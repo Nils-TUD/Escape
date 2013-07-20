@@ -23,6 +23,7 @@
 #include <sys/mem/region.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/sllnodes.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
@@ -221,7 +222,7 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
 	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
 	prf_sprintf(buf,"\tProcesses: ");
 	for(n = sll_begin(&reg->procs); n != NULL; n = n->next)
-		prf_sprintf(buf,"%d ",((sProc*)n->data)->pid);
+		prf_sprintf(buf,"%d ",((Proc*)n->data)->getPid());
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {

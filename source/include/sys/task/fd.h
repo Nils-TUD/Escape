@@ -27,7 +27,7 @@
  *
  * @param p the process
  */
-void fd_init(sProc *p);
+void fd_init(Proc *p);
 
 /**
  * Requests the file for the given file-descriptor and increments the usage-count
@@ -49,14 +49,14 @@ void fd_release(sFile *file);
  *
  * @param p the new process
  */
-void fd_clone(sProc *p);
+void fd_clone(Proc *p);
 
 /**
  * Destroyes all file-descriptors of <p>
  *
  * @param p the process to destroy
  */
-void fd_destroy(sProc *p);
+void fd_destroy(Proc *p);
 
 /**
  * Associates a free file-descriptor with the given file-number
@@ -96,4 +96,4 @@ sFile *fd_unassoc(int fd);
  *
  * @param p the process
  */
-void fd_print(sProc *p);
+void fd_print(Proc *p);

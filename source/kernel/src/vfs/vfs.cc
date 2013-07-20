@@ -126,7 +126,7 @@ const char *vfs_getPath(sFile *f) {
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
-	const sProc *p;
+	const Proc *p;
 	uint mode;
 	if(n->name == NULL)
 		return -ENOENT;
@@ -134,11 +134,11 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	if(pid == KERNEL_PID)
 		return 0;
 
-	p = proc_getByPid(pid);
+	p = Proc::getByPid(pid);
 	if(p == NULL)
 		return -ESRCH;
 	/* root is (nearly) allmighty as well */
-	if(p->euid == ROOT_UID) {
+	if(p->getEUid() == ROOT_UID) {
 		/* root has exec-permission if at least one has exec-permission */
 		if(flags & VFS_EXEC)
 			return (n->mode & MODE_EXEC) ? 0 : -EACCES;
@@ -146,9 +146,9 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	}
 
 	/* determine mask */
-	if(p->euid == n->uid)
+	if(p->getEUid() == n->uid)
 		mode = n->mode & S_IRWXU;
-	else if(p->egid == n->gid || groups_contains(p->pid,n->gid))
+	else if(p->getEGid() == n->gid || groups_contains(p->getPid(),n->gid))
 		mode = n->mode & S_IRWXG;
 	else
 		mode = n->mode & S_IRWXO;
@@ -190,7 +190,7 @@ void vfs_decUsages(sFile *file) {
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
 	if(file->usageCount == 0 && file->refCount == 0)
-		vfs_doCloseFile(proc_getRunning(),file);
+		vfs_doCloseFile(Proc::getRunning(),file);
 	spinlock_release(&file->lock);
 }
 
@@ -233,12 +233,12 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
 	/* resolve path */
 	err = vfs_node_resolvePath(path,&nodeNo,&created,flags);
 	if(err == -EREALPATH) {
-		const sProc *p = proc_getByPid(pid);
+		const Proc *p = Proc::getByPid(pid);
 		/* unfortunatly we have to check for fs here. because e.g. if the user tries to mount the
 		 * device "/realfile" the userspace has no opportunity to distinguish between virtual
 		 * and real files. therefore fs will try to open this path and shoot itself in the foot... */
 		/* TODO there has to be a better solution */
-		if(p->flags & P_FS)
+		if(p->getFlags() & P_FS)
 			return -ENOENT;
 
 		/* send msg to fs and wait for reply */
@@ -583,7 +583,7 @@ ssize_t vfs_readFile(pid_t pid,sFile *file,USER void *buffer,size_t count) {
 	}
 
 	if(readBytes > 0 && pid != KERNEL_PID) {
-		sProc *p = proc_getByPid(pid);
+		Proc *p = Proc::getByPid(pid);
 		/* no lock here because its not critical. we don't make decisions based on it or similar.
 		 * its just for statistics. therefore, it doesn't really hurt if we add a bit less in
 		 * very very rare cases. */
@@ -617,7 +617,7 @@ ssize_t vfs_writeFile(pid_t pid,sFile *file,USER const void *buffer,size_t count
 	}
 
 	if(writtenBytes > 0 && pid != KERNEL_PID) {
-		sProc *p = proc_getByPid(pid);
+		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->stats.output += writtenBytes;
 	}
@@ -641,7 +641,7 @@ ssize_t vfs_sendMsg(pid_t pid,sFile *file,msgid_t id,USER const void *data1,size
 
 	err = vfs_chan_send(pid,file->flags,n,id,data1,size1,data2,size2);
 	if(err == 0 && pid != KERNEL_PID) {
-		sProc *p = proc_getByPid(pid);
+		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->stats.output += size1 + size2;
 	}
@@ -663,7 +663,7 @@ ssize_t vfs_receiveMsg(pid_t pid,sFile *file,USER msgid_t *id,USER void *data,si
 	err = vfs_chan_receive(pid,file->flags,n,id,data,size,
 			forceBlock || !(file->flags & VFS_NOBLOCK),forceBlock);
 	if(err > 0 && pid != KERNEL_PID) {
-		sProc *p = proc_getByPid(pid);
+		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->stats.input += err;
 	}
@@ -1264,7 +1264,7 @@ errorName:
 
 void vfs_removeProcess(pid_t pid) {
 	/* remove from /system/processes */
-	const sProc *p = proc_getByPid(pid);
+	const Proc *p = Proc::getByPid(pid);
 	sVFSNode *node = vfs_node_get(p->threadDir);
 	vfs_node_destroyNow(node->parent);
 	vfs_fsmsgs_removeProc(pid);
@@ -1400,8 +1400,8 @@ void vfs_printGFT(void) {
 			if(f->owner == KERNEL_PID)
 				vid_printf("\t\towner: %d (kernel)\n",f->owner);
 			else {
-				const sProc *p = proc_getByPid(f->owner);
-				vid_printf("\t\towner: %d:%s\n",f->owner,p ? p->command : "???");
+				const Proc *p = Proc::getByPid(f->owner);
+				vid_printf("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
 			}
 			if(f->devNo == VFS_DEV_NO) {
 				sVFSNode *n = f->node;

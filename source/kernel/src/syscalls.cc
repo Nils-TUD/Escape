@@ -157,7 +157,7 @@ bool sysc_absolutize_path(char *dst,size_t size,const char *src) {
 	if(slen < 0 || !paging_isInUserSpace((uintptr_t)src,slen))
 		return false;
 	if(*src != '/') {
-		pid_t pid = proc_getRunning();
+		pid_t pid = Proc::getRunning();
 		if(env_get(pid,"CWD",dst,size)) {
 			len = strlen(dst);
 			if(len < size - 1 && dst[len - 1] != '/') {

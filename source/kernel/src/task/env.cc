@@ -34,33 +34,33 @@ typedef struct {
 	char *value;
 } sEnvVar;
 
-static bool env_exists(const sProc *p,const char *name);
-static sEnvVar *env_getiOf(const sProc *p,size_t *index);
-static sEnvVar *env_getOf(const sProc *p,const char *name);
+static bool env_exists(const Proc *p,const char *name);
+static sEnvVar *env_getiOf(const Proc *p,size_t *index);
+static sEnvVar *env_getOf(const Proc *p,const char *name);
 
 bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 	sEnvVar *var;
 	while(1) {
-		sProc *p = proc_request(pid,PLOCK_ENV);
+		Proc *p = Proc::request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
 		var = env_getiOf(p,&index);
 		if(var != NULL) {
 			bool res = true;
 			if(dst) {
-				Thread::addLock(p->locks + PLOCK_ENV);
+				p->addLock(PLOCK_ENV);
 				strnzcpy(dst,var->name,size);
-				Thread::remLock(p->locks + PLOCK_ENV);
+				p->remLock(PLOCK_ENV);
 			}
-			proc_release(p,PLOCK_ENV);
+			Proc::release(p,PLOCK_ENV);
 			return res;
 		}
-		if(p->pid == 0) {
-			proc_release(p,PLOCK_ENV);
+		if(p->getPid() == 0) {
+			Proc::release(p,PLOCK_ENV);
 			break;
 		}
-		pid = p->parentPid;
-		proc_release(p,PLOCK_ENV);
+		pid = p->getParentPid();
+		Proc::release(p,PLOCK_ENV);
 	}
 	return false;
 }
@@ -68,32 +68,32 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 	sEnvVar *var;
 	while(1) {
-		sProc *p = proc_request(pid,PLOCK_ENV);
+		Proc *p = Proc::request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
-		Thread::addLock(p->locks + PLOCK_ENV);
+		p->addLock(PLOCK_ENV);
 		var = env_getOf(p,name);
 		if(var != NULL) {
 			if(dst)
 				strnzcpy(dst,var->value,size);
-			Thread::remLock(p->locks + PLOCK_ENV);
-			proc_release(p,PLOCK_ENV);
+			p->remLock(PLOCK_ENV);
+			Proc::release(p,PLOCK_ENV);
 			return true;
 		}
-		Thread::remLock(p->locks + PLOCK_ENV);
-		if(p->pid == 0) {
-			proc_release(p,PLOCK_ENV);
+		p->remLock(PLOCK_ENV);
+		if(p->getPid() == 0) {
+			Proc::release(p,PLOCK_ENV);
 			break;
 		}
-		pid = p->parentPid;
-		proc_release(p,PLOCK_ENV);
+		pid = p->getParentPid();
+		Proc::release(p,PLOCK_ENV);
 	}
 	return false;
 }
 
 bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	sEnvVar *var;
-	sProc *p;
+	Proc *p;
 	char *nameCpy,*valueCpy;
 	nameCpy = strdup(name);
 	if(!nameCpy)
@@ -105,7 +105,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorNameCpy;
 
 	/* at first we have to look whether the var already exists for the given process */
-	p = proc_request(pid,PLOCK_ENV);
+	p = Proc::request(pid,PLOCK_ENV);
 	if(!p)
 		goto errorValCpy;
 	var = env_getOf(p,nameCpy);
@@ -116,7 +116,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		/* we don't need the previous value anymore */
 		cache_free(oldVal);
 		cache_free(nameCpy);
-		proc_release(p,PLOCK_ENV);
+		Proc::release(p,PLOCK_ENV);
 		return true;
 	}
 
@@ -138,7 +138,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	}
 	if(!sll_append(p->env,var))
 		goto errorList;
-	proc_release(p,PLOCK_ENV);
+	Proc::release(p,PLOCK_ENV);
 	return true;
 
 errorList:
@@ -147,7 +147,7 @@ errorList:
 errorVar:
 	cache_free(var);
 errorProc:
-	proc_release(p,PLOCK_ENV);
+	Proc::release(p,PLOCK_ENV);
 errorValCpy:
 	cache_free(valueCpy);
 errorNameCpy:
@@ -156,7 +156,7 @@ errorNameCpy:
 }
 
 void env_removeFor(pid_t pid) {
-	sProc *p = proc_request(pid,PLOCK_ENV);
+	Proc *p = Proc::request(pid,PLOCK_ENV);
 	if(p) {
 		if(p->env) {
 			sSLNode *n;
@@ -169,7 +169,7 @@ void env_removeFor(pid_t pid) {
 			sll_destroy(p->env,false);
 			p->env = NULL;
 		}
-		proc_release(p,PLOCK_ENV);
+		Proc::release(p,PLOCK_ENV);
 	}
 }
 
@@ -186,20 +186,20 @@ void env_printAllOf(pid_t pid) {
 	}
 }
 
-static bool env_exists(const sProc *p,const char *name) {
+static bool env_exists(const Proc *p,const char *name) {
 	sEnvVar *var;
 	while(1) {
 		var = env_getOf(p,name);
 		if(var != NULL)
 			return true;
-		if(p->pid == 0)
+		if(p->getPid() == 0)
 			break;
-		p = proc_getByPid(p->parentPid);
+		p = Proc::getByPid(p->getParentPid());
 	}
 	return false;
 }
 
-static sEnvVar *env_getiOf(const sProc *p,size_t *index) {
+static sEnvVar *env_getiOf(const Proc *p,size_t *index) {
 	sSLNode *n;
 	sEnvVar *e = NULL;
 	if(!p->env)
@@ -212,7 +212,7 @@ static sEnvVar *env_getiOf(const sProc *p,size_t *index) {
 	return NULL;
 }
 
-static sEnvVar *env_getOf(const sProc *p,USER const char *name) {
+static sEnvVar *env_getOf(const Proc *p,USER const char *name) {
 	sSLNode *n;
 	if(!p->env)
 		return NULL;

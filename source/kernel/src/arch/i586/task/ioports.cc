@@ -27,77 +27,77 @@
 #include <errno.h>
 #include <string.h>
 
-void ioports_init(sProc *p) {
-	p->archAttr.ioMap = NULL;
+void ioports_init(Proc *p) {
+	p->ioMap = NULL;
 }
 
 int ioports_request(uint16_t start,size_t count) {
-	sProc *p;
+	Proc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return -EINVAL;
 
-	p = proc_request(proc_getRunning(),PLOCK_PORTS);
-	if(p->archAttr.ioMap == NULL) {
-		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
-		if(p->archAttr.ioMap == NULL) {
-			proc_release(p,PLOCK_PORTS);
+	p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
+	if(p->ioMap == NULL) {
+		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
+		if(p->ioMap == NULL) {
+			Proc::release(p,PLOCK_PORTS);
 			return -ENOMEM;
 		}
 		/* mark all as disallowed */
-		memset(p->archAttr.ioMap,0xFF,IO_MAP_SIZE / 8);
+		memset(p->ioMap,0xFF,IO_MAP_SIZE / 8);
 	}
 
 	/* 0 means allowed */
 	while(count-- > 0) {
-		p->archAttr.ioMap[start / 8] &= ~(1 << (start % 8));
+		p->ioMap[start / 8] &= ~(1 << (start % 8));
 		start++;
 	}
 
-	tss_setIOMap(p->archAttr.ioMap,true);
-	proc_release(p,PLOCK_PORTS);
+	tss_setIOMap(p->ioMap,true);
+	Proc::release(p,PLOCK_PORTS);
 	return 0;
 }
 
 bool ioports_handleGPF(void) {
 	bool res = false;
-	sProc *p = proc_request(proc_getRunning(),PLOCK_PORTS);
-	if(p->archAttr.ioMap != NULL && !tss_ioMapPresent()) {
+	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
+	if(p->ioMap != NULL && !tss_ioMapPresent()) {
 		/* load it and give the process another try */
-		tss_setIOMap(p->archAttr.ioMap,false);
+		tss_setIOMap(p->ioMap,false);
 		res = true;
 	}
-	proc_release(p,PLOCK_PORTS);
+	Proc::release(p,PLOCK_PORTS);
 	return res;
 }
 
 int ioports_release(uint16_t start,size_t count) {
-	sProc *p;
+	Proc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return -EINVAL;
 
-	p = proc_request(proc_getRunning(),PLOCK_PORTS);
-	if(p->archAttr.ioMap == NULL) {
-		proc_release(p,PLOCK_PORTS);
+	p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
+	if(p->ioMap == NULL) {
+		Proc::release(p,PLOCK_PORTS);
 		return -EINVAL;
 	}
 
 	/* 1 means disallowed */
 	while(count-- > 0) {
-		p->archAttr.ioMap[start / 8] |= 1 << (start % 8);
+		p->ioMap[start / 8] |= 1 << (start % 8);
 		start++;
 	}
 
-	tss_setIOMap(p->archAttr.ioMap,true);
-	proc_release(p,PLOCK_PORTS);
+	tss_setIOMap(p->ioMap,true);
+	Proc::release(p,PLOCK_PORTS);
 	return 0;
 }
 
-void ioports_free(sProc *p) {
-	if(p->archAttr.ioMap != NULL) {
-		cache_free(p->archAttr.ioMap);
-		p->archAttr.ioMap = NULL;
+void ioports_free(Proc *p) {
+	if(p->ioMap != NULL) {
+		cache_free(p->ioMap);
+		p->ioMap = NULL;
 	}
 }
 

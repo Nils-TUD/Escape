@@ -24,6 +24,7 @@
 #include <sys/arch/i586/fpu.h>
 #include <sys/arch/i586/apic.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/elf.h>
 #include <sys/task/smp.h>
 #include <sys/mem/vmm.h>
@@ -64,7 +65,7 @@ uintptr_t smpstart(void) {
 
 	/* start an idle-thread for each cpu */
 	for(i = 0; i < total; i++)
-		proc_startThread((uintptr_t)&idlestart,T_IDLE,NULL);
+		Proc::startThread((uintptr_t)&idlestart,T_IDLE,NULL);
 
 	/* start all APs */
 	smp_start();
@@ -82,12 +83,12 @@ uintptr_t smpstart(void) {
 }
 
 void apstart(void) {
-	sProc *p = proc_getByPid(0);
+	Proc *p = Proc::getByPid(0);
 	/* store the running thread for our temp-stack again, because we might need it in gdt_init_ap
 	 * for example */
 	Thread::setRunning(Thread::getById(0));
 	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
-	paging_activate(p->pagedir.own);
+	paging_activate(p->getPageDir()->own);
 	gdt_init_ap();
 	/* setup IDT for this cpu and enable its local APIC */
 	idt_init();

@@ -85,7 +85,7 @@ static int vm86Res = -1;
 static mutex_t vm86Lock;
 
 int vm86_create(void) {
-	sProc *p;
+	Proc *p;
 	Thread *t;
 	size_t i,frameCount;
 	int res;
@@ -97,7 +97,7 @@ int vm86_create(void) {
 	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get
 	 * chosen by the scheduler the first time. Otherwise the scheduler can't set the right
 	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
-	res = proc_clone(P_VM86);
+	res = Proc::clone(P_VM86);
 	if(res < 0)
 		return res;
 	/* parent */
@@ -109,7 +109,7 @@ int vm86_create(void) {
 	vm86Tid = t->tid;
 
 	/* remove all regions */
-	proc_removeRegions(p->pid,true);
+	Proc::removeRegions(p->getPid(),true);
 
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
@@ -125,15 +125,15 @@ int vm86_create(void) {
 	 * following instructions, too!? By giving the task the permission to perform port I/O
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
-	if(p->archAttr.ioMap == NULL)
-		p->archAttr.ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
+	if(p->ioMap == NULL)
+		p->ioMap = (uint8_t*)cache_alloc(IO_MAP_SIZE / 8);
 	/* note that we HAVE TO request all ports (even the reserved ones); otherwise it doesn't work
 	 * everywhere (e.g. my notebook needs it) */
-	if(p->archAttr.ioMap != NULL)
-		memset(p->archAttr.ioMap,0x00,IO_MAP_SIZE / 8);
+	if(p->ioMap != NULL)
+		memset(p->ioMap,0x00,IO_MAP_SIZE / 8);
 
 	/* give it a name */
-	proc_setCommand(p,"VM86",0,"");
+	p->setCommand("VM86",0,"");
 
 	/* block us; we get waked up as soon as someone wants to use us */
 	ev_block(t);
@@ -156,7 +156,7 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* check whether there still is a vm86-task */
 	vm86t = Thread::getById(vm86Tid);
-	if(vm86t == NULL || !(vm86t->proc->flags & P_VM86))
+	if(vm86t == NULL || !(vm86t->proc->getFlags() & P_VM86))
 		return -ESRCH;
 
 	/* ensure that only one thread at a time can use the vm86-task */

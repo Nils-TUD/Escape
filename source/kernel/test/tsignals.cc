@@ -68,7 +68,7 @@ static void test_canHandle(void) {
 
 static void test_setHandler(void) {
 	Thread *t1 = Thread::getRunning();
-	int tid = proc_startThread(0,0,NULL);
+	int tid = Proc::startThread(0,0,NULL);
 	Thread *t2 = Thread::getById(tid);
 	int sig = 0xFF;
 	fSignal handler,old;
@@ -105,7 +105,7 @@ static void test_setHandler(void) {
 
 	test_caseStart("Adding signal for process");
 	test_assertInt(sig_setHandler(t1->tid,SIG_TERM,(fSignal)0x456,&old),0);
-	proc_addSignalFor(t1->proc->pid,SIG_TERM);
+	Proc::addSignalFor(t1->proc->getPid(),SIG_TERM);
 	test_assertTrue(sig_hasSignalFor(t1->tid));
 	test_assertInt(sig_checkAndStart(t1->tid,&sig,&handler),SIG_CHECK_CUR);
 	test_assertTrue(sig == SIG_TERM);
@@ -165,5 +165,5 @@ static void test_setHandler(void) {
 	test_caseSucceeded();
 
 	assert(t2->beginTerm());
-	proc_killThread(tid);
+	Proc::killThread(tid);
 }

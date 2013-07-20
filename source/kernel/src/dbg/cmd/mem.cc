@@ -37,7 +37,7 @@ static void displayLine(void *data,uintptr_t addr,uint8_t *bytes);
 static uintptr_t gotoAddr(void *data,const char *gotoAddr);
 
 static sScreenBackup backup;
-static sProc *proc;
+static Proc *proc;
 static uintptr_t lastAddr = 0;
 static uint8_t *page = NULL;
 static sNaviBackend backend;
@@ -50,7 +50,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	}
 
 	if(argc > 1) {
-		proc = proc_getByPid(strtoul(argv[1],NULL,10));
+		proc = Proc::getByPid(strtoul(argv[1],NULL,10));
 		if(!proc) {
 			vid_printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
 			return -ESRCH;
@@ -59,7 +59,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 			addr = (uintptr_t)strtoul(argv[2],NULL,16);
 	}
 	else
-		proc = proc_getByPid(proc_getRunning());
+		proc = Proc::getByPid(Proc::getRunning());
 
 	vid_backup(backup.screen,&backup.row,&backup.col);
 
@@ -85,7 +85,7 @@ static const char *getLineInfo(A_UNUSED void *data,A_UNUSED uintptr_t addr) {
 	buf.len = 0;
 	buf.size = sizeof(procName);
 	buf.str = procName;
-	prf_sprintf(&buf,"Process %d (%s)",proc->pid,proc->command);
+	prf_sprintf(&buf,"Process %d (%s)",proc->getPid(),proc->getCommand());
 	return procName;
 }
 
@@ -93,8 +93,8 @@ static uint8_t *loadLine(A_UNUSED void *data,uintptr_t addr) {
 	if(page == NULL || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
 		if(page)
 			paging_removeAccess();
-		if(paging_isPresent(&proc->pagedir,addr)) {
-			frameno_t frame = paging_getFrameNo(&proc->pagedir,addr);
+		if(paging_isPresent(proc->getPageDir(),addr)) {
+			frameno_t frame = paging_getFrameNo(proc->getPageDir(),addr);
 			page = (uint8_t*)paging_getAccess(frame);
 		}
 		else

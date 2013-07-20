@@ -37,22 +37,8 @@ private:
 	static Thread *cur;
 };
 
-inline void ThreadBase::addInitialStack() {
-	assert(tid == INIT_TID);
-	assert(vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
-}
-
 inline size_t ThreadBase::getThreadFrmCnt() {
 	return INITIAL_STACK_PAGES;
-}
-
-inline void ThreadBase::freeArch(Thread *t) {
-	if(t->stackRegions[0] != NULL) {
-		vmm_remove(t->proc->pid,t->stackRegions[0]);
-		t->stackRegions[0] = NULL;
-	}
-	pmem_free(t->kstackFrame,FRM_KERNEL);
 }
 
 inline Thread *ThreadBase::getRunning() {

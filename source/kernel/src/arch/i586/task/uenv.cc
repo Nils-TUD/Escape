@@ -22,6 +22,7 @@
 #include <sys/task/uenv.h>
 #include <sys/task/event.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/spinlock.h>
@@ -46,7 +47,7 @@ void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
 int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	if(!paging_isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
-		proc_segFault();
+		Proc::segFault();
 		/* never reached */
 		assert(false);
 	}
@@ -194,7 +195,7 @@ static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,f
 	*--esp = sig;
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
-	*--esp = t->proc->sigRetAddr;
+	*--esp = t->proc->getSigRetAddr();
 	stack->eip = (uintptr_t)handler;
 	stack->uesp = (uint32_t)esp;
 }

@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/timer.h>
 #include <sys/task/uenv.h>
@@ -217,7 +218,7 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	uintptr_t pfaddr = cpu_getFaultLoc();
 
 #if DEBUG_PAGEFAULTS
-	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
 			util_panic("%d page-faults at the same address of the same process",exCount);
@@ -225,20 +226,20 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 	else
 		exCount = 0;
 	lastPFAddr = pfaddr;
-	lastPFProc = proc_getRunning()->pid;
+	lastPFProc = Proc::getRunning()->getPid();
 	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-			stack->r[30],proc_getRunning()->pid);
+			stack->r[30],Proc::getRunning()->getPid());
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!vmm_pagefault(pfaddr,irqNo == TRAP_PROT_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(pfaddr) < 0) {
-			pid_t pid = proc_getRunning();
+			pid_t pid = Proc::getRunning();
 			sKSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
 			vid_printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
-			proc_segFault();
+			Proc::segFault();
 		}
 	}
 }
@@ -249,7 +250,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	uint64_t *kbRegs = (uint64_t*)KEYBOARD_BASE;
 	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
 
-	if(proc_getByPid(KEYBOARD_PID) == NULL) {
+	if(Proc::getByPid(KEYBOARD_PID) == NULL) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
 		/* (with a present keyboard-device we would steal him the scancodes) */
 		/* this way, we can debug the system in the startup-phase without affecting timings

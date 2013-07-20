@@ -27,7 +27,7 @@
  *
  * @param p the process
  */
-void ioports_init(sProc *p);
+void ioports_init(Proc *p);
 
 /**
  * Requests some IO-ports for the current process. Will not replace the IO-Map in TSS!
@@ -60,7 +60,7 @@ int ioports_release(uint16_t start,size_t count);
  *
  * @param p the process
  */
-void ioports_free(sProc *p);
+void ioports_free(Proc *p);
 
 
 #if DEBUGGING

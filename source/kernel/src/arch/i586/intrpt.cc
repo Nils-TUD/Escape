@@ -166,7 +166,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		intrpt->handler(t,stack);
 	else {
 		vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
-				intrpt->name,stack->eip,t->proc->pid,t->proc->command);
+				intrpt->name,stack->eip,t->proc->getPid(),t->proc->getCommand());
 	}
 
 	/* handle signal */
@@ -179,7 +179,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 static void intrpt_exFatal(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	vid_printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
-			t->proc->pid,t->proc->command);
+			t->proc->getPid(),t->proc->getCommand());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;
@@ -209,7 +209,7 @@ static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 		return;
 	}
 	/* vm86-task? */
-	if(t->proc->flags & P_VM86) {
+	if(t->proc->getFlags() & P_VM86) {
 		vm86_handleGPF(stack);
 		exCount = 0;
 		return;
@@ -235,7 +235,7 @@ static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
 	}
 
 #if DEBUG_PAGEFAULTS
-	if(addr == lastPFAddr && lastPFProc == proc_getRunning()) {
+	if(addr == lastPFAddr && lastPFProc == Proc::getRunning()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
 			util_panic("%d page-faults at the same address of the same process",exCount);
@@ -243,7 +243,7 @@ static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
 	else
 		exCount = 0;
 	lastPFAddr = addr;
-	lastPFProc = proc_getRunning();
+	lastPFProc = Proc::getRunning();
 	intrpt_printPFInfo(stack,addr);
 #endif
 
@@ -252,7 +252,7 @@ static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(addr) < 0) {
 			intrpt_printPFInfo(stack,addr);
-			/* TODO proc_segFault();*/
+			/* TODO Proc::segFault();*/
 			util_panic("Process segfaulted");
 		}
 	}
@@ -280,7 +280,7 @@ static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	/* (with a present keyboard-device we would steal him the scancodes) */
 	/* this way, we can debug the system in the startup-phase without affecting timings
 	 * (before viewing the log ;)) */
-	if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {
+	if(stack->intrptNo == IRQ_KEYBOARD && Proc::getByPid(KEYBOARD_PID) == NULL) {
 		sKeyEvent ev;
 		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
 			cons_start(NULL);
@@ -311,7 +311,7 @@ static void intrpt_ipiTerm(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 }
 
 static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {
-	pid_t pid = proc_getRunning();
+	pid_t pid = Proc::getRunning();
 	vid_printf("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
 	vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 			(stack->errorCode & 0x1) ?

@@ -35,7 +35,7 @@ typedef struct {
 	/* note that we don't need to save eip because when we're done in thread_resume() we have
 	 * our kernel-stack back which causes the ret-instruction to return to the point where
 	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */
-	/* note also that this only works because when we call thread_save() in proc_finishClone
+	/* note also that this only works because when we call thread_save() in Proc::finishClone
 	 * we take care not to call a function afterwards (since it would overwrite the return-address
 	 * on the stack). When we call it in thread_switch() our return-address gets overwritten, but
 	 * it doesn't really matter because it looks like this:

@@ -22,6 +22,7 @@
 #include <sys/task/event.h>
 #include <sys/task/sched.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <esc/sllist.h>
@@ -213,7 +214,7 @@ void ev_print(void) {
 			inode_t nodeNo;
 			Thread *t = Thread::getById(w->tid);
 			vid_printf("\t\tthread=%d (%d:%s), object=%x",
-					t->tid,t->proc->pid,t->proc->command,w->object);
+					t->tid,t->proc->getPid(),t->proc->getCommand(),w->object);
 			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
 			if(vfs_node_isValid(nodeNo))
 				vid_printf("(%s)",vfs_node_getPath(nodeNo));

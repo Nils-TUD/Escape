@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/step.h>
+#include <sys/task/proc.h>
 #include <sys/util.h>
 #include <string.h>
 
@@ -34,7 +35,7 @@ int cons_cmd_step(size_t argc,char **argv) {
 	sIntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->eflags &= ~(1 << 8);
-		vid_printf("Executing thread %d:%d:%s\n",t->tid,t->proc->pid,t->proc->command);
+		vid_printf("Executing thread %d:%d:%s\n",t->tid,t->proc->getPid(),t->proc->getCommand());
 		util_printStackTrace(util_getUserStackTraceOf(t));
 		util_printUserState();
 		return 0;

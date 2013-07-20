@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
@@ -85,6 +86,14 @@ extern void *stackCopy;
 extern uint64_t stackCopySize;
 Thread *Thread::cur = NULL;
 
+void ThreadBase::addInitialStack() {
+	assert(tid == INIT_TID);
+	assert(vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
+	assert(vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 1) == 0);
+}
+
 int ThreadBase::initArch(Thread *t) {
 	t->kstackFrame = pmem_allocate(FRM_KERNEL);
 	if(t->kstackFrame == 0)
@@ -99,18 +108,18 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 		return -ENOMEM;
 	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
-		int res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		int res = vmm_map(dst->proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			pmem_free(dst->kstackFrame,FRM_KERNEL);
 			return res;
 		}
 		/* add a new stack-region for the software-stack */
-		res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		res = vmm_map(dst->proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 1);
 		if(res < 0) {
 			/* remove register-stack */
-			vmm_remove(dst->proc->pid,dst->stackRegions[0]);
+			vmm_remove(dst->proc->getPid(),dst->stackRegions[0]);
 			dst->stackRegions[0] = NULL;
 			pmem_free(dst->kstackFrame,FRM_KERNEL);
 			return res;
@@ -124,7 +133,7 @@ void ThreadBase::freeArch(Thread *t) {
 	int i;
 	for(i = 0; i < 2; i++) {
 		if(t->stackRegions[i] != NULL) {
-			vmm_remove(t->proc->pid,t->stackRegions[i]);
+			vmm_remove(t->proc->getPid(),t->stackRegions[i]);
 			t->stackRegions[i] = NULL;
 		}
 	}
@@ -164,7 +173,7 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	ssp = (uint64_t*)(start + PAGE_SIZE - sizeof(uint64_t));
 	*ssp-- = entryPoint;
 	*ssp-- = (uint64_t)arg;
-	*ssp = nt->proc->entryPoint;
+	*ssp = nt->proc->getEntryPoint();
 	/* set sp and fp */
 	rsp[-(13 + 1)] = (uint64_t)ssp;									/* $254 */
 	rsp[-(13 + 2)] = (uint64_t)ssp;									/* $253 */
@@ -226,7 +235,7 @@ void ThreadBase::doSwitch(void) {
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		smp_schedule(n->getCPU(),n,timestamp);
 		n->stats.cycleStart = cpu_rdtsc();
-		thread_doSwitchTo(&old->save,&n->save,n->proc->pagedir,n->tid);
+		thread_doSwitchTo(&old->save,&n->save,*n->proc->getPageDir(),n->tid);
 	}
 	else
 		n->stats.cycleStart = cpu_rdtsc();

@@ -39,7 +39,7 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups);
  * @param dst the dest-process
  * @param src the src-process
  */
-void groups_join(sProc *dst,sProc *src);
+void groups_join(Proc *dst,Proc *src);
 
 /**
  * Copies the group-ids from the given process into the given list. If <count> is 0, the number

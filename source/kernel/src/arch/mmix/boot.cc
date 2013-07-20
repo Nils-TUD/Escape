@@ -47,12 +47,12 @@ static const sBootTask tasks[] = {
 	{"Initializing physical memory-management...",pmem_init},
 	{"Initializing address spaces...",aspace_init},
 	{"Initializing paging...",paging_init},
-	{"Preinit processes...",proc_preinit},
+	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",dyna_init},
 	{"Initializing SMP...",smp_init},
 	{"Initializing VFS...",vfs_init},
 	{"Initializing event system...",ev_init},
-	{"Initializing processes...",proc_init},
+	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",sched_init},
 	{"Initializing terminator...",term_init},
 	{"Start logging to VFS...",log_vfsIsReady},
@@ -121,26 +121,26 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	if(bootState == bootFinished)
 		return 0;
 
-	/* note that we can't do more than one proc_clone at once here, because we have to leave the
+	/* note that we can't do more than one Proc::clone at once here, because we have to leave the
 	 * kernel immediatly to choose another stack (the created process gets our stack) */
 	if(bootState == 0) {
 		/* start idle-thread */
-		proc_startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+		Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 		/* start termination-thread */
-		proc_startThread((uintptr_t)&term_start,0,NULL);
+		Proc::startThread((uintptr_t)&term_start,0,NULL);
 		bootState++;
 	}
 	else if((bootState % 2) == 1) {
 		i = (bootState / 2) + 1;
 		/* clone proc */
-		if((child = proc_clone(P_BOOT)) == 0) {
+		if((child = Proc::clone(P_BOOT)) == 0) {
 			int res,argc;
 			/* parse args */
 			const char **argv = boot_parseArgs(progs[i].command,&argc);
 			if(argc < 2)
 				util_panic("Invalid arguments for boot-module: %s\n",progs[i].path);
 			/* exec */
-			res = proc_exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
+			res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",progs[i].path,res);
 			/* we don't want to continue ;) */
@@ -175,7 +175,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 #if 0
 	/* start the swapper-thread. it will never return */
 	if(pmem_canSwap())
-		proc_startThread((uintptr_t)&pmem_swapper,0,NULL);
+		Proc::startThread((uintptr_t)&pmem_swapper,0,NULL);
 #endif
 
 	if(bootState == bootFinished) {

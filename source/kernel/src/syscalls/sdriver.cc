@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
 #include <sys/task/fd.h>
@@ -37,7 +38,7 @@ int sysc_createdev(Thread *t,sIntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint type = SYSC_ARG2(stack);
 	uint ops = SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	int res,fd;
 	sFile *file;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
@@ -66,7 +67,7 @@ int sysc_getclientid(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFile *file;
 	inode_t id;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 
 	file = fd_request(fd);
 	if(file == NULL)
@@ -82,7 +83,7 @@ int sysc_getclientid(Thread *t,sIntrptStackFrame *stack) {
 int sysc_getclient(Thread *t,sIntrptStackFrame *stack) {
 	int drvFd = (int)SYSC_ARG1(stack);
 	inode_t cid = (inode_t)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file,*drvFile;
 	int res,fd;
 
@@ -115,7 +116,7 @@ int sysc_getwork(Thread *t,sIntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG5(stack);
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	inode_t clientNo;
 	int fd;

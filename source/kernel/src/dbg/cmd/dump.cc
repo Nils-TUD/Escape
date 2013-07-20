@@ -23,6 +23,7 @@
 #include <sys/dbg/lines.h>
 #include <sys/dbg/cmd/dump.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
 #include <sys/video.h>
@@ -46,7 +47,7 @@ static sNaviBackend backend;
 int cons_cmd_dump(size_t argc,char **argv) {
 	sStringBuffer buf;
 	int res;
-	pid = proc_getRunning();
+	pid = Proc::getRunning();
 
 	if(cons_isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s <file>\n",argv[0]);

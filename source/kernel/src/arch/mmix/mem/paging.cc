@@ -425,7 +425,7 @@ size_t paging_unmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFra
 }
 
 static pagedir_t *paging_getPageDir(void) {
-	return proc_getPageDir();
+	return Proc::getCurPageDir();
 }
 
 static uint64_t *paging_getPTOf(const pagedir_t *pdir,uintptr_t virt,bool create,size_t *createdPts) {

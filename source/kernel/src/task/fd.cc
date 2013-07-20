@@ -27,23 +27,23 @@
 #include <string.h>
 #include <errno.h>
 
-void fd_init(sProc *p) {
+void fd_init(Proc *p) {
 	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(sFile*));
 }
 
 sFile *fd_request(int fd) {
 	sFile *file;
-	sProc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->proc;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 
-	spinlock_aquire(p->locks + PLOCK_FDS);
+	p->lock(PLOCK_FDS);
 	file = p->fileDescs[fd];
 	if(file != NULL) {
 		vfs_incUsages(file);
 		Thread::addFileUsage(file);
 	}
-	spinlock_release(p->locks + PLOCK_FDS);
+	p->unlock(PLOCK_FDS);
 	return file;
 }
 
@@ -52,38 +52,38 @@ void fd_release(sFile *file) {
 	vfs_decUsages(file);
 }
 
-void fd_clone(sProc *p) {
+void fd_clone(Proc *p) {
 	size_t i;
-	sProc *cur = Thread::getRunning()->proc;
+	Proc *cur = Thread::getRunning()->proc;
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
-	spinlock_aquire(cur->locks + PLOCK_FDS);
+	cur->lock(PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
 		if(p->fileDescs[i] != NULL)
 			vfs_incRefs(p->fileDescs[i]);
 	}
-	spinlock_release(cur->locks + PLOCK_FDS);
+	cur->unlock(PLOCK_FDS);
 }
 
-void fd_destroy(sProc *p) {
+void fd_destroy(Proc *p) {
 	size_t i;
-	spinlock_aquire(p->locks + PLOCK_FDS);
+	p->lock(PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
 			vfs_incUsages(p->fileDescs[i]);
-			if(!vfs_closeFile(p->pid,p->fileDescs[i]))
+			if(!vfs_closeFile(p->getPid(),p->fileDescs[i]))
 				vfs_decUsages(p->fileDescs[i]);
 			p->fileDescs[i] = NULL;
 		}
 	}
-	spinlock_release(p->locks + PLOCK_FDS);
+	p->unlock(PLOCK_FDS);
 }
 
 int fd_assoc(sFile *fileNo) {
 	sFile *const *fds;
 	int i,fd = -EMFILE;
-	sProc *p = Thread::getRunning()->proc;
-	spinlock_aquire(p->locks + PLOCK_FDS);
+	Proc *p = Thread::getRunning()->proc;
+	p->lock(PLOCK_FDS);
 	fds = p->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == NULL) {
@@ -93,7 +93,7 @@ int fd_assoc(sFile *fileNo) {
 	}
 	if(fd >= 0)
 		p->fileDescs[fd] = fileNo;
-	spinlock_release(p->locks + PLOCK_FDS);
+	p->unlock(PLOCK_FDS);
 	return fd;
 }
 
@@ -101,12 +101,12 @@ int fd_dup(int fd) {
 	sFile *f;
 	sFile *const *fds;
 	int i,nfd = -EBADF;
-	sProc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->proc;
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return -EBADF;
 
-	spinlock_aquire(p->locks + PLOCK_FDS);
+	p->lock(PLOCK_FDS);
 	fds = p->fileDescs;
 	f = p->fileDescs[fd];
 	if(f != NULL) {
@@ -121,51 +121,51 @@ int fd_dup(int fd) {
 			}
 		}
 	}
-	spinlock_release(p->locks + PLOCK_FDS);
+	p->unlock(PLOCK_FDS);
 	return nfd;
 }
 
 int fd_redirect(int src,int dst) {
 	sFile *fSrc,*fDst;
 	int err = -EBADF;
-	sProc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->proc;
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
 		return -EBADF;
 
-	spinlock_aquire(p->locks + PLOCK_FDS);
+	p->lock(PLOCK_FDS);
 	fSrc = p->fileDescs[src];
 	fDst = p->fileDescs[dst];
 	if(fSrc != NULL && fDst != NULL) {
 		vfs_incRefs(fDst);
 		/* we have to close the source because no one else will do it anymore... */
-		vfs_closeFile(p->pid,fSrc);
+		vfs_closeFile(p->getPid(),fSrc);
 		/* now redirect src to dst */
 		p->fileDescs[src] = fDst;
 		err = 0;
 	}
-	spinlock_release(p->locks + PLOCK_FDS);
+	p->unlock(PLOCK_FDS);
 	return err;
 }
 
 sFile *fd_unassoc(int fd) {
 	sFile *file;
-	sProc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->proc;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 
-	spinlock_aquire(p->locks + PLOCK_FDS);
+	p->lock(PLOCK_FDS);
 	file = p->fileDescs[fd];
 	if(file != NULL)
 		p->fileDescs[fd] = NULL;
-	spinlock_release(p->locks + PLOCK_FDS);
+	p->unlock(PLOCK_FDS);
 	return file;
 }
 
-void fd_print(sProc *p) {
+void fd_print(Proc *p) {
 	size_t i;
-	vid_printf("File descriptors of %d:\n",p->pid);
+	vid_printf("File descriptors of %d:\n",p->getPid());
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
 			vid_printf("\t%-2d: ",i);

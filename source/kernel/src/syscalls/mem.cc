@@ -32,7 +32,7 @@
 
 int sysc_chgsize(Thread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	size_t oldEnd;
 	if(count > 0)
 		t->reserveFrames(count);
@@ -50,7 +50,7 @@ int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
 	int flags = SYSC_ARG5(stack);
 	int fd = SYSC_ARG6(stack);
 	off_t binOffset = SYSC_ARG7(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *f = NULL;
 	sVMRegion *vm;
 	int res;
@@ -94,7 +94,7 @@ int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_mprotect(Thread *t,sIntrptStackFrame *stack) {
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	int res;
@@ -113,7 +113,7 @@ int sysc_munmap(Thread *t,sIntrptStackFrame *stack) {
 	sVMRegion *reg = vmm_getRegion(t->proc,(uintptr_t)virt);
 	if(reg == NULL)
 		SYSC_ERROR(stack,-ENOENT);
-	vmm_remove(t->proc->pid,reg);
+	vmm_remove(t->proc->getPid(),reg);
 	SYSC_RET1(stack,0);
 }
 
@@ -121,7 +121,7 @@ int sysc_regaddphys(Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	uintptr_t addr,physCpy = *phys;
 
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))

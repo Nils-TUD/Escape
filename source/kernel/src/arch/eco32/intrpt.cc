@@ -21,6 +21,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/timer.h>
 #include <sys/task/uenv.h>
+#include <sys/task/proc.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/dbg/kb.h>
@@ -160,7 +161,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 		vid_unsetPrintFunc();
 
 #if DEBUG_PAGEFAULTS
-	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
 			util_panic("%d page-faults at the same address of the same process",exCount);
@@ -168,18 +169,18 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	else
 		exCount = 0;
 	lastPFAddr = pfaddr;
-	lastPFProc = proc_getRunning()->pid;
+	lastPFProc = Proc::getRunning()->getPid();
 	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-			stack->r[30],proc_getRunning()->pid);
+			stack->r[30],Proc::getRunning()->getPid());
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!vmm_pagefault(pfaddr,stack->irqNo == EXC_TLB_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(pfaddr) < 0) {
-			pid_t pid = proc_getRunning();
+			pid_t pid = Proc::getRunning();
 			vid_printf("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
-			proc_segFault();
+			Proc::segFault();
 		}
 	}
 }
@@ -202,7 +203,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack) {
 	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
 	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
 
-	if(proc_getByPid(KEYBOARD_PID) == NULL) {
+	if(Proc::getByPid(KEYBOARD_PID) == NULL) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
 		/* (with a present keyboard-device we would steal him the scancodes) */
 		/* this way, we can debug the system in the startup-phase without affecting timings

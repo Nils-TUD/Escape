@@ -273,7 +273,7 @@ void sig_print(void) {
 	vid_printf("Signal handler:\n");
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
-		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
+		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->getPid(),t->proc->getCommand());
 		vid_printf("\t\tpending: %zu\n",t->signals->pending.count);
 		vid_printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
 		vid_printf("\t\tcurrent: %d\n",t->signals->currentSignal);

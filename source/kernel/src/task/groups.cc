@@ -26,11 +26,11 @@
 #include <sys/video.h>
 #include <string.h>
 
-static sProcGroups *groups_getByPid(pid_t pid);
+static Proc::Groups *groups_getByPid(pid_t pid);
 
 bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
-	sProcGroups *g;
-	sProc *p;
+	Proc::Groups *g;
+	Proc *p;
 	gid_t *grpCpy = NULL;
 	if(count > 0) {
 		grpCpy = (gid_t*)cache_alloc(count * sizeof(gid_t));
@@ -41,7 +41,7 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
 		Thread::remHeapAlloc(grpCpy);
 	}
 
-	g = (sProcGroups*)cache_alloc(sizeof(sProcGroups));
+	g = (Proc::Groups*)cache_alloc(sizeof(Proc::Groups));
 	if(!g) {
 		cache_free(grpCpy);
 		return false;
@@ -51,7 +51,7 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
 	g->count = count;
 	g->groups = grpCpy;
 	groups_leave(pid);
-	p = proc_getByPid(pid);
+	p = Proc::getByPid(pid);
 	if(!p) {
 		cache_free(g);
 		cache_free(grpCpy);
@@ -61,8 +61,8 @@ bool groups_set(pid_t pid,size_t count,USER const gid_t *groups) {
 	return true;
 }
 
-void groups_join(sProc *dst,sProc *src) {
-	sProcGroups *g = src->groups;
+void groups_join(Proc *dst,Proc *src) {
+	Proc::Groups *g = src->groups;
 	dst->groups = g;
 	if(g) {
 		spinlock_aquire(&g->lock);
@@ -72,7 +72,7 @@ void groups_join(sProc *dst,sProc *src) {
 }
 
 size_t groups_get(pid_t pid,USER gid_t *list,size_t count) {
-	sProcGroups *g = groups_getByPid(pid);
+	Proc::Groups *g = groups_getByPid(pid);
 	if(count == 0)
 		return g ? g->count : 0;
 	if(g) {
@@ -84,7 +84,7 @@ size_t groups_get(pid_t pid,USER gid_t *list,size_t count) {
 }
 
 bool groups_contains(pid_t pid,gid_t gid) {
-	sProcGroups *g = groups_getByPid(pid);
+	Proc::Groups *g = groups_getByPid(pid);
 	if(g) {
 		size_t i;
 		for(i = 0; i < g->count; i++) {
@@ -96,8 +96,8 @@ bool groups_contains(pid_t pid,gid_t gid) {
 }
 
 void groups_leave(pid_t pid) {
-	sProcGroups *g;
-	sProc *p = proc_getByPid(pid);
+	Proc::Groups *g;
+	Proc *p = Proc::getByPid(pid);
 	if(!p)
 		return;
 	g = p->groups;
@@ -113,7 +113,7 @@ void groups_leave(pid_t pid) {
 }
 
 void groups_print(pid_t pid) {
-	sProcGroups *g = groups_getByPid(pid);
+	Proc::Groups *g = groups_getByPid(pid);
 	if(g) {
 		size_t i;
 		vid_printf("[refs: %u] ",g->refCount);
@@ -124,8 +124,8 @@ void groups_print(pid_t pid) {
 		vid_printf("-");
 }
 
-static sProcGroups *groups_getByPid(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+static Proc::Groups *groups_getByPid(pid_t pid) {
+	Proc *p = Proc::getByPid(pid);
 	if(!p)
 		return NULL;
 	return p->groups;

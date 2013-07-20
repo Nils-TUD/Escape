@@ -55,35 +55,23 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-static void proc_doRemoveRegions(sProc *p,bool remStack);
-static int proc_getExitState(pid_t ppid,USER sExitState *state);
-static void proc_doDestroy(sProc *p);
-static void proc_notifyProcDied(pid_t parent);
-static pid_t proc_getFreePid(void);
-static bool proc_add(sProc *p);
-static void proc_remove(sProc *p);
-
 /* we have to put the first one here because we need a process before we can allocate
  * something on the kernel-heap. sounds strange, but the kheap-init stuff uses paging and
  * this wants to have the current process. So, I guess the cleanest way is to simply put
  * the first process in the data-area (we can't free the first one anyway) */
-static sProc first;
+Proc ProcBase::first;
 /* our processes */
-static sSLList procs;
-static sProc *pidToProc[MAX_PROC_COUNT];
-static pid_t nextPid = 1;
-static mutex_t procLock;
-static mutex_t childLock;
+sSLList ProcBase::procs;
+Proc *ProcBase::pidToProc[MAX_PROC_COUNT];
+pid_t ProcBase::nextPid = 1;
+mutex_t ProcBase::procLock;
+mutex_t ProcBase::childLock;
 
-void proc_preinit(void) {
-	paging_setFirst(&first.pagedir);
-}
-
-void proc_init(void) {
+void ProcBase::init() {
 	/* init the first process */
-	sProc *p = &first;
+	Proc *p = &first;
 
-	*(pid_t*)&p->pid = 0;
+	p->pid = 0;
 	p->parentPid = 0;
 	p->ruid = ROOT_UID;
 	p->euid = ROOT_UID;
@@ -133,48 +121,22 @@ void proc_init(void) {
 
 	/* add to procs */
 	sll_init(&procs,slln_allocNode,slln_freeNode);
-	if(!proc_add(p))
+	if(!add(p))
 		util_panic("Unable to add init-process");
 }
 
-pagedir_t *proc_getPageDir(void) {
-	const Thread *t = Thread::getRunning();
-	/* just needed at the beginning */
-	if(t == NULL)
-		return &first.pagedir;
-	return &t->proc->pagedir;
-}
-
-void proc_addOwn(sProc *p,long amount) {
-	assert(amount > 0 || p->ownFrames >= (ulong)-amount);
-	p->ownFrames += amount;
-	p->stats.peakOwnFrames = MAX(p->ownFrames,p->stats.peakOwnFrames);
-}
-
-void proc_addShared(sProc *p,long amount) {
-	assert(amount > 0 || p->sharedFrames >= (ulong)-amount);
-	p->sharedFrames += amount;
-	p->stats.peakSharedFrames = MAX(p->sharedFrames,p->stats.peakSharedFrames);
-}
-
-void proc_addSwap(sProc *p,long amount) {
-	assert(amount > 0 || p->swapped >= (ulong)-amount);
-	p->swapped += amount;
-	p->stats.swapCount += amount < 0 ? -amount : amount;
-}
-
-void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
+void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 	int i;
 	size_t cmdlen = strlen(cmd);
 	size_t len = cmdlen + 1;
 	const char *curargs = args;
 	char *curdst;
-	if(p->command)
-		cache_free((char*)p->command);
+	if(command)
+		cache_free((char*)command);
 
 	/* store flag for the fs driver; TODO this is an ugly hack */
 	if(strstr(cmd,"/dev/fs") != NULL)
-		p->flags |= P_FS;
+		flags |= P_FS;
 
 	/* determine total length */
 	for(i = 0; i < argc; ++i) {
@@ -185,8 +147,8 @@ void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
 	}
 
 	/* copy cmd and arguments into buffer */
-	p->command = (char*)cache_alloc(len);
-	curdst = (char*)p->command;
+	command = (char*)cache_alloc(len);
+	curdst = (char*)command;
 	memcpy(curdst,cmd,cmdlen);
 	curdst += cmdlen;
 	for(i = 0; i < argc; ++i) {
@@ -204,57 +166,24 @@ void proc_setCommand(sProc *p,const char *cmd,int argc,const char *args) {
 	*curdst = '\0';
 }
 
-pid_t proc_getRunning(void) {
-	const Thread *t = Thread::getRunning();
-	return t->proc->pid;
-}
-
-sProc *proc_getByPid(pid_t pid) {
-	if(pid >= ARRAY_SIZE(pidToProc))
-		return NULL;
-	return pidToProc[pid];
-}
-
-sProc *proc_request(pid_t pid,size_t l) {
-	sProc *p = proc_getByPid(pid);
-	if(p) {
-		if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-			mutex_aquire(p->locks + l);
-		else
-			spinlock_aquire(p->locks + l);
-	}
-	return p;
-}
-
-void proc_release(sProc *p,size_t l) {
-	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		mutex_release(p->locks + l);
-	else
-		spinlock_release(p->locks + l);
-}
-
-size_t proc_getCount(void) {
-	return sll_length(&procs);
-}
-
-void proc_getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
-	sProc *p = proc_request(pid,PLOCK_REGIONS);
+void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
+	Proc *p = request(pid,PLOCK_REGIONS);
 	if(p) {
 		vmm_getMemUsageOf(p,own,shared,swapped);
-		*own = *own + paging_getPTableCount(&p->pagedir) + proc_getKMemUsageOf(p);
-		proc_release(p,PLOCK_REGIONS);
+		*own = *own + paging_getPTableCount(p->getPageDir()) + p->getKMemUsage();
+		release(p,PLOCK_REGIONS);
 	}
 }
 
-void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
+void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
 	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		size_t pown,psh,pswap;
-		sProc *p = (sProc*)n->data;
-		proc_getMemUsageOf(p->pid,&pown,&psh,&pswap);
+		Proc *p = (Proc*)n->data;
+		getMemUsageOf(p->pid,&pown,&psh,&pswap);
 		ownMem += pown;
 		shMem += psh;
 		dReal += vmm_getMemUsage(p->pid,&pages);
@@ -265,12 +194,12 @@ void proc_getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	*dataReal = (size_t)(dReal + cow_getFrmCount()) * PAGE_SIZE;
 }
 
-int proc_clone(uint8_t flags) {
+int ProcBase::clone(uint8_t flags) {
 	int newPid,res = 0;
-	sProc *p,*cur;
+	Proc *p,*cur;
 	Thread *nt,*curThread = Thread::getRunning();
 	assert((flags & P_ZOMBIE) == 0);
-	cur = proc_request(curThread->proc->pid,PLOCK_PROG);
+	cur = request(curThread->proc->pid,PLOCK_PROG);
 	if(!cur) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -281,14 +210,14 @@ int proc_clone(uint8_t flags) {
 		goto errorCur;
 	}
 
-	p = (sProc*)cache_alloc(sizeof(sProc));
+	p = (Proc*)cache_alloc(sizeof(Proc));
 	if(!p) {
 		res = -ENOMEM;
 		goto errorCur;
 	}
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(&p->pagedir,curThread->tid)) < 0)
+	if((res = paging_cloneKernelspace(p->getPageDir(),curThread->tid)) < 0)
 		goto errorProc;
 
 	/* set basic attributes */
@@ -325,7 +254,7 @@ int proc_clone(uint8_t flags) {
 
 	/* determine pid; ensure that nobody can get this pid, too */
 	mutex_aquire(&procLock);
-	newPid = proc_getFreePid();
+	newPid = getFreePid();
 	if(newPid < 0) {
 		mutex_release(&procLock);
 		res = -ENOPROCS;
@@ -333,8 +262,8 @@ int proc_clone(uint8_t flags) {
 	}
 
 	/* add to processes */
-	*(pid_t*)&p->pid = newPid;
-	if(!proc_add(p)) {
+	p->pid = newPid;
+	if(!add(p)) {
 		mutex_release(&procLock);
 		res = -ENOMEM;
 		goto errorCmd;
@@ -367,7 +296,7 @@ int proc_clone(uint8_t flags) {
 		goto errorThread;
 	}
 
-	if((res = proc_cloneArch(p,cur) < 0))
+	if((res = cloneArch(p,cur) < 0))
 		goto errorThreadAppend;
 
 	/* inherit file-descriptors */
@@ -391,7 +320,7 @@ int proc_clone(uint8_t flags) {
 #endif
 #endif
 
-	proc_release(cur,PLOCK_PROG);
+	release(cur,PLOCK_PROG);
 	/* if we had reserved too many, free them now */
 	curThread->discardFrames();
 	return p->pid;
@@ -401,29 +330,29 @@ errorThreadAppend:
 errorThread:
 	nt->kill();
 errorRegs:
-	proc_doRemoveRegions(p,true);
+	doRemoveRegions(p,true);
 errorVFS:
 	groups_leave(p->pid);
 	vfs_removeProcess(p->pid);
 errorAdd:
-	proc_remove(p);
+	remove(p);
 errorCmd:
 	cache_free((void*)p->command);
 errorPdir:
-	paging_destroyPDir(&p->pagedir);
+	paging_destroyPDir(p->getPageDir());
 errorProc:
 	cache_free(p);
 errorCur:
-	proc_release(cur,PLOCK_PROG);
+	release(cur,PLOCK_PROG);
 errorReqProc:
 	return res;
 }
 
-int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
+int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	uintptr_t tlsStart,tlsEnd;
 	size_t pageCount;
 	Thread *t = Thread::getRunning();
-	sProc *p;
+	Proc *p;
 	Thread *nt;
 	int res;
 	/* don't allow new threads when the process should die */
@@ -436,7 +365,7 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
 	t->reserveFrames(pageCount);
 
-	p = proc_request(t->proc->pid,PLOCK_PROG);
+	p = request(t->proc->pid,PLOCK_PROG);
 	if(!p) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -470,35 +399,35 @@ int proc_startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 #endif
 #endif
 
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 	t->discardFrames();
 	return nt->tid;
 
 error:
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 errorReqProc:
 	t->discardFrames();
 	return res;
 }
 
-int proc_exec(const char *path,USER const char *const *args,const void *code,size_t size) {
+int ProcBase::exec(const char *path,USER const char *const *args,const void *code,size_t size) {
 	char *argBuffer;
 	sStartupInfo info;
 	Thread *t = Thread::getRunning();
-	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->proc->pid,PLOCK_PROG);
 	size_t argSize;
 	int argc,fd = -1;
 	if(!p)
 		return -ESRCH;
 	/* don't allow exec when the process should die */
 	if(p->flags & (P_ZOMBIE | P_PREZOMBIE)) {
-		proc_release(p,PLOCK_PROG);
+		release(p,PLOCK_PROG);
 		return -EDESTROYED;
 	}
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
 	 * "kernel-threads") */
 	if(p->pid != 0 && sll_length(&p->threads) > 1) {
-		proc_release(p,PLOCK_PROG);
+		release(p,PLOCK_PROG);
 		return -EINVAL;
 	}
 
@@ -506,7 +435,7 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 		/* resolve path; require a path in real fs */
 		inode_t nodeNo;
 		if(vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ) != -EREALPATH) {
-			proc_release(p,PLOCK_PROG);
+			release(p,PLOCK_PROG);
 			return -EINVAL;
 		}
 	}
@@ -514,16 +443,16 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 	argc = 0;
 	argBuffer = NULL;
 	if(args != NULL) {
-		argc = proc_buildArgs(args,&argBuffer,&argSize,!code);
+		argc = buildArgs(args,&argBuffer,&argSize,!code);
 		if(argc < 0) {
-			proc_release(p,PLOCK_PROG);
+			release(p,PLOCK_PROG);
 			return argc;
 		}
 	}
 	Thread::addHeapAlloc(argBuffer);
 
 	/* remove all except stack */
-	proc_doRemoveRegions(p,false);
+	doRemoveRegions(p,false);
 
 	/* load program */
 	if(code) {
@@ -549,7 +478,7 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 	}
 
 	/* copy path so that we can identify the process */
-	proc_setCommand(p,path,argc,argBuffer);
+	p->setCommand(path,argc,argBuffer);
 	/* reset stats */
 	p->stats.input = 0;
 	p->stats.output = 0;
@@ -572,7 +501,7 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 	/* make process ready */
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto errorNoRel;
@@ -581,59 +510,59 @@ int proc_exec(const char *path,USER const char *const *args,const void *code,siz
 	return 0;
 
 error:
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 errorNoRel:
 	Thread::remHeapAlloc(argBuffer);
 	cache_free(argBuffer);
-	proc_terminate(p->pid,1,SIG_COUNT);
+	terminate(p->pid,1,SIG_COUNT);
 	Thread::switchAway();
 	util_panic("We should not reach this!");
 	/* not reached */
 	return 0;
 }
 
-void proc_join(tid_t tid) {
+void ProcBase::join(tid_t tid) {
 	Thread *t = Thread::getRunning();
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
-	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->proc->pid,PLOCK_PROG);
 	while((tid == 0 && sll_length(&t->proc->threads) > 1) ||
 			(tid != 0 && Thread::getById(tid) != NULL)) {
 		ev_wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
-		proc_release(p,PLOCK_PROG);
+		release(p,PLOCK_PROG);
 
 		Thread::switchNoSigs();
 
-		proc_request(t->proc->pid,PLOCK_PROG);
+		request(t->proc->pid,PLOCK_PROG);
 	}
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 }
 
-void proc_exit(int exitCode) {
+void ProcBase::exit(int exitCode) {
 	Thread *t = Thread::getRunning();
-	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->proc->pid,PLOCK_PROG);
 	if(p) {
 		p->stats.exitCode = exitCode;
 		t->terminate();
-		proc_release(p,PLOCK_PROG);
+		release(p,PLOCK_PROG);
 	}
 }
 
-void proc_segFault(void) {
+void ProcBase::segFault() {
 	Thread *t = Thread::getRunning();
-	proc_addSignalFor(t->proc->pid,SIG_SEGFAULT);
+	addSignalFor(t->proc->pid,SIG_SEGFAULT);
 	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
 	 * we might get in an endless-loop */
 	sig_unsetHandler(t->tid,SIG_SEGFAULT);
 }
 
-void proc_addSignalFor(pid_t pid,int signal) {
-	sProc *p = proc_request(pid,PLOCK_PROG);
+void ProcBase::addSignalFor(pid_t pid,int signal) {
+	Proc *p = request(pid,PLOCK_PROG);
 	if(p) {
 		bool sent = false;
 		sSLNode *n;
 		/* don't send a signal to processes that are dying */
 		if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
-			proc_release(p,PLOCK_PROG);
+			release(p,PLOCK_PROG);
 			return;
 		}
 
@@ -642,25 +571,25 @@ void proc_addSignalFor(pid_t pid,int signal) {
 			if(sig_addSignalFor(pt->tid,signal))
 				sent = true;
 		}
-		proc_release(p,PLOCK_PROG);
+		release(p,PLOCK_PROG);
 
 		/* no handler and fatal? terminate proc! */
 		if(!sent && sig_isFatal(signal)) {
-			proc_terminate(pid,1,signal);
-			if(pid == proc_getRunning())
+			terminate(pid,1,signal);
+			if(pid == getRunning())
 				Thread::switchAway();
 		}
 	}
 }
 
-void proc_terminate(pid_t pid,int exitCode,int signal) {
+void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
 	sSLNode *tn;
-	sProc *p = proc_request(pid,PLOCK_PROG);
+	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
 		return;
 	/* don't terminate processes twice */
 	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
-		proc_release(p,PLOCK_PROG);
+		release(p,PLOCK_PROG);
 		return;
 	}
 
@@ -683,12 +612,12 @@ void proc_terminate(pid_t pid,int exitCode,int signal) {
 		pt->terminate();
 	}
 	p->flags |= P_PREZOMBIE;
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 }
 
-void proc_killThread(tid_t tid) {
+void ProcBase::killThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
-	sProc *p = proc_request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->proc->pid,PLOCK_PROG);
 	assert(p != NULL);
 	p->stats.totalRuntime += t->getStats().runtime;
 	p->stats.totalSyscalls += t->getStats().syscalls;
@@ -697,14 +626,14 @@ void proc_killThread(tid_t tid) {
 	sll_removeFirstWith(&p->threads,t);
 	if(sll_length(&p->threads) == 0) {
 		p->stats.exitCode = 0;
-		proc_doDestroy(p);
+		doDestroy(p);
 	}
-	proc_release(p,PLOCK_PROG);
+	release(p,PLOCK_PROG);
 }
 
-void proc_destroy(pid_t pid) {
+void ProcBase::destroy(pid_t pid) {
 	sSLNode *n;
-	sProc *p = proc_request(pid,PLOCK_PROG);
+	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
 		return;
 	for(n = sll_begin(&p->threads); n != NULL; ) {
@@ -715,21 +644,21 @@ void proc_destroy(pid_t pid) {
 		n = next;
 	}
 	p->stats.exitCode = 0;
-	proc_doDestroy(p);
-	proc_release(p,PLOCK_PROG);
+	doDestroy(p);
+	release(p,PLOCK_PROG);
 }
 
-static void proc_doDestroy(sProc *p) {
+void ProcBase::doDestroy(Proc *p) {
 	/* release resources */
 	fd_destroy(p);
 	groups_leave(p->pid);
 	env_removeFor(p->pid);
-	proc_doRemoveRegions(p,true);
+	doRemoveRegions(p,true);
 	vmfree_destroy(&p->freemap);
 	vmreg_remTree(&p->regtree);
-	paging_destroyPDir(&p->pagedir);
+	paging_destroyPDir(p->getPageDir());
 	lock_releaseAll(p->pid);
-	proc_terminateArch(p);
+	terminateArch(p);
 	sll_clear(&p->threads,false);
 
 	/* we are a zombie now, so notify parent that he can get our exit-state */
@@ -737,13 +666,13 @@ static void proc_doDestroy(sProc *p) {
 	p->flags |= P_ZOMBIE;
 	/* ensure that the parent-wakeup doesn't get lost */
 	mutex_aquire(&childLock);
-	proc_notifyProcDied(p->parentPid);
+	notifyProcDied(p->parentPid);
 	mutex_release(&childLock);
 }
 
-void proc_kill(pid_t pid) {
+void ProcBase::kill(pid_t pid) {
 	sSLNode *n;
-	sProc *p = proc_request(pid,PLOCK_PROG);
+	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
 		return;
 
@@ -751,13 +680,13 @@ void proc_kill(pid_t pid) {
 	mutex_aquire(&childLock);
 	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		sProc *cp = (sProc*)n->data;
+		Proc *cp = (Proc*)n->data;
 		if(cp->parentPid == p->pid) {
 			cp->parentPid = 0;
 			/* if this process has already died, the parent can't wait for it since its dying
 			 * right now. therefore notify init of it */
 			if(cp->flags & P_ZOMBIE)
-				proc_notifyProcDied(0);
+				notifyProcDied(0);
 		}
 	}
 	mutex_release(&procLock);
@@ -768,23 +697,23 @@ void proc_kill(pid_t pid) {
 	vfs_removeProcess(p->pid);
 
 	/* remove and free */
-	proc_remove(p);
-	proc_release(p,PLOCK_PROG);
+	remove(p);
+	release(p,PLOCK_PROG);
 	cache_free(p);
 }
 
-static void proc_notifyProcDied(pid_t parent) {
-	proc_addSignalFor(parent,SIG_CHILD_TERM);
-	ev_wakeup(EVI_CHILD_DIED,(evobj_t)proc_getByPid(parent));
+void ProcBase::notifyProcDied(pid_t parent) {
+	addSignalFor(parent,SIG_CHILD_TERM);
+	ev_wakeup(EVI_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
-int proc_waitChild(USER sExitState *state) {
+int ProcBase::waitChild(USER ExitState *state) {
 	Thread *t = Thread::getRunning();
-	sProc *p = t->proc;
+	Proc *p = t->proc;
 	int res;
 	/* check if there is already a dead child-proc */
 	mutex_aquire(&childLock);
-	res = proc_getExitState(p->pid,state);
+	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
 		ev_wait(t,EVI_CHILD_DIED,(evobj_t)p);
@@ -795,7 +724,7 @@ int proc_waitChild(USER sExitState *state) {
 		/* don't continue here if we were interrupted by a signal */
 		if(sig_hasSignalFor(t->tid))
 			return -EINTR;
-		res = proc_getExitState(p->pid,state);
+		res = getExitState(p->pid,state);
 		if(res < 0)
 			return res;
 	}
@@ -803,19 +732,19 @@ int proc_waitChild(USER sExitState *state) {
 		mutex_release(&childLock);
 
 	/* finally kill the process */
-	proc_kill(res);
+	kill(res);
 	return 0;
 }
 
-static int proc_getExitState(pid_t ppid,USER sExitState *state) {
+int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 	sSLNode *n;
 	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		Proc *p = (Proc*)n->data;
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
 			/* avoid deadlock; at other places we aquire the PLOCK_PROG first and procLock afterwards */
 			mutex_release(&procLock);
-			p = proc_request(p->pid,PLOCK_PROG);
+			p = request(p->pid,PLOCK_PROG);
 			if(state) {
 				state->pid = p->pid;
 				state->exitCode = p->stats.exitCode;
@@ -826,10 +755,10 @@ static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 				state->ownFrames = p->stats.peakOwnFrames;
 				state->sharedFrames = p->stats.peakSharedFrames;
 				state->swapped = p->stats.swapCount;
-				proc_release(p,PLOCK_PROG);
+				release(p,PLOCK_PROG);
 				return p->pid;
 			}
-			proc_release(p,PLOCK_PROG);
+			release(p,PLOCK_PROG);
 			return p->pid;
 		}
 	}
@@ -837,13 +766,7 @@ static int proc_getExitState(pid_t ppid,USER sExitState *state) {
 	return -ECHILD;
 }
 
-void proc_removeRegions(pid_t pid,bool remStack) {
-	sProc *p = proc_request(pid,PLOCK_PROG);
-	proc_doRemoveRegions(p,remStack);
-	proc_release(p,PLOCK_PROG);
-}
-
-static void proc_doRemoveRegions(sProc *p,bool remStack) {
+void ProcBase::doRemoveRegions(Proc *p,bool remStack) {
 	sSLNode *n;
 	/* unset TLS-region (and stack-region, if needed) from all threads; do this first because as
 	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
@@ -855,69 +778,69 @@ static void proc_doRemoveRegions(sProc *p,bool remStack) {
 	vmm_removeAll(p->pid,remStack);
 }
 
-void proc_printAll(void) {
+void ProcBase::printAll() {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
-		proc_print(p);
+		Proc *p = (Proc*)n->data;
+		p->print();
 	}
 }
 
-void proc_printAllRegions(void) {
+void ProcBase::printAllRegions() {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		Proc *p = (Proc*)n->data;
 		vmm_print(p->pid);
 		vid_printf("\n");
 	}
 }
 
-void proc_printAllPDs(uint parts,bool regions) {
+void ProcBase::printAllPDs(uint parts,bool regions) {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		sProc *p = (sProc*)n->data;
+		Proc *p = (Proc*)n->data;
 		size_t own,shared,swapped;
-		proc_getMemUsageOf(p->pid,&own,&shared,&swapped);
+		getMemUsageOf(p->pid,&own,&shared,&swapped);
 		vid_printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
 				p->pid,p->command,own,shared,swapped);
 		if(regions)
 			vmm_print(p->pid);
-		paging_printPDir(&p->pagedir,parts);
+		paging_printPDir(p->getPageDir(),parts);
 		vid_printf("\n");
 	}
 }
 
-void proc_print(sProc *p) {
-	size_t own,shared,swapped;
+void ProcBase::print() {
+	size_t own,shared,swap;
 	sSLNode *n;
-	vid_printf("Proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, entry=%#Px\n",p->parentPid,p->command,p->entryPoint);
-	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",p->ruid,p->euid,p->suid);
-	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",p->rgid,p->egid,p->sgid);
+	vid_printf("Proc %d:\n",pid);
+	vid_printf("\tppid=%d, cmd=%s, entry=%#Px\n",parentPid,command,entryPoint);
+	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
+	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
 	vid_printf("\tGroups: ");
-	groups_print(p->pid);
+	groups_print(pid);
 	vid_printf("\n");
-	proc_getMemUsageOf(p->pid,&own,&shared,&swapped);
-	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swapped);
-	vid_printf("\tExitInfo: code=%u, signal=%u\n",p->stats.exitCode,p->stats.exitSignal);
+	getMemUsageOf(pid,&own,&shared,&swap);
+	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);
+	vid_printf("\tExitInfo: code=%u, signal=%u\n",stats.exitCode,stats.exitSignal);
 	vid_printf("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",
-	           p->stats.peakOwnFrames,p->stats.peakSharedFrames,p->stats.swapCount);
+	           stats.peakOwnFrames,stats.peakSharedFrames,stats.swapCount);
 	vid_printf("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
-	           p->stats.totalRuntime,p->stats.totalScheds,p->stats.totalSyscalls);
+	           stats.totalRuntime,stats.totalScheds,stats.totalSyscalls);
 	prf_pushIndent();
-	vmfree_print(&p->freemap);
+	vmfree_print(&freemap);
 	prf_popIndent();
 	vid_printf("\tRegions:\n");
-	vid_printf("\t\tDataRegion: %p\n",p->dataAddr);
-	vid_printf("\t\tFreeStack: %p\n",p->freeStackAddr);
-	vmm_printShort(p->pid,"\t\t");
+	vid_printf("\t\tDataRegion: %p\n",dataAddr);
+	vid_printf("\t\tFreeStack: %p\n",freeStackAddr);
+	vmm_printShort(pid,"\t\t");
 	prf_pushIndent();
-	env_printAllOf(p->pid);
-	fd_print(p);
-	vfs_fsmsgs_printFSChans(p);
+	env_printAllOf(pid);
+	fd_print(static_cast<Proc*>(this));
+	vfs_fsmsgs_printFSChans(static_cast<Proc*>(this));
 	prf_popIndent();
 	vid_printf("\tThreads:\n");
-	for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
+	for(n = sll_begin(&threads); n != NULL; n = n->next) {
 		vid_printf("\t\t");
 		((Thread*)n->data)->printShort();
 		vid_printf("\n");
@@ -925,7 +848,7 @@ void proc_print(sProc *p) {
 	vid_printf("\n");
 }
 
-int proc_buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
+int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
 	const char *const *arg;
 	char *bufPos;
 	int argc = 0;
@@ -979,7 +902,7 @@ error:
 	return -EFAULT;
 }
 
-static pid_t proc_getFreePid(void) {
+pid_t ProcBase::getFreePid() {
 	size_t count = 0;
 	while(count < MAX_PROC_COUNT) {
 		/* 0 is always present */
@@ -992,7 +915,7 @@ static pid_t proc_getFreePid(void) {
 	return INVALID_PID;
 }
 
-static bool proc_add(sProc *p) {
+bool ProcBase::add(Proc *p) {
 	if(sll_append(&procs,p)) {
 		pidToProc[p->pid] = p;
 		return true;
@@ -1000,7 +923,7 @@ static bool proc_add(sProc *p) {
 	return false;
 }
 
-static void proc_remove(sProc *p) {
+void ProcBase::remove(Proc *p) {
 	mutex_aquire(&procLock);
 	sll_removeFirstWith(&procs,p);
 	pidToProc[p->pid] = NULL;
@@ -1008,18 +931,17 @@ static void proc_remove(sProc *p) {
 }
 
 
-/* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
 #define PROF_PROC_COUNT		128
 
 static time_t proctimes[PROF_PROC_COUNT];
 
-void proc_dbg_startProf(void) {
+void ProcBase::dbg_startProf() {
 	sSLNode *n,*m;
 	Thread *t;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		const sProc *p = (const sProc*)n->data;
+		const Proc *p = (const Proc*)n->data;
 		assert(p->pid < PROF_PROC_COUNT);
 		proctimes[p->pid] = 0;
 		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {
@@ -1029,11 +951,11 @@ void proc_dbg_startProf(void) {
 	}
 }
 
-void proc_dbg_stopProf(void) {
+void ProcBase::dbg_stopProf() {
 	sSLNode *n,*m;
 	Thread *t;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		const sProc *p = (const sProc*)n->data;
+		const Proc *p = (const Proc*)n->data;
 		time_t curtime = 0;
 		assert(p->pid < PROF_PROC_COUNT);
 		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {

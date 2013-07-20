@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
@@ -40,10 +41,16 @@ EXTERN_C bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_
 static klock_t switchLock;
 static bool threadSet = false;
 
+int ThreadBase::initArch(Thread *t) {
+	t->kernelStack = paging_createKernelStack(t->proc->getPageDir());
+	t->fpuState = NULL;
+	return 0;
+}
+
 void ThreadBase::addInitialStack() {
 	int res;
 	assert(tid == INIT_TID);
-	res = vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	res = vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 0);
 	assert(res == 0);
 }
@@ -51,7 +58,7 @@ void ThreadBase::addInitialStack() {
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 	if(cloneProc) {
 		/* map the kernel-stack at the same address */
-		if(paging_mapTo(&dst->proc->pagedir,src->kernelStack,NULL,1,
+		if(paging_mapTo(dst->proc->getPageDir(),src->kernelStack,NULL,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
 			return -ENOMEM;
 		dst->kernelStack = src->kernelStack;
@@ -59,15 +66,15 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 	else {
 		int res;
 		/* map the kernel-stack at a free address */
-		dst->kernelStack = paging_createKernelStack(&dst->proc->pagedir);
+		dst->kernelStack = paging_createKernelStack(dst->proc->getPageDir());
 		if(dst->kernelStack == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		res = vmm_map(dst->proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		res = vmm_map(dst->proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			paging_unmapFrom(&dst->proc->pagedir,dst->kernelStack,1,true);
+			paging_unmapFrom(dst->proc->getPageDir(),dst->kernelStack,1,true);
 			return res;
 		}
 	}
@@ -77,10 +84,10 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 
 void ThreadBase::freeArch(Thread *t) {
 	if(t->stackRegions[0] != NULL) {
-		vmm_remove(t->proc->pid,t->stackRegions[0]);
+		vmm_remove(t->proc->getPid(),t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
-	paging_removeKernelStack(&t->proc->pagedir,t->kernelStack);
+	paging_removeKernelStack(t->proc->getPageDir(),t->kernelStack);
 	fpu_freeState(&t->fpuState);
 }
 
@@ -93,7 +100,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	spinlock_aquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	frame = paging_getFrameNo(&nt->proc->pagedir,nt->kernelStack);
+	frame = paging_getFrameNo(nt->proc->getPageDir(),nt->kernelStack);
 	dst = (ulong*)paging_mapToTemp(&frame,1);
 
 	if(thread_save(&nt->save)) {
@@ -117,12 +124,12 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 
 void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* setup kernel-stack */
-	frameno_t frame = paging_getFrameNo(&nt->proc->pagedir,nt->kernelStack);
+	frameno_t frame = paging_getFrameNo(nt->proc->getPageDir(),nt->kernelStack);
 	ulong *dst = (ulong*)paging_mapToTemp(&frame,1);
 	uint32_t sp = nt->kernelStack + PAGE_SIZE - sizeof(int) * 6;
 	dst += PT_ENTRY_COUNT - 1;
 	*dst = (uint32_t)nt;
-	*--dst = nt->proc->entryPoint;
+	*--dst = nt->proc->getEntryPoint();
 	*--dst = entryPoint;
 	*--dst = (ulong)arg;
 	*--dst = (ulong)&thread_startup;
@@ -160,7 +167,7 @@ void Thread::initialSwitch() {
 	cur->setCPU(gdt_prepareRun(NULL,cur));
 	fpu_lockFPU();
 	cur->stats.cycleStart = cpu_rdtsc();
-	thread_resume(cur->proc->pagedir.own,&cur->save,&switchLock,true);
+	thread_resume(cur->proc->getPageDir()->own,&cur->save,&switchLock,true);
 }
 
 void ThreadBase::doSwitch() {
@@ -196,7 +203,7 @@ void ThreadBase::doSwitch() {
 		if(!thread_save(&old->save)) {
 			/* old thread */
 			n->stats.cycleStart = cpu_rdtsc();
-			thread_resume(n->proc->pagedir.own,&n->save,&switchLock,n->proc != old->proc);
+			thread_resume(n->proc->getPageDir()->own,&n->save,&switchLock,n->proc != old->proc);
 		}
 	}
 	else {

@@ -23,6 +23,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/task/smp.h>
+#include <sys/task/proc.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <string.h>
@@ -341,7 +342,7 @@ cpuid_t gdt_prepareRun(Thread *old,Thread *n) {
 	}
 	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
 	 * stack first (not in protected mode) */
-	if(n->proc->flags & P_VM86)
+	if(n->proc->getFlags() & P_VM86)
 		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
 	else
 		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - (1 + 5) * sizeof(int);

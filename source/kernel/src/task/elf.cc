@@ -91,7 +91,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	Thread *t = Thread::getRunning();
-	sProc *p = t->proc;
+	Proc *p = t->proc;
 	sFile *file;
 	size_t j,loadSeg = 0;
 	uintptr_t datPtr;
@@ -102,25 +102,25 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	int res,fd;
 	char *interpName;
 
-	res = vfs_openPath(p->pid,VFS_READ,path,&file);
+	res = vfs_openPath(p->getPid(),VFS_READ,path,&file);
 	if(res < 0) {
 		vid_printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
 		return -ENOEXEC;
 	}
 
 	/* fill bindesc */
-	if((res = vfs_fstat(p->pid,file,&finfo)) < 0) {
+	if((res = vfs_fstat(p->getPid(),file,&finfo)) < 0) {
 		vid_printf("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
 		goto failed;
 	}
 	/* set suid and sgid */
 	if(finfo.mode & S_ISUID)
-		p->suid = finfo.uid;
+		p->setSUid(finfo.uid);
 	if(finfo.mode & S_ISGID)
-		p->sgid = finfo.gid;
+		p->setSGid(finfo.gid);
 
 	/* first read the header */
-	if((readRes = vfs_readFile(p->pid,file,&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
+	if((readRes = vfs_readFile(p->getPid(),file,&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
 		vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
 		goto failed;
 	}
@@ -142,12 +142,12 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	datPtr = eheader.e_phoff;
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(vfs_seek(p->pid,file,(off_t)datPtr,SEEK_SET) < 0) {
+		if(vfs_seek(p->getPid(),file,(off_t)datPtr,SEEK_SET) < 0) {
 			vid_printf("[LOADER] Seeking to position 0x%Ox failed\n",(off_t)datPtr);
 			goto failed;
 		}
 		/* read pheader */
-		if((readRes = vfs_readFile(p->pid,file,&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
+		if((readRes = vfs_readFile(p->getPid(),file,&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			vid_printf("[LOADER] Reading program-header %d of '%s' failed: %s\n",
 					j,path,strerror(-readRes));
 			goto failed;
@@ -166,15 +166,15 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				goto failed;
 			}
 			Thread::addHeapAlloc(interpName);
-			if(vfs_seek(p->pid,file,pheader.p_offset,SEEK_SET) < 0) {
+			if(vfs_seek(p->getPid(),file,pheader.p_offset,SEEK_SET) < 0) {
 				vid_printf("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
 			}
-			if(vfs_readFile(p->pid,file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
+			if(vfs_readFile(p->getPid(),file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				vid_printf("[LOADER] Reading dynlinker name failed\n");
 				goto failedInterpName;
 			}
-			vfs_closeFile(p->pid,file);
+			vfs_closeFile(p->getPid(),file);
 			/* now load him and stop loading the 'real' program */
 			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
 			Thread::remHeapAlloc(interpName);
@@ -189,12 +189,12 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 				uintptr_t tlsStart;
 				if(t->getTLSRange(&tlsStart,NULL)) {
 					/* read tdata */
-					if(vfs_seek(p->pid,file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
+					if(vfs_seek(p->getPid(),file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
 						vid_printf("[LOADER] Seeking to load segment %d (%Ox) failed\n",
 								loadSeg,pheader.p_offset);
 						goto failed;
 					}
-					if((readRes = vfs_readFile(p->pid,file,(void*)tlsStart,pheader.p_filesz)) < 0) {
+					if((readRes = vfs_readFile(p->getPid(),file,(void*)tlsStart,pheader.p_filesz)) < 0) {
 						vid_printf("[LOADER] Reading load segment %d failed: %s\n",
 								loadSeg,strerror(-readRes));
 						goto failed;
@@ -216,14 +216,14 @@ static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 		goto failed;
 	}
 	assert(fd_unassoc(fd) != NULL);
-	vfs_closeFile(p->pid,file);
+	vfs_closeFile(p->getPid(),file);
 	return 0;
 
 failedInterpName:
 	Thread::remHeapAlloc(interpName);
 	cache_free(interpName);
 failed:
-	vfs_closeFile(p->pid,file);
+	vfs_closeFile(p->getPid(),file);
 	return -ENOEXEC;
 }
 
@@ -286,7 +286,7 @@ static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegN
 		t->reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
-	if((res = vmm_map(t->proc->pid,pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
+	if((res = vmm_map(t->proc->getPid(),pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		t->discardFrames();

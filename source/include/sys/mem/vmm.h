@@ -51,7 +51,7 @@
 #define MAP_NOMAP			512UL
 #define MAP_FIXED			1024UL
 
-struct sProc;
+class Proc;
 class Thread;
 
 /**
@@ -137,7 +137,7 @@ void vmm_setTimestamp(Thread *t,uint64_t timestamp);
  * @param shared will be set to the number of shared frames
  * @param swapped will be set to the number of swapped frames
  */
-void vmm_getMemUsageOf(sProc *p,size_t *own,size_t *shared,size_t *swapped);
+void vmm_getMemUsageOf(Proc *p,size_t *own,size_t *shared,size_t *swapped);
 
 /**
  * This is a helper-function for determining the real memory-usage of all processes. It counts
@@ -159,7 +159,7 @@ float vmm_getMemUsage(pid_t pid,size_t *pages);
  * @param addr the address
  * @return the region
  */
-sVMRegion *vmm_getRegion(sProc *p,uintptr_t addr);
+sVMRegion *vmm_getRegion(Proc *p,uintptr_t addr);
 
 /**
  * Queries the start- and end-address of a region

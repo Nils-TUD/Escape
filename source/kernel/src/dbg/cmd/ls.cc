@@ -35,7 +35,7 @@ static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e);
 static sScreenBackup backup;
 
 int cons_cmd_ls(size_t argc,char **argv) {
-	pid_t pid = proc_getRunning();
+	pid_t pid = Proc::getRunning();
 	sLines lines;
 	sStringBuffer buf;
 	sFile *file;

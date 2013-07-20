@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/sched.h>
 #include <sys/task/smp.h>
 #include <sys/task/timer.h>
@@ -426,7 +427,7 @@ static void sched_qPrepend(sQueue *q,Thread *t) {
 static void sched_qPrint(sQueue *q) {
 	const Thread *t = q->first;
 	while(t != NULL) {
-		vid_printf("\t\t%d:%d:%s\n",t->tid,t->proc->pid,t->proc->command);
+		vid_printf("\t\t%d:%d:%s\n",t->tid,t->proc->getPid(),t->proc->getCommand());
 		t = t->next;
 	}
 }

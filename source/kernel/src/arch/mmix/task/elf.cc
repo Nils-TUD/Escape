@@ -23,6 +23,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/cpu.h>
 #include <sys/video.h>
@@ -41,9 +42,9 @@ int elf_finishFromMem(const void *code,A_UNUSED size_t length,sStartupInfo *info
 	sVMRegion *textreg = vmm_getRegion(t->proc,eheader->e_entry);
 	if(textreg) {
 		uintptr_t begin,start,end;
-		vmm_getRegRange(t->proc->pid,textreg,&start,&end,true);
+		vmm_getRegRange(t->proc->getPid(),textreg,&start,&end,true);
 		while(start < end) {
-			frameno_t frame = paging_getFrameNo(&t->proc->pagedir,start);
+			frameno_t frame = paging_getFrameNo(t->proc->getPageDir(),start);
 			size_t amount = MIN(PAGE_SIZE,end - start);
 			begin = DIR_MAPPED_SPACE | frame * PAGE_SIZE;
 			cpu_syncid(begin,begin + amount);
@@ -64,12 +65,12 @@ int elf_finishFromFile(sFile *file,const sElfEHeader *eheader,sStartupInfo *info
 	}
 
 	Thread::addHeapAlloc(secHeaders);
-	if(vfs_seek(t->proc->pid,file,eheader->e_shoff,SEEK_SET) < 0) {
+	if(vfs_seek(t->proc->getPid(),file,eheader->e_shoff,SEEK_SET) < 0) {
 		vid_printf("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
 	}
 
-	if((readRes = vfs_readFile(t->proc->pid,file,secHeaders,headerSize)) != headerSize) {
+	if((readRes = vfs_readFile(t->proc->getPid(),file,secHeaders,headerSize)) != headerSize) {
 		vid_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(-readRes));
 		goto error;
 	}
@@ -111,11 +112,11 @@ static int elf_finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *he
 				sheader->sh_addr != 0) {
 			/* append global registers */
 			if(file != NULL) {
-				if((res = vfs_seek(t->proc->pid,file,sheader->sh_offset,SEEK_SET)) < 0) {
+				if((res = vfs_seek(t->proc->getPid(),file,sheader->sh_offset,SEEK_SET)) < 0) {
 					vid_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
 					return res;
 				}
-				if((res = vfs_readFile(t->proc->pid,file,stack,sheader->sh_size)) !=
+				if((res = vfs_readFile(t->proc->getPid(),file,stack,sheader->sh_size)) !=
 						(ssize_t)sheader->sh_size) {
 					vid_printf("[LOADER] Unable to read reg-section: %s\n",strerror(-res));
 					return res;

@@ -24,6 +24,9 @@
 #define DISK_PID			1
 #define KEYBOARD_PID		8	/* just for debugging */
 
-typedef struct {
-	uint8_t dummy;
-} sProcArchAttr;
+class Proc : public ProcBase {
+	friend class ProcBase;
+
+	Proc() : ProcBase() {
+	}
+};

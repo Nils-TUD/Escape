@@ -23,6 +23,7 @@
 #include <sys/dbg/lines.h>
 #include <sys/dbg/cmd/file.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
 #include <sys/video.h>
@@ -33,7 +34,7 @@ static sScreenBackup backup;
 static char buffer[512];
 
 int cons_cmd_file(size_t argc,char **argv) {
-	pid_t pid = proc_getRunning();
+	pid_t pid = Proc::getRunning();
 	sFile *file = NULL;
 	ssize_t i,count;
 	int res;

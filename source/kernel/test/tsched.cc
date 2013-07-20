@@ -35,12 +35,12 @@ sTestModule tModSched = {
 static void test_sched(void) {
 	/* TODO implement for threads */
 #if 0
-	sProc *x = (sProc*)proc_getByPid(proc_getFreePid());
-	sProc *rand[5] = {x + 1,x,x + 4,x + 2,x + 3};
+	Proc *x = (Proc*)Proc::getByPid(Proc::getFreePid());
+	Proc *rand[5] = {x + 1,x,x + 4,x + 2,x + 3};
 	size_t i;
 	bool res = true;
 	/* not relevant here */
-	sProc *p = (sProc*)x, *pp;
+	Proc *p = (Proc*)x, *pp;
 
 	test_caseStart("Enqueuing - dequeuing");
 	/* enqueue */
@@ -48,7 +48,7 @@ static void test_sched(void) {
 		sched_setReady(p++);
 	}
 	/* dequeue */
-	pp = (sProc*)x;
+	pp = (Proc*)x;
 	while((p = sched_dequeueReady()) != NULL) {
 		p->state = Thread::UNUSED;
 		if(p != pp) {
@@ -66,7 +66,7 @@ static void test_sched(void) {
 	res = true;
 	test_caseStart("Dequeue specific processes (opposite order)");
 	/* enqueue some processes */
-	p = (sProc*)x;
+	p = (Proc*)x;
 	for(i = 0; i < 5; i++)
 		sched_setReady(p++);
 	/* dequeue */
@@ -86,7 +86,7 @@ static void test_sched(void) {
 	res = true;
 	test_caseStart("Dequeue specific processes (random order)");
 	/* enqueue some processes */
-	p = (sProc*)x;
+	p = (Proc*)x;
 	for(i = 0; i < 5; i++)
 		sched_setReady(p++);
 	/* dequeue */

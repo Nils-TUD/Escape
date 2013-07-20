@@ -64,14 +64,14 @@ static void view_pdiruser(size_t argc,char **argv);
 static void view_pdirkernel(size_t argc,char **argv);
 static void view_regions(size_t argc,char **argv);
 
-static sProc *view_getProc(size_t argc,char **argv);
+static Proc *view_getProc(size_t argc,char **argv);
 static const Thread *view_getThread(size_t argc,char **argv);
 
 static sLines lines;
 static sScreenBackup backup;
 static sView views[] = {
 	{"proc",(fView)view_proc},
-	{"procs",(fView)proc_printAll},
+	{"procs",(fView)Proc::printAll},
 	{"sched",(fView)sched_print},
 	{"signals",(fView)sig_print},
 	{"thread",(fView)view_thread},
@@ -153,9 +153,9 @@ static void view_printc(char c) {
 }
 
 static void view_proc(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		proc_print(p);
+		p->print();
 }
 static void view_thread(size_t argc,char **argv) {
 	const Thread *t = view_getThread(argc,argv);
@@ -163,36 +163,36 @@ static void view_thread(size_t argc,char **argv) {
 		t->print();
 }
 static void view_pdirall(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(&p->pagedir,PD_PART_ALL);
+		paging_printPDir(p->getPageDir(),PD_PART_ALL);
 }
 static void view_pdiruser(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(&p->pagedir,PD_PART_USER);
+		paging_printPDir(p->getPageDir(),PD_PART_USER);
 }
 static void view_pdirkernel(size_t argc,char **argv) {
-	sProc *p = view_getProc(argc,argv);
+	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(&p->pagedir,PD_PART_KERNEL);
+		paging_printPDir(p->getPageDir(),PD_PART_KERNEL);
 }
 static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)
-		proc_printAllRegions();
+		Proc::printAllRegions();
 	else {
-		sProc *p = view_getProc(argc,argv);
+		Proc *p = view_getProc(argc,argv);
 		if(p != NULL)
-			vmm_print(p->pid);
+			vmm_print(p->getPid());
 	}
 }
 
-static sProc *view_getProc(size_t argc,char **argv) {
-	sProc *p;
+static Proc *view_getProc(size_t argc,char **argv) {
+	Proc *p;
 	if(argc > 2)
-		p = proc_getByPid(atoi(argv[2]));
+		p = Proc::getByPid(atoi(argv[2]));
 	else
-		p = proc_getByPid(proc_getRunning());
+		p = Proc::getByPid(Proc::getRunning());
 	if(p == NULL)
 		vid_printf("Unable to find process '%s'\n",argv[2]);
 	return p;

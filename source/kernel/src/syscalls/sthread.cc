@@ -47,13 +47,13 @@ int sysc_gettid(Thread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getthreadcnt(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,sll_length(&t->proc->threads));
+	SYSC_RET1(stack,t->proc->getThreadCount());
 }
 
 int sysc_startthread(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
-	int res = proc_startThread(entryPoint,0,arg);
+	int res = Proc::startThread(entryPoint,0,arg);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -61,7 +61,7 @@ int sysc_startthread(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 
 int sysc_exit(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
-	proc_exit(exitCode);
+	Proc::exit(exitCode);
 	Thread::switchAway();
 	util_panic("We shouldn't get here...");
 	SYSC_RET1(stack,0);
@@ -123,7 +123,7 @@ int sysc_waitunlock(Thread *t,sIntrptStackFrame *stack) {
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
@@ -153,7 +153,7 @@ int sysc_lock(Thread *t,sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 
 	int res = lock_aquire(global ? INVALID_PID : pid,ident,flags);
 	if(res < 0)
@@ -164,7 +164,7 @@ int sysc_lock(Thread *t,sIntrptStackFrame *stack) {
 int sysc_unlock(Thread *t,sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 
 	int res = lock_release(global ? INVALID_PID : pid,ident);
 	if(res < 0)
@@ -177,11 +177,11 @@ int sysc_join(Thread *t,sIntrptStackFrame *stack) {
 	if(tid != 0) {
 		const Thread *tt = Thread::getById(tid);
 		/* just threads from the own process */
-		if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+		if(tt == NULL || tt->tid == t->tid || tt->proc->getPid() != t->proc->getPid())
 			SYSC_ERROR(stack,-EINVAL);
 	}
 
-	proc_join(tid);
+	Proc::join(tid);
 	SYSC_RET1(stack,0);
 }
 
@@ -189,7 +189,7 @@ int sysc_suspend(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
-	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+	if(tt == NULL || tt->tid == t->tid || tt->proc->getPid() != t->proc->getPid())
 		SYSC_ERROR(stack,-EINVAL);
 	ev_suspend(tt);
 	SYSC_RET1(stack,0);
@@ -199,7 +199,7 @@ int sysc_resume(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
-	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+	if(tt == NULL || tt->tid == t->tid || tt->proc->getPid() != t->proc->getPid())
 		SYSC_ERROR(stack,-EINVAL);
 	ev_unsuspend(tt);
 	SYSC_RET1(stack,0);

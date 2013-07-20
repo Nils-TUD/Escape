@@ -188,12 +188,12 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	Thread *recipient = t;
 
 #if PRINT_MSGS
-	sProc *p = proc_getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	vid_printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
-			t->tid,pid,p ? p->command : "??",id,size1,n->name,n,n->parent->name);
+			t->tid,pid,p ? p->getCommand() : "??",id,size1,n->name,n,n->parent->name);
 	if(data2) {
 		vid_printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
-				t->tid,pid,p ? p->command : "??",id,size2,n->name,n,n->parent->name);
+				t->tid,pid,p ? p->getCommand() : "??",id,size2,n->name,n,n->parent->name);
 	}
 #endif
 
@@ -353,9 +353,9 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	}
 
 #if PRINT_MSGS
-	sProc *p = proc_getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	vid_printf("%d:%d:%s <- %d (%d b) %s:%x (%s)\n",
-			t->tid,pid,p ? p->command : "??",msg->id,msg->length,node->name,node,node->parent->name);
+			t->tid,pid,p ? p->getCommand() : "??",msg->id,msg->length,node->name,node,node->parent->name);
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
@@ -403,8 +403,8 @@ void vfs_chan_print(const sVFSNode *n) {
 			sMessage *msg = (sMessage*)sll_get(lists[i],j);
 			vid_printf("\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
 					msg->thread ? msg->thread->tid : -1,
-					msg->thread ? msg->thread->proc->pid : -1,
-					msg->thread ? msg->thread->proc->command : "");
+					msg->thread ? msg->thread->proc->getPid() : -1,
+					msg->thread ? msg->thread->proc->getCommand() : "");
 		}
 	}
 }

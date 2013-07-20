@@ -27,7 +27,14 @@
 /* special process-flag for x86 */
 #define P_VM86				8
 
-typedef struct {
+class Proc : public ProcBase {
+	friend class ProcBase;
+
+	Proc() : ProcBase() {
+	}
+
+	/* TODO temporary */
+public:
 	/* the io-map (NULL by default) */
 	uint8_t *ioMap;
-} sProcArchAttr;
+};

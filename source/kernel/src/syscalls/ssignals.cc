@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/signals.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
 #include <sys/syscalls/signals.h>
@@ -36,10 +37,10 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,(long)SIG_ERR);
 
 	if(signal == (int)SIG_RET)
-		t->proc->sigRetAddr = (uintptr_t)handler;
+		t->proc->setSigRetAddr((uintptr_t)handler);
 	else {
 		/* no signal-ret-address known yet? */
-		if(t->proc->sigRetAddr == 0)
+		if(t->proc->getSigRetAddr() == 0)
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		/* check signal */
@@ -73,7 +74,7 @@ int sysc_kill(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	if(pid != INVALID_PID)
-		proc_addSignalFor(pid,signal);
+		Proc::addSignalFor(pid,signal);
 	else
 		sig_addSignal(signal);
 	SYSC_RET1(stack,0);

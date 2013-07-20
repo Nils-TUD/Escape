@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
 #include <sys/task/sched.h>
@@ -28,6 +27,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmreg.h>
 #include <sys/mem/vmm.h>
+#include <sys/intrpt.h>
 #include <esc/hashmap.h>
 #include <assert.h>
 
@@ -82,8 +82,11 @@ typedef struct sWait {
 } sWait;
 
 class Thread;
+class Proc;
 
 class ThreadBase {
+	friend class ProcBase;
+
 	struct Stats {
 		uint64_t timeslice;
 		/* number of microseconds of runtime this thread has got so far */
@@ -115,46 +118,6 @@ public:
 	};
 
 	ThreadBase() = delete;
-
-	/**
-	 * Inits the threading-stuff. Uses <p> as first process
-	 *
-	 * @param p the first process
-	 * @return the first thread
-	 */
-	static Thread *init(sProc *p);
-
-	/**
-	 * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
-	 * new one.
-	 *
-	 * @param src the thread to copy
-	 * @param dst will contain a pointer to the new thread
-	 * @param p the process the thread should belong to
-	 * @param flags the flags for the thread (T_*)
-	 * @param cloneProc whether a process is cloned or just a thread
-	 * @return 0 on success
-	 */
-	static int create(Thread *src,Thread **dst,sProc *p,uint8_t flags,bool cloneProc);
-
-	/**
-	 * Finishes the clone of a thread
-	 *
-	 * @param t the original thread
-	 * @param nt the new thread
-	 * @return 0 for the parent, 1 for the child
-	 */
-	static int finishClone(Thread *t,Thread *nt);
-
-	/**
-	 * Performs the finish-operations after the thread nt has been started, but before it runs.
-	 *
-	 * @param t the running thread
-	 * @param tn the started thread
-	 * @param arg the argument
-	 * @param entryPoint the entry-point of the thread (in kernel or in user-space)
-	 */
-	static void finishThreadStart(Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint);
 
 	/**
 	 * Determines the number of necessary frames to start a new thread
@@ -219,12 +182,6 @@ public:
 	 * @param tid the thread-id
 	 */
 	static void switchTo(tid_t tid);
-
-	/**
-	 * Kills dead threads, if there are any; is called by switchTo(). Should NOT be called by
-	 * anyone else.
-	 */
-	static void killDead();
 
 	/**
 	 * Extends the stack of the current thread so that the given address is accessible. If that
@@ -558,17 +515,6 @@ public:
 	void discardFrames();
 
 	/**
-	 * Terminates this thread, i.e. adds it to the terminator and if its the running thread, it
-	 * makes sure that it isn't chosen again.
-	 */
-	void terminate();
-
-	/**
-	 * Kills this thread, i.e. releases all resources and destroys it.
-	 */
-	void kill();
-
-	/**
 	 * Prints a short info about this thread
 	 */
 	void printShort() const;
@@ -587,6 +533,51 @@ public:
 
 private:
 	/**
+	 * Inits the threading-stuff. Uses <p> as first process
+	 *
+	 * @param p the first process
+	 * @return the first thread
+	 */
+	static Thread *init(Proc *p);
+
+	/**
+	 * Inits the architecture-specific attributes of the given thread
+	 */
+	static int initArch(Thread *t);
+
+	/**
+	 * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
+	 * new one.
+	 *
+	 * @param src the thread to copy
+	 * @param dst will contain a pointer to the new thread
+	 * @param p the process the thread should belong to
+	 * @param flags the flags for the thread (T_*)
+	 * @param cloneProc whether a process is cloned or just a thread
+	 * @return 0 on success
+	 */
+	static int create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool cloneProc);
+
+	/**
+	 * Finishes the clone of a thread
+	 *
+	 * @param t the original thread
+	 * @param nt the new thread
+	 * @return 0 for the parent, 1 for the child
+	 */
+	static int finishClone(Thread *t,Thread *nt);
+
+	/**
+	 * Performs the finish-operations after the thread nt has been started, but before it runs.
+	 *
+	 * @param t the running thread
+	 * @param tn the started thread
+	 * @param arg the argument
+	 * @param entryPoint the entry-point of the thread (in kernel or in user-space)
+	 */
+	static void finishThreadStart(Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint);
+
+	/**
 	 * Clones the architecture-specific attributes of the given thread
 	 *
 	 * @param src the thread to copy
@@ -597,19 +588,25 @@ private:
 	static int createArch(const Thread *src,Thread *dst,bool cloneProc);
 
 	/**
-	 * Inits the architecture-specific attributes of the given thread
-	 */
-	static int initArch(Thread *t);
-
-	/**
 	 * Frees the architecture-specific attributes of the given thread
 	 */
 	static void freeArch(Thread *t);
 
+	/**
+	 * Terminates this thread, i.e. adds it to the terminator and if its the running thread, it
+	 * makes sure that it isn't chosen again.
+	 */
+	void terminate();
+
+	/**
+	 * Kills this thread, i.e. releases all resources and destroys it.
+	 */
+	void kill();
+
 	void makeUnrunnable();
 	void initProps();
 	static void doSwitch();
-	static Thread *createInitial(sProc *p);
+	static Thread *createInitial(Proc *p);
 	static tid_t getFreeTid(void);
 	bool add();
 	void remove();
@@ -626,7 +623,7 @@ public:
 	uint events;
 	sWait *waits;
 	/* the process we belong to */
-	sProc *const proc;
+	Proc *const proc;
 	/* for the scheduler */
 	Thread *prev;
 	Thread *next;
@@ -767,20 +764,6 @@ inline void ThreadBase::popIntrptLevel() {
 inline size_t ThreadBase::getIntrptLevel() const {
 	assert(intrptLevel > 0);
 	return intrptLevel - 1;
-}
-
-inline bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) {
-	bool res = false;
-	if(stackRegions[stackNo] != NULL)
-		res = vmm_getRegRange(proc->pid,stackRegions[stackNo],start,end,false);
-	return res;
-}
-
-inline bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
-	bool res = false;
-	if(tlsRegion != NULL)
-		res = vmm_getRegRange(proc->pid,tlsRegion,start,end,false);
-	return res;
 }
 
 inline void ThreadBase::block() {

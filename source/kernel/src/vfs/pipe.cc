@@ -237,7 +237,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 			}
 			if(pipe->noReader) {
 				spinlock_release(&node->lock);
-				proc_addSignalFor(pid,SIG_PIPE_CLOSED);
+				Proc::addSignalFor(pid,SIG_PIPE_CLOSED);
 				return -EPIPE;
 			}
 		}

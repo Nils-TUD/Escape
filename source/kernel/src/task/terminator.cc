@@ -59,7 +59,7 @@ void term_start(void) {
 				timer_sleepFor(t->tid,20,true);
 				Thread::switchAway();
 			}
-			proc_killThread(dt->tid);
+			Proc::killThread(dt->tid);
 
 			spinlock_aquire(&termLock);
 		}

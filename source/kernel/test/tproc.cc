@@ -63,13 +63,13 @@ static void test_proc_clone(void) {
 	for(x = 0; x < 5; x++) {
 		pid_t pid;
 		tprintf("Cloning process\n");
-		pid = proc_clone(0);
+		pid = Proc::clone(0);
 		test_assertTrue(pid > 0);
 		tprintf("Destroying process\n");
 		/* first terminate it, then free resources and finally remove the process */
-		assert(((Thread*)sll_get(&proc_getByPid(pid)->threads,0))->beginTerm());
-		proc_destroy(pid);
-		proc_kill(pid);
+		assert(Proc::getByPid(pid)->getMainThread()->beginTerm());
+		Proc::destroy(pid);
+		Proc::kill(pid);
 	}
 	checkMemoryAfter(false);
 	test_caseSucceeded();
@@ -81,19 +81,19 @@ static void thread_test(void) {
 	vid_printf("thread %d is running...\n",Thread::getRunning()->tid);
 	threadcnt++;
 
-	proc_exit(0);
+	Proc::exit(0);
 	Thread::switchAway();
 }
 
 static void test_thread(void) {
 	test_init("Starting threads and joining them");
 
-	int tid = proc_startThread((uintptr_t)&thread_test,0,NULL);
+	int tid = Proc::startThread((uintptr_t)&thread_test,0,NULL);
 	test_assertTrue(tid >= 0);
-	int tid2 = proc_startThread((uintptr_t)&thread_test,0,NULL);
+	int tid2 = Proc::startThread((uintptr_t)&thread_test,0,NULL);
 	test_assertTrue(tid2 >= 0);
-	proc_join(tid);
-	proc_join(tid2);
+	Proc::join(tid);
+	Proc::join(tid2);
 	test_assertInt(threadcnt,2);
 	vid_printf("threads finished\n");
 

@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/fd.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -62,7 +63,7 @@ void log_vfsIsReady(void) {
 	sVFSNode *logNode;
 	sFile *inFile;
 	char *nameCpy;
-	pid_t pid = proc_getRunning();
+	pid_t pid = Proc::getRunning();
 
 	/* open log-file */
 	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);

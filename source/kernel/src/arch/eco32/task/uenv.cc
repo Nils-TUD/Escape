@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/uenv.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
@@ -157,7 +158,7 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,fSignal handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!paging_isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
-		proc_segFault();
+		Proc::segFault();
 		/* never reached */
 		assert(false);
 	}
@@ -175,7 +176,7 @@ static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,f
 	/* the process should continue here */
 	stack->r[30] = (uint32_t)handler;
 	/* and return here after handling the signal */
-	stack->r[31] = t->proc->sigRetAddr;
+	stack->r[31] = t->proc->getSigRetAddr();
 }
 
 static uint32_t *uenv_addArgs(Thread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread) {

@@ -23,6 +23,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/fd.h>
 #include <sys/syscalls/io.h>
 #include <sys/syscalls.h>
@@ -37,7 +38,7 @@ int sysc_open(Thread *t,sIntrptStackFrame *stack) {
 	uint flags = (uint)SYSC_ARG2(stack);
 	sFile *file;
 	int res,fd;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
@@ -64,7 +65,7 @@ int sysc_fcntl(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	uint cmd = SYSC_ARG2(stack);
 	int arg = (int)SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	int res;
 
@@ -83,7 +84,7 @@ int sysc_fcntl(Thread *t,sIntrptStackFrame *stack) {
 int sysc_pipe(Thread *t,sIntrptStackFrame *stack) {
 	int *readFd = (int*)SYSC_ARG1(stack);
 	int *writeFd = (int*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *readFile,*writeFile;
 	int kreadFd,kwriteFd;
 	int res;
@@ -127,7 +128,7 @@ int sysc_stat(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	int res;
 	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -143,7 +144,7 @@ int sysc_stat(Thread *t,sIntrptStackFrame *stack) {
 int sysc_fstat(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	int res;
 	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
@@ -165,7 +166,7 @@ int sysc_chmod(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	int res;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -181,7 +182,7 @@ int sysc_chown(Thread *t,sIntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uid_t uid = (uid_t)SYSC_ARG2(stack);
 	gid_t gid = (gid_t)SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	int res;
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -195,7 +196,7 @@ int sysc_chown(Thread *t,sIntrptStackFrame *stack) {
 int sysc_tell(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -215,7 +216,7 @@ int sysc_seek(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	off_t res;
 
@@ -238,7 +239,7 @@ int sysc_read(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	ssize_t readBytes;
 	sFile *file;
 
@@ -265,7 +266,7 @@ int sysc_write(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	const void *buffer = (const void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	ssize_t writtenBytes;
 	sFile *file;
 
@@ -293,7 +294,7 @@ int sysc_send(Thread *t,sIntrptStackFrame *stack) {
 	msgid_t id = (msgid_t)SYSC_ARG2(stack);
 	const void *data = (const void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
@@ -320,7 +321,7 @@ int sysc_receive(Thread *t,sIntrptStackFrame *stack) {
 	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	sFile *file;
 	ssize_t res;
 	if(!paging_isInUserSpace((uintptr_t)data,size))
@@ -360,7 +361,7 @@ int sysc_redirect(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 
 int sysc_close(Thread *t,sIntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 
 	sFile *file = fd_request(fd);
 	if(file == NULL)
@@ -377,7 +378,7 @@ int sysc_close(Thread *t,sIntrptStackFrame *stack) {
 
 int sysc_sync(Thread *t,sIntrptStackFrame *stack) {
 	int res;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	res = vfs_sync(pid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
@@ -388,7 +389,7 @@ int sysc_link(Thread *t,sIntrptStackFrame *stack) {
 	char oldabs[MAX_PATH_LEN + 1];
 	char newabs[MAX_PATH_LEN + 1];
 	int res;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	const char *oldPath = (const char*)SYSC_ARG1(stack);
 	const char *newPath = (const char*)SYSC_ARG2(stack);
 	if(!sysc_absolutize_path(oldabs,sizeof(oldabs),oldPath))
@@ -405,7 +406,7 @@ int sysc_link(Thread *t,sIntrptStackFrame *stack) {
 int sysc_unlink(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -419,7 +420,7 @@ int sysc_unlink(Thread *t,sIntrptStackFrame *stack) {
 int sysc_mkdir(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
-	pid_t pid = proc_getRunning();
+	pid_t pid = Proc::getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -433,7 +434,7 @@ int sysc_mkdir(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 int sysc_rmdir(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -448,7 +449,7 @@ int sysc_mount(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	char absdev[MAX_PATH_LEN + 1];
 	int res;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	const char *device = (const char*)SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
 	uint type = (uint)SYSC_ARG3(stack);
@@ -466,7 +467,7 @@ int sysc_mount(Thread *t,sIntrptStackFrame *stack) {
 int sysc_unmount(Thread *t,sIntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int res;
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
 	if(!sysc_absolutize_path(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);

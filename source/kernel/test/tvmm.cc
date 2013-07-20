@@ -22,6 +22,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/video.h>
 #include <esc/test.h>
 #include "tvmm.h"
@@ -47,8 +48,8 @@ static void test_1(void) {
 	sVMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->proc->pid;
-	sProc *clone;
+	pid_t pid = t->proc->getPid();
+	Proc *clone;
 	test_caseStart("Testing vmm_add() and vmm_remove()");
 
 	checkMemoryBefore(true);
@@ -87,20 +88,20 @@ static void test_1(void) {
 	t->discardFrames();
 	checkMemoryAfter(true);
 
-	cpid = proc_clone(0);
+	cpid = Proc::clone(0);
 	test_assertTrue(cpid > 0);
-	clone = proc_getByPid(cpid);
+	clone = Proc::getByPid(cpid);
 
 	checkMemoryBefore(true);
 	t->reserveFrames(4);
 	test_assertTrue(vmm_map(pid,0,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ,MAP_SHARED,NULL,0,&rno) == 0);
-	test_assertTrue(vmm_join(pid,rno->virt,clone->pid,&rno2,0) == 0);
-	vmm_remove(clone->pid,rno2);
+	test_assertTrue(vmm_join(pid,rno->virt,clone->getPid(),&rno2,0) == 0);
+	vmm_remove(clone->getPid(),rno2);
 	vmm_remove(pid,rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
-	proc_kill(clone->pid);
+	Proc::kill(clone->getPid());
 
 	test_caseSucceeded();
 }
@@ -109,7 +110,7 @@ static void test_2(void) {
 	sVMRegion *rno;
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->proc->pid;
+	pid_t pid = t->proc->getPid();
 	test_caseStart("Testing vmm_grow()");
 
 	checkMemoryBefore(true);

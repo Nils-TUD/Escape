@@ -21,16 +21,16 @@
 #include <sys/arch/i586/task/ioports.h>
 #include <sys/task/proc.h>
 
-int proc_cloneArch(sProc *dst,A_UNUSED const sProc *src) {
+int ProcBase::cloneArch(Proc *dst,A_UNUSED const Proc *src) {
 	ioports_init(dst);
 	return 0;
 }
 
-void proc_terminateArch(sProc *p) {
+void ProcBase::terminateArch(Proc *p) {
 	ioports_free(p);
 }
 
-size_t proc_getKMemUsageOf(sProc *p) {
+size_t ProcBase::getKMemUsage() {
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 kernelstack for each thread */
-	return sll_length(&p->threads) + 2;
+	return sll_length(&threads) + 2;
 }

@@ -73,12 +73,6 @@ inline void ThreadBase::setRunning(Thread *t) {
 	*tptr = t;
 }
 
-inline int ThreadBase::initArch(Thread *t) {
-	t->kernelStack = paging_createKernelStack(&t->proc->pagedir);
-	t->fpuState = NULL;
-	return 0;
-}
-
 inline size_t ThreadBase::getThreadFrmCnt(void) {
 	return INITIAL_STACK_PAGES;
 }

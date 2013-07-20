@@ -44,12 +44,12 @@
 static const sBootTask tasks[] = {
 	{"Initializing physical memory-management...",pmem_init},
 	{"Initializing paging...",paging_init},
-	{"Preinit processes...",proc_preinit},
+	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",dyna_init},
 	{"Initializing SMP...",smp_init},
 	{"Initializing VFS...",vfs_init},
 	{"Initializing event system...",ev_init},
-	{"Initializing processes...",proc_init},
+	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",sched_init},
 	{"Initializing terminator...",term_init},
 	{"Start logging to VFS...",log_vfsIsReady},
@@ -115,7 +115,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		return 0;
 
 	/* start idle-thread */
-	proc_startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 
 	loadedMods = true;
 	for(i = 1; i < info.progCount; i++) {
@@ -126,8 +126,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 			util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 
 		/* clone proc */
-		if((child = proc_clone(P_BOOT)) == 0) {
-			int res = proc_exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
+		if((child = Proc::clone(P_BOOT)) == 0) {
+			int res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
 			/* we don't want to continue ;) */
@@ -152,9 +152,9 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 #if 0
 	/* start the swapper-thread. it will never return */
 	if(pmem_canSwap())
-		proc_startThread((uintptr_t)&pmem_swapper,0,NULL);
+		Proc::startThread((uintptr_t)&pmem_swapper,0,NULL);
 #endif
-	proc_startThread((uintptr_t)&term_start,0,NULL);
+	Proc::startThread((uintptr_t)&term_start,0,NULL);
 
 	/* if not requested otherwise, from now on, print only to log */
 	if(!conf_get(CONF_LOG2SCR))

@@ -55,7 +55,7 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file);
 static klock_t fsChanLock;
 
 void vfs_fsmsgs_removeProc(pid_t pid) {
-	sProc *p = proc_getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	sSLNode *n;
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
@@ -65,7 +65,7 @@ void vfs_fsmsgs_removeProc(pid_t pid) {
 }
 
 int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,sFile **file) {
-	const sProc *p = proc_getByPid(pid);
+	const Proc *p = Proc::getByPid(pid);
 	ssize_t res = -ENOMEM;
 	size_t pathLen = strlen(path);
 	sVFSNode *node;
@@ -82,9 +82,9 @@ int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,sFile **file) {
 
 	/* send msg to fs */
 	msg.arg1 = flags;
-	msg.arg2 = p->euid;
-	msg.arg3 = p->egid;
-	msg.arg4 = p->pid;
+	msg.arg2 = p->getEUid();
+	msg.arg3 = p->getEGid();
+	msg.arg4 = p->getPid();
 	memcpy(msg.s1,path,pathLen + 1);
 	res = vfs_sendMsg(pid,fs,MSG_FS_OPEN,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
@@ -138,10 +138,10 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 
 	/* send msg to fs */
 	if(path) {
-		const sProc *p = proc_getByPid(pid);
-		msg.str.arg1 = p->euid;
-		msg.str.arg2 = p->egid;
-		msg.str.arg3 = p->pid;
+		const Proc *p = Proc::getByPid(pid);
+		msg.str.arg1 = p->getEUid();
+		msg.str.arg2 = p->getEGid();
+		msg.str.arg3 = p->getPid();
 		memcpy(msg.str.s1,path,pathLen + 1);
 		res = vfs_sendMsg(pid,fs,MSG_FS_STAT,&msg,sizeof(msg.str),NULL,0);
 	}
@@ -303,7 +303,7 @@ void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 
 static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = -ENOMEM;
-	const sProc *p = proc_getByPid(pid);
+	const Proc *p = Proc::getByPid(pid);
 	sFile *fs;
 	sVFSNode *node;
 	sStrMsg msg;
@@ -322,9 +322,9 @@ static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *pat
 	if(path2)
 		strcpy(msg.s2,path2);
 	msg.arg1 = arg1;
-	msg.arg2 = p->euid;
-	msg.arg3 = p->egid;
-	msg.arg4 = p->pid;
+	msg.arg2 = p->getEUid();
+	msg.arg3 = p->getEGid();
+	msg.arg4 = p->getPid();
 	res = vfs_sendMsg(pid,fs,cmd,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
 		goto error;
@@ -348,7 +348,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 	sFSChan *chan;
 	sVFSNode *child,*fsnode;
 	inode_t nodeNo;
-	sProc *p = proc_getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
 	spinlock_aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
@@ -422,7 +422,7 @@ errorChan:
 
 static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 	sSLNode *n;
-	const sProc *p = proc_getByPid(pid);
+	const Proc *p = Proc::getByPid(pid);
 	spinlock_aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
@@ -434,7 +434,7 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 	spinlock_release(&fsChanLock);
 }
 
-void vfs_fsmsgs_printFSChans(const sProc *p) {
+void vfs_fsmsgs_printFSChans(const Proc *p) {
 	sSLNode *n;
 	spinlock_aquire(&fsChanLock);
 	vid_printf("FS-Channels:\n");

@@ -51,7 +51,7 @@ typedef void (*fReadCallBack)(sVFSNode *node,size_t *dataSize,void **buffer);
 static ssize_t vfs_info_readHelper(pid_t pid,sVFSNode *node,void *buffer,off_t offset,size_t count,
 		size_t dataSize,fReadCallBack callback);
 
-static sProc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer);
+static Proc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer);
 static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer);
 static Thread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer);
 
@@ -124,7 +124,7 @@ ssize_t vfs_info_procReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,U
 static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
 	size_t pages,own,shared,swapped;
-	sProc *p;
+	Proc *p;
 	pid_t pid = vfs_info_getPid(node,dataSize,buffer);
 	if(pid == INVALID_PID)
 		return;
@@ -134,9 +134,9 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	buf.size = 0;
 	buf.len = 0;
 	vmm_getMemUsage(pid,&pages);
-	proc_getMemUsageOf(pid,&own,&shared,&swapped);
+	Proc::getMemUsageOf(pid,&own,&shared,&swapped);
 
-	p = proc_getByPid(pid);
+	p = Proc::getByPid(pid);
 	if(p) {
 		prf_sprintf(
 			&buf,
@@ -152,11 +152,11 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 			"%-16s%lu\n"
 			"%-16s%lu\n"
 			,
-			"Pid:",p->pid,
-			"ParentPid:",p->parentPid,
-			"Uid:",p->euid,
-			"Gid:",p->egid,
-			"Command:",p->command,
+			"Pid:",p->getPid(),
+			"ParentPid:",p->getParentPid(),
+			"Uid:",p->getEUid(),
+			"Gid:",p->getEGid(),
+			"Command:",p->getCommand(),
 			"Pages:",pages,
 			"OwnFrames:",own,
 			"SharedFrames:",shared,
@@ -208,8 +208,8 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"%-16s%u\n"
 		,
 		"Tid:",t->tid,
-		"Pid:",t->proc->pid,
-		"ProcName:",t->proc->command,
+		"Pid:",t->proc->getPid(),
+		"ProcName:",t->proc->getCommand(),
 		"State:",t->getState(),
 		"Flags:",t->getFlags() & T_IDLE,
 		"Priority:",t->getPriority(),
@@ -262,7 +262,7 @@ static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,
 		"%-16s%016Lx\n"
 		"%-16s%zus\n"
 		,
-		"Processes:",proc_getCount(),
+		"Processes:",Proc::getCount(),
 		"Threads:",Thread::getCount(),
 		"Interrupts:",intrpt_getCount(),
 		"CPUCycles:",cycles.val64,
@@ -293,7 +293,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 	kheap = kheap_getOccupiedMem();
 	cache = cache_getOccMem();
 	pmem = pmem_getStackSize();
-	proc_getMemUsage(&dataShared,&dataOwn,&dataReal);
+	Proc::getMemUsage(&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,
 		"%-11s%10zu\n"
@@ -377,20 +377,20 @@ ssize_t vfs_info_virtMemReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *nod
 
 static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	sStringBuffer buf;
-	sProc *p = vfs_info_getProc(node,dataSize,buffer);
+	Proc *p = vfs_info_getProc(node,dataSize,buffer);
 	if(!p)
 		return;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	paging_sprintfVirtMem(&buf,&p->pagedir);
+	paging_sprintfVirtMem(&buf,p->getPageDir());
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }
 
-static sProc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sProc *p;
+static Proc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
+	Proc *p;
 	spinlock_aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
@@ -398,7 +398,7 @@ static sProc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
 		spinlock_release(&node->lock);
 		return NULL;
 	}
-	p = proc_getByPid(atoi(node->parent->name));
+	p = Proc::getByPid(atoi(node->parent->name));
 	spinlock_release(&node->lock);
 	return p;
 }

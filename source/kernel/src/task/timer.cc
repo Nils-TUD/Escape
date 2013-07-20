@@ -22,6 +22,7 @@
 #include <sys/task/timer.h>
 #include <sys/task/event.h>
 #include <sys/task/smp.h>
+#include <sys/task/proc.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>
@@ -199,6 +200,6 @@ void timer_print(void) {
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
 		vid_printf("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
-				Thread::getById(l->tid)->proc->command,l->block);
+				Thread::getById(l->tid)->proc->getCommand(),l->block);
 	}
 }

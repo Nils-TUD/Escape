@@ -20,15 +20,15 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
-int proc_cloneArch(A_UNUSED sProc *dst,A_UNUSED const sProc *src) {
+int ProcBase::cloneArch(A_UNUSED Proc *dst,A_UNUSED const Proc *src) {
 	return 0;
 }
 
-void proc_terminateArch(A_UNUSED sProc *p) {
+void ProcBase::terminateArch(A_UNUSED Proc *p) {
 	/* nothing to do */
 }
 
-size_t proc_getKMemUsageOf(sProc *p) {
+size_t ProcBase::getKMemUsage() {
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 kernelstack for each thread */
-	return sll_length(&p->threads) + 2;
+	return sll_length(&threads) + 2;
 }

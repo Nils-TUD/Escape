@@ -63,7 +63,7 @@ static const sBootTask tasks[] = {
 	{"Initializing FPU...",fpu_init},
 	{"Initializing VFS...",vfs_init},
 	{"Initializing event system...",ev_init},
-	{"Initializing processes...",proc_init},
+	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",sched_init},
 	{"Initializing terminator...",term_init},
 	{"Start logging to VFS...",log_vfsIsReady},
@@ -128,7 +128,7 @@ void boot_arch_start(sBootInfo *info) {
 	ser_init();
 
 	/* init physical memory and paging */
-	proc_preinit();
+	Proc::preinit();
 	pmem_init();
 	paging_mapKernelSpace();
 
@@ -226,8 +226,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		strcat(loadingStatus,"...");
 		boot_taskStarted(loadingStatus);
 
-		if((child = proc_clone(P_BOOT)) == 0) {
-			res = proc_exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
+		if((child = Proc::clone(P_BOOT)) == 0) {
+			res = Proc::exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
 			if(res < 0)
 				util_panic("Unable to exec boot-program %s: %d\n",argv[0],res);
 			/* we don't want to continue ;) */
@@ -253,9 +253,9 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 
 	/* start the swapper-thread. it will never return */
 	if(pmem_canSwap())
-		proc_startThread((uintptr_t)&pmem_swapper,0,NULL);
+		Proc::startThread((uintptr_t)&pmem_swapper,0,NULL);
 	/* start the terminator */
-	proc_startThread((uintptr_t)&term_start,0,NULL);
+	Proc::startThread((uintptr_t)&term_start,0,NULL);
 
 	/* if not requested otherwise, from now on, print only to log */
 	if(!conf_get(CONF_LOG2SCR))

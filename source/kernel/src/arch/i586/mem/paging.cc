@@ -733,7 +733,7 @@ void paging_sprintfVirtMem(sStringBuffer *buf,pagedir_t *pdir) {
 }
 
 static pagedir_t *paging_getPageDir(void) {
-	return proc_getPageDir();
+	return Proc::getCurPageDir();
 }
 
 static uintptr_t paging_getPTables(pagedir_t *cur,pagedir_t *other) {
@@ -800,7 +800,7 @@ void paging_printPageOf(pagedir_t *pdir,uintptr_t virt) {
 	/* don't use locking here; its only used in the debugging-console anyway. its better without
 	 * locking to be able to view these things even if somebody currently holds the lock (e.g.
 	 * because a panic occurred during that operation) */
-	pagedir_t *cur = proc_getPageDir();
+	pagedir_t *cur = Proc::getCurPageDir();
 	pagedir_t *old = cur->other;
 	uintptr_t ptables;
 	pde_t *pdirAddr;
@@ -823,7 +823,7 @@ void paging_printCur(uint parts) {
 
 void paging_printPDir(pagedir_t *pdir,uint parts) {
 	size_t i;
-	pagedir_t *cur = proc_getPageDir();
+	pagedir_t *cur = Proc::getCurPageDir();
 	pagedir_t *old = cur->other;
 	uintptr_t ptables;
 	pde_t *pdirAddr;

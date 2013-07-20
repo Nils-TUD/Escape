@@ -49,7 +49,7 @@ Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
 klock_t ThreadBase::threadLock;
 
-Thread *ThreadBase::init(sProc *p) {
+Thread *ThreadBase::init(Proc *p) {
 	Thread *curThread;
 	sll_init(&threads,slln_allocNode,slln_freeNode);
 
@@ -59,14 +59,14 @@ Thread *ThreadBase::init(sProc *p) {
 	return curThread;
 }
 
-Thread *ThreadBase::createInitial(sProc *p) {
+Thread *ThreadBase::createInitial(Proc *p) {
 	size_t i;
 	Thread *t = (Thread*)cache_alloc(sizeof(Thread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
 	*(tid_t*)&t->tid = nextTid++;
-	*(sProc**)&t->proc = p;
+	*(Proc**)&t->proc = p;
 	t->flags = 0;
 	t->initProps();
 	t->state = Thread::RUNNING;
@@ -130,10 +130,24 @@ int ThreadBase::extendStack(uintptr_t address) {
 		if(t->stackRegions[i] == NULL)
 			return -ENOMEM;
 
-		res = vmm_growStackTo(t->proc->pid,t->stackRegions[i],address);
+		res = vmm_growStackTo(t->proc->getPid(),t->stackRegions[i],address);
 		if(res >= 0)
 			return res;
 	}
+	return res;
+}
+
+bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) {
+	bool res = false;
+	if(stackRegions[stackNo] != NULL)
+		res = vmm_getRegRange(proc->getPid(),stackRegions[stackNo],start,end,false);
+	return res;
+}
+
+bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
+	bool res = false;
+	if(tlsRegion != NULL)
+		res = vmm_getRegRange(proc->getPid(),tlsRegion,start,end,false);
 	return res;
 }
 
@@ -177,7 +191,7 @@ bool ThreadBase::reserveFrames(size_t count) {
 	return true;
 }
 
-int ThreadBase::create(Thread *src,Thread **dst,sProc *p,uint8_t flags,bool cloneProc) {
+int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool cloneProc) {
 	int err = -ENOMEM;
 	Thread *t = (Thread*)cache_alloc(sizeof(Thread));
 	if(t == NULL)
@@ -188,7 +202,7 @@ int ThreadBase::create(Thread *src,Thread **dst,sProc *p,uint8_t flags,bool clon
 		err = -ENOTHREADS;
 		goto errThread;
 	}
-	*(sProc**)&t->proc = p;
+	*(Proc**)&t->proc = p;
 	t->flags = flags;
 
 	t->initProps();
@@ -212,8 +226,8 @@ int ThreadBase::create(Thread *src,Thread **dst,sProc *p,uint8_t flags,bool clon
 		t->tlsRegion = NULL;
 		if(src->tlsRegion != NULL) {
 			uintptr_t tlsStart,tlsEnd;
-			vmm_getRegRange(src->proc->pid,src->tlsRegion,&tlsStart,&tlsEnd,false);
-			err = vmm_map(p->pid,0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,0,NULL,0,&t->tlsRegion);
+			vmm_getRegRange(src->proc->getPid(),src->tlsRegion,&tlsStart,&tlsEnd,false);
+			err = vmm_map(p->getPid(),0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,0,NULL,0,&t->tlsRegion);
 			if(err < 0)
 				goto errThread;
 		}
@@ -249,7 +263,7 @@ errArch:
 	freeArch(t);
 errClone:
 	if(t->tlsRegion != NULL)
-		vmm_remove(p->pid,t->tlsRegion);
+		vmm_remove(p->getPid(),t->tlsRegion);
 errThread:
 	cache_free(t);
 	return err;
@@ -260,7 +274,7 @@ void ThreadBase::kill() {
 	assert(state == Thread::ZOMBIE);
 	/* remove tls */
 	if(tlsRegion != NULL) {
-		vmm_remove(proc->pid,tlsRegion);
+		vmm_remove(proc->getPid(),tlsRegion);
 		tlsRegion = NULL;
 	}
 
@@ -314,7 +328,7 @@ void ThreadBase::printShort() const {
 void ThreadBase::print() const {
 	size_t i;
 	sFuncCall *calls;
-	vid_printf("Thread %d: (process %d:%s)\n",tid,proc->pid,proc->command);
+	vid_printf("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
 	prf_pushIndent();
 	vid_printf("Flags=%#x\n",flags);
 	vid_printf("State=%s\n",getStateName(state));

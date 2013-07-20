@@ -46,14 +46,6 @@ private:
 	static Thread *cur;
 };
 
-inline void ThreadBase::addInitialStack() {
-	assert(tid == INIT_TID);
-	assert(vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
-	assert(vmm_map(proc->pid,0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 1) == 0);
-}
-
 inline size_t ThreadBase::getThreadFrmCnt() {
 	return INITIAL_STACK_PAGES * 2;
 }

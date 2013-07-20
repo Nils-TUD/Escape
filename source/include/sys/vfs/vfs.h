@@ -361,7 +361,7 @@ ssize_t vfs_sendMsg(pid_t pid,sFile *file,msgid_t id,USER const void *data1,size
 ssize_t vfs_receiveMsg(pid_t pid,sFile *file,msgid_t *id,void *data,size_t size,bool forceBlock);
 
 /**
- * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
+ * Closes the given file. That means it calls Proc::closeFile() and decrements the reference-count
  * in the global file table. If there are no references anymore it releases the slot.
  *
  * @param pid the process-id

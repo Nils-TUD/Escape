@@ -26,6 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <esc/sllist.h>

@@ -25,6 +25,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/pmemareas.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
 #include <sys/config.h>
@@ -360,7 +361,7 @@ void pmem_swapper(void) {
 	pid_t pid;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	swapper = Thread::getRunning();
-	pid = swapper->proc->pid;
+	pid = swapper->proc->getPid();
 	assert(swapEnabled);
 
 	/* open device */
@@ -440,8 +441,8 @@ void pmem_print(void) {
 	vid_printf("\n");
 	vid_printf("Swap-in-jobs:\n");
 	for(job = siJobList; job != NULL; job = job->next) {
-		vid_printf("\tThread %d:%d:%s @ %p\n",job->thread->tid,job->thread->proc->pid,
-				job->thread->proc->command,job->addr);
+		vid_printf("\tThread %d:%d:%s @ %p\n",job->thread->tid,job->thread->proc->getPid(),
+				job->thread->proc->getCommand(),job->addr);
 	}
 }
 

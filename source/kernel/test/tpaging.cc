@@ -61,20 +61,20 @@ static void test_paging(void) {
 
 static void test_paging_foreign(void) {
 	size_t ownFrames, sharedFrames;
-	sProc *child;
+	Proc *child;
 	Thread *t = Thread::getRunning();
-	pid_t pid = proc_clone(0);
+	pid_t pid = Proc::clone(0);
 	test_assertTrue(pid > 0);
-	child = proc_getByPid(pid);
+	child = Proc::getByPid(pid);
 
-	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,&child->pagedir);
+	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->getPageDir());
 	ownFrames = child->ownFrames;
 	sharedFrames = child->sharedFrames;
 	checkMemoryBefore(true);
 
 	t->reserveFrames(3);
-	paging_mapTo(&child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_unmapFrom(&child->pagedir,0,3,true);
+	paging_mapTo(child->getPageDir(),0,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_unmapFrom(child->getPageDir(),0,3,true);
 	t->discardFrames();
 
 	checkMemoryAfter(true);
@@ -85,16 +85,16 @@ static void test_paging_foreign(void) {
 	else
 		test_caseSucceeded();
 
-	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,&child->pagedir);
+	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->getPageDir());
 	ownFrames = child->ownFrames;
 	sharedFrames = child->sharedFrames;
 	checkMemoryBefore(true);
 
 	t->reserveFrames(6);
-	paging_mapTo(&child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_mapTo(&child->pagedir,0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_unmapFrom(&child->pagedir,0x40000000,1,true);
-	paging_unmapFrom(&child->pagedir,0x40000000 + PAGE_SIZE * 1,5,true);
+	paging_mapTo(child->getPageDir(),0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_mapTo(child->getPageDir(),0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
+	paging_unmapFrom(child->getPageDir(),0x40000000,1,true);
+	paging_unmapFrom(child->getPageDir(),0x40000000 + PAGE_SIZE * 1,5,true);
 	t->discardFrames();
 
 	checkMemoryAfter(true);
@@ -104,9 +104,9 @@ static void test_paging_foreign(void) {
 	}
 	else
 		test_caseSucceeded();
-	assert(((Thread*)sll_get(&child->threads,0))->beginTerm());
-	proc_destroy(child->pid);
-	proc_kill(child->pid);
+	assert(child->getMainThread()->beginTerm());
+	Proc::destroy(child->getPid());
+	Proc::kill(child->getPid());
 }
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {

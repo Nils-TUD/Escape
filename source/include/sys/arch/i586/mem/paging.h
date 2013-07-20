@@ -161,13 +161,13 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_AREA && \
 								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
-typedef struct pagedir_t {
+struct pagedir_t {
 	uint64_t lastChange;
 	uintptr_t own;
 	struct pagedir_t *other;
 	uint64_t otherUpdate;
 	uintptr_t freeKStack;
-} pagedir_t;
+};
 
 /**
  * Activates paging

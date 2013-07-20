@@ -158,12 +158,12 @@ int vfs_node_getInfo(pid_t pid,inode_t nodeNo,USER sFileInfo *info) {
 
 int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
 	int res = 0;
-	const sProc *p = pid == KERNEL_PID ? NULL : proc_getByPid(pid);
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
 		return -ENOENT;
 	/* root can chmod everything; others can only chmod their own files */
-	if(p && p->euid != n->uid && p->euid != ROOT_UID)
+	if(p && p->getEUid() != n->uid && p->getEUid() != ROOT_UID)
 		res = -EPERM;
 	else
 		n->mode = (n->mode & ~MODE_PERM) | (mode & MODE_PERM);
@@ -173,20 +173,21 @@ int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
 
 int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 	int res = 0;
-	const sProc *p = pid == KERNEL_PID ? NULL : proc_getByPid(pid);
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
 	sVFSNode *n = vfs_node_request(nodeNo);
 	if(n == NULL)
 		return -ENOENT;
 
 	/* root can chown everything; others can only chown their own files */
-	if(p && p->euid != n->uid && p->euid != ROOT_UID)
+	if(p && p->getEUid() != n->uid && p->getEUid() != ROOT_UID)
 		res = -EPERM;
-	else if(p && p->euid != ROOT_UID) {
+	else if(p && p->getEUid() != ROOT_UID) {
 		/* users can't change the owner */
-		if(uid != (uid_t)-1 && uid != n->uid && uid != p->euid)
+		if(uid != (uid_t)-1 && uid != n->uid && uid != p->getEUid())
 			res = -EPERM;
 		/* users can change the group only to a group they're a member of */
-		else if(gid != (gid_t)-1 && gid != n->gid && gid != p->egid && !groups_contains(p->pid,gid))
+		else if(gid != (gid_t)-1 && gid != n->gid && gid != p->getEGid() &&
+				!groups_contains(p->getPid(),gid))
 			res = -EPERM;
 	}
 
@@ -238,7 +239,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	sVFSNode *dir,*n = vfs_node_get(0);
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
-	pid_t pid = t ? t->proc->pid : KERNEL_PID;
+	pid_t pid = t ? t->proc->getPid() : KERNEL_PID;
 	int pos = 0,err,depth,lastdepth;
 	bool isValid;
 	if(created)
@@ -412,7 +413,7 @@ sVFSNode *vfs_node_findInDirOf(inode_t nodeNo,const char *name,size_t nameLen) {
 sVFSNode *vfs_node_create(pid_t pid,char *name) {
 	sVFSNode *node;
 	size_t nameLen = strlen(name);
-	const sProc *p = pid != INVALID_PID ? proc_getByPid(pid) : NULL;
+	const Proc *p = pid != INVALID_PID ? Proc::getByPid(pid) : NULL;
 	vassert(name != NULL,"name == NULL");
 
 	if(nameLen > MAX_NAME_LEN)
@@ -424,8 +425,8 @@ sVFSNode *vfs_node_create(pid_t pid,char *name) {
 
 	/* ensure that all values are initialized properly */
 	*(pid_t*)&node->owner = pid;
-	node->uid = p ? p->euid : ROOT_UID;
-	node->gid = p ? p->egid : ROOT_GID;
+	node->uid = p ? p->getEUid() : ROOT_UID;
+	node->gid = p ? p->getEGid() : ROOT_GID;
 	*(char**)&node->name = name;
 	*(size_t*)&node->nameLen = nameLen;
 	node->mode = 0;

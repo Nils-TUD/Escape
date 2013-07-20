@@ -38,17 +38,17 @@ sTestModule tModAddrSpace = {
 static sAddressSpace *spaces[ADDR_SPACE_COUNT * 3];
 
 static void test_addrspace(void) {
-	sProc *p = proc_getByPid(proc_getRunning());
+	Proc *p = Proc::getByPid(Proc::getRunning());
 	/* a trick to ensure that no address-spaces are in use yet: temporary free the first one and
 	 * allocate it again when we're finished */
-	aspace_free(p->pagedir.addrSpace);
+	aspace_free(p->getPageDir()->addrSpace);
 	test_basics();
 	test_dupUsage();
 	/* do it twice to ensure that the cleanup is correct */
 	test_dupUsage();
-	p->pagedir.addrSpace = aspace_alloc();
-	p->pagedir.rv &= ~0x3F;
-	p->pagedir.rv |= (p->pagedir.addrSpace->no << 3);
+	p->getPageDir()->addrSpace = aspace_alloc();
+	p->getPageDir()->rv &= ~0x3F;
+	p->getPageDir()->rv |= (p->getPageDir()->addrSpace->no << 3);
 }
 
 static void test_basics(void) {

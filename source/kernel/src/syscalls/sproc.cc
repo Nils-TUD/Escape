@@ -40,7 +40,7 @@
 #include <string.h>
 
 int sysc_getpid(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->proc->getPid());
+	SYSC_RET1(stack,t->getProc()->getPid());
 }
 
 int sysc_getppid(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
@@ -53,12 +53,12 @@ int sysc_getppid(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getuid(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->proc->getRUid());
+	SYSC_RET1(stack,t->getProc()->getRUid());
 }
 
 int sysc_setuid(Thread *t,sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
-	Proc *p = t->proc;
+	Proc *p = t->getProc();
 	if(p->getEUid() != ROOT_UID)
 		SYSC_ERROR(stack,-EPERM);
 
@@ -67,12 +67,12 @@ int sysc_setuid(Thread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getgid(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->proc->getRGid());
+	SYSC_RET1(stack,t->getProc()->getRGid());
 }
 
 int sysc_setgid(Thread *t,sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
-	Proc *p = t->proc;
+	Proc *p = t->getProc();
 	if(p->getEUid() != ROOT_UID)
 		SYSC_ERROR(stack,-EPERM);
 
@@ -81,12 +81,12 @@ int sysc_setgid(Thread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_geteuid(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->proc->getEUid());
+	SYSC_RET1(stack,t->getProc()->getEUid());
 }
 
 int sysc_seteuid(Thread *t,sIntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
-	Proc *p = t->proc;
+	Proc *p = t->getProc();
 	/* if not root, it has to be either ruid, euid or suid */
 	if(p->getEUid() != ROOT_UID && uid != p->getRUid() && uid != p->getEUid() && uid != p->getSUid())
 		SYSC_ERROR(stack,-EPERM);
@@ -96,12 +96,12 @@ int sysc_seteuid(Thread *t,sIntrptStackFrame *stack) {
 }
 
 int sysc_getegid(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->proc->getEGid());
+	SYSC_RET1(stack,t->getProc()->getEGid());
 }
 
 int sysc_setegid(Thread *t,sIntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
-	Proc *p = t->proc;
+	Proc *p = t->getProc();
 	/* if not root, it has to be either rgid, egid or sgid */
 	if(p->getEUid() != ROOT_UID && gid != p->getRGid() && gid != p->getEGid() && gid != p->getSGid())
 		SYSC_ERROR(stack,-EPERM);
@@ -113,7 +113,7 @@ int sysc_setegid(Thread *t,sIntrptStackFrame *stack) {
 int sysc_getgroups(Thread *t,sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,-EFAULT);
 
@@ -124,7 +124,7 @@ int sysc_getgroups(Thread *t,sIntrptStackFrame *stack) {
 int sysc_setgroups(Thread *t,sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,-EFAULT);
 
@@ -163,7 +163,7 @@ int sysc_getenvito(Thread *t,sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	if(size == 0)
 		SYSC_ERROR(stack,-EINVAL);
 	if(!paging_isInUserSpace((uintptr_t)buffer,size))
@@ -178,7 +178,7 @@ int sysc_getenvto(Thread *t,sIntrptStackFrame *stack) {
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	if(!sysc_isStrInUserSpace(name,NULL))
 		SYSC_ERROR(stack,-EFAULT);
 	if(size == 0)
@@ -194,7 +194,7 @@ int sysc_getenvto(Thread *t,sIntrptStackFrame *stack) {
 int sysc_setenv(Thread *t,sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
 		SYSC_ERROR(stack,-EFAULT);
 

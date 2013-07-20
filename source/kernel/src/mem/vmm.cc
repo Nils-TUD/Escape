@@ -384,7 +384,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 	frameno_t frame;
 	ulong block;
 	size_t index;
-	sVMRegion *vmreg = vmreg_getByAddr(&t->proc->regtree,addr);
+	sVMRegion *vmreg = vmreg_getByAddr(&t->getProc()->regtree,addr);
 	if(!vmreg)
 		return false;
 
@@ -400,7 +400,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 #if DEBUG_SWAP
 	sSLNode *n;
 	log_printf("IN: %d of region %x (block %d)\n",index,vmreg->reg,block);
-	for(n = sll_begin(vmreg->reg->procs); n != NULL; n = n->next) {
+	for(n = sll_begin(vmreg->reg->getProc()s); n != NULL; n = n->next) {
 		Proc *mp = (Proc*)n->data;
 		sVMRegion *mpreg = vmreg_getByReg(t,&mp->regtree,vmreg->reg);
 		log_printf("\tProcess %d:%s -> page %p\n",mp->getPid(),mp->getCommand(),
@@ -431,7 +431,7 @@ void vmm_setTimestamp(Thread *t,uint64_t timestamp) {
 	/* ignore setting the timestamp if the process is currently locked; its not that critical and
 	 * we can't wait for the mutex here because this is called from Thread::switchAway() and the wait
 	 * for the mutex would call that as well */
-	Proc *p = vmm_tryReqProc(t->proc->getPid());
+	Proc *p = vmm_tryReqProc(t->getProc()->getPid());
 	if(p) {
 		sVMRegion *vm;
 		size_t i;
@@ -441,7 +441,7 @@ void vmm_setTimestamp(Thread *t,uint64_t timestamp) {
 			if(t->getStackRegion(i))
 				t->getStackRegion(i)->reg->timestamp = timestamp;
 		}
-		for(vm = t->proc->regtree.begin; vm != NULL; vm = vm->next) {
+		for(vm = t->getProc()->regtree.begin; vm != NULL; vm = vm->next) {
 			if(!(vm->reg->flags & (RF_TLS | RF_STACK)))
 				vm->reg->timestamp = timestamp;
 		}
@@ -523,7 +523,7 @@ bool vmm_pagefault(uintptr_t addr,bool write) {
 	if(!t->reserveFrames(1))
 		return false;
 
-	p = vmm_reqProc(t->proc->getPid());
+	p = vmm_reqProc(t->getProc()->getPid());
 	vm = vmreg_getByAddr(&p->regtree,addr);
 	if(vm == NULL) {
 		vmm_relProc(p);
@@ -761,7 +761,7 @@ int vmm_cloneAll(pid_t dstId) {
 	size_t j;
 	Thread *t = Thread::getRunning();
 	Proc *dst = vmm_reqProc(dstId);
-	Proc *src = vmm_reqProc(t->proc->getPid());
+	Proc *src = vmm_reqProc(t->getProc()->getPid());
 	sVMRegion *vm;
 	dst->swapped = 0;
 	dst->sharedFrames = 0;

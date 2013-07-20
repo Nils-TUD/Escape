@@ -207,9 +207,9 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"%-16s%016Lx\n"
 		"%-16s%u\n"
 		,
-		"Tid:",t->tid,
-		"Pid:",t->proc->getPid(),
-		"ProcName:",t->proc->getCommand(),
+		"Tid:",t->getTid(),
+		"Pid:",t->getProc()->getPid(),
+		"ProcName:",t->getProc()->getCommand(),
 		"State:",t->getState(),
 		"Flags:",t->getFlags() & T_IDLE,
 		"Priority:",t->getPriority(),

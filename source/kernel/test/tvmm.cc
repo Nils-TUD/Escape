@@ -48,7 +48,7 @@ static void test_1(void) {
 	sVMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	Proc *clone;
 	test_caseStart("Testing vmm_add() and vmm_remove()");
 
@@ -110,7 +110,7 @@ static void test_2(void) {
 	sVMRegion *rno;
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	test_caseStart("Testing vmm_grow()");
 
 	checkMemoryBefore(true);

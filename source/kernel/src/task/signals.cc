@@ -167,7 +167,7 @@ int sig_checkAndStart(tid_t tid,int *sig,fSignal *handler) {
 			s = t->signals;
 			if(!t->isIgnoringSigs() && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
 				sPendingSig *psig = s->pending.first;
-				if(t->tid == tid) {
+				if(t->getTid() == tid) {
 					*handler = s->handler[psig->sig];
 					*sig = psig->sig;
 					s->currentSignal = psig->sig;
@@ -273,7 +273,7 @@ void sig_print(void) {
 	vid_printf("Signal handler:\n");
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
-		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->getPid(),t->proc->getCommand());
+		vid_printf("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		vid_printf("\t\tpending: %zu\n",t->signals->pending.count);
 		vid_printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
 		vid_printf("\t\tcurrent: %d\n",t->signals->currentSignal);

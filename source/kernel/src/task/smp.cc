@@ -167,7 +167,7 @@ void smp_flushTLB(pagedir_t *pdir) {
 		sCPU *cpu = cpus[i];
 		if(cpu && cpu->ready && i != cur) {
 			Thread *t = cpu->thread;
-			if(t && t->proc->getPageDir() == pdir)
+			if(t && t->getProc()->getPageDir() == pdir)
 				smp_sendIPI(i,IPI_FLUSH_TLB);
 		}
 	}
@@ -194,7 +194,7 @@ void smp_print(void) {
 		Thread *t = cpu->thread;
 		vid_printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
 				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
-				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->tid,t->proc->getPid(),t->proc->getCommand(),
+				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),
 				cpu->schedCount,cpu->runtime,cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);
 	}
 }

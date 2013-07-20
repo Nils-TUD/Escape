@@ -597,7 +597,7 @@ inline pagedir_t *ProcBase::getCurPageDir() {
 	/* just needed at the beginning */
 	if(t == NULL)
 		return &first.pagedir;
-	return &t->proc->pagedir;
+	return &t->getProc()->pagedir;
 }
 
 inline void ProcBase::addOwn(long amount) {
@@ -620,7 +620,7 @@ inline void ProcBase::addSwap(long amount) {
 
 inline pid_t ProcBase::getRunning() {
 	const Thread *t = Thread::getRunning();
-	return t->proc->getPid();
+	return t->getProc()->getPid();
 }
 
 inline Proc *ProcBase::getByPid(pid_t pid) {

@@ -81,7 +81,7 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 		/* if it exists and is locked, wait */
 		uint event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
 		/* TODO don't panic here, just return and continue using the lock */
-		assert(l->writer != t->tid);
+		assert(l->writer != t->getTid());
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
 			Event::wait(t,event,(evobj_t)ident);
@@ -105,7 +105,7 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	/* lock it */
 	l->flags = flags | LOCK_USED;
 	if(flags & LOCK_EXCLUSIVE)
-		l->writer = t->tid;
+		l->writer = t->getTid();
 	else
 		l->readRefs++;
 	spinlock_release(&klock);

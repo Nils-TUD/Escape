@@ -33,7 +33,7 @@ void fd_init(Proc *p) {
 
 sFile *fd_request(int fd) {
 	sFile *file;
-	Proc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 
@@ -54,7 +54,7 @@ void fd_release(sFile *file) {
 
 void fd_clone(Proc *p) {
 	size_t i;
-	Proc *cur = Thread::getRunning()->proc;
+	Proc *cur = Thread::getRunning()->getProc();
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
 	cur->lock(PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -82,7 +82,7 @@ void fd_destroy(Proc *p) {
 int fd_assoc(sFile *fileNo) {
 	sFile *const *fds;
 	int i,fd = -EMFILE;
-	Proc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->getProc();
 	p->lock(PLOCK_FDS);
 	fds = p->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -101,7 +101,7 @@ int fd_dup(int fd) {
 	sFile *f;
 	sFile *const *fds;
 	int i,nfd = -EBADF;
-	Proc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->getProc();
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return -EBADF;
@@ -128,7 +128,7 @@ int fd_dup(int fd) {
 int fd_redirect(int src,int dst) {
 	sFile *fSrc,*fDst;
 	int err = -EBADF;
-	Proc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->getProc();
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
@@ -151,7 +151,7 @@ int fd_redirect(int src,int dst) {
 
 sFile *fd_unassoc(int fd) {
 	sFile *file;
-	Proc *p = Thread::getRunning()->proc;
+	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 

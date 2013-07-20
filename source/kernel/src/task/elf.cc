@@ -91,7 +91,7 @@ int elf_loadFromMem(const void *code,size_t length,sStartupInfo *info) {
 
 static int elf_doLoadFromFile(const char *path,uint type,sStartupInfo *info) {
 	Thread *t = Thread::getRunning();
-	Proc *p = t->proc;
+	Proc *p = t->getProc();
 	sFile *file;
 	size_t j,loadSeg = 0;
 	uintptr_t datPtr;
@@ -286,7 +286,7 @@ static int elf_addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegN
 		t->reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
-	if((res = vmm_map(t->proc->getPid(),pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
+	if((res = vmm_map(t->getProc()->getPid(),pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		t->discardFrames();

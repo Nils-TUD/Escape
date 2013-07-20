@@ -37,7 +37,7 @@ static uint32_t *uenv_addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool
 void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
 	int sig;
 	fSignal handler;
-	int res = sig_checkAndStart(t->tid,&sig,&handler);
+	int res = sig_checkAndStart(t->getTid(),&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,stack,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
@@ -195,7 +195,7 @@ static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,f
 	*--esp = sig;
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
-	*--esp = t->proc->getSigRetAddr();
+	*--esp = t->getProc()->getSigRetAddr();
 	stack->eip = (uintptr_t)handler;
 	stack->uesp = (uint32_t)esp;
 }

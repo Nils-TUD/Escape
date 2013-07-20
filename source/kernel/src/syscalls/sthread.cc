@@ -43,11 +43,11 @@ static int sysc_doWaitLoop(const Event::WaitObject *uobjects,size_t objCount,
 		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
 
 int sysc_gettid(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->tid);
+	SYSC_RET1(stack,t->getTid());
 }
 
 int sysc_getthreadcnt(Thread *t,sIntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->proc->getThreadCount());
+	SYSC_RET1(stack,t->getProc()->getThreadCount());
 }
 
 int sysc_startthread(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
@@ -77,7 +77,7 @@ int sysc_getcycles(Thread *t,sIntrptStackFrame *stack) {
 int sysc_alarm(Thread *t,sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
-	if((res = timer_sleepFor(t->tid,msecs,false)) < 0)
+	if((res = timer_sleepFor(t->getTid(),msecs,false)) < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -85,13 +85,13 @@ int sysc_alarm(Thread *t,sIntrptStackFrame *stack) {
 int sysc_sleep(Thread *t,sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
-	if((res = timer_sleepFor(t->tid,msecs,true)) < 0)
+	if((res = timer_sleepFor(t->getTid(),msecs,true)) < 0)
 		SYSC_ERROR(stack,res);
 	Thread::switchAway();
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
 	 * and the sleep-time was not over yet. */
-	timer_removeThread(t->tid);
-	if(sig_hasSignalFor(t->tid))
+	timer_removeThread(t->getTid());
+	if(sig_hasSignalFor(t->getTid()))
 		SYSC_ERROR(stack,-EINTR);
 	SYSC_RET1(stack,0);
 }
@@ -123,7 +123,7 @@ int sysc_waitunlock(Thread *t,sIntrptStackFrame *stack) {
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
@@ -153,7 +153,7 @@ int sysc_lock(Thread *t,sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 
 	int res = lock_aquire(global ? INVALID_PID : pid,ident,flags);
 	if(res < 0)
@@ -164,7 +164,7 @@ int sysc_lock(Thread *t,sIntrptStackFrame *stack) {
 int sysc_unlock(Thread *t,sIntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
-	pid_t pid = t->proc->getPid();
+	pid_t pid = t->getProc()->getPid();
 
 	int res = lock_release(global ? INVALID_PID : pid,ident);
 	if(res < 0)
@@ -177,7 +177,7 @@ int sysc_join(Thread *t,sIntrptStackFrame *stack) {
 	if(tid != 0) {
 		const Thread *tt = Thread::getById(tid);
 		/* just threads from the own process */
-		if(tt == NULL || tt->tid == t->tid || tt->proc->getPid() != t->proc->getPid())
+		if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
 			SYSC_ERROR(stack,-EINVAL);
 	}
 
@@ -189,7 +189,7 @@ int sysc_suspend(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
-	if(tt == NULL || tt->tid == t->tid || tt->proc->getPid() != t->proc->getPid())
+	if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
 		SYSC_ERROR(stack,-EINVAL);
 	Event::suspend(tt);
 	SYSC_RET1(stack,0);
@@ -199,7 +199,7 @@ int sysc_resume(Thread *t,sIntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
-	if(tt == NULL || tt->tid == t->tid || tt->proc->getPid() != t->proc->getPid())
+	if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
 		SYSC_ERROR(stack,-EINVAL);
 	Event::unsuspend(tt);
 	SYSC_RET1(stack,0);

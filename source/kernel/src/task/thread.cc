@@ -65,8 +65,8 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
-	*(tid_t*)&t->tid = nextTid++;
-	*(Proc**)&t->proc = p;
+	t->tid = nextTid++;
+	t->proc = p;
 	t->flags = 0;
 	t->initProps();
 	t->state = Thread::RUNNING;
@@ -81,7 +81,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 		util_panic("Unable to put initial thread into the thread-list");
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->tid))
+	if(!vfs_createThread(t->getTid()))
 		util_panic("Unable to put first thread in vfs");
 
 	return t;
@@ -130,7 +130,7 @@ int ThreadBase::extendStack(uintptr_t address) {
 		if(t->stackRegions[i] == NULL)
 			return -ENOMEM;
 
-		res = vmm_growStackTo(t->proc->getPid(),t->stackRegions[i],address);
+		res = vmm_growStackTo(t->getProc()->getPid(),t->stackRegions[i],address);
 		if(res >= 0)
 			return res;
 	}
@@ -197,12 +197,12 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 	if(t == NULL)
 		return -ENOMEM;
 
-	*(tid_t*)&t->tid = getFreeTid();
-	if(t->tid == INVALID_TID) {
+	t->tid = getFreeTid();
+	if(t->getTid() == INVALID_TID) {
 		err = -ENOTHREADS;
 		goto errThread;
 	}
-	*(Proc**)&t->proc = p;
+	t->proc = p;
 	t->flags = flags;
 
 	t->initProps();
@@ -226,7 +226,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		t->tlsRegion = NULL;
 		if(src->tlsRegion != NULL) {
 			uintptr_t tlsStart,tlsEnd;
-			vmm_getRegRange(src->proc->getPid(),src->tlsRegion,&tlsStart,&tlsEnd,false);
+			vmm_getRegRange(src->getProc()->getPid(),src->tlsRegion,&tlsStart,&tlsEnd,false);
 			err = vmm_map(p->getPid(),0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,0,NULL,0,&t->tlsRegion);
 			if(err < 0)
 				goto errThread;
@@ -247,17 +247,17 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
-		sig_cloneHandler(src->tid,t->tid);
+		sig_cloneHandler(src->getTid(),t->getTid());
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->tid))
+	if(!vfs_createThread(t->getTid()))
 		goto errAppendIdle;
 
 	*dst = t;
 	return 0;
 
 errAppendIdle:
-	sig_removeHandlerFor(t->tid);
+	sig_removeHandlerFor(t->getTid());
 	t->remove();
 errArch:
 	freeArch(t);

@@ -105,8 +105,8 @@ int vm86_create(void) {
 		return 0;
 
 	t = Thread::getRunning();
-	p = t->proc;
-	vm86Tid = t->tid;
+	p = t->getProc();
+	vm86Tid = t->getTid();
 
 	/* remove all regions */
 	Proc::removeRegions(p->getPid(),true);
@@ -156,13 +156,13 @@ int vm86_int(uint16_t interrupt,USER sVM86Regs *regs,USER const sVM86Memarea *ar
 
 	/* check whether there still is a vm86-task */
 	vm86t = Thread::getById(vm86Tid);
-	if(vm86t == NULL || !(vm86t->proc->getFlags() & P_VM86))
+	if(vm86t == NULL || !(vm86t->getProc()->getFlags() & P_VM86))
 		return -ESRCH;
 
 	/* ensure that only one thread at a time can use the vm86-task */
 	mutex_aquire(&vm86Lock);
 	/* store information in calling process */
-	caller = t->tid;
+	caller = t->getTid();
 	if(!vm86_copyInfo(interrupt,regs,area)) {
 		vm86_finish();
 		return -ENOMEM;

@@ -245,7 +245,7 @@ bool pmem_reserve(size_t frameCount) {
 
 	/* swapping not possible? */
 	t = Thread::getRunning();
-	if(!swapEnabled || t->tid == ATA_TID || t->tid == swapper->tid) {
+	if(!swapEnabled || t->getTid() == ATA_TID || t->getTid() == swapper->getTid()) {
 		spinlock_release(&defLock);
 		return false;
 	}
@@ -361,7 +361,7 @@ void pmem_swapper(void) {
 	pid_t pid;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	swapper = Thread::getRunning();
-	pid = swapper->proc->getPid();
+	pid = swapper->getProc()->getPid();
 	assert(swapEnabled);
 
 	/* open device */
@@ -441,8 +441,8 @@ void pmem_print(void) {
 	vid_printf("\n");
 	vid_printf("Swap-in-jobs:\n");
 	for(job = siJobList; job != NULL; job = job->next) {
-		vid_printf("\tThread %d:%d:%s @ %p\n",job->thread->tid,job->thread->proc->getPid(),
-				job->thread->proc->getCommand(),job->addr);
+		vid_printf("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
+				job->thread->getProc()->getCommand(),job->addr);
 	}
 }
 

@@ -199,7 +199,7 @@ int ProcBase::clone(uint8_t flags) {
 	Proc *p,*cur;
 	Thread *nt,*curThread = Thread::getRunning();
 	assert((flags & P_ZOMBIE) == 0);
-	cur = request(curThread->proc->pid,PLOCK_PROG);
+	cur = request(curThread->getProc()->pid,PLOCK_PROG);
 	if(!cur) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -217,7 +217,7 @@ int ProcBase::clone(uint8_t flags) {
 	}
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(p->getPageDir(),curThread->tid)) < 0)
+	if((res = paging_cloneKernelspace(p->getPageDir(),curThread->getTid())) < 0)
 		goto errorProc;
 
 	/* set basic attributes */
@@ -312,11 +312,11 @@ int ProcBase::clone(uint8_t flags) {
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,
+	debugf("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command,
 			nt->archAttr.kstackFrame);
 #endif
 #ifdef __mmix__
-	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
+	debugf("Thread %d (proc %d:%s)\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command);
 #endif
 #endif
 
@@ -356,7 +356,7 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	Thread *nt;
 	int res;
 	/* don't allow new threads when the process should die */
-	if(t->proc->flags & (P_ZOMBIE | P_PREZOMBIE))
+	if(t->getProc()->flags & (P_ZOMBIE | P_PREZOMBIE))
 		return -EDESTROYED;
 
 	/* reserve frames for new stack- and tls-region */
@@ -365,7 +365,7 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
 	t->reserveFrames(pageCount);
 
-	p = request(t->proc->pid,PLOCK_PROG);
+	p = request(t->getProc()->pid,PLOCK_PROG);
 	if(!p) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -391,17 +391,17 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",nt->tid,nt->proc->pid,nt->proc->command,
+	debugf("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command,
 			nt->archAttr.kstackFrame);
 #endif
 #ifdef __mmix__
-	debugf("Thread %d (proc %d:%s)\n",nt->tid,nt->proc->pid,nt->proc->command);
+	debugf("Thread %d (proc %d:%s)\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command);
 #endif
 #endif
 
 	release(p,PLOCK_PROG);
 	t->discardFrames();
-	return nt->tid;
+	return nt->getTid();
 
 error:
 	release(p,PLOCK_PROG);
@@ -414,7 +414,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	char *argBuffer;
 	sStartupInfo info;
 	Thread *t = Thread::getRunning();
-	Proc *p = request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	size_t argSize;
 	int argc,fd = -1;
 	if(!p)
@@ -524,22 +524,22 @@ errorNoRel:
 void ProcBase::join(tid_t tid) {
 	Thread *t = Thread::getRunning();
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
-	Proc *p = request(t->proc->pid,PLOCK_PROG);
-	while((tid == 0 && sll_length(&t->proc->threads) > 1) ||
+	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
+	while((tid == 0 && sll_length(&t->getProc()->threads) > 1) ||
 			(tid != 0 && Thread::getById(tid) != NULL)) {
-		Event::wait(t,EVI_THREAD_DIED,(evobj_t)t->proc);
+		Event::wait(t,EVI_THREAD_DIED,(evobj_t)t->getProc());
 		release(p,PLOCK_PROG);
 
 		Thread::switchNoSigs();
 
-		request(t->proc->pid,PLOCK_PROG);
+		request(t->getProc()->pid,PLOCK_PROG);
 	}
 	release(p,PLOCK_PROG);
 }
 
 void ProcBase::exit(int exitCode) {
 	Thread *t = Thread::getRunning();
-	Proc *p = request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	if(p) {
 		p->stats.exitCode = exitCode;
 		t->terminate();
@@ -549,10 +549,10 @@ void ProcBase::exit(int exitCode) {
 
 void ProcBase::segFault() {
 	Thread *t = Thread::getRunning();
-	addSignalFor(t->proc->pid,SIG_SEGFAULT);
+	addSignalFor(t->getProc()->pid,SIG_SEGFAULT);
 	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
 	 * we might get in an endless-loop */
-	sig_unsetHandler(t->tid,SIG_SEGFAULT);
+	sig_unsetHandler(t->getTid(),SIG_SEGFAULT);
 }
 
 void ProcBase::addSignalFor(pid_t pid,int signal) {
@@ -568,7 +568,7 @@ void ProcBase::addSignalFor(pid_t pid,int signal) {
 
 		for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
 			Thread *pt = (Thread*)n->data;
-			if(sig_addSignalFor(pt->tid,signal))
+			if(sig_addSignalFor(pt->getTid(),signal))
 				sent = true;
 		}
 		release(p,PLOCK_PROG);
@@ -617,7 +617,7 @@ void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
 
 void ProcBase::killThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
-	Proc *p = request(t->proc->pid,PLOCK_PROG);
+	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	assert(p != NULL);
 	p->stats.totalRuntime += t->getStats().runtime;
 	p->stats.totalSyscalls += t->getStats().syscalls;
@@ -709,7 +709,7 @@ void ProcBase::notifyProcDied(pid_t parent) {
 
 int ProcBase::waitChild(USER ExitState *state) {
 	Thread *t = Thread::getRunning();
-	Proc *p = t->proc;
+	Proc *p = t->getProc();
 	int res;
 	/* check if there is already a dead child-proc */
 	mutex_aquire(&childLock);
@@ -722,7 +722,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		Event::removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
-		if(sig_hasSignalFor(t->tid))
+		if(sig_hasSignalFor(t->getTid()))
 			return -EINTR;
 		res = getExitState(p->pid,state);
 		if(res < 0)

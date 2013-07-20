@@ -56,10 +56,10 @@ void term_start(void) {
 
 			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
-				timer_sleepFor(t->tid,20,true);
+				timer_sleepFor(t->getTid(),20,true);
 				Thread::switchAway();
 			}
-			Proc::killThread(dt->tid);
+			Proc::killThread(dt->getTid());
 
 			spinlock_aquire(&termLock);
 		}

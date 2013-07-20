@@ -172,7 +172,7 @@ void Event::print(void) {
 			inode_t nodeNo;
 			Thread *t = Thread::getById(w->tid);
 			vid_printf("\t\tthread=%d (%d:%s), object=%x",
-					t->tid,t->proc->getPid(),t->proc->getCommand(),w->object);
+					t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),w->object);
 			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
 			if(vfs_node_isValid(nodeNo))
 				vid_printf("(%s)",vfs_node_getPath(nodeNo));
@@ -208,7 +208,7 @@ sWait *Event::doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *pr
 	sWait *w = allocWait();
 	if(!w)
 		return NULL;
-	w->tid = t->tid;
+	w->tid = t->getTid();
 	w->evi = evi;
 	w->object = object;
 	/* insert into list */

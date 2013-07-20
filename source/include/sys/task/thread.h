@@ -85,6 +85,7 @@ class Proc;
 
 class ThreadBase {
 	friend class ProcBase;
+	friend class Sched;
 
 	struct Stats {
 		uint64_t timeslice;
@@ -277,6 +278,20 @@ public:
 	 * @param t the thread
 	 */
 	void addInitialStack();
+
+	/**
+	 * @return the thread-id
+	 */
+	tid_t getTid() const {
+		return tid;
+	}
+
+	/**
+	 * @return the process the thread belongs to
+	 */
+	Proc *getProc() const {
+		return proc;
+	}
 
 	/**
 	 * @return the flags of this thread (T_*)
@@ -610,22 +625,19 @@ private:
 	bool add();
 	void remove();
 
+	/* thread id */
+	tid_t tid;
+	/* the process we belong to */
+	Proc *proc;
 	/* TODO temporary; restrict it later */
 public:
 	/* the signal-data, managed by the signals-module */
 	sSignals *signals;
-	/* thread id */
-	const tid_t tid;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	sWait *waits;
-	/* the process we belong to */
-	Proc *const proc;
-	/* for the scheduler */
-	Thread *prev;
-	Thread *next;
 
 protected:
 	uint8_t flags;
@@ -663,8 +675,11 @@ protected:
 	 * reserved for this thread and have not yet been used */
 	sSLList reqFrames;
 	Stats stats;
-
 private:
+	/* for the scheduler */
+	Thread *prev;
+	Thread *next;
+
 	static sSLList threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;

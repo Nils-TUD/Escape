@@ -140,7 +140,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 
 		Thread::switchAway();
 
-		if(sig_hasSignalFor(t->tid))
+		if(sig_hasSignalFor(t->getTid()))
 			return -EINTR;
 		spinlock_aquire(&node->lock);
 		if(node->name == NULL) {

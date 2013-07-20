@@ -35,7 +35,7 @@ int cons_cmd_step(size_t argc,char **argv) {
 	sIntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->eflags &= ~(1 << 8);
-		vid_printf("Executing thread %d:%d:%s\n",t->tid,t->proc->getPid(),t->proc->getCommand());
+		vid_printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		util_printStackTrace(util_getUserStackTraceOf(t));
 		util_printUserState();
 		return 0;

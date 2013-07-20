@@ -342,11 +342,11 @@ cpuid_t gdt_prepareRun(Thread *old,Thread *n) {
 	}
 	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
 	 * stack first (not in protected mode) */
-	if(n->proc->getFlags() & P_VM86)
+	if(n->getProc()->getFlags() & P_VM86)
 		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
 	else
 		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - (1 + 5) * sizeof(int);
-	if(!old || old->proc != n->proc)
+	if(!old || old->getProc() != n->getProc())
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
 	gdt_setRunning(id,n);

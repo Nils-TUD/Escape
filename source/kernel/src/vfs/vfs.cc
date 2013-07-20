@@ -777,11 +777,11 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 		if(pid != KERNEL_PID)
 			lock_release(pid,ident);
 		if(isFirstWait && maxWaitTime != 0)
-			timer_sleepFor(t->tid,maxWaitTime,true);
+			timer_sleepFor(t->getTid(),maxWaitTime,true);
 		spinlock_release(&waitLock);
 
 		Thread::switchAway();
-		if(sig_hasSignalFor(t->tid)) {
+		if(sig_hasSignalFor(t->getTid())) {
 			res = -EINTR;
 			goto error;
 		}
@@ -801,7 +801,7 @@ done:
 	res = 0;
 error:
 	if(maxWaitTime != 0)
-		timer_removeThread(t->tid);
+		timer_removeThread(t->getTid());
 	return res;
 }
 
@@ -877,7 +877,7 @@ inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags)
 		spinlock_release(&waitLock);
 
 		Thread::switchAway();
-		if(sig_hasSignalFor(t->tid)) {
+		if(sig_hasSignalFor(t->getTid())) {
 			clientNo = -EINTR;
 			break;
 		}
@@ -1282,7 +1282,7 @@ bool vfs_createThread(tid_t tid) {
 	itoa(name,12,tid);
 
 	/* create dir */
-	n = vfs_node_get(t->proc->threadDir);
+	n = vfs_node_get(t->getProc()->threadDir);
 	dir = vfs_dir_create(KERNEL_PID,n,name);
 	if(dir == NULL)
 		goto errorDir;
@@ -1320,7 +1320,7 @@ void vfs_removeThread(tid_t tid) {
 	itoa(name,sizeof(name),tid);
 
 	/* search for thread-node and remove it */
-	dir = vfs_node_get(t->proc->threadDir);
+	dir = vfs_node_get(t->getProc()->threadDir);
 	n = vfs_node_openDir(dir,true,&isValid);
 	if(!isValid) {
 		vfs_node_closeDir(dir,true);

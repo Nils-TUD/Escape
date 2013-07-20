@@ -37,10 +37,10 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,(long)SIG_ERR);
 
 	if(signal == (int)SIG_RET)
-		t->proc->setSigRetAddr((uintptr_t)handler);
+		t->getProc()->setSigRetAddr((uintptr_t)handler);
 	else {
 		/* no signal-ret-address known yet? */
-		if(t->proc->getSigRetAddr() == 0)
+		if(t->getProc()->getSigRetAddr() == 0)
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		/* check signal */
@@ -48,9 +48,9 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		if(handler == SIG_DFL)
-			old = sig_unsetHandler(t->tid,signal);
+			old = sig_unsetHandler(t->getTid(),signal);
 		else {
-			if(sig_setHandler(t->tid,signal,handler,&old) < 0)
+			if(sig_setHandler(t->getTid(),signal,handler,&old) < 0)
 				SYSC_ERROR(stack,(long)SIG_ERR);
 		}
 	}
@@ -59,7 +59,7 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 
 int sysc_acksignal(Thread *t,sIntrptStackFrame *stack) {
 	int res;
-	int signal = sig_ackHandling(t->tid);
+	int signal = sig_ackHandling(t->getTid());
 	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */

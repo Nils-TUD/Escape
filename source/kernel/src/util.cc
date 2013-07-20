@@ -72,7 +72,7 @@ void util_panic(const char *fmt, ...) {
 
 	/* write information about the running thread to log/screen */
 	if(t != NULL)
-		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->getCommand());
+		vid_printf("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
 	util_printStackTrace(util_getKernelStackTrace());
 	if(t) {
 		util_printUserState();
@@ -80,7 +80,7 @@ void util_panic(const char *fmt, ...) {
 		vid_setTargets(TARGET_LOG);
 		vid_printf("\n============= snip =============\n");
 		vid_printf("Region overview:\n");
-		vmm_printShort(t->proc->getPid(),"\t");
+		vmm_printShort(t->getProc()->getPid(),"\t");
 
 		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 		util_printStackTrace(util_getUserStackTrace());
@@ -95,7 +95,7 @@ void util_panic(const char *fmt, ...) {
 		vid_setTargets(TARGET_SCREEN);
 		vid_printf("\n\nWriting regions and page-directory of the current process to log...");
 		vid_setTargets(TARGET_LOG);
-		vmm_print(t->proc->getPid());
+		vmm_print(t->getProc()->getPid());
 		paging_printCur(PD_PART_USER);
 		vid_setTargets(TARGET_SCREEN);
 		vid_printf("Done\n");

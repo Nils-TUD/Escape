@@ -166,7 +166,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		intrpt->handler(t,stack);
 	else {
 		vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
-				intrpt->name,stack->eip,t->proc->getPid(),t->proc->getCommand());
+				intrpt->name,stack->eip,t->getProc()->getPid(),t->getProc()->getCommand());
 	}
 
 	/* handle signal */
@@ -179,7 +179,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 static void intrpt_exFatal(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	vid_printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
-			t->proc->getPid(),t->proc->getCommand());
+			t->getProc()->getPid(),t->getProc()->getCommand());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;
@@ -209,7 +209,7 @@ static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 		return;
 	}
 	/* vm86-task? */
-	if(t->proc->getFlags() & P_VM86) {
+	if(t->getProc()->getFlags() & P_VM86) {
 		vm86_handleGPF(stack);
 		exCount = 0;
 		return;

@@ -44,7 +44,7 @@ static void uenv_addArgs(Thread *t,const sStartupInfo *info,uint64_t *rsp,uint64
 void uenv_handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	int sig;
 	fSignal handler;
-	int res = sig_checkAndStart(t->tid,&sig,&handler);
+	int res = sig_checkAndStart(t->getTid(),&sig,&handler);
 	if(res == SIG_CHECK_CUR)
 		uenv_startSignalHandler(t,sig,handler);
 	else if(res == SIG_CHECK_OTHER)
@@ -147,7 +147,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
 	Thread *t = Thread::getRunning();
 	sStartupInfo sinfo;
-	sinfo.progEntry = t->proc->getEntryPoint();
+	sinfo.progEntry = t->getProc()->getEntryPoint();
 	sinfo.linkerEntry = 0;
 	sinfo.stackBegin = 0;
 
@@ -168,11 +168,11 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * therefore, we have to prepare this again with the ELF-finisher. additionally, we have to
 	 * take care that we use elf_finishFromMem() for boot-modules and elf_finishFromFile() other-
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
-	if(t->proc->getFlags() & P_BOOT) {
+	if(t->getProc()->getFlags() & P_BOOT) {
 		size_t i;
 		const sBootInfo *info = boot_getInfo();
 		for(i = 1; i < info->progCount; i++) {
-			if(info->progs[i].id == t->proc->getPid()) {
+			if(info->progs[i].id == t->getProc()->getPid()) {
 				if(elf_finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
 					return false;
 				break;
@@ -183,22 +183,22 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 		/* TODO well, its not really nice that we have to read this stuff again for every started
 		 * thread :/ */
 		/* every process has a text-region from his binary */
-		sVMRegion *textreg = vmm_getRegion(t->proc,t->proc->getEntryPoint());
+		sVMRegion *textreg = vmm_getRegion(t->getProc(),t->getProc()->getEntryPoint());
 		assert(textreg->reg->file != NULL);
 		ssize_t res;
 		sElfEHeader ehd;
 
 		/* seek to header */
-		if(vfs_seek(t->proc->getPid(),textreg->reg->file,0,SEEK_SET) < 0) {
-			vid_printf("[LOADER] Unable to seek to header of '%s'\n",t->proc->getCommand());
+		if(vfs_seek(t->getProc()->getPid(),textreg->reg->file,0,SEEK_SET) < 0) {
+			vid_printf("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
 			return false;
 		}
 
 		/* read the header */
-		if((res = vfs_readFile(t->proc->getPid(),textreg->reg->file,&ehd,sizeof(sElfEHeader))) !=
+		if((res = vfs_readFile(t->getProc()->getPid(),textreg->reg->file,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
-					t->proc->getCommand(),strerror(-res));
+					t->getProc()->getCommand(),strerror(-res));
 			return false;
 		}
 
@@ -217,7 +217,7 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	rsp[1] = (uint64_t)arg;
 
 	/* add TLS args and entrypoint */
-	uenv_addArgs(t,&sinfo,rsp,ssp,t->proc->getEntryPoint(),tentryPoint,true);
+	uenv_addArgs(t,&sinfo,rsp,ssp,t->getProc()->getEntryPoint(),tentryPoint,true);
 	return ssp;
 }
 
@@ -241,7 +241,7 @@ static void uenv_startSignalHandler(Thread *t,int sig,fSignal handler) {
 	curStack[-15] = (uint64_t)sp;	/* $254 */
 
 	/* jump to sigRetAddr for setup and finish-code */
-	sregs->rww = t->proc->getSigRetAddr();
+	sregs->rww = t->getProc()->getSigRetAddr();
 	sregs->rxx = 1UL << 63;
 }
 

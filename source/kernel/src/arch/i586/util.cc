@@ -84,7 +84,7 @@ void util_panic_arch(void) {
 void util_printUserStateOf(const Thread *t) {
 	static uint32_t regs[REG_COUNT];
 	if(t->getIntrptStack()) {
-		frameno_t frame = paging_getFrameNo(t->proc->getPageDir(),t->getKernelStack());
+		frameno_t frame = paging_getFrameNo(t->getProc()->getPageDir(),t->getKernelStack());
 		uintptr_t kstackAddr = paging_mapToTemp(&frame,1);
 		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
 		sIntrptStackFrame *kstack = (sIntrptStackFrame*)(kstackAddr + kstackOff);
@@ -174,13 +174,13 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 			sIntrptStackFrame *istack = t->getIntrptStack();
 			uintptr_t temp,startCpy = start;
 			size_t i;
-			frames[0] = paging_getFrameNo(t->proc->getPageDir(),t->getKernelStack());
+			frames[0] = paging_getFrameNo(t->getProc()->getPageDir(),t->getKernelStack());
 			for(i = 0; startCpy < end; i++) {
-				if(!paging_isPresent(t->proc->getPageDir(),startCpy)) {
+				if(!paging_isPresent(t->getProc()->getPageDir(),startCpy)) {
 					cache_free(frames);
 					return NULL;
 				}
-				frames[i + 1] = paging_getFrameNo(t->proc->getPageDir(),startCpy);
+				frames[i + 1] = paging_getFrameNo(t->getProc()->getPageDir(),startCpy);
 				startCpy += PAGE_SIZE;
 			}
 			temp = paging_mapToTemp(frames,pcount + 1);
@@ -201,7 +201,7 @@ sFuncCall *util_getKernelStackTraceOf(const Thread *t) {
 		return util_getKernelStackTrace();
 	else {
 		uint32_t ebp = t->getRegs().ebp;
-		frameno_t frame = paging_getFrameNo(t->proc->getPageDir(),t->getKernelStack());
+		frameno_t frame = paging_getFrameNo(t->getProc()->getPageDir(),t->getKernelStack());
 		uintptr_t temp = paging_mapToTemp(&frame,1);
 		sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->getKernelStack(),temp,temp + PAGE_SIZE);
 		paging_unmapFromTemp(1);

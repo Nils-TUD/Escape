@@ -79,7 +79,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 					old->getState());
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
-			if(old->getState() != Thread::ZOMBIE && sig_hasSignalFor(old->tid)) {
+			if(old->getState() != Thread::ZOMBIE && sig_hasSignalFor(old->getTid())) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
 				spinlock_release(&schedLock);
@@ -277,7 +277,7 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 				rdyCount--;
 				break;
 			default:
-				vassert(false,"Thread %d has invalid state for suspending (%d)",t->tid,t->getState());
+				vassert(false,"Thread %d has invalid state for suspending (%d)",t->getTid(),t->getState());
 				break;
 		}
 	}
@@ -300,7 +300,7 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 				rdyCount++;
 				break;
 			default:
-				vassert(false,"Thread %d has invalid state for resuming (%d)",t->tid,t->getState());
+				vassert(false,"Thread %d has invalid state for resuming (%d)",t->getTid(),t->getState());
 				break;
 		}
 	}
@@ -414,7 +414,7 @@ void Sched::qPrepend(Sched::Queue *q,Thread *t) {
 void Sched::qPrint(Sched::Queue *q) {
 	const Thread *t = q->first;
 	while(t != NULL) {
-		vid_printf("\t\t%d:%d:%s\n",t->tid,t->proc->getPid(),t->proc->getCommand());
+		vid_printf("\t\t%d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		t = t->next;
 	}
 }

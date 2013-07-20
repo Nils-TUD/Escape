@@ -49,7 +49,7 @@ int ThreadBase::initArch(Thread *t) {
 	frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
 	if(stackFrame == 0)
 		return -ENOMEM;
-	if(paging_mapTo(t->proc->getPageDir(),KERNEL_STACK,&stackFrame,1,
+	if(paging_mapTo(t->getProc()->getPageDir(),KERNEL_STACK,&stackFrame,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
 		pmem_free(stackFrame,FRM_KERNEL);
 		return -ENOMEM;
@@ -63,7 +63,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 		frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
 		if(stackFrame == 0)
 			return -ENOMEM;
-		if(paging_mapTo(dst->proc->getPageDir(),KERNEL_STACK,&stackFrame,1,
+		if(paging_mapTo(dst->getProc()->getPageDir(),KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
 			pmem_free(stackFrame,FRM_KERNEL);
 			return -ENOMEM;
@@ -77,7 +77,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		res = vmm_map(dst->proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			pmem_free(dst->kstackFrame,FRM_KERNEL);
@@ -89,7 +89,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 
 void ThreadBase::freeArch(Thread *t) {
 	if(t->stackRegions[0] != NULL) {
-		vmm_remove(t->proc->getPid(),t->stackRegions[0]);
+		vmm_remove(t->getProc()->getPid(),t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
 	pmem_free(t->kstackFrame,FRM_KERNEL);
@@ -119,7 +119,7 @@ int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
 
 void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* prepare registers for the first thread_resume() */
-	nt->save.r16 = nt->proc->getEntryPoint();
+	nt->save.r16 = nt->getProc()->getEntryPoint();
 	nt->save.r17 = entryPoint;
 	nt->save.r18 = (uint32_t)arg;
 	nt->save.r19 = 0;
@@ -157,14 +157,14 @@ void ThreadBase::doSwitch(void) {
 	n = Sched::perform(old,runtime);
 	n->stats.schedCount++;
 
-	if(n->tid != old->tid) {
+	if(n->getTid() != old->getTid()) {
 		if(!thread_save(&old->save)) {
 			setRunning(n);
 			vmm_setTimestamp(n,timestamp);
 
 			smp_schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;
-			thread_resume(*n->proc->getPageDir(),&n->save,n->kstackFrame);
+			thread_resume(*n->getProc()->getPageDir(),&n->save,n->kstackFrame);
 		}
 	}
 	else

@@ -106,7 +106,7 @@ void ProcBase::init() {
 		util_panic("Not enough mem for init process");
 
 	/* init fds */
-	fd_init(p);
+	FileDesc::init(p);
 
 	/* create first thread */
 	sll_init(&p->threads,slln_allocNode,slln_freeNode);
@@ -300,7 +300,7 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorThreadAppend;
 
 	/* inherit file-descriptors */
-	fd_clone(p);
+	FileDesc::clone(p);
 
 	res = Thread::finishClone(curThread,nt);
 	if(res == 1) {
@@ -470,7 +470,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 		sFile *file;
 		if(vfs_openPath(p->pid,VFS_READ,path,&file) < 0)
 			goto error;
-		fd = fd_assoc(file);
+		fd = FileDesc::assoc(file);
 		if(fd < 0) {
 			vfs_closeFile(p->pid,file);
 			goto error;
@@ -650,7 +650,7 @@ void ProcBase::destroy(pid_t pid) {
 
 void ProcBase::doDestroy(Proc *p) {
 	/* release resources */
-	fd_destroy(p);
+	FileDesc::destroy(p);
 	groups_leave(p->pid);
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
@@ -836,7 +836,7 @@ void ProcBase::print() {
 	vmm_printShort(pid,"\t\t");
 	prf_pushIndent();
 	Env::printAllOf(pid);
-	fd_print(static_cast<Proc*>(this));
+	FileDesc::print(static_cast<Proc*>(this));
 	vfs_fsmsgs_printFSChans(static_cast<Proc*>(this));
 	prf_popIndent();
 	vid_printf("\tThreads:\n");

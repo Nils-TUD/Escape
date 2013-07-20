@@ -214,10 +214,10 @@ static int sysc_doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
-			objFiles[i] = fd_request((int)uobjects[i].object);
+			objFiles[i] = FileDesc::request((int)uobjects[i].object);
 			if(objFiles[i] == NULL) {
 				for(; i > 0; i--)
-					fd_release(objFiles[i - 1]);
+					FileDesc::release(objFiles[i - 1]);
 				return -EBADF;
 			}
 		}
@@ -229,7 +229,7 @@ static int sysc_doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 	/* release them */
 	for(i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
-			fd_release(objFiles[i]);
+			FileDesc::release(objFiles[i]);
 	}
 	return res;
 }

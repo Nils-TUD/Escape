@@ -22,78 +22,83 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 
-/**
- * Inits the file-descriptors for the initial process <p>
- *
- * @param p the process
- */
-void fd_init(Proc *p);
+class FileDesc {
+	FileDesc() = delete;
 
-/**
- * Requests the file for the given file-descriptor and increments the usage-count
- *
- * @param fd the file-descriptor
- * @return the file or NULL if the fd is invalid
- */
-sFile *fd_request(int fd);
+public:
+	/**
+	 * Inits the file-descriptors for the initial process <p>
+	 *
+	 * @param p the process
+	 */
+	static void init(Proc *p);
 
-/**
- * Releases the given file, i.e. decrements the usage-count
- *
- * @param file the file
- */
-void fd_release(sFile *file);
+	/**
+	 * Requests the file for the given file-descriptor and increments the usage-count
+	 *
+	 * @param fd the file-descriptor
+	 * @return the file or NULL if the fd is invalid
+	 */
+	static sFile *request(int fd);
 
-/**
- * Clones all file-descriptors of the current process to <p>
- *
- * @param p the new process
- */
-void fd_clone(Proc *p);
+	/**
+	 * Releases the given file, i.e. decrements the usage-count
+	 *
+	 * @param file the file
+	 */
+	static void release(sFile *file);
 
-/**
- * Destroyes all file-descriptors of <p>
- *
- * @param p the process to destroy
- */
-void fd_destroy(Proc *p);
+	/**
+	 * Clones all file-descriptors of the current process to <p>
+	 *
+	 * @param p the new process
+	 */
+	static void clone(Proc *p);
 
-/**
- * Associates a free file-descriptor with the given file-number
- *
- * @param fileNo the file-number
- * @return the file-descriptor on success
- */
-int fd_assoc(sFile *fileNo);
+	/**
+	 * Destroyes all file-descriptors of <p>
+	 *
+	 * @param p the process to destroy
+	 */
+	static void destroy(Proc *p);
 
-/**
- * Duplicates the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the error-code or the new file-descriptor
- */
-int fd_dup(int fd);
+	/**
+	 * Associates a free file-descriptor with the given file-number
+	 *
+	 * @param fileNo the file-number
+	 * @return the file-descriptor on success
+	 */
+	static int assoc(sFile *fileNo);
 
-/**
- * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
- *
- * @param src the source-file-descriptor
- * @param dst the destination-file-descriptor
- * @return the error-code or 0 if successfull
- */
-int fd_redirect(int src,int dst);
+	/**
+	 * Duplicates the given file-descriptor
+	 *
+	 * @param fd the file-descriptor
+	 * @return the error-code or the new file-descriptor
+	 */
+	static int dup(int fd);
 
-/**
- * Releases the given file-descriptor (marks it unused)
- *
- * @param fd the file-descriptor
- * @return the file that was associated with the fd (or NULL)
- */
-sFile *fd_unassoc(int fd);
+	/**
+	 * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+	 *
+	 * @param src the source-file-descriptor
+	 * @param dst the destination-file-descriptor
+	 * @return the error-code or 0 if successfull
+	 */
+	static int redirect(int src,int dst);
 
-/**
- * Prints the file-descriptors of <p>
- *
- * @param p the process
- */
-void fd_print(Proc *p);
+	/**
+	 * Releases the given file-descriptor (marks it unused)
+	 *
+	 * @param fd the file-descriptor
+	 * @return the file that was associated with the fd (or NULL)
+	 */
+	static sFile *unassoc(int fd);
+
+	/**
+	 * Prints the file-descriptors of <p>
+	 *
+	 * @param p the process
+	 */
+	static void print(Proc *p);
+};

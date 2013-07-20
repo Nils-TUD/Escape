@@ -27,11 +27,11 @@
 #include <string.h>
 #include <errno.h>
 
-void fd_init(Proc *p) {
+void FileDesc::init(Proc *p) {
 	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(sFile*));
 }
 
-sFile *fd_request(int fd) {
+sFile *FileDesc::request(int fd) {
 	sFile *file;
 	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -47,12 +47,12 @@ sFile *fd_request(int fd) {
 	return file;
 }
 
-void fd_release(sFile *file) {
+void FileDesc::release(sFile *file) {
 	Thread::remFileUsage(file);
 	vfs_decUsages(file);
 }
 
-void fd_clone(Proc *p) {
+void FileDesc::clone(Proc *p) {
 	size_t i;
 	Proc *cur = Thread::getRunning()->getProc();
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
@@ -65,7 +65,7 @@ void fd_clone(Proc *p) {
 	cur->unlock(PLOCK_FDS);
 }
 
-void fd_destroy(Proc *p) {
+void FileDesc::destroy(Proc *p) {
 	size_t i;
 	p->lock(PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -79,7 +79,7 @@ void fd_destroy(Proc *p) {
 	p->unlock(PLOCK_FDS);
 }
 
-int fd_assoc(sFile *fileNo) {
+int FileDesc::assoc(sFile *fileNo) {
 	sFile *const *fds;
 	int i,fd = -EMFILE;
 	Proc *p = Thread::getRunning()->getProc();
@@ -97,7 +97,7 @@ int fd_assoc(sFile *fileNo) {
 	return fd;
 }
 
-int fd_dup(int fd) {
+int FileDesc::dup(int fd) {
 	sFile *f;
 	sFile *const *fds;
 	int i,nfd = -EBADF;
@@ -125,7 +125,7 @@ int fd_dup(int fd) {
 	return nfd;
 }
 
-int fd_redirect(int src,int dst) {
+int FileDesc::redirect(int src,int dst) {
 	sFile *fSrc,*fDst;
 	int err = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
@@ -149,7 +149,7 @@ int fd_redirect(int src,int dst) {
 	return err;
 }
 
-sFile *fd_unassoc(int fd) {
+sFile *FileDesc::unassoc(int fd) {
 	sFile *file;
 	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -163,7 +163,7 @@ sFile *fd_unassoc(int fd) {
 	return file;
 }
 
-void fd_print(Proc *p) {
+void FileDesc::print(Proc *p) {
 	size_t i;
 	vid_printf("File descriptors of %d:\n",p->getPid());
 	for(i = 0; i < MAX_FD_COUNT; i++) {

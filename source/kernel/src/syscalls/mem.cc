@@ -71,7 +71,7 @@ int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
 	}
 	if(fd != -1) {
 		/* get file */
-		f = fd_request(fd);
+		f = FileDesc::request(fd);
 		if(f == NULL)
 			SYSC_ERROR(stack,-EBADF);
 	}
@@ -79,7 +79,7 @@ int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
 	/* add region */
 	res = vmm_map(pid,addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
 	if(f)
-		fd_release(f);
+		FileDesc::release(f);
 	/* save tls-region-number */
 	if(flags & MAP_TLS) {
 		if(res == 0)

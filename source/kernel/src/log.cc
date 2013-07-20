@@ -78,9 +78,9 @@ void log_vfsIsReady(void) {
 	 * create new ones (for the vterm of the shell) */
 	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
 	assert(vfs_openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO,&inFile) == 0);
-	assert(fd_assoc(inFile) == 0);
-	assert(fd_assoc(logFile) == 1);
-	assert(fd_assoc(logFile) == 2);
+	assert(FileDesc::assoc(inFile) == 0);
+	assert(FileDesc::assoc(logFile) == 1);
+	assert(FileDesc::assoc(logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
 	vfsIsReady = true;

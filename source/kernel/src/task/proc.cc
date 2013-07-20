@@ -503,7 +503,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	p->entryPoint = info.progEntry;
 	release(p,PLOCK_PROG);
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!uenv_setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
+	if(!UEnv::setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto errorNoRel;
 	Thread::remHeapAlloc(argBuffer);
 	cache_free(argBuffer);

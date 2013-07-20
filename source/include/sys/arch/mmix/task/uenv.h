@@ -21,12 +21,22 @@
 
 #include <sys/common.h>
 
-/**
- * Setups the user-environment when starting the current thread
- *
- * @param arg the thread-argument
- * @param tentryPoint the entry-point
- * @return the stack-pointer
- */
-/* TODO why C linkage? */
-EXTERN_C uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint);
+class UEnv : public UEnvBase {
+	friend class UEnvBase;
+
+	UEnv() = delete;
+
+	static void startSignalHandler(Thread *t,int sig,Signals::handler_func handler);
+	static void addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+	                    uintptr_t entry,uintptr_t tentry,bool thread);
+};
+
+inline void UEnvBase::handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+	int sig;
+	Signals::handler_func handler;
+	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
+	if(res == SIG_CHECK_CUR)
+		UEnv::startSignalHandler(t,sig,handler);
+	else if(res == SIG_CHECK_OTHER)
+		Thread::switchAway();
+}

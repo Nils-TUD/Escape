@@ -60,7 +60,7 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 int sysc_acksignal(Thread *t,sIntrptStackFrame *stack) {
 	int res;
 	int signal = Signals::ackHandling(t->getTid());
-	if((res = uenv_finishSignalHandler(stack,signal)) < 0)
+	if((res = UEnv::finishSignalHandler(stack,signal)) < 0)
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */
 	return 0;

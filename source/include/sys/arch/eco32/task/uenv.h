@@ -21,11 +21,22 @@
 
 #include <sys/common.h>
 
-/**
- * Setups the user-environment when starting the current thread
- *
- * @param arg the thread-argument
- * @param tentryPoint the entry-point
- * @return the stack-pointer
- */
-uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint);
+class UEnv : public UEnvBase {
+	friend class UEnvBase;
+
+	UEnv() = delete;
+
+	static void startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,
+	                                    Signals::handler_func handler);
+	static uint32_t *addArgs(Thread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
+};
+
+inline void UEnvBase::handleSignal(Thread *t,sIntrptStackFrame *stack) {
+	int sig;
+	Signals::handler_func handler;
+	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
+	if(res == SIG_CHECK_CUR)
+		UEnv::startSignalHandler(t,stack,sig,handler);
+	else if(res == SIG_CHECK_OTHER)
+		Thread::switchAway();
+}

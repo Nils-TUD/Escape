@@ -30,21 +30,7 @@
 #include <errno.h>
 #include <assert.h>
 
-static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler);
-static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint);
-static uint32_t *uenv_addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
-
-void uenv_handleSignal(Thread *t,sIntrptStackFrame *stack) {
-	int sig;
-	Signals::handler_func handler;
-	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
-	if(res == SIG_CHECK_CUR)
-		uenv_startSignalHandler(t,stack,sig,handler);
-	else if(res == SIG_CHECK_OTHER)
-		Thread::switchAway();
-}
-
-int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
+int UEnvBase::finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	if(!paging_isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
 		Proc::segFault();
@@ -67,8 +53,8 @@ int uenv_finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,size_t argsSize,const ELF::StartupInfo *info,
-		uintptr_t entryPoint,int fd) {
+bool UEnvBase::setupProc(int argc,const char *args,size_t argsSize,const ELF::StartupInfo *info,
+                         uintptr_t entryPoint,int fd) {
 	uint32_t *esp;
 	char **argv;
 	size_t totalSize;
@@ -137,7 +123,7 @@ bool uenv_setupProc(int argc,const char *args,size_t argsSize,const ELF::Startup
 	*esp-- = argc;
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
-	esp = uenv_addArgs(t,esp,info->progEntry,false);
+	esp = UEnv::addArgs(t,esp,info->progEntry,false);
 
 	/* if its the dynamic linker, give him the filedescriptor, so that he can load it including
 	 * all shared libraries */
@@ -148,11 +134,11 @@ bool uenv_setupProc(int argc,const char *args,size_t argsSize,const ELF::Startup
 
 	frame->uesp = (uint32_t)esp;
 	frame->ebp = frame->uesp;
-	uenv_setupRegs(frame,entryPoint);
+	UEnv::setupRegs(frame,entryPoint);
 	return true;
 }
 
-uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
+void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint32_t *esp;
 	Thread *t = Thread::getRunning();
 
@@ -176,10 +162,10 @@ uint32_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	esp--;
 	*esp-- = (uintptr_t)arg;
 	/* add TLS args and entrypoint */
-	return uenv_addArgs(t,esp,tentryPoint,true);
+	return UEnv::addArgs(t,esp,tentryPoint,true);
 }
 
-static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler) {
+void UEnv::startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
 	/* the ret-instruction of sigRet() should go to the old eip */
 	*--esp = stack->eip;
@@ -200,7 +186,7 @@ static void uenv_startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,S
 	stack->uesp = (uint32_t)esp;
 }
 
-static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
+void UEnv::setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	/* user-mode segments */
 	frame->cs = SEGSEL_GDTI_UCODE | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
 	frame->ds = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
@@ -219,7 +205,7 @@ static void uenv_setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	frame->edi = 0;
 }
 
-static uint32_t *uenv_addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
+uint32_t *UEnv::addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	uintptr_t tlsStart,tlsEnd;
 	if(t->getTLSRange(&tlsStart,&tlsEnd)) {

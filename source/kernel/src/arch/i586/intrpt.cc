@@ -172,7 +172,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* handle signal */
 	t = Thread::getRunning();
 	if(level == 1)
-		uenv_handleSignal(t,stack);
+		UEnv::handleSignal(t,stack);
 
 	t->popIntrptLevel();
 }

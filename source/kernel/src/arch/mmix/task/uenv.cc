@@ -37,21 +37,7 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-static void uenv_startSignalHandler(Thread *t,int sig,Signals::handler_func handler);
-static void uenv_addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
-		uintptr_t entry,uintptr_t tentry,bool thread);
-
-void uenv_handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
-	int sig;
-	Signals::handler_func handler;
-	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
-	if(res == SIG_CHECK_CUR)
-		uenv_startSignalHandler(t,sig,handler);
-	else if(res == SIG_CHECK_OTHER)
-		Thread::switchAway();
-}
-
-int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
+int UEnvBase::finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
 	Thread *t = Thread::getRunning();
 	sIntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *regs;
@@ -78,8 +64,8 @@ int uenv_finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
 	return 0;
 }
 
-bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const ELF::StartupInfo *info,
-		uintptr_t entryPoint,A_UNUSED int fd) {
+bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
+                         const ELF::StartupInfo *info,uintptr_t entryPoint,A_UNUSED int fd) {
 	uint64_t *ssp,*rsp;
 	char **argv;
 	Thread *t = Thread::getRunning();
@@ -139,11 +125,11 @@ bool uenv_setupProc(int argc,const char *args,A_UNUSED size_t argsSize,const ELF
 
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
-	uenv_addArgs(t,info,rsp,ssp,entryPoint,0,false);
+	UEnv::addArgs(t,info,rsp,ssp,entryPoint,0,false);
 	return true;
 }
 
-uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
+void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	uint64_t *rsp,*ssp;
 	Thread *t = Thread::getRunning();
 	ELF::StartupInfo sinfo;
@@ -217,11 +203,11 @@ uint64_t *uenv_setupThread(const void *arg,uintptr_t tentryPoint) {
 	rsp[1] = (uint64_t)arg;
 
 	/* add TLS args and entrypoint */
-	uenv_addArgs(t,&sinfo,rsp,ssp,t->getProc()->getEntryPoint(),tentryPoint,true);
+	UEnv::addArgs(t,&sinfo,rsp,ssp,t->getProc()->getEntryPoint(),tentryPoint,true);
 	return ssp;
 }
 
-static void uenv_startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
+void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	sIntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	sKSpecRegs *sregs;
@@ -245,8 +231,8 @@ static void uenv_startSignalHandler(Thread *t,int sig,Signals::handler_func hand
 	sregs->rxx = 1UL << 63;
 }
 
-static void uenv_addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
-		uintptr_t entry,uintptr_t tentry,bool thread) {
+void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+                   uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
 	sKSpecRegs *sregs;
 	uintptr_t tlsStart,tlsEnd;

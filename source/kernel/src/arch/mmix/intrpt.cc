@@ -175,7 +175,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 
 	/* only handle signals, if we come directly from user-mode */
 	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0)
-		uenv_handleSignal(t,stack);
+		UEnv::handleSignal(t,stack);
 	intrpt_leaveKernel(t);
 }
 
@@ -192,7 +192,7 @@ bool intrpt_dynTrap(sIntrptStackFrame *stack,int irqNo) {
 	/* only handle signals, if we come directly from user-mode */
 	t = Thread::getRunning();
 	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0)
-		uenv_handleSignal(t,stack);
+		UEnv::handleSignal(t,stack);
 	intrpt_leaveKernel(t);
 	return t->getFlags() & T_IDLE;
 }

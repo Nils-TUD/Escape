@@ -187,7 +187,7 @@ int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 			res = -EPERM;
 		/* users can change the group only to a group they're a member of */
 		else if(gid != (gid_t)-1 && gid != n->gid && gid != p->getEGid() &&
-				!groups_contains(p->getPid(),gid))
+				!Groups::contains(p->getPid(),gid))
 			res = -EPERM;
 	}
 

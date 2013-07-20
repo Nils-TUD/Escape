@@ -279,7 +279,7 @@ int ProcBase::clone(uint8_t flags) {
 
 	/* join group of parent */
 	p->groups = NULL;
-	groups_join(p,cur);
+	Groups::join(p,cur);
 
 	/* clone regions */
 	p->freeStackAddr = 0;
@@ -332,7 +332,7 @@ errorThread:
 errorRegs:
 	doRemoveRegions(p,true);
 errorVFS:
-	groups_leave(p->pid);
+	Groups::leave(p->pid);
 	vfs_removeProcess(p->pid);
 errorAdd:
 	remove(p);
@@ -651,7 +651,7 @@ void ProcBase::destroy(pid_t pid) {
 void ProcBase::doDestroy(Proc *p) {
 	/* release resources */
 	FileDesc::destroy(p);
-	groups_leave(p->pid);
+	Groups::leave(p->pid);
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
 	vmfree_destroy(&p->freemap);
@@ -818,7 +818,7 @@ void ProcBase::print() {
 	vid_printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
 	vid_printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
 	vid_printf("\tGroups: ");
-	groups_print(pid);
+	Groups::print(pid);
 	vid_printf("\n");
 	getMemUsageOf(pid,&own,&shared,&swap);
 	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);

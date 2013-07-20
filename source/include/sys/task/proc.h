@@ -26,6 +26,7 @@
 #include <sys/mem/vmfree.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
+#include <sys/task/groups.h>
 #include <sys/spinlock.h>
 #include <sys/mutex.h>
 #include <sys/intrpt.h>
@@ -64,13 +65,6 @@ protected:
 	}
 
 public:
-	struct Groups {
-		klock_t lock;
-		int refCount;
-		size_t count;
-		gid_t *groups;
-	};
-
 	struct ExitState {
 		pid_t pid;
 		/* the signal that killed the process (SIG_COUNT if none) */
@@ -532,7 +526,7 @@ public:
 	/* the regions */
 	sVMRegTree regtree;
 	/* all groups (may include egid or not) of this process */
-	Groups *groups;
+	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */
 	sFile *fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */

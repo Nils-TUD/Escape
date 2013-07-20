@@ -117,7 +117,7 @@ int sysc_getgroups(Thread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,-EFAULT);
 
-	size = groups_get(pid,list,size);
+	size = Groups::get(pid,list,size);
 	SYSC_RET1(stack,size);
 }
 
@@ -128,7 +128,7 @@ int sysc_setgroups(Thread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!groups_set(pid,size,list))
+	if(!Groups::set(pid,size,list))
 		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }
@@ -136,7 +136,7 @@ int sysc_setgroups(Thread *t,sIntrptStackFrame *stack) {
 int sysc_isingroup(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	gid_t gid = (gid_t)SYSC_ARG2(stack);
-	SYSC_RET1(stack,groups_contains(pid,gid));
+	SYSC_RET1(stack,Groups::contains(pid,gid));
 }
 
 int sysc_fork(A_UNUSED Thread *t,sIntrptStackFrame *stack) {

@@ -148,7 +148,7 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	/* determine mask */
 	if(p->getEUid() == n->uid)
 		mode = n->mode & S_IRWXU;
-	else if(p->getEGid() == n->gid || groups_contains(p->getPid(),n->gid))
+	else if(p->getEGid() == n->gid || Groups::contains(p->getPid(),n->gid))
 		mode = n->mode & S_IRWXG;
 	else
 		mode = n->mode & S_IRWXO;

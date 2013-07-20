@@ -116,7 +116,7 @@ static void vid_putchar(char c) {
 	uint32_t *video;
 	/* do an explicit newline if necessary */
 	if(col >= VID_COLS) {
-		if(conf_get(CONF_LINEBYLINE))
+		if(Config::get(Config::LINEBYLINE))
 			kb_get(NULL,KEV_PRESS,true);
 		row++;
 		col = 0;
@@ -125,7 +125,7 @@ static void vid_putchar(char c) {
 	video = (uint32_t*)VIDEO_BASE + row * MAX_COLS + col;
 
 	if(c == '\n') {
-		if(conf_get(CONF_LINEBYLINE))
+		if(Config::get(Config::LINEBYLINE))
 			kb_get(NULL,KEV_PRESS,true);
 		row++;
 		col = 0;

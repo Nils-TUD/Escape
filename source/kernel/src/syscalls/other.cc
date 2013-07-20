@@ -58,7 +58,7 @@ int sysc_debug(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 
 int sysc_sysconf(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int id = SYSC_ARG1(stack);
-	long res = conf_get(id);
+	long res = Config::get(id);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

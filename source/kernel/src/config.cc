@@ -27,18 +27,13 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAX_BPNAME_LEN		16
-#define MAX_BPVAL_LEN		32
+bool Config::lineByLine = false;
+bool Config::doLog = true;
+bool Config::log2scr = false;
+bool Config::smp = true;
+char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
-static void conf_set(const char *name,const char *value);
-
-static bool lineByLine = false;
-static bool doLog = true;
-static bool log2scr = false;
-static bool smp = true;
-static char swapDev[MAX_BPVAL_LEN + 1] = "";
-
-void conf_parseBootParams(int argc,const char *const *argv) {
+void Config::parseBootParams(int argc,const char *const *argv) {
 	char name[MAX_BPNAME_LEN + 1];
 	char value[MAX_BPVAL_LEN + 1];
 	int i;
@@ -46,7 +41,7 @@ void conf_parseBootParams(int argc,const char *const *argv) {
 		size_t len = strlen(argv[i]);
 		if(len > MAX_BPNAME_LEN + MAX_BPVAL_LEN + 1)
 			continue;
-		int eq = strchri(argv[i],'=');
+		size_t eq = strchri(argv[i],'=');
 		if(eq > MAX_BPNAME_LEN || (len - eq) > MAX_BPVAL_LEN)
 			continue;
 		strncpy(name,argv[i],eq);
@@ -55,48 +50,48 @@ void conf_parseBootParams(int argc,const char *const *argv) {
 			strnzcpy(value,argv[i] + eq + 1,sizeof(value));
 		else
 			value[0] = '\0';
-		conf_set(name,value);
+		set(name,value);
 	}
 }
 
-const char *conf_getStr(int id) {
+const char *Config::getStr(int id) {
 	const char *res = NULL;
 	switch(id) {
-		case CONF_SWAP_DEVICE:
+		case SWAP_DEVICE:
 			res = *swapDev ? swapDev : NULL;
 			break;
 	}
 	return res;
 }
 
-long conf_get(int id) {
+long Config::get(int id) {
 	long res;
 	switch(id) {
-		case CONF_TIMER_FREQ:
+		case TIMER_FREQ:
 			res = Timer::FREQUENCY_DIV;
 			break;
-		case CONF_MAX_PROCS:
+		case MAX_PROCS:
 			res = MAX_PROC_COUNT;
 			break;
-		case CONF_MAX_FDS:
+		case MAX_FDS:
 			res = MAX_FD_COUNT;
 			break;
-		case CONF_LOG:
+		case LOG:
 			res = doLog;
 			break;
-		case CONF_PAGE_SIZE:
+		case PAGESIZE:
 			res = PAGE_SIZE;
 			break;
-		case CONF_LINEBYLINE:
+		case LINEBYLINE:
 			res = lineByLine;
 			break;
-		case CONF_LOG2SCR:
+		case LOG2SCR:
 			res = log2scr;
 			break;
-		case CONF_CPU_COUNT:
+		case CPU_COUNT:
 			res = SMP::getCPUCount();
 			break;
-		case CONF_SMP:
+		case SMP:
 			res = smp;
 			break;
 		default:
@@ -106,7 +101,7 @@ long conf_get(int id) {
 	return res;
 }
 
-static void conf_set(const char *name,const char *value) {
+void Config::set(const char *name,const char *value) {
 	if(strcmp(name,"swapdev") == 0)
 		strcpy(swapDev,value);
 	else if(strcmp(name,"nolog") == 0)

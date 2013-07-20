@@ -24,9 +24,9 @@
 #define CONF_TIMER_FREQ			0
 #define CONF_MAX_PROCS			1
 #define CONF_MAX_FDS			2
-#define CONF_LOG				5
-#define CONF_PAGE_SIZE			6
-#define CONF_CPU_COUNT			9
+#define CONF_LOG				4
+#define CONF_PAGE_SIZE			5
+#define CONF_CPU_COUNT			8
 
 #ifdef __cplusplus
 extern "C" {

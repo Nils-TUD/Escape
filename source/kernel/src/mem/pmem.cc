@@ -134,7 +134,7 @@ void pmem_init(void) {
 	initialized = true;
 
 	/* test whether a swap-device is present */
-	if(conf_getStr(CONF_SWAP_DEVICE) != NULL) {
+	if(Config::getStr(Config::SWAP_DEVICE) != NULL) {
 		size_t i,free;
 		/* build freelist */
 		siFreelist = siJobs + 0;
@@ -359,7 +359,7 @@ void pmem_swapper(void) {
 	size_t free;
 	sFile *swapFile;
 	pid_t pid;
-	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
+	const char *dev = Config::getStr(Config::SWAP_DEVICE);
 	swapper = Thread::getRunning();
 	pid = swapper->getProc()->getPid();
 	assert(swapEnabled);
@@ -428,7 +428,7 @@ void pmem_swapper(void) {
 
 void pmem_print(void) {
 	sSwapInJob *job;
-	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
+	const char *dev = Config::getStr(Config::SWAP_DEVICE);
 	vid_printf("Default: %zu\n",pmem_getFreeDef());
 	vid_printf("Contiguous: %zu\n",freeCont);
 	vid_printf("Swap-Device: %s\n",dev ? dev : "-none-");

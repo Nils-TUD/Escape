@@ -77,7 +77,7 @@ void boot_arch_start(sBootInfo *binfo) {
 
 	/* parse the boot parameter */
 	argv = boot_parseArgs(binfo->progs[0].command,&argc);
-	conf_parseBootParams(argc,argv);
+	Config::parseBootParams(argc,argv);
 }
 
 const sBootInfo *boot_getInfo(void) {
@@ -157,7 +157,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 
 	/* if not requested otherwise, from now on, print only to log */
-	if(!conf_get(CONF_LOG2SCR))
+	if(!Config::get(Config::LOG2SCR))
 		vid_setTargets(TARGET_LOG);
 	return 0;
 }

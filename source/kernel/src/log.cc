@@ -106,7 +106,7 @@ void log_vprintf(const char *fmt,va_list ap) {
 }
 
 static void log_printc(char c) {
-	if(conf_get(CONF_LOG) && !vfsIsReady)
+	if(Config::get(Config::LOG) && !vfsIsReady)
 		log_writeChar(c);
 	if(bufPos >= BUF_SIZE)
 		log_flush();
@@ -146,7 +146,7 @@ static void log_escape(const char **str) {
 
 static ssize_t log_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
-	if(conf_get(CONF_LOG) && logToSer) {
+	if(Config::get(Config::LOG) && logToSer) {
 		char *str = (char*)buffer;
 		size_t i;
 		for(i = 0; i < count; i++)

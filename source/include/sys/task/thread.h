@@ -840,7 +840,7 @@ inline void ThreadBase::terminate() {
 	/* if its the current one, it can't be chosen again by the scheduler */
 	if(this == getRunning())
 		makeUnrunnable();
-	term_addDead(static_cast<Thread*>(this));
+	Terminator::addDead(static_cast<Thread*>(this));
 }
 
 /**

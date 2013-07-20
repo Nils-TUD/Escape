@@ -20,23 +20,33 @@
 #pragma once
 
 #include <sys/common.h>
+#include <esc/sllist.h>
 
 class Thread;
 
-/**
- * Inits the terminator
- */
-void term_init(void);
+class Terminator {
+	friend class ThreadBase;
 
-/**
- * The start-function of the terminator. Should be called by a dedicated thread.
- */
-void term_start(void);
+public:
+	/**
+	 * Inits the terminator
+	 */
+	static void init();
 
-/**
- * Adds the given thread for termination. If all threads of the process have been terminated,
- * the process will be terminated as well.
- *
- * @param t the thread
- */
-void term_addDead(Thread *t);
+	/**
+	 * The start-function of the terminator. Should be called by a dedicated thread.
+	 */
+	static void start();
+
+private:
+	/**
+	 * Adds the given thread for termination. If all threads of the process have been terminated,
+	 * the process will be terminated as well.
+	 *
+	 * @param t the thread
+	 */
+	static void addDead(Thread *t);
+
+	static sSLList deadThreads;
+	static klock_t termLock;
+};

@@ -65,7 +65,7 @@ static const sBootTask tasks[] = {
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
-	{"Initializing terminator...",term_init},
+	{"Initializing terminator...",Terminator::init},
 	{"Start logging to VFS...",log_vfsIsReady},
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
@@ -255,7 +255,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	if(pmem_canSwap())
 		Proc::startThread((uintptr_t)&pmem_swapper,0,NULL);
 	/* start the terminator */
-	Proc::startThread((uintptr_t)&term_start,0,NULL);
+	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 
 	/* if not requested otherwise, from now on, print only to log */
 	if(!conf_get(CONF_LOG2SCR))

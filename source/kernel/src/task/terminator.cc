@@ -28,14 +28,14 @@
 #include <esc/sllist.h>
 #include <assert.h>
 
-static sSLList deadThreads;
-static klock_t termLock;
+sSLList Terminator::deadThreads;
+klock_t Terminator::termLock;
 
-void term_init(void) {
+void Terminator::init() {
 	sll_init(&deadThreads,slln_allocNode,slln_freeNode);
 }
 
-void term_start(void) {
+void Terminator::start() {
 	Thread *t = Thread::getRunning();
 	spinlock_aquire(&termLock);
 	while(1) {
@@ -66,7 +66,7 @@ void term_start(void) {
 	}
 }
 
-void term_addDead(Thread *t) {
+void Terminator::addDead(Thread *t) {
 	spinlock_aquire(&termLock);
 	/* ensure that we don't add a thread twice */
 	if(!(t->getFlags() & T_WILL_DIE)) {

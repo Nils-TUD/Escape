@@ -61,7 +61,7 @@ void bspstart(sBootInfo *bootinfo) {
 	boot_start(bootinfo);
 
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
-	Proc::startThread((uintptr_t)&term_start,0,NULL);
+	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	/* TODO find a better solution */

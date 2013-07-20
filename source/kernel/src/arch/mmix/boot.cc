@@ -54,7 +54,7 @@ static const sBootTask tasks[] = {
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
-	{"Initializing terminator...",term_init},
+	{"Initializing terminator...",Terminator::init},
 	{"Start logging to VFS...",log_vfsIsReady},
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
@@ -127,7 +127,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 		/* start idle-thread */
 		Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 		/* start termination-thread */
-		Proc::startThread((uintptr_t)&term_start,0,NULL);
+		Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 		bootState++;
 	}
 	else if((bootState % 2) == 1) {

@@ -289,7 +289,7 @@ static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 
 static void intrpt_syscall(Thread *t,sIntrptStackFrame *stack) {
 	t->getStats().syscalls++;
-	sysc_handle(t,stack);
+	Syscalls::handle(t,stack);
 }
 
 static void intrpt_ipiWork(Thread *t,A_UNUSED sIntrptStackFrame *stack) {

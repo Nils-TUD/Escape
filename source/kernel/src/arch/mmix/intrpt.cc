@@ -167,7 +167,7 @@ void intrpt_forcedTrap(sIntrptStackFrame *stack) {
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
 	t->getStats().syscalls++;
-	sysc_handle(t,begin);
+	Syscalls::handle(t,begin);
 
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = Thread::getRunning(); /* thread might have changed */

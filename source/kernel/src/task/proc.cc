@@ -876,7 +876,7 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 			break;
 
 		/* check whether the string is readable */
-		if(fromUser && !sysc_isStrInUserSpace(*arg,&len))
+		if(fromUser && !Syscalls::isStrInUserSpace(*arg,&len))
 			goto error;
 		else
 			len = strlen(*arg);

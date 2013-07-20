@@ -150,7 +150,7 @@ static void intrpt_defHandler(sIntrptStackFrame *stack) {
 static void intrpt_exTrap(sIntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	t->getStats().syscalls++;
-	sysc_handle(t,stack);
+	Syscalls::handle(t,stack);
 	/* skip trap-instruction */
 	stack->r[30] += 4;
 }

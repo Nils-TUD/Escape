@@ -21,14 +21,13 @@
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/task/ioports.h>
-#include <sys/arch/i586/syscalls/proc.h>
 #include <sys/mem/paging.h>
 #include <sys/task/proc.h>
 #include <sys/syscalls.h>
 #include <assert.h>
 #include <errno.h>
 
-int sysc_reqports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::reqports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -43,7 +42,7 @@ int sysc_reqports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_relports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::relports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
 	int err;
@@ -58,7 +57,7 @@ int sysc_relports(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_vm86start(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+int Syscalls::vm86start(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	int res;
 	if((res = VM86::create()) == 0) {
 		/* don't change any registers on the stack here */
@@ -67,7 +66,7 @@ int sysc_vm86start(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	SYSC_ERROR(stack,res);
 }
 
-int sysc_vm86int(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::vm86int(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	VM86::Regs *regs = (VM86::Regs*)SYSC_ARG2(stack);
 	VM86::Memarea *mArea = (VM86::Memarea*)SYSC_ARG3(stack);

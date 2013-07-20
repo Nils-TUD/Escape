@@ -23,11 +23,10 @@
 #include <sys/task/proc.h>
 #include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
-#include <sys/syscalls/signals.h>
 #include <sys/syscalls.h>
 #include <errno.h>
 
-int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::signal(Thread *t,sIntrptStackFrame *stack) {
 	int signal = (int)SYSC_ARG1(stack);
 	Signals::handler_func handler = (Signals::handler_func)SYSC_ARG2(stack);
 	Signals::handler_func old = SIG_ERR;
@@ -57,7 +56,7 @@ int sysc_signal(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,(long)old);
 }
 
-int sysc_acksignal(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::acksignal(Thread *t,sIntrptStackFrame *stack) {
 	int res;
 	int signal = Signals::ackHandling(t->getTid());
 	if((res = UEnv::finishSignalHandler(stack,signal)) < 0)
@@ -66,7 +65,7 @@ int sysc_acksignal(Thread *t,sIntrptStackFrame *stack) {
 	return 0;
 }
 
-int sysc_kill(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::kill(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	int signal = (int)SYSC_ARG2(stack);
 

@@ -23,14 +23,13 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
-#include <sys/syscalls/mem.h>
 #include <sys/syscalls.h>
 #include <sys/boot.h>
 #include <esc/fsinterface.h>
 #include <string.h>
 #include <errno.h>
 
-int sysc_chgsize(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::chgsize(Thread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	pid_t pid = t->getProc()->getPid();
 	size_t oldEnd;
@@ -42,7 +41,7 @@ int sysc_chgsize(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t addr = SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
 	size_t loadCount = SYSC_ARG3(stack);
@@ -93,7 +92,7 @@ int sysc_mmap(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-int sysc_mprotect(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
@@ -108,7 +107,7 @@ int sysc_mprotect(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_munmap(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::munmap(Thread *t,sIntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
 	sVMRegion *reg = vmm_getRegion(t->getProc(),(uintptr_t)virt);
 	if(reg == NULL)
@@ -117,7 +116,7 @@ int sysc_munmap(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int sysc_regaddphys(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::regaddphys(Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);

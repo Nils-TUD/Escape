@@ -652,7 +652,7 @@ void ProcBase::doDestroy(Proc *p) {
 	/* release resources */
 	fd_destroy(p);
 	groups_leave(p->pid);
-	env_removeFor(p->pid);
+	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
 	vmfree_destroy(&p->freemap);
 	vmreg_remTree(&p->regtree);
@@ -835,7 +835,7 @@ void ProcBase::print() {
 	vid_printf("\t\tFreeStack: %p\n",freeStackAddr);
 	vmm_printShort(pid,"\t\t");
 	prf_pushIndent();
-	env_printAllOf(pid);
+	Env::printAllOf(pid);
 	fd_print(static_cast<Proc*>(this));
 	vfs_fsmsgs_printFSChans(static_cast<Proc*>(this));
 	prf_popIndent();

@@ -158,7 +158,7 @@ bool sysc_absolutize_path(char *dst,size_t size,const char *src) {
 		return false;
 	if(*src != '/') {
 		pid_t pid = Proc::getRunning();
-		if(env_get(pid,"CWD",dst,size)) {
+		if(Env::get(pid,"CWD",dst,size)) {
 			len = strlen(dst);
 			if(len < size - 1 && dst[len - 1] != '/') {
 				dst[len++] = '/';

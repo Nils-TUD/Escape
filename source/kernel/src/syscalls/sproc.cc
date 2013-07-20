@@ -169,7 +169,7 @@ int sysc_getenvito(Thread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!env_geti(pid,index,buffer,size))
+	if(!Env::geti(pid,index,buffer,size))
 		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
@@ -186,7 +186,7 @@ int sysc_getenvto(Thread *t,sIntrptStackFrame *stack) {
 	if(!paging_isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!env_get(pid,name,buffer,size))
+	if(!Env::get(pid,name,buffer,size))
 		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
@@ -198,7 +198,7 @@ int sysc_setenv(Thread *t,sIntrptStackFrame *stack) {
 	if(!sysc_isStrInUserSpace(name,NULL) || !sysc_isStrInUserSpace(value,NULL))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!env_set(pid,name,value))
+	if(!Env::set(pid,name,value))
 		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }

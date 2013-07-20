@@ -28,23 +28,13 @@
 #include <esc/sllist.h>
 #include <string.h>
 
-typedef struct {
-	uint8_t dup;		/* whether this is a duplicate of a parent-var */
-	char *name;
-	char *value;
-} sEnvVar;
-
-static bool env_exists(const Proc *p,const char *name);
-static sEnvVar *env_getiOf(const Proc *p,size_t *index);
-static sEnvVar *env_getOf(const Proc *p,const char *name);
-
-bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
-	sEnvVar *var;
+bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
+	EnvVar *var;
 	while(1) {
 		Proc *p = Proc::request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
-		var = env_getiOf(p,&index);
+		var = getiOf(p,&index);
 		if(var != NULL) {
 			bool res = true;
 			if(dst) {
@@ -65,14 +55,14 @@ bool env_geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 	return false;
 }
 
-bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
-	sEnvVar *var;
+bool Env::get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
+	EnvVar *var;
 	while(1) {
 		Proc *p = Proc::request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
 		p->addLock(PLOCK_ENV);
-		var = env_getOf(p,name);
+		var = getOf(p,name);
 		if(var != NULL) {
 			if(dst)
 				strnzcpy(dst,var->value,size);
@@ -91,8 +81,8 @@ bool env_get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 	return false;
 }
 
-bool env_set(pid_t pid,USER const char *name,USER const char *value) {
-	sEnvVar *var;
+bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
+	EnvVar *var;
 	Proc *p;
 	char *nameCpy,*valueCpy;
 	nameCpy = strdup(name);
@@ -108,7 +98,7 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 	p = Proc::request(pid,PLOCK_ENV);
 	if(!p)
 		goto errorValCpy;
-	var = env_getOf(p,nameCpy);
+	var = getOf(p,nameCpy);
 	if(var != NULL) {
 		char *oldVal = var->value;
 		/* set value */
@@ -120,12 +110,12 @@ bool env_set(pid_t pid,USER const char *name,USER const char *value) {
 		return true;
 	}
 
-	var = (sEnvVar*)cache_alloc(sizeof(sEnvVar));
+	var = (EnvVar*)cache_alloc(sizeof(EnvVar));
 	if(var == NULL)
 		goto errorProc;
 
 	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
-	var->dup = env_exists(p,nameCpy);
+	var->dup = exists(p,nameCpy);
 	/* set name and value */
 	var->name = nameCpy;
 	var->value = valueCpy;
@@ -155,13 +145,13 @@ errorNameCpy:
 	return false;
 }
 
-void env_removeFor(pid_t pid) {
+void Env::removeFor(pid_t pid) {
 	Proc *p = Proc::request(pid,PLOCK_ENV);
 	if(p) {
 		if(p->env) {
 			sSLNode *n;
 			for(n = sll_begin(p->env); n != NULL; n = n->next) {
-				sEnvVar *var = (sEnvVar*)n->data;
+				EnvVar *var = (EnvVar*)n->data;
 				cache_free(var->name);
 				cache_free(var->value);
 				cache_free(var);
@@ -173,23 +163,23 @@ void env_removeFor(pid_t pid) {
 	}
 }
 
-void env_printAllOf(pid_t pid) {
+void Env::printAllOf(pid_t pid) {
 	char name[64];
 	char value[64];
 	size_t i;
 	vid_printf("Environment of %d:\n",pid);
 	for(i = 0; ; i++) {
-		if(!env_geti(pid,i,name,sizeof(name)))
+		if(!geti(pid,i,name,sizeof(name)))
 			break;
-		env_get(pid,name,value,sizeof(value));
+		get(pid,name,value,sizeof(value));
 		vid_printf("\t'%s' = '%s'\n",name,value);
 	}
 }
 
-static bool env_exists(const Proc *p,const char *name) {
-	sEnvVar *var;
+bool Env::exists(const Proc *p,const char *name) {
+	EnvVar *var;
 	while(1) {
-		var = env_getOf(p,name);
+		var = getOf(p,name);
 		if(var != NULL)
 			return true;
 		if(p->getPid() == 0)
@@ -199,25 +189,25 @@ static bool env_exists(const Proc *p,const char *name) {
 	return false;
 }
 
-static sEnvVar *env_getiOf(const Proc *p,size_t *index) {
+Env::EnvVar *Env::getiOf(const Proc *p,size_t *index) {
 	sSLNode *n;
-	sEnvVar *e = NULL;
+	EnvVar *e = NULL;
 	if(!p->env)
 		return NULL;
 	for(n = sll_begin(p->env); n != NULL; n = n->next) {
-		e = (sEnvVar*)n->data;
+		e = (EnvVar*)n->data;
 		if(!e->dup && (*index)-- == 0)
 			return e;
 	}
 	return NULL;
 }
 
-static sEnvVar *env_getOf(const Proc *p,USER const char *name) {
+Env::EnvVar *Env::getOf(const Proc *p,USER const char *name) {
 	sSLNode *n;
 	if(!p->env)
 		return NULL;
 	for(n = sll_begin(p->env); n != NULL; n = n->next) {
-		sEnvVar *e = (sEnvVar*)n->data;
+		EnvVar *e = (EnvVar*)n->data;
 		if(strcmp(e->name,name) == 0)
 			return e;
 	}

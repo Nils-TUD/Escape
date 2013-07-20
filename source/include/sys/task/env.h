@@ -22,48 +22,64 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
-/**
- * Copies the env-variable-name with given index to <dst>
- *
- * @param pid the process-id
- * @param index the index
- * @param dst the destination-string
- * @param size the size of dst
- * @return true if existing and successfully copied
- */
-bool env_geti(pid_t pid,size_t index,char *dst,size_t size);
+class Env {
+	Env() = delete;
 
-/**
- * Copies the env-variable-value with given name to <dst>
- *
- * @param pid the process-id
- * @param name the variable-name
- * @param dst the destination-string
- * @param size the size of dst
- * @return true if existing and successfully copied
- */
-bool env_get(pid_t pid,const char *name,char *dst,size_t size);
+	struct EnvVar {
+		uint8_t dup; /* whether this is a duplicate of a parent-var */
+		char *name;
+		char *value;
+	};
 
-/**
- * Sets <name> to <value>
- *
- * @param pid the process-id
- * @param name the variable-name
- * @param value the (new) value
- * @return true if successfull
- */
-bool env_set(pid_t pid,const char *name,const char *value);
+public:
+	/**
+	 * Copies the env-variable-name with given index to <dst>
+	 *
+	 * @param pid the process-id
+	 * @param index the index
+	 * @param dst the destination-string
+	 * @param size the size of dst
+	 * @return true if existing and successfully copied
+	 */
+	static bool geti(pid_t pid,size_t index,char *dst,size_t size);
 
-/**
- * Removes all env-variables for given process
- *
- * @param pid the process-id
- */
-void env_removeFor(pid_t pid);
+	/**
+	 * Copies the env-variable-value with given name to <dst>
+	 *
+	 * @param pid the process-id
+	 * @param name the variable-name
+	 * @param dst the destination-string
+	 * @param size the size of dst
+	 * @return true if existing and successfully copied
+	 */
+	static bool get(pid_t pid,const char *name,char *dst,size_t size);
 
-/**
- * Prints all env-vars of given process
- *
- * @param pid the process-id
- */
-void env_printAllOf(pid_t pid);
+	/**
+	 * Sets <name> to <value>
+	 *
+	 * @param pid the process-id
+	 * @param name the variable-name
+	 * @param value the (new) value
+	 * @return true if successfull
+	 */
+	static bool set(pid_t pid,const char *name,const char *value);
+
+	/**
+	 * Removes all env-variables for given process
+	 *
+	 * @param pid the process-id
+	 */
+	static void removeFor(pid_t pid);
+
+	/**
+	 * Prints all env-vars of given process
+	 *
+	 * @param pid the process-id
+	 */
+	static void printAllOf(pid_t pid);
+
+private:
+	static bool exists(const Proc *p,const char *name);
+	static EnvVar *getiOf(const Proc *p,size_t *index);
+	static EnvVar *getOf(const Proc *p,const char *name);
+};

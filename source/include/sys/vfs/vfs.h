@@ -450,7 +450,7 @@ int vfs_createdev(pid_t pid,char *path,uint type,uint ops,sFile **file);
  * Waits for the given wait-objects, whereas the objects are expected to be of type sFile*.
  * First, the function checks whether we can wait, i.e. if the event to wait for has already
  * arrived. If not, we wait until one of the events arrived.
- * If <pid> != KERNEL_PID, it calls lock_release(pid,ident) before going to sleep (this is used
+ * If <pid> != KERNEL_PID, it calls Lock::release(pid,ident) before going to sleep (this is used
  * for waitunlock).
  *
  * @param objects the array of wait-objects (will be changed; files -> nodes)
@@ -458,7 +458,7 @@ int vfs_createdev(pid_t pid,char *path,uint type,uint ops,sFile **file);
  * @param maxWaitTime the maximum time to wait (in milliseconds)
  * @param block whether we should wait if necessary (otherwise it will be checked only whether
  *  we can wait and if so, -EWOULDBLOCK is returned. if not, 0 is returned.)
- * @param pid the process-id for lock_release (KERNEL_PID = don't call it)
+ * @param pid the process-id for Lock::release (KERNEL_PID = don't call it)
  * @param ident the ident for lock_release
  * @return 0 on success
  */

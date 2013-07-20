@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/lock.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
@@ -29,46 +30,25 @@
 #include <assert.h>
 #include <errno.h>
 
-#define LOCK_USED		4
+size_t Lock::lockCount = 0;
+Lock::Entry *Lock::locks = NULL;
+klock_t Lock::klock;
 
-/* a lock-entry */
-typedef struct {
-	ulong ident;
-	ushort flags;
-	pid_t pid;
-	volatile ushort readRefs;
-	volatile tid_t writer;
-	ushort waitCount;
-} sLock;
-
-/**
- * Searches the lock-entry for the given ident and process-id
- */
-static ssize_t lock_get(pid_t pid,ulong ident,bool free);
-
-static size_t lockCount = 0;
-static sLock *locks = NULL;
-/* I think, in this case its better to use a single global lock instead of locking an sLock
- * structure individually. Because when we're searching for a lock, we would have to do a lot
- * of aquires and releases. Additionally, this module isn't used that extensively, so that it
- * doesn't hurt to reduce the amount of parallelity a bit, IMO. */
-static klock_t klock;
-
-static bool lock_isLocked(const sLock *l,ushort flags) {
+bool Lock::isLocked(const Entry *l,ushort flags) {
 	bool res = false;
-	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))
+	if((flags & EXCLUSIVE) && (l->readRefs > 0 || l->writer != INVALID_TID))
 		res = true;
-	else if(!(flags & LOCK_EXCLUSIVE) && l->writer != INVALID_TID)
+	else if(!(flags & EXCLUSIVE) && l->writer != INVALID_TID)
 		res = true;
 	return res;
 }
 
-int lock_aquire(pid_t pid,ulong ident,ushort flags) {
+int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
 	Thread *t = Thread::getRunning();
 	ssize_t i;
-	sLock *l;
+	Entry *l;
 	spinlock_aquire(&klock);
-	i = lock_get(pid,ident,true);
+	i = get(pid,ident,true);
 	if(i < 0) {
 		spinlock_release(&klock);
 		return -ENOMEM;
@@ -79,10 +59,10 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	l = locks + i;
 	if(l->flags) {
 		/* if it exists and is locked, wait */
-		uint event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
+		uint event = (flags & EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
 		/* TODO don't panic here, just return and continue using the lock */
 		assert(l->writer != t->getTid());
-		while(lock_isLocked(locks + i,flags)) {
+		while(isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
 			Event::wait(t,event,(evobj_t)ident);
 			spinlock_release(&klock);
@@ -103,8 +83,8 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	}
 
 	/* lock it */
-	l->flags = flags | LOCK_USED;
-	if(flags & LOCK_EXCLUSIVE)
+	l->flags = flags | USED;
+	if(flags & EXCLUSIVE)
 		l->writer = t->getTid();
 	else
 		l->readRefs++;
@@ -112,11 +92,11 @@ int lock_aquire(pid_t pid,ulong ident,ushort flags) {
 	return 0;
 }
 
-int lock_release(pid_t pid,ulong ident) {
+int Lock::release(pid_t pid,ulong ident) {
 	ssize_t i;
-	sLock *l;
+	Entry *l;
 	spinlock_aquire(&klock);
-	i = lock_get(pid,ident,false);
+	i = get(pid,ident,false);
 	l = locks + i;
 	if(i < 0) {
 		spinlock_release(&klock);
@@ -124,7 +104,7 @@ int lock_release(pid_t pid,ulong ident) {
 	}
 
 	/* unlock */
-	if(l->flags & LOCK_EXCLUSIVE) {
+	if(l->flags & EXCLUSIVE) {
 		vassert(l->writer != INVALID_TID,"ident=%#08x, pid=%d",l->ident,l->pid);
 		l->writer = INVALID_TID;
 	}
@@ -145,13 +125,13 @@ int lock_release(pid_t pid,ulong ident) {
 			Event::wakeup(EVI_UNLOCK_EX,(evobj_t)ident);
 	}
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
-	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))
+	else if(l->readRefs == 0 && !(l->flags & KEEP))
 		l->flags = 0;
 	spinlock_release(&klock);
 	return 0;
 }
 
-void lock_releaseAll(pid_t pid) {
+void Lock::releaseAll(pid_t pid) {
 	size_t i;
 	spinlock_aquire(&klock);
 	for(i = 0; i < lockCount; i++) {
@@ -161,11 +141,11 @@ void lock_releaseAll(pid_t pid) {
 	spinlock_release(&klock);
 }
 
-void lock_print(void) {
+void Lock::print(void) {
 	size_t i;
 	vid_printf("Locks:\n");
 	for(i = 0; i < lockCount; i++) {
-		sLock *l = locks + i;
+		Entry *l = locks + i;
 		if(l->flags) {
 			vid_printf("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
 					l->ident,l->pid,l->flags,l->readRefs,l->writer,l->waitCount);
@@ -173,7 +153,7 @@ void lock_print(void) {
 	}
 }
 
-static ssize_t lock_get(pid_t pid,ulong ident,bool free) {
+ssize_t Lock::get(pid_t pid,ulong ident,bool free) {
 	size_t i;
 	ssize_t freeIdx = -1;
 	for(i = 0; i < lockCount; i++) {
@@ -184,19 +164,19 @@ static ssize_t lock_get(pid_t pid,ulong ident,bool free) {
 			return i;
 	}
 	if(freeIdx == -1 && free) {
-		sLock *nlocks;
+		Entry *nlocks;
 		size_t oldCount = lockCount;
 		if(lockCount == 0)
 			lockCount = 8;
 		else
 			lockCount *= 2;
-		nlocks = (sLock*)cache_realloc(locks,lockCount * sizeof(sLock));
+		nlocks = (Entry*)cache_realloc(locks,lockCount * sizeof(Entry));
 		if(nlocks == NULL) {
 			lockCount = oldCount;
 			return -ENOMEM;
 		}
 		locks = nlocks;
-		memclear(locks + oldCount,(lockCount - oldCount) * sizeof(sLock));
+		memclear(locks + oldCount,(lockCount - oldCount) * sizeof(Entry));
 		return oldCount;
 	}
 	return freeIdx;

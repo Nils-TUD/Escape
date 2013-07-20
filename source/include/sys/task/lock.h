@@ -20,39 +20,73 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/proc.h>
 
-#define LOCK_EXCLUSIVE	1
-#define LOCK_KEEP		2
+class Lock {
+	Lock() = delete;
 
-/**
- * Aquires the lock with given pid and ident. You can specify with the flags whether it should
- * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
- *
- * @param pid the process-id (INVALID_PID to lock it globally)
- * @param ident to identify the lock
- * @param flags flags (LOCK_*)
- * @return 0 on success
- */
-int lock_aquire(pid_t pid,ulong ident,ushort flags);
+	/* a lock-entry */
+	struct Entry {
+		ulong ident;
+		ushort flags;
+		pid_t pid;
+		volatile ushort readRefs;
+		volatile tid_t writer;
+		ushort waitCount;
+	};
 
-/**
- * Releases the lock with given ident and pid
- *
- * @param pid the process-id (INVALID_PID to lock it globally)
- * @param ident to identify the lock
- * @return 0 on success
- */
-int lock_release(pid_t pid,ulong ident);
+	static const ushort USED		= 4;
 
-/**
- * Releases all locks of the given process
- *
- * @param pid the process-id
- */
-void lock_releaseAll(pid_t pid);
+public:
+	static const ushort EXCLUSIVE	= 1;
+	static const ushort KEEP		= 2;
 
-/**
- * Prints all locks
- */
-void lock_print(void);
+	/**
+	 * Aquires the lock with given pid and ident. You can specify with the flags whether it should
+	 * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
+	 *
+	 * @param pid the process-id (INVALID_PID to lock it globally)
+	 * @param ident to identify the lock
+	 * @param flags flags (LOCK_*)
+	 * @return 0 on success
+	 */
+	static int aquire(pid_t pid,ulong ident,ushort flags);
+
+	/**
+	 * Releases the lock with given ident and pid
+	 *
+	 * @param pid the process-id (INVALID_PID to lock it globally)
+	 * @param ident to identify the lock
+	 * @return 0 on success
+	 */
+	static int release(pid_t pid,ulong ident);
+
+	/**
+	 * Releases all locks of the given process
+	 *
+	 * @param pid the process-id
+	 */
+	static void releaseAll(pid_t pid);
+
+	/**
+	 * Prints all locks
+	 */
+	static void print();
+
+private:
+	/**
+	 * Checks whether l is locked, depending on the flags
+	 */
+	static bool isLocked(const Entry *l,ushort flags);
+	/**
+	 * Searches the lock-entry for the given ident and process-id
+	 */
+	static ssize_t get(pid_t pid,ulong ident,bool free);
+
+	static size_t lockCount;
+	static Entry *locks;
+	/* I think, in this case its better to use a single global lock instead of locking an sLock
+	 * structure individually. Because when we're searching for a lock, we would have to do a lot
+	 * of aquires and releases. Additionally, this module isn't used that extensively, so that it
+	 * doesn't hurt to reduce the amount of parallelity a bit, IMO. */
+	static klock_t klock;
+};

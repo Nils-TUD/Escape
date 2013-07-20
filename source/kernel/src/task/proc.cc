@@ -657,7 +657,7 @@ void ProcBase::doDestroy(Proc *p) {
 	vmfree_destroy(&p->freemap);
 	vmreg_remTree(&p->regtree);
 	paging_destroyPDir(p->getPageDir());
-	lock_releaseAll(p->pid);
+	Lock::releaseAll(p->pid);
 	terminateArch(p);
 	sll_clear(&p->threads,false);
 

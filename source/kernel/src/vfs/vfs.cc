@@ -775,7 +775,7 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 			goto error;
 		}
 		if(pid != KERNEL_PID)
-			lock_release(pid,ident);
+			Lock::release(pid,ident);
 		if(isFirstWait && maxWaitTime != 0)
 			timer_sleepFor(t->getTid(),maxWaitTime,true);
 		spinlock_release(&waitLock);
@@ -795,7 +795,7 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 
 noWait:
 	if(pid != KERNEL_PID)
-		lock_release(pid,ident);
+		Lock::release(pid,ident);
 	spinlock_release(&waitLock);
 done:
 	res = 0;

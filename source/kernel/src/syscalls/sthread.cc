@@ -155,7 +155,7 @@ int sysc_lock(Thread *t,sIntrptStackFrame *stack) {
 	ushort flags = (uint)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	int res = lock_aquire(global ? INVALID_PID : pid,ident,flags);
+	int res = Lock::aquire(global ? INVALID_PID : pid,ident,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -166,7 +166,7 @@ int sysc_unlock(Thread *t,sIntrptStackFrame *stack) {
 	bool global = (bool)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	int res = lock_release(global ? INVALID_PID : pid,ident);
+	int res = Lock::release(global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

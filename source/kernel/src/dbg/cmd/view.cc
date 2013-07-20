@@ -99,7 +99,7 @@ static sView views[] = {
 #endif
 	{"timer",(fView)timer_print},
 	{"boot",(fView)boot_print},
-	{"locks",(fView)lock_print},
+	{"locks",(fView)Lock::print},
 	{"events",(fView)Event::print},
 	{"smp",(fView)SMP::print},
 };

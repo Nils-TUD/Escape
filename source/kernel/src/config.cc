@@ -73,7 +73,7 @@ long conf_get(int id) {
 	long res;
 	switch(id) {
 		case CONF_TIMER_FREQ:
-			res = TIMER_FREQUENCY_DIV;
+			res = Timer::FREQUENCY_DIV;
 			break;
 		case CONF_MAX_PROCS:
 			res = MAX_PROC_COUNT;

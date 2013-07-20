@@ -777,7 +777,7 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 		if(pid != KERNEL_PID)
 			Lock::release(pid,ident);
 		if(isFirstWait && maxWaitTime != 0)
-			timer_sleepFor(t->getTid(),maxWaitTime,true);
+			Timer::sleepFor(t->getTid(),maxWaitTime,true);
 		spinlock_release(&waitLock);
 
 		Thread::switchAway();
@@ -801,7 +801,7 @@ done:
 	res = 0;
 error:
 	if(maxWaitTime != 0)
-		timer_removeThread(t->getTid());
+		Timer::removeThread(t->getTid());
 	return res;
 }
 

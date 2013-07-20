@@ -21,6 +21,108 @@
 
 #include <sys/common.h>
 
+class TimerBase {
+	TimerBase() = delete;
+
+	/* an entry in the listener-list */
+	struct Listener {
+		tid_t tid;
+		/* difference to the previous listener */
+		time_t time;
+		/* if true, the thread is blocked during that time. otherwise it can run and will not be waked
+		 * up, but gets a signal (SIG_ALARM) */
+		bool block;
+		Listener *next;
+	};
+
+	static const size_t LISTENER_COUNT		= 1024;
+
+public:
+	/* time-slice = 5ms */
+	static const unsigned FREQUENCY_DIV		= 200;
+	/* the time that we give one process (60ms) */
+	static const unsigned TIMESLICE			= ((1000 / FREQUENCY_DIV) * 12);
+
+	/**
+	 * Initializes the timer
+	 */
+	static void init();
+
+	/**
+	 * @return the number of timer-interrupts so far
+	 */
+	static size_t getIntrptCount() {
+		return timerIntrpts;
+	}
+
+	/**
+	 * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
+	 */
+	static time_t getTimestamp() {
+		return elapsedMsecs;
+	}
+
+	/**
+	 * @param cycles the number of cycles
+	 * @return the number of microseconds
+	 */
+	static uint64_t cyclesToTime(uint64_t cycles);
+
+	/**
+	 * @param us the number of microseconds
+	 * @return the number of cycles
+	 */
+	static uint64_t timeToCycles(uint us);
+
+	/**
+	 * Puts the given thread to sleep for the given number of milliseconds
+	 *
+	 * @param tid the thread-id
+	 * @param msecs the number of milliseconds to wait
+	 * @param block whether to block the thread or not (if so, it will be waked up, otherwise it gets
+	 *  SIG_ALARM)
+	 * @return 0 on success
+	 */
+	static int sleepFor(tid_t tid,time_t msecs,bool block);
+
+	/**
+	 * Removes the given thread from the timer
+	 *
+	 * @param tid the thread-id
+	 */
+	static void removeThread(tid_t tid);
+
+	/**
+	 * Handles a timer-interrupt
+	 *
+	 * @return true if we should perform a thread-switch
+	 */
+	static bool intrpt();
+
+	/**
+	 * Prints the timer-queue
+	 */
+	static void print();
+
+private:
+	/**
+	 * Inits the architecture-dependent part of the timer
+	 */
+	static void archInit();
+
+	/* total elapsed milliseconds */
+	static time_t elapsedMsecs;
+	static time_t lastResched;
+	static time_t lastRuntimeUpdate;
+	static size_t timerIntrpts;
+
+	static klock_t timerLock;
+	static Listener listenObjs[LISTENER_COUNT];
+	static Listener *freeList;
+	/* processes that should be waked up to a specified time */
+	static Listener *listener;
+};
+
 #ifdef __i386__
 #include <sys/arch/i586/task/timer.h>
 #endif
@@ -30,66 +132,3 @@
 #ifdef __mmix__
 #include <sys/arch/mmix/task/timer.h>
 #endif
-
-/* time-slice = 5ms */
-#define TIMER_FREQUENCY_DIV		200
-
-/* the time that we give one process (60ms) */
-#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY_DIV) * 12)
-
-/**
- * Initializes the timer
- */
-void timer_init(void);
-
-/**
- * @return the number of timer-interrupts so far
- */
-size_t timer_getIntrptCount(void);
-
-/**
- * @param cycles the number of cycles
- * @return the number of microseconds
- */
-uint64_t timer_cyclesToTime(uint64_t cycles);
-
-/**
- * @param us the number of microseconds
- * @return the number of cycles
- */
-uint64_t timer_timeToCycles(uint us);
-
-/**
- * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
- */
-time_t timer_getTimestamp(void);
-
-/**
- * Puts the given thread to sleep for the given number of milliseconds
- *
- * @param tid the thread-id
- * @param msecs the number of milliseconds to wait
- * @param block whether to block the thread or not (if so, it will be waked up, otherwise it gets
- *  SIG_ALARM)
- * @return 0 on success
- */
-int timer_sleepFor(tid_t tid,time_t msecs,bool block);
-
-/**
- * Removes the given thread from the timer
- *
- * @param tid the thread-id
- */
-void timer_removeThread(tid_t tid);
-
-/**
- * Handles a timer-interrupt
- *
- * @return true if we should perform a thread-switch
- */
-bool timer_intrpt(void);
-
-/**
- * Prints the timer-queue
- */
-void timer_print(void);

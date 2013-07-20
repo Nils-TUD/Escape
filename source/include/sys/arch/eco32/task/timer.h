@@ -21,17 +21,50 @@
 
 #include <esc/common.h>
 
-/**
- * Inits the architecture-dependent part of the timer
- */
-void timer_arch_init(void);
+class Timer : public TimerBase {
+	friend class TimerBase;
 
-/**
- * Acknoleges a timer-interrupt
- */
-void timer_ackIntrpt(void);
+	Timer() = delete;
 
-/**
- * @return the elapsed milliseconds since the last timer-interrupt
- */
-time_t timer_getTimeSinceIRQ(void);
+	static const uintptr_t TIMER_BASE		= 0xF0000000;
+
+	static const uint REG_CTRL				= 0;	/* timer control register */
+	static const uint REG_DIVISOR			= 1;	/* timer divisor register */
+
+	static const uint CTRL_EXP				= 0x01;	/* timer has expired */
+	static const uint CTRL_IEN				= 0x02;	/* enable timer interrupt */
+
+public:
+	/**
+	 * Acknoleges a timer-interrupt
+	 */
+	static void ackIntrpt();
+
+	/**
+	 * @return the elapsed milliseconds since the last timer-interrupt
+	 */
+	static time_t getTimeSinceIRQ();
+};
+
+inline void TimerBase::archInit() {
+	uint *regs = (uint*)Timer::TIMER_BASE;
+	/* set frequency */
+	regs[Timer::REG_DIVISOR] = 1000 / Timer::FREQUENCY_DIV;
+	/* enable timer */
+	regs[Timer::REG_CTRL] = Timer::CTRL_IEN;
+}
+
+inline void Timer::ackIntrpt() {
+	uint *regs = (uint*)TIMER_BASE;
+	/* remove expired-flag */
+	regs[REG_CTRL] = CTRL_IEN;
+}
+
+inline uint64_t TimerBase::cyclesToTime(uint64_t cycles) {
+	/* can't be implemented (not used anyway) */
+	return cycles;
+}
+
+inline uint64_t TimerBase::timeToCycles(uint us) {
+	return us;
+}

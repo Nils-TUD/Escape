@@ -263,7 +263,7 @@ static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack) {
 	const sInterrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		sig_addSignal(intrpt->signal);
-	res = timer_intrpt();
+	res = Timer::intrpt();
 	pic_eoi(stack->intrptNo);
 	if(res) {
 		if(t->getIntrptLevel() == 0)

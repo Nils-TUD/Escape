@@ -58,7 +58,7 @@ static const sBootTask tasks[] = {
 	{"Start logging to VFS...",log_vfsIsReady},
 	{"Initializing virtual memory-management...",vmm_init},
 	{"Initializing copy-on-write...",cow_init},
-	{"Initializing timer...",timer_init},
+	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",sig_init},
 };
 const sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
@@ -164,7 +164,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
 			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-			timer_sleepFor(Thread::getRunning()->getTid(),20,true);
+			Timer::sleepFor(Thread::getRunning()->getTid(),20,true);
 			Thread::switchAway();
 		}
 

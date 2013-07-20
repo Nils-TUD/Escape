@@ -163,7 +163,7 @@ void Thread::initialSwitch() {
 	spinlock_aquire(&switchLock);
 	cur = Sched::perform(NULL,0);
 	cur->stats.schedCount++;
-	vmm_setTimestamp(cur,timer_getTimestamp());
+	vmm_setTimestamp(cur,Timer::getTimestamp());
 	cur->setCPU(gdt_prepareRun(NULL,cur));
 	fpu_lockFPU();
 	cur->stats.cycleStart = cpu_rdtsc();
@@ -180,7 +180,7 @@ void ThreadBase::doSwitch() {
 
 	/* update runtime-stats */
 	cycles = cpu_rdtsc();
-	runtime = timer_cyclesToTime(cycles - old->stats.cycleStart);
+	runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
@@ -190,7 +190,7 @@ void ThreadBase::doSwitch() {
 
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
-		time_t timestamp = timer_cyclesToTime(cycles);
+		time_t timestamp = Timer::cyclesToTime(cycles);
 		vmm_setTimestamp(n,timestamp);
 		n->setCPU(gdt_prepareRun(old,n));
 

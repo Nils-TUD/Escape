@@ -97,7 +97,7 @@ static sView views[] = {
 	{"ioapic",(fView)ioapic_print},
 	{"acpi",(fView)acpi_print},
 #endif
-	{"timer",(fView)timer_print},
+	{"timer",(fView)Timer::print},
 	{"boot",(fView)boot_print},
 	{"locks",(fView)Lock::print},
 	{"events",(fView)Event::print},

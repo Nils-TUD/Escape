@@ -290,7 +290,7 @@ void ThreadBase::kill() {
 
 	/* remove from all modules we may be announced */
 	makeUnrunnable();
-	timer_removeThread(tid);
+	Timer::removeThread(tid);
 	sig_removeHandlerFor(tid);
 	freeArch(static_cast<Thread*>(this));
 	vfs_removeThread(tid);

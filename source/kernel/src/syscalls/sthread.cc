@@ -77,7 +77,7 @@ int sysc_getcycles(Thread *t,sIntrptStackFrame *stack) {
 int sysc_alarm(Thread *t,sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
-	if((res = timer_sleepFor(t->getTid(),msecs,false)) < 0)
+	if((res = Timer::sleepFor(t->getTid(),msecs,false)) < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -85,12 +85,12 @@ int sysc_alarm(Thread *t,sIntrptStackFrame *stack) {
 int sysc_sleep(Thread *t,sIntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
-	if((res = timer_sleepFor(t->getTid(),msecs,true)) < 0)
+	if((res = Timer::sleepFor(t->getTid(),msecs,true)) < 0)
 		SYSC_ERROR(stack,res);
 	Thread::switchAway();
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
 	 * and the sleep-time was not over yet. */
-	timer_removeThread(t->getTid());
+	Timer::removeThread(t->getTid());
 	if(sig_hasSignalFor(t->getTid()))
 		SYSC_ERROR(stack,-EINTR);
 	SYSC_RET1(stack,0);

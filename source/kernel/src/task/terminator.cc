@@ -56,7 +56,7 @@ void term_start(void) {
 
 			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
-				timer_sleepFor(t->getTid(),20,true);
+				Timer::sleepFor(t->getTid(),20,true);
 				Thread::switchAway();
 			}
 			Proc::killThread(dt->getTid());

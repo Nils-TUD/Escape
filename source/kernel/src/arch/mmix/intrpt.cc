@@ -271,8 +271,8 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack,A_UNUSED int irqNo) {
 	bool res;
 	sig_addSignal(SIG_INTRPT_TIMER);
-	res = timer_intrpt();
-	timer_ackIntrpt();
+	res = Timer::intrpt();
+	Timer::ackIntrpt();
 	if(res) {
 		Thread *t = Thread::getRunning();
 		if(t->getIntrptLevel() == 0)

@@ -20,18 +20,51 @@
 #pragma once
 
 #include <esc/common.h>
+#include <sys/cpu.h>
 
-/**
- * Inits the architecture-dependent part of the timer
- */
-void timer_arch_init(void);
+class Timer : public TimerBase {
+	friend class TimerBase;
 
-/**
- * Acknoleges a timer-interrupt
- */
-void timer_ackIntrpt(void);
+	Timer() = delete;
 
-/**
- * @return the elapsed milliseconds since the last timer-interrupt
- */
-time_t timer_getTimeSinceIRQ(void);
+	static const uintptr_t TIMER_BASE		= 0x8001000000000000;
+
+	static const ulong REG_CTRL				= 0;	/* timer control register */
+	static const ulong REG_DIVISOR			= 1;	/* timer divisor register */
+
+	static const ulong CTRL_EXP				= 0x01;	/* timer has expired */
+	static const ulong CTRL_IEN				= 0x02;	/* enable timer interrupt */
+
+public:
+	/**
+	 * Acknoleges a timer-interrupt
+	 */
+	static void ackIntrpt();
+
+	/**
+	 * @return the elapsed milliseconds since the last timer-interrupt
+	 */
+	static time_t getTimeSinceIRQ();
+};
+
+inline void TimerBase::archInit() {
+	ulong *regs = (ulong*)Timer::TIMER_BASE;
+	/* set frequency */
+	regs[Timer::REG_DIVISOR] = 1000 / Timer::FREQUENCY_DIV;
+	/* enable timer */
+	regs[Timer::REG_CTRL] = Timer::CTRL_IEN;
+}
+
+inline void Timer::ackIntrpt() {
+	ulong *regs = (ulong*)TIMER_BASE;
+	/* remove expired-flag */
+	regs[REG_CTRL] = CTRL_IEN;
+}
+
+inline uint64_t TimerBase::cyclesToTime(uint64_t cycles) {
+	return cycles / (cpu_getSpeed() / 1000000);
+}
+
+inline uint64_t TimerBase::timeToCycles(uint us) {
+	return (cpu_getSpeed() / 1000000) * us;
+}

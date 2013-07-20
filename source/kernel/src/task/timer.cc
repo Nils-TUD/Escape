@@ -28,34 +28,20 @@
 #include <sys/spinlock.h>
 #include <errno.h>
 
-#define LISTENER_COUNT		1024
-
-/* an entry in the listener-list */
-typedef struct sTimerListener {
-	tid_t tid;
-	/* difference to the previous listener */
-	time_t time;
-	/* if true, the thread is blocked during that time. otherwise it can run and will not be waked
-	 * up, but gets a signal (SIG_ALARM) */
-	bool block;
-	struct sTimerListener *next;
-} sTimerListener;
-
 /* total elapsed milliseconds */
-static time_t elapsedMsecs = 0;
-static time_t lastResched = 0;
-static time_t lastRuntimeUpdate = 0;
-static size_t timerIntrpts = 0;
+time_t TimerBase::elapsedMsecs = 0;
+time_t TimerBase::lastResched = 0;
+time_t TimerBase::lastRuntimeUpdate = 0;
+size_t TimerBase::timerIntrpts = 0;
 
-static klock_t timerLock;
-static sTimerListener listenObjs[LISTENER_COUNT];
-static sTimerListener *freeList;
-/* processes that should be waked up to a specified time */
-static sTimerListener *listener = NULL;
+klock_t TimerBase::timerLock;
+TimerBase::Listener TimerBase::listenObjs[LISTENER_COUNT];
+TimerBase::Listener *TimerBase::freeList;
+TimerBase::Listener *TimerBase::listener = NULL;
 
-void timer_init(void) {
+void TimerBase::init(void) {
 	size_t i;
-	timer_arch_init();
+	archInit();
 
 	/* init objects */
 	listenObjs->next = NULL;
@@ -66,17 +52,9 @@ void timer_init(void) {
 	}
 }
 
-size_t timer_getIntrptCount(void) {
-	return timerIntrpts;
-}
-
-time_t timer_getTimestamp(void) {
-	return elapsedMsecs;
-}
-
-int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
+int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	time_t msecDiff;
-	sTimerListener *p,*nl,*l;
+	Listener *p,*nl,*l;
 	spinlock_aquire(&timerLock);
 	l = freeList;
 	if(l == NULL) {
@@ -116,8 +94,8 @@ int timer_sleepFor(tid_t tid,time_t msecs,bool block) {
 	return 0;
 }
 
-void timer_removeThread(tid_t tid) {
-	sTimerListener *l,*p;
+void TimerBase::removeThread(tid_t tid) {
+	Listener *l,*p;
 	spinlock_aquire(&timerLock);
 	p = NULL;
 	for(l = listener; l != NULL; p = l, l = l->next) {
@@ -140,10 +118,10 @@ void timer_removeThread(tid_t tid) {
 	spinlock_release(&timerLock);
 }
 
-bool timer_intrpt(void) {
+bool TimerBase::intrpt(void) {
 	bool res,foundThread = false;
-	sTimerListener *l,*tl;
-	time_t timeInc = 1000 / TIMER_FREQUENCY_DIV;
+	Listener *l,*tl;
+	time_t timeInc = 1000 / FREQUENCY_DIV;
 
 	spinlock_aquire(&timerLock);
 	timerIntrpts++;
@@ -184,7 +162,7 @@ bool timer_intrpt(void) {
 
 	/* if a process has been waked up or the time-slice is over, reschedule */
 	res = false;
-	if(foundThread || (elapsedMsecs - lastResched) >= PROC_TIMESLICE) {
+	if(foundThread || (elapsedMsecs - lastResched) >= TIMESLICE) {
 		lastResched = elapsedMsecs;
 		res = true;
 	}
@@ -192,9 +170,9 @@ bool timer_intrpt(void) {
 	return res;
 }
 
-void timer_print(void) {
+void TimerBase::print(void) {
 	time_t time;
-	sTimerListener *l;
+	Listener *l;
 	vid_printf("Timer-Listener:\n");
 	time = 0;
 	for(l = listener; l != NULL; l = l->next) {

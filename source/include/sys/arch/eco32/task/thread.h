@@ -50,7 +50,7 @@ inline void ThreadBase::setRunning(Thread *t) {
 }
 
 inline uint64_t ThreadBase::getTSC() {
-	return timer_getTimestamp();
+	return Timer::getTimestamp();
 }
 
 inline uint64_t ThreadBase::ticksPerSec() {

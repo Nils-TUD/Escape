@@ -266,7 +266,7 @@ static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,
 		"Threads:",Thread::getCount(),
 		"Interrupts:",intrpt_getCount(),
 		"CPUCycles:",cycles.val64,
-		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY_DIV
+		"UpTime:",Timer::getIntrptCount() / Timer::FREQUENCY_DIV
 	);
 	*buffer = buf.str;
 	*dataSize = buf.len;

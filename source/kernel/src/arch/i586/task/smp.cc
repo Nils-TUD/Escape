@@ -172,17 +172,17 @@ void SMPBase::start() {
 		*(uint32_t*)((TRAMPOLINE_ADDR | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
 
 		apic_sendInitIPI();
-		timer_wait(10000);
+		Timer::wait(10000);
 
 		apic_sendStartupIPI(TRAMPOLINE_ADDR);
-		timer_wait(200);
+		Timer::wait(200);
 		apic_sendStartupIPI(TRAMPOLINE_ADDR);
-		timer_wait(200);
+		Timer::wait(200);
 
 		/* wait until all APs are running */
 		total = getCPUCount() - 1;
 		start = cpu_rdtsc();
-		end = start + timer_timeToCycles(2000000);
+		end = start + Timer::timeToCycles(2000000);
 		while(cpu_rdtsc() < end && seenAPs != total)
 			__asm__ ("pause");
 		if(seenAPs != total) {

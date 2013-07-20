@@ -148,7 +148,7 @@ void ThreadBase::doSwitch(void) {
 	Thread *n;
 	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
 	 * measurement */
-	time_t timestamp = timer_getTimestamp();
+	time_t timestamp = Timer::getTimestamp();
 	uint64_t runtime = (timestamp - old->stats.cycleStart) * 1000;
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += timestamp - old->stats.cycleStart;

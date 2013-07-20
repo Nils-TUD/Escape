@@ -18,10 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/task/timer.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
+#include <sys/task/timer.h>
 #include <sys/cpu.h>
 #include <sys/printf.h>
 #include <sys/video.h>
@@ -145,7 +145,7 @@ void cpu_detect(void) {
 			util_panic("Not enough mem for CPU-infos");
 
 		/* detect the speed just once */
-		cpuHz = timer_detectCPUSpeed();
+		cpuHz = Timer::detectCPUSpeed();
 		log_printf("Detected %zu Mhz CPU",cpuHz / 1000000);
 	}
 

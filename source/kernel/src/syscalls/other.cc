@@ -68,6 +68,6 @@ int sysc_tsctotime(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
 	if(!paging_isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
 		SYSC_ERROR(stack,-EINVAL);
-	*tsc = timer_cyclesToTime(*tsc);
+	*tsc = Timer::cyclesToTime(*tsc);
 	SYSC_RET1(stack,0);
 }

@@ -186,7 +186,7 @@ uint64_t ThreadBase::getRuntime() const {
 		/* if the thread is running, we must take the time since the last scheduling of that thread
 		 * into account. this is especially a problem with idle-threads */
 		uint64_t cycles = cpu_rdtsc();
-		return (stats.runtime + timer_cyclesToTime(cycles - stats.cycleStart));
+		return (stats.runtime + Timer::cyclesToTime(cycles - stats.cycleStart));
 	}
 	return stats.runtime;
 }
@@ -208,7 +208,7 @@ void ThreadBase::doSwitch(void) {
 
 	/* update runtime-stats */
 	cycles = cpu_rdtsc();
-	runtime = timer_cyclesToTime(cycles - old->stats.cycleStart);
+	runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
@@ -218,7 +218,7 @@ void ThreadBase::doSwitch(void) {
 
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
-		time_t timestamp = timer_getTimestamp();
+		time_t timestamp = Timer::getTimestamp();
 		setRunning(n);
 		vmm_setTimestamp(n,timestamp);
 

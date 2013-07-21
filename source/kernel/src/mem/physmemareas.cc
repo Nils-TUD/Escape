@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmemareas.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/mem/paging.h>
 #include <sys/util.h>
 #include <sys/video.h>

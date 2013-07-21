@@ -18,10 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmemareas.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/util.h>
 #include <esc/test.h>
-#include "tpmemareas.h"
+#include "tphysmemareas.h"
 #include "testutils.h"
 
 /* forward declarations */

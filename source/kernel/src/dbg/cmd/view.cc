@@ -40,7 +40,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
-#include <sys/mem/pmemareas.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/swapmap.h>
 #include <sys/boot.h>

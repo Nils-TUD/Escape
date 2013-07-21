@@ -23,7 +23,7 @@
 #include <sys/mem/sllnodes.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/pmemareas.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/event.h>

@@ -21,7 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/pmemareas.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/util.h>

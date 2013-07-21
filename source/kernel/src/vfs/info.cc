@@ -24,7 +24,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/swapmap.h>
-#include <sys/mem/pmemareas.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/task/timer.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>

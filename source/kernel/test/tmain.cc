@@ -45,7 +45,7 @@
 #include "tctype.h"
 #include "tvmreg.h"
 #include "tvmfree.h"
-#include "tpmemareas.h"
+#include "tphysmemareas.h"
 /* TODO find a better solution */
 #ifdef __mmix__
 #include "arch/mmix/taddrspace.h"

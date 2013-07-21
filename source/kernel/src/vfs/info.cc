@@ -290,7 +290,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 	total = pmemareas_getTotal();
 	ksize = boot_getKernelSize();
 	msize = boot_getModuleSize();
-	kheap = kheap_getOccupiedMem();
+	kheap = KHeap::getOccupiedMem();
 	cache = Cache::getOccMem();
 	pmem = pmem_getStackSize();
 	Proc::getMemUsage(&dataShared,&dataOwn,&dataReal);
@@ -321,7 +321,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 		"Modules:",msize,
 		"PhysMem:",pmem,
 		"KHeapSize:",kheap,
-		"KHeapUsage:",kheap_getUsedMem(),
+		"KHeapUsage:",KHeap::getUsedMem(),
 		"CacheSize:",cache,
 		"CacheUsage:",Cache::getUsedMem(),
 		"UserShared:",dataShared,

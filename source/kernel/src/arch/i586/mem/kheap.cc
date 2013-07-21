@@ -22,9 +22,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 
-static size_t pages = 0;
-
-uintptr_t kheap_allocAreas(void) {
+uintptr_t KHeap::allocAreas(void) {
 	/* heap full? */
 	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return 0;
@@ -37,7 +35,7 @@ uintptr_t kheap_allocAreas(void) {
 	return KERNEL_HEAP_START + pages++ * PAGE_SIZE;
 }
 
-uintptr_t kheap_allocSpace(size_t count) {
+uintptr_t KHeap::allocSpace(size_t count) {
 	/* heap full? */
 	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return 0;

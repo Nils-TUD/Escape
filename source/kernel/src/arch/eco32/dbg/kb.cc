@@ -170,8 +170,8 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 83 */	{VK_F7,			0},
 };
 
-static bool isExt = 0;
-static bool isBreak = false;
+static int isExt = 0;
+static int isBreak = 0;
 
 uint8_t kb_getKeyCode(uint *flags) {
 	uint8_t scanCode,keycode;
@@ -183,12 +183,12 @@ uint8_t kb_getKeyCode(uint *flags) {
 	scanCode = kb[KEYBOARD_DATA];
 	/* extended code-start? */
 	if(scanCode == 0xE0) {
-		isExt = true;
+		isExt = 1;
 		return VK_NOKEY;
 	}
 	/* break code? */
 	if(scanCode == 0xF0) {
-		isBreak = true;
+		isBreak = 1;
 		return VK_NOKEY;
 	}
 
@@ -199,7 +199,7 @@ uint8_t kb_getKeyCode(uint *flags) {
 		*flags |= KE_BREAK;
 	else
 		*flags &= ~KE_BREAK;
-	isExt = false;
-	isBreak = false;
+	isExt = 0;
+	isBreak = 0;
 	return keycode;
 }

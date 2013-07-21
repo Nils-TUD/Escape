@@ -22,21 +22,23 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 
-uintptr_t kheap_allocAreas(void) {
+uintptr_t KHeap::allocAreas(void) {
 	frameno_t frame = pmem_allocate(FRM_CRIT);
 	if(frame == 0)
 		return 0;
+	pages++;
 	return DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
 }
 
-uintptr_t kheap_allocSpace(size_t count) {
+uintptr_t KHeap::allocSpace(size_t count) {
 	ssize_t res;
 	/* if its just one page, take a frame from the pmem-stack */
 	if(count == 1)
-		return kheap_allocAreas();
+		return allocAreas();
 	/* otherwise we have to use contiguous physical memory */
 	res = pmem_allocateContiguous(count,1);
 	if(res < 0)
 		return 0;
+	pages += count;
 	return DIR_MAPPED_SPACE | (res * PAGE_SIZE);
 }

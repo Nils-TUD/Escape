@@ -20,96 +20,139 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 #include <assert.h>
 
-/**
- * Allocates <size> bytes in kernel-space and returns the pointer to the beginning of
- * the allocated memory. If there is not enough memory the function returns NULL.
- *
- * @param size the number of bytes to allocate
- * @return the address of the memory or NULL
- */
-void *kheap_alloc(size_t size);
+class Cache;
 
-/**
- * Allocates space for <num> elements, each <size> big, on the heap and memset's the area to 0.
- * If there is not enough memory the function returns NULL.
- *
- * @param num the number of elements
- * @param size the size of each element
- * @return the address of the memory or NULL
- */
-void *kheap_calloc(size_t num,size_t size);
+class KHeap {
+	friend class Cache;
 
-/**
- * Reallocates the area at given address to the given size. That means either your data will
- * be copied to a different address or your area will be resized.
- *
- * @param addr the address of your area
- * @param size the number of bytes your area should be resized to
- * @return the address (may be different) of your area or NULL if there is not enough mem
- */
-void *kheap_realloc(void *addr,size_t size);
+	KHeap() = delete;
 
-/**
- * Frees the via kmalloc() allocated area starting at <addr>.
- */
-void kheap_free(void *addr);
+	struct MemArea {
+		size_t size;
+		void *address;
+		MemArea *next;
+	};
 
-/**
- * Adds the given memory-range to the heap as free space
- *
- * @param addr the start-address
- * @param size the size
- * @return true if the memory has been added (we need areas to do so, which might not be available
- * 	when no area is free anymore and no free frame is available)
- */
-bool kheap_addMemory(uintptr_t addr,size_t size);
+	/* the number of entries in the occupied map */
+	static const size_t OCC_MAP_SIZE			= 1024;
+	static const ulong GUARD_MAGIC				= 0xDEADBEEF;
 
-/**
- * @return the number of allocated pages
- */
-size_t kheap_getPageCount(void);
+public:
+	/**
+	 * Allocates <size> bytes in kernel-space and returns the pointer to the beginning of
+	 * the allocated memory. If there is not enough memory the function returns NULL.
+	 *
+	 * @param size the number of bytes to allocate
+	 * @return the address of the memory or NULL
+	 */
+	static void *alloc(size_t size);
 
-/**
- * @return the number of used bytes
- */
-size_t kheap_getUsedMem(void);
+	/**
+	 * Allocates space for <num> elements, each <size> big, on the heap and memset's the area to 0.
+	 * If there is not enough memory the function returns NULL.
+	 *
+	 * @param num the number of elements
+	 * @param size the size of each element
+	 * @return the address of the memory or NULL
+	 */
+	static void *calloc(size_t num,size_t size);
 
-/**
- * @return the total number of bytes occupied (frames reserved; maybe not all in use atm)
- */
-size_t kheap_getOccupiedMem(void);
+	/**
+	 * Reallocates the area at given address to the given size. That means either your data will
+	 * be copied to a different address or your area will be resized.
+	 *
+	 * @param addr the address of your area
+	 * @param size the number of bytes your area should be resized to
+	 * @return the address (may be different) of your area or NULL if there is not enough mem
+	 */
+	static void *realloc(void *addr,size_t size);
 
-/**
- * Note that this function is intended for debugging-purposes only!
- *
- * @return the number of free bytes
- */
-size_t kheap_getFreeMem(void);
+	/**
+	 * Frees the via kmalloc() allocated area starting at <addr>.
+	 */
+	static void free(void *addr);
 
-/**
- * @param addr the area-address
- * @return the size of the area at given address (0 if not found)
- */
-size_t kheap_getAreaSize(void *addr);
+	/**
+	 * @return the number of allocated pages
+	 */
+	static size_t getPageCount() {
+		return pages;
+	}
 
-/**
- * Internal: Allocates one page for areas
- *
- * @return the address at which the space can be accessed
- */
-uintptr_t kheap_allocAreas(void);
+	/**
+	 * @return the number of used bytes
+	 */
+	static size_t getUsedMem();
 
-/**
- * Internal: Allocates <count> pages for data
- *
- * @param count the number of pages
- * @return the address at which the space can be accessed
- */
-uintptr_t kheap_allocSpace(size_t count);
+	/**
+	 * @return the total number of bytes occupied (frames reserved; maybe not all in use atm)
+	 */
+	static size_t getOccupiedMem() {
+		return memUsage;
+	}
 
-/**
- * Prints the kernel-heap data-structure
- */
-void kheap_print(void);
+	/**
+	 * Note that this function is intended for debugging-purposes only!
+	 *
+	 * @return the number of free bytes
+	 */
+	static size_t getFreeMem();
+
+	/**
+	 * Prints the kernel-heap data-structure
+	 */
+	static void print();
+
+private:
+	/**
+	 * Internal: Allocates one page for areas
+	 *
+	 * @return the address at which the space can be accessed
+	 */
+	static uintptr_t allocAreas();
+
+	/**
+	 * Internal: Allocates <count> pages for data
+	 *
+	 * @param count the number of pages
+	 * @return the address at which the space can be accessed
+	 */
+	static uintptr_t allocSpace(size_t count);
+
+	/**
+	 * Adds the given memory-range to the heap as free space
+	 *
+	 * @param addr the start-address
+	 * @param size the size
+	 * @return true if the memory has been added (we need areas to do so, which might not be available
+	 * 	when no area is free anymore and no free frame is available)
+	 */
+	static bool addMemory(uintptr_t addr,size_t size);
+
+	static bool loadNewAreas(void);
+	static bool doAddMemory(uintptr_t addr,size_t size);
+	static bool loadNewSpace(size_t size);
+	static size_t getHash(void *addr);
+
+	/* a linked list of free and usable areas. That means the areas have an address and size */
+	static MemArea *usableList;
+	/* a linked list of free but not usable areas. That means the areas have no address and size */
+	static MemArea *freeList;
+	/* a hashmap with occupied-lists, key is getHash(address) */
+	static MemArea *occupiedMap[];
+	/* currently occupied memory */
+	static size_t memUsage;
+	static size_t pages;
+	static klock_t lock;
+};
+
+inline bool KHeap::addMemory(uintptr_t addr,size_t size) {
+	bool res;
+	spinlock_aquire(&lock);
+	res = doAddMemory(addr,size);
+	spinlock_release(&lock);
+	return res;
+}

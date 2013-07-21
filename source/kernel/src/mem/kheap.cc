@@ -27,39 +27,17 @@
 #include <assert.h>
 #include <string.h>
 
-/* the number of entries in the occupied map */
-#define OCC_MAP_SIZE			1024
+KHeap::MemArea *KHeap::usableList = NULL;
+KHeap::MemArea *KHeap::freeList = NULL;
+KHeap::MemArea *KHeap::occupiedMap[OCC_MAP_SIZE] = {NULL};
+size_t KHeap::memUsage = 0;
+size_t KHeap::pages = 0;
+klock_t KHeap::lock;
 
-#define GUARD_MAGIC				0xDEADBEEF
-
-/* an area in memory */
-typedef struct sMemArea sMemArea;
-struct sMemArea {
-	size_t size;
-	void *address;
-	sMemArea *next;
-};
-
-static bool kheap_loadNewAreas(void);
-static bool kheap_doAddMemory(uintptr_t addr,size_t size);
-static bool kheap_loadNewSpace(size_t size);
-static size_t kheap_getHash(void *addr);
-
-/* a linked list of free and usable areas. That means the areas have an address and size */
-static sMemArea *usableList = NULL;
-/* a linked list of free but not usable areas. That means the areas have no address and size */
-static sMemArea *freeList = NULL;
-/* a hashmap with occupied-lists, key is getHash(address) */
-static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
-/* currently occupied memory */
-static size_t memUsage = 0;
-static size_t pages = 0;
-static klock_t kheapLock;
-
-void *kheap_alloc(size_t size) {
+void *KHeap::alloc(size_t size) {
 	ulong *begin;
-	sMemArea *area,*prev,*narea;
-	sMemArea **list;
+	MemArea *area,*prev,*narea;
+	MemArea **list;
 
 	if(size == 0)
 		return NULL;
@@ -67,7 +45,7 @@ void *kheap_alloc(size_t size) {
 	/* align and we need 3 ulongs for the guards */
 	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
-	spinlock_aquire(&kheapLock);
+	spinlock_aquire(&lock);
 
 	/* find a suitable area */
 	prev = NULL;
@@ -81,8 +59,8 @@ void *kheap_alloc(size_t size) {
 
 	/* no area found? */
 	if(area == NULL) {
-		if(!kheap_loadNewSpace(size)) {
-			spinlock_release(&kheapLock);
+		if(!loadNewSpace(size)) {
+			spinlock_release(&lock);
 			return NULL;
 		}
 		/* we can assume that it fits */
@@ -101,9 +79,9 @@ void *kheap_alloc(size_t size) {
 	/* is there space left? */
 	if(size < area->size) {
 		if(freeList == NULL) {
-			if(!kheap_loadNewAreas()) {
+			if(!loadNewAreas()) {
 				/* TODO we may have changed something... */
-				spinlock_release(&kheapLock);
+				spinlock_release(&lock);
 				return NULL;
 			}
 		}
@@ -120,7 +98,7 @@ void *kheap_alloc(size_t size) {
 	}
 
 	/* insert in occupied-map */
-	list = occupiedMap + kheap_getHash(area->address);
+	list = occupiedMap + getHash(area->address);
 	area->next = *list;
 	*list = area;
 
@@ -129,12 +107,12 @@ void *kheap_alloc(size_t size) {
 	begin[0] = size - sizeof(ulong) * 3;
 	begin[1] = GUARD_MAGIC;
 	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-	spinlock_release(&kheapLock);
+	spinlock_release(&lock);
 	return begin + 2;
 }
 
-void *kheap_calloc(size_t num,size_t size) {
-	void *a = kheap_alloc(num * size);
+void *KHeap::calloc(size_t num,size_t size) {
+	void *a = alloc(num * size);
 	if(a == NULL)
 		return NULL;
 
@@ -142,9 +120,9 @@ void *kheap_calloc(size_t num,size_t size) {
 	return a;
 }
 
-void kheap_free(void *addr) {
+void KHeap::free(void *addr) {
 	ulong *begin;
-	sMemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
+	MemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
 
 	/* addr may be null */
 	if(addr == NULL)
@@ -155,11 +133,11 @@ void kheap_free(void *addr) {
 	assert(begin[1] == GUARD_MAGIC);
 	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
 
-	spinlock_aquire(&kheapLock);
+	spinlock_aquire(&lock);
 
 	/* find the area with given address */
 	oprev = NULL;
-	area = occupiedMap[kheap_getHash(begin)];
+	area = occupiedMap[getHash(begin)];
 	while(area != NULL) {
 		if(area->address == begin)
 			break;
@@ -169,7 +147,7 @@ void kheap_free(void *addr) {
 
 	/* area not found? */
 	if(area == NULL) {
-		spinlock_release(&kheapLock);
+		spinlock_release(&lock);
 		return;
 	}
 
@@ -200,7 +178,7 @@ void kheap_free(void *addr) {
 	if(oprev)
 		oprev->next = area->next;
 	else
-		occupiedMap[kheap_getHash(begin)] = area->next;
+		occupiedMap[getHash(begin)] = area->next;
 
 	/* see what we have to merge */
 	if(prev && next) {
@@ -253,22 +231,22 @@ void kheap_free(void *addr) {
 		area->next = usableList;
 		usableList = area;
 	}
-	spinlock_release(&kheapLock);
+	spinlock_release(&lock);
 }
 
-void *kheap_realloc(void *addr,size_t size) {
+void *KHeap::realloc(void *addr,size_t size) {
 	ulong *begin;
-	sMemArea *area,*a,*prev;
+	MemArea *area,*a,*prev;
 
 	if(addr == NULL)
-		return kheap_alloc(size);
+		return alloc(size);
 
 	begin = (ulong*)addr - 2;
 
-	spinlock_aquire(&kheapLock);
+	spinlock_aquire(&lock);
 
 	/* find the area with given address */
-	area = occupiedMap[kheap_getHash(begin)];
+	area = occupiedMap[getHash(begin)];
 	while(area != NULL) {
 		if(area->address == begin)
 			break;
@@ -277,7 +255,7 @@ void *kheap_realloc(void *addr,size_t size) {
 
 	/* area not found? */
 	if(area == NULL) {
-		spinlock_release(&kheapLock);
+		spinlock_release(&lock);
 		return NULL;
 	}
 
@@ -286,7 +264,7 @@ void *kheap_realloc(void *addr,size_t size) {
 
 	/* ignore shrinks */
 	if(size < area->size) {
-		spinlock_release(&kheapLock);
+		spinlock_release(&lock);
 		return addr;
 	}
 
@@ -320,7 +298,7 @@ void *kheap_realloc(void *addr,size_t size) {
 				begin[0] = size - sizeof(ulong) * 3;
 				begin[1] = GUARD_MAGIC;
 				begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-				spinlock_release(&kheapLock);
+				spinlock_release(&lock);
 				return begin + 2;
 			}
 
@@ -330,34 +308,22 @@ void *kheap_realloc(void *addr,size_t size) {
 		prev = a;
 		a = a->next;
 	}
-	spinlock_release(&kheapLock);
+	spinlock_release(&lock);
 
 	/* the areas are not big enough, so allocate a new one */
-	a = (sMemArea*)kheap_alloc(size);
+	a = (MemArea*)alloc(size);
 	if(a == NULL)
 		return NULL;
 
 	/* copy the old data and free it */
 	memcpy(a,addr,area->size - sizeof(ulong) * 3);
-	kheap_free(addr);
+	free(addr);
 	return a;
 }
 
-bool kheap_addMemory(uintptr_t addr,size_t size) {
-	bool res;
-	spinlock_aquire(&kheapLock);
-	res = kheap_doAddMemory(addr,size);
-	spinlock_release(&kheapLock);
-	return res;
-}
-
-size_t kheap_getPageCount(void) {
-	return pages;
-}
-
-size_t kheap_getUsedMem(void) {
+size_t KHeap::getUsedMem(void) {
 	size_t i,c = 0;
-	sMemArea *a;
+	MemArea *a;
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		a = occupiedMap[i];
 		while(a != NULL) {
@@ -368,13 +334,9 @@ size_t kheap_getUsedMem(void) {
 	return c;
 }
 
-size_t kheap_getOccupiedMem(void) {
-	return memUsage;
-}
-
-size_t kheap_getFreeMem(void) {
+size_t KHeap::getFreeMem(void) {
 	size_t c = 0;
-	sMemArea *a = usableList;
+	MemArea *a = usableList;
 	while(a != NULL) {
 		c += a->size;
 		a = a->next;
@@ -382,22 +344,11 @@ size_t kheap_getFreeMem(void) {
 	return c;
 }
 
-size_t kheap_getAreaSize(void *addr) {
-	sMemArea *area;
-	area = occupiedMap[kheap_getHash(addr)];
-	while(area != NULL) {
-		if(area->address == addr)
-			return area->size;
-		area = area->next;
-	}
-	return 0;
-}
-
-void kheap_print(void) {
-	sMemArea *area;
+void KHeap::print(void) {
+	MemArea *area;
 	size_t i;
 
-	vid_printf("Used=%zu, free=%zu, pages=%zu\n",kheap_getUsedMem(),kheap_getFreeMem(),
+	vid_printf("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
 			memUsage / PAGE_SIZE);
 	vid_printf("UsableList:\n");
 	area = usableList;
@@ -419,10 +370,10 @@ void kheap_print(void) {
 	}
 }
 
-static bool kheap_doAddMemory(uintptr_t addr,size_t size) {
-	sMemArea *area;
+bool KHeap::doAddMemory(uintptr_t addr,size_t size) {
+	MemArea *area;
 	if(freeList == NULL) {
-		if(!kheap_loadNewAreas())
+		if(!loadNewAreas())
 			return false;
 	}
 
@@ -438,7 +389,7 @@ static bool kheap_doAddMemory(uintptr_t addr,size_t size) {
 	return true;
 }
 
-static bool kheap_loadNewSpace(size_t size) {
+bool KHeap::loadNewSpace(size_t size) {
 	uintptr_t addr;
 	size_t count;
 
@@ -450,25 +401,24 @@ static bool kheap_loadNewSpace(size_t size) {
 
 	/* allocate the required pages */
 	count = BYTES_2_PAGES(size);
-	addr = kheap_allocSpace(count);
+	addr = allocSpace(count);
 	if(addr == 0)
 		return false;
 
-	pages += count;
-	return kheap_doAddMemory(addr,count * PAGE_SIZE);
+	return doAddMemory(addr,count * PAGE_SIZE);
 }
 
-static bool kheap_loadNewAreas(void) {
-	sMemArea *area,*end;
+bool KHeap::loadNewAreas(void) {
+	MemArea *area,*end;
 	uintptr_t addr;
 
-	addr = kheap_allocAreas();
+	addr = allocAreas();
 	if(addr == 0)
 		return false;
 
 	/* determine start- and end-address */
-	area = (sMemArea*)addr;
-	end = area + (PAGE_SIZE / sizeof(sMemArea));
+	area = (MemArea*)addr;
+	end = area + (PAGE_SIZE / sizeof(MemArea));
 
 	/* put all areas in the freelist */
 	area->next = freeList;
@@ -480,12 +430,11 @@ static bool kheap_loadNewAreas(void) {
 		area++;
 	}
 
-	pages++;
 	memUsage += PAGE_SIZE;
 	return true;
 }
 
-static size_t kheap_getHash(void *addr) {
+size_t KHeap::getHash(void *addr) {
 	/* the algorithm distributes the entries more equally in the occupied-map. */
 	/* borrowed from java.util.HashMap :) */
 	size_t h = (uintptr_t)addr;

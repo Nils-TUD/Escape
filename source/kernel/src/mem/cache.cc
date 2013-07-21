@@ -70,7 +70,7 @@ void *Cache::alloc(size_t size) {
 			goto done;
 		}
 	}
-	res = kheap_alloc(size);
+	res = KHeap::alloc(size);
 
 done:
 #if DEBUG_ALLOC_N_FREE
@@ -100,7 +100,7 @@ void *Cache::realloc(void *p,size_t size) {
 	area = (ulong*)p - 2;
 	/* if the guard is not ours, perhaps it has been allocated on the fallback-heap */
 	if(area[1] != GUARD_MAGIC)
-		return kheap_realloc(p,size);
+		return KHeap::realloc(p,size);
 
 	assert(area[0] < ARRAY_SIZE(caches));
 	objSize = caches[area[0]].objSize;
@@ -131,7 +131,7 @@ void Cache::free(void *p) {
 
 	/* if the guard is not ours, perhaps it has been allocated on the fallback-heap */
 	if(area[1] != GUARD_MAGIC) {
-		kheap_free(p);
+		KHeap::free(p);
 		return;
 	}
 
@@ -205,7 +205,7 @@ void *Cache::get(Entry *c,size_t i) {
 		size_t totalObjSize = c->objSize + sizeof(ulong) * 3;
 		size_t j,objs = bytes / totalObjSize;
 		size_t rem = bytes - objs * totalObjSize;
-		ulong *space = (ulong*)kheap_allocSpace(pageCount);
+		ulong *space = (ulong*)KHeap::allocSpace(pageCount);
 		if(space == NULL) {
 			spinlock_release(&cacheLock);
 			return NULL;
@@ -215,7 +215,7 @@ void *Cache::get(Entry *c,size_t i) {
 		/* if the remaining space is big enough (it won't bring advantages to add dozens e.g. 8
 		 * byte large areas to the heap), add it to the fallback-heap */
 		if(rem >= HEAP_THRESHOLD)
-			kheap_addMemory((uintptr_t)space + bytes - rem,rem);
+			KHeap::addMemory((uintptr_t)space + bytes - rem,rem);
 
 		c->totalObjs += objs;
 		c->freeObjs += objs;

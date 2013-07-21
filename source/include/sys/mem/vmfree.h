@@ -21,73 +21,79 @@
 
 #include <sys/common.h>
 
-typedef struct sVMFreeArea {
-	uintptr_t addr;
-	size_t size;
-	struct sVMFreeArea *next;
-} sVMFreeArea;
+class VMFreeMap {
+	struct Area {
+		uintptr_t addr;
+		size_t size;
+		Area *next;
+	};
 
-typedef struct {
-	sVMFreeArea *list;
-} sVMFreeMap;
+public:
+	/**
+	 * Does NOT initialize the object!
+	 */
+	VMFreeMap() {
+	}
 
-/**
- * Inits the vmfree-map
- *
- * @param map the map
- * @param addr the address of the map
- * @param size the size of the map
- * @return true if successfull
- */
-bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size);
+	/**
+	 * Inits the vmfree-map
+	 *
+	 * @param map the map
+	 * @param addr the address of the map
+	 * @param size the size of the map
+	 * @return true if successfull
+	 */
+	static bool init(VMFreeMap *map,uintptr_t addr,size_t size);
 
-/**
- * Destroys the given map
- *
- * @param map the map
- */
-void vmfree_destroy(sVMFreeMap *map);
+	/**
+	 * Destroys this map
+	 */
+	void destroy();
 
-/**
- * Allocates an area in the given map, that is <size> bytes large.
- *
- * @param map the map
- * @param size the size of the area
- * @return the address of 0 if failed
- */
-uintptr_t vmfree_allocate(sVMFreeMap *map,size_t size);
+	/**
+	 * Allocates an area in the given map, that is <size> bytes large.
+	 *
+	 * @param map the map
+	 * @param size the size of the area
+	 * @return the address of 0 if failed
+	 */
+	uintptr_t allocate(size_t size);
 
-/**
- * Allocates an area in the given map at the specified address, that is <size> bytes large.
- *
- * @param map the map
- * @param addr the address of the area
- * @param size the size of the area
- * @return the address of 0 if failed
- */
-bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size);
+	/**
+	 * Allocates an area in the given map at the specified address, that is <size> bytes large.
+	 *
+	 * @param map the map
+	 * @param addr the address of the area
+	 * @param size the size of the area
+	 * @return the address of 0 if failed
+	 */
+	bool allocateAt(uintptr_t addr,size_t size);
 
-/**
- * Frees the area at <addr> with <size> bytes.
- *
- * @param map the map
- * @param addr the address of the area
- * @param size the size of the area
- */
-void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size);
+	/**
+	 * Frees the area at <addr> with <size> bytes.
+	 *
+	 * @param map the map
+	 * @param addr the address of the area
+	 * @param size the size of the area
+	 */
+	void free(uintptr_t addr,size_t size);
 
-/**
- * Just for debugging/testing: Determines the total number of free bytes in the map
- *
- * @param map the map
- * @param areas will be set to the number of areas in the map
- * @return the free bytes
- */
-size_t vmfree_getSize(sVMFreeMap *map,size_t *areas);
+	/**
+	 * Just for debugging/testing: Determines the total number of free bytes in the map
+	 *
+	 * @param map the map
+	 * @param areas will be set to the number of areas in the map
+	 * @return the free bytes
+	 */
+	size_t getSize(size_t *areas) const;
 
-/**
- * Prints the given map
- *
- * @param map the map
- */
-void vmfree_print(sVMFreeMap *map);
+	/**
+	 * Prints the given map
+	 *
+	 * @param map the map
+	 */
+	void print() const;
+
+private:
+	Area *list;
+};

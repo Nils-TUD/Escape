@@ -86,34 +86,34 @@ static void test_vmfree_randOrder(void) {
 }
 
 static void test_vmfree_allocAt(void) {
-	sVMFreeMap map;
+	VMFreeMap map;
 	size_t areas,size = TOTAL_SIZE;
 	test_caseStart("Allocating areas at specific positions");
 	checkMemoryBefore(false);
 
-	test_assertTrue(vmfree_init(&map,PAGE_SIZE,size));
-	test_assertSize(vmfree_getSize(&map,&areas),size);
+	test_assertTrue(VMFreeMap::init(&map,PAGE_SIZE,size));
+	test_assertSize(map.getSize(&areas),size);
 	test_assertSize(areas,1);
 
-	test_assertTrue(vmfree_allocateAt(&map,1 * PAGE_SIZE,2 * PAGE_SIZE));
-	test_assertTrue(vmfree_allocateAt(&map,3 * PAGE_SIZE,1 * PAGE_SIZE));
-	test_assertTrue(vmfree_allocateAt(&map,6 * PAGE_SIZE,2 * PAGE_SIZE));
-	test_assertTrue(vmfree_allocateAt(&map,5 * PAGE_SIZE,1 * PAGE_SIZE));
-	test_assertTrue(vmfree_allocateAt(&map,18 * PAGE_SIZE,1 * PAGE_SIZE));
-	test_assertTrue(vmfree_allocateAt(&map,16 * PAGE_SIZE,1 * PAGE_SIZE));
-	test_assertTrue(vmfree_allocateAt(&map,4 * PAGE_SIZE,1 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(1 * PAGE_SIZE,2 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(3 * PAGE_SIZE,1 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(6 * PAGE_SIZE,2 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(5 * PAGE_SIZE,1 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(18 * PAGE_SIZE,1 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(16 * PAGE_SIZE,1 * PAGE_SIZE));
+	test_assertTrue(map.allocateAt(4 * PAGE_SIZE,1 * PAGE_SIZE));
 
-	vmfree_free(&map,18 * PAGE_SIZE,1 * PAGE_SIZE);
-	vmfree_free(&map,6 * PAGE_SIZE,2 * PAGE_SIZE);
-	vmfree_free(&map,5 * PAGE_SIZE,1 * PAGE_SIZE);
-	vmfree_free(&map,1 * PAGE_SIZE,2 * PAGE_SIZE);
-	vmfree_free(&map,4 * PAGE_SIZE,1 * PAGE_SIZE);
-	vmfree_free(&map,3 * PAGE_SIZE,1 * PAGE_SIZE);
-	vmfree_free(&map,16 * PAGE_SIZE,1 * PAGE_SIZE);
+	map.free(18 * PAGE_SIZE,1 * PAGE_SIZE);
+	map.free(6 * PAGE_SIZE,2 * PAGE_SIZE);
+	map.free(5 * PAGE_SIZE,1 * PAGE_SIZE);
+	map.free(1 * PAGE_SIZE,2 * PAGE_SIZE);
+	map.free(4 * PAGE_SIZE,1 * PAGE_SIZE);
+	map.free(3 * PAGE_SIZE,1 * PAGE_SIZE);
+	map.free(16 * PAGE_SIZE,1 * PAGE_SIZE);
 
-	test_assertSize(vmfree_getSize(&map,&areas),size);
+	test_assertSize(map.getSize(&areas),size);
 	test_assertSize(areas,1);
-	vmfree_destroy(&map);
+	map.destroy();
 
 	checkMemoryAfter(false);
 	test_caseSucceeded();
@@ -123,32 +123,32 @@ static void test_vmfree_allocNFree(size_t *sizes,size_t *freeIndices,const char 
 	size_t i,areas;
 	uintptr_t addrs[AREA_COUNT];
 	size_t size = TOTAL_SIZE;
-	sVMFreeMap map;
+	VMFreeMap map;
 	test_caseStart(msg);
 	checkMemoryBefore(false);
 
-	test_assertTrue(vmfree_init(&map,PAGE_SIZE,size));
-	test_assertSize(vmfree_getSize(&map,&areas),size);
+	test_assertTrue(VMFreeMap::init(&map,PAGE_SIZE,size));
+	test_assertSize(map.getSize(&areas),size);
 	test_assertSize(areas,1);
 
 	/* allocate */
 	for(i = 0; i < AREA_COUNT; i++) {
-		addrs[i] = vmfree_allocate(&map,sizes[i]);
+		addrs[i] = map.allocate(sizes[i]);
 		test_assertTrue(addrs[i] > 0);
 		size -= sizes[i];
-		test_assertSize(vmfree_getSize(&map,&areas),size);
+		test_assertSize(map.getSize(&areas),size);
 	}
 
 	/* free */
 	for(i = 0; i < AREA_COUNT; i++) {
-		vmfree_free(&map,addrs[freeIndices[i]],sizes[freeIndices[i]]);
+		map.free(addrs[freeIndices[i]],sizes[freeIndices[i]]);
 		size += sizes[freeIndices[i]];
-		test_assertSize(vmfree_getSize(&map,&areas),size);
+		test_assertSize(map.getSize(&areas),size);
 	}
 
-	test_assertSize(vmfree_getSize(&map,&areas),size);
+	test_assertSize(map.getSize(&areas),size);
 	test_assertSize(areas,1);
-	vmfree_destroy(&map);
+	map.destroy();
 
 	checkMemoryAfter(false);
 	test_caseSucceeded();

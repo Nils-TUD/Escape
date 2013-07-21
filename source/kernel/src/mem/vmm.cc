@@ -193,7 +193,7 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 		if(rflags & MAP_STACK)
 			addr = vmm_findFreeStack(p,length,rflags);
 		else
-			addr = vmfree_allocate(&p->freemap,ROUND_PAGE_UP(length));
+			addr = p->freemap.allocate(ROUND_PAGE_UP(length));
 		if(addr == 0)
 			goto errProc;
 	}
@@ -672,7 +672,7 @@ static void vmm_doRemove(Proc *p,sVMRegion *vm) {
 			p->freeStackAddr = vm->virt + vm->reg->getByteCount();
 		/* give the memory back to the free-area, if its in there */
 		else if(vm->virt >= FREE_AREA_BEGIN)
-			vmfree_free(&p->freemap,vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
+			p->freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
 		if(vm->virt == p->dataAddr)
 			p->dataAddr = 0;
 		/* now destroy region */
@@ -691,7 +691,7 @@ static void vmm_doRemove(Proc *p,sVMRegion *vm) {
 		p->addSwap(-swapped);
 		/* give the memory back to the free-area, if its in there */
 		if(vm->virt >= FREE_AREA_BEGIN)
-			vmfree_free(&p->freemap,vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
+			p->freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
 		vm->reg->release();
 	}
 	vmreg_remove(&p->regtree,vm);
@@ -723,7 +723,7 @@ int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t
 	assert(vm->reg->getFlags() & RF_SHAREABLE);
 
 	if(dstAddr == 0)
-		dstAddr = vmfree_allocate(&dst->freemap,ROUND_PAGE_UP(vm->reg->getByteCount()));
+		dstAddr = dst->freemap.allocate(ROUND_PAGE_UP(vm->reg->getByteCount()));
 	else if(vmreg_getByAddr(&dst->regtree,dstAddr) != NULL)
 		goto errReg;
 	if(dstAddr == 0)
@@ -796,8 +796,7 @@ int vmm_cloneAll(pid_t dstId) {
 
 			/* remove regions in the free area from the free-map */
 			if(vm->virt >= FREE_AREA_BEGIN) {
-				if(!vmfree_allocateAt(&dst->freemap,nvm->virt,
-						ROUND_PAGE_UP(nvm->reg->getByteCount())))
+				if(!dst->freemap.allocateAt(nvm->virt,ROUND_PAGE_UP(nvm->reg->getByteCount())))
 					goto error;
 			}
 
@@ -984,7 +983,7 @@ static size_t vmm_doGrow(Proc *p,sVMRegion *vm,ssize_t amount) {
 			/* remove it from the free area (used by the dynlinker for its data-region only) */
 			/* note that we assume here that we get the location at the end of the data-region */
 			if(vm->virt >= FREE_AREA_BEGIN)
-				vmfree_allocate(&p->freemap,amount * PAGE_SIZE);
+				p->freemap.allocate(amount * PAGE_SIZE);
 		}
 		else {
 			if(vm->reg->getFlags() & RF_GROWS_DOWN) {
@@ -995,7 +994,7 @@ static size_t vmm_doGrow(Proc *p,sVMRegion *vm,ssize_t amount) {
 				virt = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
 			/* give it back to the free area */
 			if(vm->virt >= FREE_AREA_BEGIN)
-				vmfree_free(&p->freemap,virt,-amount * PAGE_SIZE);
+				p->freemap.free(virt,-amount * PAGE_SIZE);
 			pts = paging_unmapFrom(p->getPageDir(),virt,-amount,true);
 			p->addOwn(-(pts - amount));
 			p->addSwap(-res);

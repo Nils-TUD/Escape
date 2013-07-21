@@ -522,7 +522,7 @@ public:
 	/* address of the data-region; required for chgsize */
 	uintptr_t dataAddr;
 	/* area-map for the free area */
-	sVMFreeMap freemap;
+	VMFreeMap freemap;
 	/* the regions */
 	sVMRegTree regtree;
 	/* all groups (may include egid or not) of this process */

@@ -29,8 +29,8 @@
  * malloc-like management that keeps track of the free areas (not the used ones).
  */
 
-bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size) {
-	sVMFreeArea *a = (sVMFreeArea*)Cache::alloc(sizeof(sVMFreeArea));
+bool VMFreeMap::init(VMFreeMap *map,uintptr_t addr,size_t size) {
+	Area *a = (Area*)Cache::alloc(sizeof(Area));
 	if(!a)
 		return false;
 	a->addr = addr;
@@ -40,23 +40,23 @@ bool vmfree_init(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	return true;
 }
 
-void vmfree_destroy(sVMFreeMap *map) {
-	sVMFreeArea *a;
-	for(a = map->list; a != NULL; ) {
-		sVMFreeArea *n = a->next;
+void VMFreeMap::destroy() {
+	Area *a;
+	for(a = list; a != NULL; ) {
+		Area *n = a->next;
 		Cache::free(a);
 		a = n;
 	}
-	map->list = NULL;
+	list = NULL;
 }
 
-uintptr_t vmfree_allocate(sVMFreeMap *map,size_t size) {
-	sVMFreeArea *a,*p;
+uintptr_t VMFreeMap::allocate(size_t size) {
+	Area *a,*p;
 	uintptr_t res;
 	/* TODO is that correct on archs with page-size != 0x1000? */
 	assert((size & 0xFFF) == 0);
 	p = NULL;
-	for(a = map->list; a != NULL; p = a, a = a->next) {
+	for(a = list; a != NULL; p = a, a = a->next) {
 		if(a->size >= size)
 			break;
 	}
@@ -72,16 +72,16 @@ uintptr_t vmfree_allocate(sVMFreeMap *map,size_t size) {
 		if(p)
 			p->next = a->next;
 		else
-			map->list = a->next;
+			list = a->next;
 		Cache::free(a);
 	}
 	return res;
 }
 
-bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
-	sVMFreeArea *a,*p;
+bool VMFreeMap::allocateAt(uintptr_t addr,size_t size) {
+	Area *a,*p;
 	p = NULL;
-	for(a = map->list; a != NULL && addr > a->addr + a->size; p = a, a = a->next)
+	for(a = list; a != NULL && addr > a->addr + a->size; p = a, a = a->next)
 		;
 	/* invalid position or too small? */
 	if(a == NULL || addr + size > a->addr + a->size || (!p && addr < a->addr))
@@ -92,7 +92,7 @@ bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
 		if(p)
 			p->next = a->next;
 		else
-			map->list = a->next;
+			list = a->next;
 		Cache::free(a);
 	}
 	/* at the beginning? */
@@ -106,7 +106,7 @@ bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	}
 	/* in the middle */
 	else {
-		sVMFreeArea *na = (sVMFreeArea*)Cache::alloc(sizeof(sVMFreeArea));
+		Area *na = (Area*)Cache::alloc(sizeof(Area));
 		if(!na)
 			return false;
 		na->addr = a->addr;
@@ -115,19 +115,19 @@ bool vmfree_allocateAt(sVMFreeMap *map,uintptr_t addr,size_t size) {
 		if(p)
 			p->next = na;
 		else
-			map->list = na;
+			list = na;
 		a->addr = addr + size;
 		a->size -= na->size + size;
 	}
 	return true;
 }
 
-void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size) {
-	sVMFreeArea *n,*p;
+void VMFreeMap::free(uintptr_t addr,size_t size) {
+	Area *n,*p;
 	assert((size & 0xFFF) == 0);
 	/* find the area behind ours */
 	p = NULL;
-	for(n = map->list; n != NULL && addr > n->addr; p = n, n = n->next)
+	for(n = list; n != NULL && addr > n->addr; p = n, n = n->next)
 		;
 
 	/* merge with prev and next */
@@ -147,7 +147,7 @@ void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size) {
 	}
 	/* create new area between them */
 	else {
-		sVMFreeArea *a = (sVMFreeArea*)Cache::alloc(sizeof(sVMFreeArea));
+		Area *a = (Area*)Cache::alloc(sizeof(Area));
 		/* if this fails, ignore it; we can't really do something about it */
 		if(!a)
 			return;
@@ -156,27 +156,26 @@ void vmfree_free(sVMFreeMap *map,uintptr_t addr,size_t size) {
 		if(p)
 			p->next = a;
 		else
-			map->list = a;
+			list = a;
 		a->next = n;
 	}
 }
 
-size_t vmfree_getSize(sVMFreeMap *map,size_t *areas) {
-	sVMFreeArea *a;
+size_t VMFreeMap::getSize(size_t *areas) const {
+	Area *a;
 	size_t total = 0;
 	*areas = 0;
-	for(a = map->list; a != NULL; a = a->next) {
+	for(a = list; a != NULL; a = a->next) {
 		total += a->size;
 		(*areas)++;
 	}
 	return total;
 }
 
-void vmfree_print(sVMFreeMap *map) {
-	sVMFreeArea *a;
+void VMFreeMap::print() const {
+	Area *a;
 	size_t areas;
-	vid_printf("Free area with %zu bytes:\n",vmfree_getSize(map,&areas));
-	for(a = map->list; a != NULL; a = a->next) {
+	vid_printf("Free area with %zu bytes:\n",getSize(&areas));
+	for(a = list; a != NULL; a = a->next)
 		vid_printf("\t@ %p, %zu bytes\n",a->addr,a->size);
-	}
 }

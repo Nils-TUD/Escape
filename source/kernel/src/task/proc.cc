@@ -116,7 +116,7 @@ void ProcBase::init() {
 	/* init region-stuff */
 	p->freeStackAddr = 0;
 	p->dataAddr = 0;
-	vmfree_init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
+	VMFreeMap::init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
 	vmreg_addTree(p->pid,&p->regtree);
 
 	/* add to procs */
@@ -283,7 +283,7 @@ int ProcBase::clone(uint8_t flags) {
 
 	/* clone regions */
 	p->freeStackAddr = 0;
-	vmfree_init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
+	VMFreeMap::init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
 	if((res = vmm_cloneAll(p->pid)) < 0)
 		goto errorVFS;
 
@@ -654,7 +654,7 @@ void ProcBase::doDestroy(Proc *p) {
 	Groups::leave(p->pid);
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
-	vmfree_destroy(&p->freemap);
+	p->freemap.destroy();
 	vmreg_remTree(&p->regtree);
 	paging_destroyPDir(p->getPageDir());
 	Lock::releaseAll(p->pid);
@@ -828,7 +828,7 @@ void ProcBase::print() {
 	vid_printf("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
 	           stats.totalRuntime,stats.totalScheds,stats.totalSyscalls);
 	prf_pushIndent();
-	vmfree_print(&freemap);
+	freemap.print();
 	prf_popIndent();
 	vid_printf("\tRegions:\n");
 	vid_printf("\t\tDataRegion: %p\n",dataAddr);

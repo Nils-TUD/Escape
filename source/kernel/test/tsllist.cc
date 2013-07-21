@@ -239,14 +239,20 @@ static void test_8(void) {
 	sll_append(list,(void*)0x456);
 	sll_append(list,(void*)0x789);
 
-	tprintf("Starting at index 0\n");
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		tprintf("element @ 0x%x : 0x%x\n",n,n->data);
-	}
-	tprintf("Starting at index 2\n");
-	for(n = sll_nodeAt(list,2); n != NULL; n = n->next) {
-		tprintf("element @ 0x%x : 0x%x\n",n,n->data);
-	}
+	n = sll_begin(list);
+	test_assertPtr(n->data,(void*)0x123);
+	n = n->next;
+	test_assertPtr(n->data,(void*)0x456);
+	n = n->next;
+	test_assertPtr(n->data,(void*)0x789);
+	n = n->next;
+	test_assertPtr(n,NULL);
+
+	n = sll_nodeAt(list,2);
+	test_assertPtr(n->data,(void*)0x789);
+	n = n->next;
+	test_assertPtr(n,NULL);
+
 	sll_destroy(list,false);
 
 	checkMemoryAfter(false);

@@ -68,6 +68,7 @@ help() {
 	echo "                             in gdb"
 	echo "    dis=<prog>:              run objdump -SC <prog> (the cross-compiler version)"
 	echo "    elf=<prog>:              run readelf -a <prog> (the cross-compiler version)"
+	echo "    nm=<prog>:               run nm -SC <prog> (the cross-compiler version)"
 	echo "    straddr=<prog> <str>:    search for the string <str> in <prog> and display"
 	echo "                             the addresses"
 	echo "    list:                    list the link-address of all programs"
@@ -138,7 +139,7 @@ case "$cmd" in
 			exit 1
 		fi
 		;;
-	straddr=*|dis=*|elf=*|dbg=*)
+	straddr=*|dis=*|elf=*|nm=*|dbg=*)
 		if [ "`echo $cmd | grep '^straddr='`" != "" ] && [ "$script" = "" ]; then
 			echo "Usage: $0 $cmd <string>" >&2
 			exit 1
@@ -223,6 +224,9 @@ case "$cmd" in
 		;;
 	elf=*)
 		$crossdir/bin/$cross-readelf -aW $build/bin/$binary | c++filt | less
+		;;
+	nm=*)
+		$crossdir/bin/$cross-nm -SC $build/bin/$binary | sort | less
 		;;
 	straddr=*)
 		echo "Strings containing '$script' in $binary:"

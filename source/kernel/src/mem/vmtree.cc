@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/vmreg.h>
+#include <sys/mem/vmtree.h>
 #include <sys/mem/region.h>
 #include <sys/mem/cache.h>
 #include <sys/task/proc.h>

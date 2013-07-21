@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
-#include <sys/mem/vmreg.h>
+#include <sys/mem/vmtree.h>
 #include <sys/util.h>
 #include <esc/test.h>
 #include "testutils.h"

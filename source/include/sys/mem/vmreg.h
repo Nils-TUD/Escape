@@ -23,7 +23,7 @@
 #include <sys/mem/region.h>
 
 typedef struct sVMRegion {
-	sRegion *reg;
+	Region *reg;
 	uintptr_t virt;
 	/* for the treap */
 	uint32_t priority;
@@ -99,7 +99,7 @@ sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr);
  * @param reg the region to search for.
  * @return the region or NULL if not found
  */
-sVMRegion *vmreg_getByReg(sVMRegTree *tree,sRegion *reg);
+sVMRegion *vmreg_getByReg(sVMRegTree *tree,Region *reg);
 
 /**
  * Adds a new vm-region to the given tree.
@@ -109,7 +109,7 @@ sVMRegion *vmreg_getByReg(sVMRegTree *tree,sRegion *reg);
  * @param addr the address to put the region at
  * @return the created vm-region
  */
-sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr);
+sVMRegion *vmreg_add(sVMRegTree *tree,Region *reg,uintptr_t addr);
 
 /**
  * Removes the given vm-region from the given tree

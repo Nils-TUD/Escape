@@ -50,9 +50,9 @@
  * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
  * memory. */
 
-sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags) {
+Region *Region::create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags) {
 	size_t i,pageCount;
-	sRegion *reg;
+	Region *reg;
 	/* a region can never be shareable AND growable. this way, we don't need to lock every region-
 	 * access. because either its growable, then there is only one process that uses the region,
 	 * whose region-stuff is locked anyway. or its shareable, then byteCount, pfSize and pageFlags
@@ -60,7 +60,7 @@ sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong 
 	assert((flags & (RF_SHAREABLE | RF_GROWABLE)) != (RF_SHAREABLE | RF_GROWABLE));
 	assert(pgFlags == (ulong)-1 || pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 
-	reg = (sRegion*)Cache::alloc(sizeof(sRegion));
+	reg = (Region*)Cache::alloc(sizeof(Region));
 	if(reg == NULL)
 		return NULL;
 	sll_init(&reg->procs,slln_allocNode,slln_freeNode);
@@ -97,65 +97,59 @@ sRegion *reg_create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong 
 	return reg;
 }
 
-void reg_destroy(sRegion *reg) {
-	size_t i,pcount = BYTES_2_PAGES(reg->byteCount);
-	/* first free the swapped out blocks */
-	for(i = 0; i < pcount; i++) {
-		if(reg->pageFlags[i] & PF_SWAPPED)
-			swmap_free(reg_getSwapBlock(reg,i));
+Region *Region::clone(const void *p) const {
+	Region *c;
+	assert(!(flags & RF_SHAREABLE));
+	c = create(file,byteCount,loadCount,offset,-1,flags);
+	if(c) {
+		/* increment references to swap-blocks */
+		size_t i,count = BYTES_2_PAGES(byteCount);
+		for(i = 0; i < count; i++) {
+			c->pageFlags[i] = pageFlags[i];
+			if(pageFlags[i] & PF_SWAPPED)
+				swmap_incRefs(getSwapBlock(i));
+		}
+		c->addTo(p);
 	}
-	Cache::free(reg->pageFlags);
-	sll_clear(&reg->procs,false);
-	Cache::free(reg);
+	return c;
 }
 
-size_t reg_pageCount(const sRegion *reg,size_t *swapped) {
-	size_t i,c = 0,pcount = BYTES_2_PAGES(reg->byteCount);
-	assert(reg != NULL);
+void Region::destroy() {
+	size_t i,pcount = BYTES_2_PAGES(byteCount);
+	/* first free the swapped out blocks */
+	for(i = 0; i < pcount; i++) {
+		if(pageFlags[i] & PF_SWAPPED)
+			swmap_free(getSwapBlock(i));
+	}
+	Cache::free(pageFlags);
+	sll_clear(&procs,false);
+	Cache::free(this);
+}
+
+size_t Region::pageCount(size_t *swapped) const {
+	size_t i,c = 0,pcount = BYTES_2_PAGES(byteCount);
+	assert(this != NULL);
 	*swapped = 0;
 	for(i = 0; i < pcount; i++) {
-		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_SWAPPED)) == 0)
+		if((pageFlags[i] & (PF_DEMANDLOAD | PF_SWAPPED)) == 0)
 			c++;
-		if(reg->pageFlags[i] & PF_SWAPPED)
+		if(pageFlags[i] & PF_SWAPPED)
 			(*swapped)++;
 	}
 	return c;
 }
 
-ulong reg_getSwapBlock(const sRegion *reg,size_t pageIndex) {
-	assert(reg->pageFlags[pageIndex] & PF_SWAPPED);
-	return reg->pageFlags[pageIndex] >> PF_BITCOUNT;
-}
-
-void reg_setSwapBlock(sRegion *reg,size_t pageIndex,ulong swapBlock) {
-	reg->pageFlags[pageIndex] &= (1 << PF_BITCOUNT) - 1;
-	reg->pageFlags[pageIndex] |= swapBlock << PF_BITCOUNT;
-}
-
-size_t reg_refCount(sRegion *reg) {
-	return sll_length(&reg->procs);
-}
-
-bool reg_addTo(sRegion *reg,const void *p) {
-	assert(sll_length(&reg->procs) == 0 || (reg->flags & RF_SHAREABLE));
-	return sll_append(&reg->procs,(void*)p);
-}
-
-bool reg_remFrom(sRegion *reg,const void *p) {
-	return sll_removeFirstWith(&reg->procs,(void*)p) != -1;
-}
-
-ssize_t reg_grow(sRegion *reg,ssize_t amount) {
-	size_t count = BYTES_2_PAGES(reg->byteCount);
+ssize_t Region::grow(ssize_t amount) {
+	size_t count = BYTES_2_PAGES(byteCount);
 	ssize_t res = 0;
-	assert((reg->flags & RF_GROWABLE));
+	assert((flags & RF_GROWABLE));
 	if(amount > 0) {
 		ssize_t i;
-		ulong *pf = (ulong*)Cache::realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(ulong));
+		ulong *pf = (ulong*)Cache::realloc(pageFlags,(pfSize + amount) * sizeof(ulong));
 		if(pf == NULL)
 			return -ENOMEM;
-		reg->pfSize += amount;
-		if(reg->flags & RF_GROWS_DOWN) {
+		pfSize += amount;
+		if(flags & RF_GROWS_DOWN) {
 			memmove(pf + amount,pf,count * sizeof(ulong));
 			for(i = 0; i < amount; i++)
 				pf[i] = 0;
@@ -164,96 +158,79 @@ ssize_t reg_grow(sRegion *reg,ssize_t amount) {
 			for(i = 0; i < amount; i++)
 				pf[i + count] = 0;
 		}
-		reg->pageFlags = pf;
+		pageFlags = pf;
 		/* round up; if we add a page, we'll always have a complete page before that */
-		reg->byteCount = ROUND_PAGE_UP(reg->byteCount);
-		reg->byteCount += amount * PAGE_SIZE;
+		byteCount = ROUND_PAGE_UP(byteCount);
+		byteCount += amount * PAGE_SIZE;
 	}
 	else {
 		size_t i;
-		if(reg->byteCount < (size_t)-amount * PAGE_SIZE)
+		if(byteCount < (size_t)-amount * PAGE_SIZE)
 			return -ENOMEM;
 		/* free swapped pages */
 		for(i = count + amount; i < count; i++) {
-			if(reg->pageFlags[i] & PF_SWAPPED) {
-				swmap_free(reg_getSwapBlock(reg,i));
+			if(pageFlags[i] & PF_SWAPPED) {
+				swmap_free(getSwapBlock(i));
 				res++;
 			}
 		}
-		if(reg->flags & RF_GROWS_DOWN)
-			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(ulong));
+		if(flags & RF_GROWS_DOWN)
+			memmove(pageFlags,pageFlags + -amount,(count + amount) * sizeof(ulong));
 		/* round up for the same reason */
-		reg->byteCount = ROUND_PAGE_UP(reg->byteCount);
-		reg->byteCount -= -amount * PAGE_SIZE;
+		byteCount = ROUND_PAGE_UP(byteCount);
+		byteCount -= -amount * PAGE_SIZE;
 	}
 	return res;
 }
 
-sRegion *reg_clone(const void *p,const sRegion *reg) {
-	sRegion *clone;
-	assert(!(reg->flags & RF_SHAREABLE));
-	clone = reg_create(reg->file,reg->byteCount,reg->loadCount,reg->offset,-1,reg->flags);
-	if(clone) {
-		/* increment references to swap-blocks */
-		size_t i,count = BYTES_2_PAGES(reg->byteCount);
-		for(i = 0; i < count; i++) {
-			clone->pageFlags[i] = reg->pageFlags[i];
-			if(reg->pageFlags[i] & PF_SWAPPED)
-				swmap_incRefs(reg_getSwapBlock(reg,i));
-		}
-		reg_addTo(clone,p);
-	}
-	return clone;
-}
-
-void reg_sprintf(sStringBuffer *buf,sRegion *reg,uintptr_t virt) {
+void Region::sprintf(sStringBuffer *buf,uintptr_t virt) const {
 	size_t i,x;
 	sSLNode *n;
-	prf_sprintf(buf,"\tSize: %zu bytes\n",reg->byteCount);
-	prf_sprintf(buf,"\tLoad: %zu bytes\n",reg->loadCount);
+	prf_sprintf(buf,"\tSize: %zu bytes\n",byteCount);
+	prf_sprintf(buf,"\tLoad: %zu bytes\n",loadCount);
 	prf_sprintf(buf,"\tflags: ");
-	reg_sprintfFlags(buf,reg);
+	sprintfFlags(buf);
 	prf_sprintf(buf,"\n");
-	if(reg->file) {
+	if(file) {
 		prf_pushIndent();
-		vfs_printFile(reg->file);
+		vfs_printFile(file);
 		prf_popIndent();
 	}
-	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
+	prf_sprintf(buf,"\tTimestamp: %d\n",timestamp);
 	prf_sprintf(buf,"\tProcesses: ");
-	for(n = sll_begin(&reg->procs); n != NULL; n = n->next)
+	for(n = sll_begin(&procs); n != NULL; n = n->next)
 		prf_sprintf(buf,"%d ",((Proc*)n->data)->getPid());
 	prf_sprintf(buf,"\n");
-	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));
-	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
+	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(byteCount));
+	for(i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {
 		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
-				(reg->pageFlags[i] & PF_SWAPPED) ? reg_getSwapBlock(reg,i) : 0,
-				(reg->pageFlags[i] & PF_COPYONWRITE) ? 'c' : '-',
-				(reg->pageFlags[i] & PF_DEMANDLOAD) ? 'l' : '-',
-				(reg->pageFlags[i] & PF_SWAPPED) ? 's' : '-');
+				(pageFlags[i] & PF_SWAPPED) ? getSwapBlock(i) : 0,
+				(pageFlags[i] & PF_COPYONWRITE) ? 'c' : '-',
+				(pageFlags[i] & PF_DEMANDLOAD) ? 'l' : '-',
+				(pageFlags[i] & PF_SWAPPED) ? 's' : '-');
 	}
 }
 
-void reg_printFlags(const sRegion *reg) {
+void Region::printFlags() const {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;
 	buf.size = 0;
 	buf.str = NULL;
-	reg_sprintfFlags(&buf,reg);
+	sprintfFlags(&buf);
 	if(buf.str) {
 		vid_printf("%s",buf.str);
 		Cache::free(buf.str);
 	}
 }
 
-void reg_print(sRegion *reg,uintptr_t virt) {
+void Region::print(uintptr_t virt) const {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;
 	buf.size = 0;
 	buf.str = NULL;
-	reg_sprintf(&buf,reg,virt);
+	sprintf(&buf,virt);
 	if(buf.str != NULL)
 		vid_printf("%s",buf.str);
 	else
@@ -261,7 +238,7 @@ void reg_print(sRegion *reg,uintptr_t virt) {
 	Cache::free(buf.str);
 }
 
-void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
+void Region::sprintfFlags(sStringBuffer *buf) const {
 	struct {
 		const char *name;
 		ulong no;
@@ -277,7 +254,7 @@ void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 	};
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
-		if(reg->flags & flagNames[i].no)
+		if(flags & flagNames[i].no)
 			prf_sprintf(buf,"%s ",flagNames[i].name);
 	}
 }

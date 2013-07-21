@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/thread.h>
 
 /**
  * Aquires the given mutex. It won't use busy-waiting here, but suspend the thread when the mutex

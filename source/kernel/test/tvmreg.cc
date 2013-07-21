@@ -87,7 +87,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 
 	/* create */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
-		sRegion *r = reg_create(NULL,PAGE_SIZE,0,0,0,0);
+		Region *r = Region::create(NULL,PAGE_SIZE,0,0,0,0);
 		regs[i] = vmreg_add(&tree,r,addrs[i]);
 	}
 
@@ -101,8 +101,8 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 
 	/* remove */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
-		sRegion *r = regs[i]->reg;
-		reg_destroy(regs[i]->reg);
+		Region *r = regs[i]->reg;
+		regs[i]->reg->destroy();
 		vmreg_remove(&tree,regs[i]);
 		reg = vmreg_getByAddr(&tree,addrs[i]);
 		test_assertPtr(reg,NULL);

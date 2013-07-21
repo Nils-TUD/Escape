@@ -87,7 +87,7 @@ void vmreg_relTree(void) {
 bool vmreg_available(sVMRegTree *tree,uintptr_t addr,size_t size) {
 	sVMRegion *vm;
 	for(vm = tree->begin; vm != NULL; vm = vm->next) {
-		uintptr_t end = vm->virt + ROUND_PAGE_UP(vm->reg->byteCount);
+		uintptr_t end = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
 		if(OVERLAPS(addr,addr + size,vm->virt,end))
 			return false;
 	}
@@ -97,7 +97,7 @@ bool vmreg_available(sVMRegTree *tree,uintptr_t addr,size_t size) {
 sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 	sVMRegion *vm;
 	for(vm = tree->root; vm != NULL; ) {
-		if(addr >= vm->virt && addr < vm->virt + ROUND_PAGE_UP(vm->reg->byteCount))
+		if(addr >= vm->virt && addr < vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()))
 			return vm;
 		if(addr < vm->virt)
 			vm = vm->left;
@@ -107,7 +107,7 @@ sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 	return NULL;
 }
 
-sVMRegion *vmreg_getByReg(sVMRegTree *tree,sRegion *reg) {
+sVMRegion *vmreg_getByReg(sVMRegTree *tree,Region *reg) {
 	sVMRegion *vm;
 	for(vm = tree->begin; vm != NULL; vm = vm->next) {
 		if(vm->reg == reg)
@@ -116,7 +116,7 @@ sVMRegion *vmreg_getByReg(sVMRegTree *tree,sRegion *reg) {
 	return NULL;
 }
 
-sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
+sVMRegion *vmreg_add(sVMRegTree *tree,Region *reg,uintptr_t addr) {
 	/* find a place for a new node. we want to insert it by priority, so find the first
 	 * node that has <= priority */
 	sVMRegion *p,**q,**l,**r;
@@ -131,8 +131,8 @@ sVMRegion *vmreg_add(sVMRegTree *tree,sRegion *reg,uintptr_t addr) {
 	if(!*q)
 		return NULL;
 	/* we have a reference to that file now. we'll release it on unmap */
-	if(reg->file)
-		vfs_incRefs(reg->file);
+	if(reg->getFile())
+		vfs_incRefs(reg->getFile());
 	/* fibonacci hashing to spread the priorities very even in the 32-bit room */
 	(*q)->priority = tree->priority;
 	tree->priority += 0x9e3779b9;	/* floor(2^32 / phi), with phi = golden ratio */
@@ -194,8 +194,8 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 		}
 	}
 	/* close file */
-	if(reg->reg->file)
-		vfs_closeFile(tree->pid,reg->reg->file);
+	if(reg->reg->getFile())
+		vfs_closeFile(tree->pid,reg->reg->getFile());
 	Cache::free(reg);
 }
 

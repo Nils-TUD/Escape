@@ -154,11 +154,12 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * therefore, we have to prepare this again with the ELF-finisher. additionally, we have to
 	 * take care that we use elf_finishFromMem() for boot-modules and elf_finishFromFile() other-
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
+	pid_t pid = t->getProc()->getPid();
 	if(t->getProc()->getFlags() & P_BOOT) {
 		size_t i;
 		const sBootInfo *info = boot_getInfo();
 		for(i = 1; i < info->progCount; i++) {
-			if(info->progs[i].id == t->getProc()->getPid()) {
+			if(info->progs[i].id == pid) {
 				if(ELF::finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
 					return false;
 				break;
@@ -170,25 +171,25 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		 * thread :/ */
 		/* every process has a text-region from his binary */
 		sVMRegion *textreg = vmm_getRegion(t->getProc(),t->getProc()->getEntryPoint());
-		assert(textreg->reg->file != NULL);
+		assert(textreg->reg->getFile() != NULL);
 		ssize_t res;
 		sElfEHeader ehd;
 
 		/* seek to header */
-		if(vfs_seek(t->getProc()->getPid(),textreg->reg->file,0,SEEK_SET) < 0) {
+		if(vfs_seek(pid,textreg->reg->getFile(),0,SEEK_SET) < 0) {
 			vid_printf("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
 			return false;
 		}
 
 		/* read the header */
-		if((res = vfs_readFile(t->getProc()->getPid(),textreg->reg->file,&ehd,sizeof(sElfEHeader))) !=
+		if((res = vfs_readFile(pid,textreg->reg->getFile(),&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			vid_printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->getProc()->getCommand(),strerror(-res));
 			return false;
 		}
 
-		res = ELF::finishFromFile(textreg->reg->file,&ehd,&sinfo);
+		res = ELF::finishFromFile(textreg->reg->getFile(),&ehd,&sinfo);
 		if(res < 0)
 			return false;
 	}

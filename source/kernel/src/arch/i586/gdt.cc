@@ -335,7 +335,7 @@ cpuid_t gdt_prepareRun(Thread *old,Thread *n) {
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
 	if(n->getTLSRegion()) {
-		uintptr_t tlsEnd = n->getTLSRegion()->virt + n->getTLSRegion()->reg->byteCount;
+		uintptr_t tlsEnd = n->getTLSRegion()->virt + n->getTLSRegion()->reg->getByteCount();
 		gdt_set_desc((sGDTDesc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);

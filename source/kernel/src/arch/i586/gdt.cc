@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
 #include <sys/mem/paging.h>
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>

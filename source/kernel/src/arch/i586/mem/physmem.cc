@@ -18,9 +18,26 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
+#include <sys/mem/paging.h>
+#include <sys/boot.h>
+#include <sys/util.h>
+#include <sys/video.h>
+#include <sys/log.h>
+#include <string.h>
 
 bool PhysMem::canMap(uintptr_t addr,size_t size) {
-	/* only the IO-space can be mapped */
-	return addr >= 0x30000000 && addr + size < 0x40000000;
+	sMemMap *mmap;
+	const sBootInfo *mb = boot_getInfo();
+	if(mb->mmapAddr == NULL)
+		return false;
+	/* go through the memory-map; if it overlaps with one of the free areas, its not allowed */
+	for(mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
+			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
+		if(mmap->type == MMAP_TYPE_AVAILABLE) {
+			if(OVERLAPS(addr,addr + size,mmap->baseAddr,mmap->baseAddr + mmap->length))
+				return false;
+		}
+	}
+	return true;
 }

@@ -23,13 +23,13 @@
 #include <sys/spinlock.h>
 
 #ifdef __i386__
-#include <sys/arch/i586/mem/pmem.h>
+#include <sys/arch/i586/mem/physmem.h>
 #endif
 #ifdef __eco32__
-#include <sys/arch/eco32/mem/pmem.h>
+#include <sys/arch/eco32/mem/physmem.h>
 #endif
 #ifdef __mmix__
-#include <sys/arch/mmix/mem/pmem.h>
+#include <sys/arch/mmix/mem/physmem.h>
 #endif
 
 /* converts bytes to pages */

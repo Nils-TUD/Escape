@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
 
 bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	/* only the IO-space can be mapped */

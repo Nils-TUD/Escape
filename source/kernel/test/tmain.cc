@@ -30,7 +30,7 @@
 #include "tdynarray.h"
 #include "tpaging.h"
 #include "tproc.h"
-#include "tmm.h"
+#include "tphysmem.h"
 #include "tsched.h"
 #include "tsllist.h"
 #include "tstring.h"

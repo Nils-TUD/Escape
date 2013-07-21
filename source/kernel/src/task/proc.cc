@@ -31,7 +31,7 @@
 #include <sys/task/terminator.h>
 #include <sys/task/fd.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/cow.h>

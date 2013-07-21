@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
 #include <sys/mem/dynarray.h>
 #include <sys/util.h>
 #include <string.h>

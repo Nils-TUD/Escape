@@ -21,7 +21,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
 #include <sys/video.h>
 #include <esc/test.h>
 #include <assert.h>

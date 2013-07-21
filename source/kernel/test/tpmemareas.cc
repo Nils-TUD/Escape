@@ -21,7 +21,7 @@
 #include <sys/mem/pmemareas.h>
 #include <sys/util.h>
 #include <esc/test.h>
-#include "tmm.h"
+#include "tpmemareas.h"
 #include "testutils.h"
 
 /* forward declarations */

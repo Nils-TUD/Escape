@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/pmem.h>
+#include <sys/mem/physmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/mem/swapmap.h>

@@ -78,24 +78,24 @@ static void test_vmreg_randOrder(void) {
 
 static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 	size_t i,j;
-	sVMRegTree tree;
-	sVMRegion *reg,*regs[TEST_REG_COUNT];
+	VMTree tree;
+	VMRegion *reg,*regs[TEST_REG_COUNT];
 
 	test_caseStart(msg);
 	checkMemoryBefore(false);
-	vmreg_addTree(0,&tree);
+	VMTree::addTree(0,&tree);
 
 	/* create */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
 		Region *r = Region::create(NULL,PAGE_SIZE,0,0,0,0);
-		regs[i] = vmreg_add(&tree,r,addrs[i]);
+		regs[i] = tree.add(r,addrs[i]);
 	}
 
 	/* find all */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
-		reg = vmreg_getByAddr(&tree,addrs[i]);
+		reg = tree.getByAddr(addrs[i]);
 		test_assertPtr(reg,regs[i]);
-		reg = vmreg_getByReg(&tree,regs[i]->reg);
+		reg = tree.getByReg(regs[i]->reg);
 		test_assertPtr(reg,regs[i]);
 	}
 
@@ -103,21 +103,21 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 	for(i = 0; i < TEST_REG_COUNT; i++) {
 		Region *r = regs[i]->reg;
 		regs[i]->reg->destroy();
-		vmreg_remove(&tree,regs[i]);
-		reg = vmreg_getByAddr(&tree,addrs[i]);
+		tree.remove(regs[i]);
+		reg = tree.getByAddr(addrs[i]);
 		test_assertPtr(reg,NULL);
-		reg = vmreg_getByReg(&tree,r);
+		reg = tree.getByReg(r);
 		test_assertPtr(reg,NULL);
 
 		for(j = i + 1; j < TEST_REG_COUNT; j++) {
-			reg = vmreg_getByAddr(&tree,addrs[j]);
+			reg = tree.getByAddr(addrs[j]);
 			test_assertPtr(reg,regs[j]);
-			reg = vmreg_getByReg(&tree,regs[j]->reg);
+			reg = tree.getByReg(regs[j]->reg);
 			test_assertPtr(reg,regs[j]);
 		}
 	}
 
-	vmreg_remTree(&tree);
+	VMTree::remTree(&tree);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 }

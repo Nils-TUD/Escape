@@ -22,106 +22,143 @@
 #include <sys/common.h>
 #include <sys/mem/region.h>
 
-typedef struct sVMRegion {
+struct VMRegion {
 	Region *reg;
 	uintptr_t virt;
 	/* for the treap */
 	uint32_t priority;
-	struct sVMRegion *left;
-	struct sVMRegion *right;
+	VMRegion *left;
+	VMRegion *right;
 	/* for the linked list */
-	struct sVMRegion *next;
-} sVMRegion;
+	VMRegion *next;
+};
 
-typedef struct sVMRegTree {
+class VMTree {
+public:
+	/**
+	 * Does NOT initialize the object
+	 */
+	VMTree() {
+	}
+
+	/**
+	 * Initializes and adds the given tree into the linked list of all vmreg-trees
+	 *
+	 * @param pid the process-id
+	 * @param tree the tree to add
+	 */
+	static void addTree(pid_t pid,VMTree *tree);
+
+	/**
+	 * Removes the given tree from the linked list of all vmreg-trees. Assumes that its empty.
+	 *
+	 * @param tree the tree
+	 */
+	static void remTree(VMTree *tree);
+
+	/**
+	 * Requests the linked list of all trees (locks it)
+	 *
+	 * @return the list of trees
+	 */
+	static VMTree *reqTree();
+
+	/**
+	 * Releases the linked list of trees again
+	 */
+	static void relTree();
+
+	/**
+	 * @return the process id
+	 */
+	pid_t getPid() const {
+		return pid;
+	}
+	/**
+	 * @return the first vm-region in this tree
+	 */
+	VMRegion *first() const {
+		return begin;
+	}
+	/**
+	 * @return the next tree
+	 */
+	VMTree *getNext() const {
+		return next;
+	}
+
+	/**
+	 * Checks whether <addr>..<addr>+<size> is still available.
+	 *
+	 * @param addr the start-address
+	 * @param size the size of the region
+	 * @return true if it's still free
+	 */
+	bool available(uintptr_t addr,size_t size) const;
+
+	/**
+	 * Finds a vm-region in the tree by an address. That is, it walks through the binary tree,
+	 * which is pretty fast.
+	 *
+	 * @param addr the address to search for
+	 * @return the region or NULL if not found
+	 */
+	VMRegion *getByAddr(uintptr_t addr) const;
+
+	/**
+	 * Finds a vm-region in the tree by a region. That is, it walks through the linked list,
+	 * which takes a bit longer than searching for an address.
+	 *
+	 * @param reg the region to search for.
+	 * @return the region or NULL if not found
+	 */
+	VMRegion *getByReg(Region *reg) const;
+
+	/**
+	 * Adds a new vm-region to the tree.
+	 *
+	 * @param reg the region
+	 * @param addr the address to put the region at
+	 * @return the created vm-region
+	 */
+	VMRegion *add(Region *reg,uintptr_t addr);
+
+	/**
+	 * Removes the given vm-region from the tree
+	 *
+	 * @param reg the vm-region
+	 */
+	void remove(VMRegion *reg);
+
+	/**
+	 * Prints the tree
+	 */
+	void print() const;
+
+private:
+	static void doRemove(VMRegion **p,VMRegion *reg);
+	static void doPrint(const VMRegion *n,int layer);
+
 	pid_t pid;
 	/* the linked list */
-	sVMRegion *begin;
-	sVMRegion *end;
+	VMRegion *begin;
+	VMRegion *end;
 	/* the tree */
-	sVMRegion *root;
+	VMRegion *root;
 	uint32_t priority;
-	struct sVMRegTree *next;
-} sVMRegTree;
+	VMTree *next;
 
-/**
- * Initializes and adds the given tree into the linked list of all vmreg-trees
- *
- * @param pid the process-id
- * @param tree the tree to add
- */
-void vmreg_addTree(pid_t pid,sVMRegTree *tree);
+	/* mutex for accessing/changing the list of all vm-regions */
+	static mutex_t regMutex;
+	static VMTree *regList;
+	static VMTree *regListEnd;
+};
 
-/**
- * Removes the given tree from the linked list of all vmreg-trees. Assumes that its empty.
- *
- * @param tree the tree
- */
-void vmreg_remTree(sVMRegTree *tree);
+inline VMTree *VMTree::reqTree() {
+	mutex_aquire(&regMutex);
+	return regList;
+}
 
-/**
- * Requests the linked list of all trees (locks it)
- *
- * @return the list of trees
- */
-sVMRegTree *vmreg_reqTree(void);
-
-/**
- * Releases the linked list of trees again
- */
-void vmreg_relTree(void);
-
-/**
- * Checks whether <addr>..<addr>+<size> is still available.
- *
- * @param tree the tree
- * @param addr the start-address
- * @param size the size of the region
- * @return true if it's still free
- */
-bool vmreg_available(sVMRegTree *tree,uintptr_t addr,size_t size);
-
-/**
- * Finds a vm-region in the given tree by an address. That is, it walks through the binary tree,
- * which is pretty fast.
- *
- * @param tree the tree
- * @param addr the address to search for
- * @return the region or NULL if not found
- */
-sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr);
-
-/**
- * Finds a vm-region in the given tree by a region. That is, it walks through the linked list,
- * which takes a bit longer than searching for an address.
- *
- * @param tree the tree
- * @param reg the region to search for.
- * @return the region or NULL if not found
- */
-sVMRegion *vmreg_getByReg(sVMRegTree *tree,Region *reg);
-
-/**
- * Adds a new vm-region to the given tree.
- *
- * @param tree the tree
- * @param reg the region
- * @param addr the address to put the region at
- * @return the created vm-region
- */
-sVMRegion *vmreg_add(sVMRegTree *tree,Region *reg,uintptr_t addr);
-
-/**
- * Removes the given vm-region from the given tree
- *
- * @param tree the tree
- * @param reg the vm-region
- */
-void vmreg_remove(sVMRegTree *tree,sVMRegion *reg);
-
-/**
- * Prints the given tree
- *
- * @param tree the tree
- */
-void vmreg_print(sVMRegTree *tree);
+inline void VMTree::relTree() {
+	mutex_release(&regMutex);
+}

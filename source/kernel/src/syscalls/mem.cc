@@ -51,7 +51,7 @@ int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
 	off_t binOffset = SYSC_ARG7(stack);
 	pid_t pid = t->getProc()->getPid();
 	sFile *f = NULL;
-	sVMRegion *vm;
+	VMRegion *vm;
 	int res;
 
 	/* check args */
@@ -109,7 +109,7 @@ int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
 
 int Syscalls::munmap(Thread *t,sIntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
-	sVMRegion *reg = vmm_getRegion(t->getProc(),(uintptr_t)virt);
+	VMRegion *reg = vmm_getRegion(t->getProc(),(uintptr_t)virt);
 	if(reg == NULL)
 		SYSC_ERROR(stack,-ENOENT);
 	vmm_remove(t->getProc()->getPid(),reg);

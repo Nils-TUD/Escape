@@ -342,17 +342,17 @@ public:
 	/**
 	 * @return the region of this thread (NULL if not existing)
 	 */
-	sVMRegion *getTLSRegion() const {
+	VMRegion *getTLSRegion() const {
 		return tlsRegion;
 	}
-	void setTLSRegion(sVMRegion *vm) {
+	void setTLSRegion(VMRegion *vm) {
 		tlsRegion = vm;
 	}
 
 	/**
 	 * @return the stack region with given number
 	 */
-	sVMRegion *getStackRegion(size_t no) const {
+	VMRegion *getStackRegion(size_t no) const {
 		return stackRegions[no];
 	}
 
@@ -488,7 +488,7 @@ public:
 	 * @param vm the region
 	 * @return true if so
 	 */
-	bool hasStackRegion(sVMRegion *vm) const;
+	bool hasStackRegion(VMRegion *vm) const;
 
 	/**
 	 * Removes the regions for this thread. Optionally the stack as well.
@@ -651,9 +651,9 @@ protected:
 	/* the number of allocated resources (thread can't die until resources=0) */
 	uint8_t resources;
 	/* the stack-region(s) for this thread */
-	sVMRegion *stackRegions[STACK_REG_COUNT];
+	VMRegion *stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
-	sVMRegion *tlsRegion;
+	VMRegion *tlsRegion;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
 	sIntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;
@@ -804,7 +804,7 @@ inline void ThreadBase::unsuspend() {
 	Sched::setSuspended(static_cast<Thread*>(this),false);
 }
 
-inline bool ThreadBase::hasStackRegion(sVMRegion *vm) const {
+inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {
 	size_t i;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		if(stackRegions[i] == vm)

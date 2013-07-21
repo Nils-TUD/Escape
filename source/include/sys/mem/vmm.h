@@ -88,7 +88,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
  * @return 0 on success or a negative error-code
  */
 int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
-            off_t offset,sVMRegion **vmreg);
+            off_t offset,VMRegion **vmreg);
 
 /**
  * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-
@@ -159,7 +159,7 @@ float vmm_getMemUsage(pid_t pid,size_t *pages);
  * @param addr the address
  * @return the region
  */
-sVMRegion *vmm_getRegion(Proc *p,uintptr_t addr);
+VMRegion *vmm_getRegion(Proc *p,uintptr_t addr);
 
 /**
  * Queries the start- and end-address of a region
@@ -172,7 +172,7 @@ sVMRegion *vmm_getRegion(Proc *p,uintptr_t addr);
  * @param locked whether to lock the regions of the given process during the operation
  * @return true if the region exists
  */
-bool vmm_getRegRange(pid_t pid,sVMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked);
+bool vmm_getRegRange(pid_t pid,VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked);
 
 /**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
@@ -198,7 +198,7 @@ void vmm_removeAll(pid_t pid,bool remStack);
  * @param pid the process-id
  * @param vm the region
  */
-void vmm_remove(pid_t pid,sVMRegion *vm);
+void vmm_remove(pid_t pid,VMRegion *vm);
 
 /**
  * Joins process <dst> to the region <rno> of process <src>. This can just be used for shared-
@@ -211,7 +211,7 @@ void vmm_remove(pid_t pid,sVMRegion *vm);
  * @param dstVirt the virtual address where to create that region (0 = auto)
  * @return 0 on success or the negative error-code
  */
-int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,sVMRegion **nvm,uintptr_t dstVirt);
+int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,VMRegion **nvm,uintptr_t dstVirt);
 
 /**
  * Clones all regions of the current process into the destination-process
@@ -229,7 +229,7 @@ int vmm_cloneAll(pid_t dstId);
  * @param addr the address
  * @return 0 on success
  */
-int vmm_growStackTo(pid_t pid,sVMRegion *vm,uintptr_t addr);
+int vmm_growStackTo(pid_t pid,VMRegion *vm,uintptr_t addr);
 
 /**
  * If <amount> is positive, the region will be grown by <amount> pages. If negative it will be

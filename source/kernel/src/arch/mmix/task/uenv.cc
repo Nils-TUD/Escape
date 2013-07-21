@@ -170,7 +170,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		/* TODO well, its not really nice that we have to read this stuff again for every started
 		 * thread :/ */
 		/* every process has a text-region from his binary */
-		sVMRegion *textreg = vmm_getRegion(t->getProc(),t->getProc()->getEntryPoint());
+		VMRegion *textreg = vmm_getRegion(t->getProc(),t->getProc()->getEntryPoint());
 		assert(textreg->reg->getFile() != NULL);
 		ssize_t res;
 		sElfEHeader ehd;

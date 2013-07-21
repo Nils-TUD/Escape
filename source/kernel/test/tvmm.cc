@@ -45,7 +45,7 @@ static void test_vmm(void) {
 }
 
 static void test_1(void) {
-	sVMRegion *rno,*rno2,*rno3;
+	VMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();
@@ -107,7 +107,7 @@ static void test_1(void) {
 }
 
 static void test_2(void) {
-	sVMRegion *rno;
+	VMRegion *rno;
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();

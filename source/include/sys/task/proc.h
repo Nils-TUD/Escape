@@ -524,7 +524,7 @@ public:
 	/* area-map for the free area */
 	VMFreeMap freemap;
 	/* the regions */
-	sVMRegTree regtree;
+	VMTree regtree;
 	/* all groups (may include egid or not) of this process */
 	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */

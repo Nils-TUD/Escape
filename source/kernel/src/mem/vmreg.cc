@@ -33,15 +33,11 @@
  * list of this vm-regions as well.
  */
 
-static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg);
-static void vmreg_doPrint(const sVMRegion *n,int layer);
+mutex_t VMTree::regMutex;
+VMTree *VMTree::regList;
+VMTree *VMTree::regListEnd;
 
-/* mutex for accessing/changing the list of all vm-regions */
-static mutex_t regMutex;
-static sVMRegTree *regList;
-static sVMRegTree *regListEnd;
-
-void vmreg_addTree(pid_t pid,sVMRegTree *tree) {
+void VMTree::addTree(pid_t pid,VMTree *tree) {
 	mutex_aquire(&regMutex);
 	if(regListEnd)
 		regListEnd->next = tree;
@@ -57,8 +53,8 @@ void vmreg_addTree(pid_t pid,sVMRegTree *tree) {
 	mutex_release(&regMutex);
 }
 
-void vmreg_remTree(sVMRegTree *tree) {
-	sVMRegTree *t,*p;
+void VMTree::remTree(VMTree *tree) {
+	VMTree *t,*p;
 	p = NULL;
 	mutex_aquire(&regMutex);
 	for(t = regList; t != NULL; p = t, t = t->next) {
@@ -75,28 +71,19 @@ void vmreg_remTree(sVMRegTree *tree) {
 	mutex_release(&regMutex);
 }
 
-sVMRegTree *vmreg_reqTree(void) {
-	mutex_aquire(&regMutex);
-	return regList;
-}
-
-void vmreg_relTree(void) {
-	mutex_release(&regMutex);
-}
-
-bool vmreg_available(sVMRegTree *tree,uintptr_t addr,size_t size) {
-	sVMRegion *vm;
-	for(vm = tree->begin; vm != NULL; vm = vm->next) {
-		uintptr_t end = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
-		if(OVERLAPS(addr,addr + size,vm->virt,end))
+bool VMTree::available(uintptr_t addr,size_t size) const {
+	VMRegion *vm;
+	for(vm = begin; vm != NULL; vm = vm->next) {
+		uintptr_t endaddr = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
+		if(OVERLAPS(addr,addr + size,vm->virt,endaddr))
 			return false;
 	}
 	return true;
 }
 
-sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
-	sVMRegion *vm;
-	for(vm = tree->root; vm != NULL; ) {
+VMRegion *VMTree::getByAddr(uintptr_t addr) const {
+	VMRegion *vm;
+	for(vm = root; vm != NULL; ) {
 		if(addr >= vm->virt && addr < vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()))
 			return vm;
 		if(addr < vm->virt)
@@ -107,35 +94,35 @@ sVMRegion *vmreg_getByAddr(sVMRegTree *tree,uintptr_t addr) {
 	return NULL;
 }
 
-sVMRegion *vmreg_getByReg(sVMRegTree *tree,Region *reg) {
-	sVMRegion *vm;
-	for(vm = tree->begin; vm != NULL; vm = vm->next) {
+VMRegion *VMTree::getByReg(Region *reg) const {
+	VMRegion *vm;
+	for(vm = begin; vm != NULL; vm = vm->next) {
 		if(vm->reg == reg)
 			return vm;
 	}
 	return NULL;
 }
 
-sVMRegion *vmreg_add(sVMRegTree *tree,Region *reg,uintptr_t addr) {
+VMRegion *VMTree::add(Region *reg,uintptr_t addr) {
 	/* find a place for a new node. we want to insert it by priority, so find the first
 	 * node that has <= priority */
-	sVMRegion *p,**q,**l,**r;
-	for(p = tree->root, q = &tree->root; p && p->priority < tree->priority; p = *q) {
+	VMRegion *p,**q,**l,**r;
+	for(p = root, q = &root; p && p->priority < priority; p = *q) {
 		if(addr < p->virt)
 			q = &p->left;
 		else
 			q = &p->right;
 	}
 	/* create new node */
-	*q = (sVMRegion*)Cache::alloc(sizeof(sVMRegion));
+	*q = (VMRegion*)Cache::alloc(sizeof(VMRegion));
 	if(!*q)
 		return NULL;
 	/* we have a reference to that file now. we'll release it on unmap */
 	if(reg->getFile())
 		vfs_incRefs(reg->getFile());
 	/* fibonacci hashing to spread the priorities very even in the 32-bit room */
-	(*q)->priority = tree->priority;
-	tree->priority += 0x9e3779b9;	/* floor(2^32 / phi), with phi = golden ratio */
+	(*q)->priority = priority;
+	priority += 0x9e3779b9;	/* floor(2^32 / phi), with phi = golden ratio */
 	(*q)->reg = reg;
 	(*q)->virt = addr;
 	/* At this point we want to split the binary search tree p into two parts based on the
@@ -158,19 +145,19 @@ sVMRegion *vmreg_add(sVMRegTree *tree,Region *reg,uintptr_t addr) {
 	*l = *r = NULL;
 	p = *q;
 	/* insert at the end of the linked list */
-	if(tree->end)
-		tree->end->next = p;
+	if(end)
+		end->next = p;
 	else
-		tree->begin = p;
-	tree->end = p;
+		begin = p;
+	end = p;
 	p->next = NULL;
 	return p;
 }
 
-void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
-	sVMRegion **p,*r,*prev;
+void VMTree::remove(VMRegion *reg) {
+	VMRegion **p,*r,*prev;
 	/* find the position where reg is stored */
-	for(p = &tree->root; *p && *p != reg; ) {
+	for(p = &root; *p && *p != reg; ) {
 		if(reg->virt < (*p)->virt)
 			p = &(*p)->left;
 		else
@@ -178,45 +165,45 @@ void vmreg_remove(sVMRegTree *tree,sVMRegion *reg) {
 	}
 	assert(*p);
 	/* remove from tree */
-	vmreg_doRemove(p,reg);
+	doRemove(p,reg);
 
 	/* remove from linked list */
 	prev = NULL;
-	for(r = tree->begin; r != NULL; prev = r, r = r->next) {
+	for(r = begin; r != NULL; prev = r, r = r->next) {
 		if(r == reg) {
 			if(prev)
 				prev->next = r->next;
 			else
-				tree->begin = r->next;
+				begin = r->next;
 			if(!r->next)
-				tree->end = prev;
+				end = prev;
 			break;
 		}
 	}
 	/* close file */
 	if(reg->reg->getFile())
-		vfs_closeFile(tree->pid,reg->reg->getFile());
+		vfs_closeFile(pid,reg->reg->getFile());
 	Cache::free(reg);
 }
 
-static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg) {
+void VMTree::doRemove(VMRegion **p,VMRegion *reg) {
 	/* two childs */
 	if(reg->left && reg->right) {
 		/* rotate with left */
 		if(reg->left->priority < reg->right->priority) {
-			sVMRegion *t = reg->left;
+			VMRegion *t = reg->left;
 			reg->left = t->right;
 			t->right = reg;
 			*p = t;
-			vmreg_doRemove(&t->right,reg);
+			doRemove(&t->right,reg);
 		}
 		/* rotate with right */
 		else {
-			sVMRegion *t = reg->right;
+			VMRegion *t = reg->right;
 			reg->right = t->left;
 			t->left = reg;
 			*p = t;
-			vmreg_doRemove(&t->left,reg);
+			doRemove(&t->left,reg);
 		}
 	}
 	/* one child: replace us with our child */
@@ -229,18 +216,18 @@ static void vmreg_doRemove(sVMRegion **p,sVMRegion *reg) {
 		*p = NULL;
 }
 
-void vmreg_print(sVMRegTree *tree) {
-	vmreg_doPrint(tree->root,0);
+void VMTree::print() const {
+	doPrint(root,0);
 	vid_printf("\n");
 }
 
-static void vmreg_doPrint(const sVMRegion *n,int layer) {
+void VMTree::doPrint(const VMRegion *n,int layer) {
 	if(n) {
 		vid_printf("prio=%08x, addr=%p\n",n->priority,n->virt);
 		vid_printf("%*s\\-(l) ",layer * 2,"");
-		vmreg_doPrint(n->left,layer + 1);
+		doPrint(n->left,layer + 1);
 		vid_printf("\n");
 		vid_printf("%*s\\-(r) ",layer * 2,"");
-		vmreg_doPrint(n->right,layer + 1);
+		doPrint(n->right,layer + 1);
 	}
 }

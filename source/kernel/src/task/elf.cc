@@ -220,7 +220,7 @@ failed:
 int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type) {
 	Thread *t = Thread::getRunning();
 	int res,prot = 0,flags = type == TYPE_INTERP ? 0 : MAP_FIXED;
-	sVMRegion *vm;
+	VMRegion *vm;
 	size_t memsz = pheader->p_memsz;
 
 	/* determine protection flags */

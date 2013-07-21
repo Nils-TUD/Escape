@@ -117,7 +117,7 @@ void ProcBase::init() {
 	p->freeStackAddr = 0;
 	p->dataAddr = 0;
 	VMFreeMap::init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
-	vmreg_addTree(p->pid,&p->regtree);
+	VMTree::addTree(p->pid,&p->regtree);
 
 	/* add to procs */
 	sll_init(&procs,slln_allocNode,slln_freeNode);
@@ -655,7 +655,7 @@ void ProcBase::doDestroy(Proc *p) {
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
 	p->freemap.destroy();
-	vmreg_remTree(&p->regtree);
+	VMTree::remTree(&p->regtree);
 	paging_destroyPDir(p->getPageDir());
 	Lock::releaseAll(p->pid);
 	terminateArch(p);

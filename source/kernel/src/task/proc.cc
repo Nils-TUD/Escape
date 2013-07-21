@@ -29,7 +29,7 @@
 #include <sys/task/uenv.h>
 #include <sys/task/groups.h>
 #include <sys/task/terminator.h>
-#include <sys/task/fd.h>
+#include <sys/task/filedesc.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/cache.h>

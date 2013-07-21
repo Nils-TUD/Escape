@@ -25,7 +25,7 @@
 #include <sys/task/event.h>
 #include <sys/task/lock.h>
 #include <sys/task/timer.h>
-#include <sys/task/fd.h>
+#include <sys/task/filedesc.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>

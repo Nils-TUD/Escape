@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include <sys/task/fd.h>
+#include <sys/task/filedesc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>

@@ -24,7 +24,7 @@
 #include <sys/vfs/node.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
-#include <sys/task/fd.h>
+#include <sys/task/filedesc.h>
 #include <sys/syscalls.h>
 #include <esc/messages.h>
 #include <errno.h>

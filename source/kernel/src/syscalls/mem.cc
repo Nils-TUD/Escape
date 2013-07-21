@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/task/fd.h>
+#include <sys/task/filedesc.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/virtmem.h>

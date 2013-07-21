@@ -24,7 +24,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
-#include <sys/task/fd.h>
+#include <sys/task/filedesc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/channel.h>

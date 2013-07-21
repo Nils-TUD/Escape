@@ -30,22 +30,17 @@
  * the child-process the content at that point of time, i.e. we can't demand-load it from disk in
  * this case. that means, both regions have to load this page from the swap-block. */
 
-typedef struct sSwapBlock {
-	uint refCount;
-	struct sSwapBlock *next;
-} sSwapBlock;
+size_t SwapMap::totalBlocks = 0;
+size_t SwapMap::freeBlocks = 0;
+SwapMap::Block *SwapMap::swapBlocks = NULL;
+SwapMap::Block *SwapMap::freeList = NULL;
+klock_t SwapMap::lock;
 
-static size_t totalBlocks = 0;
-static size_t freeBlocks = 0;
-static sSwapBlock *swapBlocks = NULL;
-static sSwapBlock *freeList = NULL;
-static klock_t swmapLock;
-
-bool swmap_init(size_t swapSize) {
+bool SwapMap::init(size_t swapSize) {
 	size_t i;
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
-	swapBlocks = (sSwapBlock*)Cache::alloc(totalBlocks * sizeof(sSwapBlock));
+	swapBlocks = (Block*)Cache::alloc(totalBlocks * sizeof(Block));
 	if(swapBlocks == NULL)
 		return false;
 
@@ -61,63 +56,39 @@ bool swmap_init(size_t swapSize) {
 	return true;
 }
 
-ulong swmap_alloc(void) {
-	sSwapBlock *block;
-	spinlock_aquire(&swmapLock);
+ulong SwapMap::alloc() {
+	Block *block;
+	spinlock_aquire(&lock);
 	if(!freeList) {
-		spinlock_release(&swmapLock);
+		spinlock_release(&lock);
 		return INVALID_BLOCK;
 	}
 	block = freeList;
 	freeList = freeList->next;
 	block->refCount = 1;
 	freeBlocks--;
-	spinlock_release(&swmapLock);
+	spinlock_release(&lock);
 	return block - swapBlocks;
 }
 
-void swmap_incRefs(ulong block) {
-	spinlock_aquire(&swmapLock);
-	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
-	swapBlocks[block].refCount++;
-	spinlock_release(&swmapLock);
-}
-
-bool swmap_isUsed(ulong block) {
-	bool res;
-	spinlock_aquire(&swmapLock);
-	assert(block < totalBlocks);
-	res = swapBlocks[block].refCount > 0;
-	spinlock_release(&swmapLock);
-	return res;
-}
-
-void swmap_free(ulong block) {
-	spinlock_aquire(&swmapLock);
+void SwapMap::free(ulong block) {
+	spinlock_aquire(&lock);
 	assert(block < totalBlocks);
 	if(--swapBlocks[block].refCount == 0) {
 		swapBlocks[block].next = freeList;
 		freeList = swapBlocks + block;
 		freeBlocks++;
 	}
-	spinlock_release(&swmapLock);
+	spinlock_release(&lock);
 }
 
-size_t swmap_totalSpace(void) {
-	return totalBlocks * PAGE_SIZE;
-}
-
-size_t swmap_freeSpace(void) {
-	return freeBlocks * PAGE_SIZE;
-}
-
-void swmap_print(void) {
+void SwapMap::print() {
 	size_t i,c = 0;
 	vid_printf("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
 	vid_printf("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
 	vid_printf("Used:");
 	for(i = 0; i < totalBlocks; i++) {
-		sSwapBlock *block = swapBlocks + i;
+		Block *block = swapBlocks + i;
 		if(block->refCount > 0) {
 			if(c % 8 == 0)
 				vid_printf("\n ");

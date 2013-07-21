@@ -90,7 +90,7 @@ static sView views[] = {
 	{"pmemcont",(fView)PhysMem::printCont},
 	{"pmemstack",(fView)PhysMem::printStack},
 	{"pmemareas",(fView)PhysMemAreas::print},
-	{"swapmap",(fView)swmap_print},
+	{"swapmap",(fView)SwapMap::print},
 	{"cpu",(fView)CPU::print},
 #ifdef __i386__
 	{"gdt",(fView)gdt_print},

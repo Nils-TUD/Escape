@@ -341,7 +341,7 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 			vmreg = vmreg_getByReg(&proc->regtree,reg);
 
 			/* find swap-block */
-			block = swmap_alloc();
+			block = SwapMap::alloc();
 			assert(block != INVALID_BLOCK);
 
 #if DEBUG_SWAP
@@ -420,7 +420,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 	/* mark as not-swapped and map into all affected processes */
 	vmm_setSwappedIn(vmreg->reg,index,frame);
 	/* free swap-block */
-	swmap_free(block);
+	SwapMap::free(block);
 	return true;
 }
 

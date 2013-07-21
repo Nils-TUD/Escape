@@ -53,25 +53,25 @@ static void test_swapmap1(void) {
 	ulong blocks[5];
 	test_doStart("Testing alloc & free");
 
-	blocks[0] = swmap_alloc();
-	blocks[1] = swmap_alloc();
-	blocks[2] = swmap_alloc();
-	blocks[3] = swmap_alloc();
-	blocks[4] = swmap_alloc();
+	blocks[0] = SwapMap::alloc();
+	blocks[1] = SwapMap::alloc();
+	blocks[2] = SwapMap::alloc();
+	blocks[3] = SwapMap::alloc();
+	blocks[4] = SwapMap::alloc();
 
-	test_assertTrue(swmap_isUsed(blocks[0]));
-	test_assertTrue(swmap_isUsed(blocks[1]));
-	test_assertTrue(swmap_isUsed(blocks[2]));
-	test_assertTrue(swmap_isUsed(blocks[3]));
-	test_assertTrue(swmap_isUsed(blocks[4]));
-	test_assertFalse(swmap_isUsed(blocks[4] - 1));
-	test_assertFalse(swmap_isUsed(blocks[4] - 2));
+	test_assertTrue(SwapMap::isUsed(blocks[0]));
+	test_assertTrue(SwapMap::isUsed(blocks[1]));
+	test_assertTrue(SwapMap::isUsed(blocks[2]));
+	test_assertTrue(SwapMap::isUsed(blocks[3]));
+	test_assertTrue(SwapMap::isUsed(blocks[4]));
+	test_assertFalse(SwapMap::isUsed(blocks[4] - 1));
+	test_assertFalse(SwapMap::isUsed(blocks[4] - 2));
 
-	swmap_free(blocks[0]);
-	swmap_free(blocks[1]);
-	swmap_free(blocks[2]);
-	swmap_free(blocks[3]);
-	swmap_free(blocks[4]);
+	SwapMap::free(blocks[0]);
+	SwapMap::free(blocks[1]);
+	SwapMap::free(blocks[2]);
+	SwapMap::free(blocks[3]);
+	SwapMap::free(blocks[4]);
 
 	test_finish();
 }
@@ -80,17 +80,17 @@ static void test_swapmap2(void) {
 	ulong blocks[5];
 	test_doStart("Testing alloc & reverse free");
 
-	blocks[0] = swmap_alloc();
-	blocks[1] = swmap_alloc();
-	blocks[2] = swmap_alloc();
-	blocks[3] = swmap_alloc();
-	blocks[4] = swmap_alloc();
+	blocks[0] = SwapMap::alloc();
+	blocks[1] = SwapMap::alloc();
+	blocks[2] = SwapMap::alloc();
+	blocks[3] = SwapMap::alloc();
+	blocks[4] = SwapMap::alloc();
 
-	swmap_free(blocks[4]);
-	swmap_free(blocks[3]);
-	swmap_free(blocks[2]);
-	swmap_free(blocks[1]);
-	swmap_free(blocks[0]);
+	SwapMap::free(blocks[4]);
+	SwapMap::free(blocks[3]);
+	SwapMap::free(blocks[2]);
+	SwapMap::free(blocks[1]);
+	SwapMap::free(blocks[0]);
 
 	test_finish();
 }
@@ -99,67 +99,67 @@ static void test_swapmap5(void) {
 	ulong blocks[9];
 	test_doStart("Testing alloc & free mixed");
 
-	blocks[0] = swmap_alloc();
-	blocks[1] = swmap_alloc();
-	blocks[2] = swmap_alloc();
-	blocks[3] = swmap_alloc();
+	blocks[0] = SwapMap::alloc();
+	blocks[1] = SwapMap::alloc();
+	blocks[2] = SwapMap::alloc();
+	blocks[3] = SwapMap::alloc();
 
-	test_assertTrue(swmap_isUsed(blocks[0]));
-	test_assertTrue(swmap_isUsed(blocks[1]));
-	test_assertTrue(swmap_isUsed(blocks[2]));
-	test_assertTrue(swmap_isUsed(blocks[3]));
+	test_assertTrue(SwapMap::isUsed(blocks[0]));
+	test_assertTrue(SwapMap::isUsed(blocks[1]));
+	test_assertTrue(SwapMap::isUsed(blocks[2]));
+	test_assertTrue(SwapMap::isUsed(blocks[3]));
 
-	swmap_free(blocks[2]);
+	SwapMap::free(blocks[2]);
 
-	test_assertTrue(swmap_isUsed(blocks[0]));
-	test_assertTrue(swmap_isUsed(blocks[1]));
-	test_assertFalse(swmap_isUsed(blocks[2]));
-	test_assertTrue(swmap_isUsed(blocks[3]));
+	test_assertTrue(SwapMap::isUsed(blocks[0]));
+	test_assertTrue(SwapMap::isUsed(blocks[1]));
+	test_assertFalse(SwapMap::isUsed(blocks[2]));
+	test_assertTrue(SwapMap::isUsed(blocks[3]));
 
-	blocks[4] = swmap_alloc();
-	blocks[5] = swmap_alloc();
-	blocks[6] = swmap_alloc();
-	blocks[7] = swmap_alloc();
+	blocks[4] = SwapMap::alloc();
+	blocks[5] = SwapMap::alloc();
+	blocks[6] = SwapMap::alloc();
+	blocks[7] = SwapMap::alloc();
 
-	test_assertTrue(swmap_isUsed(blocks[4]));
-	test_assertTrue(swmap_isUsed(blocks[5]));
-	test_assertTrue(swmap_isUsed(blocks[6]));
-	test_assertTrue(swmap_isUsed(blocks[7]));
+	test_assertTrue(SwapMap::isUsed(blocks[4]));
+	test_assertTrue(SwapMap::isUsed(blocks[5]));
+	test_assertTrue(SwapMap::isUsed(blocks[6]));
+	test_assertTrue(SwapMap::isUsed(blocks[7]));
 
-	swmap_free(blocks[6]);
+	SwapMap::free(blocks[6]);
 
-	test_assertTrue(swmap_isUsed(blocks[4]));
-	test_assertTrue(swmap_isUsed(blocks[5]));
-	test_assertFalse(swmap_isUsed(blocks[6]));
-	test_assertTrue(swmap_isUsed(blocks[7]));
+	test_assertTrue(SwapMap::isUsed(blocks[4]));
+	test_assertTrue(SwapMap::isUsed(blocks[5]));
+	test_assertFalse(SwapMap::isUsed(blocks[6]));
+	test_assertTrue(SwapMap::isUsed(blocks[7]));
 
-	blocks[8] = swmap_alloc();
+	blocks[8] = SwapMap::alloc();
 
-	test_assertTrue(swmap_isUsed(blocks[8]));
+	test_assertTrue(SwapMap::isUsed(blocks[8]));
 
-	swmap_free(blocks[5]);
-	swmap_free(blocks[3]);
-	swmap_free(blocks[8]);
-	swmap_free(blocks[4]);
-	swmap_free(blocks[0]);
-	swmap_free(blocks[1]);
-	swmap_free(blocks[7]);
+	SwapMap::free(blocks[5]);
+	SwapMap::free(blocks[3]);
+	SwapMap::free(blocks[8]);
+	SwapMap::free(blocks[4]);
+	SwapMap::free(blocks[0]);
+	SwapMap::free(blocks[1]);
+	SwapMap::free(blocks[7]);
 
 	test_finish();
 }
 
 static void test_swapmap6(void) {
 	size_t i;
-	size_t total = swmap_freeSpace() / PAGE_SIZE;
+	size_t total = SwapMap::freeSpace() / PAGE_SIZE;
 	ulong *blocks = (ulong*)Cache::alloc(total * sizeof(ulong));
 	test_doStart("Testing alloc all & free");
 
 	for(i = 0; i < total; i++) {
-		blocks[i] = swmap_alloc();
+		blocks[i] = SwapMap::alloc();
 		test_assertTrue(blocks[i] != INVALID_BLOCK);
 	}
 	for(i = 0; i < total; i++)
-		swmap_free(blocks[i]);
+		SwapMap::free(blocks[i]);
 
 	test_finish();
 	Cache::free(blocks);
@@ -167,11 +167,11 @@ static void test_swapmap6(void) {
 
 static void test_doStart(const char *title) {
 	test_caseStart(title);
-	spaceBefore = swmap_freeSpace();
+	spaceBefore = SwapMap::freeSpace();
 }
 
 static void test_finish(void) {
-	size_t spaceAfter = swmap_freeSpace();
+	size_t spaceAfter = SwapMap::freeSpace();
 	if(spaceAfter != spaceBefore)
 		test_caseFailed("Space before: %d, After: %d",spaceBefore,spaceAfter);
 	else

@@ -20,56 +20,96 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/mem/paging.h>
+#include <sys/spinlock.h>
 #include <esc/sllist.h>
+#include <assert.h>
 
 #define INVALID_BLOCK		0xFFFFFFFF
 
-/**
- * Inits the swap-map
- *
- * @param swapSize the size of the swap-device in bytes
- * @return true on success
- */
-bool swmap_init(size_t swapSize);
+class SwapMap {
+	SwapMap() = delete;
 
-/**
- * Allocates 1 block on the swap-device
- *
- * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
- */
-ulong swmap_alloc(void);
+	struct Block {
+		uint refCount;
+		Block *next;
+	};
 
-/**
- * Increases the references of the given block
- *
- * @param the block-number
- */
-void swmap_incRefs(ulong block);
+public:
+	/**
+	 * Inits the swap-map
+	 *
+	 * @param swapSize the size of the swap-device in bytes
+	 * @return true on success
+	 */
+	static bool init(size_t swapSize);
 
-/**
- * @param block the block-number
- * @return true if the given block is used
- */
-bool swmap_isUsed(ulong block);
+	/**
+	 * Allocates 1 block on the swap-device
+	 *
+	 * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
+	 */
+	static ulong alloc();
 
-/**
- * @return the total space on the swap device in bytes
- */
-size_t swmap_totalSpace(void);
+	/**
+	 * Increases the references of the given block
+	 *
+	 * @param the block-number
+	 */
+	static void incRefs(ulong block);
 
-/**
- * @return the free space in bytes
- */
-size_t swmap_freeSpace(void);
+	/**
+	 * @param block the block-number
+	 * @return true if the given block is used
+	 */
+	static bool isUsed(ulong block);
 
-/**
- * Free's the given block
- *
- * @param block the block to free
- */
-void swmap_free(ulong block);
+	/**
+	 * @return the total space on the swap device in bytes
+	 */
+	static size_t totalSpace() {
+		return totalBlocks * PAGE_SIZE;
+	}
 
-/**
- * Prints the swap-map
- */
-void swmap_print(void);
+	/**
+	 * @return the free space in bytes
+	 */
+	static size_t freeSpace() {
+		return freeBlocks * PAGE_SIZE;
+	}
+
+	/**
+	 * Free's the given block
+	 *
+	 * @param block the block to free
+	 */
+	static void free(ulong block);
+
+	/**
+	 * Prints the swap-map
+	 */
+	static void print();
+
+private:
+	static size_t totalBlocks;
+	static size_t freeBlocks;
+	static Block *swapBlocks;
+	static Block *freeList;
+	static klock_t lock;
+};
+
+inline void SwapMap::incRefs(ulong block) {
+	spinlock_aquire(&lock);
+	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
+	swapBlocks[block].refCount++;
+	spinlock_release(&lock);
+}
+
+inline bool SwapMap::isUsed(ulong block) {
+	bool res;
+	spinlock_aquire(&lock);
+	assert(block < totalBlocks);
+	res = swapBlocks[block].refCount > 0;
+	spinlock_release(&lock);
+	return res;
+}

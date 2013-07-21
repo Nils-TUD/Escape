@@ -107,7 +107,7 @@ Region *Region::clone(const void *p) const {
 		for(i = 0; i < count; i++) {
 			c->pageFlags[i] = pageFlags[i];
 			if(pageFlags[i] & PF_SWAPPED)
-				swmap_incRefs(getSwapBlock(i));
+				SwapMap::incRefs(getSwapBlock(i));
 		}
 		c->addTo(p);
 	}
@@ -119,7 +119,7 @@ void Region::destroy() {
 	/* first free the swapped out blocks */
 	for(i = 0; i < pcount; i++) {
 		if(pageFlags[i] & PF_SWAPPED)
-			swmap_free(getSwapBlock(i));
+			SwapMap::free(getSwapBlock(i));
 	}
 	Cache::free(pageFlags);
 	sll_clear(&procs,false);
@@ -170,7 +170,7 @@ ssize_t Region::grow(ssize_t amount) {
 		/* free swapped pages */
 		for(i = count + amount; i < count; i++) {
 			if(pageFlags[i] & PF_SWAPPED) {
-				swmap_free(getSwapBlock(i));
+				SwapMap::free(getSwapBlock(i));
 				res++;
 			}
 		}

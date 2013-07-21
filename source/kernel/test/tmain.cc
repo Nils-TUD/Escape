@@ -72,7 +72,7 @@ void bspstart(sBootInfo *bootinfo) {
 	/* start tests */
 	/* swapmap (needed for swapmap tests) */
 	vid_printf("Initializing Swapmap...");
-	swmap_init(256 * K);
+	SwapMap::init(256 * K);
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #ifdef __mmix__

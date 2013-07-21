@@ -161,7 +161,7 @@ static sKeymapEntry keymap[] = {
 	/* VK_PIPE */				{'<','>','|'},
 };
 
-static uint8_t flags = 0;
+static uint flags = 0;
 
 bool kb_get(sKeyEvent *ev,uint8_t events,bool wait) {
 	while(true) {

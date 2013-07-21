@@ -173,7 +173,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 static bool isExt = 0;
 static bool isBreak = false;
 
-uint8_t kb_getKeyCode(uint8_t *flags) {
+uint8_t kb_getKeyCode(uint *flags) {
 	uint8_t scanCode,keycode;
 	sScanCodeEntry *e;
 	uint64_t *kb = (uint64_t*)(KEYBOARD_BASE | DIR_MAPPED_SPACE);

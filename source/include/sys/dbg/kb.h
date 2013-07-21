@@ -39,7 +39,7 @@ typedef struct {
  * @param flags will be changed to set/unset KE_BREAK
  * @return the keycode, if there is any, or VK_NOKEY
  */
-uint8_t kb_getKeyCode(uint8_t *flags);
+uint8_t kb_getKeyCode(uint *flags);
 
 /**
  * Fills the given keyevent. If <wait> is true, it waits until a scancode is present. Otherwise

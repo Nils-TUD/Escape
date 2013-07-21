@@ -164,7 +164,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 
 static uint8_t set = 0;
 
-uint8_t kb_getKeyCode(uint8_t *flags) {
+uint8_t kb_getKeyCode(uint *flags) {
 	uint8_t scanCode,keycode;
 	sScanCodeEntry *e;
 	uint8_t status = ports_inByte(IOPORT_KB_CTRL);

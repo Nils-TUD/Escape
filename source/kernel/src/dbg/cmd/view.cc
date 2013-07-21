@@ -41,7 +41,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/pmemareas.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/swapmap.h>
 #include <sys/boot.h>
 #include <sys/cpu.h>

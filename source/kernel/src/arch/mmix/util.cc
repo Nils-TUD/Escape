@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/kb.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/cache.h>
 #include <sys/debug.h>
 #include <sys/intrpt.h>

@@ -22,7 +22,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/intrpt.h>

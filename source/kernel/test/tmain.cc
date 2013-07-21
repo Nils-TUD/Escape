@@ -40,7 +40,7 @@
 #include "tesccodes.h"
 #include "tswapmap.h"
 #include "tregion.h"
-#include "tvmm.h"
+#include "tvirtmem.h"
 #include "thashmap.h"
 #include "tctype.h"
 #include "tvmreg.h"

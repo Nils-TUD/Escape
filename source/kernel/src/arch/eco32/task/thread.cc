@@ -23,7 +23,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/paging.h>
 #include <sys/cpu.h>
 #include <sys/config.h>

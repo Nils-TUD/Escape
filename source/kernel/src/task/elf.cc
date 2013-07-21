@@ -23,7 +23,7 @@
 #include <sys/task/fd.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
 #include <sys/log.h>

@@ -29,7 +29,7 @@
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/video.h>
 #include <sys/mutex.h>
 #include <string.h>

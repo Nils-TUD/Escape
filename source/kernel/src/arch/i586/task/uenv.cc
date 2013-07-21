@@ -23,7 +23,7 @@
 #include <sys/task/event.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/paging.h>
 #include <sys/spinlock.h>
 #include <string.h>

@@ -25,7 +25,7 @@
 #include <sys/task/terminator.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmtree.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/intrpt.h>
 #include <esc/hashmap.h>
 #include <assert.h>

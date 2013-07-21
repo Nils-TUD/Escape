@@ -21,7 +21,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <assert.h>

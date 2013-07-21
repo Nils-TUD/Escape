@@ -19,13 +19,13 @@
 
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
 #include <esc/test.h>
-#include "tvmm.h"
+#include "tvirtmem.h"
 #include "testutils.h"
 
 /* forward declarations */

@@ -25,7 +25,7 @@
 #include <sys/task/smp.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/fpu.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/paging.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>

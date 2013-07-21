@@ -30,7 +30,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>

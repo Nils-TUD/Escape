@@ -22,7 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>

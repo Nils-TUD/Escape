@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>

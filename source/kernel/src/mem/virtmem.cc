@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/swapmap.h>

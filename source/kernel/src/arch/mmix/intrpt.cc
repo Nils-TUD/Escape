@@ -23,7 +23,7 @@
 #include <sys/task/timer.h>
 #include <sys/task/uenv.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <esc/keycodes.h>

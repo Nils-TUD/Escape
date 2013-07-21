@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/vmm.h>
+#include <sys/mem/virtmem.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>

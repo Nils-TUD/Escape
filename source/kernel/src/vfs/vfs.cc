@@ -45,7 +45,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#define FILE_COUNT					(gftArray.objCount)
+#define FILE_COUNT					(gftArray.getObjCount())
 
 /* an entry in the global file table */
 struct sFile {
@@ -77,7 +77,7 @@ static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVF
 static void vfs_releaseFile(sFile *file);
 
 /* global file table (expands dynamically) */
-static sDynArray gftArray;
+static DynArray gftArray(sizeof(sFile),GFT_AREA,GFT_AREA_SIZE);
 static sFile *gftFreeList;
 static sVFSNode *procsNode;
 static sVFSNode *devNode;
@@ -86,9 +86,7 @@ klock_t waitLock;
 
 void vfs_init(void) {
 	sVFSNode *root,*sys;
-	dyna_start(&gftArray,sizeof(sFile),GFT_AREA,GFT_AREA_SIZE);
 	gftFreeList = NULL;
-	vfs_node_init();
 
 	/*
 	 *  /
@@ -420,7 +418,7 @@ static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVF
 		/* TODO walk through used-list and pick first from freelist */
 		ushort rwFlags = flags & userFlags;
 		for(i = 0; i < FILE_COUNT; i++) {
-			e = (sFile*)dyna_getObj(&gftArray,i);
+			e = (sFile*)gftArray.getObj(i);
 			/* used slot and same node? */
 			if(e->flags != 0) {
 				/* same file? */
@@ -442,16 +440,16 @@ static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVF
 	/* if there is no free slot anymore, extend our dyn-array */
 	if(gftFreeList == NULL) {
 		size_t j;
-		i = gftArray.objCount;
-		if(!dyna_extend(&gftArray))
+		i = gftArray.getObjCount();
+		if(!gftArray.extend())
 			return -ENFILE;
 		/* put all except i on the freelist */
-		for(j = i + 1; j < gftArray.objCount; j++) {
-			e = (sFile*)dyna_getObj(&gftArray,j);
+		for(j = i + 1; j < gftArray.getObjCount(); j++) {
+			e = (sFile*)gftArray.getObj(j);
 			e->next = gftFreeList;
 			gftFreeList = e;
 		}
-		*f = (sFile*)dyna_getObj(&gftArray,i);
+		*f = (sFile*)gftArray.getObj(i);
 		return 0;
 	}
 
@@ -1339,7 +1337,7 @@ void vfs_removeThread(tid_t tid) {
 size_t vfs_dbg_getGFTEntryCount(void) {
 	size_t i,count = 0;
 	for(i = 0; i < FILE_COUNT; i++) {
-		sFile *f = (sFile*)dyna_getObj(&gftArray,i);
+		sFile *f = (sFile*)gftArray.getObj(i);
 		if(f->flags != 0)
 			count++;
 	}
@@ -1365,7 +1363,7 @@ void vfs_printMsgs(void) {
 
 void vfs_printFile(sFile *f) {
 	vid_printf("%3d [ %2u refs, %2u uses (%u:%u",
-			dyna_getIndex(&gftArray,f),f->refCount,f->usageCount,f->devNo,f->nodeNo);
+			gftArray.getIndex(f),f->refCount,f->usageCount,f->devNo,f->nodeNo);
 	if(f->devNo == VFS_DEV_NO && vfs_node_isValid(f->nodeNo))
 		vid_printf(":%s)",vfs_node_getPath(f->nodeNo));
 	else
@@ -1378,7 +1376,7 @@ void vfs_printGFT(void) {
 	sFile *f;
 	vid_printf("Global File Table:\n");
 	for(i = 0; i < FILE_COUNT; i++) {
-		f = (sFile*)dyna_getObj(&gftArray,i);
+		f = (sFile*)gftArray.getObj(i);
 		if(f->flags != 0) {
 			vid_printf("\tfile @ index %d\n",i);
 			vid_printf("\t\tflags: ");

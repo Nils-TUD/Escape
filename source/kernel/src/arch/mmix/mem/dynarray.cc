@@ -24,36 +24,16 @@
 #include <sys/util.h>
 #include <string.h>
 
-#define DYNA_REG_COUNT	128
-
-static sDynaRegion regions[DYNA_REG_COUNT];
-static sDynaRegion *freeList;
-static size_t totalPages = 0;
-
-void dyna_init(void) {
-	size_t i;
-	regions[0].next = NULL;
-	freeList = regions;
-	for(i = 1; i < DYNA_REG_COUNT; i++) {
-		regions[i].next = freeList;
-		freeList = regions + i;
-	}
-}
-
-size_t dyna_getTotalPages(void) {
-	return totalPages;
-}
-
-bool dyna_extend(sDynArray *d) {
+bool DynArray::extend() {
 	frameno_t frame;
-	sDynaRegion *reg;
+	Region *reg;
 
 	/* we use the begin for the current size here */
-	if(d->regions == NULL)
-		d->areaBegin = 0;
+	if(regions == NULL)
+		areaBegin = 0;
 
 	/* region full? */
-	if(d->areaBegin + PAGE_SIZE > d->areaSize)
+	if(areaBegin + PAGE_SIZE > areaSize)
 		return false;
 
 	/* allocate new region */
@@ -70,10 +50,10 @@ bool dyna_extend(sDynArray *d) {
 	freeList = freeList->next;
 	reg->next = NULL;
 	/* append to regions */
-	if(d->regions == NULL)
-		d->regions = reg;
+	if(regions == NULL)
+		regions = reg;
 	else {
-		sDynaRegion *r = d->regions;
+		Region *r = regions;
 		while(r->next != NULL)
 			r = r->next;
 		r->next = reg;
@@ -84,15 +64,15 @@ bool dyna_extend(sDynArray *d) {
 	totalPages++;
 	/* clear it and increase total size and number of objects */
 	memclear((void*)reg->addr,PAGE_SIZE);
-	d->areaBegin += PAGE_SIZE;
-	d->objCount += PAGE_SIZE / d->objSize;
+	areaBegin += PAGE_SIZE;
+	objCount += PAGE_SIZE / objSize;
 	return true;
 }
 
-void dyna_destroy(sDynArray *d) {
-	sDynaRegion *reg = d->regions;
+DynArray::~DynArray() {
+	Region *reg = regions;
 	while(reg != NULL) {
-		sDynaRegion *next = reg->next;
+		Region *next = reg->next;
 		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,FRM_CRIT);
 		totalPages--;
 		/* put region on freelist */
@@ -100,5 +80,5 @@ void dyna_destroy(sDynArray *d) {
 		freeList = reg;
 		reg = next;
 	}
-	d->regions = NULL;
+	regions = NULL;
 }

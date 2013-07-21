@@ -24,48 +24,26 @@
 #include <sys/util.h>
 #include <string.h>
 
-/* for i586 and eco32, we need only 3 regions; one for gft, one for vfs-nodes and one for sll-nodes */
-/* but one additional one for the unit-tests doesn't hurt */
-#define DYNA_REG_COUNT	4
-
-static sDynaRegion regions[DYNA_REG_COUNT];
-static sDynaRegion *freeList;
-static size_t totalPages = 0;
-
-void dyna_init(void) {
-	size_t i;
-	regions[0].next = NULL;
-	freeList = regions;
-	for(i = 1; i < DYNA_REG_COUNT; i++) {
-		regions[i].next = freeList;
-		freeList = regions + i;
-	}
-}
-
-size_t dyna_getTotalPages(void) {
-	return totalPages;
-}
-
-bool dyna_extend(sDynArray *d) {
-	sDynaRegion *reg;
+bool DynArray::extend() {
+	Region *reg;
 	uintptr_t addr;
-	spinlock_aquire(&d->lock);
+	spinlock_aquire(&lock);
 
 	/* region full? */
-	if(d->areaBegin + d->objCount * d->objSize + PAGE_SIZE > d->areaBegin + d->areaSize) {
-		spinlock_release(&d->lock);
+	if(areaBegin + objCount * objSize + PAGE_SIZE > areaBegin + areaSize) {
+		spinlock_release(&lock);
 		return false;
 	}
 
-	reg = d->regions;
+	reg = regions;
 	if(reg == NULL) {
-		reg = d->regions = freeList;
+		reg = regions = freeList;
 		if(reg == NULL) {
-			spinlock_release(&d->lock);
+			spinlock_release(&lock);
 			return false;
 		}
 		freeList = freeList->next;
-		reg->addr = d->areaBegin;
+		reg->addr = areaBegin;
 		reg->size = 0;
 		reg->next = NULL;
 	}
@@ -74,24 +52,24 @@ bool dyna_extend(sDynArray *d) {
 	if(paging_map(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
 		reg->next = freeList;
 		freeList = reg;
-		spinlock_release(&d->lock);
+		spinlock_release(&lock);
 		return false;
 	}
 	memclear((void*)addr,PAGE_SIZE);
 	totalPages++;
 	reg->size += PAGE_SIZE;
-	d->objCount = reg->size / d->objSize;
-	spinlock_release(&d->lock);
+	objCount = reg->size / objSize;
+	spinlock_release(&lock);
 	return true;
 }
 
-void dyna_destroy(sDynArray *d) {
-	if(d->regions) {
-		paging_unmap(d->regions->addr,d->regions->size / PAGE_SIZE,true);
-		totalPages -= d->regions->size / PAGE_SIZE;
+DynArray::~DynArray() {
+	if(regions) {
+		paging_unmap(regions->addr,regions->size / PAGE_SIZE,true);
+		totalPages -= regions->size / PAGE_SIZE;
 		/* put region on freelist */
-		d->regions->next = freeList;
-		freeList = d->regions;
-		d->regions = NULL;
+		regions->next = freeList;
+		freeList = regions;
+		regions = NULL;
 	}
 }

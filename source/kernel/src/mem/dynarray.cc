@@ -20,48 +20,53 @@
 #include <sys/common.h>
 #include <sys/mem/dynarray.h>
 
-void dyna_start(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize) {
-	d->lock = 0;
-	d->objSize = objSize;
-	d->objCount = 0;
-	d->areaBegin = areaBegin;
-	d->areaSize = areaSize;
-	d->regions = NULL;
+DynArray::Region DynArray::regionstore[DYNA_REG_COUNT];
+DynArray::Region *DynArray::freeList;
+size_t DynArray::totalPages = 0;
+
+void DynArray::init() {
+	size_t i;
+	regionstore[0].next = NULL;
+	freeList = regionstore;
+	for(i = 1; i < DYNA_REG_COUNT; i++) {
+		regionstore[i].next = freeList;
+		freeList = regionstore + i;
+	}
 }
 
-void *dyna_getObj(sDynArray *d,size_t index) {
+void *DynArray::getObj(size_t index) const {
 	void *res = NULL;
-	sDynaRegion *reg;
-	spinlock_aquire(&d->lock);
-	reg = d->regions;
+	Region *reg;
+	spinlock_aquire(&lock);
+	reg = regions;
 	/* note that we're using the index here to prevent that an object reaches out of a region */
 	while(reg != NULL) {
-		size_t objsInReg = reg->size / d->objSize;
+		size_t objsInReg = reg->size / objSize;
 		if(index < objsInReg) {
-			res = (void*)(reg->addr + index * d->objSize);
+			res = (void*)(reg->addr + index * objSize);
 			break;
 		}
 		index -= objsInReg;
 		reg = reg->next;
 	}
-	spinlock_release(&d->lock);
+	spinlock_release(&lock);
 	return res;
 }
 
-ssize_t dyna_getIndex(sDynArray *d,const void *obj) {
+ssize_t DynArray::getIndex(const void *obj) const {
 	ssize_t res = -1;
 	size_t index = 0;
-	sDynaRegion *reg;
-	spinlock_aquire(&d->lock);
-	reg = d->regions;
+	Region *reg;
+	spinlock_aquire(&lock);
+	reg = regions;
 	while(reg != NULL) {
 		if((uintptr_t)obj >= reg->addr && (uintptr_t)obj < reg->addr + reg->size) {
-			res = index + ((uintptr_t)obj - reg->addr) / d->objSize;
+			res = index + ((uintptr_t)obj - reg->addr) / objSize;
 			break;
 		}
-		index += reg->size / d->objSize;
+		index += reg->size / objSize;
 		reg = reg->next;
 	}
-	spinlock_release(&d->lock);
+	spinlock_release(&lock);
 	return res;
 }

@@ -56,7 +56,7 @@
 #define PHYS2VIRT(x)			((void*)((uintptr_t)x + KERNEL_AREA))
 
 static const sBootTask tasks[] = {
-	{"Initializing dynarray...",dyna_init},
+	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
 	{"Initializing GDT...",gdt_init_bsp},
 	{"Initializing CPU...",CPU::detect},

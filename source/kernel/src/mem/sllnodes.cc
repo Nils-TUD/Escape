@@ -40,8 +40,7 @@ struct sListNode {
 	const void *data;
 };
 
-static bool initialized = false;
-static sDynArray nodeArray;
+static DynArray nodeArray(sizeof(sListNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 static sListNode *freelist = NULL;
 static klock_t sllnLock;
 
@@ -51,17 +50,13 @@ void *slln_allocNode(size_t size) {
 	spinlock_aquire(&sllnLock);
 	if(freelist == NULL) {
 		size_t i,oldCount;
-		if(!initialized) {
-			dyna_start(&nodeArray,sizeof(sListNode),SLLNODE_AREA,SLLNODE_AREA_SIZE);
-			initialized = true;
-		}
-		oldCount = nodeArray.objCount;
-		if(!dyna_extend(&nodeArray)) {
+		oldCount = nodeArray.getObjCount();
+		if(!nodeArray.extend()) {
 			spinlock_release(&sllnLock);
 			return NULL;
 		}
-		for(i = oldCount; i < nodeArray.objCount; i++) {
-			n = (sListNode*)dyna_getObj(&nodeArray,i);
+		for(i = oldCount; i < nodeArray.getObjCount(); i++) {
+			n = (sListNode*)nodeArray.getObj(i);
 			n->next = freelist;
 			freelist = n;
 		}

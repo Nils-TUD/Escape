@@ -46,26 +46,22 @@ static void vfs_node_releaseNode(sVFSNode *node);
 static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent);
 
 /* all nodes (expand dynamically) */
-static sDynArray nodeArray;
+static DynArray nodeArray(sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
 /* a pointer to the first free node (which points to the next and so on) */
 static sVFSNode *freeList = NULL;
 static uint nextUsageId = 0;
 static klock_t nodesLock;
 
-void vfs_node_init(void) {
-	dyna_start(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
-}
-
 bool vfs_node_isValid(inode_t nodeNo) {
-	return nodeNo >= 0 && nodeNo < (inode_t)nodeArray.objCount;
+	return nodeNo >= 0 && nodeNo < (inode_t)nodeArray.getObjCount();
 }
 
 inode_t vfs_node_getNo(const sVFSNode *node) {
-	return (inode_t)dyna_getIndex(&nodeArray,node);
+	return (inode_t)nodeArray.getIndex(node);
 }
 
 sVFSNode *vfs_node_request(inode_t nodeNo) {
-	sVFSNode *n = (sVFSNode*)dyna_getObj(&nodeArray,nodeNo);
+	sVFSNode *n = (sVFSNode*)nodeArray.getObj(nodeNo);
 	spinlock_aquire(&n->lock);
 	if(n->name)
 		return n;
@@ -78,7 +74,7 @@ void vfs_node_release(sVFSNode *node) {
 }
 
 sVFSNode *vfs_node_get(inode_t nodeNo) {
-	return (sVFSNode*)dyna_getObj(&nodeArray,nodeNo);
+	return (sVFSNode*)nodeArray.getObj(nodeNo);
 }
 
 static sVFSNode *vfs_node_openDirOf(inode_t nodeNo,bool *isValid) {
@@ -244,9 +240,6 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 	bool isValid;
 	if(created)
 		*created = false;
-	/* not initialized? */
-	if(nodeArray.objSize == 0)
-		return -ENOTSUP;
 
 	/* no absolute path? */
 	if(*path != '/')
@@ -604,13 +597,13 @@ static sVFSNode *vfs_node_requestNode(void) {
 	sVFSNode *node = NULL;
 	spinlock_aquire(&nodesLock);
 	if(freeList == NULL) {
-		size_t i,oldCount = nodeArray.objCount;
-		if(!dyna_extend(&nodeArray)) {
+		size_t i,oldCount = nodeArray.getObjCount();
+		if(!nodeArray.extend()) {
 			spinlock_release(&nodesLock);
 			return NULL;
 		}
 		freeList = vfs_node_get(oldCount);
-		for(i = oldCount; i < nodeArray.objCount - 1; i++) {
+		for(i = oldCount; i < nodeArray.getObjCount() - 1; i++) {
 			node = vfs_node_get(i);
 			node->next = vfs_node_get(i + 1);
 		}

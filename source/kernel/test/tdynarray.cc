@@ -39,30 +39,29 @@ sTestModule tModDynArray = {
 
 static void test_dynarray(void) {
 	size_t i,j;
-	sDynArray da;
 	test_caseStart("Test various functions");
 
 	checkMemoryBefore(true);
-	dyna_start(&da,sizeof(uint),REGION_START,REGION_SIZE);
+	{
+		DynArray da(sizeof(uint),REGION_START,REGION_SIZE);
 
-	for(j = 0; j < REGION_SIZE; j += PAGE_SIZE) {
-		size_t oldCount = da.objCount;
-		test_assertTrue(dyna_extend(&da));
-		for(i = oldCount; i < da.objCount; i++) {
-			uint *l = (uint*)dyna_getObj(&da,i);
-			*l = i;
+		for(j = 0; j < REGION_SIZE; j += PAGE_SIZE) {
+			size_t oldCount = da.getObjCount();
+			test_assertTrue(da.extend());
+			for(i = oldCount; i < da.getObjCount(); i++) {
+				uint *l = (uint*)da.getObj(i);
+				*l = i;
+			}
+		}
+
+		test_assertFalse(da.extend());
+
+		for(i = 0, j = 0; j < REGION_SIZE; i++, j += sizeof(uint)) {
+			uint *l = (uint*)da.getObj(i);
+			test_assertSSize(da.getIndex(l),i);
+			test_assertUInt(*l,i);
 		}
 	}
-
-	test_assertFalse(dyna_extend(&da));
-
-	for(i = 0, j = 0; j < REGION_SIZE; i++, j += sizeof(uint)) {
-		uint *l = (uint*)dyna_getObj(&da,i);
-		test_assertSSize(dyna_getIndex(&da,l),i);
-		test_assertUInt(*l,i);
-	}
-
-	dyna_destroy(&da);
 	checkMemoryAfter(true);
 
 	test_caseSucceeded();

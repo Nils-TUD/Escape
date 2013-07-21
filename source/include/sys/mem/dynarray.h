@@ -45,16 +45,95 @@
  * have a huge static array.
  */
 
-/* describes a dynarray-region */
-typedef struct sDynaRegion {
-	uintptr_t addr;
-	size_t size;
-	struct sDynaRegion *next;
-} sDynaRegion;
+/* for i586 and eco32, we need only 3 regions; one for gft, one for vfs-nodes and one for sll-nodes */
+/* but one additional one for the unit-tests doesn't hurt */
+#ifdef __i386__
+#define DYNA_REG_COUNT	4
+#endif
+#ifdef __eco32__
+#define DYNA_REG_COUNT	4
+#endif
+#ifdef __mmix__
+#define DYNA_REG_COUNT	128
+#endif
 
-/* describes an dyn-array */
-typedef struct {
-	klock_t lock;
+class DynArray {
+	/* describes a dynarray-region */
+	struct Region {
+		uintptr_t addr;
+		size_t size;
+		Region *next;
+	};
+
+public:
+	/**
+	 * Initializes the dynamic-array-system
+	 */
+	static void init();
+
+	/**
+	 * @return the total number of pages used for all dynamic arrays
+	 */
+	static size_t getTotalPages() {
+		return totalPages;
+	}
+
+	/**
+	 * Creates the given dynamic array
+	 *
+	 * @param objSize the size of one object
+	 * @param areaBegin the beginning of the area in virtual memory where the objects should be
+	 * @param areaSize the size of that area
+	 */
+	explicit DynArray(size_t objSize,uintptr_t areaBegin,size_t areaSize)
+		: lock(), objSize(objSize), objCount(), areaBegin(areaBegin), areaSize(areaSize),
+		  regions() {
+	}
+	/**
+	 * Destroys the dynamic array
+	 */
+	~DynArray();
+
+	/**
+	 * @return the size of one object
+	 */
+	size_t getObjSize() const {
+		return objSize;
+	}
+	/**
+	 * @return the current number of available objects
+	 */
+	size_t getObjCount() const {
+		return objCount;
+	}
+
+	/**
+	 * Retrieves an object from the given dynarray with given index
+	 *
+	 * @param d the dynamic array
+	 * @param index the index of the object
+	 * @return the object or NULL if out of range
+	 */
+	void *getObj(size_t index) const;
+
+	/**
+	 * Retrieves the index for the given object
+	 *
+	 * @param obj the object
+	 * @return the index or -1 if not found
+	 */
+	ssize_t getIndex(const void *obj) const;
+
+	/**
+	 * Extends this array. That means, it allocates one page more and changes the number of
+	 * available objects correspondingly (objCount).
+	 *
+	 * @return true if successfull
+	 */
+	bool extend();
+
+private:
+	mutable klock_t lock;
 	/* number of objects currently avaiable */
 	size_t objCount;
 	size_t objSize;
@@ -62,59 +141,9 @@ typedef struct {
 	uintptr_t areaBegin;
 	size_t areaSize;
 	/* the regions for this array */
-	sDynaRegion *regions;
-} sDynArray;
+	Region *regions;
 
-/**
- * Initializes the dynamic-array-system
- */
-void dyna_init(void);
-
-/**
- * @return the total number of pages used for all dynamic arrays
- */
-size_t dyna_getTotalPages(void);
-
-/**
- * Starts the given dynamic array
- *
- * @param d the dynamic array
- * @param objSize the size of one object
- * @param areaBegin the beginning of the area in virtual memory where the objects should be
- * @param areaSize the size of that area
- */
-void dyna_start(sDynArray *d,size_t objSize,uintptr_t areaBegin,size_t areaSize);
-
-/**
- * Retrieves an object from the given dynarray with given index
- *
- * @param d the dynamic array
- * @param index the index of the object
- * @return the object or NULL if out of range
- */
-void *dyna_getObj(sDynArray *d,size_t index);
-
-/**
- * Retrieves the index for the given object in the given dynarray
- *
- * @param d the dynamic array
- * @param obj the object
- * @return the index or -1 if not found
- */
-ssize_t dyna_getIndex(sDynArray *d,const void *obj);
-
-/**
- * Extends the given array. That means, it allocates one page more and changes the number of
- * available objects correspondingly (objCount).
- *
- * @param d the dynamic array
- * @return true if successfull
- */
-bool dyna_extend(sDynArray *d);
-
-/**
- * Destroys the given dynamic array
- *
- * @param d the dynamic array
- */
-void dyna_destroy(sDynArray *d);
+	static Region regionstore[];
+	static Region *freeList;
+	static size_t totalPages;
+};

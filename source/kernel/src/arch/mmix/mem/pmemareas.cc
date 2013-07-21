@@ -24,7 +24,7 @@
 #include <sys/boot.h>
 #include <sys/util.h>
 
-void pmemareas_initArch(void) {
+void PhysMemAreas::initArch(void) {
 	const sBootInfo *binfo = boot_getInfo();
 	const sLoadProg *last;
 
@@ -32,10 +32,10 @@ void pmemareas_initArch(void) {
 	if(binfo->progCount == 0)
 		util_panic("No boot-modules found");
 	last = binfo->progs + binfo->progCount - 1;
-	pmemareas_add(ROUND_PAGE_UP(last->start - KERNEL_START + last->size),binfo->memSize);
+	PhysMemAreas::add(ROUND_PAGE_UP(last->start - KERNEL_START + last->size),binfo->memSize);
 }
 
-size_t pmemareas_getTotal(void) {
+size_t PhysMemAreas::getTotal(void) {
 	const sBootInfo *binfo = boot_getInfo();
 	return binfo->memSize;
 }

@@ -153,7 +153,7 @@ void paging_setFirst(pagedir_t *pdir) {
 
 uintptr_t paging_makeAccessible(uintptr_t phys,size_t pages) {
 	assert(phys == 0);
-	return DIR_MAPPED_SPACE | (pmemareas_alloc(pages) * PAGE_SIZE);
+	return DIR_MAPPED_SPACE | (PhysMemAreas::alloc(pages) * PAGE_SIZE);
 }
 
 bool paging_isInUserSpace(uintptr_t virt,size_t count) {

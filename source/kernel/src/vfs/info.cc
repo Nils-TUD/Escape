@@ -287,7 +287,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 
 	/* TODO change that (kframes, swapping, ...) */
 	free = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT) << PAGE_SIZE_SHIFT;
-	total = pmemareas_getTotal();
+	total = PhysMemAreas::getTotal();
 	ksize = boot_getKernelSize();
 	msize = boot_getModuleSize();
 	kheap = KHeap::getOccupiedMem();

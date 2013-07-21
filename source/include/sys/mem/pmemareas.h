@@ -21,57 +21,78 @@
 
 #include <sys/common.h>
 
-typedef struct sPhysMemArea {
-	uintptr_t addr;
-	size_t size;
-	struct sPhysMemArea *next;
-} sPhysMemArea;
+class PhysMem;
 
-/**
- * Architecture-dependent: collects all available memory
- */
-void pmemareas_initArch(void);
+class PhysMemAreas {
+	friend class PhysMem;
 
-/**
- * Allocates <frames> frames from the physical memory. That is, it removes it from the area-list.
- *
- * @param frames the number of frames
- * @return the first frame-number
- */
-frameno_t pmemareas_alloc(size_t frames);
+	PhysMemAreas() = delete;
 
-/**
- * @return the list of free physical memory
- */
-sPhysMemArea *pmemareas_get(void);
+	static const size_t MAX_PHYSMEM_AREAS			= 64;
 
-/**
- * @return the total amount of memory (in bytes)
- */
-size_t pmemareas_getTotal(void);
+public:
+	struct MemArea {
+		uintptr_t addr;
+		size_t size;
+		MemArea *next;
+	};
 
-/**
- * @return the currently available amount of memory (in bytes)
- */
-size_t pmemareas_getAvailable(void);
+	/**
+	 * Allocates <frames> frames from the physical memory. That is, it removes it from the area-list.
+	 *
+	 * @param frames the number of frames
+	 * @return the first frame-number
+	 */
+	static frameno_t alloc(size_t frames);
 
-/**
- * Adds <addr>..<end> to the list of free memory
- *
- * @param addr the start address
- * @param end the end address
- */
-void pmemareas_add(uintptr_t addr,uintptr_t end);
+	/**
+	 * @return the list of free physical memory
+	 */
+	static const MemArea *get() {
+		return list;
+	}
 
-/**
- * Removes <addr>..<end> from all areas in the list
- *
- * @param addr the start address
- * @param end the end address
- */
-void pmemareas_rem(uintptr_t addr,uintptr_t end);
+	/**
+	 * @return the total amount of memory (in bytes)
+	 */
+	static size_t getTotal();
 
-/**
- * Prints the list
- */
-void pmemareas_print(void);
+	/**
+	 * @return the currently available amount of memory (in bytes)
+	 */
+	static size_t getAvailable();
+
+	/**
+	 * Prints the list
+	 */
+	static void print();
+
+	/* TODO private! */
+	/**
+	 * Adds <addr>..<end> to the list of free memory
+	 *
+	 * @param addr the start address
+	 * @param end the end address
+	 */
+	static void add(uintptr_t addr,uintptr_t end);
+
+	/**
+	 * Removes <addr>..<end> from all areas in the list
+	 *
+	 * @param addr the start address
+	 * @param end the end address
+	 */
+	static void rem(uintptr_t addr,uintptr_t end);
+
+private:
+	/**
+	 * Architecture-dependent: collects all available memory
+	 */
+	static void initArch();
+	static MemArea *allocArea();
+
+	static MemArea areas[];
+	static size_t count;
+	static MemArea *list;
+	static MemArea *listend;
+};

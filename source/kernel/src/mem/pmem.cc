@@ -74,14 +74,14 @@ PhysMem::SwapInJob *PhysMem::siJobEnd = NULL;
 size_t PhysMem::jobWaiters = 0;
 
 void PhysMem::init() {
-	sPhysMemArea *area;
+	const PhysMemAreas::MemArea *area;
 
 	/* determine the available memory */
-	pmemareas_initArch();
+	PhysMemAreas::initArch();
 
 	/* calculate mm-stack-size */
 	size_t bmFrmCnt;
-	size_t memSize = pmemareas_getAvailable();
+	size_t memSize = PhysMemAreas::getAvailable();
 	size_t defPageCount = (memSize / PAGE_SIZE) - BITMAP_PAGE_COUNT;
 	stackPages = (defPageCount + (PAGE_SIZE - 1) / sizeof(frameno_t)) / (PAGE_SIZE / sizeof(frameno_t));
 
@@ -97,16 +97,16 @@ void PhysMem::init() {
 	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 
 	/* first, search memory that will be managed with the bitmap */
-	for(area = pmemareas_get(); area != NULL; area = area->next) {
+	for(area = PhysMemAreas::get(); area != NULL; area = area->next) {
 		if(area->size >= BITMAP_PAGE_COUNT * PAGE_SIZE) {
 			bitmapStart = area->addr;
-			pmemareas_rem(area->addr,area->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
+			PhysMemAreas::rem(area->addr,area->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
 			break;
 		}
 	}
 
 	/* now mark the remaining memory as free on stack */
-	for(area = pmemareas_get(); area != NULL; area = area->next)
+	for(area = PhysMemAreas::get(); area != NULL; area = area->next)
 		markRangeUsed(area->addr,area->addr + area->size,false);
 
 	/* stack and bitmap is ready */
@@ -233,7 +233,7 @@ frameno_t PhysMem::allocate(FrameType type) {
 	util_printEventTrace(util_getKernelStackTrace(),"[A] %x ",*(stack - 1));
 	/* remove the memory from the available one when we're not yet initialized */
 	if(!initialized)
-		frm = pmemareas_alloc(1);
+		frm = PhysMemAreas::alloc(1);
 	else if(swapEnabled && type == CRIT) {
 		if(cframes > 0) {
 			frm = *(--stack);

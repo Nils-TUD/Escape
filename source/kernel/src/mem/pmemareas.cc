@@ -24,22 +24,18 @@
 #include <sys/video.h>
 #include <assert.h>
 
-#define MAX_PHYSMEM_AREAS			64
-
-static sPhysMemArea *pmemareas_allocArea(void);
-
 /* areas of (initially) free physical memory */
-static sPhysMemArea areas[MAX_PHYSMEM_AREAS];
-static size_t count = 0;
-static sPhysMemArea *list = NULL;
-static sPhysMemArea *listend = NULL;
+PhysMemAreas::MemArea PhysMemAreas::areas[MAX_PHYSMEM_AREAS];
+size_t PhysMemAreas::count = 0;
+PhysMemAreas::MemArea *PhysMemAreas::list = NULL;
+PhysMemAreas::MemArea *PhysMemAreas::listend = NULL;
 
-frameno_t pmemareas_alloc(size_t frames) {
-	sPhysMemArea *area = list;
+frameno_t PhysMemAreas::alloc(size_t frames) {
+	MemArea *area = list;
 	while(area != NULL) {
 		if(area->size >= frames * PAGE_SIZE) {
 			uintptr_t begin = area->addr;
-			pmemareas_rem(begin,begin + frames * PAGE_SIZE);
+			rem(begin,begin + frames * PAGE_SIZE);
 			return begin / PAGE_SIZE;
 		}
 		area = area->next;
@@ -47,12 +43,8 @@ frameno_t pmemareas_alloc(size_t frames) {
 	return 0;
 }
 
-sPhysMemArea *pmemareas_get(void) {
-	return list;
-}
-
-size_t pmemareas_getAvailable(void) {
-	sPhysMemArea *area = list;
+size_t PhysMemAreas::getAvailable(void) {
+	MemArea *area = list;
 	size_t total = 0;
 	while(area != NULL) {
 		total += area->size;
@@ -61,8 +53,8 @@ size_t pmemareas_getAvailable(void) {
 	return total;
 }
 
-void pmemareas_add(uintptr_t addr,uintptr_t end) {
-	sPhysMemArea *area = pmemareas_allocArea();
+void PhysMemAreas::add(uintptr_t addr,uintptr_t end) {
+	MemArea *area = allocArea();
 	addr = ROUND_PAGE_UP(addr);
 	end = ROUND_PAGE_UP(end);
 	area->addr = addr;
@@ -75,9 +67,9 @@ void pmemareas_add(uintptr_t addr,uintptr_t end) {
 	listend = area;
 }
 
-void pmemareas_rem(uintptr_t addr,uintptr_t end) {
-	sPhysMemArea *prev = NULL;
-	sPhysMemArea *area = list;
+void PhysMemAreas::rem(uintptr_t addr,uintptr_t end) {
+	MemArea *prev = NULL;
+	MemArea *area = list;
 	addr = ROUND_PAGE_DN(addr);
 	end = ROUND_PAGE_UP(end);
 	while(area != NULL) {
@@ -94,7 +86,7 @@ void pmemareas_rem(uintptr_t addr,uintptr_t end) {
 		}
 		/* in the middle of the area */
 		else if(addr > area->addr && end < area->addr + area->size) {
-			pmemareas_add(end,area->addr + area->size);
+			add(end,area->addr + area->size);
 			area->size = addr - area->addr;
 		}
 		/* beginning covered, i.e. end is within the area */
@@ -111,9 +103,9 @@ void pmemareas_rem(uintptr_t addr,uintptr_t end) {
 	}
 }
 
-void pmemareas_print(void) {
-	sPhysMemArea *area = list;
-	vid_printf("Free physical memory areas [in total %zu KiB]:\n",pmemareas_getAvailable() / K);
+void PhysMemAreas::print(void) {
+	MemArea *area = list;
+	vid_printf("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / K);
 	while(area != NULL) {
 		vid_printf("	%p .. %p [%zu KiB]\n",area->addr,area->addr + area->size - 1,
 				area->size / K);
@@ -121,7 +113,7 @@ void pmemareas_print(void) {
 	}
 }
 
-static sPhysMemArea *pmemareas_allocArea(void) {
+PhysMemAreas::MemArea *PhysMemAreas::allocArea(void) {
 	if(count == MAX_PHYSMEM_AREAS)
 		util_panic("Ran out of physmem-areas");
 	return areas + count++;

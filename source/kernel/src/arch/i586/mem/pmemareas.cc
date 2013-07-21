@@ -27,7 +27,7 @@
 extern void *_ebss;
 static size_t total;
 
-void pmemareas_initArch(void) {
+void PhysMemAreas::initArch(void) {
 	size_t i;
 	sMemMap *mmap;
 	sModule *mod;
@@ -48,22 +48,22 @@ void pmemareas_initArch(void) {
 				log_printf("Skipping memory above 4G: %#Lx .. %#Lx\n",0x100000000ULL,end);
 				end = 0xFFFFFFFF;
 			}
-			pmemareas_add((uintptr_t)mmap->baseAddr,(uintptr_t)end);
+			PhysMemAreas::add((uintptr_t)mmap->baseAddr,(uintptr_t)end);
 		}
 	}
-	total = pmemareas_getAvailable();
+	total = PhysMemAreas::getAvailable();
 
 	/* remove kernel and the first MB */
-	pmemareas_rem(0,(uintptr_t)&_ebss - KERNEL_AREA);
+	PhysMemAreas::rem(0,(uintptr_t)&_ebss - KERNEL_AREA);
 
 	/* remove modules */
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
-		pmemareas_rem(mod->modStart,mod->modEnd);
+		PhysMemAreas::rem(mod->modStart,mod->modEnd);
 		mod++;
 	}
 }
 
-size_t pmemareas_getTotal(void) {
+size_t PhysMemAreas::getTotal(void) {
 	return total;
 }

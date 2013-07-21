@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <sys/mem/region.h>
 #include <sys/mem/vmtree.h>
-#include <sys/mem/vmfree.h>
+#include <sys/mem/vmfreemap.h>
 #include <sys/mem/paging.h>
 #include <sys/printf.h>
 

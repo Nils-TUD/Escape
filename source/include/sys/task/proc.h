@@ -23,7 +23,7 @@
 #include <sys/mem/region.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmtree.h>
-#include <sys/mem/vmfree.h>
+#include <sys/mem/vmfreemap.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>

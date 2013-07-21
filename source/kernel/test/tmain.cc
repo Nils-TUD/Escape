@@ -44,7 +44,7 @@
 #include "thashmap.h"
 #include "tctype.h"
 #include "tvmreg.h"
-#include "tvmfree.h"
+#include "tvmfreemap.h"
 #include "tphysmemareas.h"
 /* TODO find a better solution */
 #ifdef __mmix__

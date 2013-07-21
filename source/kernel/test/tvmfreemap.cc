@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
-#include <sys/mem/vmfree.h>
+#include <sys/mem/vmfreemap.h>
 #include <sys/util.h>
 #include <esc/test.h>
 #include "testutils.h"

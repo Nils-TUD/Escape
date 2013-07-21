@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/vmfree.h>
+#include <sys/mem/vmfreemap.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <assert.h>

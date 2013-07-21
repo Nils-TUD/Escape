@@ -21,7 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/cow.h>
+#include <sys/mem/copyonwrite.h>
 #include <sys/mem/dynarray.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>

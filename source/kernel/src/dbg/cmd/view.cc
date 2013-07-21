@@ -35,7 +35,7 @@
 #include <sys/task/smp.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
-#include <sys/mem/cow.h>
+#include <sys/mem/copyonwrite.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>

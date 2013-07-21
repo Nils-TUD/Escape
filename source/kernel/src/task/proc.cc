@@ -34,7 +34,7 @@
 #include <sys/mem/physmem.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/cow.h>
+#include <sys/mem/copyonwrite.h>
 #include <sys/mem/sllnodes.h>
 #include <sys/intrpt.h>
 #include <sys/vfs/vfs.h>

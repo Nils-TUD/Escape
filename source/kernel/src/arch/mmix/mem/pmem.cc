@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
 
-bool pmem_canMap(uintptr_t addr,size_t size) {
+bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	/* only the IO-space can be mapped */
 	return addr >= 0x0001000000000000 && addr + size < 0x0100000000000000;
 }

@@ -23,7 +23,7 @@
 #include <sys/mem/pmem.h>
 
 uintptr_t KHeap::allocAreas(void) {
-	frameno_t frame = pmem_allocate(FRM_CRIT);
+	frameno_t frame = PhysMem::allocate(PhysMem::CRIT);
 	if(frame == 0)
 		return 0;
 	pages++;
@@ -36,7 +36,7 @@ uintptr_t KHeap::allocSpace(size_t count) {
 	if(count == 1)
 		return allocAreas();
 	/* otherwise we have to use contiguous physical memory */
-	res = pmem_allocateContiguous(count,1);
+	res = PhysMem::allocateContiguous(count,1);
 	if(res < 0)
 		return 0;
 	pages += count;

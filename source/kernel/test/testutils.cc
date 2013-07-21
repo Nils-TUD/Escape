@@ -39,7 +39,7 @@ void checkMemoryBefore(bool checkMappedPages) {
 	cachePages = Cache::getPageCount();
 	cacheUsed = Cache::getUsedMem();
 	daPages = DynArray::getTotalPages();
-	freeFrames = pmem_getFreeFrames(MM_DEF | MM_CONT);
+	freeFrames = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT);
 }
 
 void checkMemoryAfter(bool checkMappedPages) {
@@ -52,7 +52,7 @@ void checkMemoryAfter(bool checkMappedPages) {
 	newCachePages = Cache::getPageCount();
 	newCacheUsed = Cache::getUsedMem();
 	newDaPages = DynArray::getTotalPages();
-	newFreeFrames = pmem_getFreeFrames(MM_DEF | MM_CONT);
+	newFreeFrames = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT);
 	if(checkMappedPages) {
 		size_t newMappedPages = paging_dbg_getPageCount();
 		test_assertSize(newMappedPages,mappedPages);

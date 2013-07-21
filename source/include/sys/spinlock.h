@@ -20,8 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/util.h>
-#include <sys/log.h>
 
 #ifdef __i386__
 static A_INLINE void spinlock_aquire(klock_t *l) {

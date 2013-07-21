@@ -253,14 +253,14 @@ int paging_cloneKernelspace(pagedir_t *pdir,tid_t tid) {
 	spinlock_aquire(&pagingLock);
 
 	/* allocate frames */
-	pdirFrame = pmem_allocate(FRM_KERNEL);
+	pdirFrame = PhysMem::allocate(PhysMem::KERN);
 	if(pdirFrame == 0) {
 		spinlock_release(&pagingLock);
 		return -ENOMEM;
 	}
-	stackPtFrame = pmem_allocate(FRM_KERNEL);
+	stackPtFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackPtFrame == 0) {
-		pmem_free(pdirFrame,FRM_KERNEL);
+		PhysMem::free(pdirFrame,PhysMem::KERN);
 		spinlock_release(&pagingLock);
 		return -ENOMEM;
 	}
@@ -358,12 +358,12 @@ void paging_destroyPDir(pagedir_t *pdir) {
 	for(i = ADDR_TO_PDINDEX(KERNEL_STACK_AREA);
 		i < ADDR_TO_PDINDEX(KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE); i++) {
 		if(pd[i] & PDE_EXISTS) {
-			pmem_free(PDE_FRAMENO(pd[i]),FRM_KERNEL);
+			PhysMem::free(PDE_FRAMENO(pd[i]),PhysMem::KERN);
 			pd[i] = 0;
 		}
 	}
 	/* free page-dir */
-	pmem_free(pdir->own >> PAGE_SIZE_SHIFT,FRM_KERNEL);
+	PhysMem::free(pdir->own >> PAGE_SIZE_SHIFT,PhysMem::KERN);
 	spinlock_release(&pagingLock);
 }
 
@@ -528,7 +528,7 @@ static int paging_crtPageTable(pde_t *pd,uintptr_t ptables,uintptr_t virt,uint f
 	size_t pdi = ADDR_TO_PDINDEX(virt);
 	assert((pd[pdi] & PDE_PRESENT) == 0);
 	/* get new frame for page-table */
-	frame = pmem_allocate(FRM_KERNEL);
+	frame = PhysMem::allocate(PhysMem::KERN);
 	if(frame == 0)
 		return -ENOMEM;
 	/* writable because we want to be able to change PTE's in the PTE-area */
@@ -583,7 +583,7 @@ static ssize_t paging_doMapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *fr
 			if(frames == NULL) {
 				frameno_t frame;
 				if(virt >= KERNEL_AREA) {
-					frame = pmem_allocate(virt < KERNEL_STACK_AREA ? FRM_CRIT : FRM_KERNEL);
+					frame = PhysMem::allocate(virt < KERNEL_STACK_AREA ? PhysMem::CRIT : PhysMem::KERN);
 					if(frame == 0)
 						goto error;
 				}
@@ -654,12 +654,12 @@ static size_t paging_doUnmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,boo
 				frameno_t frame = PTE_FRAMENO(*pte);
 				if(virt >= KERNEL_AREA) {
 					if(virt < KERNEL_STACK_AREA)
-						pmem_free(frame,FRM_CRIT);
+						PhysMem::free(frame,PhysMem::CRIT);
 					else
-						pmem_free(frame,FRM_KERNEL);
+						PhysMem::free(frame,PhysMem::KERN);
 				}
 				else
-					pmem_free(frame,FRM_USER);
+					PhysMem::free(frame,PhysMem::USR);
 			}
 		}
 		*pte &= ~PTE_EXISTS;
@@ -766,7 +766,7 @@ static size_t paging_remEmptyPt(uintptr_t ptables,size_t pti) {
 	}
 	/* empty => can be removed */
 	pde = (pde_t*)PAGEDIR(ptables) + pti;
-	pmem_free(PDE_FRAMENO(*pde),FRM_KERNEL);
+	PhysMem::free(PDE_FRAMENO(*pde),PhysMem::KERN);
 	*pde = 0;
 	if(ptables == MAPPED_PTS_START)
 		paging_flushPageTable(virt,ptables);

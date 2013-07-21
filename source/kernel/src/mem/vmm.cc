@@ -84,7 +84,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	Thread::addHeapAlloc(frames);
 	if(*phys == 0) {
 		if(align) {
-			ssize_t first = pmem_allocateContiguous(pages,align / PAGE_SIZE);
+			ssize_t first = PhysMem::allocateContiguous(pages,align / PAGE_SIZE);
 			if(first < 0)
 				goto error;
 			for(i = 0; i < pages; i++)
@@ -92,7 +92,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 		}
 		else {
 			for(i = 0; i < pages; i++)
-				frames[i] = pmem_allocate(FRM_USER);
+				frames[i] = PhysMem::allocate(PhysMem::USR);
 		}
 	}
 	/* otherwise use the specified one */
@@ -108,7 +108,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 			*phys ? (MAP_NOMAP | MAP_NOFREE) : MAP_NOMAP,NULL,0,&vm);
 	if(res < 0) {
 		if(!*phys)
-			pmem_freeContiguous(frames[0],pages);
+			PhysMem::freeContiguous(frames[0],pages);
 		goto error;
 	}
 
@@ -368,7 +368,7 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 
 			/* copy to a temporary buffer because we can't use the temp-area when switching threads */
 			paging_copyFromFrame(frameNo,buffer);
-			pmem_free(frameNo,FRM_USER);
+			PhysMem::free(frameNo,PhysMem::USR);
 
 			/* write out on disk */
 			assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
@@ -426,7 +426,7 @@ bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 }
 
 void vmm_setTimestamp(Thread *t,uint64_t timestamp) {
-	if(!pmem_shouldSetRegTimestamp())
+	if(!PhysMem::shouldSetRegTimestamp())
 		return;
 	/* ignore setting the timestamp if the process is currently locked; its not that critical and
 	 * we can't wait for the mutex here because this is called from Thread::switchAway() and the wait
@@ -548,7 +548,7 @@ static bool vmm_doPagefault(uintptr_t addr,Proc *p,sVMRegion *vm,bool write) {
 			*flags &= ~PF_DEMANDLOAD;
 	}
 	else if(*flags & PF_SWAPPED)
-		res = pmem_swapIn(addr);
+		res = PhysMem::swapIn(addr);
 	else if(*flags & PF_COPYONWRITE) {
 		frameno_t frameNumber = paging_getFrameNo(p->getPageDir(),addr);
 		size_t frmCount = CopyOnWrite::pagefault(addr,frameNumber);

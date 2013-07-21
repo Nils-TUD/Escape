@@ -30,6 +30,7 @@
 #include <sys/video.h>
 #include <sys/cpu.h>
 #include <sys/spinlock.h>
+#include <sys/log.h>
 #include <sys/util.h>
 #include <string.h>
 

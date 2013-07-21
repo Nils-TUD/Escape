@@ -178,10 +178,10 @@ void ThreadBase::updateRuntimes(void) {
 bool ThreadBase::reserveFrames(size_t count) {
 	while(count > 0) {
 		size_t i;
-		if(!pmem_reserve(count))
+		if(!PhysMem::reserve(count))
 			return false;
 		for(i = count; i > 0; i--) {
-			frameno_t frm = pmem_allocate(FRM_USER);
+			frameno_t frm = PhysMem::allocate(PhysMem::USR);
 			if(!frm)
 				break;
 			sll_append(&reqFrames,(void*)frm);

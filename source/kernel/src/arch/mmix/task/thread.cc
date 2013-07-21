@@ -95,7 +95,7 @@ void ThreadBase::addInitialStack() {
 }
 
 int ThreadBase::initArch(Thread *t) {
-	t->kstackFrame = pmem_allocate(FRM_KERNEL);
+	t->kstackFrame = PhysMem::allocate(PhysMem::KERN);
 	if(t->kstackFrame == 0)
 		return -ENOMEM;
 	t->tempStack = -1;
@@ -103,7 +103,7 @@ int ThreadBase::initArch(Thread *t) {
 }
 
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
-	dst->kstackFrame = pmem_allocate(FRM_KERNEL);
+	dst->kstackFrame = PhysMem::allocate(PhysMem::KERN);
 	if(dst->kstackFrame == 0)
 		return -ENOMEM;
 	if(!cloneProc) {
@@ -111,7 +111,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 		int res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			pmem_free(dst->kstackFrame,FRM_KERNEL);
+			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
 		}
 		/* add a new stack-region for the software-stack */
@@ -121,7 +121,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			/* remove register-stack */
 			vmm_remove(dst->getProc()->getPid(),dst->stackRegions[0]);
 			dst->stackRegions[0] = NULL;
-			pmem_free(dst->kstackFrame,FRM_KERNEL);
+			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
 		}
 	}
@@ -138,15 +138,15 @@ void ThreadBase::freeArch(Thread *t) {
 		}
 	}
 	if(t->tempStack != (frameno_t)-1) {
-		pmem_free(t->tempStack,FRM_KERNEL);
+		PhysMem::free(t->tempStack,PhysMem::KERN);
 		t->tempStack = -1;
 	}
-	pmem_free(t->kstackFrame,FRM_KERNEL);
+	PhysMem::free(t->kstackFrame,PhysMem::KERN);
 }
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	int res;
-	nt->tempStack = pmem_allocate(FRM_KERNEL);
+	nt->tempStack = PhysMem::allocate(PhysMem::KERN);
 	if(nt->tempStack == 0)
 		return -ENOMEM;
 	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
@@ -228,7 +228,7 @@ void ThreadBase::doSwitch(void) {
 			memcpy((void*)(DIR_MAPPED_SPACE | n->kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | n->tempStack * PAGE_SIZE),
 					PAGE_SIZE);
-			pmem_free(n->tempStack,FRM_KERNEL);
+			PhysMem::free(n->tempStack,PhysMem::KERN);
 			n->tempStack = -1;
 		}
 

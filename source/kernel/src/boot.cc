@@ -57,8 +57,8 @@ void boot_start(sBootInfo *info) {
 		boot_taskFinished();
 	}
 
-	log_printf("%d free frames (%d KiB)\n",pmem_getFreeFrames(MM_CONT | MM_DEF),
-			pmem_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
+	log_printf("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
+			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / K);
 }
 
 void boot_taskStarted(const char *text) {

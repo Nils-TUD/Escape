@@ -82,7 +82,7 @@ void paging_init(void) {
 	uintptr_t rootLoc;
 	ssize_t res;
 	/* set root-location of first process */
-	if((res = pmem_allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1)) < 0)
+	if((res = PhysMem::allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1)) < 0)
 		util_panic("Not enough contiguous memory for the root-location of the first process");
 	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	/* clear */
@@ -115,7 +115,7 @@ int paging_cloneKernelspace(pagedir_t *pdir,A_UNUSED tid_t tid) {
 	pagedir_t *cur = paging_getPageDir();
 	uintptr_t rootLoc;
 	/* allocate root-location */
-	ssize_t res = pmem_allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1);
+	ssize_t res = PhysMem::allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1);
 	if(res < 0)
 		return res;
 	/* clear */
@@ -133,7 +133,7 @@ int paging_cloneKernelspace(pagedir_t *pdir,A_UNUSED tid_t tid) {
 void paging_destroyPDir(pagedir_t *pdir) {
 	assert(pdir != paging_getPageDir());
 	/* free page-dir */
-	pmem_freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
+	PhysMem::freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
 	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
 	 * get the problem that the old process had a page that the new process with this
 	 * address-space-number has not. if the entry of the old one is still in the tc, the new
@@ -407,7 +407,7 @@ size_t paging_unmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFra
 		pte = pt[pageNo % PT_ENTRY_COUNT];
 		if(freeFrames && (pte & (PTE_READABLE | PTE_WRITABLE | PTE_EXECUTABLE))) {
 			if(freeFrames)
-				pmem_free(PTE_FRAMENO(pte),FRM_KERNEL);
+				PhysMem::free(PTE_FRAMENO(pte),PhysMem::KERN);
 		}
 		pt[pageNo % PT_ENTRY_COUNT] = 0;
 
@@ -453,7 +453,7 @@ static uint64_t *paging_getPTOf(const pagedir_t *pdir,uintptr_t virt,bool create
 			if(!create)
 				return NULL;
 			/* allocate page-table and clear it */
-			frame = pmem_allocate(FRM_KERNEL);
+			frame = PhysMem::allocate(PhysMem::KERN);
 			if(frame == 0)
 				return NULL;
 			*ptpAddr = DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
@@ -503,7 +503,7 @@ static size_t paging_removePts(pagedir_t *pdir,uint64_t pageNo,uint64_t c,ulong 
 			}
 			/* free the frame, if the pt is empty */
 			if(empty) {
-				pmem_free(c,FRM_KERNEL);
+				PhysMem::free(c,PhysMem::KERN);
 				count++;
 			}
 		}
@@ -522,7 +522,7 @@ static size_t paging_removePts(pagedir_t *pdir,uint64_t pageNo,uint64_t c,ulong 
 		if(empty) {
 			/* remove all pages in that page-table from the TCs */
 			paging_tcRemPT(pdir,pageNo * PAGE_SIZE);
-			pmem_free(c,FRM_KERNEL);
+			PhysMem::free(c,PhysMem::KERN);
 			count++;
 		}
 	}

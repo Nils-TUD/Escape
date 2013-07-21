@@ -127,7 +127,7 @@ int Syscalls::regaddphys(Thread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* ensure that its allowed to map this area (if the address is specified) */
-	if(physCpy && !pmem_canMap(physCpy,bytes))
+	if(physCpy && !PhysMem::canMap(physCpy,bytes))
 		SYSC_ERROR(stack,-EFAULT);
 	/* reserve frames if we don't want to use contiguous physical memory */
 	if(!physCpy && !align)

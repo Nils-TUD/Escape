@@ -63,45 +63,45 @@ static void test_contiguous(void) {
 
 	test_caseStart("Requesting once and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(3,1);
-	pmem_freeContiguous(res1,3);
+	res1 = PhysMem::allocateContiguous(3,1);
+	PhysMem::freeContiguous(res1,3);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("Requesting twice and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(6,1);
-	res2 = pmem_allocateContiguous(5,1);
-	pmem_freeContiguous(res1,6);
-	pmem_freeContiguous(res2,5);
+	res1 = PhysMem::allocateContiguous(6,1);
+	res2 = PhysMem::allocateContiguous(5,1);
+	PhysMem::freeContiguous(res1,6);
+	PhysMem::freeContiguous(res2,5);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("Request, free, request and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(5,1);
-	res2 = pmem_allocateContiguous(5,1);
-	res3 = pmem_allocateContiguous(5,1);
-	pmem_freeContiguous(res2,5);
-	res2 = pmem_allocateContiguous(3,1);
-	res4 = pmem_allocateContiguous(3,1);
-	pmem_freeContiguous(res1,5);
-	pmem_freeContiguous(res2,3);
-	pmem_freeContiguous(res3,5);
-	pmem_freeContiguous(res4,3);
+	res1 = PhysMem::allocateContiguous(5,1);
+	res2 = PhysMem::allocateContiguous(5,1);
+	res3 = PhysMem::allocateContiguous(5,1);
+	PhysMem::freeContiguous(res2,5);
+	res2 = PhysMem::allocateContiguous(3,1);
+	res4 = PhysMem::allocateContiguous(3,1);
+	PhysMem::freeContiguous(res1,5);
+	PhysMem::freeContiguous(res2,3);
+	PhysMem::freeContiguous(res3,5);
+	PhysMem::freeContiguous(res4,3);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("Request a lot multiple times and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(35,1);
-	res2 = pmem_allocateContiguous(12,1);
-	res3 = pmem_allocateContiguous(89,1);
-	res4 = pmem_allocateContiguous(56,1);
-	pmem_freeContiguous(res3,89);
-	pmem_freeContiguous(res1,35);
-	pmem_freeContiguous(res2,12);
-	pmem_freeContiguous(res4,56);
+	res1 = PhysMem::allocateContiguous(35,1);
+	res2 = PhysMem::allocateContiguous(12,1);
+	res3 = PhysMem::allocateContiguous(89,1);
+	res4 = PhysMem::allocateContiguous(56,1);
+	PhysMem::freeContiguous(res3,89);
+	PhysMem::freeContiguous(res1,35);
+	PhysMem::freeContiguous(res2,12);
+	PhysMem::freeContiguous(res4,56);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
@@ -111,57 +111,57 @@ static void test_contiguous_align(void) {
 
 	test_caseStart("[Align] Requesting once and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(3,4);
+	res1 = PhysMem::allocateContiguous(3,4);
 	test_assertTrue((res1 % 4) == 0);
-	pmem_freeContiguous(res1,3);
+	PhysMem::freeContiguous(res1,3);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Requesting twice and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(6,4);
+	res1 = PhysMem::allocateContiguous(6,4);
 	test_assertTrue((res1 % 4) == 0);
-	res2 = pmem_allocateContiguous(5,8);
+	res2 = PhysMem::allocateContiguous(5,8);
 	test_assertTrue((res2 % 8) == 0);
-	pmem_freeContiguous(res1,6);
-	pmem_freeContiguous(res2,5);
+	PhysMem::freeContiguous(res1,6);
+	PhysMem::freeContiguous(res2,5);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Request, free, request and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(5,16);
+	res1 = PhysMem::allocateContiguous(5,16);
 	test_assertTrue((res1 % 16) == 0);
-	res2 = pmem_allocateContiguous(5,16);
+	res2 = PhysMem::allocateContiguous(5,16);
 	test_assertTrue((res2 % 16) == 0);
-	res3 = pmem_allocateContiguous(5,16);
+	res3 = PhysMem::allocateContiguous(5,16);
 	test_assertTrue((res3 % 16) == 0);
-	pmem_freeContiguous(res2,5);
-	res2 = pmem_allocateContiguous(3,64);
+	PhysMem::freeContiguous(res2,5);
+	res2 = PhysMem::allocateContiguous(3,64);
 	test_assertTrue((res2 % 64) == 0);
-	res4 = pmem_allocateContiguous(3,64);
+	res4 = PhysMem::allocateContiguous(3,64);
 	test_assertTrue((res4 % 64) == 0);
-	pmem_freeContiguous(res1,5);
-	pmem_freeContiguous(res2,3);
-	pmem_freeContiguous(res3,5);
-	pmem_freeContiguous(res4,3);
+	PhysMem::freeContiguous(res1,5);
+	PhysMem::freeContiguous(res2,3);
+	PhysMem::freeContiguous(res3,5);
+	PhysMem::freeContiguous(res4,3);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 
 	test_caseStart("[Align] Request a lot multiple times and free");
 	checkMemoryBefore(false);
-	res1 = pmem_allocateContiguous(35,4);
+	res1 = PhysMem::allocateContiguous(35,4);
 	test_assertTrue((res1 % 4) == 0);
-	res2 = pmem_allocateContiguous(12,4);
+	res2 = PhysMem::allocateContiguous(12,4);
 	test_assertTrue((res2 % 4) == 0);
-	res3 = pmem_allocateContiguous(89,4);
+	res3 = PhysMem::allocateContiguous(89,4);
 	test_assertTrue((res3 % 4) == 0);
-	res4 = pmem_allocateContiguous(56,4);
+	res4 = PhysMem::allocateContiguous(56,4);
 	test_assertTrue((res4 % 4) == 0);
-	pmem_freeContiguous(res3,89);
-	pmem_freeContiguous(res1,35);
-	pmem_freeContiguous(res2,12);
-	pmem_freeContiguous(res4,56);
+	PhysMem::freeContiguous(res3,89);
+	PhysMem::freeContiguous(res1,35);
+	PhysMem::freeContiguous(res2,12);
+	PhysMem::freeContiguous(res4,56);
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 }
@@ -169,7 +169,7 @@ static void test_contiguous_align(void) {
 static void test_mm_allocate(void) {
 	ssize_t i = 0;
 	while(i < FRAME_COUNT) {
-		frames[i] = pmem_allocate(FRM_KERNEL);
+		frames[i] = PhysMem::allocate(PhysMem::KERN);
 		i++;
 	}
 }
@@ -177,7 +177,7 @@ static void test_mm_allocate(void) {
 static void test_mm_free(void) {
 	ssize_t i = FRAME_COUNT - 1;
 	while(i >= 0) {
-		pmem_free(frames[i],FRM_KERNEL);
+		PhysMem::free(frames[i],PhysMem::KERN);
 		i--;
 	}
 }

@@ -26,7 +26,7 @@
 #include <sys/log.h>
 #include <string.h>
 
-bool pmem_canMap(uintptr_t addr,size_t size) {
+bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	sMemMap *mmap;
 	const sBootInfo *mb = boot_getInfo();
 	if(mb->mmapAddr == NULL)

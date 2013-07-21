@@ -833,7 +833,7 @@ inline frameno_t ThreadBase::getFrame() {
 inline void ThreadBase::discardFrames() {
 	frameno_t frm;
 	while((frm = (frameno_t)sll_removeFirst(&reqFrames)) != 0)
-		pmem_free(frm,FRM_USER);
+		PhysMem::free(frm,PhysMem::USR);
 }
 
 inline void ThreadBase::terminate() {

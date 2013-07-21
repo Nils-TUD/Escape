@@ -42,7 +42,7 @@ bool DynArray::extend() {
 		return false;
 
 	/* allocate a frame */
-	frame = pmem_allocate(FRM_CRIT);
+	frame = PhysMem::allocate(PhysMem::CRIT);
 	if(frame == 0)
 		return false;
 
@@ -73,7 +73,7 @@ DynArray::~DynArray() {
 	Region *reg = regions;
 	while(reg != NULL) {
 		Region *next = reg->next;
-		pmem_free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,FRM_CRIT);
+		PhysMem::free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,PhysMem::CRIT);
 		totalPages--;
 		/* put region on freelist */
 		reg->next = freeList;

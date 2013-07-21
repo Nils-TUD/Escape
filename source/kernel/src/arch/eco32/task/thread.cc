@@ -46,12 +46,12 @@ void ThreadBase::addInitialStack() {
 
 int ThreadBase::initArch(Thread *t) {
 	/* setup kernel-stack for us */
-	frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
+	frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackFrame == 0)
 		return -ENOMEM;
 	if(paging_mapTo(t->getProc()->getPageDir(),KERNEL_STACK,&stackFrame,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
-		pmem_free(stackFrame,FRM_KERNEL);
+		PhysMem::free(stackFrame,PhysMem::KERN);
 		return -ENOMEM;
 	}
 	t->kstackFrame = stackFrame;
@@ -60,19 +60,19 @@ int ThreadBase::initArch(Thread *t) {
 
 int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc) {
 	if(cloneProc) {
-		frameno_t stackFrame = pmem_allocate(FRM_KERNEL);
+		frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
 		if(stackFrame == 0)
 			return -ENOMEM;
 		if(paging_mapTo(dst->getProc()->getPageDir(),KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
-			pmem_free(stackFrame,FRM_KERNEL);
+			PhysMem::free(stackFrame,PhysMem::KERN);
 			return -ENOMEM;
 		}
 		dst->kstackFrame = stackFrame;
 	}
 	else {
 		int res;
-		dst->kstackFrame = pmem_allocate(FRM_KERNEL);
+		dst->kstackFrame = PhysMem::allocate(PhysMem::KERN);
 		if(dst->kstackFrame == 0)
 			return -ENOMEM;
 
@@ -80,7 +80,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 		res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			pmem_free(dst->kstackFrame,FRM_KERNEL);
+			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
 		}
 	}
@@ -92,7 +92,7 @@ void ThreadBase::freeArch(Thread *t) {
 		vmm_remove(t->getProc()->getPid(),t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
-	pmem_free(t->kstackFrame,FRM_KERNEL);
+	PhysMem::free(t->kstackFrame,PhysMem::KERN);
 }
 
 int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {

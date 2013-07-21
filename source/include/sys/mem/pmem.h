@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 
 #ifdef __i386__
 #include <sys/arch/i586/mem/pmem.h>
@@ -34,133 +35,215 @@
 /* converts bytes to pages */
 #define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
 
-/* set values to support bit-masks of the types */
-typedef enum {MM_CONT = 1,MM_DEF = 2} eMemType;
-typedef enum {FRM_CRIT,FRM_KERNEL,FRM_USER} eFrmType;
+class Thread;
 
-/**
- * Initializes the memory-management
- */
-void pmem_init(void);
+class PhysMem {
+	PhysMem() = delete;
 
-/**
- * Inits the architecture-specific part of the physical-memory management.
- * This function should not be called by other modules!
- *
- * @param stackBegin is set to the beginning of the stack
- * @param stackSize the size of the stack
- * @param bitmap the start of the bitmap
- */
-void pmem_initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
+	struct SwapInJob {
+		uintptr_t addr;
+		Thread *thread;
+		SwapInJob *next;
+	};
 
-/**
- * Checks whether its allowed to map the given physical address range
- *
- * @param addr the start-address
- * @param size the size of the area
- * @return true if so
- */
-bool pmem_canMap(uintptr_t addr,size_t size);
+	static const size_t BITS_PER_BMWORD				= sizeof(tBitmap) * 8;
+	static const ulong KERNEL_MEM_PERCENT			= 20;
+	static const ulong KERNEL_MEM_MIN				= 750;
+	static const ulong MAX_SWAP_AT_ONCE				= 10;
+	static const ulong SWAPIN_JOB_COUNT				= 64;
+	/* the amount of memory at which we should start to set the region-timestamp */
+	static const size_t REG_TS_BEGIN				= 1024 * PAGE_SIZE;
 
-/**
- * @return whether we can swap
- */
-bool pmem_canSwap(void);
+public:
+	enum MemType {
+		CONT	= 1,
+		DEF		= 2
+	};
 
-/**
- * Marks all memory available/occupied as necessary.
- * This function should not be called by other modules!
- */
-void pmem_markAvailable(void);
+	enum FrameType {
+		CRIT,
+		KERN,
+		USR
+	};
 
-/**
- * @return the number of bytes used for the mm-stack
- */
-size_t pmem_getStackSize(void);
+	/**
+	 * Initializes the memory-management
+	 */
+	static void init();
 
-/**
- * Counts the number of free frames. This is primarly intended for debugging!
- *
- * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
- * @return the number of free frames
- */
-size_t pmem_getFreeFrames(uint types);
+	/**
+	 * Checks whether its allowed to map the given physical address range
+	 *
+	 * @param addr the start-address
+	 * @param size the size of the area
+	 * @return true if so
+	 */
+	static bool canMap(uintptr_t addr,size_t size);
 
-/**
- * Determines whether the region-timestamp should be set (depending on the still available memory)
- *
- * @return true if so
- */
-bool pmem_shouldSetRegTimestamp(void);
+	/**
+	 * @return whether we can swap
+	 */
+	static bool canSwap() {
+		return swapEnabled;
+	}
 
-/**
- * Allocates <count> contiguous frames from the MM-bitmap
- *
- * @param count the number of frames
- * @param align the alignment of the memory (in pages)
- * @return the first allocated frame or negative if an error occurred
- */
-ssize_t pmem_allocateContiguous(size_t count,size_t align);
+	/**
+	 * @return the number of bytes used for the mm-stack
+	 */
+	static size_t getStackSize() {
+		return stackPages * PAGE_SIZE;
+	}
 
-/**
- * Free's <count> contiguous frames, starting at <first> in the MM-bitmap
- *
- * @param first the first frame-number
- * @param count the number of frames
- */
-void pmem_freeContiguous(frameno_t first,size_t count);
+	/**
+	 * Marks all memory available/occupied as necessary.
+	 * This function should not be called by other modules!
+	 */
+	static void markAvailable();
 
-/**
- * Starts the swapping-system. This HAS TO be done with the swapping-thread!
- * Assumes that swapping is enabled.
- */
-void pmem_swapper(void);
+	/**
+	 * Counts the number of free frames. This is primarly intended for debugging!
+	 *
+	 * @param types a bit-mask with all types (PhysMem::CONT,PhysMem::DEF) to use for counting
+	 * @return the number of free frames
+	 */
+	static size_t getFreeFrames(uint types);
 
-/**
- * Swaps out frames until at least <frameCount> frames are available.
- * Panics if its not possible to make that frames available (swapping disabled, partition full, ...)
- *
- * @param frameCount the number of frames you need
- * @return true on success
- */
-bool pmem_reserve(size_t frameCount);
+	/**
+	 * Determines whether the region-timestamp should be set (depending on the still available memory)
+	 *
+	 * @return true if so
+	 */
+	static bool shouldSetRegTimestamp();
 
-/**
- * Allocates one frame. Assumes that it is available. You should announce it with pmem_reserve()
- * first!
- *
- * @param type the type of memory (FRM_*)
- * @return the frame-number or 0 if no free frame is available
- */
-frameno_t pmem_allocate(eFrmType type);
+	/**
+	 * Allocates <count> contiguous frames from the MM-bitmap
+	 *
+	 * @param count the number of frames
+	 * @param align the alignment of the memory (in pages)
+	 * @return the first allocated frame or negative if an error occurred
+	 */
+	static ssize_t allocateContiguous(size_t count,size_t align);
 
-/**
- * Frees the given frame
- *
- * @param frame the frame-number
- * @param type the type of memory (FRM_*)
- */
-void pmem_free(frameno_t frame,eFrmType type);
+	/**
+	 * Free's <count> contiguous frames, starting at <first> in the MM-bitmap
+	 *
+	 * @param first the first frame-number
+	 * @param count the number of frames
+	 */
+	static void freeContiguous(frameno_t first,size_t count);
 
-/**
- * Swaps the page with given address for the current process in
- *
- * @param addr the address of the page
- * @return true if successfull
- */
-bool pmem_swapIn(uintptr_t addr);
+	/**
+	 * Starts the swapping-system. This HAS TO be done with the swapping-thread!
+	 * Assumes that swapping is enabled.
+	 */
+	static void swapper();
 
-/**
- * Prints information about the pmem-module
- */
-void pmem_print(void);
+	/**
+	 * Swaps out frames until at least <frameCount> frames are available.
+	 * Panics if its not possible to make that frames available (swapping disabled, partition full, ...)
+	 *
+	 * @param frameCount the number of frames you need
+	 * @return true on success
+	 */
+	static bool reserve(size_t frameCount);
 
-/**
- * Prints the free frames on the stack
- */
-void pmem_printStack(void);
+	/**
+	 * Allocates one frame. Assumes that it is available. You should announce it with reserve()
+	 * first!
+	 *
+	 * @param type the type of memory (FRM_*)
+	 * @return the frame-number or 0 if no free frame is available
+	 */
+	static frameno_t allocate(FrameType type);
 
-/**
- * Prints the free contiguous frames
- */
-void pmem_printCont(void);
+	/**
+	 * Frees the given frame
+	 *
+	 * @param frame the frame-number
+	 * @param type the type of memory (FRM_*)
+	 */
+	static void free(frameno_t frame,FrameType type);
+
+	/**
+	 * Swaps the page with given address for the current process in
+	 *
+	 * @param addr the address of the page
+	 * @return true if successfull
+	 */
+	static bool swapIn(uintptr_t addr);
+
+	/**
+	 * Prints information about the pmem-module
+	 */
+	static void print();
+
+	/**
+	 * Prints the free frames on the stack
+	 */
+	static void printStack();
+
+	/**
+	 * Prints the free contiguous frames
+	 */
+	static void printCont();
+
+private:
+	/**
+	 * Inits the architecture-specific part of the physical-memory management.
+	 * This function should not be called by other modules!
+	 *
+	 * @param stackBegin is set to the beginning of the stack
+	 * @param stackSize the size of the stack
+	 * @param bitmap the start of the bitmap
+	 */
+	static void initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
+
+private:
+	static size_t getFreeDef(void);
+	static void markRangeUsed(uintptr_t from,uintptr_t to,bool used);
+	static void doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);
+	static void markUsed(frameno_t frame,bool used);
+	static void appendJob(SwapInJob *job);
+	static SwapInJob *getJob(void);
+	static void freeJob(SwapInJob *job);
+
+	/* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
+	static tBitmap *bitmap;
+	static uintptr_t bitmapStart;
+	static size_t freeCont;
+
+	/* We use a stack for the remaining memory
+	 * TODO Currently we don't free the frames for the stack */
+	static size_t stackPages;
+	static uintptr_t stackBegin;
+	static frameno_t *stack;
+	static klock_t contLock;
+	static klock_t defLock;
+	static bool initialized;
+
+	/* for swapping */
+	static size_t swappedOut;
+	static size_t swappedIn;
+	static bool swapEnabled;
+	static bool swapping;
+	static Thread *swapperThread;
+	static size_t cframes;	/* critical frames; for dynarea, cache and heap */
+	static size_t kframes;	/* kernel frames: for pagedirs, page-tables, kstacks, ... */
+	static size_t uframes;	/* user frames */
+	/* swap-in jobs */
+	static SwapInJob siJobs[];
+	static SwapInJob *siFreelist;
+	static SwapInJob *siJobList;
+	static SwapInJob *siJobEnd;
+	static size_t jobWaiters;
+};
+
+inline bool PhysMem::shouldSetRegTimestamp() {
+	bool res;
+	if(!swapEnabled)
+		return false;
+	spinlock_aquire(&defLock);
+	res = getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
+	spinlock_release(&defLock);
+	return res;
+}

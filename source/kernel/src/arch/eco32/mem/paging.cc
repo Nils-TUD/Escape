@@ -111,7 +111,7 @@ void paging_init(void) {
 	frameno_t frame;
 
 	/* set page-dir of first process */
-	frame = pmem_allocate(FRM_KERNEL);
+	frame = PhysMem::allocate(PhysMem::KERN);
 	if(frame == 0)
 		util_panic("Not enough memory for initial page-dir");
 	curPDir = (pagedir_t)(frame * PAGE_SIZE) | DIR_MAPPED_SPACE;
@@ -132,7 +132,7 @@ void paging_init(void) {
 	pde = pd + ADDR_TO_PDINDEX(KERNEL_HEAP_START);
 	while(addr < end) {
 		/* get frame and insert into page-dir */
-		frame = pmem_allocate(FRM_KERNEL);
+		frame = PhysMem::allocate(PhysMem::KERN);
 		if(frame == 0)
 			util_panic("Not enough memory for kernel page-tables");
 		pde->ptFrameNo = frame;
@@ -166,12 +166,12 @@ int paging_cloneKernelspace(pagedir_t *pdir,A_UNUSED tid_t tid) {
 	sPTEntry *pt;
 
 	/* allocate frames */
-	pdirFrame = pmem_allocate(FRM_KERNEL);
+	pdirFrame = PhysMem::allocate(PhysMem::KERN);
 	if(pdirFrame == 0)
 		return -ENOMEM;
-	stackPtFrame = pmem_allocate(FRM_KERNEL);
+	stackPtFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackPtFrame == 0) {
-		pmem_free(pdirFrame,FRM_KERNEL);
+		PhysMem::free(pdirFrame,PhysMem::KERN);
 		return -ENOMEM;
 	}
 
@@ -218,9 +218,9 @@ void paging_destroyPDir(pagedir_t *pdir) {
 	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;
 	pde->exists = false;
-	pmem_free(pde->ptFrameNo,FRM_KERNEL);
+	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
 	/* free page-dir */
-	pmem_free((*pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT,FRM_KERNEL);
+	PhysMem::free((*pdir & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT,PhysMem::KERN);
 	/* ensure that we don't use it again */
 	otherPDir = 0;
 }
@@ -360,7 +360,7 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 		/* page table not present? */
 		if(!pde->present) {
 			/* get new frame for page-table */
-			pde->ptFrameNo = pmem_allocate(FRM_KERNEL);
+			pde->ptFrameNo = PhysMem::allocate(PhysMem::KERN);
 			if(pde->ptFrameNo == 0)
 				goto error;
 			pde->present = true;
@@ -385,7 +385,7 @@ ssize_t paging_mapTo(pagedir_t *pdir,uintptr_t virt,const frameno_t *frames,size
 		if(!(flags & PG_KEEPFRM) && (flags & PG_PRESENT)) {
 			if(frames == NULL) {
 				if(virt >= KERNEL_AREA) {
-					pte->frameNumber = pmem_allocate(FRM_CRIT);
+					pte->frameNumber = PhysMem::allocate(PhysMem::CRIT);
 					if(pte->frameNumber == 0)
 						goto error;
 				}
@@ -440,7 +440,7 @@ size_t paging_unmapFrom(pagedir_t *pdir,uintptr_t virt,size_t count,bool freeFra
 		if(pte->present) {
 			pte->present = false;
 			if(freeFrames)
-				pmem_free(pte->frameNumber,FRM_USER);
+				PhysMem::free(pte->frameNumber,PhysMem::USR);
 		}
 		pte->exists = false;
 
@@ -471,7 +471,7 @@ static size_t paging_remEmptyPt(pagedir_t *pdir,uintptr_t ptables,size_t pti) {
 	pde = (sPDEntry*)PAGE_DIR_DIRMAP_OF(*pdir) + pti;
 	pde->present = false;
 	pde->exists = false;
-	pmem_free(pde->ptFrameNo,FRM_KERNEL);
+	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
 	if(ptables == MAPPED_PTS_START)
 		paging_flushPageTable(virt,ptables);
 	else

@@ -42,7 +42,7 @@
 #include <string.h>
 
 static const sBootTask tasks[] = {
-	{"Initializing physical memory-management...",pmem_init},
+	{"Initializing physical memory-management...",PhysMem::init},
 	{"Initializing paging...",paging_init},
 	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",DynArray::init},
@@ -151,8 +151,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	/* TODO */
 #if 0
 	/* start the swapper-thread. it will never return */
-	if(pmem_canSwap())
-		Proc::startThread((uintptr_t)&pmem_swapper,0,NULL);
+	if(PhysMem::canSwap())
+		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
 #endif
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 

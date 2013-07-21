@@ -204,7 +204,7 @@ ssize_t paging_clonePages(pagedir_t *src,pagedir_t *dst,uintptr_t virtSrc,uintpt
  *
  * @param virt the virt start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use.
- * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
+ * 	a NULL-value causes the function to request PhysMem::DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated page-tables or a negative error-code if it failed
@@ -219,7 +219,7 @@ ssize_t paging_map(uintptr_t virt,const frameno_t *frames,size_t count,uint flag
  * @param pdir the physical address of the page-directory
  * @param virt the virt start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use.
- * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
+ * 	a NULL-value causes the function to request PhysMem::DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated page-tables or a negative error-code if it failed

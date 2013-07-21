@@ -129,7 +129,7 @@ void boot_arch_start(sBootInfo *info) {
 
 	/* init physical memory and paging */
 	Proc::preinit();
-	pmem_init();
+	PhysMem::init();
 	paging_mapKernelSpace();
 
 	/* now map modules */
@@ -252,8 +252,8 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 	}
 
 	/* start the swapper-thread. it will never return */
-	if(pmem_canSwap())
-		Proc::startThread((uintptr_t)&pmem_swapper,0,NULL);
+	if(PhysMem::canSwap())
+		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
 	/* start the terminator */
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 

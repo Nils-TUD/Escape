@@ -154,10 +154,10 @@ public:
 	}
 
 	/**
-	 * @return the linked list of processes that use this region
+	 * @return the linked list of virtmem objects that use this region
 	 */
-	const sSLList *getProcList() const {
-		return &procs;
+	const sSLList *getVMList() const {
+		return &vms;
 	}
 
 	/**
@@ -251,7 +251,7 @@ private:
 	uint64_t timestamp;
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
-	sSLList procs;
+	sSLList vms;
 	mutex_t lock;			/* lock for the procs-field (all others can't change or belong to
 	 	 	 	 	 	 	   exactly 1 process, which is locked anyway) */
 };
@@ -267,14 +267,14 @@ inline void Region::setSwapBlock(size_t pageIndex,ulong swapBlock) {
 }
 
 inline size_t Region::refCount() const {
-	return sll_length(&procs);
+	return sll_length(&vms);
 }
 
 inline bool Region::addTo(const void *p) {
-	assert(sll_length(&procs) == 0 || (flags & RF_SHAREABLE));
-	return sll_append(&procs,(void*)p);
+	assert(sll_length(&vms) == 0 || (flags & RF_SHAREABLE));
+	return sll_append(&vms,(void*)p);
 }
 
 inline bool Region::remFrom(const void *p) {
-	return sll_removeFirstWith(&procs,(void*)p) != -1;
+	return sll_removeFirstWith(&vms,(void*)p) != -1;
 }

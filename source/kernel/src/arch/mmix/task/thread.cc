@@ -88,9 +88,9 @@ Thread *Thread::cur = NULL;
 
 void ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
-	assert(vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	assert(proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
-	assert(vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	assert(proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 1) == 0);
 }
 
@@ -108,18 +108,18 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 		return -ENOMEM;
 	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
-		int res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		int res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
 		}
 		/* add a new stack-region for the software-stack */
-		res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 1);
 		if(res < 0) {
 			/* remove register-stack */
-			vmm_remove(dst->getProc()->getPid(),dst->stackRegions[0]);
+			dst->getProc()->getVM()->remove(dst->stackRegions[0]);
 			dst->stackRegions[0] = NULL;
 			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
@@ -133,7 +133,7 @@ void ThreadBase::freeArch(Thread *t) {
 	int i;
 	for(i = 0; i < 2; i++) {
 		if(t->stackRegions[i] != NULL) {
-			vmm_remove(t->getProc()->getPid(),t->stackRegions[i]);
+			t->getProc()->getVM()->remove(t->stackRegions[i]);
 			t->stackRegions[i] = NULL;
 		}
 	}
@@ -220,7 +220,7 @@ void ThreadBase::doSwitch(void) {
 	if(n->getTid() != old->getTid()) {
 		time_t timestamp = Timer::getTimestamp();
 		setRunning(n);
-		vmm_setTimestamp(n,timestamp);
+		VirtMem::setTimestamp(n,timestamp);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */

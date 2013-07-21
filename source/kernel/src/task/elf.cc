@@ -276,7 +276,7 @@ int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int 
 		t->reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
-	if((res = vmm_map(t->getProc()->getPid(),pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
+	if((res = t->getProc()->getVM()->map(pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
 		vid_printf("[LOADER] Unable to add region: %s\n",strerror(-res));
 		t->discardFrames();

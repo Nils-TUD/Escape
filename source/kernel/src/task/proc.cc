@@ -80,9 +80,6 @@ void ProcBase::init() {
 	p->egid = ROOT_GID;
 	p->sgid = ROOT_GID;
 	p->groups = NULL;
-	p->ownFrames = 0;
-	p->sharedFrames = 0;
-	p->swapped = 0;
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	p->entryPoint = 0;
@@ -90,9 +87,6 @@ void ProcBase::init() {
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
-	p->stats.peakOwnFrames = 0;
-	p->stats.peakSharedFrames = 0;
-	p->stats.swapCount = 0;
 	p->stats.totalRuntime = 0;
 	p->stats.totalSyscalls = 0;
 	p->stats.totalScheds = 0;
@@ -113,11 +107,8 @@ void ProcBase::init() {
 	if(!sll_append(&p->threads,Thread::init(p)))
 		util_panic("Unable to append the initial thread");
 
-	/* init region-stuff */
-	p->freeStackAddr = 0;
-	p->dataAddr = 0;
-	VMFreeMap::init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
-	VMTree::addTree(p->pid,&p->regtree);
+	/* init virt mem */
+	p->virtmem.init(p->pid);
 
 	/* add to procs */
 	sll_init(&procs,slln_allocNode,slln_freeNode);
@@ -169,7 +160,9 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
 	Proc *p = request(pid,PLOCK_REGIONS);
 	if(p) {
-		vmm_getMemUsageOf(p,own,shared,swapped);
+		*own = p->virtmem.getOwnFrames();
+		*shared = p->virtmem.getSharedFrames();
+		*swapped = p->virtmem.getSwappedFrames();
 		*own = *own + paging_getPTableCount(p->getPageDir()) + p->getKMemUsage();
 		release(p,PLOCK_REGIONS);
 	}
@@ -181,12 +174,12 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 	sSLNode *n;
 	mutex_aquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		size_t pown,psh,pswap;
+		size_t pown = 0,psh = 0,pswap = 0;
 		Proc *p = (Proc*)n->data;
 		getMemUsageOf(p->pid,&pown,&psh,&pswap);
 		ownMem += pown;
 		shMem += psh;
-		dReal += vmm_getMemUsage(p->pid,&pages);
+		dReal += p->virtmem.getMemUsage(&pages);
 	}
 	mutex_release(&procLock);
 	*dataOwn = ownMem * PAGE_SIZE;
@@ -237,9 +230,6 @@ int ProcBase::clone(uint8_t flags) {
 	p->flags = flags;
 	p->stats.input = 0;
 	p->stats.output = 0;
-	p->stats.peakOwnFrames = 0;
-	p->stats.peakSharedFrames = 0;
-	p->stats.swapCount = 0;
 	p->stats.totalRuntime = 0;
 	p->stats.totalSyscalls = 0;
 	p->stats.totalScheds = 0;
@@ -282,9 +272,8 @@ int ProcBase::clone(uint8_t flags) {
 	Groups::join(p,cur);
 
 	/* clone regions */
-	p->freeStackAddr = 0;
-	VMFreeMap::init(&p->freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
-	if((res = vmm_cloneAll(p->pid)) < 0)
+	p->virtmem.init(p->pid);
+	if((res = cur->virtmem.cloneAll(&p->virtmem)) < 0)
 		goto errorVFS;
 
 	/* clone current thread */
@@ -482,12 +471,10 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* reset stats */
 	p->stats.input = 0;
 	p->stats.output = 0;
-	p->stats.peakOwnFrames = p->ownFrames;
-	p->stats.peakSharedFrames = p->sharedFrames;
-	p->stats.swapCount = 0;
 	p->stats.totalRuntime = 0;
 	p->stats.totalSyscalls = 0;
 	p->stats.totalScheds = 0;
+	p->virtmem.resetStats();
 
 #if DEBUG_CREATIONS
 #ifdef __eco32__
@@ -654,8 +641,7 @@ void ProcBase::doDestroy(Proc *p) {
 	Groups::leave(p->pid);
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
-	p->freemap.destroy();
-	VMTree::remTree(&p->regtree);
+	p->virtmem.destroy();
 	paging_destroyPDir(p->getPageDir());
 	Lock::releaseAll(p->pid);
 	terminateArch(p);
@@ -752,9 +738,9 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				state->runtime = p->stats.totalRuntime;
 				state->schedCount = p->stats.totalScheds;
 				state->syscalls = p->stats.totalSyscalls;
-				state->ownFrames = p->stats.peakOwnFrames;
-				state->sharedFrames = p->stats.peakSharedFrames;
-				state->swapped = p->stats.swapCount;
+				state->ownFrames = p->virtmem.getPeakOwnFrames();
+				state->sharedFrames = p->virtmem.getPeakSharedFrames();
+				state->swapped = p->virtmem.getSwapCount();
 				release(p,PLOCK_PROG);
 				return p->pid;
 			}
@@ -775,7 +761,7 @@ void ProcBase::doRemoveRegions(Proc *p,bool remStack) {
 		Thread *t = (Thread*)n->data;
 		t->removeRegions(remStack);
 	}
-	vmm_removeAll(p->pid,remStack);
+	p->virtmem.removeAll(remStack);
 }
 
 void ProcBase::printAll() {
@@ -790,7 +776,7 @@ void ProcBase::printAllRegions() {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
-		vmm_print(p->pid);
+		p->virtmem.printRegions();
 		vid_printf("\n");
 	}
 }
@@ -799,19 +785,19 @@ void ProcBase::printAllPDs(uint parts,bool regions) {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
-		size_t own,shared,swapped;
+		size_t own = 0,shared = 0,swapped = 0;
 		getMemUsageOf(p->pid,&own,&shared,&swapped);
 		vid_printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
 				p->pid,p->command,own,shared,swapped);
 		if(regions)
-			vmm_print(p->pid);
+			p->virtmem.printRegions();
 		paging_printPDir(p->getPageDir(),parts);
 		vid_printf("\n");
 	}
 }
 
 void ProcBase::print() {
-	size_t own,shared,swap;
+	size_t own = 0,shared = 0,swap = 0;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",pid);
 	vid_printf("\tppid=%d, cmd=%s, entry=%#Px\n",parentPid,command,entryPoint);
@@ -824,17 +810,11 @@ void ProcBase::print() {
 	vid_printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);
 	vid_printf("\tExitInfo: code=%u, signal=%u\n",stats.exitCode,stats.exitSignal);
 	vid_printf("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",
-	           stats.peakOwnFrames,stats.peakSharedFrames,stats.swapCount);
+	           virtmem.getPeakOwnFrames(),virtmem.getPeakSharedFrames(),virtmem.getSwapCount());
 	vid_printf("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
 	           stats.totalRuntime,stats.totalScheds,stats.totalSyscalls);
 	prf_pushIndent();
-	freemap.print();
-	prf_popIndent();
-	vid_printf("\tRegions:\n");
-	vid_printf("\t\tDataRegion: %p\n",dataAddr);
-	vid_printf("\t\tFreeStack: %p\n",freeStackAddr);
-	vmm_printShort(pid,"\t\t");
-	prf_pushIndent();
+	virtmem.print();
 	Env::printAllOf(pid);
 	FileDesc::print(static_cast<Proc*>(this));
 	vfs_fsmsgs_printFSChans(static_cast<Proc*>(this));

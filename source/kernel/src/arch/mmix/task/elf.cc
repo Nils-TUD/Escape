@@ -39,10 +39,10 @@ int ELF::finishFromMem(const void *code,A_UNUSED size_t length,StartupInfo *info
 	sElfEHeader *eheader = (sElfEHeader*)code;
 
 	/* at first, SYNCID the text-region */
-	VMRegion *textreg = vmm_getRegion(t->getProc(),eheader->e_entry);
+	VMRegion *textreg = t->getProc()->getVM()->getRegion(eheader->e_entry);
 	if(textreg) {
 		uintptr_t begin,start,end;
-		vmm_getRegRange(t->getProc()->getPid(),textreg,&start,&end,true);
+		t->getProc()->getVM()->getRegRange(textreg,&start,&end,true);
 		while(start < end) {
 			frameno_t frame = paging_getFrameNo(t->getProc()->getPageDir(),start);
 			size_t amount = MIN(PAGE_SIZE,end - start);

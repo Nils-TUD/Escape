@@ -232,7 +232,7 @@ static void intrpt_exProtFault(A_UNUSED sIntrptStackFrame *stack,int irqNo) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!vmm_pagefault(pfaddr,irqNo == TRAP_PROT_WRITE)) {
+	if(!VirtMem::pagefault(pfaddr,irqNo == TRAP_PROT_WRITE)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = Proc::getRunning();

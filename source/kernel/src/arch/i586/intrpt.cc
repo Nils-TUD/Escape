@@ -248,7 +248,7 @@ static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!vmm_pagefault(addr,stack->errorCode & 0x2)) {
+	if(!VirtMem::pagefault(addr,stack->errorCode & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(addr) < 0) {
 			intrpt_printPFInfo(stack,addr);

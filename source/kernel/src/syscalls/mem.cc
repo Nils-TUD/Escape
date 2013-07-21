@@ -31,11 +31,10 @@
 
 int Syscalls::chgsize(Thread *t,sIntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	pid_t pid = t->getProc()->getPid();
 	size_t oldEnd;
 	if(count > 0)
 		t->reserveFrames(count);
-	oldEnd = vmm_grow(pid,t->getProc()->dataAddr,count);
+	oldEnd = t->getProc()->getVM()->growData(count);
 	if(count > 0)
 		t->discardFrames();
 	SYSC_RET1(stack,oldEnd);
@@ -49,7 +48,6 @@ int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
 	int flags = SYSC_ARG5(stack);
 	int fd = SYSC_ARG6(stack);
 	off_t binOffset = SYSC_ARG7(stack);
-	pid_t pid = t->getProc()->getPid();
 	sFile *f = NULL;
 	VMRegion *vm;
 	int res;
@@ -76,7 +74,7 @@ int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
 	}
 
 	/* add region */
-	res = vmm_map(pid,addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+	res = t->getProc()->getVM()->map(addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
 	if(f)
 		FileDesc::release(f);
 	/* save tls-region-number */
@@ -88,12 +86,11 @@ int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
-	vmm_getRegRange(pid,vm,&addr,0,true);
+	t->getProc()->getVM()->getRegRange(vm,&addr,0,true);
 	SYSC_RET1(stack,addr);
 }
 
 int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
-	pid_t pid = t->getProc()->getPid();
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	int res;
@@ -101,7 +98,7 @@ int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
 	if(!(prot & (PROT_WRITE | PROT_READ | PROT_EXEC)))
 		SYSC_ERROR(stack,-EINVAL);
 
-	res = vmm_regctrl(pid,(uintptr_t)addr,prot);
+	res = t->getProc()->getVM()->regctrl((uintptr_t)addr,prot);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -109,10 +106,10 @@ int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
 
 int Syscalls::munmap(Thread *t,sIntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
-	VMRegion *reg = vmm_getRegion(t->getProc(),(uintptr_t)virt);
+	VMRegion *reg = t->getProc()->getVM()->getRegion((uintptr_t)virt);
 	if(reg == NULL)
 		SYSC_ERROR(stack,-ENOENT);
-	vmm_remove(t->getProc()->getPid(),reg);
+	t->getProc()->getVM()->remove(reg);
 	SYSC_RET1(stack,0);
 }
 
@@ -120,7 +117,6 @@ int Syscalls::regaddphys(Thread *t,sIntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
 	uintptr_t addr,physCpy = *phys;
 
 	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
@@ -133,7 +129,7 @@ int Syscalls::regaddphys(Thread *t,sIntrptStackFrame *stack) {
 	if(!physCpy && !align)
 		t->reserveFrames(BYTES_2_PAGES(bytes));
 
-	addr = vmm_addPhys(pid,&physCpy,bytes,align,true);
+	addr = t->getProc()->getVM()->addPhys(&physCpy,bytes,align,true);
 	if(addr == 0)
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;

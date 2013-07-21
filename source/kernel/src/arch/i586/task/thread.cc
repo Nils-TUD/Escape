@@ -50,7 +50,7 @@ int ThreadBase::initArch(Thread *t) {
 void ThreadBase::addInitialStack() {
 	int res;
 	assert(tid == INIT_TID);
-	res = vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	res = proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 0);
 	assert(res == 0);
 }
@@ -71,7 +71,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			paging_unmapFrom(dst->getProc()->getPageDir(),dst->kernelStack,1,true);
@@ -84,7 +84,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 
 void ThreadBase::freeArch(Thread *t) {
 	if(t->stackRegions[0] != NULL) {
-		vmm_remove(t->getProc()->getPid(),t->stackRegions[0]);
+		t->getProc()->getVM()->remove(t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
 	paging_removeKernelStack(t->getProc()->getPageDir(),t->kernelStack);
@@ -163,7 +163,7 @@ void Thread::initialSwitch() {
 	spinlock_aquire(&switchLock);
 	cur = Sched::perform(NULL,0);
 	cur->stats.schedCount++;
-	vmm_setTimestamp(cur,Timer::getTimestamp());
+	VirtMem::setTimestamp(cur,Timer::getTimestamp());
 	cur->setCPU(gdt_prepareRun(NULL,cur));
 	fpu_lockFPU();
 	cur->stats.cycleStart = CPU::rdtsc();
@@ -191,7 +191,7 @@ void ThreadBase::doSwitch() {
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
 		time_t timestamp = Timer::cyclesToTime(cycles);
-		vmm_setTimestamp(n,timestamp);
+		VirtMem::setTimestamp(n,timestamp);
 		n->setCPU(gdt_prepareRun(old,n));
 
 		/* some stats for SMP */

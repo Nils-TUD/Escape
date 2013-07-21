@@ -40,7 +40,7 @@ EXTERN_C bool thread_resume(pagedir_t pageDir,const sThreadRegs *saveArea,framen
 
 void ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
-	assert(vmm_map(proc->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	assert(proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
 }
 
@@ -77,8 +77,9 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		res = vmm_map(dst->getProc()->getPid(),0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-				MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,dst->stackRegions + 0);
+		res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,
+				PROT_READ | PROT_WRITE,MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,
+				dst->stackRegions + 0);
 		if(res < 0) {
 			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
@@ -89,7 +90,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 
 void ThreadBase::freeArch(Thread *t) {
 	if(t->stackRegions[0] != NULL) {
-		vmm_remove(t->getProc()->getPid(),t->stackRegions[0]);
+		t->getProc()->getVM()->remove(t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
 	PhysMem::free(t->kstackFrame,PhysMem::KERN);
@@ -160,7 +161,7 @@ void ThreadBase::doSwitch(void) {
 	if(n->getTid() != old->getTid()) {
 		if(!thread_save(&old->save)) {
 			setRunning(n);
-			vmm_setTimestamp(n,timestamp);
+			VirtMem::setTimestamp(n,timestamp);
 
 			SMP::schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;

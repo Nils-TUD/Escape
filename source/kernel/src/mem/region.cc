@@ -63,7 +63,7 @@ Region *Region::create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulo
 	reg = (Region*)Cache::alloc(sizeof(Region));
 	if(reg == NULL)
 		return NULL;
-	sll_init(&reg->procs,slln_allocNode,slln_freeNode);
+	sll_init(&reg->vms,slln_allocNode,slln_freeNode);
 	if(file) {
 		reg->offset = offset;
 		reg->file = file;
@@ -85,7 +85,7 @@ Region *Region::create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulo
 	reg->pfSize = MAX(1,pageCount);
 	reg->pageFlags = (ulong*)Cache::alloc(reg->pfSize * sizeof(ulong));
 	if(reg->pageFlags == NULL) {
-		sll_clear(&reg->procs,false);
+		sll_clear(&reg->vms,false);
 		Cache::free(reg);
 		return NULL;
 	}
@@ -122,7 +122,7 @@ void Region::destroy() {
 			SwapMap::free(getSwapBlock(i));
 	}
 	Cache::free(pageFlags);
-	sll_clear(&procs,false);
+	sll_clear(&vms,false);
 	Cache::free(this);
 }
 
@@ -198,8 +198,8 @@ void Region::sprintf(sStringBuffer *buf,uintptr_t virt) const {
 	}
 	prf_sprintf(buf,"\tTimestamp: %d\n",timestamp);
 	prf_sprintf(buf,"\tProcesses: ");
-	for(n = sll_begin(&procs); n != NULL; n = n->next)
-		prf_sprintf(buf,"%d ",((Proc*)n->data)->getPid());
+	for(n = sll_begin(&vms); n != NULL; n = n->next)
+		prf_sprintf(buf,"%d ",((VirtMem*)n->data)->getPid());
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(byteCount));
 	for(i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {

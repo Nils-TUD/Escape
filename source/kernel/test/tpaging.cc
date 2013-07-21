@@ -68,8 +68,8 @@ static void test_paging_foreign(void) {
 	child = Proc::getByPid(pid);
 
 	test_caseStart("Mapping %d pages to %p into pdir %p",3,0,child->getPageDir());
-	ownFrames = child->ownFrames;
-	sharedFrames = child->sharedFrames;
+	ownFrames = child->getVM()->getOwnFrames();
+	sharedFrames = child->getVM()->getSharedFrames();
 	checkMemoryBefore(true);
 
 	t->reserveFrames(3);
@@ -78,16 +78,16 @@ static void test_paging_foreign(void) {
 	t->discardFrames();
 
 	checkMemoryAfter(true);
-	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
+	if(child->getVM()->getOwnFrames() != ownFrames || child->getVM()->getSharedFrames() != sharedFrames) {
 		test_caseFailed("oldOwn=%zu, newOwn=%zu, oldSh=%zu, newSh=%zu",
-				ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
+				ownFrames,child->getVM()->getOwnFrames(),sharedFrames,child->getVM()->getSharedFrames());
 	}
 	else
 		test_caseSucceeded();
 
 	test_caseStart("Mapping %d pages to %p into pdir %p, separatly",6,0x40000000,child->getPageDir());
-	ownFrames = child->ownFrames;
-	sharedFrames = child->sharedFrames;
+	ownFrames = child->getVM()->getOwnFrames();
+	sharedFrames = child->getVM()->getSharedFrames();
 	checkMemoryBefore(true);
 
 	t->reserveFrames(6);
@@ -98,9 +98,9 @@ static void test_paging_foreign(void) {
 	t->discardFrames();
 
 	checkMemoryAfter(true);
-	if(child->ownFrames != ownFrames || child->sharedFrames != sharedFrames) {
+	if(child->getVM()->getOwnFrames() != ownFrames || child->getVM()->getSharedFrames() != sharedFrames) {
 		test_caseFailed("oldOwn=%zu, newOwn=%zu, oldSh=%zu, newSh=%zu",
-				ownFrames,child->ownFrames,sharedFrames,child->sharedFrames);
+				ownFrames,child->getVM()->getOwnFrames(),sharedFrames,child->getVM()->getSharedFrames());
 	}
 	else
 		test_caseSucceeded();

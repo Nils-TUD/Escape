@@ -33,6 +33,8 @@ struct VMRegion {
 	VMRegion *next;
 };
 
+class VirtMem;
+
 class VMTree {
 public:
 	/**
@@ -44,10 +46,10 @@ public:
 	/**
 	 * Initializes and adds the given tree into the linked list of all vmreg-trees
 	 *
-	 * @param pid the process-id
+	 * @param vm the virtual memory it belongs to
 	 * @param tree the tree to add
 	 */
-	static void addTree(pid_t pid,VMTree *tree);
+	static void addTree(VirtMem *vm,VMTree *tree);
 
 	/**
 	 * Removes the given tree from the linked list of all vmreg-trees. Assumes that its empty.
@@ -69,10 +71,10 @@ public:
 	static void relTree();
 
 	/**
-	 * @return the process id
+	 * @return the virtmem object it belongs to
 	 */
-	pid_t getPid() const {
-		return pid;
+	VirtMem *getVM() const {
+		return virtmem;
 	}
 	/**
 	 * @return the first vm-region in this tree
@@ -139,7 +141,7 @@ private:
 	static void doRemove(VMRegion **p,VMRegion *reg);
 	static void doPrint(const VMRegion *n,int layer);
 
-	pid_t pid;
+	VirtMem *virtmem;
 	/* the linked list */
 	VMRegion *begin;
 	VMRegion *end;

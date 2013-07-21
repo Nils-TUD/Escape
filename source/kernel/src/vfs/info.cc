@@ -133,11 +133,11 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	vmm_getMemUsage(pid,&pages);
-	Proc::getMemUsageOf(pid,&own,&shared,&swapped);
 
 	p = Proc::getByPid(pid);
 	if(p) {
+		p->getVM()->getMemUsage(&pages);
+		Proc::getMemUsageOf(pid,&own,&shared,&swapped);
 		prf_sprintf(
 			&buf,
 			"%-16s%u\n"
@@ -346,7 +346,7 @@ static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	vmm_sprintfRegions(&buf,pid);
+	Proc::getByPid(pid)->getVM()->sprintfRegions(&buf);
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }
@@ -365,7 +365,7 @@ static void vfs_info_mapsReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	vmm_sprintfMaps(&buf,pid);
+	Proc::getByPid(pid)->getVM()->sprintfMaps(&buf);
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }

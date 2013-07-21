@@ -130,7 +130,7 @@ int ThreadBase::extendStack(uintptr_t address) {
 		if(t->stackRegions[i] == NULL)
 			return -ENOMEM;
 
-		res = vmm_growStackTo(t->getProc()->getPid(),t->stackRegions[i],address);
+		res = t->getProc()->getVM()->growStackTo(t->stackRegions[i],address);
 		if(res >= 0)
 			return res;
 	}
@@ -140,14 +140,14 @@ int ThreadBase::extendStack(uintptr_t address) {
 bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) {
 	bool res = false;
 	if(stackRegions[stackNo] != NULL)
-		res = vmm_getRegRange(proc->getPid(),stackRegions[stackNo],start,end,false);
+		res = proc->getVM()->getRegRange(stackRegions[stackNo],start,end,false);
 	return res;
 }
 
 bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
 	bool res = false;
 	if(tlsRegion != NULL)
-		res = vmm_getRegRange(proc->getPid(),tlsRegion,start,end,false);
+		res = proc->getVM()->getRegRange(tlsRegion,start,end,false);
 	return res;
 }
 
@@ -210,12 +210,12 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		size_t i;
 		for(i = 0; i < STACK_REG_COUNT; i++) {
 			if(src->stackRegions[i])
-				t->stackRegions[i] = vmm_getRegion(p,src->stackRegions[i]->virt);
+				t->stackRegions[i] = p->getVM()->getRegion(src->stackRegions[i]->virt);
 			else
 				t->stackRegions[i] = NULL;
 		}
 		if(src->tlsRegion)
-			t->tlsRegion = vmm_getRegion(p,src->tlsRegion->virt);
+			t->tlsRegion = p->getVM()->getRegion(src->tlsRegion->virt);
 		else
 			t->tlsRegion = NULL;
 		t->intrptLevel = src->intrptLevel;
@@ -226,8 +226,8 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		t->tlsRegion = NULL;
 		if(src->tlsRegion != NULL) {
 			uintptr_t tlsStart,tlsEnd;
-			vmm_getRegRange(src->getProc()->getPid(),src->tlsRegion,&tlsStart,&tlsEnd,false);
-			err = vmm_map(p->getPid(),0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,0,NULL,0,&t->tlsRegion);
+			src->getProc()->getVM()->getRegRange(src->tlsRegion,&tlsStart,&tlsEnd,false);
+			err = p->getVM()->map(0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,0,NULL,0,&t->tlsRegion);
 			if(err < 0)
 				goto errThread;
 		}
@@ -263,7 +263,7 @@ errArch:
 	freeArch(t);
 errClone:
 	if(t->tlsRegion != NULL)
-		vmm_remove(p->getPid(),t->tlsRegion);
+		p->getVM()->remove(t->tlsRegion);
 errThread:
 	Cache::free(t);
 	return err;
@@ -274,7 +274,7 @@ void ThreadBase::kill() {
 	assert(state == Thread::ZOMBIE);
 	/* remove tls */
 	if(tlsRegion != NULL) {
-		vmm_remove(proc->getPid(),tlsRegion);
+		proc->getVM()->remove(tlsRegion);
 		tlsRegion = NULL;
 	}
 

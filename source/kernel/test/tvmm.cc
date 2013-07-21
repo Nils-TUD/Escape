@@ -48,43 +48,43 @@ static void test_1(void) {
 	VMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 	Proc *clone;
-	test_caseStart("Testing vmm_add() and vmm_remove()");
+	test_caseStart("Testing VirtMem::add() and VirtMem::remove()");
 
 	checkMemoryBefore(true);
 	t->reserveFrames(1);
-	test_assertTrue(vmm_map(pid,0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_FIXED,NULL,0,&rno) == 0);
-	vmm_remove(pid,rno);
+	p->getVM()->remove(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
 	t->reserveFrames(9);
-	test_assertTrue(vmm_map(pid,0x1000,PAGE_SIZE * 2,PAGE_SIZE * 2,PROT_READ | PROT_EXEC,
+	test_assertTrue(p->getVM()->map(0x1000,PAGE_SIZE * 2,PAGE_SIZE * 2,PROT_READ | PROT_EXEC,
 			MAP_SHARED | MAP_FIXED,NULL,0,&rno) == 0);
-	test_assertTrue(vmm_map(pid,0x8000,PAGE_SIZE * 3,PAGE_SIZE * 3,PROT_READ,
+	test_assertTrue(p->getVM()->map(0x8000,PAGE_SIZE * 3,PAGE_SIZE * 3,PROT_READ,
 			MAP_PRIVATE | MAP_FIXED,NULL,0,&rno2) == 0);
-	test_assertTrue(vmm_map(pid,0x10000,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0x10000,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_GROWABLE | MAP_FIXED,NULL,0,&rno3) == 0);
-	vmm_remove(pid,rno);
-	vmm_remove(pid,rno2);
-	vmm_remove(pid,rno3);
+	p->getVM()->remove(rno);
+	p->getVM()->remove(rno2);
+	p->getVM()->remove(rno3);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
 	t->reserveFrames(8);
-	test_assertTrue(vmm_map(pid,0,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,&rno) == 0);
-	test_assertTrue(vmm_map(pid,0,PAGE_SIZE * 2,PAGE_SIZE * 2,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0,PAGE_SIZE * 2,PAGE_SIZE * 2,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,&rno2) == 0);
-	test_assertTrue(vmm_map(pid,0,PAGE_SIZE * 5,PAGE_SIZE * 5,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0,PAGE_SIZE * 5,PAGE_SIZE * 5,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE,NULL,0,&rno3) == 0);
-	vmm_remove(pid,rno);
-	vmm_remove(pid,rno2);
-	vmm_remove(pid,rno3);
+	p->getVM()->remove(rno);
+	p->getVM()->remove(rno2);
+	p->getVM()->remove(rno3);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -94,10 +94,10 @@ static void test_1(void) {
 
 	checkMemoryBefore(true);
 	t->reserveFrames(4);
-	test_assertTrue(vmm_map(pid,0,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ,MAP_SHARED,NULL,0,&rno) == 0);
-	test_assertTrue(vmm_join(pid,rno->virt,clone->getPid(),&rno2,0) == 0);
-	vmm_remove(clone->getPid(),rno2);
-	vmm_remove(pid,rno);
+	test_assertTrue(p->getVM()->map(0,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ,MAP_SHARED,NULL,0,&rno) == 0);
+	test_assertTrue(p->getVM()->join(rno->virt,clone->getVM(),&rno2,0) == 0);
+	clone->getVM()->remove(rno2);
+	p->getVM()->remove(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -110,40 +110,40 @@ static void test_2(void) {
 	VMRegion *rno;
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->getProc()->getPid();
-	test_caseStart("Testing vmm_grow()");
+	Proc *p = t->getProc();
+	test_caseStart("Testing VirtMem::grow()");
 
 	checkMemoryBefore(true);
 	t->reserveFrames(5);
-	test_assertTrue(vmm_map(pid,0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_FIXED | MAP_GROWABLE,NULL,0,&rno) == 0);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,3),end);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,-2),end);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,1),end);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,-3),end);
-	vmm_remove(pid,rno);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,3),end);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,-2),end);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,1),end);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,-3),end);
+	p->getVM()->remove(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
 	checkMemoryBefore(true);
 	t->reserveFrames(7);
-	test_assertTrue(vmm_map(pid,0,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
+	test_assertTrue(p->getVM()->map(0,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,&rno) == 0);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,3),start);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,2),start);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,-4),start);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,1),start);
-	vmm_getRegRange(pid,rno,&start,&end,true);
-	test_assertSSize(vmm_grow(pid,rno->virt,-1),start);
-	vmm_remove(pid,rno);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,3),start);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,2),start);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,-4),start);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,1),start);
+	p->getVM()->getRegRange(rno,&start,&end,true);
+	test_assertSSize(p->getVM()->grow(rno->virt,-1),start);
+	p->getVM()->remove(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 

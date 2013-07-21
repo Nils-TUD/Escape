@@ -393,10 +393,16 @@ public:
 		return command;
 	}
 	/**
+	 * @return the virtual memory object for this process
+	 */
+	VirtMem *getVM() {
+		return &virtmem;
+	}
+	/**
 	 * @return the page-directory
 	 */
 	pagedir_t *getPageDir() {
-		return &pagedir;
+		return virtmem.getPageDir();
 	}
 	/**
 	 * @return the entry-point of the program
@@ -504,27 +510,11 @@ private:
 	gid_t rgid;
 	gid_t egid;
 	gid_t sgid;
-	/* the physical address for the page-directory of this process */
-	pagedir_t pagedir;
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
+	VirtMem virtmem;
 	/* TODO until the other modules are classes */
 public:
-	/* the number of frames the process owns, i.e. no cow, no shared stuff, no regaddphys.
-	 * paging-structures are counted, too */
-	ulong ownFrames;
-	/* the number of frames the process uses, but maybe other processes as well */
-	ulong sharedFrames;
-	/* pages that are in swap */
-	ulong swapped;
-	/* for finding free positions more quickly: the start for the stacks */
-	uintptr_t freeStackAddr;
-	/* address of the data-region; required for chgsize */
-	uintptr_t dataAddr;
-	/* area-map for the free area */
-	VMFreeMap freemap;
-	/* the regions */
-	VMTree regtree;
 	/* all groups (may include egid or not) of this process */
 	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */
@@ -536,10 +526,6 @@ public:
 	/* the directory-node-number in the VFS of this process */
 	inode_t threadDir;
 	struct {
-		/* mem stats */
-		ulong peakOwnFrames;
-		ulong peakSharedFrames;
-		ulong swapCount;
 		/* thread stats */
 		ulong totalRuntime;
 		ulong totalSyscalls;
@@ -583,33 +569,15 @@ private:
 typedef enum {CHG_DATA,CHG_STACK} eChgArea;
 
 inline void ProcBase::preinit() {
-	paging_setFirst(&first.pagedir);
+	paging_setFirst(first.getPageDir());
 }
 
 inline pagedir_t *ProcBase::getCurPageDir() {
 	const Thread *t = Thread::getRunning();
 	/* just needed at the beginning */
 	if(t == NULL)
-		return &first.pagedir;
-	return &t->getProc()->pagedir;
-}
-
-inline void ProcBase::addOwn(long amount) {
-	assert(amount > 0 || ownFrames >= (ulong)-amount);
-	ownFrames += amount;
-	stats.peakOwnFrames = MAX(ownFrames,stats.peakOwnFrames);
-}
-
-inline void ProcBase::addShared(long amount) {
-	assert(amount > 0 || sharedFrames >= (ulong)-amount);
-	sharedFrames += amount;
-	stats.peakSharedFrames = MAX(sharedFrames,stats.peakSharedFrames);
-}
-
-inline void ProcBase::addSwap(long amount) {
-	assert(amount > 0 || swapped >= (ulong)-amount);
-	swapped += amount;
-	stats.swapCount += amount < 0 ? -amount : amount;
+		return first.getPageDir();
+	return t->getProc()->getPageDir();
 }
 
 inline pid_t ProcBase::getRunning() {

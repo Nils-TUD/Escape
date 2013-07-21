@@ -352,7 +352,7 @@ void PhysMem::swapper() {
 			swapping = true;
 			spinlock_release(&defLock);
 
-			vmm_swapOut(pid,swapFile,amount);
+			VirtMem::swapOut(pid,swapFile,amount);
 			swappedOut += amount;
 
 			spinlock_aquire(&defLock);
@@ -367,7 +367,7 @@ void PhysMem::swapper() {
 			swapping = true;
 			spinlock_release(&defLock);
 
-			if(vmm_swapIn(pid,swapFile,job->thread,job->addr))
+			if(VirtMem::swapIn(pid,swapFile,job->thread,job->addr))
 				swappedIn++;
 
 			spinlock_aquire(&defLock);

@@ -37,14 +37,14 @@ mutex_t VMTree::regMutex;
 VMTree *VMTree::regList;
 VMTree *VMTree::regListEnd;
 
-void VMTree::addTree(pid_t pid,VMTree *tree) {
+void VMTree::addTree(VirtMem *vm,VMTree *tree) {
 	mutex_aquire(&regMutex);
 	if(regListEnd)
 		regListEnd->next = tree;
 	else
 		regList = tree;
 	regListEnd = tree;
-	tree->pid = pid;
+	tree->virtmem = vm;
 	tree->next = NULL;
 	tree->begin = NULL;
 	tree->end = NULL;
@@ -182,7 +182,7 @@ void VMTree::remove(VMRegion *reg) {
 	}
 	/* close file */
 	if(reg->reg->getFile())
-		vfs_closeFile(pid,reg->reg->getFile());
+		vfs_closeFile(virtmem->getPid(),reg->reg->getFile());
 	Cache::free(reg);
 }
 

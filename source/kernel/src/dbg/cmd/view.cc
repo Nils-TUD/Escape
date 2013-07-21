@@ -183,7 +183,7 @@ static void view_regions(size_t argc,char **argv) {
 	else {
 		Proc *p = view_getProc(argc,argv);
 		if(p != NULL)
-			vmm_print(p->getPid());
+			p->getVM()->printRegions();
 	}
 }
 

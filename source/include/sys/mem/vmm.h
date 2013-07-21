@@ -22,6 +22,8 @@
 #include <sys/common.h>
 #include <sys/mem/region.h>
 #include <sys/mem/vmtree.h>
+#include <sys/mem/vmfree.h>
+#include <sys/mem/paging.h>
 #include <sys/printf.h>
 
 #ifdef DEBUGGING
@@ -54,221 +56,349 @@
 class Proc;
 class Thread;
 
-/**
- * Initializes the virtual memory management
- */
-void vmm_init(void);
+class VirtMem {
+	friend class ProcBase;
 
-/**
- * Adds a region for physical memory mapped into the virtual memory (e.g. for vga text-mode or DMA).
- * Please use this function instead of vmm_add() because this one maps the pages!
- *
- * @param pid the process-id
- * @param phys a pointer to the physical memory to map; if *phys is 0, the function allocates
- * 	contiguous physical memory itself and stores the address in *phys
- * @param bCount the number of bytes to map
- * @param align the alignment for the allocated physical-memory (just if *phys = 0)
- * @param writable whether it should be mapped writable
- * @return the virtual address or 0 if failed
- */
-uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool writable);
+public:
+	/**
+	 * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
+	 * it on demand, handles copy-on-write or swapping.
+	 *
+	 * @param addr the address that caused the page-fault
+	 * @param write whether its a write-access
+	 * @return true if successfull
+	 */
+	static bool pagefault(uintptr_t addr,bool write);
 
-/**
- * Maps a region to the given process.
- *
- * @param pid the process-id
- * @param addr the virtual address of the region (ignored if MAP_FIXED is not set in <flags>)
- * @param length the number of bytes
- * @param loadCount the number of bytes to demand-load
- * @param prot the protection flags (PROT_*)
- * @param flags the map flags (MAP_*)
- * @param f the file to map (may be NULL)
- * @param offset the offset in the binary from where to load the region (ignored if bin is NULL)
- * @param vmreg will be set to the created region
- * @return 0 on success or a negative error-code
- */
-int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
-            off_t offset,VMRegion **vmreg);
+	/**
+	 * Swaps <count> pages out. It searches for the best suited page to swap out.
+	 *
+	 * @param pid the process-id for writing the page-content to <file>
+	 * @param file the file to write to
+	 * @param count the number of pages to swap out
+	 */
+	static void swapOut(pid_t pid,sFile *file,size_t count);
 
-/**
- * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-
- * and nofree-regions.
- *
- * @param pid the process-id
- * @param addr the virtual address
- * @param flags the new flags (RF_WRITABLE or 0)
- * @return 0 on success
- */
-int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags);
+	/**
+	 * Swaps the page at given address of the given process in.
+	 *
+	 * @param pid the process-id for writing the page-content to <file>
+	 * @param file the file to write to
+	 * @param t the thread that wants to swap the page in (and has reserved the frame to do so)
+	 * @param addr the address of the page to swap in
+	 * @return true on success
+	 */
+	static bool swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr);
 
-/**
- * Swaps <count> pages out. It searches for the best suited page to swap out.
- *
- * @param pid the process-id for writing the page-content to <file>
- * @param file the file to write to
- * @param count the number of pages to swap out
- */
-void vmm_swapOut(pid_t pid,sFile *file,size_t count);
+	/**
+	 * Sets the timestamp for all regions that are used by the given thread
+	 *
+	 * @param t the thread
+	 * @param timestamp the timestamp to set
+	 */
+	static void setTimestamp(Thread *t,uint64_t timestamp);
 
-/**
- * Swaps the page at given address of the given process in.
- *
- * @param pid the process-id for writing the page-content to <file>
- * @param file the file to write to
- * @param t the thread that wants to swap the page in (and has reserved the frame to do so)
- * @param addr the address of the page to swap in
- * @return true on success
- */
-bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr);
+	/**
+	 * @return the id of the process that owns this virtual memory
+	 */
+	pid_t getPid() const {
+		return pid;
+	}
+	/**
+	 * @return the page-directory
+	 */
+	pagedir_t *getPageDir() const {
+		// TODO is that necessary?
+		return const_cast<pagedir_t*>(&pagedir);
+	}
+	/**
+	 * @return the number of own frames
+	 */
+	size_t getOwnFrames() const {
+		return ownFrames;
+	}
+	/**
+	 * @return the number of shared frames
+	 */
+	size_t getSharedFrames() const {
+		return sharedFrames;
+	}
+	/**
+	 * @return the number of swapped out frames
+	 */
+	size_t getSwappedFrames() const {
+		return swapped;
+	}
 
-/**
- * Sets the timestamp for all regions that are used by the given thread
- *
- * @param t the thread
- * @param timestamp the timestamp to set
- */
-void vmm_setTimestamp(Thread *t,uint64_t timestamp);
+	/**
+	 * @return stats
+	 */
+	size_t getPeakOwnFrames() const {
+		return peakOwnFrames;
+	}
+	size_t getPeakSharedFrames() const {
+		return peakSharedFrames;
+	}
+	size_t getSwapCount() const {
+		return swapCount;
+	}
 
-/**
- * Sets the given pointers to the corresponding number of frames for the given process
- *
- * @param p the process (region-locked)
- * @param own will be set to the number of own frames
- * @param shared will be set to the number of shared frames
- * @param swapped will be set to the number of swapped frames
- */
-void vmm_getMemUsageOf(Proc *p,size_t *own,size_t *shared,size_t *swapped);
+	/**
+	 * Adds a region for physical memory mapped into the virtual memory (e.g. for vga text-mode or DMA).
+	 * Please use this function instead of add() because this one maps the pages!
+	 *
+	 * @param phys a pointer to the physical memory to map; if *phys is 0, the function allocates
+	 * 	contiguous physical memory itself and stores the address in *phys
+	 * @param bCount the number of bytes to map
+	 * @param align the alignment for the allocated physical-memory (just if *phys = 0)
+	 * @param writable whether it should be mapped writable
+	 * @return the virtual address or 0 if failed
+	 */
+	uintptr_t addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writable);
 
-/**
- * This is a helper-function for determining the real memory-usage of all processes. It counts
- * the number of present frames in all regions of the given process and divides them for each
- * region by the number of region-users. It does not count cow-pages!
- * This way, we don't count shared regions multiple times (at the end the division sums up to
- * one usage of the region).
- *
- * @param pid the process-id
- * @param pages will point to the number of pages (size of virtual-memory)
- * @return the number of used frames for this process
- */
-float vmm_getMemUsage(pid_t pid,size_t *pages);
+	/**
+	 * Maps a region to this VM.
+	 *
+	 * @param addr the virtual address of the region (ignored if MAP_FIXED is not set in <flags>)
+	 * @param length the number of bytes
+	 * @param loadCount the number of bytes to demand-load
+	 * @param prot the protection flags (PROT_*)
+	 * @param flags the map flags (MAP_*)
+	 * @param f the file to map (may be NULL)
+	 * @param offset the offset in the binary from where to load the region (ignored if bin is NULL)
+	 * @param vmreg will be set to the created region
+	 * @return 0 on success or a negative error-code
+	 */
+	int map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
+			off_t offset,VMRegion **vmreg);
 
-/**
- * Gets the region at given address
- *
- * @param p the process
- * @param addr the address
- * @return the region
- */
-VMRegion *vmm_getRegion(Proc *p,uintptr_t addr);
+	/**
+	 * Changes the protection-settings of the region @ <addr>. This is not possible for TLS-, stack-
+	 * and nofree-regions.
+	 *
+	 * @param addr the virtual address
+	 * @param flags the new flags (RF_WRITABLE or 0)
+	 * @return 0 on success
+	 */
+	int regctrl(uintptr_t addr,ulong flags);
 
-/**
- * Queries the start- and end-address of a region
- *
- * @param pid the process-id
- * @param reg the region-number
- * @param start will be set to the start-address
- * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
- *  accessible byte)
- * @param locked whether to lock the regions of the given process during the operation
- * @return true if the region exists
- */
-bool vmm_getRegRange(pid_t pid,VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked);
+	/**
+	 * This is a helper-function for determining the real memory-usage of all processes. It counts
+	 * the number of present frames in all regions of the given process and divides them for each
+	 * region by the number of region-users. It does not count cow-pages!
+	 * This way, we don't count shared regions multiple times (at the end the division sums up to
+	 * one usage of the region).
+	 *
+	 * @param pages will point to the number of pages (size of virtual-memory)
+	 * @return the number of used frames for this process
+	 */
+	float getMemUsage(size_t *pages);
 
-/**
- * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
- * it on demand, handles copy-on-write or swapping.
- *
- * @param addr the address that caused the page-fault
- * @param write whether its a write-access
- * @return true if successfull
- */
-bool vmm_pagefault(uintptr_t addr,bool write);
+	/**
+	 * Gets the region at given address
+	 *
+	 * @param addr the address
+	 * @return the region
+	 */
+	VMRegion *getRegion(uintptr_t addr) {
+		return regtree.getByAddr(addr);
+	}
 
-/**
- * Removes all regions of the given process, optionally including stack.
- *
- * @param pid the process-id
- * @param remStack whether to remove the stack too
- */
-void vmm_removeAll(pid_t pid,bool remStack);
+	/**
+	 * Queries the start- and end-address of a region
+	 *
+	 * @param reg the region-number
+	 * @param start will be set to the start-address
+	 * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
+	 *  accessible byte)
+	 * @param locked whether to lock the regions of the given process during the operation
+	 * @return true if the region exists
+	 */
+	bool getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked);
 
-/**
- * Removes the given region from the given process
- *
- * @param pid the process-id
- * @param vm the region
- */
-void vmm_remove(pid_t pid,VMRegion *vm);
+	/**
+	 * Removes all regions, optionally including stack.
+	 *
+	 * @param remStack whether to remove the stack too
+	 */
+	void removeAll(bool remStack);
 
-/**
- * Joins process <dst> to the region <rno> of process <src>. This can just be used for shared-
- * memory!
- *
- * @param srcId the source-process
- * @param rno the region-number in the source-process
- * @param dstId the destination-process
- * @param nvm the new created region
- * @param dstVirt the virtual address where to create that region (0 = auto)
- * @return 0 on success or the negative error-code
- */
-int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,VMRegion **nvm,uintptr_t dstVirt);
+	/**
+	 * Removes the given region
+	 *
+	 * @param vm the region
+	 */
+	void remove(VMRegion *vm);
 
-/**
- * Clones all regions of the current process into the destination-process
- *
- * @param dstId the destination-process-id
- * @return 0 on success
- */
-int vmm_cloneAll(pid_t dstId);
+	/**
+	 * Joins virtmem <dst> to the region <rno> of this virtmem. This can only be used for shared-
+	 * memory!
+	 *
+	 * @param rno the region-number in the source-process
+	 * @param dst the destination-virtmem
+	 * @param nvm the new created region
+	 * @param dstVirt the virtual address where to create that region (0 = auto)
+	 * @return 0 on success or the negative error-code
+	 */
+	int join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstVirt);
 
-/**
- * Grows the stack of the given thread so that <addr> is accessible, if possible
- *
- * @param pid the process-id
- * @param vm the region
- * @param addr the address
- * @return 0 on success
- */
-int vmm_growStackTo(pid_t pid,VMRegion *vm,uintptr_t addr);
+	/**
+	 * Clones all regions of this virtmem (current) into the destination-virtmem
+	 *
+	 * @param dst the destination-virtmem
+	 * @return 0 on success
+	 */
+	int cloneAll(VirtMem *dst);
 
-/**
- * If <amount> is positive, the region will be grown by <amount> pages. If negative it will be
- * shrinked. If 0 it returns the current offset to the region-beginning, in pages.
- *
- * @param pid the process-id
- * @param addr the address of the region
- * @param amount the number of pages to add/remove
- * @return the old region-end or 0 if failed
- */
-size_t vmm_grow(pid_t pid,uintptr_t addr,ssize_t amount);
+	/**
+	 * If <amount> is positive, the region will be grown by <amount> pages. If negative it
+	 * will be shrinked. If 0 it returns the current offset to the region-beginning, in pages.
+	 *
+	 * @param addr the address of the region
+	 * @param amount the number of pages to add/remove
+	 * @return the old region-end or 0 if failed
+	 */
+	size_t grow(uintptr_t addr,ssize_t amount);
 
-/**
- * Prints information about all regions in the given process to the given buffer
- *
- * @param buf the buffer
- * @param pid the process-id
- */
-void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid);
+	/**
+	 * Grows the stack of the given thread so that <addr> is accessible, if possible
+	 *
+	 * @param vm the region
+	 * @param addr the address
+	 * @return 0 on success
+	 */
+	int growStackTo(VMRegion *vm,uintptr_t addr);
 
-/**
- * Prints information about all mappings of the given process to the given buffer
- *
- * @param buf the buffer
- * @param pid the process-id
- */
-void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid);
+	/**
+	 * Convenience-method for the data-region.
+	 *
+	 * @param amount the number of pages to add/remove
+	 * @return the old region-end or 0 if failed
+	 */
+	size_t growData(ssize_t amount) {
+		return grow(dataAddr,amount);
+	}
 
-/**
- * Prints a short version of the regions of given process
- *
- * @param pid the process-id
- * @param prefix the print prefix (e.g. tabs)
- */
-void vmm_printShort(pid_t pid,const char *prefix);
+	/**
+	 * Prints information about all regions to the given buffer
+	 *
+	 * @param buf the buffer
+	 */
+	void sprintfRegions(sStringBuffer *buf) const;
 
-/**
- * Prints all regions of the given process
- *
- * @param pid the process-id
- */
-void vmm_print(pid_t pid);
+	/**
+	 * Prints information about all mappings to the given buffer
+	 *
+	 * @param buf the buffer
+	 */
+	void sprintfMaps(sStringBuffer *buf) const;
+
+	/**
+	 * Prints a short version of the regions
+	 *
+	 * @param prefix the print prefix (e.g. tabs)
+	 */
+	void printShort(const char *prefix) const;
+
+	/**
+	 * Prints all regions
+	 */
+	void printRegions() const;
+
+	/**
+	 * Prints information about the virtmem
+	 */
+	void print() const;
+
+private:
+	/**
+	 * Inits this object
+	 *
+	 * @param pid the pid to set
+	 */
+	void init(pid_t pid) {
+		this->pid = pid;
+		ownFrames = sharedFrames = swapped = 0;
+		freeStackAddr = dataAddr = 0;
+		peakOwnFrames = peakSharedFrames = swapCount = 0;
+		VMFreeMap::init(&freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
+		VMTree::addTree(this,&regtree);
+	}
+
+	/**
+	 * Destroys this object
+	 */
+	void destroy() {
+		freemap.destroy();
+		VMTree::remTree(&regtree);
+	}
+
+	/**
+	 * Resets the stats
+	 */
+	void resetStats() {
+		peakOwnFrames = ownFrames;
+		peakSharedFrames = sharedFrames;
+		swapCount = 0;
+	}
+
+	static Region *getLRURegion(void);
+	static uintptr_t getBinary(sFile *file,VirtMem *&binOwner);
+	static ssize_t getPgIdxForSwap(const Region *reg);
+	static void setSwappedOut(Region *reg,size_t index);
+	static void setSwappedIn(Region *reg,size_t index,frameno_t frameNo);
+
+	bool doPagefault(uintptr_t addr,VMRegion *vm,bool write);
+	void sync(VMRegion *vm) const;
+	void doRemove(VMRegion *vm);
+	size_t doGrow(VMRegion *vm,ssize_t amount);
+	bool demandLoad(VMRegion *vm,uintptr_t addr);
+	bool loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount);
+	uintptr_t findFreeStack(size_t byteCount,ulong rflags);
+	VMRegion *isOccupied(uintptr_t start,uintptr_t end) const;
+	uintptr_t getFirstUsableAddr() const;
+	const char *getRegName(const VMRegion *vm) const;
+
+	bool aquire() const;
+	bool tryAquire() const;
+	void release() const;
+
+	void addOwn(long amount) {
+		assert(amount > 0 || ownFrames >= (ulong)-amount);
+		ownFrames += amount;
+		peakOwnFrames = MAX(ownFrames,peakOwnFrames);
+	}
+	void addShared(long amount) {
+		assert(amount > 0 || sharedFrames >= (ulong)-amount);
+		sharedFrames += amount;
+		peakSharedFrames = MAX(sharedFrames,peakSharedFrames);
+	}
+	void addSwap(long amount) {
+		assert(amount > 0 || swapped >= (ulong)-amount);
+		swapped += amount;
+		swapCount += amount < 0 ? -amount : amount;
+	}
+
+	pid_t pid;
+	/* the physical address for the page-directory of this process */
+	pagedir_t pagedir;
+	/* the number of frames the process owns, i.e. no cow, no shared stuff, no regaddphys.
+	 * paging-structures are counted, too */
+	ulong ownFrames;
+	/* the number of frames the process uses, but maybe other processes as well */
+	ulong sharedFrames;
+	/* pages that are in swap */
+	ulong swapped;
+	/* for finding free positions more quickly: the start for the stacks */
+	uintptr_t freeStackAddr;
+	/* address of the data-region; required for chgsize */
+	uintptr_t dataAddr;
+	/* area-map for the free area */
+	VMFreeMap freemap;
+	/* the regions */
+	VMTree regtree;
+	/* mem stats */
+	ulong peakOwnFrames;
+	ulong peakSharedFrames;
+	ulong swapCount;
+};

@@ -47,34 +47,23 @@
 
 #define DEBUG_SWAP			0
 
-static Region *vmm_getLRURegion(void);
-static ssize_t vmm_getPgIdxForSwap(const Region *reg);
-static void vmm_setSwappedOut(Region *reg,size_t index);
-static void vmm_setSwappedIn(Region *reg,size_t index,frameno_t frameNo);
-static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner);
-static bool vmm_doPagefault(uintptr_t addr,Proc *p,VMRegion *vm,bool write);
-static void vmm_doRemove(Proc *p,VMRegion *vm);
-static size_t vmm_doGrow(Proc *p,VMRegion *vm,ssize_t amount);
-static bool vmm_demandLoad(Proc *p,VMRegion *vm,uintptr_t addr);
-static bool vmm_loadFromFile(Proc *p,VMRegion *vm,uintptr_t addr,size_t loadCount);
-static uintptr_t vmm_findFreeStack(Proc *p,size_t byteCount,ulong rflags);
-static VMRegion *vmm_isOccupied(Proc *p,uintptr_t start,uintptr_t end);
-static uintptr_t vmm_getFirstUsableAddr(Proc *p);
-static Proc *vmm_reqProc(pid_t pid);
-static Proc *vmm_tryReqProc(pid_t pid);
-static void vmm_relProc(Proc *p);
-static const char *vmm_getRegName(Proc *p,const VMRegion *vm);
-
 static uint8_t buffer[PAGE_SIZE];
 
-void vmm_init(void) {
-	/* nothing to do */
+bool VirtMem::aquire() const {
+	return Proc::request(pid,PLOCK_REGIONS) != NULL;
 }
 
-uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool writable) {
+bool VirtMem::tryAquire() const {
+	return Proc::tryRequest(pid,PLOCK_REGIONS) != NULL;
+}
+
+void VirtMem::release() const {
+	Proc::release(Proc::getByPid(pid),PLOCK_REGIONS);
+}
+
+uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {
 	VMRegion *vm;
 	ssize_t res;
-	Proc *p;
 	size_t i,pages = BYTES_2_PAGES(bCount);
 	frameno_t *frames = (frameno_t*)Cache::alloc(sizeof(frameno_t) * pages);
 	if(frames == NULL)
@@ -104,7 +93,7 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	}
 
 	/* create region */
-	res = vmm_map(pid,0,bCount,0,PROT_READ | (writable ? PROT_WRITE : 0),
+	res = map(0,bCount,0,PROT_READ | (writable ? PROT_WRITE : 0),
 			*phys ? (MAP_NOMAP | MAP_NOFREE) : MAP_NOMAP,NULL,0,&vm);
 	if(res < 0) {
 		if(!*phys)
@@ -113,65 +102,62 @@ uintptr_t vmm_addPhys(pid_t pid,uintptr_t *phys,size_t bCount,size_t align,bool 
 	}
 
 	/* map memory */
-	p = vmm_reqProc(pid);
-	if(!p)
+	if(!aquire())
 		goto errorRem;
-	res = paging_mapTo(p->getPageDir(),vm->virt,frames,pages,
+	res = paging_mapTo(getPageDir(),vm->virt,frames,pages,
 			writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT);
 	if(res < 0)
 		goto errorRel;
 	if(*phys) {
 		/* the page-tables are ours, the pages may be used by others, too */
-		p->addOwn(res);
-		p->addShared(pages);
+		addOwn(res);
+		addShared(pages);
 	}
 	else {
 		/* its our own mem; store physical address for the caller */
-		p->addOwn(res);
+		addOwn(res);
 		*phys = frames[0] * PAGE_SIZE;
 	}
-	vmm_relProc(p);
+	release();
 	Thread::remHeapAlloc(frames);
 	Cache::free(frames);
 	return vm->virt;
 
 errorRel:
-	vmm_relProc(p);
+	release();
 errorRem:
-	vmm_remove(pid,vm);
+	remove(vm);
 error:
 	Thread::remHeapAlloc(frames);
 	Cache::free(frames);
 	return 0;
 }
 
-int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
-            off_t offset,VMRegion **vmreg) {
+int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
+                 off_t offset,VMRegion **vmreg) {
 	Region *reg;
 	VMRegion *vm;
 	int res;
 	ulong pgFlags = f != NULL ? PF_DEMANDLOAD : 0;
 	ulong rflags = flags | prot;
-	Proc *p;
 	assert(length > 0 && length >= loadCount);
 
 	/* for files: try to find another process with that file */
 	if(f && (rflags & MAP_SHARED)) {
-		pid_t binOwner = 0;
-		uintptr_t binVirt = vmm_getBinary(f,&binOwner);
+		VirtMem *virtmem = NULL;
+		uintptr_t binVirt = getBinary(f,virtmem);
 		if(binVirt != 0)
-			return vmm_join(binOwner,binVirt,pid,vmreg,rflags & MAP_FIXED ? addr : 0);
+			return virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0);
 	}
 
 	/* get the attributes of the region (depending on type) */
-	p = vmm_reqProc(pid);
-	if(!p)
+	if(!aquire())
 		return -ESRCH;
 
 	/* if it's a data-region.. */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE)) {
 		/* if we already have the real data-region */
-		if(p->dataAddr && p->dataAddr < FREE_AREA_BEGIN) {
+		if(dataAddr && dataAddr < FREE_AREA_BEGIN) {
 			/* using a fixed address is not allowed in this case */
 			if(rflags & MAP_FIXED)
 				return -EINVAL;
@@ -185,15 +171,15 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 	res = -EINVAL;
 	if(rflags & MAP_FIXED) {
 		/* ok, the user has choosen a place. check it */
-		if(!p->regtree.available(addr,length))
+		if(!regtree.available(addr,length))
 			goto errProc;
 	}
 	else {
 		/* find a suitable place */
 		if(rflags & MAP_STACK)
-			addr = vmm_findFreeStack(p,length,rflags);
+			addr = findFreeStack(length,rflags);
 		else
-			addr = p->freemap.allocate(ROUND_PAGE_UP(length));
+			addr = freemap.allocate(ROUND_PAGE_UP(length));
 		if(addr == 0)
 			goto errProc;
 	}
@@ -203,9 +189,9 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 	reg = Region::create(f,length,loadCount,offset,pgFlags,rflags);
 	if(!reg)
 		goto errProc;
-	if(!reg->addTo(p))
+	if(!reg->addTo(this))
 		goto errReg;
-	vm = p->regtree.add(reg,addr);
+	vm = regtree.add(reg,addr);
 	if(vm == NULL)
 		goto errAdd;
 
@@ -221,19 +207,19 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 		}
 		if(rflags & PROT_WRITE)
 			mapFlags |= PG_WRITABLE;
-		pts = paging_mapTo(p->getPageDir(),addr,NULL,pageCount,mapFlags);
+		pts = paging_mapTo(getPageDir(),addr,NULL,pageCount,mapFlags);
 		if(pts < 0)
 			goto errMap;
 		if(rflags & MAP_SHARED)
-			p->addShared(pageCount);
+			addShared(pageCount);
 		else
-			p->addOwn(pageCount);
-		p->addOwn(pts);
+			addOwn(pageCount);
+		addOwn(pts);
 	}
 	/* set data-region */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE))
-		p->dataAddr = addr;
-	vmm_relProc(p);
+		dataAddr = addr;
+	release();
 
 	if(DISABLE_DEMLOAD || (rflags & MAP_POPULATE)) {
 		size_t i;
@@ -242,37 +228,35 @@ int vmm_map(pid_t pid,uintptr_t addr,size_t length,size_t loadCount,int prot,int
 		size_t oldres = t->getReservedFrmCnt();
 		t->discardFrames();
 		for(i = 0; i < vm->reg->getPageCount(); i++)
-			vmm_pagefault(vm->virt + i * PAGE_SIZE,false);
+			pagefault(vm->virt + i * PAGE_SIZE,false);
 		t->reserveFrames(oldres);
 	}
 	*vmreg = vm;
 	return 0;
 
 errMap:
-	p->regtree.remove(vm);
+	regtree.remove(vm);
 errAdd:
-	reg->remFrom(p);
+	reg->remFrom(this);
 errReg:
 	reg->destroy();
 errProc:
-	vmm_relProc(p);
+	release();
 	return res;
 }
 
-int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
+int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 	size_t i,pgcount;
 	sSLNode *n;
 	VMRegion *vmreg;
-	Proc *p;
 	int res = -EPERM;
 
-	p = vmm_reqProc(pid);
-	if(!p)
+	if(!aquire())
 		return -ESRCH;
 
-	vmreg = p->regtree.getByAddr(addr);
+	vmreg = regtree.getByAddr(addr);
 	if(vmreg == NULL) {
-		vmm_relProc(p);
+		release();
 		return -ENXIO;
 	}
 
@@ -291,8 +275,8 @@ int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
 	vmreg->reg->setFlags((vmreg->reg->getFlags() & ~(RF_WRITABLE | RF_EXECUTABLE)) | flags);
 
 	/* change mapping */
-	for(n = sll_begin(vmreg->reg->getProcList()); n != NULL; n = n->next) {
-		Proc *mp = (Proc*)n->data;
+	for(n = sll_begin(vmreg->reg->getVMList()); n != NULL; n = n->next) {
+		VirtMem *mp = (VirtMem*)n->data;
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(vmreg->reg);
 		assert(mpreg != NULL);
@@ -313,13 +297,13 @@ int vmm_regctrl(pid_t pid,uintptr_t addr,ulong flags) {
 
 error:
 	vmreg->reg->release();
-	vmm_relProc(p);
+	release();
 	return res;
 }
 
-void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
+void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 	while(count > 0) {
-		Region *reg = vmm_getLRURegion();
+		Region *reg = getLRURegion();
 		if(reg == NULL)
 			util_panic("No pages to swap out");
 
@@ -328,17 +312,17 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 			frameno_t frameNo;
 			ulong block;
 			ssize_t index;
-			Proc *proc;
+			VirtMem *vm;
 			VMRegion *vmreg;
 
 			/* get page to swap out */
-			index = vmm_getPgIdxForSwap(reg);
+			index = getPgIdxForSwap(reg);
 			if(index < 0)
 				break;
 
 			/* get VM-region of first process */
-			proc = (Proc*)sll_get(reg->getProcList(),0);
-			vmreg = proc->regtree.getByReg(reg);
+			vm = (VirtMem*)sll_get(reg->getVMList(),0);
+			vmreg = vm->regtree.getByReg(reg);
 
 			/* find swap-block */
 			block = SwapMap::alloc();
@@ -357,11 +341,11 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 #endif
 
 			/* get the frame first, because the page has to be present */
-			frameNo = paging_getFrameNo(proc->getPageDir(),vmreg->virt + index * PAGE_SIZE);
+			frameNo = paging_getFrameNo(vm->getPageDir(),vmreg->virt + index * PAGE_SIZE);
 			/* unmap the page in all processes and ensure that all CPUs have flushed their TLB */
 			/* this way we know that nobody can still access the page; if someone tries, he will
 			 * cause a page-fault and will wait until we release the region-mutex */
-			vmm_setSwappedOut(reg,index);
+			setSwappedOut(reg,index);
 			reg->setSwapBlock(index,block);
 			SMP::ensureTLBFlushed();
 
@@ -379,11 +363,11 @@ void vmm_swapOut(pid_t pid,sFile *file,size_t count) {
 	}
 }
 
-bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
+bool VirtMem::swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 	frameno_t frame;
 	ulong block;
 	size_t index;
-	VMRegion *vmreg = t->getProc()->regtree.getByAddr(addr);
+	VMRegion *vmreg = t->getProc()->getVM()->regtree.getByAddr(addr);
 	if(!vmreg)
 		return false;
 
@@ -418,21 +402,22 @@ bool vmm_swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 	paging_copyToFrame(frame,buffer);
 
 	/* mark as not-swapped and map into all affected processes */
-	vmm_setSwappedIn(vmreg->reg,index,frame);
+	setSwappedIn(vmreg->reg,index,frame);
 	/* free swap-block */
 	SwapMap::free(block);
 	return true;
 }
 
-void vmm_setTimestamp(Thread *t,uint64_t timestamp) {
+void VirtMem::setTimestamp(Thread *t,uint64_t timestamp) {
 	if(!PhysMem::shouldSetRegTimestamp())
 		return;
+
 	/* ignore setting the timestamp if the process is currently locked; its not that critical and
 	 * we can't wait for the mutex here because this is called from Thread::switchAway() and the wait
 	 * for the mutex would call that as well */
-	Proc *p = vmm_tryReqProc(t->getProc()->getPid());
-	if(p) {
-		VMRegion *vm;
+	VirtMem *vm = t->getProc()->getVM();
+	if(vm->tryAquire()) {
+		VMRegion *reg;
 		size_t i;
 		if(t->getTLSRegion())
 			t->getTLSRegion()->reg->setTimestamp(timestamp);
@@ -440,27 +425,20 @@ void vmm_setTimestamp(Thread *t,uint64_t timestamp) {
 			if(t->getStackRegion(i))
 				t->getStackRegion(i)->reg->setTimestamp(timestamp);
 		}
-		for(vm = t->getProc()->regtree.first(); vm != NULL; vm = vm->next) {
-			if(!(vm->reg->getFlags() & (RF_TLS | RF_STACK)))
-				vm->reg->setTimestamp(timestamp);
+		for(reg = vm->regtree.first(); reg != NULL; reg = reg->next) {
+			if(!(reg->reg->getFlags() & (RF_TLS | RF_STACK)))
+				reg->reg->setTimestamp(timestamp);
 		}
-		vmm_relProc(p);
+		vm->release();
 	}
 }
 
-void vmm_getMemUsageOf(Proc *p,size_t *own,size_t *shared,size_t *swapped) {
-	*own = p->ownFrames;
-	*shared = p->sharedFrames;
-	*swapped = p->swapped;
-}
-
-float vmm_getMemUsage(pid_t pid,size_t *pages) {
+float VirtMem::getMemUsage(size_t *pages) {
 	float rpages = 0;
-	Proc *p = vmm_reqProc(pid);
 	*pages = 0;
-	if(p) {
+	if(aquire()) {
 		VMRegion *vm;
-		for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			size_t j,count = 0;
 			size_t pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
 			for(j = 0; j < pageCount; j++) {
@@ -470,31 +448,26 @@ float vmm_getMemUsage(pid_t pid,size_t *pages) {
 			*pages += pageCount;
 			rpages += (float)count / vm->reg->refCount();
 		}
-		vmm_relProc(p);
+		release();
 	}
 	return rpages;
 }
 
-VMRegion *vmm_getRegion(Proc *p,uintptr_t addr) {
-	return p->regtree.getByAddr(addr);
-}
-
-bool vmm_getRegRange(pid_t pid,VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) {
+bool VirtMem::getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) {
 	bool res = false;
-	Proc *p = locked ? vmm_reqProc(pid) : Proc::getByPid(pid);
-	if(p) {
+	if(!locked || aquire()) {
 		if(start)
 			*start = vm->virt;
 		if(end)
 			*end = vm->virt + vm->reg->getByteCount();
 		if(locked)
-			vmm_relProc(p);
+			release();
 		res = true;
 	}
 	return res;
 }
 
-static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner) {
+uintptr_t VirtMem::getBinary(sFile *file,VirtMem *&binOwner) {
 	uintptr_t res = 0;
 	VMTree *tree = VMTree::reqTree();
 	for(; tree != NULL; tree = tree->getNext()) {
@@ -504,7 +477,7 @@ static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner) {
 			if((vm->reg->getFlags() & RF_SHAREABLE) && vm->reg->getFile() &&
 					vfs_isSameFile(vm->reg->getFile(),file)) {
 				res = vm->virt;
-				*binOwner = tree->getPid();
+				binOwner = tree->getVM();
 				break;
 			}
 		}
@@ -513,30 +486,30 @@ static uintptr_t vmm_getBinary(sFile *file,pid_t *binOwner) {
 	return res;
 }
 
-bool vmm_pagefault(uintptr_t addr,bool write) {
-	Proc *p;
+bool VirtMem::pagefault(uintptr_t addr,bool write) {
 	Thread *t = Thread::getRunning();
-	VMRegion *vm;
 	bool res = false;
+	VMRegion *reg;
 
 	/* we can swap here; note that we don't need page-tables in this case, they're always present */
 	if(!t->reserveFrames(1))
 		return false;
 
-	p = vmm_reqProc(t->getProc()->getPid());
-	vm = p->regtree.getByAddr(addr);
-	if(vm == NULL) {
-		vmm_relProc(p);
+	VirtMem *vm = t->getProc()->getVM();
+	vm->aquire();
+	reg = vm->regtree.getByAddr(addr);
+	if(reg == NULL) {
+		vm->release();
 		t->discardFrames();
 		return false;
 	}
-	res = vmm_doPagefault(addr,p,vm,write);
-	vmm_relProc(p);
+	res = vm->doPagefault(addr,reg,write);
+	vm->release();
 	t->discardFrames();
 	return res;
 }
 
-static bool vmm_doPagefault(uintptr_t addr,Proc *p,VMRegion *vm,bool write) {
+bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 	bool res = false;
 	size_t page = (addr - vm->virt) / PAGE_SIZE;
 	ulong flags;
@@ -544,17 +517,17 @@ static bool vmm_doPagefault(uintptr_t addr,Proc *p,VMRegion *vm,bool write) {
 	flags = vm->reg->getPageFlags(page);
 	addr &= ~(PAGE_SIZE - 1);
 	if(flags & PF_DEMANDLOAD) {
-		res = vmm_demandLoad(p,vm,addr);
+		res = demandLoad(vm,addr);
 		if(res)
 			vm->reg->setPageFlags(page,flags & ~PF_DEMANDLOAD);
 	}
 	else if(flags & PF_SWAPPED)
 		res = PhysMem::swapIn(addr);
 	else if(flags & PF_COPYONWRITE) {
-		frameno_t frameNumber = paging_getFrameNo(p->getPageDir(),addr);
+		frameno_t frameNumber = paging_getFrameNo(getPageDir(),addr);
 		size_t frmCount = CopyOnWrite::pagefault(addr,frameNumber);
-		p->addOwn(frmCount);
-		p->addShared(-frmCount);
+		addOwn(frmCount);
+		addShared(-frmCount);
 		vm->reg->setPageFlags(page,flags & ~PF_COPYONWRITE);
 		res = true;
 	}
@@ -571,27 +544,25 @@ static bool vmm_doPagefault(uintptr_t addr,Proc *p,VMRegion *vm,bool write) {
 	return res;
 }
 
-void vmm_removeAll(pid_t pid,bool remStack) {
-	Proc *p = vmm_reqProc(pid);
-	if(p) {
+void VirtMem::removeAll(bool remStack) {
+	if(aquire()) {
 		VMRegion *vm;
-		for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if((!(vm->reg->getFlags() & RF_STACK) || remStack))
-				vmm_doRemove(p,vm);
+				doRemove(vm);
 		}
-		vmm_relProc(p);
+		release();
 	}
 }
 
-void vmm_remove(pid_t pid,VMRegion *vm) {
-	Proc *p = vmm_reqProc(pid);
-	if(p) {
-		vmm_doRemove(p,vm);
-		vmm_relProc(p);
+void VirtMem::remove(VMRegion *vm) {
+	if(aquire()) {
+		doRemove(vm);
+		release();
 	}
 }
 
-static void vmm_sync(Proc *p,VMRegion *vm) {
+void VirtMem::sync(VMRegion *vm) const {
 	sFile *file = vm->reg->getFile();
 	if((vm->reg->getFlags() & RF_SHAREABLE) && (vm->reg->getFlags() & RF_WRITABLE) && file) {
 		size_t i,pcount = BYTES_2_PAGES(vm->reg->getByteCount());
@@ -599,7 +570,7 @@ static void vmm_sync(Proc *p,VMRegion *vm) {
 		 * can't directly access the memory. */
 		pid_t cur = Proc::getRunning();
 		uint8_t *buf;
-		if(cur != p->getPid()) {
+		if(cur != pid) {
 			buf = (uint8_t*)Cache::alloc(PAGE_SIZE);
 			if(buf == NULL)
 				return;
@@ -608,114 +579,112 @@ static void vmm_sync(Proc *p,VMRegion *vm) {
 
 		for(i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->getByteCount() - i * PAGE_SIZE);
-			if(vfs_seek(p->getPid(),file,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
+			if(vfs_seek(pid,file,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
-			if(p->getPid() == cur)
-				vfs_writeFile(p->getPid(),file,(void*)(vm->virt + i * PAGE_SIZE),amount);
+			if(pid == cur)
+				vfs_writeFile(pid,file,(void*)(vm->virt + i * PAGE_SIZE),amount);
 			else {
 				/* we can't use the temp mapping during vfs_writeFile because we might perform a
 				 * context-switch in between. */
-				frameno_t frame = paging_getFrameNo(p->getPageDir(),vm->virt + i * PAGE_SIZE);
+				frameno_t frame = paging_getFrameNo(getPageDir(),vm->virt + i * PAGE_SIZE);
 				uintptr_t addr = paging_getAccess(frame);
 				memcpy(buf,(void*)addr,amount);
 				paging_removeAccess();
-				vfs_writeFile(p->getPid(),file,buf,amount);
+				vfs_writeFile(pid,file,buf,amount);
 			}
 		}
 
-		if(cur != p->getPid()) {
+		if(cur != pid) {
 			Thread::remHeapAlloc(buf);
 			Cache::free(buf);
 		}
 	}
 }
 
-static void vmm_doRemove(Proc *p,VMRegion *vm) {
+void VirtMem::doRemove(VMRegion *vm) {
 	size_t i = 0;
 	size_t pcount;
 	vm->reg->aquire();
 	pcount = BYTES_2_PAGES(vm->reg->getByteCount());
-	assert(vm->reg->remFrom(p));
+	assert(vm->reg->remFrom(this));
 	if(vm->reg->refCount() == 0) {
 		uintptr_t virt = vm->virt;
 		/* first, write the content of the memory back to the file, if necessary */
-		vmm_sync(p,vm);
+		sync(vm);
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
 		for(i = 0; i < pcount; i++) {
 			ssize_t pts;
 			bool freeFrame = !(vm->reg->getFlags() & RF_NOFREE);
 			if(vm->reg->getPageFlags(i) & PF_COPYONWRITE) {
 				bool foundOther;
-				frameno_t frameNo = paging_getFrameNo(p->getPageDir(),virt);
+				frameno_t frameNo = paging_getFrameNo(getPageDir(),virt);
 				/* we can free the frame if there is no other user */
-				p->addShared(-CopyOnWrite::remove(frameNo,&foundOther));
+				addShared(-CopyOnWrite::remove(frameNo,&foundOther));
 				freeFrame = !foundOther;
 				/* if we'll free the frame with unmap we will substract 1 too much because
 				 * we don't own the frame */
 				if(freeFrame)
-					p->addOwn(1);
+					addOwn(1);
 			}
 			if(vm->reg->getPageFlags(i) & PF_SWAPPED)
-				p->addSwap(-1);
-			pts = paging_unmapFrom(p->getPageDir(),virt,1,freeFrame);
+				addSwap(-1);
+			pts = paging_unmapFrom(getPageDir(),virt,1,freeFrame);
 			if(freeFrame) {
 				if(vm->reg->getFlags() & RF_SHAREABLE)
-					p->addShared(-1);
+					addShared(-1);
 				else
-					p->addOwn(-1);
+					addOwn(-1);
 			}
-			p->addOwn(-pts);
+			addOwn(-pts);
 			virt += PAGE_SIZE;
 		}
 		/* store next free stack-address, if its a stack */
-		if(vm->virt + vm->reg->getByteCount() > p->freeStackAddr && (vm->reg->getFlags() & RF_STACK))
-			p->freeStackAddr = vm->virt + vm->reg->getByteCount();
+		if(vm->virt + vm->reg->getByteCount() > freeStackAddr && (vm->reg->getFlags() & RF_STACK))
+			freeStackAddr = vm->virt + vm->reg->getByteCount();
 		/* give the memory back to the free-area, if its in there */
 		else if(vm->virt >= FREE_AREA_BEGIN)
-			p->freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
-		if(vm->virt == p->dataAddr)
-			p->dataAddr = 0;
+			freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
+		if(vm->virt == dataAddr)
+			dataAddr = 0;
 		/* now destroy region */
 		vm->reg->release();
 		vm->reg->destroy();
 	}
 	else {
-		size_t swapped;
+		size_t sw;
 		/* no free here, just unmap */
-		ssize_t pts = paging_unmapFrom(p->getPageDir(),vm->virt,pcount,false);
+		ssize_t pts = paging_unmapFrom(getPageDir(),vm->virt,pcount,false);
 		/* in this case its always a shared region because otherwise there wouldn't be other users */
 		/* so we have to substract the present content-frames from the shared ones,
 		 * and the ptables from ours */
-		p->addShared(-vm->reg->pageCount(&swapped));
-		p->addOwn(-pts);
-		p->addSwap(-swapped);
+		addShared(-vm->reg->pageCount(&sw));
+		addOwn(-pts);
+		addSwap(-sw);
 		/* give the memory back to the free-area, if its in there */
 		if(vm->virt >= FREE_AREA_BEGIN)
-			p->freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
+			freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
 		vm->reg->release();
 	}
-	p->regtree.remove(vm);
+	regtree.remove(vm);
 }
 
-int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,VMRegion **nvm,uintptr_t dstAddr) {
-	Proc *src,*dst;
+int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAddr) {
 	ssize_t res;
-	size_t pageCount,swapped;
+	size_t pageCount,sw;
 	VMRegion *vm;
-	if(srcId == dstId)
+	if(dst == this)
 		return -EINVAL;
 
-	src = vmm_reqProc(srcId);
-	dst = vmm_reqProc(dstId);
-	if(!src || !dst) {
-		if(dst)
-			vmm_relProc(dst);
-		if(src)
-			vmm_relProc(src);
+	if(!aquire())
+		return -ESRCH;
+	// better use tryAquire here to prevent a deadlock; this is of course suboptimal because the
+	// caller would have to retry the operation in this case
+	if(!dst->tryAquire()) {
+		release();
 		return -ESRCH;
 	}
 
-	vm = src->regtree.getByAddr(srcAddr);
+	vm = regtree.getByAddr(srcAddr);
 	if(vm == NULL)
 		goto errProc;
 
@@ -736,15 +705,15 @@ int vmm_join(pid_t srcId,uintptr_t srcAddr,pid_t dstId,VMRegion **nvm,uintptr_t 
 
 	/* shared, so content-frames to shared, ptables to own */
 	pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
-	res = paging_clonePages(src->getPageDir(),dst->getPageDir(),vm->virt,(*nvm)->virt,pageCount,true);
+	res = paging_clonePages(getPageDir(),dst->getPageDir(),vm->virt,(*nvm)->virt,pageCount,true);
 	if(res < 0)
 		goto errRem;
-	dst->addShared(vm->reg->pageCount(&swapped));
+	dst->addShared(vm->reg->pageCount(&sw));
 	dst->addOwn(res);
-	dst->addSwap(swapped);
+	dst->addSwap(sw);
 	vm->reg->release();
-	vmm_relProc(dst);
-	vmm_relProc(src);
+	dst->release();
+	release();
 	return 0;
 
 errRem:
@@ -754,29 +723,36 @@ errAdd:
 errReg:
 	vm->reg->release();
 errProc:
-	vmm_relProc(dst);
-	vmm_relProc(src);
+	dst->release();
+	release();
 	return -ENOMEM;
 }
 
-int vmm_cloneAll(pid_t dstId) {
+int VirtMem::cloneAll(VirtMem *dst) {
 	size_t j;
 	Thread *t = Thread::getRunning();
-	Proc *dst = vmm_reqProc(dstId);
-	Proc *src = vmm_reqProc(t->getProc()->getPid());
+	assert(pid == t->getProc()->getPid());
+
+	if(!aquire())
+		return -ESRCH;
+	if(!dst->tryAquire()) {
+		release();
+		return -ESRCH;
+	}
+
 	VMRegion *vm;
 	dst->swapped = 0;
 	dst->sharedFrames = 0;
 	dst->ownFrames = 0;
-	dst->dataAddr = src->dataAddr;
+	dst->dataAddr = dataAddr;
 
-	VMTree::addTree(dstId,&dst->regtree);
-	for(vm = src->regtree.first(); vm != NULL; vm = vm->next) {
+	VMTree::addTree(dst,&dst->regtree);
+	for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 		/* just clone the tls- and stack-region of the current thread */
 		if((!(vm->reg->getFlags() & RF_STACK) || t->hasStackRegion(vm)) &&
 				(!(vm->reg->getFlags() & RF_TLS) || t->getTLSRegion() == vm)) {
 			ssize_t res;
-			size_t pageCount,swapped;
+			size_t pageCount,sw;
 			VMRegion *nvm = dst->regtree.add(vm->reg,vm->virt);
 			if(nvm == NULL)
 				goto error;
@@ -802,7 +778,7 @@ int vmm_cloneAll(pid_t dstId) {
 
 			/* now copy the pages */
 			pageCount = BYTES_2_PAGES(nvm->reg->getByteCount());
-			res = paging_clonePages(src->getPageDir(),dst->getPageDir(),vm->virt,nvm->virt,pageCount,
+			res = paging_clonePages(getPageDir(),dst->getPageDir(),vm->virt,nvm->virt,pageCount,
 					vm->reg->getFlags() & RF_SHAREABLE);
 			if(res < 0) {
 				vm->reg->release();
@@ -812,8 +788,8 @@ int vmm_cloneAll(pid_t dstId) {
 
 			/* update stats */
 			if(vm->reg->getFlags() & RF_SHAREABLE) {
-				dst->addShared(nvm->reg->pageCount(&swapped));
-				dst->addSwap(swapped);
+				dst->addShared(nvm->reg->pageCount(&sw));
+				dst->addSwap(sw);
 			}
 			/* add frames to copy-on-write, if not shared */
 			else {
@@ -824,7 +800,7 @@ int vmm_cloneAll(pid_t dstId) {
 					/* not when demand-load or swapping is outstanding since we've not loaded it
 					 * from disk yet */
 					else if(!(vm->reg->getPageFlags(j) & (PF_DEMANDLOAD | PF_SWAPPED))) {
-						frameno_t frameNo = paging_getFrameNo(src->getPageDir(),virt);
+						frameno_t frameNo = paging_getFrameNo(getPageDir(),virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->getPageFlags(j) & PF_COPYONWRITE)) {
 							vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) | PF_COPYONWRITE);
@@ -832,8 +808,8 @@ int vmm_cloneAll(pid_t dstId) {
 								vm->reg->release();
 								goto error;
 							}
-							src->addShared(1);
-							src->addOwn(-1);
+							addShared(1);
+							addOwn(-1);
 						}
 						/* do it always for the child */
 						nvm->reg->setPageFlags(j,nvm->reg->getPageFlags(j) | PF_COPYONWRITE);
@@ -849,78 +825,78 @@ int vmm_cloneAll(pid_t dstId) {
 			vm->reg->release();
 		}
 	}
-	vmm_relProc(src);
-	vmm_relProc(dst);
+	dst->release();
+	release();
 	return 0;
 
 error:
-	vmm_relProc(src);
-	vmm_relProc(dst);
+	dst->release();
+	release();
 	/* Note that vmm_remove() will undo the cow just for the child; but thats ok since
 	 * the parent will get its frame back as soon as it writes to it */
 	/* Note also that we don't restore the old frame-counts; for dst it makes no sense because
 	 * we'll destroy the process anyway. for src we can't do it because the cow-entries still
 	 * exists and therefore its correct. */
-	Proc::removeRegions(dstId,true);
+	Proc::removeRegions(dst->pid,true);
 	/* no need to free regs, since vmm_remove has already done it */
 	return -ENOMEM;
 }
 
-int vmm_growStackTo(pid_t pid,VMRegion *vm,uintptr_t addr) {
-	Proc *p = vmm_reqProc(pid);
-	ssize_t newPages = 0;
+int VirtMem::growStackTo(VMRegion *vm,uintptr_t addr) {
 	int res = -ENOMEM;
-	addr &= ~(PAGE_SIZE - 1);
-	/* report failure if its outside (upper / lower) of the region */
-	/* note that we assume here that if a thread has multiple stack-regions, they grow towards
-	 * each other */
-	if(vm->reg->getFlags() & RF_GROWS_DOWN) {
-		if(addr < vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()) && addr < vm->virt) {
-			res = 0;
-			newPages = (vm->virt - addr) / PAGE_SIZE;
-		}
-	}
-	else {
-		if(addr >= vm->virt && addr >= vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount())) {
-			res = 0;
-			newPages = ROUND_PAGE_UP(addr -
-					(vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()) - 1)) / PAGE_SIZE;
-		}
-	}
-
-	if(res == 0) {
-		/* if its too much, try the next one; if there is none that fits, report failure */
-		if(BYTES_2_PAGES(vm->reg->getByteCount()) + newPages >= MAX_STACK_PAGES - 1)
-			res = -ENOMEM;
-		/* new pages necessary? */
-		else if(newPages > 0) {
-			Thread *t = Thread::getRunning();
-			if(!t->reserveFrames(newPages)) {
-				vmm_relProc(p);
-				return -ENOMEM;
+	if(aquire()) {
+		ssize_t newPages = 0;
+		addr &= ~(PAGE_SIZE - 1);
+		/* report failure if its outside (upper / lower) of the region */
+		/* note that we assume here that if a thread has multiple stack-regions, they grow towards
+		 * each other */
+		if(vm->reg->getFlags() & RF_GROWS_DOWN) {
+			if(addr < vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()) && addr < vm->virt) {
+				res = 0;
+				newPages = (vm->virt - addr) / PAGE_SIZE;
 			}
-			res = vmm_doGrow(p,vm,newPages) != 0 ? 0 : -ENOMEM;
-			t->discardFrames();
 		}
+		else {
+			if(addr >= vm->virt && addr >= vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount())) {
+				res = 0;
+				newPages = ROUND_PAGE_UP(addr -
+						(vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()) - 1)) / PAGE_SIZE;
+			}
+		}
+
+		if(res == 0) {
+			/* if its too much, try the next one; if there is none that fits, report failure */
+			if(BYTES_2_PAGES(vm->reg->getByteCount()) + newPages >= MAX_STACK_PAGES - 1)
+				res = -ENOMEM;
+			/* new pages necessary? */
+			else if(newPages > 0) {
+				Thread *t = Thread::getRunning();
+				if(!t->reserveFrames(newPages)) {
+					release();
+					return -ENOMEM;
+				}
+				res = doGrow(vm,newPages) != 0 ? 0 : -ENOMEM;
+				t->discardFrames();
+			}
+		}
+		release();
 	}
-	vmm_relProc(p);
 	return res;
 }
 
-size_t vmm_grow(pid_t pid,uintptr_t addr,ssize_t amount) {
+size_t VirtMem::grow(uintptr_t addr,ssize_t amount) {
 	VMRegion *vm;
 	size_t res = 0;
-	Proc *p = vmm_reqProc(pid);
-	if(!p)
+	if(!aquire())
 		return 0;
-	vm = p->regtree.getByAddr(addr);
+	vm = regtree.getByAddr(addr);
 	if(vm)
-		res = vmm_doGrow(p,vm,amount);
-	vmm_relProc(p);
+		res = doGrow(vm,amount);
+	release();
 	return res;
 }
 
-static size_t vmm_doGrow(Proc *p,VMRegion *vm,ssize_t amount) {
+size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 	size_t oldSize;
 	ssize_t res = -ENOMEM;
 	uintptr_t oldVirt,virt;
@@ -942,14 +918,14 @@ static size_t vmm_doGrow(Proc *p,VMRegion *vm,ssize_t amount) {
 		/* check whether the space is free */
 		if(amount > 0) {
 			if(vm->reg->getFlags() & RF_GROWS_DOWN) {
-				if(vmm_isOccupied(p,oldVirt - amount * PAGE_SIZE,oldVirt)) {
+				if(isOccupied(oldVirt - amount * PAGE_SIZE,oldVirt)) {
 					vm->reg->release();
 					return 0;
 				}
 			}
 			else {
 				uintptr_t end = oldVirt + ROUND_PAGE_UP(vm->reg->getByteCount());
-				if(vmm_isOccupied(p,end,end + amount * PAGE_SIZE)) {
+				if(isOccupied(end,end + amount * PAGE_SIZE)) {
 					vm->reg->release();
 					return 0;
 				}
@@ -972,18 +948,18 @@ static size_t vmm_doGrow(Proc *p,VMRegion *vm,ssize_t amount) {
 			}
 			else
 				virt = vm->virt + ROUND_PAGE_UP(oldSize);
-			pts = paging_mapTo(p->getPageDir(),virt,NULL,amount,mapFlags);
+			pts = paging_mapTo(getPageDir(),virt,NULL,amount,mapFlags);
 			if(pts < 0) {
 				if(vm->reg->getFlags() & RF_GROWS_DOWN)
 					vm->virt += amount * PAGE_SIZE;
 				vm->reg->release();
 				return 0;
 			}
-			p->addOwn(pts + amount);
+			addOwn(pts + amount);
 			/* remove it from the free area (used by the dynlinker for its data-region only) */
 			/* note that we assume here that we get the location at the end of the data-region */
 			if(vm->virt >= FREE_AREA_BEGIN)
-				p->freemap.allocate(amount * PAGE_SIZE);
+				freemap.allocate(amount * PAGE_SIZE);
 		}
 		else {
 			if(vm->reg->getFlags() & RF_GROWS_DOWN) {
@@ -994,10 +970,10 @@ static size_t vmm_doGrow(Proc *p,VMRegion *vm,ssize_t amount) {
 				virt = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
 			/* give it back to the free area */
 			if(vm->virt >= FREE_AREA_BEGIN)
-				p->freemap.free(virt,-amount * PAGE_SIZE);
-			pts = paging_unmapFrom(p->getPageDir(),virt,-amount,true);
-			p->addOwn(-(pts - amount));
-			p->addSwap(-res);
+				freemap.free(virt,-amount * PAGE_SIZE);
+			pts = paging_unmapFrom(getPageDir(),virt,-amount,true);
+			addOwn(-(pts - amount));
+			addSwap(-res);
 		}
 	}
 
@@ -1006,12 +982,11 @@ static size_t vmm_doGrow(Proc *p,VMRegion *vm,ssize_t amount) {
 	return res;
 }
 
-void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid) {
-	Proc *p = vmm_reqProc(pid);
-	if(p) {
+void VirtMem::sprintfRegions(sStringBuffer *buf) const {
+	if(aquire()) {
 		VMRegion *vm;
 		size_t c = 0;
-		for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if(c)
 				prf_sprintf(buf,"\n");
 			vm->reg->aquire();
@@ -1020,17 +995,16 @@ void vmm_sprintfRegions(sStringBuffer *buf,pid_t pid) {
 			vm->reg->release();
 			c++;
 		}
-		vmm_relProc(p);
+		release();
 	}
 }
 
-void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
-	Proc *p = vmm_reqProc(pid);
-	if(p) {
+void VirtMem::sprintfMaps(sStringBuffer *buf) const {
+	if(aquire()) {
 		VMRegion *vm;
-		for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			vm->reg->aquire();
-			prf_sprintf(buf,"%-24s %p - %p (%5zuK) %c%c%c%c",vmm_getRegName(p,vm),vm->virt,
+			prf_sprintf(buf,"%-24s %p - %p (%5zuK) %c%c%c%c",getRegName(vm),vm->virt,
 					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K,
 					(vm->reg->getFlags() & RF_WRITABLE) ? 'w' : '-',
 					(vm->reg->getFlags() & RF_EXECUTABLE) ? 'x' : '-',
@@ -1039,13 +1013,13 @@ void vmm_sprintfMaps(sStringBuffer *buf,pid_t pid) {
 			vm->reg->release();
 			prf_sprintf(buf,"\n");
 		}
-		vmm_relProc(p);
+		release();
 	}
 }
 
-static const char *vmm_getRegName(Proc *p,const VMRegion *vm) {
+const char *VirtMem::getRegName(const VMRegion *vm) const {
 	const char *name = "";
-	if(vm->virt == p->dataAddr)
+	if(vm->virt == dataAddr)
 		name = "data";
 	else if(vm->reg->getFlags() & RF_STACK)
 		name = "stack";
@@ -1055,33 +1029,35 @@ static const char *vmm_getRegName(Proc *p,const VMRegion *vm) {
 		name = "phys";
 	else if(vm->reg->getFile())
 		name = vfs_getPath(vm->reg->getFile());
-	else if(p->getEntryPoint() >= vm->virt && p->getEntryPoint() < vm->virt + vm->reg->getByteCount())
-		name = p->getCommand();
-	else
-		name = "???";
+	else {
+		Proc *p = Proc::getByPid(pid);
+		if(p->getEntryPoint() >= vm->virt && p->getEntryPoint() < vm->virt + vm->reg->getByteCount())
+			name = p->getCommand();
+		else
+			name = "???";
+	}
 	return name;
 }
 
-void vmm_printShort(pid_t pid,const char *prefix) {
-	Proc *p = Proc::getByPid(pid);
-	if(p) {
+void VirtMem::printShort(const char *prefix) const {
+	if(aquire()) {
 		VMRegion *vm;
-		for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
-			vid_printf("%s%-24s %p - %p (%5zuK) ",prefix,vmm_getRegName(p,vm),vm->virt,
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
+			vid_printf("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(vm),vm->virt,
 					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K);
 			vm->reg->printFlags();
 			vid_printf("\n");
 		}
+		release();
 	}
 }
 
-void vmm_print(pid_t pid) {
-	Proc *p = Proc::getByPid(pid);
-	if(p) {
+void VirtMem::printRegions() const {
+	if(aquire()) {
 		size_t c = 0;
 		VMRegion *vm;
-		vid_printf("Regions of proc %d (%s)\n",pid,p->getCommand());
-		for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+		vid_printf("Regions of proc %d (%s)\n",pid,Proc::getByPid(pid)->getCommand());
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if(c)
 				vid_printf("\n");
 			vid_printf("VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
@@ -1090,10 +1066,19 @@ void vmm_print(pid_t pid) {
 		}
 		if(c == 0)
 			vid_printf("- no regions -\n");
+		release();
 	}
 }
 
-static bool vmm_demandLoad(Proc *p,VMRegion *vm,uintptr_t addr) {
+void VirtMem::print() const {
+	freemap.print();
+	vid_printf("Regions:\n");
+	vid_printf("\tDataRegion: %p\n",dataAddr);
+	vid_printf("\tFreeStack: %p\n",freeStackAddr);
+	printShort("\t");
+}
+
+bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 	bool res = false;
 
 	/* calculate the number of bytes to load and zero */
@@ -1106,7 +1091,7 @@ static bool vmm_demandLoad(Proc *p,VMRegion *vm,uintptr_t addr) {
 
 	/* load from file */
 	if(loadCount)
-		res = vmm_loadFromFile(p,vm,addr,loadCount);
+		res = loadFromFile(vm,addr,loadCount);
 
 	/* zero the rest, if necessary */
 	if(res && zeroCount) {
@@ -1122,8 +1107,8 @@ static bool vmm_demandLoad(Proc *p,VMRegion *vm,uintptr_t addr) {
 			uint mapFlags = PG_PRESENT;
 			if(vm->reg->getFlags() & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
-			for(n = sll_begin(vm->reg->getProcList()); n != NULL; n = n->next) {
-				Proc *mp = (Proc*)n->data;
+			for(n = sll_begin(vm->reg->getVMList()); n != NULL; n = n->next) {
+				VirtMem *mp = (VirtMem*)n->data;
 				/* the region may be mapped to a different virtual address */
 				VMRegion *mpreg = mp->regtree.getByReg(vm->reg);
 				/* can't fail */
@@ -1135,9 +1120,8 @@ static bool vmm_demandLoad(Proc *p,VMRegion *vm,uintptr_t addr) {
 	return res;
 }
 
-static bool vmm_loadFromFile(Proc *p,VMRegion *vm,uintptr_t addr,size_t loadCount) {
+bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	int err;
-	pid_t pid = p->getPid();
 	void *tempBuf;
 	sSLNode *n;
 	frameno_t frame;
@@ -1176,8 +1160,8 @@ static bool vmm_loadFromFile(Proc *p,VMRegion *vm,uintptr_t addr,size_t loadCoun
 		mapFlags |= PG_WRITABLE;
 	if(vm->reg->getFlags() & RF_EXECUTABLE)
 		mapFlags |= PG_EXECUTABLE;
-	for(n = sll_begin(vm->reg->getProcList()); n != NULL; n = n->next) {
-		Proc *mp = (Proc*)n->data;
+	for(n = sll_begin(vm->reg->getVMList()); n != NULL; n = n->next) {
+		VirtMem *mp = (VirtMem*)n->data;
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(vm->reg);
 		/* can't fail */
@@ -1193,24 +1177,23 @@ errorFree:
 	Thread::remHeapAlloc(tempBuf);
 	Cache::free(tempBuf);
 error:
-	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,p->getCommand(),strerror(-err),err);
+	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,
+			Proc::getByPid(pid)->getCommand(),strerror(-err),err);
 	return false;
 }
 
-static Region *vmm_getLRURegion(void) {
+Region *VirtMem::getLRURegion() {
 	VMRegion *vm;
 	Region *lru = NULL;
 	time_t ts = UINT_MAX;
-	Proc *p;
 	VMTree *tree = VMTree::reqTree();
 	for(; tree != NULL; tree = tree->getNext()) {
 		/* the disk-driver is not swappable */
-		if(tree->getPid() == DISK_PID)
+		if(tree->getVM()->pid == DISK_PID)
 			continue;
 
 		/* same as below; we have to try to aquire the mutex, otherwise we risk a deadlock */
-		p = vmm_tryReqProc(tree->getPid());
-		if(p) {
+		if(tree->getVM()->tryAquire()) {
 			for(vm = tree->first(); vm != NULL; vm = vm->next) {
 				size_t j,count = 0,pages;
 				if((vm->reg->getFlags() & RF_NOFREE) || vm->reg->getTimestamp() >= ts)
@@ -1238,14 +1221,14 @@ static Region *vmm_getLRURegion(void) {
 						vm->reg->release();
 				}
 			}
-			vmm_relProc(p);
+			tree->getVM()->release();
 		}
 	}
 	VMTree::relTree();
 	return lru;
 }
 
-static ssize_t vmm_getPgIdxForSwap(const Region *reg) {
+ssize_t VirtMem::getPgIdxForSwap(const Region *reg) {
 	size_t i,pages = BYTES_2_PAGES(reg->getByteCount());
 	size_t index,count = 0;
 	for(i = 0; i < pages; i++) {
@@ -1264,12 +1247,12 @@ static ssize_t vmm_getPgIdxForSwap(const Region *reg) {
 	return -1;
 }
 
-static void vmm_setSwappedOut(Region *reg,size_t index) {
+void VirtMem::setSwappedOut(Region *reg,size_t index) {
 	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	reg->setPageFlags(index,reg->getPageFlags(index) | PF_SWAPPED);
-	for(n = sll_begin(reg->getProcList()); n != NULL; n = n->next) {
-		Proc *mp = (Proc*)n->data;
+	for(n = sll_begin(reg->getVMList()); n != NULL; n = n->next) {
+		VirtMem *mp = (VirtMem*)n->data;
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(reg);
 		/* can't fail */
@@ -1282,7 +1265,7 @@ static void vmm_setSwappedOut(Region *reg,size_t index) {
 	}
 }
 
-static void vmm_setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
+void VirtMem::setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	uint flags = PG_PRESENT;
@@ -1292,8 +1275,8 @@ static void vmm_setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 		flags |= PG_EXECUTABLE;
 	reg->setPageFlags(index,reg->getPageFlags(index) & ~PF_SWAPPED);
 	reg->setSwapBlock(index,0);
-	for(n = sll_begin(reg->getProcList()); n != NULL; n = n->next) {
-		Proc *mp = (Proc*)n->data;
+	for(n = sll_begin(reg->getVMList()); n != NULL; n = n->next) {
+		VirtMem *mp = (VirtMem*)n->data;
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(reg);
 		/* can't fail */
@@ -1306,7 +1289,7 @@ static void vmm_setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 	}
 }
 
-static uintptr_t vmm_findFreeStack(Proc *p,size_t byteCount,A_UNUSED ulong rflags) {
+uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 	uintptr_t addr,end;
 	size_t size = ROUND_PAGE_UP(byteCount);
 	VMRegion *dataReg;
@@ -1315,14 +1298,14 @@ static uintptr_t vmm_findFreeStack(Proc *p,size_t byteCount,A_UNUSED ulong rflag
 		return 0;
 #if STACK_AREA_GROWS_DOWN
 	/* find end address */
-	dataReg = p->regtree.getByAddr(p->dataAddr);
+	dataReg = regtree.getByAddr(dataAddr);
 	if(dataReg)
 		end = dataReg->virt + ROUND_PAGE_UP(dataReg->reg->getByteCount());
 	else
-		end = vmm_getFirstUsableAddr(p);
+		end = getFirstUsableAddr();
 	/* determine start address */
-	if(p->freeStackAddr != 0)
-		addr = p->freeStackAddr;
+	if(freeStackAddr != 0)
+		addr = freeStackAddr;
 	else
 		addr = STACK_AREA_END;
 	for(; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
@@ -1330,14 +1313,14 @@ static uintptr_t vmm_findFreeStack(Proc *p,size_t byteCount,A_UNUSED ulong rflag
 		/* in this case it is not necessary to use vmm_isOccupied() because all stack-regions
 		 * have a fixed max-size and there is no other region that can be in that area. so its
 		 * enough to test whether in this area is a region or not */
-		if(p->regtree.getByAddr(start) == NULL) {
-			p->freeStackAddr = addr - MAX_STACK_PAGES * PAGE_SIZE;
+		if(regtree.getByAddr(start) == NULL) {
+			freeStackAddr = addr - MAX_STACK_PAGES * PAGE_SIZE;
 			return start;
 		}
 	}
 #else
 	for(addr = STACK_AREA_BEGIN; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
-		if(vmm_isOccupied(p,addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL) {
+		if(isOccupied(addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL) {
 			if(rflags & RF_GROWS_DOWN)
 				return addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE - ROUND_PAGE_UP(byteCount);
 			return addr;
@@ -1347,9 +1330,9 @@ static uintptr_t vmm_findFreeStack(Proc *p,size_t byteCount,A_UNUSED ulong rflag
 	return 0;
 }
 
-static VMRegion *vmm_isOccupied(Proc *p,uintptr_t start,uintptr_t end) {
+VMRegion *VirtMem::isOccupied(uintptr_t start,uintptr_t end) const {
 	VMRegion *vm;
-	for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+	for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 		uintptr_t rstart = vm->virt;
 		uintptr_t rend = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
 		if(OVERLAPS(rstart,rend,start,end))
@@ -1358,26 +1341,14 @@ static VMRegion *vmm_isOccupied(Proc *p,uintptr_t start,uintptr_t end) {
 	return NULL;
 }
 
-static uintptr_t vmm_getFirstUsableAddr(Proc *p) {
+uintptr_t VirtMem::getFirstUsableAddr() const {
 	uintptr_t addr = 0;
 	VMRegion *vm;
-	for(vm = p->regtree.first(); vm != NULL; vm = vm->next) {
+	for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 		if(!(vm->reg->getFlags() & RF_STACK) && vm->virt < FREE_AREA_BEGIN &&
 				vm->virt + vm->reg->getByteCount() > addr) {
 			addr = vm->virt + vm->reg->getByteCount();
 		}
 	}
 	return ROUND_PAGE_UP(addr);
-}
-
-static Proc *vmm_reqProc(pid_t pid) {
-	return Proc::request(pid,PLOCK_REGIONS);
-}
-
-static Proc *vmm_tryReqProc(pid_t pid) {
-	return Proc::tryRequest(pid,PLOCK_REGIONS);
-}
-
-static void vmm_relProc(Proc *p) {
-	Proc::release(p,PLOCK_REGIONS);
 }

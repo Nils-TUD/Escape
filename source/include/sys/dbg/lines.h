@@ -21,56 +21,72 @@
 
 #include <sys/common.h>
 
-typedef struct {
+class Lines {
+public:
+	/**
+	 * Creates a new lines-object
+	 */
+	explicit Lines() : lines(0), lineCount(0), linePos(0), lineSize(0) {
+	}
+
+	/**
+	 * Free's the memory
+	 */
+	~Lines();
+
+	/**
+	 * @return true if no error happened so far
+	 */
+	bool isValid() const {
+		return lineSize != (size_t)-1;
+	}
+	/**
+	 * @return the number of finished lines
+	 */
+	size_t getLineCount() const {
+		return lineCount;
+	}
+	/**
+	 * @param i the line number
+	 * @return the line i
+	 */
+	const char *getLine(size_t i) const {
+		return lines[i];
+	}
+
+	/**
+	 * Appends the given string to the current line, if possible
+	 *
+	 * @param str the string
+	 */
+	void appendStr(const char *str);
+
+	/**
+	 * Appends the character to the current line, if possible
+	 *
+	 * @param c the character
+	 */
+	void append(char c);
+
+	/**
+	 * Adds a new line
+	 *
+	 * @return true if successfull
+	 */
+	bool newLine();
+
+	/**
+	 * Ends the current line. This is intended for finalizing, i.e. you should call it when everything
+	 * has been added. It will finish the current line and increase the l->lineCount by 1, so that its
+	 * really the number of lines and not the index of the current line.
+	 */
+	void endLine();
+
+private:
+	bool init();
+
 	char **lines;
 	size_t lineCount;
 	size_t linePos;
 	size_t lineSize;
-} sLines;
-
-/**
- * Initializes the given lines-struct
- *
- * @param l the lines
- * @return 0 on success
- */
-int lines_create(sLines *l);
-
-/**
- * Appends the given string to the current line, if possible
- *
- * @param l the lines
- * @param str the string
- */
-void lines_appendStr(sLines *l,const char *str);
-
-/**
- * Appends the character to the current line, if possible
- *
- * @param l the lines
- * @param c the character
- */
-void lines_append(sLines *l,char c);
-
-/**
- * Adds a new line
- *
- * @param l the lines
- */
-void lines_newline(sLines *l);
-
-/**
- * Ends the current line. This is intended for finalizing, i.e. you should call it when everything
- * has been added. It will finish the current line and increase the l->lineCount by 1, so that its
- * really the number of lines and not the index of the current line.
- *
- * @param l the lines
- */
-void lines_end(sLines *l);
-
-/**
- * Free's the memory of the given lines
- *
- * @param l the lines
- */
-void lines_destroy(sLines *l);
+};

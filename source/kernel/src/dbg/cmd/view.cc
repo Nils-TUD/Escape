@@ -50,11 +50,11 @@
 
 #define MAX_VIEWNAME_LEN	16
 
-typedef void (*fView)(size_t argc,char **argv);
-typedef struct {
+typedef void (*view_func)(size_t argc,char **argv);
+struct View {
 	char name[MAX_VIEWNAME_LEN];
-	fView func;
-} sView;
+	view_func func;
+};
 
 static void view_printc(char c);
 static void view_proc(size_t argc,char **argv);
@@ -67,47 +67,46 @@ static void view_regions(size_t argc,char **argv);
 static Proc *view_getProc(size_t argc,char **argv);
 static const Thread *view_getThread(size_t argc,char **argv);
 
-static sLines lines;
-static sScreenBackup backup;
-static sView views[] = {
-	{"proc",(fView)view_proc},
-	{"procs",(fView)Proc::printAll},
-	{"sched",(fView)Sched::print},
-	{"signals",(fView)Signals::print},
-	{"thread",(fView)view_thread},
-	{"threads",(fView)Thread::printAll},
-	{"vfstree",(fView)vfs_node_printTree},
-	{"gft",(fView)vfs_printGFT},
-	{"msgs",(fView)vfs_printMsgs},
-	{"cow",(fView)CopyOnWrite::print},
-	{"cache",(fView)Cache::print},
-	{"kheap",(fView)KHeap::print},
-	{"pdirall",(fView)view_pdirall},
-	{"pdiruser",(fView)view_pdiruser},
-	{"pdirkernel",(fView)view_pdirkernel},
-	{"regions",(fView)view_regions},
-	{"pmem",(fView)PhysMem::print},
-	{"pmemcont",(fView)PhysMem::printCont},
-	{"pmemstack",(fView)PhysMem::printStack},
-	{"pmemareas",(fView)PhysMemAreas::print},
-	{"swapmap",(fView)SwapMap::print},
-	{"cpu",(fView)CPU::print},
+static Lines *linesptr;
+static ScreenBackup backup;
+static View views[] = {
+	{"proc",(view_func)view_proc},
+	{"procs",(view_func)Proc::printAll},
+	{"sched",(view_func)Sched::print},
+	{"signals",(view_func)Signals::print},
+	{"thread",(view_func)view_thread},
+	{"threads",(view_func)Thread::printAll},
+	{"vfstree",(view_func)vfs_node_printTree},
+	{"gft",(view_func)vfs_printGFT},
+	{"msgs",(view_func)vfs_printMsgs},
+	{"cow",(view_func)CopyOnWrite::print},
+	{"cache",(view_func)Cache::print},
+	{"kheap",(view_func)KHeap::print},
+	{"pdirall",(view_func)view_pdirall},
+	{"pdiruser",(view_func)view_pdiruser},
+	{"pdirkernel",(view_func)view_pdirkernel},
+	{"regions",(view_func)view_regions},
+	{"pmem",(view_func)PhysMem::print},
+	{"pmemcont",(view_func)PhysMem::printCont},
+	{"pmemstack",(view_func)PhysMem::printStack},
+	{"pmemareas",(view_func)PhysMemAreas::print},
+	{"swapmap",(view_func)SwapMap::print},
+	{"cpu",(view_func)CPU::print},
 #ifdef __i386__
-	{"gdt",(fView)gdt_print},
-	{"ioapic",(fView)ioapic_print},
-	{"acpi",(fView)acpi_print},
+	{"gdt",(view_func)gdt_print},
+	{"ioapic",(view_func)ioapic_print},
+	{"acpi",(view_func)acpi_print},
 #endif
-	{"timer",(fView)Timer::print},
-	{"boot",(fView)boot_print},
-	{"locks",(fView)Lock::print},
-	{"events",(fView)Event::print},
-	{"smp",(fView)SMP::print},
+	{"timer",(view_func)Timer::print},
+	{"boot",(view_func)boot_print},
+	{"locks",(view_func)Lock::print},
+	{"events",(view_func)Event::print},
+	{"smp",(view_func)SMP::print},
 };
 
 int cons_cmd_view(size_t argc,char **argv) {
 	size_t i;
-	int res;
-	if(cons_isHelp(argc,argv) || argc < 2) {
+	if(Console::isHelp(argc,argv) || argc < 2) {
 		vid_printf("Usage: %s <what>\n",argv[0]);
 		vid_printf("Available 'whats':\n");
 		for(i = 0; i < ARRAY_SIZE(views); i++) {
@@ -122,14 +121,14 @@ int cons_cmd_view(size_t argc,char **argv) {
 		return 0;
 	}
 
+	Lines lines;
+	linesptr = &lines;
 	for(i = 0; i < ARRAY_SIZE(views); i++) {
 		if(strcmp(views[i].name,argv[1]) == 0) {
-			/* create lines and redirect prints */
-			if((res = lines_create(&lines)) < 0)
-				return res;
+			/* redirect prints */
 			vid_setPrintFunc(view_printc);
 			views[i].func(argc,argv);
-			lines_end(&lines);
+			lines.endLine();
 			vid_unsetPrintFunc();
 			break;
 		}
@@ -139,17 +138,16 @@ int cons_cmd_view(size_t argc,char **argv) {
 
 	/* view the lines */
 	vid_backup(backup.screen,&backup.row,&backup.col);
-	cons_viewLines(&lines);
-	lines_destroy(&lines);
+	Console::viewLines(&lines);
 	vid_restore(backup.screen,backup.row,backup.col);
 	return 0;
 }
 
 static void view_printc(char c) {
 	if(c == '\n')
-		lines_newline(&lines);
+		linesptr->newLine();
 	else
-		lines_append(&lines,c);
+		linesptr->append(c);
 }
 
 static void view_proc(size_t argc,char **argv) {

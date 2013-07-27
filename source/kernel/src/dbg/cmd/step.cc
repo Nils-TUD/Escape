@@ -25,7 +25,7 @@
 #include <string.h>
 
 int cons_cmd_step(size_t argc,char **argv) {
-	if(cons_isHelp(argc,argv) || argc > 2) {
+	if(Console::isHelp(argc,argv) || argc > 2) {
 		vid_printf("Usage: step [show]\n");
 		return 0;
 	}
@@ -35,7 +35,8 @@ int cons_cmd_step(size_t argc,char **argv) {
 	sIntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->eflags &= ~(1 << 8);
-		vid_printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
+		vid_printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
+		           t->getProc()->getCommand());
 		util_printStackTrace(util_getUserStackTraceOf(t));
 		util_printUserState();
 		return 0;

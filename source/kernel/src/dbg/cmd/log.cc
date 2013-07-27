@@ -23,11 +23,11 @@
 #include <string.h>
 
 int cons_cmd_log(size_t argc,char **argv) {
-	if(cons_isHelp(argc,argv) || argc != 2) {
+	if(Console::isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s on|off\n",argv[0]);
 		return 0;
 	}
 
-	cons_setLogEnabled(strcmp(argv[1],"on") == 0);
+	Console::setLogEnabled(strcmp(argv[1],"on") == 0);
 	return 0;
 }

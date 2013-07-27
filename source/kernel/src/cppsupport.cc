@@ -18,12 +18,27 @@
  */
 
 #include <sys/common.h>
+#include <sys/mem/cache.h>
+#include <sys/util.h>
 
 EXTERN_C int __cxa_atexit(void (*f)(void *), void *p, void *d);
+EXTERN_C void __cxa_pure_virtual();
 
 void *__dso_handle;
 
 int __cxa_atexit(void (*)(void *), void *, void *) {
 	/* just do nothing here because the kernel will never be destructed */
 	return 0;
+}
+
+void *operator new(size_t size) {
+	return Cache::alloc(size);
+}
+
+void operator delete(void *ptr) {
+	Cache::free(ptr);
+}
+
+void __cxa_pure_virtual() {
+	util_panic("Pure virtual method called");
 }

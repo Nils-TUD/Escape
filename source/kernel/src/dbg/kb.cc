@@ -21,16 +21,8 @@
 #include <sys/dbg/kb.h>
 #include <esc/keycodes.h>
 
-typedef struct {
-	char def;
-	char shift;
-	char alt;
-} sKeymapEntry;
-
-static bool kb_translate(sKeyEvent *ev,uint8_t scanCode);
-static uint8_t kb_toggleFlag(bool isbreak,uint8_t val,uint8_t flag);
-
-static sKeymapEntry keymap[] = {
+uint Keyboard::flags = 0;
+Keyboard::KeymapEntry Keyboard::keymap[] = {
 	/* --- */					{'\0','\0','\0'},
 	/* VK_ACCENT ( ° ) */		{'^','\xF8','\0'},
 	/* VK_0 */					{'0','=','}'},
@@ -161,20 +153,18 @@ static sKeymapEntry keymap[] = {
 	/* VK_PIPE */				{'<','>','|'},
 };
 
-static uint flags = 0;
-
-bool kb_get(sKeyEvent *ev,uint8_t events,bool wait) {
+bool Keyboard::get(Event *ev,uint8_t events,bool wait) {
 	while(true) {
-		uint8_t keycode = kb_getKeyCode(&flags);
+		uint8_t keycode = getKeyCode(&flags);
 		if(keycode == VK_NOKEY) {
 			if(!wait)
 				break;
-			while((keycode = kb_getKeyCode(&flags)) == VK_NOKEY)
+			while((keycode = getKeyCode(&flags)) == VK_NOKEY)
 				;
 		}
 
 		/* key pressed/released */
-		if(kb_translate(ev,keycode)) {
+		if(translate(ev,keycode)) {
 			if(((flags & KE_BREAK) && (events & KEV_RELEASE)) ||
 				(!(flags & KE_BREAK) && (events & KEV_PRESS)))
 				return true;
@@ -183,8 +173,8 @@ bool kb_get(sKeyEvent *ev,uint8_t events,bool wait) {
 	return false;
 }
 
-static bool kb_translate(sKeyEvent *ev,uint8_t keycode) {
-	sKeymapEntry *km;
+bool Keyboard::translate(Event *ev,uint8_t keycode) {
+	KeymapEntry *km;
 	if(ev)
 		ev->keycode = keycode;
 
@@ -193,15 +183,15 @@ static bool kb_translate(sKeyEvent *ev,uint8_t keycode) {
 	switch(keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:
-			flags = kb_toggleFlag(flags & KE_BREAK,flags,KE_SHIFT);
+			flags = toggleFlag(flags & KE_BREAK,flags,KE_SHIFT);
 			break;
 		case VK_LALT:
 		case VK_RALT:
-			flags = kb_toggleFlag(flags & KE_BREAK,flags,KE_ALT);
+			flags = toggleFlag(flags & KE_BREAK,flags,KE_ALT);
 			break;
 		case VK_LCTRL:
 		case VK_RCTRL:
-			flags = kb_toggleFlag(flags & KE_BREAK,flags,KE_CTRL);
+			flags = toggleFlag(flags & KE_BREAK,flags,KE_CTRL);
 			break;
 	}
 	if(ev)
@@ -219,7 +209,7 @@ static bool kb_translate(sKeyEvent *ev,uint8_t keycode) {
 	return true;
 }
 
-static uint8_t kb_toggleFlag(bool isbreak,uint8_t val,uint8_t flag) {
+uint8_t Keyboard::toggleFlag(bool isbreak,uint8_t val,uint8_t flag) {
 	if(isbreak)
 		return val & ~flag;
 	return val | flag;

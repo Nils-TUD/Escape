@@ -30,7 +30,7 @@
 #include <esc/keycodes.h>
 #include <errno.h>
 
-static sScreenBackup backup;
+static ScreenBackup backup;
 static char buffer[512];
 
 int cons_cmd_file(size_t argc,char **argv) {
@@ -38,9 +38,9 @@ int cons_cmd_file(size_t argc,char **argv) {
 	sFile *file = NULL;
 	ssize_t i,count;
 	int res;
-	sLines lines;
+	Lines lines;
 
-	if(cons_isHelp(argc,argv) || argc != 2) {
+	if(Console::isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s <file>\n",argv[0]);
 		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
 		vid_printf("\tSo, I hope, you know what you're doing ;)\n");
@@ -49,9 +49,6 @@ int cons_cmd_file(size_t argc,char **argv) {
 
 	vid_backup(backup.screen,&backup.row,&backup.col);
 
-	if((res = lines_create(&lines)) < 0)
-		goto error;
-
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
 		goto error;
@@ -59,22 +56,21 @@ int cons_cmd_file(size_t argc,char **argv) {
 		/* build lines from the read data */
 		for(i = 0; i < count; i++) {
 			if(buffer[i] == '\n')
-				lines_newline(&lines);
+				lines.newLine();
 			else
-				lines_append(&lines,buffer[i]);
+				lines.append(buffer[i]);
 		}
 	}
-	lines_end(&lines);
+	lines.endLine();
 	vfs_closeFile(pid,file);
 	file = NULL;
 
 	/* now display lines */
-	cons_viewLines(&lines);
+	Console::viewLines(&lines);
 	res = 0;
 
 error:
 	/* clean up */
-	lines_destroy(&lines);
 	if(file != NULL)
 		vfs_closeFile(pid,file);
 

@@ -50,7 +50,7 @@ int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	Cache::dbg_setAaFEnabled(foo == 0);
 	foo = foo ? 0 : 1;
 #else
-	cons_start(NULL);
+	Console::start(NULL);
 #endif
 	SYSC_RET1(stack,0);
 }

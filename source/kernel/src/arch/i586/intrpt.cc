@@ -219,7 +219,7 @@ static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 }
 
 static void intrpt_exSStep(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
-	cons_start("step show");
+	Console::start("step show");
 }
 
 static void intrpt_exCoProcNA(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
@@ -281,9 +281,9 @@ static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	/* this way, we can debug the system in the startup-phase without affecting timings
 	 * (before viewing the log ;)) */
 	if(stack->intrptNo == IRQ_KEYBOARD && Proc::getByPid(KEYBOARD_PID) == NULL) {
-		sKeyEvent ev;
-		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
-			cons_start(NULL);
+		Keyboard::Event ev;
+		if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+			Console::start(NULL);
 	}
 }
 

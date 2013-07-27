@@ -26,12 +26,12 @@
 #define IOPORT_KB_CTRL				0x64
 #define STATUS_OUTBUF_FULL			(1 << 0)
 
-typedef struct {
+struct ScanCodeEntry {
 	uint8_t def;
 	uint8_t ext;
-} sScanCodeEntry;
+};
 
-static sScanCodeEntry scanCode2KeyCode[] = {
+static ScanCodeEntry scanCode2KeyCode[] = {
 	/* 00 */	{0,				0},
 	/* 01 */	{VK_ESC,		0},
 	/* 02 */	{VK_1,			0},
@@ -162,11 +162,10 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 7F */	{0,				0},
 };
 
-static uint8_t set = 0;
-
-uint8_t kb_getKeyCode(uint *flags) {
+uint8_t Keyboard::getKeyCode(uint *pflags) {
+	static uint8_t set = 0;
 	uint8_t scanCode,keycode;
-	sScanCodeEntry *e;
+	ScanCodeEntry *e;
 	uint8_t status = ports_inByte(IOPORT_KB_CTRL);
 	if(!(status & STATUS_OUTBUF_FULL))
 		return VK_NOKEY;
@@ -179,9 +178,9 @@ uint8_t kb_getKeyCode(uint *flags) {
 	}
 
 	/* break? */
-	*flags &= ~KE_BREAK;
+	*pflags &= ~KE_BREAK;
 	if(scanCode & 0x80) {
-		*flags |= KE_BREAK;
+		*pflags |= KE_BREAK;
 		scanCode &= ~0x80;
 	}
 

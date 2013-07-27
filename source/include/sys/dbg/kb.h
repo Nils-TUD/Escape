@@ -29,25 +29,43 @@
 #define KE_ALT		4
 #define KE_BREAK	8
 
-typedef struct {
-	uint8_t keycode;
-	char character;
-	uint8_t flags;
-} sKeyEvent;
+class Keyboard {
+	Keyboard() = delete;
 
-/**
- * @param flags will be changed to set/unset KE_BREAK
- * @return the keycode, if there is any, or VK_NOKEY
- */
-uint8_t kb_getKeyCode(uint *flags);
+	struct KeymapEntry {
+		char def;
+		char shift;
+		char alt;
+	};
 
-/**
- * Fills the given keyevent. If <wait> is true, it waits until a scancode is present. Otherwise
- * it just checks whether one is present. If no, it gives up.
- *
- * @param ev the event to fill (may be NULL if you just want to wait for a keypress/-release)
- * @param events a mask of events to react on (KEV_*)
- * @param wait whether to wait until a scancode is present
- * @return true if a key could be read. false if not (always true, when <wait> is true)
- */
-bool kb_get(sKeyEvent *ev,uint8_t events,bool wait);
+public:
+	struct Event {
+		uint8_t keycode;
+		char character;
+		uint8_t flags;
+	};
+
+	/**
+	 * @param flags will be changed to set/unset KE_BREAK
+	 * @return the keycode, if there is any, or VK_NOKEY
+	 */
+	static uint8_t getKeyCode(uint *flags);
+
+	/**
+	 * Fills the given keyevent. If <wait> is true, it waits until a scancode is present. Otherwise
+	 * it just checks whether one is present. If no, it gives up.
+	 *
+	 * @param ev the event to fill (may be NULL if you just want to wait for a keypress/-release)
+	 * @param events a mask of events to react on (KEV_*)
+	 * @param wait whether to wait until a scancode is present
+	 * @return true if a key could be read. false if not (always true, when <wait> is true)
+	 */
+	static bool get(Event *ev,uint8_t events,bool wait);
+
+private:
+	static bool translate(Event *ev,uint8_t scanCode);
+	static uint8_t toggleFlag(bool isbreak,uint8_t val,uint8_t flag);
+
+	static uint flags;
+	static KeymapEntry keymap[];
+};

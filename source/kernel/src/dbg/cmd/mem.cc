@@ -30,21 +30,69 @@
 #include <string.h>
 #include <limits.h>
 
-static const char *getLineInfo(void *data,uintptr_t addr);
-static uint8_t *loadLine(void *data,uintptr_t addr);
-static bool lineMatches(void *data,uintptr_t addr,const char *search,size_t searchlen);
-static void displayLine(void *data,uintptr_t addr,uint8_t *bytes);
-static uintptr_t gotoAddr(void *data,const char *gotoAddr);
+class MemNaviBackend : public NaviBackend {
+public:
+	explicit MemNaviBackend(Proc *p,uintptr_t addr)
+		: NaviBackend(addr,ROUND_DN(ULONG_MAX,(ulong)BYTES_PER_LINE)),
+		  proc(p), lastAddr(), page() {
+	}
+	virtual ~MemNaviBackend() {
+		if(page)
+			paging_removeAccess();
+	}
 
-static sScreenBackup backup;
-static Proc *proc;
-static uintptr_t lastAddr = 0;
-static uint8_t *page = NULL;
-static sNaviBackend backend;
+	virtual const char *getInfo(uintptr_t) {
+		static char procName[60];
+		sStringBuffer buf;
+		buf.dynamic = false;
+		buf.len = 0;
+		buf.size = sizeof(procName);
+		buf.str = procName;
+		prf_sprintf(&buf,"Process %d (%s)",proc->getPid(),proc->getCommand());
+		return procName;
+	}
+
+	virtual uint8_t *loadLine(uintptr_t addr) {
+		if(page == NULL || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
+			if(page)
+				paging_removeAccess();
+			if(paging_isPresent(proc->getPageDir(),addr)) {
+				frameno_t frame = paging_getFrameNo(proc->getPageDir(),addr);
+				page = (uint8_t*)paging_getAccess(frame);
+			}
+			else
+				page = NULL;
+			lastAddr = addr;
+		}
+		return page ? page + (addr & (PAGE_SIZE - 1)) : NULL;
+	}
+
+	virtual bool lineMatches(uintptr_t addr,const char *search,size_t searchlen) {
+		return Console::multiLineMatches(this,addr,search,searchlen);
+	}
+
+	virtual void displayLine(uintptr_t addr,uint8_t *bytes) {
+		Console::dumpLine(addr,bytes);
+	}
+
+	virtual uintptr_t gotoAddr(const char *addr) {
+		uintptr_t off = strtoul(addr,NULL,16);
+		return ROUND_DN(off,(uintptr_t)BYTES_PER_LINE);
+	}
+
+private:
+	Proc *proc;
+	uintptr_t lastAddr;
+	uint8_t *page;
+	static uint8_t buffer[BYTES_PER_LINE + 1];
+};
+
+static ScreenBackup backup;
 
 int cons_cmd_mem(size_t argc,char **argv) {
+	Proc *proc;
 	uintptr_t addr = 0;
-	if(cons_isHelp(argc,argv) || argc > 3) {
+	if(Console::isHelp(argc,argv) || argc > 3) {
 		vid_printf("Usage: %s [<pid> [<addr>]]\n",argv[0]);
 		return 0;
 	}
@@ -63,56 +111,9 @@ int cons_cmd_mem(size_t argc,char **argv) {
 
 	vid_backup(backup.screen,&backup.row,&backup.col);
 
-	backend.startPos = addr;
-	backend.maxPos = ROUND_DN(ULONG_MAX,(ulong)BYTES_PER_LINE);
-	backend.loadLine = loadLine;
-	backend.getInfo = getLineInfo;
-	backend.lineMatches = lineMatches;
-	backend.displayLine = displayLine;
-	backend.gotoAddr = gotoAddr;
-	cons_navigation(&backend,NULL);
-	if(page)
-		paging_removeAccess();
+	MemNaviBackend backend(proc,addr);
+	Console::navigation(&backend);
 
 	vid_restore(backup.screen,backup.row,backup.col);
 	return 0;
-}
-
-static const char *getLineInfo(A_UNUSED void *data,A_UNUSED uintptr_t addr) {
-	static char procName[60];
-	sStringBuffer buf;
-	buf.dynamic = false;
-	buf.len = 0;
-	buf.size = sizeof(procName);
-	buf.str = procName;
-	prf_sprintf(&buf,"Process %d (%s)",proc->getPid(),proc->getCommand());
-	return procName;
-}
-
-static uint8_t *loadLine(A_UNUSED void *data,uintptr_t addr) {
-	if(page == NULL || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
-		if(page)
-			paging_removeAccess();
-		if(paging_isPresent(proc->getPageDir(),addr)) {
-			frameno_t frame = paging_getFrameNo(proc->getPageDir(),addr);
-			page = (uint8_t*)paging_getAccess(frame);
-		}
-		else
-			page = NULL;
-		lastAddr = addr;
-	}
-	return page ? page + (addr & (PAGE_SIZE - 1)) : NULL;
-}
-
-static bool lineMatches(void *data,uintptr_t addr,const char *search,size_t searchlen) {
-	return cons_multiLineMatches(&backend,data,addr,search,searchlen);
-}
-
-static void displayLine(A_UNUSED void *data,uintptr_t addr,uint8_t *bytes) {
-	cons_dumpLine(addr,bytes);
-}
-
-static uintptr_t gotoAddr(A_UNUSED void *data,const char *addr) {
-	uintptr_t off = strtoul(addr,NULL,16);
-	return ROUND_DN(off,(uintptr_t)BYTES_PER_LINE);
 }

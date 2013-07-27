@@ -122,7 +122,7 @@ static void vid_putchar(char c) {
 	/* do an explicit newline if necessary */
 	if(col >= VID_COLS) {
 		if(Config::get(Config::LINEBYLINE))
-			kb_get(NULL,KEV_PRESS,true);
+			Keyboard::get(NULL,KEV_PRESS,true);
 		row++;
 		col = 0;
 	}
@@ -132,7 +132,7 @@ static void vid_putchar(char c) {
 
 	if(c == '\n') {
 		if(Config::get(Config::LINEBYLINE))
-			kb_get(NULL,KEV_PRESS,true);
+			Keyboard::get(NULL,KEV_PRESS,true);
 		row++;
 		col = 0;
 	}

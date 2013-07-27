@@ -32,28 +32,26 @@
 
 static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e);
 
-static sScreenBackup backup;
+static ScreenBackup backup;
 
 int cons_cmd_ls(size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
-	sLines lines;
+	Lines lines;
 	sStringBuffer buf;
 	sFile *file;
 	sDirEntry e;
 	int res;
-	if(cons_isHelp(argc,argv) || argc != 2) {
+	if(Console::isHelp(argc,argv) || argc != 2) {
 		vid_printf("Usage: %s <dir>\n",argv[0]);
 		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
 		vid_printf("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
-	/* create lines and redirect prints */
-	if((res = lines_create(&lines)) < 0)
-		return res;
+	/* redirect prints */
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
-		goto errorLines;
+		return res;
 	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
 		buf.dynamic = true;
 		buf.len = 0;
@@ -61,26 +59,21 @@ int cons_cmd_ls(size_t argc,char **argv) {
 		buf.str = NULL;
 		prf_sprintf(&buf,"%d %s",e.nodeNo,e.name);
 		if(buf.str) {
-			lines_appendStr(&lines,buf.str);
+			lines.appendStr(buf.str);
 			Cache::free(buf.str);
 		}
-		lines_newline(&lines);
+		lines.newLine();
 	}
 	vfs_closeFile(pid,file);
 	if(res < 0)
-		goto errorLines;
-	lines_end(&lines);
+		return res;
+	lines.endLine();
 
 	/* view the lines */
 	vid_backup(backup.screen,&backup.row,&backup.col);
-	cons_viewLines(&lines);
-	lines_destroy(&lines);
+	Console::viewLines(&lines);
 	vid_restore(backup.screen,backup.row,backup.col);
 	return 0;
-
-errorLines:
-	lines_destroy(&lines);
-	return res;
 }
 
 static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e) {

@@ -30,12 +30,12 @@
 #define KEYBOARD_RDY		0x01		/* keyboard has a character */
 #define KEYBOARD_IEN		0x02		/* enable keyboard interrupt */
 
-typedef struct {
+struct ScanCodeEntry {
 	uint8_t def;
 	uint8_t ext;
-} sScanCodeEntry;
+};
 
-static sScanCodeEntry scanCode2KeyCode[] = {
+static ScanCodeEntry scanCode2KeyCode[] = {
 	/* 00 */	{0,				0},
 	/* 01 */	{VK_F9,			0},
 	/* 02 */	{0,				0},
@@ -170,12 +170,11 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 83 */	{VK_F7,			0},
 };
 
-static int isExt = 0;
-static int isBreak = 0;
-
-uint8_t kb_getKeyCode(uint *flags) {
+uint8_t Keyboard::getKeyCode(uint *pflags) {
+	static int isExt = 0;
+	static int isBreak = 0;
 	uint8_t scanCode,keycode;
-	sScanCodeEntry *e;
+	ScanCodeEntry *e;
 	uint32_t *kb = (uint32_t*)(KEYBOARD_BASE | DIR_MAPPED_SPACE);
 	if(!(kb[KEYBOARD_CTRL] & KEYBOARD_RDY))
 		return VK_NOKEY;
@@ -196,9 +195,9 @@ uint8_t kb_getKeyCode(uint *flags) {
 	e = scanCode2KeyCode + (scanCode % 0x84);
 	keycode = isExt ? e->ext : e->def;
 	if(isBreak)
-		*flags |= KE_BREAK;
+		*pflags |= KE_BREAK;
 	else
-		*flags &= ~KE_BREAK;
+		*pflags &= ~KE_BREAK;
 	isExt = 0;
 	isBreak = 0;
 	return keycode;

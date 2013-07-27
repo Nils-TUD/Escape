@@ -23,78 +23,78 @@
 #include <sys/video.h>
 #include <errno.h>
 
-int lines_create(sLines *l) {
-	l->lineCount = 0;
-	l->linePos = 0;
-	l->lineSize = 16;
-	l->lines = (char**)Cache::alloc(l->lineSize * sizeof(char*));
-	if(!l->lines)
-		return -ENOMEM;
-	l->lines[l->lineCount] = (char*)Cache::alloc(VID_COLS + 1);
-	if(!l->lines[l->lineCount]) {
-		lines_destroy(l);
-		return -ENOMEM;
-	}
-	return 0;
+bool Lines::init() {
+	if(lineSize == (size_t)-1)
+		return false;
+	if(lineSize == 0)
+		return newLine();
+	return true;
 }
 
-void lines_appendStr(sLines *l,const char *str) {
-	if(l->lineSize == (size_t)-1)
+void Lines::appendStr(const char *str) {
+	if(!init())
 		return;
 	while(*str)
-		lines_append(l,*str++);
+		append(*str++);
 }
 
-void lines_append(sLines *l,char c) {
-	if(l->lineSize == (size_t)-1)
+void Lines::append(char c) {
+	if(!init())
 		return;
-	if(l->linePos < VID_COLS)
-		l->lines[l->lineCount][l->linePos++] = c;
+	if(linePos < VID_COLS)
+		lines[lineCount][linePos++] = c;
 }
 
-void lines_newline(sLines *l) {
+bool Lines::newLine() {
 	size_t i;
-	if(l->lineSize == (size_t)-1)
-		return;
-	/* fill up with spaces */
-	for(i = l->linePos; i < VID_COLS; i++)
-		l->lines[l->lineCount][i] = ' ';
-	l->lines[l->lineCount][i] = '\0';
-	/* to next line */
-	l->linePos = 0;
-	l->lineCount++;
+	if(lineSize == (size_t)-1)
+		return false;
+	if(lineSize) {
+		/* fill up with spaces */
+		for(i = linePos; i < VID_COLS; i++)
+			lines[lineCount][i] = ' ';
+		lines[lineCount][i] = '\0';
+		/* to next line */
+		linePos = 0;
+		lineCount++;
+	}
 	/* allocate more lines if necessary */
-	if(l->lineCount >= l->lineSize) {
-		char **lines;
-		l->lineSize *= 2;
-		lines = (char**)Cache::realloc(l->lines,l->lineSize * sizeof(char*));
-		if(!lines) {
-			l->lineSize = (size_t)-1;
-			return;
+	if(lineCount >= lineSize) {
+		char **newlines;
+		lineSize = lineSize == 0 ? 16 : lineSize * 2;
+		newlines = (char**)Cache::realloc(lines,lineSize * sizeof(char*));
+		if(!newlines) {
+			lineSize = (size_t)-1;
+			return false;
 		}
-		l->lines = lines;
+		lines = newlines;
 	}
 	/* allocate new line */
-	l->lines[l->lineCount] = (char*)Cache::alloc(VID_COLS + 1);
-	if(!l->lines[l->lineCount]) {
-		l->lineCount--;
-		l->lineSize = (size_t)-1;
+	lines[lineCount] = (char*)Cache::alloc(VID_COLS + 1);
+	if(!lines[lineCount]) {
+		if(lineCount)
+			lineCount--;
+		lineSize = (size_t)-1;
+		return false;
 	}
+	return true;
 }
 
-void lines_end(sLines *l) {
+void Lines::endLine() {
+	if(!init())
+		return;
 	size_t i;
-	for(i = l->linePos; i < VID_COLS; i++)
-		l->lines[l->lineCount][i] = ' ';
-	l->lines[l->lineCount][i] = '\0';
-	l->lineCount++;
+	for(i = linePos; i < VID_COLS; i++)
+		lines[lineCount][i] = ' ';
+	lines[lineCount][i] = '\0';
+	lineCount++;
 }
 
-void lines_destroy(sLines *l) {
-	if(l->lines) {
+Lines::~Lines() {
+	if(lines) {
 		size_t i;
-		for(i = 0; i < l->lineCount; i++)
-			Cache::free(l->lines[i]);
-		Cache::free(l->lines);
+		for(i = 0; i < lineCount; i++)
+			Cache::free(lines[i]);
+		Cache::free(lines);
 	}
 }

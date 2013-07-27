@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
+#include <string.h>
 
 #define CONS_EXIT			-1234
 /* has to be a power of 2 */
@@ -36,82 +37,134 @@
 #define SEARCH_BACKWARDS	2
 
 /* to make a screen-backup */
-typedef struct {
+struct ScreenBackup {
 	char screen[VID_COLS * VID_ROWS * 2];
 	ushort row;
 	ushort col;
-} sScreenBackup;
+};
 
-typedef uint8_t *(*fLoadLine)(void *data,uintptr_t addr);
-typedef const char *(*fGetInfo)(void *data,uintptr_t addr);
-typedef bool (*fLineMatches)(void *data,uintptr_t addr,const char *search,size_t searchlen);
-typedef void (*fDisplayLine)(void *data,uintptr_t addr,uint8_t *bytes);
-typedef uintptr_t (*fGotoAddr)(void *data,const char *gotoAddr);
+class NaviBackend {
+public:
+	explicit NaviBackend(uintptr_t startPos,uintptr_t maxPos)
+		: startPos(startPos), maxPos(maxPos) {
+	}
+	virtual ~NaviBackend() {
+	}
 
-typedef struct {
-	fLoadLine loadLine;
-	fGetInfo getInfo;
-	fLineMatches lineMatches;
-	fDisplayLine displayLine;
-	fGotoAddr gotoAddr;
+	uintptr_t getStartPos() const {
+		return startPos;
+	}
+	uintptr_t getMaxPos() const {
+		return maxPos;
+	}
+
+	virtual uint8_t *loadLine(uintptr_t addr) = 0;
+	virtual const char *getInfo(uintptr_t addr) = 0;
+	virtual bool lineMatches(uintptr_t addr,const char *search,size_t searchlen) = 0;
+	virtual void displayLine(uintptr_t addr,uint8_t *bytes) = 0;
+	virtual uintptr_t gotoAddr(const char *gotoAddr) = 0;
+
+private:
 	uintptr_t startPos;
 	uintptr_t maxPos;
-} sNaviBackend;
+};
 
-/**
- * Starts the debugging-console
- *
- * @param initialcmd the initial command to execute (NULL = none)
- */
-void cons_start(const char *initialcmd);
+class Console {
+	Console() = delete;
 
-/**
- * @param argc the number of args
- * @param argv the args
- * @return true if the given arguments contain a help-request
- */
-bool cons_isHelp(int argc,char **argv);
+	static const size_t HISTORY_SIZE	= 32;
+	static const size_t MAX_ARG_COUNT	= 5;
+	static const size_t MAX_ARG_LEN		= 32;
+	static const size_t MAX_SEARCH_LEN	= 16;
 
-/**
- * Enables/disables writing to log
- *
- * @param enabled the new value
- */
-void cons_setLogEnabled(bool enabled);
+public:
+	typedef int (*command_func)(size_t argc,char **argv);
 
-/**
- * Prints a dump of one line from <bytes> whose origin is <addr>.
- *
- * @param addr the address
- * @param bytes the bytes to print. has to contain at least BYTES_PER_LINE bytes!
- */
-void cons_dumpLine(uintptr_t addr,uint8_t *bytes);
+	struct Command {
+		char name[MAX_ARG_LEN];
+		command_func exec;
+	};
 
-/**
- * Runs a navigation loop, i.e. reads from keyboard and lets the user navigate via certain key-
- * strokes. It calls backend->loadLine() to get the content.
- *
- * @param backend the backend to use
- * @param data will be passed to all backend-functions
- */
-void cons_navigation(const sNaviBackend *backend,void *data);
+	/**
+	 * Starts the debugging-console
+	 *
+	 * @param initialcmd the initial command to execute (NULL = none)
+	 */
+	static void start(const char *initialcmd);
 
-/**
- * Displays the given lines and provides a navigation through them
- *
- * @param l the lines
- */
-void cons_viewLines(const sLines *l);
+	/**
+	 * @param argc the number of args
+	 * @param argv the args
+	 * @return true if the given arguments contain a help-request
+	 */
+	static bool isHelp(int argc,char **argv) {
+		return argc > 1 && (strcmp(argv[1],"-h") == 0 || strcmp(argv[1],"-?") == 0 ||
+				strcmp(argv[1],"--help") == 0);
+	}
 
-/**
- * Uses <backend> to search for matches that may span multiple lines.
- *
- * @param backend the backend
- * @param data will be passed to all backend-functions
- * @param addr the current address
- * @param search the term to search for
- * @param searchlen the length of the search term
- * @return true if the line @ <addr> matches
- */
-bool cons_multiLineMatches(const sNaviBackend *backend,void *data,uintptr_t addr,
-                           const char *search,size_t searchlen);
+	/**
+	 * Enables/disables writing to log
+	 *
+	 * @param enabled the new value
+	 */
+	static void setLogEnabled(bool enabled) {
+		if(enabled)
+			vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+		else
+			vid_setTargets(TARGET_SCREEN);
+	}
+
+	/**
+	 * Prints a dump of one line from <bytes> whose origin is <addr>.
+	 *
+	 * @param addr the address
+	 * @param bytes the bytes to print. has to contain at least BYTES_PER_LINE bytes!
+	 */
+	static void dumpLine(uintptr_t addr,uint8_t *bytes);
+
+	/**
+	 * Runs a navigation loop, i.e. reads from keyboard and lets the user navigate via certain key-
+	 * strokes. It calls backend->loadLine() to get the content.
+	 *
+	 * @param backend the backend to use
+	 */
+	static void navigation(NaviBackend *backend);
+
+	/**
+	 * Displays the given lines and provides a navigation through them
+	 *
+	 * @param l the lines
+	 */
+	static void viewLines(const Lines *l);
+
+	/**
+	 * Uses <backend> to search for matches that may span multiple lines.
+	 *
+	 * @param backend the backend
+	 * @param addr the current address
+	 * @param search the term to search for
+	 * @param searchlen the length of the search term
+	 * @return true if the line @ <addr> matches
+	 */
+	static bool multiLineMatches(NaviBackend *backend,uintptr_t addr,const char *search,size_t searchlen);
+
+private:
+	static uintptr_t getMaxAddr(uintptr_t end);
+	static uintptr_t incrAddr(uintptr_t end,uintptr_t addr,size_t amount);
+	static uintptr_t decrAddr(uintptr_t addr,size_t amount);
+	static void display(NaviBackend *backend,const char *searchInfo,const char *search,
+	                    int searchMode,uintptr_t *addr);
+	static uint8_t charToInt(char c);
+	static void convSearch(const char *src,char *dst,size_t len);
+	static char **parseLine(const char *line,size_t *argc);
+	static char *readLine(void);
+	static Command *getCommand(const char *name);
+
+	static size_t histWritePos;
+	static size_t histReadPos;
+	static size_t histSize;
+	static char *history[HISTORY_SIZE];
+	static char emptyLine[VID_COLS];
+	static ScreenBackup backup;
+	static Command commands[];
+};

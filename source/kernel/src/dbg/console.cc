@@ -36,40 +36,13 @@
 #include <ctype.h>
 #include <assert.h>
 
-#define HISTORY_SIZE	32
-#define MAX_ARG_COUNT	5
-#define MAX_ARG_LEN		32
-#define MAX_SEARCH_LEN	16
-
-typedef int (*fCommand)(size_t argc,char **argv);
-typedef struct {
-	char name[MAX_ARG_LEN];
-	fCommand exec;
-} sCommand;
-
-static uintptr_t cons_getMaxAddr(uintptr_t end);
-static uintptr_t cons_incrAddr(uintptr_t end,uintptr_t addr,size_t amount);
-static uintptr_t cons_decrAddr(uintptr_t addr,size_t amount);
-static uint8_t *cons_loadLine(void *data,uintptr_t addr);
-static const char *cons_getLineInfo(void *data,uintptr_t addr);
-static bool cons_lineMatches(void *data,uintptr_t addr,const char *search,size_t searchlen);
-static void cons_displayLine(void *data,uintptr_t addr,uint8_t *bytes);
-static uintptr_t cons_gotoAddr(void *data,const char *gotoAddr);
-static void cons_display(const sNaviBackend *backend,void *data,
-                         const char *searchInfo,const char *search,int searchMode,uintptr_t *addr);
-static uint8_t cons_charToInt(char c);
-static void cons_convSearch(const char *src,char *dst,size_t len);
-static char **cons_parseLine(const char *line,size_t *argc);
-static char *cons_readLine(void);
-static sCommand *cons_getCommand(const char *name);
-
-static size_t histWritePos = 0;
-static size_t histReadPos = 0;
-static size_t histSize = 0;
-static char *history[HISTORY_SIZE];
-static char emptyLine[VID_COLS];
-static sScreenBackup backup;
-static sCommand commands[] = {
+size_t Console::histWritePos = 0;
+size_t Console::histReadPos = 0;
+size_t Console::histSize = 0;
+char *Console::history[HISTORY_SIZE];
+char Console::emptyLine[VID_COLS];
+ScreenBackup Console::backup;
+Console::Command Console::commands[] = {
 	{"help",NULL},
 	{"exit",NULL},
 	{"file",cons_cmd_file},
@@ -82,10 +55,58 @@ static sCommand commands[] = {
 	{"step",cons_cmd_step},
 };
 
-void cons_start(const char *initialcmd) {
+class LinesNaviBackend : public NaviBackend {
+public:
+	explicit LinesNaviBackend(const Lines *l)
+		: NaviBackend(0,l->getLineCount() * BYTES_PER_LINE), lines(l) {
+	}
+
+	virtual uint8_t *loadLine(uintptr_t addr) {
+		if(addr / BYTES_PER_LINE < lines->getLineCount())
+			return (uint8_t*)lines->getLine(addr / BYTES_PER_LINE);
+		return NULL;
+	}
+
+	virtual const char *getInfo(uintptr_t addr) {
+		static char tmp[64];
+		sStringBuffer buf;
+		size_t start = addr / BYTES_PER_LINE;
+		size_t end = MIN(lines->getLineCount(),start + VID_ROWS - 1);
+
+		buf.len = 0;
+		buf.dynamic = false;
+		buf.size = sizeof(tmp);
+		buf.str = tmp;
+		prf_sprintf(&buf,"Lines %zu..%zu of %zu",start + 1,end,lines->getLineCount());
+		if(!lines->isValid())
+			prf_sprintf(&buf," (incomplete)");
+		return buf.str;
+	}
+
+	virtual bool lineMatches(uintptr_t addr,const char *search,A_UNUSED size_t searchlen) {
+		uint8_t *bytes = loadLine(addr);
+		return bytes != NULL && *search && strcasestr((char*)bytes,search) != NULL;
+	}
+
+	virtual void displayLine(uintptr_t,uint8_t *bytes) {
+		if(bytes)
+			vid_printf("%s\r",bytes);
+		else
+			vid_printf("%*s\n",VID_COLS - 1,"");
+	}
+
+	virtual uintptr_t gotoAddr(const char *addr) {
+		return (strtoul(addr,NULL,10) - 1) * BYTES_PER_LINE;
+	}
+
+private:
+	const Lines *lines;
+};
+
+void Console::start(const char *initialcmd) {
 	size_t i,argc;
 	int res;
-	sCommand *cmd;
+	Command *cmd;
 	char **argv;
 
 	/* first, pause all other CPUs to ensure that we're alone */
@@ -106,11 +127,11 @@ void cons_start(const char *initialcmd) {
 		vid_printf("# ");
 
 		if(initialcmd != NULL) {
-			argv = cons_parseLine(initialcmd,&argc);
+			argv = parseLine(initialcmd,&argc);
 			initialcmd = NULL;
 		}
 		else {
-			argv = cons_parseLine(cons_readLine(),&argc);
+			argv = parseLine(readLine(),&argc);
 			vid_printf("\n");
 		}
 
@@ -120,7 +141,7 @@ void cons_start(const char *initialcmd) {
 				continue;
 			size_t last = (histReadPos - 1) % histSize;
 			if(history[last]) {
-				argv = cons_parseLine(history[last],&argc);
+				argv = parseLine(history[last],&argc);
 				if(argc == 0)
 					continue;
 			}
@@ -154,7 +175,7 @@ void cons_start(const char *initialcmd) {
 			vid_printf("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
 		}
 		else {
-			cmd = cons_getCommand(argv[0]);
+			cmd = getCommand(argv[0]);
 			if(cmd) {
 				res = cmd->exec(argc,argv);
 				if(res == CONS_EXIT)
@@ -174,19 +195,7 @@ void cons_start(const char *initialcmd) {
 	SMP::resumeOthers();
 }
 
-bool cons_isHelp(int argc,char **argv) {
-	return argc > 1 && (strcmp(argv[1],"-h") == 0 || strcmp(argv[1],"-?") == 0 ||
-			strcmp(argv[1],"--help") == 0);
-}
-
-void cons_setLogEnabled(bool enabled) {
-	if(enabled)
-		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
-	else
-		vid_setTargets(TARGET_SCREEN);
-}
-
-void cons_dumpLine(uintptr_t addr,uint8_t *bytes) {
+void Console::dumpLine(uintptr_t addr,uint8_t *bytes) {
 	size_t i;
 	vid_printf("%p: ",addr);
 	if(bytes) {
@@ -210,43 +219,43 @@ void cons_dumpLine(uintptr_t addr,uint8_t *bytes) {
 	vid_printf("\n");
 }
 
-void cons_navigation(const sNaviBackend *backend,void *data) {
+void Console::navigation(NaviBackend *backend) {
 	/* the maximum has to be BYTES_PER_LINE because cons_display assumes it atm */
 	char search[BYTES_PER_LINE + 1] = "";
 	char searchClone[BYTES_PER_LINE + 1] = "";
 	int searchMode = SEARCH_NONE;
-	uintptr_t addr = backend->startPos;
+	uintptr_t addr = backend->getStartPos();
 	size_t searchPos = 0;
-	sKeyEvent ev;
+	Keyboard::Event ev;
 	bool run = true;
-	assert((backend->maxPos & (BYTES_PER_LINE - 1)) == 0);
+	assert((backend->getMaxPos() & (BYTES_PER_LINE - 1)) == 0);
 	while(run) {
 		assert((addr & (BYTES_PER_LINE - 1)) == 0);
-		cons_convSearch(search,searchClone,searchPos);
-		cons_display(backend,data,search,searchClone,searchMode,&addr);
+		convSearch(search,searchClone,searchPos);
+		display(backend,search,searchClone,searchMode,&addr);
 		searchMode = SEARCH_NONE;
-		kb_get(&ev,KEV_PRESS,true);
+		Keyboard::get(&ev,KEV_PRESS,true);
 		switch(ev.keycode) {
 			case VK_UP:
-				addr = cons_decrAddr(addr,BYTES_PER_LINE);
+				addr = decrAddr(addr,BYTES_PER_LINE);
 				break;
 			case VK_DOWN:
-				addr = cons_incrAddr(backend->maxPos,addr,BYTES_PER_LINE);
+				addr = incrAddr(backend->getMaxPos(),addr,BYTES_PER_LINE);
 				break;
 			case VK_PGUP:
-				addr = cons_decrAddr(addr,BYTES_PER_LINE * SCROLL_LINES);
+				addr = decrAddr(addr,BYTES_PER_LINE * SCROLL_LINES);
 				break;
 			case VK_PGDOWN:
-				addr = cons_incrAddr(backend->maxPos,addr,BYTES_PER_LINE * SCROLL_LINES);
+				addr = incrAddr(backend->getMaxPos(),addr,BYTES_PER_LINE * SCROLL_LINES);
 				break;
 			case VK_HOME:
-				addr = backend->startPos;
+				addr = backend->getStartPos();
 				break;
 			case VK_END:
-				if(backend->maxPos < BYTES_PER_LINE * SCROLL_LINES)
+				if(backend->getMaxPos() < BYTES_PER_LINE * SCROLL_LINES)
 					addr = 0;
 				else
-					addr = backend->maxPos - BYTES_PER_LINE * SCROLL_LINES;
+					addr = backend->getMaxPos() - BYTES_PER_LINE * SCROLL_LINES;
 				break;
 			case VK_BACKSP:
 				if(searchPos > 0)
@@ -254,7 +263,7 @@ void cons_navigation(const sNaviBackend *backend,void *data) {
 				break;
 			case VK_ENTER:
 				if(searchPos > 0) {
-					addr = backend->gotoAddr(data,search);
+					addr = backend->gotoAddr(search);
 					searchPos = 0;
 					search[0] = '\0';
 				}
@@ -283,31 +292,23 @@ void cons_navigation(const sNaviBackend *backend,void *data) {
 	}
 }
 
-void cons_viewLines(const sLines *l) {
-	sNaviBackend backend;
-	backend.startPos = 0;
-	backend.maxPos = l->lineCount * BYTES_PER_LINE;
-	backend.loadLine = cons_loadLine;
-	backend.getInfo = cons_getLineInfo;
-	backend.lineMatches = cons_lineMatches;
-	backend.displayLine = cons_displayLine;
-	backend.gotoAddr = cons_gotoAddr;
-	cons_navigation(&backend,(void*)l);
+void Console::viewLines(const Lines *l) {
+	LinesNaviBackend backend(l);
+	navigation(&backend);
 }
 
-bool cons_multiLineMatches(const sNaviBackend *backend,void *data,uintptr_t addr,
-                           const char *search,size_t searchlen) {
-	uint8_t *bytes = backend->loadLine(data,addr);
+bool Console::multiLineMatches(NaviBackend *backend,uintptr_t addr,const char *search,size_t searchlen) {
+	uint8_t *bytes = backend->loadLine(addr);
 	if(bytes && searchlen > 0) {
 		size_t i;
 		for(i = 0; i < BYTES_PER_LINE; i++) {
 			size_t len = MIN(searchlen,BYTES_PER_LINE - i);
 			if(strncasecmp(search,(char*)bytes + i,len) == 0) {
 				if(len < searchlen) {
-					uint8_t *nextBytes = backend->loadLine(data,addr + BYTES_PER_LINE);
+					uint8_t *nextBytes = backend->loadLine(addr + BYTES_PER_LINE);
 					if(nextBytes && strncasecmp(search + len,(char*)nextBytes,searchlen - len) == 0)
 						return true;
-					bytes = backend->loadLine(data,addr);
+					bytes = backend->loadLine(addr);
 				}
 				else
 					return true;
@@ -317,66 +318,26 @@ bool cons_multiLineMatches(const sNaviBackend *backend,void *data,uintptr_t addr
 	return false;
 }
 
-static uintptr_t cons_getMaxAddr(uintptr_t end) {
+uintptr_t Console::getMaxAddr(uintptr_t end) {
 	uintptr_t max = end - BYTES_PER_LINE * SCROLL_LINES;
 	return max > end ? 0 : max;
 }
 
-static uintptr_t cons_incrAddr(uintptr_t end,uintptr_t addr,size_t amount) {
-	uintptr_t max = cons_getMaxAddr(end);
+uintptr_t Console::incrAddr(uintptr_t end,uintptr_t addr,size_t amount) {
+	uintptr_t max = getMaxAddr(end);
 	if(addr + amount < addr || addr + amount > max)
 		return max;
 	return addr + amount;
 }
 
-static uintptr_t cons_decrAddr(uintptr_t addr,size_t amount) {
+uintptr_t Console::decrAddr(uintptr_t addr,size_t amount) {
 	if(addr - amount > addr)
 		return 0;
 	return addr - amount;
 }
 
-static uint8_t *cons_loadLine(void *data,uintptr_t addr) {
-	const sLines *l = (const sLines*)data;
-	if(addr / BYTES_PER_LINE < l->lineCount)
-		return (uint8_t*)l->lines[addr / BYTES_PER_LINE];
-	return NULL;
-}
-
-static const char *cons_getLineInfo(void *data,uintptr_t addr) {
-	static char tmp[64];
-	sStringBuffer buf;
-	const sLines *l = (const sLines*)data;
-	size_t start = addr / BYTES_PER_LINE;
-	size_t end = MIN(l->lineCount,start + VID_ROWS - 1);
-
-	buf.len = 0;
-	buf.dynamic = false;
-	buf.size = sizeof(tmp);
-	buf.str = tmp;
-	prf_sprintf(&buf,"Lines %zu..%zu of %zu",start + 1,end,l->lineCount);
-	if(l->lineSize == (size_t)-1)
-		prf_sprintf(&buf," (incomplete)");
-	return buf.str;
-}
-
-static bool cons_lineMatches(void *data,uintptr_t addr,const char *search,A_UNUSED size_t searchlen) {
-	uint8_t *bytes = cons_loadLine(data,addr);
-	return bytes != NULL && *search && strcasestr((char*)bytes,search) != NULL;
-}
-
-static void cons_displayLine(A_UNUSED void *data,A_UNUSED uintptr_t addr,uint8_t *bytes) {
-	if(bytes)
-		vid_printf("%s\r",bytes);
-	else
-		vid_printf("%*s\n",VID_COLS - 1,"");
-}
-
-static uintptr_t cons_gotoAddr(A_UNUSED void *data,const char *gotoAddr) {
-	return (strtoul(gotoAddr,NULL,10) - 1) * BYTES_PER_LINE;
-}
-
-static void cons_display(const sNaviBackend *backend,void *data,
-                         const char *searchInfo,const char *search,int searchMode,uintptr_t *addr) {
+void Console::display(NaviBackend *backend,const char *searchInfo,const char *search,
+                      int searchMode,uintptr_t *addr) {
 	static char states[] = {'|','/','-','\\','|','/','-'};
 	const char *info;
 	uint y;
@@ -385,15 +346,16 @@ static void cons_display(const sNaviBackend *backend,void *data,
 	uintptr_t startAddr = *addr;
 	if(searchMode != SEARCH_NONE) {
 		long count = 0;
-		sKeyEvent ev;
+		Keyboard::Event ev;
 		int state = 0;
 		size_t searchlen = strlen(search);
 		found = false;
-		for(; !found && ((searchMode == SEARCH_FORWARD && startAddr < cons_getMaxAddr(backend->maxPos)) ||
+		for(; !found && ((searchMode == SEARCH_FORWARD &&
+				startAddr < getMaxAddr(backend->getMaxPos())) ||
 			  (searchMode == SEARCH_BACKWARDS && startAddr >= BYTES_PER_LINE)); count++) {
 			if(count % 100 == 0) {
 				vid_goto(VID_ROWS - 1,0);
-				if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_S) {
+				if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_S) {
 					*addr = startAddr;
 					break;
 				}
@@ -401,7 +363,7 @@ static void cons_display(const sNaviBackend *backend,void *data,
 			}
 
 			startAddr += searchMode == SEARCH_FORWARD ? BYTES_PER_LINE : -BYTES_PER_LINE;
-			if(backend->lineMatches(data,startAddr,search,searchlen)) {
+			if(backend->lineMatches(startAddr,search,searchlen)) {
 				found = true;
 				break;
 			}
@@ -410,20 +372,20 @@ static void cons_display(const sNaviBackend *backend,void *data,
 			startAddr = *addr;
 	}
 
-	if(startAddr > cons_getMaxAddr(backend->maxPos))
-		startAddr = ROUND_DN(cons_getMaxAddr(backend->maxPos),(uintptr_t)BYTES_PER_LINE);
+	if(startAddr > getMaxAddr(backend->getMaxPos()))
+		startAddr = ROUND_DN(getMaxAddr(backend->getMaxPos()),(uintptr_t)BYTES_PER_LINE);
 	if(found)
 		*addr = startAddr;
 
-	info = backend->getInfo(data,startAddr);
+	info = backend->getInfo(startAddr);
 
 	vid_goto(0,0);
 	for(y = 0; y < VID_ROWS - 1; y++) {
-		uint8_t *bytes = backend->loadLine(data,startAddr);
-		bool matches = backend->lineMatches(data,startAddr,search,strlen(search));
+		uint8_t *bytes = backend->loadLine(startAddr);
+		bool matches = backend->lineMatches(startAddr,search,strlen(search));
 		if(matches)
 			vid_printf("\033[co;0;2]");
-		backend->displayLine(data,startAddr,bytes);
+		backend->displayLine(startAddr,bytes);
 		if(matches)
 			vid_printf("\033[co]");
 		startAddr += BYTES_PER_LINE;
@@ -435,7 +397,7 @@ static void cons_display(const sNaviBackend *backend,void *data,
 		vid_printf("\033[co;0;7]- Search/Goto: \033[co;4;7]%s\033[co;0;7]%|s\033[co]",searchInfo,info);
 }
 
-static uint8_t cons_charToInt(char c) {
+uint8_t Console::charToInt(char c) {
 	if(c >= 'a' && c <= 'f')
 		return 10 + c - 'a';
 	if(c >= 'A' && c <= 'F')
@@ -445,11 +407,11 @@ static uint8_t cons_charToInt(char c) {
 	return 0;
 }
 
-static void cons_convSearch(const char *src,char *dst,size_t len) {
+void Console::convSearch(const char *src,char *dst,size_t len) {
 	size_t i,j;
 	for(i = 0, j = 0; i < len; ++i) {
 		if(src[i] == '\\' && len > i + 2) {
-			dst[j++] = (cons_charToInt(src[i + 1]) << 4) | cons_charToInt(src[i + 2]);
+			dst[j++] = (charToInt(src[i + 1]) << 4) | charToInt(src[i + 2]);
 			i += 2;
 		}
 		else if(src[i] != '\\')
@@ -458,7 +420,7 @@ static void cons_convSearch(const char *src,char *dst,size_t len) {
 	dst[j] = '\0';
 }
 
-static char **cons_parseLine(const char *line,size_t *argc) {
+char **Console::parseLine(const char *line,size_t *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
 	size_t i = 0,j = 0;
@@ -487,12 +449,12 @@ static char **cons_parseLine(const char *line,size_t *argc) {
 	return args;
 }
 
-static char *cons_readLine(void) {
+char *Console::readLine(void) {
 	static char line[VID_COLS + 1];
 	size_t i = 0;
-	sKeyEvent ev;
+	Keyboard::Event ev;
 	while(true) {
-		kb_get(&ev,KEV_PRESS,true);
+		Keyboard::get(&ev,KEV_PRESS,true);
 		if(i >= sizeof(line) - 1 || ev.keycode == VK_ENTER)
 			break;
 
@@ -541,7 +503,7 @@ static char *cons_readLine(void) {
 	return line;
 }
 
-static sCommand *cons_getCommand(const char *name) {
+Console::Command *Console::getCommand(const char *name) {
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(commands); i++) {
 		if(strcmp(commands[i].name,name) == 0)

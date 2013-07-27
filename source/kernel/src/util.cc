@@ -103,8 +103,8 @@ void util_panic(const char *fmt, ...) {
 
 	vid_printf("\nPress any key to start debugger");
 	while(1) {
-		kb_get(NULL,KEV_PRESS,true);
-		cons_start(NULL);
+		Keyboard::get(NULL,KEV_PRESS,true);
+		Console::start(NULL);
 	}
 }
 

@@ -70,7 +70,7 @@ static const sBootTask tasks[] = {
 	{"Initializing copy-on-write...",CopyOnWrite::init},
 	{"Initializing interrupts...",intrpt_init},
 	{"Initializing PIC...",pic_init},
-	{"Initializing IDT...",idt_init},
+	{"Initializing IDT...",IDT::init},
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},
 };

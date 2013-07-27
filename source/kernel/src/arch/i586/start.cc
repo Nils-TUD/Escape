@@ -90,7 +90,7 @@ void apstart(void) {
 	PageDir::activate(p->getPageDir()->getPhysAddr());
 	GDT::init_ap();
 	/* setup IDT for this cpu and enable its local APIC */
-	idt_init();
+	IDT::init();
 	LAPIC::enable();
 	/* init FPU and detect our CPU */
 	FPU::preinit();

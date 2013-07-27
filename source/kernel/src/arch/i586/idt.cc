@@ -20,41 +20,6 @@
 #include <sys/common.h>
 #include <sys/arch/i586/idt.h>
 
-#define IDT_COUNT				256
-/* the privilege level */
-#define IDT_DPL_KERNEL			0
-#define IDT_DPL_USER			3
-/* reserved by intel */
-#define IDT_INTEL_RES1			2
-#define IDT_INTEL_RES2			15
-/* the code-selector */
-#define IDT_CODE_SEL			0x8
-
-/* represents an IDT-entry */
-typedef struct {
-	/* The address[0..15] of the ISR */
-	uint16_t offsetLow;
-	/* Code selector that the ISR will use */
-	uint16_t selector;
-	/* these bits are fix: 0.1110.0000.0000b */
-	uint16_t fix		: 13,
-	/* the privilege level, 00 = ring0, 01 = ring1, 10 = ring2, 11 = ring3 */
-	dpl			: 2,
-	/* If Present is not set to 1, an exception will occur */
-	present		: 1;
-	/* The address[16..31] of the ISR */
-	uint16_t	offsetHigh;
-} A_PACKED sIDTEntry;
-
-/* represents an IDT-pointer */
-typedef struct {
-	uint16_t size;
-	uint32_t address;
-} A_PACKED sIDTPtr;
-
-/* isr prototype */
-typedef void (*fISR)(void);
-
 /**
  * Our ISRs
  */
@@ -116,96 +81,94 @@ EXTERN_C void isr54(void);
 /* the handler for a other interrupts */
 EXTERN_C void isrNull(void);
 
-static void idt_set(size_t number,fISR handler,uint8_t dpl);
-
 /* the interrupt descriptor table */
-static sIDTEntry idt[IDT_COUNT];
+IDT::Entry IDT::idt[IDT_COUNT];
 
-void idt_init(void) {
+void IDT::init(void) {
 	size_t i;
 
 	/* setup the idt-pointer */
-	sIDTPtr idtPtr;
+	Pointer idtPtr;
 	idtPtr.address = (uintptr_t)idt;
 	idtPtr.size = sizeof(idt) - 1;
 
 	/* setup the idt */
 
 	/* exceptions */
-	idt_set(0,isr0,IDT_DPL_KERNEL);
-	idt_set(1,isr1,IDT_DPL_KERNEL);
-	idt_set(2,isr2,IDT_DPL_KERNEL);
-	idt_set(3,isr3,IDT_DPL_KERNEL);
-	idt_set(4,isr4,IDT_DPL_KERNEL);
-	idt_set(5,isr5,IDT_DPL_KERNEL);
-	idt_set(6,isr6,IDT_DPL_KERNEL);
-	idt_set(7,isr7,IDT_DPL_KERNEL);
-	idt_set(8,isr8,IDT_DPL_KERNEL);
-	idt_set(9,isr9,IDT_DPL_KERNEL);
-	idt_set(10,isr10,IDT_DPL_KERNEL);
-	idt_set(11,isr11,IDT_DPL_KERNEL);
-	idt_set(12,isr12,IDT_DPL_KERNEL);
-	idt_set(13,isr13,IDT_DPL_KERNEL);
-	idt_set(14,isr14,IDT_DPL_KERNEL);
-	idt_set(15,isr15,IDT_DPL_KERNEL);
-	idt_set(16,isr16,IDT_DPL_KERNEL);
-	idt_set(17,isr17,IDT_DPL_KERNEL);
-	idt_set(18,isr18,IDT_DPL_KERNEL);
-	idt_set(19,isr19,IDT_DPL_KERNEL);
-	idt_set(20,isr20,IDT_DPL_KERNEL);
-	idt_set(21,isr21,IDT_DPL_KERNEL);
-	idt_set(22,isr22,IDT_DPL_KERNEL);
-	idt_set(23,isr23,IDT_DPL_KERNEL);
-	idt_set(24,isr24,IDT_DPL_KERNEL);
-	idt_set(25,isr25,IDT_DPL_KERNEL);
-	idt_set(26,isr26,IDT_DPL_KERNEL);
-	idt_set(27,isr27,IDT_DPL_KERNEL);
-	idt_set(28,isr28,IDT_DPL_KERNEL);
-	idt_set(29,isr29,IDT_DPL_KERNEL);
-	idt_set(30,isr30,IDT_DPL_KERNEL);
-	idt_set(31,isr31,IDT_DPL_KERNEL);
-	idt_set(32,isr32,IDT_DPL_KERNEL);
+	set(0,isr0,DPL_KERNEL);
+	set(1,isr1,DPL_KERNEL);
+	set(2,isr2,DPL_KERNEL);
+	set(3,isr3,DPL_KERNEL);
+	set(4,isr4,DPL_KERNEL);
+	set(5,isr5,DPL_KERNEL);
+	set(6,isr6,DPL_KERNEL);
+	set(7,isr7,DPL_KERNEL);
+	set(8,isr8,DPL_KERNEL);
+	set(9,isr9,DPL_KERNEL);
+	set(10,isr10,DPL_KERNEL);
+	set(11,isr11,DPL_KERNEL);
+	set(12,isr12,DPL_KERNEL);
+	set(13,isr13,DPL_KERNEL);
+	set(14,isr14,DPL_KERNEL);
+	set(15,isr15,DPL_KERNEL);
+	set(16,isr16,DPL_KERNEL);
+	set(17,isr17,DPL_KERNEL);
+	set(18,isr18,DPL_KERNEL);
+	set(19,isr19,DPL_KERNEL);
+	set(20,isr20,DPL_KERNEL);
+	set(21,isr21,DPL_KERNEL);
+	set(22,isr22,DPL_KERNEL);
+	set(23,isr23,DPL_KERNEL);
+	set(24,isr24,DPL_KERNEL);
+	set(25,isr25,DPL_KERNEL);
+	set(26,isr26,DPL_KERNEL);
+	set(27,isr27,DPL_KERNEL);
+	set(28,isr28,DPL_KERNEL);
+	set(29,isr29,DPL_KERNEL);
+	set(30,isr30,DPL_KERNEL);
+	set(31,isr31,DPL_KERNEL);
+	set(32,isr32,DPL_KERNEL);
 
 	/* hardware-interrupts */
-	idt_set(33,isr33,IDT_DPL_KERNEL);
-	idt_set(34,isr34,IDT_DPL_KERNEL);
-	idt_set(35,isr35,IDT_DPL_KERNEL);
-	idt_set(36,isr36,IDT_DPL_KERNEL);
-	idt_set(37,isr37,IDT_DPL_KERNEL);
-	idt_set(38,isr38,IDT_DPL_KERNEL);
-	idt_set(39,isr39,IDT_DPL_KERNEL);
-	idt_set(40,isr40,IDT_DPL_KERNEL);
-	idt_set(41,isr41,IDT_DPL_KERNEL);
-	idt_set(42,isr42,IDT_DPL_KERNEL);
-	idt_set(43,isr43,IDT_DPL_KERNEL);
-	idt_set(44,isr44,IDT_DPL_KERNEL);
-	idt_set(45,isr45,IDT_DPL_KERNEL);
-	idt_set(46,isr46,IDT_DPL_KERNEL);
-	idt_set(47,isr47,IDT_DPL_KERNEL);
+	set(33,isr33,DPL_KERNEL);
+	set(34,isr34,DPL_KERNEL);
+	set(35,isr35,DPL_KERNEL);
+	set(36,isr36,DPL_KERNEL);
+	set(37,isr37,DPL_KERNEL);
+	set(38,isr38,DPL_KERNEL);
+	set(39,isr39,DPL_KERNEL);
+	set(40,isr40,DPL_KERNEL);
+	set(41,isr41,DPL_KERNEL);
+	set(42,isr42,DPL_KERNEL);
+	set(43,isr43,DPL_KERNEL);
+	set(44,isr44,DPL_KERNEL);
+	set(45,isr45,DPL_KERNEL);
+	set(46,isr46,DPL_KERNEL);
+	set(47,isr47,DPL_KERNEL);
 
 	/* syscall */
-	idt_set(48,isr48,IDT_DPL_USER);
+	set(48,isr48,DPL_USER);
 	/* IPIs */
-	idt_set(49,isr49,IDT_DPL_KERNEL);
-	idt_set(50,isr50,IDT_DPL_KERNEL);
-	idt_set(51,isr51,IDT_DPL_KERNEL);
-	idt_set(52,isr52,IDT_DPL_KERNEL);
-	idt_set(53,isr53,IDT_DPL_KERNEL);
-	idt_set(54,isr54,IDT_DPL_KERNEL);
+	set(49,isr49,DPL_KERNEL);
+	set(50,isr50,DPL_KERNEL);
+	set(51,isr51,DPL_KERNEL);
+	set(52,isr52,DPL_KERNEL);
+	set(53,isr53,DPL_KERNEL);
+	set(54,isr54,DPL_KERNEL);
 
 	/* all other interrupts */
 	for(i = 55; i < 256; i++)
-		idt_set(i,isrNull,IDT_DPL_KERNEL);
+		set(i,isrNull,DPL_KERNEL);
 
 	/* now we can use our idt */
-	__asm__ volatile ("lidt %0" : : "m" (idtPtr));
+	load(&idtPtr);
 }
 
-static void idt_set(size_t number,fISR handler,uint8_t dpl) {
+void IDT::set(size_t number,isr_func handler,uint8_t dpl) {
 	idt[number].fix = 0xE00;
 	idt[number].dpl = dpl;
-	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
-	idt[number].selector = IDT_CODE_SEL;
+	idt[number].present = number != INTEL_RES1 && number != INTEL_RES2;
+	idt[number].selector = CODE_SEL;
 	idt[number].offsetHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
 	idt[number].offsetLow = (uintptr_t)handler & 0xFFFF;
 }

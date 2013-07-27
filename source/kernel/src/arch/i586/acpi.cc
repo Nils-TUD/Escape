@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/acpi.h>
-#include <sys/arch/i586/apic.h>
+#include <sys/arch/i586/lapic.h>
 #include <sys/task/smp.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/sllnodes.h>
@@ -121,7 +121,7 @@ void ACPI::parse() {
 	}
 
 	/* walk through the table and search for APIC entries */
-	cpuid_t id = apic_getId();
+	cpuid_t id = ::LAPIC::getId();
 	sSLNode *n;
 	for(n = sll_begin(&acpiTables); n != NULL; n = n->next) {
 		RSDT *tbl = (RSDT*)n->data;

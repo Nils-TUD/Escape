@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/apic.h>
+#include <sys/arch/i586/lapic.h>
 
 class SMP : public SMPBase {
 	friend class SMPBase;
@@ -49,7 +49,7 @@ inline cpuid_t SMP::getPhysId(cpuid_t logId) {
 }
 
 inline void SMPBase::sendIPI(cpuid_t id,uint8_t vector) {
-	apic_sendIPITo(SMP::getPhysId(id),vector);
+	LAPIC::sendIPITo(SMP::getPhysId(id),vector);
 }
 
 inline cpuid_t SMPBase::getCurId(void) {

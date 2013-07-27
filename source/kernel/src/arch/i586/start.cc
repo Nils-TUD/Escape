@@ -21,7 +21,7 @@
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/idt.h>
 #include <sys/arch/i586/fpu.h>
-#include <sys/arch/i586/apic.h>
+#include <sys/arch/i586/lapic.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/elf.h>
@@ -91,7 +91,7 @@ void apstart(void) {
 	gdt_init_ap();
 	/* setup IDT for this cpu and enable its local APIC */
 	idt_init();
-	apic_enable();
+	LAPIC::enable();
 	/* init FPU and detect our CPU */
 	fpu_preinit();
 	CPU::detect();

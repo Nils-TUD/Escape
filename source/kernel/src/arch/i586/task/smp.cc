@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/apic.h>
+#include <sys/arch/i586/lapic.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/ioapic.h>
 #include <sys/arch/i586/acpi.h>
@@ -56,18 +56,18 @@ extern volatile uint halting;
 extern volatile uint flushed;
 
 bool SMPBase::init_arch() {
-	apic_init();
-	if(apic_isAvailable()) {
+	LAPIC::init();
+	if(LAPIC::isAvailable()) {
 		bool enabled = false;
 		/* try ACPI first to find the LAPICs */
 		if(ACPI::find()) {
-			apic_enable();
+			LAPIC::enable();
 			ACPI::parse();
 			enabled = true;
 		}
 		/* if that's not available, use MPConf */
 		else if(mpconf_find()) {
-			apic_enable();
+			LAPIC::enable();
 			mpconf_parse();
 			enabled = true;
 		}
@@ -80,7 +80,7 @@ bool SMPBase::init_arch() {
 			}
 			/* from now on, we'll use the logical-id as far as possible; but remember the physical
 			 * one for IPIs, e.g. */
-			cpuid_t id = apic_getId();
+			cpuid_t id = LAPIC::getId();
 			SMP::log2Phys = (cpuid_t*)Cache::alloc(getCPUCount() * sizeof(cpuid_t));
 			SMP::log2Phys[0] = id;
 			setId(id,0);
@@ -151,7 +151,7 @@ void SMPBase::ensureTLBFlushed() {
 void SMP::apIsRunning() {
 	cpuid_t phys,log;
 	spinlock_aquire(&smpLock);
-	phys = apic_getId();
+	phys = LAPIC::getId();
 	log = gdt_getCPUId();
 	log2Phys[log] = phys;
 	setId(phys,log);
@@ -171,12 +171,12 @@ void SMPBase::start() {
 		/* give the trampoline the start-address */
 		*(uint32_t*)((TRAMPOLINE_ADDR | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
 
-		apic_sendInitIPI();
+		LAPIC::sendInitIPI();
 		Timer::wait(10000);
 
-		apic_sendStartupIPI(TRAMPOLINE_ADDR);
+		LAPIC::sendStartupIPI(TRAMPOLINE_ADDR);
 		Timer::wait(200);
-		apic_sendStartupIPI(TRAMPOLINE_ADDR);
+		LAPIC::sendStartupIPI(TRAMPOLINE_ADDR);
 		Timer::wait(200);
 
 		/* wait until all APs are running */

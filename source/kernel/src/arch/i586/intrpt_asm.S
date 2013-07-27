@@ -21,7 +21,7 @@
 .global waitlock
 .global halting
 .global flushed
-.extern apic_eoi
+.extern lapic_eoi
 .extern intrpt_handler
 
 waiting:
@@ -112,7 +112,7 @@ isr51:
 	# flush TLB
 	mov		%cr3,%eax
 	mov		%eax,%cr3
-	call	apic_eoi
+	call	lapic_eoi
 	popa
 	iret
 
@@ -130,7 +130,7 @@ isr52:
 	jz		2f
 	pause
 	jmp		1b
-2:	call	apic_eoi
+2:	call	lapic_eoi
 	popa
 	iret
 
@@ -157,7 +157,7 @@ isr54:
 	lock
 	add		$1,(flushed)
 	# continue
-	call	apic_eoi
+	call	lapic_eoi
 	popa
 	iret
 

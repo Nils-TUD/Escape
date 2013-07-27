@@ -21,7 +21,7 @@
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/task/ioports.h>
 #include <sys/arch/i586/pic.h>
-#include <sys/arch/i586/apic.h>
+#include <sys/arch/i586/lapic.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/cache.h>
@@ -293,7 +293,7 @@ static void intrpt_syscall(Thread *t,sIntrptStackFrame *stack) {
 }
 
 static void intrpt_ipiWork(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
-	apic_eoi();
+	LAPIC::eoi();
 	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
 	/* this may happen if we're about to switch to a non-idle-thread and have idled previously,
 	 * while SMP::wakeupCPU() was called. */

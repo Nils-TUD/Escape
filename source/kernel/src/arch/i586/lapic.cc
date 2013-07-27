@@ -17,18 +17,35 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <sys/common.h>
+#include <sys/arch/i586/lapic.h>
+#include <sys/mem/paging.h>
+#include <sys/cpu.h>
+#include <assert.h>
 
-void apic_init(void);
+bool LAPIC::enabled;
+uintptr_t LAPIC::apicAddr;
 
-cpuid_t apic_getId(void);
+void LAPIC::init(void) {
+	enabled = false;
 
-bool apic_isAvailable(void);
-void apic_enable(void);
+	if(CPU::hasLocalAPIC()) {
+		/* TODO every APIC may have a different address */
+		uint64_t apicBase = CPU::getMSR(MSR_APIC_BASE);
+		if(apicBase & APIC_BASE_EN) {
+			apicAddr = PageDir::makeAccessible(apicBase & 0xFFFFF000,1);
+			enabled = true;
+		}
+	}
+}
 
-void apic_sendIPITo(cpuid_t id,uint8_t vector);
-void apic_sendInitIPI(void);
-void apic_sendStartupIPI(uintptr_t startAddr);
-void apic_eoi(void);
+void LAPIC::writeIPI(uint32_t high,uint32_t low) {
+	while((read(REG_ICR_LOW) & ICR_DELSTAT_PENDING))
+		__asm__ ("pause");
+	write(REG_ICR_HIGH,high);
+	write(REG_ICR_LOW,low);
+}
+
+void lapic_eoi() {
+	LAPIC::eoi();
+}

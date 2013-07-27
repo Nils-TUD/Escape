@@ -47,10 +47,10 @@ void PageDirBase::init() {
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* create context for the first process */
-	PageDir::firstCon.addrSpace = aspace_alloc();
+	PageDir::firstCon.addrSpace = AddressSpace::alloc();
 	/* set value for rV: b1 = 2, b2 = 4, b3 = 6, b4 = 0, page-size = 2^13 */
 	PageDir::firstCon.rv = 0x24600DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) |
-			(PageDir::firstCon.addrSpace->no << 3);
+			(PageDir::firstCon.addrSpace->getNo() << 3);
 	/* enable paging */
 	PageDir::setrV(PageDir::firstCon.rv);
 }
@@ -67,10 +67,10 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* init context */
-	pdir->addrSpace = aspace_alloc();
+	pdir->addrSpace = AddressSpace::alloc();
 	pdir->ptables = 0;
 	pdir->rv = cur->rv & 0xFFFFFF0000000000;
-	pdir->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (pdir->addrSpace->no << 3);
+	pdir->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (pdir->addrSpace->getNo() << 3);
 	return 0;
 }
 
@@ -79,6 +79,8 @@ void PageDirBase::destroy() {
 	assert(pdir != Proc::getCurPageDir());
 	/* free page-dir */
 	PhysMem::freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
+	/* free address-space */
+	AddressSpace::free(pdir->addrSpace);
 	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
 	 * get the problem that the old process had a page that the new process with this
 	 * address-space-number has not. if the entry of the old one is still in the tc, the new
@@ -153,9 +155,9 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 	ulong srcPageNo = PAGE_NO(virtSrc);
 	ulong dstPageNo = PAGE_NO(virtDst);
 	uint64_t pte,*spt = NULL,*dpt = NULL;
-	uint64_t dstAddrSpace = dst->addrSpace->no << 3;
+	uint64_t dstAddrSpace = dst->addrSpace->getNo() << 3;
 	uint64_t dstKey = virtDst | dstAddrSpace;
-	uint64_t srcKey = virtSrc | (src->addrSpace->no << 3);
+	uint64_t srcKey = virtSrc | (src->addrSpace->getNo() << 3);
 	assert(this != dst && (this == cur || dst == cur));
 	while(count > 0) {
 		/* get src-page-table */
@@ -243,7 +245,7 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 		pteFlags |= PTE_WRITABLE;
 	if((flags & PG_PRESENT) && (flags & PG_EXECUTABLE))
 		pteFlags |= PTE_EXECUTABLE;
-	pteAttr = pteFlags | (pdir->addrSpace->no << 3);
+	pteAttr = pteFlags | (pdir->addrSpace->getNo() << 3);
 	key = virt | pteAttr;
 	pteAttr |= PTE_EXISTS;
 
@@ -375,7 +377,7 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,size_t *createdPts) const {
 			*ptpAddr = DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
 			memclear((void*)*ptpAddr,PAGE_SIZE);
 			/* put rV.n in that page-table */
-			*ptpAddr |= addrSpace->no << 3;
+			*ptpAddr |= addrSpace->getNo() << 3;
 			ptp = *ptpAddr;
 			if(createdPts)
 				(*createdPts)++;
@@ -460,7 +462,7 @@ size_t PageDir::remEmptyPts(uintptr_t virt) {
 
 void PageDir::tcRemPT(uintptr_t virt) {
 	size_t i;
-	uint64_t key = ROUND_PAGE_DN(virt) | (addrSpace->no << 3);
+	uint64_t key = ROUND_PAGE_DN(virt) | (addrSpace->getNo() << 3);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		updateTC(key);
 		key += PAGE_SIZE;

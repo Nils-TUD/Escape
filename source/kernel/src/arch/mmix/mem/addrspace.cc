@@ -34,15 +34,12 @@
  * we spread the processes over the address-spaces and hope for the best :)
  */
 
-/* rV.n has 10 bits */
-#define ADDR_SPACE_COUNT		1024
+AddressSpace AddressSpace::addrSpaces[ADDR_SPACE_COUNT];
+AddressSpace *AddressSpace::freeList = NULL;
+AddressSpace *AddressSpace::usedList = NULL;
+AddressSpace *AddressSpace::lastUsed = NULL;
 
-static sAddressSpace addrSpaces[ADDR_SPACE_COUNT];
-static sAddressSpace *freeList = NULL;
-static sAddressSpace *usedList = NULL;
-static sAddressSpace *lastUsed = NULL;
-
-void aspace_init(void) {
+void AddressSpace::init() {
 	size_t i;
 	freeList = addrSpaces;
 	freeList->next = NULL;
@@ -53,8 +50,8 @@ void aspace_init(void) {
 	}
 }
 
-sAddressSpace *aspace_alloc(void) {
-	sAddressSpace *as = NULL;
+AddressSpace *AddressSpace::alloc() {
+	AddressSpace *as = NULL;
 	if(freeList != NULL) {
 		/* remove the first of the freelist */
 		as = freeList;
@@ -78,10 +75,10 @@ sAddressSpace *aspace_alloc(void) {
 	return as;
 }
 
-void aspace_free(sAddressSpace *aspace) {
+void AddressSpace::free(AddressSpace *aspace) {
 	if(--aspace->refCount == 0) {
 		/* remove from usedlist */
-		sAddressSpace *p = NULL,*as = usedList;
+		AddressSpace *p = NULL,*as = usedList;
 		while(as != NULL) {
 			if(as == aspace) {
 				if(as == lastUsed)

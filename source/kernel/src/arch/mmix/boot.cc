@@ -45,7 +45,7 @@
 
 static const sBootTask tasks[] = {
 	{"Initializing physical memory-management...",PhysMem::init},
-	{"Initializing address spaces...",aspace_init},
+	{"Initializing address spaces...",AddressSpace::init},
 	{"Initializing paging...",PageDir::init},
 	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",DynArray::init},

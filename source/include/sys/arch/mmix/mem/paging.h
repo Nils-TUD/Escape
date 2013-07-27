@@ -196,7 +196,7 @@ private:
 
 	/* TODO remove that */
 public:
-	sAddressSpace *addrSpace;
+	AddressSpace *addrSpace;
 	uint64_t rv;
 	ulong ptables;
 private:

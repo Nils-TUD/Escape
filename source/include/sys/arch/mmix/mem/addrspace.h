@@ -21,12 +21,28 @@
 
 #include <esc/common.h>
 
-typedef struct sAddressSpace {
+class AddressSpace {
+	/* rV.n has 10 bits */
+	static const size_t ADDR_SPACE_COUNT		= 1024;
+
+public:
+	static void init();
+	static AddressSpace *alloc();
+	static void free(AddressSpace *aspace);
+
+	ulong getNo() const {
+		return no;
+	}
+	ulong getRefCount() const {
+		return refCount;
+	}
+
+private:
 	ulong no;
 	ulong refCount;
-	struct sAddressSpace *next;
-} sAddressSpace;
-
-void aspace_init(void);
-sAddressSpace *aspace_alloc(void);
-void aspace_free(sAddressSpace *aspace);
+	struct AddressSpace *next;
+	static AddressSpace addrSpaces[ADDR_SPACE_COUNT];
+	static AddressSpace *freeList;
+	static AddressSpace *usedList;
+	static AddressSpace *lastUsed;
+};

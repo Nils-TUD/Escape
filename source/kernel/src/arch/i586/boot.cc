@@ -265,7 +265,7 @@ int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
 void boot_print(void) {
 	size_t x;
 	sMemMap *mmap;
-	vid_printf("MultiBoot-Structure:\n---------------------\nflags=0x%x\n",mb->flags);
+	vid_printf("flags=0x%x\n",mb->flags);
 	if(CHECK_FLAG(mb->flags,0)) {
 		vid_printf("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
 	}
@@ -321,6 +321,4 @@ void boot_print(void) {
 					(uint)drive->heads,(uint)drive->sectors);
 		}
 	}
-
-	vid_printf("---------------------\n");
 }

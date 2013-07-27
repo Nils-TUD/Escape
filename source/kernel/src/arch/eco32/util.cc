@@ -53,6 +53,7 @@ void util_printUserStateOf(const Thread *t) {
 			if(i % 4 == 3)
 				vid_printf("\n\t");
 		}
+		vid_printf("\n");
 	}
 }
 

@@ -60,9 +60,9 @@ bool SMPBase::init_arch() {
 	if(apic_isAvailable()) {
 		bool enabled = false;
 		/* try ACPI first to find the LAPICs */
-		if(acpi_find()) {
+		if(ACPI::find()) {
 			apic_enable();
-			acpi_parse();
+			ACPI::parse();
 			enabled = true;
 		}
 		/* if that's not available, use MPConf */

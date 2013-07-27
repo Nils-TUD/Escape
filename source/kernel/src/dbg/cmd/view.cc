@@ -95,7 +95,7 @@ static View views[] = {
 #ifdef __i386__
 	{"gdt",(view_func)gdt_print},
 	{"ioapic",(view_func)ioapic_print},
-	{"acpi",(view_func)acpi_print},
+	{"acpi",(view_func)ACPI::print},
 #endif
 	{"timer",(view_func)Timer::print},
 	{"boot",(view_func)boot_print},

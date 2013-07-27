@@ -33,83 +33,26 @@
 #define BIOS_AREA			0xE0000
 #define SIG(A,B,C,D)		(A + (B << 8) + (C << 16) + (D << 24))
 
-/* root system descriptor pointer */
-typedef struct {
-	uint32_t signature[2];
-	uint8_t checksum;
-	char oemId[6];
-	uint8_t revision;
-	uint32_t rsdtAddr;
-	/* since 2.0 */
-	uint32_t length;
-	uint64_t xsdtAddr;
-	uint8_t xchecksum;
-} A_PACKED sRSDP;
+ACPI::RSDP *ACPI::rsdp;
+sSLList ACPI::acpiTables;
 
-/* root system descriptor table */
-typedef struct {
-    uint32_t signature;
-	uint32_t length;
-	uint8_t revision;
-	uint8_t checksum;
-	char oemId[6];
-	char oemTableId[8];
-	uint32_t oemRevision;
-	char creatorId[4];
-	uint32_t creatorRevision;
-} A_PACKED sRSDT;
-
-/* APIC entry in RSDT */
-typedef struct {
-	uint8_t type;
-	uint8_t length;
-} A_PACKED sAPIC;
-
-/* types of APIC-entries */
-enum {
-	LAPIC = 0, IOAPIC = 1, INTR = 2,
-};
-
-/* special APIC-entry: Local APIC */
-typedef struct {
-	sAPIC head;
-	uint8_t cpu;
-	uint8_t id;
-	uint32_t flags;
-} A_PACKED sLAPIC;
-
-/* special RSDT: for APIC */
-typedef struct {
-	sRSDT head;
-    uint32_t apic_addr;
-    uint32_t flags;
-    sAPIC apics[];
-} A_PACKED sRSDTAPIC;
-
-static bool acpi_sigValid(const sRSDP *rsdp);
-static bool acpi_checksumValid(const void *r,size_t len);
-static sRSDP *acpi_findIn(uintptr_t start,size_t len);
-
-static sRSDP *rsdp;
-static sSLList acpiTables;
-
-bool acpi_find(void) {
+bool ACPI::find() {
 	/* first kb of extended bios data area (EBDA) */
 	uint16_t ebda = *(uint16_t*)(KERNEL_AREA | BDA_EBDA);
-	if((rsdp = acpi_findIn(KERNEL_AREA | ebda * 16,1024)))
+	if((rsdp = findIn(KERNEL_AREA | ebda * 16,1024)))
 		return true;
 	/* main bios area below 1 mb */
-	if((rsdp = acpi_findIn(KERNEL_AREA | BIOS_AREA,0x20000)))
+	if((rsdp = findIn(KERNEL_AREA | BIOS_AREA,0x20000)))
 		return true;
 	return false;
 }
 
-void acpi_parse(void) {
-	sRSDT *rsdt = (sRSDT*)rsdp->rsdtAddr;
+void ACPI::parse() {
+	RSDT *rsdt = (RSDT*)rsdp->rsdtAddr;
 	size_t size = sizeof(uint32_t);
 	/* check for extended system descriptor table */
-	if(rsdp->revision > 1 && acpi_checksumValid(rsdp,rsdp->length)) {
-		rsdt = (sRSDT*)rsdp->xsdtAddr;
+	if(rsdp->revision > 1 && checksumValid(rsdp,rsdp->length)) {
+		rsdt = (RSDT*)rsdp->xsdtAddr;
 		size = sizeof(uint64_t);
 	}
 
@@ -117,11 +60,11 @@ void acpi_parse(void) {
 
 	/* first map the RSDT. we assume that it covers only one page */
 	size_t off = (uintptr_t)rsdt & (PAGE_SIZE - 1);
-	rsdt = (sRSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,1) + off);
-	size_t i,j,count = (rsdt->length - sizeof(sRSDT)) / size;
+	rsdt = (RSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,1) + off);
+	size_t i,j,count = (rsdt->length - sizeof(RSDT)) / size;
 	if(off + rsdt->length > PAGE_SIZE) {
 		size_t pages = BYTES_2_PAGES(off + rsdt->length);
-		rsdt = (sRSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,pages) + off);
+		rsdt = (RSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,pages) + off);
 	}
 
 	/* now walk through the tables behind the RSDT */
@@ -129,18 +72,18 @@ void acpi_parse(void) {
 	uintptr_t destEnd = curDest + MAX_ACPI_PAGES * PAGE_SIZE;
 	uintptr_t start = (uintptr_t)(rsdt + 1);
 	for(i = 0; i < count; i++) {
-		sRSDT *tbl;
+		RSDT *tbl;
 		if(size == sizeof(uint32_t))
-			tbl = (sRSDT*)*(uint32_t*)(start + i * size);
+			tbl = (RSDT*)*(uint32_t*)(start + i * size);
 		else
-			tbl = (sRSDT*)*(uint64_t*)(start + i * size);
+			tbl = (RSDT*)*(uint64_t*)(start + i * size);
 
 		/* map it to a temporary place; try one page first and extend it if necessary */
 		size_t tmpPages = 1;
 		size_t tbloff = (uintptr_t)tbl & (PAGE_SIZE - 1);
 		frameno_t frm = (uintptr_t)tbl / PAGE_SIZE;
 		uintptr_t tmp = PageDir::mapToTemp(&frm,1);
-		sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
+		RSDT *tmptbl = (RSDT*)(tmp + tbloff);
 		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
 			size_t tbllen = tmptbl->length;
 			PageDir::unmapFromTemp(1);
@@ -155,7 +98,7 @@ void acpi_parse(void) {
 			for(j = 0; j < tmpPages; ++j)
 				framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
 			tmp  = PageDir::mapToTemp(framenos,tmpPages);
-			tmptbl = (sRSDT*)(tmp + tbloff);
+			tmptbl = (RSDT*)(tmp + tbloff);
 		}
 
 		/* do we have to extend the mapping in the ACPI-area? */
@@ -166,7 +109,7 @@ void acpi_parse(void) {
 			continue;
 		}
 
-		if(acpi_checksumValid(tmptbl,tmptbl->length)) {
+		if(checksumValid(tmptbl,tmptbl->length)) {
 			/* copy the table */
 			memcpy((void*)curDest,tmptbl,tmptbl->length);
 			sll_append(&acpiTables,(void*)curDest);
@@ -181,28 +124,28 @@ void acpi_parse(void) {
 	cpuid_t id = apic_getId();
 	sSLNode *n;
 	for(n = sll_begin(&acpiTables); n != NULL; n = n->next) {
-		sRSDT *tbl = (sRSDT*)n->data;
-		if(acpi_checksumValid(tbl,tbl->length) && tbl->signature == SIG('A','P','I','C')) {
-			sRSDTAPIC *rapic = (sRSDTAPIC*)tbl;
-			sAPIC *apic = rapic->apics;
-			while(apic < (sAPIC*)((uintptr_t)tbl + tbl->length)) {
+		RSDT *tbl = (RSDT*)n->data;
+		if(checksumValid(tbl,tbl->length) && tbl->signature == SIG('A','P','I','C')) {
+			RSDTAPIC *rapic = (RSDTAPIC*)tbl;
+			APIC *apic = rapic->apics;
+			while(apic < (APIC*)((uintptr_t)tbl + tbl->length)) {
 				/* we're only interested in the local APICs */
-				if(apic->type == LAPIC) {
-					sLAPIC *lapic = (sLAPIC*)apic;
+				if(apic->type == TYPE_LAPIC) {
+					LAPIC *lapic = (LAPIC*)apic;
 					if(lapic->flags & 0x1)
 						SMP::addCPU(lapic->id == id,lapic->id,false);
 				}
-				apic = (sAPIC*)((uintptr_t)apic + apic->length);
+				apic = (APIC*)((uintptr_t)apic + apic->length);
 			}
 		}
 	}
 }
 
-static bool acpi_sigValid(const sRSDP *r) {
+bool ACPI::sigValid(const RSDP *r) {
 	return r->signature[0] == SIG('R','S','D',' ') && r->signature[1] == SIG('P','T','R',' ');
 }
 
-static bool acpi_checksumValid(const void *r,size_t len) {
+bool ACPI::checksumValid(const void *r,size_t len) {
 	uint8_t sum = 0;
 	uint8_t *p;
 	for(p = (uint8_t*)r; p < (uint8_t*)r + len; p++)
@@ -210,22 +153,22 @@ static bool acpi_checksumValid(const void *r,size_t len) {
 	return sum == 0;
 }
 
-static sRSDP *acpi_findIn(uintptr_t start,size_t len) {
+ACPI::RSDP *ACPI::findIn(uintptr_t start,size_t len) {
 	uintptr_t addr;
 	for(addr = start; addr < start + len; addr += 16) {
-		sRSDP *r = (sRSDP*)addr;
-		if(acpi_sigValid(r) && acpi_checksumValid(r,20))
+		RSDP *r = (RSDP*)addr;
+		if(sigValid(r) && checksumValid(r,20))
 			return r;
 	}
 	return NULL;
 }
 
-void acpi_print(void) {
+void ACPI::print() {
 	sSLNode *n;
 	size_t i = 0;
 	vid_printf("ACPI tables:\n");
 	for(n = sll_begin(&acpiTables); n != NULL; n = n->next, i++) {
-		sRSDT *tbl = (sRSDT*)n->data;
+		RSDT *tbl = (RSDT*)n->data;
 		vid_printf("\tTable%zu:\n",i);
 		vid_printf("\t\tsignature: %.4s\n",(char*)&tbl->signature);
 		vid_printf("\t\tlength: %u\n",tbl->length);

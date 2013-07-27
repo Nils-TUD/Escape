@@ -58,7 +58,7 @@
 static const sBootTask tasks[] = {
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
-	{"Initializing GDT...",gdt_init_bsp},
+	{"Initializing GDT...",GDT::init_bsp},
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing FPU...",FPU::init},
 	{"Initializing VFS...",vfs_init},
@@ -118,7 +118,7 @@ void boot_arch_start(sBootInfo *info) {
 
 	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
 	PageDir::init();
-	gdt_init();
+	GDT::init();
 	Thread::setRunning(NULL);
 
 	/* init basic modules */

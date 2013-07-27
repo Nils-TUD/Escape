@@ -188,13 +188,13 @@ void UEnv::startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals
 
 void UEnv::setupRegs(sIntrptStackFrame *frame,uintptr_t entryPoint) {
 	/* user-mode segments */
-	frame->cs = SEGSEL_GDTI_UCODE | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->ds = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->es = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->fs = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->cs = GDT::SEGSEL_GDTI_UCODE | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
+	frame->ds = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
+	frame->es = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
+	frame->fs = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
 	/* gs is used for TLS */
-	frame->gs = SEGSEL_GDTI_UTLS | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->uss = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->gs = GDT::SEGSEL_GDTI_UTLS | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
+	frame->uss = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
 	frame->eip = entryPoint;
 	/* general purpose register */
 	frame->eax = 0;

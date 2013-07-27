@@ -17,14 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global tss_load
 .global gdt_flush
-.global gdt_get
-
-# void tss_load(size_t gdtOffset);
-tss_load:
-	ltr		4(%esp)					# load tss
-	ret
 
 # void gdt_flush(tGDTTable *gdt);
 gdt_flush:
@@ -40,9 +33,3 @@ gdt_flush:
 	ljmp	$0x08,$2f				# reload code-segment via far-jump
 2:
 	ret								# we're done
-
-# void gdt_get(sGDTTable *gdt);
-gdt_get:
-	mov		4(%esp),%eax
-	sgdt	(%eax)
-	ret

@@ -33,10 +33,6 @@
 /* whether to store the running thread in the gdt (for bochs) */
 #define GDT_STORE_RUN_THREAD	1
 
-/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data, tls
- * and one entry for our TSS */
-#define GDT_ENTRY_COUNT 		8
-
 /* == for the access-field == */
 
 /* the GDT entry types */
@@ -61,180 +57,42 @@
 #define GDT_DPL_USER			3
 
 /* the offset of the io-bitmap */
-#define IO_MAP_OFFSET			offsetof(sTSS,ioMap)
+#define IO_MAP_OFFSET			offsetof(TSS,ioMap)
 /* an invalid offset for the io-bitmap => not loaded yet */
-#define IO_MAP_OFFSET_INVALID	sizeof(sTSS) + 16
+#define IO_MAP_OFFSET_INVALID	sizeof(TSS) + 16
 
-/* the GDT table */
-typedef struct {
-	uint16_t size;		/* the size of the table -1 (size=0 is not allowed) */
-	uint32_t offset;
-} A_PACKED sGDTTable;
+GDT::Desc GDT::bspgdt[GDT_ENTRY_COUNT];
+GDT::Table *GDT::allgdts;
+size_t GDT::gdtCount = 1;
+GDT::TSS GDT::bsptss A_ALIGNED(PAGE_SIZE);
+GDT::TSS **GDT::alltss;
+size_t GDT::tssCount = 1;
+const uint8_t **GDT::ioMaps;
+size_t GDT::cpuCount;
 
-/* a GDT descriptor */
-typedef struct {
-	/* size[0..15] */
-	uint16_t sizeLow;
-
-	/* address[0..15] */
-	uint16_t addrLow;
-
-	/* address[16..23] */
-	uint8_t addrMiddle;
-
-	/*
-	 *     7      6   5     4     3    2      1        0
-	 * |-------|----|----|------|----|---|---------|--------|
-	 * |present|privilege|unused|exec|dir|readWrite|accessed|
-	 * ------------------------------------------------------
-	 *
-	 * present:		This must be 1 for all valid selectors.
-	 * privilege:	Contains the ring level, 0 = highest (kernel), 3 = lowest (user applications).
-	 * unused:		always 1
-	 * exec:		If 1 code in this segment can be executed
-	 * dir:			Direction bit for data selectors: Tells the direction. 0 the segment grows up.
-	 * 				1 the segment grows down, ie. the offset has to be greater than the base.
-	 * 				Conforming bit for code selectors: Privilege-related.
-	 * readWrite:	Readable bit for code selectors: Whether read access for this segment
-	 * 				is allowed. Write access is never allowed for code segments.
-	 * 				Writable bit for data selectors: Whether write access for this segment
-	 * 				is allowed. Read access is always allowed for data segments.
-	 * accessed:	Just set to 0. The CPU sets this to 1 when the segment is accessed.
-	 */
-	uint8_t access;
-
-	/*
-	 *       7       6   5   4  3  2  1  0
-	 * |-----------|----|--|---|--|--|--|--|
-	 * |granularity|size|unused|  sizeHigh |
-	 * -------------------------------------
-	 *
-	 * granularity:	If 0 the limit is in 1 B blocks (byte granularity), if 1 the limit is in
-	 * 				4 KiB blocks (page granularity).
-	 * size:		If 0 the selector defines 16 bit protected mode. If 1 it defines 32 bit
-	 * 				protected mode. You can have both 16 bit and 32 bit selectors at once.
-	 * unused:		always 0
-	 * sizeHigh:	size[16..19]
-	 */
-	uint8_t sizeHigh;
-
-	/* address[24..31] */
-	uint8_t addrHigh;
-} A_PACKED sGDTDesc;
-
-/* the Task State Segment */
-typedef struct {
-	/*
-	 * Contains the segment selector for the TSS of the
-	 * previous task (updated on a task switch that was initiated by a call, interrupt, or
-	 * exception). This field (which is sometimes called the back link field) permits a
-	 * task switch back to the previous task by using the IRET instruction.
-	 */
-	uint16_t prevTaskLink;
-	uint16_t : 16; /* reserved */
-	/* esp for PL 0 */
-	uint32_t esp0;
-	/* stack-segment for PL 0 */
-	uint16_t ss0;
-	uint16_t : 16; /* reserved */
-	/* esp for PL 1 */
-	uint32_t esp1;
-	/* stack-segment for PL 1 */
-	uint16_t ss1;
-	uint16_t : 16; /* reserved */
-	/* esp for PL 2 */
-	uint32_t esp2;
-	/* stack-segment for PL 2 */
-	uint16_t ss2;
-	uint16_t : 16; /* reserved */
-	/* page-directory-base-register */
-	uint32_t cr3;
-	/* State of the EIP register prior to the task switch. */
-	uint32_t eip;
-	/* State of the EFAGS register prior to the task switch. */
-	uint32_t eflags;
-	/* general purpose registers */
-	uint32_t eax;
-	uint32_t ecx;
-	uint32_t edx;
-	uint32_t ebx;
-	uint32_t esp;
-	uint32_t ebp;
-	uint32_t esi;
-	uint32_t edi;
-	/* segment registers */
-	uint16_t es;
-	uint16_t : 16; /* reserved */
-	uint16_t cs;
-	uint16_t : 16; /* reserved */
-	uint16_t ss;
-	uint16_t : 16; /* reserved */
-	uint16_t ds;
-	uint16_t : 16; /* reserved */
-	uint16_t fs;
-	uint16_t : 16; /* reserved */
-	uint16_t gs;
-	uint16_t : 16; /* reserved */
-	/* Contains the segment selector for the task's LDT. */
-	uint16_t ldtSegmentSelector;
-	uint16_t : 16; /* reserved */
-	/* When set, the T flag causes the processor to raise a debug exception when a task
-	 * switch to this task occurs */
-	uint16_t debugTrap	: 1,
-					: 15; /* reserved */
-	/* Contains a 16-bit offset from the base of the TSS to the I/O permission bit map
-	 * and interrupt redirection bitmap. When present, these maps are stored in the
-	 * TSS at higher addresses. The I/O map base address points to the beginning of the
-	 * I/O permission bit map and the end of the interrupt redirection bit map. */
-	uint16_t ioMapOffset;
-	uint8_t ioMap[IO_MAP_SIZE / 8];
-	uint8_t ioMapEnd;
-} A_PACKED sTSS;
-
-EXTERN_C void gdt_flush(sGDTTable *gdt);
-EXTERN_C void gdt_get(sGDTTable *gdt);
-EXTERN_C void tss_load(size_t gdtOffset);
-static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,
-		uint8_t ringLevel);
-static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size);
-
-/* the GDTs */
-static sGDTDesc bspgdt[GDT_ENTRY_COUNT];
-static sGDTTable *allgdts;
-static size_t gdtCount = 1;
-
-/* our TSS's (should not contain a page-boundary) */
-static sTSS bsptss A_ALIGNED(PAGE_SIZE);
-static sTSS **alltss;
-static size_t tssCount = 1;
-
-/* I/O maps for all TSSs; just to remember the last set I/O map */
-static const uint8_t **ioMaps;
-static size_t cpuCount;
-
-void gdt_init(void) {
-	sGDTTable gdtTable;
+void GDT::init() {
+	Table gdtTable;
 	gdtTable.offset = (uintptr_t)bspgdt;
-	gdtTable.size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
+	gdtTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 
 	/* clear gdt */
-	memclear(bspgdt,GDT_ENTRY_COUNT * sizeof(sGDTDesc));
+	memclear(bspgdt,GDT_ENTRY_COUNT * sizeof(Desc));
 
 	/* kernel code */
-	gdt_set_desc(bspgdt,1,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,1,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_CODE | GDT_PRESENT | GDT_CODE_READ,GDT_DPL_KERNEL);
 	/* kernel data */
-	gdt_set_desc(bspgdt,2,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,2,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_KERNEL);
 
 	/* user code */
-	gdt_set_desc(bspgdt,3,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,3,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_CODE | GDT_PRESENT | GDT_CODE_READ,GDT_DPL_USER);
 	/* user data */
-	gdt_set_desc(bspgdt,4,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,4,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 	/* tls */
-	gdt_set_desc(bspgdt,5,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,5,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 
 	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
@@ -244,22 +102,22 @@ void gdt_init(void) {
 	/* init io-map */
 	bsptss.ioMapOffset = IO_MAP_OFFSET_INVALID;
 	bsptss.ioMapEnd = 0xFF;
-	gdt_set_tss_desc(bspgdt,6,(uintptr_t)&bsptss,sizeof(sTSS) - 1);
+	setTSSDesc(bspgdt,6,(uintptr_t)&bsptss,sizeof(TSS) - 1);
 
 	/* for the current thread */
-	gdt_set_desc(bspgdt,7,0,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
+	setDesc(bspgdt,7,0,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
 
 	/* now load GDT and TSS */
-	gdt_flush(&gdtTable);
-	tss_load(6 * sizeof(sGDTDesc));
+	flush(&gdtTable);
+	loadTSS(6 * sizeof(Desc));
 }
 
-void gdt_init_bsp(void) {
+void GDT::init_bsp() {
 	cpuCount = SMP::getCPUCount();
-	allgdts = (sGDTTable*)Cache::calloc(cpuCount,sizeof(sGDTTable));
+	allgdts = (Table*)Cache::calloc(cpuCount,sizeof(Table));
 	if(!allgdts)
 		util_panic("Unable to allocate GDT-Tables for APs");
-	alltss = (sTSS**)Cache::calloc(cpuCount,sizeof(sTSS*));
+	alltss = (TSS**)Cache::calloc(cpuCount,sizeof(TSS*));
 	if(!alltss)
 		util_panic("Unable to allocate TSS-pointers for APs");
 	ioMaps = (const uint8_t**)Cache::calloc(cpuCount,sizeof(uint8_t*));
@@ -268,53 +126,53 @@ void gdt_init_bsp(void) {
 
 	/* put GDT of BSP into the GDT-array, for simplicity */
 	allgdts[0].offset = (uintptr_t)bspgdt;
-	allgdts[0].size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
+	allgdts[0].size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 	/* put TSS of BSP into the TSS-array */
 	alltss[0] = &bsptss;
 }
 
-void gdt_init_ap(void) {
+void GDT::init_ap() {
 	size_t i;
-	sGDTDesc *apgdt;
-	sGDTTable *gdttbl;
-	sTSS *tss;
-	sGDTTable tmpTable;
+	Desc *apgdt;
+	Table *gdttbl;
+	TSS *tss;
+	Table tmpTable;
 	/* use the GDT of the BSP temporary. this way, we can access the heap and build our own gdt */
 	tmpTable.offset = (uintptr_t)bspgdt;
-	tmpTable.size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
-	gdt_flush(&tmpTable);
+	tmpTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
+	flush(&tmpTable);
 
 	gdttbl = allgdts + gdtCount++;
 	i = tssCount++;
-	tss = (sTSS*)PageDir::makeAccessible(0,BYTES_2_PAGES(sizeof(sTSS)));
+	tss = (TSS*)PageDir::makeAccessible(0,BYTES_2_PAGES(sizeof(TSS)));
 
 	/* create GDT (copy from first one) */
-	apgdt = (sGDTDesc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(sGDTDesc));
+	apgdt = (Desc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(Desc));
 	if(!apgdt)
 		util_panic("Unable to allocate GDT for AP");
 	gdttbl->offset = (uintptr_t)apgdt;
-	gdttbl->size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
-	memcpy(apgdt,bspgdt,GDT_ENTRY_COUNT * sizeof(sGDTDesc));
+	gdttbl->size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
+	memcpy(apgdt,bspgdt,GDT_ENTRY_COUNT * sizeof(Desc));
 
 	/* create TSS (copy from first one) */
 	alltss[i] = tss;
-	memcpy(tss,&bsptss,sizeof(sTSS));
+	memcpy(tss,&bsptss,sizeof(TSS));
 	tss->esp0 = KERNEL_STACK_AREA + PAGE_SIZE - (1 + 5) * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
 	tss->ioMapEnd = 0xFF;
 
 	/* put tss in our gdt */
-	gdt_set_tss_desc(apgdt,6,(uintptr_t)tss,sizeof(sTSS) - 1);
+	setTSSDesc(apgdt,6,(uintptr_t)tss,sizeof(TSS) - 1);
 
 	/* now load our GDT and TSS */
-	gdt_flush(gdttbl);
-	tss_load(6 * sizeof(sGDTDesc));
+	flush(gdttbl);
+	loadTSS(6 * sizeof(Desc));
 }
 
-cpuid_t gdt_getCPUId(void) {
+cpuid_t GDT::getCPUId() {
 	size_t i;
-	sGDTTable tbl;
-	gdt_get(&tbl);
+	Table tbl;
+	get(&tbl);
 	for(i = 0; i < cpuCount; i++) {
 		if(allgdts[i].offset == tbl.offset)
 			return i;
@@ -323,20 +181,20 @@ cpuid_t gdt_getCPUId(void) {
 	return -1;
 }
 
-void gdt_setRunning(cpuid_t id,Thread *t) {
+void GDT::setRunning(cpuid_t id,Thread *t) {
 	/* store the thread-pointer into an unused slot of the gdt */
-	sGDTDesc *gdt = (sGDTDesc*)allgdts[id].offset;
-	gdt_set_desc(gdt,7,(uintptr_t)t,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
+	Desc *gdt = (Desc*)allgdts[id].offset;
+	setDesc(gdt,7,(uintptr_t)t,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
 }
 
-cpuid_t gdt_prepareRun(Thread *old,Thread *n) {
-	cpuid_t id = old == NULL ? gdt_getCPUId() : old->getCPU();
+cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
+	cpuid_t id = old == NULL ? getCPUId() : old->getCPU();
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
 	if(n->getTLSRegion()) {
 		uintptr_t tlsEnd = n->getTLSRegion()->virt + n->getTLSRegion()->reg->getByteCount();
-		gdt_set_desc((sGDTDesc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
+		setDesc((Desc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
 	}
@@ -349,17 +207,17 @@ cpuid_t gdt_prepareRun(Thread *old,Thread *n) {
 	if(!old || old->getProc() != n->getProc())
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
-	gdt_setRunning(id,n);
+	setRunning(id,n);
 #endif
 	return id;
 }
 
-bool tss_ioMapPresent(void) {
+bool GDT::ioMapPresent() {
 	Thread *t = Thread::getRunning();
 	return alltss[t->getCPU()]->ioMapOffset != IO_MAP_OFFSET_INVALID;
 }
 
-void tss_setIOMap(const uint8_t *ioMap,bool forceCpy) {
+void GDT::setIOMap(const uint8_t *ioMap,bool forceCpy) {
 	Thread *t = Thread::getRunning();
 	alltss[t->getCPU()]->ioMapOffset = IO_MAP_OFFSET;
 	if(forceCpy || ioMap != ioMaps[t->getCPU()])
@@ -375,8 +233,7 @@ void tss_setIOMap(const uint8_t *ioMap,bool forceCpy) {
 	ioMaps[t->getCPU()] = ioMap;
 }
 
-static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,
-		uint8_t ringLevel) {
+void GDT::setDesc(Desc *gdt,size_t index,uintptr_t address,size_t size,uint8_t access,uint8_t ringLevel) {
 	gdt[index].addrLow = address & 0xFFFF;
 	gdt[index].addrMiddle = (address >> 16) & 0xFF;
 	gdt[index].addrHigh = (address >> 24) & 0xFF;
@@ -385,7 +242,7 @@ static void gdt_set_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t siz
 	gdt[index].access = access | ((ringLevel & 3) << 5);
 }
 
-static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t size) {
+void GDT::setTSSDesc(Desc *gdt,size_t index,uintptr_t address,size_t size) {
 	gdt[index].addrLow = address & 0xFFFF;
 	gdt[index].addrMiddle = (address >> 16) & 0xFF;
 	gdt[index].addrHigh = (address >> 24) & 0xFF;
@@ -394,13 +251,13 @@ static void gdt_set_tss_desc(sGDTDesc *gdt,size_t index,uintptr_t address,size_t
 	gdt[index].access = GDT_PRESENT | GDT_TYPE_32BIT_TSS | (GDT_DPL_KERNEL << 5);
 }
 
-void gdt_print(void) {
+void GDT::print() {
 	size_t i,j;
 	size_t count = SMP::getCPUCount();
 	const SMP::CPU **cpus = SMP::getCPUs();
 	vid_printf("GDTs:\n");
 	for(i = 0; i < count; i++) {
-		sGDTDesc *gdt = (sGDTDesc*)allgdts[cpus[i]->id].offset;
+		Desc *gdt = (Desc*)allgdts[cpus[i]->id].offset;
 		vid_printf("\tGDT of CPU %d\n",cpus[i]->id);
 		if(gdt) {
 			for(j = 0; j < GDT_ENTRY_COUNT; j++) {

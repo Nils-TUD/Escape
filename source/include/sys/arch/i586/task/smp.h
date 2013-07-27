@@ -53,5 +53,5 @@ inline void SMPBase::sendIPI(cpuid_t id,uint8_t vector) {
 }
 
 inline cpuid_t SMPBase::getCurId(void) {
-	return gdt_getCPUId();
+	return GDT::getCPUId();
 }

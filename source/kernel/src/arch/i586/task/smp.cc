@@ -152,7 +152,7 @@ void SMP::apIsRunning() {
 	cpuid_t phys,log;
 	spinlock_aquire(&smpLock);
 	phys = LAPIC::getId();
-	log = gdt_getCPUId();
+	log = GDT::getCPUId();
 	log2Phys[log] = phys;
 	setId(phys,log);
 	setReady(log);

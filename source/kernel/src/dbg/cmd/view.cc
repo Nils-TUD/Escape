@@ -93,7 +93,7 @@ static View views[] = {
 	{"swapmap",(view_func)SwapMap::print},
 	{"cpu",(view_func)CPU::print},
 #ifdef __i386__
-	{"gdt",(view_func)gdt_print},
+	{"gdt",(view_func)GDT::print},
 	{"ioapic",(view_func)ioapic_print},
 	{"acpi",(view_func)ACPI::print},
 #endif

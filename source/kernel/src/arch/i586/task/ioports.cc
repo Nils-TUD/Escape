@@ -39,13 +39,13 @@ int IOPorts::request(uint16_t start,size_t count) {
 
 	p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap == NULL) {
-		p->ioMap = (uint8_t*)Cache::alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)Cache::alloc(GDT::IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL) {
 			Proc::release(p,PLOCK_PORTS);
 			return -ENOMEM;
 		}
 		/* mark all as disallowed */
-		memset(p->ioMap,0xFF,IO_MAP_SIZE / 8);
+		memset(p->ioMap,0xFF,GDT::IO_MAP_SIZE / 8);
 	}
 
 	/* 0 means allowed */
@@ -54,7 +54,7 @@ int IOPorts::request(uint16_t start,size_t count) {
 		start++;
 	}
 
-	tss_setIOMap(p->ioMap,true);
+	GDT::setIOMap(p->ioMap,true);
 	Proc::release(p,PLOCK_PORTS);
 	return 0;
 }
@@ -62,9 +62,9 @@ int IOPorts::request(uint16_t start,size_t count) {
 bool IOPorts::handleGPF(void) {
 	bool res = false;
 	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
-	if(p->ioMap != NULL && !tss_ioMapPresent()) {
+	if(p->ioMap != NULL && !GDT::ioMapPresent()) {
 		/* load it and give the process another try */
-		tss_setIOMap(p->ioMap,false);
+		GDT::setIOMap(p->ioMap,false);
 		res = true;
 	}
 	Proc::release(p,PLOCK_PORTS);
@@ -89,7 +89,7 @@ int IOPorts::release(uint16_t start,size_t count) {
 		start++;
 	}
 
-	tss_setIOMap(p->ioMap,true);
+	GDT::setIOMap(p->ioMap,true);
 	Proc::release(p,PLOCK_PORTS);
 	return 0;
 }
@@ -107,7 +107,7 @@ void IOPorts::free(Proc *p) {
 void IOPorts::print(const uint8_t *map) {
 	size_t i,j,c = 0;
 	vid_printf("Reserved IO-ports:\n\t");
-	for(i = 0; i < IO_MAP_SIZE / 8; i++) {
+	for(i = 0; i < GDT::IO_MAP_SIZE / 8; i++) {
 		for(j = 0; j < 8; j++) {
 			if(!(map[i] & (1 << j))) {
 				vid_printf("%zx, ",i * 8 + j);

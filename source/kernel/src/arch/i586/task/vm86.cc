@@ -112,11 +112,11 @@ int VM86::create(void) {
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
 	if(p->ioMap == NULL)
-		p->ioMap = (uint8_t*)Cache::alloc(IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)Cache::alloc(GDT::IO_MAP_SIZE / 8);
 	/* note that we HAVE TO request all ports (even the reserved ones); otherwise it doesn't work
 	 * everywhere (e.g. my notebook needs it) */
 	if(p->ioMap != NULL)
-		memset(p->ioMap,0x00,IO_MAP_SIZE / 8);
+		memset(p->ioMap,0x00,GDT::IO_MAP_SIZE / 8);
 
 	/* give it a name */
 	p->setCommand("VM86",0,"");

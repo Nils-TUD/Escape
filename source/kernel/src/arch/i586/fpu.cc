@@ -27,14 +27,10 @@
 #include <sys/util.h>
 #include <string.h>
 
-extern void fpu_finit(void);
-extern void fpu_saveState(sFPUState *state);
-extern void fpu_restoreState(sFPUState *state);
-
 /* current FPU state-memory */
-static sFPUState ***curStates = NULL;
+FPU::State ***FPU::curStates = NULL;
 
-void fpu_preinit(void) {
+void FPU::preinit() {
 	uint32_t cr0 = CPU::getCR0();
 	/* enable coprocessor monitoring */
 	cr0 |= CPU::CR0_MONITOR_COPROC;
@@ -46,33 +42,25 @@ void fpu_preinit(void) {
 	/* set the OSFXSR bit
 	CPU::setCR4(CPU::getCR4() | 0x200);*/
 	/* init the fpu */
-	__asm__ volatile (
-		"finit"
-	);
+	finit();
 }
 
-void fpu_init(void) {
+void FPU::init() {
 	/* allocate a state-pointer for each cpu */
-	curStates = (sFPUState***)Cache::calloc(SMP::getCPUCount(),sizeof(sFPUState**));
+	curStates = (State***)Cache::calloc(SMP::getCPUCount(),sizeof(State**));
 	if(!curStates)
 		util_panic("Unable to allocate memory for FPU-states");
 }
 
-void fpu_lockFPU(void) {
-	/* set the task-switched-bit in CR0. as soon as a process uses any FPU instruction
-	 * we'll get a EX_CO_PROC_NA and call fpu_handleCoProcNA() */
-	CPU::setCR0(CPU::getCR0() | CPU::CR0_TASK_SWITCHED);
-}
-
-void fpu_handleCoProcNA(sFPUState **state) {
+void FPU::handleCoProcNA(State **state) {
 	Thread *t = Thread::getRunning();
-	sFPUState **current = curStates[t->getCPU()];
+	State **current = curStates[t->getCPU()];
 	if(current != state) {
 		/* if any process has used the FPU in the past */
 		if(current != NULL) {
 			/* do we have to allocate space for the state? */
 			if(*current == NULL) {
-				*current = (sFPUState*)Cache::alloc(sizeof(sFPUState));
+				*current = (State*)Cache::alloc(sizeof(State));
 				/* if we can't save the state, don't unlock the FPU for another process */
 				/* TODO ok? */
 				if(*current == NULL)
@@ -81,43 +69,35 @@ void fpu_handleCoProcNA(sFPUState **state) {
 			/* unlock FPU (necessary here because otherwise fpu_saveState would cause a #NM) */
 			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 			/* save state */
-			__asm__ volatile (
-				"fsave %0" : : "m" (**current)
-			);
+			fsave(*current);
 		}
 		else
 			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 
 		/* init FPU for new process */
 		curStates[t->getCPU()] = state;
-		if(*state != NULL) {
-			__asm__ volatile (
-				"frstor %0" : : "m" (**state)
-			);
-		}
-		else {
-			__asm__ volatile (
-				"finit"
-			);
-		}
+		if(*state != NULL)
+			frestore(*state);
+		else
+			finit();
 	}
 	/* just unlock */
 	else
 		CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 }
 
-void fpu_cloneState(sFPUState **dst,const sFPUState *src) {
+void FPU::cloneState(State **dst,const State *src) {
 	if(src != NULL) {
-		*dst = (sFPUState*)Cache::alloc(sizeof(sFPUState));
+		*dst = (State*)Cache::alloc(sizeof(State));
 		/* simply ignore it here if alloc fails */
 		if(*dst)
-			memcpy(*dst,src,sizeof(sFPUState));
+			memcpy(*dst,src,sizeof(State));
 	}
 	else
 		*dst = NULL;
 }
 
-void fpu_freeState(sFPUState **state) {
+void FPU::freeState(State **state) {
 	size_t i,n;
 	if(*state != NULL)
 		Cache::free(*state);

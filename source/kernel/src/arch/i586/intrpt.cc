@@ -223,7 +223,7 @@ static void intrpt_exSStep(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack)
 }
 
 static void intrpt_exCoProcNA(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
-	fpu_handleCoProcNA(t->getFPUState());
+	FPU::handleCoProcNA(t->getFPUState());
 }
 
 static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {

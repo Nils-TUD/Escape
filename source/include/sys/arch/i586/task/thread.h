@@ -37,14 +37,14 @@ public:
 	uintptr_t getKernelStack() const {
 		return kernelStack;
 	}
-	sFPUState **getFPUState() {
+	FPU::State **getFPUState() {
 		return &fpuState;
 	}
 
 private:
 	uintptr_t kernelStack;
 	/* FPU-state; initially NULL */
-	sFPUState *fpuState;
+	FPU::State *fpuState;
 };
 
 inline Thread *ThreadBase::getRunning() {

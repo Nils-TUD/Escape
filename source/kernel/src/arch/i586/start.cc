@@ -93,7 +93,7 @@ void apstart(void) {
 	idt_init();
 	LAPIC::enable();
 	/* init FPU and detect our CPU */
-	fpu_preinit();
+	FPU::preinit();
 	CPU::detect();
 	/* notify the BSP that we're running */
 	SMP::apIsRunning();

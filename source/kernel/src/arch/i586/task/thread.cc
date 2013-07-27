@@ -78,7 +78,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			return res;
 		}
 	}
-	fpu_cloneState(&(dst->fpuState),src->fpuState);
+	FPU::cloneState(&(dst->fpuState),src->fpuState);
 	return 0;
 }
 
@@ -88,7 +88,7 @@ void ThreadBase::freeArch(Thread *t) {
 		t->stackRegions[0] = NULL;
 	}
 	t->getProc()->getPageDir()->removeKernelStack(t->kernelStack);
-	fpu_freeState(&t->fpuState);
+	FPU::freeState(&t->fpuState);
 }
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
@@ -165,7 +165,7 @@ void Thread::initialSwitch() {
 	cur->stats.schedCount++;
 	VirtMem::setTimestamp(cur,Timer::getTimestamp());
 	cur->setCPU(gdt_prepareRun(NULL,cur));
-	fpu_lockFPU();
+	FPU::lockFPU();
 	cur->stats.cycleStart = CPU::rdtsc();
 	thread_resume(cur->getProc()->getPageDir()->getPhysAddr(),&cur->save,&switchLock,true);
 }
@@ -199,7 +199,7 @@ void ThreadBase::doSwitch() {
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
-		fpu_lockFPU();
+		FPU::lockFPU();
 		if(!thread_save(&old->save)) {
 			/* old thread */
 			n->stats.cycleStart = CPU::rdtsc();

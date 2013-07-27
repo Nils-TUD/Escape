@@ -60,7 +60,7 @@ static const sBootTask tasks[] = {
 	{"Initializing SMP...",SMP::init},
 	{"Initializing GDT...",gdt_init_bsp},
 	{"Initializing CPU...",CPU::detect},
-	{"Initializing FPU...",fpu_init},
+	{"Initializing FPU...",FPU::init},
 	{"Initializing VFS...",vfs_init},
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
@@ -123,7 +123,7 @@ void boot_arch_start(sBootInfo *info) {
 
 	/* init basic modules */
 	vid_init();
-	fpu_preinit();
+	FPU::preinit();
 	ser_init();
 
 	/* init physical memory and paging */

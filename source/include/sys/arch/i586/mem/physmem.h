@@ -20,7 +20,6 @@
 #pragma once
 
 #include <esc/common.h>
-#include <sys/arch/i586/mem/paging.h>
 
 /**
  * Physical memory layout:

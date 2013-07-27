@@ -20,6 +20,10 @@
 #pragma once
 
 #include <esc/common.h>
+#include <sys/spinlock.h>
+#include <sys/cpu.h>
+#include <string.h>
+#include <assert.h>
 
 /**
  * Virtual memory layout:
@@ -161,69 +165,166 @@
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_AREA && \
 								(uintptr_t)(addr) < KERNEL_STACK_AREA)
 
-struct pagedir_t {
+class PageDir : public PageDirBase {
+	friend class PageDirBase;
+
+	typedef uint32_t pte_t;
+	typedef uint32_t pde_t;
+
+public:
+	explicit PageDir() : PageDirBase(), lastChange(), own(), other(), otherUpdate(), freeKStack() {
+	}
+
+	/**
+	* Activates paging
+	*
+	* @param pageDir the page-directory
+	*/
+	static void activate(uintptr_t pageDir);
+
+	/**
+	* Assembler routine to exchange the page-directory to the given one
+	*
+	* @param physAddr the physical address of the page-directory
+	*/
+	static void exchangePDir(uintptr_t physAddr);
+
+	/**
+	* Reserves page-tables for the whole higher-half and inserts them into the page-directory.
+	* This should be done ONCE at the beginning as soon as the physical memory management is set up
+	*/
+	static void mapKernelSpace();
+
+	/**
+	* Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
+	* soon as the GDT is setup for a flat memory layout!
+	*/
+	static void gdtFinished();
+
+	/**
+	* Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
+	* can access it. Please use unmapFromTemp() as soon as you're finished!
+	*
+	* @param frames the frame-numbers
+	* @param count the number of frames
+	* @return the virtual start-address
+	*/
+	static uintptr_t mapToTemp(const frameno_t *frames,size_t count);
+
+	/**
+	* Unmaps the temporary mappings
+	*
+	* @param count the number of pages
+	*/
+	static void unmapFromTemp(size_t count);
+
+	/**
+	 * @return the physical address of the page-directory
+	 */
+	uintptr_t getPhysAddr() const {
+		return own;
+	}
+
+	/**
+	* Creates a kernel-stack at an unused address.
+	*
+	* @return the used address
+	*/
+	uintptr_t createKernelStack();
+
+	/**
+	* Removes the given kernel-stack
+	*
+	* @param addr the address of the kernel-stack
+	*/
+	void removeKernelStack(uintptr_t addr);
+
+private:
+	static void enable() {
+		CPU::setCR0(CPU::getCR0() | CPU::CR0_PAGING_ENABLED);
+	}
+	static void setPDir(uintptr_t phys) {
+		CPU::setCR3(phys);
+	}
+	static void flushTLB() {
+		CPU::setCR3(CPU::getCR3());
+	}
+	static void setWriteProtection(bool enabled) {
+		if(enabled)
+			CPU::setCR0(CPU::getCR0() | CPU::CR0_WRITE_PROTECT);
+		else
+			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_WRITE_PROTECT);
+	}
+
+	static void flushPageTable(uintptr_t virt,uintptr_t ptables) {
+		/* it seems to be much faster to flush the complete TLB instead of flushing just the
+		 * affected range (and hoping that less TLB-misses occur afterwards) */
+		flushTLB();
+	}
+
+	static int crtPageTable(pde_t *pd,uintptr_t ptables,uintptr_t virt,uint flags);
+	static size_t remEmptyPt(uintptr_t ptables,size_t pti);
+	static void printPageTable(uintptr_t ptables,size_t no,pde_t pde);
+	static void printPage(pte_t page);
+
+	uintptr_t getPTables(PageDir *cur) const;
+	ssize_t doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
+	size_t doUnmap(uintptr_t virt,size_t count,bool freeFrames);
+
 	uint64_t lastChange;
 	uintptr_t own;
-	struct pagedir_t *other;
+	PageDir *other;
 	uint64_t otherUpdate;
 	uintptr_t freeKStack;
+
+	/* the page-directory for process 0 */
+	static pde_t proc0PD[PAGE_SIZE / sizeof(pde_t)];
+	/* the page-table for process 0 */
+	static pte_t proc0PT[PAGE_SIZE / sizeof(pte_t)];
+	static klock_t tmpMapLock;
+	/* TODO we could maintain different locks for userspace and kernelspace; since just the kernel is
+	 * shared. it would be better to have a global lock for that and a pagedir-lock for the userspace */
+	static klock_t pagingLock;
+	static uintptr_t freeAreaAddr;
 };
 
-/**
- * Activates paging
- *
- * @param pageDir the page-directory
- */
-void paging_activate(uintptr_t pageDir);
+inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
+	return PageDir::mapToTemp(&frame,1);
+}
 
-/**
- * Reserves page-tables for the whole higher-half and inserts them into the page-directory.
- * This should be done ONCE at the beginning as soon as the physical memory management is set up
- */
-void paging_mapKernelSpace(void);
+inline void PageDirBase::removeAccess() {
+	PageDir::unmapFromTemp(1);
+}
 
-/**
- * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
- * soon as the GDT is setup for a flat memory layout!
- */
-void paging_gdtFinished(void);
+inline bool PageDirBase::isInUserSpace(uintptr_t virt,size_t count) {
+	return virt + count <= KERNEL_AREA && virt + count >= virt;
+}
 
-/**
- * Assembler routine to exchange the page-directory to the given one
- *
- * @param physAddr the physical address of the page-directory
- */
-extern void paging_exchangePDir(uintptr_t physAddr);
+inline void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
+	/* in this case, we know that we can write to the frame, but it may be mapped as readonly */
+	PageDir::setWriteProtection(false);
+	memcpy(dst,src,count);
+	PageDir::setWriteProtection(true);
+}
 
-/**
- * Creates a kernel-stack at an unused address.
- *
- * @param pdir the page-directory
- * @return the used address
- */
-uintptr_t paging_createKernelStack(pagedir_t *pdir);
+inline void PageDirBase::zeroToUser(void *dst,size_t count) {
+	PageDir::setWriteProtection(false);
+	memclear(dst,count);
+	PageDir::setWriteProtection(true);
+}
 
-/**
- * Removes the given kernel-stack
- *
- * @param pdir the page-directory
- * @param addr the address of the kernel-stack
- */
-void paging_removeKernelStack(pagedir_t *pdir,uintptr_t addr);
+inline ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
+	ssize_t pts;
+	spinlock_aquire(&PageDir::pagingLock);
+	pts = static_cast<PageDir*>(this)->doMap(virt,frames,count,flags);
+	spinlock_release(&PageDir::pagingLock);
+	return pts;
+}
 
-/**
- * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
- * can access it. Please use paging_unmapFromTemp() as soon as you're finished!
- *
- * @param frames the frame-numbers
- * @param count the number of frames
- * @return the virtual start-address
- */
-uintptr_t paging_mapToTemp(const frameno_t *frames,size_t count);
-
-/**
- * Unmaps the temporary mappings
- *
- * @param count the number of pages
- */
-void paging_unmapFromTemp(size_t count);
+inline size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
+	size_t pts;
+	spinlock_aquire(&PageDir::pagingLock);
+	pts = static_cast<PageDir*>(this)->doUnmap(virt,count,freeFrames);
+	spinlock_release(&PageDir::pagingLock);
+	return pts;
+}

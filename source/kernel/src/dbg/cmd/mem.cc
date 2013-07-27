@@ -38,7 +38,7 @@ public:
 	}
 	virtual ~MemNaviBackend() {
 		if(page)
-			paging_removeAccess();
+			PageDir::removeAccess();
 	}
 
 	virtual const char *getInfo(uintptr_t) {
@@ -55,10 +55,10 @@ public:
 	virtual uint8_t *loadLine(uintptr_t addr) {
 		if(page == NULL || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
 			if(page)
-				paging_removeAccess();
-			if(paging_isPresent(proc->getPageDir(),addr)) {
-				frameno_t frame = paging_getFrameNo(proc->getPageDir(),addr);
-				page = (uint8_t*)paging_getAccess(frame);
+				PageDir::removeAccess();
+			if(proc->getPageDir()->isPresent(addr)) {
+				frameno_t frame = proc->getPageDir()->getFrameNo(addr);
+				page = (uint8_t*)PageDir::getAccess(frame);
 			}
 			else
 				page = NULL;

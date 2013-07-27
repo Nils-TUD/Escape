@@ -103,8 +103,8 @@ int VM86::create(void) {
 	frameCount = (1024 * K) / PAGE_SIZE;
 	for(i = 0; i < frameCount; i++)
 		frameNos[i] = i;
-	paging_map(0x00000000,frameNos,frameCount,PG_PRESENT | PG_WRITABLE);
-	paging_map(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_PRESENT | PG_WRITABLE);
+	PageDir::mapToCur(0x00000000,frameNos,frameCount,PG_PRESENT | PG_WRITABLE);
+	PageDir::mapToCur(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_PRESENT | PG_WRITABLE);
 
 	/* Give the vm86-task permission for all ports. As it seems vmware expects that if they
 	 * have used the 32-bit-data-prefix once (at least for inw) it takes effect for the
@@ -346,7 +346,7 @@ void VM86::start(void) {
 	 * we map other frames to that area. */
 	if(info.area) {
 		/* can't fail */
-		assert(paging_map(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),
+		assert(PageDir::mapToCur(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),
 				PG_PRESENT | PG_WRITABLE) >= 0);
 		memcpy((void*)info.area->dst,info.copies[0],info.area->size);
 	}
@@ -429,10 +429,10 @@ int VM86::storeAreaResult(void) {
 			memcpy((void*)info.copies[i + 1],(void*)virt,info.area->ptr[i].size);
 		}
 		/* undo mapping */
-		paging_unmap(info.area->dst,pages,true);
+		PageDir::unmapFromCur(info.area->dst,pages,true);
 		for(i = 0; i < pages; i++)
 			frameNos[start + i] = start + i;
-		assert(paging_map(info.area->dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE) == 0);
+		assert(PageDir::mapToCur(info.area->dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE) == 0);
 	}
 	return 0;
 }

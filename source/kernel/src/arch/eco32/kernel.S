@@ -32,8 +32,6 @@
 	.global cpu_getBadAddr
 
 	.global start
-	.global tlb_get
-	.global tlb_set
 	.global tlb_remove
 
 	.global logByte
@@ -361,24 +359,6 @@ debugcLoop:
 #===========================================
 # TLB
 #===========================================
-
-# void tlb_get(int index,uint *entryHi,uint *entryLo)
-tlb_get:
-	mvts	$4,FS_TLB_INDEX
-	tbri
-	mvfs	$8,FS_TLB_EHIGH
-	stw		$8,$5,0
-	mvfs	$8,FS_TLB_ELOW
-	stw		$8,$6,0
-	jr		$31
-
-# void tlb_set(int index,unsigned int entryHi,unsigned int entryLo)
-tlb_set:
-	mvts	$4,FS_TLB_INDEX					# set index
-	mvts	$5,FS_TLB_EHIGH					# set entryHi
-	mvts	$6,FS_TLB_ELOW					# set entryLo
-	tbwi									# write TLB entry at index
-	jr		$31
 
 # void tlb_remove(unsigned int addr)
 tlb_remove:

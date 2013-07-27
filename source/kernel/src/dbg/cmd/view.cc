@@ -163,17 +163,17 @@ static void view_thread(size_t argc,char **argv) {
 static void view_pdirall(size_t argc,char **argv) {
 	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(p->getPageDir(),PD_PART_ALL);
+		p->getPageDir()->print(PD_PART_ALL);
 }
 static void view_pdiruser(size_t argc,char **argv) {
 	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(p->getPageDir(),PD_PART_USER);
+		p->getPageDir()->print(PD_PART_USER);
 }
 static void view_pdirkernel(size_t argc,char **argv) {
 	Proc *p = view_getProc(argc,argv);
 	if(p != NULL)
-		paging_printPDir(p->getPageDir(),PD_PART_KERNEL);
+		p->getPageDir()->print(PD_PART_KERNEL);
 }
 static void view_regions(size_t argc,char **argv) {
 	if(argc < 3)

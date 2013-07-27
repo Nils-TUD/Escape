@@ -60,7 +60,7 @@ void ioapic_add(uint8_t id,uint8_t version,uintptr_t addr) {
 
 	ioapics[count].id = id;
 	ioapics[count].version = version;
-	ioapics[count].addr = (uint32_t*)paging_makeAccessible(addr,1);
+	ioapics[count].addr = (uint32_t*)PageDir::makeAccessible(addr,1);
 	assert((addr & (PAGE_SIZE - 1)) == 0);
 	count++;
 }

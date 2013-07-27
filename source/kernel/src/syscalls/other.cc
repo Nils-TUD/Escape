@@ -65,7 +65,7 @@ int Syscalls::sysconf(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 
 int Syscalls::tsctotime(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
-	if(!paging_isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
+	if(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
 		SYSC_ERROR(stack,-EINVAL);
 	*tsc = Timer::cyclesToTime(*tsc);
 	SYSC_RET1(stack,0);

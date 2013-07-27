@@ -131,7 +131,7 @@ uint Syscalls::getArgCount(uint sysCallNo) {
 bool Syscalls::absolutizePath(char *dst,size_t size,const char *src) {
 	size_t len = 0;
 	ssize_t slen = strnlen(src,MAX_PATH_LEN);
-	if(slen < 0 || !paging_isInUserSpace((uintptr_t)src,slen))
+	if(slen < 0 || !PageDir::isInUserSpace((uintptr_t)src,slen))
 		return false;
 	if(*src != '/') {
 		pid_t pid = Proc::getRunning();

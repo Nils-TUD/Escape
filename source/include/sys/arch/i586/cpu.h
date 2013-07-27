@@ -44,6 +44,7 @@ class CPU : public CPUBase {
 	};
 
 public:
+	static const uint32_t CR0_PAGING_ENABLED		= 1 << 31;
 	/* Determines whether the CPU can write to pages marked read-only */
 	static const uint32_t CR0_WRITE_PROTECT			= 1 << 16;
 	/* Enables the native (internal) mechanism for reporting x87 FPU errors when set;
@@ -142,6 +143,13 @@ public:
 		uint32_t res;
 		asm volatile ("mov %%cr3, %0" : "=r"(res));
 		return res;
+	}
+
+	/**
+	 * @param cr0 the new CR3 value
+	 */
+	static void setCR3(uint32_t cr0) {
+		asm volatile ("mov %0, %%cr3" : : "r"(cr0));
 	}
 
 	/**

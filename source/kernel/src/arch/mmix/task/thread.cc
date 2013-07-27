@@ -80,7 +80,7 @@
 
 EXTERN_C void thread_startup(void);
 EXTERN_C int thread_initSave(sThreadRegs *saveArea,void *newStack);
-EXTERN_C int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid);
+EXTERN_C int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,uint64_t rv,tid_t tid);
 
 extern void *stackCopy;
 extern uint64_t stackCopySize;
@@ -235,7 +235,7 @@ void ThreadBase::doSwitch(void) {
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		SMP::schedule(n->getCPU(),n,timestamp);
 		n->stats.cycleStart = CPU::rdtsc();
-		thread_doSwitchTo(&old->save,&n->save,*n->getProc()->getPageDir(),n->getTid());
+		thread_doSwitchTo(&old->save,&n->save,n->getProc()->getPageDir()->getRV(),n->getTid());
 	}
 	else
 		n->stats.cycleStart = CPU::rdtsc();

@@ -73,8 +73,8 @@ static void test_paging_foreign(void) {
 	checkMemoryBefore(true);
 
 	t->reserveFrames(3);
-	paging_mapTo(child->getPageDir(),0,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_unmapFrom(child->getPageDir(),0,3,true);
+	child->getPageDir()->map(0,NULL,3,PG_PRESENT | PG_WRITABLE);
+	child->getPageDir()->unmap(0,3,true);
 	t->discardFrames();
 
 	checkMemoryAfter(true);
@@ -91,10 +91,10 @@ static void test_paging_foreign(void) {
 	checkMemoryBefore(true);
 
 	t->reserveFrames(6);
-	paging_mapTo(child->getPageDir(),0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_mapTo(child->getPageDir(),0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
-	paging_unmapFrom(child->getPageDir(),0x40000000,1,true);
-	paging_unmapFrom(child->getPageDir(),0x40000000 + PAGE_SIZE * 1,5,true);
+	child->getPageDir()->map(0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
+	child->getPageDir()->map(0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
+	child->getPageDir()->unmap(0x40000000,1,true);
+	child->getPageDir()->unmap(0x40000000 + PAGE_SIZE * 1,5,true);
 	t->discardFrames();
 
 	checkMemoryAfter(true);
@@ -127,7 +127,7 @@ static bool test_paging_cycle(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_allocate(uintptr_t addr,size_t count) {
-	paging_map(addr,NULL,count,PG_PRESENT | PG_WRITABLE);
+	PageDir::mapToCur(addr,NULL,count,PG_PRESENT | PG_WRITABLE);
 }
 
 static void test_paging_access(uintptr_t addr,size_t count) {
@@ -145,5 +145,5 @@ static void test_paging_access(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_free(uintptr_t addr,size_t count) {
-	paging_unmap(addr,count,true);
+	PageDir::unmapFromCur(addr,count,true);
 }

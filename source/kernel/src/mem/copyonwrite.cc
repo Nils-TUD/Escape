@@ -54,11 +54,11 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 	if(cow->refCount == 0)
 		flags |= PG_KEEPFRM;
 	/* can't fail, we've already allocated the frame */
-	paging_map(address,NULL,1,flags);
+	PageDir::mapToCur(address,NULL,1,flags);
 
 	/* copy? */
 	if(cow->refCount > 0)
-		paging_copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
+		PageDir::copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
 		Cache::free(cow);
 	spinlock_release(&lock);

@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/mem/paging.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/idt.h>
 #include <sys/arch/i586/fpu.h>
@@ -88,7 +87,7 @@ void apstart(void) {
 	 * for example */
 	Thread::setRunning(Thread::getById(0));
 	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
-	paging_activate(p->getPageDir()->own);
+	PageDir::activate(p->getPageDir()->getPhysAddr());
 	gdt_init_ap();
 	/* setup IDT for this cpu and enable its local APIC */
 	idt_init();

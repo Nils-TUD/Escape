@@ -163,7 +163,7 @@ void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swappe
 		*own = p->virtmem.getOwnFrames();
 		*shared = p->virtmem.getSharedFrames();
 		*swapped = p->virtmem.getSwappedFrames();
-		*own = *own + paging_getPTableCount(p->getPageDir()) + p->getKMemUsage();
+		*own = *own + p->getPageDir()->getPTableCount() + p->getKMemUsage();
 		release(p,PLOCK_REGIONS);
 	}
 }
@@ -210,7 +210,7 @@ int ProcBase::clone(uint8_t flags) {
 	}
 
 	/* clone page-dir */
-	if((res = paging_cloneKernelspace(p->getPageDir(),curThread->getTid())) < 0)
+	if((res = PageDir::cloneKernelspace(p->getPageDir(),curThread->getTid())) < 0)
 		goto errorProc;
 
 	/* set basic attributes */
@@ -328,7 +328,7 @@ errorAdd:
 errorCmd:
 	Cache::free((void*)p->command);
 errorPdir:
-	paging_destroyPDir(p->getPageDir());
+	p->getPageDir()->destroy();
 errorProc:
 	Cache::free(p);
 errorCur:
@@ -642,7 +642,6 @@ void ProcBase::doDestroy(Proc *p) {
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
 	p->virtmem.destroy();
-	paging_destroyPDir(p->getPageDir());
 	Lock::releaseAll(p->pid);
 	terminateArch(p);
 	sll_clear(&p->threads,false);
@@ -791,7 +790,7 @@ void ProcBase::printAllPDs(uint parts,bool regions) {
 				p->pid,p->command,own,shared,swapped);
 		if(regions)
 			p->virtmem.printRegions();
-		paging_printPDir(p->getPageDir(),parts);
+		p->getPageDir()->print(parts);
 		vid_printf("\n");
 	}
 }
@@ -849,7 +848,7 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 	arg = args;
 	while(1) {
 		/* check if it is a valid pointer */
-		if(fromUser && !paging_isInUserSpace((uintptr_t)arg,sizeof(char*)))
+		if(fromUser && !PageDir::isInUserSpace((uintptr_t)arg,sizeof(char*)))
 			goto error;
 		/* end of list? */
 		if(*arg == NULL)

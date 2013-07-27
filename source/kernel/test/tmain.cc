@@ -66,7 +66,7 @@ void bspstart(sBootInfo *bootinfo) {
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
 	/* TODO find a better solution */
 #ifdef __i386__
-	paging_gdtFinished();
+	PageDir::gdtFinished();
 #endif
 
 	/* start tests */

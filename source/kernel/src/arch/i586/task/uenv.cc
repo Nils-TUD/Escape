@@ -32,7 +32,7 @@
 
 int UEnvBase::finishSignalHandler(sIntrptStackFrame *stack,A_UNUSED int signal) {
 	uint32_t *esp = (uint32_t*)stack->uesp;
-	if(!paging_isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
+	if(!PageDir::isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
 		Proc::segFault();
 		/* never reached */
 		assert(false);

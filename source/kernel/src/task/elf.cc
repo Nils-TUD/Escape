@@ -64,10 +64,10 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 			if(addSegment(NULL,pheader,loadSegNo,TYPE_PROG) < 0)
 				return -ENOEXEC;
 			/* copy the data and zero the rest, if necessary */
-			paging_copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
-					pheader->p_filesz);
-			paging_zeroToUser((void*)(pheader->p_vaddr + pheader->p_filesz),
-					pheader->p_memsz - pheader->p_filesz);
+			PageDir::copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
+			                    pheader->p_filesz);
+			PageDir::zeroToUser((void*)(pheader->p_vaddr + pheader->p_filesz),
+			                    pheader->p_memsz - pheader->p_filesz);
 			loadSegNo++;
 		}
 	}
@@ -190,8 +190,8 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 						goto failed;
 					}
 					/* clear tbss */
-					paging_zeroToUser((void*)(tlsStart + pheader.p_filesz),
-							pheader.p_memsz - pheader.p_filesz);
+					PageDir::zeroToUser((void*)(tlsStart + pheader.p_filesz),
+					                    pheader.p_memsz - pheader.p_filesz);
 				}
 			}
 			loadSeg++;

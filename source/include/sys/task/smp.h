@@ -106,7 +106,7 @@ public:
 	 *
 	 * @param pdir the pagedir
 	 */
-	static void flushTLB(pagedir_t *pdir);
+	static void flushTLB(PageDir *pdir);
 
 	/**
 	 * Sends the IPI <vector> to the CPU <id>

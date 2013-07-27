@@ -22,6 +22,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/dynarray.h>
+#include <sys/task/proc.h>
 #include <esc/test.h>
 #include "testutils.h"
 
@@ -33,7 +34,7 @@ static size_t freeFrames;
 
 void checkMemoryBefore(bool checkMappedPages) {
 	if(checkMappedPages)
-		mappedPages = paging_dbg_getPageCount();
+		mappedPages = Proc::getCurPageDir()->getPageCount();
 	heapPages = KHeap::getPageCount();
 	heapUsed = KHeap::getUsedMem();
 	cachePages = Cache::getPageCount();
@@ -54,7 +55,7 @@ void checkMemoryAfter(bool checkMappedPages) {
 	newDaPages = DynArray::getTotalPages();
 	newFreeFrames = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT);
 	if(checkMappedPages) {
-		size_t newMappedPages = paging_dbg_getPageCount();
+		size_t newMappedPages = Proc::getCurPageDir()->getPageCount();
 		test_assertSize(newMappedPages,mappedPages);
 	}
 	test_assertSize(newHeapUsed,heapUsed);

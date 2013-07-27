@@ -36,7 +36,7 @@ Thread *Thread::cur = NULL;
 
 EXTERN_C void thread_startup(void);
 EXTERN_C bool thread_save(sThreadRegs *saveArea);
-EXTERN_C bool thread_resume(pagedir_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
+EXTERN_C bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
 
 void ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
@@ -49,7 +49,7 @@ int ThreadBase::initArch(Thread *t) {
 	frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackFrame == 0)
 		return -ENOMEM;
-	if(paging_mapTo(t->getProc()->getPageDir(),KERNEL_STACK,&stackFrame,1,
+	if(t->getProc()->getPageDir()->map(KERNEL_STACK,&stackFrame,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
 		PhysMem::free(stackFrame,PhysMem::KERN);
 		return -ENOMEM;
@@ -63,7 +63,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 		frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
 		if(stackFrame == 0)
 			return -ENOMEM;
-		if(paging_mapTo(dst->getProc()->getPageDir(),KERNEL_STACK,&stackFrame,1,
+		if(dst->getProc()->getPageDir()->map(KERNEL_STACK,&stackFrame,1,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
 			PhysMem::free(stackFrame,PhysMem::KERN);
 			return -ENOMEM;
@@ -165,7 +165,7 @@ void ThreadBase::doSwitch(void) {
 
 			SMP::schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;
-			thread_resume(*n->getProc()->getPageDir(),&n->save,n->kstackFrame);
+			thread_resume(n->getProc()->getPageDir()->getPhysAddr(),&n->save,n->kstackFrame);
 		}
 	}
 	else

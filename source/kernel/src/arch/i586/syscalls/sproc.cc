@@ -73,21 +73,21 @@ int Syscalls::vm86int(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	/* check args */
-	if(!paging_isInUserSpace((uintptr_t)regs,sizeof(VM86::Regs)))
+	if(!PageDir::isInUserSpace((uintptr_t)regs,sizeof(VM86::Regs)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(mArea != NULL) {
 		size_t j;
-		if(!paging_isInUserSpace((uintptr_t)mArea,sizeof(VM86::Memarea)))
+		if(!PageDir::isInUserSpace((uintptr_t)mArea,sizeof(VM86::Memarea)))
 			SYSC_ERROR(stack,-EFAULT);
 		/* ensure that only memory from the real-mode-memory can be copied */
 		if(mArea->dst + mArea->size < mArea->dst || mArea->dst + mArea->size >= (1 * M + 64 * K))
 			SYSC_ERROR(stack,-EFAULT);
-		if(!paging_isInUserSpace((uintptr_t)mArea->src,mArea->size))
+		if(!PageDir::isInUserSpace((uintptr_t)mArea->src,mArea->size))
 			SYSC_ERROR(stack,-EFAULT);
 		for(j = 0; j < mArea->ptrCount; j++) {
 			if(mArea->ptr[j].offset + sizeof(uintptr_t) > mArea->size)
 				SYSC_ERROR(stack,-EINVAL);
-			if(!paging_isInUserSpace(mArea->ptr[j].result,mArea->ptr[j].size))
+			if(!PageDir::isInUserSpace(mArea->ptr[j].result,mArea->ptr[j].size))
 				SYSC_ERROR(stack,-EFAULT);
 		}
 	}

@@ -51,6 +51,6 @@ uintptr_t bspstart(sBootInfo *bootinfo) {
 	t->addInitialStack();
 	t->discardFrames();
 	/* we have to set the kernel-stack for the first process */
-	tlb_set(0,KERNEL_STACK,(t->getKernelStack() * PAGE_SIZE) | 0x3);
+	PageDir::tlbSet(0,KERNEL_STACK,(t->getKernelStack() * PAGE_SIZE) | 0x3);
 	return info.progEntry;
 }

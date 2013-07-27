@@ -146,7 +146,7 @@ void SMPBase::wakeupCPU() {
 	}
 }
 
-void SMPBase::flushTLB(pagedir_t *pdir) {
+void SMPBase::flushTLB(PageDir *pdir) {
 	if(!cpus || cpuCount == 1)
 		return;
 

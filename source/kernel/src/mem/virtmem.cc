@@ -104,8 +104,7 @@ uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	/* map memory */
 	if(!aquire())
 		goto errorRem;
-	res = paging_mapTo(getPageDir(),vm->virt,frames,pages,
-			writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT);
+	res = getPageDir()->map(vm->virt,frames,pages,writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT);
 	if(res < 0)
 		goto errorRel;
 	if(*phys) {
@@ -207,7 +206,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 		}
 		if(rflags & PROT_WRITE)
 			mapFlags |= PG_WRITABLE;
-		pts = paging_mapTo(getPageDir(),addr,NULL,pageCount,mapFlags);
+		pts = getPageDir()->map(addr,NULL,pageCount,mapFlags);
 		if(pts < 0)
 			goto errMap;
 		if(rflags & MAP_SHARED)
@@ -290,7 +289,7 @@ int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
 			/* can't fail because of PG_KEEPFRM and because the page-table is always present */
-			assert(paging_mapTo(mp->getPageDir(),mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags) == 0);
+			assert(mp->getPageDir()->map(mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags) == 0);
 		}
 	}
 	res = 0;
@@ -341,7 +340,7 @@ void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 #endif
 
 			/* get the frame first, because the page has to be present */
-			frameNo = paging_getFrameNo(vm->getPageDir(),vmreg->virt + index * PAGE_SIZE);
+			frameNo = vm->getPageDir()->getFrameNo(vmreg->virt + index * PAGE_SIZE);
 			/* unmap the page in all processes and ensure that all CPUs have flushed their TLB */
 			/* this way we know that nobody can still access the page; if someone tries, he will
 			 * cause a page-fault and will wait until we release the region-mutex */
@@ -350,7 +349,7 @@ void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 			SMP::ensureTLBFlushed();
 
 			/* copy to a temporary buffer because we can't use the temp-area when switching threads */
-			paging_copyFromFrame(frameNo,buffer);
+			PageDir::copyFromFrame(frameNo,buffer);
 			PhysMem::free(frameNo,PhysMem::USR);
 
 			/* write out on disk */
@@ -399,7 +398,7 @@ bool VirtMem::swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 
 	/* copy into a new frame */
 	frame = t->getFrame();
-	paging_copyToFrame(frame,buffer);
+	PageDir::copyToFrame(frame,buffer);
 
 	/* mark as not-swapped and map into all affected processes */
 	setSwappedIn(vmreg->reg,index,frame);
@@ -524,7 +523,7 @@ bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 	else if(flags & PF_SWAPPED)
 		res = PhysMem::swapIn(addr);
 	else if(flags & PF_COPYONWRITE) {
-		frameno_t frameNumber = paging_getFrameNo(getPageDir(),addr);
+		frameno_t frameNumber = getPageDir()->getFrameNo(addr);
 		size_t frmCount = CopyOnWrite::pagefault(addr,frameNumber);
 		addOwn(frmCount);
 		addShared(-frmCount);
@@ -586,10 +585,10 @@ void VirtMem::sync(VMRegion *vm) const {
 			else {
 				/* we can't use the temp mapping during vfs_writeFile because we might perform a
 				 * context-switch in between. */
-				frameno_t frame = paging_getFrameNo(getPageDir(),vm->virt + i * PAGE_SIZE);
-				uintptr_t addr = paging_getAccess(frame);
+				frameno_t frame = getPageDir()->getFrameNo(vm->virt + i * PAGE_SIZE);
+				uintptr_t addr = PageDir::getAccess(frame);
 				memcpy(buf,(void*)addr,amount);
-				paging_removeAccess();
+				PageDir::removeAccess();
 				vfs_writeFile(pid,file,buf,amount);
 			}
 		}
@@ -617,7 +616,7 @@ void VirtMem::doRemove(VMRegion *vm) {
 			bool freeFrame = !(vm->reg->getFlags() & RF_NOFREE);
 			if(vm->reg->getPageFlags(i) & PF_COPYONWRITE) {
 				bool foundOther;
-				frameno_t frameNo = paging_getFrameNo(getPageDir(),virt);
+				frameno_t frameNo = getPageDir()->getFrameNo(virt);
 				/* we can free the frame if there is no other user */
 				addShared(-CopyOnWrite::remove(frameNo,&foundOther));
 				freeFrame = !foundOther;
@@ -628,7 +627,7 @@ void VirtMem::doRemove(VMRegion *vm) {
 			}
 			if(vm->reg->getPageFlags(i) & PF_SWAPPED)
 				addSwap(-1);
-			pts = paging_unmapFrom(getPageDir(),virt,1,freeFrame);
+			pts = getPageDir()->unmap(virt,1,freeFrame);
 			if(freeFrame) {
 				if(vm->reg->getFlags() & RF_SHAREABLE)
 					addShared(-1);
@@ -653,7 +652,7 @@ void VirtMem::doRemove(VMRegion *vm) {
 	else {
 		size_t sw;
 		/* no free here, just unmap */
-		ssize_t pts = paging_unmapFrom(getPageDir(),vm->virt,pcount,false);
+		ssize_t pts = getPageDir()->unmap(vm->virt,pcount,false);
 		/* in this case its always a shared region because otherwise there wouldn't be other users */
 		/* so we have to substract the present content-frames from the shared ones,
 		 * and the ptables from ours */
@@ -705,7 +704,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 
 	/* shared, so content-frames to shared, ptables to own */
 	pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
-	res = paging_clonePages(getPageDir(),dst->getPageDir(),vm->virt,(*nvm)->virt,pageCount,true);
+	res = getPageDir()->clonePages(dst->getPageDir(),vm->virt,(*nvm)->virt,pageCount,true);
 	if(res < 0)
 		goto errRem;
 	dst->addShared(vm->reg->pageCount(&sw));
@@ -778,7 +777,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 
 			/* now copy the pages */
 			pageCount = BYTES_2_PAGES(nvm->reg->getByteCount());
-			res = paging_clonePages(getPageDir(),dst->getPageDir(),vm->virt,nvm->virt,pageCount,
+			res = getPageDir()->clonePages(dst->getPageDir(),vm->virt,nvm->virt,pageCount,
 					vm->reg->getFlags() & RF_SHAREABLE);
 			if(res < 0) {
 				vm->reg->release();
@@ -800,7 +799,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 					/* not when demand-load or swapping is outstanding since we've not loaded it
 					 * from disk yet */
 					else if(!(vm->reg->getPageFlags(j) & (PF_DEMANDLOAD | PF_SWAPPED))) {
-						frameno_t frameNo = paging_getFrameNo(getPageDir(),virt);
+						frameno_t frameNo = getPageDir()->getFrameNo(virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->getPageFlags(j) & PF_COPYONWRITE)) {
 							vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) | PF_COPYONWRITE);
@@ -948,7 +947,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 			}
 			else
 				virt = vm->virt + ROUND_PAGE_UP(oldSize);
-			pts = paging_mapTo(getPageDir(),virt,NULL,amount,mapFlags);
+			pts = getPageDir()->map(virt,NULL,amount,mapFlags);
 			if(pts < 0) {
 				if(vm->reg->getFlags() & RF_GROWS_DOWN)
 					vm->virt += amount * PAGE_SIZE;
@@ -971,7 +970,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 			/* give it back to the free area */
 			if(vm->virt >= FREE_AREA_BEGIN)
 				freemap.free(virt,-amount * PAGE_SIZE);
-			pts = paging_unmapFrom(getPageDir(),virt,-amount,true);
+			pts = getPageDir()->unmap(virt,-amount,true);
 			addOwn(-(pts - amount));
 			addSwap(-res);
 		}
@@ -1096,11 +1095,11 @@ bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 	/* zero the rest, if necessary */
 	if(res && zeroCount) {
 		/* do the memclear before the mapping to ensure that it's ready when the first CPU sees it */
-		frameno_t frame = loadCount ? paging_getFrameNo(Proc::getCurPageDir(),addr)
+		frameno_t frame = loadCount ? Proc::getCurPageDir()->getFrameNo(addr)
 									: Thread::getRunning()->getFrame();
-		uintptr_t frameAddr = paging_getAccess(frame);
+		uintptr_t frameAddr = PageDir::getAccess(frame);
 		memclear((void*)(frameAddr + loadCount),zeroCount);
-		paging_removeAccess();
+		PageDir::removeAccess();
 		/* if the pages weren't present so far, map them into every process that has this region */
 		if(!loadCount) {
 			sSLNode *n;
@@ -1112,7 +1111,7 @@ bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 				/* the region may be mapped to a different virtual address */
 				VMRegion *mpreg = mp->regtree.getByReg(vm->reg);
 				/* can't fail */
-				assert(paging_mapTo(mp->getPageDir(),mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
+				assert(mp->getPageDir()->map(mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
 				mp->addShared(1);
 			}
 		}
@@ -1148,7 +1147,7 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	}
 
 	/* copy into frame */
-	frame = paging_demandLoad(tempBuf,loadCount,vm->reg->getFlags());
+	frame = PageDir::demandLoad(tempBuf,loadCount,vm->reg->getFlags());
 
 	/* free resources not needed anymore */
 	Thread::remHeapAlloc(tempBuf);
@@ -1165,7 +1164,7 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(vm->reg);
 		/* can't fail */
-		assert(paging_mapTo(mp->getPageDir(),mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
+		assert(mp->getPageDir()->map(mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
 		if(vm->reg->getFlags() & RF_SHAREABLE)
 			mp->addShared(1);
 		else
@@ -1256,7 +1255,7 @@ void VirtMem::setSwappedOut(Region *reg,size_t index) {
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(reg);
 		/* can't fail */
-		assert(paging_mapTo(mp->getPageDir(),mpreg->virt + offset,NULL,1,0) == 0);
+		assert(mp->getPageDir()->map(mpreg->virt + offset,NULL,1,0) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
 			mp->addShared(-1);
 		else
@@ -1280,7 +1279,7 @@ void VirtMem::setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = mp->regtree.getByReg(reg);
 		/* can't fail */
-		assert(paging_mapTo(mp->getPageDir(),mpreg->virt + offset,&frameNo,1,flags) == 0);
+		assert(mp->getPageDir()->map(mpreg->virt + offset,&frameNo,1,flags) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
 			mp->addShared(1);
 		else

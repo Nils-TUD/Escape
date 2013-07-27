@@ -212,7 +212,7 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	sIntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	sKSpecRegs *sregs;
-	if(!paging_isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
+	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
 		Proc::segFault();
 		/* not reached */
 		assert(false);

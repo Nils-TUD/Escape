@@ -74,7 +74,7 @@ void apic_init(void) {
 		/* TODO every APIC may have a different address */
 		uint64_t apicBase = CPU::getMSR(MSR_APIC_BASE);
 		if(apicBase & APIC_BASE_EN) {
-			apicAddr = paging_makeAccessible(APIC_BASE_ADDR(apicBase),1);
+			apicAddr = PageDir::makeAccessible(APIC_BASE_ADDR(apicBase),1);
 			enabled = true;
 		}
 	}

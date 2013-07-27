@@ -94,7 +94,7 @@ public:
 	/**
 	 * @return the page-dir of the current process (or the first one)
 	 */
-	static pagedir_t *getCurPageDir();
+	static PageDir *getCurPageDir();
 
 	/**
 	 * @return the pid of the running process
@@ -401,7 +401,7 @@ public:
 	/**
 	 * @return the page-directory
 	 */
-	pagedir_t *getPageDir() {
+	PageDir *getPageDir() {
 		return virtmem.getPageDir();
 	}
 	/**
@@ -569,10 +569,10 @@ private:
 typedef enum {CHG_DATA,CHG_STACK} eChgArea;
 
 inline void ProcBase::preinit() {
-	paging_setFirst(first.getPageDir());
+	first.getPageDir()->makeFirst();
 }
 
-inline pagedir_t *ProcBase::getCurPageDir() {
+inline PageDir *ProcBase::getCurPageDir() {
 	const Thread *t = Thread::getRunning();
 	/* just needed at the beginning */
 	if(t == NULL)

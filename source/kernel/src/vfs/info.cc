@@ -384,7 +384,7 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	paging_sprintfVirtMem(&buf,p->getPageDir());
+	p->getPageDir()->sprintf(&buf);
 	*buffer = buf.str;
 	*dataSize = buf.len;
 }

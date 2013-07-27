@@ -29,10 +29,6 @@
 
 	.global logByte
 	.global debugc
-	.global paging_setrV
-
-	.global tc_clear
-	.global tc_update
 
 	.global cpu_getSyscallNo
 	.global cpu_getFaultLoc
@@ -336,7 +332,7 @@ thread_initSave:
 	SET		$0,0							# return 0
 	POP		1,0
 
-# int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,pagedir_t pdir,tid_t tid)
+# int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,uint64_t rv,tid_t tid)
 thread_doSwitchTo:
 	# just for backtracing: put the thread-id in rF
 	PUT		rF,$3
@@ -349,8 +345,7 @@ thread_doSwitchTo:
 	SAVE	$255,0
 	STOU	$255,$250,0						# store stack-end
 	# restore state of new thread
-	LDOU	$0,$252,8						# load rV
-	PUT		rV,$0
+	PUT		rV,$252
 	LDOU	$0,$251,0						# load stackend
 	SET		$1,$0
 	ANDNL	$1,#1FFF						# to page-begin
@@ -358,29 +353,6 @@ thread_doSwitchTo:
 	UNSAVE	0,$0
 	SET		$0,1							# return 1
 	POP		1,0
-
-#===========================================
-# Paging
-#===========================================
-
-# void paging_setrV(uint64_t rv)
-paging_setrV:
-	PUT		rV,$0
-	POP		0,0
-
-#===========================================
-# TC
-#===========================================
-
-# void tc_clear(void)
-tc_clear:
-	SYNC	6
-	POP		0,0
-
-# void tc_update(uint64_t key)
-tc_update:
-	LDVTS	$0,$0,0
-	POP		0,0
 
 #===========================================
 # CPU

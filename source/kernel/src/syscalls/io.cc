@@ -89,8 +89,8 @@ int Syscalls::pipe(Thread *t,sIntrptStackFrame *stack) {
 	int res;
 
 	/* make sure that the pointers point to userspace */
-	if(!paging_isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
-			!paging_isInUserSpace((uintptr_t)writeFd,sizeof(int)))
+	if(!PageDir::isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
+			!PageDir::isInUserSpace((uintptr_t)writeFd,sizeof(int)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	res = vfs_openPipe(pid,&readFile,&writeFile);
@@ -129,7 +129,7 @@ int Syscalls::stat(Thread *t,sIntrptStackFrame *stack) {
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 	int res;
-	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
+	if(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
@@ -146,7 +146,7 @@ int Syscalls::fstat(Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	sFile *file;
 	int res;
-	if(!paging_isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
+	if(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
@@ -197,7 +197,7 @@ int Syscalls::tell(Thread *t,sIntrptStackFrame *stack) {
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 	sFile *file;
-	if(!paging_isInUserSpace((uintptr_t)pos,sizeof(off_t)))
+	if(!PageDir::isInUserSpace((uintptr_t)pos,sizeof(off_t)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
@@ -245,7 +245,7 @@ int Syscalls::read(Thread *t,sIntrptStackFrame *stack) {
 	/* validate count and buffer */
 	if(count == 0)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)buffer,count))
+	if(!PageDir::isInUserSpace((uintptr_t)buffer,count))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
@@ -272,7 +272,7 @@ int Syscalls::write(Thread *t,sIntrptStackFrame *stack) {
 	/* validate count and buffer */
 	if(count == 0)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)buffer,count))
+	if(!PageDir::isInUserSpace((uintptr_t)buffer,count))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
@@ -296,7 +296,7 @@ int Syscalls::send(Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	sFile *file;
 	ssize_t res;
-	if(!paging_isInUserSpace((uintptr_t)data,size))
+	if(!PageDir::isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,-EFAULT);
 	/* can't be sent by user-programs */
 	if(IS_DEVICE_MSG(id))
@@ -323,7 +323,7 @@ int Syscalls::receive(Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	sFile *file;
 	ssize_t res;
-	if(!paging_isInUserSpace((uintptr_t)data,size))
+	if(!PageDir::isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */

@@ -21,7 +21,10 @@
 
 #include <esc/common.h>
 #include <sys/arch/mmix/mem/addrspace.h>
+#include <sys/mem/physmemareas.h>
 #include <sys/boot.h>
+#include <string.h>
+#include <assert.h>
 
 /**
  * Virtual memory layout:
@@ -124,8 +127,128 @@
  * if it is accessed over the directly mapped space. */
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START)
 
-typedef struct {
+/*
+ * PTE:
+ * +-------+-+-------------------------------------------+----------+-+-+-+
+ * |       |e|                 frameNumber               |     n    |r|w|x|
+ * +-------+-+-------------------------------------------+----------+-+-+-+
+ * 63     57 56                                          13         3     0
+ *
+ * PTP:
+ * +-+---------------------------------------------------+----------+-+-+-+
+ * |1|                   ptframeNumber                   |     n    | ign |
+ * +-+---------------------------------------------------+----------+-+-+-+
+ * 63                                                    13         3     0
+ */
+
+/* to shift a flag down to the first bit */
+#define PG_PRESENT_SHIFT			0
+#define PG_WRITABLE_SHIFT			1
+#define PG_EXECUTABLE_SHIFT			2
+
+/* pte fields */
+#define PTE_EXISTS					(1UL << 56)
+#define PTE_READABLE				(1UL << 2)
+#define PTE_WRITABLE				(1UL << 1)
+#define PTE_EXECUTABLE				(1UL << 0)
+#define PTE_FRAMENO(pte)			(((pte) >> PAGE_SIZE_SHIFT) & 0x7FFFFFFFFFF)
+#define PTE_FRAMENO_MASK			0x00FFFFFFFFFFE000
+#define PTE_NMASK					0x0000000000001FF8
+
+#define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT)
+#define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
+
+class PageDir : public PageDirBase {
+	friend class PageDirBase;
+
+public:
+	explicit PageDir() : PageDirBase(), addrSpace(), rv(), ptables() {
+	}
+
+	uint64_t getRV() const {
+		return rv;
+	}
+
+private:
+	static void clearTC() {
+		asm volatile ("SYNC 6");
+	}
+	static void updateTC(uint64_t key) {
+		asm volatile ("LDVTS %0,%0,0" : "+r"(key));
+	}
+	static void setrV(uint64_t rv) {
+		asm volatile ("PUT rV,%0" : : "r"(rv));
+	}
+
+	static void sprintfPrint(char c) {
+		prf_sprintf(strBuf,"%c",c);
+	}
+
+	static size_t getPageCountOf(uint64_t *pt,size_t level);
+	static void printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
+	static void printPTE(uint64_t pte);
+
+	uint64_t *getPT(uintptr_t virt,bool create,size_t *createdPts) const;
+	uint64_t getPTE(uintptr_t virt) const;
+	size_t removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth);
+	size_t remEmptyPts(uintptr_t virt);
+	void tcRemPT(uintptr_t virt);
+
+	/* TODO remove that */
+public:
 	sAddressSpace *addrSpace;
 	uint64_t rv;
 	ulong ptables;
-} pagedir_t;
+private:
+	static PageDir firstCon;
+	static sStringBuffer *strBuf;
+};
+
+inline void PageDirBase::makeFirst() {
+	PageDir *pdir = static_cast<PageDir*>(this);
+	pdir->addrSpace = PageDir::firstCon.addrSpace;
+	pdir->rv = PageDir::firstCon.rv;
+	pdir->ptables = PageDir::firstCon.ptables;
+}
+
+inline uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
+	assert(phys == 0);
+	return DIR_MAPPED_SPACE | (PhysMemAreas::alloc(pages) * PAGE_SIZE);
+}
+
+inline bool PageDirBase::isInUserSpace(uintptr_t virt,size_t count) {
+	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
+}
+
+inline size_t PageDirBase::getPTableCount() const {
+	return static_cast<const PageDir*>(this)->ptables;
+}
+
+inline bool PageDirBase::isPresent(uintptr_t virt) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	uint64_t pte = pdir->getPTE(virt);
+	return pte & PTE_EXISTS;
+}
+
+inline frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	uint64_t pte = pdir->getPTE(virt);
+	assert(pte & PTE_EXISTS);
+	return PTE_FRAMENO(pte);
+}
+
+inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
+	return frame * PAGE_SIZE | DIR_MAPPED_SPACE;
+}
+
+inline void PageDirBase::removeAccess() {
+	/* nothing to do */
+}
+
+inline void PageDirBase::copyToFrame(frameno_t frame,const void *src) {
+	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),src,PAGE_SIZE);
+}
+
+inline void PageDirBase::copyFromFrame(frameno_t frame,void *dst) {
+	memcpy(dst,(void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),PAGE_SIZE);
+}

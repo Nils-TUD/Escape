@@ -125,11 +125,11 @@ int Syscalls::getwork(Thread *t,sIntrptStackFrame *stack) {
 	/* validate pointers */
 	if(fdCount == 0 || fdCount > MAX_GETWORK_DEVICES)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)drv,sizeof(int)))
+	if(!PageDir::isInUserSpace((uintptr_t)drv,sizeof(int)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!paging_isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
+	if(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!paging_isInUserSpace((uintptr_t)data,size))
+	if(!PageDir::isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* translate to files */

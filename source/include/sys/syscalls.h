@@ -63,7 +63,7 @@ public:
 		size_t slen = strlen(str);
 		if(len)
 			*len = slen;
-		return paging_isInUserSpace((uintptr_t)str,slen);
+		return PageDir::isInUserSpace((uintptr_t)str,slen);
 	}
 
 private:

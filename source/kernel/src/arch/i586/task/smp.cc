@@ -198,6 +198,6 @@ void SMPBase::start() {
 	 * it passes it to the MMU).
 	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
 	 * Therefore we can unmap the 0x0 area. */
-	paging_gdtFinished();
+	PageDir::gdtFinished();
 	setReady(0);
 }

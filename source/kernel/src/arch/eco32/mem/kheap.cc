@@ -28,7 +28,7 @@ uintptr_t KHeap::allocAreas(void) {
 		return 0;
 
 	/* allocate one page for area-structs */
-	if(paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,
+	if(PageDir::mapToCur(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
 
@@ -40,7 +40,7 @@ uintptr_t KHeap::allocSpace(size_t count) {
 	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return 0;
 
-	if(paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
+	if(PageDir::mapToCur(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
 

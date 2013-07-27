@@ -144,7 +144,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 
 void UEnv::startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
-	if(!paging_isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
+	if(!PageDir::isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
 		Proc::segFault();
 		/* never reached */
 		assert(false);

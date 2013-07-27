@@ -286,7 +286,7 @@ void gdt_init_ap(void) {
 
 	gdttbl = allgdts + gdtCount++;
 	i = tssCount++;
-	tss = (sTSS*)paging_makeAccessible(0,BYTES_2_PAGES(sizeof(sTSS)));
+	tss = (sTSS*)PageDir::makeAccessible(0,BYTES_2_PAGES(sizeof(sTSS)));
 
 	/* create GDT (copy from first one) */
 	apgdt = (sGDTDesc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(sGDTDesc));

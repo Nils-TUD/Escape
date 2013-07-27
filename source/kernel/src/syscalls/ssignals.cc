@@ -32,7 +32,7 @@ int Syscalls::signal(Thread *t,sIntrptStackFrame *stack) {
 	Signals::handler_func old = SIG_ERR;
 
 	/* address should be valid */
-	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isInUserSpace((uintptr_t)handler,1))
+	if(handler != SIG_IGN && handler != SIG_DFL && !PageDir::isInUserSpace((uintptr_t)handler,1))
 		SYSC_ERROR(stack,(long)SIG_ERR);
 
 	if(signal == (int)SIG_RET)

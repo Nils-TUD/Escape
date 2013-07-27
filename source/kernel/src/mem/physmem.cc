@@ -87,12 +87,12 @@ void PhysMem::init() {
 
 	/* map it so that we can access it; this will automatically remove some frames from the
 	 * available memory. */
-	stackBegin = paging_makeAccessible(0,stackPages);
+	stackBegin = PageDir::makeAccessible(0,stackPages);
 	stack = (frameno_t*)stackBegin;
 
 	/* map bitmap behind it */
 	bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
-	bitmap = (tBitmap*)paging_makeAccessible(0,bmFrmCnt);
+	bitmap = (tBitmap*)PageDir::makeAccessible(0,bmFrmCnt);
 	/* mark all free */
 	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 

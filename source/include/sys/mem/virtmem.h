@@ -107,9 +107,9 @@ public:
 	/**
 	 * @return the page-directory
 	 */
-	pagedir_t *getPageDir() const {
+	PageDir *getPageDir() const {
 		// TODO is that necessary?
-		return const_cast<pagedir_t*>(&pagedir);
+		return const_cast<PageDir*>(&pagedir);
 	}
 	/**
 	 * @return the number of own frames
@@ -331,6 +331,7 @@ private:
 	void destroy() {
 		freemap.destroy();
 		VMTree::remTree(&regtree);
+		pagedir.destroy();
 	}
 
 	/**
@@ -381,7 +382,7 @@ private:
 
 	pid_t pid;
 	/* the physical address for the page-directory of this process */
-	pagedir_t pagedir;
+	PageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no regaddphys.
 	 * paging-structures are counted, too */
 	ulong ownFrames;

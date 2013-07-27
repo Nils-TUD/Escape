@@ -108,7 +108,7 @@ int Syscalls::wait(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
+	if(!PageDir::isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	res = doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
@@ -127,7 +127,7 @@ int Syscalls::waitunlock(Thread *t,sIntrptStackFrame *stack) {
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
+	if(!PageDir::isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* wait and release the lock before going to sleep */

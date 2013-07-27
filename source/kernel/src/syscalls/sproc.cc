@@ -113,7 +113,7 @@ int Syscalls::getgroups(Thread *t,sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
+	if(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	size = Groups::get(pid,list,size);
@@ -124,7 +124,7 @@ int Syscalls::setgroups(Thread *t,sIntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!paging_isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
+	if(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	if(!Groups::set(pid,size,list))
@@ -149,7 +149,7 @@ int Syscalls::fork(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 int Syscalls::waitchild(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	Proc::ExitState *state = (Proc::ExitState*)SYSC_ARG1(stack);
 	int res;
-	if(state != NULL && !paging_isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState)))
+	if(state != NULL && !PageDir::isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	res = Proc::waitChild(state);
@@ -165,7 +165,7 @@ int Syscalls::getenvito(Thread *t,sIntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	if(size == 0)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)buffer,size))
+	if(!PageDir::isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	if(!Env::geti(pid,index,buffer,size))
@@ -182,7 +182,7 @@ int Syscalls::getenvto(Thread *t,sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 	if(size == 0)
 		SYSC_ERROR(stack,-EINVAL);
-	if(!paging_isInUserSpace((uintptr_t)buffer,size))
+	if(!PageDir::isInUserSpace((uintptr_t)buffer,size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	if(!Env::get(pid,name,buffer,size))

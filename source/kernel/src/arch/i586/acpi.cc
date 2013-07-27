@@ -117,15 +117,15 @@ void acpi_parse(void) {
 
 	/* first map the RSDT. we assume that it covers only one page */
 	size_t off = (uintptr_t)rsdt & (PAGE_SIZE - 1);
-	rsdt = (sRSDT*)(paging_makeAccessible((uintptr_t)rsdt,1) + off);
+	rsdt = (sRSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,1) + off);
 	size_t i,j,count = (rsdt->length - sizeof(sRSDT)) / size;
 	if(off + rsdt->length > PAGE_SIZE) {
 		size_t pages = BYTES_2_PAGES(off + rsdt->length);
-		rsdt = (sRSDT*)(paging_makeAccessible((uintptr_t)rsdt,pages) + off);
+		rsdt = (sRSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,pages) + off);
 	}
 
 	/* now walk through the tables behind the RSDT */
-	uintptr_t curDest = paging_makeAccessible(0,MAX_ACPI_PAGES);
+	uintptr_t curDest = PageDir::makeAccessible(0,MAX_ACPI_PAGES);
 	uintptr_t destEnd = curDest + MAX_ACPI_PAGES * PAGE_SIZE;
 	uintptr_t start = (uintptr_t)(rsdt + 1);
 	for(i = 0; i < count; i++) {
@@ -139,11 +139,11 @@ void acpi_parse(void) {
 		size_t tmpPages = 1;
 		size_t tbloff = (uintptr_t)tbl & (PAGE_SIZE - 1);
 		frameno_t frm = (uintptr_t)tbl / PAGE_SIZE;
-		uintptr_t tmp = paging_mapToTemp(&frm,1);
+		uintptr_t tmp = PageDir::mapToTemp(&frm,1);
 		sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
 		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
 			size_t tbllen = tmptbl->length;
-			paging_unmapFromTemp(1);
+			PageDir::unmapFromTemp(1);
 			/* determine the real number of required pages */
 			tmpPages = (tbloff + tbllen + PAGE_SIZE - 1) / PAGE_SIZE;
 			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
@@ -154,7 +154,7 @@ void acpi_parse(void) {
 			frameno_t framenos[tmpPages];
 			for(j = 0; j < tmpPages; ++j)
 				framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
-			tmp  = paging_mapToTemp(framenos,tmpPages);
+			tmp  = PageDir::mapToTemp(framenos,tmpPages);
 			tmptbl = (sRSDT*)(tmp + tbloff);
 		}
 
@@ -162,7 +162,7 @@ void acpi_parse(void) {
 		if(curDest + tmptbl->length > destEnd) {
 			log_printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
 					curDest + tmptbl->length,destEnd);
-			paging_unmapFromTemp(tmpPages);
+			PageDir::unmapFromTemp(tmpPages);
 			continue;
 		}
 
@@ -174,7 +174,7 @@ void acpi_parse(void) {
 		}
 		else
 			log_printf("Checksum of table %zu is invalid. Skipping\n",i);
-		paging_unmapFromTemp(tmpPages);
+		PageDir::unmapFromTemp(tmpPages);
 	}
 
 	/* walk through the table and search for APIC entries */

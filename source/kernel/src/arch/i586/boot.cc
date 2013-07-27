@@ -117,7 +117,7 @@ void boot_arch_start(sBootInfo *info) {
 	bootTaskList.moduleCount = mb->modsCount;
 
 	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
-	paging_init();
+	PageDir::init();
 	gdt_init();
 	Thread::setRunning(NULL);
 
@@ -129,13 +129,13 @@ void boot_arch_start(sBootInfo *info) {
 	/* init physical memory and paging */
 	Proc::preinit();
 	PhysMem::init();
-	paging_mapKernelSpace();
+	PageDir::mapKernelSpace();
 
 	/* now map modules */
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		size_t size = mod->modEnd - mod->modStart;
-		mod->modStart = paging_makeAccessible(mod->modStart,BYTES_2_PAGES(size));
+		mod->modStart = PageDir::makeAccessible(mod->modStart,BYTES_2_PAGES(size));
 		mod->modEnd = mod->modStart + size;
 		mod++;
 	}

@@ -119,7 +119,7 @@ int Syscalls::regaddphys(Thread *t,sIntrptStackFrame *stack) {
 	size_t align = SYSC_ARG3(stack);
 	uintptr_t addr,physCpy = *phys;
 
-	if(!paging_isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
+	if(!PageDir::isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* ensure that its allowed to map this area (if the address is specified) */

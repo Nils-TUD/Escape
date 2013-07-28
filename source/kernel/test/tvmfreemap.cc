@@ -74,10 +74,10 @@ static void test_vmfree_randOrder(void) {
 		sizes[i] = (i + 1) * PAGE_SIZE;
 		freeIndices[i] = i;
 	}
-	util_srand(0x12345);
+	Util::srand(0x12345);
 	for(i = 0; i < 10000; i++) {
-		size_t j = util_rand() % AREA_COUNT;
-		size_t k = util_rand() % AREA_COUNT;
+		size_t j = Util::rand() % AREA_COUNT;
+		size_t k = Util::rand() % AREA_COUNT;
 		size_t t = freeIndices[j];
 		freeIndices[j] = freeIndices[k];
 		freeIndices[k] = t;

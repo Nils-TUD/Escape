@@ -61,7 +61,7 @@ void SMPBase::disable() {
 void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	CPU *cpu = (CPU*)Cache::alloc(sizeof(CPU));
 	if(!cpu)
-		util_panic("Unable to allocate mem for CPU");
+		Util::panic("Unable to allocate mem for CPU");
 	cpu->bootstrap = bootstrap;
 	cpu->id = id;
 	cpu->ready = ready;
@@ -73,7 +73,7 @@ void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	cpu->lastTotal = 0;
 	cpu->lastUpdate = 0;
 	if(!sll_append(&cpuList,cpu))
-		util_panic("Unable to append CPU");
+		Util::panic("Unable to append CPU");
 	cpuCount++;
 }
 
@@ -86,7 +86,7 @@ void SMPBase::setId(cpuid_t old,cpuid_t newid) {
 	if(!cpus) {
 		cpus = (CPU**)Cache::calloc(cpuCount,sizeof(CPU*));
 		if(!cpus)
-			util_panic("Not enough mem for cpu-array");
+			Util::panic("Not enough mem for cpu-array");
 	}
 	cpus[newid] = cpu;
 }

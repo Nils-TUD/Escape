@@ -160,12 +160,12 @@ void PageDir::mapKernelSpace() {
 		addr < TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE;
 		addr += PAGE_SIZE * PT_ENTRY_COUNT) {
 		if(crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
-			util_panic("Not enough kernel-memory for page tables");
+			Util::panic("Not enough kernel-memory for page tables");
 	}
 	/* map dynamically extending regions */
 	for(addr = GFT_AREA; addr < SLLNODE_AREA + SLLNODE_AREA_SIZE; addr += PAGE_SIZE * PT_ENTRY_COUNT) {
 		if(crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
-			util_panic("Not enough kernel-memory for page tables");
+			Util::panic("Not enough kernel-memory for page tables");
 	}
 }
 
@@ -181,7 +181,7 @@ uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
 	PageDir *cur = Proc::getCurPageDir();
 	uintptr_t addr = PageDir::freeAreaAddr;
 	if(addr + pages * PAGE_SIZE > FREE_KERNEL_AREA + FREE_KERNEL_AREA_SIZE)
-		util_panic("Bootstrap area too small");
+		Util::panic("Bootstrap area too small");
 	if(phys) {
 		size_t i;
 		for(i = 0; i < pages; ++i) {

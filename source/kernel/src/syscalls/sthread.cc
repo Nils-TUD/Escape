@@ -62,7 +62,7 @@ int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
 	Proc::exit(exitCode);
 	Thread::switchAway();
-	util_panic("We shouldn't get here...");
+	Util::panic("We shouldn't get here...");
 	SYSC_RET1(stack,0);
 }
 

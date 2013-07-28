@@ -26,6 +26,7 @@
 #include <sys/printf.h>
 #include <sys/video.h>
 #include <sys/log.h>
+#include <sys/util.h>
 #include <string.h>
 
 /* based on http://forum.osdev.org/viewtopic.php?t=11998 */
@@ -140,7 +141,7 @@ void CPU::detect() {
 	if(cpus == NULL) {
 		cpus = (Info*)Cache::alloc(sizeof(Info) * SMP::getCPUCount());
 		if(!cpus)
-			util_panic("Not enough mem for CPU-infos");
+			Util::panic("Not enough mem for CPU-infos");
 
 		/* detect the speed just once */
 		cpuHz = Timer::detectCPUSpeed();

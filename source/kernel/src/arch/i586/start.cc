@@ -71,11 +71,11 @@ uintptr_t smpstart(void) {
 
 	/* load initloader */
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
-		util_panic("Unable to load initloader");
+		Util::panic("Unable to load initloader");
 	/* give the process some stack pages */
 	t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
-		util_panic("Not enough mem for initloader-stack");
+		Util::panic("Not enough mem for initloader-stack");
 	t->addInitialStack();
 	t->discardFrames();
 	return info.progEntry;

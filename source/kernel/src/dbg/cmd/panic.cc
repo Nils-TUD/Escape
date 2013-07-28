@@ -28,6 +28,6 @@ int cons_cmd_panic(A_UNUSED size_t argc,A_UNUSED char **argv) {
 		return 0;
 	}
 
-	util_panic("This is a sample panic!");
+	Util::panic("This is a sample panic!");
 	return 0;
 }

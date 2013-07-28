@@ -116,13 +116,13 @@ void GDT::init_bsp() {
 	cpuCount = SMP::getCPUCount();
 	allgdts = (Table*)Cache::calloc(cpuCount,sizeof(Table));
 	if(!allgdts)
-		util_panic("Unable to allocate GDT-Tables for APs");
+		Util::panic("Unable to allocate GDT-Tables for APs");
 	alltss = (TSS**)Cache::calloc(cpuCount,sizeof(TSS*));
 	if(!alltss)
-		util_panic("Unable to allocate TSS-pointers for APs");
+		Util::panic("Unable to allocate TSS-pointers for APs");
 	ioMaps = (const uint8_t**)Cache::calloc(cpuCount,sizeof(uint8_t*));
 	if(!ioMaps)
-		util_panic("Unable to allocate IO-Map-Pointers for APs");
+		Util::panic("Unable to allocate IO-Map-Pointers for APs");
 
 	/* put GDT of BSP into the GDT-array, for simplicity */
 	allgdts[0].offset = (uintptr_t)bspgdt;
@@ -149,7 +149,7 @@ void GDT::init_ap() {
 	/* create GDT (copy from first one) */
 	apgdt = (Desc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(Desc));
 	if(!apgdt)
-		util_panic("Unable to allocate GDT for AP");
+		Util::panic("Unable to allocate GDT for AP");
 	gdttbl->offset = (uintptr_t)apgdt;
 	gdttbl->size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 	memcpy(apgdt,bspgdt,GDT_ENTRY_COUNT * sizeof(Desc));

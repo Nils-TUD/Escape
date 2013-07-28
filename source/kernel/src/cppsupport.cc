@@ -40,5 +40,5 @@ void operator delete(void *ptr) {
 }
 
 void __cxa_pure_virtual() {
-	util_panic("Pure virtual method called");
+	Util::panic("Pure virtual method called");
 }

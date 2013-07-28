@@ -41,7 +41,7 @@ void PageDirBase::init() {
 	ssize_t res;
 	/* set root-location of first process */
 	if((res = PhysMem::allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1)) < 0)
-		util_panic("Not enough contiguous memory for the root-location of the first process");
+		Util::panic("Not enough contiguous memory for the root-location of the first process");
 	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	/* clear */
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);

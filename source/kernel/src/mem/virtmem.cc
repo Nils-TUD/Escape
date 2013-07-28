@@ -304,7 +304,7 @@ void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 	while(count > 0) {
 		Region *reg = getLRURegion();
 		if(reg == NULL)
-			util_panic("No pages to swap out");
+			Util::panic("No pages to swap out");
 
 		/* the list of processes may have changed in the meantime; we can't swap out in this case */
 		while(count > 0) {
@@ -1235,7 +1235,7 @@ ssize_t VirtMem::getPgIdxForSwap(const Region *reg) {
 			count++;
 	}
 	if(count > 0) {
-		index = util_rand() % count;
+		index = Util::rand() % count;
 		for(i = 0; i < pages; i++) {
 			if(!(reg->getPageFlags(i) & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
 				if(index-- == 0)

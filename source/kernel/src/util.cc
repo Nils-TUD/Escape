@@ -30,17 +30,19 @@
 #include <sys/video.h>
 #include <sys/spinlock.h>
 #include <sys/util.h>
+#include <sys/cpu.h>
 #include <sys/log.h>
 #include <stdarg.h>
 #include <string.h>
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
-static uint randa = 1103515245;
-static uint randc = 12345;
-static uint lastRand = 0;
-static klock_t randLock;
+uint Util::randa = 1103515245;
+uint Util::randc = 12345;
+uint Util::lastRand = 0;
+klock_t Util::randLock;
+uint64_t Util::profStart;
 
-int util_rand(void) {
+int Util::rand() {
 	int res;
 	spinlock_aquire(&randLock);
 	lastRand = randa * lastRand + randc;
@@ -49,16 +51,30 @@ int util_rand(void) {
 	return res;
 }
 
-void util_srand(uint seed) {
+void Util::srand(uint seed) {
 	spinlock_aquire(&randLock);
 	lastRand = seed;
 	spinlock_release(&randLock);
 }
 
-void util_panic(const char *fmt, ...) {
+void Util::startTimer() {
+	profStart = CPU::rdtsc();
+}
+
+void Util::stopTimer(const char *prefix,...) {
+	va_list l;
+	uLongLong diff;
+	diff.val64 = CPU::rdtsc() - profStart;
+	va_start(l,prefix);
+	vid_vprintf(prefix,l);
+	va_end(l);
+	vid_printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
+}
+
+void Util::panic(const char *fmt, ...) {
 	va_list ap;
 	const Thread *t = Thread::getRunning();
-	util_panic_arch();
+	panicArch();
 	vid_clearScreen();
 
 	/* print message */
@@ -73,9 +89,9 @@ void util_panic(const char *fmt, ...) {
 	/* write information about the running thread to log/screen */
 	if(t != NULL)
 		vid_printf("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
-	util_printStackTrace(util_getKernelStackTrace());
+	printStackTrace(getKernelStackTrace());
 	if(t) {
-		util_printUserState();
+		printUserState();
 
 		vid_setTargets(TARGET_LOG);
 		vid_printf("\n============= snip =============\n");
@@ -83,7 +99,7 @@ void util_panic(const char *fmt, ...) {
 		t->getProc()->getVM()->printShort("\t");
 
 		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
-		util_printStackTrace(util_getUserStackTrace());
+		printStackTrace(getUserStackTrace());
 
 		vid_setTargets(TARGET_LOG);
 		vid_printf("============= snip =============\n\n");
@@ -108,7 +124,7 @@ void util_panic(const char *fmt, ...) {
 	}
 }
 
-void util_printEventTrace(const sFuncCall *trace,const char *fmt,...) {
+void Util::printEventTrace(const FuncCall *trace,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	vid_vprintf(fmt,ap);
@@ -129,7 +145,7 @@ void util_printEventTrace(const sFuncCall *trace,const char *fmt,...) {
 	vid_printf("\n");
 }
 
-void util_printStackTrace(const sFuncCall *trace) {
+void Util::printStackTrace(const FuncCall *trace) {
 	if(trace && trace->addr) {
 		if(trace->addr < KERNEL_AREA)
 			vid_printf("User-Stacktrace:\n");
@@ -143,7 +159,7 @@ void util_printStackTrace(const sFuncCall *trace) {
 	}
 }
 
-void util_dumpMem(const void *addr,size_t dwordCount) {
+void Util::dumpMem(const void *addr,size_t dwordCount) {
 	ulong *ptr = (ulong*)addr;
 	while(dwordCount-- > 0) {
 		vid_printf("%p: 0x%0*lx\n",ptr,sizeof(ulong) * 2,*ptr);
@@ -151,7 +167,7 @@ void util_dumpMem(const void *addr,size_t dwordCount) {
 	}
 }
 
-void util_dumpBytes(const void *addr,size_t byteCount) {
+void Util::dumpBytes(const void *addr,size_t byteCount) {
 	size_t i = 0;
 	uchar *ptr = (uchar*)addr;
 	for(i = 0; byteCount-- > 0; i++) {

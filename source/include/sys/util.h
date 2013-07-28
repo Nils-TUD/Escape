@@ -24,125 +24,136 @@
 #include <sys/ksymbols.h>
 #include <stdarg.h>
 
-/**
- * Represents one function-call
- */
-typedef struct {
-	uintptr_t addr;
-	uintptr_t funcAddr;
-	const char *funcName;
-} sFuncCall;
+class Util {
+	Util() = delete;
 
-#ifdef __i386__
-#include <sys/arch/i586/util.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/util.h>
-#endif
+public:
+	/**
+	 * Represents one function-call
+	 */
+	struct FuncCall {
+		uintptr_t addr;
+		uintptr_t funcAddr;
+		const char *funcName;
+	};
 
-/* The max. stack-depth util_getStackTrace() supports */
-#define MAX_STACK_DEPTH 100
+	/* The max. stack-depth getStackTrace() supports */
+	static const size_t MAX_STACK_DEPTH		= 100;
 
-/**
- * PANIC: Displays the given message and halts
- *
- * @param fmt the format of the message to display
- */
-/* TODO temporary! */
-EXTERN_C void util_panic(const char *fmt,...);
+	/**
+	 * PANIC: Displays the given message and halts
+	 *
+	 * @param fmt the format of the message to display
+	 */
+	static void panic(const char *fmt,...) asm("util_panic");
 
-/**
- * Architecture dependent part of panic
- */
-void util_panic_arch(void);
+	/**
+	 * Prints the user state of the current thread.
+	 */
+	static void printUserState();
 
-/**
- * Prints the user state of the current thread.
- */
-void util_printUserState(void);
+	/**
+	 * Prints the user state of the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void printUserStateOf(const Thread *t);
 
-/**
- * Prints the user state of the given thread
- *
- * @param t the thread
- */
-void util_printUserStateOf(const Thread *t);
+	/**
+	 * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
+	 *
+	 * @return the random number
+	 */
+	static int rand();
 
-/**
- * Starts the log-viewer
- */
-void util_logViewer(void);
+	/**
+	 * Srand seeds the random number generation function rand so it does not produce the same
+	 * sequence of numbers.
+	 */
+	static void srand(uint seed);
 
-/**
- * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
- *
- * @return the random number
- */
-int util_rand(void);
+	/**
+	 * Starts the timer
+	 */
+	static void startTimer();
 
-/**
- * Srand seeds the random number generation function rand so it does not produce the same
- * sequence of numbers.
- */
-void util_srand(uint seed);
+	/**
+	 * Stops the timer and displays "<prefix>: <instructions>"
+	 *
+	 * @param prefix the prefix to display
+	 */
+	static void stopTimer(const char *prefix,...);
 
-/**
- * Builds the user-stack-trace for the current thread
- *
- * @return the first function-call (for util_printStackTrace())
- */
-sFuncCall *util_getUserStackTrace(void);
+	/**
+	 * Builds the user-stack-trace for the current thread
+	 *
+	 * @return the first function-call (for printStackTrace())
+	 */
+	static FuncCall *getUserStackTrace();
 
-/**
- * Builds the user-stack-trace for the given thread
- *
- * @param t the thread
- * @return the first function-call (for util_printStackTrace()) or NULL if failed
- */
-sFuncCall *util_getUserStackTraceOf(Thread *t);
+	/**
+	 * Builds the user-stack-trace for the given thread
+	 *
+	 * @param t the thread
+	 * @return the first function-call (for printStackTrace()) or NULL if failed
+	 */
+	static FuncCall *getUserStackTraceOf(Thread *t);
 
-/**
- * Builds the kernel-stack-trace of the given thread
- *
- * @param t the thread
- * @return the first function-call (for util_printStackTrace())
- */
-sFuncCall *util_getKernelStackTraceOf(const Thread *t);
+	/**
+	 * Builds the kernel-stack-trace of the given thread
+	 *
+	 * @param t the thread
+	 * @return the first function-call (for printStackTrace())
+	 */
+	static FuncCall *getKernelStackTraceOf(const Thread *t);
 
-/**
- * Builds the stack-trace for the kernel
- *
- * @return the first function-call (for util_printStackTrace())
- */
-sFuncCall *util_getKernelStackTrace(void);
+	/**
+	 * Builds the stack-trace for the kernel
+	 *
+	 * @return the first function-call (for printStackTrace())
+	 */
+	static FuncCall *getKernelStackTrace();
 
-/**
- * Prints <msg>, followed by a short version of the given stack-trace and a newline.
- *
- * @param trace the first function-call (NULL-terminated)
- * @param msg the message to print before the trace
- */
-void util_printEventTrace(const sFuncCall *trace,const char *msg,...);
+	/**
+	 * Prints <msg>, followed by a short version of the given stack-trace and a newline.
+	 *
+	 * @param trace the first function-call (NULL-terminated)
+	 * @param msg the message to print before the trace
+	 */
+	static void printEventTrace(const FuncCall *trace,const char *msg,...);
 
-/**
- * Prints the given stack-trace
- *
- * @param trace the first function-call (NULL-terminated)
- */
-void util_printStackTrace(const sFuncCall *trace);
+	/**
+	 * Prints the given stack-trace
+	 *
+	 * @param trace the first function-call (NULL-terminated)
+	 */
+	static void printStackTrace(const FuncCall *trace);
 
-/**
- * Prints the memory from <addr> to <addr> + <dwordCount>
- *
- * @param addr the staring address
- * @param dwordCount the number of dwords to print
- */
-void util_dumpMem(const void *addr,size_t dwordCount);
+	/**
+	 * Prints the memory from <addr> to <addr> + <dwordCount>
+	 *
+	 * @param addr the staring address
+	 * @param dwordCount the number of dwords to print
+	 */
+	static void dumpMem(const void *addr,size_t dwordCount);
 
-/**
- * Prints <byteCount> bytes at <addr>
- *
- * @param addr the start-address
- * @param byteCount the number of bytes
- */
-void util_dumpBytes(const void *addr,size_t byteCount);
+	/**
+	 * Prints <byteCount> bytes at <addr>
+	 *
+	 * @param addr the start-address
+	 * @param byteCount the number of bytes
+	 */
+	static void dumpBytes(const void *addr,size_t byteCount);
+
+private:
+	/**
+	 * Architecture dependent part of panic
+	 */
+	static void panicArch();
+
+	static uint randa;
+	static uint randc;
+	static uint lastRand;
+	static klock_t randLock;
+	static uint64_t profStart;
+};

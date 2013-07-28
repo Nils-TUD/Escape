@@ -51,7 +51,7 @@ void MPConfig::parse() {
 	TableHeader *tbl = (TableHeader*)(KERNEL_AREA | mpf->mpConfigTable);
 
 	if(tbl->signature != MPC_SIGNATURE)
-		util_panic("MP Config Table has invalid signature\n");
+		Util::panic("MP Config Table has invalid signature\n");
 
 	ptr = (uint8_t*)tbl + sizeof(TableHeader);
 	for(i = 0; i < tbl->entryCount; i++) {
@@ -82,7 +82,7 @@ void MPConfig::parse() {
 				ptr += MPCTE_LEN_LIRQ;
 				break;
 			default:
-				util_panic("Unknown MP Config Table entry %x",*ptr);
+				Util::panic("Unknown MP Config Table entry %x",*ptr);
 				break;
 		}
 	}

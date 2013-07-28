@@ -63,7 +63,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	size_t i;
 	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
 	if(t == NULL)
-		util_panic("Unable to allocate mem for initial thread");
+		Util::panic("Unable to allocate mem for initial thread");
 
 	t->tid = nextTid++;
 	t->proc = p;
@@ -74,15 +74,15 @@ Thread *ThreadBase::createInitial(Proc *p) {
 		t->stackRegions[i] = NULL;
 	t->tlsRegion = NULL;
 	if(initArch(t) < 0)
-		util_panic("Unable to init the arch-specific attributes of initial thread");
+		Util::panic("Unable to init the arch-specific attributes of initial thread");
 
 	/* create list */
 	if(!t->add())
-		util_panic("Unable to put initial thread into the thread-list");
+		Util::panic("Unable to put initial thread into the thread-list");
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->getTid()))
-		util_panic("Unable to put first thread in vfs");
+		Util::panic("Unable to put first thread in vfs");
 
 	return t;
 }
@@ -332,7 +332,7 @@ void ThreadBase::printShort() const {
 
 void ThreadBase::print() const {
 	size_t i;
-	sFuncCall *calls;
+	Util::FuncCall *calls;
 	vid_printf("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
 	prf_pushIndent();
 	vid_printf("Flags=%#x\n",flags);
@@ -357,13 +357,13 @@ void ThreadBase::print() const {
 	vid_printf("cycleStart = %Lu\n",stats.cycleStart);
 	vid_printf("Kernel-trace:\n");
 	prf_pushIndent();
-	calls = util_getKernelStackTraceOf(static_cast<const Thread*>(this));
+	calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
 	while(calls->addr != 0) {
 		vid_printf("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
 	prf_popIndent();
-	calls = util_getUserStackTraceOf(const_cast<Thread*>(static_cast<const Thread*>(this)));
+	calls = Util::getUserStackTraceOf(const_cast<Thread*>(static_cast<const Thread*>(this)));
 	if(calls) {
 		vid_printf("User-trace:\n");
 		prf_pushIndent();
@@ -374,7 +374,7 @@ void ThreadBase::print() const {
 		}
 		prf_popIndent();
 	}
-	util_printUserStateOf(static_cast<const Thread*>(this));
+	Util::printUserStateOf(static_cast<const Thread*>(this));
 	prf_popIndent();
 }
 

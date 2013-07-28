@@ -43,7 +43,7 @@ static void test_pmemareas(void) {
 	/* backup current areas and remove all */
 	for(i = 0, area = PhysMemAreas::get(); area != NULL; ++i, area = area->next) {
 		if(i >= ARRAY_SIZE(backup))
-			util_panic("Out of backup-slots for physmem-areas");
+			Util::panic("Out of backup-slots for physmem-areas");
 		backup[i].addr = area->addr;
 		backup[i].size = area->size;
 		count++;

@@ -27,7 +27,7 @@
 	.extern intrpt_handler
 	.extern curPDir
 	.extern otherPDir
-	.extern util_panic
+	.extern Util::panic
 
 	.global cpu_getBadAddr
 

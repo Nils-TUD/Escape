@@ -87,7 +87,7 @@ static bool loadedMods = false;
 static void *boot_copy_mbinfo(const void *info,size_t len) {
 	void *res = mbbuf + mbbufpos;
 	if(mbbufpos + len > sizeof(mbbuf))
-		util_panic("Multiboot-buffer too small");
+		Util::panic("Multiboot-buffer too small");
 	memcpy(mbbuf + mbbufpos,PHYS2VIRT(info),len);
 	mbbufpos += len;
 	return res;
@@ -113,7 +113,7 @@ void boot_arch_start(sBootInfo *info) {
 	}
 	mb = info;
 	if(mb->modsCount > MAX_MOD_COUNT)
-		util_panic("Too many modules (max %u)",MAX_MOD_COUNT);
+		Util::panic("Too many modules (max %u)",MAX_MOD_COUNT);
 	bootTaskList.moduleCount = mb->modsCount;
 
 	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
@@ -191,7 +191,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* create module files */
 	res = vfs_node_resolvePath("/system/mbmods",&nodeNo,NULL,0);
 	if(res < 0)
-		util_panic("Unable to resolve /system/mbmods");
+		Util::panic("Unable to resolve /system/mbmods");
 	mbmods = vfs_node_get(nodeNo);
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
@@ -200,7 +200,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 		sVFSNode *n = vfs_file_create_for(KERNEL_PID,mbmods,modname,(void*)mod->modStart,
 				mod->modEnd - mod->modStart);
 		if(!n || vfs_node_chmod(KERNEL_PID,vfs_node_getNo(n),S_IRUSR | S_IRGRP | S_IROTH) != 0)
-			util_panic("Unable to create/chmod mbmod-file for '%s'",modname);
+			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
 		mod++;
 	}
 
@@ -218,7 +218,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 			continue;
 		}
 		if(argc < 2)
-			util_panic("Invalid arguments for multiboot-module: %s\n",mod->name);
+			Util::panic("Invalid arguments for multiboot-module: %s\n",mod->name);
 
 		strcpy(loadingStatus,"Loading ");
 		strcat(loadingStatus,argv[0]);
@@ -228,12 +228,12 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			res = Proc::exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
 			if(res < 0)
-				util_panic("Unable to exec boot-program %s: %d\n",argv[0],res);
+				Util::panic("Unable to exec boot-program %s: %d\n",argv[0],res);
 			/* we don't want to continue ;) */
 			return 0;
 		}
 		else if(child < 0)
-			util_panic("Unable to clone process for boot-program %s: %d\n",argv[0],child);
+			Util::panic("Unable to clone process for boot-program %s: %d\n",argv[0],child);
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */

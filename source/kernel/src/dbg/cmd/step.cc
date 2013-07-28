@@ -37,8 +37,8 @@ int cons_cmd_step(size_t argc,char **argv) {
 		kstack->eflags &= ~(1 << 8);
 		vid_printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
 		           t->getProc()->getCommand());
-		util_printStackTrace(util_getUserStackTraceOf(t));
-		util_printUserState();
+		Util::printStackTrace(Util::getUserStackTraceOf(t));
+		Util::printUserState();
 		return 0;
 	}
 

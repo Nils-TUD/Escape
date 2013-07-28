@@ -97,7 +97,7 @@ void ProcBase::init() {
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(p->pid);
 	if(p->threadDir < 0)
-		util_panic("Not enough mem for init process");
+		Util::panic("Not enough mem for init process");
 
 	/* init fds */
 	FileDesc::init(p);
@@ -105,7 +105,7 @@ void ProcBase::init() {
 	/* create first thread */
 	sll_init(&p->threads,slln_allocNode,slln_freeNode);
 	if(!sll_append(&p->threads,Thread::init(p)))
-		util_panic("Unable to append the initial thread");
+		Util::panic("Unable to append the initial thread");
 
 	/* init virt mem */
 	p->virtmem.init(p->pid);
@@ -113,7 +113,7 @@ void ProcBase::init() {
 	/* add to procs */
 	sll_init(&procs,slln_allocNode,slln_freeNode);
 	if(!add(p))
-		util_panic("Unable to add init-process");
+		Util::panic("Unable to add init-process");
 }
 
 void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
@@ -503,7 +503,7 @@ errorNoRel:
 	Cache::free(argBuffer);
 	terminate(p->pid,1,SIG_COUNT);
 	Thread::switchAway();
-	util_panic("We should not reach this!");
+	Util::panic("We should not reach this!");
 	/* not reached */
 	return 0;
 }
@@ -581,7 +581,7 @@ void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
 	}
 
 	if(pid == 0)
-		util_panic("You can't terminate the initial process");
+		Util::panic("You can't terminate the initial process");
 
 	/* print information to log */
 	if(signal != SIG_COUNT || exitCode != 0) {

@@ -39,7 +39,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define util_printEventTrace(...)
+#define printEventTrace(...)
 
 #define BITMAP_START_FRAME			(PhysMem::bitmapStart / PAGE_SIZE)
 
@@ -180,14 +180,14 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	/* the bitmap starts managing the memory at itself */
 	i += BITMAP_START_FRAME;
 	doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
-	util_printEventTrace(util_getKernelStackTrace(),"[AC] %x:%zu ",i,count);
+	printEventTrace(Util::getKernelStackTrace(),"[AC] %x:%zu ",i,count);
 	spinlock_release(&contLock);
 	return i;
 }
 
 void PhysMem::freeContiguous(frameno_t first,size_t count) {
 	spinlock_aquire(&contLock);
-	util_printEventTrace(util_getKernelStackTrace(),"[FC] %x:%zu ",first,count);
+	printEventTrace(Util::getKernelStackTrace(),"[FC] %x:%zu ",first,count);
 	doMarkRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
 	spinlock_release(&contLock);
 }
@@ -230,7 +230,7 @@ bool PhysMem::reserve(size_t frameCount) {
 frameno_t PhysMem::allocate(FrameType type) {
 	frameno_t frm = 0;
 	spinlock_aquire(&defLock);
-	util_printEventTrace(util_getKernelStackTrace(),"[A] %x ",*(stack - 1));
+	printEventTrace(Util::getKernelStackTrace(),"[A] %x ",*(stack - 1));
 	/* remove the memory from the available one when we're not yet initialized */
 	if(!initialized)
 		frm = PhysMemAreas::alloc(1);
@@ -267,7 +267,7 @@ frameno_t PhysMem::allocate(FrameType type) {
 
 void PhysMem::free(frameno_t frame,FrameType type) {
 	spinlock_aquire(&defLock);
-	util_printEventTrace(util_getKernelStackTrace(),"[F] %x ",frame);
+	printEventTrace(Util::getKernelStackTrace(),"[F] %x ",frame);
 	if(swapEnabled) {
 		if(type == CRIT)
 			cframes++;
@@ -468,7 +468,7 @@ void PhysMem::markUsed(frameno_t frame,bool used) {
 		 * memory-management */
 		if(!used) {
 			if((uintptr_t)stack >= stackBegin + stackPages * PAGE_SIZE)
-				util_panic("MM-Stack too small for physical memory!");
+				Util::panic("MM-Stack too small for physical memory!");
 			*stack = frame;
 			stack++;
 		}

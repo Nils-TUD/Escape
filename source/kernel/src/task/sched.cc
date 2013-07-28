@@ -107,7 +107,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 					old->setState(Thread::ZOMBIE);
 					break;
 				default:
-					util_panic("Unexpected new state (%d)\n",old->getNewState());
+					Util::panic("Unexpected new state (%d)\n",old->getNewState());
 					break;
 			}
 		}

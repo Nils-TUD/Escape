@@ -46,13 +46,13 @@ uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	/* give the process some stack pages */
 	t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES * 2))
-		util_panic("Not enough mem for initloader-stack");
+		Util::panic("Not enough mem for initloader-stack");
 	t->addInitialStack();
 	t->discardFrames();
 
 	/* load initloader */
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
-		util_panic("Unable to load initloader");
+		Util::panic("Unable to load initloader");
 	*stackBegin = info.stackBegin;
 	*rss = DIR_MAPPED_SPACE | (t->getKernelStack() * PAGE_SIZE);
 	return info.progEntry;

@@ -96,7 +96,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 
 void Interrupts::defHandler(IntrptStackFrame *stack) {
 	/* do nothing */
-	util_panic("Got interrupt %d (%s) @ %p\n",
+	Util::panic("Got interrupt %d (%s) @ %p\n",
 			stack->irqNo,intrptList[stack->irqNo & 0x1f].name,stack->r[30]);
 }
 
@@ -117,7 +117,7 @@ void Interrupts::exPageFault(IntrptStackFrame *stack) {
 	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
-			util_panic("%d page-faults at the same address of the same process",exCount);
+			Util::panic("%d page-faults at the same address of the same process",exCount);
 	}
 	else
 		exCount = 0;

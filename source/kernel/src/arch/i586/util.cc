@@ -42,13 +42,12 @@
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
 
-static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
+static Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
 
 /* the beginning of the kernel-stack */
 extern uintptr_t kernelStack;
-static uint64_t profStart;
 
-void util_panic_arch(void) {
+void Util::panicArch() {
 	sFile *file;
 
 	/* at first, halt the other CPUs */
@@ -81,7 +80,7 @@ void util_panic_arch(void) {
 	}
 }
 
-void util_printUserStateOf(const Thread *t) {
+void Util::printUserStateOf(const Thread *t) {
 	static uint32_t regs[REG_COUNT];
 	if(t->getIntrptStack()) {
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
@@ -112,37 +111,23 @@ void util_printUserStateOf(const Thread *t) {
 	}
 }
 
-void util_printUserState(void) {
+void Util::printUserState(void) {
 	const Thread *t = Thread::getRunning();
-	util_printUserStateOf(t);
+	printUserStateOf(t);
 }
 
-void util_startTimer(void) {
-	profStart = CPU::rdtsc();
-}
-
-void util_stopTimer(const char *prefix,...) {
-	va_list l;
-	uLongLong diff;
-	diff.val64 = CPU::rdtsc() - profStart;
-	va_start(l,prefix);
-	vid_vprintf(prefix,l);
-	va_end(l);
-	vid_printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
-}
-
-sFuncCall *util_getUserStackTrace(void) {
+Util::FuncCall *Util::getUserStackTrace(void) {
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(kstack) {
 		if(t->getStackRange(&start,&end,0))
-			return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
+			return getStackTrace((uint32_t*)kstack->ebp,start,start,end);
 	}
 	return NULL;
 }
 
-sFuncCall *util_getKernelStackTrace(void) {
+Util::FuncCall *Util::getKernelStackTrace(void) {
 	uintptr_t start,end;
 	uint32_t* ebp;
 	Thread *t = Thread::getRunning();
@@ -159,15 +144,15 @@ sFuncCall *util_getKernelStackTrace(void) {
 			start = ((uintptr_t)&kernelStack) - TMP_STACK_SIZE;
 			end = (uintptr_t)&kernelStack;
 		}
-		return util_getStackTrace(ebp,start,start,end);
+		return getStackTrace(ebp,start,start,end);
 	}
 	return NULL;
 }
 
-sFuncCall *util_getUserStackTraceOf(Thread *t) {
+Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 	uintptr_t start,end;
 	if(t->getStackRange(&start,&end,0)) {
-		sFuncCall *calls;
+		FuncCall *calls;
 		PageDir *pdir = t->getProc()->getPageDir();
 		size_t pcount = (end - start) / PAGE_SIZE;
 		frameno_t *frames = (frameno_t*)Cache::alloc((pcount + 2) * sizeof(frameno_t));
@@ -186,7 +171,7 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 			}
 			temp = PageDir::mapToTemp(frames,pcount + 1);
 			istack = (IntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
-			calls = util_getStackTrace((uint32_t*)istack->ebp,start,
+			calls = getStackTrace((uint32_t*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			PageDir::unmapFromTemp(pcount + 1);
 			Cache::free(frames);
@@ -196,29 +181,29 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 	return NULL;
 }
 
-sFuncCall *util_getKernelStackTraceOf(const Thread *t) {
+Util::FuncCall *Util::getKernelStackTraceOf(const Thread *t) {
 	Thread *run = Thread::getRunning();
 	if(run == t)
-		return util_getKernelStackTrace();
+		return getKernelStackTrace();
 	else {
 		uint32_t ebp = t->getRegs().ebp;
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
 		uintptr_t temp = PageDir::mapToTemp(&frame,1);
-		sFuncCall *calls = util_getStackTrace((uint32_t*)ebp,t->getKernelStack(),temp,temp + PAGE_SIZE);
+		FuncCall *calls = getStackTrace((uint32_t*)ebp,t->getKernelStack(),temp,temp + PAGE_SIZE);
 		PageDir::unmapFromTemp(1);
 		return calls;
 	}
 }
 
-static sFuncCall *util_getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
-	static sFuncCall frames[MAX_STACK_DEPTH];
+Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
+	static Util::FuncCall frames[Util::MAX_STACK_DEPTH];
 	size_t i;
 	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA;
-	sFuncCall *frame = &frames[0];
+	Util::FuncCall *frame = &frames[0];
 	sSymbol *sym;
 	uint32_t *oldebp;
 
-	for(i = 0; i < MAX_STACK_DEPTH; i++) {
+	for(i = 0; i < Util::MAX_STACK_DEPTH; i++) {
 		if(ebp == NULL)
 			break;
 		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace

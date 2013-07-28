@@ -91,7 +91,7 @@ ssize_t vfs_info_traceReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 }
 
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sFuncCall *call;
+	Util::FuncCall *call;
 	sStringBuffer buf;
 	Thread *t = vfs_info_getThread(node,dataSize,buffer);
 	if(!t)
@@ -101,13 +101,13 @@ static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **bu
 	buf.size = 0;
 	buf.len = 0;
 	prf_sprintf(&buf,"Kernel:\n");
-	call = util_getKernelStackTraceOf(t);
+	call = Util::getKernelStackTraceOf(t);
 	while(call && call->addr != 0) {
 		prf_sprintf(&buf,"\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
 		call++;
 	}
 	prf_sprintf(&buf,"User:\n");
-	call = util_getUserStackTraceOf(t);
+	call = Util::getUserStackTraceOf(t);
 	while(call && call->addr != 0) {
 		prf_sprintf(&buf,"\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
 		call++;

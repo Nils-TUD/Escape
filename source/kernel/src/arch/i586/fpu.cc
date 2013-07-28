@@ -49,7 +49,7 @@ void FPU::init() {
 	/* allocate a state-pointer for each cpu */
 	curStates = (State***)Cache::calloc(SMP::getCPUCount(),sizeof(State**));
 	if(!curStates)
-		util_panic("Unable to allocate memory for FPU-states");
+		Util::panic("Unable to allocate memory for FPU-states");
 }
 
 void FPU::handleCoProcNA(State **state) {

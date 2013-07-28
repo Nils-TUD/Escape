@@ -30,7 +30,7 @@ void PhysMemAreas::initArch(void) {
 
 	/* mark everything behind the modules as free */
 	if(binfo->progCount == 0)
-		util_panic("No boot-modules found");
+		Util::panic("No boot-modules found");
 	last = binfo->progs + binfo->progCount - 1;
 	PhysMemAreas::add(ROUND_PAGE_UP(last->start - KERNEL_START + last->size),binfo->memSize);
 }

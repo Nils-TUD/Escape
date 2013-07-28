@@ -115,7 +115,7 @@ static pid_t lastPFProc = INVALID_PID;
 void InterruptsBase::init() {
 	Interrupts::pfAddrs = (uintptr_t*)Cache::alloc(SMP::getCPUCount() * sizeof(uintptr_t));
 	if(Interrupts::pfAddrs == NULL)
-		util_panic("Unable to alloc memory for pagefault-addresses");
+		Util::panic("Unable to alloc memory for pagefault-addresses");
 }
 
 void InterruptsBase::handler(IntrptStackFrame *stack) {
@@ -156,7 +156,7 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 			/* for exceptions in kernel: ensure that we have the default print-function */
 			if(stack->eip >= KERNEL_AREA)
 				vid_unsetPrintFunc();
-			util_panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
+			Util::panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
 					stack->intrptNo,exCount,stack->eip);
 		}
 	}
@@ -182,7 +182,7 @@ void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
 		return;
 	}
 	/* TODO later the process should be killed here */
-	util_panic("GPF @ 0x%x",stack->eip);
+	Util::panic("GPF @ 0x%x",stack->eip);
 }
 
 void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
@@ -205,7 +205,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	if(addr == lastPFAddr && lastPFProc == Proc::getRunning()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
-			util_panic("%d page-faults at the same address of the same process",exCount);
+			Util::panic("%d page-faults at the same address of the same process",exCount);
 	}
 	else
 		exCount = 0;
@@ -220,7 +220,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 		if(Thread::extendStack(addr) < 0) {
 			printPFInfo(stack,addr);
 			/* TODO Proc::segFault();*/
-			util_panic("Process segfaulted");
+			Util::panic("Process segfaulted");
 		}
 	}
 }

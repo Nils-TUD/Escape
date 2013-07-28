@@ -25,7 +25,7 @@
 #include <sys/util.h>
 #include <assert.h>
 
-#define util_printEventTrace(...)
+#define printEventTrace(...)
 
 static klock_t mutexLock;
 
@@ -34,7 +34,7 @@ void mutex_aquire(mutex_t *m) {
 	spinlock_aquire(&mutexLock);
 	if(*m & 1) {
 		*m += 2;
-		util_printEventTrace(util_getKernelStackTrace(),"[%d] Waiting for %#x ",t->getTid(),m);
+		printEventTrace(Util::getKernelStackTrace(),"[%d] Waiting for %#x ",t->getTid(),m);
 		do {
 			Event::wait(t,EVI_MUTEX,(evobj_t)m);
 			spinlock_release(&mutexLock);
@@ -44,7 +44,7 @@ void mutex_aquire(mutex_t *m) {
 		while(*m & 1);
 		*m -= 2;
 	}
-	util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),m);
+	printEventTrace(Util::getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),m);
 	*m |= 1;
 	t->addResource();
 	spinlock_release(&mutexLock);
@@ -55,7 +55,7 @@ bool mutex_tryAquire(mutex_t *m) {
 	bool res = false;
 	spinlock_aquire(&mutexLock);
 	if(!(*m & 1)) {
-		util_printEventTrace(util_getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),m);
+		printEventTrace(Util::getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),m);
 		*m |= 1;
 		t->addResource();
 		res = true;
@@ -71,7 +71,7 @@ void mutex_release(mutex_t *m) {
 	t->remResource();
 	if(*m > 0)
 		Event::wakeup(EVI_MUTEX,(evobj_t)m);
-	util_printEventTrace(util_getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->getTid(),m,
+	printEventTrace(Util::getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->getTid(),m,
 			*m > 0 ? "(Waking up)" : "(No wakeup)");
 	spinlock_release(&mutexLock);
 }

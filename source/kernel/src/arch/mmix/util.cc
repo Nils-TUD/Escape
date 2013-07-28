@@ -30,14 +30,14 @@
 #include <stdarg.h>
 #include <string.h>
 
-static sFuncCall frames[1] = {
+static Util::FuncCall frames[1] = {
 	{0,0,""}
 };
 
-void util_panic_arch(void) {
+void Util::panicArch() {
 }
 
-void util_printUserStateOf(const Thread *t) {
+void Util::printUserStateOf(const Thread *t) {
 	sKSpecRegs *sregs = t->getSpecRegs();
 	vid_printf("User state:\n");
 	prf_pushIndent();
@@ -47,12 +47,12 @@ void util_printUserStateOf(const Thread *t) {
 	prf_popIndent();
 }
 
-void util_printUserState(void) {
+void Util::printUserState() {
 	const Thread *t = Thread::getRunning();
-	util_printUserStateOf(t);
+	Util::printUserStateOf(t);
 }
 
-sFuncCall *util_getUserStackTrace(void) {
+Util::FuncCall *Util::getUserStackTrace() {
 	/* TODO */
 	/* the MMIX-toolchain doesn't use a frame-pointer when enabling optimization, as it seems.
 	 * therefore without information about the stackframe-sizes or similar, there is no way to
@@ -60,14 +60,14 @@ sFuncCall *util_getUserStackTrace(void) {
 	return frames;
 }
 
-sFuncCall *util_getKernelStackTrace(void) {
+Util::FuncCall *Util::getKernelStackTrace() {
 	return frames;
 }
 
-sFuncCall *util_getUserStackTraceOf(A_UNUSED Thread *t) {
+Util::FuncCall *Util::getUserStackTraceOf(A_UNUSED Thread *t) {
 	return frames;
 }
 
-sFuncCall *util_getKernelStackTraceOf(A_UNUSED const Thread *t) {
+Util::FuncCall *Util::getKernelStackTraceOf(A_UNUSED const Thread *t) {
 	return frames;
 }

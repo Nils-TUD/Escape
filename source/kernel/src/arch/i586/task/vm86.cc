@@ -32,6 +32,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/video.h>
 #include <sys/mutex.h>
+#include <sys/util.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -307,7 +308,7 @@ void VM86::handleGPF(IntrptStackFrame *stack) {
 			stack->eip++;
 			break;
 		default:
-			util_panic("Invalid opcode (0x%x) @ 0x%x",opCode,(uintptr_t)(ops - 1));
+			Util::panic("Invalid opcode (0x%x) @ 0x%x",opCode,(uintptr_t)(ops - 1));
 			break;
 	}
 }

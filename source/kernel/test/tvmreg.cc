@@ -65,10 +65,10 @@ static void test_vmreg_randOrder(void) {
 	uintptr_t addrs[TEST_REG_COUNT];
 	for(i = 0; i < TEST_REG_COUNT; i++)
 		addrs[i] = i * PAGE_SIZE;
-	util_srand(0x12345);
+	Util::srand(0x12345);
 	for(i = 0; i < 10000; i++) {
-		size_t j = util_rand() % TEST_REG_COUNT;
-		size_t k = util_rand() % TEST_REG_COUNT;
+		size_t j = Util::rand() % TEST_REG_COUNT;
+		size_t k = Util::rand() % TEST_REG_COUNT;
 		uintptr_t t = addrs[j];
 		addrs[j] = addrs[k];
 		addrs[k] = t;

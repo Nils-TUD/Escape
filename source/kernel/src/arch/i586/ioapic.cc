@@ -31,7 +31,7 @@ IOAPIC::Instance IOAPIC::ioapics[MAX_IOAPICS];
 void IOAPIC::add(uint8_t id,uint8_t version,uintptr_t addr) {
 	frameno_t frame;
 	if(count >= MAX_IOAPICS)
-		util_panic("Limit of I/O APICs (%d) reached",MAX_IOAPICS);
+		Util::panic("Limit of I/O APICs (%d) reached",MAX_IOAPICS);
 
 	ioapics[count].id = id;
 	ioapics[count].version = version;
@@ -47,7 +47,7 @@ void IOAPIC::setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_
 	cpuid_t lapicId = SMP::getCurId();
 	sIOAPIC *ioapic = get(dstApic);
 	if(ioapic == NULL)
-		util_panic("Unable to find I/O APIC with id %#x\n",dstApic);
+		Util::panic("Unable to find I/O APIC with id %#x\n",dstApic);
 	write(ioapic,IOAPIC_REG_REDTBL + dstInt * 2 + 1,lapicId << 24);
 	write(ioapic,IOAPIC_REG_REDTBL + dstInt * 2,
 			RED_INT_MASK_DIS | RED_DESTMODE_PHYS | (polarity << 13) |

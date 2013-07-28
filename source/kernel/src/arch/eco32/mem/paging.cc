@@ -58,7 +58,7 @@ void PageDirBase::init() {
 	/* set page-dir of first process */
 	frame = PhysMem::allocate(PhysMem::KERN);
 	if(frame == 0)
-		util_panic("Not enough memory for initial page-dir");
+		Util::panic("Not enough memory for initial page-dir");
 	PageDir::curPDir = (frame * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	pd = (PageDir::PDEntry*)PageDir::curPDir;
 	/* clear */
@@ -79,7 +79,7 @@ void PageDirBase::init() {
 		/* get frame and insert into page-dir */
 		frame = PhysMem::allocate(PhysMem::KERN);
 		if(frame == 0)
-			util_panic("Not enough memory for kernel page-tables");
+			Util::panic("Not enough memory for kernel page-tables");
 		pde->ptFrameNo = frame;
 		pde->present = true;
 		pde->writable = true;

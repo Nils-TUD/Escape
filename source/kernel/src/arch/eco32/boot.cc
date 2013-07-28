@@ -122,18 +122,18 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 		int argc;
 		const char **argv = boot_parseArgs(progs[i].command,&argc);
 		if(argc < 2)
-			util_panic("Invalid arguments for boot-module: %s\n",progs[i].command);
+			Util::panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 
 		/* clone proc */
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			int res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
-				util_panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
+				Util::panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
 			/* we don't want to continue ;) */
 			return 0;
 		}
 		else if(child < 0)
-			util_panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
+			Util::panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */

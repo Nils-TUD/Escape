@@ -153,7 +153,7 @@ void Interrupts::leaveKernel(Thread *t) {
 void Interrupts::defHandler(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	uint64_t rww = CPU::getSpecial(rWW);
 	/* do nothing */
-	util_panic("Got interrupt %d (%s) @ %p",
+	Util::panic("Got interrupt %d (%s) @ %p",
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
@@ -164,7 +164,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
 		exCount++;
 		if(exCount >= MAX_EX_COUNT)
-			util_panic("%d page-faults at the same address of the same process",exCount);
+			Util::panic("%d page-faults at the same address of the same process",exCount);
 	}
 	else
 		exCount = 0;

@@ -115,6 +115,6 @@ void PhysMemAreas::print(void) {
 
 PhysMemAreas::MemArea *PhysMemAreas::allocArea(void) {
 	if(count == MAX_PHYSMEM_AREAS)
-		util_panic("Ran out of physmem-areas");
+		Util::panic("Ran out of physmem-areas");
 	return areas + count++;
 }

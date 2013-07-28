@@ -105,9 +105,9 @@ void PhysMemAreas::rem(uintptr_t addr,uintptr_t end) {
 
 void PhysMemAreas::print(void) {
 	MemArea *area = list;
-	vid_printf("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / K);
+	Video::printf("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / K);
 	while(area != NULL) {
-		vid_printf("	%p .. %p [%zu KiB]\n",area->addr,area->addr + area->size - 1,
+		Video::printf("	%p .. %p [%zu KiB]\n",area->addr,area->addr + area->size - 1,
 				area->size / K);
 		area = area->next;
 	}

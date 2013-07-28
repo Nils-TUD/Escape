@@ -216,12 +216,12 @@ void ThreadBase::doSwitch() {
 #if DEBUGGING
 
 void ThreadBase::printState(const sThreadRegs *state) {
-	vid_printf("State @ 0x%08Px:\n",state);
-	vid_printf("\tesp = %#08x\n",state->esp);
-	vid_printf("\tedi = %#08x\n",state->edi);
-	vid_printf("\tesi = %#08x\n",state->esi);
-	vid_printf("\tebp = %#08x\n",state->ebp);
-	vid_printf("\teflags = %#08x\n",state->eflags);
+	Video::printf("State @ 0x%08Px:\n",state);
+	Video::printf("\tesp = %#08x\n",state->esp);
+	Video::printf("\tedi = %#08x\n",state->edi);
+	Video::printf("\tesi = %#08x\n",state->esi);
+	Video::printf("\tebp = %#08x\n",state->ebp);
+	Video::printf("\teflags = %#08x\n",state->eflags);
 }
 
 #endif

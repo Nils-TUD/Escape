@@ -1348,7 +1348,7 @@ void vfs_printMsgs(void) {
 	bool isValid;
 	sVFSNode *drv = vfs_node_openDir(devNode,false,&isValid);
 	if(isValid) {
-		vid_printf("Messages:\n");
+		Video::printf("Messages:\n");
 		while(drv != NULL) {
 			if(IS_DEVICE(drv->mode)) {
 				prf_pushIndent();
@@ -1362,54 +1362,54 @@ void vfs_printMsgs(void) {
 }
 
 void vfs_printFile(sFile *f) {
-	vid_printf("%3d [ %2u refs, %2u uses (%u:%u",
+	Video::printf("%3d [ %2u refs, %2u uses (%u:%u",
 			gftArray.getIndex(f),f->refCount,f->usageCount,f->devNo,f->nodeNo);
 	if(f->devNo == VFS_DEV_NO && vfs_node_isValid(f->nodeNo))
-		vid_printf(":%s)",vfs_node_getPath(f->nodeNo));
+		Video::printf(":%s)",vfs_node_getPath(f->nodeNo));
 	else
-		vid_printf(")");
-	vid_printf(" ]");
+		Video::printf(")");
+	Video::printf(" ]");
 }
 
 void vfs_printGFT(void) {
 	size_t i;
 	sFile *f;
-	vid_printf("Global File Table:\n");
+	Video::printf("Global File Table:\n");
 	for(i = 0; i < FILE_COUNT; i++) {
 		f = (sFile*)gftArray.getObj(i);
 		if(f->flags != 0) {
-			vid_printf("\tfile @ index %d\n",i);
-			vid_printf("\t\tflags: ");
+			Video::printf("\tfile @ index %d\n",i);
+			Video::printf("\t\tflags: ");
 			if(f->flags & VFS_READ)
-				vid_printf("READ ");
+				Video::printf("READ ");
 			if(f->flags & VFS_WRITE)
-				vid_printf("WRITE ");
+				Video::printf("WRITE ");
 			if(f->flags & VFS_NOBLOCK)
-				vid_printf("NOBLOCK ");
+				Video::printf("NOBLOCK ");
 			if(f->flags & VFS_DEVICE)
-				vid_printf("DEVICE ");
+				Video::printf("DEVICE ");
 			if(f->flags & VFS_MSGS)
-				vid_printf("MSGS ");
-			vid_printf("\n");
-			vid_printf("\t\tnodeNo: %d\n",f->nodeNo);
-			vid_printf("\t\tdevNo: %d\n",f->devNo);
-			vid_printf("\t\tpos: %Od\n",f->position);
-			vid_printf("\t\trefCount: %d\n",f->refCount);
+				Video::printf("MSGS ");
+			Video::printf("\n");
+			Video::printf("\t\tnodeNo: %d\n",f->nodeNo);
+			Video::printf("\t\tdevNo: %d\n",f->devNo);
+			Video::printf("\t\tpos: %Od\n",f->position);
+			Video::printf("\t\trefCount: %d\n",f->refCount);
 			if(f->owner == KERNEL_PID)
-				vid_printf("\t\towner: %d (kernel)\n",f->owner);
+				Video::printf("\t\towner: %d (kernel)\n",f->owner);
 			else {
 				const Proc *p = Proc::getByPid(f->owner);
-				vid_printf("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
+				Video::printf("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
 			}
 			if(f->devNo == VFS_DEV_NO) {
 				sVFSNode *n = f->node;
 				if(n->name == NULL)
-					vid_printf("\t\tFile: <destroyed>\n");
+					Video::printf("\t\tFile: <destroyed>\n");
 				else
-					vid_printf("\t\tFile: '%s'\n",vfs_getPath(f));
+					Video::printf("\t\tFile: '%s'\n",vfs_getPath(f));
 			}
 			else
-				vid_printf("\t\tFile: '%s'\n",vfs_getPath(f));
+				Video::printf("\t\tFile: '%s'\n",vfs_getPath(f));
 		}
 	}
 }

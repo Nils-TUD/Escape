@@ -18,146 +18,26 @@
  */
 
 #include <sys/common.h>
-#include <sys/dbg/kb.h>
-#include <sys/config.h>
-#include <sys/util.h>
-#include <sys/log.h>
-#include <sys/printf.h>
 #include <sys/video.h>
-#include <esc/esccodes.h>
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
 
-#define VIDEO_BASE			0xF0100000
-#define MAX_COLS			128
-#define TAB_WIDTH			4
-
-extern void logByte(char c);
-static void vid_move(void);
-static void vid_putchar(char c);
-static void vid_copyScrToScr(void *dst,const void *src,size_t rows);
-static void vid_copyScrToMem(void *dst,const void *src,size_t rows);
-static void vid_copyMemToScr(void *dst,const void *src,size_t rows);
-static void vid_clear(void);
-static uchar vid_handlePipePad(void);
-static void vid_handleColorCode(const char **str);
-
-static fPrintc printFunc = vid_putchar;
-static ushort col = 0;
-static ushort row = 0;
-static uchar color = 0;
-static uint targets = TARGET_SCREEN | TARGET_LOG;
-static bool lastWasLineStart = true;
-
-void vid_init(void) {
-	vid_clearScreen();
-	color = (BLACK << 4) | WHITE;
-}
-
-void vid_goto(ushort r,ushort c) {
-	assert(r < VID_ROWS && c < VID_COLS);
-	col = c;
-	row = r;
-}
-
-void vid_backup(char *buffer,ushort *r,ushort *c) {
-	vid_copyScrToMem(buffer,(void*)VIDEO_BASE,VID_ROWS);
-	*r = row;
-	*c = col;
-}
-
-void vid_restore(const char *buffer,ushort r,ushort c) {
-	vid_copyMemToScr((void*)VIDEO_BASE,buffer,VID_ROWS);
-	row = r;
-	col = c;
-}
-
-void vid_setTargets(uint ntargets) {
-	targets = ntargets;
-}
-
-void vid_clearScreen(void) {
-	vid_clear();
-	col = row = 0;
-}
-
-void vid_setPrintFunc(fPrintc func) {
-	printFunc = func;
-}
-
-void vid_unsetPrintFunc(void) {
-	printFunc = vid_putchar;
-}
-
-void vid_printf(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
-	va_end(ap);
-}
-
-void vid_vprintf(const char *fmt,va_list ap) {
-	if(targets & TARGET_SCREEN) {
-		sPrintEnv env;
-		env.print = printFunc;
-		env.escape = vid_handleColorCode;
-		env.pipePad = vid_handlePipePad;
-		env.lineStart = lastWasLineStart;
-		prf_vprintf(&env,fmt,ap);
-		lastWasLineStart = env.lineStart;
-	}
-	if(targets & TARGET_LOG)
-		Log::vprintf(fmt,ap);
-}
-
-static void vid_putchar(char c) {
-	size_t i;
-	uint32_t *video;
-	/* do an explicit newline if necessary */
-	if(col >= VID_COLS) {
-		if(Config::get(Config::LINEBYLINE))
-			Keyboard::get(NULL,KEV_PRESS,true);
-		row++;
-		col = 0;
-	}
-	vid_move();
-	video = (uint32_t*)VIDEO_BASE + row * MAX_COLS + col;
-
-	if(c == '\n') {
-		if(Config::get(Config::LINEBYLINE))
-			Keyboard::get(NULL,KEV_PRESS,true);
-		row++;
-		col = 0;
-	}
-	else if(c == '\r')
-		col = 0;
-	else if(c == '\t') {
-		i = TAB_WIDTH - col % TAB_WIDTH;
-		while(i-- > 0)
-			vid_putchar(' ');
-	}
-	else {
-		*video = color << 8 | (unsigned char)c;
-		col++;
-	}
-}
-
-static void vid_move(void) {
+void Video::move() {
 	/* last line? */
 	if(row >= VID_ROWS) {
 		size_t x;
 		/* copy all chars one line back */
-		vid_copyScrToScr((void*)VIDEO_BASE,(uint32_t*)VIDEO_BASE + MAX_COLS,VID_ROWS - 1);
+		copyScrToScr(screen(),(uint32_t*)screen() + MAX_COLS,VID_ROWS - 1);
 		/* clear last line */
-		uint32_t *screen = (uint32_t*)VIDEO_BASE + MAX_COLS * (VID_ROWS - 1);
+		uint32_t *scr = (uint32_t*)screen() + MAX_COLS * (VID_ROWS - 1);
 		for(x = 0; x < VID_COLS; x++)
-			*screen++ = 0;
+			*scr++ = 0;
 		row--;
 	}
 }
 
-static void vid_copyScrToScr(void *dst,const void *src,size_t rows) {
+void Video::copyScrToScr(void *dst,const void *src,size_t rows) {
 	size_t x,y;
 	uint32_t *idst = (uint32_t*)dst;
 	uint32_t *isrc = (uint32_t*)src;
@@ -169,7 +49,7 @@ static void vid_copyScrToScr(void *dst,const void *src,size_t rows) {
 	}
 }
 
-static void vid_copyScrToMem(void *dst,const void *src,size_t rows) {
+void Video::copyScrToMem(void *dst,const void *src,size_t rows) {
 	size_t x,y;
 	uint16_t *idst = (uint16_t*)dst;
 	uint32_t *isrc = (uint32_t*)src;
@@ -180,7 +60,7 @@ static void vid_copyScrToMem(void *dst,const void *src,size_t rows) {
 	}
 }
 
-static void vid_copyMemToScr(void *dst,const void *src,size_t rows) {
+void Video::copyMemToScr(void *dst,const void *src,size_t rows) {
 	size_t x,y;
 	uint32_t *idst = (uint32_t*)dst;
 	uint16_t *isrc = (uint16_t*)src;
@@ -191,32 +71,12 @@ static void vid_copyMemToScr(void *dst,const void *src,size_t rows) {
 	}
 }
 
-static void vid_clear(void) {
+void Video::clear() {
 	size_t x,y;
-	uint32_t *screen = (uint32_t*)VIDEO_BASE;
+	uint32_t *scr = (uint32_t*)screen();
 	for(y = 0; y < VID_ROWS; y++) {
 		for(x = 0; x < VID_COLS; x++)
-			*screen++ = 0;
-		screen += MAX_COLS - VID_COLS;
-	}
-}
-
-static uchar vid_handlePipePad(void) {
-	return VID_COLS - col;
-}
-
-static void vid_handleColorCode(const char **str) {
-	int n1,n2,n3;
-	int cmd = escc_get(str,&n1,&n2,&n3);
-	switch(cmd) {
-		case ESCC_COLOR: {
-			uchar fg = n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1);
-			uchar bg = n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2);
-			color = (bg << 4) | fg;
-		}
-		break;
-		default:
-			vassert(false,"Invalid escape-code ^[%d;%d,%d,%d]",cmd,n1,n2,n3);
-			break;
+			*scr++ = 0;
+		scr += MAX_COLS - VID_COLS;
 	}
 }

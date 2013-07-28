@@ -682,7 +682,7 @@ void PageDirBase::print(uint parts) const {
 	PageDir::pde_t *pdirAddr;
 	ptables = static_cast<const PageDir*>(this)->getPTables(cur);
 	pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
-	vid_printf("page-dir @ %p:\n",pdirAddr);
+	Video::printf("page-dir @ %p:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(!(pdirAddr[i] & PDE_PRESENT))
 			continue;
@@ -701,7 +701,7 @@ void PageDirBase::print(uint parts) const {
 			PageDir::printPageTable(ptables,i,pdirAddr[i]);
 		}
 	}
-	vid_printf("\n");
+	Video::printf("\n");
 	if(cur->other != old)
 		old->getPTables(cur);
 }
@@ -755,9 +755,9 @@ void PageDirBase::printPage(uintptr_t virt) const {
 	pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)] & PDE_PRESENT) {
 		PageDir::pte_t *page = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-		vid_printf("Page @ %p: ",virt);
+		Video::printf("Page @ %p: ",virt);
 		printPage(*page);
-		vid_printf("\n");
+		Video::printf("\n");
 	}
 	/* restore the old mapping, if necessary */
 	if(cur->other != old)
@@ -768,16 +768,16 @@ void PageDir::printPageTable(uintptr_t ptables,size_t no,pde_t pde) {
 	size_t i;
 	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	pte_t *pte = (pte_t*)(ptables + no * PAGE_SIZE);
-	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ %p: (VM: %p - %p)\n",no,
+	Video::printf("\tpt 0x%x [frame 0x%x, %c%c] @ %p: (VM: %p - %p)\n",no,
 			PDE_FRAMENO(pde),(pde & PDE_NOTSUPER) ? 'u' : 'k',
 			(pde & PDE_WRITABLE) ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
 	if(pte) {
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i] & PTE_EXISTS) {
-				vid_printf("\t\t0x%zx: ",i);
+				Video::printf("\t\t0x%zx: ",i);
 				printPage(pte[i]);
-				vid_printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
+				Video::printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
 		}
@@ -786,11 +786,11 @@ void PageDir::printPageTable(uintptr_t ptables,size_t no,pde_t pde) {
 
 void PageDir::printPage(pte_t page) {
 	if(page & PTE_EXISTS) {
-		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c]",page,PTE_FRAMENO(page),
+		Video::printf("r=0x%08x fr=0x%x [%c%c%c%c]",page,PTE_FRAMENO(page),
 				(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',
 				(page & PTE_WRITABLE) ? 'w' : 'r',(page & PTE_GLOBAL) ? 'g' : '-');
 	}
 	else {
-		vid_printf("-");
+		Video::printf("-");
 	}
 }

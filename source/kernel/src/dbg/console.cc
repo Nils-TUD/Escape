@@ -90,9 +90,9 @@ public:
 
 	virtual void displayLine(uintptr_t,uint8_t *bytes) {
 		if(bytes)
-			vid_printf("%s\r",bytes);
+			Video::printf("%s\r",bytes);
 		else
-			vid_printf("%*s\n",VID_COLS - 1,"");
+			Video::printf("%*s\n",VID_COLS - 1,"");
 	}
 
 	virtual uintptr_t gotoAddr(const char *addr) {
@@ -112,19 +112,19 @@ void Console::start(const char *initialcmd) {
 	/* first, pause all other CPUs to ensure that we're alone */
 	SMP::pauseOthers();
 
-	vid_setTargets(TARGET_SCREEN);
-	vid_backup(backup.screen,&backup.row,&backup.col);
+	Video::setTargets(Video::SCREEN);
+	Video::backup(backup.screen,&backup.row,&backup.col);
 
-	vid_clearScreen();
+	Video::clearScreen();
 	for(i = 0; i < VID_ROWS - 3; i++)
-		vid_printf("\n");
-	vid_printf("Welcome to the debugging console!\nType 'help' to get a list of commands!\n\n");
+		Video::printf("\n");
+	Video::printf("Welcome to the debugging console!\nType 'help' to get a list of commands!\n\n");
 
 	memset(emptyLine,' ',VID_COLS - 1);
 	emptyLine[VID_COLS - 1] = '\0';
 
 	while(true) {
-		vid_printf("# ");
+		Video::printf("# ");
 
 		if(initialcmd != NULL) {
 			argv = parseLine(initialcmd,&argc);
@@ -132,7 +132,7 @@ void Console::start(const char *initialcmd) {
 		}
 		else {
 			argv = parseLine(readLine(),&argc);
-			vid_printf("\n");
+			Video::printf("\n");
 		}
 
 		/* repeat last command when no args are given */
@@ -162,17 +162,17 @@ void Console::start(const char *initialcmd) {
 		}
 
 		if(strcmp(argv[0],"help") == 0) {
-			vid_printf("Available commands:\n");
+			Video::printf("Available commands:\n");
 			for(i = 0; i < ARRAY_SIZE(commands); i++)
-				vid_printf("	%s\n",commands[i].name);
-			vid_printf("\n");
-			vid_printf("All commands use a viewer, that supports the following key-strokes:\n");
-			vid_printf(" - up/down/pageup/pagedown/home/end: navigate through the data\n");
-			vid_printf(" - left/right: to previous/next search result\n");
-			vid_printf(" - enter: jump to entered line/address\n");
-			vid_printf(" - s: stop searching\n");
-			vid_printf(" - esc: quit\n");
-			vid_printf("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
+				Video::printf("	%s\n",commands[i].name);
+			Video::printf("\n");
+			Video::printf("All commands use a viewer, that supports the following key-strokes:\n");
+			Video::printf(" - up/down/pageup/pagedown/home/end: navigate through the data\n");
+			Video::printf(" - left/right: to previous/next search result\n");
+			Video::printf(" - enter: jump to entered line/address\n");
+			Video::printf(" - s: stop searching\n");
+			Video::printf(" - esc: quit\n");
+			Video::printf("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
 		}
 		else {
 			cmd = getCommand(argv[0]);
@@ -181,15 +181,15 @@ void Console::start(const char *initialcmd) {
 				if(res == CONS_EXIT)
 					break;
 				if(res != 0)
-					vid_printf("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
+					Video::printf("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
 			}
 			else
-				vid_printf("Unknown command '%s'\n",argv[0]);
+				Video::printf("Unknown command '%s'\n",argv[0]);
 		}
 	}
 
-	vid_restore(backup.screen,backup.row,backup.col);
-	vid_setTargets(TARGET_LOG);
+	Video::restore(backup.screen,backup.row,backup.col);
+	Video::setTargets(Video::LOG);
 
 	/* now let the other CPUs continue */
 	SMP::resumeOthers();
@@ -197,26 +197,26 @@ void Console::start(const char *initialcmd) {
 
 void Console::dumpLine(uintptr_t addr,uint8_t *bytes) {
 	size_t i;
-	vid_printf("%p: ",addr);
+	Video::printf("%p: ",addr);
 	if(bytes) {
 		for(i = 0; i < BYTES_PER_LINE; i++)
-			vid_printf("%02X ",bytes[i]);
-		vid_printf("| ");
+			Video::printf("%02X ",bytes[i]);
+		Video::printf("| ");
 		for(i = 0; i < BYTES_PER_LINE; i++) {
 			if(isprint(bytes[i]) && bytes[i] < 0x80 && !isspace(bytes[i]))
-				vid_printf("%c",bytes[i]);
+				Video::printf("%c",bytes[i]);
 			else
-				vid_printf(".");
+				Video::printf(".");
 		}
 	}
 	else {
 		for(i = 0; i < BYTES_PER_LINE; i++)
-			vid_printf("?? ");
-		vid_printf("| ");
+			Video::printf("?? ");
+		Video::printf("| ");
 		for(i = 0; i < BYTES_PER_LINE; i++)
-			vid_printf(".");
+			Video::printf(".");
 	}
-	vid_printf("\n");
+	Video::printf("\n");
 }
 
 void Console::navigation(NaviBackend *backend) {
@@ -354,12 +354,12 @@ void Console::display(NaviBackend *backend,const char *searchInfo,const char *se
 				startAddr < getMaxAddr(backend->getMaxPos())) ||
 			  (searchMode == SEARCH_BACKWARDS && startAddr >= BYTES_PER_LINE)); count++) {
 			if(count % 100 == 0) {
-				vid_goto(VID_ROWS - 1,0);
+				Video::goTo(VID_ROWS - 1,0);
 				if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_S) {
 					*addr = startAddr;
 					break;
 				}
-				vid_printf("\033[co;0;7]%c\033[co]",states[state++ % ARRAY_SIZE(states)]);
+				Video::printf("\033[co;0;7]%c\033[co]",states[state++ % ARRAY_SIZE(states)]);
 			}
 
 			startAddr += searchMode == SEARCH_FORWARD ? BYTES_PER_LINE : -BYTES_PER_LINE;
@@ -379,22 +379,22 @@ void Console::display(NaviBackend *backend,const char *searchInfo,const char *se
 
 	info = backend->getInfo(startAddr);
 
-	vid_goto(0,0);
+	Video::goTo(0,0);
 	for(y = 0; y < VID_ROWS - 1; y++) {
 		uint8_t *bytes = backend->loadLine(startAddr);
 		bool matches = backend->lineMatches(startAddr,search,strlen(search));
 		if(matches)
-			vid_printf("\033[co;0;2]");
+			Video::printf("\033[co;0;2]");
 		backend->displayLine(startAddr,bytes);
 		if(matches)
-			vid_printf("\033[co]");
+			Video::printf("\033[co]");
 		startAddr += BYTES_PER_LINE;
 	}
 
 	if(found)
-		vid_printf("\033[co;0;7]- Search/Goto: %s%|s\033[co]",searchInfo,info);
+		Video::printf("\033[co;0;7]- Search/Goto: %s%|s\033[co]",searchInfo,info);
 	else
-		vid_printf("\033[co;0;7]- Search/Goto: \033[co;4;7]%s\033[co;0;7]%|s\033[co]",searchInfo,info);
+		Video::printf("\033[co;0;7]- Search/Goto: \033[co;4;7]%s\033[co;0;7]%|s\033[co]",searchInfo,info);
 }
 
 uint8_t Console::charToInt(char c) {
@@ -477,17 +477,17 @@ char *Console::readLine(void) {
 			if(history[histReadPos]) {
 				strcpy(line,history[histReadPos]);
 				i = strlen(line);
-				vid_printf("\r%s\r# %s",emptyLine,line);
+				Video::printf("\r%s\r# %s",emptyLine,line);
 			}
 		}
 		else if(ev.keycode == VK_BACKSP) {
 			if(i > 0) {
 				line[--i] = '\0';
-				vid_printf("\r%s\r# %s",emptyLine,line);
+				Video::printf("\r%s\r# %s",emptyLine,line);
 			}
 		}
 		else if(isprint(ev.character)) {
-			vid_printf("%c",ev.character);
+			Video::printf("%c",ev.character);
 			line[i++] = ev.character;
 		}
 	}

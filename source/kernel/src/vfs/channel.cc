@@ -189,10 +189,10 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
-	vid_printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
+	Video::printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
 			t->getTid(),pid,p ? p->getCommand() : "??",id,size1,n->name,n,n->parent->name);
 	if(data2) {
-		vid_printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
+		Video::printf("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
 				t->getTid(),pid,p ? p->getCommand() : "??",id,size2,n->name,n,n->parent->name);
 	}
 #endif
@@ -354,7 +354,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
-	vid_printf("%d:%d:%s <- %d (%d b) %s:%x (%s)\n",
+	Video::printf("%d:%d:%s <- %d (%d b) %s:%x (%s)\n",
 			t->getTid(),pid,p ? p->getCommand() : "??",msg->id,msg->length,node->name,node,node->parent->name);
 #endif
 
@@ -397,11 +397,11 @@ void vfs_chan_print(const sVFSNode *n) {
 	lists[1] = &chan->recvList;
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
-		vid_printf("Channel %s %s: (%zu,%s)\n",n->name,i ? "recvs" : "sends",count,
+		Video::printf("Channel %s %s: (%zu,%s)\n",n->name,i ? "recvs" : "sends",count,
 		                                                     chan->used ? "used" : "-");
 		for(j = 0; j < count; j++) {
 			sMessage *msg = (sMessage*)sll_get(lists[i],j);
-			vid_printf("\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
+			Video::printf("\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
 					msg->thread ? msg->thread->getTid() : -1,
 					msg->thread ? msg->thread->getProc()->getPid() : -1,
 					msg->thread ? msg->thread->getProc()->getCommand() : "");

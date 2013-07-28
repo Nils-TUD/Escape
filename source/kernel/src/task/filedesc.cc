@@ -165,12 +165,12 @@ sFile *FileDesc::unassoc(int fd) {
 
 void FileDesc::print(Proc *p) {
 	size_t i;
-	vid_printf("File descriptors of %d:\n",p->getPid());
+	Video::printf("File descriptors of %d:\n",p->getPid());
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
-			vid_printf("\t%-2d: ",i);
+			Video::printf("\t%-2d: ",i);
 			vfs_printFile(p->fileDescs[i]);
-			vid_printf("\n");
+			Video::printf("\n");
 		}
 	}
 }

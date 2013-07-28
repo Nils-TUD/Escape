@@ -93,14 +93,14 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	Proc *proc;
 	uintptr_t addr = 0;
 	if(Console::isHelp(argc,argv) || argc > 3) {
-		vid_printf("Usage: %s [<pid> [<addr>]]\n",argv[0]);
+		Video::printf("Usage: %s [<pid> [<addr>]]\n",argv[0]);
 		return 0;
 	}
 
 	if(argc > 1) {
 		proc = Proc::getByPid(strtoul(argv[1],NULL,10));
 		if(!proc) {
-			vid_printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
+			Video::printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
 			return -ESRCH;
 		}
 		if(argc > 2)
@@ -109,11 +109,11 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	else
 		proc = Proc::getByPid(Proc::getRunning());
 
-	vid_backup(backup.screen,&backup.row,&backup.col);
+	Video::backup(backup.screen,&backup.row,&backup.col);
 
 	MemNaviBackend backend(proc,addr);
 	Console::navigation(&backend);
 
-	vid_restore(backup.screen,backup.row,backup.col);
+	Video::restore(backup.screen,backup.row,backup.col);
 	return 0;
 }

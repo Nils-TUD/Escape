@@ -24,7 +24,7 @@
 
 int cons_cmd_panic(A_UNUSED size_t argc,A_UNUSED char **argv) {
 	if(Console::isHelp(argc,argv)) {
-		vid_printf("Usage: panic\n");
+		Video::printf("Usage: panic\n");
 		return 0;
 	}
 

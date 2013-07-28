@@ -111,7 +111,7 @@ void Interrupts::exTrap(IntrptStackFrame *stack) {
 void Interrupts::exPageFault(IntrptStackFrame *stack) {
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->r[30] >= DIR_MAPPED_SPACE)
-		vid_unsetPrintFunc();
+		Video::unsetPrintFunc();
 
 #if DEBUG_PAGEFAULTS
 	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
@@ -123,7 +123,7 @@ void Interrupts::exPageFault(IntrptStackFrame *stack) {
 		exCount = 0;
 	lastPFAddr = pfaddr;
 	lastPFProc = Proc::getRunning()->getPid();
-	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+	Video::printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
 			stack->r[30],Proc::getRunning()->getPid());
 #endif
 
@@ -132,7 +132,7 @@ void Interrupts::exPageFault(IntrptStackFrame *stack) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = Proc::getRunning();
-			vid_printf("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
+			Video::printf("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 			Proc::segFault();
 		}
 	}
@@ -184,10 +184,10 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack) {
 
 void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
 	int i;
-	vid_printf("stack-frame @ 0x%Px\n",stack);
-	vid_printf("\tirqNo=%d\n",stack->irqNo);
-	vid_printf("\tpsw=#%08x\n",stack->psw);
-	vid_printf("\tregister:\n");
+	Video::printf("stack-frame @ 0x%Px\n",stack);
+	Video::printf("\tirqNo=%d\n",stack->irqNo);
+	Video::printf("\tpsw=#%08x\n",stack->psw);
+	Video::printf("\tregister:\n");
 	for(i = 0; i < REG_COUNT; i++)
-		vid_printf("\tr[%d]=#%08x\n",i,stack->r[i]);
+		Video::printf("\tr[%d]=#%08x\n",i,stack->r[i]);
 }

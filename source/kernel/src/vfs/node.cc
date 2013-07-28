@@ -539,20 +539,20 @@ char *vfs_node_getId(pid_t pid) {
 }
 
 void vfs_node_printTree(void) {
-	vid_printf("VFS:\n");
-	vid_printf("/\n");
+	Video::printf("VFS:\n");
+	Video::printf("/\n");
 	vfs_node_dbg_doPrintTree(1,vfs_node_get(0));
 }
 
 void vfs_node_printNode(const sVFSNode *node) {
-	vid_printf("VFSNode @ %p:\n",node);
+	Video::printf("VFSNode @ %p:\n",node);
 	if(node) {
-		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");
-		vid_printf("\tfirstChild: %p\n",node->firstChild);
-		vid_printf("\tlastChild: %p\n",node->lastChild);
-		vid_printf("\tnext: %p\n",node->next);
-		vid_printf("\tprev: %p\n",node->prev);
-		vid_printf("\towner: %d\n",node->owner);
+		Video::printf("\tname: %s\n",node->name ? node->name : "NULL");
+		Video::printf("\tfirstChild: %p\n",node->firstChild);
+		Video::printf("\tlastChild: %p\n",node->lastChild);
+		Video::printf("\tnext: %p\n",node->next);
+		Video::printf("\tprev: %p\n",node->prev);
+		Video::printf("\towner: %d\n",node->owner);
 	}
 }
 
@@ -635,8 +635,8 @@ static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
 	if(isValid) {
 		while(n != NULL) {
 			for(i = 0;i < level;i++)
-				vid_printf(" |");
-			vid_printf("- %s\n",n->name);
+				Video::printf(" |");
+			Video::printf("- %s\n",n->name);
 			/* don't recurse for "." and ".." */
 			if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
 				vfs_node_dbg_doPrintTree(level + 1,n);

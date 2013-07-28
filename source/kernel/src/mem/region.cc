@@ -219,7 +219,7 @@ void Region::printFlags() const {
 	buf.str = NULL;
 	sprintfFlags(&buf);
 	if(buf.str) {
-		vid_printf("%s",buf.str);
+		Video::printf("%s",buf.str);
 		Cache::free(buf.str);
 	}
 }
@@ -232,9 +232,9 @@ void Region::print(uintptr_t virt) const {
 	buf.str = NULL;
 	sprintf(&buf,virt);
 	if(buf.str != NULL)
-		vid_printf("%s",buf.str);
+		Video::printf("%s",buf.str);
 	else
-		vid_printf("- no regions -\n");
+		Video::printf("- no regions -\n");
 	Cache::free(buf.str);
 }
 

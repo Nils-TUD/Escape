@@ -42,9 +42,9 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	sDirEntry e;
 	int res;
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		vid_printf("Usage: %s <dir>\n",argv[0]);
-		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
-		vid_printf("\tSo, I hope, you know what you're doing ;)\n");
+		Video::printf("Usage: %s <dir>\n",argv[0]);
+		Video::printf("\tUses the current proc to be able to access the real-fs.\n");
+		Video::printf("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
@@ -70,9 +70,9 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	lines.endLine();
 
 	/* view the lines */
-	vid_backup(backup.screen,&backup.row,&backup.col);
+	Video::backup(backup.screen,&backup.row,&backup.col);
 	Console::viewLines(&lines);
-	vid_restore(backup.screen,backup.row,backup.col);
+	Video::restore(backup.screen,backup.row,backup.col);
 	return 0;
 }
 

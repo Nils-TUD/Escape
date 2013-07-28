@@ -114,12 +114,12 @@ void CopyOnWrite::print(void) {
 	sSLNode *n;
 	Entry *cow;
 	size_t i;
-	vid_printf("COW-Frames: (%zu frames)\n",getFrmCount());
+	Video::printf("COW-Frames: (%zu frames)\n",getFrmCount());
 	for(i = 0; i < HEAP_SIZE; i++) {
-		vid_printf("\t%zu:\n",i);
+		Video::printf("\t%zu:\n",i);
 		for(n = sll_begin(frames + i); n != NULL; n = n->next) {
 			cow = (Entry*)n->data;
-			vid_printf("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
+			Video::printf("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
 		}
 	}
 }

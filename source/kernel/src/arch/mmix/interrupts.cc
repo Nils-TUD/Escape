@@ -170,7 +170,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		exCount = 0;
 	lastPFAddr = pfaddr;
 	lastPFProc = Proc::getRunning()->getPid();
-	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+	Video::printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
 			stack->r[30],Proc::getRunning()->getPid());
 #endif
 
@@ -180,7 +180,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = Proc::getRunning();
 			sKSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
-			vid_printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
+			Video::printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
 			Proc::segFault();
 		}
@@ -236,31 +236,31 @@ void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
 	int i,j,rl,rg = *stack >> 56;
 	int changedStack = (*stack >> 32) & 0x1;
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
-	vid_printf("rG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
+	Video::printf("rG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
 	for(j = 0, i = 1; i <= (int)ARRAY_SIZE(spregs); j++, i++) {
-		vid_printf("%-4s: #%016lx ",CPU::getSpecialName(spregs[i - 1]),*stack--);
+		Video::printf("%-4s: #%016lx ",CPU::getSpecialName(spregs[i - 1]),*stack--);
 		if(j % 3 == 2)
-			vid_printf("\n");
+			Video::printf("\n");
 	}
 	if(j % 3 != 0)
-		vid_printf("\n");
+		Video::printf("\n");
 	for(j = 0, i = 255; i >= rg; j++, i--) {
-		vid_printf("$%-3d: #%016lx ",i,*stack--);
+		Video::printf("$%-3d: #%016lx ",i,*stack--);
 		if(j % 3 == 2)
-			vid_printf("\n");
+			Video::printf("\n");
 	}
 	if(j % 3 != 0)
-		vid_printf("\n");
+		Video::printf("\n");
 	if(changedStack) {
-		vid_printf("rS  : #%016lx",*stack--);
-		vid_printf(" rO  : #%016lx\n",*stack--);
+		Video::printf("rS  : #%016lx",*stack--);
+		Video::printf(" rO  : #%016lx\n",*stack--);
 	}
 	rl = *stack--;
-	vid_printf("rL  : %d\n",rl);
+	Video::printf("rL  : %d\n",rl);
 	for(j = 0, i = rl - 1; i >= 0; j++, i--) {
-		vid_printf("$%-3d: #%016lx ",i,*stack--);
+		Video::printf("$%-3d: #%016lx ",i,*stack--);
 		if(i > 0 && j % 3 == 2)
-			vid_printf("\n");
+			Video::printf("\n");
 	}
-	vid_printf("\n");
+	Video::printf("\n");
 }

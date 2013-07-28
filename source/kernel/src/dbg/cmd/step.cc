@@ -26,7 +26,7 @@
 
 int cons_cmd_step(size_t argc,char **argv) {
 	if(Console::isHelp(argc,argv) || argc > 2) {
-		vid_printf("Usage: step [show]\n");
+		Video::printf("Usage: step [show]\n");
 		return 0;
 	}
 
@@ -35,7 +35,7 @@ int cons_cmd_step(size_t argc,char **argv) {
 	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->eflags &= ~(1 << 8);
-		vid_printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
+		Video::printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
 		           t->getProc()->getCommand());
 		Util::printStackTrace(Util::getUserStackTraceOf(t));
 		Util::printUserState();
@@ -45,7 +45,7 @@ int cons_cmd_step(size_t argc,char **argv) {
 	kstack->eflags |= 1 << 8;
 	return CONS_EXIT;
 #else
-	vid_printf("Sorry, not supported\n");
+	Video::printf("Sorry, not supported\n");
 	return 0;
 #endif
 }

@@ -132,7 +132,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	if(intrpt->handler)
 		intrpt->handler(t,stack);
 	else {
-		vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
+		Video::printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
 				intrpt->name,stack->eip,t->getProc()->getPid(),t->getProc()->getCommand());
 	}
 
@@ -145,7 +145,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 }
 
 void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	vid_printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
+	Video::printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
 			t->getProc()->getPid(),t->getProc()->getCommand());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
@@ -155,7 +155,7 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		if(exCount >= MAX_EX_COUNT) {
 			/* for exceptions in kernel: ensure that we have the default print-function */
 			if(stack->eip >= KERNEL_AREA)
-				vid_unsetPrintFunc();
+				Video::unsetPrintFunc();
 			Util::panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
 					stack->intrptNo,exCount,stack->eip);
 		}
@@ -169,7 +169,7 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA)
-		vid_unsetPrintFunc();
+		Video::unsetPrintFunc();
 	/* io-map not loaded yet? */
 	if(IOPorts::handleGPF()) {
 		exCount = 0;
@@ -197,8 +197,8 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t addr = pfAddrs[t->getCPU()];
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA) {
-		vid_setTargets(TARGET_LOG | TARGET_SCREEN);
-		vid_unsetPrintFunc();
+		Video::setTargets(Video::LOG | Video::SCREEN);
+		Video::unsetPrintFunc();
 	}
 
 #if DEBUG_PAGEFAULTS
@@ -279,8 +279,8 @@ void Interrupts::ipiTerm(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 void Interrupts::printPFInfo(IntrptStackFrame *stack,uintptr_t addr) {
 	pid_t pid = Proc::getRunning();
-	vid_printf("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
-	vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
+	Video::printf("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
+	Video::printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 			(stack->errorCode & 0x1) ?
 				"page-level protection violation" : "not-present page",
 			(stack->errorCode & 0x2) ? "write" : "read",
@@ -290,22 +290,22 @@ void Interrupts::printPFInfo(IntrptStackFrame *stack,uintptr_t addr) {
 }
 
 void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
-	vid_printf("stack-frame @ 0x%x\n",stack);
-	vid_printf("\tcs=%02x\n",stack->cs);
-	vid_printf("\tds=%02x\n",stack->ds);
-	vid_printf("\tes=%02x\n",stack->es);
-	vid_printf("\tfs=%02x\n",stack->fs);
-	vid_printf("\tgs=%02x\n",stack->gs);
-	vid_printf("\teax=0x%08x\n",stack->eax);
-	vid_printf("\tebx=0x%08x\n",stack->ebx);
-	vid_printf("\tecx=0x%08x\n",stack->ecx);
-	vid_printf("\tedx=0x%08x\n",stack->edx);
-	vid_printf("\tesi=0x%08x\n",stack->esi);
-	vid_printf("\tedi=0x%08x\n",stack->edi);
-	vid_printf("\tebp=0x%08x\n",stack->ebp);
-	vid_printf("\tuesp=0x%08x\n",stack->uesp);
-	vid_printf("\teip=0x%08x\n",stack->eip);
-	vid_printf("\teflags=0x%08x\n",stack->eflags);
-	vid_printf("\terrorCode=%d\n",stack->errorCode);
-	vid_printf("\tintrptNo=%d\n",stack->intrptNo);
+	Video::printf("stack-frame @ 0x%x\n",stack);
+	Video::printf("\tcs=%02x\n",stack->cs);
+	Video::printf("\tds=%02x\n",stack->ds);
+	Video::printf("\tes=%02x\n",stack->es);
+	Video::printf("\tfs=%02x\n",stack->fs);
+	Video::printf("\tgs=%02x\n",stack->gs);
+	Video::printf("\teax=0x%08x\n",stack->eax);
+	Video::printf("\tebx=0x%08x\n",stack->ebx);
+	Video::printf("\tecx=0x%08x\n",stack->ecx);
+	Video::printf("\tedx=0x%08x\n",stack->edx);
+	Video::printf("\tesi=0x%08x\n",stack->esi);
+	Video::printf("\tedi=0x%08x\n",stack->edi);
+	Video::printf("\tebp=0x%08x\n",stack->ebp);
+	Video::printf("\tuesp=0x%08x\n",stack->uesp);
+	Video::printf("\teip=0x%08x\n",stack->eip);
+	Video::printf("\teflags=0x%08x\n",stack->eflags);
+	Video::printf("\terrorCode=%d\n",stack->errorCode);
+	Video::printf("\tintrptNo=%d\n",stack->intrptNo);
 }

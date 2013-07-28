@@ -334,11 +334,11 @@ void Sched::removeThread(Thread *t) {
 
 void Sched::print(void) {
 	size_t i;
-	vid_printf("Ready queues:\n");
+	Video::printf("Ready queues:\n");
 	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
-		vid_printf("\t[%d]:\n",i);
+		Video::printf("\t[%d]:\n",i);
 		qPrint(rdyQueues + i);
-		vid_printf("\n");
+		Video::printf("\n");
 	}
 }
 
@@ -414,7 +414,7 @@ void Sched::qPrepend(Sched::Queue *q,Thread *t) {
 void Sched::qPrint(Sched::Queue *q) {
 	const Thread *t = q->first;
 	while(t != NULL) {
-		vid_printf("\t\t%d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
+		Video::printf("\t\t%d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		t = t->next;
 	}
 }

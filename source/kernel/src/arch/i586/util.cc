@@ -87,7 +87,7 @@ void Util::printUserStateOf(const Thread *t) {
 		uintptr_t kstackAddr = PageDir::mapToTemp(&frame,1);
 		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
 		IntrptStackFrame *kstack = (IntrptStackFrame*)(kstackAddr + kstackOff);
-		vid_printf("User-Register:\n");
+		Video::printf("User-Register:\n");
 		prf_pushIndent();
 		regs[R_EAX] = kstack->eax;
 		regs[R_EBX] = kstack->ebx;

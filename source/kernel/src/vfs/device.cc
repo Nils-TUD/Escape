@@ -240,14 +240,14 @@ void vfs_device_print(sVFSNode *n) {
 	sDevice *dev = (sDevice*)n->data;
 	sVFSNode *chan = vfs_node_openDir(n,false,&isValid);
 	if(isValid) {
-		vid_printf("%s (%s):\n",n->name,dev->isEmpty ? "empty" : "full");
+		Video::printf("%s (%s):\n",n->name,dev->isEmpty ? "empty" : "full");
 		while(chan != NULL) {
 			prf_pushIndent();
 			vfs_chan_print(chan);
 			prf_popIndent();
 			chan = chan->next;
 		}
-		vid_printf("\n");
+		Video::printf("\n");
 	}
 	vfs_node_closeDir(n,false);
 }

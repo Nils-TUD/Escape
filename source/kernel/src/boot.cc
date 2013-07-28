@@ -46,7 +46,7 @@ void boot_start(sBootInfo *info) {
 		(*func)();
 
 	boot_arch_start(info);
-	vid_setTargets(TARGET_SCREEN);
+	Video::setTargets(Video::SCREEN);
 	drawProgressBar();
 	for(i = 0; i < bootTaskList.count; i++) {
 		const sBootTask *task = bootTaskList.tasks + i;
@@ -62,8 +62,8 @@ void boot_start(sBootInfo *info) {
 }
 
 void boot_taskStarted(const char *text) {
-	vid_goto(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
-	vid_printf("%-*s",VID_COLS - BAR_PADX * 2,text);
+	Video::goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
+	Video::printf("%-*s",VID_COLS - BAR_PADX * 2,text);
 }
 
 void boot_taskFinished(void) {
@@ -74,11 +74,11 @@ void boot_taskFinished(void) {
 	total = bootTaskList.count + bootTaskList.moduleCount;
 	percent = KERNEL_PERCENT * ((float)finished / total);
 	filled = percent == 0 ? 0 : (uint)(width / (100.0 / percent));
-	vid_goto(BAR_PADY + 1,BAR_PADX + 1);
+	Video::goTo(BAR_PADY + 1,BAR_PADX + 1);
 	if(filled)
-		vid_printf("\033[co;0;7]%*s\033[co]",filled," ");
+		Video::printf("\033[co;0;7]%*s\033[co]",filled," ");
 	if(width - filled)
-		vid_printf("%*s",width - filled," ");
+		Video::printf("%*s",width - filled," ");
 }
 
 const char **boot_parseArgs(const char *line,int *argc) {
@@ -109,22 +109,22 @@ const char **boot_parseArgs(const char *line,int *argc) {
 static void drawProgressBar(void) {
 	ushort x,y;
 	/* top */
-	vid_goto(BAR_PADY,BAR_PADX);
-	vid_printf("\xC9");
+	Video::goTo(BAR_PADY,BAR_PADX);
+	Video::printf("\xC9");
 	for(x = 1; x < BAR_WIDTH - 2; x++)
-		vid_printf("\xCD");
-	vid_printf("\xBB");
+		Video::printf("\xCD");
+	Video::printf("\xBB");
 	/* left and right */
 	for(y = 0; y < BAR_HEIGHT; y++) {
-		vid_goto(BAR_PADY + 1 + y,BAR_PADX);
-		vid_printf("\xBA");
-		vid_goto(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
-		vid_printf("\xBA");
+		Video::goTo(BAR_PADY + 1 + y,BAR_PADX);
+		Video::printf("\xBA");
+		Video::goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
+		Video::printf("\xBA");
 	}
 	/* bottom */
-	vid_goto(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
-	vid_printf("\xC8");
+	Video::goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
+	Video::printf("\xC8");
 	for(x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
-		vid_printf("\xCD");
-	vid_printf("\xBC");
+		Video::printf("\xCD");
+	Video::printf("\xBC");
 }

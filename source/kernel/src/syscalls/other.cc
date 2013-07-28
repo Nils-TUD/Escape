@@ -38,9 +38,9 @@ int Syscalls::loadmods(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::debugc(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
-	vid_setTargets(TARGET_LOG);
-	vid_printf("%c",c);
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	Video::setTargets(Video::LOG);
+	Video::printf("%c",c);
+	Video::setTargets(Video::SCREEN | Video::LOG);
 	SYSC_RET1(stack,0);
 }
 

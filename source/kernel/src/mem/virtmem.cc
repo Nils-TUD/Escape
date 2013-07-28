@@ -1042,10 +1042,10 @@ void VirtMem::printShort(const char *prefix) const {
 	if(aquire()) {
 		VMRegion *vm;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
-			vid_printf("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(vm),vm->virt,
+			Video::printf("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(vm),vm->virt,
 					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K);
 			vm->reg->printFlags();
-			vid_printf("\n");
+			Video::printf("\n");
 		}
 		release();
 	}
@@ -1055,25 +1055,25 @@ void VirtMem::printRegions() const {
 	if(aquire()) {
 		size_t c = 0;
 		VMRegion *vm;
-		vid_printf("Regions of proc %d (%s)\n",pid,Proc::getByPid(pid)->getCommand());
+		Video::printf("Regions of proc %d (%s)\n",pid,Proc::getByPid(pid)->getCommand());
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if(c)
-				vid_printf("\n");
-			vid_printf("VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
+				Video::printf("\n");
+			Video::printf("VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
 			vm->reg->print(vm->virt);
 			c++;
 		}
 		if(c == 0)
-			vid_printf("- no regions -\n");
+			Video::printf("- no regions -\n");
 		release();
 	}
 }
 
 void VirtMem::print() const {
 	freemap.print();
-	vid_printf("Regions:\n");
-	vid_printf("\tDataRegion: %p\n",dataAddr);
-	vid_printf("\tFreeStack: %p\n",freeStackAddr);
+	Video::printf("Regions:\n");
+	Video::printf("\tDataRegion: %p\n",dataAddr);
+	Video::printf("\tFreeStack: %p\n",freeStackAddr);
 	printShort("\t");
 }
 

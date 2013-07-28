@@ -41,13 +41,13 @@ int cons_cmd_file(size_t argc,char **argv) {
 	Lines lines;
 
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		vid_printf("Usage: %s <file>\n",argv[0]);
-		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
-		vid_printf("\tSo, I hope, you know what you're doing ;)\n");
+		Video::printf("Usage: %s <file>\n",argv[0]);
+		Video::printf("\tUses the current proc to be able to access the real-fs.\n");
+		Video::printf("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
-	vid_backup(backup.screen,&backup.row,&backup.col);
+	Video::backup(backup.screen,&backup.row,&backup.col);
 
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
@@ -74,6 +74,6 @@ error:
 	if(file != NULL)
 		vfs_closeFile(pid,file);
 
-	vid_restore(backup.screen,backup.row,backup.col);
+	Video::restore(backup.screen,backup.row,backup.col);
 	return res;
 }

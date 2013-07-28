@@ -19,6 +19,31 @@
 
 #pragma once
 
+#include <string.h>
+
 #define VID_COLS				80
 #define VID_ROWS				25
 #define BYTES_PER_COL			2
+
+inline void *Video::screen() {
+	return (void*)0xC00B8000;
+}
+
+inline void Video::copyScrToScr(void *dst,const void *src,size_t rows) {
+	memcpy(dst,src,rows * VID_COLS * 2);
+}
+
+inline void Video::copyScrToMem(void *dst,const void *src,size_t rows) {
+	memcpy(dst,src,rows * VID_COLS * 2);
+}
+
+inline void Video::copyMemToScr(void *dst,const void *src,size_t rows) {
+	memcpy(dst,src,rows * VID_COLS * 2);
+}
+
+inline void Video::drawChar(ushort col,ushort row,char c) {
+	char *video = (char*)(screen() + row * VID_COLS * 2 + col * 2);
+	*video = c;
+	video++;
+	*video = color;
+}

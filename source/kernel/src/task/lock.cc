@@ -143,11 +143,11 @@ void Lock::releaseAll(pid_t pid) {
 
 void Lock::print(void) {
 	size_t i;
-	vid_printf("Locks:\n");
+	Video::printf("Locks:\n");
 	for(i = 0; i < lockCount; i++) {
 		Entry *l = locks + i;
 		if(l->flags) {
-			vid_printf("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
+			Video::printf("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
 					l->ident,l->pid,l->flags,l->readRefs,l->writer,l->waitCount);
 		}
 	}

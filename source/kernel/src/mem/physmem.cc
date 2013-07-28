@@ -390,19 +390,19 @@ void PhysMem::swapper() {
 void PhysMem::print() {
 	SwapInJob *job;
 	const char *dev = Config::getStr(Config::SWAP_DEVICE);
-	vid_printf("Default: %zu\n",getFreeDef());
-	vid_printf("Contiguous: %zu\n",freeCont);
-	vid_printf("Swap-Device: %s\n",dev ? dev : "-none-");
-	vid_printf("Swap enabled: %d\n",swapEnabled);
-	vid_printf("EFrames: %zu\n",cframes);
-	vid_printf("KFrames: %zu\n",kframes);
-	vid_printf("UFrames: %zu\n",uframes);
-	vid_printf("Swapped out: %zu\n",swappedOut);
-	vid_printf("Swapped in: %zu\n",swappedIn);
-	vid_printf("\n");
-	vid_printf("Swap-in-jobs:\n");
+	Video::printf("Default: %zu\n",getFreeDef());
+	Video::printf("Contiguous: %zu\n",freeCont);
+	Video::printf("Swap-Device: %s\n",dev ? dev : "-none-");
+	Video::printf("Swap enabled: %d\n",swapEnabled);
+	Video::printf("EFrames: %zu\n",cframes);
+	Video::printf("KFrames: %zu\n",kframes);
+	Video::printf("UFrames: %zu\n",uframes);
+	Video::printf("Swapped out: %zu\n",swappedOut);
+	Video::printf("Swapped in: %zu\n",swappedIn);
+	Video::printf("\n");
+	Video::printf("Swap-in-jobs:\n");
 	for(job = siJobList; job != NULL; job = job->next) {
-		vid_printf("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
+		Video::printf("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
 				job->thread->getProc()->getCommand(),job->addr);
 	}
 }
@@ -410,19 +410,19 @@ void PhysMem::print() {
 void PhysMem::printStack() {
 	size_t i;
 	frameno_t *ptr;
-	vid_printf("Stack: (frame numbers)\n");
+	Video::printf("Stack: (frame numbers)\n");
 	for(i = 0, ptr = stack - 1; (uintptr_t)ptr >= stackBegin; i++, ptr--) {
-		vid_printf("0x%08Px, ",*ptr);
+		Video::printf("0x%08Px, ",*ptr);
 		if(i % 6 == 5)
-			vid_printf("\n");
+			Video::printf("\n");
 	}
 }
 
 void PhysMem::printCont() {
 	size_t i,pos = bitmapStart;
-	vid_printf("Bitmap: (frame numbers)\n");
+	Video::printf("Bitmap: (frame numbers)\n");
 	for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
-		vid_printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
+		Video::printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
 		pos += PAGE_SIZE * BITS_PER_BMWORD;
 	}
 }

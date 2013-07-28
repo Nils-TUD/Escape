@@ -245,8 +245,8 @@ void ThreadBase::doSwitch(void) {
 #if DEBUGGING
 
 void thread_printState(const sThreadRegs *state) {
-	vid_printf("State:\n",state);
-	vid_printf("\tStackend = %p\n",state->stackEnd);
+	Video::printf("State:\n",state);
+	Video::printf("\tStackend = %p\n",state->stackEnd);
 }
 
 #endif

@@ -174,10 +174,10 @@ void Cache::print(void) {
 			maxMem = amount;
 		total += amount;
 	}
-	vid_printf("Total: %zu bytes\n",total);
+	Video::printf("Total: %zu bytes\n",total);
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
 		size_t mem = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
-		vid_printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
+		Video::printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
 				caches[i].totalObjs,caches[i].freeObjs,BYTES_2_PAGES(mem));
 		printBar(mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
 	}
@@ -189,11 +189,11 @@ void Cache::printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
 	size_t full = (size_t)(memTotal * ((total - free) / (double)total));
 	for(i = 0; i < VID_COLS; i++) {
 		if(i < full)
-			vid_printf("%c",0xDB);
+			Video::printf("%c",0xDB);
 		else if(i < memTotal)
-			vid_printf("%c",0xB0);
+			Video::printf("%c",0xB0);
 	}
-	vid_printf("\n");
+	Video::printf("\n");
 }
 
 void *Cache::get(Entry *c,size_t i) {

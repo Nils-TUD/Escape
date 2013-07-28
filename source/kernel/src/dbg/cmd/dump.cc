@@ -93,22 +93,22 @@ int cons_cmd_dump(size_t argc,char **argv) {
 	int res;
 
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		vid_printf("Usage: %s <file>\n",argv[0]);
-		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
-		vid_printf("\tSo, I hope, you know what you're doing ;)\n");
+		Video::printf("Usage: %s <file>\n",argv[0]);
+		Video::printf("\tUses the current proc to be able to access the real-fs.\n");
+		Video::printf("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
 	pid = Proc::getRunning();
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res >= 0) {
-		vid_backup(backup.screen,&backup.row,&backup.col);
+		Video::backup(backup.screen,&backup.row,&backup.col);
 
 		off_t end = vfs_seek(pid,file,0,SEEK_END);
 		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)BYTES_PER_LINE));
 		Console::navigation(&backend);
 
-		vid_restore(backup.screen,backup.row,backup.col);
+		Video::restore(backup.screen,backup.row,backup.col);
 
 		vfs_closeFile(pid,file);
 	}

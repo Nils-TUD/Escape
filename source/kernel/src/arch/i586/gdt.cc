@@ -255,18 +255,18 @@ void GDT::print() {
 	size_t i,j;
 	size_t count = SMP::getCPUCount();
 	const SMP::CPU **cpus = SMP::getCPUs();
-	vid_printf("GDTs:\n");
+	Video::printf("GDTs:\n");
 	for(i = 0; i < count; i++) {
 		Desc *gdt = (Desc*)allgdts[cpus[i]->id].offset;
-		vid_printf("\tGDT of CPU %d\n",cpus[i]->id);
+		Video::printf("\tGDT of CPU %d\n",cpus[i]->id);
 		if(gdt) {
 			for(j = 0; j < GDT_ENTRY_COUNT; j++) {
-				vid_printf("\t\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",
+				Video::printf("\t\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",
 						j,gdt[j].addrHigh,gdt[j].addrMiddle,gdt[j].addrLow,
 						gdt[j].sizeHigh,gdt[j].sizeLow,gdt[j].access);
 			}
 		}
 		else
-			vid_printf("\t\t-\n");
+			Video::printf("\t\t-\n");
 	}
 }

@@ -66,58 +66,58 @@ void Util::stopTimer(const char *prefix,...) {
 	uLongLong diff;
 	diff.val64 = CPU::rdtsc() - profStart;
 	va_start(l,prefix);
-	vid_vprintf(prefix,l);
+	Video::vprintf(prefix,l);
 	va_end(l);
-	vid_printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
+	Video::printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
 }
 
 void Util::panic(const char *fmt, ...) {
 	va_list ap;
 	const Thread *t = Thread::getRunning();
 	panicArch();
-	vid_clearScreen();
+	Video::clearScreen();
 
 	/* print message */
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
-	vid_printf("\n");
-	vid_printf("\033[co;7;4]PANIC: ");
+	Video::setTargets(Video::SCREEN | Video::LOG);
+	Video::printf("\n");
+	Video::printf("\033[co;7;4]PANIC: ");
 	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
+	Video::vprintf(fmt,ap);
 	va_end(ap);
-	vid_printf("%|s\033[co]\n","");
+	Video::printf("%|s\033[co]\n","");
 
 	/* write information about the running thread to log/screen */
 	if(t != NULL)
-		vid_printf("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
+		Video::printf("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
 	printStackTrace(getKernelStackTrace());
 	if(t) {
 		printUserState();
 
-		vid_setTargets(TARGET_LOG);
-		vid_printf("\n============= snip =============\n");
-		vid_printf("Region overview:\n");
+		Video::setTargets(Video::LOG);
+		Video::printf("\n============= snip =============\n");
+		Video::printf("Region overview:\n");
 		t->getProc()->getVM()->printShort("\t");
 
-		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+		Video::setTargets(Video::SCREEN | Video::LOG);
 		printStackTrace(getUserStackTrace());
 
-		vid_setTargets(TARGET_LOG);
-		vid_printf("============= snip =============\n\n");
-		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+		Video::setTargets(Video::LOG);
+		Video::printf("============= snip =============\n\n");
+		Video::setTargets(Video::SCREEN | Video::LOG);
 	}
 
 	/* write into log only */
 	if(t) {
-		vid_setTargets(TARGET_SCREEN);
-		vid_printf("\n\nWriting regions and page-directory of the current process to log...");
-		vid_setTargets(TARGET_LOG);
+		Video::setTargets(Video::SCREEN);
+		Video::printf("\n\nWriting regions and page-directory of the current process to log...");
+		Video::setTargets(Video::LOG);
 		t->getProc()->getVM()->printRegions();
 		t->getProc()->getPageDir()->print(PD_PART_USER);
-		vid_setTargets(TARGET_SCREEN);
-		vid_printf("Done\n");
+		Video::setTargets(Video::SCREEN);
+		Video::printf("Done\n");
 	}
 
-	vid_printf("\nPress any key to start debugger");
+	Video::printf("\nPress any key to start debugger");
 	while(1) {
 		Keyboard::get(NULL,KEV_PRESS,true);
 		Console::start(NULL);
@@ -127,33 +127,33 @@ void Util::panic(const char *fmt, ...) {
 void Util::printEventTrace(const FuncCall *trace,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
+	Video::vprintf(fmt,ap);
 	va_end(ap);
 	if(trace) {
 		size_t i;
 		for(i = 0; trace->addr != 0 && i < 5; i++) {
 			sSymbol *sym = ksym_getSymbolAt(trace->addr);
 			if(sym->address)
-				vid_printf("%s",sym->funcName);
+				Video::printf("%s",sym->funcName);
 			else
-				vid_printf("%Px",trace->addr);
+				Video::printf("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
-				vid_printf(" ");
+				Video::printf(" ");
 		}
 	}
-	vid_printf("\n");
+	Video::printf("\n");
 }
 
 void Util::printStackTrace(const FuncCall *trace) {
 	if(trace && trace->addr) {
 		if(trace->addr < KERNEL_AREA)
-			vid_printf("User-Stacktrace:\n");
+			Video::printf("User-Stacktrace:\n");
 		else
-			vid_printf("Kernel-Stacktrace:\n");
+			Video::printf("Kernel-Stacktrace:\n");
 
 		while(trace->addr != 0) {
-			vid_printf("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+			Video::printf("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
 			trace++;
 		}
 	}
@@ -162,7 +162,7 @@ void Util::printStackTrace(const FuncCall *trace) {
 void Util::dumpMem(const void *addr,size_t dwordCount) {
 	ulong *ptr = (ulong*)addr;
 	while(dwordCount-- > 0) {
-		vid_printf("%p: 0x%0*lx\n",ptr,sizeof(ulong) * 2,*ptr);
+		Video::printf("%p: 0x%0*lx\n",ptr,sizeof(ulong) * 2,*ptr);
 		ptr++;
 	}
 }
@@ -173,10 +173,10 @@ void Util::dumpBytes(const void *addr,size_t byteCount) {
 	for(i = 0; byteCount-- > 0; i++) {
 		if(i % 16 == 0) {
 			if(i > 0)
-				vid_printf("\n");
-			vid_printf("%p:",ptr);
+				Video::printf("\n");
+			Video::printf("%p:",ptr);
 		}
-		vid_printf(" %02x",*ptr);
+		Video::printf(" %02x",*ptr);
 		ptr++;
 	}
 }

@@ -348,22 +348,22 @@ void KHeap::print(void) {
 	MemArea *area;
 	size_t i;
 
-	vid_printf("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
+	Video::printf("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
 			memUsage / PAGE_SIZE);
-	vid_printf("UsableList:\n");
+	Video::printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		vid_printf("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
+		Video::printf("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 		area = area->next;
 	}
 
-	vid_printf("OccupiedMap:\n");
+	Video::printf("OccupiedMap:\n");
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		area = occupiedMap[i];
 		if(area != NULL) {
-			vid_printf("\t%d:\n",i);
+			Video::printf("\t%d:\n",i);
 			while(area != NULL) {
-				vid_printf("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
+				Video::printf("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 				area = area->next;
 			}
 		}

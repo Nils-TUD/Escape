@@ -324,51 +324,51 @@ static const char *getStateName(uint8_t state) {
 }
 
 void ThreadBase::printShort() const {
-	vid_printf("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
+	Video::printf("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
 			tid,getStateName(state),priority,cpu,getRuntime());
 	Event::printEvMask(static_cast<const Thread*>(this));
-	vid_printf("]");
+	Video::printf("]");
 }
 
 void ThreadBase::print() const {
 	size_t i;
 	Util::FuncCall *calls;
-	vid_printf("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
+	Video::printf("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
 	prf_pushIndent();
-	vid_printf("Flags=%#x\n",flags);
-	vid_printf("State=%s\n",getStateName(state));
-	vid_printf("Events=");
+	Video::printf("Flags=%#x\n",flags);
+	Video::printf("State=%s\n",getStateName(state));
+	Video::printf("Events=");
 	Event::printEvMask(static_cast<const Thread*>(this));
-	vid_printf("\n");
-	vid_printf("LastCPU=%d\n",cpu);
-	vid_printf("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);
+	Video::printf("\n");
+	Video::printf("LastCPU=%d\n",cpu);
+	Video::printf("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		vid_printf("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt : 0);
+		Video::printf("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt : 0);
 		if(i < STACK_REG_COUNT - 1)
-			vid_printf(", ");
+			Video::printf(", ");
 	}
-	vid_printf("\n");
-	vid_printf("Priority = %d\n",priority);
-	vid_printf("Runtime = %Lums\n",getRuntime());
-	vid_printf("Scheduled = %u\n",stats.schedCount);
-	vid_printf("Syscalls = %u\n",stats.syscalls);
-	vid_printf("CurCycleCount = %Lu\n",stats.curCycleCount);
-	vid_printf("LastCycleCount = %Lu\n",stats.lastCycleCount);
-	vid_printf("cycleStart = %Lu\n",stats.cycleStart);
-	vid_printf("Kernel-trace:\n");
+	Video::printf("\n");
+	Video::printf("Priority = %d\n",priority);
+	Video::printf("Runtime = %Lums\n",getRuntime());
+	Video::printf("Scheduled = %u\n",stats.schedCount);
+	Video::printf("Syscalls = %u\n",stats.syscalls);
+	Video::printf("CurCycleCount = %Lu\n",stats.curCycleCount);
+	Video::printf("LastCycleCount = %Lu\n",stats.lastCycleCount);
+	Video::printf("cycleStart = %Lu\n",stats.cycleStart);
+	Video::printf("Kernel-trace:\n");
 	prf_pushIndent();
 	calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
 	while(calls->addr != 0) {
-		vid_printf("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		Video::printf("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
 	prf_popIndent();
 	calls = Util::getUserStackTraceOf(const_cast<Thread*>(static_cast<const Thread*>(this)));
 	if(calls) {
-		vid_printf("User-trace:\n");
+		Video::printf("User-trace:\n");
 		prf_pushIndent();
 		while(calls->addr != 0) {
-			vid_printf("%p -> %p (%s)\n",
+			Video::printf("%p -> %p (%s)\n",
 					(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}

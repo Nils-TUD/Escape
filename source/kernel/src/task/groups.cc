@@ -115,12 +115,12 @@ void Groups::print(pid_t pid) {
 	Entries *g = getByPid(pid);
 	if(g) {
 		size_t i;
-		vid_printf("[refs: %u] ",g->refCount);
+		Video::printf("[refs: %u] ",g->refCount);
 		for(i = 0; i < g->count; i++)
-			vid_printf("%u ",g->groups[i]);
+			Video::printf("%u ",g->groups[i]);
 	}
 	else
-		vid_printf("-");
+		Video::printf("-");
 }
 
 Groups::Entries *Groups::getByPid(pid_t pid) {

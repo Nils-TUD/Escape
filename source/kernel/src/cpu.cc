@@ -29,6 +29,6 @@ void CPUBase::print() {
 	buf.size = 0;
 	buf.str = NULL;
 	sprintf(&buf);
-	vid_printf("%s",buf.str);
+	Video::printf("%s",buf.str);
 	Cache::free(buf.str);
 }

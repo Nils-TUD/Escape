@@ -437,10 +437,10 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 void vfs_fsmsgs_printFSChans(const Proc *p) {
 	sSLNode *n;
 	spinlock_aquire(&fsChanLock);
-	vid_printf("FS-Channels:\n");
+	Video::printf("FS-Channels:\n");
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
-		vid_printf("\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
+		Video::printf("\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
 				chan->active ? "active" : "not active");
 	}
 	spinlock_release(&fsChanLock);

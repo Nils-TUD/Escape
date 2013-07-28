@@ -106,13 +106,13 @@ void IOPorts::free(Proc *p) {
 
 void IOPorts::print(const uint8_t *map) {
 	size_t i,j,c = 0;
-	vid_printf("Reserved IO-ports:\n\t");
+	Video::printf("Reserved IO-ports:\n\t");
 	for(i = 0; i < GDT::IO_MAP_SIZE / 8; i++) {
 		for(j = 0; j < 8; j++) {
 			if(!(map[i] & (1 << j))) {
-				vid_printf("%zx, ",i * 8 + j);
+				Video::printf("%zx, ",i * 8 + j);
 				if(++c % 10 == 0)
-					vid_printf("\n\t");
+					Video::printf("\n\t");
 			}
 		}
 	}

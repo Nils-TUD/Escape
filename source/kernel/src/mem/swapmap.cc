@@ -84,17 +84,17 @@ void SwapMap::free(ulong block) {
 
 void SwapMap::print() {
 	size_t i,c = 0;
-	vid_printf("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
-	vid_printf("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
-	vid_printf("Used:");
+	Video::printf("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
+	Video::printf("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
+	Video::printf("Used:");
 	for(i = 0; i < totalBlocks; i++) {
 		Block *block = swapBlocks + i;
 		if(block->refCount > 0) {
 			if(c % 8 == 0)
-				vid_printf("\n ");
-			vid_printf("%5u[%u] ",i,block->refCount);
+				Video::printf("\n ");
+			Video::printf("%5u[%u] ",i,block->refCount);
 			c++;
 		}
 	}
-	vid_printf("\n");
+	Video::printf("\n");
 }

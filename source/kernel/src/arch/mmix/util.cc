@@ -39,11 +39,11 @@ void Util::panicArch() {
 
 void Util::printUserStateOf(const Thread *t) {
 	sKSpecRegs *sregs = t->getSpecRegs();
-	vid_printf("User state:\n");
+	Video::printf("User state:\n");
 	prf_pushIndent();
 	Interrupts::printStackFrame(t->getIntrptStack());
-	vid_printf("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
-	vid_printf("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
+	Video::printf("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
+	Video::printf("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
 	prf_popIndent();
 }
 

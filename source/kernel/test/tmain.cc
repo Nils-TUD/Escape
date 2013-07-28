@@ -63,7 +63,7 @@ void bspstart(sBootInfo *bootinfo) {
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	Video::setTargets(Video::SCREEN | Video::LOG);
 	/* TODO find a better solution */
 #ifdef __i386__
 	PageDir::gdtFinished();
@@ -71,9 +71,9 @@ void bspstart(sBootInfo *bootinfo) {
 
 	/* start tests */
 	/* swapmap (needed for swapmap tests) */
-	vid_printf("Initializing Swapmap...");
+	Video::printf("Initializing Swapmap...");
 	SwapMap::init(256 * K);
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
+	Video::printf("\033[co;2]%|s\033[co]","DONE");
 
 #ifdef __mmix__
 	test_register(&tModAddrSpace);

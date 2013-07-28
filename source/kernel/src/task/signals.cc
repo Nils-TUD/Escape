@@ -249,17 +249,17 @@ const char *Signals::dbg_getName(int signal) {
 void Signals::print(void) {
 	size_t i;
 	sSLNode *n;
-	vid_printf("Signal handler:\n");
+	Video::printf("Signal handler:\n");
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
-		vid_printf("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
-		vid_printf("\t\tpending: %zu\n",t->signals->pending.count);
-		vid_printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
-		vid_printf("\t\tcurrent: %d\n",t->signals->currentSignal);
-		vid_printf("\t\thandler:\n");
+		Video::printf("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
+		Video::printf("\t\tpending: %zu\n",t->signals->pending.count);
+		Video::printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
+		Video::printf("\t\tcurrent: %d\n",t->signals->currentSignal);
+		Video::printf("\t\thandler:\n");
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
-				vid_printf("\t\t\t%s: handler=%p\n",dbg_getName(i),t->signals->handler[i]);
+				Video::printf("\t\t\t%s: handler=%p\n",dbg_getName(i),t->signals->handler[i]);
 		}
 	}
 }

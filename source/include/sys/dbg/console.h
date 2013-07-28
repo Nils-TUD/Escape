@@ -109,9 +109,9 @@ public:
 	 */
 	static void setLogEnabled(bool enabled) {
 		if(enabled)
-			vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+			Video::setTargets(Video::SCREEN | Video::LOG);
 		else
-			vid_setTargets(TARGET_SCREEN);
+			Video::setTargets(Video::SCREEN);
 	}
 
 	/**

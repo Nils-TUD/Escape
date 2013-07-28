@@ -218,16 +218,16 @@ void VMTree::doRemove(VMRegion **p,VMRegion *reg) {
 
 void VMTree::print() const {
 	doPrint(root,0);
-	vid_printf("\n");
+	Video::printf("\n");
 }
 
 void VMTree::doPrint(const VMRegion *n,int layer) {
 	if(n) {
-		vid_printf("prio=%08x, addr=%p\n",n->priority,n->virt);
-		vid_printf("%*s\\-(l) ",layer * 2,"");
+		Video::printf("prio=%08x, addr=%p\n",n->priority,n->virt);
+		Video::printf("%*s\\-(l) ",layer * 2,"");
 		doPrint(n->left,layer + 1);
-		vid_printf("\n");
-		vid_printf("%*s\\-(r) ",layer * 2,"");
+		Video::printf("\n");
+		Video::printf("%*s\\-(r) ",layer * 2,"");
 		doPrint(n->right,layer + 1);
 	}
 }

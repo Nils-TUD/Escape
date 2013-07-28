@@ -81,7 +81,7 @@ void Log::vfsIsReady() {
 }
 
 void Log::printc(char c) {
-	if(Config::get(Config::LOG) && !vfsIsReady)
+	if(Config::get(Config::LOG) && !vfsReady)
 		writeChar(c);
 	if(bufPos >= BUF_SIZE)
 		flush();

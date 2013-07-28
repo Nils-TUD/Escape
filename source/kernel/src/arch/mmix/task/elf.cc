@@ -60,18 +60,18 @@ int ELF::finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
 	sElfSHeader *secHeaders = (sElfSHeader*)Cache::alloc(headerSize);
 	if(secHeaders == NULL) {
-		vid_printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
+		Video::printf("[LOADER] Unable to allocate memory for ELF-header (%zu bytes)\n",headerSize);
 		return -ENOEXEC;
 	}
 
 	Thread::addHeapAlloc(secHeaders);
 	if(vfs_seek(t->getProc()->getPid(),file,eheader->e_shoff,SEEK_SET) < 0) {
-		vid_printf("[LOADER] Unable to seek to ELF-header\n");
+		Video::printf("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
 	}
 
 	if((readRes = vfs_readFile(t->getProc()->getPid(),file,secHeaders,headerSize)) != headerSize) {
-		vid_printf("[LOADER] Unable to read ELF-header: %s\n",strerror(-readRes));
+		Video::printf("[LOADER] Unable to read ELF-header: %s\n",strerror(-readRes));
 		goto error;
 	}
 
@@ -113,12 +113,12 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 			/* append global registers */
 			if(file != NULL) {
 				if((res = vfs_seek(t->getProc()->getPid(),file,sheader->sh_offset,SEEK_SET)) < 0) {
-					vid_printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
+					Video::printf("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
 					return res;
 				}
 				if((res = vfs_readFile(t->getProc()->getPid(),file,stack,sheader->sh_size)) !=
 						(ssize_t)sheader->sh_size) {
-					vid_printf("[LOADER] Unable to read reg-section: %s\n",strerror(-res));
+					Video::printf("[LOADER] Unable to read reg-section: %s\n",strerror(-res));
 					return res;
 				}
 			}

@@ -164,11 +164,11 @@ void SMPBase::flushTLB(PageDir *pdir) {
 
 void SMPBase::print() {
 	sSLNode *n;
-	vid_printf("CPUs:\n");
+	Video::printf("CPUs:\n");
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
 		CPU *cpu = (CPU*)n->data;
 		Thread *t = cpu->thread;
-		vid_printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
+		Video::printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
 				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),
 				cpu->schedCount,cpu->runtime,cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);

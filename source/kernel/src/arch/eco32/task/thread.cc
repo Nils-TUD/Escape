@@ -176,18 +176,18 @@ void ThreadBase::doSwitch(void) {
 #if DEBUGGING
 
 void ThreadBase::printState(const sThreadRegs *state) {
-	vid_printf("State:\n",state);
-	vid_printf("\t$16 = %#08x\n",state->r16);
-	vid_printf("\t$17 = %#08x\n",state->r17);
-	vid_printf("\t$18 = %#08x\n",state->r18);
-	vid_printf("\t$19 = %#08x\n",state->r19);
-	vid_printf("\t$20 = %#08x\n",state->r20);
-	vid_printf("\t$21 = %#08x\n",state->r21);
-	vid_printf("\t$22 = %#08x\n",state->r22);
-	vid_printf("\t$23 = %#08x\n",state->r23);
-	vid_printf("\t$29 = %#08x\n",state->r29);
-	vid_printf("\t$30 = %#08x\n",state->r30);
-	vid_printf("\t$31 = %#08x\n",state->r31);
+	Video::printf("State:\n",state);
+	Video::printf("\t$16 = %#08x\n",state->r16);
+	Video::printf("\t$17 = %#08x\n",state->r17);
+	Video::printf("\t$18 = %#08x\n",state->r18);
+	Video::printf("\t$19 = %#08x\n",state->r19);
+	Video::printf("\t$20 = %#08x\n",state->r20);
+	Video::printf("\t$21 = %#08x\n",state->r21);
+	Video::printf("\t$22 = %#08x\n",state->r22);
+	Video::printf("\t$23 = %#08x\n",state->r23);
+	Video::printf("\t$29 = %#08x\n",state->r29);
+	Video::printf("\t$30 = %#08x\n",state->r30);
+	Video::printf("\t$31 = %#08x\n",state->r31);
 }
 
 #endif

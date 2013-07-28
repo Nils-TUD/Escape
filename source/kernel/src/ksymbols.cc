@@ -26,9 +26,9 @@ extern size_t kernel_symbol_count;
 
 void ksym_print(void) {
 	size_t i;
-	vid_printf("Kernel-Symbols:\n");
+	Video::printf("Kernel-Symbols:\n");
 	for(i = 0; i < kernel_symbol_count; i++)
-		vid_printf("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
+		Video::printf("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
 }
 
 sSymbol *ksym_getSymbolAt(uintptr_t address) {

@@ -152,31 +152,31 @@ bool Event::wakeupThread(Thread *t,uint events) {
 void Event::printEvMask(const Thread *t) {
 	uint e;
 	if(t->events == 0)
-		vid_printf("-");
+		Video::printf("-");
 	else {
 		for(e = 0; e < EV_COUNT; e++) {
 			if(t->events & (1 << e))
-				vid_printf("%s ",getName(e));
+				Video::printf("%s ",getName(e));
 		}
 	}
 }
 
 void Event::print(void) {
 	size_t e;
-	vid_printf("Eventlists:\n");
+	Video::printf("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
 		WaitList *list = evlists + e;
 		sWait *w = list->begin;
-		vid_printf("\t%s:\n",getName(e));
+		Video::printf("\t%s:\n",getName(e));
 		while(w != NULL) {
 			inode_t nodeNo;
 			Thread *t = Thread::getById(w->tid);
-			vid_printf("\t\tthread=%d (%d:%s), object=%x",
+			Video::printf("\t\tthread=%d (%d:%s), object=%x",
 					t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),w->object);
 			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
 			if(vfs_node_isValid(nodeNo))
-				vid_printf("(%s)",vfs_node_getPath(nodeNo));
-			vid_printf("\n");
+				Video::printf("(%s)",vfs_node_getPath(nodeNo));
+			Video::printf("\n");
 			w = w->next;
 		}
 	}

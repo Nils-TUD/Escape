@@ -167,12 +167,12 @@ void Env::printAllOf(pid_t pid) {
 	char name[64];
 	char value[64];
 	size_t i;
-	vid_printf("Environment of %d:\n",pid);
+	Video::printf("Environment of %d:\n",pid);
 	for(i = 0; ; i++) {
 		if(!geti(pid,i,name,sizeof(name)))
 			break;
 		get(pid,name,value,sizeof(value));
-		vid_printf("\t'%s' = '%s'\n",name,value);
+		Video::printf("\t'%s' = '%s'\n",name,value);
 	}
 }
 

@@ -173,11 +173,11 @@ bool TimerBase::intrpt(void) {
 void TimerBase::print(void) {
 	time_t time;
 	Listener *l;
-	vid_printf("Timer-Listener:\n");
+	Video::printf("Timer-Listener:\n");
 	time = 0;
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
-		vid_printf("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
+		Video::printf("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
 				Thread::getById(l->tid)->getProc()->getCommand(),l->block);
 	}
 }

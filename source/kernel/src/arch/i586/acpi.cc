@@ -166,15 +166,15 @@ ACPI::RSDP *ACPI::findIn(uintptr_t start,size_t len) {
 void ACPI::print() {
 	sSLNode *n;
 	size_t i = 0;
-	vid_printf("ACPI tables:\n");
+	Video::printf("ACPI tables:\n");
 	for(n = sll_begin(&acpiTables); n != NULL; n = n->next, i++) {
 		RSDT *tbl = (RSDT*)n->data;
-		vid_printf("\tTable%zu:\n",i);
-		vid_printf("\t\tsignature: %.4s\n",(char*)&tbl->signature);
-		vid_printf("\t\tlength: %u\n",tbl->length);
-		vid_printf("\t\trevision: %u\n",tbl->revision);
-		vid_printf("\t\toemId: %.6s\n",tbl->oemId);
-		vid_printf("\t\toemTableId: %.8s\n",tbl->oemTableId);
-		vid_printf("\n");
+		Video::printf("\tTable%zu:\n",i);
+		Video::printf("\t\tsignature: %.4s\n",(char*)&tbl->signature);
+		Video::printf("\t\tlength: %u\n",tbl->length);
+		Video::printf("\t\trevision: %u\n",tbl->revision);
+		Video::printf("\t\toemId: %.6s\n",tbl->oemId);
+		Video::printf("\t\toemTableId: %.8s\n",tbl->oemTableId);
+		Video::printf("\n");
 	}
 }

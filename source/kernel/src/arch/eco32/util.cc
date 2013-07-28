@@ -44,16 +44,16 @@ void Util::printUserStateOf(const Thread *t) {
 	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
 	if(istackAddr) {
 		IntrptStackFrame *istack = (IntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
-		vid_printf("User state:\n");
-		vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
+		Video::printf("User state:\n");
+		Video::printf("\tPSW: 0x%08x\n\t",istack->psw);
 		for(i = 0; i < REG_COUNT; i++) {
 			int row = i / 4;
 			int col = i % 4;
-			vid_printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
+			Video::printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
 			if(i % 4 == 3)
-				vid_printf("\n\t");
+				Video::printf("\n\t");
 		}
-		vid_printf("\n");
+		Video::printf("\n");
 	}
 }
 

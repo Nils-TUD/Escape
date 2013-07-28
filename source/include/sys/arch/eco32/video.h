@@ -22,3 +22,13 @@
 #define VID_COLS				80
 #define VID_ROWS				30
 #define BYTES_PER_COL			4
+#define MAX_COLS				128
+
+inline void *Video::screen() {
+	return (void*)0xF0100000;
+}
+
+inline void Video::drawChar(ushort col,ushort row,char c) {
+	uint32_t *video = (uint32_t*)screen() + row * MAX_COLS + col;
+	*video = color << 8 | (unsigned char)c;
+}

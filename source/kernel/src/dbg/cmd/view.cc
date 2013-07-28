@@ -107,17 +107,17 @@ static View views[] = {
 int cons_cmd_view(size_t argc,char **argv) {
 	size_t i;
 	if(Console::isHelp(argc,argv) || argc < 2) {
-		vid_printf("Usage: %s <what>\n",argv[0]);
-		vid_printf("Available 'whats':\n");
+		Video::printf("Usage: %s <what>\n",argv[0]);
+		Video::printf("Available 'whats':\n");
 		for(i = 0; i < ARRAY_SIZE(views); i++) {
 			if(i % 6 == 0) {
 				if(i > 0)
-					vid_printf("\n");
-				vid_printf("\t");
+					Video::printf("\n");
+				Video::printf("\t");
 			}
-			vid_printf("%s ",views[i].name);
+			Video::printf("%s ",views[i].name);
 		}
-		vid_printf("\n");
+		Video::printf("\n");
 		return 0;
 	}
 
@@ -126,10 +126,10 @@ int cons_cmd_view(size_t argc,char **argv) {
 	for(i = 0; i < ARRAY_SIZE(views); i++) {
 		if(strcmp(views[i].name,argv[1]) == 0) {
 			/* redirect prints */
-			vid_setPrintFunc(view_printc);
+			Video::setPrintFunc(view_printc);
 			views[i].func(argc,argv);
 			lines.endLine();
-			vid_unsetPrintFunc();
+			Video::unsetPrintFunc();
 			break;
 		}
 	}
@@ -137,9 +137,9 @@ int cons_cmd_view(size_t argc,char **argv) {
 		return -EINVAL;
 
 	/* view the lines */
-	vid_backup(backup.screen,&backup.row,&backup.col);
+	Video::backup(backup.screen,&backup.row,&backup.col);
 	Console::viewLines(&lines);
-	vid_restore(backup.screen,backup.row,backup.col);
+	Video::restore(backup.screen,backup.row,backup.col);
 	return 0;
 }
 
@@ -192,7 +192,7 @@ static Proc *view_getProc(size_t argc,char **argv) {
 	else
 		p = Proc::getByPid(Proc::getRunning());
 	if(p == NULL)
-		vid_printf("Unable to find process '%s'\n",argv[2]);
+		Video::printf("Unable to find process '%s'\n",argv[2]);
 	return p;
 }
 
@@ -203,6 +203,6 @@ static const Thread *view_getThread(size_t argc,char **argv) {
 	else
 		t = Thread::getRunning();
 	if(t == NULL)
-		vid_printf("Unable to find thread '%s'\n",argv[2]);
+		Video::printf("Unable to find thread '%s'\n",argv[2]);
 	return t;
 }

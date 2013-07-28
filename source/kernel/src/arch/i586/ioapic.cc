@@ -57,14 +57,14 @@ void IOAPIC::setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_
 
 void IOAPIC::print(void) {
 	size_t i,j;
-	vid_printf("I/O APICs:\n");
+	Video::printf("I/O APICs:\n");
 	for(i = 0; i < count; i++) {
-		vid_printf("%d:\n",i);
-		vid_printf("\tid = %#x\n",ioapics[i].id);
-		vid_printf("\tversion = %#x\n",ioapics[i].version);
-		vid_printf("\tvirt. addr. = %#x\n",ioapics[i].addr);
+		Video::printf("%d:\n",i);
+		Video::printf("\tid = %#x\n",ioapics[i].id);
+		Video::printf("\tversion = %#x\n",ioapics[i].version);
+		Video::printf("\tvirt. addr. = %#x\n",ioapics[i].addr);
 		for(j = 0; j < RED_COUNT; j++) {
-			vid_printf("\tred[%d]: %#x:%#x\n",j,read(ioapics + i,IOAPIC_REG_REDTBL + j * 2),
+			Video::printf("\tred[%d]: %#x:%#x\n",j,read(ioapics + i,IOAPIC_REG_REDTBL + j * 2),
 					read(ioapics + i,IOAPIC_REG_REDTBL + j * 2 + 1));
 		}
 	}

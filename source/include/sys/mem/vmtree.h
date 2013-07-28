@@ -157,10 +157,10 @@ private:
 };
 
 inline VMTree *VMTree::reqTree() {
-	mutex_acquire(&regMutex);
+	Mutex::acquire(&regMutex);
 	return regList;
 }
 
 inline void VMTree::relTree() {
-	mutex_release(&regMutex);
+	Mutex::release(&regMutex);
 }

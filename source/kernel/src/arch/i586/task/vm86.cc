@@ -147,7 +147,7 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 		return -ESRCH;
 
 	/* ensure that only one thread at a time can use the vm86-task */
-	mutex_acquire(&vm86Lock);
+	Mutex::acquire(&vm86Lock);
 	/* store information in calling process */
 	caller = t->getTid();
 	if(!copyInfo(interrupt,regs,area)) {
@@ -403,7 +403,7 @@ void VM86::finish(void) {
 		Thread::getById(vm86Tid)->discardFrames();
 	clearInfo();
 	caller = INVALID_TID;
-	mutex_release(&vm86Lock);
+	Mutex::release(&vm86Lock);
 }
 
 void VM86::copyRegResult(IntrptStackFrame *stack) {

@@ -77,7 +77,7 @@ public:
 	 * Aquires the lock for this region
 	 */
 	void acquire() {
-		mutex_acquire(&lock);
+		Mutex::acquire(&lock);
 	}
 	/**
 	 * Tries to acquire the lock for this region
@@ -85,13 +85,13 @@ public:
 	 * @return true if successfull
 	 */
 	bool tryAquire() {
-		return mutex_tryAquire(&lock);
+		return Mutex::tryAcquire(&lock);
 	}
 	/**
 	 * Releases the lock for this region
 	 */
 	void release() {
-		mutex_release(&lock);
+		Mutex::release(&lock);
 	}
 
 	/**

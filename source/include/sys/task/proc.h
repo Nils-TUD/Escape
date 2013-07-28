@@ -602,7 +602,7 @@ inline Proc *ProcBase::tryRequest(pid_t pid,size_t l) {
 	assert(l == PLOCK_REGIONS || l == PLOCK_PROG);
 	Proc *p = getByPid(pid);
 	if(p) {
-		if(!mutex_tryAquire(p->locks + l))
+		if(!Mutex::tryAcquire(p->locks + l))
 			return NULL;
 	}
 	return p;
@@ -614,14 +614,14 @@ inline void ProcBase::release(Proc *p,size_t l) {
 
 inline void ProcBase::lock(size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		mutex_acquire(locks + l);
+		Mutex::acquire(locks + l);
 	else
 		SpinLock::acquire(locks + l);
 }
 
 inline void ProcBase::unlock(size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		mutex_release(locks + l);
+		Mutex::release(locks + l);
 	else
 		SpinLock::release(locks + l);
 }

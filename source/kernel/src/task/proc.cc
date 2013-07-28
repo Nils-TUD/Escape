@@ -172,7 +172,7 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
-	mutex_acquire(&procLock);
+	Mutex::acquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		size_t pown = 0,psh = 0,pswap = 0;
 		Proc *p = (Proc*)n->data;
@@ -181,7 +181,7 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 		shMem += psh;
 		dReal += p->virtmem.getMemUsage(&pages);
 	}
-	mutex_release(&procLock);
+	Mutex::release(&procLock);
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = (size_t)(dReal + CopyOnWrite::getFrmCount()) * PAGE_SIZE;
@@ -243,10 +243,10 @@ int ProcBase::clone(uint8_t flags) {
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
-	mutex_acquire(&procLock);
+	Mutex::acquire(&procLock);
 	newPid = getFreePid();
 	if(newPid < 0) {
-		mutex_release(&procLock);
+		Mutex::release(&procLock);
 		res = -ENOPROCS;
 		goto errorCmd;
 	}
@@ -254,11 +254,11 @@ int ProcBase::clone(uint8_t flags) {
 	/* add to processes */
 	p->pid = newPid;
 	if(!add(p)) {
-		mutex_release(&procLock);
+		Mutex::release(&procLock);
 		res = -ENOMEM;
 		goto errorCmd;
 	}
-	mutex_release(&procLock);
+	Mutex::release(&procLock);
 
 	/* create the VFS node */
 	p->threadDir = vfs_createProcess(p->pid);
@@ -650,9 +650,9 @@ void ProcBase::doDestroy(Proc *p) {
 	p->flags &= ~P_PREZOMBIE;
 	p->flags |= P_ZOMBIE;
 	/* ensure that the parent-wakeup doesn't get lost */
-	mutex_acquire(&childLock);
+	Mutex::acquire(&childLock);
 	notifyProcDied(p->parentPid);
-	mutex_release(&childLock);
+	Mutex::release(&childLock);
 }
 
 void ProcBase::kill(pid_t pid) {
@@ -662,8 +662,8 @@ void ProcBase::kill(pid_t pid) {
 		return;
 
 	/* give childs the ppid 0 */
-	mutex_acquire(&childLock);
-	mutex_acquire(&procLock);
+	Mutex::acquire(&childLock);
+	Mutex::acquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *cp = (Proc*)n->data;
 		if(cp->parentPid == p->pid) {
@@ -674,8 +674,8 @@ void ProcBase::kill(pid_t pid) {
 				notifyProcDied(0);
 		}
 	}
-	mutex_release(&procLock);
-	mutex_release(&childLock);
+	Mutex::release(&procLock);
+	Mutex::release(&childLock);
 
 	/* free the last resources and remove us from vfs */
 	Cache::free((char*)p->command);
@@ -697,12 +697,12 @@ int ProcBase::waitChild(USER ExitState *state) {
 	Proc *p = t->getProc();
 	int res;
 	/* check if there is already a dead child-proc */
-	mutex_acquire(&childLock);
+	Mutex::acquire(&childLock);
 	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
 		Event::wait(t,EVI_CHILD_DIED,(evobj_t)p);
-		mutex_release(&childLock);
+		Mutex::release(&childLock);
 		Thread::switchAway();
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		Event::removeThread(t);
@@ -714,7 +714,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 			return res;
 	}
 	else
-		mutex_release(&childLock);
+		Mutex::release(&childLock);
 
 	/* finally kill the process */
 	kill(res);
@@ -723,12 +723,12 @@ int ProcBase::waitChild(USER ExitState *state) {
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 	sSLNode *n;
-	mutex_acquire(&procLock);
+	Mutex::acquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
 			/* avoid deadlock; at other places we acquire the PLOCK_PROG first and procLock afterwards */
-			mutex_release(&procLock);
+			Mutex::release(&procLock);
 			p = request(p->pid,PLOCK_PROG);
 			if(state) {
 				state->pid = p->pid;
@@ -747,7 +747,7 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 			return p->pid;
 		}
 	}
-	mutex_release(&procLock);
+	Mutex::release(&procLock);
 	return -ECHILD;
 }
 
@@ -903,10 +903,10 @@ bool ProcBase::add(Proc *p) {
 }
 
 void ProcBase::remove(Proc *p) {
-	mutex_acquire(&procLock);
+	Mutex::acquire(&procLock);
 	sll_removeFirstWith(&procs,p);
 	pidToProc[p->pid] = NULL;
-	mutex_release(&procLock);
+	Mutex::release(&procLock);
 }
 
 

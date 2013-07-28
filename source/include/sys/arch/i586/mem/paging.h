@@ -315,16 +315,16 @@ inline void PageDirBase::zeroToUser(void *dst,size_t count) {
 
 inline ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
 	ssize_t pts;
-	spinlock_aquire(&PageDir::pagingLock);
+	SpinLock::aquire(&PageDir::pagingLock);
 	pts = static_cast<PageDir*>(this)->doMap(virt,frames,count,flags);
-	spinlock_release(&PageDir::pagingLock);
+	SpinLock::release(&PageDir::pagingLock);
 	return pts;
 }
 
 inline size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	size_t pts;
-	spinlock_aquire(&PageDir::pagingLock);
+	SpinLock::aquire(&PageDir::pagingLock);
 	pts = static_cast<PageDir*>(this)->doUnmap(virt,count,freeFrames);
-	spinlock_release(&PageDir::pagingLock);
+	SpinLock::release(&PageDir::pagingLock);
 	return pts;
 }

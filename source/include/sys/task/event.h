@@ -231,7 +231,7 @@ inline void Event::unsuspend(Thread *t) {
 }
 
 inline void Event::removeThread(Thread *t) {
-	spinlock_aquire(&evLock);
+	SpinLock::aquire(&evLock);
 	doRemoveThread(t);
-	spinlock_release(&evLock);
+	SpinLock::release(&evLock);
 }

@@ -31,19 +31,19 @@ bool Video::lastWasLineStart = true;
 klock_t Video::lock;
 
 void Video::backup(char *buffer,ushort *r,ushort *c) {
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	copyScrToMem(buffer,screen(),VID_ROWS);
 	*r = row;
 	*c = col;
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 }
 
 void Video::restore(const char *buffer,ushort r,ushort c) {
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	copyMemToScr(screen(),buffer,VID_ROWS);
 	row = r;
 	col = c;
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 }
 
 void Video::printf(const char *fmt,...) {
@@ -55,7 +55,7 @@ void Video::printf(const char *fmt,...) {
 
 void Video::vprintf(const char *fmt,va_list ap) {
 	if(targets & SCREEN) {
-		spinlock_aquire(&lock);
+		SpinLock::aquire(&lock);
 		sPrintEnv env;
 		env.print = printFunc;
 		env.escape = handleColorCode;
@@ -63,7 +63,7 @@ void Video::vprintf(const char *fmt,va_list ap) {
 		env.lineStart = lastWasLineStart;
 		prf_vprintf(&env,fmt,ap);
 		lastWasLineStart = env.lineStart;
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 	}
 	if(targets & LOG)
 		Log::vprintf(fmt,ap);

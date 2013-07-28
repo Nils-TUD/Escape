@@ -58,28 +58,28 @@ bool SwapMap::init(size_t swapSize) {
 
 ulong SwapMap::alloc() {
 	Block *block;
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	if(!freeList) {
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 		return INVALID_BLOCK;
 	}
 	block = freeList;
 	freeList = freeList->next;
 	block->refCount = 1;
 	freeBlocks--;
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return block - swapBlocks;
 }
 
 void SwapMap::free(ulong block) {
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	assert(block < totalBlocks);
 	if(--swapBlocks[block].refCount == 0) {
 		swapBlocks[block].next = freeList;
 		freeList = swapBlocks + block;
 		freeBlocks++;
 	}
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 }
 
 void SwapMap::print() {

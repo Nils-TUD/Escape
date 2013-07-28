@@ -391,43 +391,43 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 
 static Proc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
 	Proc *p;
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		return NULL;
 	}
 	p = Proc::getByPid(atoi(node->parent->name));
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 	return p;
 }
 
 static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer) {
 	pid_t pid;
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		return INVALID_PID;
 	}
 	pid = atoi(node->parent->name);
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 	return pid;
 }
 
 static Thread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer) {
 	Thread *t;
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		return NULL;
 	}
 	t = Thread::getById(atoi(node->parent->name));
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 	return t;
 }
 

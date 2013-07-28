@@ -21,20 +21,8 @@
 
 #include <sys/common.h>
 
-class SpinLock {
-	SpinLock() = delete;
-
-public:
-	static void aquire(klock_t *l);
-	static void release(klock_t *l);
-};
-
-#ifdef __i386__
-#include <sys/arch/i586/spinlock.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/spinlock.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/spinlock.h>
-#endif
+/* mmix does not support smp */
+inline void SpinLock::aquire(klock_t *) {
+}
+inline void SpinLock::release(klock_t *) {
+}

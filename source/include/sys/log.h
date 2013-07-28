@@ -61,10 +61,10 @@ public:
 	 */
 	static void vprintf(const char *fmt,va_list ap) {
 		/* lock it all, to make the debug-output more readable */
-		spinlock_aquire(&lock);
+		SpinLock::aquire(&lock);
 		prf_vprintf(&env,fmt,ap);
 		flush();
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 	}
 
 private:

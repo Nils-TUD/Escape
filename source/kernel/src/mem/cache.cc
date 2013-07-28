@@ -75,9 +75,9 @@ void *Cache::alloc(size_t size) {
 done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		spinlock_aquire(&cacheLock);
+		SpinLock::aquire(&cacheLock);
 		Util::printEventTrace(Util::getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
-		spinlock_release(&cacheLock);
+		SpinLock::release(&cacheLock);
 	}
 #endif
 	return res;
@@ -123,9 +123,9 @@ void Cache::free(void *p) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		spinlock_aquire(&cacheLock);
+		SpinLock::aquire(&cacheLock);
 		Util::printEventTrace(Util::getKernelStackTrace(),"\n[F] %Px 0 ",p);
-		spinlock_release(&cacheLock);
+		SpinLock::release(&cacheLock);
 	}
 #endif
 
@@ -144,11 +144,11 @@ void Cache::free(void *p) {
 
 	/* put on freelist */
 	c = caches + area[0];
-	spinlock_aquire(&cacheLock);
+	SpinLock::aquire(&cacheLock);
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
-	spinlock_release(&cacheLock);
+	SpinLock::release(&cacheLock);
 }
 
 size_t Cache::getOccMem(void) {
@@ -198,7 +198,7 @@ void Cache::printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
 
 void *Cache::get(Entry *c,size_t i) {
 	ulong *area;
-	spinlock_aquire(&cacheLock);
+	SpinLock::aquire(&cacheLock);
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -207,7 +207,7 @@ void *Cache::get(Entry *c,size_t i) {
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)KHeap::allocSpace(pageCount);
 		if(space == NULL) {
-			spinlock_release(&cacheLock);
+			SpinLock::release(&cacheLock);
 			return NULL;
 		}
 
@@ -235,6 +235,6 @@ void *Cache::get(Entry *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
-	spinlock_release(&cacheLock);
+	SpinLock::release(&cacheLock);
 	return area + 2;
 }

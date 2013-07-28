@@ -88,10 +88,10 @@ public:
 	 * Clears the screen
 	 */
 	static void clearScreen() {
-		spinlock_aquire(&lock);
+		SpinLock::aquire(&lock);
 		clear();
 		col = row = 0;
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 	}
 
 	/**

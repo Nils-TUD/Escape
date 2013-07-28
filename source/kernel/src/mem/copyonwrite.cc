@@ -43,7 +43,7 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 	Entry *cow;
 	uint flags;
 
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	/* find the cow-entry */
 	cow = getByFrame(frameNumber,true);
 	vassert(cow != NULL,"No COW entry for frame %#x and address %p",frameNumber,address);
@@ -61,35 +61,35 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 		PageDir::copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
 		Cache::free(cow);
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return 1;
 }
 
 bool CopyOnWrite::add(frameno_t frameNo) {
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	Entry *cow = getByFrame(frameNo,false);
 	if(!cow) {
 		cow = (Entry*)Cache::alloc(sizeof(Entry));
 		if(cow == NULL) {
-			spinlock_release(&lock);
+			SpinLock::release(&lock);
 			return false;
 		}
 		cow->frameNumber = frameNo;
 		cow->refCount = 0;
 		if(!sll_append(frames + (frameNo % HEAP_SIZE),cow)) {
 			Cache::free(cow);
-			spinlock_release(&lock);
+			SpinLock::release(&lock);
 			return false;
 		}
 	}
 	cow->refCount++;
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return true;
 }
 
 size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
 	Entry *cow;
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	/* find the cow-entry */
 	cow = getByFrame(frameNo,true);
 	vassert(cow != NULL,"For frameNo %#x",frameNo);
@@ -97,16 +97,16 @@ size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
 	*foundOther = cow->refCount > 0;
 	if(cow->refCount == 0)
 		Cache::free(cow);
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return 1;
 }
 
 size_t CopyOnWrite::getFrmCount(void) {
 	size_t i,count = 0;
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	for(i = 0; i < HEAP_SIZE; i++)
 		count += sll_length(frames + i);
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return count;
 }
 

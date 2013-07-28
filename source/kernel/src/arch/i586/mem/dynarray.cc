@@ -27,11 +27,11 @@
 bool DynArray::extend() {
 	Region *reg;
 	uintptr_t addr;
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 
 	/* region full? */
 	if(areaBegin + objCount * objSize + PAGE_SIZE > areaBegin + areaSize) {
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 		return false;
 	}
 
@@ -39,7 +39,7 @@ bool DynArray::extend() {
 	if(reg == NULL) {
 		reg = regions = freeList;
 		if(reg == NULL) {
-			spinlock_release(&lock);
+			SpinLock::release(&lock);
 			return false;
 		}
 		freeList = freeList->next;
@@ -52,14 +52,14 @@ bool DynArray::extend() {
 	if(PageDir::mapToCur(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
 		reg->next = freeList;
 		freeList = reg;
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 		return false;
 	}
 	memclear((void*)addr,PAGE_SIZE);
 	totalPages++;
 	reg->size += PAGE_SIZE;
 	objCount = reg->size / objSize;
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return true;
 }
 

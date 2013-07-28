@@ -47,10 +47,10 @@ int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
 	Thread *t = Thread::getRunning();
 	ssize_t i;
 	Entry *l;
-	spinlock_aquire(&klock);
+	SpinLock::aquire(&klock);
 	i = get(pid,ident,true);
 	if(i < 0) {
-		spinlock_release(&klock);
+		SpinLock::release(&klock);
 		return -ENOMEM;
 	}
 
@@ -65,11 +65,11 @@ int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
 		while(isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
 			Event::wait(t,event,(evobj_t)ident);
-			spinlock_release(&klock);
+			SpinLock::release(&klock);
 
 			Thread::switchNoSigs();
 
-			spinlock_aquire(&klock);
+			SpinLock::aquire(&klock);
 			locks[i].waitCount--;
 		}
 		l = locks + i;
@@ -88,18 +88,18 @@ int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
 		l->writer = t->getTid();
 	else
 		l->readRefs++;
-	spinlock_release(&klock);
+	SpinLock::release(&klock);
 	return 0;
 }
 
 int Lock::release(pid_t pid,ulong ident) {
 	ssize_t i;
 	Entry *l;
-	spinlock_aquire(&klock);
+	SpinLock::aquire(&klock);
 	i = get(pid,ident,false);
 	l = locks + i;
 	if(i < 0) {
-		spinlock_release(&klock);
+		SpinLock::release(&klock);
 		return -ENOENT;
 	}
 
@@ -127,18 +127,18 @@ int Lock::release(pid_t pid,ulong ident) {
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & KEEP))
 		l->flags = 0;
-	spinlock_release(&klock);
+	SpinLock::release(&klock);
 	return 0;
 }
 
 void Lock::releaseAll(pid_t pid) {
 	size_t i;
-	spinlock_aquire(&klock);
+	SpinLock::aquire(&klock);
 	for(i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
 			locks[i].flags = 0;
 	}
-	spinlock_release(&klock);
+	SpinLock::release(&klock);
 }
 
 void Lock::print(void) {

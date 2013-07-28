@@ -616,14 +616,14 @@ inline void ProcBase::lock(size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
 		mutex_aquire(locks + l);
 	else
-		spinlock_aquire(locks + l);
+		SpinLock::aquire(locks + l);
 }
 
 inline void ProcBase::unlock(size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
 		mutex_release(locks + l);
 	else
-		spinlock_release(locks + l);
+		SpinLock::release(locks + l);
 }
 
 inline size_t ProcBase::getCount() {

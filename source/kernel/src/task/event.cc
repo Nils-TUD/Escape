@@ -53,7 +53,7 @@ void Event::init(void) {
 bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
-	spinlock_aquire(&evLock);
+	SpinLock::aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -61,14 +61,14 @@ bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 		t->block();
 		res = true;
 	}
-	spinlock_release(&evLock);
+	SpinLock::release(&evLock);
 	return res;
 }
 
 bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
-	spinlock_aquire(&evLock);
+	SpinLock::aquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -81,7 +81,7 @@ bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 					w = doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
 						doRemoveThread(t);
-						spinlock_release(&evLock);
+						SpinLock::release(&evLock);
 						return false;
 					}
 					events &= ~(1 << e);
@@ -90,7 +90,7 @@ bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 		}
 	}
 	t->block();
-	spinlock_release(&evLock);
+	SpinLock::release(&evLock);
 	return true;
 }
 
@@ -99,7 +99,7 @@ void Event::wakeup(size_t evi,evobj_t object) {
 	WaitList *list = evlists + evi;
 	sWait *w;
 	size_t i = 0;
-	spinlock_aquire(&evLock);
+	SpinLock::aquire(&evLock);
 	w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
@@ -124,7 +124,7 @@ void Event::wakeup(size_t evi,evobj_t object) {
 		doRemoveThread(t);
 		t->unblock();
 	}
-	spinlock_release(&evLock);
+	SpinLock::release(&evLock);
 }
 
 void Event::wakeupm(uint events,evobj_t object) {
@@ -139,13 +139,13 @@ void Event::wakeupm(uint events,evobj_t object) {
 
 bool Event::wakeupThread(Thread *t,uint events) {
 	bool res = false;
-	spinlock_aquire(&evLock);
+	SpinLock::aquire(&evLock);
 	if(t->events & events) {
 		doRemoveThread(t);
 		t->unblock();
 		res = true;
 	}
-	spinlock_release(&evLock);
+	SpinLock::release(&evLock);
 	return res;
 }
 

@@ -44,17 +44,17 @@ uint64_t Util::profStart;
 
 int Util::rand() {
 	int res;
-	spinlock_aquire(&randLock);
+	SpinLock::aquire(&randLock);
 	lastRand = randa * lastRand + randc;
 	res = (int)((uint)(lastRand / 65536) % 32768);
-	spinlock_release(&randLock);
+	SpinLock::release(&randLock);
 	return res;
 }
 
 void Util::srand(uint seed) {
-	spinlock_aquire(&randLock);
+	SpinLock::aquire(&randLock);
 	lastRand = seed;
-	spinlock_release(&randLock);
+	SpinLock::release(&randLock);
 }
 
 void Util::startTimer() {

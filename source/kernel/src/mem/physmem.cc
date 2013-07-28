@@ -151,7 +151,7 @@ size_t PhysMem::getFreeFrames(uint types) {
 
 ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	size_t i,c = 0;
-	spinlock_aquire(&contLock);
+	SpinLock::aquire(&contLock);
 	/* align in physical memory */
 	i = ROUND_UP(BITMAP_START_FRAME,align);
 	i -= BITMAP_START_FRAME;
@@ -173,7 +173,7 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	}
 
 	if(c != count) {
-		spinlock_release(&contLock);
+		SpinLock::release(&contLock);
 		return -ENOMEM;
 	}
 
@@ -181,33 +181,33 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	i += BITMAP_START_FRAME;
 	doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 	printEventTrace(Util::getKernelStackTrace(),"[AC] %x:%zu ",i,count);
-	spinlock_release(&contLock);
+	SpinLock::release(&contLock);
 	return i;
 }
 
 void PhysMem::freeContiguous(frameno_t first,size_t count) {
-	spinlock_aquire(&contLock);
+	SpinLock::aquire(&contLock);
 	printEventTrace(Util::getKernelStackTrace(),"[FC] %x:%zu ",first,count);
 	doMarkRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
-	spinlock_release(&contLock);
+	SpinLock::release(&contLock);
 }
 
 bool PhysMem::reserve(size_t frameCount) {
 	size_t free;
 	Thread *t;
-	spinlock_aquire(&defLock);
+	SpinLock::aquire(&defLock);
 	free = getFreeDef();
 	uframes += frameCount;
 	/* enough user-memory available? */
 	if(free >= frameCount && free - frameCount >= kframes + cframes) {
-		spinlock_release(&defLock);
+		SpinLock::release(&defLock);
 		return true;
 	}
 
 	/* swapping not possible? */
 	t = Thread::getRunning();
 	if(!swapEnabled || t->getTid() == ATA_TID || t->getTid() == swapperThread->getTid()) {
-		spinlock_release(&defLock);
+		SpinLock::release(&defLock);
 		return false;
 	}
 
@@ -217,19 +217,19 @@ bool PhysMem::reserve(size_t frameCount) {
 		if(!swapping)
 			Event::wakeupThread(swapperThread,EV_SWAP_WORK);
 		Event::wait(t,EVI_SWAP_FREE,0);
-		spinlock_release(&defLock);
+		SpinLock::release(&defLock);
 		Thread::switchNoSigs();
-		spinlock_aquire(&defLock);
+		SpinLock::aquire(&defLock);
 		free = getFreeDef();
 	}
 	while(free - (kframes + cframes) < frameCount);
-	spinlock_release(&defLock);
+	SpinLock::release(&defLock);
 	return true;
 }
 
 frameno_t PhysMem::allocate(FrameType type) {
 	frameno_t frm = 0;
-	spinlock_aquire(&defLock);
+	SpinLock::aquire(&defLock);
 	printEventTrace(Util::getKernelStackTrace(),"[A] %x ",*(stack - 1));
 	/* remove the memory from the available one when we're not yet initialized */
 	if(!initialized)
@@ -261,12 +261,12 @@ frameno_t PhysMem::allocate(FrameType type) {
 				uframes--;
 		}
 	}
-	spinlock_release(&defLock);
+	SpinLock::release(&defLock);
 	return frm;
 }
 
 void PhysMem::free(frameno_t frame,FrameType type) {
-	spinlock_aquire(&defLock);
+	SpinLock::aquire(&defLock);
 	printEventTrace(Util::getKernelStackTrace(),"[F] %x ",frame);
 	if(swapEnabled) {
 		if(type == CRIT)
@@ -275,7 +275,7 @@ void PhysMem::free(frameno_t frame,FrameType type) {
 			kframes++;
 	}
 	markUsed(frame,false);
-	spinlock_release(&defLock);
+	SpinLock::release(&defLock);
 }
 
 bool PhysMem::swapIn(uintptr_t addr) {
@@ -286,15 +286,15 @@ bool PhysMem::swapIn(uintptr_t addr) {
 
 	/* get a free job */
 	t = Thread::getRunning();
-	spinlock_aquire(&defLock);
+	SpinLock::aquire(&defLock);
 	do {
 		job = siFreelist;
 		if(job == NULL) {
 			Event::wait(t,EVI_SWAP_JOB,0);
 			jobWaiters++;
-			spinlock_release(&defLock);
+			SpinLock::release(&defLock);
 			Thread::switchNoSigs();
-			spinlock_aquire(&defLock);
+			SpinLock::aquire(&defLock);
 			jobWaiters--;
 		}
 	}
@@ -311,7 +311,7 @@ bool PhysMem::swapIn(uintptr_t addr) {
 		Event::wakeupThread(swapperThread,EV_SWAP_WORK);
 	/* wait until its done */
 	Event::block(t);
-	spinlock_release(&defLock);
+	SpinLock::release(&defLock);
 	Thread::switchNoSigs();
 	return true;
 }
@@ -342,7 +342,7 @@ void PhysMem::swapper() {
 	}
 
 	/* start main-loop; wait for work */
-	spinlock_aquire(&defLock);
+	SpinLock::aquire(&defLock);
 	while(1) {
 		SwapInJob *job;
 		free = getFreeDef();
@@ -350,12 +350,12 @@ void PhysMem::swapper() {
 		if((free - (kframes + cframes)) < uframes) {
 			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - (kframes + cframes)));
 			swapping = true;
-			spinlock_release(&defLock);
+			SpinLock::release(&defLock);
 
 			VirtMem::swapOut(pid,swapFile,amount);
 			swappedOut += amount;
 
-			spinlock_aquire(&defLock);
+			SpinLock::aquire(&defLock);
 			swapping = false;
 		}
 		/* wakeup in every case because its possible that the frames are available now but weren't
@@ -365,12 +365,12 @@ void PhysMem::swapper() {
 		/* handle swap-in-jobs */
 		while((job = getJob()) != NULL) {
 			swapping = true;
-			spinlock_release(&defLock);
+			SpinLock::release(&defLock);
 
 			if(VirtMem::swapIn(pid,swapFile,job->thread,job->addr))
 				swappedIn++;
 
-			spinlock_aquire(&defLock);
+			SpinLock::aquire(&defLock);
 			Event::unblock(job->thread);
 			freeJob(job);
 			swapping = false;
@@ -379,12 +379,12 @@ void PhysMem::swapper() {
 		if(getFreeDef() - (kframes + cframes) >= uframes) {
 			/* we may receive new work now */
 			Event::wait(swapperThread,EVI_SWAP_WORK,0);
-			spinlock_release(&defLock);
+			SpinLock::release(&defLock);
 			Thread::switchAway();
-			spinlock_aquire(&defLock);
+			SpinLock::aquire(&defLock);
 		}
 	}
-	spinlock_release(&defLock);
+	SpinLock::release(&defLock);
 }
 
 void PhysMem::print() {

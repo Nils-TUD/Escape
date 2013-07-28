@@ -242,8 +242,8 @@ inline bool PhysMem::shouldSetRegTimestamp() {
 	bool res;
 	if(!swapEnabled)
 		return false;
-	spinlock_aquire(&defLock);
+	SpinLock::aquire(&defLock);
 	res = getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
-	spinlock_release(&defLock);
+	SpinLock::release(&defLock);
 	return res;
 }

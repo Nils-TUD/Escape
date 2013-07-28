@@ -151,8 +151,8 @@ private:
 
 inline bool KHeap::addMemory(uintptr_t addr,size_t size) {
 	bool res;
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 	res = doAddMemory(addr,size);
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return res;
 }

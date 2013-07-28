@@ -154,19 +154,19 @@ void vfs_device_addMsg(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
 	if(!dev)
 		return;
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	dev->msgCount++;
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 }
 
 void vfs_device_remMsg(sVFSNode *node) {
 	sDevice *dev = (sDevice*)node->data;
 	if(!dev)
 		return;
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	assert(dev->msgCount > 0);
 	dev->msgCount--;
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 }
 
 bool vfs_device_hasWork(sVFSNode *node) {

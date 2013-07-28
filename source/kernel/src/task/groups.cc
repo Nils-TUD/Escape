@@ -64,9 +64,9 @@ void Groups::join(Proc *dst,Proc *src) {
 	Entries *g = src->groups;
 	dst->groups = g;
 	if(g) {
-		spinlock_aquire(&g->lock);
+		SpinLock::aquire(&g->lock);
 		g->refCount++;
-		spinlock_release(&g->lock);
+		SpinLock::release(&g->lock);
 	}
 }
 
@@ -101,12 +101,12 @@ void Groups::leave(pid_t pid) {
 		return;
 	g = p->groups;
 	if(g) {
-		spinlock_aquire(&g->lock);
+		SpinLock::aquire(&g->lock);
 		if(--g->refCount == 0) {
 			Cache::free(g->groups);
 			Cache::free(g);
 		}
-		spinlock_release(&g->lock);
+		SpinLock::release(&g->lock);
 	}
 	p->groups = NULL;
 }

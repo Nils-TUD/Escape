@@ -350,7 +350,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 	inode_t nodeNo;
 	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
-	spinlock_aquire(&fsChanLock);
+	SpinLock::aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		chan = (sFSChan*)n->data;
 		if(!chan->active) {
@@ -358,18 +358,18 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 				/* remove channel */
 				sll_removeFirstWith(&p->fsChans,chan);
 				Cache::free(chan);
-				spinlock_release(&fsChanLock);
+				SpinLock::release(&fsChanLock);
 				return -EDESTROYED;
 			}
 			if(node)
 				*node = chan->node;
 			chan->active = true;
-			spinlock_release(&fsChanLock);
+			SpinLock::release(&fsChanLock);
 			*file = chan->file;
 			return 0;
 		}
 	}
-	spinlock_release(&fsChanLock);
+	SpinLock::release(&fsChanLock);
 
 	chan = (sFSChan*)Cache::alloc(sizeof(sFSChan));
 	if(!chan)
@@ -397,12 +397,12 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 	err = vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO,&chan->file);
 	if(err < 0)
 		goto errorChild;
-	spinlock_aquire(&fsChanLock);
+	SpinLock::aquire(&fsChanLock);
 	if(!sll_append(&p->fsChans,chan)) {
-		spinlock_release(&fsChanLock);
+		SpinLock::release(&fsChanLock);
 		goto errorClose;
 	}
-	spinlock_release(&fsChanLock);
+	SpinLock::release(&fsChanLock);
 	if(node)
 		*node = chan->node;
 	vfs_node_release(fsnode);
@@ -423,7 +423,7 @@ errorChan:
 static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 	sSLNode *n;
 	const Proc *p = Proc::getByPid(pid);
-	spinlock_aquire(&fsChanLock);
+	SpinLock::aquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		if(chan->file == file) {
@@ -431,17 +431,17 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 			break;
 		}
 	}
-	spinlock_release(&fsChanLock);
+	SpinLock::release(&fsChanLock);
 }
 
 void vfs_fsmsgs_printFSChans(const Proc *p) {
 	sSLNode *n;
-	spinlock_aquire(&fsChanLock);
+	SpinLock::aquire(&fsChanLock);
 	Video::printf("FS-Channels:\n");
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		Video::printf("\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
 				chan->active ? "active" : "not active");
 	}
-	spinlock_release(&fsChanLock);
+	SpinLock::release(&fsChanLock);
 }

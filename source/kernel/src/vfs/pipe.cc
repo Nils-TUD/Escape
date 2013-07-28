@@ -129,22 +129,22 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 	sPipeData *data;
 
 	/* wait until data is available */
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	if(node->name == NULL) {
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		return -EDESTROYED;
 	}
 	while(sll_length(&pipe->list) == 0) {
 		Event::wait(t,EVI_PIPE_FULL,(evobj_t)node);
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 
 		Thread::switchAway();
 
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
-		spinlock_aquire(&node->lock);
+		SpinLock::aquire(&node->lock);
 		if(node->name == NULL) {
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 			return -EDESTROYED;
 		}
 	}
@@ -152,7 +152,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 	data = (sPipeData*)sll_get(&pipe->list,0);
 	/* empty message indicates EOF */
 	if(data->length == 0) {
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		return 0;
 	}
 
@@ -182,15 +182,15 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 			 * we may cause a deadlock here */
 			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 			Event::wait(t,EVI_PIPE_FULL,(evobj_t)node);
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
 			Thread::switchNoSigs();
 
-			spinlock_aquire(&node->lock);
+			SpinLock::aquire(&node->lock);
 			if(node->name == NULL) {
-				spinlock_release(&node->lock);
+				SpinLock::release(&node->lock);
 				return -EDESTROYED;
 			}
 		}
@@ -199,7 +199,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 		if(data->length == 0)
 			break;
 	}
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 	/* wakeup all threads that wait for writing in this node */
 	Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 	return total;
@@ -217,31 +217,31 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 
 	/* wait while our node is full */
 	if(count) {
-		spinlock_aquire(&node->lock);
+		SpinLock::aquire(&node->lock);
 		if(node->name == NULL) {
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 			return -EDESTROYED;
 		}
 		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
 			Event::wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 
 			Thread::switchNoSigs();
 
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			spinlock_aquire(&node->lock);
+			SpinLock::aquire(&node->lock);
 			if(node->name == NULL) {
-				spinlock_release(&node->lock);
+				SpinLock::release(&node->lock);
 				return -EDESTROYED;
 			}
 			if(pipe->noReader) {
-				spinlock_release(&node->lock);
+				SpinLock::release(&node->lock);
 				Proc::addSignalFor(pid,SIG_PIPE_CLOSED);
 				return -EPIPE;
 			}
 		}
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 	}
 
 	/* build pipe-data */
@@ -257,19 +257,19 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	}
 
 	/* append */
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	if(node->name == NULL) {
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		Cache::free(data);
 		return -EDESTROYED;
 	}
 	if(!sll_append(&pipe->list,data)) {
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		Cache::free(data);
 		return -ENOMEM;
 	}
 	pipe->total += count;
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 	Event::wakeup(EVI_PIPE_FULL,(evobj_t)node);
 	return count;
 }

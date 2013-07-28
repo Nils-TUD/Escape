@@ -233,15 +233,15 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		Thread::remHeapAlloc(msg1);
 	}
 
-	spinlock_aquire(&n->lock);
+	SpinLock::aquire(&n->lock);
 	if(n->name == NULL) {
-		spinlock_release(&n->lock);
+		SpinLock::release(&n->lock);
 		return -EDESTROYED;
 	}
 
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
-	spinlock_aquire(&waitLock);
+	SpinLock::aquire(&waitLock);
 
 	/* set recipient */
 	if(flags & VFS_DEVICE)
@@ -270,15 +270,15 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		else
 			Event::wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
 	}
-	spinlock_release(&waitLock);
-	spinlock_release(&n->lock);
+	SpinLock::release(&waitLock);
+	SpinLock::release(&n->lock);
 	return 0;
 
 errorRem:
 	sll_removeFirstWith(list,msg1);
 error:
-	spinlock_release(&waitLock);
-	spinlock_release(&n->lock);
+	SpinLock::release(&waitLock);
+	SpinLock::release(&n->lock);
 	Cache::free(msg1);
 	Cache::free(msg2);
 	return -ENOMEM;
@@ -294,10 +294,10 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	size_t event;
 	ssize_t res;
 
-	spinlock_aquire(&node->lock);
+	SpinLock::aquire(&node->lock);
 	/* node destroyed? */
 	if(node->name == NULL) {
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 		return -EDESTROYED;
 	}
 
@@ -316,16 +316,16 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	/* wait until a message arrives */
 	while((msg = vfs_chan_getMsg(t,list,flags)) == NULL) {
 		if(!block) {
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
 		if(chan->closed) {
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 			return -EDESTROYED;
 		}
 		Event::wait(t,event,(evobj_t)waitNode);
-		spinlock_release(&node->lock);
+		SpinLock::release(&node->lock);
 
 		if(ignoreSigs)
 			Thread::switchNoSigs();
@@ -335,9 +335,9 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
-		spinlock_aquire(&node->lock);
+		SpinLock::aquire(&node->lock);
 		if(node->name == NULL) {
-			spinlock_release(&node->lock);
+			SpinLock::release(&node->lock);
 			return -EDESTROYED;
 		}
 	}
@@ -346,7 +346,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		vfs_device_remMsg(node->parent);
 		chan->curClient = msg->thread;
 	}
-	spinlock_release(&node->lock);
+	SpinLock::release(&node->lock);
 	if(data && msg->length > size) {
 		Cache::free(msg);
 		return -EINVAL;

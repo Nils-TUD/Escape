@@ -37,22 +37,22 @@ void Terminator::init() {
 
 void Terminator::start() {
 	Thread *t = Thread::getRunning();
-	spinlock_aquire(&termLock);
+	SpinLock::aquire(&termLock);
 	while(1) {
 		if(sll_length(&deadThreads) == 0) {
 			Event::wait(t,EVI_TERMINATION,0);
-			spinlock_release(&termLock);
+			SpinLock::release(&termLock);
 
 			Thread::switchAway();
 
-			spinlock_aquire(&termLock);
+			SpinLock::aquire(&termLock);
 		}
 
 		while(sll_length(&deadThreads) > 0) {
 			Thread *dt = (Thread*)sll_removeFirst(&deadThreads);
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
-			spinlock_release(&termLock);
+			SpinLock::release(&termLock);
 
 			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
@@ -61,18 +61,18 @@ void Terminator::start() {
 			}
 			Proc::killThread(dt->getTid());
 
-			spinlock_aquire(&termLock);
+			SpinLock::aquire(&termLock);
 		}
 	}
 }
 
 void Terminator::addDead(Thread *t) {
-	spinlock_aquire(&termLock);
+	SpinLock::aquire(&termLock);
 	/* ensure that we don't add a thread twice */
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(sll_append(&deadThreads,t));
 		Event::wakeup(EVI_TERMINATION,0);
 	}
-	spinlock_release(&termLock);
+	SpinLock::release(&termLock);
 }

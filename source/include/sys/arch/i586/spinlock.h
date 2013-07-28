@@ -21,20 +21,26 @@
 
 #include <sys/common.h>
 
-class SpinLock {
-	SpinLock() = delete;
+inline void SpinLock::aquire(klock_t *l) {
+	asm volatile (
+		"mov	$1,%%ecx;"
+		"1:"
+		"	xor		%%eax,%%eax;"
+		"	lock	cmpxchg %%ecx,(%0);"
+		"	jz		2f;"
+		/* improves the performance and lowers the power-consumption of spinlocks */
+		"	pause;"
+		"	jmp		1b;"
+		"2:;"
+		/* outputs */
+		:
+		/* inputs */
+		: "D" (l)
+		/* eax, ecx and cc will be clobbered; we need memory as well because *l is changed */
+		: "eax", "ecx", "cc", "memory"
+	);
+}
 
-public:
-	static void aquire(klock_t *l);
-	static void release(klock_t *l);
-};
-
-#ifdef __i386__
-#include <sys/arch/i586/spinlock.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/spinlock.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/spinlock.h>
-#endif
+inline void SpinLock::release(klock_t *l) {
+	*l = 0;
+}

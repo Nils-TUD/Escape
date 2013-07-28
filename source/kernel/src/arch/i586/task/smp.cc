@@ -150,14 +150,14 @@ void SMPBase::ensureTLBFlushed() {
 
 void SMP::apIsRunning() {
 	cpuid_t phys,log;
-	spinlock_aquire(&smpLock);
+	SpinLock::aquire(&smpLock);
 	phys = LAPIC::getId();
 	log = GDT::getCPUId();
 	log2Phys[log] = phys;
 	setId(phys,log);
 	setReady(log);
 	seenAPs++;
-	spinlock_release(&smpLock);
+	SpinLock::release(&smpLock);
 }
 
 void SMPBase::start() {

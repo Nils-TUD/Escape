@@ -39,11 +39,11 @@ void Serial::out(uint16_t port,uint8_t byte) {
 	uint16_t ioport;
 	assert(port < ARRAY_SIZE(ports));
 	ioport = ports[port];
-	spinlock_aquire(&serialLock);
+	SpinLock::aquire(&serialLock);
 	while(isTransmitEmpty(ioport) == 0)
 		;
 	Ports::out<uint8_t>(ioport,byte);
-	spinlock_release(&serialLock);
+	SpinLock::release(&serialLock);
 }
 
 int Serial::isTransmitEmpty(uint16_t port) {

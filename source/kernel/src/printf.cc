@@ -77,12 +77,12 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	env.escape = NULL;
 	env.pipePad = NULL;
 	env.lineStart = true;
-	spinlock_aquire(&bufLock);
+	SpinLock::aquire(&bufLock);
 	curbuf = buf;
 	prf_vprintf(&env,fmt,ap);
 	/* terminate */
 	prf_aprintc('\0');
-	spinlock_release(&bufLock);
+	SpinLock::release(&bufLock);
 }
 
 static void prf_aprintc(char c) {

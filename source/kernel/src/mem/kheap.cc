@@ -45,7 +45,7 @@ void *KHeap::alloc(size_t size) {
 	/* align and we need 3 ulongs for the guards */
 	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 
 	/* find a suitable area */
 	prev = NULL;
@@ -60,7 +60,7 @@ void *KHeap::alloc(size_t size) {
 	/* no area found? */
 	if(area == NULL) {
 		if(!loadNewSpace(size)) {
-			spinlock_release(&lock);
+			SpinLock::release(&lock);
 			return NULL;
 		}
 		/* we can assume that it fits */
@@ -81,7 +81,7 @@ void *KHeap::alloc(size_t size) {
 		if(freeList == NULL) {
 			if(!loadNewAreas()) {
 				/* TODO we may have changed something... */
-				spinlock_release(&lock);
+				SpinLock::release(&lock);
 				return NULL;
 			}
 		}
@@ -107,7 +107,7 @@ void *KHeap::alloc(size_t size) {
 	begin[0] = size - sizeof(ulong) * 3;
 	begin[1] = GUARD_MAGIC;
 	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 	return begin + 2;
 }
 
@@ -133,7 +133,7 @@ void KHeap::free(void *addr) {
 	assert(begin[1] == GUARD_MAGIC);
 	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
 
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 
 	/* find the area with given address */
 	oprev = NULL;
@@ -147,7 +147,7 @@ void KHeap::free(void *addr) {
 
 	/* area not found? */
 	if(area == NULL) {
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 		return;
 	}
 
@@ -231,7 +231,7 @@ void KHeap::free(void *addr) {
 		area->next = usableList;
 		usableList = area;
 	}
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 }
 
 void *KHeap::realloc(void *addr,size_t size) {
@@ -243,7 +243,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 
 	begin = (ulong*)addr - 2;
 
-	spinlock_aquire(&lock);
+	SpinLock::aquire(&lock);
 
 	/* find the area with given address */
 	area = occupiedMap[getHash(begin)];
@@ -255,7 +255,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 
 	/* area not found? */
 	if(area == NULL) {
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 		return NULL;
 	}
 
@@ -264,7 +264,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 
 	/* ignore shrinks */
 	if(size < area->size) {
-		spinlock_release(&lock);
+		SpinLock::release(&lock);
 		return addr;
 	}
 
@@ -298,7 +298,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 				begin[0] = size - sizeof(ulong) * 3;
 				begin[1] = GUARD_MAGIC;
 				begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-				spinlock_release(&lock);
+				SpinLock::release(&lock);
 				return begin + 2;
 			}
 
@@ -308,7 +308,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 		prev = a;
 		a = a->next;
 	}
-	spinlock_release(&lock);
+	SpinLock::release(&lock);
 
 	/* the areas are not big enough, so allocate a new one */
 	a = (MemArea*)alloc(size);

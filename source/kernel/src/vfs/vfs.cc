@@ -170,26 +170,26 @@ bool vfs_isDevice(sFile *file) {
 }
 
 void vfs_incRefs(sFile *file) {
-	spinlock_aquire(&file->lock);
+	SpinLock::aquire(&file->lock);
 	file->refCount++;
-	spinlock_release(&file->lock);
+	SpinLock::release(&file->lock);
 }
 
 void vfs_incUsages(sFile *file) {
-	spinlock_aquire(&file->lock);
+	SpinLock::aquire(&file->lock);
 	file->usageCount++;
-	spinlock_release(&file->lock);
+	SpinLock::release(&file->lock);
 }
 
 void vfs_decUsages(sFile *file) {
-	spinlock_aquire(&file->lock);
+	SpinLock::aquire(&file->lock);
 	assert(file->usageCount > 0);
 	file->usageCount--;
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
 	if(file->usageCount == 0 && file->refCount == 0)
 		vfs_doCloseFile(Proc::getRunning(),file);
-	spinlock_release(&file->lock);
+	SpinLock::release(&file->lock);
 }
 
 int vfs_fcntl(A_UNUSED pid_t pid,sFile *file,uint cmd,int arg) {
@@ -199,20 +199,20 @@ int vfs_fcntl(A_UNUSED pid_t pid,sFile *file,uint cmd,int arg) {
 		case F_GETFL:
 			return file->flags & VFS_NOBLOCK;
 		case F_SETFL:
-			spinlock_aquire(&file->lock);
+			SpinLock::aquire(&file->lock);
 			file->flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DEVICE;
 			file->flags |= arg & VFS_NOBLOCK;
-			spinlock_release(&file->lock);
+			SpinLock::release(&file->lock);
 			return 0;
 		case F_SETDATA: {
 			sVFSNode *n = file->node;
 			int res = 0;
-			spinlock_aquire(&waitLock);
+			SpinLock::aquire(&waitLock);
 			if(file->devNo != VFS_DEV_NO || !IS_DEVICE(n->mode))
 				res = -EINVAL;
 			else
 				res = vfs_device_setReadable(n,(bool)arg);
-			spinlock_release(&waitLock);
+			SpinLock::release(&waitLock);
 			return res;
 		}
 	}
@@ -357,16 +357,16 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 	}
 
 	/* determine free file */
-	spinlock_aquire(&gftLock);
+	SpinLock::aquire(&gftLock);
 	err = vfs_getFreeFile(pid,flags,nodeNo,devNo,n,&f);
 	if(err < 0) {
-		spinlock_release(&gftLock);
+		SpinLock::release(&gftLock);
 		if(devNo == VFS_DEV_NO)
 			vfs_node_release(n);
 		return err;
 	}
 
-	spinlock_aquire(&f->lock);
+	SpinLock::aquire(&f->lock);
 	/* unused file? */
 	if(f->flags == 0) {
 		/* count references of virtual nodes */
@@ -389,8 +389,8 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 		f->refCount++;
 	if(devNo == VFS_DEV_NO)
 		vfs_node_release(n);
-	spinlock_release(&f->lock);
-	spinlock_release(&gftLock);
+	SpinLock::release(&f->lock);
+	SpinLock::release(&gftLock);
 	*file = f;
 	return 0;
 }
@@ -461,10 +461,10 @@ static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVF
 }
 
 static void vfs_releaseFile(sFile *file) {
-	spinlock_aquire(&gftLock);
+	SpinLock::aquire(&gftLock);
 	file->next = gftFreeList;
 	gftFreeList = file;
-	spinlock_release(&gftLock);
+	SpinLock::release(&gftLock);
 }
 
 off_t vfs_tell(A_UNUSED pid_t pid,sFile *file) {
@@ -516,13 +516,13 @@ off_t vfs_seek(pid_t pid,sFile *file,off_t offset,uint whence) {
 	/* don't lock it during vfs_fsmsgs_istat(). we don't need it in this case because position is
 	 * simply set and never restored to oldPos */
 	if(file->devNo == VFS_DEV_NO || whence != SEEK_END)
-		spinlock_aquire(&file->lock);
+		SpinLock::aquire(&file->lock);
 
 	oldPos = file->position;
 	if(file->devNo == VFS_DEV_NO) {
 		sVFSNode *n = file->node;
 		if(n->seek == NULL) {
-			spinlock_release(&file->lock);
+			SpinLock::release(&file->lock);
 			return -ENOTSUP;
 		}
 		file->position = n->seek(pid,n,file->position,offset,whence);
@@ -552,7 +552,7 @@ off_t vfs_seek(pid_t pid,sFile *file,off_t offset,uint whence) {
 		res = file->position;
 
 	if(file->devNo == VFS_DEV_NO || whence != SEEK_END)
-		spinlock_release(&file->lock);
+		SpinLock::release(&file->lock);
 	return res;
 }
 
@@ -575,9 +575,9 @@ ssize_t vfs_readFile(pid_t pid,sFile *file,USER void *buffer,size_t count) {
 	}
 
 	if(readBytes > 0) {
-		spinlock_aquire(&file->lock);
+		SpinLock::aquire(&file->lock);
 		file->position += readBytes;
-		spinlock_release(&file->lock);
+		SpinLock::release(&file->lock);
 	}
 
 	if(readBytes > 0 && pid != KERNEL_PID) {
@@ -609,9 +609,9 @@ ssize_t vfs_writeFile(pid_t pid,sFile *file,USER const void *buffer,size_t count
 	}
 
 	if(writtenBytes > 0) {
-		spinlock_aquire(&file->lock);
+		SpinLock::aquire(&file->lock);
 		file->position += writtenBytes;
-		spinlock_release(&file->lock);
+		SpinLock::release(&file->lock);
 	}
 
 	if(writtenBytes > 0 && pid != KERNEL_PID) {
@@ -670,9 +670,9 @@ ssize_t vfs_receiveMsg(pid_t pid,sFile *file,USER msgid_t *id,USER void *data,si
 
 bool vfs_closeFile(pid_t pid,sFile *file) {
 	bool res;
-	spinlock_aquire(&file->lock);
+	SpinLock::aquire(&file->lock);
 	res = vfs_doCloseFile(pid,file);
-	spinlock_release(&file->lock);
+	SpinLock::release(&file->lock);
 	return res;
 }
 
@@ -742,13 +742,13 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 		 * sends us an event before we've finished the Event::waitObjects(). otherwise, it would be
 		 * possible that we never wake up again, because we have missed the event and get no other
 		 * one. */
-		spinlock_aquire(&waitLock);
+		SpinLock::aquire(&waitLock);
 		/* check whether we can wait */
 		for(i = 0; i < objCount; i++) {
 			if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 				sVFSNode *n = (sVFSNode*)objects[i].object;
 				if(n->name == NULL) {
-					spinlock_release(&waitLock);
+					SpinLock::release(&waitLock);
 					res = -EDESTROYED;
 					goto error;
 				}
@@ -762,13 +762,13 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 		}
 
 		if(!block) {
-			spinlock_release(&waitLock);
+			SpinLock::release(&waitLock);
 			return -EWOULDBLOCK;
 		}
 
 		/* wait */
 		if(!Event::waitObjects(t,objects,objCount)) {
-			spinlock_release(&waitLock);
+			SpinLock::release(&waitLock);
 			res = -ENOMEM;
 			goto error;
 		}
@@ -776,7 +776,7 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 			Lock::release(pid,ident);
 		if(isFirstWait && maxWaitTime != 0)
 			Timer::sleepFor(t->getTid(),maxWaitTime,true);
-		spinlock_release(&waitLock);
+		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
 		if(Signals::hasSignalFor(t->getTid())) {
@@ -794,7 +794,7 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 noWait:
 	if(pid != KERNEL_PID)
 		Lock::release(pid,ident);
-	spinlock_release(&waitLock);
+	SpinLock::release(&waitLock);
 done:
 	res = 0;
 error:
@@ -847,16 +847,16 @@ inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags)
 	bool inited = false;
 	inode_t clientNo;
 	while(true) {
-		spinlock_aquire(&waitLock);
+		SpinLock::aquire(&waitLock);
 		clientNo = vfs_doGetClient(files,count,index);
 		if(clientNo != -ENOCLIENT) {
-			spinlock_release(&waitLock);
+			SpinLock::release(&waitLock);
 			break;
 		}
 
 		/* if we shouldn't block, stop here */
 		if(flags & GW_NOBLOCK) {
-			spinlock_release(&waitLock);
+			SpinLock::release(&waitLock);
 			break;
 		}
 
@@ -872,7 +872,7 @@ inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags)
 
 		/* wait for a client (accept signals) */
 		Event::waitObjects(t,waits,count);
-		spinlock_release(&waitLock);
+		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
 		if(Signals::hasSignalFor(t->getTid())) {

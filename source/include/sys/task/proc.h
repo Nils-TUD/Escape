@@ -29,7 +29,7 @@
 #include <sys/task/groups.h>
 #include <sys/spinlock.h>
 #include <sys/mutex.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <assert.h>
 
 /* max number of coexistent processes */

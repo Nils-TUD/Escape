@@ -183,7 +183,7 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	return vm86Res;
 }
 
-void VM86::handleGPF(sIntrptStackFrame *stack) {
+void VM86::handleGPF(IntrptStackFrame *stack) {
 	uint8_t *ops = (uint8_t*)(stack->eip + (stack->cs << 4));
 	uint8_t opCode;
 	bool data32 = false;
@@ -312,31 +312,31 @@ void VM86::handleGPF(sIntrptStackFrame *stack) {
 	}
 }
 
-uint16_t VM86::popw(sIntrptStackFrame *stack) {
+uint16_t VM86::popw(IntrptStackFrame *stack) {
 	uint16_t *sp = (uint16_t*)(stack->uesp + (stack->uss << 4));
 	stack->uesp += sizeof(uint16_t);
 	return *sp;
 }
 
-uint32_t VM86::popl(sIntrptStackFrame *stack) {
+uint32_t VM86::popl(IntrptStackFrame *stack) {
 	uint32_t *sp = (uint32_t*)(stack->uesp + (stack->uss << 4));
 	stack->uesp += sizeof(uint32_t);
 	return *sp;
 }
 
-void VM86::pushw(sIntrptStackFrame *stack,uint16_t word) {
+void VM86::pushw(IntrptStackFrame *stack,uint16_t word) {
 	stack->uesp -= sizeof(uint16_t);
 	*((uint16_t*)(stack->uesp + (stack->uss << 4))) = word;
 }
 
-void VM86::pushl(sIntrptStackFrame *stack,uint32_t l) {
+void VM86::pushl(IntrptStackFrame *stack,uint32_t l) {
 	stack->uesp -= sizeof(uint32_t);
 	*((uint32_t*)(stack->uesp + (stack->uss << 4))) = l;
 }
 
 void VM86::start(void) {
 	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
-	sIntrptStackFrame *istack;
+	IntrptStackFrame *istack;
 	Thread *t = Thread::getRunning();
 	assert(caller != INVALID_TID);
 
@@ -379,7 +379,7 @@ void VM86::start(void) {
 	istack->edi = info.regs.di;
 }
 
-void VM86::stop(sIntrptStackFrame *stack) {
+void VM86::stop(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	Thread *ct = Thread::getById(caller);
 	vm86Res = 0;
@@ -405,7 +405,7 @@ void VM86::finish(void) {
 	mutex_release(&vm86Lock);
 }
 
-void VM86::copyRegResult(sIntrptStackFrame *stack) {
+void VM86::copyRegResult(IntrptStackFrame *stack) {
 	info.regs.ax = stack->eax;
 	info.regs.bx = stack->ebx;
 	info.regs.cx = stack->ecx;

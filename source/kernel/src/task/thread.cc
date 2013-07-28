@@ -219,7 +219,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		else
 			t->tlsRegion = NULL;
 		t->intrptLevel = src->intrptLevel;
-		memcpy(t->intrptLevels,src->intrptLevels,sizeof(sIntrptStackFrame*) * MAX_INTRPT_LEVELS);
+		memcpy(t->intrptLevels,src->intrptLevels,sizeof(IntrptStackFrame*) * MAX_INTRPT_LEVELS);
 	}
 	else {
 		/* add a new tls-region, if its present in the src-thread */

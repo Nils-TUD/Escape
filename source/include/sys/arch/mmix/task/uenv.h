@@ -31,7 +31,7 @@ class UEnv : public UEnvBase {
 	                    uintptr_t entry,uintptr_t tentry,bool thread);
 };
 
-inline void UEnvBase::handleSignal(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+inline void UEnvBase::handleSignal(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	int sig;
 	Signals::handler_func handler;
 	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);

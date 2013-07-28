@@ -24,7 +24,7 @@
 #include <sys/dbg/kb.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -43,7 +43,7 @@ void util_printUserStateOf(const Thread *t) {
 	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->getKernelStack() << PAGE_SIZE_SHIFT);
 	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
 	if(istackAddr) {
-		sIntrptStackFrame *istack = (sIntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
+		IntrptStackFrame *istack = (IntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
 		vid_printf("User state:\n");
 		vid_printf("\tPSW: 0x%08x\n\t",istack->psw);
 		for(i = 0; i < REG_COUNT; i++) {

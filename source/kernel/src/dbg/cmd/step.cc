@@ -32,7 +32,7 @@ int cons_cmd_step(size_t argc,char **argv) {
 
 #ifdef __i386__
 	Thread *t = Thread::getRunning();
-	sIntrptStackFrame *kstack = t->getIntrptStack();
+	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->eflags &= ~(1 << 8);
 		vid_printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),

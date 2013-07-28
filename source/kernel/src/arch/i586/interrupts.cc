@@ -33,7 +33,7 @@
 #include <sys/task/timer.h>
 #include <sys/syscalls.h>
 #include <sys/cpu.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <esc/keycodes.h>
@@ -44,124 +44,91 @@
 /* maximum number of a exception in a row */
 #define MAX_EX_COUNT			10
 
-typedef void (*fIntrptHandler)(Thread *t,sIntrptStackFrame *stack);
-typedef struct {
-	fIntrptHandler handler;
-	const char *name;
-	int signal;
-} sInterrupt;
-
-/**
- * The exception and interrupt-handlers
- */
-static void intrpt_exFatal(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_exSStep(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_exCoProcNA(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_irqDefault(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_syscall(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_ipiWork(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_ipiTerm(Thread *t,sIntrptStackFrame *stack);
-static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t pfaddr);
-
-static const sInterrupt intrptList[] = {
-	/* 0x00: EX_DIVIDE_BY_ZERO */	{intrpt_exFatal,	"Divide by zero",		0},
-	/* 0x01: EX_SINGLE_STEP */		{intrpt_exSStep,	"Single step",			0},
-	/* 0x02: EX_NONMASKABLE */		{intrpt_exFatal,	"Non maskable",			0},
-	/* 0x03: EX_BREAKPOINT */		{intrpt_exFatal,	"Breakpoint",			0},
-	/* 0x04: EX_OVERFLOW */			{intrpt_exFatal,	"Overflow",				0},
-	/* 0x05: EX_BOUNDS_CHECK */		{intrpt_exFatal,	"Bounds check",			0},
-	/* 0x06: EX_INVALID_OPCODE */	{intrpt_exFatal,	"Invalid opcode",		0},
-	/* 0x07: EX_CO_PROC_NA */		{intrpt_exCoProcNA,	"Co-proc. n/a",			0},
-	/* 0x08: EX_DOUBLE_FAULT */		{intrpt_exFatal,	"Double fault",			0},
-	/* 0x09: EX_CO_PROC_SEG_OVR */	{intrpt_exFatal,	"Co-proc seg. overrun",	0},
-	/* 0x0A: EX_INVALID_TSS */		{intrpt_exFatal,	"Invalid TSS",			0},
-	/* 0x0B: EX_SEG_NOT_PRESENT */	{intrpt_exFatal,	"Segment not present",	0},
-	/* 0x0C: EX_STACK */			{intrpt_exFatal,	"Stack exception",		0},
-	/* 0x0D: EX_GEN_PROT_FAULT */	{intrpt_exGPF,		"Gen. prot. fault",		0},
-	/* 0x0E: EX_PAGE_FAULT */		{intrpt_exPF,		"Page fault",			0},
-	/* 0x0F: -- */					{NULL,				"Unknown",				0},
-	/* 0x10: EX_CO_PROC_ERROR */	{intrpt_exFatal,	"Co-processor error",	0},
-	/* 0x11: -- */					{NULL,				"Unknown",				0},
-	/* 0x12: -- */					{NULL,				"Unknown",				0},
-	/* 0x13: -- */					{NULL,				"Unknown",				0},
-	/* 0x14: -- */					{NULL,				"Unknown",				0},
-	/* 0x15: -- */					{NULL,				"Unknown",				0},
-	/* 0x16: -- */					{NULL,				"Unknown",				0},
-	/* 0x17: -- */					{NULL,				"Unknown",				0},
-	/* 0x18: -- */					{NULL,				"Unknown",				0},
-	/* 0x19: -- */					{NULL,				"Unknown",				0},
-	/* 0x1A: -- */					{NULL,				"Unknown",				0},
-	/* 0x1B: -- */					{NULL,				"Unknown",				0},
-	/* 0x1C: -- */					{NULL,				"Unknown",				0},
-	/* 0x1D: -- */					{NULL,				"Unknown",				0},
-	/* 0x1E: -- */					{NULL,				"Unknown",				0},
-	/* 0x1F: -- */					{NULL,				"Unknown",				0},
-	/* 0x20: IRQ_TIMER */			{intrpt_irqTimer,	"Timer",				SIG_INTRPT_TIMER},
-	/* 0x21: IRQ_KEYBOARD */		{intrpt_irqDefault,	"Keyboard",				SIG_INTRPT_KB},
-	/* 0x22: -- */					{NULL,				"Unknown",				0},
-	/* 0x23: IRQ_COM2 */			{intrpt_irqDefault,	"COM2",					SIG_INTRPT_COM2},
-	/* 0x24: IRQ_COM1 */			{intrpt_irqDefault,	"COM1",					SIG_INTRPT_COM1},
-	/* 0x25: -- */					{NULL,				"Unknown",				0},
-	/* 0x26: IRQ_FLOPPY */			{intrpt_irqDefault,	"Floppy",				SIG_INTRPT_FLOPPY},
-	/* 0x27: -- */					{NULL,				"Unknown",				0},
-	/* 0x28: IRQ_CMOS_RTC */		{intrpt_irqDefault,	"CMOS",					SIG_INTRPT_CMOS},
-	/* 0x29: -- */					{NULL,				"Unknown",				0},
-	/* 0x2A: -- */					{NULL,				"Unknown",				0},
-	/* 0x2B: -- */					{NULL,				"Unknown",				0},
-	/* 0x2C: IRQ_MOUSE */			{intrpt_irqDefault,	"Mouse",				SIG_INTRPT_MOUSE},
-	/* 0x2D: -- */					{NULL,				"Unknown",				0},
-	/* 0x2C: IRQ_ATA1 */			{intrpt_irqDefault,	"ATA1",					SIG_INTRPT_ATA1},
-	/* 0x2C: IRQ_ATA2 */			{intrpt_irqDefault,	"ATA2",					SIG_INTRPT_ATA2},
-	/* 0x30: syscall */				{intrpt_syscall,	"Systemcall",			0},
-	/* 0x31: IPI_WORK */			{intrpt_ipiWork,	"Work IPI",				0},
-	/* 0x32: IPI_TERM */			{intrpt_ipiTerm,	"Term IPI",				0},
-	/* 0x33: IPI_FLUSH_TLB */		{intrpt_exFatal,	"Flush TLB IPI",		0},	/* not handled here */
-	/* 0x34: IPI_WAIT */			{intrpt_exFatal,	"",						0},
-	/* 0x35: IPI_HALT */			{intrpt_exFatal,	"",						0},
-	/* 0x36: IPI_FLUSH_TLB */		{intrpt_exFatal,	"",						0},
-	/* 0x37: isrNull */				{intrpt_exFatal,	"",						0},
+const Interrupts::Interrupt Interrupts::intrptList[] = {
+	/* 0x00: EX_DIVIDE_BY_ZERO */	{exFatal,		"Divide by zero",		0},
+	/* 0x01: EX_SINGLE_STEP */		{exSStep,		"Single step",			0},
+	/* 0x02: EX_NONMASKABLE */		{exFatal,		"Non maskable",			0},
+	/* 0x03: EX_BREAKPOINT */		{exFatal,		"Breakpoint",			0},
+	/* 0x04: EX_OVERFLOW */			{exFatal,		"Overflow",				0},
+	/* 0x05: EX_BOUNDS_CHECK */		{exFatal,		"Bounds check",			0},
+	/* 0x06: EX_INVALID_OPCODE */	{exFatal,		"Invalid opcode",		0},
+	/* 0x07: EX_CO_PROC_NA */		{exCoProcNA,	"Co-proc. n/a",			0},
+	/* 0x08: EX_DOUBLE_FAULT */		{exFatal,		"Double fault",			0},
+	/* 0x09: EX_CO_PROC_SEG_OVR */	{exFatal,		"Co-proc seg. overrun",	0},
+	/* 0x0A: EX_INVALID_TSS */		{exFatal,		"Invalid TSS",			0},
+	/* 0x0B: EX_SEG_NOT_PRESENT */	{exFatal,		"Segment not present",	0},
+	/* 0x0C: EX_STACK */			{exFatal,		"Stack exception",		0},
+	/* 0x0D: EX_GEN_PROT_FAULT */	{exGPF,			"Gen. prot. fault",		0},
+	/* 0x0E: EX_PAGE_FAULT */		{exPF,			"Page fault",			0},
+	/* 0x0F: -- */					{NULL,			"Unknown",				0},
+	/* 0x10: EX_CO_PROC_ERROR */	{exFatal,		"Co-processor error",	0},
+	/* 0x11: -- */					{NULL,			"Unknown",				0},
+	/* 0x12: -- */					{NULL,			"Unknown",				0},
+	/* 0x13: -- */					{NULL,			"Unknown",				0},
+	/* 0x14: -- */					{NULL,			"Unknown",				0},
+	/* 0x15: -- */					{NULL,			"Unknown",				0},
+	/* 0x16: -- */					{NULL,			"Unknown",				0},
+	/* 0x17: -- */					{NULL,			"Unknown",				0},
+	/* 0x18: -- */					{NULL,			"Unknown",				0},
+	/* 0x19: -- */					{NULL,			"Unknown",				0},
+	/* 0x1A: -- */					{NULL,			"Unknown",				0},
+	/* 0x1B: -- */					{NULL,			"Unknown",				0},
+	/* 0x1C: -- */					{NULL,			"Unknown",				0},
+	/* 0x1D: -- */					{NULL,			"Unknown",				0},
+	/* 0x1E: -- */					{NULL,			"Unknown",				0},
+	/* 0x1F: -- */					{NULL,			"Unknown",				0},
+	/* 0x20: IRQ_TIMER */			{irqTimer,		"Timer",				SIG_INTRPT_TIMER},
+	/* 0x21: IRQ_KEYBOARD */		{irqDefault,	"Keyboard",				SIG_INTRPT_KB},
+	/* 0x22: -- */					{NULL,			"Unknown",				0},
+	/* 0x23: IRQ_COM2 */			{irqDefault,	"COM2",					SIG_INTRPT_COM2},
+	/* 0x24: IRQ_COM1 */			{irqDefault,	"COM1",					SIG_INTRPT_COM1},
+	/* 0x25: -- */					{NULL,			"Unknown",				0},
+	/* 0x26: IRQ_FLOPPY */			{irqDefault,	"Floppy",				SIG_INTRPT_FLOPPY},
+	/* 0x27: -- */					{NULL,			"Unknown",				0},
+	/* 0x28: IRQ_CMOS_RTC */		{irqDefault,	"CMOS",					SIG_INTRPT_CMOS},
+	/* 0x29: -- */					{NULL,			"Unknown",				0},
+	/* 0x2A: -- */					{NULL,			"Unknown",				0},
+	/* 0x2B: -- */					{NULL,			"Unknown",				0},
+	/* 0x2C: IRQ_MOUSE */			{irqDefault,	"Mouse",				SIG_INTRPT_MOUSE},
+	/* 0x2D: -- */					{NULL,			"Unknown",				0},
+	/* 0x2C: IRQ_ATA1 */			{irqDefault,	"ATA1",					SIG_INTRPT_ATA1},
+	/* 0x2C: IRQ_ATA2 */			{irqDefault,	"ATA2",					SIG_INTRPT_ATA2},
+	/* 0x30: syscall */				{syscall,		"Systemcall",			0},
+	/* 0x31: IPI_WORK */			{ipiWork,		"Work IPI",				0},
+	/* 0x32: IPI_TERM */			{ipiTerm,		"Term IPI",				0},
+	/* 0x33: IPI_FLUSH_TLB */		{exFatal,		"Flush TLB IPI",		0},	/* not handled here */
+	/* 0x34: IPI_WAIT */			{exFatal,		"",						0},
+	/* 0x35: IPI_HALT */			{exFatal,		"",						0},
+	/* 0x36: IPI_FLUSH_TLB */		{exFatal,		"",						0},
+	/* 0x37: isrNull */				{exFatal,		"",						0},
 };
 
-/* total number of interrupts */
-static size_t intrptCount = 0;
-
-static uintptr_t *pfAddrs;
-/* stuff to count exceptions */
-static size_t exCount = 0;
-static uint32_t lastEx = 0xFFFFFFFF;
+size_t Interrupts::intrptCount = 0;
+uintptr_t *Interrupts::pfAddrs;
+size_t Interrupts::exCount = 0;
+uint32_t Interrupts::lastEx = 0xFFFFFFFF;
 #if DEBUG_PAGEFAULTS
 static uintptr_t lastPFAddr = ~(uintptr_t)0;
 static pid_t lastPFProc = INVALID_PID;
 #endif
 
-void intrpt_init(void) {
-	pfAddrs = (uintptr_t*)Cache::alloc(SMP::getCPUCount() * sizeof(uintptr_t));
-	if(pfAddrs == NULL)
+void InterruptsBase::init() {
+	Interrupts::pfAddrs = (uintptr_t*)Cache::alloc(SMP::getCPUCount() * sizeof(uintptr_t));
+	if(Interrupts::pfAddrs == NULL)
 		util_panic("Unable to alloc memory for pagefault-addresses");
 }
 
-size_t intrpt_getCount(void) {
-	return intrptCount;
-}
-
-uint8_t intrpt_getVectorFor(uint8_t irq) {
-	return irq + 0x20;
-}
-
-void intrpt_handler(sIntrptStackFrame *stack) {
+void InterruptsBase::handler(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
-	const sInterrupt *intrpt;
+	const Interrupts::Interrupt *intrpt;
 	size_t level = t->pushIntrptLevel(stack);
-	intrptCount++;
+	Interrupts::intrptCount++;
 
 	/* we need to save the page-fault address here because swapping may cause other ones */
-	if(stack->intrptNo == EX_PAGE_FAULT)
-		pfAddrs[t->getCPU()] = CPU::getCR2();
+	if(stack->intrptNo == Interrupts::EX_PAGE_FAULT)
+		Interrupts::pfAddrs[t->getCPU()] = CPU::getCR2();
 
-	intrpt = intrptList + stack->intrptNo;
+	intrpt = Interrupts::intrptList + stack->intrptNo;
 	if(intrpt->handler)
 		intrpt->handler(t,stack);
 	else {
@@ -177,7 +144,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	t->popIntrptLevel();
 }
 
-static void intrpt_exFatal(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	vid_printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
 			t->getProc()->getPid(),t->getProc()->getCommand());
 	/* count consecutive occurrences */
@@ -199,7 +166,7 @@ static void intrpt_exFatal(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
+void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA)
 		vid_unsetPrintFunc();
@@ -218,15 +185,15 @@ static void intrpt_exGPF(Thread *t,sIntrptStackFrame *stack) {
 	util_panic("GPF @ 0x%x",stack->eip);
 }
 
-static void intrpt_exSStep(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	Console::start("step show");
 }
 
-static void intrpt_exCoProcNA(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::exCoProcNA(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	FPU::handleCoProcNA(t->getFPUState());
 }
 
-static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
+void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t addr = pfAddrs[t->getCPU()];
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->eip >= KERNEL_AREA) {
@@ -251,16 +218,16 @@ static void intrpt_exPF(Thread *t,sIntrptStackFrame *stack) {
 	if(!VirtMem::pagefault(addr,stack->errorCode & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(addr) < 0) {
-			intrpt_printPFInfo(stack,addr);
+			printPFInfo(stack,addr);
 			/* TODO Proc::segFault();*/
 			util_panic("Process segfaulted");
 		}
 	}
 }
 
-static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack) {
+void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
 	bool res;
-	const sInterrupt *intrpt = intrptList + stack->intrptNo;
+	const Interrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		Signals::addSignal(intrpt->signal);
 	res = Timer::intrpt();
@@ -271,8 +238,8 @@ static void intrpt_irqTimer(Thread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
-	const sInterrupt *intrpt = intrptList + stack->intrptNo;
+void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	const Interrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		Signals::addSignal(intrpt->signal);
 	pic_eoi(stack->intrptNo);
@@ -287,12 +254,12 @@ static void intrpt_irqDefault(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_syscall(Thread *t,sIntrptStackFrame *stack) {
+void Interrupts::syscall(Thread *t,IntrptStackFrame *stack) {
 	t->getStats().syscalls++;
 	Syscalls::handle(t,stack);
 }
 
-static void intrpt_ipiWork(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::ipiWork(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	LAPIC::eoi();
 	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
 	/* this may happen if we're about to switch to a non-idle-thread and have idled previously,
@@ -304,13 +271,13 @@ static void intrpt_ipiWork(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 		Thread::switchAway();
 }
 
-static void intrpt_ipiTerm(Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::ipiTerm(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	/* stop running the thread, if it should die */
 	if(t->getNewState() == Thread::ZOMBIE)
 		Thread::switchAway();
 }
 
-static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {
+void Interrupts::printPFInfo(IntrptStackFrame *stack,uintptr_t addr) {
 	pid_t pid = Proc::getRunning();
 	vid_printf("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
 	vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
@@ -322,7 +289,7 @@ static void intrpt_printPFInfo(sIntrptStackFrame *stack,uintptr_t addr) {
 			(stack->errorCode & 0x16) ? "instruction-fetch" : "");
 }
 
-void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
+void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);
 	vid_printf("\tcs=%02x\n",stack->cs);
 	vid_printf("\tds=%02x\n",stack->ds);

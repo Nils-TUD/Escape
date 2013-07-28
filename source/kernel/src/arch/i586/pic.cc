@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/pic.h>
-#include <sys/arch/i586/intrpt.h>
 #include <sys/arch/i586/ports.h>
+#include <sys/interrupts.h>
 
 /* I/O ports for PICs */
 #define PIC_MASTER				0x20				/* base-port for master PIC */
@@ -51,8 +51,8 @@ void pic_init(void) {
 	Ports::out<uint8_t>(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
 	Ports::out<uint8_t>(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
 	/* remap the irqs to 0x20 and 0x28 */
-	Ports::out<uint8_t>(PIC_MASTER_DATA,IRQ_MASTER_BASE);
-	Ports::out<uint8_t>(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
+	Ports::out<uint8_t>(PIC_MASTER_DATA,Interrupts::IRQ_MASTER_BASE);
+	Ports::out<uint8_t>(PIC_SLAVE_DATA,Interrupts::IRQ_SLAVE_BASE);
 	/* continue */
 	Ports::out<uint8_t>(PIC_MASTER_DATA,4);
 	Ports::out<uint8_t>(PIC_SLAVE_DATA,2);
@@ -68,8 +68,9 @@ void pic_init(void) {
 
 void pic_eoi(uint32_t intrptNo) {
 	/* do we have to send EOI? */
-	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
-	    if(intrptNo >= IRQ_SLAVE_BASE) {
+	if(intrptNo >= Interrupts::IRQ_MASTER_BASE &&
+			intrptNo <= Interrupts::IRQ_MASTER_BASE + Interrupts::IRQ_NUM) {
+	    if(intrptNo >= Interrupts::IRQ_SLAVE_BASE) {
 	    	/* notify the slave */
 	        Ports::out<uint8_t>(PIC_SLAVE_CMD,PIC_EOI);
 	    }

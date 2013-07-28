@@ -32,7 +32,7 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-int UEnvBase::finishSignalHandler(sIntrptStackFrame *stack,int signal) {
+int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,int signal) {
 	uint32_t *regs;
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
@@ -53,7 +53,7 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 	uint32_t *sp;
 	char **argv;
 	Thread *t = Thread::getRunning();
-	sIntrptStackFrame *frame = t->getIntrptStack();
+	IntrptStackFrame *frame = t->getIntrptStack();
 
 	/*
 	 * Initial stack:
@@ -142,7 +142,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	return UEnv::addArgs(t,sp,tentryPoint,true);
 }
 
-void UEnv::startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,Signals::handler_func handler) {
+void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
 		Proc::segFault();

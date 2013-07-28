@@ -29,7 +29,7 @@
 #include <string.h>
 #include <errno.h>
 
-int Syscalls::chgsize(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	size_t oldEnd;
 	if(count > 0)
@@ -40,7 +40,7 @@ int Syscalls::chgsize(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t addr = SYSC_ARG1(stack);
 	size_t byteCount = SYSC_ARG2(stack);
 	size_t loadCount = SYSC_ARG3(stack);
@@ -90,7 +90,7 @@ int Syscalls::mmap(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 	int res;
@@ -104,7 +104,7 @@ int Syscalls::mprotect(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::munmap(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
 	VMRegion *reg = t->getProc()->getVM()->getRegion((uintptr_t)virt);
 	if(reg == NULL)
@@ -113,7 +113,7 @@ int Syscalls::munmap(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::regaddphys(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);

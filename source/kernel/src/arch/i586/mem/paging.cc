@@ -26,7 +26,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/smp.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/boot.h>
 #include <sys/cpu.h>
 #include <sys/util.h>

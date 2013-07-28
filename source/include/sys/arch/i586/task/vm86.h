@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 
 class VM86 {
 public:
@@ -85,17 +85,17 @@ public:
 	 *
 	 * @param stack the interrupt-stack-frame
 	 */
-	static void handleGPF(sIntrptStackFrame *stack);
+	static void handleGPF(IntrptStackFrame *stack);
 
 private:
-	static uint16_t popw(sIntrptStackFrame *stack);
-	static uint32_t popl(sIntrptStackFrame *stack);
-	static void pushw(sIntrptStackFrame *stack,uint16_t word);
-	static void pushl(sIntrptStackFrame *stack,uint32_t l);
+	static uint16_t popw(IntrptStackFrame *stack);
+	static uint32_t popl(IntrptStackFrame *stack);
+	static void pushw(IntrptStackFrame *stack,uint16_t word);
+	static void pushl(IntrptStackFrame *stack,uint32_t l);
 	static void start(void);
-	static void stop(sIntrptStackFrame *stack);
+	static void stop(IntrptStackFrame *stack);
 	static void finish(void);
-	static void copyRegResult(sIntrptStackFrame* stack);
+	static void copyRegResult(IntrptStackFrame* stack);
 	static int storeAreaResult(void);
 	static void copyAreaResult(void);
 	static bool copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);

@@ -104,7 +104,7 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 	return 0;
 }
 
-int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
+int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	size_t i;
 	inode_t nodeNo;
 	int child;

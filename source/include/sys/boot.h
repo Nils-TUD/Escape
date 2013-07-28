@@ -20,7 +20,9 @@
 #pragma once
 
 #include <esc/common.h>
-#include <sys/intrpt.h>
+#ifdef __cplusplus
+#include <sys/interrupts.h>
+#endif
 
 typedef void (*fBootTask)(void);
 typedef struct {
@@ -48,6 +50,8 @@ typedef struct sBootTaskList {
 #ifdef __mmix__
 #include <sys/arch/mmix/boot.h>
 #endif
+
+#ifdef __cplusplus
 
 /**
  * Starts the boot-process
@@ -102,9 +106,11 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size);
  *
  * @param stack the interrupt-stack-frame
  */
-int boot_loadModules(sIntrptStackFrame *stack);
+int boot_loadModules(IntrptStackFrame *stack);
 
 /**
  * Prints all interesting elements of the multi-boot-structure
  */
 void boot_print(void);
+
+#endif

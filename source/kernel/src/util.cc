@@ -25,7 +25,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>

@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <string.h>
 
 #ifdef __i386__
@@ -35,7 +35,7 @@
 #endif
 
 class Syscalls {
-	typedef int (*handler_func)(Thread *t,sIntrptStackFrame *stack);
+	typedef int (*handler_func)(Thread *t,IntrptStackFrame *stack);
 
 	/* for syscall-definitions */
 	struct Syscall {
@@ -52,7 +52,7 @@ public:
 	 * @param t the running thread
 	 * @param intrptStack the pointer to the interrupt-stack
 	 */
-	static void handle(Thread *t,sIntrptStackFrame *intrptStack);
+	static void handle(Thread *t,IntrptStackFrame *intrptStack);
 
 	/**
 	 * @param str the string
@@ -68,101 +68,101 @@ public:
 
 private:
 	// driver
-	static int createdev(Thread *t,sIntrptStackFrame *stack);
-	static int getclientid(Thread *t,sIntrptStackFrame *stack);
-	static int getclient(Thread *t,sIntrptStackFrame *stack);
-	static int getwork(Thread *t,sIntrptStackFrame *stack);
+	static int createdev(Thread *t,IntrptStackFrame *stack);
+	static int getclientid(Thread *t,IntrptStackFrame *stack);
+	static int getclient(Thread *t,IntrptStackFrame *stack);
+	static int getwork(Thread *t,IntrptStackFrame *stack);
 
 	// io
-	static int open(Thread *t,sIntrptStackFrame *stack);
-	static int fcntl(Thread *t,sIntrptStackFrame *stack);
-	static int pipe(Thread *t,sIntrptStackFrame *stack);
-	static int tell(Thread *t,sIntrptStackFrame *stack);
-	static int eof(Thread *t,sIntrptStackFrame *stack);
-	static int seek(Thread *t,sIntrptStackFrame *stack);
-	static int read(Thread *t,sIntrptStackFrame *stack);
-	static int write(Thread *t,sIntrptStackFrame *stack);
-	static int dup(Thread *t,sIntrptStackFrame *stack);
-	static int redirect(Thread *t,sIntrptStackFrame *stack);
-	static int close(Thread *t,sIntrptStackFrame *stack);
-	static int send(Thread *t,sIntrptStackFrame *stack);
-	static int receive(Thread *t,sIntrptStackFrame *stack);
-	static int stat(Thread *t,sIntrptStackFrame *stack);
-	static int fstat(Thread *t,sIntrptStackFrame *stack);
-	static int chmod(Thread *t,sIntrptStackFrame *stack);
-	static int chown(Thread *t,sIntrptStackFrame *stack);
-	static int sync(Thread *t,sIntrptStackFrame *stack);
-	static int link(Thread *t,sIntrptStackFrame *stack);
-	static int unlink(Thread *t,sIntrptStackFrame *stack);
-	static int mkdir(Thread *t,sIntrptStackFrame *stack);
-	static int rmdir(Thread *t,sIntrptStackFrame *stack);
-	static int mount(Thread *t,sIntrptStackFrame *stack);
-	static int unmount(Thread *t,sIntrptStackFrame *stack);
+	static int open(Thread *t,IntrptStackFrame *stack);
+	static int fcntl(Thread *t,IntrptStackFrame *stack);
+	static int pipe(Thread *t,IntrptStackFrame *stack);
+	static int tell(Thread *t,IntrptStackFrame *stack);
+	static int eof(Thread *t,IntrptStackFrame *stack);
+	static int seek(Thread *t,IntrptStackFrame *stack);
+	static int read(Thread *t,IntrptStackFrame *stack);
+	static int write(Thread *t,IntrptStackFrame *stack);
+	static int dup(Thread *t,IntrptStackFrame *stack);
+	static int redirect(Thread *t,IntrptStackFrame *stack);
+	static int close(Thread *t,IntrptStackFrame *stack);
+	static int send(Thread *t,IntrptStackFrame *stack);
+	static int receive(Thread *t,IntrptStackFrame *stack);
+	static int stat(Thread *t,IntrptStackFrame *stack);
+	static int fstat(Thread *t,IntrptStackFrame *stack);
+	static int chmod(Thread *t,IntrptStackFrame *stack);
+	static int chown(Thread *t,IntrptStackFrame *stack);
+	static int sync(Thread *t,IntrptStackFrame *stack);
+	static int link(Thread *t,IntrptStackFrame *stack);
+	static int unlink(Thread *t,IntrptStackFrame *stack);
+	static int mkdir(Thread *t,IntrptStackFrame *stack);
+	static int rmdir(Thread *t,IntrptStackFrame *stack);
+	static int mount(Thread *t,IntrptStackFrame *stack);
+	static int unmount(Thread *t,IntrptStackFrame *stack);
 
 	// mem
-	static int chgsize(Thread *t,sIntrptStackFrame *stack);
-	static int mmap(Thread *t,sIntrptStackFrame *stack);
-	static int mprotect(Thread *t,sIntrptStackFrame *stack);
-	static int munmap(Thread *t,sIntrptStackFrame *stack);
-	static int regaddphys(Thread *t,sIntrptStackFrame *stack);
+	static int chgsize(Thread *t,IntrptStackFrame *stack);
+	static int mmap(Thread *t,IntrptStackFrame *stack);
+	static int mprotect(Thread *t,IntrptStackFrame *stack);
+	static int munmap(Thread *t,IntrptStackFrame *stack);
+	static int regaddphys(Thread *t,IntrptStackFrame *stack);
 
 	// proc
-	static int getpid(Thread *t,sIntrptStackFrame *stack);
-	static int getppid(Thread *t,sIntrptStackFrame *stack);
-	static int getuid(Thread *t,sIntrptStackFrame *stack);
-	static int setuid(Thread *t,sIntrptStackFrame *stack);
-	static int geteuid(Thread *t,sIntrptStackFrame *stack);
-	static int seteuid(Thread *t,sIntrptStackFrame *stack);
-	static int getgid(Thread *t,sIntrptStackFrame *stack);
-	static int setgid(Thread *t,sIntrptStackFrame *stack);
-	static int getegid(Thread *t,sIntrptStackFrame *stack);
-	static int setegid(Thread *t,sIntrptStackFrame *stack);
-	static int getgroups(Thread *t,sIntrptStackFrame *stack);
-	static int setgroups(Thread *t,sIntrptStackFrame *stack);
-	static int isingroup(Thread *t,sIntrptStackFrame *stack);
-	static int fork(Thread *t,sIntrptStackFrame *stack);
-	static int waitchild(Thread *t,sIntrptStackFrame *stack);
-	static int exec(Thread *t,sIntrptStackFrame *stack);
-	static int getenvito(Thread *t,sIntrptStackFrame *stack);
-	static int getenvto(Thread *t,sIntrptStackFrame *stack);
-	static int setenv(Thread *t,sIntrptStackFrame *stack);
+	static int getpid(Thread *t,IntrptStackFrame *stack);
+	static int getppid(Thread *t,IntrptStackFrame *stack);
+	static int getuid(Thread *t,IntrptStackFrame *stack);
+	static int setuid(Thread *t,IntrptStackFrame *stack);
+	static int geteuid(Thread *t,IntrptStackFrame *stack);
+	static int seteuid(Thread *t,IntrptStackFrame *stack);
+	static int getgid(Thread *t,IntrptStackFrame *stack);
+	static int setgid(Thread *t,IntrptStackFrame *stack);
+	static int getegid(Thread *t,IntrptStackFrame *stack);
+	static int setegid(Thread *t,IntrptStackFrame *stack);
+	static int getgroups(Thread *t,IntrptStackFrame *stack);
+	static int setgroups(Thread *t,IntrptStackFrame *stack);
+	static int isingroup(Thread *t,IntrptStackFrame *stack);
+	static int fork(Thread *t,IntrptStackFrame *stack);
+	static int waitchild(Thread *t,IntrptStackFrame *stack);
+	static int exec(Thread *t,IntrptStackFrame *stack);
+	static int getenvito(Thread *t,IntrptStackFrame *stack);
+	static int getenvto(Thread *t,IntrptStackFrame *stack);
+	static int setenv(Thread *t,IntrptStackFrame *stack);
 
 	// signals
-	static int signal(Thread *t,sIntrptStackFrame *stack);
-	static int acksignal(Thread *t,sIntrptStackFrame *stack);
-	static int kill(Thread *t,sIntrptStackFrame *stack);
+	static int signal(Thread *t,IntrptStackFrame *stack);
+	static int acksignal(Thread *t,IntrptStackFrame *stack);
+	static int kill(Thread *t,IntrptStackFrame *stack);
 
 	// thread
-	static int gettid(Thread *t,sIntrptStackFrame *stack);
-	static int getthreadcnt(Thread *t,sIntrptStackFrame *stack);
-	static int startthread(Thread *t,sIntrptStackFrame *stack);
-	static int exit(Thread *t,sIntrptStackFrame *stack);
-	static int getcycles(Thread *t,sIntrptStackFrame *stack);
-	static int alarm(Thread *t,sIntrptStackFrame *stack);
-	static int sleep(Thread *t,sIntrptStackFrame *stack);
-	static int yield(Thread *t,sIntrptStackFrame *stack);
-	static int wait(Thread *t,sIntrptStackFrame *stack);
-	static int waitunlock(Thread *t,sIntrptStackFrame *stack);
-	static int notify(Thread *t,sIntrptStackFrame *stack);
-	static int lock(Thread *t,sIntrptStackFrame *stack);
-	static int unlock(Thread *t,sIntrptStackFrame *stack);
-	static int join(Thread *t,sIntrptStackFrame *stack);
-	static int suspend(Thread *t,sIntrptStackFrame *stack);
-	static int resume(Thread *t,sIntrptStackFrame *stack);
+	static int gettid(Thread *t,IntrptStackFrame *stack);
+	static int getthreadcnt(Thread *t,IntrptStackFrame *stack);
+	static int startthread(Thread *t,IntrptStackFrame *stack);
+	static int exit(Thread *t,IntrptStackFrame *stack);
+	static int getcycles(Thread *t,IntrptStackFrame *stack);
+	static int alarm(Thread *t,IntrptStackFrame *stack);
+	static int sleep(Thread *t,IntrptStackFrame *stack);
+	static int yield(Thread *t,IntrptStackFrame *stack);
+	static int wait(Thread *t,IntrptStackFrame *stack);
+	static int waitunlock(Thread *t,IntrptStackFrame *stack);
+	static int notify(Thread *t,IntrptStackFrame *stack);
+	static int lock(Thread *t,IntrptStackFrame *stack);
+	static int unlock(Thread *t,IntrptStackFrame *stack);
+	static int join(Thread *t,IntrptStackFrame *stack);
+	static int suspend(Thread *t,IntrptStackFrame *stack);
+	static int resume(Thread *t,IntrptStackFrame *stack);
 
 	// other
-	static int loadmods(Thread *t,sIntrptStackFrame *stack);
-	static int debugc(Thread *t,sIntrptStackFrame *stack);
-	static int debug(Thread *t,sIntrptStackFrame *stack);
-	static int sysconf(Thread *t,sIntrptStackFrame *stack);
-	static int tsctotime(Thread *t,sIntrptStackFrame *stack);
+	static int loadmods(Thread *t,IntrptStackFrame *stack);
+	static int debugc(Thread *t,IntrptStackFrame *stack);
+	static int debug(Thread *t,IntrptStackFrame *stack);
+	static int sysconf(Thread *t,IntrptStackFrame *stack);
+	static int tsctotime(Thread *t,IntrptStackFrame *stack);
 
 #ifdef __i386__
 	// x86 specific
-	static int reqports(Thread *t,sIntrptStackFrame *stack);
-	static int relports(Thread *t,sIntrptStackFrame *stack);
-	static int vm86start(Thread *t,sIntrptStackFrame *stack);
-	static int vm86int(Thread *t,sIntrptStackFrame *stack);
+	static int reqports(Thread *t,IntrptStackFrame *stack);
+	static int relports(Thread *t,IntrptStackFrame *stack);
+	static int vm86start(Thread *t,IntrptStackFrame *stack);
+	static int vm86int(Thread *t,IntrptStackFrame *stack);
 #endif
 
 	/**

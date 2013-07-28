@@ -112,7 +112,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 #endif
 };
 
-void Syscalls::handle(Thread *t,sIntrptStackFrame *stack) {
+void Syscalls::handle(Thread *t,IntrptStackFrame *stack) {
 	uint sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo >= ARRAY_SIZE(syscalls)) {
 		SYSC_SETERROR(stack,-EINVAL);

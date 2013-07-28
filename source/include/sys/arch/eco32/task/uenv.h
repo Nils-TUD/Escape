@@ -26,12 +26,12 @@ class UEnv : public UEnvBase {
 
 	UEnv() = delete;
 
-	static void startSignalHandler(Thread *t,sIntrptStackFrame *stack,int sig,
+	static void startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,
 	                                    Signals::handler_func handler);
 	static uint32_t *addArgs(Thread *t,uint32_t *sp,uintptr_t tentryPoint,bool newThread);
 };
 
-inline void UEnvBase::handleSignal(Thread *t,sIntrptStackFrame *stack) {
+inline void UEnvBase::handleSignal(Thread *t,IntrptStackFrame *stack) {
 	int sig;
 	Signals::handler_func handler;
 	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);

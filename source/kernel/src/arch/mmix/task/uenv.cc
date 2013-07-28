@@ -37,9 +37,9 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-int UEnvBase::finishSignalHandler(A_UNUSED sIntrptStackFrame *stack,int signal) {
+int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,int signal) {
 	Thread *t = Thread::getRunning();
-	sIntrptStackFrame *curStack = t->getIntrptStack();
+	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *regs;
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
 	sKSpecRegs *sregs;
@@ -209,7 +209,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 }
 
 void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
-	sIntrptStackFrame *curStack = t->getIntrptStack();
+	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	sKSpecRegs *sregs;
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {

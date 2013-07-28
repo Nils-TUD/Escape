@@ -68,7 +68,7 @@ static const sBootTask tasks[] = {
 	{"Initializing terminator...",Terminator::init},
 	{"Start logging to VFS...",log_vfsIsReady},
 	{"Initializing copy-on-write...",CopyOnWrite::init},
-	{"Initializing interrupts...",intrpt_init},
+	{"Initializing interrupts...",Interrupts::init},
 	{"Initializing PIC...",pic_init},
 	{"Initializing IDT...",IDT::init},
 	{"Initializing timer...",Timer::init},
@@ -176,7 +176,7 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 	return 0;
 }
 
-int boot_loadModules(A_UNUSED sIntrptStackFrame *stack) {
+int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	char loadingStatus[256];
 	size_t i;
 	int child,res;

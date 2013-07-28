@@ -26,7 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/virtmem.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <esc/hashmap.h>
 #include <assert.h>
 
@@ -410,7 +410,7 @@ public:
 	/**
 	 * @return the current interrupt-stack, i.e. the innermost-level
 	 */
-	sIntrptStackFrame *getIntrptStack() const;
+	IntrptStackFrame *getIntrptStack() const;
 
 	/**
 	 * Pushes the given kernel-stack onto the interrupt-level-stack
@@ -418,7 +418,7 @@ public:
 	 * @param stack the kernel-stack
 	 * @return the current level
 	 */
-	size_t pushIntrptLevel(sIntrptStackFrame *stack);
+	size_t pushIntrptLevel(IntrptStackFrame *stack);
 
 	/**
 	 * Removes the topmost interrupt-level-stack
@@ -655,7 +655,7 @@ protected:
 	/* the TLS-region for this thread (-1 if not present) */
 	VMRegion *tlsRegion;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
-	sIntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
+	IntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;
 	/* the save-area for registers */
 	sThreadRegs save;
@@ -758,13 +758,13 @@ inline void ThreadBase::remCallback(void (*callback)(void)) {
 	cur->termCallbackCount--;
 }
 
-inline sIntrptStackFrame *ThreadBase::getIntrptStack() const {
+inline IntrptStackFrame *ThreadBase::getIntrptStack() const {
 	if(intrptLevel > 0)
 		return intrptLevels[intrptLevel - 1];
 	return NULL;
 }
 
-inline size_t ThreadBase::pushIntrptLevel(sIntrptStackFrame *stack) {
+inline size_t ThreadBase::pushIntrptLevel(IntrptStackFrame *stack) {
 	assert(intrptLevel < MAX_INTRPT_LEVELS);
 	intrptLevels[intrptLevel++] = stack;
 	return intrptLevel;

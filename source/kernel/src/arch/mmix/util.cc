@@ -23,7 +23,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/mem/cache.h>
 #include <sys/debug.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
 #include <sys/video.h>
@@ -41,7 +41,7 @@ void util_printUserStateOf(const Thread *t) {
 	sKSpecRegs *sregs = t->getSpecRegs();
 	vid_printf("User state:\n");
 	prf_pushIndent();
-	intrpt_printStackFrame(t->getIntrptStack());
+	Interrupts::printStackFrame(t->getIntrptStack());
 	vid_printf("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
 	vid_printf("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
 	prf_popIndent();

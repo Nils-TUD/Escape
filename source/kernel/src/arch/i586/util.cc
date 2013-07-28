@@ -28,7 +28,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/vfs/vfs.h>
 #include <sys/cpu.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 #include <sys/util.h>
@@ -87,7 +87,7 @@ void util_printUserStateOf(const Thread *t) {
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
 		uintptr_t kstackAddr = PageDir::mapToTemp(&frame,1);
 		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
-		sIntrptStackFrame *kstack = (sIntrptStackFrame*)(kstackAddr + kstackOff);
+		IntrptStackFrame *kstack = (IntrptStackFrame*)(kstackAddr + kstackOff);
 		vid_printf("User-Register:\n");
 		prf_pushIndent();
 		regs[R_EAX] = kstack->eax;
@@ -134,7 +134,7 @@ void util_stopTimer(const char *prefix,...) {
 sFuncCall *util_getUserStackTrace(void) {
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
-	sIntrptStackFrame *kstack = t->getIntrptStack();
+	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(kstack) {
 		if(t->getStackRange(&start,&end,0))
 			return util_getStackTrace((uint32_t*)kstack->ebp,start,start,end);
@@ -172,7 +172,7 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 		size_t pcount = (end - start) / PAGE_SIZE;
 		frameno_t *frames = (frameno_t*)Cache::alloc((pcount + 2) * sizeof(frameno_t));
 		if(frames) {
-			sIntrptStackFrame *istack = t->getIntrptStack();
+			IntrptStackFrame *istack = t->getIntrptStack();
 			uintptr_t temp,startCpy = start;
 			size_t i;
 			frames[0] = pdir->getFrameNo(t->getKernelStack());
@@ -185,7 +185,7 @@ sFuncCall *util_getUserStackTraceOf(Thread *t) {
 				startCpy += PAGE_SIZE;
 			}
 			temp = PageDir::mapToTemp(frames,pcount + 1);
-			istack = (sIntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
+			istack = (IntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
 			calls = util_getStackTrace((uint32_t*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			PageDir::unmapFromTemp(pcount + 1);

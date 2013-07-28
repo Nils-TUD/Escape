@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/boot.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
@@ -31,12 +31,12 @@
 #include <sys/video.h>
 #include <errno.h>
 
-int Syscalls::loadmods(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::loadmods(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = boot_loadModules(stack);
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::debugc(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::debugc(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
 	vid_setTargets(TARGET_LOG);
 	vid_printf("%c",c);
@@ -44,7 +44,7 @@ int Syscalls::debugc(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
+int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 #if 0
 	static size_t foo = 0;
 	Cache::dbg_setAaFEnabled(foo == 0);
@@ -55,7 +55,7 @@ int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::sysconf(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::sysconf(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int id = SYSC_ARG1(stack);
 	long res = Config::get(id);
 	if(res < 0)
@@ -63,7 +63,7 @@ int Syscalls::sysconf(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::tsctotime(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
 	if(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
 		SYSC_ERROR(stack,-EINVAL);

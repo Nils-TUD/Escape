@@ -29,125 +29,78 @@
 #include <esc/keycodes.h>
 #include <sys/cpu.h>
 #include <sys/syscalls.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/video.h>
 #include <sys/util.h>
 
 #define DEBUG_PAGEFAULTS	0
 
-#define PSW_PUM				0x02000000	/* previous value of PSW_UM */
-
-/* interrupt- and exception-numbers */
-#define IRQ_TTY0_XMTR		0
-#define IRQ_TTY0_RCVR		1
-#define IRQ_TTY1_XMTR		2
-#define IRQ_TTY1_RCVR		3
-#define IRQ_KEYBOARD		4
-#define IRQ_DISK			8
-#define IRQ_TIMER			14
-#define EXC_BUS_TIMEOUT		16
-#define EXC_ILL_INSTRCT		17
-#define EXC_PRV_INSTRCT		18
-#define EXC_DIVIDE			19
-#define EXC_TRAP			20
-#define EXC_TLB_MISS		21
-#define EXC_TLB_WRITE		22
-#define EXC_TLB_INVALID		23
-#define EXC_ILL_ADDRESS		24
-#define EXC_PRV_ADDRESS		25
-
-#define KEYBOARD_BASE		0xF0200000
-#define KEYBOARD_CTRL		0
-#define KEYBOARD_IEN		0x02
-
-#define DISK_BASE			0xF0400000
-#define DISK_CTRL			0
-#define DISK_IEN			0x02
-
-typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
-typedef struct {
-	fIntrptHandler handler;
-	const char *name;
-	int signal;
-} sInterrupt;
-
-static void intrpt_defHandler(sIntrptStackFrame *stack);
-static void intrpt_exTrap(sIntrptStackFrame *stack);
-static void intrpt_exPageFault(sIntrptStackFrame *stack);
-static void intrpt_irqTimer(sIntrptStackFrame *stack);
-static void intrpt_irqKB(sIntrptStackFrame *stack);
-static void intrpt_irqDisk(sIntrptStackFrame *stack);
-
-static sInterrupt intrptList[] = {
-	/* 0x00: IRQ_TTY0_XMTR */	{intrpt_defHandler,	"Terminal 0 Transmitter",0},
-	/* 0x01: IRQ_TTY0_RCVR */	{intrpt_defHandler,	"Terminal 0 Receiver",	0},
-	/* 0x02: IRQ_TTY1_XMTR */	{intrpt_defHandler,	"Terminal 1 Transmitter",0},
-	/* 0x03: IRQ_TTY1_RCVR */	{intrpt_defHandler,	"Terminal 1 Receiver",	0},
-	/* 0x04: IRQ_KEYBOARD */	{intrpt_irqKB,		"Keyboard",				SIG_INTRPT_KB},
-	/* 0x05: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x06: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x07: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x08: IRQ_DISK */		{intrpt_irqDisk,	"Disk",					SIG_INTRPT_ATA1},
-	/* 0x09: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x0A: - */				{intrpt_defHandler,	"??",					0},
-	/* 0x0B: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x0C: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x0D: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x0E: IRQ_TIMER */		{intrpt_irqTimer,	"Timer",				SIG_INTRPT_TIMER},
-	/* 0x0F: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x10: EXC_BUS_TIMEOUT */	{intrpt_defHandler,	"Bus timeout exception",0},
-	/* 0x11: EXC_ILL_INSTRCT */	{intrpt_defHandler,	"Ill. instr. exception",0},
-	/* 0x12: EXC_PRV_INSTRCT */	{intrpt_defHandler,	"Prv. instr. exception",0},
-	/* 0x13: EXC_DIVIDE */		{intrpt_defHandler,	"Divide exception",		0},
-	/* 0x14: EXC_TRAP */		{intrpt_exTrap,		"Trap exception",		0},
-	/* 0x15: EXC_TLB_MISS */	{intrpt_defHandler,	"TLB miss exception",	0},
-	/* 0x16: EXC_TLB_WRITE */	{intrpt_exPageFault,"TLB write exception",	0},
-	/* 0x17: EXC_TLB_INVALID */	{intrpt_exPageFault,"TLB invalid exception",0},
-	/* 0x18: EXC_ILL_ADDRESS */	{intrpt_defHandler,	"Ill. addr. exception",	0},
-	/* 0x19: EXC_PRV_ADDRESS */	{intrpt_defHandler,	"Prv. addr. exception",	0},
-	/* 0x1A: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x1B: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x1C: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x1D: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x1E: -- */				{intrpt_defHandler,	"??",					0},
-	/* 0x1F: -- */				{intrpt_defHandler,	"??",					0},
+const Interrupts::Interrupt Interrupts::intrptList[] = {
+	/* 0x00: IRQ_TTY0_XMTR */	{defHandler,	"Terminal 0 Transmitter",0},
+	/* 0x01: IRQ_TTY0_RCVR */	{defHandler,	"Terminal 0 Receiver",	0},
+	/* 0x02: IRQ_TTY1_XMTR */	{defHandler,	"Terminal 1 Transmitter",0},
+	/* 0x03: IRQ_TTY1_RCVR */	{defHandler,	"Terminal 1 Receiver",	0},
+	/* 0x04: IRQ_KEYBOARD */	{irqKB,			"Keyboard",				SIG_INTRPT_KB},
+	/* 0x05: -- */				{defHandler,	"??",					0},
+	/* 0x06: -- */				{defHandler,	"??",					0},
+	/* 0x07: -- */				{defHandler,	"??",					0},
+	/* 0x08: IRQ_DISK */		{irqDisk,		"Disk",					SIG_INTRPT_ATA1},
+	/* 0x09: -- */				{defHandler,	"??",					0},
+	/* 0x0A: - */				{defHandler,	"??",					0},
+	/* 0x0B: -- */				{defHandler,	"??",					0},
+	/* 0x0C: -- */				{defHandler,	"??",					0},
+	/* 0x0D: -- */				{defHandler,	"??",					0},
+	/* 0x0E: IRQ_TIMER */		{irqTimer,		"Timer",				SIG_INTRPT_TIMER},
+	/* 0x0F: -- */				{defHandler,	"??",					0},
+	/* 0x10: EXC_BUS_TIMEOUT */	{defHandler,	"Bus timeout exception",0},
+	/* 0x11: EXC_ILL_INSTRCT */	{defHandler,	"Ill. instr. exception",0},
+	/* 0x12: EXC_PRV_INSTRCT */	{defHandler,	"Prv. instr. exception",0},
+	/* 0x13: EXC_DIVIDE */		{defHandler,	"Divide exception",		0},
+	/* 0x14: EXC_TRAP */		{exTrap,		"Trap exception",		0},
+	/* 0x15: EXC_TLB_MISS */	{defHandler,	"TLB miss exception",	0},
+	/* 0x16: EXC_TLB_WRITE */	{exPageFault,	"TLB write exception",	0},
+	/* 0x17: EXC_TLB_INVALID */	{exPageFault,	"TLB invalid exception",0},
+	/* 0x18: EXC_ILL_ADDRESS */	{defHandler,	"Ill. addr. exception",	0},
+	/* 0x19: EXC_PRV_ADDRESS */	{defHandler,	"Prv. addr. exception",	0},
+	/* 0x1A: -- */				{defHandler,	"??",					0},
+	/* 0x1B: -- */				{defHandler,	"??",					0},
+	/* 0x1C: -- */				{defHandler,	"??",					0},
+	/* 0x1D: -- */				{defHandler,	"??",					0},
+	/* 0x1E: -- */				{defHandler,	"??",					0},
+	/* 0x1F: -- */				{defHandler,	"??",					0},
 };
-static size_t irqCount = 0;
-static uintptr_t pfaddr = 0;
+size_t Interrupts::irqCount = 0;
+uintptr_t Interrupts::pfaddr = 0;
 
-void intrpt_handler(sIntrptStackFrame *stack) {
+void InterruptsBase::handler(IntrptStackFrame *stack) {
 	Thread *t;
-	sInterrupt *intrpt;
+	const Interrupts::Interrupt *intrpt;
 	/* note: we have to do that before there is a chance for a kernel-miss */
-	pfaddr = CPU::getBadAddr();
+	Interrupts::pfaddr = CPU::getBadAddr();
 	t = Thread::getRunning();
 	t->pushIntrptLevel(stack);
-	irqCount++;
+	Interrupts::irqCount++;
 
 	/* call handler */
-	intrpt = intrptList + (stack->irqNo & 0x1F);
+	intrpt = Interrupts::intrptList + (stack->irqNo & 0x1F);
 	intrpt->handler(stack);
 
 	/* only handle signals, if we come directly from user-mode */
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = Thread::getRunning();
-	if(t != NULL && ((t->getFlags() & T_IDLE) || (stack->psw & PSW_PUM)))
+	if(t != NULL && ((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)))
 		UEnv::handleSignal(t,stack);
 	t->popIntrptLevel();
 }
 
-size_t intrpt_getCount(void) {
-	return irqCount;
-}
-
-static void intrpt_defHandler(sIntrptStackFrame *stack) {
+void Interrupts::defHandler(IntrptStackFrame *stack) {
 	/* do nothing */
 	util_panic("Got interrupt %d (%s) @ %p\n",
 			stack->irqNo,intrptList[stack->irqNo & 0x1f].name,stack->r[30]);
 }
 
-static void intrpt_exTrap(sIntrptStackFrame *stack) {
+void Interrupts::exTrap(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	t->getStats().syscalls++;
 	Syscalls::handle(t,stack);
@@ -155,7 +108,7 @@ static void intrpt_exTrap(sIntrptStackFrame *stack) {
 	stack->r[30] += 4;
 }
 
-static void intrpt_exPageFault(sIntrptStackFrame *stack) {
+void Interrupts::exPageFault(IntrptStackFrame *stack) {
 	/* for exceptions in kernel: ensure that we have the default print-function */
 	if(stack->r[30] >= DIR_MAPPED_SPACE)
 		vid_unsetPrintFunc();
@@ -185,7 +138,7 @@ static void intrpt_exPageFault(sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack) {
 	bool res;
 	Signals::addSignal(SIG_INTRPT_TIMER);
 	res = Timer::intrpt();
@@ -197,7 +150,7 @@ static void intrpt_irqTimer(A_UNUSED sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack) {
 	/* we have to disable interrupts until the device has handled the request */
 	/* otherwise we would get into an interrupt loop */
 	uint32_t *kbRegs = (uint32_t*)KEYBOARD_BASE;
@@ -221,7 +174,7 @@ static void intrpt_irqKB(A_UNUSED sIntrptStackFrame *stack) {
 	}
 }
 
-static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack) {
+void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack) {
 	/* see interrupt_irqKb() */
 	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
@@ -229,7 +182,7 @@ static void intrpt_irqDisk(A_UNUSED sIntrptStackFrame *stack) {
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 }
 
-void intrpt_printStackFrame(const sIntrptStackFrame *stack) {
+void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
 	int i;
 	vid_printf("stack-frame @ 0x%Px\n",stack);
 	vid_printf("\tirqNo=%d\n",stack->irqNo);

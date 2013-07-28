@@ -264,7 +264,7 @@ static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,
 		,
 		"Processes:",Proc::getCount(),
 		"Threads:",Thread::getCount(),
-		"Interrupts:",intrpt_getCount(),
+		"Interrupts:",Interrupts::getCount(),
 		"CPUCycles:",cycles.val64,
 		"UpTime:",Timer::getIntrptCount() / Timer::FREQUENCY_DIV
 	);

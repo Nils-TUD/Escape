@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 
 #define MMAP_TYPE_AVAILABLE 0x1
 

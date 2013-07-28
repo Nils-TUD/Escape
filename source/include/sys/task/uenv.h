@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <sys/intrpt.h>
+#include <sys/interrupts.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
 
@@ -35,7 +35,7 @@ public:
 	 * @param t the current thread
 	 * @param stack the interrupt-stack-frame
 	 */
-	static void handleSignal(Thread *t,sIntrptStackFrame *stack);
+	static void handleSignal(Thread *t,IntrptStackFrame *stack);
 
 	/**
 	 * Finishes the signal-handling-process
@@ -44,7 +44,7 @@ public:
 	 * @param signal the handled signal
 	 * @return 0 on success
 	 */
-	static int finishSignalHandler(sIntrptStackFrame *stack,int signal);
+	static int finishSignalHandler(IntrptStackFrame *stack,int signal);
 
 	/**
 	 * Setups the user-stack for given interrupt-stack, when starting the current process

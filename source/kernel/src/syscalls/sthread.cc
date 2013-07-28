@@ -41,15 +41,15 @@ static int doWait(const Event::WaitObject *uobjects,size_t objCount,time_t maxWa
 static int doWaitLoop(const Event::WaitObject *uobjects,size_t objCount,
 		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
 
-int Syscalls::gettid(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
 }
 
-int Syscalls::getthreadcnt(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::getthreadcnt(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getProc()->getThreadCount());
 }
 
-int Syscalls::startthread(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
 	int res = Proc::startThread(entryPoint,0,arg);
@@ -58,7 +58,7 @@ int Syscalls::startthread(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::exit(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
 	Proc::exit(exitCode);
 	Thread::switchAway();
@@ -66,14 +66,14 @@ int Syscalls::exit(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::getcycles(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 	uLongLong cycles;
 	cycles.val64 = t->getStats().curCycleCount;
 	SYSC_SETRET2(stack,cycles.val32.upper);
 	SYSC_RET1(stack,cycles.val32.lower);
 }
 
-int Syscalls::alarm(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
 	if((res = Timer::sleepFor(t->getTid(),msecs,false)) < 0)
@@ -81,7 +81,7 @@ int Syscalls::alarm(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::sleep(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
 	if((res = Timer::sleepFor(t->getTid(),msecs,true)) < 0)
@@ -95,12 +95,12 @@ int Syscalls::sleep(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::yield(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::yield(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Thread::switchAway();
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::wait(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	const Event::WaitObject *uobjects = (const Event::WaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
@@ -117,7 +117,7 @@ int Syscalls::wait(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::waitunlock(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 	const Event::WaitObject *uobjects = (const Event::WaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
@@ -137,7 +137,7 @@ int Syscalls::waitunlock(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::notify(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::notify(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	uint events = SYSC_ARG2(stack);
 	Thread *nt = Thread::getById(tid);
@@ -148,7 +148,7 @@ int Syscalls::notify(A_UNUSED Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::lock(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::lock(Thread *t,IntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	ushort flags = (uint)SYSC_ARG3(stack);
@@ -160,7 +160,7 @@ int Syscalls::lock(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::unlock(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::unlock(Thread *t,IntrptStackFrame *stack) {
 	ulong ident = SYSC_ARG1(stack);
 	bool global = (bool)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
@@ -171,7 +171,7 @@ int Syscalls::unlock(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::join(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	if(tid != 0) {
 		const Thread *tt = Thread::getById(tid);
@@ -184,7 +184,7 @@ int Syscalls::join(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::suspend(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::suspend(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
@@ -194,7 +194,7 @@ int Syscalls::suspend(Thread *t,sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::resume(Thread *t,sIntrptStackFrame *stack) {
+int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */

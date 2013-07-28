@@ -38,7 +38,7 @@ VMTree *VMTree::regList;
 VMTree *VMTree::regListEnd;
 
 void VMTree::addTree(VirtMem *vm,VMTree *tree) {
-	mutex_aquire(&regMutex);
+	mutex_acquire(&regMutex);
 	if(regListEnd)
 		regListEnd->next = tree;
 	else
@@ -56,7 +56,7 @@ void VMTree::addTree(VirtMem *vm,VMTree *tree) {
 void VMTree::remTree(VMTree *tree) {
 	VMTree *t,*p;
 	p = NULL;
-	mutex_aquire(&regMutex);
+	mutex_acquire(&regMutex);
 	for(t = regList; t != NULL; p = t, t = t->next) {
 		if(t == tree) {
 			if(p)

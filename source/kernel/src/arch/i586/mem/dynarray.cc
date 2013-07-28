@@ -27,7 +27,7 @@
 bool DynArray::extend() {
 	Region *reg;
 	uintptr_t addr;
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 
 	/* region full? */
 	if(areaBegin + objCount * objSize + PAGE_SIZE > areaBegin + areaSize) {

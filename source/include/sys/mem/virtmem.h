@@ -360,7 +360,7 @@ private:
 	uintptr_t getFirstUsableAddr() const;
 	const char *getRegName(const VMRegion *vm) const;
 
-	bool aquire() const;
+	bool acquire() const;
 	bool tryAquire() const;
 	void release() const;
 

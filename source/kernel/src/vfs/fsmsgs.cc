@@ -350,7 +350,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 	inode_t nodeNo;
 	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
-	SpinLock::aquire(&fsChanLock);
+	SpinLock::acquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		chan = (sFSChan*)n->data;
 		if(!chan->active) {
@@ -397,7 +397,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,sFile **file) {
 	err = vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO,&chan->file);
 	if(err < 0)
 		goto errorChild;
-	SpinLock::aquire(&fsChanLock);
+	SpinLock::acquire(&fsChanLock);
 	if(!sll_append(&p->fsChans,chan)) {
 		SpinLock::release(&fsChanLock);
 		goto errorClose;
@@ -423,7 +423,7 @@ errorChan:
 static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 	sSLNode *n;
 	const Proc *p = Proc::getByPid(pid);
-	SpinLock::aquire(&fsChanLock);
+	SpinLock::acquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;
 		if(chan->file == file) {
@@ -436,7 +436,7 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,sFile *file) {
 
 void vfs_fsmsgs_printFSChans(const Proc *p) {
 	sSLNode *n;
-	SpinLock::aquire(&fsChanLock);
+	SpinLock::acquire(&fsChanLock);
 	Video::printf("FS-Channels:\n");
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
 		sFSChan *chan = (sFSChan*)n->data;

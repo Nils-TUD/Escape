@@ -76,11 +76,11 @@ public:
 	/**
 	 * Aquires the lock for this region
 	 */
-	void aquire() {
-		mutex_aquire(&lock);
+	void acquire() {
+		mutex_acquire(&lock);
 	}
 	/**
-	 * Tries to aquire the lock for this region
+	 * Tries to acquire the lock for this region
 	 *
 	 * @return true if successfull
 	 */

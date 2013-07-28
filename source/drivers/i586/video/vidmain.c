@@ -215,7 +215,7 @@ static int vid_setMode(int mid,bool clear) {
 	/* map video-memory for our process */
 	videoData = (uint8_t*)regaddphys(&mode->addr,mode->info->width * (mode->info->height + 1) * 2,0);
 	if(videoData == NULL)
-		error("Unable to aquire video-memory (%p)",mode->addr);
+		error("Unable to acquire video-memory (%p)",mode->addr);
 	return 0;
 }
 

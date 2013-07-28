@@ -391,7 +391,7 @@ static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **
 
 static Proc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
 	Proc *p;
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
@@ -405,7 +405,7 @@ static Proc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {
 
 static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer) {
 	pid_t pid;
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
@@ -419,7 +419,7 @@ static pid_t vfs_info_getPid(sVFSNode *node,size_t *dataSize,void **buffer) {
 
 static Thread *vfs_info_getThread(sVFSNode *node,size_t *dataSize,void **buffer) {
 	Thread *t;
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	if(node->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;

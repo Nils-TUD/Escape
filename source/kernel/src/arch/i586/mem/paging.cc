@@ -200,7 +200,7 @@ uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
 uintptr_t PageDir::mapToTemp(const frameno_t *frames,size_t count) {
 	assert(frames != NULL && count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE - 1);
 	/* the temp-map-area is shared */
-	SpinLock::aquire(&tmpMapLock);
+	SpinLock::acquire(&tmpMapLock);
 	Proc::getCurPageDir()->map(TEMP_MAP_AREA + PAGE_SIZE,frames,count,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA + PAGE_SIZE;
@@ -217,7 +217,7 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	PageDir::pde_t *pd,*npd;
 	Thread *t = Thread::getById(tid);
 	PageDir *cur = Proc::getCurPageDir();
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 
 	/* allocate frames */
 	pdirFrame = PhysMem::allocate(PhysMem::KERN);
@@ -283,7 +283,7 @@ uintptr_t PageDir::createKernelStack() {
 	uintptr_t addr,end,ptables;
 	pte_t *pt;
 	pde_t *pd;
-	SpinLock::aquire(&pagingLock);
+	SpinLock::acquire(&pagingLock);
 	addr = freeKStack;
 	end = KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE;
 	ptables = getPTables(Proc::getCurPageDir());
@@ -307,7 +307,7 @@ uintptr_t PageDir::createKernelStack() {
 }
 
 void PageDir::removeKernelStack(uintptr_t addr) {
-	SpinLock::aquire(&pagingLock);
+	SpinLock::acquire(&pagingLock);
 	if(addr < freeKStack)
 		freeKStack = addr;
 	doUnmap(addr,1,true);
@@ -319,7 +319,7 @@ void PageDirBase::destroy() {
 	size_t i;
 	uintptr_t ptables;
 	PageDir::pde_t *pd;
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	ptables = pdir->getPTables(Proc::getCurPageDir());
 	pd = (PageDir::pde_t*)PAGEDIR(ptables);
 	/* free page-tables for kernel-stack */
@@ -340,7 +340,7 @@ bool PageDirBase::isPresent(uintptr_t virt) const {
 	uintptr_t ptables;
 	PageDir::pde_t *pd;
 	bool res = false;
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	ptables = pdir->getPTables(Proc::getCurPageDir());
 	pd = (PageDir::pde_t*)PAGEDIR(ptables);
 	if((pd[ADDR_TO_PDINDEX(virt)] & (PDE_PRESENT | PDE_EXISTS)) == (PDE_PRESENT | PDE_EXISTS)) {
@@ -357,7 +357,7 @@ frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 	frameno_t res = -1;
 	PageDir::pte_t *pt;
 	PageDir::pde_t *pde;
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	ptables = pdir->getPTables(Proc::getCurPageDir());
 	pde = (PageDir::pde_t*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
 	pt = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
@@ -371,7 +371,7 @@ frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	frameno_t frame;
 	PageDir *pdir = Proc::getCurPageDir();
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	frame = Thread::getRunning()->getFrame();
 	pdir->doMap(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
@@ -382,7 +382,7 @@ frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,A_UNUSED u
 
 void PageDirBase::copyToFrame(frameno_t frame,const void *src) {
 	PageDir *pdir = Proc::getCurPageDir();
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	pdir->doMap(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,src,PAGE_SIZE);
 	pdir->doUnmap(TEMP_MAP_AREA,1,false);
@@ -391,7 +391,7 @@ void PageDirBase::copyToFrame(frameno_t frame,const void *src) {
 
 void PageDirBase::copyFromFrame(frameno_t frame,void *dst) {
 	PageDir *pdir = Proc::getCurPageDir();
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	pdir->doMap(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(dst,(void*)TEMP_MAP_AREA,PAGE_SIZE);
 	pdir->doUnmap(TEMP_MAP_AREA,1,false);
@@ -408,7 +408,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 	uintptr_t srctables,dsttables;
 	PageDir::pde_t *dstpdir;
 	assert(this != dst && (this == cur || dst == cur));
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	srctables = src->getPTables(cur);
 	dsttables = dst->getPTables(cur);
 	dstpdir = (PageDir::pde_t*)PAGEDIR(dsttables);
@@ -648,7 +648,7 @@ size_t PageDirBase::getPTableCount() const {
 	size_t i,count = 0;
 	uintptr_t ptables;
 	PageDir::pde_t *pdirAddr;
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	ptables = static_cast<const PageDir*>(this)->getPTables(Proc::getCurPageDir());
 	pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
@@ -710,7 +710,7 @@ void PageDirBase::sprintf(sStringBuffer *buf) const {
 	size_t i,j;
 	uintptr_t ptables;
 	PageDir::pde_t *pdirAddr;
-	SpinLock::aquire(&PageDir::pagingLock);
+	SpinLock::acquire(&PageDir::pagingLock);
 	ptables = static_cast<const PageDir*>(this)->getPTables(Proc::getCurPageDir());
 	/* note that we release the lock here because prf_sprintf() might cause the cache-module to
 	 * allocate more memory and use paging to map it. therefore, we would cause a deadlock if

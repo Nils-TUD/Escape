@@ -49,7 +49,7 @@ public:
 	 * @param flags flags (LOCK_*)
 	 * @return 0 on success
 	 */
-	static int aquire(pid_t pid,ulong ident,ushort flags);
+	static int acquire(pid_t pid,ulong ident,ushort flags);
 
 	/**
 	 * Releases the lock with given ident and pid
@@ -86,7 +86,7 @@ private:
 	static Entry *locks;
 	/* I think, in this case its better to use a single global lock instead of locking an sLock
 	 * structure individually. Because when we're searching for a lock, we would have to do a lot
-	 * of aquires and releases. Additionally, this module isn't used that extensively, so that it
+	 * of acquires and releases. Additionally, this module isn't used that extensively, so that it
 	 * doesn't hurt to reduce the amount of parallelity a bit, IMO. */
 	static klock_t klock;
 };

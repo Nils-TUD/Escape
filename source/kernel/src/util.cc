@@ -44,7 +44,7 @@ uint64_t Util::profStart;
 
 int Util::rand() {
 	int res;
-	SpinLock::aquire(&randLock);
+	SpinLock::acquire(&randLock);
 	lastRand = randa * lastRand + randc;
 	res = (int)((uint)(lastRand / 65536) % 32768);
 	SpinLock::release(&randLock);
@@ -52,7 +52,7 @@ int Util::rand() {
 }
 
 void Util::srand(uint seed) {
-	SpinLock::aquire(&randLock);
+	SpinLock::acquire(&randLock);
 	lastRand = seed;
 	SpinLock::release(&randLock);
 }

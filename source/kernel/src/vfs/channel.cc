@@ -233,7 +233,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		Thread::remHeapAlloc(msg1);
 	}
 
-	SpinLock::aquire(&n->lock);
+	SpinLock::acquire(&n->lock);
 	if(n->name == NULL) {
 		SpinLock::release(&n->lock);
 		return -EDESTROYED;
@@ -241,7 +241,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
-	SpinLock::aquire(&waitLock);
+	SpinLock::acquire(&waitLock);
 
 	/* set recipient */
 	if(flags & VFS_DEVICE)
@@ -294,7 +294,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	size_t event;
 	ssize_t res;
 
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	/* node destroyed? */
 	if(node->name == NULL) {
 		SpinLock::release(&node->lock);
@@ -335,7 +335,7 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
-		SpinLock::aquire(&node->lock);
+		SpinLock::acquire(&node->lock);
 		if(node->name == NULL) {
 			SpinLock::release(&node->lock);
 			return -EDESTROYED;

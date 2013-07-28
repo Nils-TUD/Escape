@@ -172,7 +172,7 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
 	sSLNode *n;
-	mutex_aquire(&procLock);
+	mutex_acquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		size_t pown = 0,psh = 0,pswap = 0;
 		Proc *p = (Proc*)n->data;
@@ -243,7 +243,7 @@ int ProcBase::clone(uint8_t flags) {
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
-	mutex_aquire(&procLock);
+	mutex_acquire(&procLock);
 	newPid = getFreePid();
 	if(newPid < 0) {
 		mutex_release(&procLock);
@@ -650,7 +650,7 @@ void ProcBase::doDestroy(Proc *p) {
 	p->flags &= ~P_PREZOMBIE;
 	p->flags |= P_ZOMBIE;
 	/* ensure that the parent-wakeup doesn't get lost */
-	mutex_aquire(&childLock);
+	mutex_acquire(&childLock);
 	notifyProcDied(p->parentPid);
 	mutex_release(&childLock);
 }
@@ -662,8 +662,8 @@ void ProcBase::kill(pid_t pid) {
 		return;
 
 	/* give childs the ppid 0 */
-	mutex_aquire(&childLock);
-	mutex_aquire(&procLock);
+	mutex_acquire(&childLock);
+	mutex_acquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *cp = (Proc*)n->data;
 		if(cp->parentPid == p->pid) {
@@ -697,7 +697,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 	Proc *p = t->getProc();
 	int res;
 	/* check if there is already a dead child-proc */
-	mutex_aquire(&childLock);
+	mutex_acquire(&childLock);
 	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
@@ -723,11 +723,11 @@ int ProcBase::waitChild(USER ExitState *state) {
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 	sSLNode *n;
-	mutex_aquire(&procLock);
+	mutex_acquire(&procLock);
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
-			/* avoid deadlock; at other places we aquire the PLOCK_PROG first and procLock afterwards */
+			/* avoid deadlock; at other places we acquire the PLOCK_PROG first and procLock afterwards */
 			mutex_release(&procLock);
 			p = request(p->pid,PLOCK_PROG);
 			if(state) {
@@ -903,7 +903,7 @@ bool ProcBase::add(Proc *p) {
 }
 
 void ProcBase::remove(Proc *p) {
-	mutex_aquire(&procLock);
+	mutex_acquire(&procLock);
 	sll_removeFirstWith(&procs,p);
 	pidToProc[p->pid] = NULL;
 	mutex_release(&procLock);

@@ -31,7 +31,7 @@ bool Video::lastWasLineStart = true;
 klock_t Video::lock;
 
 void Video::backup(char *buffer,ushort *r,ushort *c) {
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	copyScrToMem(buffer,screen(),VID_ROWS);
 	*r = row;
 	*c = col;
@@ -39,7 +39,7 @@ void Video::backup(char *buffer,ushort *r,ushort *c) {
 }
 
 void Video::restore(const char *buffer,ushort r,ushort c) {
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	copyMemToScr(screen(),buffer,VID_ROWS);
 	row = r;
 	col = c;
@@ -55,7 +55,7 @@ void Video::printf(const char *fmt,...) {
 
 void Video::vprintf(const char *fmt,va_list ap) {
 	if(targets & SCREEN) {
-		SpinLock::aquire(&lock);
+		SpinLock::acquire(&lock);
 		sPrintEnv env;
 		env.print = printFunc;
 		env.escape = handleColorCode;

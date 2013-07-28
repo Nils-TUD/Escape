@@ -88,7 +88,7 @@ public:
 	 * Clears the screen
 	 */
 	static void clearScreen() {
-		SpinLock::aquire(&lock);
+		SpinLock::acquire(&lock);
 		clear();
 		col = row = 0;
 		SpinLock::release(&lock);

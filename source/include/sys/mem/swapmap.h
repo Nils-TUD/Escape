@@ -99,7 +99,7 @@ private:
 };
 
 inline void SwapMap::incRefs(ulong block) {
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
 	swapBlocks[block].refCount++;
 	SpinLock::release(&lock);
@@ -107,7 +107,7 @@ inline void SwapMap::incRefs(ulong block) {
 
 inline bool SwapMap::isUsed(ulong block) {
 	bool res;
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	assert(block < totalBlocks);
 	res = swapBlocks[block].refCount > 0;
 	SpinLock::release(&lock);

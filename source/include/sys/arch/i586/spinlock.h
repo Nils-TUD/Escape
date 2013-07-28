@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 
-inline void SpinLock::aquire(klock_t *l) {
+inline void SpinLock::acquire(klock_t *l) {
 	asm volatile (
 		"mov	$1,%%ecx;"
 		"1:"

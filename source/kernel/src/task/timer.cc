@@ -55,7 +55,7 @@ void TimerBase::init(void) {
 int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	time_t msecDiff;
 	Listener *p,*nl,*l;
-	SpinLock::aquire(&timerLock);
+	SpinLock::acquire(&timerLock);
 	l = freeList;
 	if(l == NULL) {
 		SpinLock::release(&timerLock);
@@ -96,7 +96,7 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 
 void TimerBase::removeThread(tid_t tid) {
 	Listener *l,*p;
-	SpinLock::aquire(&timerLock);
+	SpinLock::acquire(&timerLock);
 	p = NULL;
 	for(l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
@@ -123,7 +123,7 @@ bool TimerBase::intrpt(void) {
 	Listener *l,*tl;
 	time_t timeInc = 1000 / FREQUENCY_DIV;
 
-	SpinLock::aquire(&timerLock);
+	SpinLock::acquire(&timerLock);
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
 

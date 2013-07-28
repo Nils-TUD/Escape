@@ -154,7 +154,7 @@ int Syscalls::lock(Thread *t,IntrptStackFrame *stack) {
 	ushort flags = (uint)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	int res = Lock::aquire(global ? INVALID_PID : pid,ident,flags);
+	int res = Lock::acquire(global ? INVALID_PID : pid,ident,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

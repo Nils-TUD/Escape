@@ -121,7 +121,7 @@ ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USE
 		off_t offset,size_t count) {
 	size_t byteCount = 0;
 	sFileContent *con = (sFileContent*)node->data;
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	if(con == NULL) {
 		SpinLock::release(&node->lock);
 		return -EDESTROYED;
@@ -145,7 +145,7 @@ ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *n,USER 
 	void *oldData;
 	size_t newSize = 0;
 	sFileContent *con = (sFileContent*)n->data;
-	SpinLock::aquire(&n->lock);
+	SpinLock::acquire(&n->lock);
 	if(con == NULL) {
 		SpinLock::release(&n->lock);
 		return -EDESTROYED;

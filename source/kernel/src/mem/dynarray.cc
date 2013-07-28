@@ -37,7 +37,7 @@ void DynArray::init() {
 void *DynArray::getObj(size_t index) const {
 	void *res = NULL;
 	Region *reg;
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	reg = regions;
 	/* note that we're using the index here to prevent that an object reaches out of a region */
 	while(reg != NULL) {
@@ -57,7 +57,7 @@ ssize_t DynArray::getIndex(const void *obj) const {
 	ssize_t res = -1;
 	size_t index = 0;
 	Region *reg;
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	reg = regions;
 	while(reg != NULL) {
 		if((uintptr_t)obj >= reg->addr && (uintptr_t)obj < reg->addr + reg->size) {

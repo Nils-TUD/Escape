@@ -22,7 +22,7 @@
 #include <sys/common.h>
 
 /* mmix does not support smp */
-inline void SpinLock::aquire(klock_t *) {
+inline void SpinLock::acquire(klock_t *) {
 }
 inline void SpinLock::release(klock_t *) {
 }

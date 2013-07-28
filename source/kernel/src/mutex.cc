@@ -29,9 +29,9 @@
 
 static klock_t mutexLock;
 
-void mutex_aquire(mutex_t *m) {
+void mutex_acquire(mutex_t *m) {
 	Thread *t = Thread::getRunning();
-	SpinLock::aquire(&mutexLock);
+	SpinLock::acquire(&mutexLock);
 	if(*m & 1) {
 		*m += 2;
 		printEventTrace(Util::getKernelStackTrace(),"[%d] Waiting for %#x ",t->getTid(),m);
@@ -39,7 +39,7 @@ void mutex_aquire(mutex_t *m) {
 			Event::wait(t,EVI_MUTEX,(evobj_t)m);
 			SpinLock::release(&mutexLock);
 			Thread::switchNoSigs();
-			SpinLock::aquire(&mutexLock);
+			SpinLock::acquire(&mutexLock);
 		}
 		while(*m & 1);
 		*m -= 2;
@@ -53,7 +53,7 @@ void mutex_aquire(mutex_t *m) {
 bool mutex_tryAquire(mutex_t *m) {
 	Thread *t = Thread::getRunning();
 	bool res = false;
-	SpinLock::aquire(&mutexLock);
+	SpinLock::acquire(&mutexLock);
 	if(!(*m & 1)) {
 		printEventTrace(Util::getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),m);
 		*m |= 1;
@@ -66,7 +66,7 @@ bool mutex_tryAquire(mutex_t *m) {
 
 void mutex_release(mutex_t *m) {
 	Thread *t = Thread::getRunning();
-	SpinLock::aquire(&mutexLock);
+	SpinLock::acquire(&mutexLock);
 	*m &= ~1;
 	t->remResource();
 	if(*m > 0)

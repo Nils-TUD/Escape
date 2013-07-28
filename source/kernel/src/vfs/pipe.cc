@@ -129,7 +129,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 	sPipeData *data;
 
 	/* wait until data is available */
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	if(node->name == NULL) {
 		SpinLock::release(&node->lock);
 		return -EDESTROYED;
@@ -142,7 +142,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
-		SpinLock::aquire(&node->lock);
+		SpinLock::acquire(&node->lock);
 		if(node->name == NULL) {
 			SpinLock::release(&node->lock);
 			return -EDESTROYED;
@@ -188,7 +188,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
 			Thread::switchNoSigs();
 
-			SpinLock::aquire(&node->lock);
+			SpinLock::acquire(&node->lock);
 			if(node->name == NULL) {
 				SpinLock::release(&node->lock);
 				return -EDESTROYED;
@@ -217,7 +217,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 
 	/* wait while our node is full */
 	if(count) {
-		SpinLock::aquire(&node->lock);
+		SpinLock::acquire(&node->lock);
 		if(node->name == NULL) {
 			SpinLock::release(&node->lock);
 			return -EDESTROYED;
@@ -230,7 +230,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			SpinLock::aquire(&node->lock);
+			SpinLock::acquire(&node->lock);
 			if(node->name == NULL) {
 				SpinLock::release(&node->lock);
 				return -EDESTROYED;
@@ -257,7 +257,7 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *
 	}
 
 	/* append */
-	SpinLock::aquire(&node->lock);
+	SpinLock::acquire(&node->lock);
 	if(node->name == NULL) {
 		SpinLock::release(&node->lock);
 		Cache::free(data);

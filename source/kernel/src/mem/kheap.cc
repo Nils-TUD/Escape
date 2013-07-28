@@ -45,7 +45,7 @@ void *KHeap::alloc(size_t size) {
 	/* align and we need 3 ulongs for the guards */
 	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 
 	/* find a suitable area */
 	prev = NULL;
@@ -133,7 +133,7 @@ void KHeap::free(void *addr) {
 	assert(begin[1] == GUARD_MAGIC);
 	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
 
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 
 	/* find the area with given address */
 	oprev = NULL;
@@ -243,7 +243,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 
 	begin = (ulong*)addr - 2;
 
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 
 	/* find the area with given address */
 	area = occupiedMap[getHash(begin)];

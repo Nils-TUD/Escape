@@ -62,7 +62,7 @@ inode_t vfs_node_getNo(const sVFSNode *node) {
 
 sVFSNode *vfs_node_request(inode_t nodeNo) {
 	sVFSNode *n = (sVFSNode*)nodeArray.getObj(nodeNo);
-	SpinLock::aquire(&n->lock);
+	SpinLock::acquire(&n->lock);
 	if(n->name)
 		return n;
 	SpinLock::release(&n->lock);
@@ -86,7 +86,7 @@ static sVFSNode *vfs_node_openDirOf(inode_t nodeNo,bool *isValid) {
 		else {
 			parent = vfs_link_resolve(dir);
 			vfs_node_release(dir);
-			SpinLock::aquire(&parent->lock);
+			SpinLock::acquire(&parent->lock);
 			*isValid = parent->name != NULL;
 		}
 		return parent->firstChild;
@@ -101,7 +101,7 @@ sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked,bool *isValid) {
 	else
 		parent = vfs_link_resolve(dir);
 	if(locked)
-		SpinLock::aquire(&parent->lock);
+		SpinLock::acquire(&parent->lock);
 	*isValid = parent->name != NULL;
 	return parent->firstChild;
 }
@@ -459,7 +459,7 @@ static void vfs_node_doDestroy(sVFSNode *n,bool remove) {
 	sVFSNode *tn;
 	sVFSNode *child;
 	bool norefs;
-	SpinLock::aquire(&n->lock);
+	SpinLock::acquire(&n->lock);
 	norefs = --n->refCount == 0;
 	SpinLock::release(&n->lock);
 
@@ -472,12 +472,12 @@ static void vfs_node_doDestroy(sVFSNode *n,bool remove) {
 		}
 	}
 
-	/* aquire both locks before n->destroy(). we can't destroy the node-data without lock because
+	/* acquire both locks before n->destroy(). we can't destroy the node-data without lock because
 	 * otherwise one could access it before the node is removed from the tree */
-	SpinLock::aquire(&n->lock);
+	SpinLock::acquire(&n->lock);
 	parent = n->parent;
 	if(parent)
-		SpinLock::aquire(&parent->lock);
+		SpinLock::acquire(&parent->lock);
 
 	/* take care that we don't destroy the node twice */
 	if(norefs) {
@@ -531,7 +531,7 @@ char *vfs_node_getId(pid_t pid) {
 	itoa(name,size,pid);
 	len = strlen(name);
 	*(name + len) = '.';
-	SpinLock::aquire(&nodesLock);
+	SpinLock::acquire(&nodesLock);
 	id = nextUsageId++;
 	SpinLock::release(&nodesLock);
 	itoa(name + len + 1,size - (len + 1),id);
@@ -595,7 +595,7 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 
 static sVFSNode *vfs_node_requestNode(void) {
 	sVFSNode *node = NULL;
-	SpinLock::aquire(&nodesLock);
+	SpinLock::acquire(&nodesLock);
 	if(freeList == NULL) {
 		size_t i,oldCount = nodeArray.getObjCount();
 		if(!nodeArray.extend()) {
@@ -622,7 +622,7 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 	*(char**)&node->name = NULL;
 	*(size_t*)&node->nameLen = 0;
 	*(pid_t*)&node->owner = INVALID_PID;
-	SpinLock::aquire(&nodesLock);
+	SpinLock::acquire(&nodesLock);
 	node->next = freeList;
 	freeList = node;
 	SpinLock::release(&nodesLock);

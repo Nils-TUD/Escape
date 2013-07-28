@@ -97,7 +97,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	frameno_t frame;
 	/* ensure that we won't get interrupted */
 	klock_t lock = 0;
-	SpinLock::aquire(&lock);
+	SpinLock::acquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
@@ -147,7 +147,7 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 
 bool ThreadBase::beginTerm() {
 	bool res;
-	SpinLock::aquire(&switchLock);
+	SpinLock::acquire(&switchLock);
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
 	res = state != Thread::RUNNING && termHeapCount == 0 && !hasResources();
@@ -160,7 +160,7 @@ bool ThreadBase::beginTerm() {
 
 void Thread::initialSwitch() {
 	Thread *cur;
-	SpinLock::aquire(&switchLock);
+	SpinLock::acquire(&switchLock);
 	cur = Sched::perform(NULL,0);
 	cur->stats.schedCount++;
 	VirtMem::setTimestamp(cur,Timer::getTimestamp());
@@ -176,7 +176,7 @@ void ThreadBase::doSwitch() {
 	Thread *n;
 	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
-	SpinLock::aquire(&switchLock);
+	SpinLock::acquire(&switchLock);
 
 	/* update runtime-stats */
 	cycles = CPU::rdtsc();

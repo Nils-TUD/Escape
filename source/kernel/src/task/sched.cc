@@ -58,7 +58,7 @@ void Sched::init(void) {
 }
 
 void Sched::addIdleThread(Thread *t) {
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	sll_append(&idleThreads,t);
 	SpinLock::release(&schedLock);
 }
@@ -66,7 +66,7 @@ void Sched::addIdleThread(Thread *t) {
 Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	ssize_t i;
 	Thread *t;
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	/* give the old thread a new state */
 	if(old) {
 		/* TODO it would be better to keep the idle-thread if we should idle again */
@@ -149,7 +149,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	const uint64_t threadSlice = (RUNTIME_UPDATE_INTVAL * 1000) / threadCount;
 	uint64_t runtime;
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->getStats().timeslice;
 	/* if the thread has used a lot of its timeslice, lower its priority */
 	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
@@ -185,7 +185,7 @@ bool Sched::setReady(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return false;
 
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	if(t->getState() == Thread::RUNNING) {
 		res = t->getNewState() != Thread::READY;
 		t->setNewState(Thread::READY);
@@ -207,7 +207,7 @@ bool Sched::setReadyQuick(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return false;
 
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	if(t->getState() == Thread::RUNNING) {
 		res = t->getNewState() != Thread::READY;
 		t->setNewState(Thread::READY);
@@ -229,7 +229,7 @@ bool Sched::setReadyQuick(Thread *t) {
 
 void Sched::setBlocked(Thread *t) {
 	assert(t != NULL);
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	switch(t->getState()) {
 		case Thread::ZOMBIE:
 		case Thread::ZOMBIE_SUSP:
@@ -257,7 +257,7 @@ void Sched::setBlocked(Thread *t) {
 void Sched::setSuspended(Thread *t,bool blocked) {
 	assert(t != NULL);
 
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	if(blocked) {
 		switch(t->getState()) {
 			/* already suspended, so ignore it */
@@ -308,7 +308,7 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 }
 
 void Sched::removeThread(Thread *t) {
-	SpinLock::aquire(&schedLock);
+	SpinLock::acquire(&schedLock);
 	switch(t->getState()) {
 		case Thread::RUNNING:
 			t->setNewState(Thread::ZOMBIE);

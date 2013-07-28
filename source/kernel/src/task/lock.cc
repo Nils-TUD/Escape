@@ -43,11 +43,11 @@ bool Lock::isLocked(const Entry *l,ushort flags) {
 	return res;
 }
 
-int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
+int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 	Thread *t = Thread::getRunning();
 	ssize_t i;
 	Entry *l;
-	SpinLock::aquire(&klock);
+	SpinLock::acquire(&klock);
 	i = get(pid,ident,true);
 	if(i < 0) {
 		SpinLock::release(&klock);
@@ -69,7 +69,7 @@ int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
 
 			Thread::switchNoSigs();
 
-			SpinLock::aquire(&klock);
+			SpinLock::acquire(&klock);
 			locks[i].waitCount--;
 		}
 		l = locks + i;
@@ -95,7 +95,7 @@ int Lock::aquire(pid_t pid,ulong ident,ushort flags) {
 int Lock::release(pid_t pid,ulong ident) {
 	ssize_t i;
 	Entry *l;
-	SpinLock::aquire(&klock);
+	SpinLock::acquire(&klock);
 	i = get(pid,ident,false);
 	l = locks + i;
 	if(i < 0) {
@@ -133,7 +133,7 @@ int Lock::release(pid_t pid,ulong ident) {
 
 void Lock::releaseAll(pid_t pid) {
 	size_t i;
-	SpinLock::aquire(&klock);
+	SpinLock::acquire(&klock);
 	for(i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
 			locks[i].flags = 0;

@@ -49,7 +49,7 @@
 
 static uint8_t buffer[PAGE_SIZE];
 
-bool VirtMem::aquire() const {
+bool VirtMem::acquire() const {
 	return Proc::request(pid,PLOCK_REGIONS) != NULL;
 }
 
@@ -102,7 +102,7 @@ uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	}
 
 	/* map memory */
-	if(!aquire())
+	if(!acquire())
 		goto errorRem;
 	res = getPageDir()->map(vm->virt,frames,pages,writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT);
 	if(res < 0)
@@ -150,7 +150,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 	}
 
 	/* get the attributes of the region (depending on type) */
-	if(!aquire())
+	if(!acquire())
 		return -ESRCH;
 
 	/* if it's a data-region.. */
@@ -250,7 +250,7 @@ int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 	VMRegion *vmreg;
 	int res = -EPERM;
 
-	if(!aquire())
+	if(!acquire())
 		return -ESRCH;
 
 	vmreg = regtree.getByAddr(addr);
@@ -259,7 +259,7 @@ int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 		return -ENXIO;
 	}
 
-	vmreg->reg->aquire();
+	vmreg->reg->acquire();
 	if(!vmreg || (vmreg->reg->getFlags() & (RF_NOFREE | RF_STACK | RF_TLS)))
 		goto error;
 
@@ -435,7 +435,7 @@ void VirtMem::setTimestamp(Thread *t,uint64_t timestamp) {
 float VirtMem::getMemUsage(size_t *pages) {
 	float rpages = 0;
 	*pages = 0;
-	if(aquire()) {
+	if(acquire()) {
 		VMRegion *vm;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			size_t j,count = 0;
@@ -454,7 +454,7 @@ float VirtMem::getMemUsage(size_t *pages) {
 
 bool VirtMem::getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) {
 	bool res = false;
-	if(!locked || aquire()) {
+	if(!locked || acquire()) {
 		if(start)
 			*start = vm->virt;
 		if(end)
@@ -495,7 +495,7 @@ bool VirtMem::pagefault(uintptr_t addr,bool write) {
 		return false;
 
 	VirtMem *vm = t->getProc()->getVM();
-	vm->aquire();
+	vm->acquire();
 	reg = vm->regtree.getByAddr(addr);
 	if(reg == NULL) {
 		vm->release();
@@ -512,7 +512,7 @@ bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 	bool res = false;
 	size_t page = (addr - vm->virt) / PAGE_SIZE;
 	ulong flags;
-	vm->reg->aquire();
+	vm->reg->acquire();
 	flags = vm->reg->getPageFlags(page);
 	addr &= ~(PAGE_SIZE - 1);
 	if(flags & PF_DEMANDLOAD) {
@@ -544,7 +544,7 @@ bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 }
 
 void VirtMem::removeAll(bool remStack) {
-	if(aquire()) {
+	if(acquire()) {
 		VMRegion *vm;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if((!(vm->reg->getFlags() & RF_STACK) || remStack))
@@ -555,7 +555,7 @@ void VirtMem::removeAll(bool remStack) {
 }
 
 void VirtMem::remove(VMRegion *vm) {
-	if(aquire()) {
+	if(acquire()) {
 		doRemove(vm);
 		release();
 	}
@@ -603,7 +603,7 @@ void VirtMem::sync(VMRegion *vm) const {
 void VirtMem::doRemove(VMRegion *vm) {
 	size_t i = 0;
 	size_t pcount;
-	vm->reg->aquire();
+	vm->reg->acquire();
 	pcount = BYTES_2_PAGES(vm->reg->getByteCount());
 	assert(vm->reg->remFrom(this));
 	if(vm->reg->refCount() == 0) {
@@ -674,7 +674,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 	if(dst == this)
 		return -EINVAL;
 
-	if(!aquire())
+	if(!acquire())
 		return -ESRCH;
 	// better use tryAquire here to prevent a deadlock; this is of course suboptimal because the
 	// caller would have to retry the operation in this case
@@ -687,7 +687,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 	if(vm == NULL)
 		goto errProc;
 
-	vm->reg->aquire();
+	vm->reg->acquire();
 	assert(vm->reg->getFlags() & RF_SHAREABLE);
 
 	if(dstAddr == 0)
@@ -732,7 +732,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 	Thread *t = Thread::getRunning();
 	assert(pid == t->getProc()->getPid());
 
-	if(!aquire())
+	if(!acquire())
 		return -ESRCH;
 	if(!dst->tryAquire()) {
 		release();
@@ -755,7 +755,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 			VMRegion *nvm = dst->regtree.add(vm->reg,vm->virt);
 			if(nvm == NULL)
 				goto error;
-			vm->reg->aquire();
+			vm->reg->acquire();
 			/* TODO ?? better don't share the file; they may have to read in parallel */
 			if(vm->reg->getFlags() & RF_SHAREABLE) {
 				vm->reg->addTo(dst);
@@ -843,7 +843,7 @@ error:
 
 int VirtMem::growStackTo(VMRegion *vm,uintptr_t addr) {
 	int res = -ENOMEM;
-	if(aquire()) {
+	if(acquire()) {
 		ssize_t newPages = 0;
 		addr &= ~(PAGE_SIZE - 1);
 		/* report failure if its outside (upper / lower) of the region */
@@ -886,7 +886,7 @@ int VirtMem::growStackTo(VMRegion *vm,uintptr_t addr) {
 size_t VirtMem::grow(uintptr_t addr,ssize_t amount) {
 	VMRegion *vm;
 	size_t res = 0;
-	if(!aquire())
+	if(!acquire())
 		return 0;
 	vm = regtree.getByAddr(addr);
 	if(vm)
@@ -899,7 +899,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 	size_t oldSize;
 	ssize_t res = -ENOMEM;
 	uintptr_t oldVirt,virt;
-	vm->reg->aquire();
+	vm->reg->acquire();
 	assert((vm->reg->getFlags() & RF_GROWABLE) && !(vm->reg->getFlags() & RF_SHAREABLE));
 
 	/* check whether we've reached the max stack-pages */
@@ -982,13 +982,13 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 }
 
 void VirtMem::sprintfRegions(sStringBuffer *buf) const {
-	if(aquire()) {
+	if(acquire()) {
 		VMRegion *vm;
 		size_t c = 0;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if(c)
 				prf_sprintf(buf,"\n");
-			vm->reg->aquire();
+			vm->reg->acquire();
 			prf_sprintf(buf,"VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
 			vm->reg->sprintf(buf,vm->virt);
 			vm->reg->release();
@@ -999,10 +999,10 @@ void VirtMem::sprintfRegions(sStringBuffer *buf) const {
 }
 
 void VirtMem::sprintfMaps(sStringBuffer *buf) const {
-	if(aquire()) {
+	if(acquire()) {
 		VMRegion *vm;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
-			vm->reg->aquire();
+			vm->reg->acquire();
 			prf_sprintf(buf,"%-24s %p - %p (%5zuK) %c%c%c%c",getRegName(vm),vm->virt,
 					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K,
 					(vm->reg->getFlags() & RF_WRITABLE) ? 'w' : '-',
@@ -1039,7 +1039,7 @@ const char *VirtMem::getRegName(const VMRegion *vm) const {
 }
 
 void VirtMem::printShort(const char *prefix) const {
-	if(aquire()) {
+	if(acquire()) {
 		VMRegion *vm;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			Video::printf("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(vm),vm->virt,
@@ -1052,7 +1052,7 @@ void VirtMem::printShort(const char *prefix) const {
 }
 
 void VirtMem::printRegions() const {
-	if(aquire()) {
+	if(acquire()) {
 		size_t c = 0;
 		VMRegion *vm;
 		Video::printf("Regions of proc %d (%s)\n",pid,Proc::getByPid(pid)->getCommand());
@@ -1191,7 +1191,7 @@ Region *VirtMem::getLRURegion() {
 		if(tree->getVM()->pid == DISK_PID)
 			continue;
 
-		/* same as below; we have to try to aquire the mutex, otherwise we risk a deadlock */
+		/* same as below; we have to try to acquire the mutex, otherwise we risk a deadlock */
 		if(tree->getVM()->tryAquire()) {
 			for(vm = tree->first(); vm != NULL; vm = vm->next) {
 				size_t j,count = 0,pages;

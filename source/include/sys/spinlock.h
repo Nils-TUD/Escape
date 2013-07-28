@@ -25,7 +25,7 @@ class SpinLock {
 	SpinLock() = delete;
 
 public:
-	static void aquire(klock_t *l);
+	static void acquire(klock_t *l);
 	static void release(klock_t *l);
 };
 

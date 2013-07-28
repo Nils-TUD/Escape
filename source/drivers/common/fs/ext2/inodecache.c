@@ -35,10 +35,10 @@
 #define ALLOC_LOCK	0xF7180001
 
 /**
- * Aquires the tpool_lock for given mode and inode. Assumes that ALLOC_LOCK is aquired and releases
+ * Aquires the tpool_lock for given mode and inode. Assumes that ALLOC_LOCK is acquired and releases
  * it at the end.
  */
-static void ext2_icache_aquire(sExt2CInode *inode,uint mode);
+static void ext2_icache_acquire(sExt2CInode *inode,uint mode);
 /**
  * Releases the given inode
  */
@@ -70,7 +70,7 @@ void ext2_icache_flush(sExt2 *e) {
 	for(inode = e->inodeCache; inode < end; inode++) {
 		if(inode->dirty) {
 			assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-			ext2_icache_aquire(inode,IMODE_READ);
+			ext2_icache_acquire(inode,IMODE_READ);
 			ext2_icache_write(e,inode);
 			ext2_icache_release(e,inode);
 		}
@@ -94,7 +94,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 
 	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
-			ext2_icache_aquire(inode,mode);
+			ext2_icache_acquire(inode,mode);
 			e->icacheHits++;
 			return inode;
 		}
@@ -103,7 +103,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 	if(inode == iend) {
 		for(inode = e->inodeCache; inode < startNode; inode++) {
 			if(inode->inodeNo == no) {
-				ext2_icache_aquire(inode,mode);
+				ext2_icache_acquire(inode,mode);
 				e->icacheHits++;
 				return inode;
 			}
@@ -132,7 +132,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 
 	/* write the old inode back, if necessary */
 	if(inode->dirty && inode->inodeNo != EXT2_BAD_INO) {
-		ext2_icache_aquire(inode,IMODE_READ);
+		ext2_icache_acquire(inode,IMODE_READ);
 		ext2_icache_write(e,inode);
 		ext2_icache_doRelease(e,inode,false);
 	}
@@ -141,14 +141,14 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 	inode->inodeNo = no;
 	inode->dirty = false;
 	/* first for writing because we have to load it */
-	ext2_icache_aquire(inode,IMODE_WRITE);
+	ext2_icache_acquire(inode,IMODE_WRITE);
 
 	ext2_icache_read(e,inode);
 
 	/* now use for the requested mode */
 	if(mode != IMODE_WRITE) {
 		ext2_icache_doRelease(e,inode,false);
-		ext2_icache_aquire(inode,mode);
+		ext2_icache_acquire(inode,mode);
 	}
 
 	e->icacheMisses++;
@@ -181,7 +181,7 @@ void ext2_icache_print(FILE *f,sExt2 *e) {
 	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
 }
 
-static void ext2_icache_aquire(sExt2CInode *inode,A_UNUSED uint mode) {
+static void ext2_icache_acquire(sExt2CInode *inode,A_UNUSED uint mode) {
 	inode->refs++;
 	assert(tpool_unlock(ALLOC_LOCK) == 0);
 	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);

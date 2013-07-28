@@ -77,7 +77,7 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	env.escape = NULL;
 	env.pipePad = NULL;
 	env.lineStart = true;
-	SpinLock::aquire(&bufLock);
+	SpinLock::acquire(&bufLock);
 	curbuf = buf;
 	prf_vprintf(&env,fmt,ap);
 	/* terminate */

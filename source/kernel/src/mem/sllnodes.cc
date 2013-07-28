@@ -47,7 +47,7 @@ static klock_t sllnLock;
 void *slln_allocNode(size_t size) {
 	sListNode *n;
 	assert(sizeof(sListNode) == size && offsetof(sSLNode,next) == offsetof(sListNode,next));
-	SpinLock::aquire(&sllnLock);
+	SpinLock::acquire(&sllnLock);
 	if(freelist == NULL) {
 		size_t i,oldCount;
 		oldCount = nodeArray.getObjCount();
@@ -69,7 +69,7 @@ void *slln_allocNode(size_t size) {
 
 void slln_freeNode(void *o) {
 	sListNode *n = (sListNode*)o;
-	SpinLock::aquire(&sllnLock);
+	SpinLock::acquire(&sllnLock);
 	n->next = freelist;
 	freelist = n;
 	SpinLock::release(&sllnLock);

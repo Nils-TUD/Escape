@@ -27,13 +27,13 @@
  *
  * @param m the mutex
  */
-void mutex_aquire(mutex_t *m);
+void mutex_acquire(mutex_t *m);
 
 /**
- * Tries to aquire the given mutex. If its locked, it does not block, but return false.
+ * Tries to acquire the given mutex. If its locked, it does not block, but return false.
  *
  * @param m the mutex
- * @return true if the mutex has been aquired
+ * @return true if the mutex has been acquired
  */
 bool mutex_tryAquire(mutex_t *m);
 

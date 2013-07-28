@@ -53,7 +53,7 @@ void Signals::init(void) {
 int Signals::setHandler(tid_t tid,int signal,handler_func func,handler_func *old) {
 	Data *s;
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = getThread(tid,true);
 	if(!s) {
 		SpinLock::release(&sigLock);
@@ -72,7 +72,7 @@ Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
 	handler_func old = NULL;
 	Data *s;
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = getThread(tid,false);
 	if(s) {
 		old = s->handler[signal];
@@ -85,7 +85,7 @@ Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
 
 void Signals::removeHandlerFor(tid_t tid) {
 	Data *s;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = getThread(tid,false);
 	if(s) {
 		Thread *t = Thread::getById(tid);
@@ -101,7 +101,7 @@ void Signals::removeHandlerFor(tid_t tid) {
 void Signals::cloneHandler(tid_t parent,tid_t child) {
 	Data *p;
 	Data *c;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	p = getThread(parent,false);
 	if(p) {
 		c = getThread(child,true);
@@ -114,7 +114,7 @@ void Signals::cloneHandler(tid_t parent,tid_t child) {
 bool Signals::hasSignalFor(tid_t tid) {
 	Data *s;
 	bool res = false;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = getThread(tid,false);
 	if(s && !s->currentSignal && (s->deliveredSignal || s->pending.count > 0)) {
 		Thread *t = Thread::getById(tid);
@@ -128,7 +128,7 @@ int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 	Thread *t = Thread::getById(tid);
 	Data *s;
 	int res = SIG_CHECK_NO;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = t->signals;
 	assert(t->isIgnoringSigs() == 0);
 	if(s && s->deliveredSignal && !s->currentSignal) {
@@ -179,7 +179,7 @@ int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 bool Signals::addSignalFor(tid_t tid,int signal) {
 	Data *s;
 	bool res = false;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = getThread(tid,false);
 	if(s && s->handler[signal]) {
 		if(s->handler[signal] != SIG_IGN)
@@ -193,7 +193,7 @@ bool Signals::addSignalFor(tid_t tid,int signal) {
 bool Signals::addSignal(int signal) {
 	sSLNode *n;
 	bool res = false;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
 		if(t->signals->handler[signal] && t->signals->handler[signal] != SIG_IGN) {
@@ -208,7 +208,7 @@ bool Signals::addSignal(int signal) {
 int Signals::ackHandling(tid_t tid) {
 	int res;
 	Data *s;
-	SpinLock::aquire(&sigLock);
+	SpinLock::acquire(&sigLock);
 	s = getThread(tid,false);
 	assert(s != NULL);
 	vassert(s->currentSignal != 0,"No signal handling");

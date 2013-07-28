@@ -53,7 +53,7 @@ void Event::init(void) {
 bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
-	SpinLock::aquire(&evLock);
+	SpinLock::acquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -68,7 +68,7 @@ bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
-	SpinLock::aquire(&evLock);
+	SpinLock::acquire(&evLock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -99,7 +99,7 @@ void Event::wakeup(size_t evi,evobj_t object) {
 	WaitList *list = evlists + evi;
 	sWait *w;
 	size_t i = 0;
-	SpinLock::aquire(&evLock);
+	SpinLock::acquire(&evLock);
 	w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
@@ -139,7 +139,7 @@ void Event::wakeupm(uint events,evobj_t object) {
 
 bool Event::wakeupThread(Thread *t,uint events) {
 	bool res = false;
-	SpinLock::aquire(&evLock);
+	SpinLock::acquire(&evLock);
 	if(t->events & events) {
 		doRemoveThread(t);
 		t->unblock();

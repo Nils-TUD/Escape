@@ -60,7 +60,7 @@ int main(void) {
 	phys = VIDEO_MEM;
 	videoData = (uint32_t*)regaddphys(&phys,MAX_COLS * ROWS * 4,0);
 	if(videoData == NULL)
-		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
+		error("Unable to acquire video-memory (%p)",VIDEO_MEM);
 
 	/* wait for messages */
 	while(1) {

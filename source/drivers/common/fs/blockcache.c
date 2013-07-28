@@ -31,7 +31,7 @@
 /**
  * Aquires the tpool_lock, depending on <mode>, for the given block
  */
-static void bcache_aquire(sCBlock *b,uint mode);
+static void bcache_acquire(sCBlock *b,uint mode);
 /**
  * Releases the tpool_lock for given block
  */
@@ -81,7 +81,7 @@ void bcache_flush(sBlockCache *c) {
 		assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 		if(bentry->dirty) {
 			vassert(c->write != NULL,"Block %d dirty, but no write-function",bentry->blockNo);
-			bcache_aquire(bentry,BMODE_READ);
+			bcache_acquire(bentry,BMODE_READ);
 			c->write(c->handle,bentry->buffer,bentry->blockNo,1);
 			bentry->dirty = false;
 			bcache_doRelease(bentry,false);
@@ -104,7 +104,7 @@ sCBlock *bcache_request(sBlockCache *c,block_t blockNo,uint mode) {
 	return bcache_doRequest(c,blockNo,true,mode);
 }
 
-static void bcache_aquire(sCBlock *b,uint mode) {
+static void bcache_acquire(sCBlock *b,uint mode) {
 	assert(!(mode & BMODE_WRITE) || b->refs == 0);
 	b->refs++;
 	assert(tpool_unlock(ALLOC_LOCK) == 0);
@@ -127,7 +127,7 @@ void bcache_release(sCBlock *b) {
 static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint mode) {
 	sCBlock *block,*bentry;
 
-	/* aquire tpool_lock for getting a block */
+	/* acquire tpool_lock for getting a block */
 	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	/* search for the block. perhaps it's already in cache */
@@ -150,7 +150,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 				bentry->next->prev = bentry;
 				c->usedBlocks = bentry;
 			}
-			bcache_aquire(bentry,mode);
+			bcache_acquire(bentry,mode);
 			c->hits++;
 			return bentry;
 		}
@@ -173,7 +173,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 	/* now read from disk */
 	if(doRead) {
 		/* we need always a write-tpool_lock because we have to read the content into it */
-		bcache_aquire(block,BMODE_WRITE);
+		bcache_acquire(block,BMODE_WRITE);
 		if(c->read(c->handle,block->buffer,blockNo,1) != 0) {
 			block->blockNo = 0;
 			bcache_doRelease(block,true);
@@ -182,7 +182,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 		bcache_doRelease(block,false);
 	}
 
-	bcache_aquire(block,mode);
+	bcache_acquire(block,mode);
 	c->misses++;
 	return block;
 }
@@ -219,7 +219,7 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 	/* if it is dirty we have to write it first to disk */
 	if(block->dirty) {
 		vassert(c->write != NULL,"Block %d dirty, but no write-function",block->blockNo);
-		bcache_aquire(block,BMODE_READ);
+		bcache_acquire(block,BMODE_READ);
 		c->write(c->handle,block->buffer,block->blockNo,1);
 		bcache_doRelease(block,false);
 	}

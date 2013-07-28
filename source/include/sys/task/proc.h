@@ -614,9 +614,9 @@ inline void ProcBase::release(Proc *p,size_t l) {
 
 inline void ProcBase::lock(size_t l) {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		mutex_aquire(locks + l);
+		mutex_acquire(locks + l);
 	else
-		SpinLock::aquire(locks + l);
+		SpinLock::acquire(locks + l);
 }
 
 inline void ProcBase::unlock(size_t l) {

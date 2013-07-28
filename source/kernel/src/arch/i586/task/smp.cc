@@ -66,9 +66,9 @@ bool SMPBase::init_arch() {
 			enabled = true;
 		}
 		/* if that's not available, use MPConf */
-		else if(mpconf_find()) {
+		else if(MPConfig::find()) {
 			LAPIC::enable();
-			mpconf_parse();
+			MPConfig::parse();
 			enabled = true;
 		}
 

@@ -55,7 +55,7 @@
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 #define PHYS2VIRT(x)			((void*)((uintptr_t)x + KERNEL_AREA))
 
-static const sBootTask tasks[] = {
+static const BootTask tasks[] = {
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
 	{"Initializing GDT...",GDT::init_bsp},
@@ -74,17 +74,18 @@ static const sBootTask tasks[] = {
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},
 };
-sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
+BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
+bool Boot::loadedMods = false;
+
 static uintptr_t physModAddrs[MAX_MOD_COUNT];
 static char mbbuf[PAGE_SIZE];
 static size_t mbbufpos = 0;
 
 extern void *_btext;
 extern void *_ebss;
-static sBootInfo *mb;
-static bool loadedMods = false;
+static BootInfo *mb;
 
-static void *boot_copy_mbinfo(const void *info,size_t len) {
+static void *copy_mbinfo(const void *info,size_t len) {
 	void *res = mbbuf + mbbufpos;
 	if(mbbufpos + len > sizeof(mbbuf))
 		Util::panic("Multiboot-buffer too small");
@@ -93,28 +94,28 @@ static void *boot_copy_mbinfo(const void *info,size_t len) {
 	return res;
 }
 
-void boot_arch_start(sBootInfo *info) {
+void Boot::archStart(BootInfo *info) {
 	size_t i;
-	sModule *mod;
+	BootModule *mod;
 	int argc;
 	const char **argv;
 
 	/* copy mb-stuff into buffer */
-	info = (sBootInfo*)boot_copy_mbinfo(info,sizeof(sBootInfo));
-	info->cmdLine = (char*)boot_copy_mbinfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
-	info->modsAddr = (sModule*)boot_copy_mbinfo(info->modsAddr,sizeof(sModule) * info->modsCount);
-	info->mmapAddr = (sMemMap*)boot_copy_mbinfo(info->mmapAddr,info->mmapLength);
-	info->drivesAddr = (sDrive*)boot_copy_mbinfo(info->drivesAddr,info->drivesLength);
+	info = (BootInfo*)copy_mbinfo(info,sizeof(BootInfo));
+	info->cmdLine = (char*)copy_mbinfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
+	info->modsAddr = (BootModule*)copy_mbinfo(info->modsAddr,sizeof(BootModule) * info->modsCount);
+	info->mmapAddr = (BootMemMap*)copy_mbinfo(info->mmapAddr,info->mmapLength);
+	info->drivesAddr = (BootDrive*)copy_mbinfo(info->drivesAddr,info->drivesLength);
 	mod = info->modsAddr;
 	for(i = 0; i < info->modsCount; i++) {
-		mod->name = (char*)boot_copy_mbinfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
+		mod->name = (char*)copy_mbinfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
 		physModAddrs[i] = mod->modStart;
 		mod++;
 	}
 	mb = info;
 	if(mb->modsCount > MAX_MOD_COUNT)
 		Util::panic("Too many modules (max %u)",MAX_MOD_COUNT);
-	bootTaskList.moduleCount = mb->modsCount;
+	taskList.moduleCount = mb->modsCount;
 
 	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
 	PageDir::init();
@@ -141,21 +142,21 @@ void boot_arch_start(sBootInfo *info) {
 	}
 
 	/* parse boot parameters */
-	argv = boot_parseArgs(mb->cmdLine,&argc);
+	argv = Boot::parseArgs(mb->cmdLine,&argc);
 	Config::parseBootParams(argc,argv);
 }
 
-const sBootInfo *boot_getInfo(void) {
+const BootInfo *Boot::getInfo() {
 	return mb;
 }
 
-size_t boot_getKernelSize(void) {
+size_t Boot::getKernelSize() {
 	uintptr_t start = (uintptr_t)&_btext;
 	uintptr_t end = (uintptr_t)&_ebss;
 	return end - start;
 }
 
-size_t boot_getModuleSize(void) {
+size_t Boot::getModuleSize() {
 	if(mb->modsCount == 0)
 		return 0;
 	uintptr_t start = mb->modsAddr[0].modStart;
@@ -163,9 +164,9 @@ size_t boot_getModuleSize(void) {
 	return end - start;
 }
 
-uintptr_t boot_getModuleRange(const char *name,size_t *size) {
+uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
 	size_t i;
-	sModule *mod = mb->modsAddr;
+	BootModule *mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		if(strcmp(mod->name,name) == 0) {
 			*size = mod->modEnd - mod->modStart;
@@ -176,13 +177,13 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 	return 0;
 }
 
-int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
+int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	char loadingStatus[256];
 	size_t i;
 	int child,res;
 	inode_t nodeNo;
 	sVFSNode *mbmods;
-	sModule *mod;
+	BootModule *mod;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
@@ -210,10 +211,10 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	for(i = 0; i < mb->modsCount; i++) {
 		/* parse args */
 		int argc;
-		const char **argv = boot_parseArgs(mod->name,&argc);
+		const char **argv = Boot::parseArgs(mod->name,&argc);
 		/* ignore modules with just a path; this might be a ramdisk */
 		if(argc == 1) {
-			boot_taskFinished();
+			Boot::taskFinished();
 			mod++;
 			continue;
 		}
@@ -223,7 +224,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 		strcpy(loadingStatus,"Loading ");
 		strcat(loadingStatus,argv[0]);
 		strcat(loadingStatus,"...");
-		boot_taskStarted(loadingStatus);
+		Boot::taskStarted(loadingStatus);
 
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			res = Proc::exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
@@ -246,7 +247,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 			Thread::switchAway();
 		}
 
-		boot_taskFinished();
+		Boot::taskFinished();
 		mod++;
 	}
 
@@ -262,9 +263,9 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	return 0;
 }
 
-void boot_print(void) {
+void Boot::print() {
 	size_t x;
-	sMemMap *mmap;
+	BootMemMap *mmap;
 	Video::printf("flags=0x%x\n",mb->flags);
 	if(CHECK_FLAG(mb->flags,0)) {
 		Video::printf("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
@@ -279,7 +280,7 @@ void boot_print(void) {
 	}
 	if(CHECK_FLAG(mb->flags,3)) {
 		size_t i;
-		sModule *mod = mb->modsAddr;
+		BootModule *mod = mb->modsAddr;
 		Video::printf("modsCount=%d:\n",mb->modsCount);
 		for(i = 0; i < mb->modsCount; i++) {
 			Video::printf("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,mod->modStart,mod->modEnd,
@@ -300,9 +301,9 @@ void boot_print(void) {
 		Video::printf("mmapLength=%d, mmapAddr=%p\n",mb->mmapLength,mb->mmapAddr);
 		Video::printf("memory-map:\n");
 		x = 0;
-		for(mmap = (sMemMap*)mb->mmapAddr;
+		for(mmap = (BootMemMap*)mb->mmapAddr;
 			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-			mmap = (sMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
+			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL) {
 				Video::printf("\t%d: addr=%#012Lx, size=%#012Lx, type=%s\n",
 						x,mmap->baseAddr,mmap->length,
@@ -313,7 +314,7 @@ void boot_print(void) {
 	}
 	if(CHECK_FLAG(mb->flags,7) && mb->drivesLength > 0) {
 		size_t i;
-		sDrive *drive = mb->drivesAddr;
+		BootDrive *drive = mb->drivesAddr;
 		Video::printf("Drives: (size=%u)\n",mb->drivesLength);
 		for(x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
 			Video::printf("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",

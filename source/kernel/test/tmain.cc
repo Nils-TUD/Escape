@@ -52,13 +52,13 @@
 #endif
 
 /* make gcc happy */
-EXTERN_C void bspstart(sBootInfo *mbp);
+EXTERN_C void bspstart(BootInfo *mbp);
 EXTERN_C uintptr_t smpstart(void);
 EXTERN_C void apstart(void);
 
-void bspstart(sBootInfo *bootinfo) {
+void bspstart(BootInfo *bootinfo) {
 	/* init the kernel */
-	boot_start(bootinfo);
+	Boot::start(bootinfo);
 
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);

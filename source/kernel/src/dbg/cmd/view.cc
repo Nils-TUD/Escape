@@ -98,7 +98,7 @@ static View views[] = {
 	{"acpi",(view_func)ACPI::print},
 #endif
 	{"timer",(view_func)Timer::print},
-	{"boot",(view_func)boot_print},
+	{"boot",(view_func)Boot::print},
 	{"locks",(view_func)Lock::print},
 	{"events",(view_func)Event::print},
 	{"smp",(view_func)SMP::print},

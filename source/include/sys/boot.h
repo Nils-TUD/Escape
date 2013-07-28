@@ -20,26 +20,23 @@
 #pragma once
 
 #include <esc/common.h>
-#ifdef __cplusplus
 #include <sys/interrupts.h>
-#endif
 
-typedef void (*fBootTask)(void);
-typedef struct {
+typedef void (*boottask_func)(void);
+struct BootTask {
 	const char *name;
-	fBootTask execute;
-} sBootTask;
+	boottask_func execute;
+};
 
-typedef struct sBootTaskList {
-	const sBootTask *tasks;
+struct BootTaskList {
+	const BootTask *tasks;
 	size_t count;
 	size_t moduleCount;
 
-#ifdef __cplusplus
-	sBootTaskList(const sBootTask *tasks,size_t count) : tasks(tasks), count(count), moduleCount(0) {
+	explicit BootTaskList(const BootTask *tasks,size_t count)
+		: tasks(tasks), count(count), moduleCount(0) {
 	}
-#endif
-} sBootTaskList;
+};
 
 #ifdef __i386__
 #include <sys/arch/i586/boot.h>
@@ -51,66 +48,82 @@ typedef struct sBootTaskList {
 #include <sys/arch/mmix/boot.h>
 #endif
 
-#ifdef __cplusplus
+class Boot {
+	Boot() = delete;
 
-/**
- * Starts the boot-process
- *
- * @param info the boot-information
- */
-void boot_start(sBootInfo *info);
+public:
+	/**
+	 * Starts the boot-process
+	 *
+	 * @param info the boot-information
+	 */
+	static void start(BootInfo *info);
 
-/**
- * Displays the given text that should indicate that a task in the boot-process
- * has just been started
- *
- * @param text the text to display
- */
-void boot_taskStarted(const char *text);
+	/**
+	 * @return the multiboot-info-structure
+	 */
+	static const BootInfo *getInfo();
 
-/**
- * Finishes an item, i.e. updates the progress-bar
- */
-void boot_taskFinished(void);
+	/**
+	 * Displays the given text that should indicate that a task in the boot-process
+	 * has just been started
+	 *
+	 * @param text the text to display
+	 */
+	static void taskStarted(const char *text);
 
-/**
- * Parses the given line into arguments
- *
- * @param line the line to parse
- * @param argc will be set to the number of found arguments
- * @return the arguments (statically allocated)
- */
-const char **boot_parseArgs(const char *line,int *argc);
+	/**
+	 * Finishes an item, i.e. updates the progress-bar
+	 */
+	static void taskFinished();
 
-/**
- * @return size of the kernel (in bytes)
- */
-size_t boot_getKernelSize(void);
+	/**
+	 * Parses the given line into arguments
+	 *
+	 * @param line the line to parse
+	 * @param argc will be set to the number of found arguments
+	 * @return the arguments (statically allocated)
+	 */
+	static const char **parseArgs(const char *line,int *argc);
 
-/**
- * @return size of the multiboot-modules (in bytes)
- */
-size_t boot_getModuleSize(void);
+	/**
+	 * @return size of the kernel (in bytes)
+	 */
+	static size_t getKernelSize();
 
-/**
- * Determines the physical address range of the multiboot-module with given name
- *
- * @param name the module-name
- * @param size will be set to the size in bytes
- * @return the address of the module (physical) or 0 if not found
- */
-uintptr_t boot_getModuleRange(const char *name,size_t *size);
+	/**
+	 * @return size of the multiboot-modules (in bytes)
+	 */
+	static size_t getModuleSize();
 
-/**
- * Loads all multiboot-modules
- *
- * @param stack the interrupt-stack-frame
- */
-int boot_loadModules(IntrptStackFrame *stack);
+	/**
+	 * Determines the physical address range of the multiboot-module with given name
+	 *
+	 * @param name the module-name
+	 * @param size will be set to the size in bytes
+	 * @return the address of the module (physical) or 0 if not found
+	 */
+	static uintptr_t getModuleRange(const char *name,size_t *size);
 
-/**
- * Prints all interesting elements of the multi-boot-structure
- */
-void boot_print(void);
+	/**
+	 * Loads all multiboot-modules
+	 *
+	 * @param stack the interrupt-stack-frame
+	 */
+	static int loadModules(IntrptStackFrame *stack);
 
-#endif
+	/**
+	 * Prints all interesting elements of the multi-boot-structure
+	 */
+	static void print();
+
+private:
+	static void archStart(BootInfo *info);
+	static void drawProgressBar();
+
+	/**
+	 * The boot-tasks to load
+	 */
+	static BootTaskList taskList;
+	static bool loadedMods;
+};

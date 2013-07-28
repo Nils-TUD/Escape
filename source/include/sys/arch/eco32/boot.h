@@ -25,40 +25,23 @@
 #define MAX_CMD_LEN		128
 #define MAX_PROG_COUNT	8
 
+#define BL_DISK_ID		0
+#define BL_FS_ID		1
+#define BL_RTC_ID		2
+#define BL_K_ID			3
+
 /* a program we should load */
-typedef struct {
+struct LoadProg {
 	char path[MAX_PATH_LEN];
 	char command[MAX_PATH_LEN];
 	uint id;
 	uintptr_t start;
 	size_t size;
-} sLoadProg;
+};
 
-typedef struct {
+struct BootInfo {
 	size_t progCount;
-	const sLoadProg *progs;
+	const LoadProg *progs;
 	size_t memSize;
 	size_t diskSize;
-} sBootInfo;
-
-#define BL_DISK_ID	0
-#define BL_FS_ID	1
-#define BL_RTC_ID	2
-#define BL_K_ID		3
-
-/**
- * Performs the architecture-dependend stuff at the beginning of the boot-process
- *
- * @param info the boot-information
- */
-void boot_arch_start(sBootInfo *info);
-
-/**
- * @return the multiboot-info-structure
- */
-const sBootInfo *boot_getInfo(void);
-
-/**
- * The boot-tasks to load
- */
-extern const sBootTaskList bootTaskList;
+};

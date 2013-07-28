@@ -157,7 +157,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	pid_t pid = t->getProc()->getPid();
 	if(t->getProc()->getFlags() & P_BOOT) {
 		size_t i;
-		const sBootInfo *info = boot_getInfo();
+		const BootInfo *info = Boot::getInfo();
 		for(i = 1; i < info->progCount; i++) {
 			if(info->progs[i].id == pid) {
 				if(ELF::finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)

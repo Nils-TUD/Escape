@@ -43,7 +43,7 @@
 #include <sys/video.h>
 #include <string.h>
 
-static const sBootTask tasks[] = {
+static const BootTask tasks[] = {
 	{"Initializing physical memory-management...",PhysMem::init},
 	{"Initializing address spaces...",AddressSpace::init},
 	{"Initializing paging...",PageDir::init},
@@ -60,22 +60,23 @@ static const sBootTask tasks[] = {
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},
 };
-const sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
+BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
+bool Boot::loadedMods = false;
 
-static sLoadProg progs[MAX_PROG_COUNT];
-static sBootInfo info;
+static LoadProg progs[MAX_PROG_COUNT];
+static BootInfo info;
 static int bootState = 0;
 static int bootFinished = 1;
 
-void boot_arch_start(sBootInfo *binfo) {
+void Boot::archStart(BootInfo *binfo) {
 	int argc;
 	const char **argv;
 
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
 	 * shortly */
-	memcpy(&info,binfo,sizeof(sBootInfo));
+	memcpy(&info,binfo,sizeof(BootInfo));
 	info.progs = progs;
-	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
+	memcpy((void*)info.progs,binfo->progs,sizeof(LoadProg) * binfo->progCount);
 	/* start idle-thread, load programs (without kernel) and wait for programs */
 	bootFinished = (info.progCount - 1) * 2 + 1;
 
@@ -83,25 +84,25 @@ void boot_arch_start(sBootInfo *binfo) {
 	CPU::setSpeed(info.cpuHz);
 
 	/* parse the boot parameter */
-	argv = boot_parseArgs(binfo->progs[0].command,&argc);
+	argv = Boot::parseArgs(binfo->progs[0].command,&argc);
 	Config::parseBootParams(argc,argv);
 }
 
-const sBootInfo *boot_getInfo(void) {
+const BootInfo *Boot::getInfo() {
 	return &info;
 }
 
-size_t boot_getKernelSize(void) {
+size_t Boot::getKernelSize() {
 	return progs[0].size;
 }
 
-size_t boot_getModuleSize(void) {
+size_t Boot::getModuleSize() {
 	uintptr_t start = progs[1].start;
 	uintptr_t end = progs[info.progCount - 1].start + progs[info.progCount - 1].size;
 	return end - start;
 }
 
-uintptr_t boot_getModuleRange(const char *name,size_t *size) {
+uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
 	size_t i;
 	for(i = 1; i < info.progCount; i++) {
 		if(strcmp(progs[i].command,name) == 0) {
@@ -112,7 +113,7 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 	return 0;
 }
 
-int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
+int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	size_t i;
 	int child;
 
@@ -135,7 +136,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			int res,argc;
 			/* parse args */
-			const char **argv = boot_parseArgs(progs[i].command,&argc);
+			const char **argv = Boot::parseArgs(progs[i].command,&argc);
 			if(argc < 2)
 				Util::panic("Invalid arguments for boot-module: %s\n",progs[i].path);
 			/* exec */
@@ -154,7 +155,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 		i = bootState / 2;
 		inode_t nodeNo;
 		int argc;
-		const char **argv = boot_parseArgs(progs[i].command,&argc);
+		const char **argv = Boot::parseArgs(progs[i].command,&argc);
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
@@ -185,7 +186,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	return bootState == bootFinished ? 0 : 1;
 }
 
-void boot_print(void) {
+void Boot::print() {
 	size_t i;
 	Video::printf("Memory size: %zu bytes\n",info.memSize);
 	Video::printf("Disk size: %zu bytes\n",info.diskSize);

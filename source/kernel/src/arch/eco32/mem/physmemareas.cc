@@ -25,8 +25,8 @@
 #include <sys/util.h>
 
 void PhysMemAreas::initArch(void) {
-	const sBootInfo *binfo = boot_getInfo();
-	const sLoadProg *last;
+	const BootInfo *binfo = Boot::getInfo();
+	const LoadProg *last;
 
 	/* mark everything behind the modules as free */
 	if(binfo->progCount == 0)
@@ -36,6 +36,6 @@ void PhysMemAreas::initArch(void) {
 }
 
 size_t PhysMemAreas::getTotal(void) {
-	const sBootInfo *binfo = boot_getInfo();
+	const BootInfo *binfo = Boot::getInfo();
 	return binfo->memSize;
 }

@@ -27,7 +27,7 @@
 #include <sys/util.h>
 #include <assert.h>
 
-EXTERN_C uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss);
+EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss);
 
 static A_ALIGNED(8) uint8_t initloader[] = {
 #if DEBUGGING
@@ -37,11 +37,11 @@ static A_ALIGNED(8) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(sBootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
+uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	Thread *t;
 	ELF::StartupInfo info;
 
-	boot_start(bootinfo);
+	Boot::start(bootinfo);
 
 	/* give the process some stack pages */
 	t = Thread::getRunning();

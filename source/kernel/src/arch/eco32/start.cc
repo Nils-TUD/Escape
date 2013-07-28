@@ -26,7 +26,7 @@
 #include <sys/util.h>
 #include <assert.h>
 
-EXTERN_C uintptr_t bspstart(sBootInfo *bootinfo);
+EXTERN_C uintptr_t bspstart(BootInfo *bootinfo);
 
 static A_ALIGNED(4) uint8_t initloader[] = {
 #if DEBUGGING
@@ -36,11 +36,11 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(sBootInfo *bootinfo) {
+uintptr_t bspstart(BootInfo *bootinfo) {
 	Thread *t;
 	ELF::StartupInfo info;
 
-	boot_start(bootinfo);
+	Boot::start(bootinfo);
 
 	/* load initloader */
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)

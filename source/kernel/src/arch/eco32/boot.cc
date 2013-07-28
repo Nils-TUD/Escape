@@ -41,7 +41,7 @@
 #include <sys/util.h>
 #include <string.h>
 
-static const sBootTask tasks[] = {
+static const BootTask tasks[] = {
 	{"Initializing physical memory-management...",PhysMem::init},
 	{"Initializing paging...",PageDir::init},
 	{"Preinit processes...",Proc::preinit},
@@ -57,43 +57,43 @@ static const sBootTask tasks[] = {
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},
 };
-const sBootTaskList bootTaskList(tasks,ARRAY_SIZE(tasks));
+BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
+bool Boot::loadedMods = false;
 
-static bool loadedMods = false;
-static sLoadProg progs[MAX_PROG_COUNT];
-static sBootInfo info;
+static LoadProg progs[MAX_PROG_COUNT];
+static BootInfo info;
 
-void boot_arch_start(sBootInfo *binfo) {
+void Boot::archStart(BootInfo *binfo) {
 	int argc;
 	const char **argv;
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
 	 * shortly */
-	memcpy(&info,binfo,sizeof(sBootInfo));
+	memcpy(&info,binfo,sizeof(BootInfo));
 	info.progs = progs;
-	memcpy((void*)info.progs,binfo->progs,sizeof(sLoadProg) * binfo->progCount);
+	memcpy((void*)info.progs,binfo->progs,sizeof(LoadProg) * binfo->progCount);
 
 	Video::init();
 
 	/* parse the boot parameter */
-	argv = boot_parseArgs(binfo->progs[0].command,&argc);
+	argv = parseArgs(binfo->progs[0].command,&argc);
 	Config::parseBootParams(argc,argv);
 }
 
-const sBootInfo *boot_getInfo(void) {
+const BootInfo *Boot::getInfo() {
 	return &info;
 }
 
-size_t boot_getKernelSize(void) {
+size_t Boot::getKernelSize() {
 	return progs[0].size;
 }
 
-size_t boot_getModuleSize(void) {
+size_t Boot::getModuleSize() {
 	uintptr_t start = progs[1].start;
 	uintptr_t end = progs[info.progCount - 1].start + progs[info.progCount - 1].size;
 	return end - start;
 }
 
-uintptr_t boot_getModuleRange(const char *name,size_t *size) {
+uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
 	size_t i;
 	for(i = 1; i < info.progCount; i++) {
 		if(strcmp(progs[i].command,name) == 0) {
@@ -104,7 +104,7 @@ uintptr_t boot_getModuleRange(const char *name,size_t *size) {
 	return 0;
 }
 
-int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
+int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	size_t i;
 	inode_t nodeNo;
 	int child;
@@ -120,7 +120,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	for(i = 1; i < info.progCount; i++) {
 		/* parse args */
 		int argc;
-		const char **argv = boot_parseArgs(progs[i].command,&argc);
+		const char **argv = parseArgs(progs[i].command,&argc);
 		if(argc < 2)
 			Util::panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 
@@ -161,7 +161,7 @@ int boot_loadModules(A_UNUSED IntrptStackFrame *stack) {
 	return 0;
 }
 
-void boot_print(void) {
+void Boot::print() {
 	size_t i;
 	Video::printf("Memory size: %zu bytes\n",info.memSize);
 	Video::printf("Disk size: %zu bytes\n",info.diskSize);

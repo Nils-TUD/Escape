@@ -34,44 +34,43 @@
 #define BAR_PADX		((VID_COLS - BAR_WIDTH) / 2)
 #define BAR_PADY		((VID_ROWS / 2) - ((BAR_HEIGHT + 2) / 2) - 1)
 
-static void drawProgressBar(void);
 extern void (*CTORS_BEGIN)();
 extern void (*CTORS_END)();
 
 static size_t finished = 0;
 
-void boot_start(sBootInfo *info) {
+void Boot::start(BootInfo *info) {
 	size_t i;
 	for(void (**func)() = &CTORS_BEGIN; func != &CTORS_END; func++)
 		(*func)();
 
-	boot_arch_start(info);
+	archStart(info);
 	Video::setTargets(Video::SCREEN);
 	drawProgressBar();
-	for(i = 0; i < bootTaskList.count; i++) {
-		const sBootTask *task = bootTaskList.tasks + i;
+	for(i = 0; i < taskList.count; i++) {
+		const BootTask *task = taskList.tasks + i;
 		Log::printf("%s",task->name);
-		boot_taskStarted(task->name);
+		taskStarted(task->name);
 		task->execute();
 		Log::printf("%|s","done");
-		boot_taskFinished();
+		taskFinished();
 	}
 
 	Log::printf("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
 			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / K);
 }
 
-void boot_taskStarted(const char *text) {
+void Boot::taskStarted(const char *text) {
 	Video::goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
 	Video::printf("%-*s",VID_COLS - BAR_PADX * 2,text);
 }
 
-void boot_taskFinished(void) {
+void Boot::taskFinished() {
 	const uint width = BAR_WIDTH - 3;
 	size_t total;
 	uint percent,filled;
 	finished++;
-	total = bootTaskList.count + bootTaskList.moduleCount;
+	total = taskList.count + taskList.moduleCount;
 	percent = KERNEL_PERCENT * ((float)finished / total);
 	filled = percent == 0 ? 0 : (uint)(width / (100.0 / percent));
 	Video::goTo(BAR_PADY + 1,BAR_PADX + 1);
@@ -81,7 +80,7 @@ void boot_taskFinished(void) {
 		Video::printf("%*s",width - filled," ");
 }
 
-const char **boot_parseArgs(const char *line,int *argc) {
+const char **Boot::parseArgs(const char *line,int *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
 	size_t i = 0,j = 0;
@@ -106,7 +105,7 @@ const char **boot_parseArgs(const char *line,int *argc) {
 	return (const char**)args;
 }
 
-static void drawProgressBar(void) {
+void Boot::drawProgressBar() {
 	ushort x,y;
 	/* top */
 	Video::goTo(BAR_PADY,BAR_PADX);

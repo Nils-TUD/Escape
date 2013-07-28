@@ -32,7 +32,7 @@
 #include <errno.h>
 
 int Syscalls::loadmods(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	int res = boot_loadModules(stack);
+	int res = Boot::loadModules(stack);
 	SYSC_RET1(stack,res);
 }
 

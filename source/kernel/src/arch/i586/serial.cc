@@ -23,45 +23,34 @@
 #include <sys/spinlock.h>
 #include <assert.h>
 
-enum {
-	DLR_LO	= 0,
-	DLR_HI	= 1,
-	IER		= 1,	/* interrupt enable register */
-	FCR		= 2,	/* FIFO control register */
-	LCR		= 3,	/* line control register */
-	MCR		= 4,	/* modem control register */
-};
-
-static int ser_isTransmitEmpty(uint16_t port);
-static void ser_initPort(uint16_t port);
-
-static const uint16_t ports[] = {
+const uint16_t Serial::ports[] = {
 	/* COM1 */	0x3F8,
 	/* COM2 */	0x2E8,
 	/* COM3 */	0x2F8,
 	/* COM4 */	0x3E8
 };
-static klock_t serialLock;
+klock_t Serial::serialLock;
 
-void ser_init(void) {
-	ser_initPort(ports[SER_COM1]);
+void Serial::init() {
+	initPort(ports[COM1]);
 }
 
-void ser_out(uint16_t port,uint8_t byte) {
+void Serial::out(uint16_t port,uint8_t byte) {
 	uint16_t ioport;
 	assert(port < ARRAY_SIZE(ports));
 	ioport = ports[port];
 	spinlock_aquire(&serialLock);
-	while(ser_isTransmitEmpty(ioport) == 0);
+	while(isTransmitEmpty(ioport) == 0)
+		;
 	Ports::out<uint8_t>(ioport,byte);
 	spinlock_release(&serialLock);
 }
 
-static int ser_isTransmitEmpty(uint16_t port) {
+int Serial::isTransmitEmpty(uint16_t port) {
 	return Ports::in<uint8_t>(port + 5) & 0x20;
 }
 
-static void ser_initPort(uint16_t port) {
+void Serial::initPort(uint16_t port) {
 	Ports::out<uint8_t>(port + LCR,0x80);		/* Enable DLAB (set baud rate divisor) */
 	Ports::out<uint8_t>(port + DLR_LO,0x01);	/* Set divisor to 1 (lo byte) 115200 baud */
 	Ports::out<uint8_t>(port + DLR_HI,0x00);	/*                  (hi byte) */

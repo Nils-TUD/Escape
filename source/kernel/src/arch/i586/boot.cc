@@ -124,7 +124,7 @@ void boot_arch_start(sBootInfo *info) {
 	/* init basic modules */
 	vid_init();
 	FPU::preinit();
-	ser_init();
+	Serial::init();
 
 	/* init physical memory and paging */
 	Proc::preinit();

@@ -24,5 +24,5 @@
 void log_writeChar(char c) {
 	/* write to COM1 (some chars make no sense here) */
 	if(c != '\r' && c != '\b')
-		ser_out(SER_COM1,c);
+		Serial::out(Serial::COM1,c);
 }

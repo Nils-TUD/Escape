@@ -21,26 +21,31 @@
 
 #include <sys/common.h>
 
-/* Represents one symbol (address -> name) */
-typedef struct {
-	uintptr_t address;
-	const char *funcName;
-} sSymbol;
-
 class OStream;
 
-/**
- * Prints all kernel-symbols
- *
- * @param os the output-stream
- */
-void ksym_print(OStream &os);
+class KSymbols {
+	KSymbols() = delete;
 
-/**
- * Searches for the highest address lower than the given one in the symbol-table. In other
- * words: The name of the function to which the given address belongs
- *
- * @param address the address
- * @return the pointer to the symbol (no copy!)
- */
-sSymbol *ksym_getSymbolAt(uintptr_t address);
+public:
+	/* Represents one symbol (address -> name) */
+	struct Symbol {
+		uintptr_t address;
+		const char *funcName;
+	};
+
+	/**
+	 * Prints all kernel-symbols
+	 *
+	 * @param os the output-stream
+	 */
+	static void print(OStream &os);
+
+	/**
+	 * Searches for the highest address lower than the given one in the symbol-table. In other
+	 * words: The name of the function to which the given address belongs
+	 *
+	 * @param address the address
+	 * @return the pointer to the symbol (no copy!)
+	 */
+	static Symbol *getSymbolAt(uintptr_t address);
+};

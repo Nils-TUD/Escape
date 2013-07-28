@@ -187,7 +187,7 @@ Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,ui
 	size_t i;
 	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA;
 	Util::FuncCall *frame = &frames[0];
-	sSymbol *sym;
+	KSymbols::Symbol *sym;
 	uint32_t *oldebp;
 
 	for(i = 0; i < Util::MAX_STACK_DEPTH; i++) {
@@ -203,7 +203,7 @@ Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,ui
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		if(isKernel) {
-			sym = ksym_getSymbolAt(frame->addr);
+			sym = KSymbols::getSymbolAt(frame->addr);
 			frame->funcAddr = sym->address;
 			frame->funcName = sym->funcName;
 		}

@@ -3,10 +3,10 @@
 echo "#include <sys/ksymbols.h>"
 echo "#include <sys/video.h>"
 echo ""
-echo "sSymbol kernel_symbols[] = {"
+echo "KSymbols::Symbol kernel_symbols[] = {"
 
 if [ "$1" != "-" ]; then
-	objdump -t $* | gawk '
+	objdump -tC $* | gawk '
 	/^[a-f0-9]+.+?\.text.*$/ {
 		address = gensub(/^([a-f0-9]+).*/, "\\1", 1)
 		name = gensub(/^[a-f0-9]+.+?\.text[ \t]+[a-f0-9]+[ \t]+(.+)$/, "\\1", 1)

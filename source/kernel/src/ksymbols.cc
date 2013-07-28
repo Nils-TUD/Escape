@@ -21,18 +21,18 @@
 #include <sys/ksymbols.h>
 #include <sys/video.h>
 
-extern sSymbol kernel_symbols[];
+extern KSymbols::Symbol kernel_symbols[];
 extern size_t kernel_symbol_count;
 
-void ksym_print(OStream &os) {
+void KSymbols::print(OStream &os) {
 	size_t i;
 	os.writef("Kernel-Symbols:\n");
 	for(i = 0; i < kernel_symbol_count; i++)
 		os.writef("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
 }
 
-sSymbol *ksym_getSymbolAt(uintptr_t address) {
-	sSymbol *sym = &kernel_symbols[kernel_symbol_count - 1];
+KSymbols::Symbol *KSymbols::getSymbolAt(uintptr_t address) {
+	Symbol *sym = &kernel_symbols[kernel_symbol_count - 1];
 	while(sym >= &kernel_symbols[0]) {
 		if(address >= sym->address)
 			return sym;

@@ -21,21 +21,12 @@
 
 #include <sys/common.h>
 
-#ifdef __eco32__
-#include <sys/arch/eco32/debug.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/debug.h>
-#endif
+class Term : public OStream {
+public:
+	virtual void writec(char c) {
+		debugc(c);
+	}
 
-class OStream;
-
-/**
- * Starts the timer
- */
-void dbg_startTimer(void);
-
-/**
- * Stops the timer and prints the number of clock-cycles done until startTimer()
- */
-void dbg_stopTimer(OStream &os,const char *prefix);
+private:
+	static void debugc(char c) asm("debugc");
+};

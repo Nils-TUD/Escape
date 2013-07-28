@@ -22,7 +22,6 @@
 #include <sys/dbg/kb.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/cache.h>
-#include <sys/debug.h>
 #include <sys/interrupts.h>
 #include <sys/util.h>
 #include <sys/cpu.h>

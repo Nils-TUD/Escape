@@ -45,7 +45,7 @@
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/log.h>
-#include <sys/debug.h>
+#include <sys/term.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
@@ -300,13 +300,8 @@ int ProcBase::clone(uint8_t flags) {
 	Event::unblock(nt);
 
 #if DEBUG_CREATIONS
-#ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command,
-			nt->archAttr.kstackFrame);
-#endif
-#ifdef __mmix__
-	debugf("Thread %d (proc %d:%s)\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command);
-#endif
+	Term().writef("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,
+			nt->getProc()->command,nt->getKernelStack());
 #endif
 
 	release(cur,PLOCK_PROG);
@@ -379,13 +374,8 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		Event::unblock(nt);
 
 #if DEBUG_CREATIONS
-#ifdef __eco32__
-	debugf("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command,
-			nt->archAttr.kstackFrame);
-#endif
-#ifdef __mmix__
-	debugf("Thread %d (proc %d:%s)\n",nt->getTid(),nt->getProc()->pid,nt->getProc()->command);
-#endif
+	Term().writef("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,
+			nt->getProc()->command,nt->getKernelStack());
 #endif
 
 	release(p,PLOCK_PROG);
@@ -477,12 +467,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	p->virtmem.resetStats();
 
 #if DEBUG_CREATIONS
-#ifdef __eco32__
-	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
-#endif
-#ifdef __mmix__
-	debugf("EXEC: proc %d:%s\n",p->pid,p->command);
-#endif
+	Term().writef("EXEC: proc %d:%s\n",p->pid,p->command);
 #endif
 
 	/* make process ready */

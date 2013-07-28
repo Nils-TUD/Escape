@@ -34,7 +34,6 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/util.h>
-#include <sys/debug.h>
 #include <errno.h>
 #include <string.h>
 

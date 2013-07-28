@@ -59,3 +59,7 @@ void Serial::initPort(uint16_t port) {
 	Ports::out<uint8_t>(port + FCR,7);
 	Ports::out<uint8_t>(port + MCR,3);
 }
+
+void Serial::debugc(char c) {
+	out(COM1,c);
+}

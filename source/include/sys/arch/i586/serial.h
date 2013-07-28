@@ -55,6 +55,7 @@ public:
 	static void out(uint16_t port,uint8_t byte);
 
 private:
+	static void debugc(char c) asm("debugc");
 	static int isTransmitEmpty(uint16_t port);
 	static void initPort(uint16_t port);
 

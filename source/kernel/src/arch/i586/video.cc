@@ -183,8 +183,8 @@ static void vid_handleColorCode(const char **str) {
 }
 
 static void vid_removeBIOSCursor(void) {
-	ports_outByte(0x3D4,14);
-	ports_outByte(0x3D5,0x07);
-	ports_outByte(0x3D4,15);
-	ports_outByte(0x3D5,0xd0);
+	Ports::out<uint8_t>(0x3D4,14);
+	Ports::out<uint8_t>(0x3D5,0x07);
+	Ports::out<uint8_t>(0x3D4,15);
+	Ports::out<uint8_t>(0x3D5,0xd0);
 }

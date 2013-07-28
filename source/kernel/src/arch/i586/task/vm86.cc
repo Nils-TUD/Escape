@@ -277,26 +277,26 @@ void VM86::handleGPF(sIntrptStackFrame *stack) {
 		case X86OP_OUTW:
 			DBGVM86("[VM86] outw (0x%x -> 0x%x)\n",stack->eax,stack->edx);
 			if(data32)
-				ports_outDWord(stack->edx,stack->eax);
+				Ports::out<uint32_t>(stack->edx,stack->eax);
 			else
-				ports_outWord(stack->edx,stack->eax);
+				Ports::out<uint16_t>(stack->edx,stack->eax);
 			stack->eip++;
 			break;
 		case X86OP_OUTB:
 			DBGVM86("[VM86] outb (0x%x -> 0x%x)\n",stack->eax,stack->edx);
-			ports_outByte(stack->edx,stack->eax);
+			Ports::out<uint8_t>(stack->edx,stack->eax);
 			stack->eip++;
 			break;
 		case X86OP_INW:
 			if(data32)
-				stack->eax = ports_inDWord(stack->edx);
+				stack->eax = Ports::in<uint32_t>(stack->edx);
 			else
-				stack->eax = ports_inWord(stack->edx);
+				stack->eax = Ports::in<uint16_t>(stack->edx);
 			DBGVM86("[VM86] inw (0x%x <- 0x%x)\n",stack->eax,stack->edx);
 			stack->eip++;
 			break;
 		case X86OP_INB:
-			stack->eax = (stack->eax & 0xFF00) + ports_inByte(stack->edx);
+			stack->eax = (stack->eax & 0xFF00) + Ports::in<uint8_t>(stack->edx);
 			DBGVM86("[VM86] inb (0x%x <- 0x%x)\n",stack->eax,stack->edx);
 			stack->eip++;
 			break;

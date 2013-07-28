@@ -19,52 +19,31 @@
 
 #pragma once
 
-#include <sys/common.h>
+class Ports {
+	Ports() = delete;
 
-/**
- * Outputs the <val> to the I/O-Port <port>
- *
- * @param port the port
- * @param val the value
- */
-extern void ports_outByte(uint16_t port,uint8_t val);
+public:
+	/**
+	 * Reads the value from the I/O-Port <port>
+	 *
+	 * @param port the port
+	 * @return the value
+	 */
+    template<typename T>
+    static T in(unsigned port) {
+        T val;
+        asm volatile ("in %w1, %0" : "=a"(val) : "Nd"(port));
+        return val;
+    }
 
-/**
- * Outputs the <val> to the I/O-Port <port>
- *
- * @param port the port
- * @param val the value
- */
-extern void ports_outWord(uint16_t port,uint16_t val);
-
-/**
- * Outputs the <val> to the I/O-Port <port>
- *
- * @param port the port
- * @param val the value
- */
-extern void ports_outDWord(uint16_t port,uint32_t val);
-
-/**
- * Reads the value from the I/O-Port <port>
- *
- * @param port the port
- * @return the value
- */
-extern uint8_t ports_inByte(uint16_t port);
-
-/**
- * Reads the value from the I/O-Port <port>
- *
- * @param port the port
- * @return the value
- */
-extern uint16_t ports_inWord(uint16_t port);
-
-/**
- * Reads the value from the I/O-Port <port>
- *
- * @param port the port
- * @return the value
- */
-extern uint32_t ports_inDWord(uint16_t port);
+	/**
+	 * Outputs the <val> to the I/O-Port <port>
+	 *
+	 * @param port the port
+	 * @param val the value
+	 */
+    template<typename T>
+    static void out(unsigned port, T val) {
+        asm volatile ("out %0, %w1" : : "a"(val), "Nd"(port));
+    }
+};

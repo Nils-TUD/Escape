@@ -27,10 +27,10 @@ uint64_t Timer::cpuMhz;
 void TimerBase::archInit() {
 	/* change timer divisor */
 	uint freq = Timer::BASE_FREQUENCY / Timer::FREQUENCY_DIV;
-	ports_outByte(Timer::IOPORT_CTRL,Timer::CTRL_CHAN0 | Timer::CTRL_RWLOHI |
+	Ports::out<uint8_t>(Timer::IOPORT_CTRL,Timer::CTRL_CHAN0 | Timer::CTRL_RWLOHI |
 	              Timer::CTRL_MODE2 | Timer::CTRL_CNTBIN16);
-	ports_outByte(Timer::IOPORT_CHAN0DIV,freq & 0xFF);
-	ports_outByte(Timer::IOPORT_CHAN0DIV,freq >> 8);
+	Ports::out<uint8_t>(Timer::IOPORT_CHAN0DIV,freq & 0xFF);
+	Ports::out<uint8_t>(Timer::IOPORT_CHAN0DIV,freq >> 8);
 }
 
 void Timer::wait(uint us) {
@@ -80,11 +80,11 @@ uint64_t Timer::determineSpeed(int instrCount) {
 	uint32_t left;
 	volatile int i;
 	/* set PIT channel 0 to single-shot mode */
-	ports_outByte(IOPORT_CTRL,CTRL_CHAN0 | CTRL_RWLOHI |
+	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0 | CTRL_RWLOHI |
 			CTRL_MODE2 | CTRL_CNTBIN16);
 	/* set reload-value to 65535 */
-	ports_outByte(IOPORT_CHAN0DIV,0xFF);
-	ports_outByte(IOPORT_CHAN0DIV,0xFF);
+	Ports::out<uint8_t>(IOPORT_CHAN0DIV,0xFF);
+	Ports::out<uint8_t>(IOPORT_CHAN0DIV,0xFF);
 
 	/* now spend some time and measure the number of cycles */
 	before = CPU::rdtsc();
@@ -93,9 +93,9 @@ uint64_t Timer::determineSpeed(int instrCount) {
 	after = CPU::rdtsc();
 
 	/* read current count */
-	ports_outByte(IOPORT_CTRL,CTRL_CHAN0);
-	left = ports_inByte(IOPORT_CHAN0DIV);
-	left |= ports_inByte(IOPORT_CHAN0DIV) << 8;
+	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0);
+	left = Ports::in<uint8_t>(IOPORT_CHAN0DIV);
+	left |= Ports::in<uint8_t>(IOPORT_CHAN0DIV) << 8;
 	/* if there was no tick at all, we have to increase instrCount */
 	if(left == 0xFFFF)
 		return 0;

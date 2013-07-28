@@ -53,20 +53,20 @@ void ser_out(uint16_t port,uint8_t byte) {
 	ioport = ports[port];
 	spinlock_aquire(&serialLock);
 	while(ser_isTransmitEmpty(ioport) == 0);
-	ports_outByte(ioport,byte);
+	Ports::out<uint8_t>(ioport,byte);
 	spinlock_release(&serialLock);
 }
 
 static int ser_isTransmitEmpty(uint16_t port) {
-	return ports_inByte(port + 5) & 0x20;
+	return Ports::in<uint8_t>(port + 5) & 0x20;
 }
 
 static void ser_initPort(uint16_t port) {
-	ports_outByte(port + LCR,0x80);		/* Enable DLAB (set baud rate divisor) */
-	ports_outByte(port + DLR_LO,0x01);	/* Set divisor to 1 (lo byte) 115200 baud */
-	ports_outByte(port + DLR_HI,0x00);	/*                  (hi byte) */
-	ports_outByte(port + LCR,0x03);	/* 8 bits, no parity, one stop bit */
-	ports_outByte(port + IER,0);		/* disable interrupts */
-	ports_outByte(port + FCR,7);
-	ports_outByte(port + MCR,3);
+	Ports::out<uint8_t>(port + LCR,0x80);		/* Enable DLAB (set baud rate divisor) */
+	Ports::out<uint8_t>(port + DLR_LO,0x01);	/* Set divisor to 1 (lo byte) 115200 baud */
+	Ports::out<uint8_t>(port + DLR_HI,0x00);	/*                  (hi byte) */
+	Ports::out<uint8_t>(port + LCR,0x03);	/* 8 bits, no parity, one stop bit */
+	Ports::out<uint8_t>(port + IER,0);		/* disable interrupts */
+	Ports::out<uint8_t>(port + FCR,7);
+	Ports::out<uint8_t>(port + MCR,3);
 }

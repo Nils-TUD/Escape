@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/pic.h>
-#include <sys/arch/i586/ports.h>
 #include <sys/arch/i586/intrpt.h>
+#include <sys/arch/i586/ports.h>
 
 /* I/O ports for PICs */
 #define PIC_MASTER				0x20				/* base-port for master PIC */
@@ -48,22 +48,22 @@
 
 void pic_init(void) {
 	/* starts the initialization. we want to send a ICW4 */
-	ports_outByte(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	ports_outByte(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	Ports::out<uint8_t>(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	Ports::out<uint8_t>(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
 	/* remap the irqs to 0x20 and 0x28 */
-	ports_outByte(PIC_MASTER_DATA,IRQ_MASTER_BASE);
-	ports_outByte(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
+	Ports::out<uint8_t>(PIC_MASTER_DATA,IRQ_MASTER_BASE);
+	Ports::out<uint8_t>(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
 	/* continue */
-	ports_outByte(PIC_MASTER_DATA,4);
-	ports_outByte(PIC_SLAVE_DATA,2);
+	Ports::out<uint8_t>(PIC_MASTER_DATA,4);
+	Ports::out<uint8_t>(PIC_SLAVE_DATA,2);
 
 	/* we want to use 8086 mode */
-	ports_outByte(PIC_MASTER_DATA,ICW4_8086);
-	ports_outByte(PIC_SLAVE_DATA,ICW4_8086);
+	Ports::out<uint8_t>(PIC_MASTER_DATA,ICW4_8086);
+	Ports::out<uint8_t>(PIC_SLAVE_DATA,ICW4_8086);
 
 	/* enable all interrupts (set masks to 0) */
-	ports_outByte(PIC_MASTER_DATA,0x00);
-	ports_outByte(PIC_SLAVE_DATA,0x00);
+	Ports::out<uint8_t>(PIC_MASTER_DATA,0x00);
+	Ports::out<uint8_t>(PIC_SLAVE_DATA,0x00);
 }
 
 void pic_eoi(uint32_t intrptNo) {
@@ -71,10 +71,10 @@ void pic_eoi(uint32_t intrptNo) {
 	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
 	    if(intrptNo >= IRQ_SLAVE_BASE) {
 	    	/* notify the slave */
-	        ports_outByte(PIC_SLAVE_CMD,PIC_EOI);
+	        Ports::out<uint8_t>(PIC_SLAVE_CMD,PIC_EOI);
 	    }
 
 	    /* notify the master */
-	    ports_outByte(PIC_MASTER_CMD,PIC_EOI);
+	    Ports::out<uint8_t>(PIC_MASTER_CMD,PIC_EOI);
     }
 }

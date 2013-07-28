@@ -29,7 +29,7 @@
 #include <assert.h>
 
 sSLList Terminator::deadThreads;
-klock_t Terminator::termLock;
+klock_t Terminator::lock;
 
 void Terminator::init() {
 	sll_init(&deadThreads,slln_allocNode,slln_freeNode);
@@ -37,22 +37,22 @@ void Terminator::init() {
 
 void Terminator::start() {
 	Thread *t = Thread::getRunning();
-	SpinLock::acquire(&termLock);
+	SpinLock::acquire(&lock);
 	while(1) {
 		if(sll_length(&deadThreads) == 0) {
 			Event::wait(t,EVI_TERMINATION,0);
-			SpinLock::release(&termLock);
+			SpinLock::release(&lock);
 
 			Thread::switchAway();
 
-			SpinLock::acquire(&termLock);
+			SpinLock::acquire(&lock);
 		}
 
 		while(sll_length(&deadThreads) > 0) {
 			Thread *dt = (Thread*)sll_removeFirst(&deadThreads);
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
-			SpinLock::release(&termLock);
+			SpinLock::release(&lock);
 
 			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
@@ -61,18 +61,18 @@ void Terminator::start() {
 			}
 			Proc::killThread(dt->getTid());
 
-			SpinLock::acquire(&termLock);
+			SpinLock::acquire(&lock);
 		}
 	}
 }
 
 void Terminator::addDead(Thread *t) {
-	SpinLock::acquire(&termLock);
+	SpinLock::acquire(&lock);
 	/* ensure that we don't add a thread twice */
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(sll_append(&deadThreads,t));
 		Event::wakeup(EVI_TERMINATION,0);
 	}
-	SpinLock::release(&termLock);
+	SpinLock::release(&lock);
 }

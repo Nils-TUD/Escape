@@ -222,7 +222,7 @@ private:
 	static void removePending(Data *s,int sig);
 	static Data *getThread(tid_t tid,bool create);
 
-	static klock_t sigLock;
+	static klock_t lock;
 	static size_t pendingSignals;
 	static sSLList sigThreads;
 	static PendingSig signals[SIGNAL_COUNT];

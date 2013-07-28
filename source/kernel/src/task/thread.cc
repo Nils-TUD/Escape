@@ -47,7 +47,7 @@
 sSLList ThreadBase::threads;
 Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
-klock_t ThreadBase::threadLock;
+klock_t ThreadBase::lock;
 
 Thread *ThreadBase::init(Proc *p) {
 	Thread *curThread;
@@ -115,9 +115,9 @@ void ThreadBase::initProps() {
 
 size_t ThreadBase::getCount() {
 	size_t len;
-	SpinLock::acquire(&threadLock);
+	SpinLock::acquire(&lock);
 	len = sll_length(&threads);
-	SpinLock::release(&threadLock);
+	SpinLock::release(&lock);
 	return len;
 }
 
@@ -155,7 +155,7 @@ void ThreadBase::updateRuntimes(void) {
 	sSLNode *n;
 	size_t threadCount;
 	uint64_t cyclesPerSec = Thread::ticksPerSec();
-	SpinLock::acquire(&threadLock);
+	SpinLock::acquire(&lock);
 	threadCount = sll_length(&threads);
 	for(n = sll_begin(&threads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
@@ -172,7 +172,7 @@ void ThreadBase::updateRuntimes(void) {
 		/* raise/lower the priority if necessary */
 		Sched::adjustPrio(t,threadCount);
 	}
-	SpinLock::release(&threadLock);
+	SpinLock::release(&lock);
 }
 
 bool ThreadBase::reserveFrames(size_t count) {
@@ -381,7 +381,7 @@ void ThreadBase::print(OStream &os) const {
 tid_t ThreadBase::getFreeTid(void) {
 	size_t count = 0;
 	tid_t res = INVALID_TID;
-	SpinLock::acquire(&threadLock);
+	SpinLock::acquire(&lock);
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)
 			nextTid = 0;
@@ -391,24 +391,24 @@ tid_t ThreadBase::getFreeTid(void) {
 		}
 		count++;
 	}
-	SpinLock::release(&threadLock);
+	SpinLock::release(&lock);
 	return res;
 }
 
 bool ThreadBase::add() {
 	bool res = false;
-	SpinLock::acquire(&threadLock);
+	SpinLock::acquire(&lock);
 	if(sll_append(&threads,this)) {
 		tidToThread[tid] = static_cast<Thread*>(this);
 		res = true;
 	}
-	SpinLock::release(&threadLock);
+	SpinLock::release(&lock);
 	return res;
 }
 
 void ThreadBase::remove() {
-	SpinLock::acquire(&threadLock);
+	SpinLock::acquire(&lock);
 	sll_removeFirstWith(&threads,this);
 	tidToThread[tid] = NULL;
-	SpinLock::release(&threadLock);
+	SpinLock::release(&lock);
 }

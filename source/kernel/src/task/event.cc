@@ -30,7 +30,7 @@
 #include <sys/video.h>
 #include <assert.h>
 
-klock_t Event::evLock;
+klock_t Event::lock;
 sWait Event::waits[MAX_WAIT_COUNT];
 sWait *Event::waitFree;
 Event::WaitList Event::evlists[EV_COUNT];
@@ -53,7 +53,7 @@ void Event::init(void) {
 bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
 	sWait *w;
-	SpinLock::acquire(&evLock);
+	SpinLock::acquire(&lock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -61,14 +61,14 @@ bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 		t->block();
 		res = true;
 	}
-	SpinLock::release(&evLock);
+	SpinLock::release(&lock);
 	return res;
 }
 
 bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 	size_t i,e;
 	sWait *w;
-	SpinLock::acquire(&evLock);
+	SpinLock::acquire(&lock);
 	w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
@@ -81,7 +81,7 @@ bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 					w = doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
 						doRemoveThread(t);
-						SpinLock::release(&evLock);
+						SpinLock::release(&lock);
 						return false;
 					}
 					events &= ~(1 << e);
@@ -90,7 +90,7 @@ bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 		}
 	}
 	t->block();
-	SpinLock::release(&evLock);
+	SpinLock::release(&lock);
 	return true;
 }
 
@@ -99,7 +99,7 @@ void Event::wakeup(size_t evi,evobj_t object) {
 	WaitList *list = evlists + evi;
 	sWait *w;
 	size_t i = 0;
-	SpinLock::acquire(&evLock);
+	SpinLock::acquire(&lock);
 	w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
@@ -124,7 +124,7 @@ void Event::wakeup(size_t evi,evobj_t object) {
 		doRemoveThread(t);
 		t->unblock();
 	}
-	SpinLock::release(&evLock);
+	SpinLock::release(&lock);
 }
 
 void Event::wakeupm(uint events,evobj_t object) {
@@ -139,13 +139,13 @@ void Event::wakeupm(uint events,evobj_t object) {
 
 bool Event::wakeupThread(Thread *t,uint events) {
 	bool res = false;
-	SpinLock::acquire(&evLock);
+	SpinLock::acquire(&lock);
 	if(t->events & events) {
 		doRemoveThread(t);
 		t->unblock();
 		res = true;
 	}
-	SpinLock::release(&evLock);
+	SpinLock::release(&lock);
 	return res;
 }
 

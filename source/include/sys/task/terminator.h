@@ -48,5 +48,5 @@ private:
 	static void addDead(Thread *t);
 
 	static sSLList deadThreads;
-	static klock_t termLock;
+	static klock_t lock;
 };

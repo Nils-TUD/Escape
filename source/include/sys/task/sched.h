@@ -122,7 +122,7 @@ private:
 	static void qPrepend(Queue *q,Thread *t);
 	static void qPrint(OStream &os,Queue *q);
 
-	static klock_t schedLock;
+	static klock_t lock;
 	static Queue rdyQueues[];
 	static size_t rdyCount;
 	static sSLList idleThreads;

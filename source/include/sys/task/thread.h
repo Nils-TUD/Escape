@@ -690,7 +690,7 @@ private:
 	static sSLList threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;
-	static klock_t threadLock;
+	static klock_t lock;
 };
 
 #ifdef __i386__

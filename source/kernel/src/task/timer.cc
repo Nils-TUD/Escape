@@ -34,7 +34,7 @@ time_t TimerBase::lastResched = 0;
 time_t TimerBase::lastRuntimeUpdate = 0;
 size_t TimerBase::timerIntrpts = 0;
 
-klock_t TimerBase::timerLock;
+klock_t TimerBase::lock;
 TimerBase::Listener TimerBase::listenObjs[LISTENER_COUNT];
 TimerBase::Listener *TimerBase::freeList;
 TimerBase::Listener *TimerBase::listener = NULL;
@@ -55,10 +55,10 @@ void TimerBase::init(void) {
 int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	time_t msecDiff;
 	Listener *p,*nl,*l;
-	SpinLock::acquire(&timerLock);
+	SpinLock::acquire(&lock);
 	l = freeList;
 	if(l == NULL) {
-		SpinLock::release(&timerLock);
+		SpinLock::release(&lock);
 		return -ENOMEM;
 	}
 
@@ -90,13 +90,13 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	/* put process to sleep */
 	if(block)
 		Event::block(Thread::getById(tid));
-	SpinLock::release(&timerLock);
+	SpinLock::release(&lock);
 	return 0;
 }
 
 void TimerBase::removeThread(tid_t tid) {
 	Listener *l,*p;
-	SpinLock::acquire(&timerLock);
+	SpinLock::acquire(&lock);
 	p = NULL;
 	for(l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
@@ -115,7 +115,7 @@ void TimerBase::removeThread(tid_t tid) {
 			break;
 		}
 	}
-	SpinLock::release(&timerLock);
+	SpinLock::release(&lock);
 }
 
 bool TimerBase::intrpt(void) {
@@ -123,7 +123,7 @@ bool TimerBase::intrpt(void) {
 	Listener *l,*tl;
 	time_t timeInc = 1000 / FREQUENCY_DIV;
 
-	SpinLock::acquire(&timerLock);
+	SpinLock::acquire(&lock);
 	timerIntrpts++;
 	elapsedMsecs += timeInc;
 
@@ -166,7 +166,7 @@ bool TimerBase::intrpt(void) {
 		lastResched = elapsedMsecs;
 		res = true;
 	}
-	SpinLock::release(&timerLock);
+	SpinLock::release(&lock);
 	return res;
 }
 

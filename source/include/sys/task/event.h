@@ -205,7 +205,7 @@ private:
 	static void freeWait(sWait *w);
 	static const char *getName(size_t evi);
 
-	static klock_t evLock;
+	static klock_t lock;
 	static sWait waits[MAX_WAIT_COUNT];
 	static sWait *waitFree;
 	static WaitList evlists[EV_COUNT];
@@ -234,7 +234,7 @@ inline void Event::unsuspend(Thread *t) {
 }
 
 inline void Event::removeThread(Thread *t) {
-	SpinLock::acquire(&evLock);
+	SpinLock::acquire(&lock);
 	doRemoveThread(t);
-	SpinLock::release(&evLock);
+	SpinLock::release(&lock);
 }

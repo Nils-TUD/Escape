@@ -109,7 +109,7 @@ private:
 #if DEBUGGING
 	static bool aafEnabled;
 #endif
-	static klock_t cacheLock;
+	static klock_t lock;
 	static size_t pages;
 	static Entry caches[];
 };

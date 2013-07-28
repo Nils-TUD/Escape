@@ -120,7 +120,7 @@ private:
 	static time_t lastRuntimeUpdate;
 	static size_t timerIntrpts;
 
-	static klock_t timerLock;
+	static klock_t lock;
 	static Listener listenObjs[LISTENER_COUNT];
 	static Listener *freeList;
 	/* processes that should be waked up to a specified time */

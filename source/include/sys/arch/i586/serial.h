@@ -60,5 +60,5 @@ private:
 	static void initPort(uint16_t port);
 
 	static const uint16_t ports[];
-	static klock_t serialLock;
+	static klock_t lock;
 };

@@ -44,7 +44,7 @@
  * a static storage of nodes for the linked list; we use the threads itself)
  */
 
-klock_t Sched::schedLock;
+klock_t Sched::lock;
 Sched::Queue Sched::rdyQueues[MAX_PRIO + 1];
 size_t Sched::rdyCount;
 sSLList Sched::idleThreads;
@@ -58,15 +58,15 @@ void Sched::init(void) {
 }
 
 void Sched::addIdleThread(Thread *t) {
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	sll_append(&idleThreads,t);
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 }
 
 Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	ssize_t i;
 	Thread *t;
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	/* give the old thread a new state */
 	if(old) {
 		/* TODO it would be better to keep the idle-thread if we should idle again */
@@ -82,7 +82,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
-				SpinLock::release(&schedLock);
+				SpinLock::release(&lock);
 				Event::removeThread(old);
 				return old;
 			}
@@ -142,14 +142,14 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	if(rdyCount > 0)
 		SMP::wakeupCPU();
 
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 	return t;
 }
 
 void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	const uint64_t threadSlice = (RUNTIME_UPDATE_INTVAL * 1000) / threadCount;
 	uint64_t runtime;
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->getStats().timeslice;
 	/* if the thread has used a lot of its timeslice, lower its priority */
 	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
@@ -176,7 +176,7 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 		}
 	}
 	t->getStats().timeslice = RUNTIME_UPDATE_INTVAL * 1000;
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 }
 
 bool Sched::setReady(Thread *t) {
@@ -185,7 +185,7 @@ bool Sched::setReady(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return false;
 
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	if(t->getState() == Thread::RUNNING) {
 		res = t->getNewState() != Thread::READY;
 		t->setNewState(Thread::READY);
@@ -197,7 +197,7 @@ bool Sched::setReady(Thread *t) {
 			res = true;
 		}
 	}
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 	return res;
 }
 
@@ -207,7 +207,7 @@ bool Sched::setReadyQuick(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return false;
 
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	if(t->getState() == Thread::RUNNING) {
 		res = t->getNewState() != Thread::READY;
 		t->setNewState(Thread::READY);
@@ -223,13 +223,13 @@ bool Sched::setReadyQuick(Thread *t) {
 			res = true;
 		}
 	}
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 	return res;
 }
 
 void Sched::setBlocked(Thread *t) {
 	assert(t != NULL);
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	switch(t->getState()) {
 		case Thread::ZOMBIE:
 		case Thread::ZOMBIE_SUSP:
@@ -251,13 +251,13 @@ void Sched::setBlocked(Thread *t) {
 			vassert(false,"Invalid state for setBlocked (%d)",t->getState());
 			break;
 	}
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 }
 
 void Sched::setSuspended(Thread *t,bool blocked) {
 	assert(t != NULL);
 
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	if(blocked) {
 		switch(t->getState()) {
 			/* already suspended, so ignore it */
@@ -304,16 +304,16 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 				break;
 		}
 	}
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 }
 
 void Sched::removeThread(Thread *t) {
-	SpinLock::acquire(&schedLock);
+	SpinLock::acquire(&lock);
 	switch(t->getState()) {
 		case Thread::RUNNING:
 			t->setNewState(Thread::ZOMBIE);
 			SMP::killThread(t);
-			SpinLock::release(&schedLock);
+			SpinLock::release(&lock);
 			return;
 		case Thread::ZOMBIE:
 		case Thread::BLOCKED:
@@ -329,7 +329,7 @@ void Sched::removeThread(Thread *t) {
 	}
 	t->setState(Thread::ZOMBIE);
 	t->setNewState(Thread::ZOMBIE);
-	SpinLock::release(&schedLock);
+	SpinLock::release(&lock);
 }
 
 void Sched::print(OStream &os) {

@@ -90,7 +90,7 @@ void ACPI::parse() {
 			/* determine the real number of required pages */
 			tmpPages = (tbloff + tbllen + PAGE_SIZE - 1) / PAGE_SIZE;
 			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
-				log_printf("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
+				Log::printf("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
 				continue;
 			}
 			/* map it again */
@@ -103,7 +103,7 @@ void ACPI::parse() {
 
 		/* do we have to extend the mapping in the ACPI-area? */
 		if(curDest + tmptbl->length > destEnd) {
-			log_printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
+			Log::printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
 					curDest + tmptbl->length,destEnd);
 			PageDir::unmapFromTemp(tmpPages);
 			continue;
@@ -116,7 +116,7 @@ void ACPI::parse() {
 			curDest += tmptbl->length;
 		}
 		else
-			log_printf("Checksum of table %zu is invalid. Skipping\n",i);
+			Log::printf("Checksum of table %zu is invalid. Skipping\n",i);
 		PageDir::unmapFromTemp(tmpPages);
 	}
 

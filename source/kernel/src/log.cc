@@ -35,30 +35,20 @@
 #include <string.h>
 
 #define TAB_WIDTH		4
-#define BUF_SIZE		2048
 #define LOG_DIR			"/system"
 #define LOG_FILENAME	"log"
 #define DUMMY_STDIN		"/system/stdin"
 
-static void log_printc(char c);
-static uchar log_pipePad(void);
-static void log_escape(const char **str);
-static ssize_t log_write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,
-		off_t offset,size_t count);
-static void log_flush(void);
+char Log::buf[BUF_SIZE];
+size_t Log::bufPos;
+uint Log::col = 0;
+bool Log::logToSer = true;
+sFile *Log::logFile;
+bool Log::vfsReady = false;
+klock_t Log::lock;
+sPrintEnv Log::env(printc,escape,pipePad);
 
-/* don't use a heap here to prevent problems */
-static char buf[BUF_SIZE];
-static size_t bufPos;
-static uint col = 0;
-
-static bool logToSer = true;
-static sFile *logFile;
-static bool vfsIsReady = false;
-static klock_t logLock;
-static sPrintEnv env(log_printc,log_escape,log_pipePad);
-
-void log_vfsIsReady(void) {
+void Log::vfsIsReady() {
 	inode_t inodeNo;
 	sVFSNode *logNode;
 	sFile *inFile;
@@ -69,7 +59,7 @@ void log_vfsIsReady(void) {
 	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
 	nameCpy = strdup(LOG_FILENAME);
 	assert(nameCpy != NULL);
-	logNode = vfs_file_create(KERNEL_PID,vfs_node_get(inodeNo),nameCpy,vfs_file_read,log_write);
+	logNode = vfs_file_create(KERNEL_PID,vfs_node_get(inodeNo),nameCpy,vfs_file_read,write);
 	assert(logNode != NULL);
 	assert(vfs_openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO,&logFile) == 0);
 
@@ -83,33 +73,18 @@ void log_vfsIsReady(void) {
 	assert(FileDesc::assoc(logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
-	vfsIsReady = true;
+	vfsReady = true;
 	/* don't write that again to COM1 */
 	logToSer = false;
-	log_flush();
+	flush();
 	logToSer = true;
 }
 
-void log_printf(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	log_vprintf(fmt,ap);
-	va_end(ap);
-}
-
-void log_vprintf(const char *fmt,va_list ap) {
-	/* lock it all, to make the debug-output more readable */
-	spinlock_aquire(&logLock);
-	prf_vprintf(&env,fmt,ap);
-	log_flush();
-	spinlock_release(&logLock);
-}
-
-static void log_printc(char c) {
+void Log::printc(char c) {
 	if(Config::get(Config::LOG) && !vfsIsReady)
-		log_writeChar(c);
+		writeChar(c);
 	if(bufPos >= BUF_SIZE)
-		log_flush();
+		flush();
 	if(bufPos < BUF_SIZE) {
 		buf[bufPos++] = c;
 		switch(c) {
@@ -120,14 +95,14 @@ static void log_printc(char c) {
 			case '\t':
 				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
 				if(col == 0) {
-					log_printc(' ');
+					printc(' ');
 					return;
 				}
 				break;
 			default:
 				col = (col + 1) % VID_COLS;
 				if(col == 0) {
-					log_printc('\n');
+					printc('\n');
 					return;
 				}
 				break;
@@ -135,30 +110,30 @@ static void log_printc(char c) {
 	}
 }
 
-static uchar log_pipePad(void) {
+uchar Log::pipePad(void) {
 	return VID_COLS - col;
 }
 
-static void log_escape(const char **str) {
+void Log::escape(const char **str) {
 	int n1,n2,n3;
 	escc_get(str,&n1,&n2,&n3);
 }
 
-static ssize_t log_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
+ssize_t Log::write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
 	if(Config::get(Config::LOG) && logToSer) {
 		char *str = (char*)buffer;
 		size_t i;
 		for(i = 0; i < count; i++)
-			log_writeChar(str[i]);
+			Log::writeChar(str[i]);
 	}
 	/* ignore errors here */
 	vfs_file_write(pid,file,node,buffer,offset,count);
 	return count;
 }
 
-static void log_flush(void) {
-	if(vfsIsReady && bufPos) {
+void Log::flush(void) {
+	if(vfsReady && bufPos) {
 		vfs_writeFile(KERNEL_PID,logFile,buf,bufPos);
 		bufPos = 0;
 	}

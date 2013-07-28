@@ -144,7 +144,7 @@ void CPU::detect() {
 
 		/* detect the speed just once */
 		cpuHz = Timer::detectCPUSpeed();
-		log_printf("Detected %zu Mhz CPU",cpuHz / 1000000);
+		Log::printf("Detected %zu Mhz CPU",cpuHz / 1000000);
 	}
 
 	/* get vendor-string */

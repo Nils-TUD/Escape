@@ -50,14 +50,14 @@ void boot_start(sBootInfo *info) {
 	drawProgressBar();
 	for(i = 0; i < bootTaskList.count; i++) {
 		const sBootTask *task = bootTaskList.tasks + i;
-		log_printf("%s",task->name);
+		Log::printf("%s",task->name);
 		boot_taskStarted(task->name);
 		task->execute();
-		log_printf("%|s","done");
+		Log::printf("%|s","done");
 		boot_taskFinished();
 	}
 
-	log_printf("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
+	Log::printf("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
 			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / K);
 }
 

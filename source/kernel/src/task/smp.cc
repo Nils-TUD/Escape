@@ -47,7 +47,7 @@ void SMPBase::init() {
 		setId(0,0);
 	}
 
-	log_printf("%zu CPUs found",cpuCount);
+	Log::printf("%zu CPUs found",cpuCount);
 }
 
 void SMPBase::disable() {

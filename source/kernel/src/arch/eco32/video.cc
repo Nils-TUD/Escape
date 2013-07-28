@@ -108,7 +108,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 		lastWasLineStart = env.lineStart;
 	}
 	if(targets & TARGET_LOG)
-		log_vprintf(fmt,ap);
+		Log::vprintf(fmt,ap);
 }
 
 static void vid_putchar(char c) {

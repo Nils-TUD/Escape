@@ -131,8 +131,8 @@ void PhysMem::init() {
 		cframes = (kframes * 2) / 3;
 		kframes = kframes - cframes;
 		if(cframes + kframes > free / 2) {
-			log_printf("Warning: Detected VERY small number of free frames\n");
-			log_printf("         (%zu total, using %zu for kernel, %zu for critical)\n",
+			Log::printf("Warning: Detected VERY small number of free frames\n");
+			Log::printf("         (%zu total, using %zu for kernel, %zu for critical)\n",
 					free,kframes,cframes);
 		}
 		swapEnabled = true;
@@ -327,7 +327,7 @@ void PhysMem::swapper() {
 
 	/* open device */
 	if(vfs_openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev,&swapFile) < 0) {
-		log_printf("Unable to open swap-device '%s'\n",dev);
+		Log::printf("Unable to open swap-device '%s'\n",dev);
 		swapEnabled = false;
 	}
 	else {

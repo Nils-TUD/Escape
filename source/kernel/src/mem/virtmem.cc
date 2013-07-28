@@ -329,14 +329,14 @@ void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 
 #if DEBUG_SWAP
 			sSLNode *n;
-			log_printf("OUT: %d of region %x (block %d)\n",index,vmreg->reg,block);
+			Log::printf("OUT: %d of region %x (block %d)\n",index,vmreg->reg,block);
 			for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 				Proc *mp = (Proc*)n->data;
 				VMRegion *mpreg = mp->regtree.getByReg(reg);
-				log_printf("\tProcess %d:%s -> page %p\n",mp->getPid(),mp->getCommand(),
+				Log::printf("\tProcess %d:%s -> page %p\n",mp->getPid(),mp->getCommand(),
 						mpreg->virt + index * PAGE_SIZE);
 			}
-			log_printf("\n");
+			Log::printf("\n");
 #endif
 
 			/* get the frame first, because the page has to be present */
@@ -381,14 +381,14 @@ bool VirtMem::swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 
 #if DEBUG_SWAP
 	sSLNode *n;
-	log_printf("IN: %d of region %x (block %d)\n",index,vmreg->reg,block);
+	Log::printf("IN: %d of region %x (block %d)\n",index,vmreg->reg,block);
 	for(n = sll_begin(vmreg->reg->getProc()s); n != NULL; n = n->next) {
 		Proc *mp = (Proc*)n->data;
 		VMRegion *mpreg = mp->regtree.getByReg(vmreg->reg);
-		log_printf("\tProcess %d:%s -> page %p\n",mp->getPid(),mp->getCommand(),
+		Log::printf("\tProcess %d:%s -> page %p\n",mp->getPid(),mp->getCommand(),
 				mpreg->virt + index * PAGE_SIZE);
 	}
-	log_printf("\n");
+	Log::printf("\n");
 #endif
 
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
@@ -1176,7 +1176,7 @@ errorFree:
 	Thread::remHeapAlloc(tempBuf);
 	Cache::free(tempBuf);
 error:
-	log_printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,
+	Log::printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,
 			Proc::getByPid(pid)->getCommand(),strerror(-err),err);
 	return false;
 }

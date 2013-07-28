@@ -186,7 +186,7 @@ void SMPBase::start() {
 		while(::CPU::rdtsc() < end && seenAPs != total)
 			__asm__ ("pause");
 		if(seenAPs != total) {
-			log_printf("Found %zu CPUs in 2s, expected %zu. Disabling SMP",seenAPs,total);
+			Log::printf("Found %zu CPUs in 2s, expected %zu. Disabling SMP",seenAPs,total);
 			disable();
 		}
 	}

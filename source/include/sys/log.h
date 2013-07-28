@@ -20,36 +20,75 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
+#include <sys/printf.h>
+#include <sys/vfs/vfs.h>
 #include <stdarg.h>
 
-/**
- * @return the file used for logging
- */
-sFile *log_getFile(void);
+class Log {
+	Log() = delete;
 
-/**
- * Tells the log that the VFS is usable now
- */
-void log_vfsIsReady(void);
+	static const size_t BUF_SIZE		= 2048;
 
-/**
- * Writes the given character to log
- *
- * @param c the char
- */
-void log_writeChar(char c);
+public:
+	/**
+	 * @return the file used for logging
+	 */
+	static sFile *getFile();
 
-/**
- * Formatted output into the logfile
- *
- * @param fmt the format
- */
-void log_printf(const char *fmt,...);
+	/**
+	 * Tells the log that the VFS is usable now
+	 */
+	static void vfsIsReady();
 
-/**
- * Like log_printf, but with argument-list
- *
- * @param fmt the format
- * @param ap the argument-list
- */
-void log_vprintf(const char *fmt,va_list ap);
+	/**
+	 * Formatted output into the logfile
+	 *
+	 * @param fmt the format
+	 */
+	static void printf(const char *fmt,...) {
+		va_list ap;
+		va_start(ap,fmt);
+		vprintf(fmt,ap);
+		va_end(ap);
+	}
+
+	/**
+	 * Like printf, but with argument-list
+	 *
+	 * @param fmt the format
+	 * @param ap the argument-list
+	 */
+	static void vprintf(const char *fmt,va_list ap) {
+		/* lock it all, to make the debug-output more readable */
+		spinlock_aquire(&lock);
+		prf_vprintf(&env,fmt,ap);
+		flush();
+		spinlock_release(&lock);
+	}
+
+private:
+	/**
+	 * Writes the given character to log
+	 *
+	 * @param c the char
+	 */
+	static void writeChar(char c);
+
+	static void printc(char c);
+	static uchar pipePad();
+	static void escape(const char **str);
+	static ssize_t write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,
+			off_t offset,size_t count);
+	static void flush();
+
+	/* don't use a heap here to prevent problems */
+	static char buf[BUF_SIZE];
+	static size_t bufPos;
+	static uint col;
+	static bool logToSer;
+	static sFile *logFile;
+	static bool vfsReady;
+	static klock_t lock;
+	static sPrintEnv env;
+};

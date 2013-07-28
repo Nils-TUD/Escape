@@ -163,7 +163,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack) {
 	}
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
-	 * call uenv_handleSignal(), which might cause a thread-switch */
+	 * call UEnv::handleSignal(), which might cause a thread-switch */
 	if(!Signals::addSignal(SIG_INTRPT_KB)) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
@@ -171,7 +171,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack) {
-	/* see interrupt_irqKb() */
+	/* see Interrupts::irqKb() */
 	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
 	if(!Signals::addSignal(SIG_INTRPT_ATA1))

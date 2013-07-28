@@ -202,13 +202,13 @@ public:
 	/**
 	 * @return the total number of announced handlers
 	 */
-	static size_t dbg_getHandlerCount();
+	static size_t getHandlerCount();
 
 	/**
 	 * @param signal the signal-number
 	 * @return the name of the given signal
 	 */
-	static const char *dbg_getName(int signal);
+	static const char *getName(int signal);
 
 	/**
 	 * Prints all announced signal-handlers

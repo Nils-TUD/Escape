@@ -37,6 +37,11 @@ public:
 	}
 
 private:
+	static void startup() asm("thread_startup");
+	static int initSave(ThreadRegs *saveArea,void *newStack) asm("thread_initSave");
+	static int doSwitchTo(ThreadRegs *oldArea,ThreadRegs *newArea,uint64_t rv,tid_t tid)
+		asm("thread_doSwitchTo");
+
 	/* the frame mapped at KERNEL_STACK */
 	frameno_t kstackFrame;
 	/* use as a temporary kernel-stack for cloning */

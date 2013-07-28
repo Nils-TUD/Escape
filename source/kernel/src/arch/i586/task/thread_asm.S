@@ -37,7 +37,7 @@ thread_idle:
 	hlt
 	jmp			1b
 
-# bool thread_save(sThreadRegs *saveArea);
+# bool thread_save(ThreadRegs *saveArea);
 thread_save:
 	push	%ebp
 	mov		%esp,%ebp
@@ -56,7 +56,7 @@ thread_save:
 	leave
 	ret
 
-# bool thread_resume(uintptr_t pageDir,sThreadRegs *saveArea,klock_t lock,bool newProc);
+# bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,klock_t lock,bool newProc);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp

@@ -200,7 +200,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 		exCount = 0;
 	lastPFAddr = addr;
 	lastPFProc = Proc::getRunning();
-	intrpt_printPFInfo(stack,addr);
+	printPFInfo(Log::get(),stack,addr);
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */

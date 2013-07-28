@@ -34,10 +34,6 @@
 
 Thread *Thread::cur = NULL;
 
-EXTERN_C void thread_startup(void);
-EXTERN_C bool thread_save(sThreadRegs *saveArea);
-EXTERN_C bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,frameno_t kstackFrame);
-
 void ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
 	assert(proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
@@ -103,7 +99,7 @@ int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
 	/* map stack temporary (copy later) */
 	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
 
-	if(thread_save(&nt->save)) {
+	if(Thread::save(&nt->saveArea)) {
 		/* child */
 		return 1;
 	}
@@ -119,19 +115,19 @@ int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
 }
 
 void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
-	/* prepare registers for the first thread_resume() */
-	nt->save.r16 = nt->getProc()->getEntryPoint();
-	nt->save.r17 = entryPoint;
-	nt->save.r18 = (uint32_t)arg;
-	nt->save.r19 = 0;
-	nt->save.r20 = 0;
-	nt->save.r21 = 0;
-	nt->save.r22 = 0;
-	nt->save.r23 = 0;
-	nt->save.r25 = 0;
-	nt->save.r29 = KERNEL_STACK + PAGE_SIZE - sizeof(int);
-	nt->save.r30 = 0;
-	nt->save.r31 = (uint32_t)&thread_startup;
+	/* prepare registers for the first Thread::resume() */
+	nt->saveArea.r16 = nt->getProc()->getEntryPoint();
+	nt->saveArea.r17 = entryPoint;
+	nt->saveArea.r18 = (uint32_t)arg;
+	nt->saveArea.r19 = 0;
+	nt->saveArea.r20 = 0;
+	nt->saveArea.r21 = 0;
+	nt->saveArea.r22 = 0;
+	nt->saveArea.r23 = 0;
+	nt->saveArea.r25 = 0;
+	nt->saveArea.r29 = KERNEL_STACK + PAGE_SIZE - sizeof(int);
+	nt->saveArea.r30 = 0;
+	nt->saveArea.r31 = (uint32_t)&Thread::startup;
 }
 
 bool ThreadBase::beginTerm() {
@@ -159,13 +155,13 @@ void ThreadBase::doSwitch(void) {
 	n->stats.schedCount++;
 
 	if(n->getTid() != old->getTid()) {
-		if(!thread_save(&old->save)) {
+		if(!Thread::save(&old->saveArea)) {
 			setRunning(n);
 			VirtMem::setTimestamp(n,timestamp);
 
 			SMP::schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;
-			thread_resume(n->getProc()->getPageDir()->getPhysAddr(),&n->save,n->kstackFrame);
+			Thread::resume(n->getProc()->getPageDir()->getPhysAddr(),&n->saveArea,n->kstackFrame);
 		}
 	}
 	else
@@ -175,7 +171,7 @@ void ThreadBase::doSwitch(void) {
 
 #if DEBUGGING
 
-void ThreadBase::printState(OStream &os,const sThreadRegs *state) {
+void ThreadBase::printState(OStream &os,const ThreadRegs *state) {
 	os.writef("State:\n",state);
 	os.writef("\t$16 = %#08x\n",state->r16);
 	os.writef("\t$17 = %#08x\n",state->r17);

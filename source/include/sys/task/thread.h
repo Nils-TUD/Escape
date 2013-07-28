@@ -405,8 +405,8 @@ public:
 	/**
 	 * @return the register state of the thread
 	 */
-	const sThreadRegs &getRegs() const {
-		return save;
+	const ThreadRegs &getRegs() const {
+		return saveArea;
 	}
 
 	/**
@@ -550,7 +550,7 @@ public:
 	 * @param os the output-stream
 	 * @param state the pointer to the state-struct
 	 */
-	void printState(OStream &os,const sThreadRegs *state);
+	void printState(OStream &os,const ThreadRegs *state);
 
 private:
 	/**
@@ -665,7 +665,7 @@ protected:
 	IntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;
 	/* the save-area for registers */
-	sThreadRegs save;
+	ThreadRegs saveArea;
 	/* a list with heap-allocations that should be free'd on thread-termination */
 	void *termHeapAllocs[TERM_RESOURCE_CNT];
 	/* a list of locks that should be released on thread-termination */

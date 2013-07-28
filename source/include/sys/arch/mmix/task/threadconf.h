@@ -24,9 +24,9 @@
 #define STACK_REG_COUNT			2
 
 /* the thread-state which will be saved for context-switching */
-typedef struct {
+struct ThreadRegs {
 	uintptr_t stackEnd;
-} sThreadRegs;
+};
 
 typedef struct {
 	uint64_t rbb;

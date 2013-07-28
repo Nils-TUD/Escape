@@ -88,7 +88,7 @@ void apstart(void) {
 	Thread::setRunning(Thread::getById(0));
 	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
 	PageDir::activate(p->getPageDir()->getPhysAddr());
-	GDT::init_ap();
+	GDT::initAP();
 	/* setup IDT for this cpu and enable its local APIC */
 	IDT::init();
 	LAPIC::enable();

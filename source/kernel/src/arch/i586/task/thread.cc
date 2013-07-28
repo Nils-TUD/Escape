@@ -34,10 +34,6 @@
 #include <assert.h>
 #include <errno.h>
 
-EXTERN_C void thread_startup(void);
-EXTERN_C bool thread_save(sThreadRegs *saveArea);
-EXTERN_C bool thread_resume(uintptr_t pageDir,const sThreadRegs *saveArea,klock_t *lock,bool newProc);
-
 static klock_t switchLock;
 static bool threadSet = false;
 
@@ -103,7 +99,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
 	dst = (ulong*)PageDir::mapToTemp(&frame,1);
 
-	if(thread_save(&nt->save)) {
+	if(Thread::save(&nt->saveArea)) {
 		/* child */
 		return 1;
 	}
@@ -132,17 +128,17 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	*--dst = nt->getProc()->getEntryPoint();
 	*--dst = entryPoint;
 	*--dst = (ulong)arg;
-	*--dst = (ulong)&thread_startup;
+	*--dst = (ulong)&Thread::startup;
 	*--dst = sp;
 	PageDir::unmapFromTemp(1);
 
-	/* prepare registers for the first thread_resume() */
-	nt->save.ebp = sp;
-	nt->save.esp = sp;
-	nt->save.ebx = 0;
-	nt->save.edi = 0;
-	nt->save.esi = 0;
-	nt->save.eflags = 0;
+	/* prepare registers for the first Thread::resume() */
+	nt->saveArea.ebp = sp;
+	nt->saveArea.esp = sp;
+	nt->saveArea.ebx = 0;
+	nt->saveArea.edi = 0;
+	nt->saveArea.esi = 0;
+	nt->saveArea.eflags = 0;
 }
 
 bool ThreadBase::beginTerm() {
@@ -167,14 +163,14 @@ void Thread::initialSwitch() {
 	cur->setCPU(GDT::prepareRun(NULL,cur));
 	FPU::lockFPU();
 	cur->stats.cycleStart = CPU::rdtsc();
-	thread_resume(cur->getProc()->getPageDir()->getPhysAddr(),&cur->save,&switchLock,true);
+	Thread::resume(cur->getProc()->getPageDir()->getPhysAddr(),&cur->saveArea,&switchLock,true);
 }
 
 void ThreadBase::doSwitch() {
 	uint64_t cycles,runtime;
 	Thread *old = Thread::getRunning();
 	Thread *n;
-	/* lock this, because sched_perform() may make us ready and we can't be chosen by another CPU
+	/* lock this, because Sched::perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
 	SpinLock::acquire(&switchLock);
 
@@ -200,11 +196,11 @@ void ThreadBase::doSwitch() {
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		FPU::lockFPU();
-		if(!thread_save(&old->save)) {
+		if(!Thread::save(&old->saveArea)) {
 			/* old thread */
 			n->stats.cycleStart = CPU::rdtsc();
-			thread_resume(n->getProc()->getPageDir()->getPhysAddr(),&n->save,&switchLock,
-			              n->getProc() != old->getProc());
+			Thread::resume(n->getProc()->getPageDir()->getPhysAddr(),&n->saveArea,&switchLock,
+			               n->getProc() != old->getProc());
 		}
 	}
 	else {
@@ -215,7 +211,7 @@ void ThreadBase::doSwitch() {
 
 #if DEBUGGING
 
-void ThreadBase::printState(OStream &os,const sThreadRegs *state) {
+void ThreadBase::printState(OStream &os,const ThreadRegs *state) {
 	os.writef("State @ 0x%08Px:\n",state);
 	os.writef("\tesp = %#08x\n",state->esp);
 	os.writef("\tedi = %#08x\n",state->edi);

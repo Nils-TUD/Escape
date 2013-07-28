@@ -65,7 +65,7 @@
  * The second problem forces us to use a different thread-switch-mechanismn than in ECO32 and i586.
  * Because the old one relies on the opportunity to save the state at any place and resume it later.
  * Since we have to do the SAVE and the RESUME directly after another, we provide the function
- * thread_doSwitchTo and use it when switching the thread. This is no problem in thread_doSwitch()
+ * Thread::doSwitchTo and use it when switching the thread. This is no problem in Thread::doSwitch()
  * and the initial state can be created by thread_initSave. This one is rather tricky as well. It
  * performs a SAVE at first to write the whole state to memory, copies the register- and software-
  * stack to newStack, writes rWW, ..., rZZ and the end of the stack to saveArea and executes an
@@ -77,10 +77,6 @@
  * than necessary, because most of the values wouldn't need to be restored. The only important ones
  * are rS and rO, which can't be set directly.
  */
-
-EXTERN_C void thread_startup(void);
-EXTERN_C int thread_initSave(sThreadRegs *saveArea,void *newStack);
-EXTERN_C int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,uint64_t rv,tid_t tid);
 
 extern void *stackCopy;
 extern uint64_t stackCopySize;
@@ -149,7 +145,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	nt->tempStack = PhysMem::allocate(PhysMem::KERN);
 	if(nt->tempStack == 0)
 		return -ENOMEM;
-	res = thread_initSave(&nt->save,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
+	res = Thread::initSave(&nt->saveArea,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
 		/* switch stacks */
@@ -166,9 +162,9 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	uintptr_t start = (uintptr_t)rsp;
 	memcpy(rsp,&stackCopy,stackCopySize);
 	rsp += stackCopySize / sizeof(uint64_t) - 1;
-	rsp[-8] = (uint64_t)&thread_startup;							/* rJ = startup-code */
+	rsp[-8] = (uint64_t)&Thread::startup;							/* rJ = startup-code */
 	/* store stack-end for UNSAVE */
-	nt->save.stackEnd = (uintptr_t)rsp;
+	nt->saveArea.stackEnd = (uintptr_t)rsp;
 	/* put arguments for the startup-code on the software-stack */
 	ssp = (uint64_t*)(start + PAGE_SIZE - sizeof(uint64_t));
 	*ssp-- = entryPoint;
@@ -235,7 +231,7 @@ void ThreadBase::doSwitch(void) {
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		SMP::schedule(n->getCPU(),n,timestamp);
 		n->stats.cycleStart = CPU::rdtsc();
-		thread_doSwitchTo(&old->save,&n->save,n->getProc()->getPageDir()->getRV(),n->getTid());
+		Thread::doSwitchTo(&old->saveArea,&n->saveArea,n->getProc()->getPageDir()->getRV(),n->getTid());
 	}
 	else
 		n->stats.cycleStart = CPU::rdtsc();

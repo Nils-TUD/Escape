@@ -112,7 +112,7 @@ void GDT::init() {
 	loadTSS(6 * sizeof(Desc));
 }
 
-void GDT::init_bsp() {
+void GDT::initBSP() {
 	cpuCount = SMP::getCPUCount();
 	allgdts = (Table*)Cache::calloc(cpuCount,sizeof(Table));
 	if(!allgdts)
@@ -131,7 +131,7 @@ void GDT::init_bsp() {
 	alltss[0] = &bsptss;
 }
 
-void GDT::init_ap() {
+void GDT::initAP() {
 	size_t i;
 	Desc *apgdt;
 	Table *gdttbl;

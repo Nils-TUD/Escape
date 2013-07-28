@@ -310,12 +310,12 @@ public:
 	/**
 	 * Starts profiling all processes
 	 */
-	static void dbg_startProf();
+	static void startProf();
 
 	/**
 	 * Stops profiling all processes and prints the result
 	 */
-	static void dbg_stopProf();
+	static void stopProf();
 #endif
 
 	/**

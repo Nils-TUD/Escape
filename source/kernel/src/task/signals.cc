@@ -219,7 +219,7 @@ int Signals::ackHandling(tid_t tid) {
 	return res;
 }
 
-const char *Signals::dbg_getName(int signal) {
+const char *Signals::getName(int signal) {
 	static const char *names[] = {
 		"SIG_KILL",
 		"SIG_TERM",
@@ -259,12 +259,12 @@ void Signals::print(OStream &os) {
 		os.writef("\t\thandler:\n");
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
-				os.writef("\t\t\t%s: handler=%p\n",dbg_getName(i),t->signals->handler[i]);
+				os.writef("\t\t\t%s: handler=%p\n",getName(i),t->signals->handler[i]);
 		}
 	}
 }
 
-size_t Signals::dbg_getHandlerCount(void) {
+size_t Signals::getHandlerCount(void) {
 	sSLNode *n;
 	size_t i,c = 0;
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {

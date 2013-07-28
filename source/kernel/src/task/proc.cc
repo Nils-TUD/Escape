@@ -919,7 +919,7 @@ void ProcBase::remove(Proc *p) {
 
 static time_t proctimes[PROF_PROC_COUNT];
 
-void ProcBase::dbg_startProf() {
+void ProcBase::startProf() {
 	sSLNode *n,*m;
 	Thread *t;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
@@ -933,7 +933,7 @@ void ProcBase::dbg_startProf() {
 	}
 }
 
-void ProcBase::dbg_stopProf() {
+void ProcBase::stopProf() {
 	sSLNode *n,*m;
 	Thread *t;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {

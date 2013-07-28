@@ -152,7 +152,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 
 	/* the thread has to perform an UNSAVE at the beginning to establish the initial state.
 	 * therefore, we have to prepare this again with the ELF-finisher. additionally, we have to
-	 * take care that we use elf_finishFromMem() for boot-modules and elf_finishFromFile() other-
+	 * take care that we use ELF::finishFromMem() for boot-modules and ELF::finishFromFile() other-
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
 	pid_t pid = t->getProc()->getPid();
 	if(t->getProc()->getFlags() & P_BOOT) {

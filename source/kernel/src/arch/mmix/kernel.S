@@ -296,7 +296,7 @@ thread_idle:
 	SYNC	4								# power-saver mode
 	JMP		1b
 
-# int thread_initSave(sThreadRegs *saveArea,void *newStack)
+# int thread_initSave(ThreadRegs *saveArea,void *newStack)
 thread_initSave:
 	SET		$251,$0
 	SET		$252,$1							# save $0 and $1, SAVE will set rL to 0
@@ -332,7 +332,7 @@ thread_initSave:
 	SET		$0,0							# return 0
 	POP		1,0
 
-# int thread_doSwitchTo(sThreadRegs *oldArea,sThreadRegs *newArea,uint64_t rv,tid_t tid)
+# int thread_doSwitchTo(ThreadRegs *oldArea,ThreadRegs *newArea,uint64_t rv,tid_t tid)
 thread_doSwitchTo:
 	# just for backtracing: put the thread-id in rF
 	PUT		rF,$3

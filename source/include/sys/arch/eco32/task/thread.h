@@ -33,6 +33,11 @@ public:
 	}
 
 private:
+	static void startup() asm("thread_startup");
+	static bool save(ThreadRegs *saveArea) asm("thread_save");
+	static bool resume(uintptr_t pageDir,const ThreadRegs *saveArea,frameno_t kstackFrame)
+		asm("thread_resume");
+
 	frameno_t kstackFrame;
 	static Thread *cur;
 };

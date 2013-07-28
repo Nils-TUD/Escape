@@ -40,7 +40,7 @@ void SMPBase::init() {
 	sll_init(&cpuList,slln_allocNode,slln_freeNode);
 
 	cpuCount = 0;
-	enabled = Config::get(Config::SMP) ? SMP::init_arch() : false;
+	enabled = Config::get(Config::SMP) ? SMP::initArch() : false;
 	if(!enabled) {
 		addCPU(true,0,true);
 		setId(0,0);

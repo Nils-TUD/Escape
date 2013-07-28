@@ -58,7 +58,7 @@
 static const BootTask tasks[] = {
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
-	{"Initializing GDT...",GDT::init_bsp},
+	{"Initializing GDT...",GDT::initBSP},
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing FPU...",FPU::init},
 	{"Initializing VFS...",vfs_init},
@@ -85,7 +85,7 @@ extern void *_btext;
 extern void *_ebss;
 static BootInfo *mb;
 
-static void *copy_mbinfo(const void *info,size_t len) {
+static void *copyMBInfo(const void *info,size_t len) {
 	void *res = mbbuf + mbbufpos;
 	if(mbbufpos + len > sizeof(mbbuf))
 		Util::panic("Multiboot-buffer too small");
@@ -101,14 +101,14 @@ void Boot::archStart(BootInfo *info) {
 	const char **argv;
 
 	/* copy mb-stuff into buffer */
-	info = (BootInfo*)copy_mbinfo(info,sizeof(BootInfo));
-	info->cmdLine = (char*)copy_mbinfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
-	info->modsAddr = (BootModule*)copy_mbinfo(info->modsAddr,sizeof(BootModule) * info->modsCount);
-	info->mmapAddr = (BootMemMap*)copy_mbinfo(info->mmapAddr,info->mmapLength);
-	info->drivesAddr = (BootDrive*)copy_mbinfo(info->drivesAddr,info->drivesLength);
+	info = (BootInfo*)copyMBInfo(info,sizeof(BootInfo));
+	info->cmdLine = (char*)copyMBInfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
+	info->modsAddr = (BootModule*)copyMBInfo(info->modsAddr,sizeof(BootModule) * info->modsCount);
+	info->mmapAddr = (BootMemMap*)copyMBInfo(info->mmapAddr,info->mmapLength);
+	info->drivesAddr = (BootDrive*)copyMBInfo(info->drivesAddr,info->drivesLength);
 	mod = info->modsAddr;
 	for(i = 0; i < info->modsCount; i++) {
-		mod->name = (char*)copy_mbinfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
+		mod->name = (char*)copyMBInfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
 		physModAddrs[i] = mod->modStart;
 		mod++;
 	}

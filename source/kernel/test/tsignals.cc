@@ -115,10 +115,10 @@ static void test_setHandler(void) {
 	test_caseSucceeded();
 
 	test_caseStart("Testing Signals::unsetHandler()");
-	test_assertSize(Signals::dbg_getHandlerCount(),2);
+	test_assertSize(Signals::getHandlerCount(),2);
 	Signals::unsetHandler(t2->getTid(),SIG_INTRPT_ATA1);
 	Signals::unsetHandler(t1->getTid(),SIG_TERM);
-	test_assertSize(Signals::dbg_getHandlerCount(),0);
+	test_assertSize(Signals::getHandlerCount(),0);
 	test_caseSucceeded();
 
 	test_caseStart("Testing Signals::unsetHandler() with pending signals");
@@ -159,9 +159,9 @@ static void test_setHandler(void) {
 	test_assertInt(Signals::setHandler(t2->getTid(),SIG_INTRPT_ATA1,(Signals::handler_func)0x1337,&old),0);
 	test_assertInt(Signals::setHandler(t2->getTid(),SIG_INTRPT_COM1,(Signals::handler_func)0x1337,&old),0);
 	Signals::removeHandlerFor(t2->getTid());
-	test_assertSize(Signals::dbg_getHandlerCount(),3);
+	test_assertSize(Signals::getHandlerCount(),3);
 	Signals::removeHandlerFor(t1->getTid());
-	test_assertSize(Signals::dbg_getHandlerCount(),0);
+	test_assertSize(Signals::getHandlerCount(),0);
 	test_caseSucceeded();
 
 	assert(t2->beginTerm());

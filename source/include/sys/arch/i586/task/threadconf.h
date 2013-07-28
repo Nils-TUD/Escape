@@ -25,7 +25,7 @@
 #define STACK_REG_COUNT			1
 
 /* the thread-state which will be saved for context-switching */
-typedef struct {
+struct ThreadRegs {
 	uint32_t esp;
 	uint32_t edi;
 	uint32_t esi;
@@ -47,4 +47,4 @@ typedef struct {
 	 * So whether we return to the instruction after the call of thread_save and jump below this
 	 * if-statement or whether we return to the instruction after thread_resume() doesn't matter.
 	 */
-} sThreadRegs;
+};

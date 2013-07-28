@@ -184,7 +184,7 @@ private:
 	 *
 	 * @return true on success
 	 */
-	static bool init_arch();
+	static bool initArch();
 
 	/**
 	 * Should be called if thread <new> is scheduled on CPU <id>

@@ -24,7 +24,7 @@
 class SMP : public SMPBase {
 };
 
-inline bool SMPBase::init_arch() {
+inline bool SMPBase::initArch() {
 	/* eco32 does not support SMP */
 	return false;
 }

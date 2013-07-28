@@ -55,7 +55,7 @@ extern volatile uint waitlock;
 extern volatile uint halting;
 extern volatile uint flushed;
 
-bool SMPBase::init_arch() {
+bool SMPBase::initArch() {
 	LAPIC::init();
 	if(LAPIC::isAvailable()) {
 		bool enabled = false;

@@ -190,12 +190,12 @@ public:
 	/**
 	 * Finishes the initialization for the bootstrap processor
 	 */
-	static void init_bsp();
+	static void initBSP();
 
 	/**
 	 * Finishes the initialization for an application processor
 	 */
-	static void init_ap();
+	static void initAP();
 
 	/**
 	 * @return the current cpu-id

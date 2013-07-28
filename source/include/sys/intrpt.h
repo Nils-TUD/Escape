@@ -52,7 +52,7 @@ uint8_t intrpt_getVectorFor(uint8_t irq);
  *
  * @param number the interrupt-number
  */
-void intrpt_handler(sIntrptStackFrame *stack);
+EXTERN_C void intrpt_handler(sIntrptStackFrame *stack);
 
 /**
  * Prints the given interrupt-stack

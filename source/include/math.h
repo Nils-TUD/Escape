@@ -36,6 +36,10 @@ typedef double double_t;
 
 enum { FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_NORMAL };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int pow(int a,int b);
 double sqrt(double x);
 
@@ -51,3 +55,7 @@ int isnanf(float x);
 
 int isinf(double x);
 int isinff(float x);
+
+#ifdef __cplusplus
+}
+#endif

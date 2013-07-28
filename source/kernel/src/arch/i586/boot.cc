@@ -69,7 +69,7 @@ static const sBootTask tasks[] = {
 	{"Start logging to VFS...",log_vfsIsReady},
 	{"Initializing copy-on-write...",CopyOnWrite::init},
 	{"Initializing interrupts...",Interrupts::init},
-	{"Initializing PIC...",pic_init},
+	{"Initializing PIC...",PIC::init},
 	{"Initializing IDT...",IDT::init},
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},

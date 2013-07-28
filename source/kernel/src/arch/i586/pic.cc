@@ -22,60 +22,22 @@
 #include <sys/arch/i586/ports.h>
 #include <sys/interrupts.h>
 
-/* I/O ports for PICs */
-#define PIC_MASTER				0x20				/* base-port for master PIC */
-#define PIC_SLAVE				0xA0				/* base-port for slave PIC */
-#define PIC_MASTER_CMD			PIC_MASTER			/* command-port for master PIC */
-#define PIC_MASTER_DATA			(PIC_MASTER + 1)	/* data-port for master PIC */
-#define PIC_SLAVE_CMD			PIC_SLAVE			/* command-port for slave PIC */
-#define PIC_SLAVE_DATA			(PIC_SLAVE + 1)		/* data-port for slave PIC */
-
-#define PIC_EOI					0x20				/* end of interrupt */
-
-/* flags in Initialization Command Word 1 (ICW1) */
-#define ICW1_NEED_ICW4			0x01				/* ICW4 needed */
-#define ICW1_SINGLE				0x02				/* Single (not cascade) mode */
-#define ICW1_INTERVAL4			0x04				/* Call address interval 4 (instead of 8) */
-#define ICW1_LEVEL				0x08				/* Level triggered (not edge) mode */
-#define ICW1_INIT				0x10				/* Initialization - required! */
-
-/* flags in Initialization Command Word 4 (ICW4) */
-#define ICW4_8086				0x01				/* 8086/88 (instead of MCS-80/85) mode */
-#define ICW4_AUTO				0x02				/* Auto (instead of normal) EOI */
-#define ICW4_BUF_SLAVE			0x08				/* Buffered mode/slave */
-#define ICW4_BUF_MASTER			0x0C				/* Buffered mode/master */
-#define ICW4_SFNM				0x10				/* Special fully nested */
-
-void pic_init(void) {
+void PIC::init() {
 	/* starts the initialization. we want to send a ICW4 */
-	Ports::out<uint8_t>(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	Ports::out<uint8_t>(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	Ports::out<uint8_t>(PORT_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	Ports::out<uint8_t>(PORT_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
 	/* remap the irqs to 0x20 and 0x28 */
-	Ports::out<uint8_t>(PIC_MASTER_DATA,Interrupts::IRQ_MASTER_BASE);
-	Ports::out<uint8_t>(PIC_SLAVE_DATA,Interrupts::IRQ_SLAVE_BASE);
+	Ports::out<uint8_t>(PORT_MASTER_DATA,Interrupts::IRQ_MASTER_BASE);
+	Ports::out<uint8_t>(PORT_SLAVE_DATA,Interrupts::IRQ_SLAVE_BASE);
 	/* continue */
-	Ports::out<uint8_t>(PIC_MASTER_DATA,4);
-	Ports::out<uint8_t>(PIC_SLAVE_DATA,2);
+	Ports::out<uint8_t>(PORT_MASTER_DATA,4);
+	Ports::out<uint8_t>(PORT_SLAVE_DATA,2);
 
 	/* we want to use 8086 mode */
-	Ports::out<uint8_t>(PIC_MASTER_DATA,ICW4_8086);
-	Ports::out<uint8_t>(PIC_SLAVE_DATA,ICW4_8086);
+	Ports::out<uint8_t>(PORT_MASTER_DATA,ICW4_8086);
+	Ports::out<uint8_t>(PORT_SLAVE_DATA,ICW4_8086);
 
 	/* enable all interrupts (set masks to 0) */
-	Ports::out<uint8_t>(PIC_MASTER_DATA,0x00);
-	Ports::out<uint8_t>(PIC_SLAVE_DATA,0x00);
-}
-
-void pic_eoi(uint32_t intrptNo) {
-	/* do we have to send EOI? */
-	if(intrptNo >= Interrupts::IRQ_MASTER_BASE &&
-			intrptNo <= Interrupts::IRQ_MASTER_BASE + Interrupts::IRQ_NUM) {
-	    if(intrptNo >= Interrupts::IRQ_SLAVE_BASE) {
-	    	/* notify the slave */
-	        Ports::out<uint8_t>(PIC_SLAVE_CMD,PIC_EOI);
-	    }
-
-	    /* notify the master */
-	    Ports::out<uint8_t>(PIC_MASTER_CMD,PIC_EOI);
-    }
+	Ports::out<uint8_t>(PORT_MASTER_DATA,0x00);
+	Ports::out<uint8_t>(PORT_SLAVE_DATA,0x00);
 }

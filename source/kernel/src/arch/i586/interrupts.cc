@@ -231,7 +231,7 @@ void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
 	if(intrpt->signal)
 		Signals::addSignal(intrpt->signal);
 	res = Timer::intrpt();
-	pic_eoi(stack->intrptNo);
+	PIC::eoi(stack->intrptNo);
 	if(res) {
 		if(t->getIntrptLevel() == 0)
 			Thread::switchAway();
@@ -242,7 +242,7 @@ void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	const Interrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		Signals::addSignal(intrpt->signal);
-	pic_eoi(stack->intrptNo);
+	PIC::eoi(stack->intrptNo);
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-device we would steal him the scancodes) */
 	/* this way, we can debug the system in the startup-phase without affecting timings

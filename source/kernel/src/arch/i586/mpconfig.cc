@@ -149,12 +149,12 @@ void mpconf_parse(void) {
 			case MPCTE_TYPE_IOAPIC:
 				ioapic = (sMPConfIOAPIC*)ptr;
 				if(ioapic->enabled)
-					ioapic_add(ioapic->ioAPICId,ioapic->ioAPICVersion,ioapic->baseAddr);
+					IOAPIC::add(ioapic->ioAPICId,ioapic->ioAPICVersion,ioapic->baseAddr);
 				ptr += MPCTE_LEN_IOAPIC;
 				break;
 			case MPCTE_TYPE_IOIRQ:
 				ioint = (sMPConfIOIntrptEntry*)ptr;
-				ioapic_setRedirection(ioint->dstIOAPICId,ioint->srcBusIRQ,ioint->dstIOAPICInt,
+				IOAPIC::setRedirection(ioint->dstIOAPICId,ioint->srcBusIRQ,ioint->dstIOAPICInt,
 						ioint->intrptType,ioint->polarity,ioint->triggerMode);
 				ptr += MPCTE_LEN_IOIRQ;
 				break;

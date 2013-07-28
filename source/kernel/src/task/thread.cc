@@ -308,11 +308,11 @@ void ThreadBase::makeUnrunnable() {
 	Sched::removeThread(static_cast<Thread*>(this));
 }
 
-void ThreadBase::printAll() {
+void ThreadBase::printAll(OStream &os) {
 	sSLNode *n;
 	for(n = sll_begin(&threads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
-		t->print();
+		t->print(os);
 	}
 }
 
@@ -323,59 +323,59 @@ static const char *getStateName(uint8_t state) {
 	return states[state];
 }
 
-void ThreadBase::printShort() const {
-	Video::printf("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
+void ThreadBase::printShort(OStream &os) const {
+	os.writef("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
 			tid,getStateName(state),priority,cpu,getRuntime());
-	Event::printEvMask(static_cast<const Thread*>(this));
-	Video::printf("]");
+	Event::printEvMask(os,static_cast<const Thread*>(this));
+	os.writef("]");
 }
 
-void ThreadBase::print() const {
+void ThreadBase::print(OStream &os) const {
 	size_t i;
 	Util::FuncCall *calls;
-	Video::printf("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
-	prf_pushIndent();
-	Video::printf("Flags=%#x\n",flags);
-	Video::printf("State=%s\n",getStateName(state));
-	Video::printf("Events=");
-	Event::printEvMask(static_cast<const Thread*>(this));
-	Video::printf("\n");
-	Video::printf("LastCPU=%d\n",cpu);
-	Video::printf("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);
+	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
+	os.pushIndent();
+	os.writef("Flags=%#x\n",flags);
+	os.writef("State=%s\n",getStateName(state));
+	os.writef("Events=");
+	Event::printEvMask(os,static_cast<const Thread*>(this));
+	os.writef("\n");
+	os.writef("LastCPU=%d\n",cpu);
+	os.writef("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);
 	for(i = 0; i < STACK_REG_COUNT; i++) {
-		Video::printf("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt : 0);
+		os.writef("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt : 0);
 		if(i < STACK_REG_COUNT - 1)
-			Video::printf(", ");
+			os.writef(", ");
 	}
-	Video::printf("\n");
-	Video::printf("Priority = %d\n",priority);
-	Video::printf("Runtime = %Lums\n",getRuntime());
-	Video::printf("Scheduled = %u\n",stats.schedCount);
-	Video::printf("Syscalls = %u\n",stats.syscalls);
-	Video::printf("CurCycleCount = %Lu\n",stats.curCycleCount);
-	Video::printf("LastCycleCount = %Lu\n",stats.lastCycleCount);
-	Video::printf("cycleStart = %Lu\n",stats.cycleStart);
-	Video::printf("Kernel-trace:\n");
-	prf_pushIndent();
+	os.writef("\n");
+	os.writef("Priority = %d\n",priority);
+	os.writef("Runtime = %Lums\n",getRuntime());
+	os.writef("Scheduled = %u\n",stats.schedCount);
+	os.writef("Syscalls = %u\n",stats.syscalls);
+	os.writef("CurCycleCount = %Lu\n",stats.curCycleCount);
+	os.writef("LastCycleCount = %Lu\n",stats.lastCycleCount);
+	os.writef("cycleStart = %Lu\n",stats.cycleStart);
+	os.writef("Kernel-trace:\n");
+	os.pushIndent();
 	calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
 	while(calls->addr != 0) {
-		Video::printf("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		os.writef("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 		calls++;
 	}
-	prf_popIndent();
+	os.popIndent();
 	calls = Util::getUserStackTraceOf(const_cast<Thread*>(static_cast<const Thread*>(this)));
 	if(calls) {
-		Video::printf("User-trace:\n");
-		prf_pushIndent();
+		os.writef("User-trace:\n");
+		os.pushIndent();
 		while(calls->addr != 0) {
-			Video::printf("%p -> %p (%s)\n",
+			os.writef("%p -> %p (%s)\n",
 					(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}
-		prf_popIndent();
+		os.popIndent();
 	}
-	Util::printUserStateOf(static_cast<const Thread*>(this));
-	prf_popIndent();
+	Util::printUserStateOf(os,static_cast<const Thread*>(this));
+	os.popIndent();
 }
 
 tid_t ThreadBase::getFreeTid(void) {

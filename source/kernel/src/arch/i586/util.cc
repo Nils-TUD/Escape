@@ -80,40 +80,27 @@ void Util::panicArch() {
 	}
 }
 
-void Util::printUserStateOf(const Thread *t) {
-	static uint32_t regs[REG_COUNT];
+void Util::printUserStateOf(OStream &os,const Thread *t) {
 	if(t->getIntrptStack()) {
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
 		uintptr_t kstackAddr = PageDir::mapToTemp(&frame,1);
 		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
 		IntrptStackFrame *kstack = (IntrptStackFrame*)(kstackAddr + kstackOff);
-		Video::printf("User-Register:\n");
-		prf_pushIndent();
-		regs[R_EAX] = kstack->eax;
-		regs[R_EBX] = kstack->ebx;
-		regs[R_ECX] = kstack->ecx;
-		regs[R_EDX] = kstack->edx;
-		regs[R_ESI] = kstack->esi;
-		regs[R_EDI] = kstack->edi;
-		regs[R_ESP] = kstack->uesp;
-		regs[R_EBP] = kstack->ebp;
-		regs[R_CS] = kstack->cs;
-		regs[R_DS] = kstack->ds;
-		regs[R_ES] = kstack->es;
-		regs[R_FS] = kstack->fs;
-		regs[R_GS] = kstack->gs;
-		regs[R_SS] = kstack->uss;
-		regs[R_EFLAGS] = kstack->eflags;
-		regs[R_EIP] = kstack->eip;
-		PRINT_REGS(regs);
-		prf_popIndent();
+		os.writef("User-Register:\n");
+		os.writef("\teax=%#08x, ebx=%#08x, ecx=%#08x, edx=%#08x\n",
+				kstack->eax,kstack->ebx,kstack->ecx,kstack->edx);
+		os.writef("\tesi=%#08x, edi=%#08x, esp=%#08x, ebp=%#08x\n",
+				kstack->esi,kstack->edi,kstack->esp,kstack->ebp);
+		os.writef("\teip=%#08x, eflags=%#08x\n",kstack->eip,kstack->eflags);
+		os.writef("\tcs=%#02x, ds=%#02x, es=%#02x, fs=%#02x, gs=%#02x, ss=%#02x\n",
+				kstack->cs,kstack->ds,kstack->es,kstack->fs,kstack->gs,kstack->uss);
 		PageDir::unmapFromTemp(1);
 	}
 }
 
-void Util::printUserState(void) {
+void Util::printUserState(OStream &os) {
 	const Thread *t = Thread::getRunning();
-	printUserStateOf(t);
+	printUserStateOf(os,t);
 }
 
 Util::FuncCall *Util::getUserStackTrace(void) {

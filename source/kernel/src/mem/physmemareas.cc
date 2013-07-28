@@ -103,11 +103,11 @@ void PhysMemAreas::rem(uintptr_t addr,uintptr_t end) {
 	}
 }
 
-void PhysMemAreas::print(void) {
+void PhysMemAreas::print(OStream &os) {
 	MemArea *area = list;
-	Video::printf("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / K);
+	os.writef("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / K);
 	while(area != NULL) {
-		Video::printf("	%p .. %p [%zu KiB]\n",area->addr,area->addr + area->size - 1,
+		os.writef("	%p .. %p [%zu KiB]\n",area->addr,area->addr + area->size - 1,
 				area->size / K);
 		area = area->next;
 	}

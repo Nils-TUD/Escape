@@ -24,7 +24,6 @@
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>
 #include <sys/log.h>
-#include <sys/video.h>
 #include <sys/config.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
@@ -47,7 +46,7 @@ void SMPBase::init() {
 		setId(0,0);
 	}
 
-	Log::printf("%zu CPUs found",cpuCount);
+	Log::get().writef("%zu CPUs found",cpuCount);
 }
 
 void SMPBase::disable() {
@@ -162,13 +161,13 @@ void SMPBase::flushTLB(PageDir *pdir) {
 	}
 }
 
-void SMPBase::print() {
+void SMPBase::print(OStream &os) {
 	sSLNode *n;
-	Video::printf("CPUs:\n");
+	os.writef("CPUs:\n");
 	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
 		CPU *cpu = (CPU*)n->data;
 		Thread *t = cpu->thread;
-		Video::printf("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
+		os.writef("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
 				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),
 				cpu->schedCount,cpu->runtime,cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);

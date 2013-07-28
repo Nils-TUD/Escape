@@ -34,9 +34,9 @@
 #include <sys/vfs/fsmsgs.h>
 #include <sys/cpu.h>
 #include <sys/spinlock.h>
+#include <sys/ostringstream.h>
 #include <sys/boot.h>
 #include <sys/util.h>
-#include <sys/printf.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -92,28 +92,25 @@ ssize_t vfs_info_traceReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
 
 static void vfs_info_traceReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
 	Util::FuncCall *call;
-	sStringBuffer buf;
 	Thread *t = vfs_info_getThread(node,dataSize,buffer);
 	if(!t)
 		return;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-	prf_sprintf(&buf,"Kernel:\n");
+
+	OStringStream os;
+	os.writef("Kernel:\n");
 	call = Util::getKernelStackTraceOf(t);
 	while(call && call->addr != 0) {
-		prf_sprintf(&buf,"\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
+		os.writef("\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
 		call++;
 	}
-	prf_sprintf(&buf,"User:\n");
+	os.writef("User:\n");
 	call = Util::getUserStackTraceOf(t);
 	while(call && call->addr != 0) {
-		prf_sprintf(&buf,"\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
+		os.writef("\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
 		call++;
 	}
-	*buffer = buf.str;
-	*dataSize = buf.len;
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 ssize_t vfs_info_procReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -122,24 +119,18 @@ ssize_t vfs_info_procReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,U
 }
 
 static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	size_t pages,own,shared,swapped;
 	Proc *p;
 	pid_t pid = vfs_info_getPid(node,dataSize,buffer);
 	if(pid == INVALID_PID)
 		return;
 
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-
+	OStringStream os;
 	p = Proc::getByPid(pid);
 	if(p) {
 		p->getVM()->getMemUsage(&pages);
 		Proc::getMemUsageOf(pid,&own,&shared,&swapped);
-		prf_sprintf(
-			&buf,
+		os.writef(
 			"%-16s%u\n"
 			"%-16s%u\n"
 			"%-16s%u\n"
@@ -165,8 +156,8 @@ static void vfs_info_procReadCallback(sVFSNode *node,size_t *dataSize,void **buf
 			"Write:",p->stats.output
 		);
 	}
-	*buffer = buf.str;
-	*dataSize = buf.len;
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 ssize_t vfs_info_threadReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -175,25 +166,20 @@ ssize_t vfs_info_threadReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node
 }
 
 static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	size_t i;
 	ulong stackPages = 0;
 	Thread *t = vfs_info_getThread(node,dataSize,buffer);
 	if(!t)
 		return;
 
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
+	OStringStream os;
 	for(i = 0; i < STACK_REG_COUNT; i++) {
 		uintptr_t stackBegin = 0,stackEnd = 0;
 		if(t->getStackRange(&stackBegin,&stackEnd,i))
 			stackPages += (stackEnd - stackBegin) / PAGE_SIZE;
 	}
 
-	prf_sprintf(
-		&buf,
+	os.writef(
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%s\n"
@@ -220,8 +206,8 @@ static void vfs_info_threadReadCallback(sVFSNode *node,size_t *dataSize,void **b
 		"Cycles:",t->getStats().lastCycleCount,
 		"CPU:",t->getCPU()
 	);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 static ssize_t vfs_info_cpuReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -230,14 +216,10 @@ static ssize_t vfs_info_cpuReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *
 }
 
 static void vfs_info_cpuReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-	CPU::sprintf(&buf);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+	OStringStream os;
+	CPU::print(os);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 static ssize_t vfs_info_statsReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -246,16 +228,11 @@ static ssize_t vfs_info_statsReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode
 }
 
 static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
+	OStringStream os;
 	uLongLong cycles;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
 
 	cycles.val64 = CPU::rdtsc();
-	prf_sprintf(
-		&buf,
+	os.writef(
 		"%-16s%zu\n"
 		"%-16s%zu\n"
 		"%-16s%zu\n"
@@ -268,8 +245,8 @@ static void vfs_info_statsReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,
 		"CPUCycles:",cycles.val64,
 		"UpTime:",Timer::getIntrptCount() / Timer::FREQUENCY_DIV
 	);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 static ssize_t vfs_info_memUsageReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
@@ -278,12 +255,8 @@ static ssize_t vfs_info_memUsageReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSN
 }
 
 static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	size_t free,total,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
+	OStringStream os;
 
 	/* TODO change that (kframes, swapping, ...) */
 	free = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT) << PAGE_SIZE_SHIFT;
@@ -294,8 +267,7 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 	cache = Cache::getOccMem();
 	pmem = PhysMem::getStackSize();
 	Proc::getMemUsage(&dataShared,&dataOwn,&dataReal);
-	prf_sprintf(
-		&buf,
+	os.writef(
 		"%-11s%10zu\n"
 		"%-11s%10zu\n"
 		"%-11s%10zu\n"
@@ -328,8 +300,8 @@ static void vfs_info_memUsageReadCallback(A_UNUSED sVFSNode *node,size_t *dataSi
 		"UserOwn:",dataOwn,
 		"UserReal:",dataReal
 	);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 ssize_t vfs_info_regionsReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -338,17 +310,14 @@ ssize_t vfs_info_regionsReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *nod
 }
 
 static void vfs_info_regionsReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	pid_t pid = vfs_info_getPid(node,dataSize,buffer);
 	if(pid == INVALID_PID)
 		return;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-	Proc::getByPid(pid)->getVM()->sprintfRegions(&buf);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+
+	OStringStream os;
+	Proc::getByPid(pid)->getVM()->printRegions(os);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 ssize_t vfs_info_mapsReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -357,17 +326,14 @@ ssize_t vfs_info_mapsReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,U
 }
 
 static void vfs_info_mapsReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	pid_t pid = vfs_info_getPid(node,dataSize,buffer);
 	if(pid == INVALID_PID)
 		return;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-	Proc::getByPid(pid)->getVM()->sprintfMaps(&buf);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+
+	OStringStream os;
+	Proc::getByPid(pid)->getVM()->printMaps(os);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 ssize_t vfs_info_virtMemReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
@@ -376,17 +342,14 @@ ssize_t vfs_info_virtMemReadHandler(pid_t pid,A_UNUSED sFile *file,sVFSNode *nod
 }
 
 static void vfs_info_virtMemReadCallback(sVFSNode *node,size_t *dataSize,void **buffer) {
-	sStringBuffer buf;
 	Proc *p = vfs_info_getProc(node,dataSize,buffer);
 	if(!p)
 		return;
-	buf.dynamic = true;
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-	p->getPageDir()->sprintf(&buf);
-	*buffer = buf.str;
-	*dataSize = buf.len;
+
+	OStringStream os;
+	p->getPageDir()->print(os,PD_PART_USER);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
 }
 
 static Proc *vfs_info_getProc(sVFSNode *node,size_t *dataSize,void **buffer) {

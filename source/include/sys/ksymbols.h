@@ -27,10 +27,14 @@ typedef struct {
 	const char *funcName;
 } sSymbol;
 
+class OStream;
+
 /**
  * Prints all kernel-symbols
+ *
+ * @param os the output-stream
  */
-void ksym_print(void);
+void ksym_print(OStream &os);
 
 /**
  * Searches for the highest address lower than the given one in the symbol-table. In other

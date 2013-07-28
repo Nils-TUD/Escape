@@ -24,8 +24,9 @@
 /**
  * Displays the content of physical or virtual memory
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_mem(size_t argc,char **argv);
+int cons_cmd_mem(OStream &os,size_t argc,char **argv);

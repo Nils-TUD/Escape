@@ -107,6 +107,7 @@ sVFSNode *vfs_device_getWork(sVFSNode *node,bool *cont,bool *retry);
 /**
  * Prints the given server
  *
+ * @param os the output-stream
  * @param n the server-node
  */
-void vfs_device_print(sVFSNode *n);
+void vfs_device_print(OStream &os,sVFSNode *n);

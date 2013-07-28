@@ -21,7 +21,7 @@
 #include <sys/arch/i586/serial.h>
 #include <sys/log.h>
 
-void Log::writeChar(char c) {
+void Log::toSerial(char c) {
 	/* write to COM1 (some chars make no sense here) */
 	if(c != '\r' && c != '\b')
 		Serial::out(Serial::COM1,c);

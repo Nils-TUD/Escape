@@ -32,6 +32,7 @@
 #define IPI_FLUSH_TLB_ACK	54
 
 class Sched;
+class OStream;
 
 class SMPBase {
 	friend class Sched;
@@ -150,8 +151,10 @@ public:
 
 	/**
 	 * Prints all CPUs
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 	/* TODO temporary */
 	/**

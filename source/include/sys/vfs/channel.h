@@ -90,6 +90,7 @@ ssize_t vfs_chan_receive(pid_t pid,ushort flags,sVFSNode *node,msgid_t *id,void 
 /**
  * Prints the given channel
  *
+ * @param os the output-stream
  * @param n the channel-node
  */
-void vfs_chan_print(const sVFSNode *n);
+void vfs_chan_print(OStream &os,const sVFSNode *n);

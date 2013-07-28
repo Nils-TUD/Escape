@@ -43,7 +43,7 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 static void vfs_node_doDestroy(sVFSNode *n,bool remove);
 static sVFSNode *vfs_node_requestNode(void);
 static void vfs_node_releaseNode(sVFSNode *node);
-static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent);
+static void vfs_node_dbg_doPrintTree(OStream &os,size_t level,sVFSNode *parent);
 
 /* all nodes (expand dynamically) */
 static DynArray nodeArray(sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
@@ -538,21 +538,21 @@ char *vfs_node_getId(pid_t pid) {
 	return name;
 }
 
-void vfs_node_printTree(void) {
-	Video::printf("VFS:\n");
-	Video::printf("/\n");
-	vfs_node_dbg_doPrintTree(1,vfs_node_get(0));
+void vfs_node_printTree(OStream &os) {
+	os.writef("VFS:\n");
+	os.writef("/\n");
+	vfs_node_dbg_doPrintTree(os,1,vfs_node_get(0));
 }
 
-void vfs_node_printNode(const sVFSNode *node) {
-	Video::printf("VFSNode @ %p:\n",node);
+void vfs_node_printNode(OStream &os,const sVFSNode *node) {
+	os.writef("VFSNode @ %p:\n",node);
 	if(node) {
-		Video::printf("\tname: %s\n",node->name ? node->name : "NULL");
-		Video::printf("\tfirstChild: %p\n",node->firstChild);
-		Video::printf("\tlastChild: %p\n",node->lastChild);
-		Video::printf("\tnext: %p\n",node->next);
-		Video::printf("\tprev: %p\n",node->prev);
-		Video::printf("\towner: %d\n",node->owner);
+		os.writef("\tname: %s\n",node->name ? node->name : "NULL");
+		os.writef("\tfirstChild: %p\n",node->firstChild);
+		os.writef("\tlastChild: %p\n",node->lastChild);
+		os.writef("\tnext: %p\n",node->next);
+		os.writef("\tprev: %p\n",node->prev);
+		os.writef("\towner: %d\n",node->owner);
 	}
 }
 
@@ -628,18 +628,18 @@ static void vfs_node_releaseNode(sVFSNode *node) {
 	SpinLock::release(&nodesLock);
 }
 
-static void vfs_node_dbg_doPrintTree(size_t level,sVFSNode *parent) {
+static void vfs_node_dbg_doPrintTree(OStream &os,size_t level,sVFSNode *parent) {
 	size_t i;
 	bool isValid;
 	sVFSNode *n = vfs_node_openDir(parent,true,&isValid);
 	if(isValid) {
 		while(n != NULL) {
 			for(i = 0;i < level;i++)
-				Video::printf(" |");
-			Video::printf("- %s\n",n->name);
+				os.writef(" |");
+			os.writef("- %s\n",n->name);
 			/* don't recurse for "." and ".." */
 			if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
-				vfs_node_dbg_doPrintTree(level + 1,n);
+				vfs_node_dbg_doPrintTree(os,level + 1,n);
 			n = n->next;
 		}
 	}

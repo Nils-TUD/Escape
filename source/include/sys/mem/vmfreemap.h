@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 class VMFreeMap {
 	struct Area {
 		uintptr_t addr;
@@ -88,11 +90,11 @@ public:
 	size_t getSize(size_t *areas) const;
 
 	/**
-	 * Prints the given map
+	 * Prints this map
 	 *
-	 * @param map the map
+	 * @param os the output-stream
 	 */
-	void print() const;
+	void print(OStream &os) const;
 
 private:
 	Area *list;

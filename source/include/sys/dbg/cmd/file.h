@@ -24,8 +24,9 @@
 /**
  * Reads a file and displays them via cons_viewLines()
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_file(size_t argc,char **argv);
+int cons_cmd_file(OStream &os,size_t argc,char **argv);

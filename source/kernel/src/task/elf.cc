@@ -41,7 +41,7 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 
 	/* check magic */
 	if(memcmp(eheader->e_ident,ELFMAG,4) != 0) {
-		Video::printf("[LOADER] Invalid magic-number '%02x%02x%02x%02x'\n",
+		Log::get().writef("[LOADER] Invalid magic-number '%02x%02x%02x%02x'\n",
 				eheader->e_ident[0],eheader->e_ident[1],eheader->e_ident[2],eheader->e_ident[3]);
 		return -ENOEXEC;
 	}
@@ -52,13 +52,13 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 		pheader = (sElfPHeader*)datPtr;
 		/* check if all stuff is in the binary */
 		if((uintptr_t)pheader + sizeof(sElfPHeader) >= (uintptr_t)code + length) {
-			Video::printf("[LOADER] Unexpected end; pheader %d not finished\n",j);
+			Log::get().writef("[LOADER] Unexpected end; pheader %d not finished\n",j);
 			return -ENOEXEC;
 		}
 
 		if(pheader->p_type == PT_LOAD) {
 			if(pheader->p_vaddr + pheader->p_filesz >= (uintptr_t)code + length) {
-				Video::printf("[LOADER] Unexpected end; load segment %d not finished\n",loadSegNo);
+				Log::get().writef("[LOADER] Unexpected end; load segment %d not finished\n",loadSegNo);
 				return -ENOEXEC;
 			}
 			if(addSegment(NULL,pheader,loadSegNo,TYPE_PROG) < 0)
@@ -94,13 +94,13 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 
 	res = vfs_openPath(p->getPid(),VFS_READ,path,&file);
 	if(res < 0) {
-		Video::printf("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
+		Log::get().writef("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
 		return -ENOEXEC;
 	}
 
 	/* fill bindesc */
 	if((res = vfs_fstat(p->getPid(),file,&finfo)) < 0) {
-		Video::printf("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
+		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
 		goto failed;
 	}
 	/* set suid and sgid */
@@ -111,13 +111,13 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 
 	/* first read the header */
 	if((readRes = vfs_readFile(p->getPid(),file,&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
-		Video::printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
+		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
 		goto failed;
 	}
 
 	/* check magic */
 	if(memcmp(eheader.e_ident,ELFMAG,4) != 0) {
-		Video::printf("[LOADER] Invalid magic-number '%02x%02x%02x%02x' in '%s'\n",
+		Log::get().writef("[LOADER] Invalid magic-number '%02x%02x%02x%02x' in '%s'\n",
 				eheader.e_ident[0],eheader.e_ident[1],eheader.e_ident[2],eheader.e_ident[3],path);
 		goto failed;
 	}
@@ -133,12 +133,12 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
 		if(vfs_seek(p->getPid(),file,(off_t)datPtr,SEEK_SET) < 0) {
-			Video::printf("[LOADER] Seeking to position 0x%Ox failed\n",(off_t)datPtr);
+			Log::get().writef("[LOADER] Seeking to position 0x%Ox failed\n",(off_t)datPtr);
 			goto failed;
 		}
 		/* read pheader */
 		if((readRes = vfs_readFile(p->getPid(),file,&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
-			Video::printf("[LOADER] Reading program-header %d of '%s' failed: %s\n",
+			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
 					j,path,strerror(-readRes));
 			goto failed;
 		}
@@ -146,22 +146,22 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		if(pheader.p_type == PT_INTERP) {
 			/* has to be the first segment and is not allowed for the dynamic linker */
 			if(loadSeg > 0 || type != TYPE_PROG) {
-				Video::printf("[LOADER] PT_INTERP segment is not first or we're loading the dynlinker\n");
+				Log::get().writef("[LOADER] PT_INTERP seg is not first or we're loading the dynlinker\n");
 				goto failed;
 			}
 			/* read name of dynamic linker */
 			interpName = (char*)Cache::alloc(pheader.p_filesz);
 			if(interpName == NULL) {
-				Video::printf("[LOADER] Allocating memory for dynamic linker name failed\n");
+				Log::get().writef("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
 			Thread::addHeapAlloc(interpName);
 			if(vfs_seek(p->getPid(),file,pheader.p_offset,SEEK_SET) < 0) {
-				Video::printf("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
+				Log::get().writef("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
 			}
 			if(vfs_readFile(p->getPid(),file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
-				Video::printf("[LOADER] Reading dynlinker name failed\n");
+				Log::get().writef("[LOADER] Reading dynlinker name failed\n");
 				goto failedInterpName;
 			}
 			vfs_closeFile(p->getPid(),file);
@@ -180,12 +180,12 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 				if(t->getTLSRange(&tlsStart,NULL)) {
 					/* read tdata */
 					if(vfs_seek(p->getPid(),file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
-						Video::printf("[LOADER] Seeking to load segment %d (%Ox) failed\n",
+						Log::get().writef("[LOADER] Seeking to load segment %d (%Ox) failed\n",
 								loadSeg,pheader.p_offset);
 						goto failed;
 					}
 					if((readRes = vfs_readFile(p->getPid(),file,(void*)tlsStart,pheader.p_filesz)) < 0) {
-						Video::printf("[LOADER] Reading load segment %d failed: %s\n",
+						Log::get().writef("[LOADER] Reading load segment %d failed: %s\n",
 								loadSeg,strerror(-readRes));
 						goto failed;
 					}
@@ -235,7 +235,7 @@ int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int 
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */
 		if(type == TYPE_INTERP && pheader->p_vaddr != INTERP_TEXT_BEGIN) {
-			Video::printf("[LOADER] Dynamic linker text does not start at %p\n",INTERP_TEXT_BEGIN);
+			Log::get().writef("[LOADER] Dynamic linker text does not start at %p\n",INTERP_TEXT_BEGIN);
 			return -ENOEXEC;
 		}
 		/* text regions are shared */
@@ -244,7 +244,7 @@ int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int 
 	else if(pheader->p_type == PT_TLS) {
 		/* not allowed for the dynamic linker */
 		if(type == TYPE_INTERP) {
-			Video::printf("[LOADER] TLS segment not allowed for dynamic linker\n");
+			Log::get().writef("[LOADER] TLS segment not allowed for dynamic linker\n");
 			return -ENOEXEC;
 		}
 		/* we need the thread-control-block at the end */
@@ -259,14 +259,14 @@ int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int 
 	else if(pheader->p_flags == (PF_R | PF_W))
 		flags |= MAP_GROWABLE;
 	else {
-		Video::printf("[LOADER] Unrecognized load segment (no=%d, type=%x, flags=%x)\n",
+		Log::get().writef("[LOADER] Unrecognized load segment (no=%d, type=%x, flags=%x)\n",
 				loadSegNo,pheader->p_type,pheader->p_flags);
 		return -ENOEXEC;
 	}
 
 	/* check if the sizes are valid */
 	if(pheader->p_filesz > memsz) {
-		Video::printf("[LOADER] Number of bytes in file (%zx) more than number of bytes in mem (%zx)\n",
+		Log::get().writef("[LOADER] Number of bytes in file (%zx) more than number of bytes in mem (%zx)\n",
 				pheader->p_filesz,memsz);
 		return -ENOEXEC;
 	}
@@ -278,7 +278,7 @@ int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int 
 	/* add the region */
 	if((res = t->getProc()->getVM()->map(pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
-		Video::printf("[LOADER] Unable to add region: %s\n",strerror(-res));
+		Log::get().writef("[LOADER] Unable to add region: %s\n",strerror(-res));
 		t->discardFrames();
 		return res;
 	}

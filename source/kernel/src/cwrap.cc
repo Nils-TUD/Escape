@@ -18,17 +18,18 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/cache.h>
-#include <sys/cpu.h>
-#include <sys/video.h>
+#include <sys/videolog.h>
+#include <sys/cwrap.h>
 
-void CPUBase::print() {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
-	sprintf(&buf);
-	Video::printf("%s",buf.str);
-	Cache::free(buf.str);
+static VideoLog vl;
+
+void vid_printf(const char *fmt,...) {
+	va_list ap;
+	va_start(ap,fmt);
+	vl.vwritef(fmt,ap);
+	va_end(ap);
+}
+
+void vid_vprintf(const char *fmt,va_list ap) {
+	vl.vwritef(fmt,ap);
 }

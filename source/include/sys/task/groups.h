@@ -22,6 +22,7 @@
 #include <sys/common.h>
 
 class Proc;
+class OStream;
 
 class Groups {
 	Groups() = delete;
@@ -83,9 +84,10 @@ public:
 	/**
 	 * Prints the groups of the given process
 	 *
+	 * @param os the output-stream
 	 * @param pid the process-id
 	 */
-	static void print(pid_t pid);
+	static void print(OStream &os,pid_t pid);
 
 private:
 	static Entries *getByPid(pid_t pid);

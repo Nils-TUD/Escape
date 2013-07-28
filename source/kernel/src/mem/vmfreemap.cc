@@ -172,10 +172,10 @@ size_t VMFreeMap::getSize(size_t *areas) const {
 	return total;
 }
 
-void VMFreeMap::print() const {
+void VMFreeMap::print(OStream &os) const {
 	Area *a;
 	size_t areas;
-	Video::printf("Free area with %zu bytes:\n",getSize(&areas));
+	os.writef("Free area with %zu bytes:\n",getSize(&areas));
 	for(a = list; a != NULL; a = a->next)
-		Video::printf("\t@ %p, %zu bytes\n",a->addr,a->size);
+		os.writef("\t@ %p, %zu bytes\n",a->addr,a->size);
 }

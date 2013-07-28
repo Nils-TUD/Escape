@@ -205,8 +205,10 @@ public:
 
 	/**
 	* Prints the contents of the TLB
+	*
+	* @param os the output-stream
 	*/
-	void printTLB() const;
+	void printTLB(OStream &os) const;
 
 private:
 	/**
@@ -227,8 +229,8 @@ private:
 	*/
 	static void flushPageTable(uintptr_t virt,uintptr_t ptables);
 
-	static void printPageTable(uintptr_t ptables,size_t no,PDEntry *pde);
-	static void printPage(PTEntry *page);
+	static void printPageTable(OStream &os,uintptr_t ptables,size_t no,PDEntry *pde);
+	static void printPage(OStream &os,PTEntry *page);
 
 	size_t remEmptyPt(uintptr_t ptables,size_t pti);
 	uintptr_t getPTables() const;

@@ -104,15 +104,15 @@ void IOPorts::free(Proc *p) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void IOPorts::print(const uint8_t *map) {
+void IOPorts::print(OStream &os,const uint8_t *map) {
 	size_t i,j,c = 0;
-	Video::printf("Reserved IO-ports:\n\t");
+	os.writef("Reserved IO-ports:\n\t");
 	for(i = 0; i < GDT::IO_MAP_SIZE / 8; i++) {
 		for(j = 0; j < 8; j++) {
 			if(!(map[i] & (1 << j))) {
-				Video::printf("%zx, ",i * 8 + j);
+				os.writef("%zx, ",i * 8 + j);
 				if(++c % 10 == 0)
-					Video::printf("\n\t");
+					os.writef("\n\t");
 			}
 		}
 	}

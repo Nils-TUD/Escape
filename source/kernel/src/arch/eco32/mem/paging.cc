@@ -26,7 +26,6 @@
 #include <sys/task/thread.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sys/printf.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -460,61 +459,35 @@ size_t PageDirBase::getPageCount() const {
 	return count;
 }
 
-void PageDir::printTLB() const {
+void PageDir::printTLB(OStream &os) const {
 	int i;
-	Video::printf("TLB:\n");
+	os.writef("TLB:\n");
 	for(i = 0; i < TLB_SIZE; i++) {
 		uint entryHi,entryLo;
 		tlbGet(i,&entryHi,&entryLo);
-		Video::printf("\t%d: %08x %08x %c%c\n",i,entryHi,entryLo,
+		os.writef("\t%d: %08x %08x %c%c\n",i,entryHi,entryLo,
 			(entryLo & 0x2) ? 'w' : '-',(entryLo & 0x1) ? 'v' : '-');
 	}
 }
 
-void PageDirBase::sprintf(sStringBuffer *buf) const {
-	size_t i,j;
-	const PageDir *pdir = static_cast<const PageDir*>(this);
-	uintptr_t ptables = pdir->getPTables();
-	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
-		if(pdirAddr[i].present) {
-			uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
-			PageDir::PTEntry *pte = (PageDir::PTEntry*)(ptables + i * PAGE_SIZE);
-			prf_sprintf(buf,"PageTable 0x%x (VM: 0x%08x - 0x%08x)\n",i,addr,
-					addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
-			for(j = 0; j < PT_ENTRY_COUNT; j++) {
-				if(pte[j].exists) {
-					PageDir::PTEntry *page = pte + j;
-					prf_sprintf(buf,"\tPage 0x%03x: ",j);
-					prf_sprintf(buf,"frame 0x%05x [%c%c] (VM: 0x%08x - 0x%08x)\n",
-							page->frameNumber,page->present ? 'p' : '-',
-							page->writable ? 'w' : 'r',
-							addr,addr + PAGE_SIZE - 1);
-				}
-				addr += PAGE_SIZE;
-			}
-		}
-	}
-}
-
-void PageDirBase::printPage(uintptr_t virt) const {
+void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	uintptr_t ptables = pdir->getPTables();
 	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
 		PageDir::PTEntry *page = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-		Video::printf("Page @ %08Px: ",virt);
-		PageDir::printPage(page);
-		Video::printf("\n");
+		os.writef("Page @ %08Px: ",virt);
+		PageDir::printPage(os,page);
+		os.writef("\n");
 	}
 }
 
-void PageDirBase::print(uint parts) const {
+void PageDirBase::print(OStream &os,uint parts) const {
 	size_t i;
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	uintptr_t ptables = pdir->getPTables();
 	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys);
-	Video::printf("page-dir @ 0x%08x:\n",pdirAddr);
+	os.writef("page-dir @ 0x%08x:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(!pdirAddr[i].present)
 			continue;
@@ -530,37 +503,37 @@ void PageDirBase::print(uint parts) const {
 					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE) &&
 					(parts & PD_PART_KHEAP)) ||
 			(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
-			PageDir::printPageTable(ptables,i,pdirAddr + i);
+			PageDir::printPageTable(os,ptables,i,pdirAddr + i);
 		}
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }
 
-void PageDir::printPageTable(uintptr_t ptables,size_t no,PDEntry *pde) {
+void PageDir::printPageTable(OStream &os,uintptr_t ptables,size_t no,PDEntry *pde) {
 	size_t i;
 	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	PTEntry *pte = (PTEntry*)(ptables + no * PAGE_SIZE);
-	Video::printf("\tpt 0x%x [frame 0x%x, %c] @ 0x%08Px: (VM: 0x%08Px - 0x%08Px)\n",no,
+	os.writef("\tpt 0x%x [frame 0x%x, %c] @ 0x%08Px: (VM: 0x%08Px - 0x%08Px)\n",no,
 			pde->ptFrameNo,pde->writable ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
 	if(pte) {
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i].exists) {
-				Video::printf("\t\t0x%zx: ",i);
-				printPage(pte + i);
-				Video::printf(" (VM: 0x%08Px - 0x%08Px)\n",addr,addr + PAGE_SIZE - 1);
+				os.writef("\t\t0x%zx: ",i);
+				printPage(os,pte + i);
+				os.writef(" (VM: 0x%08Px - 0x%08Px)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
 		}
 	}
 }
 
-void PageDir::printPage(PTEntry *page) {
+void PageDir::printPage(OStream &os,PTEntry *page) {
 	if(page->exists) {
-		Video::printf("r=0x%08x fr=0x%x [%c%c]",*(uint32_t*)page,
+		os.writef("r=0x%08x fr=0x%x [%c%c]",*(uint32_t*)page,
 				page->frameNumber,page->present ? 'p' : '-',page->writable ? 'w' : 'r');
 	}
 	else {
-		Video::printf("-");
+		os.writef("-");
 	}
 }

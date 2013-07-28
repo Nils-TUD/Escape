@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 class TimerBase {
 	TimerBase() = delete;
 
@@ -101,8 +103,10 @@ public:
 
 	/**
 	 * Prints the timer-queue
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	/**

@@ -163,16 +163,16 @@ void Env::removeFor(pid_t pid) {
 	}
 }
 
-void Env::printAllOf(pid_t pid) {
+void Env::printAllOf(OStream &os,pid_t pid) {
 	char name[64];
 	char value[64];
 	size_t i;
-	Video::printf("Environment of %d:\n",pid);
+	os.writef("Environment of %d:\n",pid);
 	for(i = 0; ; i++) {
 		if(!geti(pid,i,name,sizeof(name)))
 			break;
 		get(pid,name,value,sizeof(value));
-		Video::printf("\t'%s' = '%s'\n",name,value);
+		os.writef("\t'%s' = '%s'\n",name,value);
 	}
 }
 

@@ -21,20 +21,23 @@
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
-#include <sys/printf.h>
+#include <sys/ostream.h>
 #include <sys/vfs/vfs.h>
 #include <stdarg.h>
 
-class Log {
-	Log() = delete;
-
+class Log : public OStream {
 	static const size_t BUF_SIZE		= 2048;
+
+	explicit Log() : OStream(), buf(), bufPos(), col(), logToSer(true), logFile(), vfsReady(), lock() {
+	}
 
 public:
 	/**
-	 * @return the file used for logging
+	 * @return the instance
 	 */
-	static sFile *getFile();
+	static Log &get() {
+		return inst;
+	}
 
 	/**
 	 * Tells the log that the VFS is usable now
@@ -42,53 +45,27 @@ public:
 	static void vfsIsReady();
 
 	/**
-	 * Formatted output into the logfile
-	 *
-	 * @param fmt the format
+	 * @return the file used for logging
 	 */
-	static void printf(const char *fmt,...) {
-		va_list ap;
-		va_start(ap,fmt);
-		vprintf(fmt,ap);
-		va_end(ap);
-	}
+	sFile *getFile();
 
-	/**
-	 * Like printf, but with argument-list
-	 *
-	 * @param fmt the format
-	 * @param ap the argument-list
-	 */
-	static void vprintf(const char *fmt,va_list ap) {
-		/* lock it all, to make the debug-output more readable */
-		SpinLock::acquire(&lock);
-		prf_vprintf(&env,fmt,ap);
-		flush();
-		SpinLock::release(&lock);
-	}
+	virtual void writec(char c);
 
 private:
-	/**
-	 * Writes the given character to log
-	 *
-	 * @param c the char
-	 */
-	static void writeChar(char c);
+	virtual uchar pipepad();
+	virtual bool escape(const char **str);
 
-	static void printc(char c);
-	static uchar pipePad();
-	static void escape(const char **str);
-	static ssize_t write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,
-			off_t offset,size_t count);
-	static void flush();
+	static void toSerial(char c);
+	static ssize_t write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
+	void flush();
 
 	/* don't use a heap here to prevent problems */
-	static char buf[BUF_SIZE];
-	static size_t bufPos;
-	static uint col;
-	static bool logToSer;
-	static sFile *logFile;
-	static bool vfsReady;
-	static klock_t lock;
-	static sPrintEnv env;
+	char buf[BUF_SIZE];
+	size_t bufPos;
+	uint col;
+	bool logToSer;
+	sFile *logFile;
+	bool vfsReady;
+	klock_t lock;
+	static Log inst;
 };

@@ -24,11 +24,11 @@
 extern sSymbol kernel_symbols[];
 extern size_t kernel_symbol_count;
 
-void ksym_print(void) {
+void ksym_print(OStream &os) {
 	size_t i;
-	Video::printf("Kernel-Symbols:\n");
+	os.writef("Kernel-Symbols:\n");
 	for(i = 0; i < kernel_symbol_count; i++)
-		Video::printf("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
+		os.writef("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
 }
 
 sSymbol *ksym_getSymbolAt(uintptr_t address) {

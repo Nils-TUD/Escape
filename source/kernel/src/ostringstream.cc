@@ -17,28 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/i586/ports.h>
-#include <sys/video.h>
-#include <string.h>
-#include <assert.h>
-#include <stdarg.h>
+#include <sys/ostringstream.h>
 
-void Video::clear() {
-	memclear(screen(),VID_COLS * 2 * VID_ROWS);
-	// remove cursor
-	Ports::out<uint8_t>(0x3D4,14);
-	Ports::out<uint8_t>(0x3D5,0x07);
-	Ports::out<uint8_t>(0x3D4,15);
-	Ports::out<uint8_t>(0x3D5,0xd0);
-}
-
-void Video::move() {
-	/* last line? */
-	if(row >= VID_ROWS) {
-		/* copy all chars one line back */
-		memmove(screen(),(char*)screen() + VID_COLS * 2,(VID_ROWS - 1) * VID_COLS * 2);
-		memclear((char*)screen() + (VID_ROWS - 1) * VID_COLS * 2,VID_COLS * 2);
-		row--;
+void OStringStream::writec(char c) {
+	if(size != (size_t)-1) {
+		if(dynamic) {
+			if(len >= size) {
+				char *dup;
+				size *= 2;
+				dup = (char*)Cache::realloc(str,size * sizeof(char));
+				if(!dup) {
+					/* make end visible */
+					str[len - 1] = 0xBA;
+					size = (size_t)-1;
+					return;
+				}
+				else
+					str = dup;
+			}
+		}
+		if(str && (dynamic || c == '\0' || len + 1 < size)) {
+			str[len] = c;
+			if(c != '\0')
+				len++;
+		}
 	}
 }

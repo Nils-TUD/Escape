@@ -21,16 +21,16 @@
 #include <sys/mem/kheap.h>
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
-#include <sys/printf.h>
+#include <sys/ostream.h>
 #include <sys/video.h>
 #include <string.h>
 
-void CPUBase::sprintf(sStringBuffer *buf) {
+void CPUBase::print(OStream &os) {
 	const SMP::CPU *smpcpu = SMP::getCPUs()[0];
-	prf_sprintf(buf,"CPU 0:\n");
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Total:",smpcpu->lastTotal);
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",0);
-	prf_sprintf(buf,"\t%-12s%s\n","Vendor:","THM");
-	prf_sprintf(buf,"\t%-12s%s\n","Model:","ECO32");
+	os.writef("CPU 0:\n");
+	os.writef("\t%-12s%Lu Cycles\n","Total:",smpcpu->lastTotal);
+	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
+	os.writef("\t%-12s%lu Hz\n","Speed:",0);
+	os.writef("\t%-12s%s\n","Vendor:","THM");
+	os.writef("\t%-12s%s\n","Model:","ECO32");
 }

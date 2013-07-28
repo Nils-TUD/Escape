@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
+#include <sys/videolog.h>
 #include <string.h>
 
 #define CONS_EXIT			-1234
@@ -61,7 +62,7 @@ public:
 	virtual uint8_t *loadLine(uintptr_t addr) = 0;
 	virtual const char *getInfo(uintptr_t addr) = 0;
 	virtual bool lineMatches(uintptr_t addr,const char *search,size_t searchlen) = 0;
-	virtual void displayLine(uintptr_t addr,uint8_t *bytes) = 0;
+	virtual void displayLine(OStream &os,uintptr_t addr,uint8_t *bytes) = 0;
 	virtual uintptr_t gotoAddr(const char *gotoAddr) = 0;
 
 private:
@@ -78,7 +79,7 @@ class Console {
 	static const size_t MAX_SEARCH_LEN	= 16;
 
 public:
-	typedef int (*command_func)(size_t argc,char **argv);
+	typedef int (*command_func)(OStream &os,size_t argc,char **argv);
 
 	struct Command {
 		char name[MAX_ARG_LEN];
@@ -109,33 +110,36 @@ public:
 	 */
 	static void setLogEnabled(bool enabled) {
 		if(enabled)
-			Video::setTargets(Video::SCREEN | Video::LOG);
+			out = &vidlog;
 		else
-			Video::setTargets(Video::SCREEN);
+			out = &Video::get();
 	}
 
 	/**
 	 * Prints a dump of one line from <bytes> whose origin is <addr>.
 	 *
+	 * @param os the output-stream
 	 * @param addr the address
 	 * @param bytes the bytes to print. has to contain at least BYTES_PER_LINE bytes!
 	 */
-	static void dumpLine(uintptr_t addr,uint8_t *bytes);
+	static void dumpLine(OStream &os,uintptr_t addr,uint8_t *bytes);
 
 	/**
 	 * Runs a navigation loop, i.e. reads from keyboard and lets the user navigate via certain key-
 	 * strokes. It calls backend->loadLine() to get the content.
 	 *
+	 * @param os the output-stream
 	 * @param backend the backend to use
 	 */
-	static void navigation(NaviBackend *backend);
+	static void navigation(OStream &os,NaviBackend *backend);
 
 	/**
 	 * Displays the given lines and provides a navigation through them
 	 *
+	 * @param os the output-stream
 	 * @param l the lines
 	 */
-	static void viewLines(const Lines *l);
+	static void viewLines(OStream &os,const Lines *l);
 
 	/**
 	 * Uses <backend> to search for matches that may span multiple lines.
@@ -152,7 +156,7 @@ private:
 	static uintptr_t getMaxAddr(uintptr_t end);
 	static uintptr_t incrAddr(uintptr_t end,uintptr_t addr,size_t amount);
 	static uintptr_t decrAddr(uintptr_t addr,size_t amount);
-	static void display(NaviBackend *backend,const char *searchInfo,const char *search,
+	static void display(OStream &os,NaviBackend *backend,const char *searchInfo,const char *search,
 	                    int searchMode,uintptr_t *addr);
 	static uint8_t charToInt(char c);
 	static void convSearch(const char *src,char *dst,size_t len);
@@ -166,5 +170,8 @@ private:
 	static char *history[HISTORY_SIZE];
 	static char emptyLine[VID_COLS];
 	static ScreenBackup backup;
+	static ScreenBackup viewBackup;
+	static OStream *out;
+	static VideoLog vidlog;
 	static Command commands[];
 };

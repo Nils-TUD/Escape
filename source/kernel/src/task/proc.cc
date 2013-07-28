@@ -44,7 +44,7 @@
 #include <sys/mutex.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
-#include <sys/video.h>
+#include <sys/log.h>
 #include <sys/debug.h>
 #include <string.h>
 #include <assert.h>
@@ -585,7 +585,7 @@ void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
 
 	/* print information to log */
 	if(signal != SIG_COUNT || exitCode != 0) {
-		Video::printf("Process %d:%s terminated by signal %d, exitCode %d\n",
+		Log::get().writef("Process %d:%s terminated by signal %d, exitCode %d\n",
 				p->pid,p->command,signal,exitCode);
 	}
 
@@ -763,68 +763,71 @@ void ProcBase::doRemoveRegions(Proc *p,bool remStack) {
 	p->virtmem.removeAll(remStack);
 }
 
-void ProcBase::printAll() {
+void ProcBase::printAll(OStream &os) {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
-		p->print();
+		p->print(os);
 	}
 }
 
-void ProcBase::printAllRegions() {
+void ProcBase::printAllRegions(OStream &os) {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
-		p->virtmem.printRegions();
-		Video::printf("\n");
+		os.writef("Regions of proc %d (%s)\n",p->pid,p->getCommand());
+		p->virtmem.printRegions(os);
+		os.writef("\n");
 	}
 }
 
-void ProcBase::printAllPDs(uint parts,bool regions) {
+void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
 	sSLNode *n;
 	for(n = sll_begin(&procs); n != NULL; n = n->next) {
 		Proc *p = (Proc*)n->data;
 		size_t own = 0,shared = 0,swapped = 0;
 		getMemUsageOf(p->pid,&own,&shared,&swapped);
-		Video::printf("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
+		os.writef("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
 				p->pid,p->command,own,shared,swapped);
-		if(regions)
-			p->virtmem.printRegions();
-		p->getPageDir()->print(parts);
-		Video::printf("\n");
+		if(regions) {
+			os.writef("Regions of proc %d (%s)\n",p->pid,p->getCommand());
+			p->virtmem.printRegions(os);
+		}
+		p->getPageDir()->print(os,parts);
+		os.writef("\n");
 	}
 }
 
-void ProcBase::print() {
+void ProcBase::print(OStream &os) {
 	size_t own = 0,shared = 0,swap = 0;
 	sSLNode *n;
-	Video::printf("Proc %d:\n",pid);
-	Video::printf("\tppid=%d, cmd=%s, entry=%#Px\n",parentPid,command,entryPoint);
-	Video::printf("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
-	Video::printf("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
-	Video::printf("\tGroups: ");
-	Groups::print(pid);
-	Video::printf("\n");
+	os.writef("Proc %d:\n",pid);
+	os.writef("\tppid=%d, cmd=%s, entry=%#Px\n",parentPid,command,entryPoint);
+	os.writef("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
+	os.writef("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
+	os.writef("\tGroups: ");
+	Groups::print(os,pid);
+	os.writef("\n");
 	getMemUsageOf(pid,&own,&shared,&swap);
-	Video::printf("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);
-	Video::printf("\tExitInfo: code=%u, signal=%u\n",stats.exitCode,stats.exitSignal);
-	Video::printf("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",
+	os.writef("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);
+	os.writef("\tExitInfo: code=%u, signal=%u\n",stats.exitCode,stats.exitSignal);
+	os.writef("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",
 	           virtmem.getPeakOwnFrames(),virtmem.getPeakSharedFrames(),virtmem.getSwapCount());
-	Video::printf("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
+	os.writef("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
 	           stats.totalRuntime,stats.totalScheds,stats.totalSyscalls);
-	prf_pushIndent();
-	virtmem.print();
-	Env::printAllOf(pid);
-	FileDesc::print(static_cast<Proc*>(this));
-	vfs_fsmsgs_printFSChans(static_cast<Proc*>(this));
-	prf_popIndent();
-	Video::printf("\tThreads:\n");
+	os.pushIndent();
+	virtmem.print(os);
+	Env::printAllOf(os,pid);
+	FileDesc::print(os,static_cast<Proc*>(this));
+	vfs_fsmsgs_printFSChans(os,static_cast<Proc*>(this));
+	os.popIndent();
+	os.writef("\tThreads:\n");
 	for(n = sll_begin(&threads); n != NULL; n = n->next) {
-		Video::printf("\t\t");
-		((Thread*)n->data)->printShort();
-		Video::printf("\n");
+		os.writef("\t\t");
+		((Thread*)n->data)->printShort(os);
+		os.writef("\n");
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }
 
 int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
@@ -943,7 +946,7 @@ void ProcBase::dbg_stopProf() {
 		}
 		curtime -= proctimes[p->pid];
 		if(curtime > 0)
-			Video::printf("Process %3d (%18s): t=%08x\n",p->pid,p->command,curtime);
+			Log::get().writef("Process %3d (%18s): t=%08x\n",p->pid,p->command,curtime);
 	}
 }
 

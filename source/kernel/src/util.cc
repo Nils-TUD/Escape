@@ -28,6 +28,7 @@
 #include <sys/interrupts.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
+#include <sys/videolog.h>
 #include <sys/spinlock.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
@@ -61,122 +62,115 @@ void Util::startTimer() {
 	profStart = CPU::rdtsc();
 }
 
-void Util::stopTimer(const char *prefix,...) {
+void Util::stopTimer(OStream &os,const char *prefix,...) {
 	va_list l;
 	uLongLong diff;
 	diff.val64 = CPU::rdtsc() - profStart;
 	va_start(l,prefix);
-	Video::vprintf(prefix,l);
+	os.vwritef(prefix,l);
 	va_end(l);
-	Video::printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
+	os.writef(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
 }
 
 void Util::panic(const char *fmt, ...) {
 	va_list ap;
+	VideoLog vl;
+	Video &vid = Video::get();
+	Log &log = Log::get();
 	const Thread *t = Thread::getRunning();
 	panicArch();
-	Video::clearScreen();
+
+	vid.clearScreen();
 
 	/* print message */
-	Video::setTargets(Video::SCREEN | Video::LOG);
-	Video::printf("\n");
-	Video::printf("\033[co;7;4]PANIC: ");
+	vl.writef("\n\033[co;7;4]PANIC: ");
 	va_start(ap,fmt);
-	Video::vprintf(fmt,ap);
+	vl.vwritef(fmt,ap);
 	va_end(ap);
-	Video::printf("%|s\033[co]\n","");
+	vl.writef("%|s\033[co]\n","");
 
 	/* write information about the running thread to log/screen */
 	if(t != NULL)
-		Video::printf("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
-	printStackTrace(getKernelStackTrace());
+		vl.writef("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
+	printStackTrace(vl,getKernelStackTrace());
 	if(t) {
-		printUserState();
+		printUserState(vl);
 
-		Video::setTargets(Video::LOG);
-		Video::printf("\n============= snip =============\n");
-		Video::printf("Region overview:\n");
-		t->getProc()->getVM()->printShort("\t");
-
-		Video::setTargets(Video::SCREEN | Video::LOG);
-		printStackTrace(getUserStackTrace());
-
-		Video::setTargets(Video::LOG);
-		Video::printf("============= snip =============\n\n");
-		Video::setTargets(Video::SCREEN | Video::LOG);
+		log.writef("\n============= snip =============\n");
+		log.writef("Region overview:\n");
+		t->getProc()->getVM()->printShort(log,"\t");
+		printStackTrace(vl,getUserStackTrace());
+		log.writef("============= snip =============\n\n");
 	}
 
 	/* write into log only */
 	if(t) {
-		Video::setTargets(Video::SCREEN);
-		Video::printf("\n\nWriting regions and page-directory of the current process to log...");
-		Video::setTargets(Video::LOG);
-		t->getProc()->getVM()->printRegions();
-		t->getProc()->getPageDir()->print(PD_PART_USER);
-		Video::setTargets(Video::SCREEN);
-		Video::printf("Done\n");
+		vid.writef("\n\nWriting regions and page-directory of the current process to log...");
+		t->getProc()->getVM()->printRegions(log);
+		t->getProc()->getPageDir()->print(log,PD_PART_USER);
+		vid.writef("Done\n");
 	}
 
-	Video::printf("\nPress any key to start debugger");
+	vid.writef("\nPress any key to start debugger");
 	while(1) {
 		Keyboard::get(NULL,KEV_PRESS,true);
 		Console::start(NULL);
 	}
 }
 
-void Util::printEventTrace(const FuncCall *trace,const char *fmt,...) {
+void Util::printEventTrace(OStream &os,const FuncCall *trace,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
-	Video::vprintf(fmt,ap);
+	os.vwritef(fmt,ap);
 	va_end(ap);
 	if(trace) {
 		size_t i;
 		for(i = 0; trace->addr != 0 && i < 5; i++) {
 			sSymbol *sym = ksym_getSymbolAt(trace->addr);
 			if(sym->address)
-				Video::printf("%s",sym->funcName);
+				os.writef("%s",sym->funcName);
 			else
-				Video::printf("%Px",trace->addr);
+				os.writef("%Px",trace->addr);
 			trace++;
 			if(trace->addr)
-				Video::printf(" ");
+				os.writef(" ");
 		}
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }
 
-void Util::printStackTrace(const FuncCall *trace) {
+void Util::printStackTrace(OStream &os,const FuncCall *trace) {
 	if(trace && trace->addr) {
 		if(trace->addr < KERNEL_AREA)
-			Video::printf("User-Stacktrace:\n");
+			os.writef("User-Stacktrace:\n");
 		else
-			Video::printf("Kernel-Stacktrace:\n");
+			os.writef("Kernel-Stacktrace:\n");
 
 		while(trace->addr != 0) {
-			Video::printf("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+			os.writef("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
 			trace++;
 		}
 	}
 }
 
-void Util::dumpMem(const void *addr,size_t dwordCount) {
+void Util::dumpMem(OStream &os,const void *addr,size_t dwordCount) {
 	ulong *ptr = (ulong*)addr;
 	while(dwordCount-- > 0) {
-		Video::printf("%p: 0x%0*lx\n",ptr,sizeof(ulong) * 2,*ptr);
+		os.writef("%p: 0x%0*lx\n",ptr,sizeof(ulong) * 2,*ptr);
 		ptr++;
 	}
 }
 
-void Util::dumpBytes(const void *addr,size_t byteCount) {
+void Util::dumpBytes(OStream &os,const void *addr,size_t byteCount) {
 	size_t i = 0;
 	uchar *ptr = (uchar*)addr;
 	for(i = 0; byteCount-- > 0; i++) {
 		if(i % 16 == 0) {
 			if(i > 0)
-				Video::printf("\n");
-			Video::printf("%p:",ptr);
+				os.writef("\n");
+			os.writef("%p:",ptr);
 		}
-		Video::printf(" %02x",*ptr);
+		os.writef(" %02x",*ptr);
 		ptr++;
 	}
 }

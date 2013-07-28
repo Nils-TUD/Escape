@@ -207,7 +207,7 @@ private:
 	static void syscall(Thread *t,IntrptStackFrame *stack);
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
 	static void ipiTerm(Thread *t,IntrptStackFrame *stack);
-	static void printPFInfo(IntrptStackFrame *stack,uintptr_t pfaddr);
+	static void printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t pfaddr);
 
 	/* total number of interrupts */
 	static size_t intrptCount;

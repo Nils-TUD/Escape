@@ -37,19 +37,19 @@ static Util::FuncCall frames[1] = {
 void Util::panicArch() {
 }
 
-void Util::printUserStateOf(const Thread *t) {
+void Util::printUserStateOf(OStream &os,const Thread *t) {
 	sKSpecRegs *sregs = t->getSpecRegs();
-	Video::printf("User state:\n");
-	prf_pushIndent();
-	Interrupts::printStackFrame(t->getIntrptStack());
-	Video::printf("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
-	Video::printf("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
-	prf_popIndent();
+	os.writef("User state:\n");
+	os.pushIndent();
+	Interrupts::printStackFrame(os,t->getIntrptStack());
+	os.writef("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
+	os.writef("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
+	os.popIndent();
 }
 
-void Util::printUserState() {
+void Util::printUserState(OStream &os) {
 	const Thread *t = Thread::getRunning();
-	Util::printUserStateOf(t);
+	Util::printUserStateOf(os,t);
 }
 
 Util::FuncCall *Util::getUserStackTrace() {

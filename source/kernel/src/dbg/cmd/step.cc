@@ -24,9 +24,9 @@
 #include <sys/util.h>
 #include <string.h>
 
-int cons_cmd_step(size_t argc,char **argv) {
+int cons_cmd_step(OStream &os,size_t argc,char **argv) {
 	if(Console::isHelp(argc,argv) || argc > 2) {
-		Video::printf("Usage: step [show]\n");
+		os.writef("Usage: step [show]\n");
 		return 0;
 	}
 
@@ -35,17 +35,17 @@ int cons_cmd_step(size_t argc,char **argv) {
 	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->eflags &= ~(1 << 8);
-		Video::printf("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
+		os.writef("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
 		           t->getProc()->getCommand());
-		Util::printStackTrace(Util::getUserStackTraceOf(t));
-		Util::printUserState();
+		Util::printStackTrace(os,Util::getUserStackTraceOf(t));
+		Util::printUserState(os);
 		return 0;
 	}
 
 	kstack->eflags |= 1 << 8;
 	return CONS_EXIT;
 #else
-	Video::printf("Sorry, not supported\n");
+	os.writef("Sorry, not supported\n");
 	return 0;
 #endif
 }

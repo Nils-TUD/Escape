@@ -110,16 +110,16 @@ size_t CopyOnWrite::getFrmCount(void) {
 	return count;
 }
 
-void CopyOnWrite::print(void) {
+void CopyOnWrite::print(OStream &os) {
 	sSLNode *n;
 	Entry *cow;
 	size_t i;
-	Video::printf("COW-Frames: (%zu frames)\n",getFrmCount());
+	os.writef("COW-Frames: (%zu frames)\n",getFrmCount());
 	for(i = 0; i < HEAP_SIZE; i++) {
-		Video::printf("\t%zu:\n",i);
+		os.writef("\t%zu:\n",i);
 		for(n = sll_begin(frames + i); n != NULL; n = n->next) {
 			cow = (Entry*)n->data;
-			Video::printf("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
+			os.writef("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
 		}
 	}
 }

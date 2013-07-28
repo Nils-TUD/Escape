@@ -175,19 +175,19 @@ void ThreadBase::doSwitch(void) {
 
 #if DEBUGGING
 
-void ThreadBase::printState(const sThreadRegs *state) {
-	Video::printf("State:\n",state);
-	Video::printf("\t$16 = %#08x\n",state->r16);
-	Video::printf("\t$17 = %#08x\n",state->r17);
-	Video::printf("\t$18 = %#08x\n",state->r18);
-	Video::printf("\t$19 = %#08x\n",state->r19);
-	Video::printf("\t$20 = %#08x\n",state->r20);
-	Video::printf("\t$21 = %#08x\n",state->r21);
-	Video::printf("\t$22 = %#08x\n",state->r22);
-	Video::printf("\t$23 = %#08x\n",state->r23);
-	Video::printf("\t$29 = %#08x\n",state->r29);
-	Video::printf("\t$30 = %#08x\n",state->r30);
-	Video::printf("\t$31 = %#08x\n",state->r31);
+void ThreadBase::printState(OStream &os,const sThreadRegs *state) {
+	os.writef("State:\n",state);
+	os.writef("\t$16 = %#08x\n",state->r16);
+	os.writef("\t$17 = %#08x\n",state->r17);
+	os.writef("\t$18 = %#08x\n",state->r18);
+	os.writef("\t$19 = %#08x\n",state->r19);
+	os.writef("\t$20 = %#08x\n",state->r20);
+	os.writef("\t$21 = %#08x\n",state->r21);
+	os.writef("\t$22 = %#08x\n",state->r22);
+	os.writef("\t$23 = %#08x\n",state->r23);
+	os.writef("\t$29 = %#08x\n",state->r29);
+	os.writef("\t$30 = %#08x\n",state->r30);
+	os.writef("\t$31 = %#08x\n",state->r31);
 }
 
 #endif

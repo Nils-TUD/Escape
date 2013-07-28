@@ -115,7 +115,7 @@ public:
 	/**
 	 * Prints all interesting elements of the multi-boot-structure
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static void archStart(BootInfo *info);

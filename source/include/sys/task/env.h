@@ -74,9 +74,10 @@ public:
 	/**
 	 * Prints all env-vars of given process
 	 *
+	 * @param os the output-stream
 	 * @param pid the process-id
 	 */
-	static void printAllOf(pid_t pid);
+	static void printAllOf(OStream &os,pid_t pid);
 
 private:
 	static bool exists(const Proc *p,const char *name);

@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 class IOAPIC {
 	IOAPIC() = delete;
 
@@ -53,7 +55,7 @@ public:
 	static void add(uint8_t id,uint8_t version,uintptr_t addr);
 	static void setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_t type,
 			uint8_t polarity,uint8_t triggerMode);
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static Instance *get(uint8_t id);

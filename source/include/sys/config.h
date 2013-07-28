@@ -34,7 +34,6 @@ public:
 		LOG,
 		PAGESIZE,
 		LINEBYLINE,
-		LOG2SCR,
 		CPU_COUNT,
 		SMP,
 	};
@@ -68,7 +67,6 @@ private:
 
 	static bool lineByLine;
 	static bool doLog;
-	static bool log2scr;
 	static bool smp;
 	static char swapDev[];
 };

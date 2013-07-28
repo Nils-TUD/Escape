@@ -82,19 +82,19 @@ void SwapMap::free(ulong block) {
 	SpinLock::release(&lock);
 }
 
-void SwapMap::print() {
+void SwapMap::print(OStream &os) {
 	size_t i,c = 0;
-	Video::printf("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
-	Video::printf("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
-	Video::printf("Used:");
+	os.writef("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
+	os.writef("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
+	os.writef("Used:");
 	for(i = 0; i < totalBlocks; i++) {
 		Block *block = swapBlocks + i;
 		if(block->refCount > 0) {
 			if(c % 8 == 0)
-				Video::printf("\n ");
-			Video::printf("%5u[%u] ",i,block->refCount);
+				os.writef("\n ");
+			os.writef("%5u[%u] ",i,block->refCount);
 			c++;
 		}
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }

@@ -70,9 +70,10 @@ public:
 	/**
 	 * Prints the given IO-map
 	 *
+	 * @param os the output-stream
 	 * @param map the io-map
 	 */
-	static void print(const uint8_t *map);
+	static void print(OStream &os,const uint8_t *map);
 
 	#endif
 };

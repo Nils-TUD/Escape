@@ -30,10 +30,9 @@
 #include <esc/keycodes.h>
 #include <errno.h>
 
-static ScreenBackup backup;
 static char buffer[512];
 
-int cons_cmd_file(size_t argc,char **argv) {
+int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
 	sFile *file = NULL;
 	ssize_t i,count;
@@ -41,13 +40,11 @@ int cons_cmd_file(size_t argc,char **argv) {
 	Lines lines;
 
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		Video::printf("Usage: %s <file>\n",argv[0]);
-		Video::printf("\tUses the current proc to be able to access the real-fs.\n");
-		Video::printf("\tSo, I hope, you know what you're doing ;)\n");
+		os.writef("Usage: %s <file>\n",argv[0]);
+		os.writef("\tUses the current proc to be able to access the real-fs.\n");
+		os.writef("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
-
-	Video::backup(backup.screen,&backup.row,&backup.col);
 
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
@@ -66,14 +63,12 @@ int cons_cmd_file(size_t argc,char **argv) {
 	file = NULL;
 
 	/* now display lines */
-	Console::viewLines(&lines);
+	Console::viewLines(os,&lines);
 	res = 0;
 
 error:
 	/* clean up */
 	if(file != NULL)
 		vfs_closeFile(pid,file);
-
-	Video::restore(backup.screen,backup.row,backup.col);
 	return res;
 }

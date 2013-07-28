@@ -163,14 +163,14 @@ sFile *FileDesc::unassoc(int fd) {
 	return file;
 }
 
-void FileDesc::print(Proc *p) {
+void FileDesc::print(OStream &os,Proc *p) {
 	size_t i;
-	Video::printf("File descriptors of %d:\n",p->getPid());
+	os.writef("File descriptors of %d:\n",p->getPid());
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
-			Video::printf("\t%-2d: ",i);
-			vfs_printFile(p->fileDescs[i]);
-			Video::printf("\n");
+			os.writef("\t%-2d: ",i);
+			vfs_printFile(os,p->fileDescs[i]);
+			os.writef("\n");
 		}
 	}
 }

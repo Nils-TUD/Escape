@@ -28,13 +28,11 @@
 #include <sys/cpu.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sys/printf.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
 
 PageDir PageDir::firstCon;
-sStringBuffer *PageDir::strBuf = NULL;
 
 void PageDirBase::init() {
 	uintptr_t rootLoc;
@@ -469,43 +467,36 @@ void PageDir::tcRemPT(uintptr_t virt) {
 	}
 }
 
-void PageDirBase::sprintf(sStringBuffer *buf) const {
-	PageDir::strBuf = buf;
-	Video::setPrintFunc(PageDir::sprintfPrint);
-	static_cast<const PageDir*>(this)->print(0);
-	Video::unsetPrintFunc();
-}
-
-void PageDirBase::print(A_UNUSED uint parts) const {
+void PageDirBase::print(OStream &os,A_UNUSED uint parts) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	size_t i,j;
 	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rv & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */
-	Video::printf("root-location @ %p [n=%X]:\n",root,(pdir->rv & 0x1FF8) >> 3);
+	os.writef("root-location @ %p [n=%X]:\n",root,(pdir->rv & 0x1FF8) >> 3);
 	for(i = 0; i < SEGMENT_COUNT; i++) {
 		ulong segSize = SEGSIZE(pdir->rv,i + 1) - SEGSIZE(pdir->rv,i);
 		uintptr_t addr = (i << 61);
-		Video::printf("segment %zu:\n",i);
+		os.writef("segment %zu:\n",i);
 		for(j = 0; j < segSize; j++) {
-			PageDir::printPageTable(i,addr,(uint64_t*)root,j,1);
+			PageDir::printPageTable(os,i,addr,(uint64_t*)root,j,1);
 			addr = (i << 61) | (PAGE_SIZE * (1UL << (10 * (j + 1))));
 			root += PAGE_SIZE;
 		}
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }
 
-void PageDir::printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent) {
+void PageDir::printPageTable(OStream &os,ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent) {
 	size_t i;
 	uint64_t *pte;
 	if(level > 0) {
 		/* page-table with PTPs */
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pt[i] != 0) {
-				Video::printf("%*sPTP%zd[%zd]=%PX n=%X (VM: %p - %p)\n",indent * 2,"",level,i,
+				os.writef("%*sPTP%zd[%zd]=%PX n=%X (VM: %p - %p)\n",indent * 2,"",level,i,
 						(pt[i] & ~DIR_MAPPED_SPACE) / PAGE_SIZE,(pt[i] & PTE_NMASK) >> 3,
 						addr,addr + PAGE_SIZE * (1UL << (10 * level)) - 1);
-				printPageTable(seg,addr,(uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1,indent + 1);
+				printPageTable(os,seg,addr,(uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1,indent + 1);
 			}
 			addr += PAGE_SIZE * (1UL << (10 * level));
 		}
@@ -515,34 +506,34 @@ void PageDir::printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,
 		pte = (uint64_t*)pt;
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i] & PTE_EXISTS) {
-				Video::printf("%*s%zx: ",indent * 2,"",i);
-				printPTE(pte[i]);
-				Video::printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
+				os.writef("%*s%zx: ",indent * 2,"",i);
+				printPTE(os,pte[i]);
+				os.writef(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
 		}
 	}
 }
 
-void PageDir::printPTE(uint64_t pte) {
+void PageDir::printPTE(OStream &os,uint64_t pte) {
 	if(pte & PTE_EXISTS) {
-		Video::printf("f=%PX n=%X [%c%c%c]",PTE_FRAMENO(pte),(pte & PTE_NMASK) >> 3,
+		os.writef("f=%PX n=%X [%c%c%c]",PTE_FRAMENO(pte),(pte & PTE_NMASK) >> 3,
 				(pte & PTE_READABLE) ? 'r' : '-',
 				(pte & PTE_WRITABLE) ? 'w' : '-',
 				(pte & PTE_EXECUTABLE) ? 'x' : '-');
 	}
 	else {
-		Video::printf("-");
+		os.writef("-");
 	}
 }
 
-void PageDirBase::printPage(uintptr_t virt) const {
+void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	uint64_t pte = pdir->getPTE(virt);
 	if(pte & PTE_EXISTS) {
-		Video::printf("Page @ %p: ",virt);
-		PageDir::printPTE(pte);
-		Video::printf("\n");
+		os.writef("Page @ %p: ",virt);
+		PageDir::printPTE(os,pte);
+		os.writef("\n");
 	}
 }
 

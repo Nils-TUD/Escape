@@ -36,6 +36,7 @@
 #define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
 
 class Thread;
+class OStream;
 
 class PhysMem {
 	PhysMem() = delete;
@@ -174,18 +175,24 @@ public:
 
 	/**
 	 * Prints information about the pmem-module
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 	/**
 	 * Prints the free frames on the stack
+	 *
+	 * @param os the output-stream
 	 */
-	static void printStack();
+	static void printStack(OStream &os);
 
 	/**
 	 * Prints the free contiguous frames
+	 *
+	 * @param os the output-stream
 	 */
-	static void printCont();
+	static void printCont(OStream &os);
 
 private:
 	/**

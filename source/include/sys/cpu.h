@@ -20,7 +20,8 @@
 #pragma once
 
 #include <esc/common.h>
-#include <sys/printf.h>
+
+class OStream;
 
 class CPUBase {
 	CPUBase() = delete;
@@ -37,16 +38,11 @@ public:
 	static uint64_t getSpeed();
 
 	/**
-	 * Prints information about the used CPU into the given string-buffer
-	 *
-	 * @param buf the string-buffer
-	 */
-	static void sprintf(sStringBuffer *buf);
-
-	/**
 	 * Prints the CPU-information
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 };
 
 #ifdef __i386__

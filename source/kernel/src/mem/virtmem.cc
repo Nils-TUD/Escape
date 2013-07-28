@@ -30,10 +30,10 @@
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/spinlock.h>
-#include <sys/video.h>
+#include <sys/ostream.h>
+#include <sys/mutex.h>
 #include <sys/util.h>
 #include <sys/log.h>
-#include <sys/mutex.h>
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
@@ -981,41 +981,6 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 	return res;
 }
 
-void VirtMem::sprintfRegions(sStringBuffer *buf) const {
-	if(acquire()) {
-		VMRegion *vm;
-		size_t c = 0;
-		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
-			if(c)
-				prf_sprintf(buf,"\n");
-			vm->reg->acquire();
-			prf_sprintf(buf,"VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
-			vm->reg->sprintf(buf,vm->virt);
-			vm->reg->release();
-			c++;
-		}
-		release();
-	}
-}
-
-void VirtMem::sprintfMaps(sStringBuffer *buf) const {
-	if(acquire()) {
-		VMRegion *vm;
-		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
-			vm->reg->acquire();
-			prf_sprintf(buf,"%-24s %p - %p (%5zuK) %c%c%c%c",getRegName(vm),vm->virt,
-					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K,
-					(vm->reg->getFlags() & RF_WRITABLE) ? 'w' : '-',
-					(vm->reg->getFlags() & RF_EXECUTABLE) ? 'x' : '-',
-					(vm->reg->getFlags() & RF_GROWABLE) ? 'g' : '-',
-					(vm->reg->getFlags() & RF_SHAREABLE) ? 's' : '-');
-			vm->reg->release();
-			prf_sprintf(buf,"\n");
-		}
-		release();
-	}
-}
-
 const char *VirtMem::getRegName(const VMRegion *vm) const {
 	const char *name = "";
 	if(vm->virt == dataAddr)
@@ -1038,43 +1003,62 @@ const char *VirtMem::getRegName(const VMRegion *vm) const {
 	return name;
 }
 
-void VirtMem::printShort(const char *prefix) const {
+void VirtMem::printMaps(OStream &os) const {
 	if(acquire()) {
 		VMRegion *vm;
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
-			Video::printf("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(vm),vm->virt,
-					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K);
-			vm->reg->printFlags();
-			Video::printf("\n");
+			vm->reg->acquire();
+			os.writef("%-24s %p - %p (%5zuK) %c%c%c%c",getRegName(vm),vm->virt,
+					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K,
+					(vm->reg->getFlags() & RF_WRITABLE) ? 'w' : '-',
+					(vm->reg->getFlags() & RF_EXECUTABLE) ? 'x' : '-',
+					(vm->reg->getFlags() & RF_GROWABLE) ? 'g' : '-',
+					(vm->reg->getFlags() & RF_SHAREABLE) ? 's' : '-');
+			vm->reg->release();
+			os.writef("\n");
 		}
 		release();
 	}
 }
 
-void VirtMem::printRegions() const {
+void VirtMem::printShort(OStream &os,const char *prefix) const {
+	if(acquire()) {
+		VMRegion *vm;
+		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
+			os.writef("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(vm),vm->virt,
+					vm->virt + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K);
+			vm->reg->printFlags(os);
+			os.writef("\n");
+		}
+		release();
+	}
+}
+
+void VirtMem::printRegions(OStream &os) const {
 	if(acquire()) {
 		size_t c = 0;
 		VMRegion *vm;
-		Video::printf("Regions of proc %d (%s)\n",pid,Proc::getByPid(pid)->getCommand());
 		for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 			if(c)
-				Video::printf("\n");
-			Video::printf("VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
-			vm->reg->print(vm->virt);
+				os.writef("\n");
+			vm->reg->acquire();
+			os.writef("VMRegion (%p .. %p):\n",vm->virt,vm->virt + vm->reg->getByteCount() - 1);
+			vm->reg->print(os,vm->virt);
+			vm->reg->release();
 			c++;
 		}
 		if(c == 0)
-			Video::printf("- no regions -\n");
+			os.writef("- no regions -\n");
 		release();
 	}
 }
 
-void VirtMem::print() const {
-	freemap.print();
-	Video::printf("Regions:\n");
-	Video::printf("\tDataRegion: %p\n",dataAddr);
-	Video::printf("\tFreeStack: %p\n",freeStackAddr);
-	printShort("\t");
+void VirtMem::print(OStream &os) const {
+	freemap.print(os);
+	os.writef("Regions:\n");
+	os.writef("\tDataRegion: %p\n",dataAddr);
+	os.writef("\tFreeStack: %p\n",freeStackAddr);
+	printShort(os,"\t");
 }
 
 bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
@@ -1176,7 +1160,7 @@ errorFree:
 	Thread::remHeapAlloc(tempBuf);
 	Cache::free(tempBuf);
 error:
-	Log::printf("Demandload page @ %p for proc %s: %s (%d)\n",addr,
+	Log::get().writef("Demandload page @ %p for proc %s: %s (%d)\n",addr,
 			Proc::getByPid(pid)->getCommand(),strerror(-err),err);
 	return false;
 }

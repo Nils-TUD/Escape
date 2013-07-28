@@ -86,8 +86,10 @@ public:
 
 	/**
 	 * Prints the cache
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 	#if DEBUGGING
 	/**
@@ -101,7 +103,7 @@ public:
 	#endif
 
 private:
-	static void printBar(size_t mem,size_t maxMem,size_t total,size_t free);
+	static void printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t free);
 	static void *get(Entry *c,size_t i);
 
 #if DEBUGGING

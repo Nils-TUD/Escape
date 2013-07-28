@@ -23,6 +23,7 @@
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/ls.h>
 #include <sys/mem/cache.h>
+#include <sys/ostringstream.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <string.h>
@@ -32,19 +33,16 @@
 
 static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e);
 
-static ScreenBackup backup;
-
-int cons_cmd_ls(size_t argc,char **argv) {
+int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
 	Lines lines;
-	sStringBuffer buf;
 	sFile *file;
 	sDirEntry e;
 	int res;
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		Video::printf("Usage: %s <dir>\n",argv[0]);
-		Video::printf("\tUses the current proc to be able to access the real-fs.\n");
-		Video::printf("\tSo, I hope, you know what you're doing ;)\n");
+		os.writef("Usage: %s <dir>\n",argv[0]);
+		os.writef("\tUses the current proc to be able to access the real-fs.\n");
+		os.writef("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
@@ -53,15 +51,10 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	if(res < 0)
 		return res;
 	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
-		buf.dynamic = true;
-		buf.len = 0;
-		buf.size = 0;
-		buf.str = NULL;
-		prf_sprintf(&buf,"%d %s",e.nodeNo,e.name);
-		if(buf.str) {
-			lines.appendStr(buf.str);
-			Cache::free(buf.str);
-		}
+		OStringStream ss;
+		ss.writef("%d %s",e.nodeNo,e.name);
+		if(ss.getString())
+			lines.appendStr(ss.getString());
 		lines.newLine();
 	}
 	vfs_closeFile(pid,file);
@@ -70,9 +63,7 @@ int cons_cmd_ls(size_t argc,char **argv) {
 	lines.endLine();
 
 	/* view the lines */
-	Video::backup(backup.screen,&backup.row,&backup.col);
-	Console::viewLines(&lines);
-	Video::restore(backup.screen,backup.row,backup.col);
+	Console::viewLines(os,&lines);
 	return 0;
 }
 

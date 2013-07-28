@@ -186,14 +186,17 @@ public:
 	/**
 	 * Prints the event-mask of given thread
 	 *
+	 * @param os the output-stream
 	 * @param t the thread
 	 */
-	static void printEvMask(const Thread *t);
+	static void printEvMask(OStream &os,const Thread *t);
 
 	/**
 	 * Prints all waiting threads
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static void doRemoveThread(Thread *t);

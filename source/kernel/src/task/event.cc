@@ -149,34 +149,34 @@ bool Event::wakeupThread(Thread *t,uint events) {
 	return res;
 }
 
-void Event::printEvMask(const Thread *t) {
+void Event::printEvMask(OStream &os,const Thread *t) {
 	uint e;
 	if(t->events == 0)
-		Video::printf("-");
+		os.writef("-");
 	else {
 		for(e = 0; e < EV_COUNT; e++) {
 			if(t->events & (1 << e))
-				Video::printf("%s ",getName(e));
+				os.writef("%s ",getName(e));
 		}
 	}
 }
 
-void Event::print(void) {
+void Event::print(OStream &os) {
 	size_t e;
-	Video::printf("Eventlists:\n");
+	os.writef("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
 		WaitList *list = evlists + e;
 		sWait *w = list->begin;
-		Video::printf("\t%s:\n",getName(e));
+		os.writef("\t%s:\n",getName(e));
 		while(w != NULL) {
 			inode_t nodeNo;
 			Thread *t = Thread::getById(w->tid);
-			Video::printf("\t\tthread=%d (%d:%s), object=%x",
+			os.writef("\t\tthread=%d (%d:%s), object=%x",
 					t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),w->object);
 			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
 			if(vfs_node_isValid(nodeNo))
-				Video::printf("(%s)",vfs_node_getPath(nodeNo));
-			Video::printf("\n");
+				os.writef("(%s)",vfs_node_getPath(nodeNo));
+			os.writef("\n");
 			w = w->next;
 		}
 	}

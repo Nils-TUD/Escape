@@ -251,22 +251,22 @@ void GDT::setTSSDesc(Desc *gdt,size_t index,uintptr_t address,size_t size) {
 	gdt[index].access = GDT_PRESENT | GDT_TYPE_32BIT_TSS | (GDT_DPL_KERNEL << 5);
 }
 
-void GDT::print() {
+void GDT::print(OStream &os) {
 	size_t i,j;
 	size_t count = SMP::getCPUCount();
 	const SMP::CPU **cpus = SMP::getCPUs();
-	Video::printf("GDTs:\n");
+	os.writef("GDTs:\n");
 	for(i = 0; i < count; i++) {
 		Desc *gdt = (Desc*)allgdts[cpus[i]->id].offset;
-		Video::printf("\tGDT of CPU %d\n",cpus[i]->id);
+		os.writef("\tGDT of CPU %d\n",cpus[i]->id);
 		if(gdt) {
 			for(j = 0; j < GDT_ENTRY_COUNT; j++) {
-				Video::printf("\t\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",
+				os.writef("\t\t%d: address=%02x%02x:%04x, size=%02x%04x, access=%02x\n",
 						j,gdt[j].addrHigh,gdt[j].addrMiddle,gdt[j].addrLow,
 						gdt[j].sizeHigh,gdt[j].sizeLow,gdt[j].access);
 			}
 		}
 		else
-			Video::printf("\t\t-\n");
+			os.writef("\t\t-\n");
 	}
 }

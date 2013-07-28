@@ -25,7 +25,6 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/file.h>
 #include <sys/video.h>
-#include <sys/printf.h>
 #include <sys/log.h>
 #include <sys/spinlock.h>
 #include <sys/config.h>
@@ -39,14 +38,7 @@
 #define LOG_FILENAME	"log"
 #define DUMMY_STDIN		"/system/stdin"
 
-char Log::buf[BUF_SIZE];
-size_t Log::bufPos;
-uint Log::col = 0;
-bool Log::logToSer = true;
-sFile *Log::logFile;
-bool Log::vfsReady = false;
-klock_t Log::lock;
-sPrintEnv Log::env(printc,escape,pipePad);
+Log Log::inst;
 
 void Log::vfsIsReady() {
 	inode_t inodeNo;
@@ -61,7 +53,7 @@ void Log::vfsIsReady() {
 	assert(nameCpy != NULL);
 	logNode = vfs_file_create(KERNEL_PID,vfs_node_get(inodeNo),nameCpy,vfs_file_read,write);
 	assert(logNode != NULL);
-	assert(vfs_openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO,&logFile) == 0);
+	assert(vfs_openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO,&inst.logFile) == 0);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
@@ -69,23 +61,24 @@ void Log::vfsIsReady() {
 	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
 	assert(vfs_openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO,&inFile) == 0);
 	assert(FileDesc::assoc(inFile) == 0);
-	assert(FileDesc::assoc(logFile) == 1);
-	assert(FileDesc::assoc(logFile) == 2);
+	assert(FileDesc::assoc(inst.logFile) == 1);
+	assert(FileDesc::assoc(inst.logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
-	vfsReady = true;
+	inst.vfsReady = true;
 	/* don't write that again to COM1 */
-	logToSer = false;
-	flush();
-	logToSer = true;
+	inst.logToSer = false;
+	inst.flush();
+	inst.logToSer = true;
 }
 
-void Log::printc(char c) {
-	if(Config::get(Config::LOG) && !vfsReady)
-		writeChar(c);
-	if(bufPos >= BUF_SIZE)
+void Log::writec(char c) {
+	SpinLock::acquire(&lock);
+	if(c != '\0' && Config::get(Config::LOG) && !vfsReady)
+		toSerial(c);
+	if(c == '\0' || bufPos >= BUF_SIZE)
 		flush();
-	if(bufPos < BUF_SIZE) {
+	if(c != '\0' && bufPos < BUF_SIZE) {
 		buf[bufPos++] = c;
 		switch(c) {
 			case '\n':
@@ -95,37 +88,41 @@ void Log::printc(char c) {
 			case '\t':
 				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
 				if(col == 0) {
-					printc(' ');
+					SpinLock::release(&lock);
+					writec(' ');
 					return;
 				}
 				break;
 			default:
 				col = (col + 1) % VID_COLS;
 				if(col == 0) {
-					printc('\n');
+					SpinLock::release(&lock);
+					writec('\n');
 					return;
 				}
 				break;
 		}
 	}
+	SpinLock::release(&lock);
 }
 
-uchar Log::pipePad(void) {
+uchar Log::pipepad() {
 	return VID_COLS - col;
 }
 
-void Log::escape(const char **str) {
+bool Log::escape(const char **str) {
 	int n1,n2,n3;
 	escc_get(str,&n1,&n2,&n3);
+	return true;
 }
 
 ssize_t Log::write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
-	if(Config::get(Config::LOG) && logToSer) {
+	if(Config::get(Config::LOG) && Log::get().logToSer) {
 		char *str = (char*)buffer;
 		size_t i;
 		for(i = 0; i < count; i++)
-			Log::writeChar(str[i]);
+			toSerial(str[i]);
 	}
 	/* ignore errors here */
 	vfs_file_write(pid,file,node,buffer,offset,count);

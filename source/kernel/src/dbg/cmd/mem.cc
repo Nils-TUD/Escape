@@ -23,7 +23,7 @@
 #include <sys/dbg/kb.h>
 #include <sys/mem/paging.h>
 #include <sys/task/proc.h>
-#include <sys/video.h>
+#include <sys/ostringstream.h>
 #include <esc/keycodes.h>
 #include <ctype.h>
 #include <errno.h>
@@ -43,12 +43,8 @@ public:
 
 	virtual const char *getInfo(uintptr_t) {
 		static char procName[60];
-		sStringBuffer buf;
-		buf.dynamic = false;
-		buf.len = 0;
-		buf.size = sizeof(procName);
-		buf.str = procName;
-		prf_sprintf(&buf,"Process %d (%s)",proc->getPid(),proc->getCommand());
+		OStringStream os(procName,sizeof(procName));
+		os.writef("Process %d (%s)",proc->getPid(),proc->getCommand());
 		return procName;
 	}
 
@@ -71,8 +67,8 @@ public:
 		return Console::multiLineMatches(this,addr,search,searchlen);
 	}
 
-	virtual void displayLine(uintptr_t addr,uint8_t *bytes) {
-		Console::dumpLine(addr,bytes);
+	virtual void displayLine(OStream &os,uintptr_t addr,uint8_t *bytes) {
+		Console::dumpLine(os,addr,bytes);
 	}
 
 	virtual uintptr_t gotoAddr(const char *addr) {
@@ -87,20 +83,18 @@ private:
 	static uint8_t buffer[BYTES_PER_LINE + 1];
 };
 
-static ScreenBackup backup;
-
-int cons_cmd_mem(size_t argc,char **argv) {
+int cons_cmd_mem(OStream &os,size_t argc,char **argv) {
 	Proc *proc;
 	uintptr_t addr = 0;
 	if(Console::isHelp(argc,argv) || argc > 3) {
-		Video::printf("Usage: %s [<pid> [<addr>]]\n",argv[0]);
+		os.writef("Usage: %s [<pid> [<addr>]]\n",argv[0]);
 		return 0;
 	}
 
 	if(argc > 1) {
 		proc = Proc::getByPid(strtoul(argv[1],NULL,10));
 		if(!proc) {
-			Video::printf("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
+			os.writef("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
 			return -ESRCH;
 		}
 		if(argc > 2)
@@ -109,11 +103,7 @@ int cons_cmd_mem(size_t argc,char **argv) {
 	else
 		proc = Proc::getByPid(Proc::getRunning());
 
-	Video::backup(backup.screen,&backup.row,&backup.col);
-
 	MemNaviBackend backend(proc,addr);
-	Console::navigation(&backend);
-
-	Video::restore(backup.screen,backup.row,backup.col);
+	Console::navigation(os,&backend);
 	return 0;
 }

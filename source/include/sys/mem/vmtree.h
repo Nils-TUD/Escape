@@ -34,6 +34,7 @@ struct VMRegion {
 };
 
 class VirtMem;
+class OStream;
 
 class VMTree {
 public:
@@ -134,12 +135,14 @@ public:
 
 	/**
 	 * Prints the tree
+	 *
+	 * @param os the output-stream
 	 */
-	void print() const;
+	void print(OStream &os) const;
 
 private:
 	static void doRemove(VMRegion **p,VMRegion *reg);
-	static void doPrint(const VMRegion *n,int layer);
+	static void doPrint(OStream &os,const VMRegion *n,int layer);
 
 	VirtMem *virtmem;
 	/* the linked list */

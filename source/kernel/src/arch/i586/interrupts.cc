@@ -132,7 +132,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	if(intrpt->handler)
 		intrpt->handler(t,stack);
 	else {
-		Video::printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
+		Log::get().writef("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
 				intrpt->name,stack->eip,t->getProc()->getPid(),t->getProc()->getCommand());
 	}
 
@@ -145,7 +145,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 }
 
 void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	Video::printf("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
+	Log::get().writef("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
 			t->getProc()->getPid(),t->getProc()->getCommand());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
@@ -153,9 +153,6 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 		/* stop here? */
 		if(exCount >= MAX_EX_COUNT) {
-			/* for exceptions in kernel: ensure that we have the default print-function */
-			if(stack->eip >= KERNEL_AREA)
-				Video::unsetPrintFunc();
 			Util::panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
 					stack->intrptNo,exCount,stack->eip);
 		}
@@ -167,9 +164,6 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
-	/* for exceptions in kernel: ensure that we have the default print-function */
-	if(stack->eip >= KERNEL_AREA)
-		Video::unsetPrintFunc();
 	/* io-map not loaded yet? */
 	if(IOPorts::handleGPF()) {
 		exCount = 0;
@@ -195,11 +189,6 @@ void Interrupts::exCoProcNA(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t addr = pfAddrs[t->getCPU()];
-	/* for exceptions in kernel: ensure that we have the default print-function */
-	if(stack->eip >= KERNEL_AREA) {
-		Video::setTargets(Video::LOG | Video::SCREEN);
-		Video::unsetPrintFunc();
-	}
 
 #if DEBUG_PAGEFAULTS
 	if(addr == lastPFAddr && lastPFProc == Proc::getRunning()) {
@@ -218,7 +207,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	if(!VirtMem::pagefault(addr,stack->errorCode & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(addr) < 0) {
-			printPFInfo(stack,addr);
+			printPFInfo(Log::get(),stack,addr);
 			/* TODO Proc::segFault();*/
 			Util::panic("Process segfaulted");
 		}
@@ -277,10 +266,10 @@ void Interrupts::ipiTerm(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 		Thread::switchAway();
 }
 
-void Interrupts::printPFInfo(IntrptStackFrame *stack,uintptr_t addr) {
+void Interrupts::printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t addr) {
 	pid_t pid = Proc::getRunning();
-	Video::printf("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
-	Video::printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
+	os.writef("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
+	os.writef("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 			(stack->errorCode & 0x1) ?
 				"page-level protection violation" : "not-present page",
 			(stack->errorCode & 0x2) ? "write" : "read",
@@ -289,23 +278,23 @@ void Interrupts::printPFInfo(IntrptStackFrame *stack,uintptr_t addr) {
 			(stack->errorCode & 0x16) ? "instruction-fetch" : "");
 }
 
-void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
-	Video::printf("stack-frame @ 0x%x\n",stack);
-	Video::printf("\tcs=%02x\n",stack->cs);
-	Video::printf("\tds=%02x\n",stack->ds);
-	Video::printf("\tes=%02x\n",stack->es);
-	Video::printf("\tfs=%02x\n",stack->fs);
-	Video::printf("\tgs=%02x\n",stack->gs);
-	Video::printf("\teax=0x%08x\n",stack->eax);
-	Video::printf("\tebx=0x%08x\n",stack->ebx);
-	Video::printf("\tecx=0x%08x\n",stack->ecx);
-	Video::printf("\tedx=0x%08x\n",stack->edx);
-	Video::printf("\tesi=0x%08x\n",stack->esi);
-	Video::printf("\tedi=0x%08x\n",stack->edi);
-	Video::printf("\tebp=0x%08x\n",stack->ebp);
-	Video::printf("\tuesp=0x%08x\n",stack->uesp);
-	Video::printf("\teip=0x%08x\n",stack->eip);
-	Video::printf("\teflags=0x%08x\n",stack->eflags);
-	Video::printf("\terrorCode=%d\n",stack->errorCode);
-	Video::printf("\tintrptNo=%d\n",stack->intrptNo);
+void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
+	os.writef("stack-frame @ 0x%x\n",stack);
+	os.writef("\tcs=%02x\n",stack->cs);
+	os.writef("\tds=%02x\n",stack->ds);
+	os.writef("\tes=%02x\n",stack->es);
+	os.writef("\tfs=%02x\n",stack->fs);
+	os.writef("\tgs=%02x\n",stack->gs);
+	os.writef("\teax=0x%08x\n",stack->eax);
+	os.writef("\tebx=0x%08x\n",stack->ebx);
+	os.writef("\tecx=0x%08x\n",stack->ecx);
+	os.writef("\tedx=0x%08x\n",stack->edx);
+	os.writef("\tesi=0x%08x\n",stack->esi);
+	os.writef("\tedi=0x%08x\n",stack->edi);
+	os.writef("\tebp=0x%08x\n",stack->ebp);
+	os.writef("\tuesp=0x%08x\n",stack->uesp);
+	os.writef("\teip=0x%08x\n",stack->eip);
+	os.writef("\teflags=0x%08x\n",stack->eflags);
+	os.writef("\terrorCode=%d\n",stack->errorCode);
+	os.writef("\tintrptNo=%d\n",stack->intrptNo);
 }

@@ -23,7 +23,7 @@
 #include <sys/task/smp.h>
 #include <sys/task/timer.h>
 #include <sys/cpu.h>
-#include <sys/printf.h>
+#include <sys/ostream.h>
 #include <sys/video.h>
 #include <sys/log.h>
 #include <sys/util.h>
@@ -49,7 +49,7 @@ enum Vendors {
 	VENDOR_UNKNOWN
 };
 
-static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu);
+static void doPrint(OStream &os,CPU::Info *cpu,const SMP::CPU *smpcpu);
 
 static const char *vendors[] = {
 	"AMDisbetter!",	/* early engineering samples of AMD K5 processor */
@@ -145,7 +145,7 @@ void CPU::detect() {
 
 		/* detect the speed just once */
 		cpuHz = Timer::detectCPUSpeed();
-		Log::printf("Detected %zu Mhz CPU",cpuHz / 1000000);
+		Log::get().writef("Detected %zu Mhz CPU",cpuHz / 1000000);
 	}
 
 	/* get vendor-string */
@@ -217,34 +217,34 @@ bool CPU::hasLocalAPIC() {
 	return (edx & FEATURE_LAPIC) ? true : false;
 }
 
-void CPUBase::sprintf(sStringBuffer *buf) {
+void CPUBase::print(OStream &os) {
 	const SMP::CPU **smpCPUs = SMP::getCPUs();
 	size_t i,count = SMP::getCPUCount();
 	for(i = 0; i < count; i++) {
-		prf_sprintf(buf,"CPU %d:\n",smpCPUs[i]->id);
-		doSprintf(buf,CPU::cpus + i,smpCPUs[i]);
+		os.writef("CPU %d:\n",smpCPUs[i]->id);
+		doPrint(os,CPU::cpus + i,smpCPUs[i]);
 	}
 }
 
-static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu) {
+static void doPrint(OStream &os,CPU::Info *cpu,const SMP::CPU *smpcpu) {
 	size_t size;
-	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%Lu Hz\n","Speed:",CPU::getSpeed());
-	prf_sprintf(buf,"\t%-12s%s\n","Vendor:",vendors[cpu->vendor]);
-	prf_sprintf(buf,"\t%-12s%s\n","Name:",(char*)cpu->name);
+	os.writef("\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
+	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
+	os.writef("\t%-12s%Lu Hz\n","Speed:",CPU::getSpeed());
+	os.writef("\t%-12s%s\n","Vendor:",vendors[cpu->vendor]);
+	os.writef("\t%-12s%s\n","Name:",(char*)cpu->name);
 	switch(cpu->vendor) {
 		case VENDOR_INTEL: {
 			const char **models = NULL;
 			if(cpu->type < ARRAY_SIZE(intelTypes))
-				prf_sprintf(buf,"\t%-12s%s\n","Type:",intelTypes[cpu->type]);
+				os.writef("\t%-12s%s\n","Type:",intelTypes[cpu->type]);
 			else
-				prf_sprintf(buf,"\t%-12s%d\n","Type:",cpu->type);
+				os.writef("\t%-12s%d\n","Type:",cpu->type);
 
 			if(cpu->family < ARRAY_SIZE(intelFamilies))
-				prf_sprintf(buf,"\t%-12s%s\n","Family:",intelFamilies[cpu->family]);
+				os.writef("\t%-12s%s\n","Family:",intelFamilies[cpu->family]);
 			else
-				prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
+				os.writef("\t%-12s%d\n","Family:",cpu->family);
 
 			switch(cpu->family) {
 				case 4:
@@ -261,21 +261,21 @@ static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu) 
 					break;
 			}
 			if(models != NULL && cpu->model < size)
-				prf_sprintf(buf,"\t%-12s%s\n","Model:",models[cpu->model]);
+				os.writef("\t%-12s%s\n","Model:",models[cpu->model]);
 			else
-				prf_sprintf(buf,"\t%-12s%d\n","Model:",cpu->model);
-			prf_sprintf(buf,"\t%-12s%d\n","Brand:",cpu->brand);
-			prf_sprintf(buf,"\t%-12s%d\n","Stepping:",cpu->stepping);
-			prf_sprintf(buf,"\t%-12s%08x\n","Signature:",cpu->signature);
+				os.writef("\t%-12s%d\n","Model:",cpu->model);
+			os.writef("\t%-12s%d\n","Brand:",cpu->brand);
+			os.writef("\t%-12s%d\n","Stepping:",cpu->stepping);
+			os.writef("\t%-12s%08x\n","Signature:",cpu->signature);
 		}
 		break;
 
 		case VENDOR_AMD:
-			prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
-			prf_sprintf(buf,"\t%-12s","Model:");
+			os.writef("\t%-12s%d\n","Family:",cpu->family);
+			os.writef("\t%-12s","Model:");
 			switch(cpu->family) {
 				case 4:
-					prf_sprintf(buf,"%s%d\n","486 Model",cpu->model);
+					os.writef("%s%d\n","486 Model",cpu->model);
 					break;
 				case 5:
 				switch(cpu->model) {
@@ -285,16 +285,16 @@ static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu) 
 					case 3:
 					case 6:
 					case 7:
-						prf_sprintf(buf,"%s%d\n","K6 Model",cpu->model);
+						os.writef("%s%d\n","K6 Model",cpu->model);
 						break;
 					case 8:
-						prf_sprintf(buf,"%s\n","K6-2 Model 8");
+						os.writef("%s\n","K6-2 Model 8");
 						break;
 					case 9:
-						prf_sprintf(buf,"%s\n","K6-III Model 9");
+						os.writef("%s\n","K6-III Model 9");
 						break;
 					default:
-						prf_sprintf(buf,"%s%d\n","K5/K6 Model",cpu->model);
+						os.writef("%s%d\n","K5/K6 Model",cpu->model);
 						break;
 				}
 				break;
@@ -303,33 +303,33 @@ static void doSprintf(sStringBuffer *buf,CPU::Info *cpu,const SMP::CPU *smpcpu) 
 					case 1:
 					case 2:
 					case 4:
-						prf_sprintf(buf,"%s%d\n","Athlon Model ",cpu->model);
+						os.writef("%s%d\n","Athlon Model ",cpu->model);
 						break;
 					case 3:
-						prf_sprintf(buf,"%s\n","Duron Model 3");
+						os.writef("%s\n","Duron Model 3");
 						break;
 					case 6:
-						prf_sprintf(buf,"%s\n","Athlon MP/Mobile Athlon Model 6");
+						os.writef("%s\n","Athlon MP/Mobile Athlon Model 6");
 						break;
 					case 7:
-						prf_sprintf(buf,"%s\n","Mobile Duron Model 7");
+						os.writef("%s\n","Mobile Duron Model 7");
 						break;
 					default:
-						prf_sprintf(buf,"%s%d\n","Duron/Athlon Model ",cpu->model);
+						os.writef("%s%d\n","Duron/Athlon Model ",cpu->model);
 						break;
 				}
 				break;
 			}
-			prf_sprintf(buf,"\t%-12s%d\n","Stepping:",cpu->stepping);
+			os.writef("\t%-12s%d\n","Stepping:",cpu->stepping);
 			break;
 
 		default:
-			prf_sprintf(buf,"\t%-12s%d\n","Model:",cpu->model);
-			prf_sprintf(buf,"\t%-12s%d\n","Type:",cpu->type);
-			prf_sprintf(buf,"\t%-12s%d\n","Family:",cpu->family);
-			prf_sprintf(buf,"\t%-12s%d\n","Brand:",cpu->brand);
-			prf_sprintf(buf,"\t%-12s%d\n","Stepping:",cpu->stepping);
-			prf_sprintf(buf,"\t%-12s%08x\n","Signature:",cpu->signature);
+			os.writef("\t%-12s%d\n","Model:",cpu->model);
+			os.writef("\t%-12s%d\n","Type:",cpu->type);
+			os.writef("\t%-12s%d\n","Family:",cpu->family);
+			os.writef("\t%-12s%d\n","Brand:",cpu->brand);
+			os.writef("\t%-12s%d\n","Stepping:",cpu->stepping);
+			os.writef("\t%-12s%08x\n","Signature:",cpu->signature);
 			break;
 	}
 }

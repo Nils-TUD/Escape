@@ -24,6 +24,7 @@
 
 class Thread;
 class ThreadBase;
+class OStream;
 
 class Sched {
 	friend class Thread;
@@ -44,8 +45,10 @@ public:
 
 	/**
 	 * Prints the status of the scheduler
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	/**
@@ -117,7 +120,7 @@ private:
 	static void qDequeueThread(Queue *q,Thread *t);
 	static void qAppend(Queue *q,Thread *t);
 	static void qPrepend(Queue *q,Thread *t);
-	static void qPrint(Queue *q);
+	static void qPrint(OStream &os,Queue *q);
 
 	static klock_t schedLock;
 	static Queue rdyQueues[];

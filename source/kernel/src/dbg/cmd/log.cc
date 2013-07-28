@@ -22,9 +22,9 @@
 #include <sys/dbg/cmd/log.h>
 #include <string.h>
 
-int cons_cmd_log(size_t argc,char **argv) {
+int cons_cmd_log(OStream &os,size_t argc,char **argv) {
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		Video::printf("Usage: %s on|off\n",argv[0]);
+		os.writef("Usage: %s on|off\n",argv[0]);
 		return 0;
 	}
 

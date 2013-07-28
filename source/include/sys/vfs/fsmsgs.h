@@ -189,6 +189,7 @@ void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo);
 /**
  * Prints the FS-channels for the given process
  *
+ * @param os the output-stream
  * @param p the process
  */
-void vfs_fsmsgs_printFSChans(const Proc *p);
+void vfs_fsmsgs_printFSChans(OStream &os,const Proc *p);

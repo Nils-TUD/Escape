@@ -74,8 +74,10 @@ public:
 
 	/**
 	 * Prints the cow-list
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static Entry *getByFrame(frameno_t frameNo,bool dec);

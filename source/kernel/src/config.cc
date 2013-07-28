@@ -29,7 +29,6 @@
 
 bool Config::lineByLine = false;
 bool Config::doLog = true;
-bool Config::log2scr = false;
 bool Config::smp = true;
 char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
@@ -85,9 +84,6 @@ long Config::get(int id) {
 		case LINEBYLINE:
 			res = lineByLine;
 			break;
-		case LOG2SCR:
-			res = log2scr;
-			break;
 		case CPU_COUNT:
 			res = SMP::getCPUCount();
 			break;
@@ -108,8 +104,6 @@ void Config::set(const char *name,const char *value) {
 		doLog = false;
 	else if(strcmp(name,"linebyline") == 0)
 		lineByLine = true;
-	else if(strcmp(name,"log2scr") == 0)
-		log2scr = true;
 	else if(strcmp(name,"nosmp") == 0)
 		smp = false;
 }

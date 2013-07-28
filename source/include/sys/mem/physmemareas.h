@@ -22,6 +22,7 @@
 #include <sys/common.h>
 
 class PhysMem;
+class OStream;
 
 class PhysMemAreas {
 	friend class PhysMem;
@@ -64,8 +65,10 @@ public:
 
 	/**
 	 * Prints the list
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 	/* TODO private! */
 	/**

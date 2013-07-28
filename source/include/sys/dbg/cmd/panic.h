@@ -24,8 +24,9 @@
 /**
  * Causes a panic
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_panic(size_t argc,char **argv);
+int cons_cmd_panic(OStream &os,size_t argc,char **argv);

@@ -180,13 +180,9 @@ private:
 		asm volatile ("PUT rV,%0" : : "r"(rv));
 	}
 
-	static void sprintfPrint(char c) {
-		prf_sprintf(strBuf,"%c",c);
-	}
-
 	static size_t getPageCountOf(uint64_t *pt,size_t level);
-	static void printPageTable(ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
-	static void printPTE(uint64_t pte);
+	static void printPageTable(OStream &os,ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
+	static void printPTE(OStream &os,uint64_t pte);
 
 	uint64_t *getPT(uintptr_t virt,bool create,size_t *createdPts) const;
 	uint64_t getPTE(uintptr_t virt) const;
@@ -201,7 +197,6 @@ public:
 	ulong ptables;
 private:
 	static PageDir firstCon;
-	static sStringBuffer *strBuf;
 };
 
 inline void PageDirBase::makeFirst() {

@@ -49,15 +49,18 @@ public:
 
 	/**
 	 * Prints the user state of the current thread.
+	 *
+	 * @param os the output-stream
 	 */
-	static void printUserState();
+	static void printUserState(OStream &os);
 
 	/**
 	 * Prints the user state of the given thread
 	 *
+	 * @param os the output-stream
 	 * @param t the thread
 	 */
-	static void printUserStateOf(const Thread *t);
+	static void printUserStateOf(OStream &os,const Thread *t);
 
 	/**
 	 * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
@@ -78,11 +81,12 @@ public:
 	static void startTimer();
 
 	/**
-	 * Stops the timer and displays "<prefix>: <instructions>"
+	 * Stops the timer and prints "<prefix>: <instructions>"
 	 *
+	 * @param os the output-stream
 	 * @param prefix the prefix to display
 	 */
-	static void stopTimer(const char *prefix,...);
+	static void stopTimer(OStream &os,const char *prefix,...);
 
 	/**
 	 * Builds the user-stack-trace for the current thread
@@ -117,33 +121,37 @@ public:
 	/**
 	 * Prints <msg>, followed by a short version of the given stack-trace and a newline.
 	 *
+	 * @param os the output-stream
 	 * @param trace the first function-call (NULL-terminated)
 	 * @param msg the message to print before the trace
 	 */
-	static void printEventTrace(const FuncCall *trace,const char *msg,...);
+	static void printEventTrace(OStream &os,const FuncCall *trace,const char *msg,...);
 
 	/**
 	 * Prints the given stack-trace
 	 *
+	 * @param os the output-stream
 	 * @param trace the first function-call (NULL-terminated)
 	 */
-	static void printStackTrace(const FuncCall *trace);
+	static void printStackTrace(OStream &os,const FuncCall *trace);
 
 	/**
 	 * Prints the memory from <addr> to <addr> + <dwordCount>
 	 *
+	 * @param os the output-stream
 	 * @param addr the staring address
 	 * @param dwordCount the number of dwords to print
 	 */
-	static void dumpMem(const void *addr,size_t dwordCount);
+	static void dumpMem(OStream &os,const void *addr,size_t dwordCount);
 
 	/**
 	 * Prints <byteCount> bytes at <addr>
 	 *
+	 * @param os the output-stream
 	 * @param addr the start-address
 	 * @param byteCount the number of bytes
 	 */
-	static void dumpBytes(const void *addr,size_t byteCount);
+	static void dumpBytes(OStream &os,const void *addr,size_t byteCount);
 
 private:
 	/**

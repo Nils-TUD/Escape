@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/printf.h>
 
 class CPU : public CPUBase {
 	friend class CPUBase;

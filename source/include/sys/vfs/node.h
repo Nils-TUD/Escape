@@ -220,10 +220,14 @@ char *vfs_node_getId(pid_t pid);
 
 /**
  * Prints the VFS tree
+ *
+ * @param os the output-stream
  */
-void vfs_node_printTree(void);
+void vfs_node_printTree(OStream &os);
 
 /**
  * Prints the given VFS node
+ *
+ * @param os the output-stream
  */
-void vfs_node_printNode(const sVFSNode *node);
+void vfs_node_printNode(OStream &os,const sVFSNode *node);

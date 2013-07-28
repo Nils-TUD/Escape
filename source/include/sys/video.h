@@ -20,15 +20,21 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/printf.h>
+#include <sys/ostream.h>
 #include <sys/spinlock.h>
 #include <assert.h>
 #include <stdarg.h>
 
-class Video {
-	Video() = delete;
+class VideoLog;
+
+class Video : public OStream {
+	friend class VideoLog;
 
 	static const int TAB_WIDTH	= 4;
+
+	explicit Video() : OStream(), col(0), row(0), color((BLACK << 4) | WHITE), lock() {
+		clearScreen();
+	}
 
 public:
 	enum {
@@ -41,10 +47,10 @@ public:
 	};
 
 	/**
-	 * Inits the video-stuff
+	 * @return the instance
 	 */
-	static void init() {
-		clearScreen();
+	static Video &get() {
+		return inst;
 	}
 
 	/**
@@ -53,7 +59,7 @@ public:
 	 * @param r the row
 	 * @param c the column
 	 */
-	static void goTo(ushort r,ushort c);
+	void goTo(ushort r,ushort c);
 
 	/**
 	 * Backups the screen to the given buffer. Assumes (!) that the buffer is large enough to contain
@@ -63,7 +69,7 @@ public:
 	 * @param row pointer to the row to set
 	 * @param col pointer to the col to set
 	 */
-	static void backup(char *buffer,ushort *row,ushort *col);
+	void backup(char *buffer,ushort *row,ushort *col);
 
 	/**
 	 * Restores the screen from the given buffer. Assumes (!) that the buffer is large enough to contain
@@ -73,78 +79,38 @@ public:
 	 * @param row the row to set
 	 * @param col the col to set
 	 */
-	static void restore(const char *buffer,ushort row,ushort col);
-
-	/**
-	 * Sets the targets of the printing
-	 *
-	 * @param ntargets the targets (TARGET_*)
-	 */
-	static void setTargets(uint ntargets) {
-		targets = ntargets;
-	}
+	void restore(const char *buffer,ushort row,ushort col);
 
 	/**
 	 * Clears the screen
 	 */
-	static void clearScreen() {
+	void clearScreen() {
 		SpinLock::acquire(&lock);
 		clear();
 		col = row = 0;
 		SpinLock::release(&lock);
 	}
 
-	/**
-	 * Sets the given function as callback for every character to print (instead of the default one
-	 * for printing to screen)
-	 *
-	 * @param func the function
-	 */
-	static void setPrintFunc(fPrintc func) {
-		printFunc = func;
-	}
-
-	/**
-	 * Resets the print-function to the default one
-	 */
-	static void unsetPrintFunc() {
-		printFunc = putchar;
-	}
-
-	/**
-	 * Formatted output to the video-screen
-	 *
-	 * @param fmt the format
-	 */
-	static void printf(const char *fmt,...) asm("vid_printf");
-
-	/**
-	 * Same as printf, but with the va_list as argument
-	 *
-	 * @param fmt the format
-	 * @param ap the argument-list
-	 */
-	static void vprintf(const char *fmt,va_list ap) asm("vid_vprintf");
+	virtual void writec(char c);
 
 private:
+	virtual bool escape(const char **str);
+	virtual uchar pipepad();
+
+	void drawChar(ushort col,ushort row,char c);
+	void clear();
+	void move();
+
 	static void *screen();
-	static void putchar(char c);
-	static void drawChar(ushort col,ushort row,char c);
 	static void copyScrToScr(void *dst,const void *src,size_t rows);
 	static void copyScrToMem(void *dst,const void *src,size_t rows);
 	static void copyMemToScr(void *dst,const void *src,size_t rows);
-	static void clear();
-	static void move();
-	static uchar handlePipePad();
-	static void handleColorCode(const char **str);
 
-	static fPrintc printFunc;
-	static ulong col;
-	static ulong row;
-	static uchar color;
-	static ulong targets;
-	static bool lastWasLineStart;
-	static klock_t lock;
+	ulong col;
+	ulong row;
+	uchar color;
+	klock_t lock;
+	static Video inst;
 };
 
 #ifdef __i386__
@@ -161,8 +127,4 @@ inline void Video::goTo(ushort r,ushort c) {
 	assert(r < VID_ROWS && c < VID_COLS);
 	col = c;
 	row = r;
-}
-
-inline uchar Video::handlePipePad() {
-	return VID_COLS - col;
 }

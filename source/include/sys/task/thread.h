@@ -268,8 +268,10 @@ public:
 
 	/**
 	 * Prints all threads
+	 *
+	 * @param os the output-stream
 	 */
-	static void printAll();
+	static void printAll(OStream &os);
 
 
 	/**
@@ -530,20 +532,25 @@ public:
 
 	/**
 	 * Prints a short info about this thread
+	 *
+	 * @param os the output-stream
 	 */
-	void printShort() const;
+	void printShort(OStream &os) const;
 
 	/**
 	 * Prints this thread
+	 *
+	 * @param os the output-stream
 	 */
-	void print() const;
+	void print(OStream &os) const;
 
 	/**
 	 * Prints the given thread-state
 	 *
+	 * @param os the output-stream
 	 * @param state the pointer to the state-struct
 	 */
-	void printState(const sThreadRegs *state);
+	void printState(OStream &os,const sThreadRegs *state);
 
 private:
 	/**

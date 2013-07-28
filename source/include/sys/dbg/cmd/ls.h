@@ -24,8 +24,9 @@
 /**
  * Displays the content of an directory
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_ls(size_t argc,char **argv);
+int cons_cmd_ls(OStream &os,size_t argc,char **argv);

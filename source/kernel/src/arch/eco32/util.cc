@@ -38,28 +38,28 @@ static Util::FuncCall frames[1] = {
 void Util::panicArch() {
 }
 
-void Util::printUserStateOf(const Thread *t) {
+void Util::printUserStateOf(OStream &os,const Thread *t) {
 	size_t i;
 	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->getKernelStack() << PAGE_SIZE_SHIFT);
 	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
 	if(istackAddr) {
 		IntrptStackFrame *istack = (IntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
-		Video::printf("User state:\n");
-		Video::printf("\tPSW: 0x%08x\n\t",istack->psw);
+		os.writef("User state:\n");
+		os.writef("\tPSW: 0x%08x\n\t",istack->psw);
 		for(i = 0; i < REG_COUNT; i++) {
 			int row = i / 4;
 			int col = i % 4;
-			Video::printf("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
+			os.writef("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);
 			if(i % 4 == 3)
-				Video::printf("\n\t");
+				os.writef("\n\t");
 		}
-		Video::printf("\n");
+		os.writef("\n");
 	}
 }
 
-void Util::printUserState() {
+void Util::printUserState(OStream &os) {
 	const Thread *t = Thread::getRunning();
-	printUserStateOf(t);
+	printUserStateOf(os,t);
 }
 
 Util::FuncCall *Util::getUserStackTrace() {

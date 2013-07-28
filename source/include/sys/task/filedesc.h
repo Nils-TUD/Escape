@@ -22,6 +22,8 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 
+class OStream;
+
 class FileDesc {
 	FileDesc() = delete;
 
@@ -98,7 +100,8 @@ public:
 	/**
 	 * Prints the file-descriptors of <p>
 	 *
+	 * @param os the output-stream
 	 * @param p the process
 	 */
-	static void print(Proc *p);
+	static void print(OStream &os,Proc *p);
 };

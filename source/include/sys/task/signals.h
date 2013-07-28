@@ -55,6 +55,7 @@
 #define SIG_CHECK_NO		2
 
 class ThreadBase;
+class OStream;
 
 class Signals {
 	friend class ThreadBase;
@@ -211,8 +212,10 @@ public:
 
 	/**
 	 * Prints all announced signal-handlers
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static bool add(Data *s,int sig);

@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/cache.h>
-#include <sys/printf.h>
+#include <sys/ostream.h>
 #include <sys/spinlock.h>
 #include <esc/width.h>
 #include <stdarg.h>
@@ -38,90 +38,10 @@
 #define FFL_INTPTR_T		512
 #define FFL_OFF_T			1024
 
-/* the initial space for prf_aprintc() */
-#define SPRINTF_INIT_SIZE	16
+char OStream::hexCharsBig[] = "0123456789ABCDEF";
+char OStream::hexCharsSmall[] = "0123456789abcdef";
 
-static void prf_putc(sPrintEnv *env,char c);
-static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags);
-static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags);
-static int prf_printpad(sPrintEnv *env,int count,uint flags);
-static int prf_printu(sPrintEnv *env,ullong n,uint base,char *chars);
-static int prf_printn(sPrintEnv *env,llong n);
-static int prf_puts(sPrintEnv *env,const char *str,ssize_t len);
-static void prf_aprintc(char c);
-
-static char hexCharsBig[] = "0123456789ABCDEF";
-static char hexCharsSmall[] = "0123456789abcdef";
-static sStringBuffer *curbuf = NULL;
-static klock_t bufLock;
-static size_t indent = 0;
-
-void prf_pushIndent(void) {
-	indent++;
-}
-
-void prf_popIndent(void) {
-	indent--;
-}
-
-void prf_sprintf(sStringBuffer *buf,const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	prf_vsprintf(buf,fmt,ap);
-	va_end(ap);
-}
-
-void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
-	sPrintEnv env;
-	env.print = prf_aprintc;
-	env.escape = NULL;
-	env.pipePad = NULL;
-	env.lineStart = true;
-	SpinLock::acquire(&bufLock);
-	curbuf = buf;
-	prf_vprintf(&env,fmt,ap);
-	/* terminate */
-	prf_aprintc('\0');
-	SpinLock::release(&bufLock);
-}
-
-static void prf_aprintc(char c) {
-	if(curbuf->size != (size_t)-1) {
-		if(curbuf->dynamic) {
-			if(curbuf->str == NULL) {
-				curbuf->size = SPRINTF_INIT_SIZE;
-				curbuf->str = (char*)Cache::alloc(SPRINTF_INIT_SIZE * sizeof(char));
-			}
-			if(curbuf->len >= curbuf->size) {
-				char *dup;
-				curbuf->size *= 2;
-				dup = (char*)Cache::realloc(curbuf->str,curbuf->size * sizeof(char));
-				if(!dup) {
-					/* make end visible */
-					curbuf->str[curbuf->len - 1] = 0xBA;
-					curbuf->size = (size_t)-1;
-					return;
-				}
-				else
-					curbuf->str = dup;
-			}
-		}
-		if(curbuf->str && (curbuf->dynamic || c == '\0' || curbuf->len + 1 < curbuf->size)) {
-			curbuf->str[curbuf->len] = c;
-			if(c != '\0')
-				curbuf->len++;
-		}
-	}
-}
-
-void prf_printf(sPrintEnv *env,const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	prf_vprintf(env,fmt,ap);
-	va_end(ap);
-}
-
-void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
+void OStream::vwritef(const char *fmt,va_list ap) {
 	char c,b;
 	char *s;
 	llong n;
@@ -135,14 +55,12 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
 			/* escape */
-			if(c == '\033' && env->escape) {
-				env->escape(&fmt);
+			if(c == '\033' && escape(&fmt))
 				continue;
-			}
+			printc(c);
 			/* finished? */
 			if(c == '\0')
 				return;
-			prf_putc(env,c);
 		}
 
 		/* read flags */
@@ -176,8 +94,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					fmt++;
 					break;
 				case '|':
-					if(env->pipePad)
-						pad = env->pipePad();
+					pad = pipepad();
 					fmt++;
 					break;
 				default:
@@ -251,7 +168,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					n = va_arg(ap, off_t);
 				else
 					n = va_arg(ap, int);
-				prf_printnpad(env,n,pad,flags);
+				printnpad(n,pad,flags);
 				break;
 
 			/* pointer */
@@ -262,10 +179,10 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 				/* 2 hex-digits per byte and a ':' every 2 bytes */
 				pad = size * 2 + size / 2;
 				while(size > 0) {
-					prf_printupad(env,(u >> (size * 8 - 16)) & 0xFFFF,16,4,flags);
+					printupad((u >> (size * 8 - 16)) & 0xFFFF,16,4,flags);
 					size -= 2;
 					if(size > 0)
-						prf_putc(env,':');
+						printc(':');
 				}
 				break;
 
@@ -290,7 +207,7 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 					u = va_arg(ap, off_t);
 				else
 					u = va_arg(ap, uint);
-				prf_printupad(env,u,base,pad,flags);
+				printupad(u,base,pad,flags);
 				break;
 
 			/* string */
@@ -299,133 +216,133 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 				if(precision == -1)
 					precision = s ? strlen(s) : 6;
 				if(pad > 0 && !(flags & FFL_PADRIGHT))
-					prf_printpad(env,pad - precision,flags);
-				n = prf_puts(env,s ? s : "(null)",precision);
+					printpad(pad - precision,flags);
+				n = prints(s ? s : "(null)",precision);
 				if(pad > 0 && (flags & FFL_PADRIGHT))
-					prf_printpad(env,pad - n,flags);
+					printpad(pad - n,flags);
 				break;
 
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, uint);
-				prf_putc(env,b);
+				printc(b);
 				break;
 
 			default:
-				prf_putc(env,c);
+				printc(c);
 				break;
 		}
 	}
 }
 
-static void prf_putc(sPrintEnv *env,char c) {
-	if(env->lineStart) {
+void OStream::printc(char c) {
+	if(c && lineStart) {
 		size_t i;
 		for(i = 0; i < indent; ++i)
-			env->print('\t');
-		env->lineStart = false;
+			writec('\t');
+		lineStart = false;
 	}
-	env->print(c);
+	writec(c);
 	if(c == '\n')
-		env->lineStart = true;
+		lineStart = true;
 }
 
-static void prf_printnpad(sPrintEnv *env,llong n,uint pad,uint flags) {
+void OStream::printnpad(llong n,uint pad,uint flags) {
 	int count = 0;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
 		size_t width = getllwidth(n);
 		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
-		count += prf_printpad(env,pad - width,flags);
+		count += printpad(pad - width,flags);
 	}
 	/* print '+' or ' ' instead of '-' */
 	if(n > 0) {
 		if((flags & FFL_FORCESIGN)) {
-			prf_putc(env,'+');
+			printc('+');
 			count++;
 		}
 		else if(((flags) & FFL_SPACESIGN)) {
-			prf_putc(env,' ');
+			printc(' ');
 			count++;
 		}
 	}
 	/* print number */
-	count += prf_printn(env,n);
+	count += printn(n);
 	/* pad right */
 	if((flags & FFL_PADRIGHT) && pad > 0)
-		prf_printpad(env,pad - count,flags);
+		printpad(pad - count,flags);
 }
 
-static void prf_printupad(sPrintEnv *env,ullong u,uint base,uint pad,uint flags) {
+void OStream::printupad(ullong u,uint base,uint pad,uint flags) {
 	int count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
 		size_t width = getullwidth(u,base);
-		count += prf_printpad(env,pad - width,flags);
+		count += printpad(pad - width,flags);
 	}
 	/* print base-prefix */
 	if((flags & FFL_PRINTBASE)) {
 		if(base == 16 || base == 8) {
-			prf_putc(env,'0');
+			printc('0');
 			count++;
 		}
 		if(base == 16) {
 			char c = (flags & FFL_CAPHEX) ? 'X' : 'x';
-			prf_putc(env,c);
+			printc(c);
 			count++;
 		}
 	}
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
 		size_t width = getullwidth(u,base);
-		count += prf_printpad(env,pad - width,flags);
+		count += printpad(pad - width,flags);
 	}
 	/* print number */
 	if(flags & FFL_CAPHEX)
-		count += prf_printu(env,u,base,hexCharsBig);
+		count += printu(u,base,hexCharsBig);
 	else
-		count += prf_printu(env,u,base,hexCharsSmall);
+		count += printu(u,base,hexCharsSmall);
 	/* pad right */
 	if((flags & FFL_PADRIGHT) && pad > 0)
-		prf_printpad(env,pad - count,flags);
+		printpad(pad - count,flags);
 }
 
-static int prf_printpad(sPrintEnv *env,int count,uint flags) {
+int OStream::printpad(int count,uint flags) {
 	int res = count;
 	char c = flags & FFL_PADZEROS ? '0' : ' ';
 	while(count-- > 0)
-		prf_putc(env,c);
+		printc(c);
 	return res;
 }
 
-static int prf_printu(sPrintEnv *env,ullong n,uint base,char *chars) {
+int OStream::printu(ullong n,uint base,char *chars) {
 	int res = 0;
 	if(n >= base)
-		res += prf_printu(env,n / base,base,chars);
-	prf_putc(env,chars[(n % base)]);
+		res += printu(n / base,base,chars);
+	printc(chars[(n % base)]);
 	return res + 1;
 }
 
-static int prf_printn(sPrintEnv *env,llong n) {
+int OStream::printn(llong n) {
 	int res = 0;
 	if(n < 0) {
-		prf_putc(env,'-');
+		printc('-');
 		n = -n;
 		res++;
 	}
 
 	if(n >= 10)
-		res += prf_printn(env,n / 10);
-	prf_putc(env,'0' + n % 10);
+		res += printn(n / 10);
+	printc('0' + n % 10);
 	return res + 1;
 }
 
-static int prf_puts(sPrintEnv *env,const char *str,ssize_t len) {
+int OStream::prints(const char *str,ssize_t len) {
 	const char *begin = str;
 	char c;
 	while((len == -1 || len-- > 0) && (c = *str)) {
-		prf_putc(env,c);
+		printc(c);
 		str++;
 	}
 	return str - begin;

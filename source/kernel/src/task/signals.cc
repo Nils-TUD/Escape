@@ -246,20 +246,20 @@ const char *Signals::dbg_getName(int signal) {
 	return "Unknown signal";
 }
 
-void Signals::print(void) {
+void Signals::print(OStream &os) {
 	size_t i;
 	sSLNode *n;
-	Video::printf("Signal handler:\n");
+	os.writef("Signal handler:\n");
 	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
 		Thread *t = (Thread*)n->data;
-		Video::printf("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
-		Video::printf("\t\tpending: %zu\n",t->signals->pending.count);
-		Video::printf("\t\tdeliver: %d\n",t->signals->deliveredSignal);
-		Video::printf("\t\tcurrent: %d\n",t->signals->currentSignal);
-		Video::printf("\t\thandler:\n");
+		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
+		os.writef("\t\tpending: %zu\n",t->signals->pending.count);
+		os.writef("\t\tdeliver: %d\n",t->signals->deliveredSignal);
+		os.writef("\t\tcurrent: %d\n",t->signals->currentSignal);
+		os.writef("\t\thandler:\n");
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
-				Video::printf("\t\t\t%s: handler=%p\n",dbg_getName(i),t->signals->handler[i]);
+				os.writef("\t\t\t%s: handler=%p\n",dbg_getName(i),t->signals->handler[i]);
 		}
 	}
 }

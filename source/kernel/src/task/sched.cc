@@ -332,13 +332,13 @@ void Sched::removeThread(Thread *t) {
 	SpinLock::release(&schedLock);
 }
 
-void Sched::print(void) {
+void Sched::print(OStream &os) {
 	size_t i;
-	Video::printf("Ready queues:\n");
+	os.writef("Ready queues:\n");
 	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
-		Video::printf("\t[%d]:\n",i);
-		qPrint(rdyQueues + i);
-		Video::printf("\n");
+		os.writef("\t[%d]:\n",i);
+		qPrint(os,rdyQueues + i);
+		os.writef("\n");
 	}
 }
 
@@ -411,10 +411,10 @@ void Sched::qPrepend(Sched::Queue *q,Thread *t) {
 	q->first = t;
 }
 
-void Sched::qPrint(Sched::Queue *q) {
+void Sched::qPrint(OStream &os,Sched::Queue *q) {
 	const Thread *t = q->first;
 	while(t != NULL) {
-		Video::printf("\t\t%d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
+		os.writef("\t\t%d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		t = t->next;
 	}
 }

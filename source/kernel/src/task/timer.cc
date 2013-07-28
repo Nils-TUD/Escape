@@ -170,14 +170,14 @@ bool TimerBase::intrpt(void) {
 	return res;
 }
 
-void TimerBase::print(void) {
+void TimerBase::print(OStream &os) {
 	time_t time;
 	Listener *l;
-	Video::printf("Timer-Listener:\n");
+	os.writef("Timer-Listener:\n");
 	time = 0;
 	for(l = listener; l != NULL; l = l->next) {
 		time += l->time;
-		Video::printf("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
+		os.writef("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
 				Thread::getById(l->tid)->getProc()->getCommand(),l->block);
 	}
 }

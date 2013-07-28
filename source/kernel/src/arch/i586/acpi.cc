@@ -90,7 +90,7 @@ void ACPI::parse() {
 			/* determine the real number of required pages */
 			tmpPages = (tbloff + tbllen + PAGE_SIZE - 1) / PAGE_SIZE;
 			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
-				Log::printf("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
+				Log::get().writef("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
 				continue;
 			}
 			/* map it again */
@@ -103,7 +103,7 @@ void ACPI::parse() {
 
 		/* do we have to extend the mapping in the ACPI-area? */
 		if(curDest + tmptbl->length > destEnd) {
-			Log::printf("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
+			Log::get().writef("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
 					curDest + tmptbl->length,destEnd);
 			PageDir::unmapFromTemp(tmpPages);
 			continue;
@@ -116,7 +116,7 @@ void ACPI::parse() {
 			curDest += tmptbl->length;
 		}
 		else
-			Log::printf("Checksum of table %zu is invalid. Skipping\n",i);
+			Log::get().writef("Checksum of table %zu is invalid. Skipping\n",i);
 		PageDir::unmapFromTemp(tmpPages);
 	}
 
@@ -163,18 +163,18 @@ ACPI::RSDP *ACPI::findIn(uintptr_t start,size_t len) {
 	return NULL;
 }
 
-void ACPI::print() {
+void ACPI::print(OStream &os) {
 	sSLNode *n;
 	size_t i = 0;
-	Video::printf("ACPI tables:\n");
+	os.writef("ACPI tables:\n");
 	for(n = sll_begin(&acpiTables); n != NULL; n = n->next, i++) {
 		RSDT *tbl = (RSDT*)n->data;
-		Video::printf("\tTable%zu:\n",i);
-		Video::printf("\t\tsignature: %.4s\n",(char*)&tbl->signature);
-		Video::printf("\t\tlength: %u\n",tbl->length);
-		Video::printf("\t\trevision: %u\n",tbl->revision);
-		Video::printf("\t\toemId: %.6s\n",tbl->oemId);
-		Video::printf("\t\toemTableId: %.8s\n",tbl->oemTableId);
-		Video::printf("\n");
+		os.writef("\tTable%zu:\n",i);
+		os.writef("\t\tsignature: %.4s\n",(char*)&tbl->signature);
+		os.writef("\t\tlength: %u\n",tbl->length);
+		os.writef("\t\trevision: %u\n",tbl->revision);
+		os.writef("\t\toemId: %.6s\n",tbl->oemId);
+		os.writef("\t\toemTableId: %.8s\n",tbl->oemTableId);
+		os.writef("\n");
 	}
 }

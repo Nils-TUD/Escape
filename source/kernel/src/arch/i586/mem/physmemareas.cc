@@ -39,13 +39,13 @@ void PhysMemAreas::initArch(void) {
 		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
 			/* take care that we don't use memory above 4G */
 			if(mmap->baseAddr >= 0x100000000ULL) {
-				Log::printf("Skipping memory above 4G: %#Lx .. %#Lx\n",
+				Log::get().writef("Skipping memory above 4G: %#Lx .. %#Lx\n",
 						mmap->baseAddr,mmap->baseAddr + mmap->length);
 				continue;
 			}
 			uint64_t end = mmap->baseAddr + mmap->length;
 			if(end >= 0x100000000ULL) {
-				Log::printf("Skipping memory above 4G: %#Lx .. %#Lx\n",0x100000000ULL,end);
+				Log::get().writef("Skipping memory above 4G: %#Lx .. %#Lx\n",0x100000000ULL,end);
 				end = 0xFFFFFFFF;
 			}
 			PhysMemAreas::add((uintptr_t)mmap->baseAddr,(uintptr_t)end);

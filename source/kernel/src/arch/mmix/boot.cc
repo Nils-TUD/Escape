@@ -80,7 +80,6 @@ void Boot::archStart(BootInfo *binfo) {
 	/* start idle-thread, load programs (without kernel) and wait for programs */
 	bootFinished = (info.progCount - 1) * 2 + 1;
 
-	Video::init();
 	CPU::setSpeed(info.cpuHz);
 
 	/* parse the boot parameter */
@@ -177,25 +176,19 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	if(PhysMem::canSwap())
 		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
 #endif
-
-	if(bootState == bootFinished) {
-		/* if not requested otherwise, from now on, print only to log */
-		if(!Config::get(Config::LOG2SCR))
-			Video::setTargets(Video::LOG);
-	}
 	return bootState == bootFinished ? 0 : 1;
 }
 
-void Boot::print() {
+void Boot::print(OStream &os) {
 	size_t i;
-	Video::printf("Memory size: %zu bytes\n",info.memSize);
-	Video::printf("Disk size: %zu bytes\n",info.diskSize);
-	Video::printf("Kernelstack-begin: %p\n",info.kstackBegin);
-	Video::printf("Kernelstack-end: %p\n",info.kstackEnd);
-	Video::printf("Boot modules:\n");
+	os.writef("Memory size: %zu bytes\n",info.memSize);
+	os.writef("Disk size: %zu bytes\n",info.diskSize);
+	os.writef("Kernelstack-begin: %p\n",info.kstackBegin);
+	os.writef("Kernelstack-end: %p\n",info.kstackEnd);
+	os.writef("Boot modules:\n");
 	/* skip kernel */
 	for(i = 0; i < info.progCount; i++) {
-		Video::printf("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
+		os.writef("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }

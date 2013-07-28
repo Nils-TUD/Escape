@@ -183,27 +183,26 @@ ssize_t Region::grow(ssize_t amount) {
 	return res;
 }
 
-void Region::sprintf(sStringBuffer *buf,uintptr_t virt) const {
+void Region::print(OStream &os,uintptr_t virt) const {
 	size_t i,x;
 	sSLNode *n;
-	prf_sprintf(buf,"\tSize: %zu bytes\n",byteCount);
-	prf_sprintf(buf,"\tLoad: %zu bytes\n",loadCount);
-	prf_sprintf(buf,"\tflags: ");
-	sprintfFlags(buf);
-	prf_sprintf(buf,"\n");
+	os.writef("\tSize: %zu bytes\n",byteCount);
+	os.writef("\tLoad: %zu bytes\n",loadCount);
+	os.writef("\tflags: ");
+	printFlags(os);
+	os.writef("\n");
 	if(file) {
-		prf_pushIndent();
-		vfs_printFile(file);
-		prf_popIndent();
+		os.writef("\tFile: ");
+		vfs_printFile(os,file);
 	}
-	prf_sprintf(buf,"\tTimestamp: %d\n",timestamp);
-	prf_sprintf(buf,"\tProcesses: ");
+	os.writef("\tTimestamp: %d\n",timestamp);
+	os.writef("\tProcesses: ");
 	for(n = sll_begin(&vms); n != NULL; n = n->next)
-		prf_sprintf(buf,"%d ",((VirtMem*)n->data)->getPid());
-	prf_sprintf(buf,"\n");
-	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(byteCount));
+		os.writef("%d ",((VirtMem*)n->data)->getPid());
+	os.writef("\n");
+	os.writef("\tPages (%d):\n",BYTES_2_PAGES(byteCount));
 	for(i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {
-		prf_sprintf(buf,"\t\t%d: (%p) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
+		os.writef("\t\t%d: (%p) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
 				(pageFlags[i] & PF_SWAPPED) ? getSwapBlock(i) : 0,
 				(pageFlags[i] & PF_COPYONWRITE) ? 'c' : '-',
 				(pageFlags[i] & PF_DEMANDLOAD) ? 'l' : '-',
@@ -211,34 +210,7 @@ void Region::sprintf(sStringBuffer *buf,uintptr_t virt) const {
 	}
 }
 
-void Region::printFlags() const {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
-	sprintfFlags(&buf);
-	if(buf.str) {
-		Video::printf("%s",buf.str);
-		Cache::free(buf.str);
-	}
-}
-
-void Region::print(uintptr_t virt) const {
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
-	sprintf(&buf,virt);
-	if(buf.str != NULL)
-		Video::printf("%s",buf.str);
-	else
-		Video::printf("- no regions -\n");
-	Cache::free(buf.str);
-}
-
-void Region::sprintfFlags(sStringBuffer *buf) const {
+void Region::printFlags(OStream &os) const {
 	struct {
 		const char *name;
 		ulong no;
@@ -255,6 +227,6 @@ void Region::sprintfFlags(sStringBuffer *buf) const {
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
 		if(flags & flagNames[i].no)
-			prf_sprintf(buf,"%s ",flagNames[i].name);
+			os.writef("%s ",flagNames[i].name);
 	}
 }

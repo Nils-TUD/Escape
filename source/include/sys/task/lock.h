@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 class Lock {
 	Lock() = delete;
 
@@ -69,8 +71,10 @@ public:
 
 	/**
 	 * Prints all locks
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	/**

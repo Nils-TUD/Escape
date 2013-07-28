@@ -529,20 +529,25 @@ void vfs_removeThread(tid_t tid);
 
 /**
  * Prints all used entries in the global file table
+ *
+ * @param os the output-stream
  */
-void vfs_printGFT(void);
+void vfs_printGFT(OStream &os);
 
 /**
  * Prints all messages of all devices
+ *
+ * @param os the output-stream
  */
-void vfs_printMsgs(void);
+void vfs_printMsgs(OStream &os);
 
 /**
  * Prints information to the given file
  *
+ * @param os the output-stream
  * @param f the file
  */
-void vfs_printFile(sFile *f);
+void vfs_printFile(OStream &os,sFile *f);
 
 /**
  * @return the number of entries in the global file table

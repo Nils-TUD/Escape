@@ -165,7 +165,7 @@ size_t Cache::getUsedMem(void) {
 	return count;
 }
 
-void Cache::print(void) {
+void Cache::print(OStream &os) {
 	size_t i;
 	size_t total = 0,maxMem = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
@@ -174,26 +174,26 @@ void Cache::print(void) {
 			maxMem = amount;
 		total += amount;
 	}
-	Video::printf("Total: %zu bytes\n",total);
+	os.writef("Total: %zu bytes\n",total);
 	for(i = 0; i < ARRAY_SIZE(caches); i++) {
 		size_t mem = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
-		Video::printf("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
+		os.writef("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
 				caches[i].totalObjs,caches[i].freeObjs,BYTES_2_PAGES(mem));
-		printBar(mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
+		printBar(os,mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
 	}
 }
 
-void Cache::printBar(size_t mem,size_t maxMem,size_t total,size_t free) {
+void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t free) {
 	size_t i;
 	size_t memTotal = (size_t)(VID_COLS * (mem / (double)maxMem));
 	size_t full = (size_t)(memTotal * ((total - free) / (double)total));
 	for(i = 0; i < VID_COLS; i++) {
 		if(i < full)
-			Video::printf("%c",0xDB);
+			os.writef("%c",0xDB);
 		else if(i < memTotal)
-			Video::printf("%c",0xB0);
+			os.writef("%c",0xB0);
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }
 
 void *Cache::get(Entry *c,size_t i) {

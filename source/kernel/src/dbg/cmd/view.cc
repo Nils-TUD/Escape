@@ -50,86 +50,101 @@
 
 #define MAX_VIEWNAME_LEN	16
 
-typedef void (*view_func)(size_t argc,char **argv);
+class ViewOStream : public OStream {
+public:
+	explicit ViewOStream(Lines *l) : OStream(), lines(l) {
+	}
+
+private:
+	virtual void writec(char c) {
+		if(c == '\n')
+			lines->newLine();
+		else if(c != '\0')
+			lines->append(c);
+	}
+
+	Lines *lines;
+};
+
+typedef void (*view_func)(OStream &os);
 struct View {
 	char name[MAX_VIEWNAME_LEN];
 	view_func func;
 };
 
-static void view_printc(char c);
-static void view_proc(size_t argc,char **argv);
-static void view_thread(size_t argc,char **argv);
-static void view_pdirall(size_t argc,char **argv);
-static void view_pdiruser(size_t argc,char **argv);
-static void view_pdirkernel(size_t argc,char **argv);
-static void view_regions(size_t argc,char **argv);
+static void view_proc(OStream &os);
+static void view_thread(OStream &os);
+static void view_pdirall(OStream &os);
+static void view_pdiruser(OStream &os);
+static void view_pdirkernel(OStream &os);
+static void view_regions(OStream &os);
 
-static Proc *view_getProc(size_t argc,char **argv);
-static const Thread *view_getThread(size_t argc,char **argv);
+static Proc *view_getProc(OStream &os);
+static const Thread *view_getThread(OStream &os);
 
-static Lines *linesptr;
-static ScreenBackup backup;
 static View views[] = {
-	{"proc",(view_func)view_proc},
-	{"procs",(view_func)Proc::printAll},
-	{"sched",(view_func)Sched::print},
-	{"signals",(view_func)Signals::print},
-	{"thread",(view_func)view_thread},
-	{"threads",(view_func)Thread::printAll},
-	{"vfstree",(view_func)vfs_node_printTree},
-	{"gft",(view_func)vfs_printGFT},
-	{"msgs",(view_func)vfs_printMsgs},
-	{"cow",(view_func)CopyOnWrite::print},
-	{"cache",(view_func)Cache::print},
-	{"kheap",(view_func)KHeap::print},
-	{"pdirall",(view_func)view_pdirall},
-	{"pdiruser",(view_func)view_pdiruser},
-	{"pdirkernel",(view_func)view_pdirkernel},
-	{"regions",(view_func)view_regions},
-	{"pmem",(view_func)PhysMem::print},
-	{"pmemcont",(view_func)PhysMem::printCont},
-	{"pmemstack",(view_func)PhysMem::printStack},
-	{"pmemareas",(view_func)PhysMemAreas::print},
-	{"swapmap",(view_func)SwapMap::print},
-	{"cpu",(view_func)CPU::print},
+	{"proc",		view_proc},
+	{"procs",		Proc::printAll},
+	{"sched",		Sched::print},
+	{"signals",		Signals::print},
+	{"thread",		view_thread},
+	{"threads",		Thread::printAll},
+	{"vfstree",		vfs_node_printTree},
+	{"gft",			vfs_printGFT},
+	{"msgs",		vfs_printMsgs},
+	{"cow",			CopyOnWrite::print},
+	{"cache",		Cache::print},
+	{"kheap",		KHeap::print},
+	{"pdirall",		view_pdirall},
+	{"pdiruser",	view_pdiruser},
+	{"pdirkernel",	view_pdirkernel},
+	{"regions",		view_regions},
+	{"pmem",		PhysMem::print},
+	{"pmemcont",	PhysMem::printCont},
+	{"pmemstack",	PhysMem::printStack},
+	{"pmemareas",	PhysMemAreas::print},
+	{"swapmap",		SwapMap::print},
+	{"cpu",			CPU::print},
 #ifdef __i386__
-	{"gdt",(view_func)GDT::print},
-	{"ioapic",(view_func)IOAPIC::print},
-	{"acpi",(view_func)ACPI::print},
+	{"gdt",			GDT::print},
+	{"ioapic",		IOAPIC::print},
+	{"acpi",		ACPI::print},
 #endif
-	{"timer",(view_func)Timer::print},
-	{"boot",(view_func)Boot::print},
-	{"locks",(view_func)Lock::print},
-	{"events",(view_func)Event::print},
-	{"smp",(view_func)SMP::print},
+	{"timer",		Timer::print},
+	{"boot",		Boot::print},
+	{"locks",		Lock::print},
+	{"events",		Event::print},
+	{"smp",			SMP::print},
 };
 
-int cons_cmd_view(size_t argc,char **argv) {
+static size_t _argc;
+static char **_argv;
+
+int cons_cmd_view(OStream &os,size_t argc,char **argv) {
 	size_t i;
 	if(Console::isHelp(argc,argv) || argc < 2) {
-		Video::printf("Usage: %s <what>\n",argv[0]);
-		Video::printf("Available 'whats':\n");
+		os.writef("Usage: %s <what>\n",argv[0]);
+		os.writef("Available 'whats':\n");
 		for(i = 0; i < ARRAY_SIZE(views); i++) {
 			if(i % 6 == 0) {
 				if(i > 0)
-					Video::printf("\n");
-				Video::printf("\t");
+					os.writef("\n");
+				os.writef("\t");
 			}
-			Video::printf("%s ",views[i].name);
+			os.writef("%s ",views[i].name);
 		}
-		Video::printf("\n");
+		os.writef("\n");
 		return 0;
 	}
 
 	Lines lines;
-	linesptr = &lines;
+	ViewOStream vos(&lines);
+	_argc = argc;
+	_argv = argv;
 	for(i = 0; i < ARRAY_SIZE(views); i++) {
 		if(strcmp(views[i].name,argv[1]) == 0) {
-			/* redirect prints */
-			Video::setPrintFunc(view_printc);
-			views[i].func(argc,argv);
+			views[i].func(vos);
 			lines.endLine();
-			Video::unsetPrintFunc();
 			break;
 		}
 	}
@@ -137,72 +152,63 @@ int cons_cmd_view(size_t argc,char **argv) {
 		return -EINVAL;
 
 	/* view the lines */
-	Video::backup(backup.screen,&backup.row,&backup.col);
-	Console::viewLines(&lines);
-	Video::restore(backup.screen,backup.row,backup.col);
+	Console::viewLines(os,&lines);
 	return 0;
 }
 
-static void view_printc(char c) {
-	if(c == '\n')
-		linesptr->newLine();
-	else
-		linesptr->append(c);
-}
-
-static void view_proc(size_t argc,char **argv) {
-	Proc *p = view_getProc(argc,argv);
+static void view_proc(OStream &os) {
+	Proc *p = view_getProc(os);
 	if(p != NULL)
-		p->print();
+		p->print(os);
 }
-static void view_thread(size_t argc,char **argv) {
-	const Thread *t = view_getThread(argc,argv);
+static void view_thread(OStream &os) {
+	const Thread *t = view_getThread(os);
 	if(t != NULL)
-		t->print();
+		t->print(os);
 }
-static void view_pdirall(size_t argc,char **argv) {
-	Proc *p = view_getProc(argc,argv);
+static void view_pdirall(OStream &os) {
+	Proc *p = view_getProc(os);
 	if(p != NULL)
-		p->getPageDir()->print(PD_PART_ALL);
+		p->getPageDir()->print(os,PD_PART_ALL);
 }
-static void view_pdiruser(size_t argc,char **argv) {
-	Proc *p = view_getProc(argc,argv);
+static void view_pdiruser(OStream &os) {
+	Proc *p = view_getProc(os);
 	if(p != NULL)
-		p->getPageDir()->print(PD_PART_USER);
+		p->getPageDir()->print(os,PD_PART_USER);
 }
-static void view_pdirkernel(size_t argc,char **argv) {
-	Proc *p = view_getProc(argc,argv);
+static void view_pdirkernel(OStream &os) {
+	Proc *p = view_getProc(os);
 	if(p != NULL)
-		p->getPageDir()->print(PD_PART_KERNEL);
+		p->getPageDir()->print(os,PD_PART_KERNEL);
 }
-static void view_regions(size_t argc,char **argv) {
-	if(argc < 3)
-		Proc::printAllRegions();
+static void view_regions(OStream &os) {
+	if(_argc < 3)
+		Proc::printAllRegions(os);
 	else {
-		Proc *p = view_getProc(argc,argv);
+		Proc *p = view_getProc(os);
 		if(p != NULL)
-			p->getVM()->printRegions();
+			p->getVM()->printRegions(os);
 	}
 }
 
-static Proc *view_getProc(size_t argc,char **argv) {
+static Proc *view_getProc(OStream &os) {
 	Proc *p;
-	if(argc > 2)
-		p = Proc::getByPid(atoi(argv[2]));
+	if(_argc > 2)
+		p = Proc::getByPid(atoi(_argv[2]));
 	else
 		p = Proc::getByPid(Proc::getRunning());
 	if(p == NULL)
-		Video::printf("Unable to find process '%s'\n",argv[2]);
+		os.writef("Unable to find process '%s'\n",_argv[2]);
 	return p;
 }
 
-static const Thread *view_getThread(size_t argc,char **argv) {
+static const Thread *view_getThread(OStream &os) {
 	const Thread *t;
-	if(argc > 2)
-		t = Thread::getById(atoi(argv[2]));
+	if(_argc > 2)
+		t = Thread::getById(atoi(_argv[2]));
 	else
 		t = Thread::getRunning();
 	if(t == NULL)
-		Video::printf("Unable to find thread '%s'\n",argv[2]);
+		os.writef("Unable to find thread '%s'\n",_argv[2]);
 	return t;
 }

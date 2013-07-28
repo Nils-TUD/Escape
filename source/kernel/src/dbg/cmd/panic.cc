@@ -22,9 +22,9 @@
 #include <sys/dbg/cmd/panic.h>
 #include <sys/util.h>
 
-int cons_cmd_panic(A_UNUSED size_t argc,A_UNUSED char **argv) {
+int cons_cmd_panic(OStream &os,A_UNUSED size_t argc,A_UNUSED char **argv) {
 	if(Console::isHelp(argc,argv)) {
-		Video::printf("Usage: panic\n");
+		os.writef("Usage: panic\n");
 		return 0;
 	}
 

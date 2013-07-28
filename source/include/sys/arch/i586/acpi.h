@@ -22,6 +22,8 @@
 #include <sys/common.h>
 #include <esc/sllist.h>
 
+class OStream;
+
 class ACPI {
 	ACPI() = delete;
 
@@ -94,8 +96,10 @@ public:
 	static void parse();
 	/**
 	 * Prints all ACPI tables.
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static bool sigValid(const RSDP *rsdp);

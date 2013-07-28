@@ -21,7 +21,6 @@
 #include <sys/mem/kheap.h>
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
-#include <sys/printf.h>
 #include <sys/video.h>
 #include <string.h>
 
@@ -63,15 +62,15 @@ const char *CPU::specialRegs[] = {
 
 uint64_t CPU::cpuHz;
 
-void CPUBase::sprintf(sStringBuffer *buf) {
+void CPUBase::print(OStream &os) {
 	uint64_t rn = CPU::getSpecial(rN);
 	const SMP::CPU *smpcpu = SMP::getCPUs()[0];
-	prf_sprintf(buf,"CPU 0:\n");
-	prf_sprintf(buf,"\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
-	prf_sprintf(buf,"\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
-	prf_sprintf(buf,"\t%-12s%lu Hz\n","Speed:",CPU::getSpeed());
-	prf_sprintf(buf,"\t%-12s%s\n","Vendor:","THM");
-	prf_sprintf(buf,"\t%-12s%s\n","Model:","GIMMIX");
-	prf_sprintf(buf,"\t%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
-	prf_sprintf(buf,"\t%-12s%lu\n","Builddate",rn & 0xFFFFFFFFFF);
+	os.writef("CPU 0:\n");
+	os.writef("\t%-12s%lu Cycles\n","Total:",smpcpu->lastTotal);
+	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
+	os.writef("\t%-12s%lu Hz\n","Speed:",CPU::getSpeed());
+	os.writef("\t%-12s%s\n","Vendor:","THM");
+	os.writef("\t%-12s%s\n","Model:","GIMMIX");
+	os.writef("\t%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
+	os.writef("\t%-12s%lu\n","Builddate",rn & 0xFFFFFFFFFF);
 }

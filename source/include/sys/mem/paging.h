@@ -21,7 +21,6 @@
 
 #include <sys/common.h>
 #include <sys/mem/physmem.h>
-#include <sys/printf.h>
 
 /* flags for map() */
 #define PG_PRESENT				1
@@ -44,6 +43,7 @@
 #define PD_PART_TEMPMAP			16
 
 class PageDir;
+class OStream;
 
 class PageDirBase {
 protected:
@@ -239,23 +239,18 @@ public:
 	/**
 	 * Prints the given parts from this page-directory
 	 *
+	 * @param os the output-stream
 	 * @param parts the parts to print
 	 */
-	void print(uint parts) const;
-
-	/**
-	 * Prints the user-part of this page-directory to the given buffer
-	 *
-	 * @param buffer the buffer
-	 */
-	void sprintf(sStringBuffer *buf) const;
+	void print(OStream &os,uint parts) const;
 
 	/**
 	 * Prints the page at given virtual address
 	 *
+	 * @param os the output-stream
 	 * @param virt the virtual address
 	 */
-	void printPage(uintptr_t virt) const;
+	void printPage(OStream &os,uintptr_t virt) const;
 };
 
 #ifdef __i386__

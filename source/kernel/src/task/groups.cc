@@ -111,16 +111,16 @@ void Groups::leave(pid_t pid) {
 	p->groups = NULL;
 }
 
-void Groups::print(pid_t pid) {
+void Groups::print(OStream &os,pid_t pid) {
 	Entries *g = getByPid(pid);
 	if(g) {
 		size_t i;
-		Video::printf("[refs: %u] ",g->refCount);
+		os.writef("[refs: %u] ",g->refCount);
 		for(i = 0; i < g->count; i++)
-			Video::printf("%u ",g->groups[i]);
+			os.writef("%u ",g->groups[i]);
 	}
 	else
-		Video::printf("-");
+		os.writef("-");
 }
 
 Groups::Entries *Groups::getByPid(pid_t pid) {

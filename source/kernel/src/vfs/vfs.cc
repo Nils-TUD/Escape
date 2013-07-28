@@ -1344,16 +1344,16 @@ size_t vfs_dbg_getGFTEntryCount(void) {
 	return count;
 }
 
-void vfs_printMsgs(void) {
+void vfs_printMsgs(OStream &os) {
 	bool isValid;
 	sVFSNode *drv = vfs_node_openDir(devNode,false,&isValid);
 	if(isValid) {
-		Video::printf("Messages:\n");
+		os.writef("Messages:\n");
 		while(drv != NULL) {
 			if(IS_DEVICE(drv->mode)) {
-				prf_pushIndent();
-				vfs_device_print(drv);
-				prf_popIndent();
+				os.pushIndent();
+				vfs_device_print(os,drv);
+				os.popIndent();
 			}
 			drv = drv->next;
 		}
@@ -1361,55 +1361,55 @@ void vfs_printMsgs(void) {
 	vfs_node_closeDir(devNode,false);
 }
 
-void vfs_printFile(sFile *f) {
-	Video::printf("%3d [ %2u refs, %2u uses (%u:%u",
+void vfs_printFile(OStream &os,sFile *f) {
+	os.writef("%3d [ %2u refs, %2u uses (%u:%u",
 			gftArray.getIndex(f),f->refCount,f->usageCount,f->devNo,f->nodeNo);
 	if(f->devNo == VFS_DEV_NO && vfs_node_isValid(f->nodeNo))
-		Video::printf(":%s)",vfs_node_getPath(f->nodeNo));
+		os.writef(":%s)",vfs_node_getPath(f->nodeNo));
 	else
-		Video::printf(")");
-	Video::printf(" ]");
+		os.writef(")");
+	os.writef(" ]");
 }
 
-void vfs_printGFT(void) {
+void vfs_printGFT(OStream &os) {
 	size_t i;
 	sFile *f;
-	Video::printf("Global File Table:\n");
+	os.writef("Global File Table:\n");
 	for(i = 0; i < FILE_COUNT; i++) {
 		f = (sFile*)gftArray.getObj(i);
 		if(f->flags != 0) {
-			Video::printf("\tfile @ index %d\n",i);
-			Video::printf("\t\tflags: ");
+			os.writef("\tfile @ index %d\n",i);
+			os.writef("\t\tflags: ");
 			if(f->flags & VFS_READ)
-				Video::printf("READ ");
+				os.writef("READ ");
 			if(f->flags & VFS_WRITE)
-				Video::printf("WRITE ");
+				os.writef("WRITE ");
 			if(f->flags & VFS_NOBLOCK)
-				Video::printf("NOBLOCK ");
+				os.writef("NOBLOCK ");
 			if(f->flags & VFS_DEVICE)
-				Video::printf("DEVICE ");
+				os.writef("DEVICE ");
 			if(f->flags & VFS_MSGS)
-				Video::printf("MSGS ");
-			Video::printf("\n");
-			Video::printf("\t\tnodeNo: %d\n",f->nodeNo);
-			Video::printf("\t\tdevNo: %d\n",f->devNo);
-			Video::printf("\t\tpos: %Od\n",f->position);
-			Video::printf("\t\trefCount: %d\n",f->refCount);
+				os.writef("MSGS ");
+			os.writef("\n");
+			os.writef("\t\tnodeNo: %d\n",f->nodeNo);
+			os.writef("\t\tdevNo: %d\n",f->devNo);
+			os.writef("\t\tpos: %Od\n",f->position);
+			os.writef("\t\trefCount: %d\n",f->refCount);
 			if(f->owner == KERNEL_PID)
-				Video::printf("\t\towner: %d (kernel)\n",f->owner);
+				os.writef("\t\towner: %d (kernel)\n",f->owner);
 			else {
 				const Proc *p = Proc::getByPid(f->owner);
-				Video::printf("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
+				os.writef("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
 			}
 			if(f->devNo == VFS_DEV_NO) {
 				sVFSNode *n = f->node;
 				if(n->name == NULL)
-					Video::printf("\t\tFile: <destroyed>\n");
+					os.writef("\t\tFile: <destroyed>\n");
 				else
-					Video::printf("\t\tFile: '%s'\n",vfs_getPath(f));
+					os.writef("\t\tFile: '%s'\n",vfs_getPath(f));
 			}
 			else
-				Video::printf("\t\tFile: '%s'\n",vfs_getPath(f));
+				os.writef("\t\tFile: '%s'\n",vfs_getPath(f));
 		}
 	}
 }

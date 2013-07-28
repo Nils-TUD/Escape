@@ -31,6 +31,8 @@
 #include <sys/arch/mmix/intrptstackframe.h>
 #endif
 
+class OStream;
+
 class InterruptsBase {
 	InterruptsBase() = delete;
 
@@ -61,9 +63,10 @@ public:
 	/**
 	 * Prints the given interrupt-stack
 	 *
+	 * @param os the output-stream
 	 * @param stack the interrupt-stack
 	 */
-	static void printStackFrame(const IntrptStackFrame *stack);
+	static void printStackFrame(OStream &os,const IntrptStackFrame *stack);
 };
 
 #ifdef __i386__

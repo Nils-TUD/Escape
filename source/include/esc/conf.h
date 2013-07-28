@@ -26,7 +26,7 @@
 #define CONF_MAX_FDS			2
 #define CONF_LOG				4
 #define CONF_PAGE_SIZE			5
-#define CONF_CPU_COUNT			8
+#define CONF_CPU_COUNT			7
 
 #ifdef __cplusplus
 extern "C" {

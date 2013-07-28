@@ -24,6 +24,7 @@
 #include <assert.h>
 
 class Cache;
+class OStream;
 
 class KHeap {
 	friend class Cache;
@@ -103,8 +104,10 @@ public:
 
 	/**
 	 * Prints the kernel-heap data-structure
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	/**

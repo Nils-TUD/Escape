@@ -45,24 +45,23 @@ void Boot::start(BootInfo *info) {
 		(*func)();
 
 	archStart(info);
-	Video::setTargets(Video::SCREEN);
 	drawProgressBar();
 	for(i = 0; i < taskList.count; i++) {
 		const BootTask *task = taskList.tasks + i;
-		Log::printf("%s",task->name);
+		Log::get().writef("%s",task->name);
 		taskStarted(task->name);
 		task->execute();
-		Log::printf("%|s","done");
+		Log::get().writef("%|s","done");
 		taskFinished();
 	}
 
-	Log::printf("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
+	Log::get().writef("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
 			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / K);
 }
 
 void Boot::taskStarted(const char *text) {
-	Video::goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
-	Video::printf("%-*s",VID_COLS - BAR_PADX * 2,text);
+	Video::get().goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
+	Video::get().writef("%-*s",VID_COLS - BAR_PADX * 2,text);
 }
 
 void Boot::taskFinished() {
@@ -73,11 +72,11 @@ void Boot::taskFinished() {
 	total = taskList.count + taskList.moduleCount;
 	percent = KERNEL_PERCENT * ((float)finished / total);
 	filled = percent == 0 ? 0 : (uint)(width / (100.0 / percent));
-	Video::goTo(BAR_PADY + 1,BAR_PADX + 1);
+	Video::get().goTo(BAR_PADY + 1,BAR_PADX + 1);
 	if(filled)
-		Video::printf("\033[co;0;7]%*s\033[co]",filled," ");
+		Video::get().writef("\033[co;0;7]%*s\033[co]",filled," ");
 	if(width - filled)
-		Video::printf("%*s",width - filled," ");
+		Video::get().writef("%*s",width - filled," ");
 }
 
 const char **Boot::parseArgs(const char *line,int *argc) {
@@ -106,24 +105,25 @@ const char **Boot::parseArgs(const char *line,int *argc) {
 }
 
 void Boot::drawProgressBar() {
+	Video &vid = Video::get();
 	ushort x,y;
 	/* top */
-	Video::goTo(BAR_PADY,BAR_PADX);
-	Video::printf("\xC9");
+	vid.goTo(BAR_PADY,BAR_PADX);
+	vid.writef("\xC9");
 	for(x = 1; x < BAR_WIDTH - 2; x++)
-		Video::printf("\xCD");
-	Video::printf("\xBB");
+		vid.writef("\xCD");
+	vid.writef("\xBB");
 	/* left and right */
 	for(y = 0; y < BAR_HEIGHT; y++) {
-		Video::goTo(BAR_PADY + 1 + y,BAR_PADX);
-		Video::printf("\xBA");
-		Video::goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
-		Video::printf("\xBA");
+		vid.goTo(BAR_PADY + 1 + y,BAR_PADX);
+		vid.writef("\xBA");
+		vid.goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
+		vid.writef("\xBA");
 	}
 	/* bottom */
-	Video::goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
-	Video::printf("\xC8");
+	vid.goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
+	vid.writef("\xC8");
 	for(x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
-		Video::printf("\xCD");
-	Video::printf("\xBC");
+		vid.writef("\xCD");
+	vid.writef("\xBC");
 }

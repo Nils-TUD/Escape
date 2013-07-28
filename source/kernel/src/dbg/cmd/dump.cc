@@ -26,12 +26,11 @@
 #include <sys/task/proc.h>
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
-#include <sys/video.h>
+#include <sys/ostringstream.h>
 #include <esc/keycodes.h>
 #include <errno.h>
 #include <string.h>
 
-static ScreenBackup backup;
 static sFile *file;
 static pid_t pid;
 
@@ -39,12 +38,8 @@ class DumpNaviBackend : public NaviBackend {
 public:
 	explicit DumpNaviBackend(const char *f,uintptr_t end)
 			: NaviBackend(0,end), pid(Proc::getRunning()) {
-		sStringBuffer buf;
-		buf.dynamic = false;
-		buf.len = 0;
-		buf.size = sizeof(filename);
-		buf.str = filename;
-		prf_sprintf(&buf,"File %s",f);
+		OStringStream os(filename,sizeof(filename));
+		os.writef("File %s",f);
 	}
 
 	virtual const char *getInfo(uintptr_t) {
@@ -71,8 +66,8 @@ public:
 		return Console::multiLineMatches(this,addr,search,searchlen);
 	}
 
-	virtual void displayLine(uintptr_t addr,uint8_t *bytes) {
-		Console::dumpLine(addr,bytes);
+	virtual void displayLine(OStream &os,uintptr_t addr,uint8_t *bytes) {
+		Console::dumpLine(os,addr,bytes);
 	}
 
 	virtual uintptr_t gotoAddr(const char *addr) {
@@ -89,27 +84,22 @@ private:
 uint8_t DumpNaviBackend::buffer[BYTES_PER_LINE + 1];
 char DumpNaviBackend::filename[50];
 
-int cons_cmd_dump(size_t argc,char **argv) {
+int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 	int res;
 
 	if(Console::isHelp(argc,argv) || argc != 2) {
-		Video::printf("Usage: %s <file>\n",argv[0]);
-		Video::printf("\tUses the current proc to be able to access the real-fs.\n");
-		Video::printf("\tSo, I hope, you know what you're doing ;)\n");
+		os.writef("Usage: %s <file>\n",argv[0]);
+		os.writef("\tUses the current proc to be able to access the real-fs.\n");
+		os.writef("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
 	pid = Proc::getRunning();
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res >= 0) {
-		Video::backup(backup.screen,&backup.row,&backup.col);
-
 		off_t end = vfs_seek(pid,file,0,SEEK_END);
 		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)BYTES_PER_LINE));
-		Console::navigation(&backend);
-
-		Video::restore(backup.screen,backup.row,backup.col);
-
+		Console::navigation(os,&backend);
 		vfs_closeFile(pid,file);
 	}
 	return res;

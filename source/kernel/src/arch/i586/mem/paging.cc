@@ -31,7 +31,6 @@
 #include <sys/cpu.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sys/printf.h>
 #include <sys/spinlock.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -674,15 +673,24 @@ size_t PageDirBase::getPageCount() const {
 	return count;
 }
 
-void PageDirBase::print(uint parts) const {
+void PageDirBase::print(OStream &os,uint parts) const {
 	size_t i;
 	PageDir *cur = Proc::getCurPageDir();
 	PageDir *old = cur->other;
 	uintptr_t ptables;
 	PageDir::pde_t *pdirAddr;
+	SpinLock::acquire(&PageDir::pagingLock);
 	ptables = static_cast<const PageDir*>(this)->getPTables(cur);
+	/* note that we release the lock here because os.writef() might cause the cache-module to
+	 * allocate more memory and use paging to map it. therefore, we would cause a deadlock if
+	 * we use don't release it here.
+	 * I think, in this case we can do it without lock because the only things that could happen
+	 * are a delivery of wrong information to the user and a segfault, which would kill the
+	 * process. Of course, only the process that is reading the information could cause these
+	 * problems. Therefore, its not really a bad thing. */
+	SpinLock::release(&PageDir::pagingLock);
 	pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
-	Video::printf("page-dir @ %p:\n",pdirAddr);
+	os.writef("page-dir @ %p:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(!(pdirAddr[i] & PDE_PRESENT))
 			continue;
@@ -698,52 +706,15 @@ void PageDirBase::print(uint parts) const {
 					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE) &&
 					(parts & PD_PART_KHEAP)) ||
 			(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
-			PageDir::printPageTable(ptables,i,pdirAddr[i]);
+			PageDir::printPageTable(os,ptables,i,pdirAddr[i]);
 		}
 	}
-	Video::printf("\n");
+	os.writef("\n");
 	if(cur->other != old)
 		old->getPTables(cur);
 }
 
-void PageDirBase::sprintf(sStringBuffer *buf) const {
-	size_t i,j;
-	uintptr_t ptables;
-	PageDir::pde_t *pdirAddr;
-	SpinLock::acquire(&PageDir::pagingLock);
-	ptables = static_cast<const PageDir*>(this)->getPTables(Proc::getCurPageDir());
-	/* note that we release the lock here because prf_sprintf() might cause the cache-module to
-	 * allocate more memory and use paging to map it. therefore, we would cause a deadlock if
-	 * we use don't release it here.
-	 * I think, in this case we can do it without lock because the only things that could happen
-	 * are a delivery of wrong information to the user and a segfault, which would kill the
-	 * process. Of course, only the process that is reading the information could cause these
-	 * problems. Therefore, its not really a bad thing. */
-	SpinLock::release(&PageDir::pagingLock);
-	pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
-		if(pdirAddr[i] & PDE_PRESENT) {
-			uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
-			PageDir::pte_t *pte = (PageDir::pte_t*)(ptables + i * PAGE_SIZE);
-			prf_sprintf(buf,"PageTable 0x%x (VM: 0x%08x - 0x%08x)\n",i,addr,
-					addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
-			for(j = 0; j < PT_ENTRY_COUNT; j++) {
-				PageDir::pte_t page = pte[j];
-				if(page & PTE_EXISTS) {
-					prf_sprintf(buf,"\tPage 0x%03x: ",j);
-					prf_sprintf(buf,"frame 0x%05x [%c%c%c] (VM: 0x%08x - 0x%08x)\n",
-							PTE_FRAMENO(page),(page & PTE_PRESENT) ? 'p' : '-',
-						    (page & PTE_NOTSUPER) ? 'u' : 'k',
-						    (page & PTE_WRITABLE) ? 'w' : 'r',
-							addr,addr + PAGE_SIZE - 1);
-				}
-				addr += PAGE_SIZE;
-			}
-		}
-	}
-}
-
-void PageDirBase::printPage(uintptr_t virt) const {
+void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
 	/* don't use locking here; its only used in the debugging-console anyway. its better without
 	 * locking to be able to view these things even if somebody currently holds the lock (e.g.
 	 * because a panic occurred during that operation) */
@@ -755,42 +726,42 @@ void PageDirBase::printPage(uintptr_t virt) const {
 	pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)] & PDE_PRESENT) {
 		PageDir::pte_t *page = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-		Video::printf("Page @ %p: ",virt);
-		printPage(*page);
-		Video::printf("\n");
+		os.writef("Page @ %p: ",virt);
+		printPage(os,*page);
+		os.writef("\n");
 	}
 	/* restore the old mapping, if necessary */
 	if(cur->other != old)
 		old->getPTables(cur);
 }
 
-void PageDir::printPageTable(uintptr_t ptables,size_t no,pde_t pde) {
+void PageDir::printPageTable(OStream &os,uintptr_t ptables,size_t no,pde_t pde) {
 	size_t i;
 	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	pte_t *pte = (pte_t*)(ptables + no * PAGE_SIZE);
-	Video::printf("\tpt 0x%x [frame 0x%x, %c%c] @ %p: (VM: %p - %p)\n",no,
+	os.writef("\tpt 0x%x [frame 0x%x, %c%c] @ %p: (VM: %p - %p)\n",no,
 			PDE_FRAMENO(pde),(pde & PDE_NOTSUPER) ? 'u' : 'k',
 			(pde & PDE_WRITABLE) ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
 	if(pte) {
 		for(i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i] & PTE_EXISTS) {
-				Video::printf("\t\t0x%zx: ",i);
-				printPage(pte[i]);
-				Video::printf(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
+				os.writef("\t\t0x%zx: ",i);
+				printPage(os,pte[i]);
+				os.writef(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
 		}
 	}
 }
 
-void PageDir::printPage(pte_t page) {
+void PageDir::printPage(OStream &os,pte_t page) {
 	if(page & PTE_EXISTS) {
-		Video::printf("r=0x%08x fr=0x%x [%c%c%c%c]",page,PTE_FRAMENO(page),
+		os.writef("r=0x%08x fr=0x%x [%c%c%c%c]",page,PTE_FRAMENO(page),
 				(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',
 				(page & PTE_WRITABLE) ? 'w' : 'r',(page & PTE_GLOBAL) ? 'g' : '-');
 	}
 	else {
-		Video::printf("-");
+		os.writef("-");
 	}
 }

@@ -131,8 +131,8 @@ void PhysMem::init() {
 		cframes = (kframes * 2) / 3;
 		kframes = kframes - cframes;
 		if(cframes + kframes > free / 2) {
-			Log::printf("Warning: Detected VERY small number of free frames\n");
-			Log::printf("         (%zu total, using %zu for kernel, %zu for critical)\n",
+			Log::get().writef("Warning: Detected VERY small number of free frames\n");
+			Log::get().writef("         (%zu total, using %zu for kernel, %zu for critical)\n",
 					free,kframes,cframes);
 		}
 		swapEnabled = true;
@@ -327,7 +327,7 @@ void PhysMem::swapper() {
 
 	/* open device */
 	if(vfs_openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev,&swapFile) < 0) {
-		Log::printf("Unable to open swap-device '%s'\n",dev);
+		Log::get().writef("Unable to open swap-device '%s'\n",dev);
 		swapEnabled = false;
 	}
 	else {
@@ -387,42 +387,42 @@ void PhysMem::swapper() {
 	SpinLock::release(&defLock);
 }
 
-void PhysMem::print() {
+void PhysMem::print(OStream &os) {
 	SwapInJob *job;
 	const char *dev = Config::getStr(Config::SWAP_DEVICE);
-	Video::printf("Default: %zu\n",getFreeDef());
-	Video::printf("Contiguous: %zu\n",freeCont);
-	Video::printf("Swap-Device: %s\n",dev ? dev : "-none-");
-	Video::printf("Swap enabled: %d\n",swapEnabled);
-	Video::printf("EFrames: %zu\n",cframes);
-	Video::printf("KFrames: %zu\n",kframes);
-	Video::printf("UFrames: %zu\n",uframes);
-	Video::printf("Swapped out: %zu\n",swappedOut);
-	Video::printf("Swapped in: %zu\n",swappedIn);
-	Video::printf("\n");
-	Video::printf("Swap-in-jobs:\n");
+	os.writef("Default: %zu\n",getFreeDef());
+	os.writef("Contiguous: %zu\n",freeCont);
+	os.writef("Swap-Device: %s\n",dev ? dev : "-none-");
+	os.writef("Swap enabled: %d\n",swapEnabled);
+	os.writef("EFrames: %zu\n",cframes);
+	os.writef("KFrames: %zu\n",kframes);
+	os.writef("UFrames: %zu\n",uframes);
+	os.writef("Swapped out: %zu\n",swappedOut);
+	os.writef("Swapped in: %zu\n",swappedIn);
+	os.writef("\n");
+	os.writef("Swap-in-jobs:\n");
 	for(job = siJobList; job != NULL; job = job->next) {
-		Video::printf("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
+		os.writef("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
 				job->thread->getProc()->getCommand(),job->addr);
 	}
 }
 
-void PhysMem::printStack() {
+void PhysMem::printStack(OStream &os) {
 	size_t i;
 	frameno_t *ptr;
-	Video::printf("Stack: (frame numbers)\n");
+	os.writef("Stack: (frame numbers)\n");
 	for(i = 0, ptr = stack - 1; (uintptr_t)ptr >= stackBegin; i++, ptr--) {
-		Video::printf("0x%08Px, ",*ptr);
+		os.writef("0x%08Px, ",*ptr);
 		if(i % 6 == 5)
-			Video::printf("\n");
+			os.writef("\n");
 	}
 }
 
-void PhysMem::printCont() {
+void PhysMem::printCont(OStream &os) {
 	size_t i,pos = bitmapStart;
-	Video::printf("Bitmap: (frame numbers)\n");
+	os.writef("Bitmap: (frame numbers)\n");
 	for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
-		Video::printf("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
+		os.writef("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
 		pos += PAGE_SIZE * BITS_PER_BMWORD;
 	}
 }

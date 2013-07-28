@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/printf.h>
 #include <esc/sllist.h>
 #include <sys/mutex.h>
 #include <assert.h>
@@ -38,6 +37,8 @@
 #define RF_NOFREE			32UL	/* means that the memory should not be free'd on release */
 #define RF_TLS				64UL	/* needed to distinguish TLS-regions from others */
 #define RF_GROWS_DOWN		128UL
+
+class OStream;
 
 class Region {
 	Region() = delete;
@@ -215,32 +216,18 @@ public:
 	ssize_t grow(ssize_t amount);
 
 	/**
-	 * Prints information about the given region in the given buffer
-	 *
-	 * @param buf the buffer
-	 * @param reg the region
-	 * @param virt the virtual-address at which the region is mapped
-	 */
-	void sprintf(sStringBuffer *buf,uintptr_t virt) const;
-
-	/**
 	 * Prints the region
 	 *
 	 * @param virt the virtual-address at which the region is mapped
 	 */
-	void print(uintptr_t virt) const;
+	void print(OStream &os,uintptr_t virt) const;
 
 	/**
 	 * Prints the flags of the region
-	 */
-	void printFlags() const;
-
-	/**
-	 * Prints the flags of the region into the given buffer
 	 *
-	 * @param buf the buffer
+	 * @param os the output-stream
 	 */
-	void sprintfFlags(sStringBuffer *buf) const;
+	void printFlags(OStream &os) const;
 
 private:
 	ulong flags;

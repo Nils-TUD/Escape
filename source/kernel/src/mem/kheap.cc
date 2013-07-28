@@ -344,26 +344,26 @@ size_t KHeap::getFreeMem(void) {
 	return c;
 }
 
-void KHeap::print(void) {
+void KHeap::print(OStream &os) {
 	MemArea *area;
 	size_t i;
 
-	Video::printf("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
+	os.writef("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
 			memUsage / PAGE_SIZE);
-	Video::printf("UsableList:\n");
+	os.writef("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		Video::printf("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
+		os.writef("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 		area = area->next;
 	}
 
-	Video::printf("OccupiedMap:\n");
+	os.writef("OccupiedMap:\n");
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		area = occupiedMap[i];
 		if(area != NULL) {
-			Video::printf("\t%d:\n",i);
+			os.writef("\t%d:\n",i);
 			while(area != NULL) {
-				Video::printf("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
+				os.writef("\t\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 				area = area->next;
 			}
 		}

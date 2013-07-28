@@ -87,8 +87,10 @@ public:
 
 	/**
 	 * Prints the swap-map
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static size_t totalBlocks;

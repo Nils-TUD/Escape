@@ -123,7 +123,6 @@ void Boot::archStart(BootInfo *info) {
 	Thread::setRunning(NULL);
 
 	/* init basic modules */
-	Video::init();
 	FPU::preinit();
 	Serial::init();
 
@@ -256,56 +255,52 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
 	/* start the terminator */
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-
-	/* if not requested otherwise, from now on, print only to log */
-	if(!Config::get(Config::LOG2SCR))
-		Video::setTargets(Video::LOG);
 	return 0;
 }
 
-void Boot::print() {
+void Boot::print(OStream &os) {
 	size_t x;
 	BootMemMap *mmap;
-	Video::printf("flags=0x%x\n",mb->flags);
+	os.writef("flags=0x%x\n",mb->flags);
 	if(CHECK_FLAG(mb->flags,0)) {
-		Video::printf("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
+		os.writef("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
 	}
 	if(CHECK_FLAG(mb->flags,1)) {
-		Video::printf("biosDriveNumber=%2X, part1=%2X, part2=%2X, part3=%2X\n",
+		os.writef("biosDriveNumber=%2X, part1=%2X, part2=%2X, part3=%2X\n",
 			(uint)mb->bootDevice.drive,(uint)mb->bootDevice.partition1,
 			(uint)mb->bootDevice.partition2,(uint)mb->bootDevice.partition3);
 	}
 	if(CHECK_FLAG(mb->flags,2)) {
-		Video::printf("cmdLine=%s\n",mb->cmdLine);
+		os.writef("cmdLine=%s\n",mb->cmdLine);
 	}
 	if(CHECK_FLAG(mb->flags,3)) {
 		size_t i;
 		BootModule *mod = mb->modsAddr;
-		Video::printf("modsCount=%d:\n",mb->modsCount);
+		os.writef("modsCount=%d:\n",mb->modsCount);
 		for(i = 0; i < mb->modsCount; i++) {
-			Video::printf("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,mod->modStart,mod->modEnd,
+			os.writef("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,mod->modStart,mod->modEnd,
 					physModAddrs[i],physModAddrs[i] + (mod->modEnd - mod->modStart));
-			Video::printf("\t     cmdline: %s\n",mod->name ? mod->name : "<NULL>");
+			os.writef("\t     cmdline: %s\n",mod->name ? mod->name : "<NULL>");
 			mod++;
 		}
 	}
 	if(CHECK_FLAG(mb->flags,4)) {
-		Video::printf("a.out: tabSize=%d, strSize=%d, addr=0x%x\n",mb->syms.aDotOut.tabSize,
+		os.writef("a.out: tabSize=%d, strSize=%d, addr=0x%x\n",mb->syms.aDotOut.tabSize,
 				mb->syms.aDotOut.strSize,mb->syms.aDotOut.addr);
 	}
 	else if(CHECK_FLAG(mb->flags,5)) {
-		Video::printf("ELF: num=%d, size=%d, addr=0x%x, shndx=0x%x\n",mb->syms.ELF.num,mb->syms.ELF.size,
+		os.writef("ELF: num=%d, size=%d, addr=0x%x, shndx=0x%x\n",mb->syms.ELF.num,mb->syms.ELF.size,
 			mb->syms.ELF.addr,mb->syms.ELF.shndx);
 	}
 	if(CHECK_FLAG(mb->flags,6)) {
-		Video::printf("mmapLength=%d, mmapAddr=%p\n",mb->mmapLength,mb->mmapAddr);
-		Video::printf("memory-map:\n");
+		os.writef("mmapLength=%d, mmapAddr=%p\n",mb->mmapLength,mb->mmapAddr);
+		os.writef("memory-map:\n");
 		x = 0;
 		for(mmap = (BootMemMap*)mb->mmapAddr;
 			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL) {
-				Video::printf("\t%d: addr=%#012Lx, size=%#012Lx, type=%s\n",
+				os.writef("\t%d: addr=%#012Lx, size=%#012Lx, type=%s\n",
 						x,mmap->baseAddr,mmap->length,
 						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 				x++;
@@ -315,9 +310,9 @@ void Boot::print() {
 	if(CHECK_FLAG(mb->flags,7) && mb->drivesLength > 0) {
 		size_t i;
 		BootDrive *drive = mb->drivesAddr;
-		Video::printf("Drives: (size=%u)\n",mb->drivesLength);
+		os.writef("Drives: (size=%u)\n",mb->drivesLength);
 		for(x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
-			Video::printf("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",
+			os.writef("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",
 					i,(uint)drive->number,(uint)drive->mode,(uint)drive->cylinders,
 					(uint)drive->heads,(uint)drive->sectors);
 		}

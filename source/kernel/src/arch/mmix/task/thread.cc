@@ -240,13 +240,3 @@ void ThreadBase::doSwitch(void) {
 	else
 		n->stats.cycleStart = CPU::rdtsc();
 }
-
-
-#if DEBUGGING
-
-void thread_printState(const sThreadRegs *state) {
-	Video::printf("State:\n",state);
-	Video::printf("\tStackend = %p\n",state->stackEnd);
-}
-
-#endif

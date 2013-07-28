@@ -25,8 +25,9 @@
  * Lets the user view various kind of information about the current state of the system. This works
  * by calling *_print() or similar, capture the output and display it via cons_viewLines().
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_view(size_t argc,char **argv);
+int cons_cmd_view(OStream &os,size_t argc,char **argv);

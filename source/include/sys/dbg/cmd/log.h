@@ -24,8 +24,9 @@
 /**
  * Lets the user enable/disable logging
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_log(size_t argc,char **argv);
+int cons_cmd_log(OStream &os,size_t argc,char **argv);

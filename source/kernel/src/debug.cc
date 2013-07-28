@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <esc/debug.h>
 #include <esc/thread.h>
-#include <sys/video.h>
+#include <sys/ostream.h>
 #include <sys/cpu.h>
 #include <string.h>
 #include <stdarg.h>
@@ -31,8 +31,8 @@ void dbg_startTimer(void) {
 	start = CPU::rdtsc();
 }
 
-void dbg_stopTimer(const char *prefix) {
+void dbg_stopTimer(OStream &os,const char *prefix) {
 	uLongLong diff;
 	diff.val64 = CPU::rdtsc() - start;
-	Video::printf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
+	os.writef("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }

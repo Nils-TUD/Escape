@@ -24,7 +24,7 @@
 
 static uint64_t *output = (uint64_t*)OUTPUT_BASE;
 
-void Log::writeChar(char c) {
+void Log::toSerial(char c) {
 	/* some chars make no sense here */
 	if(c != '\r' && c != '\b')
 		*output = c;

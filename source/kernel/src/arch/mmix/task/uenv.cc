@@ -177,14 +177,14 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 
 		/* seek to header */
 		if(vfs_seek(pid,textreg->reg->getFile(),0,SEEK_SET) < 0) {
-			Video::printf("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
+			Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
 			return false;
 		}
 
 		/* read the header */
 		if((res = vfs_readFile(pid,textreg->reg->getFile(),&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
-			Video::printf("[LOADER] Reading ELF-header of '%s' failed: %s\n",
+			Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->getProc()->getCommand(),strerror(-res));
 			return false;
 		}

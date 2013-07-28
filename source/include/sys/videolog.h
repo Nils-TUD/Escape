@@ -17,28 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/i586/ports.h>
+#pragma once
+
+#include <sys/ostream.h>
 #include <sys/video.h>
-#include <string.h>
-#include <assert.h>
-#include <stdarg.h>
+#include <sys/log.h>
 
-void Video::clear() {
-	memclear(screen(),VID_COLS * 2 * VID_ROWS);
-	// remove cursor
-	Ports::out<uint8_t>(0x3D4,14);
-	Ports::out<uint8_t>(0x3D5,0x07);
-	Ports::out<uint8_t>(0x3D4,15);
-	Ports::out<uint8_t>(0x3D5,0xd0);
-}
-
-void Video::move() {
-	/* last line? */
-	if(row >= VID_ROWS) {
-		/* copy all chars one line back */
-		memmove(screen(),(char*)screen() + VID_COLS * 2,(VID_ROWS - 1) * VID_COLS * 2);
-		memclear((char*)screen() + (VID_ROWS - 1) * VID_COLS * 2,VID_COLS * 2);
-		row--;
+class VideoLog : public OStream {
+public:
+	virtual void writec(char c) {
+		Video::get().writec(c);
+		Log::get().writec(c);
 	}
-}
+	virtual bool escape(const char **fmt) {
+		return Video::get().escape(fmt);
+	}
+	virtual uchar pipepad() {
+		return Video::get().pipepad();
+	}
+};

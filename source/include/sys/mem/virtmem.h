@@ -24,7 +24,6 @@
 #include <sys/mem/vmtree.h>
 #include <sys/mem/vmfreemap.h>
 #include <sys/mem/paging.h>
-#include <sys/printf.h>
 
 #ifdef DEBUGGING
 #	define DISABLE_DEMLOAD	1
@@ -55,6 +54,7 @@
 
 class Proc;
 class Thread;
+class OStream;
 
 class VirtMem {
 	friend class ProcBase;
@@ -280,35 +280,33 @@ public:
 	}
 
 	/**
-	 * Prints information about all regions to the given buffer
+	 * Prints information about all mappings
 	 *
-	 * @param buf the buffer
+	 * @param os the output-stream
 	 */
-	void sprintfRegions(sStringBuffer *buf) const;
-
-	/**
-	 * Prints information about all mappings to the given buffer
-	 *
-	 * @param buf the buffer
-	 */
-	void sprintfMaps(sStringBuffer *buf) const;
+	void printMaps(OStream &os) const;
 
 	/**
 	 * Prints a short version of the regions
 	 *
+	 * @param os the output-stream
 	 * @param prefix the print prefix (e.g. tabs)
 	 */
-	void printShort(const char *prefix) const;
+	void printShort(OStream &os,const char *prefix) const;
 
 	/**
 	 * Prints all regions
+	 *
+	 * @param os the output-stream
 	 */
-	void printRegions() const;
+	void printRegions(OStream &os) const;
 
 	/**
 	 * Prints information about the virtmem
+	 *
+	 * @param os the output-stream
 	 */
-	void print() const;
+	void print(OStream &os) const;
 
 private:
 	/**

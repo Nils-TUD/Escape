@@ -238,8 +238,10 @@ public:
 
 	/**
 	 * Prints the GDT
+	 *
+	 * @param os the output-stream
 	 */
-	static void print();
+	static void print(OStream &os);
 
 private:
 	static void flush(Table *gdt) asm("gdt_flush");

@@ -170,7 +170,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		exCount = 0;
 	lastPFAddr = pfaddr;
 	lastPFProc = Proc::getRunning()->getPid();
-	Video::printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+	Log::get().writef("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
 			stack->r[30],Proc::getRunning()->getPid());
 #endif
 
@@ -180,7 +180,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = Proc::getRunning();
 			sKSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
-			Video::printf("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
+			Log::get().writef("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
 			Proc::segFault();
 		}
@@ -231,36 +231,36 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 }
 
-void InterruptsBase::printStackFrame(const IntrptStackFrame *stack) {
+void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
 	stack--;
 	int i,j,rl,rg = *stack >> 56;
 	int changedStack = (*stack >> 32) & 0x1;
 	static int spregs[] = {rZ,rY,rX,rW,rP,rR,rM,rJ,rH,rE,rD,rB};
-	Video::printf("rG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
+	os.writef("rG=%d,rA=#%x\n",rg,*stack-- & 0x3FFFF);
 	for(j = 0, i = 1; i <= (int)ARRAY_SIZE(spregs); j++, i++) {
-		Video::printf("%-4s: #%016lx ",CPU::getSpecialName(spregs[i - 1]),*stack--);
+		os.writef("%-4s: #%016lx ",CPU::getSpecialName(spregs[i - 1]),*stack--);
 		if(j % 3 == 2)
-			Video::printf("\n");
+			os.writef("\n");
 	}
 	if(j % 3 != 0)
-		Video::printf("\n");
+		os.writef("\n");
 	for(j = 0, i = 255; i >= rg; j++, i--) {
-		Video::printf("$%-3d: #%016lx ",i,*stack--);
+		os.writef("$%-3d: #%016lx ",i,*stack--);
 		if(j % 3 == 2)
-			Video::printf("\n");
+			os.writef("\n");
 	}
 	if(j % 3 != 0)
-		Video::printf("\n");
+		os.writef("\n");
 	if(changedStack) {
-		Video::printf("rS  : #%016lx",*stack--);
-		Video::printf(" rO  : #%016lx\n",*stack--);
+		os.writef("rS  : #%016lx",*stack--);
+		os.writef(" rO  : #%016lx\n",*stack--);
 	}
 	rl = *stack--;
-	Video::printf("rL  : %d\n",rl);
+	os.writef("rL  : %d\n",rl);
 	for(j = 0, i = rl - 1; i >= 0; j++, i--) {
-		Video::printf("$%-3d: #%016lx ",i,*stack--);
+		os.writef("$%-3d: #%016lx ",i,*stack--);
 		if(i > 0 && j % 3 == 2)
-			Video::printf("\n");
+			os.writef("\n");
 	}
-	Video::printf("\n");
+	os.writef("\n");
 }

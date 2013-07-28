@@ -72,8 +72,6 @@ void Boot::archStart(BootInfo *binfo) {
 	info.progs = progs;
 	memcpy((void*)info.progs,binfo->progs,sizeof(LoadProg) * binfo->progCount);
 
-	Video::init();
-
 	/* parse the boot parameter */
 	argv = parseArgs(binfo->progs[0].command,&argc);
 	Config::parseBootParams(argc,argv);
@@ -154,21 +152,17 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
 #endif
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-
-	/* if not requested otherwise, from now on, print only to log */
-	if(!Config::get(Config::LOG2SCR))
-		Video::setTargets(Video::LOG);
 	return 0;
 }
 
-void Boot::print() {
+void Boot::print(OStream &os) {
 	size_t i;
-	Video::printf("Memory size: %zu bytes\n",info.memSize);
-	Video::printf("Disk size: %zu bytes\n",info.diskSize);
-	Video::printf("Boot modules:\n");
+	os.writef("Memory size: %zu bytes\n",info.memSize);
+	os.writef("Disk size: %zu bytes\n",info.diskSize);
+	os.writef("Boot modules:\n");
 	/* skip kernel */
 	for(i = 1; i < info.progCount; i++) {
-		Video::printf("\t%s [%p .. %p]\n",info.progs[i].command,
+		os.writef("\t%s [%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}
 }

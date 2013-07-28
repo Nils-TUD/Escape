@@ -17,28 +17,45 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <sys/common.h>
-#include <sys/arch/i586/ports.h>
-#include <sys/video.h>
-#include <string.h>
-#include <assert.h>
-#include <stdarg.h>
+#include <sys/mem/cache.h>
+#include <sys/ostream.h>
 
-void Video::clear() {
-	memclear(screen(),VID_COLS * 2 * VID_ROWS);
-	// remove cursor
-	Ports::out<uint8_t>(0x3D4,14);
-	Ports::out<uint8_t>(0x3D5,0x07);
-	Ports::out<uint8_t>(0x3D4,15);
-	Ports::out<uint8_t>(0x3D5,0xd0);
-}
+class OStringStream : public OStream {
+	static const size_t INIT_SIZE	= 16;
 
-void Video::move() {
-	/* last line? */
-	if(row >= VID_ROWS) {
-		/* copy all chars one line back */
-		memmove(screen(),(char*)screen() + VID_COLS * 2,(VID_ROWS - 1) * VID_COLS * 2);
-		memclear((char*)screen() + (VID_ROWS - 1) * VID_COLS * 2,VID_COLS * 2);
-		row--;
+public:
+	explicit OStringStream(char *str,size_t size)
+		: OStream(), dynamic(false), str(str), size(size), len(0) {
 	}
-}
+	explicit OStringStream()
+		: OStream(), dynamic(true), str(static_cast<char*>(Cache::alloc(INIT_SIZE))),
+		  size(INIT_SIZE), len(0) {
+	}
+	virtual ~OStringStream() {
+		if(dynamic)
+			Cache::free(str);
+	}
+
+	const char *getString() const {
+		return str;
+	}
+	size_t getLength() const {
+		return len;
+	}
+	char *keepString() {
+		dynamic = false;
+		return str;
+	}
+
+	virtual void writec(char c);
+
+private:
+
+	bool dynamic;
+	char *str;
+	size_t size;
+	size_t len;
+};

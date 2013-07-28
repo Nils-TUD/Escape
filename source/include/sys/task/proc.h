@@ -285,21 +285,26 @@ public:
 
 	/**
 	 * Prints all existing processes
+	 *
+	 * @param os the output-stream
 	 */
-	static void printAll();
+	static void printAll(OStream &os);
 
 	/**
 	 * Prints the regions of all existing processes
+	 *
+	 * @param os the output-stream
 	 */
-	static void printAllRegions();
+	static void printAllRegions(OStream &os);
 
 	/**
 	 * Prints the given parts of the page-directory for all existing processes
 	 *
+	 * @param os the output-stream
 	 * @param parts the parts (see paging_printPageDirOf)
 	 * @param regions whether to print the regions too
 	 */
-	static void printAllPDs(uint parts,bool regions);
+	static void printAllPDs(OStream &os,uint parts,bool regions);
 
 #if DEBUGGING
 	/**
@@ -468,8 +473,10 @@ public:
 
 	/**
 	 * Prints this process
+	 *
+	 * @param os the output-stream
 	 */
-	void print();
+	void print(OStream &os);
 
 private:
 	/**

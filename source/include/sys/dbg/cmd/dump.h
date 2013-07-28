@@ -24,8 +24,9 @@
 /**
  * Reads a file and allows the navigation through the dump
  *
+ * @param os the output-stream
  * @param argc the number of args
  * @param argv the arguments
  * @return 0 on success
  */
-int cons_cmd_dump(size_t argc,char **argv);
+int cons_cmd_dump(OStream &os,size_t argc,char **argv);

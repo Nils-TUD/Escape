@@ -78,7 +78,7 @@ static void test_proc_clone(void) {
 static int threadcnt = 0;
 
 static void thread_test(void) {
-	Video::printf("thread %d is running...\n",Thread::getRunning()->getTid());
+	tprintf("thread %d is running...\n",Thread::getRunning()->getTid());
 	threadcnt++;
 
 	Proc::exit(0);
@@ -95,7 +95,7 @@ static void test_thread(void) {
 	Proc::join(tid);
 	Proc::join(tid2);
 	test_assertInt(threadcnt,2);
-	Video::printf("threads finished\n");
+	tprintf("threads finished\n");
 
 	test_caseSucceeded();
 }

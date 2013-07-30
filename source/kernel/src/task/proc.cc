@@ -40,6 +40,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/spinlock.h>
 #include <sys/mutex.h>
 #include <sys/util.h>
@@ -446,12 +447,12 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
 	/* we need to do this here without lock, because vfs_openPath will perform a context-switch */
 	if(info.linkerEntry != info.progEntry) {
-		sFile *file;
+		OpenFile *file;
 		if(vfs_openPath(p->pid,VFS_READ,path,&file) < 0)
 			goto error;
 		fd = FileDesc::assoc(file);
 		if(fd < 0) {
-			vfs_closeFile(p->pid,file);
+			file->closeFile(p->pid);
 			goto error;
 		}
 	}

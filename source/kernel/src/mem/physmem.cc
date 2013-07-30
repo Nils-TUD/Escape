@@ -28,6 +28,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/config.h>
 #include <sys/boot.h>
 #include <sys/util.h>
@@ -318,7 +319,7 @@ bool PhysMem::swapIn(uintptr_t addr) {
 
 void PhysMem::swapper() {
 	size_t free;
-	sFile *swapFile;
+	OpenFile *swapFile;
 	pid_t pid;
 	const char *dev = Config::getStr(Config::SWAP_DEVICE);
 	swapperThread = Thread::getRunning();
@@ -333,11 +334,11 @@ void PhysMem::swapper() {
 	else {
 		/* get device-size and init swap-map */
 		sArgsMsg msg;
-		assert(vfs_sendMsg(pid,swapFile,MSG_DISK_GETSIZE,NULL,0,NULL,0) >= 0);
-		assert(vfs_receiveMsg(pid,swapFile,NULL,&msg,sizeof(msg),false) >= 0);
+		assert(swapFile->sendMsg(pid,MSG_DISK_GETSIZE,NULL,0,NULL,0) >= 0);
+		assert(swapFile->receiveMsg(pid,NULL,&msg,sizeof(msg),false) >= 0);
 		if(!SwapMap::init(msg.arg1)) {
 			swapEnabled = false;
-			vfs_closeFile(pid,swapFile);
+			swapFile->closeFile(pid);
 		}
 	}
 

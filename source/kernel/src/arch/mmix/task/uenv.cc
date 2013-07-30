@@ -25,6 +25,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/boot.h>
 #include <sys/log.h>
 #include <sys/cpu.h>
@@ -176,13 +177,13 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		sElfEHeader ehd;
 
 		/* seek to header */
-		if(vfs_seek(pid,textreg->reg->getFile(),0,SEEK_SET) < 0) {
+		if(textreg->reg->getFile()->seek(pid,0,SEEK_SET) < 0) {
 			Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
 			return false;
 		}
 
 		/* read the header */
-		if((res = vfs_readFile(pid,textreg->reg->getFile(),&ehd,sizeof(sElfEHeader))) !=
+		if((res = textreg->reg->getFile()->readFile(pid,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->getProc()->getCommand(),strerror(-res));

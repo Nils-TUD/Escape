@@ -47,7 +47,7 @@ public:
 	/**
 	 * @return the file used for logging
 	 */
-	sFile *getFile();
+	OpenFile *getFile();
 
 	virtual void writec(char c);
 
@@ -56,7 +56,7 @@ private:
 	virtual bool escape(const char **str);
 
 	static void toSerial(char c);
-	static ssize_t write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
+	static ssize_t write(pid_t pid,OpenFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
 	void flush();
 
 	/* don't use a heap here to prevent problems */
@@ -64,7 +64,7 @@ private:
 	size_t bufPos;
 	uint col;
 	bool logToSer;
-	sFile *logFile;
+	OpenFile *logFile;
 	bool vfsReady;
 	klock_t lock;
 	static Log inst;

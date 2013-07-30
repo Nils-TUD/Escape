@@ -41,14 +41,14 @@ public:
 	 * @param fd the file-descriptor
 	 * @return the file or NULL if the fd is invalid
 	 */
-	static sFile *request(int fd);
+	static OpenFile *request(int fd);
 
 	/**
 	 * Releases the given file, i.e. decrements the usage-count
 	 *
 	 * @param file the file
 	 */
-	static void release(sFile *file);
+	static void release(OpenFile *file);
 
 	/**
 	 * Clones all file-descriptors of the current process to <p>
@@ -70,7 +70,7 @@ public:
 	 * @param fileNo the file-number
 	 * @return the file-descriptor on success
 	 */
-	static int assoc(sFile *fileNo);
+	static int assoc(OpenFile *fileNo);
 
 	/**
 	 * Duplicates the given file-descriptor
@@ -95,7 +95,7 @@ public:
 	 * @param fd the file-descriptor
 	 * @return the file that was associated with the fd (or NULL)
 	 */
-	static sFile *unassoc(int fd);
+	static OpenFile *unassoc(int fd);
 
 	/**
 	 * Prints the file-descriptors of <p>

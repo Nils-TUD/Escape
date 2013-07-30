@@ -28,6 +28,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/pipe.h>
+#include <sys/vfs/openfile.h>
 #include <sys/spinlock.h>
 #include <string.h>
 #include <assert.h>
@@ -49,10 +50,10 @@ typedef struct {
 
 static size_t vfs_pipe_getSize(pid_t pid,sVFSNode *node);
 static void vfs_pipe_destroy(sVFSNode *n);
-static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node);
-static ssize_t vfs_pipe_read(tid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,
+static void vfs_pipe_close(pid_t pid,OpenFile *file,sVFSNode *node);
+static ssize_t vfs_pipe_read(tid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
-static ssize_t vfs_pipe_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
+static ssize_t vfs_pipe_write(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count);
 
 sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
@@ -104,24 +105,24 @@ static void vfs_pipe_destroy(sVFSNode *n) {
 	}
 }
 
-static void vfs_pipe_close(pid_t pid,sFile *file,sVFSNode *node) {
+static void vfs_pipe_close(pid_t pid,OpenFile *file,sVFSNode *node) {
 	/* if there are still more than 1 user, notify the other */
 	if(node->name != NULL && node->refCount > 1) {
 		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */
-		if(vfs_fcntl(pid,file,F_GETACCESS,0) == VFS_READ) {
+		if(file->fcntl(pid,F_GETACCESS,0) == VFS_READ) {
 			sPipe *pipe = (sPipe*)node->data;
 			pipe->noReader = true;
 			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
 		}
 		/* otherwise write EOF in the pipe */
 		else
-			vfs_writeFile(pid,file,NULL,0);
+			file->writeFile(pid,NULL,0);
 	}
 	/* in any case, destroy the node, i.e. decrease references */
 	vfs_node_destroy(node);
 }
 
-static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *node,
+static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,
 		USER void *buffer,off_t offset,size_t count) {
 	size_t byteCount,total;
 	Thread *t = Thread::getRunning();
@@ -205,7 +206,7 @@ static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED sFile *file,sVFSNode *n
 	return total;
 }
 
-static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node,
+static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,
 		USER const void *buffer,off_t offset,size_t count) {
 	sPipeData *data;
 	Thread *t = Thread::getRunning();

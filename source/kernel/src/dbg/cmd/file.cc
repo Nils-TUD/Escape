@@ -26,6 +26,7 @@
 #include <sys/task/proc.h>
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/video.h>
 #include <esc/keycodes.h>
 #include <errno.h>
@@ -34,7 +35,7 @@ static char buffer[512];
 
 int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
-	sFile *file = NULL;
+	OpenFile *file = NULL;
 	ssize_t i,count;
 	int res;
 	Lines lines;
@@ -49,7 +50,7 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
 		goto error;
-	while((count = vfs_readFile(pid,file,buffer,sizeof(buffer))) > 0) {
+	while((count = file->readFile(pid,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < count; i++) {
 			if(buffer[i] == '\n')
@@ -59,7 +60,7 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 		}
 	}
 	lines.endLine();
-	vfs_closeFile(pid,file);
+	file->closeFile(pid);
 	file = NULL;
 
 	/* now display lines */
@@ -69,6 +70,6 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 error:
 	/* clean up */
 	if(file != NULL)
-		vfs_closeFile(pid,file);
+		file->closeFile(pid);
 	return res;
 }

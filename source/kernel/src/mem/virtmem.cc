@@ -29,6 +29,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/spinlock.h>
 #include <sys/ostream.h>
 #include <sys/mutex.h>
@@ -132,7 +133,7 @@ error:
 	return 0;
 }
 
-int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
+int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,OpenFile *f,
                  off_t offset,VMRegion **vmreg) {
 	Region *reg;
 	VMRegion *vm;
@@ -300,7 +301,7 @@ error:
 	return res;
 }
 
-void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
+void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 	while(count > 0) {
 		Region *reg = getLRURegion();
 		if(reg == NULL)
@@ -353,8 +354,8 @@ void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 			PhysMem::free(frameNo,PhysMem::USR);
 
 			/* write out on disk */
-			assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-			assert(vfs_writeFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
+			assert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
+			assert(file->writeFile(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 			count--;
 		}
@@ -362,7 +363,7 @@ void VirtMem::swapOut(pid_t pid,sFile *file,size_t count) {
 	}
 }
 
-bool VirtMem::swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
+bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 	frameno_t frame;
 	ulong block;
 	size_t index;
@@ -393,8 +394,8 @@ bool VirtMem::swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr) {
 
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
 	 * done by the swapper-thread) */
-	assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(vfs_readFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
+	assert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
+	assert(file->readFile(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
 	frame = t->getFrame();
@@ -466,7 +467,7 @@ bool VirtMem::getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool lock
 	return res;
 }
 
-uintptr_t VirtMem::getBinary(sFile *file,VirtMem *&binOwner) {
+uintptr_t VirtMem::getBinary(OpenFile *file,VirtMem *&binOwner) {
 	uintptr_t res = 0;
 	VMTree *tree = VMTree::reqTree();
 	for(; tree != NULL; tree = tree->getNext()) {
@@ -474,7 +475,7 @@ uintptr_t VirtMem::getBinary(sFile *file,VirtMem *&binOwner) {
 		for(vm = tree->first(); vm != NULL; vm = vm->next) {
 			/* if its shareable and the binary fits, return region-number */
 			if((vm->reg->getFlags() & RF_SHAREABLE) && vm->reg->getFile() &&
-					vfs_isSameFile(vm->reg->getFile(),file)) {
+					vm->reg->getFile()->isSameFile(file)) {
 				res = vm->virt;
 				binOwner = tree->getVM();
 				break;
@@ -562,7 +563,7 @@ void VirtMem::remove(VMRegion *vm) {
 }
 
 void VirtMem::sync(VMRegion *vm) const {
-	sFile *file = vm->reg->getFile();
+	OpenFile *file = vm->reg->getFile();
 	if((vm->reg->getFlags() & RF_SHAREABLE) && (vm->reg->getFlags() & RF_WRITABLE) && file) {
 		size_t i,pcount = BYTES_2_PAGES(vm->reg->getByteCount());
 		/* this is more complicated because p might not be the current process. in this case we
@@ -578,18 +579,18 @@ void VirtMem::sync(VMRegion *vm) const {
 
 		for(i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->getByteCount() - i * PAGE_SIZE);
-			if(vfs_seek(pid,file,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
+			if(file->seek(pid,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
 			if(pid == cur)
-				vfs_writeFile(pid,file,(void*)(vm->virt + i * PAGE_SIZE),amount);
+				file->writeFile(pid,(void*)(vm->virt + i * PAGE_SIZE),amount);
 			else {
-				/* we can't use the temp mapping during vfs_writeFile because we might perform a
+				/* we can't use the temp mapping during file->writeFile() because we might perform a
 				 * context-switch in between. */
 				frameno_t frame = getPageDir()->getFrameNo(vm->virt + i * PAGE_SIZE);
 				uintptr_t addr = PageDir::getAccess(frame);
 				memcpy(buf,(void*)addr,amount);
 				PageDir::removeAccess();
-				vfs_writeFile(pid,file,buf,amount);
+				file->writeFile(pid,buf,amount);
 			}
 		}
 
@@ -992,7 +993,7 @@ const char *VirtMem::getRegName(const VMRegion *vm) const {
 	else if(vm->reg->getFlags() & RF_NOFREE)
 		name = "phys";
 	else if(vm->reg->getFile())
-		name = vfs_getPath(vm->reg->getFile());
+		name = vm->reg->getFile()->getPath();
 	else {
 		Proc *p = Proc::getByPid(pid);
 		if(p->getEntryPoint() >= vm->virt && p->getEntryPoint() < vm->virt + vm->reg->getByteCount())
@@ -1111,7 +1112,7 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	uint mapFlags;
 
 	/* note that we currently ignore that the file might have changed in the meantime */
-	if((err = vfs_seek(pid,vm->reg->getFile(),vm->reg->getOffset() + (addr - vm->virt),SEEK_SET)) < 0)
+	if((err = vm->reg->getFile()->seek(pid,vm->reg->getOffset() + (addr - vm->virt),SEEK_SET)) < 0)
 		goto error;
 
 	/* first read into a temp-buffer because we can't mark the page as present until
@@ -1123,7 +1124,7 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		goto error;
 	}
 	Thread::addHeapAlloc(tempBuf);
-	err = vfs_readFile(pid,vm->reg->getFile(),tempBuf,loadCount);
+	err = vm->reg->getFile()->readFile(pid,tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
 			err = -ENOMEM;

@@ -39,7 +39,7 @@
 static int doWait(const Event::WaitObject *uobjects,size_t objCount,time_t maxWaitTime,
 		pid_t pid,ulong ident);
 static int doWaitLoop(const Event::WaitObject *uobjects,size_t objCount,
-		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
+		OpenFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
@@ -206,7 +206,7 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 
 static int doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 		time_t maxWaitTime,pid_t pid,ulong ident) {
-	sFile *objFiles[MAX_WAIT_OBJECTS];
+	OpenFile *objFiles[MAX_WAIT_OBJECTS];
 	size_t i;
 	int res;
 	/* first request the files from the file-descriptors */
@@ -234,7 +234,7 @@ static int doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 }
 
 static int doWaitLoop(USER const Event::WaitObject *uobjects,size_t objCount,
-		sFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident) {
+		OpenFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident) {
 	Event::WaitObject kobjects[MAX_WAIT_OBJECTS];
 	size_t i;
 

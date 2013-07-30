@@ -27,6 +27,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/cpu.h>
 #include <sys/interrupts.h>
 #include <sys/ksymbols.h>
@@ -48,7 +49,7 @@ static Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 extern uintptr_t kernelStack;
 
 void Util::panicArch() {
-	sFile *file;
+	OpenFile *file;
 
 	/* at first, halt the other CPUs */
 	SMP::haltOthers();
@@ -60,23 +61,23 @@ void Util::panicArch() {
 	if(vfs_openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video",&file) == 0) {
 		ssize_t i,res;
 		sArgsMsg msg;
-		vfs_sendMsg(KERNEL_PID,file,MSG_VID_GETMODE,NULL,0,NULL,0);
+		file->sendMsg(KERNEL_PID,MSG_VID_GETMODE,NULL,0,NULL,0);
 		for(i = 0; i < 100; i++) {
-			res = vfs_receiveMsg(KERNEL_PID,file,NULL,&msg,sizeof(msg),false);
+			res = file->receiveMsg(KERNEL_PID,NULL,&msg,sizeof(msg),false);
 			if(res >= 0)
 				break;
 			Thread::switchAway();
 		}
 		if(res >= 0) {
-			vfs_sendMsg(KERNEL_PID,file,MSG_VID_SETMODE,&msg,sizeof(msg),NULL,0);
+			file->sendMsg(KERNEL_PID,MSG_VID_SETMODE,&msg,sizeof(msg),NULL,0);
 			for(i = 0; i < 100; i++) {
-				res = vfs_receiveMsg(KERNEL_PID,file,NULL,NULL,0,false);
+				res = file->receiveMsg(KERNEL_PID,NULL,NULL,0,false);
 				if(res >= 0)
 					break;
 				Thread::switchAway();
 			}
 		}
-		vfs_closeFile(KERNEL_PID,file);
+		file->closeFile(KERNEL_PID);
 	}
 }
 

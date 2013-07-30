@@ -62,7 +62,7 @@ static void test_1(void) {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	reg = Region::create((sFile*)0x1234,PAGE_SIZE + 1,PAGE_SIZE + 1,124,0,RF_STACK | RF_GROWS_DOWN);
+	reg = Region::create((OpenFile*)0x1234,PAGE_SIZE + 1,PAGE_SIZE + 1,124,0,RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	test_assertPtr(reg->getFile(),(void*)0x1234);
 	test_assertULInt(reg->getFlags(),RF_STACK | RF_GROWS_DOWN);
@@ -178,7 +178,7 @@ static void test_4(void) {
 	test_caseStart("Testing Region::clone()");
 
 	checkMemoryBefore(false);
-	reg = Region::create((sFile*)0x1234,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
+	reg = Region::create((OpenFile*)0x1234,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	clone = reg->clone((const void*)0x1234);
 	test_assertTrue(clone != NULL);

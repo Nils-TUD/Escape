@@ -35,6 +35,7 @@
 #include <sys/task/smp.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/mem/copyonwrite.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/kheap.h>
@@ -90,7 +91,7 @@ static View views[] = {
 	{"thread",		view_thread},
 	{"threads",		Thread::printAll},
 	{"vfstree",		vfs_node_printTree},
-	{"gft",			vfs_printGFT},
+	{"gft",			OpenFile::printAll},
 	{"msgs",		vfs_printMsgs},
 	{"cow",			CopyOnWrite::print},
 	{"cache",		Cache::print},

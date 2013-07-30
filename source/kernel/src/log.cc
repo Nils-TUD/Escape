@@ -24,6 +24,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/file.h>
+#include <sys/vfs/openfile.h>
 #include <sys/video.h>
 #include <sys/log.h>
 #include <sys/spinlock.h>
@@ -43,7 +44,7 @@ Log Log::inst;
 void Log::vfsIsReady() {
 	inode_t inodeNo;
 	sVFSNode *logNode;
-	sFile *inFile;
+	OpenFile *inFile;
 	char *nameCpy;
 	pid_t pid = Proc::getRunning();
 
@@ -116,7 +117,7 @@ bool Log::escape(const char **str) {
 	return true;
 }
 
-ssize_t Log::write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
+ssize_t Log::write(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,
 		off_t offset,size_t count) {
 	if(Config::get(Config::LOG) && Log::get().logToSer) {
 		char *str = (char*)buffer;
@@ -131,7 +132,7 @@ ssize_t Log::write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,
 
 void Log::flush(void) {
 	if(vfsReady && bufPos) {
-		vfs_writeFile(KERNEL_PID,logFile,buf,bufPos);
+		logFile->writeFile(KERNEL_PID,buf,bufPos);
 		bufPos = 0;
 	}
 }

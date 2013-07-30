@@ -525,7 +525,7 @@ public:
 	/* all groups (may include egid or not) of this process */
 	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */
-	sFile *fileDescs[MAX_FD_COUNT];
+	OpenFile *fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	sSLList fsChans;
 	/* environment-variables of this process */

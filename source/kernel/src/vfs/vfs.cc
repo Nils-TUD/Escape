@@ -29,6 +29,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/vfs/pipe.h>
 #include <sys/vfs/device.h>
+#include <sys/vfs/openfile.h>
 #include <sys/task/proc.h>
 #include <sys/task/groups.h>
 #include <sys/task/event.h>
@@ -45,48 +46,12 @@
 #include <assert.h>
 #include <errno.h>
 
-#define FILE_COUNT					(gftArray.getObjCount())
-
-/* an entry in the global file table */
-struct sFile {
-	klock_t lock;
-	/* read OR write; flags = 0 => entry unused */
-	ushort flags;
-	/* the owner of this file */
-	pid_t owner;
-	/* number of references (file-descriptors) */
-	ushort refCount;
-	/* number of threads that are currently using this file (reading, writing, ...) */
-	ushort usageCount;
-	/* current position in file */
-	off_t position;
-	/* node-number */
-	inode_t nodeNo;
-	/* the node, if devNo == VFS_DEV_NO, otherwise null */
-	sVFSNode *node;
-	/* the device-number */
-	dev_t devNo;
-	/* for real files: the path; for virt files: NULL */
-	char *path;
-	/* for the freelist */
-	struct sFile *next;
-};
-
-static bool vfs_doCloseFile(pid_t pid,sFile *file);
-static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,sFile **f);
-static void vfs_releaseFile(sFile *file);
-
-/* global file table (expands dynamically) */
-static DynArray gftArray(sizeof(sFile),GFT_AREA,GFT_AREA_SIZE);
-static sFile *gftFreeList;
 static sVFSNode *procsNode;
 static sVFSNode *devNode;
-static klock_t gftLock;
 klock_t waitLock;
 
 void vfs_init(void) {
 	sVFSNode *root,*sys;
-	gftFreeList = NULL;
 
 	/*
 	 *  /
@@ -108,19 +73,6 @@ void vfs_init(void) {
 	devNode = vfs_dir_create(KERNEL_PID,root,(char*)"dev");
 
 	vfs_info_init();
-}
-
-bool vfs_isSameFile(sFile *f1,sFile *f2) {
-	return f1->devNo == f2->devNo && f1->nodeNo == f2->nodeNo;
-}
-
-const char *vfs_getPath(sFile *f) {
-	if(f->path) {
-		assert(f->devNo != VFS_DEV_NO);
-		return f->path;
-	}
-	assert(f->devNo == VFS_DEV_NO);
-	return vfs_node_getPath(f->nodeNo);
 }
 
 int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
@@ -161,69 +113,7 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	return 0;
 }
 
-sVFSNode *vfs_getNode(sFile *file) {
-	return file->node;
-}
-
-bool vfs_isDevice(sFile *file) {
-	return file->flags & VFS_DEVICE;
-}
-
-void vfs_incRefs(sFile *file) {
-	SpinLock::acquire(&file->lock);
-	file->refCount++;
-	SpinLock::release(&file->lock);
-}
-
-void vfs_incUsages(sFile *file) {
-	SpinLock::acquire(&file->lock);
-	file->usageCount++;
-	SpinLock::release(&file->lock);
-}
-
-void vfs_decUsages(sFile *file) {
-	SpinLock::acquire(&file->lock);
-	assert(file->usageCount > 0);
-	file->usageCount--;
-	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
-	 * previously because of our usage */
-	if(file->usageCount == 0 && file->refCount == 0)
-		vfs_doCloseFile(Proc::getRunning(),file);
-	SpinLock::release(&file->lock);
-}
-
-int vfs_fcntl(A_UNUSED pid_t pid,sFile *file,uint cmd,int arg) {
-	switch(cmd) {
-		case F_GETACCESS:
-			return file->flags & (VFS_READ | VFS_WRITE | VFS_MSGS);
-		case F_GETFL:
-			return file->flags & VFS_NOBLOCK;
-		case F_SETFL:
-			SpinLock::acquire(&file->lock);
-			file->flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DEVICE;
-			file->flags |= arg & VFS_NOBLOCK;
-			SpinLock::release(&file->lock);
-			return 0;
-		case F_SETDATA: {
-			sVFSNode *n = file->node;
-			int res = 0;
-			SpinLock::acquire(&waitLock);
-			if(file->devNo != VFS_DEV_NO || !IS_DEVICE(n->mode))
-				res = -EINVAL;
-			else
-				res = vfs_device_setReadable(n,(bool)arg);
-			SpinLock::release(&waitLock);
-			return res;
-		}
-	}
-	return -EINVAL;
-}
-
-bool vfs_shouldBlock(sFile *file) {
-	return !(file->flags & VFS_NOBLOCK);
-}
-
-int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
+int vfs_openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 	inode_t nodeNo;
 	bool created;
 	int err;
@@ -245,7 +135,7 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
 			return err;
 
 		/* store the path for debugging purposes */
-		(*file)->path = strdup(path);
+		(*file)->setPath(strdup(path));
 	}
 	else {
 		sVFSNode *node;
@@ -286,7 +176,7 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
 			err = vfs_devmsgs_open(pid,*file,node,flags);
 			if(err < 0) {
 				/* close removes the channeldevice-node, if it is one */
-				vfs_closeFile(pid,*file);
+				(*file)->closeFile(pid);
 				return err;
 			}
 		}
@@ -294,16 +184,16 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,sFile **file) {
 
 	/* append? */
 	if(flags & VFS_APPEND) {
-		err = vfs_seek(pid,*file,0,SEEK_END);
+		err = (*file)->seek(pid,0,SEEK_END);
 		if(err < 0) {
-			vfs_closeFile(pid,*file);
+			(*file)->closeFile(pid);
 			return err;
 		}
 	}
 	return 0;
 }
 
-int vfs_openPipe(pid_t pid,sFile **readFile,sFile **writeFile) {
+int vfs_openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	sVFSNode *node,*pipeNode;
 	inode_t nodeNo,pipeNodeNo;
 	int err;
@@ -332,15 +222,14 @@ int vfs_openPipe(pid_t pid,sFile **readFile,sFile **writeFile) {
 	err = vfs_openFile(pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO,writeFile);
 	if(err < 0) {
 		/* closeFile removes the pipenode, too */
-		vfs_closeFile(pid,*readFile);
+		(*readFile)->closeFile(pid);
 		return err;
 	}
 	return 0;
 }
 
-int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file) {
+int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **file) {
 	sVFSNode *n = NULL;
-	sFile *f;
 	int err;
 
 	/* cleanup flags */
@@ -357,118 +246,10 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sFile **file)
 	}
 
 	/* determine free file */
-	SpinLock::acquire(&gftLock);
-	err = vfs_getFreeFile(pid,flags,nodeNo,devNo,n,&f);
-	if(err < 0) {
-		SpinLock::release(&gftLock);
-		if(devNo == VFS_DEV_NO)
-			vfs_node_release(n);
-		return err;
-	}
-
-	SpinLock::acquire(&f->lock);
-	/* unused file? */
-	if(f->flags == 0) {
-		/* count references of virtual nodes */
-		if(devNo == VFS_DEV_NO) {
-			n->refCount++;
-			f->node = n;
-		}
-		else
-			f->node = NULL;
-		f->owner = pid;
-		f->flags = flags;
-		f->refCount = 1;
-		f->usageCount = 0;
-		f->position = 0;
-		f->devNo = devNo;
-		f->nodeNo = nodeNo;
-		f->path = NULL;
-	}
-	else
-		f->refCount++;
+	err = OpenFile::getFree(pid,flags,nodeNo,devNo,n,file);
 	if(devNo == VFS_DEV_NO)
 		vfs_node_release(n);
-	SpinLock::release(&f->lock);
-	SpinLock::release(&gftLock);
-	*file = f;
-	return 0;
-}
-
-static int vfs_getFreeFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,sFile **f) {
-	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
-	size_t i;
-	bool isDrvUse = false;
-	sFile *e;
-	/* ensure that we don't increment usages of an unused slot */
-	assert(flags & (VFS_READ | VFS_WRITE | VFS_MSGS));
-	assert(!(flags & ~userFlags));
-
-	if(devNo == VFS_DEV_NO) {
-		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
-		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
-	}
-	/* doesn't work for channels and pipes */
-	if(isDrvUse && (flags & VFS_EXCLUSIVE))
-		return -EINVAL;
-
-	/* for devices it doesn't matter whether we use an existing file or a new one, because it is
-	 * no problem when multiple threads use it for writing */
-	if(!isDrvUse) {
-		/* TODO walk through used-list and pick first from freelist */
-		ushort rwFlags = flags & userFlags;
-		for(i = 0; i < FILE_COUNT; i++) {
-			e = (sFile*)gftArray.getObj(i);
-			/* used slot and same node? */
-			if(e->flags != 0) {
-				/* same file? */
-				if(e->devNo == devNo && e->nodeNo == nodeNo) {
-					if(e->owner == pid) {
-						/* if the flags are the same we don't need a new file */
-						if((e->flags & userFlags) == rwFlags) {
-							*f = e;
-							return 0;
-						}
-					}
-					else if((rwFlags & VFS_EXCLUSIVE) || (e->flags & VFS_EXCLUSIVE))
-						return -EBUSY;
-				}
-			}
-		}
-	}
-
-	/* if there is no free slot anymore, extend our dyn-array */
-	if(gftFreeList == NULL) {
-		size_t j;
-		i = gftArray.getObjCount();
-		if(!gftArray.extend())
-			return -ENFILE;
-		/* put all except i on the freelist */
-		for(j = i + 1; j < gftArray.getObjCount(); j++) {
-			e = (sFile*)gftArray.getObj(j);
-			e->next = gftFreeList;
-			gftFreeList = e;
-		}
-		*f = (sFile*)gftArray.getObj(i);
-		return 0;
-	}
-
-	/* use the first from the freelist */
-	e = gftFreeList;
-	gftFreeList = gftFreeList->next;
-	*f = e;
-	return 0;
-}
-
-static void vfs_releaseFile(sFile *file) {
-	SpinLock::acquire(&gftLock);
-	file->next = gftFreeList;
-	gftFreeList = file;
-	SpinLock::release(&gftLock);
-}
-
-off_t vfs_tell(A_UNUSED pid_t pid,sFile *file) {
-	return file->position;
+	return err;
 }
 
 int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
@@ -478,15 +259,6 @@ int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 		res = vfs_fsmsgs_stat(pid,path,info);
 	else if(res == 0)
 		res = vfs_node_getInfo(pid,nodeNo,info);
-	return res;
-}
-
-int vfs_fstat(pid_t pid,sFile *file,USER sFileInfo *info) {
-	int res;
-	if(file->devNo == VFS_DEV_NO)
-		res = vfs_node_getInfo(pid,file->nodeNo,info);
-	else
-		res = vfs_fsmsgs_istat(pid,file->nodeNo,file->devNo,info);
 	return res;
 }
 
@@ -508,204 +280,6 @@ int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	else if(res == 0)
 		res = vfs_node_chown(pid,nodeNo,uid,gid);
 	return res;
-}
-
-off_t vfs_seek(pid_t pid,sFile *file,off_t offset,uint whence) {
-	off_t oldPos,res;
-
-	/* don't lock it during vfs_fsmsgs_istat(). we don't need it in this case because position is
-	 * simply set and never restored to oldPos */
-	if(file->devNo == VFS_DEV_NO || whence != SEEK_END)
-		SpinLock::acquire(&file->lock);
-
-	oldPos = file->position;
-	if(file->devNo == VFS_DEV_NO) {
-		sVFSNode *n = file->node;
-		if(n->seek == NULL) {
-			SpinLock::release(&file->lock);
-			return -ENOTSUP;
-		}
-		file->position = n->seek(pid,n,file->position,offset,whence);
-	}
-	else {
-		if(whence == SEEK_END) {
-			sFileInfo info;
-			res = vfs_fsmsgs_istat(pid,file->nodeNo,file->devNo,&info);
-			if(res < 0)
-				return res;
-			/* can't be < 0, therefore it will always be kept */
-			file->position = info.size;
-		}
-		/* since the fs-device validates the position anyway we can simply set it */
-		else if(whence == SEEK_SET)
-			file->position = offset;
-		else
-			file->position += offset;
-	}
-
-	/* invalid position? */
-	if(file->position < 0) {
-		file->position = oldPos;
-		res = -EINVAL;
-	}
-	else
-		res = file->position;
-
-	if(file->devNo == VFS_DEV_NO || whence != SEEK_END)
-		SpinLock::release(&file->lock);
-	return res;
-}
-
-ssize_t vfs_readFile(pid_t pid,sFile *file,USER void *buffer,size_t count) {
-	ssize_t readBytes;
-	if(!(file->flags & VFS_READ))
-		return -EACCES;
-
-	if(file->devNo == VFS_DEV_NO) {
-		sVFSNode *n = file->node;
-		if(n->read == NULL)
-			return -EACCES;
-
-		/* use the read-handler */
-		readBytes = n->read(pid,file,n,buffer,file->position,count);
-	}
-	else {
-		/* query the fs-device to read from the inode */
-		readBytes = vfs_fsmsgs_read(pid,file->nodeNo,file->devNo,buffer,file->position,count);
-	}
-
-	if(readBytes > 0) {
-		SpinLock::acquire(&file->lock);
-		file->position += readBytes;
-		SpinLock::release(&file->lock);
-	}
-
-	if(readBytes > 0 && pid != KERNEL_PID) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock here because its not critical. we don't make decisions based on it or similar.
-		 * its just for statistics. therefore, it doesn't really hurt if we add a bit less in
-		 * very very rare cases. */
-		p->stats.input += readBytes;
-	}
-	return readBytes;
-}
-
-ssize_t vfs_writeFile(pid_t pid,sFile *file,USER const void *buffer,size_t count) {
-	ssize_t writtenBytes;
-	if(!(file->flags & VFS_WRITE))
-		return -EACCES;
-
-	if(file->devNo == VFS_DEV_NO) {
-		sVFSNode *n = file->node;
-		if(n->write == NULL)
-			return -EACCES;
-
-		/* write to the node */
-		writtenBytes = n->write(pid,file,n,buffer,file->position,count);
-	}
-	else {
-		/* query the fs-device to write to the inode */
-		writtenBytes = vfs_fsmsgs_write(pid,file->nodeNo,file->devNo,buffer,file->position,count);
-	}
-
-	if(writtenBytes > 0) {
-		SpinLock::acquire(&file->lock);
-		file->position += writtenBytes;
-		SpinLock::release(&file->lock);
-	}
-
-	if(writtenBytes > 0 && pid != KERNEL_PID) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock; same reason as above */
-		p->stats.output += writtenBytes;
-	}
-	return writtenBytes;
-}
-
-ssize_t vfs_sendMsg(pid_t pid,sFile *file,msgid_t id,USER const void *data1,size_t size1,
-		USER const void *data2,size_t size2) {
-	ssize_t err;
-	sVFSNode *n;
-
-	if(file->devNo != VFS_DEV_NO)
-		return -EPERM;
-	/* the device-messages (open, read, write, close) are always allowed */
-	if(!IS_DEVICE_MSG(id) && !(file->flags & VFS_MSGS))
-		return -EACCES;
-
-	n = file->node;
-	if(!IS_CHANNEL(n->mode))
-		return -ENOTSUP;
-
-	err = vfs_chan_send(pid,file->flags,n,id,data1,size1,data2,size2);
-	if(err == 0 && pid != KERNEL_PID) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock; same reason as above */
-		p->stats.output += size1 + size2;
-	}
-	return err;
-}
-
-ssize_t vfs_receiveMsg(pid_t pid,sFile *file,USER msgid_t *id,USER void *data,size_t size,
-		bool forceBlock) {
-	ssize_t err;
-	sVFSNode *n;
-
-	if(file->devNo != VFS_DEV_NO)
-		return -EPERM;
-
-	n = file->node;
-	if(!IS_CHANNEL(n->mode))
-		return -ENOTSUP;
-
-	err = vfs_chan_receive(pid,file->flags,n,id,data,size,
-			forceBlock || !(file->flags & VFS_NOBLOCK),forceBlock);
-	if(err > 0 && pid != KERNEL_PID) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock; same reason as above */
-		p->stats.input += err;
-	}
-	return err;
-}
-
-bool vfs_closeFile(pid_t pid,sFile *file) {
-	bool res;
-	SpinLock::acquire(&file->lock);
-	res = vfs_doCloseFile(pid,file);
-	SpinLock::release(&file->lock);
-	return res;
-}
-
-static bool vfs_doCloseFile(pid_t pid,sFile *file) {
-	/* decrement references; it may be already zero if we have closed the file previously but
-	 * couldn't free it because there was still a user of it. */
-	if(file->refCount > 0)
-		file->refCount--;
-
-	/* if there are no more references, free the file */
-	if(file->refCount == 0) {
-		/* if we have used a file-descriptor to get here, the usages are at least 1; otherwise it is
-		 * 0, because it is used kernel-intern only and not passed to other "users". */
-		if(file->usageCount <= 1) {
-			if(file->devNo == VFS_DEV_NO) {
-				sVFSNode *n = file->node;
-				if(n->close)
-					n->close(pid,file,n);
-				else
-					vfs_node_destroy(n);
-			}
-			/* vfs_fsmsgs_close won't cause a context-switch; therefore we can keep the lock */
-			else
-				vfs_fsmsgs_close(pid,file->nodeNo,file->devNo);
-
-			/* mark unused */
-			Cache::free(file->path);
-			file->flags = 0;
-			vfs_releaseFile(file);
-			return true;
-		}
-	}
-	return false;
 }
 
 static bool vfs_hasMsg(sVFSNode *node) {
@@ -730,10 +304,10 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 	/* transform the files into vfs-nodes */
 	for(i = 0; i < objCount; i++) {
 		if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			sFile *file = (sFile*)objects[i].object;
-			if(file->devNo != VFS_DEV_NO)
+			OpenFile *file = (OpenFile*)objects[i].object;
+			if(file->getDev() != VFS_DEV_NO)
 				return -EPERM;
-			objects[i].object = (evobj_t)file->node;
+			objects[i].object = (evobj_t)file->getNode();
 		}
 	}
 
@@ -801,114 +375,6 @@ error:
 	if(maxWaitTime != 0)
 		Timer::removeThread(t->getTid());
 	return res;
-}
-
-static inode_t vfs_doGetClient(sFile *const *files,size_t count,size_t *index) {
-	sVFSNode *match = NULL;
-	size_t i;
-	bool retry,cont = true;
-	do {
-		retry = false;
-		for(i = 0; cont && i < count; i++) {
-			const sFile *f = files[i];
-			sVFSNode *client,*node = f->node;
-			if(f->devNo != VFS_DEV_NO)
-				return -EPERM;
-
-			if(!IS_DEVICE(node->mode))
-				return -EPERM;
-
-			client = vfs_device_getWork(node,&cont,&retry);
-			if(client) {
-				if(index)
-					*index = i;
-				if(cont)
-					match = client;
-				else {
-					vfs_chan_setUsed(client,true);
-					return vfs_node_getNo(client);
-				}
-			}
-		}
-		/* if we have a match, use this one */
-		if(match) {
-			vfs_chan_setUsed(match,true);
-			return vfs_node_getNo(match);
-		}
-		/* if not and we've skipped a client, try another time */
-	}
-	while(retry);
-	return -ENOCLIENT;
-}
-
-inode_t vfs_getClient(sFile *const *files,size_t count,size_t *index,uint flags) {
-	Event::WaitObject waits[MAX_GETWORK_DEVICES];
-	Thread *t = Thread::getRunning();
-	bool inited = false;
-	inode_t clientNo;
-	while(true) {
-		SpinLock::acquire(&waitLock);
-		clientNo = vfs_doGetClient(files,count,index);
-		if(clientNo != -ENOCLIENT) {
-			SpinLock::release(&waitLock);
-			break;
-		}
-
-		/* if we shouldn't block, stop here */
-		if(flags & GW_NOBLOCK) {
-			SpinLock::release(&waitLock);
-			break;
-		}
-
-		/* build wait-objects */
-		if(!inited) {
-			size_t i;
-			for(i = 0; i < count; i++) {
-				waits[i].events = EV_CLIENT;
-				waits[i].object = (evobj_t)files[i]->node;
-			}
-			inited = true;
-		}
-
-		/* wait for a client (accept signals) */
-		Event::waitObjects(t,waits,count);
-		SpinLock::release(&waitLock);
-
-		Thread::switchAway();
-		if(Signals::hasSignalFor(t->getTid())) {
-			clientNo = -EINTR;
-			break;
-		}
-	}
-	return clientNo;
-}
-
-inode_t vfs_getClientId(A_UNUSED pid_t pid,sFile *file) {
-	sVFSNode *n = file->node;
-	if(file->devNo != VFS_DEV_NO || !IS_CHANNEL(n->mode))
-		return -EPERM;
-	return file->nodeNo;
-}
-
-int vfs_openClient(pid_t pid,sFile *file,inode_t clientId,sFile **cfile) {
-	bool isValid;
-	sVFSNode *n;
-
-	/* search for the client */
-	n = vfs_node_openDir(file->node,true,&isValid);
-	if(isValid) {
-		while(n != NULL) {
-			if(vfs_node_getNo(n) == clientId)
-				break;
-			n = n->next;
-		}
-	}
-	vfs_node_closeDir(file->node,true);
-	if(n == NULL)
-		return -ENOENT;
-
-	/* open file */
-	return vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(n),VFS_DEV_NO,cfile);
 }
 
 int vfs_mount(pid_t pid,const char *device,const char *path,uint type) {
@@ -1128,7 +594,7 @@ int vfs_rmdir(pid_t pid,const char *path) {
 	return 0;
 }
 
-int vfs_createdev(pid_t pid,char *path,uint type,uint ops,sFile **file) {
+int vfs_createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
 	sVFSNode *dir,*srv;
 	size_t len;
 	char *name;
@@ -1334,16 +800,6 @@ void vfs_removeThread(tid_t tid) {
 		vfs_node_destroyNow(n);
 }
 
-size_t vfs_dbg_getGFTEntryCount(void) {
-	size_t i,count = 0;
-	for(i = 0; i < FILE_COUNT; i++) {
-		sFile *f = (sFile*)gftArray.getObj(i);
-		if(f->flags != 0)
-			count++;
-	}
-	return count;
-}
-
 void vfs_printMsgs(OStream &os) {
 	bool isValid;
 	sVFSNode *drv = vfs_node_openDir(devNode,false,&isValid);
@@ -1359,57 +815,4 @@ void vfs_printMsgs(OStream &os) {
 		}
 	}
 	vfs_node_closeDir(devNode,false);
-}
-
-void vfs_printFile(OStream &os,sFile *f) {
-	os.writef("%3d [ %2u refs, %2u uses (%u:%u",
-			gftArray.getIndex(f),f->refCount,f->usageCount,f->devNo,f->nodeNo);
-	if(f->devNo == VFS_DEV_NO && vfs_node_isValid(f->nodeNo))
-		os.writef(":%s)",vfs_node_getPath(f->nodeNo));
-	else
-		os.writef(")");
-	os.writef(" ]");
-}
-
-void vfs_printGFT(OStream &os) {
-	size_t i;
-	sFile *f;
-	os.writef("Global File Table:\n");
-	for(i = 0; i < FILE_COUNT; i++) {
-		f = (sFile*)gftArray.getObj(i);
-		if(f->flags != 0) {
-			os.writef("\tfile @ index %d\n",i);
-			os.writef("\t\tflags: ");
-			if(f->flags & VFS_READ)
-				os.writef("READ ");
-			if(f->flags & VFS_WRITE)
-				os.writef("WRITE ");
-			if(f->flags & VFS_NOBLOCK)
-				os.writef("NOBLOCK ");
-			if(f->flags & VFS_DEVICE)
-				os.writef("DEVICE ");
-			if(f->flags & VFS_MSGS)
-				os.writef("MSGS ");
-			os.writef("\n");
-			os.writef("\t\tnodeNo: %d\n",f->nodeNo);
-			os.writef("\t\tdevNo: %d\n",f->devNo);
-			os.writef("\t\tpos: %Od\n",f->position);
-			os.writef("\t\trefCount: %d\n",f->refCount);
-			if(f->owner == KERNEL_PID)
-				os.writef("\t\towner: %d (kernel)\n",f->owner);
-			else {
-				const Proc *p = Proc::getByPid(f->owner);
-				os.writef("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
-			}
-			if(f->devNo == VFS_DEV_NO) {
-				sVFSNode *n = f->node;
-				if(n->name == NULL)
-					os.writef("\t\tFile: <destroyed>\n");
-				else
-					os.writef("\t\tFile: '%s'\n",vfs_getPath(f));
-			}
-			else
-				os.writef("\t\tFile: '%s'\n",vfs_getPath(f));
-		}
-	}
 }

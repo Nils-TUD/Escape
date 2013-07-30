@@ -29,35 +29,35 @@ void vfs_info_init(void);
 /**
  * The trace-read-handler
  */
-ssize_t vfs_info_traceReadHandler(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_traceReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count);
 
 /**
  * The proc-read-handler
  */
-ssize_t vfs_info_procReadHandler(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_procReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count);
 
 /**
  * The thread-read-handler
  */
-ssize_t vfs_info_threadReadHandler(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_threadReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count);
 
 /**
  * The regions-read-handler
  */
-ssize_t vfs_info_regionsReadHandler(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_regionsReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count);
 
 /**
  * The maps-read-handler
  */
-ssize_t vfs_info_mapsReadHandler(pid_t pid,sFile *file,sVFSNode *node,USER void *buffer,
+ssize_t vfs_info_mapsReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count);
 
 /**
  * The virtual-memory-read-handler
  */
-ssize_t vfs_info_virtMemReadHandler(pid_t pid,sFile *file,sVFSNode *node,void *buffer,
+ssize_t vfs_info_virtMemReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
 		off_t offset,size_t count);

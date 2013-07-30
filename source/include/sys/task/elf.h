@@ -77,11 +77,11 @@ public:
 	 * @param info the startup-info
 	 * @return 0 on success
 	 */
-	static int finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info);
+	static int finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info);
 
 private:
 	static int doLoadFromFile(const char *path,int type,StartupInfo *info);
-	static int addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type);
+	static int addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type);
 };
 
 #ifdef __i386__

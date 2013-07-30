@@ -23,6 +23,7 @@
 #include <sys/mem/cache.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/video.h>
 #include <sys/mutex.h>
 #include <assert.h>
@@ -119,7 +120,7 @@ VMRegion *VMTree::add(Region *reg,uintptr_t addr) {
 		return NULL;
 	/* we have a reference to that file now. we'll release it on unmap */
 	if(reg->getFile())
-		vfs_incRefs(reg->getFile());
+		reg->getFile()->incRefs();
 	/* fibonacci hashing to spread the priorities very even in the 32-bit room */
 	(*q)->priority = priority;
 	priority += 0x9e3779b9;	/* floor(2^32 / phi), with phi = golden ratio */
@@ -182,7 +183,7 @@ void VMTree::remove(VMRegion *reg) {
 	}
 	/* close file */
 	if(reg->reg->getFile())
-		vfs_closeFile(virtmem->getPid(),reg->reg->getFile());
+		reg->reg->getFile()->closeFile(virtmem->getPid());
 	Cache::free(reg);
 }
 

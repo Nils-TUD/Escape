@@ -26,6 +26,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/log.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -82,7 +83,7 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
-	sFile *file;
+	OpenFile *file;
 	size_t j,loadSeg = 0;
 	uintptr_t datPtr;
 	sElfEHeader eheader;
@@ -99,7 +100,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	}
 
 	/* fill bindesc */
-	if((res = vfs_fstat(p->getPid(),file,&finfo)) < 0) {
+	if((res = file->fstat(p->getPid(),&finfo)) < 0) {
 		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
 		goto failed;
 	}
@@ -110,7 +111,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		p->setSGid(finfo.gid);
 
 	/* first read the header */
-	if((readRes = vfs_readFile(p->getPid(),file,&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
+	if((readRes = file->readFile(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
 		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
 		goto failed;
 	}
@@ -132,12 +133,12 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	datPtr = eheader.e_phoff;
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(vfs_seek(p->getPid(),file,(off_t)datPtr,SEEK_SET) < 0) {
+		if(file->seek(p->getPid(),(off_t)datPtr,SEEK_SET) < 0) {
 			Log::get().writef("[LOADER] Seeking to position 0x%Ox failed\n",(off_t)datPtr);
 			goto failed;
 		}
 		/* read pheader */
-		if((readRes = vfs_readFile(p->getPid(),file,&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
+		if((readRes = file->readFile(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
 					j,path,strerror(-readRes));
 			goto failed;
@@ -156,15 +157,15 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 				goto failed;
 			}
 			Thread::addHeapAlloc(interpName);
-			if(vfs_seek(p->getPid(),file,pheader.p_offset,SEEK_SET) < 0) {
+			if(file->seek(p->getPid(),pheader.p_offset,SEEK_SET) < 0) {
 				Log::get().writef("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
 			}
-			if(vfs_readFile(p->getPid(),file,interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
+			if(file->readFile(p->getPid(),interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				Log::get().writef("[LOADER] Reading dynlinker name failed\n");
 				goto failedInterpName;
 			}
-			vfs_closeFile(p->getPid(),file);
+			file->closeFile(p->getPid());
 			/* now load him and stop loading the 'real' program */
 			res = doLoadFromFile(interpName,TYPE_INTERP,info);
 			Thread::remHeapAlloc(interpName);
@@ -179,12 +180,12 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 				uintptr_t tlsStart;
 				if(t->getTLSRange(&tlsStart,NULL)) {
 					/* read tdata */
-					if(vfs_seek(p->getPid(),file,(off_t)pheader.p_offset,SEEK_SET) < 0) {
+					if(file->seek(p->getPid(),(off_t)pheader.p_offset,SEEK_SET) < 0) {
 						Log::get().writef("[LOADER] Seeking to load segment %d (%Ox) failed\n",
 								loadSeg,pheader.p_offset);
 						goto failed;
 					}
-					if((readRes = vfs_readFile(p->getPid(),file,(void*)tlsStart,pheader.p_filesz)) < 0) {
+					if((readRes = file->readFile(p->getPid(),(void*)tlsStart,pheader.p_filesz)) < 0) {
 						Log::get().writef("[LOADER] Reading load segment %d failed: %s\n",
 								loadSeg,strerror(-readRes));
 						goto failed;
@@ -206,18 +207,18 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		goto failed;
 	}
 	assert(FileDesc::unassoc(fd) != NULL);
-	vfs_closeFile(p->getPid(),file);
+	file->closeFile(p->getPid());
 	return 0;
 
 failedInterpName:
 	Thread::remHeapAlloc(interpName);
 	Cache::free(interpName);
 failed:
-	vfs_closeFile(p->getPid(),file);
+	file->closeFile(p->getPid());
 	return -ENOEXEC;
 }
 
-int ELF::addSegment(sFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type) {
+int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type) {
 	Thread *t = Thread::getRunning();
 	int res,prot = 0,flags = type == TYPE_INTERP ? 0 : MAP_FIXED;
 	VMRegion *vm;

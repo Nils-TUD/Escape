@@ -56,7 +56,7 @@ public:
 	 * @param flags the flags of the region (RF_*)
 	 * @return the region or NULL if failed
 	 */
-	static Region *create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags);
+	static Region *create(OpenFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags);
 
 	/**
 	 * Clones this region for the given process. That means it copies the attributes from the
@@ -107,7 +107,7 @@ public:
 	/**
 	 * @return the file or NULL if the region is not backed by a file
 	 */
-	sFile *getFile() const {
+	OpenFile *getFile() const {
 		return file;
 	}
 	/**
@@ -231,7 +231,7 @@ public:
 
 private:
 	ulong flags;
-	sFile *file;
+	OpenFile *file;
 	off_t offset;
 	size_t loadCount;
 	size_t byteCount;

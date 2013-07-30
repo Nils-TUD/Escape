@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
+#include <sys/vfs/openfile.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
@@ -102,7 +103,7 @@ static void test_vfs_node_getPath(void) {
 static void test_vfs_node_file_refs(void) {
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();
-	sFile *f1,*f2;
+	OpenFile *f1,*f2;
 	sVFSNode *n;
 	char buffer[64] = "This is a test!";
 
@@ -110,10 +111,10 @@ static void test_vfs_node_file_refs(void) {
 	checkMemoryBefore(false);
 
 	test_assertInt(vfs_openPath(pid,VFS_WRITE | VFS_CREATE,"/system/foobar",&f1),0);
-	n = vfs_getNode(f1);
-	test_assertSSize(vfs_writeFile(pid,f1,buffer,strlen(buffer)),strlen(buffer));
+	n = f1->getNode();
+	test_assertSSize(f1->writeFile(pid,buffer,strlen(buffer)),strlen(buffer));
 	test_assertSize(n->refCount,2);
-	vfs_closeFile(pid,f1);
+	f1->closeFile(pid);
 	test_assertSize(n->refCount,1);
 
 	test_assertInt(vfs_openPath(pid,VFS_READ,"/system/foobar",&f2),0);
@@ -122,9 +123,9 @@ static void test_vfs_node_file_refs(void) {
 	test_assertSize(n->refCount,1);
 	test_assertInt(vfs_openPath(pid,VFS_READ,"/system/foobar",&f2),-ENOENT);
 	memclear(buffer,sizeof(buffer));
-	test_assertTrue(vfs_readFile(pid,f2,buffer,sizeof(buffer)) > 0);
+	test_assertTrue(f2->readFile(pid,buffer,sizeof(buffer)) > 0);
 	test_assertStr(buffer,"This is a test!");
-	vfs_closeFile(pid,f2);
+	f2->closeFile(pid);
 
 	checkMemoryAfter(false);
 	test_caseSucceeded();
@@ -133,7 +134,7 @@ static void test_vfs_node_file_refs(void) {
 static void test_vfs_node_dir_refs(void) {
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();
-	sFile *f1;
+	OpenFile *f1;
 	sVFSNode *n,*f;
 	inode_t nodeNo;
 	bool valid;
@@ -144,9 +145,9 @@ static void test_vfs_node_dir_refs(void) {
 	test_assertInt(vfs_mkdir(pid,"/system/foobar"),0);
 	test_assertInt(vfs_mkdir(pid,"/system/foobar/test"),0);
 	test_assertInt(vfs_openPath(pid,VFS_WRITE | VFS_CREATE,"/system/foobar/myfile1",&f1),0);
-	vfs_closeFile(pid,f1);
+	f1->closeFile(pid);
 	test_assertInt(vfs_openPath(pid,VFS_WRITE | VFS_CREATE,"/system/foobar/myfile2",&f1),0);
-	vfs_closeFile(pid,f1);
+	f1->closeFile(pid);
 
 	test_assertInt(vfs_node_resolvePath("/system/foobar",&nodeNo,NULL,0),0);
 	n = vfs_node_get(nodeNo);
@@ -167,7 +168,7 @@ static void test_vfs_node_dir_refs(void) {
 	test_assertSize(n->refCount,1);
 
 	vfs_node_closeDir(n,false);
-	vfs_closeFile(pid,f1);
+	f1->closeFile(pid);
 
 	checkMemoryAfter(false);
 	test_caseSucceeded();

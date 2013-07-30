@@ -58,7 +58,7 @@ sVFSNode *vfs_file_create_for(pid_t pid,sVFSNode *parent,char *name,void *data,s
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-ssize_t vfs_file_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,size_t count);
+ssize_t vfs_file_read(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,size_t count);
 
 /**
  * The default write-handler
@@ -71,4 +71,4 @@ ssize_t vfs_file_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t of
  * @param count the number of bytes to write
  * @return the number of written bytes
  */
-ssize_t vfs_file_write(pid_t pid,sFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
+ssize_t vfs_file_write(pid_t pid,OpenFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);

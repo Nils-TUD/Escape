@@ -46,7 +46,7 @@ typedef struct {
 } sDevice;
 
 static size_t vfs_device_getSize(pid_t pid,sVFSNode *node);
-static void vfs_device_close(pid_t pid,sFile *file,sVFSNode *node);
+static void vfs_device_close(pid_t pid,OpenFile *file,sVFSNode *node);
 static void vfs_device_destroy(sVFSNode *node);
 static void vfs_device_wakeupClients(sVFSNode *node,uint events,bool locked);
 
@@ -98,7 +98,7 @@ static size_t vfs_device_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
 	return dev ? dev->msgCount : 0;
 }
 
-static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED sFile *file,sVFSNode *node) {
+static void vfs_device_close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node) {
 	/* wakeup all threads that may be waiting for this node so they can check
 	 * whether they are affected by the remove of this device and perform the corresponding
 	 * action */

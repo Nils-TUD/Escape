@@ -22,17 +22,18 @@
 #include <sys/task/thread.h>
 #include <sys/task/filedesc.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
 #include <errno.h>
 
 void FileDesc::init(Proc *p) {
-	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(sFile*));
+	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(OpenFile*));
 }
 
-sFile *FileDesc::request(int fd) {
-	sFile *file;
+OpenFile *FileDesc::request(int fd) {
+	OpenFile *file;
 	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
@@ -40,16 +41,16 @@ sFile *FileDesc::request(int fd) {
 	p->lock(PLOCK_FDS);
 	file = p->fileDescs[fd];
 	if(file != NULL) {
-		vfs_incUsages(file);
+		file->incUsages();
 		Thread::addFileUsage(file);
 	}
 	p->unlock(PLOCK_FDS);
 	return file;
 }
 
-void FileDesc::release(sFile *file) {
+void FileDesc::release(OpenFile *file) {
 	Thread::remFileUsage(file);
-	vfs_decUsages(file);
+	file->decUsages();
 }
 
 void FileDesc::clone(Proc *p) {
@@ -60,7 +61,7 @@ void FileDesc::clone(Proc *p) {
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
 		if(p->fileDescs[i] != NULL)
-			vfs_incRefs(p->fileDescs[i]);
+			p->fileDescs[i]->incRefs();
 	}
 	cur->unlock(PLOCK_FDS);
 }
@@ -70,17 +71,17 @@ void FileDesc::destroy(Proc *p) {
 	p->lock(PLOCK_FDS);
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
-			vfs_incUsages(p->fileDescs[i]);
-			if(!vfs_closeFile(p->getPid(),p->fileDescs[i]))
-				vfs_decUsages(p->fileDescs[i]);
+			p->fileDescs[i]->incUsages();
+			if(!p->fileDescs[i]->closeFile(p->getPid()))
+				p->fileDescs[i]->decUsages();
 			p->fileDescs[i] = NULL;
 		}
 	}
 	p->unlock(PLOCK_FDS);
 }
 
-int FileDesc::assoc(sFile *fileNo) {
-	sFile *const *fds;
+int FileDesc::assoc(OpenFile *fileNo) {
+	OpenFile *const *fds;
 	int i,fd = -EMFILE;
 	Proc *p = Thread::getRunning()->getProc();
 	p->lock(PLOCK_FDS);
@@ -98,8 +99,8 @@ int FileDesc::assoc(sFile *fileNo) {
 }
 
 int FileDesc::dup(int fd) {
-	sFile *f;
-	sFile *const *fds;
+	OpenFile *f;
+	OpenFile *const *fds;
 	int i,nfd = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
 	/* check fd */
@@ -115,7 +116,7 @@ int FileDesc::dup(int fd) {
 			if(fds[i] == NULL) {
 				/* increase references */
 				nfd = i;
-				vfs_incRefs(f);
+				f->incRefs();
 				p->fileDescs[nfd] = f;
 				break;
 			}
@@ -126,7 +127,7 @@ int FileDesc::dup(int fd) {
 }
 
 int FileDesc::redirect(int src,int dst) {
-	sFile *fSrc,*fDst;
+	OpenFile *fSrc,*fDst;
 	int err = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
 
@@ -138,9 +139,9 @@ int FileDesc::redirect(int src,int dst) {
 	fSrc = p->fileDescs[src];
 	fDst = p->fileDescs[dst];
 	if(fSrc != NULL && fDst != NULL) {
-		vfs_incRefs(fDst);
+		fDst->incRefs();
 		/* we have to close the source because no one else will do it anymore... */
-		vfs_closeFile(p->getPid(),fSrc);
+		fSrc->closeFile(p->getPid());
 		/* now redirect src to dst */
 		p->fileDescs[src] = fDst;
 		err = 0;
@@ -149,8 +150,8 @@ int FileDesc::redirect(int src,int dst) {
 	return err;
 }
 
-sFile *FileDesc::unassoc(int fd) {
-	sFile *file;
+OpenFile *FileDesc::unassoc(int fd) {
+	OpenFile *file;
 	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
@@ -169,7 +170,7 @@ void FileDesc::print(OStream &os,Proc *p) {
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
 			os.writef("\t%-2d: ",i);
-			vfs_printFile(os,p->fileDescs[i]);
+			p->fileDescs[i]->print(os);
 			os.writef("\n");
 		}
 	}

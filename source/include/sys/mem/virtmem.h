@@ -77,7 +77,7 @@ public:
 	 * @param file the file to write to
 	 * @param count the number of pages to swap out
 	 */
-	static void swapOut(pid_t pid,sFile *file,size_t count);
+	static void swapOut(pid_t pid,OpenFile *file,size_t count);
 
 	/**
 	 * Swaps the page at given address of the given process in.
@@ -88,7 +88,7 @@ public:
 	 * @param addr the address of the page to swap in
 	 * @return true on success
 	 */
-	static bool swapIn(pid_t pid,sFile *file,Thread *t,uintptr_t addr);
+	static bool swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr);
 
 	/**
 	 * Sets the timestamp for all regions that are used by the given thread
@@ -169,7 +169,7 @@ public:
 	 * @param vmreg will be set to the created region
 	 * @return 0 on success or a negative error-code
 	 */
-	int map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,sFile *f,
+	int map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,OpenFile *f,
 			off_t offset,VMRegion **vmreg);
 
 	/**
@@ -342,7 +342,7 @@ private:
 	}
 
 	static Region *getLRURegion(void);
-	static uintptr_t getBinary(sFile *file,VirtMem *&binOwner);
+	static uintptr_t getBinary(OpenFile *file,VirtMem *&binOwner);
 	static ssize_t getPgIdxForSwap(const Region *reg);
 	static void setSwappedOut(Region *reg,size_t index);
 	static void setSwappedIn(Region *reg,size_t index,frameno_t frameNo);

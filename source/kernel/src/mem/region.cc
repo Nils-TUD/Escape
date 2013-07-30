@@ -25,6 +25,7 @@
 #include <sys/mem/sllnodes.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
@@ -50,7 +51,7 @@
  * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
  * memory. */
 
-Region *Region::create(sFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags) {
+Region *Region::create(OpenFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags) {
 	size_t i,pageCount;
 	Region *reg;
 	/* a region can never be shareable AND growable. this way, we don't need to lock every region-
@@ -193,7 +194,7 @@ void Region::print(OStream &os,uintptr_t virt) const {
 	os.writef("\n");
 	if(file) {
 		os.writef("\tFile: ");
-		vfs_printFile(os,file);
+		file->print(os);
 	}
 	os.writef("\tTimestamp: %d\n",timestamp);
 	os.writef("\tProcesses: ");

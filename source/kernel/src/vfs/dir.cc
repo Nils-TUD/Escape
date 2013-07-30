@@ -29,6 +29,7 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/openfile.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <assert.h>
@@ -43,7 +44,7 @@ typedef struct {
 	/* name follows (up to 255 bytes) */
 } A_PACKED sVFSDirEntry;
 
-static ssize_t vfs_dir_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,
+static ssize_t vfs_dir_read(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,
 		size_t count);
 static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static size_t vfs_dir_getSize(pid_t pid,sVFSNode *node);
@@ -103,7 +104,7 @@ static size_t vfs_dir_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
 	return byteCount;
 }
 
-static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER void *buffer,
+static ssize_t vfs_dir_read(pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USER void *buffer,
 		off_t offset,size_t count) {
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
@@ -122,10 +123,10 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 		size_t c,curSize = bufSize;
 		fsBytes = Cache::alloc(bufSize);
 		if(fsBytes != NULL) {
-			sFile *rfile;
+			OpenFile *rfile;
 			Thread::addHeapAlloc(fsBytes);
 			if(vfs_fsmsgs_openPath(pid,VFS_READ,"/",&rfile) == 0) {
-				while((c = vfs_readFile(pid,rfile,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
+				while((c = rfile->readFile(pid,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;
 					if(c < bufSize)
 						break;
@@ -140,7 +141,7 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED sFile *file,sVFSNode *node,USER v
 					fsBytes = fsBytesDup;
 					Thread::addHeapAlloc(fsBytes);
 				}
-				vfs_closeFile(pid,rfile);
+				rfile->closeFile(pid);
 			}
 			Thread::remHeapAlloc(fsBytes);
 		}

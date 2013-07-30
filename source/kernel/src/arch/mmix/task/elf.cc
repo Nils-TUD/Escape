@@ -25,6 +25,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/cpu.h>
 #include <sys/video.h>
 #include <sys/log.h>
@@ -32,7 +33,7 @@
 #include <errno.h>
 
 static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		sFile *file,ELF::StartupInfo *info);
+		OpenFile *file,ELF::StartupInfo *info);
 
 int ELF::finishFromMem(const void *code,A_UNUSED size_t length,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
@@ -54,7 +55,7 @@ int ELF::finishFromMem(const void *code,A_UNUSED size_t length,StartupInfo *info
 	return finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),NULL,info);
 }
 
-int ELF::finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info) {
+int ELF::finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info) {
 	int res = -ENOEXEC;
 	Thread *t = Thread::getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
@@ -65,12 +66,12 @@ int ELF::finishFromFile(sFile *file,const sElfEHeader *eheader,StartupInfo *info
 	}
 
 	Thread::addHeapAlloc(secHeaders);
-	if(vfs_seek(t->getProc()->getPid(),file,eheader->e_shoff,SEEK_SET) < 0) {
+	if(file->seek(t->getProc()->getPid(),eheader->e_shoff,SEEK_SET) < 0) {
 		Log::get().writef("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
 	}
 
-	if((readRes = vfs_readFile(t->getProc()->getPid(),file,secHeaders,headerSize)) != headerSize) {
+	if((readRes = file->readFile(t->getProc()->getPid(),secHeaders,headerSize)) != headerSize) {
 		Log::get().writef("[LOADER] Unable to read ELF-header: %s\n",strerror(-readRes));
 		goto error;
 	}
@@ -85,7 +86,7 @@ error:
 }
 
 static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
-		sFile *file,ELF::StartupInfo *info) {
+		OpenFile *file,ELF::StartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;
 	size_t j;
@@ -112,11 +113,11 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 				sheader->sh_addr != 0) {
 			/* append global registers */
 			if(file != NULL) {
-				if((res = vfs_seek(t->getProc()->getPid(),file,sheader->sh_offset,SEEK_SET)) < 0) {
+				if((res = file->seek(t->getProc()->getPid(),sheader->sh_offset,SEEK_SET)) < 0) {
 					Log::get().writef("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
 					return res;
 				}
-				if((res = vfs_readFile(t->getProc()->getPid(),file,stack,sheader->sh_size)) !=
+				if((res = file->readFile(t->getProc()->getPid(),stack,sheader->sh_size)) !=
 						(ssize_t)sheader->sh_size) {
 					Log::get().writef("[LOADER] Unable to read reg-section: %s\n",strerror(-res));
 					return res;

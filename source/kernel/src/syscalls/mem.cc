@@ -48,7 +48,7 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	int flags = SYSC_ARG5(stack);
 	int fd = SYSC_ARG6(stack);
 	off_t binOffset = SYSC_ARG7(stack);
-	sFile *f = NULL;
+	OpenFile *f = NULL;
 	VMRegion *vm;
 	int res;
 

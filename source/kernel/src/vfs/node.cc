@@ -198,7 +198,8 @@ int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
 }
 
 const char *vfs_node_getPath(inode_t nodeNo) {
-	static char path[MAX_PATH_LEN];
+	/* TODO the +1 is necessary for eco32 (alignment bug) */
+	static char path[MAX_PATH_LEN + 1];
 	size_t nlen,len = 0,total = 0;
 	sVFSNode *node = vfs_node_get(nodeNo);
 	sVFSNode *n = node;

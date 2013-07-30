@@ -243,14 +243,14 @@ public:
 	 *
 	 * @param file the file
 	 */
-	static void addFileUsage(sFile *file);
+	static void addFileUsage(OpenFile *file);
 
 	/**
 	 * Removes the given file from the file-usage-list.
 	 *
 	 * @param file the file
 	 */
-	static void remFileUsage(sFile *file);
+	static void remFileUsage(OpenFile *file);
 
 	/**
 	 * Adds the given callback to the callback-list. These will be called on thread-termination.
@@ -671,7 +671,7 @@ protected:
 	/* a list of locks that should be released on thread-termination */
 	klock_t *termLocks[TERM_RESOURCE_CNT];
 	/* a list of file-usages that should be decremented on thread-termination */
-	sFile *termUsages[TERM_RESOURCE_CNT];
+	OpenFile *termUsages[TERM_RESOURCE_CNT];
 	/* a list of callbacks that should be called on thread-termination */
 	fTermCallback termCallbacks[TERM_RESOURCE_CNT];
 	uint8_t termHeapCount;
@@ -741,13 +741,13 @@ inline void ThreadBase::remHeapAlloc(void *ptr) {
 	cur->termHeapCount--;
 }
 
-inline void ThreadBase::addFileUsage(sFile *file) {
+inline void ThreadBase::addFileUsage(OpenFile *file) {
 	Thread *cur = getRunning();
 	assert(cur->termUsageCount < TERM_RESOURCE_CNT);
 	cur->termUsages[cur->termUsageCount++] = file;
 }
 
-inline void ThreadBase::remFileUsage(sFile *file) {
+inline void ThreadBase::remFileUsage(OpenFile *file) {
 	Thread *cur = getRunning();
 	assert(cur->termUsageCount > 0);
 	cur->termUsageCount--;

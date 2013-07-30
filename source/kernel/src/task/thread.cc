@@ -27,6 +27,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/channel.h>
+#include <sys/vfs/openfile.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
@@ -284,7 +285,7 @@ void ThreadBase::kill() {
 	for(i = 0; i < termHeapCount; i++)
 		Cache::free(termHeapAllocs[i]);
 	for(i = 0; i < termUsageCount; i++)
-		vfs_decUsages(termUsages[i]);
+		termUsages[i]->decUsages();
 	for(i = 0; i < termCallbackCount; i++)
 		termCallbacks[i]();
 

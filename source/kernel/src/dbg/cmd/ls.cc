@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/ls.h>
 #include <sys/mem/cache.h>
@@ -31,12 +32,12 @@
 
 #define DIRE_SIZE		(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
 
-static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e);
+static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e);
 
 int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
 	Lines lines;
-	sFile *file;
+	OpenFile *file;
 	sDirEntry e;
 	int res;
 	if(Console::isHelp(argc,argv) || argc != 2) {
@@ -57,7 +58,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 			lines.appendStr(ss.getString());
 		lines.newLine();
 	}
-	vfs_closeFile(pid,file);
+	file->closeFile(pid);
 	if(res < 0)
 		return res;
 	lines.endLine();
@@ -67,11 +68,11 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	return 0;
 }
 
-static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e) {
+static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
 	ssize_t res;
 	size_t len;
 	/* default way; read the entry without name first */
-	if((res = vfs_readFile(pid,file,e,DIRE_SIZE)) < 0)
+	if((res = file->readFile(pid,e,DIRE_SIZE)) < 0)
 		return res;
 	/* EOF? */
 	if(res == 0)
@@ -86,13 +87,13 @@ static int cons_cmd_ls_read(pid_t pid,sFile *file,sDirEntry *e) {
 		return -ENAMETOOLONG;
 
 	/* now read the name */
-	if((res = vfs_readFile(pid,file,e->name,len)) < 0)
+	if((res = file->readFile(pid,e->name,len)) < 0)
 		return res;
 
 	/* if the record is longer, we have to skip the stuff until the next record */
 	if(e->recLen - DIRE_SIZE > len) {
 		len = (e->recLen - DIRE_SIZE - len);
-		if((res = vfs_seek(pid,file,len,SEEK_CUR)) < 0)
+		if((res = file->seek(pid,len,SEEK_CUR)) < 0)
 			return res;
 	}
 

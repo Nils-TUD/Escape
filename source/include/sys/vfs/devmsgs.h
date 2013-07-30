@@ -31,7 +31,7 @@
  * @param flags the open-flags
  * @return 0 if successfull
  */
-ssize_t vfs_devmsgs_open(pid_t pid,sFile *file,sVFSNode *node,uint flags);
+ssize_t vfs_devmsgs_open(pid_t pid,OpenFile *file,sVFSNode *node,uint flags);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the given device. Note that not all
@@ -45,7 +45,7 @@ ssize_t vfs_devmsgs_open(pid_t pid,sFile *file,sVFSNode *node,uint flags);
  * @param count the number of bytes to read
  * @return the number of read bytes or a negative error-code
  */
-ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t offset,size_t count);
+ssize_t vfs_devmsgs_read(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,size_t count);
 
 /**
  * Writes <count> bytes to <offset> from <buffer> to the given device. Note that not all
@@ -59,7 +59,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,sFile *file,sVFSNode *node,void *buffer,off_t
  * @param count the number of bytes to write
  * @return the number of written bytes or a negative error-code
  */
-ssize_t vfs_devmsgs_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffer,off_t offset,
+ssize_t vfs_devmsgs_write(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,off_t offset,
 		size_t count);
 
 /**
@@ -69,4 +69,4 @@ ssize_t vfs_devmsgs_write(pid_t pid,sFile *file,sVFSNode *node,const void *buffe
  * @param file the file for the device
  * @param node the VFS-node of the device
  */
-void vfs_devmsgs_close(pid_t pid,sFile *file,sVFSNode *node);
+void vfs_devmsgs_close(pid_t pid,OpenFile *file,sVFSNode *node);

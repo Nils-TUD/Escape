@@ -29,6 +29,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
 #include <sys/vfs/devmsgs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
 #include <esc/messages.h>
@@ -58,7 +59,7 @@ typedef struct {
 static void vfs_chan_destroy(sVFSNode *n);
 static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
 static size_t vfs_chan_getSize(pid_t pid,sVFSNode *node);
-static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node);
+static void vfs_chan_close(pid_t pid,OpenFile *file,sVFSNode *node);
 static sMessage *vfs_chan_getMsg(Thread *t,sSLList *list,ushort flags);
 
 extern klock_t waitLock;
@@ -133,12 +134,12 @@ static size_t vfs_chan_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
 	return chan ? sll_length(&chan->sendList) + sll_length(&chan->recvList) : 0;
 }
 
-static void vfs_chan_close(pid_t pid,sFile *file,sVFSNode *node) {
+static void vfs_chan_close(pid_t pid,OpenFile *file,sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	if(node->name == NULL)
 		vfs_node_destroy(node);
 	else {
-		if(vfs_isDevice(file)) {
+		if(file->isDevice()) {
 			chan->used = false;
 			chan->curClient = NULL;
 		}

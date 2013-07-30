@@ -26,12 +26,13 @@
 #include <sys/task/proc.h>
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/ostringstream.h>
 #include <esc/keycodes.h>
 #include <errno.h>
 #include <string.h>
 
-static sFile *file;
+static OpenFile *file;
 static pid_t pid;
 
 class DumpNaviBackend : public NaviBackend {
@@ -51,9 +52,9 @@ public:
 		bool valid = true;
 		if(lastAddr != addr) {
 			memclear(buffer,sizeof(buffer));
-			if(vfs_seek(pid,file,addr,SEEK_SET) < 0)
+			if(file->seek(pid,addr,SEEK_SET) < 0)
 				valid = false;
-			if(valid && vfs_readFile(pid,file,buffer,sizeof(buffer)) < 0)
+			if(valid && file->readFile(pid,buffer,sizeof(buffer)) < 0)
 				valid = false;
 			if(valid)
 				buffer[sizeof(buffer) - 1] = '\0';
@@ -97,10 +98,10 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 	pid = Proc::getRunning();
 	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
 	if(res >= 0) {
-		off_t end = vfs_seek(pid,file,0,SEEK_END);
+		off_t end = file->seek(pid,0,SEEK_END);
 		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)BYTES_PER_LINE));
 		Console::navigation(os,&backend);
-		vfs_closeFile(pid,file);
+		file->closeFile(pid);
 	}
 	return res;
 }

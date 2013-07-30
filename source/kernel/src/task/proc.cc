@@ -96,7 +96,7 @@ void ProcBase::init() {
 	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
-	p->threadDir = vfs_createProcess(p->pid);
+	p->threadDir = VFS::createProcess(p->pid);
 	if(p->threadDir < 0)
 		Util::panic("Not enough mem for init process");
 
@@ -262,7 +262,7 @@ int ProcBase::clone(uint8_t flags) {
 	Mutex::release(&procLock);
 
 	/* create the VFS node */
-	p->threadDir = vfs_createProcess(p->pid);
+	p->threadDir = VFS::createProcess(p->pid);
 	if(p->threadDir < 0) {
 		res = p->threadDir;
 		goto errorAdd;
@@ -318,7 +318,7 @@ errorRegs:
 	doRemoveRegions(p,true);
 errorVFS:
 	Groups::leave(p->pid);
-	vfs_removeProcess(p->pid);
+	VFS::removeProcess(p->pid);
 errorAdd:
 	remove(p);
 errorCmd:
@@ -448,7 +448,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* we need to do this here without lock, because vfs_openPath will perform a context-switch */
 	if(info.linkerEntry != info.progEntry) {
 		OpenFile *file;
-		if(vfs_openPath(p->pid,VFS_READ,path,&file) < 0)
+		if(VFS::openPath(p->pid,VFS_READ,path,&file) < 0)
 			goto error;
 		fd = FileDesc::assoc(file);
 		if(fd < 0) {
@@ -665,7 +665,7 @@ void ProcBase::kill(pid_t pid) {
 
 	/* free the last resources and remove us from vfs */
 	Cache::free((char*)p->command);
-	vfs_removeProcess(p->pid);
+	VFS::removeProcess(p->pid);
 
 	/* remove and free */
 	remove(p);

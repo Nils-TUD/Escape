@@ -92,7 +92,7 @@ static View views[] = {
 	{"threads",		Thread::printAll},
 	{"vfstree",		vfs_node_printTree},
 	{"gft",			OpenFile::printAll},
-	{"msgs",		vfs_printMsgs},
+	{"msgs",		VFS::printMsgs},
 	{"cow",			CopyOnWrite::print},
 	{"cache",		Cache::print},
 	{"kheap",		KHeap::print},

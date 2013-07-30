@@ -48,7 +48,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	}
 
 	/* redirect prints */
-	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
+	res = VFS::openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
 		return res;
 	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {

@@ -47,7 +47,7 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 		return 0;
 	}
 
-	res = vfs_openPath(pid,VFS_READ,argv[1],&file);
+	res = VFS::openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
 		goto error;
 	while((count = file->readFile(pid,buffer,sizeof(buffer))) > 0) {

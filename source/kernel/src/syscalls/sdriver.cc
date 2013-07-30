@@ -52,7 +52,7 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* create device and open it */
-	res = vfs_createdev(pid,abspath,type,ops,&file);
+	res = VFS::createdev(pid,abspath,type,ops,&file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -154,7 +154,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,clientNo);
 
 	/* open file */
-	res = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO,&file);
+	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO,&file);
 	if(res < 0) {
 		/* we have to set the channel unused again; otherwise its ignored for ever */
 		vfs_chan_setUsed(vfs_node_get(clientNo),false);

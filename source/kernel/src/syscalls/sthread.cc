@@ -256,5 +256,5 @@ static int doWaitLoop(USER const Event::WaitObject *uobjects,size_t objCount,
 		else
 			kobjects[i].object = uobjects[i].object;
 	}
-	return vfs_waitFor(kobjects,objCount,maxWaitTime,true,pid,ident);
+	return VFS::waitFor(kobjects,objCount,maxWaitTime,true,pid,ident);
 }

@@ -25,10 +25,18 @@
 #include <sys/vfs/node.h>
 #include <errno.h>
 
-/* TODO make some things private and VFS a friend */
+class VFS;
+class VMTree;
+class FileDesc;
+class ThreadBase;
 
 /* an entry in the global file table */
 class OpenFile {
+	friend class VFS;
+	friend class VMTree;
+	friend class FileDesc;
+	friend class ThreadBase;
+
 	OpenFile() = delete;
 
 public:
@@ -50,19 +58,6 @@ public:
 	static inode_t getClient(OpenFile *const *files,size_t count,size_t *index,uint flags);
 
 	/**
-	 * Requests a new file or reuses an existing file for the given node+dev to open.
-	 *
-	 * @param pid the process-id
-	 * @param flags the flags
-	 * @param nodeNo the node-number
-	 * @param devNo the dev-number
-	 * @param n the VFS-node or NULL
-	 * @param f will point to the used file afterwards
-	 * @return 0 on success
-	 */
-	static int getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,OpenFile **f);
-
-	/**
 	 * Checks whether they point to the same file
 	 *
 	 * @param f the second file
@@ -82,14 +77,6 @@ public:
 		}
 		assert(devNo == VFS_DEV_NO);
 		return vfs_node_getPath(nodeNo);
-	}
-	/**
-	 * Sets the path of this file
-	 *
-	 * @param path the new value
-	 */
-	void setPath(char *path) {
-		this->path = path;
 	}
 	/**
 	 * @return the device number
@@ -115,27 +102,6 @@ public:
 	bool shouldBlock() const {
 		return !(flags & VFS_NOBLOCK);
 	}
-
-	/**
-	 * Increases the references of this file
-	 */
-	void incRefs() {
-		SpinLock::acquire(&lock);
-		refCount++;
-		SpinLock::release(&lock);
-	}
-	/**
-	 * Increments the number of usages of this file
-	 */
-	void incUsages() {
-		SpinLock::acquire(&lock);
-		usageCount++;
-		SpinLock::release(&lock);
-	}
-	/**
-	 * Decrements the number of usages of this file
-	 */
-	void decUsages();
 
 	/**
 	 * Manipulates this file, depending on the command
@@ -270,6 +236,49 @@ public:
 	static void printAll(OStream &os);
 
 private:
+	/**
+	 * Sets the path of this file
+	 *
+	 * @param path the new value
+	 */
+	void setPath(char *path) {
+		this->path = path;
+	}
+
+	/**
+	 * Increases the references of this file
+	 */
+	void incRefs() {
+		SpinLock::acquire(&lock);
+		refCount++;
+		SpinLock::release(&lock);
+	}
+	/**
+	 * Increments the number of usages of this file
+	 */
+	void incUsages() {
+		SpinLock::acquire(&lock);
+		usageCount++;
+		SpinLock::release(&lock);
+	}
+	/**
+	 * Decrements the number of usages of this file
+	 */
+	void decUsages();
+
+	/**
+	 * Requests a new file or reuses an existing file for the given node+dev to open.
+	 *
+	 * @param pid the process-id
+	 * @param flags the flags
+	 * @param nodeNo the node-number
+	 * @param devNo the dev-number
+	 * @param n the VFS-node or NULL
+	 * @param f will point to the used file afterwards
+	 * @return 0 on success
+	 */
+	static int getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,OpenFile **f);
+
 	static inode_t doGetClient(OpenFile *const *files,size_t count,size_t *index);
 	static void releaseFile(OpenFile *file);
 	bool doCloseFile(pid_t pid);

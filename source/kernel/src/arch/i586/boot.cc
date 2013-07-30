@@ -61,7 +61,7 @@ static const BootTask tasks[] = {
 	{"Initializing GDT...",GDT::initBSP},
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing FPU...",FPU::init},
-	{"Initializing VFS...",vfs_init},
+	{"Initializing VFS...",VFS::init},
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},

@@ -85,7 +85,7 @@ ssize_t vfs_devmsgs_read(pid_t pid,OpenFile *file,sVFSNode *node,USER void *buff
 	/* wait until there is data available, if necessary */
 	obj.events = EV_DATA_READABLE;
 	obj.object = (evobj_t)file;
-	res = vfs_waitFor(&obj,1,0,file->shouldBlock(),KERNEL_PID,0);
+	res = VFS::waitFor(&obj,1,0,file->shouldBlock(),KERNEL_PID,0);
 	if(res < 0)
 		return res;
 

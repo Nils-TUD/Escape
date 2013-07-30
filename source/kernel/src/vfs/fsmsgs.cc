@@ -106,7 +106,7 @@ int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 	}
 
 	/* now open the file */
-	res = vfs_openFile(pid,flags,inode,dev,file);
+	res = VFS::openFile(pid,flags,inode,dev,file);
 
 error:
 	vfs_fsmsgs_releaseFile(pid,fs);
@@ -395,7 +395,7 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,OpenFile **file) {
 	nodeNo = vfs_node_getNo(child);
 
 	/* open file */
-	err = vfs_openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO,&chan->file);
+	err = VFS::openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO,&chan->file);
 	if(err < 0)
 		goto errorChild;
 	SpinLock::acquire(&fsChanLock);

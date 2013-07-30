@@ -379,7 +379,7 @@ int OpenFile::openClient(pid_t pid,inode_t clientId,OpenFile **cfile) {
 		return -ENOENT;
 
 	/* open file */
-	return vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(n),VFS_DEV_NO,cfile);
+	return VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(n),VFS_DEV_NO,cfile);
 }
 
 void OpenFile::print(OStream &os) const {

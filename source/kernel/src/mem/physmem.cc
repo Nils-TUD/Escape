@@ -327,7 +327,7 @@ void PhysMem::swapper() {
 	assert(swapEnabled);
 
 	/* open device */
-	if(vfs_openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev,&swapFile) < 0) {
+	if(VFS::openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev,&swapFile) < 0) {
 		Log::get().writef("Unable to open swap-device '%s'\n",dev);
 		swapEnabled = false;
 	}

@@ -46,11 +46,11 @@
 #include <assert.h>
 #include <errno.h>
 
-static sVFSNode *procsNode;
-static sVFSNode *devNode;
+sVFSNode *VFS::procsNode;
+sVFSNode *VFS::devNode;
 klock_t waitLock;
 
-void vfs_init(void) {
+void VFS::init() {
 	sVFSNode *root,*sys;
 
 	/*
@@ -75,7 +75,7 @@ void vfs_init(void) {
 	vfs_info_init();
 }
 
-int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
+int VFS::hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	const Proc *p;
 	uint mode;
 	if(n->name == NULL)
@@ -113,7 +113,7 @@ int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags) {
 	return 0;
 }
 
-int vfs_openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
+int VFS::openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 	inode_t nodeNo;
 	bool created;
 	int err;
@@ -151,7 +151,7 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 		if(IS_DEVICE(node->mode)) {
 			sVFSNode *child;
 			/* check if we can access the device */
-			if((err = vfs_hasAccess(pid,node,flags)) < 0) {
+			if((err = hasAccess(pid,node,flags)) < 0) {
 				vfs_node_release(node);
 				return err;
 			}
@@ -165,7 +165,7 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 		vfs_node_release(node);
 
 		/* open file */
-		err = vfs_openFile(pid,flags,nodeNo,VFS_DEV_NO,file);
+		err = openFile(pid,flags,nodeNo,VFS_DEV_NO,file);
 		if(err < 0)
 			return err;
 
@@ -193,7 +193,7 @@ int vfs_openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 	return 0;
 }
 
-int vfs_openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
+int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	sVFSNode *node,*pipeNode;
 	inode_t nodeNo,pipeNodeNo;
 	int err;
@@ -212,14 +212,14 @@ int vfs_openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 
 	pipeNodeNo = vfs_node_getNo(pipeNode);
 	/* open file for reading */
-	err = vfs_openFile(pid,VFS_READ,pipeNodeNo,VFS_DEV_NO,readFile);
+	err = openFile(pid,VFS_READ,pipeNodeNo,VFS_DEV_NO,readFile);
 	if(err < 0) {
 		vfs_node_destroy(pipeNode);
 		return err;
 	}
 
 	/* open file for writing */
-	err = vfs_openFile(pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO,writeFile);
+	err = openFile(pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO,writeFile);
 	if(err < 0) {
 		/* closeFile removes the pipenode, too */
 		(*readFile)->closeFile(pid);
@@ -228,7 +228,7 @@ int vfs_openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	return 0;
 }
 
-int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **file) {
+int VFS::openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **file) {
 	sVFSNode *n = NULL;
 	int err;
 
@@ -239,7 +239,7 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **fi
 		n = vfs_node_request(nodeNo);
 		if(!n)
 			return -ENOENT;
-		if((err = vfs_hasAccess(pid,n,flags)) < 0) {
+		if((err = hasAccess(pid,n,flags)) < 0) {
 			vfs_node_release(n);
 			return err;
 		}
@@ -252,7 +252,7 @@ int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **fi
 	return err;
 }
 
-int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
+int VFS::stat(pid_t pid,const char *path,USER sFileInfo *info) {
 	inode_t nodeNo;
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == -EREALPATH)
@@ -262,7 +262,7 @@ int vfs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
 	return res;
 }
 
-int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
+int VFS::chmod(pid_t pid,const char *path,mode_t mode) {
 	inode_t nodeNo;
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == -EREALPATH)
@@ -272,7 +272,7 @@ int vfs_chmod(pid_t pid,const char *path,mode_t mode) {
 	return res;
 }
 
-int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
+int VFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	inode_t nodeNo;
 	int res = vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == -EREALPATH)
@@ -282,19 +282,19 @@ int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	return res;
 }
 
-static bool vfs_hasMsg(sVFSNode *node) {
+bool VFS::hasMsg(sVFSNode *node) {
 	return IS_CHANNEL(node->mode) && vfs_chan_hasReply(node);
 }
 
-static bool vfs_hasData(sVFSNode *node) {
+bool VFS::hasData(sVFSNode *node) {
 	return IS_DEVICE(node->parent->mode) && vfs_device_isReadable(node->parent);
 }
 
-static bool vfs_hasWork(sVFSNode *node) {
+bool VFS::hasWork(sVFSNode *node) {
 	return IS_DEVICE(node->mode) && vfs_device_hasWork(node);
 }
 
-int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
+int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
 		pid_t pid,ulong ident) {
 	Thread *t = Thread::getRunning();
 	size_t i;
@@ -326,11 +326,11 @@ int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bo
 					res = -EDESTROYED;
 					goto error;
 				}
-				if((objects[i].events & EV_CLIENT) && vfs_hasWork(n))
+				if((objects[i].events & EV_CLIENT) && hasWork(n))
 					goto noWait;
-				else if((objects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(n))
+				else if((objects[i].events & EV_RECEIVED_MSG) && hasMsg(n))
 					goto noWait;
-				else if((objects[i].events & EV_DATA_READABLE) && vfs_hasData(n))
+				else if((objects[i].events & EV_DATA_READABLE) && hasData(n))
 					goto noWait;
 			}
 		}
@@ -377,25 +377,25 @@ error:
 	return res;
 }
 
-int vfs_mount(pid_t pid,const char *device,const char *path,uint type) {
+int VFS::mount(pid_t pid,const char *device,const char *path,uint type) {
 	inode_t ino;
 	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != -EREALPATH)
 		return -EPERM;
 	return vfs_fsmsgs_mount(pid,device,path,type);
 }
 
-int vfs_unmount(pid_t pid,const char *path) {
+int VFS::unmount(pid_t pid,const char *path) {
 	inode_t ino;
 	if(vfs_node_resolvePath(path,&ino,NULL,VFS_READ) != -EREALPATH)
 		return -EPERM;
 	return vfs_fsmsgs_unmount(pid,path);
 }
 
-int vfs_sync(pid_t pid) {
+int VFS::sync(pid_t pid) {
 	return vfs_fsmsgs_sync(pid);
 }
 
-int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
+int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	char newPathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy,backup;
 	size_t len;
@@ -458,7 +458,7 @@ int vfs_link(pid_t pid,const char *oldPath,const char *newPath) {
 		goto errorName;
 	}
 	/* check permissions */
-	if((res = vfs_hasAccess(pid,dir,VFS_WRITE)) < 0)
+	if((res = hasAccess(pid,dir,VFS_WRITE)) < 0)
 		goto errorDir;
 	if(vfs_link_create(pid,dir,namecpy,target) == NULL) {
 		res = -ENOMEM;
@@ -476,7 +476,7 @@ errorTarget:
 	return res;
 }
 
-int vfs_unlink(pid_t pid,const char *path) {
+int VFS::unlink(pid_t pid,const char *path) {
 	int res;
 	inode_t ino;
 	sVFSNode *n;
@@ -491,7 +491,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 		return -ENOENT;
 	/* check permissions */
 	res = -EPERM;
-	if(n->owner == KERNEL_PID || (res = vfs_hasAccess(pid,n,VFS_WRITE)) < 0) {
+	if(n->owner == KERNEL_PID || (res = hasAccess(pid,n,VFS_WRITE)) < 0) {
 		vfs_node_release(n);
 		return res;
 	}
@@ -500,7 +500,7 @@ int vfs_unlink(pid_t pid,const char *path) {
 	return 0;
 }
 
-int vfs_mkdir(pid_t pid,const char *path) {
+int VFS::mkdir(pid_t pid,const char *path) {
 	char pathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy;
 	char backup;
@@ -548,7 +548,7 @@ int vfs_mkdir(pid_t pid,const char *path) {
 		goto error;
 	}
 	/* check permissions */
-	if((res = vfs_hasAccess(pid,node,VFS_WRITE)) < 0)
+	if((res = hasAccess(pid,node,VFS_WRITE)) < 0)
 		goto errorRel;
 	child = vfs_dir_create(pid,node,namecpy);
 	if(child == NULL) {
@@ -565,7 +565,7 @@ error:
 	return res;
 }
 
-int vfs_rmdir(pid_t pid,const char *path) {
+int VFS::rmdir(pid_t pid,const char *path) {
 	int res;
 	sVFSNode *node;
 	inode_t inodeNo;
@@ -580,7 +580,7 @@ int vfs_rmdir(pid_t pid,const char *path) {
 		return -ENOENT;
 	/* check permissions */
 	res = -EPERM;
-	if(node->owner == KERNEL_PID || (res = vfs_hasAccess(pid,node,VFS_WRITE)) < 0) {
+	if(node->owner == KERNEL_PID || (res = hasAccess(pid,node,VFS_WRITE)) < 0) {
 		vfs_node_release(node);
 		return res;
 	}
@@ -594,7 +594,7 @@ int vfs_rmdir(pid_t pid,const char *path) {
 	return 0;
 }
 
-int vfs_createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
+int VFS::createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
 	sVFSNode *dir,*srv;
 	size_t len;
 	char *name;
@@ -634,7 +634,7 @@ int vfs_createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
 		err = -ENOMEM;
 		goto errorDir;
 	}
-	err = vfs_openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(srv),VFS_DEV_NO,file);
+	err = openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(srv),VFS_DEV_NO,file);
 	if(err < 0)
 		goto errDevice;
 	vfs_node_release(dir);
@@ -649,7 +649,7 @@ errorName:
 	return err;
 }
 
-inode_t vfs_createProcess(pid_t pid) {
+inode_t VFS::createProcess(pid_t pid) {
 	char *name;
 	sVFSNode *proc = procsNode;
 	sVFSNode *n;
@@ -726,7 +726,7 @@ errorName:
 	return res;
 }
 
-void vfs_removeProcess(pid_t pid) {
+void VFS::removeProcess(pid_t pid) {
 	/* remove from /system/processes */
 	const Proc *p = Proc::getByPid(pid);
 	sVFSNode *node = vfs_node_get(p->threadDir);
@@ -734,7 +734,7 @@ void vfs_removeProcess(pid_t pid) {
 	vfs_fsmsgs_removeProc(pid);
 }
 
-bool vfs_createThread(tid_t tid) {
+bool VFS::createThread(tid_t tid) {
 	char *name;
 	sVFSNode *n,*dir;
 	const Thread *t = Thread::getById(tid);
@@ -774,7 +774,7 @@ errorDir:
 	return false;
 }
 
-void vfs_removeThread(tid_t tid) {
+void VFS::removeThread(tid_t tid) {
 	char name[12];
 	Thread *t = Thread::getById(tid);
 	sVFSNode *n,*dir;
@@ -800,7 +800,7 @@ void vfs_removeThread(tid_t tid) {
 		vfs_node_destroyNow(n);
 }
 
-void vfs_printMsgs(OStream &os) {
+void VFS::printMsgs(OStream &os) {
 	bool isValid;
 	sVFSNode *drv = vfs_node_openDir(devNode,false,&isValid);
 	if(isValid) {

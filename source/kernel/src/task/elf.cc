@@ -93,7 +93,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	int res,fd;
 	char *interpName;
 
-	res = vfs_openPath(p->getPid(),VFS_READ,path,&file);
+	res = VFS::openPath(p->getPid(),VFS_READ,path,&file);
 	if(res < 0) {
 		Log::get().writef("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
 		return -ENOEXEC;

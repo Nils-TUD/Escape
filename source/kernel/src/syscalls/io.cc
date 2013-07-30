@@ -48,7 +48,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* open the path */
-	res = vfs_openPath(pid,flags,abspath,&file);
+	res = VFS::openPath(pid,flags,abspath,&file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -94,7 +94,7 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 			!PageDir::isInUserSpace((uintptr_t)writeFd,sizeof(int)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_openPipe(pid,&readFile,&writeFile);
+	res = VFS::openPipe(pid,&readFile,&writeFile);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -135,7 +135,7 @@ int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_stat(pid,abspath,info);
+	res = VFS::stat(pid,abspath,info);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -171,7 +171,7 @@ int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_chmod(pid,abspath,mode);
+	res = VFS::chmod(pid,abspath,mode);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -187,7 +187,7 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_chown(pid,abspath,uid,gid);
+	res = VFS::chown(pid,abspath,uid,gid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -379,7 +379,7 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::sync(Thread *t,IntrptStackFrame *stack) {
 	int res;
 	pid_t pid = t->getProc()->getPid();
-	res = vfs_sync(pid);
+	res = VFS::sync(pid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -397,7 +397,7 @@ int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(newabs,sizeof(newabs),newPath))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_link(pid,oldabs,newabs);
+	res = VFS::link(pid,oldabs,newabs);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -411,7 +411,7 @@ int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_unlink(pid,abspath);
+	res = VFS::unlink(pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -425,7 +425,7 @@ int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_mkdir(pid,abspath);
+	res = VFS::mkdir(pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -439,7 +439,7 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_rmdir(pid,abspath);
+	res = VFS::rmdir(pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -458,7 +458,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(absdev,sizeof(absdev),device))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_mount(pid,absdev,abspath,type);
+	res = VFS::mount(pid,absdev,abspath,type);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -472,7 +472,7 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	if(!absolutizePath(abspath,sizeof(abspath),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = vfs_unmount(pid,abspath);
+	res = VFS::unmount(pid,abspath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

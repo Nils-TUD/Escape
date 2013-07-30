@@ -82,7 +82,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 		Util::panic("Unable to put initial thread into the thread-list");
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->getTid()))
+	if(!VFS::createThread(t->getTid()))
 		Util::panic("Unable to put first thread in vfs");
 
 	return t;
@@ -251,7 +251,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		Signals::cloneHandler(src->getTid(),t->getTid());
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->getTid()))
+	if(!VFS::createThread(t->getTid()))
 		goto errAppendIdle;
 
 	*dst = t;
@@ -294,7 +294,7 @@ void ThreadBase::kill() {
 	Timer::removeThread(tid);
 	Signals::removeHandlerFor(tid);
 	freeArch(static_cast<Thread*>(this));
-	vfs_removeThread(tid);
+	VFS::removeThread(tid);
 
 	/* notify the process about it */
 	Event::wakeup(EVI_THREAD_DIED,(evobj_t)proc);

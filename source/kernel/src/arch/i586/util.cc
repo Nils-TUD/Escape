@@ -58,7 +58,7 @@ void Util::panicArch() {
 	/* actually it may fail depending on what caused the panic. this may make it more difficult
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :) */
-	if(vfs_openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video",&file) == 0) {
+	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video",&file) == 0) {
 		ssize_t i,res;
 		sArgsMsg msg;
 		file->sendMsg(KERNEL_PID,MSG_VID_GETMODE,NULL,0,NULL,0);

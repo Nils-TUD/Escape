@@ -266,7 +266,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 			if(depth != lastdepth) {
 				char c;
 				/* check if we can access this directory */
-				if((err = vfs_hasAccess(pid,dir,VFS_EXEC)) < 0)
+				if((err = VFS::hasAccess(pid,dir,VFS_EXEC)) < 0)
 					goto done;
 
 				pos = 0;
@@ -565,7 +565,7 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 	char *nextSlash;
 	int err;
 	/* can we create files in this directory? */
-	if((err = vfs_hasAccess(pid,dir,VFS_WRITE)) < 0)
+	if((err = VFS::hasAccess(pid,dir,VFS_WRITE)) < 0)
 		return err;
 
 	nextSlash = strchr(path,'/');

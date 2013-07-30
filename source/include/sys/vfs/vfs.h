@@ -131,217 +131,230 @@ struct sVFSNode {
 	void *data;
 };
 
-/**
- * Initializes the virtual file system
- */
-void vfs_init(void);
+class VFS {
+	VFS() = delete;
 
-/**
- * Checks whether the process with given id has permission to use <n> with the given flags
- *
- * @param pid the process-id
- * @param n the node
- * @param flags the flags (VFS_*)
- * @return 0 if successfull, negative if the process has no permission
- */
-int vfs_hasAccess(pid_t pid,sVFSNode *n,ushort flags);
+public:
+	/**
+	 * Initializes the virtual file system
+	 */
+	static void init();
 
-/**
- * Opens the given path with given flags. That means it walks through the global
- * file table and searches for a free entry or an entry for that file.
- * Note that multiple processs may read from the same file simultaneously but NOT write!
- *
- * @param pid the process-id with which the file should be opened
- * @param flags whether it is a virtual or real file and whether you want to read or write
- * @param path the path
- * @param file will be set to the opened file
- * @return 0 if successfull or < 0
- */
-int vfs_openPath(pid_t pid,ushort flags,const char *path,OpenFile **file);
+	/**
+	 * Checks whether the process with given id has permission to use <n> with the given flags
+	 *
+	 * @param pid the process-id
+	 * @param n the node
+	 * @param flags the flags (VFS_*)
+	 * @return 0 if successfull, negative if the process has no permission
+	 */
+	static int hasAccess(pid_t pid,sVFSNode *n,ushort flags);
 
-/**
- * Creates a pipe and opens one file for reading and one file for writing.
- *
- * @param pid the process-id
- * @param readFile will be set to the file for reading
- * @param writeFile will be set to the file for writing
- * @return 0 on success
- */
-int vfs_openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile);
+	/**
+	 * Opens the given path with given flags. That means it walks through the global
+	 * file table and searches for a free entry or an entry for that file.
+	 * Note that multiple processs may read from the same file simultaneously but NOT write!
+	 *
+	 * @param pid the process-id with which the file should be opened
+	 * @param flags whether it is a virtual or real file and whether you want to read or write
+	 * @param path the path
+	 * @param file will be set to the opened file
+	 * @return 0 if successfull or < 0
+	 */
+	static int openPath(pid_t pid,ushort flags,const char *path,OpenFile **file);
 
-/**
- * Opens the file with given number and given flags. That means it walks through the global
- * file table and searches for a free entry or an entry for that file.
- * Note that multiple processs may read from the same file simultaneously but NOT write!
- *
- * @param pid the process-id with which the file should be opened
- * @param flags whether it is a virtual or real file and whether you want to read or write
- * @param nodeNo the node-number (in the virtual or real environment)
- * @param devNo the device-number
- * @param file will be set to the opened file
- * @return 0 if successfull or < 0
- */
-int vfs_openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **file);
+	/**
+	 * Creates a pipe and opens one file for reading and one file for writing.
+	 *
+	 * @param pid the process-id
+	 * @param readFile will be set to the file for reading
+	 * @param writeFile will be set to the file for writing
+	 * @return 0 on success
+	 */
+	static int openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile);
 
-/**
- * Retrieves information about the given path
- *
- * @param pid the process-id
- * @param path the path
- * @param info the info to fill
- * @return 0 on success
- */
-int vfs_stat(pid_t pid,const char *path,sFileInfo *info);
+	/**
+	 * Opens the file with given number and given flags. That means it walks through the global
+	 * file table and searches for a free entry or an entry for that file.
+	 * Note that multiple processs may read from the same file simultaneously but NOT write!
+	 *
+	 * @param pid the process-id with which the file should be opened
+	 * @param flags whether it is a virtual or real file and whether you want to read or write
+	 * @param nodeNo the node-number (in the virtual or real environment)
+	 * @param devNo the device-number
+	 * @param file will be set to the opened file
+	 * @return 0 if successfull or < 0
+	 */
+	static int openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **file);
 
-/**
- * Sets the permissions of the file denoted by <path> to <mode>.
- *
- * @param pid the process-id
- * @param path the path
- * @param mode the new mode
- * @return 0 on success
- */
-int vfs_chmod(pid_t pid,const char *path,mode_t mode);
+	/**
+	 * Retrieves information about the given path
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @param info the info to fill
+	 * @return 0 on success
+	 */
+	static int stat(pid_t pid,const char *path,sFileInfo *info);
 
-/**
- * Sets the owner and group of the file denoted by <path>
- *
- * @param pid the process-id
- * @param path the path
- * @param uid the new user-id
- * @param gid the new group-id
- * @return 0 on success
- */
-int vfs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
+	/**
+	 * Sets the permissions of the file denoted by <path> to <mode>.
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @param mode the new mode
+	 * @return 0 on success
+	 */
+	static int chmod(pid_t pid,const char *path,mode_t mode);
 
-/**
- * Mounts <device> at <path> with given type.
- *
- * @param pid the process-id
- * @param device the device to mount
- * @param path the path to mount the device at
- * @param type the type of file-system to use
- * @return 0 on success
- */
-int vfs_mount(pid_t pid,const char *device,const char *path,uint type);
+	/**
+	 * Sets the owner and group of the file denoted by <path>
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @param uid the new user-id
+	 * @param gid the new group-id
+	 * @return 0 on success
+	 */
+	static int chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
 
-/**
- * Unmounts the given path
- *
- * @param pid the process-id
- * @param path the path
- * @return 0 on success
- */
-int vfs_unmount(pid_t pid,const char *path);
+	/**
+	 * Mounts <device> at <path> with given type.
+	 *
+	 * @param pid the process-id
+	 * @param device the device to mount
+	 * @param path the path to mount the device at
+	 * @param type the type of file-system to use
+	 * @return 0 on success
+	 */
+	static int mount(pid_t pid,const char *device,const char *path,uint type);
 
-/**
- * Writes all cached blocks to disk.
- *
- * @param pid the process-id
- */
-int vfs_sync(pid_t pid);
+	/**
+	 * Unmounts the given path
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @return 0 on success
+	 */
+	static int unmount(pid_t pid,const char *path);
 
-/**
- * Creates a link @ <newPath> to <oldPath>
- *
- * @param pid the process-id
- * @param oldPath the link-target
- * @param newPath the link-name
- * @return 0 on success
- */
-int vfs_link(pid_t pid,const char *oldPath,const char *newPath);
+	/**
+	 * Writes all cached blocks to disk.
+	 *
+	 * @param pid the process-id
+	 */
+	static int sync(pid_t pid);
 
-/**
- * Removes the given file
- *
- * @param pid the process-id
- * @param path the path
- * @return 0 on success
- */
-int vfs_unlink(pid_t pid,const char *path);
+	/**
+	 * Creates a link @ <newPath> to <oldPath>
+	 *
+	 * @param pid the process-id
+	 * @param oldPath the link-target
+	 * @param newPath the link-name
+	 * @return 0 on success
+	 */
+	static int link(pid_t pid,const char *oldPath,const char *newPath);
 
-/**
- * Creates the directory <path>
- *
- * @param pid the process-id
- * @param path the path
- * @return 0 on success
- */
-int vfs_mkdir(pid_t pid,const char *path);
+	/**
+	 * Removes the given file
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @return 0 on success
+	 */
+	static int unlink(pid_t pid,const char *path);
 
-/**
- * Removes the given directory
- *
- * @param pid the process-id
- * @param path the path
- * @return 0 on success
- */
-int vfs_rmdir(pid_t pid,const char *path);
+	/**
+	 * Creates the directory <path>
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @return 0 on success
+	 */
+	static int mkdir(pid_t pid,const char *path);
 
-/**
- * Creates a device-node for the given process at given path and opens a file for it
- *
- * @param pid the process-id
- * @param path the path to the device
- * @param type the device-type (DEV_TYPE_*)
- * @param ops the supported operations
- * @param file will be set to the opened file
- * @return 0 if ok, negative if an error occurred
- */
-int vfs_createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file);
+	/**
+	 * Removes the given directory
+	 *
+	 * @param pid the process-id
+	 * @param path the path
+	 * @return 0 on success
+	 */
+	static int rmdir(pid_t pid,const char *path);
 
-/**
- * Waits for the given wait-objects, whereas the objects are expected to be of type OpenFile*.
- * First, the function checks whether we can wait, i.e. if the event to wait for has already
- * arrived. If not, we wait until one of the events arrived.
- * If <pid> != KERNEL_PID, it calls Lock::release(pid,ident) before going to sleep (this is used
- * for waitunlock).
- *
- * @param objects the array of wait-objects (will be changed; files -> nodes)
- * @param objCount the number of wait-objects
- * @param maxWaitTime the maximum time to wait (in milliseconds)
- * @param block whether we should wait if necessary (otherwise it will be checked only whether
- *  we can wait and if so, -EWOULDBLOCK is returned. if not, 0 is returned.)
- * @param pid the process-id for Lock::release (KERNEL_PID = don't call it)
- * @param ident the ident for lock_release
- * @return 0 on success
- */
-int vfs_waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
-		pid_t pid,ulong ident);
+	/**
+	 * Creates a device-node for the given process at given path and opens a file for it
+	 *
+	 * @param pid the process-id
+	 * @param path the path to the device
+	 * @param type the device-type (DEV_TYPE_*)
+	 * @param ops the supported operations
+	 * @param file will be set to the opened file
+	 * @return 0 if ok, negative if an error occurred
+	 */
+	static int createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file);
 
-/**
- * Creates a process-node with given pid
- *
- * @param pid the process-id
- * @return the process-directory-node on success
- */
-inode_t vfs_createProcess(pid_t pid);
+	/**
+	 * Waits for the given wait-objects, whereas the objects are expected to be of type OpenFile*.
+	 * First, the function checks whether we can wait, i.e. if the event to wait for has already
+	 * arrived. If not, we wait until one of the events arrived.
+	 * If <pid> != KERNEL_PID, it calls Lock::release(pid,ident) before going to sleep (this is used
+	 * for waitunlock).
+	 *
+	 * @param objects the array of wait-objects (will be changed; files -> nodes)
+	 * @param objCount the number of wait-objects
+	 * @param maxWaitTime the maximum time to wait (in milliseconds)
+	 * @param block whether we should wait if necessary (otherwise it will be checked only whether
+	 *  we can wait and if so, -EWOULDBLOCK is returned. if not, 0 is returned.)
+	 * @param pid the process-id for Lock::release (KERNEL_PID = don't call it)
+	 * @param ident the ident for lock_release
+	 * @return 0 on success
+	 */
+	static int waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
+			pid_t pid,ulong ident);
 
-/**
- * Removes all occurrences of the given process from VFS
- *
- * @param pid the process-id
- */
-void vfs_removeProcess(pid_t pid);
+	/**
+	 * Creates a process-node with given pid
+	 *
+	 * @param pid the process-id
+	 * @return the process-directory-node on success
+	 */
+	static inode_t createProcess(pid_t pid);
 
-/**
- * Creates the VFS-node for the given thread
- *
- * @param tid the thread-id
- * @return true on success
- */
-bool vfs_createThread(tid_t tid);
+	/**
+	 * Removes all occurrences of the given process from VFS
+	 *
+	 * @param pid the process-id
+	 */
+	static void removeProcess(pid_t pid);
 
-/**
- * Removes all occurrences of the given thread from VFS
- *
- * @param tid the thread-id
- */
-void vfs_removeThread(tid_t tid);
+	/**
+	 * Creates the VFS-node for the given thread
+	 *
+	 * @param tid the thread-id
+	 * @return true on success
+	 */
+	static bool createThread(tid_t tid);
 
-/**
- * Prints all messages of all devices
- *
- * @param os the output-stream
- */
-void vfs_printMsgs(OStream &os);
+	/**
+	 * Removes all occurrences of the given thread from VFS
+	 *
+	 * @param tid the thread-id
+	 */
+	static void removeThread(tid_t tid);
+
+	/**
+	 * Prints all messages of all devices
+	 *
+	 * @param os the output-stream
+	 */
+	static void printMsgs(OStream &os);
+
+private:
+	static bool hasMsg(sVFSNode *node);
+	static bool hasData(sVFSNode *node);
+	static bool hasWork(sVFSNode *node);
+
+	static sVFSNode *procsNode;
+	static sVFSNode *devNode;
+};

@@ -47,7 +47,7 @@ static const BootTask tasks[] = {
 	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
-	{"Initializing VFS...",vfs_init},
+	{"Initializing VFS...",VFS::init},
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},

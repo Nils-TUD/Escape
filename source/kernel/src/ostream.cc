@@ -213,10 +213,11 @@ void OStream::vwritef(const char *fmt,va_list ap) {
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
+				size = s ? strlen(s) : 6;
 				if(precision == -1)
-					precision = s ? strlen(s) : 6;
+					precision = size;
 				if(pad > 0 && !(flags & FFL_PADRIGHT))
-					printpad(pad - precision,flags);
+					printpad(pad - size,flags);
 				n = prints(s ? s : "(null)",precision);
 				if(pad > 0 && (flags & FFL_PADRIGHT))
 					printpad(pad - n,flags);

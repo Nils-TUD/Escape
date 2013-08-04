@@ -29,72 +29,27 @@
 #include <string.h>
 #include <errno.h>
 
-/* the initial size of the write-cache for file-nodes */
-#define VFS_INITIAL_WRITECACHE		128
-
-typedef struct {
-	bool dynamic;
-	/* size of the buffer */
-	size_t size;
-	/* currently used size */
-	off_t pos;
-	void *data;
-} sFileContent;
-
-static void vfs_file_destroy(sVFSNode *n);
-static off_t vfs_file_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-static size_t vfs_file_getSize(pid_t pid,sVFSNode *node);
-
-sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write) {
-	sVFSNode *node;
-	node = vfs_node_create(pid,name);
-	if(node == NULL)
-		return NULL;
-
-	node->mode = FILE_DEF_MODE;
-	node->read = read;
-	node->write = write;
-	node->seek = vfs_file_seek;
-	node->getSize = vfs_file_getSize;
-	node->close = NULL;
-	node->destroy = vfs_file_destroy;
-	node->data = NULL;
-	if(read == vfs_file_read) {
-		sFileContent *con = (sFileContent*)Cache::alloc(sizeof(sFileContent));
-		if(!con) {
-			vfs_node_destroy(node);
-			return NULL;
-		}
-		con->dynamic = true;
-		con->data = NULL;
-		con->size = 0;
-		con->pos = 0;
-		node->data = con;
-	}
-	vfs_node_append(parent,node);
-	return node;
+VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,bool &success)
+		: VFSNode(pid,n,FILE_DEF_MODE,success), dynamic(true), size(), pos(), data() {
+	if(!success)
+		return;
+	append(p);
 }
 
-sVFSNode *vfs_file_create_for(pid_t pid,sVFSNode *parent,char *name,void *data,size_t len) {
-	sVFSNode *n = vfs_file_create(pid,parent,name,vfs_file_read,vfs_file_write);
-	sFileContent *con = (sFileContent*)n->data;
-	con->dynamic = false;
-	con->data = data;
-	con->pos = len;
-	return n;
+VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,void *buffer,size_t len,bool &success)
+		: VFSNode(pid,n,FILE_DEF_MODE,success), dynamic(false), size(), pos(len), data(buffer) {
+	if(!success)
+		return;
+	append(p);
 }
 
-static void vfs_file_destroy(sVFSNode *n) {
-	sFileContent *con = (sFileContent*)n->data;
-	if(con) {
-		if(con->dynamic)
-			Cache::free(con->data);
-		Cache::free(con);
-		n->data = NULL;
-	}
+VFSFile::~VFSFile() {
+	if(dynamic)
+		Cache::free(data);
+	data = NULL;
 }
 
-static off_t vfs_file_seek(A_UNUSED pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence) {
+off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -103,102 +58,87 @@ static off_t vfs_file_seek(A_UNUSED pid_t pid,sVFSNode *node,off_t position,off_
 			 * generated on demand */
 			return position + offset;
 		default:
-		case SEEK_END: {
-			sFileContent *con = (sFileContent*)node->data;
-			if(con)
-				return con->pos;
-			return 0;
-		}
+		case SEEK_END:
+			return pos;
 	}
 }
 
-static size_t vfs_file_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
-	sFileContent *con = (sFileContent*)node->data;
-	return con ? con->pos : 0;
+size_t VFSFile::getSize(A_UNUSED pid_t pid) const {
+	return pos;
 }
 
-ssize_t vfs_file_read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USER void *buffer,
-		off_t offset,size_t count) {
+ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
+                      off_t offset,size_t count) {
 	size_t byteCount = 0;
-	sFileContent *con = (sFileContent*)node->data;
-	SpinLock::acquire(&node->lock);
-	if(con == NULL) {
-		SpinLock::release(&node->lock);
-		return -EDESTROYED;
-	}
-	if(con->data != NULL) {
-		if(offset > con->pos)
-			offset = con->pos;
-		byteCount = MIN((size_t)(con->pos - offset),count);
+	SpinLock::acquire(&lock);
+	if(data != NULL) {
+		if(offset > pos)
+			offset = pos;
+		byteCount = MIN((size_t)(pos - offset),count);
 		if(byteCount > 0) {
-			Thread::addLock(&node->lock);
-			memcpy(buffer,(uint8_t*)con->data + offset,byteCount);
-			Thread::remLock(&node->lock);
+			Thread::addLock(&lock);
+			memcpy(buffer,(uint8_t*)data + offset,byteCount);
+			Thread::remLock(&lock);
 		}
 	}
-	SpinLock::release(&node->lock);
+	SpinLock::release(&lock);
 	return byteCount;
 }
 
-ssize_t vfs_file_write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNode *n,USER const void *buffer,
-		off_t offset,size_t count) {
+ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
+                       off_t offset,size_t count) {
 	void *oldData;
 	size_t newSize = 0;
-	sFileContent *con = (sFileContent*)n->data;
-	SpinLock::acquire(&n->lock);
-	if(con == NULL) {
-		SpinLock::release(&n->lock);
-		return -EDESTROYED;
-	}
 
 	/* need to create cache? */
-	oldData = con->data;
-	if(con->data == NULL) {
+	SpinLock::acquire(&lock);
+	oldData = data;
+	if(data == NULL) {
 		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
 		/* check for overflow */
 		if(newSize > MAX_VFS_FILE_SIZE) {
-			SpinLock::release(&n->lock);
+			SpinLock::release(&lock);
 			return -ENOMEM;
 		}
 
-		con->data = Cache::alloc(newSize);
+		data = Cache::alloc(newSize);
 		/* reset position */
-		con->pos = 0;
+		pos = 0;
 	}
 	/* need to increase cache-size? */
-	else if(con->size < offset + count) {
-		if(!con->dynamic) {
-			SpinLock::release(&n->lock);
+	else if(size < offset + count) {
+		if(!dynamic) {
+			SpinLock::release(&lock);
 			return -ENOTSUP;
 		}
 		/* ensure that we allocate enough memory */
-		newSize = MAX(offset + count,con->size * 2);
+		newSize = MAX(offset + count,size * 2);
 		if(newSize > MAX_VFS_FILE_SIZE) {
-			SpinLock::release(&n->lock);
+			SpinLock::release(&lock);
 			return -ENOMEM;
 		}
 
-		con->data = Cache::realloc(con->data,newSize);
+		data = Cache::realloc(data,newSize);
 	}
 
 	/* failed? */
-	if(con->data == NULL) {
+	if(data == NULL) {
 		/* don't throw the data away, use the old version */
-		con->data = oldData;
-		SpinLock::release(&n->lock);
+		data = oldData;
+		SpinLock::release(&lock);
 		return -ENOMEM;
 	}
 
 	/* set total size and number of used bytes */
 	if(newSize)
-		con->size = newSize;
+		size = newSize;
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
 	 * file as it was before, except that we've increased the buffer-size */
-	Thread::addLock(&n->lock);
-	memcpy((uint8_t*)con->data + offset,buffer,count);
-	Thread::remLock(&n->lock);
+	Thread::addLock(&lock);
+	memcpy((uint8_t*)data + offset,buffer,count);
+	Thread::remLock(&lock);
 	/* we have checked size for overflow. so it is ok here */
-	con->pos = MAX(con->pos,(off_t)(offset + count));
-	SpinLock::release(&n->lock);
+	pos = MAX(pos,(off_t)(offset + count));
+	SpinLock::release(&lock);
 	return count;
 }

@@ -34,183 +34,128 @@
 #include <assert.h>
 #include <errno.h>
 
-typedef struct {
-	uint8_t noReader;
-	/* total number of bytes available */
-	size_t total;
-	/* a list with sPipeData */
-	sSLList list;
-} sPipe;
+VFSPipe::VFSPipe(pid_t pid,VFSNode *p,bool &success)
+		: VFSNode(pid,generateId(pid),MODE_TYPE_PIPE | S_IRUSR | S_IWUSR,success), noReader(false),
+		  total(0), list() {
+	if(!success)
+		return;
 
-typedef struct {
-	size_t length;
-	off_t offset;
-	uint8_t data[];
-} sPipeData;
-
-static size_t vfs_pipe_getSize(pid_t pid,sVFSNode *node);
-static void vfs_pipe_destroy(sVFSNode *n);
-static void vfs_pipe_close(pid_t pid,OpenFile *file,sVFSNode *node);
-static ssize_t vfs_pipe_read(tid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,
-		size_t count);
-static ssize_t vfs_pipe_write(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,
-		off_t offset,size_t count);
-
-sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent) {
-	sPipe *pipe;
-	sVFSNode *node;
-	char *name = vfs_node_getId(pid);
-	if(!name)
-		return NULL;
-	node = vfs_node_create(pid,name);
-	if(node == NULL) {
-		Cache::free(name);
-		return NULL;
-	}
-
-	node->mode = MODE_TYPE_PIPE | S_IRUSR | S_IWUSR;
-	node->read = vfs_pipe_read;
-	node->write = vfs_pipe_write;
-	node->seek = NULL;
-	node->getSize = vfs_pipe_getSize;
-	node->destroy = vfs_pipe_destroy;
-	node->close = vfs_pipe_close;
-	node->data = NULL;
-	pipe = (sPipe*)Cache::alloc(sizeof(sPipe));
-	if(!pipe) {
-		vfs_node_destroy(node);
-		return NULL;
-	}
-	pipe->noReader = false;
-	pipe->total = 0;
-	sll_init(&pipe->list,slln_allocNode,slln_freeNode);
-	node->data = pipe;
+	sll_init(&list,slln_allocNode,slln_freeNode);
 	/* auto-destroy on the last close() */
-	node->refCount--;
-	vfs_node_append(parent,node);
-	return node;
+	refCount--;
+	append(p);
 }
 
-static size_t vfs_pipe_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
-	sPipe *pipe = (sPipe*)node->data;
-	return pipe ? pipe->total : 0;
+VFSPipe::~VFSPipe() {
+	sll_clear(&list,true);
 }
 
-static void vfs_pipe_destroy(sVFSNode *n) {
-	sPipe *pipe = (sPipe*)n->data;
-	if(pipe) {
-		sll_clear(&pipe->list,true);
-		Cache::free(pipe);
-		n->data = NULL;
-	}
+size_t VFSPipe::getSize(A_UNUSED pid_t pid) const {
+	return total;
 }
 
-static void vfs_pipe_close(pid_t pid,OpenFile *file,sVFSNode *node) {
+void VFSPipe::close(pid_t pid,OpenFile *file) {
 	/* if there are still more than 1 user, notify the other */
-	if(node->name != NULL && node->refCount > 1) {
+	/* TODO actually, this doesn't work (we need a lock for refCount) */
+	if(name != NULL && refCount > 1) {
 		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */
 		if(file->fcntl(pid,F_GETACCESS,0) == VFS_READ) {
-			sPipe *pipe = (sPipe*)node->data;
-			pipe->noReader = true;
-			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
+			noReader = true;
+			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)this);
 		}
 		/* otherwise write EOF in the pipe */
 		else
 			file->writeFile(pid,NULL,0);
 	}
 	/* in any case, destroy the node, i.e. decrease references */
-	vfs_node_destroy(node);
+	unref();
 }
 
-static ssize_t vfs_pipe_read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,
-		USER void *buffer,off_t offset,size_t count) {
-	size_t byteCount,total;
+ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
+                      off_t offset,size_t count) {
+	size_t byteCount,totalBytes;
 	Thread *t = Thread::getRunning();
-	sPipe *pipe = (sPipe*)node->data;
-	sPipeData *data;
+	PipeData *data;
 
 	/* wait until data is available */
-	SpinLock::acquire(&node->lock);
-	if(node->name == NULL) {
-		SpinLock::release(&node->lock);
+	if(!isAlive())
 		return -EDESTROYED;
-	}
-	while(sll_length(&pipe->list) == 0) {
-		Event::wait(t,EVI_PIPE_FULL,(evobj_t)node);
-		SpinLock::release(&node->lock);
+	SpinLock::acquire(&lock);
+	while(sll_length(&list) == 0) {
+		Event::wait(t,EVI_PIPE_FULL,(evobj_t)this);
+		SpinLock::release(&lock);
 
 		Thread::switchAway();
 
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
-		SpinLock::acquire(&node->lock);
-		if(node->name == NULL) {
-			SpinLock::release(&node->lock);
+		SpinLock::acquire(&lock);
+		if(!isAlive()) {
+			SpinLock::release(&lock);
 			return -EDESTROYED;
 		}
 	}
 
-	data = (sPipeData*)sll_get(&pipe->list,0);
+	data = (PipeData*)sll_get(&list,0);
 	/* empty message indicates EOF */
 	if(data->length == 0) {
-		SpinLock::release(&node->lock);
+		SpinLock::release(&lock);
 		return 0;
 	}
 
-	total = 0;
+	totalBytes = 0;
 	while(true) {
 		/* copy */
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		byteCount = MIN(data->length - (offset - data->offset),count);
-		Thread::addLock(&node->lock);
-		memcpy((uint8_t*)buffer + total,data->data + (offset - data->offset),byteCount);
-		Thread::remLock(&node->lock);
+		Thread::addLock(&lock);
+		memcpy((uint8_t*)buffer + totalBytes,data->data + (offset - data->offset),byteCount);
+		Thread::remLock(&lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			Cache::free(data);
-			sll_removeFirst(&pipe->list);
+			sll_removeFirst(&list);
 		}
 		count -= byteCount;
-		total += byteCount;
-		pipe->total -= byteCount;
+		totalBytes += byteCount;
+		total -= byteCount;
 		offset += byteCount;
 		if(count == 0)
 			break;
 		/* wait until data is available */
-		while(sll_length(&pipe->list) == 0) {
+		while(sll_length(&list) == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
-			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
-			Event::wait(t,EVI_PIPE_FULL,(evobj_t)node);
-			SpinLock::release(&node->lock);
+			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)this);
+			Event::wait(t,EVI_PIPE_FULL,(evobj_t)this);
+			SpinLock::release(&lock);
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
 			Thread::switchNoSigs();
 
-			SpinLock::acquire(&node->lock);
-			if(node->name == NULL) {
-				SpinLock::release(&node->lock);
+			SpinLock::acquire(&lock);
+			if(!isAlive()) {
+				SpinLock::release(&lock);
 				return -EDESTROYED;
 			}
 		}
-		data = (sPipeData*)sll_get(&pipe->list,0);
+		data = (PipeData*)sll_get(&list,0);
 		/* keep the empty one for the next transfer */
 		if(data->length == 0)
 			break;
 	}
-	SpinLock::release(&node->lock);
+	SpinLock::release(&lock);
 	/* wakeup all threads that wait for writing in this node */
-	Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)node);
-	return total;
+	Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)this);
+	return totalBytes;
 }
 
-static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,
-		USER const void *buffer,off_t offset,size_t count) {
-	sPipeData *data;
+ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
+                       off_t offset,size_t count) {
+	PipeData *data;
 	Thread *t = Thread::getRunning();
-	sPipe *pipe = (sPipe*)node->data;
 
 	/* Note that the size-check doesn't ensure that the total pipe-size can't be larger than the
 	 * maximum. Its not really critical here, I think. Therefore its enough for making sure that
@@ -218,35 +163,33 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNod
 
 	/* wait while our node is full */
 	if(count) {
-		SpinLock::acquire(&node->lock);
-		if(node->name == NULL) {
-			SpinLock::release(&node->lock);
+		if(!isAlive())
 			return -EDESTROYED;
-		}
-		while((pipe->total + count) >= MAX_VFS_FILE_SIZE) {
-			Event::wait(t,EVI_PIPE_EMPTY,(evobj_t)node);
-			SpinLock::release(&node->lock);
+		SpinLock::acquire(&lock);
+		while((total + count) >= MAX_VFS_FILE_SIZE) {
+			Event::wait(t,EVI_PIPE_EMPTY,(evobj_t)this);
+			SpinLock::release(&lock);
 
 			Thread::switchNoSigs();
 
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			SpinLock::acquire(&node->lock);
-			if(node->name == NULL) {
-				SpinLock::release(&node->lock);
+			SpinLock::acquire(&lock);
+			if(!isAlive()) {
+				SpinLock::release(&lock);
 				return -EDESTROYED;
 			}
-			if(pipe->noReader) {
-				SpinLock::release(&node->lock);
+			if(noReader) {
+				SpinLock::release(&lock);
 				Proc::addSignalFor(pid,SIG_PIPE_CLOSED);
 				return -EPIPE;
 			}
 		}
-		SpinLock::release(&node->lock);
+		SpinLock::release(&lock);
 	}
 
 	/* build pipe-data */
-	data = (sPipeData*)Cache::alloc(sizeof(sPipeData) + count);
+	data = (PipeData*)Cache::alloc(sizeof(PipeData) + count);
 	if(data == NULL)
 		return -ENOMEM;
 	data->offset = offset;
@@ -258,19 +201,19 @@ static ssize_t vfs_pipe_write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,sVFSNod
 	}
 
 	/* append */
-	SpinLock::acquire(&node->lock);
-	if(node->name == NULL) {
-		SpinLock::release(&node->lock);
+	SpinLock::acquire(&lock);
+	if(!isAlive()) {
+		SpinLock::release(&lock);
 		Cache::free(data);
 		return -EDESTROYED;
 	}
-	if(!sll_append(&pipe->list,data)) {
-		SpinLock::release(&node->lock);
+	if(!sll_append(&list,data)) {
+		SpinLock::release(&lock);
 		Cache::free(data);
 		return -ENOMEM;
 	}
-	pipe->total += count;
-	SpinLock::release(&node->lock);
-	Event::wakeup(EVI_PIPE_FULL,(evobj_t)node);
+	total += count;
+	SpinLock::release(&lock);
+	Event::wakeup(EVI_PIPE_FULL,(evobj_t)this);
 	return count;
 }

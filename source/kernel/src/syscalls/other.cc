@@ -22,6 +22,7 @@
 #include <sys/interrupts.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/cache.h>
 #include <sys/task/thread.h>
 #include <sys/task/lock.h>
 #include <sys/dbg/console.h>

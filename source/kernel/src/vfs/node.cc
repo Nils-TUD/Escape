@@ -21,10 +21,13 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
-#include <sys/vfs/devmsgs.h>
 #include <sys/vfs/file.h>
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>
+#include <sys/vfs/channel.h>
+#include <sys/vfs/device.h>
+#include <sys/vfs/pipe.h>
+#include <sys/vfs/openfile.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/physmem.h>
@@ -33,107 +36,74 @@
 #include <sys/task/groups.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/cppsupport.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
 
-static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t *nodeNo,
-		bool *created);
-static void vfs_node_doDestroy(sVFSNode *n,bool remove);
-static sVFSNode *vfs_node_requestNode(void);
-static void vfs_node_releaseNode(sVFSNode *node);
-static void vfs_node_dbg_doPrintTree(OStream &os,size_t level,sVFSNode *parent);
+/* we have to use the max-size of all VFSNode sub-classes. that's unfortunate, but I don't see a
+ * better way */
+static constexpr size_t getMaxSize() {
+	return MAX(sizeof(VFSChannel),
+			MAX(sizeof(VFSDevice),
+			MAX(sizeof(VFSDir),
+			MAX(sizeof(VFSFile),
+			MAX(sizeof(VFSLink),sizeof(VFSPipe))))));
+}
 
 /* all nodes (expand dynamically) */
-static DynArray nodeArray(sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
+DynArray VFSNode::nodeArray(getMaxSize(),VFSNODE_AREA,VFSNODE_AREA_SIZE);
 /* a pointer to the first free node (which points to the next and so on) */
-static sVFSNode *freeList = NULL;
-static uint nextUsageId = 0;
-static klock_t nodesLock;
+VFSNode *VFSNode::freeList = NULL;
+uint VFSNode::nextUsageId = 0;
+klock_t VFSNode::nodesLock;
+klock_t VFSNode::treeLock;
+size_t VFSNode::allocated;
 
-bool vfs_node_isValid(inode_t nodeNo) {
-	return nodeNo >= 0 && nodeNo < (inode_t)nodeArray.getObjCount();
-}
-
-inode_t vfs_node_getNo(const sVFSNode *node) {
-	return (inode_t)nodeArray.getIndex(node);
-}
-
-sVFSNode *vfs_node_request(inode_t nodeNo) {
-	sVFSNode *n = (sVFSNode*)nodeArray.getObj(nodeNo);
-	SpinLock::acquire(&n->lock);
-	if(n->name)
-		return n;
-	SpinLock::release(&n->lock);
-	return NULL;
-}
-
-void vfs_node_release(sVFSNode *node) {
-	SpinLock::release(&node->lock);
-}
-
-sVFSNode *vfs_node_get(inode_t nodeNo) {
-	return (sVFSNode*)nodeArray.getObj(nodeNo);
-}
-
-static sVFSNode *vfs_node_openDirOf(inode_t nodeNo,bool *isValid) {
-	sVFSNode *dir = vfs_node_request(nodeNo);
-	sVFSNode *parent;
-	if(dir) {
-		if(!S_ISLNK(dir->mode))
-			parent = dir;
-		else {
-			parent = vfs_link_resolve(dir);
-			vfs_node_release(dir);
-			SpinLock::acquire(&parent->lock);
-			*isValid = parent->name != NULL;
-		}
-		return parent->firstChild;
+/* we have 2 refs at the beginning because we expect the creator to release the node if he's done
+ * working with it */
+VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
+		: lock(), name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
+		  parent(), prev(), firstChild(), lastChild(), next() {
+	const Proc *p = pid != INVALID_PID ? Proc::getByPid(pid) : NULL;
+	if(this == nullptr || name == NULL || nameLen > MAX_NAME_LEN) {
+		success = false;
+		return;
 	}
-	return NULL;
+
+	nameLen = strlen(name);
+	uid = p ? p->getEUid() : ROOT_UID;
+	gid = p ? p->getEGid() : ROOT_GID;
 }
 
-sVFSNode *vfs_node_openDir(sVFSNode *dir,bool locked,bool *isValid) {
-	sVFSNode *parent;
-	if(!S_ISLNK(dir->mode))
-		parent = dir;
+const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
+	const VFSNode *p;
+	if(!S_ISLNK(mode))
+		p = this;
 	else
-		parent = vfs_link_resolve(dir);
+		p = static_cast<const VFSLink*>(this)->resolve();
 	if(locked)
-		SpinLock::acquire(&parent->lock);
-	*isValid = parent->name != NULL;
-	return parent->firstChild;
+		SpinLock::acquire(&treeLock);
+	*valid = p->name != NULL;
+	return p->firstChild;
 }
 
-void vfs_node_closeDir(sVFSNode *dir,bool locked) {
-	sVFSNode *parent;
-	if(!S_ISLNK(dir->mode))
-		parent = dir;
-	else
-		parent = vfs_link_resolve(dir);
-	if(locked)
-		SpinLock::release(&parent->lock);
-}
-
-int vfs_node_isEmptyDir(sVFSNode *node) {
+int VFSNode::isEmptyDir() const {
 	bool valid;
-	if(!S_ISDIR(node->mode))
+	if(!S_ISDIR(mode))
 		return -ENOTDIR;
-	sVFSNode *c = vfs_node_openDir(node,false,&valid);
+	const VFSNode *c = openDir(true,&valid);
 	if(valid) {
 		bool res = c->next && !c->next->next;
-		vfs_node_closeDir(node,false);
+		closeDir(true);
 		return res ? 0 : -ENOTEMPTY;
 	}
+	closeDir(true);
 	return -EDESTROYED;
 }
 
-int vfs_node_getInfo(pid_t pid,inode_t nodeNo,USER sFileInfo *info) {
-	sVFSNode *n = vfs_node_request(nodeNo);
-	if(n == NULL)
-		return -ENOENT;
-
+void VFSNode::getInfo(pid_t pid,USER sFileInfo *info) const {
 	/* some infos are not available here */
 	/* TODO needs to be completed */
 	info->device = VFS_DEV_NO;
@@ -142,68 +112,20 @@ int vfs_node_getInfo(pid_t pid,inode_t nodeNo,USER sFileInfo *info) {
 	info->createtime = 0;
 	info->blockCount = 0;
 	info->blockSize = 512;
-	info->inodeNo = nodeNo;
+	info->inodeNo = getNo();
 	info->linkCount = 1;
-	info->uid = n->uid;
-	info->gid = n->gid;
-	info->mode = n->mode;
-	info->size = n->getSize ? n->getSize(pid,n) : 0;
-	vfs_node_release(n);
-	return 0;
+	info->uid = uid;
+	info->gid = gid;
+	info->mode = mode;
+	info->size = getSize(pid);
 }
 
-int vfs_node_chmod(pid_t pid,inode_t nodeNo,mode_t mode) {
-	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
-	sVFSNode *n = vfs_node_request(nodeNo);
-	if(n == NULL)
-		return -ENOENT;
-	/* root can chmod everything; others can only chmod their own files */
-	if(p && p->getEUid() != n->uid && p->getEUid() != ROOT_UID)
-		res = -EPERM;
-	else
-		n->mode = (n->mode & ~MODE_PERM) | (mode & MODE_PERM);
-	vfs_node_release(n);
-	return res;
-}
-
-int vfs_node_chown(pid_t pid,inode_t nodeNo,uid_t uid,gid_t gid) {
-	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
-	sVFSNode *n = vfs_node_request(nodeNo);
-	if(n == NULL)
-		return -ENOENT;
-
-	/* root can chown everything; others can only chown their own files */
-	if(p && p->getEUid() != n->uid && p->getEUid() != ROOT_UID)
-		res = -EPERM;
-	else if(p && p->getEUid() != ROOT_UID) {
-		/* users can't change the owner */
-		if(uid != (uid_t)-1 && uid != n->uid && uid != p->getEUid())
-			res = -EPERM;
-		/* users can change the group only to a group they're a member of */
-		else if(gid != (gid_t)-1 && gid != n->gid && gid != p->getEGid() &&
-				!Groups::contains(p->getPid(),gid))
-			res = -EPERM;
-	}
-
-	if(res == 0) {
-		if(uid != (uid_t)-1)
-			n->uid = uid;
-		if(gid != (gid_t)-1)
-			n->gid = gid;
-	}
-	vfs_node_release(n);
-	return res;
-}
-
-const char *vfs_node_getPath(inode_t nodeNo) {
+const char *VFSNode::getPath() const {
 	/* TODO the +1 is necessary for eco32 (alignment bug) */
 	static char path[MAX_PATH_LEN + 1];
 	size_t nlen,len = 0,total = 0;
-	sVFSNode *node = vfs_node_get(nodeNo);
-	sVFSNode *n = node;
-	if(n->name == NULL)
+	const VFSNode *n = this;
+	if(!n->isAlive())
 		return "<destroyed>";
 
 	while(n->parent != NULL) {
@@ -216,7 +138,7 @@ const char *vfs_node_getPath(inode_t nodeNo) {
 	if(total > MAX_PATH_LEN)
 		total = MAX_PATH_LEN;
 
-	n = node;
+	n = this;
 	len = total;
 	while(n->parent != NULL) {
 		nlen = n->nameLen + 1;
@@ -232,15 +154,52 @@ const char *vfs_node_getPath(inode_t nodeNo) {
 	return (char*)path;
 }
 
-int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint flags) {
-	sVFSNode *dir,*n = vfs_node_get(0);
+int VFSNode::chmod(pid_t pid,mode_t m) {
+	int res = 0;
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
+	/* root can chmod everything; others can only chmod their own files */
+	if(p && p->getEUid() != uid && p->getEUid() != ROOT_UID)
+		res = -EPERM;
+	else
+		mode = (mode & ~MODE_PERM) | (m & MODE_PERM);
+	return res;
+}
+
+int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
+	int res = 0;
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
+	/* root can chown everything; others can only chown their own files */
+	if(p && p->getEUid() != uid && p->getEUid() != ROOT_UID)
+		res = -EPERM;
+	else if(p && p->getEUid() != ROOT_UID) {
+		/* users can't change the owner */
+		if(nuid != (uid_t)-1 && nuid != uid && nuid != p->getEUid())
+			res = -EPERM;
+		/* users can change the group only to a group they're a member of */
+		else if(ngid != (gid_t)-1 && ngid != gid && ngid != p->getEGid() &&
+				!Groups::contains(p->getPid(),ngid))
+			res = -EPERM;
+	}
+
+	if(res == 0) {
+		if(nuid != (uid_t)-1)
+			uid = nuid;
+		if(ngid != (gid_t)-1)
+			gid = ngid;
+	}
+	return res;
+}
+
+int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags) {
+	const VFSNode *dir,*n = get(0);
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->getProc()->getPid() : KERNEL_PID;
 	int pos = 0,err,depth,lastdepth;
-	bool isValid;
+	bool valid;
 	if(created)
 		*created = false;
+	*node = NULL;
 
 	/* no absolute path? */
 	if(*path != '/')
@@ -252,15 +211,16 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 
 	/* root/current node requested? */
 	if(!*path) {
-		*nodeNo = vfs_node_getNo(n);
-		return 0;
+		*node = const_cast<VFSNode*>(n->increaseRefs());
+		err = *node == NULL ? -ENOENT : 0;
+		return err;
 	}
 
 	depth = 0;
 	lastdepth = -1;
 	dir = n;
-	n = vfs_node_openDir(dir,true,&isValid);
-	if(isValid) {
+	n = dir->openDir(true,&valid);
+	if(valid) {
 		while(n != NULL) {
 			/* go to next '/' and check for invalid chars */
 			if(depth != lastdepth) {
@@ -297,10 +257,9 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 					break;
 
 				/* move to childs of this node */
-				vfs_node_closeDir(dir,true);
 				dir = n;
-				n = vfs_node_openDir(dir,true,&isValid);
-				if(!isValid) {
+				n = dir->openDir(false,&valid);
+				if(!valid) {
 					err = -EDESTROYED;
 					goto done;
 				}
@@ -313,6 +272,7 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 
 	err = 0;
 	if(n == NULL) {
+		dir->closeDir(true);
 		/* not existing file/dir in root-directory means that we should ask fs */
 		/* Note: this means that no one can create (additional) virtual nodes in the root-directory,
 		 * which is intended. The existing virtual nodes in the root-directory, of course, hide
@@ -321,24 +281,29 @@ int vfs_node_resolvePath(const char *path,inode_t *nodeNo,bool *created,uint fla
 			err = -EREALPATH;
 		/* should we create a default-file? */
 		else if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
-			err = vfs_node_createFile(pid,path,dir,nodeNo,created);
+			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created);
 		else
 			err = -ENOENT;
 	}
 	else {
 		/* resolve link */
 		if(!(flags & VFS_NOLINKRES) && S_ISLNK(n->mode))
-			n = vfs_link_resolve(n);
+			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());
 
 		/* virtual node */
-		*nodeNo = vfs_node_getNo(n);
+		*node = const_cast<VFSNode*>(n->increaseRefs());
+		if(*node == NULL)
+			err = -ENOENT;
+		dir->closeDir(true);
 	}
+	return err;
+
 done:
-	vfs_node_closeDir(dir,true);
+	dir->closeDir(true);
 	return err;
 }
 
-char *vfs_node_basename(char *path,size_t *len) {
+char *VFSNode::basename(char *path,size_t *len) {
 	char *p = path + *len - 1;
 	while(*p == '/') {
 		p--;
@@ -350,7 +315,7 @@ char *vfs_node_basename(char *path,size_t *len) {
 	return p + 1;
 }
 
-void vfs_node_dirname(char *path,size_t len) {
+void VFSNode::dirname(char *path,size_t len) {
 	char *p = path + len - 1;
 	/* remove last '/' */
 	while(*p == '/') {
@@ -370,154 +335,99 @@ void vfs_node_dirname(char *path,size_t len) {
 	*(p + 1) = '\0';
 }
 
-sVFSNode *vfs_node_findInDir(sVFSNode *dir,const char *name,size_t nameLen) {
-	bool isValid = false;
-	sVFSNode *res = NULL;
-	sVFSNode *n = vfs_node_openDir(dir,false,&isValid);
-	if(isValid) {
+const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen) const {
+	bool valid = false;
+	const VFSNode *res = NULL;
+	const VFSNode *n = openDir(true,&valid);
+	if(valid) {
 		while(n != NULL) {
-			if(n->nameLen == nameLen && strncmp(n->name,name,nameLen) == 0) {
+			if(n->nameLen == enameLen && strncmp(n->name,ename,enameLen) == 0) {
 				res = n;
 				break;
 			}
 			n = n->next;
 		}
 	}
-	vfs_node_closeDir(dir,false);
+	closeDir(true);
 	return res;
 }
 
-sVFSNode *vfs_node_findInDirOf(inode_t nodeNo,const char *name,size_t nameLen) {
-	bool isValid = false;
-	sVFSNode *res = NULL;
-	sVFSNode *n = vfs_node_openDirOf(nodeNo,&isValid);
-	if(isValid) {
-		while(n != NULL) {
-			if(n->nameLen == nameLen && strncmp(n->name,name,nameLen) == 0) {
-				res = n;
-				break;
-			}
-			n = n->next;
-		}
+void VFSNode::append(VFSNode *p) {
+	if(p != NULL) {
+		SpinLock::acquire(&treeLock);
+		if(p->firstChild == NULL)
+			p->firstChild = this;
+		if(p->lastChild != NULL)
+			p->lastChild->next = this;
+		prev = p->lastChild;
+		p->lastChild = this;
+		SpinLock::release(&treeLock);
 	}
-	vfs_node_closeDir(vfs_node_get(nodeNo),true);
-	return res;
+	parent = p;
 }
 
-sVFSNode *vfs_node_create(pid_t pid,char *name) {
-	sVFSNode *node;
-	size_t nameLen = strlen(name);
-	const Proc *p = pid != INVALID_PID ? Proc::getByPid(pid) : NULL;
-	vassert(name != NULL,"name == NULL");
+void VFSNode::doUnref(bool remove) {
+	const char *nameptr = NULL;
+	/* first check whether we have the last ref */
+	bool norefs = refCount == 1;
 
-	if(nameLen > MAX_NAME_LEN)
-		return NULL;
-
-	node = vfs_node_requestNode();
-	if(node == NULL)
-		return NULL;
-
-	/* ensure that all values are initialized properly */
-	*(pid_t*)&node->owner = pid;
-	node->uid = p ? p->getEUid() : ROOT_UID;
-	node->gid = p ? p->getEGid() : ROOT_GID;
-	*(char**)&node->name = name;
-	*(size_t*)&node->nameLen = nameLen;
-	node->mode = 0;
-	node->refCount = 1;
-	node->next = NULL;
-	node->prev = NULL;
-	node->firstChild = NULL;
-	node->lastChild = NULL;
-	*(sVFSNode**)&node->parent = NULL;
-	return node;
-}
-
-void vfs_node_append(sVFSNode *parent,sVFSNode *node) {
-	if(parent != NULL) {
-		/* we assume here that the parent is locked */
-		if(parent->firstChild == NULL)
-			parent->firstChild = node;
-		if(parent->lastChild != NULL)
-			parent->lastChild->next = node;
-		node->prev = parent->lastChild;
-		parent->lastChild = node;
-	}
-	*(sVFSNode**)&node->parent = parent;
-}
-
-void vfs_node_destroy(sVFSNode *n) {
-	vfs_node_doDestroy(n,false);
-}
-
-void vfs_node_destroyNow(sVFSNode *n) {
-	vfs_node_doDestroy(n,true);
-}
-
-static void vfs_node_doDestroy(sVFSNode *n,bool remove) {
-	/* remove childs */
-	sVFSNode *parent;
-	sVFSNode *tn;
-	sVFSNode *child;
-	bool norefs;
-	SpinLock::acquire(&n->lock);
-	norefs = --n->refCount == 0;
-	SpinLock::release(&n->lock);
-
+	/* no remove the child-nodes, if necessary. this is done unlocked which also means that */
 	if(norefs || remove) {
-		child = n->firstChild;
+		VFSNode *child = firstChild;
 		while(child != NULL) {
-			tn = child->next;
-			vfs_node_doDestroy(child,remove);
+			VFSNode *tn = child->next;
+			/* if the parent is destroyed, the childs have to be destroyed as well, regardless of
+			 * whether they have still references or not (of course, the node isn't free'd if there
+			 * are still references) */
+			child->doUnref(true);
 			child = tn;
 		}
 	}
 
-	/* acquire both locks before n->destroy(). we can't destroy the node-data without lock because
-	 * otherwise one could access it before the node is removed from the tree */
-	SpinLock::acquire(&n->lock);
-	parent = n->parent;
-	if(parent)
-		SpinLock::acquire(&parent->lock);
+	SpinLock::acquire(&treeLock);
+	/* don't decrease the refs twice with remove */
+	if(!remove || name) {
+		SpinLock::acquire(&lock);
+		norefs = --refCount == 0;
+		SpinLock::release(&lock);
+	}
 
 	/* take care that we don't destroy the node twice */
-	if(norefs) {
-		/* let the node clean up */
-		if(n->destroy)
-			n->destroy(n);
-	}
-	if((norefs || remove) && n->name) {
-		/* free name */
-		if(IS_ON_HEAP(n->name))
-			Cache::free((void*)n->name);
-		*(char**)&n->name = NULL;
-
+	if(norefs)
+		invalidate();
+	if((norefs || remove) && name) {
 		/* remove from parent and release (attention: maybe its not yet in the tree) */
-		if(n->prev)
-			n->prev->next = n->next;
+		if(prev)
+			prev->next = next;
 		else if(parent)
-			parent->firstChild = n->next;
-		if(n->next)
-			n->next->prev = n->prev;
+			parent->firstChild = next;
+		if(next)
+			next->prev = prev;
 		else if(parent)
-			parent->lastChild = n->prev;
-		n->prev = NULL;
-		n->next = NULL;
-		n->firstChild = NULL;
-		n->lastChild = NULL;
-		*(sVFSNode**)&n->parent = NULL;
+			parent->lastChild = prev;
+
+		prev = NULL;
+		next = NULL;
+		firstChild = NULL;
+		lastChild = NULL;
+		parent = NULL;
+
+		/* free name (do that afterwards, unlocked) */
+		if(IS_ON_HEAP(name))
+			nameptr = name;
+		name = NULL;
 	}
 
-	if(parent)
-		SpinLock::release(&parent->lock);
-	SpinLock::release(&n->lock);
+	SpinLock::release(&treeLock);
 
+	if(nameptr)
+		Cache::free(const_cast<char*>(nameptr));
 	/* if there are no references anymore, we can put the node on the freelist */
 	if(norefs)
-		vfs_node_releaseNode(n);
+		delete this;
 }
 
-char *vfs_node_getId(pid_t pid) {
+char *VFSNode::generateId(pid_t pid) {
 	char *name;
 	size_t len;
 	uint id;
@@ -539,28 +449,8 @@ char *vfs_node_getId(pid_t pid) {
 	return name;
 }
 
-void vfs_node_printTree(OStream &os) {
-	os.writef("VFS:\n");
-	os.writef("/\n");
-	vfs_node_dbg_doPrintTree(os,1,vfs_node_get(0));
-}
-
-void vfs_node_printNode(OStream &os,const sVFSNode *node) {
-	os.writef("VFSNode @ %p:\n",node);
-	if(node) {
-		os.writef("\tname: %s\n",node->name ? node->name : "NULL");
-		os.writef("\tfirstChild: %p\n",node->firstChild);
-		os.writef("\tlastChild: %p\n",node->lastChild);
-		os.writef("\tnext: %p\n",node->next);
-		os.writef("\tprev: %p\n",node->prev);
-		os.writef("\towner: %d\n",node->owner);
-	}
-}
-
-static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t *nodeNo,
-		bool *created) {
+int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created) {
 	size_t nameLen;
-	sVFSNode *child;
 	char *nameCpy;
 	char *nextSlash;
 	int err;
@@ -584,18 +474,17 @@ static int vfs_node_createFile(pid_t pid,const char *path,sVFSNode *dir,inode_t 
 		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);
 	/* now create the node and pass the node-number back */
-	if((child = vfs_file_create(pid,dir,nameCpy,vfs_file_read,vfs_file_write)) == NULL) {
+	if((*child = create<VFSFile>(pid,dir,nameCpy)) == NULL) {
 		Cache::free(nameCpy);
 		return -ENOMEM;
 	}
 	if(created)
 		*created = true;
-	*nodeNo = vfs_node_getNo(child);
 	return 0;
 }
 
-static sVFSNode *vfs_node_requestNode(void) {
-	sVFSNode *node = NULL;
+void *VFSNode::operator new(size_t) throw() {
+	VFSNode *node = NULL;
 	SpinLock::acquire(&nodesLock);
 	if(freeList == NULL) {
 		size_t i,oldCount = nodeArray.getObjCount();
@@ -603,46 +492,69 @@ static sVFSNode *vfs_node_requestNode(void) {
 			SpinLock::release(&nodesLock);
 			return NULL;
 		}
-		freeList = vfs_node_get(oldCount);
+		freeList = get(oldCount);
 		for(i = oldCount; i < nodeArray.getObjCount() - 1; i++) {
-			node = vfs_node_get(i);
-			node->next = vfs_node_get(i + 1);
+			node = get(i);
+			node->next = get(i + 1);
 		}
 		node->next = NULL;
 	}
 
 	node = freeList;
 	freeList = freeList->next;
+	allocated++;
 	SpinLock::release(&nodesLock);
 	return node;
 }
 
-static void vfs_node_releaseNode(sVFSNode *node) {
+void VFSNode::operator delete(void *ptr) throw() {
+	VFSNode *node = static_cast<VFSNode*>(ptr);
 	vassert(node != NULL,"node == NULL");
 	/* mark unused */
-	*(char**)&node->name = NULL;
-	*(size_t*)&node->nameLen = 0;
-	*(pid_t*)&node->owner = INVALID_PID;
+	node->name = NULL;
+	node->nameLen = 0;
+	node->owner = INVALID_PID;
 	SpinLock::acquire(&nodesLock);
 	node->next = freeList;
 	freeList = node;
+	allocated--;
 	SpinLock::release(&nodesLock);
 }
 
-static void vfs_node_dbg_doPrintTree(OStream &os,size_t level,sVFSNode *parent) {
+void VFSNode::printTree(OStream &os) {
+	os.writef("VFS:\n");
+	os.writef("/\n");
+	SpinLock::acquire(&treeLock);
+	doPrintTree(os,1,get(0));
+	SpinLock::release(&treeLock);
+}
+
+void VFSNode::print(OStream &os) const {
+	os.writef("VFSNode @ %p:\n",this);
+	if(this) {
+		os.writef("\tname: %s\n",name ? name : "NULL");
+		os.writef("\tfirstChild: %p\n",firstChild);
+		os.writef("\tlastChild: %p\n",lastChild);
+		os.writef("\tnext: %p\n",next);
+		os.writef("\tprev: %p\n",prev);
+		os.writef("\towner: %d\n",owner);
+	}
+}
+
+void VFSNode::doPrintTree(OStream &os,size_t level,const VFSNode *parent) {
 	size_t i;
-	bool isValid;
-	sVFSNode *n = vfs_node_openDir(parent,true,&isValid);
-	if(isValid) {
+	bool valid;
+	const VFSNode *n = parent->openDir(false,&valid);
+	if(valid) {
 		while(n != NULL) {
 			for(i = 0;i < level;i++)
 				os.writef(" |");
 			os.writef("- %s\n",n->name);
 			/* don't recurse for "." and ".." */
 			if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
-				vfs_node_dbg_doPrintTree(os,level + 1,n);
+				doPrintTree(os,level + 1,n);
 			n = n->next;
 		}
 	}
-	vfs_node_closeDir(parent,true);
+	parent->closeDir(false);
 }

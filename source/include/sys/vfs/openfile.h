@@ -21,9 +21,25 @@
 
 #include <sys/common.h>
 #include <sys/mem/dynarray.h>
-#include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <errno.h>
+#include <assert.h>
+
+/* GFT flags */
+enum {
+	VFS_NOACCESS = 0,		/* no read and write */
+	VFS_READ = 1,
+	VFS_WRITE = 2,
+	VFS_CREATE = 4,
+	VFS_TRUNCATE = 8,
+	VFS_APPEND = 16,
+	VFS_NOBLOCK = 32,
+	VFS_MSGS = 64,			/* exchange msgs with a device */
+	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
+	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
+	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
+	VFS_EXEC = 1024,		/* kernel-intern: for accessing directories */
+};
 
 class VFS;
 class VMTree;
@@ -46,16 +62,17 @@ public:
 	static size_t getCount();
 
 	/**
-	 * For devices: Looks whether a client wants to be served and return the node-number. If
-	 * necessary and if GW_NOBLOCK is not used, the function waits until a client wants to be served.
+	 * For devices: Looks whether a client wants to be served. If necessary and if GW_NOBLOCK is
+	 * not used, the function waits until a client wants to be served.
 	 *
 	 * @param files an array of files to check for clients
 	 * @param count the number of files
 	 * @param index will be set to the index in <files> from which the client was chosen
+	 * @param client will be set to the client
 	 * @param flags the flags (GW_*)
-	 * @return the error-code or the node-number of the client
+	 * @return the error-code or 0
 	 */
-	static inode_t getClient(OpenFile *const *files,size_t count,size_t *index,uint flags);
+	static int getClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client,uint flags);
 
 	/**
 	 * Checks whether they point to the same file
@@ -76,7 +93,7 @@ public:
 			return path;
 		}
 		assert(devNo == VFS_DEV_NO);
-		return vfs_node_getPath(nodeNo);
+		return node->getPath();
 	}
 	/**
 	 * @return the device number
@@ -87,7 +104,7 @@ public:
 	/**
 	 * @return the node of this file (might be NULL)
 	 */
-	sVFSNode *getNode() const {
+	VFSNode *getNode() const {
 		return node;
 	}
 	/**
@@ -205,8 +222,7 @@ public:
 	 * @return the client-id or the error-code
 	 */
 	inode_t getClientId(pid_t pid) {
-		sVFSNode *n = node;
-		if(devNo != VFS_DEV_NO || !IS_CHANNEL(n->mode))
+		if(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode()))
 			return -EPERM;
 		return nodeNo;
 	}
@@ -277,9 +293,9 @@ private:
 	 * @param f will point to the used file afterwards
 	 * @return 0 on success
 	 */
-	static int getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,OpenFile **f);
+	static int getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f);
 
-	static inode_t doGetClient(OpenFile *const *files,size_t count,size_t *index);
+	static int doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client);
 	static void releaseFile(OpenFile *file);
 	bool doCloseFile(pid_t pid);
 
@@ -297,7 +313,7 @@ private:
 	/* node-number */
 	inode_t nodeNo;
 	/* the node, if devNo == VFS_DEV_NO, otherwise null */
-	sVFSNode *node;
+	VFSNode *node;
 	/* the device-number */
 	dev_t devNo;
 	/* for real files: the path; for virt files: NULL */

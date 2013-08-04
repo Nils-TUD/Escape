@@ -24,11 +24,12 @@
 #include <sys/spinlock.h>
 #include <sys/log.h>
 #include <sys/video.h>
+#include <sys/util.h>
 #include <string.h>
 #include <assert.h>
 
 #if DEBUGGING
-#define DEBUG_ALLOC_N_FREE	0
+#define DEBUG_ALLOC_N_FREE	1
 #endif
 
 #define GUARD_MAGIC			0xCAFEBABE
@@ -76,7 +77,7 @@ done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		SpinLock::acquire(&lock);
-		Util::printEventTrace(Util::getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
+		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
 		SpinLock::release(&lock);
 	}
 #endif
@@ -124,7 +125,8 @@ void Cache::free(void *p) {
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
 		SpinLock::acquire(&lock);
-		Util::printEventTrace(Util::getKernelStackTrace(),"\n[F] %Px 0 ",p);
+		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[F] %Px %zu ",
+		                      p,caches[area[0]].objSize);
 		SpinLock::release(&lock);
 	}
 #endif

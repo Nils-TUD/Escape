@@ -20,77 +20,102 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
 
-/**
- * Creates a new channel for given process
- *
- * @param pid the process-id
- * @param parent the parent-node
- * @return the created node or NULL
- */
-sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent);
+class VFSChannel : public VFSNode {
+	struct Message {
+		msgid_t id;
+		size_t length;
+		Thread *thread;
+	};
 
-/**
- * Marks the given channel as used/unused.
- *
- * @param node the channel-node
- * @param used whether to mark it used or unused
- */
-void vfs_chan_setUsed(sVFSNode *node,bool used);
+public:
+	/**
+	 * Creates a new channel for given process
+	 *
+	 * @param pid the process-id
+	 * @param parent the parent-node
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
+	 */
+	explicit VFSChannel(pid_t pid,VFSNode *parent,bool &success);
 
-/**
- * Checks whether the given channel has a reply for the client
- *
- * @param node the channel-node
- * @return true if so
- */
-bool vfs_chan_hasReply(const sVFSNode *node);
+	/**
+	 * Marks the given channel as used/unused.
+	 *
+	 * @param used whether to mark it used or unused
+	 */
+	void setUsed(bool used) {
+		this->used = used;
+	}
 
-/**
- * Checks whether the given channel has work to do for the server
- *
- * @param node the channel-node
- * @return true if so
- */
-bool vfs_chan_hasWork(const sVFSNode *node);
+	/**
+	 * Checks whether the channel has a reply for the client
+	 *
+	 * @return true if so
+	 */
+	bool hasReply() const {
+		return sll_length(&recvList) > 0;
+	}
 
-/**
- * Sends the given message to the channel
- *
- * @param pid the process-id
- * @param flags the flags of the file
- * @param n the channel-node
- * @param id the message-id
- * @param data1 the message-data
- * @param size1 the data-size
- * @param data2 for the device-messages: a second message (NULL = no second one)
- * @param size2 the size of the second message
- * @return 0 on success
- */
-ssize_t vfs_chan_send(pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
-		USER const void *data1,size_t size1,USER const void *data2,size_t size2);
+	/**
+	 * Checks whether the channel has work to do for the server
+	 *
+	 * @return true if so
+	 */
+	bool hasWork() const {
+		return !used && sll_length(&sendList) > 0;
+	}
 
-/**
- * Receives a message from the channel
- *
- * @param pid the process-id
- * @param flags the flags of the file
- * @param n the channel-node
- * @param id will be set to the message-id (if not NULL)
- * @param data the buffer to write the message to
- * @param size the size of the buffer
- * @param block whether to block if no message is available
- * @param ignoreSigs whether to ignore signals while sleeping
- * @return the number of written bytes on success
- */
-ssize_t vfs_chan_receive(pid_t pid,ushort flags,sVFSNode *node,msgid_t *id,void *data,
-		size_t size,bool block,bool ignoreSigs);
+	/**
+	 * Sends the given message to the channel
+	 *
+	 * @param pid the process-id
+	 * @param flags the flags of the file
+	 * @param id the message-id
+	 * @param data1 the message-data
+	 * @param size1 the data-size
+	 * @param data2 for the device-messages: a second message (NULL = no second one)
+	 * @param size2 the size of the second message
+	 * @return 0 on success
+	 */
+	ssize_t send(pid_t pid,ushort flags,msgid_t id,USER const void *data1,size_t size1,
+	             USER const void *data2,size_t size2);
 
-/**
- * Prints the given channel
- *
- * @param os the output-stream
- * @param n the channel-node
- */
-void vfs_chan_print(OStream &os,const sVFSNode *n);
+	/**
+	 * Receives a message from the channel
+	 *
+	 * @param pid the process-id
+	 * @param flags the flags of the file
+	 * @param id will be set to the message-id (if not NULL)
+	 * @param data the buffer to write the message to
+	 * @param size the size of the buffer
+	 * @param block whether to block if no message is available
+	 * @param ignoreSigs whether to ignore signals while sleeping
+	 * @return the number of written bytes on success
+	 */
+	ssize_t receive(pid_t pid,ushort flags,msgid_t *id,void *data,size_t size,bool block,
+	                bool ignoreSigs);
+
+	virtual ssize_t open(pid_t pid,OpenFile *file,uint flags);
+	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence);
+	virtual size_t getSize(pid_t pid) const;
+	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
+	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+	virtual void close(pid_t pid,OpenFile *file);
+	virtual void print(OStream &os) const;
+
+protected:
+	virtual void invalidate();
+
+private:
+	static Message *getMsg(Thread *t,sSLList *list,ushort flags);
+	int isSupported(int op) const;
+
+	bool used;
+	bool closed;
+	Thread *curClient;
+	/* a list for sending messages to the device */
+	sSLList sendList;
+	/* a list for reading messages from the device */
+	sSLList recvList;
+};

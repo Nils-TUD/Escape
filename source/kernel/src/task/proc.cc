@@ -39,7 +39,7 @@
 #include <sys/interrupts.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/fs.h>
 #include <sys/vfs/openfile.h>
 #include <sys/spinlock.h>
 #include <sys/mutex.h>
@@ -413,8 +413,9 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 
 	if(!code) {
 		/* resolve path; require a path in real fs */
-		inode_t nodeNo;
-		if(vfs_node_resolvePath(path,&nodeNo,NULL,VFS_READ) != -EREALPATH) {
+		VFSNode *node;
+		if(VFSNode::request(path,&node,NULL,VFS_READ) != -EREALPATH) {
+			VFSNode::release(node);
 			release(p,PLOCK_PROG);
 			return -EINVAL;
 		}
@@ -445,7 +446,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	}
 
 	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
-	/* we need to do this here without lock, because vfs_openPath will perform a context-switch */
+	/* we need to do this here without lock, because VFS::openPath will perform a context-switch */
 	if(info.linkerEntry != info.progEntry) {
 		OpenFile *file;
 		if(VFS::openPath(p->pid,VFS_READ,path,&file) < 0)
@@ -805,7 +806,7 @@ void ProcBase::print(OStream &os) {
 	virtmem.print(os);
 	Env::printAllOf(os,pid);
 	FileDesc::print(os,static_cast<Proc*>(this));
-	vfs_fsmsgs_printFSChans(os,static_cast<Proc*>(this));
+	VFSFS::printFSChans(os,static_cast<Proc*>(this));
 	os.popIndent();
 	os.writef("\tThreads:\n");
 	for(n = sll_begin(&threads); n != NULL; n = n->next) {

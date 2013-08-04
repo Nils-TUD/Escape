@@ -20,94 +20,121 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <esc/messages.h>
+#include <errno.h>
 
-/**
- * Creates a server-node
- *
- * @param pid the process-id to use
- * @param parent the parent-node
- * @param name the node-name
- * @param type the device-type
- * @param ops the supported operations
- * @return the node
- */
-sVFSNode *vfs_device_create(pid_t pid,sVFSNode *parent,char *name,uint type,uint ops);
+class VFSDevice : public VFSNode {
+public:
+	/**
+	 * Creates a server-node
+	 *
+	 * @param pid the process-id to use
+	 * @param parent the parent-node
+	 * @param name the node-name
+	 * @param type the device-type
+	 * @param ops the supported operations
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
+	 */
+	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,uint type,uint ops,bool &success);
 
-/**
- * Tells the server that the given client has been removed. This way, it can reset the internal
- * state that stores which client will be served next.
- *
- * @param node the server-node
- * @param client the client-node
- */
-void vfs_device_clientRemoved(sVFSNode *node,const sVFSNode *client);
+	/**
+	 * @param funcs the functions to check
+	 * @return true if the server supports the given functions
+	 */
+	bool supports(uint funcs) const {
+		return (this->funcs & funcs) != 0;
+	}
 
-/**
- * @param node the server-node
- * @param funcs the functions to check
- * @return true if the server supports the given functions
- */
-bool vfs_device_supports(const sVFSNode *node,uint funcs);
+	/**
+	 * @param id the msg-id to check
+	 * @return true if the server accepts the given message
+	 */
+	bool accepts(uint id) const {
+		if(IS_FS(mode) && id != MSG_FS_OPEN_RESP)
+			return true;
+		return false;
+	}
 
-/**
- * @param node the server-node
- * @param id the msg-id to check
- * @return true if the server accepts the given message
- */
-bool vfs_device_accepts(const sVFSNode *node,uint id);
+	/**
+	 * @return true if data can be read from the server (is available)
+	 */
+	bool isReadable() const {
+		return !isEmpty;
+	}
 
-/**
- * @param node the server-node
- * @return true if data can be read from the server (is available)
- */
-bool vfs_device_isReadable(const sVFSNode *node);
+	/**
+	 * Sets whether data is available
+	 *
+	 * @param readable the new value
+	 * @return 0 on success
+	 */
+	int setReadable(bool readable);
 
-/**
- * Sets whether data is available
- *
- * @param node the server-node
- * @param readable the new value
- * @return 0 on success
- */
-int vfs_device_setReadable(sVFSNode *node,bool readable);
+	/**
+	 * @return true if there is work
+	 */
+	bool hasWork() const {
+		return msgCount > 0;
+	}
 
-/**
- * Increases the message-count for the given server
- *
- * @param node the server-node
- */
-void vfs_device_addMsg(sVFSNode *node);
+	/**
+	 * Increases the message-count for this device
+	 */
+	void addMsg() {
+		SpinLock::acquire(&lock);
+		msgCount++;
+		SpinLock::release(&lock);
+	}
 
-/**
- * Decreases the message-count for the given server
- *
- * @param node the server-node
- */
-void vfs_device_remMsg(sVFSNode *node);
+	/**
+	 * Decreases the message-count for this device
+	 */
+	void remMsg() {
+		SpinLock::acquire(&lock);
+		assert(msgCount > 0);
+		msgCount--;
+		SpinLock::release(&lock);
+	}
 
-/**
- * @param node the server-node
- * @return true if there is work
- */
-bool vfs_device_hasWork(sVFSNode *node);
+	/**
+	 * Tells the server that the given client has been removed. This way, it can reset the internal
+	 * state that stores which client will be served next.
+	 *
+	 * @param client the client-node
+	 */
+	void clientRemoved(const VFSNode *client) {
+		/* we don't have to lock this, because its only called in unref(), which can only
+		 * be called when the treelock is held. i.e. it is not possible during getwork() */
+		if(lastClient == client)
+			lastClient = NULL;
+	}
 
-/**
- * Searches for a client of the given server-node that should be served
- *
- * @param node the server-node
- * @param cont will be set to false (never to true!), if the caller should stop and use service
- * 	the returned client
- * @param retry will be set to true (never to false!), if the caller should check all device-nodes
- * 	again, after the current loop is finished
- * @return the client to serve or NULL if there is none
- */
-sVFSNode *vfs_device_getWork(sVFSNode *node,bool *cont,bool *retry);
+	/**
+	 * Searches for a client of the server-node that should be served
+	 *
+	 * @param cont will be set to false (never to true!), if the caller should stop and use service
+	 * 	the returned client
+	 * @param retry will be set to true (never to false!), if the caller should check all device-nodes
+	 * 	again, after the current loop is finished
+	 * @return the client to serve or NULL if there is none
+	 */
+	VFSNode *getWork(bool *cont,bool *retry);
 
-/**
- * Prints the given server
- *
- * @param os the output-stream
- * @param n the server-node
- */
-void vfs_device_print(OStream &os,sVFSNode *n);
+	virtual size_t getSize(pid_t pid) const;
+	virtual void close(pid_t pid,OpenFile *file);
+	virtual void print(OStream &os) const;
+
+private:
+	static uint buildMode(uint type);
+	void wakeupClients(uint events,bool locked);
+
+	/* whether there is data to read or not */
+	bool isEmpty;
+	/* implemented functions */
+	uint funcs;
+	/* total number of messages in all channels (for the device, not the clients) */
+	ulong msgCount;
+	/* the last served client */
+	const VFSNode *lastClient;
+};

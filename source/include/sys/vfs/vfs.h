@@ -21,28 +21,12 @@
 
 #include <sys/common.h>
 #include <sys/task/event.h>
+#include <sys/vfs/node.h>
 #include <esc/sllist.h>
 #include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(64 * K)
 #define MAX_GETWORK_DEVICES			16
-
-/* some additional types for the kernel */
-#define MODE_TYPE_CHANNEL			0x0010000
-#define MODE_TYPE_PIPE				0x0020000
-#define MODE_TYPE_DEVMASK			0x0700000
-#define MODE_TYPE_BLKDEV			(0x0100000 | S_IFBLK)
-#define MODE_TYPE_CHARDEV			(0x0200000 | S_IFCHR)
-#define MODE_TYPE_FSDEV				(0x0300000 | S_IFFS)
-#define MODE_TYPE_FILEDEV			(0x0400000 | S_IFREG)
-#define MODE_TYPE_SERVDEV			(0x0500000 | S_IFSERV)
-
-/* the device-number of the VFS */
-#define VFS_DEV_NO					((dev_t)0xFF)
-
-#define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
-#define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
-#define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
 
 #define DEV_OPEN					1
 #define DEV_READ					2
@@ -69,67 +53,9 @@
 /* getwork-flags */
 #define GW_NOBLOCK					1
 
-/* GFT flags */
-enum {
-	VFS_NOACCESS = 0,		/* no read and write */
-	VFS_READ = 1,
-	VFS_WRITE = 2,
-	VFS_CREATE = 4,
-	VFS_TRUNCATE = 8,
-	VFS_APPEND = 16,
-	VFS_NOBLOCK = 32,
-	VFS_MSGS = 64,			/* exchange msgs with a device */
-	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
-	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
-	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
-	VFS_EXEC = 1024,		/* kernel-intern: for accessing directories */
-};
-
 /* all flags that the user can use */
 #define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | \
 									 VFS_APPEND | VFS_NOBLOCK | VFS_EXCLUSIVE)
-
-/* a node in our virtual file system */
-typedef struct sVFSNode sVFSNode;
-
-/* the prototypes for the operations on nodes */
-typedef ssize_t (*fRead)(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
-			off_t offset,size_t count);
-typedef ssize_t (*fWrite)(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,
-			off_t offset,size_t count);
-typedef off_t (*fSeek)(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-typedef size_t (*fGetSize)(pid_t pid,sVFSNode *node);
-typedef void (*fClose)(pid_t pid,OpenFile *file,sVFSNode *node);
-typedef void (*fDestroy)(sVFSNode *n);
-
-struct sVFSNode {
-	klock_t lock;
-	const char *const name;
-	const size_t nameLen;
-	/* number of open files for this node */
-	ushort refCount;
-	/* the owner of this node */
-	const pid_t owner;
-	uid_t uid;
-	gid_t gid;
-	/* 0 means unused; stores permissions and the type of node */
-	uint mode;
-	/* for the vfs-structure */
-	sVFSNode *const parent;
-	sVFSNode *prev;
-	sVFSNode *next;
-	sVFSNode *firstChild;
-	sVFSNode *lastChild;
-	/* the handler that perform a read-/write-operation on this node */
-	fRead read;
-	fWrite write;
-	fSeek seek;
-	fGetSize getSize;
-	fClose close;
-	fDestroy destroy;
-	/* data in various forms, depending on the node-type */
-	void *data;
-};
 
 class VFS {
 	VFS() = delete;
@@ -148,7 +74,7 @@ public:
 	 * @param flags the flags (VFS_*)
 	 * @return 0 if successfull, negative if the process has no permission
 	 */
-	static int hasAccess(pid_t pid,sVFSNode *n,ushort flags);
+	static int hasAccess(pid_t pid,const VFSNode *n,ushort flags);
 
 	/**
 	 * Opens the given path with given flags. That means it walks through the global
@@ -180,12 +106,14 @@ public:
 	 *
 	 * @param pid the process-id with which the file should be opened
 	 * @param flags whether it is a virtual or real file and whether you want to read or write
+	 * @param node the node if its virtual or NULL otherwise.
 	 * @param nodeNo the node-number (in the virtual or real environment)
 	 * @param devNo the device-number
 	 * @param file will be set to the opened file
 	 * @return 0 if successfull or < 0
 	 */
-	static int openFile(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,OpenFile **file);
+	static int openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_t devNo,
+	                    OpenFile **file);
 
 	/**
 	 * Retrieves information about the given path
@@ -317,7 +245,7 @@ public:
 	 * Creates a process-node with given pid
 	 *
 	 * @param pid the process-id
-	 * @return the process-directory-node on success
+	 * @return 0 on success
 	 */
 	static inode_t createProcess(pid_t pid);
 
@@ -351,10 +279,10 @@ public:
 	static void printMsgs(OStream &os);
 
 private:
-	static bool hasMsg(sVFSNode *node);
-	static bool hasData(sVFSNode *node);
-	static bool hasWork(sVFSNode *node);
+	static bool hasMsg(VFSNode *node);
+	static bool hasData(VFSNode *node);
+	static bool hasWork(VFSNode *node);
 
-	static sVFSNode *procsNode;
-	static sVFSNode *devNode;
+	static VFSNode *procsNode;
+	static VFSNode *devNode;
 };

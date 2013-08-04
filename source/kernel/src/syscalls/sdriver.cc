@@ -118,7 +118,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	uint flags = (uint)SYSC_ARG7(stack);
 	pid_t pid = t->getProc()->getPid();
 	OpenFile *file;
-	inode_t clientNo;
+	VFSNode *client;
 	int fd;
 	size_t i,index;
 	ssize_t res;
@@ -144,20 +144,21 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	}
 
 	/* open a client */
-	clientNo = OpenFile::getClient(files,fdCount,&index,flags);
+	res = OpenFile::getClient(files,fdCount,&index,&client,flags);
 
 	/* release files */
 	for(i = 0; i < fdCount; i++)
 		FileDesc::release(files[i]);
 
-	if(clientNo < 0)
-		SYSC_ERROR(stack,clientNo);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 
 	/* open file */
-	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,clientNo,VFS_DEV_NO,&file);
+	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,client,client->getNo(),VFS_DEV_NO,&file);
+	VFSNode::release(client);
 	if(res < 0) {
 		/* we have to set the channel unused again; otherwise its ignored for ever */
-		vfs_chan_setUsed(vfs_node_get(clientNo),false);
+		static_cast<VFSChannel*>(client)->setUsed(false);
 		SYSC_ERROR(stack,res);
 	}
 

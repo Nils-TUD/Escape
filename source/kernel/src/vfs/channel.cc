@@ -28,10 +28,10 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
-#include <sys/vfs/devmsgs.h>
 #include <sys/vfs/openfile.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
+#include <sys/log.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -40,83 +40,108 @@
 
 #define PRINT_MSGS			0
 
-typedef struct {
-	bool used;
-	bool closed;
-	Thread *curClient;
-	/* a list for sending messages to the device */
-	sSLList sendList;
-	/* a list for reading messages from the device */
-	sSLList recvList;
-} sChannel;
-
-typedef struct {
-	msgid_t id;
-	size_t length;
-	Thread *thread;
-} sMessage;
-
-static void vfs_chan_destroy(sVFSNode *n);
-static off_t vfs_chan_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-static size_t vfs_chan_getSize(pid_t pid,sVFSNode *node);
-static void vfs_chan_close(pid_t pid,OpenFile *file,sVFSNode *node);
-static sMessage *vfs_chan_getMsg(Thread *t,sSLList *list,ushort flags);
-
 extern klock_t waitLock;
 
-sVFSNode *vfs_chan_create(pid_t pid,sVFSNode *parent) {
-	sChannel *chan;
-	sVFSNode *node;
-	char *name = vfs_node_getId(pid);
-	if(!name)
-		return NULL;
-	node = vfs_node_create(pid,name);
-	if(node == NULL) {
-		Cache::free(name);
-		return NULL;
-	}
+VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
+		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR,success), used(false),
+		  closed(false), curClient(), sendList(), recvList() {
+	if(!success)
+		return;
 
-	node->mode = MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR;
-	node->read = (fRead)vfs_devmsgs_read;
-	node->write = (fWrite)vfs_devmsgs_write;
-	node->seek = vfs_chan_seek;
-	node->getSize = vfs_chan_getSize;
-	node->close = vfs_chan_close;
-	node->destroy = vfs_chan_destroy;
-	node->data = NULL;
-	chan = (sChannel*)Cache::alloc(sizeof(sChannel));
-	if(!chan) {
-		vfs_node_destroy(node);
-		return NULL;
-	}
-	sll_init(&chan->sendList,slln_allocNode,slln_freeNode);
-	sll_init(&chan->recvList,slln_allocNode,slln_freeNode);
-	chan->curClient = NULL;
-	chan->used = false;
-	chan->closed = false;
-	node->data = chan;
+	sll_init(&sendList,slln_allocNode,slln_freeNode);
+	sll_init(&recvList,slln_allocNode,slln_freeNode);
 	/* auto-destroy on the last close() */
-	node->refCount--;
-	vfs_node_append(parent,node);
-	return node;
+	refCount--;
+	append(p);
 }
 
-static void vfs_chan_destroy(sVFSNode *n) {
-	sChannel *chan = (sChannel*)n->data;
-	if(chan) {
-		/* we have to reset the last client for the device here */
-		if(n->parent)
-			vfs_device_clientRemoved(n->parent,n);
-		/* clear send and receive list */
-		sll_clear(&chan->recvList,true);
-		sll_clear(&chan->sendList,true);
-		Cache::free(chan);
-		n->data = NULL;
+void VFSChannel::invalidate() {
+	/* we have to reset the last client for the device here */
+	if(parent)
+		static_cast<VFSDevice*>(parent)->clientRemoved(this);
+	sll_clear(&recvList,true);
+	sll_clear(&sendList,true);
+}
+
+int VFSChannel::isSupported(int op) const {
+	VFSNode::acquireTree();
+	if(!isAlive()) {
+		VFSNode::releaseTree();
+		return -EDESTROYED;
+	}
+	/* if the driver doesn't implement read, its an error */
+	if(!static_cast<VFSDevice*>(parent)->supports(op)) {
+		VFSNode::releaseTree();
+		return -ENOTSUP;
+	}
+	VFSNode::releaseTree();
+	return 0;
+}
+
+ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
+	ssize_t res;
+	sArgsMsg msg;
+	msgid_t mid;
+	Thread *t = Thread::getRunning();
+
+	if((res = isSupported(DEV_OPEN)) < 0)
+		return res == -ENOTSUP ? 0 : res;
+
+	/* send msg to driver */
+	msg.arg1 = flags;
+	res = file->sendMsg(pid,MSG_DEV_OPEN,&msg,sizeof(msg),NULL,0);
+	if(res < 0)
+		return res;
+
+	/* receive response */
+	t->addResource();
+	do {
+		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		vassert(res < 0 || mid == MSG_DEV_OPEN_RESP,"mid=%u, res=%zd, node=%s:%p",
+		        mid,res,getPath(),this);
+	}
+	while(res == -EINTR);
+	t->remResource();
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}
+
+void VFSChannel::close(pid_t pid,OpenFile *file) {
+	if(!isAlive())
+		unref();
+	else {
+		if(file->isDevice()) {
+			used = false;
+			curClient = NULL;
+		}
+
+		/* TODO actually, this doesn't work (we need a lock for refCount) */
+		if(refCount > 1) {
+			if(refCount == 2 && closed)
+				unref();
+			unref();
+		}
+		else {
+			/* if the driver implemented close, notify him */
+			if(static_cast<VFSDevice*>(parent)->supports(DEV_CLOSE))
+				file->sendMsg(pid,MSG_DEV_CLOSE,NULL,0,NULL,0);
+
+			/* if there are message for the driver we don't want to throw them away */
+			/* if there are any in the receivelist (and no references of the node) we
+			 * can throw them away because no one will read them anymore
+			 * (it means that the client has already closed the file) */
+			/* note also that we can assume that the driver is still running since we
+			 * would have deleted the whole device-node otherwise */
+			if(sll_length(&sendList) == 0)
+				unref();
+			else
+				closed = true;
+		}
 	}
 }
 
-static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t position,
-		off_t offset,uint whence) {
+off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -129,86 +154,124 @@ static off_t vfs_chan_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posi
 	}
 }
 
-static size_t vfs_chan_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
-	sChannel *chan = (sChannel*)node->data;
-	return chan ? sll_length(&chan->sendList) + sll_length(&chan->recvList) : 0;
+size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
+	return sll_length(&sendList) + sll_length(&recvList);
 }
 
-static void vfs_chan_close(pid_t pid,OpenFile *file,sVFSNode *node) {
-	sChannel *chan = (sChannel*)node->data;
-	if(node->name == NULL)
-		vfs_node_destroy(node);
-	else {
-		if(file->isDevice()) {
-			chan->used = false;
-			chan->curClient = NULL;
-		}
+ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
+	ssize_t res;
+	msgid_t mid;
+	sArgsMsg msg;
+	Event::WaitObject obj;
+	Thread *t = Thread::getRunning();
 
-		if(node->refCount > 1)
-			vfs_node_destroy(node);
-		else {
-			/* notify the driver, if it is one */
-			vfs_devmsgs_close(pid,file,node);
+	if((res = isSupported(DEV_READ)) < 0)
+		return res;
 
-			/* if there are message for the driver we don't want to throw them away */
-			/* if there are any in the receivelist (and no references of the node) we
-			 * can throw them away because no one will read them anymore
-			 * (it means that the client has already closed the file) */
-			/* note also that we can assume that the driver is still running since we
-			 * would have deleted the whole device-node otherwise */
-			if(sll_length(&chan->sendList) == 0)
-				vfs_node_destroy(node);
-			else
-				chan->closed = true;
-		}
+	/* wait until there is data available, if necessary */
+	obj.events = EV_DATA_READABLE;
+	obj.object = (evobj_t)file;
+	res = VFS::waitFor(&obj,1,0,file->shouldBlock(),KERNEL_PID,0);
+	if(res < 0)
+		return res;
+
+	/* send msg to driver */
+	msg.arg1 = offset;
+	msg.arg2 = count;
+	res = file->sendMsg(pid,MSG_DEV_READ,&msg,sizeof(msg),NULL,0);
+	if(res < 0)
+		return res;
+
+	/* read response and ensure that we don't get killed until we've received both messages
+	 * (otherwise the channel might get in an inconsistent state) */
+	t->addResource();
+	do {
+		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		vassert(res < 0 || mid == MSG_DEV_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
+				mid,res,getPath(),this);
 	}
+	while(res == -EINTR);
+	t->remResource();
+	if(res < 0)
+		return res;
+
+	/* handle response */
+	if(msg.arg2 != READABLE_DONT_SET) {
+		VFSNode::acquireTree();
+		if(parent)
+			static_cast<VFSDevice*>(parent)->setReadable(msg.arg2);
+		VFSNode::releaseTree();
+	}
+	if((long)msg.arg1 <= 0)
+		return msg.arg1;
+
+	/* read data */
+	t->addResource();
+	do
+		res = file->receiveMsg(pid,NULL,buffer,count,true);
+	while(res == -EINTR);
+	t->remResource();
+	return res;
 }
 
-void vfs_chan_setUsed(sVFSNode *node,bool used) {
-	sChannel *chan = (sChannel*)node->data;
-	if(chan)
-		chan->used = used;
+ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
+	msgid_t mid;
+	ssize_t res;
+	sArgsMsg msg;
+	Thread *t = Thread::getRunning();
+
+	if((res = isSupported(DEV_WRITE)) < 0)
+		return res;
+
+	/* send msg and data to driver */
+	msg.arg1 = offset;
+	msg.arg2 = count;
+	res = file->sendMsg(pid,MSG_DEV_WRITE,&msg,sizeof(msg),buffer,count);
+	if(res < 0)
+		return res;
+
+	/* read response */
+	t->addResource();
+	do {
+		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		vassert(res < 0 || mid == MSG_DEV_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
+				mid,res,getPath(),this);
+	}
+	while(res == -EINTR);
+	t->remResource();
+	if(res < 0)
+		return res;
+	return msg.arg1;
 }
 
-bool vfs_chan_hasReply(const sVFSNode *node) {
-	sChannel *chan = (sChannel*)node->data;
-	return chan && sll_length(&chan->recvList) > 0;
-}
-
-bool vfs_chan_hasWork(const sVFSNode *node) {
-	sChannel *chan = (sChannel*)node->data;
-	return chan && !chan->used && sll_length(&chan->sendList) > 0;
-}
-
-ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
-		USER const void *data1,size_t size1,USER const void *data2,size_t size2) {
+ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
+                         size_t size1,USER const void *data2,size_t size2) {
 	sSLList *list;
 	Thread *t = Thread::getRunning();
-	sChannel *chan = (sChannel*)n->data;
-	sMessage *msg1,*msg2 = NULL;
+	Message *msg1,*msg2 = NULL;
 	Thread *recipient = t;
 
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
-	os.writef("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
-			t->getTid(),pid,p ? p->getCommand() : "??",id,size1,n->name,n,n->parent->name);
+	Log::get().writef("%2d:%2d(%-12.12s) -> %6d (%4d b) %#x (%s)\n",
+			t->getTid(),pid,p ? p->getCommand() : "??",id,size1,this,getPath());
 	if(data2) {
-		os.writef("%d:%d:%s -> %d (%d b) %s:%x (%s)\n",
-				t->getTid(),pid,p ? p->getCommand() : "??",id,size2,n->name,n,n->parent->name);
+		Log::get().writef("%2d:%2d(%-12.12s) -> %6d (%4d b) %#x (%s)\n",
+				t->getTid(),pid,p ? p->getCommand() : "??",id,size2,this,getPath());
 	}
 #endif
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(flags & VFS_DEVICE) {
 		assert(data2 == NULL && size2 == 0);
-		list = &chan->recvList;
+		list = &recvList;
 	}
 	/* other processes write to the send-list (which will be read by the driver) */
 	else
-		list = &chan->sendList;
+		list = &sendList;
 
 	/* create message and copy data to it */
-	msg1 = (sMessage*)Cache::alloc(sizeof(sMessage) + size1);
+	msg1 = (Message*)Cache::alloc(sizeof(Message) + size1);
 	if(msg1 == NULL)
 		return -ENOMEM;
 
@@ -221,7 +284,7 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 	}
 
 	if(data2) {
-		msg2 = (sMessage*)Cache::alloc(sizeof(sMessage) + size2);
+		msg2 = (Message*)Cache::alloc(sizeof(Message) + size2);
 		if(msg2 == NULL)
 			return -ENOMEM;
 
@@ -234,19 +297,13 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		Thread::remHeapAlloc(msg1);
 	}
 
-	SpinLock::acquire(&n->lock);
-	if(n->name == NULL) {
-		SpinLock::release(&n->lock);
-		return -EDESTROYED;
-	}
-
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
 	SpinLock::acquire(&waitLock);
 
 	/* set recipient */
 	if(flags & VFS_DEVICE)
-		recipient = id >= MSG_DEF_RESPONSE ? chan->curClient : NULL;
+		recipient = id >= MSG_DEF_RESPONSE ? curClient : NULL;
 	msg1->thread = recipient;
 	if(data2)
 		msg2->thread = recipient;
@@ -258,75 +315,70 @@ ssize_t vfs_chan_send(A_UNUSED pid_t pid,ushort flags,sVFSNode *n,msgid_t id,
 		goto errorRem;
 
 	/* notify the driver */
-	if(list == &chan->sendList) {
-		vfs_device_addMsg(n->parent);
-		if(msg2)
-			vfs_device_addMsg(n->parent);
-		Event::wakeup(EVI_CLIENT,(evobj_t)n->parent);
+	if(list == &sendList) {
+		VFSNode::acquireTree();
+		if(parent) {
+			static_cast<VFSDevice*>(parent)->addMsg();
+			if(msg2)
+				static_cast<VFSDevice*>(parent)->addMsg();
+			Event::wakeup(EVI_CLIENT,(evobj_t)parent);
+		}
+		VFSNode::releaseTree();
 	}
 	else {
 		/* notify other possible waiters */
 		if(recipient)
 			Event::unblock(recipient);
 		else
-			Event::wakeup(EVI_RECEIVED_MSG,(evobj_t)n);
+			Event::wakeup(EVI_RECEIVED_MSG,(evobj_t)this);
 	}
 	SpinLock::release(&waitLock);
-	SpinLock::release(&n->lock);
 	return 0;
 
 errorRem:
 	sll_removeFirstWith(list,msg1);
 error:
 	SpinLock::release(&waitLock);
-	SpinLock::release(&n->lock);
 	Cache::free(msg1);
 	Cache::free(msg2);
 	return -ENOMEM;
 }
 
-ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msgid_t *id,
-		USER void *data,size_t size,bool block,bool ignoreSigs) {
+ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USER void *data,
+                            size_t size,bool block,bool ignoreSigs) {
 	sSLList *list;
 	Thread *t = Thread::getRunning();
-	sChannel *chan = (sChannel*)node->data;
-	sVFSNode *waitNode;
-	sMessage *msg;
+	VFSNode *waitNode;
+	Message *msg;
 	size_t event;
 	ssize_t res;
-
-	SpinLock::acquire(&node->lock);
-	/* node destroyed? */
-	if(node->name == NULL) {
-		SpinLock::release(&node->lock);
-		return -EDESTROYED;
-	}
 
 	/* determine list and event to use */
 	if(flags & VFS_DEVICE) {
 		event = EVI_CLIENT;
-		list = &chan->sendList;
-		waitNode = node->parent;
+		list = &sendList;
+		waitNode = parent;
 	}
 	else {
 		event = EVI_RECEIVED_MSG;
-		list = &chan->recvList;
-		waitNode = node;
+		list = &recvList;
+		waitNode = this;
 	}
 
 	/* wait until a message arrives */
-	while((msg = vfs_chan_getMsg(t,list,flags)) == NULL) {
+	SpinLock::acquire(&waitLock);
+	while((msg = getMsg(t,list,flags)) == NULL) {
 		if(!block) {
-			SpinLock::release(&node->lock);
+			SpinLock::release(&waitLock);
 			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
-		if(chan->closed) {
-			SpinLock::release(&node->lock);
+		if(closed) {
+			SpinLock::release(&waitLock);
 			return -EDESTROYED;
 		}
 		Event::wait(t,event,(evobj_t)waitNode);
-		SpinLock::release(&node->lock);
+		SpinLock::release(&waitLock);
 
 		if(ignoreSigs)
 			Thread::switchNoSigs();
@@ -336,18 +388,19 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
-		SpinLock::acquire(&node->lock);
-		if(node->name == NULL) {
-			SpinLock::release(&node->lock);
+		if(!isAlive())
 			return -EDESTROYED;
-		}
+		SpinLock::acquire(&waitLock);
 	}
 
 	if(event == EVI_CLIENT) {
-		vfs_device_remMsg(node->parent);
-		chan->curClient = msg->thread;
+		VFSNode::acquireTree();
+		if(parent)
+			static_cast<VFSDevice*>(parent)->remMsg();
+		VFSNode::releaseTree();
+		curClient = msg->thread;
 	}
-	SpinLock::release(&node->lock);
+	SpinLock::release(&waitLock);
 	if(data && msg->length > size) {
 		Cache::free(msg);
 		return -EINVAL;
@@ -355,8 +408,8 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
-	os.writef("%d:%d:%s <- %d (%d b) %s:%x (%s)\n",
-			t->getTid(),pid,p ? p->getCommand() : "??",msg->id,msg->length,node->name,node,node->parent->name);
+	Log::get().writef("%2d:%2d(%-12.12s) <- %6d (%4d b) %#x (%s)\n",
+			t->getTid(),pid,p ? p->getCommand() : "??",msg->id,msg->length,this,getPath());
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
@@ -372,16 +425,16 @@ ssize_t vfs_chan_receive(A_UNUSED pid_t pid,ushort flags,sVFSNode *node,USER msg
 	return res;
 }
 
-static sMessage *vfs_chan_getMsg(Thread *t,sSLList *list,ushort flags) {
+VFSChannel::Message *VFSChannel::getMsg(Thread *t,sSLList *list,ushort flags) {
 	sSLNode *n,*p;
 	/* drivers get always the first message */
 	if(flags & VFS_DEVICE)
-		return (sMessage*)sll_removeFirst(list);
+		return (Message*)sll_removeFirst(list);
 
 	/* find the message for this client-thread */
 	p = NULL;
 	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
-		sMessage *msg = (sMessage*)n->data;
+		Message *msg = (Message*)n->data;
 		if(msg->thread == NULL || msg->thread == t) {
 			sll_removeNode(list,n,p);
 			return msg;
@@ -390,18 +443,16 @@ static sMessage *vfs_chan_getMsg(Thread *t,sSLList *list,ushort flags) {
 	return NULL;
 }
 
-void vfs_chan_print(OStream &os,const sVFSNode *n) {
+void VFSChannel::print(OStream &os) const {
 	size_t i;
-	sChannel *chan = (sChannel*)n->data;
-	sSLList *lists[] = {NULL,NULL};
-	lists[0] = &chan->sendList;
-	lists[1] = &chan->recvList;
+	const sSLList *lists[] = {NULL,NULL};
+	lists[0] = &sendList;
+	lists[1] = &recvList;
 	for(i = 0; i < ARRAY_SIZE(lists); i++) {
 		size_t j,count = sll_length(lists[i]);
-		os.writef("Channel %s %s: (%zu,%s)\n",n->name,i ? "recvs" : "sends",count,
-		                                                     chan->used ? "used" : "-");
+		os.writef("Channel %s %s: (%zu,%s)\n",name,i ? "recvs" : "sends",count,used ? "used" : "-");
 		for(j = 0; j < count; j++) {
-			sMessage *msg = (sMessage*)sll_get(lists[i],j);
+			Message *msg = (Message*)sll_get(lists[i],j);
 			os.writef("\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
 					msg->thread ? msg->thread->getTid() : -1,
 					msg->thread ? msg->thread->getProc()->getPid() : -1,

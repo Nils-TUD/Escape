@@ -20,13 +20,39 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
 
-/**
- * Creates a new pipe for <pid> in <parent>
- *
- * @param pid the process-id
- * @param parent the parent-node
- * @return the created node or NULL
- */
-sVFSNode *vfs_pipe_create(pid_t pid,sVFSNode *parent);
+class VFSPipe : public VFSNode {
+	struct PipeData {
+		size_t length;
+		off_t offset;
+		uint8_t data[];
+	};
+
+public:
+	/**
+	 * Creates a new pipe for <pid> in <parent>
+	 *
+	 * @param pid the process-id
+	 * @param parent the parent-node
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
+	 */
+	explicit VFSPipe(pid_t pid,VFSNode *parent,bool &success);
+
+	/**
+	 * Destructor
+	 */
+	virtual ~VFSPipe();
+
+	virtual size_t getSize(pid_t pid) const;
+	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
+	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+	virtual void close(pid_t pid,OpenFile *file);
+
+private:
+	uint8_t noReader;
+	/* total number of bytes available */
+	size_t total;
+	/* a list with sPipeData */
+	sSLList list;
+};

@@ -173,9 +173,9 @@ void Event::print(OStream &os) {
 			Thread *t = Thread::getById(w->tid);
 			os.writef("\t\tthread=%d (%d:%s), object=%x",
 					t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),w->object);
-			nodeNo = vfs_node_getNo((sVFSNode*)w->object);
-			if(vfs_node_isValid(nodeNo))
-				os.writef("(%s)",vfs_node_getPath(nodeNo));
+			nodeNo = ((VFSNode*)w->object)->getNo();
+			if(VFSNode::isValid(nodeNo))
+				os.writef("(%s)",((VFSNode*)w->object)->getPath());
 			os.writef("\n");
 			w = w->next;
 		}

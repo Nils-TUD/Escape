@@ -20,44 +20,57 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/vfs/file.h>
 
-/**
- * Creates the vfs-info nodes
- */
-void vfs_info_init(void);
+class VFSInfo {
+	/* callback function for the default read-handler */
+	typedef void (*read_func)(VFSNode *node,size_t *dataSize,void **buffer);
 
-/**
- * The trace-read-handler
- */
-ssize_t vfs_info_traceReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
-		off_t offset,size_t count);
+#define GEN_INFO_FILECLASS(className,fileName,callback)											\
+	class className : public VFSFile {															\
+	public:																						\
+		explicit className(pid_t pid,VFSNode *parent,bool &success)								\
+			: VFSFile(pid,parent,(char*)(fileName),success) {									\
+		}																						\
+		virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count) {	\
+			return VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));				\
+		}																						\
+		virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,			\
+							  size_t count) {													\
+			return -ENOTSUP;																	\
+		}																						\
+	}
 
-/**
- * The proc-read-handler
- */
-ssize_t vfs_info_procReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
-		off_t offset,size_t count);
+	static void traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void procReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void threadReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void regionsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void mapsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void virtMemReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void cpuReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void statsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void memUsageReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 
-/**
- * The thread-read-handler
- */
-ssize_t vfs_info_threadReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
-		off_t offset,size_t count);
+public:
+	/**
+	 * Creates the vfs-info nodes
+	 */
+	static void init();
 
-/**
- * The regions-read-handler
- */
-ssize_t vfs_info_regionsReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
-		off_t offset,size_t count);
+	GEN_INFO_FILECLASS(TraceFile,"trace",traceReadCallback);
+	GEN_INFO_FILECLASS(ProcFile,"info",procReadCallback);
+	GEN_INFO_FILECLASS(ThreadFile,"info",threadReadCallback);
+	GEN_INFO_FILECLASS(RegionsFile,"regions",regionsReadCallback);
+	GEN_INFO_FILECLASS(MapFile,"map",mapsReadCallback);
+	GEN_INFO_FILECLASS(VirtMemFile,"virtmem",virtMemReadCallback);
+	GEN_INFO_FILECLASS(CPUFile,"cpu",cpuReadCallback);
+	GEN_INFO_FILECLASS(StatsFile,"stats",statsReadCallback);
+	GEN_INFO_FILECLASS(MemUsageFile,"memusage",memUsageReadCallback);
 
-/**
- * The maps-read-handler
- */
-ssize_t vfs_info_mapsReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,USER void *buffer,
-		off_t offset,size_t count);
-
-/**
- * The virtual-memory-read-handler
- */
-ssize_t vfs_info_virtMemReadHandler(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,
-		off_t offset,size_t count);
+private:
+	static ssize_t readHelper(pid_t pid,VFSNode *node,void *buffer,off_t offset,
+			size_t count,size_t dataSize,read_func callback);
+	static Proc *getProc(VFSNode *node,size_t *dataSize,void **buffer);
+	static pid_t getPid(VFSNode *node,size_t *dataSize,void **buffer);
+	static Thread *getThread(VFSNode *node,size_t *dataSize,void **buffer);
+};

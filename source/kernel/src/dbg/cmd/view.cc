@@ -90,7 +90,7 @@ static View views[] = {
 	{"signals",		Signals::print},
 	{"thread",		view_thread},
 	{"threads",		Thread::printAll},
-	{"vfstree",		vfs_node_printTree},
+	{"vfstree",		VFSNode::printTree},
 	{"gft",			OpenFile::printAll},
 	{"msgs",		VFS::printMsgs},
 	{"cow",			CopyOnWrite::print},

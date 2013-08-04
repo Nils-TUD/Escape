@@ -28,7 +28,7 @@
 #include <sys/vfs/link.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/info.h>
-#include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/fs.h>
 #include <sys/vfs/openfile.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
@@ -36,49 +36,29 @@
 #include <string.h>
 #include <errno.h>
 
-/* VFS-directory-entry (equal to the direntry of ext2) */
-typedef struct {
-	inode_t nodeNo;
-	uint16_t recLen;
-	uint16_t nameLen;
-	/* name follows (up to 255 bytes) */
-} A_PACKED sVFSDirEntry;
+VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,bool &success)
+		: VFSNode(pid,n,DIR_DEF_MODE,success) {
+	VFSNode *l;
+	if(!success)
+		return;
 
-static ssize_t vfs_dir_read(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,
-		size_t count);
-static off_t vfs_dir_seek(pid_t pid,sVFSNode *node,off_t position,off_t offset,uint whence);
-static size_t vfs_dir_getSize(pid_t pid,sVFSNode *node);
-
-sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name) {
-	sVFSNode *target;
-	sVFSNode *node = vfs_node_create(pid,name);
-	if(node == NULL)
-		return NULL;
-
-	node->mode = DIR_DEF_MODE;
-	if(vfs_link_create(pid,node,(char*)".",node) == NULL) {
-		vfs_node_destroy(node);
-		return NULL;
+	if(!(l = new VFSLink(pid,this,(char*)".",this,success))) {
+		success = false;
+		return;
 	}
+	VFSNode::release(l);
 	/* the root-node has no parent */
-	target = parent == NULL ? node : parent;
-	if(vfs_link_create(pid,node,(char*)"..",target) == NULL) {
-		vfs_node_destroy(node);
-		return NULL;
+	VFSNode *target = p == NULL ? this : p;
+	if(!(l = new VFSLink(pid,this,(char*)"..",target,success))) {
+		success = false;
+		return;
 	}
+	VFSNode::release(l);
 
-	node->read = vfs_dir_read;
-	node->write = NULL;
-	node->seek = vfs_dir_seek;
-	node->getSize = vfs_dir_getSize;
-	node->destroy = NULL;
-	node->close = NULL;
-	vfs_node_append(parent,node);
-	return node;
+	append(p);
 }
 
-static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t position,
-		off_t offset,uint whence) {
+off_t VFSDir::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -92,25 +72,24 @@ static off_t vfs_dir_seek(A_UNUSED pid_t pid,A_UNUSED sVFSNode *node,off_t posit
 	}
 }
 
-static size_t vfs_dir_getSize(A_UNUSED pid_t pid,sVFSNode *node) {
-	bool isValid;
+size_t VFSDir::getSize(A_UNUSED pid_t pid) const {
+	bool valid;
 	size_t byteCount = 0;
 	/* node is already locked */
-	sVFSNode *n = vfs_node_openDir(node,false,&isValid);
+	const VFSNode *n = openDir(true,&valid);
 	while(n != NULL) {
-		byteCount += sizeof(sVFSDirEntry) + n->nameLen;
+		byteCount += sizeof(VFSDirEntry) + n->nameLen;
 		n = n->next;
 	}
+	closeDir(true);
 	return byteCount;
 }
 
-static ssize_t vfs_dir_read(pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USER void *buffer,
-		off_t offset,size_t count) {
+ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
-	sVFSNode *n,*firstChild;
-	bool isValid;
-	assert(node != NULL);
+	const VFSNode *n,*first;
+	bool valid;
 	assert(buffer != NULL);
 
 	/* the root-directory is distributed on the fs-device and the kernel */
@@ -118,14 +97,14 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USE
 	/* but don't do that if we're the kernel (vfsr does not work then) */
 	byteCount = 0;
 	fsByteCount = 0;
-	if(node->parent == NULL && pid != KERNEL_PID) {
+	if(parent == NULL && pid != KERNEL_PID) {
 		const size_t bufSize = 1024;
 		size_t c,curSize = bufSize;
 		fsBytes = Cache::alloc(bufSize);
 		if(fsBytes != NULL) {
 			OpenFile *rfile;
 			Thread::addHeapAlloc(fsBytes);
-			if(vfs_fsmsgs_openPath(pid,VFS_READ,"/",&rfile) == 0) {
+			if(VFSFS::openPath(pid,VFS_READ,"/",&rfile) == 0) {
 				while((c = rfile->readFile(pid,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;
 					if(c < bufSize)
@@ -148,15 +127,15 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USE
 		byteCount += fsByteCount;
 	}
 
-	firstChild = n = vfs_node_openDir(node,true,&isValid);
-	if(isValid) {
+	first = n = openDir(true,&valid);
+	if(valid) {
 		/* count the number of bytes in the virtual directory */
 		/* note that we do that here because using the fs service involves context-switches,
 		 * which may lead to a deadlock if we hold the node-lock during that time */
 		while(n != NULL) {
-			if(node->parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
+			if(parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
 					&& (n->nameLen != 2 || strcmp(n->name,"..") != 0)))
-				byteCount += sizeof(sVFSDirEntry) + n->nameLen;
+				byteCount += sizeof(VFSDirEntry) + n->nameLen;
 			n = n->next;
 		}
 
@@ -166,12 +145,13 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USE
 			byteCount = 0;
 		else {
 			size_t len;
-			sVFSDirEntry *dirEntry = (sVFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
+			VFSDirEntry *dirEntry = (VFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
 			Thread::addHeapAlloc(fsBytes);
-			n = firstChild;
+			Thread::addLock(&VFSNode::treeLock);
+			n = first;
 			while(n != NULL) {
-				if(node->parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
+				if(parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
 						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
 					n = n->next;
 					continue;
@@ -179,17 +159,18 @@ static ssize_t vfs_dir_read(pid_t pid,A_UNUSED OpenFile *file,sVFSNode *node,USE
 				len = n->nameLen;
 				/* unfortunatly, we have to convert the endianess here, because readdir() expects
 				 * that its encoded in little endian */
-				dirEntry->nodeNo = cputole32(vfs_node_getNo(n));
+				dirEntry->nodeNo = cputole32(n->getNo());
 				dirEntry->nameLen = cputole16(len);
-				dirEntry->recLen = cputole16(sizeof(sVFSDirEntry) + len);
+				dirEntry->recLen = cputole16(sizeof(VFSDirEntry) + len);
 				memcpy(dirEntry + 1,n->name,len);
-				dirEntry = (sVFSDirEntry*)((uint8_t*)dirEntry + sizeof(sVFSDirEntry) + len);
+				dirEntry = (VFSDirEntry*)((uint8_t*)dirEntry + sizeof(VFSDirEntry) + len);
 				n = n->next;
 			}
+			Thread::remLock(&VFSNode::treeLock);
 			Thread::remHeapAlloc(fsBytes);
 		}
 	}
-	vfs_node_closeDir(node,true);
+	closeDir(true);
 
 	if(offset > (off_t)byteCount)
 		offset = byteCount;

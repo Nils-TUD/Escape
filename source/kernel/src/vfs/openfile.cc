@@ -21,7 +21,7 @@
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
 #include <sys/vfs/openfile.h>
-#include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/fs.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
 #include <sys/vfs/vfs.h>
@@ -60,13 +60,13 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			SpinLock::release(&lock);
 			return 0;
 		case F_SETDATA: {
-			sVFSNode *n = node;
+			VFSNode *n = node;
 			int res = 0;
 			SpinLock::acquire(&waitLock);
-			if(devNo != VFS_DEV_NO || !IS_DEVICE(n->mode))
+			if(devNo != VFS_DEV_NO || !IS_DEVICE(n->getMode()))
 				res = -EINVAL;
 			else
-				res = vfs_device_setReadable(n,(bool)arg);
+				res = static_cast<VFSDevice*>(n)->setReadable((bool)arg);
 			SpinLock::release(&waitLock);
 			return res;
 		}
@@ -75,35 +75,35 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 }
 
 int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
-	int res;
+	int res = 0;
 	if(devNo == VFS_DEV_NO)
-		res = vfs_node_getInfo(pid,nodeNo,info);
+		node->getInfo(pid,info);
 	else
-		res = vfs_fsmsgs_istat(pid,nodeNo,devNo,info);
+		res = VFSFS::istat(pid,nodeNo,devNo,info);
 	return res;
 }
 
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t oldPos,res;
 
-	/* don't lock it during vfs_fsmsgs_istat(). we don't need it in this case because position is
+	/* don't lock it during VFSFS::istat(). we don't need it in this case because position is
 	 * simply set and never restored to oldPos */
 	if(devNo == VFS_DEV_NO || whence != SEEK_END)
 		SpinLock::acquire(&lock);
 
 	oldPos = position;
 	if(devNo == VFS_DEV_NO) {
-		sVFSNode *n = node;
-		if(n->seek == NULL) {
+		res = node->seek(pid,position,offset,whence);
+		if(res < 0) {
 			SpinLock::release(&lock);
-			return -ENOTSUP;
+			return res;
 		}
-		position = n->seek(pid,n,position,offset,whence);
+		position = res;
 	}
 	else {
 		if(whence == SEEK_END) {
 			sFileInfo info;
-			res = vfs_fsmsgs_istat(pid,nodeNo,devNo,&info);
+			res = VFSFS::istat(pid,nodeNo,devNo,&info);
 			if(res < 0)
 				return res;
 			/* can't be < 0, therefore it will always be kept */
@@ -135,16 +135,12 @@ ssize_t OpenFile::readFile(pid_t pid,USER void *buffer,size_t count) {
 		return -EACCES;
 
 	if(devNo == VFS_DEV_NO) {
-		sVFSNode *n = node;
-		if(n->read == NULL)
-			return -EACCES;
-
 		/* use the read-handler */
-		readBytes = n->read(pid,this,n,buffer,position,count);
+		readBytes = node->read(pid,this,buffer,position,count);
 	}
 	else {
 		/* query the fs-device to read from the inode */
-		readBytes = vfs_fsmsgs_read(pid,nodeNo,devNo,buffer,position,count);
+		readBytes = VFSFS::read(pid,nodeNo,devNo,buffer,position,count);
 	}
 
 	if(readBytes > 0) {
@@ -169,16 +165,12 @@ ssize_t OpenFile::writeFile(pid_t pid,USER const void *buffer,size_t count) {
 		return -EACCES;
 
 	if(devNo == VFS_DEV_NO) {
-		sVFSNode *n = node;
-		if(n->write == NULL)
-			return -EACCES;
-
 		/* write to the node */
-		writtenBytes = n->write(pid,this,n,buffer,position,count);
+		writtenBytes = node->write(pid,this,buffer,position,count);
 	}
 	else {
 		/* query the fs-device to write to the inode */
-		writtenBytes = vfs_fsmsgs_write(pid,nodeNo,devNo,buffer,position,count);
+		writtenBytes = VFSFS::write(pid,nodeNo,devNo,buffer,position,count);
 	}
 
 	if(writtenBytes > 0) {
@@ -198,7 +190,7 @@ ssize_t OpenFile::writeFile(pid_t pid,USER const void *buffer,size_t count) {
 ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t size1,
 		USER const void *data2,size_t size2) {
 	ssize_t err;
-	sVFSNode *n;
+	VFSNode *n;
 
 	if(devNo != VFS_DEV_NO)
 		return -EPERM;
@@ -207,10 +199,10 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 		return -EACCES;
 
 	n = node;
-	if(!IS_CHANNEL(n->mode))
+	if(!IS_CHANNEL(n->getMode()))
 		return -ENOTSUP;
 
-	err = vfs_chan_send(pid,flags,n,id,data1,size1,data2,size2);
+	err = static_cast<VFSChannel*>(n)->send(pid,flags,id,data1,size1,data2,size2);
 	if(err == 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
@@ -222,16 +214,16 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t size,
 		bool forceBlock) {
 	ssize_t err;
-	sVFSNode *n;
+	VFSNode *n;
 
 	if(devNo != VFS_DEV_NO)
 		return -EPERM;
 
 	n = node;
-	if(!IS_CHANNEL(n->mode))
+	if(!IS_CHANNEL(n->getMode()))
 		return -ENOTSUP;
 
-	err = vfs_chan_receive(pid,flags,n,id,data,size,
+	err = static_cast<VFSChannel*>(n)->receive(pid,flags,id,data,size,
 			forceBlock || !(flags & VFS_NOBLOCK),forceBlock);
 	if(err > 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
@@ -260,16 +252,11 @@ bool OpenFile::doCloseFile(pid_t pid) {
 		/* if we have used a file-descriptor to get here, the usages are at least 1; otherwise it is
 		 * 0, because it is used kernel-intern only and not passed to other "users". */
 		if(usageCount <= 1) {
-			if(devNo == VFS_DEV_NO) {
-				sVFSNode *n = node;
-				if(n->close)
-					n->close(pid,this,n);
-				else
-					vfs_node_destroy(n);
-			}
-			/* vfs_fsmsgs_close won't cause a context-switch; therefore we can keep the lock */
+			if(devNo == VFS_DEV_NO)
+				node->close(pid,this);
+			/* VFSFS::close won't cause a context-switch; therefore we can keep the lock */
 			else
-				vfs_fsmsgs_close(pid,nodeNo,devNo);
+				VFSFS::close(pid,nodeNo,devNo);
 
 			/* mark unused */
 			Cache::free(path);
@@ -281,23 +268,17 @@ bool OpenFile::doCloseFile(pid_t pid) {
 	return false;
 }
 
-inode_t OpenFile::getClient(OpenFile *const *files,size_t count,size_t *index,uint flags) {
+int OpenFile::getClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client,uint flags) {
 	Event::WaitObject waits[MAX_GETWORK_DEVICES];
 	Thread *t = Thread::getRunning();
 	bool inited = false;
-	inode_t clientNo;
 	while(true) {
 		SpinLock::acquire(&waitLock);
-		clientNo = doGetClient(files,count,index);
-		if(clientNo != -ENOCLIENT) {
+		int res = doGetClient(files,count,index,client);
+		/* if we've found one or we shouldn't block, stop here */
+		if(res != -ENOCLIENT || (flags & GW_NOBLOCK)) {
 			SpinLock::release(&waitLock);
-			break;
-		}
-
-		/* if we shouldn't block, stop here */
-		if(flags & GW_NOBLOCK) {
-			SpinLock::release(&waitLock);
-			break;
+			return res;
 		}
 
 		/* build wait-objects */
@@ -315,45 +296,50 @@ inode_t OpenFile::getClient(OpenFile *const *files,size_t count,size_t *index,ui
 		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
-		if(Signals::hasSignalFor(t->getTid())) {
-			clientNo = -EINTR;
-			break;
-		}
+		if(Signals::hasSignalFor(t->getTid()))
+			return -EINTR;
 	}
-	return clientNo;
+	return 0;
 }
 
-inode_t OpenFile::doGetClient(OpenFile *const *files,size_t count,size_t *index) {
-	sVFSNode *match = NULL;
+int OpenFile::doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client) {
+	VFSNode *match = NULL;
 	size_t i;
+	for(i = 0; i < count; i++) {
+		const OpenFile *f = files[i];
+		if(f->devNo != VFS_DEV_NO)
+			return -EPERM;
+		if(!IS_DEVICE(f->node->getMode()))
+			return -EPERM;
+	}
+
 	bool retry,cont = true;
 	do {
 		retry = false;
 		for(i = 0; cont && i < count; i++) {
 			const OpenFile *f = files[i];
-			sVFSNode *client,*node = f->node;
-			if(f->devNo != VFS_DEV_NO)
-				return -EPERM;
+			VFSNode *node = f->node;
 
-			if(!IS_DEVICE(node->mode))
-				return -EPERM;
-
-			client = vfs_device_getWork(node,&cont,&retry);
-			if(client) {
+			*client = static_cast<VFSDevice*>(node)->getWork(&cont,&retry);
+			if(*client) {
+				if(match)
+					match->unref();
 				if(index)
 					*index = i;
-				if(cont)
-					match = client;
+				if(cont) {
+					match = *client;
+				}
 				else {
-					vfs_chan_setUsed(client,true);
-					return vfs_node_getNo(client);
+					static_cast<VFSChannel*>(*client)->setUsed(true);
+					return 0;
 				}
 			}
 		}
 		/* if we have a match, use this one */
 		if(match) {
-			vfs_chan_setUsed(match,true);
-			return vfs_node_getNo(match);
+			static_cast<VFSChannel*>(match)->setUsed(true);
+			*client = match;
+			return 0;
 		}
 		/* if not and we've skipped a client, try another time */
 	}
@@ -363,30 +349,28 @@ inode_t OpenFile::doGetClient(OpenFile *const *files,size_t count,size_t *index)
 
 int OpenFile::openClient(pid_t pid,inode_t clientId,OpenFile **cfile) {
 	bool isValid;
-	sVFSNode *n;
-
 	/* search for the client */
-	n = vfs_node_openDir(node,true,&isValid);
+	const VFSNode *n = node->openDir(true,&isValid);
 	if(isValid) {
 		while(n != NULL) {
-			if(vfs_node_getNo(n) == clientId)
+			if(n->getNo() == clientId)
 				break;
 			n = n->next;
 		}
 	}
-	vfs_node_closeDir(node,true);
+	node->closeDir(true);
 	if(n == NULL)
 		return -ENOENT;
 
 	/* open file */
-	return VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,vfs_node_getNo(n),VFS_DEV_NO,cfile);
+	return VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,n,n->getNo(),VFS_DEV_NO,cfile);
 }
 
 void OpenFile::print(OStream &os) const {
 	os.writef("%3d [ %2u refs, %2u uses (%u:%u",
 			gftArray.getIndex(this),refCount,usageCount,devNo,nodeNo);
-	if(devNo == VFS_DEV_NO && vfs_node_isValid(nodeNo))
-		os.writef(":%s)",vfs_node_getPath(nodeNo));
+	if(devNo == VFS_DEV_NO && VFSNode::isValid(nodeNo))
+		os.writef(":%s)",node->getPath());
 	else
 		os.writef(")");
 	os.writef(" ]");
@@ -423,8 +407,8 @@ void OpenFile::printAll(OStream &os) {
 				os.writef("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
 			}
 			if(f->devNo == VFS_DEV_NO) {
-				sVFSNode *n = f->node;
-				if(n->name == NULL)
+				VFSNode *n = f->node;
+				if(!n->isAlive())
 					os.writef("\t\tFile: <destroyed>\n");
 				else
 					os.writef("\t\tFile: '%s'\n",f->getPath());
@@ -445,7 +429,7 @@ size_t OpenFile::getCount() {
 	return count;
 }
 
-int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode *n,OpenFile **f) {
+int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
 	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
 	size_t i;
 	bool isDrvUse = false;
@@ -456,7 +440,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode
 
 	if(devNo == VFS_DEV_NO) {
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
-		isDrvUse = (n->mode & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
+		isDrvUse = (n->getMode() & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
 	/* doesn't work for channels and pipes */
 	if(isDrvUse && (flags & VFS_EXCLUSIVE))
@@ -518,8 +502,8 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,sVFSNode
 
 	/* count references of virtual nodes */
 	if(devNo == VFS_DEV_NO) {
-		n->refCount++;
-		e->node = n;
+		n->increaseRefs();
+		e->node = const_cast<VFSNode*>(n);
 	}
 	else
 		e->node = NULL;

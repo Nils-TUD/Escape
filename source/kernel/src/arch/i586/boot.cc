@@ -41,12 +41,14 @@
 #include <sys/vfs/file.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/log.h>
 #include <sys/boot.h>
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
+#include <sys/cppsupport.h>
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
@@ -180,8 +182,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	char loadingStatus[256];
 	size_t i;
 	int child,res;
-	inode_t nodeNo;
-	sVFSNode *mbmods;
+	VFSNode *node;
 	BootModule *mod;
 
 	/* it's not good to do this twice.. */
@@ -189,20 +190,21 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		return 0;
 
 	/* create module files */
-	res = vfs_node_resolvePath("/system/mbmods",&nodeNo,NULL,0);
+	res = VFSNode::request("/system/mbmods",&node,NULL,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /system/mbmods");
-	mbmods = vfs_node_get(nodeNo);
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		char *modname = (char*)Cache::alloc(12);
 		itoa(modname,12,i);
-		sVFSNode *n = vfs_file_create_for(KERNEL_PID,mbmods,modname,(void*)mod->modStart,
+		VFSNode *n = create<VFSFile>(KERNEL_PID,node,modname,(void*)mod->modStart,
 				mod->modEnd - mod->modStart);
-		if(!n || vfs_node_chmod(KERNEL_PID,vfs_node_getNo(n),S_IRUSR | S_IRGRP | S_IROTH) != 0)
+		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IRGRP | S_IROTH) != 0)
 			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
+		VFSNode::release(n);
 		mod++;
 	}
+	VFSNode::release(node);
 
 	/* load modules */
 	loadedMods = true;
@@ -237,7 +239,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
-		while(vfs_node_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
+		while(VFSNode::request(argv[1],&node,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
@@ -245,6 +247,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 			Timer::sleepFor(Thread::getRunning()->getTid(),20,true);
 			Thread::switchAway();
 		}
+		VFSNode::release(node);
 
 		Boot::taskFinished();
 		mod++;

@@ -20,14 +20,29 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
 
-/**
- * Creates a new directory with name <name> in <parent>
- *
- * @param pid the process-id
- * @param parent the parent-node
- * @param name the name
- * @return the created node or NULL
- */
-sVFSNode *vfs_dir_create(pid_t pid,sVFSNode *parent,char *name);
+class VFSDir : public VFSNode {
+	/* VFS-directory-entry (equal to the direntry of ext2) */
+	struct VFSDirEntry {
+		inode_t nodeNo;
+		uint16_t recLen;
+		uint16_t nameLen;
+		/* name follows (up to 255 bytes) */
+	} A_PACKED;
+
+public:
+	/**
+	 * Creates a new directory with name <name> in <parent>
+	 *
+	 * @param pid the process-id
+	 * @param parent the parent-node
+	 * @param name the name
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
+	 */
+	explicit VFSDir(pid_t pid,VFSNode *parent,char *name,bool &success);
+
+	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence);
+	virtual size_t getSize(pid_t pid) const;
+	virtual ssize_t read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count);
+};

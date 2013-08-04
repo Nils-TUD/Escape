@@ -17,28 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <sys/common.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/link.h>
-#include <sys/vfs/node.h>
-#include <sys/task/proc.h>
 
-sVFSNode *vfs_link_create(pid_t pid,sVFSNode *parent,char *name,const sVFSNode *target) {
-	sVFSNode *child = vfs_node_create(pid,name);
-	if(child == NULL)
+template<class T,typename... ARGS>
+static inline T *create(ARGS ... args) {
+	bool succ = true;
+	T *t = new T(args...,succ);
+	if(!succ) {
+		delete t;
 		return NULL;
-	child->read = NULL;
-	child->write = NULL;
-	child->seek = NULL;
-	child->getSize = NULL;
-	child->destroy = NULL;
-	child->close = NULL;
-	child->mode = S_IFLNK | (target->mode & MODE_PERM);
-	child->data = (void*)target;
-	vfs_node_append(parent,child);
-	return child;
-}
-
-sVFSNode *vfs_link_resolve(const sVFSNode *node) {
-	return (sVFSNode*)node->data;
+	}
+	return t;
 }

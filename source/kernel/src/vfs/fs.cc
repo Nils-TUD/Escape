@@ -25,12 +25,13 @@
 #include <sys/mem/virtmem.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <sys/vfs/fsmsgs.h>
+#include <sys/vfs/fs.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/openfile.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
+#include <sys/cppsupport.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
@@ -38,38 +39,23 @@
 
 #define FS_PATH				"/dev/fs"
 
-typedef struct {
-	uint8_t active;
-	OpenFile *file;
-	sVFSNode *node;
-} sFSChan;
+klock_t VFSFS::fsChanLock;
 
-/* for istat() and stat() */
-static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,sFileInfo *info);
-/* The request-handler for sending a path and receiving a result */
-static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd);
-
-/* for requesting and releasing a file for communication */
-static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,OpenFile **file);
-static void vfs_fsmsgs_releaseFile(pid_t pid,OpenFile *file);
-
-static klock_t fsChanLock;
-
-void vfs_fsmsgs_removeProc(pid_t pid) {
+void VFSFS::removeProc(pid_t pid) {
 	Proc *p = Proc::getByPid(pid);
 	sSLNode *n;
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		sFSChan *chan = (sFSChan*)n->data;
+		FSChan *chan = (FSChan*)n->data;
 		chan->file->closeFile(pid);
 	}
 	sll_clear(&p->fsChans,true);
 }
 
-int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
+int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 	const Proc *p = Proc::getByPid(pid);
 	ssize_t res = -ENOMEM;
 	size_t pathLen = strlen(path);
-	sVFSNode *node;
+	VFSNode *node;
 	OpenFile *fs;
 	sStrMsg msg;
 	inode_t inode;
@@ -77,7 +63,7 @@ int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 
 	if(pathLen > MAX_MSGSTR_LEN)
 		return -ENAMETOOLONG;
-	res = vfs_fsmsgs_requestFile(pid,&node,&fs);
+	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -106,26 +92,26 @@ int vfs_fsmsgs_openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 	}
 
 	/* now open the file */
-	res = VFS::openFile(pid,flags,inode,dev,file);
+	res = VFS::openFile(pid,flags,NULL,inode,dev,file);
 
 error:
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 	return res;
 }
 
-int vfs_fsmsgs_istat(pid_t pid,inode_t ino,dev_t devNo,USER sFileInfo *info) {
-	return vfs_fsmsgs_doStat(pid,NULL,ino,devNo,info);
+int VFSFS::istat(pid_t pid,inode_t ino,dev_t devNo,USER sFileInfo *info) {
+	return doStat(pid,NULL,ino,devNo,info);
 }
 
-int vfs_fsmsgs_stat(pid_t pid,const char *path,USER sFileInfo *info) {
-	return vfs_fsmsgs_doStat(pid,path,0,0,info);
+int VFSFS::stat(pid_t pid,const char *path,USER sFileInfo *info) {
+	return doStat(pid,path,0,0,info);
 }
 
-static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileInfo *info) {
+int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileInfo *info) {
 	ssize_t res = -ENOMEM;
 	size_t pathLen = 0;
 	OpenFile *fs;
-	sVFSNode *node;
+	VFSNode *node;
 	sMsg msg;
 
 	if(path) {
@@ -133,7 +119,7 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 		if(pathLen > MAX_MSGSTR_LEN)
 			return -ENAMETOOLONG;
 	}
-	res = vfs_fsmsgs_requestFile(pid,&node,&fs);
+	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -167,17 +153,17 @@ static int vfs_fsmsgs_doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,
 		memcpy(info,msg.data.d,sizeof(sFileInfo));
 
 error:
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 	return res;
 }
 
-ssize_t vfs_fsmsgs_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,off_t offset,
+ssize_t VFSFS::read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,off_t offset,
 		size_t count) {
 	ssize_t res;
-	sVFSNode *node;
+	VFSNode *node;
 	sArgsMsg msg;
 	OpenFile *fs;
-	res = vfs_fsmsgs_requestFile(pid,&node,&fs);
+	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -208,17 +194,17 @@ ssize_t vfs_fsmsgs_read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,
 	while(res == -EINTR);
 
 error:
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 	return res;
 }
 
-ssize_t vfs_fsmsgs_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *buffer,off_t offset,
+ssize_t VFSFS::write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *buffer,off_t offset,
 		size_t count) {
 	ssize_t res = -ENOMEM;
-	sVFSNode *node;
+	VFSNode *node;
 	sArgsMsg msg;
 	OpenFile *fs;
-	res = vfs_fsmsgs_requestFile(pid,&node,&fs);
+	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -240,57 +226,57 @@ ssize_t vfs_fsmsgs_write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *
 	res = msg.arg1;
 
 error:
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 	return res;
 }
 
-int vfs_fsmsgs_chmod(pid_t pid,const char *path,mode_t mode) {
-	return vfs_fsmsgs_pathReqHandler(pid,path,NULL,mode,MSG_FS_CHMOD);
+int VFSFS::chmod(pid_t pid,const char *path,mode_t mode) {
+	return pathReqHandler(pid,path,NULL,mode,MSG_FS_CHMOD);
 }
 
-int vfs_fsmsgs_chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
+int VFSFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	/* TODO better solution? */
-	return vfs_fsmsgs_pathReqHandler(pid,path,NULL,(uid << 16) | (gid & 0xFFFF),MSG_FS_CHOWN);
+	return pathReqHandler(pid,path,NULL,(uid << 16) | (gid & 0xFFFF),MSG_FS_CHOWN);
 }
 
-int vfs_fsmsgs_link(pid_t pid,const char *oldPath,const char *newPath) {
-	return vfs_fsmsgs_pathReqHandler(pid,oldPath,newPath,0,MSG_FS_LINK);
+int VFSFS::link(pid_t pid,const char *oldPath,const char *newPath) {
+	return pathReqHandler(pid,oldPath,newPath,0,MSG_FS_LINK);
 }
 
-int vfs_fsmsgs_unlink(pid_t pid,const char *path) {
-	return vfs_fsmsgs_pathReqHandler(pid,path,NULL,0,MSG_FS_UNLINK);
+int VFSFS::unlink(pid_t pid,const char *path) {
+	return pathReqHandler(pid,path,NULL,0,MSG_FS_UNLINK);
 }
 
-int vfs_fsmsgs_mkdir(pid_t pid,const char *path) {
-	return vfs_fsmsgs_pathReqHandler(pid,path,NULL,0,MSG_FS_MKDIR);
+int VFSFS::mkdir(pid_t pid,const char *path) {
+	return pathReqHandler(pid,path,NULL,0,MSG_FS_MKDIR);
 }
 
-int vfs_fsmsgs_rmdir(pid_t pid,const char *path) {
-	return vfs_fsmsgs_pathReqHandler(pid,path,NULL,0,MSG_FS_RMDIR);
+int VFSFS::rmdir(pid_t pid,const char *path) {
+	return pathReqHandler(pid,path,NULL,0,MSG_FS_RMDIR);
 }
 
-int vfs_fsmsgs_mount(pid_t pid,const char *device,const char *path,uint type) {
-	return vfs_fsmsgs_pathReqHandler(pid,device,path,type,MSG_FS_MOUNT);
+int VFSFS::mount(pid_t pid,const char *device,const char *path,uint type) {
+	return pathReqHandler(pid,device,path,type,MSG_FS_MOUNT);
 }
 
-int vfs_fsmsgs_unmount(pid_t pid,const char *path) {
-	return vfs_fsmsgs_pathReqHandler(pid,path,NULL,0,MSG_FS_UNMOUNT);
+int VFSFS::unmount(pid_t pid,const char *path) {
+	return pathReqHandler(pid,path,NULL,0,MSG_FS_UNMOUNT);
 }
 
-int vfs_fsmsgs_sync(pid_t pid) {
+int VFSFS::sync(pid_t pid) {
 	OpenFile *fs;
-	int res = vfs_fsmsgs_requestFile(pid,NULL,&fs);
+	int res = requestFile(pid,NULL,&fs);
 	if(res < 0)
 		return res;
 	res = fs->sendMsg(pid,MSG_FS_SYNC,NULL,0,NULL,0);
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 	return res;
 }
 
-void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
+void VFSFS::close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 	sArgsMsg msg;
 	OpenFile *fs;
-	int res = vfs_fsmsgs_requestFile(pid,NULL,&fs);
+	int res = requestFile(pid,NULL,&fs);
 	if(res < 0)
 		return;
 
@@ -299,14 +285,14 @@ void vfs_fsmsgs_close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 	msg.arg2 = devNo;
 	fs->sendMsg(pid,MSG_FS_CLOSE,&msg,sizeof(msg),NULL,0);
 	/* no response necessary, therefore no wait, too */
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 }
 
-static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
+int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = -ENOMEM;
 	const Proc *p = Proc::getByPid(pid);
 	OpenFile *fs;
-	sVFSNode *node;
+	VFSNode *node;
 	sStrMsg msg;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
@@ -314,7 +300,7 @@ static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *pat
 	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
 		return -ENAMETOOLONG;
 
-	res = vfs_fsmsgs_requestFile(pid,&node,&fs);
+	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -339,23 +325,22 @@ static int vfs_fsmsgs_pathReqHandler(pid_t pid,const char *path1,const char *pat
 	res = msg.arg1;
 
 error:
-	vfs_fsmsgs_releaseFile(pid,fs);
+	releaseFile(pid,fs);
 	return res;
 }
 
-static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,OpenFile **file) {
+int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	int err;
 	sSLNode *n;
-	sFSChan *chan;
-	sVFSNode *child,*fsnode;
-	inode_t nodeNo;
+	FSChan *chan;
+	VFSNode *child,*fsnode;
 	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
 	SpinLock::acquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		chan = (sFSChan*)n->data;
+		chan = (FSChan*)n->data;
 		if(!chan->active) {
-			if(chan->node->name == NULL) {
+			if(!chan->node->isAlive()) {
 				/* remove channel */
 				sll_removeFirstWith(&p->fsChans,chan);
 				Cache::free(chan);
@@ -372,30 +357,26 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,OpenFile **file) {
 	}
 	SpinLock::release(&fsChanLock);
 
-	chan = (sFSChan*)Cache::alloc(sizeof(sFSChan));
+	chan = (FSChan*)Cache::alloc(sizeof(FSChan));
 	if(!chan)
 		return -ENOMEM;
 	chan->active = true;
 
 	/* resolve path to fs */
-	err = vfs_node_resolvePath(FS_PATH,&nodeNo,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
+	err = VFSNode::request(FS_PATH,&fsnode,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
 	if(err < 0)
 		goto errorChan;
 
 	/* create usage-node */
-	fsnode = vfs_node_request(nodeNo);
-	if(!fsnode)
-		goto errorChan;
-	child = vfs_chan_create(pid,fsnode);
+	child = create<VFSChannel>(pid,fsnode);
 	if(child == NULL) {
 		err = -ENOMEM;
 		goto errorNode;
 	}
 	chan->node = child;
-	nodeNo = vfs_node_getNo(child);
 
 	/* open file */
-	err = VFS::openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,nodeNo,VFS_DEV_NO,&chan->file);
+	err = VFS::openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,child,child->getNo(),VFS_DEV_NO,&chan->file);
 	if(err < 0)
 		goto errorChild;
 	SpinLock::acquire(&fsChanLock);
@@ -406,27 +387,29 @@ static int vfs_fsmsgs_requestFile(pid_t pid,sVFSNode **node,OpenFile **file) {
 	SpinLock::release(&fsChanLock);
 	if(node)
 		*node = chan->node;
-	vfs_node_release(fsnode);
+	VFSNode::release(child);
+	VFSNode::release(fsnode);
 	*file = chan->file;
 	return 0;
 
 errorClose:
 	chan->file->closeFile(pid);
 errorChild:
-	vfs_node_destroy(child);
+	VFSNode::release(child);
+	VFSNode::release(child);
 errorNode:
-	vfs_node_release(fsnode);
+	VFSNode::release(fsnode);
 errorChan:
 	Cache::free(chan);
 	return err;
 }
 
-static void vfs_fsmsgs_releaseFile(pid_t pid,OpenFile *file) {
+void VFSFS::releaseFile(pid_t pid,OpenFile *file) {
 	sSLNode *n;
 	const Proc *p = Proc::getByPid(pid);
 	SpinLock::acquire(&fsChanLock);
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		sFSChan *chan = (sFSChan*)n->data;
+		FSChan *chan = (FSChan*)n->data;
 		if(chan->file == file) {
 			chan->active = false;
 			break;
@@ -435,14 +418,13 @@ static void vfs_fsmsgs_releaseFile(pid_t pid,OpenFile *file) {
 	SpinLock::release(&fsChanLock);
 }
 
-void vfs_fsmsgs_printFSChans(OStream &os,const Proc *p) {
+void VFSFS::printFSChans(OStream &os,const Proc *p) {
 	sSLNode *n;
 	SpinLock::acquire(&fsChanLock);
 	os.writef("FS-Channels:\n");
 	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		sFSChan *chan = (sFSChan*)n->data;
-		os.writef("\t%s (%s)\n",vfs_node_getPath(vfs_node_getNo(chan->node)),
-				chan->active ? "active" : "not active");
+		FSChan *chan = (FSChan*)n->data;
+		os.writef("\t%s (%s)\n",chan->node->getPath(),chan->active ? "active" : "not active");
 	}
 	SpinLock::release(&fsChanLock);
 }

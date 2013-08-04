@@ -29,6 +29,7 @@
 #include <sys/log.h>
 #include <sys/spinlock.h>
 #include <sys/config.h>
+#include <sys/cppsupport.h>
 #include <esc/esccodes.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -36,31 +37,29 @@
 
 #define TAB_WIDTH		4
 #define LOG_DIR			"/system"
-#define LOG_FILENAME	"log"
 #define DUMMY_STDIN		"/system/stdin"
 
 Log Log::inst;
 
 void Log::vfsIsReady() {
-	inode_t inodeNo;
-	sVFSNode *logNode;
+	VFSNode *logNode,*dir,*stdin;
 	OpenFile *inFile;
-	char *nameCpy;
 	pid_t pid = Proc::getRunning();
 
 	/* open log-file */
-	assert(vfs_node_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
-	nameCpy = strdup(LOG_FILENAME);
-	assert(nameCpy != NULL);
-	logNode = vfs_file_create(KERNEL_PID,vfs_node_get(inodeNo),nameCpy,vfs_file_read,write);
+	assert(VFSNode::request(LOG_DIR,&dir,NULL,VFS_CREATE) == 0);
+	logNode = create<LogFile>(KERNEL_PID,dir);
 	assert(logNode != NULL);
-	assert(VFS::openFile(KERNEL_PID,VFS_WRITE,vfs_node_getNo(logNode),VFS_DEV_NO,&inst.logFile) == 0);
+	VFSNode::release(dir);
+	assert(VFS::openFile(KERNEL_PID,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);
+	VFSNode::release(logNode);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
-	assert(vfs_node_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
-	assert(VFS::openFile(pid,VFS_READ,inodeNo,VFS_DEV_NO,&inFile) == 0);
+	assert(VFSNode::request(DUMMY_STDIN,&stdin,NULL,VFS_CREATE) == 0);
+	assert(VFS::openFile(pid,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
+	VFSNode::release(stdin);
 	assert(FileDesc::assoc(inFile) == 0);
 	assert(FileDesc::assoc(inst.logFile) == 1);
 	assert(FileDesc::assoc(inst.logFile) == 2);
@@ -117,8 +116,7 @@ bool Log::escape(const char **str) {
 	return true;
 }
 
-ssize_t Log::write(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,
-		off_t offset,size_t count) {
+ssize_t Log::LogFile::write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count) {
 	if(Config::get(Config::LOG) && Log::get().logToSer) {
 		char *str = (char*)buffer;
 		size_t i;
@@ -126,7 +124,7 @@ ssize_t Log::write(pid_t pid,OpenFile *file,sVFSNode *node,const void *buffer,
 			toSerial(str[i]);
 	}
 	/* ignore errors here */
-	vfs_file_write(pid,file,node,buffer,offset,count);
+	VFSFile::write(pid,file,buffer,offset,count);
 	return count;
 }
 

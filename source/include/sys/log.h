@@ -22,11 +22,20 @@
 #include <sys/common.h>
 #include <sys/spinlock.h>
 #include <sys/ostream.h>
+#include <sys/vfs/file.h>
 #include <sys/vfs/vfs.h>
 #include <stdarg.h>
 
 class Log : public OStream {
 	static const size_t BUF_SIZE		= 2048;
+
+	class LogFile : public VFSFile {
+	public:
+		explicit LogFile(pid_t pid,VFSNode *parent,bool &success)
+				: VFSFile(pid,parent,(char*)"log",success) {
+		}
+		virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+	};
 
 	explicit Log() : OStream(), buf(), bufPos(), col(), logToSer(true), logFile(), vfsReady(), lock() {
 	}
@@ -56,7 +65,6 @@ private:
 	virtual bool escape(const char **str);
 
 	static void toSerial(char c);
-	static ssize_t write(pid_t pid,OpenFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
 	void flush();
 
 	/* don't use a heap here to prevent problems */

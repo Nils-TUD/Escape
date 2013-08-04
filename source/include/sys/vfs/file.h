@@ -20,55 +20,50 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
 
-/**
- * Creates a new file with name <name> in <parent>
- *
- * @param pid the process-id
- * @param parent the parent-node
- * @param name the name
- * @param read the read-function; note that if you use vfs_file_read, it is expected that you
- * 	either specify vfs_file_write, too, or use it.
- * @param write the write-function
- * @return the created node or NULL
- */
-sVFSNode *vfs_file_create(pid_t pid,sVFSNode *parent,char *name,fRead read,fWrite write);
+class VFSFile : public VFSNode {
+	/* the initial size of the write-cache for file-nodes */
+	static const size_t VFS_INITIAL_WRITECACHE		= 128;
 
-/**
- * Creates a new file for the memory <data>..<data>+<len>.
- *
- * @param pid the process-id
- * @param parent the parent-node
- * @param name the name
- * @param data the data to make available with that file
- * @param len the length of the data in bytes
- * @return the created node or NULL
- */
-sVFSNode *vfs_file_create_for(pid_t pid,sVFSNode *parent,char *name,void *data,size_t len);
+public:
+	/**
+	 * Creates a new file with name <name> in <parent>
+	 *
+	 * @param pid the process-id
+	 * @param parent the parent-node
+	 * @param name the name
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
+	 */
+	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,bool &success);
 
-/**
- * The default-read-handler
- *
- * @param pid the process-id
- * @param file the file
- * @param node the file-node
- * @param buffer to buffer to write into
- * @param offset the offset
- * @param count the number of bytes to read
- * @return the number of read bytes
- */
-ssize_t vfs_file_read(pid_t pid,OpenFile *file,sVFSNode *node,void *buffer,off_t offset,size_t count);
+	/**
+	 * Creates a new file for the memory <data>..<data>+<len>.
+	 *
+	 * @param pid the process-id
+	 * @param parent the parent-node
+	 * @param name the name
+	 * @param data the data to make available with that file
+	 * @param len the length of the data in bytes
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
+	 */
+	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,void *data,size_t len,bool &success);
 
-/**
- * The default write-handler
- *
- * @param pid the process-id
- * @param file the file
- * @param n the file-node
- * @param buffer to buffer to read from
- * @param offset the offset
- * @param count the number of bytes to write
- * @return the number of written bytes
- */
-ssize_t vfs_file_write(pid_t pid,OpenFile *file,sVFSNode *n,const void *buffer,off_t offset,size_t count);
+	/**
+	 * Destructor
+	 */
+	virtual ~VFSFile();
+
+	virtual size_t getSize(pid_t pid) const;
+	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence);
+	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
+	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+
+private:
+	bool dynamic;
+	/* size of the buffer */
+	size_t size;
+	/* currently used size */
+	off_t pos;
+	void *data;
+};

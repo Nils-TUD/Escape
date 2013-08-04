@@ -116,8 +116,10 @@ static int getRequests(A_UNUSED void *arg) {
 		error("Unable to announce signal-handler");
 	do {
 		int cfd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
-		if(cfd < 0)
-			printe("[TEST] Unable to get work");
+		if(cfd < 0) {
+			if(cfd != -EINTR)
+				printe("[TEST] Unable to get work");
+		}
 		else {
 			sTestRequest *req = (sTestRequest*)malloc(sizeof(sTestRequest));
 			req->fd = cfd;

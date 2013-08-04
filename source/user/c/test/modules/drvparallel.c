@@ -60,8 +60,10 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		sMsg msg;
 		msgid_t mid;
 		int fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			fprintf(stderr,"Unable to get work\n");
+		if(fd < 0) {
+			if(fd != -EINTR)
+				fprintf(stderr,"Unable to get work\n");
+		}
 		else {
 			int tid;
 			sTask *task = (sTask*)malloc(sizeof(sTask));

@@ -146,21 +146,28 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 	if(f && (rflags & MAP_SHARED)) {
 		VirtMem *virtmem = NULL;
 		uintptr_t binVirt = getBinary(f,virtmem);
-		if(binVirt != 0)
-			return virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0);
+		if(binVirt != 0) {
+			if(virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0) == 0)
+				return 0;
+			/* if it failed, try to map it on our own. maybe we couldn't lock the other process */
+		}
 	}
 
 	/* get the attributes of the region (depending on type) */
-	if(!acquire())
-		return -ESRCH;
+	if(!acquire()) {
+		res = -ESRCH;
+		goto error;
+	}
 
 	/* if it's a data-region.. */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE)) {
 		/* if we already have the real data-region */
 		if(dataAddr && dataAddr < FREE_AREA_BEGIN) {
 			/* using a fixed address is not allowed in this case */
-			if(rflags & MAP_FIXED)
-				return -EINVAL;
+			if(rflags & MAP_FIXED) {
+				res = -EINVAL;
+				goto error;
+			}
 			/* in every case, it can't be growable */
 			rflags &= ~MAP_GROWABLE;
 		}
@@ -242,6 +249,7 @@ errReg:
 	reg->destroy();
 errProc:
 	release();
+error:
 	return res;
 }
 
@@ -471,15 +479,19 @@ uintptr_t VirtMem::getBinary(OpenFile *file,VirtMem *&binOwner) {
 	uintptr_t res = 0;
 	VMTree *tree = VMTree::reqTree();
 	for(; tree != NULL; tree = tree->getNext()) {
-		VMRegion *vm;
-		for(vm = tree->first(); vm != NULL; vm = vm->next) {
-			/* if its shareable and the binary fits, return region-number */
-			if((vm->reg->getFlags() & RF_SHAREABLE) && vm->reg->getFile() &&
-					vm->reg->getFile()->isSameFile(file)) {
-				res = vm->virt;
-				binOwner = tree->getVM();
-				break;
+		/* if we can't acquire the lock, don't consider this tree */
+		if(tree->getVM()->tryAquire()) {
+			VMRegion *vm;
+			for(vm = tree->first(); vm != NULL; vm = vm->next) {
+				/* if its shareable and the binary fits, return region-number */
+				if((vm->reg->getFlags() & RF_SHAREABLE) && vm->reg->getFile() &&
+						vm->reg->getFile()->isSameFile(file)) {
+					res = vm->virt;
+					binOwner = tree->getVM();
+					break;
+				}
 			}
+			tree->getVM()->release();
 		}
 	}
 	VMTree::relTree();

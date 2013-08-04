@@ -12,7 +12,7 @@ define('CALLERNAME',4);
 $allocs = array();
 $matches = array();
 $content = implode('',file($argv[1]));
-preg_match_all('/\[(A|F)\] ([\da-f]+) (\d+) (.*?);;;;/s',$content,$matches);
+preg_match_all('/\[(A|F)\] ([\da-f]+) (\d+) (.*)/',$content,$matches);
 
 foreach($matches[0] as $k => $v) {
 	$addr = $matches[ADDRESS][$k];

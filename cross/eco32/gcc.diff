@@ -1830,7 +1830,7 @@ diff -rcN src_org/gcc/gcc/config/escape.h src/gcc/gcc/config/escape.h
 --- src/gcc/gcc/config/escape.h	2011-05-24 12:13:21.000000000 +0200
 ***************
 *** 0 ****
---- 1,29 ----
+--- 1,31 ----
 +   #undef   STARTFILE_SPEC
 +   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
 +   
@@ -1860,6 +1860,8 @@ diff -rcN src_org/gcc/gcc/config/escape.h src/gcc/gcc/config/escape.h
 +   
 +   #undef TARGET_VERSION
 +   #define TARGET_VERSION fprintf(stderr, " (eco32 escape)");
++ 
++   #define NO_IMPLICIT_EXTERN_C
 diff -rcN src_org/gcc/gcc/config.gcc src/gcc/gcc/config.gcc
 *** src_org/gcc/gcc/config.gcc	2010-01-04 16:13:08.000000000 +0100
 --- src/gcc/gcc/config.gcc	2011-05-24 12:13:21.000000000 +0200

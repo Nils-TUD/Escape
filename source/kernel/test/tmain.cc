@@ -46,6 +46,7 @@
 #include "tvmreg.h"
 #include "tvmfreemap.h"
 #include "tphysmemareas.h"
+#include "tslist.h"
 /* TODO find a better solution */
 #ifdef __mmix__
 #include "arch/mmix/taddrspace.h"
@@ -95,6 +96,7 @@ void bspstart(BootInfo *bootinfo) {
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);
 	test_register(&tModPmemAreas);
+	test_register(&tModSList);
 	test_start();
 
 	/* stay here */

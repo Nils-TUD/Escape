@@ -37,10 +37,11 @@
 VFSPipe::VFSPipe(pid_t pid,VFSNode *p,bool &success)
 		: VFSNode(pid,generateId(pid),MODE_TYPE_PIPE | S_IRUSR | S_IWUSR,success), noReader(false),
 		  total(0), list() {
+	/* take care that the destructor works in case of failures */
+	sll_init(&list,slln_allocNode,slln_freeNode);
 	if(!success)
 		return;
 
-	sll_init(&list,slln_allocNode,slln_freeNode);
 	/* auto-destroy on the last close() */
 	refCount--;
 	append(p);

@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/slist.h>
+#include <sys/col/slist.h>
 
 class CopyOnWrite {
 	CopyOnWrite() = delete;

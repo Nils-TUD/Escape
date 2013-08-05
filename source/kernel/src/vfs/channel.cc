@@ -45,11 +45,12 @@ extern klock_t waitLock;
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR,success), used(false),
 		  closed(false), curClient(), sendList(), recvList() {
+	/* take care that the destructor works in case of failures */
+	sll_init(&sendList,slln_allocNode,slln_freeNode);
+	sll_init(&recvList,slln_allocNode,slln_freeNode);
 	if(!success)
 		return;
 
-	sll_init(&sendList,slln_allocNode,slln_freeNode);
-	sll_init(&recvList,slln_allocNode,slln_freeNode);
 	/* auto-destroy on the last close() */
 	refCount--;
 	append(p);

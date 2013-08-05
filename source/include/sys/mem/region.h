@@ -20,7 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <esc/sllist.h>
+#include <sys/mem/virtmem.h>
+#include <sys/col/islist.h>
 #include <sys/mutex.h>
 #include <assert.h>
 
@@ -39,11 +40,12 @@
 #define RF_GROWS_DOWN		128UL
 
 class OStream;
+class VirtMem;
 
 class Region {
-	Region() = delete;
-
 public:
+	typedef ISList<VirtMem*>::iterator iterator;
+
 	/**
 	 * Creates a new region with given attributes. Initially the process-collection that use the
 	 * region will be empty!
@@ -54,25 +56,27 @@ public:
 	 * @param offset the offset in the binary (ignored if bin is NULL)
 	 * @param pgFlags the flags of the pages (PF_*)
 	 * @param flags the flags of the region (RF_*)
-	 * @return the region or NULL if failed
+	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	static Region *create(OpenFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags);
+	explicit Region(OpenFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,
+	                ulong flags,bool &success);
 
 	/**
-	 * Clones this region for the given process. That means it copies the attributes from the
-	 * given region into a new one and puts <p> as the only user into it. It assumes that <reg>
+	 * Clones the given region for the given process. That means it copies the attributes from the
+	 * given region into a new one and puts <vm> as the only user into it. It assumes that <reg>
 	 * has just one user, too (since shared regions can't be cloned).
 	 * The page-flags are simply copied, i.e. you have to handle copy-on-write!
 	 *
-	 * @param p the process
-	 * @return the created region or NULL if failed
+	 * @param reg the region to clone
+	 * @param vm the virtmem-object
+	 * @param success whether it succeeded (is expected to be true before the call!)
 	 */
-	Region *clone(const void *p) const;
+	Region(const Region &reg,VirtMem *vm,bool &success);
 
 	/**
 	 * Destroys this region (regardless of the number of users!)
 	 */
-	void destroy();
+	~Region();
 
 	/**
 	 * Aquires the lock for this region
@@ -155,10 +159,13 @@ public:
 	}
 
 	/**
-	 * @return the linked list of virtmem objects that use this region
+	 * @return begin/end for the virtmem objects that use this region
 	 */
-	const sSLList *getVMList() const {
-		return &vms;
+	iterator vmbegin() {
+		return vms.begin();
+	}
+	iterator vmend() {
+		return vms.end();
 	}
 
 	/**
@@ -191,20 +198,20 @@ public:
 	void setSwapBlock(size_t pageIndex,ulong swapBlock);
 
 	/**
-	 * Adds the given process as user to the region
+	 * Adds the given virtmem-object as user to the region
 	 *
-	 * @param p the process
+	 * @param vm the virtmem-object
 	 * @return true if successfull
 	 */
-	bool addTo(const void *p);
+	bool addTo(VirtMem *vm);
 
 	/**
-	 * Removes the given process as user from the region
+	 * Removes the given virtmem-object as user from the region
 	 *
-	 * @param p the process
+	 * @param vm the virtmem-object
 	 * @return true if found
 	 */
-	bool remFrom(const void *p);
+	bool remFrom(VirtMem *vm);
 
 	/**
 	 * Grows/shrinks the region by <amount> pages. The added page-flags are always 0.
@@ -230,6 +237,11 @@ public:
 	void printFlags(OStream &os) const;
 
 private:
+	void init(ulong pgFlags,bool &success);
+
+	Region(const Region &) = delete;
+	Region &operator=(const Region &) = delete;
+
 	ulong flags;
 	OpenFile *file;
 	off_t offset;
@@ -238,7 +250,7 @@ private:
 	uint64_t timestamp;
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
-	sSLList vms;
+	ISList<VirtMem*> vms;
 	mutex_t lock;			/* lock for the procs-field (all others can't change or belong to
 	 	 	 	 	 	 	   exactly 1 process, which is locked anyway) */
 };
@@ -254,14 +266,14 @@ inline void Region::setSwapBlock(size_t pageIndex,ulong swapBlock) {
 }
 
 inline size_t Region::refCount() const {
-	return sll_length(&vms);
+	return vms.length();
 }
 
-inline bool Region::addTo(const void *p) {
-	assert(sll_length(&vms) == 0 || (flags & RF_SHAREABLE));
-	return sll_append(&vms,(void*)p);
+inline bool Region::addTo(VirtMem *vm) {
+	assert(vms.length() == 0 || (flags & RF_SHAREABLE));
+	return vms.append(vm);
 }
 
-inline bool Region::remFrom(const void *p) {
-	return sll_removeFirstWith(&vms,(void*)p) != -1;
+inline bool Region::remFrom(VirtMem *vm) {
+	return vms.remove(vm);
 }

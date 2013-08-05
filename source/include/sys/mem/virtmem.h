@@ -20,10 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/mem/region.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/vmfreemap.h>
 #include <sys/mem/paging.h>
+#include <sys/col/slist.h>
 
 #ifdef DEBUGGING
 #	define DISABLE_DEMLOAD	1
@@ -55,8 +55,9 @@
 class Proc;
 class Thread;
 class OStream;
+class Region;
 
-class VirtMem {
+class VirtMem : public SListItem {
 	friend class ProcBase;
 
 public:

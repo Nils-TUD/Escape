@@ -21,8 +21,42 @@
 
 #include <sys/common.h>
 
+#define CREATE(className,...)	({							\
+	bool __succ = true;										\
+	className *__t = new className(__VA_ARGS__,__succ);		\
+	if(!__succ) {											\
+		delete __t;											\
+		__t = NULL;											\
+	}														\
+	__t;													\
+})
+
+#define CLONE(className,obj,...)	CREATE(className,obj,__VA_ARGS__)
+
+/* unfortunatly, we can't use the template-solution atm, because eco32 uses still gcc 4.4.3 and it
+ * will probably be quite hard to move to a newer version because of the backend we would have to
+ * port :/ */
+#if 0
+template<typename T>
+struct remove_reference {
+    typedef T type;
+};
+template<typename T>
+struct remove_reference<T&> {
+    typedef T type;
+};
+template<typename T>
+struct remove_reference<T&&> {
+    typedef T type;
+};
+
+template<typename T>
+static constexpr T&& forward(typename remove_reference<T>::type& a) {
+	return static_cast<T&&>(a);
+}
+
 template<class T,typename... ARGS>
-static inline T *create(ARGS ... args) {
+static inline T *create(ARGS && ... args) {
 	bool succ = true;
 	T *t = new T(args...,succ);
 	if(!succ) {
@@ -31,3 +65,9 @@ static inline T *create(ARGS ... args) {
 	}
 	return t;
 }
+
+template<class T,typename... ARGS>
+static inline T *clone(const T &t,ARGS && ... args) {
+	return create<T>(t,forward<ARGS...>(args...));
+}
+#endif

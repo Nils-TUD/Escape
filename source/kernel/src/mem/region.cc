@@ -51,9 +51,33 @@
  * in the page-table-entries. That is, for 3/4 flags and the swap-block, if the page is not in
  * memory. */
 
-Region *Region::create(OpenFile *file,size_t bCount,size_t lCount,size_t offset,ulong pgFlags,ulong flags) {
-	size_t i,pageCount;
-	Region *reg;
+Region::Region(OpenFile *f,size_t bCount,size_t lCount,size_t off,ulong pgFlags,
+               ulong _flags,bool &success)
+		: flags(_flags), file(f), offset(off), loadCount(lCount), byteCount(bCount),
+		  timestamp(0), pfSize(), pageFlags(), vms(), lock() {
+	init(pgFlags,success);
+}
+
+Region::Region(const Region &reg,VirtMem *vm,bool &success)
+		: flags(reg.flags), file(reg.file), offset(reg.offset), loadCount(reg.loadCount),
+		  byteCount(reg.byteCount), timestamp(0), pfSize(), pageFlags(), vms(), lock() {
+	assert(!(flags & RF_SHAREABLE));
+	init(-1,success);
+	if(!success)
+		return;
+
+	/* increment references to swap-blocks */
+	size_t i,count = BYTES_2_PAGES(reg.byteCount);
+	for(i = 0; i < count; i++) {
+		pageFlags[i] = reg.pageFlags[i];
+		if(reg.pageFlags[i] & PF_SWAPPED)
+			SwapMap::incRefs(reg.getSwapBlock(i));
+	}
+	addTo(vm);
+}
+
+void Region::init(ulong pgFlags,bool &success) {
+	size_t i,pages;
 	/* a region can never be shareable AND growable. this way, we don't need to lock every region-
 	 * access. because either its growable, then there is only one process that uses the region,
 	 * whose region-stuff is locked anyway. or its shareable, then byteCount, pfSize and pageFlags
@@ -61,61 +85,31 @@ Region *Region::create(OpenFile *file,size_t bCount,size_t lCount,size_t offset,
 	assert((flags & (RF_SHAREABLE | RF_GROWABLE)) != (RF_SHAREABLE | RF_GROWABLE));
 	assert(pgFlags == (ulong)-1 || pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 
-	reg = (Region*)Cache::alloc(sizeof(Region));
-	if(reg == NULL)
-		return NULL;
-	sll_init(&reg->vms,slln_allocNode,slln_freeNode);
-	if(file) {
-		reg->offset = offset;
-		reg->file = file;
-		reg->loadCount = lCount;
+	if(!file) {
+		offset = 0;
+		loadCount = 0;
 	}
-	else {
-		reg->file = NULL;
-		reg->offset = 0;
-		reg->loadCount = 0;
-	}
-	reg->flags = flags;
-	reg->byteCount = bCount;
-	reg->timestamp = 0;
-	reg->lock = 0;
-	pageCount = BYTES_2_PAGES(bCount);
+
+	pages = BYTES_2_PAGES(byteCount);
 	/* if we have no pages, create the page-array with 1; using 0 will fail and this may actually
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
 	 * must exist. */
-	reg->pfSize = MAX(1,pageCount);
-	reg->pageFlags = (ulong*)Cache::alloc(reg->pfSize * sizeof(ulong));
-	if(reg->pageFlags == NULL) {
-		sll_clear(&reg->vms,false);
-		Cache::free(reg);
-		return NULL;
+	pfSize = MAX(1,pages);
+	pageFlags = (ulong*)Cache::alloc(pfSize * sizeof(ulong));
+	if(pageFlags == NULL) {
+		/* make sure that we don't touch pageFlags in the destructor */
+		byteCount = 0;
+		success = false;
+		return;
 	}
 	/* -1 means its initialized later (for reg_clone) */
 	if(pgFlags != (ulong)-1) {
-		for(i = 0; i < pageCount; i++)
-			reg->pageFlags[i] = pgFlags;
+		for(i = 0; i < pages; i++)
+			pageFlags[i] = pgFlags;
 	}
-	return reg;
 }
 
-Region *Region::clone(const void *p) const {
-	Region *c;
-	assert(!(flags & RF_SHAREABLE));
-	c = create(file,byteCount,loadCount,offset,-1,flags);
-	if(c) {
-		/* increment references to swap-blocks */
-		size_t i,count = BYTES_2_PAGES(byteCount);
-		for(i = 0; i < count; i++) {
-			c->pageFlags[i] = pageFlags[i];
-			if(pageFlags[i] & PF_SWAPPED)
-				SwapMap::incRefs(getSwapBlock(i));
-		}
-		c->addTo(p);
-	}
-	return c;
-}
-
-void Region::destroy() {
+Region::~Region() {
 	size_t i,pcount = BYTES_2_PAGES(byteCount);
 	/* first free the swapped out blocks */
 	for(i = 0; i < pcount; i++) {
@@ -123,8 +117,6 @@ void Region::destroy() {
 			SwapMap::free(getSwapBlock(i));
 	}
 	Cache::free(pageFlags);
-	sll_clear(&vms,false);
-	Cache::free(this);
 }
 
 size_t Region::pageCount(size_t *swapped) const {
@@ -186,7 +178,6 @@ ssize_t Region::grow(ssize_t amount) {
 
 void Region::print(OStream &os,uintptr_t virt) const {
 	size_t i,x;
-	sSLNode *n;
 	os.writef("\tSize: %zu bytes\n",byteCount);
 	os.writef("\tLoad: %zu bytes\n",loadCount);
 	os.writef("\tflags: ");
@@ -198,8 +189,8 @@ void Region::print(OStream &os,uintptr_t virt) const {
 	}
 	os.writef("\tTimestamp: %d\n",timestamp);
 	os.writef("\tProcesses: ");
-	for(n = sll_begin(&vms); n != NULL; n = n->next)
-		os.writef("%d ",((VirtMem*)n->data)->getPid());
+	for(auto it = vms.cbegin(); it != vms.cend(); ++it)
+		os.writef("%d ",(*it)->getPid());
 	os.writef("\n");
 	os.writef("\tPages (%d):\n",BYTES_2_PAGES(byteCount));
 	for(i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {

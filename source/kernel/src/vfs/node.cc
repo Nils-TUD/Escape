@@ -44,7 +44,7 @@
 
 /* we have to use the max-size of all VFSNode sub-classes. that's unfortunate, but I don't see a
  * better way */
-static constexpr size_t getMaxSize() {
+static size_t getMaxSize() {
 	return MAX(sizeof(VFSChannel),
 			MAX(sizeof(VFSDevice),
 			MAX(sizeof(VFSDir),
@@ -474,7 +474,7 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);
 	/* now create the node and pass the node-number back */
-	if((*child = create<VFSFile>(pid,dir,nameCpy)) == NULL) {
+	if((*child = CREATE(VFSFile,pid,dir,nameCpy)) == NULL) {
 		Cache::free(nameCpy);
 		return -ENOMEM;
 	}

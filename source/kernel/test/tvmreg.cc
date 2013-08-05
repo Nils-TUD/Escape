@@ -20,6 +20,8 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 #include <sys/mem/vmtree.h>
+#include <sys/mem/region.h>
+#include <sys/cppsupport.h>
 #include <sys/util.h>
 #include <esc/test.h>
 #include "testutils.h"
@@ -87,7 +89,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 
 	/* create */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
-		Region *r = Region::create(NULL,PAGE_SIZE,0,0,0,0);
+		Region *r = CREATE(Region,nullptr,PAGE_SIZE,0,0,0,0);
 		regs[i] = tree.add(r,addrs[i]);
 	}
 
@@ -102,7 +104,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 	/* remove */
 	for(i = 0; i < TEST_REG_COUNT; i++) {
 		Region *r = regs[i]->reg;
-		regs[i]->reg->destroy();
+		delete regs[i]->reg;
 		tree.remove(regs[i]);
 		reg = tree.getByAddr(addrs[i]);
 		test_assertPtr(reg,NULL);

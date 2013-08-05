@@ -368,7 +368,7 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 		goto errorChan;
 
 	/* create usage-node */
-	child = create<VFSChannel>(pid,fsnode);
+	child = CREATE(VFSChannel,pid,fsnode);
 	if(child == NULL) {
 		err = -ENOMEM;
 		goto errorNode;

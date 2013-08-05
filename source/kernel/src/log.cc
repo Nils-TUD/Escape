@@ -48,7 +48,7 @@ void Log::vfsIsReady() {
 
 	/* open log-file */
 	assert(VFSNode::request(LOG_DIR,&dir,NULL,VFS_CREATE) == 0);
-	logNode = create<LogFile>(KERNEL_PID,dir);
+	logNode = CREATE(LogFile,KERNEL_PID,dir);
 	assert(logNode != NULL);
 	VFSNode::release(dir);
 	assert(VFS::openFile(KERNEL_PID,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);

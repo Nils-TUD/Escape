@@ -30,6 +30,7 @@
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/openfile.h>
+#include <sys/cppsupport.h>
 #include <sys/spinlock.h>
 #include <sys/ostream.h>
 #include <sys/mutex.h>
@@ -193,7 +194,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 
 	/* create region */
 	res = -ENOMEM;
-	reg = Region::create(f,length,loadCount,offset,pgFlags,rflags);
+	reg = CREATE(Region,f,length,loadCount,offset,pgFlags,rflags);
 	if(!reg)
 		goto errProc;
 	if(!reg->addTo(this))
@@ -246,7 +247,7 @@ errMap:
 errAdd:
 	reg->remFrom(this);
 errReg:
-	reg->destroy();
+	delete reg;
 errProc:
 	release();
 error:
@@ -255,7 +256,6 @@ error:
 
 int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 	size_t i,pgcount;
-	sSLNode *n;
 	VMRegion *vmreg;
 	int res = -EPERM;
 
@@ -283,10 +283,9 @@ int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 	vmreg->reg->setFlags((vmreg->reg->getFlags() & ~(RF_WRITABLE | RF_EXECUTABLE)) | flags);
 
 	/* change mapping */
-	for(n = sll_begin(vmreg->reg->getVMList()); n != NULL; n = n->next) {
-		VirtMem *mp = (VirtMem*)n->data;
+	for(auto mp = vmreg->reg->vmbegin(); mp != vmreg->reg->vmend(); ++mp) {
 		/* the region may be mapped to a different virtual address */
-		VMRegion *mpreg = mp->regtree.getByReg(vmreg->reg);
+		VMRegion *mpreg = (*mp)->regtree.getByReg(vmreg->reg);
 		assert(mpreg != NULL);
 		for(i = 0; i < pgcount; i++) {
 			/* determine flags; we can't always mark it present.. */
@@ -298,7 +297,7 @@ int VirtMem::regctrl(uintptr_t addr,ulong flags) {
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
 			/* can't fail because of PG_KEEPFRM and because the page-table is always present */
-			assert(mp->getPageDir()->map(mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags) == 0);
+			assert((*mp)->getPageDir()->map(mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags) == 0);
 		}
 	}
 	res = 0;
@@ -329,7 +328,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 				break;
 
 			/* get VM-region of first process */
-			vm = (VirtMem*)sll_get(reg->getVMList(),0);
+			vm = *reg->vmbegin();
 			vmreg = vm->regtree.getByReg(reg);
 
 			/* find swap-block */
@@ -660,7 +659,7 @@ void VirtMem::doRemove(VMRegion *vm) {
 			dataAddr = 0;
 		/* now destroy region */
 		vm->reg->release();
-		vm->reg->destroy();
+		delete vm->reg;
 	}
 	else {
 		size_t sw;
@@ -775,7 +774,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 				nvm->reg = vm->reg;
 			}
 			else {
-				nvm->reg = vm->reg->clone(dst);
+				nvm->reg = CLONE(Region,*vm->reg,dst);
 				if(nvm->reg == NULL) {
 					vm->reg->release();
 					goto error;
@@ -1099,17 +1098,15 @@ bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 		PageDir::removeAccess();
 		/* if the pages weren't present so far, map them into every process that has this region */
 		if(!loadCount) {
-			sSLNode *n;
 			uint mapFlags = PG_PRESENT;
 			if(vm->reg->getFlags() & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
-			for(n = sll_begin(vm->reg->getVMList()); n != NULL; n = n->next) {
-				VirtMem *mp = (VirtMem*)n->data;
+			for(auto mp = vm->reg->vmbegin(); mp != vm->reg->vmend(); ++mp) {
 				/* the region may be mapped to a different virtual address */
-				VMRegion *mpreg = mp->regtree.getByReg(vm->reg);
+				VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 				/* can't fail */
-				assert(mp->getPageDir()->map(mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
-				mp->addShared(1);
+				assert((*mp)->getPageDir()->map(mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
+				(*mp)->addShared(1);
 			}
 		}
 	}
@@ -1119,7 +1116,6 @@ bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	int err;
 	void *tempBuf;
-	sSLNode *n;
 	frameno_t frame;
 	uint mapFlags;
 
@@ -1156,16 +1152,15 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		mapFlags |= PG_WRITABLE;
 	if(vm->reg->getFlags() & RF_EXECUTABLE)
 		mapFlags |= PG_EXECUTABLE;
-	for(n = sll_begin(vm->reg->getVMList()); n != NULL; n = n->next) {
-		VirtMem *mp = (VirtMem*)n->data;
+	for(auto mp = vm->reg->vmbegin(); mp != vm->reg->vmend(); ++mp) {
 		/* the region may be mapped to a different virtual address */
-		VMRegion *mpreg = mp->regtree.getByReg(vm->reg);
+		VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 		/* can't fail */
-		assert(mp->getPageDir()->map(mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
+		assert((*mp)->getPageDir()->map(mpreg->virt + (addr - vm->virt),&frame,1,mapFlags) == 0);
 		if(vm->reg->getFlags() & RF_SHAREABLE)
-			mp->addShared(1);
+			(*mp)->addShared(1);
 		else
-			mp->addOwn(1);
+			(*mp)->addOwn(1);
 	}
 	return true;
 
@@ -1244,25 +1239,22 @@ ssize_t VirtMem::getPgIdxForSwap(const Region *reg) {
 }
 
 void VirtMem::setSwappedOut(Region *reg,size_t index) {
-	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	reg->setPageFlags(index,reg->getPageFlags(index) | PF_SWAPPED);
-	for(n = sll_begin(reg->getVMList()); n != NULL; n = n->next) {
-		VirtMem *mp = (VirtMem*)n->data;
+	for(auto mp = reg->vmbegin(); mp != reg->vmend(); ++mp) {
 		/* the region may be mapped to a different virtual address */
-		VMRegion *mpreg = mp->regtree.getByReg(reg);
+		VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 		/* can't fail */
-		assert(mp->getPageDir()->map(mpreg->virt + offset,NULL,1,0) == 0);
+		assert((*mp)->getPageDir()->map(mpreg->virt + offset,NULL,1,0) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
-			mp->addShared(-1);
+			(*mp)->addShared(-1);
 		else
-			mp->addOwn(-1);
-		mp->addSwap(1);
+			(*mp)->addOwn(-1);
+		(*mp)->addSwap(1);
 	}
 }
 
 void VirtMem::setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
-	sSLNode *n;
 	uintptr_t offset = index * PAGE_SIZE;
 	uint flags = PG_PRESENT;
 	if(reg->getFlags() & RF_WRITABLE)
@@ -1271,17 +1263,16 @@ void VirtMem::setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 		flags |= PG_EXECUTABLE;
 	reg->setPageFlags(index,reg->getPageFlags(index) & ~PF_SWAPPED);
 	reg->setSwapBlock(index,0);
-	for(n = sll_begin(reg->getVMList()); n != NULL; n = n->next) {
-		VirtMem *mp = (VirtMem*)n->data;
+	for(auto mp = reg->vmbegin(); mp != reg->vmend(); ++mp) {
 		/* the region may be mapped to a different virtual address */
-		VMRegion *mpreg = mp->regtree.getByReg(reg);
+		VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 		/* can't fail */
-		assert(mp->getPageDir()->map(mpreg->virt + offset,&frameNo,1,flags) == 0);
+		assert((*mp)->getPageDir()->map(mpreg->virt + offset,&frameNo,1,flags) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
-			mp->addShared(1);
+			(*mp)->addShared(1);
 		else
-			mp->addOwn(1);
-		mp->addSwap(-1);
+			(*mp)->addOwn(1);
+		(*mp)->addSwap(-1);
 	}
 }
 

@@ -20,7 +20,11 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/mem/region.h>
+#include <sys/mutex.h>
+
+class Region;
+class VirtMem;
+class OStream;
 
 struct VMRegion {
 	Region *reg;
@@ -32,9 +36,6 @@ struct VMRegion {
 	/* for the linked list */
 	VMRegion *next;
 };
-
-class VirtMem;
-class OStream;
 
 class VMTree {
 public:

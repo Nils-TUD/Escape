@@ -24,6 +24,8 @@
 
 template<class T>
 class SList;
+template<class T>
+class ISList;
 template<class T, class It>
 class SListIteratorBase;
 
@@ -62,6 +64,8 @@ template<class T, class It>
 class SListIteratorBase {
     template<class T1>
     friend class SList;
+    template<class T1>
+    friend class ISList;
 
 public:
     explicit SListIteratorBase(T *n = nullptr) : _n(n) {
@@ -88,9 +92,9 @@ protected:
 };
 
 template<class T>
-class SListIterator : public SListIteratorBase<T, SListIterator<T> > {
+class SListIterator : public SListIteratorBase<T, SListIterator<T>> {
 public:
-    explicit SListIterator(T *n = nullptr) : SListIteratorBase<T, SListIterator<T> >(n) {
+    explicit SListIterator(T *n = nullptr) : SListIteratorBase<T, SListIterator<T>>(n) {
     }
 
     T & operator*() const {
@@ -102,9 +106,9 @@ public:
 };
 
 template<class T>
-class SListConstIterator : public SListIteratorBase<T, SListConstIterator<T> > {
+class SListConstIterator : public SListIteratorBase<T, SListConstIterator<T>> {
 public:
-    explicit SListConstIterator(T *n = nullptr) : SListIteratorBase<T, SListConstIterator<T> >(n) {
+    explicit SListConstIterator(T *n = nullptr) : SListIteratorBase<T, SListConstIterator<T>>(n) {
     }
 
     const T & operator*() const {
@@ -247,6 +251,15 @@ public:
 		if(!e->next())
 			_tail = p;
 		_len--;
+    }
+
+    /**
+     * Clears the list. Note that it leaves the elements untouched, i.e. the next-pointer isn't
+     * changed.
+     */
+    void clear() {
+    	_head = _tail = nullptr;
+    	_len = 0;
     }
 
 private:

@@ -21,11 +21,14 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
+#include <sys/slist.h>
 
 class CopyOnWrite {
 	CopyOnWrite() = delete;
 
-	struct Entry {
+	struct Entry : public SListItem {
+		explicit Entry(frameno_t frameNo) : SListItem(), frameNumber(frameNo), refCount(0) {
+		}
 		frameno_t frameNumber;
 		size_t refCount;
 	};
@@ -33,11 +36,6 @@ class CopyOnWrite {
 	static const size_t HEAP_SIZE	= 64;
 
 public:
-	/**
-	 * Initializes copy-on-write
-	 */
-	static void init();
-
 	/**
 	 * Handles a pagefault for given address. Assumes that the pagefault was caused by a write access
 	 * to a copy-on-write page!
@@ -82,6 +80,6 @@ public:
 private:
 	static Entry *getByFrame(frameno_t frameNo,bool dec);
 
-	static sSLList frames[];
+	static SList<Entry> frames[];
 	static klock_t lock;
 };

@@ -53,7 +53,6 @@ static const BootTask tasks[] = {
 	{"Initializing scheduler...",Sched::init},
 	{"Initializing terminator...",Terminator::init},
 	{"Start logging to VFS...",Log::vfsIsReady},
-	{"Initializing copy-on-write...",CopyOnWrite::init},
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},
 };

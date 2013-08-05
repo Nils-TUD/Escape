@@ -30,14 +30,8 @@
 #include <assert.h>
 #include <string.h>
 
-sSLList CopyOnWrite::frames[HEAP_SIZE];
+SList<CopyOnWrite::Entry> CopyOnWrite::frames[HEAP_SIZE];
 klock_t CopyOnWrite::lock;
-
-void CopyOnWrite::init(void) {
-	size_t i;
-	for(i = 0; i < HEAP_SIZE; i++)
-		sll_init(frames + i,slln_allocNode,slln_freeNode);
-}
 
 size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 	Entry *cow;
@@ -60,7 +54,7 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 	if(cow->refCount > 0)
 		PageDir::copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
-		Cache::free(cow);
+		delete cow;
 	SpinLock::release(&lock);
 	return 1;
 }
@@ -69,18 +63,12 @@ bool CopyOnWrite::add(frameno_t frameNo) {
 	SpinLock::acquire(&lock);
 	Entry *cow = getByFrame(frameNo,false);
 	if(!cow) {
-		cow = (Entry*)Cache::alloc(sizeof(Entry));
+		cow = new Entry(frameNo);
 		if(cow == NULL) {
 			SpinLock::release(&lock);
 			return false;
 		}
-		cow->frameNumber = frameNo;
-		cow->refCount = 0;
-		if(!sll_append(frames + (frameNo % HEAP_SIZE),cow)) {
-			Cache::free(cow);
-			SpinLock::release(&lock);
-			return false;
-		}
+		frames[frameNo % HEAP_SIZE].append(cow);
 	}
 	cow->refCount++;
 	SpinLock::release(&lock);
@@ -96,7 +84,7 @@ size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
 
 	*foundOther = cow->refCount > 0;
 	if(cow->refCount == 0)
-		Cache::free(cow);
+		delete cow;
 	SpinLock::release(&lock);
 	return 1;
 }
@@ -105,37 +93,30 @@ size_t CopyOnWrite::getFrmCount(void) {
 	size_t i,count = 0;
 	SpinLock::acquire(&lock);
 	for(i = 0; i < HEAP_SIZE; i++)
-		count += sll_length(frames + i);
+		count += frames[i].length();
 	SpinLock::release(&lock);
 	return count;
 }
 
 void CopyOnWrite::print(OStream &os) {
-	sSLNode *n;
-	Entry *cow;
-	size_t i;
 	os.writef("COW-Frames: (%zu frames)\n",getFrmCount());
-	for(i = 0; i < HEAP_SIZE; i++) {
+	for(size_t i = 0; i < HEAP_SIZE; i++) {
 		os.writef("\t%zu:\n",i);
-		for(n = sll_begin(frames + i); n != NULL; n = n->next) {
-			cow = (Entry*)n->data;
-			os.writef("\t\t%#x (%zu refs)\n",cow->frameNumber,cow->refCount);
-		}
+		for(auto it = frames[i].cbegin(); it != frames[i].cend(); ++it)
+			os.writef("\t\t%#x (%zu refs)\n",it->frameNumber,it->refCount);
 	}
 }
 
 CopyOnWrite::Entry *CopyOnWrite::getByFrame(frameno_t frameNo,bool dec) {
-	sSLNode *n,*p;
-	sSLList *list = frames + (frameNo % HEAP_SIZE);
-	p = NULL;
-	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
-		Entry *cow = (Entry*)n->data;
-		if(cow->frameNumber == frameNo) {
+	SList<Entry> *list = frames + (frameNo % HEAP_SIZE);
+	Entry *p = NULL;
+	for(auto it = list->begin(); it != list->end(); p = &*it, ++it) {
+		if(it->frameNumber == frameNo) {
 			if(dec) {
-				if(--cow->refCount == 0)
-					sll_removeNode(list,n,p);
+				if(--it->refCount == 0)
+					list->removeAt(p,&*it);
 			}
-			return cow;
+			return &*it;
 		}
 	}
 	return NULL;

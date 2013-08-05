@@ -30,6 +30,10 @@ typedef uintptr_t frameno_t;
 typedef uint klock_t;
 typedef uint mutex_t;
 
+#ifdef __eco32__
+#define nullptr					0
+#endif
+
 #ifndef NDEBUG
 #define DEBUGGING 1
 #endif

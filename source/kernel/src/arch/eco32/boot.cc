@@ -34,6 +34,7 @@
 #include <sys/task/terminator.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
+#include <sys/vfs/openfile.h>
 #include <sys/log.h>
 #include <sys/config.h>
 #include <sys/boot.h>

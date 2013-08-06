@@ -68,13 +68,6 @@ public:
 	static void free(void *p) asm("cache_free");
 
 	/**
-	 * @return the number of pages used by the cache
-	 */
-	static size_t getPageCount() {
-		return pages;
-	}
-
-	/**
 	 * @return the occupied memory
 	 */
 	static size_t getOccMem();
@@ -110,6 +103,5 @@ private:
 	static bool aafEnabled;
 #endif
 	static klock_t lock;
-	static size_t pages;
 	static Entry caches[];
 };

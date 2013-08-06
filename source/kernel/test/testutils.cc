@@ -28,7 +28,7 @@
 
 static size_t mappedPages;
 static size_t heapUsed,heapPages;
-static size_t cacheUsed,cachePages;
+static size_t cacheUsed;
 static size_t daPages;
 static size_t freeFrames;
 
@@ -37,7 +37,6 @@ void checkMemoryBefore(bool checkMappedPages) {
 		mappedPages = Proc::getCurPageDir()->getPageCount();
 	heapPages = KHeap::getPageCount();
 	heapUsed = KHeap::getUsedMem();
-	cachePages = Cache::getPageCount();
 	cacheUsed = Cache::getUsedMem();
 	daPages = DynArray::getTotalPages();
 	freeFrames = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT);
@@ -45,12 +44,11 @@ void checkMemoryBefore(bool checkMappedPages) {
 
 void checkMemoryAfter(bool checkMappedPages) {
 	size_t newHeapUsed,newHeapPages;
-	size_t newCacheUsed,newCachePages;
+	size_t newCacheUsed;
 	size_t newFreeFrames;
 	size_t newDaPages;
 	newHeapPages = KHeap::getPageCount();
 	newHeapUsed = KHeap::getUsedMem();
-	newCachePages = Cache::getPageCount();
 	newCacheUsed = Cache::getUsedMem();
 	newDaPages = DynArray::getTotalPages();
 	newFreeFrames = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT);
@@ -63,8 +61,7 @@ void checkMemoryAfter(bool checkMappedPages) {
 	/* the heap, cache and the dynamic-arrays might have been extended; this is not considered
 	 * as a memory-leak, since they are not free'd anyway. */
 	test_assertSize(
-		newFreeFrames +
-			((newDaPages + newHeapPages + newCachePages) - (daPages + heapPages + cachePages)),
+		newFreeFrames + ((newDaPages + newHeapPages) - (daPages + heapPages)),
 		freeFrames
 	);
 }

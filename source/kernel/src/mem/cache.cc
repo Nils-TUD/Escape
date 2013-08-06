@@ -38,7 +38,6 @@
 #define HEAP_THRESHOLD		512
 
 klock_t Cache::lock;
-size_t Cache::pages = 0;
 Cache::Entry Cache::caches[] = {
 	{16,0,0,NULL},
 	{32,0,0,NULL},
@@ -213,7 +212,6 @@ void *Cache::get(Entry *c,size_t i) {
 			return NULL;
 		}
 
-		pages += pageCount;
 		/* if the remaining space is big enough (it won't bring advantages to add dozens e.g. 8
 		 * byte large areas to the heap), add it to the fallback-heap */
 		if(rem >= HEAP_THRESHOLD)

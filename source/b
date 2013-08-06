@@ -69,6 +69,7 @@ help() {
 	echo "    dis=<prog>:              run objdump -SC <prog> (the cross-compiler version)"
 	echo "    elf=<prog>:              run readelf -a <prog> (the cross-compiler version)"
 	echo "    nm=<prog>:               run nm -SC <prog> (the cross-compiler version)"
+    echo "    constr=<prog>:           list the contructor calls of <prog>"
 	echo "    straddr=<prog> <str>:    search for the string <str> in <prog> and display"
 	echo "                             the addresses"
 	echo "    list:                    list the link-address of all programs"
@@ -139,7 +140,7 @@ case "$cmd" in
 			exit 1
 		fi
 		;;
-	straddr=*|dis=*|elf=*|nm=*|dbg=*)
+	straddr=*|dis=*|elf=*|constr=*|nm=*|dbg=*)
 		if [ "`echo $cmd | grep '^straddr='`" != "" ] && [ "$script" = "" ]; then
 			echo "Usage: $0 $cmd <string>" >&2
 			exit 1
@@ -225,6 +226,9 @@ case "$cmd" in
 	elf=*)
 		$crossdir/bin/$cross-readelf -aW $build/bin/$binary | c++filt | less
 		;;
+    constr=*)
+    	./tools/listconstr.sh $crossdir $cross $build/bin/$binary
+        ;;
 	nm=*)
 		$crossdir/bin/$cross-nm -SC $build/bin/$binary | sort | less
 		;;

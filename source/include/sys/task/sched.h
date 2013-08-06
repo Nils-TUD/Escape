@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <esc/sllist.h>
+#include <sys/col/islist.h>
 
 class Thread;
 class ThreadBase;
@@ -125,5 +125,5 @@ private:
 	static klock_t lock;
 	static Queue rdyQueues[];
 	static size_t rdyCount;
-	static sSLList idleThreads;
+	static ISList<Thread*> idleThreads;
 };

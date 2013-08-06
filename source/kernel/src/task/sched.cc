@@ -47,19 +47,18 @@
 klock_t Sched::lock;
 Sched::Queue Sched::rdyQueues[MAX_PRIO + 1];
 size_t Sched::rdyCount;
-sSLList Sched::idleThreads;
+ISList<Thread*> Sched::idleThreads;
 
 void Sched::init(void) {
 	size_t i;
 	rdyCount = 0;
 	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++)
 		qInit(rdyQueues + i);
-	sll_init(&idleThreads,slln_allocNode,slln_freeNode);
 }
 
 void Sched::addIdleThread(Thread *t) {
 	SpinLock::acquire(&lock);
-	sll_append(&idleThreads,t);
+	idleThreads.append(t);
 	SpinLock::release(&lock);
 }
 
@@ -71,7 +70,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	if(old) {
 		/* TODO it would be better to keep the idle-thread if we should idle again */
 		if(old->getFlags() & T_IDLE) {
-			sll_append(&idleThreads,old);
+			idleThreads.append(old);
 			old->setState(Thread::BLOCKED);
 		}
 		else {
@@ -130,7 +129,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	}
 	if(t == NULL) {
 		/* choose an idle-thread */
-		t = (Thread*)sll_removeFirst(&idleThreads);
+		t = idleThreads.removeFirst();
 		t->setState(Thread::RUNNING);
 	}
 	else {

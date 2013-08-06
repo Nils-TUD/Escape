@@ -159,6 +159,21 @@ public:
 	}
 
 	/**
+	 * Removes the first element from the list and returns it.
+	 *
+	 * @return the first element or NULL if the list is empty
+	 */
+	T removeFirst() {
+		T res = T();
+		Node *first = list.removeFirst();
+		if(first) {
+			res = first->data;
+			delete first;
+		}
+		return res;
+	}
+
+	/**
 	 * Clears the list, i.e. deletes all nodes.
 	 */
 	void clear() {

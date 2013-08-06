@@ -257,12 +257,36 @@ public:
 	}
 
 	/**
+	 * Removes the first element from the list and returns it.
+	 *
+	 * @return the first element or NULL if the list is empty
+	 */
+	T *removeFirst() {
+		if(!_len)
+			return nullptr;
+		T *res = &*begin();
+		removeAt(nullptr,res);
+		return res;
+	}
+
+	/**
 	 * Clears the list. Note that it leaves the elements untouched, i.e. the next-pointer isn't
 	 * changed.
 	 */
 	void clear() {
 		_head = _tail = nullptr;
 		_len = 0;
+	}
+
+	/**
+	 * Deletes all elements in this list and clears the list.
+	 */
+	void deleteAll() {
+		for(auto it = begin(); it != end(); ) {
+			auto old = it++;
+			delete &*old;
+		}
+		clear();
 	}
 
 private:

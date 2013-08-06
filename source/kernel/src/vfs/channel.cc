@@ -45,9 +45,6 @@ extern klock_t waitLock;
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR,success), used(false),
 		  closed(false), curClient(), sendList(), recvList() {
-	/* take care that the destructor works in case of failures */
-	sll_init(&sendList,slln_allocNode,slln_freeNode);
-	sll_init(&recvList,slln_allocNode,slln_freeNode);
 	if(!success)
 		return;
 
@@ -60,8 +57,8 @@ void VFSChannel::invalidate() {
 	/* we have to reset the last client for the device here */
 	if(parent)
 		static_cast<VFSDevice*>(parent)->clientRemoved(this);
-	sll_clear(&recvList,true);
-	sll_clear(&sendList,true);
+	recvList.deleteAll();
+	sendList.deleteAll();
 }
 
 int VFSChannel::isSupported(int op) const {
@@ -134,7 +131,7 @@ void VFSChannel::close(pid_t pid,OpenFile *file) {
 			 * (it means that the client has already closed the file) */
 			/* note also that we can assume that the driver is still running since we
 			 * would have deleted the whole device-node otherwise */
-			if(sll_length(&sendList) == 0)
+			if(sendList.length() == 0)
 				unref();
 			else
 				closed = true;
@@ -156,7 +153,7 @@ off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whenc
 }
 
 size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
-	return sll_length(&sendList) + sll_length(&recvList);
+	return sendList.length() + recvList.length();
 }
 
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
@@ -247,7 +244,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
                          size_t size1,USER const void *data2,size_t size2) {
-	sSLList *list;
+	SList<Message> *list;
 	Thread *t = Thread::getRunning();
 	Message *msg1,*msg2 = NULL;
 	Thread *recipient = t;
@@ -310,10 +307,9 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		msg2->thread = recipient;
 
 	/* append to list */
-	if(!sll_append(list,msg1))
-		goto error;
-	if(msg2 && !sll_append(list,msg2))
-		goto errorRem;
+	list->append(msg1);
+	if(msg2)
+		list->append(msg2);
 
 	/* notify the driver */
 	if(list == &sendList) {
@@ -335,19 +331,11 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	}
 	SpinLock::release(&waitLock);
 	return 0;
-
-errorRem:
-	sll_removeFirstWith(list,msg1);
-error:
-	SpinLock::release(&waitLock);
-	Cache::free(msg1);
-	Cache::free(msg2);
-	return -ENOMEM;
 }
 
 ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USER void *data,
                             size_t size,bool block,bool ignoreSigs) {
-	sSLList *list;
+	SList<Message> *list;
 	Thread *t = Thread::getRunning();
 	VFSNode *waitNode;
 	Message *msg;
@@ -426,38 +414,32 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	return res;
 }
 
-VFSChannel::Message *VFSChannel::getMsg(Thread *t,sSLList *list,ushort flags) {
-	sSLNode *n,*p;
+VFSChannel::Message *VFSChannel::getMsg(Thread *t,SList<Message> *list,ushort flags) {
 	/* drivers get always the first message */
 	if(flags & VFS_DEVICE)
-		return (Message*)sll_removeFirst(list);
+		return list->removeFirst();
 
 	/* find the message for this client-thread */
-	p = NULL;
-	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
-		Message *msg = (Message*)n->data;
-		if(msg->thread == NULL || msg->thread == t) {
-			sll_removeNode(list,n,p);
-			return msg;
+	Message *p = NULL;
+	for(auto it = list->begin(); it != list->end(); p = &*it, ++it) {
+		if(it->thread == NULL || it->thread == t) {
+			list->removeAt(p,&*it);
+			return &*it;
 		}
 	}
 	return NULL;
 }
 
 void VFSChannel::print(OStream &os) const {
-	size_t i;
-	const sSLList *lists[] = {NULL,NULL};
-	lists[0] = &sendList;
-	lists[1] = &recvList;
-	for(i = 0; i < ARRAY_SIZE(lists); i++) {
-		size_t j,count = sll_length(lists[i]);
+	const SList<Message> *lists[] = {&sendList,&recvList};
+	for(size_t i = 0; i < ARRAY_SIZE(lists); i++) {
+		size_t count = lists[i]->length();
 		os.writef("Channel %s %s: (%zu,%s)\n",name,i ? "recvs" : "sends",count,used ? "used" : "-");
-		for(j = 0; j < count; j++) {
-			Message *msg = (Message*)sll_get(lists[i],j);
-			os.writef("\tid=%u len=%zu, thread=%d:%d:%s\n",msg->id,msg->length,
-					msg->thread ? msg->thread->getTid() : -1,
-					msg->thread ? msg->thread->getProc()->getPid() : -1,
-					msg->thread ? msg->thread->getProc()->getCommand() : "");
+		for(auto it = lists[i]->cbegin(); it != lists[i]->cend(); ++it) {
+			os.writef("\tid=%u len=%zu, thread=%d:%d:%s\n",it->id,it->length,
+					it->thread ? it->thread->getTid() : -1,
+					it->thread ? it->thread->getProc()->getPid() : -1,
+					it->thread ? it->thread->getProc()->getCommand() : "");
 		}
 	}
 }

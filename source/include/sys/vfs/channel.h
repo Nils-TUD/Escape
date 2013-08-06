@@ -21,9 +21,10 @@
 
 #include <sys/common.h>
 #include <sys/vfs/node.h>
+#include <sys/col/slist.h>
 
 class VFSChannel : public VFSNode {
-	struct Message {
+	struct Message : public SListItem {
 		msgid_t id;
 		size_t length;
 		Thread *thread;
@@ -54,7 +55,7 @@ public:
 	 * @return true if so
 	 */
 	bool hasReply() const {
-		return sll_length(&recvList) > 0;
+		return recvList.length() > 0;
 	}
 
 	/**
@@ -63,7 +64,7 @@ public:
 	 * @return true if so
 	 */
 	bool hasWork() const {
-		return !used && sll_length(&sendList) > 0;
+		return !used && sendList.length() > 0;
 	}
 
 	/**
@@ -108,14 +109,14 @@ protected:
 	virtual void invalidate();
 
 private:
-	static Message *getMsg(Thread *t,sSLList *list,ushort flags);
+	static Message *getMsg(Thread *t,SList<Message> *list,ushort flags);
 	int isSupported(int op) const;
 
 	bool used;
 	bool closed;
 	Thread *curClient;
 	/* a list for sending messages to the device */
-	sSLList sendList;
+	SList<Message> sendList;
 	/* a list for reading messages from the device */
-	sSLList recvList;
+	SList<Message> recvList;
 };

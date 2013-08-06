@@ -103,5 +103,5 @@ public:
 	 * @param os the output-stream
 	 * @param p the process
 	 */
-	static void print(OStream &os,Proc *p);
+	static void print(OStream &os,const Proc *p);
 };

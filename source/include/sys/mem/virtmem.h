@@ -193,7 +193,7 @@ public:
 	 * @param pages will point to the number of pages (size of virtual-memory)
 	 * @return the number of used frames for this process
 	 */
-	float getMemUsage(size_t *pages);
+	float getMemUsage(size_t *pages) const;
 
 	/**
 	 * Gets the region at given address

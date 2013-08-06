@@ -164,7 +164,7 @@ OpenFile *FileDesc::unassoc(int fd) {
 	return file;
 }
 
-void FileDesc::print(OStream &os,Proc *p) {
+void FileDesc::print(OStream &os,const Proc *p) {
 	size_t i;
 	os.writef("File descriptors of %d:\n",p->getPid());
 	for(i = 0; i < MAX_FD_COUNT; i++) {

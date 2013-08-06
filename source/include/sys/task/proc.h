@@ -61,7 +61,7 @@
 struct sThread;
 
 /* represents a process */
-class ProcBase {
+class ProcBase : public SListItem {
 protected:
 	ProcBase() {
 	}
@@ -135,7 +135,7 @@ public:
 	 * @param p the process
 	 * @param l the lock: PLOCK_*
 	 */
-	static void release(Proc *p,size_t l);
+	static void release(const Proc *p,size_t l);
 
 	/**
 	 * @return the number of existing processes
@@ -325,13 +325,13 @@ public:
 	 *
 	 * @param l the lock
 	 */
-	void lock(size_t l);
+	void lock(size_t l) const;
 	/**
 	 * Releases the given lock of this process
 	 *
 	 * @param l the lock
 	 */
-	void unlock(size_t l);
+	void unlock(size_t l) const;
 
 	/**
 	 * @return the process id
@@ -411,6 +411,9 @@ public:
 	PageDir *getPageDir() {
 		return virtmem.getPageDir();
 	}
+	const PageDir *getPageDir() const {
+		return virtmem.getPageDir();
+	}
 	/**
 	 * @return the entry-point of the program
 	 */
@@ -471,14 +474,14 @@ public:
 	/**
 	 * @return the number of frames that is used by the process in the kernel-space
 	 */
-	size_t getKMemUsage();
+	size_t getKMemUsage() const;
 
 	/**
 	 * Prints this process
 	 *
 	 * @param os the output-stream
 	 */
-	void print(OStream &os);
+	void print(OStream &os) const;
 
 private:
 	/**
@@ -502,7 +505,7 @@ private:
 	static void doRemoveRegions(Proc *p,bool remStack);
 	static void doDestroy(Proc *p);
 	static pid_t getFreePid();
-	static bool add(Proc *p);
+	static void add(Proc *p);
 	static void remove(Proc *p);
 
 	/* flags for vm86 and zombie */
@@ -554,10 +557,10 @@ private:
 	/* threads of this process */
 	sSLList threads;
 	/* locks for this process */
-	klock_t locks[PLOCK_COUNT];
+	mutable klock_t locks[PLOCK_COUNT];
 
 	static Proc first;
-	static sSLList procs;
+	static SList<Proc> procs;
 	static Proc *pidToProc[MAX_PROC_COUNT];
 	static pid_t nextPid;
 	static mutex_t procLock;
@@ -617,18 +620,18 @@ inline Proc *ProcBase::tryRequest(pid_t pid,size_t l) {
 	return p;
 }
 
-inline void ProcBase::release(Proc *p,size_t l) {
+inline void ProcBase::release(const Proc *p,size_t l) {
 	p->unlock(l);
 }
 
-inline void ProcBase::lock(size_t l) {
+inline void ProcBase::lock(size_t l) const {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
 		Mutex::acquire(locks + l);
 	else
 		SpinLock::acquire(locks + l);
 }
 
-inline void ProcBase::unlock(size_t l) {
+inline void ProcBase::unlock(size_t l) const {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
 		Mutex::release(locks + l);
 	else
@@ -636,7 +639,7 @@ inline void ProcBase::unlock(size_t l) {
 }
 
 inline size_t ProcBase::getCount() {
-	return sll_length(&procs);
+	return procs.length();
 }
 
 inline void ProcBase::removeRegions(pid_t pid,bool remStack) {

@@ -62,7 +62,7 @@
  * the first process in the data-area (we can't free the first one anyway) */
 Proc ProcBase::first;
 /* our processes */
-sSLList ProcBase::procs;
+SList<Proc> ProcBase::procs;
 Proc *ProcBase::pidToProc[MAX_PROC_COUNT];
 pid_t ProcBase::nextPid = 1;
 mutex_t ProcBase::procLock;
@@ -112,9 +112,7 @@ void ProcBase::init() {
 	p->virtmem.init(p->pid);
 
 	/* add to procs */
-	sll_init(&procs,slln_allocNode,slln_freeNode);
-	if(!add(p))
-		Util::panic("Unable to add init-process");
+	add(p);
 }
 
 void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
@@ -172,11 +170,9 @@ void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swappe
 void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
-	sSLNode *n;
 	Mutex::acquire(&procLock);
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		size_t pown = 0,psh = 0,pswap = 0;
-		Proc *p = (Proc*)n->data;
 		getMemUsageOf(p->pid,&pown,&psh,&pswap);
 		ownMem += pown;
 		shMem += psh;
@@ -254,11 +250,7 @@ int ProcBase::clone(uint8_t flags) {
 
 	/* add to processes */
 	p->pid = newPid;
-	if(!add(p)) {
-		Mutex::release(&procLock);
-		res = -ENOMEM;
-		goto errorCmd;
-	}
+	add(p);
 	Mutex::release(&procLock);
 
 	/* create the VFS node */
@@ -643,7 +635,6 @@ void ProcBase::doDestroy(Proc *p) {
 }
 
 void ProcBase::kill(pid_t pid) {
-	sSLNode *n;
 	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
 		return;
@@ -651,8 +642,7 @@ void ProcBase::kill(pid_t pid) {
 	/* give childs the ppid 0 */
 	Mutex::acquire(&childLock);
 	Mutex::acquire(&procLock);
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		Proc *cp = (Proc*)n->data;
+	for(auto cp = procs.begin(); cp != procs.end(); ++cp) {
 		if(cp->parentPid == p->pid) {
 			cp->parentPid = 0;
 			/* if this process has already died, the parent can't wait for it since its dying
@@ -709,14 +699,12 @@ int ProcBase::waitChild(USER ExitState *state) {
 }
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
-	sSLNode *n;
 	Mutex::acquire(&procLock);
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		Proc *p = (Proc*)n->data;
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
 			/* avoid deadlock; at other places we acquire the PLOCK_PROG first and procLock afterwards */
 			Mutex::release(&procLock);
-			p = request(p->pid,PLOCK_PROG);
+			request(p->pid,PLOCK_PROG);
 			if(state) {
 				state->pid = p->pid;
 				state->exitCode = p->stats.exitCode;
@@ -727,10 +715,10 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				state->ownFrames = p->virtmem.getPeakOwnFrames();
 				state->sharedFrames = p->virtmem.getPeakSharedFrames();
 				state->swapped = p->virtmem.getSwapCount();
-				release(p,PLOCK_PROG);
+				release(&*p,PLOCK_PROG);
 				return p->pid;
 			}
-			release(p,PLOCK_PROG);
+			release(&*p,PLOCK_PROG);
 			return p->pid;
 		}
 	}
@@ -751,17 +739,12 @@ void ProcBase::doRemoveRegions(Proc *p,bool remStack) {
 }
 
 void ProcBase::printAll(OStream &os) {
-	sSLNode *n;
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		Proc *p = (Proc*)n->data;
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p)
 		p->print(os);
-	}
 }
 
 void ProcBase::printAllRegions(OStream &os) {
-	sSLNode *n;
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		Proc *p = (Proc*)n->data;
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		os.writef("Regions of proc %d (%s)\n",p->pid,p->getCommand());
 		p->virtmem.printRegions(os);
 		os.writef("\n");
@@ -769,9 +752,7 @@ void ProcBase::printAllRegions(OStream &os) {
 }
 
 void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
-	sSLNode *n;
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		Proc *p = (Proc*)n->data;
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		size_t own = 0,shared = 0,swapped = 0;
 		getMemUsageOf(p->pid,&own,&shared,&swapped);
 		os.writef("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
@@ -785,7 +766,7 @@ void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
 	}
 }
 
-void ProcBase::print(OStream &os) {
+void ProcBase::print(OStream &os) const {
 	size_t own = 0,shared = 0,swap = 0;
 	sSLNode *n;
 	os.writef("Proc %d:\n",pid);
@@ -805,8 +786,8 @@ void ProcBase::print(OStream &os) {
 	os.pushIndent();
 	virtmem.print(os);
 	Env::printAllOf(os,pid);
-	FileDesc::print(os,static_cast<Proc*>(this));
-	VFSFS::printFSChans(os,static_cast<Proc*>(this));
+	FileDesc::print(os,static_cast<const Proc*>(this));
+	VFSFS::printFSChans(os,static_cast<const Proc*>(this));
 	os.popIndent();
 	os.writef("\tThreads:\n");
 	for(n = sll_begin(&threads); n != NULL; n = n->next) {
@@ -884,17 +865,14 @@ pid_t ProcBase::getFreePid() {
 	return INVALID_PID;
 }
 
-bool ProcBase::add(Proc *p) {
-	if(sll_append(&procs,p)) {
-		pidToProc[p->pid] = p;
-		return true;
-	}
-	return false;
+void ProcBase::add(Proc *p) {
+	procs.append(p);
+	pidToProc[p->pid] = p;
 }
 
 void ProcBase::remove(Proc *p) {
 	Mutex::acquire(&procLock);
-	sll_removeFirstWith(&procs,p);
+	procs.remove(p);
 	pidToProc[p->pid] = NULL;
 	Mutex::release(&procLock);
 }
@@ -907,10 +885,9 @@ void ProcBase::remove(Proc *p) {
 static time_t proctimes[PROF_PROC_COUNT];
 
 void ProcBase::startProf() {
-	sSLNode *n,*m;
+	sSLNode *m;
 	Thread *t;
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		const Proc *p = (const Proc*)n->data;
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		assert(p->pid < PROF_PROC_COUNT);
 		proctimes[p->pid] = 0;
 		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {
@@ -921,10 +898,9 @@ void ProcBase::startProf() {
 }
 
 void ProcBase::stopProf() {
-	sSLNode *n,*m;
+	sSLNode *m;
 	Thread *t;
-	for(n = sll_begin(&procs); n != NULL; n = n->next) {
-		const Proc *p = (const Proc*)n->data;
+	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		time_t curtime = 0;
 		assert(p->pid < PROF_PROC_COUNT);
 		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {

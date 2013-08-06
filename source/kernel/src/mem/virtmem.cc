@@ -440,7 +440,7 @@ void VirtMem::setTimestamp(Thread *t,uint64_t timestamp) {
 	}
 }
 
-float VirtMem::getMemUsage(size_t *pages) {
+float VirtMem::getMemUsage(size_t *pages) const {
 	float rpages = 0;
 	*pages = 0;
 	if(acquire()) {

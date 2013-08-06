@@ -21,9 +21,10 @@
 
 #include <sys/common.h>
 #include <sys/vfs/node.h>
+#include <sys/col/slist.h>
 
 class VFSPipe : public VFSNode {
-	struct PipeData {
+	struct PipeData : public SListItem {
 		size_t length;
 		off_t offset;
 		uint8_t data[];
@@ -54,5 +55,5 @@ private:
 	/* total number of bytes available */
 	size_t total;
 	/* a list with sPipeData */
-	sSLList list;
+	SList<PipeData> list;
 };

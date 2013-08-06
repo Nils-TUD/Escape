@@ -37,8 +37,6 @@
 VFSPipe::VFSPipe(pid_t pid,VFSNode *p,bool &success)
 		: VFSNode(pid,generateId(pid),MODE_TYPE_PIPE | S_IRUSR | S_IWUSR,success), noReader(false),
 		  total(0), list() {
-	/* take care that the destructor works in case of failures */
-	sll_init(&list,slln_allocNode,slln_freeNode);
 	if(!success)
 		return;
 
@@ -48,7 +46,10 @@ VFSPipe::VFSPipe(pid_t pid,VFSNode *p,bool &success)
 }
 
 VFSPipe::~VFSPipe() {
-	sll_clear(&list,true);
+	for(auto it = list.begin(); it != list.end(); ) {
+		auto old = it++;
+		delete &*old;
+	}
 }
 
 size_t VFSPipe::getSize(A_UNUSED pid_t pid) const {
@@ -82,7 +83,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 	if(!isAlive())
 		return -EDESTROYED;
 	SpinLock::acquire(&lock);
-	while(sll_length(&list) == 0) {
+	while(list.length() == 0) {
 		Event::wait(t,EVI_PIPE_FULL,(evobj_t)this);
 		SpinLock::release(&lock);
 
@@ -97,7 +98,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		}
 	}
 
-	data = (PipeData*)sll_get(&list,0);
+	data = &*list.begin();
 	/* empty message indicates EOF */
 	if(data->length == 0) {
 		SpinLock::release(&lock);
@@ -115,8 +116,8 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		Thread::remLock(&lock);
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
+			list.removeAt(NULL,data);
 			Cache::free(data);
-			sll_removeFirst(&list);
 		}
 		count -= byteCount;
 		totalBytes += byteCount;
@@ -125,7 +126,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		if(count == 0)
 			break;
 		/* wait until data is available */
-		while(sll_length(&list) == 0) {
+		while(list.length() == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
 			Event::wakeup(EVI_PIPE_EMPTY,(evobj_t)this);
@@ -142,7 +143,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 				return -EDESTROYED;
 			}
 		}
-		data = (PipeData*)sll_get(&list,0);
+		data = &*list.begin();
 		/* keep the empty one for the next transfer */
 		if(data->length == 0)
 			break;
@@ -208,11 +209,7 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 		Cache::free(data);
 		return -EDESTROYED;
 	}
-	if(!sll_append(&list,data)) {
-		SpinLock::release(&lock);
-		Cache::free(data);
-		return -ENOMEM;
-	}
+	list.append(data);
 	total += count;
 	SpinLock::release(&lock);
 	Event::wakeup(EVI_PIPE_FULL,(evobj_t)this);

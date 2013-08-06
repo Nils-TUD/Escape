@@ -24,7 +24,7 @@
 #include "tsched.h"
 
 /* forward declarations */
-static void test_sched(void);
+static void test_sched();
 
 /* our test-module */
 sTestModule tModSched = {
@@ -32,7 +32,7 @@ sTestModule tModSched = {
 	&test_sched
 };
 
-static void test_sched(void) {
+static void test_sched() {
 	/* TODO implement for threads */
 #if 0
 	Proc *x = (Proc*)Proc::getByPid(Proc::getFreePid());

@@ -68,7 +68,7 @@ public:
 	 *
 	 * @return 0 on success
 	 */
-	static int create(void);
+	static int create();
 
 	/**
 	 * Performs a VM86-interrupt
@@ -92,14 +92,14 @@ private:
 	static uint32_t popl(IntrptStackFrame *stack);
 	static void pushw(IntrptStackFrame *stack,uint16_t word);
 	static void pushl(IntrptStackFrame *stack,uint32_t l);
-	static void start(void);
+	static void start();
 	static void stop(IntrptStackFrame *stack);
-	static void finish(void);
+	static void finish();
 	static void copyRegResult(IntrptStackFrame* stack);
-	static int storeAreaResult(void);
-	static void copyAreaResult(void);
+	static int storeAreaResult();
+	static void copyAreaResult();
 	static bool copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);
-	static void clearInfo(void);
+	static void clearInfo();
 
 	static frameno_t frameNos[];
 	static tid_t vm86Tid;

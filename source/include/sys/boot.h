@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <sys/interrupts.h>
 
-typedef void (*boottask_func)(void);
+typedef void (*boottask_func)();
 struct BootTask {
 	const char *name;
 	boottask_func execute;

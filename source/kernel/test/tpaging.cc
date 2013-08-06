@@ -30,8 +30,8 @@
 #include "testutils.h"
 
 /* forward declarations */
-static void test_paging(void);
-static void test_paging_foreign(void);
+static void test_paging();
+static void test_paging_foreign();
 static bool test_paging_cycle(uintptr_t addr,size_t count);
 static void test_paging_allocate(uintptr_t addr,size_t count);
 static void test_paging_access(uintptr_t addr,size_t count);
@@ -43,7 +43,7 @@ sTestModule tModPaging = {
 	&test_paging
 };
 
-static void test_paging(void) {
+static void test_paging() {
 	size_t x,y;
 	uintptr_t addr[] = {
 		0x0,0x40000000,0x70000000,0x4000,0x1234
@@ -59,7 +59,7 @@ static void test_paging(void) {
 	test_paging_foreign();
 }
 
-static void test_paging_foreign(void) {
+static void test_paging_foreign() {
 	size_t ownFrames, sharedFrames;
 	Proc *child;
 	Thread *t = Thread::getRunning();

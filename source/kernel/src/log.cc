@@ -128,7 +128,7 @@ ssize_t Log::LogFile::write(pid_t pid,OpenFile *file,const void *buffer,off_t of
 	return count;
 }
 
-void Log::flush(void) {
+void Log::flush() {
 	if(vfsReady && bufPos) {
 		logFile->writeFile(KERNEL_PID,buf,bufPos);
 		bufPos = 0;

@@ -40,7 +40,7 @@ void Timer::wait(uint us) {
 		__asm__ volatile ("pause");
 }
 
-uint64_t Timer::detectCPUSpeed(void) {
+uint64_t Timer::detectCPUSpeed() {
 	int i,j;
 	int bestMatches = -1;
 	uint64_t bestHz = 0;

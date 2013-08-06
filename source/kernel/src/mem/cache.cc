@@ -152,14 +152,14 @@ void Cache::free(void *p) {
 	SpinLock::release(&lock);
 }
 
-size_t Cache::getOccMem(void) {
+size_t Cache::getOccMem() {
 	size_t i,count = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++)
 		count += BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3));
 	return count * PAGE_SIZE;
 }
 
-size_t Cache::getUsedMem(void) {
+size_t Cache::getUsedMem() {
 	size_t i,count = 0;
 	for(i = 0; i < ARRAY_SIZE(caches); i++)
 		count += (caches[i].totalObjs - caches[i].freeObjs) * (caches[i].objSize + sizeof(ulong) * 3);

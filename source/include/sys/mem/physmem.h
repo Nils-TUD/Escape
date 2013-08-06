@@ -206,12 +206,12 @@ private:
 	static void initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
 
 private:
-	static size_t getFreeDef(void);
+	static size_t getFreeDef();
 	static void markRangeUsed(uintptr_t from,uintptr_t to,bool used);
 	static void doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);
 	static void markUsed(frameno_t frame,bool used);
 	static void appendJob(SwapInJob *job);
-	static SwapInJob *getJob(void);
+	static SwapInJob *getJob();
 	static void freeJob(SwapInJob *job);
 
 	/* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */

@@ -27,10 +27,10 @@
 
 #define TEST_MAP_SIZE	16
 
-static void test_hashmap(void);
-static void test_basic(void);
-static void test_remove(void);
-static void test_iterator(void);
+static void test_hashmap();
+static void test_basic();
+static void test_remove();
+static void test_iterator();
 static ulong test_getkey(const void *data) {
 	return (ulong)data;
 }
@@ -41,13 +41,13 @@ sTestModule tModHashMap = {
 	&test_hashmap
 };
 
-static void test_hashmap(void) {
+static void test_hashmap() {
 	test_basic();
 	test_remove();
 	test_iterator();
 }
 
-static void test_basic(void) {
+static void test_basic() {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
 	test_caseStart("Testing basic functionality");
@@ -77,7 +77,7 @@ static void test_basic(void) {
 	test_caseSucceeded();
 }
 
-static void test_remove(void) {
+static void test_remove() {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
 	test_caseStart("Testing remove");
@@ -117,7 +117,7 @@ static void test_remove(void) {
 	test_caseSucceeded();
 }
 
-static void test_iterator(void) {
+static void test_iterator() {
 	sSLList *testmap[TEST_MAP_SIZE] = {NULL};
 	sHashMap *m;
 	size_t j;

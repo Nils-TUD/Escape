@@ -28,10 +28,10 @@
 #include "testutils.h"
 
 /* forward declarations */
-static void test_region(void);
-static void test_1(void);
-static void test_2(void);
-static void test_3(void);
+static void test_region();
+static void test_1();
+static void test_2();
+static void test_3();
 
 /* our test-module */
 sTestModule tModRegion = {
@@ -39,13 +39,13 @@ sTestModule tModRegion = {
 	&test_region
 };
 
-static void test_region(void) {
+static void test_region() {
 	test_1();
 	test_2();
 	test_3();
 }
 
-static void test_1(void) {
+static void test_1() {
 	Region *reg;
 	test_caseStart("Testing Region::create() & Region::destroy()");
 
@@ -75,7 +75,7 @@ static void test_1(void) {
 	test_caseSucceeded();
 }
 
-static void test_2(void) {
+static void test_2() {
 	Region *reg;
 	size_t i;
 	test_caseStart("Testing Region::grow()");
@@ -152,7 +152,7 @@ static void test_2(void) {
 	test_caseSucceeded();
 }
 
-static void test_3(void) {
+static void test_3() {
 	Region *reg,*reg2;
 	VirtMem vm;
 	test_caseStart("Testing Region::clone()");

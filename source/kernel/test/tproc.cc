@@ -29,9 +29,9 @@
 #include "tproc.h"
 
 /* forward declarations */
-static void test_proc(void);
-static void test_proc_clone(void);
-static void test_thread(void);
+static void test_proc();
+static void test_proc_clone();
+static void test_thread();
 
 /* our test-module */
 sTestModule tModProc = {
@@ -39,7 +39,7 @@ sTestModule tModProc = {
 	&test_proc
 };
 
-static void test_proc(void) {
+static void test_proc() {
 	test_proc_clone();
 	test_thread();
 }
@@ -55,7 +55,7 @@ static void test_init(const char *fmt,...) {
 	checkMemoryBefore(false);
 }
 
-static void test_proc_clone(void) {
+static void test_proc_clone() {
 	size_t x;
 
 	/* test process clone & destroy */
@@ -77,7 +77,7 @@ static void test_proc_clone(void) {
 
 static int threadcnt = 0;
 
-static void thread_test(void) {
+static void thread_test() {
 	tprintf("thread %d is running...\n",Thread::getRunning()->getTid());
 	threadcnt++;
 
@@ -85,7 +85,7 @@ static void thread_test(void) {
 	Thread::switchAway();
 }
 
-static void test_thread(void) {
+static void test_thread() {
 	test_init("Starting threads and joining them");
 
 	int tid = Proc::startThread((uintptr_t)&thread_test,0,NULL);

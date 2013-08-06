@@ -28,10 +28,10 @@
 
 #define TEST_REG_COUNT	10
 
-static void test_vmreg(void);
-static void test_vmreg_inOrder(void);
-static void test_vmreg_revOrder(void);
-static void test_vmreg_randOrder(void);
+static void test_vmreg();
+static void test_vmreg_inOrder();
+static void test_vmreg_revOrder();
+static void test_vmreg_randOrder();
 static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg);
 
 /* our test-module */
@@ -40,13 +40,13 @@ sTestModule tModVMReg = {
 	&test_vmreg
 };
 
-static void test_vmreg(void) {
+static void test_vmreg() {
 	test_vmreg_inOrder();
 	test_vmreg_revOrder();
 	test_vmreg_randOrder();
 }
 
-static void test_vmreg_inOrder(void) {
+static void test_vmreg_inOrder() {
 	size_t i;
 	uintptr_t addrs[TEST_REG_COUNT];
 	for(i = 0; i < TEST_REG_COUNT; i++)
@@ -54,7 +54,7 @@ static void test_vmreg_inOrder(void) {
 	test_vmreg_addAndRem(addrs,"Add and remove regions with increasing addresses");
 }
 
-static void test_vmreg_revOrder(void) {
+static void test_vmreg_revOrder() {
 	size_t i;
 	uintptr_t addrs[TEST_REG_COUNT];
 	for(i = 0; i < TEST_REG_COUNT; i++)
@@ -62,7 +62,7 @@ static void test_vmreg_revOrder(void) {
 	test_vmreg_addAndRem(addrs,"Add and remove regions with decreasing addresses");
 }
 
-static void test_vmreg_randOrder(void) {
+static void test_vmreg_randOrder() {
 	size_t i;
 	uintptr_t addrs[TEST_REG_COUNT];
 	for(i = 0; i < TEST_REG_COUNT; i++)

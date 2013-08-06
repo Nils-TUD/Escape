@@ -26,12 +26,12 @@
 #define FRAME_COUNT 50
 
 /* forward declarations */
-static void test_mm(void);
-static void test_default(void);
-static void test_contiguous(void);
-static void test_contiguous_align(void);
-static void test_mm_allocate(void);
-static void test_mm_free(void);
+static void test_mm();
+static void test_default();
+static void test_contiguous();
+static void test_contiguous_align();
+static void test_mm_allocate();
+static void test_mm_free();
 
 /* our test-module */
 sTestModule tModMM = {
@@ -41,13 +41,13 @@ sTestModule tModMM = {
 
 static frameno_t frames[FRAME_COUNT];
 
-static void test_mm(void) {
+static void test_mm() {
 	test_default();
 	test_contiguous();
 	test_contiguous_align();
 }
 
-static void test_default(void) {
+static void test_default() {
 	test_caseStart("Requesting and freeing %d frames",FRAME_COUNT);
 
 	checkMemoryBefore(false);
@@ -58,7 +58,7 @@ static void test_default(void) {
 	test_caseSucceeded();
 }
 
-static void test_contiguous(void) {
+static void test_contiguous() {
 	ssize_t res1,res2,res3,res4;
 
 	test_caseStart("Requesting once and free");
@@ -106,7 +106,7 @@ static void test_contiguous(void) {
 	test_caseSucceeded();
 }
 
-static void test_contiguous_align(void) {
+static void test_contiguous_align() {
 	ssize_t res1,res2,res3,res4;
 
 	test_caseStart("[Align] Requesting once and free");
@@ -166,7 +166,7 @@ static void test_contiguous_align(void) {
 	test_caseSucceeded();
 }
 
-static void test_mm_allocate(void) {
+static void test_mm_allocate() {
 	ssize_t i = 0;
 	while(i < FRAME_COUNT) {
 		frames[i] = PhysMem::allocate(PhysMem::KERN);
@@ -174,7 +174,7 @@ static void test_mm_allocate(void) {
 	}
 }
 
-static void test_mm_free(void) {
+static void test_mm_free() {
 	ssize_t i = FRAME_COUNT - 1;
 	while(i >= 0) {
 		PhysMem::free(frames[i],PhysMem::KERN);

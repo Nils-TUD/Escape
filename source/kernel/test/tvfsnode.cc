@@ -30,12 +30,12 @@
 #include <string.h>
 #include <errno.h>
 
-static void test_vfsn(void);
-static void test_vfs_node_resolvePath(void);
+static void test_vfsn();
+static void test_vfs_node_resolvePath();
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b);
-static void test_vfs_node_getPath(void);
-static void test_vfs_node_file_refs(void);
-static void test_vfs_node_dir_refs(void);
+static void test_vfs_node_getPath();
+static void test_vfs_node_file_refs();
+static void test_vfs_node_dir_refs();
 
 /* our test-module */
 sTestModule tModVFSn = {
@@ -43,14 +43,14 @@ sTestModule tModVFSn = {
 	&test_vfsn
 };
 
-static void test_vfsn(void) {
+static void test_vfsn() {
 	test_vfs_node_resolvePath();
 	test_vfs_node_getPath();
 	test_vfs_node_file_refs();
 	test_vfs_node_dir_refs();
 }
 
-static void test_vfs_node_resolvePath(void) {
+static void test_vfs_node_resolvePath() {
 	test_caseStart("Testing vfs_node_resolvePath()");
 
 	if(!test_vfs_node_resolvePathCpy("/system/..","")) return;
@@ -83,7 +83,7 @@ static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 	return res;
 }
 
-static void test_vfs_node_getPath(void) {
+static void test_vfs_node_getPath() {
 	VFSNode *node;
 
 	test_caseStart("Testing vfs_node_getPath()");
@@ -103,7 +103,7 @@ static void test_vfs_node_getPath(void) {
 	test_caseSucceeded();
 }
 
-static void test_vfs_node_file_refs(void) {
+static void test_vfs_node_file_refs() {
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();
 	OpenFile *f1,*f2,*f3;
@@ -136,7 +136,7 @@ static void test_vfs_node_file_refs(void) {
 	test_caseSucceeded();
 }
 
-static void test_vfs_node_dir_refs(void) {
+static void test_vfs_node_dir_refs() {
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();
 	OpenFile *f1;

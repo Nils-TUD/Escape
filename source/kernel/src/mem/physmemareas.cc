@@ -43,7 +43,7 @@ frameno_t PhysMemAreas::alloc(size_t frames) {
 	return 0;
 }
 
-size_t PhysMemAreas::getAvailable(void) {
+size_t PhysMemAreas::getAvailable() {
 	MemArea *area = list;
 	size_t total = 0;
 	while(area != NULL) {
@@ -113,7 +113,7 @@ void PhysMemAreas::print(OStream &os) {
 	}
 }
 
-PhysMemAreas::MemArea *PhysMemAreas::allocArea(void) {
+PhysMemAreas::MemArea *PhysMemAreas::allocArea() {
 	if(count == MAX_PHYSMEM_AREAS)
 		Util::panic("Ran out of physmem-areas");
 	return areas + count++;

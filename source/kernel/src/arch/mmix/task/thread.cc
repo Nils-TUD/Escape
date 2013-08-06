@@ -196,7 +196,7 @@ bool ThreadBase::beginTerm() {
 	return res;
 }
 
-void ThreadBase::doSwitch(void) {
+void ThreadBase::doSwitch() {
 	uint64_t cycles,runtime;
 	Thread *old = Thread::getRunning();
 	Thread *n;

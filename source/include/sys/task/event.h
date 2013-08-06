@@ -201,7 +201,7 @@ public:
 private:
 	static void doRemoveThread(Thread *t);
 	static sWait *doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
-	static sWait *allocWait(void);
+	static sWait *allocWait();
 	static void freeWait(sWait *w);
 	static const char *getName(size_t evi);
 

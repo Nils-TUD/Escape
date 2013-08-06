@@ -27,7 +27,7 @@
 extern void *_ebss;
 static size_t total;
 
-void PhysMemAreas::initArch(void) {
+void PhysMemAreas::initArch() {
 	size_t i;
 	BootMemMap *mmap;
 	BootModule *mod;
@@ -64,6 +64,6 @@ void PhysMemAreas::initArch(void) {
 	}
 }
 
-size_t PhysMemAreas::getTotal(void) {
+size_t PhysMemAreas::getTotal() {
 	return total;
 }

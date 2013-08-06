@@ -29,7 +29,7 @@
 #define REGION_SIZE			(PAGE_SIZE * 8)
 
 /* forward declarations */
-static void test_dynarray(void);
+static void test_dynarray();
 
 /* our test-module */
 sTestModule tModDynArray = {
@@ -37,7 +37,7 @@ sTestModule tModDynArray = {
 	&test_dynarray
 };
 
-static void test_dynarray(void) {
+static void test_dynarray() {
 	size_t i,j;
 	test_caseStart("Test various functions");
 

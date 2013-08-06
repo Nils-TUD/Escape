@@ -27,11 +27,11 @@
 #define TOTAL_SIZE	(0x40 * PAGE_SIZE)
 #define AREA_COUNT	10
 
-static void test_vmfree(void);
-static void test_vmfree_inOrder(void);
-static void test_vmfree_revOrder(void);
-static void test_vmfree_randOrder(void);
-static void test_vmfree_allocAt(void);
+static void test_vmfree();
+static void test_vmfree_inOrder();
+static void test_vmfree_revOrder();
+static void test_vmfree_randOrder();
+static void test_vmfree_allocAt();
 static void test_vmfree_allocNFree(size_t *sizes,size_t *freeIndices,const char *msg);
 
 /* our test-module */
@@ -40,14 +40,14 @@ sTestModule tModVMFree = {
 	&test_vmfree
 };
 
-static void test_vmfree(void) {
+static void test_vmfree() {
 	test_vmfree_inOrder();
 	test_vmfree_revOrder();
 	test_vmfree_randOrder();
 	test_vmfree_allocAt();
 }
 
-static void test_vmfree_inOrder(void) {
+static void test_vmfree_inOrder() {
 	size_t i,sizes[AREA_COUNT];
 	size_t freeIndices[AREA_COUNT];
 	for(i = 0; i < AREA_COUNT; i++) {
@@ -57,7 +57,7 @@ static void test_vmfree_inOrder(void) {
 	test_vmfree_allocNFree(sizes,freeIndices,"Allocating areas and freeing them in same order");
 }
 
-static void test_vmfree_revOrder(void) {
+static void test_vmfree_revOrder() {
 	size_t i,sizes[AREA_COUNT];
 	size_t freeIndices[AREA_COUNT];
 	for(i = 0; i < AREA_COUNT; i++) {
@@ -67,7 +67,7 @@ static void test_vmfree_revOrder(void) {
 	test_vmfree_allocNFree(sizes,freeIndices,"Allocating areas and freeing them in reverse order");
 }
 
-static void test_vmfree_randOrder(void) {
+static void test_vmfree_randOrder() {
 	size_t i,sizes[AREA_COUNT];
 	size_t freeIndices[AREA_COUNT];
 	for(i = 0; i < AREA_COUNT; i++) {
@@ -85,7 +85,7 @@ static void test_vmfree_randOrder(void) {
 	test_vmfree_allocNFree(sizes,freeIndices,"Allocating areas and freeing them in random order");
 }
 
-static void test_vmfree_allocAt(void) {
+static void test_vmfree_allocAt() {
 	VMFreeMap map;
 	size_t areas,size = TOTAL_SIZE;
 	test_caseStart("Allocating areas at specific positions");

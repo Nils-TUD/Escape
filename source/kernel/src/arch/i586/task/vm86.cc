@@ -71,7 +71,7 @@ VM86::Info VM86::info;
 int VM86::vm86Res = -1;
 mutex_t VM86::vm86Lock;
 
-int VM86::create(void) {
+int VM86::create() {
 	Proc *p;
 	Thread *t;
 	size_t i,frameCount;
@@ -335,7 +335,7 @@ void VM86::pushl(IntrptStackFrame *stack,uint32_t l) {
 	*((uint32_t*)(stack->uesp + (stack->uss << 4))) = l;
 }
 
-void VM86::start(void) {
+void VM86::start() {
 	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
 	IntrptStackFrame *istack;
 	Thread *t = Thread::getRunning();
@@ -398,7 +398,7 @@ void VM86::stop(IntrptStackFrame *stack) {
 	start();
 }
 
-void VM86::finish(void) {
+void VM86::finish() {
 	if(info.area)
 		Thread::getById(vm86Tid)->discardFrames();
 	clearInfo();
@@ -417,7 +417,7 @@ void VM86::copyRegResult(IntrptStackFrame *stack) {
 	info.regs.es = stack->vm86es;
 }
 
-int VM86::storeAreaResult(void) {
+int VM86::storeAreaResult() {
 	size_t i;
 	if(info.area) {
 		uintptr_t start = info.area->dst / PAGE_SIZE;
@@ -438,7 +438,7 @@ int VM86::storeAreaResult(void) {
 	return 0;
 }
 
-void VM86::copyAreaResult(void) {
+void VM86::copyAreaResult() {
 	size_t i;
 	if(info.area) {
 		memcpy(info.area->src,info.copies[0],info.area->size);
@@ -491,7 +491,7 @@ bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea 
 	return true;
 }
 
-void VM86::clearInfo(void) {
+void VM86::clearInfo() {
 	size_t i;
 	if(info.area) {
 		for(i = 0; i <= info.area->ptrCount; i++)

@@ -22,7 +22,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
 
-uintptr_t KHeap::allocAreas(void) {
+uintptr_t KHeap::allocAreas() {
 	/* heap full? */
 	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return 0;

@@ -135,7 +135,7 @@ private:
 	 */
 	static bool addMemory(uintptr_t addr,size_t size);
 
-	static bool loadNewAreas(void);
+	static bool loadNewAreas();
 	static bool doAddMemory(uintptr_t addr,size_t size);
 	static bool loadNewSpace(size_t size);
 	static size_t getHash(void *addr);

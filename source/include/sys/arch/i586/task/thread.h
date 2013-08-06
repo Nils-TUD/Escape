@@ -78,15 +78,15 @@ inline void ThreadBase::setRunning(Thread *t) {
 	*tptr = t;
 }
 
-inline size_t ThreadBase::getThreadFrmCnt(void) {
+inline size_t ThreadBase::getThreadFrmCnt() {
 	return INITIAL_STACK_PAGES;
 }
 
-inline uint64_t ThreadBase::getTSC(void) {
+inline uint64_t ThreadBase::getTSC() {
 	return CPU::rdtsc();
 }
 
-inline uint64_t ThreadBase::ticksPerSec(void) {
+inline uint64_t ThreadBase::ticksPerSec() {
 	return CPU::getSpeed();
 }
 

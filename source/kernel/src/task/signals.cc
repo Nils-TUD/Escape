@@ -36,7 +36,7 @@ ISList<Thread*> Signals::sigThreads;
 Signals::PendingSig Signals::signals[SIGNAL_COUNT];
 Signals::PendingSig *Signals::freelist;
 
-void Signals::init(void) {
+void Signals::init() {
 	/* init signal-freelist */
 	size_t i;
 	signals->next = NULL;
@@ -257,7 +257,7 @@ void Signals::print(OStream &os) {
 	}
 }
 
-size_t Signals::getHandlerCount(void) {
+size_t Signals::getHandlerCount() {
 	size_t i,c = 0;
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		for(i = 0; i < SIG_COUNT; i++) {

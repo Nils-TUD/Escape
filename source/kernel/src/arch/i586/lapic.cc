@@ -26,7 +26,7 @@
 bool LAPIC::enabled;
 uintptr_t LAPIC::apicAddr;
 
-void LAPIC::init(void) {
+void LAPIC::init() {
 	enabled = false;
 
 	if(CPU::hasLocalAPIC()) {

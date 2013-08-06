@@ -29,9 +29,9 @@
 #include "testutils.h"
 
 /* forward declarations */
-static void test_vmm(void);
-static void test_1(void);
-static void test_2(void);
+static void test_vmm();
+static void test_1();
+static void test_2();
 
 /* our test-module */
 sTestModule tModVmm = {
@@ -39,12 +39,12 @@ sTestModule tModVmm = {
 	&test_vmm
 };
 
-static void test_vmm(void) {
+static void test_vmm() {
 	test_1();
 	test_2();
 }
 
-static void test_1(void) {
+static void test_1() {
 	VMRegion *rno,*rno2,*rno3;
 	pid_t cpid;
 	Thread *t = Thread::getRunning();
@@ -106,7 +106,7 @@ static void test_1(void) {
 	test_caseSucceeded();
 }
 
-static void test_2(void) {
+static void test_2() {
 	VMRegion *rno;
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();

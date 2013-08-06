@@ -47,7 +47,7 @@ Sched::Queue Sched::rdyQueues[MAX_PRIO + 1];
 size_t Sched::rdyCount;
 ISList<Thread*> Sched::idleThreads;
 
-void Sched::init(void) {
+void Sched::init() {
 	size_t i;
 	rdyCount = 0;
 	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++)

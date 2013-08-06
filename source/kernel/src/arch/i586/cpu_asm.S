@@ -21,7 +21,7 @@
 .global cpu_getInfo
 .global cpu_getStrInfo
 
-# bool CPU::cpuidSupported(void);
+# bool CPU::cpuidSupported();
 cpu_cpuidSupported:
 	pushfl
 	pop		%eax					# load eflags into eax

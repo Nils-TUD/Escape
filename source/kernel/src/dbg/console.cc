@@ -452,7 +452,7 @@ char **Console::parseLine(const char *line,size_t *argc) {
 	return args;
 }
 
-char *Console::readLine(void) {
+char *Console::readLine() {
 	static char line[VID_COLS + 1];
 	Video &vid = Video::get();
 	size_t i = 0;

@@ -342,7 +342,7 @@ private:
 		swapCount = 0;
 	}
 
-	static Region *getLRURegion(void);
+	static Region *getLRURegion();
 	static uintptr_t getBinary(OpenFile *file,VirtMem *&binOwner);
 	static ssize_t getPgIdxForSwap(const Region *reg);
 	static void setSwappedOut(Region *reg,size_t index);

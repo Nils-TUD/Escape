@@ -70,7 +70,7 @@
 #include <sys/arch/mmix/task/threadconf.h>
 #endif
 
-typedef void (*fTermCallback)(void);
+typedef void (*fTermCallback)();
 
 typedef struct sWait {
 	tid_t tid;
@@ -258,14 +258,14 @@ public:
 	 *
 	 * @param callback the callback
 	 */
-	static void addCallback(void (*callback)(void));
+	static void addCallback(void (*callback)());
 
 	/**
 	 * Removes the given callback from the callback-list.
 	 *
 	 * @param callback the callback
 	 */
-	static void remCallback(void (*callback)(void));
+	static void remCallback(void (*callback)());
 
 	/**
 	 * Prints all threads
@@ -629,7 +629,7 @@ private:
 	void initProps();
 	static void doSwitch();
 	static Thread *createInitial(Proc *p);
-	static tid_t getFreeTid(void);
+	static tid_t getFreeTid();
 	bool add();
 	void remove();
 
@@ -754,13 +754,13 @@ inline void ThreadBase::remFileUsage(OpenFile *file) {
 	cur->termUsageCount--;
 }
 
-inline void ThreadBase::addCallback(void (*callback)(void)) {
+inline void ThreadBase::addCallback(void (*callback)()) {
 	Thread *cur = getRunning();
 	assert(cur->termCallbackCount < TERM_RESOURCE_CNT);
 	cur->termCallbacks[cur->termCallbackCount++] = callback;
 }
 
-inline void ThreadBase::remCallback(void (*callback)(void)) {
+inline void ThreadBase::remCallback(void (*callback)()) {
 	Thread *cur = getRunning();
 	assert(cur->termCallbackCount > 0);
 	cur->termCallbackCount--;
@@ -854,4 +854,4 @@ inline void ThreadBase::terminate() {
 /**
  * The start-function for the idle-thread
  */
-EXTERN_C void thread_idle(void);
+EXTERN_C void thread_idle();

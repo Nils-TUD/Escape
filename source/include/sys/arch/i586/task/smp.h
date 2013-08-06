@@ -38,7 +38,7 @@ public:
 	/**
 	 * Tells the BSP that an AP is running
 	 */
-	static void apIsRunning(void);
+	static void apIsRunning();
 
 private:
 	static cpuid_t *log2Phys;
@@ -52,6 +52,6 @@ inline void SMPBase::sendIPI(cpuid_t id,uint8_t vector) {
 	LAPIC::sendIPITo(SMP::getPhysId(id),vector);
 }
 
-inline cpuid_t SMPBase::getCurId(void) {
+inline cpuid_t SMPBase::getCurId() {
 	return GDT::getCPUId();
 }

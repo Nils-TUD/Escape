@@ -25,7 +25,7 @@
 #include "testutils.h"
 
 /* forward declarations */
-static void test_pmemareas(void);
+static void test_pmemareas();
 
 /* our test-module */
 sTestModule tModPmemAreas = {
@@ -35,7 +35,7 @@ sTestModule tModPmemAreas = {
 
 static PhysMemAreas::MemArea backup[16];
 
-static void test_pmemareas(void) {
+static void test_pmemareas() {
 	size_t i,available,count = 0;
 	const PhysMemAreas::MemArea *area;
 	test_caseStart("Adding and removing areas");

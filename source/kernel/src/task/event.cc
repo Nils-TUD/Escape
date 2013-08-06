@@ -33,7 +33,7 @@ sWait Event::waits[MAX_WAIT_COUNT];
 sWait *Event::waitFree;
 Event::WaitList Event::evlists[EV_COUNT];
 
-void Event::init(void) {
+void Event::init() {
 	size_t i;
 	for(i = 0; i < EV_COUNT; i++) {
 		evlists[i].begin = NULL;
@@ -227,7 +227,7 @@ sWait *Event::doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *pr
 	return w;
 }
 
-sWait *Event::allocWait(void) {
+sWait *Event::allocWait() {
 	sWait *res = waitFree;
 	if(res == NULL)
 		return NULL;

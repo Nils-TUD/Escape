@@ -139,7 +139,7 @@ bool ThreadBase::beginTerm() {
 	return res;
 }
 
-void ThreadBase::doSwitch(void) {
+void ThreadBase::doSwitch() {
 	Thread *old = Thread::getRunning();
 	Thread *n;
 	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-

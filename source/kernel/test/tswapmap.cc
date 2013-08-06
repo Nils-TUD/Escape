@@ -25,13 +25,13 @@
 
 #include "tswapmap.h"
 
-static void test_swapmap(void);
-static void test_swapmap1(void);
-static void test_swapmap2(void);
-static void test_swapmap5(void);
-static void test_swapmap6(void);
+static void test_swapmap();
+static void test_swapmap1();
+static void test_swapmap2();
+static void test_swapmap5();
+static void test_swapmap6();
 static void test_doStart(const char *title);
-static void test_finish(void);
+static void test_finish();
 
 /* our test-module */
 sTestModule tModSwapMap = {
@@ -41,14 +41,14 @@ sTestModule tModSwapMap = {
 
 static size_t spaceBefore;
 
-static void test_swapmap(void) {
+static void test_swapmap() {
 	test_swapmap1();
 	test_swapmap2();
 	test_swapmap5();
 	test_swapmap6();
 }
 
-static void test_swapmap1(void) {
+static void test_swapmap1() {
 	ulong blocks[5];
 	test_doStart("Testing alloc & free");
 
@@ -75,7 +75,7 @@ static void test_swapmap1(void) {
 	test_finish();
 }
 
-static void test_swapmap2(void) {
+static void test_swapmap2() {
 	ulong blocks[5];
 	test_doStart("Testing alloc & reverse free");
 
@@ -94,7 +94,7 @@ static void test_swapmap2(void) {
 	test_finish();
 }
 
-static void test_swapmap5(void) {
+static void test_swapmap5() {
 	ulong blocks[9];
 	test_doStart("Testing alloc & free mixed");
 
@@ -147,7 +147,7 @@ static void test_swapmap5(void) {
 	test_finish();
 }
 
-static void test_swapmap6(void) {
+static void test_swapmap6() {
 	size_t i;
 	size_t total = SwapMap::freeSpace() / PAGE_SIZE;
 	ulong *blocks = (ulong*)Cache::alloc(total * sizeof(ulong));
@@ -169,7 +169,7 @@ static void test_doStart(const char *title) {
 	spaceBefore = SwapMap::freeSpace();
 }
 
-static void test_finish(void) {
+static void test_finish() {
 	size_t spaceAfter = SwapMap::freeSpace();
 	if(spaceAfter != spaceBefore)
 		test_caseFailed("Space before: %d, After: %d",spaceBefore,spaceAfter);

@@ -27,43 +27,43 @@
 #include <esc/test.h>
 
 /* forward declarations */
-static void test_string(void);
-static void test_atoi(void);
-static void test_atoll(void);
-static void test_itoa(void);
-static void test_memset(void);
-static void test_memclear(void);
-static void test_memchr(void);
-static void test_memcpy(void);
-static void test_memcmp(void);
-static void test_memmove(void);
-static void test_strcpy(void);
-static void test_strncpy(void);
-static void test_strtok(void);
-static void test_strcat(void);
-static void test_strncat(void);
-static void test_strcmp(void);
-static void test_strncmp(void);
-static void test_strcasecmp(void);
-static void test_strncasecmp(void);
-static void test_strchr(void);
-static void test_strchri(void);
-static void test_strrchr(void);
-static void test_strstr(void);
-static void test_strcasestr(void);
-static void test_strspn(void);
-static void test_strcspn(void);
-static void test_strpbrk(void);
-static void test_strcut(void);
-static void test_strlen(void);
-static void test_strnlen(void);
-static void test_tolower(void);
-static void test_toupper(void);
-static void test_isalnumstr(void);
-static void test_strmatch(void);
-static void test_strtold(void);
-static void test_strtol(void);
-static void test_ecvt(void);
+static void test_string();
+static void test_atoi();
+static void test_atoll();
+static void test_itoa();
+static void test_memset();
+static void test_memclear();
+static void test_memchr();
+static void test_memcpy();
+static void test_memcmp();
+static void test_memmove();
+static void test_strcpy();
+static void test_strncpy();
+static void test_strtok();
+static void test_strcat();
+static void test_strncat();
+static void test_strcmp();
+static void test_strncmp();
+static void test_strcasecmp();
+static void test_strncasecmp();
+static void test_strchr();
+static void test_strchri();
+static void test_strrchr();
+static void test_strstr();
+static void test_strcasestr();
+static void test_strspn();
+static void test_strcspn();
+static void test_strpbrk();
+static void test_strcut();
+static void test_strlen();
+static void test_strnlen();
+static void test_tolower();
+static void test_toupper();
+static void test_isalnumstr();
+static void test_strmatch();
+static void test_strtold();
+static void test_strtol();
+static void test_ecvt();
 
 /* our test-module */
 sTestModule tModString = {
@@ -71,7 +71,7 @@ sTestModule tModString = {
 	&test_string
 };
 
-static void test_string(void) {
+static void test_string() {
 	test_atoi();
 	test_atoll();
 	test_itoa();
@@ -110,7 +110,7 @@ static void test_string(void) {
 	test_ecvt();
 }
 
-static void test_atoi(void) {
+static void test_atoi() {
 	test_caseStart("Testing atoi()");
 
 	test_assertInt(atoi("123"),123);
@@ -131,7 +131,7 @@ static void test_atoi(void) {
 	test_caseSucceeded();
 }
 
-static void test_atoll(void) {
+static void test_atoll() {
 	test_caseStart("Testing atoll()");
 
 	test_assertLLInt(atoll("123"),123);
@@ -162,7 +162,7 @@ static bool test_itoacpy(int n,const char *expected) {
 	return test_assertStr(str,(char*)expected);
 }
 
-static void test_itoa(void) {
+static void test_itoa() {
 	test_caseStart("Testing itoa()");
 
 	test_itoacpy(1,"1");
@@ -200,7 +200,7 @@ static void checkZero(uint8_t *buf,size_t start,size_t len,size_t total) {
 	}
 }
 
-static void test_memset(void) {
+static void test_memset() {
 	int i,j;
 	uint8_t buf[16] = {0};
 	test_caseStart("Testing memset()");
@@ -237,7 +237,7 @@ static void test_memset(void) {
 	test_caseSucceeded();
 }
 
-static void test_memclear(void) {
+static void test_memclear() {
 	int i,j;
 	uint8_t buf[16] = {0};
 	test_caseStart("Testing memclear()");
@@ -266,7 +266,7 @@ static void test_memclear(void) {
 	test_caseSucceeded();
 }
 
-static void test_memcpy(void) {
+static void test_memcpy() {
 	int i,j;
 	uint8_t zeros[17] = {0};
 	uint8_t src[17] = "0123456789ABCDEF",dest[17];
@@ -298,7 +298,7 @@ static int abs(int n) {
 	return n < 0 ? -n : n;
 }
 
-static void test_memmove(void) {
+static void test_memmove() {
 	int i,j;
 	uint8_t zdest[32];
 	char str1[10] = "abc";
@@ -326,7 +326,7 @@ static void test_memmove(void) {
 	test_caseSucceeded();
 }
 
-static void test_memchr(void) {
+static void test_memchr() {
 	const char *s1 = "abc";
 	const char *s2 = "def123456";
 	test_caseStart("Testing memchr()");
@@ -341,7 +341,7 @@ static void test_memchr(void) {
 	test_caseSucceeded();
 }
 
-static void test_memcmp(void) {
+static void test_memcmp() {
 	const char *str1 = "abc", *str2 = "abcdef", *str3 = "def";
 	test_caseStart("Testing memcmp()");
 
@@ -355,7 +355,7 @@ static void test_memcmp(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcpy(void) {
+static void test_strcpy() {
 	char target[20];
 	test_caseStart("Testing strcpy()");
 
@@ -367,7 +367,7 @@ static void test_strcpy(void) {
 	test_caseSucceeded();
 }
 
-static void test_strncpy(void) {
+static void test_strncpy() {
 	char target[20];
 	char cmp1[] = {'a',0,0};
 	char cmp2[] = {'d','e','f',0,0,0};
@@ -405,7 +405,7 @@ static void test_strncpy(void) {
 	test_caseSucceeded();
 }
 
-static void test_strtok(void) {
+static void test_strtok() {
 	char str1[] = "- This, a sample string.";
 	char str2[] = "";
 	char str3[] = ".,.";
@@ -470,7 +470,7 @@ static void test_strtok(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcat(void) {
+static void test_strcat() {
 	char str1[7] = "abc";
 	char str2[] = "def";
 	test_caseStart("Testing strcat()");
@@ -481,7 +481,7 @@ static void test_strcat(void) {
 	test_caseSucceeded();
 }
 
-static void test_strncat(void) {
+static void test_strncat() {
 	char str1[10] = "abc";
 	char str2[10] = "abc";
 	char str3[10] = "abc";
@@ -501,7 +501,7 @@ static void test_strncat(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcmp(void) {
+static void test_strcmp() {
 	test_caseStart("Testing strcmp()");
 
 	test_assertTrue(strcmp("","") == 0);
@@ -516,7 +516,7 @@ static void test_strcmp(void) {
 	test_caseSucceeded();
 }
 
-static void test_strncmp(void) {
+static void test_strncmp() {
 	test_caseStart("Testing strncmp()");
 
 	test_assertTrue(strncmp("","",0) == 0);
@@ -535,7 +535,7 @@ static void test_strncmp(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcasecmp(void) {
+static void test_strcasecmp() {
 	test_caseStart("Testing strcasecmp()");
 
 	test_assertTrue(strcasecmp("","") == 0);
@@ -550,7 +550,7 @@ static void test_strcasecmp(void) {
 	test_caseSucceeded();
 }
 
-static void test_strncasecmp(void) {
+static void test_strncasecmp() {
 	test_caseStart("Testing strncasecmp()");
 
 	test_assertTrue(strncasecmp("","abc",0) == 0);
@@ -570,7 +570,7 @@ static void test_strncasecmp(void) {
 	test_caseSucceeded();
 }
 
-static void test_strchr(void) {
+static void test_strchr() {
 	char str1[] = "abcdef";
 	test_caseStart("Testing strchr()");
 
@@ -582,7 +582,7 @@ static void test_strchr(void) {
 	test_caseSucceeded();
 }
 
-static void test_strchri(void) {
+static void test_strchri() {
 	char str1[] = "abcdef";
 	test_caseStart("Testing strchri()");
 
@@ -594,7 +594,7 @@ static void test_strchri(void) {
 	test_caseSucceeded();
 }
 
-static void test_strrchr(void) {
+static void test_strrchr() {
 	char str1[] = "abcdefabc";
 	test_caseStart("Testing strrchr()");
 
@@ -607,7 +607,7 @@ static void test_strrchr(void) {
 	test_caseSucceeded();
 }
 
-static void test_strstr(void) {
+static void test_strstr() {
 	char str1[] = "abc def ghi";
 	char str2[] = "";
 	test_caseStart("Testing strstr()");
@@ -627,7 +627,7 @@ static void test_strstr(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcasestr(void) {
+static void test_strcasestr() {
 	char str1[] = "aBc DeF gHi";
 	char str2[] = "";
 	test_caseStart("Testing strcasestr()");
@@ -647,7 +647,7 @@ static void test_strcasestr(void) {
 	test_caseSucceeded();
 }
 
-static void test_strspn(void) {
+static void test_strspn() {
 	test_caseStart("Testing strspn()");
 
 	test_assertSize(strspn("abc","def"),0);
@@ -666,7 +666,7 @@ static void test_strspn(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcspn(void) {
+static void test_strcspn() {
 	test_caseStart("Testing strcspn()");
 
 	test_assertSize(strcspn("abc","def"),3);
@@ -679,7 +679,7 @@ static void test_strcspn(void) {
 	test_caseSucceeded();
 }
 
-static void test_strpbrk(void) {
+static void test_strpbrk() {
 	char str1[] = "test";
 	char str2[] = "abc_def";
 	char str3[] = "";
@@ -703,7 +703,7 @@ static void test_strpbrk(void) {
 	test_caseSucceeded();
 }
 
-static void test_strcut(void) {
+static void test_strcut() {
 	char str1[] = "abc def ghi";
 	char str2[] = "abc";
 	char str3[] = "a";
@@ -720,7 +720,7 @@ static void test_strcut(void) {
 	test_caseSucceeded();
 }
 
-static void test_strlen(void) {
+static void test_strlen() {
 	test_caseStart("Testing strlen()");
 
 	test_assertSize(strlen("abc"),3);
@@ -731,7 +731,7 @@ static void test_strlen(void) {
 	test_caseSucceeded();
 }
 
-static void test_strnlen(void) {
+static void test_strnlen() {
 	test_caseStart("Testing strnlen()");
 
 	test_assertSSize(strnlen("abc",10),3);
@@ -749,7 +749,7 @@ static void test_strnlen(void) {
 	test_caseSucceeded();
 }
 
-static void test_tolower(void) {
+static void test_tolower() {
 	test_caseStart("Testing tolower()");
 
 	test_assertInt(tolower('C'),'c');
@@ -762,7 +762,7 @@ static void test_tolower(void) {
 	test_caseSucceeded();
 }
 
-static void test_toupper(void) {
+static void test_toupper() {
 	test_caseStart("Testing toupper()");
 
 	test_assertInt(toupper('c'),'C');
@@ -775,7 +775,7 @@ static void test_toupper(void) {
 	test_caseSucceeded();
 }
 
-static void test_isalnumstr(void) {
+static void test_isalnumstr() {
 	test_caseStart("Testing isalnumstr()");
 
 	test_assertTrue(isalnumstr("abc123"));
@@ -791,7 +791,7 @@ static void test_isalnumstr(void) {
 	test_caseSucceeded();
 }
 
-static void test_strmatch(void) {
+static void test_strmatch() {
 	test_caseStart("Testing strmatch()");
 
 	test_assertTrue(strmatch("abc*def","abcdef"));
@@ -838,7 +838,7 @@ static void test_strmatch(void) {
 	test_caseSucceeded();
 }
 
-static void test_strtold(void) {
+static void test_strtold() {
 	typedef struct {
 		const char *str;
 		long double res;
@@ -872,7 +872,7 @@ static void test_strtold(void) {
 	test_caseSucceeded();
 }
 
-static void test_strtol(void) {
+static void test_strtol() {
 	typedef struct {
 		const char *str;
 		uint base;
@@ -910,7 +910,7 @@ static void test_strtol(void) {
 	test_caseSucceeded();
 }
 
-static void test_ecvt(void) {
+static void test_ecvt() {
 	int decpt,sign;
 	char *s;
 	test_caseStart("Testing ecvt()");

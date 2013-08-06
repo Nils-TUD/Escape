@@ -26,12 +26,12 @@
 #include "testutils.h"
 
 /* forward declarations */
-static void test_rbuf(void);
-static void test_1(void);
-static void test_2(void);
-static void test_3(void);
-static void test_4(void);
-static void test_5(void);
+static void test_rbuf();
+static void test_1();
+static void test_2();
+static void test_3();
+static void test_4();
+static void test_5();
 
 /* our test-module */
 sTestModule tModRBuffer = {
@@ -39,7 +39,7 @@ sTestModule tModRBuffer = {
 	&test_rbuf
 };
 
-static void test_rbuf(void) {
+static void test_rbuf() {
 	test_1();
 	test_2();
 	test_3();
@@ -47,7 +47,7 @@ static void test_rbuf(void) {
 	test_5();
 }
 
-static void test_1(void) {
+static void test_1() {
 	sRingBuf *rb;
 	test_caseStart("Create & Destroy");
 	checkMemoryBefore(false);
@@ -63,7 +63,7 @@ static void test_1(void) {
 	test_caseSucceeded();
 }
 
-static void test_2(void) {
+static void test_2() {
 	sRingBuf *rb;
 	size_t i,x;
 	test_caseStart("Write & Read");
@@ -87,7 +87,7 @@ static void test_2(void) {
 	test_caseSucceeded();
 }
 
-static void test_3(void) {
+static void test_3() {
 	sRingBuf *rb;
 	size_t i,x;
 	test_caseStart("Write & Read - Full RB_OVERWRITE");
@@ -132,7 +132,7 @@ static void test_3(void) {
 	test_caseSucceeded();
 }
 
-static void test_4(void) {
+static void test_4() {
 	sRingBuf *rb;
 	size_t i,x;
 	test_caseStart("Write & Read - Full RB_DEFAULT");
@@ -158,7 +158,7 @@ static void test_4(void) {
 	test_caseSucceeded();
 }
 
-static void test_5(void) {
+static void test_5() {
 	size_t i;
 	sRingBuf *rb1,*rb2;
 	test_caseStart("Move");

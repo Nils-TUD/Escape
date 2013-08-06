@@ -37,9 +37,9 @@
 
 /* make gcc happy */
 EXTERN_C void bspstart(BootInfo *mbp);
-EXTERN_C uintptr_t smpstart(void);
-EXTERN_C void apstart(void);
-static void idlestart(void);
+EXTERN_C uintptr_t smpstart();
+EXTERN_C void apstart();
+static void idlestart();
 extern klock_t aplock;
 
 static uint8_t initloader[] = {
@@ -55,7 +55,7 @@ void bspstart(BootInfo *mbp) {
 	Boot::start(mbp);
 }
 
-uintptr_t smpstart(void) {
+uintptr_t smpstart() {
 	Thread *t;
 	ELF::StartupInfo info;
 	size_t i,total = SMP::getCPUCount();
@@ -81,7 +81,7 @@ uintptr_t smpstart(void) {
 	return info.progEntry;
 }
 
-void apstart(void) {
+void apstart() {
 	Proc *p = Proc::getByPid(0);
 	/* store the running thread for our temp-stack again, because we might need it in gdt_init_ap
 	 * for example */
@@ -101,7 +101,7 @@ void apstart(void) {
 	Thread::initialSwitch();
 }
 
-static void idlestart(void) {
+static void idlestart() {
 	if(!SMP::isBSP()) {
 		/* unlock the temporary kernel-stack, so that other CPUs can use it */
 		SpinLock::release(&aplock);

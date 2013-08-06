@@ -59,7 +59,7 @@ int IOPorts::request(uint16_t start,size_t count) {
 	return 0;
 }
 
-bool IOPorts::handleGPF(void) {
+bool IOPorts::handleGPF() {
 	bool res = false;
 	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap != NULL && !GDT::ioMapPresent()) {

@@ -53,8 +53,8 @@
 
 /* make gcc happy */
 EXTERN_C void bspstart(BootInfo *mbp);
-EXTERN_C uintptr_t smpstart(void);
-EXTERN_C void apstart(void);
+EXTERN_C uintptr_t smpstart();
+EXTERN_C void apstart();
 
 void bspstart(BootInfo *bootinfo) {
 	/* init the kernel */
@@ -101,11 +101,11 @@ void bspstart(BootInfo *bootinfo) {
 	while(1);
 }
 
-uintptr_t smpstart(void) {
+uintptr_t smpstart() {
 	/* not used */
 	return 0;
 }
 
-void apstart(void) {
+void apstart() {
 	/* not used */
 }

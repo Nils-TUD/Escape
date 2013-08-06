@@ -26,7 +26,7 @@
 #include "tctype.h"
 #include <esc/test.h>
 
-static void test_ctype(void);
+static void test_ctype();
 static int test_isalnum(int c);
 static int test_isalpha(int c);
 static int test_isblank(int c);
@@ -46,7 +46,7 @@ sTestModule tModCtype = {
 	&test_ctype
 };
 
-static void test_ctype(void) {
+static void test_ctype() {
 	int c;
 	test_caseStart("Testing all characters");
 

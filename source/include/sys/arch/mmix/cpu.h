@@ -121,7 +121,7 @@ public:
 	/**
 	 * @return the fault-location for protection-faults
 	 */
-	static uintptr_t getFaultLoc(void) {
+	static uintptr_t getFaultLoc() {
 		uintptr_t res;
 		asm volatile ("GET %0, rYY" : "=r"(res));
 		return res;
@@ -165,12 +165,12 @@ private:
 	static uint64_t cpuHz;
 };
 
-inline uint64_t CPUBase::rdtsc(void) {
+inline uint64_t CPUBase::rdtsc() {
 	uint64_t res;
 	asm volatile ("GET %0, rC" : "=r"(res));
 	return res;
 }
 
-inline uint64_t CPUBase::getSpeed(void) {
+inline uint64_t CPUBase::getSpeed() {
 	return CPU::cpuHz;
 }

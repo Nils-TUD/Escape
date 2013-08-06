@@ -24,7 +24,7 @@
 #include <sys/boot.h>
 #include <sys/util.h>
 
-void PhysMemAreas::initArch(void) {
+void PhysMemAreas::initArch() {
 	const BootInfo *binfo = Boot::getInfo();
 	const LoadProg *last;
 
@@ -35,7 +35,7 @@ void PhysMemAreas::initArch(void) {
 	PhysMemAreas::add(ROUND_PAGE_UP(last->start - KERNEL_START + last->size),binfo->memSize);
 }
 
-size_t PhysMemAreas::getTotal(void) {
+size_t PhysMemAreas::getTotal() {
 	const BootInfo *binfo = Boot::getInfo();
 	return binfo->memSize;
 }

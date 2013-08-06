@@ -138,7 +138,7 @@ start:
 loop:
 	JMP		loop
 
-# uint64_t detectCPUSpeed(void)
+# uint64_t detectCPUSpeed()
 detectCPUSpeed:
 	# set dynamic-trap address
 	GETA	$0,tempDynTrap
@@ -286,7 +286,7 @@ thread_startup:
 	NEG		$255,0,1						# set rK = -1
 	RESUME	1
 
-# void thread_idle(void)
+# void thread_idle()
 thread_idle:
 	NEG		$0,0,1
 	ANDNMH	$0,#0001

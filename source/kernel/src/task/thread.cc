@@ -148,7 +148,7 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
 	return res;
 }
 
-void ThreadBase::updateRuntimes(void) {
+void ThreadBase::updateRuntimes() {
 	size_t threadCount;
 	uint64_t cyclesPerSec = Thread::ticksPerSec();
 	SpinLock::acquire(&lock);
@@ -370,7 +370,7 @@ void ThreadBase::print(OStream &os) const {
 	os.popIndent();
 }
 
-tid_t ThreadBase::getFreeTid(void) {
+tid_t ThreadBase::getFreeTid() {
 	size_t count = 0;
 	tid_t res = INVALID_TID;
 	SpinLock::acquire(&lock);

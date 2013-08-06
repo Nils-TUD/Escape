@@ -104,7 +104,7 @@ void Util::printUserState(OStream &os) {
 	printUserStateOf(os,t);
 }
 
-Util::FuncCall *Util::getUserStackTrace(void) {
+Util::FuncCall *Util::getUserStackTrace() {
 	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *kstack = t->getIntrptStack();
@@ -115,7 +115,7 @@ Util::FuncCall *Util::getUserStackTrace(void) {
 	return NULL;
 }
 
-Util::FuncCall *Util::getKernelStackTrace(void) {
+Util::FuncCall *Util::getKernelStackTrace() {
 	uintptr_t start,end;
 	uint32_t* ebp;
 	Thread *t = Thread::getRunning();

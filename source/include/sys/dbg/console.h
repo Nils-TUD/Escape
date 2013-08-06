@@ -161,7 +161,7 @@ private:
 	static uint8_t charToInt(char c);
 	static void convSearch(const char *src,char *dst,size_t len);
 	static char **parseLine(const char *line,size_t *argc);
-	static char *readLine(void);
+	static char *readLine();
 	static Command *getCommand(const char *name);
 
 	static size_t histWritePos;

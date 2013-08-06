@@ -321,7 +321,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 	return a;
 }
 
-size_t KHeap::getUsedMem(void) {
+size_t KHeap::getUsedMem() {
 	size_t i,c = 0;
 	MemArea *a;
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
@@ -334,7 +334,7 @@ size_t KHeap::getUsedMem(void) {
 	return c;
 }
 
-size_t KHeap::getFreeMem(void) {
+size_t KHeap::getFreeMem() {
 	size_t c = 0;
 	MemArea *a = usableList;
 	while(a != NULL) {
@@ -408,7 +408,7 @@ bool KHeap::loadNewSpace(size_t size) {
 	return doAddMemory(addr,count * PAGE_SIZE);
 }
 
-bool KHeap::loadNewAreas(void) {
+bool KHeap::loadNewAreas() {
 	MemArea *area,*end;
 	uintptr_t addr;
 

@@ -39,7 +39,7 @@ TimerBase::Listener TimerBase::listenObjs[LISTENER_COUNT];
 TimerBase::Listener *TimerBase::freeList;
 TimerBase::Listener *TimerBase::listener = NULL;
 
-void TimerBase::init(void) {
+void TimerBase::init() {
 	size_t i;
 	archInit();
 
@@ -118,7 +118,7 @@ void TimerBase::removeThread(tid_t tid) {
 	SpinLock::release(&lock);
 }
 
-bool TimerBase::intrpt(void) {
+bool TimerBase::intrpt() {
 	bool res,foundThread = false;
 	Listener *l,*tl;
 	time_t timeInc = 1000 / FREQUENCY_DIV;

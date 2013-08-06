@@ -26,9 +26,9 @@
 #define ADDR_SPACE_COUNT		1024
 
 /* forward declarations */
-static void test_addrspace(void);
-static void test_basics(void);
-static void test_dupUsage(void);
+static void test_addrspace();
+static void test_basics();
+static void test_dupUsage();
 
 /* our test-module */
 sTestModule tModAddrSpace = {
@@ -37,7 +37,7 @@ sTestModule tModAddrSpace = {
 };
 static AddressSpace *spaces[ADDR_SPACE_COUNT * 3];
 
-static void test_addrspace(void) {
+static void test_addrspace() {
 	Proc *p = Proc::getByPid(Proc::getRunning());
 	/* a trick to ensure that no address-spaces are in use yet: temporary free the first one and
 	 * allocate it again when we're finished */
@@ -51,7 +51,7 @@ static void test_addrspace(void) {
 	p->getPageDir()->rv |= (p->getPageDir()->addrSpace->getNo() << 3);
 }
 
-static void test_basics(void) {
+static void test_basics() {
 	AddressSpace *as1,*as2;
 	test_caseStart("Testing basics");
 
@@ -68,7 +68,7 @@ static void test_basics(void) {
 	test_caseSucceeded();
 }
 
-static void test_dupUsage(void) {
+static void test_dupUsage() {
 	size_t i;
 	test_caseStart("Testing duplicate usage");
 

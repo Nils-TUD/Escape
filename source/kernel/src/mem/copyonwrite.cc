@@ -87,7 +87,7 @@ size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
 	return 1;
 }
 
-size_t CopyOnWrite::getFrmCount(void) {
+size_t CopyOnWrite::getFrmCount() {
 	size_t i,count = 0;
 	SpinLock::acquire(&lock);
 	for(i = 0; i < HEAP_SIZE; i++)

@@ -30,7 +30,7 @@
 .set STATE_EFLAGS,					16
 .set STATE_EBX,						20
 
-# void thread_idle(void);
+# void thread_idle();
 thread_idle:
 	sti
 1:

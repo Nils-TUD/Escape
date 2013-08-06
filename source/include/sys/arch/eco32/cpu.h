@@ -26,15 +26,15 @@ public:
 	/**
 	 * @return the pagefault-address
 	 */
-	static uint getBadAddr(void) asm("cpu_getBadAddr");
+	static uint getBadAddr() asm("cpu_getBadAddr");
 };
 
-inline uint64_t CPUBase::rdtsc(void) {
+inline uint64_t CPUBase::rdtsc() {
 	/* TODO not implemented yet */
 	return 0;
 }
 
-inline uint64_t CPUBase::getSpeed(void) {
+inline uint64_t CPUBase::getSpeed() {
 	/* not available */
 	return 0;
 }

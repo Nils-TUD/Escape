@@ -317,7 +317,7 @@ intrpt_setMask:
 # CPU
 #===========================================
 
-# uint cpu_getFaultAddr(void)
+# uint cpu_getFaultAddr()
 cpu_getBadAddr:
 	mvfs	$2,FS_TLB_BAD
 	jr		$31
@@ -407,7 +407,7 @@ thread_startup:
 	mvts	$8,FS_PSW
 	rfx
 
-# void thread_idle(void)
+# void thread_idle()
 thread_idle:
 	# enable interrupts
 	mvfs	$8,FS_PSW

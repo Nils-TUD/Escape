@@ -22,7 +22,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
 
-uintptr_t KHeap::allocAreas(void) {
+uintptr_t KHeap::allocAreas() {
 	frameno_t frame = PhysMem::allocate(PhysMem::CRIT);
 	if(frame == 0)
 		return 0;

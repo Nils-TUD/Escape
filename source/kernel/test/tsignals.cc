@@ -25,9 +25,9 @@
 #include "esc/test.h"
 #include "tsignals.h"
 
-static void test_signals(void);
-static void test_canHandle(void);
-static void test_setHandler(void);
+static void test_signals();
+static void test_canHandle();
+static void test_setHandler();
 
 /* our test-module */
 sTestModule tModSignals = {
@@ -49,12 +49,12 @@ static int signals[] = {
 	SIG_SEGFAULT
 };
 
-static void test_signals(void) {
+static void test_signals() {
 	test_canHandle();
 	test_setHandler();
 }
 
-static void test_canHandle(void) {
+static void test_canHandle() {
 	size_t i;
 	test_caseStart("Testing Signals::canHandle()");
 
@@ -66,7 +66,7 @@ static void test_canHandle(void) {
 	test_caseSucceeded();
 }
 
-static void test_setHandler(void) {
+static void test_setHandler() {
 	Thread *t1 = Thread::getRunning();
 	int tid = Proc::startThread(0,0,NULL);
 	Thread *t2 = Thread::getById(tid);

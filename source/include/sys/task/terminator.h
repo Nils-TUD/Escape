@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <esc/sllist.h>
+#include <sys/col/islist.h>
 
 class Thread;
 
@@ -28,11 +28,6 @@ class Terminator {
 	friend class ThreadBase;
 
 public:
-	/**
-	 * Inits the terminator
-	 */
-	static void init();
-
 	/**
 	 * The start-function of the terminator. Should be called by a dedicated thread.
 	 */
@@ -47,6 +42,6 @@ private:
 	 */
 	static void addDead(Thread *t);
 
-	static sSLList deadThreads;
+	static ISList<Thread*> deadThreads;
 	static klock_t lock;
 };

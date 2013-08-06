@@ -375,7 +375,7 @@ public:
 	 * @return the position to set
 	 */
 	virtual off_t seek(A_UNUSED pid_t pid,A_UNUSED off_t position,A_UNUSED off_t offset,
-	                   A_UNUSED uint whence) {
+	                   A_UNUSED uint whence) const {
 		return -ENOTSUP;
 	}
 

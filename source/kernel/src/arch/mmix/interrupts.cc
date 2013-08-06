@@ -179,7 +179,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(pfaddr) < 0) {
 			pid_t pid = Proc::getRunning();
-			sKSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
+			KSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
 			Log::get().writef("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,
 					pfaddr,sregs->rww);
 			Proc::segFault();

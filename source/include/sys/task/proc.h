@@ -60,8 +60,6 @@
 #define PLOCK_PORTS			3
 #define PLOCK_PROG			4	/* clone, exec, threads */
 
-struct sThread;
-
 /* represents a process */
 class ProcBase : public SListItem {
 protected:

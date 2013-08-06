@@ -29,8 +29,8 @@
 #include <assert.h>
 
 klock_t Event::lock;
-sWait Event::waits[MAX_WAIT_COUNT];
-sWait *Event::waitFree;
+Wait Event::waits[MAX_WAIT_COUNT];
+Wait *Event::waitFree;
 Event::WaitList Event::evlists[EV_COUNT];
 
 void Event::init() {
@@ -50,7 +50,7 @@ void Event::init() {
 
 bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
-	sWait *w;
+	Wait *w;
 	SpinLock::acquire(&lock);
 	w = t->waits;
 	while(w && w->tnext)
@@ -65,7 +65,7 @@ bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 
 bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 	size_t i,e;
-	sWait *w;
+	Wait *w;
 	SpinLock::acquire(&lock);
 	w = t->waits;
 	while(w && w->tnext)
@@ -95,7 +95,7 @@ bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 void Event::wakeup(size_t evi,evobj_t object) {
 	tid_t tids[MAX_WAKEUPS];
 	WaitList *list = evlists + evi;
-	sWait *w;
+	Wait *w;
 	size_t i = 0;
 	SpinLock::acquire(&lock);
 	w = list->begin;
@@ -164,7 +164,7 @@ void Event::print(OStream &os) {
 	os.writef("Eventlists:\n");
 	for(e = 0; e < EV_COUNT; e++) {
 		WaitList *list = evlists + e;
-		sWait *w = list->begin;
+		Wait *w = list->begin;
 		os.writef("\t%s:\n",getName(e));
 		while(w != NULL) {
 			inode_t nodeNo;
@@ -182,9 +182,9 @@ void Event::print(OStream &os) {
 
 void Event::doRemoveThread(Thread *t) {
 	if(t->events) {
-		sWait *w = t->waits;
+		Wait *w = t->waits;
 		while(w != NULL) {
-			sWait *nw = w->tnext;
+			Wait *nw = w->tnext;
 			if(w->prev)
 				w->prev->next = w->next;
 			else
@@ -201,9 +201,9 @@ void Event::doRemoveThread(Thread *t) {
 	}
 }
 
-sWait *Event::doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev) {
+Wait *Event::doWait(Thread *t,size_t evi,evobj_t object,Wait **begin,Wait *prev) {
 	WaitList *list = evlists + evi;
-	sWait *w = allocWait();
+	Wait *w = allocWait();
 	if(!w)
 		return NULL;
 	w->tid = t->getTid();
@@ -227,15 +227,15 @@ sWait *Event::doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *pr
 	return w;
 }
 
-sWait *Event::allocWait() {
-	sWait *res = waitFree;
+Wait *Event::allocWait() {
+	Wait *res = waitFree;
 	if(res == NULL)
 		return NULL;
 	waitFree = waitFree->next;
 	return res;
 }
 
-void Event::freeWait(sWait *w) {
+void Event::freeWait(Wait *w) {
 	w->next = waitFree;
 	waitFree = w;
 }

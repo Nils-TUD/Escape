@@ -211,7 +211,7 @@ void ThreadBase::doSwitch() {
 
 #if DEBUGGING
 
-void ThreadBase::printState(OStream &os,const ThreadRegs *state) {
+void ThreadBase::printState(OStream &os,const ThreadRegs *state) const {
 	os.writef("State @ 0x%08Px:\n",state);
 	os.writef("\tesp = %#08x\n",state->esp);
 	os.writef("\tedi = %#08x\n",state->edi);

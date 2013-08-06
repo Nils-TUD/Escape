@@ -23,8 +23,6 @@
 #include <esc/defines.h>
 #include <stddef.h>
 
-struct OpenFile;
-typedef struct OpenFile OpenFile;
 typedef int vmreg_t;
 typedef uintptr_t frameno_t;
 typedef uint klock_t;

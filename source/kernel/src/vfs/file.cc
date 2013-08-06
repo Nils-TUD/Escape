@@ -49,7 +49,7 @@ VFSFile::~VFSFile() {
 	data = NULL;
 }
 
-off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) {
+off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) const {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;

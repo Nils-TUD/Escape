@@ -134,14 +134,14 @@ int ThreadBase::extendStack(uintptr_t address) {
 	return res;
 }
 
-bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) {
+bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) const {
 	bool res = false;
 	if(stackRegions[stackNo] != NULL)
 		res = proc->getVM()->getRegRange(stackRegions[stackNo],start,end,false);
 	return res;
 }
 
-bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
+bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 	bool res = false;
 	if(tlsRegion != NULL)
 		res = proc->getVM()->getRegRange(tlsRegion,start,end,false);

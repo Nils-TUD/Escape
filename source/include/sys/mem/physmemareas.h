@@ -70,7 +70,6 @@ public:
 	 */
 	static void print(OStream &os);
 
-	/* TODO private! */
 	/**
 	 * Adds <addr>..<end> to the list of free memory
 	 *

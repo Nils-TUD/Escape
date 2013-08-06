@@ -106,7 +106,7 @@ void Log::writec(char c) {
 	SpinLock::release(&lock);
 }
 
-uchar Log::pipepad() {
+uchar Log::pipepad() const {
 	return VID_COLS - col;
 }
 

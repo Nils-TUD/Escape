@@ -28,10 +28,10 @@ struct ThreadRegs {
 	uintptr_t stackEnd;
 };
 
-typedef struct {
+struct KSpecRegs {
 	uint64_t rbb;
 	uint64_t rww;
 	uint64_t rxx;
 	uint64_t ryy;
 	uint64_t rzz;
-} sKSpecRegs;
+};

@@ -32,7 +32,7 @@ public:
 	virtual bool escape(const char **fmt) {
 		return Video::get().escape(fmt);
 	}
-	virtual uchar pipepad() {
+	virtual uchar pipepad() const {
 		return Video::get().pipepad();
 	}
 };

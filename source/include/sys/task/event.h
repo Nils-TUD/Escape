@@ -78,8 +78,8 @@ class Event {
 	static const size_t MAX_WAKEUPS			= 8;
 
 	struct WaitList {
-		sWait *begin;
-		sWait *last;
+		Wait *begin;
+		Wait *last;
 	};
 
 public:
@@ -200,14 +200,14 @@ public:
 
 private:
 	static void doRemoveThread(Thread *t);
-	static sWait *doWait(Thread *t,size_t evi,evobj_t object,sWait **begin,sWait *prev);
-	static sWait *allocWait();
-	static void freeWait(sWait *w);
+	static Wait *doWait(Thread *t,size_t evi,evobj_t object,Wait **begin,Wait *prev);
+	static Wait *allocWait();
+	static void freeWait(Wait *w);
 	static const char *getName(size_t evi);
 
 	static klock_t lock;
-	static sWait waits[MAX_WAIT_COUNT];
-	static sWait *waitFree;
+	static Wait waits[MAX_WAIT_COUNT];
+	static Wait *waitFree;
 	static WaitList evlists[EV_COUNT];
 };
 

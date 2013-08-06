@@ -70,23 +70,26 @@
 #include <sys/arch/mmix/task/threadconf.h>
 #endif
 
-typedef void (*fTermCallback)();
+typedef void (*terminate_func)();
 
-typedef struct sWait {
+struct Wait {
 	tid_t tid;
 	ushort evi;
 	evobj_t object;
-	struct sWait *prev;
-	struct sWait *next;
-	struct sWait *tnext;
-} sWait;
+	Wait *prev;
+	Wait *next;
+	Wait *tnext;
+};
 
 class Thread;
 class Proc;
+class Event;
 
 class ThreadBase {
 	friend class ProcBase;
 	friend class Sched;
+	friend class Signals;
+	friend class Event;
 
 	struct Stats {
 		uint64_t timeslice;
@@ -324,12 +327,11 @@ public:
 	void setState(uint8_t state) {
 		this->state = state;
 	}
-	/* TODO temp */
+	/**
+	 * @return the next state a thread should receive if we schedule away from him
+	 */
 	uint8_t getNewState() const {
 		return newState;
-	}
-	void setNewState(uint8_t state) {
-		newState = state;
 	}
 
 	/**
@@ -449,7 +451,7 @@ public:
 	 * @param stackNo the stack-number
 	 * @return true if the stack-region exists
 	 */
-	bool getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo);
+	bool getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) const;
 
 	/**
 	 * Retrieves the range of the TLS region
@@ -458,7 +460,7 @@ public:
 	 * @param end will be set to the end-address (may be NULL)
 	 * @return true if the TLS-region exists
 	 */
-	bool getTLSRange(uintptr_t *start,uintptr_t *end);
+	bool getTLSRange(uintptr_t *start,uintptr_t *end) const;
 
 	/**
 	 * Blocks this thread. ONLY CALLED by event.
@@ -551,7 +553,7 @@ public:
 	 * @param os the output-stream
 	 * @param state the pointer to the state-struct
 	 */
-	void printState(OStream &os,const ThreadRegs *state);
+	void printState(OStream &os,const ThreadRegs *state) const;
 
 private:
 	/**
@@ -625,6 +627,10 @@ private:
 	 */
 	void kill();
 
+	void setNewState(uint8_t state) {
+		newState = state;
+	}
+
 	void makeUnrunnable();
 	void initProps();
 	static void doSwitch();
@@ -633,21 +639,18 @@ private:
 	bool add();
 	void remove();
 
+protected:
 	/* thread id */
 	tid_t tid;
 	/* the process we belong to */
 	Proc *proc;
-	/* TODO temporary; restrict it later */
-public:
 	/* the signal-data, managed by the signals-module */
 	Signals::Data *signals;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */
 	uint events;
-	sWait *waits;
-
-protected:
+	Wait *waits;
 	uint8_t flags;
 	uint8_t priority;
 	uint8_t state;
@@ -674,7 +677,7 @@ protected:
 	/* a list of file-usages that should be decremented on thread-termination */
 	OpenFile *termUsages[TERM_RESOURCE_CNT];
 	/* a list of callbacks that should be called on thread-termination */
-	fTermCallback termCallbacks[TERM_RESOURCE_CNT];
+	terminate_func termCallbacks[TERM_RESOURCE_CNT];
 	uint8_t termHeapCount;
 	uint8_t termLockCount;
 	uint8_t termUsageCount;

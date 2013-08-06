@@ -41,7 +41,7 @@ void LAPIC::init() {
 
 void LAPIC::writeIPI(uint32_t high,uint32_t low) {
 	while((read(REG_ICR_LOW) & ICR_DELSTAT_PENDING))
-		__asm__ ("pause");
+		CPU::pause();
 	write(REG_ICR_HIGH,high);
 	write(REG_ICR_LOW,low);
 }

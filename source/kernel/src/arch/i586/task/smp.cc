@@ -104,7 +104,7 @@ void SMPBase::pauseOthers() {
 	}
 	/* wait until all CPUs are paused */
 	while(waiting < count)
-		__asm__ ("pause");
+		::CPU::pause();
 }
 
 void SMPBase::resumeOthers() {
@@ -126,7 +126,7 @@ void SMPBase::haltOthers() {
 	}
 	/* wait until all CPUs are halted */
 	while(halting < count)
-		__asm__ ("pause");
+		::CPU::pause();
 }
 
 void SMPBase::ensureTLBFlushed() {
@@ -142,7 +142,7 @@ void SMPBase::ensureTLBFlushed() {
 	}
 	/* wait until all CPUs have flushed their TLB */
 	while(halting == 0 && flushed < count)
-		__asm__ ("pause");
+		::CPU::pause();
 }
 
 void SMP::apIsRunning() {
@@ -181,7 +181,7 @@ void SMPBase::start() {
 		start = ::CPU::rdtsc();
 		end = start + Timer::timeToCycles(2000000);
 		while(::CPU::rdtsc() < end && seenAPs != total)
-			__asm__ ("pause");
+			::CPU::pause();
 		if(seenAPs != total) {
 			Log::get().writef("Found %zu CPUs in 2s, expected %zu. Disabling SMP",seenAPs,total);
 			disable();

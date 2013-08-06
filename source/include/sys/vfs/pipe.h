@@ -54,6 +54,6 @@ private:
 	uint8_t noReader;
 	/* total number of bytes available */
 	size_t total;
-	/* a list with sPipeData */
+	/* a list with PipeData */
 	SList<PipeData> list;
 };

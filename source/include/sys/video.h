@@ -69,7 +69,7 @@ public:
 	 * @param row pointer to the row to set
 	 * @param col pointer to the col to set
 	 */
-	void backup(char *buffer,ushort *row,ushort *col);
+	void backup(char *buffer,ushort *row,ushort *col) const;
 
 	/**
 	 * Restores the screen from the given buffer. Assumes (!) that the buffer is large enough to contain
@@ -95,7 +95,7 @@ public:
 
 private:
 	virtual bool escape(const char **str);
-	virtual uchar pipepad();
+	virtual uchar pipepad() const;
 
 	void drawChar(ushort col,ushort row,char c);
 	void clear();
@@ -109,7 +109,7 @@ private:
 	ulong col;
 	ulong row;
 	uchar color;
-	klock_t lock;
+	mutable klock_t lock;
 	static Video inst;
 };
 

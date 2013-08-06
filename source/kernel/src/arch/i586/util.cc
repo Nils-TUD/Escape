@@ -120,7 +120,7 @@ Util::FuncCall *Util::getKernelStackTrace() {
 	uint32_t* ebp;
 	Thread *t = Thread::getRunning();
 	if(t) {
-		__asm__ volatile ("mov %%ebp,%0" : "=a" (ebp) : );
+		asm volatile ("mov %%ebp,%0" : "=a" (ebp) : );
 
 		/* determine the stack-bounds; we have a temp stack at the beginning */
 		if((uintptr_t)ebp >= t->getKernelStack() &&

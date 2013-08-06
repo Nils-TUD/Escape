@@ -27,7 +27,7 @@
 
 Video Video::inst;
 
-void Video::backup(char *buffer,ushort *r,ushort *c) {
+void Video::backup(char *buffer,ushort *r,ushort *c) const {
 	SpinLock::acquire(&lock);
 	copyScrToMem(buffer,screen(),VID_ROWS);
 	*r = row;
@@ -76,7 +76,7 @@ void Video::writec(char c) {
 	}
 }
 
-uchar Video::pipepad() {
+uchar Video::pipepad() const {
 	return VID_COLS - col;
 }
 

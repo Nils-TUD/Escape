@@ -43,13 +43,13 @@ int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,int signal) {
 	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *regs;
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
-	sKSpecRegs *sregs;
+	KSpecRegs *sregs;
 
 	/* restore rBB, rWW, rXX, rYY and rZZ */
 	sp += 2;
 	curStack[-9] = *sp++;			/* rJ */
 	sregs = t->getSpecRegs();
-	memcpy(sregs,sp,sizeof(sKSpecRegs));
+	memcpy(sregs,sp,sizeof(KSpecRegs));
 	sp += 5;
 	curStack[-15] = (uint64_t)sp;	/* $254 */
 
@@ -212,7 +212,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
-	sKSpecRegs *sregs;
+	KSpecRegs *sregs;
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
 		Proc::segFault();
 		/* not reached */
@@ -221,7 +221,7 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 
 	/* backup rBB, rWW, rXX, rYY and rZZ */
 	sregs = t->getSpecRegs();
-	memcpy(sp - 5,sregs,sizeof(sKSpecRegs));
+	memcpy(sp - 5,sregs,sizeof(KSpecRegs));
 	sp -= 6;
 	*sp-- = curStack[-9];			/* rJ */
 	*sp-- = (uintptr_t)handler;
@@ -236,7 +236,7 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
                    uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
-	sKSpecRegs *sregs;
+	KSpecRegs *sregs;
 	uintptr_t tlsStart,tlsEnd;
 	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
 		rsp[5] = tlsStart;

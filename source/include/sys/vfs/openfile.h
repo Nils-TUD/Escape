@@ -221,7 +221,7 @@ public:
 	 * @param pid the process-id (device-owner)
 	 * @return the client-id or the error-code
 	 */
-	inode_t getClientId(pid_t pid) {
+	inode_t getClientId(pid_t pid) const {
 		if(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode()))
 			return -EPERM;
 		return nodeNo;

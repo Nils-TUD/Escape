@@ -456,7 +456,7 @@ float VirtMem::getMemUsage(size_t *pages) const {
 	return rpages;
 }
 
-bool VirtMem::getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) {
+bool VirtMem::getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) const {
 	bool res = false;
 	if(!locked || acquire()) {
 		if(start)

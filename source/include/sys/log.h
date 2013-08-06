@@ -61,7 +61,7 @@ public:
 	virtual void writec(char c);
 
 private:
-	virtual uchar pipepad();
+	virtual uchar pipepad() const;
 	virtual bool escape(const char **str);
 
 	static void toSerial(char c);

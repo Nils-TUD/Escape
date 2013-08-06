@@ -27,7 +27,7 @@ class Thread : public ThreadBase {
 public:
 	static void pushSpecRegs();
 	static void popSpecRegs();
-	sKSpecRegs *getSpecRegs() const;
+	KSpecRegs *getSpecRegs() const;
 
 	/**
 	 * @return the frame mapped at KERNEL_STACK
@@ -47,7 +47,7 @@ private:
 	/* use as a temporary kernel-stack for cloning */
 	frameno_t tempStack;
 	/* when handling a signal, we have to backup these registers */
-	sKSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
+	KSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
 	static Thread *cur;
 };
 
@@ -63,19 +63,19 @@ inline void ThreadBase::setRunning(Thread *t) {
 	Thread::cur = t;
 }
 
-inline sKSpecRegs *Thread::getSpecRegs() const {
-	return const_cast<sKSpecRegs*>(specRegLevels) + intrptLevel - 1;
+inline KSpecRegs *Thread::getSpecRegs() const {
+	return const_cast<KSpecRegs*>(specRegLevels) + intrptLevel - 1;
 }
 
 inline void Thread::pushSpecRegs() {
 	Thread *t = Thread::getRunning();
-	sKSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
+	KSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
 	CPU::getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
 }
 
 inline void Thread::popSpecRegs() {
 	Thread *t = Thread::getRunning();
-	sKSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
+	KSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
 	CPU::setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
 }
 

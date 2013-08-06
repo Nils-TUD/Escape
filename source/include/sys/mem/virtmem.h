@@ -56,6 +56,7 @@ class Proc;
 class Thread;
 class OStream;
 class Region;
+class OpenFile;
 
 class VirtMem : public SListItem {
 	friend class ProcBase;
@@ -108,9 +109,11 @@ public:
 	/**
 	 * @return the page-directory
 	 */
-	PageDir *getPageDir() const {
-		// TODO is that necessary?
-		return const_cast<PageDir*>(&pagedir);
+	PageDir *getPageDir() {
+		return &pagedir;
+	}
+	const PageDir *getPageDir() const {
+		return &pagedir;
 	}
 	/**
 	 * @return the number of own frames
@@ -215,7 +218,7 @@ public:
 	 * @param locked whether to lock the regions of the given process during the operation
 	 * @return true if the region exists
 	 */
-	bool getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked);
+	bool getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) const;
 
 	/**
 	 * Removes all regions, optionally including stack.

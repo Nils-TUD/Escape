@@ -73,7 +73,7 @@
  * Flushes the TLB-entry for the given virtual address.
  * NOTE: supported for >= Intel486
  */
-#define	FLUSHADDR(addr)			__asm__ __volatile__ ("invlpg (%0)" : : "r" (addr));
+#define	FLUSHADDR(addr)			asm volatile ("invlpg (%0)" : : "r" (addr));
 
 /* converts the given virtual address to a physical
  * (this assumes that the kernel lies at 0xC0000000)

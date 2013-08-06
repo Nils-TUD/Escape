@@ -37,7 +37,7 @@ void Timer::wait(uint us) {
 	uint64_t start = CPU::rdtsc();
 	uint64_t end = start + timeToCycles(us);
 	while(CPU::rdtsc() < end)
-		__asm__ volatile ("pause");
+		CPU::pause();
 }
 
 uint64_t Timer::detectCPUSpeed() {

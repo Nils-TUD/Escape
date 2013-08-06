@@ -54,7 +54,7 @@ private:
 
 inline Thread *ThreadBase::getRunning() {
 	uint32_t esp;
-	__asm__ (
+	asm volatile (
 		"mov	%%esp,%0;"
 		/* outputs */
 		: "=r" (esp)
@@ -67,7 +67,7 @@ inline Thread *ThreadBase::getRunning() {
 
 inline void ThreadBase::setRunning(Thread *t) {
 	uint32_t esp;
-	__asm__ (
+	asm volatile (
 		"mov	%%esp,%0;"
 		/* outputs */
 		: "=r" (esp)

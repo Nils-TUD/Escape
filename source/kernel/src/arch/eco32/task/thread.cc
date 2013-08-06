@@ -170,7 +170,7 @@ void ThreadBase::doSwitch() {
 
 #if DEBUGGING
 
-void ThreadBase::printState(OStream &os,const ThreadRegs *state) {
+void ThreadBase::printState(OStream &os,const ThreadRegs *state) const {
 	os.writef("State:\n",state);
 	os.writef("\t$16 = %#08x\n",state->r16);
 	os.writef("\t$17 = %#08x\n",state->r17);

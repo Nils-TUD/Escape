@@ -120,7 +120,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			return res;
 		}
 	}
-	memcpy(dst->specRegLevels,src->specRegLevels,sizeof(sKSpecRegs) * MAX_INTRPT_LEVELS);
+	memcpy(dst->specRegLevels,src->specRegLevels,sizeof(KSpecRegs) * MAX_INTRPT_LEVELS);
 	return 0;
 }
 

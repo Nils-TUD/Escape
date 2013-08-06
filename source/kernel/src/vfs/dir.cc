@@ -58,7 +58,7 @@ VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,bool &success)
 	append(p);
 }
 
-off_t VFSDir::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) {
+off_t VFSDir::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) const {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;

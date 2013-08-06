@@ -111,6 +111,13 @@ public:
 	static void getStrInfo(uint32_t code,char *res) asm("cpu_getStrInfo");
 
 	/**
+	 * Executes the 'pause' instruction
+	 */
+	static void pause() {
+		asm volatile ("pause");
+	}
+
+	/**
 	 * @return the value of the CR0 register
 	 */
 	static uint32_t getCR0() {

@@ -45,7 +45,7 @@ void IOAPIC::setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_
 #if 0
 	uint8_t vector = Interrupts::getVectorFor(srcIRQ);
 	cpuid_t lapicId = SMP::getCurId();
-	sIOAPIC *ioapic = get(dstApic);
+	IOAPIC::Instance *ioapic = get(dstApic);
 	if(ioapic == NULL)
 		Util::panic("Unable to find I/O APIC with id %#x\n",dstApic);
 	write(ioapic,IOAPIC_REG_REDTBL + dstInt * 2 + 1,lapicId << 24);

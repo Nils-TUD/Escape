@@ -137,7 +137,7 @@ void VFSChannel::close(pid_t pid,OpenFile *file) {
 	}
 }
 
-off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) {
+off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) const {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;

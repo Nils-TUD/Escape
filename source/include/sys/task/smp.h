@@ -68,6 +68,27 @@ public:
 	static void init();
 
 	/**
+	 * Starts the SMP-system, i.e. the other CPUs
+	 */
+	static void start();
+
+	/**
+	 * Sets CPU with id <id> to ready
+	 *
+	 * @param id the CPU-id
+	 */
+	static void setReady(cpuid_t id);
+
+	/**
+	 * Adds the given CPU to the CPU-list
+	 *
+	 * @param bootstrap whether its the bootstrap CPU
+	 * @param id its CPU-id
+	 * @param ready whether its ready
+	 */
+	static void addCPU(bool bootstrap,uint8_t id,uint8_t ready);
+
+	/**
 	 * Disables SMP. This is possible even after some CPUs have been added.
 	 */
 	static void disable();
@@ -165,28 +186,6 @@ public:
 	 * @param os the output-stream
 	 */
 	static void print(OStream &os);
-
-	/* TODO temporary */
-	/**
-	 * Starts the SMP-system, i.e. the other CPUs
-	 */
-	static void start();
-
-	/**
-	 * Sets CPU with id <id> to ready
-	 *
-	 * @param id the CPU-id
-	 */
-	static void setReady(cpuid_t id);
-
-	/**
-	 * Adds the given CPU to the CPU-list
-	 *
-	 * @param bootstrap whether its the bootstrap CPU
-	 * @param id its CPU-id
-	 * @param ready whether its ready
-	 */
-	static void addCPU(bool bootstrap,uint8_t id,uint8_t ready);
 
 private:
 	/**

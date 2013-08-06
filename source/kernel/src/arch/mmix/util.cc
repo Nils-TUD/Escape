@@ -37,7 +37,7 @@ void Util::panicArch() {
 }
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {
-	sKSpecRegs *sregs = t->getSpecRegs();
+	KSpecRegs *sregs = t->getSpecRegs();
 	os.writef("User state:\n");
 	os.pushIndent();
 	Interrupts::printStackFrame(os,t->getIntrptStack());

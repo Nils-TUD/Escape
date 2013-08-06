@@ -64,9 +64,6 @@ public:
 	 */
 	static void free(Proc *p);
 
-
-	#if DEBUGGING
-
 	/**
 	 * Prints the given IO-map
 	 *
@@ -74,6 +71,4 @@ public:
 	 * @param map the io-map
 	 */
 	static void print(OStream &os,const uint8_t *map);
-
-	#endif
 };

@@ -839,11 +839,11 @@ static void test_strmatch() {
 }
 
 static void test_strtold() {
-	typedef struct {
+	struct StrtoldTest {
 		const char *str;
 		long double res;
-	} sStrtoldTest;
-	sStrtoldTest tests[] = {
+	};
+	StrtoldTest tests[] = {
 		{"1234",		1234L},
 		{" 12.34",		12.34L},
 		{".5",			.5L},
@@ -873,12 +873,12 @@ static void test_strtold() {
 }
 
 static void test_strtol() {
-	typedef struct {
+	struct StrtolTest {
 		const char *str;
 		uint base;
 		long res;
-	} sStrtolTest;
-	sStrtolTest tests[] = {
+	};
+	StrtolTest tests[] = {
 		{"1234",		10,	1234},
 		{" \t12",		0,	12},
 		{"+234",		10,	234},

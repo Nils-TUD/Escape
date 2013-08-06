@@ -79,7 +79,7 @@ private:
 	/**
 	 * @return the pad-value for '|'
 	 */
-	virtual uchar pipepad() {
+	virtual uchar pipepad() const {
 		return 0;
 	}
 

@@ -42,7 +42,7 @@ public:
 	 */
 	explicit VFSDir(pid_t pid,VFSNode *parent,char *name,bool &success);
 
-	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence);
+	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual size_t getSize(pid_t pid) const;
 	virtual ssize_t read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count);
 };

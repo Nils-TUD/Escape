@@ -22,6 +22,8 @@
 #include <sys/common.h>
 #include <esc/elf.h>
 
+class OpenFile;
+
 class ELF {
 	static const int TYPE_PROG		= 0;
 	static const int TYPE_INTERP	= 1;

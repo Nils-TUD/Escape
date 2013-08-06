@@ -35,139 +35,140 @@ class ISList {
 		T data;
 	};
 
-	class ISListIterator : public SListIteratorBase<Node, ISListIterator> {
+	class ISListIterator : public SListIteratorBase<Node,ISListIterator> {
 	public:
-	    explicit ISListIterator(Node *n = nullptr)
-	    	: SListIteratorBase<Node, ISListIterator>(n) {
-	    }
+		explicit ISListIterator(Node *n = nullptr)
+				: SListIteratorBase<Node,ISListIterator>(n) {
+		}
 
-	    T & operator*() const {
-	        return this->_n->data;
-	    }
-	    T *operator->() const {
-	        return &operator*();
-	    }
+		T & operator*() const {
+			return this->_n->data;
+		}
+		T *operator->() const {
+			return &operator*();
+		}
 	};
 
-	class ISListConstIterator : public SListIteratorBase<Node, ISListConstIterator> {
+	class ISListConstIterator : public SListIteratorBase<Node,ISListConstIterator> {
 	public:
-	    explicit ISListConstIterator(const Node *n = nullptr)
-	    	: SListIteratorBase<Node, ISListConstIterator>(const_cast<Node*>(n)) {
-	    }
+		explicit ISListConstIterator(const Node *n = nullptr)
+				: SListIteratorBase<Node,ISListConstIterator>(const_cast<Node*>(n)) {
+		}
 
-	    const T & operator*() const {
-	        return this->_n->data;
-	    }
-	    const T *operator->() const {
-	        return &operator*();
-	    }
+		const T & operator*() const {
+			return this->_n->data;
+		}
+		const T *operator->() const {
+			return &operator*();
+		}
 	};
 
 public:
-    typedef ISListIterator iterator;
-    typedef ISListConstIterator const_iterator;
+	typedef ISListIterator iterator;
+	typedef ISListConstIterator const_iterator;
 
-    /**
-     * Constructor. Creates an empty list
-     */
-    explicit ISList() : list() {
-    }
-    /**
-     * Destructor. Free's all memory.
-     */
-    ~ISList() {
-    	clear();
-    }
+	/**
+	 * Constructor. Creates an empty list
+	 */
+	explicit ISList()
+			: list() {
+	}
+	/**
+	 * Destructor. Free's all memory.
+	 */
+	~ISList() {
+		clear();
+	}
 
-    /**
-     * @return the number of items in the list
-     */
-    size_t length() const {
-        return list.length();
-    }
+	/**
+	 * @return the number of items in the list
+	 */
+	size_t length() const {
+		return list.length();
+	}
 
-    /**
-     * @return beginning of list (you can change the list items)
-     */
-    iterator begin() {
-        return iterator(&*list.begin());
-    }
-    /**
-     * @return end of list
-     */
-    iterator end() {
-        return iterator();
-    }
-    /**
-     * @return tail of the list, i.e. the last valid item
-     */
-    iterator tail() {
-        return iterator(&*list.tail());
-    }
+	/**
+	 * @return beginning of list (you can change the list items)
+	 */
+	iterator begin() {
+		return iterator(&*list.begin());
+	}
+	/**
+	 * @return end of list
+	 */
+	iterator end() {
+		return iterator();
+	}
+	/**
+	 * @return tail of the list, i.e. the last valid item
+	 */
+	iterator tail() {
+		return iterator(&*list.tail());
+	}
 
-    /**
-     * @return beginning of list (you can NOT change the list items)
-     */
-    const_iterator cbegin() const {
-        return const_iterator(&*list.cbegin());
-    }
-    /**
-     * @return end of list
-     */
-    const_iterator cend() const {
-        return const_iterator();
-    }
-    /**
-     * @return tail of the list, i.e. the last valid item (NOT changeable)
-     */
-    const_iterator ctail() const {
-        return const_iterator(&*list.ctail());
-    }
+	/**
+	 * @return beginning of list (you can NOT change the list items)
+	 */
+	const_iterator cbegin() const {
+		return const_iterator(&*list.cbegin());
+	}
+	/**
+	 * @return end of list
+	 */
+	const_iterator cend() const {
+		return const_iterator();
+	}
+	/**
+	 * @return tail of the list, i.e. the last valid item (NOT changeable)
+	 */
+	const_iterator ctail() const {
+		return const_iterator(&*list.ctail());
+	}
 
-    /**
-     * Appends the given item to the list. This works in constant time.
-     *
-     * @param e the list item
-     * @return true if successfull
-     */
-    bool append(T e) {
-    	/* TODO we should use a sllnodes-like allocator here! */
-    	Node *n = new Node(e);
-    	if(n)
-    		list.append(n);
-    	return n != nullptr;
-    }
+	/**
+	 * Appends the given item to the list. This works in constant time.
+	 *
+	 * @param e the list item
+	 * @return true if successfull
+	 */
+	bool append(T e) {
+		/* TODO we should use a sllnodes-like allocator here! */
+		Node *n = new Node(e);
+		if(n)
+			list.append(n);
+		return n != nullptr;
+	}
 
-    /**
-     * Removes the given item from the list. This works in linear time.
-     * Does NOT expect that the item is in the list!
-     *
-     * @param e the list item (doesn't have to be a valid pointer)
-     * @return true if the item has been found and removed
-     */
-    bool remove(T e) {
-    	Node *p = nullptr;
-    	for(iterator it = begin(); it != end(); p = it._n, ++it) {
-    		if(*it == e) {
-    			list.removeAt(p,it._n);
-    			delete it._n;
-    			return true;
-    		}
-    	}
-    	return false;
-    }
+	/**
+	 * Removes the given item from the list. This works in linear time.
+	 * Does NOT expect that the item is in the list!
+	 *
+	 * @param e the list item (doesn't have to be a valid pointer)
+	 * @return true if the item has been found and removed
+	 */
+	bool remove(T e) {
+		Node *p = nullptr;
+		for(iterator it = begin(); it != end(); p = it._n,++it) {
+			if(*it == e) {
+				list.removeAt(p,it._n);
+				delete it._n;
+				return true;
+			}
+		}
+		return false;
+	}
 
-    /**
-     * Clears the list, i.e. deletes all nodes.
-     */
-    void clear() {
-    	for(auto it = begin(); it != end(); ) {
-    		auto old = it++;
-    		delete old._n;
-    	}
-    	list.clear();
-    }
+	/**
+	 * Clears the list, i.e. deletes all nodes.
+	 */
+	void clear() {
+		for(auto it = begin(); it != end();) {
+			auto old = it++;
+			delete old._n;
+		}
+		list.clear();
+	}
 
 private:
-    SList<Node> list;
+	SList<Node> list;
 };

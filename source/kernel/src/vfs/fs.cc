@@ -330,7 +330,6 @@ error:
 
 int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	int err;
-	sSLNode *n;
 	FSChan *chan;
 	VFSNode *child,*fsnode;
 	Proc *p = Proc::getByPid(pid);

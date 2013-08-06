@@ -27,6 +27,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>
+#include <sys/vfs/fs.h>
 #include <sys/spinlock.h>
 #include <sys/mutex.h>
 #include <sys/interrupts.h>
@@ -527,7 +528,7 @@ public:
 	/* file descriptors: point into the global file table */
 	OpenFile *fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
-	sSLList fsChans;
+	SList<VFSFS::FSChan> fsChans;
 	/* environment-variables of this process */
 	sSLList *env;
 	/* the directory-node-number in the VFS of this process */

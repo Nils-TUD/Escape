@@ -84,7 +84,7 @@ void ProcBase::init() {
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	p->entryPoint = 0;
-	sll_init(&p->fsChans,slln_allocNode,slln_freeNode);
+	p->fsChans = SList<VFSFS::FSChan>();
 	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
@@ -226,7 +226,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->sigRetAddr = cur->sigRetAddr;
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
-	sll_init(&p->fsChans,slln_allocNode,slln_freeNode);
+	p->fsChans = SList<VFSFS::FSChan>();
 	p->env = NULL;
 	p->flags = flags;
 	p->stats.input = 0;

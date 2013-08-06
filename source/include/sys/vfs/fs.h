@@ -20,21 +20,25 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/proc.h>
 #include <sys/vfs/openfile.h>
 #include <sys/vfs/node.h>
+#include <sys/col/slist.h>
 #include <esc/fsinterface.h>
+
+class Proc;
 
 class VFSFS {
 	VFSFS() = delete;
 
-	struct FSChan {
+public:
+	struct FSChan : public SListItem {
+		explicit FSChan() : SListItem(), active(true), file(), node() {
+		}
 		uint8_t active;
 		OpenFile *file;
 		VFSNode *node;
 	};
 
-public:
 	/**
 	 * Removes the given process (closes fs-communication-file)
 	 *

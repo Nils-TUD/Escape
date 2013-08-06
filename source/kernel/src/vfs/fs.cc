@@ -43,12 +43,11 @@ klock_t VFSFS::fsChanLock;
 
 void VFSFS::removeProc(pid_t pid) {
 	Proc *p = Proc::getByPid(pid);
-	sSLNode *n;
-	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		FSChan *chan = (FSChan*)n->data;
-		chan->file->closeFile(pid);
+	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ) {
+		auto old = it++;
+		old->file->closeFile(pid);
+		delete &*old;
 	}
-	sll_clear(&p->fsChans,true);
 }
 
 int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
@@ -337,30 +336,28 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
 	SpinLock::acquire(&fsChanLock);
-	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		chan = (FSChan*)n->data;
-		if(!chan->active) {
-			if(!chan->node->isAlive()) {
+	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
+		if(!it->active) {
+			if(!it->node->isAlive()) {
 				/* remove channel */
-				sll_removeFirstWith(&p->fsChans,chan);
-				Cache::free(chan);
+				p->fsChans.remove(&*it);
+				delete &*it;
 				SpinLock::release(&fsChanLock);
 				return -EDESTROYED;
 			}
 			if(node)
-				*node = chan->node;
-			chan->active = true;
+				*node = it->node;
+			it->active = true;
 			SpinLock::release(&fsChanLock);
-			*file = chan->file;
+			*file = it->file;
 			return 0;
 		}
 	}
 	SpinLock::release(&fsChanLock);
 
-	chan = (FSChan*)Cache::alloc(sizeof(FSChan));
+	chan = new FSChan();
 	if(!chan)
 		return -ENOMEM;
-	chan->active = true;
 
 	/* resolve path to fs */
 	err = VFSNode::request(FS_PATH,&fsnode,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
@@ -380,10 +377,7 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	if(err < 0)
 		goto errorChild;
 	SpinLock::acquire(&fsChanLock);
-	if(!sll_append(&p->fsChans,chan)) {
-		SpinLock::release(&fsChanLock);
-		goto errorClose;
-	}
+	p->fsChans.append(chan);
 	SpinLock::release(&fsChanLock);
 	if(node)
 		*node = chan->node;
@@ -392,8 +386,6 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	*file = chan->file;
 	return 0;
 
-errorClose:
-	chan->file->closeFile(pid);
 errorChild:
 	VFSNode::release(child);
 	VFSNode::release(child);
@@ -405,13 +397,11 @@ errorChan:
 }
 
 void VFSFS::releaseFile(pid_t pid,OpenFile *file) {
-	sSLNode *n;
-	const Proc *p = Proc::getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	SpinLock::acquire(&fsChanLock);
-	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		FSChan *chan = (FSChan*)n->data;
-		if(chan->file == file) {
-			chan->active = false;
+	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
+		if(it->file == file) {
+			it->active = false;
 			break;
 		}
 	}
@@ -419,12 +409,9 @@ void VFSFS::releaseFile(pid_t pid,OpenFile *file) {
 }
 
 void VFSFS::printFSChans(OStream &os,const Proc *p) {
-	sSLNode *n;
 	SpinLock::acquire(&fsChanLock);
 	os.writef("FS-Channels:\n");
-	for(n = sll_begin(&p->fsChans); n != NULL; n = n->next) {
-		FSChan *chan = (FSChan*)n->data;
-		os.writef("\t%s (%s)\n",chan->node->getPath(),chan->active ? "active" : "not active");
-	}
+	for(auto it = p->fsChans.cbegin(); it != p->fsChans.cend(); ++it)
+		os.writef("\t%s (%s)\n",it->node->getPath(),it->active ? "active" : "not active");
 	SpinLock::release(&fsChanLock);
 }

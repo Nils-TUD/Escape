@@ -33,15 +33,13 @@
 
 klock_t Signals::lock;
 size_t Signals::pendingSignals = 0;
-sSLList Signals::sigThreads;
+ISList<Thread*> Signals::sigThreads;
 Signals::PendingSig Signals::signals[SIGNAL_COUNT];
 Signals::PendingSig *Signals::freelist;
 
 void Signals::init(void) {
-	size_t i;
-	sll_init(&sigThreads,slln_allocNode,slln_freeNode);
-
 	/* init signal-freelist */
+	size_t i;
 	signals->next = NULL;
 	freelist = signals;
 	for(i = 1; i < SIGNAL_COUNT; i++) {
@@ -91,7 +89,7 @@ void Signals::removeHandlerFor(tid_t tid) {
 		Thread *t = Thread::getById(tid);
 		/* remove all pending */
 		removePending(s,0);
-		sll_removeFirstWith(&sigThreads,t);
+		sigThreads.remove(t);
 		Cache::free(s);
 		t->signals = NULL;
 	}
@@ -140,9 +138,8 @@ int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 	}
 
 	if(res == SIG_CHECK_NO && pendingSignals > 0) {
-		sSLNode *n;
-		for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-			t = (Thread*)n->data;
+		for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
+			t = *it;
 			s = t->signals;
 			if(!t->isIgnoringSigs() && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
 				PendingSig *psig = s->pending.first;
@@ -191,13 +188,11 @@ bool Signals::addSignalFor(tid_t tid,int signal) {
 }
 
 bool Signals::addSignal(int signal) {
-	sSLNode *n;
 	bool res = false;
 	SpinLock::acquire(&lock);
-	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-		Thread *t = (Thread*)n->data;
-		if(t->signals->handler[signal] && t->signals->handler[signal] != SIG_IGN) {
-			add(t->signals,signal);
+	for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
+		if((*it)->signals->handler[signal] && (*it)->signals->handler[signal] != SIG_IGN) {
+			add((*it)->signals,signal);
 			res = true;
 		}
 	}
@@ -248,10 +243,9 @@ const char *Signals::getName(int signal) {
 
 void Signals::print(OStream &os) {
 	size_t i;
-	sSLNode *n;
 	os.writef("Signal handler:\n");
-	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-		Thread *t = (Thread*)n->data;
+	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
+		const Thread *t = *it;
 		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		os.writef("\t\tpending: %zu\n",t->signals->pending.count);
 		os.writef("\t\tdeliver: %d\n",t->signals->deliveredSignal);
@@ -265,12 +259,10 @@ void Signals::print(OStream &os) {
 }
 
 size_t Signals::getHandlerCount(void) {
-	sSLNode *n;
 	size_t i,c = 0;
-	for(n = sll_begin(&sigThreads); n != NULL; n = n->next) {
-		Thread *t = (Thread*)n->data;
+	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		for(i = 0; i < SIG_COUNT; i++) {
-			if(t->signals->handler[i])
+			if((*it)->signals->handler[i])
 				c++;
 		}
 	}
@@ -334,7 +326,7 @@ Signals::Data *Signals::getThread(tid_t tid,bool create) {
 		t->signals = (Data*)Cache::calloc(1,sizeof(Data));
 		if(!t->signals)
 			return NULL;
-		if(!sll_append(&sigThreads,t)) {
+		if(!sigThreads.append(t)) {
 			Cache::free(t->signals);
 			t->signals = NULL;
 			return NULL;

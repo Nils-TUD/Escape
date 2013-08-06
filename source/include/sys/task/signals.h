@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <esc/sllist.h>
+#include <sys/col/islist.h>
 
 #define SIG_COUNT			19
 
@@ -54,6 +54,7 @@
 #define SIG_CHECK_OTHER		1
 #define SIG_CHECK_NO		2
 
+class Thread;
 class ThreadBase;
 class OStream;
 
@@ -224,7 +225,7 @@ private:
 
 	static klock_t lock;
 	static size_t pendingSignals;
-	static sSLList sigThreads;
+	static ISList<Thread*> sigThreads;
 	static PendingSig signals[SIGNAL_COUNT];
 	static PendingSig *freelist;
 };

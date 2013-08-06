@@ -26,6 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/virtmem.h>
+#include <sys/col/islist.h>
 #include <sys/interrupts.h>
 #include <esc/hashmap.h>
 #include <assert.h>
@@ -503,7 +504,7 @@ public:
 	 * @return the number of reserved frames
 	 */
 	size_t getReservedFrmCnt() const {
-		return sll_length(&reqFrames);
+		return reqFrames.length();
 	}
 
 	/**
@@ -680,7 +681,7 @@ protected:
 	uint8_t termCallbackCount;
 	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
 	 * reserved for this thread and have not yet been used */
-	sSLList reqFrames;
+	ISList<frameno_t> reqFrames;
 	Stats stats;
 private:
 	/* for the scheduler */
@@ -832,14 +833,14 @@ inline void ThreadBase::removeRegions(bool remStack) {
 }
 
 inline frameno_t ThreadBase::getFrame() {
-	frameno_t frm = (frameno_t)sll_removeFirst(&reqFrames);
+	frameno_t frm = reqFrames.removeFirst();
 	assert(frm != 0);
 	return frm;
 }
 
 inline void ThreadBase::discardFrames() {
 	frameno_t frm;
-	while((frm = (frameno_t)sll_removeFirst(&reqFrames)) != 0)
+	while((frm = reqFrames.removeFirst()) != 0)
 		PhysMem::free(frm,PhysMem::USR);
 }
 

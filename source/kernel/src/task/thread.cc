@@ -108,7 +108,7 @@ void ThreadBase::initProps() {
 	termCallbackCount = 0;
 	termUsageCount = 0;
 	termLockCount = 0;
-	sll_init(&reqFrames,slln_allocNode,slln_freeNode);
+	reqFrames = ISList<frameno_t>();
 }
 
 size_t ThreadBase::getCount() {
@@ -180,7 +180,7 @@ bool ThreadBase::reserveFrames(size_t count) {
 			frameno_t frm = PhysMem::allocate(PhysMem::USR);
 			if(!frm)
 				break;
-			sll_append(&reqFrames,(void*)frm);
+			reqFrames.append(frm);
 			count--;
 		}
 	}

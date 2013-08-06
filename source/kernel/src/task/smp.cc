@@ -32,13 +32,11 @@
 #include <string.h>
 
 bool SMPBase::enabled;
-sSLList SMPBase::cpuList;
+SList<SMP::CPU> SMPBase::cpuList;
 SMP::CPU **SMPBase::cpus;
 size_t SMPBase::cpuCount;
 
 void SMPBase::init() {
-	sll_init(&cpuList,slln_allocNode,slln_freeNode);
-
 	cpuCount = 0;
 	enabled = Config::get(Config::SMP) ? SMP::initArch() : false;
 	if(!enabled) {
@@ -51,28 +49,19 @@ void SMPBase::init() {
 
 void SMPBase::disable() {
 	cpuCount = 1;
-	while(sll_length(&cpuList) > 1) {
-		void *res = sll_removeIndex(&cpuList,1);
-		Cache::free(res);
+	CPU *prev = &*cpuList.begin();
+	while(cpuList.length() > 1) {
+		CPU *cpu = &*(++cpuList.begin());
+		cpuList.removeAt(prev,cpu);
+		delete cpu;
 	}
 }
 
 void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
-	CPU *cpu = (CPU*)Cache::alloc(sizeof(CPU));
+	CPU *cpu = new CPU(id,bootstrap,ready);
 	if(!cpu)
 		Util::panic("Unable to allocate mem for CPU");
-	cpu->bootstrap = bootstrap;
-	cpu->id = id;
-	cpu->ready = ready;
-	cpu->schedCount = 0;
-	cpu->runtime = 0;
-	cpu->thread = NULL;
-	cpu->curCycles = 0;
-	cpu->lastCycles = 0;
-	cpu->lastTotal = 0;
-	cpu->lastUpdate = 0;
-	if(!sll_append(&cpuList,cpu))
-		Util::panic("Unable to append CPU");
+	cpuList.append(cpu);
 	cpuCount++;
 }
 
@@ -104,27 +93,25 @@ void SMPBase::schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
 }
 
 void SMPBase::updateRuntimes() {
-	size_t i;
-	for(i = 0; i < cpuCount; i++) {
-		cpus[i]->lastTotal = Thread::getTSC() - cpus[i]->lastUpdate;
-		cpus[i]->lastUpdate = Thread::getTSC();
-		if(cpus[i]->thread && !(cpus[i]->thread->getFlags() & T_IDLE)) {
+	for(auto cpu = cpuList.begin(); cpu != cpuList.end(); ++cpu) {
+		cpu->lastTotal = Thread::getTSC() - cpu->lastUpdate;
+		cpu->lastUpdate = Thread::getTSC();
+		if(cpu->thread && !(cpu->thread->getFlags() & T_IDLE)) {
 			/* we want to measure the last second only */
-			uint64_t cycles = Thread::getTSC() - cpus[i]->thread->getStats().cycleStart;
-			cpus[i]->curCycles = MIN(cpus[i]->lastTotal,cpus[i]->curCycles + cycles);
+			uint64_t cycles = Thread::getTSC() - cpu->thread->getStats().cycleStart;
+			cpu->curCycles = MIN(cpu->lastTotal,cpu->curCycles + cycles);
 		}
-		cpus[i]->lastCycles = cpus[i]->curCycles;
-		cpus[i]->curCycles = 0;
+		cpu->lastCycles = cpu->curCycles;
+		cpu->curCycles = 0;
 	}
 }
 
 void SMPBase::killThread(Thread *t) {
 	if(cpuCount > 1) {
-		size_t i;
 		cpuid_t cur = getCurId();
-		for(i = 0; i < cpuCount; i++) {
-			if(i != cur && cpus[i]->ready && cpus[i]->thread == t) {
-				sendIPI(i,IPI_TERM);
+		for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {
+			if(cpu->id != cur && cpu->ready && cpu->thread == t) {
+				sendIPI(cpu->id,IPI_TERM);
 				break;
 			}
 		}
@@ -133,12 +120,11 @@ void SMPBase::killThread(Thread *t) {
 
 void SMPBase::wakeupCPU() {
 	if(cpuCount > 1) {
-		size_t i;
 		cpuid_t cur = getCurId();
-		for(i = 0; i < cpuCount; i++) {
-			if(i != cur && cpus[i]->ready && (!cpus[i]->thread ||
-					(cpus[i]->thread->getFlags() & T_IDLE))) {
-				sendIPI(i,IPI_WORK);
+		for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {
+			if(cpu->id != cur && cpu->ready && (!cpu->thread ||
+					(cpu->thread->getFlags() & T_IDLE))) {
+				sendIPI(cpu->id,IPI_WORK);
 				break;
 			}
 		}
@@ -149,37 +135,32 @@ void SMPBase::flushTLB(PageDir *pdir) {
 	if(!cpus || cpuCount == 1)
 		return;
 
-	size_t i;
 	cpuid_t cur = getCurId();
-	for(i = 0; i < cpuCount; i++) {
-		CPU *cpu = cpus[i];
-		if(cpu && cpu->ready && i != cur) {
+	for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {
+		if(cpu->ready && cpu->id != cur) {
 			Thread *t = cpu->thread;
 			if(t && t->getProc()->getPageDir() == pdir)
-				sendIPI(i,IPI_FLUSH_TLB);
+				sendIPI(cpu->id,IPI_FLUSH_TLB);
 		}
 	}
 }
 
 void SMPBase::print(OStream &os) {
-	sSLNode *n;
 	os.writef("CPUs:\n");
-	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
-		CPU *cpu = (CPU*)n->data;
+	for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {
 		Thread *t = cpu->thread;
 		os.writef("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
 				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
-				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),
-				cpu->schedCount,cpu->runtime,cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);
+				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),
+				t->getProc()->getCommand(),cpu->schedCount,cpu->runtime,cpu->lastUpdate,
+				cpu->lastTotal,cpu->lastCycles);
 	}
 }
 
 SMP::CPU *SMPBase::getCPUById(cpuid_t id) {
-	sSLNode *n;
-	for(n = sll_begin(&cpuList); n != NULL; n = n->next) {
-		CPU *cpu = (CPU*)n->data;
+	for(auto cpu = cpuList.begin(); cpu != cpuList.end(); ++cpu) {
 		if(cpu->id == id)
-			return cpu;
+			return &*cpu;
 	}
 	return NULL;
 }

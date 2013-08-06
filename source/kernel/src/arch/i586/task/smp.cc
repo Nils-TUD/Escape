@@ -91,15 +91,14 @@ bool SMPBase::initArch() {
 }
 
 void SMPBase::pauseOthers() {
-	const CPU **cpus = getCPUs();
-	size_t i,count,cpuCount = getCPUCount();
+	size_t count;
 	cpuid_t cur = getCurId();
 	waiting = 0;
 	waitlock = 1;
 	count = 0;
-	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
-			sendIPI(i,IPI_WAIT);
+	for(auto cpu = begin(); cpu != end(); ++cpu) {
+		if(cpu->id != cur && cpu->ready) {
+			sendIPI(cpu->id,IPI_WAIT);
 			count++;
 		}
 	}
@@ -113,16 +112,15 @@ void SMPBase::resumeOthers() {
 }
 
 void SMPBase::haltOthers() {
-	const CPU **cpus = getCPUs();
-	size_t i,count,cpuCount = getCPUCount();
+	size_t count;
 	cpuid_t cur = getCurId();
 	halting = 0;
 	count = 0;
-	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
+	for(auto cpu = begin(); cpu != end(); ++cpu) {
+		if(cpu->id != cur && cpu->ready) {
 			/* prevent that we want to halt/pause this one again */
-			getCPUById(i)->ready = false;
-			sendIPI(i,IPI_HALT);
+			cpu->ready = false;
+			sendIPI(cpu->id,IPI_HALT);
 			count++;
 		}
 	}
@@ -132,14 +130,13 @@ void SMPBase::haltOthers() {
 }
 
 void SMPBase::ensureTLBFlushed() {
-	const CPU **cpus = getCPUs();
-	size_t i,count,cpuCount = getCPUCount();;
+	size_t count;
 	cpuid_t cur = getCurId();
 	flushed = 0;
 	count = 0;
-	for(i = 0; i < cpuCount; i++) {
-		if(i != cur && cpus[i]->ready) {
-			sendIPI(i,IPI_FLUSH_TLB_ACK);
+	for(auto cpu = begin(); cpu != end(); ++cpu) {
+		if(cpu->id != cur && cpu->ready) {
+			sendIPI(cpu->id,IPI_FLUSH_TLB_ACK);
 			count++;
 		}
 	}

@@ -26,10 +26,10 @@
 #include <string.h>
 
 void CPUBase::print(OStream &os) {
-	const SMP::CPU *smpcpu = SMP::getCPUs()[0];
+	auto cpu = SMP::begin();
 	os.writef("CPU 0:\n");
-	os.writef("\t%-12s%Lu Cycles\n","Total:",smpcpu->lastTotal);
-	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",smpcpu->lastCycles);
+	os.writef("\t%-12s%Lu Cycles\n","Total:",cpu->lastTotal);
+	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",cpu->lastCycles);
 	os.writef("\t%-12s%lu Hz\n","Speed:",0);
 	os.writef("\t%-12s%s\n","Vendor:","THM");
 	os.writef("\t%-12s%s\n","Model:","ECO32");

@@ -218,11 +218,9 @@ bool CPU::hasLocalAPIC() {
 }
 
 void CPUBase::print(OStream &os) {
-	const SMP::CPU **smpCPUs = SMP::getCPUs();
-	size_t i,count = SMP::getCPUCount();
-	for(i = 0; i < count; i++) {
-		os.writef("CPU %d:\n",smpCPUs[i]->id);
-		doPrint(os,CPU::cpus + i,smpCPUs[i]);
+	for(auto cpu = SMP::begin(); cpu != SMP::end(); ++cpu) {
+		os.writef("CPU %d:\n",cpu->id);
+		doPrint(os,CPU::cpus + cpu->id,&*cpu);
 	}
 }
 

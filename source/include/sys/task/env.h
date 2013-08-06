@@ -20,18 +20,23 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/proc.h>
+#include <sys/col/slist.h>
+
+class Proc;
 
 class Env {
 	Env() = delete;
 
-	struct EnvVar {
+public:
+	struct EnvVar : public SListItem {
+		explicit EnvVar(uint8_t dup,char *name,char *value)
+			: SListItem(), dup(dup), name(name), value(value) {
+		}
 		uint8_t dup; /* whether this is a duplicate of a parent-var */
 		char *name;
 		char *value;
 	};
 
-public:
 	/**
 	 * Copies the env-variable-name with given index to <dst>
 	 *

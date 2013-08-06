@@ -34,6 +34,7 @@
 #include <sys/mem/dynarray.h>
 #include <sys/task/env.h>
 #include <sys/task/groups.h>
+#include <sys/task/proc.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <sys/cppsupport.h>

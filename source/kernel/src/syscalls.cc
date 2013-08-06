@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/task/env.h>
+#include <sys/task/proc.h>
 #include <sys/syscalls.h>
 #include <esc/syscalls.h>
 #include <esc/fsinterface.h>

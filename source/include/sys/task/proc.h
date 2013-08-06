@@ -25,6 +25,7 @@
 #include <sys/mem/vmtree.h>
 #include <sys/mem/vmfreemap.h>
 #include <sys/task/elf.h>
+#include <sys/task/env.h>
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>
 #include <sys/vfs/fs.h>
@@ -530,7 +531,7 @@ public:
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	SList<VFSFS::FSChan> fsChans;
 	/* environment-variables of this process */
-	sSLList *env;
+	SList<Env::EnvVar> *env;
 	/* the directory-node-number in the VFS of this process */
 	inode_t threadDir;
 	struct {

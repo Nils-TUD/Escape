@@ -110,32 +110,23 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		return true;
 	}
 
-	var = (EnvVar*)Cache::alloc(sizeof(EnvVar));
+	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
+	var = new EnvVar(exists(p,nameCpy),nameCpy,valueCpy);
 	if(var == NULL)
 		goto errorProc;
 
-	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
-	var->dup = exists(p,nameCpy);
-	/* set name and value */
-	var->name = nameCpy;
-	var->value = valueCpy;
-
 	/* append to list */
 	if(!p->env) {
-		p->env = sll_create();
+		p->env = new SList<EnvVar>();
 		if(!p->env)
 			goto errorVar;
 	}
-	if(!sll_append(p->env,var))
-		goto errorList;
+	p->env->append(var);
 	Proc::release(p,PLOCK_ENV);
 	return true;
 
-errorList:
-	if(sll_length(p->env) == 0)
-		sll_destroy(p->env,false);
 errorVar:
-	Cache::free(var);
+	delete var;
 errorProc:
 	Proc::release(p,PLOCK_ENV);
 errorValCpy:
@@ -149,14 +140,13 @@ void Env::removeFor(pid_t pid) {
 	Proc *p = Proc::request(pid,PLOCK_ENV);
 	if(p) {
 		if(p->env) {
-			sSLNode *n;
-			for(n = sll_begin(p->env); n != NULL; n = n->next) {
-				EnvVar *var = (EnvVar*)n->data;
-				Cache::free(var->name);
-				Cache::free(var->value);
-				Cache::free(var);
+			for(auto var = p->env->begin(); var != p->env->end(); ) {
+				auto old = var++;
+				Cache::free(old->name);
+				Cache::free(old->value);
+				delete &*old;
 			}
-			sll_destroy(p->env,false);
+			delete p->env;
 			p->env = NULL;
 		}
 		Proc::release(p,PLOCK_ENV);
@@ -190,26 +180,21 @@ bool Env::exists(const Proc *p,const char *name) {
 }
 
 Env::EnvVar *Env::getiOf(const Proc *p,size_t *index) {
-	sSLNode *n;
-	EnvVar *e = NULL;
 	if(!p->env)
 		return NULL;
-	for(n = sll_begin(p->env); n != NULL; n = n->next) {
-		e = (EnvVar*)n->data;
-		if(!e->dup && (*index)-- == 0)
-			return e;
+	for(auto var = p->env->begin(); var != p->env->end(); ++var) {
+		if(!var->dup && (*index)-- == 0)
+			return &*var;
 	}
 	return NULL;
 }
 
 Env::EnvVar *Env::getOf(const Proc *p,USER const char *name) {
-	sSLNode *n;
 	if(!p->env)
 		return NULL;
-	for(n = sll_begin(p->env); n != NULL; n = n->next) {
-		EnvVar *e = (EnvVar*)n->data;
-		if(strcmp(e->name,name) == 0)
-			return e;
+	for(auto var = p->env->begin(); var != p->env->end(); ++var) {
+		if(strcmp(var->name,name) == 0)
+			return &*var;
 	}
 	return NULL;
 }

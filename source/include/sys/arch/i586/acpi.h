@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <esc/sllist.h>
+#include <sys/col/islist.h>
 
 class OStream;
 
@@ -107,5 +107,5 @@ private:
 	static RSDP *findIn(uintptr_t start,size_t len);
 
 	static RSDP *rsdp;
-	static sSLList acpiTables;
+	static ISList<RSDT*> acpiTables;
 };

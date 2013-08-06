@@ -34,7 +34,7 @@
 #define SIG(A,B,C,D)		(A + (B << 8) + (C << 16) + (D << 24))
 
 ACPI::RSDP *ACPI::rsdp;
-sSLList ACPI::acpiTables;
+ISList<ACPI::RSDT*> ACPI::acpiTables;
 
 bool ACPI::find() {
 	/* first kb of extended bios data area (EBDA) */
@@ -55,8 +55,6 @@ void ACPI::parse() {
 		rsdt = (RSDT*)rsdp->xsdtAddr;
 		size = sizeof(uint64_t);
 	}
-
-	sll_init(&acpiTables,slln_allocNode,slln_freeNode);
 
 	/* first map the RSDT. we assume that it covers only one page */
 	size_t off = (uintptr_t)rsdt & (PAGE_SIZE - 1);
@@ -112,7 +110,7 @@ void ACPI::parse() {
 		if(checksumValid(tmptbl,tmptbl->length)) {
 			/* copy the table */
 			memcpy((void*)curDest,tmptbl,tmptbl->length);
-			sll_append(&acpiTables,(void*)curDest);
+			acpiTables.append((RSDT*)curDest);
 			curDest += tmptbl->length;
 		}
 		else
@@ -122,13 +120,11 @@ void ACPI::parse() {
 
 	/* walk through the table and search for APIC entries */
 	cpuid_t id = ::LAPIC::getId();
-	sSLNode *n;
-	for(n = sll_begin(&acpiTables); n != NULL; n = n->next) {
-		RSDT *tbl = (RSDT*)n->data;
-		if(checksumValid(tbl,tbl->length) && tbl->signature == SIG('A','P','I','C')) {
-			RSDTAPIC *rapic = (RSDTAPIC*)tbl;
+	for(auto it = acpiTables.cbegin(); it != acpiTables.cend(); ++it) {
+		if(checksumValid(*it,(*it)->length) && (*it)->signature == SIG('A','P','I','C')) {
+			RSDTAPIC *rapic = (RSDTAPIC*)(*it);
 			APIC *apic = rapic->apics;
-			while(apic < (APIC*)((uintptr_t)tbl + tbl->length)) {
+			while(apic < (APIC*)((uintptr_t)(*it) + (*it)->length)) {
 				/* we're only interested in the local APICs */
 				if(apic->type == TYPE_LAPIC) {
 					LAPIC *lapic = (LAPIC*)apic;
@@ -164,17 +160,15 @@ ACPI::RSDP *ACPI::findIn(uintptr_t start,size_t len) {
 }
 
 void ACPI::print(OStream &os) {
-	sSLNode *n;
 	size_t i = 0;
 	os.writef("ACPI tables:\n");
-	for(n = sll_begin(&acpiTables); n != NULL; n = n->next, i++) {
-		RSDT *tbl = (RSDT*)n->data;
+	for(auto it = acpiTables.cbegin(); it != acpiTables.cend(); ++it, ++i) {
 		os.writef("\tTable%zu:\n",i);
-		os.writef("\t\tsignature: %.4s\n",(char*)&tbl->signature);
-		os.writef("\t\tlength: %u\n",tbl->length);
-		os.writef("\t\trevision: %u\n",tbl->revision);
-		os.writef("\t\toemId: %.6s\n",tbl->oemId);
-		os.writef("\t\toemTableId: %.8s\n",tbl->oemTableId);
+		os.writef("\t\tsignature: %.4s\n",(char*)&(*it)->signature);
+		os.writef("\t\tlength: %u\n",(*it)->length);
+		os.writef("\t\trevision: %u\n",(*it)->revision);
+		os.writef("\t\toemId: %.6s\n",(*it)->oemId);
+		os.writef("\t\toemTableId: %.8s\n",(*it)->oemTableId);
 		os.writef("\n");
 	}
 }

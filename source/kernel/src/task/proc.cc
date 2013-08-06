@@ -873,22 +873,20 @@ void ProcBase::remove(Proc *p) {
 static time_t proctimes[PROF_PROC_COUNT];
 
 void ProcBase::startProf() {
-	Thread *t;
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		assert(p->pid < PROF_PROC_COUNT);
 		proctimes[p->pid] = 0;
-		for(t = p->threads.cbegin(); t != p->threads.cend(); ++t)
-			proctimes[p->pid] += t->stats.runtime;
+		for(auto t = p->threads.cbegin(); t != p->threads.cend(); ++t)
+			proctimes[p->pid] += (*t)->stats.runtime;
 	}
 }
 
 void ProcBase::stopProf() {
-	Thread *t;
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		time_t curtime = 0;
 		assert(p->pid < PROF_PROC_COUNT);
-		for(t = p->threads.cbegin(); t != p->threads.cend(); ++t)
-			curtime += t->stats.runtime;
+		for(auto t = p->threads.cbegin(); t != p->threads.cend(); ++t)
+			curtime += (*t)->stats.runtime;
 		curtime -= proctimes[p->pid];
 		if(curtime > 0)
 			Log::get().writef("Process %3d (%18s): t=%08x\n",p->pid,p->command,curtime);

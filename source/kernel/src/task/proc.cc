@@ -104,8 +104,8 @@ void ProcBase::init() {
 	FileDesc::init(p);
 
 	/* create first thread */
-	sll_init(&p->threads,slln_allocNode,slln_freeNode);
-	if(!sll_append(&p->threads,Thread::init(p)))
+	p->threads = ISList<Thread*>();
+	if(!p->threads.append(Thread::init(p)))
 		Util::panic("Unable to append the initial thread");
 
 	/* init virt mem */
@@ -272,8 +272,8 @@ int ProcBase::clone(uint8_t flags) {
 	/* clone current thread */
 	if((res = Thread::create(curThread,&nt,p,0,true)) < 0)
 		goto errorRegs;
-	sll_init(&p->threads,slln_allocNode,slln_freeNode);
-	if(!sll_append(&p->threads,nt)) {
+	p->threads = ISList<Thread*>();
+	if(!p->threads.append(nt)) {
 		res = -ENOMEM;
 		goto errorThread;
 	}
@@ -303,7 +303,7 @@ int ProcBase::clone(uint8_t flags) {
 	return p->pid;
 
 errorThreadAppend:
-	sll_removeFirstWith(&p->threads,nt);
+	p->threads.remove(nt);
 errorThread:
 	nt->kill();
 errorRegs:
@@ -352,7 +352,7 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		goto error;
 
 	/* append thread */
-	if(!sll_append(&p->threads,nt)) {
+	if(!p->threads.append(nt)) {
 		nt->kill();
 		res = -ENOMEM;
 		goto error;
@@ -398,7 +398,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	}
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
 	 * "kernel-threads") */
-	if(p->pid != 0 && sll_length(&p->threads) > 1) {
+	if(p->pid != 0 && p->threads.length() > 1) {
 		release(p,PLOCK_PROG);
 		return -EINVAL;
 	}
@@ -491,7 +491,7 @@ void ProcBase::join(tid_t tid) {
 	Thread *t = Thread::getRunning();
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
-	while((tid == 0 && sll_length(&t->getProc()->threads) > 1) ||
+	while((tid == 0 && t->getProc()->threads.length() > 1) ||
 			(tid != 0 && Thread::getById(tid) != NULL)) {
 		Event::wait(t,EVI_THREAD_DIED,(evobj_t)t->getProc());
 		release(p,PLOCK_PROG);
@@ -525,16 +525,14 @@ void ProcBase::addSignalFor(pid_t pid,int signal) {
 	Proc *p = request(pid,PLOCK_PROG);
 	if(p) {
 		bool sent = false;
-		sSLNode *n;
 		/* don't send a signal to processes that are dying */
 		if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
 			release(p,PLOCK_PROG);
 			return;
 		}
 
-		for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
-			Thread *pt = (Thread*)n->data;
-			if(Signals::addSignalFor(pt->getTid(),signal))
+		for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
+			if(Signals::addSignalFor((*pt)->getTid(),signal))
 				sent = true;
 		}
 		release(p,PLOCK_PROG);
@@ -549,7 +547,6 @@ void ProcBase::addSignalFor(pid_t pid,int signal) {
 }
 
 void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
-	sSLNode *tn;
 	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
 		return;
@@ -573,10 +570,8 @@ void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
 	p->stats.exitSignal = signal;
 
 	/* terminate all threads */
-	for(tn = sll_begin(&p->threads); tn != NULL; tn = tn->next) {
-		Thread *pt = (Thread*)tn->data;
-		pt->terminate();
-	}
+	for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt)
+		(*pt)->terminate();
 	p->flags |= P_PREZOMBIE;
 	release(p,PLOCK_PROG);
 }
@@ -589,8 +584,8 @@ void ProcBase::killThread(tid_t tid) {
 	p->stats.totalSyscalls += t->getStats().syscalls;
 	p->stats.totalScheds += t->getStats().schedCount;
 	t->kill();
-	sll_removeFirstWith(&p->threads,t);
-	if(sll_length(&p->threads) == 0) {
+	p->threads.remove(t);
+	if(p->threads.length() == 0) {
 		p->stats.exitCode = 0;
 		doDestroy(p);
 	}
@@ -598,16 +593,13 @@ void ProcBase::killThread(tid_t tid) {
 }
 
 void ProcBase::destroy(pid_t pid) {
-	sSLNode *n;
 	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
 		return;
-	for(n = sll_begin(&p->threads); n != NULL; ) {
-		sSLNode *next = n->next;
-		Thread *pt = (Thread*)n->data;
-		pt->kill();
-		sll_removeFirstWith(&p->threads,pt);
-		n = next;
+	for(auto pt = p->threads.begin(); pt != p->threads.end(); ) {
+		auto old = pt++;
+		(*old)->kill();
+		p->threads.remove(*old);
 	}
 	p->stats.exitCode = 0;
 	doDestroy(p);
@@ -623,7 +615,7 @@ void ProcBase::doDestroy(Proc *p) {
 	p->virtmem.destroy();
 	Lock::releaseAll(p->pid);
 	terminateArch(p);
-	sll_clear(&p->threads,false);
+	p->threads.clear();
 
 	/* we are a zombie now, so notify parent that he can get our exit-state */
 	p->flags &= ~P_PREZOMBIE;
@@ -727,14 +719,11 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 }
 
 void ProcBase::doRemoveRegions(Proc *p,bool remStack) {
-	sSLNode *n;
 	/* unset TLS-region (and stack-region, if needed) from all threads; do this first because as
 	 * soon as vmm_removeAll is finished, somebody might use the stack-region-number to get the
 	 * region-range, which is not possible anymore, because the region is already gone. */
-	for(n = sll_begin(&p->threads); n != NULL; n = n->next) {
-		Thread *t = (Thread*)n->data;
-		t->removeRegions(remStack);
-	}
+	for(auto t = p->threads.begin(); t != p->threads.end(); ++t)
+		(*t)->removeRegions(remStack);
 	p->virtmem.removeAll(remStack);
 }
 
@@ -768,7 +757,6 @@ void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
 
 void ProcBase::print(OStream &os) const {
 	size_t own = 0,shared = 0,swap = 0;
-	sSLNode *n;
 	os.writef("Proc %d:\n",pid);
 	os.writef("\tppid=%d, cmd=%s, entry=%#Px\n",parentPid,command,entryPoint);
 	os.writef("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
@@ -790,9 +778,9 @@ void ProcBase::print(OStream &os) const {
 	VFSFS::printFSChans(os,static_cast<const Proc*>(this));
 	os.popIndent();
 	os.writef("\tThreads:\n");
-	for(n = sll_begin(&threads); n != NULL; n = n->next) {
+	for(auto t = threads.cbegin(); t != threads.cend(); ++t) {
 		os.writef("\t\t");
-		((Thread*)n->data)->printShort(os);
+		(*t)->printShort(os);
 		os.writef("\n");
 	}
 	os.writef("\n");
@@ -885,28 +873,22 @@ void ProcBase::remove(Proc *p) {
 static time_t proctimes[PROF_PROC_COUNT];
 
 void ProcBase::startProf() {
-	sSLNode *m;
 	Thread *t;
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		assert(p->pid < PROF_PROC_COUNT);
 		proctimes[p->pid] = 0;
-		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {
-			t = (Thread*)m->data;
+		for(t = p->threads.cbegin(); t != p->threads.cend(); ++t)
 			proctimes[p->pid] += t->stats.runtime;
-		}
 	}
 }
 
 void ProcBase::stopProf() {
-	sSLNode *m;
 	Thread *t;
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		time_t curtime = 0;
 		assert(p->pid < PROF_PROC_COUNT);
-		for(m = sll_begin(&p->threads); m != NULL; m = m->next) {
-			t = (Thread*)m->data;
+		for(t = p->threads.cbegin(); t != p->threads.cend(); ++t)
 			curtime += t->stats.runtime;
-		}
 		curtime -= proctimes[p->pid];
 		if(curtime > 0)
 			Log::get().writef("Process %3d (%18s): t=%08x\n",p->pid,p->command,curtime);

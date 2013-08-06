@@ -29,6 +29,8 @@
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>
 #include <sys/vfs/fs.h>
+#include <sys/col/slist.h>
+#include <sys/col/islist.h>
 #include <sys/spinlock.h>
 #include <sys/mutex.h>
 #include <sys/interrupts.h>
@@ -433,7 +435,7 @@ public:
 	 * @return the number of threads
 	 */
 	size_t getThreadCount() const {
-		return sll_length(&threads);
+		return threads.length();
 	}
 
 	/**
@@ -450,7 +452,7 @@ public:
 	 * @return the main thread of this process
 	 */
 	Thread *getMainThread() {
-		return static_cast<Thread*>(sll_begin(&threads)->data);
+		return *threads.begin();
 	}
 
 	/**
@@ -555,7 +557,7 @@ private:
 	/* start-command */
 	const char *command;
 	/* threads of this process */
-	sSLList threads;
+	ISList<Thread*> threads;
 	/* locks for this process */
 	mutable klock_t locks[PLOCK_COUNT];
 

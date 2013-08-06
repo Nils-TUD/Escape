@@ -32,5 +32,5 @@ void ProcBase::terminateArch(A_UNUSED Proc *p) {
 
 size_t ProcBase::getKMemUsage() const {
 	/* root-directory, 1 kernelstack for each thread */
-	return sll_length(&threads) + SEGMENT_COUNT * PTS_PER_SEGMENT;
+	return threads.length() + SEGMENT_COUNT * PTS_PER_SEGMENT;
 }

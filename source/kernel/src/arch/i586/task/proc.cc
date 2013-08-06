@@ -32,5 +32,5 @@ void ProcBase::terminateArch(Proc *p) {
 
 size_t ProcBase::getKMemUsage() const {
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 kernelstack for each thread */
-	return sll_length(&threads) + 2;
+	return threads.length() + 2;
 }

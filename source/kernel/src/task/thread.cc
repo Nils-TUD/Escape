@@ -45,17 +45,14 @@
 #include <errno.h>
 
 /* our threads */
-sSLList ThreadBase::threads;
+ISList<Thread*> ThreadBase::threads;
 Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
 klock_t ThreadBase::lock;
 
 Thread *ThreadBase::init(Proc *p) {
-	Thread *curThread;
-	sll_init(&threads,slln_allocNode,slln_freeNode);
-
 	/* create thread for init */
-	curThread = createInitial(p);
+	Thread *curThread = createInitial(p);
 	setRunning(curThread);
 	return curThread;
 }
@@ -117,7 +114,7 @@ void ThreadBase::initProps() {
 size_t ThreadBase::getCount() {
 	size_t len;
 	SpinLock::acquire(&lock);
-	len = sll_length(&threads);
+	len = threads.length();
 	SpinLock::release(&lock);
 	return len;
 }
@@ -153,25 +150,23 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) {
 }
 
 void ThreadBase::updateRuntimes(void) {
-	sSLNode *n;
 	size_t threadCount;
 	uint64_t cyclesPerSec = Thread::ticksPerSec();
 	SpinLock::acquire(&lock);
-	threadCount = sll_length(&threads);
-	for(n = sll_begin(&threads); n != NULL; n = n->next) {
-		Thread *t = (Thread*)n->data;
+	threadCount = threads.length();
+	for(auto t = threads.begin(); t != threads.end(); ++t) {
 		/* update cycle-stats */
-		if(t->state == Thread::RUNNING) {
+		if((*t)->state == Thread::RUNNING) {
 			/* we want to measure the last second only */
-			uint64_t cycles = Thread::getTSC() - t->stats.cycleStart;
-			t->stats.lastCycleCount = t->stats.curCycleCount + MIN(cyclesPerSec,cycles);
+			uint64_t cycles = Thread::getTSC() - (*t)->stats.cycleStart;
+			(*t)->stats.lastCycleCount = (*t)->stats.curCycleCount + MIN(cyclesPerSec,cycles);
 		}
 		else
-			t->stats.lastCycleCount = t->stats.curCycleCount;
-		t->stats.curCycleCount = 0;
+			(*t)->stats.lastCycleCount = (*t)->stats.curCycleCount;
+		(*t)->stats.curCycleCount = 0;
 
 		/* raise/lower the priority if necessary */
-		Sched::adjustPrio(t,threadCount);
+		Sched::adjustPrio(*t,threadCount);
 	}
 	SpinLock::release(&lock);
 }
@@ -310,11 +305,8 @@ void ThreadBase::makeUnrunnable() {
 }
 
 void ThreadBase::printAll(OStream &os) {
-	sSLNode *n;
-	for(n = sll_begin(&threads); n != NULL; n = n->next) {
-		Thread *t = (Thread*)n->data;
-		t->print(os);
-	}
+	for(auto t = threads.cbegin(); t != threads.cend(); ++t)
+		(*t)->print(os);
 }
 
 static const char *getStateName(uint8_t state) {
@@ -399,7 +391,7 @@ tid_t ThreadBase::getFreeTid(void) {
 bool ThreadBase::add() {
 	bool res = false;
 	SpinLock::acquire(&lock);
-	if(sll_append(&threads,this)) {
+	if(threads.append(static_cast<Thread*>(this))) {
 		tidToThread[tid] = static_cast<Thread*>(this);
 		res = true;
 	}
@@ -409,7 +401,7 @@ bool ThreadBase::add() {
 
 void ThreadBase::remove() {
 	SpinLock::acquire(&lock);
-	sll_removeFirstWith(&threads,this);
+	threads.remove(static_cast<Thread*>(this));
 	tidToThread[tid] = NULL;
 	SpinLock::release(&lock);
 }

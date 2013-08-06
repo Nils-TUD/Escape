@@ -687,7 +687,7 @@ private:
 	Thread *prev;
 	Thread *next;
 
-	static sSLList threads;
+	static ISList<Thread*> threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;
 	static klock_t lock;

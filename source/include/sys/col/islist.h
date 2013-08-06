@@ -21,6 +21,10 @@
 
 #include <sys/common.h>
 #include <sys/col/slist.h>
+#include <sys/col/nodeallocator.h>
+#include <sys/spinlock.h>
+#include <sys/mem/dynarray.h>
+#include <sys/mem/paging.h>
 
 /**
  * An indirect, singly linked list. That is, the elements are not inherited from a class that gives
@@ -29,16 +33,11 @@
  */
 template<class T>
 class ISList {
-	struct Node : public SListItem {
-		explicit Node(T _data) : SListItem(), data(_data) {
-		}
-		T data;
-	};
-
-	class ISListIterator : public SListIteratorBase<Node,ISListIterator> {
+	class ISListIterator : public SListIteratorBase<NodeAllocator::Node<T>,ISListIterator> {
+		typedef SListIteratorBase<NodeAllocator::Node<T>,ISListIterator> base_type;
 	public:
-		explicit ISListIterator(Node *n = nullptr)
-				: SListIteratorBase<Node,ISListIterator>(n) {
+		explicit ISListIterator(NodeAllocator::Node<T> *n = nullptr)
+				: base_type(n) {
 		}
 
 		T & operator*() const {
@@ -49,10 +48,11 @@ class ISList {
 		}
 	};
 
-	class ISListConstIterator : public SListIteratorBase<Node,ISListConstIterator> {
+	class ISListConstIterator : public SListIteratorBase<NodeAllocator::Node<T>,ISListConstIterator> {
+		typedef SListIteratorBase<NodeAllocator::Node<T>,ISListConstIterator> base_type;
 	public:
-		explicit ISListConstIterator(const Node *n = nullptr)
-				: SListIteratorBase<Node,ISListConstIterator>(const_cast<Node*>(n)) {
+		explicit ISListConstIterator(const NodeAllocator::Node<T> *n = nullptr)
+				: base_type(const_cast<NodeAllocator::Node<T>*>(n)) {
 		}
 
 		const T & operator*() const {
@@ -132,8 +132,7 @@ public:
 	 * @return true if successfull
 	 */
 	bool append(T e) {
-		/* TODO we should use a sllnodes-like allocator here! */
-		Node *n = new Node(e);
+		NodeAllocator::Node<T> *n = new NodeAllocator::Node<T>(e);
 		if(n)
 			list.append(n);
 		return n != nullptr;
@@ -147,7 +146,7 @@ public:
 	 * @return true if the item has been found and removed
 	 */
 	bool remove(T e) {
-		Node *p = nullptr;
+		NodeAllocator::Node<T> *p = nullptr;
 		for(iterator it = begin(); it != end(); p = it._n,++it) {
 			if(*it == e) {
 				list.removeAt(p,it._n);
@@ -165,7 +164,7 @@ public:
 	 */
 	T removeFirst() {
 		T res = T();
-		Node *first = list.removeFirst();
+		NodeAllocator::Node<T> *first = list.removeFirst();
 		if(first) {
 			res = first->data;
 			delete first;
@@ -185,5 +184,5 @@ public:
 	}
 
 private:
-	SList<Node> list;
+	SList<NodeAllocator::Node<T>> list;
 };

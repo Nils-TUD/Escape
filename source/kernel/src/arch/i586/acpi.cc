@@ -22,7 +22,6 @@
 #include <sys/arch/i586/lapic.h>
 #include <sys/task/smp.h>
 #include <sys/mem/paging.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/log.h>
 #include <sys/util.h>
 #include <sys/video.h>

@@ -32,7 +32,6 @@
 #include "tproc.h"
 #include "tphysmem.h"
 #include "tsched.h"
-#include "tsllist.h"
 #include "tstring.h"
 #include "tvfsnode.h"
 #include "tsignals.h"
@@ -87,7 +86,6 @@ void bspstart(BootInfo *bootinfo) {
 	test_register(&tModKHeap);
 	test_register(&tModRegion);
 	test_register(&tModRBuffer);
-	test_register(&tModSLList);
 	test_register(&tModSched);
 	test_register(&tModString);
 	test_register(&tModVFSn);

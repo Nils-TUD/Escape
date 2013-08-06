@@ -22,7 +22,6 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/spinlock.h>
-#include <esc/sllist.h>
 #include <assert.h>
 
 #define INVALID_BLOCK		0xFFFFFFFF

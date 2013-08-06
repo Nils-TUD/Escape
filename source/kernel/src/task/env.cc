@@ -25,7 +25,6 @@
 #include <sys/mem/virtmem.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <string.h>
 
 bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {

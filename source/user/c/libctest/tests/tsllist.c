@@ -17,13 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
-#include <sys/video.h>
+#include <esc/common.h>
 #include <esc/sllist.h>
 #include <esc/test.h>
+#include <stdlib.h>
 #include "tsllist.h"
-#include "testutils.h"
 
 /* forward declarations */
 static void test_sllist(void);
@@ -59,11 +57,11 @@ static void test_sllist(void) {
 
 static void test_1(void) {
 	ulong x = 0x100;
-	size_t i,len;
+	size_t i,len,oldFree;
 	bool res = true;
 	sSLList *list;
 	test_caseStart("Append & check & remove index 0");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	for(i = 0; i < 20; i++) {
@@ -87,16 +85,16 @@ static void test_1(void) {
 	test_assertSSize(len,0);
 	sll_destroy(list,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_2(void) {
 	ulong x = 0x100;
-	size_t i,len;
+	size_t i,len,oldFree;
 	sSLList *list;
 	test_caseStart("Append & remove first (NULL)");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	for(i = 0; i < 2; i++) {
@@ -110,16 +108,16 @@ static void test_2(void) {
 	test_assertSize(len,0);
 	sll_destroy(list,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_3(void) {
 	ulong x = 0x100;
-	size_t i,len;
+	size_t i,len,oldFree;
 	sSLList *list;
 	test_caseStart("Append & remove first (x)");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	for(i = 0; i < 50; i++) {
@@ -134,16 +132,16 @@ static void test_3(void) {
 	test_assertSize(len,0);
 	sll_destroy(list,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_4(void) {
 	ulong x = 0x100;
-	size_t i;
+	size_t i,oldFree;
 	sSLList *list;
 	test_caseStart("Create & append & destroy");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	for(i = 0; i < 200; i++) {
@@ -151,17 +149,17 @@ static void test_4(void) {
 	}
 	sll_destroy(list,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_5(void) {
 	ulong x = 0x100;
-	size_t i;
+	size_t i,oldFree;
 	sSLList *list;
 	bool res = true;
 	test_caseStart("Create & append & insert somewhere & destroy");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	for(i = 0; i < 5; i++) {
@@ -187,17 +185,17 @@ static void test_5(void) {
 	sll_destroy(list,false);
 	test_assertTrue(res);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_6(void) {
 	ulong x = 0x100;
-	size_t i;
+	size_t i,oldFree;
 	sSLList *list;
 	bool res = true;
 	test_caseStart("Create & append & set somewhere & destroy");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	for(i = 0; i < 5; i++) {
@@ -223,16 +221,17 @@ static void test_6(void) {
 	sll_destroy(list,false);
 	test_assertTrue(res);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_8(void) {
 	sSLList *list;
+	size_t oldFree;
 	sSLNode *n;
 
 	test_caseStart("Walking through the list");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	sll_append(list,(void*)0x123);
@@ -255,15 +254,16 @@ static void test_8(void) {
 
 	sll_destroy(list,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_9(void) {
 	sSLList *list;
+	size_t oldFree;
 
 	test_caseStart("Testing sll_indexOf and sll_nodeWith");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	list = sll_create();
 	sll_append(list,(void*)0x123);
@@ -280,14 +280,15 @@ static void test_9(void) {
 	test_assertPtr(sll_nodeWith(list,(void*)0x123123),NULL);
 	sll_destroy(list,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_10(void) {
 	sSLList *l1,*l2;
+	size_t oldFree;
 	test_caseStart("Testing sll_clone");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	l1 = sll_create();
 	sll_append(l1,(void*)4);
@@ -307,14 +308,15 @@ static void test_10(void) {
 	sll_destroy(l2,false);
 	sll_destroy(l1,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }
 
 static void test_11(void) {
 	sSLList *l1;
+	size_t oldFree;
 	test_caseStart("Testing sll_removeFirst");
-	checkMemoryBefore(false);
+	oldFree = heapspace();
 
 	l1 = sll_create();
 	sll_append(l1,(void*)4);
@@ -330,6 +332,6 @@ static void test_11(void) {
 	test_assertPtr(sll_removeFirst(l1),NULL);
 	sll_destroy(l1,false);
 
-	checkMemoryAfter(false);
+	test_assertSize(heapspace(),oldFree);
 	test_caseSucceeded();
 }

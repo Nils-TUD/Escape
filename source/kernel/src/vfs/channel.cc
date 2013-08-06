@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/task/proc.h>
@@ -33,7 +32,6 @@
 #include <sys/spinlock.h>
 #include <sys/log.h>
 #include <esc/messages.h>
-#include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

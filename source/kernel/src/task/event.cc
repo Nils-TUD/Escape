@@ -18,14 +18,12 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/task/event.h>
 #include <sys/task/sched.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
-#include <esc/sllist.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <assert.h>

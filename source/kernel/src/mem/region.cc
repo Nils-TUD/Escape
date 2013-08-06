@@ -22,7 +22,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/region.h>
 #include <sys/mem/swapmap.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/openfile.h>

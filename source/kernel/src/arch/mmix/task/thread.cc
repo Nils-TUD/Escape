@@ -28,7 +28,6 @@
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>

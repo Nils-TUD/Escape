@@ -20,14 +20,12 @@
 #include <sys/common.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>
 #include <sys/log.h>
 #include <sys/config.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
-#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 

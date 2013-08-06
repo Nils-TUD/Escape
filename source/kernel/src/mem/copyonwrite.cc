@@ -21,12 +21,10 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/copyonwrite.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/task/proc.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 

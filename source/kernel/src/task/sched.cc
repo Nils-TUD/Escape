@@ -25,11 +25,9 @@
 #include <sys/task/timer.h>
 #include <sys/task/event.h>
 #include <sys/mem/kheap.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 

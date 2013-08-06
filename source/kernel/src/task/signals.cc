@@ -22,7 +22,6 @@
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/mem/cache.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>

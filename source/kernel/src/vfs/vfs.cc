@@ -41,7 +41,6 @@
 #include <sys/video.h>
 #include <sys/cppsupport.h>
 #include <esc/messages.h>
-#include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

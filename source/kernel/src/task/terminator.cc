@@ -23,9 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/event.h>
 #include <sys/task/timer.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/spinlock.h>
-#include <esc/sllist.h>
 #include <assert.h>
 
 ISList<Thread*> Terminator::deadThreads;

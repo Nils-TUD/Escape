@@ -32,7 +32,6 @@
 #include <sys/util.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
-#include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

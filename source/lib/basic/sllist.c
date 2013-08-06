@@ -27,8 +27,8 @@
 #	define sllprintf	vid_printf
 #	define heapalloc	cache_alloc
 #	define heapfree		cache_free
-#	define nodealloc	slln_allocNode
-#	define nodefree		slln_freeNode
+#	define nodealloc	cache_alloc
+#	define nodefree		cache_free
 #else
 /* for exit (vassert) */
 #	include <esc/proc.h>

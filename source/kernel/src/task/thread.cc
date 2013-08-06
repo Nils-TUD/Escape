@@ -32,7 +32,6 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/sllnodes.h>
 #include <sys/task/sched.h>
 #include <sys/task/lock.h>
 #include <sys/task/smp.h>

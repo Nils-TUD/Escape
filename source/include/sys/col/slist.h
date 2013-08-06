@@ -28,6 +28,7 @@ template<class T>
 class ISList;
 template<class T,class It>
 class SListIteratorBase;
+class NodeAllocator;
 
 /**
  * A listitem for the singly linked list. It is intended that you inherit from this class to add
@@ -38,6 +39,7 @@ class SListItem {
 	friend class SList;
 	template<class T,class It>
 	friend class SListIteratorBase;
+	friend class NodeAllocator;
 
 public:
 	/**

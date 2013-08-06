@@ -21,7 +21,6 @@
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
-#include <esc/sllist.h>
 #include <esc/test.h>
 
 #include "tswapmap.h"

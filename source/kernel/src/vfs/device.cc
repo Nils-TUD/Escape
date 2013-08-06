@@ -28,7 +28,6 @@
 #include <sys/video.h>
 #include <sys/spinlock.h>
 #include <esc/messages.h>
-#include <esc/sllist.h>
 #include <assert.h>
 #include <errno.h>
 

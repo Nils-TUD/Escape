@@ -32,6 +32,7 @@
 #include "tests/trect.h"
 #include "tests/tpasswd.h"
 #include "tests/tmem.h"
+#include "tests/tsllist.h"
 
 int main(void) {
 	if(getuid() != ROOT_UID)
@@ -47,6 +48,7 @@ int main(void) {
 	test_register(&tModPasswd);
 	test_register(&tModRect);
 	test_register(&tModMem);
+	test_register(&tModSLList);
 	test_start();
 	return EXIT_SUCCESS;
 }

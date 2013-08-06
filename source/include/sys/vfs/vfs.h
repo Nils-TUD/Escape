@@ -22,7 +22,6 @@
 #include <sys/common.h>
 #include <sys/task/event.h>
 #include <sys/vfs/node.h>
-#include <esc/sllist.h>
 #include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(64 * K)

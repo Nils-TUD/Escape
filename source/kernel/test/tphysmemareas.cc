@@ -53,38 +53,38 @@ static void test_pmemareas() {
 		PhysMemAreas::rem(area->addr,area->addr + area->size);
 
 	/* add some test areas */
-	PhysMemAreas::add(0x1000,0x3000);
-	PhysMemAreas::add(0x5000,0x8000);
-	PhysMemAreas::add(0x8000,0xD000);
-	PhysMemAreas::add(0x4000,0x5000);
-	test_assertSize(PhysMemAreas::getAvailable(),0xB000);
+	PhysMemAreas::add(PAGE_SIZE * 1,PAGE_SIZE * 3);
+	PhysMemAreas::add(PAGE_SIZE * 5,PAGE_SIZE * 8);
+	PhysMemAreas::add(PAGE_SIZE * 8,PAGE_SIZE * 13);
+	PhysMemAreas::add(PAGE_SIZE * 4,PAGE_SIZE * 5);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 11);
 
 	/* rem end */
-	PhysMemAreas::rem(0x7000,0x8000);
-	test_assertSize(PhysMemAreas::getAvailable(),0xA000);
+	PhysMemAreas::rem(PAGE_SIZE * 7,PAGE_SIZE * 8);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 10);
 
 	/* rem nothing */
-	PhysMemAreas::rem(0x0000,0x1000);
-	test_assertSize(PhysMemAreas::getAvailable(),0xA000);
+	PhysMemAreas::rem(PAGE_SIZE * 0,PAGE_SIZE * 1);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 10);
 
 	/* rem middle */
-	PhysMemAreas::rem(0x9000,0xA000);
-	test_assertSize(PhysMemAreas::getAvailable(),0x9000);
+	PhysMemAreas::rem(PAGE_SIZE * 9,PAGE_SIZE * 10);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 9);
 
 	/* rem begin */
-	PhysMemAreas::rem(0x5000,0x6000);
-	test_assertSize(PhysMemAreas::getAvailable(),0x8000);
+	PhysMemAreas::rem(PAGE_SIZE * 5,PAGE_SIZE * 6);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 8);
 
 	/* rem complete area */
-	PhysMemAreas::rem(0x4000,0x5000);
-	test_assertSize(PhysMemAreas::getAvailable(),0x7000);
+	PhysMemAreas::rem(PAGE_SIZE * 4,PAGE_SIZE * 5);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 7);
 
 	/* add something again */
-	PhysMemAreas::add(0x4000,0x5000);
-	test_assertSize(PhysMemAreas::getAvailable(),0x8000);
+	PhysMemAreas::add(PAGE_SIZE * 4,PAGE_SIZE * 5);
+	test_assertSize(PhysMemAreas::getAvailable(),PAGE_SIZE * 8);
 
 	/* remove all */
-	PhysMemAreas::rem(0x0000,0xD000);
+	PhysMemAreas::rem(PAGE_SIZE * 0,PAGE_SIZE * 13);
 	test_assertSize(PhysMemAreas::getAvailable(),0);
 
 	/* restore old state */

@@ -31,10 +31,9 @@
 
 int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	size_t oldEnd;
 	if(count > 0)
 		t->reserveFrames(count);
-	oldEnd = t->getProc()->getVM()->growData(count);
+	size_t oldEnd = t->getProc()->getVM()->growData(count);
 	if(count > 0)
 		t->discardFrames();
 	SYSC_RET1(stack,oldEnd);
@@ -49,8 +48,6 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	int fd = SYSC_ARG6(stack);
 	off_t binOffset = SYSC_ARG7(stack);
 	OpenFile *f = NULL;
-	VMRegion *vm;
-	int res;
 
 	/* check args */
 	if(byteCount == 0 || loadCount > byteCount)
@@ -74,7 +71,8 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	}
 
 	/* add region */
-	res = t->getProc()->getVM()->map(addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+	VMRegion *vm;
+	int res = t->getProc()->getVM()->map(addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
 	if(f)
 		FileDesc::release(f);
 	/* save tls-region-number */
@@ -93,12 +91,11 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
-	int res;
 
 	if(!(prot & (PROT_WRITE | PROT_READ | PROT_EXEC)))
 		SYSC_ERROR(stack,-EINVAL);
 
-	res = t->getProc()->getVM()->regctrl((uintptr_t)addr,prot);
+	int res = t->getProc()->getVM()->regctrl((uintptr_t)addr,prot);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -117,7 +114,7 @@ int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
-	uintptr_t addr,physCpy = *phys;
+	uintptr_t physCpy = *phys;
 
 	if(!PageDir::isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -129,7 +126,7 @@ int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
 	if(!physCpy && !align)
 		t->reserveFrames(BYTES_2_PAGES(bytes));
 
-	addr = t->getProc()->getVM()->addPhys(&physCpy,bytes,align,true);
+	uintptr_t addr = t->getProc()->getVM()->addPhys(&physCpy,bytes,align,true);
 	if(addr == 0)
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;

@@ -174,12 +174,11 @@ bool Keyboard::get(Event *ev,uint8_t events,bool wait) {
 }
 
 bool Keyboard::translate(Event *ev,uint8_t keycode) {
-	KeymapEntry *km;
 	if(ev)
 		ev->keycode = keycode;
 
 	/* handle shift,ctrl,alt */
-	km = keymap + keycode;
+	KeymapEntry *km = keymap + keycode;
 	switch(keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:

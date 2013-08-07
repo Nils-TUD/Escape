@@ -147,11 +147,10 @@ int Syscalls::fork(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Proc::ExitState *state = (Proc::ExitState*)SYSC_ARG1(stack);
-	int res;
 	if(state != NULL && !PageDir::isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = Proc::waitChild(state);
+	int res = Proc::waitChild(state);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -205,11 +204,10 @@ int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
-	int res;
 	if(!absolutizePath(pathSave,sizeof(pathSave),path))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = Proc::exec(pathSave,args,NULL,0);
+	int res = Proc::exec(pathSave,args,NULL,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

@@ -41,24 +41,23 @@
 int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,int signal) {
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *curStack = t->getIntrptStack();
-	uint64_t *regs;
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
-	KSpecRegs *sregs;
 
 	/* restore rBB, rWW, rXX, rYY and rZZ */
 	sp += 2;
 	curStack[-9] = *sp++;			/* rJ */
-	sregs = t->getSpecRegs();
+	KSpecRegs *sregs = t->getSpecRegs();
 	memcpy(sregs,sp,sizeof(KSpecRegs));
 	sp += 5;
 	curStack[-15] = (uint64_t)sp;	/* $254 */
 
 	/* reenable device-interrupts */
 	switch(signal) {
-		case SIG_INTRPT_KB:
-			regs = (uint64_t*)KEYBOARD_BASE;
+		case SIG_INTRPT_KB: {
+			uint64_t *regs = (uint64_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
+		}
 		/* not necessary for disk here; the device will reenable interrupts as soon as a new
 		 * command is started */
 	}
@@ -67,8 +66,6 @@ int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,int signal) {
 
 bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
                          const ELF::StartupInfo *info,uintptr_t entryPoint,A_UNUSED int fd) {
-	uint64_t *ssp,*rsp;
-	char **argv;
 	Thread *t = Thread::getRunning();
 
 	/*
@@ -89,13 +86,14 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 	 */
 
 	/* get register-stack */
+	uint64_t *rsp,*ssp;
 	t->getStackRange((uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
 	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
 	/* copy arguments on the user-stack (8byte space) */
 	ssp--;
-	argv = NULL;
+	char **argv = NULL;
 	if(argc > 0) {
 		argv = (char**)(ssp - argc);
 		/* space for the argument-pointer */
@@ -128,7 +126,6 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 }
 
 void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
-	uint64_t *rsp,*ssp;
 	Thread *t = Thread::getRunning();
 	ELF::StartupInfo sinfo;
 	sinfo.progEntry = t->getProc()->getEntryPoint();
@@ -192,6 +189,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	}
 
 	/* get register-stack */
+	uint64_t *rsp,*ssp;
 	t->getStackRange((uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
 	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
@@ -208,7 +206,6 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
-	KSpecRegs *sregs;
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
 		Proc::segFault();
 		/* not reached */
@@ -216,7 +213,7 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	}
 
 	/* backup rBB, rWW, rXX, rYY and rZZ */
-	sregs = t->getSpecRegs();
+	KSpecRegs *sregs = t->getSpecRegs();
 	memcpy(sp - 5,sregs,sizeof(KSpecRegs));
 	sp -= 6;
 	*sp-- = curStack[-9];			/* rJ */
@@ -232,7 +229,6 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
                    uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
-	KSpecRegs *sregs;
 	uintptr_t tlsStart,tlsEnd;
 	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
 		rsp[5] = tlsStart;
@@ -252,7 +248,7 @@ void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t
 		frame[-(12 + 2 + 2)] = (uint64_t)ssp;
 
 		/* setup start */
-		sregs = t->getSpecRegs();
+		KSpecRegs *sregs = t->getSpecRegs();
 		sregs->rww = entry;
 		sregs->rxx = 1UL << 63;
 	}

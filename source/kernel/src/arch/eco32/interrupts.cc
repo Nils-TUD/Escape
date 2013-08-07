@@ -73,11 +73,10 @@ size_t Interrupts::irqCount = 0;
 uintptr_t Interrupts::pfaddr = 0;
 
 void InterruptsBase::handler(IntrptStackFrame *stack) {
-	Thread *t;
 	const Interrupts::Interrupt *intrpt;
 	/* note: we have to do that before there is a chance for a kernel-miss */
 	Interrupts::pfaddr = CPU::getBadAddr();
-	t = Thread::getRunning();
+	Thread *t = Thread::getRunning();
 	t->pushIntrptLevel(stack);
 	Interrupts::irqCount++;
 
@@ -135,9 +134,8 @@ void Interrupts::exPageFault(IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack) {
-	bool res;
 	Signals::addSignal(SIG_INTRPT_TIMER);
-	res = Timer::intrpt();
+	bool res = Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res) {
 		Thread *t = Thread::getRunning();

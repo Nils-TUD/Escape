@@ -74,9 +74,7 @@ void VFSPipe::close(pid_t pid,OpenFile *file) {
 
 ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
                       off_t offset,size_t count) {
-	size_t byteCount,totalBytes;
 	Thread *t = Thread::getRunning();
-	PipeData *data;
 
 	/* wait until data is available */
 	if(!isAlive())
@@ -97,19 +95,19 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		}
 	}
 
-	data = &*list.begin();
+	PipeData *data = &*list.begin();
 	/* empty message indicates EOF */
 	if(data->length == 0) {
 		SpinLock::release(&lock);
 		return 0;
 	}
 
-	totalBytes = 0;
+	size_t totalBytes = 0;
 	while(true) {
 		/* copy */
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
-		byteCount = MIN(data->length - (offset - data->offset),count);
+		size_t byteCount = MIN(data->length - (offset - data->offset),count);
 		Thread::addLock(&lock);
 		memcpy((uint8_t*)buffer + totalBytes,data->data + (offset - data->offset),byteCount);
 		Thread::remLock(&lock);
@@ -155,7 +153,6 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 
 ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
                        off_t offset,size_t count) {
-	PipeData *data;
 	Thread *t = Thread::getRunning();
 
 	/* Note that the size-check doesn't ensure that the total pipe-size can't be larger than the
@@ -190,7 +187,7 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	}
 
 	/* build pipe-data */
-	data = (PipeData*)Cache::alloc(sizeof(PipeData) + count);
+	PipeData *data = (PipeData*)Cache::alloc(sizeof(PipeData) + count);
 	if(data == NULL)
 		return -ENOMEM;
 	data->offset = offset;

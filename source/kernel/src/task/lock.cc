@@ -44,10 +44,8 @@ bool Lock::isLocked(const Entry *l,ushort flags) {
 
 int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 	Thread *t = Thread::getRunning();
-	ssize_t i;
-	Entry *l;
 	SpinLock::acquire(&klock);
-	i = get(pid,ident,true);
+	ssize_t i = get(pid,ident,true);
 	if(i < 0) {
 		SpinLock::release(&klock);
 		return -ENOMEM;
@@ -55,7 +53,7 @@ int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 
 	/* note that we have to use the index here since locks can change if another threads reallocates
 	 * it in the meanwhile */
-	l = locks + i;
+	Entry *l = locks + i;
 	if(l->flags) {
 		/* if it exists and is locked, wait */
 		uint event = (flags & EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
@@ -92,11 +90,9 @@ int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 }
 
 int Lock::release(pid_t pid,ulong ident) {
-	ssize_t i;
-	Entry *l;
 	SpinLock::acquire(&klock);
-	i = get(pid,ident,false);
-	l = locks + i;
+	ssize_t i = get(pid,ident,false);
+	Entry *l = locks + i;
 	if(i < 0) {
 		SpinLock::release(&klock);
 		return -ENOENT;
@@ -160,13 +156,12 @@ ssize_t Lock::get(pid_t pid,ulong ident,bool free) {
 			return i;
 	}
 	if(freeIdx == -1 && free) {
-		Entry *nlocks;
 		size_t oldCount = lockCount;
 		if(lockCount == 0)
 			lockCount = 8;
 		else
 			lockCount *= 2;
-		nlocks = (Entry*)Cache::realloc(locks,lockCount * sizeof(Entry));
+		Entry *nlocks = (Entry*)Cache::realloc(locks,lockCount * sizeof(Entry));
 		if(nlocks == NULL) {
 			lockCount = oldCount;
 			return -ENOMEM;

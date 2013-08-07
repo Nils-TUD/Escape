@@ -25,8 +25,6 @@
 #include <string.h>
 
 bool DynArray::extend() {
-	Region *reg;
-	uintptr_t addr;
 	SpinLock::acquire(&lock);
 
 	/* region full? */
@@ -35,7 +33,7 @@ bool DynArray::extend() {
 		return false;
 	}
 
-	reg = regions;
+	Region *reg = regions;
 	if(reg == NULL) {
 		reg = regions = freeList;
 		if(reg == NULL) {
@@ -48,7 +46,7 @@ bool DynArray::extend() {
 		reg->next = NULL;
 	}
 
-	addr = reg->addr + reg->size;
+	uintptr_t addr = reg->addr + reg->size;
 	if(PageDir::mapToCur(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
 		reg->next = freeList;
 		freeList = reg;

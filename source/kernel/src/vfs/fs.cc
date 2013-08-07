@@ -54,14 +54,14 @@ int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 	const Proc *p = Proc::getByPid(pid);
 	ssize_t res = -ENOMEM;
 	size_t pathLen = strlen(path);
-	VFSNode *node;
-	OpenFile *fs;
 	sStrMsg msg;
 	inode_t inode;
 	dev_t dev;
 
 	if(pathLen > MAX_MSGSTR_LEN)
 		return -ENAMETOOLONG;
+	VFSNode *node;
+	OpenFile *fs;
 	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
@@ -109,8 +109,6 @@ int VFSFS::stat(pid_t pid,const char *path,USER sFileInfo *info) {
 int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileInfo *info) {
 	ssize_t res = -ENOMEM;
 	size_t pathLen = 0;
-	OpenFile *fs;
-	VFSNode *node;
 	sMsg msg;
 
 	if(path) {
@@ -118,6 +116,8 @@ int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileI
 		if(pathLen > MAX_MSGSTR_LEN)
 			return -ENAMETOOLONG;
 	}
+	OpenFile *fs;
+	VFSNode *node;
 	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
@@ -158,11 +158,10 @@ error:
 
 ssize_t VFSFS::read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,off_t offset,
 		size_t count) {
-	ssize_t res;
-	VFSNode *node;
 	sArgsMsg msg;
+	VFSNode *node;
 	OpenFile *fs;
-	res = requestFile(pid,&node,&fs);
+	ssize_t res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -199,11 +198,10 @@ error:
 
 ssize_t VFSFS::write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *buffer,off_t offset,
 		size_t count) {
-	ssize_t res = -ENOMEM;
-	VFSNode *node;
 	sArgsMsg msg;
+	VFSNode *node;
 	OpenFile *fs;
-	res = requestFile(pid,&node,&fs);
+	ssize_t res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
 
@@ -290,8 +288,6 @@ void VFSFS::close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = -ENOMEM;
 	const Proc *p = Proc::getByPid(pid);
-	OpenFile *fs;
-	VFSNode *node;
 	sStrMsg msg;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
@@ -299,6 +295,8 @@ int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg
 	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
 		return -ENAMETOOLONG;
 
+	OpenFile *fs;
+	VFSNode *node;
 	res = requestFile(pid,&node,&fs);
 	if(res < 0)
 		return res;
@@ -329,8 +327,6 @@ error:
 }
 
 int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
-	int err;
-	FSChan *chan;
 	VFSNode *child,*fsnode;
 	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
@@ -354,12 +350,12 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	}
 	SpinLock::release(&fsChanLock);
 
-	chan = new FSChan();
+	FSChan *chan = new FSChan();
 	if(!chan)
 		return -ENOMEM;
 
 	/* resolve path to fs */
-	err = VFSNode::request(FS_PATH,&fsnode,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
+	int err = VFSNode::request(FS_PATH,&fsnode,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
 	if(err < 0)
 		goto errorChan;
 

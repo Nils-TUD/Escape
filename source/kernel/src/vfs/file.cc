@@ -87,12 +87,11 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 
 ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
                        off_t offset,size_t count) {
-	void *oldData;
 	size_t newSize = 0;
 
 	/* need to create cache? */
 	SpinLock::acquire(&lock);
-	oldData = data;
+	void *oldData = data;
 	if(data == NULL) {
 		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
 		/* check for overflow */

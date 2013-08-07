@@ -28,8 +28,6 @@
 #include <string.h>
 
 bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
-	Entries *g;
-	Proc *p;
 	gid_t *grpCpy = NULL;
 	if(count > 0) {
 		grpCpy = (gid_t*)Cache::alloc(count * sizeof(gid_t));
@@ -40,7 +38,7 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 		Thread::remHeapAlloc(grpCpy);
 	}
 
-	g = (Entries*)Cache::alloc(sizeof(Entries));
+	Entries *g = (Entries*)Cache::alloc(sizeof(Entries));
 	if(!g) {
 		Cache::free(grpCpy);
 		return false;
@@ -50,7 +48,7 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 	g->count = count;
 	g->groups = grpCpy;
 	leave(pid);
-	p = Proc::getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	if(!p) {
 		Cache::free(g);
 		Cache::free(grpCpy);
@@ -94,11 +92,10 @@ bool Groups::contains(pid_t pid,gid_t gid) {
 }
 
 void Groups::leave(pid_t pid) {
-	Entries *g;
 	Proc *p = Proc::getByPid(pid);
 	if(!p)
 		return;
-	g = p->groups;
+	Entries *g = p->groups;
 	if(g) {
 		SpinLock::acquire(&g->lock);
 		if(--g->refCount == 0) {

@@ -110,9 +110,8 @@ void ThreadBase::initProps() {
 }
 
 size_t ThreadBase::getCount() {
-	size_t len;
 	SpinLock::acquire(&lock);
-	len = threads.length();
+	size_t len = threads.length();
 	SpinLock::release(&lock);
 	return len;
 }
@@ -147,10 +146,9 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 }
 
 void ThreadBase::updateRuntimes() {
-	size_t threadCount;
 	uint64_t cyclesPerSec = Thread::ticksPerSec();
 	SpinLock::acquire(&lock);
-	threadCount = threads.length();
+	size_t threadCount = threads.length();
 	for(auto t = threads.begin(); t != threads.end(); ++t) {
 		/* update cycle-stats */
 		if((*t)->state == Thread::RUNNING) {
@@ -318,7 +316,6 @@ void ThreadBase::printShort(OStream &os) const {
 }
 
 void ThreadBase::print(OStream &os) const {
-	Util::FuncCall *calls;
 	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
 	os.pushIndent();
 	os.writef("Flags=%#x\n",flags);
@@ -343,22 +340,27 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("cycleStart = %Lu\n",stats.cycleStart);
 	os.writef("Kernel-trace:\n");
 	os.pushIndent();
-	calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
-	while(calls->addr != 0) {
-		os.writef("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
-		calls++;
-	}
-	os.popIndent();
-	calls = Util::getUserStackTraceOf(const_cast<Thread*>(static_cast<const Thread*>(this)));
-	if(calls) {
-		os.writef("User-trace:\n");
-		os.pushIndent();
+	{
+		Util::FuncCall *calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
 		while(calls->addr != 0) {
-			os.writef("%p -> %p (%s)\n",
-					(calls + 1)->addr,calls->funcAddr,calls->funcName);
+			os.writef("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}
-		os.popIndent();
+	}
+	os.popIndent();
+	{
+		Util::FuncCall *calls = Util::getUserStackTraceOf(
+				const_cast<Thread*>(static_cast<const Thread*>(this)));
+		if(calls) {
+			os.writef("User-trace:\n");
+			os.pushIndent();
+			while(calls->addr != 0) {
+				os.writef("%p -> %p (%s)\n",
+						(calls + 1)->addr,calls->funcAddr,calls->funcName);
+				calls++;
+			}
+			os.popIndent();
+		}
 	}
 	Util::printUserStateOf(os,static_cast<const Thread*>(this));
 	os.popIndent();

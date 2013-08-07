@@ -149,16 +149,16 @@ void PageDirBase::makeFirst() {
 }
 
 void PageDir::mapKernelSpace() {
-	uintptr_t addr;
 	/* map kernel heap and temp area*/
-	for(addr = KERNEL_HEAP_START;
-		addr < TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE;
-		addr += PAGE_SIZE * PT_ENTRY_COUNT) {
+	for(uintptr_t addr = KERNEL_HEAP_START;
+			addr < TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE;
+			addr += PAGE_SIZE * PT_ENTRY_COUNT) {
 		if(crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
 			Util::panic("Not enough kernel-memory for page tables");
 	}
 	/* map dynamically extending regions */
-	for(addr = GFT_AREA; addr < SLLNODE_AREA + SLLNODE_AREA_SIZE; addr += PAGE_SIZE * PT_ENTRY_COUNT) {
+	for(uintptr_t addr = GFT_AREA; addr < SLLNODE_AREA + SLLNODE_AREA_SIZE;
+			addr += PAGE_SIZE * PT_ENTRY_COUNT) {
 		if(crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
 			Util::panic("Not enough kernel-memory for page tables");
 	}
@@ -206,20 +206,17 @@ void PageDir::unmapFromTemp(size_t count) {
 }
 
 int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
-	uintptr_t kstackAddr,kstackPtAddr;
-	frameno_t pdirFrame,stackPtFrame;
-	PageDir::pde_t *pd,*npd;
 	Thread *t = Thread::getById(tid);
 	PageDir *cur = Proc::getCurPageDir();
 	SpinLock::acquire(&PageDir::lock);
 
 	/* allocate frames */
-	pdirFrame = PhysMem::allocate(PhysMem::KERN);
+	frameno_t pdirFrame = PhysMem::allocate(PhysMem::KERN);
 	if(pdirFrame == 0) {
 		SpinLock::release(&PageDir::lock);
 		return -ENOMEM;
 	}
-	stackPtFrame = PhysMem::allocate(PhysMem::KERN);
+	frameno_t stackPtFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackPtFrame == 0) {
 		PhysMem::free(pdirFrame,PhysMem::KERN);
 		SpinLock::release(&PageDir::lock);
@@ -227,9 +224,9 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	}
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
-	pd = (PageDir::pde_t*)PAGE_DIR_AREA;
+	PageDir::pde_t *pd = (PageDir::pde_t*)PAGE_DIR_AREA;
 	cur->doMap(TEMP_MAP_AREA,&pdirFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	npd = (PageDir::pde_t*)TEMP_MAP_AREA;
+	PageDir::pde_t *npd = (PageDir::pde_t*)TEMP_MAP_AREA;
 
 	/* clear user-space page-tables */
 	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA) * sizeof(PageDir::pde_t));
@@ -249,11 +246,11 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	kstackAddr = t->getKernelStack();
+	uintptr_t kstackAddr = t->getKernelStack();
 	npd[ADDR_TO_PDINDEX(kstackAddr)] =
 			stackPtFrame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 	/* clear the page-table */
-	kstackPtAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,kstackAddr);
+	uintptr_t kstackPtAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,kstackAddr);
 	FLUSHADDR(kstackPtAddr);
 	memclear((void*)kstackPtAddr,PAGE_SIZE);
 
@@ -274,16 +271,13 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 }
 
 uintptr_t PageDir::createKernelStack() {
-	uintptr_t addr,end,ptables;
-	pte_t *pt;
-	pde_t *pd;
 	SpinLock::acquire(&lock);
-	addr = freeKStack;
-	end = KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE;
-	ptables = getPTables(Proc::getCurPageDir());
-	pd = (pde_t*)PAGEDIR(ptables);
+	uintptr_t addr = freeKStack;
+	uintptr_t end = KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE;
+	uintptr_t ptables = getPTables(Proc::getCurPageDir());
+	pde_t *pd = (pde_t*)PAGEDIR(ptables);
 	while(addr < end) {
-		pt = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,addr);
+		pte_t *pt = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,addr);
 		/* use this address if either the page-table or the page doesn't exist yet */
 		if(!(pd[ADDR_TO_PDINDEX(addr)] & PDE_EXISTS) || !(*pt & PTE_EXISTS)) {
 			if(doMap(addr,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
@@ -470,7 +464,6 @@ ssize_t PageDir::doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint 
 	PageDir *cur = Proc::getCurPageDir();
 	uintptr_t ptables = getPTables(cur);
 	pde_t *pdirAddr = (pde_t*)PAGEDIR(ptables);
-	bool freeFrames;
 	pte_t *ptep,pte,pteFlags = PTE_EXISTS;
 
 	virt &= ~(PAGE_SIZE - 1);
@@ -532,7 +525,7 @@ ssize_t PageDir::doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint 
 	return pts;
 
 error:
-	freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
+	bool freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
 	doUnmap(orgVirt,orgCount - count,freeFrames);
 	return -ENOMEM;
 }
@@ -587,7 +580,6 @@ size_t PageDir::doUnmap(uintptr_t virt,size_t count,bool freeFrames) {
 }
 
 uintptr_t PageDir::getPTables(PageDir *cur) const {
-	pde_t *pde;
 	if(this == cur)
 		return MAPPED_PTS_START;
 	if(this == cur->other) {
@@ -596,7 +588,7 @@ uintptr_t PageDir::getPTables(PageDir *cur) const {
 			return TMPMAP_PTS_START;
 	}
 	/* map page-tables to other area */
-	pde = ((pde_t*)PAGE_DIR_AREA) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
+	pde_t *pde = ((pde_t*)PAGE_DIR_AREA) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	*pde = own | PDE_PRESENT | PDE_EXISTS | PDE_WRITABLE;
 	/* we want to access the whole page-table */
 	flushPageTable(TMPMAP_PTS_START,MAPPED_PTS_START);

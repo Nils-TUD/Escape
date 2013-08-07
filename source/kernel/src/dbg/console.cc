@@ -221,7 +221,6 @@ void Console::navigation(OStream &os,NaviBackend *backend) {
 	int searchMode = SEARCH_NONE;
 	uintptr_t addr = backend->getStartPos();
 	size_t searchPos = 0;
-	Keyboard::Event ev;
 	bool run = true;
 	Video::get().backup(viewBackup.screen,&viewBackup.row,&viewBackup.col);
 	assert((backend->getMaxPos() & (BYTES_PER_LINE - 1)) == 0);
@@ -230,6 +229,7 @@ void Console::navigation(OStream &os,NaviBackend *backend) {
 		convSearch(search,searchClone,searchPos);
 		display(os,backend,search,searchClone,searchMode,&addr);
 		searchMode = SEARCH_NONE;
+		Keyboard::Event ev;
 		Keyboard::get(&ev,KEV_PRESS,true);
 		switch(ev.keycode) {
 			case VK_UP:
@@ -343,7 +343,6 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
 	uintptr_t startAddr = *addr;
 	if(searchMode != SEARCH_NONE) {
 		long count = 0;
-		Keyboard::Event ev;
 		int state = 0;
 		size_t searchlen = strlen(search);
 		found = false;
@@ -352,6 +351,7 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
 			  (searchMode == SEARCH_BACKWARDS && startAddr >= BYTES_PER_LINE)); count++) {
 			if(count % 100 == 0) {
 				vid.goTo(VID_ROWS - 1,0);
+				Keyboard::Event ev;
 				if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_S) {
 					*addr = startAddr;
 					break;
@@ -450,8 +450,8 @@ char *Console::readLine() {
 	static char line[VID_COLS + 1];
 	Video &vid = Video::get();
 	size_t i = 0;
-	Keyboard::Event ev;
 	while(true) {
+		Keyboard::Event ev;
 		Keyboard::get(&ev,KEV_PRESS,true);
 		if(i >= sizeof(line) - 1 || ev.keycode == VK_ENTER)
 			break;

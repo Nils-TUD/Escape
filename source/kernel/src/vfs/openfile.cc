@@ -84,14 +84,14 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 }
 
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
-	off_t oldPos,res;
+	off_t res;
 
 	/* don't lock it during VFSFS::istat(). we don't need it in this case because position is
 	 * simply set and never restored to oldPos */
 	if(devNo == VFS_DEV_NO || whence != SEEK_END)
 		SpinLock::acquire(&lock);
 
-	oldPos = position;
+	off_t oldPos = position;
 	if(devNo == VFS_DEV_NO) {
 		res = node->seek(pid,position,offset,whence);
 		if(res < 0) {
@@ -130,10 +130,10 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 }
 
 ssize_t OpenFile::readFile(pid_t pid,USER void *buffer,size_t count) {
-	ssize_t readBytes;
 	if(!(flags & VFS_READ))
 		return -EACCES;
 
+	ssize_t readBytes;
 	if(devNo == VFS_DEV_NO) {
 		/* use the read-handler */
 		readBytes = node->read(pid,this,buffer,position,count);
@@ -160,10 +160,10 @@ ssize_t OpenFile::readFile(pid_t pid,USER void *buffer,size_t count) {
 }
 
 ssize_t OpenFile::writeFile(pid_t pid,USER const void *buffer,size_t count) {
-	ssize_t writtenBytes;
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
+	ssize_t writtenBytes;
 	if(devNo == VFS_DEV_NO) {
 		/* write to the node */
 		writtenBytes = node->write(pid,this,buffer,position,count);
@@ -189,20 +189,16 @@ ssize_t OpenFile::writeFile(pid_t pid,USER const void *buffer,size_t count) {
 
 ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t size1,
 		USER const void *data2,size_t size2) {
-	ssize_t err;
-	VFSNode *n;
-
 	if(devNo != VFS_DEV_NO)
 		return -EPERM;
 	/* the device-messages (open, read, write, close) are always allowed */
 	if(!IS_DEVICE_MSG(id) && !(flags & VFS_MSGS))
 		return -EACCES;
 
-	n = node;
-	if(!IS_CHANNEL(n->getMode()))
+	if(!IS_CHANNEL(node->getMode()))
 		return -ENOTSUP;
 
-	err = static_cast<VFSChannel*>(n)->send(pid,flags,id,data1,size1,data2,size2);
+	ssize_t err = static_cast<VFSChannel*>(node)->send(pid,flags,id,data1,size1,data2,size2);
 	if(err == 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
@@ -213,17 +209,13 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 
 ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t size,
 		bool forceBlock) {
-	ssize_t err;
-	VFSNode *n;
-
 	if(devNo != VFS_DEV_NO)
 		return -EPERM;
 
-	n = node;
-	if(!IS_CHANNEL(n->getMode()))
+	if(!IS_CHANNEL(node->getMode()))
 		return -ENOTSUP;
 
-	err = static_cast<VFSChannel*>(n)->receive(pid,flags,id,data,size,
+	ssize_t err = static_cast<VFSChannel*>(node)->receive(pid,flags,id,data,size,
 			forceBlock || !(flags & VFS_NOBLOCK),forceBlock);
 	if(err > 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
@@ -234,9 +226,8 @@ ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t s
 }
 
 bool OpenFile::closeFile(pid_t pid) {
-	bool res;
 	SpinLock::acquire(&lock);
-	res = doCloseFile(pid);
+	bool res = doCloseFile(pid);
 	SpinLock::release(&lock);
 	return res;
 }
@@ -375,10 +366,9 @@ void OpenFile::print(OStream &os) const {
 }
 
 void OpenFile::printAll(OStream &os) {
-	OpenFile *f;
 	os.writef("Global File Table:\n");
 	for(size_t i = 0; i < FILE_COUNT; i++) {
-		f = (OpenFile*)gftArray.getObj(i);
+		OpenFile *f = (OpenFile*)gftArray.getObj(i);
 		if(f->flags != 0) {
 			os.writef("\tfile @ index %d\n",i);
 			os.writef("\t\tflags: ");

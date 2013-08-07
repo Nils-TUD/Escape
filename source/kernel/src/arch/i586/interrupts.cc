@@ -215,11 +215,10 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
-	bool res;
 	const Interrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal)
 		Signals::addSignal(intrpt->signal);
-	res = Timer::intrpt();
+	bool res = Timer::intrpt();
 	PIC::eoi(stack->intrptNo);
 	if(res) {
 		if(t->getIntrptLevel() == 0)

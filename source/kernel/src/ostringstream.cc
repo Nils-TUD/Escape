@@ -23,9 +23,8 @@ void OStringStream::writec(char c) {
 	if(size != (size_t)-1) {
 		if(dynamic) {
 			if(len >= size) {
-				char *dup;
 				size *= 2;
-				dup = (char*)Cache::realloc(str,size * sizeof(char));
+				char *dup = (char*)Cache::realloc(str,size * sizeof(char));
 				if(!dup) {
 					/* make end visible */
 					str[len - 1] = 0xBA;

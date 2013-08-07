@@ -68,9 +68,6 @@ static int bootState = 0;
 static int bootFinished = 1;
 
 void Boot::archStart(BootInfo *binfo) {
-	int argc;
-	const char **argv;
-
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
 	 * shortly */
 	memcpy(&info,binfo,sizeof(BootInfo));
@@ -82,7 +79,8 @@ void Boot::archStart(BootInfo *binfo) {
 	CPU::setSpeed(info.cpuHz);
 
 	/* parse the boot parameter */
-	argv = Boot::parseArgs(binfo->progs[0].command,&argc);
+	int argc;
+	const char **argv = Boot::parseArgs(binfo->progs[0].command,&argc);
 	Config::parseBootParams(argc,argv);
 }
 
@@ -111,9 +109,6 @@ uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
 }
 
 int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
-	size_t i;
-	int child;
-
 	/* it's not good to do this twice.. */
 	if(bootState == bootFinished)
 		return 0;
@@ -128,8 +123,9 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		bootState++;
 	}
 	else if((bootState % 2) == 1) {
-		i = (bootState / 2) + 1;
+		size_t i = (bootState / 2) + 1;
 		/* clone proc */
+		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			int res,argc;
 			/* parse args */
@@ -149,7 +145,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		bootState++;
 	}
 	else {
-		i = bootState / 2;
+		size_t i = bootState / 2;
 		VFSNode *node;
 		int argc;
 		const char **argv = Boot::parseArgs(progs[i].command,&argc);

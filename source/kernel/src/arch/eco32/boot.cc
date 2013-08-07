@@ -63,8 +63,6 @@ static LoadProg progs[MAX_PROG_COUNT];
 static BootInfo info;
 
 void Boot::archStart(BootInfo *binfo) {
-	int argc;
-	const char **argv;
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
 	 * shortly */
 	memcpy(&info,binfo,sizeof(BootInfo));
@@ -72,7 +70,8 @@ void Boot::archStart(BootInfo *binfo) {
 	memcpy((void*)info.progs,binfo->progs,sizeof(LoadProg) * binfo->progCount);
 
 	/* parse the boot parameter */
-	argv = parseArgs(binfo->progs[0].command,&argc);
+	int argc;
+	const char **argv = parseArgs(binfo->progs[0].command,&argc);
 	Config::parseBootParams(argc,argv);
 }
 

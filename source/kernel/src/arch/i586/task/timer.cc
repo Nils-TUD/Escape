@@ -76,8 +76,6 @@ uint64_t Timer::detectCPUSpeed() {
 }
 
 uint64_t Timer::determineSpeed(int instrCount) {
-	uint64_t before,after;
-	uint32_t left;
 	/* set PIT channel 0 to single-shot mode */
 	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0 | CTRL_RWLOHI |
 			CTRL_MODE2 | CTRL_CNTBIN16);
@@ -86,14 +84,14 @@ uint64_t Timer::determineSpeed(int instrCount) {
 	Ports::out<uint8_t>(IOPORT_CHAN0DIV,0xFF);
 
 	/* now spend some time and measure the number of cycles */
-	before = CPU::rdtsc();
+	uint64_t before = CPU::rdtsc();
 	for(volatile int i = instrCount; i > 0; i--)
 		;
-	after = CPU::rdtsc();
+	uint64_t after = CPU::rdtsc();
 
 	/* read current count */
 	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0);
-	left = Ports::in<uint8_t>(IOPORT_CHAN0DIV);
+	uint32_t left = Ports::in<uint8_t>(IOPORT_CHAN0DIV);
 	left |= Ports::in<uint8_t>(IOPORT_CHAN0DIV) << 8;
 	/* if there was no tick at all, we have to increase instrCount */
 	if(left == 0xFFFF)

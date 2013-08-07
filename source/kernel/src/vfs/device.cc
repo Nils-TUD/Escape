@@ -76,10 +76,9 @@ void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file) {
 }
 
 int VFSDevice::setReadable(bool readable) {
-	bool wasEmpty;
 	if(!supports(DEV_READ))
 		return -ENOTSUP;
-	wasEmpty = isEmpty;
+	bool wasEmpty = isEmpty;
 	isEmpty = !readable;
 	if(wasEmpty && readable)
 		wakeupClients(EV_RECEIVED_MSG | EV_DATA_READABLE,true);

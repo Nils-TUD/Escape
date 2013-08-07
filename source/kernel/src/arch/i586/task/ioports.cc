@@ -32,12 +32,11 @@ void IOPorts::init(Proc *p) {
 }
 
 int IOPorts::request(uint16_t start,size_t count) {
-	Proc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return -EINVAL;
 
-	p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
+	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap == NULL) {
 		p->ioMap = (uint8_t*)Cache::alloc(GDT::IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL) {

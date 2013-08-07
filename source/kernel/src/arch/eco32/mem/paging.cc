@@ -50,29 +50,25 @@ uintptr_t PageDir::curPDir = 0;
 uintptr_t PageDir::otherPDir = 0;
 
 void PageDirBase::init() {
-	uintptr_t addr,end;
-	PageDir::PDEntry *pd,*pde;
-	frameno_t frame;
-
 	/* set page-dir of first process */
-	frame = PhysMem::allocate(PhysMem::KERN);
+	frameno_t frame = PhysMem::allocate(PhysMem::KERN);
 	if(frame == 0)
 		Util::panic("Not enough memory for initial page-dir");
 	PageDir::curPDir = (frame * PAGE_SIZE) | DIR_MAPPED_SPACE;
-	pd = (PageDir::PDEntry*)PageDir::curPDir;
+	PageDir::PDEntry *pd = (PageDir::PDEntry*)PageDir::curPDir;
 	/* clear */
 	memclear(pd,PAGE_SIZE);
 
 	/* put the page-directory in itself */
-	pde = pd + ADDR_TO_PDINDEX(MAPPED_PTS_START);
+	PageDir::PDEntry *pde = pd + ADDR_TO_PDINDEX(MAPPED_PTS_START);
 	pde->ptFrameNo = (PageDir::curPDir & ~DIR_MAPPED_SPACE) / PAGE_SIZE;
 	pde->present = true;
 	pde->writable = true;
 	pde->exists = true;
 
 	/* insert shared page-tables */
-	addr = KERNEL_HEAP_START;
-	end = KERNEL_STACK;
+	uintptr_t addr = KERNEL_HEAP_START;
+	uintptr_t end = KERNEL_STACK;
 	pde = pd + ADDR_TO_PDINDEX(KERNEL_HEAP_START);
 	while(addr < end) {
 		/* get frame and insert into page-dir */
@@ -100,23 +96,19 @@ size_t PageDirBase::unmapFromCur(uintptr_t virt,size_t count,bool freeFrames) {
 }
 
 int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
-	frameno_t pdirFrame,stackPtFrame;
-	PageDir::PDEntry *pd,*npd,*tpd;
-	PageDir::PTEntry *pt;
-
 	/* allocate frames */
-	pdirFrame = PhysMem::allocate(PhysMem::KERN);
+	frameno_t pdirFrame = PhysMem::allocate(PhysMem::KERN);
 	if(pdirFrame == 0)
 		return -ENOMEM;
-	stackPtFrame = PhysMem::allocate(PhysMem::KERN);
+	frameno_t stackPtFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackPtFrame == 0) {
 		PhysMem::free(pdirFrame,PhysMem::KERN);
 		return -ENOMEM;
 	}
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
-	pd = (PageDir::PDEntry*)PAGE_DIR_DIRMAP;
-	npd = (PageDir::PDEntry*)((pdirFrame * PAGE_SIZE) | DIR_MAPPED_SPACE);
+	PageDir::PDEntry *pd = (PageDir::PDEntry*)PAGE_DIR_DIRMAP;
+	PageDir::PDEntry *npd = (PageDir::PDEntry*)((pdirFrame * PAGE_SIZE) | DIR_MAPPED_SPACE);
 
 	/* clear user-space page-tables */
 	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA) * sizeof(PageDir::PDEntry));
@@ -137,14 +129,14 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
+	PageDir::PDEntry *tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
 	tpd->ptFrameNo = stackPtFrame;
 	tpd->present = true;
 	tpd->writable = true;
 	tpd->exists = true;
 	/* clear the page-table */
 	PageDir::otherPDir = 0;
-	pt = (PageDir::PTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
+	PageDir::PTEntry *pt = (PageDir::PTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
 	memclear(pt,PAGE_SIZE);
 
 	pdir->phys = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
@@ -153,10 +145,10 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 
 void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	PageDir::PDEntry *pde;
 	assert(pdir->phys != PageDir::curPDir);
 	/* free page-table for kernel-stack */
-	pde = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys) + ADDR_TO_PDINDEX(KERNEL_STACK);
+	PageDir::PDEntry *pde = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys)
+			+ ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;
 	pde->exists = false;
 	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
@@ -169,11 +161,10 @@ void PageDirBase::destroy() {
 bool PageDirBase::isPresent(uintptr_t virt) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	uintptr_t ptables = pdir->getPTables();
-	PageDir::PTEntry *pt;
 	PageDir::PDEntry *pde = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys) + ADDR_TO_PDINDEX(virt);
 	if(!pde->present || !pde->exists)
 		return false;
-	pt = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+	PageDir::PTEntry *pt = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	return pt->present && pt->exists;
 }
 
@@ -227,7 +218,6 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 	uintptr_t srctables = src->getPTables();
 	assert(src != dst && (src->phys == PageDir::curPDir || dst->phys == PageDir::curPDir));
 	while(count > 0) {
-		ssize_t mres;
 		PageDir::PTEntry *pte = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,virtSrc);
 		frameno_t *frames = NULL;
 		uint flags = 0;
@@ -240,7 +230,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 			flags |= PG_ADDR_TO_FRAME;
 			frames = (frameno_t*)pte;
 		}
-		mres = dst->map(virtDst,frames,1,flags);
+		ssize_t mres = dst->map(virtDst,frames,1,flags);
 		if(mres < 0)
 			goto error;
 		pts += mres;
@@ -274,13 +264,11 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 	size_t orgCount = count;
 	uintptr_t ptables = pdir->getPTables();
 	uintptr_t pdirAddr = PAGE_DIR_DIRMAP_OF(pdir->phys);
-	PageDir::PDEntry *pde;
-	PageDir::PTEntry *pte;
-	bool freeFrames;
 
 	virt &= ~(PAGE_SIZE - 1);
 	while(count > 0) {
-		pde = (PageDir::PDEntry*)pdirAddr + ADDR_TO_PDINDEX(virt);
+		PageDir::PTEntry *pte;
+		PageDir::PDEntry *pde = (PageDir::PDEntry*)pdirAddr + ADDR_TO_PDINDEX(virt);
 		/* page table not present? */
 		if(!pde->present) {
 			/* get new frame for page-table */
@@ -336,7 +324,7 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 	return pts;
 
 error:
-	freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
+	bool freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
 	pdir->unmap(orgVirt,orgCount - count,freeFrames);
 	return -ENOMEM;
 }
@@ -380,7 +368,6 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 }
 
 size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
-	PDEntry *pde;
 	uintptr_t virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
 	PTEntry *pte = (PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
@@ -388,7 +375,7 @@ size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
 			return 0;
 	}
 	/* empty => can be removed */
-	pde = (PDEntry*)PAGE_DIR_DIRMAP_OF(phys) + pti;
+	PDEntry *pde = (PDEntry*)PAGE_DIR_DIRMAP_OF(phys) + pti;
 	pde->present = false;
 	pde->exists = false;
 	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
@@ -413,13 +400,12 @@ void PageDir::flushPageTable(uintptr_t virt,uintptr_t ptables) {
 }
 
 uintptr_t PageDir::getPTables() const {
-	PDEntry *pde;
 	if(phys == curPDir)
 		return MAPPED_PTS_START;
 	if(phys == otherPDir)
 		return TMPMAP_PTS_START;
 	/* map page-tables to other area*/
-	pde = ((PDEntry*)PAGE_DIR_DIRMAP) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
+	PDEntry *pde = ((PDEntry*)PAGE_DIR_DIRMAP) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	pde->present = true;
 	pde->exists = true;
 	pde->ptFrameNo = (phys & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT;
@@ -443,11 +429,10 @@ size_t PageDirBase::getPTableCount() const {
 
 size_t PageDirBase::getPageCount() const {
 	size_t count = 0;
-	PageDir::PTEntry *pagetable;
 	PageDir::PDEntry *pdir = (PageDir::PDEntry*)PAGE_DIR_DIRMAP;
 	for(size_t i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
 		if(pdir[i].present) {
-			pagetable = (PageDir::PTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
+			PageDir::PTEntry *pagetable = (PageDir::PTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
 			for(size_t x = 0; x < PT_ENTRY_COUNT; x++) {
 				if(pagetable[x].present)
 					count++;

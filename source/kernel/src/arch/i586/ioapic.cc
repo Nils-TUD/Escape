@@ -29,7 +29,6 @@ size_t IOAPIC::count;
 IOAPIC::Instance IOAPIC::ioapics[MAX_IOAPICS];
 
 void IOAPIC::add(uint8_t id,uint8_t version,uintptr_t addr) {
-	frameno_t frame;
 	if(count >= MAX_IOAPICS)
 		Util::panic("Limit of I/O APICs (%d) reached",MAX_IOAPICS);
 

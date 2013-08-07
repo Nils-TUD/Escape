@@ -44,10 +44,9 @@ klock_t Util::randLock;
 uint64_t Util::profStart;
 
 int Util::rand() {
-	int res;
 	SpinLock::acquire(&randLock);
 	lastRand = randa * lastRand + randc;
-	res = (int)((uint)(lastRand / 65536) % 32768);
+	int res = (int)((uint)(lastRand / 65536) % 32768);
 	SpinLock::release(&randLock);
 	return res;
 }

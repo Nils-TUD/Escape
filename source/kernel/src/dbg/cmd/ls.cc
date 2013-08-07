@@ -37,9 +37,6 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e);
 int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
 	Lines lines;
-	OpenFile *file;
-	sDirEntry e;
-	int res;
 	if(Console::isHelp(argc,argv) || argc != 2) {
 		os.writef("Usage: %s <dir>\n",argv[0]);
 		os.writef("\tUses the current proc to be able to access the real-fs.\n");
@@ -48,9 +45,11 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	}
 
 	/* redirect prints */
-	res = VFS::openPath(pid,VFS_READ,argv[1],&file);
+	OpenFile *file;
+	int res = VFS::openPath(pid,VFS_READ,argv[1],&file);
 	if(res < 0)
 		return res;
+	sDirEntry e;
 	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
 		OStringStream ss;
 		ss.writef("%d %s",e.nodeNo,e.name);
@@ -70,7 +69,6 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 
 static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
 	ssize_t res;
-	size_t len;
 	/* default way; read the entry without name first */
 	if((res = file->readFile(pid,e,DIRE_SIZE)) < 0)
 		return res;
@@ -81,7 +79,7 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
 	e->nameLen = le16tocpu(e->nameLen);
 	e->recLen = le16tocpu(e->recLen);
 	e->nodeNo = le32tocpu(e->nodeNo);
-	len = e->nameLen;
+	size_t len = e->nameLen;
 	/* ensure that the name is short enough */
 	if(len >= MAX_NAME_LEN)
 		return -ENAMETOOLONG;

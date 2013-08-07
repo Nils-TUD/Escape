@@ -66,13 +66,12 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 		dst->kstackFrame = stackFrame;
 	}
 	else {
-		int res;
 		dst->kstackFrame = PhysMem::allocate(PhysMem::KERN);
 		if(dst->kstackFrame == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,
+		int res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,
 				PROT_READ | PROT_WRITE,MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,
 				dst->stackRegions + 0);
 		if(res < 0) {
@@ -92,7 +91,6 @@ void ThreadBase::freeArch(Thread *t) {
 }
 
 int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
-	ulong *src;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
@@ -104,7 +102,7 @@ int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
 
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
-	src = (ulong*)KERNEL_STACK;
+	ulong *src = (ulong*)KERNEL_STACK;
 	for(size_t i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
 
@@ -140,7 +138,6 @@ bool ThreadBase::beginTerm() {
 
 void ThreadBase::doSwitch() {
 	Thread *old = Thread::getRunning();
-	Thread *n;
 	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
 	 * measurement */
 	time_t timestamp = Timer::getTimestamp();
@@ -149,7 +146,7 @@ void ThreadBase::doSwitch() {
 	old->stats.curCycleCount += timestamp - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	n = Sched::perform(old,runtime);
+	Thread *n = Sched::perform(old,runtime);
 	n->stats.schedCount++;
 
 	if(n->getTid() != old->getTid()) {

@@ -64,9 +64,8 @@ void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 }
 
 void SMPBase::setId(cpuid_t old,cpuid_t newid) {
-	CPU *cpu;
 	assert(newid < cpuCount);
-	cpu = getCPUById(old);
+	CPU *cpu = getCPUById(old);
 	if(cpu)
 		cpu->id = newid;
 	if(!cpus) {

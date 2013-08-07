@@ -52,10 +52,8 @@ void TimerBase::init() {
 }
 
 int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
-	time_t msecDiff;
-	Listener *p,*nl,*l;
 	SpinLock::acquire(&lock);
-	l = freeList;
+	Listener *l = freeList;
 	if(l == NULL) {
 		SpinLock::release(&lock);
 		return -ENOMEM;
@@ -65,8 +63,9 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	freeList = freeList->next;
 	/* find place and calculate time */
 	l->tid = tid;
-	msecDiff = 0;
-	p = NULL;
+	time_t msecDiff = 0;
+	Listener *p = NULL;
+	Listener *nl;
 	for(nl = listener; nl != NULL; p = nl, nl = nl->next) {
 		if(msecDiff + nl->time > msecs)
 			break;

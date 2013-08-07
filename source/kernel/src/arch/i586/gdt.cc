@@ -132,22 +132,18 @@ void GDT::initBSP() {
 }
 
 void GDT::initAP() {
-	size_t i;
-	Desc *apgdt;
-	Table *gdttbl;
-	TSS *tss;
 	Table tmpTable;
 	/* use the GDT of the BSP temporary. this way, we can access the heap and build our own gdt */
 	tmpTable.offset = (uintptr_t)bspgdt;
 	tmpTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 	flush(&tmpTable);
 
-	gdttbl = allgdts + gdtCount++;
-	i = tssCount++;
-	tss = (TSS*)PageDir::makeAccessible(0,BYTES_2_PAGES(sizeof(TSS)));
+	Table *gdttbl = allgdts + gdtCount++;
+	size_t i = tssCount++;
+	TSS *tss = (TSS*)PageDir::makeAccessible(0,BYTES_2_PAGES(sizeof(TSS)));
 
 	/* create GDT (copy from first one) */
-	apgdt = (Desc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(Desc));
+	Desc *apgdt = (Desc*)Cache::alloc(GDT_ENTRY_COUNT * sizeof(Desc));
 	if(!apgdt)
 		Util::panic("Unable to allocate GDT for AP");
 	gdttbl->offset = (uintptr_t)apgdt;

@@ -86,17 +86,15 @@ size_t VFSDir::getSize(A_UNUSED pid_t pid) const {
 }
 
 ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t offset,size_t count) {
-	size_t byteCount,fsByteCount;
 	void *fsBytes = NULL,*fsBytesDup;
 	const VFSNode *n,*first;
-	bool valid;
 	assert(buffer != NULL);
 
 	/* the root-directory is distributed on the fs-device and the kernel */
 	/* therefore we have to read it from the fs-device, too */
 	/* but don't do that if we're the kernel (vfsr does not work then) */
-	byteCount = 0;
-	fsByteCount = 0;
+	size_t byteCount = 0;
+	size_t fsByteCount = 0;
 	if(parent == NULL && pid != KERNEL_PID) {
 		const size_t bufSize = 1024;
 		size_t c,curSize = bufSize;
@@ -127,6 +125,7 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 		byteCount += fsByteCount;
 	}
 
+	bool valid;
 	first = n = openDir(true,&valid);
 	if(valid) {
 		/* count the number of bytes in the virtual directory */
@@ -144,7 +143,6 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 		if(fsBytesDup == NULL)
 			byteCount = 0;
 		else {
-			size_t len;
 			VFSDirEntry *dirEntry = (VFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
 			fsBytes = fsBytesDup;
 			Thread::addHeapAlloc(fsBytes);
@@ -156,7 +154,7 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 					n = n->next;
 					continue;
 				}
-				len = n->nameLen;
+				size_t len = n->nameLen;
 				/* unfortunatly, we have to convert the endianess here, because readdir() expects
 				 * that its encoded in little endian */
 				dirEntry->nodeNo = cputole32(n->getNo());

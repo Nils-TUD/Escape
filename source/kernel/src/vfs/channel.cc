@@ -77,7 +77,6 @@ int VFSChannel::isSupported(int op) const {
 ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
 	ssize_t res;
 	sArgsMsg msg;
-	msgid_t mid;
 	Thread *t = Thread::getRunning();
 
 	if((res = isSupported(DEV_OPEN)) < 0)
@@ -92,6 +91,7 @@ ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
 	/* receive response */
 	t->addResource();
 	do {
+		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
 		vassert(res < 0 || mid == MSG_DEV_OPEN_RESP,"mid=%u, res=%zd, node=%s:%p",
 		        mid,res,getPath(),this);
@@ -156,15 +156,14 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	ssize_t res;
-	msgid_t mid;
 	sArgsMsg msg;
-	Event::WaitObject obj;
 	Thread *t = Thread::getRunning();
 
 	if((res = isSupported(DEV_READ)) < 0)
 		return res;
 
 	/* wait until there is data available, if necessary */
+	Event::WaitObject obj;
 	obj.events = EV_DATA_READABLE;
 	obj.object = (evobj_t)file;
 	res = VFS::waitFor(&obj,1,0,file->shouldBlock(),KERNEL_PID,0);
@@ -182,6 +181,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	 * (otherwise the channel might get in an inconsistent state) */
 	t->addResource();
 	do {
+		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
 		vassert(res < 0 || mid == MSG_DEV_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
@@ -211,7 +211,6 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 }
 
 ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
-	msgid_t mid;
 	ssize_t res;
 	sArgsMsg msg;
 	Thread *t = Thread::getRunning();
@@ -229,6 +228,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	/* read response */
 	t->addResource();
 	do {
+		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
 		vassert(res < 0 || mid == MSG_DEV_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);

@@ -35,12 +35,11 @@
 PageDir PageDir::firstCon;
 
 void PageDirBase::init() {
-	uintptr_t rootLoc;
 	ssize_t res;
 	/* set root-location of first process */
 	if((res = PhysMem::allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1)) < 0)
 		Util::panic("Not enough contiguous memory for the root-location of the first process");
-	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	uintptr_t rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	/* clear */
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
@@ -55,13 +54,12 @@ void PageDirBase::init() {
 
 int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	PageDir *cur = Proc::getCurPageDir();
-	uintptr_t rootLoc;
 	/* allocate root-location */
 	ssize_t res = PhysMem::allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1);
 	if(res < 0)
 		return res;
 	/* clear */
-	rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	uintptr_t rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* init context */
@@ -234,7 +232,6 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 	uint64_t key,pteFlags = 0;
 	uint64_t pteAttr = 0;
 	uint64_t pte,oldFrame,*pt = NULL;
-	bool freeFrames;
 
 	virt &= ~(PAGE_SIZE - 1);
 	if(flags & PG_PRESENT)
@@ -294,7 +291,7 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 	return pts;
 
 error:
-	freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
+	bool freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
 	pdir->unmap(orgVirt,orgCount - count,freeFrames);
 	return -ENOMEM;
 }
@@ -306,7 +303,6 @@ size_t PageDirBase::unmapFromCur(uintptr_t virt,size_t count,bool freeFrames) {
 size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	size_t pts = 0;
-	size_t ptables;
 	ulong pageNo = PAGE_NO(virt);
 	uint64_t pte,*pt = NULL;
 	virt &= ~(PAGE_SIZE - 1);
@@ -315,7 +311,7 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 		if(!pt || (pageNo % PT_ENTRY_COUNT) == 0) {
 			/* not the first one? then check if its empty */
 			if(pt) {
-				ptables = pdir->remEmptyPts(virt - PAGE_SIZE);
+				size_t ptables = pdir->remEmptyPts(virt - PAGE_SIZE);
 				pts += ptables;
 				pdir->ptables -= ptables;
 			}
@@ -337,7 +333,7 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	}
 	/* check if the last changed pagetable is empty (pt is NULL if no pages have been unmapped) */
 	if(pt) {
-		ptables = pdir->remEmptyPts(virt - PAGE_SIZE);
+		size_t ptables = pdir->remEmptyPts(virt - PAGE_SIZE);
 		pts += ptables;
 		pdir->ptables -= ptables;
 	}
@@ -365,11 +361,10 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,size_t *createdPts) const {
 		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
 		uint64_t ptp = *ptpAddr;
 		if(ptp == 0) {
-			frameno_t frame;
 			if(!create)
 				return NULL;
 			/* allocate page-table and clear it */
-			frame = PhysMem::allocate(PhysMem::KERN);
+			frameno_t frame = PhysMem::allocate(PhysMem::KERN);
 			if(frame == 0)
 				return NULL;
 			*ptpAddr = DIR_MAPPED_SPACE | (frame * PAGE_SIZE);

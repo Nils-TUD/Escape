@@ -31,12 +31,11 @@ uintptr_t KHeap::allocAreas() {
 }
 
 uintptr_t KHeap::allocSpace(size_t count) {
-	ssize_t res;
 	/* if its just one page, take a frame from the pmem-stack */
 	if(count == 1)
 		return allocAreas();
 	/* otherwise we have to use contiguous physical memory */
-	res = PhysMem::allocateContiguous(count,1);
+	ssize_t res = PhysMem::allocateContiguous(count,1);
 	if(res < 0)
 		return 0;
 	pages += count;

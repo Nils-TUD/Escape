@@ -212,9 +212,8 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
-	bool res;
 	Signals::addSignal(SIG_INTRPT_TIMER);
-	res = Timer::intrpt();
+	bool res = Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res) {
 		Thread *t = Thread::getRunning();

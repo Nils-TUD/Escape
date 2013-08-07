@@ -91,11 +91,10 @@ bool SMPBase::initArch() {
 }
 
 void SMPBase::pauseOthers() {
-	size_t count;
 	cpuid_t cur = getCurId();
 	waiting = 0;
 	waitlock = 1;
-	count = 0;
+	size_t count = 0;
 	for(auto cpu = begin(); cpu != end(); ++cpu) {
 		if(cpu->id != cur && cpu->ready) {
 			sendIPI(cpu->id,IPI_WAIT);
@@ -112,10 +111,9 @@ void SMPBase::resumeOthers() {
 }
 
 void SMPBase::haltOthers() {
-	size_t count;
 	cpuid_t cur = getCurId();
 	halting = 0;
-	count = 0;
+	size_t count = 0;
 	for(auto cpu = begin(); cpu != end(); ++cpu) {
 		if(cpu->id != cur && cpu->ready) {
 			/* prevent that we want to halt/pause this one again */
@@ -130,10 +128,9 @@ void SMPBase::haltOthers() {
 }
 
 void SMPBase::ensureTLBFlushed() {
-	size_t count;
 	cpuid_t cur = getCurId();
 	flushed = 0;
-	count = 0;
+	size_t count = 0;
 	for(auto cpu = begin(); cpu != end(); ++cpu) {
 		if(cpu->id != cur && cpu->ready) {
 			sendIPI(cpu->id,IPI_FLUSH_TLB_ACK);
@@ -146,10 +143,9 @@ void SMPBase::ensureTLBFlushed() {
 }
 
 void SMP::apIsRunning() {
-	cpuid_t phys,log;
 	SpinLock::acquire(&smpLock);
-	phys = LAPIC::getId();
-	log = GDT::getCPUId();
+	cpuid_t phys = LAPIC::getId();
+	cpuid_t log = GDT::getCPUId();
 	log2Phys[log] = phys;
 	setId(phys,log);
 	setReady(log);
@@ -159,8 +155,6 @@ void SMP::apIsRunning() {
 
 void SMPBase::start() {
 	if(isEnabled()) {
-		size_t total;
-		uint64_t start,end;
 		/* TODO thats not completely correct, according to the MP specification */
 		/* we have to check if apic is an 82489DX */
 
@@ -177,9 +171,9 @@ void SMPBase::start() {
 		Timer::wait(200);
 
 		/* wait until all APs are running */
-		total = getCPUCount() - 1;
-		start = ::CPU::rdtsc();
-		end = start + Timer::timeToCycles(2000000);
+		size_t total = getCPUCount() - 1;
+		uint64_t start = ::CPU::rdtsc();
+		uint64_t end = start + Timer::timeToCycles(2000000);
 		while(::CPU::rdtsc() < end && seenAPs != total)
 			::CPU::pause();
 		if(seenAPs != total) {

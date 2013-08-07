@@ -76,15 +76,14 @@ void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 }
 
 void VFSInfo::procReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	size_t pages,own,shared,swapped;
-	Proc *p;
 	pid_t pid = getPid(node,dataSize,buffer);
 	if(pid == INVALID_PID)
 		return;
 
 	OStringStream os;
-	p = Proc::getByPid(pid);
+	Proc *p = Proc::getByPid(pid);
 	if(p) {
+		size_t pages,own,shared,swapped;
 		p->getVM()->getMemUsage(&pages);
 		Proc::getMemUsageOf(pid,&own,&shared,&swapped);
 		os.writef(
@@ -171,7 +170,6 @@ void VFSInfo::cpuReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **buf
 void VFSInfo::statsReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **buffer) {
 	OStringStream os;
 	uLongLong cycles;
-
 	cycles.val64 = CPU::rdtsc();
 	os.writef(
 		"%-16s%zu\n"
@@ -191,17 +189,17 @@ void VFSInfo::statsReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **b
 }
 
 void VFSInfo::memUsageReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **buffer) {
-	size_t free,total,dataShared,dataOwn,dataReal,ksize,msize,kheap,cache,pmem;
 	OStringStream os;
 
 	/* TODO change that (kframes, swapping, ...) */
-	free = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT) << PAGE_SIZE_SHIFT;
-	total = PhysMemAreas::getTotal();
-	ksize = Boot::getKernelSize();
-	msize = Boot::getModuleSize();
-	kheap = KHeap::getOccupiedMem();
-	cache = Cache::getOccMem();
-	pmem = PhysMem::getStackSize();
+	size_t free = PhysMem::getFreeFrames(PhysMem::DEF | PhysMem::CONT) << PAGE_SIZE_SHIFT;
+	size_t total = PhysMemAreas::getTotal();
+	size_t ksize = Boot::getKernelSize();
+	size_t msize = Boot::getModuleSize();
+	size_t kheap = KHeap::getOccupiedMem();
+	size_t cache = Cache::getOccMem();
+	size_t pmem = PhysMem::getStackSize();
+	size_t dataShared,dataOwn,dataReal;
 	Proc::getMemUsage(&dataShared,&dataOwn,&dataReal);
 	os.writef(
 		"%-11s%10zu\n"

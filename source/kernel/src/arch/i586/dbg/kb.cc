@@ -164,13 +164,11 @@ static ScanCodeEntry scanCode2KeyCode[] = {
 
 uint8_t Keyboard::getKeyCode(uint *pflags) {
 	static uint8_t set = 0;
-	uint8_t scanCode,keycode;
-	ScanCodeEntry *e;
 	uint8_t status = Ports::in<uint8_t>(IOPORT_KB_CTRL);
 	if(!(status & STATUS_OUTBUF_FULL))
 		return VK_NOKEY;
 
-	scanCode = Ports::in<uint8_t>(IOPORT_KB_DATA);
+	uint8_t scanCode = Ports::in<uint8_t>(IOPORT_KB_DATA);
 	/* extended code-start? */
 	if(scanCode == 0xE0) {
 		set = 1;
@@ -185,8 +183,8 @@ uint8_t Keyboard::getKeyCode(uint *pflags) {
 	}
 
 	/* get keycode */
-	e = scanCode2KeyCode + (scanCode & 0x7F);
-	keycode = set ? e->ext : e->def;
+	ScanCodeEntry *e = scanCode2KeyCode + (scanCode & 0x7F);
+	uint8_t keycode = set ? e->ext : e->def;
 	set = 0;
 	return keycode;
 }

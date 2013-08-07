@@ -88,13 +88,12 @@ void MPConfig::parse() {
 
 MPConfig::FloatPtr *MPConfig::search() {
 	FloatPtr *res = NULL;
-	uint16_t memSize;
 	/* first kb of extended bios data area (EBDA) */
 	uint16_t ebda = *(uint16_t*)(KERNEL_AREA | BDA_EBDA);
 	if((res = searchIn(KERNEL_AREA | ebda * 16,1024)))
 		return res;
 	/* last kb of base memory */
-	memSize = *(uint16_t*)(KERNEL_AREA | BDA_MEMSIZE);
+	uint16_t memSize = *(uint16_t*)(KERNEL_AREA | BDA_MEMSIZE);
 	if((res = searchIn(KERNEL_AREA | (memSize - 1) * 1024,1024)))
 		return res;
 	/* bios rom address space */

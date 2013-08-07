@@ -25,9 +25,6 @@
 #include <string.h>
 
 bool DynArray::extend() {
-	frameno_t frame;
-	Region *reg;
-
 	/* we use the begin for the current size here */
 	if(regions == NULL)
 		areaBegin = 0;
@@ -37,12 +34,12 @@ bool DynArray::extend() {
 		return false;
 
 	/* allocate new region */
-	reg = freeList;
+	Region *reg = freeList;
 	if(reg == NULL)
 		return false;
 
 	/* allocate a frame */
-	frame = PhysMem::allocate(PhysMem::CRIT);
+	frameno_t frame = PhysMem::allocate(PhysMem::CRIT);
 	if(frame == 0)
 		return false;
 

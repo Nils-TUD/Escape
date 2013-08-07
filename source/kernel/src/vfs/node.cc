@@ -91,9 +91,9 @@ const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
 }
 
 int VFSNode::isEmptyDir() const {
-	bool valid;
 	if(!S_ISDIR(mode))
 		return -ENOTDIR;
+	bool valid;
 	const VFSNode *c = openDir(true,&valid);
 	if(valid) {
 		bool res = c->next && !c->next->next;
@@ -429,22 +429,19 @@ void VFSNode::doUnref(bool remove) {
 }
 
 char *VFSNode::generateId(pid_t pid) {
-	char *name;
-	size_t len;
-	uint id;
 	/* we want a id in the form <pid>.<x>, i.e. 2 ints, a '.' and '\0'. thus, allowing up to 31
 	 * digits per int is enough, even for 64-bit ints */
 	const size_t size = 64;
-	name = (char*)Cache::alloc(size);
+	char *name = (char*)Cache::alloc(size);
 	if(name == NULL)
 		return NULL;
 
 	/* create usage-node */
 	itoa(name,size,pid);
-	len = strlen(name);
+	size_t len = strlen(name);
 	*(name + len) = '.';
 	SpinLock::acquire(&nodesLock);
-	id = nextUsageId++;
+	uint id = nextUsageId++;
 	SpinLock::release(&nodesLock);
 	itoa(name + len + 1,size - (len + 1),id);
 	return name;
@@ -452,14 +449,12 @@ char *VFSNode::generateId(pid_t pid) {
 
 int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created) {
 	size_t nameLen;
-	char *nameCpy;
-	char *nextSlash;
 	int err;
 	/* can we create files in this directory? */
 	if((err = VFS::hasAccess(pid,dir,VFS_WRITE)) < 0)
 		return err;
 
-	nextSlash = strchr(path,'/');
+	char *nextSlash = strchr(path,'/');
 	if(nextSlash) {
 		/* if there is still a slash in the path, we can't create the file */
 		if(*(nextSlash + 1) != '\0')
@@ -470,7 +465,7 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 	else
 		nameLen = strlen(path);
 	/* copy the name because vfs_file_create() will store the pointer */
-	nameCpy = (char*)Cache::alloc(nameLen + 1);
+	char *nameCpy = (char*)Cache::alloc(nameLen + 1);
 	if(nameCpy == NULL)
 		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);

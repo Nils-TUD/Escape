@@ -35,10 +35,6 @@ size_t KHeap::pages = 0;
 klock_t KHeap::lock;
 
 void *KHeap::alloc(size_t size) {
-	ulong *begin;
-	MemArea *area,*prev,*narea;
-	MemArea **list;
-
 	if(size == 0)
 		return NULL;
 
@@ -48,8 +44,8 @@ void *KHeap::alloc(size_t size) {
 	SpinLock::acquire(&lock);
 
 	/* find a suitable area */
-	prev = NULL;
-	area = usableList;
+	MemArea *prev = NULL;
+	MemArea *area = usableList;
 	while(area != NULL) {
 		if(area->size >= size)
 			break;
@@ -87,7 +83,7 @@ void *KHeap::alloc(size_t size) {
 		}
 
 		/* split the area */
-		narea = freeList;
+		MemArea *narea = freeList;
 		freeList = freeList->next;
 		narea->address = (void*)((uintptr_t)area->address + size);
 		narea->size = area->size - size;
@@ -98,12 +94,12 @@ void *KHeap::alloc(size_t size) {
 	}
 
 	/* insert in occupied-map */
-	list = occupiedMap + getHash(area->address);
+	MemArea **list = occupiedMap + getHash(area->address);
 	area->next = *list;
 	*list = area;
 
 	/* add guards */
-	begin = (ulong*)area->address;
+	ulong *begin = (ulong*)area->address;
 	begin[0] = size - sizeof(ulong) * 3;
 	begin[1] = GUARD_MAGIC;
 	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;

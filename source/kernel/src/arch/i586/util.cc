@@ -49,8 +49,6 @@ static Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 extern uintptr_t kernelStack;
 
 void Util::panicArch() {
-	OpenFile *file;
-
 	/* at first, halt the other CPUs */
 	SMP::haltOthers();
 
@@ -58,6 +56,7 @@ void Util::panicArch() {
 	/* actually it may fail depending on what caused the panic. this may make it more difficult
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :) */
+	OpenFile *file;
 	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video",&file) == 0) {
 		ssize_t res;
 		sArgsMsg msg;
@@ -105,10 +104,10 @@ void Util::printUserState(OStream &os) {
 }
 
 Util::FuncCall *Util::getUserStackTrace() {
-	uintptr_t start,end;
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(kstack) {
+		uintptr_t start,end;
 		if(t->getStackRange(&start,&end,0))
 			return getStackTrace((uint32_t*)kstack->ebp,start,start,end);
 	}
@@ -116,13 +115,13 @@ Util::FuncCall *Util::getUserStackTrace() {
 }
 
 Util::FuncCall *Util::getKernelStackTrace() {
-	uintptr_t start,end;
 	uint32_t* ebp;
 	Thread *t = Thread::getRunning();
 	if(t) {
 		asm volatile ("mov %%ebp,%0" : "=a" (ebp) : );
 
 		/* determine the stack-bounds; we have a temp stack at the beginning */
+		uintptr_t start,end;
 		if((uintptr_t)ebp >= t->getKernelStack() &&
 				(uintptr_t)ebp < t->getKernelStack() + PAGE_SIZE) {
 			start = t->getKernelStack();
@@ -140,7 +139,6 @@ Util::FuncCall *Util::getKernelStackTrace() {
 Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 	uintptr_t start,end;
 	if(t->getStackRange(&start,&end,0)) {
-		FuncCall *calls;
 		PageDir *pdir = t->getProc()->getPageDir();
 		size_t pcount = (end - start) / PAGE_SIZE;
 		frameno_t *frames = (frameno_t*)Cache::alloc((pcount + 2) * sizeof(frameno_t));
@@ -158,7 +156,7 @@ Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 			}
 			temp = PageDir::mapToTemp(frames,pcount + 1);
 			istack = (IntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
-			calls = getStackTrace((uint32_t*)istack->ebp,start,
+			FuncCall *calls = getStackTrace((uint32_t*)istack->ebp,start,
 					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
 			PageDir::unmapFromTemp(pcount + 1);
 			Cache::free(frames);

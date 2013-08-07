@@ -60,7 +60,6 @@ void Sched::addIdleThread(Thread *t) {
 }
 
 Thread *Sched::perform(Thread *old,uint64_t runtime) {
-	Thread *t;
 	SpinLock::acquire(&lock);
 	/* give the old thread a new state */
 	if(old) {
@@ -109,6 +108,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	}
 
 	/* get new thread */
+	Thread *t;
 	for(ssize_t i = MAX_PRIO; i >= 0; i--) {
 		t = qDequeue(rdyQueues + i);
 		if(t) {
@@ -143,9 +143,8 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 
 void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	const uint64_t threadSlice = (RUNTIME_UPDATE_INTVAL * 1000) / threadCount;
-	uint64_t runtime;
 	SpinLock::acquire(&lock);
-	runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->getStats().timeslice;
+	uint64_t runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->getStats().timeslice;
 	/* if the thread has used a lot of its timeslice, lower its priority */
 	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
 		if(t->getPriority() > 0) {

@@ -323,10 +323,7 @@ errorReqProc:
 }
 
 int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
-	uintptr_t tlsStart,tlsEnd;
-	size_t pageCount;
 	Thread *t = Thread::getRunning();
-	Proc *p;
 	Thread *nt;
 	int res;
 	/* don't allow new threads when the process should die */
@@ -334,12 +331,13 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 		return -EDESTROYED;
 
 	/* reserve frames for new stack- and tls-region */
-	pageCount = Thread::getThreadFrmCnt();
+	size_t pageCount = Thread::getThreadFrmCnt();
+	uintptr_t tlsStart,tlsEnd;
 	if(t->getTLSRange(&tlsStart,&tlsEnd))
 		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
 	t->reserveFrames(pageCount);
 
-	p = request(t->getProc()->pid,PLOCK_PROG);
+	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	if(!p) {
 		res = -ESRCH;
 		goto errorReqProc;
@@ -784,11 +782,8 @@ void ProcBase::print(OStream &os) const {
 }
 
 int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
-	const char *const *arg;
-	char *bufPos;
 	int argc = 0;
 	size_t remaining = EXEC_MAX_ARGSIZE;
-	size_t len;
 
 	/* alloc space for the arguments */
 	*argBuffer = (char*)Cache::alloc(EXEC_MAX_ARGSIZE);
@@ -800,8 +795,8 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
 	Thread::addHeapAlloc(*argBuffer);
-	bufPos = *argBuffer;
-	arg = args;
+	char *bufPos = *argBuffer;
+	const char *const *arg = args;
 	while(1) {
 		/* check if it is a valid pointer */
 		if(fromUser && !PageDir::isInUserSpace((uintptr_t)arg,sizeof(char*)))
@@ -811,6 +806,7 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 			break;
 
 		/* check whether the string is readable */
+		size_t len;
 		if(fromUser && !Syscalls::isStrInUserSpace(*arg,&len))
 			goto error;
 		else

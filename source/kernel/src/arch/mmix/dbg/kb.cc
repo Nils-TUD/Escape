@@ -173,13 +173,11 @@ static ScanCodeEntry scanCode2KeyCode[] = {
 uint8_t Keyboard::getKeyCode(uint *pflags) {
 	static bool isExt = 0;
 	static bool isBreak = false;
-	uint8_t scanCode,keycode;
-	ScanCodeEntry *e;
 	uint64_t *kb = (uint64_t*)(KEYBOARD_BASE | DIR_MAPPED_SPACE);
 	if(!(kb[KEYBOARD_CTRL] & KEYBOARD_RDY))
 		return VK_NOKEY;
 
-	scanCode = kb[KEYBOARD_DATA];
+	uint8_t scanCode = kb[KEYBOARD_DATA];
 	/* extended code-start? */
 	if(scanCode == 0xE0) {
 		isExt = true;
@@ -192,8 +190,8 @@ uint8_t Keyboard::getKeyCode(uint *pflags) {
 	}
 
 	/* get keycode */
-	e = scanCode2KeyCode + (scanCode % 0x84);
-	keycode = isExt ? e->ext : e->def;
+	ScanCodeEntry *e = scanCode2KeyCode + (scanCode % 0x84);
+	uint8_t keycode = isExt ? e->ext : e->def;
 	if(isBreak)
 		*pflags |= KE_BREAK;
 	else

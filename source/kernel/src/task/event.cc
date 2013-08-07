@@ -159,11 +159,10 @@ void Event::print(OStream &os) {
 		Wait *w = list->begin;
 		os.writef("\t%s:\n",getName(e));
 		while(w != NULL) {
-			inode_t nodeNo;
 			Thread *t = Thread::getById(w->tid);
 			os.writef("\t\tthread=%d (%d:%s), object=%x",
 					t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),w->object);
-			nodeNo = ((VFSNode*)w->object)->getNo();
+			inode_t nodeNo = ((VFSNode*)w->object)->getNo();
 			if(VFSNode::isValid(nodeNo))
 				os.writef("(%s)",((VFSNode*)w->object)->getPath());
 			os.writef("\n");

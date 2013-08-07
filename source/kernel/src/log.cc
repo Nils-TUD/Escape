@@ -42,13 +42,13 @@
 Log Log::inst;
 
 void Log::vfsIsReady() {
-	VFSNode *logNode,*dir,*stdin;
+	VFSNode *dir,*stdin;
 	OpenFile *inFile;
 	pid_t pid = Proc::getRunning();
 
 	/* open log-file */
 	assert(VFSNode::request(LOG_DIR,&dir,NULL,VFS_CREATE) == 0);
-	logNode = CREATE(LogFile,KERNEL_PID,dir);
+	VFSNode *logNode = CREATE(LogFile,KERNEL_PID,dir);
 	assert(logNode != NULL);
 	VFSNode::release(dir);
 	assert(VFS::openFile(KERNEL_PID,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);

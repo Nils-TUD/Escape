@@ -33,13 +33,12 @@ void FileDesc::init(Proc *p) {
 }
 
 OpenFile *FileDesc::request(int fd) {
-	OpenFile *file;
 	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 
 	p->lock(PLOCK_FDS);
-	file = p->fileDescs[fd];
+	OpenFile *file = p->fileDescs[fd];
 	if(file != NULL) {
 		file->incUsages();
 		Thread::addFileUsage(file);
@@ -97,8 +96,6 @@ int FileDesc::assoc(OpenFile *fileNo) {
 }
 
 int FileDesc::dup(int fd) {
-	OpenFile *f;
-	OpenFile *const *fds;
 	int nfd = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
 	/* check fd */
@@ -106,8 +103,8 @@ int FileDesc::dup(int fd) {
 		return -EBADF;
 
 	p->lock(PLOCK_FDS);
-	fds = p->fileDescs;
-	f = p->fileDescs[fd];
+	OpenFile *const *fds = p->fileDescs;
+	OpenFile *f = p->fileDescs[fd];
 	if(f != NULL) {
 		nfd = -EMFILE;
 		for(size_t i = 0; i < MAX_FD_COUNT; i++) {
@@ -125,7 +122,6 @@ int FileDesc::dup(int fd) {
 }
 
 int FileDesc::redirect(int src,int dst) {
-	OpenFile *fSrc,*fDst;
 	int err = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
 
@@ -134,8 +130,8 @@ int FileDesc::redirect(int src,int dst) {
 		return -EBADF;
 
 	p->lock(PLOCK_FDS);
-	fSrc = p->fileDescs[src];
-	fDst = p->fileDescs[dst];
+	OpenFile *fSrc = p->fileDescs[src];
+	OpenFile *fDst = p->fileDescs[dst];
 	if(fSrc != NULL && fDst != NULL) {
 		fDst->incRefs();
 		/* we have to close the source because no one else will do it anymore... */
@@ -149,13 +145,12 @@ int FileDesc::redirect(int src,int dst) {
 }
 
 OpenFile *FileDesc::unassoc(int fd) {
-	OpenFile *file;
 	Proc *p = Thread::getRunning()->getProc();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return NULL;
 
 	p->lock(PLOCK_FDS);
-	file = p->fileDescs[fd];
+	OpenFile *file = p->fileDescs[fd];
 	if(file != NULL)
 		p->fileDescs[fd] = NULL;
 	p->unlock(PLOCK_FDS);

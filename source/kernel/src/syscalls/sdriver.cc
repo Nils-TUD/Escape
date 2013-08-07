@@ -113,7 +113,6 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG6(stack);
 	uint flags = (uint)SYSC_ARG7(stack);
 	pid_t pid = t->getProc()->getPid();
-	ssize_t res;
 
 	/* validate pointers */
 	if(fdCount == 0 || fdCount > MAX_GETWORK_DEVICES)
@@ -138,7 +137,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	/* open a client */
 	size_t index;
 	VFSNode *client;
-	res = OpenFile::getClient(files,fdCount,&index,&client,flags);
+	ssize_t res = OpenFile::getClient(files,fdCount,&index,&client,flags);
 
 	/* release files */
 	for(size_t i = 0; i < fdCount; i++)

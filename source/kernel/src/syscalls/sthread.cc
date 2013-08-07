@@ -104,14 +104,13 @@ int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	const Event::WaitObject *uobjects = (const Event::WaitObject*)SYSC_ARG1(stack);
 	size_t objCount = SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
-	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
 		SYSC_ERROR(stack,-EINVAL);
 	if(!PageDir::isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	res = doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
+	int res = doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

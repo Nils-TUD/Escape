@@ -195,18 +195,16 @@ bool ThreadBase::beginTerm() {
 }
 
 void ThreadBase::doSwitch() {
-	uint64_t cycles,runtime;
 	Thread *old = Thread::getRunning();
-	Thread *n;
 
 	/* update runtime-stats */
-	cycles = CPU::rdtsc();
-	runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
+	uint64_t cycles = CPU::rdtsc();
+	uint64_t runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	n = Sched::perform(old,runtime);
+	Thread *n = Sched::perform(old,runtime);
 	n->stats.schedCount++;
 
 	/* switch thread */

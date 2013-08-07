@@ -56,13 +56,12 @@ bool SwapMap::init(size_t swapSize) {
 }
 
 ulong SwapMap::alloc() {
-	Block *block;
 	SpinLock::acquire(&lock);
 	if(!freeList) {
 		SpinLock::release(&lock);
 		return INVALID_BLOCK;
 	}
-	block = freeList;
+	Block *block = freeList;
 	freeList = freeList->next;
 	block->refCount = 1;
 	freeBlocks--;

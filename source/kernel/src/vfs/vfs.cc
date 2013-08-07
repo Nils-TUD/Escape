@@ -80,7 +80,6 @@ void VFS::init() {
 
 int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 	const Proc *p;
-	uint mode;
 	if(!n->isAlive())
 		return -ENOENT;
 	/* kernel is allmighty :P */
@@ -99,6 +98,7 @@ int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 	}
 
 	/* determine mask */
+	uint mode;
 	if(p->getEUid() == n->getUid())
 		mode = n->getMode() & S_IRWXU;
 	else if(p->getEGid() == n->getGid() || Groups::contains(p->getPid(),n->getGid()))
@@ -117,12 +117,10 @@ int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 }
 
 int VFS::openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
-	VFSNode *node;
-	bool created;
-	int err;
-
 	/* resolve path */
-	err = VFSNode::request(path,&node,&created,flags);
+	bool created;
+	VFSNode *node;
+	int err = VFSNode::request(path,&node,&created,flags);
 	if(err == -EREALPATH) {
 		const Proc *p = Proc::getByPid(pid);
 		/* unfortunatly we have to check for fs here. because e.g. if the user tries to mount the
@@ -193,16 +191,14 @@ int VFS::openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 }
 
 int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
-	VFSNode *node,*pipeNode;
-	int err;
-
 	/* resolve pipe-path */
-	err = VFSNode::request("/system/pipe",&node,NULL,VFS_READ);
+	VFSNode *node;
+	int err = VFSNode::request("/system/pipe",&node,NULL,VFS_READ);
 	if(err < 0)
 		return err;
 
 	/* create pipe */
-	pipeNode = CREATE(VFSPipe,pid,node);
+	VFSNode *pipeNode = CREATE(VFSPipe,pid,node);
 	VFSNode::release(node);
 	if(pipeNode == NULL)
 		return -ENOMEM;
@@ -403,11 +399,11 @@ int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	char *name,*namecpy,backup;
 	size_t len;
 	VFSNode *oldNode,*newNode,*link;
-	int res,oldRes,newRes;
+	int res;
 
 	/* first check whether it is a realpath */
-	oldRes = VFSNode::request(oldPath,&oldNode,NULL,VFS_READ);
-	newRes = VFSNode::request(newPath,&newNode,NULL,VFS_WRITE);
+	int oldRes = VFSNode::request(oldPath,&oldNode,NULL,VFS_READ);
+	int newRes = VFSNode::request(newPath,&newNode,NULL,VFS_WRITE);
 	if(oldRes == -EREALPATH) {
 		if(newRes != -EREALPATH) {
 			res = -EXDEV;
@@ -481,9 +477,8 @@ errorRelease:
 }
 
 int VFS::unlink(pid_t pid,const char *path) {
-	int res;
 	VFSNode *n;
-	res = VFSNode::request(path,&n,NULL,VFS_WRITE | VFS_NOLINKRES);
+	int res = VFSNode::request(path,&n,NULL,VFS_WRITE | VFS_NOLINKRES);
 	if(res == -EREALPATH)
 		return VFSFS::unlink(pid,path);
 	if(res < 0)
@@ -508,9 +503,6 @@ int VFS::unlink(pid_t pid,const char *path) {
 
 int VFS::mkdir(pid_t pid,const char *path) {
 	char pathCpy[MAX_PATH_LEN + 1];
-	char *name,*namecpy;
-	char backup;
-	int res;
 	size_t len = strlen(path);
 	VFSNode *node,*child;
 
@@ -520,12 +512,12 @@ int VFS::mkdir(pid_t pid,const char *path) {
 	strcpy(pathCpy,path);
 
 	/* extract name and directory */
-	name = VFSNode::basename(pathCpy,&len);
-	backup = *name;
+	char *name = VFSNode::basename(pathCpy,&len);
+	char backup = *name;
 	VFSNode::dirname(pathCpy,len);
 
 	/* get the parent-directory */
-	res = VFSNode::request(pathCpy,&node,NULL,VFS_WRITE);
+	int res = VFSNode::request(pathCpy,&node,NULL,VFS_WRITE);
 	/* special-case: directories in / should be created in the real fs! */
 	if(res == -EREALPATH || (res >= 0 && strcmp(pathCpy,"/") == 0)) {
 		VFSNode::release(node);
@@ -538,7 +530,7 @@ int VFS::mkdir(pid_t pid,const char *path) {
 	/* alloc space for name and copy it over */
 	*name = backup;
 	len = strlen(name);
-	namecpy = (char*)Cache::alloc(len + 1);
+	char *namecpy = (char*)Cache::alloc(len + 1);
 	if(namecpy == NULL) {
 		res = -ENOMEM;
 		goto errorRel;
@@ -570,9 +562,8 @@ errorRel:
 }
 
 int VFS::rmdir(pid_t pid,const char *path) {
-	int res;
 	VFSNode *node;
-	res = VFSNode::request(path,&node,NULL,VFS_WRITE);
+	int res = VFSNode::request(path,&node,NULL,VFS_WRITE);
 	if(res == -EREALPATH)
 		return VFSFS::rmdir(pid,path);
 	if(res < 0)
@@ -596,20 +587,17 @@ int VFS::rmdir(pid_t pid,const char *path) {
 
 int VFS::createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
 	VFSNode *dir,*srv;
-	size_t len;
-	char *name;
-	int err;
 
 	/* get name */
-	len = strlen(path);
-	name = VFSNode::basename(path,&len);
+	size_t len = strlen(path);
+	char *name = VFSNode::basename(path,&len);
 	name = strdup(name);
 	if(!name)
 		return -ENOMEM;
 
 	/* check whether the directory exists */
 	VFSNode::dirname(path,len);
-	err = VFSNode::request(path,&dir,NULL,VFS_READ);
+	int err = VFSNode::request(path,&dir,NULL,VFS_READ);
 	/* this includes -EREALPATH since devices have to be created in the VFS */
 	if(err < 0)
 		goto errorName;
@@ -648,20 +636,19 @@ errorName:
 }
 
 inode_t VFS::createProcess(pid_t pid) {
-	char *name;
 	VFSNode *proc = procsNode,*dir,*nn;
 	const VFSNode *n;
-	bool isValid;
 	int res = -ENOMEM;
 
 	/* build name */
-	name = (char*)Cache::alloc(12);
+	char *name = (char*)Cache::alloc(12);
 	if(name == NULL)
 		return -ENOMEM;
 
 	itoa(name,12,pid);
 
 	/* go to last entry */
+	bool isValid;
 	n = proc->openDir(true,&isValid);
 	if(!isValid) {
 		proc->closeDir(true);
@@ -736,12 +723,11 @@ void VFS::removeProcess(pid_t pid) {
 }
 
 bool VFS::createThread(tid_t tid) {
-	char *name;
 	VFSNode *n,*dir;
 	const Thread *t = Thread::getById(tid);
 
 	/* build name */
-	name = (char*)Cache::alloc(12);
+	char *name = (char*)Cache::alloc(12);
 	if(name == NULL)
 		return false;
 	itoa(name,12,tid);

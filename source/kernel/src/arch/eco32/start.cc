@@ -37,15 +37,13 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 };
 
 uintptr_t bspstart(BootInfo *bootinfo) {
-	Thread *t;
-	ELF::StartupInfo info;
-
 	Boot::start(bootinfo);
 
 	/* load initloader */
+	ELF::StartupInfo info;
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		Util::panic("Unable to load initloader");
-	t = Thread::getRunning();
+	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		Util::panic("Not enough mem for initloader-stack");
 	t->addInitialStack();

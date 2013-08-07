@@ -33,15 +33,15 @@
 #define KEYBOARD_IEN		0x02
 
 int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,int signal) {
-	uint32_t *regs;
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
 	/* reenable device-interrupts */
 	switch(signal) {
-		case SIG_INTRPT_KB:
-			regs = (uint32_t*)KEYBOARD_BASE;
+		case SIG_INTRPT_KB: {
+			uint32_t *regs = (uint32_t*)KEYBOARD_BASE;
 			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 			break;
+		}
 		/* not necessary for disk here; the device will reenable interrupts as soon as a new
 		 * command is started */
 	}
@@ -50,8 +50,6 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,int signal) {
 
 bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
                          const ELF::StartupInfo *info,uintptr_t entryPoint,A_UNUSED int fd) {
-	uint32_t *sp;
-	char **argv;
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *frame = t->getIntrptStack();
 
@@ -74,11 +72,12 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 	 */
 
 	/* get esp */
+	uint32_t *sp;
 	t->getStackRange(NULL,(uintptr_t*)&sp,0);
 
 	/* copy arguments on the user-stack (4byte space) */
 	sp--;
-	argv = NULL;
+	char **argv = NULL;
 	if(argc > 0) {
 		char *str;
 		size_t len;
@@ -115,7 +114,6 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 }
 
 void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
-	uint32_t *sp;
 	Thread *t = Thread::getRunning();
 
 	/*
@@ -132,6 +130,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 */
 
 	/* get esp */
+	uint32_t *sp;
 	t->getStackRange(NULL,(uintptr_t*)&sp,0);
 	sp--;
 

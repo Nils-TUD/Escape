@@ -44,9 +44,8 @@ int ThreadBase::initArch(Thread *t) {
 }
 
 void ThreadBase::addInitialStack() {
-	int res;
 	assert(tid == INIT_TID);
-	res = proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	int res = proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 0);
 	assert(res == 0);
 }
@@ -60,14 +59,13 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 		dst->kernelStack = src->kernelStack;
 	}
 	else {
-		int res;
 		/* map the kernel-stack at a free address */
 		dst->kernelStack = dst->getProc()->getPageDir()->createKernelStack();
 		if(dst->kernelStack == 0)
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		int res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			dst->getProc()->getPageDir()->unmap(dst->kernelStack,1,true);
@@ -139,11 +137,10 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 }
 
 bool ThreadBase::beginTerm() {
-	bool res;
 	SpinLock::acquire(&switchLock);
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	res = state != Thread::RUNNING && termHeapCount == 0 && !hasResources();
+	bool res = state != Thread::RUNNING && termHeapCount == 0 && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		Sched::removeThread(static_cast<Thread*>(this));
@@ -152,9 +149,8 @@ bool ThreadBase::beginTerm() {
 }
 
 void Thread::initialSwitch() {
-	Thread *cur;
 	SpinLock::acquire(&switchLock);
-	cur = Sched::perform(NULL,0);
+	Thread *cur = Sched::perform(NULL,0);
 	cur->stats.schedCount++;
 	VirtMem::setTimestamp(cur,Timer::getTimestamp());
 	cur->setCPU(GDT::prepareRun(NULL,cur));
@@ -164,21 +160,19 @@ void Thread::initialSwitch() {
 }
 
 void ThreadBase::doSwitch() {
-	uint64_t cycles,runtime;
 	Thread *old = Thread::getRunning();
-	Thread *n;
 	/* lock this, because Sched::perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
 	SpinLock::acquire(&switchLock);
 
 	/* update runtime-stats */
-	cycles = CPU::rdtsc();
-	runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
+	uint64_t cycles = CPU::rdtsc();
+	uint64_t runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	n = Sched::perform(old,runtime);
+	Thread *n = Sched::perform(old,runtime);
 	n->stats.schedCount++;
 
 	/* switch thread */

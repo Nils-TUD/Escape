@@ -28,12 +28,11 @@
 #include <string.h>
 
 bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
-	EnvVar *var;
 	while(1) {
 		Proc *p = Proc::request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
-		var = getiOf(p,&index);
+		EnvVar *var = getiOf(p,&index);
 		if(var != NULL) {
 			bool res = true;
 			if(dst) {
@@ -55,13 +54,12 @@ bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 }
 
 bool Env::get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
-	EnvVar *var;
 	while(1) {
 		Proc *p = Proc::request(pid,PLOCK_ENV);
 		if(!p)
 			return false;
 		p->addLock(PLOCK_ENV);
-		var = getOf(p,name);
+		EnvVar *var = getOf(p,name);
 		if(var != NULL) {
 			if(dst)
 				strnzcpy(dst,var->value,size);
@@ -81,9 +79,9 @@ bool Env::get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 }
 
 bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
+	char *nameCpy,*valueCpy;
 	EnvVar *var;
 	Proc *p;
-	char *nameCpy,*valueCpy;
 	nameCpy = strdup(name);
 	if(!nameCpy)
 		return false;
@@ -155,9 +153,8 @@ void Env::removeFor(pid_t pid) {
 void Env::printAllOf(OStream &os,pid_t pid) {
 	char name[64];
 	char value[64];
-	size_t i;
 	os.writef("Environment of %d:\n",pid);
-	for(i = 0; ; i++) {
+	for(size_t i = 0; ; i++) {
 		if(!geti(pid,i,name,sizeof(name)))
 			break;
 		get(pid,name,value,sizeof(value));
@@ -166,9 +163,8 @@ void Env::printAllOf(OStream &os,pid_t pid) {
 }
 
 bool Env::exists(const Proc *p,const char *name) {
-	EnvVar *var;
 	while(1) {
-		var = getOf(p,name);
+		EnvVar *var = getOf(p,name);
 		if(var != NULL)
 			return true;
 		if(p->getPid() == 0)

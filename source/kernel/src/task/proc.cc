@@ -115,11 +115,9 @@ void ProcBase::init() {
 }
 
 void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
-	int i;
 	size_t cmdlen = strlen(cmd);
 	size_t len = cmdlen + 1;
 	const char *curargs = args;
-	char *curdst;
 	if(command)
 		Cache::free((char*)command);
 
@@ -128,7 +126,7 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 		flags |= P_FS;
 
 	/* determine total length */
-	for(i = 0; i < argc; ++i) {
+	for(int i = 0; i < argc; ++i) {
 		size_t curlen = strlen(curargs) + 1;
 		if(i > 0)
 			len += curlen;
@@ -137,10 +135,10 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 
 	/* copy cmd and arguments into buffer */
 	command = (char*)Cache::alloc(len);
-	curdst = (char*)command;
+	char *curdst = (char*)command;
 	memcpy(curdst,cmd,cmdlen);
 	curdst += cmdlen;
-	for(i = 0; i < argc; ++i) {
+	for(int i = 0; i < argc; ++i) {
 		size_t curlen = strlen(args);
 		if(i > 0) {
 			if(i == 1)

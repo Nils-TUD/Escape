@@ -170,10 +170,9 @@ void GDT::initAP() {
 }
 
 cpuid_t GDT::getCPUId() {
-	size_t i;
 	Table tbl;
 	get(&tbl);
-	for(i = 0; i < cpuCount; i++) {
+	for(size_t i = 0; i < cpuCount; i++) {
 		if(allgdts[i].offset == tbl.offset)
 			return i;
 	}
@@ -224,8 +223,7 @@ void GDT::setIOMap(const uint8_t *ioMap,bool forceCpy) {
 		memcpy(alltss[t->getCPU()]->ioMap,ioMap,IO_MAP_SIZE / 8);
 	/* remove the map from other cpus; we have to copy it again because it has changed */
 	if(forceCpy) {
-		size_t i;
-		for(i = 0; i < cpuCount; i++) {
+		for(size_t i = 0; i < cpuCount; i++) {
 			if(i != t->getCPU() && ioMaps[i] == ioMap)
 				ioMaps[i] = NULL;
 		}

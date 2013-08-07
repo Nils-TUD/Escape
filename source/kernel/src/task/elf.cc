@@ -35,8 +35,7 @@
 #include <assert.h>
 
 int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
-	size_t j,loadSegNo = 0;
-	uintptr_t datPtr;
+	size_t loadSegNo = 0;
 	sElfEHeader *eheader = (sElfEHeader*)code;
 	sElfPHeader *pheader = NULL;
 
@@ -48,8 +47,8 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 	}
 
 	/* load the LOAD segments. */
-	datPtr = (uintptr_t)code + eheader->e_phoff;
-	for(j = 0; j < eheader->e_phnum; datPtr += eheader->e_phentsize, j++) {
+	uintptr_t datPtr = (uintptr_t)code + eheader->e_phoff;
+	for(size_t j = 0; j < eheader->e_phnum; datPtr += eheader->e_phentsize, j++) {
 		pheader = (sElfPHeader*)datPtr;
 		/* check if all stuff is in the binary */
 		if((uintptr_t)pheader + sizeof(sElfPHeader) >= (uintptr_t)code + length) {
@@ -83,16 +82,13 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
-	OpenFile *file;
-	size_t j,loadSeg = 0;
-	uintptr_t datPtr;
-	sElfEHeader eheader;
-	sElfPHeader pheader;
-	sFileInfo finfo;
+	size_t loadSeg = 0;
 	ssize_t readRes;
-	int res,fd;
+	int res;
 	char *interpName;
+	uintptr_t datPtr;
 
+	OpenFile *file;
 	res = VFS::openPath(p->getPid(),VFS_READ,path,&file);
 	if(res < 0) {
 		Log::get().writef("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
@@ -100,6 +96,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	}
 
 	/* fill bindesc */
+	sFileInfo finfo;
 	if((res = file->fstat(p->getPid(),&finfo)) < 0) {
 		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
 		goto failed;
@@ -111,6 +108,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		p->setSGid(finfo.gid);
 
 	/* first read the header */
+	sElfEHeader eheader;
 	if((readRes = file->readFile(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
 		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
 		goto failed;
@@ -131,13 +129,14 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 
 	/* load the LOAD segments. */
 	datPtr = eheader.e_phoff;
-	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
+	for(size_t j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
 		if(file->seek(p->getPid(),(off_t)datPtr,SEEK_SET) < 0) {
 			Log::get().writef("[LOADER] Seeking to position 0x%Ox failed\n",(off_t)datPtr);
 			goto failed;
 		}
 		/* read pheader */
+		sElfPHeader pheader;
 		if((readRes = file->readFile(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
 					j,path,strerror(-readRes));
@@ -200,6 +199,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	}
 
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
+	int fd;
 	if((fd = FileDesc::assoc(file)) < 0)
 		goto failed;
 	if(finishFromFile(file,&eheader,info) < 0) {
@@ -221,7 +221,6 @@ failed:
 int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type) {
 	Thread *t = Thread::getRunning();
 	int res,prot = 0,flags = type == TYPE_INTERP ? 0 : MAP_FIXED;
-	VMRegion *vm;
 	size_t memsz = pheader->p_memsz;
 
 	/* determine protection flags */
@@ -277,6 +276,7 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 		t->reserveFrames(BYTES_2_PAGES(memsz));
 
 	/* add the region */
+	VMRegion *vm;
 	if((res = t->getProc()->getVM()->map(pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
 		Log::get().writef("[LOADER] Unable to add region: %s\n",strerror(-res));

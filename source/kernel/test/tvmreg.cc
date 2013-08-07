@@ -47,28 +47,25 @@ static void test_vmreg() {
 }
 
 static void test_vmreg_inOrder() {
-	size_t i;
 	uintptr_t addrs[TEST_REG_COUNT];
-	for(i = 0; i < TEST_REG_COUNT; i++)
+	for(size_t i = 0; i < TEST_REG_COUNT; i++)
 		addrs[i] = i * PAGE_SIZE;
 	test_vmreg_addAndRem(addrs,"Add and remove regions with increasing addresses");
 }
 
 static void test_vmreg_revOrder() {
-	size_t i;
 	uintptr_t addrs[TEST_REG_COUNT];
-	for(i = 0; i < TEST_REG_COUNT; i++)
+	for(size_t i = 0; i < TEST_REG_COUNT; i++)
 		addrs[i] = (TEST_REG_COUNT - i) * PAGE_SIZE;
 	test_vmreg_addAndRem(addrs,"Add and remove regions with decreasing addresses");
 }
 
 static void test_vmreg_randOrder() {
-	size_t i;
 	uintptr_t addrs[TEST_REG_COUNT];
-	for(i = 0; i < TEST_REG_COUNT; i++)
+	for(size_t i = 0; i < TEST_REG_COUNT; i++)
 		addrs[i] = i * PAGE_SIZE;
 	Util::srand(0x12345);
-	for(i = 0; i < 10000; i++) {
+	for(size_t i = 0; i < 10000; i++) {
 		size_t j = Util::rand() % TEST_REG_COUNT;
 		size_t k = Util::rand() % TEST_REG_COUNT;
 		uintptr_t t = addrs[j];
@@ -79,7 +76,6 @@ static void test_vmreg_randOrder() {
 }
 
 static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
-	size_t i,j;
 	VMTree tree;
 	VMRegion *reg,*regs[TEST_REG_COUNT];
 
@@ -88,13 +84,13 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 	VMTree::addTree(0,&tree);
 
 	/* create */
-	for(i = 0; i < TEST_REG_COUNT; i++) {
+	for(size_t i = 0; i < TEST_REG_COUNT; i++) {
 		Region *r = CREATE(Region,nullptr,PAGE_SIZE,0,0,0,0);
 		regs[i] = tree.add(r,addrs[i]);
 	}
 
 	/* find all */
-	for(i = 0; i < TEST_REG_COUNT; i++) {
+	for(size_t i = 0; i < TEST_REG_COUNT; i++) {
 		reg = tree.getByAddr(addrs[i]);
 		test_assertPtr(reg,regs[i]);
 		reg = tree.getByReg(regs[i]->reg);
@@ -102,7 +98,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 	}
 
 	/* remove */
-	for(i = 0; i < TEST_REG_COUNT; i++) {
+	for(size_t i = 0; i < TEST_REG_COUNT; i++) {
 		Region *r = regs[i]->reg;
 		delete regs[i]->reg;
 		tree.remove(regs[i]);
@@ -111,7 +107,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 		reg = tree.getByReg(r);
 		test_assertPtr(reg,NULL);
 
-		for(j = i + 1; j < TEST_REG_COUNT; j++) {
+		for(size_t j = i + 1; j < TEST_REG_COUNT; j++) {
 			reg = tree.getByAddr(addrs[j]);
 			test_assertPtr(reg,regs[j]);
 			reg = tree.getByReg(regs[j]->reg);

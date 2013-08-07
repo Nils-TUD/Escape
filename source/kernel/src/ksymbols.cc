@@ -25,9 +25,8 @@ extern KSymbols::Symbol kernel_symbols[];
 extern size_t kernel_symbol_count;
 
 void KSymbols::print(OStream &os) {
-	size_t i;
 	os.writef("Kernel-Symbols:\n");
-	for(i = 0; i < kernel_symbol_count; i++)
+	for(size_t i = 0; i < kernel_symbol_count; i++)
 		os.writef("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
 }
 

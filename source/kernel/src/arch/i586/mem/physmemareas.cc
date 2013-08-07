@@ -28,13 +28,10 @@ extern void *_ebss;
 static size_t total;
 
 void PhysMemAreas::initArch() {
-	size_t i;
-	BootMemMap *mmap;
-	BootModule *mod;
 	const BootInfo *mb = Boot::getInfo();
 
 	/* walk through the memory-map and mark all free areas as free */
-	for(mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
+	for(BootMemMap *mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
 			/* take care that we don't use memory above 4G */
@@ -57,8 +54,8 @@ void PhysMemAreas::initArch() {
 	PhysMemAreas::rem(0,(uintptr_t)&_ebss - KERNEL_AREA);
 
 	/* remove modules */
-	mod = mb->modsAddr;
-	for(i = 0; i < mb->modsCount; i++) {
+	BootModule *mod = mb->modsAddr;
+	for(size_t i = 0; i < mb->modsCount; i++) {
 		PhysMemAreas::rem(mod->modStart,mod->modEnd);
 		mod++;
 	}

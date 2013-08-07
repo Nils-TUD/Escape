@@ -35,8 +35,7 @@ char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 void Config::parseBootParams(int argc,const char *const *argv) {
 	char name[MAX_BPNAME_LEN + 1];
 	char value[MAX_BPVAL_LEN + 1];
-	int i;
-	for(i = 1; i < argc; i++) {
+	for(int i = 1; i < argc; i++) {
 		size_t len = strlen(argv[i]);
 		if(len > MAX_BPNAME_LEN + MAX_BPVAL_LEN + 1)
 			continue;

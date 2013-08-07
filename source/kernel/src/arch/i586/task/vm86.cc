@@ -72,10 +72,6 @@ int VM86::vm86Res = -1;
 mutex_t VM86::vm86Lock;
 
 int VM86::create() {
-	Proc *p;
-	Thread *t;
-	size_t i,frameCount;
-	int res;
 	/* already present? */
 	if(vm86Tid != INVALID_TID)
 		return -EINVAL;
@@ -84,15 +80,15 @@ int VM86::create() {
 	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get
 	 * chosen by the scheduler the first time. Otherwise the scheduler can't set the right
 	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
-	res = Proc::clone(P_VM86);
+	int res = Proc::clone(P_VM86);
 	if(res < 0)
 		return res;
 	/* parent */
 	if(res != 0)
 		return 0;
 
-	t = Thread::getRunning();
-	p = t->getProc();
+	Thread *t = Thread::getRunning();
+	Proc *p = t->getProc();
 	vm86Tid = t->getTid();
 
 	/* remove all regions */
@@ -101,8 +97,8 @@ int VM86::create() {
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
 	 * therefore we have to emulate it. We do that by simply mapping the same to >= 1MiB. */
-	frameCount = (1024 * K) / PAGE_SIZE;
-	for(i = 0; i < frameCount; i++)
+	size_t frameCount = (1024 * K) / PAGE_SIZE;
+	for(size_t i = 0; i < frameCount; i++)
 		frameNos[i] = i;
 	PageDir::mapToCur(0x00000000,frameNos,frameCount,PG_PRESENT | PG_WRITABLE);
 	PageDir::mapToCur(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_PRESENT | PG_WRITABLE);
@@ -133,16 +129,14 @@ int VM86::create() {
 }
 
 int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area) {
-	Thread *t;
-	Thread *vm86t;
 	if(area && BYTES_2_PAGES(area->size) > VM86_MAX_MEMPAGES)
 		return -EINVAL;
 	if(interrupt >= VM86_IVT_SIZE)
 		return -EINVAL;
-	t = Thread::getRunning();
+	Thread *t = Thread::getRunning();
 
 	/* check whether there still is a vm86-task */
-	vm86t = Thread::getById(vm86Tid);
+	Thread *vm86t = Thread::getById(vm86Tid);
 	if(vm86t == NULL || !(vm86t->getProc()->getFlags() & P_VM86))
 		return -ESRCH;
 
@@ -336,12 +330,10 @@ void VM86::pushl(IntrptStackFrame *stack,uint32_t l) {
 }
 
 void VM86::start() {
-	volatile uint32_t *ivt; /* has to be volatile to prevent llvm from optimizing it away */
-	IntrptStackFrame *istack;
 	Thread *t = Thread::getRunning();
 	assert(caller != INVALID_TID);
 
-	istack = t->getIntrptStack();
+	IntrptStackFrame *istack = t->getIntrptStack();
 
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
@@ -362,8 +354,9 @@ void VM86::start() {
 	memclear((void*)0x7DF8,0x8);
 	/* enable VM flag */
 	istack->eflags |= 1 << 17;
+	/* has to be volatile to prevent llvm from optimizing it away */
+	volatile uint32_t *ivt = (uint32_t*)0;
 	/* set entrypoint */
-	ivt = (uint32_t*)0;
 	istack->eip = ivt[info.interrupt] & 0xFFFF;
 	istack->cs = ivt[info.interrupt] >> 16;
 	/* segment registers */
@@ -418,20 +411,19 @@ void VM86::copyRegResult(IntrptStackFrame *stack) {
 }
 
 int VM86::storeAreaResult() {
-	size_t i;
 	if(info.area) {
 		uintptr_t start = info.area->dst / PAGE_SIZE;
 		size_t pages = BYTES_2_PAGES(info.area->size);
 		/* copy the result to heap; we'll copy it later to the calling process */
 		memcpy(info.copies[0],(void*)info.area->dst,info.area->size);
-		for(i = 0; i < info.area->ptrCount; i++) {
+		for(size_t i = 0; i < info.area->ptrCount; i++) {
 			uintptr_t rmAddr = *(uintptr_t*)((uintptr_t)info.copies[0] + info.area->ptr[i].offset);
 			uintptr_t virt = ((rmAddr & 0xFFFF0000) >> 12) | (rmAddr & 0xFFFF);
 			memcpy((void*)info.copies[i + 1],(void*)virt,info.area->ptr[i].size);
 		}
 		/* undo mapping */
 		PageDir::unmapFromCur(info.area->dst,pages,true);
-		for(i = 0; i < pages; i++)
+		for(size_t i = 0; i < pages; i++)
 			frameNos[start + i] = start + i;
 		assert(PageDir::mapToCur(info.area->dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE) == 0);
 	}
@@ -439,11 +431,10 @@ int VM86::storeAreaResult() {
 }
 
 void VM86::copyAreaResult() {
-	size_t i;
 	if(info.area) {
 		memcpy(info.area->src,info.copies[0],info.area->size);
 		if(info.area->ptrCount > 0) {
-			for(i = 0; i < info.area->ptrCount; i++)
+			for(size_t i = 0; i < info.area->ptrCount; i++)
 				memcpy((void*)info.area->ptr[i].result,info.copies[i + 1],info.area->ptr[i].size);
 		}
 	}
@@ -455,7 +446,6 @@ bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea 
 	info.copies = NULL;
 	info.area = NULL;
 	if(area) {
-		size_t i;
 		/* copy area */
 		info.area = (Memarea*)Cache::alloc(sizeof(Memarea));
 		if(info.area == NULL)
@@ -479,7 +469,7 @@ bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea 
 			return false;
 		}
 		memcpy(info.copies[0],area->src,area->size);
-		for(i = 0; i < area->ptrCount; i++) {
+		for(size_t i = 0; i < area->ptrCount; i++) {
 			void *copy = Cache::alloc(area->ptr[i].size);
 			if(!copy) {
 				clearInfo();
@@ -492,9 +482,8 @@ bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea 
 }
 
 void VM86::clearInfo() {
-	size_t i;
 	if(info.area) {
-		for(i = 0; i <= info.area->ptrCount; i++)
+		for(size_t i = 0; i <= info.area->ptrCount; i++)
 			Cache::free(info.copies[i]);
 		Cache::free(info.area->ptr);
 		Cache::free(info.copies);

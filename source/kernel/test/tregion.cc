@@ -77,7 +77,6 @@ static void test_1() {
 
 static void test_2() {
 	Region *reg;
-	size_t i;
 	test_caseStart("Testing Region::grow()");
 
 	checkMemoryBefore(false);
@@ -87,7 +86,7 @@ static void test_2() {
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
 	test_assertInt(reg->grow(10),0);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
-	for(i = 1; i < 11; i++)
+	for(size_t i = 1; i < 11; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 11);
 	test_assertInt(reg->grow(-5),0);
@@ -105,17 +104,17 @@ static void test_2() {
 	test_assertSize(reg->getByteCount(),PAGE_SIZE);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
 	test_assertInt(reg->grow(10),0);
-	for(i = 0; i < 10; i++)
+	for(size_t i = 0; i < 10; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertULInt(reg->getPageFlags(10),PF_DEMANDLOAD);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 11);
 	test_assertInt(reg->grow(-5),0);
-	for(i = 0; i < 5; i++)
+	for(size_t i = 0; i < 5; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertULInt(reg->getPageFlags(5),PF_DEMANDLOAD);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 6);
 	test_assertInt(reg->grow(-3),0);
-	for(i = 0; i < 2; i++)
+	for(size_t i = 0; i < 2; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertULInt(reg->getPageFlags(2),PF_DEMANDLOAD);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 3);
@@ -130,17 +129,17 @@ static void test_2() {
 	test_assertSize(reg->getByteCount(),PAGE_SIZE);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
 	test_assertInt(reg->grow(10),0);
-	for(i = 1; i < 10; i++)
+	for(size_t i = 1; i < 10; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 11);
 	test_assertInt(reg->grow(-5),0);
-	for(i = 1; i < 5; i++)
+	for(size_t i = 1; i < 5; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 6);
 	test_assertInt(reg->grow(-3),0);
-	for(i = 1; i < 2; i++)
+	for(size_t i = 1; i < 2; i++)
 		test_assertULInt(reg->getPageFlags(i),0);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE * 3);

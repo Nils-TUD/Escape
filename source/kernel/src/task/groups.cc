@@ -85,8 +85,7 @@ size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
 bool Groups::contains(pid_t pid,gid_t gid) {
 	Entries *g = getByPid(pid);
 	if(g) {
-		size_t i;
-		for(i = 0; i < g->count; i++) {
+		for(size_t i = 0; i < g->count; i++) {
 			if(g->groups[i] == gid)
 				return true;
 		}
@@ -114,9 +113,8 @@ void Groups::leave(pid_t pid) {
 void Groups::print(OStream &os,pid_t pid) {
 	Entries *g = getByPid(pid);
 	if(g) {
-		size_t i;
 		os.writef("[refs: %u] ",g->refCount);
-		for(i = 0; i < g->count; i++)
+		for(size_t i = 0; i < g->count; i++)
 			os.writef("%u ",g->groups[i]);
 	}
 	else

@@ -97,17 +97,14 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 	ssp--;
 	argv = NULL;
 	if(argc > 0) {
-		char *str;
-		int i;
-		size_t len;
 		argv = (char**)(ssp - argc);
 		/* space for the argument-pointer */
 		ssp -= argc;
 		/* start for the arguments */
-		str = (char*)ssp;
-		for(i = 0; i < argc; i++) {
+		char *str = (char*)ssp;
+		for(int i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
-			len = strlen(args) + 1;
+			size_t len = strlen(args) + 1;
 			str -= len;
 			/* store arg-pointer and copy arg */
 			argv[i] = str;
@@ -157,9 +154,8 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
 	pid_t pid = t->getProc()->getPid();
 	if(t->getProc()->getFlags() & P_BOOT) {
-		size_t i;
 		const BootInfo *info = Boot::getInfo();
-		for(i = 1; i < info->progCount; i++) {
+		for(size_t i = 1; i < info->progCount; i++) {
 			if(info->progs[i].id == pid) {
 				if(ELF::finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
 					return false;

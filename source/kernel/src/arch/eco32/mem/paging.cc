@@ -380,11 +380,10 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 }
 
 size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
-	size_t i;
 	PDEntry *pde;
 	uintptr_t virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
 	PTEntry *pte = (PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+	for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pte[i].exists)
 			return 0;
 	}
@@ -401,11 +400,10 @@ size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
 }
 
 void PageDir::flushPageTable(uintptr_t virt,uintptr_t ptables) {
-	int i;
 	uintptr_t mapAddr = ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	/* to beginning of page-table */
 	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
-	for(i = TLB_FIXED; i < TLB_SIZE; i++) {
+	for(int i = TLB_FIXED; i < TLB_SIZE; i++) {
 		uint entryHi,entryLo;
 		tlbGet(i,&entryHi,&entryLo);
 		/* affected by the page-table? */
@@ -433,10 +431,10 @@ uintptr_t PageDir::getPTables() const {
 }
 
 size_t PageDirBase::getPTableCount() const {
-	size_t i,count = 0;
+	size_t count = 0;
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
+	for(size_t i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
 		if(pdirAddr[i].present)
 			count++;
 	}
@@ -444,13 +442,13 @@ size_t PageDirBase::getPTableCount() const {
 }
 
 size_t PageDirBase::getPageCount() const {
-	size_t i,x,count = 0;
+	size_t count = 0;
 	PageDir::PTEntry *pagetable;
 	PageDir::PDEntry *pdir = (PageDir::PDEntry*)PAGE_DIR_DIRMAP;
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
+	for(size_t i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
 		if(pdir[i].present) {
 			pagetable = (PageDir::PTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
-			for(x = 0; x < PT_ENTRY_COUNT; x++) {
+			for(size_t x = 0; x < PT_ENTRY_COUNT; x++) {
 				if(pagetable[x].present)
 					count++;
 			}
@@ -460,9 +458,8 @@ size_t PageDirBase::getPageCount() const {
 }
 
 void PageDir::printTLB(OStream &os) const {
-	int i;
 	os.writef("TLB:\n");
-	for(i = 0; i < TLB_SIZE; i++) {
+	for(int i = 0; i < TLB_SIZE; i++) {
 		uint entryHi,entryLo;
 		tlbGet(i,&entryHi,&entryLo);
 		os.writef("\t%d: %08x %08x %c%c\n",i,entryHi,entryLo,
@@ -483,12 +480,11 @@ void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
 }
 
 void PageDirBase::print(OStream &os,uint parts) const {
-	size_t i;
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	uintptr_t ptables = pdir->getPTables();
 	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys);
 	os.writef("page-dir @ 0x%08x:\n",pdirAddr);
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+	for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(!pdirAddr[i].present)
 			continue;
 		if(parts == PD_PART_ALL ||
@@ -510,14 +506,13 @@ void PageDirBase::print(OStream &os,uint parts) const {
 }
 
 void PageDir::printPageTable(OStream &os,uintptr_t ptables,size_t no,PDEntry *pde) {
-	size_t i;
 	uintptr_t addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
 	PTEntry *pte = (PTEntry*)(ptables + no * PAGE_SIZE);
 	os.writef("\tpt 0x%x [frame 0x%x, %c] @ 0x%08Px: (VM: 0x%08Px - 0x%08Px)\n",no,
 			pde->ptFrameNo,pde->writable ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
 	if(pte) {
-		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+		for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i].exists) {
 				os.writef("\t\t0x%zx: ",i);
 				printPage(os,pte + i);

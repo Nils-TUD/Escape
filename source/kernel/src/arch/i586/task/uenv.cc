@@ -55,9 +55,6 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
 
 bool UEnvBase::setupProc(int argc,const char *args,size_t argsSize,const ELF::StartupInfo *info,
                          uintptr_t entryPoint,int fd) {
-	uint32_t *esp;
-	char **argv;
-	size_t totalSize;
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *frame = t->getIntrptStack();
 
@@ -80,7 +77,7 @@ bool UEnvBase::setupProc(int argc,const char *args,size_t argsSize,const ELF::St
 	 */
 
 	/* we need to know the total number of bytes we'll store on the stack */
-	totalSize = 0;
+	size_t totalSize = 0;
 	if(argc > 0) {
 		/* first round the size of the arguments up. then we need argc+1 pointer */
 		totalSize += ROUND_UP(argsSize,sizeof(uint32_t));
@@ -90,23 +87,21 @@ bool UEnvBase::setupProc(int argc,const char *args,size_t argsSize,const ELF::St
 	totalSize += sizeof(uint32_t) * 5;
 
 	/* get esp */
+	uint32_t *esp;
 	t->getStackRange(NULL,(uintptr_t*)&esp,0);
 
 	/* copy arguments on the user-stack (4byte space) */
 	esp--;
-	argv = NULL;
+	char **argv = NULL;
 	if(argc > 0) {
-		char *str;
-		int i;
-		size_t len;
 		argv = (char**)(esp - argc);
 		/* space for the argument-pointer */
 		esp -= argc;
 		/* start for the arguments */
-		str = (char*)esp;
-		for(i = 0; i < argc; i++) {
+		char *str = (char*)esp;
+		for(int i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
-			len = strlen(args) + 1;
+			size_t len = strlen(args) + 1;
 			str -= len;
 			/* store arg-pointer and copy arg */
 			argv[i] = str;
@@ -139,7 +134,6 @@ bool UEnvBase::setupProc(int argc,const char *args,size_t argsSize,const ELF::St
 }
 
 void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
-	uint32_t *esp;
 	Thread *t = Thread::getRunning();
 
 	/*
@@ -156,6 +150,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 */
 
 	/* get esp */
+	uint32_t *esp;
 	t->getStackRange(NULL,(uintptr_t*)&esp,0);
 
 	/* put arg on stack */

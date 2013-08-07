@@ -65,17 +65,17 @@ static void test_1() {
 
 static void test_2() {
 	sRingBuf *rb;
-	size_t i,x;
 	test_caseStart("Write & Read");
 	checkMemoryBefore(false);
 
 	rb = rb_create(sizeof(size_t),10,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
 
-	for(i = 0; i < 10; i++)
+	for(size_t i = 0; i < 10; i++)
 		test_assertTrue(rb_write(rb,&i));
 	test_assertSize(rb_length(rb),10);
-	for(i = 0; i < 10; i++) {
+	for(size_t i = 0; i < 10; i++) {
+		size_t x;
 		test_assertTrue(rb_read(rb,&x));
 		test_assertSize(x,i);
 	}
@@ -89,7 +89,6 @@ static void test_2() {
 
 static void test_3() {
 	sRingBuf *rb;
-	size_t i,x;
 	test_caseStart("Write & Read - Full RB_OVERWRITE");
 	checkMemoryBefore(false);
 
@@ -97,30 +96,33 @@ static void test_3() {
 	test_assertTrue(rb != NULL);
 
 	/* overwrite 1 */
-	for(i = 0; i < 6; i++)
+	for(size_t i = 0; i < 6; i++)
 		test_assertTrue(rb_write(rb,&i));
 	test_assertSize(rb_length(rb),5);
-	for(i = 0; i < 5; i++) {
+	for(size_t i = 0; i < 5; i++) {
+		size_t x;
 		test_assertTrue(rb_read(rb,&x));
 		test_assertSize(x,i + 1);
 	}
 	test_assertSize(rb_length(rb),0);
 
 	/* overwrite 5 = all */
-	for(i = 0; i < 10; i++)
+	for(size_t i = 0; i < 10; i++)
 		test_assertTrue(rb_write(rb,&i));
 	test_assertSize(rb_length(rb),5);
-	for(i = 0; i < 5; i++) {
+	for(size_t i = 0; i < 5; i++) {
+		size_t x;
 		test_assertTrue(rb_read(rb,&x));
 		test_assertSize(x,i + 5);
 	}
 	test_assertSize(rb_length(rb),0);
 
 	/* overwrite 2 */
-	for(i = 0; i < 7; i++)
+	for(size_t i = 0; i < 7; i++)
 		test_assertTrue(rb_write(rb,&i));
 	test_assertSize(rb_length(rb),5);
-	for(i = 0; i < 5; i++) {
+	for(size_t i = 0; i < 5; i++) {
+		size_t x;
 		test_assertTrue(rb_read(rb,&x));
 		test_assertSize(x,i + 2);
 	}
@@ -134,19 +136,20 @@ static void test_3() {
 
 static void test_4() {
 	sRingBuf *rb;
-	size_t i,x;
 	test_caseStart("Write & Read - Full RB_DEFAULT");
 	checkMemoryBefore(false);
 
 	rb = rb_create(sizeof(size_t),5,RB_DEFAULT);
 	test_assertTrue(rb != NULL);
 
+	size_t i;
 	for(i = 0; i < 5; i++)
 		test_assertTrue(rb_write(rb,&i));
 	test_assertSize(rb_length(rb),5);
 	test_assertFalse(rb_write(rb,&i));
 	test_assertSize(rb_length(rb),5);
 	for(i = 0; i < 5; i++) {
+		size_t x;
 		test_assertTrue(rb_read(rb,&x));
 		test_assertSize(x,i);
 	}
@@ -159,7 +162,6 @@ static void test_4() {
 }
 
 static void test_5() {
-	size_t i;
 	sRingBuf *rb1,*rb2;
 	test_caseStart("Move");
 	checkMemoryBefore(false);
@@ -169,7 +171,7 @@ static void test_5() {
 	test_assertTrue(rb1 != NULL);
 	test_assertTrue(rb2 != NULL);
 
-	for(i = 0; i < 5; i++)
+	for(size_t i = 0; i < 5; i++)
 		test_assertTrue(rb_write(rb1,&i));
 	test_assertSize(rb_move(rb2,rb1,5),5);
 	test_assertSize(rb_length(rb1),0);

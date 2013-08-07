@@ -55,10 +55,9 @@ static void test_signals() {
 }
 
 static void test_canHandle() {
-	size_t i;
 	test_caseStart("Testing Signals::canHandle()");
 
-	for(i = 0; i < ARRAY_SIZE(signals); i++)
+	for(size_t i = 0; i < ARRAY_SIZE(signals); i++)
 		test_assertTrue(Signals::canHandle(signals[i]));
 	test_assertFalse(Signals::canHandle(SIG_KILL));
 	test_assertFalse(Signals::canHandle(SIG_COUNT));

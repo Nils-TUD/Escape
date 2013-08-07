@@ -293,12 +293,11 @@ bool VFS::hasWork(VFSNode *node) {
 int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
 		pid_t pid,ulong ident) {
 	Thread *t = Thread::getRunning();
-	size_t i;
 	bool isFirstWait = true;
 	int res;
 
 	/* transform the files into vfs-nodes */
-	for(i = 0; i < objCount; i++) {
+	for(size_t i = 0; i < objCount; i++) {
 		if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			OpenFile *file = (OpenFile*)objects[i].object;
 			if(file->getDev() != VFS_DEV_NO)
@@ -314,7 +313,7 @@ int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,b
 		 * one. */
 		SpinLock::acquire(&waitLock);
 		/* check whether we can wait */
-		for(i = 0; i < objCount; i++) {
+		for(size_t i = 0; i < objCount; i++) {
 			if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 				VFSNode *n = (VFSNode*)objects[i].object;
 				if(!n->isAlive()) {
@@ -354,7 +353,7 @@ int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,b
 			goto error;
 		}
 		/* if we're waiting for other events, too, we have to wake up */
-		for(i = 0; i < objCount; i++) {
+		for(size_t i = 0; i < objCount; i++) {
 			if((objects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
 				goto done;
 		}

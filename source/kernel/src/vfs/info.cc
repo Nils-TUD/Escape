@@ -118,14 +118,13 @@ void VFSInfo::procReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 }
 
 void VFSInfo::threadReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	size_t i;
 	ulong stackPages = 0;
 	Thread *t = getThread(node,dataSize,buffer);
 	if(!t)
 		return;
 
 	OStringStream os;
-	for(i = 0; i < STACK_REG_COUNT; i++) {
+	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		uintptr_t stackBegin = 0,stackEnd = 0;
 		if(t->getStackRange(&stackBegin,&stackEnd,i))
 			stackPages += (stackEnd - stackBegin) / PAGE_SIZE;

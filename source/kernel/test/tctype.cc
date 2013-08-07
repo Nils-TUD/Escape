@@ -47,10 +47,9 @@ sTestModule tModCtype = {
 };
 
 static void test_ctype() {
-	int c;
 	test_caseStart("Testing all characters");
 
-	for(c = 0; c <= 0xFF; c++) {
+	for(int c = 0; c <= 0xFF; c++) {
 		if(test_isalnum(c))
 			test_assertTrue(isalnum(c));
 		else

@@ -38,10 +38,9 @@ Signals::PendingSig *Signals::freelist;
 
 void Signals::init() {
 	/* init signal-freelist */
-	size_t i;
 	signals->next = NULL;
 	freelist = signals;
-	for(i = 1; i < SIGNAL_COUNT; i++) {
+	for(size_t i = 1; i < SIGNAL_COUNT; i++) {
 		signals[i].next = freelist;
 		freelist = signals + i;
 	}
@@ -241,7 +240,6 @@ const char *Signals::getName(int signal) {
 }
 
 void Signals::print(OStream &os) {
-	size_t i;
 	os.writef("Signal handler:\n");
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		const Thread *t = *it;
@@ -250,7 +248,7 @@ void Signals::print(OStream &os) {
 		os.writef("\t\tdeliver: %d\n",t->signals->deliveredSignal);
 		os.writef("\t\tcurrent: %d\n",t->signals->currentSignal);
 		os.writef("\t\thandler:\n");
-		for(i = 0; i < SIG_COUNT; i++) {
+		for(size_t i = 0; i < SIG_COUNT; i++) {
 			if(t->signals->handler[i])
 				os.writef("\t\t\t%s: handler=%p\n",getName(i),t->signals->handler[i]);
 		}
@@ -258,9 +256,9 @@ void Signals::print(OStream &os) {
 }
 
 size_t Signals::getHandlerCount() {
-	size_t i,c = 0;
+	size_t c = 0;
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
-		for(i = 0; i < SIG_COUNT; i++) {
+		for(size_t i = 0; i < SIG_COUNT; i++) {
 			if((*it)->signals->handler[i])
 				c++;
 		}
@@ -290,11 +288,10 @@ bool Signals::add(Data *s,int sig) {
 }
 
 void Signals::removePending(Data *s,int sig) {
-	PendingSig *ps,*prev;
 	if(s->deliveredSignal == sig)
 		s->deliveredSignal = 0;
-	prev = NULL;
-	for(ps = s->pending.first; ps != NULL; ) {
+	PendingSig *prev = NULL;
+	for(PendingSig *ps = s->pending.first; ps != NULL; ) {
 		if(sig == 0 || ps->sig == sig) {
 			PendingSig *tps = ps->next;
 			ps->next = freelist;

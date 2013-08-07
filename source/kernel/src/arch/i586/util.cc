@@ -59,10 +59,10 @@ void Util::panicArch() {
 	 * to find the real reason for a failure. so it might be a good idea to turn it off during
 	 * kernel-debugging :) */
 	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/video",&file) == 0) {
-		ssize_t i,res;
+		ssize_t res;
 		sArgsMsg msg;
 		file->sendMsg(KERNEL_PID,MSG_VID_GETMODE,NULL,0,NULL,0);
-		for(i = 0; i < 100; i++) {
+		for(int i = 0; i < 100; i++) {
 			res = file->receiveMsg(KERNEL_PID,NULL,&msg,sizeof(msg),false);
 			if(res >= 0)
 				break;
@@ -70,7 +70,7 @@ void Util::panicArch() {
 		}
 		if(res >= 0) {
 			file->sendMsg(KERNEL_PID,MSG_VID_SETMODE,&msg,sizeof(msg),NULL,0);
-			for(i = 0; i < 100; i++) {
+			for(int i = 0; i < 100; i++) {
 				res = file->receiveMsg(KERNEL_PID,NULL,NULL,0,false);
 				if(res >= 0)
 					break;
@@ -147,9 +147,8 @@ Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 		if(frames) {
 			IntrptStackFrame *istack = t->getIntrptStack();
 			uintptr_t temp,startCpy = start;
-			size_t i;
 			frames[0] = pdir->getFrameNo(t->getKernelStack());
-			for(i = 0; startCpy < end; i++) {
+			for(size_t i = 0; startCpy < end; i++) {
 				if(!pdir->isPresent(startCpy)) {
 					Cache::free(frames);
 					return NULL;
@@ -185,13 +184,10 @@ Util::FuncCall *Util::getKernelStackTraceOf(const Thread *t) {
 
 Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
 	static Util::FuncCall frames[Util::MAX_STACK_DEPTH];
-	size_t i;
 	bool isKernel = (uintptr_t)ebp >= KERNEL_AREA;
 	Util::FuncCall *frame = &frames[0];
-	KSymbols::Symbol *sym;
-	uint32_t *oldebp;
 
-	for(i = 0; i < Util::MAX_STACK_DEPTH; i++) {
+	for(size_t i = 0; i < Util::MAX_STACK_DEPTH; i++) {
 		if(ebp == NULL)
 			break;
 		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
@@ -204,7 +200,7 @@ Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,ui
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		if(isKernel) {
-			sym = KSymbols::getSymbolAt(frame->addr);
+			KSymbols::Symbol *sym = KSymbols::getSymbolAt(frame->addr);
 			frame->funcAddr = sym->address;
 			frame->funcName = sym->funcName;
 		}
@@ -214,7 +210,7 @@ Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,ui
 		}
 		frame++;
 		/* detect loops */
-		oldebp = ebp;
+		uint32_t *oldebp = ebp;
 		ebp = (uint32_t*)*ebp;
 		if(ebp == oldebp)
 			break;

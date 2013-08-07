@@ -69,45 +69,44 @@ static void test_basics() {
 }
 
 static void test_dupUsage() {
-	size_t i;
 	test_caseStart("Testing duplicate usage");
 
 	/* allocate 0 .. 1023 */
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		spaces[i] = AddressSpace::alloc();
 	}
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		test_assertUInt(spaces[i]->getRefCount(),1);
 	}
 
 	/* allocate 1024 .. 2047 */
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		spaces[ADDR_SPACE_COUNT + i] = AddressSpace::alloc();
 	}
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		test_assertUInt(spaces[ADDR_SPACE_COUNT + i]->getRefCount(),2);
 	}
 
 	/* allocate 2048 .. 3071 */
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		spaces[ADDR_SPACE_COUNT * 2 + i] = AddressSpace::alloc();
 	}
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		test_assertUInt(spaces[ADDR_SPACE_COUNT * 2 + i]->getRefCount(),3);
 	}
 
 	/* free 3071 .. 2048 */
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		AddressSpace::free(spaces[ADDR_SPACE_COUNT * 2 + i]);
 		test_assertUInt(spaces[ADDR_SPACE_COUNT * 2 + i]->getRefCount(),2);
 	}
 	/* free 2047 .. 1024 */
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		AddressSpace::free(spaces[ADDR_SPACE_COUNT + i]);
 		test_assertUInt(spaces[ADDR_SPACE_COUNT + i]->getRefCount(),1);
 	}
 	/* free 2047 .. 0 */
-	for(i = 0; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 0; i < ADDR_SPACE_COUNT; i++) {
 		AddressSpace::free(spaces[i]);
 		test_assertUInt(spaces[i]->getRefCount(),0);
 	}

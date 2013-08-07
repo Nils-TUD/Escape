@@ -40,10 +40,9 @@ AddressSpace *AddressSpace::usedList = NULL;
 AddressSpace *AddressSpace::lastUsed = NULL;
 
 void AddressSpace::init() {
-	size_t i;
 	freeList = addrSpaces;
 	freeList->next = NULL;
-	for(i = 1; i < ADDR_SPACE_COUNT; i++) {
+	for(size_t i = 1; i < ADDR_SPACE_COUNT; i++) {
 		addrSpaces[i].no = i;
 		addrSpaces[i].next = freeList;
 		freeList = addrSpaces + i;

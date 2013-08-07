@@ -89,8 +89,6 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 		OpenFile *file,ELF::StartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;
-	size_t j;
-	ssize_t res;
 	uint64_t *stack;
 	if(!t->getStackRange((uintptr_t*)&stack,NULL,0))
 		return -ENOMEM;
@@ -105,7 +103,7 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 
 	/* load the regs-section */
 	uintptr_t datPtr = (uintptr_t)headers;
-	for(j = 0; j < eheader->e_shnum; datPtr += eheader->e_shentsize, j++) {
+	for(size_t j = 0; j < eheader->e_shnum; datPtr += eheader->e_shentsize, j++) {
 		sElfSHeader *sheader = (sElfSHeader*)datPtr;
 		/* the first section with type == PROGBITS, addr != 0 and flags = W
 		 * should be .MMIX.reg_contents */
@@ -113,6 +111,7 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 				sheader->sh_addr != 0) {
 			/* append global registers */
 			if(file != NULL) {
+				ssize_t res;
 				if((res = file->seek(t->getProc()->getPid(),sheader->sh_offset,SEEK_SET)) < 0) {
 					Log::get().writef("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
 					return res;

@@ -54,11 +54,10 @@ void FileDesc::release(OpenFile *file) {
 }
 
 void FileDesc::clone(Proc *p) {
-	size_t i;
 	Proc *cur = Thread::getRunning()->getProc();
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
 	cur->lock(PLOCK_FDS);
-	for(i = 0; i < MAX_FD_COUNT; i++) {
+	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
 		if(p->fileDescs[i] != NULL)
 			p->fileDescs[i]->incRefs();
@@ -67,9 +66,8 @@ void FileDesc::clone(Proc *p) {
 }
 
 void FileDesc::destroy(Proc *p) {
-	size_t i;
 	p->lock(PLOCK_FDS);
-	for(i = 0; i < MAX_FD_COUNT; i++) {
+	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
 			p->fileDescs[i]->incUsages();
 			if(!p->fileDescs[i]->closeFile(p->getPid()))
@@ -82,11 +80,11 @@ void FileDesc::destroy(Proc *p) {
 
 int FileDesc::assoc(OpenFile *fileNo) {
 	OpenFile *const *fds;
-	int i,fd = -EMFILE;
+	int fd = -EMFILE;
 	Proc *p = Thread::getRunning()->getProc();
 	p->lock(PLOCK_FDS);
 	fds = p->fileDescs;
-	for(i = 0; i < MAX_FD_COUNT; i++) {
+	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == NULL) {
 			fd = i;
 			break;
@@ -101,7 +99,7 @@ int FileDesc::assoc(OpenFile *fileNo) {
 int FileDesc::dup(int fd) {
 	OpenFile *f;
 	OpenFile *const *fds;
-	int i,nfd = -EBADF;
+	int nfd = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -112,7 +110,7 @@ int FileDesc::dup(int fd) {
 	f = p->fileDescs[fd];
 	if(f != NULL) {
 		nfd = -EMFILE;
-		for(i = 0; i < MAX_FD_COUNT; i++) {
+		for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 			if(fds[i] == NULL) {
 				/* increase references */
 				nfd = i;
@@ -165,9 +163,8 @@ OpenFile *FileDesc::unassoc(int fd) {
 }
 
 void FileDesc::print(OStream &os,const Proc *p) {
-	size_t i;
 	os.writef("File descriptors of %d:\n",p->getPid());
-	for(i = 0; i < MAX_FD_COUNT; i++) {
+	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
 			os.writef("\t%-2d: ",i);
 			p->fileDescs[i]->print(os);

@@ -238,8 +238,7 @@ void OStream::vwritef(const char *fmt,va_list ap) {
 
 void OStream::printc(char c) {
 	if(c && lineStart) {
-		size_t i;
-		for(i = 0; i < indent; ++i)
+		for(size_t i = 0; i < indent; ++i)
 			writec('\t');
 		lineStart = false;
 	}

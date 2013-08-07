@@ -134,7 +134,6 @@ CPU::Info *CPU::cpus;
 uint64_t CPU::cpuHz;
 
 void CPU::detect() {
-	size_t i;
 	uint32_t eax,ebx,edx,unused;
 	char vendor[VENDOR_STRLEN + 1];
 	cpuid_t id = SMP::getCurId();
@@ -154,7 +153,7 @@ void CPU::detect() {
 
 	/* check which one it is */
 	cpus[id].vendor = VENDOR_UNKNOWN;
-	for(i = 0; i < ARRAY_SIZE(vendors) - 1; i++) {
+	for(size_t i = 0; i < ARRAY_SIZE(vendors) - 1; i++) {
 		if(strcmp(vendors[i],vendor) == 0) {
 			cpus[id].vendor = i;
 			break;

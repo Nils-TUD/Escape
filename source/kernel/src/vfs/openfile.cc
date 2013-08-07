@@ -283,8 +283,7 @@ int OpenFile::getClient(OpenFile *const *files,size_t count,size_t *index,VFSNod
 
 		/* build wait-objects */
 		if(!inited) {
-			size_t i;
-			for(i = 0; i < count; i++) {
+			for(size_t i = 0; i < count; i++) {
 				waits[i].events = EV_CLIENT;
 				waits[i].object = (evobj_t)files[i]->node;
 			}
@@ -304,8 +303,7 @@ int OpenFile::getClient(OpenFile *const *files,size_t count,size_t *index,VFSNod
 
 int OpenFile::doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client) {
 	VFSNode *match = NULL;
-	size_t i;
-	for(i = 0; i < count; i++) {
+	for(size_t i = 0; i < count; i++) {
 		const OpenFile *f = files[i];
 		if(f->devNo != VFS_DEV_NO)
 			return -EPERM;
@@ -316,7 +314,7 @@ int OpenFile::doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSN
 	bool retry,cont = true;
 	do {
 		retry = false;
-		for(i = 0; cont && i < count; i++) {
+		for(size_t i = 0; cont && i < count; i++) {
 			const OpenFile *f = files[i];
 			VFSNode *node = f->node;
 
@@ -377,10 +375,9 @@ void OpenFile::print(OStream &os) const {
 }
 
 void OpenFile::printAll(OStream &os) {
-	size_t i;
 	OpenFile *f;
 	os.writef("Global File Table:\n");
-	for(i = 0; i < FILE_COUNT; i++) {
+	for(size_t i = 0; i < FILE_COUNT; i++) {
 		f = (OpenFile*)gftArray.getObj(i);
 		if(f->flags != 0) {
 			os.writef("\tfile @ index %d\n",i);
@@ -420,8 +417,8 @@ void OpenFile::printAll(OStream &os) {
 }
 
 size_t OpenFile::getCount() {
-	size_t i,count = 0;
-	for(i = 0; i < FILE_COUNT; i++) {
+	size_t count = 0;
+	for(size_t i = 0; i < FILE_COUNT; i++) {
 		OpenFile *f = (OpenFile*)gftArray.getObj(i);
 		if(f->flags != 0)
 			count++;

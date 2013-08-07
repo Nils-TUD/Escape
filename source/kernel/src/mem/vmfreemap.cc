@@ -41,8 +41,7 @@ bool VMFreeMap::init(VMFreeMap *map,uintptr_t addr,size_t size) {
 }
 
 void VMFreeMap::destroy() {
-	Area *a;
-	for(a = list; a != NULL; ) {
+	for(Area *a = list; a != NULL; ) {
 		Area *n = a->next;
 		Cache::free(a);
 		a = n;
@@ -51,11 +50,10 @@ void VMFreeMap::destroy() {
 }
 
 uintptr_t VMFreeMap::allocate(size_t size) {
-	Area *a,*p;
-	uintptr_t res;
+	Area *a;
 	/* TODO is that correct on archs with page-size != 0x1000? */
 	assert((size & 0xFFF) == 0);
-	p = NULL;
+	Area *p = NULL;
 	for(a = list; a != NULL; p = a, a = a->next) {
 		if(a->size >= size)
 			break;
@@ -64,7 +62,7 @@ uintptr_t VMFreeMap::allocate(size_t size) {
 		return 0;
 
 	/* take it from the front */
-	res = a->addr;
+	uintptr_t res = a->addr;
 	a->size -= size;
 	a->addr += size;
 	/* if the area is empty now, remove it */
@@ -79,8 +77,7 @@ uintptr_t VMFreeMap::allocate(size_t size) {
 }
 
 bool VMFreeMap::allocateAt(uintptr_t addr,size_t size) {
-	Area *a,*p;
-	p = NULL;
+	Area *a,*p = NULL;
 	for(a = list; a != NULL && addr > a->addr + a->size; p = a, a = a->next)
 		;
 	/* invalid position or too small? */
@@ -123,10 +120,9 @@ bool VMFreeMap::allocateAt(uintptr_t addr,size_t size) {
 }
 
 void VMFreeMap::free(uintptr_t addr,size_t size) {
-	Area *n,*p;
 	assert((size & 0xFFF) == 0);
 	/* find the area behind ours */
-	p = NULL;
+	Area *n,*p = NULL;
 	for(n = list; n != NULL && addr > n->addr; p = n, n = n->next)
 		;
 
@@ -162,10 +158,9 @@ void VMFreeMap::free(uintptr_t addr,size_t size) {
 }
 
 size_t VMFreeMap::getSize(size_t *areas) const {
-	Area *a;
 	size_t total = 0;
 	*areas = 0;
-	for(a = list; a != NULL; a = a->next) {
+	for(Area *a = list; a != NULL; a = a->next) {
 		total += a->size;
 		(*areas)++;
 	}
@@ -173,9 +168,8 @@ size_t VMFreeMap::getSize(size_t *areas) const {
 }
 
 void VMFreeMap::print(OStream &os) const {
-	Area *a;
 	size_t areas;
 	os.writef("Free area with %zu bytes:\n",getSize(&areas));
-	for(a = list; a != NULL; a = a->next)
+	for(Area *a = list; a != NULL; a = a->next)
 		os.writef("\t@ %p, %zu bytes\n",a->addr,a->size);
 }

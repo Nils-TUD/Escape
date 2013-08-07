@@ -121,23 +121,20 @@ void *KHeap::calloc(size_t num,size_t size) {
 }
 
 void KHeap::free(void *addr) {
-	ulong *begin;
-	MemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
-
 	/* addr may be null */
 	if(addr == NULL)
 		return;
 
 	/* check guards */
-	begin = (ulong*)addr - 2;
+	ulong *begin = (ulong*)addr - 2;
 	assert(begin[1] == GUARD_MAGIC);
 	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
 
 	SpinLock::acquire(&lock);
 
 	/* find the area with given address */
-	oprev = NULL;
-	area = occupiedMap[getHash(begin)];
+	MemArea *oprev = NULL;
+	MemArea *area = occupiedMap[getHash(begin)];
 	while(area != NULL) {
 		if(area->address == begin)
 			break;
@@ -152,12 +149,12 @@ void KHeap::free(void *addr) {
 	}
 
 	/* find the previous and next free areas */
-	prev = NULL;
-	next = NULL;
-	tprev = NULL;
-	pprev = NULL;
-	nprev = NULL;
-	a = usableList;
+	MemArea *prev = NULL;
+	MemArea *next = NULL;
+	MemArea *tprev = NULL;
+	MemArea *pprev = NULL;
+	MemArea *nprev = NULL;
+	MemArea *a = usableList;
 	while(a != NULL) {
 		if((uintptr_t)a->address + a->size == (uintptr_t)begin) {
 			prev = a;
@@ -235,18 +232,15 @@ void KHeap::free(void *addr) {
 }
 
 void *KHeap::realloc(void *addr,size_t size) {
-	ulong *begin;
-	MemArea *area,*a,*prev;
-
 	if(addr == NULL)
 		return alloc(size);
 
-	begin = (ulong*)addr - 2;
+	ulong *begin = (ulong*)addr - 2;
 
 	SpinLock::acquire(&lock);
 
 	/* find the area with given address */
-	area = occupiedMap[getHash(begin)];
+	MemArea *area = occupiedMap[getHash(begin)];
 	while(area != NULL) {
 		if(area->address == begin)
 			break;
@@ -268,8 +262,8 @@ void *KHeap::realloc(void *addr,size_t size) {
 		return addr;
 	}
 
-	a = usableList;
-	prev = NULL;
+	MemArea *a = usableList;
+	MemArea *prev = NULL;
 	while(a != NULL) {
 		/* found the area behind? */
 		if((uintptr_t)a->address == (uintptr_t)area->address + area->size) {
@@ -322,10 +316,9 @@ void *KHeap::realloc(void *addr,size_t size) {
 }
 
 size_t KHeap::getUsedMem() {
-	size_t i,c = 0;
-	MemArea *a;
-	for(i = 0; i < OCC_MAP_SIZE; i++) {
-		a = occupiedMap[i];
+	size_t c = 0;
+	for(size_t i = 0; i < OCC_MAP_SIZE; i++) {
+		MemArea *a = occupiedMap[i];
 		while(a != NULL) {
 			c += a->size;
 			a = a->next;
@@ -345,20 +338,17 @@ size_t KHeap::getFreeMem() {
 }
 
 void KHeap::print(OStream &os) {
-	MemArea *area;
-	size_t i;
-
 	os.writef("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
 			memUsage / PAGE_SIZE);
 	os.writef("UsableList:\n");
-	area = usableList;
+	MemArea *area = usableList;
 	while(area != NULL) {
 		os.writef("\t%p: addr=%p, size=0x%zx\n",area,area->address,area->size);
 		area = area->next;
 	}
 
 	os.writef("OccupiedMap:\n");
-	for(i = 0; i < OCC_MAP_SIZE; i++) {
+	for(size_t i = 0; i < OCC_MAP_SIZE; i++) {
 		area = occupiedMap[i];
 		if(area != NULL) {
 			os.writef("\t%d:\n",i);
@@ -371,14 +361,13 @@ void KHeap::print(OStream &os) {
 }
 
 bool KHeap::doAddMemory(uintptr_t addr,size_t size) {
-	MemArea *area;
 	if(freeList == NULL) {
 		if(!loadNewAreas())
 			return false;
 	}
 
 	/* take one area from the freelist and put the memory in it */
-	area = freeList;
+	MemArea *area = freeList;
 	freeList = freeList->next;
 	area->address = (void*)addr;
 	area->size = size;
@@ -390,9 +379,6 @@ bool KHeap::doAddMemory(uintptr_t addr,size_t size) {
 }
 
 bool KHeap::loadNewSpace(size_t size) {
-	uintptr_t addr;
-	size_t count;
-
 	/* check for overflow */
 	if(size + PAGE_SIZE < PAGE_SIZE)
 		return false;
@@ -400,8 +386,8 @@ bool KHeap::loadNewSpace(size_t size) {
 	/* note that we assume here that we won't check the same pages than loadNewAreas() did... */
 
 	/* allocate the required pages */
-	count = BYTES_2_PAGES(size);
-	addr = allocSpace(count);
+	size_t count = BYTES_2_PAGES(size);
+	uintptr_t addr = allocSpace(count);
 	if(addr == 0)
 		return false;
 
@@ -409,16 +395,13 @@ bool KHeap::loadNewSpace(size_t size) {
 }
 
 bool KHeap::loadNewAreas() {
-	MemArea *area,*end;
-	uintptr_t addr;
-
-	addr = allocAreas();
+	uintptr_t addr = allocAreas();
 	if(addr == 0)
 		return false;
 
 	/* determine start- and end-address */
-	area = (MemArea*)addr;
-	end = area + (PAGE_SIZE / sizeof(MemArea));
+	MemArea *area = (MemArea*)addr;
+	MemArea *end = area + (PAGE_SIZE / sizeof(MemArea));
 
 	/* put all areas in the freelist */
 	area->next = freeList;

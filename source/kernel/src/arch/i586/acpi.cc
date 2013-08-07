@@ -58,7 +58,7 @@ void ACPI::parse() {
 	/* first map the RSDT. we assume that it covers only one page */
 	size_t off = (uintptr_t)rsdt & (PAGE_SIZE - 1);
 	rsdt = (RSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,1) + off);
-	size_t i,j,count = (rsdt->length - sizeof(RSDT)) / size;
+	size_t count = (rsdt->length - sizeof(RSDT)) / size;
 	if(off + rsdt->length > PAGE_SIZE) {
 		size_t pages = BYTES_2_PAGES(off + rsdt->length);
 		rsdt = (RSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,pages) + off);
@@ -68,7 +68,7 @@ void ACPI::parse() {
 	uintptr_t curDest = PageDir::makeAccessible(0,MAX_ACPI_PAGES);
 	uintptr_t destEnd = curDest + MAX_ACPI_PAGES * PAGE_SIZE;
 	uintptr_t start = (uintptr_t)(rsdt + 1);
-	for(i = 0; i < count; i++) {
+	for(size_t i = 0; i < count; i++) {
 		RSDT *tbl;
 		if(size == sizeof(uint32_t))
 			tbl = (RSDT*)*(uint32_t*)(start + i * size);
@@ -92,7 +92,7 @@ void ACPI::parse() {
 			}
 			/* map it again */
 			frameno_t framenos[tmpPages];
-			for(j = 0; j < tmpPages; ++j)
+			for(size_t j = 0; j < tmpPages; ++j)
 				framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
 			tmp  = PageDir::mapToTemp(framenos,tmpPages);
 			tmptbl = (RSDT*)(tmp + tbloff);
@@ -142,15 +142,13 @@ bool ACPI::sigValid(const RSDP *r) {
 
 bool ACPI::checksumValid(const void *r,size_t len) {
 	uint8_t sum = 0;
-	uint8_t *p;
-	for(p = (uint8_t*)r; p < (uint8_t*)r + len; p++)
+	for(uint8_t *p = (uint8_t*)r; p < (uint8_t*)r + len; p++)
 		sum += *p;
 	return sum == 0;
 }
 
 ACPI::RSDP *ACPI::findIn(uintptr_t start,size_t len) {
-	uintptr_t addr;
-	for(addr = start; addr < start + len; addr += 16) {
+	for(uintptr_t addr = start; addr < start + len; addr += 16) {
 		RSDP *r = (RSDP*)addr;
 		if(sigValid(r) && checksumValid(r,20))
 			return r;

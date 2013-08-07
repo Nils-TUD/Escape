@@ -124,8 +124,7 @@ void Util::printEventTrace(OStream &os,const FuncCall *trace,const char *fmt,...
 	os.vwritef(fmt,ap);
 	va_end(ap);
 	if(trace) {
-		size_t i;
-		for(i = 0; trace->addr != 0 && i < 5; i++) {
+		for(size_t i = 0; trace->addr != 0 && i < 5; i++) {
 			KSymbols::Symbol *sym = KSymbols::getSymbolAt(trace->addr);
 			if(sym->address)
 				os.writef("%s",sym->funcName);
@@ -162,9 +161,8 @@ void Util::dumpMem(OStream &os,const void *addr,size_t dwordCount) {
 }
 
 void Util::dumpBytes(OStream &os,const void *addr,size_t byteCount) {
-	size_t i = 0;
 	uchar *ptr = (uchar*)addr;
-	for(i = 0; byteCount-- > 0; i++) {
+	for(size_t i = 0; byteCount-- > 0; i++) {
 		if(i % 16 == 0) {
 			if(i > 0)
 				os.writef("\n");

@@ -88,16 +88,13 @@ void ThreadBase::freeArch(Thread *t) {
 }
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
-	ulong *src,*dst;
-	size_t i;
-	frameno_t frame;
 	/* ensure that we won't get interrupted */
 	klock_t lock = 0;
 	SpinLock::acquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
-	dst = (ulong*)PageDir::mapToTemp(&frame,1);
+	frameno_t frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
+	ulong *dst = (ulong*)PageDir::mapToTemp(&frame,1);
 
 	if(Thread::save(&nt->saveArea)) {
 		/* child */
@@ -106,8 +103,8 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
-	src = (ulong*)t->kernelStack;
-	for(i = 0; i < PT_ENTRY_COUNT - 1; i++)
+	ulong *src = (ulong*)t->kernelStack;
+	for(size_t i = 0; i < PT_ENTRY_COUNT - 1; i++)
 		*dst++ = *src++;
 	/* store thread at the top */
 	*dst = (ulong)nt;

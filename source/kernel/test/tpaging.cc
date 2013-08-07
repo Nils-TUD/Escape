@@ -44,14 +44,13 @@ sTestModule tModPaging = {
 };
 
 static void test_paging() {
-	size_t x,y;
 	uintptr_t addr[] = {
 		0x0,0x40000000,0x70000000,0x4000,0x1234
 	};
 	size_t count[] = {0,1,50,1024,1025,2048,2051};
 
-	for(y = 0; y < ARRAY_SIZE(addr); y++) {
-		for(x = 0; x < ARRAY_SIZE(count); x++) {
+	for(size_t y = 0; y < ARRAY_SIZE(addr); y++) {
+		for(size_t x = 0; x < ARRAY_SIZE(count); x++) {
 			test_paging_cycle(addr[y],count[x]);
 		}
 	}
@@ -131,9 +130,8 @@ static void test_paging_allocate(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_access(uintptr_t addr,size_t count) {
-	size_t i;
 	addr &= ~(PAGE_SIZE - 1);
-	for(i = 0; i < count; i++) {
+	for(size_t i = 0; i < count; i++) {
 		/* write to the first word */
 		*(uint*)addr = 0xDEADBEEF;
 		test_assertUInt(*(uint*)addr,0xDEADBEEF);

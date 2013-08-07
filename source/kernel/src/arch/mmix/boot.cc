@@ -101,8 +101,7 @@ size_t Boot::getModuleSize() {
 }
 
 uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
-	size_t i;
-	for(i = 1; i < info.progCount; i++) {
+	for(size_t i = 1; i < info.progCount; i++) {
 		if(strcmp(progs[i].command,name) == 0) {
 			*size = progs[i].size;
 			return progs[i].start;
@@ -180,14 +179,13 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Boot::print(OStream &os) {
-	size_t i;
 	os.writef("Memory size: %zu bytes\n",info.memSize);
 	os.writef("Disk size: %zu bytes\n",info.diskSize);
 	os.writef("Kernelstack-begin: %p\n",info.kstackBegin);
 	os.writef("Kernelstack-end: %p\n",info.kstackEnd);
 	os.writef("Boot modules:\n");
 	/* skip kernel */
-	for(i = 0; i < info.progCount; i++) {
+	for(size_t i = 0; i < info.progCount; i++) {
 		os.writef("\t%s\n\t\t[%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}

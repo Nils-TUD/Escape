@@ -98,13 +98,12 @@ void FPU::cloneState(State **dst,const State *src) {
 }
 
 void FPU::freeState(State **state) {
-	size_t i,n;
 	if(*state != NULL)
 		Cache::free(*state);
 	*state = NULL;
 	/* we have to unset the current state because maybe the next created process gets
 	 * the same slot, so that the pointer is the same. */
-	for(i = 0, n = SMP::getCPUCount(); i < n; i++) {
+	for(size_t i = 0, n = SMP::getCPUCount(); i < n; i++) {
 		if(curStates[i] == state)
 			curStates[i] = NULL;
 	}

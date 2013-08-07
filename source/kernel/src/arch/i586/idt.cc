@@ -85,8 +85,6 @@ EXTERN_C void isrNull();
 IDT::Entry IDT::idt[IDT_COUNT];
 
 void IDT::init() {
-	size_t i;
-
 	/* setup the idt-pointer */
 	Pointer idtPtr;
 	idtPtr.address = (uintptr_t)idt;
@@ -157,7 +155,7 @@ void IDT::init() {
 	set(54,isr54,DPL_KERNEL);
 
 	/* all other interrupts */
-	for(i = 55; i < 256; i++)
+	for(size_t i = 55; i < 256; i++)
 		set(i,isrNull,DPL_KERNEL);
 
 	/* now we can use our idt */

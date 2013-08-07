@@ -74,13 +74,10 @@ PhysMem::SwapInJob *PhysMem::siJobEnd = NULL;
 size_t PhysMem::jobWaiters = 0;
 
 void PhysMem::init() {
-	const PhysMemAreas::MemArea *area;
-
 	/* determine the available memory */
 	PhysMemAreas::initArch();
 
 	/* calculate mm-stack-size */
-	size_t bmFrmCnt;
 	size_t memSize = PhysMemAreas::getAvailable();
 	size_t defPageCount = (memSize / PAGE_SIZE) - BITMAP_PAGE_COUNT;
 	stackPages = (defPageCount + (PAGE_SIZE - 1) / sizeof(frameno_t)) / (PAGE_SIZE / sizeof(frameno_t));
@@ -91,13 +88,13 @@ void PhysMem::init() {
 	stack = (frameno_t*)stackBegin;
 
 	/* map bitmap behind it */
-	bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
+	size_t bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
 	bitmap = (tBitmap*)PageDir::makeAccessible(0,bmFrmCnt);
 	/* mark all free */
 	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 
 	/* first, search memory that will be managed with the bitmap */
-	for(area = PhysMemAreas::get(); area != NULL; area = area->next) {
+	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next) {
 		if(area->size >= BITMAP_PAGE_COUNT * PAGE_SIZE) {
 			bitmapStart = area->addr;
 			PhysMemAreas::rem(area->addr,area->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
@@ -106,7 +103,7 @@ void PhysMem::init() {
 	}
 
 	/* now mark the remaining memory as free on stack */
-	for(area = PhysMemAreas::get(); area != NULL; area = area->next)
+	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next)
 		markRangeUsed(area->addr,area->addr + area->size,false);
 
 	/* stack and bitmap is ready */
@@ -114,17 +111,16 @@ void PhysMem::init() {
 
 	/* test whether a swap-device is present */
 	if(Config::getStr(Config::SWAP_DEVICE) != NULL) {
-		size_t i,free;
 		/* build freelist */
 		siFreelist = siJobs + 0;
 		siJobs[0].next = NULL;
-		for(i = 1; i < SWAPIN_JOB_COUNT; i++) {
+		for(size_t i = 1; i < SWAPIN_JOB_COUNT; i++) {
 			siJobs[i].next = siFreelist;
 			siFreelist = siJobs + i;
 		}
 
 		/* determine kernel-memory-size */
-		free = getFreeDef();
+		size_t free = getFreeDef();
 		kframes = free / (100 / KERNEL_MEM_PERCENT);
 		if(kframes < KERNEL_MEM_MIN)
 			kframes = KERNEL_MEM_MIN;
@@ -150,10 +146,10 @@ size_t PhysMem::getFreeFrames(uint types) {
 }
 
 ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
-	size_t i,c = 0;
+	size_t c = 0;
 	SpinLock::acquire(&contLock);
 	/* align in physical memory */
-	i = ROUND_UP(BITMAP_START_FRAME,align);
+	size_t i = ROUND_UP(BITMAP_START_FRAME,align);
 	i -= BITMAP_START_FRAME;
 	for(; i < BITMAP_PAGE_COUNT; ) {
 		/* walk forward until we find an occupied frame */
@@ -193,10 +189,8 @@ void PhysMem::freeContiguous(frameno_t first,size_t count) {
 }
 
 bool PhysMem::reserve(size_t frameCount) {
-	size_t free;
-	Thread *t;
 	SpinLock::acquire(&defLock);
-	free = getFreeDef();
+	size_t free = getFreeDef();
 	uframes += frameCount;
 	/* enough user-memory available? */
 	if(free >= frameCount && free - frameCount >= kframes + cframes) {
@@ -205,7 +199,7 @@ bool PhysMem::reserve(size_t frameCount) {
 	}
 
 	/* swapping not possible? */
-	t = Thread::getRunning();
+	Thread *t = Thread::getRunning();
 	if(!swapEnabled || t->getTid() == ATA_TID || t->getTid() == swapperThread->getTid()) {
 		SpinLock::release(&defLock);
 		return false;
@@ -279,14 +273,13 @@ void PhysMem::free(frameno_t frame,FrameType type) {
 }
 
 bool PhysMem::swapIn(uintptr_t addr) {
-	Thread *t;
-	SwapInJob *job;
 	if(!swapEnabled)
 		return false;
 
 	/* get a free job */
-	t = Thread::getRunning();
+	Thread *t = Thread::getRunning();
 	SpinLock::acquire(&defLock);
+	SwapInJob *job;
 	do {
 		job = siFreelist;
 		if(job == NULL) {
@@ -317,15 +310,13 @@ bool PhysMem::swapIn(uintptr_t addr) {
 }
 
 void PhysMem::swapper() {
-	size_t free;
-	OpenFile *swapFile;
-	pid_t pid;
 	const char *dev = Config::getStr(Config::SWAP_DEVICE);
 	swapperThread = Thread::getRunning();
-	pid = swapperThread->getProc()->getPid();
+	pid_t pid = swapperThread->getProc()->getPid();
 	assert(swapEnabled);
 
 	/* open device */
+	OpenFile *swapFile;
 	if(VFS::openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,dev,&swapFile) < 0) {
 		Log::get().writef("Unable to open swap-device '%s'\n",dev);
 		swapEnabled = false;
@@ -345,7 +336,7 @@ void PhysMem::swapper() {
 	SpinLock::acquire(&defLock);
 	while(1) {
 		SwapInJob *job;
-		free = getFreeDef();
+		size_t free = getFreeDef();
 		/* swapping out is more important than swapping in */
 		if((free - (kframes + cframes)) < uframes) {
 			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - (kframes + cframes)));
@@ -388,7 +379,6 @@ void PhysMem::swapper() {
 }
 
 void PhysMem::print(OStream &os) {
-	SwapInJob *job;
 	const char *dev = Config::getStr(Config::SWAP_DEVICE);
 	os.writef("Default: %zu\n",getFreeDef());
 	os.writef("Contiguous: %zu\n",freeCont);
@@ -401,16 +391,16 @@ void PhysMem::print(OStream &os) {
 	os.writef("Swapped in: %zu\n",swappedIn);
 	os.writef("\n");
 	os.writef("Swap-in-jobs:\n");
-	for(job = siJobList; job != NULL; job = job->next) {
+	for(SwapInJob *job = siJobList; job != NULL; job = job->next) {
 		os.writef("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
 				job->thread->getProc()->getCommand(),job->addr);
 	}
 }
 
 void PhysMem::printStack(OStream &os) {
-	size_t i;
-	frameno_t *ptr;
 	os.writef("Stack: (frame numbers)\n");
+	frameno_t *ptr;
+	size_t i;
 	for(i = 0, ptr = stack - 1; (uintptr_t)ptr >= stackBegin; i++, ptr--) {
 		os.writef("0x%08Px, ",*ptr);
 		if(i % 6 == 5)
@@ -419,9 +409,9 @@ void PhysMem::printStack(OStream &os) {
 }
 
 void PhysMem::printCont(OStream &os) {
-	size_t i,pos = bitmapStart;
 	os.writef("Bitmap: (frame numbers)\n");
-	for(i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
+	size_t pos = bitmapStart;
+	for(size_t i = 0; i < BITMAP_PAGE_COUNT / BITS_PER_BMWORD; i++) {
 		os.writef("0x%08Px..: %0*lb\n",pos / PAGE_SIZE,sizeof(tBitmap) * 8,bitmap[i]);
 		pos += PAGE_SIZE * BITS_PER_BMWORD;
 	}

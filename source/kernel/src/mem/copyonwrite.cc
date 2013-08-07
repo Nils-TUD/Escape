@@ -32,17 +32,14 @@ SList<CopyOnWrite::Entry> CopyOnWrite::frames[HEAP_SIZE];
 klock_t CopyOnWrite::lock;
 
 size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
-	Entry *cow;
-	uint flags;
-
 	SpinLock::acquire(&lock);
 	/* find the cow-entry */
-	cow = getByFrame(frameNumber,true);
+	Entry *cow = getByFrame(frameNumber,true);
 	vassert(cow != NULL,"No COW entry for frame %#x and address %p",frameNumber,address);
 
 	/* if there is another process who wants to get the frame, we make a copy for us */
 	/* otherwise we keep the frame for ourself */
-	flags = PG_PRESENT | PG_WRITABLE;
+	uint flags = PG_PRESENT | PG_WRITABLE;
 	if(cow->refCount == 0)
 		flags |= PG_KEEPFRM;
 	/* can't fail, we've already allocated the frame */
@@ -74,10 +71,9 @@ bool CopyOnWrite::add(frameno_t frameNo) {
 }
 
 size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
-	Entry *cow;
 	SpinLock::acquire(&lock);
 	/* find the cow-entry */
-	cow = getByFrame(frameNo,true);
+	Entry *cow = getByFrame(frameNo,true);
 	vassert(cow != NULL,"For frameNo %#x",frameNo);
 
 	*foundOther = cow->refCount > 0;
@@ -88,9 +84,9 @@ size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
 }
 
 size_t CopyOnWrite::getFrmCount() {
-	size_t i,count = 0;
+	size_t count = 0;
 	SpinLock::acquire(&lock);
-	for(i = 0; i < HEAP_SIZE; i++)
+	for(size_t i = 0; i < HEAP_SIZE; i++)
 		count += frames[i].length();
 	SpinLock::release(&lock);
 	return count;

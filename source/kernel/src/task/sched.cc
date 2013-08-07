@@ -48,9 +48,8 @@ size_t Sched::rdyCount;
 ISList<Thread*> Sched::idleThreads;
 
 void Sched::init() {
-	size_t i;
 	rdyCount = 0;
-	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++)
+	for(size_t i = 0; i < ARRAY_SIZE(rdyQueues); i++)
 		qInit(rdyQueues + i);
 }
 
@@ -61,7 +60,6 @@ void Sched::addIdleThread(Thread *t) {
 }
 
 Thread *Sched::perform(Thread *old,uint64_t runtime) {
-	ssize_t i;
 	Thread *t;
 	SpinLock::acquire(&lock);
 	/* give the old thread a new state */
@@ -111,7 +109,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	}
 
 	/* get new thread */
-	for(i = MAX_PRIO; i >= 0; i--) {
+	for(ssize_t i = MAX_PRIO; i >= 0; i--) {
 		t = qDequeue(rdyQueues + i);
 		if(t) {
 			/* if its the old thread again and we have more ready threads, don't take this one again.
@@ -330,9 +328,8 @@ void Sched::removeThread(Thread *t) {
 }
 
 void Sched::print(OStream &os) {
-	size_t i;
 	os.writef("Ready queues:\n");
-	for(i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
+	for(size_t i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
 		os.writef("\t[%d]:\n",i);
 		qPrint(os,rdyQueues + i);
 		os.writef("\n");

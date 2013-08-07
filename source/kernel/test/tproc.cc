@@ -56,11 +56,9 @@ static void test_init(const char *fmt,...) {
 }
 
 static void test_proc_clone() {
-	size_t x;
-
 	/* test process clone & destroy */
 	test_init("Cloning and destroying processes");
-	for(x = 0; x < 5; x++) {
+	for(size_t x = 0; x < 5; x++) {
 		pid_t pid;
 		tprintf("Cloning process\n");
 		pid = Proc::clone(0);

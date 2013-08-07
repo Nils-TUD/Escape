@@ -38,17 +38,16 @@ sTestModule tModDynArray = {
 };
 
 static void test_dynarray() {
-	size_t i,j;
 	test_caseStart("Test various functions");
 
 	checkMemoryBefore(true);
 	{
 		DynArray da(sizeof(uint),REGION_START,REGION_SIZE);
 
-		for(j = 0; j < REGION_SIZE; j += PAGE_SIZE) {
+		for(size_t j = 0; j < REGION_SIZE; j += PAGE_SIZE) {
 			size_t oldCount = da.getObjCount();
 			test_assertTrue(da.extend());
-			for(i = oldCount; i < da.getObjCount(); i++) {
+			for(size_t i = oldCount; i < da.getObjCount(); i++) {
 				uint *l = (uint*)da.getObj(i);
 				*l = i;
 			}
@@ -56,7 +55,7 @@ static void test_dynarray() {
 
 		test_assertFalse(da.extend());
 
-		for(i = 0, j = 0; j < REGION_SIZE; i++, j += sizeof(uint)) {
+		for(size_t i = 0, j = 0; j < REGION_SIZE; i++, j += sizeof(uint)) {
 			uint *l = (uint*)da.getObj(i);
 			test_assertSSize(da.getIndex(l),i);
 			test_assertUInt(*l,i);

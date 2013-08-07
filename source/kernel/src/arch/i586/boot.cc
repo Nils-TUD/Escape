@@ -95,11 +95,7 @@ static void *copyMBInfo(const void *info,size_t len) {
 }
 
 void Boot::archStart(BootInfo *info) {
-	size_t i;
 	BootModule *mod;
-	int argc;
-	const char **argv;
-
 	/* copy mb-stuff into buffer */
 	info = (BootInfo*)copyMBInfo(info,sizeof(BootInfo));
 	info->cmdLine = (char*)copyMBInfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
@@ -107,7 +103,7 @@ void Boot::archStart(BootInfo *info) {
 	info->mmapAddr = (BootMemMap*)copyMBInfo(info->mmapAddr,info->mmapLength);
 	info->drivesAddr = (BootDrive*)copyMBInfo(info->drivesAddr,info->drivesLength);
 	mod = info->modsAddr;
-	for(i = 0; i < info->modsCount; i++) {
+	for(size_t i = 0; i < info->modsCount; i++) {
 		mod->name = (char*)copyMBInfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
 		physModAddrs[i] = mod->modStart;
 		mod++;
@@ -133,7 +129,7 @@ void Boot::archStart(BootInfo *info) {
 
 	/* now map modules */
 	mod = mb->modsAddr;
-	for(i = 0; i < mb->modsCount; i++) {
+	for(size_t i = 0; i < mb->modsCount; i++) {
 		size_t size = mod->modEnd - mod->modStart;
 		mod->modStart = PageDir::makeAccessible(mod->modStart,BYTES_2_PAGES(size));
 		mod->modEnd = mod->modStart + size;
@@ -141,7 +137,8 @@ void Boot::archStart(BootInfo *info) {
 	}
 
 	/* parse boot parameters */
-	argv = Boot::parseArgs(mb->cmdLine,&argc);
+	int argc;
+	const char **argv = Boot::parseArgs(mb->cmdLine,&argc);
 	Config::parseBootParams(argc,argv);
 }
 
@@ -164,9 +161,8 @@ size_t Boot::getModuleSize() {
 }
 
 uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
-	size_t i;
 	BootModule *mod = mb->modsAddr;
-	for(i = 0; i < mb->modsCount; i++) {
+	for(size_t i = 0; i < mb->modsCount; i++) {
 		if(strcmp(mod->name,name) == 0) {
 			*size = mod->modEnd - mod->modStart;
 			return physModAddrs[i];
@@ -178,21 +174,18 @@ uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
 
 int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	char loadingStatus[256];
-	size_t i;
-	int child,res;
-	VFSNode *node;
-	BootModule *mod;
 
 	/* it's not good to do this twice.. */
 	if(loadedMods)
 		return 0;
 
 	/* create module files */
-	res = VFSNode::request("/system/mbmods",&node,NULL,0);
+	VFSNode *node;
+	int res = VFSNode::request("/system/mbmods",&node,NULL,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /system/mbmods");
-	mod = mb->modsAddr;
-	for(i = 0; i < mb->modsCount; i++) {
+	BootModule *mod = mb->modsAddr;
+	for(size_t i = 0; i < mb->modsCount; i++) {
 		char *modname = (char*)Cache::alloc(12);
 		itoa(modname,12,i);
 		VFSNode *n = CREATE(VFSFile,KERNEL_PID,node,modname,(void*)mod->modStart,
@@ -207,7 +200,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* load modules */
 	loadedMods = true;
 	mod = mb->modsAddr;
-	for(i = 0; i < mb->modsCount; i++) {
+	for(size_t i = 0; i < mb->modsCount; i++) {
 		/* parse args */
 		int argc;
 		const char **argv = Boot::parseArgs(mod->name,&argc);
@@ -225,6 +218,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		strcat(loadingStatus,"...");
 		Boot::taskStarted(loadingStatus);
 
+		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			res = Proc::exec(argv[0],argv,(void*)mod->modStart,mod->modEnd - mod->modStart);
 			if(res < 0)
@@ -260,8 +254,6 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Boot::print(OStream &os) {
-	size_t x;
-	BootMemMap *mmap;
 	os.writef("flags=0x%x\n",mb->flags);
 	if(CHECK_FLAG(mb->flags,0)) {
 		os.writef("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
@@ -275,10 +267,9 @@ void Boot::print(OStream &os) {
 		os.writef("cmdLine=%s\n",mb->cmdLine);
 	}
 	if(CHECK_FLAG(mb->flags,3)) {
-		size_t i;
 		BootModule *mod = mb->modsAddr;
 		os.writef("modsCount=%d:\n",mb->modsCount);
-		for(i = 0; i < mb->modsCount; i++) {
+		for(size_t i = 0; i < mb->modsCount; i++) {
 			os.writef("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,mod->modStart,mod->modEnd,
 					physModAddrs[i],physModAddrs[i] + (mod->modEnd - mod->modStart));
 			os.writef("\t     cmdline: %s\n",mod->name ? mod->name : "<NULL>");
@@ -296,8 +287,8 @@ void Boot::print(OStream &os) {
 	if(CHECK_FLAG(mb->flags,6)) {
 		os.writef("mmapLength=%d, mmapAddr=%p\n",mb->mmapLength,mb->mmapAddr);
 		os.writef("memory-map:\n");
-		x = 0;
-		for(mmap = (BootMemMap*)mb->mmapAddr;
+		size_t x = 0;
+		for(BootMemMap *mmap = (BootMemMap*)mb->mmapAddr;
 			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
 			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL) {
@@ -309,10 +300,9 @@ void Boot::print(OStream &os) {
 		}
 	}
 	if(CHECK_FLAG(mb->flags,7) && mb->drivesLength > 0) {
-		size_t i;
 		BootDrive *drive = mb->drivesAddr;
 		os.writef("Drives: (size=%u)\n",mb->drivesLength);
-		for(x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
+		for(size_t x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
 			os.writef("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",
 					i,(uint)drive->number,(uint)drive->mode,(uint)drive->cylinders,
 					(uint)drive->heads,(uint)drive->sectors);

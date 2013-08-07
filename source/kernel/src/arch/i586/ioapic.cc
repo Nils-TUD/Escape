@@ -56,14 +56,13 @@ void IOAPIC::setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_
 }
 
 void IOAPIC::print(OStream &os) {
-	size_t i,j;
 	os.writef("I/O APICs:\n");
-	for(i = 0; i < count; i++) {
+	for(size_t i = 0; i < count; i++) {
 		os.writef("%d:\n",i);
 		os.writef("\tid = %#x\n",ioapics[i].id);
 		os.writef("\tversion = %#x\n",ioapics[i].version);
 		os.writef("\tvirt. addr. = %#x\n",ioapics[i].addr);
-		for(j = 0; j < RED_COUNT; j++) {
+		for(size_t j = 0; j < RED_COUNT; j++) {
 			os.writef("\tred[%d]: %#x:%#x\n",j,read(ioapics + i,IOAPIC_REG_REDTBL + j * 2),
 					read(ioapics + i,IOAPIC_REG_REDTBL + j * 2 + 1));
 		}
@@ -71,8 +70,7 @@ void IOAPIC::print(OStream &os) {
 }
 
 IOAPIC::Instance *IOAPIC::get(uint8_t id) {
-	size_t i;
-	for(i = 0; i < count; i++) {
+	for(size_t i = 0; i < count; i++) {
 		if(ioapics[i].id == id)
 			return ioapics + i;
 	}

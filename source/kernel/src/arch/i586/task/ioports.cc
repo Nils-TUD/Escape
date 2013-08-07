@@ -72,12 +72,11 @@ bool IOPorts::handleGPF() {
 }
 
 int IOPorts::release(uint16_t start,size_t count) {
-	Proc *p;
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return -EINVAL;
 
-	p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
+	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap == NULL) {
 		Proc::release(p,PLOCK_PORTS);
 		return -EINVAL;
@@ -105,10 +104,10 @@ void IOPorts::free(Proc *p) {
 #if DEBUGGING
 
 void IOPorts::print(OStream &os,const uint8_t *map) {
-	size_t i,j,c = 0;
+	size_t c = 0;
 	os.writef("Reserved IO-ports:\n\t");
-	for(i = 0; i < GDT::IO_MAP_SIZE / 8; i++) {
-		for(j = 0; j < 8; j++) {
+	for(size_t i = 0; i < GDT::IO_MAP_SIZE / 8; i++) {
+		for(size_t j = 0; j < 8; j++) {
 			if(!(map[i] & (1 << j))) {
 				os.writef("%zx, ",i * 8 + j);
 				if(++c % 10 == 0)

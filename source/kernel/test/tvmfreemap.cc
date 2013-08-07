@@ -48,9 +48,9 @@ static void test_vmfree() {
 }
 
 static void test_vmfree_inOrder() {
-	size_t i,sizes[AREA_COUNT];
+	size_t sizes[AREA_COUNT];
 	size_t freeIndices[AREA_COUNT];
-	for(i = 0; i < AREA_COUNT; i++) {
+	for(size_t i = 0; i < AREA_COUNT; i++) {
 		sizes[i] = (i + 1) * PAGE_SIZE;
 		freeIndices[i] = i;
 	}
@@ -58,9 +58,9 @@ static void test_vmfree_inOrder() {
 }
 
 static void test_vmfree_revOrder() {
-	size_t i,sizes[AREA_COUNT];
+	size_t sizes[AREA_COUNT];
 	size_t freeIndices[AREA_COUNT];
-	for(i = 0; i < AREA_COUNT; i++) {
+	for(size_t i = 0; i < AREA_COUNT; i++) {
 		sizes[i] = (i + 1) * PAGE_SIZE;
 		freeIndices[i] = AREA_COUNT - i - 1;
 	}
@@ -68,14 +68,14 @@ static void test_vmfree_revOrder() {
 }
 
 static void test_vmfree_randOrder() {
-	size_t i,sizes[AREA_COUNT];
+	size_t sizes[AREA_COUNT];
 	size_t freeIndices[AREA_COUNT];
-	for(i = 0; i < AREA_COUNT; i++) {
+	for(size_t i = 0; i < AREA_COUNT; i++) {
 		sizes[i] = (i + 1) * PAGE_SIZE;
 		freeIndices[i] = i;
 	}
 	Util::srand(0x12345);
-	for(i = 0; i < 10000; i++) {
+	for(size_t i = 0; i < 10000; i++) {
 		size_t j = Util::rand() % AREA_COUNT;
 		size_t k = Util::rand() % AREA_COUNT;
 		size_t t = freeIndices[j];
@@ -120,7 +120,7 @@ static void test_vmfree_allocAt() {
 }
 
 static void test_vmfree_allocNFree(size_t *sizes,size_t *freeIndices,const char *msg) {
-	size_t i,areas;
+	size_t areas;
 	uintptr_t addrs[AREA_COUNT];
 	size_t size = TOTAL_SIZE;
 	VMFreeMap map;
@@ -132,7 +132,7 @@ static void test_vmfree_allocNFree(size_t *sizes,size_t *freeIndices,const char 
 	test_assertSize(areas,1);
 
 	/* allocate */
-	for(i = 0; i < AREA_COUNT; i++) {
+	for(size_t i = 0; i < AREA_COUNT; i++) {
 		addrs[i] = map.allocate(sizes[i]);
 		test_assertTrue(addrs[i] > 0);
 		size -= sizes[i];
@@ -140,7 +140,7 @@ static void test_vmfree_allocNFree(size_t *sizes,size_t *freeIndices,const char 
 	}
 
 	/* free */
-	for(i = 0; i < AREA_COUNT; i++) {
+	for(size_t i = 0; i < AREA_COUNT; i++) {
 		map.free(addrs[freeIndices[i]],sizes[freeIndices[i]]);
 		size += sizes[freeIndices[i]];
 		test_assertSize(map.getSize(&areas),size);

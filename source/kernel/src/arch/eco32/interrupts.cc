@@ -179,11 +179,10 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack) {
 }
 
 void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
-	int i;
 	os.writef("stack-frame @ 0x%Px\n",stack);
 	os.writef("\tirqNo=%d\n",stack->irqNo);
 	os.writef("\tpsw=#%08x\n",stack->psw);
 	os.writef("\tregister:\n");
-	for(i = 0; i < REG_COUNT; i++)
+	for(int i = 0; i < REG_COUNT; i++)
 		os.writef("\tr[%d]=#%08x\n",i,stack->r[i]);
 }

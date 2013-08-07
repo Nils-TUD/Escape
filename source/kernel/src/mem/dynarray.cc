@@ -25,10 +25,9 @@ DynArray::Region *DynArray::freeList;
 size_t DynArray::totalPages = 0;
 
 void DynArray::init() {
-	size_t i;
 	regionstore[0].next = NULL;
 	freeList = regionstore;
-	for(i = 1; i < DYNA_REG_COUNT; i++) {
+	for(size_t i = 1; i < DYNA_REG_COUNT; i++) {
 		regionstore[i].next = freeList;
 		freeList = regionstore + i;
 	}
@@ -36,9 +35,8 @@ void DynArray::init() {
 
 void *DynArray::getObj(size_t index) const {
 	void *res = NULL;
-	Region *reg;
 	SpinLock::acquire(&lock);
-	reg = regions;
+	Region *reg = regions;
 	/* note that we're using the index here to prevent that an object reaches out of a region */
 	while(reg != NULL) {
 		size_t objsInReg = reg->size / objSize;
@@ -56,9 +54,8 @@ void *DynArray::getObj(size_t index) const {
 ssize_t DynArray::getIndex(const void *obj) const {
 	ssize_t res = -1;
 	size_t index = 0;
-	Region *reg;
 	SpinLock::acquire(&lock);
-	reg = regions;
+	Region *reg = regions;
 	while(reg != NULL) {
 		if((uintptr_t)obj >= reg->addr && (uintptr_t)obj < reg->addr + reg->size) {
 			res = index + ((uintptr_t)obj - reg->addr) / objSize;

@@ -81,14 +81,13 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 	argv = NULL;
 	if(argc > 0) {
 		char *str;
-		int i;
 		size_t len;
 		argv = (char**)(sp - argc);
 		/* space for the argument-pointer */
 		sp -= argc;
 		/* start for the arguments */
 		str = (char*)sp;
-		for(i = 0; i < argc; i++) {
+		for(int i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
 			len = strlen(args) + 1;
 			str -= len;

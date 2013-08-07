@@ -41,16 +41,16 @@ void Timer::wait(uint us) {
 }
 
 uint64_t Timer::detectCPUSpeed() {
-	int i,j;
 	int bestMatches = -1;
 	uint64_t bestHz = 0;
-	for(i = 1; i <= MEASURE_COUNT; i++) {
+	for(int i = 1; i <= MEASURE_COUNT; i++) {
 		bool found = true;
 		uint64_t ref = determineSpeed(0x1000 * i * 10);
 		/* no tick at all? */
 		if(ref == 0)
 			continue;
 
+		int j;
 		for(j = 0; j < REQUIRED_MATCHES; j++) {
 			uint64_t hz = determineSpeed(0x1000 * i * 10);
 			/* not in tolerance? */
@@ -78,7 +78,6 @@ uint64_t Timer::detectCPUSpeed() {
 uint64_t Timer::determineSpeed(int instrCount) {
 	uint64_t before,after;
 	uint32_t left;
-	volatile int i;
 	/* set PIT channel 0 to single-shot mode */
 	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0 | CTRL_RWLOHI |
 			CTRL_MODE2 | CTRL_CNTBIN16);
@@ -88,7 +87,7 @@ uint64_t Timer::determineSpeed(int instrCount) {
 
 	/* now spend some time and measure the number of cycles */
 	before = CPU::rdtsc();
-	for(i = instrCount; i > 0; i--)
+	for(volatile int i = instrCount; i > 0; i--)
 		;
 	after = CPU::rdtsc();
 

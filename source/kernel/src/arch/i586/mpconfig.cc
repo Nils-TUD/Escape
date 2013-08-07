@@ -43,18 +43,16 @@ void MPConfig::parse() {
 	if(!mpf)
 		return;
 
-	size_t i;
 	Proc *proc;
 	IOAPIC *ioapic;
 	IOIntrptEntry *ioint;
-	uint8_t *ptr;
 	TableHeader *tbl = (TableHeader*)(KERNEL_AREA | mpf->mpConfigTable);
 
 	if(tbl->signature != MPC_SIGNATURE)
 		Util::panic("MP Config Table has invalid signature\n");
 
-	ptr = (uint8_t*)tbl + sizeof(TableHeader);
-	for(i = 0; i < tbl->entryCount; i++) {
+	uint8_t *ptr = (uint8_t*)tbl + sizeof(TableHeader);
+	for(size_t i = 0; i < tbl->entryCount; i++) {
 		switch(*ptr) {
 			case MPCTE_TYPE_PROC:
 				proc = (Proc*)ptr;
@@ -110,11 +108,10 @@ MPConfig::FloatPtr *MPConfig::searchIn(uintptr_t start,size_t length) {
 	uintptr_t end = start + length;
 	while((uintptr_t)addr < end) {
 		if(addr->signature == MPF_SIGNATURE) {
-			size_t i;
 			/* all bytes sum'ed up including the signature should yield 0 */
 			uint8_t checksum = 0;
 			uint8_t *bytes = (uint8_t*)addr;
-			for(i = 0; i < sizeof(FloatPtr); i++)
+			for(size_t i = 0; i < sizeof(FloatPtr); i++)
 				checksum += bytes[i];
 			if(checksum == 0)
 				return addr;

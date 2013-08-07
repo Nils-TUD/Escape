@@ -103,10 +103,6 @@ private:
 };
 
 void Console::start(const char *initialcmd) {
-	size_t i,argc;
-	int res;
-	Command *cmd;
-	char **argv;
 	Video &vid = Video::get();
 
 	/* first, pause all other CPUs to ensure that we're alone */
@@ -115,7 +111,7 @@ void Console::start(const char *initialcmd) {
 	vid.backup(backup.screen,&backup.row,&backup.col);
 
 	vid.clearScreen();
-	for(i = 0; i < VID_ROWS - 3; i++)
+	for(size_t i = 0; i < VID_ROWS - 3; i++)
 		vid.writef("\n");
 	vid.writef("Welcome to the debugging console!\nType 'help' to get a list of commands!\n\n");
 
@@ -125,6 +121,8 @@ void Console::start(const char *initialcmd) {
 	while(true) {
 		vid.writef("# ");
 
+		size_t argc;
+		char **argv;
 		if(initialcmd != NULL) {
 			argv = parseLine(initialcmd,&argc);
 			initialcmd = NULL;
@@ -162,7 +160,7 @@ void Console::start(const char *initialcmd) {
 
 		if(strcmp(argv[0],"help") == 0) {
 			vid.writef("Available commands:\n");
-			for(i = 0; i < ARRAY_SIZE(commands); i++)
+			for(size_t i = 0; i < ARRAY_SIZE(commands); i++)
 				vid.writef("	%s\n",commands[i].name);
 			vid.writef("\n");
 			vid.writef("All commands use a viewer, that supports the following key-strokes:\n");
@@ -174,9 +172,9 @@ void Console::start(const char *initialcmd) {
 			vid.writef("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
 		}
 		else {
-			cmd = getCommand(argv[0]);
+			Command *cmd = getCommand(argv[0]);
 			if(cmd) {
-				res = cmd->exec(*out,argc,argv);
+				int res = cmd->exec(*out,argc,argv);
 				if(res == CONS_EXIT)
 					break;
 				if(res != 0)
@@ -194,13 +192,12 @@ void Console::start(const char *initialcmd) {
 }
 
 void Console::dumpLine(OStream &os,uintptr_t addr,uint8_t *bytes) {
-	size_t i;
 	os.writef("%p: ",addr);
 	if(bytes) {
-		for(i = 0; i < BYTES_PER_LINE; i++)
+		for(size_t i = 0; i < BYTES_PER_LINE; i++)
 			os.writef("%02X ",bytes[i]);
 		os.writef("| ");
-		for(i = 0; i < BYTES_PER_LINE; i++) {
+		for(size_t i = 0; i < BYTES_PER_LINE; i++) {
 			if(isprint(bytes[i]) && bytes[i] < 0x80 && !isspace(bytes[i]))
 				os.writef("%c",bytes[i]);
 			else
@@ -208,10 +205,10 @@ void Console::dumpLine(OStream &os,uintptr_t addr,uint8_t *bytes) {
 		}
 	}
 	else {
-		for(i = 0; i < BYTES_PER_LINE; i++)
+		for(size_t i = 0; i < BYTES_PER_LINE; i++)
 			os.writef("?? ");
 		os.writef("| ");
-		for(i = 0; i < BYTES_PER_LINE; i++)
+		for(size_t i = 0; i < BYTES_PER_LINE; i++)
 			os.writef(".");
 	}
 	os.writef("\n");
@@ -302,8 +299,7 @@ void Console::viewLines(OStream &os,const Lines *l) {
 bool Console::multiLineMatches(NaviBackend *backend,uintptr_t addr,const char *search,size_t searchlen) {
 	uint8_t *bytes = backend->loadLine(addr);
 	if(bytes && searchlen > 0) {
-		size_t i;
-		for(i = 0; i < BYTES_PER_LINE; i++) {
+		for(size_t i = 0; i < BYTES_PER_LINE; i++) {
 			size_t len = MIN(searchlen,BYTES_PER_LINE - i);
 			if(strncasecmp(search,(char*)bytes + i,len) == 0) {
 				if(len < searchlen) {
@@ -342,8 +338,6 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
                       int searchMode,uintptr_t *addr) {
 	static char states[] = {'|','/','-','\\','|','/','-'};
 	Video &vid = Video::get();
-	const char *info;
-	uint y;
 	bool found = true;
 
 	uintptr_t startAddr = *addr;
@@ -380,10 +374,10 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
 	if(found)
 		*addr = startAddr;
 
-	info = backend->getInfo(startAddr);
+	const char *info = backend->getInfo(startAddr);
 
 	vid.goTo(0,0);
-	for(y = 0; y < VID_ROWS - 1; y++) {
+	for(uint y = 0; y < VID_ROWS - 1; y++) {
 		uint8_t *bytes = backend->loadLine(startAddr);
 		bool matches = backend->lineMatches(startAddr,search,strlen(search));
 		if(matches)
@@ -508,8 +502,7 @@ char *Console::readLine() {
 }
 
 Console::Command *Console::getCommand(const char *name) {
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(commands); i++) {
+	for(size_t i = 0; i < ARRAY_SIZE(commands); i++) {
 		if(strcmp(commands[i].name,name) == 0)
 			return commands + i;
 	}

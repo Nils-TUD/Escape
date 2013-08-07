@@ -125,8 +125,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 }
 
 void ThreadBase::freeArch(Thread *t) {
-	int i;
-	for(i = 0; i < 2; i++) {
+	for(int i = 0; i < 2; i++) {
 		if(t->stackRegions[i] != NULL) {
 			t->getProc()->getVM()->remove(t->stackRegions[i]);
 			t->stackRegions[i] = NULL;
@@ -140,11 +139,10 @@ void ThreadBase::freeArch(Thread *t) {
 }
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
-	int res;
 	nt->tempStack = PhysMem::allocate(PhysMem::KERN);
 	if(nt->tempStack == 0)
 		return -ENOMEM;
-	res = Thread::initSave(&nt->saveArea,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
+	int res = Thread::initSave(&nt->saveArea,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
 		/* switch stacks */

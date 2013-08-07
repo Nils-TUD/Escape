@@ -122,11 +122,10 @@ static size_t _argc;
 static char **_argv;
 
 int cons_cmd_view(OStream &os,size_t argc,char **argv) {
-	size_t i;
 	if(Console::isHelp(argc,argv) || argc < 2) {
 		os.writef("Usage: %s <what>\n",argv[0]);
 		os.writef("Available 'whats':\n");
-		for(i = 0; i < ARRAY_SIZE(views); i++) {
+		for(size_t i = 0; i < ARRAY_SIZE(views); i++) {
 			if(i % 6 == 0) {
 				if(i > 0)
 					os.writef("\n");
@@ -142,6 +141,7 @@ int cons_cmd_view(OStream &os,size_t argc,char **argv) {
 	ViewOStream vos(&lines);
 	_argc = argc;
 	_argv = argv;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(views); i++) {
 		if(strcmp(views[i].name,argv[1]) == 0) {
 			views[i].func(vos);

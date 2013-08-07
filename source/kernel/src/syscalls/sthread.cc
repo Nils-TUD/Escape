@@ -123,7 +123,6 @@ int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
-	int res;
 
 	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
 		SYSC_ERROR(stack,-EINVAL);
@@ -131,7 +130,7 @@ int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* wait and release the lock before going to sleep */
-	res = doWait(uobjects,objCount,0,global ? INVALID_PID : pid,ident);
+	int res = doWait(uobjects,objCount,0,global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -207,10 +206,8 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 static int doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 		time_t maxWaitTime,pid_t pid,ulong ident) {
 	OpenFile *objFiles[MAX_WAIT_OBJECTS];
-	size_t i;
-	int res;
 	/* first request the files from the file-descriptors */
-	for(i = 0; i < objCount; i++) {
+	for(size_t i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
 			/* translate fd to node-number */
 			objFiles[i] = FileDesc::request((int)uobjects[i].object);
@@ -223,10 +220,10 @@ static int doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 	}
 
 	/* now wait */
-	res = doWaitLoop(uobjects,objCount,objFiles,maxWaitTime,pid,ident);
+	int res = doWaitLoop(uobjects,objCount,objFiles,maxWaitTime,pid,ident);
 
 	/* release them */
-	for(i = 0; i < objCount; i++) {
+	for(size_t i = 0; i < objCount; i++) {
 		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
 			FileDesc::release(objFiles[i]);
 	}
@@ -236,10 +233,8 @@ static int doWait(USER const Event::WaitObject *uobjects,size_t objCount,
 static int doWaitLoop(USER const Event::WaitObject *uobjects,size_t objCount,
 		OpenFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident) {
 	Event::WaitObject kobjects[MAX_WAIT_OBJECTS];
-	size_t i;
-
 	/* copy to kobjects and check */
-	for(i = 0; i < objCount; i++) {
+	for(size_t i = 0; i < objCount; i++) {
 		kobjects[i].events = uobjects[i].events;
 		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
 			return -EINVAL;

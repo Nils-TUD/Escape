@@ -37,7 +37,6 @@ SwapMap::Block *SwapMap::freeList = NULL;
 klock_t SwapMap::lock;
 
 bool SwapMap::init(size_t swapSize) {
-	size_t i;
 	totalBlocks = swapSize / PAGE_SIZE;
 	freeBlocks = totalBlocks;
 	swapBlocks = (Block*)Cache::alloc(totalBlocks * sizeof(Block));
@@ -48,7 +47,7 @@ bool SwapMap::init(size_t swapSize) {
 	freeList = swapBlocks + 0;
 	swapBlocks[0].refCount = 0;
 	swapBlocks[0].next = NULL;
-	for(i = 1; i < totalBlocks; i++) {
+	for(size_t i = 1; i < totalBlocks; i++) {
 		swapBlocks[i].next = freeList;
 		swapBlocks[i].refCount = 0;
 		freeList = swapBlocks + i;
@@ -83,11 +82,11 @@ void SwapMap::free(ulong block) {
 }
 
 void SwapMap::print(OStream &os) {
-	size_t i,c = 0;
+	size_t c = 0;
 	os.writef("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
 	os.writef("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
 	os.writef("Used:");
-	for(i = 0; i < totalBlocks; i++) {
+	for(size_t i = 0; i < totalBlocks; i++) {
 		Block *block = swapBlocks + i;
 		if(block->refCount > 0) {
 			if(c % 8 == 0)

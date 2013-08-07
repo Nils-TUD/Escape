@@ -488,13 +488,13 @@ void *VFSNode::operator new(size_t) throw() {
 	VFSNode *node = NULL;
 	SpinLock::acquire(&nodesLock);
 	if(freeList == NULL) {
-		size_t i,oldCount = nodeArray.getObjCount();
+		size_t oldCount = nodeArray.getObjCount();
 		if(!nodeArray.extend()) {
 			SpinLock::release(&nodesLock);
 			return NULL;
 		}
 		freeList = get(oldCount);
-		for(i = oldCount; i < nodeArray.getObjCount() - 1; i++) {
+		for(size_t i = oldCount; i < nodeArray.getObjCount() - 1; i++) {
 			node = get(i);
 			node->next = get(i + 1);
 		}
@@ -543,12 +543,11 @@ void VFSNode::print(OStream &os) const {
 }
 
 void VFSNode::doPrintTree(OStream &os,size_t level,const VFSNode *parent) {
-	size_t i;
 	bool valid;
 	const VFSNode *n = parent->openDir(false,&valid);
 	if(valid) {
 		while(n != NULL) {
-			for(i = 0;i < level;i++)
+			for(size_t i = 0;i < level;i++)
 				os.writef(" |");
 			os.writef("- %s\n",n->name);
 			/* don't recurse for "." and ".." */

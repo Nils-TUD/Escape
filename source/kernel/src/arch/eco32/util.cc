@@ -39,14 +39,13 @@ void Util::panicArch() {
 }
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {
-	size_t i;
 	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->getKernelStack() << PAGE_SIZE_SHIFT);
 	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
 	if(istackAddr) {
 		IntrptStackFrame *istack = (IntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
 		os.writef("User state:\n");
 		os.writef("\tPSW: 0x%08x\n\t",istack->psw);
-		for(i = 0; i < REG_COUNT; i++) {
+		for(size_t i = 0; i < REG_COUNT; i++) {
 			int row = i / 4;
 			int col = i % 4;
 			os.writef("$%-2d: 0x%08x ",col * 8 + row,istack->r[col * 8 + row]);

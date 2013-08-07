@@ -30,13 +30,12 @@
 int Syscalls::reqports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
-	int err;
 
 	/* check range */
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,-EINVAL);
 
-	err = IOPorts::request(start,count);
+	int err = IOPorts::request(start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
@@ -45,13 +44,12 @@ int Syscalls::reqports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 int Syscalls::relports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);
 	size_t count = SYSC_ARG2(stack);
-	int err;
 
 	/* check range */
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,-EINVAL);
 
-	err = IOPorts::release(start,count);
+	int err = IOPorts::release(start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
@@ -70,13 +68,11 @@ int Syscalls::vm86int(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	VM86::Regs *regs = (VM86::Regs*)SYSC_ARG2(stack);
 	VM86::Memarea *mArea = (VM86::Memarea*)SYSC_ARG3(stack);
-	int res;
 
 	/* check args */
 	if(!PageDir::isInUserSpace((uintptr_t)regs,sizeof(VM86::Regs)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(mArea != NULL) {
-		size_t j;
 		if(!PageDir::isInUserSpace((uintptr_t)mArea,sizeof(VM86::Memarea)))
 			SYSC_ERROR(stack,-EFAULT);
 		/* ensure that only memory from the real-mode-memory can be copied */
@@ -84,7 +80,7 @@ int Syscalls::vm86int(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 			SYSC_ERROR(stack,-EFAULT);
 		if(!PageDir::isInUserSpace((uintptr_t)mArea->src,mArea->size))
 			SYSC_ERROR(stack,-EFAULT);
-		for(j = 0; j < mArea->ptrCount; j++) {
+		for(size_t j = 0; j < mArea->ptrCount; j++) {
 			if(mArea->ptr[j].offset + sizeof(uintptr_t) > mArea->size)
 				SYSC_ERROR(stack,-EINVAL);
 			if(!PageDir::isInUserSpace(mArea->ptr[j].result,mArea->ptr[j].size))
@@ -93,7 +89,7 @@ int Syscalls::vm86int(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	}
 
 	/* do vm86-interrupt */
-	res = VM86::interrupt(interrupt,regs,mArea);
+	int res = VM86::interrupt(interrupt,regs,mArea);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

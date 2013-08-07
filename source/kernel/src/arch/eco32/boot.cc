@@ -91,8 +91,7 @@ size_t Boot::getModuleSize() {
 }
 
 uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
-	size_t i;
-	for(i = 1; i < info.progCount; i++) {
+	for(size_t i = 1; i < info.progCount; i++) {
 		if(strcmp(progs[i].command,name) == 0) {
 			*size = progs[i].size;
 			return progs[i].start;
@@ -102,10 +101,6 @@ uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
 }
 
 int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
-	size_t i;
-	VFSNode *node;
-	int child;
-
 	/* it's not good to do this twice.. */
 	if(loadedMods)
 		return 0;
@@ -114,7 +109,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 
 	loadedMods = true;
-	for(i = 1; i < info.progCount; i++) {
+	for(size_t i = 1; i < info.progCount; i++) {
 		/* parse args */
 		int argc;
 		const char **argv = parseArgs(progs[i].command,&argc);
@@ -122,6 +117,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 			Util::panic("Invalid arguments for boot-module: %s\n",progs[i].command);
 
 		/* clone proc */
+		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
 			int res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
@@ -134,6 +130,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
+		VFSNode *node;
 		while(VFSNode::request(argv[1],&node,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
@@ -156,12 +153,11 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Boot::print(OStream &os) {
-	size_t i;
 	os.writef("Memory size: %zu bytes\n",info.memSize);
 	os.writef("Disk size: %zu bytes\n",info.diskSize);
 	os.writef("Boot modules:\n");
 	/* skip kernel */
-	for(i = 1; i < info.progCount; i++) {
+	for(size_t i = 1; i < info.progCount; i++) {
 		os.writef("\t%s [%p .. %p]\n",info.progs[i].command,
 				info.progs[i].start,info.progs[i].start + info.progs[i].size);
 	}

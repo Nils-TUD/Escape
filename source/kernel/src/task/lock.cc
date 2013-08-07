@@ -131,9 +131,8 @@ int Lock::release(pid_t pid,ulong ident) {
 }
 
 void Lock::releaseAll(pid_t pid) {
-	size_t i;
 	SpinLock::acquire(&klock);
-	for(i = 0; i < lockCount; i++) {
+	for(size_t i = 0; i < lockCount; i++) {
 		if(locks[i].flags && locks[i].pid == pid)
 			locks[i].flags = 0;
 	}
@@ -141,9 +140,8 @@ void Lock::releaseAll(pid_t pid) {
 }
 
 void Lock::print(OStream &os) {
-	size_t i;
 	os.writef("Locks:\n");
-	for(i = 0; i < lockCount; i++) {
+	for(size_t i = 0; i < lockCount; i++) {
 		Entry *l = locks + i;
 		if(l->flags) {
 			os.writef("\t%08lx: pid=%u, flags=%#x, reads=%u, writer=%d, waits=%d\n",
@@ -153,9 +151,8 @@ void Lock::print(OStream &os) {
 }
 
 ssize_t Lock::get(pid_t pid,ulong ident,bool free) {
-	size_t i;
 	ssize_t freeIdx = -1;
-	for(i = 0; i < lockCount; i++) {
+	for(size_t i = 0; i < lockCount; i++) {
 		if(free && freeIdx == -1 && locks[i].flags == 0)
 			freeIdx = i;
 		else if(locks[i].flags && locks[i].ident == ident &&

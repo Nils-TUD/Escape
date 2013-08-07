@@ -56,14 +56,13 @@ void bspstart(BootInfo *mbp) {
 }
 
 uintptr_t smpstart() {
-	Thread *t;
 	ELF::StartupInfo info;
-	size_t i,total = SMP::getCPUCount();
+	size_t total = SMP::getCPUCount();
 	/* the running thread has been stored on a different stack last time */
 	Thread::setRunning(Thread::getById(0));
 
 	/* start an idle-thread for each cpu */
-	for(i = 0; i < total; i++)
+	for(size_t i = 0; i < total; i++)
 		Proc::startThread((uintptr_t)&idlestart,T_IDLE,NULL);
 
 	/* start all APs */
@@ -73,7 +72,7 @@ uintptr_t smpstart() {
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		Util::panic("Unable to load initloader");
 	/* give the process some stack pages */
-	t = Thread::getRunning();
+	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		Util::panic("Not enough mem for initloader-stack");
 	t->addInitialStack();

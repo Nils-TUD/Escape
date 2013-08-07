@@ -57,7 +57,6 @@ Thread *ThreadBase::init(Proc *p) {
 }
 
 Thread *ThreadBase::createInitial(Proc *p) {
-	size_t i;
 	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
 	if(t == NULL)
 		Util::panic("Unable to allocate mem for initial thread");
@@ -67,7 +66,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	t->flags = 0;
 	t->initProps();
 	t->state = Thread::RUNNING;
-	for(i = 0; i < STACK_REG_COUNT; i++)
+	for(size_t i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = NULL;
 	t->tlsRegion = NULL;
 	if(initArch(t) < 0)
@@ -120,9 +119,8 @@ size_t ThreadBase::getCount() {
 
 int ThreadBase::extendStack(uintptr_t address) {
 	Thread *t = Thread::getRunning();
-	size_t i;
 	int res = 0;
-	for(i = 0; i < STACK_REG_COUNT; i++) {
+	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		/* if it does not yet exist, report an error */
 		if(t->stackRegions[i] == NULL)
 			return -ENOMEM;
@@ -172,10 +170,9 @@ void ThreadBase::updateRuntimes() {
 
 bool ThreadBase::reserveFrames(size_t count) {
 	while(count > 0) {
-		size_t i;
 		if(!PhysMem::reserve(count))
 			return false;
-		for(i = count; i > 0; i--) {
+		for(size_t i = count; i > 0; i--) {
 			frameno_t frm = PhysMem::allocate(PhysMem::USR);
 			if(!frm)
 				break;
@@ -202,8 +199,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 
 	t->initProps();
 	if(cloneProc) {
-		size_t i;
-		for(i = 0; i < STACK_REG_COUNT; i++) {
+		for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 			if(src->stackRegions[i])
 				t->stackRegions[i] = p->getVM()->getRegion(src->stackRegions[i]->virt);
 			else
@@ -265,7 +261,6 @@ errThread:
 }
 
 void ThreadBase::kill() {
-	size_t i;
 	assert(state == Thread::ZOMBIE);
 	/* remove tls */
 	if(tlsRegion != NULL) {
@@ -274,13 +269,13 @@ void ThreadBase::kill() {
 	}
 
 	/* release resources */
-	for(i = 0; i < termLockCount; i++)
+	for(size_t i = 0; i < termLockCount; i++)
 		SpinLock::release(termLocks[i]);
-	for(i = 0; i < termHeapCount; i++)
+	for(size_t i = 0; i < termHeapCount; i++)
 		Cache::free(termHeapAllocs[i]);
-	for(i = 0; i < termUsageCount; i++)
+	for(size_t i = 0; i < termUsageCount; i++)
 		termUsages[i]->decUsages();
-	for(i = 0; i < termCallbackCount; i++)
+	for(size_t i = 0; i < termCallbackCount; i++)
 		termCallbacks[i]();
 
 	/* remove from all modules we may be announced */
@@ -323,7 +318,6 @@ void ThreadBase::printShort(OStream &os) const {
 }
 
 void ThreadBase::print(OStream &os) const {
-	size_t i;
 	Util::FuncCall *calls;
 	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
 	os.pushIndent();
@@ -334,7 +328,7 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("\n");
 	os.writef("LastCPU=%d\n",cpu);
 	os.writef("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);
-	for(i = 0; i < STACK_REG_COUNT; i++) {
+	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		os.writef("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt : 0);
 		if(i < STACK_REG_COUNT - 1)
 			os.writef(", ");

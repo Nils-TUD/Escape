@@ -55,10 +55,9 @@ void VMTree::addTree(VirtMem *vm,VMTree *tree) {
 }
 
 void VMTree::remTree(VMTree *tree) {
-	VMTree *t,*p;
-	p = NULL;
 	Mutex::acquire(&regMutex);
-	for(t = regList; t != NULL; p = t, t = t->next) {
+	VMTree *p = NULL;
+	for(VMTree *t = regList; t != NULL; p = t, t = t->next) {
 		if(t == tree) {
 			if(p)
 				p->next = t->next;
@@ -73,8 +72,7 @@ void VMTree::remTree(VMTree *tree) {
 }
 
 bool VMTree::available(uintptr_t addr,size_t size) const {
-	VMRegion *vm;
-	for(vm = begin; vm != NULL; vm = vm->next) {
+	for(VMRegion *vm = begin; vm != NULL; vm = vm->next) {
 		uintptr_t endaddr = vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount());
 		if(OVERLAPS(addr,addr + size,vm->virt,endaddr))
 			return false;
@@ -83,8 +81,7 @@ bool VMTree::available(uintptr_t addr,size_t size) const {
 }
 
 VMRegion *VMTree::getByAddr(uintptr_t addr) const {
-	VMRegion *vm;
-	for(vm = root; vm != NULL; ) {
+	for(VMRegion *vm = root; vm != NULL; ) {
 		if(addr >= vm->virt && addr < vm->virt + ROUND_PAGE_UP(vm->reg->getByteCount()))
 			return vm;
 		if(addr < vm->virt)
@@ -96,8 +93,7 @@ VMRegion *VMTree::getByAddr(uintptr_t addr) const {
 }
 
 VMRegion *VMTree::getByReg(Region *reg) const {
-	VMRegion *vm;
-	for(vm = begin; vm != NULL; vm = vm->next) {
+	for(VMRegion *vm = begin; vm != NULL; vm = vm->next) {
 		if(vm->reg == reg)
 			return vm;
 	}
@@ -156,7 +152,7 @@ VMRegion *VMTree::add(Region *reg,uintptr_t addr) {
 }
 
 void VMTree::remove(VMRegion *reg) {
-	VMRegion **p,*r,*prev;
+	VMRegion **p;
 	/* find the position where reg is stored */
 	for(p = &root; *p && *p != reg; ) {
 		if(reg->virt < (*p)->virt)
@@ -169,8 +165,8 @@ void VMTree::remove(VMRegion *reg) {
 	doRemove(p,reg);
 
 	/* remove from linked list */
-	prev = NULL;
-	for(r = begin; r != NULL; prev = r, r = r->next) {
+	VMRegion *prev = NULL;
+	for(VMRegion *r = begin; r != NULL; prev = r, r = r->next) {
 		if(r == reg) {
 			if(prev)
 				prev->next = r->next;

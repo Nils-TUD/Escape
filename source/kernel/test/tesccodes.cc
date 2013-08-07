@@ -105,27 +105,25 @@ static void test_1() {
 }
 
 static void test_2() {
-	size_t i;
 	const char *str[] = {
 		"\033[]","\033[ab]","\033[ab;]","\033[;]","\033[;;]","\033[;;;]","\033[;bb;a]",
 		"\033]]","\033[colorcodeandmore]","\033[co;123123123123123123;12312313]","\033[co;+23,-12]",
 	};
 	test_caseStart("Invalid codes");
 
-	for(i = 0; i < ARRAY_SIZE(str); i++)
+	for(size_t i = 0; i < ARRAY_SIZE(str); i++)
 		test_check(str[i],ESCC_INVALID,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
 
 	test_caseSucceeded();
 }
 
 static void test_3() {
-	size_t i;
 	const char *str[] = {
 		"\033[","\033[c","\033[co","\033[co;","\033[co;1","\033[co;12","\033[co;12;","\033[co;12;3"
 	};
 	test_caseStart("Incomplete codes");
 
-	for(i = 0; i < ARRAY_SIZE(str); i++)
+	for(size_t i = 0; i < ARRAY_SIZE(str); i++)
 		test_check(str[i],ESCC_INCOMPLETE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
 
 	test_caseSucceeded();

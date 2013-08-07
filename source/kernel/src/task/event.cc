@@ -34,15 +34,14 @@ Wait *Event::waitFree;
 Event::WaitList Event::evlists[EV_COUNT];
 
 void Event::init() {
-	size_t i;
-	for(i = 0; i < EV_COUNT; i++) {
+	for(size_t i = 0; i < EV_COUNT; i++) {
 		evlists[i].begin = NULL;
 		evlists[i].last = NULL;
 	}
 
 	waitFree = waits;
 	waitFree->next = NULL;
-	for(i = 1; i < MAX_WAIT_COUNT; i++) {
+	for(size_t i = 1; i < MAX_WAIT_COUNT; i++) {
 		waits[i].next = waitFree;
 		waitFree = waits + i;
 	}
@@ -50,9 +49,8 @@ void Event::init() {
 
 bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 	bool res = false;
-	Wait *w;
 	SpinLock::acquire(&lock);
-	w = t->waits;
+	Wait *w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
 	if(doWait(t,evi,object,&t->waits,w) != NULL) {
@@ -64,17 +62,15 @@ bool Event::wait(Thread *t,size_t evi,evobj_t object) {
 }
 
 bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
-	size_t i,e;
-	Wait *w;
 	SpinLock::acquire(&lock);
-	w = t->waits;
+	Wait *w = t->waits;
 	while(w && w->tnext)
 		w = w->tnext;
 
-	for(i = 0; i < objCount; i++) {
+	for(size_t i = 0; i < objCount; i++) {
 		uint events = objects[i].events;
 		if(events != 0) {
-			for(e = 0; events && e < EV_COUNT; e++) {
+			for(size_t e = 0; events && e < EV_COUNT; e++) {
 				if(events & (1 << e)) {
 					w = doWait(t,e,objects[i].object,&t->waits,w);
 					if(w == NULL) {
@@ -95,10 +91,9 @@ bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
 void Event::wakeup(size_t evi,evobj_t object) {
 	tid_t tids[MAX_WAKEUPS];
 	WaitList *list = evlists + evi;
-	Wait *w;
 	size_t i = 0;
 	SpinLock::acquire(&lock);
-	w = list->begin;
+	Wait *w = list->begin;
 	while(w != NULL) {
 		if(w->object == 0 || w->object == object) {
 			if(i < MAX_WAKEUPS && (i == 0 || tids[i - 1] != w->tid))
@@ -126,8 +121,7 @@ void Event::wakeup(size_t evi,evobj_t object) {
 }
 
 void Event::wakeupm(uint events,evobj_t object) {
-	size_t e;
-	for(e = 0; events && e < EV_COUNT; e++) {
+	for(size_t e = 0; events && e < EV_COUNT; e++) {
 		if(events & (1 << e)) {
 			wakeup(e,object);
 			events &= ~(1 << e);
@@ -148,11 +142,10 @@ bool Event::wakeupThread(Thread *t,uint events) {
 }
 
 void Event::printEvMask(OStream &os,const Thread *t) {
-	uint e;
 	if(t->events == 0)
 		os.writef("-");
 	else {
-		for(e = 0; e < EV_COUNT; e++) {
+		for(uint e = 0; e < EV_COUNT; e++) {
 			if(t->events & (1 << e))
 				os.writef("%s ",getName(e));
 		}
@@ -160,9 +153,8 @@ void Event::printEvMask(OStream &os,const Thread *t) {
 }
 
 void Event::print(OStream &os) {
-	size_t e;
 	os.writef("Eventlists:\n");
-	for(e = 0; e < EV_COUNT; e++) {
+	for(size_t e = 0; e < EV_COUNT; e++) {
 		WaitList *list = evlists + e;
 		Wait *w = list->begin;
 		os.writef("\t%s:\n",getName(e));

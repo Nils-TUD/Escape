@@ -816,8 +816,7 @@ inline void ThreadBase::unsuspend() {
 }
 
 inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {
-	size_t i;
-	for(i = 0; i < STACK_REG_COUNT; i++) {
+	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		if(stackRegions[i] == vm)
 			return true;
 	}
@@ -827,8 +826,7 @@ inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {
 inline void ThreadBase::removeRegions(bool remStack) {
 	tlsRegion = NULL;
 	if(remStack) {
-		size_t i;
-		for(i = 0; i < STACK_REG_COUNT; i++)
+		for(size_t i = 0; i < STACK_REG_COUNT; i++)
 			stackRegions[i] = NULL;
 	}
 	/* remove all signal-handler since we've removed the code to handle signals */

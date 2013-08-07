@@ -119,8 +119,7 @@ bool Log::escape(const char **str) {
 ssize_t Log::LogFile::write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count) {
 	if(Config::get(Config::LOG) && Log::get().logToSer) {
 		char *str = (char*)buffer;
-		size_t i;
-		for(i = 0; i < count; i++)
+		for(size_t i = 0; i < count; i++)
 			toSerial(str[i]);
 	}
 	/* ignore errors here */

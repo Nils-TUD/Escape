@@ -148,16 +148,15 @@ static void test_swapmap5() {
 }
 
 static void test_swapmap6() {
-	size_t i;
 	size_t total = SwapMap::freeSpace() / PAGE_SIZE;
 	ulong *blocks = (ulong*)Cache::alloc(total * sizeof(ulong));
 	test_doStart("Testing alloc all & free");
 
-	for(i = 0; i < total; i++) {
+	for(size_t i = 0; i < total; i++) {
 		blocks[i] = SwapMap::alloc();
 		test_assertTrue(blocks[i] != INVALID_BLOCK);
 	}
-	for(i = 0; i < total; i++)
+	for(size_t i = 0; i < total; i++)
 		SwapMap::free(blocks[i]);
 
 	test_finish();

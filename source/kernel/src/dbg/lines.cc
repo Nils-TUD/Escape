@@ -46,11 +46,11 @@ void Lines::append(char c) {
 }
 
 bool Lines::newLine() {
-	size_t i;
 	if(lineSize == (size_t)-1)
 		return false;
 	if(lineSize) {
 		/* fill up with spaces */
+		size_t i;
 		for(i = linePos; i < VID_COLS; i++)
 			lines[lineCount][i] = ' ';
 		lines[lineCount][i] = '\0';
@@ -92,8 +92,7 @@ void Lines::endLine() {
 
 Lines::~Lines() {
 	if(lines) {
-		size_t i;
-		for(i = 0; i < lineCount; i++)
+		for(size_t i = 0; i < lineCount; i++)
 			Cache::free(lines[i]);
 		Cache::free(lines);
 	}

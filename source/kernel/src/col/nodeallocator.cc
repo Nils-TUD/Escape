@@ -25,13 +25,12 @@ klock_t NodeAllocator::lock;
 void *NodeAllocator::allocate() {
 	SpinLock::acquire(&lock);
 	if(freelist == NULL) {
-		size_t i,oldCount;
-		oldCount = nodeArray.getObjCount();
+		size_t oldCount = nodeArray.getObjCount();
 		if(!nodeArray.extend()) {
 			SpinLock::release(&lock);
 			return NULL;
 		}
-		for(i = oldCount; i < nodeArray.getObjCount(); i++) {
+		for(size_t i = oldCount; i < nodeArray.getObjCount(); i++) {
 			SListItem *n = (SListItem*)nodeArray.getObj(i);
 			n->next(freelist);
 			freelist = n;

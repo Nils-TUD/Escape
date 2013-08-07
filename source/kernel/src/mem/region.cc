@@ -66,8 +66,8 @@ Region::Region(const Region &reg,VirtMem *vm,bool &success)
 		return;
 
 	/* increment references to swap-blocks */
-	size_t i,count = BYTES_2_PAGES(reg.byteCount);
-	for(i = 0; i < count; i++) {
+	size_t count = BYTES_2_PAGES(reg.byteCount);
+	for(size_t i = 0; i < count; i++) {
 		pageFlags[i] = reg.pageFlags[i];
 		if(reg.pageFlags[i] & PF_SWAPPED)
 			SwapMap::incRefs(reg.getSwapBlock(i));
@@ -76,7 +76,6 @@ Region::Region(const Region &reg,VirtMem *vm,bool &success)
 }
 
 void Region::init(ulong pgFlags,bool &success) {
-	size_t i,pages;
 	/* a region can never be shareable AND growable. this way, we don't need to lock every region-
 	 * access. because either its growable, then there is only one process that uses the region,
 	 * whose region-stuff is locked anyway. or its shareable, then byteCount, pfSize and pageFlags
@@ -89,7 +88,7 @@ void Region::init(ulong pgFlags,bool &success) {
 		loadCount = 0;
 	}
 
-	pages = BYTES_2_PAGES(byteCount);
+	size_t pages = BYTES_2_PAGES(byteCount);
 	/* if we have no pages, create the page-array with 1; using 0 will fail and this may actually
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
 	 * must exist. */
@@ -103,15 +102,15 @@ void Region::init(ulong pgFlags,bool &success) {
 	}
 	/* -1 means its initialized later (for reg_clone) */
 	if(pgFlags != (ulong)-1) {
-		for(i = 0; i < pages; i++)
+		for(size_t i = 0; i < pages; i++)
 			pageFlags[i] = pgFlags;
 	}
 }
 
 Region::~Region() {
-	size_t i,pcount = BYTES_2_PAGES(byteCount);
+	size_t pcount = BYTES_2_PAGES(byteCount);
 	/* first free the swapped out blocks */
-	for(i = 0; i < pcount; i++) {
+	for(size_t i = 0; i < pcount; i++) {
 		if(pageFlags[i] & PF_SWAPPED)
 			SwapMap::free(getSwapBlock(i));
 	}
@@ -119,10 +118,10 @@ Region::~Region() {
 }
 
 size_t Region::pageCount(size_t *swapped) const {
-	size_t i,c = 0,pcount = BYTES_2_PAGES(byteCount);
+	size_t c = 0,pcount = BYTES_2_PAGES(byteCount);
 	assert(this != NULL);
 	*swapped = 0;
-	for(i = 0; i < pcount; i++) {
+	for(size_t i = 0; i < pcount; i++) {
 		if((pageFlags[i] & (PF_DEMANDLOAD | PF_SWAPPED)) == 0)
 			c++;
 		if(pageFlags[i] & PF_SWAPPED)
@@ -136,18 +135,17 @@ ssize_t Region::grow(ssize_t amount) {
 	ssize_t res = 0;
 	assert((flags & RF_GROWABLE));
 	if(amount > 0) {
-		ssize_t i;
 		ulong *pf = (ulong*)Cache::realloc(pageFlags,(pfSize + amount) * sizeof(ulong));
 		if(pf == NULL)
 			return -ENOMEM;
 		pfSize += amount;
 		if(flags & RF_GROWS_DOWN) {
 			memmove(pf + amount,pf,count * sizeof(ulong));
-			for(i = 0; i < amount; i++)
+			for(ssize_t i = 0; i < amount; i++)
 				pf[i] = 0;
 		}
 		else {
-			for(i = 0; i < amount; i++)
+			for(ssize_t i = 0; i < amount; i++)
 				pf[i + count] = 0;
 		}
 		pageFlags = pf;
@@ -156,11 +154,10 @@ ssize_t Region::grow(ssize_t amount) {
 		byteCount += amount * PAGE_SIZE;
 	}
 	else {
-		size_t i;
 		if(byteCount < (size_t)-amount * PAGE_SIZE)
 			return -ENOMEM;
 		/* free swapped pages */
-		for(i = count + amount; i < count; i++) {
+		for(size_t i = count + amount; i < count; i++) {
 			if(pageFlags[i] & PF_SWAPPED) {
 				SwapMap::free(getSwapBlock(i));
 				res++;
@@ -176,7 +173,6 @@ ssize_t Region::grow(ssize_t amount) {
 }
 
 void Region::print(OStream &os,uintptr_t virt) const {
-	size_t i,x;
 	os.writef("\tSize: %zu bytes\n",byteCount);
 	os.writef("\tLoad: %zu bytes\n",loadCount);
 	os.writef("\tflags: ");
@@ -192,7 +188,7 @@ void Region::print(OStream &os,uintptr_t virt) const {
 		os.writef("%d ",(*it)->getPid());
 	os.writef("\n");
 	os.writef("\tPages (%d):\n",BYTES_2_PAGES(byteCount));
-	for(i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {
+	for(size_t i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {
 		os.writef("\t\t%d: (%p) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
 				(pageFlags[i] & PF_SWAPPED) ? getSwapBlock(i) : 0,
 				(pageFlags[i] & PF_COPYONWRITE) ? 'c' : '-',
@@ -215,8 +211,7 @@ void Region::printFlags(OStream &os) const {
 		{"TLS",RF_TLS},
 		{"GrDwn",RF_GROWS_DOWN}
 	};
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
+	for(size_t i = 0; i < ARRAY_SIZE(flagNames); i++) {
 		if(flags & flagNames[i].no)
 			os.writef("%s ",flagNames[i].name);
 	}

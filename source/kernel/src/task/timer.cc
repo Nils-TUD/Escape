@@ -40,13 +40,12 @@ TimerBase::Listener *TimerBase::freeList;
 TimerBase::Listener *TimerBase::listener = NULL;
 
 void TimerBase::init() {
-	size_t i;
 	archInit();
 
 	/* init objects */
 	listenObjs->next = NULL;
 	freeList = listenObjs;
-	for(i = 1; i < LISTENER_COUNT; i++) {
+	for(size_t i = 1; i < LISTENER_COUNT; i++) {
 		listenObjs[i].next = freeList;
 		freeList = listenObjs + i;
 	}
@@ -95,10 +94,9 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 }
 
 void TimerBase::removeThread(tid_t tid) {
-	Listener *l,*p;
 	SpinLock::acquire(&lock);
-	p = NULL;
-	for(l = listener; l != NULL; p = l, l = l->next) {
+	Listener *p = NULL;
+	for(Listener *l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
 			/* increase time of next */
 			if(l->next)
@@ -120,7 +118,6 @@ void TimerBase::removeThread(tid_t tid) {
 
 bool TimerBase::intrpt() {
 	bool res,foundThread = false;
-	Listener *l,*tl;
 	time_t timeInc = 1000 / FREQUENCY_DIV;
 
 	SpinLock::acquire(&lock);
@@ -134,7 +131,7 @@ bool TimerBase::intrpt() {
 	}
 
 	/* look if there are threads to wakeup */
-	for(l = listener; l != NULL; ) {
+	for(Listener *l = listener; l != NULL; ) {
 		/* stop if we have to continue waiting for this one */
 		/* note that multiple listeners may have l->time = 0 */
 		if(l->time > timeInc) {
@@ -152,7 +149,7 @@ bool TimerBase::intrpt() {
 			Signals::addSignalFor(l->tid,SIG_ALARM);
 		/* remove from list */
 		listener = l->next;
-		tl = l->next;
+		Listener *tl = l->next;
 		/* put on freelist */
 		l->next = freeList;
 		freeList = l;
@@ -171,11 +168,9 @@ bool TimerBase::intrpt() {
 }
 
 void TimerBase::print(OStream &os) {
-	time_t time;
-	Listener *l;
 	os.writef("Timer-Listener:\n");
-	time = 0;
-	for(l = listener; l != NULL; l = l->next) {
+	time_t time = 0;
+	for(Listener *l = listener; l != NULL; l = l->next) {
 		time += l->time;
 		os.writef("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
 				Thread::getById(l->tid)->getProc()->getCommand(),l->block);

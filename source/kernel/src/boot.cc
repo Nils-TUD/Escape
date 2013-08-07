@@ -40,13 +40,12 @@ extern void (*CTORS_END)();
 static size_t finished = 0;
 
 void Boot::start(BootInfo *info) {
-	size_t i;
 	for(void (**func)() = &CTORS_BEGIN; func != &CTORS_END; func++)
 		(*func)();
 
 	archStart(info);
 	drawProgressBar();
-	for(i = 0; i < taskList.count; i++) {
+	for(size_t i = 0; i < taskList.count; i++) {
 		const BootTask *task = taskList.tasks + i;
 		Log::get().writef("%s",task->name);
 		taskStarted(task->name);
@@ -106,15 +105,14 @@ const char **Boot::parseArgs(const char *line,int *argc) {
 
 void Boot::drawProgressBar() {
 	Video &vid = Video::get();
-	ushort x,y;
 	/* top */
 	vid.goTo(BAR_PADY,BAR_PADX);
 	vid.writef("\xC9");
-	for(x = 1; x < BAR_WIDTH - 2; x++)
+	for(ushort x = 1; x < BAR_WIDTH - 2; x++)
 		vid.writef("\xCD");
 	vid.writef("\xBB");
 	/* left and right */
-	for(y = 0; y < BAR_HEIGHT; y++) {
+	for(ushort y = 0; y < BAR_HEIGHT; y++) {
 		vid.goTo(BAR_PADY + 1 + y,BAR_PADX);
 		vid.writef("\xBA");
 		vid.goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
@@ -123,7 +121,7 @@ void Boot::drawProgressBar() {
 	/* bottom */
 	vid.goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
 	vid.writef("\xC8");
-	for(x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
+	for(ushort x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
 		vid.writef("\xCD");
 	vid.writef("\xBC");
 }

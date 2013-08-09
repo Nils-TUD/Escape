@@ -34,7 +34,6 @@
 	push	%ebp
 	mov		%esp,%ebp
 	push	%edi
-	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	DO_SYSENTER
 	STORE_ERRNO
@@ -51,7 +50,6 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
-	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	mov		8(%ebp),%esi					# set arg1
 	DO_SYSENTER
@@ -70,12 +68,10 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
-	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
 	mov		8(%ebp),%esi					# set arg1
-	pushl	12(%ebp)						# push arg2
+	mov		12(%ebp),%edi					# set arg2
 	DO_SYSENTER
-	add		$4,%esp							# remove arg2
 	STORE_ERRNO
 	pop		%esi
 	pop		%edi
@@ -91,14 +87,14 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
-	mov		8(%ebp),%esi					# set arg1
-	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%edi,%edi						# clear error-code
+	push	%ebx
 	mov		$\syscno,%eax					# set syscall-number
+	mov		8(%ebp),%esi					# set arg1
+	mov		12(%ebp),%edi					# set arg2
+	mov		16(%ebp),%ebx					# set arg3
 	DO_SYSENTER
-	add		$8,%esp							# remove arg3 and arg2
 	STORE_ERRNO
+	pop		%ebx
 	pop		%esi
 	pop		%edi
 	leave
@@ -113,15 +109,16 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
-	mov		8(%ebp),%esi					# set arg1
-	pushl	20(%ebp)						# push arg4
-	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%edi,%edi						# clear error-code
+	push	%ebx
 	mov		$\syscno,%eax					# set syscall-number
+	mov		8(%ebp),%esi					# set arg1
+	mov		12(%ebp),%edi					# set arg2
+	mov		16(%ebp),%ebx					# set arg3
+	pushl	20(%ebp)						# push arg4
 	DO_SYSENTER
-	add		$12,%esp						# remove arg2, arg3 and arg4
+	add		$4,%esp							# remove arg3 and arg4
 	STORE_ERRNO
+	pop		%ebx
 	pop		%esi
 	pop		%edi
 	leave
@@ -136,16 +133,17 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
+	push	%ebx
+	mov		$\syscno,%eax					# set syscall-number
 	mov		8(%ebp),%esi					# set arg1
+	mov		12(%ebp),%edi					# set arg2
+	mov		16(%ebp),%ebx					# set arg3
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
-	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%edi,%edi						# clear error-code
-	mov		$\syscno,%eax					# set syscall-number
 	DO_SYSENTER
-	add		$16,%esp						# remove args
+	add		$8,%esp							# remove args
 	STORE_ERRNO
+	pop		%ebx
 	pop		%esi
 	pop		%edi
 	leave
@@ -160,17 +158,18 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
+	push	%ebx
+	mov		$\syscno,%eax					# set syscall-number
 	mov		8(%ebp),%esi					# set arg1
+	mov		12(%ebp),%edi					# set arg2
+	mov		16(%ebp),%ebx					# set arg3
 	pushl	28(%ebp)						# push arg6
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
-	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%edi,%edi						# clear error-code
-	mov		$\syscno,%eax					# set syscall-number
 	DO_SYSENTER
-	add		$20,%esp						# remove args
+	add		$12,%esp						# remove args
 	STORE_ERRNO
+	pop		%ebx
 	pop		%esi
 	pop		%edi
 	leave
@@ -185,18 +184,19 @@
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
+	push	%ebx
+	mov		$\syscno,%eax					# set syscall-number
 	mov		8(%ebp),%esi					# set arg1
+	mov		12(%ebp),%edi					# set arg2
+	mov		16(%ebp),%ebx					# set arg3
 	pushl	32(%ebp)						# push arg7
 	pushl	28(%ebp)						# push arg6
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
-	pushl	16(%ebp)						# push arg3
-	pushl	12(%ebp)						# push arg2
-	xor		%edi,%edi						# clear error-code
-	mov		$\syscno,%eax					# set syscall-number
 	DO_SYSENTER
-	add		$24,%esp						# remove args
+	add		$16,%esp						# remove args
 	STORE_ERRNO
+	pop		%ebx
 	pop		%esi
 	pop		%edi
 	leave

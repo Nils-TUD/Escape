@@ -178,7 +178,7 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	return vm86Res;
 }
 
-void VM86::handleGPF(IntrptStackFrame *stack) {
+void VM86::handleGPF(VM86IntrptStackFrame *stack) {
 	uint8_t *ops = (uint8_t*)(stack->eip + (stack->cs << 4));
 	uint8_t opCode;
 	bool data32 = false;
@@ -307,24 +307,24 @@ void VM86::handleGPF(IntrptStackFrame *stack) {
 	}
 }
 
-uint16_t VM86::popw(IntrptStackFrame *stack) {
+uint16_t VM86::popw(VM86IntrptStackFrame *stack) {
 	uint16_t *sp = (uint16_t*)(stack->uesp + (stack->uss << 4));
 	stack->uesp += sizeof(uint16_t);
 	return *sp;
 }
 
-uint32_t VM86::popl(IntrptStackFrame *stack) {
+uint32_t VM86::popl(VM86IntrptStackFrame *stack) {
 	uint32_t *sp = (uint32_t*)(stack->uesp + (stack->uss << 4));
 	stack->uesp += sizeof(uint32_t);
 	return *sp;
 }
 
-void VM86::pushw(IntrptStackFrame *stack,uint16_t word) {
+void VM86::pushw(VM86IntrptStackFrame *stack,uint16_t word) {
 	stack->uesp -= sizeof(uint16_t);
 	*((uint16_t*)(stack->uesp + (stack->uss << 4))) = word;
 }
 
-void VM86::pushl(IntrptStackFrame *stack,uint32_t l) {
+void VM86::pushl(VM86IntrptStackFrame *stack,uint32_t l) {
 	stack->uesp -= sizeof(uint32_t);
 	*((uint32_t*)(stack->uesp + (stack->uss << 4))) = l;
 }
@@ -332,8 +332,6 @@ void VM86::pushl(IntrptStackFrame *stack,uint32_t l) {
 void VM86::start() {
 	Thread *t = Thread::getRunning();
 	assert(caller != INVALID_TID);
-
-	IntrptStackFrame *istack = t->getIntrptStack();
 
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
@@ -344,36 +342,50 @@ void VM86::start() {
 		memcpy((void*)info.area->dst,info.copies[0],info.area->size);
 	}
 
+	/* has to be volatile, because otherwise the compiler thinks we don't use it */
+	volatile VM86IntrptStackFrame istack;
 	/* set stack-pointer (in an unsed area) */
 	/* the BIOS puts the bootloader to 0x7C00. it is 512 bytes large, so that the area
 	 * 0x7C00 .. 0x7E00 should always be available (we don't need it anymore). */
-	istack->uss = 0x700;
-	istack->uesp = 0xDF8;
+	istack.uss = 0x700;
+	istack.uesp = 0xDF8;
 	/* ensure that the last 2 words on the stack are 0. it is required for the last iret that
 	 * indicates that vm86 is finished */
 	memclear((void*)0x7DF8,0x8);
-	/* enable VM flag */
-	istack->eflags |= 1 << 17;
+	/* enable VM and IF flag, IOPL = 0*/
+	istack.eflags = (1 << 17) | (1 << 9);
 	/* has to be volatile to prevent llvm from optimizing it away */
 	volatile uint32_t *ivt = (uint32_t*)0;
 	/* set entrypoint */
-	istack->eip = ivt[info.interrupt] & 0xFFFF;
-	istack->cs = ivt[info.interrupt] >> 16;
+	istack.eip = ivt[info.interrupt] & 0xFFFF;
+	istack.cs = ivt[info.interrupt] >> 16;
 	/* segment registers */
-	istack->vm86ds = info.regs.ds;
-	istack->vm86es = info.regs.es;
-	istack->vm86fs = 0;
-	istack->vm86gs = 0;
+	istack.vm86ds = info.regs.ds;
+	istack.vm86es = info.regs.es;
+	istack.vm86fs = 0;
+	istack.vm86gs = 0;
 	/* general purpose registers */
-	istack->eax = info.regs.ax;
-	istack->ebx = info.regs.bx;
-	istack->ecx = info.regs.cx;
-	istack->edx = info.regs.dx;
-	istack->esi = info.regs.si;
-	istack->edi = info.regs.di;
+	istack.eax = info.regs.ax;
+	istack.ebx = info.regs.bx;
+	istack.ecx = info.regs.cx;
+	istack.edx = info.regs.dx;
+	istack.esi = info.regs.si;
+	istack.edi = info.regs.di;
+	istack.ebp = 0;
+	t->popIntrptLevel();
+	/* return to userland. do it here, so that we don't need the same stacklayout for VM86-mode and
+	 * protected mode */
+	asm volatile (
+		"mov	%0,%%esp\n"
+		"popa\n"
+		"add	$8,%%esp\n"
+		"iret"
+		: : "r"(&istack)
+	);
+	A_UNREACHED;
 }
 
-void VM86::stop(IntrptStackFrame *stack) {
+void VM86::stop(VM86IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	Thread *ct = Thread::getById(caller);
 	vm86Res = 0;
@@ -399,7 +411,7 @@ void VM86::finish() {
 	Mutex::release(&vm86Lock);
 }
 
-void VM86::copyRegResult(IntrptStackFrame *stack) {
+void VM86::copyRegResult(VM86IntrptStackFrame *stack) {
 	info.regs.ax = stack->eax;
 	info.regs.bx = stack->ebx;
 	info.regs.cx = stack->ecx;

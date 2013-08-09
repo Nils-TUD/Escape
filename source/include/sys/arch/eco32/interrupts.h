@@ -67,6 +67,7 @@ class Interrupts : public InterruptsBase {
 	};
 
 	static void defHandler(IntrptStackFrame *stack);
+	static void debug(IntrptStackFrame *stack);
 	static void exTrap(IntrptStackFrame *stack);
 	static void exPageFault(IntrptStackFrame *stack);
 	static void irqTimer(IntrptStackFrame *stack);

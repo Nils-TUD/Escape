@@ -17,23 +17,29 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-# the IRQ for syscalls
-.set SYSCALL_IRQ,							0x30
-
 # macros for the different syscall-types, depending on the argument-number
+
+.macro SYSC_DEBUG name
+.global \name
+.type \name, @function
+\name:
+	int		$0x30
+	ret
+.endm
 
 .macro SYSC_0ARGS name syscno
 .global \name
 .type \name, @function
 \name:
-	xor		%ecx,%ecx						# clear error-code
+	push	%ebp
+	mov		%esp,%ebp
+	push	%edi
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
-	test	%ecx,%ecx
-	jz		1f								# no-error?
+	DO_SYSENTER
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%edi
+	leave
 	ret
 .endm
 
@@ -41,15 +47,18 @@
 .global \name
 .type \name, @function
 \name:
-	xor		%ecx,%ecx						# clear error-code
+	push	%ebp
+	mov		%esp,%ebp
+	push	%edi
+	push	%esi
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	mov		4(%esp),%edx					# set arg1
-	int		$SYSCALL_IRQ
-	test	%ecx,%ecx
-	jz		1f								# no-error?
+	mov		8(%ebp),%esi					# set arg1
+	DO_SYSENTER
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
+	leave
 	ret
 .endm
 
@@ -59,17 +68,17 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	xor		%ecx,%ecx						# clear error-code
+	push	%edi
+	push	%esi
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	mov		8(%ebp),%edx					# set arg1
+	mov		8(%ebp),%esi					# set arg1
 	pushl	12(%ebp)						# push arg2
-	int		$SYSCALL_IRQ
+	DO_SYSENTER
 	add		$4,%esp							# remove arg2
-	test	%ecx,%ecx
-	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
 	leave
 	ret
 .endm
@@ -80,18 +89,18 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	push	%edi
+	push	%esi
+	mov		8(%ebp),%esi					# set arg1
 	pushl	16(%ebp)						# push arg3
 	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
+	DO_SYSENTER
 	add		$8,%esp							# remove arg3 and arg2
-	test	%ecx,%ecx
-	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
 	leave
 	ret
 .endm
@@ -102,19 +111,19 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	push	%edi
+	push	%esi
+	mov		8(%ebp),%esi					# set arg1
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
 	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
+	DO_SYSENTER
 	add		$12,%esp						# remove arg2, arg3 and arg4
-	test	%ecx,%ecx
-	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
 	leave
 	ret
 .endm
@@ -125,20 +134,20 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	push	%edi
+	push	%esi
+	mov		8(%ebp),%esi					# set arg1
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
 	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
+	DO_SYSENTER
 	add		$16,%esp						# remove args
-	test	%ecx,%ecx
-	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
 	leave
 	ret
 .endm
@@ -149,21 +158,21 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	push	%edi
+	push	%esi
+	mov		8(%ebp),%esi					# set arg1
 	pushl	28(%ebp)						# push arg6
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
 	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
+	DO_SYSENTER
 	add		$20,%esp						# remove args
-	test	%ecx,%ecx
-	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
 	leave
 	ret
 .endm
@@ -174,28 +183,47 @@
 \name:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%ebp),%edx					# set arg1
+	push	%edi
+	push	%esi
+	mov		8(%ebp),%esi					# set arg1
 	pushl	32(%ebp)						# push arg7
 	pushl	28(%ebp)						# push arg6
 	pushl	24(%ebp)						# push arg5
 	pushl	20(%ebp)						# push arg4
 	pushl	16(%ebp)						# push arg3
 	pushl	12(%ebp)						# push arg2
-	xor		%ecx,%ecx						# clear error-code
+	xor		%edi,%edi						# clear error-code
 	mov		$\syscno,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
+	DO_SYSENTER
 	add		$24,%esp						# remove args
-	test	%ecx,%ecx
-	jz		1f								# no-error?
 	STORE_ERRNO
-	mov		%ecx,%eax						# return error-code
-1:
+	pop		%esi
+	pop		%edi
 	leave
 	ret
 .endm
 
-# stores the received error-code (in ecx) to the global variable errno
+# calculates the return address for sysenter and the stackpointer and performs sysenter.
+# this has to be done differently when using it in a shared library because we don't know the
+# absolute address
+.macro DO_SYSENTER
+#ifdef SHAREDLIB
+	call	1f
+1:
+	pop		%edx
+	add		$(1f - 1b),%edx
+#else
+	mov		$1f,%edx
+#endif
+	mov		%esp,%ecx
+	sysenter
+1:
+.endm
+
+# stores the received error-code (in edi) to the global variable errno
 .macro STORE_ERRNO
+	test	%edi,%edi
+	jz		1f								# no-error?
 	# use GOT for shared-libraries
 	#ifdef SHAREDLIB
 	# first get address of GOT
@@ -203,11 +231,13 @@
 	addl	$_GLOBAL_OFFSET_TABLE_,%eax
 	# now access symbol and store errno
 	mov		errno@GOT(%eax),%eax
-	mov		%ecx,(%eax)
+	mov		%edi,(%eax)
 	negl	(%eax)
 	#else
 	# otherwise access errno directly
-	mov		%ecx,(errno)					# store error-code
+	mov		%edi,(errno)					# store error-code
 	negl	(errno)
 	#endif
+	mov		%edi,%eax						# return error-code
+1:
 .endm

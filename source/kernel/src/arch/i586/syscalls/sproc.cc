@@ -58,7 +58,7 @@ int Syscalls::relports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 int Syscalls::vm86start(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	int res;
 	if((res = VM86::create()) == 0) {
-		/* don't change any registers on the stack here */
+		/* not reached */
 		return 0;
 	}
 	SYSC_ERROR(stack,res);

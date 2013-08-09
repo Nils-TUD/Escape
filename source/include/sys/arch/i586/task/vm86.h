@@ -85,17 +85,17 @@ public:
 	 *
 	 * @param stack the interrupt-stack-frame
 	 */
-	static void handleGPF(IntrptStackFrame *stack);
+	static void handleGPF(VM86IntrptStackFrame *stack);
 
 private:
-	static uint16_t popw(IntrptStackFrame *stack);
-	static uint32_t popl(IntrptStackFrame *stack);
-	static void pushw(IntrptStackFrame *stack,uint16_t word);
-	static void pushl(IntrptStackFrame *stack,uint32_t l);
-	static void start();
-	static void stop(IntrptStackFrame *stack);
+	static uint16_t popw(VM86IntrptStackFrame *stack);
+	static uint32_t popl(VM86IntrptStackFrame *stack);
+	static void pushw(VM86IntrptStackFrame *stack,uint16_t word);
+	static void pushl(VM86IntrptStackFrame *stack,uint32_t l);
+	static void start() A_NORETURN;
+	static void stop(VM86IntrptStackFrame *stack);
 	static void finish();
-	static void copyRegResult(IntrptStackFrame* stack);
+	static void copyRegResult(VM86IntrptStackFrame* stack);
 	static int storeAreaResult();
 	static void copyAreaResult();
 	static bool copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);

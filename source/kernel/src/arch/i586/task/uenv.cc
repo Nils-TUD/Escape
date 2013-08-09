@@ -31,7 +31,7 @@
 #include <assert.h>
 
 int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
-	uint32_t *esp = (uint32_t*)stack->uesp;
+	uint32_t *esp = (uint32_t*)stack->getSP();
 	if(!PageDir::isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
 		Proc::segFault();
 		/* never reached */
@@ -46,10 +46,10 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
 	stack->ecx = *esp++;
 	stack->ebx = *esp++;
 	stack->eax = *esp++;
-	stack->eflags = *esp++;
+	stack->setFlags(*esp++);
 	/* return */
-	stack->eip = *esp++;
-	stack->uesp = (uintptr_t)esp;
+	stack->setIP(*esp++);
+	stack->setSP((uintptr_t)esp);
 	return 0;
 }
 
@@ -127,9 +127,9 @@ bool UEnvBase::setupProc(int argc,const char *args,size_t argsSize,const ELF::St
 		*--esp = fd;
 	}
 
-	frame->uesp = (uint32_t)esp;
-	frame->ebp = frame->uesp;
-	UEnv::setupRegs(frame,entryPoint);
+	frame->setSP((uint32_t)esp);
+	frame->ebp = frame->getSP();
+	frame->setIP(entryPoint);
 	return true;
 }
 
@@ -161,11 +161,11 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 }
 
 void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
-	uint32_t *esp = (uint32_t*)stack->uesp;
+	uint32_t *esp = (uint32_t*)stack->getSP();
 	/* the ret-instruction of sigRet() should go to the old eip */
-	*--esp = stack->eip;
+	*--esp = stack->getIP();
 	/* save regs */
-	*--esp = stack->eflags;
+	*--esp = stack->getFlags();
 	*--esp = stack->eax;
 	*--esp = stack->ebx;
 	*--esp = stack->ecx;
@@ -177,27 +177,8 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
 	*--esp = t->getProc()->getSigRetAddr();
-	stack->eip = (uintptr_t)handler;
-	stack->uesp = (uint32_t)esp;
-}
-
-void UEnv::setupRegs(IntrptStackFrame *frame,uintptr_t entryPoint) {
-	/* user-mode segments */
-	frame->cs = GDT::SEGSEL_GDTI_UCODE | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
-	frame->ds = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
-	frame->es = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
-	frame->fs = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
-	/* gs is used for TLS */
-	frame->gs = GDT::SEGSEL_GDTI_UTLS | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
-	frame->uss = GDT::SEGSEL_GDTI_UDATA | GDT::SEGSEL_RPL_USER | GDT::SEGSEL_TI_GDT;
-	frame->eip = entryPoint;
-	/* general purpose register */
-	frame->eax = 0;
-	frame->ebx = 0;
-	frame->ecx = 0;
-	frame->edx = 0;
-	frame->esi = 0;
-	frame->edi = 0;
+	stack->setIP((uintptr_t)handler);
+	stack->setSP((uint32_t)esp);
 }
 
 uint32_t *UEnv::addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {

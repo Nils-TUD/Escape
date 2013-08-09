@@ -153,7 +153,6 @@ private:
 	// other
 	static int loadmods(Thread *t,IntrptStackFrame *stack);
 	static int debugc(Thread *t,IntrptStackFrame *stack);
-	static int debug(Thread *t,IntrptStackFrame *stack);
 	static int sysconf(Thread *t,IntrptStackFrame *stack);
 	static int tsctotime(Thread *t,IntrptStackFrame *stack);
 
@@ -163,6 +162,8 @@ private:
 	static int relports(Thread *t,IntrptStackFrame *stack);
 	static int vm86start(Thread *t,IntrptStackFrame *stack);
 	static int vm86int(Thread *t,IntrptStackFrame *stack);
+#else
+	static int debug(Thread *t,IntrptStackFrame *stack);
 #endif
 
 	/**

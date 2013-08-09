@@ -36,6 +36,7 @@ typedef struct {
 extern int _lock(uint ident,bool global,uint flags);
 extern int _unlock(uint ident,bool global);
 extern int _waitunlock(sWaitObject *objects,size_t objCount,uint ident,bool global);
+extern int _getcycles(uint64_t *res);
 
 static sSLList *tvalmap[HASHMAP_SIZE];
 
@@ -126,4 +127,10 @@ int unlock(uint ident) {
 
 int unlockg(uint ident) {
 	return _unlock(ident,true);
+}
+
+uint64_t getcycles(void) {
+	uint64_t res;
+	_getcycles(&res);
+	return res;
 }

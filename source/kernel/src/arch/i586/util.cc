@@ -90,10 +90,8 @@ void Util::printUserStateOf(OStream &os,const Thread *t) {
 		os.writef("\teax=%#08x, ebx=%#08x, ecx=%#08x, edx=%#08x\n",
 				kstack->eax,kstack->ebx,kstack->ecx,kstack->edx);
 		os.writef("\tesi=%#08x, edi=%#08x, esp=%#08x, ebp=%#08x\n",
-				kstack->esi,kstack->edi,kstack->esp,kstack->ebp);
-		os.writef("\teip=%#08x, eflags=%#08x\n",kstack->eip,kstack->eflags);
-		os.writef("\tcs=%#02x, ds=%#02x, es=%#02x, fs=%#02x, gs=%#02x, ss=%#02x\n",
-				kstack->cs,kstack->ds,kstack->es,kstack->fs,kstack->gs,kstack->uss);
+				kstack->esi,kstack->edi,kstack->getSP(),kstack->ebp);
+		os.writef("\teip=%#08x, eflags=%#08x\n",kstack->getIP(),kstack->getFlags());
 		PageDir::unmapFromTemp(1);
 	}
 }

@@ -82,6 +82,9 @@ void Log::writec(char c) {
 		buf[bufPos++] = c;
 		switch(c) {
 			case '\n':
+				col = 0;
+				flush();
+				break;
 			case '\r':
 				col = 0;
 				break;

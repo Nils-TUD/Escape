@@ -67,10 +67,11 @@ int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
-	uLongLong cycles;
-	cycles.val64 = t->getStats().curCycleCount;
-	SYSC_SETRET2(stack,cycles.val32.upper);
-	SYSC_RET1(stack,cycles.val32.lower);
+	uint64_t *res = (uint64_t*)SYSC_ARG1(stack);
+	if(!PageDir::isInUserSpace((uintptr_t)res,sizeof(uint64_t)))
+		SYSC_ERROR(stack,-EFAULT);
+	*res = t->getStats().curCycleCount;
+	SYSC_RET1(stack,0);
 }
 
 int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {

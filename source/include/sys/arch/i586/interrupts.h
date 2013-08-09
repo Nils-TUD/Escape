@@ -194,9 +194,12 @@ private:
 		int signal;
 	};
 
+	static void syscall(IntrptStackFrame *stack) asm("syscall_handler");
+
 	/**
 	 * The exception and interrupt-handlers
 	 */
+	static void debug(Thread *t,IntrptStackFrame *stack);
 	static void exFatal(Thread *t,IntrptStackFrame *stack);
 	static void exSStep(Thread *t,IntrptStackFrame *stack);
 	static void exGPF(Thread *t,IntrptStackFrame *stack);
@@ -204,7 +207,6 @@ private:
 	static void exPF(Thread *t,IntrptStackFrame *stack);
 	static void irqTimer(Thread *t,IntrptStackFrame *stack);
 	static void irqDefault(Thread *t,IntrptStackFrame *stack);
-	static void syscall(Thread *t,IntrptStackFrame *stack);
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
 	static void ipiTerm(Thread *t,IntrptStackFrame *stack);
 	static void printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t pfaddr);

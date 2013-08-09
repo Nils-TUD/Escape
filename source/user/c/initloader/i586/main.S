@@ -28,20 +28,27 @@
 _start:
 	# load modules first
 	mov		$SYSCALL_LOADMODS,%eax
-	int		$SYSCALL_IRQ
+	mov		$1f,%edx
+	mov		%esp,%ecx
+	sysenter
+1:
 
 	# load vm86-task
 	mov		$SYSCALL_VM86START,%eax
-	int		$SYSCALL_IRQ
+	mov		$1f,%edx
+	mov		%esp,%ecx
+	sysenter
+1:
 
 	# now replace with init
-	mov		$progName,%edx						# arg1: path
+	mov		$progName,%esi						# arg1: path
 	pushl	$args								# arg2: arguments
 	mov		$SYSCALL_EXEC,%eax					# set syscall-number
-	int		$SYSCALL_IRQ
-
-	# we should not reach this
+	mov		$1f,%edx
+	mov		%esp,%ecx
+	sysenter
 1:
+	# we should not reach this
 	jmp		1b
 
 # provide just a dummy

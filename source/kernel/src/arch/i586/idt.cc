@@ -143,9 +143,8 @@ void IDT::init() {
 	set(45,isr45,DPL_KERNEL);
 	set(46,isr46,DPL_KERNEL);
 	set(47,isr47,DPL_KERNEL);
-
-	/* syscall */
 	set(48,isr48,DPL_USER);
+
 	/* IPIs */
 	set(49,isr49,DPL_KERNEL);
 	set(50,isr50,DPL_KERNEL);

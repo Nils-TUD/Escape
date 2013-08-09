@@ -93,7 +93,7 @@ const Interrupts::Interrupt Interrupts::intrptList[] = {
 	/* 0x2D: -- */					{NULL,			"Unknown",				0},
 	/* 0x2C: IRQ_ATA1 */			{irqDefault,	"ATA1",					SIG_INTRPT_ATA1},
 	/* 0x2C: IRQ_ATA2 */			{irqDefault,	"ATA2",					SIG_INTRPT_ATA2},
-	/* 0x30: syscall */				{syscall,		"Systemcall",			0},
+	/* 0x30: debug */				{debug,			"Debug-Call",			0},
 	/* 0x31: IPI_WORK */			{ipiWork,		"Work IPI",				0},
 	/* 0x32: IPI_TERM */			{ipiTerm,		"Term IPI",				0},
 	/* 0x33: IPI_FLUSH_TLB */		{exFatal,		"Flush TLB IPI",		0},	/* not handled here */
@@ -118,6 +118,21 @@ void InterruptsBase::init() {
 		Util::panic("Unable to alloc memory for pagefault-addresses");
 }
 
+void Interrupts::syscall(IntrptStackFrame *stack) {
+	Thread *t = Thread::getRunning();
+	size_t level = t->pushIntrptLevel(stack);
+
+	t->getStats().syscalls++;
+	Syscalls::handle(t,stack);
+
+	/* handle signal */
+	t = Thread::getRunning();
+	if(level == 1)
+		UEnv::handleSignal(t,stack);
+
+	t->popIntrptLevel();
+}
+
 void InterruptsBase::handler(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	const Interrupts::Interrupt *intrpt;
@@ -133,7 +148,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 		intrpt->handler(t,stack);
 	else {
 		Log::get().writef("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
-				intrpt->name,stack->eip,t->getProc()->getPid(),t->getProc()->getCommand());
+				intrpt->name,stack->getIP(),t->getProc()->getPid(),t->getProc()->getCommand());
 	}
 
 	/* handle signal */
@@ -144,8 +159,12 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	t->popIntrptLevel();
 }
 
+void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
+	Console::start(NULL);
+}
+
 void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	Log::get().writef("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->eip,
+	Log::get().writef("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->getIP(),
 			t->getProc()->getPid(),t->getProc()->getCommand());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
@@ -154,7 +173,7 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		/* stop here? */
 		if(exCount >= MAX_EX_COUNT) {
 			Util::panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
-					stack->intrptNo,exCount,stack->eip);
+					stack->intrptNo,exCount,stack->getIP());
 		}
 	}
 	else {
@@ -171,12 +190,12 @@ void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
 	}
 	/* vm86-task? */
 	if(t->getProc()->getFlags() & P_VM86) {
-		VM86::handleGPF(stack);
+		VM86::handleGPF(static_cast<VM86IntrptStackFrame*>(stack));
 		exCount = 0;
 		return;
 	}
 	/* TODO later the process should be killed here */
-	Util::panic("GPF @ 0x%x",stack->eip);
+	Util::panic("GPF @ 0x%x",stack->getIP());
 }
 
 void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
@@ -204,7 +223,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!VirtMem::pagefault(addr,stack->errorCode & 0x2)) {
+	if(!VirtMem::pagefault(addr,stack->getError() & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(addr) < 0) {
 			printPFInfo(Log::get(),stack,addr);
@@ -242,11 +261,6 @@ void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	}
 }
 
-void Interrupts::syscall(Thread *t,IntrptStackFrame *stack) {
-	t->getStats().syscalls++;
-	Syscalls::handle(t,stack);
-}
-
 void Interrupts::ipiWork(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	LAPIC::eoi();
 	/* if we have been waked up, but are not idling anymore, wakeup another cpu */
@@ -267,23 +281,18 @@ void Interrupts::ipiTerm(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 void Interrupts::printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t addr) {
 	pid_t pid = Proc::getRunning();
-	os.writef("Page fault for address %p @ %p, process %d\n",addr,stack->eip,pid);
+	os.writef("Page fault for address %p @ %p, process %d\n",addr,stack->getIP(),pid);
 	os.writef("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
-			(stack->errorCode & 0x1) ?
+			(stack->getError() & 0x1) ?
 				"page-level protection violation" : "not-present page",
-			(stack->errorCode & 0x2) ? "write" : "read",
-			(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
-			(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
-			(stack->errorCode & 0x16) ? "instruction-fetch" : "");
+			(stack->getError() & 0x2) ? "write" : "read",
+			(stack->getError() & 0x4) ? "user-mode" : "kernel-mode",
+			(stack->getError() & 0x8) ? "reserved bits set to 1\n\t" : "",
+			(stack->getError() & 0x16) ? "instruction-fetch" : "");
 }
 
 void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
 	os.writef("stack-frame @ 0x%x\n",stack);
-	os.writef("\tcs=%02x\n",stack->cs);
-	os.writef("\tds=%02x\n",stack->ds);
-	os.writef("\tes=%02x\n",stack->es);
-	os.writef("\tfs=%02x\n",stack->fs);
-	os.writef("\tgs=%02x\n",stack->gs);
 	os.writef("\teax=0x%08x\n",stack->eax);
 	os.writef("\tebx=0x%08x\n",stack->ebx);
 	os.writef("\tecx=0x%08x\n",stack->ecx);
@@ -291,9 +300,11 @@ void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) 
 	os.writef("\tesi=0x%08x\n",stack->esi);
 	os.writef("\tedi=0x%08x\n",stack->edi);
 	os.writef("\tebp=0x%08x\n",stack->ebp);
-	os.writef("\tuesp=0x%08x\n",stack->uesp);
-	os.writef("\teip=0x%08x\n",stack->eip);
-	os.writef("\teflags=0x%08x\n",stack->eflags);
-	os.writef("\terrorCode=%d\n",stack->errorCode);
-	os.writef("\tintrptNo=%d\n",stack->intrptNo);
+	os.writef("\tuesp=0x%08x\n",stack->getSP());
+	os.writef("\teip=0x%08x\n",stack->getIP());
+	os.writef("\teflags=0x%08x\n",stack->getFlags());
+	if(stack->intrptNo) {
+		os.writef("\terrorCode=%d\n",stack->getError());
+		os.writef("\tintrptNo=%d\n",stack->intrptNo);
+	}
 }

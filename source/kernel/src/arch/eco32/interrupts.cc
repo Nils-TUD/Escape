@@ -107,6 +107,10 @@ void Interrupts::exTrap(IntrptStackFrame *stack) {
 	stack->r[30] += 4;
 }
 
+void Interrupts::debug(A_UNUSED IntrptStackFrame *stack) {
+	Console::start(NULL);
+}
+
 void Interrupts::exPageFault(IntrptStackFrame *stack) {
 #if DEBUG_PAGEFAULTS
 	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {

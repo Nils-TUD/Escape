@@ -102,6 +102,7 @@ BUILD_DEF_ISR 44
 BUILD_DEF_ISR 45
 BUILD_DEF_ISR 46
 BUILD_DEF_ISR 47
+BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 BUILD_DEF_ISR 50
 
@@ -170,44 +171,28 @@ isrNull:
 	jmp		isrCommon
 
 # syscall
-.global isr48
-isr48:
-	pushl	$0						# error-code (no error here)
-	pushl	$48						# the interrupt-number
-
+.global syscall_entry
+syscall_entry:
+	pushl	$0						# store intrptNo = 0 so that we can distinguish the stack-frames
 	# save registers
 	pusha
-	push	%gs
-	push	%fs
-	push	%ds
-	push	%es
 
 	# call c-routine
-	push	%esp					# stack-frame
 	mov		%esp,%eax
 	push	%eax					# pointer to stack-frame
-	call	intrpt_handler
-	add		$8,%esp
+	call	syscall_handler
+	add		$4,%esp
 
 	# restore registers
-	pop		%es
-	pop		%ds
-	pop		%fs
-	pop		%gs
 	popa
-
-	# remove error-code and interrupt-number from stack and return
-	add		$8,%esp
-	iret
+	add		$4,%esp
+	sti
+	sysexit
 
 # the ISR for all interrupts
 isrCommon:
 	# save registers
 	pusha
-	push	%gs
-	push	%fs
-	push	%ds
-	push	%es
 
 	# set segment-registers for kernel
 	# TODO just necessary for VM86-tasks because ds,es,fs and gs is set to 0 in this case
@@ -218,17 +203,12 @@ isrCommon:
 	mov		%eax,%gs
 
 	# call c-routine
-	push	%esp					# stack-frame
 	mov		%esp,%eax
 	push	%eax					# pointer to stack-frame
 	call	intrpt_handler
-	add		$8,%esp
+	add		$4,%esp
 
 	# restore registers
-	pop		%es
-	pop		%ds
-	pop		%fs
-	pop		%gs
 	popa
 
 	# remove error-code and interrupt-number from stack and return

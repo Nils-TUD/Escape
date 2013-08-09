@@ -19,33 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/dbg/console.h>
-#include <sys/dbg/cmd/step.h>
-#include <sys/task/proc.h>
-#include <sys/util.h>
-#include <string.h>
+#include <sys/syscalls.h>
 
-int cons_cmd_step(OStream &os,size_t argc,char **argv) {
-	if(Console::isHelp(argc,argv) || argc > 2) {
-		os.writef("Usage: step [show]\n");
-		return 0;
-	}
-
-#ifdef __i386__
-	Thread *t = Thread::getRunning();
-	IntrptStackFrame *kstack = t->getIntrptStack();
-	if(argc == 2 && strcmp(argv[1],"show") == 0) {
-		kstack->setFlags(kstack->getFlags() & ~(1 << 8));
-		os.writef("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
-		           t->getProc()->getCommand());
-		Util::printStackTrace(os,Util::getUserStackTraceOf(t));
-		Util::printUserState(os);
-		return 0;
-	}
-
-	kstack->setFlags(kstack->getFlags() | (1 << 8));
-	return CONS_EXIT;
-#else
-	os.writef("Sorry, not supported\n");
-	return 0;
-#endif
+int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
+	Console::start(NULL);
+	SYSC_RET1(stack,0);
 }

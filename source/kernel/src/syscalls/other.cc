@@ -43,17 +43,6 @@ int Syscalls::debugc(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
-#if 0
-	static size_t foo = 0;
-	Cache::dbg_setAaFEnabled(foo == 0);
-	foo = foo ? 0 : 1;
-#else
-	Console::start(NULL);
-#endif
-	SYSC_RET1(stack,0);
-}
-
 int Syscalls::sysconf(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int id = SYSC_ARG1(stack);
 	long res = Config::get(id);

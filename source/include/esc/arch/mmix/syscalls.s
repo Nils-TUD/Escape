@@ -810,9 +810,9 @@ _exit:
 1:
 	POP		1,0							# return value is in $0
 
-.global getcycles
-.type getcycles, @function
-getcycles:
+.global _getcycles
+.type _getcycles, @function
+_getcycles:
 	SET		$7,0						# clear error-code
 	TRAP	0,SYSCALL_GETCYCLES,0
 	BZ		$7,1f						# no-error?

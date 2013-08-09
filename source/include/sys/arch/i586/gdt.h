@@ -156,6 +156,13 @@ private:
 		uint8_t ioMapEnd;
 	} A_PACKED;
 
+	/* MSRs for sysenter/sysexit */
+	enum {
+		MSR_IA32_SYSENTER_CS			= 0x174,
+		MSR_IA32_SYSENTER_ESP			= 0x175,
+		MSR_IA32_SYSENTER_EIP			= 0x176,
+	};
+
 	/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data, tls
 	 * and one entry for our TSS */
 	static const size_t GDT_ENTRY_COUNT = 8;

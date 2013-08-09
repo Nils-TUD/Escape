@@ -69,6 +69,7 @@ GDT::TSS **GDT::alltss;
 size_t GDT::tssCount = 1;
 const uint8_t **GDT::ioMaps;
 size_t GDT::cpuCount;
+extern void *syscall_entry;
 
 void GDT::init() {
 	Table gdtTable;
@@ -97,7 +98,7 @@ void GDT::init() {
 
 	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes) */
-	bsptss.esp0 = KERNEL_STACK_AREA + PAGE_SIZE - (1 + 5) * sizeof(int);
+	bsptss.esp0 = KERNEL_STACK_AREA + PAGE_SIZE - 2 * sizeof(int);
 	bsptss.ss0 = 0x10;
 	/* init io-map */
 	bsptss.ioMapOffset = IO_MAP_OFFSET_INVALID;
@@ -129,6 +130,10 @@ void GDT::initBSP() {
 	allgdts[0].size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 	/* put TSS of BSP into the TSS-array */
 	alltss[0] = &bsptss;
+
+	CPU::setMSR(MSR_IA32_SYSENTER_CS,SEGSEL_GDTI_KCODE);
+	CPU::setMSR(MSR_IA32_SYSENTER_ESP,bsptss.esp0);
+	CPU::setMSR(MSR_IA32_SYSENTER_EIP,(uint64_t)&syscall_entry);
 }
 
 void GDT::initAP() {
@@ -153,7 +158,7 @@ void GDT::initAP() {
 	/* create TSS (copy from first one) */
 	alltss[i] = tss;
 	memcpy(tss,&bsptss,sizeof(TSS));
-	tss->esp0 = KERNEL_STACK_AREA + PAGE_SIZE - (1 + 5) * sizeof(int);
+	tss->esp0 = KERNEL_STACK_AREA + PAGE_SIZE - 2 * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
 	tss->ioMapEnd = 0xFF;
 
@@ -163,6 +168,10 @@ void GDT::initAP() {
 	/* now load our GDT and TSS */
 	flush(gdttbl);
 	loadTSS(6 * sizeof(Desc));
+
+	CPU::setMSR(MSR_IA32_SYSENTER_CS,SEGSEL_GDTI_KCODE);
+	CPU::setMSR(MSR_IA32_SYSENTER_ESP,tss->esp0);
+	CPU::setMSR(MSR_IA32_SYSENTER_EIP,(uint64_t)&syscall_entry);
 }
 
 cpuid_t GDT::getCPUId() {
@@ -193,17 +202,13 @@ cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
 	}
-	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
-	 * stack first (not in protected mode) */
-	if(n->getProc()->getFlags() & P_VM86)
-		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
-	else
-		alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - (1 + 5) * sizeof(int);
+	alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
 	if(!old || old->getProc() != n->getProc())
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
 	setRunning(id,n);
 #endif
+	CPU::setMSR(MSR_IA32_SYSENTER_ESP,alltss[id]->esp0);
 	return id;
 }
 

@@ -20,16 +20,51 @@
 #pragma once
 
 #include <esc/common.h>
+#include <assert.h>
+
+class VM86;
 
 /* the stack frame for the interrupt-handler */
-struct IntrptStackFrame {
-	/* stack-pointer before calling isr-handler */
-	uint32_t esp;
-	/* segment-registers */
-	uint32_t es;
-	uint32_t ds;
-	uint32_t fs;
-	uint32_t gs;
+class IntrptStackFrame {
+	friend class VM86;
+
+public:
+	uint32_t getError() const {
+		assert(intrptNo != 0);
+		return errorCode;
+	}
+
+	// we don't need eflags on sysenter because we can expect that the user doesn't rely on a
+	// not-changed eflags after the syscall. obviously, we need it on interrupts and thus we have
+	// to save/restore it when handling a signal.
+	uint32_t getFlags() const {
+		return intrptNo ? eflags : 0;
+	}
+	void setFlags(uint32_t flags) {
+		if(intrptNo)
+			eflags = flags;
+	}
+
+	uint32_t getIP() const {
+		return intrptNo ? eip : edx;
+	}
+	void setIP(uint32_t ip) {
+		if(intrptNo)
+			eip = ip;
+		else
+			edx = ip;
+	}
+
+	uint32_t getSP() const {
+		return intrptNo ? uesp : ecx;
+	}
+	void setSP(uint32_t sp) {
+		if(intrptNo)
+			uesp = sp;
+		else
+			ecx = sp;
+	}
+
 	/* general purpose registers */
 	uint32_t edi;
 	uint32_t esi;
@@ -41,6 +76,7 @@ struct IntrptStackFrame {
 	uint32_t eax;
 	/* interrupt-number */
 	uint32_t intrptNo;
+private:
 	/* error-code (for exceptions); default = 0 */
 	uint32_t errorCode;
 	/* pushed by the CPU */
@@ -50,7 +86,9 @@ struct IntrptStackFrame {
 	/* if we come from user-mode this fields will be present and will be restored with iret */
 	uint32_t uesp;
 	uint32_t uss;
-	/* available when interrupting an vm86-task */
+} A_PACKED;
+
+struct VM86IntrptStackFrame : public IntrptStackFrame {
 	uint16_t vm86es;
 	uint16_t : 16;
 	uint16_t vm86ds;

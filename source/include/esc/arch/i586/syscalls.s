@@ -19,6 +19,8 @@
 
 # macros for the different syscall-types, depending on the argument-number
 
+.set	ACKSIG_IRQ,		49
+
 .macro SYSC_DEBUG name
 .global \name
 .type \name, @function

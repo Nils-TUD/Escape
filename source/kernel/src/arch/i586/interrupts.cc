@@ -91,16 +91,17 @@ const Interrupts::Interrupt Interrupts::intrptList[] = {
 	/* 0x2B: -- */					{NULL,			"Unknown",				0},
 	/* 0x2C: IRQ_MOUSE */			{irqDefault,	"Mouse",				SIG_INTRPT_MOUSE},
 	/* 0x2D: -- */					{NULL,			"Unknown",				0},
-	/* 0x2C: IRQ_ATA1 */			{irqDefault,	"ATA1",					SIG_INTRPT_ATA1},
-	/* 0x2C: IRQ_ATA2 */			{irqDefault,	"ATA2",					SIG_INTRPT_ATA2},
+	/* 0x2E: IRQ_ATA1 */			{irqDefault,	"ATA1",					SIG_INTRPT_ATA1},
+	/* 0x2F: IRQ_ATA2 */			{irqDefault,	"ATA2",					SIG_INTRPT_ATA2},
 	/* 0x30: debug */				{debug,			"Debug-Call",			0},
-	/* 0x31: IPI_WORK */			{ipiWork,		"Work IPI",				0},
-	/* 0x32: IPI_TERM */			{ipiTerm,		"Term IPI",				0},
-	/* 0x33: IPI_FLUSH_TLB */		{exFatal,		"Flush TLB IPI",		0},	/* not handled here */
-	/* 0x34: IPI_WAIT */			{exFatal,		"",						0},
-	/* 0x35: IPI_HALT */			{exFatal,		"",						0},
-	/* 0x36: IPI_FLUSH_TLB */		{exFatal,		"",						0},
-	/* 0x37: isrNull */				{exFatal,		"",						0},
+	/* 0x31: ack-signal */			{Syscalls::handle,"Ack-Signal",			0},
+	/* 0x32: IPI_WORK */			{ipiWork,		"Work IPI",				0},
+	/* 0x33: IPI_TERM */			{ipiTerm,		"Term IPI",				0},
+	/* 0x34: IPI_FLUSH_TLB */		{exFatal,		"Flush TLB IPI",		0},	/* not handled here */
+	/* 0x35: IPI_WAIT */			{exFatal,		"",						0},
+	/* 0x36: IPI_HALT */			{exFatal,		"",						0},
+	/* 0x37: IPI_FLUSH_TLB */		{exFatal,		"",						0},
+	/* 0x38: isrNull */				{exFatal,		"",						0},
 };
 
 size_t Interrupts::intrptCount = 0;

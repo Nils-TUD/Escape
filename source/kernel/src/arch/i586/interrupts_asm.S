@@ -105,10 +105,11 @@ BUILD_DEF_ISR 47
 BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 BUILD_DEF_ISR 50
+BUILD_DEF_ISR 51
 
 # IPI: flush TLB
-.global isr51
-isr51:
+.global isr52
+isr52:
 	pusha
 	# flush TLB
 	mov		%cr3,%eax
@@ -118,8 +119,8 @@ isr51:
 	iret
 
 # IPI: wait
-.global isr52
-isr52:
+.global isr53
+isr53:
 	pusha
 	# tell the CPU that requested the wait that we're waiting
 	lock
@@ -136,8 +137,8 @@ isr52:
 	iret
 
 # IPI: halt
-.global isr53
-isr53:
+.global isr54
+isr54:
 	# tell the CPU that requested the halt that we're halting
 	lock
 	add		$1,(halting)
@@ -148,8 +149,8 @@ isr53:
 	jmp		1b
 
 # IPI: flush TLB ack
-.global isr54
-isr54:
+.global isr55
+isr55:
 	pusha
 	# flush TLB
 	mov		%cr3,%eax
@@ -167,7 +168,7 @@ isr54:
 isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	pushl	$0						# error-code (no error here)
-	pushl	$55						# the interrupt-number
+	pushl	$56						# the interrupt-number
 	jmp		isrCommon
 
 # syscall

@@ -77,8 +77,10 @@ threadExit:
 
 # all signal-handler return to this "function"
 sigRetFunc:
+	# we have to use int instead of sysenter here because sysexit does not restore ecx,edx and eflags.
+	# so, if we have started the signal during an interrupt/exception and were thus not prepared for
+	# loosing one of those, we would get into trouble.
 	mov		$SYSCALL_ACKSIG,%eax
-	mov		%esp,%ecx
-	sysenter
+	int		$ACKSIG_IRQ
 	# never reached
 #endif

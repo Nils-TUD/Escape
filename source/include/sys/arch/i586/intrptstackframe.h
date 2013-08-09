@@ -37,8 +37,10 @@ public:
 	// we don't need eflags on sysenter because we can expect that the user doesn't rely on a
 	// not-changed eflags after the syscall. obviously, we need it on interrupts and thus we have
 	// to save/restore it when handling a signal.
+	// note that it has to be 1 << 9 (IF set) because if we handle the signal during a syscall and
+	// restore it with int/iret we have to have a valid eflags value. So, at least IF has to be set.
 	uint32_t getFlags() const {
-		return intrptNo ? eflags : 0;
+		return intrptNo ? eflags : (1 << 9);
 	}
 	void setFlags(uint32_t flags) {
 		if(intrptNo)

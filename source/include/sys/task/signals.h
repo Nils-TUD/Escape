@@ -79,17 +79,6 @@ private:
 		size_t count;
 	};
 
-	struct Data {
-		/* list of pending signals */
-		PendingQueue pending;
-		/* signal handler */
-		handler_func handler[SIG_COUNT];
-		/* the signal that the thread is currently handling (if > 0) */
-		int currentSignal;
-		/* the signal that the thread should handle now */
-		int deliveredSignal;
-	};
-
 	static const size_t SIGNAL_COUNT	= 8192;
 
 public:
@@ -219,9 +208,9 @@ public:
 	static void print(OStream &os);
 
 private:
-	static bool add(Data *s,int sig);
-	static void removePending(Data *s,int sig);
-	static Data *getThread(tid_t tid,bool create);
+	static bool add(Thread *t,int sig);
+	static void removePending(Thread *t,int sig);
+	static Thread *getThread(tid_t tid,bool create);
 
 	static klock_t lock;
 	static size_t pendingSignals;

@@ -49,16 +49,16 @@ void Signals::init() {
 int Signals::setHandler(tid_t tid,int signal,handler_func func,handler_func *old) {
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
 	SpinLock::acquire(&lock);
-	Data *s = getThread(tid,true);
-	if(!s) {
+	Thread *t = getThread(tid,true);
+	if(!t) {
 		SpinLock::release(&lock);
 		return -ENOMEM;
 	}
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
-	*old = s->handler[signal];
-	s->handler[signal] = func;
-	removePending(s,signal);
+	*old = t->sigHandler[signal];
+	t->sigHandler[signal] = func;
+	removePending(t,signal);
 	SpinLock::release(&lock);
 	return 0;
 }
@@ -67,11 +67,11 @@ Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
 	handler_func old = NULL;
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
 	SpinLock::acquire(&lock);
-	Data *s = getThread(tid,false);
-	if(s) {
-		old = s->handler[signal];
-		s->handler[signal] = NULL;
-		removePending(s,signal);
+	Thread *t = getThread(tid,false);
+	if(t) {
+		old = t->sigHandler[signal];
+		t->sigHandler[signal] = NULL;
+		removePending(t,signal);
 	}
 	SpinLock::release(&lock);
 	return old;
@@ -79,25 +79,24 @@ Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
 
 void Signals::removeHandlerFor(tid_t tid) {
 	SpinLock::acquire(&lock);
-	Data *s = getThread(tid,false);
-	if(s) {
-		Thread *t = Thread::getById(tid);
+	Thread *t = getThread(tid,false);
+	if(t) {
 		/* remove all pending */
-		removePending(s,0);
+		removePending(t,0);
 		sigThreads.remove(t);
-		Cache::free(s);
-		t->signals = NULL;
+		Cache::free(t->sigHandler);
+		t->sigHandler = NULL;
 	}
 	SpinLock::release(&lock);
 }
 
 void Signals::cloneHandler(tid_t parent,tid_t child) {
 	SpinLock::acquire(&lock);
-	Data *p = getThread(parent,false);
+	Thread *p = getThread(parent,false);
 	if(p) {
-		Data *c = getThread(child,true);
+		Thread *c = getThread(child,true);
 		if(c)
-			memcpy(c->handler,p->handler,sizeof(p->handler));
+			memcpy(c->sigHandler,p->sigHandler,SIG_COUNT * sizeof(handler_func));
 	}
 	SpinLock::release(&lock);
 }
@@ -105,11 +104,9 @@ void Signals::cloneHandler(tid_t parent,tid_t child) {
 bool Signals::hasSignalFor(tid_t tid) {
 	bool res = false;
 	SpinLock::acquire(&lock);
-	Data *s = getThread(tid,false);
-	if(s && !s->currentSignal && (s->deliveredSignal || s->pending.count > 0)) {
-		Thread *t = Thread::getById(tid);
+	Thread *t = getThread(tid,false);
+	if(t && !t->currentSignal && (t->deliveredSignal || t->pending.count > 0))
 		res = !t->isIgnoringSigs();
-	}
 	SpinLock::release(&lock);
 	return res;
 }
@@ -118,37 +115,35 @@ int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 	Thread *t = Thread::getById(tid);
 	int res = SIG_CHECK_NO;
 	SpinLock::acquire(&lock);
-	Data *s = t->signals;
 	assert(t->isIgnoringSigs() == 0);
-	if(s && s->deliveredSignal && !s->currentSignal) {
-		*handler = s->handler[s->deliveredSignal];
-		*sig = s->deliveredSignal;
+	if(t && t->deliveredSignal && !t->currentSignal) {
+		*handler = t->sigHandler[t->deliveredSignal];
+		*sig = t->deliveredSignal;
 		res = SIG_CHECK_CUR;
-		s->deliveredSignal = 0;
-		s->currentSignal = *sig;
+		t->deliveredSignal = 0;
+		t->currentSignal = *sig;
 	}
-
+	
 	if(res == SIG_CHECK_NO && pendingSignals > 0) {
 		for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
 			t = *it;
-			s = t->signals;
-			if(!t->isIgnoringSigs() && !s->deliveredSignal && !s->currentSignal && s->pending.count > 0) {
-				PendingSig *psig = s->pending.first;
+			if(!t->isIgnoringSigs() && !t->deliveredSignal && !t->currentSignal && t->pending.count > 0) {
+				PendingSig *psig = t->pending.first;
 				if(t->getTid() == tid) {
-					*handler = s->handler[psig->sig];
+					*handler = t->sigHandler[psig->sig];
 					*sig = psig->sig;
-					s->currentSignal = psig->sig;
+					t->currentSignal = psig->sig;
 					res = SIG_CHECK_CUR;
 				}
 				else {
-					s->deliveredSignal = psig->sig;
+					t->deliveredSignal = psig->sig;
 					res = SIG_CHECK_OTHER;
 				}
 				/* remove signal */
-				s->pending.first = psig->next;
-				if(s->pending.last == psig)
-					s->pending.last = NULL;
-				s->pending.count--;
+				t->pending.first = psig->next;
+				if(t->pending.last == psig)
+					t->pending.last = NULL;
+				t->pending.count--;
 				pendingSignals--;
 				/* put on freelist */
 				psig->next = freelist;
@@ -167,10 +162,10 @@ int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 bool Signals::addSignalFor(tid_t tid,int signal) {
 	bool res = false;
 	SpinLock::acquire(&lock);
-	Data *s = getThread(tid,false);
-	if(s && s->handler[signal]) {
-		if(s->handler[signal] != SIG_IGN)
-			add(s,signal);
+	Thread *t = getThread(tid,false);
+	if(t && t->sigHandler[signal]) {
+		if(t->sigHandler[signal] != SIG_IGN)
+			add(t,signal);
 		res = true;
 	}
 	SpinLock::release(&lock);
@@ -181,8 +176,8 @@ bool Signals::addSignal(int signal) {
 	bool res = false;
 	SpinLock::acquire(&lock);
 	for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
-		if((*it)->signals->handler[signal] && (*it)->signals->handler[signal] != SIG_IGN) {
-			add((*it)->signals,signal);
+		if((*it)->sigHandler[signal] && (*it)->sigHandler[signal] != SIG_IGN) {
+			add(*it,signal);
 			res = true;
 		}
 	}
@@ -192,12 +187,12 @@ bool Signals::addSignal(int signal) {
 
 int Signals::ackHandling(tid_t tid) {
 	SpinLock::acquire(&lock);
-	Data *s = getThread(tid,false);
-	assert(s != NULL);
-	vassert(s->currentSignal != 0,"No signal handling");
-	vassert(canHandle(s->currentSignal),"Unable to handle signal %d",s->currentSignal);
-	int res = s->currentSignal;
-	s->currentSignal = 0;
+	Thread *t = getThread(tid,false);
+	assert(t != NULL);
+	vassert(t->currentSignal != 0,"No signal handling");
+	vassert(canHandle(t->currentSignal),"Unable to handle signal %d",t->currentSignal);
+	int res = t->currentSignal;
+	t->currentSignal = 0;
 	SpinLock::release(&lock);
 	return res;
 }
@@ -234,13 +229,13 @@ void Signals::print(OStream &os) {
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		const Thread *t = *it;
 		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
-		os.writef("\t\tpending: %zu\n",t->signals->pending.count);
-		os.writef("\t\tdeliver: %d\n",t->signals->deliveredSignal);
-		os.writef("\t\tcurrent: %d\n",t->signals->currentSignal);
+		os.writef("\t\tpending: %zu\n",t->pending.count);
+		os.writef("\t\tdeliver: %d\n",t->deliveredSignal);
+		os.writef("\t\tcurrent: %d\n",t->currentSignal);
 		os.writef("\t\thandler:\n");
 		for(size_t i = 0; i < SIG_COUNT; i++) {
-			if(t->signals->handler[i])
-				os.writef("\t\t\t%s: handler=%p\n",getName(i),t->signals->handler[i]);
+			if(t->sigHandler[i])
+				os.writef("\t\t\t%s: handler=%p\n",getName(i),t->sigHandler[i]);
 		}
 	}
 }
@@ -249,14 +244,14 @@ size_t Signals::getHandlerCount() {
 	size_t c = 0;
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		for(size_t i = 0; i < SIG_COUNT; i++) {
-			if((*it)->signals->handler[i])
+			if((*it)->sigHandler[i])
 				c++;
 		}
 	}
 	return c;
 }
 
-bool Signals::add(Data *s,int sig) {
+bool Signals::add(Thread *t,int sig) {
 	PendingSig *psig = freelist;
 	if(psig == NULL)
 		return false;
@@ -267,35 +262,35 @@ bool Signals::add(Data *s,int sig) {
 	psig->sig = sig;
 	psig->next = NULL;
 	/* append */
-	if(s->pending.last)
-		s->pending.last->next = psig;
+	if(t->pending.last)
+		t->pending.last->next = psig;
 	else
-		s->pending.first = psig;
-	s->pending.last = psig;
-	s->pending.count++;
+		t->pending.first = psig;
+	t->pending.last = psig;
+	t->pending.count++;
 	pendingSignals++;
 	return true;
 }
 
-void Signals::removePending(Data *s,int sig) {
-	if(s->deliveredSignal == sig)
-		s->deliveredSignal = 0;
+void Signals::removePending(Thread *t,int sig) {
+	if(t->deliveredSignal == sig)
+		t->deliveredSignal = 0;
 	PendingSig *prev = NULL;
-	for(PendingSig *ps = s->pending.first; ps != NULL; ) {
+	for(PendingSig *ps = t->pending.first; ps != NULL; ) {
 		if(sig == 0 || ps->sig == sig) {
 			PendingSig *tps = ps->next;
 			ps->next = freelist;
 			freelist = ps;
 			ps = tps;
-			assert(pendingSignals > 0 && s->pending.count > 0);
+			assert(pendingSignals > 0 && t->pending.count > 0);
 			if(prev)
 				prev->next = tps;
 			else
-				s->pending.first = tps;
+				t->pending.first = tps;
 			if(!tps)
-				s->pending.last = prev;
+				t->pending.last = prev;
 			pendingSignals--;
-			s->pending.count--;
+			t->pending.count--;
 		}
 		else {
 			prev = ps;
@@ -304,19 +299,19 @@ void Signals::removePending(Data *s,int sig) {
 	}
 }
 
-Signals::Data *Signals::getThread(tid_t tid,bool create) {
+Thread *Signals::getThread(tid_t tid,bool create) {
 	Thread *t = Thread::getById(tid);
-	if(t->signals == NULL) {
+	if(t->sigHandler == NULL) {
 		if(!create)
 			return NULL;
-		t->signals = (Data*)Cache::calloc(1,sizeof(Data));
-		if(!t->signals)
+		t->sigHandler = (handler_func*)Cache::calloc(SIG_COUNT,sizeof(handler_func));
+		if(!t->sigHandler)
 			return NULL;
 		if(!sigThreads.append(t)) {
-			Cache::free(t->signals);
-			t->signals = NULL;
+			Cache::free(t->sigHandler);
+			t->sigHandler = NULL;
 			return NULL;
 		}
 	}
-	return t->signals;
+	return t;
 }

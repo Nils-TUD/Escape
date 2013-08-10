@@ -645,7 +645,12 @@ protected:
 	/* the process we belong to */
 	Proc *proc;
 	/* the signal-data, managed by the signals-module */
-	Signals::Data *signals;
+	Signals::handler_func *sigHandler;
+	/* list of pending signals */
+	Signals::PendingQueue pending;
+	/* the signal that the thread is currently handling (if > 0) */
+	int currentSignal;
+	int deliveredSignal;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */

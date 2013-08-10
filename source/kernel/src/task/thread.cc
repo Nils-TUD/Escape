@@ -91,7 +91,12 @@ void ThreadBase::initProps() {
 	events = 0;
 	waits = NULL;
 	ignoreSignals = 0;
-	signals = NULL;
+	sigHandler = NULL;
+	currentSignal = 0;
+	deliveredSignal = 0;
+	pending.count = 0;
+	pending.first = NULL;
+	pending.last = NULL;
 	intrptLevel = 0;
 	cpu = 0;
 	stats.timeslice = RUNTIME_UPDATE_INTVAL * 1000;

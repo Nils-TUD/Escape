@@ -609,15 +609,11 @@ void VirtMem::doRemove(VMRegion *vm) {
 				/* we can free the frame if there is no other user */
 				addShared(-CopyOnWrite::remove(frameNo,&foundOther));
 				freeFrame = !foundOther;
-				/* if we'll free the frame with unmap we will substract 1 too much because
-				 * we don't own the frame */
-				if(freeFrame)
-					addOwn(1);
 			}
 			if(vm->reg->getPageFlags(i) & PF_SWAPPED)
 				addSwap(-1);
 			pts = getPageDir()->unmap(virt,1,freeFrame);
-			if(freeFrame) {
+			if(freeFrame && !(vm->reg->getPageFlags(i) & (PF_COPYONWRITE | PF_DEMANDLOAD))) {
 				if(vm->reg->getFlags() & RF_SHAREABLE)
 					addShared(-1);
 				else
@@ -717,6 +713,10 @@ errProc:
 
 int VirtMem::cloneAll(VirtMem *dst) {
 	Thread *t = Thread::getRunning();
+	VMRegion *vm,*nvm;
+	Region *reg;
+	size_t j;
+	uintptr_t virt;
 	assert(pid == t->getProc()->getPid());
 
 	if(!acquire())
@@ -732,41 +732,38 @@ int VirtMem::cloneAll(VirtMem *dst) {
 	dst->dataAddr = dataAddr;
 
 	VMTree::addTree(dst,&dst->regtree);
-	for(VMRegion *vm = regtree.first(); vm != NULL; vm = vm->next) {
+	for(vm = regtree.first(); vm != NULL; vm = vm->next) {
 		/* just clone the tls- and stack-region of the current thread */
 		if((!(vm->reg->getFlags() & RF_STACK) || t->hasStackRegion(vm)) &&
 				(!(vm->reg->getFlags() & RF_TLS) || t->getTLSRegion() == vm)) {
-			VMRegion *nvm = dst->regtree.add(vm->reg,vm->virt);
-			if(nvm == NULL)
-				goto error;
 			vm->reg->acquire();
 			/* TODO ?? better don't share the file; they may have to read in parallel */
 			if(vm->reg->getFlags() & RF_SHAREABLE) {
 				vm->reg->addTo(dst);
-				nvm->reg = vm->reg;
+				reg = vm->reg;
 			}
 			else {
-				nvm->reg = CLONE(Region,*vm->reg,dst);
-				if(nvm->reg == NULL) {
-					vm->reg->release();
-					goto error;
-				}
+				reg = CLONE(Region,*vm->reg,dst);
+				if(reg == NULL)
+					goto errorRel;
 			}
+
+			nvm = dst->regtree.add(reg,vm->virt);
+			if(nvm == NULL)
+				goto errorReg;
 
 			/* remove regions in the free area from the free-map */
 			if(vm->virt >= FREE_AREA_BEGIN) {
 				if(!dst->freemap.allocateAt(nvm->virt,ROUND_PAGE_UP(nvm->reg->getByteCount())))
-					goto error;
+					goto errorRem;
 			}
 
 			/* now copy the pages */
 			size_t pageCount = BYTES_2_PAGES(nvm->reg->getByteCount());
 			ssize_t res = getPageDir()->clonePages(dst->getPageDir(),vm->virt,nvm->virt,pageCount,
 					vm->reg->getFlags() & RF_SHAREABLE);
-			if(res < 0) {
-				vm->reg->release();
-				goto error;
-			}
+			if(res < 0)
+				goto errorFreeArea;
 			dst->addOwn(res);
 
 			/* update stats */
@@ -777,31 +774,41 @@ int VirtMem::cloneAll(VirtMem *dst) {
 			}
 			/* add frames to copy-on-write, if not shared */
 			else {
-				uintptr_t virt = nvm->virt;
-				for(size_t j = 0; j < pageCount; j++) {
+				virt = nvm->virt;
+				for(j = 0; j < pageCount; j++) {
 					if(vm->reg->getPageFlags(j) & PF_SWAPPED)
 						dst->addSwap(1);
 					/* not when demand-load or swapping is outstanding since we've not loaded it
 					 * from disk yet */
 					else if(!(vm->reg->getPageFlags(j) & (PF_DEMANDLOAD | PF_SWAPPED))) {
+						bool marked = false;
 						frameno_t frameNo = getPageDir()->getFrameNo(virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->getPageFlags(j) & PF_COPYONWRITE)) {
-							vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) | PF_COPYONWRITE);
 							if(!CopyOnWrite::add(frameNo)) {
-								vm->reg->release();
-								goto error;
+								Log::get().writef("FAILED1\n");
+								goto errorPages;
 							}
+							vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) | PF_COPYONWRITE);
 							addShared(1);
 							addOwn(-1);
+							marked = true;
 						}
 						/* do it always for the child */
 						nvm->reg->setPageFlags(j,nvm->reg->getPageFlags(j) | PF_COPYONWRITE);
-						if(!CopyOnWrite::add(frameNo)) {
-							vm->reg->release();
-							goto error;
-						}
 						dst->addShared(1);
+						if(!CopyOnWrite::add(frameNo)) {
+							Log::get().writef("FAILED2\n");
+							if(marked) {
+								bool other;
+								CopyOnWrite::remove(frameNo,&other);
+								if(!other)
+									vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) & ~PF_COPYONWRITE);
+								addShared(-1);
+								addOwn(1);
+							}
+							goto errorPages;
+						}
 					}
 					virt += PAGE_SIZE;
 				}
@@ -813,7 +820,37 @@ int VirtMem::cloneAll(VirtMem *dst) {
 	release();
 	return 0;
 
-error:
+errorPages:
+	/* undo the stats-change for this and remove the frames from copy-on-write */
+	for(; j-- > 0; ) {
+		virt -= PAGE_SIZE;
+		if(!(vm->reg->getPageFlags(j) & (PF_DEMANDLOAD | PF_SWAPPED))) {
+			bool other;
+			frameno_t frameNo = getPageDir()->getFrameNo(virt);
+			CopyOnWrite::remove(frameNo,&other);
+			if(vm->reg->getPageFlags(j) & PF_COPYONWRITE) {
+				CopyOnWrite::remove(frameNo,&other);
+				/* if there are no other users of this frame, it's our own and we don't have to
+				 * mark it as copy-on-write anymore */
+				if(!other)
+					vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) & ~PF_COPYONWRITE);
+				addShared(-1);
+				addOwn(1);
+			}
+		}
+	}
+errorFreeArea:
+	if(vm->virt >= FREE_AREA_BEGIN)
+		dst->freemap.free(nvm->virt,ROUND_PAGE_UP(nvm->reg->getByteCount()));
+errorRem:
+	dst->regtree.remove(nvm);
+errorReg:
+	if(vm->reg->getFlags() & RF_SHAREABLE)
+		vm->reg->remFrom(dst);
+	else
+		delete reg;
+errorRel:
+	vm->reg->release();
 	dst->release();
 	release();
 	/* Note that vmm_remove() will undo the cow just for the child; but thats ok since

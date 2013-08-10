@@ -159,7 +159,7 @@ void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swappe
 		*own = p->virtmem.getOwnFrames();
 		*shared = p->virtmem.getSharedFrames();
 		*swapped = p->virtmem.getSwappedFrames();
-		*own = *own + p->getPageDir()->getPTableCount() + p->getKMemUsage();
+		*own = *own + p->getKMemUsage();
 		release(p,PLOCK_REGIONS);
 	}
 }
@@ -763,7 +763,8 @@ void ProcBase::print(OStream &os) const {
 	os.writef("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);
 	os.writef("\tExitInfo: code=%u, signal=%u\n",stats.exitCode,stats.exitSignal);
 	os.writef("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",
-	           virtmem.getPeakOwnFrames(),virtmem.getPeakSharedFrames(),virtmem.getSwapCount());
+	           virtmem.getPeakOwnFrames() + getKMemUsage(),
+	           virtmem.getPeakSharedFrames(),virtmem.getSwapCount());
 	os.writef("\tRunStats: runtime=%lu, scheds=%lu, syscalls=%lu\n",
 	           stats.totalRuntime,stats.totalScheds,stats.totalSyscalls);
 	os.pushIndent();

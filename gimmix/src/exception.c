@@ -89,7 +89,7 @@ static const char *trapNames[] = {
 	/* 3A */ "Term2 transmitter",
 	/* 3B */ "Term3 receiver",
 	/* 3C */ "Term3 transmitter",
-	/* 3D */ "???",
+	/* 3D */ "Keyboard",
 	/* 3E */ "???",
 	/* 3F */ "???",
 };

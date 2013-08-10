@@ -10,6 +10,7 @@
 #include "cli/console.h"
 #include "cli/lang/specreg.h"
 #include "cli/lang/idesc.h"
+#include "cli/lang/symmap.h"
 #include "core/cpu.h"
 #include "core/register.h"
 #include "core/mmu.h"
@@ -200,8 +201,10 @@ void cli_cmd_effects(size_t argc,const sASTNode **argv) {
 	const sInstrArgs *args = cpu_getCurInstrArgs();
 	const sInstrDesc *desc = idesc_get(OPCODE(raw));
 
+	octa funcStart = 0;
+	const char *name = symmap_getNearestFuncName(oldPC,&funcStart);
 	if(beforeExecCalled) {
-		mprintf("%016OX: %-23s: ",oldPC,idesc_disasm(oldPC,raw,false));
+		mprintf("%016OX <%-16.16s>: %-23s: ",oldPC,name,idesc_disasm(oldPC,raw,false));
 		if(OPCODE(raw) == RESUME) {
 			// RESUME itself can never affect the register-stack or set bits in rA
 			printEffects(desc->effect,&instrArgs);
@@ -217,17 +220,17 @@ void cli_cmd_effects(size_t argc,const sASTNode **argv) {
 	// if beforeExec has not been called we got an exception before that. so we don't know anything
 	// about the current instruction
 	else
-		mprintf("%016OX: %-23s: ???",oldPC,"???");
+		mprintf("%016OX <%-16.16s>: %-23s: ???",oldPC,name,"???");
 
 	if(reg_getSpecial(rQ) != oldrQ)
 		mprintf(", rQ=#%OX=%s",reg_getSpecial(rQ),sreg_explain(rQ,reg_getSpecial(rQ)));
 	if(exNo != EX_NONE) {
 		int trap = exNo == EX_DYNAMIC_TRAP || exNo == EX_FORCED_TRAP;
-		mprintf("\n%43s%s -> #%OX","",ex_toString(exNo,exBits),cpu_getPC());
-		mprintf("\n%43srW=#%OX, rX=#%OX, rY=#%OX, rZ=#%OX","",
+		mprintf("\n%62s%s -> #%OX","",ex_toString(exNo,exBits),cpu_getPC());
+		mprintf("\n%62srW=#%OX, rX=#%OX, rY=#%OX, rZ=#%OX","",
 			reg_getSpecial(trap ? rWW : rW),reg_getSpecial(trap ? rXX : rX),
 			reg_getSpecial(trap ? rYY : rY),reg_getSpecial(trap ? rZZ : rZ));
-		mprintf("\n%43srB=#%OX, $255=#%OX","",
+		mprintf("\n%62srB=#%OX, $255=#%OX","",
 			reg_getSpecial(trap ? rBB : rB),reg_get(255));
 	}
 	else if(beforeExecCalled && OPCODE(raw) == TRAP && args->x == 0 && args->y == 0 && args->z == 0)
@@ -477,14 +480,16 @@ static void traceResume(const sInstrArgs *args,int enabledEvents) {
 	// display translation-effects
 	if(ropcode == RESUME_TRANS) {
 		sVirtTransReg vtr = mmu_unpackrV(reg_getSpecial(rV));
-		mprintf("\n%43s%cTC[#%OX] = #%OX","",OPCODE(rx) == SWYM ? 'I' : 'D',
+		mprintf("\n%62s%cTC[#%OX] = #%OX","",OPCODE(rx) == SWYM ? 'I' : 'D',
 				tc_addrToKey(oldrYY,vtr.s,vtr.n),tc_pteToTrans(oldrZZ,vtr.s));
 	}
 
 	// display the effects of the instruction as if it has been inserted into the instruction-stream
 	if(ropcode != RESUME_TRANS || OPCODE(rx) != SWYM) {
+	    octa funcStart = 0;
+	    const char *fname = symmap_getNearestFuncName(rw - sizeof(tetra),&funcStart);
 		mprintf("\n");
-		mprintf("%016OX: %-23s: ",rw - sizeof(tetra),disasm);
+		mprintf("%016OX <%-16.16s>: %-23s: ",rw - sizeof(tetra),fname,disasm);
 		switch(ropcode) {
 			case RESUME_SET:
 				mprintf("$%d=%c[%d] = #%OX",dst,dst >= (int)oldrG ? 'g' : 'l',rno,rz);
@@ -550,11 +555,11 @@ static void printEvents(int enabledEvents) {
 static void printCacheEvent(sInstrEvent *ev) {
 	const sCache *c = cache_getCache(ev->d.cache.cache);
 	if(ev->d.cache.fill) {
-		mprintf("%s: Filling m[#%OX .. #%OX]\n%43s",c->name,ev->d.cache.addr,
+		mprintf("%s: Filling m[#%OX .. #%OX]\n%62s",c->name,ev->d.cache.addr,
 				ev->d.cache.addr + c->blockSize - 1,"");
 	}
 	else {
-		mprintf("%s: Flushing m[#%OX .. #%OX]\n%43s",c->name,ev->d.cache.addr,
+		mprintf("%s: Flushing m[#%OX .. #%OX]\n%62s",c->name,ev->d.cache.addr,
 				ev->d.cache.addr + c->blockSize - 1,"");
 	}
 }
@@ -562,11 +567,11 @@ static void printCacheEvent(sInstrEvent *ev) {
 static void printDevEvent(sInstrEvent *ev) {
 	const sDevice *dev = bus_getDevByAddr(ev->d.dev.addr);
 	if(ev->d.dev.load) {
-		mprintf("Device[%s]: m8[#%016OX] -> #%016OX\n%43s",dev->name,ev->d.dev.addr,
+		mprintf("Device[%s]: m8[#%016OX] -> #%016OX\n%62s",dev->name,ev->d.dev.addr,
 				ev->d.dev.value,"");
 	}
 	else {
-		mprintf("Device[%s]: #%016OX -> m8[#%016OX]\n%43s",dev->name,ev->d.dev.value,
+		mprintf("Device[%s]: #%016OX -> m8[#%016OX]\n%62s",dev->name,ev->d.dev.value,
 				ev->d.dev.addr,"");
 	}
 }
@@ -582,19 +587,19 @@ static void printVatEvent(sInstrEvent *ev) {
 		mprintf(" -> #%OX",ev->d.vat.phys);
 	if(ev->d.vat.usedTC)
 		mprintf(" (used %s)",ev->d.vat.mode == MEM_EXEC ? "ITC" : "DTC");
-	mprintf("\n%43s","");
+	mprintf("\n%62s","");
 }
 
 static void printStackEvent(sInstrEvent *ev) {
 	if(ev->d.stack.load) {
 		mprintf("rS -= %d, ",sizeof(octa));
 		printRegStackLoc(ev->d.stack.type,ev->d.stack.index);
-		mprintf(" = M8[#%016OX] = #%OX\n%43s",ev->d.stack.addr,ev->d.stack.value,"");
+		mprintf(" = M8[#%016OX] = #%OX\n%62s",ev->d.stack.addr,ev->d.stack.value,"");
 	}
 	else {
 		mprintf("M8[#%016OX] = ",ev->d.stack.addr);
 		printRegStackLoc(ev->d.stack.type,ev->d.stack.index);
-		mprintf(" = #%OX, rS += %d\n%43s",ev->d.stack.value,sizeof(octa),"");
+		mprintf(" = #%OX, rS += %d\n%62s",ev->d.stack.value,sizeof(octa),"");
 	}
 }
 

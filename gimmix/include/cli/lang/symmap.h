@@ -7,19 +7,9 @@
 #define MAX_MAPS		4
 
 /**
- * one entry for the Function list.
+ * Get the function that is near the given address.
  */
-typedef struct tFN {
-	const char *name;
-	octa address;
-	struct tFN *next;
-	struct tFN *prev;
-} traceFunctionNode;
-
-/**
- * Append an Entry to the traceFunctionList
- */
-void symmap_append(traceFunctionNode* node);
+const char *symmap_getNearestFuncName(octa address,octa *nearest);
 
 /**
  * Get the Function name spezified by the given address. If there isn't a name, return "Unnamed"

@@ -121,16 +121,14 @@ void InterruptsBase::init() {
 
 void Interrupts::syscall(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
-	size_t level = t->pushIntrptLevel(stack);
-
+	t->pushIntrptLevel(stack);
 	t->getStats().syscalls++;
 	Syscalls::handle(t,stack);
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(level == 1)
+	if(t->hasSignalQuick())
 		UEnv::handleSignal(t,stack);
-
 	t->popIntrptLevel();
 }
 
@@ -154,7 +152,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(level == 1)
+	if(level == 1 && t->hasSignalQuick())
 		UEnv::handleSignal(t,stack);
 
 	t->popIntrptLevel();
@@ -235,21 +233,29 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
+	assert(t->getIntrptLevel() == 0);
+	bool res = false;
 	const Interrupt *intrpt = intrptList + stack->intrptNo;
-	if(intrpt->signal)
-		Signals::addSignal(intrpt->signal);
-	bool res = Timer::intrpt();
-	PIC::eoi(stack->intrptNo);
-	if(res) {
-		if(t->getIntrptLevel() == 0)
-			Thread::switchAway();
+	if(intrpt->signal) {
+		/* the idle-task HAS TO switch to another thread if he given somebody a signal. otherwise
+		 * we would wait for the next thread-switch (e.g. caused by a timer-irq). */
+		if(Signals::addSignal(intrpt->signal) & (t->getFlags() & T_IDLE))
+			res = true;
 	}
+	res |= Timer::intrpt();
+	PIC::eoi(stack->intrptNo);
+	if(res)
+		Thread::switchAway();
 }
 
 void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	assert(t->getIntrptLevel() == 0);
+	bool res = false;
 	const Interrupt *intrpt = intrptList + stack->intrptNo;
-	if(intrpt->signal)
-		Signals::addSignal(intrpt->signal);
+	if(intrpt->signal) {
+		if(Signals::addSignal(intrpt->signal) & (t->getFlags() & T_IDLE))
+			res = true;
+	}
 	PIC::eoi(stack->intrptNo);
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-device we would steal him the scancodes) */
@@ -260,6 +266,8 @@ void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
 			Console::start(NULL);
 	}
+	if(res)
+		Thread::switchAway();
 }
 
 void Interrupts::ipiWork(Thread *t,A_UNUSED IntrptStackFrame *stack) {

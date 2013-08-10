@@ -153,16 +153,15 @@ public:
 	static bool hasSignalFor(tid_t tid);
 
 	/**
-	 * Checks whether a signal should be handled. If the current thread has a signal, it returns
-	 * SIG_CHECK_CUR and sets *sig and *handler correspondingly. If another thread has a signal, it
-	 * delivers it and returns SIG_CHECK_OTHER. Otherwise, it returns SIG_CHECK_NO.
+	 * Checks whether the current thread should handle a signal. If so, it sets *sig and *handler
+	 * correspondingly.
 	 *
 	 * @param tid the thread-id of the current thread
 	 * @param sig will be set to the signal to handle, if the current thread has a signal
 	 * @param handler will be set to the handler, if the current thread has a signal
-	 * @return SIG_CHECK_* the result
+	 * @return true if there is a signal to handle
 	 */
-	static int checkAndStart(tid_t tid,int *sig,handler_func *handler);
+	static bool checkAndStart(tid_t tid,int *sig,handler_func *handler);
 
 	/**
 	 * Adds the given signal for the given thread
@@ -210,10 +209,10 @@ public:
 private:
 	static bool add(Thread *t,int sig);
 	static void removePending(Thread *t,int sig);
-	static Thread *getThread(tid_t tid,bool create);
+	static Thread *getThread(tid_t tid);
 
 	static klock_t lock;
-	static size_t pendingSignals;
+	static klock_t listLock;
 	static ISList<Thread*> sigThreads;
 	static PendingSig signals[SIGNAL_COUNT];
 	static PendingSig *freelist;

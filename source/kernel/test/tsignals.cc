@@ -76,40 +76,47 @@ static void test_setHandler() {
 	test_assertInt(Signals::setHandler(t2->getTid(),SIG_INTRPT_ATA1,(Signals::handler_func)0x123,&old),0);
 	test_caseSucceeded();
 
-	test_caseStart("Adding and handling a signal");
+	test_caseStart("Adding a signal for somebody else");
 	test_assertTrue(Signals::addSignal(SIG_INTRPT_ATA1));
 	test_assertTrue(Signals::hasSignalFor(t2->getTid()));
-	test_assertInt(Signals::checkAndStart(t2->getTid(),&sig,&handler),SIG_CHECK_CUR);
-	test_assertTrue(sig == SIG_INTRPT_ATA1);
-	test_assertTrue(handler == (Signals::handler_func)0x123);
-	test_assertTrue(Signals::ackHandling(t2->getTid()) == SIG_INTRPT_ATA1);
-	test_assertFalse(Signals::hasSignalFor(t2->getTid()));
 	test_caseSucceeded();
 
-	test_caseStart("Adding nested signals");
-	test_assertTrue(Signals::addSignal(SIG_INTRPT_ATA1));
-	test_assertTrue(Signals::hasSignalFor(t2->getTid()));
-	test_assertInt(Signals::checkAndStart(t2->getTid(),&sig,&handler),SIG_CHECK_CUR);
-	test_assertTrue(sig == SIG_INTRPT_ATA1);
-	test_assertTrue(handler == (Signals::handler_func)0x123);
-	test_assertTrue(Signals::addSignal(SIG_INTRPT_ATA1));
-	test_assertTrue(Signals::ackHandling(t2->getTid()) == SIG_INTRPT_ATA1);
-	test_assertTrue(Signals::hasSignalFor(t2->getTid()));
-	test_assertInt(Signals::checkAndStart(t2->getTid(),&sig,&handler),SIG_CHECK_CUR);
-	test_assertTrue(sig == SIG_INTRPT_ATA1);
-	test_assertTrue(handler == (Signals::handler_func)0x123);
-	test_assertTrue(Signals::ackHandling(t2->getTid()) == SIG_INTRPT_ATA1);
-	test_assertFalse(Signals::hasSignalFor(t2->getTid()));
+	test_caseStart("Adding a signal for us");
+	test_assertInt(Signals::setHandler(t1->getTid(),SIG_INTRPT_ATA2,(Signals::handler_func)0x456,&old),0);
+	test_assertTrue(Signals::addSignal(SIG_INTRPT_ATA2));
+	test_assertTrue(Signals::hasSignalFor(t1->getTid()));
+	test_assertTrue(Signals::checkAndStart(t1->getTid(),&sig,&handler));
+	test_assertTrue(sig == SIG_INTRPT_ATA2);
+	test_assertTrue(handler == (Signals::handler_func)0x456);
+	test_assertTrue(Signals::ackHandling(t1->getTid()) == sig);
+	test_assertFalse(Signals::hasSignalFor(t1->getTid()));
+	test_assertTrue(Signals::unsetHandler(t1->getTid(),SIG_INTRPT_ATA2) == (Signals::handler_func)0x456);
 	test_caseSucceeded();
 
-	test_caseStart("Adding signal for process");
+	test_caseStart("Adding signal for own process");
 	test_assertInt(Signals::setHandler(t1->getTid(),SIG_TERM,(Signals::handler_func)0x456,&old),0);
 	Proc::addSignalFor(t1->getProc()->getPid(),SIG_TERM);
 	test_assertTrue(Signals::hasSignalFor(t1->getTid()));
-	test_assertInt(Signals::checkAndStart(t1->getTid(),&sig,&handler),SIG_CHECK_CUR);
+	test_assertTrue(Signals::checkAndStart(t1->getTid(),&sig,&handler));
 	test_assertTrue(sig == SIG_TERM);
 	test_assertTrue(handler == (Signals::handler_func)0x456);
 	test_assertTrue(Signals::ackHandling(t1->getTid()) == sig);
+	test_assertFalse(Signals::hasSignalFor(t1->getTid()));
+	test_caseSucceeded();
+
+	test_caseStart("Adding nested signals");
+	test_assertTrue(Signals::addSignal(SIG_TERM));
+	test_assertTrue(Signals::hasSignalFor(t1->getTid()));
+	test_assertTrue(Signals::checkAndStart(t1->getTid(),&sig,&handler));
+	test_assertTrue(sig == SIG_TERM);
+	test_assertTrue(handler == (Signals::handler_func)0x456);
+	test_assertTrue(Signals::addSignal(SIG_TERM));
+	test_assertTrue(Signals::ackHandling(t1->getTid()) == SIG_TERM);
+	test_assertTrue(Signals::hasSignalFor(t1->getTid()));
+	test_assertTrue(Signals::checkAndStart(t1->getTid(),&sig,&handler));
+	test_assertTrue(sig == SIG_TERM);
+	test_assertTrue(handler == (Signals::handler_func)0x456);
+	test_assertTrue(Signals::ackHandling(t1->getTid()) == SIG_TERM);
 	test_assertFalse(Signals::hasSignalFor(t1->getTid()));
 	test_caseSucceeded();
 
@@ -138,7 +145,6 @@ static void test_setHandler() {
 	test_assertInt(Signals::setHandler(t1->getTid(),SIG_TERM,(Signals::handler_func)0x456,&old),0);
 	test_assertTrue(Signals::addSignal(SIG_TERM));
 	test_assertTrue(Signals::addSignal(SIG_TERM));
-	test_assertInt(Signals::checkAndStart(t2->getTid(),&sig,&handler),SIG_CHECK_OTHER);
 	test_assertTrue(Signals::hasSignalFor(t1->getTid()));
 	Signals::unsetHandler(t1->getTid(),SIG_TERM);
 	test_assertFalse(Signals::hasSignalFor(t1->getTid()));

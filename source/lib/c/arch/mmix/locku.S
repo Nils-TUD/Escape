@@ -21,13 +21,20 @@
 
 .global locku
 .global unlocku
+.extern yield
 
 # void locku(tULock *l)
 locku:
+	GET		$1,rJ
+1:
 	PUT		rP,0
-	SET		$1,1
-	CSWAP	$1,$0,0
-	BZ		$1,locku
+	SET		$2,1
+	CSWAP	$2,$0,0
+	BNZ		$2,1f
+	PUSHJ	$2,yield
+	JMP		1b
+1:
+	PUT		rJ,$1
 	POP		0,0
 
 # void unlocku(tULock *l)

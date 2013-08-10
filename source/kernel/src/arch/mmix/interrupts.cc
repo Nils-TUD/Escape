@@ -117,7 +117,7 @@ void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	stack[-14] = DIR_MAPPED_SPACE | (t->getKernelStack() * PAGE_SIZE);
 
 	/* only handle signals, if we come directly from user-mode */
-	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0)
+	if(t->hasSignalQuick() && ((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0))
 		UEnv::handleSignal(t,stack);
 	leaveKernel(t);
 }
@@ -134,7 +134,7 @@ bool Interrupts::dynTrap(IntrptStackFrame *stack,int irqNo) {
 
 	/* only handle signals, if we come directly from user-mode */
 	t = Thread::getRunning();
-	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0)
+	if(t->hasSignalQuick() && ((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0))
 		UEnv::handleSignal(t,stack);
 	leaveKernel(t);
 	return t->getFlags() & T_IDLE;
@@ -209,17 +209,16 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
+	else
+		Thread::switchAway();
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
-	Signals::addSignal(SIG_INTRPT_TIMER);
-	bool res = Timer::intrpt();
+	bool res = Signals::addSignal(SIG_INTRPT_TIMER);
+	res |= Timer::intrpt();
 	Timer::ackIntrpt();
-	if(res) {
-		Thread *t = Thread::getRunning();
-		if(t->getIntrptLevel() == 0)
-			Thread::switchAway();
-	}
+	if(res)
+		Thread::switchAway();
 }
 
 void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
@@ -228,6 +227,8 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
 	if(!Signals::addSignal(SIG_INTRPT_ATA1))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
+	else
+		Thread::switchAway();
 }
 
 void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {

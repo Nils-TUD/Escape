@@ -93,7 +93,6 @@ void ThreadBase::initProps() {
 	ignoreSignals = 0;
 	sigHandler = NULL;
 	currentSignal = 0;
-	deliveredSignal = 0;
 	pending.count = 0;
 	pending.first = NULL;
 	pending.last = NULL;

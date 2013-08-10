@@ -31,7 +31,7 @@
 #include <assert.h>
 
 klock_t Signals::lock;
-size_t Signals::pendingSignals = 0;
+klock_t Signals::listLock;
 ISList<Thread*> Signals::sigThreads;
 Signals::PendingSig Signals::signals[SIGNAL_COUNT];
 Signals::PendingSig *Signals::freelist;
@@ -48,12 +48,11 @@ void Signals::init() {
 
 int Signals::setHandler(tid_t tid,int signal,handler_func func,handler_func *old) {
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
-	SpinLock::acquire(&lock);
-	Thread *t = getThread(tid,true);
-	if(!t) {
-		SpinLock::release(&lock);
+	assert(tid == Thread::getRunning()->getTid());
+	Thread *t = getThread(tid);
+	if(!t)
 		return -ENOMEM;
-	}
+	SpinLock::acquire(&lock);
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
 	*old = t->sigHandler[signal];
@@ -67,8 +66,8 @@ Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
 	handler_func old = NULL;
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
 	SpinLock::acquire(&lock);
-	Thread *t = getThread(tid,false);
-	if(t) {
+	Thread *t = Thread::getById(tid);
+	if(t->sigHandler) {
 		old = t->sigHandler[signal];
 		t->sigHandler[signal] = NULL;
 		removePending(t,signal);
@@ -78,9 +77,10 @@ Signals::handler_func Signals::unsetHandler(tid_t tid,int signal) {
 }
 
 void Signals::removeHandlerFor(tid_t tid) {
+	SpinLock::acquire(&listLock);
 	SpinLock::acquire(&lock);
-	Thread *t = getThread(tid,false);
-	if(t) {
+	Thread *t = Thread::getById(tid);
+	if(t->sigHandler) {
 		/* remove all pending */
 		removePending(t,0);
 		sigThreads.remove(t);
@@ -88,106 +88,95 @@ void Signals::removeHandlerFor(tid_t tid) {
 		t->sigHandler = NULL;
 	}
 	SpinLock::release(&lock);
+	SpinLock::release(&listLock);
 }
 
 void Signals::cloneHandler(tid_t parent,tid_t child) {
-	SpinLock::acquire(&lock);
-	Thread *p = getThread(parent,false);
-	if(p) {
-		Thread *c = getThread(child,true);
-		if(c)
+	Thread *p = Thread::getById(parent);
+	if(p->sigHandler) {
+		Thread *c = getThread(child);
+		if(c) {
+			SpinLock::acquire(&lock);
 			memcpy(c->sigHandler,p->sigHandler,SIG_COUNT * sizeof(handler_func));
+			SpinLock::release(&lock);
+		}
 	}
-	SpinLock::release(&lock);
 }
 
 bool Signals::hasSignalFor(tid_t tid) {
 	bool res = false;
 	SpinLock::acquire(&lock);
-	Thread *t = getThread(tid,false);
-	if(t && !t->currentSignal && (t->deliveredSignal || t->pending.count > 0))
+	Thread *t = Thread::getById(tid);
+	if(t->sigHandler && !t->currentSignal && t->pending.count > 0)
 		res = !t->isIgnoringSigs();
 	SpinLock::release(&lock);
 	return res;
 }
 
-int Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
-	Thread *t = Thread::getById(tid);
-	int res = SIG_CHECK_NO;
-	SpinLock::acquire(&lock);
-	assert(t->isIgnoringSigs() == 0);
-	if(t && t->deliveredSignal && !t->currentSignal) {
-		*handler = t->sigHandler[t->deliveredSignal];
-		*sig = t->deliveredSignal;
-		res = SIG_CHECK_CUR;
-		t->deliveredSignal = 0;
-		t->currentSignal = *sig;
-	}
-	
-	if(res == SIG_CHECK_NO && pendingSignals > 0) {
-		for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
-			t = *it;
-			if(!t->isIgnoringSigs() && !t->deliveredSignal && !t->currentSignal && t->pending.count > 0) {
-				PendingSig *psig = t->pending.first;
-				if(t->getTid() == tid) {
-					*handler = t->sigHandler[psig->sig];
-					*sig = psig->sig;
-					t->currentSignal = psig->sig;
-					res = SIG_CHECK_CUR;
-				}
-				else {
-					t->deliveredSignal = psig->sig;
-					res = SIG_CHECK_OTHER;
-				}
-				/* remove signal */
-				t->pending.first = psig->next;
-				if(t->pending.last == psig)
-					t->pending.last = NULL;
-				t->pending.count--;
-				pendingSignals--;
-				/* put on freelist */
-				psig->next = freelist;
-				freelist = psig;
-				break;
-			}
-		}
-	}
-	SpinLock::release(&lock);
-	/* without locking because the scheduler calls Signals::hasSignalFor) */
-	if(res == SIG_CHECK_OTHER)
-		Event::unblockQuick(t);
-	return res;
-}
-
-bool Signals::addSignalFor(tid_t tid,int signal) {
+bool Signals::checkAndStart(tid_t tid,int *sig,handler_func *handler) {
 	bool res = false;
+	Thread *t = Thread::getById(tid);
 	SpinLock::acquire(&lock);
-	Thread *t = getThread(tid,false);
-	if(t && t->sigHandler[signal]) {
-		if(t->sigHandler[signal] != SIG_IGN)
-			add(t,signal);
+	assert(t->isIgnoringSigs() == 0 && t->sigHandler);
+	if(!t->currentSignal) {
+		PendingSig *psig = t->pending.first;
+		*handler = t->sigHandler[psig->sig];
+		*sig = psig->sig;
+		t->currentSignal = psig->sig;
+		/* remove signal */
+		t->pending.first = psig->next;
+		if(t->pending.last == psig)
+			t->pending.last = NULL;
+		t->pending.count--;
+		/* put on freelist */
+		psig->next = freelist;
+		freelist = psig;
 		res = true;
 	}
 	SpinLock::release(&lock);
 	return res;
 }
 
-bool Signals::addSignal(int signal) {
+bool Signals::addSignalFor(tid_t tid,int signal) {
 	bool res = false;
 	SpinLock::acquire(&lock);
-	for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
-		if((*it)->sigHandler[signal] && (*it)->sigHandler[signal] != SIG_IGN) {
-			add(*it,signal);
-			res = true;
-		}
+	Thread *t = Thread::getById(tid);
+	if(t->sigHandler && t->sigHandler[signal]) {
+		if(t->sigHandler[signal] != SIG_IGN)
+			add(t,signal);
+		res = true;
 	}
 	SpinLock::release(&lock);
+	/* without locking because the scheduler calls Signals::hasSignalFor) */
+	if(res)
+		Event::unblockQuick(t);
+	return res;
+}
+
+bool Signals::addSignal(int signal) {
+	bool res = false;
+	SpinLock::acquire(&listLock);
+	for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
+		SpinLock::acquire(&lock);
+		bool added = false;
+		if((*it)->sigHandler[signal] && (*it)->sigHandler[signal] != SIG_IGN) {
+			add(*it,signal);
+			added = true;
+			res = true;
+		}
+		SpinLock::release(&lock);
+		/* without locking because the scheduler calls Signals::hasSignalFor).
+		 * the listlock is ok because we don't grab it in hasSignalFor. */
+		if(added)
+			Event::unblockQuick(*it);
+	}
+	SpinLock::release(&listLock);
 	return res;
 }
 
 int Signals::ackHandling(tid_t tid) {
 	SpinLock::acquire(&lock);
-	Thread *t = getThread(tid,false);
+	Thread *t = Thread::getById(tid);
 	assert(t != NULL);
 	vassert(t->currentSignal != 0,"No signal handling");
 	vassert(canHandle(t->currentSignal),"Unable to handle signal %d",t->currentSignal);
@@ -226,11 +215,11 @@ const char *Signals::getName(int signal) {
 
 void Signals::print(OStream &os) {
 	os.writef("Signal handler:\n");
+	SpinLock::acquire(&listLock);
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		const Thread *t = *it;
 		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		os.writef("\t\tpending: %zu\n",t->pending.count);
-		os.writef("\t\tdeliver: %d\n",t->deliveredSignal);
 		os.writef("\t\tcurrent: %d\n",t->currentSignal);
 		os.writef("\t\thandler:\n");
 		for(size_t i = 0; i < SIG_COUNT; i++) {
@@ -238,16 +227,19 @@ void Signals::print(OStream &os) {
 				os.writef("\t\t\t%s: handler=%p\n",getName(i),t->sigHandler[i]);
 		}
 	}
+	SpinLock::release(&listLock);
 }
 
 size_t Signals::getHandlerCount() {
 	size_t c = 0;
+	SpinLock::acquire(&listLock);
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		for(size_t i = 0; i < SIG_COUNT; i++) {
 			if((*it)->sigHandler[i])
 				c++;
 		}
 	}
+	SpinLock::release(&listLock);
 	return c;
 }
 
@@ -268,13 +260,10 @@ bool Signals::add(Thread *t,int sig) {
 		t->pending.first = psig;
 	t->pending.last = psig;
 	t->pending.count++;
-	pendingSignals++;
 	return true;
 }
 
 void Signals::removePending(Thread *t,int sig) {
-	if(t->deliveredSignal == sig)
-		t->deliveredSignal = 0;
 	PendingSig *prev = NULL;
 	for(PendingSig *ps = t->pending.first; ps != NULL; ) {
 		if(sig == 0 || ps->sig == sig) {
@@ -282,14 +271,13 @@ void Signals::removePending(Thread *t,int sig) {
 			ps->next = freelist;
 			freelist = ps;
 			ps = tps;
-			assert(pendingSignals > 0 && t->pending.count > 0);
+			assert(t->pending.count > 0);
 			if(prev)
 				prev->next = tps;
 			else
 				t->pending.first = tps;
 			if(!tps)
 				t->pending.last = prev;
-			pendingSignals--;
 			t->pending.count--;
 		}
 		else {
@@ -299,19 +287,19 @@ void Signals::removePending(Thread *t,int sig) {
 	}
 }
 
-Thread *Signals::getThread(tid_t tid,bool create) {
+Thread *Signals::getThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
 	if(t->sigHandler == NULL) {
-		if(!create)
-			return NULL;
 		t->sigHandler = (handler_func*)Cache::calloc(SIG_COUNT,sizeof(handler_func));
 		if(!t->sigHandler)
 			return NULL;
+		SpinLock::acquire(&listLock);
 		if(!sigThreads.append(t)) {
 			Cache::free(t->sigHandler);
 			t->sigHandler = NULL;
-			return NULL;
+			t = NULL;
 		}
+		SpinLock::release(&listLock);
 	}
 	return t;
 }

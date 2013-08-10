@@ -88,7 +88,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = Thread::getRunning();
-	if(t != NULL && ((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)))
+	if(t->hasSignalQuick() && ((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)))
 		UEnv::handleSignal(t,stack);
 	t->popIntrptLevel();
 }
@@ -138,8 +138,8 @@ void Interrupts::exPageFault(IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack) {
-	Signals::addSignal(SIG_INTRPT_TIMER);
-	bool res = Timer::intrpt();
+	bool res = Signals::addSignal(SIG_INTRPT_TIMER);
+	res |= Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res) {
 		Thread *t = Thread::getRunning();
@@ -170,6 +170,8 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
+	else
+		Thread::switchAway();
 }
 
 void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack) {
@@ -178,6 +180,8 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack) {
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
 	if(!Signals::addSignal(SIG_INTRPT_ATA1))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
+	else
+		Thread::switchAway();
 }
 
 void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {

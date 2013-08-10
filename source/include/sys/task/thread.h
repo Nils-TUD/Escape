@@ -406,6 +406,19 @@ public:
 	}
 
 	/**
+	 * This is the quick way of checking for signals. Since this is done without locking, it is
+	 * possible that in this moment a signal is added and we miss it. But this isn't bad because
+	 * we'll simply handle it later, as we would have anyway if it had arrived a bit later.
+	 * It might also mean that there actually is no signal to handle because we're currently handling
+	 * one.
+	 *
+	 * @return whether there is a signal to handle
+	 */
+	bool hasSignalQuick() const {
+		return pending.count > 0;
+	}
+
+	/**
 	 * @return the register state of the thread
 	 */
 	const ThreadRegs &getRegs() const {
@@ -650,7 +663,6 @@ protected:
 	Signals::PendingQueue pending;
 	/* the signal that the thread is currently handling (if > 0) */
 	int currentSignal;
-	int deliveredSignal;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */

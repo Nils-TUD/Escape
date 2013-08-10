@@ -34,9 +34,6 @@ class UEnv : public UEnvBase {
 inline void UEnvBase::handleSignal(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	int sig;
 	Signals::handler_func handler;
-	int res = Signals::checkAndStart(t->getTid(),&sig,&handler);
-	if(res == SIG_CHECK_CUR)
+	if(Signals::checkAndStart(t->getTid(),&sig,&handler))
 		UEnv::startSignalHandler(t,sig,handler);
-	else if(res == SIG_CHECK_OTHER)
-		Thread::switchAway();
 }

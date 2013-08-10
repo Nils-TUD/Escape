@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/cppsupport.h>
 #include <assert.h>
 
 template<class T>
@@ -34,7 +35,7 @@ class NodeAllocator;
  * A listitem for the singly linked list. It is intended that you inherit from this class to add
  * data to the item.
  */
-class SListItem {
+class SListItem : public CacheAllocatable {
 	template<class T>
 	friend class SList;
 	template<class T,class It>
@@ -129,7 +130,7 @@ public:
  * specify your class for T.
  */
 template<class T>
-class SList {
+class SList : public CacheAllocatable {
 public:
 	typedef SListIterator<T> iterator;
 	typedef SListConstIterator<T> const_iterator;

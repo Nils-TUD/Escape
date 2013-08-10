@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/col/slist.h>
+#include <sys/cppsupport.h>
 
 class Proc;
 
@@ -28,7 +29,7 @@ class Env {
 	Env() = delete;
 
 public:
-	struct EnvVar : public SListItem {
+	struct EnvVar : public SListItem, public CacheAllocatable {
 		explicit EnvVar(uint8_t dup,char *name,char *value)
 			: SListItem(), dup(dup), name(name), value(value) {
 		}

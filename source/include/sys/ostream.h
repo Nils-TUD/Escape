@@ -20,9 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/cppsupport.h>
 #include <stdarg.h>
 
-class OStream {
+class OStream : public CacheAllocatable {
 public:
 	explicit OStream() : indent(), lineStart(true) {
 	}

@@ -23,6 +23,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/col/islist.h>
 #include <sys/mutex.h>
+#include <sys/cppsupport.h>
 #include <assert.h>
 
 #define PF_BITCOUNT			3		/* number of bits occupied by real flags */
@@ -42,7 +43,7 @@
 class OStream;
 class VirtMem;
 
-class Region {
+class Region : public CacheAllocatable {
 public:
 	typedef ISList<VirtMem*>::iterator iterator;
 

@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/dynarray.h>
+#include <sys/cppsupport.h>
 #include <esc/fsinterface.h>
 #include <errno.h>
 
@@ -47,7 +48,7 @@ class VFSDir;
 class VFSInfo;
 class OpenFile;
 
-class VFSNode {
+class VFSNode : public CacheAllocatable {
 	/* we do often handle with VFSNode objects and still want to have access to the protected
 	 * members */
 	friend class VFSDevice;

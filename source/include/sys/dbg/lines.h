@@ -20,8 +20,9 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/cppsupport.h>
 
-class Lines {
+class Lines : public CacheAllocatable {
 public:
 	/**
 	 * Creates a new lines-object

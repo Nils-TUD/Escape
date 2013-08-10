@@ -31,14 +31,6 @@ int __cxa_atexit(void (*)(void *), void *, void *) {
 	return 0;
 }
 
-void *operator new(size_t size) {
-	return Cache::alloc(size);
-}
-
-void operator delete(void *ptr) {
-	Cache::free(ptr);
-}
-
 void __cxa_pure_virtual() {
 	Util::panic("Pure virtual method called");
 }

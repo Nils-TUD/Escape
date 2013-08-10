@@ -23,6 +23,7 @@
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 #include <sys/videolog.h>
+#include <sys/cppsupport.h>
 #include <string.h>
 
 #define CONS_EXIT			-1234
@@ -44,7 +45,7 @@ struct ScreenBackup {
 	ushort col;
 };
 
-class NaviBackend {
+class NaviBackend : public CacheAllocatable {
 public:
 	explicit NaviBackend(uintptr_t startPos,uintptr_t maxPos)
 		: startPos(startPos), maxPos(maxPos) {

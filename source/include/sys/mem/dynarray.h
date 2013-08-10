@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
+#include <sys/cppsupport.h>
 
 /* This module is intended to provide a dynamically extending region. That means you have a limited
  * area in virtual-memory, but allocate the pages in it when needed. This way we still have a
@@ -57,7 +58,7 @@
 #define DYNA_REG_COUNT	128
 #endif
 
-class DynArray {
+class DynArray : public CacheAllocatable {
 	/* describes a dynarray-region */
 	struct Region {
 		uintptr_t addr;

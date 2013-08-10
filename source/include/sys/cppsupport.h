@@ -20,6 +20,17 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/mem/cache.h>
+
+class CacheAllocatable {
+public:
+	static void *operator new(size_t size) throw() {
+		return Cache::alloc(size);
+	}
+	static void operator delete(void *ptr) throw() {
+		Cache::free(ptr);
+	}
+};
 
 #define CREATE(className,...)	({							\
 	bool __succ = true;										\

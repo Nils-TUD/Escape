@@ -229,6 +229,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->stats.totalScheds = 0;
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
+	p->threads = ISList<Thread*>();
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
 	if(p->command == NULL) {
@@ -269,7 +270,6 @@ int ProcBase::clone(uint8_t flags) {
 	/* clone current thread */
 	if((res = Thread::create(curThread,&nt,p,0,true)) < 0)
 		goto errorRegs;
-	p->threads = ISList<Thread*>();
 	if(!p->threads.append(nt)) {
 		res = -ENOMEM;
 		goto errorThread;

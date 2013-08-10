@@ -424,7 +424,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 
 error:
 	/* unmap from dest-pagedir; the frames are always owned by src */
-	dst->unmap(orgVirtDst,orgCount - count,false);
+	dst->doUnmap(orgVirtDst,orgCount - count,false);
 	/* make the cow-pages writable again */
 	while(orgCount > count) {
 		PageDir::pte_t *pte = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(srctables,orgVirtSrc);

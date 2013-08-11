@@ -722,14 +722,14 @@ void VFS::removeProcess(pid_t pid) {
 	VFSFS::removeProc(pid);
 }
 
-bool VFS::createThread(tid_t tid) {
+inode_t VFS::createThread(tid_t tid) {
 	VFSNode *n,*dir;
 	const Thread *t = Thread::getById(tid);
 
 	/* build name */
 	char *name = (char*)Cache::alloc(12);
 	if(name == NULL)
-		return false;
+		return -ENOMEM;
 	itoa(name,12,tid);
 
 	/* create dir */
@@ -750,40 +750,20 @@ bool VFS::createThread(tid_t tid) {
 		goto errorInfo;
 	VFSNode::release(n);
 	VFSNode::release(dir);
-	return true;
+	return dir->getNo();
 
 errorInfo:
 	VFSNode::release(dir);
 	VFSNode::release(dir);
 errorDir:
 	Cache::free(name);
-	return false;
+	return -ENOMEM;
 }
 
 void VFS::removeThread(tid_t tid) {
-	char name[12];
 	Thread *t = Thread::getById(tid);
-	const VFSNode *n,*dir;
-	bool isValid;
-
-	/* build name */
-	itoa(name,sizeof(name),tid);
-
-	/* search for thread-node and remove it */
-	dir = VFSNode::get(t->getProc()->threadDir);
-	n = dir->openDir(true,&isValid);
-	if(!isValid) {
-		dir->closeDir(true);
-		return;
-	}
-	while(n != NULL) {
-		if(strcmp(n->getName(),name) == 0)
-			break;
-		n = n->next;
-	}
-	dir->closeDir(true);
-	if(n)
-		const_cast<VFSNode*>(n)->destroy();
+	VFSNode *n= VFSNode::get(t->getThreadDir());
+	n->destroy();
 }
 
 void VFS::printMsgs(OStream &os) {

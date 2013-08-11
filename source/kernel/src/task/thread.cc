@@ -77,9 +77,9 @@ Thread *ThreadBase::createInitial(Proc *p) {
 		Util::panic("Unable to put initial thread into the thread-list");
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!VFS::createThread(t->getTid()))
+	t->threadDir = VFS::createThread(t->getTid());
+	if(t->threadDir < 0)
 		Util::panic("Unable to put first thread in vfs");
-
 	return t;
 }
 
@@ -97,6 +97,7 @@ void ThreadBase::initProps() {
 	pending.first = NULL;
 	pending.last = NULL;
 	intrptLevel = 0;
+	threadDir = 0;
 	cpu = 0;
 	stats.timeslice = RUNTIME_UPDATE_INTVAL * (CPU::getSpeed() / 1000);
 	stats.runtime = 0;
@@ -248,7 +249,8 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		Signals::cloneHandler(src->getTid(),t->getTid());
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!VFS::createThread(t->getTid()))
+	t->threadDir = VFS::createThread(t->getTid());
+	if(t->threadDir < 0)
 		goto errAppendIdle;
 
 	*dst = t;

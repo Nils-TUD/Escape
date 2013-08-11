@@ -406,6 +406,13 @@ public:
 	}
 
 	/**
+	 * @return the inode for the thread-directory in the VFS
+	 */
+	inode_t getThreadDir() const {
+		return threadDir;
+	}
+
+	/**
 	 * This is the quick way of checking for signals. Since this is done without locking, it is
 	 * possible that in this moment a signal is added and we miss it. But this isn't bad because
 	 * we'll simply handle it later, as we would have anyway if it had arrived a bit later.
@@ -682,6 +689,8 @@ protected:
 	VMRegion *stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
 	VMRegion *tlsRegion;
+	/* thread-directory in VFS */
+	inode_t threadDir;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
 	IntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;

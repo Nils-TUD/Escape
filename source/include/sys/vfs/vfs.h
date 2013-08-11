@@ -259,9 +259,9 @@ public:
 	 * Creates the VFS-node for the given thread
 	 *
 	 * @param tid the thread-id
-	 * @return true on success
+	 * @return the inode-number for the directory-node on success
 	 */
-	static bool createThread(tid_t tid);
+	static inode_t createThread(tid_t tid);
 
 	/**
 	 * Removes all occurrences of the given thread from VFS

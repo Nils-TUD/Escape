@@ -239,7 +239,7 @@ void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
 	if(intrpt->signal) {
 		/* the idle-task HAS TO switch to another thread if he given somebody a signal. otherwise
 		 * we would wait for the next thread-switch (e.g. caused by a timer-irq). */
-		if(Signals::addSignal(intrpt->signal) & (t->getFlags() & T_IDLE))
+		if(Signals::addSignal(intrpt->signal) && (t->getFlags() & T_IDLE))
 			res = true;
 	}
 	res |= Timer::intrpt();
@@ -253,7 +253,7 @@ void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	bool res = false;
 	const Interrupt *intrpt = intrptList + stack->intrptNo;
 	if(intrpt->signal) {
-		if(Signals::addSignal(intrpt->signal) & (t->getFlags() & T_IDLE))
+		if(Signals::addSignal(intrpt->signal) && (t->getFlags() & T_IDLE))
 			res = true;
 	}
 	PIC::eoi(stack->intrptNo);

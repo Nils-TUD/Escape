@@ -47,16 +47,23 @@ ScreenBackup Console::viewBackup;
 OStream *Console::out = &vidlog;
 VideoLog Console::vidlog;
 Console::Command Console::commands[] = {
-	{"help",	NULL},
-	{"exit",	NULL},
+	{"help",	help},
+	{"h",		help},
+	{"exit",	exit},
+	{"e",		exit},
 	{"file",	cons_cmd_file},
+	{"f",		cons_cmd_file},
 	{"dump",	cons_cmd_dump},
+	{"d",		cons_cmd_dump},
 	{"view",	cons_cmd_view},
+	{"v",		cons_cmd_view},
 	{"log",		cons_cmd_log},
 	{"ls",		cons_cmd_ls},
 	{"mem",		cons_cmd_mem},
+	{"m",		cons_cmd_mem},
 	{"panic",	cons_cmd_panic},
 	{"step",	cons_cmd_step},
+	{"s",		cons_cmd_step},
 };
 
 class LinesNaviBackend : public NaviBackend {
@@ -102,6 +109,42 @@ private:
 	const Lines *lines;
 };
 
+int Console::help(OStream &os,size_t,char **) {
+	os.writef("Available commands:\n");
+	for(size_t i = 0; i < ARRAY_SIZE(commands); i++) {
+		if(i > 0) {
+			if(commands[i].exec == commands[i - 1].exec) {
+				os.writef(", %s",commands[i].name);
+				continue;
+			}
+			else
+				os.writef("\n");
+		}
+		os.writef("	%s",commands[i].name);
+	}
+	os.writef("\n");
+	os.writef("All commands use a viewer, that supports the following key-strokes:\n");
+	os.writef(" - up/down/pageup/pagedown/home/end: navigate through the data\n");
+	os.writef(" - left/right: to previous/next search result\n");
+	os.writef(" - enter: jump to entered line/address\n");
+	os.writef(" - s: stop searching\n");
+	os.writef(" - esc: quit\n");
+	os.writef("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
+	return 0;
+}
+
+int Console::exit(OStream &,size_t,char **) {
+	/* remove this command from history */
+	assert(histSize > 0);
+	size_t last = (histReadPos - 1) % histSize;
+	Cache::free(history[last]);
+	history[last] = NULL;
+	histReadPos = last;
+	histWritePos = last;
+	histSize--;
+	return CONS_EXIT;
+}
+
 void Console::start(const char *initialcmd) {
 	Video &vid = Video::get();
 
@@ -146,43 +189,16 @@ void Console::start(const char *initialcmd) {
 				continue;
 		}
 
-		if(strcmp(argv[0],"exit") == 0) {
-			/* remove this command from history */
-			assert(histSize > 0);
-			size_t last = (histReadPos - 1) % histSize;
-			Cache::free(history[last]);
-			history[last] = NULL;
-			histReadPos = last;
-			histWritePos = last;
-			histSize--;
-			break;
+		Command *cmd = getCommand(argv[0]);
+		if(cmd) {
+			int res = cmd->exec(*out,argc,argv);
+			if(res == CONS_EXIT)
+				break;
+			if(res != 0)
+				out->writef("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
 		}
-
-		if(strcmp(argv[0],"help") == 0) {
-			vid.writef("Available commands:\n");
-			for(size_t i = 0; i < ARRAY_SIZE(commands); i++)
-				vid.writef("	%s\n",commands[i].name);
-			vid.writef("\n");
-			vid.writef("All commands use a viewer, that supports the following key-strokes:\n");
-			vid.writef(" - up/down/pageup/pagedown/home/end: navigate through the data\n");
-			vid.writef(" - left/right: to previous/next search result\n");
-			vid.writef(" - enter: jump to entered line/address\n");
-			vid.writef(" - s: stop searching\n");
-			vid.writef(" - esc: quit\n");
-			vid.writef("Note also that you can use '\\XX' to enter a character in hex when searching.\n");
-		}
-		else {
-			Command *cmd = getCommand(argv[0]);
-			if(cmd) {
-				int res = cmd->exec(*out,argc,argv);
-				if(res == CONS_EXIT)
-					break;
-				if(res != 0)
-					out->writef("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
-			}
-			else
-				out->writef("Unknown command '%s'\n",argv[0]);
-		}
+		else
+			out->writef("Unknown command '%s'\n",argv[0]);
 	}
 
 	vid.restore(backup.screen,backup.row,backup.col);

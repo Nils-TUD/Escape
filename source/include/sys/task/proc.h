@@ -569,12 +569,15 @@ private:
 
 #ifdef __i386__
 #include <sys/arch/i586/task/proc.h>
+static_assert(sizeof(Proc) <= 512,"Proc is too big");
 #endif
 #ifdef __eco32__
 #include <sys/arch/eco32/task/proc.h>
+static_assert(sizeof(Proc) <= 512,"Proc is too big");
 #endif
 #ifdef __mmix__
 #include <sys/arch/mmix/task/proc.h>
+static_assert(sizeof(Proc) <= 1024,"Proc is too big");
 #endif
 
 /* the area for ProcBase::chgsize() */

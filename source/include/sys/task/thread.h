@@ -56,6 +56,8 @@
 #define KERNEL_TID				0xFFFE
 
 #define TERM_RESOURCE_CNT		4
+#define TERM_USAGE_CNT			2
+#define TERM_CALLBACK_CNT		1
 
 #define T_IDLE					1
 #define T_WILL_DIE				2
@@ -676,11 +678,11 @@ protected:
 	Signals::PendingQueue pending;
 	/* the signal that the thread is currently handling (if > 0) */
 	int currentSignal;
-	/* a counter used to raise the priority after a certain number of "good behaviours" */
-	uint8_t prioGoodCnt;
 	/* the events the thread waits for (if waiting) */
 	uint events;
 	Wait *waits;
+	/* a counter used to raise the priority after a certain number of "good behaviours" */
+	uint8_t prioGoodCnt;
 	uint8_t flags;
 	uint8_t priority;
 	uint8_t state;
@@ -707,9 +709,9 @@ protected:
 	/* a list of locks that should be released on thread-termination */
 	klock_t *termLocks[TERM_RESOURCE_CNT];
 	/* a list of file-usages that should be decremented on thread-termination */
-	OpenFile *termUsages[TERM_RESOURCE_CNT];
+	OpenFile *termUsages[TERM_USAGE_CNT];
 	/* a list of callbacks that should be called on thread-termination */
-	terminate_func termCallbacks[TERM_RESOURCE_CNT];
+	terminate_func termCallbacks[TERM_CALLBACK_CNT];
 	uint8_t termHeapCount;
 	uint8_t termLockCount;
 	uint8_t termUsageCount;
@@ -733,12 +735,17 @@ private:
 
 #ifdef __i386__
 #include <sys/arch/i586/task/thread.h>
+static_assert(sizeof(Thread) <= 256,"Thread is too big");
 #endif
 #ifdef __eco32__
 #include <sys/arch/eco32/task/thread.h>
+// TODO actually, there is not much missing for 256 bytes
+static_assert(sizeof(Thread) <= 512,"Thread is too big");
 #endif
 #ifdef __mmix__
 #include <sys/arch/mmix/task/thread.h>
+// TODO actually, there is not much missing for 512 bytes
+static_assert(sizeof(Thread) <= 1024,"Thread is too big");
 #endif
 
 inline Thread *ThreadBase::getById(tid_t tid) {
@@ -781,7 +788,7 @@ inline void ThreadBase::remHeapAlloc(void *ptr) {
 
 inline void ThreadBase::addFileUsage(OpenFile *file) {
 	Thread *cur = getRunning();
-	assert(cur->termUsageCount < TERM_RESOURCE_CNT);
+	assert(cur->termUsageCount < TERM_USAGE_CNT);
 	cur->termUsages[cur->termUsageCount++] = file;
 }
 
@@ -793,7 +800,7 @@ inline void ThreadBase::remFileUsage(OpenFile *file) {
 
 inline void ThreadBase::addCallback(void (*callback)()) {
 	Thread *cur = getRunning();
-	assert(cur->termCallbackCount < TERM_RESOURCE_CNT);
+	assert(cur->termCallbackCount < TERM_CALLBACK_CNT);
 	cur->termCallbacks[cur->termCallbackCount++] = callback;
 }
 

@@ -156,6 +156,7 @@ public:
 private:
 	static int help(OStream &os,size_t argc,char **argv);
 	static int exit(OStream &os,size_t argc,char **argv);
+	static int cont(OStream &os,size_t argc,char **argv);
 	static uintptr_t getMaxAddr(uintptr_t end);
 	static uintptr_t incrAddr(uintptr_t end,uintptr_t addr,size_t amount);
 	static uintptr_t decrAddr(uintptr_t addr,size_t amount);

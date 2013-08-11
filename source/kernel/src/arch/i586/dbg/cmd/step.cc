@@ -30,7 +30,6 @@ int cons_cmd_step(OStream &os,size_t argc,char **argv) {
 		return 0;
 	}
 
-#ifdef __i386__
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *kstack = t->getIntrptStack();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
@@ -44,8 +43,4 @@ int cons_cmd_step(OStream &os,size_t argc,char **argv) {
 
 	kstack->setFlags(kstack->getFlags() | (1 << 8));
 	return CONS_EXIT;
-#else
-	os.writef("Sorry, not supported\n");
-	return 0;
-#endif
 }

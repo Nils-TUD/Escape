@@ -153,6 +153,11 @@ public:
 	 */
 	static void dumpBytes(OStream &os,const void *addr,size_t byteCount);
 
+	/**
+	 * Switches to VGA mode via video
+	 */
+	static void switchToVGA();
+
 private:
 	/**
 	 * Architecture dependent part of panic

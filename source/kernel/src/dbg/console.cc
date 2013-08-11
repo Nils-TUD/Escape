@@ -27,6 +27,7 @@
 #include <sys/dbg/cmd/panic.h>
 #include <sys/dbg/cmd/dump.h>
 #include <sys/dbg/cmd/step.h>
+#include <sys/dbg/cmd/break.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
@@ -50,7 +51,7 @@ Console::Command Console::commands[] = {
 	{"help",	help},
 	{"h",		help},
 	{"exit",	exit},
-	{"e",		exit},
+	{"c",		cont},
 	{"file",	cons_cmd_file},
 	{"f",		cons_cmd_file},
 	{"dump",	cons_cmd_dump},
@@ -62,8 +63,12 @@ Console::Command Console::commands[] = {
 	{"mem",		cons_cmd_mem},
 	{"m",		cons_cmd_mem},
 	{"panic",	cons_cmd_panic},
+#ifdef __i386__
 	{"step",	cons_cmd_step},
 	{"s",		cons_cmd_step},
+	{"break",	cons_cmd_break},
+	{"b",		cons_cmd_break},
+#endif
 };
 
 class LinesNaviBackend : public NaviBackend {
@@ -145,12 +150,22 @@ int Console::exit(OStream &,size_t,char **) {
 	return CONS_EXIT;
 }
 
+int Console::cont(OStream &,size_t,char**) {
+	return CONS_EXIT;
+}
+
 void Console::start(const char *initialcmd) {
-	Video &vid = Video::get();
+	static char initialcpy[128];
+	char *initial = NULL;
+	if(initialcmd) {
+		strnzcpy(initialcpy,initialcmd,sizeof(initialcpy));
+		initial = strtok(initialcpy,";");
+	}
 
 	/* first, pause all other CPUs to ensure that we're alone */
 	SMP::pauseOthers();
 
+	Video &vid = Video::get();
 	vid.backup(backup.screen,&backup.row,&backup.col);
 
 	vid.clearScreen();
@@ -166,9 +181,9 @@ void Console::start(const char *initialcmd) {
 
 		size_t argc;
 		char **argv;
-		if(initialcmd != NULL) {
-			argv = parseLine(initialcmd,&argc);
-			initialcmd = NULL;
+		if(initial != NULL) {
+			argv = parseLine(initial,&argc);
+			initial = strtok(NULL,";");
 		}
 		else {
 			argv = parseLine(readLine(),&argc);

@@ -198,7 +198,8 @@ void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
-	Console::start("step show");
+	Util::switchToVGA();
+	Console::start("b i;step show");
 }
 
 void Interrupts::exCoProcNA(Thread *t,A_UNUSED IntrptStackFrame *stack) {

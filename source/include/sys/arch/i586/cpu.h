@@ -118,49 +118,23 @@ public:
 	}
 
 	/**
-	 * @return the value of the CR0 register
+	 * @return the value of a control-register
 	 */
 	static uint32_t getCR0() {
 		uint32_t res;
 		asm volatile ("mov %%cr0, %0" : "=r"(res));
 		return res;
 	}
-
-	/**
-	 * @param cr0 the new CR0 value
-	 */
-	static void setCR0(uint32_t cr0) {
-		asm volatile ("mov %0, %%cr0" : : "r"(cr0));
-	}
-
-	/**
-	 * @return the value of the CR2 register, that means the linear address that caused a page-fault
-	 */
 	static uint32_t getCR2() {
 		uint32_t res;
 		asm volatile ("mov %%cr2, %0" : "=r"(res));
 		return res;
 	}
-
-	/**
-	 * @return the value of the CR3 register, that means the physical address of the page-directory
-	 */
 	static uint32_t getCR3() {
 		uint32_t res;
 		asm volatile ("mov %%cr3, %0" : "=r"(res));
 		return res;
 	}
-
-	/**
-	 * @param cr0 the new CR3 value
-	 */
-	static void setCR3(uint32_t cr0) {
-		asm volatile ("mov %0, %%cr3" : : "r"(cr0));
-	}
-
-	/**
-	 * @return the value of the CR4 register
-	 */
 	static uint32_t getCR4() {
 		uint32_t res;
 		asm volatile ("mov %%cr4, %0" : "=r"(res));
@@ -168,10 +142,73 @@ public:
 	}
 
 	/**
-	 * @param cr4 the new CR4 value
+	 * Sets a control register
+	 *
+	 * @param val the new value
 	 */
-	static void setCR4(uint32_t cr4) {
-		asm volatile ("mov %0, %%cr4" : : "r"(cr4));
+	static void setCR0(uint32_t val) {
+		asm volatile ("mov %0, %%cr0" : : "r"(val));
+	}
+	static void setCR3(uint32_t val) {
+		asm volatile ("mov %0, %%cr3" : : "r"(val));
+	}
+	static void setCR4(uint32_t val) {
+		asm volatile ("mov %0, %%cr4" : : "r"(val));
+	}
+
+	/**
+	 * @return the value of a debug-register
+	 */
+	static uint32_t getDR0() {
+		uint32_t res;
+		asm volatile ("mov %%dr0, %0" : "=r"(res));
+		return res;
+	}
+	static uint32_t getDR1() {
+		uint32_t res;
+		asm volatile ("mov %%dr1, %0" : "=r"(res));
+		return res;
+	}
+	static uint32_t getDR2() {
+		uint32_t res;
+		asm volatile ("mov %%dr2, %0" : "=r"(res));
+		return res;
+	}
+	static uint32_t getDR3() {
+		uint32_t res;
+		asm volatile ("mov %%dr3, %0" : "=r"(res));
+		return res;
+	}
+	static uint32_t getDR6() {
+		uint32_t res;
+		asm volatile ("mov %%dr6, %0" : "=r"(res));
+		return res;
+	}
+	static uint32_t getDR7() {
+		uint32_t res;
+		asm volatile ("mov %%dr7, %0" : "=r"(res));
+		return res;
+	}
+
+	/**
+	 * Sets a debug register
+	 *
+	 * @param val the new value
+	 */
+	static void setDR0(uint32_t val) {
+		asm volatile ("mov %0, %%dr0" : : "r"(val));
+	}
+	static void setDR1(uint32_t val) {
+		asm volatile ("mov %0, %%dr1" : : "r"(val));
+	}
+	static void setDR2(uint32_t val) {
+		asm volatile ("mov %0, %%dr2" : : "r"(val));
+	}
+	static void setDR3(uint32_t val) {
+		asm volatile ("mov %0, %%dr3" : : "r"(val));
+	}
+	static void setDR7(uint32_t val) {
+		asm volatile ("mov %0, %%dr7" : : "r"(val));
 	}
 
 	/**

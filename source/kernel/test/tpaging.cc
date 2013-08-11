@@ -71,8 +71,8 @@ static void test_paging_foreign() {
 	sharedFrames = child->getVM()->getSharedFrames();
 	checkMemoryBefore(true);
 
-	t->reserveFrames(3);
-	child->getPageDir()->map(0,NULL,3,PG_PRESENT | PG_WRITABLE);
+	test_assertTrue(t->reserveFrames(3));
+	test_assertTrue(child->getPageDir()->map(0,NULL,3,PG_PRESENT | PG_WRITABLE) >= 0);
 	child->getPageDir()->unmap(0,3,true);
 	t->discardFrames();
 
@@ -89,9 +89,9 @@ static void test_paging_foreign() {
 	sharedFrames = child->getVM()->getSharedFrames();
 	checkMemoryBefore(true);
 
-	t->reserveFrames(6);
-	child->getPageDir()->map(0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
-	child->getPageDir()->map(0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE);
+	test_assertTrue(t->reserveFrames(6));
+	test_assertTrue(child->getPageDir()->map(0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE) >= 0);
+	test_assertTrue(child->getPageDir()->map(0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE) >= 0);
 	child->getPageDir()->unmap(0x40000000,1,true);
 	child->getPageDir()->unmap(0x40000000 + PAGE_SIZE * 1,5,true);
 	t->discardFrames();
@@ -113,7 +113,7 @@ static bool test_paging_cycle(uintptr_t addr,size_t count) {
 	test_caseStart("Mapping %zu pages to %p",count,addr);
 	checkMemoryBefore(true);
 
-	t->reserveFrames(count);
+	test_assertTrue(t->reserveFrames(count));
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);

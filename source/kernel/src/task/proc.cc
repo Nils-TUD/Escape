@@ -30,6 +30,7 @@
 #include <sys/task/groups.h>
 #include <sys/task/terminator.h>
 #include <sys/task/filedesc.h>
+#include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/cache.h>
@@ -696,7 +697,7 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				state->pid = p->pid;
 				state->exitCode = p->stats.exitCode;
 				state->signal = p->stats.exitSignal;
-				state->runtime = p->stats.totalRuntime;
+				state->runtime = Timer::cyclesToTime(p->stats.totalRuntime);
 				state->schedCount = p->stats.totalScheds;
 				state->syscalls = p->stats.totalSyscalls;
 				state->ownFrames = p->virtmem.getPeakOwnFrames();

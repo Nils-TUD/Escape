@@ -167,7 +167,7 @@ void ThreadBase::doSwitch() {
 
 	/* update runtime-stats */
 	uint64_t cycles = CPU::rdtsc();
-	uint64_t runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
+	uint64_t runtime = cycles - old->stats.cycleStart;
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
@@ -177,12 +177,11 @@ void ThreadBase::doSwitch() {
 
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
-		time_t timestamp = Timer::cyclesToTime(cycles);
-		VirtMem::setTimestamp(n,timestamp);
+		VirtMem::setTimestamp(n,cycles);
 		n->setCPU(GDT::prepareRun(old,n));
 
 		/* some stats for SMP */
-		SMP::schedule(n->getCPU(),n,timestamp);
+		SMP::schedule(n->getCPU(),n,cycles);
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */

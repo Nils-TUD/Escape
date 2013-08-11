@@ -179,9 +179,9 @@ uint64_t ThreadBase::getRuntime() const {
 		/* if the thread is running, we must take the time since the last scheduling of that thread
 		 * into account. this is especially a problem with idle-threads */
 		uint64_t cycles = CPU::rdtsc();
-		return (stats.runtime + Timer::cyclesToTime(cycles - stats.cycleStart));
+		return Timer::cyclesToTime(stats.runtime + (cycles - stats.cycleStart));
 	}
-	return stats.runtime;
+	return Timer::cyclesToTime(stats.runtime);
 }
 
 bool ThreadBase::beginTerm() {
@@ -199,7 +199,7 @@ void ThreadBase::doSwitch() {
 
 	/* update runtime-stats */
 	uint64_t cycles = CPU::rdtsc();
-	uint64_t runtime = Timer::cyclesToTime(cycles - old->stats.cycleStart);
+	uint64_t runtime = cycles - old->stats.cycleStart;
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
@@ -209,9 +209,8 @@ void ThreadBase::doSwitch() {
 
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
-		time_t timestamp = Timer::getTimestamp();
 		setRunning(n);
-		VirtMem::setTimestamp(n,timestamp);
+		VirtMem::setTimestamp(n,cycles);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
@@ -224,7 +223,7 @@ void ThreadBase::doSwitch() {
 		}
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
-		SMP::schedule(n->getCPU(),n,timestamp);
+		SMP::schedule(n->getCPU(),n,cycles);
 		n->stats.cycleStart = CPU::rdtsc();
 		Thread::doSwitchTo(&old->saveArea,&n->saveArea,n->getProc()->getPageDir()->getRV(),n->getTid());
 	}

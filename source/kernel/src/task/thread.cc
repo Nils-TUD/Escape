@@ -98,7 +98,7 @@ void ThreadBase::initProps() {
 	pending.last = NULL;
 	intrptLevel = 0;
 	cpu = 0;
-	stats.timeslice = RUNTIME_UPDATE_INTVAL * 1000;
+	stats.timeslice = RUNTIME_UPDATE_INTVAL * (CPU::getSpeed() / 1000);
 	stats.runtime = 0;
 	stats.curCycleCount = 0;
 	stats.lastCycleCount = 0;

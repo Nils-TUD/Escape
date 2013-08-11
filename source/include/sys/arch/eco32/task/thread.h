@@ -63,5 +63,5 @@ inline uint64_t ThreadBase::ticksPerSec() {
 }
 
 inline uint64_t ThreadBase::getRuntime() const {
-	return stats.runtime;
+	return Timer::cyclesToTime(stats.runtime);
 }

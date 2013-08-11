@@ -26,6 +26,7 @@
 #include <sys/task/event.h>
 #include <sys/mem/kheap.h>
 #include <sys/util.h>
+#include <sys/cpu.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <assert.h>
@@ -142,9 +143,10 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 }
 
 void Sched::adjustPrio(Thread *t,size_t threadCount) {
-	const uint64_t threadSlice = (RUNTIME_UPDATE_INTVAL * 1000) / threadCount;
+	const uint64_t interval = RUNTIME_UPDATE_INTVAL * (CPU::getSpeed() / 1000);
+	const uint64_t threadSlice = interval / threadCount;
 	SpinLock::acquire(&lock);
-	uint64_t runtime = RUNTIME_UPDATE_INTVAL * 1000 - t->getStats().timeslice;
+	uint64_t runtime = interval - t->getStats().timeslice;
 	/* if the thread has used a lot of its timeslice, lower its priority */
 	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
 		if(t->getPriority() > 0) {
@@ -169,7 +171,7 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 			}
 		}
 	}
-	t->getStats().timeslice = RUNTIME_UPDATE_INTVAL * 1000;
+	t->getStats().timeslice = interval;
 	SpinLock::release(&lock);
 }
 

@@ -539,7 +539,7 @@ public:
 	inode_t threadDir;
 	struct {
 		/* thread stats */
-		ulong totalRuntime;
+		uint64_t totalRuntime;
 		ulong totalSyscalls;
 		ulong totalScheds;
 		/* I/O stats */

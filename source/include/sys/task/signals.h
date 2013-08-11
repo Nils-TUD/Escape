@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/col/islist.h>
 
 #define SIG_COUNT			19
 
@@ -213,7 +212,6 @@ private:
 
 	static klock_t lock;
 	static klock_t listLock;
-	static ISList<Thread*> sigThreads;
 	static PendingSig signals[SIGNAL_COUNT];
 	static PendingSig *freelist;
 };

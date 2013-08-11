@@ -36,6 +36,7 @@
 #include <sys/task/lock.h>
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
+#include <sys/log.h>
 #include <sys/spinlock.h>
 #include <sys/util.h>
 #include <sys/video.h>
@@ -44,7 +45,7 @@
 #include <errno.h>
 
 /* our threads */
-ISList<Thread*> ThreadBase::threads;
+DList<Thread::ListItem> ThreadBase::threads;
 Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
 klock_t ThreadBase::lock;
@@ -72,9 +73,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	if(initArch(t) < 0)
 		Util::panic("Unable to init the arch-specific attributes of initial thread");
 
-	/* create list */
-	if(!t->add())
-		Util::panic("Unable to put initial thread into the thread-list");
+	t->add();
 
 	/* insert in VFS; thread needs to be inserted for it */
 	t->threadDir = VFS::createThread(t->getTid());
@@ -112,6 +111,8 @@ void ThreadBase::initProps() {
 	termUsageCount = 0;
 	termLockCount = 0;
 	reqFrames = ISList<frameno_t>();
+	threadListItem = ListItem(static_cast<Thread*>(this));
+	signalListItem = ListItem(static_cast<Thread*>(this));
 }
 
 size_t ThreadBase::getCount() {
@@ -156,17 +157,17 @@ void ThreadBase::updateRuntimes() {
 	size_t threadCount = threads.length();
 	for(auto t = threads.begin(); t != threads.end(); ++t) {
 		/* update cycle-stats */
-		if((*t)->state == Thread::RUNNING) {
+		if(t->thread->state == Thread::RUNNING) {
 			/* we want to measure the last second only */
-			uint64_t cycles = Thread::getTSC() - (*t)->stats.cycleStart;
-			(*t)->stats.lastCycleCount = (*t)->stats.curCycleCount + MIN(cyclesPerSec,cycles);
+			uint64_t cycles = Thread::getTSC() - t->thread->stats.cycleStart;
+			t->thread->stats.lastCycleCount = t->thread->stats.curCycleCount + MIN(cyclesPerSec,cycles);
 		}
 		else
-			(*t)->stats.lastCycleCount = (*t)->stats.curCycleCount;
-		(*t)->stats.curCycleCount = 0;
+			t->thread->stats.lastCycleCount = t->thread->stats.curCycleCount;
+		t->thread->stats.curCycleCount = 0;
 
 		/* raise/lower the priority if necessary */
-		Sched::adjustPrio(*t,threadCount);
+		Sched::adjustPrio(t->thread,threadCount);
 	}
 	SpinLock::release(&lock);
 }
@@ -190,7 +191,7 @@ bool ThreadBase::reserveFrames(size_t count) {
 	return true;
 }
 
-int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool cloneProc) {
+int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool cloneProc) {
 	int err = -ENOMEM;
 	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
 	if(t == NULL)
@@ -202,7 +203,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		goto errThread;
 	}
 	t->proc = p;
-	t->flags = flags;
+	t->flags = tflags;
 
 	t->initProps();
 	if(cloneProc) {
@@ -237,11 +238,10 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 		goto errClone;
 
 	/* insert into thread-list */
-	if(!t->add())
-		goto errArch;
+	t->add();
 
 	/* append to idle-list if its an idle-thread */
-	if(flags & T_IDLE)
+	if(tflags & T_IDLE)
 		Sched::addIdleThread(t);
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
@@ -259,7 +259,6 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t flags,bool clone
 errAppendIdle:
 	Signals::removeHandlerFor(t->getTid());
 	t->remove();
-errArch:
 	freeArch(t);
 errClone:
 	if(t->tlsRegion != NULL)
@@ -309,7 +308,7 @@ void ThreadBase::makeUnrunnable() {
 
 void ThreadBase::printAll(OStream &os) {
 	for(auto t = threads.cbegin(); t != threads.cend(); ++t)
-		(*t)->print(os);
+		t->thread->print(os);
 }
 
 static const char *getStateName(uint8_t state) {
@@ -394,20 +393,16 @@ tid_t ThreadBase::getFreeTid() {
 	return res;
 }
 
-bool ThreadBase::add() {
-	bool res = false;
+void ThreadBase::add() {
 	SpinLock::acquire(&lock);
-	if(threads.append(static_cast<Thread*>(this))) {
-		tidToThread[tid] = static_cast<Thread*>(this);
-		res = true;
-	}
+	threads.append(&threadListItem);
+	tidToThread[tid] = static_cast<Thread*>(this);
 	SpinLock::release(&lock);
-	return res;
 }
 
 void ThreadBase::remove() {
 	SpinLock::acquire(&lock);
-	threads.remove(static_cast<Thread*>(this));
+	threads.remove(&threadListItem);
 	tidToThread[tid] = NULL;
 	SpinLock::release(&lock);
 }

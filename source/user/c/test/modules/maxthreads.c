@@ -50,7 +50,7 @@ int mod_maxthreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
 			break;
 		}
 		unlock(LOCK_IDENT);
-		yield();
+		sleep(20);
 	}
 	printf("Kill them...\n");
 	fflush(stdout);

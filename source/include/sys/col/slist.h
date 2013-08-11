@@ -20,109 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/cppsupport.h>
+#include <sys/col/node.h>
 #include <assert.h>
-
-template<class T>
-class SList;
-template<class T>
-class ISList;
-template<class T,class It>
-class SListIteratorBase;
-class NodeAllocator;
-
-/**
- * A listitem for the singly linked list. It is intended that you inherit from this class to add
- * data to the item.
- */
-class SListItem : public CacheAllocatable {
-	template<class T>
-	friend class SList;
-	template<class T,class It>
-	friend class SListIteratorBase;
-	friend class NodeAllocator;
-
-public:
-	/**
-	 * Constructor
-	 */
-	explicit SListItem() : _next() {
-	}
-
-private:
-	SListItem *next() {
-		return _next;
-	}
-	void next(SListItem *i) {
-		_next = i;
-	}
-
-	SListItem *_next;
-};
-
-/**
- * Generic iterator for a singly linked list. Expects the list node class to have a next() method.
- */
-template<class T,class It>
-class SListIteratorBase {
-	template<class T1>
-	friend class SList;
-	template<class T1>
-	friend class ISList;
-
-public:
-	explicit SListIteratorBase(T *n = nullptr) : _n(n) {
-	}
-
-	It& operator++() {
-		_n = static_cast<T*>(_n->next());
-		return static_cast<It&>(*this);
-	}
-	It operator++(int) {
-		It tmp(static_cast<It&>(*this));
-		operator++();
-		return tmp;
-	}
-	bool operator==(const It& rhs) const {
-		return _n == rhs._n;
-	}
-	bool operator!=(const It& rhs) const {
-		return _n != rhs._n;
-	}
-
-protected:
-	T *_n;
-};
-
-template<class T>
-class SListIterator : public SListIteratorBase<T,SListIterator<T>> {
-public:
-	explicit SListIterator(T *n = nullptr)
-			: SListIteratorBase<T,SListIterator<T>>(n) {
-	}
-
-	T & operator*() const {
-		return *this->_n;
-	}
-	T *operator->() const {
-		return &operator*();
-	}
-};
-
-template<class T>
-class SListConstIterator : public SListIteratorBase<T,SListConstIterator<T>> {
-public:
-	explicit SListConstIterator(T *n = nullptr)
-			: SListIteratorBase<T,SListConstIterator<T>>(n) {
-	}
-
-	const T & operator*() const {
-		return *this->_n;
-	}
-	const T *operator->() const {
-		return &operator*();
-	}
-};
 
 /**
  * The singly linked list. Takes an arbitrary class as list-item and expects it to have a prev(),
@@ -132,8 +31,8 @@ public:
 template<class T>
 class SList : public CacheAllocatable {
 public:
-	typedef SListIterator<T> iterator;
-	typedef SListConstIterator<T> const_iterator;
+	typedef ListIterator<T> iterator;
+	typedef ListConstIterator<T> const_iterator;
 
 	/**
 	 * Constructor. Creates an empty list

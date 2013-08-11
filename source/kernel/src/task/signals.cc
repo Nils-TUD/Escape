@@ -22,6 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
+#include <sys/col/dlist.h>
 #include <sys/mem/cache.h>
 #include <sys/util.h>
 #include <sys/spinlock.h>
@@ -32,9 +33,9 @@
 
 klock_t Signals::lock;
 klock_t Signals::listLock;
-ISList<Thread*> Signals::sigThreads;
 Signals::PendingSig Signals::signals[SIGNAL_COUNT];
 Signals::PendingSig *Signals::freelist;
+static DList<Thread::ListItem> sigThreads;
 
 void Signals::init() {
 	/* init signal-freelist */
@@ -83,7 +84,7 @@ void Signals::removeHandlerFor(tid_t tid) {
 	if(t->sigHandler) {
 		/* remove all pending */
 		removePending(t,0);
-		sigThreads.remove(t);
+		sigThreads.remove(&t->signalListItem);
 		Cache::free(t->sigHandler);
 		t->sigHandler = NULL;
 	}
@@ -159,8 +160,8 @@ bool Signals::addSignal(int signal) {
 	for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
 		SpinLock::acquire(&lock);
 		bool added = false;
-		if((*it)->sigHandler[signal] && (*it)->sigHandler[signal] != SIG_IGN) {
-			add(*it,signal);
+		if(it->thread->sigHandler[signal] && it->thread->sigHandler[signal] != SIG_IGN) {
+			add(it->thread,signal);
 			added = true;
 			res = true;
 		}
@@ -168,7 +169,7 @@ bool Signals::addSignal(int signal) {
 		/* without locking because the scheduler calls Signals::hasSignalFor).
 		 * the listlock is ok because we don't grab it in hasSignalFor. */
 		if(added)
-			Event::unblockQuick(*it);
+			Event::unblockQuick(it->thread);
 	}
 	SpinLock::release(&listLock);
 	return res;
@@ -217,7 +218,7 @@ void Signals::print(OStream &os) {
 	os.writef("Signal handler:\n");
 	SpinLock::acquire(&listLock);
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
-		const Thread *t = *it;
+		const Thread *t = it->thread;
 		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
 		os.writef("\t\tpending: %zu\n",t->pending.count);
 		os.writef("\t\tcurrent: %d\n",t->currentSignal);
@@ -235,7 +236,7 @@ size_t Signals::getHandlerCount() {
 	SpinLock::acquire(&listLock);
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		for(size_t i = 0; i < SIG_COUNT; i++) {
-			if((*it)->sigHandler[i])
+			if(it->thread->sigHandler[i])
 				c++;
 		}
 	}
@@ -294,11 +295,7 @@ Thread *Signals::getThread(tid_t tid) {
 		if(!t->sigHandler)
 			return NULL;
 		SpinLock::acquire(&listLock);
-		if(!sigThreads.append(t)) {
-			Cache::free(t->sigHandler);
-			t->sigHandler = NULL;
-			t = NULL;
-		}
+		sigThreads.append(&t->signalListItem);
 		SpinLock::release(&listLock);
 	}
 	return t;

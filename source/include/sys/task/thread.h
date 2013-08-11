@@ -26,7 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/virtmem.h>
-#include <sys/col/islist.h>
+#include <sys/col/dlist.h>
 #include <sys/interrupts.h>
 #include <esc/hashmap.h>
 #include <assert.h>
@@ -106,6 +106,12 @@ class ThreadBase {
 	};
 
 public:
+	struct ListItem : public DListItem {
+		explicit ListItem(Thread *t) : DListItem(), thread(t) {
+		}
+		Thread *thread;
+	};
+
 	/* the thread states */
 	enum State {
 		UNUSED			= 0,
@@ -656,7 +662,7 @@ private:
 	static void doSwitch();
 	static Thread *createInitial(Proc *p);
 	static tid_t getFreeTid();
-	bool add();
+	void add();
 	void remove();
 
 protected:
@@ -708,6 +714,8 @@ protected:
 	uint8_t termLockCount;
 	uint8_t termUsageCount;
 	uint8_t termCallbackCount;
+	ListItem threadListItem;
+	ListItem signalListItem;
 	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
 	 * reserved for this thread and have not yet been used */
 	ISList<frameno_t> reqFrames;
@@ -717,7 +725,7 @@ private:
 	Thread *prev;
 	Thread *next;
 
-	static ISList<Thread*> threads;
+	static DList<ListItem> threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;
 	static klock_t lock;

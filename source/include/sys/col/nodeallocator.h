@@ -18,7 +18,10 @@
 
 #include <sys/common.h>
 #include <sys/mem/dynarray.h>
-#include <sys/col/slist.h>
+
+class SListItem;
+template<class T>
+struct IListNode;
 
 /* The idea is to provide a very fast node-allocation and -deallocation for the indirect
  * single-linked-list that is used in kernel. It is used at very many places, so that its really
@@ -29,32 +32,11 @@
  * anyway), using it does basically cost nothing :) */
 
 class NodeAllocator {
+	template<class T>
+	friend struct IListNode;
+
 	NodeAllocator() = delete;
 
-public:
-	template<class T>
-	struct Node;
-	template<class T>
-	friend class Node;
-
-	template<class T>
-	struct Node : public SListItem {
-		explicit Node(T _data) : SListItem(), data(_data) {
-			static_assert(sizeof(T) <= sizeof(void*),"T has to be a word!");
-		}
-
-		static void *operator new(size_t size) throw() {
-			return NodeAllocator::allocate();
-		}
-
-		static void operator delete(void *ptr) throw() {
-			NodeAllocator::free(ptr);
-		}
-
-		T data;
-	};
-
-private:
 	static void *allocate();
 	static void free(void *ptr);
 

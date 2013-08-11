@@ -18,7 +18,7 @@
 #include <sys/col/islist.h>
 #include <sys/mem/paging.h>
 
-DynArray NodeAllocator::nodeArray(sizeof(Node<void*>),SLLNODE_AREA,SLLNODE_AREA_SIZE);
+DynArray NodeAllocator::nodeArray(sizeof(IListNode<void*>),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 SListItem *NodeAllocator::freelist = NULL;
 klock_t NodeAllocator::lock;
 

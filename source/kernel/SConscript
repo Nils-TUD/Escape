@@ -13,6 +13,11 @@ kenv.Append(
 	BUILDERS = {'GenSyms' : gensyms}
 )
 
+#kenv.Append(
+#	CPPFLAGS = ' -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list='	+
+#		'ksymbols.cc,src/arch/i586/gdt.cc,src/basic/arch/$ARCH/profile.c'
+#)
+
 src = [kenv.Glob('src/arch/$ARCH/kernel.S')]
 src += [kenv.Glob('src/*.c'), kenv.Glob('src/*/*.c')]
 src += [kenv.Glob('src/*.cc'), kenv.Glob('src/*/*.cc')]

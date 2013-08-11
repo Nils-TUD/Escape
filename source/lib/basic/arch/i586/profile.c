@@ -20,17 +20,7 @@
 #ifdef PROFILE
 #include <assert.h>
 #ifdef IN_KERNEL
-#	include <esc/arch/i586/register.h>
-#	include <sys/arch/i586/ports.h>
-#	include <sys/task/thread.h>
-#	include <sys/mem/paging.h>
-#	include <sys/ksymbols.h>
-#	include <sys/cpu.h>
-#	include <sys/video.h>
-#	include <sys/util.h>
-#	define outb			ports_outByte
-#	define inb			ports_inByte
-#	if 1
+#	if 0
 #		define gettid()		({ \
 	uintptr_t __esp; \
 	tid_t __tid; \
@@ -44,14 +34,11 @@
 #	else
 #		define gettid()		0
 #	endif
-#	define getcycles()	cpu_rdtsc()
+#	define getcycles()	rdtsc()
 #else
-#	include <esc/arch/i586/ports.h>
 #	include <esc/thread.h>
 #	include <esc/debug.h>
 #	include <stdio.h>
-#	define outb			outbyte
-#	define inb			inbyte
 #endif
 
 #define STACK_SIZE	1024
@@ -59,8 +46,26 @@
 static void logUnsigned(ullong n,uint base);
 static void logChar(char c);
 
+static uint64_t rdtsc(void) {
+	uint32_t u, l;
+	__asm__ volatile ("rdtsc" : "=a" (l), "=d" (u));
+	return (uint64_t)u << 32 | l;
+}
+
+static uint8_t prof_inbyte(uint16_t port) {
+	uint8_t res;
+	__asm__ volatile ("in %1, %0" : "=a"(res) : "d"(port));
+	return res;
+}
+
+static void prof_outbyte(uint16_t port,uint8_t val) {
+	__asm__ volatile ("out %0, %1" : : "a"(val), "d"(port));
+}
+
 #if !IN_KERNEL
 static bool initialized = false;
+#else
+int profEnabled = false;
 #endif
 static size_t stackPos = 0;
 static bool inProf = false;
@@ -70,7 +75,7 @@ EXTERN_C void __cyg_profile_func_enter(void *this_fn,void *call_site);
 EXTERN_C void __cyg_profile_func_exit(void *this_fn,void *call_site);
 
 void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
-	if(inProf)
+	if(inProf || !profEnabled)
 		return;
 	inProf = true;
 #if !IN_KERNEL
@@ -92,7 +97,7 @@ void __cyg_profile_func_enter(void *this_fn,A_UNUSED void *call_site) {
 
 void __cyg_profile_func_exit(A_UNUSED void *this_fn,A_UNUSED void *call_site) {
 	uint64_t now;
-	if(inProf || stackPos <= 0)
+	if(inProf || !profEnabled || stackPos <= 0)
 		return;
 	inProf = true;
 	now = getcycles();
@@ -112,9 +117,9 @@ static void logUnsigned(ullong n,uint base) {
 }
 
 static void logChar(char c) {
-	outb(0xe9,c);
-	outb(0x3f8,c);
-	while((inb(0x3fd) & 0x20) == 0)
+	prof_outbyte(0xe9,c);
+	prof_outbyte(0x3f8,c);
+	while((prof_inbyte(0x3fd) & 0x20) == 0)
 		;
 }
 #endif

@@ -785,10 +785,8 @@ int VirtMem::cloneAll(VirtMem *dst) {
 						frameno_t frameNo = getPageDir()->getFrameNo(virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->getPageFlags(j) & PF_COPYONWRITE)) {
-							if(!CopyOnWrite::add(frameNo)) {
-								Log::get().writef("FAILED1\n");
+							if(!CopyOnWrite::add(frameNo))
 								goto errorPages;
-							}
 							vm->reg->setPageFlags(j,vm->reg->getPageFlags(j) | PF_COPYONWRITE);
 							addShared(1);
 							addOwn(-1);
@@ -798,7 +796,6 @@ int VirtMem::cloneAll(VirtMem *dst) {
 						nvm->reg->setPageFlags(j,nvm->reg->getPageFlags(j) | PF_COPYONWRITE);
 						dst->addShared(1);
 						if(!CopyOnWrite::add(frameNo)) {
-							Log::get().writef("FAILED2\n");
 							if(marked) {
 								bool other;
 								CopyOnWrite::remove(frameNo,&other);

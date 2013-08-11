@@ -272,8 +272,12 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 	}
 
 	/* regions without binary will not be demand-loaded */
-	if(file == NULL)
-		t->reserveFrames(BYTES_2_PAGES(memsz));
+	if(file == NULL) {
+		if(!t->reserveFrames(BYTES_2_PAGES(memsz))) {
+			Log::get().writef("[LOADER] Unable to reserve frames for region (%zx bytes)\n",memsz);
+			return -ENOMEM;
+		}
+	}
 
 	/* add the region */
 	VMRegion *vm;

@@ -31,8 +31,10 @@
 
 int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	if(count > 0)
-		t->reserveFrames(count);
+	if(count > 0) {
+		if(!t->reserveFrames(count))
+			SYSC_ERROR(stack,-ENOMEM);
+	}
 	size_t oldEnd = t->getProc()->getVM()->growData(count);
 	if(count > 0)
 		t->discardFrames();
@@ -61,7 +63,8 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	if(flags & MAP_TLS) {
 		if(t->getTLSRegion() != NULL)
 			SYSC_ERROR(stack,-EINVAL);
-		t->reserveFrames(BYTES_2_PAGES(byteCount));
+		if(!t->reserveFrames(BYTES_2_PAGES(byteCount)))
+			SYSC_ERROR(stack,-ENOMEM);
 	}
 	if(fd != -1) {
 		/* get file */
@@ -123,10 +126,14 @@ int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
 	if(physCpy && !PhysMem::canMap(physCpy,bytes))
 		SYSC_ERROR(stack,-EFAULT);
 	/* reserve frames if we don't want to use contiguous physical memory */
-	if(!physCpy && !align)
-		t->reserveFrames(BYTES_2_PAGES(bytes));
+	if(!physCpy && !align) {
+		if(!t->reserveFrames(BYTES_2_PAGES(bytes)))
+			SYSC_ERROR(stack,-ENOMEM);
+	}
 
 	uintptr_t addr = t->getProc()->getVM()->addPhys(&physCpy,bytes,align,true);
+	if(!physCpy && !align)
+		t->discardFrames();
 	if(addr == 0)
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;

@@ -172,12 +172,16 @@ void ThreadBase::updateRuntimes() {
 
 bool ThreadBase::reserveFrames(size_t count) {
 	while(count > 0) {
-		if(!PhysMem::reserve(count))
+		if(!PhysMem::reserve(count)) {
+			discardFrames();
 			return false;
+		}
 		for(size_t i = count; i > 0; i--) {
 			frameno_t frm = PhysMem::allocate(PhysMem::USR);
-			if(!frm)
-				break;
+			if(!frm) {
+				discardFrames();
+				return false;
+			}
 			reqFrames.append(frm);
 			count--;
 		}

@@ -336,7 +336,8 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	uintptr_t tlsStart,tlsEnd;
 	if(t->getTLSRange(&tlsStart,&tlsEnd))
 		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
-	t->reserveFrames(pageCount);
+	if(!t->reserveFrames(pageCount))
+		return -ENOMEM;
 
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	if(!p) {

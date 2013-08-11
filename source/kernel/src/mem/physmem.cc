@@ -118,20 +118,20 @@ void PhysMem::init() {
 			siJobs[i].next = siFreelist;
 			siFreelist = siJobs + i;
 		}
-
-		/* determine kernel-memory-size */
-		size_t free = getFreeDef();
-		kframes = free / (100 / KERNEL_MEM_PERCENT);
-		if(kframes < KERNEL_MEM_MIN)
-			kframes = KERNEL_MEM_MIN;
-		cframes = (kframes * 2) / 3;
-		kframes = kframes - cframes;
-		if(cframes + kframes > free / 2) {
-			Log::get().writef("Warning: Detected VERY small number of free frames\n");
-			Log::get().writef("         (%zu total, using %zu for kernel, %zu for critical)\n",
-					free,kframes,cframes);
-		}
 		swapEnabled = true;
+	}
+
+	/* determine kernel-memory-size */
+	size_t free = getFreeDef();
+	kframes = free / (100 / KERNEL_MEM_PERCENT);
+	if(kframes < KERNEL_MEM_MIN)
+		kframes = KERNEL_MEM_MIN;
+	cframes = (kframes * 2) / 3;
+	kframes = kframes - cframes;
+	if(cframes + kframes > free / 2) {
+		Log::get().writef("Warning: Detected VERY small number of free frames\n");
+		Log::get().writef("         (%zu total, using %zu for kernel, %zu for critical)\n",
+				free,kframes,cframes);
 	}
 }
 
@@ -228,13 +228,13 @@ frameno_t PhysMem::allocate(FrameType type) {
 	/* remove the memory from the available one when we're not yet initialized */
 	if(!initialized)
 		frm = PhysMemAreas::alloc(1);
-	else if(swapEnabled && type == CRIT) {
+	else if(type == CRIT) {
 		if(cframes > 0) {
 			frm = *(--stack);
 			cframes--;
 		}
 	}
-	else if(swapEnabled && type == KERN) {
+	else if(type == KERN) {
 		/* if there are no kframes anymore, take away a few uframes */
 		if(kframes == 0) {
 			size_t free = getFreeDef();
@@ -249,10 +249,9 @@ frameno_t PhysMem::allocate(FrameType type) {
 	else {
 		size_t free = getFreeDef();
 		if(free > (kframes + cframes)) {
-			assert(type != USR || uframes > 0);
+			assert(uframes > 0);
 			frm = *(--stack);
-			if(type == USR)
-				uframes--;
+			uframes--;
 		}
 	}
 	SpinLock::release(&defLock);
@@ -262,12 +261,10 @@ frameno_t PhysMem::allocate(FrameType type) {
 void PhysMem::free(frameno_t frame,FrameType type) {
 	SpinLock::acquire(&defLock);
 	printEventTrace(Util::getKernelStackTrace(),"[F] %x ",frame);
-	if(swapEnabled) {
-		if(type == CRIT)
-			cframes++;
-		else if(type == KERN)
-			kframes++;
-	}
+	if(type == CRIT)
+		cframes++;
+	else if(type == KERN)
+		kframes++;
 	markUsed(frame,false);
 	SpinLock::release(&defLock);
 }
@@ -384,7 +381,7 @@ void PhysMem::print(OStream &os) {
 	os.writef("Contiguous: %zu\n",freeCont);
 	os.writef("Swap-Device: %s\n",dev ? dev : "-none-");
 	os.writef("Swap enabled: %d\n",swapEnabled);
-	os.writef("EFrames: %zu\n",cframes);
+	os.writef("CFrames: %zu\n",cframes);
 	os.writef("KFrames: %zu\n",kframes);
 	os.writef("UFrames: %zu\n",uframes);
 	os.writef("Swapped out: %zu\n",swappedOut);

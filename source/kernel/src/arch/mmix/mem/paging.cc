@@ -323,7 +323,7 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 		pte = pt[pageNo % PT_ENTRY_COUNT];
 		if(freeFrames && (pte & (PTE_READABLE | PTE_WRITABLE | PTE_EXECUTABLE))) {
 			if(freeFrames)
-				PhysMem::free(PTE_FRAMENO(pte),PhysMem::KERN);
+				PhysMem::free(PTE_FRAMENO(pte),PhysMem::USR);
 		}
 		pt[pageNo % PT_ENTRY_COUNT] = 0;
 

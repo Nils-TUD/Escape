@@ -87,9 +87,10 @@ uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	}
 	/* otherwise use the specified one */
 	else {
+		uintptr_t addr = *phys;
 		for(size_t i = 0; i < pages; i++) {
-			frames[i] = *phys / PAGE_SIZE;
-			*phys += PAGE_SIZE;
+			frames[i] = addr / PAGE_SIZE;
+			addr += PAGE_SIZE;
 		}
 	}
 

@@ -142,6 +142,25 @@ void SMPBase::flushTLB(PageDir *pdir) {
 	}
 }
 
+void SMPBase::callback(cpuid_t id) {
+	CPU *c = cpus[id];
+	assert(c->callback);
+	c->callback();
+}
+
+void SMPBase::callbackOthers(callback_func callback) {
+	if(!cpus || cpuCount == 1)
+		return;
+
+	cpuid_t cur = getCurId();
+	for(auto cpu = cpuList.begin(); cpu != cpuList.end(); ++cpu) {
+		if(cpu->ready && cpu->id != cur) {
+			cpu->callback = callback;
+			sendIPI(cpu->id,IPI_CALLBACK);
+		}
+	}
+}
+
 void SMPBase::print(OStream &os) {
 	os.writef("CPUs:\n");
 	for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {

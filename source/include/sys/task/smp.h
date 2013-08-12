@@ -30,6 +30,7 @@
 #define IPI_WAIT			53
 #define IPI_HALT			54
 #define IPI_FLUSH_TLB_ACK	55
+#define IPI_CALLBACK		56
 
 class Sched;
 class OStream;
@@ -41,10 +42,12 @@ class SMPBase {
 	SMPBase() = delete;
 
 public:
+	typedef void (*callback_func)();
+
 	struct CPU : public SListItem {
 		explicit CPU(uint8_t id,bool bootstrap,uint8_t ready)
 			: SListItem(), id(id), bootstrap(bootstrap), ready(ready), schedCount(), runtime(),
-			lastSched(), curCycles(), lastCycles(), lastTotal(), lastUpdate(), thread() {
+			lastSched(), curCycles(), lastCycles(), lastTotal(), lastUpdate(), callback(), thread() {
 		}
 
 		uint8_t id;
@@ -57,6 +60,7 @@ public:
 		uint64_t lastCycles;
 		uint64_t lastTotal;
 		uint64_t lastUpdate;
+		callback_func callback;
 		Thread *thread;
 	};
 
@@ -136,6 +140,20 @@ public:
 	 * @param pdir the pagedir
 	 */
 	static void flushTLB(PageDir *pdir);
+
+	/**
+	 * Calls the callback for CPU <id>
+	 *
+	 * @param id the CPU-id
+	 */
+	static void callback(cpuid_t id);
+
+	/**
+	 * Let all other CPUs call the given callback
+	 *
+	 * @param callback the function to call
+	 */
+	static void callbackOthers(callback_func callback);
 
 	/**
 	 * Sends the IPI <vector> to the CPU <id>

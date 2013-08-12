@@ -106,6 +106,7 @@ BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 BUILD_DEF_ISR 50
 BUILD_DEF_ISR 51
+BUILD_DEF_ISR 56
 
 # IPI: flush TLB
 .global isr52
@@ -168,7 +169,7 @@ isr55:
 isrNull:
 	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	pushl	$0						# error-code (no error here)
-	pushl	$56						# the interrupt-number
+	pushl	$57						# the interrupt-number
 	jmp		isrCommon
 
 # syscall

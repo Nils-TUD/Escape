@@ -21,6 +21,7 @@
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/break.h>
 #include <sys/task/proc.h>
+#include <sys/task/smp.h>
 #include <sys/util.h>
 #include <string.h>
 
@@ -81,6 +82,16 @@ static const char *condNames[] = {
 	"x","w","io","rw"
 };
 
+struct Breakpoint {
+	uint32_t addr;
+	int len;
+	int cond;
+	int enabled;
+};
+
+static bool changed = false;
+static Breakpoint breakpoints[4];
+
 static uint32_t getDR(int r) {
 	switch(r) {
 		case 0: return CPU::getDR0();
@@ -118,13 +129,23 @@ static void usage(OStream &os) {
 	os.writef("  i                            - show information\n");
 }
 
-static void set(int reg,uint32_t addr,int len,int cond) {
+static void set(int reg,uint32_t addr,int len,int cond,int en) {
 	setDR(reg,addr);
 	uint32_t dr7 = CPU::getDR7();
 	dr7 = dr7_set_len(dr7,reg,len);
 	dr7 = dr7_set_cond(dr7,reg,cond);
-	dr7 = dr7_set_glb_en(dr7,reg,addr != 0);
+	dr7 = dr7_set_glb_en(dr7,reg,en);
+	breakpoints[reg].addr = addr;
+	breakpoints[reg].len = len;
+	breakpoints[reg].cond = cond;
+	breakpoints[reg].enabled = en;
 	CPU::setDR7(dr7);
+	changed = true;
+}
+
+static void sync_breakpoints() {
+	for(int i = 0; i < 4; ++i)
+		set(i,breakpoints[i].addr,breakpoints[i].len,breakpoints[i].cond,breakpoints[i].enabled);
 }
 
 static int getRegNo(OStream &os,size_t argc,char **argv) {
@@ -187,7 +208,7 @@ static int set_breakpoint(OStream &os,size_t argc,char **argv) {
 		}
 	}
 
-	set(reg,addr,len,cond);
+	set(reg,addr,len,cond,1);
 	printBreakpoint(os,reg,getDR(reg));
 	return 0;
 }
@@ -196,7 +217,7 @@ static int delete_breakpoint(OStream &os,size_t argc,char **argv) {
 	int reg = getRegNo(os,argc,argv);
 	if(reg < 0)
 		return 0;
-	set(reg,0,BRK_LEN_1,BRK_COND_EXEC);
+	set(reg,0,BRK_LEN_1,BRK_COND_EXEC,0);
 	printBreakpoint(os,reg,getDR(reg));
 	return 0;
 }
@@ -205,9 +226,7 @@ static int endis_breakpoint(OStream &os,size_t argc,char **argv,int en) {
 	int reg = getRegNo(os,argc,argv);
 	if(reg < 0)
 		return 0;
-	uint32_t dr7 = CPU::getDR7();
-	dr7 = dr7_set_glb_en(dr7,reg,en);
-	CPU::setDR7(dr7);
+	set(reg,breakpoints[reg].addr,breakpoints[reg].len,breakpoints[reg].cond,en);
 	printBreakpoint(os,reg,getDR(reg));
 	return 0;
 }
@@ -234,21 +253,27 @@ int cons_cmd_break(OStream &os,size_t argc,char **argv) {
 		return 0;
 	}
 
+	int res = 0;
+	changed = false;
 	if(argc == 1 || strcmp(argv[1],"l") == 0) {
 		for(int i = 0; i < 4; ++i)
 			printBreakpoint(os,i,getDR(i));
 	}
 	else if(strcmp(argv[1],"s") == 0)
-		return set_breakpoint(os,argc,argv);
+		res = set_breakpoint(os,argc,argv);
 	else if(strcmp(argv[1],"d") == 0)
-		return delete_breakpoint(os,argc,argv);
+		res = delete_breakpoint(os,argc,argv);
 	else if(strcmp(argv[1],"en") == 0)
-		return endis_breakpoint(os,argc,argv,1);
+		res = endis_breakpoint(os,argc,argv,1);
 	else if(strcmp(argv[1],"dis") == 0)
-		return endis_breakpoint(os,argc,argv,0);
+		res = endis_breakpoint(os,argc,argv,0);
 	else if(strcmp(argv[1],"i") == 0)
-		return show_info(os,argc,argv);
+		res = show_info(os,argc,argv);
 	else
 		usage(os);
-	return 0;
+
+	/* if we have changed the breakpoints, let all other CPUs set the breakpoints as well */
+	if(changed)
+		SMP::callbackOthers(sync_breakpoints);
+	return res;
 }

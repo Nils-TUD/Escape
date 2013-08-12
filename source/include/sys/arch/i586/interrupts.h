@@ -209,6 +209,7 @@ private:
 	static void irqDefault(Thread *t,IntrptStackFrame *stack);
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
 	static void ipiTerm(Thread *t,IntrptStackFrame *stack);
+	static void ipiCallback(Thread *t,IntrptStackFrame *stack);
 	static void printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t pfaddr);
 
 	/* total number of interrupts */

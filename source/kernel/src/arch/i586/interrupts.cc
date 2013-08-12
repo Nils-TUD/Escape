@@ -101,7 +101,8 @@ const Interrupts::Interrupt Interrupts::intrptList[] = {
 	/* 0x35: IPI_WAIT */			{exFatal,		"",						0},
 	/* 0x36: IPI_HALT */			{exFatal,		"",						0},
 	/* 0x37: IPI_FLUSH_TLB */		{exFatal,		"",						0},
-	/* 0x38: isrNull */				{exFatal,		"",						0},
+	/* 0x38: IPI_CALLBACK */		{ipiCallback,	"IPI Callback",			0},
+	/* 0x39: isrNull */				{exFatal,		"",						0},
 };
 
 size_t Interrupts::intrptCount = 0;
@@ -287,6 +288,11 @@ void Interrupts::ipiTerm(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	/* stop running the thread, if it should die */
 	if(t->getNewState() == Thread::ZOMBIE)
 		Thread::switchAway();
+}
+
+void Interrupts::ipiCallback(Thread *t,A_UNUSED IntrptStackFrame *stack) {
+	SMP::callback(t->getCPU());
+	LAPIC::eoi();
 }
 
 void Interrupts::printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t addr) {

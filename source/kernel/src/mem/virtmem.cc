@@ -614,8 +614,8 @@ void VirtMem::doRemove(VMRegion *vm) {
 			if(vm->reg->getPageFlags(i) & PF_SWAPPED)
 				addSwap(-1);
 			pts = getPageDir()->unmap(virt,1,freeFrame);
-			if(freeFrame && !(vm->reg->getPageFlags(i) & (PF_COPYONWRITE | PF_DEMANDLOAD))) {
-				if(vm->reg->getFlags() & RF_SHAREABLE)
+			if(!(vm->reg->getPageFlags(i) & (PF_COPYONWRITE | PF_DEMANDLOAD))) {
+				if(vm->reg->getFlags() & (RF_NOFREE | RF_SHAREABLE))
 					addShared(-1);
 				else
 					addOwn(-1);

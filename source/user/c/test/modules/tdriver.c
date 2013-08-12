@@ -29,7 +29,8 @@
 #include <time.h>
 #include "tdriver.h"
 
-#define MY_LOCK		0x487912ee
+#define MY_LOCK			0x487912ee
+#define CLIENT_COUNT	10
 
 typedef struct {
 	int fd;
@@ -39,7 +40,7 @@ typedef struct {
 	void *data;
 } sTestRequest;
 
-static volatile int clientCount;
+static volatile int closeCount = 0;
 static int respId = 1;
 static sMsg msg;
 static int id;
@@ -64,7 +65,7 @@ static void sigUsr1(A_UNUSED int sig) {
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
 
-	for(i = 0; i < 10; i++) {
+	for(i = 0; i < CLIENT_COUNT; i++) {
 		if(startthread(clientThread,NULL) < 0)
 			error("Unable to start thread");
 	}
@@ -111,7 +112,6 @@ static int clientThread(A_UNUSED void *arg) {
 static int getRequests(A_UNUSED void *arg) {
 	msgid_t mid;
 	int tid;
-	clientCount = 0;
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 	do {
@@ -133,11 +133,9 @@ static int getRequests(A_UNUSED void *arg) {
 			}
 			if((tid = startthread(handleRequest,req)) < 0)
 				error("Unable to start thread");
-			if(clientCount == 0)
-				join(tid);
 		}
 	}
-	while(clientCount > 0);
+	while(closeCount < CLIENT_COUNT);
 	printffl("No clients anymore, giving up :(\n");
 	return 0;
 }
@@ -150,7 +148,6 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,req->msg.args.arg1);
 			req->msg.args.arg1 = 0;
 			send(req->fd,MSG_DEV_OPEN_RESP,&req->msg,sizeof(req->msg.args));
-			clientCount++;
 			break;
 		case MSG_DEV_READ:
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,
@@ -169,7 +166,7 @@ static int handleRequest(void *arg) {
 			break;
 		case MSG_DEV_CLOSE:
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
-			clientCount--;
+			closeCount++;
 			if(kill(getpid(),SIG_USR1) < 0)
 				error("Unable to send signal to driver-thread");
 			break;

@@ -632,6 +632,8 @@ void VirtMem::doRemove(VMRegion *vm) {
 			dataAddr = 0;
 		/* now destroy region */
 		vm->reg->release();
+		/* do the remove BEFORE the free */
+		regtree.remove(vm);
 		delete vm->reg;
 	}
 	else {
@@ -648,8 +650,8 @@ void VirtMem::doRemove(VMRegion *vm) {
 		if(vm->virt >= FREE_AREA_BEGIN)
 			freemap.free(vm->virt,ROUND_PAGE_UP(vm->reg->getByteCount()));
 		vm->reg->release();
+		regtree.remove(vm);
 	}
-	regtree.remove(vm);
 }
 
 int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAddr) {

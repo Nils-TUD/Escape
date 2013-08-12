@@ -49,7 +49,7 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 	if(res < 0)
 		goto error;
 	ssize_t count;
-	while((count = file->readFile(pid,buffer,sizeof(buffer))) > 0) {
+	while((count = file->read(pid,buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(ssize_t i = 0; i < count; i++) {
 			if(buffer[i] == '\n')
@@ -59,7 +59,7 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 		}
 	}
 	lines.endLine();
-	file->closeFile(pid);
+	file->close(pid);
 	file = NULL;
 
 	/* now display lines */
@@ -69,6 +69,6 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 error:
 	/* clean up */
 	if(file != NULL)
-		file->closeFile(pid);
+		file->close(pid);
 	return res;
 }

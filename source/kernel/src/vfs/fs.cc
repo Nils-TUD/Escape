@@ -45,7 +45,7 @@ void VFSFS::removeProc(pid_t pid) {
 	Proc *p = Proc::getByPid(pid);
 	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ) {
 		auto old = it++;
-		old->file->closeFile(pid);
+		old->file->close(pid);
 		delete &*old;
 	}
 }

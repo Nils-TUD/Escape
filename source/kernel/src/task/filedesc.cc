@@ -69,7 +69,7 @@ void FileDesc::destroy(Proc *p) {
 	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != NULL) {
 			p->fileDescs[i]->incUsages();
-			if(!p->fileDescs[i]->closeFile(p->getPid()))
+			if(!p->fileDescs[i]->close(p->getPid()))
 				p->fileDescs[i]->decUsages();
 			p->fileDescs[i] = NULL;
 		}
@@ -135,7 +135,7 @@ int FileDesc::redirect(int src,int dst) {
 	if(fSrc != NULL && fDst != NULL) {
 		fDst->incRefs();
 		/* we have to close the source because no one else will do it anymore... */
-		fSrc->closeFile(p->getPid());
+		fSrc->close(p->getPid());
 		/* now redirect src to dst */
 		p->fileDescs[src] = fDst;
 		err = 0;

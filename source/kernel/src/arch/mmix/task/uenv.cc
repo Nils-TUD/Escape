@@ -176,7 +176,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		}
 
 		/* read the header */
-		if((res = textreg->reg->getFile()->readFile(pid,&ehd,sizeof(sElfEHeader))) !=
+		if((res = textreg->reg->getFile()->read(pid,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->getProc()->getCommand(),strerror(-res));

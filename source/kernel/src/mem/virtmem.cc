@@ -351,7 +351,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 
 			/* write out on disk */
 			assert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
-			assert(file->writeFile(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
+			assert(file->write(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 			count--;
 		}
@@ -386,7 +386,7 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
 	 * done by the swapper-thread) */
 	assert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(file->readFile(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
+	assert(file->read(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
 	frameno_t frame = t->getFrame();
@@ -572,7 +572,7 @@ void VirtMem::sync(VMRegion *vm) const {
 			if(file->seek(pid,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
 			if(pid == cur)
-				file->writeFile(pid,(void*)(vm->virt + i * PAGE_SIZE),amount);
+				file->write(pid,(void*)(vm->virt + i * PAGE_SIZE),amount);
 			else {
 				/* we can't use the temp mapping during file->writeFile() because we might perform a
 				 * context-switch in between. */
@@ -580,7 +580,7 @@ void VirtMem::sync(VMRegion *vm) const {
 				uintptr_t addr = PageDir::getAccess(frame);
 				memcpy(buf,(void*)addr,amount);
 				PageDir::removeAccess();
-				file->writeFile(pid,buf,amount);
+				file->write(pid,buf,amount);
 			}
 		}
 
@@ -1135,7 +1135,7 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		goto error;
 	}
 	Thread::addHeapAlloc(tempBuf);
-	err = vm->reg->getFile()->readFile(pid,tempBuf,loadCount);
+	err = vm->reg->getFile()->read(pid,tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
 			err = -ENOMEM;

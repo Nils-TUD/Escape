@@ -57,7 +57,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 			lines.appendStr(ss.getString());
 		lines.newLine();
 	}
-	file->closeFile(pid);
+	file->close(pid);
 	if(res < 0)
 		return res;
 	lines.endLine();
@@ -70,7 +70,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
 	ssize_t res;
 	/* default way; read the entry without name first */
-	if((res = file->readFile(pid,e,DIRE_SIZE)) < 0)
+	if((res = file->read(pid,e,DIRE_SIZE)) < 0)
 		return res;
 	/* EOF? */
 	if(res == 0)
@@ -85,7 +85,7 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
 		return -ENAMETOOLONG;
 
 	/* now read the name */
-	if((res = file->readFile(pid,e->name,len)) < 0)
+	if((res = file->read(pid,e->name,len)) < 0)
 		return res;
 
 	/* if the record is longer, we have to skip the stuff until the next record */

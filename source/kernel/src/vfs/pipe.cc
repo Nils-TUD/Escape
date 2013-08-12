@@ -66,7 +66,7 @@ void VFSPipe::close(pid_t pid,OpenFile *file) {
 		}
 		/* otherwise write EOF in the pipe */
 		else
-			file->writeFile(pid,NULL,0);
+			file->write(pid,NULL,0);
 	}
 	/* in any case, destroy the node, i.e. decrease references */
 	unref();

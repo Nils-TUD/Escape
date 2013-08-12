@@ -442,7 +442,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 			goto error;
 		fd = FileDesc::assoc(file);
 		if(fd < 0) {
-			file->closeFile(p->pid);
+			file->close(p->pid);
 			goto error;
 		}
 	}

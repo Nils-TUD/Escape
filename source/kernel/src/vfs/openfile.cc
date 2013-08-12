@@ -43,7 +43,7 @@ void OpenFile::decUsages() {
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
 	if(usageCount == 0 && refCount == 0)
-		doCloseFile(Proc::getRunning());
+		doClose(Proc::getRunning());
 	SpinLock::release(&lock);
 }
 
@@ -129,7 +129,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	return res;
 }
 
-ssize_t OpenFile::readFile(pid_t pid,USER void *buffer,size_t count) {
+ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 	if(!(flags & VFS_READ))
 		return -EACCES;
 
@@ -159,7 +159,7 @@ ssize_t OpenFile::readFile(pid_t pid,USER void *buffer,size_t count) {
 	return readBytes;
 }
 
-ssize_t OpenFile::writeFile(pid_t pid,USER const void *buffer,size_t count) {
+ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
@@ -225,14 +225,14 @@ ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t s
 	return err;
 }
 
-bool OpenFile::closeFile(pid_t pid) {
+bool OpenFile::close(pid_t pid) {
 	SpinLock::acquire(&lock);
-	bool res = doCloseFile(pid);
+	bool res = doClose(pid);
 	SpinLock::release(&lock);
 	return res;
 }
 
-bool OpenFile::doCloseFile(pid_t pid) {
+bool OpenFile::doClose(pid_t pid) {
 	/* decrement references; it may be already zero if we have closed the file previously but
 	 * couldn't free it because there was still a user of it. */
 	if(refCount > 0)

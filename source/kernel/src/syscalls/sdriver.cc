@@ -97,7 +97,7 @@ int Syscalls::getclient(Thread *t,IntrptStackFrame *stack) {
 	/* associate fd with file */
 	int fd = FileDesc::assoc(file);
 	if(fd < 0) {
-		file->closeFile(pid);
+		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
 	SYSC_RET1(stack,fd);
@@ -159,14 +159,14 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	/* receive a message */
 	res = file->receiveMsg(pid,id,data,size,false);
 	if(res < 0) {
-		file->closeFile(pid);
+		file->close(pid);
 		SYSC_ERROR(stack,res);
 	}
 
 	/* assoc with fd */
 	int fd = FileDesc::assoc(file);
 	if(fd < 0) {
-		file->closeFile(pid);
+		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
 

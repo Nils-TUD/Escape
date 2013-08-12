@@ -179,7 +179,7 @@ void VMTree::remove(VMRegion *reg) {
 	}
 	/* close file */
 	if(reg->reg->getFile())
-		reg->reg->getFile()->closeFile(virtmem->getPid());
+		reg->reg->getFile()->close(virtmem->getPid());
 	Cache::free(reg);
 }
 

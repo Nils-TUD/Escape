@@ -325,7 +325,7 @@ void PhysMem::swapper() {
 		assert(swapFile->receiveMsg(pid,NULL,&msg,sizeof(msg),false) >= 0);
 		if(!SwapMap::init(msg.arg1)) {
 			swapEnabled = false;
-			swapFile->closeFile(pid);
+			swapFile->close(pid);
 		}
 	}
 

@@ -54,7 +54,7 @@ public:
 			memclear(buffer,sizeof(buffer));
 			if(file->seek(pid,addr,SEEK_SET) < 0)
 				valid = false;
-			if(valid && file->readFile(pid,buffer,sizeof(buffer)) < 0)
+			if(valid && file->read(pid,buffer,sizeof(buffer)) < 0)
 				valid = false;
 			if(valid)
 				buffer[sizeof(buffer) - 1] = '\0';
@@ -99,7 +99,7 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 		off_t end = file->seek(pid,0,SEEK_END);
 		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)BYTES_PER_LINE));
 		Console::navigation(os,&backend);
-		file->closeFile(pid);
+		file->close(pid);
 	}
 	return res;
 }

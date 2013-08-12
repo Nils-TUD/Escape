@@ -109,7 +109,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 
 	/* first read the header */
 	sElfEHeader eheader;
-	if((readRes = file->readFile(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
+	if((readRes = file->read(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
 		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
 		goto failed;
 	}
@@ -137,7 +137,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		}
 		/* read pheader */
 		sElfPHeader pheader;
-		if((readRes = file->readFile(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
+		if((readRes = file->read(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
 					j,path,strerror(-readRes));
 			goto failed;
@@ -160,11 +160,11 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 				Log::get().writef("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
 			}
-			if(file->readFile(p->getPid(),interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
+			if(file->read(p->getPid(),interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				Log::get().writef("[LOADER] Reading dynlinker name failed\n");
 				goto failedInterpName;
 			}
-			file->closeFile(p->getPid());
+			file->close(p->getPid());
 			/* now load him and stop loading the 'real' program */
 			res = doLoadFromFile(interpName,TYPE_INTERP,info);
 			Thread::remHeapAlloc(interpName);
@@ -184,7 +184,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 								loadSeg,pheader.p_offset);
 						goto failed;
 					}
-					if((readRes = file->readFile(p->getPid(),(void*)tlsStart,pheader.p_filesz)) < 0) {
+					if((readRes = file->read(p->getPid(),(void*)tlsStart,pheader.p_filesz)) < 0) {
 						Log::get().writef("[LOADER] Reading load segment %d failed: %s\n",
 								loadSeg,strerror(-readRes));
 						goto failed;
@@ -207,14 +207,14 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		goto failed;
 	}
 	assert(FileDesc::unassoc(fd) != NULL);
-	file->closeFile(p->getPid());
+	file->close(p->getPid());
 	return 0;
 
 failedInterpName:
 	Thread::remHeapAlloc(interpName);
 	Cache::free(interpName);
 failed:
-	file->closeFile(p->getPid());
+	file->close(p->getPid());
 	return -ENOEXEC;
 }
 

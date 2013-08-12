@@ -103,7 +103,7 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 			OpenFile *rfile;
 			Thread::addHeapAlloc(fsBytes);
 			if(VFSFS::openPath(pid,VFS_READ,"/",&rfile) == 0) {
-				while((c = rfile->readFile(pid,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
+				while((c = rfile->read(pid,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
 					fsByteCount += c;
 					if(c < bufSize)
 						break;
@@ -118,7 +118,7 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 					fsBytes = fsBytesDup;
 					Thread::addHeapAlloc(fsBytes);
 				}
-				rfile->closeFile(pid);
+				rfile->close(pid);
 			}
 			Thread::remHeapAlloc(fsBytes);
 		}

@@ -54,7 +54,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	/* assoc fd with file */
 	int fd = FileDesc::assoc(file);
 	if(fd < 0) {
-		file->closeFile(pid);
+		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
 	SYSC_RET1(stack,fd);
@@ -96,8 +96,8 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 	/* assoc fd with read-file */
 	int kreadFd = FileDesc::assoc(readFile);
 	if(kreadFd < 0) {
-		readFile->closeFile(pid);
-		writeFile->closeFile(pid);
+		readFile->close(pid);
+		writeFile->close(pid);
 		SYSC_ERROR(stack,kreadFd);
 	}
 
@@ -105,8 +105,8 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 	int kwriteFd = FileDesc::assoc(writeFile);
 	if(kwriteFd < 0) {
 		FileDesc::unassoc(kreadFd);
-		readFile->closeFile(pid);
-		writeFile->closeFile(pid);
+		readFile->close(pid);
+		writeFile->close(pid);
 		SYSC_ERROR(stack,kwriteFd);
 	}
 
@@ -245,7 +245,7 @@ int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
-	ssize_t readBytes = file->readFile(pid,buffer,count);
+	ssize_t readBytes = file->read(pid,buffer,count);
 	FileDesc::release(file);
 	if(readBytes < 0)
 		SYSC_ERROR(stack,readBytes);
@@ -270,7 +270,7 @@ int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
-	ssize_t writtenBytes = file->writeFile(pid,buffer,count);
+	ssize_t writtenBytes = file->write(pid,buffer,count);
 	FileDesc::release(file);
 	if(writtenBytes < 0)
 		SYSC_ERROR(stack,writtenBytes);
@@ -355,7 +355,7 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 
 	/* close file */
 	FileDesc::unassoc(fd);
-	if(!file->closeFile(pid))
+	if(!file->close(pid))
 		FileDesc::release(file);
 	else
 		Thread::remFileUsage(file);

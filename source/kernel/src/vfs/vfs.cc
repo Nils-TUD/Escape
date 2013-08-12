@@ -172,7 +172,7 @@ int VFS::openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 		err = node->open(pid,*file,flags);
 		if(err < 0) {
 			/* close removes the channel device-node, if it is one */
-			(*file)->closeFile(pid);
+			(*file)->close(pid);
 			VFSNode::release(node);
 			return err;
 		}
@@ -183,7 +183,7 @@ int VFS::openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 	if(flags & VFS_APPEND) {
 		err = (*file)->seek(pid,0,SEEK_END);
 		if(err < 0) {
-			(*file)->closeFile(pid);
+			(*file)->close(pid);
 			return err;
 		}
 	}
@@ -216,7 +216,7 @@ int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	if(err < 0) {
 		VFSNode::release(pipeNode);
 		/* closeFile removes the pipenode, too */
-		(*readFile)->closeFile(pid);
+		(*readFile)->close(pid);
 		return err;
 	}
 	VFSNode::release(pipeNode);

@@ -168,7 +168,7 @@ public:
 	 * @param count the max. number of bytes to read
 	 * @return the number of bytes read
 	 */
-	ssize_t readFile(pid_t pid,void *buffer,size_t count);
+	ssize_t read(pid_t pid,void *buffer,size_t count);
 
 	/**
 	 * Writes count bytes from the given buffer into this file and returns the number of written
@@ -179,7 +179,7 @@ public:
 	 * @param count the number of bytes to write
 	 * @return the number of bytes written
 	 */
-	ssize_t writeFile(pid_t pid,const void *buffer,size_t count);
+	ssize_t write(pid_t pid,const void *buffer,size_t count);
 
 	/**
 	 * Sends a message to the corresponding device
@@ -213,7 +213,7 @@ public:
 	 * @param pid the process-id
 	 * @return true if the file has really been closed
 	 */
-	bool closeFile(pid_t pid);
+	bool close(pid_t pid);
 
 	/***
 	 * Fetches the client-id from this file
@@ -297,7 +297,7 @@ private:
 
 	static int doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client);
 	static void releaseFile(OpenFile *file);
-	bool doCloseFile(pid_t pid);
+	bool doClose(pid_t pid);
 
 	klock_t lock;
 	/* read OR write; flags = 0 => entry unused */

@@ -80,7 +80,7 @@ void Util::switchToVGA() {
 				Thread::switchAway();
 			}
 		}
-		file->closeFile(KERNEL_PID);
+		file->close(KERNEL_PID);
 	}
 }
 

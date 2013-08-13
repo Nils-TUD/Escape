@@ -717,7 +717,7 @@ errorName:
 void VFS::removeProcess(pid_t pid) {
 	/* remove from /system/processes */
 	const Proc *p = Proc::getByPid(pid);
-	VFSNode *node = VFSNode::get(p->threadDir);
+	VFSNode *node = VFSNode::get(p->getThreadsDir());
 	node->getParent()->destroy();
 	VFSFS::removeProc(pid);
 }
@@ -733,7 +733,7 @@ inode_t VFS::createThread(tid_t tid) {
 	itoa(name,12,tid);
 
 	/* create dir */
-	n = VFSNode::get(t->getProc()->threadDir);
+	n = VFSNode::get(t->getProc()->getThreadsDir());
 	dir = CREATE(VFSDir,KERNEL_PID,n,name);
 	if(dir == NULL)
 		goto errorDir;

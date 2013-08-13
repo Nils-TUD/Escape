@@ -154,7 +154,7 @@ ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 		/* no lock here because its not critical. we don't make decisions based on it or similar.
 		 * its just for statistics. therefore, it doesn't really hurt if we add a bit less in
 		 * very very rare cases. */
-		p->stats.input += readBytes;
+		p->getStats().input += readBytes;
 	}
 	return readBytes;
 }
@@ -182,7 +182,7 @@ ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 	if(writtenBytes > 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
-		p->stats.output += writtenBytes;
+		p->getStats().output += writtenBytes;
 	}
 	return writtenBytes;
 }
@@ -202,7 +202,7 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 	if(err == 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
-		p->stats.output += size1 + size2;
+		p->getStats().output += size1 + size2;
 	}
 	return err;
 }
@@ -220,7 +220,7 @@ ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t s
 	if(err > 0 && pid != KERNEL_PID) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
-		p->stats.input += err;
+		p->getStats().input += err;
 	}
 	return err;
 }

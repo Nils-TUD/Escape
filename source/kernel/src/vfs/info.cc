@@ -108,8 +108,8 @@ void VFSInfo::procReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 			"OwnFrames:",own,
 			"SharedFrames:",shared,
 			"Swapped:",swapped,
-			"Read:",p->stats.input,
-			"Write:",p->stats.output
+			"Read:",p->getStats().input,
+			"Write:",p->getStats().output
 		);
 	}
 	*buffer = os.keepString();

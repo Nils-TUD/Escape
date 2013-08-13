@@ -96,8 +96,8 @@ void ProcBase::init() {
 	memclear(p->locks,sizeof(p->locks));
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
-	p->threadDir = VFS::createProcess(p->pid);
-	if(p->threadDir < 0)
+	p->threadsDir = VFS::createProcess(p->pid);
+	if(p->threadsDir < 0)
 		Util::panic("Not enough mem for init process");
 
 	/* init fds */
@@ -253,9 +253,9 @@ int ProcBase::clone(uint8_t flags) {
 	Mutex::release(&procLock);
 
 	/* create the VFS node */
-	p->threadDir = VFS::createProcess(p->pid);
-	if(p->threadDir < 0) {
-		res = p->threadDir;
+	p->threadsDir = VFS::createProcess(p->pid);
+	if(p->threadsDir < 0) {
+		res = p->threadsDir;
 		goto errorAdd;
 	}
 

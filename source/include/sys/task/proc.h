@@ -60,8 +60,18 @@
 #define PLOCK_PORTS			3
 #define PLOCK_PROG			4	/* clone, exec, threads */
 
+class Groups;
+class FileDesc;
+class VFSFS;
+class Env;
+
 /* represents a process */
 class ProcBase : public SListItem {
+	friend class Groups;
+	friend class FileDesc;
+	friend class VFSFS;
+	friend class Env;
+
 protected:
 	ProcBase() {
 	}
@@ -81,6 +91,19 @@ public:
 		uint64_t runtime;
 		ulong schedCount;
 		ulong syscalls;
+	};
+
+	struct Stats {
+		/* thread stats */
+		uint64_t totalRuntime;
+		ulong totalSyscalls;
+		ulong totalScheds;
+		/* I/O stats */
+		ulong input;
+		ulong output;
+		/* exit */
+		ushort exitCode;
+		ushort exitSignal;
 	};
 
 	/**
@@ -447,6 +470,23 @@ public:
 	}
 
 	/**
+	 * @return the statistics for this process
+	 */
+	Stats &getStats() {
+		return stats;
+	}
+	const Stats &getStats() const {
+		return stats;
+	}
+
+	/**
+	 * @return the threads-directory in the VFS
+	 */
+	inode_t getThreadsDir() const {
+		return threadsDir;
+	}
+
+	/**
 	 * @return the main thread of this process
 	 */
 	Thread *getMainThread() {
@@ -525,8 +565,6 @@ private:
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
 	VirtMem virtmem;
-	/* TODO until the other modules are classes */
-public:
 	/* all groups (may include egid or not) of this process */
 	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */
@@ -536,20 +574,8 @@ public:
 	/* environment-variables of this process */
 	SList<Env::EnvVar> *env;
 	/* the directory-node-number in the VFS of this process */
-	inode_t threadDir;
-	struct {
-		/* thread stats */
-		uint64_t totalRuntime;
-		ulong totalSyscalls;
-		ulong totalScheds;
-		/* I/O stats */
-		ulong input;
-		ulong output;
-		/* exit */
-		ushort exitCode;
-		ushort exitSignal;
-	} stats;
-private:
+	inode_t threadsDir;
+	Stats stats;
 	/* the address of the sigRet "function" */
 	uintptr_t sigRetAddr;
 	/* start-command */

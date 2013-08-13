@@ -118,6 +118,8 @@ size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail) {
 	if(rb_length(vt->inbuf) == 0)
 		vt->inbufEOF = false;
 	*avail = vt->inbufEOF || rb_length(vt->inbuf) > 0;
+	if(*avail == 0)
+		fcntl(vt->sid,F_SETDATA,false);
 	unlocku(&vt->lock);
 	return res;
 }

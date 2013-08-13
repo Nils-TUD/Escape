@@ -124,7 +124,7 @@ static int vtermThread(void *vterm) {
 					size_t count = msg.args.arg2;
 					char *data = (char*)malloc(count);
 					msg.args.arg1 = vtin_gets(vt,data,count,&avail);
-					msg.args.arg2 = avail;
+					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1);

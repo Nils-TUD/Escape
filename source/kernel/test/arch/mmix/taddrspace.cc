@@ -41,14 +41,14 @@ static void test_addrspace() {
 	Proc *p = Proc::getByPid(Proc::getRunning());
 	/* a trick to ensure that no address-spaces are in use yet: temporary free the first one and
 	 * allocate it again when we're finished */
-	AddressSpace::free(p->getPageDir()->addrSpace);
+	AddressSpace::free(p->getPageDir()->getAddrSpace());
 	test_basics();
 	test_dupUsage();
 	/* do it twice to ensure that the cleanup is correct */
 	test_dupUsage();
-	p->getPageDir()->addrSpace = AddressSpace::alloc();
-	p->getPageDir()->rv &= ~0x3F;
-	p->getPageDir()->rv |= (p->getPageDir()->addrSpace->getNo() << 3);
+	p->getPageDir()->setAddrSpace(AddressSpace::alloc());
+	p->getPageDir()->setRV((p->getPageDir()->getRV() & ~0x3F) |
+			(p->getPageDir()->getAddrSpace()->getNo() << 3));
 }
 
 static void test_basics() {

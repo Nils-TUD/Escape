@@ -168,6 +168,15 @@ public:
 	uint64_t getRV() const {
 		return rv;
 	}
+	void setRV(uint64_t nrv) {
+		rv = nrv;
+	}
+	AddressSpace *getAddrSpace() {
+		return addrSpace;
+	}
+	void setAddrSpace(AddressSpace *aspace) {
+		addrSpace = aspace;
+	}
 
 private:
 	static void clearTC() {
@@ -190,12 +199,10 @@ private:
 	size_t remEmptyPts(uintptr_t virt);
 	void tcRemPT(uintptr_t virt);
 
-	/* TODO remove that */
-public:
+private:
 	AddressSpace *addrSpace;
 	uint64_t rv;
 	ulong ptables;
-private:
 	static PageDir firstCon;
 };
 

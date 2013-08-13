@@ -351,6 +351,10 @@ sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count,bool setDev) {
 		n = MIN(n,total);
 		rem = n;
 		res = (sVTMode*)malloc(sizeof(sVTMode) * n);
+		if(!res) {
+			*count = -ENOMEM;
+			return NULL;
+		}
 		for(i = 0; i < cfg->devCount; i++) {
 			if((err = video_getModes(cfg->devFds[i],res + (n - rem),rem)) < 0) {
 				*count = err;

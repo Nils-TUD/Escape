@@ -75,11 +75,15 @@ static int kmMngThread(A_UNUSED void *arg) {
 			printe("Unable to read from stdin");
 			break;
 		}
-		if(c != '\033')
+		if(c != '\033') {
+			printe("Got bogus data from stdin");
 			continue;
+		}
 		cmd = freadesc(stdin,&n1,&n2,&n3);
-		if(cmd != ESCC_KEYCODE)
+		if(cmd != ESCC_KEYCODE) {
+			printe("Got bogus data from stdin");
 			continue;
+		}
 		game_handleKey(n2,n3,n1);
 	}
 	return 0;

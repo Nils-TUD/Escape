@@ -163,22 +163,17 @@ void ThreadBase::doSwitch() {
 		n->stats.cycleStart = timestamp;
 }
 
-
-#if DEBUGGING
-
-void ThreadBase::printState(OStream &os,const ThreadRegs *state) const {
-	os.writef("State:\n",state);
-	os.writef("\t$16 = %#08x\n",state->r16);
-	os.writef("\t$17 = %#08x\n",state->r17);
-	os.writef("\t$18 = %#08x\n",state->r18);
-	os.writef("\t$19 = %#08x\n",state->r19);
-	os.writef("\t$20 = %#08x\n",state->r20);
-	os.writef("\t$21 = %#08x\n",state->r21);
-	os.writef("\t$22 = %#08x\n",state->r22);
-	os.writef("\t$23 = %#08x\n",state->r23);
-	os.writef("\t$29 = %#08x\n",state->r29);
-	os.writef("\t$30 = %#08x\n",state->r30);
-	os.writef("\t$31 = %#08x\n",state->r31);
+void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {
+	os.writef("State:\n",st);
+	os.writef("\t$16 = %#08x\n",st->r16);
+	os.writef("\t$17 = %#08x\n",st->r17);
+	os.writef("\t$18 = %#08x\n",st->r18);
+	os.writef("\t$19 = %#08x\n",st->r19);
+	os.writef("\t$20 = %#08x\n",st->r20);
+	os.writef("\t$21 = %#08x\n",st->r21);
+	os.writef("\t$22 = %#08x\n",st->r22);
+	os.writef("\t$23 = %#08x\n",st->r23);
+	os.writef("\t$29 = %#08x\n",st->r29);
+	os.writef("\t$30 = %#08x\n",st->r30);
+	os.writef("\t$31 = %#08x\n",st->r31);
 }
-
-#endif

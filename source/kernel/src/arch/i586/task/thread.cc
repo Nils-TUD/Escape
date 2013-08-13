@@ -199,15 +199,11 @@ void ThreadBase::doSwitch() {
 	}
 }
 
-#if DEBUGGING
-
-void ThreadBase::printState(OStream &os,const ThreadRegs *state) const {
-	os.writef("State @ 0x%08Px:\n",state);
-	os.writef("\tesp = %#08x\n",state->esp);
-	os.writef("\tedi = %#08x\n",state->edi);
-	os.writef("\tesi = %#08x\n",state->esi);
-	os.writef("\tebp = %#08x\n",state->ebp);
-	os.writef("\teflags = %#08x\n",state->eflags);
+void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {
+	os.writef("State @ 0x%08Px:\n",st);
+	os.writef("\tesp = %#08x\n",st->esp);
+	os.writef("\tedi = %#08x\n",st->edi);
+	os.writef("\tesi = %#08x\n",st->esi);
+	os.writef("\tebp = %#08x\n",st->ebp);
+	os.writef("\teflags = %#08x\n",st->eflags);
 }
-
-#endif

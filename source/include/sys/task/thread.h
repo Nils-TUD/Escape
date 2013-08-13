@@ -579,9 +579,9 @@ public:
 	 * Prints the given thread-state
 	 *
 	 * @param os the output-stream
-	 * @param state the pointer to the state-struct
+	 * @param st the pointer to the state-struct
 	 */
-	void printState(OStream &os,const ThreadRegs *state) const;
+	void printState(OStream &os,const ThreadRegs *st) const;
 
 private:
 	/**

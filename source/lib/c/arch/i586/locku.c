@@ -21,46 +21,14 @@
 #include <esc/thread.h>
 #include <esc/conf.h>
 
-typedef void (*fConstr)(void);
-
-static void initLock(void);
-
-/* actually this isn't optimal because the stdio-constructor may run first and uses locku. but it
- * isn't that bad because at this stage there won't be multiple threads anyway so that the lock
- * is never hold and the number of cpus doesn't matter */
-fConstr lockConstr[1] A_INIT = {
-	initLock
-};
-static size_t cpuCount;
-
-static void initLock(void) {
-	cpuCount = sysconf(CONF_CPU_COUNT) > 1;
-}
-
 void locku(tULock *l) {
-	__asm__ (
-		"mov $1,%%ecx;"				/* ecx=1 to lock it for others */
-		"lockuLoop:"
-		"	xor	%%eax,%%eax;"		/* clear eax */
-		"	lock;"					/* lock next instruction */
-		"	cmpxchg %%ecx,(%0);"	/* compare l with eax; if equal exchange ecx with l */
-		"	jz		done;"
-		"	mov		%1,%%eax;"
-		"	test	%%eax,%%eax;"
-		"	jnz		lockuLoop;"		/* if there are multiple cpus, just sit here and wait */
-		"	call	yield;"			/* with only one cpu, waiting makes no sense because nobody
-									   else can release the lock */
-		"	jmp		lockuLoop;"		/* try again */
-		"done:"
-		/* outputs */
-		:
-		/* inputs */
-		: "D" (l), "m" (cpuCount)
-		/* eax, ecx and cc will be clobbered; we need memory as well because *l is changed */
-		: "eax", "ecx", "cc", "memory"
-	);
+	/* 0 means free, < 0 means taken. we have this slightly odd meaning here to prevent that we
+	 * have to initialize all locks with 1 (which would also be arch-dependent here) */
+    if(__sync_fetch_and_add(l, -1) <= -1)
+    	lock((uint)l,LOCK_EXCLUSIVE);
 }
 
 void unlocku(tULock *l) {
-	*l = false;
+    if(__sync_fetch_and_add(l, +1) < -1)
+    	unlock((uint)l);
 }

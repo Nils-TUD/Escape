@@ -41,7 +41,7 @@ typedef struct {
 	evobj_t object;
 } sWaitObject;
 
-typedef ulong tULock;
+typedef long tULock;
 
 #ifdef __cplusplus
 extern "C" {

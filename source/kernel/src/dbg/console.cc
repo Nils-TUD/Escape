@@ -304,7 +304,6 @@ void Console::navigation(OStream &os,NaviBackend *backend) {
 					searchMode = SEARCH_FORWARD;
 				break;
 			case VK_ESC:
-			case VK_Q:
 				run = false;
 				break;
 			default:

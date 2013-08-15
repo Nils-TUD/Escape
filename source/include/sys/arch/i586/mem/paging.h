@@ -265,7 +265,7 @@ private:
 	static int crtPageTable(pde_t *pd,uintptr_t ptables,uintptr_t virt,uint flags);
 	static size_t remEmptyPt(uintptr_t ptables,size_t pti);
 	static void printPageTable(OStream &os,uintptr_t ptables,size_t no,pde_t pde);
-	static void printPage(OStream &os,pte_t page);
+	static void printPTE(OStream &os,pte_t page);
 
 	uintptr_t getPTables(PageDir *cur) const;
 	ssize_t doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint flags);

@@ -692,7 +692,7 @@ void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
 	if(pdirAddr[ADDR_TO_PDINDEX(virt)] & PDE_PRESENT) {
 		PageDir::pte_t *page = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 		os.writef("Page @ %p: ",virt);
-		printPage(os,*page);
+		PageDir::printPTE(os,*page);
 		os.writef("\n");
 	}
 	/* restore the old mapping, if necessary */
@@ -711,7 +711,7 @@ void PageDir::printPageTable(OStream &os,uintptr_t ptables,size_t no,pde_t pde) 
 		for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pte[i] & PTE_EXISTS) {
 				os.writef("\t\t0x%zx: ",i);
-				printPage(os,pte[i]);
+				printPTE(os,pte[i]);
 				os.writef(" (VM: %p - %p)\n",addr,addr + PAGE_SIZE - 1);
 			}
 			addr += PAGE_SIZE;
@@ -719,7 +719,7 @@ void PageDir::printPageTable(OStream &os,uintptr_t ptables,size_t no,pde_t pde) 
 	}
 }
 
-void PageDir::printPage(OStream &os,pte_t page) {
+void PageDir::printPTE(OStream &os,pte_t page) {
 	if(page & PTE_EXISTS) {
 		os.writef("r=0x%08x fr=0x%x [%c%c%c%c]",page,PTE_FRAMENO(page),
 				(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',

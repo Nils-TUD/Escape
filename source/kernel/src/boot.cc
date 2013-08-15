@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/paging.h>
+#include <sys/mem/virtmem.h>
 #include <sys/dbg/kb.h>
 #include <sys/boot.h>
 #include <sys/log.h>
@@ -56,6 +57,9 @@ void Boot::start(BootInfo *info) {
 
 	Log::get().writef("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
 			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / K);
+
+	if(DISABLE_DEMLOAD)
+		Log::get().writef("Warning: demand loading is disabled!\n");
 }
 
 void Boot::taskStarted(const char *text) {

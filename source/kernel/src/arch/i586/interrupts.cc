@@ -220,14 +220,14 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 		exCount = 0;
 	lastPFAddr = addr;
 	lastPFProc = Proc::getRunning();
-	printPFInfo(Log::get(),stack,addr);
+	printPFInfo(Log::get(),t,stack,addr);
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 	if(!VirtMem::pagefault(addr,stack->getError() & 0x2)) {
 		/* ok, now lets check if the thread wants more stack-pages */
 		if(Thread::extendStack(addr) < 0) {
-			printPFInfo(Log::get(),stack,addr);
+			printPFInfo(Log::get(),t,stack,addr);
 			/* TODO Proc::segFault();*/
 			Util::panic("Process segfaulted");
 		}
@@ -295,9 +295,9 @@ void Interrupts::ipiCallback(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	LAPIC::eoi();
 }
 
-void Interrupts::printPFInfo(OStream &os,IntrptStackFrame *stack,uintptr_t addr) {
-	pid_t pid = Proc::getRunning();
-	os.writef("Page fault for address %p @ %p, process %d\n",addr,stack->getIP(),pid);
+void Interrupts::printPFInfo(OStream &os,Thread *t,IntrptStackFrame *stack,uintptr_t addr) {
+	os.writef("Page fault for address %p @ %p on CPU %d, process %d\n",
+			addr,stack->getIP(),t->getCPU(),t->getProc()->getPid());
 	os.writef("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 			(stack->getError() & 0x1) ?
 				"page-level protection violation" : "not-present page",

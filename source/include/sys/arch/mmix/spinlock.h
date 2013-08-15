@@ -24,5 +24,8 @@
 /* mmix does not support smp */
 inline void SpinLock::acquire(klock_t *) {
 }
+inline bool SpinLock::tryAcquire(klock_t *) {
+	return true;
+}
 inline void SpinLock::release(klock_t *) {
 }

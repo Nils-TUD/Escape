@@ -19,20 +19,24 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/arch/i586/atomic.h>
-#include <sys/cpu.h>
+#include <esc/common.h>
 
-inline void SpinLock::acquire(klock_t *l) {
-    while(!Atomic::cmpnswap(l, 0, 1))
-        CPU::pause();
-}
+class Atomic {
+	Atomic() = delete;
 
-inline bool SpinLock::tryAcquire(klock_t *l) {
-	return Atomic::cmpnswap(l, 0, 1);
-}
-
-inline void SpinLock::release(klock_t *l) {
-	/* generates a memory-barrier as well */
-    __sync_lock_release(l);
-}
+public:
+    /**
+     * Adds <value> to *<ptr> and returns the old value
+     */
+    template<typename T, typename Y>
+    static T add(T volatile *ptr, Y value) {
+        return __sync_fetch_and_add(ptr, value);
+    }
+    /**
+     * Compare and swap
+     */
+    template<typename T, typename Y>
+    static bool cmpnswap(T volatile *ptr, Y oldval, Y newval) {
+        return __sync_bool_compare_and_swap(ptr, oldval, newval);
+    }
+};

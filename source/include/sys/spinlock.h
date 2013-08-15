@@ -26,6 +26,7 @@ class SpinLock {
 
 public:
 	static void acquire(klock_t *l);
+	static bool tryAcquire(klock_t *l);
 	static void release(klock_t *l);
 };
 

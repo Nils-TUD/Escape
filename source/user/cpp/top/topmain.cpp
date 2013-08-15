@@ -185,9 +185,6 @@ static void display(void) {
 }
 
 static int refreshThread(void*) {
-	size_t usercount;
-	pagesize = sysconf(CONF_PAGE_SIZE);
-	users = user_parseFromFile(USERS_PATH,&usercount);
 	while(run) {
 		display();
 		sleep(1000);
@@ -199,6 +196,10 @@ int main(void) {
 	vterm_setNavi(STDIN_FILENO,false);
 	vterm_setReadline(STDIN_FILENO,false);
 	vterm_backup(STDIN_FILENO);
+
+	size_t usercount;
+	pagesize = sysconf(CONF_PAGE_SIZE);
+	users = user_parseFromFile(USERS_PATH,&usercount);
 
 	int tid = startthread(refreshThread,nullptr);
 	if(tid < 0)

@@ -111,12 +111,11 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 			return -ENOTSUP;
 		}
 		/* ensure that we allocate enough memory */
-		newSize = MAX(offset + count,size * 2);
-		if(newSize > MAX_VFS_FILE_SIZE) {
+		if(offset + count > MAX_VFS_FILE_SIZE) {
 			SpinLock::release(&lock);
 			return -ENOMEM;
 		}
-
+		newSize = MIN(MAX(offset + count,size * 2),MAX_VFS_FILE_SIZE);
 		data = Cache::realloc(data,newSize);
 	}
 

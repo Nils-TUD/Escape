@@ -42,6 +42,7 @@
 #include "modules/drvparallel.h"
 #include "modules/pingpong.h"
 #include "modules/maxthreads.h"
+#include "modules/pagefaults.h"
 
 #define NAME_LEN 10
 
@@ -71,6 +72,7 @@ static sTestModule modules[] = {
 	{"parallel",mod_drvparallel},
 	{"pingpong",mod_pingpong},
 	{"maxthreads",mod_maxthreads},
+	{"pagefaults",mod_pagefaults},
 };
 
 int main(int argc,char *argv[]) {

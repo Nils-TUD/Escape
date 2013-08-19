@@ -357,8 +357,8 @@ sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count,bool setDev) {
 		}
 		for(i = 0; i < cfg->devCount; i++) {
 			if((err = video_getModes(cfg->devFds[i],res + (n - rem),rem)) < 0) {
-				*count = err;
-				return NULL;
+				printe("[VTERM] Unable to get modes from %s",cfg->devNames[i]);
+				continue;
 			}
 			/* set device number */
 			if(setDev) {

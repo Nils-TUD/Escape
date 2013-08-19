@@ -92,10 +92,8 @@ bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows) {
 
 	/* set video mode */
 	res = video_setMode(cfg->devFds[mode.device],mode.id);
-	if(res < 0) {
+	if(res < 0)
 		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
-		return false;
-	}
 
 	if(startthread(vt_dateThread,NULL) < 0)
 		error("Unable to start date-thread");
@@ -166,7 +164,7 @@ static int vt_findMode(sVTermCfg *cfg,uint cols,uint rows,sVTMode *mode) {
 	/* search for the best matching mode */
 	bestmode = count;
 	for(i = 0; i < count; i++) {
-		uint pixdiff = ABS(modes[i].width * modes[i].height - cols * rows);
+		uint pixdiff = ABS((int)(modes[i].width * modes[i].height) - (int)(cols * rows));
 		if(pixdiff < bestdiff) {
 			bestmode = i;
 			bestdiff = pixdiff;

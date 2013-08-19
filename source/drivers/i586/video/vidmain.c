@@ -73,23 +73,23 @@ int main(int argc,char **argv) {
 
 	id = createdev("/dev/video",DEV_TYPE_BLOCK,DEV_WRITE);
 	if(id < 0)
-		error("Unable to register device 'video'");
+		error("[VGA] Unable to register device 'video'");
 
 	/* reserve ports for cursor */
 	if(reqports(CURSOR_PORT_INDEX,2) < 0)
-		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
+		error("[VGA] Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* use current mode */
 	if(usebios)
 		modes[1].id = vid_getMode();
 	if(vid_setMode(modes[1].id,false) < 0)
-		printe("Unable to set VGA mode");
+		printe("[VGA] Unable to set VGA mode. Disabling BIOS-calls!");
 
 	/* wait for messages */
 	while(1) {
 		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[VIDEO] Unable to get work");
+			printe("[VGA] Unable to get work");
 		else {
 			/* see what we have to do */
 			switch(mid) {
@@ -177,8 +177,11 @@ static uint16_t vid_getMode(void) {
 	sVM86Regs regs;
 	memclear(&regs,sizeof(regs));
 	regs.ax = 0x0F00;
-	if(vm86int(0x10,&regs,NULL) < 0)
-		printe("Getting current vga-mode failed");
+	if(vm86int(0x10,&regs,NULL) < 0) {
+		printe("[VGA] Getting current vga-mode failed");
+		/* fall back to default */
+		return 3;
+	}
 	return regs.ax & 0xFF;
 }
 
@@ -193,8 +196,10 @@ static int vid_setMode(int mid,bool clear) {
 		if(!clear)
 			regs.ax |= 0x80;
 		res = vm86int(0x10,&regs,NULL);
-		if(res < 0)
-			return res;
+		if(res < 0) {
+			printe("[VGA] Unable to set vga-mode. Disabling BIOS-calls!");
+			usebios = false;
+		}
 	}
 
 	/* find mode */
@@ -215,7 +220,7 @@ static int vid_setMode(int mid,bool clear) {
 	/* map video-memory for our process */
 	videoData = (uint8_t*)regaddphys(&mode->addr,mode->info->width * (mode->info->height + 1) * 2,0);
 	if(videoData == NULL)
-		error("Unable to acquire video-memory (%p)",mode->addr);
+		error("[VGA] Unable to acquire video-memory (%p)",mode->addr);
 	return 0;
 }
 

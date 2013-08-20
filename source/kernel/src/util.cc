@@ -73,6 +73,12 @@ void Util::stopTimer(OStream &os,const char *prefix,...) {
 
 void Util::panic(const char *fmt, ...) {
 	va_list ap;
+	va_start(ap,fmt);
+	Util::vpanic(fmt,ap);
+	va_end(ap);
+}
+
+void Util::vpanic(const char *fmt,va_list ap) {
 	VideoLog vl;
 	Video &vid = Video::get();
 	Log &log = Log::get();
@@ -83,9 +89,7 @@ void Util::panic(const char *fmt, ...) {
 
 	/* print message */
 	vl.writef("\n\033[co;7;4]PANIC: ");
-	va_start(ap,fmt);
 	vl.vwritef(fmt,ap);
-	va_end(ap);
 	vl.writef("%|s\033[co]\n","");
 
 	/* write information about the running thread to log/screen */

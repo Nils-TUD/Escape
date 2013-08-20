@@ -45,6 +45,7 @@ public:
 	 *
 	 * @param fmt the format of the message to display
 	 */
+	static void vpanic(const char *fmt,va_list ap);
 	static void panic(const char *fmt,...) asm("util_panic");
 
 	/**

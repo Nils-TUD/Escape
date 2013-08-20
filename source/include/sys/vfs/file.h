@@ -54,12 +54,23 @@ public:
 	 */
 	virtual ~VFSFile();
 
+	/**
+	 * This is only intended for intern usage! It reserves <size> bytes space for the file, which
+	 * requires that the allocation is dynamic.
+	 *
+	 * @param newSize the new size
+	 * @return 0 on success
+	 */
+	int reserve(size_t newSize);
+
 	virtual size_t getSize(pid_t pid) const;
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
 	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
 
 private:
+	int doReserve(size_t newSize);
+
 	bool dynamic;
 	/* size of the buffer */
 	size_t size;

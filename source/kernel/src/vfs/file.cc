@@ -63,6 +63,28 @@ off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) 
 	}
 }
 
+int VFSFile::reserve(size_t newSize) {
+	SpinLock::acquire(&lock);
+	int res = doReserve(newSize);
+	SpinLock::release(&lock);
+	return res;
+}
+
+int VFSFile::doReserve(size_t newSize) {
+	if(!dynamic)
+		return -ENOTSUP;
+	/* ensure that we allocate enough memory */
+	if(newSize > MAX_VFS_FILE_SIZE)
+		return -ENOMEM;
+	newSize = MIN(MAX(newSize,size * 2),MAX_VFS_FILE_SIZE);
+	void *newData = Cache::realloc(data,newSize);
+	if(!newData)
+		return -ENOMEM;
+	data = newData;
+	size = newSize;
+	return 0;
+}
+
 size_t VFSFile::getSize(A_UNUSED pid_t pid) const {
 	return pos;
 }
@@ -87,49 +109,16 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 
 ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
                        off_t offset,size_t count) {
-	size_t newSize = 0;
-
 	/* need to create cache? */
 	SpinLock::acquire(&lock);
-	void *oldData = data;
-	if(data == NULL) {
-		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
-		/* check for overflow */
-		if(newSize > MAX_VFS_FILE_SIZE) {
+	if(data == NULL || size < offset + count) {
+		int res = doReserve(MAX(offset + count,VFS_INITIAL_WRITECACHE));
+		if(res < 0) {
 			SpinLock::release(&lock);
-			return -ENOMEM;
+			return res;
 		}
-
-		data = Cache::alloc(newSize);
-		/* reset position */
-		pos = 0;
-	}
-	/* need to increase cache-size? */
-	else if(size < offset + count) {
-		if(!dynamic) {
-			SpinLock::release(&lock);
-			return -ENOTSUP;
-		}
-		/* ensure that we allocate enough memory */
-		if(offset + count > MAX_VFS_FILE_SIZE) {
-			SpinLock::release(&lock);
-			return -ENOMEM;
-		}
-		newSize = MIN(MAX(offset + count,size * 2),MAX_VFS_FILE_SIZE);
-		data = Cache::realloc(data,newSize);
 	}
 
-	/* failed? */
-	if(data == NULL) {
-		/* don't throw the data away, use the old version */
-		data = oldData;
-		SpinLock::release(&lock);
-		return -ENOMEM;
-	}
-
-	/* set total size and number of used bytes */
-	if(newSize)
-		size = newSize;
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
 	 * file as it was before, except that we've increased the buffer-size */
 	Thread::addLock(&lock);

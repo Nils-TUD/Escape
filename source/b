@@ -239,7 +239,7 @@ case "$cmd" in
 			xargs | cut -d ' ' -f 5`
 		# find section number of .rodata
 		section=`$crossdir/bin/$cross-readelf -S $build/bin/$binary | grep .rodata | \
-			xargs | cut -d ' ' -f 1 | sed -e 's/\[\([[:digit:]]*\)\]/\1/'`
+			sed -e 's/.*\[\s*\([[:digit:]]*\)\].*/\1/g'`
 		# grep for matching lines, prepare for better use of awk and finally add offset to base
 		$crossdir/bin/$cross-readelf -p $section $build/bin/$binary | grep $script | \
 			sed 's/^ *\[ *\([[:xdigit:]]*\)\] *\(.*\)$/0x\1 \2/' | \

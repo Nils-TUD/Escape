@@ -134,6 +134,9 @@ isr53:
 	pause
 	jmp		1b
 2:	call	lapic_eoi
+	# tell the CPU that we're done
+	lock
+	sub		$1,(waiting)
 	popa
 	iret
 

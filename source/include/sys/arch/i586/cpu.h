@@ -116,6 +116,12 @@ public:
 	static void pause() {
 		asm volatile ("pause");
 	}
+	/**
+	 * Disables interrupts and halts the CPU
+	 */
+	static void halt() {
+		asm volatile ("cli; hlt");
+	}
 
 	/**
 	 * @return the value of a control-register

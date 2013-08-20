@@ -91,19 +91,36 @@ bool SMPBase::initArch() {
 }
 
 void SMPBase::pauseOthers() {
-	cpuid_t cur = getCurId();
-	waiting = 0;
-	waitlock = 1;
-	size_t count = 0;
-	for(auto cpu = begin(); cpu != end(); ++cpu) {
-		if(cpu->id != cur && cpu->ready) {
-			sendIPI(cpu->id,IPI_WAIT);
-			count++;
+	static klock_t lock;
+retry:
+	if(SpinLock::tryAcquire(&lock)) {
+		cpuid_t cur = getCurId();
+		/* wait until all CPUs left the last wait. otherwise, if we're too fast so that they haven't
+		 * done that yet, they might get stuck in the loop that waits for waitlock to become 0
+		 * (because we set it to 1 below) */
+		while(waiting > 0)
+			::CPU::pause();
+		/* now a new pause can begin */
+		waitlock = 1;
+		size_t count = 0;
+		for(auto cpu = begin(); cpu != end(); ++cpu) {
+			if(cpu->id != cur && cpu->ready) {
+				sendIPI(cpu->id,IPI_WAIT);
+				count++;
+			}
 		}
+		/* wait until all CPUs are paused */
+		while(waiting < count)
+			::CPU::pause();
+		SpinLock::release(&lock);
 	}
-	/* wait until all CPUs are paused */
-	while(waiting < count)
-		::CPU::pause();
+	else {
+		Atomic::add(&waiting,+1);
+		while(waitlock)
+			::CPU::pause();
+		Atomic::add(&waiting,-1);
+		goto retry;
+	}
 }
 
 void SMPBase::resumeOthers() {
@@ -111,35 +128,52 @@ void SMPBase::resumeOthers() {
 }
 
 void SMPBase::haltOthers() {
-	cpuid_t cur = getCurId();
-	halting = 0;
-	size_t count = 0;
-	for(auto cpu = begin(); cpu != end(); ++cpu) {
-		if(cpu->id != cur && cpu->ready) {
-			/* prevent that we want to halt/pause this one again */
-			cpu->ready = false;
-			sendIPI(cpu->id,IPI_HALT);
-			count++;
+	static klock_t lock;
+	if(SpinLock::tryAcquire(&lock)) {
+		cpuid_t cur = getCurId();
+		halting = 0;
+		size_t count = 0;
+		for(auto cpu = begin(); cpu != end(); ++cpu) {
+			if(cpu->id != cur && cpu->ready) {
+				/* prevent that we want to halt/pause this one again */
+				cpu->ready = false;
+				sendIPI(cpu->id,IPI_HALT);
+				count++;
+			}
 		}
+		/* wait until all CPUs are halted */
+		while(halting < count)
+			::CPU::pause();
+		SpinLock::release(&lock);
 	}
-	/* wait until all CPUs are halted */
-	while(halting < count)
-		::CPU::pause();
+	else {
+		Atomic::add(&halting,+1);
+		while(1)
+			::CPU::halt();
+	}
 }
 
 void SMPBase::ensureTLBFlushed() {
-	cpuid_t cur = getCurId();
-	flushed = 0;
-	size_t count = 0;
-	for(auto cpu = begin(); cpu != end(); ++cpu) {
-		if(cpu->id != cur && cpu->ready) {
-			sendIPI(cpu->id,IPI_FLUSH_TLB_ACK);
-			count++;
+	static klock_t lock;
+	if(SpinLock::tryAcquire(&lock)) {
+		cpuid_t cur = getCurId();
+		flushed = 0;
+		size_t count = 0;
+		for(auto cpu = begin(); cpu != end(); ++cpu) {
+			if(cpu->id != cur && cpu->ready) {
+				sendIPI(cpu->id,IPI_FLUSH_TLB_ACK);
+				count++;
+			}
 		}
+		/* wait until all CPUs have flushed their TLB */
+		while(halting == 0 && flushed < count)
+			::CPU::pause();
+		SpinLock::release(&lock);
 	}
-	/* wait until all CPUs have flushed their TLB */
-	while(halting == 0 && flushed < count)
-		::CPU::pause();
+	else {
+		::CPU::setCR3(::CPU::getCR3());
+		Atomic::add(&flushed,+1);
+	}
 }
 
 void SMP::apIsRunning() {

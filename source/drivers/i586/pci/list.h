@@ -48,3 +48,14 @@ sPCIDevice *list_getByClass(uchar baseClass,uchar subClass);
  * @return the device or NULL
  */
 sPCIDevice *list_getById(uchar bus,uchar dev,uchar func);
+
+/**
+ * @param i the number
+ * @return the PCI-device number <i>
+ */
+sPCIDevice *list_get(size_t i);
+
+/**
+ * @return the number of devices
+ */
+size_t list_length(void);

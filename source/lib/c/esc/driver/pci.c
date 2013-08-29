@@ -40,6 +40,18 @@ int pci_getById(uchar bus,uchar dev,uchar func,sPCIDevice *d) {
 	return pci_getDevice(&msg,MSG_PCI_GET_BY_ID,d);
 }
 
+ssize_t pci_getCount(void) {
+	sMsg msg;
+	msg.args.arg1 = -1;
+	return pci_getDevice(&msg,MSG_PCI_GET_LIST,NULL);
+}
+
+int pci_getByIdx(size_t idx,sPCIDevice *d) {
+	sMsg msg;
+	msg.args.arg1 = idx;
+	return pci_getDevice(&msg,MSG_PCI_GET_LIST,d);
+}
+
 static int pci_getDevice(sMsg *msg,msgid_t mid,sPCIDevice *dev) {
 	int res,fd;
 	fd = open("/dev/pci",IO_MSGS);
@@ -55,7 +67,7 @@ static int pci_getDevice(sMsg *msg,msgid_t mid,sPCIDevice *dev) {
 		close(fd);
 		return res;
 	}
-	if(msg->data.arg1 == sizeof(sPCIDevice))
+	if(dev && msg->data.arg1 == sizeof(sPCIDevice))
 		memcpy(dev,msg->data.d,sizeof(sPCIDevice));
 	close(fd);
 	return msg->data.arg1;

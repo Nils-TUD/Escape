@@ -7054,3 +7054,9 @@ const char *pciDevSelFlags[] = {
 	"Slow Devsel Speed",     /* TypeA */
 	"Reserved 9&10"
 };
+
+const char *pciDevTypes[] = {
+	"Generic",
+	"PCI-to-PCI Bridge",
+	"CardBus Bridge"
+};

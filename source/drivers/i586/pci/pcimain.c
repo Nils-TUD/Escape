@@ -71,6 +71,22 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
+				case MSG_PCI_GET_LIST: {
+					size_t idx = (size_t)msg.args.arg1;
+					if(idx == (size_t)-1)
+						msg.data.arg1 = list_length();
+					else {
+						sPCIDevice *dev = list_get(idx);
+						if(dev) {
+							msg.data.arg1 = sizeof(sPCIDevice);
+							memcpy(msg.data.d,dev,sizeof(sPCIDevice));
+						}
+						else
+							msg.data.arg1 = -EINVAL;
+					}
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+				}
+				break;
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

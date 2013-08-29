@@ -167,6 +167,7 @@
 
 #define MSG_PCI_GET_BY_CLASS		900	/* searches for a pci device with given class */
 #define MSG_PCI_GET_BY_ID			901	/* searches for a pci device with given id */
+#define MSG_PCI_GET_LIST			902 /* get device-count or a device by index */
 
 #define MSG_INIT_REBOOT				1000 /* requests a reboot */
 #define MSG_INIT_SHUTDOWN			1001 /* requests a shutdown */
@@ -245,9 +246,21 @@ typedef struct {
 
 typedef struct {
 	enum {BAR_MEM,BAR_IO} type;
+	enum {
+		BAR_MEM_32			= 0x1,
+		BAR_MEM_64			= 0x2,
+		BAR_MEM_PREFETCH	= 0x4
+	};
 	uintptr_t addr;
 	size_t size;
+	uint flags;
 } sPCIBar;
+
+typedef enum {
+	PCI_TYPE_GENERIC			= 0,
+	PCI_TYPE_PCI_PCI_BRIDGE		= 1,
+	PCI_TYPE_CARD_BUS_BRIDGE	= 2,
+} ePCIDevType;
 
 typedef struct {
 	uchar bus;

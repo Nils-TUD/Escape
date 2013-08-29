@@ -28,6 +28,8 @@ extern "C" {
 
 int pci_getByClass(uchar base,uchar sub,sPCIDevice *d);
 int pci_getById(uchar bus,uchar dev,uchar func,sPCIDevice *d);
+ssize_t pci_getCount(void);
+int pci_getByIdx(size_t idx,sPCIDevice *d);
 
 #ifdef __cplusplus
 }

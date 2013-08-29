@@ -21,6 +21,8 @@
 #include <sys/arch/i586/acpi.h>
 #include <sys/arch/i586/lapic.h>
 #include <sys/task/smp.h>
+#include <sys/task/proc.h>
+#include <sys/vfs/dir.h>
 #include <sys/mem/paging.h>
 #include <sys/log.h>
 #include <sys/util.h>
@@ -33,7 +35,7 @@
 #define SIG(A,B,C,D)		(A + (B << 8) + (C << 16) + (D << 24))
 
 ACPI::RSDP *ACPI::rsdp;
-ISList<ACPI::RSDT*> ACPI::acpiTables;
+ISList<sRSDT*> ACPI::acpiTables;
 
 bool ACPI::find() {
 	/* first kb of extended bios data area (EBDA) */
@@ -47,40 +49,40 @@ bool ACPI::find() {
 }
 
 void ACPI::parse() {
-	RSDT *rsdt = (RSDT*)rsdp->rsdtAddr;
+	sRSDT *rsdt = (sRSDT*)rsdp->rsdtAddr;
 	size_t size = sizeof(uint32_t);
 	/* check for extended system descriptor table */
 	if(rsdp->revision > 1 && checksumValid(rsdp,rsdp->length)) {
-		rsdt = (RSDT*)rsdp->xsdtAddr;
+		rsdt = (sRSDT*)rsdp->xsdtAddr;
 		size = sizeof(uint64_t);
 	}
 
-	/* first map the RSDT. we assume that it covers only one page */
+	/* first map the sRSDT. we assume that it covers only one page */
 	size_t off = (uintptr_t)rsdt & (PAGE_SIZE - 1);
-	rsdt = (RSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,1) + off);
-	size_t count = (rsdt->length - sizeof(RSDT)) / size;
+	rsdt = (sRSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,1) + off);
+	size_t count = (rsdt->length - sizeof(sRSDT)) / size;
 	if(off + rsdt->length > PAGE_SIZE) {
 		size_t pages = BYTES_2_PAGES(off + rsdt->length);
-		rsdt = (RSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,pages) + off);
+		rsdt = (sRSDT*)(PageDir::makeAccessible((uintptr_t)rsdt,pages) + off);
 	}
 
-	/* now walk through the tables behind the RSDT */
+	/* now walk through the tables behind the sRSDT */
 	uintptr_t curDest = PageDir::makeAccessible(0,MAX_ACPI_PAGES);
 	uintptr_t destEnd = curDest + MAX_ACPI_PAGES * PAGE_SIZE;
 	uintptr_t start = (uintptr_t)(rsdt + 1);
 	for(size_t i = 0; i < count; i++) {
-		RSDT *tbl;
+		sRSDT *tbl;
 		if(size == sizeof(uint32_t))
-			tbl = (RSDT*)*(uint32_t*)(start + i * size);
+			tbl = (sRSDT*)*(uint32_t*)(start + i * size);
 		else
-			tbl = (RSDT*)*(uint64_t*)(start + i * size);
+			tbl = (sRSDT*)*(uint64_t*)(start + i * size);
 
 		/* map it to a temporary place; try one page first and extend it if necessary */
 		size_t tmpPages = 1;
 		size_t tbloff = (uintptr_t)tbl & (PAGE_SIZE - 1);
 		frameno_t frm = (uintptr_t)tbl / PAGE_SIZE;
 		uintptr_t tmp = PageDir::mapToTemp(&frm,1);
-		RSDT *tmptbl = (RSDT*)(tmp + tbloff);
+		sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
 		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
 			size_t tbllen = tmptbl->length;
 			PageDir::unmapFromTemp(1);
@@ -95,7 +97,7 @@ void ACPI::parse() {
 			for(size_t j = 0; j < tmpPages; ++j)
 				framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
 			tmp  = PageDir::mapToTemp(framenos,tmpPages);
-			tmptbl = (RSDT*)(tmp + tbloff);
+			tmptbl = (sRSDT*)(tmp + tbloff);
 		}
 
 		/* do we have to extend the mapping in the ACPI-area? */
@@ -109,7 +111,7 @@ void ACPI::parse() {
 		if(checksumValid(tmptbl,tmptbl->length)) {
 			/* copy the table */
 			memcpy((void*)curDest,tmptbl,tmptbl->length);
-			acpiTables.append((RSDT*)curDest);
+			acpiTables.append((sRSDT*)curDest);
 			curDest += tmptbl->length;
 		}
 		else
@@ -134,6 +136,36 @@ void ACPI::parse() {
 			}
 		}
 	}
+}
+
+void ACPI::create_files() {
+	/* create /system/acpi */
+	bool created;
+	VFSNode *sys;
+	if(VFSNode::request("/system",&sys,&created,VFS_WRITE) != 0)
+		return;
+	VFSNode *acpidir = CREATE(VFSDir,KERNEL_PID,sys,(char*)"acpi");
+	if(!acpidir)
+		goto error;
+
+	/* create files */
+	for(auto it = acpiTables.cbegin(); it != acpiTables.cend(); ++it) {
+		char *name = (char*)Cache::calloc(1,5);
+		if(name) {
+			strncpy(name,(char*)&(*it)->signature,4);
+			VFSNode *node = CREATE(VFSFile,KERNEL_PID,acpidir,name,*it,(*it)->length);
+			if(!node) {
+				Log::get().writef("Unable to create ACPI table %s\n",name);
+				Cache::free(name);
+			}
+			else
+				VFSNode::release(node);
+		}
+	}
+
+	VFSNode::release(acpidir);
+error:
+	VFSNode::release(sys);
 }
 
 bool ACPI::sigValid(const RSDP *r) {

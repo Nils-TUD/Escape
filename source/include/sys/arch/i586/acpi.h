@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/col/islist.h>
+#include <esc/arch/i586/acpi.h>
 
 class OStream;
 
@@ -38,19 +39,6 @@ class ACPI {
 		uint32_t length;
 		uint64_t xsdtAddr;
 		uint8_t xchecksum;
-	} A_PACKED;
-
-	/* root system descriptor table */
-	struct RSDT {
-	    uint32_t signature;
-		uint32_t length;
-		uint8_t revision;
-		uint8_t checksum;
-		char oemId[6];
-		char oemTableId[8];
-		uint32_t oemRevision;
-		char creatorId[4];
-		uint32_t creatorRevision;
 	} A_PACKED;
 
 	/* APIC entry in RSDT */
@@ -76,7 +64,7 @@ class ACPI {
 
 	/* special RSDT: for APIC */
 	struct RSDTAPIC {
-		RSDT head;
+		sRSDT head;
 	    uint32_t apic_addr;
 	    uint32_t flags;
 	    APIC apics[];
@@ -95,6 +83,10 @@ public:
 	 */
 	static void parse();
 	/**
+	 * Creates files in the VFS for all ACPI tables
+	 */
+	static void create_files();
+	/**
 	 * Prints all ACPI tables.
 	 *
 	 * @param os the output-stream
@@ -107,5 +99,5 @@ private:
 	static RSDP *findIn(uintptr_t start,size_t len);
 
 	static RSDP *rsdp;
-	static ISList<RSDT*> acpiTables;
+	static ISList<sRSDT*> acpiTables;
 };

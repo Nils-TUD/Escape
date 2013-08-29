@@ -23,6 +23,7 @@
 #include <sys/arch/i586/serial.h>
 #include <sys/arch/i586/idt.h>
 #include <sys/arch/i586/pic.h>
+#include <sys/arch/i586/acpi.h>
 #include <sys/task/timer.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/cache.h>
@@ -64,6 +65,7 @@ static const BootTask tasks[] = {
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing FPU...",FPU::init},
 	{"Initializing VFS...",VFS::init},
+	{"Creating ACPI files...",ACPI::create_files},
 	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},

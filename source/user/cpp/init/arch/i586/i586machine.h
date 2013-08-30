@@ -20,12 +20,68 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/arch/i586/acpi.h>
 #include "../../machine.h"
 
 class i586Machine : public Machine {
 private:
 	static const uint16_t PORT_KB_DATA	= 0x60;
 	static const uint16_t PORT_KB_CTRL	= 0x64;
+
+	enum FACPFlags {
+		RESET_REG_SUP	= 1 << 10
+	};
+
+	enum AddressSpace {
+		SYS_MEM			= 0,
+		SYS_IO			= 1,
+		PCI_CONF_SPACE	= 2,
+		EMBEDDED_CTRL	= 3,
+		SMBUS			= 4,
+	};
+
+	struct GAS {
+		uint8_t addressSpace;
+		uint8_t regBitWidth;
+		uint8_t regBitOffset;
+		uint8_t accessSize;
+		uint64_t address;
+	} A_PACKED;
+
+	struct FACP {
+		sRSDT head;
+		uint32_t :32;
+		uint32_t DSDT;
+		uint32_t :32;
+		uint32_t SMI_CMD;
+		uint8_t ACPI_ENABLE;
+		uint8_t ACPI_DISABLE;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint16_t : 16;
+		uint32_t PM1a_CNT_BLK;
+		uint32_t PM1b_CNT_BLK;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t : 32;
+		uint32_t flags;
+		GAS RESET_REG;
+		uint8_t RESET_VALUE;
+	} A_PACKED;
+
+	struct ShutdownInfo {
+		uint PM1a_CNT;
+		uint PM1b_CNT;
+		uint SLP_TYPa;
+		uint SLP_TYPb;
+		uint SLP_EN;
+	};
 
 public:
 	i586Machine()
@@ -36,4 +92,12 @@ public:
 
 	virtual void reboot(Progress &pg);
 	virtual void shutdown(Progress &pg);
+
+private:
+	void rebootPCI();
+	void rebootSysCtrlPort();
+	void rebootACPI();
+	void rebootPulseResetLine();
+	void *mapTable(const char *name,size_t *len);
+	bool shutdownSupported(ShutdownInfo *info);
 };

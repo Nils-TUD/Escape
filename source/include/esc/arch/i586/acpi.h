@@ -21,6 +21,8 @@
 
 #include <esc/common.h>
 
+#define ACPI_SIG(A,B,C,D)		(A + (B << 8) + (C << 16) + (D << 24))
+
 /* root system descriptor table */
 typedef struct {
 	uint32_t signature;
@@ -33,3 +35,11 @@ typedef struct {
 	char creatorId[4];
 	uint32_t creatorRevision;
 } sRSDT A_PACKED;
+
+static __inline__ bool acpi_checksumValid(const void *r,size_t len) {
+	uint8_t sum = 0;
+	uint8_t *p;
+	for(p = (uint8_t*)r; p < (uint8_t*)r + len; p++)
+		sum += *p;
+	return sum == 0;
+}

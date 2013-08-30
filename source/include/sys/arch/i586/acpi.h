@@ -70,6 +70,13 @@ class ACPI {
 	    APIC apics[];
 	} A_PACKED;
 
+	/* special RSDT: FACP */
+	struct RSDTFACP {
+		sRSDT head;
+		uint32_t :32;
+		uint32_t DSDT;
+	} A_PACKED;
+
 public:
 	/**
 	 * Searches for the root system description pointer.
@@ -94,8 +101,8 @@ public:
 	static void print(OStream &os);
 
 private:
+	static void addTable(sRSDT *tbl,size_t i,uintptr_t &curDest,uintptr_t destEnd);
 	static bool sigValid(const RSDP *rsdp);
-	static bool checksumValid(const void *r,size_t len);
 	static RSDP *findIn(uintptr_t start,size_t len);
 
 	static RSDP *rsdp;

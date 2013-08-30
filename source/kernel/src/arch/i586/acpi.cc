@@ -32,7 +32,6 @@
 #define MAX_ACPI_PAGES		16
 #define BDA_EBDA			0x40E	/* TODO not always available? */
 #define BIOS_AREA			0xE0000
-#define SIG(A,B,C,D)		(A + (B << 8) + (C << 16) + (D << 24))
 
 ACPI::RSDP *ACPI::rsdp;
 ISList<sRSDT*> ACPI::acpiTables;
@@ -48,11 +47,54 @@ bool ACPI::find() {
 	return false;
 }
 
+void ACPI::addTable(sRSDT *tbl,size_t i,uintptr_t &curDest,uintptr_t destEnd) {
+	/* map it to a temporary place; try one page first and extend it if necessary */
+	size_t tmpPages = 1;
+	size_t tbloff = (uintptr_t)tbl & (PAGE_SIZE - 1);
+	frameno_t frm = (uintptr_t)tbl / PAGE_SIZE;
+	uintptr_t tmp = PageDir::mapToTemp(&frm,1);
+	sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
+	if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
+		size_t tbllen = tmptbl->length;
+		PageDir::unmapFromTemp(1);
+		/* determine the real number of required pages */
+		tmpPages = (tbloff + tbllen + PAGE_SIZE - 1) / PAGE_SIZE;
+		if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
+			Log::get().writef("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
+			return;
+		}
+		/* map it again */
+		frameno_t framenos[tmpPages];
+		for(size_t j = 0; j < tmpPages; ++j)
+			framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
+		tmp  = PageDir::mapToTemp(framenos,tmpPages);
+		tmptbl = (sRSDT*)(tmp + tbloff);
+	}
+
+	/* do we have to extend the mapping in the ACPI-area? */
+	if(curDest + tmptbl->length > destEnd) {
+		Log::get().writef("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
+				curDest + tmptbl->length,destEnd);
+		PageDir::unmapFromTemp(tmpPages);
+		return;
+	}
+
+	if(acpi_checksumValid(tmptbl,tmptbl->length)) {
+		/* copy the table */
+		memcpy((void*)curDest,tmptbl,tmptbl->length);
+		acpiTables.append((sRSDT*)curDest);
+		curDest += tmptbl->length;
+	}
+	else
+		Log::get().writef("Checksum of table %zu is invalid. Skipping\n",i);
+	PageDir::unmapFromTemp(tmpPages);
+}
+
 void ACPI::parse() {
 	sRSDT *rsdt = (sRSDT*)rsdp->rsdtAddr;
 	size_t size = sizeof(uint32_t);
 	/* check for extended system descriptor table */
-	if(rsdp->revision > 1 && checksumValid(rsdp,rsdp->length)) {
+	if(rsdp->revision > 1 && acpi_checksumValid(rsdp,rsdp->length)) {
 		rsdt = (sRSDT*)rsdp->xsdtAddr;
 		size = sizeof(uint64_t);
 	}
@@ -76,63 +118,32 @@ void ACPI::parse() {
 			tbl = (sRSDT*)*(uint32_t*)(start + i * size);
 		else
 			tbl = (sRSDT*)*(uint64_t*)(start + i * size);
-
-		/* map it to a temporary place; try one page first and extend it if necessary */
-		size_t tmpPages = 1;
-		size_t tbloff = (uintptr_t)tbl & (PAGE_SIZE - 1);
-		frameno_t frm = (uintptr_t)tbl / PAGE_SIZE;
-		uintptr_t tmp = PageDir::mapToTemp(&frm,1);
-		sRSDT *tmptbl = (sRSDT*)(tmp + tbloff);
-		if((uintptr_t)tmptbl + tmptbl->length > tmp + PAGE_SIZE) {
-			size_t tbllen = tmptbl->length;
-			PageDir::unmapFromTemp(1);
-			/* determine the real number of required pages */
-			tmpPages = (tbloff + tbllen + PAGE_SIZE - 1) / PAGE_SIZE;
-			if(tmpPages > TEMP_MAP_AREA_SIZE / PAGE_SIZE) {
-				Log::get().writef("Skipping ACPI table %zu (too large: %zu)\n",i,tbllen);
-				continue;
-			}
-			/* map it again */
-			frameno_t framenos[tmpPages];
-			for(size_t j = 0; j < tmpPages; ++j)
-				framenos[j] = ((uintptr_t)tbl + j * PAGE_SIZE) / PAGE_SIZE;
-			tmp  = PageDir::mapToTemp(framenos,tmpPages);
-			tmptbl = (sRSDT*)(tmp + tbloff);
-		}
-
-		/* do we have to extend the mapping in the ACPI-area? */
-		if(curDest + tmptbl->length > destEnd) {
-			Log::get().writef("Skipping ACPI table %zu (doesn't fit anymore: %p vs. %p)\n",i,
-					curDest + tmptbl->length,destEnd);
-			PageDir::unmapFromTemp(tmpPages);
-			continue;
-		}
-
-		if(checksumValid(tmptbl,tmptbl->length)) {
-			/* copy the table */
-			memcpy((void*)curDest,tmptbl,tmptbl->length);
-			acpiTables.append((sRSDT*)curDest);
-			curDest += tmptbl->length;
-		}
-		else
-			Log::get().writef("Checksum of table %zu is invalid. Skipping\n",i);
-		PageDir::unmapFromTemp(tmpPages);
+		addTable(tbl,i,curDest,destEnd);
 	}
 
 	/* walk through the table and search for APIC entries */
 	cpuid_t id = ::LAPIC::getId();
 	for(auto it = acpiTables.cbegin(); it != acpiTables.cend(); ++it) {
-		if(checksumValid(*it,(*it)->length) && (*it)->signature == SIG('A','P','I','C')) {
-			RSDTAPIC *rapic = (RSDTAPIC*)(*it);
-			APIC *apic = rapic->apics;
-			while(apic < (APIC*)((uintptr_t)(*it) + (*it)->length)) {
-				/* we're only interested in the local APICs */
-				if(apic->type == TYPE_LAPIC) {
-					LAPIC *lapic = (LAPIC*)apic;
-					if(lapic->flags & 0x1)
-						SMP::addCPU(lapic->id == id,lapic->id,false);
+		switch((*it)->signature) {
+			case ACPI_SIG('F','A','C','P'): {
+				RSDTFACP *facp = (RSDTFACP*)(*it);
+				addTable((sRSDT*)facp->DSDT,++count,curDest,destEnd);
+				break;
+			}
+
+			case ACPI_SIG('A','P','I','C'): {
+				RSDTAPIC *rapic = (RSDTAPIC*)(*it);
+				APIC *apic = rapic->apics;
+				while(apic < (APIC*)((uintptr_t)(*it) + (*it)->length)) {
+					/* we're only interested in the local APICs */
+					if(apic->type == TYPE_LAPIC) {
+						LAPIC *lapic = (LAPIC*)apic;
+						if(lapic->flags & 0x1)
+							SMP::addCPU(lapic->id == id,lapic->id,false);
+					}
+					apic = (APIC*)((uintptr_t)apic + apic->length);
 				}
-				apic = (APIC*)((uintptr_t)apic + apic->length);
+				break;
 			}
 		}
 	}
@@ -169,20 +180,13 @@ error:
 }
 
 bool ACPI::sigValid(const RSDP *r) {
-	return r->signature[0] == SIG('R','S','D',' ') && r->signature[1] == SIG('P','T','R',' ');
-}
-
-bool ACPI::checksumValid(const void *r,size_t len) {
-	uint8_t sum = 0;
-	for(uint8_t *p = (uint8_t*)r; p < (uint8_t*)r + len; p++)
-		sum += *p;
-	return sum == 0;
+	return r->signature[0] == ACPI_SIG('R','S','D',' ') && r->signature[1] == ACPI_SIG('P','T','R',' ');
 }
 
 ACPI::RSDP *ACPI::findIn(uintptr_t start,size_t len) {
 	for(uintptr_t addr = start; addr < start + len; addr += 16) {
 		RSDP *r = (RSDP*)addr;
-		if(sigValid(r) && checksumValid(r,20))
+		if(sigValid(r) && acpi_checksumValid(r,20))
 			return r;
 	}
 	return NULL;

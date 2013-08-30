@@ -3,9 +3,9 @@
 Import('env')
 
 myenv = env.Clone()
-builddir = Dir('$BUILDDIR/user/c/calc')
+builddir = Dir('$BUILDDIR/user/calc')
 myenv.Append(
-	CFLAGS = ' -DYYERROR_VERBOSE -I user/c/calc -I ' + builddir.abspath,
+	CFLAGS = ' -DYYERROR_VERBOSE -I user/calc -I ' + builddir.abspath,
 	LEXFLAGS = '--nounistd',
 	YACCFLAGS = '-t -d'
 )

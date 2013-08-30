@@ -2,9 +2,9 @@
 
 Import('env')
 myenv = env.Clone()
-builddir = Dir('$BUILDDIR/user/cpp/gcalc')
+builddir = Dir('$BUILDDIR/user/gcalc')
 myenv.Append(
-	CFLAGS = ' -DYYERROR_VERBOSE -I user/cpp/gcalc -I ' + builddir.abspath,
+	CFLAGS = ' -DYYERROR_VERBOSE -I user/gcalc -I ' + builddir.abspath,
 	LEXFLAGS = '--nounistd',
 	YACCFLAGS = '-t -d'
 )

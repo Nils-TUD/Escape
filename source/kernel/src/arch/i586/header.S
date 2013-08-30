@@ -54,7 +54,7 @@ loader:
 # our GDT for the setup-process
 setupGDT:
 	# GDT size
-	.word		setupGDTEntries - setupGDTEntriesEnd - 1
+	.word		setupGDTEntriesEnd - setupGDTEntries - 1
 	# Pointer to entries
 	.long		setupGDTEntries
 

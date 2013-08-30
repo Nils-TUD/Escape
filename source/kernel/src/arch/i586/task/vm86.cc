@@ -69,7 +69,7 @@ tid_t VM86::vm86Tid = INVALID_TID;
 volatile tid_t VM86::caller = INVALID_TID;
 VM86::Info VM86::info;
 int VM86::vm86Res = -1;
-mutex_t VM86::vm86Lock;
+Mutex VM86::vm86Lock;
 
 int VM86::create() {
 	/* already present? */
@@ -141,7 +141,7 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 		return -ESRCH;
 
 	/* ensure that only one thread at a time can use the vm86-task */
-	Mutex::acquire(&vm86Lock);
+	vm86Lock.down();
 	/* store information in calling process */
 	caller = t->getTid();
 	if(!copyInfo(interrupt,regs,area)) {
@@ -183,6 +183,7 @@ void VM86::handleGPF(VM86IntrptStackFrame *stack) {
 	uint8_t opCode;
 	bool data32 = false;
 	bool pref_done = false;
+
 	do {
 		switch((opCode = *ops)) {
 			case X86OP_DATA32:
@@ -408,7 +409,7 @@ void VM86::finish() {
 		Thread::getById(vm86Tid)->discardFrames();
 	clearInfo();
 	caller = INVALID_TID;
-	Mutex::release(&vm86Lock);
+	vm86Lock.up();
 }
 
 void VM86::copyRegResult(VM86IntrptStackFrame *stack) {

@@ -83,7 +83,7 @@ public:
 	 * Aquires the lock for this region
 	 */
 	void acquire() {
-		Mutex::acquire(&lock);
+		lock.down();
 	}
 	/**
 	 * Tries to acquire the lock for this region
@@ -91,13 +91,13 @@ public:
 	 * @return true if successfull
 	 */
 	bool tryAquire() {
-		return Mutex::tryAcquire(&lock);
+		return lock.tryDown();
 	}
 	/**
 	 * Releases the lock for this region
 	 */
 	void release() {
-		Mutex::release(&lock);
+		lock.up();
 	}
 
 	/**
@@ -252,7 +252,7 @@ private:
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	ISList<VirtMem*> vms;
-	mutex_t lock;			/* lock for the procs-field (all others can't change or belong to
+	Mutex lock;				/* lock for the procs-field (all others can't change or belong to
 	 	 	 	 	 	 	   exactly 1 process, which is locked anyway) */
 };
 

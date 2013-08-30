@@ -65,8 +65,8 @@ Proc ProcBase::first;
 SList<Proc> ProcBase::procs;
 Proc *ProcBase::pidToProc[MAX_PROC_COUNT];
 pid_t ProcBase::nextPid = 1;
-mutex_t ProcBase::procLock;
-mutex_t ProcBase::childLock;
+Mutex ProcBase::procLock;
+Mutex ProcBase::childLock;
 
 void ProcBase::init() {
 	/* init the first process */
@@ -94,6 +94,8 @@ void ProcBase::init() {
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
 	memclear(p->locks,sizeof(p->locks));
+	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
+		p->mutexes[i] = Mutex();
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
 	p->threadsDir = VFS::createProcess(p->pid);
@@ -168,7 +170,7 @@ void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swappe
 void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
 	float dReal = 0;
-	Mutex::acquire(&procLock);
+	procLock.down();
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		size_t pown = 0,psh = 0,pswap = 0;
 		getMemUsageOf(p->pid,&pown,&psh,&pswap);
@@ -176,7 +178,7 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 		shMem += psh;
 		dReal += p->virtmem.getMemUsage(&pages);
 	}
-	Mutex::release(&procLock);
+	procLock.up();
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = (size_t)(dReal + CopyOnWrite::getFrmCount()) * PAGE_SIZE;
@@ -211,6 +213,8 @@ int ProcBase::clone(uint8_t flags) {
 	/* set basic attributes */
 	p->parentPid = cur->pid;
 	memclear(p->locks,sizeof(p->locks));
+	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
+		p->mutexes[i] = Mutex();
 	p->ruid = cur->ruid;
 	p->euid = cur->euid;
 	p->suid = cur->suid;
@@ -239,10 +243,10 @@ int ProcBase::clone(uint8_t flags) {
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
-	Mutex::acquire(&procLock);
+	procLock.down();
 	newPid = getFreePid();
 	if(newPid < 0) {
-		Mutex::release(&procLock);
+		procLock.up();
 		res = -ENOPROCS;
 		goto errorCmd;
 	}
@@ -250,7 +254,7 @@ int ProcBase::clone(uint8_t flags) {
 	/* add to processes */
 	p->pid = newPid;
 	add(p);
-	Mutex::release(&procLock);
+	procLock.up();
 
 	/* create the VFS node */
 	p->threadsDir = VFS::createProcess(p->pid);
@@ -618,9 +622,9 @@ void ProcBase::doDestroy(Proc *p) {
 	p->flags &= ~P_PREZOMBIE;
 	p->flags |= P_ZOMBIE;
 	/* ensure that the parent-wakeup doesn't get lost */
-	Mutex::acquire(&childLock);
+	childLock.down();
 	notifyProcDied(p->parentPid);
-	Mutex::release(&childLock);
+	childLock.up();
 }
 
 void ProcBase::kill(pid_t pid) {
@@ -629,8 +633,8 @@ void ProcBase::kill(pid_t pid) {
 		return;
 
 	/* give childs the ppid 0 */
-	Mutex::acquire(&childLock);
-	Mutex::acquire(&procLock);
+	childLock.down();
+	procLock.down();
 	for(auto cp = procs.begin(); cp != procs.end(); ++cp) {
 		if(cp->parentPid == p->pid) {
 			cp->parentPid = 0;
@@ -640,8 +644,8 @@ void ProcBase::kill(pid_t pid) {
 				notifyProcDied(0);
 		}
 	}
-	Mutex::release(&procLock);
-	Mutex::release(&childLock);
+	procLock.up();
+	childLock.up();
 
 	/* free the last resources and remove us from vfs */
 	Cache::free((char*)p->command);
@@ -663,12 +667,12 @@ int ProcBase::waitChild(USER ExitState *state) {
 	Proc *p = t->getProc();
 	int res;
 	/* check if there is already a dead child-proc */
-	Mutex::acquire(&childLock);
+	childLock.down();
 	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
 		Event::wait(t,EVI_CHILD_DIED,(evobj_t)p);
-		Mutex::release(&childLock);
+		childLock.up();
 		Thread::switchAway();
 		/* stop waiting for event; maybe we have been waked up for another reason */
 		Event::removeThread(t);
@@ -680,7 +684,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 			return res;
 	}
 	else
-		Mutex::release(&childLock);
+		childLock.up();
 
 	/* finally kill the process */
 	kill(res);
@@ -688,11 +692,11 @@ int ProcBase::waitChild(USER ExitState *state) {
 }
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
-	Mutex::acquire(&procLock);
+	procLock.down();
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
 			/* avoid deadlock; at other places we acquire the PLOCK_PROG first and procLock afterwards */
-			Mutex::release(&procLock);
+			procLock.up();
 			request(p->pid,PLOCK_PROG);
 			if(state) {
 				state->pid = p->pid;
@@ -711,7 +715,7 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 			return p->pid;
 		}
 	}
-	Mutex::release(&procLock);
+	procLock.up();
 	return -ECHILD;
 }
 
@@ -855,10 +859,10 @@ void ProcBase::add(Proc *p) {
 }
 
 void ProcBase::remove(Proc *p) {
-	Mutex::acquire(&procLock);
+	procLock.down();
 	procs.remove(p);
 	pidToProc[p->pid] = NULL;
-	Mutex::release(&procLock);
+	procLock.up();
 }
 
 

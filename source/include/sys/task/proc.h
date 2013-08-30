@@ -53,11 +53,12 @@
 #define P_FS				4
 #define P_BOOT				8
 
-#define PLOCK_COUNT			5
+#define PLOCK_COUNT			3
+#define PMUTEX_COUNT		2
 #define PLOCK_ENV			0
-#define PLOCK_REGIONS		1
-#define PLOCK_FDS			2
-#define PLOCK_PORTS			3
+#define PLOCK_FDS			1
+#define PLOCK_PORTS			2
+#define PLOCK_REGIONS		3
 #define PLOCK_PROG			4	/* clone, exec, threads */
 
 class Groups;
@@ -584,13 +585,14 @@ private:
 	ISList<Thread*> threads;
 	/* locks for this process */
 	mutable klock_t locks[PLOCK_COUNT];
+	mutable Mutex mutexes[PMUTEX_COUNT];
 
 	static Proc first;
 	static SList<Proc> procs;
 	static Proc *pidToProc[MAX_PROC_COUNT];
 	static pid_t nextPid;
-	static mutex_t procLock;
-	static mutex_t childLock;
+	static Mutex procLock;
+	static Mutex childLock;
 };
 
 #ifdef __i386__
@@ -643,7 +645,7 @@ inline Proc *ProcBase::tryRequest(pid_t pid,size_t l) {
 	assert(l == PLOCK_REGIONS || l == PLOCK_PROG);
 	Proc *p = getByPid(pid);
 	if(p) {
-		if(!Mutex::tryAcquire(p->locks + l))
+		if(!p->mutexes[l - PLOCK_COUNT].tryDown())
 			return NULL;
 	}
 	return p;
@@ -655,14 +657,14 @@ inline void ProcBase::release(const Proc *p,size_t l) {
 
 inline void ProcBase::lock(size_t l) const {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		Mutex::acquire(locks + l);
+		mutexes[l - PLOCK_COUNT].down();
 	else
 		SpinLock::acquire(locks + l);
 }
 
 inline void ProcBase::unlock(size_t l) const {
 	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
-		Mutex::release(locks + l);
+		mutexes[l - PLOCK_COUNT].up();
 	else
 		SpinLock::release(locks + l);
 }

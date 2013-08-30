@@ -155,16 +155,16 @@ private:
 	VMTree *next;
 
 	/* mutex for accessing/changing the list of all vm-regions */
-	static mutex_t regMutex;
+	static Mutex regMutex;
 	static VMTree *regList;
 	static VMTree *regListEnd;
 };
 
 inline VMTree *VMTree::reqTree() {
-	Mutex::acquire(&regMutex);
+	regMutex.down();
 	return regList;
 }
 
 inline void VMTree::relTree() {
-	Mutex::release(&regMutex);
+	regMutex.up();
 }

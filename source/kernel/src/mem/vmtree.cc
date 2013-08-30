@@ -34,12 +34,12 @@
  * list of this vm-regions as well.
  */
 
-mutex_t VMTree::regMutex;
+Mutex VMTree::regMutex;
 VMTree *VMTree::regList;
 VMTree *VMTree::regListEnd;
 
 void VMTree::addTree(VirtMem *vm,VMTree *tree) {
-	Mutex::acquire(&regMutex);
+	regMutex.down();
 	if(regListEnd)
 		regListEnd->next = tree;
 	else
@@ -51,11 +51,11 @@ void VMTree::addTree(VirtMem *vm,VMTree *tree) {
 	tree->end = NULL;
 	tree->root = NULL;
 	tree->priority = 314159265;
-	Mutex::release(&regMutex);
+	regMutex.up();
 }
 
 void VMTree::remTree(VMTree *tree) {
-	Mutex::acquire(&regMutex);
+	regMutex.down();
 	VMTree *p = NULL;
 	for(VMTree *t = regList; t != NULL; p = t, t = t->next) {
 		if(t == tree) {
@@ -68,7 +68,7 @@ void VMTree::remTree(VMTree *tree) {
 			break;
 		}
 	}
-	Mutex::release(&regMutex);
+	regMutex.up();
 }
 
 bool VMTree::available(uintptr_t addr,size_t size) const {

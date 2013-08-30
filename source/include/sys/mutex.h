@@ -20,34 +20,14 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/semaphore.h>
 
-class Mutex {
-	Mutex() = delete;
-
+class Mutex : public Semaphore {
 public:
-	/**
-	 * Aquires the given mutex. It won't use busy-waiting here, but suspend the thread when the mutex
-	 * is not available.
-	 *
-	 * @param m the mutex
-	 */
-	static void acquire(mutex_t *m);
+	explicit Mutex() : Semaphore(1) {
+	}
 
-	/**
-	 * Tries to acquire the given mutex. If its locked, it does not block, but return false.
-	 *
-	 * @param m the mutex
-	 * @return true if the mutex has been acquired
-	 */
-	static bool tryAcquire(mutex_t *m);
-
-	/**
-	 * Releases the given mutex
-	 *
-	 * @param m the mutex
-	 */
-	static void release(mutex_t *m);
-
-private:
-	static klock_t lock;
+	void down();
+	bool tryDown();
+	void up();
 };

@@ -19,27 +19,33 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/defines.h>
-#include <stddef.h>
+#include <sys/common.h>
 
-typedef int vmreg_t;
-typedef uintptr_t frameno_t;
-typedef uint klock_t;
+class Semaphore {
+public:
+	explicit Semaphore(uint value = 1) : value(value), waiting(0), lock() {
+	}
 
-#ifdef __eco32__
-#define nullptr					0
-#endif
+	/**
+	 * Aquires this mutex. It won't use busy-waiting here, but suspend the thread when the mutex
+	 * is not available.
+	 */
+	void down();
 
-#ifndef NDEBUG
-#define DEBUGGING 1
-#endif
+	/**
+	 * Tries to acquire this mutex. If its locked, it does not block, but return false.
+	 *
+	 * @return true if the mutex has been acquired
+	 */
+	bool tryDown();
 
-/* indicates that a pointer might point into userspace */
-#define USER
-/* indicates that a function is called when handling an interrupt */
-#define INTRPT
+	/**
+	 * Releases this semaphore
+	 */
+	void up();
 
-#define K						1024
-#define M						(1024 * K)
-#define G						(1024 * M)
+private:
+	uint value;
+	uint waiting;
+	klock_t lock;
+};

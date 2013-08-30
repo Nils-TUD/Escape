@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/interrupts.h>
+#include <sys/mutex.h>
 
 class VM86 {
 public:
@@ -106,5 +107,5 @@ private:
 	static volatile tid_t caller;
 	static Info info;
 	static int vm86Res;
-	static mutex_t vm86Lock;
+	static Mutex vm86Lock;
 };

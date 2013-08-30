@@ -129,6 +129,9 @@ void Boot::archStart(BootInfo *info) {
 	PhysMem::init();
 	PageDir::mapKernelSpace();
 
+	/* clear screen here because of virtualbox-bug */
+	Video::get().clearScreen();
+
 	/* now map modules */
 	mod = mb->modsAddr;
 	for(size_t i = 0; i < mb->modsCount; i++) {

@@ -33,7 +33,9 @@ class Video : public OStream {
 	static const int TAB_WIDTH	= 4;
 
 	explicit Video() : OStream(), col(0), row(0), color((BLACK << 4) | WHITE), lock() {
-		clearScreen();
+		// actually, we could clear the screen here, but virtualbox seems to have a bug in
+		// the gdt-handling when accessing VGA memory and causing an overflow during the
+		// translation from logical addresses to linear addresses.
 	}
 
 public:

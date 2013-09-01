@@ -74,6 +74,11 @@ namespace std {
 			_outBuf = nullptr;
 		}
 		if(_fd >= 0) {
+		    // flush c-streams, because this won't be possible after we closed the file
+		    if(_fd == STDOUT_FILENO)
+		        fflush(stdout);
+		    if(_fd == STDERR_FILENO)
+		        fflush(stderr);
 			::close(_fd);
 			_fd = -1;
 		}

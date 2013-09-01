@@ -143,12 +143,11 @@ uintptr_t load_addSegments(void) {
 					load_error("Unable to add segment %d (type %d)",j,pheader.p_type);
 				/* store load-address of text */
 				if(loadSeg == 0) {
-					if(l->isDSO) {
+					if(l->isDSO)
 						l->loadAddr = addr;
-						l->textSize = pheader.p_memsz;
-					}
 					else
 						l->mainTextAddr = addr;
+                    l->textSize = pheader.p_memsz;
 				}
 				loadSeg++;
 			}

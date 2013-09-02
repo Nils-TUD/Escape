@@ -57,6 +57,7 @@
 #define PDE_CACHE_DISABLE		(1UL << 4)
 #define PDE_ACCESSED			(1UL << 5)
 #define PDE_LARGE				(1UL << 7)
+#define PDE_GLOBAL				(1UL << 8)
 #define PDE_EXISTS				(1UL << 9)
 #define PDE_FRAMENO(pde)		(((pde) >> PAGE_SIZE_SHIFT) & 0xFFFFF)
 #define PDE_FRAMENO_MASK		0xFFFFF000
@@ -98,20 +99,12 @@ void PageDirBase::init() {
 
 	/* map one page-table */
 	uintptr_t addr = KERNEL_AREA_P_ADDR;
-	for(size_t i = 0; i < PT_ENTRY_COUNT; i++, addr += PAGE_SIZE) {
-		/* build page-table entry */
-		/* we need only 0x7000 (trampoline) and 0xB8000 (vga mem) writable in the first megabyte */
-		if(addr < 1 * M && addr != 0x7000 && addr != 0xB8000)
-			PageDir::proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_EXISTS;
-		else
-			PageDir::proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
-	}
-
-	/* insert page-table in the page-directory */
+	for(size_t i = 0; i < PT_ENTRY_COUNT; i++, addr += PAGE_SIZE)
+		PageDir::proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
 	PageDir::proc0PD[ADDR_TO_PDINDEX(KERNEL_AREA)] =
-			(uintptr_t)VIRT2PHYS(PageDir::proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
-	/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
-	PageDir::proc0PD[0] = (uintptr_t)VIRT2PHYS(PageDir::proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
+			VIRT2PHYS(PageDir::proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS | PDE_GLOBAL;
+	PageDir::proc0PD[0] =
+			VIRT2PHYS(PageDir::proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS | PDE_GLOBAL;
 
 	/* put the page-directory in the last page-dir-slot */
 	PageDir::proc0PD[ADDR_TO_PDINDEX(MAPPED_PTS_START)] = pd | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
@@ -122,6 +115,7 @@ void PageDirBase::init() {
 
 void PageDir::activate(uintptr_t pageDir) {
 	setPDir(pageDir);
+	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
 	CPU::setCR4(CPU::getCR4() | CPU::CR4_PGE);
 	enable();
 	/* enable write-protection; this way, the kernel can't write to readonly-pages */
@@ -164,10 +158,8 @@ void PageDir::mapKernelSpace() {
 }
 
 void PageDir::gdtFinished() {
-	/* we can simply remove the first 2 page-tables since it just a "link" to the "real" page-table
-	 * for the kernel */
+	/* make first page-table not-present */
 	proc0PD[0] = 0;
-	proc0PD[1] = 0;
 	flushTLB();
 }
 
@@ -475,6 +467,7 @@ ssize_t PageDir::doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint 
 	if(flags & PG_GLOBAL)
 		pteFlags |= PTE_GLOBAL;
 
+	bool needShootdown = false;
 	while(count > 0) {
 		/* create page-table if necessary */
 		if(!(pdirAddr[ADDR_TO_PDINDEX(virt)] & PDE_PRESENT)) {
@@ -508,10 +501,14 @@ ssize_t PageDir::doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint 
 					pte |= *frames++ << PAGE_SIZE_SHIFT;
 			}
 		}
+		/* shootdown is only required if we downgrade permissions. to keep the check simple: do it
+		 * whenever it was present previously. */
+		bool waspresent = *ptep & PTE_PRESENT;
+		needShootdown |= waspresent;
 		*ptep = pte;
 
 		/* invalidate TLB-entry */
-		if(this == cur)
+		if(this == cur && waspresent)
 			FLUSHADDR(virt);
 
 		/* to next page */
@@ -520,7 +517,8 @@ ssize_t PageDir::doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint 
 	}
 
 	lastChange = CPU::rdtsc();
-	SMP::flushTLB(this);
+	if(needShootdown)
+		SMP::flushTLB(this);
 	return pts;
 
 error:
@@ -535,7 +533,8 @@ size_t PageDir::doUnmap(uintptr_t virt,size_t count,bool freeFrames) {
 	uintptr_t ptables = getPTables(cur);
 	size_t pti = PT_ENTRY_COUNT;
 	size_t lastPti = PT_ENTRY_COUNT;
-	pte_t *pte = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+	pte_t pte,*ptep = (pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+	bool needShootdown = false;
 	while(count-- > 0) {
 		/* remove and free page-table, if necessary */
 		pti = ADDR_TO_PDINDEX(virt);
@@ -546,10 +545,11 @@ size_t PageDir::doUnmap(uintptr_t virt,size_t count,bool freeFrames) {
 		}
 
 		/* remove page and free if necessary */
-		if(*pte & PTE_PRESENT) {
-			*pte &= ~PTE_PRESENT;
+		pte = *ptep;
+		*ptep &= ~(PTE_EXISTS | PTE_PRESENT);
+		if(pte & PTE_PRESENT) {
 			if(freeFrames) {
-				frameno_t frame = PTE_FRAMENO(*pte);
+				frameno_t frame = PTE_FRAMENO(pte);
 				if(virt >= KERNEL_AREA) {
 					if(virt < KERNEL_STACK_AREA)
 						PhysMem::free(frame,PhysMem::CRIT);
@@ -559,22 +559,22 @@ size_t PageDir::doUnmap(uintptr_t virt,size_t count,bool freeFrames) {
 				else
 					PhysMem::free(frame,PhysMem::USR);
 			}
+			/* invalidate TLB-entry */
+			if(this == cur)
+				FLUSHADDR(virt);
+			needShootdown = true;
 		}
-		*pte &= ~PTE_EXISTS;
-
-		/* invalidate TLB-entry */
-		if(this == cur)
-			FLUSHADDR(virt);
 
 		/* to next page */
-		pte++;
+		ptep++;
 		virt += PAGE_SIZE;
 	}
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
 		pts += remEmptyPt(ptables,pti);
 	lastChange = CPU::rdtsc();
-	SMP::flushTLB(this);
+	if(needShootdown)
+		SMP::flushTLB(this);
 	return pts;
 }
 

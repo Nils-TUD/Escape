@@ -1,4 +1,6 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg('bin', target = 'testperf', source = env.Glob('*.c'))
+env.EscapeCXXProg('bin', target = 'testperf', source = [
+	env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('*/*.cpp')
+])

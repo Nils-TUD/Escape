@@ -36,8 +36,24 @@ typedef struct {
 
 static void client(void);
 static void server(void);
+static void server_fast(void);
 
-static size_t messageCount = 1000;
+static size_t messageCount = 100000;
+
+int mod_sendrecv(int argc,char *argv[]) {
+	int pid;
+	if(argc > 2)
+		messageCount = atoi(argv[2]);
+	if((pid = fork()) == 0)
+		server_fast();
+	else {
+		client();
+		if(kill(pid,SIG_TERM) < 0)
+			perror("kill");
+		waitchild(NULL);
+	}
+	return 0;
+}
 
 int mod_pingpong(int argc,char *argv[]) {
 	int pid;
@@ -75,16 +91,38 @@ static void client(void) {
 	}
 	end = rdtsc();
 	total = end - begin;
-	printf("Cycles: %Lu, per msg: %Lu\n",total,total / messageCount);
+	printf("%Lu cycles, per msg: %Lu\n",total,total / messageCount);
 	close(fd);
 }
 
 static void server(void) {
 	sIPCMsg msg;
+	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
+	if(dev < 0) {
+		printe("Unable to create device");
+		return;
+	}
+	while(1) {
+		msgid_t mid;
+		int fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0)
+			fprintf(stderr,"Unable to get work\n");
+		else {
+			if(send(fd,0,&msg,sizeof(msg)) < 0)
+				printe("Message-sending failed");
+			close(fd);
+		}
+	}
+}
+
+static void server_fast(void) {
+	sIPCMsg msg;
 	msgid_t mid;
 	int fd,dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
-	if(dev < 0)
-		error("Unable to create device");
+	if(dev < 0) {
+		printe("Unable to create device");
+		return;
+	}
 	fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
 	while(1) {
 		if(send(fd,0,&msg,sizeof(msg)) < 0)
@@ -93,18 +131,4 @@ static void server(void) {
 			printe("Message-receiving failed");
 	}
 	close(fd);
-
-	/*while(msg < messageCount) {
-		msgid_t mid;
-		int fd = getwork(&dev,1,NULL,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			fprintf(stderr,"Unable to get work\n");
-		else {
-			msg++;
-			if(send(fd,0,&msg,sizeof(msg)) < 0)
-				printe("Message-sending failed");
-			close(fd);
-		}
-	}*/
-	/* don't close the device here, so that the client gets the last response */
 }

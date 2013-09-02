@@ -17,11 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
+#include <esc/proc.h>
+#include <esc/time.h>
+#include <stdio.h>
 
-/**
- * Tests message-ping-pong
- */
-int mod_pingpong(int argc,char *argv[]);
+#include "getpid.h"
+
+#define SYSC_COUNT		100000
+
+int mod_getpid(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	uint64_t start = rdtsc();
+	int i;
+	for(i = 0; i < SYSC_COUNT; ++i)
+		getpid();
+	uint64_t end = rdtsc();
+	printf("getpid(): %Lu cycles/call\n",(end - start) / SYSC_COUNT);
+	return 0;
+}

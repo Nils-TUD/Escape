@@ -40,7 +40,6 @@
 #include "modules/ooc.h"
 #include "modules/highcpu.h"
 #include "modules/drvparallel.h"
-#include "modules/pingpong.h"
 #include "modules/maxthreads.h"
 #include "modules/pagefaults.h"
 
@@ -70,7 +69,6 @@ static sTestModule modules[] = {
 	{"ooc",mod_ooc},
 	{"highcpu",mod_highcpu},
 	{"parallel",mod_drvparallel},
-	{"pingpong",mod_pingpong},
 	{"maxthreads",mod_maxthreads},
 	{"pagefaults",mod_pagefaults},
 };

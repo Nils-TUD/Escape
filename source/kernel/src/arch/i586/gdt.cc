@@ -31,7 +31,7 @@
 #include <stddef.h>
 
 /* whether to store the running thread in the gdt (for bochs) */
-#define GDT_STORE_RUN_THREAD	1
+#define GDT_STORE_RUN_THREAD	0
 
 /* == for the access-field == */
 
@@ -68,6 +68,7 @@ GDT::TSS GDT::bsptss A_ALIGNED(PAGE_SIZE);
 GDT::TSS **GDT::alltss;
 size_t GDT::tssCount = 1;
 const uint8_t **GDT::ioMaps;
+uint32_t *GDT::lastMSRs;
 size_t GDT::cpuCount;
 extern void *syscall_entry;
 
@@ -124,6 +125,9 @@ void GDT::initBSP() {
 	ioMaps = (const uint8_t**)Cache::calloc(cpuCount,sizeof(uint8_t*));
 	if(!ioMaps)
 		Util::panic("Unable to allocate IO-Map-Pointers for APs");
+	lastMSRs = (uint32_t*)Cache::calloc(cpuCount,sizeof(uint32_t));
+	if(!lastMSRs)
+		Util::panic("Unable to allocate lastMSRs");
 
 	/* put GDT of BSP into the GDT-array, for simplicity */
 	allgdts[0].offset = (uintptr_t)bspgdt;
@@ -208,7 +212,10 @@ cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
 #if GDT_STORE_RUN_THREAD
 	setRunning(id,n);
 #endif
-	CPU::setMSR(MSR_IA32_SYSENTER_ESP,alltss[id]->esp0);
+	if(lastMSRs[id] != alltss[id]->esp0) {
+		CPU::setMSR(MSR_IA32_SYSENTER_ESP,alltss[id]->esp0);
+		lastMSRs[id] = alltss[id]->esp0;
+	}
 	return id;
 }
 

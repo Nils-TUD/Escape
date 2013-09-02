@@ -274,5 +274,7 @@ private:
 
 	/* I/O maps for all TSSs; just to remember the last set I/O map */
 	static const uint8_t **ioMaps;
+	/* last set sysenter-esp MSR for each CPU */
+	static uint32_t *lastMSRs;
 	static size_t cpuCount;
 };

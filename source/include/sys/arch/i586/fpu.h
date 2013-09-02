@@ -209,7 +209,9 @@ public:
 	static void lockFPU() {
 		/* set the task-switched-bit in CR0. as soon as a process uses any FPU instruction
 		 * we'll get a EX_CO_PROC_NA and call handleCoProcNA() */
-		CPU::setCR0(CPU::getCR0() | CPU::CR0_TASK_SWITCHED);
+		uint32_t cr0 = CPU::getCR0();
+		if(~cr0 & CPU::CR0_TASK_SWITCHED)
+			CPU::setCR0(cr0 | CPU::CR0_TASK_SWITCHED);
 	}
 
 	/**

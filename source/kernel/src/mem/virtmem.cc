@@ -401,9 +401,6 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 }
 
 void VirtMem::setTimestamp(Thread *t,uint64_t timestamp) {
-	if(!PhysMem::shouldSetRegTimestamp())
-		return;
-
 	/* ignore setting the timestamp if the process is currently locked; its not that critical and
 	 * we can't wait for the mutex here because this is called from Thread::switchAway() and the wait
 	 * for the mutex would call that as well */

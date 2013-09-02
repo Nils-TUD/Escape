@@ -152,7 +152,8 @@ void Thread::initialSwitch() {
 	SpinLock::acquire(&switchLock);
 	Thread *cur = Sched::perform(NULL,0);
 	cur->stats.schedCount++;
-	VirtMem::setTimestamp(cur,Timer::getTimestamp());
+	if(PhysMem::shouldSetRegTimestamp())
+		VirtMem::setTimestamp(cur,Timer::getTimestamp());
 	cur->setCPU(GDT::prepareRun(NULL,cur));
 	FPU::lockFPU();
 	cur->stats.cycleStart = CPU::rdtsc();
@@ -177,8 +178,9 @@ void ThreadBase::doSwitch() {
 
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
-		VirtMem::setTimestamp(n,cycles);
 		n->setCPU(GDT::prepareRun(old,n));
+		if(PhysMem::shouldSetRegTimestamp())
+			VirtMem::setTimestamp(n,cycles);
 
 		/* some stats for SMP */
 		SMP::schedule(n->getCPU(),n,cycles);

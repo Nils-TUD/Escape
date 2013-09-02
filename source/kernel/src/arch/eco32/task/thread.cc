@@ -152,7 +152,8 @@ void ThreadBase::doSwitch() {
 	if(n->getTid() != old->getTid()) {
 		if(!Thread::save(&old->saveArea)) {
 			setRunning(n);
-			VirtMem::setTimestamp(n,timestamp);
+			if(PhysMem::shouldSetRegTimestamp())
+				VirtMem::setTimestamp(n,timestamp);
 
 			SMP::schedule(n->getCPU(),n,timestamp);
 			n->stats.cycleStart = timestamp;

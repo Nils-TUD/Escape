@@ -210,7 +210,8 @@ void ThreadBase::doSwitch() {
 	/* switch thread */
 	if(n->getTid() != old->getTid()) {
 		setRunning(n);
-		VirtMem::setTimestamp(n,cycles);
+		if(PhysMem::shouldSetRegTimestamp())
+			VirtMem::setTimestamp(n,cycles);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */

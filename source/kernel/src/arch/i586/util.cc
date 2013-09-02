@@ -96,6 +96,8 @@ void Util::printUserStateOf(OStream &os,const Thread *t) {
 		os.writef("\tesi=%#08x, edi=%#08x, esp=%#08x, ebp=%#08x\n",
 				kstack->esi,kstack->edi,kstack->getSP(),kstack->ebp);
 		os.writef("\teip=%#08x, eflags=%#08x\n",kstack->getIP(),kstack->getFlags());
+		os.writef("\tcr0=%#08x, cr2=%#08x, cr3=%#08x, cr4=%#08x\n",
+				CPU::getCR0(),CPU::getCR2(),CPU::getCR3(),CPU::getCR4());
 		PageDir::unmapFromTemp(1);
 	}
 }

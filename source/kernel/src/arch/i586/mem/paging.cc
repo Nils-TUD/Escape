@@ -122,13 +122,12 @@ void PageDirBase::init() {
 
 void PageDir::activate(uintptr_t pageDir) {
 	setPDir(pageDir);
+	CPU::setCR4(CPU::getCR4() | CPU::CR4_PGE);
 	enable();
 	/* enable write-protection; this way, the kernel can't write to readonly-pages */
 	/* this helps a lot because we don't have to check in advance whether for copy-on-write and so
 	 * on before writing to user-space-memory in kernel */
 	setWriteProtection(true);
-	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
-	CPU::setCR4(CPU::getCR4() | (1 << 7));
 }
 
 ssize_t PageDirBase::mapToCur(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {

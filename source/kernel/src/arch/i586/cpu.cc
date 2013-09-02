@@ -209,11 +209,13 @@ void CPU::detect() {
 	}
 }
 
-bool CPU::hasLocalAPIC() {
+bool CPU::hasFeature(uint64_t feat) {
 	/* don't use the cpus-array here, since it is called before CPU::detect() */
-	uint32_t unused,edx;
-	getInfo(CPUID_GETFEATURES,&unused,&unused,&unused,&edx);
-	return (edx & FEATURE_LAPIC) ? true : false;
+	uint32_t unused,ecx,edx;
+	getInfo(CPUID_GETFEATURES,&unused,&unused,&ecx,&edx);
+	if(feat >> 32)
+		return !!(ecx & (feat >> 32));
+	return !!(edx & feat);
 }
 
 void CPUBase::print(OStream &os) {

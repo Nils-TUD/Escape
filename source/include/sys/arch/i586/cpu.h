@@ -26,7 +26,6 @@ class CPU : public CPUBase {
 
 	CPU() = delete;
 
-	static const uint32_t FEATURE_LAPIC				= 1 << 9;
 	static const size_t VENDOR_STRLEN				= 12;
 
 	enum CPUIdRequests {
@@ -43,26 +42,72 @@ class CPU : public CPUBase {
 	};
 
 public:
-	static const uint32_t CR0_PAGING_ENABLED		= 1 << 31;
-	/* Determines whether the CPU can write to pages marked read-only */
-	static const uint32_t CR0_WRITE_PROTECT			= 1 << 16;
-	/* Enables the native (internal) mechanism for reporting x87 FPU errors when set;
-	 * enables the PC-style x87 FPU error reporting mechanism when clear. */
-	static const uint32_t CR0_NUMERIC_ERROR			= 1 << 5;
-	/* Allows the saving of the x87 FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 context on a task switch
-	 * to be delayed until an x87 FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 instruction is actually executed
-	 * by the new task. The processor sets this flag on every task switch and tests it when executing
-	 * x87 FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 instructions. */
-	static const uint32_t CR0_TASK_SWITCHED			= 1 << 3;
-	/* Indicates that the processor does not have an internal or external x87 FPU when set; indicates
-	 * an x87 FPU is present when clear. This flag also affects the execution of
-	 * MMX/SSE/SSE2/SSE3/SSSE3/SSE4 instructions. */
-	static const uint32_t CR0_EMULATE				= 1 << 2;
-	/* Controls the interaction of the WAIT (or FWAIT) instruction with the TS flag (bit 3 of CR0).
-	 * If the MP flag is set, a WAIT instruction generates a device-not-available exception (#NM) if
-	 * the TS flag is also set. If the MP flag is clear, the WAIT instruction ignores the
-	 * setting of the TS flag. */
-	static const uint32_t CR0_MONITOR_COPROC		= 1 << 1;
+	enum Feature {
+		// edx
+		FEAT_FPU		= 1 << 0,
+		FEAT_DBGEXT		= 1 << 2,
+		FEAT_PSE		= 1 << 3,
+		FEAT_TSC		= 1 << 4,
+		FEAT_MSR		= 1 << 5,
+		FEAT_PAE		= 1 << 6,
+		FEAT_MCE		= 1 << 7,
+		FEAT_CX8		= 1 << 8,
+		FEAT_APIC		= 1 << 9,
+		FEAT_SEP		= 1 << 11,
+		FEAT_MTTR		= 1 << 12,
+		FEAT_PGE		= 1 << 13,
+		FEAT_MMX		= 1 << 23,
+		FEAT_FXSR		= 1 << 24,
+		FEAT_SSE		= 1 << 25,
+		FEAT_SSE2		= 1 << 26,
+		FEAT_HTT		= 1 << 28,
+		FEAT_TM			= 1 << 29,
+
+		// ecx
+		FEAT_SSE3		= 1 << (32 + 0),
+		FEAT_MONMWAIT	= 1 << (32 + 3),
+		FEAT_VMX		= 1 << (32 + 5),
+		FEAT_SSSE3		= 1 << (32 + 9),
+		FEAT_FMA		= 1 << (32 + 12),
+		FEAT_PCID		= 1 << (32 + 17),
+		FEAT_SSE41		= 1 << (32 + 19),
+		FEAT_SSE42		= 1 << (32 + 20),
+		FEAT_POPCNT		= 1 << (32 + 23),
+		FEAT_AES		= 1 << (32 + 25),
+		FEAT_AVX		= 1 << (32 + 28)
+	};
+
+	enum {
+		CR0_PAGING_ENABLED			= 1 << 31,
+		/* Determines whether the CPU can write to pages marked read-only */
+		CR0_WRITE_PROTECT			= 1 << 16,
+		/* Enables the native (internal) mechanism for reporting x87 FPU errors when set;
+		 * enables the PC-style x87 FPU error reporting mechanism when clear. */
+		CR0_NUMERIC_ERROR			= 1 << 5,
+		/* Allows the saving of the x87 FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 context on a task switch
+		 * to be delayed until an x87 FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 instruction is actually executed
+		 * by the new task. The processor sets this flag on every task switch and tests it when executing
+		 * x87 FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 instructions. */
+		CR0_TASK_SWITCHED			= 1 << 3,
+		/* Indicates that the processor does not have an internal or external x87 FPU when set; indicates
+		 * an x87 FPU is present when clear. This flag also affects the execution of
+		 * MMX/SSE/SSE2/SSE3/SSSE3/SSE4 instructions. */
+		CR0_EMULATE					= 1 << 2,
+		/* Controls the interaction of the WAIT (or FWAIT) instruction with the TS flag (bit 3 of CR0).
+		 * If the MP flag is set, a WAIT instruction generates a device-not-available exception (#NM) if
+		 * the TS flag is also set. If the MP flag is clear, the WAIT instruction ignores the
+		 * setting of the TS flag. */
+		CR0_MONITOR_COPROC			= 1 << 1
+	};
+
+	enum {
+		/* page size extension (enables 4MiB pages) */
+		CR4_PSE			= 1 << 4,
+		/* physical address extension */
+		CR4_PAE			= 1 << 5,
+		/* page global enable */
+		CR4_PGE			= 1 << 7,
+	};
 
 	struct Info {
 		uint8_t vendor;
@@ -87,9 +132,10 @@ public:
 	static void detect();
 
 	/**
-	 * @return whether the machine has a local APIC
+	 * @param feat the feature
+	 * @return whether the feature is supported
 	 */
-	static bool hasLocalAPIC();
+	static bool hasFeature(uint64_t feat);
 
 	/**
 	 * Issue a single request to CPUID

@@ -51,8 +51,9 @@ void i586Machine::rebootSysCtrlPort() {
 void i586Machine::rebootACPI() {
 	size_t len;
 	FACP *facp = reinterpret_cast<FACP*>(mapTable("FACP",&len));
-	if(len < 129) {
-		fprintf(stderr,"FACP too small (%zu)\n",len);
+	if(facp == NULL || len < 129) {
+		if(len < 129)
+			fprintf(stderr,"FACP too small (%zu)\n",len);
 		return;
 	}
 

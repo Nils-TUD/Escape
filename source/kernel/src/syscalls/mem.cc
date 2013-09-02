@@ -60,9 +60,9 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 		if(addr == 0 || addr + byteCount < addr || addr + byteCount > INTERP_TEXT_BEGIN)
 			SYSC_ERROR(stack,-EINVAL);
 	}
-	if(flags & MAP_TLS) {
-		if(t->getTLSRegion() != NULL)
-			SYSC_ERROR(stack,-EINVAL);
+	if((flags & MAP_TLS) && t->getTLSRegion() != NULL)
+		SYSC_ERROR(stack,-EINVAL);
+	if((~flags & MAP_NOMAP) && ((flags & MAP_TLS) || fd == -1)) {
 		if(!t->reserveFrames(BYTES_2_PAGES(byteCount)))
 			SYSC_ERROR(stack,-ENOMEM);
 	}
@@ -82,8 +82,8 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	if(flags & MAP_TLS) {
 		if(res == 0)
 			t->setTLSRegion(vm);
-		t->discardFrames();
 	}
+	t->discardFrames();
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 

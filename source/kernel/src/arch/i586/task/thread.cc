@@ -178,10 +178,10 @@ void ThreadBase::doSwitch() {
 	n->stats.schedCount++;
 
 	/* switch thread */
-	if(n->getTid() != old->getTid()) {
-		n->setCPU(GDT::prepareRun(old,n));
-		if(PhysMem::shouldSetRegTimestamp())
+	if(EXPECT_TRUE(n->getTid() != old->getTid())) {
+		if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
 			VirtMem::setTimestamp(n,cycles);
+		n->setCPU(GDT::prepareRun(old,n));
 
 		/* some stats for SMP */
 		SMP::schedule(n->getCPU(),n,cycles);

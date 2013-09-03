@@ -208,14 +208,14 @@ void ThreadBase::doSwitch() {
 	n->stats.schedCount++;
 
 	/* switch thread */
-	if(n->getTid() != old->getTid()) {
+	if(EXPECT_TRUE(n->getTid() != old->getTid())) {
 		setRunning(n);
-		if(PhysMem::shouldSetRegTimestamp())
+		if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
 			VirtMem::setTimestamp(n,cycles);
 
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
-		if(n->tempStack != (frameno_t)-1) {
+		if(EXPECT_FALSE(n->tempStack != (frameno_t)-1)) {
 			memcpy((void*)(DIR_MAPPED_SPACE | n->kstackFrame * PAGE_SIZE),
 					(void*)(DIR_MAPPED_SPACE | n->tempStack * PAGE_SIZE),
 					PAGE_SIZE);

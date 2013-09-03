@@ -44,6 +44,9 @@
 #define ROUND_PAGE_DN(count)	ROUND_DN(count,PAGE_SIZE)
 #define ROUND_PAGE_UP(count)	ROUND_UP(count,PAGE_SIZE)
 
+#define EXPECT_FALSE(cond)		__builtin_expect(!!(cond), 0)
+#define EXPECT_TRUE(cond)		__builtin_expect(!!(cond), 1)
+
 /* gcc-attributes */
 #define A_PACKED				__attribute__((packed))
 #define A_ALIGNED(x)			__attribute__((aligned (x)))

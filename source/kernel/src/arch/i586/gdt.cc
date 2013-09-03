@@ -196,23 +196,23 @@ void GDT::setRunning(cpuid_t id,Thread *t) {
 }
 
 cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
-	cpuid_t id = old == NULL ? getCPUId() : old->getCPU();
+	cpuid_t id = EXPECT_FALSE(old == NULL) ? getCPUId() : old->getCPU();
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
-	if(n->getTLSRegion()) {
+	if(EXPECT_FALSE(n->getTLSRegion())) {
 		uintptr_t tlsEnd = n->getTLSRegion()->virt + n->getTLSRegion()->reg->getByteCount();
 		setDesc((Desc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
 	}
 	alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
-	if(!old || old->getProc() != n->getProc())
+	if(EXPECT_TRUE(!old || old->getProc() != n->getProc()))
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
 	setRunning(id,n);
 #endif
-	if(lastMSRs[id] != alltss[id]->esp0) {
+	if(EXPECT_FALSE(lastMSRs[id] != alltss[id]->esp0)) {
 		CPU::setMSR(MSR_IA32_SYSENTER_ESP,alltss[id]->esp0);
 		lastMSRs[id] = alltss[id]->esp0;
 	}

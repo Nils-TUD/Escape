@@ -46,9 +46,12 @@
 klock_t Sched::lock;
 Sched::Queue Sched::rdyQueues[MAX_PRIO + 1];
 size_t Sched::rdyCount;
-ISList<Thread*> Sched::idleThreads;
+Thread **Sched::idleThreads;
 
 void Sched::init() {
+	idleThreads = (Thread**)Cache::calloc(SMP::getCPUCount(),sizeof(Thread*));
+	if(!idleThreads)
+		Util::panic("Unable to allocate idle-threads array");
 	rdyCount = 0;
 	for(size_t i = 0; i < ARRAY_SIZE(rdyQueues); i++)
 		qInit(rdyQueues + i);
@@ -56,22 +59,24 @@ void Sched::init() {
 
 void Sched::addIdleThread(Thread *t) {
 	SpinLock::acquire(&lock);
-	idleThreads.append(t);
+	for(size_t i = 0; i < SMP::getCPUCount(); ++i) {
+		if(idleThreads[i] == NULL) {
+			idleThreads[i] = t;
+			break;
+		}
+	}
 	SpinLock::release(&lock);
 }
 
-Thread *Sched::perform(Thread *old,uint64_t runtime) {
+Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 	SpinLock::acquire(&lock);
 	/* give the old thread a new state */
 	if(old) {
-		/* TODO it would be better to keep the idle-thread if we should idle again */
-		if(old->getFlags() & T_IDLE) {
-			idleThreads.append(old);
+		if(old->getFlags() & T_IDLE)
 			old->setState(Thread::BLOCKED);
-		}
 		else {
-			vassert(old->getState() == Thread::RUNNING || old->getState() == Thread::ZOMBIE,"State %d",
-					old->getState());
+			vassert(old->getState() == Thread::RUNNING || old->getState() == Thread::ZOMBIE,
+					"State %d",old->getState());
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
 			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {
@@ -126,7 +131,7 @@ Thread *Sched::perform(Thread *old,uint64_t runtime) {
 	}
 	if(t == NULL) {
 		/* choose an idle-thread */
-		t = idleThreads.removeFirst();
+		t = idleThreads[cpu];
 		t->setState(Thread::RUNNING);
 	}
 	else {

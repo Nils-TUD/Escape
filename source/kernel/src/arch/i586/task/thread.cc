@@ -150,7 +150,8 @@ bool ThreadBase::beginTerm() {
 
 void Thread::initialSwitch() {
 	SpinLock::acquire(&switchLock);
-	Thread *cur = Sched::perform(NULL,0);
+	cpuid_t cpu = GDT::getCPUId();
+	Thread *cur = Sched::perform(NULL,cpu,0);
 	cur->stats.schedCount++;
 	if(PhysMem::shouldSetRegTimestamp())
 		VirtMem::setTimestamp(cur,Timer::getTimestamp());
@@ -173,7 +174,7 @@ void ThreadBase::doSwitch() {
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
 
 	/* choose a new thread to run */
-	Thread *n = Sched::perform(old,runtime);
+	Thread *n = Sched::perform(old,old->getCPU(),runtime);
 	n->stats.schedCount++;
 
 	/* switch thread */

@@ -62,10 +62,11 @@ private:
 	 * Performs the scheduling. That means it picks the next thread to run and returns it
 	 *
 	 * @param old the current thread
+	 * @param cpu the CPU
 	 * @param runtime the runtime of the current thread in microseconds
 	 * @return the thread to run
 	 */
-	static Thread *perform(Thread *old,uint64_t runtime);
+	static Thread *perform(Thread *old,cpuid_t cpu,uint64_t runtime);
 
 	/**
 	 * Adjusts the priority of the given thread according to its used timeslice
@@ -125,5 +126,5 @@ private:
 	static klock_t lock;
 	static Queue rdyQueues[];
 	static size_t rdyCount;
-	static ISList<Thread*> idleThreads;
+	static Thread **idleThreads;
 };

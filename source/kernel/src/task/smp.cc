@@ -76,19 +76,6 @@ void SMPBase::setId(cpuid_t old,cpuid_t newid) {
 	cpus[newid] = cpu;
 }
 
-void SMPBase::schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
-	CPU *c = cpus[id];
-	if(c->thread && !(c->thread->getFlags() & T_IDLE)) {
-		c->curCycles += Thread::getTSC() - c->thread->getStats().cycleStart;
-		c->runtime += timestamp - c->lastSched;
-	}
-	if(!(n->getFlags() & T_IDLE)) {
-		c->schedCount++;
-		c->lastSched = timestamp;
-	}
-	c->thread = n;
-}
-
 void SMPBase::updateRuntimes() {
 	for(auto cpu = cpuList.begin(); cpu != cpuList.end(); ++cpu) {
 		cpu->lastTotal = Thread::getTSC() - cpu->lastUpdate;
@@ -165,11 +152,9 @@ void SMPBase::print(OStream &os) {
 	os.writef("CPUs:\n");
 	for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {
 		Thread *t = cpu->thread;
-		os.writef("\t%3s:%2x, running %d(%d:%s), schedCount=%zu, runtime=%Lu\n"
-				   "\t        lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
+		os.writef("\t%3s:%2x, running %d(%d:%s), lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),
-				t->getProc()->getCommand(),cpu->schedCount,cpu->runtime,cpu->lastUpdate,
-				cpu->lastTotal,cpu->lastCycles);
+				t->getProc()->getCommand(),cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);
 	}
 }
 

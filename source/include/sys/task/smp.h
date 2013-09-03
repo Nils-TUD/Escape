@@ -46,16 +46,13 @@ public:
 
 	struct CPU : public SListItem {
 		explicit CPU(uint8_t id,bool bootstrap,uint8_t ready)
-			: SListItem(), id(id), bootstrap(bootstrap), ready(ready), schedCount(), runtime(),
-			lastSched(), curCycles(), lastCycles(), lastTotal(), lastUpdate(), callback(), thread() {
+			: SListItem(), id(id), bootstrap(bootstrap), ready(ready), curCycles(), lastCycles(),
+			  lastTotal(), lastUpdate(), callback(), thread() {
 		}
 
 		uint8_t id;
 		uint8_t bootstrap;
 		uint8_t ready;
-		size_t schedCount;
-		uint64_t runtime;
-		uint64_t lastSched;
 		uint64_t curCycles;
 		uint64_t lastCycles;
 		uint64_t lastTotal;
@@ -220,7 +217,12 @@ private:
 	 * @param n the thread to run
 	 * @param timestamp the current timestamp
 	 */
-	static void schedule(cpuid_t id,Thread *n,uint64_t timestamp);
+	static void schedule(cpuid_t id,Thread *n,uint64_t timestamp) {
+		CPU *c = cpus[id];
+		if(EXPECT_TRUE(c->thread && !(c->thread->getFlags() & T_IDLE)))
+			c->curCycles += timestamp - c->thread->getStats().cycleStart;
+		c->thread = n;
+	}
 
 	/**
 	 * Sends an IPI to the CPU that executes it currently, if there is any.

@@ -116,17 +116,16 @@ public:
 
 	/* the thread states */
 	enum State {
-		UNUSED			= 0,
-		RUNNING			= 1,
-		READY			= 2,
-		BLOCKED			= 3,
-		ZOMBIE			= 4,
+		RUNNING,
+		READY,
+		BLOCKED,
+		ZOMBIE,
 		/* suspended => CAN'T run. will be set to blocked when resumed (also used for swapping) */
-		BLOCKED_SUSP	= 5,
+		BLOCKED_SUSP,
 		/* same as ST_BLOCKED_SUSP, but will be set to ready when done */
-		READY_SUSP		= 6,
+		READY_SUSP,
 		/* same as ST_BLOCKED_SUSP, but will be set to zombie when done */
-		ZOMBIE_SUSP		= 7
+		ZOMBIE_SUSP
 	};
 
 	ThreadBase() = delete;

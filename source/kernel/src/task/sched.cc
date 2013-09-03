@@ -94,17 +94,14 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 				old->getStats().timeslice -= runtime;
 
 			switch(old->getNewState()) {
-				case Thread::UNUSED:
 				case Thread::READY:
 					old->setState(Thread::READY);
 					qAppend(rdyQueues + old->getPriority(),old);
 					rdyCount++;
 					break;
 				case Thread::BLOCKED:
-					old->setState(Thread::BLOCKED);
-					break;
 				case Thread::ZOMBIE:
-					old->setState(Thread::ZOMBIE);
+					old->setState(old->getNewState());
 					break;
 				default:
 					Util::panic("Unexpected new state (%d)\n",old->getNewState());
@@ -136,7 +133,7 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 	}
 	else {
 		t->setState(Thread::RUNNING);
-		t->setNewState(Thread::UNUSED);
+		t->setNewState(Thread::READY);
 	}
 
 	/* if there is another thread ready, check if we have another cpu that we can start for it */
@@ -180,52 +177,38 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	SpinLock::release(&lock);
 }
 
-bool Sched::setReady(Thread *t) {
-	bool res = false;
+void Sched::setReady(Thread *t) {
 	assert(t != NULL);
 	if(t->getFlags() & T_IDLE)
-		return false;
+		return;
 
 	SpinLock::acquire(&lock);
-	if(t->getState() == Thread::RUNNING) {
-		res = t->getNewState() != Thread::READY;
+	if(t->getState() == Thread::RUNNING)
 		t->setNewState(Thread::READY);
-	}
-	else {
-		if(setReadyState(t)) {
-			qAppend(rdyQueues + t->getPriority(),t);
-			rdyCount++;
-			res = true;
-		}
+	else if(setReadyState(t)) {
+		qAppend(rdyQueues + t->getPriority(),t);
+		rdyCount++;
 	}
 	SpinLock::release(&lock);
-	return res;
 }
 
-bool Sched::setReadyQuick(Thread *t) {
-	bool res = false;
+void Sched::setReadyQuick(Thread *t) {
 	assert(t != NULL);
 	if(t->getFlags() & T_IDLE)
-		return false;
+		return;
 
 	SpinLock::acquire(&lock);
-	if(t->getState() == Thread::RUNNING) {
-		res = t->getNewState() != Thread::READY;
+	if(t->getState() == Thread::RUNNING)
 		t->setNewState(Thread::READY);
+	else if(t->getState() == Thread::READY) {
+		qDequeueThread(rdyQueues + t->getPriority(),t);
+		qPrepend(rdyQueues + t->getPriority(),t);
 	}
-	else {
-		if(t->getState() == Thread::READY) {
-			qDequeueThread(rdyQueues + t->getPriority(),t);
-			qPrepend(rdyQueues + t->getPriority(),t);
-		}
-		else if(setReadyState(t)) {
-			qPrepend(rdyQueues + t->getPriority(),t);
-			rdyCount++;
-			res = true;
-		}
+	else if(setReadyState(t)) {
+		qPrepend(rdyQueues + t->getPriority(),t);
+		rdyCount++;
 	}
 	SpinLock::release(&lock);
-	return res;
 }
 
 void Sched::setBlocked(Thread *t) {

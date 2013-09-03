@@ -313,7 +313,7 @@ void ThreadBase::printAll(OStream &os) {
 
 static const char *getStateName(uint8_t state) {
 	static const char *states[] = {
-		"UNUSED","RUN","RDY","BLK","ZOM","BLKSWAP","RDYSWAP"
+		"RUN","RDY","BLK","ZOM","BLKSWAP","RDYSWAP"
 	};
 	return states[state];
 }

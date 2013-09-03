@@ -80,17 +80,15 @@ private:
 	 * Appends the given thread on the ready-queue and sets the state to Thread::READY
 	 *
 	 * @param t the thread
-	 * @return true if successfull (i.e. if the thread is ready now and wasn't previously)
 	 */
-	static bool setReady(Thread *t);
+	static void setReady(Thread *t);
 
 	/**
 	 * Puts the given thread to the beginning of the ready-queue
 	 *
 	 * @param t the thread
-	 * @return true if successfull (i.e. if the thread is ready now and wasn't previously)
 	 */
-	static bool setReadyQuick(Thread *t);
+	static void setReadyQuick(Thread *t);
 
 	/**
 	 * Sets the thread in the blocked-state

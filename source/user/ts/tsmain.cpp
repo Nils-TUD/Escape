@@ -61,7 +61,6 @@ static struct sort sorts[] = {
 	{sort::TIME,"time"},
 };
 static const char *states[] = {
-	"ILL",
 	"RUN",
 	"RDY",
 	"BLK",

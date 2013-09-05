@@ -29,44 +29,41 @@
 # uint8_t inbyte(uint16_t port)
 .type inbyte, @function
 inbyte:
-	mov		4(%esp),%dx							# load port
+	mov		%ax,%dx								# load port
 	in		%dx,%al								# read from port
 	ret
 
 # uint16_t inword(uint16_t port)
 .type inword, @function
 inword:
-	mov		4(%esp),%dx							# load port
+	mov		%ax,%dx								# load port
 	in		%dx,%ax								# read from port
 	ret
 
 # uint32_t indword(uint16_t port)
 .type indword, @function
 indword:
-	mov		4(%esp),%dx							# load port
+	mov		%ax,%dx								# load port
 	in		%dx,%eax							# read from port
 	ret
 
 # void outbyte(uint16_t port,uint8_t val)
 .type outbyte, @function
 outbyte:
-	mov		4(%esp),%dx							# load port
-	mov		8(%esp),%al							# load value
+	xchg	%eax,%edx
 	out		%al,%dx								# write to port
 	ret
 
 # void outword(uint16_t port,uint16_t val)
 .type outword, @function
 outword:
-	mov		4(%esp),%dx							# load port
-	mov		8(%esp),%ax							# load value
+	xchg	%eax,%edx
 	out		%ax,%dx								# write to port
 	ret
 
 # void outdword(uint16_t port,uint32_t val)
 .type outdword, @function
 outdword:
-	mov		4(%esp),%dx							# load port
-	mov		8(%esp),%eax						# load value
+	xchg	%eax,%edx
 	out		%eax,%dx							# write to port
 	ret

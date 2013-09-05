@@ -43,7 +43,6 @@ thread_save:
 	mov		%esp,%ebp
 
 	# save register
-	mov		8(%ebp),%eax			# get saveArea
 	mov		%ebx,STATE_EBX(%eax)
 	mov		%esp,STATE_ESP(%eax)	# store esp
 	mov		%edi,STATE_EDI(%eax)
@@ -61,28 +60,24 @@ thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
 
-	mov		8(%ebp),%edi			# get page-dir
-	mov		12(%ebp),%eax			# get saveArea
-	mov		16(%ebp),%edx			# get lock
-
 	# exchange page-dir, if necessary
-	mov		20(%ebp),%ecx			# get newProc
-	test	%ecx,%ecx
+	mov		8(%ebp),%edi			# get newProc
+	test	%edi,%edi
 	jz		1f						# dont set the page-dir if its the same process
-	mov		%edi,%cr3				# set page-dir
+	mov		%eax,%cr3				# set page-dir
 
 	# now restore registers
 1:
-	mov		STATE_EDI(%eax),%edi
-	mov		STATE_ESI(%eax),%esi
-	mov		STATE_EBP(%eax),%ebp
-	mov		STATE_ESP(%eax),%esp
-	mov		STATE_EBX(%eax),%ebx
-	pushl	STATE_EFLAGS(%eax)
+	mov		STATE_EDI(%edx),%eax
+	mov		STATE_ESI(%edx),%esi
+	mov		STATE_EBP(%edx),%ebp
+	mov		STATE_ESP(%edx),%esp
+	mov		STATE_EBX(%edx),%ebx
+	pushl	STATE_EFLAGS(%edx)
 	popfl							# load eflags
 
 	# unlock now; the old thread can be used
-	movl	$0,(%edx)
+	movl	$0,(%ecx)
 
 	mov		$1,%eax					# return 1
 	leave

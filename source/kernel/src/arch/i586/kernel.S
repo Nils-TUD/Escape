@@ -49,10 +49,8 @@ higherhalf:
 	mov		%esp,%ebp
 	push	%ebp					# push ebp on the stack to ensure that the stack-trace works
 
-	push	%eax					# push Multiboot Magicnumber onto the stack
-	push	%ebx					# push address of Multiboot-Structure
-	call	bspstart				# jump to our C kernel (returns entry-point)
-	add		$8,%esp					# remove args from stack
+	mov		%ebx,%eax				# pass address of Multiboot-Structure to bspstart
+	call	bspstart
 
 	# now use the kernel-stack of the first thread and start smp
 	mov		$KSTACK_CURTHREAD,%esp
@@ -66,19 +64,20 @@ higherhalf:
 
 	# setup env for first task
 thread_startup:
-	mov		4(%esp),%eax			# load entry-point
-	cmp		$KERNEL_AREA,%eax
+	mov		4(%esp),%edx			# load entry-point
+	cmp		$KERNEL_AREA,%edx
 	jb		2f
 	# stay in kernel
-	call	*%eax
+	call	*%edx
 1:
 	jmp		1b
 
 	# setup user-env
 2:
+	mov		(%esp),%eax
 	call	uenv_setupThread		# call uenv_setupThread(arg,entryPoint)
 	mov		%eax,%ecx				# user-stackpointer
-	mov		8(%esp),%eax			# entryPoint
+	mov		8(%esp),%eax			# process entryPoint
 
 	# go to user-mode
 3:

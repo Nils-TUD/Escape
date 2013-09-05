@@ -40,9 +40,10 @@ extern void lookup_resolveStart(void);
  * @return the address of the symbol
  */
 #ifdef CALLTRACE_PID
-uintptr_t lookup_resolve(uintptr_t retAddr,sSharedLib *lib,size_t offset);
+A_REGPARM(0) uintptr_t lookup_resolve(uint32_t a,uint32_t b,uint32_t c,uintptr_t retAddr,
+                                      sSharedLib *lib,size_t offset);
 #else
-uintptr_t lookup_resolve(sSharedLib *lib,size_t offset);
+A_REGPARM(0) uintptr_t lookup_resolve(uint32_t a,uint32_t b,uint32_t c,sSharedLib *lib,size_t offset);
 #endif
 
 /**

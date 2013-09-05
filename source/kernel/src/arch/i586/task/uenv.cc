@@ -30,15 +30,34 @@
 #include <errno.h>
 #include <assert.h>
 
+void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
+	uint32_t *esp = (uint32_t*)stack->getSP();
+	/* the ret-instruction of sigRet() should go to the old eip */
+	*--esp = stack->getIP();
+	/* save regs */
+	*--esp = stack->getFlags();
+	*--esp = stack->eax;
+	*--esp = stack->ebx;
+	*--esp = stack->ecx;
+	*--esp = stack->edx;
+	*--esp = stack->edi;
+	*--esp = stack->esi;
+	/* sigRet will remove the argument, restore the register,
+	 * acknoledge the signal and return to eip */
+	*--esp = t->getProc()->getSigRetAddr();
+	stack->setIP((uintptr_t)handler);
+	stack->setSP((uint32_t)esp);
+	/* signal-number as argument */
+	stack->eax = sig;
+}
+
 int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
 	uint32_t *esp = (uint32_t*)stack->getSP();
-	if(!PageDir::isInUserSpace((uintptr_t)esp,10 * sizeof(uint32_t))) {
+	if(!PageDir::isInUserSpace((uintptr_t)esp,9 * sizeof(uint32_t))) {
 		Proc::segFault();
 		/* never reached */
 		assert(false);
 	}
-	/* remove arg */
-	esp += 1;
 	/* restore regs */
 	stack->esi = *esp++;
 	stack->edi = *esp++;
@@ -158,27 +177,6 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	*esp-- = (uintptr_t)arg;
 	/* add TLS args and entrypoint */
 	return UEnv::addArgs(t,esp,tentryPoint,true);
-}
-
-void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
-	uint32_t *esp = (uint32_t*)stack->getSP();
-	/* the ret-instruction of sigRet() should go to the old eip */
-	*--esp = stack->getIP();
-	/* save regs */
-	*--esp = stack->getFlags();
-	*--esp = stack->eax;
-	*--esp = stack->ebx;
-	*--esp = stack->ecx;
-	*--esp = stack->edx;
-	*--esp = stack->edi;
-	*--esp = stack->esi;
-	/* signal-number as arguments */
-	*--esp = sig;
-	/* sigRet will remove the argument, restore the register,
-	 * acknoledge the signal and return to eip */
-	*--esp = t->getProc()->getSigRetAddr();
-	stack->setIP((uintptr_t)handler);
-	stack->setSP((uint32_t)esp);
 }
 
 uint32_t *UEnv::addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread) {

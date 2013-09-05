@@ -21,7 +21,6 @@
 
 # void gdt_flush(tGDTTable *gdt);
 gdt_flush:
-	mov		4(%esp),%eax			# load gdt-pointer into eax
 	lgdt	(%eax)					# load gdt
 
 	mov		$0x10,%eax				# set the value for the segment-registers

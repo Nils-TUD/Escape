@@ -70,6 +70,11 @@ if target == 'mmix':
 		# do not warn if instructions are extended to setl,incml,...
 		ASFLAGS = ' -Wa,-x'
 	)
+elif target == 'i586':
+	env.Append(
+		CFLAGS = ' -mregparm=3',
+		CXXFLAGS = ' -mregparm=3'
+	)
 
 verbose = os.environ.get('ESC_VERBOSE',0)
 if int(verbose) == 0:

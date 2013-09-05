@@ -49,13 +49,14 @@
 
 /* gcc-attributes */
 #define A_PACKED				__attribute__((packed))
-#define A_ALIGNED(x)			__attribute__((aligned (x)))
+#define A_ALIGNED(x)			__attribute__((aligned(x)))
 #define A_CHECKRET				__attribute__((__warn_unused_result__))
 #define A_NORETURN				__attribute__((noreturn))
 #define A_INIT					__attribute__((section(".ctors")))
 #define A_UNUSED				__attribute__((unused))
 #define A_INLINE				__attribute__((inline))
 #define A_UNREACHED				__builtin_unreachable()
+#define A_REGPARM(x)			__attribute__((regparm(x)))
 
 #ifdef __cplusplus
 #	define EXTERN_C				extern "C"

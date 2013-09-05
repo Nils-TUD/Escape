@@ -29,7 +29,6 @@ setjmp:
 	mov		%esp,%ebp
 
 	# save regs (callee-save)
-	mov		8(%ebp),%eax						# get env
 	mov		%ebx, 0(%eax)
 	mov		%esp, 4(%eax)
 	mov		%edi, 8(%eax)
@@ -50,10 +49,8 @@ setjmp:
 longjmp:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		12(%ebp),%ecx						# get val
 
 	# restore registers (callee-save)
-	mov		8(%ebp),%eax						# get env
 	mov		8(%eax),%edi
 	mov		12(%eax),%esi
 	mov		16(%eax),%ebp
@@ -65,6 +62,6 @@ longjmp:
 	mov		24(%eax),%eax						# get return-address
 	mov		%eax,(%esp)							# set return-address
 
-	mov		%ecx,%eax							# return val
+	mov		%edx,%eax							# return val
 	ret											# no leave here because we've already restored the
 												# ebp of the caller stack-frame

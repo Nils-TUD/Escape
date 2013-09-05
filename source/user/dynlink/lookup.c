@@ -37,9 +37,11 @@ static int depth = 0;
 #endif
 
 #ifdef CALLTRACE_PID
-uintptr_t lookup_resolve(uintptr_t retAddr,sSharedLib *lib,size_t offset) {
+A_REGPARM(0) uintptr_t lookup_resolve(A_UNUSED uint32_t a,A_UNUSED uint32_t b,A_UNUSED uint32_t c,
+                                      uintptr_t retAddr,sSharedLib *lib,size_t offset) {
 #else
-uintptr_t lookup_resolve(sSharedLib *lib,size_t offset) {
+A_REGPARM(0) uintptr_t lookup_resolve(A_UNUSED uint32_t a,A_UNUSED uint32_t b,A_UNUSED uint32_t c,
+                                      sSharedLib *lib,size_t offset) {
 #endif
 	Elf32_Sym *foundSym;
 	Elf32_Rel *rel = (Elf32_Rel*)((uintptr_t)lib->jmprel + offset);

@@ -41,19 +41,18 @@ cpu_cpuidSupported:
 cpu_getInfo:
 	push	%ebp
 	mov		%esp,%ebp
-	push	%ebx					# save ebx
-	push	%esi					# save esi
-	mov		8(%ebp),%eax			# load code into eax
-	cpuid
-	mov		12(%ebp),%esi			# store result in a,b,c and d
-	mov		%eax,(%esi)
-	mov		16(%ebp),%esi
-	mov		%ebx,(%esi)
-	mov		20(%ebp),%esi
-	mov		%ecx,(%esi)
-	mov		24(%ebp),%esi
-	mov		%edx,(%esi)
-	pop		%esi					# restore esi
+	push	%ebx					# save ebx, ecx and edx; cpuid overwrites them
+	push	%ecx
+	push	%edx
+	cpuid							# code is already in eax
+	pop		%edi
+	mov		%eax,(%edi)				# store result in a,b,c and d
+	pop		%edi
+	mov		%ebx,(%edi)
+	mov		8(%ebp),%edi
+	mov		%ecx,(%edi)
+	mov		12(%ebp),%edi
+	mov		%edx,(%edi)
 	pop		%ebx					# restore ebx
 	leave
 	ret
@@ -63,14 +62,12 @@ cpu_getStrInfo:
 	push	%ebp
 	mov		%esp,%ebp
 	push	%ebx					# save ebx
-	push	%esi					# save esi
-	mov		8(%ebp),%eax			# load code into eax
-	cpuid
-	mov		12(%ebp),%esi			# load res into esi
-	mov		%ebx,0(%esi)			# store result in res
-	mov		%edx,4(%esi)
-	mov		%ecx,8(%esi)
-	pop		%esi					# restore esi
+	push	%edx					# save edx
+	cpuid							# code is already in eax
+	pop		%edi
+	mov		%ebx,0(%edi)			# store result in res
+	mov		%edx,4(%edi)
+	mov		%ecx,8(%edi)
 	pop		%ebx					# restore ebx
 	leave
 	ret

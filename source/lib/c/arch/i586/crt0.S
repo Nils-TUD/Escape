@@ -49,15 +49,19 @@
 _start:
 	# mark the beginning of the call-trace
 	mov		$0,%ebp
+	pop		%eax
+	pop		%edx
+	pop		%ecx
 	# call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
-	# remove args from stack
-	add		$12,%esp
 	# it returns the entrypoint; 0 if we're the initial thread
 	test	%eax,%eax
 	je		initialThread
 	# we're an additional thread, so call the desired function
-	call	*%eax
+	mov		%eax,%edx
+	# get argument
+	pop		%eax
+	call	*%edx
 	jmp		threadExit
 
 	# initial thread calls main
@@ -66,11 +70,14 @@ initialThread:
 	call	__libc_init
 	# call function in .init-section
 	call _init
+	# get argc and argv
+	pop		%eax
+	pop		%edx
 	# finally, call main
 	call	main
 
 threadExit:
-	push	%eax
+	# eax is already the exit-code
 	call	exit
 	# just to be sure
 	1: jmp		1b

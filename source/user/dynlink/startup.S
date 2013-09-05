@@ -49,27 +49,33 @@
 
 _start:
 	# we have no TLS, so don't waste time
-	# call __libc_init()
 	call	__libc_init
+	pop		%eax
 	call	load_setupProg
-	# first, remove fd from stack
-	add		$4,%esp
 	# load_setupProg returns the entrypoint
 	jmp		*%eax
 
 lookup_resolveStart:
 #ifndef CALLTRACE_PID
+	push	%eax
+	push	%edx
+	push	%ecx
 	call	lookup_resolve
-	add		$8,%esp									# remove args of lookup_resolve from stack
-	jmp		*%eax									# jump to function
+	push	%eax
+	mov		4(%esp),%ecx
+	mov		8(%esp),%edx
+	mov		12(%esp),%eax
+	add		$24,%esp								# remove args of lookup_resolve from stack
+	jmp		*-24(%esp)								# jump to function
 #else
 	push	8(%esp)									# push ret-addr for the call
+	push	%eax
+	push	%edx
+	push	%ecx
 	call	lookup_resolve
-	add		$12,%esp								# remove args of lookup_resolve from stack
 	push	%eax
 	call	getpid									# get pid
 	cmp		$CALLTRACE_PID,%eax						# if not the requested pid skip the whole stuff
-	pop		%eax
 	jne		1f
 	mov		(lookupDepth),%ecx
 	cmp		$100,%ecx								# we have only 100 places...
@@ -78,12 +84,16 @@ lookup_resolveStart:
 	lea		(%edx,%ecx,4),%edx						# load addr to store ret-addr at
 	add		$1,%ecx									# inc depth
 	mov		%ecx,(lookupDepth)						# store
-	mov		(%esp),%ecx								# get real return-addr
+	mov		28(%esp),%ecx							# get real return-addr
 	mov		%ecx,(%edx)								# save
 	mov		$lookup_resolveFinish,%ecx				# replace with our own
-	mov		%ecx,(%esp)
+	mov		%ecx,28(%esp)
 1:
-	jmp		*%eax									# jump to function
+	mov		4(%esp),%ecx
+	mov		8(%esp),%edx
+	mov		12(%esp),%eax
+	add		$28,%esp								# remove args of lookup_resolve from stack
+	jmp		*-28(%esp)								# jump to function
 
 lookup_resolveFinish:
 	.extern lookup_tracePop

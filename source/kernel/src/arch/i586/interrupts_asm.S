@@ -183,10 +183,8 @@ syscall_entry:
 	pusha
 
 	# call c-routine
-	mov		%esp,%eax
-	push	%eax					# pointer to stack-frame
+	mov		%esp,%eax				# pointer to stack-frame
 	call	syscall_handler
-	add		$4,%esp
 
 	# restore registers
 	popa
@@ -208,10 +206,8 @@ isrCommon:
 	mov		%eax,%gs
 
 	# call c-routine
-	mov		%esp,%eax
-	push	%eax					# pointer to stack-frame
+	mov		%esp,%eax				# pointer to stack-frame
 	call	intrpt_handler
-	add		$4,%esp
 
 	# restore registers
 	popa

@@ -69,7 +69,7 @@ help() {
 	echo "    dis=<prog>:              run objdump -SC <prog> (the cross-compiler version)"
 	echo "    elf=<prog>:              run readelf -a <prog> (the cross-compiler version)"
 	echo "    nm=<prog>:               run nm -SC <prog> (the cross-compiler version)"
-    echo "    constr=<prog>:           list the contructor calls of <prog>"
+	echo "    constr=<prog>:           list the contructor calls of <prog>"
 	echo "    straddr=<prog> <str>:    search for the string <str> in <prog> and display"
 	echo "                             the addresses"
 	echo "    list:                    list the link-address of all programs"
@@ -195,6 +195,8 @@ case "$cmd" in
 			# which replaces itself with the given program afterwards
 			$build/tools/ignoreint/ignoreint ./boot/$ESC_TARGET/$script $build \
 				"$ESC_SIM_FLAGS -S -s" >log.txt &
+			# kill qemu when we're done
+			trap "pgrep qemu | xargs kill 2>/dev/null" INT
 		elif [ "$ESC_TARGET" = "eco32" ]; then
 			echo "Sorry, a gdb is not available for eco32" >&2
 			exit 1
@@ -218,6 +220,9 @@ case "$cmd" in
 			echo "add-symbol-file $build/bin/escape 0x$addr" >> $tmp
 		fi
 		$gdb $build/bin/$binary --command=$tmp
+		if [ "$ESC_TARGET" = "i586" ]; then
+			pgrep qemu | xargs kill 2>/dev/null
+		fi
 		rm -f $tmp
 		;;
 	dis=*)
@@ -226,7 +231,7 @@ case "$cmd" in
 	elf=*)
 		$crossdir/bin/$cross-readelf -aW $build/bin/$binary | c++filt | less
 		;;
-    constr=*)
+	constr=*)
     	./tools/listconstr.sh $crossdir $cross $build/bin/$binary
         ;;
 	nm=*)

@@ -18,39 +18,46 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
+#include <esc/dir.h>
 #include <esc/test.h>
+#include <esc/setjmp.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include "tests/theap.h"
-#include "tests/tfileio.h"
-#include "tests/tdir.h"
-#include "tests/tenv.h"
-#include "tests/tfs.h"
-#include "tests/tgroup.h"
-#include "tests/tuser.h"
-#include "tests/trect.h"
-#include "tests/tpasswd.h"
-#include "tests/tmem.h"
-#include "tests/tsllist.h"
-#include "tests/tsetjmp.h"
+#include "tsetjmp.h"
 
-int main(void) {
-	if(getuid() != ROOT_UID)
-		error("Please start this program as root!");
+/* forward declarations */
+static void test_setjmp(void);
 
-	test_register(&tModHeap);
-	test_register(&tModFileio);
-	test_register(&tModDir);
-	test_register(&tModEnv);
-	test_register(&tModFs);
-	test_register(&tModGroup);
-	test_register(&tModUser);
-	test_register(&tModPasswd);
-	test_register(&tModRect);
-	test_register(&tModMem);
-	test_register(&tModSLList);
-	test_register(&tModSetjmp);
-	test_start();
-	return EXIT_SUCCESS;
+/* our test-module */
+sTestModule tModSetjmp = {
+	"setjmp",
+	&test_setjmp
+};
+
+static sJumpEnv env;
+
+static void myfunc(int i) {
+	if(i > 0)
+		myfunc(i - 1);
+	else
+		longjmp(&env,1);
+}
+
+static void test_setjmp(void) {
+	test_caseStart("Basic setjmp and longjmp");
+
+	/* not supported on eco32 and mmix yet */
+#ifdef __i386__
+	int res = setjmp(&env);
+	if(res == 0) {
+		myfunc(5);
+		test_assertFalse(true);
+	}
+	test_assertInt(res, 1);
+#endif
+
+	test_caseSucceeded();
 }

@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include "modules/getpid.h"
+#include "modules/yield.h"
 #include "modules/fileread.h"
 #include "modules/mmap.h"
 #include "modules/pingpong.h"
@@ -38,6 +39,7 @@ typedef struct {
 
 static sTestModule modules[] = {
 	{"getpid",		mod_getpid},
+	{"yield",		mod_yield},
 	{"fileread",	mod_fileread},
 	{"mmap",		mod_mmap},
 	{"sendrecv",	mod_sendrecv},

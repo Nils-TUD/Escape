@@ -49,7 +49,7 @@ static sTestModule modules[] = {
 
 int main(int argc,char *argv[]) {
 	size_t i;
-	if(argc > 2 || isHelpCmd(argc,argv)) {
+	if(isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<module>] [...]\n",argv[0]);
 		fprintf(stderr,"	Available modules:\n");
 		for(i = 0; i < ARRAY_SIZE(modules); i++)
@@ -57,7 +57,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(argc == 2) {
+	if(argc > 1) {
 		for(i = 0; i < ARRAY_SIZE(modules); i++) {
 			if(strcmp(argv[1],modules[i].name) == 0)
 				return modules[i].func(argc,argv);

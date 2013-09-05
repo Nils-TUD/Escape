@@ -102,7 +102,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
 	ulong *src = (ulong*)t->kernelStack;
-	for(size_t i = 0; i < PT_ENTRY_COUNT - 1; i++)
+	for(size_t i = 0; i < (PAGE_SIZE / sizeof(ulong)) - 1; i++)
 		*dst++ = *src++;
 	/* store thread at the top */
 	*dst = (ulong)nt;
@@ -117,9 +117,9 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	/* setup kernel-stack */
 	frameno_t frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
 	ulong *dst = (ulong*)PageDir::mapToTemp(&frame,1);
-	uint32_t sp = nt->kernelStack + PAGE_SIZE - sizeof(int) * 6;
-	dst += PT_ENTRY_COUNT - 1;
-	*dst = (uint32_t)nt;
+	ulong sp = nt->kernelStack + PAGE_SIZE - sizeof(ulong) * 6;
+	dst += (PAGE_SIZE / sizeof(ulong)) - 1;
+	*dst = (ulong)nt;
 	*--dst = nt->getProc()->getEntryPoint();
 	*--dst = entryPoint;
 	*--dst = (ulong)arg;

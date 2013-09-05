@@ -155,7 +155,8 @@ void Thread::initialSwitch() {
 	cur->stats.schedCount++;
 	if(PhysMem::shouldSetRegTimestamp())
 		VirtMem::setTimestamp(cur,Timer::getTimestamp());
-	cur->setCPU(GDT::prepareRun(NULL,cur));
+	GDT::prepareRun(cpu,true,cur);
+	cur->setCPU(cpu);
 	FPU::lockFPU();
 	cur->stats.cycleStart = CPU::rdtsc();
 	Thread::resume(cur->getProc()->getPageDir()->getPhysAddr(),&cur->saveArea,&switchLock,true);
@@ -172,19 +173,21 @@ void ThreadBase::doSwitch() {
 	uint64_t runtime = cycles - old->stats.cycleStart;
 	old->stats.runtime += runtime;
 	old->stats.curCycleCount += cycles - old->stats.cycleStart;
+	cpuid_t cpu = old->getCPU();
 
 	/* choose a new thread to run */
-	Thread *n = Sched::perform(old,old->getCPU(),runtime);
+	Thread *n = Sched::perform(old,cpu,runtime);
 	n->stats.schedCount++;
 
 	/* switch thread */
 	if(EXPECT_TRUE(n->getTid() != old->getTid())) {
 		if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
 			VirtMem::setTimestamp(n,cycles);
-		n->setCPU(GDT::prepareRun(old,n));
+		GDT::prepareRun(cpu,n->getProc() != old->getProc(),n);
+		n->setCPU(cpu);
 
 		/* some stats for SMP */
-		SMP::schedule(n->getCPU(),n,cycles);
+		SMP::schedule(cpu,n,cycles);
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */

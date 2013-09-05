@@ -195,8 +195,7 @@ void GDT::setRunning(cpuid_t id,Thread *t) {
 	setDesc(gdt,7,(uintptr_t)t,0,GDT_TYPE_DATA | GDT_PRESENT,GDT_DPL_KERNEL);
 }
 
-cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
-	cpuid_t id = EXPECT_FALSE(old == NULL) ? getCPUId() : old->getCPU();
+void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
 	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
 	 * %gs:0xFFFFFFF8 etc. */
@@ -207,7 +206,7 @@ cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
 				GDT_DPL_USER);
 	}
 	alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);
-	if(EXPECT_TRUE(!old || old->getProc() != n->getProc()))
+	if(EXPECT_TRUE(newProc))
 		alltss[id]->ioMapOffset = IO_MAP_OFFSET_INVALID;
 #if GDT_STORE_RUN_THREAD
 	setRunning(id,n);
@@ -216,7 +215,6 @@ cpuid_t GDT::prepareRun(Thread *old,Thread *n) {
 		CPU::setMSR(MSR_IA32_SYSENTER_ESP,alltss[id]->esp0);
 		lastMSRs[id] = alltss[id]->esp0;
 	}
-	return id;
 }
 
 bool GDT::ioMapPresent() {

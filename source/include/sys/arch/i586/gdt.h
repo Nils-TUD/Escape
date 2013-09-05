@@ -221,11 +221,11 @@ public:
 	 * Prepares the run of the given thread, i.e. sets the stack-pointer for interrupts, removes
 	 * the I/O map and sets the TLS-register.
 	 *
-	 * @param old the old thread (may be NULL)
+	 * @param id the CPU id
+	 * @param newProc whether it is a new process
 	 * @param n the thread to run
-	 * @return the cpu-id for the new thread
 	 */
-	static cpuid_t prepareRun(Thread *old,Thread *n);
+	static void prepareRun(cpuid_t id,bool newProc,Thread *n);
 
 	/**
 	 * Checks whether the io-map is set

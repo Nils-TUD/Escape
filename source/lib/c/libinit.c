@@ -62,7 +62,7 @@ static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 int startthread(fThreadEntry entryPoint,void *arg) {
 	int res;
 	locku(&threadLock);
-	res = _startthread(entryPoint,arg);
+	res = syscall2(SYSCALL_STARTTHREAD,(ulong)entryPoint,(ulong)arg);
 	if(res >= 0)
 		threadCount++;
 	unlocku(&threadLock);

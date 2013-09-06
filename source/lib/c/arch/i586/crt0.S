@@ -18,7 +18,6 @@
 #
 
 #include <esc/syscalls.h>
-#include <esc/arch/i586/syscalls.s>
 
 .section .text
 

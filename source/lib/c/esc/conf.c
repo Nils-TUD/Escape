@@ -17,12 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/time.h>
+#include <esc/conf.h>
 #include <esc/syscalls.h>
 
-uint64_t tsctotime(uint64_t tsc) {
-	uint64_t tmp = tsc;
-	syscall1(SYSCALL_TSCTOTIME,(ulong)&tmp);
-	return tmp;
+long sysconf(int id) {
+	return syscall1(SYSCALL_GETCONF,id);
 }

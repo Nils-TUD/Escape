@@ -99,38 +99,37 @@ int waituntil(uint events,evobj_t object,time_t max) {
 }
 
 int lock(uint ident,uint flags) {
-	/* nasm doesn't like "lock" as label... */
-	return _lock(ident,false,flags);
+	return syscall3(SYSCALL_LOCK,ident,false,flags);
 }
 
 int lockg(uint ident,uint flags) {
-	return _lock(ident,true,flags);
+	return syscall3(SYSCALL_LOCK,ident,true,flags);
 }
 
 int waitunlock(uint events,evobj_t object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
-	return _waitunlock(&obj,1,ident,false);
+	return syscall4(SYSCALL_WAITUNLOCK,(ulong)&obj,1,ident,false);
 }
 
 int waitunlockg(uint events,evobj_t object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
 	obj.object = object;
-	return _waitunlock(&obj,1,ident,true);
+	return syscall4(SYSCALL_WAITUNLOCK,(ulong)&obj,1,ident,true);
 }
 
 int unlock(uint ident) {
-	return _unlock(ident,false);
+	return syscall2(SYSCALL_UNLOCK,ident,false);
 }
 
 int unlockg(uint ident) {
-	return _unlock(ident,true);
+	return syscall2(SYSCALL_UNLOCK,ident,true);
 }
 
 uint64_t getcycles(void) {
 	uint64_t res;
-	_getcycles(&res);
+	syscall1(SYSCALL_GETCYCLES,(ulong)&res);
 	return res;
 }

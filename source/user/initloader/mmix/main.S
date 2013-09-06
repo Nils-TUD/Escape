@@ -26,15 +26,15 @@
 
 _start:
 	# load modules first; wait until we're finished ($0 = 0)
-	SET		$2,0
-	TRAP	0,SYSCALL_LOADMODS,0
+	SET		$0,SYSCALL_LOADMODS
+	TRAP	0,0,0
 	BNZ		$0,_start
 
 	# now replace with init
-	SET		$2,0
-	GETA	$0,progName
-	GETA	$1,args
-	TRAP	0,SYSCALL_EXEC,0
+	SET		$0,SYSCALL_EXEC
+	GETA	$1,progName
+	GETA	$2,args
+	TRAP	0,0,0
 
 	# we should not reach this
 1:

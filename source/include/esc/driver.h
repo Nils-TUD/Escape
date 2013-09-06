@@ -60,7 +60,9 @@ extern "C" {
  * @param ops the supported operations (DEV_*)
  * @return the file-desc if successfull, < 0 if an error occurred
  */
-int createdev(const char *path,uint type,uint ops) A_CHECKRET;
+A_CHECKRET static inline int createdev(const char *path,uint type,uint ops) {
+	return syscall3(SYSCALL_CRTDEV,(ulong)path,type,ops);
+}
 
 /**
  * Fetches the client-id from the given file-descriptor
@@ -68,7 +70,9 @@ int createdev(const char *path,uint type,uint ops) A_CHECKRET;
  * @param fd the file-descriptor
  * @return the id or an error
  */
-inode_t getclientid(int fd);
+static inline inode_t getclientid(int fd) {
+	return syscall1(SYSCALL_GETCLIENTID,fd);
+}
 
 /**
  * Opens a file for the client with given client-id.
@@ -77,7 +81,9 @@ inode_t getclientid(int fd);
  * @param cid the client-id
  * @return the file-descriptor or a negative error-code
  */
-int getclient(int fd,inode_t cid) A_CHECKRET;
+A_CHECKRET static inline int getclient(int fd,inode_t cid) {
+	return syscall2(SYSCALL_GETCLIENTPROC,fd,cid);
+}
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided
@@ -94,7 +100,10 @@ int getclient(int fd,inode_t cid) A_CHECKRET;
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-int getwork(int *fds,size_t fdCount,int *drv,msgid_t *mid,void *msg,size_t size,uint flags) A_CHECKRET;
+A_CHECKRET static inline int getwork(int *fds,size_t fdCount,int *drv,msgid_t *mid,void *msg,
+                                     size_t size,uint flags) {
+	return syscall7(SYSCALL_GETWORK,(ulong)fds,fdCount,(ulong)drv,(ulong)mid,(ulong)msg,size,flags);
+}
 
 /**
  * A convenience method which handles the message MSG_DEV_READ for DEV_TYPE_FILE. It extracts

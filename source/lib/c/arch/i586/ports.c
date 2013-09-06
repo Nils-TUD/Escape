@@ -18,10 +18,19 @@
  */
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 #include <esc/arch/i586/ports.h>
+
+int reqports(uint16_t start,size_t count) {
+	return syscall2(SYSCALL_REQIOPORTS,start,count);
+}
 
 int reqport(uint16_t port) {
 	return reqports(port,1);
+}
+
+int relports(uint16_t start,size_t count) {
+	return syscall2(SYSCALL_RELIOPORTS,start,count);
 }
 
 int relport(uint16_t port) {

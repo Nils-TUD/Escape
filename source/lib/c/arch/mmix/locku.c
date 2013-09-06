@@ -17,27 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.section .text
+#include <esc/common.h>
+#include <esc/thread.h>
 
-.global locku
-.global unlocku
-.extern yield
+void locku(tULock *l) {
+	ulong val;
+	while(1) {
+		val = 1;
+		__asm__ volatile (
+			"CSWAP	%0,%1,0\n"
+			: "+r"(val)
+			: "g"(l)
+		);
+		if(val)
+			break;
+		yield();
+	}
+}
 
-# void locku(tULock *l)
-locku:
-	GET		$1,rJ
-1:
-	PUT		rP,0
-	SET		$2,1
-	CSWAP	$2,$0,0
-	BNZ		$2,1f
-	PUSHJ	$2,yield
-	JMP		1b
-1:
-	PUT		rJ,$1
-	POP		0,0
-
-# void unlocku(tULock *l)
-unlocku:
-	STCO	0,$0,0
-	POP		0,0
+void unlocku(tULock *l) {
+    __sync_lock_release(l);
+}

@@ -17,12 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/time.h>
-#include <esc/syscalls.h>
+#pragma once
 
-uint64_t tsctotime(uint64_t tsc) {
-	uint64_t tmp = tsc;
-	syscall1(SYSCALL_TSCTOTIME,(ulong)&tmp);
-	return tmp;
-}
+#include <esc/common.h>
+
+EXTERN_C void syscalldbg(void);
+EXTERN_C long syscall0(long syscno);
+EXTERN_C long syscall1(long syscno,ulong arg1);
+EXTERN_C long syscall2(long syscno,ulong arg1,ulong arg2);
+EXTERN_C long syscall3(long syscno,ulong arg1,ulong arg2,ulong arg3);
+EXTERN_C long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4);
+EXTERN_C long syscall7(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4,ulong arg5,ulong arg6,
+                      ulong arg7);

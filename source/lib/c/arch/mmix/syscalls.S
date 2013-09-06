@@ -18,4 +18,34 @@
 #
 
 #include <esc/syscalls.h>
-#include <esc/arch/mmix/syscalls.s>
+
+.global syscalldbg
+.type syscalldbg, @function
+syscalldbg:
+.global syscall0
+.type syscall0, @function
+syscall0:
+.global syscall1
+.type syscall1, @function
+syscall1:
+.global syscall2
+.type syscall2, @function
+syscall2:
+.global syscall3
+.type syscall3, @function
+syscall3:
+.global syscall4
+.type syscall4, @function
+syscall4:
+.global syscall7
+.type syscall7, @function
+syscall7:
+	SET		$8,0						# clear error-code
+	TRAP	0,0,0
+	BZ		$8,1f						# no-error?
+	GETA	$3,errno
+	NEG		$1,0,$8
+	STTU	$1,$3,0
+	SET		$0,$8
+1:
+	POP		1,0							# return value is in $0

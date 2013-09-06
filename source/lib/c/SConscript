@@ -26,6 +26,7 @@ env.Install('$BINDIR', stlib)
 if env['ARCH'] == 'i586':
 	shenv = env.Clone()
 	shenv.Append(
+		CPPFLAGS = ' -DSHAREDLIB=1',
 		ASFLAGS = ' -DSHAREDLIB=1',
 		LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
 	)

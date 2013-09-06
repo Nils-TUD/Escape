@@ -18,9 +18,47 @@
 #
 
 #include <esc/syscalls.h>
-#include <esc/arch/i586/syscalls.s>
 
 .section .text
+
+# calculates the return address for sysenter and the stackpointer and performs sysenter.
+# this has to be done differently when using it in a shared library because we don't know the
+# absolute address
+.macro DO_SYSENTER
+#ifdef SHAREDLIB
+	call	1f
+1:
+	pop		%edx
+	add		$(1f - 1b),%edx
+#else
+	mov		$1f,%edx
+#endif
+	mov		%esp,%ecx
+	sysenter
+1:
+.endm
+
+# stores the received error-code (in edi) to the global variable errno
+.macro STORE_ERRNO
+	test	%edi,%edi
+	jz		1f								# no-error?
+	# use GOT for shared-libraries
+	#ifdef SHAREDLIB
+	# first get address of GOT
+	call	__i686.get_pc_thunk.bx
+	addl	$_GLOBAL_OFFSET_TABLE_,%eax
+	# now access symbol and store errno
+	mov		errno@GOT(%eax),%eax
+	mov		%edi,(%eax)
+	negl	(%eax)
+	#else
+	# otherwise access errno directly
+	mov		%edi,(errno)					# store error-code
+	negl	(errno)
+	#endif
+	mov		%edi,%eax						# return error-code
+1:
+.endm
 
 .extern errno
 .extern _GLOBAL_OFFSET_TABLE_
@@ -38,7 +76,24 @@ __i686.get_pc_thunk.bx:
 	ret
 #endif
 
-# i586 specific syscalls
-SYSC_2ARGS reqports,SYSCALL_REQIOPORTS
-SYSC_2ARGS relports,SYSCALL_RELIOPORTS
-SYSC_4ARGS vm86int,SYSCALL_VM86INT
+.global syscall7
+.type syscall7, @function
+syscall7:
+	push	%ebp
+	mov		%esp,%ebp
+	push	%edi
+	push	%esi
+	mov		%edx,%esi						# set arg1
+	mov		%ecx,%edi						# set arg2
+	pushl	24(%ebp)						# push arg7
+	pushl	20(%ebp)						# push arg6
+	pushl	16(%ebp)						# push arg5
+	pushl	12(%ebp)						# push arg4
+	pushl	8(%ebp)							# push arg3
+	DO_SYSENTER
+	add		$20,%esp						# remove args
+	STORE_ERRNO
+	pop		%esi
+	pop		%edi
+	leave
+	ret

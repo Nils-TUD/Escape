@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 
 #define MAX_PROC_NAME_LEN	30
 #define INVALID_PID			8193
@@ -52,7 +53,9 @@ extern "C" {
 /**
  * @return the process-id
  */
-pid_t getpid(void);
+static inline pid_t getpid(void) {
+	return syscall0(SYSCALL_PID);
+}
 
 /**
  * @return the parent-pid of the current process
@@ -65,12 +68,16 @@ pid_t getppid(void);
  * @param pid the process-id
  * @return the parent-pid
  */
-int getppidof(pid_t pid);
+static inline int getppidof(pid_t pid) {
+	return syscall1(SYSCALL_PPID,pid);
+}
 
 /**
  * @return the real user-id of the current process
  */
-uid_t getuid(void);
+static inline uid_t getuid(void) {
+	return syscall0(SYSCALL_GETUID);
+}
 
 /**
  * Sets the real, effective and saved user-id of the current process. This is allowed only if the
@@ -79,12 +86,16 @@ uid_t getuid(void);
  * @param uid the new uid
  * @return 0 on success
  */
-int setuid(uid_t uid);
+static inline int setuid(uid_t uid) {
+	return syscall1(SYSCALL_SETUID,uid);
+}
 
 /**
  * @return the effective user-id of the current process
  */
-uid_t geteuid(void);
+static inline uid_t geteuid(void) {
+	return syscall0(SYSCALL_GETEUID);
+}
 
 /**
  * Sets the effective user-id of the current process to <uid>. This can be either the current real,
@@ -93,12 +104,16 @@ uid_t geteuid(void);
  * @param uid the new user-id
  * @return 0 on success
  */
-int seteuid(uid_t uid);
+static inline int seteuid(uid_t uid) {
+	return syscall1(SYSCALL_SETEUID,uid);
+}
 
 /**
  * @return the real group-id of the current process
  */
-gid_t getgid(void);
+static inline gid_t getgid(void) {
+	return syscall0(SYSCALL_GETGID);
+}
 
 /**
  * Sets the real, effective and saved group-id of the current process. This is allowed only if the
@@ -107,12 +122,16 @@ gid_t getgid(void);
  * @param gid the new gid
  * @return 0 on success
  */
-int setgid(gid_t gid);
+static inline int setgid(gid_t gid) {
+	return syscall1(SYSCALL_SETGID,gid);
+}
 
 /**
  * @return the effective group-id of the current process
  */
-gid_t getegid(void);
+static inline gid_t getegid(void) {
+	return syscall0(SYSCALL_GETEGID);
+}
 
 /**
  * Sets the effective group-id of the current process to <gid>. This can be either the current real,
@@ -121,7 +140,9 @@ gid_t getegid(void);
  * @param gid the new group-id
  * @return 0 on success
  */
-int setegid(gid_t uid);
+static inline int setegid(gid_t gid) {
+	return syscall1(SYSCALL_SETEGID,gid);
+}
 
 /**
  * Copies at most <size> groups of the current process into <list>.
@@ -131,7 +152,9 @@ int setegid(gid_t uid);
  * @param list the list to copy the group-ids to
  * @return the number of copied group-ids (or the total number of group-ids, if <size> is 0)
  */
-int getgroups(size_t size,gid_t *list);
+static inline int getgroups(size_t size,gid_t *list) {
+	return syscall2(SYSCALL_GETGROUPS,size,(ulong)list);
+}
 
 /**
  * Sets the groups of the current process to <list>. This is only allowed if the owner of the
@@ -141,7 +164,9 @@ int getgroups(size_t size,gid_t *list);
  * @param list the group-ids
  * @return 0 on success
  */
-int setgroups(size_t size,const gid_t *list);
+static inline int setgroups(size_t size,const gid_t *list) {
+	return syscall2(SYSCALL_SETGROUPS,size,(ulong)list);
+}
 
 /**
  * Checks whether the process <pid> is in the group <gid>.
@@ -150,14 +175,18 @@ int setgroups(size_t size,const gid_t *list);
  * @param gid the group-id
  * @return 1 if so, 0 if not, negative if an error occurred
  */
-int isingroup(pid_t pid,gid_t gid);
+static inline int isingroup(pid_t pid,gid_t gid) {
+	return syscall2(SYSCALL_ISINGROUP,pid,gid);
+}
 
 /**
  * Clones the current process
  *
  * @return new pid for parent, 0 for child, < 0 if failed
  */
-int fork(void) A_CHECKRET;
+A_CHECKRET static inline int fork(void) {
+	return syscall0(SYSCALL_FORK);
+}
 
 /**
  * Exchanges the process-data with the given program
@@ -166,7 +195,9 @@ int fork(void) A_CHECKRET;
  * @param args a NULL-terminated array of arguments
  * @return a negative error-code if failed
  */
-int exec(const char *path,const char **args);
+static inline int exec(const char *path,const char **args) {
+	return syscall2(SYSCALL_EXEC,(ulong)path,(ulong)args);
+}
 
 /**
  * The same as exec(), but if <file> does not contain a slash, the environment variable PATH
@@ -187,7 +218,9 @@ int execp(const char *file,const char **args);
  * @param state the exit-state (may be NULL)
  * @return 0 on success
  */
-int waitchild(sExitState *state);
+static inline int waitchild(sExitState *state) {
+	return syscall1(SYSCALL_WAITCHILD,(ulong)state);
+}
 
 /**
  * The system function is used to issue a command. Execution of your program will not

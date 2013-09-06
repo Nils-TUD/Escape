@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 
 #define SIG_COUNT			19
 
@@ -76,7 +77,9 @@ extern "C" {
  * @param handler the new handler-function
  * @return the previous handler-function or SIG_ERR
  */
-fSignal signal(int sig,fSignal handler) A_CHECKRET;
+A_CHECKRET static inline fSignal signal(int sig,fSignal handler) {
+	return (fSignal)syscall2(SYSCALL_SETSIGH,sig,(ulong)handler);
+}
 
 /**
  * Sends the given signal to given process (interrupts can't be sended)
@@ -85,7 +88,9 @@ fSignal signal(int sig,fSignal handler) A_CHECKRET;
  * @param signal the signal
  * @return 0 on success
  */
-int kill(pid_t pid,int signal) A_CHECKRET;
+A_CHECKRET static inline int kill(pid_t pid,int signal) {
+	return syscall2(SYSCALL_SENDSIG,pid,signal);
+}
 
 /**
  * raise()  sends  a  signal  to  the current process.  It is

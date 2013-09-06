@@ -292,7 +292,9 @@ void _Exit(int status);
  * @param name the environment-variable-name
  * @return 0 if successfull
  */
-extern int getenvto(char *value,size_t valSize,const char *name) A_CHECKRET;
+A_CHECKRET static inline int getenvto(char *value,size_t valSize,const char *name) {
+	return syscall3(SYSCALL_GETENVTO,(ulong)value,valSize,(ulong)name);
+}
 
 /**
  * Returns the value of the given environment-variable
@@ -310,7 +312,9 @@ char *getenv(const char *name) A_CHECKRET;
  * @param index the index
  * @return 0 if successfull
  */
-extern int getenvito(char *name,size_t nameSize,size_t index);
+static inline int getenvito(char *name,size_t nameSize,size_t index) {
+	return syscall3(SYSCALL_GETENVITO,(ulong)name,nameSize,index);
+}
 
 /**
  * Returns the env-variable-name with given index
@@ -327,7 +331,9 @@ char *getenvi(size_t index) A_CHECKRET;
  * @param value the value
  * @return 0 on success
  */
-extern int setenv(const char *name,const char *value);
+static inline int setenv(const char *name,const char *value) {
+	return syscall2(SYSCALL_SETENV,(ulong)name,(ulong)value);
+}
 
 /**
  * The system function is used to issue a command. Execution of your program will not

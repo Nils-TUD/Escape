@@ -18,7 +18,6 @@
 #
 
 #include <esc/syscalls.h>
-#include <esc/arch/eco32/syscalls.s>
 
 .section .text
 
@@ -27,13 +26,13 @@
 
 _start:
 	# load modules first
-	add		$2,$0,SYSCALL_LOADMODS
+	add		$4,$0,SYSCALL_LOADMODS
 	trap
 
 	# now replace with init
-	add		$2,$0,SYSCALL_EXEC				# set syscall-number
-	add		$4,$0,progName					# set path
-	add		$5,$0,args						# set arguments
+	add		$4,$0,SYSCALL_EXEC				# set syscall-number
+	add		$5,$0,progName					# set path
+	add		$6,$0,args						# set arguments
 	trap
 
 	# we should not reach this

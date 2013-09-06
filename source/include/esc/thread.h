@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 
 /* the events we can wait for */
 #define EV_NOEVENT				0			/* just wakeup on signals */
@@ -50,12 +51,16 @@ extern "C" {
 /**
  * @return the id of the current thread
  */
-tid_t gettid(void);
+static inline tid_t gettid(void) {
+	return syscall0(SYSCALL_GETTID);
+}
 
 /**
  * @return the number of threads in the current process
  */
-size_t getthreadcnt(void);
+static inline size_t getthreadcnt(void) {
+	return syscall0(SYSCALL_GETTHREADCNT);
+}
 
 /**
  * Starts a new thread
@@ -71,7 +76,9 @@ int startthread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
  *
  * @param errorCode the error-code for the parent
  */
-void _exit(int exitCode) A_NORETURN;
+A_NORETURN static inline void _exit(int exitCode) {
+	syscall1(SYSCALL_EXIT,exitCode);
+}
 
 /**
  * @return the cpu-cycles of the current thread
@@ -81,7 +88,9 @@ uint64_t getcycles(void);
 /**
  * Releases the CPU (reschedule)
  */
-void yield(void);
+static inline void yield(void) {
+	syscall0(SYSCALL_YIELD);
+}
 
 /**
  * Notifies the thread in <msecs> milliseconds via signal (SIG_ALARM).
@@ -89,7 +98,9 @@ void yield(void);
  * @param msecs the number of milliseconds
  * @return 0 on success
  */
-int alarm(time_t msecs);
+static inline int alarm(time_t msecs) {
+	return syscall1(SYSCALL_ALARM,msecs);
+}
 
 /**
  * Puts the current thread to sleep for <msecs> milliseconds. If interrupted, -EINTR
@@ -98,7 +109,9 @@ int alarm(time_t msecs);
  * @param msecs the number of milliseconds to wait
  * @return 0 on success
  */
-int sleep(time_t msecs);
+static inline int sleep(time_t msecs) {
+	return syscall1(SYSCALL_SLEEP,msecs);
+}
 
 /**
  * Puts the current thread to sleep until one of the given events occurrs. Note that you will
@@ -119,7 +132,9 @@ int waitm(sWaitObject *objects,size_t objCount);
  * @param max the maximum number of milliseconds to wait (0 = unlimited)
  * @return 0 on success and a negative error-code if failed
  */
-int waitmuntil(sWaitObject *objects,size_t objCount,time_t max);
+static inline int waitmuntil(sWaitObject *objects,size_t objCount,time_t max) {
+	return syscall3(SYSCALL_WAIT,(ulong)objects,objCount,max);
+}
 
 /**
  * Does the same as waitm(), but waits for only one object
@@ -148,7 +163,9 @@ int waituntil(uint events,evobj_t object,time_t max);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-int notify(tid_t tid,uint events);
+static inline int notify(tid_t tid,uint events) {
+	return syscall2(SYSCALL_NOTIFY,tid,events);
+}
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
@@ -156,7 +173,9 @@ int notify(tid_t tid,uint events);
  * @param tid the thread-id (0 = wait until all other threads died)
  * @return 0 on success
  */
-int join(tid_t tid);
+static inline int join(tid_t tid) {
+	return syscall1(SYSCALL_JOIN,tid);
+}
 
 /**
  * Suspends a thread from the own process. That means it is blocked until resume() is called.
@@ -164,7 +183,9 @@ int join(tid_t tid);
  * @param tid the thread-id
  * @return 0 on success
  */
-int suspend(tid_t tid);
+static inline int suspend(tid_t tid) {
+	return syscall1(SYSCALL_SUSPEND,tid);
+}
 
 /**
  * Resumes a thread from the own process that has been suspended previously
@@ -172,7 +193,9 @@ int suspend(tid_t tid);
  * @param tid the thread-id
  * @return 0 on success
  */
-int resume(tid_t tid);
+static inline int resume(tid_t tid) {
+	return syscall1(SYSCALL_RESUME,tid);
+}
 
 /**
  * Sets the thread-value with given key to given value (for the current thread)

@@ -72,7 +72,8 @@ threadExit:
 sigRetFunc:
 	PUSHJ	$255,1f				# we need a few local registers..
 	# ack signal
-	TRAP	0,SYSCALL_ACKSIG,0
+	SET		$0,SYSCALL_ACKSIG
+	TRAP	0,0,0
 	# syscall failed? -> exit
 	SET		$1,$7
 	PUSHJ	$0,exit

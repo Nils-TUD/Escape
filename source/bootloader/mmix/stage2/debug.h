@@ -26,6 +26,14 @@ extern "C" {
 #endif
 
 /**
+ * Prints a dump of <byteCount> bytes at <addr>.
+ *
+ * @param addr the start-address
+ * @param byteCount the number of bytes
+ */
+void dumpBytes(const void *addr,size_t byteCount);
+
+/**
  * Prints the given char
  *
  * @param c the character

@@ -128,15 +128,6 @@ public:
 	}
 
 	/**
-	 * @return the system-call-number
-	 */
-	static int getSyscallNo() {
-		uint64_t rxx;
-		asm volatile ("GET %0, rXX" : "=r"(rxx));
-		return (rxx >> 8) & 0xFF;
-	}
-
-	/**
 	 * Performs a SYNCD and SYNCID for the given region to ensure that the IC agrees with the DC
 	 *
 	 * @param start the start-address

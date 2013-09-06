@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
+#include <esc/syscalls.h>
 #include <stdarg.h>
 #include <errno.h>
 
@@ -72,7 +73,9 @@ extern "C" {
  * @param mode the mode
  * @return the file-descriptor; negative if error
  */
-int open(const char *path,uint mode) A_CHECKRET;
+A_CHECKRET static inline int open(const char *path,uint mode) {
+	return syscall2(SYSCALL_OPEN,(ulong)path,mode);
+}
 
 /**
  * Creates a pipe with 2 separate files for reading and writing.
@@ -81,7 +84,9 @@ int open(const char *path,uint mode) A_CHECKRET;
  * @param writeFd will be set to the fd for writing
  * @return 0 on success
  */
-int pipe(int *readFd,int *writeFd) A_CHECKRET;
+A_CHECKRET static inline int pipe(int *readFd,int *writeFd) {
+	return syscall2(SYSCALL_PIPE,(ulong)readFd,(ulong)writeFd);
+}
 
 /**
  * Retrieves information about the given file
@@ -90,7 +95,9 @@ int pipe(int *readFd,int *writeFd) A_CHECKRET;
  * @param info will be filled
  * @return 0 on success
  */
-int stat(const char *path,sFileInfo *info) A_CHECKRET;
+A_CHECKRET static inline int stat(const char *path,sFileInfo *info) {
+	return syscall2(SYSCALL_STAT,(ulong)path,(ulong)info);
+}
 
 /**
  * Retrieves information about the file behind the given file-descriptor
@@ -99,7 +106,9 @@ int stat(const char *path,sFileInfo *info) A_CHECKRET;
  * @param info will be filled
  * @return 0 on success
  */
-int fstat(int fd,sFileInfo *info) A_CHECKRET;
+A_CHECKRET static inline int fstat(int fd,sFileInfo *info) {
+	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
+}
 
 /**
  * Changes the permissions of the file denoted by <path> to <mode>. This is always possible if
@@ -109,7 +118,9 @@ int fstat(int fd,sFileInfo *info) A_CHECKRET;
  * @param mode the new mode
  * @return 0 on success
  */
-int chmod(const char *path,mode_t mode) A_CHECKRET;
+A_CHECKRET static inline int chmod(const char *path,mode_t mode) {
+	return syscall2(SYSCALL_CHMOD,(ulong)path,mode);
+}
 
 /**
  * Changes the owner and group of the file denoted by <path> to <uid> and <gid>, respectively. If
@@ -122,7 +133,9 @@ int chmod(const char *path,mode_t mode) A_CHECKRET;
  * @param gid the new group-id (-1 = do not change)
  * @return 0 on success
  */
-int chown(const char *path,uid_t uid,gid_t gid) A_CHECKRET;
+A_CHECKRET static inline int chown(const char *path,uid_t uid,gid_t gid) {
+	return syscall3(SYSCALL_CHOWN,(ulong)path,uid,gid);
+}
 
 /**
  * Asks for the current file-position
@@ -131,7 +144,9 @@ int chown(const char *path,uid_t uid,gid_t gid) A_CHECKRET;
  * @param pos will point to the current file-position on success
  * @return 0 on success
  */
-int tell(int fd,off_t *pos) A_CHECKRET;
+A_CHECKRET static inline int tell(int fd,off_t *pos) {
+	return syscall2(SYSCALL_TELL,fd,(ulong)pos);
+}
 
 /**
  * Manipulates the given file-descriptor, depending on the command
@@ -141,7 +156,9 @@ int tell(int fd,off_t *pos) A_CHECKRET;
  * @param arg the argument (just used for F_SETFL)
  * @return >= 0 on success
  */
-int fcntl(int fd,uint cmd,int arg);
+static inline int fcntl(int fd,uint cmd,int arg) {
+	return syscall3(SYSCALL_FCNTL,fd,cmd,arg);
+}
 
 /**
  * Changes the position in the given file
@@ -151,7 +168,9 @@ int fcntl(int fd,uint cmd,int arg);
  * @param whence the seek-type: SEEK_SET, SEEK_CUR or SEEK_END
  * @return the new position on success, of the negative error-code
  */
-off_t seek(int fd,off_t offset,uint whence) A_CHECKRET;
+A_CHECKRET static inline off_t seek(int fd,off_t offset,uint whence) {
+	return syscall3(SYSCALL_SEEK,fd,offset,whence);
+}
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
@@ -162,7 +181,9 @@ off_t seek(int fd,off_t offset,uint whence) A_CHECKRET;
  * @param count the number of bytes
  * @return the actual read number of bytes; negative if an error occurred
  */
-ssize_t read(int fd,void *buffer,size_t count) A_CHECKRET;
+A_CHECKRET static inline ssize_t read(int fd,void *buffer,size_t count) {
+	return syscall3(SYSCALL_READ,fd,(ulong)buffer,count);
+}
 
 /**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
@@ -173,7 +194,9 @@ ssize_t read(int fd,void *buffer,size_t count) A_CHECKRET;
  * @param count the number of bytes to write
  * @return the number of bytes written; negative if an error occurred
  */
-ssize_t write(int fd,const void *buffer,size_t count) A_CHECKRET;
+A_CHECKRET static inline ssize_t write(int fd,const void *buffer,size_t count) {
+	return syscall3(SYSCALL_WRITE,fd,(ulong)buffer,count);
+}
 
 /**
  * Sends a message to the device identified by <fd>.
@@ -184,7 +207,9 @@ ssize_t write(int fd,const void *buffer,size_t count) A_CHECKRET;
  * @param size the size of the message
  * @return 0 on success or < 0 if an error occurred
  */
-ssize_t send(int fd,msgid_t id,const void *msg,size_t size);
+static inline ssize_t send(int fd,msgid_t id,const void *msg,size_t size) {
+	return syscall4(SYSCALL_SEND,fd,id,(ulong)msg,size);
+}
 
 /**
  * Receives a message from the device identified by <fd>. Blocks if no message is available.
@@ -196,7 +221,9 @@ ssize_t send(int fd,msgid_t id,const void *msg,size_t size);
  * @param size the (max) size of the message
  * @return the size of the message
  */
-ssize_t receive(int fd,msgid_t *id,void *msg,size_t size) A_CHECKRET;
+A_CHECKRET static inline ssize_t receive(int fd,msgid_t *id,void *msg,size_t size) {
+	return syscall4(SYSCALL_RECEIVE,fd,(ulong)id,(ulong)msg,size);
+}
 
 /**
  * Duplicates the given file-descriptor
@@ -204,7 +231,9 @@ ssize_t receive(int fd,msgid_t *id,void *msg,size_t size) A_CHECKRET;
  * @param fd the file-descriptor
  * @return the error-code or the new file-descriptor
  */
-int dup(int fd);
+static inline int dup(int fd) {
+	return syscall1(SYSCALL_DUPFD,fd);
+}
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
@@ -213,7 +242,9 @@ int dup(int fd);
  * @param dst the destination-file-descriptor
  * @return the error-code or 0 if successfull
  */
-int redirect(int src,int dst);
+static inline int redirect(int src,int dst) {
+	return syscall2(SYSCALL_REDIRFD,src,dst);
+}
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
@@ -222,7 +253,9 @@ int redirect(int src,int dst);
  * @param newPath the link-path
  * @return 0 on success
  */
-int link(const char *oldPath,const char *newPath) A_CHECKRET;
+A_CHECKRET static inline int link(const char *oldPath,const char *newPath) {
+	return syscall2(SYSCALL_LINK,(ulong)oldPath,(ulong)newPath);
+}
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
@@ -231,7 +264,9 @@ int link(const char *oldPath,const char *newPath) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-int unlink(const char *path) A_CHECKRET;
+A_CHECKRET static inline int unlink(const char *path) {
+	return syscall1(SYSCALL_UNLINK,(ulong)path);
+}
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.
@@ -239,7 +274,9 @@ int unlink(const char *path) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-int mkdir(const char *path) A_CHECKRET;
+A_CHECKRET static inline int mkdir(const char *path) {
+	return syscall1(SYSCALL_MKDIR,(ulong)path);
+}
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
@@ -247,7 +284,9 @@ int mkdir(const char *path) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-int rmdir(const char *path) A_CHECKRET;
+A_CHECKRET static inline int rmdir(const char *path) {
+	return syscall1(SYSCALL_RMDIR,(ulong)path);
+}
 
 /**
  * Mounts <device> at <path> with fs <type>
@@ -257,7 +296,9 @@ int rmdir(const char *path) A_CHECKRET;
  * @param type the fs-type
  * @return 0 on success
  */
-int mount(const char *device,const char *path,uint type) A_CHECKRET;
+A_CHECKRET static inline int mount(const char *device,const char *path,uint type) {
+	return syscall3(SYSCALL_MOUNT,(ulong)device,(ulong)path,type);
+}
 
 /**
  * Unmounts the device mounted at <path>
@@ -265,21 +306,27 @@ int mount(const char *device,const char *path,uint type) A_CHECKRET;
  * @param path the path
  * @return 0 on success
  */
-int unmount(const char *path) A_CHECKRET;
+A_CHECKRET static inline int unmount(const char *path) {
+	return syscall1(SYSCALL_UNMOUNT,(ulong)path);
+}
 
 /**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return 0 on success
  */
-int sync(void) A_CHECKRET;
+A_CHECKRET static inline int sync(void) {
+	return syscall0(SYSCALL_SYNC);
+}
 
 /**
  * Closes the given file-descriptor
  *
  * @param fd the file-descriptor
  */
-void close(int fd);
+static inline void close(int fd) {
+	syscall1(SYSCALL_CLOSE,fd);
+}
 
 /**
  * Checks whether the given path points to a regular file

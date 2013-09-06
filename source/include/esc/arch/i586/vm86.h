@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +68,9 @@ typedef struct {
  * @param area the memarea (may be NULL)
  * @return 0 on success
  */
-int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *area);
+static inline int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *area) {
+	return syscall3(SYSCALL_VM86INT,interrupt,(ulong)regs,(ulong)area);
+}
 
 #ifdef __cplusplus
 }

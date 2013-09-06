@@ -18,7 +18,6 @@
 #
 
 #include <esc/syscalls.h>
-#include <esc/arch/eco32/syscalls.s>
 
 .section .text
 
@@ -80,7 +79,7 @@ threadExit:
 
 # all signal-handler return to this "function"
 sigRetFunc:
-	add		$2,$0,SYSCALL_ACKSIG
+	add		$4,$0,SYSCALL_ACKSIG
 	trap
 	# never reached
 #endif

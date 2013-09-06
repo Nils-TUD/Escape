@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/width.h>
@@ -27,7 +26,8 @@
 #include <string.h>
 #include <stdarg.h>
 
-static void debugPad(size_t count,uint flags);
+#include "debug.h"
+
 static void debugStringn(char *s,uint precision);
 
 #define DBG_FFL_PADZEROS	1
@@ -158,12 +158,6 @@ void debugUint(uint n,uint base) {
 
 void debugString(char *s) {
 	debugStringn(s,0);
-}
-
-static void debugPad(size_t count,uint flags) {
-	char c = flags & DBG_FFL_PADZEROS ? '0' : ' ';
-	while(count-- > 0)
-		debugChar(c);
 }
 
 static void debugStringn(char *s,uint precision) {

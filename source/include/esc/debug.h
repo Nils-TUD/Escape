@@ -119,13 +119,6 @@ void debugBytes(const void *addr,size_t byteCount);
 void debugDwords(const void *addr,size_t dwordCount);
 
 /**
- * Prints the given char
- *
- * @param c the character
- */
-extern void debugChar(char c);
-
-/**
  * Same as debugf, but with the va_list as argument
  *
  * @param fmt the format

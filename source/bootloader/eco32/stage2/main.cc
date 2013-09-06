@@ -18,13 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
 #include <esc/endian.h>
 #include <esc/elf.h>
 #include <sys/boot.h>
 #include "../../../drivers/common/fs/ext2/ext2.h"
 #include <string.h>
 #include <stdarg.h>
+
+#include "debug.h"
 
 #define PROG_COUNT			4
 #define SEC_SIZE			512								/* disk sector size in bytes */

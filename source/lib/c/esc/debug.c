@@ -25,6 +25,7 @@
 #include <esc/thread.h>
 #include <esc/proc.h>
 #include <esc/time.h>
+#include <esc/syscalls.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -92,6 +93,10 @@ void dbg_stopTimer(const char *prefix) {
 	debugf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }
 
+void debug(void) {
+	syscalldbg();
+}
+
 void dumpBytes(const void *addr,size_t byteCount) {
 	size_t i = 0;
 	uchar *ptr = (uchar*)addr;
@@ -147,6 +152,10 @@ void debugDwords(const void *addr,size_t dwordCount) {
 		debugf("%08x ",*ptr);
 		ptr++;
 	}
+}
+
+static void debugChar(char c) {
+	syscall1(SYSCALL_DEBUGCHAR,c);
 }
 
 void debugf(const char *fmt,...) {

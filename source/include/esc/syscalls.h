@@ -19,6 +19,20 @@
 
 #pragma once
 
+#ifndef IN_ASM
+#	if defined(__i386__)
+#		include <esc/arch/i586/syscalls.h>
+#	elif defined(__eco32__)
+#		include <esc/arch/eco32/syscalls.h>
+#	else
+#		include <esc/arch/mmix/syscalls.h>
+#	endif
+#endif
+
+#ifdef __i386__
+#define ACKSIG_IRQ				49
+#endif
+
 /* the syscall-numbers */
 #define SYSCALL_PID				0
 #define SYSCALL_PPID			1
@@ -94,11 +108,14 @@
 #define SYSCALL_ISINGROUP		71
 #define SYSCALL_ALARM			72
 #define SYSCALL_TSCTOTIME		73
+#define SYSCALL_SEMCREATE		74
+#define SYSCALL_SEMUP			75
+#define SYSCALL_SEMDOWN			76
 #ifdef __i386__
-#define SYSCALL_REQIOPORTS		74
-#define SYSCALL_RELIOPORTS		75
-#define SYSCALL_VM86INT			76
-#define SYSCALL_VM86START		77
+#define SYSCALL_REQIOPORTS		77
+#define SYSCALL_RELIOPORTS		78
+#define SYSCALL_VM86INT			79
+#define SYSCALL_VM86START		80
 #else
-#define SYSCALL_DEBUG			74
+#define SYSCALL_DEBUG			77
 #endif

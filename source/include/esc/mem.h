@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 
 /* protection-flags */
 #define PROT_READ			0
@@ -86,7 +87,9 @@ void *regaddphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
  * @param prot the new protection-setting (PROT_*)
  * @return 0 on success
  */
-int mprotect(void *addr,uint prot);
+static inline int mprotect(void *addr,uint prot) {
+	return syscall2(SYSCALL_MPROTECT,(ulong)addr,prot);
+}
 
 /**
  * Unmaps the region denoted by <addr>
@@ -94,7 +97,9 @@ int mprotect(void *addr,uint prot);
  * @param addr the address of the region
  * @return 0 on success
  */
-int munmap(void *addr);
+static inline int munmap(void *addr) {
+	return syscall1(SYSCALL_MUNMAP,(ulong)addr);
+}
 
 /**
  * Creates a file in /system/shm/ with given name and opens it with <oflag>. If <oflag> contains

@@ -23,21 +23,16 @@
 #include <stdio.h>
 #include <errno.h>
 
-/* the assembler-routine */
-extern ssize_t _chgsize(ssize_t count);
-extern intptr_t _regaddphys(uintptr_t *phys,size_t count,size_t align);
-extern intptr_t _mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset);
-
 /* just a convenience for the user which sets errno if the return-value is zero (not enough mem) */
 void *chgsize(ssize_t count) {
-	size_t addr = _chgsize(count);
+	size_t addr = syscall1(SYSCALL_CHGSIZE,count);
 	if(addr == 0)
 		errno = -ENOMEM;
 	return (void*)addr;
 }
 
 void *regaddphys(uintptr_t *phys,size_t count,size_t align) {
-	intptr_t addr = _regaddphys(phys,count,align);
+	intptr_t addr = syscall3(SYSCALL_MAPPHYS,(ulong)phys,count,align);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;
@@ -45,7 +40,7 @@ void *regaddphys(uintptr_t *phys,size_t count,size_t align) {
 }
 
 void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset) {
-	intptr_t res = _mmap(addr,length,loadLength,prot,flags,fd,offset);
+	intptr_t res = syscall7(SYSCALL_MMAP,(ulong)addr,length,loadLength,prot,flags,fd,offset);
 	/* FIXME workaround until we have TLS */
 	if(res >= -200 && res < 0)
 		return NULL;

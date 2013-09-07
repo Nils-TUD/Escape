@@ -83,7 +83,11 @@ A_NORETURN static inline void _exit(int exitCode) {
 /**
  * @return the cpu-cycles of the current thread
  */
-uint64_t getcycles(void);
+static inline uint64_t getcycles(void) {
+	uint64_t res;
+	syscall1(SYSCALL_GETCYCLES,(ulong)&res);
+	return res;
+}
 
 /**
  * Releases the CPU (reschedule)
@@ -114,17 +118,6 @@ static inline int sleep(time_t msecs) {
 }
 
 /**
- * Puts the current thread to sleep until one of the given events occurrs. Note that you will
- * always be waked up for signals!
- * For EV_RECEIVED_MSG, EV_DATA_READABLE and EV_CLIENT the object is the file-descriptor!
- *
- * @param objects the objects to wait for
- * @param objCount the number of objects
- * @return 0 on success and a negative error-code if failed
- */
-int waitm(sWaitObject *objects,size_t objCount);
-
-/**
  * The same as waitm(), but waits at most <max> milliseconds.
  *
  * @param objects the objects to wait for
@@ -134,6 +127,19 @@ int waitm(sWaitObject *objects,size_t objCount);
  */
 static inline int waitmuntil(sWaitObject *objects,size_t objCount,time_t max) {
 	return syscall3(SYSCALL_WAIT,(ulong)objects,objCount,max);
+}
+
+/**
+ * Puts the current thread to sleep until one of the given events occurrs. Note that you will
+ * always be waked up for signals!
+ * For EV_RECEIVED_MSG, EV_DATA_READABLE and EV_CLIENT the object is the file-descriptor!
+ *
+ * @param objects the objects to wait for
+ * @param objCount the number of objects
+ * @return 0 on success and a negative error-code if failed
+ */
+static inline int waitm(sWaitObject *objects,size_t objCount) {
+	return waitmuntil(objects,objCount,0);
 }
 
 /**
@@ -222,7 +228,9 @@ void *getThreadVal(uint key);
  * @param flags flags (LOCK_*)
  * @return 0 on success
  */
-int lock(uint ident,uint flags);
+static inline int lock(uint ident,uint flags) {
+	return syscall3(SYSCALL_LOCK,ident,false,flags);
+}
 
 /**
  * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
@@ -239,7 +247,9 @@ void locku(tULock *lock);
  * @param ident to identify the lock
  * @return 0 on success
  */
-int lockg(uint ident,uint flags);
+static inline int lockg(uint ident,uint flags) {
+	return syscall3(SYSCALL_LOCK,ident,true,flags);
+}
 
 /**
  * First it releases the specified process-local lock. After that it blocks the thread until
@@ -289,7 +299,9 @@ int waitunlockg(uint events,evobj_t object,uint ident);
  * @param ident to identify the lock
  * @return 0 on success
  */
-int unlock(uint ident);
+static inline int unlock(uint ident) {
+	return syscall2(SYSCALL_UNLOCK,ident,false);
+}
 
 /**
  * Releases the process-local lock that is locked in user-space
@@ -304,7 +316,9 @@ void unlocku(tULock *lock);
  * @param ident to identify the lock
  * @return 0 on success
  */
-int unlockg(uint ident);
+static inline int unlockg(uint ident) {
+	return syscall2(SYSCALL_UNLOCK,ident,true);
+}
 
 #ifdef __cplusplus
 }

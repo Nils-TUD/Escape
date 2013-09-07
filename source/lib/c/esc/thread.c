@@ -30,14 +30,6 @@ typedef struct {
 	void *val;
 } sThreadVal;
 
-/**
- * Assembler-routines
- */
-extern int _lock(uint ident,bool global,uint flags);
-extern int _unlock(uint ident,bool global);
-extern int _waitunlock(sWaitObject *objects,size_t objCount,uint ident,bool global);
-extern int _getcycles(uint64_t *res);
-
 static sSLList *tvalmap[HASHMAP_SIZE];
 
 bool setThreadVal(uint key,void *val) {
@@ -80,10 +72,6 @@ void *getThreadVal(uint key) {
 	return NULL;
 }
 
-int waitm(sWaitObject *objects,size_t objCount) {
-	return waitmuntil(objects,objCount,0);
-}
-
 int wait(uint events,evobj_t object) {
 	sWaitObject obj;
 	obj.events = events;
@@ -98,14 +86,6 @@ int waituntil(uint events,evobj_t object,time_t max) {
 	return waitmuntil(&obj,1,max);
 }
 
-int lock(uint ident,uint flags) {
-	return syscall3(SYSCALL_LOCK,ident,false,flags);
-}
-
-int lockg(uint ident,uint flags) {
-	return syscall3(SYSCALL_LOCK,ident,true,flags);
-}
-
 int waitunlock(uint events,evobj_t object,uint ident) {
 	sWaitObject obj;
 	obj.events = events;
@@ -118,18 +98,4 @@ int waitunlockg(uint events,evobj_t object,uint ident) {
 	obj.events = events;
 	obj.object = object;
 	return syscall4(SYSCALL_WAITUNLOCK,(ulong)&obj,1,ident,true);
-}
-
-int unlock(uint ident) {
-	return syscall2(SYSCALL_UNLOCK,ident,false);
-}
-
-int unlockg(uint ident) {
-	return syscall2(SYSCALL_UNLOCK,ident,true);
-}
-
-uint64_t getcycles(void) {
-	uint64_t res;
-	syscall1(SYSCALL_GETCYCLES,(ulong)&res);
-	return res;
 }

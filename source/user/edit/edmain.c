@@ -128,12 +128,12 @@ int main(int argc,char *argv[]) {
 
 					case VK_HOME:
 						if(n3 & STATE_CTRL)
-							displ_mvCurVert(LONG_MIN);
+							displ_mvCurVert(INT_MIN);
 						displ_mvCurHor(HOR_MOVE_HOME);
 						break;
 					case VK_END:
 						if(n3 & STATE_CTRL)
-							displ_mvCurVert(LONG_MAX);
+							displ_mvCurVert(INT_MAX);
 						displ_mvCurHor(HOR_MOVE_END);
 						break;
 

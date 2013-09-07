@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/time.h>
-#include <esc/syscalls.h>
+#pragma once
 
-uint64_t tsctotime(uint64_t tsc) {
-	uint64_t tmp = tsc;
-	syscall1(SYSCALL_TSCTOTIME,(ulong)&tmp);
-	return tmp;
+#include <esc/common.h>
+
+static inline uint64_t rdtsc(void) {
+	/* unsupported */
+    return 0;
 }

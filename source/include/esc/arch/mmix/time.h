@@ -20,41 +20,9 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/syscalls.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * Reads the timestamp-counter
- *
- * @return the number of cycles
- */
-static inline uint64_t rdtsc(void);
-
-/**
- * Converts the given TSC value to microseconds.
- *
- * @param tsc the TSC value
- * @return the number of microseconds
- */
-static inline uint64_t tsctotime(uint64_t tsc) {
-	uint64_t tmp = tsc;
-	syscall1(SYSCALL_TSCTOTIME,(ulong)&tmp);
-	return tmp;
+static inline uint64_t rdtsc(void) {
+	uint64_t res;
+	__asm__ volatile ("GET	%0,rC" : "=r"(res));
+    return res;
 }
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __i386__
-#	include <esc/arch/i586/time.h>
-#endif
-#ifdef __eco32__
-#	include <esc/arch/eco32/time.h>
-#endif
-#ifdef __mmix__
-#	include <esc/arch/mmix/time.h>
-#endif

@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/debug.h>
+#include <esc/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

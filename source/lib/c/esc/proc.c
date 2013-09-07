@@ -23,10 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-pid_t getppid(void) {
-	return getppidof(getpid());
-}
-
 int execp(const char *file,const char **args) {
 	char path[MAX_PATH_LEN];
 	size_t len,flen;

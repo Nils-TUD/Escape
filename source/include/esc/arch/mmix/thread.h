@@ -17,18 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
-#include <esc/conf.h>
+#pragma once
 
-void locku(tULock *l) {
-	/* 0 means free, < 0 means taken. we have this slightly odd meaning here to prevent that we
-	 * have to initialize all locks with 1 (which would also be arch-dependent here) */
-    if(__sync_fetch_and_add(l, -1) <= -1)
-    	lock((uint)l,LOCK_EXCLUSIVE);
+#include <esc/common.h>
+
+EXTERN_C void mmix_locku(tULock *l);
+
+static inline void locku(tULock *l) {
+	mmix_locku(l);
 }
 
-void unlocku(tULock *l) {
-    if(__sync_fetch_and_add(l, +1) < -1)
-    	unlock((uint)l);
+static inline void unlocku(tULock *l) {
+    __sync_lock_release(l);
 }

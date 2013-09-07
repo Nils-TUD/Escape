@@ -238,7 +238,7 @@ static inline int lock(uint ident,uint flags) {
  *
  * @param lock the lock
  */
-void locku(tULock *lock);
+static inline void locku(tULock *lock);
 
 /**
  * Aquires a global lock with given ident. You can specify with the flags whether it should
@@ -308,7 +308,7 @@ static inline int unlock(uint ident) {
  *
  * @param lock the lock
  */
-void unlocku(tULock *lock);
+static inline void unlocku(tULock *lock);
 
 /**
  * Releases the global lock with given ident
@@ -322,4 +322,14 @@ static inline int unlockg(uint ident) {
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef __i386__
+#	include <esc/arch/i586/thread.h>
+#endif
+#ifdef __eco32__
+#	include <esc/arch/eco32/thread.h>
+#endif
+#ifdef __mmix__
+#	include <esc/arch/mmix/thread.h>
 #endif

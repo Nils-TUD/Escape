@@ -17,20 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
+#pragma once
 
-void mmix_locku(tULock *l) {
-	ulong val;
-	while(1) {
-		val = 1;
-		__asm__ volatile (
-			"CSWAP	%0,%1,0\n"
-			: "+r"(val)
-			: "g"(l)
-		);
-		if(val)
-			break;
-		yield();
-	}
+#include <esc/common.h>
+
+static inline void locku(tULock *l) {
+	/* TODO eco32 has no atomic compare and swap instruction or similar :/ */
+	lock((uint)l,LOCK_EXCLUSIVE);
+}
+
+static inline void unlocku(tULock *l) {
+	unlock((uint)l);
 }

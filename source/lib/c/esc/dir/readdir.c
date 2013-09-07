@@ -24,10 +24,6 @@
 
 #define DIRE_SIZE	(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
 
-DIR *opendir(const char *path) {
-	return (DIR*)fopen(path,"r");
-}
-
 bool readdir(DIR *dir,sDirEntry *e) {
 	if(fread(e,1,DIRE_SIZE,dir) > 0) {
 		/* convert endianess */
@@ -55,8 +51,4 @@ bool readdir(DIR *dir,sDirEntry *e) {
 	}
 
 	return false;
-}
-
-void closedir(DIR *dir) {
-	fclose(dir);
 }

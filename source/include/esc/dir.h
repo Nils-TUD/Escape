@@ -54,7 +54,9 @@ void dirname(char *path);
  * @param path the path to the directory
  * @return the dir-pointer or NULL if it failed
  */
-DIR *opendir(const char *path);
+static inline DIR *opendir(const char *path) {
+	return (DIR*)fopen(path,"r");
+}
 
 /**
  * Reads the next directory-entry from the given file-descriptor.
@@ -70,7 +72,9 @@ bool readdir(DIR *dir,sDirEntry *e);
  *
  * @param dir the dir-pointer
  */
-void closedir(DIR *dir);
+static inline void closedir(DIR *dir) {
+	fclose(dir);
+}
 
 #ifdef __cplusplus
 }

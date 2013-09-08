@@ -316,23 +316,8 @@ intrpt_setMask:
 	jr		$31
 
 #===========================================
-# CPU
-#===========================================
-
-# uint cpu_getFaultAddr()
-cpu_getBadAddr:
-	mvfs	$2,FS_TLB_BAD
-	jr		$31
-
-#===========================================
 # Input/Output
 #===========================================
-
-# void logByte(uchar byte)
-logByte:
-	add		$8,$0,OUTPUT_BASE				# set output base address
-	stw		$4,$8,0							# send char to output
-	jr		$31
 
 # void debugc(char c)
 debugc:

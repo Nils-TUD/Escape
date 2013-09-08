@@ -20,6 +20,8 @@
 #pragma once
 
 class CPU : public CPUBase {
+	friend class CPUBase;
+
 	CPU() = delete;
 
 public:
@@ -35,7 +37,13 @@ public:
 	/**
 	 * @return the pagefault-address
 	 */
-	static uint getBadAddr() asm("cpu_getBadAddr");
+	static uint getBadAddr() {
+		uint res;
+		asm volatile ("mvfs	%0,4" : "=r"(res));
+		return res;
+	}
+
+private:
 	static uint64_t cpuHz;
 };
 

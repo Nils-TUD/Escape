@@ -38,7 +38,7 @@ static const char *usage = "Usage: %s\n"
 	"				paging will be configured and the amount of main-memory will be 32GiB.\n"
 	"	[-b]			enable backtraces\n"
 	"	[-s <map1> ...]		symbols(s) for backtraces\n"
-	"	[--test]			enable testmode (if enabled TRAP 0,0,0 halts the CPU)";
+	"	[--test]		enable testmode (if enabled TRAP 0,0,0 halts the CPU)";
 
 /* put them here, because gcc complains that it might be clobbered by longjmp */
 static int gdbport = -1;

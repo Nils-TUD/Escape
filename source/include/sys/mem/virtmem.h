@@ -68,9 +68,9 @@ public:
 	 *
 	 * @param addr the address that caused the page-fault
 	 * @param write whether its a write-access
-	 * @return true if successfull
+	 * @return 0 if successfull
 	 */
-	static bool pagefault(uintptr_t addr,bool write);
+	static int pagefault(uintptr_t addr,bool write);
 
 	/**
 	 * Swaps <count> pages out. It searches for the best suited page to swap out.
@@ -351,12 +351,12 @@ private:
 	static void setSwappedOut(Region *reg,size_t index);
 	static void setSwappedIn(Region *reg,size_t index,frameno_t frameNo);
 
-	bool doPagefault(uintptr_t addr,VMRegion *vm,bool write);
+	int doPagefault(uintptr_t addr,VMRegion *vm,bool write);
 	void sync(VMRegion *vm) const;
 	void doRemove(VMRegion *vm);
 	size_t doGrow(VMRegion *vm,ssize_t amount);
-	bool demandLoad(VMRegion *vm,uintptr_t addr);
-	bool loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount);
+	int demandLoad(VMRegion *vm,uintptr_t addr);
+	int loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount);
 	uintptr_t findFreeStack(size_t byteCount,ulong rflags);
 	VMRegion *isOccupied(uintptr_t start,uintptr_t end) const;
 	uintptr_t getFirstUsableAddr() const;

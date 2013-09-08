@@ -224,14 +224,17 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!VirtMem::pagefault(addr,stack->getError() & 0x2)) {
-		/* ok, now lets check if the thread wants more stack-pages */
-		if(Thread::extendStack(addr) < 0) {
-			printPFInfo(Log::get(),t,stack,addr);
-			/* TODO Proc::segFault();*/
-			Util::panic("Process segfaulted");
-		}
-	}
+	int res = VirtMem::pagefault(addr,stack->getError() & 0x2);
+	if(EXPECT_TRUE(res == 0))
+		return;
+	/* ok, now lets check if the thread wants more stack-pages */
+	if(EXPECT_TRUE(res == -ENOENT && (res = Thread::extendStack(addr)) == 0))
+		return;
+
+	printPFInfo(Log::get(),t,stack,addr);
+	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(-res),res);
+	/* TODO Proc::segFault();*/
+	Util::panic("Process segfaulted");
 }
 
 void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {

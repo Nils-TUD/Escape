@@ -64,6 +64,7 @@ void VirtMem::release() const {
 }
 
 uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {
+	Thread *t = Thread::getRunning();
 	ssize_t res;
 	size_t pages = BYTES_2_PAGES(bCount);
 	frameno_t *frames = (frameno_t*)Cache::alloc(sizeof(frameno_t) * pages);
@@ -82,7 +83,7 @@ uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 		}
 		else {
 			for(size_t i = 0; i < pages; i++)
-				frames[i] = PhysMem::allocate(PhysMem::USR);
+				frames[i] = t->getFrame();
 		}
 	}
 	/* otherwise use the specified one */
@@ -475,14 +476,13 @@ uintptr_t VirtMem::getBinary(OpenFile *file,VirtMem *&binOwner) {
 	return res;
 }
 
-bool VirtMem::pagefault(uintptr_t addr,bool write) {
+int VirtMem::pagefault(uintptr_t addr,bool write) {
 	Thread *t = Thread::getRunning();
-	bool res = false;
 	VMRegion *reg;
 
 	/* we can swap here; note that we don't need page-tables in this case, they're always present */
 	if(!t->reserveFrames(1))
-		return false;
+		return -ENOMEM;
 
 	VirtMem *vm = t->getProc()->getVM();
 	vm->acquire();
@@ -490,16 +490,16 @@ bool VirtMem::pagefault(uintptr_t addr,bool write) {
 	if(reg == NULL) {
 		vm->release();
 		t->discardFrames();
-		return false;
+		return -ENOENT;
 	}
-	res = vm->doPagefault(addr,reg,write);
+	int res = vm->doPagefault(addr,reg,write);
 	vm->release();
 	t->discardFrames();
 	return res;
 }
 
-bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
-	bool res = false;
+int VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
+	int res;
 	size_t page = (addr - vm->virt) / PAGE_SIZE;
 	ulong flags;
 	vm->reg->acquire();
@@ -507,7 +507,7 @@ bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 	addr &= ~(PAGE_SIZE - 1);
 	if(flags & PF_DEMANDLOAD) {
 		res = demandLoad(vm,addr);
-		if(res)
+		if(res == 0)
 			vm->reg->setPageFlags(page,flags & ~PF_DEMANDLOAD);
 	}
 	else if(flags & PF_SWAPPED)
@@ -518,7 +518,7 @@ bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 		addOwn(frmCount);
 		addShared(-frmCount);
 		vm->reg->setPageFlags(page,flags & ~PF_COPYONWRITE);
-		res = true;
+		res = 0;
 	}
 	else {
 		vassert(flags == 0,"Flags: %x",flags);
@@ -527,7 +527,7 @@ bool VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 		 * of course, only one thread gets the region-mutex and handles the page-fault. the other
 		 * one will get the mutex afterwards and the flags will be zero, because the page-fault
 		 * has already been handled. */
-		res = !write || (vm->reg->getFlags() & RF_WRITABLE);
+		res = (!write || (vm->reg->getFlags() & RF_WRITABLE)) ? 0 : -EFAULT;
 	}
 	vm->reg->release();
 	return res;
@@ -1075,23 +1075,23 @@ void VirtMem::print(OStream &os) const {
 	printShort(os,"\t");
 }
 
-bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
-	bool res = false;
+int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
+	int res;
 
 	/* calculate the number of bytes to load and zero */
 	size_t loadCount = 0, zeroCount;
 	if(addr - vm->virt < vm->reg->getLoadCount())
 		loadCount = MIN(PAGE_SIZE,vm->reg->getLoadCount() - (addr - vm->virt));
-	else
-		res = true;
 	zeroCount = MIN(PAGE_SIZE,vm->reg->getByteCount() - (addr - vm->virt)) - loadCount;
 
 	/* load from file */
 	if(loadCount)
 		res = loadFromFile(vm,addr,loadCount);
+	else
+		res = 0;
 
 	/* zero the rest, if necessary */
-	if(res && zeroCount) {
+	if(res == 0 && zeroCount) {
 		/* do the memclear before the mapping to ensure that it's ready when the first CPU sees it */
 		frameno_t frame = loadCount ? Proc::getCurPageDir()->getFrameNo(addr)
 									: Thread::getRunning()->getFrame();
@@ -1115,7 +1115,7 @@ bool VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 	return res;
 }
 
-bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
+int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	uint mapFlags;
 	frameno_t frame;
 	void *tempBuf;
@@ -1163,7 +1163,7 @@ bool VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		else
 			(*mp)->addOwn(1);
 	}
-	return true;
+	return 0;
 
 errorFree:
 	Thread::remHeapAlloc(tempBuf);
@@ -1171,7 +1171,7 @@ errorFree:
 error:
 	Log::get().writef("Demandload page @ %p for proc %s: %s (%d)\n",addr,
 			Proc::getByPid(pid)->getCommand(),strerror(-err),err);
-	return false;
+	return -err;
 }
 
 Region *VirtMem::getLRURegion() {

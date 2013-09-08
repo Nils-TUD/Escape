@@ -127,14 +127,17 @@ void Interrupts::exPageFault(IntrptStackFrame *stack) {
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-	if(!VirtMem::pagefault(pfaddr,stack->irqNo == EXC_TLB_WRITE)) {
-		/* ok, now lets check if the thread wants more stack-pages */
-		if(Thread::extendStack(pfaddr) < 0) {
-			pid_t pid = Proc::getRunning();
-			Log::get().writef("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
-			Proc::segFault();
-		}
-	}
+	int res = VirtMem::pagefault(pfaddr,stack->irqNo == EXC_TLB_WRITE);
+	if(EXPECT_TRUE(res == 0))
+		return;
+	/* ok, now lets check if the thread wants more stack-pages */
+	if(EXPECT_TRUE(res == -ENOENT && (res = Thread::extendStack(pfaddr)) == 0))
+		return;
+
+	pid_t pid = Proc::getRunning();
+	Log::get().writef("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
+	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(-res),res);
+	Proc::segFault();
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack) {

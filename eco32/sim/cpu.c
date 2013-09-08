@@ -43,7 +43,7 @@ static Word pc;			/* program counter */
 static Word psw;		/* processor status word */
 static Word r[32];		/* general purpose registers */
 
-static int instrCount;		/* counts instrs for timer tick */
+static unsigned long long instrCount;		/* counts instrs for timer tick */
 static unsigned irqPending;	/* one bit for each pending IRQ */
 
 static Bool breakSet;		/* breakpoint set if true */
@@ -95,8 +95,7 @@ static Bool isWriteBreakAddr(Word addr, int opcode) {
 
 static void handleRealTimeTasks(void) {
   /* handle 'real-time' tasks */
-  if (++instrCount == INSTRS_PER_MSEC) {
-    instrCount = 0;
+  if ((++instrCount % INSTRS_PER_MSEC) == 0) {
     timerTick();
   }
 }
@@ -481,6 +480,12 @@ static void execNextInstruction(void) {
           break;
         case 4:
           WR(reg2, mmuGetBadAddr());
+          break;
+        case 5:
+          WR(reg2, instrCount >> 32);
+          break;
+        case 6:
+          WR(reg2, instrCount & 0xFFFFFFFF);
           break;
         default:
           throwException(EXC_ILL_INSTRCT);

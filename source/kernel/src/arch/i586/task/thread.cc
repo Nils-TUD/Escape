@@ -172,7 +172,7 @@ void ThreadBase::doSwitch() {
 	uint64_t cycles = CPU::rdtsc();
 	uint64_t runtime = cycles - old->stats.cycleStart;
 	old->stats.runtime += runtime;
-	old->stats.curCycleCount += cycles - old->stats.cycleStart;
+	old->stats.curCycleCount += runtime;
 	cpuid_t cpu = old->getCPU();
 
 	/* choose a new thread to run */

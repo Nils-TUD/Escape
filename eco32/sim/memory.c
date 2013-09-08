@@ -28,12 +28,13 @@ static FILE *romImage;
 static unsigned int romSize;
 static FILE *progImage;
 static unsigned int progSize;
+static size_t memorySize;
 
 
 Word memoryReadWord(Word pAddr) {
   Word data;
 
-  if (pAddr <= MEMORY_SIZE - 4) {
+  if (pAddr <= memorySize - 4) {
     data = ((Word) *(mem + pAddr + 0)) << 24 |
            ((Word) *(mem + pAddr + 1)) << 16 |
            ((Word) *(mem + pAddr + 2)) <<  8 |
@@ -87,7 +88,7 @@ Word memoryReadWord(Word pAddr) {
 Half memoryReadHalf(Word pAddr) {
   Half data;
 
-  if (pAddr <= MEMORY_SIZE - 2) {
+  if (pAddr <= memorySize - 2) {
     data = ((Half) *(mem + pAddr + 0)) << 8 |
            ((Half) *(mem + pAddr + 1)) << 0;
     return data;
@@ -109,7 +110,7 @@ Half memoryReadHalf(Word pAddr) {
 Byte memoryReadByte(Word pAddr) {
   Byte data;
 
-  if (pAddr <= MEMORY_SIZE - 1) {
+  if (pAddr <= memorySize - 1) {
     data = ((Byte) *(mem + pAddr + 0)) << 0;
     return data;
   }
@@ -127,7 +128,7 @@ Byte memoryReadByte(Word pAddr) {
 
 
 void memoryWriteWord(Word pAddr, Word data) {
-  if (pAddr <= MEMORY_SIZE - 4) {
+  if (pAddr <= memorySize - 4) {
     *(mem + pAddr + 0) = (Byte) (data >> 24);
     *(mem + pAddr + 1) = (Byte) (data >> 16);
     *(mem + pAddr + 2) = (Byte) (data >>  8);
@@ -168,7 +169,7 @@ void memoryWriteWord(Word pAddr, Word data) {
 
 
 void memoryWriteHalf(Word pAddr, Half data) {
-  if (pAddr <= MEMORY_SIZE - 2) {
+  if (pAddr <= memorySize - 2) {
     *(mem + pAddr + 0) = (Byte) (data >> 8);
     *(mem + pAddr + 1) = (Byte) (data >> 0);
     return;
@@ -179,7 +180,7 @@ void memoryWriteHalf(Word pAddr, Half data) {
 
 
 void memoryWriteByte(Word pAddr, Byte data) {
-  if (pAddr <= MEMORY_SIZE - 1) {
+  if (pAddr <= memorySize - 1) {
     *(mem + pAddr + 0) = (Byte) (data >> 0);
     return;
   }
@@ -195,9 +196,10 @@ void memoryReset(void) {
   for (i = 0; i < ROM_SIZE; i++) {
     rom[i] = rand();
   }
-  for (i = 0; i < MEMORY_SIZE; i++) {
+  for (i = 0; i < memorySize; i++) {
     mem[i] = rand();
   }
+  cPrintf("RAM of size %zu bytes initialized.\n", memorySize);
   if (romImage != NULL) {
     fseek(romImage, 0, SEEK_SET);
     if (fread(rom, romSize, 1, romImage) != 1) {
@@ -218,14 +220,15 @@ void memoryReset(void) {
 }
 
 
-void memoryInit(char *romImageName, char *progImageName) {
+void memoryInit(char *romImageName, char *progImageName, int memSize) {
   /* allocate ROM */
   rom = malloc(ROM_SIZE);
   if (rom == NULL) {
     error("cannot allocate ROM");
   }
   /* allocate main memory */
-  mem = malloc(MEMORY_SIZE);
+  memorySize = memSize * M;
+  mem = malloc(memorySize);
   if (mem == NULL) {
     error("cannot allocate main memory");
   }
@@ -257,7 +260,7 @@ void memoryInit(char *romImageName, char *progImageName) {
     }
     fseek(progImage, 0, SEEK_END);
     progSize = ftell(progImage);
-    if (progSize > MEMORY_SIZE) {
+    if (progSize > memorySize) {
       error("program file too big");
     }
   }

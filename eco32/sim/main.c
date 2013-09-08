@@ -29,6 +29,7 @@ static void usage(char *myself) {
   fprintf(stderr, "Usage: %s\n", myself);
   fprintf(stderr, "         [-i]             interactive mode\n");
   fprintf(stderr, "         [-l <prog>]      program file name\n");
+  fprintf(stderr, "         [-m <size>]      the amount of main-memory in MiB\n");
   fprintf(stderr, "         [-r <rom>]       ROM image file name\n");
   fprintf(stderr, "         [-d <disk>]      disk image file name\n");
   fprintf(stderr, "         [-t <n>]         n terminals connected (0-%d)\n",
@@ -36,7 +37,7 @@ static void usage(char *myself) {
   fprintf(stderr, "         [-g]             graphics controller present\n");
   fprintf(stderr, "         [-c]             console present\n");
   fprintf(stderr, "         [-o <file>]      output device file binding\n");
-  fprintf(stderr, "         [-m <map1> ...]  program-map(s) for tracing (will enable tracing)\n");
+  fprintf(stderr, "         [-s <map1> ...]  program-map(s) for tracing (will enable tracing)\n");
   fprintf(stderr, "         [-n]             don't create a tree-trace\n");
   fprintf(stderr, "The options -l and -r are mutually exclusive.\n");
   fprintf(stderr, "If both are omitted, interactive mode is assumed.\n");
@@ -79,6 +80,7 @@ int main(int argc, char *argv[]) {
   Word initialPC;
   char command[20];
   char *line;
+  int memSize = 8;
 
   // announce term-handler
   signal(SIGTERM,termHandler);
@@ -118,6 +120,9 @@ int main(int argc, char *argv[]) {
         }
         romName = argv[++i];
         break;
+      case 'm':
+        memSize = strtoul(argv[++i], NULL, 0);
+        break;
       case 'd':
         if (i == argc - 1 || diskName != NULL) {
           usage(argv[0]);
@@ -147,7 +152,7 @@ int main(int argc, char *argv[]) {
         }
         outputName = argv[++i];
         break;
-      case 'm':
+      case 's':
 	    if (i == argc - 1 || mapNames[0] != NULL) {
 	      usage(argv[0]);
 	    }
@@ -188,7 +193,7 @@ int main(int argc, char *argv[]) {
   if (graphics) {
     graphInit();
   }
-  memoryInit(romName, progName);
+  memoryInit(romName, progName, memSize);
   mmuInit();
   if (progName != NULL) {
     initialPC = 0xC0000000;

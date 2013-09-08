@@ -15,7 +15,7 @@ void memoryWriteHalf(Word pAddr, Half data);
 void memoryWriteByte(Word pAddr, Byte data);
 
 void memoryReset(void);
-void memoryInit(char *romImageName, char *progImageName);
+void memoryInit(char *romImageName, char *progImageName, int memSize);
 void memoryExit(void);
 
 

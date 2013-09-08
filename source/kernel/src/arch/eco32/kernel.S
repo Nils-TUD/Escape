@@ -130,6 +130,7 @@ start:
 
 	# enable all interrupts via mask (we'll control them just by the interrupt-enable-flag)
 	add		$16,$4,$0						# save $4
+	add		$17,$5,$0						# save $5
 	add		$4,$0,0xFFFF
 	jal		intrpt_setMask
 
@@ -139,9 +140,10 @@ start:
 	add		$9,$0,0x2
 	stw		$9,$8,0
 
-	# call main
-	add		$4,$16,$0						# give main the load-progs-array
-	jal		bspstart						# call 'bspstart' function
+	# call bspstart
+	add		$4,$16,$0						# give bspstart the load-progs-array
+	add		$5,$17,$0						# give bspstart the CPU speed
+	jal		bspstart
 
 	# initloader has been loaded, so jump to it
 	add		$30,$0,$2						# main returns the entry-point

@@ -21,6 +21,8 @@
 
 	.set	TERM_BASE,0xF0300000						# terminal base address
 	.set	OUTPUT_BASE,0xFF000000						# output base address
+	.set	TIMER_BASE,0xF0000000						# timer base address
+	.set	TIMER_REG_CTRL,0
 	.set	PAGE_SIZE,0x1000
 	.set	FS_PSW,0
 	.set	INTRPTS_IN_RAM,1 << 27						# the flag to handle interrupts in RAM (not ROM)
@@ -69,6 +71,9 @@ memDone:
 	jr		$8
 
 isr:
+	# ack interrupt (for stage2 CPU speed detection)
+	add		$20,$0,TIMER_BASE
+	stw		$0,$20,TIMER_REG_CTRL
 	add		$18,$0,1									# set flag
 	add		$30,$30,4									# skip ldw
 	rfx

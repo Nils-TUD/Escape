@@ -25,12 +25,14 @@
 #include <sys/video.h>
 #include <string.h>
 
+uint64_t CPU::cpuHz;
+
 void CPUBase::print(OStream &os) {
 	auto cpu = SMP::begin();
 	os.writef("CPU 0:\n");
 	os.writef("\t%-12s%Lu Cycles\n","Total:",cpu->lastTotal);
 	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",cpu->lastCycles);
-	os.writef("\t%-12s%lu Hz\n","Speed:",0);
+	os.writef("\t%-12s%Lu Hz\n","Speed:",CPU::cpuHz);
 	os.writef("\t%-12s%s\n","Vendor:","THM");
 	os.writef("\t%-12s%s\n","Model:","ECO32");
 }

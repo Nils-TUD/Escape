@@ -24,17 +24,31 @@ class CPU : public CPUBase {
 
 public:
 	/**
+	 * Sets the given CPU-speed (no, the hardware is not changed ;))
+	 *
+	 * @param hz the CPU-speed in Hz
+	 */
+	static void setSpeed(uint32_t hz) {
+		cpuHz = hz;
+	}
+
+	/**
 	 * @return the pagefault-address
 	 */
 	static uint getBadAddr() asm("cpu_getBadAddr");
+	static uint64_t cpuHz;
 };
 
 inline uint64_t CPUBase::rdtsc() {
-	/* TODO not implemented yet */
-	return 0;
+	uint32_t upper, lower;
+	asm volatile (
+		"mvfs	%0,5\n"
+		"mvfs	%1,6\n"
+		: "=r"(upper), "=r"(lower)
+	);
+	return ((uint64_t)upper << 32) | lower;
 }
 
 inline uint64_t CPUBase::getSpeed() {
-	/* not available */
-	return 0;
+	return CPU::cpuHz;
 }

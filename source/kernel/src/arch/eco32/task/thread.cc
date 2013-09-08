@@ -140,10 +140,10 @@ void ThreadBase::doSwitch() {
 	Thread *old = Thread::getRunning();
 	/* eco32 has no cycle-counter or similar. therefore we use the timer for runtime-
 	 * measurement */
-	time_t timestamp = Timer::getTimestamp();
-	uint64_t runtime = (timestamp - old->stats.cycleStart) * 1000;
+	uint64_t cycles = CPU::rdtsc();
+	uint64_t runtime = cycles - old->stats.cycleStart;
 	old->stats.runtime += runtime;
-	old->stats.curCycleCount += timestamp - old->stats.cycleStart;
+	old->stats.curCycleCount += runtime;
 
 	/* choose a new thread to run */
 	Thread *n = Sched::perform(old,old->getCPU(),runtime);
@@ -153,15 +153,15 @@ void ThreadBase::doSwitch() {
 		if(!Thread::save(&old->saveArea)) {
 			setRunning(n);
 			if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
-				VirtMem::setTimestamp(n,timestamp);
+				VirtMem::setTimestamp(n,cycles);
 
-			SMP::schedule(n->getCPU(),n,timestamp);
-			n->stats.cycleStart = timestamp;
+			SMP::schedule(n->getCPU(),n,cycles);
+			n->stats.cycleStart = CPU::rdtsc();
 			Thread::resume(n->getProc()->getPageDir()->getPhysAddr(),&n->saveArea,n->kstackFrame);
 		}
 	}
 	else
-		n->stats.cycleStart = timestamp;
+		n->stats.cycleStart = CPU::rdtsc();
 }
 
 void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {

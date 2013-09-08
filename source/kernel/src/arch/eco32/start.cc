@@ -26,7 +26,7 @@
 #include <sys/util.h>
 #include <assert.h>
 
-EXTERN_C uintptr_t bspstart(BootInfo *bootinfo);
+EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed);
 
 static A_ALIGNED(4) uint8_t initloader[] = {
 #if DEBUGGING
@@ -36,8 +36,10 @@ static A_ALIGNED(4) uint8_t initloader[] = {
 #endif
 };
 
-uintptr_t bspstart(BootInfo *bootinfo) {
+uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed) {
 	Boot::start(bootinfo);
+
+	CPU::setSpeed(cpuSpeed);
 
 	/* load initloader */
 	ELF::StartupInfo info;

@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/task/timer.h>
+#include <sys/cpu.h>
 
 class Thread : public ThreadBase {
 	friend class ThreadBase;
@@ -55,13 +56,19 @@ inline void ThreadBase::setRunning(Thread *t) {
 }
 
 inline uint64_t ThreadBase::getTSC() {
-	return Timer::getTimestamp();
+	return CPU::rdtsc();
 }
 
 inline uint64_t ThreadBase::ticksPerSec() {
-	return 1000;
+	return CPU::getSpeed();
 }
 
 inline uint64_t ThreadBase::getRuntime() const {
+	if(state == Thread::RUNNING) {
+		/* if the thread is running, we must take the time since the last scheduling of that thread
+		 * into account. this is especially a problem with idle-threads */
+		uint64_t cycles = CPU::rdtsc();
+		return Timer::cyclesToTime(stats.runtime + (cycles - stats.cycleStart));
+	}
 	return Timer::cyclesToTime(stats.runtime);
 }

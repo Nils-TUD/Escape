@@ -19,7 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
+#include <sys/cpu.h>
 
 class Timer : public TimerBase {
 	friend class TimerBase;
@@ -61,10 +62,9 @@ inline void Timer::ackIntrpt() {
 }
 
 inline uint64_t TimerBase::cyclesToTime(uint64_t cycles) {
-	/* can't be implemented (not used anyway) */
-	return cycles;
+	return cycles / (CPU::getSpeed() / 1000000);
 }
 
 inline uint64_t TimerBase::timeToCycles(uint us) {
-	return us;
+	return (CPU::getSpeed() / 1000000) * us;
 }

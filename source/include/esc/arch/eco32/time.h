@@ -22,6 +22,11 @@
 #include <esc/common.h>
 
 static inline uint64_t rdtsc(void) {
-	/* unsupported */
-    return 0;
+	uint32_t upper, lower;
+	__asm__ volatile (
+		"mvfs	%0,5\n"
+		"mvfs	%1,6\n"
+		: "=r"(upper), "=r"(lower)
+	);
+	return ((uint64_t)upper << 32) | lower;
 }

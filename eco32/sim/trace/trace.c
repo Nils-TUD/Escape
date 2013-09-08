@@ -117,14 +117,16 @@ void traceHandleJAL(int instrCount,Word oldPC,Word newPC) {
 	}
 
 	id = getTraceId();
-	if(id != 0) {
-		traceSAddNode(id,true,instrCount,oldPC,newPC,0,args);
-		if(treeEnabled)
-			traceTAddNode(id,true,instrCount,oldPC,newPC,0,args);
-	}
-	traceSAddNode(0,true,instrCount,oldPC,newPC,0,args);
-	if(treeEnabled)
-		traceTAddNode(0,true,instrCount,oldPC,newPC,0,args);
+    if(id != MAX_TRACES) {
+        if(id != 0) {
+            traceSAddNode(id,true,instrCount,oldPC,newPC,0,args);
+            if(treeEnabled)
+                traceTAddNode(id,true,instrCount,oldPC,newPC,0,args);
+        }
+        traceSAddNode(0,true,instrCount,oldPC,newPC,0,args);
+        if(treeEnabled)
+            traceTAddNode(0,true,instrCount,oldPC,newPC,0,args);
+    }
 }
 
 /*
@@ -139,14 +141,16 @@ int traceHandleJR(int instrCount,Word pc,int reg) {
 	/* jr $31 is our return-instruction */
 	if(reg == 31) {
 		id = getTraceId();
-		if(id != 0) {
-			traceSRemoveNode(id,true,instrCount,pc);
-			if(treeEnabled)
-				traceTRemoveNode(id,true,instrCount,pc);
-		}
-		traceSRemoveNode(0,true,instrCount,pc);
-		if(treeEnabled)
-			traceTRemoveNode(0,true,instrCount,pc);
+	    if(id != MAX_TRACES) {
+            if(id != 0) {
+                traceSRemoveNode(id,true,instrCount,pc);
+                if(treeEnabled)
+                    traceTRemoveNode(id,true,instrCount,pc);
+            }
+            traceSRemoveNode(0,true,instrCount,pc);
+            if(treeEnabled)
+                traceTRemoveNode(0,true,instrCount,pc);
+	    }
 		return 1;
 	}
 
@@ -163,14 +167,16 @@ void traceHandleIS(int instrCount,Word oldPC,Word newPC,int irqnum) {
 	}
 
 	id = getTraceId();
-	if(id != 0) {
-		traceSAddNode(id,false,instrCount,oldPC,newPC,irqnum,NULL);
-		if(treeEnabled)
-			traceTAddNode(id,false,instrCount,oldPC,newPC,irqnum,NULL);
-	}
-	traceSAddNode(0,false,instrCount,oldPC,newPC,irqnum,NULL);
-	if(treeEnabled)
-		traceTAddNode(0,false,instrCount,oldPC,newPC,irqnum,NULL);
+    if(id != MAX_TRACES) {
+        if(id != 0) {
+            traceSAddNode(id,false,instrCount,oldPC,newPC,irqnum,NULL);
+            if(treeEnabled)
+                traceTAddNode(id,false,instrCount,oldPC,newPC,irqnum,NULL);
+        }
+        traceSAddNode(0,false,instrCount,oldPC,newPC,irqnum,NULL);
+        if(treeEnabled)
+            traceTAddNode(0,false,instrCount,oldPC,newPC,irqnum,NULL);
+    }
 }
 
 /*
@@ -183,14 +189,16 @@ void traceHandleRFX(int instrCount,Word oldPC) {
 	}
 
 	id = getTraceId();
-	if(id != 0) {
-		traceSRemoveNode(id,false,instrCount,oldPC);
-		if(treeEnabled)
-			traceTRemoveNode(id,false,instrCount,oldPC);
+	if(id != MAX_TRACES) {
+        if(id != 0) {
+            traceSRemoveNode(id,false,instrCount,oldPC);
+            if(treeEnabled)
+                traceTRemoveNode(id,false,instrCount,oldPC);
+        }
+        traceSRemoveNode(0,false,instrCount,oldPC);
+        if(treeEnabled)
+            traceTRemoveNode(0,false,instrCount,oldPC);
 	}
-	traceSRemoveNode(0,false,instrCount,oldPC);
-	if(treeEnabled)
-		traceTRemoveNode(0,false,instrCount,oldPC);
 }
 
 void doSimpleTrace(char *tokens[], int n) {
@@ -268,8 +276,9 @@ static tTraceId getTraceId(void) {
 			return i;
 	}
 
+	/* just ignore it if we don't have free slots anymore */
 	if(traceCount == MAX_TRACES)
-		error("Max. number of traces reached!");
+	    return MAX_TRACES;
 
 	traces[traceCount] = e.frame;
 	return traceCount++;

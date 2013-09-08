@@ -20,38 +20,22 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/vfs/node.h>
+#include <sys/vfs/link.h>
 #include <errno.h>
 
-class VFSLink : public VFSNode {
-protected:
-	explicit VFSLink(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success)
-			: VFSNode(pid,name,mode,success), target(NULL) {
-		append(parent);
-	}
-
+class VFSSelfLink : public VFSLink {
 public:
 	/**
-	 * Creates a new link with name <name> in <parent> that links to <target>
+	 * Creates a link to /system/processes/<current> with name <name> in <parent>.
 	 *
 	 * @param pid the process-id
 	 * @param parent the parent-node
 	 * @param name the name
-	 * @param target the target-node
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSLink(pid_t pid,VFSNode *parent,char *name,const VFSNode *target,bool &success)
-			: VFSNode(pid,name,S_IFLNK | (target->getMode() & MODE_PERM),success), target(target) {
-		append(parent);
+	explicit VFSSelfLink(pid_t pid,VFSNode *parent,char *name,bool &success)
+			: VFSLink(pid,parent,name,S_IFLNK | (DIR_DEF_MODE & MODE_PERM),success) {
 	}
 
-	/**
-	 * @return the link-target
-	 */
-	virtual const VFSNode *resolve() const {
-		return target;
-	}
-
-private:
-	const VFSNode *target;
+	virtual const VFSNode *resolve() const;
 };

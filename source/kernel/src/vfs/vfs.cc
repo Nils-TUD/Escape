@@ -25,6 +25,7 @@
 #include <sys/vfs/file.h>
 #include <sys/vfs/dir.h>
 #include <sys/vfs/link.h>
+#include <sys/vfs/selflink.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/pipe.h>
 #include <sys/vfs/device.h>
@@ -55,11 +56,12 @@ void VFS::init() {
 	/*
 	 *  /
 	 *   |- system
-	 *   |   |-pipe
-	 *   |   |-mbmods
-	 *   |   |-shm
-	 *   |   |-processes
-	 *   |   \-devices
+	 *   |   |- pipe
+	 *   |   |- mbmods
+	 *   |   |- shm
+	 *   |   |- devices
+	 *   |   \- processes
+	 *   |       \- self
 	 *   \- dev
 	 */
 	root = CREATE(VFSDir,KERNEL_PID,nullptr,(char*)"");
@@ -68,6 +70,7 @@ void VFS::init() {
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm"));
 	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes");
+	VFSNode::release(CREATE(VFSSelfLink,KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"devices"));
 	devNode = CREATE(VFSDir,KERNEL_PID,root,(char*)"dev");
 	VFSNode::release(devNode);

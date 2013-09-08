@@ -21,6 +21,7 @@
 #include <info/thread.h>
 #include <fstream>
 #include <file.h>
+#include <ctype.h>
 
 using namespace std;
 
@@ -30,6 +31,9 @@ namespace info {
 		file dir("/system/processes");
 		vector<sDirEntry> files = dir.list_files(false);
 		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+			/* skip "self" */
+			if(!isdigit(it->name[0]))
+				continue;
 			try {
 				process *p = get_proc(strtoul(it->name,NULL,10),own,uid,fullcmd);
 				if(p)

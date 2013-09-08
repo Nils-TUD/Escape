@@ -20,6 +20,7 @@
 #include <info/thread.h>
 #include <fstream>
 #include <file.h>
+#include <ctype.h>
 
 namespace info {
 	vector<thread*> thread::get_list() {
@@ -27,6 +28,10 @@ namespace info {
 		file dir("/system/processes");
 		vector<sDirEntry> files = dir.list_files(false);
 		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+			/* skip "self" */
+			if(!isdigit(it->name[0]))
+				continue;
+
 			try {
 				string threadDir(string("/system/processes/") + it->name + "/threads");
 				file tdir(threadDir);

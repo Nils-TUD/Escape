@@ -154,6 +154,9 @@ void cli_cmd_btTree(size_t argc,const sASTNode **argv) {
 static void afterExec(const sEvArgs *args) {
 	UNUSED(args);
 	tTraceId id = getTraceId();
+	if(id == MAX_TRACES)
+	    return;
+
 	tetra raw = cpu_getCurInstrRaw();
 	if(OPCODE(raw) == PUSHGO || OPCODE(raw) == PUSHGOI || OPCODE(raw) == PUSHJ ||
 			OPCODE(raw) == PUSHJB) {
@@ -252,8 +255,9 @@ static tTraceId getTraceId(void) {
 		}
 	}
 
+    /* just ignore it if we don't have free slots anymore */
 	if(traceCount == MAX_TRACES)
-		cmds_throwEx("Max. number of traces reached!\n");
+	    return MAX_TRACES;
 
 	traces[traceCount].id = addrSpace;
 	return traceCount++;

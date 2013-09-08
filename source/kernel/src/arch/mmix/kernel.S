@@ -27,7 +27,6 @@
 
 	.global start
 
-	.global logByte
 	.global debugc
 
 	.global cpu_getSyscallNo

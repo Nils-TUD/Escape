@@ -37,6 +37,12 @@ static int depth = 0;
 #endif
 
 #ifdef CALLTRACE_PID
+int getpid_wrapper(void);
+
+int getpid_wrapper(void) {
+	return getpid();
+}
+
 A_REGPARM(0) uintptr_t lookup_resolve(A_UNUSED uint32_t a,A_UNUSED uint32_t b,A_UNUSED uint32_t c,
                                       uintptr_t retAddr,sSharedLib *lib,size_t offset) {
 #else

@@ -17,9 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-#include <esc/syscalls.h>
-
 .section .text
+
+#include <esc/syscalls.h>
 
 .global sigRetFunc
 .global _start
@@ -27,6 +27,7 @@
 .extern __libc_init
 .extern lookup_resolve
 .extern load_setupProg
+.extern getpid_wrapper
 
 #  Initial stack:
 #  +------------------+  <- top
@@ -73,7 +74,7 @@ lookup_resolveStart:
 	push	%ecx
 	call	lookup_resolve
 	push	%eax
-	call	getpid									# get pid
+	call	getpid_wrapper							# get pid
 	cmp		$CALLTRACE_PID,%eax						# if not the requested pid skip the whole stuff
 	jne		1f
 	mov		(lookupDepth),%ecx

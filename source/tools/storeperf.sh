@@ -1,37 +1,45 @@
 #!/bin/sh
 
-if [ ! -f log.txt ]; then
-	echo "Unable to find log.txt" 1>&2
+usage() {
+	echo "Usage: $1 <logfile> [platform]" 1>&2
+	echo "  Note that the platform is mandatory for i586!" 1>&2
 	exit 1
+}
+
+if [ $# -lt 2 ]; then
+	usage $0
 fi
 
 if [ "$ESC_BUILD" = "debug" ]; then
 	echo "WARNING: you're in debug mode!"
 fi
-
 if [ -z "$ESC_TARGET" ]; then
 	ESC_TARGET=i586
 fi
-if [ -z "$ESC_LINKTYPE" ] || [ "$ESC_TARGET" != "i586" ]; then
+if [ "$ESC_TARGET" != "i586" ]; then
 	ESC_LINKTYPE=static
+elif [ -z "$ESC_LINKTYPE" ]; then
+	ESC_LINKTYPE=dynamic
 fi
 
+logfile="$1"
 platform=""
 if [ "$ESC_TARGET" = "i586" ]; then
-	if [ "$1" = "" ]; then
-		echo "Usage: $0 <platform>" 1>&2
-		exit 1
+	if [ "$2" = "" ]; then
+		usage $0
 	fi
-	platform="$1-"
+	platform="$2-"
 fi
 
 start="=============== PERFORMANCE TEST START ==============="
 end="=============== PERFORMANCE TEST END ==============="
 
-if [ "`grep "$start" log.txt`" = "" ] || [ "`grep "$end" log.txt`" = "" ]; then
-	echo "Unable to find start and end pattern of a performance test in log.txt" 1>&2
+if [ "`grep "$start" "$logfile"`" = "" ] || [ "`grep "$end" "$logfile"`" = "" ]; then
+	echo "Unable to find start and end pattern of a performance test in $logfile" 1>&2
 	exit 1
 fi
+
+dest=perf/$ESC_TARGET-$ESC_LINKTYPE-$platform`date --iso-8601=seconds`.txt
 
 gawk "
 BEGIN {
@@ -52,5 +60,8 @@ BEGIN {
 			break
 	}
 }
-" log.txt > perf/$ESC_TARGET-$ESC_LINKTYPE-$platform`date --iso-8601=seconds`.txt
+" "$logfile" > $dest
+
+scp $dest os:escape-perf
+rm $dest
 

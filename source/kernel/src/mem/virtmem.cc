@@ -490,7 +490,7 @@ int VirtMem::pagefault(uintptr_t addr,bool write) {
 	if(reg == NULL) {
 		vm->release();
 		t->discardFrames();
-		return -ENOENT;
+		return -EFAULT;
 	}
 	int res = vm->doPagefault(addr,reg,write);
 	vm->release();
@@ -861,7 +861,7 @@ errorRel:
 }
 
 int VirtMem::growStackTo(VMRegion *vm,uintptr_t addr) {
-	int res = -ENOMEM;
+	int res = -EFAULT;
 	if(acquire()) {
 		ssize_t newPages = 0;
 		addr &= ~(PAGE_SIZE - 1);
@@ -885,7 +885,7 @@ int VirtMem::growStackTo(VMRegion *vm,uintptr_t addr) {
 		if(res == 0) {
 			/* if its too much, try the next one; if there is none that fits, report failure */
 			if(BYTES_2_PAGES(vm->reg->getByteCount()) + newPages >= MAX_STACK_PAGES - 1)
-				res = -ENOMEM;
+				res = -EFAULT;
 			/* new pages necessary? */
 			else if(newPages > 0) {
 				Thread *t = Thread::getRunning();

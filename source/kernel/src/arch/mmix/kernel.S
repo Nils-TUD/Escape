@@ -272,6 +272,16 @@ thread_startup:
 	LDOU	$2,$254,8
 	LDOU	$3,$254,16
 	PUSHJ	$1,uenv_setupThread				# call uenv_setupThread(arg,entryPoint)
+	BNZ		$1,1f
+	# do an exit if it failed
+	PUT		rL,0
+	SET		$1,1
+	PUSHJ	$0,proc_exit
+	PUSHJ	$0,thread_switch
+	# we shouldn't get here
+2:
+	JMP		2b
+1:
 	LDOU	$0,$254,0						# proc entry-point
 	SET		$254,$1							# set fp and sp
 	SET		$253,$1

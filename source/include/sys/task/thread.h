@@ -660,7 +660,7 @@ private:
 
 	void makeUnrunnable();
 	void initProps();
-	static void doSwitch();
+	static void doSwitch() asm("thread_switch");
 	static Thread *createInitial(Proc *p);
 	static tid_t getFreeTid();
 	void add();

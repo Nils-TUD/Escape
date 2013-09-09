@@ -266,7 +266,7 @@ public:
 	 *
 	 * @param exitCode the exit-code
 	 */
-	static void exit(int exitCode);
+	static void exit(int exitCode) asm("proc_exit");
 
 	/**
 	 * Sends a SIG_SEGFAULT signal to the current process and performs a thread-switch if the process

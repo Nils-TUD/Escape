@@ -155,7 +155,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		for(size_t i = 1; i < info->progCount; i++) {
 			if(info->progs[i].id == pid) {
 				if(ELF::finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
-					return false;
+					return NULL;
 				break;
 			}
 		}
@@ -172,7 +172,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		/* seek to header */
 		if(textreg->reg->getFile()->seek(pid,0,SEEK_SET) < 0) {
 			Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
-			return false;
+			return NULL;
 		}
 
 		/* read the header */
@@ -180,12 +180,12 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 				sizeof(sElfEHeader)) {
 			Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 					t->getProc()->getCommand(),strerror(-res));
-			return false;
+			return NULL;
 		}
 
 		res = ELF::finishFromFile(textreg->reg->getFile(),&ehd,&sinfo);
 		if(res < 0)
-			return false;
+			return NULL;
 	}
 
 	/* get register-stack */

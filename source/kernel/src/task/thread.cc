@@ -250,8 +250,10 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 
 	/* insert in VFS; thread needs to be inserted for it */
 	t->threadDir = VFS::createThread(t->getTid());
-	if(t->threadDir < 0)
+	if(t->threadDir < 0) {
+		err = -ENOMEM;
 		goto errAppendIdle;
+	}
 
 	*dst = t;
 	return 0;

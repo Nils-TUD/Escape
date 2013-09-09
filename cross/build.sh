@@ -39,6 +39,7 @@ else
 fi
 
 echo "Downloading binutils, gcc and newlib..."
+REGPARMS=""
 if [ "$ARCH" = "eco32" ]; then
 	wget -c http://ftp.gnu.org/gnu/binutils/binutils-2.20.1a.tar.bz2
 	wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.4.3/gcc-core-4.4.3.tar.bz2
@@ -60,7 +61,7 @@ else
 	CUSTOM_FLAGS="-g -O2 -D_POSIX_THREADS -D_UNIX98_THREAD_MUTEX_ATTRIBUTES -DPTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP"
 	ENABLE_THREADS=" --enable-threads=posix"
 	if [ "$ARCH" = "i586" ]; then
-		CUSTOM_FLAGS="$CUSTOM_FLAGS -mregparm=3"
+		REGPARMS="-mregparm=3"
 	fi
 fi
 
@@ -220,7 +221,7 @@ if $BUILD_CPP; then
 	cd $BUILD/gcc/libstdc++-v3
 	if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 		# pretend that we're using newlib
-		CPP=$TARGET-cpp CXXFLAGS=$CUSTOM_FLAGS \
+		CPP=$TARGET-cpp CXXFLAGS="$CUSTOM_FLAGS $REGPARMS" \
 			$SRC/gcc/libstdc++-v3/configure --host=$TARGET --prefix=$PREFIX \
 			--disable-hosted-libstdcxx --disable-nls --with-newlib
 		if [ $? -ne 0 ]; then

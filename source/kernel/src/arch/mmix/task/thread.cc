@@ -98,6 +98,7 @@ int ThreadBase::initArch(Thread *t) {
 }
 
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
+	dst->tempStack = -1;
 	dst->kstackFrame = PhysMem::allocate(PhysMem::KERN);
 	if(dst->kstackFrame == 0)
 		return -ENOMEM;

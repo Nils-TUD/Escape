@@ -24,10 +24,13 @@
 
 #include "modules/getpid.h"
 #include "modules/yield.h"
-#include "modules/fileread.h"
+#include "modules/fork.h"
+#include "modules/startthread.h"
+#include "modules/file.h"
 #include "modules/mmap.h"
 #include "modules/pingpong.h"
 #include "modules/sems.h"
+#include "modules/pipe.h"
 
 #define NAME_LEN 16
 
@@ -40,11 +43,14 @@ typedef struct {
 static sTestModule modules[] = {
 	{"getpid",		mod_getpid},
 	{"yield",		mod_yield},
-	{"fileread",	mod_fileread},
+	{"fork",		mod_fork},
+	{"startthread",	mod_startthread},
+	{"file",		mod_file},
 	{"mmap",		mod_mmap},
 	{"sendrecv",	mod_sendrecv},
 	{"pingpong",	mod_pingpong},
 	{"sems",		mod_sems},
+	{"pipe",		mod_pipe},
 };
 
 int main(int argc,char *argv[]) {
@@ -65,12 +71,14 @@ int main(int argc,char *argv[]) {
 		fprintf(stderr,"Module '%s' does not exist\n",argv[1]);
 	}
 	else {
+		printf("=============== PERFORMANCE TEST START ===============\n");
 		for(i = 0; i < ARRAY_SIZE(modules); i++) {
 			printf("Module '%s'...\n",modules[i].name);
 			modules[i].func(argc,argv);
 			printf("\n");
 			fflush(stdout);
 		}
+		printf("=============== PERFORMANCE TEST END ===============\n");
 	}
 	return EXIT_FAILURE;
 }

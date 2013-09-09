@@ -24,33 +24,74 @@
 
 #include "mmap.h"
 
-#define MMAP_COUNT		1000
+#define MMAP1_COUNT		1000
+#define MMAP2_COUNT		100
 
-int mod_mmap(A_UNUSED int argc,A_UNUSED char *argv[]) {
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000};
+
+static void mmapunmap(void) {
 	uint64_t start,end;
-	size_t i, sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000};
-	int j;
+	size_t i;
 	for(i = 0; i < ARRAY_SIZE(sizes); ++i) {
 		uint64_t mmapTotal = 0, munmapTotal = 0;
-		for(j = 0; j < MMAP_COUNT; ++j) {
+		int j;
+		for(j = 0; j < MMAP1_COUNT; ++j) {
 			start = rdtsc();
 			void *addr = mmap(NULL,sizes[i],0,MAP_PRIVATE,PROT_READ | PROT_WRITE,-1,0);
 			end = rdtsc();
 			mmapTotal += end - start;
 			if(!addr) {
 				printe("mmap failed");
-				return 1;
+				return;
 			}
 			start = rdtsc();
 			if(munmap(addr) != 0) {
 				printe("munmap failed");
-				return 1;
+				return;
 			}
 			end = rdtsc();
 			munmapTotal += end - start;
 		}
-		printf("mmap(%zu)  : %Lu cycles/call\n",sizes[i],mmapTotal / MMAP_COUNT);
-		printf("munmap(%zu): %Lu cycles/call\n",sizes[i],munmapTotal / MMAP_COUNT);
+		printf("mmap(%3zuK)  : %Lu cycles/call\n",sizes[i] / 1024,mmapTotal / MMAP1_COUNT);
+		printf("munmap(%3zuK): %Lu cycles/call\n",sizes[i] / 1024,munmapTotal / MMAP1_COUNT);
 	}
+}
+
+static void multimmap(void) {
+	static void *addrs[MMAP2_COUNT];
+	uint64_t start,end;
+	size_t i;
+	for(i = 0; i < ARRAY_SIZE(sizes); ++i) {
+		uint64_t mmapTotal = 0, munmapTotal = 0;
+		int j;
+		for(j = 0; j < MMAP2_COUNT; ++j) {
+			start = rdtsc();
+			addrs[j] = mmap(NULL,sizes[i],0,MAP_PRIVATE,PROT_READ | PROT_WRITE,-1,0);
+			end = rdtsc();
+			mmapTotal += end - start;
+			if(!addrs[j]) {
+				printe("mmap failed");
+				return;
+			}
+		}
+		for(j = 0; j < MMAP2_COUNT; ++j) {
+			start = rdtsc();
+			if(munmap(addrs[j]) != 0) {
+				printe("munmap failed");
+				return;
+			}
+			end = rdtsc();
+			munmapTotal += end - start;
+		}
+		printf("mmap(%3zuK)  : %Lu cycles/call\n",sizes[i] / 1024,mmapTotal / MMAP2_COUNT);
+		printf("munmap(%3zuK): %Lu cycles/call\n",sizes[i] / 1024,munmapTotal / MMAP2_COUNT);
+	}
+}
+
+int mod_mmap(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	printf("A sequence of mmap's and munmap's...\n");
+	mmapunmap();
+	printf("A sequence of mmap's, followed by a sequence of munmap's...\n");
+	multimmap();
 	return 0;
 }

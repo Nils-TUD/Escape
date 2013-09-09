@@ -18,61 +18,57 @@
  */
 
 #include <esc/common.h>
-#include <esc/thread.h>
 #include <esc/proc.h>
 #include <esc/time.h>
 #include <stdio.h>
+#include <string.h>
+#include "fork.h"
 
-#include "yield.h"
+#define TEST_COUNT		1000
 
-#define LOCK_IDENT		0x1234
-#define THREAD_COUNT	2
-#define SYSC_COUNT		100000
-
-static int thread_func(void *arg) {
-	int i;
-	lock(LOCK_IDENT,0);
+static void firenforget(void) {
+	size_t i;
 	uint64_t start = rdtsc();
-	for(i = 0; i < SYSC_COUNT; ++i)
-		yield();
-	uint64_t end = rdtsc();
-	/* actually, we measure 2 yields per step */
-	printf("[%4d] %Lu cycles/call\n",gettid(),(end - start) / (SYSC_COUNT * 2));
-	unlock(LOCK_IDENT);
-	return 0;
-}
-
-static void intra_yield(void) {
-	int i;
-	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
-	for(i = 0; i < THREAD_COUNT; ++i) {
-		if(startthread(thread_func,NULL) < 0)
-			printe("startthread failed");
-	}
-	unlock(LOCK_IDENT);
-	join(0);
-}
-
-static void inter_yield(void) {
-	int i;
-	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
-	for(i = 0; i < THREAD_COUNT; ++i) {
-		if(fork() == 0) {
-			thread_func(NULL);
+	for(i = 0; i < TEST_COUNT; ++i) {
+		int pid = fork();
+		if(pid == 0)
 			exit(0);
+		else if(pid < 0) {
+			printe("fork failed");
+			return;
 		}
 	}
-	unlock(LOCK_IDENT);
-	for(i = 0; i < THREAD_COUNT; ++i)
+	uint64_t end = rdtsc();
+	printf("fork      : %Lu cycles/call\n",(end - start) / TEST_COUNT);
+
+	/* better catch the zombies now */
+	for(i = 0; i < TEST_COUNT; ++i)
 		waitchild(NULL);
 }
 
-int mod_yield(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	printf("Intra-process...\n");
+static void waitdead(void) {
+	size_t i;
+	uint64_t start = rdtsc();
+	for(i = 0; i < TEST_COUNT; ++i) {
+		int pid = fork();
+		if(pid == 0)
+			exit(0);
+		else if(pid < 0) {
+			printe("fork failed");
+			return;
+		}
+		waitchild(NULL);
+	}
+	uint64_t end = rdtsc();
+	printf("fork      : %Lu cycles/call\n",(end - start) / TEST_COUNT);
+}
+
+int mod_fork(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	printf("Fire and forget...\n");
 	fflush(stdout);
-	intra_yield();
-	printf("Inter-process...\n");
+	firenforget();
+	printf("Wait until they're dead...\n");
 	fflush(stdout);
-	inter_yield();
-	return 0;
+	waitdead();
+	return EXIT_SUCCESS;
 }

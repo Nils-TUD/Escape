@@ -21,4 +21,4 @@
 
 #include <esc/common.h>
 
-int mod_fileread(int argc,char *argv[]);
+int mod_fork(int argc,char *argv[]);

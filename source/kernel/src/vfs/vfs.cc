@@ -650,6 +650,7 @@ inode_t VFS::createProcess(pid_t pid) {
 
 	itoa(name,12,pid);
 
+	/* TODO remove that */
 	/* go to last entry */
 	bool isValid;
 	n = proc->openDir(true,&isValid);
@@ -712,6 +713,8 @@ inode_t VFS::createProcess(pid_t pid) {
 errorDir:
 	VFSNode::release(dir);
 	VFSNode::release(dir);
+	/* name is free'd by dir */
+	return res;
 errorName:
 	Cache::free(name);
 	return res;
@@ -738,8 +741,10 @@ inode_t VFS::createThread(tid_t tid) {
 	/* create dir */
 	n = VFSNode::get(t->getProc()->getThreadsDir());
 	dir = CREATE(VFSDir,KERNEL_PID,n,name);
-	if(dir == NULL)
+	if(dir == NULL) {
+		Cache::free(name);
 		goto errorDir;
+	}
 
 	/* create info-node */
 	n = CREATE(VFSInfo::ThreadFile,KERNEL_PID,dir);
@@ -758,8 +763,8 @@ inode_t VFS::createThread(tid_t tid) {
 errorInfo:
 	VFSNode::release(dir);
 	VFSNode::release(dir);
+	/* name is free'd by dir */
 errorDir:
-	Cache::free(name);
 	return -ENOMEM;
 }
 

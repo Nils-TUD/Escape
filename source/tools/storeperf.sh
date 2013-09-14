@@ -6,7 +6,7 @@ usage() {
 	exit 1
 }
 
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
 	usage $0
 fi
 
@@ -39,8 +39,7 @@ if [ "`grep "$start" "$logfile"`" = "" ] || [ "`grep "$end" "$logfile"`" = "" ];
 	exit 1
 fi
 
-dest=perf/$ESC_TARGET-$ESC_LINKTYPE-$platform`date --iso-8601=seconds`.txt
-
+tmp=$(mktemp)
 gawk "
 BEGIN {
 	inpat = 0
@@ -60,8 +59,8 @@ BEGIN {
 			break
 	}
 }
-" "$logfile" > $dest
+" "$logfile" > $tmp
 
-scp $dest os:escape-perf
-rm $dest
+scp $tmp os:escape-perf/$ESC_TARGET-$ESC_LINKTYPE-$platform`date --iso-8601=seconds`.txt
+rm $tmp
 

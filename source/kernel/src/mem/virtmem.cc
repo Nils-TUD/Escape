@@ -914,7 +914,7 @@ size_t VirtMem::grow(uintptr_t addr,ssize_t amount) {
 }
 
 size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
-	ssize_t res = -ENOMEM;
+	ssize_t res;
 	vm->reg->acquire();
 	assert((vm->reg->getFlags() & RF_GROWABLE) && !(vm->reg->getFlags() & RF_SHAREABLE));
 

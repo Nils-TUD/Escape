@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/thread.h>
+#include <esc/proc.h>
 #include <string.h>
 #include "reloc.h"
 #include "loader.h"

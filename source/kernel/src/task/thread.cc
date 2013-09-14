@@ -128,7 +128,7 @@ int ThreadBase::extendStack(uintptr_t address) {
 	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		/* if it does not yet exist, report an error */
 		if(t->stackRegions[i] == NULL)
-			return -ENOMEM;
+			return -EFAULT;
 
 		res = t->getProc()->getVM()->growStackTo(t->stackRegions[i],address);
 		if(res >= 0)

@@ -29,7 +29,6 @@
 #include "modules/file.h"
 #include "modules/mmap.h"
 #include "modules/pingpong.h"
-#include "modules/sems.h"
 #include "modules/pipe.h"
 
 #define NAME_LEN 16
@@ -49,7 +48,6 @@ static sTestModule modules[] = {
 	{"mmap",		mod_mmap},
 	{"sendrecv",	mod_sendrecv},
 	{"pingpong",	mod_pingpong},
-	{"sems",		mod_sems},
 	{"pipe",		mod_pipe},
 };
 

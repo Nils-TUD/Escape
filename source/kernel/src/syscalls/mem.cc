@@ -33,7 +33,7 @@ int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	if(count > 0) {
 		if(!t->reserveFrames(count))
-			SYSC_ERROR(stack,-ENOMEM);
+			SYSC_RET1(stack,0);
 	}
 	size_t oldEnd = t->getProc()->getVM()->growData(count);
 	if(count > 0)

@@ -38,24 +38,36 @@ static void debugStringn(char *s,uint precision);
 
 static uint64_t start;
 
+static void printRegions(void) {
+	char buffer[PROCINFO_BUF_SIZE];
+	int fd = open("/system/processes/self/map",IO_READ);
+	if(fd >= 0) {
+		ssize_t count;
+		while((count = IGNSIGS(read(fd,buffer,sizeof(buffer) - 1))) > 0) {
+			buffer[count] = '\0';
+			debugf("%s",buffer);
+		}
+		close(fd);
+	}
+}
+
 void printStackTrace(void) {
 	uintptr_t *trace = getStackTrace();
-	const char *name = getProcName();
-	debugf("Process %s - stack-trace:\n",name ? name : "???");
-	/* TODO maybe we should skip printStackTrace here? */
+	debugf("\n============= snip =============\n");
+	debugf("Region overview:\n");
+	printRegions();
+	debugf("User-Stacktrace:\n");
 	while(*trace != 0) {
-		debugf("\t0x%08x\n",*trace);
+		debugf("\t%08x -> %08x\n",*trace,*trace);
 		trace++;
 	}
+	debugf("============= snip =============\n");
 }
 
 const char *getProcName(void) {
 	static char name[MAX_NAME_LEN];
 	char buffer[PROCINFO_BUF_SIZE];
-	char path[MAX_PATH_LEN];
-	int fd;
-	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
-	fd = open(path,IO_READ);
+	int fd = open("/system/processes/self/info",IO_READ);
 	if(fd >= 0) {
 		if(IGNSIGS(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
 			close(fd);
@@ -102,7 +114,7 @@ void dumpBytes(const void *addr,size_t byteCount) {
 	uchar *ptr = (uchar*)addr;
 	for(i = 0; byteCount-- > 0; i++) {
 		if(i % 17 == 0)
-			printf("\n%08x: ",ptr);
+			printf("\n%08lx: ",(uintptr_t)ptr);
 		printf("%02x ",*ptr);
 		ptr++;
 	}
@@ -113,7 +125,7 @@ void dumpDwords(const void *addr,size_t dwordCount) {
 	uint *ptr = (uint*)addr;
 	for(i = 0; dwordCount-- > 0; i++) {
 		if(i % 4 == 0)
-			printf("\n%08x: ",ptr);
+			printf("\n%08lx: ",(uintptr_t)ptr);
 		printf("%08x ",*ptr);
 		ptr++;
 	}

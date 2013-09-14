@@ -48,11 +48,7 @@ static inline long finish(uint32_t res,long err) {
 }
 
 static inline void syscalldbg(void) {
-	__asm__ volatile (
-		"int	$0x30\n"
-		"ret\n"
-		: : : "memory"
-	);
+	__asm__ volatile ("int	$0x30\n" : : : "memory");
 }
 
 static inline long syscall0(long syscno) {

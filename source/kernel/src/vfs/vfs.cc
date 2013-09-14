@@ -640,35 +640,13 @@ errorName:
 
 inode_t VFS::createProcess(pid_t pid) {
 	VFSNode *proc = procsNode,*dir,*nn;
-	const VFSNode *n;
 	int res = -ENOMEM;
 
 	/* build name */
 	char *name = (char*)Cache::alloc(12);
 	if(name == NULL)
 		return -ENOMEM;
-
 	itoa(name,12,pid);
-
-	/* TODO remove that */
-	/* go to last entry */
-	bool isValid;
-	n = proc->openDir(true,&isValid);
-	if(!isValid) {
-		proc->closeDir(true);
-		res = -EDESTROYED;
-		goto errorName;
-	}
-	while(n != NULL) {
-		/* entry already existing? */
-		if(strcmp(n->getName(),name) == 0) {
-			proc->closeDir(true);
-			res = -EEXIST;
-			goto errorName;
-		}
-		n = n->next;
-	}
-	proc->closeDir(true);
 
 	/* create dir */
 	dir = CREATE(VFSDir,KERNEL_PID,proc,name);

@@ -182,7 +182,8 @@ octa mmu_translate(octa addr,int mode,int expected,bool sideEffects) {
 		ev_fire2(EV_VAT,addr,mode);
 
 	if(addr & MSB(64)) {
-		if((addr & MSB(64)) && !cpu_isPriv())
+	    // the cli can always access privileged addresses
+		if(sideEffects && (addr & MSB(64)) && !cpu_isPriv())
 			ex_throw(EX_DYNAMIC_TRAP,TRAP_PRIVILEGED_ACCESS);
 		return addr & ~MSB(64);
 	}

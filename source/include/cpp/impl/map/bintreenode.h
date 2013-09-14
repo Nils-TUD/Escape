@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <functional>
+#include <utility>
+
 namespace std {
 	template<class Key,class T,class Cmp = less<Key> >
 	class bintree_node {

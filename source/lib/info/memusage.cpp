@@ -21,6 +21,8 @@
 #include <fstream>
 #include <assert.h>
 
+using namespace std;
+
 namespace info {
 	memusage memusage::get() {
 		memusage mem;

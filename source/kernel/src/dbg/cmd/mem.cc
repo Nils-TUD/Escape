@@ -21,7 +21,7 @@
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/mem.h>
 #include <sys/dbg/kb.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/task/proc.h>
 #include <sys/ostringstream.h>
 #include <esc/keycodes.h>

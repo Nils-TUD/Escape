@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/region.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/vmfreemap.h>
 #include <sys/task/elf.h>
@@ -464,10 +464,10 @@ public:
 	 * Adds/removes the given process lock via Thread::{add,rem}Lock
 	 */
 	void addLock(size_t l) {
-		Thread::addLock(locks + PLOCK_ENV);
+		Thread::addLock(locks + l);
 	}
 	void remLock(size_t l) {
-		Thread::remLock(locks + PLOCK_ENV);
+		Thread::remLock(locks + l);
 	}
 
 	/**

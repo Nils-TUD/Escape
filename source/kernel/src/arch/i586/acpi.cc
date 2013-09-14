@@ -23,7 +23,7 @@
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/dir.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/log.h>
 #include <sys/util.h>
 #include <sys/video.h>

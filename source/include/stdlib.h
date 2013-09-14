@@ -28,7 +28,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-using namespace std;
 #endif
 
 /* max rand-number */

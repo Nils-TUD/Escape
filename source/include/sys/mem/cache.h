@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 
 class Cache {
 	Cache() = delete;

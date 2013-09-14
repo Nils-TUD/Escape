@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <esc/common.h>
+
 #define RB_DEFAULT		0x0		/* error if ring-buffer full */
 #define RB_OVERWRITE	0x1		/* overwrite if full */
 

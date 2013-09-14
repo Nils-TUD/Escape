@@ -125,8 +125,9 @@ void memclear(void *addr,size_t count);
  * @param addr the starting address
  * @param value the value to set
  * @param count the number of bytes
+ * @return <addr>
  */
-void memset(void *addr,int value,size_t count);
+void *memset(void *addr,int value,size_t count);
 
 /**
  * Copies the values of num bytes from the location pointed by source to the memory block pointed

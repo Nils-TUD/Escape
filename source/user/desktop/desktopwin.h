@@ -36,10 +36,10 @@ public:
 		: _icon(icon), _app(app), _btn() {
 	}
 
-	const string& getIcon() const {
+	const std::string& getIcon() const {
 		return _icon;
 	}
-	const string& getApp() const {
+	const std::string& getApp() const {
 		return _app;
 	}
 
@@ -60,7 +60,7 @@ private:
 class DesktopWin : public gui::Window {
 	class WinButton : public gui::Button {
 	public:
-		WinButton(DesktopWin *inst,const string &title)
+		WinButton(DesktopWin *inst,const std::string &title)
 			: Button(title), _sub(clicked(),mem_recv(inst,&DesktopWin::onWinBtnClicked)) {
 		}
 
@@ -106,6 +106,6 @@ private:
 	std::shared_ptr<gui::Panel> _winPanel;
 	std::shared_ptr<gui::Panel> _iconPanel;
 	WinButton *_active;
-	map<gwinid_t,std::shared_ptr<WinButton>> _windows;
-	map<std::shared_ptr<gui::ImageButton>,Shortcut*> _shortcuts;
+	std::map<gwinid_t,std::shared_ptr<WinButton>> _windows;
+	std::map<std::shared_ptr<gui::ImageButton>,Shortcut*> _shortcuts;
 };

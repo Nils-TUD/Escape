@@ -1,0 +1,30 @@
+{
+	"folders":
+	[
+		{
+			"path": "/home/hrniels/escape/source"
+		}
+	],
+    "settings":
+    {
+        "translate_tabs_to_spaces": false,
+        "sublimeclang_additional_language_options":
+        {
+            "c++" : ["-std=c++11"],
+            "c": ["-std=c99"]
+        },
+        "sublimeclang_options":
+        [
+            "-I/home/hrniels/escape/source/include",
+            "-I/home/hrniels/escape/source/include/cpp",
+            "-D__i386__",
+            "-target",
+            "i686-linux-gnu",
+            "-march=i686",
+            "-Wall",
+            "-Wextra",
+            "-ansi",
+            "-ferror-limit=0"
+        ]
+    }
+}

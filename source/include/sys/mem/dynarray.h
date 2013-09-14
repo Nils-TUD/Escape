@@ -87,7 +87,7 @@ public:
 	 * @param areaSize the size of that area
 	 */
 	explicit DynArray(size_t objSize,uintptr_t areaBegin,size_t areaSize)
-		: lock(), objSize(objSize), objCount(), areaBegin(areaBegin), areaSize(areaSize),
+		: lock(), objCount(), objSize(objSize), areaBegin(areaBegin), areaSize(areaSize),
 		  regions() {
 	}
 	/**

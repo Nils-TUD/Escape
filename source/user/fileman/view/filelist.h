@@ -73,7 +73,7 @@ public:
 			});
 			setList(files);
 		}
-		catch(const io_exception& e) {
+		catch(const std::io_exception& e) {
 			std::cerr << e.what() << std::endl;
 		}
 	}

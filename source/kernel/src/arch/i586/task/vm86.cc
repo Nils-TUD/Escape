@@ -28,9 +28,9 @@
 #include <sys/task/signals.h>
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
-#include <sys/video.h>
+#include <sys/log.h>
 #include <sys/mutex.h>
 #include <sys/util.h>
 #include <string.h>

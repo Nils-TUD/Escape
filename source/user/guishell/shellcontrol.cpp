@@ -168,7 +168,7 @@ void ShellControl::doUpdate() {
 }
 
 void ShellControl::update() {
-	Application::getInstance()->executeLater(make_memfun(this,&ShellControl::doUpdate));
+	Application::getInstance()->executeLater(std::make_memfun(this,&ShellControl::doUpdate));
 }
 
 bool ShellControl::setCursor() {

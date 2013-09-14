@@ -24,7 +24,7 @@
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/video.h>

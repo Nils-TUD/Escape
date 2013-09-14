@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/ioapic.h>
 #include <sys/arch/i586/mpconfig.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/task/smp.h>
 #include <sys/util.h>
 

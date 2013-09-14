@@ -29,7 +29,7 @@
 #include "loader.h"
 
 static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,uint32_t hash);
-static uintptr_t lookup_getHash(const unsigned char *name);
+static uint32_t lookup_getHash(const unsigned char *name);
 
 #ifdef CALLTRACE_PID
 static int pid = -1;

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/thread.h>
 
 static inline void locku(tULock *l) {
 	/* 0 means free, < 0 means taken. we have this slightly odd meaning here to prevent that we

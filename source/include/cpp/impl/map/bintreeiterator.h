@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include <impl/map/bintreenode.h>
+#include <functional>
+#include <iterator>
+#include <utility>
+
 namespace std {
 	template<class Key,class T,class Cmp>
 	class bintree;

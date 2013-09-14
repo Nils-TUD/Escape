@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/physmemareas.h>
@@ -242,7 +242,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		count--;
 	}
 	return pts;
-	
+
 error:
 	/* unmap from dest-pagedir; the frames are always owned by src */
 	dst->unmap(orgVirtDst,orgCount - count,false);

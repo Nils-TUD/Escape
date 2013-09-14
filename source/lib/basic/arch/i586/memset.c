@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <string.h>
 
-void memset(void *addr,int value,size_t count) {
+void *memset(void *addr,int value,size_t count) {
 	uchar *baddr;
 	uint dwval = (value << 24) | (value << 16) | (value << 8) | value;
 	uint *dwaddr = (uint*)addr;
@@ -32,4 +32,5 @@ void memset(void *addr,int value,size_t count) {
 	baddr = (uchar*)dwaddr;
 	while(count-- > 0)
 		*baddr++ = value;
+	return addr;
 }

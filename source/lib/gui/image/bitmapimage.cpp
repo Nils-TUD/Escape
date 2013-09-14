@@ -21,6 +21,8 @@
 #include <gui/image/bitmapimage.h>
 #include <rawfile.h>
 
+using namespace std;
+
 namespace gui {
 	void BitmapImage::clone(const BitmapImage &img) {
 		size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);

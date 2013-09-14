@@ -34,7 +34,7 @@ typedef struct {
 	uint32_t oemRevision;
 	char creatorId[4];
 	uint32_t creatorRevision;
-} sRSDT A_PACKED;
+} A_PACKED sRSDT;
 
 static __inline__ bool acpi_checksumValid(const void *r,size_t len) {
 	uint8_t sum = 0;

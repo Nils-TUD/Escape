@@ -25,7 +25,7 @@
 #include <sys/arch/i586/mpconfig.h>
 #include <sys/task/smp.h>
 #include <sys/task/timer.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <sys/cpu.h>

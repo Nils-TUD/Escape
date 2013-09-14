@@ -23,13 +23,15 @@
 #include <assert.h>
 #include <math.h>
 
+using namespace std;
+
 namespace gui {
-	void IconLayout::add(Panel *p,std::shared_ptr<Control> c,A_UNUSED pos_type pos) {
+	void IconLayout::add(Panel *p,shared_ptr<Control> c,A_UNUSED pos_type pos) {
 		assert(_p == nullptr || p == _p);
 		_p = p;
 		_ctrls.push_back(c);
 	}
-	void IconLayout::remove(Panel *p,std::shared_ptr<Control> c,A_UNUSED pos_type pos) {
+	void IconLayout::remove(Panel *p,shared_ptr<Control> c,A_UNUSED pos_type pos) {
 		assert(_p == p && _ctrls.erase_first(c));
 	}
 	void IconLayout::removeAll() {

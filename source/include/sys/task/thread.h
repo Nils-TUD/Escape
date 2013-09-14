@@ -23,7 +23,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
 #include <sys/task/terminator.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/virtmem.h>
 #include <sys/col/dlist.h>
@@ -769,7 +769,7 @@ inline void ThreadBase::addLock(klock_t *l) {
 
 inline void ThreadBase::remLock(klock_t *l) {
 	Thread *cur = getRunning();
-	assert(cur->termLockCount > 0);
+	assert(cur->termLockCount > 0 && cur->termLocks[cur->termLockCount - 1] == l);
 	cur->termLockCount--;
 }
 
@@ -781,7 +781,7 @@ inline void ThreadBase::addHeapAlloc(void *ptr) {
 
 inline void ThreadBase::remHeapAlloc(void *ptr) {
 	Thread *cur = getRunning();
-	assert(cur->termHeapCount > 0);
+	assert(cur->termHeapCount > 0 && cur->termHeapAllocs[cur->termHeapCount - 1] == ptr);
 	cur->termHeapCount--;
 }
 
@@ -793,7 +793,7 @@ inline void ThreadBase::addFileUsage(OpenFile *file) {
 
 inline void ThreadBase::remFileUsage(OpenFile *file) {
 	Thread *cur = getRunning();
-	assert(cur->termUsageCount > 0);
+	assert(cur->termUsageCount > 0 && cur->termUsages[cur->termUsageCount - 1] == file);
 	cur->termUsageCount--;
 }
 
@@ -805,7 +805,7 @@ inline void ThreadBase::addCallback(void (*callback)()) {
 
 inline void ThreadBase::remCallback(void (*callback)()) {
 	Thread *cur = getRunning();
-	assert(cur->termCallbackCount > 0);
+	assert(cur->termCallbackCount > 0 && cur->termCallbacks[cur->termCallbackCount - 1] == callback);
 	cur->termCallbackCount--;
 }
 

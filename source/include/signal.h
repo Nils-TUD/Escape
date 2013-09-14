@@ -88,7 +88,7 @@ A_CHECKRET static inline fSignal signal(int sig,fSignal handler) {
  * @param signal the signal
  * @return 0 on success
  */
-A_CHECKRET static inline int kill(pid_t pid,int signal) {
+static inline int kill(pid_t pid,int signal) {
 	return syscall2(SYSCALL_SENDSIG,pid,signal);
 }
 

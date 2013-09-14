@@ -22,7 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/uenv.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/syscalls.h>
 #include <errno.h>
 

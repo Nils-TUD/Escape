@@ -22,6 +22,8 @@
 #include <sstream>
 #include <string>
 
+using namespace std;
+
 /* forward declarations */
 static void test_streams(void);
 static void test_outformat(void);

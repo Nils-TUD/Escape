@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <impl/list/listnode.h>
+#include <iterator>
+
 namespace std {
 	template<class T>
 	class list;

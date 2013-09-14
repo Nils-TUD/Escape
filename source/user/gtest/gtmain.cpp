@@ -40,6 +40,7 @@
 #include <time.h>
 
 using namespace gui;
+using namespace std;
 
 static void addWindow(Application *app,shared_ptr<Window> win);
 static shared_ptr<Window> win0(void);
@@ -93,7 +94,7 @@ static shared_ptr<Window> win0(void) {
 	p->add(make_control<ScrollPane>(
 			make_control<ProgressBar>("Progress4...")),BorderLayout::WEST);
 	//if(startthread(pbThread,pb) < 0)
-	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	//	cerr << "[GUITEST] Unable to start thread" << endl;
 	w->show(true);
 	return w;
 }
@@ -141,7 +142,7 @@ static shared_ptr<Window> win1(void) {
 	w->appendTabCtrl(*check);
 	w->show(true);
 	//if(startthread(pbThread,pb) < 0)
-	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	//	cerr << "[GUITEST] Unable to start thread" << endl;
 	return w;
 }
 
@@ -225,7 +226,7 @@ static shared_ptr<Window> win4(void) {
 	w->appendTabCtrl(*e);
 	w->appendTabCtrl(*check);
 	//if(startthread(pbThread,pb.get()) < 0)
-	//	std::cerr << "[GUITEST] Unable to start thread" << std::endl;
+	//	cerr << "[GUITEST] Unable to start thread" << endl;
 	w->show();
 	return w;
 }

@@ -25,7 +25,7 @@
 #include <sys/arch/i586/pic.h>
 #include <sys/arch/i586/acpi.h>
 #include <sys/task/timer.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/copyonwrite.h>

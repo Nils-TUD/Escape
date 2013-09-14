@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/region.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/video.h>
 #include <sys/cppsupport.h>
 #include <esc/test.h>

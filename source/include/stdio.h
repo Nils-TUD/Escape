@@ -49,7 +49,6 @@ typedef off_t fpos_t;
 
 #ifdef __cplusplus
 extern "C" {
-using namespace std;
 #endif
 
 /* hack to provide FILE without including ../lib/c/stdio/iobuf.h */

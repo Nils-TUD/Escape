@@ -26,8 +26,8 @@
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/fpu.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/paging.h>
-#include <sys/video.h>
+#include <sys/mem/pagedir.h>
+#include <sys/log.h>
 #include <sys/spinlock.h>
 #include <sys/config.h>
 #include <sys/cpu.h>
@@ -35,7 +35,6 @@
 #include <errno.h>
 
 static klock_t switchLock;
-static bool threadSet = false;
 
 int ThreadBase::initArch(Thread *t) {
 	t->kernelStack = t->getProc()->getPageDir()->createKernelStack();

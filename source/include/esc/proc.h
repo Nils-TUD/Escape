@@ -23,7 +23,6 @@
 #include <esc/syscalls.h>
 
 #define MAX_PROC_NAME_LEN	30
-#define INVALID_PID			8193
 
 #define ROOT_UID			0
 #define ROOT_GID			0

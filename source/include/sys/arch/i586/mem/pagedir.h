@@ -256,7 +256,7 @@ private:
 			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_WRITE_PROTECT);
 	}
 
-	static void flushPageTable(uintptr_t virt,uintptr_t ptables) {
+	static void flushPageTable(A_UNUSED uintptr_t virt,A_UNUSED uintptr_t ptables) {
 		/* it seems to be much faster to flush the complete TLB instead of flushing just the
 		 * affected range (and hoping that less TLB-misses occur afterwards) */
 		flushTLB();

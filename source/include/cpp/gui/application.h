@@ -131,13 +131,13 @@ namespace gui {
 		 *
 		 * @param win the window
 		 */
-		void addWindow(shared_ptr<Window> win);
+		void addWindow(std::shared_ptr<Window> win);
 		/**
 		 * Removes the given window from the window-list. Will remove it from the window-manager
 		 *
 		 * @param win the window
 		 */
-		void removeWindow(shared_ptr<Window> win);
+		void removeWindow(std::shared_ptr<Window> win);
 
 		/**
 		 * Puts the given functor into the event-queue and calls it later, i.e. when the run-loop
@@ -245,7 +245,7 @@ namespace gui {
 		createdev_type _created;
 		activatedev_type _activated;
 		destroyedev_type _destroyed;
-		std::vector<Functor<void>*> _queue;
+		std::vector<std::Functor<void>*> _queue;
 		tULock _queuelock;
 		bool _listening;
 		Theme _defTheme;

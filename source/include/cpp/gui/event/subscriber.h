@@ -57,7 +57,7 @@ namespace gui {
 	 */
 	template<typename... Args>
 	inline Receiver<void,Args...> *func_recv(void (*cb)(Args...)) {
-		return new detail::FunFunctor<Receiver,void,Args...>(cb);
+		return new std::detail::FunFunctor<Receiver,void,Args...>(cb);
 	}
 
 	/**
@@ -69,7 +69,7 @@ namespace gui {
 	 */
 	template<typename Cls,typename... Args>
 	inline Receiver<void,Args...> *mem_recv(Cls *obj,void (Cls::*cb)(Args...)) {
-		return new detail::MemFunctor<Receiver,Cls,void,Args...>(obj,cb);
+		return new std::detail::MemFunctor<Receiver,Cls,void,Args...>(obj,cb);
 	}
 
 	/**
@@ -81,11 +81,11 @@ namespace gui {
 	 */
 	template<typename T,typename... Args>
 	inline Receiver<void,Args...> *bind1_func_recv(T arg1,void (*cb)(T,Args...)) {
-		return new detail::Bind1Functor<Receiver,T,void,Args...>(arg1,cb);
+		return new std::detail::Bind1Functor<Receiver,T,void,Args...>(arg1,cb);
 	}
 	template<typename T,typename... Args>
 	inline Receiver<void,Args...> *bind1_func_recv(T& arg1,void (*cb)(T&,Args...)) {
-		return new detail::Bind1Functor<Receiver,T&,void,Args...>(arg1,cb);
+		return new std::detail::Bind1Functor<Receiver,T&,void,Args...>(arg1,cb);
 	}
 
 	/**
@@ -99,22 +99,22 @@ namespace gui {
 	template<typename T,typename Cls,typename... Args>
 	inline Receiver<void,Args...> *bind1_mem_recv(
 			T arg1,Cls *obj,void (Cls::*cb)(T,Args...)) {
-		return new detail::Bind1MemFunctor<Receiver,T,Cls,void,Args...>(arg1,obj,cb);
+		return new std::detail::Bind1MemFunctor<Receiver,T,Cls,void,Args...>(arg1,obj,cb);
 	}
 	template<typename T,typename Cls,typename... Args>
 	inline Receiver<void,Args...> *bind1_mem_recv(
 			T& arg1,Cls *obj,void (Cls::*cb)(T&,Args...)) {
-		return new detail::Bind1MemFunctor<Receiver,T&,Cls,void,Args...>(arg1,obj,cb);
+		return new std::detail::Bind1MemFunctor<Receiver,T&,Cls,void,Args...>(arg1,obj,cb);
 	}
 	template<typename T,typename Cls,typename... Args>
 	inline Receiver<void,Args...> *bind1_mem_recv(
 			T arg1,const Cls *obj,void (Cls::*cb)(T,Args...) const) {
-		return new detail::Bind1MemFunctor<Receiver,T,const Cls,void,Args...>(arg1,obj,cb);
+		return new std::detail::Bind1MemFunctor<Receiver,T,const Cls,void,Args...>(arg1,obj,cb);
 	}
 	template<typename T,typename Cls,typename... Args>
 	inline Receiver<void,Args...> *bind1_mem_recv(
 			T& arg1,const Cls *obj,void (Cls::*cb)(T&,Args...) const) {
-		return new detail::Bind1MemFunctor<Receiver,T&,const Cls,void,Args...>(arg1,obj,cb);
+		return new std::detail::Bind1MemFunctor<Receiver,T&,const Cls,void,Args...>(arg1,obj,cb);
 	}
 
 	/**

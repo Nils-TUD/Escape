@@ -136,7 +136,7 @@ public:
 	 * @param pid the process-id
 	 * @return the current file-position
 	 */
-	off_t tell(pid_t pid) const {
+	off_t tell(A_UNUSED pid_t pid) const {
 		return position;
 	}
 
@@ -221,7 +221,7 @@ public:
 	 * @param pid the process-id (device-owner)
 	 * @return the client-id or the error-code
 	 */
-	inode_t getClientId(pid_t pid) const {
+	inode_t getClientId(A_UNUSED pid_t pid) const {
 		if(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode()))
 			return -EPERM;
 		return nodeNo;
@@ -319,7 +319,7 @@ private:
 	/* for real files: the path; for virt files: NULL */
 	char *path;
 	/* for the freelist */
-	struct OpenFile *next;
+	OpenFile *next;
 
 	/* global file table (expands dynamically) */
 	static klock_t gftLock;

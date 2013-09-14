@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/kheap.h>
 #include <sys/spinlock.h>
 #include <sys/log.h>

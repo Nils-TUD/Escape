@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/vmfreemap.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/col/slist.h>
 
 #ifdef DEBUGGING

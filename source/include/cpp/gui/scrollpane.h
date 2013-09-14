@@ -158,8 +158,8 @@ namespace gui {
 
 	private:
 		Size getVisible() {
-			return Size(max<gsize_t>(0,getSize().width - BAR_SIZE),
-					max<gsize_t>(0,getSize().height - BAR_SIZE));
+			return Size(std::max<gsize_t>(0,getSize().width - BAR_SIZE),
+					std::max<gsize_t>(0,getSize().height - BAR_SIZE));
 		}
 		void scrollRelatively(int x,int y) {
 			Size visible = getVisible();

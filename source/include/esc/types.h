@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <stddef.h>
+
 #ifndef __cplusplus
 typedef enum {false = 0, true = 1} bool;
 #endif
@@ -29,6 +31,7 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef signed long long llong;
 typedef unsigned long long ullong;
+typedef signed long ssize_t;
 
 typedef unsigned char uint8_t;
 typedef signed char int8_t;
@@ -39,48 +42,10 @@ typedef signed int int32_t;
 typedef unsigned long long uint64_t;
 typedef signed long long int64_t;
 
-#ifdef __mmix__
-typedef int64_t intptr_t;
-typedef uint64_t uintptr_t;
-typedef int64_t ssize_t;
-#else
-typedef int32_t intptr_t;
-typedef uint32_t uintptr_t;
-typedef int32_t ssize_t;
-#endif
+typedef signed long intptr_t;
+typedef unsigned long uintptr_t;
 
-/* don't put size_t in std:: for eco32 (we have a different gcc version there) */
-#if defined(__cplusplus) && !defined(__eco32__)
-namespace std {
-#endif
-
-#ifndef _PTRDIFF_T
-#define _PTRDIFF_T
-#ifdef __mmix__
-typedef int64_t ptrdiff_t;
-#else
-typedef int32_t ptrdiff_t;
-#endif
-#endif
-
-#ifndef __SIZE_T__
-#define __SIZE_T__
-#ifdef __mmix__
-typedef uint64_t size_t;
-#else
-typedef uint32_t size_t;
-#endif
-#endif
-
-#if defined(__cplusplus) && !defined(__eco32__)
-}
-#endif
-
-#ifdef __mmix__
-typedef int64_t off_t;
-#else
-typedef int32_t off_t;
-#endif
+typedef signed long off_t;
 typedef uint16_t mode_t;
 
 /* union to access qwords as 2 dwords */

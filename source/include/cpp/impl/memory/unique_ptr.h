@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <bits/c++config.h>
+#include <algorithm>
 #include <assert.h>
 
 namespace std {

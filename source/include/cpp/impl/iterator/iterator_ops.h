@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <impl/iterator/iterator_types.h>
 #include <stddef.h>
 
 namespace std {

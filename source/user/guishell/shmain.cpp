@@ -41,6 +41,7 @@
 #define MAX_VTERM_NAME_LEN	10
 
 using namespace gui;
+using namespace std;
 
 static int guiProc(void);
 static int termThread(void *arg);
@@ -82,7 +83,7 @@ int main(int argc,char **argv) {
 	size_t no = 0;
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
-		snprintf(drvName,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
+		snprintf(drvName,MAX_PATH_LEN + 1,"/dev/guiterm%zu",no);
 		sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 		if(sid >= 0)
 			break;
@@ -93,7 +94,7 @@ int main(int argc,char **argv) {
 
 	// set term as env-variable
 	char tmppath[SSTRLEN("guiterm") + 12];
-	snprintf(tmppath,MAX_PATH_LEN + 1,"guiterm%d",no);
+	snprintf(tmppath,MAX_PATH_LEN + 1,"guiterm%zu",no);
 	setenv("TERM",tmppath);
 
 	// start the gui and the device in a separate process. this way, the forks the shell performs
@@ -105,7 +106,7 @@ int main(int argc,char **argv) {
 
 	// wait until the device is announced
 	char *drvPath = new char[MAX_PATH_LEN + 1];
-	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
+	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%zu",no);
 	int fin;
 	do {
 		fin = open(drvPath,IO_READ | IO_MSGS);

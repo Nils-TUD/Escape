@@ -23,8 +23,10 @@
 #include <string.h>
 #include <stdio.h>
 
+using namespace std;
+
 namespace gui {
-	std::shared_ptr<Image> Image::loadImage(const string& path) {
+	shared_ptr<Image> Image::loadImage(const string& path) {
 		char header[3];
 		FILE *f = fopen(path.c_str(),"r");
 		if(!f)

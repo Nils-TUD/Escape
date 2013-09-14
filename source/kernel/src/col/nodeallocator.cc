@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/col/islist.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 
 DynArray NodeAllocator::nodeArray(sizeof(IListNode<void*>),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 SListItem *NodeAllocator::freelist = NULL;

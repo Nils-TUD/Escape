@@ -21,7 +21,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>

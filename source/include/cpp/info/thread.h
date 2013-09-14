@@ -40,7 +40,7 @@ namespace info {
 		typedef unsigned long long cycle_type;
 		typedef unsigned long long time_type;
 
-		static vector<thread*> get_list();
+		static std::vector<thread*> get_list();
 		static thread *get_thread(pid_t pid,tid_t tid);
 
 	public:

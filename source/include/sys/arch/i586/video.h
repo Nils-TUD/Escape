@@ -42,7 +42,7 @@ inline void Video::copyMemToScr(void *dst,const void *src,size_t rows) {
 }
 
 inline void Video::drawChar(ushort col,ushort row,char c) {
-	char *video = (char*)(screen() + row * VID_COLS * 2 + col * 2);
+	char *video = (char*)screen() + row * VID_COLS * 2 + col * 2;
 	*video = c;
 	video++;
 	*video = color;

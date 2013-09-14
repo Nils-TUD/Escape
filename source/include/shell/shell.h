@@ -52,11 +52,6 @@ void shell_init(int argc,const char **argv);
 bool shell_prompt(void);
 
 /**
- * @return the pid we're waiting for or INVALID_PID
- */
-pid_t shell_getWaitingPid(void);
-
-/**
  * Executes the given line or file
  *
  * @param line the entered line

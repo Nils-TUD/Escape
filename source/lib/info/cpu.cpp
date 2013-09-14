@@ -21,6 +21,8 @@
 #include <fstream>
 #include <assert.h>
 
+using namespace std;
+
 namespace info {
 	std::vector<cpu*> cpu::get_list() {
 		std::vector<cpu*> list;

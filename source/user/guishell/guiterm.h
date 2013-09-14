@@ -39,7 +39,7 @@ private:
 	static const size_t READ_BUF_SIZE	= 512;
 
 public:
-	GUITerm(int sid,shared_ptr<ShellControl> sh);
+	GUITerm(int sid,std::shared_ptr<ShellControl> sh);
 	virtual ~GUITerm();
 
 	void run();

@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/lapic.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/cpu.h>
 #include <assert.h>
 

@@ -27,7 +27,7 @@
 #include <sys/task/timer.h>
 #include <sys/task/filedesc.h>
 #include <sys/mem/cache.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/vfs/vfs.h>
 #include <sys/syscalls.h>
 #include <sys/util.h>

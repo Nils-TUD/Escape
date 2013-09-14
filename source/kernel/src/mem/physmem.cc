@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/physmem.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/physmemareas.h>

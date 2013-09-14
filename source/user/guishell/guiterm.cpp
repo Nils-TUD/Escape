@@ -28,6 +28,8 @@
 #include <errno.h>
 #include "guiterm.h"
 
+using namespace std;
+
 GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
 	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(),
 	  _rbuffer(new char[READ_BUF_SIZE + 1]), _rbufPos(0) {

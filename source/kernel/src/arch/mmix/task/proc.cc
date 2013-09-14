@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 
 int ProcBase::cloneArch(A_UNUSED Proc *dst,A_UNUSED const Proc *src) {
 	/* nothing to do */

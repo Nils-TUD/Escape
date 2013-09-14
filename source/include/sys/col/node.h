@@ -114,7 +114,7 @@ struct IListNode : public DListItem {
 		static_assert(sizeof(T) <= sizeof(void*),"T has to be a word!");
 	}
 
-	static void *operator new(size_t size) throw() {
+	static void *operator new(size_t) throw() {
 		return NodeAllocator::allocate();
 	}
 

@@ -78,6 +78,7 @@ int startthread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
  */
 A_NORETURN static inline void _exit(int exitCode) {
 	syscall1(SYSCALL_EXIT,exitCode);
+	A_UNREACHED;
 }
 
 /**

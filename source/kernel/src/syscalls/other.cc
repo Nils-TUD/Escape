@@ -21,7 +21,7 @@
 #include <sys/boot.h>
 #include <sys/interrupts.h>
 #include <sys/task/timer.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/task/thread.h>
 #include <sys/task/lock.h>

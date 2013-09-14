@@ -25,6 +25,8 @@
 #include <iostream>
 #include "tcmdargs.h"
 
+using namespace std;
+
 /* forward declarations */
 static void test_cmdargs(void);
 static void test_flags(void);

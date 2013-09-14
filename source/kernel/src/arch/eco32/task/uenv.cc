@@ -23,7 +23,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/event.h>
 #include <sys/mem/virtmem.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>

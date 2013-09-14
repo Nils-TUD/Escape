@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/physmem.h>
 #include <esc/test.h>
 #include <sys/video.h>

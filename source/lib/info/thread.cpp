@@ -19,8 +19,11 @@
 
 #include <info/thread.h>
 #include <fstream>
+#include <vector>
 #include <file.h>
 #include <ctype.h>
+
+using namespace std;
 
 namespace info {
 	vector<thread*> thread::get_list() {

@@ -22,7 +22,7 @@
 #include <sys/task/timer.h>
 #include <sys/task/uenv.h>
 #include <sys/task/proc.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>

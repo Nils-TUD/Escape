@@ -23,7 +23,7 @@
 #include <sys/col/nodeallocator.h>
 #include <sys/spinlock.h>
 #include <sys/mem/dynarray.h>
-#include <sys/mem/paging.h>
+#include <sys/mem/pagedir.h>
 
 /**
  * An indirect, double linked list. That is, the elements are not inherited from a class that gives

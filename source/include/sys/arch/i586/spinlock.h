@@ -33,6 +33,5 @@ inline bool SpinLock::tryAcquire(klock_t *l) {
 }
 
 inline void SpinLock::release(klock_t *l) {
-	/* generates a memory-barrier as well */
-    __sync_lock_release(l);
+	asm volatile ("movl	$0,%0" : : "m"(*l) : "memory");
 }

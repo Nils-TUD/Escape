@@ -28,6 +28,7 @@
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/video.h>
+#include <sys/util.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -223,6 +224,9 @@ void ThreadBase::doSwitch() {
 			PhysMem::free(n->tempStack,PhysMem::KERN);
 			n->tempStack = -1;
 		}
+
+		if(n->getProc()->getPageDir()->getAddrSpace()->getRefCount() > 1)
+			Util::panic("Address space sharing not implemented");
 
 		/* TODO we have to clear the TCs if the process shares its address-space with another one */
 		SMP::schedule(n->getCPU(),n,cycles);

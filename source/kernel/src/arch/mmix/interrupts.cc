@@ -179,7 +179,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	if(EXPECT_TRUE(res == 0))
 		return;
 	/* ok, now lets check if the thread wants more stack-pages */
-	if(EXPECT_TRUE(res == -ENOENT && (res = Thread::extendStack(pfaddr)) == 0))
+	if(EXPECT_TRUE(res == -EFAULT && (res = Thread::extendStack(pfaddr)) == 0))
 		return;
 
 	pid_t pid = Proc::getRunning();

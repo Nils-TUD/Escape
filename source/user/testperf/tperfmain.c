@@ -30,6 +30,7 @@
 #include "modules/mmap.h"
 #include "modules/pingpong.h"
 #include "modules/pipe.h"
+#include "modules/readzeros.h"
 
 #define NAME_LEN 16
 
@@ -49,6 +50,7 @@ static sTestModule modules[] = {
 	{"sendrecv",	mod_sendrecv},
 	{"pingpong",	mod_pingpong},
 	{"pipe",		mod_pipe},
+	{"readzeros",	mod_readzeros},
 };
 
 int main(int argc,char *argv[]) {

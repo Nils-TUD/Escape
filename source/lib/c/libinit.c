@@ -102,5 +102,6 @@ void __cxa_finalize(A_UNUSED void *d) {
 
 void __libc_init(void) {
 	/* tell kernel address of sigRetFunc */
-	signal(SIG_RET,(fSignal)&sigRetFunc);
+	if(signal(SIG_RET,(fSignal)&sigRetFunc) == SIG_ERR)
+		error("Unable to set signal return address");
 }

@@ -157,10 +157,10 @@ static void afterExec(const sEvArgs *args) {
 	if(id == MAX_TRACES)
 	    return;
 
+    octa callargs[MAX_ARGS];
 	tetra raw = cpu_getCurInstrRaw();
 	if(OPCODE(raw) == PUSHGO || OPCODE(raw) == PUSHGOI || OPCODE(raw) == PUSHJ ||
 			OPCODE(raw) == PUSHJB) {
-		octa callargs[MAX_ARGS];
 		size_t argCount = MIN(MAX_ARGS,reg_getSpecial(rL));
 		for(size_t i = 0; i < argCount; i++)
 			callargs[i] = reg_get(i);
@@ -175,24 +175,28 @@ static void afterExec(const sEvArgs *args) {
 		bttree_add(0,true,traces[0].instrCount,oldPC,newPC,threadId,0,0,argCount,callargs);
 	}
 	else if(OPCODE(raw) == POP) {
+	    size_t argCount = DST(raw);
+        for(size_t i = 0; i < argCount; i++)
+            callargs[i] = reg_get(reg_getSpecial(rL) - i - 1);
+
 		octa cpc = cpu_getPC() + sizeof(tetra);
 		octa threadId = getId();
 		if(id != 0) {
-			btsimple_remove(id,true,traces[id].instrCount,cpc,threadId);
-			bttree_remove(id,true,traces[id].instrCount,cpc,threadId);
+			btsimple_remove(id,true,traces[id].instrCount,cpc,threadId,argCount,callargs);
+			bttree_remove(id,true,traces[id].instrCount,cpc,threadId,argCount,callargs);
 		}
-		btsimple_remove(0,true,traces[0].instrCount,cpc,threadId);
-		bttree_remove(0,true,traces[0].instrCount,cpc,threadId);
+		btsimple_remove(0,true,traces[0].instrCount,cpc,threadId,argCount,callargs);
+		bttree_remove(0,true,traces[0].instrCount,cpc,threadId,argCount,callargs);
 	}
 	else if(OPCODE(raw) == RESUME) {
 		octa cpc = cpu_getPC() + sizeof(tetra);
 		octa threadId = getId();
 		if(id != 0) {
-			btsimple_remove(id,false,traces[id].instrCount,cpc,threadId);
-			bttree_remove(id,false,traces[id].instrCount,cpc,threadId);
+			btsimple_remove(id,false,traces[id].instrCount,cpc,threadId,0,NULL);
+			bttree_remove(id,false,traces[id].instrCount,cpc,threadId,0,NULL);
 		}
-		btsimple_remove(0,false,traces[0].instrCount,cpc,threadId);
-		bttree_remove(0,false,traces[0].instrCount,cpc,threadId);
+		btsimple_remove(0,false,traces[0].instrCount,cpc,threadId,0,NULL);
+		bttree_remove(0,false,traces[0].instrCount,cpc,threadId,0,NULL);
 	}
 	if(ex != EX_NONE) {
 		octa cpc = cpu_getPC();

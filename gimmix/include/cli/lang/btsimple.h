@@ -44,12 +44,13 @@ void btsimple_cleanAll(void);
  * Adds a new node to the simple-trace
  */
 void btsimple_add(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa newPC,octa threadId,
-		int ex,octa bits,size_t argCount,octa *args);
+                  int ex,octa bits,size_t argCount,octa *args);
 
 /*
  * Removes the last node from the simple-trace
  */
-void btsimple_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId);
+void btsimple_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId,
+                     size_t argCount,octa *args);
 
 /*
  * Prints the simple-trace

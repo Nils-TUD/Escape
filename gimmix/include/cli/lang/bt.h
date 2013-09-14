@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-#define MAX_TRACES		512
+#define MAX_TRACES		2048
 #define MAX_ARGS		4
 
 typedef unsigned int tTraceId;
@@ -51,6 +51,7 @@ void bt_fillForAdd(sBacktraceData *data,bool isFunc,octa instrCount,
 /**
  * Assignes the fields of <data> from the given arguments
  */
-void bt_fillForRemove(sBacktraceData *data,bool isFunc,octa instrCount,octa oldPC,octa threadId);
+void bt_fillForRemove(sBacktraceData *data,bool isFunc,octa instrCount,octa oldPC,octa threadId,
+                      size_t argCount,octa *args);
 
 #endif /* BT_H_ */

@@ -75,11 +75,14 @@ void btsimple_add(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa newPC,
 	traces[id].sLast = node;
 }
 
-void btsimple_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId) {
+void btsimple_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId,
+                     size_t argCount,octa *args) {
 	UNUSED(isFunc);
 	UNUSED(instrCount);
 	UNUSED(oldPC);
 	UNUSED(threadId);
+	UNUSED(argCount);
+	UNUSED(args);
 	tSNode *n = traces[id].sLast;
 	if(n != &traces[id].sRoot) {
 		traces[id].sLast = traces[id].sLast->prev;
@@ -92,26 +95,23 @@ void btsimple_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa thr
 void btsimple_print(tTraceId id) {
 	sSimpleTrace *t = traces + id;
 	tSNode *n = t->sRoot.next;
-	int x,level = 0;
 	if(n == NULL) {
 		mprintf("- Trace is empty -\n");
 	}
 	else {
 		if(t->sLevel > STACK_LIMIT) {
 			char *line;
-			mprintf("The stack is %d calls deep.",t->sLevel);
-			mprintf(" Are you sure you want to display it?\n");
-			line = gl_getline((char*)"[y/n]: ");
-			if(*line != 'y')
-				return;
+			mprintf("The stack is %d calls deep.\n",t->sLevel);
+			line = gl_getline((char*)"How many do you want to display (from the end): ");
+			int maxDepth = atoi(line);
+	        // walk to the end
+	        for(int level = 0; n && level < t->sLevel - maxDepth; level++)
+	            n = n->next;
 		}
 
+		int no = 0;
 		for(; n != NULL; n = n->next) {
-			/* pad */
-			for(x = 0; x < level; x++) {
-				mprintf(" ");
-			}
-			mprintf("\\ ");
+			mprintf("* ");
 			if(n->data.isFunc) {
 				mprintf("%s(",symmap_getFuncName(n->data.newPC));
 				for(size_t i = 0; i < n->data.d.func.argCount; i++) {
@@ -119,13 +119,19 @@ void btsimple_print(tTraceId id) {
 					if(i < n->data.d.func.argCount - 1)
 						mprintf(",");
 				}
-				mprintf(") [#%OX -> #%OX]\n",n->data.oldPC,n->data.newPC);
+				mprintf(") [#%OX -> #%OX] @ #%OX\n",n->data.oldPC,n->data.newPC,n->data.instrCount);
 			}
 			else {
 				const char *ex = ex_toString(n->data.d.intrpt.ex,n->data.d.intrpt.bits);
-				mprintf("-- <%s> [0x%016OX -> 0x%016OX]\n",ex,n->data.oldPC,n->data.newPC);
+				mprintf("<%s> [0x%016OX -> 0x%016OX] @ #%OX\n",
+				        ex,n->data.oldPC,n->data.newPC,n->data.instrCount);
 			}
-			level += 1;
+
+			if((++no % STACK_LIMIT) == 0) {
+			    char *line = gl_getline((char*)"Continue? [y/n]: ");
+			    if(*line != 'y')
+			        break;
+			}
 		}
 	}
 	/* TODO keep that? */

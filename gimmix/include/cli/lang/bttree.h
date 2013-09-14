@@ -42,7 +42,8 @@ void bttree_add(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa newPC,oc
 /*
  * Removes the last node from the tree-trace
  */
-void bttree_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId);
+void bttree_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId,
+                   size_t argCount,octa *args);
 
 /*
  * Prints the tree-trace into the given file

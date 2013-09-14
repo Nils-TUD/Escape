@@ -12,7 +12,7 @@
 #include "core/cpu.h"
 #include "exception.h"
 
-#define MAX_NODES_PER_TREE	1000000
+#define MAX_NODES_PER_TREE	25000
 
 typedef struct {
 	/* number of nodes in this tree */
@@ -79,13 +79,14 @@ void bttree_add(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa newPC,oc
 	traces[id].count++;
 }
 
-void bttree_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId) {
+void bttree_remove(tTraceId id,bool isFunc,octa instrCount,octa oldPC,octa threadId,
+                   size_t argCount,octa *args) {
 	tTNode *node;
 	bttree_checkSize(id);
 
 	/* build a new node */
 	node = (tTNode*)mem_alloc(sizeof(tTNode));
-	bt_fillForRemove(&node->data,isFunc,instrCount,oldPC,threadId);
+	bt_fillForRemove(&node->data,isFunc,instrCount,oldPC,threadId,argCount,args);
 	node->isEnter = false;
 	node->next = NULL;
 	node->prev = traces[id].tLast;
@@ -140,8 +141,16 @@ void bttree_print(tTraceId id,const char *filename) {
 		}
 		/* print return */
 		else {
-			if(n->data.isFunc)
-				mfprintf(f,"/ t=%d, ic=#%OX\n",n->data.threadId,n->data.instrCount);
+			if(n->data.isFunc) {
+				mfprintf(f,"/ ");
+				if(n->data.d.func.argCount > 0) {
+					mfprintf(f,"=> (");
+					for(size_t i = 0; i < n->data.d.func.argCount; i++)
+						mfprintf(f,"#%OX",n->data.d.func.args[i]);
+					mfprintf(f,") ");
+				}
+				mfprintf(f,"t=%d, ic=#%OX\n",n->data.threadId,n->data.instrCount);
+			}
 			else
 				mfprintf(f,"/-- t=%d, ic=#%OX\n",n->data.threadId,n->data.instrCount);
 		}

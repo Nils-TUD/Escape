@@ -32,11 +32,10 @@ class VFSInfo {
 		explicit className(pid_t pid,VFSNode *parent,bool &success)								\
 			: VFSFile(pid,parent,(char*)(fileName),success) {									\
 		}																						\
-		virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count) {	\
+		virtual ssize_t read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) {		\
 			return VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));				\
 		}																						\
-		virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,			\
-							  size_t count) {													\
+		virtual ssize_t write(pid_t,OpenFile *,const void *,off_t,size_t) {						\
 			return -ENOTSUP;																	\
 		}																						\
 	}

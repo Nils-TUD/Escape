@@ -62,9 +62,14 @@ static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 int startthread(fThreadEntry entryPoint,void *arg) {
 	int res;
 	locku(&threadLock);
+	// we have to increase it first since we don't know when the thread starts to run. if he does
+	// and exists before we get to the line below, it might call the exit-functions because
+	// threadCount hasn't been increased yet.
+	threadCount++;
 	res = syscall2(SYSCALL_STARTTHREAD,(ulong)entryPoint,(ulong)arg);
-	if(res >= 0)
-		threadCount++;
+	// undo that, if an error occurred
+	if(res < 0)
+		threadCount--;
 	unlocku(&threadLock);
 	return res;
 }

@@ -25,7 +25,7 @@
 #include "readzeros.h"
 
 #define PACKET_SIZE		0x4000
-#define PACKET_COUNT	10000
+#define PACKET_COUNT	100000
 
 int mod_readzeros(A_UNUSED int argc,A_UNUSED char **argv) {
 	static char buffer[PACKET_SIZE];

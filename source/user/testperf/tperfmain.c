@@ -31,6 +31,7 @@
 #include "modules/pingpong.h"
 #include "modules/pipe.h"
 #include "modules/readzeros.h"
+#include "modules/writenull.h"
 
 #define NAME_LEN 16
 
@@ -51,6 +52,7 @@ static sTestModule modules[] = {
 	{"pingpong",	mod_pingpong},
 	{"pipe",		mod_pipe},
 	{"readzeros",	mod_readzeros},
+	{"writenull",	mod_writenull},
 };
 
 int main(int argc,char *argv[]) {

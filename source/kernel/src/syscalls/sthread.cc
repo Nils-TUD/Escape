@@ -52,6 +52,9 @@ int Syscalls::getthreadcnt(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
+	if(!PageDir::isInUserSpace(entryPoint,1))
+		SYSC_ERROR(stack, -EINVAL);
+
 	int res = Proc::startThread(entryPoint,0,arg);
 	if(res < 0)
 		SYSC_ERROR(stack,res);

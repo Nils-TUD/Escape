@@ -65,14 +65,12 @@ public:
 	 * For devices: Looks whether a client wants to be served. If necessary and if GW_NOBLOCK is
 	 * not used, the function waits until a client wants to be served.
 	 *
-	 * @param files an array of files to check for clients
-	 * @param count the number of files
-	 * @param index will be set to the index in <files> from which the client was chosen
+	 * @param file the file to check for a client
 	 * @param client will be set to the client
 	 * @param flags the flags (GW_*)
 	 * @return the error-code or 0
 	 */
-	static int getClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client,uint flags);
+	static int getClient(OpenFile *file,VFSNode **client,uint flags);
 
 	/**
 	 * Checks whether they point to the same file
@@ -295,7 +293,6 @@ private:
 	 */
 	static int getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f);
 
-	static int doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client);
 	static void releaseFile(OpenFile *file);
 	bool doClose(pid_t pid);
 

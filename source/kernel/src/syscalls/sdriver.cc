@@ -124,9 +124,8 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* open a client */
-	size_t index;
 	VFSNode *client;
-	ssize_t res = OpenFile::getClient(&file,1,&index,&client,flags);
+	ssize_t res = OpenFile::getClient(file,&client,flags);
 
 	/* release files */
 	FileDesc::release(file);

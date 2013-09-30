@@ -259,81 +259,31 @@ bool OpenFile::doClose(pid_t pid) {
 	return false;
 }
 
-int OpenFile::getClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client,uint flags) {
-	Event::WaitObject waits[MAX_GETWORK_DEVICES];
+int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 	Thread *t = Thread::getRunning();
-	bool inited = false;
+	if(file->devNo != VFS_DEV_NO)
+		return -EPERM;
+	if(!IS_DEVICE(file->node->getMode()))
+		return -EPERM;
+
 	while(true) {
 		SpinLock::acquire(&waitLock);
-		int res = doGetClient(files,count,index,client);
+		*client = static_cast<VFSDevice*>(file->node)->getWork();
 		/* if we've found one or we shouldn't block, stop here */
-		if(res != -ENOCLIENT || (flags & GW_NOBLOCK)) {
+		if(*client || (flags & GW_NOBLOCK)) {
 			SpinLock::release(&waitLock);
-			return res;
-		}
-
-		/* build wait-objects */
-		if(!inited) {
-			for(size_t i = 0; i < count; i++) {
-				waits[i].events = EV_CLIENT;
-				waits[i].object = (evobj_t)files[i]->node;
-			}
-			inited = true;
+			return *client ? 0 : -ENOCLIENT;
 		}
 
 		/* wait for a client (accept signals) */
-		Event::waitObjects(t,waits,count);
+		Event::wait(t,EVI_CLIENT,(evobj_t)file->node);
 		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;
 	}
-	return 0;
-}
-
-int OpenFile::doGetClient(OpenFile *const *files,size_t count,size_t *index,VFSNode **client) {
-	VFSNode *match = NULL;
-	for(size_t i = 0; i < count; i++) {
-		const OpenFile *f = files[i];
-		if(f->devNo != VFS_DEV_NO)
-			return -EPERM;
-		if(!IS_DEVICE(f->node->getMode()))
-			return -EPERM;
-	}
-
-	bool retry,cont = true;
-	do {
-		retry = false;
-		for(size_t i = 0; cont && i < count; i++) {
-			const OpenFile *f = files[i];
-			VFSNode *node = f->node;
-
-			*client = static_cast<VFSDevice*>(node)->getWork(&cont,&retry);
-			if(*client) {
-				if(match)
-					match->unref();
-				if(index)
-					*index = i;
-				if(cont) {
-					match = *client;
-				}
-				else {
-					static_cast<VFSChannel*>(*client)->setUsed(true);
-					return 0;
-				}
-			}
-		}
-		/* if we have a match, use this one */
-		if(match) {
-			static_cast<VFSChannel*>(match)->setUsed(true);
-			*client = match;
-			return 0;
-		}
-		/* if not and we've skipped a client, try another time */
-	}
-	while(retry);
-	return -ENOCLIENT;
+	A_UNREACHED;
 }
 
 int OpenFile::openClient(pid_t pid,inode_t clientId,OpenFile **cfile) {

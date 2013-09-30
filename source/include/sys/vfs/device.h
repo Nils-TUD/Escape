@@ -111,13 +111,9 @@ public:
 	/**
 	 * Searches for a client of the server-node that should be served
 	 *
-	 * @param cont will be set to false (never to true!), if the caller should stop and use service
-	 * 	the returned client
-	 * @param retry will be set to true (never to false!), if the caller should check all device-nodes
-	 * 	again, after the current loop is finished
 	 * @return the client to serve or NULL if there is none
 	 */
-	VFSNode *getWork(bool *cont,bool *retry);
+	VFSNode *getWork();
 
 	virtual size_t getSize(pid_t pid) const;
 	virtual void close(pid_t pid,OpenFile *file);

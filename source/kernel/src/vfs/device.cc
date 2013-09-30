@@ -85,8 +85,8 @@ int VFSDevice::setReadable(bool readable) {
 	return 0;
 }
 
-VFSNode *VFSDevice::getWork(bool *cont,bool *retry) {
-	const VFSNode *n,*last;
+VFSNode *VFSDevice::getWork() {
+	const VFSNode *n,*first,*last;
 	bool valid;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
 	 * process that requests something should be served at some time. therefore we store the last
@@ -103,51 +103,30 @@ VFSNode *VFSDevice::getWork(bool *cont,bool *retry) {
 		return NULL;
 	}
 
+	first = n;
 	last = lastClient;
-	if(last != NULL) {
-		if(last->next == NULL) {
-			closeDir(true);
-			/* if we have checked all clients in this device, give the other devices
-			 * a chance (if there are any others) */
-			lastClient = NULL;
-			*retry = true;
-			return NULL;
-		}
-		else
-			n = last->next;
-	}
+	n = last ? last->next : first;
 
 searchBegin:
 	while(n != NULL && n != last) {
 		/* data available? */
 		if(static_cast<const VFSChannel*>(n)->hasWork()) {
-			n->increaseRefs();
+			VFSNode *res = const_cast<VFSNode*>(n);
+			static_cast<VFSChannel*>(res)->setUsed(true);
+			res->increaseRefs();
+			lastClient = res;
 			closeDir(true);
-			*cont = false;
-			lastClient = n;
-			return const_cast<VFSNode*>(n);
+			return res;
 		}
 		n = n->next;
 	}
-
-	/* if we have looked through all nodes and the last one has a message again, we have to
-	 * store it because we'll not check it again */
-	if(last && n == last && static_cast<const VFSChannel*>(n)->hasWork()) {
-		n->increaseRefs();
-		closeDir(true);
-		return const_cast<VFSNode*>(n);
-	}
-	closeDir(true);
-
 	if(lastClient) {
-		n = openDir(true,&valid);
-		if(!valid) {
-			closeDir(true);
-			return NULL;
-		}
 		lastClient = NULL;
+		last = last->next;
+		n = first;
 		goto searchBegin;
 	}
+	closeDir(true);
 	return NULL;
 }
 

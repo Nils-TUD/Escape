@@ -79,8 +79,8 @@ int main(int argc,char **argv) {
 
 	while(1) {
 #if SKIP_LOGIN
-		strcpy(un,"hrniels");
-		strcpy(pw,"test");
+		strcpy(un,"root");
+		strcpy(pw,"root");
 #else
 		printf("Username: ");
 		fgetl(un,sizeof(un),stdin);

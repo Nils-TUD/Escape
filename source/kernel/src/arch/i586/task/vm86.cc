@@ -62,7 +62,7 @@
 #define VM86_IVT_SIZE		256
 #define VM86_MAX_MEMPAGES	2
 
-#define DBGVM86(fmt...)		/*Video::printf(fmt)*/
+#define DBGVM86(fmt...)		/*Log::get().writef(fmt)*/
 
 frameno_t VM86::frameNos[(1024 * K) / PAGE_SIZE];
 tid_t VM86::vm86Tid = INVALID_TID;

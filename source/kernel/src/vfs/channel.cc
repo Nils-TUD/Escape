@@ -268,20 +268,20 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 
 	/* create message and copy data to it */
 	msg1 = (Message*)Cache::alloc(sizeof(Message) + size1);
-	if(msg1 == NULL)
+	if(EXPECT_FALSE(msg1 == NULL))
 		return -ENOMEM;
 
 	msg1->length = size1;
 	msg1->id = id;
-	if(data1) {
+	if(EXPECT_TRUE(data1)) {
 		Thread::addHeapAlloc(msg1);
 		memcpy(msg1 + 1,data1,size1);
 		Thread::remHeapAlloc(msg1);
 	}
 
-	if(data2) {
+	if(EXPECT_FALSE(data2)) {
 		msg2 = (Message*)Cache::alloc(sizeof(Message) + size2);
-		if(msg2 == NULL)
+		if(EXPECT_FALSE(msg2 == NULL))
 			return -ENOMEM;
 
 		msg2->length = size2;
@@ -301,20 +301,20 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	if(flags & VFS_DEVICE)
 		recipient = id >= MSG_DEF_RESPONSE ? curClient : NULL;
 	msg1->thread = recipient;
-	if(data2)
+	if(EXPECT_FALSE(data2))
 		msg2->thread = recipient;
 
 	/* append to list */
 	list->append(msg1);
-	if(msg2)
+	if(EXPECT_FALSE(msg2))
 		list->append(msg2);
 
 	/* notify the driver */
 	if(list == &sendList) {
 		VFSNode::acquireTree();
-		if(parent) {
+		if(EXPECT_TRUE(parent)) {
 			static_cast<VFSDevice*>(parent)->addMsg();
-			if(msg2)
+			if(EXPECT_FALSE(msg2))
 				static_cast<VFSDevice*>(parent)->addMsg();
 			Event::wakeup(EVI_CLIENT,(evobj_t)parent);
 		}
@@ -355,40 +355,40 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	/* wait until a message arrives */
 	SpinLock::acquire(&waitLock);
 	while((msg = getMsg(t,list,flags)) == NULL) {
-		if(!block) {
+		if(EXPECT_FALSE(!block)) {
 			SpinLock::release(&waitLock);
 			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
-		if(closed) {
+		if(EXPECT_FALSE(closed)) {
 			SpinLock::release(&waitLock);
 			return -EDESTROYED;
 		}
 		Event::wait(t,event,(evobj_t)waitNode);
 		SpinLock::release(&waitLock);
 
-		if(ignoreSigs)
+		if(EXPECT_FALSE(ignoreSigs))
 			Thread::switchNoSigs();
 		else
 			Thread::switchAway();
 
-		if(Signals::hasSignalFor(t->getTid()))
+		if(EXPECT_FALSE(Signals::hasSignalFor(t->getTid())))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
-		if(!isAlive())
+		if(EXPECT_FALSE(!isAlive()))
 			return -EDESTROYED;
 		SpinLock::acquire(&waitLock);
 	}
 
 	if(event == EVI_CLIENT) {
 		VFSNode::acquireTree();
-		if(parent)
+		if(EXPECT_TRUE(parent))
 			static_cast<VFSDevice*>(parent)->remMsg();
 		VFSNode::releaseTree();
 		curClient = msg->thread;
 	}
 	SpinLock::release(&waitLock);
-	if(data && msg->length > size) {
+	if(EXPECT_FALSE(data && msg->length > size)) {
 		Cache::free(msg);
 		return -EINVAL;
 	}
@@ -401,9 +401,9 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
 	Thread::addHeapAlloc(msg);
-	if(data)
+	if(EXPECT_TRUE(data))
 		memcpy(data,msg + 1,msg->length);
-	if(id)
+	if(EXPECT_FALSE(id))
 		*id = msg->id;
 	Thread::remHeapAlloc(msg);
 

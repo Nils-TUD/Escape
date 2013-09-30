@@ -189,17 +189,17 @@ ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 
 ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t size1,
 		USER const void *data2,size_t size2) {
-	if(devNo != VFS_DEV_NO)
+	if(EXPECT_FALSE(devNo != VFS_DEV_NO))
 		return -EPERM;
 	/* the device-messages (open, read, write, close) are always allowed */
-	if(!IS_DEVICE_MSG(id) && !(flags & VFS_MSGS))
+	if(EXPECT_FALSE(!IS_DEVICE_MSG(id) && !(flags & VFS_MSGS)))
 		return -EACCES;
 
-	if(!IS_CHANNEL(node->getMode()))
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
 	ssize_t err = static_cast<VFSChannel*>(node)->send(pid,flags,id,data1,size1,data2,size2);
-	if(err == 0 && pid != KERNEL_PID) {
+	if(EXPECT_TRUE(err == 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->getStats().output += size1 + size2;
@@ -209,15 +209,15 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 
 ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t size,
 		bool forceBlock) {
-	if(devNo != VFS_DEV_NO)
+	if(EXPECT_FALSE(devNo != VFS_DEV_NO))
 		return -EPERM;
 
-	if(!IS_CHANNEL(node->getMode()))
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
 	ssize_t err = static_cast<VFSChannel*>(node)->receive(pid,flags,id,data,size,
 			forceBlock || !(flags & VFS_NOBLOCK),forceBlock);
-	if(err > 0 && pid != KERNEL_PID) {
+	if(EXPECT_TRUE(err > 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->getStats().input += err;

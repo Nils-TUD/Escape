@@ -284,21 +284,21 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(!PageDir::isInUserSpace((uintptr_t)data,size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 	/* can't be sent by user-programs */
-	if(IS_DEVICE_MSG(id))
+	if(EXPECT_FALSE(IS_DEVICE_MSG(id)))
 		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
 	ssize_t res = file->sendMsg(pid,id,data,size,NULL,0);
 	FileDesc::release(file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -310,18 +310,18 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(!PageDir::isInUserSpace((uintptr_t)data,size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
 	ssize_t res = file->receiveMsg(pid,id,data,size,false);
 	FileDesc::release(file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }

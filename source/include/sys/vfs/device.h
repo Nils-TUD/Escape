@@ -82,19 +82,17 @@ public:
 	 * Increases the message-count for this device
 	 */
 	void addMsg() {
-		SpinLock::acquire(&lock);
+		// we hold the waitlock currently anyway, therefore unlocked
 		msgCount++;
-		SpinLock::release(&lock);
 	}
 
 	/**
 	 * Decreases the message-count for this device
 	 */
 	void remMsg() {
-		SpinLock::acquire(&lock);
+		// we hold the waitlock currently anyway, therefore unlocked
 		assert(msgCount > 0);
 		msgCount--;
-		SpinLock::release(&lock);
 	}
 
 	/**

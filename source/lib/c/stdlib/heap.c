@@ -455,7 +455,7 @@ void printheap(void) {
 	printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+		printf("\t%p: addr=%p, size=0x%x, next=%p\n",area,area->address,area->size,area->next);
 		area = area->next;
 	}
 

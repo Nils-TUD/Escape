@@ -25,6 +25,7 @@
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/messages.h>
+#include <esc/thread.h>
 #include <signal.h>
 #include <errno.h>
 #include <stdio.h>
@@ -39,29 +40,86 @@
 #define RETRY_COUNT		3
 
 typedef struct {
+	int fd;
 	uint device;
 	uint partition;
-} sId2Fd;
+} sDrive;
 
 static ulong handleRead(sATADevice *device,sPartition *part,uint offset,uint count);
 static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint offset,uint count);
-static sId2Fd *getDevice(int sid);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
 static size_t drvCount = 0;
-static int devices[DEVICE_COUNT * PARTITION_COUNT];
-static sId2Fd id2Fd[DEVICE_COUNT * PARTITION_COUNT];
+static sDrive drives[DEVICE_COUNT * PARTITION_COUNT];
 /* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
  * may not have more memory and can't do anything about it */
 static uint16_t buffer[MAX_RW_SIZE / sizeof(uint16_t)];
+/* this lock is required for the shared access to the controller, for example. so, we could do
+ * better but I guess atm this is not really necessary. thus, the simple version */
+static tULock atalock;
 
-static sMsg msg;
+static int drive_thread(void *arg) {
+	sMsg msg;
+	sDrive *dev = (sDrive*)arg;
+	sATADevice *ataDev = ctrl_getDevice(dev->device);
+	sPartition *part = ataDev ? ataDev->partTable + dev->partition : NULL;
+	if(ataDev == NULL || part == NULL || ataDev->present == 0 || part->present == 0)
+		error("[ATA] Invalid device/partition");
+
+	while(1) {
+		msgid_t mid;
+		int fd = getwork(&dev->fd,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0) {
+			if(fd != -EINTR)
+				printe("[ATA] Unable to get client");
+		}
+		else {
+			ATA_PR2("Got message %d",mid);
+			switch(mid) {
+				case MSG_DEV_READ: {
+					uint offset = msg.args.arg1;
+					uint count = msg.args.arg2;
+					locku(&atalock);
+					msg.args.arg1 = handleRead(ataDev,part,offset,count);
+					msg.args.arg2 = true;
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					if(msg.args.arg1 > 0)
+						send(fd,MSG_DEV_READ_RESP,buffer,count);
+					unlocku(&atalock);
+				}
+				break;
+
+				case MSG_DEV_WRITE: {
+					uint offset = msg.args.arg1;
+					uint count = msg.args.arg2;
+					locku(&atalock);
+					msg.args.arg1 = handleWrite(ataDev,part,fd,offset,count);
+					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+					unlocku(&atalock);
+				}
+				break;
+
+				case MSG_DISK_GETSIZE: {
+					msg.args.arg1 = part->size * ataDev->secSize;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
+				default:
+					msg.args.arg1 = -ENOTSUP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
+			}
+			close(fd);
+			ATA_PR2("Done\n");
+		}
+	}
+}
 
 int main(int argc,char **argv) {
 	size_t i;
-	msgid_t mid;
 	bool useDma = true;
 	FILE *f;
 
@@ -85,64 +143,11 @@ int main(int argc,char **argv) {
 	f = fopen("/system/devices/ata","w");
 	fclose(f);
 
-	while(1) {
-		int drvFd;
-		int fd = getwork(devices,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("[ATA] Unable to get client");
-		}
-		else {
-			sId2Fd *dev = getDevice(drvFd);
-			sATADevice *ataDev = NULL;
-			sPartition *part = NULL;
-			if(dev) {
-				ataDev = ctrl_getDevice(dev->device);
-				if(ataDev)
-					part = ataDev->partTable + dev->partition;
-			}
-			if(ataDev == NULL || part == NULL || ataDev->present == 0 || part->present == 0) {
-				/* should never happen */
-				printe("[ATA] Invalid device");
-				continue;
-			}
-
-			ATA_PR2("Got message %d",mid);
-			switch(mid) {
-				case MSG_DEV_READ: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					msg.args.arg1 = handleRead(ataDev,part,offset,count);
-					msg.args.arg2 = true;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buffer,count);
-				}
-				break;
-
-				case MSG_DEV_WRITE: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					msg.args.arg1 = handleWrite(ataDev,part,fd,offset,count);
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DISK_GETSIZE: {
-					msg.args.arg1 = part->size * ataDev->secSize;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-			close(fd);
-			ATA_PR2("Done\n");
-		}
+	for(i = 1; i < drvCount; i++) {
+		if(startthread(drive_thread, drives + i) < 0)
+			error("[ATA] Unable to start thread");
 	}
+	drive_thread(drives + 0);
 
 	/* clean up */
 	relports(ATA_REG_BASE_PRIMARY,8);
@@ -150,7 +155,7 @@ int main(int argc,char **argv) {
 	relport(ATA_REG_BASE_PRIMARY + ATA_REG_CONTROL);
 	relport(ATA_REG_BASE_SECONDARY + ATA_REG_CONTROL);
 	for(i = 0; i < drvCount; i++)
-		close(devices[i]);
+		close(drives[i].fd);
 	return EXIT_SUCCESS;
 }
 
@@ -234,8 +239,8 @@ static void initDrives(void) {
 				else
 					snprintf(name,sizeof(name),"cd%c%d",'a' + ataDev->id,p + 1);
 				strcpy(path + SSTRLEN("/dev/"),name);
-				devices[drvCount] = createdev(path,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE);
-				if(devices[drvCount] < 0) {
+				int fd = createdev(path,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE);
+				if(fd < 0) {
 					ATA_LOG("Drive %d, Partition %d: Unable to register device '%s'",
 							ataDev->id,p + 1,name);
 				}
@@ -247,8 +252,9 @@ static void initDrives(void) {
 					if(chown(path,-1,GROUP_STORAGE) < 0)
 						ATA_LOG("Unable to set group for '%s'",path);
 					createVFSEntry(ataDev,ataDev->partTable + p,name);
-					id2Fd[drvCount].device = ataDev->id;
-					id2Fd[drvCount].partition = p;
+					drives[drvCount].device = ataDev->id;
+					drives[drvCount].partition = p;
+					drives[drvCount].fd = fd;
 					drvCount++;
 				}
 			}
@@ -303,13 +309,4 @@ static void createVFSEntry(sATADevice *ataDev,sPartition *part,const char *name)
 	}
 
 	fclose(f);
-}
-
-static sId2Fd *getDevice(int sid) {
-	size_t i;
-	for(i = 0; i < drvCount; i++) {
-		if(devices[i] == sid)
-			return id2Fd + i;
-	}
-	return NULL;
 }

@@ -48,7 +48,7 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[RTC] Unable to get work");
 		else {

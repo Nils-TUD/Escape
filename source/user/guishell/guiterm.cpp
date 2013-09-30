@@ -71,7 +71,7 @@ void GUITerm::run() {
 	sMsg msg;
 	msgid_t mid;
 	while(_run) {
-		int fd = getwork(&_sid,1,nullptr,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getwork(_sid,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			if(fd != -ENOCLIENT)
 				printe("[GUISH] Unable to get client");

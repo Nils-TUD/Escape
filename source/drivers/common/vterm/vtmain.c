@@ -113,7 +113,7 @@ static int vtermThread(void *vterm) {
 	sMsg msg;
 	msgid_t mid;
 	while(1) {
-		int fd = getwork(&vt->sid,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(vt->sid,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VTERM] Unable to get work");
 		else {

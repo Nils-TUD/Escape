@@ -125,7 +125,7 @@ static int keymapThread(A_UNUSED void *arg) {
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
-		int fd = getwork(&ids[0],1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(ids[0],&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[KMM] Unable to get work");
 		else {
@@ -190,7 +190,7 @@ static int keyeventsThread(A_UNUSED void *arg) {
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
-		int fd = getwork(&ids[1],1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(ids[1],&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[KMM] Unable to get work");
 		else {

@@ -91,18 +91,15 @@ A_CHECKRET static inline int getclient(int fd,inode_t cid) {
  * If a client wants to be served, the message is fetched from him and a file-descriptor is returned.
  * Note that you may be interrupted by a signal!
  *
- * @param fds an array with file-descs to check
- * @param fdCount the number of file-descs
- * @param drv will be set to the file-desc from which the client has been taken
+ * @param fd the device fd
  * @param mid will be set to the msg-id
  * @param msg the message
  * @param size the (max) size of the message
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-A_CHECKRET static inline int getwork(int *fds,size_t fdCount,int *drv,msgid_t *mid,void *msg,
-                                     size_t size,uint flags) {
-	return syscall7(SYSCALL_GETWORK,(ulong)fds,fdCount,(ulong)drv,(ulong)mid,(ulong)msg,size,flags);
+A_CHECKRET static inline int getwork(int fd,msgid_t *mid,void *msg,size_t size,uint flags) {
+	return syscall4(SYSCALL_GETWORK,(fd << 1) | flags,(ulong)mid,(ulong)msg,size);
 }
 
 /**

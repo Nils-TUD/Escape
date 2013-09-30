@@ -70,7 +70,7 @@ static int drive_thread(void *arg) {
 
 	while(1) {
 		msgid_t mid;
-		int fd = getwork(&dev->fd,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(dev->fd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[ATA] Unable to get client");

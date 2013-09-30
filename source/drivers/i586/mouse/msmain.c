@@ -145,7 +145,7 @@ int main(void) {
 				fcntl(sid,F_SETDATA,true);
 		}
 
-		fd = getwork(&sid,1,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(sid,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[MOUSE] Unable to get work");

@@ -62,7 +62,7 @@ int main(void) {
 		error("Unable to start thread for the infodev");
 
 	while(1) {
-		int fd = getwork(&drvId,1,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[WINM] Unable to get work");
 		else {

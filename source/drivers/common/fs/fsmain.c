@@ -92,7 +92,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to set permissions for /dev/fs");
 
 	while(true) {
-		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
 		if(fd < 0) {
 			if(fd != -EINTR) {
 				/* no requests anymore and we should shutdown? */

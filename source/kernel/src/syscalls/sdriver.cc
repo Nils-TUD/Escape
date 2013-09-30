@@ -104,50 +104,37 @@ int Syscalls::getclient(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
-	OpenFile *files[MAX_GETWORK_DEVICES];
-	const int *fds = (const int*)SYSC_ARG1(stack);
-	size_t fdCount = SYSC_ARG2(stack);
-	int *drv = (int*)SYSC_ARG3(stack);
-	msgid_t *id = (msgid_t*)SYSC_ARG4(stack);
-	void *data = (void*)SYSC_ARG5(stack);
-	size_t size = SYSC_ARG6(stack);
-	uint flags = (uint)SYSC_ARG7(stack);
+	int fd = SYSC_ARG1(stack) >> 1;
+	uint flags = SYSC_ARG1(stack) & 1;
+	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
+	void *data = (void*)SYSC_ARG3(stack);
+	size_t size = SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
+	OpenFile *file;
 
 	/* validate pointers */
-	if(fdCount == 0 || fdCount > MAX_GETWORK_DEVICES)
-		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)drv,sizeof(int)))
-		SYSC_ERROR(stack,-EFAULT);
 	if(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(!PageDir::isInUserSpace((uintptr_t)data,size))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* translate to files */
-	for(size_t i = 0; i < fdCount; i++) {
-		files[i] = FileDesc::request(fds[i]);
-		if(files[i] == NULL) {
-			for(; i > 0; i--)
-				FileDesc::release(files[i - 1]);
-			SYSC_ERROR(stack,-EBADF);
-		}
-	}
+	file = FileDesc::request(fd);
+	if(file == NULL)
+		SYSC_ERROR(stack,-EBADF);
 
 	/* open a client */
 	size_t index;
 	VFSNode *client;
-	ssize_t res = OpenFile::getClient(files,fdCount,&index,&client,flags);
+	ssize_t res = OpenFile::getClient(&file,1,&index,&client,flags);
 
 	/* release files */
-	for(size_t i = 0; i < fdCount; i++)
-		FileDesc::release(files[i]);
+	FileDesc::release(file);
 
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
 	/* open file */
-	OpenFile *file;
 	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,client,client->getNo(),VFS_DEV_NO,&file);
 	VFSNode::release(client);
 	if(res < 0) {
@@ -164,13 +151,11 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	}
 
 	/* assoc with fd */
-	int fd = FileDesc::assoc(file);
-	if(fd < 0) {
+	int cfd = FileDesc::assoc(file);
+	if(cfd < 0) {
 		file->close(pid);
-		SYSC_ERROR(stack,fd);
+		SYSC_ERROR(stack,cfd);
 	}
 
-	if(drv)
-		*drv = fds[index];
-	SYSC_RET1(stack,fd);
+	SYSC_RET1(stack,cfd);
 }

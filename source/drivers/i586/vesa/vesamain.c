@@ -134,7 +134,7 @@ int main(void) {
 
 	reqc = 0;
 	while(1) {
-		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0 || reqc >= MAX_REQC) {
 			reqc = 0;
 			vesa_doUpdate();

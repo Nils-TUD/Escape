@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+#define DEBUG_SPINLOCKS		0
+
 class SpinLock {
 	SpinLock() = delete;
 

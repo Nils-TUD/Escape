@@ -17,23 +17,40 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
-#include <sys/common.h>
-#include <sys/arch/i586/atomic.h>
+#include <sys/spinlock.h>
+#include <sys/task/thread.h>
 #include <sys/cpu.h>
+#include <sys/util.h>
+#include <stdarg.h>
 
-#if !DEBUG_SPINLOCKS
-inline void SpinLock::acquire(klock_t *l) {
-    while(!Atomic::cmpnswap(l, 0, 1))
-        CPU::pause();
+#if DEBUG_SPINLOCKS
+#define MAX_WAIT_SECS		2
+
+static void panic(const char *msg,...) {
+	static bool havePaniced = false;
+	va_list ap;
+	va_start(ap,msg);
+	if(havePaniced)
+		return;
+	havePaniced = true;
+	Util::vpanic(msg,ap);
+	va_end(ap);
+}
+
+void SpinLock::acquire(klock_t *l) {
+	Thread *t = Thread::getRunning();
+	unsigned id = t->getTid() + 1;
+	if(*l == id) {
+		panic("Self-deadlock");
+		return;
+	}
+	uint64_t max = CPU::rdtsc() + (MAX_WAIT_SECS * CPU::getSpeed());
+	while(!Atomic::cmpnswap(l, 0U, id)) {
+		if(CPU::rdtsc() > max) {
+			panic("Acquiring spinlock %p took too long",l);
+			return;
+		}
+		CPU::pause();
+	}
 }
 #endif
-
-inline bool SpinLock::tryAcquire(klock_t *l) {
-	return Atomic::cmpnswap(l, 0, 1);
-}
-
-inline void SpinLock::release(klock_t *l) {
-	asm volatile ("movl	$0,%0" : : "m"(*l) : "memory");
-}

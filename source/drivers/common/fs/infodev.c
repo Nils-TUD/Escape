@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/messages.h>
+#include <esc/thread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -35,7 +36,6 @@ typedef struct {
 } sFSInfo;
 
 static void sigUsr1(A_UNUSED int sig);
-static sFSInfo *getById(int id);
 static void getMounts(FILE *str);
 static void getFSInsts(FILE *str);
 
@@ -43,54 +43,49 @@ static sFSInfo infos[] = {
 	{"/system/mounts",getMounts},
 	{"/system/filesystems",getFSInsts},
 };
-static int ids[ARRAY_SIZE(infos)];
 static volatile bool run = true;
 
-int infodev_thread(A_UNUSED void *arg) {
+static int infodev_handler(void *arg) {
 	sMsg msg;
-	int id;
-	msgid_t mid;
-	size_t i;
+	sFSInfo *info = (sFSInfo*)arg;
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce USR1-signal-handler");
 
-	for(i = 0; i < ARRAY_SIZE(infos); i++) {
-		ids[i] = createdev(infos[i].path,DEV_TYPE_FILE,DEV_READ);
-		if(ids[i] < 0)
-			error("Unable to create file %s",infos[i].path);
-		if(chmod(infos[i].path,0644) < 0)
-			error("Unable to chmod %s",infos[i].path);
-	}
+	int id = createdev(info->path,DEV_TYPE_FILE,DEV_READ);
+	if(id < 0)
+		error("Unable to create file %s",info->path);
+	if(chmod(info->path,0644) < 0)
+		error("Unable to chmod %s",info->path);
 
 	while(run) {
-		int fd = getwork(ids,ARRAY_SIZE(ids),&id,&mid,&msg,sizeof(msg),0);
+		msgid_t mid;
+		int fd = getwork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[FSINFO] Unable to get work");
 		}
 		else {
-			sFSInfo *info = getById(id);
-			if(info == NULL)
-				printe("[FSINFO] Invalid device-id %d",id);
-			else {
-				switch(mid) {
-					case MSG_DEV_READ:
-						handleFileRead(fd,&msg,info->getData);
-						break;
+			switch(mid) {
+				case MSG_DEV_READ:
+					handleFileRead(fd,&msg,info->getData);
+					break;
 
-					default:
-						msg.args.arg1 = -ENOTSUP;
-						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-						break;
-				}
+				default:
+					msg.args.arg1 = -ENOTSUP;
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					break;
 			}
 			close(fd);
 		}
 	}
-
-	for(i = 0; i < ARRAY_SIZE(infos); i++)
-		close(ids[i]);
+	close(id);
 	return 0;
+}
+
+int infodev_thread(A_UNUSED void *arg) {
+	if(startthread(infodev_handler, infos + 1) < 0)
+		error("Unable to start thread");
+	return infodev_handler(infos + 0);
 }
 
 void infodev_shutdown(void) {
@@ -100,15 +95,6 @@ void infodev_shutdown(void) {
 
 static void sigUsr1(A_UNUSED int sig) {
 	run = false;
-}
-
-static sFSInfo *getById(int id) {
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(ids); i++) {
-		if(ids[i] == id)
-			return infos + i;
-	}
-	return NULL;
 }
 
 static void getMounts(FILE *str) {

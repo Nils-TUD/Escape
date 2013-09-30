@@ -12,5 +12,5 @@ sudo rm -Rf $dir
 dd if=$1/bootloader/mmix/stage1/stage1.bin of=$1/hd.img bs=512 count=1 conv=notrunc 1>&2
 dd if=$1/bootloader/mmix/stage2/stage2.elf of=$1/hd.img bs=512 seek=1 conv=notrunc 1>&2
 
-$gimsim -r $gimmon -o log.txt -c -t 1 -i --script=boot/$ESC_TARGET/gimmix.start \
+$gimsim -r $gimmon -o log.txt -m 128 -c -t 1 -i --script=boot/$ESC_TARGET/gimmix.start \
 	-d $1/hd.img -b -s $1/map/escape.map $2

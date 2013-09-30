@@ -21,6 +21,8 @@
 
 #include <esc/common.h>
 
+#define PANIC_ON_PAGEFAULT	1
+
 class Thread;
 
 class Interrupts : public InterruptsBase {

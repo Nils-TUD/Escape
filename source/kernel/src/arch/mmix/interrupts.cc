@@ -186,7 +186,11 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	KSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
 	Log::get().writef("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(-res),res);
+#if PANIC_ON_PAGEFAULT
+	Util::panic("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
+#else
 	Proc::segFault();
+#endif
 }
 
 void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {

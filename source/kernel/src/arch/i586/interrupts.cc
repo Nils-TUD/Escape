@@ -233,8 +233,11 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 
 	printPFInfo(Log::get(),t,stack,addr);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(-res),res);
-	/* TODO Proc::segFault();*/
+#if PANIC_ON_PAGEFAULT
 	Util::panic("Process segfaulted");
+#else
+	Proc::segFault();
+#endif
 }
 
 void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {

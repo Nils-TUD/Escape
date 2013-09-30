@@ -72,30 +72,10 @@ void *getThreadVal(uint key) {
 	return NULL;
 }
 
-int wait(uint events,evobj_t object) {
-	sWaitObject obj;
-	obj.events = events;
-	obj.object = object;
-	return waitmuntil(&obj,1,0);
-}
-
-int waituntil(uint events,evobj_t object,time_t max) {
-	sWaitObject obj;
-	obj.events = events;
-	obj.object = object;
-	return waitmuntil(&obj,1,max);
-}
-
 int waitunlock(uint events,evobj_t object,uint ident) {
-	sWaitObject obj;
-	obj.events = events;
-	obj.object = object;
-	return syscall4(SYSCALL_WAITUNLOCK,(ulong)&obj,1,ident,false);
+	return syscall4(SYSCALL_WAITUNLOCK,events,object,ident,false);
 }
 
 int waitunlockg(uint events,evobj_t object,uint ident) {
-	sWaitObject obj;
-	obj.events = events;
-	obj.object = object;
-	return syscall4(SYSCALL_WAITUNLOCK,(ulong)&obj,1,ident,true);
+	return syscall4(SYSCALL_WAITUNLOCK,events,object,ident,true);
 }

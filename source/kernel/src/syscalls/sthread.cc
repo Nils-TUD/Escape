@@ -36,10 +36,9 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int doWait(const Event::WaitObject *uobjects,size_t objCount,time_t maxWaitTime,
-		pid_t pid,ulong ident);
-static int doWaitLoop(const Event::WaitObject *uobjects,size_t objCount,
-		OpenFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident);
+static int doWait(uint events,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident);
+static int doWaitLoop(uint events,evobj_t object,OpenFile *file,time_t maxWaitTime,
+					  pid_t pid,ulong ident);
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
@@ -105,35 +104,25 @@ int Syscalls::yield(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	const Event::WaitObject *uobjects = (const Event::WaitObject*)SYSC_ARG1(stack);
-	size_t objCount = SYSC_ARG2(stack);
+	uint events = (uint)SYSC_ARG1(stack);
+	evobj_t object = (evobj_t)SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
 
-	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
-		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
-		SYSC_ERROR(stack,-EFAULT);
-
-	int res = doWait(uobjects,objCount,maxWaitTime,KERNEL_PID,0);
+	int res = doWait(events,object,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
-	const Event::WaitObject *uobjects = (const Event::WaitObject*)SYSC_ARG1(stack);
-	size_t objCount = SYSC_ARG2(stack);
+	uint events = (uint)SYSC_ARG1(stack);
+	evobj_t object = (evobj_t)SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(objCount == 0 || objCount > MAX_WAIT_OBJECTS)
-		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)uobjects,objCount * sizeof(Event::WaitObject)))
-		SYSC_ERROR(stack,-EFAULT);
-
 	/* wait and release the lock before going to sleep */
-	int res = doWait(uobjects,objCount,0,global ? INVALID_PID : pid,ident);
+	int res = doWait(events,object,0,global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -206,53 +195,43 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int doWait(USER const Event::WaitObject *uobjects,size_t objCount,
-		time_t maxWaitTime,pid_t pid,ulong ident) {
-	OpenFile *objFiles[MAX_WAIT_OBJECTS];
+static int doWait(uint events,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident) {
+	OpenFile *file = NULL;
 	/* first request the files from the file-descriptors */
-	for(size_t i = 0; i < objCount; i++) {
-		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			/* translate fd to node-number */
-			objFiles[i] = FileDesc::request((int)uobjects[i].object);
-			if(objFiles[i] == NULL) {
-				for(; i > 0; i--)
-					FileDesc::release(objFiles[i - 1]);
-				return -EBADF;
-			}
-		}
+	if(events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+		/* translate fd to node-number */
+		file = FileDesc::request((int)object);
+		if(file == NULL)
+			return -EBADF;
 	}
 
 	/* now wait */
-	int res = doWaitLoop(uobjects,objCount,objFiles,maxWaitTime,pid,ident);
+	int res = doWaitLoop(events,object,file,maxWaitTime,pid,ident);
 
 	/* release them */
-	for(size_t i = 0; i < objCount; i++) {
-		if(uobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
-			FileDesc::release(objFiles[i]);
-	}
+	if(events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
+		FileDesc::release(file);
 	return res;
 }
 
-static int doWaitLoop(USER const Event::WaitObject *uobjects,size_t objCount,
-		OpenFile **objFiles,time_t maxWaitTime,pid_t pid,ulong ident) {
-	Event::WaitObject kobjects[MAX_WAIT_OBJECTS];
+static int doWaitLoop(uint events,evobj_t object,OpenFile *file,time_t maxWaitTime,
+					  pid_t pid,ulong ident) {
+	Event::WaitObject waitobj;
 	/* copy to kobjects and check */
-	for(size_t i = 0; i < objCount; i++) {
-		kobjects[i].events = uobjects[i].events;
-		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
-			return -EINVAL;
-		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			/* check flags */
-			if(kobjects[i].events & EV_CLIENT) {
-				if(kobjects[i].events & ~(EV_CLIENT))
-					return -EINVAL;
-			}
-			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
+	waitobj.events = events;
+	if(waitobj.events & ~(EV_USER_WAIT_MASK))
+		return -EINVAL;
+	if(waitobj.events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+		/* check flags */
+		if(waitobj.events & EV_CLIENT) {
+			if(waitobj.events & ~EV_CLIENT)
 				return -EINVAL;
-			kobjects[i].object = (evobj_t)objFiles[i];
 		}
-		else
-			kobjects[i].object = uobjects[i].object;
+		else if(waitobj.events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
+			return -EINVAL;
+		waitobj.object = (evobj_t)file;
 	}
-	return VFS::waitFor(kobjects,objCount,maxWaitTime,true,pid,ident);
+	else
+		waitobj.object = object;
+	return VFS::waitFor(&waitobj,1,maxWaitTime,true,pid,ident);
 }

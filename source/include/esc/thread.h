@@ -36,12 +36,6 @@
 /* the thread-entry-point-function */
 typedef int (*fThreadEntry)(void *arg);
 
-/* an object to wait for */
-typedef struct {
-	uint events;
-	evobj_t object;
-} sWaitObject;
-
 typedef long tULock;
 
 #ifdef __cplusplus
@@ -119,28 +113,15 @@ static inline int sleep(time_t msecs) {
 }
 
 /**
- * The same as waitm(), but waits at most <max> milliseconds.
+ * The same as wait(), but waits at most <max> milliseconds.
  *
- * @param objects the objects to wait for
- * @param objCount the number of objects
+ * @param events the events to wait for
+ * @param object the object to wait for
  * @param max the maximum number of milliseconds to wait (0 = unlimited)
  * @return 0 on success and a negative error-code if failed
  */
-static inline int waitmuntil(sWaitObject *objects,size_t objCount,time_t max) {
-	return syscall3(SYSCALL_WAIT,(ulong)objects,objCount,max);
-}
-
-/**
- * Puts the current thread to sleep until one of the given events occurrs. Note that you will
- * always be waked up for signals!
- * For EV_RECEIVED_MSG, EV_DATA_READABLE and EV_CLIENT the object is the file-descriptor!
- *
- * @param objects the objects to wait for
- * @param objCount the number of objects
- * @return 0 on success and a negative error-code if failed
- */
-static inline int waitm(sWaitObject *objects,size_t objCount) {
-	return waitmuntil(objects,objCount,0);
+static inline int waituntil(uint events,evobj_t object,time_t max) {
+	return syscall3(SYSCALL_WAIT,events,object,max);
 }
 
 /**
@@ -150,17 +131,9 @@ static inline int waitm(sWaitObject *objects,size_t objCount) {
  * @param object the object to wait for
  * @return 0 on success and a negative error-code if failed
  */
-int wait(uint events,evobj_t object);
-
-/**
- * The same as wait(), but waits at most <max> milliseconds.
- *
- * @param events the events to wait for
- * @param object the object to wait for
- * @param max the maximum number of milliseconds to wait (0 = unlimited)
- * @return 0 on success and a negative error-code if failed
- */
-int waituntil(uint events,evobj_t object,time_t max);
+static inline int wait(uint events,evobj_t object) {
+	return waituntil(events,object,0);
+}
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be

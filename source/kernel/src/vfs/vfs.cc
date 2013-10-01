@@ -289,20 +289,20 @@ bool VFS::hasWork(VFSNode *node) {
 	return IS_DEVICE(node->getMode()) && static_cast<VFSDevice*>(node)->hasWork();
 }
 
-int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,bool block,
-		pid_t pid,ulong ident) {
+int VFS::waitFor(uint events,evobj_t object,time_t maxWaitTime,bool block,pid_t pid,ulong ident) {
 	Thread *t = Thread::getRunning();
 	bool isFirstWait = true;
+	Event::WaitObject wait;
 	int res;
 
 	/* transform the files into vfs-nodes */
-	for(size_t i = 0; i < objCount; i++) {
-		if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			OpenFile *file = (OpenFile*)objects[i].object;
-			if(file->getDev() != VFS_DEV_NO)
-				return -EPERM;
-			objects[i].object = (evobj_t)file->getNode();
-		}
+	wait.events = events;
+	wait.object = object;
+	if(events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+		OpenFile *file = (OpenFile*)object;
+		if(file->getDev() != VFS_DEV_NO)
+			return -EPERM;
+		wait.object = (evobj_t)file->getNode();
 	}
 
 	while(true) {
@@ -312,21 +312,19 @@ int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,b
 		 * one. */
 		SpinLock::acquire(&waitLock);
 		/* check whether we can wait */
-		for(size_t i = 0; i < objCount; i++) {
-			if(objects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-				VFSNode *n = (VFSNode*)objects[i].object;
-				if(!n->isAlive()) {
-					SpinLock::release(&waitLock);
-					res = -EDESTROYED;
-					goto error;
-				}
-				if((objects[i].events & EV_CLIENT) && hasWork(n))
-					goto noWait;
-				else if((objects[i].events & EV_RECEIVED_MSG) && hasMsg(n))
-					goto noWait;
-				else if((objects[i].events & EV_DATA_READABLE) && hasData(n))
-					goto noWait;
+		if(wait.events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+			VFSNode *n = (VFSNode*)wait.object;
+			if(!n->isAlive()) {
+				SpinLock::release(&waitLock);
+				res = -EDESTROYED;
+				goto error;
 			}
+			if((wait.events & EV_CLIENT) && hasWork(n))
+				goto noWait;
+			else if((wait.events & EV_RECEIVED_MSG) && hasMsg(n))
+				goto noWait;
+			else if((wait.events & EV_DATA_READABLE) && hasData(n))
+				goto noWait;
 		}
 
 		if(!block) {
@@ -335,7 +333,7 @@ int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,b
 		}
 
 		/* wait */
-		if(!Event::waitObjects(t,objects,objCount)) {
+		if(!Event::waitObjects(t,&wait,1)) {
 			SpinLock::release(&waitLock);
 			res = -ENOMEM;
 			goto error;
@@ -352,10 +350,8 @@ int VFS::waitFor(Event::WaitObject *objects,size_t objCount,time_t maxWaitTime,b
 			goto error;
 		}
 		/* if we're waiting for other events, too, we have to wake up */
-		for(size_t i = 0; i < objCount; i++) {
-			if((objects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
-				goto done;
-		}
+		if((wait.events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
+			goto done;
 		isFirstWait = false;
 	}
 

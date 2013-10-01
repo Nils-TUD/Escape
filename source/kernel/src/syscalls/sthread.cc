@@ -233,5 +233,5 @@ static int doWaitLoop(uint events,evobj_t object,OpenFile *file,time_t maxWaitTi
 	}
 	else
 		waitobj.object = object;
-	return VFS::waitFor(&waitobj,1,maxWaitTime,true,pid,ident);
+	return VFS::waitFor(waitobj.events,waitobj.object,maxWaitTime,true,pid,ident);
 }

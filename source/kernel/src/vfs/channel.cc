@@ -163,10 +163,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		return res;
 
 	/* wait until there is data available, if necessary */
-	Event::WaitObject obj;
-	obj.events = EV_DATA_READABLE;
-	obj.object = (evobj_t)file;
-	res = VFS::waitFor(&obj,1,0,file->shouldBlock(),KERNEL_PID,0);
+	res = VFS::waitFor(EV_DATA_READABLE,(evobj_t)file,0,file->shouldBlock(),KERNEL_PID,0);
 	if(res < 0)
 		return res;
 

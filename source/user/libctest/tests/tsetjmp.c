@@ -39,12 +39,14 @@ sTestModule tModSetjmp = {
 
 static sJumpEnv env;
 
+#ifdef __i386__
 static void myfunc(int i) {
 	if(i > 0)
 		myfunc(i - 1);
 	else
 		longjmp(&env,1);
 }
+#endif
 
 static void test_setjmp(void) {
 	test_caseStart("Basic setjmp and longjmp");

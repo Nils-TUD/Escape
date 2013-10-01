@@ -27,7 +27,7 @@ void mmix_locku(tULock *l) {
 		__asm__ volatile (
 			"CSWAP	%0,%1,0\n"
 			: "+r"(val)
-			: "g"(l)
+			: "r"(l)
 		);
 		if(val)
 			break;

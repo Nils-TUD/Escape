@@ -154,7 +154,7 @@ void SMPBase::print(OStream &os) {
 		Thread *t = cpu->thread;
 		os.writef("\t%3s:%2x, running %d(%d:%s), lastUpdate=%Lu, lastTotal=%Lu, lastCycles=%Lu\n",
 				cpu->bootstrap ? "BSP" : "AP",cpu->id,t->getTid(),t->getProc()->getPid(),
-				t->getProc()->getCommand(),cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);
+				t->getProc()->getProgram(),cpu->lastUpdate,cpu->lastTotal,cpu->lastCycles);
 	}
 }
 

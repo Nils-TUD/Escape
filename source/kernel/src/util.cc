@@ -94,7 +94,7 @@ void Util::vpanic(const char *fmt,va_list ap) {
 
 	/* write information about the running thread to log/screen */
 	if(t != NULL)
-		vl.writef("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getCommand());
+		vl.writef("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getProgram());
 	printStackTrace(vl,getKernelStackTrace());
 	if(t) {
 		printUserState(vl);

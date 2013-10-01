@@ -390,7 +390,7 @@ void PhysMem::print(OStream &os) {
 	os.writef("Swap-in-jobs:\n");
 	for(SwapInJob *job = siJobList; job != NULL; job = job->next) {
 		os.writef("\tThread %d:%d:%s @ %p\n",job->thread->getTid(),job->thread->getProc()->getPid(),
-				job->thread->getProc()->getCommand(),job->addr);
+				job->thread->getProc()->getProgram(),job->addr);
 	}
 }
 

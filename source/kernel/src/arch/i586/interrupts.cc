@@ -148,7 +148,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 		intrpt->handler(t,stack);
 	else {
 		Log::get().writef("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
-				intrpt->name,stack->getIP(),t->getProc()->getPid(),t->getProc()->getCommand());
+				intrpt->name,stack->getIP(),t->getProc()->getPid(),t->getProc()->getProgram());
 	}
 
 	/* handle signal */
@@ -165,7 +165,7 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Log::get().writef("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->getIP(),
-			t->getProc()->getPid(),t->getProc()->getCommand());
+			t->getProc()->getPid(),t->getProc()->getProgram());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;

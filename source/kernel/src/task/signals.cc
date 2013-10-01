@@ -219,7 +219,7 @@ void Signals::print(OStream &os) {
 	SpinLock::acquire(&listLock);
 	for(auto it = sigThreads.cbegin(); it != sigThreads.cend(); ++it) {
 		const Thread *t = it->thread;
-		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand());
+		os.writef("\tThread %d (%d:%s)\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram());
 		os.writef("\t\tpending: %zu\n",t->pending.count);
 		os.writef("\t\tcurrent: %d\n",t->currentSignal);
 		os.writef("\t\thandler:\n");

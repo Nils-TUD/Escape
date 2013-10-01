@@ -44,7 +44,7 @@ public:
 	virtual const char *getInfo(uintptr_t) {
 		static char procName[60];
 		OStringStream os(procName,sizeof(procName));
-		os.writef("Process %d (%s)",proc->getPid(),proc->getCommand());
+		os.writef("Process %d (%s)",proc->getPid(),proc->getProgram());
 		return procName;
 	}
 

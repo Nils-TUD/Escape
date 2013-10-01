@@ -35,7 +35,7 @@ int cons_cmd_step(OStream &os,size_t argc,char **argv) {
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->setFlags(kstack->getFlags() & ~(1 << 8));
 		os.writef("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),
-		           t->getProc()->getCommand());
+		           t->getProc()->getProgram());
 		Util::printStackTrace(os,Util::getUserStackTraceOf(t));
 		Util::printUserState(os);
 		return 0;

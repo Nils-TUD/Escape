@@ -328,7 +328,7 @@ void ThreadBase::printShort(OStream &os) const {
 }
 
 void ThreadBase::print(OStream &os) const {
-	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
+	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getProgram());
 	os.pushIndent();
 	os.writef("Flags=%#x\n",flags);
 	os.writef("State=%s\n",getStateName(state));

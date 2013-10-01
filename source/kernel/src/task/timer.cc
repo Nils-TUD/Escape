@@ -172,6 +172,6 @@ void TimerBase::print(OStream &os) {
 	for(Listener *l = listener; l != NULL; l = l->next) {
 		time += l->time;
 		os.writef("	diff=%u ms, rem=%u ms, thread=%d(%s), block=%d\n",l->time,time,l->tid,
-				Thread::getById(l->tid)->getProc()->getCommand(),l->block);
+				Thread::getById(l->tid)->getProc()->getProgram(),l->block);
 	}
 }

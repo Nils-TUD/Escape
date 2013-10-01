@@ -117,6 +117,16 @@ void ProcBase::init() {
 	add(p);
 }
 
+const char *ProcBase::getProgram() const {
+	static char buffer[32];
+	const char *cmd = command;
+	size_t i;
+	for(i = 0; i < sizeof(buffer) - 1 && *cmd && *cmd != ' '; ++i)
+		buffer[i] = *cmd++;
+	buffer[i] = '\0';
+	return buffer;
+}
+
 void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 	size_t cmdlen = strlen(cmd);
 	size_t len = cmdlen + 1;
@@ -735,7 +745,7 @@ void ProcBase::printAll(OStream &os) {
 
 void ProcBase::printAllRegions(OStream &os) {
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
-		os.writef("Regions of proc %d (%s)\n",p->pid,p->getCommand());
+		os.writef("Regions of proc %d (%s)\n",p->pid,p->getProgram());
 		p->virtmem.printRegions(os);
 		os.writef("\n");
 	}
@@ -748,7 +758,7 @@ void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
 		os.writef("Process %d (%s) (%ld own, %ld sh, %ld sw):\n",
 				p->pid,p->command,own,shared,swapped);
 		if(regions) {
-			os.writef("Regions of proc %d (%s)\n",p->pid,p->getCommand());
+			os.writef("Regions of proc %d (%s)\n",p->pid,p->getProgram());
 			p->virtmem.printRegions(os);
 		}
 		p->getPageDir()->print(os,parts);

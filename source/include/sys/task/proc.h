@@ -424,6 +424,10 @@ public:
 		return command;
 	}
 	/**
+	 * @return the program name (statically allocated)
+	 */
+	const char *getProgram() const;
+	/**
 	 * @return the virtual memory object for this process
 	 */
 	VirtMem *getVM() {

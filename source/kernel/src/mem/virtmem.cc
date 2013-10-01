@@ -333,7 +333,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 			for(auto mp = reg->vmbegin(); mp != reg->vmend(); ++mp) {
 				VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 				Log::get().writef("\tProcess %d:%s -> page %p\n",(*mp)->getPid(),
-						Proc::getByPid((*mp)->getPid())->getCommand(),mpreg->virt + index * PAGE_SIZE);
+						Proc::getByPid((*mp)->getPid())->getProgram(),mpreg->virt + index * PAGE_SIZE);
 			}
 			Log::get().writef("\n");
 #endif
@@ -380,7 +380,7 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 	for(auto mp = vmreg->reg->vmbegin(); mp != vmreg->reg->vmend(); ++mp) {
 		VMRegion *mpreg = (*mp)->regtree.getByReg(vmreg->reg);
 		Log::get().writef("\tProcess %d:%s -> page %p\n",(*mp)->getPid(),
-				Proc::getByPid((*mp)->getPid())->getCommand(),mpreg->virt + index * PAGE_SIZE);
+				Proc::getByPid((*mp)->getPid())->getProgram(),mpreg->virt + index * PAGE_SIZE);
 	}
 	Log::get().writef("\n");
 #endif

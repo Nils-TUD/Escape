@@ -171,7 +171,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 
 		/* seek to header */
 		if(textreg->reg->getFile()->seek(pid,0,SEEK_SET) < 0) {
-			Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getCommand());
+			Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getProgram());
 			return NULL;
 		}
 
@@ -179,7 +179,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 		if((res = textreg->reg->getFile()->read(pid,&ehd,sizeof(sElfEHeader))) !=
 				sizeof(sElfEHeader)) {
 			Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
-					t->getProc()->getCommand(),strerror(-res));
+					t->getProc()->getProgram(),strerror(-res));
 			return NULL;
 		}
 

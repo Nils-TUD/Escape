@@ -247,10 +247,10 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
 	Log::get().writef("%2d:%2d(%-12.12s) -> %6d (%4d b) %#x (%s)\n",
-			t->getTid(),pid,p ? p->getCommand() : "??",id,size1,this,getPath());
+			t->getTid(),pid,p ? p->getProgram() : "??",id,size1,this,getPath());
 	if(data2) {
 		Log::get().writef("%2d:%2d(%-12.12s) -> %6d (%4d b) %#x (%s)\n",
-				t->getTid(),pid,p ? p->getCommand() : "??",id,size2,this,getPath());
+				t->getTid(),pid,p ? p->getProgram() : "??",id,size2,this,getPath());
 	}
 #endif
 
@@ -393,7 +393,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
 	Log::get().writef("%2d:%2d(%-12.12s) <- %6d (%4d b) %#x (%s)\n",
-			t->getTid(),pid,p ? p->getCommand() : "??",msg->id,msg->length,this,getPath());
+			t->getTid(),pid,p ? p->getProgram() : "??",msg->id,msg->length,this,getPath());
 #endif
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
@@ -434,7 +434,7 @@ void VFSChannel::print(OStream &os) const {
 			os.writef("\tid=%u len=%zu, thread=%d:%d:%s\n",it->id,it->length,
 					it->thread ? it->thread->getTid() : -1,
 					it->thread ? it->thread->getProc()->getPid() : -1,
-					it->thread ? it->thread->getProc()->getCommand() : "");
+					it->thread ? it->thread->getProc()->getProgram() : "");
 		}
 	}
 }

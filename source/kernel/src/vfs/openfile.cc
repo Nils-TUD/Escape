@@ -341,7 +341,7 @@ void OpenFile::printAll(OStream &os) {
 				os.writef("\t\towner: %d (kernel)\n",f->owner);
 			else {
 				const Proc *p = Proc::getByPid(f->owner);
-				os.writef("\t\towner: %d:%s\n",f->owner,p ? p->getCommand() : "???");
+				os.writef("\t\towner: %d:%s\n",f->owner,p ? p->getProgram() : "???");
 			}
 			if(f->devNo == VFS_DEV_NO) {
 				VFSNode *n = f->node;

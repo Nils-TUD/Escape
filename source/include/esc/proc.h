@@ -36,13 +36,13 @@ typedef struct {
 	/* exit-code the process gave us via exit() */
 	int exitCode;
 	/* memory it has used */
-	size_t ownFrames;
-	size_t sharedFrames;
-	size_t swapped;
+	ulong ownFrames;
+	ulong sharedFrames;
+	ulong swapped;
 	/* other stats */
 	uint64_t runtime;
-	uint schedCount;
-	uint syscalls;
+	ulong schedCount;
+	ulong syscalls;
 } sExitState;
 
 #ifdef __cplusplus

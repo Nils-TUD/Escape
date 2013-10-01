@@ -40,6 +40,14 @@ public:
     }
 
     /**
+     * Removes all elements from the list
+     */
+    void clear() {
+        _head = _tail = nullptr;
+        _len = 0;
+    }
+
+    /**
      * @return the number of items in the list
      */
     size_t length() const {
@@ -85,6 +93,22 @@ public:
 	}
 
     /**
+     * Inserts the given item as the first one into the list. This works in constant time.
+     *
+     * @param e the list item
+     */
+    void prepend(T *e) {
+        e->prev(nullptr);
+        e->next(_head);
+        if(_head)
+            _head->prev(e);
+        if(_tail == nullptr)
+            _tail = e;
+        _head = e;
+        _len++;
+    }
+
+    /**
      * Appends the given item to the list. This works in constant time.
      *
      * @param e the list item
@@ -101,6 +125,25 @@ public:
         _len++;
         return iterator(e);
     }
+
+    /**
+     * Removes the first item from the list and returns it.
+     *
+     * @return the first item or NULL if there is none
+     */
+    T *removeFirst() {
+        T *first = _head;
+        if(first) {
+            _head = static_cast<T*>(first->next());
+            if(_head)
+                _head->prev(nullptr);
+            if(first == _tail)
+                _tail = nullptr;
+            _len--;
+        }
+        return first;
+    }
+
     /**
      * Removes the given item from the list. This works in constant time.
      * Expects that the item is in the list!

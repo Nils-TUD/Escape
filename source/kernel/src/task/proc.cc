@@ -494,7 +494,7 @@ void ProcBase::join(tid_t tid) {
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	while((tid == 0 && t->getProc()->threads.length() > 1) ||
 			(tid != 0 && Thread::getById(tid) != NULL)) {
-		Event::wait(t,EVI_THREAD_DIED,(evobj_t)t->getProc());
+		Event::wait(t,EV_THREAD_DIED,(evobj_t)t->getProc());
 		release(p,PLOCK_PROG);
 
 		Thread::switchNoSigs();
@@ -659,7 +659,7 @@ void ProcBase::kill(pid_t pid) {
 
 void ProcBase::notifyProcDied(pid_t parent) {
 	addSignalFor(parent,SIG_CHILD_TERM);
-	Event::wakeup(EVI_CHILD_DIED,(evobj_t)getByPid(parent));
+	Event::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
 int ProcBase::waitChild(USER ExitState *state) {
@@ -671,7 +671,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		Event::wait(t,EVI_CHILD_DIED,(evobj_t)p);
+		Event::wait(t,EV_CHILD_DIED,(evobj_t)p);
 		childLock.up();
 		Thread::switchAway();
 		/* stop waiting for event; maybe we have been waked up for another reason */

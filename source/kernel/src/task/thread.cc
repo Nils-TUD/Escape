@@ -87,8 +87,8 @@ void ThreadBase::initProps() {
 	newState = Thread::READY;
 	priority = DEFAULT_PRIO;
 	prioGoodCnt = 0;
-	events = 0;
-	waits = NULL;
+	event = 0;
+	evobject = 0;
 	ignoreSignals = 0;
 	sigHandler = NULL;
 	currentSignal = 0;
@@ -296,7 +296,7 @@ void ThreadBase::kill() {
 	VFS::removeThread(tid);
 
 	/* notify the process about it */
-	Event::wakeup(EVI_THREAD_DIED,(evobj_t)proc);
+	Event::wakeup(EV_THREAD_DIED,(evobj_t)proc);
 
 	/* finally, destroy thread */
 	remove();

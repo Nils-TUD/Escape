@@ -24,11 +24,11 @@
 
 /* the events we can wait for */
 #define EV_NOEVENT				0			/* just wakeup on signals */
-#define EV_CLIENT				(1 << 0)	/* if there's a client to be served */
-#define EV_RECEIVED_MSG			(1 << 1)	/* if a device has a msg for us */
-#define EV_DATA_READABLE		(1 << 2)	/* if we can read from a device (data available) */
-#define EV_USER1				(1 << 9)	/* an event we can send */
-#define EV_USER2				(1 << 10)	/* an event we can send */
+#define EV_CLIENT				1	/* if there's a client to be served */
+#define EV_RECEIVED_MSG			2	/* if a device has a msg for us */
+#define EV_DATA_READABLE		3	/* if we can read from a device (data available) */
+#define EV_USER1				10	/* an event we can send */
+#define EV_USER2				11	/* an event we can send */
 
 #define LOCK_EXCLUSIVE			1
 #define LOCK_KEEP				2
@@ -115,24 +115,25 @@ static inline int sleep(time_t msecs) {
 /**
  * The same as wait(), but waits at most <max> milliseconds.
  *
- * @param events the events to wait for
+ * @param event the event to wait for
  * @param object the object to wait for
  * @param max the maximum number of milliseconds to wait (0 = unlimited)
  * @return 0 on success and a negative error-code if failed
  */
-static inline int waituntil(uint events,evobj_t object,time_t max) {
-	return syscall3(SYSCALL_WAIT,events,object,max);
+static inline int waituntil(uint event,evobj_t object,time_t max) {
+	return syscall3(SYSCALL_WAIT,event,object,max);
 }
 
 /**
- * Does the same as waitm(), but waits for only one object
+ * Waits until <event> occurs for <object>. If <object> is 0, it will wakeup as soon as <event>
+ * occurs for any object.
  *
- * @param events the events to wait for
+ * @param event the event to wait for
  * @param object the object to wait for
  * @return 0 on success and a negative error-code if failed
  */
-static inline int wait(uint events,evobj_t object) {
-	return waituntil(events,object,0);
+static inline int wait(uint event,evobj_t object) {
+	return waituntil(event,object,0);
 }
 
 /**
@@ -227,7 +228,7 @@ static inline int lockg(uint ident,uint flags) {
 
 /**
  * First it releases the specified process-local lock. After that it blocks the thread until
- * one of the given events occurrs. This gives user-threads the chance to ensure that a
+ * the given event occurrs. This gives user-threads the chance to ensure that a
  * notify() arrives AFTER a thread has called wait. So they can do:
  * thread1:
  *  lock(...);
@@ -239,16 +240,16 @@ static inline int lockg(uint ident,uint flags) {
  *  notify(thread1,...);
  *  unlock(...);
  *
- * @param events the events to wait for
+ * @param event the event to wait for
  * @param object the object to wait for
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitunlock(uint events,evobj_t object,uint ident);
+int waitunlock(uint event,evobj_t object,uint ident);
 
 /**
- * First it releases the specified global lock. After that it blocks the thread until one of the
- * given events occurrs. This gives user-threads the chance to ensure that a notify() arrives
+ * First it releases the specified global lock. After that it blocks the thread until the
+ * given event occurrs. This gives user-threads the chance to ensure that a notify() arrives
  * AFTER a thread has called wait. So they can do:
  * thread1:
  *  lock(...);
@@ -260,12 +261,12 @@ int waitunlock(uint events,evobj_t object,uint ident);
  *  notify(thread1,...);
  *  unlock(...);
  *
- * @param events the events to wait for
+ * @param event the event to wait for
  * @param object the object to wait for
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitunlockg(uint events,evobj_t object,uint ident);
+int waitunlockg(uint event,evobj_t object,uint ident);
 
 /**
  * Releases the process-local lock with given ident

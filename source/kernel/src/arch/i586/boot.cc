@@ -66,7 +66,6 @@ static const BootTask tasks[] = {
 	{"Initializing FPU...",FPU::init},
 	{"Initializing VFS...",VFS::init},
 	{"Creating ACPI files...",ACPI::create_files},
-	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
 	{"Start logging to VFS...",Log::vfsIsReady},

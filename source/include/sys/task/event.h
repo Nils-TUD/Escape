@@ -23,78 +23,37 @@
 #include <sys/task/thread.h>
 #include <sys/spinlock.h>
 
-/* the event-indices */
-#define EVI_CLIENT				0
-#define EVI_RECEIVED_MSG		1
-#define EVI_DATA_READABLE		2
-#define EVI_MUTEX				3
-#define EVI_PIPE_FULL			4
-#define EVI_PIPE_EMPTY			5
-#define EVI_UNLOCK_SH			6
-#define EVI_UNLOCK_EX			7
-#define EVI_REQ_FREE			8
-#define EVI_USER1				9
-#define EVI_USER2				10
-#define EVI_SWAP_JOB			11
-#define EVI_SWAP_WORK			12
-#define EVI_SWAP_FREE			13
-#define EVI_VMM_DONE			14
-#define EVI_THREAD_DIED			15
-#define EVI_CHILD_DIED			16
-#define EVI_TERMINATION			17
-
 /* the events we can wait for */
-#define EV_NOEVENT				0
-#define EV_CLIENT				(1 << EVI_CLIENT)
-#define EV_RECEIVED_MSG			(1 << EVI_RECEIVED_MSG)
-#define EV_DATA_READABLE		(1 << EVI_DATA_READABLE)
-#define EV_MUTEX				(1 << EVI_MUTEX)		/* kernel-intern */
-#define EV_PIPE_FULL			(1 << EVI_PIPE_FULL)	/* kernel-intern */
-#define EV_PIPE_EMPTY			(1 << EVI_PIPE_EMPTY)	/* kernel-intern */
-#define EV_UNLOCK_SH			(1 << EVI_UNLOCK_SH)	/* kernel-intern */
-#define EV_UNLOCK_EX			(1 << EVI_UNLOCK_EX)	/* kernel-intern */
-#define EV_REQ_FREE				(1 << EVI_REQ_FREE)		/* kernel-intern */
-#define EV_USER1				(1 << EVI_USER1)
-#define EV_USER2				(1 << EVI_USER2)
-#define EV_SWAP_JOB				(1 << EVI_SWAP_JOB)		/* kernel-intern */
-#define EV_SWAP_WORK			(1 << EVI_SWAP_WORK)	/* kernel-intern */
-#define EV_SWAP_FREE			(1 << EVI_SWAP_FREE)	/* kernel-intern */
-#define EV_VMM_DONE				(1 << EVI_VMM_DONE)		/* kernel-intern */
-#define EV_THREAD_DIED			(1 << EVI_THREAD_DIED)	/* kernel-intern */
-#define EV_CHILD_DIED			(1 << EVI_CHILD_DIED)	/* kernel-intern */
-#define EV_TERMINATION			(1 << EVI_TERMINATION)	/* kernel-intern */
-#define EV_COUNT				18
+#define EV_NOEVENT					0
+#define EV_CLIENT					1
+#define EV_RECEIVED_MSG				2
+#define EV_DATA_READABLE			3
+#define EV_MUTEX					4		/* kernel-intern */
+#define EV_PIPE_FULL				5		/* kernel-intern */
+#define EV_PIPE_EMPTY				6		/* kernel-intern */
+#define EV_UNLOCK_SH				7		/* kernel-intern */
+#define EV_UNLOCK_EX				8		/* kernel-intern */
+#define EV_REQ_FREE					9		/* kernel-intern */
+#define EV_USER1					10
+#define EV_USER2					11
+#define EV_SWAP_JOB					12		/* kernel-intern */
+#define EV_SWAP_WORK				13		/* kernel-intern */
+#define EV_SWAP_FREE				14		/* kernel-intern */
+#define EV_VMM_DONE					15		/* kernel-intern */
+#define EV_THREAD_DIED				16		/* kernel-intern */
+#define EV_CHILD_DIED				17		/* kernel-intern */
+#define EV_TERMINATION				18		/* kernel-intern */
+#define EV_COUNT					18
 
-/* the events a user-thread can wait for */
-#define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \
-								EV_USER1 | EV_USER2)
-/* the events a user-thread can fire */
-#define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2)
+#define IS_FILE_EVENT(ev)			((ev) >= EV_CLIENT && (ev) <= EV_DATA_READABLE)
+#define IS_USER_NOTIFY_EVENT(ev)	((ev) == EV_USER1 || (ev) == EV_USER2)
+#define IS_USER_WAIT_EVENT(ev)		((ev) == EV_NOEVENT || IS_FILE_EVENT((ev)) || \
+ 									 IS_USER_NOTIFY_EVENT((ev)))
 
 class Event {
 	Event() = delete;
 
-	static const size_t MAX_WAIT_COUNT		= 2048;
-	static const size_t MAX_WAKEUPS			= 8;
-
-	struct WaitList {
-		Wait *begin;
-		Wait *last;
-	};
-
 public:
-	struct WaitObject {
-		/* the events to wait for */
-		uint events;
-		/* the object (0 = ignore) */
-		evobj_t object;
-	};
-
-	/**
-	 * Inits the event-system
-	 */
-	static void init();
-
 	/**
 	 * Blocks the given thread
 	 *
@@ -134,47 +93,29 @@ public:
 	 * Lets <tid> wait for the given event and object
 	 *
 	 * @param t the thread
-	 * @param evi the event-index(!)
+	 * @param event the event to wait for
 	 * @param object the object (0 = ignore)
 	 * @return true if successfull
 	 */
-	static bool wait(Thread *t,size_t evi,evobj_t object);
-
-	/**
-	 * Lets <tid> wait for the given objects
-	 *
-	 * @param t the thread
-	 * @param objects the objects to wait for
-	 * @param objCount the number of objects
-	 * @return true if successfull
-	 */
-	static bool waitObjects(Thread *t,const WaitObject *objects,size_t objCount);
+	static bool wait(Thread *t,uint event,evobj_t object);
 
 	/**
 	 * Wakes up all threads that wait for given event and object
 	 *
-	 * @param evi the event-index(!)
+	 * @param event the event
 	 * @param object the object
 	 */
-	static void wakeup(size_t evi,evobj_t object);
+	static void wakeup(uint event,evobj_t object);
 
 	/**
-	 * Wakes up all threads that wait for given events and the given object
-	 *
-	 * @param events the event-mask (not index!)
-	 * @param object the object
-	 */
-	static void wakeupm(uint events,evobj_t object);
-
-	/**
-	 * Wakes up the thread <tid> for given events. That means, if it does not wait for them, it is
+	 * Wakes up the thread <t> for given event. That means, if it does not wait for it, it is
 	 * not waked up.
 	 *
 	 * @param t the thread
-	 * @param events the event-mask (not index!)
+	 * @param event the event
 	 * @return true if waked up
 	 */
-	static bool wakeupThread(Thread *t,uint events);
+	static bool wakeupThread(Thread *t,uint event);
 
 	/**
 	 * Removes the given thread from the event-system. Note that it will set it to the ready-state!
@@ -199,16 +140,10 @@ public:
 	static void print(OStream &os);
 
 private:
-	static void doRemoveThread(Thread *t);
-	static Wait *doWait(Thread *t,size_t evi,evobj_t object,Wait **begin,Wait *prev);
-	static Wait *allocWait();
-	static void freeWait(Wait *w);
-	static const char *getName(size_t evi);
+	static const char *getName(uint event);
 
 	static klock_t lock;
-	static Wait waits[MAX_WAIT_COUNT];
-	static Wait *waitFree;
-	static WaitList evlists[EV_COUNT];
+	static DList<Thread> evlists[EV_COUNT];
 };
 
 inline void Event::block(Thread *t) {
@@ -231,10 +166,4 @@ inline void Event::suspend(Thread *t) {
 
 inline void Event::unsuspend(Thread *t) {
 	t->unsuspend();
-}
-
-inline void Event::removeThread(Thread *t) {
-	SpinLock::acquire(&lock);
-	doRemoveThread(t);
-	SpinLock::release(&lock);
 }

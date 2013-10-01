@@ -34,7 +34,7 @@ void Terminator::start() {
 	SpinLock::acquire(&lock);
 	while(1) {
 		if(deadThreads.length() == 0) {
-			Event::wait(t,EVI_TERMINATION,0);
+			Event::wait(t,EV_TERMINATION,0);
 			SpinLock::release(&lock);
 
 			Thread::switchAway();
@@ -66,7 +66,7 @@ void Terminator::addDead(Thread *t) {
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(deadThreads.append(t));
-		Event::wakeup(EVI_TERMINATION,0);
+		Event::wakeup(EV_TERMINATION,0);
 	}
 	SpinLock::release(&lock);
 }

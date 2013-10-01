@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/col/islist.h>
+#include <sys/col/dlist.h>
 
 class Thread;
 class ThreadBase;
@@ -33,11 +34,6 @@ class Sched {
 	Sched() = delete;
 
 public:
-	struct Queue {
-		Thread *first;
-		Thread *last;
-	};
-
 	/**
 	 * Inits the scheduler
 	 */
@@ -114,15 +110,10 @@ private:
 	static void removeThread(Thread *t);
 
 	static bool setReadyState(Thread *t);
-	static void qInit(Queue *q);
-	static Thread *qDequeue(Queue *q);
-	static void qDequeueThread(Queue *q,Thread *t);
-	static void qAppend(Queue *q,Thread *t);
-	static void qPrepend(Queue *q,Thread *t);
-	static void qPrint(OStream &os,Queue *q);
+	static void print(OStream &os,DList<Thread> *q);
 
 	static klock_t lock;
-	static Queue rdyQueues[];
+	static DList<Thread> rdyQueues[];
 	static size_t rdyCount;
 	static Thread **idleThreads;
 };

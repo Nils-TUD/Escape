@@ -71,7 +71,7 @@ void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file) {
 	 * whether they are affected by the remove of this device and perform the corresponding
 	 * action */
 	/* do that first because otherwise the client-nodes are already gone :) */
-	wakeupClients(EV_RECEIVED_MSG | EV_DATA_READABLE,true);
+	wakeupClients(true);
 	destroy();
 }
 
@@ -81,7 +81,7 @@ int VFSDevice::setReadable(bool readable) {
 	bool wasEmpty = isEmpty;
 	isEmpty = !readable;
 	if(wasEmpty && readable)
-		wakeupClients(EV_RECEIVED_MSG | EV_DATA_READABLE,true);
+		wakeupClients(true);
 	return 0;
 }
 
@@ -146,12 +146,13 @@ void VFSDevice::print(OStream &os) const {
 	closeDir(false);
 }
 
-void VFSDevice::wakeupClients(uint events,bool locked) {
+void VFSDevice::wakeupClients(bool locked) {
 	bool valid;
 	const VFSNode *n = openDir(locked,&valid);
 	if(valid) {
 		while(n != NULL) {
-			Event::wakeupm(events,(evobj_t)n);
+			Event::wakeup(EV_DATA_READABLE,(evobj_t)n);
+			Event::wakeup(EV_RECEIVED_MSG,(evobj_t)n);
 			n = n->next;
 		}
 	}

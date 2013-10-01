@@ -49,7 +49,6 @@ static const BootTask tasks[] = {
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
 	{"Initializing VFS...",VFS::init},
-	{"Initializing event system...",Event::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
 	{"Start logging to VFS...",Log::vfsIsReady},

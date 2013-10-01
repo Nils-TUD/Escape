@@ -26,212 +26,87 @@
 #include <sys/vfs/node.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
+#include <sys/log.h>
 #include <assert.h>
 
 klock_t Event::lock;
-Wait Event::waits[MAX_WAIT_COUNT];
-Wait *Event::waitFree;
-Event::WaitList Event::evlists[EV_COUNT];
+DList<Thread> Event::evlists[EV_COUNT];
 
-void Event::init() {
-	for(size_t i = 0; i < EV_COUNT; i++) {
-		evlists[i].begin = NULL;
-		evlists[i].last = NULL;
-	}
-
-	waitFree = waits;
-	waitFree->next = NULL;
-	for(size_t i = 1; i < MAX_WAIT_COUNT; i++) {
-		waits[i].next = waitFree;
-		waitFree = waits + i;
-	}
-}
-
-bool Event::wait(Thread *t,size_t evi,evobj_t object) {
-	bool res = false;
-	SpinLock::acquire(&lock);
-	Wait *w = t->waits;
-	while(w && w->tnext)
-		w = w->tnext;
-	if(doWait(t,evi,object,&t->waits,w) != NULL) {
-		t->block();
-		res = true;
-	}
-	SpinLock::release(&lock);
-	return res;
-}
-
-bool Event::waitObjects(Thread *t,const WaitObject *objects,size_t objCount) {
-	SpinLock::acquire(&lock);
-	Wait *w = t->waits;
-	while(w && w->tnext)
-		w = w->tnext;
-
-	for(size_t i = 0; i < objCount; i++) {
-		uint events = objects[i].events;
-		if(events != 0) {
-			for(size_t e = 0; events && e < EV_COUNT; e++) {
-				if(events & (1 << e)) {
-					w = doWait(t,e,objects[i].object,&t->waits,w);
-					if(w == NULL) {
-						doRemoveThread(t);
-						SpinLock::release(&lock);
-						return false;
-					}
-					events &= ~(1 << e);
-				}
-			}
-		}
-	}
+bool Event::wait(Thread *t,uint event,evobj_t object) {
+	t->event = event;
+	t->evobject = object;
 	t->block();
-	SpinLock::release(&lock);
+	if(event) {
+		SpinLock::acquire(&lock);
+		evlists[event - 1].append(t);
+		SpinLock::release(&lock);
+	}
 	return true;
 }
 
-void Event::wakeup(size_t evi,evobj_t object) {
-	tid_t tids[MAX_WAKEUPS];
-	WaitList *list = evlists + evi;
-	size_t i = 0;
+void Event::wakeup(uint event,evobj_t object) {
+	assert(event >= 1 && event <= EV_COUNT);
+	DList<Thread> *list = evlists + event - 1;
 	SpinLock::acquire(&lock);
-	Wait *w = list->begin;
-	while(w != NULL) {
-		if(w->object == 0 || w->object == object) {
-			if(i < MAX_WAKEUPS && (i == 0 || tids[i - 1] != w->tid))
-				tids[i++] = w->tid;
-			else {
-				/* all slots in use, so remove this threads and start from the beginning to find
-				 * more. hopefully, this will happen nearly never :) */
-				for(; i > 0; i--) {
-					Thread *t = Thread::getById(tids[i - 1]);
-					doRemoveThread(t);
-					t->unblock();
-				}
-				w = list->begin;
-				continue;
-			}
+	for(auto it = list->begin(); it != list->end(); ) {
+		auto old = it++;
+		assert(old->event == event);
+		if(old->evobject == 0 || old->evobject == object) {
+			list->remove(&*old);
+			old->unblock();
+			old->event = 0;
 		}
-		w = w->next;
-	}
-	for(; i > 0; i--) {
-		Thread *t = Thread::getById(tids[i - 1]);
-		doRemoveThread(t);
-		t->unblock();
 	}
 	SpinLock::release(&lock);
 }
 
-void Event::wakeupm(uint events,evobj_t object) {
-	for(size_t e = 0; events && e < EV_COUNT; e++) {
-		if(events & (1 << e)) {
-			wakeup(e,object);
-			events &= ~(1 << e);
-		}
-	}
-}
-
-bool Event::wakeupThread(Thread *t,uint events) {
+bool Event::wakeupThread(Thread *t,uint event) {
+	assert(event >= 1 && event <= EV_COUNT);
 	bool res = false;
 	SpinLock::acquire(&lock);
-	if(t->events & events) {
-		doRemoveThread(t);
+	if(t->event == event) {
+		evlists[event - 1].remove(t);
 		t->unblock();
+		t->event = 0;
 		res = true;
 	}
 	SpinLock::release(&lock);
 	return res;
 }
 
-void Event::printEvMask(OStream &os,const Thread *t) {
-	if(t->events == 0)
-		os.writef("-");
-	else {
-		for(uint e = 0; e < EV_COUNT; e++) {
-			if(t->events & (1 << e))
-				os.writef("%s ",getName(e));
-		}
+void Event::removeThread(Thread *t) {
+	SpinLock::acquire(&lock);
+	if(t->event) {
+		evlists[t->event - 1].remove(t);
+		t->event = 0;
 	}
+	SpinLock::release(&lock);
+}
+
+void Event::printEvMask(OStream &os,const Thread *t) {
+	if(t->event == 0)
+		os.writef("-");
+	else
+		os.writef("%s:%p",getName(t->event),t->evobject);
 }
 
 void Event::print(OStream &os) {
 	os.writef("Eventlists:\n");
 	for(size_t e = 0; e < EV_COUNT; e++) {
-		WaitList *list = evlists + e;
-		Wait *w = list->begin;
-		os.writef("\t%s:\n",getName(e));
-		while(w != NULL) {
-			Thread *t = Thread::getById(w->tid);
+		DList<Thread> *list = evlists + e;
+		os.writef("\t%s:\n",getName(e + 1));
+		for(auto t = list->cbegin(); t != list->cend(); ++t) {
 			os.writef("\t\tthread=%d (%d:%s), object=%x",
-					t->getTid(),t->getProc()->getPid(),t->getProc()->getCommand(),w->object);
-			inode_t nodeNo = ((VFSNode*)w->object)->getNo();
+					t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram(),t->evobject);
+			inode_t nodeNo = ((VFSNode*)t->evobject)->getNo();
 			if(VFSNode::isValid(nodeNo))
-				os.writef("(%s)",((VFSNode*)w->object)->getPath());
+				os.writef("(%s)",((VFSNode*)t->evobject)->getPath());
 			os.writef("\n");
-			w = w->next;
 		}
 	}
 }
 
-void Event::doRemoveThread(Thread *t) {
-	if(t->events) {
-		Wait *w = t->waits;
-		while(w != NULL) {
-			Wait *nw = w->tnext;
-			if(w->prev)
-				w->prev->next = w->next;
-			else
-				evlists[w->evi].begin = w->next;
-			if(w->next)
-				w->next->prev = w->prev;
-			else
-				evlists[w->evi].last = w->prev;
-			freeWait(w);
-			w = nw;
-		}
-		t->waits = NULL;
-		t->events = 0;
-	}
-}
-
-Wait *Event::doWait(Thread *t,size_t evi,evobj_t object,Wait **begin,Wait *prev) {
-	WaitList *list = evlists + evi;
-	Wait *w = allocWait();
-	if(!w)
-		return NULL;
-	w->tid = t->getTid();
-	w->evi = evi;
-	w->object = object;
-	/* insert into list */
-	w->next = NULL;
-	w->prev = list->last;
-	if(list->last)
-		list->last->next = w;
-	else
-		list->begin = w;
-	list->last = w;
-	/* add to thread */
-	t->events |= 1 << evi;
-	if(prev)
-		prev->tnext = w;
-	else
-		*begin = w;
-	w->tnext = NULL;
-	return w;
-}
-
-Wait *Event::allocWait() {
-	Wait *res = waitFree;
-	if(res == NULL)
-		return NULL;
-	waitFree = waitFree->next;
-	return res;
-}
-
-void Event::freeWait(Wait *w) {
-	w->next = waitFree;
-	waitFree = w;
-}
-
-const char *Event::getName(size_t evi) {
+const char *Event::getName(uint event) {
 	static const char *names[] = {
 		"CLIENT",
 		"RECEIVED_MSG",
@@ -252,5 +127,5 @@ const char *Event::getName(size_t evi) {
 		"CHILD_DIED",
 		"TERMINATION",
 	};
-	return names[evi];
+	return names[event - 1];
 }

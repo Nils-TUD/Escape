@@ -276,7 +276,7 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 		}
 
 		/* wait for a client (accept signals) */
-		Event::wait(t,EVI_CLIENT,(evobj_t)file->node);
+		Event::wait(t,EV_CLIENT,(evobj_t)file->node);
 		SpinLock::release(&waitLock);
 
 		Thread::switchAway();

@@ -56,7 +56,7 @@ int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 	Entry *l = locks + i;
 	if(l->flags) {
 		/* if it exists and is locked, wait */
-		uint event = (flags & EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
+		uint event = (flags & EXCLUSIVE) ? EV_UNLOCK_EX : EV_UNLOCK_SH;
 		/* TODO don't panic here, just return and continue using the lock */
 		assert(l->writer != t->getTid());
 		while(isLocked(locks + i,flags)) {
@@ -115,9 +115,9 @@ int Lock::release(pid_t pid,ulong ident) {
 	if(l->waitCount) {
 		/* if there are no reads and writes, notify all.
 		 * otherwise notify just the threads that wait for a shared lock */
-		Event::wakeup(EVI_UNLOCK_SH,(evobj_t)ident);
+		Event::wakeup(EV_UNLOCK_SH,(evobj_t)ident);
 		if(l->readRefs == 0)
-			Event::wakeup(EVI_UNLOCK_EX,(evobj_t)ident);
+			Event::wakeup(EV_UNLOCK_EX,(evobj_t)ident);
 	}
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & KEEP))

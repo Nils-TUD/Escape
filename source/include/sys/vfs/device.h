@@ -121,7 +121,7 @@ public:
 
 private:
 	static uint buildMode(uint type);
-	void wakeupClients(uint events,bool locked);
+	void wakeupClients(bool locked);
 
 	/* whether there is data to read or not */
 	bool isEmpty;

@@ -34,7 +34,7 @@ void Semaphore::down() {
 		waiting++;
 		printEventTrace(Util::getKernelStackTrace(),"[%d] Waiting for %#x ",t->getTid(),this);
 		do {
-			Event::wait(t,EVI_MUTEX,(evobj_t)this);
+			Event::wait(t,EV_MUTEX,(evobj_t)this);
 			SpinLock::release(&lock);
 			Thread::switchNoSigs();
 			SpinLock::acquire(&lock);
@@ -63,7 +63,7 @@ void Semaphore::up() {
 	SpinLock::acquire(&lock);
 	value++;
 	if(waiting > 0)
-		Event::wakeup(EVI_MUTEX,(evobj_t)this);
+		Event::wakeup(EV_MUTEX,(evobj_t)this);
 	printEventTrace(Util::getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->getTid(),this,
 			waiting ? "(Waking up)" : "(No wakeup)");
 	SpinLock::release(&lock);

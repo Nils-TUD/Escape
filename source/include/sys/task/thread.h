@@ -74,20 +74,11 @@
 
 typedef void (*terminate_func)();
 
-struct Wait {
-	tid_t tid;
-	ushort evi;
-	evobj_t object;
-	Wait *prev;
-	Wait *next;
-	Wait *tnext;
-};
-
 class Thread;
 class Proc;
 class Event;
 
-class ThreadBase {
+class ThreadBase : public DListItem {
 	friend class ProcBase;
 	friend class Sched;
 	friend class Signals;
@@ -677,9 +668,9 @@ protected:
 	Signals::PendingQueue pending;
 	/* the signal that the thread is currently handling (if > 0) */
 	int currentSignal;
-	/* the events the thread waits for (if waiting) */
-	uint events;
-	Wait *waits;
+	/* the event the thread waits for (if waiting) */
+	uint event;
+	evobj_t evobject;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	uint8_t flags;
@@ -721,11 +712,8 @@ protected:
 	 * reserved for this thread and have not yet been used */
 	ISList<frameno_t> reqFrames;
 	Stats stats;
-private:
-	/* for the scheduler */
-	Thread *prev;
-	Thread *next;
 
+private:
 	static DList<ListItem> threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;

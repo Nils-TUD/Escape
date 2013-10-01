@@ -289,20 +289,17 @@ bool VFS::hasWork(VFSNode *node) {
 	return IS_DEVICE(node->getMode()) && static_cast<VFSDevice*>(node)->hasWork();
 }
 
-int VFS::waitFor(uint events,evobj_t object,time_t maxWaitTime,bool block,pid_t pid,ulong ident) {
+int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t pid,ulong ident) {
 	Thread *t = Thread::getRunning();
 	bool isFirstWait = true;
-	Event::WaitObject wait;
 	int res;
 
 	/* transform the files into vfs-nodes */
-	wait.events = events;
-	wait.object = object;
-	if(events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+	if(IS_FILE_EVENT(event)) {
 		OpenFile *file = (OpenFile*)object;
 		if(file->getDev() != VFS_DEV_NO)
 			return -EPERM;
-		wait.object = (evobj_t)file->getNode();
+		object = (evobj_t)file->getNode();
 	}
 
 	while(true) {
@@ -312,18 +309,18 @@ int VFS::waitFor(uint events,evobj_t object,time_t maxWaitTime,bool block,pid_t 
 		 * one. */
 		SpinLock::acquire(&waitLock);
 		/* check whether we can wait */
-		if(wait.events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			VFSNode *n = (VFSNode*)wait.object;
+		if(IS_FILE_EVENT(event)) {
+			VFSNode *n = (VFSNode*)object;
 			if(!n->isAlive()) {
 				SpinLock::release(&waitLock);
 				res = -EDESTROYED;
 				goto error;
 			}
-			if((wait.events & EV_CLIENT) && hasWork(n))
+			if((event == EV_CLIENT) && hasWork(n))
 				goto noWait;
-			else if((wait.events & EV_RECEIVED_MSG) && hasMsg(n))
+			else if((event == EV_RECEIVED_MSG) && hasMsg(n))
 				goto noWait;
-			else if((wait.events & EV_DATA_READABLE) && hasData(n))
+			else if((event == EV_DATA_READABLE) && hasData(n))
 				goto noWait;
 		}
 
@@ -333,7 +330,7 @@ int VFS::waitFor(uint events,evobj_t object,time_t maxWaitTime,bool block,pid_t 
 		}
 
 		/* wait */
-		if(!Event::waitObjects(t,&wait,1)) {
+		if(!Event::wait(t,event,object)) {
 			SpinLock::release(&waitLock);
 			res = -ENOMEM;
 			goto error;
@@ -349,9 +346,6 @@ int VFS::waitFor(uint events,evobj_t object,time_t maxWaitTime,bool block,pid_t 
 			res = -EINTR;
 			goto error;
 		}
-		/* if we're waiting for other events, too, we have to wake up */
-		if((wait.events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
-			goto done;
 		isFirstWait = false;
 	}
 
@@ -359,7 +353,6 @@ noWait:
 	if(pid != KERNEL_PID)
 		Lock::release(pid,ident);
 	SpinLock::release(&waitLock);
-done:
 	res = 0;
 error:
 	if(maxWaitTime != 0)

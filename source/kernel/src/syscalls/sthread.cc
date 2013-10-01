@@ -36,9 +36,7 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int doWait(uint events,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident);
-static int doWaitLoop(uint events,evobj_t object,OpenFile *file,time_t maxWaitTime,
-					  pid_t pid,ulong ident);
+static int doWait(uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident);
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
@@ -104,25 +102,25 @@ int Syscalls::yield(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	uint events = (uint)SYSC_ARG1(stack);
+	uint event = (uint)SYSC_ARG1(stack);
 	evobj_t object = (evobj_t)SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
 
-	int res = doWait(events,object,maxWaitTime,KERNEL_PID,0);
+	int res = doWait(event,object,maxWaitTime,KERNEL_PID,0);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
-	uint events = (uint)SYSC_ARG1(stack);
+	uint event = (uint)SYSC_ARG1(stack);
 	evobj_t object = (evobj_t)SYSC_ARG2(stack);
 	uint ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 
 	/* wait and release the lock before going to sleep */
-	int res = doWait(events,object,0,global ? INVALID_PID : pid,ident);
+	int res = doWait(event,object,0,global ? INVALID_PID : pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -130,12 +128,12 @@ int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::notify(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	uint events = SYSC_ARG2(stack);
+	uint event = SYSC_ARG2(stack);
 	Thread *nt = Thread::getById(tid);
 
-	if((events & ~EV_USER_NOTIFY_MASK) != 0 || nt == NULL)
+	if(!IS_USER_NOTIFY_EVENT(event) || nt == NULL)
 		SYSC_ERROR(stack,-EINVAL);
-	Event::wakeupThread(nt,events);
+	Event::wakeupThread(nt,event);
 	SYSC_RET1(stack,0);
 }
 
@@ -195,10 +193,10 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int doWait(uint events,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident) {
+static int doWait(uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident) {
 	OpenFile *file = NULL;
 	/* first request the files from the file-descriptors */
-	if(events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+	if(IS_FILE_EVENT(event)) {
 		/* translate fd to node-number */
 		file = FileDesc::request((int)object);
 		if(file == NULL)
@@ -206,32 +204,14 @@ static int doWait(uint events,evobj_t object,time_t maxWaitTime,pid_t pid,ulong 
 	}
 
 	/* now wait */
-	int res = doWaitLoop(events,object,file,maxWaitTime,pid,ident);
+	if(!IS_USER_WAIT_EVENT(event))
+		return -EINVAL;
+	if(IS_FILE_EVENT(event))
+		object = (evobj_t)file;
+	int res = VFS::waitFor(event,object,maxWaitTime,true,pid,ident);
 
 	/* release them */
-	if(events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE))
+	if(IS_FILE_EVENT(event))
 		FileDesc::release(file);
 	return res;
-}
-
-static int doWaitLoop(uint events,evobj_t object,OpenFile *file,time_t maxWaitTime,
-					  pid_t pid,ulong ident) {
-	Event::WaitObject waitobj;
-	/* copy to kobjects and check */
-	waitobj.events = events;
-	if(waitobj.events & ~(EV_USER_WAIT_MASK))
-		return -EINVAL;
-	if(waitobj.events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-		/* check flags */
-		if(waitobj.events & EV_CLIENT) {
-			if(waitobj.events & ~EV_CLIENT)
-				return -EINVAL;
-		}
-		else if(waitobj.events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
-			return -EINVAL;
-		waitobj.object = (evobj_t)file;
-	}
-	else
-		waitobj.object = object;
-	return VFS::waitFor(waitobj.events,waitobj.object,maxWaitTime,true,pid,ident);
 }

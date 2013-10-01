@@ -313,7 +313,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 			static_cast<VFSDevice*>(parent)->addMsg();
 			if(EXPECT_FALSE(msg2))
 				static_cast<VFSDevice*>(parent)->addMsg();
-			Event::wakeup(EVI_CLIENT,(evobj_t)parent);
+			Event::wakeup(EV_CLIENT,(evobj_t)parent);
 		}
 		VFSNode::releaseTree();
 	}
@@ -322,7 +322,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		if(recipient)
 			Event::unblock(recipient);
 		else
-			Event::wakeup(EVI_RECEIVED_MSG,(evobj_t)this);
+			Event::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
 	}
 	SpinLock::release(&waitLock);
 	return 0;
@@ -339,12 +339,12 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 
 	/* determine list and event to use */
 	if(flags & VFS_DEVICE) {
-		event = EVI_CLIENT;
+		event = EV_CLIENT;
 		list = &sendList;
 		waitNode = parent;
 	}
 	else {
-		event = EVI_RECEIVED_MSG;
+		event = EV_RECEIVED_MSG;
 		list = &recvList;
 		waitNode = this;
 	}
@@ -377,7 +377,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 		SpinLock::acquire(&waitLock);
 	}
 
-	if(event == EVI_CLIENT) {
+	if(event == EV_CLIENT) {
 		VFSNode::acquireTree();
 		if(EXPECT_TRUE(parent))
 			static_cast<VFSDevice*>(parent)->remMsg();

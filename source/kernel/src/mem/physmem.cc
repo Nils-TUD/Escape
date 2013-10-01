@@ -210,7 +210,7 @@ bool PhysMem::reserve(size_t frameCount) {
 		/* notify swapper-thread */
 		if(!swapping)
 			Event::wakeupThread(swapperThread,EV_SWAP_WORK);
-		Event::wait(t,EVI_SWAP_FREE,0);
+		Event::wait(t,EV_SWAP_FREE,0);
 		SpinLock::release(&defLock);
 		Thread::switchNoSigs();
 		SpinLock::acquire(&defLock);
@@ -280,7 +280,7 @@ bool PhysMem::swapIn(uintptr_t addr) {
 	do {
 		job = siFreelist;
 		if(job == NULL) {
-			Event::wait(t,EVI_SWAP_JOB,0);
+			Event::wait(t,EV_SWAP_JOB,0);
 			jobWaiters++;
 			SpinLock::release(&defLock);
 			Thread::switchNoSigs();
@@ -348,7 +348,7 @@ void PhysMem::swapper() {
 		}
 		/* wakeup in every case because its possible that the frames are available now but weren't
 		 * previously */
-		Event::wakeup(EVI_SWAP_FREE,0);
+		Event::wakeup(EV_SWAP_FREE,0);
 
 		/* handle swap-in-jobs */
 		while((job = getJob()) != NULL) {
@@ -366,7 +366,7 @@ void PhysMem::swapper() {
 
 		if(getFreeDef() - (kframes + cframes) >= uframes) {
 			/* we may receive new work now */
-			Event::wait(swapperThread,EVI_SWAP_WORK,0);
+			Event::wait(swapperThread,EV_SWAP_WORK,0);
 			SpinLock::release(&defLock);
 			Thread::switchAway();
 			SpinLock::acquire(&defLock);
@@ -486,5 +486,5 @@ void PhysMem::freeJob(SwapInJob *job) {
 	job->next = siFreelist;
 	siFreelist = job;
 	if(jobWaiters > 0)
-		Event::wakeup(EVI_SWAP_JOB,0);
+		Event::wakeup(EV_SWAP_JOB,0);
 }

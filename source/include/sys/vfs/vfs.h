@@ -222,12 +222,12 @@ public:
 	static int createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file);
 
 	/**
-	 * Waits for the given events. First, the function checks whether we can wait, i.e. if the event
+	 * Waits for the given event. First, the function checks whether we can wait, i.e. if the event
 	 * to wait for has already arrived. If not, we wait until one of the events arrived.
 	 * If <pid> != KERNEL_PID, it calls Lock::release(pid,ident) before going to sleep (this is used
 	 * for waitunlock).
 	 *
-	 * @param events the events to wait for
+	 * @param event the event to wait for
 	 * @param object the object to wait for (is expected to be a OpenFile*, if its a file-wait)
 	 * @param maxWaitTime the maximum time to wait (in milliseconds)
 	 * @param block whether we should wait if necessary (otherwise it will be checked only whether
@@ -236,7 +236,7 @@ public:
 	 * @param ident the ident for lock_release
 	 * @return 0 on success
 	 */
-	static int waitFor(uint events,evobj_t object,time_t maxWaitTime,bool block,pid_t pid,ulong ident);
+	static int waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t pid,ulong ident);
 
 	/**
 	 * Creates a process-node with given pid

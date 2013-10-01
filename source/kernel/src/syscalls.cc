@@ -29,91 +29,139 @@
 #include <assert.h>
 #include <errno.h>
 
+#define PRINT_SYSCALLS	0
+
 /* our syscalls */
 const Syscalls::Syscall Syscalls::syscalls[] = {
-	/* 0 */		{getpid,			0},
-	/* 1 */		{getppid,			1},
-	/* 2 */ 	{debugc,			1},
-	/* 3 */		{fork,				0},
-	/* 4 */ 	{exit,				1},
-	/* 5 */ 	{open,				2},
-	/* 6 */ 	{close,				1},
-	/* 7 */ 	{read,				3},
-	/* 8 */		{createdev,			3},
-	/* 9 */		{chgsize,			1},
-	/* 10 */	{regaddphys,		2},
-	/* 11 */	{write,				3},
-	/* 12 */	{yield,				0},
-	/* 13 */	{dup,				1},
-	/* 14 */	{redirect,			2},
-	/* 15 */	{wait,				2},
-	/* 16 */	{signal,			2},
-	/* 17 */	{acksignal,			0},
-	/* 18 */	{kill,				2},
-	/* 19 */	{exec,				2},
-	/* 20 */	{fcntl,				3},
-	/* 21 */	{loadmods,			0},
-	/* 22 */	{sleep,				1},
-	/* 23 */	{seek,				2},
-	/* 24 */	{stat,				2},
-	/* 25 */	{getclient,			2},
-	/* 26 */	{lock,				3},
-	/* 27 */	{unlock,			2},
-	/* 28 */	{startthread,		2},
-	/* 29 */	{gettid,			0},
-	/* 30 */	{getthreadcnt,		0},
-	/* 31 */	{send,				4},
-	/* 32 */	{receive,			3},
-	/* 33 */	{getcycles,			0},
-	/* 34 */	{sync,				0},
-	/* 35 */	{link,				2},
-	/* 36 */	{unlink,			1},
-	/* 37 */	{mkdir,				1},
-	/* 38 */	{rmdir,				1},
-	/* 39 */	{mount,				3},
-	/* 40 */	{unmount,			1},
-	/* 41 */	{waitchild,			1},
-	/* 42 */	{tell,				2},
-	/* 43 */	{pipe,				2},
-	/* 44 */	{sysconf,			1},
-	/* 45 */	{getwork,			7},
-	/* 46 */	{join,				1},
-	/* 47 */	{suspend,			1},
-	/* 48 */	{resume,			1},
-	/* 49 */	{fstat,				2},
-	/* 50 */	{mmap,				7},
-	/* 51 */	{mprotect,			2},
-	/* 52 */	{munmap,			1},
-	/* 53 */	{notify,			2},
-	/* 54 */	{getclientid,		1},
-	/* 55 */	{waitunlock,		4},
-	/* 56 */	{getenvito,			3},
-	/* 57 */	{getenvto,			3},
-	/* 58 */	{setenv,			2},
-	/* 59 */	{getuid,			0},
-	/* 60 */	{setuid,			1},
-	/* 61 */	{geteuid,			0},
-	/* 62 */	{seteuid,			1},
-	/* 63 */	{getgid,			0},
-	/* 64 */	{setgid,			1},
-	/* 65 */	{getegid,			0},
-	/* 66 */	{setegid,			1},
-	/* 67 */	{chmod,				2},
-	/* 68 */	{chown,				3},
-	/* 69 */	{getgroups,			2},
-	/* 70 */	{setgroups,			2},
-	/* 71 */	{isingroup,			2},
-	/* 72 */	{alarm,				1},
-	/* 73 */	{tsctotime,			1},
+	/* 0 */		{getpid,			"getpid",    		0},
+	/* 1 */		{getppid,			"getppid",    		1},
+	/* 2 */ 	{debugc,			"debugc",    		1},
+	/* 3 */		{fork,				"fork",    			0},
+	/* 4 */ 	{exit,				"exit",    			1},
+	/* 5 */ 	{open,				"open",    			2},
+	/* 6 */ 	{close,				"close",    		1},
+	/* 7 */ 	{read,				"read",    			3},
+	/* 8 */		{createdev,			"createdev",    	3},
+	/* 9 */		{chgsize,			"chgsize",    		1},
+	/* 10 */	{regaddphys,		"regaddphys",    	2},
+	/* 11 */	{write,				"write",    		3},
+	/* 12 */	{yield,				"yield",    		0},
+	/* 13 */	{dup,				"dup",    			1},
+	/* 14 */	{redirect,			"redirect",    		2},
+	/* 15 */	{wait,				"wait",    			3},
+	/* 16 */	{signal,			"signal",   		2},
+	/* 17 */	{acksignal,			"acksignal",    	0},
+	/* 18 */	{kill,				"kill",    			2},
+	/* 19 */	{exec,				"exec",    			2},
+	/* 20 */	{fcntl,				"fcntl",    		3},
+	/* 21 */	{loadmods,			"loadmods",    		0},
+	/* 22 */	{sleep,				"sleep",    		1},
+	/* 23 */	{seek,				"seek",    			2},
+	/* 24 */	{stat,				"stat",    			2},
+	/* 25 */	{getclient,			"getclient",    	2},
+	/* 26 */	{lock,				"lock",    			3},
+	/* 27 */	{unlock,			"unlock",    		2},
+	/* 28 */	{startthread,		"startthread",		2},
+	/* 29 */	{gettid,			"gettid",    		0},
+	/* 30 */	{getthreadcnt,		"getthreadcnt",     0},
+	/* 31 */	{send,				"send",    			4},
+	/* 32 */	{receive,			"receive",    		3},
+	/* 33 */	{getcycles,			"getcycles",    	0},
+	/* 34 */	{sync,				"sync",    			0},
+	/* 35 */	{link,				"link",    			2},
+	/* 36 */	{unlink,			"unlink",    		1},
+	/* 37 */	{mkdir,				"mkdir",    		1},
+	/* 38 */	{rmdir,				"rmdir",    		1},
+	/* 39 */	{mount,				"mount",    		3},
+	/* 40 */	{unmount,			"unmount",    		1},
+	/* 41 */	{waitchild,			"waitchild",    	1},
+	/* 42 */	{tell,				"tell",    			2},
+	/* 43 */	{pipe,				"pipe",    			2},
+	/* 44 */	{sysconf,			"sysconf",   		1},
+	/* 45 */	{getwork,			"getwork",    		4},
+	/* 46 */	{join,				"join",    			1},
+	/* 47 */	{suspend,			"suspend",    		1},
+	/* 48 */	{resume,			"resume",    		1},
+	/* 49 */	{fstat,				"fstat",    		2},
+	/* 50 */	{mmap,				"mmap",    			7},
+	/* 51 */	{mprotect,			"mprotect",    		2},
+	/* 52 */	{munmap,			"munmap",    		1},
+	/* 53 */	{notify,			"notify",    		2},
+	/* 54 */	{getclientid,		"getclientid",    	1},
+	/* 55 */	{waitunlock,		"waitunlock",    	4},
+	/* 56 */	{getenvito,			"getenvito",    	3},
+	/* 57 */	{getenvto,			"getenvto",    		3},
+	/* 58 */	{setenv,			"setenv",    		2},
+	/* 59 */	{getuid,			"getuid",    		0},
+	/* 60 */	{setuid,			"setuid",    		1},
+	/* 61 */	{geteuid,			"geteuid",    		0},
+	/* 62 */	{seteuid,			"seteuid",    		1},
+	/* 63 */	{getgid,			"getgid",    		0},
+	/* 64 */	{setgid,			"setgid",    		1},
+	/* 65 */	{getegid,			"getegid",    		0},
+	/* 66 */	{setegid,			"setegid",   		1},
+	/* 67 */	{chmod,				"chmod",    		2},
+	/* 68 */	{chown,				"chown",    		3},
+	/* 69 */	{getgroups,			"getgroups",    	2},
+	/* 70 */	{setgroups,			"setgroups",    	2},
+	/* 71 */	{isingroup,			"isingroup",    	2},
+	/* 72 */	{alarm,				"alarm",    		1},
+	/* 73 */	{tsctotime,			"tsctotime",    	1},
 #ifdef __i386__
-	/* 74 */	{reqports,			2},
-	/* 75 */	{relports,			2},
-	/* 76 */	{vm86int,			4},
-	/* 77 */	{vm86start,			0},
+	/* 74 */	{reqports,			"reqports",   		2},
+	/* 75 */	{relports,			"relports",    		2},
+	/* 76 */	{vm86int,			"vm86int",    		4},
+	/* 77 */	{vm86start,			"vm86start",    	0},
 #else
-	/* 74 */	{debug,				0},
+	/* 74 */	{debug,				"debug",    		0},
 #endif
 };
+
+void Syscalls::printEntry(Thread *t,IntrptStackFrame *stack) {
+#if PRINT_SYSCALLS
+	uint sysCallNo = SYSC_NUMBER(stack);
+	Log::get().writef("[%d:%d:%s] %s(",t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram(),
+					  syscalls[sysCallNo].name);
+	int i;
+	for(i = 1; i <= syscalls[sysCallNo].argCount; ++i) {
+		ulong val;
+		switch(i) {
+			case 1:
+				val = SYSC_ARG1(stack);
+				break;
+			case 2:
+				val = SYSC_ARG2(stack);
+				break;
+			case 3:
+				val = SYSC_ARG3(stack);
+				break;
+			case 4:
+				val = SYSC_ARG4(stack);
+				break;
+			case 5:
+				val = SYSC_ARG5(stack);
+				break;
+			case 6:
+				val = SYSC_ARG6(stack);
+				break;
+			case 7:
+				val = SYSC_ARG7(stack);
+				break;
+		}
+		if(i < syscalls[sysCallNo].argCount)
+			Log::get().writef("%p,",val);
+		else
+			Log::get().writef("%p",val);
+	}
+	Log::get().writef(")...");
+#endif
+}
+
+void Syscalls::printExit(IntrptStackFrame *stack) {
+#if PRINT_SYSCALLS
+	Log::get().writef(" = %p (%d)\n",SYSC_GETRET(stack),SYSC_GETERR(stack));
+#endif
+}
 
 void Syscalls::handle(Thread *t,IntrptStackFrame *stack) {
 	uint sysCallNo = SYSC_NUMBER(stack);
@@ -122,7 +170,9 @@ void Syscalls::handle(Thread *t,IntrptStackFrame *stack) {
 		return;
 	}
 
+	printEntry(t,stack);
 	syscalls[sysCallNo].handler(t,stack);
+	printExit(stack);
 }
 
 uint Syscalls::getArgCount(uint sysCallNo) {

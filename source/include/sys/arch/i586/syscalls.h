@@ -25,6 +25,8 @@
 #define SYSC_SETERROR(stack,errorCode)	((stack)->edi = (errorCode))
 #define SYSC_ERROR(stack,errorCode)		{ ((stack)->edi = (errorCode)); return (errorCode); }
 #define SYSC_RET1(stack,val)			{ ((stack)->eax = (val)); ((stack)->edi = 0); return 0; }
+#define SYSC_GETRET(stack)				((stack)->eax)
+#define SYSC_GETERR(stack)				((stack)->edi)
 #define SYSC_NUMBER(stack)				((stack)->eax)
 #define SYSC_ARG1(stack)				((stack)->esi)
 #define SYSC_ARG2(stack)				((stack)->edi)

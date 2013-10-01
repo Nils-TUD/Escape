@@ -25,6 +25,8 @@
 #define SYSC_SETERROR(stack,errorCode)	((stack)[8] = (errorCode))
 #define SYSC_ERROR(stack,errorCode)		do { ((stack)[8] = (errorCode)); return (errorCode); } while(0)
 #define SYSC_RET1(stack,val)			do { ((stack)[0] = (val)); return 0; } while(0)
+#define SYSC_GETRET(stack)				((stack)[0])
+#define SYSC_GETERR(stack)				((stack)[8])
 #define SYSC_NUMBER(stack)				((stack)[0])
 #define SYSC_ARG1(stack)				((stack)[1])
 #define SYSC_ARG2(stack)				((stack)[2])

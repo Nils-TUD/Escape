@@ -40,6 +40,7 @@ class Syscalls {
 	/* for syscall-definitions */
 	struct Syscall {
 		handler_func handler;
+		const char *name;
 		uchar argCount;
 	};
 
@@ -181,6 +182,9 @@ private:
 	 * @return true if the string is valid
 	 */
 	static bool absolutizePath(char *dst,size_t size,const char *src);
+
+	static void printEntry(Thread *t,IntrptStackFrame *stack);
+	static void printExit(IntrptStackFrame *stack);
 
 	/* our syscalls */
 	static const Syscall syscalls[];

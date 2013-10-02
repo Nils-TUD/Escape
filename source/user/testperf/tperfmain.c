@@ -32,6 +32,7 @@
 #include "modules/pipe.h"
 #include "modules/readzeros.h"
 #include "modules/writenull.h"
+#include "modules/memops.h"
 
 #define NAME_LEN 16
 
@@ -53,6 +54,7 @@ static sTestModule modules[] = {
 	{"pipe",		mod_pipe},
 	{"readzeros",	mod_readzeros},
 	{"writenull",	mod_writenull},
+	{"memops",		mod_memops},
 };
 
 int main(int argc,char *argv[]) {

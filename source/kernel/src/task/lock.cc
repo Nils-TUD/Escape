@@ -21,7 +21,6 @@
 #include <sys/task/lock.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
-#include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
@@ -61,7 +60,7 @@ int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 		assert(l->writer != t->getTid());
 		while(isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
-			Event::wait(t,event,(evobj_t)ident);
+			t->wait(event,(evobj_t)ident);
 			SpinLock::release(&klock);
 
 			Thread::switchNoSigs();
@@ -115,9 +114,9 @@ int Lock::release(pid_t pid,ulong ident) {
 	if(l->waitCount) {
 		/* if there are no reads and writes, notify all.
 		 * otherwise notify just the threads that wait for a shared lock */
-		Event::wakeup(EV_UNLOCK_SH,(evobj_t)ident);
+		Sched::wakeup(EV_UNLOCK_SH,(evobj_t)ident);
 		if(l->readRefs == 0)
-			Event::wakeup(EV_UNLOCK_EX,(evobj_t)ident);
+			Sched::wakeup(EV_UNLOCK_EX,(evobj_t)ident);
 	}
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & KEEP))

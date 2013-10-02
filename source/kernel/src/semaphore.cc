@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/task/event.h>
 #include <sys/semaphore.h>
 #include <sys/spinlock.h>
 #include <sys/log.h>
@@ -34,7 +33,7 @@ void Semaphore::down() {
 		waiting++;
 		printEventTrace(Util::getKernelStackTrace(),"[%d] Waiting for %#x ",t->getTid(),this);
 		do {
-			Event::wait(t,EV_MUTEX,(evobj_t)this);
+			t->wait(EV_MUTEX,(evobj_t)this);
 			SpinLock::release(&lock);
 			Thread::switchNoSigs();
 			SpinLock::acquire(&lock);
@@ -63,7 +62,7 @@ void Semaphore::up() {
 	SpinLock::acquire(&lock);
 	value++;
 	if(waiting > 0)
-		Event::wakeup(EV_MUTEX,(evobj_t)this);
+		Sched::wakeup(EV_MUTEX,(evobj_t)this);
 	printEventTrace(Util::getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->getTid(),this,
 			waiting ? "(Waking up)" : "(No wakeup)");
 	SpinLock::release(&lock);

@@ -22,6 +22,34 @@
 #include <sys/common.h>
 #include <sys/col/islist.h>
 #include <sys/col/dlist.h>
+#include <sys/spinlock.h>
+
+/* the events we can wait for */
+#define EV_NOEVENT					0
+#define EV_CLIENT					1
+#define EV_RECEIVED_MSG				2
+#define EV_DATA_READABLE			3
+#define EV_MUTEX					4		/* kernel-intern */
+#define EV_PIPE_FULL				5		/* kernel-intern */
+#define EV_PIPE_EMPTY				6		/* kernel-intern */
+#define EV_UNLOCK_SH				7		/* kernel-intern */
+#define EV_UNLOCK_EX				8		/* kernel-intern */
+#define EV_REQ_FREE					9		/* kernel-intern */
+#define EV_USER1					10
+#define EV_USER2					11
+#define EV_SWAP_JOB					12		/* kernel-intern */
+#define EV_SWAP_WORK				13		/* kernel-intern */
+#define EV_SWAP_FREE				14		/* kernel-intern */
+#define EV_VMM_DONE					15		/* kernel-intern */
+#define EV_THREAD_DIED				16		/* kernel-intern */
+#define EV_CHILD_DIED				17		/* kernel-intern */
+#define EV_TERMINATION				18		/* kernel-intern */
+#define EV_COUNT					18
+
+#define IS_FILE_EVENT(ev)			((ev) >= EV_CLIENT && (ev) <= EV_DATA_READABLE)
+#define IS_USER_NOTIFY_EVENT(ev)	((ev) == EV_USER1 || (ev) == EV_USER2)
+#define IS_USER_WAIT_EVENT(ev)		((ev) == EV_NOEVENT || IS_FILE_EVENT((ev)) || \
+ 									 IS_USER_NOTIFY_EVENT((ev)))
 
 class Thread;
 class ThreadBase;
@@ -40,11 +68,86 @@ public:
 	static void init();
 
 	/**
+	 * Lets <tid> wait for the given event and object
+	 *
+	 * @param t the thread
+	 * @param event the event to wait for
+	 * @param object the object (0 = ignore)
+	 */
+	static void wait(Thread *t,uint event,evobj_t object);
+
+	/**
+	 * Wakes up all threads that wait for given event and object
+	 *
+	 * @param event the event
+	 * @param object the object
+	 */
+	static void wakeup(uint event,evobj_t object);
+
+	/**
+	 * Wakes up the thread <t> for given event. That means, if it does not wait for it, it is
+	 * not waked up.
+	 *
+	 * @param t the thread
+	 * @param event the event
+	 * @return true if waked up
+	 */
+	static bool wakeupThread(Thread *t,uint event);
+
+	/**
+	 * Blocks the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void block(Thread *t);
+
+	/**
+	 * Unblocks the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void unblock(Thread *t);
+
+	/**
+	 * Unblocks the given thread and puts it to the beginning of the ready-list
+	 *
+	 * @param t the thread
+	 */
+	static void unblockQuick(Thread *t);
+
+	/**
+	 * Suspends the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void suspend(Thread *t);
+
+	/**
+	 * Resumes the given thread
+	 *
+	 * @param t the thread
+	 */
+	static void unsuspend(Thread *t);
+
+	/**
 	 * Prints the status of the scheduler
 	 *
 	 * @param os the output-stream
 	 */
 	static void print(OStream &os);
+
+	/**
+	 * Prints the event-lists
+	 *
+	 * @param os the output-stream
+	 */
+	static void printEventLists(OStream &os);
+
+	/**
+	 * @param event the event
+	 * @return the name of that event
+	 */
+	static const char *getEventName(uint event);
 
 private:
 	/**
@@ -109,11 +212,48 @@ private:
 	 */
 	static void removeThread(Thread *t);
 
+	static void removeFromEventlist(Thread *t);
 	static bool setReadyState(Thread *t);
 	static void print(OStream &os,DList<Thread> *q);
 
 	static klock_t lock;
 	static DList<Thread> rdyQueues[];
+	static DList<Thread> evlists[EV_COUNT];
 	static size_t rdyCount;
 	static Thread **idleThreads;
 };
+
+inline void Sched::block(Thread *t) {
+	assert(t != NULL);
+	SpinLock::acquire(&lock);
+	setBlocked(t);
+	SpinLock::release(&lock);
+}
+
+inline void Sched::unblock(Thread *t) {
+	assert(t != NULL);
+	SpinLock::acquire(&lock);
+	setReady(t);
+	SpinLock::release(&lock);
+}
+
+inline void Sched::unblockQuick(Thread *t) {
+	assert(t != NULL);
+	SpinLock::acquire(&lock);
+	setReadyQuick(t);
+	SpinLock::release(&lock);
+}
+
+inline void Sched::suspend(Thread *t) {
+	assert(t != NULL);
+	SpinLock::acquire(&lock);
+	setSuspended(t,true);
+	SpinLock::release(&lock);
+}
+
+inline void Sched::unsuspend(Thread *t) {
+	assert(t != NULL);
+	SpinLock::acquire(&lock);
+	setSuspended(t,false);
+	SpinLock::release(&lock);
+}

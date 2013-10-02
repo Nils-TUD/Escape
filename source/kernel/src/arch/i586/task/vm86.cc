@@ -26,7 +26,6 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
-#include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
@@ -119,7 +118,7 @@ int VM86::create() {
 	p->setCommand("VM86",0,"");
 
 	/* block us; we get waked up as soon as someone wants to use us */
-	Event::block(t);
+	t->block();
 	Thread::switchAway();
 
 	/* ok, we're back again... */
@@ -158,11 +157,11 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	}
 
 	/* make vm86 ready */
-	Event::unblock(vm86t);
+	vm86t->unblock();
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
-	Event::block(t);
+	t->block();
 	Thread::switchAway();
 
 	/* everything is finished :) */
@@ -393,11 +392,11 @@ void VM86::stop(VM86IntrptStackFrame *stack) {
 	if(ct != NULL) {
 		copyRegResult(stack);
 		vm86Res = storeAreaResult();
-		Event::unblock(ct);
+		ct->unblock();
 	}
 
 	/* block us and do a switch */
-	Event::block(t);
+	t->block();
 	Thread::switchAway();
 
 	/* lets start with a new request :) */

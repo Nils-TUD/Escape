@@ -21,7 +21,6 @@
 #include <sys/task/uenv.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
-#include <sys/task/event.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/pagedir.h>
 #include <sys/vfs/vfs.h>

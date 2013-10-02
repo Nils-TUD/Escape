@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
-#include <sys/task/event.h>
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
@@ -87,7 +86,7 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 
 	/* put process to sleep */
 	if(block)
-		Event::block(Thread::getById(tid));
+		Thread::getById(tid)->block();
 	SpinLock::release(&lock);
 	return 0;
 }
@@ -141,7 +140,7 @@ bool TimerBase::intrpt() {
 		timeInc -= l->time;
 		/* wake up thread */
 		if(l->block) {
-			Event::unblock(Thread::getById(l->tid));
+			Thread::getById(l->tid)->unblock();
 			foundThread = true;
 		}
 		else

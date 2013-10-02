@@ -22,7 +22,6 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
-#include <sys/task/event.h>
 #include <sys/task/lock.h>
 #include <sys/task/timer.h>
 #include <sys/task/filedesc.h>
@@ -133,7 +132,7 @@ int Syscalls::notify(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 	if(!IS_USER_NOTIFY_EVENT(event) || nt == NULL)
 		SYSC_ERROR(stack,-EINVAL);
-	Event::wakeupThread(nt,event);
+	Sched::wakeupThread(nt,event);
 	SYSC_RET1(stack,0);
 }
 
@@ -179,7 +178,7 @@ int Syscalls::suspend(Thread *t,IntrptStackFrame *stack) {
 	/* just threads from the own process */
 	if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
 		SYSC_ERROR(stack,-EINVAL);
-	Event::suspend(tt);
+	tt->suspend();
 	SYSC_RET1(stack,0);
 }
 
@@ -189,7 +188,7 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	/* just threads from the own process */
 	if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
 		SYSC_ERROR(stack,-EINVAL);
-	Event::unsuspend(tt);
+	tt->unsuspend();
 	SYSC_RET1(stack,0);
 }
 

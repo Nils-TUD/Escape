@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include <sys/task/event.h>
 #include <sys/task/elf.h>
 #include <sys/task/signals.h>
 #include <sys/task/env.h>

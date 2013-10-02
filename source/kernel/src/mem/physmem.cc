@@ -25,7 +25,6 @@
 #include <sys/mem/physmemareas.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
-#include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/openfile.h>
 #include <sys/config.h>
@@ -209,8 +208,8 @@ bool PhysMem::reserve(size_t frameCount) {
 	do {
 		/* notify swapper-thread */
 		if(!swapping)
-			Event::wakeupThread(swapperThread,EV_SWAP_WORK);
-		Event::wait(t,EV_SWAP_FREE,0);
+			Sched::wakeupThread(swapperThread,EV_SWAP_WORK);
+		t->wait(EV_SWAP_FREE,0);
 		SpinLock::release(&defLock);
 		Thread::switchNoSigs();
 		SpinLock::acquire(&defLock);
@@ -280,7 +279,7 @@ bool PhysMem::swapIn(uintptr_t addr) {
 	do {
 		job = siFreelist;
 		if(job == NULL) {
-			Event::wait(t,EV_SWAP_JOB,0);
+			t->wait(EV_SWAP_JOB,0);
 			jobWaiters++;
 			SpinLock::release(&defLock);
 			Thread::switchNoSigs();
@@ -298,9 +297,9 @@ bool PhysMem::swapIn(uintptr_t addr) {
 
 	/* notify the swapper, if necessary */
 	if(!swapping)
-		Event::wakeupThread(swapperThread,EV_SWAP_WORK);
+		Sched::wakeupThread(swapperThread,EV_SWAP_WORK);
 	/* wait until its done */
-	Event::block(t);
+	t->block();
 	SpinLock::release(&defLock);
 	Thread::switchNoSigs();
 	return true;
@@ -348,7 +347,7 @@ void PhysMem::swapper() {
 		}
 		/* wakeup in every case because its possible that the frames are available now but weren't
 		 * previously */
-		Event::wakeup(EV_SWAP_FREE,0);
+		Sched::wakeup(EV_SWAP_FREE,0);
 
 		/* handle swap-in-jobs */
 		while((job = getJob()) != NULL) {
@@ -359,14 +358,14 @@ void PhysMem::swapper() {
 				swappedIn++;
 
 			SpinLock::acquire(&defLock);
-			Event::unblock(job->thread);
+			job->thread->unblock();
 			freeJob(job);
 			swapping = false;
 		}
 
 		if(getFreeDef() - (kframes + cframes) >= uframes) {
 			/* we may receive new work now */
-			Event::wait(swapperThread,EV_SWAP_WORK,0);
+			swapperThread->wait(EV_SWAP_WORK,0);
 			SpinLock::release(&defLock);
 			Thread::switchAway();
 			SpinLock::acquire(&defLock);
@@ -486,5 +485,5 @@ void PhysMem::freeJob(SwapInJob *job) {
 	job->next = siFreelist;
 	siFreelist = job;
 	if(jobWaiters > 0)
-		Event::wakeup(EV_SWAP_JOB,0);
+		Sched::wakeup(EV_SWAP_JOB,0);
 }

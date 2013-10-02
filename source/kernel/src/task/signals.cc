@@ -21,7 +21,6 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
-#include <sys/task/event.h>
 #include <sys/col/dlist.h>
 #include <sys/mem/cache.h>
 #include <sys/util.h>
@@ -150,7 +149,7 @@ bool Signals::addSignalFor(tid_t tid,int signal) {
 	SpinLock::release(&lock);
 	/* without locking because the scheduler calls Signals::hasSignalFor) */
 	if(res)
-		Event::unblockQuick(t);
+		t->unblockQuick();
 	return res;
 }
 
@@ -169,7 +168,7 @@ bool Signals::addSignal(int signal) {
 		/* without locking because the scheduler calls Signals::hasSignalFor).
 		 * the listlock is ok because we don't grab it in hasSignalFor. */
 		if(added)
-			Event::unblockQuick(it->thread);
+			it->thread->unblockQuick();
 	}
 	SpinLock::release(&listLock);
 	return res;

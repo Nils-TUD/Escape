@@ -21,7 +21,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
 #include <sys/task/thread.h>
-#include <sys/task/event.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -313,16 +312,16 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 			static_cast<VFSDevice*>(parent)->addMsg();
 			if(EXPECT_FALSE(msg2))
 				static_cast<VFSDevice*>(parent)->addMsg();
-			Event::wakeup(EV_CLIENT,(evobj_t)parent);
+			Sched::wakeup(EV_CLIENT,(evobj_t)parent);
 		}
 		VFSNode::releaseTree();
 	}
 	else {
 		/* notify other possible waiters */
 		if(recipient)
-			Event::unblock(recipient);
+			recipient->unblock();
 		else
-			Event::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
+			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
 	}
 	SpinLock::release(&waitLock);
 	return 0;
@@ -361,7 +360,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 			SpinLock::release(&waitLock);
 			return -EDESTROYED;
 		}
-		Event::wait(t,event,(evobj_t)waitNode);
+		t->wait(event,(evobj_t)waitNode);
 		SpinLock::release(&waitLock);
 
 		if(EXPECT_FALSE(ignoreSigs))

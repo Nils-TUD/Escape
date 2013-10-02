@@ -481,6 +481,15 @@ public:
 	bool getTLSRange(uintptr_t *start,uintptr_t *end) const;
 
 	/**
+	 * Lets this thread wait for the given event and object
+	 *
+	 * @param event the event to wait for
+	 * @param object the object (0 = ignore)
+	 * @return true if successfull
+	 */
+	void wait(uint event,evobj_t object);
+
+	/**
 	 * Blocks this thread. ONLY CALLED by event.
 	 */
 	void block();
@@ -649,6 +658,7 @@ private:
 		newState = state;
 	}
 
+	void printEvMask(OStream &os) const;
 	void makeUnrunnable();
 	void initProps();
 	static void doSwitch() asm("thread_switch");
@@ -819,28 +829,33 @@ inline size_t ThreadBase::getIntrptLevel() const {
 	return intrptLevel - 1;
 }
 
+inline void ThreadBase::wait(uint event,evobj_t object) {
+	assert(this != NULL);
+	Sched::wait(static_cast<Thread*>(this),event,object);
+}
+
 inline void ThreadBase::block() {
 	assert(this != NULL);
-	Sched::setBlocked(static_cast<Thread*>(this));
+	Sched::block(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::unblock() {
 	assert(this != NULL);
-	Sched::setReady(static_cast<Thread*>(this));
+	Sched::unblock(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::unblockQuick() {
-	Sched::setReadyQuick(static_cast<Thread*>(this));
+	Sched::unblockQuick(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::suspend() {
 	assert(this != NULL);
-	Sched::setSuspended(static_cast<Thread*>(this),true);
+	Sched::suspend(static_cast<Thread*>(this));
 }
 
 inline void ThreadBase::unsuspend() {
 	assert(this != NULL);
-	Sched::setSuspended(static_cast<Thread*>(this),false);
+	Sched::unsuspend(static_cast<Thread*>(this));
 }
 
 inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {

@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/task/event.h>
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
 #include <sys/vfs/vfs.h>
@@ -151,8 +150,8 @@ void VFSDevice::wakeupClients(bool locked) {
 	const VFSNode *n = openDir(locked,&valid);
 	if(valid) {
 		while(n != NULL) {
-			Event::wakeup(EV_DATA_READABLE,(evobj_t)n);
-			Event::wakeup(EV_RECEIVED_MSG,(evobj_t)n);
+			Sched::wakeup(EV_DATA_READABLE,(evobj_t)n);
+			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)n);
 			n = n->next;
 		}
 	}

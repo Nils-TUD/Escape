@@ -19,7 +19,6 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/task/event.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>

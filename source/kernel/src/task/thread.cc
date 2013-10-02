@@ -21,7 +21,6 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
-#include <sys/task/event.h>
 #include <sys/task/timer.h>
 #include <sys/task/terminator.h>
 #include <sys/vfs/vfs.h>
@@ -296,7 +295,7 @@ void ThreadBase::kill() {
 	VFS::removeThread(tid);
 
 	/* notify the process about it */
-	Event::wakeup(EV_THREAD_DIED,(evobj_t)proc);
+	Sched::wakeup(EV_THREAD_DIED,(evobj_t)proc);
 
 	/* finally, destroy thread */
 	remove();
@@ -304,7 +303,6 @@ void ThreadBase::kill() {
 }
 
 void ThreadBase::makeUnrunnable() {
-	Event::removeThread(static_cast<Thread*>(this));
 	Sched::removeThread(static_cast<Thread*>(this));
 }
 
@@ -320,10 +318,17 @@ static const char *getStateName(uint8_t state) {
 	return states[state];
 }
 
+void ThreadBase::printEvMask(OStream &os) const {
+    if(event == 0)
+        os.writef("-");
+    else
+        os.writef("%s:%p",Sched::getEventName(event),evobject);
+}
+
 void ThreadBase::printShort(OStream &os) const {
 	os.writef("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
 			tid,getStateName(state),priority,cpu,getRuntime());
-	Event::printEvMask(os,static_cast<const Thread*>(this));
+	this->printEvMask(os);
 	os.writef("]");
 }
 
@@ -333,7 +338,7 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("Flags=%#x\n",flags);
 	os.writef("State=%s\n",getStateName(state));
 	os.writef("Events=");
-	Event::printEvMask(os,static_cast<const Thread*>(this));
+	this->printEvMask(os);
 	os.writef("\n");
 	os.writef("LastCPU=%d\n",cpu);
 	os.writef("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);

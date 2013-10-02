@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/task/event.h>
 #include <sys/vfs/node.h>
 #include <esc/fsinterface.h>
 

@@ -21,7 +21,6 @@
 #include <sys/task/terminator.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include <sys/task/event.h>
 #include <sys/task/timer.h>
 #include <sys/spinlock.h>
 #include <assert.h>
@@ -34,7 +33,7 @@ void Terminator::start() {
 	SpinLock::acquire(&lock);
 	while(1) {
 		if(deadThreads.length() == 0) {
-			Event::wait(t,EV_TERMINATION,0);
+			t->wait(EV_TERMINATION,0);
 			SpinLock::release(&lock);
 
 			Thread::switchAway();
@@ -66,7 +65,7 @@ void Terminator::addDead(Thread *t) {
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(deadThreads.append(t));
-		Event::wakeup(EV_TERMINATION,0);
+		Sched::wakeup(EV_TERMINATION,0);
 	}
 	SpinLock::release(&lock);
 }

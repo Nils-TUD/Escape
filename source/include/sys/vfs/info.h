@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/vfs/file.h>
+#include <sys/task/proc.h>
 
 class VFSInfo {
 	/* callback function for the default read-handler */

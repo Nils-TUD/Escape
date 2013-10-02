@@ -23,7 +23,6 @@
 #include <sys/task/sched.h>
 #include <sys/task/smp.h>
 #include <sys/task/timer.h>
-#include <sys/task/event.h>
 #include <sys/mem/kheap.h>
 #include <sys/util.h>
 #include <sys/cpu.h>
@@ -46,6 +45,7 @@
 
 klock_t Sched::lock;
 DList<Thread> Sched::rdyQueues[MAX_PRIO + 1];
+DList<Thread> Sched::evlists[EV_COUNT];
 size_t Sched::rdyCount;
 Thread **Sched::idleThreads;
 
@@ -81,8 +81,8 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
+				removeFromEventlist(old);
 				SpinLock::release(&lock);
-				Event::removeThread(old);
 				return old;
 			}
 
@@ -94,6 +94,7 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 
 			switch(old->getNewState()) {
 				case Thread::READY:
+					assert(old->event == 0);
 					old->setState(Thread::READY);
 					rdyQueues[old->getPriority()].append(old);
 					rdyCount++;
@@ -176,43 +177,93 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	SpinLock::release(&lock);
 }
 
-void Sched::setReady(Thread *t) {
-	assert(t != NULL);
-	if(t->getFlags() & T_IDLE)
-		return;
-
+void Sched::wait(Thread *t,uint event,evobj_t object) {
 	SpinLock::acquire(&lock);
-	if(t->getState() == Thread::RUNNING)
-		t->setNewState(Thread::READY);
-	else if(setReadyState(t)) {
-		rdyQueues[t->getPriority()].append(t);
-		rdyCount++;
+	assert(t->event == 0);
+	assert(Thread::getRunning() == t);
+	t->event = event;
+	t->evobject = object;
+	setBlocked(t);
+	if(event)
+		evlists[event - 1].append(t);
+	SpinLock::release(&lock);
+}
+
+void Sched::wakeup(uint event,evobj_t object) {
+	assert(event >= 1 && event <= EV_COUNT);
+	DList<Thread> *list = evlists + event - 1;
+	SpinLock::acquire(&lock);
+	for(auto it = list->begin(); it != list->end(); ) {
+		auto old = it++;
+		assert(old->event == event);
+		if(old->evobject == 0 || old->evobject == object) {
+			/* important: remove it first from the event-list and set event to 0 */
+			list->remove(&*old);
+			old->event = 0;
+			setReady(&*old);
+		}
 	}
 	SpinLock::release(&lock);
 }
 
-void Sched::setReadyQuick(Thread *t) {
-	assert(t != NULL);
+bool Sched::wakeupThread(Thread *t,uint event) {
+	assert(event >= 1 && event <= EV_COUNT);
+	bool res = false;
+	SpinLock::acquire(&lock);
+	if(t->event == event) {
+		/* important: remove it first from the event-list and set event to 0 */
+		evlists[event - 1].remove(t);
+		t->event = 0;
+		setReady(t);
+		res = true;
+	}
+	SpinLock::release(&lock);
+	return res;
+}
+
+void Sched::setReady(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return;
 
-	SpinLock::acquire(&lock);
-	if(t->getState() == Thread::RUNNING)
+	if(t->getState() == Thread::RUNNING) {
+		removeFromEventlist(t);
 		t->setNewState(Thread::READY);
+	}
+	else if(setReadyState(t)) {
+		assert(t->event == 0);
+		rdyQueues[t->getPriority()].append(t);
+		rdyCount++;
+	}
+}
+
+void Sched::setReadyQuick(Thread *t) {
+	if(t->getFlags() & T_IDLE)
+		return;
+
+	if(t->getState() == Thread::RUNNING) {
+		removeFromEventlist(t);
+		t->setNewState(Thread::READY);
+	}
 	else if(t->getState() == Thread::READY) {
+		assert(t->event == 0);
 		rdyQueues[t->getPriority()].remove(t);
 		rdyQueues[t->getPriority()].prepend(t);
 	}
 	else if(setReadyState(t)) {
+		assert(t->event == 0);
 		rdyQueues[t->getPriority()].prepend(t);
 		rdyCount++;
 	}
-	SpinLock::release(&lock);
+}
+
+void Sched::removeFromEventlist(Thread *t) {
+	if(t->event) {
+		evlists[t->event - 1].remove(t);
+		t->event = 0;
+	}
 }
 
 void Sched::setBlocked(Thread *t) {
-	assert(t != NULL);
-	SpinLock::acquire(&lock);
 	switch(t->getState()) {
 		case Thread::ZOMBIE:
 		case Thread::ZOMBIE_SUSP:
@@ -234,13 +285,10 @@ void Sched::setBlocked(Thread *t) {
 			vassert(false,"Invalid state for setBlocked (%d)",t->getState());
 			break;
 	}
-	SpinLock::release(&lock);
 }
 
 void Sched::setSuspended(Thread *t,bool blocked) {
-	assert(t != NULL);
-
-	SpinLock::acquire(&lock);
+	/* TODO what if we're waiting for an event? */
 	if(blocked) {
 		switch(t->getState()) {
 			/* already suspended, so ignore it */
@@ -287,7 +335,6 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 				break;
 		}
 	}
-	SpinLock::release(&lock);
 }
 
 void Sched::removeThread(Thread *t) {
@@ -300,6 +347,7 @@ void Sched::removeThread(Thread *t) {
 			return;
 		case Thread::ZOMBIE:
 		case Thread::BLOCKED:
+			removeFromEventlist(t);
 			break;
 		case Thread::READY:
 			rdyQueues[t->getPriority()].remove(t);
@@ -315,15 +363,6 @@ void Sched::removeThread(Thread *t) {
 	SpinLock::release(&lock);
 }
 
-void Sched::print(OStream &os) {
-	os.writef("Ready queues:\n");
-	for(size_t i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
-		os.writef("\t[%d]:\n",i);
-		print(os,rdyQueues + i);
-		os.writef("\n");
-	}
-}
-
 bool Sched::setReadyState(Thread *t) {
 	switch(t->getState()) {
 		case Thread::ZOMBIE:
@@ -335,6 +374,7 @@ bool Sched::setReadyState(Thread *t) {
 			t->setState(Thread::READY_SUSP);
 			return false;
 		case Thread::BLOCKED:
+			removeFromEventlist(t);
 			break;
 		default:
 			vassert(false,"Invalid state for setReady (%d)",t->getState());
@@ -342,6 +382,55 @@ bool Sched::setReadyState(Thread *t) {
 	}
 	t->setState(Thread::READY);
 	return true;
+}
+
+void Sched::print(OStream &os) {
+	os.writef("Ready queues:\n");
+	for(size_t i = 0; i < ARRAY_SIZE(rdyQueues); i++) {
+		os.writef("\t[%d]:\n",i);
+		print(os,rdyQueues + i);
+		os.writef("\n");
+	}
+}
+
+void Sched::printEventLists(OStream &os) {
+	os.writef("Eventlists:\n");
+	for(size_t e = 0; e < EV_COUNT; e++) {
+		DList<Thread> *list = evlists + e;
+		os.writef("\t%s:\n",getEventName(e + 1));
+		for(auto t = list->cbegin(); t != list->cend(); ++t) {
+			os.writef("\t\tthread=%d (%d:%s), object=%x",
+					t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram(),t->evobject);
+			inode_t nodeNo = ((VFSNode*)t->evobject)->getNo();
+			if(VFSNode::isValid(nodeNo))
+				os.writef("(%s)",((VFSNode*)t->evobject)->getPath());
+			os.writef("\n");
+		}
+	}
+}
+
+const char *Sched::getEventName(uint event) {
+	static const char *names[] = {
+		"CLIENT",
+		"RECEIVED_MSG",
+		"DATA_READABLE",
+		"MUTEX",
+		"PIPE_FULL",
+		"PIPE_EMPTY",
+		"UNLOCK_SH",
+		"UNLOCK_EX",
+		"REQ_FREE",
+		"USER1",
+		"USER2",
+		"SWAP_JOB",
+		"SWAP_WORK",
+		"SWAP_FREE",
+		"VMM_DONE",
+		"THREAD_DIED",
+		"CHILD_DIED",
+		"TERMINATION",
+	};
+	return names[event - 1];
 }
 
 void Sched::print(OStream &os,DList<Thread> *q) {

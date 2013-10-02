@@ -25,7 +25,6 @@
 #include <sys/mem/dynarray.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include <sys/task/event.h>
 #include <sys/task/sched.h>
 #include <sys/task/elf.h>
 #include <sys/task/uenv.h>

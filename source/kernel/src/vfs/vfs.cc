@@ -32,7 +32,6 @@
 #include <sys/vfs/openfile.h>
 #include <sys/task/proc.h>
 #include <sys/task/groups.h>
-#include <sys/task/event.h>
 #include <sys/task/lock.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
@@ -330,11 +329,7 @@ int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t p
 		}
 
 		/* wait */
-		if(!Event::wait(t,event,object)) {
-			SpinLock::release(&waitLock);
-			res = -ENOMEM;
-			goto error;
-		}
+		t->wait(event,object);
 		if(pid != KERNEL_PID)
 			Lock::release(pid,ident);
 		if(isFirstWait && maxWaitTime != 0)

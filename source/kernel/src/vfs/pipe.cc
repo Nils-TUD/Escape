@@ -22,7 +22,6 @@
 #include <sys/mem/virtmem.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
-#include <sys/task/event.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -62,7 +61,7 @@ void VFSPipe::close(pid_t pid,OpenFile *file) {
 		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */
 		if(file->fcntl(pid,F_GETACCESS,0) == VFS_READ) {
 			noReader = true;
-			Event::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
+			Sched::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
 		}
 		/* otherwise write EOF in the pipe */
 		else
@@ -81,7 +80,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		return -EDESTROYED;
 	SpinLock::acquire(&lock);
 	while(list.length() == 0) {
-		Event::wait(t,EV_PIPE_FULL,(evobj_t)this);
+		t->wait(EV_PIPE_FULL,(evobj_t)this);
 		SpinLock::release(&lock);
 
 		Thread::switchAway();
@@ -126,8 +125,8 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		while(list.length() == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
-			Event::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
-			Event::wait(t,EV_PIPE_FULL,(evobj_t)this);
+			Sched::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
+			t->wait(EV_PIPE_FULL,(evobj_t)this);
 			SpinLock::release(&lock);
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
@@ -147,7 +146,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 	}
 	SpinLock::release(&lock);
 	/* wakeup all threads that wait for writing in this node */
-	Event::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
+	Sched::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
 	return totalBytes;
 }
 
@@ -165,7 +164,7 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 			return -EDESTROYED;
 		SpinLock::acquire(&lock);
 		while((total + count) >= MAX_VFS_FILE_SIZE) {
-			Event::wait(t,EV_PIPE_EMPTY,(evobj_t)this);
+			t->wait(EV_PIPE_EMPTY,(evobj_t)this);
 			SpinLock::release(&lock);
 
 			Thread::switchNoSigs();
@@ -208,6 +207,6 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	list.append(data);
 	total += count;
 	SpinLock::release(&lock);
-	Event::wakeup(EV_PIPE_FULL,(evobj_t)this);
+	Sched::wakeup(EV_PIPE_FULL,(evobj_t)this);
 	return count;
 }

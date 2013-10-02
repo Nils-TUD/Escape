@@ -24,7 +24,6 @@
 #include <sys/mem/copyonwrite.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/swapmap.h>
-#include <sys/task/event.h>
 #include <sys/task/smp.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>

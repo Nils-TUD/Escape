@@ -30,7 +30,6 @@
 #include <sys/task/signals.h>
 #include <sys/task/thread.h>
 #include <sys/task/lock.h>
-#include <sys/task/event.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
 #include <sys/vfs/node.h>
@@ -114,7 +113,7 @@ static View views[] = {
 	{"timer",		Timer::print},
 	{"boot",		Boot::print},
 	{"locks",		Lock::print},
-	{"events",		Event::print},
+	{"events",		Sched::printEventLists},
 	{"smp",			SMP::print},
 };
 

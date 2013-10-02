@@ -25,7 +25,6 @@
 #include <sys/task/elf.h>
 #include <sys/task/lock.h>
 #include <sys/task/env.h>
-#include <sys/task/event.h>
 #include <sys/task/uenv.h>
 #include <sys/task/groups.h>
 #include <sys/task/terminator.h>
@@ -302,7 +301,7 @@ int ProcBase::clone(uint8_t flags) {
 		return 0;
 	}
 	/* parent */
-	Event::unblock(nt);
+	nt->unblock();
 
 #if DEBUG_CREATIONS
 	Term().writef("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,
@@ -373,9 +372,9 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 
 	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
 	if(nt->getFlags() & T_IDLE)
-		Event::block(nt);
+		nt->block();
 	else
-		Event::unblock(nt);
+		nt->unblock();
 
 #if DEBUG_CREATIONS
 	Term().writef("Thread %d (proc %d:%s): %x\n",nt->getTid(),nt->getProc()->pid,
@@ -504,7 +503,7 @@ void ProcBase::join(tid_t tid) {
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	while((tid == 0 && t->getProc()->threads.length() > 1) ||
 			(tid != 0 && Thread::getById(tid) != NULL)) {
-		Event::wait(t,EV_THREAD_DIED,(evobj_t)t->getProc());
+		t->wait(EV_THREAD_DIED,(evobj_t)t->getProc());
 		release(p,PLOCK_PROG);
 
 		Thread::switchNoSigs();
@@ -669,7 +668,7 @@ void ProcBase::kill(pid_t pid) {
 
 void ProcBase::notifyProcDied(pid_t parent) {
 	addSignalFor(parent,SIG_CHILD_TERM);
-	Event::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
+	Sched::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
 int ProcBase::waitChild(USER ExitState *state) {
@@ -681,11 +680,9 @@ int ProcBase::waitChild(USER ExitState *state) {
 	res = getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		Event::wait(t,EV_CHILD_DIED,(evobj_t)p);
+		t->wait(EV_CHILD_DIED,(evobj_t)p);
 		childLock.up();
 		Thread::switchAway();
-		/* stop waiting for event; maybe we have been waked up for another reason */
-		Event::removeThread(t);
 		/* don't continue here if we were interrupted by a signal */
 		if(Signals::hasSignalFor(t->getTid()))
 			return -EINTR;

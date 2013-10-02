@@ -111,14 +111,6 @@ int memcmp(const void *str1,const void *str2,size_t count);
 void memswp(void *a,void *b,size_t n);
 
 /**
- * Sets <count> bytes starting at <addr> to 0.
- *
- * @param addr the starting address
- * @param count the number of bytes
- */
-void memclear(void *addr,size_t count);
-
-/**
  * Sets all bytes in memory beginning at <addr> and ending at <addr> + <count>
  * to <value>.
  *
@@ -128,6 +120,16 @@ void memclear(void *addr,size_t count);
  * @return <addr>
  */
 void *memset(void *addr,int value,size_t count);
+
+/**
+ * Sets <count> bytes starting at <addr> to 0.
+ *
+ * @param addr the starting address
+ * @param count the number of bytes
+ */
+static inline void memclear(void *addr,size_t count) {
+	memset(addr,0,count);
+}
 
 /**
  * Copies the values of num bytes from the location pointed by source to the memory block pointed

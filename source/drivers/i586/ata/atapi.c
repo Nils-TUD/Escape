@@ -61,11 +61,11 @@ bool atapi_read(sATADevice *device,uint op,void *buffer,uint64_t lba,A_UNUSED si
 		cmd[7] = (secCount >> 8) & 0xFF;
 		cmd[8] = (secCount >> 0) & 0xFF;
 	}
-    cmd[2] = (lba >> 24) & 0xFF;
-    cmd[3] = (lba >> 16) & 0xFF;
-    cmd[4] = (lba >> 8) & 0xFF;
-    cmd[5] = (lba >> 0) & 0xFF;
-    return atapi_request(device,cmd,buffer,secCount * device->secSize);
+	cmd[2] = (lba >> 24) & 0xFF;
+	cmd[3] = (lba >> 16) & 0xFF;
+	cmd[4] = (lba >> 8) & 0xFF;
+	cmd[5] = (lba >> 0) & 0xFF;
+	return atapi_request(device,cmd,buffer,secCount * device->secSize);
 }
 
 size_t atapi_getCapacity(sATADevice *device) {
@@ -83,10 +83,10 @@ static bool atapi_request(sATADevice *device,uint8_t *cmd,void *buffer,size_t bu
 	sATAController *ctrl = device->ctrl;
 
 	/* send PACKET command to drive */
-    if(!ata_readWrite(device,OP_PACKET,cmd,0xFFFF00,12,1))
-    	return false;
+	if(!ata_readWrite(device,OP_PACKET,cmd,0xFFFF00,12,1))
+		return false;
 
-    /* now transfer the data */
+	/* now transfer the data */
 	if(ctrl->useDma && device->info.capabilities.DMA)
 		return ata_transferDMA(device,OP_READ,buffer,device->secSize,bufSize / device->secSize);
 

@@ -24,5 +24,5 @@
 static inline uint64_t rdtsc(void) {
 	uint64_t res;
 	__asm__ volatile ("GET	%0,rC" : "=r"(res));
-    return res;
+	return res;
 }

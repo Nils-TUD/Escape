@@ -122,7 +122,7 @@ int main(void) {
 	if(sid < 0)
 		error("Unable to register device 'mouse'");
 
-    /* wait for commands */
+	/* wait for commands */
 	while(1) {
 		int fd;
 

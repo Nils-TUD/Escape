@@ -73,36 +73,36 @@ private:
  * data to the item.
  */
 class DListItem : public SListItem {
-    template<class T>
-    friend class SList;
-    template<class T>
-    friend class DList;
-    template<class T, class It>
-    friend class ListIteratorBase;
+	template<class T>
+	friend class SList;
+	template<class T>
+	friend class DList;
+	template<class T, class It>
+	friend class ListIteratorBase;
 	friend class NodeAllocator;
 
 public:
-    /**
-     * Constructor
-     */
-    explicit DListItem() : SListItem(), _prev() {
-    }
+	/**
+	 * Constructor
+	 */
+	explicit DListItem() : SListItem(), _prev() {
+	}
 
 private:
-    DListItem *next() {
-        return static_cast<DListItem*>(SListItem::next());
-    }
-    void next(DListItem *i) {
-    	SListItem::next(i);
-    }
-    DListItem *prev() {
-        return _prev;
-    }
-    void prev(DListItem *i) {
-        _prev = i;
-    }
+	DListItem *next() {
+		return static_cast<DListItem*>(SListItem::next());
+	}
+	void next(DListItem *i) {
+		SListItem::next(i);
+	}
+	DListItem *prev() {
+		return _prev;
+	}
+	void prev(DListItem *i) {
+		_prev = i;
+	}
 
-    DListItem *_prev;
+	DListItem *_prev;
 };
 
 /**

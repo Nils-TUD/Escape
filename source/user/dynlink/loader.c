@@ -147,7 +147,7 @@ uintptr_t load_addSegments(void) {
 						l->loadAddr = addr;
 					else
 						l->mainTextAddr = addr;
-                    l->textSize = pheader.p_memsz;
+					l->textSize = pheader.p_memsz;
 				}
 				loadSeg++;
 			}

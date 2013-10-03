@@ -28,5 +28,5 @@ static inline void locku(tULock *l) {
 }
 
 static inline void unlocku(tULock *l) {
-    __sync_lock_release(l);
+	__sync_lock_release(l);
 }

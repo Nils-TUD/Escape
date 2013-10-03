@@ -319,10 +319,10 @@ static const char *getStateName(uint8_t state) {
 }
 
 void ThreadBase::printEvMask(OStream &os) const {
-    if(event == 0)
-        os.writef("-");
-    else
-        os.writef("%s:%p",Sched::getEventName(event),evobject);
+	if(event == 0)
+		os.writef("-");
+	else
+		os.writef("%s:%p",Sched::getEventName(event),evobject);
 }
 
 void ThreadBase::printShort(OStream &os) const {

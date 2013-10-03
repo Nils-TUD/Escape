@@ -57,7 +57,7 @@ int main(int argc,char **argv) {
 	if(fcntl(id,F_SETDATA,true) < 0)
 		error("fcntl");
 
-    /* wait for commands */
+	/* wait for commands */
 	while(1) {
 		msgid_t mid;
 		fd = getwork(id,&mid,&msg,sizeof(msg),0);

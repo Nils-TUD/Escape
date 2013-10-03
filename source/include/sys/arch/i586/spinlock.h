@@ -25,8 +25,8 @@
 
 #if !DEBUG_SPINLOCKS
 inline void SpinLock::acquire(klock_t *l) {
-    while(!Atomic::cmpnswap(l, 0, 1))
-        CPU::pause();
+	while(!Atomic::cmpnswap(l, 0, 1))
+		CPU::pause();
 }
 #endif
 

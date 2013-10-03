@@ -84,7 +84,7 @@ int main(void) {
 	/* enable interrupts */
 	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 
-    /* wait for commands */
+	/* wait for commands */
 	while(1) {
 		int fd;
 

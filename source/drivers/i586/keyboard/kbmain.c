@@ -191,7 +191,7 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register device 'keyboard'");
 
-    /* wait for commands */
+	/* wait for commands */
 	while(1) {
 		int fd;
 

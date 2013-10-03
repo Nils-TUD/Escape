@@ -33,7 +33,7 @@
 	"1:\n"
 #else
 #	define DO_SYSENTER				\
-    "mov	$1f,%%edx\n"			\
+	"mov	$1f,%%edx\n"			\
 	"mov	%%esp,%%ecx\n"			\
 	"sysenter\n"					\
 	"1:\n"
@@ -98,7 +98,7 @@ static inline long syscall3(long syscno,ulong arg1,ulong arg2,ulong arg3) {
 }
 
 static inline long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4) {
-    __asm__ volatile (
+	__asm__ volatile (
 		// the problem is here that we need to push 2 values. thus, the second one can't be loaded
 		// over esp, since the first push changes that. Using "r" doesn't work either because
 		// 1. we have to tell him that ecx and edx are changed in the asm and 2. when doing that
@@ -117,4 +117,4 @@ static inline long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong a
 }
 
 EXTERN_C long syscall7(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4,ulong arg5,ulong arg6,
-                      ulong arg7);
+                       ulong arg7);

@@ -31,49 +31,49 @@ typedef void (*memop_func)(void *a,void *b,size_t len);
 static void do_test(const char *name,memop_func func);
 
 static void memcpy_func(void *a,void *b,size_t len) {
-    memcpy(a,(const void*)b,len);
+	memcpy(a,(const void*)b,len);
 }
 static void memset_func(void *a,A_UNUSED void *b,size_t len) {
-    memset(a,0,len);
+	memset(a,0,len);
 }
 
 static const size_t AREA_SIZE   = 4096;
 static const uint TEST_COUNT    = 1000;
 
 int mod_memops(A_UNUSED int argc,A_UNUSED char *argv[]) {
-    do_test("memcpy", memcpy_func);
-    do_test("memset", memset_func);
+	do_test("memcpy", memcpy_func);
+	do_test("memset", memset_func);
 	return 0;
 }
 
 static void do_test(const char *name,memop_func func) {
-    void *mem = malloc(AREA_SIZE);
-    void *buf = malloc(AREA_SIZE);
+	void *mem = malloc(AREA_SIZE);
+	void *buf = malloc(AREA_SIZE);
 
-    {
-        uint64_t total = 0;
-        for(uint i = 0; i < TEST_COUNT; ++i) {
-            uint64_t start = rdtsc();
-            func(buf, mem, AREA_SIZE);
-            total += rdtsc() - start;
-        }
-        printf("Aligned %s with %zu bytes: %Lu cycles/call, %Lu MiB/s\n",
-               name,AREA_SIZE,total / TEST_COUNT,
-               (AREA_SIZE * TEST_COUNT) / tsctotime(total));
-    }
+	{
+		uint64_t total = 0;
+		for(uint i = 0; i < TEST_COUNT; ++i) {
+			uint64_t start = rdtsc();
+			func(buf, mem, AREA_SIZE);
+			total += rdtsc() - start;
+		}
+		printf("Aligned %s with %zu bytes: %Lu cycles/call, %Lu MiB/s\n",
+				name,AREA_SIZE,total / TEST_COUNT,
+				(AREA_SIZE * TEST_COUNT) / tsctotime(total));
+	}
 
-    {
-        uint64_t total = 0;
-        for(uint i = 0; i < TEST_COUNT; ++i) {
-            uint64_t start = rdtsc();
-            func((char*)buf + 1,(char*)mem + 1,AREA_SIZE - 2);
-            total += rdtsc() - start;
-        }
-        printf("Unaligned %s with %zu bytes: %Lu cycles/call, %Lu MiB/s\n",
-               name,AREA_SIZE,total / TEST_COUNT,
-               (AREA_SIZE * TEST_COUNT) / tsctotime(total));
-    }
+	{
+		uint64_t total = 0;
+		for(uint i = 0; i < TEST_COUNT; ++i) {
+			uint64_t start = rdtsc();
+			func((char*)buf + 1,(char*)mem + 1,AREA_SIZE - 2);
+			total += rdtsc() - start;
+		}
+		printf("Unaligned %s with %zu bytes: %Lu cycles/call, %Lu MiB/s\n",
+				name,AREA_SIZE,total / TEST_COUNT,
+				(AREA_SIZE * TEST_COUNT) / tsctotime(total));
+	}
 
-    free(buf);
-    free(mem);
+	free(buf);
+	free(mem);
 }

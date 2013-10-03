@@ -245,10 +245,10 @@ void VM86::handleGPF(VM86IntrptStackFrame *stack) {
 				/* don't continue here */
 				return;
 			}
-            stack->eip = newip;
-            stack->cs = newcs;
-            /* don't disable interrupts */
-            stack->eflags = newflags | (1 << 9);
+			stack->eip = newip;
+			stack->cs = newcs;
+			/* don't disable interrupts */
+			stack->eflags = newflags | (1 << 9);
 		}
 		break;
 		case X86OP_PUSHF:

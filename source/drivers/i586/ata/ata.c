@@ -119,7 +119,7 @@ bool ata_transferDMA(sATADevice *device,uint op,void *buffer,size_t secSize,size
 	ATA_PR2("Starting DMA-transfer");
 	ctrl_inbmrb(ctrl,BMR_REG_COMMAND);
 	ctrl_inbmrb(ctrl,BMR_REG_STATUS);
-    /* start bus-mastering */
+	/* start bus-mastering */
 	if(op == OP_READ)
 		ctrl_outbmrb(ctrl,BMR_REG_COMMAND,BMR_CMD_START | BMR_CMD_READ);
 	else

@@ -199,26 +199,26 @@ typedef struct {
 	mwDMAMode2Sel : 1,
 	/* reserved */
 	: 5;
-    uint8_t supportedPIOModes;
-    /* reserved */
-    uint8_t : 8;
-    uint16_t minMwDMATransTimePerWord;	/* in nanoseconds */
-    uint16_t recMwDMATransTime;
-    uint16_t minPIOTransTime;
-    uint16_t minPIOTransTimeIncCtrlFlow;
-    /* reserved / uninteresting */
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    uint16_t : 16;
-    union {
+	uint8_t supportedPIOModes;
+	/* reserved */
+	uint8_t : 8;
+	uint16_t minMwDMATransTimePerWord;	/* in nanoseconds */
+	uint16_t recMwDMATransTime;
+	uint16_t minPIOTransTime;
+	uint16_t minPIOTransTimeIncCtrlFlow;
+	/* reserved / uninteresting */
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	uint16_t : 16;
+	union {
 		struct {
 			uint16_t : 1,
 			ata1 : 1,
@@ -231,7 +231,7 @@ typedef struct {
 			: 8;
 		} A_PACKED bits;
 		uint16_t raw;
-    } majorVersion;
+	} majorVersion;
 	uint16_t minorVersion;
 	struct {
 		uint16_t smart : 1,

@@ -269,10 +269,10 @@ public:
 	 */
 	static uint64_t getMSR(uint32_t msr) {
 		uint32_t h,l;
-        asm volatile (
-        	"rdmsr" : "=a"(l), "=d"(h) : "c"(msr)
-        );
-        return (static_cast<uint64_t>(h) << 32) | l;
+		asm volatile (
+			"rdmsr" : "=a"(l), "=d"(h) : "c"(msr)
+		);
+		return (static_cast<uint64_t>(h) << 32) | l;
 	}
 
 	/**
@@ -285,7 +285,7 @@ public:
 						"d"(static_cast<uint32_t>(value >> 32)),
 						"c"(msr)
 		);
-    }
+	}
 
 private:
 	/* the information about our cpu */

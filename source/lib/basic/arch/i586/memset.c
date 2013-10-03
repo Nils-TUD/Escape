@@ -21,46 +21,46 @@
 #include <string.h>
 
 void *memset(void *addr,int value,size_t count) {
-    uchar *baddr = (uchar*)addr;
-    /* align it */
-    while(count > 0 && (uintptr_t)baddr % sizeof(ulong)) {
-        *baddr++ = value;
-        count--;
-    }
+	uchar *baddr = (uchar*)addr;
+	/* align it */
+	while(count > 0 && (uintptr_t)baddr % sizeof(ulong)) {
+		*baddr++ = value;
+		count--;
+	}
 
-    ulong dwval = (value << 24) | (value << 16) | (value << 8) | value;
-    ulong *dwaddr = (ulong*)baddr;
-    /* set words with loop-unrolling */
-    while(count >= sizeof(ulong) * 16) {
-        *dwaddr = dwval;
-        *(dwaddr + 1) = dwval;
-        *(dwaddr + 2) = dwval;
-        *(dwaddr + 3) = dwval;
-        *(dwaddr + 4) = dwval;
-        *(dwaddr + 5) = dwval;
-        *(dwaddr + 6) = dwval;
-        *(dwaddr + 7) = dwval;
-        *(dwaddr + 8) = dwval;
-        *(dwaddr + 9) = dwval;
-        *(dwaddr + 10) = dwval;
-        *(dwaddr + 11) = dwval;
-        *(dwaddr + 12) = dwval;
-        *(dwaddr + 13) = dwval;
-        *(dwaddr + 14) = dwval;
-        *(dwaddr + 15) = dwval;
-        dwaddr += 16;
-        count -= sizeof(ulong) * 16;
-    }
+	ulong dwval = (value << 24) | (value << 16) | (value << 8) | value;
+	ulong *dwaddr = (ulong*)baddr;
+	/* set words with loop-unrolling */
+	while(count >= sizeof(ulong) * 16) {
+		*dwaddr = dwval;
+		*(dwaddr + 1) = dwval;
+		*(dwaddr + 2) = dwval;
+		*(dwaddr + 3) = dwval;
+		*(dwaddr + 4) = dwval;
+		*(dwaddr + 5) = dwval;
+		*(dwaddr + 6) = dwval;
+		*(dwaddr + 7) = dwval;
+		*(dwaddr + 8) = dwval;
+		*(dwaddr + 9) = dwval;
+		*(dwaddr + 10) = dwval;
+		*(dwaddr + 11) = dwval;
+		*(dwaddr + 12) = dwval;
+		*(dwaddr + 13) = dwval;
+		*(dwaddr + 14) = dwval;
+		*(dwaddr + 15) = dwval;
+		dwaddr += 16;
+		count -= sizeof(ulong) * 16;
+	}
 
-    /* set with dwords */
-    while(count >= sizeof(ulong)) {
-        *dwaddr++ = dwval;
-        count -= sizeof(ulong);
-    }
+	/* set with dwords */
+	while(count >= sizeof(ulong)) {
+		*dwaddr++ = dwval;
+		count -= sizeof(ulong);
+	}
 
-    /* set remaining bytes */
-    baddr = (uchar*)dwaddr;
-    while(count-- > 0)
-        *baddr++ = value;
-    return addr;
+	/* set remaining bytes */
+	baddr = (uchar*)dwaddr;
+	while(count-- > 0)
+		*baddr++ = value;
+	return addr;
 }

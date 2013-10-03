@@ -48,11 +48,11 @@ int Syscalls::getthreadcnt(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
-	if(!PageDir::isInUserSpace(entryPoint,1))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace(entryPoint,1)))
 		SYSC_ERROR(stack, -EINVAL);
 
 	int res = Proc::startThread(entryPoint,0,arg);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -67,7 +67,7 @@ int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 	uint64_t *res = (uint64_t*)SYSC_ARG1(stack);
-	if(!PageDir::isInUserSpace((uintptr_t)res,sizeof(uint64_t)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)res,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EFAULT);
 	*res = t->getStats().curCycleCount;
 	SYSC_RET1(stack,0);
@@ -76,7 +76,7 @@ int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
-	if((res = Timer::sleepFor(t->getTid(),msecs,false)) < 0)
+	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),msecs,false)) < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -84,13 +84,13 @@ int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
 	time_t msecs = SYSC_ARG1(stack);
 	int res;
-	if((res = Timer::sleepFor(t->getTid(),msecs,true)) < 0)
+	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),msecs,true)) < 0))
 		SYSC_ERROR(stack,res);
 	Thread::switchAway();
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
 	 * and the sleep-time was not over yet. */
 	Timer::removeThread(t->getTid());
-	if(t->hasSignalQuick())
+	if(EXPECT_FALSE(t->hasSignalQuick()))
 		SYSC_ERROR(stack,-EINTR);
 	SYSC_RET1(stack,0);
 }
@@ -106,7 +106,7 @@ int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	time_t maxWaitTime = SYSC_ARG3(stack);
 
 	int res = doWait(event,object,maxWaitTime,KERNEL_PID,0);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -120,7 +120,7 @@ int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 
 	/* wait and release the lock before going to sleep */
 	int res = doWait(event,object,0,global ? INVALID_PID : pid,ident);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -130,7 +130,7 @@ int Syscalls::notify(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint event = SYSC_ARG2(stack);
 	Thread *nt = Thread::getById(tid);
 
-	if(!IS_USER_NOTIFY_EVENT(event) || nt == NULL)
+	if(EXPECT_FALSE(!IS_USER_NOTIFY_EVENT(event) || nt == NULL))
 		SYSC_ERROR(stack,-EINVAL);
 	Sched::wakeupThread(nt,event);
 	SYSC_RET1(stack,0);
@@ -143,7 +143,7 @@ int Syscalls::lock(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	int res = Lock::acquire(global ? INVALID_PID : pid,ident,flags);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -154,7 +154,7 @@ int Syscalls::unlock(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	int res = Lock::release(global ? INVALID_PID : pid,ident);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -164,7 +164,8 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	if(tid != 0) {
 		const Thread *tt = Thread::getById(tid);
 		/* just threads from the own process */
-		if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
+		if(EXPECT_FALSE(tt == NULL || tt->getTid() == t->getTid() ||
+				tt->getProc()->getPid() != t->getProc()->getPid()))
 			SYSC_ERROR(stack,-EINVAL);
 	}
 
@@ -176,7 +177,8 @@ int Syscalls::suspend(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
-	if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
+	if(EXPECT_FALSE(tt == NULL || tt->getTid() == t->getTid() ||
+			tt->getProc()->getPid() != t->getProc()->getPid()))
 		SYSC_ERROR(stack,-EINVAL);
 	tt->suspend();
 	SYSC_RET1(stack,0);
@@ -186,7 +188,8 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	Thread *tt = Thread::getById(tid);
 	/* just threads from the own process */
-	if(tt == NULL || tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid())
+	if(EXPECT_FALSE(tt == NULL || tt->getTid() == t->getTid() ||
+			tt->getProc()->getPid() != t->getProc()->getPid()))
 		SYSC_ERROR(stack,-EINVAL);
 	tt->unsuspend();
 	SYSC_RET1(stack,0);
@@ -198,12 +201,12 @@ static int doWait(uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong i
 	if(IS_FILE_EVENT(event)) {
 		/* translate fd to node-number */
 		file = FileDesc::request((int)object);
-		if(file == NULL)
+		if(EXPECT_FALSE(file == NULL))
 			return -EBADF;
 	}
 
 	/* now wait */
-	if(!IS_USER_WAIT_EVENT(event))
+	if(EXPECT_FALSE(!IS_USER_WAIT_EVENT(event)))
 		return -EINVAL;
 	if(IS_FILE_EVENT(event))
 		object = (evobj_t)file;

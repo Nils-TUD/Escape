@@ -42,7 +42,7 @@ void OpenFile::decUsages() {
 	usageCount--;
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
-	if(usageCount == 0 && refCount == 0)
+	if(EXPECT_FALSE(usageCount == 0 && refCount == 0))
 		doClose(Proc::getRunning());
 	SpinLock::release(&lock);
 }
@@ -63,7 +63,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			VFSNode *n = node;
 			int res = 0;
 			SpinLock::acquire(&waitLock);
-			if(devNo != VFS_DEV_NO || !IS_DEVICE(n->getMode()))
+			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_DEVICE(n->getMode())))
 				res = -EINVAL;
 			else
 				res = static_cast<VFSDevice*>(n)->setReadable((bool)arg);
@@ -94,7 +94,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t oldPos = position;
 	if(devNo == VFS_DEV_NO) {
 		res = node->seek(pid,position,offset,whence);
-		if(res < 0) {
+		if(EXPECT_FALSE(res < 0)) {
 			SpinLock::release(&lock);
 			return res;
 		}
@@ -104,7 +104,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 		if(whence == SEEK_END) {
 			sFileInfo info;
 			res = VFSFS::istat(pid,nodeNo,devNo,&info);
-			if(res < 0)
+			if(EXPECT_FALSE(res < 0))
 				return res;
 			/* can't be < 0, therefore it will always be kept */
 			position = info.size;
@@ -117,7 +117,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	}
 
 	/* invalid position? */
-	if(position < 0) {
+	if(EXPECT_FALSE(position < 0)) {
 		position = oldPos;
 		res = -EINVAL;
 	}
@@ -130,7 +130,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 }
 
 ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
-	if(!(flags & VFS_READ))
+	if(EXPECT_FALSE(!(flags & VFS_READ)))
 		return -EACCES;
 
 	ssize_t readBytes;
@@ -143,13 +143,13 @@ ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 		readBytes = VFSFS::read(pid,nodeNo,devNo,buffer,position,count);
 	}
 
-	if(readBytes > 0) {
+	if(EXPECT_TRUE(readBytes > 0)) {
 		SpinLock::acquire(&lock);
 		position += readBytes;
 		SpinLock::release(&lock);
 	}
 
-	if(readBytes > 0 && pid != KERNEL_PID) {
+	if(EXPECT_TRUE(readBytes > 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock here because its not critical. we don't make decisions based on it or similar.
 		 * its just for statistics. therefore, it doesn't really hurt if we add a bit less in
@@ -160,7 +160,7 @@ ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 }
 
 ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
-	if(!(flags & VFS_WRITE))
+	if(EXPECT_FALSE(!(flags & VFS_WRITE)))
 		return -EACCES;
 
 	ssize_t writtenBytes;
@@ -173,13 +173,13 @@ ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 		writtenBytes = VFSFS::write(pid,nodeNo,devNo,buffer,position,count);
 	}
 
-	if(writtenBytes > 0) {
+	if(EXPECT_TRUE(writtenBytes > 0)) {
 		SpinLock::acquire(&lock);
 		position += writtenBytes;
 		SpinLock::release(&lock);
 	}
 
-	if(writtenBytes > 0 && pid != KERNEL_PID) {
+	if(EXPECT_TRUE(writtenBytes > 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->getStats().output += writtenBytes;
@@ -235,7 +235,7 @@ bool OpenFile::close(pid_t pid) {
 bool OpenFile::doClose(pid_t pid) {
 	/* decrement references; it may be already zero if we have closed the file previously but
 	 * couldn't free it because there was still a user of it. */
-	if(refCount > 0)
+	if(EXPECT_TRUE(refCount > 0))
 		refCount--;
 
 	/* if there are no more references, free the file */
@@ -261,16 +261,16 @@ bool OpenFile::doClose(pid_t pid) {
 
 int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 	Thread *t = Thread::getRunning();
-	if(file->devNo != VFS_DEV_NO)
+	if(EXPECT_FALSE(file->devNo != VFS_DEV_NO))
 		return -EPERM;
-	if(!IS_DEVICE(file->node->getMode()))
+	if(EXPECT_FALSE(!IS_DEVICE(file->node->getMode())))
 		return -EPERM;
 
 	while(true) {
 		SpinLock::acquire(&waitLock);
 		*client = static_cast<VFSDevice*>(file->node)->getWork();
 		/* if we've found one or we shouldn't block, stop here */
-		if(*client || (flags & GW_NOBLOCK)) {
+		if(EXPECT_TRUE(*client || (flags & GW_NOBLOCK))) {
 			SpinLock::release(&waitLock);
 			return *client ? 0 : -ENOCLIENT;
 		}
@@ -280,7 +280,7 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
-		if(t->hasSignalQuick())
+		if(EXPECT_FALSE(t->hasSignalQuick()))
 			return -EINTR;
 	}
 	A_UNREACHED;
@@ -289,6 +289,7 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 int OpenFile::openClient(pid_t pid,inode_t clientId,OpenFile **cfile) {
 	bool isValid;
 	/* search for the client */
+	/* TODO we don't need to search here. checking whether it has the expected parent is sufficient */
 	const VFSNode *n = node->openDir(true,&isValid);
 	if(isValid) {
 		while(n != NULL) {
@@ -380,7 +381,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		isDrvUse = (n->getMode() & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
 	}
 	/* doesn't work for channels and pipes */
-	if(isDrvUse && (flags & VFS_EXCLUSIVE))
+	if(EXPECT_FALSE(isDrvUse && (flags & VFS_EXCLUSIVE)))
 		return -EINVAL;
 
 	SpinLock::acquire(&gftLock);
@@ -414,7 +415,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 	}
 
 	/* if there is no free slot anymore, extend our dyn-array */
-	if(gftFreeList == NULL) {
+	if(EXPECT_FALSE(gftFreeList == NULL)) {
 		size_t j;
 		i = gftArray.getObjCount();
 		if(!gftArray.extend()) {

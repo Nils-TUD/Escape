@@ -38,25 +38,25 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	uint type = SYSC_ARG2(stack);
 	uint ops = SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check type and ops */
-	if(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR && type != DEV_TYPE_FS &&
-			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE)
+	if(EXPECT_FALSE(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR && type != DEV_TYPE_FS &&
+			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE))
 		SYSC_ERROR(stack,-EINVAL);
-	if(type != DEV_TYPE_FS && (ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE)) != 0)
+	if(EXPECT_FALSE(type != DEV_TYPE_FS && (ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE)) != 0))
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* create device and open it */
 	OpenFile *file;
 	int res = VFS::createdev(pid,abspath,type,ops,&file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
 	int fd = FileDesc::assoc(file);
-	if(fd < 0)
+	if(EXPECT_FALSE(fd < 0))
 		SYSC_ERROR(stack,fd);
 	SYSC_RET1(stack,fd);
 }
@@ -68,19 +68,19 @@ int Syscalls::getclient(Thread *t,IntrptStackFrame *stack) {
 
 	/* get file */
 	OpenFile *drvFile = FileDesc::request(drvFd);
-	if(drvFile == NULL)
+	if(EXPECT_FALSE(drvFile == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* open client */
 	OpenFile *file;
 	int res = drvFile->openClient(pid,cid,&file);
 	FileDesc::release(drvFile);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* associate fd with file */
 	int fd = FileDesc::assoc(file);
-	if(fd < 0) {
+	if(EXPECT_FALSE(fd < 0)) {
 		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
@@ -98,16 +98,16 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	OpenFile *file;
 
 	/* validate pointers */
-	if(!PageDir::isInUserSpace((uintptr_t)cid,sizeof(inode_t)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)cid,sizeof(inode_t))))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t))))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!PageDir::isInUserSpace((uintptr_t)data,size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* translate to files */
 	file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* open a client */
@@ -117,13 +117,13 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	/* release files */
 	FileDesc::release(file);
 
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* open file */
 	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,client,client->getNo(),VFS_DEV_NO,&file);
 	VFSNode::release(client);
-	if(res < 0) {
+	if(EXPECT_FALSE(res < 0)) {
 		/* we have to set the channel unused again; otherwise its ignored for ever */
 		static_cast<VFSChannel*>(client)->setUsed(false);
 		SYSC_ERROR(stack,res);
@@ -131,20 +131,20 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 
 	/* receive a message */
 	res = file->receiveMsg(pid,id,data,size,false);
-	if(res < 0) {
+	if(EXPECT_FALSE(res < 0)) {
 		file->close(pid);
 		SYSC_ERROR(stack,res);
 	}
 
 	/* assoc with fd */
 	int cfd = FileDesc::assoc(file);
-	if(cfd < 0) {
+	if(EXPECT_FALSE(cfd < 0)) {
 		file->close(pid);
 		SYSC_ERROR(stack,cfd);
 	}
 
 	/* set client id */
-	if(cid)
+	if(EXPECT_FALSE(cid))
 		*cid = file->getNodeNo();
 
 	SYSC_RET1(stack,cfd);

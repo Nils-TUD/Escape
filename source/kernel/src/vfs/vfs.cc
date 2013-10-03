@@ -232,7 +232,7 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_
 	/* cleanup flags */
 	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
 
-	if(node && (err = hasAccess(pid,node,flags)) < 0)
+	if(EXPECT_FALSE(node && (err = hasAccess(pid,node,flags)) < 0))
 		return err;
 
 	/* determine free file */

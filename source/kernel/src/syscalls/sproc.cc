@@ -43,7 +43,7 @@ int Syscalls::getpid(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::getppid(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	Proc *p = Proc::getByPid(pid);
-	if(!p)
+	if(EXPECT_FALSE(!p))
 		SYSC_ERROR(stack,-ESRCH);
 
 	SYSC_RET1(stack,p->getParentPid());
@@ -56,7 +56,7 @@ int Syscalls::getuid(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::setuid(Thread *t,IntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
-	if(p->getEUid() != ROOT_UID)
+	if(EXPECT_FALSE(p->getEUid() != ROOT_UID))
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setUid(uid);
@@ -70,7 +70,7 @@ int Syscalls::getgid(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::setgid(Thread *t,IntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
-	if(p->getEUid() != ROOT_UID)
+	if(EXPECT_FALSE(p->getEUid() != ROOT_UID))
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setGid(gid);
@@ -85,7 +85,8 @@ int Syscalls::seteuid(Thread *t,IntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
 	/* if not root, it has to be either ruid, euid or suid */
-	if(p->getEUid() != ROOT_UID && uid != p->getRUid() && uid != p->getEUid() && uid != p->getSUid())
+	if(EXPECT_FALSE(p->getEUid() != ROOT_UID && uid != p->getRUid() && uid != p->getEUid() &&
+			uid != p->getSUid()))
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setEUid(uid);
@@ -100,7 +101,8 @@ int Syscalls::setegid(Thread *t,IntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
 	/* if not root, it has to be either rgid, egid or sgid */
-	if(p->getEUid() != ROOT_UID && gid != p->getRGid() && gid != p->getEGid() && gid != p->getSGid())
+	if(EXPECT_FALSE(p->getEUid() != ROOT_UID && gid != p->getRGid() && gid != p->getEGid() &&
+			gid != p->getSGid()))
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setEGid(gid);
@@ -111,7 +113,7 @@ int Syscalls::getgroups(Thread *t,IntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	gid_t *list = (gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	size = Groups::get(pid,list,size);
@@ -122,10 +124,10 @@ int Syscalls::setgroups(Thread *t,IntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!Groups::set(pid,size,list))
+	if(EXPECT_FALSE(!Groups::set(pid,size,list)))
 		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }
@@ -139,18 +141,18 @@ int Syscalls::isingroup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 int Syscalls::fork(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = Proc::clone(0);
 	/* error? */
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Proc::ExitState *state = (Proc::ExitState*)SYSC_ARG1(stack);
-	if(state != NULL && !PageDir::isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState)))
+	if(EXPECT_FALSE(state != NULL && !PageDir::isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState))))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = Proc::waitChild(state);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -160,12 +162,12 @@ int Syscalls::getenvito(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG2(stack);
 	size_t index = SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(size == 0)
+	if(EXPECT_FALSE(size == 0))
 		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)buffer,size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!Env::geti(pid,index,buffer,size))
+	if(EXPECT_FALSE(!Env::geti(pid,index,buffer,size)))
 		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
@@ -175,14 +177,14 @@ int Syscalls::getenvto(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!Syscalls::isStrInUserSpace(name,NULL))
+	if(EXPECT_FALSE(!Syscalls::isStrInUserSpace(name,NULL)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(size == 0)
+	if(EXPECT_FALSE(size == 0))
 		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)buffer,size))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!Env::get(pid,name,buffer,size))
+	if(EXPECT_FALSE(!Env::get(pid,name,buffer,size)))
 		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
@@ -191,10 +193,10 @@ int Syscalls::setenv(Thread *t,IntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!Syscalls::isStrInUserSpace(name,NULL) || !Syscalls::isStrInUserSpace(value,NULL))
+	if(EXPECT_FALSE(!Syscalls::isStrInUserSpace(name,NULL) || !Syscalls::isStrInUserSpace(value,NULL)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(!Env::set(pid,name,value))
+	if(EXPECT_FALSE(!Env::set(pid,name,value)))
 		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }
@@ -203,11 +205,11 @@ int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
-	if(!absolutizePath(pathSave,sizeof(pathSave),path))
+	if(EXPECT_FALSE(!absolutizePath(pathSave,sizeof(pathSave),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = Proc::exec(pathSave,args,NULL,0);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }

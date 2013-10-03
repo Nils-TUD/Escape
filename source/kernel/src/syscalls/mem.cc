@@ -31,12 +31,12 @@
 
 int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
-	if(count > 0) {
-		if(!t->reserveFrames(count))
+	if(EXPECT_TRUE(count > 0)) {
+		if(EXPECT_FALSE(!t->reserveFrames(count)))
 			SYSC_RET1(stack,0);
 	}
 	size_t oldEnd = t->getProc()->getVM()->growData(count);
-	if(count > 0)
+	if(EXPECT_TRUE(count > 0))
 		t->discardFrames();
 	SYSC_RET1(stack,oldEnd);
 }
@@ -52,39 +52,39 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	OpenFile *f = NULL;
 
 	/* check args */
-	if(byteCount == 0 || loadCount > byteCount)
+	if(EXPECT_FALSE(byteCount == 0 || loadCount > byteCount))
 		SYSC_ERROR(stack,-EINVAL);
 	if(flags & MAP_FIXED) {
-		if(addr & (PAGE_SIZE - 1))
+		if(EXPECT_FALSE(addr & (PAGE_SIZE - 1)))
 			SYSC_ERROR(stack,-EINVAL);
-		if(addr == 0 || addr + byteCount < addr || addr + byteCount > INTERP_TEXT_BEGIN)
+		if(EXPECT_FALSE(addr == 0 || addr + byteCount < addr || addr + byteCount > INTERP_TEXT_BEGIN))
 			SYSC_ERROR(stack,-EINVAL);
 	}
-	if((flags & MAP_TLS) && t->getTLSRegion() != NULL)
+	if(EXPECT_FALSE((flags & MAP_TLS) && t->getTLSRegion() != NULL))
 		SYSC_ERROR(stack,-EINVAL);
 	if((~flags & MAP_NOMAP) && ((flags & MAP_TLS) || fd == -1)) {
-		if(!t->reserveFrames(BYTES_2_PAGES(byteCount)))
+		if(EXPECT_FALSE(!t->reserveFrames(BYTES_2_PAGES(byteCount))))
 			SYSC_ERROR(stack,-ENOMEM);
 	}
-	if(fd != -1) {
+	if(EXPECT_TRUE(fd != -1)) {
 		/* get file */
 		f = FileDesc::request(fd);
-		if(f == NULL)
+		if(EXPECT_FALSE(f == NULL))
 			SYSC_ERROR(stack,-EBADF);
 	}
 
 	/* add region */
 	VMRegion *vm;
 	int res = t->getProc()->getVM()->map(addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
-	if(f)
+	if(EXPECT_TRUE(f))
 		FileDesc::release(f);
 	/* save tls-region-number */
-	if(flags & MAP_TLS) {
-		if(res == 0)
+	if(EXPECT_FALSE(flags & MAP_TLS)) {
+		if(EXPECT_TRUE(res == 0))
 			t->setTLSRegion(vm);
 	}
 	t->discardFrames();
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	t->getProc()->getVM()->getRegRange(vm,&addr,0,true);
@@ -95,11 +95,11 @@ int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 	void *addr = (void*)SYSC_ARG1(stack);
 	uint prot = (uint)SYSC_ARG2(stack);
 
-	if(!(prot & (PROT_WRITE | PROT_READ | PROT_EXEC)))
+	if(EXPECT_FALSE(!(prot & (PROT_WRITE | PROT_READ | PROT_EXEC))))
 		SYSC_ERROR(stack,-EINVAL);
 
 	int res = t->getProc()->getVM()->regctrl((uintptr_t)addr,prot);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -107,7 +107,7 @@ int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
 	VMRegion *reg = t->getProc()->getVM()->getRegion((uintptr_t)virt);
-	if(reg == NULL)
+	if(EXPECT_FALSE(reg == NULL))
 		SYSC_ERROR(stack,-ENOENT);
 	t->getProc()->getVM()->remove(reg);
 	SYSC_RET1(stack,0);
@@ -119,22 +119,22 @@ int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
 	size_t align = SYSC_ARG3(stack);
 	uintptr_t physCpy = *phys;
 
-	if(!PageDir::isInUserSpace((uintptr_t)phys,sizeof(uintptr_t)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)phys,sizeof(uintptr_t))))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* ensure that its allowed to map this area (if the address is specified) */
-	if(physCpy && !PhysMem::canMap(physCpy,bytes))
+	if(EXPECT_FALSE(physCpy && !PhysMem::canMap(physCpy,bytes)))
 		SYSC_ERROR(stack,-EFAULT);
 	/* reserve frames if we don't want to use contiguous physical memory */
 	if(!physCpy && !align) {
-		if(!t->reserveFrames(BYTES_2_PAGES(bytes)))
+		if(EXPECT_FALSE(!t->reserveFrames(BYTES_2_PAGES(bytes))))
 			SYSC_ERROR(stack,-ENOMEM);
 	}
 
 	uintptr_t addr = t->getProc()->getVM()->addPhys(&physCpy,bytes,align,true);
-	if(!physCpy && !align)
+	if(EXPECT_TRUE(!physCpy && !align))
 		t->discardFrames();
-	if(addr == 0)
+	if(EXPECT_FALSE(addr == 0))
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;
 	SYSC_RET1(stack,addr);

@@ -37,23 +37,23 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check flags */
 	flags &= VFS_USER_FLAGS;
-	if((flags & (VFS_READ | VFS_WRITE | VFS_MSGS)) == 0)
+	if(EXPECT_FALSE((flags & (VFS_READ | VFS_WRITE | VFS_MSGS)) == 0))
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* open the path */
 	OpenFile *file;
 	int res = VFS::openPath(pid,flags,abspath,&file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with file */
 	int fd = FileDesc::assoc(file);
-	if(fd < 0) {
+	if(EXPECT_FALSE(fd < 0)) {
 		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
@@ -68,12 +68,12 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	int res = file->fcntl(pid,cmd,arg);
 	FileDesc::release(file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -84,18 +84,18 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	/* make sure that the pointers point to userspace */
-	if(!PageDir::isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
-			!PageDir::isInUserSpace((uintptr_t)writeFd,sizeof(int)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
+			!PageDir::isInUserSpace((uintptr_t)writeFd,sizeof(int))))
 		SYSC_ERROR(stack,-EFAULT);
 
 	OpenFile *readFile,*writeFile;
 	int res = VFS::openPipe(pid,&readFile,&writeFile);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with read-file */
 	int kreadFd = FileDesc::assoc(readFile);
-	if(kreadFd < 0) {
+	if(EXPECT_FALSE(kreadFd < 0)) {
 		readFile->close(pid);
 		writeFile->close(pid);
 		SYSC_ERROR(stack,kreadFd);
@@ -103,7 +103,7 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 
 	/* assoc fd with write-file */
 	int kwriteFd = FileDesc::assoc(writeFile);
-	if(kwriteFd < 0) {
+	if(EXPECT_FALSE(kwriteFd < 0)) {
 		FileDesc::unassoc(kreadFd);
 		readFile->close(pid);
 		writeFile->close(pid);
@@ -125,13 +125,13 @@ int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo))))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::stat(pid,abspath,info);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -146,12 +146,12 @@ int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 	/* get info */
 	int res = file->fstat(pid,info);
 	FileDesc::release(file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -162,11 +162,11 @@ int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::chmod(pid,abspath,mode);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -178,11 +178,11 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::chown(pid,abspath,uid,gid);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
@@ -192,12 +192,12 @@ int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(!PageDir::isInUserSpace((uintptr_t)pos,sizeof(off_t)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)pos,sizeof(off_t))))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* this may fail, but we're requested the file, so it will be released on our termination */
@@ -212,17 +212,17 @@ int Syscalls::seek(Thread *t,IntrptStackFrame *stack) {
 	uint whence = SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
+	if(EXPECT_FALSE(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END))
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	off_t res = file->seek(pid,offset,whence);
 	FileDesc::release(file);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -234,20 +234,20 @@ int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	/* validate count and buffer */
-	if(count == 0)
+	if(EXPECT_FALSE(count == 0))
 		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)buffer,count))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,count)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
 	ssize_t readBytes = file->read(pid,buffer,count);
 	FileDesc::release(file);
-	if(readBytes < 0)
+	if(EXPECT_FALSE(readBytes < 0))
 		SYSC_ERROR(stack,readBytes);
 	SYSC_RET1(stack,readBytes);
 }
@@ -259,20 +259,20 @@ int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	/* validate count and buffer */
-	if(count == 0)
+	if(EXPECT_FALSE(count == 0))
 		SYSC_ERROR(stack,-EINVAL);
-	if(!PageDir::isInUserSpace((uintptr_t)buffer,count))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,count)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
 	ssize_t writtenBytes = file->write(pid,buffer,count);
 	FileDesc::release(file);
-	if(writtenBytes < 0)
+	if(EXPECT_FALSE(writtenBytes < 0))
 		SYSC_ERROR(stack,writtenBytes);
 	SYSC_RET1(stack,writtenBytes);
 }
@@ -330,7 +330,7 @@ int Syscalls::dup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 
 	int res = FileDesc::dup(fd);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -340,7 +340,7 @@ int Syscalls::redirect(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int dst = (int)SYSC_ARG2(stack);
 
 	int err = FileDesc::redirect(src,dst);
-	if(err < 0)
+	if(EXPECT_FALSE(err < 0))
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,err);
 }
@@ -350,12 +350,12 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
+	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* close file */
 	FileDesc::unassoc(fd);
-	if(!file->close(pid))
+	if(EXPECT_FALSE(!file->close(pid)))
 		FileDesc::release(file);
 	else
 		Thread::remFileUsage(file);
@@ -365,7 +365,7 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::sync(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	int res = VFS::sync(pid);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -376,13 +376,13 @@ int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	const char *oldPath = (const char*)SYSC_ARG1(stack);
 	const char *newPath = (const char*)SYSC_ARG2(stack);
-	if(!absolutizePath(oldabs,sizeof(oldabs),oldPath))
+	if(EXPECT_FALSE(!absolutizePath(oldabs,sizeof(oldabs),oldPath)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!absolutizePath(newabs,sizeof(newabs),newPath))
+	if(EXPECT_FALSE(!absolutizePath(newabs,sizeof(newabs),newPath)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::link(pid,oldabs,newabs);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -391,11 +391,11 @@ int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = t->getProc()->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::unlink(pid,abspath);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -404,11 +404,11 @@ int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = Proc::getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::mkdir(pid,abspath);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -417,11 +417,11 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = t->getProc()->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::rmdir(pid,abspath);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -433,13 +433,13 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	const char *device = (const char*)SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
 	uint type = (uint)SYSC_ARG3(stack);
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(!absolutizePath(absdev,sizeof(absdev),device))
+	if(EXPECT_FALSE(!absolutizePath(absdev,sizeof(absdev),device)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::mount(pid,absdev,abspath,type);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
@@ -448,11 +448,11 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = t->getProc()->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(!absolutizePath(abspath,sizeof(abspath),path))
+	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::unmount(pid,abspath);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }

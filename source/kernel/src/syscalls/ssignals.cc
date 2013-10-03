@@ -32,26 +32,27 @@ int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 	Signals::handler_func old = SIG_ERR;
 
 	/* address should be valid */
-	if(handler != SIG_IGN && handler != SIG_DFL && !PageDir::isInUserSpace((uintptr_t)handler,1))
+	if(EXPECT_FALSE(handler != SIG_IGN && handler != SIG_DFL &&
+			!PageDir::isInUserSpace((uintptr_t)handler,1)))
 		SYSC_ERROR(stack,(long)SIG_ERR);
 
-	if(signal == (int)SIG_RET) {
+	if(EXPECT_FALSE(signal == (int)SIG_RET)) {
 		old = SIG_IGN;
 		t->getProc()->setSigRetAddr((uintptr_t)handler);
 	}
 	else {
 		/* no signal-ret-address known yet? */
-		if(t->getProc()->getSigRetAddr() == 0)
+		if(EXPECT_FALSE(t->getProc()->getSigRetAddr() == 0))
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		/* check signal */
-		if(!Signals::canHandle(signal))
+		if(EXPECT_FALSE(!Signals::canHandle(signal)))
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
 		if(handler == SIG_DFL)
 			old = Signals::unsetHandler(t->getTid(),signal);
 		else {
-			if(Signals::setHandler(t->getTid(),signal,handler,&old) < 0)
+			if(EXPECT_FALSE(Signals::setHandler(t->getTid(),signal,handler,&old) < 0))
 				SYSC_ERROR(stack,(long)SIG_ERR);
 		}
 	}
@@ -61,7 +62,7 @@ int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::acksignal(Thread *t,IntrptStackFrame *stack) {
 	int res;
 	int signal = Signals::ackHandling(t->getTid());
-	if((res = UEnv::finishSignalHandler(stack,signal)) < 0)
+	if(EXPECT_FALSE((res = UEnv::finishSignalHandler(stack,signal)) < 0))
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */
 	return 0;
@@ -71,7 +72,7 @@ int Syscalls::kill(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	int signal = (int)SYSC_ARG2(stack);
 
-	if(!Signals::canSend(signal))
+	if(EXPECT_FALSE(!Signals::canSend(signal)))
 		SYSC_ERROR(stack,-EINVAL);
 
 	if(pid != INVALID_PID)

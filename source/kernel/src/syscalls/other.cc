@@ -46,14 +46,14 @@ int Syscalls::debugc(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 int Syscalls::sysconf(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int id = SYSC_ARG1(stack);
 	long res = Config::get(id);
-	if(res < 0)
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
-	if(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t)))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EINVAL);
 	*tsc = Timer::cyclesToTime(*tsc);
 	SYSC_RET1(stack,0);

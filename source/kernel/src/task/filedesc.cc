@@ -34,12 +34,12 @@ void FileDesc::init(Proc *p) {
 
 OpenFile *FileDesc::request(int fd) {
 	Proc *p = Thread::getRunning()->getProc();
-	if(fd < 0 || fd >= MAX_FD_COUNT)
+	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
 		return NULL;
 
 	p->lock(PLOCK_FDS);
 	OpenFile *file = p->fileDescs[fd];
-	if(file != NULL) {
+	if(EXPECT_TRUE(file != NULL)) {
 		file->incUsages();
 		Thread::addFileUsage(file);
 	}
@@ -89,7 +89,7 @@ int FileDesc::assoc(OpenFile *fileNo) {
 			break;
 		}
 	}
-	if(fd >= 0)
+	if(EXPECT_TRUE(fd >= 0))
 		p->fileDescs[fd] = fileNo;
 	p->unlock(PLOCK_FDS);
 	return fd;
@@ -99,13 +99,13 @@ int FileDesc::dup(int fd) {
 	int nfd = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
 	/* check fd */
-	if(fd < 0 || fd >= MAX_FD_COUNT)
+	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
 		return -EBADF;
 
 	p->lock(PLOCK_FDS);
 	OpenFile *const *fds = p->fileDescs;
 	OpenFile *f = p->fileDescs[fd];
-	if(f != NULL) {
+	if(EXPECT_TRUE(f != NULL)) {
 		nfd = -EMFILE;
 		for(size_t i = 0; i < MAX_FD_COUNT; i++) {
 			if(fds[i] == NULL) {
@@ -126,13 +126,13 @@ int FileDesc::redirect(int src,int dst) {
 	Proc *p = Thread::getRunning()->getProc();
 
 	/* check fds */
-	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
+	if(EXPECT_FALSE(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT))
 		return -EBADF;
 
 	p->lock(PLOCK_FDS);
 	OpenFile *fSrc = p->fileDescs[src];
 	OpenFile *fDst = p->fileDescs[dst];
-	if(fSrc != NULL && fDst != NULL) {
+	if(EXPECT_TRUE(fSrc != NULL && fDst != NULL)) {
 		fDst->incRefs();
 		/* we have to close the source because no one else will do it anymore... */
 		fSrc->close(p->getPid());
@@ -146,12 +146,12 @@ int FileDesc::redirect(int src,int dst) {
 
 OpenFile *FileDesc::unassoc(int fd) {
 	Proc *p = Thread::getRunning()->getProc();
-	if(fd < 0 || fd >= MAX_FD_COUNT)
+	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
 		return NULL;
 
 	p->lock(PLOCK_FDS);
 	OpenFile *file = p->fileDescs[fd];
-	if(file != NULL)
+	if(EXPECT_TRUE(file != NULL))
 		p->fileDescs[fd] = NULL;
 	p->unlock(PLOCK_FDS);
 	return file;

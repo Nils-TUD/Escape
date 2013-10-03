@@ -90,7 +90,7 @@ int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
 	 * and the sleep-time was not over yet. */
 	Timer::removeThread(t->getTid());
-	if(Signals::hasSignalFor(t->getTid()))
+	if(t->hasSignalQuick())
 		SYSC_ERROR(stack,-EINTR);
 	SYSC_RET1(stack,0);
 }

@@ -337,7 +337,7 @@ int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t p
 		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
-		if(Signals::hasSignalFor(t->getTid())) {
+		if(t->hasSignalQuick()) {
 			res = -EINTR;
 			goto error;
 		}

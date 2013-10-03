@@ -368,7 +368,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 		else
 			Thread::switchAway();
 
-		if(EXPECT_FALSE(Signals::hasSignalFor(t->getTid())))
+		if(EXPECT_FALSE(t->hasSignalQuick()))
 			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
 		if(EXPECT_FALSE(!isAlive()))

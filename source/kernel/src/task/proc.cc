@@ -684,7 +684,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 		childLock.up();
 		Thread::switchAway();
 		/* don't continue here if we were interrupted by a signal */
-		if(Signals::hasSignalFor(t->getTid()))
+		if(t->hasSignalQuick())
 			return -EINTR;
 		res = getExitState(p->pid,state);
 		if(res < 0)

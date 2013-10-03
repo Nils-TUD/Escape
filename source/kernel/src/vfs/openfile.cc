@@ -280,7 +280,7 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 		SpinLock::release(&waitLock);
 
 		Thread::switchAway();
-		if(Signals::hasSignalFor(t->getTid()))
+		if(t->hasSignalQuick())
 			return -EINTR;
 	}
 	A_UNREACHED;

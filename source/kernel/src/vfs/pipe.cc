@@ -85,7 +85,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 
 		Thread::switchAway();
 
-		if(Signals::hasSignalFor(t->getTid()))
+		if(t->hasSignalQuick())
 			return -EINTR;
 		SpinLock::acquire(&lock);
 		if(!isAlive()) {

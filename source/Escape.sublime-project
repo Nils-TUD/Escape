@@ -25,6 +25,7 @@
             "-Wall",
             "-Wextra",
             "-ansi",
+            "-Wpointer-arith",
             "-ferror-limit=0"
         ]
     }

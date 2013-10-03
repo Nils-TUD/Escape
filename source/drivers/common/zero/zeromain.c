@@ -25,7 +25,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#define BUF_SIZE	(16 * 1024)
+
 static sMsg msg;
+static char zeros[BUF_SIZE];
 
 int main(void) {
 	int id;
@@ -49,7 +52,7 @@ int main(void) {
 				case MSG_DEV_READ: {
 					/* offset is ignored here */
 					size_t count = msg.args.arg2;
-					void *data = calloc(count,1);
+					void *data = count <= BUF_SIZE ? zeros : calloc(count,1);
 					if(!data) {
 						printe("[ZERO] Unable to alloc mem");
 						count = 0;
@@ -59,7 +62,8 @@ int main(void) {
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(count) {
 						send(fd,MSG_DEV_READ_RESP,data,count);
-						free(data);
+						if(count > BUF_SIZE)
+							free(data);
 					}
 				}
 				break;

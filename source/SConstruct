@@ -137,7 +137,7 @@ def SetProgDeps(env, prog, static, libs, cpp):
 def SetLinkAddr(env, static):
 	global link_addr
 	# TODO this doesn't seem to work with MMIX. why?
-	if env['ARCH'] == 'i586':
+	if env['ARCH'] == 'i586' or env['ARCH'] == 'eco32':
 		if static:
 			env.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
 		else:

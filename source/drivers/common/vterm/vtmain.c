@@ -47,32 +47,32 @@ static void sigUsr1(int sig);
 static void kmMngThread(void);
 
 static sVTermCfg cfg;
+static sVTerm vterm;
 
 int main(int argc,char **argv) {
 	size_t i;
-	int drvIds[VTERM_COUNT] = {-1};
-	char name[MAX_VT_NAME_LEN + 5 + 1];
+	int drvId;
 
-	if(argc < 4) {
-		fprintf(stderr,"Usage: %s <cols> <rows> <driver>...\n",argv[0]);
+	if(argc < 5) {
+		fprintf(stderr,"Usage: %s <cols> <rows> <name> <driver>...\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 
 	cfg.readKb = true;
 	cfg.enabled = false;
 	/* open video-devices */
-	cfg.devCount = argc - 3;
+	cfg.devCount = argc - 4;
 	cfg.devFds = (int*)malloc(sizeof(int) * cfg.devCount);
 	cfg.devNames = (char**)malloc(sizeof(char*) * cfg.devCount);
-	for(i = 3; i < (size_t)argc; i++) {
-		cfg.devNames[i - 3] = strdup(argv[i]);
-		if(cfg.devNames[i - 3] == NULL) {
+	for(i = 4; i < (size_t)argc; i++) {
+		cfg.devNames[i - 4] = strdup(argv[i]);
+		if(cfg.devNames[i - 4] == NULL) {
 			printe("Unable to clone device name");
 			return EXIT_FAILURE;
 		}
-		cfg.devFds[i - 3] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
-		if(cfg.devFds[i - 3] < 0) {
-			printe("Unable to open '%s'",cfg.devFds[i - 3]);
+		cfg.devFds[i - 4] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
+		if(cfg.devFds[i - 4] < 0) {
+			printe("Unable to open '%s'",cfg.devFds[i - 4]);
 			return EXIT_FAILURE;
 		}
 	}
@@ -81,35 +81,30 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	/* reg devices */
-	for(i = 0; i < VTERM_COUNT; i++) {
-		snprintf(name,sizeof(name),"/dev/vterm%d",i);
-		drvIds[i] = createdev(name,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
-		if(drvIds[i] < 0)
-			error("Unable to register device '%s'",name);
-	}
+	/* reg device */
+	drvId = createdev(argv[3],DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+	if(drvId < 0)
+		error("Unable to register device '%s'",argv[3]);
 
 	/* init vterms */
-	if(!vt_initAll(drvIds,&cfg,atoi(argv[1]),atoi(argv[2])))
+	if(!vt_init(drvId,&vterm,argv[3],&cfg,atoi(argv[1]),atoi(argv[2])))
 		error("Unable to init vterms");
 
-	/* start threads to handle them */
-	for(i = 0; i < VTERM_COUNT; i++) {
-		if(startthread(vtermThread,vt_get(i)) < 0)
-			error("Unable to start thread for vterm %d",i);
-	}
+	/* start thread to handle the vterm */
+	if(startthread(vtermThread,&vterm) < 0)
+		error("Unable to start thread for vterm %d",i);
+
+	/* receive from kmmanager in this thread */
 	kmMngThread();
 
 	/* clean up */
-	for(i = 0; i < VTERM_COUNT; i++) {
-		close(drvIds[i]);
-		vtctrl_destroy(vt_get(i));
-	}
+	close(drvId);
+	vtctrl_destroy(&vterm);
 	return EXIT_SUCCESS;
 }
 
-static int vtermThread(void *vterm) {
-	sVTerm *vt = (sVTerm*)vterm;
+static int vtermThread(void *vtptr) {
+	sVTerm *vt = (sVTerm*)vtptr;
 	sMsg msg;
 	msgid_t mid;
 	while(1) {
@@ -156,9 +151,7 @@ static int vtermThread(void *vterm) {
 				break;
 
 				case MSG_VT_SELECT: {
-					size_t index = msg.args.arg1;
-					if(index < VTERM_COUNT)
-						vt_selectVTerm(index);
+					vt_enable(vt,true);
 				}
 				break;
 
@@ -179,7 +172,7 @@ static int vtermThread(void *vterm) {
 				case MSG_VT_SETMODE: {
 					msg.args.arg1 = vtctrl_setVideoMode(&cfg,vt,msg.args.arg1);
 					if((int)msg.args.arg1 >= 0)
-						vt_enable(false);
+						vt_enable(vt,false);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
@@ -203,7 +196,7 @@ static int vtermThread(void *vterm) {
 					msg.data.arg1 = vtctrl_control(vt,&cfg,mid,msg.data.d);
 					/* reenable us, if necessary */
 					if(mid == MSG_VT_ENABLE)
-						vt_enable(true);
+						vt_enable(vt,true);
 					/* wakeup thread to start reading from keyboard again */
 					if(mid == MSG_VT_ENABLE || mid == MSG_VT_EN_RDKB) {
 						if(kill(getpid(),SIG_USR1) < 0)
@@ -250,14 +243,13 @@ static void kmMngThread(void) {
 		/* read from keyboard and handle the keys */
 		count = read(kbFd,kmData,sizeof(kmData));
 		if(count > 0) {
-			sVTerm *vt = vt_getActive();
 			sKmData *kmsg = kmData;
 			count /= sizeof(sKmData);
 			while(count-- > 0) {
-				vtin_handleKey(vt,kmsg->keycode,kmsg->modifier,kmsg->character);
+				vtin_handleKey(&vterm,kmsg->keycode,kmsg->modifier,kmsg->character);
 				kmsg++;
 			}
-			vt_update(vt);
+			vt_update(&vterm);
 		}
 	}
 	close(kbFd);

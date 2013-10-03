@@ -63,14 +63,9 @@ void ProcessManager::start() {
 		ifs >> *drv;
 		_procs.push_back(drv);
 	}
-	// add login-shells
-	for(int i = 0; i < VTERM_COUNT; i++) {
-		ostringstream vtname;
-		vtname << "vterm" << i;
-		ostringstream name;
-		name << "login" << i;
-		_procs.push_back(new LoginProcess(name.str(),vtname.str()));
-	}
+	// add login-shell
+	_procs.push_back(new LoginProcess("login0","vterm0"));
+	_procs.push_back(new LoginProcess("login1","vterm1"));
 
 	// load processes
 	Progress pg(KERNEL_PERCENT,0,_procs.size());

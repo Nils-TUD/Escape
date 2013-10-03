@@ -23,40 +23,25 @@
 #include <vterm/vtctrl.h>
 
 /**
- * Inits all vterms
+ * Inits the given vterm
  *
- * @param ids the device-ids
+ * @param id the device-id
+ * @param vterm the vterm
+ * @param name the device name
  * @param cfg the global config
  * @param cols the number of desired cols
  * @param rows the number of desired rows
  * @return true if successfull
  */
-bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows);
-
-/**
- * @param index the index
- * @return the vterm with given index
- */
-sVTerm *vt_get(size_t index);
-
-/**
- * Selects the given vterminal
- *
- * @param index the index of the vterm
- */
-void vt_selectVTerm(size_t index);
+bool vt_init(int id,sVTerm *vterm,const char *name,sVTermCfg *cfg,uint cols,uint rows);
 
 /**
  * Enables the vterm and marks the screen of the active one dirty
  *
+ * @param vt the vterm
  * @param setMode whether to set the mode again
  */
-void vt_enable(bool setMode);
-
-/**
- * @return the currently active vterm
- */
-sVTerm *vt_getActive(void);
+void vt_enable(sVTerm *vt,bool setMode);
 
 /**
  * Updates the dirty range

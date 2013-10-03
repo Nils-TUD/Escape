@@ -40,29 +40,16 @@
 
 #define ABS(x)			((x) > 0 ? (x) : -(x))
 
-#define VGA_DEVICE		"/dev/video"
-#define VESA_DEVICE		"/dev/vesatext"
-
 static int vt_findMode(sVTermCfg *cfg,uint cols,uint rows,sVTMode *mode);
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
 static int vt_dateThread(void *arg);
 
-/* vterms */
-static tULock vtLock;
-static sVTerm vterms[VTERM_COUNT];
-static sVTerm *activeVT = NULL;
 static sVTermCfg *config;
 
-sVTerm *vt_get(size_t index) {
-	return vterms + index;
-}
-
-bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows) {
+bool vt_init(int id,sVTerm *vterm,const char *name,sVTermCfg *cfg,uint cols,uint rows) {
 	int speakerFd;
 	sVTMode mode;
-	char name[MAX_VT_NAME_LEN + 1];
-	size_t i;
 	int res;
 
 	/* find a suitable mode */
@@ -77,68 +64,34 @@ bool vt_initAll(int *ids,sVTermCfg *cfg,uint cols,uint rows) {
 	speakerFd = open("/dev/speaker",IO_MSGS);
 	/* ignore errors here. in this case we simply don't use it */
 
-	for(i = 0; i < VTERM_COUNT; i++) {
-		vterms[i].index = i;
-		vterms[i].sid = ids[i];
-		vterms[i].defForeground = LIGHTGRAY;
-		vterms[i].defBackground = BLACK;
-		snprintf(name,sizeof(name),"vterm%d",i);
-		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
-		if(!vtctrl_init(vterms + i,mode.width,mode.height,mode.id,cfg->devFds[mode.device],speakerFd))
-			return false;
-
-		vterms[i].setCursor = vt_setCursor;
-	}
+	vterm->index = 0;
+	vterm->sid = id;
+	vterm->defForeground = LIGHTGRAY;
+	vterm->defBackground = BLACK;
+	vterm->setCursor = vt_setCursor;
+	memcpy(vterm->name,name,MAX_VT_NAME_LEN + 1);
+	if(!vtctrl_init(vterm,mode.width,mode.height,mode.id,cfg->devFds[mode.device],speakerFd))
+		return false;
+	vterm->active = true;
 
 	/* set video mode */
 	res = video_setMode(cfg->devFds[mode.device],mode.id);
 	if(res < 0)
 		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
 
-	if(startthread(vt_dateThread,NULL) < 0)
+	if(startthread(vt_dateThread,vterm) < 0)
 		error("Unable to start date-thread");
 	return true;
 }
 
-sVTerm *vt_getActive(void) {
-	return activeVT;
-}
-
-void vt_selectVTerm(size_t index) {
-	locku(&vtLock);
-	if(!activeVT || activeVT->index != index) {
-		sVTerm *old = activeVT;
-		sVTerm *vt = vterms + index;
-		if(activeVT != NULL)
-			activeVT->active = false;
-		vt->active = true;
-		/* force cursor-update */
-		vt->lastCol = vt->lastRow = -1;
-		activeVT = vt;
-
-		/* refresh screen and write titlebar */
-		locku(&vt->lock);
-		if(old && old->mode != vt->mode)
-			video_setMode(vt->video,vt->mode);
-		vtctrl_markScrDirty(vt);
-		vt_doUpdate(vt);
-		vt_setCursor(vt);
-		unlocku(&vt->lock);
-	}
-	unlocku(&vtLock);
-}
-
-void vt_enable(bool setMode) {
-	sVTerm* vt = vt_getActive();
-	if(vt) {
-		locku(&vt->lock);
-		if(setMode)
-			video_setMode(vt->video,video_getMode(vt->video));
-		/* ensure that we redraw everything and re-set the cursor */
-		vt->lastCol = vt->lastRow = -1;
-		vtctrl_markScrDirty(vt);
-		unlocku(&vt->lock);
-	}
+void vt_enable(sVTerm *vt,bool setMode) {
+	locku(&vt->lock);
+	if(setMode)
+		video_setMode(vt->video,video_getMode(vt->video));
+	/* ensure that we redraw everything and re-set the cursor */
+	vt->lastCol = vt->lastRow = -1;
+	vtctrl_markScrDirty(vt);
+	unlocku(&vt->lock);
 }
 
 void vt_update(sVTerm *vt) {
@@ -234,7 +187,8 @@ static void vt_setCursor(sVTerm *vt) {
 }
 
 static int vt_dateThread(A_UNUSED void *arg) {
-	size_t i,j,len;
+	size_t j,len;
+	sVTerm *vterm = (sVTerm*)arg;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	while(1) {
 		if(config->enabled) {
@@ -243,23 +197,19 @@ static int vt_dateThread(A_UNUSED void *arg) {
 			struct tm *date = gmtime(&now);
 			len = strftime(dateStr,sizeof(dateStr),"%a, %d. %b %Y, %H:%M:%S",date);
 
-			/* update all vterm-title-bars */
-			for(i = 0; i < VTERM_COUNT; i++) {
-				char *title;
-				locku(&vterms[i].lock);
-				title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
-				for(j = 0; j < len; j++) {
-					*title++ = dateStr[j];
-					*title++ = LIGHTGRAY | (BLUE << 4);
-				}
-				if(vterms[i].active) {
-					if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
-						printe("[VTERM] Unable to seek in video-device");
-					if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
-						printe("[VTERM] Unable to write to video-device");
-				}
-				unlocku(&vterms[i].lock);
+			/* update vterm-title-bar */
+			char *title;
+			locku(&vterm->lock);
+			title = vterm->titleBar + (vterm->cols - len) * 2;
+			for(j = 0; j < len; j++) {
+				*title++ = dateStr[j];
+				*title++ = LIGHTGRAY | (BLUE << 4);
 			}
+			if(seek(vterm->video,(vterm->cols - len) * 2,SEEK_SET) < 0)
+				printe("[VTERM] Unable to seek in video-device");
+			if(write(vterm->video,vterm->titleBar + (vterm->cols - len) * 2,len * 2) < 0)
+				printe("[VTERM] Unable to write to video-device");
+			unlocku(&vterm->lock);
 		}
 
 		/* wait a second */

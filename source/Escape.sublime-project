@@ -26,6 +26,7 @@
             "-Wextra",
             "-ansi",
             "-Wpointer-arith",
+            "-Wmissing-prototypes",
             "-ferror-limit=0"
         ]
     }

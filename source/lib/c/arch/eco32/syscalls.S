@@ -17,9 +17,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-.global syscalldbg
-.type syscalldbg, @function
-syscalldbg:
 .global syscall0
 .type syscall0, @function
 syscall0:

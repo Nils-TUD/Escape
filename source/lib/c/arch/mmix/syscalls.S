@@ -19,9 +19,6 @@
 
 #include <esc/syscalls.h>
 
-.global syscalldbg
-.type syscalldbg, @function
-syscalldbg:
 .global syscall0
 .type syscall0, @function
 syscall0:

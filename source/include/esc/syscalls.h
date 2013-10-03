@@ -19,16 +19,6 @@
 
 #pragma once
 
-#ifndef IN_ASM
-#	if defined(__i386__)
-#		include <esc/arch/i586/syscalls.h>
-#	elif defined(__eco32__)
-#		include <esc/arch/eco32/syscalls.h>
-#	else
-#		include <esc/arch/mmix/syscalls.h>
-#	endif
-#endif
-
 #ifdef __i386__
 #define ACKSIG_IRQ				49
 #endif
@@ -114,4 +104,14 @@
 #define SYSCALL_VM86START		76
 #else
 #define SYSCALL_DEBUG			73
+#endif
+
+#ifndef IN_ASM
+#	if defined(__i386__)
+#		include <esc/arch/i586/syscalls.h>
+#	elif defined(__eco32__)
+#		include <esc/arch/eco32/syscalls.h>
+#	else
+#		include <esc/arch/mmix/syscalls.h>
+#	endif
 #endif

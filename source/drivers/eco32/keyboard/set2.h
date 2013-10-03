@@ -29,4 +29,4 @@
  * @param scanCode the received scancode
  * @return true if it was a keycode
  */
-bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode);
+bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uint32_t scanCode);

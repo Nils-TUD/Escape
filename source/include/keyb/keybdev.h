@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
+#include <esc/messages.h>
 
 /**
- * Converts the given scancode to a keycode
- *
- * @param isBreak whether it is a break-keycode
- * @param keycode the keycode
- * @param scanCode the received scancode
- * @return true if it was a keycode
+ * Creates the device 'keyboard' and executes the driver loop, i.e. adds and removes clients.
  */
-bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uint64_t scanCode);
+void keyb_driverLoop(void);
+
+/**
+ * Handles the given key-event, i.e. it broadcasts it to all active clients
+ *
+ * @param data the key-event
+ */
+void keyb_handleKey(sKbData *data);

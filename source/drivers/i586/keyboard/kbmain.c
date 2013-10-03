@@ -29,7 +29,7 @@
 #include <esc/thread.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
-#include <esc/ringbuffer.h>
+#include <keyb/keybdev.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -74,27 +74,12 @@
 #define TIMEOUT						60
 #define SLEEP_TIME					20
 
-static void kbStartDbgConsole(void);
 static void kbIntrptHandler(int sig);
 static void kb_waitOutBuf(void);
 static void kb_waitInBuf(void);
 
-/* file-descriptor for ourself */
-static sMsg msg;
-static sRingBuf *rbuf;
-static uint8_t scBuf[SC_BUF_SIZE];
-static size_t scReadPos = 0;
-static size_t scWritePos = 0;
-
 int main(void) {
-	int id;
-	msgid_t mid;
 	uint8_t kbdata;
-
-	/* create buffers */
-	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	if(rbuf == NULL)
-		error("Unable to create the ring-buffer");
 
 	/* request io-ports */
 	if(reqport(IOPORT_PIC) < 0)
@@ -187,104 +172,23 @@ int main(void) {
 	if(signal(SIG_INTRPT_KB,kbIntrptHandler) == SIG_ERR)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
-	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_READ);
-	if(id < 0)
-		error("Unable to register device 'keyboard'");
-
-	/* wait for commands */
-	while(1) {
-		int fd;
-
-		/* translate scancodes to keycodes */
-		if(scReadPos != scWritePos) {
-			while(scReadPos != scWritePos) {
-				sKbData data;
-				if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scBuf[scReadPos])) {
-					/* F12 starts the kernel-debugging-console */
-					if(!data.isBreak && data.keycode == VK_F12)
-						kbStartDbgConsole();
-					else
-						rb_write(rbuf,&data);
-				}
-				scReadPos = (scReadPos + 1) % SC_BUF_SIZE;
-			}
-			if(rb_length(rbuf) > 0)
-				fcntl(id,F_SETDATA,true);
-		}
-
-		fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("[KB] Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_DEV_READ: {
-					/* offset is ignored here */
-					size_t count = msg.args.arg2 / sizeof(sKbData);
-					sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
-					msg.args.arg1 = 0;
-					if(buffer)
-						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKbData);
-					msg.args.arg2 = rb_length(rbuf) > 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1) {
-						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
-						free(buffer);
-					}
-				}
-				break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-			close(fd);
-		}
-	}
+	keyb_driverLoop();
 
 	/* clean up */
 	relport(IOPORT_PIC);
 	relport(IOPORT_KB_DATA);
 	relport(IOPORT_KB_CTRL);
-	rb_destroy(rbuf);
-	close(id);
-
 	return EXIT_SUCCESS;
-}
-
-static void kbStartDbgConsole(void) {
-	/* switch to vga-text-mode */
-	int fd = open("/dev/video",IO_MSGS);
-	if(fd >= 0) {
-		video_setMode(fd,video_getMode(fd));
-		close(fd);
-	}
-
-	/* disable vterm to prevent that it writes to VESA memory or so (might write garbage to VGA) */
-	fd = open("/dev/vterm0",IO_MSGS);
-	if(fd >= 0)
-		vterm_setEnabled(fd,false);
-
-	/* start debugger */
-	debug();
-
-	/* restore video-mode */
-	/* TODO this is not perfect since it causes problems when we're in GUI-mode.
-	 * But its for debugging, so its ok, I think :) */
-	if(fd >= 0) {
-		vterm_setEnabled(fd,true);
-		close(fd);
-	}
 }
 
 static void kbIntrptHandler(A_UNUSED int sig) {
 	if(!(inbyte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
 
-	scBuf[scWritePos] = inbyte(IOPORT_KB_DATA);
-	scWritePos = (scWritePos + 1) % SC_BUF_SIZE;
+	uint8_t sc = inbyte(IOPORT_KB_DATA);
+	sKbData data;
+	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc))
+		keyb_handleKey(&data);
 }
 
 static void kb_waitOutBuf(void) {

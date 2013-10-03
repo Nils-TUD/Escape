@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeLib(target = 'keyb', source = env.Glob('*.c'))

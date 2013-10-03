@@ -78,42 +78,38 @@ int main(void) {
 }
 
 static int kbClientThread(A_UNUSED void *arg) {
-	static sKmData data;
-	static sKbData kbData[KB_DATA_BUF_SIZE];
-	int kbFd;
-
 	/* open keyboard */
-	kbFd = open("/dev/keyboard",IO_READ);
+	int kbFd = open("/dev/keyboard",IO_READ);
 	if(kbFd < 0)
 		error("Unable to open '/dev/keyboard'");
 
 	while(1) {
-		ssize_t count = IGNSIGS(read(kbFd,kbData,sizeof(kbData)));
-		if(count < 0)
-			printe("[KM] Unable to read");
-		else {
-			sKbData *kbd = kbData;
-			bool wasReadable,readable;
-			/* use the lock while we're using map, rbuf and the events */
-			locku(&lck);
-			wasReadable = rb_length(rbuf) > 0;
-			readable = false;
-			count /= sizeof(sKbData);
-			while(count-- > 0) {
-				data.keycode = kbd->keycode;
-				data.character = km_translateKeycode(
-						map,kbd->isBreak,kbd->keycode,&(data.modifier));
-				/* if nobody has announced a global key-listener for it, add it to our rb */
-				if(!events_send(ids[1],&data)) {
-					rb_write(rbuf,&data);
-					readable = true;
-				}
-				kbd++;
-			}
-			if(!wasReadable && readable)
-				fcntl(ids[0],F_SETDATA,true);
-			unlocku(&lck);
+		msgid_t mid;
+		sKbData kbData;
+		ssize_t res = IGNSIGS(receive(kbFd,&mid,&kbData,sizeof(kbData)));
+		if(res < 0)
+			printe("[KM] receive from keyboard failed");
+
+		/* translate keycode */
+		sKmData data;
+		data.keycode = kbData.keycode;
+		data.character = km_translateKeycode(
+				map,kbData.isBreak,kbData.keycode,&(data.modifier));
+
+		bool wasReadable,readable;
+		/* use the lock while we're using map, rbuf and the events */
+		locku(&lck);
+		wasReadable = rb_length(rbuf) > 0;
+		readable = false;
+		/* if nobody has announced a global key-listener for it, add it to our rb */
+		if(!events_send(ids[1],&data)) {
+			rb_write(rbuf,&data);
+			readable = true;
 		}
+
+		if(!wasReadable && readable)
+			fcntl(ids[0],F_SETDATA,true);
+		unlocku(&lck);
 	}
 	return EXIT_SUCCESS;
 }

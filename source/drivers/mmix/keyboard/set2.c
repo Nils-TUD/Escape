@@ -165,7 +165,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 static bool isExt = 0;
 static bool isBreakFlag = false;
 
-bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode) {
+bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,uint64_t scanCode) {
 	sScanCodeEntry *e;
 	/* extended code-start? */
 	if(scanCode == 0xE0) {

@@ -28,6 +28,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/driver/vterm.h>
 #include <esc/mem.h>
+#include <keyb/keybdev.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,108 +52,31 @@
 
 static void kbIntrptHandler(int sig);
 
-static sMsg msg;
-static sRingBuf *rbuf;
 static uint32_t *kbRegs;
-static uint8_t scBuf[SC_BUF_SIZE];
-static size_t scReadPos = 0;
-static size_t scWritePos = 0;
 
 int main(void) {
-	int id;
-	msgid_t mid;
-	uintptr_t phys;
-
-	phys = KEYBOARD_BASE;
+	uintptr_t phys = KEYBOARD_BASE;
 	kbRegs = (uint32_t*)regaddphys(&phys,2 * sizeof(uint32_t),0);
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
-
-	/* create buffers */
-	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	if(rbuf == NULL)
-		error("Unable to create the ring-buffer");
 
 	/* we want to get notified about keyboard interrupts */
 	if(signal(SIG_INTRPT_KB,kbIntrptHandler) == SIG_ERR)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
-	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_READ);
-	if(id < 0)
-		error("Unable to register device 'keyboard'");
-
 	/* enable interrupts */
 	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 
-	/* wait for commands */
-	while(1) {
-		int fd;
-
-		/* translate scancodes to keycodes */
-		if(scReadPos != scWritePos) {
-			while(scReadPos != scWritePos) {
-				sKbData data;
-				if(kb_set2_getKeycode(&data.isBreak,&data.keycode,scBuf[scReadPos])) {
-					if(!data.isBreak && data.keycode == VK_F12) {
-						int vtfd = open("/dev/vterm0",IO_MSGS);
-						if(vtfd >= 0)
-							vterm_setEnabled(vtfd,false);
-						debug();
-						if(vtfd >= 0) {
-							vterm_setEnabled(vtfd,true);
-							close(vtfd);
-						}
-						kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
-					}
-					else
-						rb_write(rbuf,&data);
-				}
-				scReadPos = (scReadPos + 1) % SC_BUF_SIZE;
-			}
-			if(rb_length(rbuf) > 0)
-				fcntl(id,F_SETDATA,true);
-		}
-
-		fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("[KB] Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_DEV_READ: {
-					/* offset is ignored here */
-					size_t count = msg.args.arg2 / sizeof(sKbData);
-					sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
-					msg.args.arg1 = 0;
-					if(buffer)
-						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKbData);
-					msg.args.arg2 = rb_length(rbuf) > 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1) {
-						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
-						free(buffer);
-					}
-				}
-				break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-			close(fd);
-		}
-	}
+	keyb_driverLoop();
 
 	/* clean up */
-	rb_destroy(rbuf);
 	munmap(kbRegs);
-	close(id);
 	return EXIT_SUCCESS;
 }
 
 static void kbIntrptHandler(A_UNUSED int sig) {
-	scBuf[scWritePos] = kbRegs[KEYBOARD_DATA];
-	scWritePos = (scWritePos + 1) % SC_BUF_SIZE;
+	sKbData data;
+	uint32_t sc = kbRegs[KEYBOARD_DATA];
+	if(kb_set2_getKeycode(&data.isBreak,&data.keycode,sc))
+		keyb_handleKey(&data);
 }

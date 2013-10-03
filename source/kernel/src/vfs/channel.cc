@@ -161,10 +161,13 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	if((res = isSupported(DEV_READ)) < 0)
 		return res;
 
-	/* wait until there is data available, if necessary */
-	res = VFS::waitFor(EV_DATA_READABLE,(evobj_t)file,0,file->shouldBlock(),KERNEL_PID,0);
-	if(res < 0)
-		return res;
+	/* first do a quick check. waitFor is only necessary to make sure that we don't miss a message. */
+	if(!static_cast<VFSDevice*>(getParent())->isReadable()) {
+		/* wait until there is data available, if necessary */
+		res = VFS::waitFor(EV_DATA_READABLE,(evobj_t)file,0,file->shouldBlock(),KERNEL_PID,0);
+		if(res < 0)
+			return res;
+	}
 
 	/* send msg to driver */
 	msg.arg1 = offset;

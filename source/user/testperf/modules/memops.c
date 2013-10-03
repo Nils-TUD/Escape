@@ -57,7 +57,7 @@ static void do_test(const char *name,memop_func func) {
 			func(buf, mem, AREA_SIZE);
 			total += rdtsc() - start;
 		}
-		printf("Aligned %s with %zu bytes: %Lu cycles/call, %Lu MiB/s\n",
+		printf("Aligned %s with %zu bytes: %Lu cycles/call, %Lu MB/s\n",
 				name,AREA_SIZE,total / TEST_COUNT,
 				(AREA_SIZE * TEST_COUNT) / tsctotime(total));
 	}
@@ -69,7 +69,7 @@ static void do_test(const char *name,memop_func func) {
 			func((char*)buf + 1,(char*)mem + 1,AREA_SIZE - 2);
 			total += rdtsc() - start;
 		}
-		printf("Unaligned %s with %zu bytes: %Lu cycles/call, %Lu MiB/s\n",
+		printf("Unaligned %s with %zu bytes: %Lu cycles/call, %Lu MB/s\n",
 				name,AREA_SIZE,total / TEST_COUNT,
 				(AREA_SIZE * TEST_COUNT) / tsctotime(total));
 	}

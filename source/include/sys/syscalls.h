@@ -70,7 +70,6 @@ public:
 private:
 	// driver
 	static int createdev(Thread *t,IntrptStackFrame *stack);
-	static int getclientid(Thread *t,IntrptStackFrame *stack);
 	static int getclient(Thread *t,IntrptStackFrame *stack);
 	static int getwork(Thread *t,IntrptStackFrame *stack);
 

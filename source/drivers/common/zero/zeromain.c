@@ -44,7 +44,7 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[ZERO] Unable to get work");
 		else {

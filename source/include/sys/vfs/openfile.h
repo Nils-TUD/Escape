@@ -99,6 +99,12 @@ public:
 	dev_t getDev() const {
 		return devNo;
 	}
+	/***
+	 * @return the node-number
+	 */
+	inode_t getNodeNo() const {
+		return nodeNo;
+	}
 	/**
 	 * @return the node of this file (might be NULL)
 	 */
@@ -212,18 +218,6 @@ public:
 	 * @return true if the file has really been closed
 	 */
 	bool close(pid_t pid);
-
-	/***
-	 * Fetches the client-id from this file
-	 *
-	 * @param pid the process-id (device-owner)
-	 * @return the client-id or the error-code
-	 */
-	inode_t getClientId(A_UNUSED pid_t pid) const {
-		if(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode()))
-			return -EPERM;
-		return nodeNo;
-	}
 
 	/**
 	 * Opens a file for the client with given process-id.

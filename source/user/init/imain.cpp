@@ -93,7 +93,7 @@ static int driverThread(A_UNUSED void *arg) {
 	while(!timeout) {
 		msgid_t mid;
 		sMsg msg;
-		int fd = getwork(drv,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(drv,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[INIT] Unable to get work");

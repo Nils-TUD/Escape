@@ -61,21 +61,6 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-int Syscalls::getclientid(Thread *t,IntrptStackFrame *stack) {
-	int fd = (int)SYSC_ARG1(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	OpenFile *file = FileDesc::request(fd);
-	if(file == NULL)
-		SYSC_ERROR(stack,-EBADF);
-
-	inode_t id = file->getClientId(pid);
-	FileDesc::release(file);
-	if(id < 0)
-		SYSC_ERROR(stack,id);
-	SYSC_RET1(stack,id);
-}
-
 int Syscalls::getclient(Thread *t,IntrptStackFrame *stack) {
 	int drvFd = (int)SYSC_ARG1(stack);
 	inode_t cid = (inode_t)SYSC_ARG2(stack);
@@ -103,15 +88,18 @@ int Syscalls::getclient(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
-	int fd = SYSC_ARG1(stack) >> 1;
-	uint flags = SYSC_ARG1(stack) & 1;
-	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
-	void *data = (void*)SYSC_ARG3(stack);
-	size_t size = SYSC_ARG4(stack);
+	int fd = SYSC_ARG1(stack);
+	inode_t *cid = (inode_t*)SYSC_ARG2(stack);
+	msgid_t *id = (msgid_t*)SYSC_ARG3(stack);
+	void *data = (void*)SYSC_ARG4(stack);
+	size_t size = SYSC_ARG5(stack);
+	uint flags = SYSC_ARG6(stack);
 	pid_t pid = t->getProc()->getPid();
 	OpenFile *file;
 
 	/* validate pointers */
+	if(!PageDir::isInUserSpace((uintptr_t)cid,sizeof(inode_t)))
+		SYSC_ERROR(stack,-EFAULT);
 	if(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(!PageDir::isInUserSpace((uintptr_t)data,size))
@@ -154,6 +142,10 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		file->close(pid);
 		SYSC_ERROR(stack,cfd);
 	}
+
+	/* set client id */
+	if(cid)
+		*cid = file->getNodeNo();
 
 	SYSC_RET1(stack,cfd);
 }

@@ -65,16 +65,6 @@ A_CHECKRET static inline int createdev(const char *path,uint type,uint ops) {
 }
 
 /**
- * Fetches the client-id from the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the id or an error
- */
-static inline inode_t getclientid(int fd) {
-	return syscall1(SYSCALL_GETCLIENTID,fd);
-}
-
-/**
  * Opens a file for the client with given client-id.
  *
  * @param fd the file-descriptor for the device
@@ -92,14 +82,15 @@ A_CHECKRET static inline int getclient(int fd,inode_t cid) {
  * Note that you may be interrupted by a signal!
  *
  * @param fd the device fd
+ * @param cid will be set to the client-id
  * @param mid will be set to the msg-id
  * @param msg the message
  * @param size the (max) size of the message
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-A_CHECKRET static inline int getwork(int fd,msgid_t *mid,void *msg,size_t size,uint flags) {
-	return syscall4(SYSCALL_GETWORK,(fd << 1) | flags,(ulong)mid,(ulong)msg,size);
+A_CHECKRET static inline int getwork(int fd,inode_t *cid,msgid_t *mid,void *msg,size_t size,uint flags) {
+	return syscall7(SYSCALL_GETWORK,fd,(ulong)cid,(ulong)mid,(ulong)msg,size,flags,0);
 }
 
 /**

@@ -127,7 +127,7 @@ int main(int argc,char **argv) {
 	fclose(f);
 
 	while(1) {
-		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(drvId,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[DISK] Unable to get client");

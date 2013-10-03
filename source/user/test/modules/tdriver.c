@@ -115,7 +115,7 @@ static int getRequests(A_UNUSED void *arg) {
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 	do {
-		int cfd = getwork(id,&mid,&msg,sizeof(msg),0);
+		int cfd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
 		if(cfd < 0) {
 			if(cfd != -EINTR)
 				printe("[TEST] Unable to get work");

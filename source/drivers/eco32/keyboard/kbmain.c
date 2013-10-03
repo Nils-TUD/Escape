@@ -113,7 +113,7 @@ int main(void) {
 				fcntl(id,F_SETDATA,true);
 		}
 
-		fd = getwork(id,&mid,&msg,sizeof(msg),0);
+		fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[KB] Unable to get work");

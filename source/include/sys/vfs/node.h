@@ -87,6 +87,22 @@ public:
 	}
 
 	/**
+	 * Requests the node for the given node-number and increases the references. That is, you should
+	 * call release() if you're done.
+	 *
+	 * @param nodeNo the node number
+	 * @return the node
+	 */
+	static VFSNode *request(inode_t nodeNo) {
+		acquireTree();
+		VFSNode *n = get(nodeNo);
+		if(n)
+			n->increaseRefs();
+		releaseTree();
+		return n;
+	}
+
+	/**
 	 * Resolves the given path to a VFS-node and requests it, i.e. increments the references.
 	 * This way, you can be sure that if 0 is returned, the node is not destroyed until
 	 * you call release(). On the other hand, it might get detached from the tree if you don't

@@ -287,23 +287,21 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 }
 
 int OpenFile::openClient(pid_t pid,inode_t clientId,OpenFile **cfile) {
-	bool isValid;
-	/* search for the client */
-	/* TODO we don't need to search here. checking whether it has the expected parent is sufficient */
-	const VFSNode *n = node->openDir(true,&isValid);
-	if(isValid) {
-		while(n != NULL) {
-			if(n->getNo() == clientId)
-				break;
-			n = n->next;
-		}
-	}
-	node->closeDir(true);
-	if(n == NULL)
+	VFSNode *n = VFSNode::request(clientId);
+	if(!n)
 		return -ENOENT;
 
+	/* is it a channel for our device? not locked because the parent can't change. so, either it
+	 * is a child of our node or it is already NULL. both is a failure */
+	int res = -EINVAL;
+	if(n->getParent() != node)
+		goto error;
+
 	/* open file */
-	return VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,n,n->getNo(),VFS_DEV_NO,cfile);
+	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,n,n->getNo(),VFS_DEV_NO,cfile);
+error:
+	VFSNode::release(n);
+	return res;
 }
 
 void OpenFile::print(OStream &os) const {

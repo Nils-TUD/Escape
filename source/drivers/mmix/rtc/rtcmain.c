@@ -57,7 +57,7 @@ int main(void) {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
-					msg.args.arg2 = true;
+					msg.args.arg2 = READABLE_DONT_SET;
 					if(offset + count <= offset || offset + count > sizeof(sRTCInfo))
 						msg.args.arg1 = 0;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));

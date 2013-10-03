@@ -55,7 +55,7 @@ int main(void) {
 						count = 0;
 					}
 					msg.args.arg1 = count;
-					msg.args.arg2 = true;
+					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(count) {
 						send(fd,MSG_DEV_READ_RESP,data,count);

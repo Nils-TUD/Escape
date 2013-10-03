@@ -83,7 +83,7 @@ static int drive_thread(void *arg) {
 					uint count = msg.args.arg2;
 					locku(&atalock);
 					msg.args.arg1 = handleRead(ataDev,part,offset,count);
-					msg.args.arg2 = true;
+					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
 						send(fd,MSG_DEV_READ_RESP,buffer,count);

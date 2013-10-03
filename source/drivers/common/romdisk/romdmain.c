@@ -71,7 +71,7 @@ int main(int argc,char **argv) {
 					msg.args.arg1 = 0;
 					if(offset + count <= size && offset + count > offset)
 						msg.data.arg1 = count;
-					msg.args.arg2 = true;
+					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
 						send(fd,MSG_DEV_READ_RESP,addr + offset,msg.data.arg1);

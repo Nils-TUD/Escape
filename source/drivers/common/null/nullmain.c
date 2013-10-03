@@ -48,7 +48,7 @@ int main(void) {
 			switch(mid) {
 				case MSG_DEV_READ:
 					msg.args.arg1 = 0;
-					msg.args.arg2 = true;
+					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					break;
 				case MSG_DEV_WRITE:

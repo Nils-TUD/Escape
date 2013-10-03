@@ -153,7 +153,7 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,
 					req->msg.args.arg1,req->msg.args.arg2);
 			req->msg.args.arg1 = req->msg.args.arg2;
-			req->msg.args.arg2 = true;
+			req->msg.args.arg2 = READABLE_DONT_SET;
 			itoa(resp,sizeof(resp),respId++);
 			send(req->fd,MSG_DEV_READ_RESP,&req->msg,sizeof(req->msg.args));
 			send(req->fd,MSG_DEV_READ_RESP,resp,sizeof(resp));

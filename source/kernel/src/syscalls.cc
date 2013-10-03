@@ -117,7 +117,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 #endif
 };
 
-void Syscalls::printEntry(Thread *t,IntrptStackFrame *stack) {
+void Syscalls::printEntry(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 #if PRINT_SYSCALLS
 	uint sysCallNo = SYSC_NUMBER(stack);
 	Log::get().writef("[%d:%d:%s] %s(",t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram(),
@@ -157,7 +157,7 @@ void Syscalls::printEntry(Thread *t,IntrptStackFrame *stack) {
 #endif
 }
 
-void Syscalls::printExit(IntrptStackFrame *stack) {
+void Syscalls::printExit(A_UNUSED IntrptStackFrame *stack) {
 #if PRINT_SYSCALLS
 	Log::get().writef(" = %p (%d)\n",SYSC_GETRET(stack),SYSC_GETERR(stack));
 #endif

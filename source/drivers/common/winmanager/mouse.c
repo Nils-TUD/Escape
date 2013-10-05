@@ -135,18 +135,14 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	/* send to window */
 	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
 	if(w) {
-		int aWin = getclient(drvId,w->owner);
-		if(aWin >= 0) {
-			msg.args.arg1 = curX;
-			msg.args.arg2 = curY;
-			msg.args.arg3 = mdata->x;
-			msg.args.arg4 = -mdata->y;
-			msg.args.arg5 = mdata->z;
-			msg.args.arg6 = mdata->buttons;
-			msg.args.arg7 = w->id;
-			send(aWin,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
-			close(aWin);
-		}
+		msg.args.arg1 = curX;
+		msg.args.arg2 = curY;
+		msg.args.arg3 = mdata->x;
+		msg.args.arg4 = -mdata->y;
+		msg.args.arg5 = mdata->z;
+		msg.args.arg6 = mdata->buttons;
+		msg.args.arg7 = w->id;
+		send(w->owner,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
 	}
 
 	if(btnChanged && !buttons)

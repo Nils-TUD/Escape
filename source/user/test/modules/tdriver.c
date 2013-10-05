@@ -115,7 +115,7 @@ static int getRequests(A_UNUSED void *arg) {
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 	do {
-		int cfd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
+		int cfd = getwork(id,&mid,&msg,sizeof(msg),GW_MARKUSED);
 		if(cfd < 0) {
 			if(cfd != -EINTR)
 				printe("[TEST] Unable to get work");
@@ -167,6 +167,8 @@ static int handleRequest(void *arg) {
 		case MSG_DEV_CLOSE:
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
 			closeCount++;
+			close(req->fd);
+			req->fd = -1;
 			if(kill(getpid(),SIG_USR1) < 0)
 				error("Unable to send signal to driver-thread");
 			break;
@@ -174,7 +176,8 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Unknown command\n",gettid(),req->fd);
 			break;
 	}
-	close(req->fd);
+	if(req->fd != -1)
+		fcntl(req->fd,F_SETUNUSED,0);
 	free(req->data);
 	free(req);
 	return 0;

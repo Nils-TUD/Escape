@@ -38,10 +38,11 @@ public:
 	/**
 	 * Requests the file for the given file-descriptor and increments the usage-count
 	 *
+	 * @param p the process
 	 * @param fd the file-descriptor
 	 * @return the file or NULL if the fd is invalid
 	 */
-	static OpenFile *request(int fd);
+	static OpenFile *request(Proc *p,int fd);
 
 	/**
 	 * Releases the given file, i.e. decrements the usage-count
@@ -67,10 +68,11 @@ public:
 	/**
 	 * Associates a free file-descriptor with the given file-number
 	 *
+	 * @param p the process
 	 * @param fileNo the file-number
 	 * @return the file-descriptor on success
 	 */
-	static int assoc(OpenFile *fileNo);
+	static int assoc(Proc *p,OpenFile *fileNo);
 
 	/**
 	 * Duplicates the given file-descriptor
@@ -92,10 +94,11 @@ public:
 	/**
 	 * Releases the given file-descriptor (marks it unused)
 	 *
+	 * @param p the process
 	 * @param fd the file-descriptor
 	 * @return the file that was associated with the fd (or NULL)
 	 */
-	static OpenFile *unassoc(int fd);
+	static OpenFile *unassoc(Proc *p,int fd);
 
 	/**
 	 * Prints the file-descriptors of <p>

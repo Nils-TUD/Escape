@@ -31,29 +31,28 @@ void events_init(void);
  * Sends the given keymap-data to all that listen to the corresponding keycode/character,
  * modifier and pressed/released combination
  *
- * @param device the device-id
  * @param km the keymap-data
  * @return true if we've sent it to somebody
  */
-bool events_send(int device,sKmData *km);
+bool events_send(sKmData *km);
 
 /**
  * Adds the given listener
  *
- * @param id the client-id of the listener
+ * @param fd the client-fd
  * @param flags the flags
  * @param key the key (keycode or character, depending on the flags)
  * @param modifier the modifiers
  * @return 0 if successfull
  */
-int events_add(inode_t id,uchar flags,uchar key,uchar modifier);
+int events_add(int fd,uchar flags,uchar key,uchar modifier);
 
 /**
  * Removes the given listener
  *
- * @param id the client-id of the listener
+ * @param fd the client-fd
  * @param flags the flags
  * @param key the key (keycode or character, depending on the flags)
  * @param modifier the modifiers
  */
-void events_remove(inode_t id,uchar flags,uchar key,uchar modifier);
+void events_remove(int fd,uchar flags,uchar key,uchar modifier);

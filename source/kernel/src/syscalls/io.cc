@@ -52,7 +52,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with file */
-	int fd = FileDesc::assoc(file);
+	int fd = FileDesc::assoc(t->getProc(),file);
 	if(EXPECT_FALSE(fd < 0)) {
 		file->close(pid);
 		SYSC_ERROR(stack,fd);
@@ -64,14 +64,14 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	uint cmd = SYSC_ARG2(stack);
 	int arg = (int)SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
-	int res = file->fcntl(pid,cmd,arg);
+	int res = file->fcntl(p->getPid(),cmd,arg);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
@@ -81,7 +81,7 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 	int *readFd = (int*)SYSC_ARG1(stack);
 	int *writeFd = (int*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	/* make sure that the pointers point to userspace */
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
@@ -89,24 +89,24 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	OpenFile *readFile,*writeFile;
-	int res = VFS::openPipe(pid,&readFile,&writeFile);
+	int res = VFS::openPipe(p->getPid(),&readFile,&writeFile);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with read-file */
-	int kreadFd = FileDesc::assoc(readFile);
+	int kreadFd = FileDesc::assoc(p,readFile);
 	if(EXPECT_FALSE(kreadFd < 0)) {
-		readFile->close(pid);
-		writeFile->close(pid);
+		readFile->close(p->getPid());
+		writeFile->close(p->getPid());
 		SYSC_ERROR(stack,kreadFd);
 	}
 
 	/* assoc fd with write-file */
-	int kwriteFd = FileDesc::assoc(writeFile);
+	int kwriteFd = FileDesc::assoc(p,writeFile);
 	if(EXPECT_FALSE(kwriteFd < 0)) {
-		FileDesc::unassoc(kreadFd);
-		readFile->close(pid);
-		writeFile->close(pid);
+		FileDesc::unassoc(p,kreadFd);
+		readFile->close(p->getPid());
+		writeFile->close(p->getPid());
 		SYSC_ERROR(stack,kwriteFd);
 	}
 
@@ -139,17 +139,17 @@ int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	if(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 	/* get info */
-	int res = file->fstat(pid,info);
+	int res = file->fstat(p->getPid(),info);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
@@ -190,18 +190,18 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)pos,sizeof(off_t))))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* this may fail, but we're requested the file, so it will be released on our termination */
-	*pos = file->tell(pid);
+	*pos = file->tell(p->getPid());
 	FileDesc::release(file);
 	SYSC_RET1(stack,0);
 }
@@ -210,17 +210,17 @@ int Syscalls::seek(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t offset = (off_t)SYSC_ARG2(stack);
 	uint whence = SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END))
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
-	off_t res = file->seek(pid,offset,whence);
+	off_t res = file->seek(p->getPid(),offset,whence);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
@@ -231,7 +231,7 @@ int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	/* validate count and buffer */
 	if(EXPECT_FALSE(count == 0))
@@ -240,12 +240,12 @@ int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
-	ssize_t readBytes = file->read(pid,buffer,count);
+	ssize_t readBytes = file->read(p->getPid(),buffer,count);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(readBytes < 0))
 		SYSC_ERROR(stack,readBytes);
@@ -256,7 +256,7 @@ int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	const void *buffer = (const void*)SYSC_ARG2(stack);
 	size_t count = SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	/* validate count and buffer */
 	if(EXPECT_FALSE(count == 0))
@@ -265,12 +265,12 @@ int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* read */
-	ssize_t writtenBytes = file->write(pid,buffer,count);
+	ssize_t writtenBytes = file->write(p->getPid(),buffer,count);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(writtenBytes < 0))
 		SYSC_ERROR(stack,writtenBytes);
@@ -282,7 +282,7 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 	msgid_t id = (msgid_t)SYSC_ARG2(stack);
 	const void *data = (const void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -291,12 +291,12 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
-	ssize_t res = file->sendMsg(pid,id,data,size,NULL,0);
+	ssize_t res = file->sendMsg(p->getPid(),id,data,size,NULL,0);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
@@ -308,18 +308,18 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
-	ssize_t res = file->receiveMsg(pid,id,data,size,false);
+	ssize_t res = file->receiveMsg(p->getPid(),id,data,size,false);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
@@ -347,15 +347,15 @@ int Syscalls::redirect(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
-	OpenFile *file = FileDesc::request(fd);
+	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* close file */
-	FileDesc::unassoc(fd);
-	if(EXPECT_FALSE(!file->close(pid)))
+	FileDesc::unassoc(p,fd);
+	if(EXPECT_FALSE(!file->close(p->getPid())))
 		FileDesc::release(file);
 	else
 		Thread::remFileUsage(file);

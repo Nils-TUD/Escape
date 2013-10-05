@@ -66,11 +66,11 @@ public:
 	 * not used, the function waits until a client wants to be served.
 	 *
 	 * @param file the file to check for a client
-	 * @param client will be set to the client
+	 * @param fd will be set to the file-descriptor for the channel to receive a message from
 	 * @param flags the flags (GW_*)
 	 * @return the error-code or 0
 	 */
-	static int getClient(OpenFile *file,VFSNode **client,uint flags);
+	static int getClient(OpenFile *file,int *fd,uint flags);
 
 	/**
 	 * Checks whether they point to the same file
@@ -218,16 +218,6 @@ public:
 	 * @return true if the file has really been closed
 	 */
 	bool close(pid_t pid);
-
-	/**
-	 * Opens a file for the client with given process-id.
-	 *
-	 * @param pid the own process-id
-	 * @param clientId the id of the desired client
-	 * @param cfile will be set to the opened file
-	 * @return 0 or a negative error-code
-	 */
-	int openClient(pid_t pid,inode_t clientId,OpenFile **cfile);
 
 	/**
 	 * Prints information to this file

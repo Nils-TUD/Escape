@@ -35,7 +35,7 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int doWait(uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident);
+static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident);
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
@@ -105,7 +105,7 @@ int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	evobj_t object = (evobj_t)SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
 
-	int res = doWait(event,object,maxWaitTime,KERNEL_PID,0);
+	int res = doWait(t->getProc(),event,object,maxWaitTime,KERNEL_PID,0);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -119,7 +119,7 @@ int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 
 	/* wait and release the lock before going to sleep */
-	int res = doWait(event,object,0,global ? INVALID_PID : pid,ident);
+	int res = doWait(t->getProc(),event,object,0,global ? INVALID_PID : pid,ident);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -195,12 +195,12 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static int doWait(uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident) {
+static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident) {
 	OpenFile *file = NULL;
 	/* first request the files from the file-descriptors */
 	if(IS_FILE_EVENT(event)) {
 		/* translate fd to node-number */
-		file = FileDesc::request((int)object);
+		file = FileDesc::request(p,(int)object);
 		if(EXPECT_FALSE(file == NULL))
 			return -EBADF;
 	}

@@ -55,64 +55,35 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
-	int fd = FileDesc::assoc(file);
+	int fd = FileDesc::assoc(t->getProc(),file);
 	if(EXPECT_FALSE(fd < 0))
 		SYSC_ERROR(stack,fd);
 	SYSC_RET1(stack,fd);
 }
 
-int Syscalls::getclient(Thread *t,IntrptStackFrame *stack) {
-	int drvFd = (int)SYSC_ARG1(stack);
-	inode_t cid = (inode_t)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	/* get file */
-	OpenFile *drvFile = FileDesc::request(drvFd);
-	if(EXPECT_FALSE(drvFile == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
-	/* open client */
-	OpenFile *file;
-	int res = drvFile->openClient(pid,cid,&file);
-	FileDesc::release(drvFile);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-
-	/* associate fd with file */
-	int fd = FileDesc::assoc(file);
-	if(EXPECT_FALSE(fd < 0)) {
-		file->close(pid);
-		SYSC_ERROR(stack,fd);
-	}
-	SYSC_RET1(stack,fd);
-}
-
 int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
-	int fd = SYSC_ARG1(stack);
-	inode_t *cid = (inode_t*)SYSC_ARG2(stack);
-	msgid_t *id = (msgid_t*)SYSC_ARG3(stack);
-	void *data = (void*)SYSC_ARG4(stack);
-	size_t size = SYSC_ARG5(stack);
-	uint flags = SYSC_ARG6(stack);
-	pid_t pid = t->getProc()->getPid();
+	int fd = SYSC_ARG1(stack) >> 2;
+	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
+	void *data = (void*)SYSC_ARG3(stack);
+	size_t size = SYSC_ARG4(stack);
+	uint flags = SYSC_ARG1(stack) & 0x3;
+	Proc *p = t->getProc();
 	OpenFile *file;
 
 	/* validate pointers */
-	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)cid,sizeof(inode_t))))
-		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t))))
 		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* translate to files */
-	file = FileDesc::request(fd);
+	file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* open a client */
-	VFSNode *client;
-	ssize_t res = OpenFile::getClient(file,&client,flags);
+	int clifd;
+	ssize_t res = OpenFile::getClient(file,&clifd,flags);
 
 	/* release files */
 	FileDesc::release(file);
@@ -120,32 +91,18 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
-	/* open file */
-	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,client,client->getNo(),VFS_DEV_NO,&file);
-	VFSNode::release(client);
-	if(EXPECT_FALSE(res < 0)) {
+	OpenFile *client = FileDesc::request(p,clifd);
+	if(!client) {
 		/* we have to set the channel unused again; otherwise its ignored for ever */
-		static_cast<VFSChannel*>(client)->setUsed(false);
-		SYSC_ERROR(stack,res);
+		static_cast<VFSChannel*>(client->getNode())->setUsed(false);
+		SYSC_ERROR(stack,-EBADF);
 	}
 
 	/* receive a message */
-	res = file->receiveMsg(pid,id,data,size,false);
-	if(EXPECT_FALSE(res < 0)) {
-		file->close(pid);
+	res = client->receiveMsg(p->getPid(),id,data,size,false);
+	FileDesc::release(client);
+
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	}
-
-	/* assoc with fd */
-	int cfd = FileDesc::assoc(file);
-	if(EXPECT_FALSE(cfd < 0)) {
-		file->close(pid);
-		SYSC_ERROR(stack,cfd);
-	}
-
-	/* set client id */
-	if(EXPECT_FALSE(cid))
-		*cid = file->getNodeNo();
-
-	SYSC_RET1(stack,cfd);
+	SYSC_RET1(stack,clifd);
 }

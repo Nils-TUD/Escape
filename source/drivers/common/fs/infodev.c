@@ -59,7 +59,7 @@ static int infodev_handler(void *arg) {
 
 	while(run) {
 		msgid_t mid;
-		int fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[FSINFO] Unable to get work");
@@ -75,7 +75,6 @@ static int infodev_handler(void *arg) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 	close(id);

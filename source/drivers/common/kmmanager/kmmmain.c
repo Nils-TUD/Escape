@@ -102,7 +102,7 @@ static int kbClientThread(A_UNUSED void *arg) {
 		wasReadable = rb_length(rbuf) > 0;
 		readable = false;
 		/* if nobody has announced a global key-listener for it, add it to our rb */
-		if(!events_send(ids[1],&data)) {
+		if(!events_send(&data)) {
 			rb_write(rbuf,&data);
 			readable = true;
 		}
@@ -121,7 +121,7 @@ static int keymapThread(A_UNUSED void *arg) {
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
-		int fd = getwork(ids[0],NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(ids[0],&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[KMM] Unable to get work");
 		else {
@@ -173,7 +173,6 @@ static int keymapThread(A_UNUSED void *arg) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 	return 0;
@@ -185,9 +184,8 @@ static int keyeventsThread(A_UNUSED void *arg) {
 		error("Unable to register device 'keyevents'");
 	while(1) {
 		sMsg msg;
-		inode_t cid;
 		msgid_t mid;
-		int fd = getwork(ids[1],&cid,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(ids[1],&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[KMM] Unable to get work");
 		else {
@@ -197,7 +195,7 @@ static int keyeventsThread(A_UNUSED void *arg) {
 					uchar key = (uchar)msg.args.arg2;
 					uchar modifier = (uchar)msg.args.arg3;
 					locku(&lck);
-					msg.args.arg1 = events_add(cid,flags,key,modifier);
+					msg.args.arg1 = events_add(fd,flags,key,modifier);
 					unlocku(&lck);
 					send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
 				}
@@ -208,7 +206,7 @@ static int keyeventsThread(A_UNUSED void *arg) {
 					uchar key = (uchar)msg.args.arg2;
 					uchar modifier = (uchar)msg.args.arg3;
 					locku(&lck);
-					events_remove(cid,flags,key,modifier);
+					events_remove(fd,flags,key,modifier);
 					unlocku(&lck);
 				}
 				break;
@@ -218,7 +216,6 @@ static int keyeventsThread(A_UNUSED void *arg) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 	return 0;

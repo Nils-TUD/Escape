@@ -68,7 +68,7 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	}
 	if(EXPECT_TRUE(fd != -1)) {
 		/* get file */
-		f = FileDesc::request(fd);
+		f = FileDesc::request(t->getProc(),fd);
 		if(EXPECT_FALSE(f == NULL))
 			SYSC_ERROR(stack,-EBADF);
 	}

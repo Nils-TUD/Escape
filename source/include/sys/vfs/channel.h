@@ -50,6 +50,13 @@ public:
 	}
 
 	/**
+	 * @return the file-descriptor for the driver to communicate with this channel
+	 */
+	int getFd() const {
+		return fd;
+	}
+
+	/**
 	 * Checks whether the channel has a reply for the client
 	 *
 	 * @return true if so
@@ -110,8 +117,10 @@ protected:
 
 private:
 	static Message *getMsg(Thread *t,SList<Message> *list,ushort flags);
+	void closeFile();
 	int isSupported(int op) const;
 
+	int fd;
 	bool used;
 	bool closed;
 	Thread *curClient;

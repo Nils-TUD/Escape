@@ -85,7 +85,6 @@ bool cmds_execute(int cmd,int fd,sMsg *msg,void *data) {
 		printf("[FS] Not enough mem for request %d\n",cmd);
 #else
 	commands[cmd - MSG_FS_OPEN](fd,msg,data);
-	close(fd);
 #endif
 	return true;
 }

@@ -23,6 +23,6 @@
 #include <esc/messages.h>
 
 void listener_init(int id);
-bool listener_add(inode_t client,msgid_t mid);
+bool listener_add(int client,msgid_t mid);
 void listener_notify(msgid_t mid,const sMsg *msg,size_t size);
-void listener_remove(inode_t client,msgid_t mid);
+void listener_remove(int client,msgid_t mid);

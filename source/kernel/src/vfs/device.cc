@@ -84,7 +84,7 @@ int VFSDevice::setReadable(bool readable) {
 	return 0;
 }
 
-VFSNode *VFSDevice::getWork() {
+int VFSDevice::getWork(uint flags) {
 	const VFSNode *n,*first,*last;
 	bool valid;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
@@ -99,7 +99,7 @@ VFSNode *VFSDevice::getWork() {
 	/* if there are no messages at all or the node is invalid, stop right now */
 	if(!valid || msgCount == 0) {
 		closeDir(true);
-		return NULL;
+		return -ENOENT;
 	}
 
 	first = n;
@@ -111,11 +111,11 @@ searchBegin:
 		/* data available? */
 		if(static_cast<const VFSChannel*>(n)->hasWork()) {
 			VFSNode *res = const_cast<VFSNode*>(n);
-			static_cast<VFSChannel*>(res)->setUsed(true);
-			res->increaseRefs();
+			if(flags & GW_MARKUSED)
+				static_cast<VFSChannel*>(res)->setUsed(true);
 			lastClient = res;
 			closeDir(true);
-			return res;
+			return static_cast<VFSChannel*>(res)->getFd();
 		}
 		n = n->next;
 	}
@@ -126,7 +126,7 @@ searchBegin:
 		goto searchBegin;
 	}
 	closeDir(true);
-	return NULL;
+	return -ENOENT;
 }
 
 void VFSDevice::print(OStream &os) const {

@@ -468,16 +468,12 @@ static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 }
 
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
-	int aWin = getclient(drvId,windows[id].owner);
-	if(aWin >= 0) {
-		msg.args.arg1 = id;
-		msg.args.arg2 = isActive;
-		msg.args.arg3 = mouseX;
-		msg.args.arg4 = mouseY;
-		if(send(aWin,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args)) < 0)
-			printe("[WINM] Unable to send active-event for window %u",id);
-		close(aWin);
-	}
+	msg.args.arg1 = id;
+	msg.args.arg2 = isActive;
+	msg.args.arg3 = mouseX;
+	msg.args.arg4 = mouseY;
+	if(send(windows[id].owner,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args)) < 0)
+		printe("[WINM] Unable to send active-event for window %u",id);
 }
 
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r) {

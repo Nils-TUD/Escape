@@ -367,10 +367,11 @@ void VFSNode::append(VFSNode *p) {
 	parent = p;
 }
 
-void VFSNode::doUnref(bool remove) {
+ushort VFSNode::doUnref(bool remove) {
 	const char *nameptr = NULL;
 	/* first check whether we have the last ref */
-	bool norefs = refCount == 1;
+	ushort remRefs = refCount;
+	bool norefs = remRefs == 1;
 
 	/* no remove the child-nodes, if necessary. this is done unlocked which also means that */
 	if(norefs || remove) {
@@ -389,7 +390,8 @@ void VFSNode::doUnref(bool remove) {
 	/* don't decrease the refs twice with remove */
 	if(!remove || name) {
 		SpinLock::acquire(&lock);
-		norefs = --refCount == 0;
+		remRefs = --refCount;
+		norefs = remRefs == 0;
 		SpinLock::release(&lock);
 	}
 
@@ -426,6 +428,7 @@ void VFSNode::doUnref(bool remove) {
 	/* if there are no references anymore, we can put the node on the freelist */
 	if(norefs)
 		delete this;
+	return remRefs;
 }
 
 char *VFSNode::generateId(pid_t pid) {

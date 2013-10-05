@@ -32,7 +32,7 @@
 
 /* file-descriptor for ourself */
 static sMsg msg;
-static inode_t clients[MAX_CLIENTS];
+static int clients[MAX_CLIENTS];
 static int id;
 
 static size_t keyb_find_client(inode_t cid);
@@ -46,9 +46,8 @@ void keyb_driverLoop(void) {
 
 	/* wait for commands */
 	while(1) {
-		inode_t cid;
 		msgid_t mid;
-		int fd = getwork(id,&cid,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[KB] Unable to get work");
@@ -60,7 +59,7 @@ void keyb_driverLoop(void) {
 					if(i == MAX_CLIENTS)
 						msg.args.arg1 = -ENOMEM;
 					else {
-						clients[i] = cid;
+						clients[i] = fd;
 						msg.args.arg1 = 0;
 					}
 					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
@@ -68,9 +67,11 @@ void keyb_driverLoop(void) {
 				break;
 
 				case MSG_DEV_CLOSE: {
-					size_t i = keyb_find_client(cid);
-					if(i != MAX_CLIENTS)
+					size_t i = keyb_find_client(fd);
+					if(i != MAX_CLIENTS) {
 						clients[i] = 0;
+						close(fd);
+					}
 				}
 				break;
 
@@ -79,7 +80,6 @@ void keyb_driverLoop(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 	close(id);
@@ -93,10 +93,10 @@ void keyb_handleKey(sKbData *data) {
 		keyb_broadcast(data);
 }
 
-static size_t keyb_find_client(inode_t cid) {
+static size_t keyb_find_client(int fd) {
 	size_t i;
 	for(i = 0; i < MAX_CLIENTS; ++i) {
-		if(clients[i] == cid)
+		if(clients[i] == fd)
 			return i;
 	}
 	return MAX_CLIENTS;
@@ -104,13 +104,8 @@ static size_t keyb_find_client(inode_t cid) {
 
 static void keyb_broadcast(sKbData *data) {
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
-		if(clients[i]) {
-			int fd = getclient(id,clients[i]);
-			if(fd >= 0) {
-				send(fd,MSG_KM_EVENT,data,sizeof(*data));
-				close(fd);
-			}
-		}
+		if(clients[i])
+			send(clients[i],MSG_KM_EVENT,data,sizeof(*data));
 	}
 }
 

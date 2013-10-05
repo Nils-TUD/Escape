@@ -104,13 +104,12 @@ static void server(void) {
 	}
 	while(1) {
 		msgid_t mid;
-		int fd = getwork(dev,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(dev,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			fprintf(stderr,"Unable to get work\n");
 		else {
 			if(send(fd,0,&msg,sizeof(msg)) < 0)
 				printe("Message-sending failed");
-			close(fd);
 		}
 	}
 }
@@ -123,12 +122,11 @@ static void server_fast(void) {
 		printe("Unable to create device");
 		return;
 	}
-	fd = getwork(dev,NULL,&mid,&msg,sizeof(msg),0);
+	fd = getwork(dev,&mid,&msg,sizeof(msg),0);
 	while(1) {
 		if(send(fd,0,&msg,sizeof(msg)) < 0)
 			printe("Message-sending failed");
 		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
 			printe("Message-receiving failed");
 	}
-	close(fd);
 }

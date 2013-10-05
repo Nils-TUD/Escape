@@ -63,9 +63,9 @@ void Log::vfsIsReady() {
 	assert(VFSNode::request(DUMMY_STDIN,&stdin,NULL,VFS_CREATE) == 0);
 	assert(VFS::openFile(pid,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
 	VFSNode::release(stdin);
-	assert(FileDesc::assoc(inFile) == 0);
-	assert(FileDesc::assoc(inst.logFile) == 1);
-	assert(FileDesc::assoc(inst.logFile) == 2);
+	assert(FileDesc::assoc(Proc::getByPid(pid),inFile) == 0);
+	assert(FileDesc::assoc(Proc::getByPid(pid),inst.logFile) == 1);
+	assert(FileDesc::assoc(Proc::getByPid(pid),inst.logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
 	inst.vfsReady = true;

@@ -22,6 +22,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
+#include <sys/task/filedesc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/channel.h>
@@ -40,8 +41,8 @@
 extern klock_t waitLock;
 
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
-		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR,success), used(false),
-		  closed(false), curClient(), sendList(), recvList() {
+		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR,success), fd(-1),
+		  used(false), closed(false), curClient(), sendList(), recvList() {
 	if(!success)
 		return;
 
@@ -50,10 +51,26 @@ VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 	append(p);
 }
 
-void VFSChannel::invalidate() {
-	/* we have to reset the last client for the device here */
-	if(parent)
+void VFSChannel::closeFile() {
+	if(parent && fd >= 0) {
+		/* we have to reset the last client for the device here */
 		static_cast<VFSDevice*>(parent)->clientRemoved(this);
+		Proc *pp = Proc::getByPid(parent->getOwner());
+		assert(pp);
+		OpenFile *file = FileDesc::request(pp,fd);
+		assert(file);
+		FileDesc::unassoc(pp,fd);
+		if(!file->close(pp->getPid()))
+			FileDesc::release(file);
+		else
+			Thread::remFileUsage(file);
+		fd = -1;
+	}
+}
+
+void VFSChannel::invalidate() {
+	/* notify potentially waiting clients */
+	Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
 	recvList.deleteAll();
 	sendList.deleteAll();
 }
@@ -77,6 +94,19 @@ ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
 	ssize_t res;
 	sArgsMsg msg;
 	Thread *t = Thread::getRunning();
+
+	/* give the driver a file-descriptor for this new client */
+	VFSNode::acquireTree();
+	VFSNode *par = getParent();
+	if(par) {
+		OpenFile *clifile;
+		res = VFS::openFile(par->getOwner(),VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
+		if(res == 0)
+			fd = FileDesc::assoc(Proc::getByPid(par->getOwner()),clifile);
+		if(fd < 0)
+			Log::get().writef("Unable to open file for driver: %s\n",strerror(-fd));
+	}
+	VFSNode::releaseTree();
 
 	if((res = isSupported(DEV_OPEN)) < 0)
 		return res == -ENOTSUP ? 0 : res;
@@ -106,32 +136,26 @@ void VFSChannel::close(pid_t pid,OpenFile *file) {
 	if(!isAlive())
 		unref();
 	else {
-		if(file->isDevice()) {
-			used = false;
-			curClient = NULL;
-		}
+		if(file->isDevice())
+			destroy();
+		/* if there is only the device left, do the real close */
+		else if(unref() == 1) {
+			VFSNode::acquireTree();
+			bool closeSup = parent && static_cast<VFSDevice*>(parent)->supports(DEV_CLOSE);
+			VFSNode::releaseTree();
 
-		/* TODO actually, this doesn't work (we need a lock for refCount) */
-		if(refCount > 1) {
-			if(refCount == 2 && closed)
-				unref();
-			unref();
-		}
-		else {
 			/* if the driver implemented close, notify him */
-			if(static_cast<VFSDevice*>(parent)->supports(DEV_CLOSE))
+			if(closeSup)
 				file->sendMsg(pid,MSG_DEV_CLOSE,NULL,0,NULL,0);
 
 			/* if there are message for the driver we don't want to throw them away */
-			/* if there are any in the receivelist (and no references of the node) we
-			 * can throw them away because no one will read them anymore
-			 * (it means that the client has already closed the file) */
 			/* note also that we can assume that the driver is still running since we
 			 * would have deleted the whole device-node otherwise */
-			if(sendList.length() == 0)
-				unref();
-			else
+			if(sendList.length() > 0)
 				closed = true;
+			/* otherwise close the file now */
+			else
+				closeFile();
 		}
 	}
 }
@@ -387,6 +411,11 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 		curClient = msg->thread;
 	}
 	SpinLock::release(&waitLock);
+
+	/* if the client is already gone and we've received the last message, close it */
+	if(EXPECT_FALSE(closed && list->length() == 0))
+		closeFile();
+
 	if(EXPECT_FALSE(data && msg->length > size)) {
 		Cache::free(msg);
 		return -EINVAL;

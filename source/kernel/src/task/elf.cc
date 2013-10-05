@@ -200,13 +200,13 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 
 	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
 	int fd;
-	if((fd = FileDesc::assoc(file)) < 0)
+	if((fd = FileDesc::assoc(p,file)) < 0)
 		goto failed;
 	if(finishFromFile(file,&eheader,info) < 0) {
-		assert(FileDesc::unassoc(fd) != NULL);
+		assert(FileDesc::unassoc(p,fd) != NULL);
 		goto failed;
 	}
-	assert(FileDesc::unassoc(fd) != NULL);
+	assert(FileDesc::unassoc(p,fd) != NULL);
 	file->close(p->getPid());
 	return 0;
 

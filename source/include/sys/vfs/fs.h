@@ -32,11 +32,10 @@ class VFSFS {
 
 public:
 	struct FSChan : public SListItem {
-		explicit FSChan() : SListItem(), active(true), file(), node() {
+		explicit FSChan() : SListItem(), active(true), file() {
 		}
 		uint8_t active;
 		OpenFile *file;
-		VFSNode *node;
 	};
 
 	/**

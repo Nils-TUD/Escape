@@ -108,7 +108,7 @@ static int vtermThread(void *vtptr) {
 	sMsg msg;
 	msgid_t mid;
 	while(1) {
-		int fd = getwork(vt->sid,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(vt->sid,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[VTERM] Unable to get work");
 		else {
@@ -211,7 +211,6 @@ static int vtermThread(void *vtptr) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 	return 0;

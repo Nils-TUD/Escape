@@ -56,8 +56,7 @@ size_t VFSPipe::getSize(A_UNUSED pid_t pid) const {
 
 void VFSPipe::close(pid_t pid,OpenFile *file) {
 	/* if there are still more than 1 user, notify the other */
-	/* TODO actually, this doesn't work (we need a lock for refCount) */
-	if(name != NULL && refCount > 1) {
+	if(unref() > 0) {
 		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */
 		if(file->fcntl(pid,F_GETACCESS,0) == VFS_READ) {
 			noReader = true;
@@ -67,8 +66,6 @@ void VFSPipe::close(pid_t pid,OpenFile *file) {
 		else
 			file->write(pid,NULL,0);
 	}
-	/* in any case, destroy the node, i.e. decrease references */
-	unref();
 }
 
 ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buffer,

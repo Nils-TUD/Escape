@@ -62,8 +62,7 @@ int main(void) {
 		error("Unable to start thread for the infodev");
 
 	while(1) {
-		inode_t cid;
-		int fd = getwork(drvId,&cid,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[WINM] Unable to get work");
 		else {
@@ -77,7 +76,7 @@ int main(void) {
 					uint style = msg.str.arg6;
 					gsize_t titleBarHeight = msg.str.arg7;
 					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,cid,style,titleBarHeight,msg.str.s1);
+					msg.args.arg2 = win_create(x,y,width,height,fd,style,titleBarHeight,msg.str.s1);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style != WIN_STYLE_DESKTOP)
 						win_setActive(msg.args.arg2,false,mouse_getX(),mouse_getY());
@@ -160,7 +159,7 @@ int main(void) {
 					msgid_t msgid = (msgid_t)msg.args.arg1;
 					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
 							msgid == MSG_WIN_ACTIVE_EV)
-						listener_add(cid,msgid);
+						listener_add(fd,msgid);
 				}
 				break;
 
@@ -168,7 +167,7 @@ int main(void) {
 					msgid_t msgid = (msgid_t)msg.args.arg1;
 					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
 							msgid == MSG_WIN_ACTIVE_EV)
-						listener_remove(cid,msgid);
+						listener_remove(fd,msgid);
 				}
 				break;
 
@@ -187,7 +186,8 @@ int main(void) {
 					break;
 
 				case MSG_DEV_CLOSE:
-					win_destroyWinsOf(cid,mouse_getX(),mouse_getY());
+					win_destroyWinsOf(fd,mouse_getX(),mouse_getY());
+					close(fd);
 					break;
 
 				default:
@@ -195,7 +195,6 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 

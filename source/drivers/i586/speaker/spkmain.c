@@ -79,7 +79,7 @@ int main(void) {
 		error("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 
 	while(1) {
-		fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[SPK] Unable to get work");
@@ -105,7 +105,6 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 

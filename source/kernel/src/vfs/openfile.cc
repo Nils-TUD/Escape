@@ -70,6 +70,17 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			SpinLock::release(&waitLock);
 			return res;
 		}
+		case F_SETUNUSED: {
+			VFSNode *n = node;
+			int res = 0;
+			SpinLock::acquire(&waitLock);
+			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(n->getMode())))
+				res = -EINVAL;
+			else
+				static_cast<VFSChannel*>(n)->setUsed(false);
+			SpinLock::release(&waitLock);
+			return res;
+		}
 	}
 	return -EINVAL;
 }
@@ -259,7 +270,7 @@ bool OpenFile::doClose(pid_t pid) {
 	return false;
 }
 
-int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
+int OpenFile::getClient(OpenFile *file,int *fd,uint flags) {
 	Thread *t = Thread::getRunning();
 	if(EXPECT_FALSE(file->devNo != VFS_DEV_NO))
 		return -EPERM;
@@ -268,11 +279,11 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 
 	while(true) {
 		SpinLock::acquire(&waitLock);
-		*client = static_cast<VFSDevice*>(file->node)->getWork();
+		*fd = static_cast<VFSDevice*>(file->node)->getWork(flags);
 		/* if we've found one or we shouldn't block, stop here */
-		if(EXPECT_TRUE(*client || (flags & GW_NOBLOCK))) {
+		if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK))) {
 			SpinLock::release(&waitLock);
-			return *client ? 0 : -ENOCLIENT;
+			return *fd >= 0 ? 0 : -ENOCLIENT;
 		}
 
 		/* wait for a client (accept signals) */
@@ -284,24 +295,6 @@ int OpenFile::getClient(OpenFile *file,VFSNode **client,uint flags) {
 			return -EINTR;
 	}
 	A_UNREACHED;
-}
-
-int OpenFile::openClient(pid_t pid,inode_t clientId,OpenFile **cfile) {
-	VFSNode *n = VFSNode::request(clientId);
-	if(!n)
-		return -ENOENT;
-
-	/* is it a channel for our device? not locked because the parent can't change. so, either it
-	 * is a child of our node or it is already NULL. both is a failure */
-	int res = -EINVAL;
-	if(n->getParent() != node)
-		goto error;
-
-	/* open file */
-	res = VFS::openFile(pid,VFS_MSGS | VFS_DEVICE,n,n->getNo(),VFS_DEV_NO,cfile);
-error:
-	VFSNode::release(n);
-	return res;
 }
 
 void OpenFile::print(OStream &os) const {

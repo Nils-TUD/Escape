@@ -45,6 +45,7 @@
 #define DEV_TYPE_SERVICE			4
 
 #define GW_NOBLOCK					1
+#define GW_MARKUSED					2
 
 typedef void (*fGetData)(FILE *str);
 
@@ -65,32 +66,20 @@ A_CHECKRET static inline int createdev(const char *path,uint type,uint ops) {
 }
 
 /**
- * Opens a file for the client with given client-id.
- *
- * @param fd the file-descriptor for the device
- * @param cid the client-id
- * @return the file-descriptor or a negative error-code
- */
-A_CHECKRET static inline int getclient(int fd,inode_t cid) {
-	return syscall2(SYSCALL_GETCLIENTPROC,fd,cid);
-}
-
-/**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided
  * it waits until a client should be served. if not and GW_NOBLOCK is enabled, it returns an error.
  * If a client wants to be served, the message is fetched from him and a file-descriptor is returned.
  * Note that you may be interrupted by a signal!
  *
  * @param fd the device fd
- * @param cid will be set to the client-id
  * @param mid will be set to the msg-id
  * @param msg the message
  * @param size the (max) size of the message
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-A_CHECKRET static inline int getwork(int fd,inode_t *cid,msgid_t *mid,void *msg,size_t size,uint flags) {
-	return syscall7(SYSCALL_GETWORK,fd,(ulong)cid,(ulong)mid,(ulong)msg,size,flags,0);
+A_CHECKRET static inline int getwork(int fd,msgid_t *mid,void *msg,size_t size,uint flags) {
+	return syscall4(SYSCALL_GETWORK,(fd << 2) | flags,(ulong)mid,(ulong)msg,size);
 }
 
 /**

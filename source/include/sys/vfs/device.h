@@ -109,11 +109,12 @@ public:
 	}
 
 	/**
-	 * Searches for a client of the server-node that should be served
+	 * Searches for a channel of this device-node that should be served
 	 *
-	 * @return the client to serve or NULL if there is none
+	 * @param flags the getwork-flags
+	 * @return the fd for the channel to retrieve a message from or a an error if there is none
 	 */
-	VFSNode *getWork();
+	int getWork(uint flags);
 
 	virtual size_t getSize(pid_t pid) const;
 	virtual void close(pid_t pid,OpenFile *file);

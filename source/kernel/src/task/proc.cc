@@ -453,7 +453,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 		OpenFile *file;
 		if(VFS::openPath(p->pid,VFS_READ,path,&file) < 0)
 			goto error;
-		fd = FileDesc::assoc(file);
+		fd = FileDesc::assoc(p,file);
 		if(fd < 0) {
 			file->close(p->pid);
 			goto error;

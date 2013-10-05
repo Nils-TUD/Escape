@@ -42,6 +42,7 @@
 #define F_SETFL						1
 #define F_SETDATA					2
 #define F_GETACCESS					3
+#define F_SETUNUSED					4
 
 /* seek-types */
 #define SEEK_SET					0
@@ -50,6 +51,7 @@
 
 /* getwork-flags */
 #define GW_NOBLOCK					1
+#define GW_MARKUSED					2
 
 /* all flags that the user can use */
 #define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | \

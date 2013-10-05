@@ -326,13 +326,12 @@ error:
 }
 
 int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
-	VFSNode *child,*fsnode;
 	Proc *p = Proc::getByPid(pid);
 	/* check if there's a free channel */
 	SpinLock::acquire(&fsChanLock);
 	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
 		if(!it->active) {
-			if(!it->node->isAlive()) {
+			if(!it->file->getNode()->isAlive()) {
 				/* remove channel */
 				p->fsChans.remove(&*it);
 				delete &*it;
@@ -340,7 +339,7 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 				return -EDESTROYED;
 			}
 			if(node)
-				*node = it->node;
+				*node = it->file->getNode();
 			it->active = true;
 			SpinLock::release(&fsChanLock);
 			*file = it->file;
@@ -353,41 +352,19 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	if(!chan)
 		return -ENOMEM;
 
-	/* resolve path to fs */
-	int err = VFSNode::request(FS_PATH,&fsnode,NULL,VFS_READ | VFS_WRITE | VFS_MSGS);
-	if(err < 0)
-		goto errorChan;
-
-	/* create usage-node */
-	child = CREATE(VFSChannel,pid,fsnode);
-	if(child == NULL) {
-		err = -ENOMEM;
-		goto errorNode;
+	int err = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,FS_PATH,&chan->file);
+	if(err < 0) {
+		Cache::free(chan);
+		return err;
 	}
-	chan->node = child;
 
-	/* open file */
-	err = VFS::openFile(pid,VFS_READ | VFS_WRITE | VFS_MSGS,child,child->getNo(),VFS_DEV_NO,&chan->file);
-	if(err < 0)
-		goto errorChild;
 	SpinLock::acquire(&fsChanLock);
 	p->fsChans.append(chan);
 	SpinLock::release(&fsChanLock);
 	if(node)
-		*node = chan->node;
-	VFSNode::release(child);
-	VFSNode::release(fsnode);
+		*node = chan->file->getNode();
 	*file = chan->file;
 	return 0;
-
-errorChild:
-	VFSNode::release(child);
-	VFSNode::release(child);
-errorNode:
-	VFSNode::release(fsnode);
-errorChan:
-	Cache::free(chan);
-	return err;
 }
 
 void VFSFS::releaseFile(pid_t pid,OpenFile *file) {
@@ -406,6 +383,6 @@ void VFSFS::printFSChans(OStream &os,const Proc *p) {
 	SpinLock::acquire(&fsChanLock);
 	os.writef("FS-Channels:\n");
 	for(auto it = p->fsChans.cbegin(); it != p->fsChans.cend(); ++it)
-		os.writef("\t%s (%s)\n",it->node->getPath(),it->active ? "active" : "not active");
+		os.writef("\t%s (%s)\n",it->file->getNode()->getPath(),it->active ? "active" : "not active");
 	SpinLock::release(&fsChanLock);
 }

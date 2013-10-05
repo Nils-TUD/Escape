@@ -31,7 +31,7 @@
 
 /* a listener */
 typedef struct {
-	inode_t id;
+	int fd;
 	uchar flags;
 	uchar key;
 	uchar modifier;
@@ -40,7 +40,7 @@ typedef struct {
 /**
  * Searches for the given listener
  */
-static sEventListener *events_find(inode_t id,uchar flags,uchar key,uchar modifier);
+static sEventListener *events_find(int fd,uchar flags,uchar key,uchar modifier);
 
 /* all announced listeners */
 static sSLList *listener;
@@ -50,7 +50,7 @@ void events_init(void) {
 	assert(listener);
 }
 
-bool events_send(int device,sKmData *km) {
+bool events_send(sKmData *km) {
 	sSLNode *n;
 	sMsg msg;
 	bool copied = false;
@@ -63,28 +63,24 @@ bool events_send(int device,sKmData *km) {
 			/* character/keycode equal? */
 			if(((l->flags & KE_EV_KEYCODE) && l->key == km->keycode) ||
 					((l->flags & KE_EV_CHARACTER) && l->key == km->character)) {
-				int fd = getclient(device,l->id);
-				if(fd >= 0) {
-					if(!copied) {
-						memcpy(&msg.data.d,km,sizeof(sKmData));
-						copied = true;
-					}
-					send(fd,MSG_KM_EVENT,&msg,sizeof(msg.data));
-					close(fd);
+				if(!copied) {
+					memcpy(&msg.data.d,km,sizeof(sKmData));
+					copied = true;
 				}
+				send(l->fd,MSG_KM_EVENT,&msg,sizeof(msg.data));
 			}
 		}
 	}
 	return copied;
 }
 
-int events_add(inode_t id,uchar flags,uchar key,uchar modifier) {
+int events_add(int fd,uchar flags,uchar key,uchar modifier) {
 	sEventListener *l;
-	if(events_find(id,flags,key,modifier) != NULL)
+	if(events_find(fd,flags,key,modifier) != NULL)
 		return -EEXIST;
 
 	l = (sEventListener*)malloc(sizeof(sEventListener));
-	l->id = id;
+	l->fd = fd;
 	l->flags = flags;
 	l->key = key;
 	l->modifier = modifier;
@@ -95,19 +91,19 @@ int events_add(inode_t id,uchar flags,uchar key,uchar modifier) {
 	return 0;
 }
 
-void events_remove(inode_t id,uchar flags,uchar key,uchar modifier) {
-	sEventListener *l = events_find(id,flags,key,modifier);
+void events_remove(int fd,uchar flags,uchar key,uchar modifier) {
+	sEventListener *l = events_find(fd,flags,key,modifier);
 	if(l) {
 		sll_removeFirstWith(listener,l);
 		free(l);
 	}
 }
 
-static sEventListener *events_find(inode_t id,uchar flags,uchar key,uchar modifier) {
+static sEventListener *events_find(int fd,uchar flags,uchar key,uchar modifier) {
 	sSLNode *n;
 	for(n = sll_begin(listener); n != NULL; n = n->next) {
 		sEventListener *l = (sEventListener*)n->data;
-		if(l->id == id && l->flags == flags && l->key == key && l->modifier == modifier)
+		if(l->fd == fd && l->flags == flags && l->key == key && l->modifier == modifier)
 			return l;
 	}
 	return NULL;

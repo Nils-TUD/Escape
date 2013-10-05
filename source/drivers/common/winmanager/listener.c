@@ -25,7 +25,7 @@
 #include "listener.h"
 
 typedef struct {
-	inode_t client;
+	int client;
 	msgid_t mid;
 } sWinListener;
 
@@ -39,7 +39,7 @@ void listener_init(int id) {
 		error("Unable to create window-listener-list");
 }
 
-bool listener_add(inode_t client,msgid_t mid) {
+bool listener_add(int client,msgid_t mid) {
 	sWinListener *l = (sWinListener*)malloc(sizeof(sWinListener));
 	if(!l)
 		return false;
@@ -56,17 +56,12 @@ void listener_notify(msgid_t mid,const sMsg *msg,size_t size) {
 	sSLNode *n;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;
-		if(l->mid == mid) {
-			int fd = getclient(drvId,l->client);
-			if(fd >= 0) {
-				send(fd,mid,msg,size);
-				close(fd);
-			}
-		}
+		if(l->mid == mid)
+			send(l->client,mid,msg,size);
 	}
 }
 
-void listener_remove(inode_t client,msgid_t mid) {
+void listener_remove(int client,msgid_t mid) {
 	sSLNode *n;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;

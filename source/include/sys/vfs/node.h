@@ -319,9 +319,11 @@ public:
 	/**
 	 * Decrements the references of this node including all child-nodes. Nodes that have no refs
 	 * anymore, are destroyed and released.
+	 *
+	 * @return the remaining number of references
 	 */
-	void unref() {
-		doUnref(false);
+	ushort unref() {
+		return doUnref(false);
 	}
 
 	/**
@@ -451,7 +453,7 @@ protected:
 private:
 	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
-	void doUnref(bool remove);
+	ushort doUnref(bool remove);
 
 protected:
 	mutable klock_t lock;

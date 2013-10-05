@@ -60,7 +60,7 @@ int main(int argc,char **argv) {
 	/* wait for commands */
 	while(1) {
 		msgid_t mid;
-		fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
+		fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("[RAND] Unable to get work");
 		else {
@@ -89,7 +89,6 @@ int main(int argc,char **argv) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 

@@ -80,15 +80,10 @@ int keyboard_start(void *drvIdPtr) {
 }
 
 static void handleKbMessage(sWindow *active,uchar keycode,uchar modifier,char c) {
-	int aWin;
 	msg.args.arg1 = keycode;
 	msg.args.arg2 = (modifier & STATE_BREAK) ? 1 : 0;
 	msg.args.arg3 = active->id;
 	msg.args.arg4 = c;
 	msg.args.arg5 = modifier;
-	aWin = getclient(drvId,active->owner);
-	if(aWin >= 0) {
-		send(aWin,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg.args));
-		close(aWin);
-	}
+	send(active->owner,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg.args));
 }

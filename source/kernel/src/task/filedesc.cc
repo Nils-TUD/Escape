@@ -32,8 +32,7 @@ void FileDesc::init(Proc *p) {
 	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(OpenFile*));
 }
 
-OpenFile *FileDesc::request(int fd) {
-	Proc *p = Thread::getRunning()->getProc();
+OpenFile *FileDesc::request(Proc *p,int fd) {
 	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
 		return NULL;
 
@@ -77,10 +76,9 @@ void FileDesc::destroy(Proc *p) {
 	p->unlock(PLOCK_FDS);
 }
 
-int FileDesc::assoc(OpenFile *fileNo) {
+int FileDesc::assoc(Proc *p,OpenFile *fileNo) {
 	OpenFile *const *fds;
 	int fd = -EMFILE;
-	Proc *p = Thread::getRunning()->getProc();
 	p->lock(PLOCK_FDS);
 	fds = p->fileDescs;
 	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
@@ -144,8 +142,7 @@ int FileDesc::redirect(int src,int dst) {
 	return err;
 }
 
-OpenFile *FileDesc::unassoc(int fd) {
-	Proc *p = Thread::getRunning()->getProc();
+OpenFile *FileDesc::unassoc(Proc *p,int fd) {
 	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
 		return NULL;
 

@@ -42,7 +42,7 @@ int infodev_thread(A_UNUSED void *arg) {
 		error("Unable to chmod /system/windows");
 
 	while(1) {
-		int fd = getwork(id,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[WININFO] Unable to get work");
@@ -58,7 +58,6 @@ int infodev_thread(A_UNUSED void *arg) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 		}
 	}
 	/* never reached */

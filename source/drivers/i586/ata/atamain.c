@@ -70,7 +70,7 @@ static int drive_thread(void *arg) {
 
 	while(1) {
 		msgid_t mid;
-		int fd = getwork(dev->fd,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(dev->fd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[ATA] Unable to get client");
@@ -112,7 +112,6 @@ static int drive_thread(void *arg) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					break;
 			}
-			close(fd);
 			ATA_PR2("Done\n");
 		}
 	}

@@ -59,7 +59,7 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
-		int fd = getwork(dev,NULL,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(dev,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				fprintf(stderr,"Unable to get work\n");
@@ -71,7 +71,6 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 			task->fd = fd;
 			if((tid = startthread(fibthread,task)) < 0) {
 				fprintf(stderr,"Unable to start thread\n");
-				close(fd);
 				free(task);
 				break;
 			}
@@ -94,7 +93,7 @@ static int clientthread(A_UNUSED void *arg) {
 			printe("Unable to send request");
 		if(IGNSIGS(receive(fd,NULL,&msg,sizeof(msg))) < 0)
 			printe("Unable to receive response");
-		printf("[%d] fib(%d) = %d\n",gettid(),n,msg.args.arg1);
+		printf("[%d] fib(%d) = %lu\n",gettid(),n,msg.args.arg1);
 		fflush(stdout);
 		n++;
 		sleep(200);
@@ -114,7 +113,6 @@ static int fibthread(void *arg) {
 	sTask *task = (sTask*)arg;
 	msg.arg1 = fib(task->n);
 	send(task->fd,MSG_DEF_RESPONSE,&msg,sizeof(msg));
-	close(task->fd);
 	free(task);
 	printf("[%d] Done...\n",gettid());
 	fflush(stdout);

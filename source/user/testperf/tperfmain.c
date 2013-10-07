@@ -33,6 +33,7 @@
 #include "modules/readzeros.h"
 #include "modules/writenull.h"
 #include "modules/memops.h"
+#include "modules/locks.h"
 
 #define NAME_LEN 16
 
@@ -55,6 +56,7 @@ static sTestModule modules[] = {
 	{"readzeros",	mod_readzeros},
 	{"writenull",	mod_writenull},
 	{"memops",		mod_memops},
+	{"locks",		mod_locks},
 };
 
 int main(int argc,char *argv[]) {

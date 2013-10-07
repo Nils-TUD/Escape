@@ -241,7 +241,8 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	npd[ADDR_TO_PDINDEX(kstackAddr)] =
 			stackPtFrame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 	/* clear the page-table */
-	uintptr_t kstackPtAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,kstackAddr);
+	uintptr_t kstackPtAddr = ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
+		kstackAddr & ~(PAGE_SIZE * PT_ENTRY_COUNT - 1));
 	FLUSHADDR(kstackPtAddr);
 	memclear((void*)kstackPtAddr,PAGE_SIZE);
 

@@ -129,7 +129,7 @@ void Util::printEventTrace(OStream &os,const FuncCall *trace,const char *fmt,...
 	if(trace) {
 		for(size_t i = 0; trace->addr != 0 && i < 5; i++) {
 			KSymbols::Symbol *sym = KSymbols::getSymbolAt(trace->addr);
-			if(sym->address)
+			if(sym)
 				os.writef("%s",sym->funcName);
 			else
 				os.writef("%Px",trace->addr);

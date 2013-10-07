@@ -201,8 +201,8 @@ Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t mstart,ui
 				(((uintptr_t)(ebp + 1) + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1)) >= mend)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
-		if(isKernel) {
-			KSymbols::Symbol *sym = KSymbols::getSymbolAt(frame->addr);
+		KSymbols::Symbol *sym = isKernel ? KSymbols::getSymbolAt(frame->addr) : NULL;
+		if(sym) {
 			frame->funcAddr = sym->address;
 			frame->funcName = sym->funcName;
 		}

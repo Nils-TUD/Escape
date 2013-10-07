@@ -31,6 +31,9 @@ void KSymbols::print(OStream &os) {
 }
 
 KSymbols::Symbol *KSymbols::getSymbolAt(uintptr_t address) {
+	if(address < KERNEL_AREA)
+		return NULL;
+
 	Symbol *sym = &kernel_symbols[kernel_symbol_count - 1];
 	while(sym >= &kernel_symbols[0]) {
 		if(address >= sym->address)

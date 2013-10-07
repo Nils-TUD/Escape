@@ -22,7 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
-#include <sys/video.h>
+#include <sys/log.h>
 #include <sys/spinlock.h>
 #include <string.h>
 #include <assert.h>
@@ -56,9 +56,10 @@ int Lock::acquire(pid_t pid,ulong ident,ushort flags) {
 	if(l->flags) {
 		/* if it exists and is locked, wait */
 		uint event = (flags & EXCLUSIVE) ? EV_UNLOCK_EX : EV_UNLOCK_SH;
-		/* TODO don't panic here, just return and continue using the lock */
-		assert(l->writer != t->getTid());
 		while(isLocked(locks + i,flags)) {
+			/* TODO don't panic here, just return and continue using the lock */
+			assert(locks[i].writer != t->getTid());
+
 			locks[i].waitCount++;
 			t->wait(event,(evobj_t)ident);
 			SpinLock::release(&klock);

@@ -72,10 +72,10 @@ void *getThreadVal(uint key) {
 	return NULL;
 }
 
-int waitunlock(uint event,evobj_t object,uint ident) {
+int waitunlock(uint event,evobj_t object,ulong ident) {
 	return syscall4(SYSCALL_WAITUNLOCK,event,object,ident,false);
 }
 
-int waitunlockg(uint event,evobj_t object,uint ident) {
+int waitunlockg(uint event,evobj_t object,ulong ident) {
 	return syscall4(SYSCALL_WAITUNLOCK,event,object,ident,true);
 }

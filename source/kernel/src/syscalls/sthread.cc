@@ -114,7 +114,7 @@ int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
 	uint event = (uint)SYSC_ARG1(stack);
 	evobj_t object = (evobj_t)SYSC_ARG2(stack);
-	uint ident = SYSC_ARG3(stack);
+	ulong ident = SYSC_ARG3(stack);
 	bool global = (bool)SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 

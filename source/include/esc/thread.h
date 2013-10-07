@@ -203,7 +203,7 @@ void *getThreadVal(uint key);
  * @param flags flags (LOCK_*)
  * @return 0 on success
  */
-static inline int lock(uint ident,uint flags) {
+static inline int lock(ulong ident,uint flags) {
 	return syscall3(SYSCALL_LOCK,ident,false,flags);
 }
 
@@ -222,7 +222,7 @@ static inline void locku(tULock *lock);
  * @param ident to identify the lock
  * @return 0 on success
  */
-static inline int lockg(uint ident,uint flags) {
+static inline int lockg(ulong ident,uint flags) {
 	return syscall3(SYSCALL_LOCK,ident,true,flags);
 }
 
@@ -245,7 +245,7 @@ static inline int lockg(uint ident,uint flags) {
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitunlock(uint event,evobj_t object,uint ident);
+int waitunlock(uint event,evobj_t object,ulong ident);
 
 /**
  * First it releases the specified global lock. After that it blocks the thread until the
@@ -266,7 +266,7 @@ int waitunlock(uint event,evobj_t object,uint ident);
  * @param ident the ident to unlock
  * @return 0 on success
  */
-int waitunlockg(uint event,evobj_t object,uint ident);
+int waitunlockg(uint event,evobj_t object,ulong ident);
 
 /**
  * Releases the process-local lock with given ident
@@ -274,7 +274,7 @@ int waitunlockg(uint event,evobj_t object,uint ident);
  * @param ident to identify the lock
  * @return 0 on success
  */
-static inline int unlock(uint ident) {
+static inline int unlock(ulong ident) {
 	return syscall2(SYSCALL_UNLOCK,ident,false);
 }
 
@@ -291,7 +291,7 @@ static inline void unlocku(tULock *lock);
  * @param ident to identify the lock
  * @return 0 on success
  */
-static inline int unlockg(uint ident) {
+static inline int unlockg(ulong ident) {
 	return syscall2(SYSCALL_UNLOCK,ident,true);
 }
 

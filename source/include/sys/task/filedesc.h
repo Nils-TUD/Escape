@@ -27,13 +27,16 @@ class OStream;
 class FileDesc {
 	FileDesc() = delete;
 
+	static const size_t INIT_FD_COUNT	= 8;
+
 public:
 	/**
 	 * Inits the file-descriptors for the initial process <p>
 	 *
 	 * @param p the process
+	 * @return 0 on success
 	 */
-	static void init(Proc *p);
+	static int init(Proc *p);
 
 	/**
 	 * Requests the file for the given file-descriptor and increments the usage-count
@@ -55,8 +58,9 @@ public:
 	 * Clones all file-descriptors of the current process to <p>
 	 *
 	 * @param p the new process
+	 * @return 0 on success
 	 */
-	static void clone(Proc *p);
+	static int clone(Proc *p);
 
 	/**
 	 * Destroyes all file-descriptors of <p>
@@ -69,10 +73,10 @@ public:
 	 * Associates a free file-descriptor with the given file-number
 	 *
 	 * @param p the process
-	 * @param fileNo the file-number
+	 * @param file the file
 	 * @return the file-descriptor on success
 	 */
-	static int assoc(Proc *p,OpenFile *fileNo);
+	static int assoc(Proc *p,OpenFile *file);
 
 	/**
 	 * Duplicates the given file-descriptor
@@ -107,4 +111,8 @@ public:
 	 * @param p the process
 	 */
 	static void print(OStream &os,const Proc *p);
+
+private:
+	static int doAssoc(Proc *p,OpenFile *file);
+	static bool isValid(Proc *p,int fd);
 };

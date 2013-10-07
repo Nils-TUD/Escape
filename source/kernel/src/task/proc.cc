@@ -102,7 +102,8 @@ void ProcBase::init() {
 		Util::panic("Not enough mem for init process");
 
 	/* init fds */
-	FileDesc::init(p);
+	if(FileDesc::init(p) < 0)
+		Util::panic("Not enough mem to init file-descriptors of init-process");
 
 	/* create first thread */
 	p->threads = ISList<Thread*>();
@@ -289,11 +290,13 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorThread;
 	}
 
-	if((res = cloneArch(p,cur) < 0))
+	/* inherit file-descriptors */
+	if((res = FileDesc::clone(p)) < 0)
 		goto errorThreadAppend;
 
-	/* inherit file-descriptors */
-	FileDesc::clone(p);
+	/* init arch-dependent stuff */
+	if((res = cloneArch(p,cur) < 0))
+		goto errorFileDescs;
 
 	res = Thread::finishClone(curThread,nt);
 	if(res == 1) {
@@ -313,6 +316,8 @@ int ProcBase::clone(uint8_t flags) {
 	curThread->discardFrames();
 	return p->pid;
 
+errorFileDescs:
+	FileDesc::destroy(p);
 errorThreadAppend:
 	p->threads.remove(nt);
 errorThread:

@@ -38,7 +38,7 @@
 
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192
-#define MAX_FD_COUNT		64
+#define MAX_FD_COUNT		1024
 
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
@@ -573,7 +573,8 @@ private:
 	/* all groups (may include egid or not) of this process */
 	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */
-	OpenFile *fileDescs[MAX_FD_COUNT];
+	OpenFile **fileDescs;
+	size_t fileDescsSize;
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	SList<VFSFS::FSChan> fsChans;
 	/* environment-variables of this process */

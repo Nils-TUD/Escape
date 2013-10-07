@@ -28,12 +28,20 @@
 #include <string.h>
 #include <errno.h>
 
-void FileDesc::init(Proc *p) {
-	memclear(p->fileDescs,MAX_FD_COUNT * sizeof(OpenFile*));
+bool FileDesc::isValid(Proc *p,int fd) {
+	return fd >= 0 && (size_t)fd < p->fileDescsSize;
+}
+
+int FileDesc::init(Proc *p) {
+	p->fileDescs = (OpenFile**)cache_calloc(INIT_FD_COUNT,sizeof(OpenFile*));
+	if(p->fileDescs == NULL)
+		return -ENOMEM;
+	p->fileDescsSize = INIT_FD_COUNT;
+	return 0;
 }
 
 OpenFile *FileDesc::request(Proc *p,int fd) {
-	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
+	if(EXPECT_FALSE(!isValid(p,fd)))
 		return NULL;
 
 	p->lock(PLOCK_FDS);
@@ -51,21 +59,28 @@ void FileDesc::release(OpenFile *file) {
 	file->decUsages();
 }
 
-void FileDesc::clone(Proc *p) {
+int FileDesc::clone(Proc *p) {
 	Proc *cur = Thread::getRunning()->getProc();
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
 	cur->lock(PLOCK_FDS);
-	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
+	p->fileDescs = (OpenFile**)cache_alloc(sizeof(OpenFile*) * cur->fileDescsSize);
+	if(!p->fileDescs) {
+		cur->unlock(PLOCK_FDS);
+		return -ENOMEM;
+	}
+	p->fileDescsSize = cur->fileDescsSize;
+	for(size_t i = 0; i < cur->fileDescsSize; i++) {
 		p->fileDescs[i] = cur->fileDescs[i];
 		if(p->fileDescs[i] != NULL)
 			p->fileDescs[i]->incRefs();
 	}
 	cur->unlock(PLOCK_FDS);
+	return 0;
 }
 
 void FileDesc::destroy(Proc *p) {
 	p->lock(PLOCK_FDS);
-	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
+	for(size_t i = 0; i < p->fileDescsSize; i++) {
 		if(p->fileDescs[i] != NULL) {
 			p->fileDescs[i]->incUsages();
 			if(!p->fileDescs[i]->close(p->getPid()))
@@ -73,48 +88,51 @@ void FileDesc::destroy(Proc *p) {
 			p->fileDescs[i] = NULL;
 		}
 	}
+	cache_free(p->fileDescs);
+	p->fileDescsSize = 0;
 	p->unlock(PLOCK_FDS);
 }
 
-int FileDesc::assoc(Proc *p,OpenFile *fileNo) {
-	OpenFile *const *fds;
-	int fd = -EMFILE;
+int FileDesc::assoc(Proc *p,OpenFile *file) {
 	p->lock(PLOCK_FDS);
-	fds = p->fileDescs;
-	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
+	int fd = doAssoc(p,file);
+	p->unlock(PLOCK_FDS);
+	return fd;
+}
+
+int FileDesc::doAssoc(Proc *p,OpenFile *file) {
+	OpenFile **fds = p->fileDescs;
+	for(size_t i = 0; i < p->fileDescsSize; i++) {
 		if(fds[i] == NULL) {
-			fd = i;
-			break;
+			p->fileDescs[i] = file;
+			return i;
 		}
 	}
-	if(EXPECT_TRUE(fd >= 0))
-		p->fileDescs[fd] = fileNo;
-	p->unlock(PLOCK_FDS);
+
+	if(p->fileDescsSize == MAX_FD_COUNT)
+		return -EMFILE;
+	fds = (OpenFile**)cache_realloc(p->fileDescs,p->fileDescsSize * sizeof(OpenFile*) * 2);
+	if(!fds)
+		return -ENOMEM;
+	memclear(fds + p->fileDescsSize,p->fileDescsSize * sizeof(OpenFile*));
+	int fd = p->fileDescsSize;
+	fds[fd] = file;
+	p->fileDescsSize *= 2;
+	p->fileDescs = fds;
 	return fd;
 }
 
 int FileDesc::dup(int fd) {
 	int nfd = -EBADF;
 	Proc *p = Thread::getRunning()->getProc();
-	/* check fd */
-	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
+	if(EXPECT_FALSE(!isValid(p,fd)))
 		return -EBADF;
 
 	p->lock(PLOCK_FDS);
-	OpenFile *const *fds = p->fileDescs;
 	OpenFile *f = p->fileDescs[fd];
-	if(EXPECT_TRUE(f != NULL)) {
-		nfd = -EMFILE;
-		for(size_t i = 0; i < MAX_FD_COUNT; i++) {
-			if(fds[i] == NULL) {
-				/* increase references */
-				nfd = i;
-				f->incRefs();
-				p->fileDescs[nfd] = f;
-				break;
-			}
-		}
-	}
+	nfd = doAssoc(p,f);
+	if(EXPECT_TRUE(nfd >= 0))
+		f->incRefs();
 	p->unlock(PLOCK_FDS);
 	return nfd;
 }
@@ -124,7 +142,7 @@ int FileDesc::redirect(int src,int dst) {
 	Proc *p = Thread::getRunning()->getProc();
 
 	/* check fds */
-	if(EXPECT_FALSE(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT))
+	if(EXPECT_FALSE(!isValid(p,src) || !isValid(p,dst)))
 		return -EBADF;
 
 	p->lock(PLOCK_FDS);
@@ -143,7 +161,7 @@ int FileDesc::redirect(int src,int dst) {
 }
 
 OpenFile *FileDesc::unassoc(Proc *p,int fd) {
-	if(EXPECT_FALSE(fd < 0 || fd >= MAX_FD_COUNT))
+	if(EXPECT_FALSE(!isValid(p,fd)))
 		return NULL;
 
 	p->lock(PLOCK_FDS);
@@ -156,7 +174,7 @@ OpenFile *FileDesc::unassoc(Proc *p,int fd) {
 
 void FileDesc::print(OStream &os,const Proc *p) {
 	os.writef("File descriptors of %d:\n",p->getPid());
-	for(size_t i = 0; i < MAX_FD_COUNT; i++) {
+	for(size_t i = 0; i < p->fileDescsSize; i++) {
 		if(p->fileDescs[i] != NULL) {
 			os.writef("\t%-2d: ",i);
 			p->fileDescs[i]->print(os);

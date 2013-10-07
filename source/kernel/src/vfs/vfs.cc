@@ -55,7 +55,7 @@ void VFS::init() {
 	/*
 	 *  /
 	 *   |- system
-	 *   |   |- pipe
+	 *   |   |- pipes
 	 *   |   |- mbmods
 	 *   |   |- shm
 	 *   |   |- devices
@@ -65,7 +65,7 @@ void VFS::init() {
 	 */
 	root = CREATE(VFSDir,KERNEL_PID,nullptr,(char*)"");
 	sys = CREATE(VFSDir,KERNEL_PID,root,(char*)"system");
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipe"));
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipes"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm"));
 	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes");
@@ -195,7 +195,7 @@ int VFS::openPath(pid_t pid,ushort flags,const char *path,OpenFile **file) {
 int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	/* resolve pipe-path */
 	VFSNode *node;
-	int err = VFSNode::request("/system/pipe",&node,NULL,VFS_READ);
+	int err = VFSNode::request("/system/pipes",&node,NULL,VFS_READ);
 	if(err < 0)
 		return err;
 

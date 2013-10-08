@@ -61,7 +61,7 @@ FILE *fopen(const char *filename,const char *mode) {
 		return NULL;
 
 	/* create file */
-	if(!(f = bcreate(fd,flags,NULL,0,false)) || !sll_append(&iostreams,f)) {
+	if(!(f = bcreate(fd,flags,NULL,-1,false)) || !sll_append(&iostreams,f)) {
 		close(fd);
 		free(f);
 		return NULL;

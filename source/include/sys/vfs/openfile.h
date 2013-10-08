@@ -35,10 +35,12 @@ enum {
 	VFS_APPEND = 16,
 	VFS_NOBLOCK = 32,
 	VFS_MSGS = 64,			/* exchange msgs with a device */
+	VFS_SEM = 64,			/* use semaphore operations */
+	VFS_EXEC = 64,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
+							 * on purpose */
 	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
 	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
 	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
-	VFS_EXEC = 1024,		/* kernel-intern: for accessing directories */
 };
 
 class VFS;

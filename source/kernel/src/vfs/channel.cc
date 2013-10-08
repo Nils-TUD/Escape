@@ -41,7 +41,7 @@
 extern klock_t waitLock;
 
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
-		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IRUSR | S_IWUSR,success), fd(-1),
+		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IXUSR | S_IRUSR | S_IWUSR,success), fd(-1),
 		  used(false), closed(false), curClient(), sendList(), recvList() {
 	if(!success)
 		return;

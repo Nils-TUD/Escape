@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/syscalls.h>
+#include <esc/io.h>
 
 /* the events we can wait for */
 #define EV_NOEVENT				0			/* just wakeup on signals */
@@ -36,7 +37,10 @@
 /* the thread-entry-point-function */
 typedef int (*fThreadEntry)(void *arg);
 
-typedef long tULock;
+typedef struct {
+	int sem;
+	long value;
+} tULock;
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,6 +200,36 @@ bool setThreadVal(uint key,void *val);
 void *getThreadVal(uint key);
 
 /**
+ * Initializes a user-lock. You HAVE TO call it before using locku/unlocku!
+ *
+ * @param l the lock
+ * @return >= 0 on success
+ */
+static inline int crtlocku(tULock *l);
+
+/**
+ * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
+ * (actively, i.e. spinlock) until the lock is unused.
+ *
+ * @param lock the lock
+ */
+static inline void locku(tULock *lock);
+
+/**
+ * Releases the process-local lock that is locked in user-space
+ *
+ * @param lock the lock
+ */
+static inline void unlocku(tULock *lock);
+
+/**
+ * Removes the given user-lock
+ *
+ * @param lock the lock
+ */
+static inline void remlocku(tULock *lock);
+
+/**
  * Aquires a process-local lock with ident. You can specify with the flags whether it should
  * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
  *
@@ -206,14 +240,6 @@ void *getThreadVal(uint key);
 static inline int lock(ulong ident,uint flags) {
 	return syscall3(SYSCALL_LOCK,ident,false,flags);
 }
-
-/**
- * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
- * (actively, i.e. spinlock) until the lock is unused.
- *
- * @param lock the lock
- */
-static inline void locku(tULock *lock);
 
 /**
  * Aquires a global lock with given ident. You can specify with the flags whether it should
@@ -279,13 +305,6 @@ static inline int unlock(ulong ident) {
 }
 
 /**
- * Releases the process-local lock that is locked in user-space
- *
- * @param lock the lock
- */
-static inline void unlocku(tULock *lock);
-
-/**
  * Releases the global lock with given ident
  *
  * @param ident to identify the lock
@@ -293,6 +312,89 @@ static inline void unlocku(tULock *lock);
  */
 static inline int unlockg(ulong ident) {
 	return syscall2(SYSCALL_UNLOCK,ident,true);
+}
+
+/**
+ * Creates a process-local semaphore with initial value <value>.
+ *
+ * @param value the initial value
+ * @return the sem-id or the error-code
+ */
+static inline int semcreate(uint value) {
+	return syscall1(SYSCALL_SEMCREATE,value);
+}
+
+/**
+ * Performs the up-operation on the given semaphore, i.e. increments it.
+ *
+ * @param id the sem-id
+ */
+static inline int semup(int id) {
+	return syscall2(SYSCALL_SEMOP,id,+1);
+}
+
+/**
+ * Performs the down-operation on the given semaphore, i.e. decrements it. If the value is already
+ * 0, it blocks until semup() is done.
+ *
+ * @param id the sem-id
+ */
+static inline int semdown(int id) {
+	return syscall2(SYSCALL_SEMOP,id,-1);
+}
+
+/**
+ * Destroys the given semaphore.
+ *
+ * @param id the sem-id
+ */
+static inline void semdestroy(int id) {
+	syscall1(SYSCALL_SEMDESTROY,id);
+}
+
+/**
+ * Creates a global semaphore with given name and initial value 0.
+ *
+ * @param name the semaphore name
+ * @return the sem-id or the error-code
+ */
+int gsemopen(const char *name);
+
+/**
+ * Joins the global semaphore with given name.
+ *
+ * @param name the semaphore name
+ * @return the sem-id or the error-code
+ */
+int gsemjoin(const char *name);
+
+/**
+ * Performs the up-operation on the given semaphore, i.e. increments it.
+ *
+ * @param id the sem-id
+ * @return 0 on success
+ */
+static inline int gsemup(int sem) {
+	return fcntl(sem,F_SEMUP,0);
+}
+
+/**
+ * Performs the down-operation on the given semaphore, i.e. increments it.
+ *
+ * @param id the sem-id
+ * @return 0 on success
+ */
+static inline int gsemdown(int sem) {
+	return fcntl(sem,F_SEMDOWN,0);
+}
+
+/**
+ * Closes the given semaphore, i.e. decrements the references.
+ *
+ * @param id the sem-id
+ */
+static inline int gsemclose(int sem) {
+	close(sem);
 }
 
 #ifdef __cplusplus

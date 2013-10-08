@@ -23,13 +23,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-typedef void (*fConstr)(void);
-static void initStdio(void);
+void initStdio(void);
 static void deinitStdio(void*);
-
-fConstr stdioConstr[1] A_INIT = {
-	initStdio
-};
 
 /* for printu() */
 const char *hexCharsBig = "0123456789ABCDEF";
@@ -41,44 +36,20 @@ FILE *stdout = stdBufs + STDOUT_FILENO;
 FILE *stderr = stdBufs + STDERR_FILENO;
 sSLList iostreams;
 
-static void initStdio(void) {
+void initStdio(void) {
 	sll_init(&iostreams,malloc,free);
 	atexit(deinitStdio);
 
-	stdin->eof = false;
-	stdin->error = 0;
+	if(!binit(stdin,STDIN_FILENO,IO_READ,NULL,IN_BUFFER_SIZE,false))
+		error("Unable to init stdin");
+	if(!binit(stdout,STDOUT_FILENO,IO_WRITE,NULL,OUT_BUFFER_SIZE,false))
+		error("Unable to init stdin");
+	if(!binit(stderr,STDERR_FILENO,IO_WRITE,NULL,ERR_BUFFER_SIZE,false))
+		error("Unable to init stdin");
+
 	stdin->istty = isatty(STDIN_FILENO);
 	if(errno != 0)
 		stdin->istty = -1;
-	stdin->out.fd = -1;
-	stdin->in.fd = STDIN_FILENO;
-	stdin->in.buffer = (char*)malloc(IN_BUFFER_SIZE + 1);
-	if(stdin->in.buffer == NULL)
-		error("Not enough mem for stdin");
-	stdin->in.max = 0;
-	stdin->in.pos = 0;
-
-	stdout->eof = false;
-	stdout->error = 0;
-	stdout->istty = 0;
-	stdout->in.fd = -1;
-	stdout->out.fd = STDOUT_FILENO;
-	stdout->out.buffer = (char*)malloc(OUT_BUFFER_SIZE + 1);
-	if(stdout->out.buffer == NULL)
-		error("Not enough mem for stdout");
-	stdout->out.max = OUT_BUFFER_SIZE;
-	stdout->out.pos = 0;
-
-	stderr->eof = false;
-	stderr->error = 0;
-	stderr->istty = 0;
-	stderr->in.fd = -1;
-	stderr->out.fd = STDERR_FILENO;
-	stderr->out.buffer = (char*)malloc(ERR_BUFFER_SIZE + 1);
-	if(stderr->out.buffer == NULL)
-		error("Not enough mem for stderr");
-	stderr->out.max = ERR_BUFFER_SIZE;
-	stderr->out.pos = 0;
 }
 
 static void deinitStdio(A_UNUSED void *dummy) {

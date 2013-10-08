@@ -27,6 +27,7 @@
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
 #include <sys/vfs/pipe.h>
+#include <sys/vfs/sem.h>
 #include <sys/vfs/openfile.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
@@ -50,7 +51,8 @@ static size_t getMaxSize() {
 			MAX(sizeof(VFSDevice),
 			MAX(sizeof(VFSDir),
 			MAX(sizeof(VFSFile),
-			MAX(sizeof(VFSLink),sizeof(VFSPipe))))));
+			MAX(sizeof(VFSLink),
+			MAX(sizeof(VFSSem),sizeof(VFSPipe)))))));
 }
 
 /* all nodes (expand dynamically) */
@@ -282,7 +284,7 @@ int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags) {
 			err = -EREALPATH;
 		/* should we create a default-file? */
 		else if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
-			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created);
+			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created,flags);
 		else
 			err = -ENOENT;
 	}
@@ -450,7 +452,8 @@ char *VFSNode::generateId(pid_t pid) {
 	return name;
 }
 
-int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created) {
+int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,
+						uint flags) {
 	size_t nameLen;
 	int err;
 	/* can we create files in this directory? */
@@ -472,8 +475,14 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 	if(nameCpy == NULL)
 		return -ENOMEM;
 	memcpy(nameCpy,path,nameLen + 1);
+
 	/* now create the node and pass the node-number back */
-	if((*child = CREATE(VFSFile,pid,dir,nameCpy)) == NULL) {
+	if(flags & VFS_SEM)
+		*child = CREATE(VFSSem,pid,dir,nameCpy);
+	else
+		*child = CREATE(VFSFile,pid,dir,nameCpy);
+
+	if(*child == NULL) {
 		Cache::free(nameCpy);
 		return -ENOMEM;
 	}

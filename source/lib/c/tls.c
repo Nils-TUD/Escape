@@ -26,6 +26,8 @@
 static tULock tlsLock;
 static uint *tlsCopy = NULL;
 
+extern void initHeap(void);
+
 /**
  * TODO: Actually this is not exactly the model described in doc/thread-local-storage.pdf.
  * But linux seems to do it this way, dmd expects it to be that way (at least on linux) and it
@@ -47,6 +49,14 @@ static uint *tlsCopy = NULL;
 uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize);
 
 uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize) {
+	static bool initialized = false;
+	if(!initialized) {
+		initHeap();
+		if(crtlocku(&tlsLock) < 0)
+			error("Unable to create TLS lock");
+		initialized = true;
+	}
+
 	if(tlsSize) {
 		size_t i;
 		locku(&tlsLock);

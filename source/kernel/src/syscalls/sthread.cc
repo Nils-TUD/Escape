@@ -25,6 +25,7 @@
 #include <sys/task/lock.h>
 #include <sys/task/timer.h>
 #include <sys/task/filedesc.h>
+#include <sys/task/sems.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/pagedir.h>
 #include <sys/vfs/vfs.h>
@@ -192,6 +193,29 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 			tt->getProc()->getPid() != t->getProc()->getPid()))
 		SYSC_ERROR(stack,-EINVAL);
 	tt->unsuspend();
+	SYSC_RET1(stack,0);
+}
+
+int Syscalls::semcreate(Thread *t,IntrptStackFrame *stack) {
+	uint value = (uint)SYSC_ARG1(stack);
+	int res = Sems::create(t->getProc(),value);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+int Syscalls::semop(Thread *t,IntrptStackFrame *stack) {
+	int sem = (int)SYSC_ARG1(stack);
+	int amount = (int)SYSC_ARG2(stack);
+	int res = Sems::op(t->getProc(),sem,amount);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
+int Syscalls::semdestroy(Thread *t,IntrptStackFrame *stack) {
+	int sem = (int)SYSC_ARG1(stack);
+	Sems::destroy(t->getProc(),sem);
 	SYSC_RET1(stack,0);
 }
 

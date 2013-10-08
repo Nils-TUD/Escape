@@ -30,6 +30,7 @@
 #include <sys/task/terminator.h>
 #include <sys/task/filedesc.h>
 #include <sys/task/timer.h>
+#include <sys/task/sems.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/cache.h>
@@ -92,6 +93,7 @@ void ProcBase::init() {
 	p->stats.totalScheds = 0;
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
+	Sems::init(p);
 	memclear(p->locks,sizeof(p->locks));
 	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
 		p->mutexes[i] = Mutex();
@@ -245,11 +247,14 @@ int ProcBase::clone(uint8_t flags) {
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
 	p->threads = ISList<Thread*>();
+	if((res = Sems::clone(p,cur)) < 0)
+		goto errorPdir;
+
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
 	if(p->command == NULL) {
 		res = -ENOMEM;
-		goto errorPdir;
+		goto errorSems;
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
@@ -331,6 +336,8 @@ errorAdd:
 	remove(p);
 errorCmd:
 	Cache::free((void*)p->command);
+errorSems:
+	Sems::destroyAll(p);
 errorPdir:
 	p->getPageDir()->destroy();
 errorProc:
@@ -474,6 +481,8 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	p->stats.totalSyscalls = 0;
 	p->stats.totalScheds = 0;
 	p->virtmem.resetStats();
+	/* semaphores don't survive execs */
+	Sems::destroyAll(p);
 
 #if DEBUG_CREATIONS
 	Term().writef("EXEC: proc %d:%s\n",p->pid,p->command);
@@ -623,6 +632,7 @@ void ProcBase::destroy(pid_t pid) {
 
 void ProcBase::doDestroy(Proc *p) {
 	/* release resources */
+	Sems::destroyAll(p);
 	FileDesc::destroy(p);
 	Groups::leave(p->pid);
 	Env::removeFor(p->pid);

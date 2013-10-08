@@ -11,11 +11,7 @@ keyboard
 kmmanager
 	/dev/kmmanager 0550 input
 	/dev/keyevents 0110 input
-vterm 80 25 /dev/video
+vterm 80 25 /dev/vterm0 /dev/video
 	/dev/vterm0 0770 vterm0
+vterm 80 25 /dev/vterm1 /dev/video
 	/dev/vterm1 0770 vterm1
-	/dev/vterm2 0770 vterm2
-	/dev/vterm3 0770 vterm3
-	/dev/vterm4 0770 vterm4
-	/dev/vterm5 0770 vterm5
-ui

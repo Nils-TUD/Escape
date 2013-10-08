@@ -87,8 +87,8 @@ int main(int argc,char *argv[]) {
 	if(id < 0)
 		error("Unable to register device 'fs'");
 
-	/* set permissions to zero; the kernel will open the file to us and won't check them */
-	if(chmod("/dev/fs",0) < 0)
+	/* exec permission is enough */
+	if(chmod("/dev/fs",0111) < 0)
 		error("Unable to set permissions for /dev/fs");
 
 	while(true) {

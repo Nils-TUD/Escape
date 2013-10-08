@@ -67,9 +67,10 @@ public:
 	GEN_INFO_FILECLASS(StatsFile,"stats",statsReadCallback);
 	GEN_INFO_FILECLASS(MemUsageFile,"memusage",memUsageReadCallback);
 
-private:
 	static ssize_t readHelper(pid_t pid,VFSNode *node,void *buffer,off_t offset,
 			size_t count,size_t dataSize,read_func callback);
+
+private:
 	static Proc *getProc(VFSNode *node,size_t *dataSize,void **buffer);
 	static pid_t getPid(VFSNode *node,size_t *dataSize,void **buffer);
 	static Thread *getThread(VFSNode *node,size_t *dataSize,void **buffer);

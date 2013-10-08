@@ -28,6 +28,7 @@
 #include <sys/task/env.h>
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>
+#include <sys/task/sems.h>
 #include <sys/vfs/fs.h>
 #include <sys/col/slist.h>
 #include <sys/col/islist.h>
@@ -39,6 +40,7 @@
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192
 #define MAX_FD_COUNT		1024
+#define MAX_SEM_COUNT		16
 
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
@@ -53,13 +55,14 @@
 #define P_FS				4
 #define P_BOOT				8
 
-#define PLOCK_COUNT			3
+#define PLOCK_COUNT			4
 #define PMUTEX_COUNT		2
 #define PLOCK_ENV			0
 #define PLOCK_FDS			1
-#define PLOCK_PORTS			2
-#define PLOCK_REGIONS		3
-#define PLOCK_PROG			4	/* clone, exec, threads */
+#define PLOCK_SEMS			2
+#define PLOCK_PORTS			3
+#define PLOCK_REGIONS		4
+#define PLOCK_PROG			5	/* clone, exec, threads */
 
 class Groups;
 class FileDesc;
@@ -72,6 +75,7 @@ class ProcBase : public SListItem {
 	friend class FileDesc;
 	friend class VFSFS;
 	friend class Env;
+	friend class Sems;
 
 protected:
 	ProcBase() {
@@ -575,6 +579,8 @@ private:
 	/* file descriptors: point into the global file table */
 	OpenFile **fileDescs;
 	size_t fileDescsSize;
+	/* process local semaphores */
+	Sems::Entry *sems[MAX_SEM_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	SList<VFSFS::FSChan> fsChans;
 	/* environment-variables of this process */

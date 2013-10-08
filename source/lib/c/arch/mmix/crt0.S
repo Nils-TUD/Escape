@@ -55,8 +55,6 @@ _start:
 
 	# initial thread calls main
 initialThread:
-	.extern __libc_init
-	PUSHJ	$3,__libc_init
 	# call function in .init-section
 	PUSHJ	$3,_init
 	# finally, call main

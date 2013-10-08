@@ -19,10 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <assert.h>
 #include <stdlib.h>
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
-static tULock randLock = 0;
+static tULock randLock;
 static uint randa = 1103515245;
 static uint randc = 12345;
 static uint lastRand = 0;
@@ -37,5 +38,7 @@ int rand(void) {
 }
 
 void srand(uint seed) {
+	/* TODO make use of atomic instructions instead of locku */
+	assert(crtlocku(&randLock) >= 0);
 	lastRand = seed;
 }

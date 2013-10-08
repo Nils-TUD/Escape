@@ -21,12 +21,21 @@
 
 #include <esc/common.h>
 
-EXTERN_C void mmix_locku(tULock *l);
+EXTERN_C void mmix_locku(long *l);
+
+static inline int crtlocku(tULock *l) {
+	l->value = 0;
+	return 0;
+}
 
 static inline void locku(tULock *l) {
-	mmix_locku(l);
+	/* TODO use CSWAP to build an atomic add and use a semaphore as backup, as on x86 */
+	mmix_locku(&l->value);
 }
 
 static inline void unlocku(tULock *l) {
-	__sync_lock_release(l);
+	__sync_lock_release(&l->value);
+}
+
+static inline void remlocku(A_UNUSED tULock *l) {
 }

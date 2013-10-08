@@ -24,6 +24,7 @@
 #include <sys/vfs/fs.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
+#include <sys/vfs/sem.h>
 #include <sys/vfs/vfs.h>
 #include <sys/ostream.h>
 #include <esc/messages.h>
@@ -80,6 +81,18 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 				static_cast<VFSChannel*>(n)->setUsed(false);
 			SpinLock::release(&waitLock);
 			return res;
+		}
+		case F_SEMUP:
+		case F_SEMDOWN: {
+			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_SEM(node->getMode())))
+				return -EINVAL;
+			if(EXPECT_FALSE(~flags & VFS_SEM))
+				return -EPERM;
+			if(cmd == F_SEMUP)
+				static_cast<VFSSem*>(node)->up();
+			else
+				static_cast<VFSSem*>(node)->down();
+			return 0;
 		}
 	}
 	return -EINVAL;

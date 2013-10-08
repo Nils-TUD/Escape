@@ -44,6 +44,7 @@ static volatile bool run = true;
 static size_t pagesize;
 static ssize_t yoffset;
 static sUser *users;
+static tULock displayLock;
 
 template<typename T>
 static void printBar(size_t barwidth,double ratio,const T& name) {
@@ -80,8 +81,7 @@ static bool compareProcs(const process* a,const process* b) {
 }
 
 static void display(void) {
-	static tULock lock;
-	locku(&lock);
+	locku(&displayLock);
 	size_t cpubarwidth;
 	sVTSize consSize;
 	if(vterm_getSize(STDIN_FILENO,&consSize) < 0) {
@@ -181,7 +181,7 @@ static void display(void) {
 	}
 	freevector(procs);
 	cout.flush();
-	unlocku(&lock);
+	unlocku(&displayLock);
 }
 
 static int refreshThread(void*) {
@@ -200,6 +200,9 @@ int main(void) {
 	size_t usercount;
 	pagesize = sysconf(CONF_PAGE_SIZE);
 	users = user_parseFromFile(USERS_PATH,&usercount);
+
+	if(crtlocku(&displayLock) < 0)
+		error("Unable to create display lock");
 
 	int tid = startthread(refreshThread,nullptr);
 	if(tid < 0)

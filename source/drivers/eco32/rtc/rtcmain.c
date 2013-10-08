@@ -40,6 +40,8 @@ int main(void) {
 	msgid_t mid;
 	int id;
 
+	if(crtlocku(&dlock) < 0)
+		error("Unable to create lock");
 	if(startthread(refreshThread,NULL) < 0)
 		error("Unable to start RTC-thread");
 

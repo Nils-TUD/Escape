@@ -50,6 +50,8 @@ int main(void) {
 	FILE *f;
 
 	events_init();
+	if(crtlocku(&lck) < 0)
+		error("Unable to create lock");
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKmData),BUF_SIZE,RB_OVERWRITE);

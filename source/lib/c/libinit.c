@@ -39,6 +39,10 @@ typedef struct {
  */
 extern int _startthread(fThreadEntry entryPoint,void *arg);
 extern __attribute__((weak)) void sigRetFunc(void);
+
+extern void initStdio(void);
+extern void initHeap(void);
+
 /**
  * Inits the c-library
  */
@@ -53,9 +57,13 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d);
  */
 void __cxa_finalize(void *d);
 
-static tULock threadLock = 0;
+fConstr libcConstr[1] A_INIT = {
+	__libc_init
+};
+
+static tULock threadLock;
 static size_t threadCount = 1;
-static tULock exitLock = 0;
+static tULock exitLock;
 static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
@@ -106,7 +114,13 @@ void __cxa_finalize(A_UNUSED void *d) {
 }
 
 void __libc_init(void) {
+	if(crtlocku(&exitLock) < 0)
+		error("Unable to create exit lock");
+	if(crtlocku(&threadLock) < 0)
+		error("Unable to create thread lock");
 	/* tell kernel address of sigRetFunc */
 	if(signal(SIG_RET,(fSignal)&sigRetFunc) == SIG_ERR)
 		error("Unable to set signal return address");
+	initHeap();
+	initStdio();
 }

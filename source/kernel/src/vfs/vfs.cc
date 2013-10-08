@@ -58,6 +58,7 @@ void VFS::init() {
 	 *   |   |- pipes
 	 *   |   |- mbmods
 	 *   |   |- shm
+	 *   |   |- sems
 	 *   |   |- devices
 	 *   |   \- processes
 	 *   |       \- self
@@ -68,6 +69,7 @@ void VFS::init() {
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipes"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm"));
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"sems"));
 	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes");
 	VFSNode::release(CREATE(VFSSelfLink,KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"devices"));

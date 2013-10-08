@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 
-void mmix_locku(tULock *l) {
+void mmix_locku(long *l) {
 	ulong val;
 	while(1) {
 		val = 1;

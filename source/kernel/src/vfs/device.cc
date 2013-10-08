@@ -45,7 +45,7 @@ VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,uint type,uint ops,bool &succe
 }
 
 uint VFSDevice::buildMode(uint type) {
-	uint mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+	uint mode = S_IXUSR | S_IRUSR | S_IWUSR | S_IXGRP | S_IRGRP | S_IWGRP;
 	if(type == DEV_TYPE_BLOCK)
 		mode |= MODE_TYPE_BLKDEV;
 	else if(type == DEV_TYPE_CHAR)

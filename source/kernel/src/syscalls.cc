@@ -105,13 +105,16 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 69 */	{isingroup,			"isingroup",    	2},
 	/* 70 */	{alarm,				"alarm",    		1},
 	/* 71 */	{tsctotime,			"tsctotime",    	1},
+	/* 72 */	{semcreate,			"semcreate",		1},
+	/* 73 */	{semop,				"semcrt",			1},
+	/* 74 */	{semdestroy,		"semdestroy",		1},
 #ifdef __i386__
-	/* 72 */	{reqports,			"reqports",   		2},
-	/* 73 */	{relports,			"relports",    		2},
-	/* 74 */	{vm86int,			"vm86int",    		4},
-	/* 75 */	{vm86start,			"vm86start",    	0},
+	/* 75 */	{reqports,			"reqports",   		2},
+	/* 76 */	{relports,			"relports",    		2},
+	/* 77 */	{vm86int,			"vm86int",    		4},
+	/* 78 */	{vm86start,			"vm86start",    	0},
 #else
-	/* 72 */	{debug,				"debug",    		0},
+	/* 75 */	{debug,				"debug",    		0},
 #endif
 };
 

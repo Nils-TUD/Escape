@@ -57,7 +57,10 @@ bool vtctrl_init(sVTerm *vt,uint cols,uint rows,int vidMode,int vidFd,int speake
 	vt->setCursor = NULL;
 
 	/* init state */
-	vt->lock = 0;
+	if(crtlocku(&vt->lock) < 0) {
+		printe("Unable to create vterm lock");
+		return false;
+	}
 	vt->col = 0;
 	vt->row = vt->rows - 1;
 	vt->lastCol = 0;

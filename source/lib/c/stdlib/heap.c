@@ -43,6 +43,8 @@ struct sMemArea {
 	sMemArea *next;
 };
 
+void initHeap(void);
+
 /**
  * Allocates a new page for areas
  *
@@ -68,7 +70,17 @@ static size_t pageCount = 0;
 static size_t pageSize = 0;
 
 /* the lock for the heap */
-static tULock mlock = 0;
+static tULock mlock;
+static bool initialized = false;
+
+void initHeap(void) {
+	if(initialized)
+		return;
+
+	if(crtlocku(&mlock) < 0)
+		error("Unable to create heap lock");
+	initialized = true;
+}
 
 void *malloc(size_t size) {
 	ulong *begin;

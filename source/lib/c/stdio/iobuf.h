@@ -85,6 +85,7 @@ typedef struct {
 } sIOBuf;
 
 typedef struct {
+	uint flags;
 	uchar eof;
 	char istty;	/* only for stdin */
 	int error;
@@ -116,6 +117,7 @@ int breads(FILE *f,size_t length,char *str);
 int vbscanf(FILE *f,const char *fmt,va_list ap);
 
 FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic);
+bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic);
 
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;

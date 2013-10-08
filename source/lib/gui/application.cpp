@@ -43,6 +43,9 @@ namespace gui {
 	Application::Application()
 			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaInfo(), _windows(), _created(),
 			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr) {
+		if(crtlocku(&_queuelock) < 0)
+			throw app_error("Unable to create queue lock");
+
 		msgid_t mid;
 		_winFd = open("/dev/winmanager",IO_MSGS);
 		if(_winFd < 0)

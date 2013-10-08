@@ -27,6 +27,13 @@ public:
 	}
 
 	/**
+	 * @return the current value
+	 */
+	uint getValue() const {
+		return value;
+	}
+
+	/**
 	 * Aquires this mutex. It won't use busy-waiting here, but suspend the thread when the mutex
 	 * is not available.
 	 */

@@ -17,31 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "iobuf.h"
-#include <stdio.h>
-#include <stdlib.h>
+#pragma once
 
-int fclose(FILE *stream) {
-	int res = 0;
-	fflush(stream);
-	if(stream->flags & IO_READ)
-		remlocku(&stream->in.lck);
-	if(stream->flags & IO_WRITE)
-		remlocku(&stream->out.lck);
-	if(stream->in.fd >= 0) {
-		close(stream->in.fd);
-		free(stream->in.buffer);
-	}
-	if(stream->out.fd >= 0 || stream->out.dynamic) {
-		if(stream->out.fd >= 0)
-			close(stream->out.fd);
-		free(stream->out.buffer);
-	}
-	if(stream->in.fd >= 0 || stream->out.fd >= 0) {
-		if(sll_removeFirstWith(&iostreams,stream) == -1)
-			res = -1;
-	}
-	free(stream);
-	return res;
-}
+#include <sys/common.h>
+#include <sys/cppsupport.h>
+#include <sys/semaphore.h>
+
+class Proc;
+
+class Sems {
+	Sems() = delete;
+
+public:
+	struct Entry : public CacheAllocatable {
+		explicit Entry(uint value) : refs(1), s(value) {
+		}
+
+		int refs;
+		Semaphore s;
+	};
+
+	static void init(Proc *p);
+	static int clone(Proc *p,const Proc *old);
+	static int create(Proc *p,uint value);
+	static int op(Proc *p,int sem,int amount);
+	static void destroy(Proc *p,int sem);
+	static void destroyAll(Proc *p);
+};

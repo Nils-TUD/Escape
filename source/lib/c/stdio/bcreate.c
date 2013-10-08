@@ -21,57 +21,16 @@
 #include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 	FILE *f = (FILE*)malloc(sizeof(FILE));
 	if(!f)
 		return NULL;
 
-	f->eof = false;
-	f->error = 0;
-	f->istty = 0;
-	f->in.buffer = NULL;
-	f->out.buffer = NULL;
-
-	if(flags & IO_READ) {
-		f->in.fd = fd;
-		if(buffer)
-			f->in.buffer = buffer;
-		else {
-			f->in.buffer = (char*)malloc(IN_BUFFER_SIZE + 1);
-			if(f->in.buffer == NULL)
-				goto error;
-		}
-		f->in.pos = 0;
-		f->in.max = buffer ? size : 0;
-		f->in.lck = 0;
-		f->out.dynamic = 0;
+	if(!binit(f,fd,flags,buffer,size,dynamic)) {
+		free(f);
+		return NULL;
 	}
-	else
-		f->in.fd = -1;
-	if(flags & IO_WRITE) {
-		f->out.fd = fd;
-		if(buffer)
-			f->out.buffer = buffer;
-		else {
-			f->out.buffer = (char*)malloc((dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE) + 1);
-			if(f->out.buffer == NULL)
-				goto error;
-		}
-		f->out.pos = 0;
-		f->out.max = buffer ? size : (dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE);
-		f->out.lck = 0;
-		f->out.dynamic = dynamic;
-	}
-	else
-		f->out.fd = -1;
 	return f;
-
-error:
-	if(!buffer) {
-		free(f->out.buffer);
-		free(f->in.buffer);
-	}
-	free(f);
-	return NULL;
 }

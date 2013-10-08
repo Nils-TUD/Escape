@@ -20,9 +20,11 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/thread.h>
 #include <vector>
 #include "process.h"
 #include "../progress.h"
+#include "../initerror.h"
 
 class ProcessManager {
 public:
@@ -33,7 +35,9 @@ private:
 	static const size_t KERNEL_PERCENT	= 40;
 
 public:
-	ProcessManager() : _lock(0), _downProg(nullptr), _procs() {
+	ProcessManager() : _lock(), _downProg(nullptr), _procs() {
+		if(crtlocku(&_lock) < 0)
+			throw init_error("Unable to create process-manager lock");
 	}
 	~ProcessManager() {
 	}

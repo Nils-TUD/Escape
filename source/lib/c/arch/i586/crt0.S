@@ -65,8 +65,6 @@ _start:
 
 	# initial thread calls main
 initialThread:
-	.extern __libc_init
-	call	__libc_init
 	# call function in .init-section
 	call _init
 	# get argc and argv

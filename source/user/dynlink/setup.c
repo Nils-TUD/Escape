@@ -26,9 +26,6 @@
 #include "reloc.h"
 #include "setup.h"
 
-typedef void (*fConstr)(void);
-extern fConstr stdioConstr[1];
-
 sSLList *libs = NULL;
 
 void load_error(const char *fmt,...) {
@@ -57,8 +54,6 @@ uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 uintptr_t load_setupProg(int binFd) {
 	sSharedLib *prog;
 	uintptr_t entryPoint;
-	/* at first init stdio to be able to print errors */
-	stdioConstr[0]();
 
 	libs = sll_create();
 	if(!libs)

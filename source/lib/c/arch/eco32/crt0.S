@@ -62,8 +62,6 @@ _start:
 
 	# initial thread calls main
 initialThread:
-	.extern __libc_init
-	jal		__libc_init
 	# call function in .init-section
 	jal		_init
 	# finally, call main

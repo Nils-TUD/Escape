@@ -20,9 +20,11 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 #include <esc/sllist.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define HASHMAP_SIZE	64
+#define SEM_LOCAL_PATH	"/system/processes/self/sems/"
 
 typedef struct {
 	tid_t tid;
@@ -70,6 +72,18 @@ void *getThreadVal(uint key) {
 			return tval->val;
 	}
 	return NULL;
+}
+
+int gsemopen(const char *name) {
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/system/sems/%s",name);
+	return open(path,IO_SEM | IO_CREATE);
+}
+
+int gsemjoin(const char *name) {
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/system/sems/%s",name);
+	return open(path,IO_SEM);
 }
 
 int waitunlock(uint event,evobj_t object,ulong ident) {

@@ -21,11 +21,21 @@
 
 #include <esc/common.h>
 
+static inline int crtlocku(tULock *l) {
+	l->value = 1;
+	l->sem = semcreate(1);
+	return l->sem;
+}
+
 static inline void locku(tULock *l) {
 	/* TODO eco32 has no atomic compare and swap instruction or similar :/ */
-	lock((ulong)l,LOCK_EXCLUSIVE);
+	semdown(l->sem);
 }
 
 static inline void unlocku(tULock *l) {
-	unlock((ulong)l);
+	semup(l->sem);
+}
+
+static inline void remlocku(tULock *l) {
+	semdestroy(l->sem);
 }

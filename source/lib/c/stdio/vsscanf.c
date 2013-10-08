@@ -28,6 +28,6 @@ int vsscanf(const char *str,const char *fmt,va_list ap) {
 	if(!sbuf)
 		return EOF;
 	res = vbscanf(sbuf,fmt,ap);
-	free(sbuf);
+	fclose(sbuf);
 	return res;
 }

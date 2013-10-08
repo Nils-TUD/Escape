@@ -22,14 +22,23 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 
+static inline int crtlocku(tULock *l) {
+	l->value = 1;
+	l->sem = semcreate(0);
+	return l->sem;
+}
+
 static inline void locku(tULock *l) {
-	/* 0 means free, < 0 means taken. we have this slightly odd meaning here to prevent that we
-	 * have to initialize all locks with 1 (which would also be arch-dependent here) */
-	if(__sync_fetch_and_add(l, -1) <= -1)
-		lock((ulong)l,LOCK_EXCLUSIVE);
+	/* 1 means free, <= 0 means taken */
+	if(__sync_fetch_and_add(&l->value, -1) <= 0)
+		semdown(l->sem);
 }
 
 static inline void unlocku(tULock *l) {
-	if(__sync_fetch_and_add(l, +1) < -1)
-		unlock((ulong)l);
+	if(__sync_fetch_and_add(&l->value, +1) < 0)
+		semup(l->sem);
+}
+
+static inline void remlocku(tULock *l) {
+	semdestroy(l->sem);
 }

@@ -133,6 +133,8 @@ int main(int argc,char **argv) {
 	}
 
 	/* detect and init all devices */
+	if(crtlocku(&atalock) < 0)
+		error("Unable to create lock");
 	ctrl_init(useDma);
 	initDrives();
 	/* flush prints */

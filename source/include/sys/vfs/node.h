@@ -28,6 +28,7 @@
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000
 #define MODE_TYPE_PIPE				0x0020000
+#define MODE_TYPE_SEM				0x0040000
 #define MODE_TYPE_DEVMASK			0x0700000
 #define MODE_TYPE_BLKDEV			(0x0100000 | S_IFBLK)
 #define MODE_TYPE_CHARDEV			(0x0200000 | S_IFCHR)
@@ -41,6 +42,7 @@
 #define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 #define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
+#define IS_SEM(mode)				(((mode) & MODE_TYPE_SEM) != 0)
 #define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
 
 class VFSDevice;
@@ -451,7 +453,8 @@ protected:
 	}
 
 private:
-	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created);
+	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,
+						  uint flags);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
 	ushort doUnref(bool remove);
 

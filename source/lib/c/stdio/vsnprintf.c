@@ -30,6 +30,6 @@ int vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
 	res = vbprintf(sbuf,fmt,ap);
 	/* null-termination */
 	sbuf->out.buffer[sbuf->out.pos] = '\0';
-	free(sbuf);
+	fclose(sbuf);
 	return res;
 }

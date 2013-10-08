@@ -148,6 +148,9 @@ private:
 	static int join(Thread *t,IntrptStackFrame *stack);
 	static int suspend(Thread *t,IntrptStackFrame *stack);
 	static int resume(Thread *t,IntrptStackFrame *stack);
+	static int semcreate(Thread *t,IntrptStackFrame *stack);
+	static int semop(Thread *t,IntrptStackFrame *stack);
+	static int semdestroy(Thread *t,IntrptStackFrame *stack);
 
 	// other
 	static int loadmods(Thread *t,IntrptStackFrame *stack);

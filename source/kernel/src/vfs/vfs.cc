@@ -586,8 +586,10 @@ int VFS::createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
 	VFSNode::dirname(path,len);
 	int err = VFSNode::request(path,&dir,NULL,VFS_READ);
 	/* this includes -EREALPATH since devices have to be created in the VFS */
-	if(err < 0)
-		goto errorName;
+	if(err < 0) {
+		Cache::free(name);
+		return err;
+	}
 
 	/* ensure its a directory */
 	if(!S_ISDIR(dir->getMode()))
@@ -617,8 +619,7 @@ errDevice:
 	VFSNode::release(srv);
 errorDir:
 	VFSNode::release(dir);
-errorName:
-	Cache::free(name);
+	/* the release has already free'd the name */
 	return err;
 }
 

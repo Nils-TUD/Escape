@@ -51,6 +51,9 @@ _start:
 	# we have no TLS, so don't waste time
 	call	__libc_init
 	pop		%eax
+	# pass pointers to TLSSize and TLSStart to load_setupProg
+	lea		4(%esp),%edx
+	lea		8(%esp),%ecx
 	call	load_setupProg
 	# load_setupProg returns the entrypoint
 	jmp		*%eax

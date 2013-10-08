@@ -65,9 +65,11 @@ void load_error(const char *fmt,...);
  * The start-function. Gets the file-descriptor for the program to load from the kernel
  *
  * @param binFd the file-descriptor
+ * @param tlsStart pointer to the tlsStart argument for the program to load
+ * @param tlsSize pointer to the tlsSize argument for the program to load
  * @return the entryPoint to jump at
  */
-uintptr_t load_setupProg(int binFd);
+uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize);
 
 /**
  * Determines the value of the given tag in the dynamic-section

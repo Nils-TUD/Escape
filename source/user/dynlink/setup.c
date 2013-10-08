@@ -51,7 +51,7 @@ uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	return 0;
 }
 
-uintptr_t load_setupProg(int binFd) {
+uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize) {
 	sSharedLib *prog;
 	uintptr_t entryPoint;
 
@@ -77,7 +77,7 @@ uintptr_t load_setupProg(int binFd) {
 	load_doLoad(binFd,prog);
 
 	/* load segments into memory */
-	entryPoint = load_addSegments();
+	entryPoint = load_addSegments(tlsStart,tlsSize);
 
 #if PRINT_LOADADDR
 	sSLNode *n,*m;

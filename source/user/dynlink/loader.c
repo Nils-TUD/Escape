@@ -116,9 +116,11 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	}
 }
 
-uintptr_t load_addSegments(void) {
+uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 	sSLNode *n;
 	uintptr_t entryPoint = 0;
+	*tlsStart = 0;
+	*tlsSize = 0;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		Elf32_Ehdr eheader;
@@ -148,6 +150,10 @@ uintptr_t load_addSegments(void) {
 					else
 						l->mainTextAddr = addr;
 					l->textSize = pheader.p_memsz;
+				}
+				else if(!l->isDSO && pheader.p_type == PT_TLS) {
+					*tlsStart = addr;
+					*tlsSize = pheader.p_memsz;
 				}
 				loadSeg++;
 			}

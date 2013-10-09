@@ -91,15 +91,21 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,bool s
 	return res;
 }
 
-static int vesacli_updateScreen(sTUIClient *client,uint start,uint count) {
+static int vesacli_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sVESAScreen *scr = (sVESAScreen*)client->mode;
 	if(!scr)
 		return -EINVAL;
-	if(start + count < start || start + count > (uint)(scr->cols * scr->rows * 2))
+	if((gpos_t)(x + width) < x || x + width > client->cols ||
+		(gpos_t)(y + height) < y || y + height > client->rows)
 		return -EINVAL;
 
-	vesat_drawChars(scr,(start / 2) % client->cols,
-		(start / 2) / client->cols,(uint8_t*)client->shm + start,count / 2);
+	size_t offset = y * client->cols * 2 + x * 2;
+	if(width == client->cols)
+		vesat_drawChars(scr,x,y,(uint8_t*)client->shm + offset,width * height);
+	else {
+		for(gsize_t i = 0; i < height; ++i)
+			vesat_drawChars(scr,x,y + i,(uint8_t*)client->shm + offset + i * client->cols * 2,width);
+	}
 	return 0;
 }
 

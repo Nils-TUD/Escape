@@ -67,7 +67,7 @@ static void cli_switch(int incr) {
 			printe("[UIM] Unable to set mode");
 		if(video_setCursor(cli->backendFd,&cli->cursor) < 0)
 			printe("[UIM] Unable to set cursor");
-		if(video_update(cli->backendFd,0,cli->backendMode->width * cli->backendMode->height * 2) < 0)
+		if(video_update(cli->backendFd,0,0,cli->backendMode->width,cli->backendMode->height) < 0)
 			printe("[UIM] Screen update failed");
 	}
 }

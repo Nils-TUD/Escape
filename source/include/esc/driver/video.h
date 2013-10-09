@@ -30,7 +30,7 @@ int video_setCursor(int fd,const sVTPos *pos);
 int video_getSize(int fd,sVTSize *size);
 int video_getMode(int fd);
 int video_setMode(int fd,int mode,const char *shm,bool switchMode);
-int video_update(int fd,uint start,uint count);
+int video_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 ssize_t video_getModeCount(int fd);
 ssize_t video_getModes(int fd,sVTMode *modes,size_t count);
 

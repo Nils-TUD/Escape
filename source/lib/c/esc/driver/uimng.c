@@ -75,10 +75,12 @@ int uimng_setCursor(int fd,const sVTPos *pos) {
 	return send(fd,MSG_KM_SETCURSOR,&msg,sizeof(msg));
 }
 
-int uimng_update(int fd,uint start,uint count) {
+int uimng_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sArgsMsg msg;
-	msg.arg1 = start;
-	msg.arg2 = count;
+	msg.arg1 = x;
+	msg.arg2 = y;
+	msg.arg3 = width;
+	msg.arg4 = height;
 	int res = send(fd,MSG_KM_UPDATE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;

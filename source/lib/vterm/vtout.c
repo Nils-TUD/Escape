@@ -160,7 +160,8 @@ void vtout_putchar(sVTerm *vt,char c) {
 			vt->buffer[i] = c;
 			vt->buffer[i + 1] = (vt->background << 4) | vt->foreground;
 
-			vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,2);
+			/* TODO don't update the complete remaining line */
+			vtctrl_markDirty(vt,vt->col,vt->row,vt->cols - vt->col,1);
 			vt->col++;
 		}
 		break;
@@ -208,7 +209,7 @@ static void vtout_delete(sVTerm *vt,size_t count) {
 
 		/* overwrite line */
 		/* TODO just refresh the required part */
-		vtctrl_markDirty(vt,vt->row * vt->cols * 2,vt->cols * 2);
+		vtctrl_markDirty(vt,0,vt->row,vt->cols,1);
 	}
 	else {
 		if(vt->speaker >= 0)

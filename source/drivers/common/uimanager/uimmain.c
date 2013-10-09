@@ -299,12 +299,14 @@ static int ctrlThread(A_UNUSED void *arg) {
 				break;
 
 				case MSG_KM_UPDATE: {
-					uint start = (uint)msg.args.arg1;
-					uint count = (uint)msg.args.arg2;
+					gpos_t x = (gpos_t)msg.args.arg1;
+					gpos_t y = (gpos_t)msg.args.arg2;
+					gsize_t width = (gsize_t)msg.args.arg3;
+					gsize_t height = (gsize_t)msg.args.arg4;
 					sClient *cli = cli_get(fd);
 					msg.args.arg1 = 0;
 					if(cli == cli_getActive())
-						msg.args.arg1 = video_update(cli->backendFd,start,count);
+						msg.args.arg1 = video_update(cli->backendFd,x,y,width,height);
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;

@@ -68,10 +68,12 @@ int video_setMode(int fd,int mode,const char *shm,bool switchMode) {
 	return msg.arg1;
 }
 
-int video_update(int fd,uint start,uint count) {
+int video_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sArgsMsg msg;
-	msg.arg1 = start;
-	msg.arg2 = count;
+	msg.arg1 = x;
+	msg.arg2 = y;
+	msg.arg3 = width;
+	msg.arg4 = height;
 	int res = send(fd,MSG_VID_UPDATE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;

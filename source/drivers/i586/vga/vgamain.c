@@ -43,7 +43,7 @@
 
 static int vga_setMode(sTUIClient *client,const char *shmname,int mid,bool switchMode);
 static void vga_setCursor(sTUIClient *client,uint row,uint col);
-static int vga_updateScreen(sTUIClient *client,uint start,uint count);
+static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 static sVTMode modes[] = {
 	{0x0001,40,25,4,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
@@ -136,13 +136,22 @@ static void vga_setCursor(sTUIClient *client,uint row,uint col) {
 	outbyte(CURSOR_PORT_DATA,(uint8_t)((position >> 8) & 0xFF));
 }
 
-static int vga_updateScreen(sTUIClient *client,uint start,uint count) {
+static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sVTMode *mode = client->mode;
 	if(!mode)
 		return -EINVAL;
-	if(start + count < start || start + count > mode->width * mode->height * 2)
+	if((gpos_t)(x + width) < x || x + width > mode->width ||
+		(gpos_t)(y + height) < y || y + height > mode->height)
 		return -EINVAL;
 
-	memcpy(vgaData + start,client->shm + start,count);
+	if(width == mode->width)
+		memcpy(vgaData + y * mode->width * 2,client->shm + y * mode->width * 2,height * mode->width * 2);
+	else {
+		size_t offset = y * mode->width * 2 + x * 2;
+		for(gsize_t i = 0; i < height; i++) {
+			memcpy(vgaData + offset,client->shm + offset,width * 2);
+			offset += mode->width * 2;
+		}
+	}
 	return 0;
 }

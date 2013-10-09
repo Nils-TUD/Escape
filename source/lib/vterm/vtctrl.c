@@ -67,8 +67,10 @@ bool vtctrl_init(sVTerm *vt,sVTMode *mode) {
 	vt->row = vt->rows - 1;
 	vt->lastCol = 0;
 	vt->lastRow = 0;
-	vt->upStart = 0;
-	vt->upLength = 0;
+	vt->upCol = vt->cols;
+	vt->upRow = vt->rows;
+	vt->upWidth = 0;
+	vt->upHeight = 0;
 	vt->upScroll = 0;
 	vt->foreground = vt->defForeground;
 	vt->background = vt->defBackground;
@@ -278,8 +280,10 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->row = MIN(rows - 1,rows - (vt->rows - vt->row));
 		vt->cols = cols;
 		vt->rows = rows;
-		vt->upStart = 0;
-		vt->upLength = 0;
+		vt->upCol = vt->cols;
+		vt->upRow = vt->rows;
+		vt->upWidth = 0;
+		vt->upHeight = 0;
 		vtctrl_markScrDirty(vt);
 		vtctrl_buildTitle(vt);
 		free(old);
@@ -372,20 +376,16 @@ void vtctrl_scroll(sVTerm *vt,int lines) {
 }
 
 void vtctrl_markScrDirty(sVTerm *vt) {
-	vtctrl_markDirty(vt,0,vt->cols * vt->rows * 2);
+	vtctrl_markDirty(vt,0,0,vt->cols,vt->rows);
 }
 
-void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length) {
-	if(vt->upLength == 0) {
-		vt->upStart = start;
-		vt->upLength = length;
-	}
-	else {
-		size_t oldstart = vt->upStart;
-		if(start < oldstart)
-			vt->upStart = start;
-		vt->upLength = MAX(oldstart + vt->upLength,start + length) - vt->upStart;
-	}
+void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
+	vt->upCol = MIN(vt->upCol,col);
+	vt->upRow = MIN(vt->upRow,row);
+	vt->upWidth = MAX(vt->upWidth,width);
+	vt->upHeight = MAX(vt->upHeight,height);
+	assert(vt->upWidth <= vt->cols);
+	assert(vt->upHeight <= vt->rows);
 }
 
 static void vtctrl_buildTitle(sVTerm *vt) {

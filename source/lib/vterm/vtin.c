@@ -141,7 +141,7 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 
 				/* overwrite line */
 				/* TODO just refresh the required part */
-				vtctrl_markDirty(vt,vt->row * vt->cols * 2,vt->cols * 2);
+				vtctrl_markDirty(vt,0,vt->row,vt->cols,1);
 			}
 		}
 		break;

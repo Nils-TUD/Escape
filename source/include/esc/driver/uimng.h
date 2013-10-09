@@ -31,7 +31,7 @@ int uimng_attach(int fd,int id);
 int uimng_getMode(int fd);
 int uimng_setMode(int fd,int mode,const char *shm);
 int uimng_setCursor(int fd,const sVTPos *pos);
-int uimng_update(int fd,uint start,uint count);
+int uimng_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 ssize_t uimng_getModeCount(int fd);
 int uimng_getModes(int fd,sVTMode *modes,size_t count);
 

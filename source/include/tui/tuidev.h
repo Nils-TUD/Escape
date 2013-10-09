@@ -31,7 +31,7 @@ typedef struct {
 
 typedef int (*fSetMode)(sTUIClient *client,const char *shmname,int mid,bool switchMode);
 typedef void (*fSetCursor)(sTUIClient *client,uint row,uint col);
-typedef int (*fUpdateScreen)(sTUIClient *client,uint start,uint count);
+typedef int (*fUpdateScreen)(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 void tui_driverLoop(const char *name,sVTMode *modelist,size_t count,fSetMode setMode,
 					fSetCursor setCursor,fUpdateScreen updateScreen);

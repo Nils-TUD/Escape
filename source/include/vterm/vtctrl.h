@@ -79,8 +79,10 @@ struct sVTerm {
 	/* the first visible line */
 	size_t firstVisLine;
 	/* a range that should be updated */
-	size_t upStart;
-	size_t upLength;
+	uint upCol;
+	uint upRow;
+	size_t upWidth;
+	size_t upHeight;
 	ssize_t upScroll;
 	/* whether entered characters should be echo'd to screen */
 	uchar echo;
@@ -169,13 +171,15 @@ void vtctrl_scroll(sVTerm *vt,int lines);
 void vtctrl_markScrDirty(sVTerm *vt);
 
 /**
- * Marks the given range as dirty (unlocked)
+ * Marks the given rectangle as dirty (unlocked). All numbers are in columns/rows not bytes.
  *
  * @param vt the vterm
- * @param start the start-position
- * @param length the number of bytes
+ * @param col the x position
+ * @param row the y position
+ * @param width the width
+ * @param height the height
  */
-void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length);
+void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height);
 
 /**
  * Releases resources (unlocked)

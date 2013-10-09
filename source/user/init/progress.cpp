@@ -123,9 +123,8 @@ void Progress::paintBar() {
 }
 
 void Progress::paintTo(const void *data,int x,int y,size_t width,size_t height) {
-	uint start = _vtSize.width * y * 2 + x * 2;
-	memcpy(_shm + start,data,width * height * 2);
-	video_update(_fd,start,width * height * 2);
+	memcpy(_shm + _vtSize.width * y * 2 + x * 2,data,width * height * 2);
+	video_update(_fd,x,y,width,height);
 }
 
 bool Progress::connect() {

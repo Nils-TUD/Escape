@@ -126,38 +126,48 @@ static int vt_findMode(int uimng,uint cols,uint rows,sVTMode *mode) {
 }
 
 static void vt_doUpdate(sVTerm *vt) {
-	size_t byteCount;
 	/* if we should scroll, mark the whole screen (without title) as dirty */
 	if(vt->upScroll != 0) {
-		vt->upStart = MIN(vt->upStart,vt->cols * 2);
-		vt->upLength = vt->cols * vt->rows * 2 - vt->upStart;
+		vt->upCol = 0;
+		vt->upRow = MIN(vt->upRow,1);
+		vt->upHeight = vt->rows - vt->upRow;
+		vt->upWidth = vt->cols;
 	}
 
-	if(vt->upLength > 0) {
+	if(vt->upWidth > 0) {
 		/* update title-bar? */
-		uint start = vt->upStart;
-		uint length = vt->upLength;
-		if(start < vt->cols * 2) {
-			byteCount = MIN(vt->cols * 2 - start,length);
-			memcpy(vt->scrShm + start,vt->titleBar,byteCount);
-			length -= byteCount;
-			start = vt->cols * 2;
+		uint upRow = vt->upRow;
+		size_t upHeight = vt->upHeight;
+		if(upRow == 0) {
+			memcpy(vt->scrShm + vt->upCol * 2,vt->titleBar,vt->upWidth * 2);
+			upRow++;
+			upHeight--;
 		}
 
-		byteCount = MIN((vt->rows * vt->cols * 2) - start,length);
-		if(byteCount > 0) {
-			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + start;
-			memcpy(vt->scrShm + start,startPos,byteCount);
+		/* update content? */
+		if(upHeight > 0) {
+			size_t offset = upRow * vt->cols * 2 + vt->upCol * 2;
+			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + offset;
+			if(vt->upWidth == vt->cols)
+				memcpy(vt->scrShm + offset,startPos,vt->upWidth * upHeight * 2);
+			else {
+				for(size_t i = 0; i < upHeight; ++i) {
+					memcpy(vt->scrShm + offset + i * vt->cols * 2,
+						startPos + i * vt->cols * 2,vt->upWidth * 2);
+				}
+			}
 		}
 
-		if(uimng_update(vt->uimng,vt->upStart,vt->upLength) < 0)
+		if(uimng_update(vt->uimng,vt->upCol,vt->upRow,vt->upWidth,vt->upHeight) < 0)
 			printe("[VTERM] Unable to update screen");
 	}
 	vt_setCursor(vt);
 
 	/* all synchronized now */
-	vt->upStart = 0;
-	vt->upLength = 0;
+	vt->upCol = vt->cols;
+	vt->upRow = vt->rows;
+	vt->upWidth = 0;
+	vt->upHeight = 0;
 	vt->upScroll = 0;
 }
 
@@ -198,7 +208,7 @@ static int vt_dateThread(A_UNUSED void *arg) {
 			*title++ = LIGHTGRAY | (BLUE << 4);
 		}
 		memcpy(vt->scrShm + (vt->cols - len) * 2,vt->titleBar + (vt->cols - len) * 2,len * 2);
-		if(uimng_update(vt->uimng,(vt->cols - len) * 2,len * 2) < 0)
+		if(uimng_update(vt->uimng,vt->cols - len,0,len * 2,1) < 0)
 			printe("[VTERM] Unable to update screen");
 		unlocku(&vt->lock);
 

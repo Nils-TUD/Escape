@@ -21,6 +21,7 @@
 #include <esc/keycodes.h>
 #include <esc/io.h>
 #include <esc/esccodes.h>
+#include <esc/sllist.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,26 +38,65 @@ static bool km_skipTrash(FILE *f);
 static bool shiftDown = false;
 static bool altDown = false;
 static bool ctrlDown = false;
+static sSLList *maps;
 
-sKeymapEntry *km_parse(const char *file) {
+sKeymap *km_request(const char *file) {
+	if(maps == NULL) {
+		maps = sll_create();
+		if(maps == NULL)
+			error("[UIM] Unable to create maps-list");
+	}
+
+	/* do we already have the keymap? */
+	sSLNode *n;
+	for(n = sll_begin(maps); n != NULL; n = n->next) {
+		sKeymap *m = (sKeymap*)n->data;
+		if(strcmp(m->path,file) == 0) {
+			m->refs++;
+			return m;
+		}
+	}
+
+	/* create map */
 	FILE *f;
-	sKeymapEntry *map = (sKeymapEntry*)calloc(KEYMAP_SIZE,sizeof(sKeymapEntry));
+	sKeymap *map = (sKeymap*)malloc(sizeof(sKeymap));
 	if(!map)
 		return NULL;
+	map->refs = 1;
+	strnzcpy(map->path,file,sizeof(map->path));
+	map->entries = calloc(KEYMAP_SIZE,sizeof(sKeymapEntry));
+	if(!map->entries)
+		goto error;
+
 	f = fopen(file,"r");
-	if(!f) {
-		free(map);
-		return NULL;
-	}
+	if(!f)
+		goto errorEntries;
 	while(1) {
-		if(!km_parseLine(f,map))
+		if(!km_parseLine(f,map->entries))
 			break;
 	}
 	fclose(f);
+
+	if(!sll_append(maps,map))
+		goto errorEntries;
 	return map;
+
+errorEntries:
+	free(map->entries);
+error:
+	free(map);
+	return NULL;
 }
 
-char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *modifier) {
+void km_release(sKeymap *map) {
+	if(--map->refs == 0) {
+		sll_removeFirstWith(maps,map);
+		free(map->entries);
+		free(map);
+	}
+}
+
+char km_translateKeycode(sKeymap *map,bool isBreak,uchar keycode,uchar *modifier) {
 	sKeymapEntry *e;
 	/* handle shift, alt and ctrl */
 	switch(keycode) {
@@ -74,7 +114,7 @@ char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *mod
 			break;
 	}
 
-	e = map + keycode;
+	e = map->entries + keycode;
 	*modifier = (altDown ? STATE_ALT : 0) | (ctrlDown ? STATE_CTRL : 0) |
 			(shiftDown ? STATE_SHIFT : 0) | (isBreak ? STATE_BREAK : 0);
 	if(shiftDown)

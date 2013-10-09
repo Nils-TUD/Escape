@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/messages.h>
 
 #define VBEERR_UNSUPPORTED		-10000
 #define VBEERR_GETINFO_FAILED	-10001

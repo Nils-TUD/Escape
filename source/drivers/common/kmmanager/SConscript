@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeCProg('sbin', target = 'kmmanager', source = env.Glob('*.c'))

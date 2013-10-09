@@ -26,17 +26,13 @@
 extern "C" {
 #endif
 
-int vterm_setEnabled(int fd,bool enabled);
 int vterm_setEcho(int fd,bool echo);
 int vterm_setReadline(int fd,bool readline);
-int vterm_setReadKB(int fd,bool read);
 int vterm_setNavi(int fd,bool navi);
 int vterm_backup(int fd);
 int vterm_restore(int fd);
-int vterm_getDevice(int fd,char *buffer,size_t max);
 int vterm_setShellPid(int fd,pid_t pid);
 int vterm_getSize(int fd,sVTSize *size);
-int vterm_select(int fd,int vterm);
 int vterm_getMode(int fd);
 int vterm_setMode(int fd,int mode);
 ssize_t vterm_getModeCount(int fd);

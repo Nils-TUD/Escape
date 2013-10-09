@@ -28,6 +28,9 @@ private:
 	typedef size_t size_type;
 
 private:
+	static const uint VGA_COLS			= 80;
+	static const uint VGA_ROWS			= 25;
+
 	static const size_type BAR_HEIGHT	= 1;
 	static const size_type BAR_WIDTH	= 60;
 	static const size_type BAR_PAD		= 10;
@@ -54,11 +57,12 @@ private:
 		return (_vtSize.height / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
 	}
 	void updateBar();
-	void paintTo(const void *data,int x,int y,size_t size);
+	void paintTo(const void *data,int x,int y,size_t width,size_t height);
 	bool connect();
 
 private:
 	int _fd;
+	char *_shm;
 	size_t _startSkip;
 	size_t _itemCount;
 	size_t _finished;

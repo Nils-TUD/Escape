@@ -37,7 +37,7 @@ static void usage(const char *name) {
 static bool run = true;
 
 int main(int argc,const char *argv[]) {
-	static char vtermPath[MAX_PATH_LEN] = "/dev/";
+	static char vtermPath[MAX_PATH_LEN];
 	const char **args;
 	FILE *vt,*in = stdin;
 	size_t line,col;
@@ -63,7 +63,7 @@ int main(int argc,const char *argv[]) {
 	}
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	strncat(vtermPath,getenv("TERM"),sizeof(vtermPath));
+	strnzcpy(vtermPath,getenv("TERM"),sizeof(vtermPath));
 	vtermPath[sizeof(vtermPath) - 1] = '\0';
 	vt = fopen(vtermPath,"rm");
 	if(!vt)

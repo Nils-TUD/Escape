@@ -17,23 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
 #include <esc/messages.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct {
+	int id;
+	uint rows;
+	uint cols;
+	int modeid;
+	void *mode;
+	char *shm;
+} sTUIClient;
 
-int video_setCursor(int fd,const sVTPos *pos);
-int video_getSize(int fd,sVTSize *size);
-int video_getMode(int fd);
-int video_setMode(int fd,int mode,const char *shm,bool switchMode);
-int video_update(int fd,uint start,uint count);
-ssize_t video_getModeCount(int fd);
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count);
+typedef int (*fSetMode)(sTUIClient *client,const char *shmname,int mid,bool switchMode);
+typedef void (*fSetCursor)(sTUIClient *client,uint row,uint col);
+typedef int (*fUpdateScreen)(sTUIClient *client,uint start,uint count);
 
-#ifdef __cplusplus
-}
-#endif
+void tui_driverLoop(const char *name,sVTMode *modelist,size_t count,fSetMode setMode,
+					fSetCursor setCursor,fUpdateScreen updateScreen);

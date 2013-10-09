@@ -26,7 +26,9 @@
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
 #include <esc/driver/video.h>
+#include <esc/driver/uimng.h>
 #include <esc/conf.h>
+#include <esc/mem.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -42,16 +44,16 @@
 #define TITLE_BAR_COLOR		0x17
 #define OS_TITLE			"Escape v"ESCAPE_VERSION
 
-static ssize_t vtctrl_getModeCount(sVTermCfg *cfg);
 static void vtctrl_buildTitle(sVTerm *vt);
 
-bool vtctrl_init(sVTerm *vt,uint cols,uint rows,int vidMode,int vidFd,int speakerFd) {
+bool vtctrl_init(sVTerm *vt,sVTMode *mode) {
 	size_t i,len;
 	uchar color;
 	char *ptr;
-	vt->cols = cols;
-	vt->rows = rows;
-	vt->mode = vidMode;
+	vt->cols = mode->width;
+	vt->rows = mode->height;
+	vt->scrShm = NULL;
+	vt->scrMode = -1;
 
 	/* by default we have no handlers for that */
 	vt->setCursor = NULL;
@@ -70,9 +72,6 @@ bool vtctrl_init(sVTerm *vt,uint cols,uint rows,int vidMode,int vidFd,int speake
 	vt->upScroll = 0;
 	vt->foreground = vt->defForeground;
 	vt->background = vt->defBackground;
-	vt->active = false;
-	vt->video = vidFd;
-	vt->speaker = speakerFd;
 	/* start on first line of the last page */
 	vt->firstLine = HISTORY_SIZE * vt->rows - vt->rows;
 	vt->currLine = HISTORY_SIZE * vt->rows - vt->rows;
@@ -130,41 +129,76 @@ void vtctrl_destroy(sVTerm *vt) {
 	free(vt->rlBuffer);
 }
 
-int vtctrl_setVideoMode(sVTermCfg *cfg,sVTerm *vt,int mode) {
-	sVTMode *modes;
-	ssize_t res,n = vtctrl_getModeCount(cfg);
-	size_t i,count;
-	if(n < 0)
-		return n;
+sVTMode *vtctrl_getModes(sVTerm *vt,size_t n,size_t *count) {
+	ssize_t res;
+	if(n == 0) {
+		*count = uimng_getModeCount(vt->uimng);
+		return NULL;
+	}
 
-	modes = vtctrl_getModes(cfg,n,&count,true);
+	sVTMode *modes = (sVTMode*)malloc(n * sizeof(sVTMode));
+	if(!modes)
+		return NULL;
+	if((res = uimng_getModes(vt->uimng,modes,n)) < 0) {
+		free(modes);
+		*count = res;
+		return NULL;
+	}
+	*count = n;
+	return modes;
+}
+
+static int vtctrl_doSetMode(sVTerm *vt,const char *shmname,uint cols,uint rows,int mid) {
+	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0777);
+	if(fd < 0)
+		return fd;
+	vt->scrShm = mmap(NULL,cols * rows * 2,0,PROT_READ | PROT_WRITE,
+		MAP_SHARED,fd,0);
+	close(fd);
+	if(!vt->scrShm)
+		return -ENOMEM;
+	int res = uimng_setMode(vt->uimng,mid,shmname);
+	if(res < 0) {
+		munmap(vt->scrShm);
+		shm_unlink(shmname);
+		return res;
+	}
+	return 0;
+}
+
+int vtctrl_setVideoMode(sVTerm *vt,int mode) {
+	/* get all modes */
+	size_t i,count;
+	vtctrl_getModes(vt,0,&count);
+	sVTMode *modes = vtctrl_getModes(vt,count,&count);
+	if(!modes)
+		return -ENOMEM;
+
+	ssize_t res;
 	for(i = 0; i < count; i++) {
 		if(modes[i].id == mode) {
-			/* save old values */
-			int old = vt->video;
-			int oldmode = video_getMode(old);
-			if(oldmode < 0) {
-				res = oldmode;
-				goto error;
+			/* destroy current stuff */
+			if(vt->scrShm) {
+				munmap(vt->scrShm);
+				shm_unlink(vt->name);
 			}
 
-			/* change mode */
-			vt->video = cfg->devFds[modes[i].device];
-			res = video_setMode(vt->video,mode);
+			/* try to set new mode */
+			res = vtctrl_doSetMode(vt,vt->name,modes[i].width,modes[i].height,modes[i].id);
 			if(res < 0)
 				goto error;
 
 			/* resize vterm if necessary */
 			if(vt->cols != modes[i].width || vt->rows != modes[i].height) {
 				if(!vtctrl_resize(vt,modes[i].width,modes[i].height)) {
-					/* restore old values */
-					video_setMode(old,oldmode);
-					vt->video = old;
+					res = vtctrl_doSetMode(vt,vt->name,vt->cols,vt->rows,vt->scrMode);
+					if(res < 0)
+						error("Unable to restore old mode");
 					res = -ENOMEM;
 					goto error;
 				}
 			}
-			vt->mode = mode;
+			vt->scrMode = mode;
 			free(modes);
 			return 0;
 		}
@@ -256,18 +290,12 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	return res;
 }
 
-int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
+int vtctrl_control(sVTerm *vt,uint cmd,void *data) {
 	int res = 0;
 	locku(&vt->lock);
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
 			vt->shellPid = *(pid_t*)data;
-			break;
-		case MSG_VT_ENABLE:
-			cfg->enabled = true;
-			break;
-		case MSG_VT_DISABLE:
-			cfg->enabled = false;
 			break;
 		case MSG_VT_EN_ECHO:
 			vt->echo = true;
@@ -284,12 +312,6 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 		case MSG_VT_DIS_RDLINE:
 			vt->readLine = false;
 			break;
-		case MSG_VT_EN_RDKB:
-			cfg->readKb = true;
-			break;
-		case MSG_VT_DIS_RDKB:
-			cfg->readKb = false;
-			break;
 		case MSG_VT_EN_NAVI:
 			vt->navigation = true;
 			break;
@@ -297,7 +319,7 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 			vt->navigation = false;
 			break;
 		case MSG_VT_GETMODE:
-			res = vt->mode;
+			res = vt->scrMode;
 			break;
 		case MSG_VT_BACKUP:
 			if(!vt->screenBackup)
@@ -328,50 +350,8 @@ int vtctrl_control(sVTerm *vt,sVTermCfg *cfg,uint cmd,void *data) {
 			res = sizeof(sVTSize);
 		}
 		break;
-		case MSG_VT_GETDEVICE: {
-			size_t i;
-			res = -EINVAL;
-			for(i = 0; i < cfg->devCount; i++) {
-				if(cfg->devFds[i] == vt->video) {
-					strnzcpy(data,cfg->devNames[i],MAX_MSG_SIZE);
-					res = 0;
-					break;
-				}
-			}
-		}
-		break;
 	}
 	unlocku(&vt->lock);
-	return res;
-}
-
-sVTMode *vtctrl_getModes(sVTermCfg *cfg,size_t n,size_t *count,bool setDev) {
-	sVTMode *res = NULL;
-	ssize_t err;
-	size_t i,j,rem,total = vtctrl_getModeCount(cfg);
-	*count = total;
-	if(n != 0) {
-		n = MIN(n,total);
-		rem = n;
-		res = (sVTMode*)malloc(sizeof(sVTMode) * n);
-		if(!res) {
-			*count = -ENOMEM;
-			return NULL;
-		}
-		for(i = 0; i < cfg->devCount; i++) {
-			if((err = video_getModes(cfg->devFds[i],res + (n - rem),rem)) < 0) {
-				printe("[VTERM] Unable to get modes from %s",cfg->devNames[i]);
-				continue;
-			}
-			/* set device number */
-			if(setDev) {
-				for(j = 0; j < err / sizeof(sVTMode); ++j)
-					res[n - rem + j].device = i;
-			}
-			rem -= err / sizeof(sVTMode);
-		}
-		*count = n;
-	}
 	return res;
 }
 
@@ -387,7 +367,7 @@ void vtctrl_scroll(sVTerm *vt,int lines) {
 		vt->firstVisLine = MIN(HISTORY_SIZE * vt->rows - vt->rows,vt->firstVisLine - lines);
 	}
 
-	if(vt->active && old != vt->firstVisLine)
+	if(old != vt->firstVisLine)
 		vt->upScroll -= lines;
 }
 
@@ -406,17 +386,6 @@ void vtctrl_markDirty(sVTerm *vt,size_t start,size_t length) {
 			vt->upStart = start;
 		vt->upLength = MAX(oldstart + vt->upLength,start + length) - vt->upStart;
 	}
-}
-
-static ssize_t vtctrl_getModeCount(sVTermCfg *cfg) {
-	size_t i,count = 0;
-	for(i = 0; i < cfg->devCount; i++) {
-		ssize_t res = video_getModeCount(cfg->devFds[i]);
-		if(res < 0)
-			return res;
-		count += res;
-	}
-	return count;
 }
 
 static void vtctrl_buildTitle(sVTerm *vt) {

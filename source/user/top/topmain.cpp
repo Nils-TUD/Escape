@@ -209,8 +209,7 @@ int main(void) {
 		error("startthread");
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	string vtermPath = string("/dev/") + env::get("TERM");
-	ifstream vt(vtermPath.c_str());
+	ifstream vt(env::get("TERM").c_str());
 
 	// read from vterm
 	char c;

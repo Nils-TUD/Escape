@@ -37,7 +37,6 @@ static void handleKbMessage(sWindow *active,uchar keycode,uchar modifier,char c)
 static volatile bool enabled = false;
 static int drvId;
 static sMsg msg;
-static sKmData kbData[KB_DATA_BUF_SIZE];
 
 static void sigUsr1(A_UNUSED int sig) {
 	enabled = !enabled;
@@ -57,7 +56,8 @@ int keyboard_start(void *drvIdPtr) {
 		while(!enabled)
 			wait(EV_NOEVENT,0);
 
-		ssize_t count = IGNSIGS(read(km,kbData,sizeof(kbData)));
+		sKmData ev;
+		ssize_t count = receive(km,NULL,&ev,sizeof(ev));
 		if(count < 0) {
 			if(count != -EINTR)
 				printe("[WINM] Unable to read from kmmanager");
@@ -67,12 +67,8 @@ int keyboard_start(void *drvIdPtr) {
 			if(!active)
 				continue;
 
-			sKmData *kbd = kbData;
-			count /= sizeof(sKmData);
-			while(count-- > 0) {
-				handleKbMessage(active,kbd->keycode,kbd->modifier,kbd->character);
-				kbd++;
-			}
+			if(ev.type == KM_EV_KEYBOARD)
+				handleKbMessage(active,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
 		}
 	}
 	close(km);

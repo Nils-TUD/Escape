@@ -28,20 +28,11 @@
  * @param id the device-id
  * @param vterm the vterm
  * @param name the device name
- * @param cfg the global config
  * @param cols the number of desired cols
  * @param rows the number of desired rows
  * @return true if successfull
  */
-bool vt_init(int id,sVTerm *vterm,const char *name,sVTermCfg *cfg,uint cols,uint rows);
-
-/**
- * Enables the vterm and marks the screen of the active one dirty
- *
- * @param vt the vterm
- * @param setMode whether to set the mode again
- */
-void vt_enable(sVTerm *vt,bool setMode);
+bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows);
 
 /**
  * Updates the dirty range

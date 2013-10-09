@@ -20,20 +20,20 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <vbe/vbe.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct {
+	uint refs;
+	uint8_t *frmbuf;
+	uint8_t *whOnBlCache;
+	uint8_t *content;
+	sVbeModeInfo *mode;
+	uint8_t cols;
+	uint8_t rows;
+	uint8_t lastCol;
+	uint8_t lastRow;
+} sVESAScreen;
 
-int video_setCursor(int fd,const sVTPos *pos);
-int video_getSize(int fd,sVTSize *size);
-int video_getMode(int fd);
-int video_setMode(int fd,int mode,const char *shm,bool switchMode);
-int video_update(int fd,uint start,uint count);
-ssize_t video_getModeCount(int fd);
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count);
-
-#ifdef __cplusplus
-}
-#endif
+sVESAScreen *vesascr_request(sVbeModeInfo *minfo);
+void vesascr_reset(sVESAScreen *scr);
+void vesascr_release(sVESAScreen *scr);

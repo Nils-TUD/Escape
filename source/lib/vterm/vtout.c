@@ -208,7 +208,7 @@ static void vtout_delete(sVTerm *vt,size_t count) {
 
 		/* overwrite line */
 		/* TODO just refresh the required part */
-		vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
+		vtctrl_markDirty(vt,vt->row * vt->cols * 2,vt->cols * 2);
 	}
 	else {
 		if(vt->speaker >= 0)

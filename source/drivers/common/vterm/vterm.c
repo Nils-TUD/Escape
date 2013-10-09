@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
+#include <esc/driver/uimng.h>
 #include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
@@ -40,28 +40,30 @@
 
 #define ABS(x)			((x) > 0 ? (x) : -(x))
 
-static int vt_findMode(sVTermCfg *cfg,uint cols,uint rows,sVTMode *mode);
+static int vt_findMode(int uimng,uint cols,uint rows,sVTMode *mode);
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
 static int vt_dateThread(void *arg);
 
-static sVTermCfg *config;
-
-bool vt_init(int id,sVTerm *vterm,const char *name,sVTermCfg *cfg,uint cols,uint rows) {
-	int speakerFd;
+bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	sVTMode mode;
 	int res;
 
+	/* connect to ui-manager */
+	vterm->uimng = open("/dev/uim-ctrl",IO_MSGS);
+	if(vterm->uimng < 0)
+		error("Unable to open '/dev/uim-ctrl'");
+	vterm->uimngid = uimng_getId(vterm->uimng);
+
 	/* find a suitable mode */
-	config = cfg;
-	res = vt_findMode(cfg,cols,rows,&mode);
+	res = vt_findMode(vterm->uimng,cols,rows,&mode);
 	if(res < 0) {
 		fprintf(stderr,"Unable to find a suitable mode: %s\n",strerror(-res));
 		return false;
 	}
 
 	/* open speaker */
-	speakerFd = open("/dev/speaker",IO_MSGS);
+	vterm->speaker = open("/dev/speaker",IO_MSGS);
 	/* ignore errors here. in this case we simply don't use it */
 
 	vterm->index = 0;
@@ -70,57 +72,52 @@ bool vt_init(int id,sVTerm *vterm,const char *name,sVTermCfg *cfg,uint cols,uint
 	vterm->defBackground = BLACK;
 	vterm->setCursor = vt_setCursor;
 	memcpy(vterm->name,name,MAX_VT_NAME_LEN + 1);
-	if(!vtctrl_init(vterm,mode.width,mode.height,mode.id,cfg->devFds[mode.device],speakerFd))
+	if(!vtctrl_init(vterm,&mode))
 		return false;
-	vterm->active = true;
 
 	/* set video mode */
-	res = video_setMode(cfg->devFds[mode.device],mode.id);
+	res = vtctrl_setVideoMode(vterm,mode.id);
 	if(res < 0)
 		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
 
-	if(startthread(vt_dateThread,vterm) < 0)
-		error("Unable to start date-thread");
+	/*if(startthread(vt_dateThread,vterm) < 0)
+		error("Unable to start date-thread");*/
 	return true;
 }
 
-void vt_enable(sVTerm *vt,bool setMode) {
-	locku(&vt->lock);
-	if(setMode)
-		video_setMode(vt->video,video_getMode(vt->video));
-	/* ensure that we redraw everything and re-set the cursor */
-	vt->lastCol = vt->lastRow = -1;
-	vtctrl_markScrDirty(vt);
-	unlocku(&vt->lock);
-}
-
 void vt_update(sVTerm *vt) {
-	if(!vt->active)
-		return;
-
 	locku(&vt->lock);
 	vt_doUpdate(vt);
 	unlocku(&vt->lock);
 }
 
-static int vt_findMode(sVTermCfg *cfg,uint cols,uint rows,sVTMode *mode) {
-	size_t i,count,bestmode;
+static int vt_findMode(int uimng,uint cols,uint rows,sVTMode *mode) {
+	ssize_t i,count,res;
+	size_t bestmode;
 	uint bestdiff = UINT_MAX;
 	sVTMode *modes;
 
 	/* get all modes */
-	vtctrl_getModes(cfg,0,&count,true);
-	modes = vtctrl_getModes(cfg,count,&count,true);
+	count = uimng_getModeCount(uimng);
+	if(count < 0)
+		return count;
+	modes = (sVTMode*)malloc(count * sizeof(sVTMode));
 	if(!modes)
-		return -ENOENT;
+		return -ENOMEM;
+	if((res = uimng_getModes(uimng,modes,count)) < 0) {
+		free(modes);
+		return res;
+	}
 
 	/* search for the best matching mode */
 	bestmode = count;
 	for(i = 0; i < count; i++) {
-		uint pixdiff = ABS((int)(modes[i].width * modes[i].height) - (int)(cols * rows));
-		if(pixdiff < bestdiff) {
-			bestmode = i;
-			bestdiff = pixdiff;
+		if(modes[i].type & VID_MODE_TYPE_TUI) {
+			uint pixdiff = ABS((int)(modes[i].width * modes[i].height) - (int)(cols * rows));
+			if(pixdiff < bestdiff) {
+				bestmode = i;
+				bestdiff = pixdiff;
+			}
 		}
 	}
 	memcpy(mode,modes + bestmode,sizeof(sVTMode));
@@ -138,25 +135,23 @@ static void vt_doUpdate(sVTerm *vt) {
 
 	if(vt->upLength > 0) {
 		/* update title-bar? */
-		if(vt->upStart < vt->cols * 2) {
-			byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
-			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
-				printe("[VTERM] Unable to seek in video-device to %d",vt->upStart);
-			if(write(vt->video,vt->titleBar,byteCount) < 0)
-				printe("[VTERM] Unable to write to video-device");
-			vt->upLength -= byteCount;
-			vt->upStart = vt->cols * 2;
+		uint start = vt->upStart;
+		uint length = vt->upLength;
+		if(start < vt->cols * 2) {
+			byteCount = MIN(vt->cols * 2 - start,length);
+			memcpy(vt->scrShm + start,vt->titleBar,byteCount);
+			length -= byteCount;
+			start = vt->cols * 2;
 		}
 
-		/* refresh the rest */
-		byteCount = MIN((vt->rows * vt->cols * 2) - vt->upStart,vt->upLength);
+		byteCount = MIN((vt->rows * vt->cols * 2) - start,length);
 		if(byteCount > 0) {
-			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart;
-			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
-				printe("[VTERM] Unable to seek in video-device to %d",vt->upStart);
-			if(write(vt->video,startPos,byteCount) < 0)
-				printe("[VTERM] Unable to write to video-device");
+			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + start;
+			memcpy(vt->scrShm + start,startPos,byteCount);
 		}
+
+		if(uimng_update(vt->uimng,vt->upStart,vt->upLength) < 0)
+			printe("[VTERM] Unable to update screen");
 	}
 	vt_setCursor(vt);
 
@@ -167,50 +162,45 @@ static void vt_doUpdate(sVTerm *vt) {
 }
 
 static void vt_setCursor(sVTerm *vt) {
-	if(vt->active) {
-		sVTPos pos;
-		if(vt->upScroll != 0 || vt->col != vt->lastCol || vt->row != vt->lastRow) {
-			/* draw no cursor if it's not visible by setting it to an invalid location */
-			if(vt->firstVisLine + vt->rows <= vt->currLine + vt->row) {
-				pos.col = vt->cols;
-				pos.row = vt->rows;
-			}
-			else {
-				pos.col = vt->col;
-				pos.row = vt->row;
-			}
-			video_setCursor(vt->video,&pos);
-			vt->lastCol = pos.col;
-			vt->lastRow = pos.row;
+	sVTPos pos;
+	if(vt->upScroll != 0 || vt->col != vt->lastCol || vt->row != vt->lastRow) {
+		/* draw no cursor if it's not visible by setting it to an invalid location */
+		if(vt->firstVisLine + vt->rows <= vt->currLine + vt->row) {
+			pos.col = vt->cols;
+			pos.row = vt->rows;
 		}
+		else {
+			pos.col = vt->col;
+			pos.row = vt->row;
+		}
+		uimng_setCursor(vt->uimng,&pos);
+		vt->lastCol = pos.col;
+		vt->lastRow = pos.row;
 	}
 }
 
 static int vt_dateThread(A_UNUSED void *arg) {
 	size_t j,len;
-	sVTerm *vterm = (sVTerm*)arg;
+	sVTerm *vt = (sVTerm*)arg;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	while(1) {
-		if(config->enabled) {
-			/* get date and format it */
-			time_t now = time(NULL);
-			struct tm *date = gmtime(&now);
-			len = strftime(dateStr,sizeof(dateStr),"%a, %d. %b %Y, %H:%M:%S",date);
+		/* get date and format it */
+		time_t now = time(NULL);
+		struct tm *date = gmtime(&now);
+		len = strftime(dateStr,sizeof(dateStr),"%a, %d. %b %Y, %H:%M:%S",date);
 
-			/* update vterm-title-bar */
-			char *title;
-			locku(&vterm->lock);
-			title = vterm->titleBar + (vterm->cols - len) * 2;
-			for(j = 0; j < len; j++) {
-				*title++ = dateStr[j];
-				*title++ = LIGHTGRAY | (BLUE << 4);
-			}
-			if(seek(vterm->video,(vterm->cols - len) * 2,SEEK_SET) < 0)
-				printe("[VTERM] Unable to seek in video-device");
-			if(write(vterm->video,vterm->titleBar + (vterm->cols - len) * 2,len * 2) < 0)
-				printe("[VTERM] Unable to write to video-device");
-			unlocku(&vterm->lock);
+		/* update vterm-title-bar */
+		char *title;
+		locku(&vt->lock);
+		title = vt->titleBar + (vt->cols - len) * 2;
+		for(j = 0; j < len; j++) {
+			*title++ = dateStr[j];
+			*title++ = LIGHTGRAY | (BLUE << 4);
 		}
+		memcpy(vt->scrShm + (vt->cols - len) * 2,vt->titleBar + (vt->cols - len) * 2,len * 2);
+		if(uimng_update(vt->uimng,(vt->cols - len) * 2,len * 2) < 0)
+			printe("[VTERM] Unable to update screen");
+		unlocku(&vt->lock);
 
 		/* wait a second */
 		sleep(1000);

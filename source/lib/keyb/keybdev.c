@@ -36,8 +36,6 @@ static int clients[MAX_CLIENTS];
 static int id;
 
 static size_t keyb_find_client(inode_t cid);
-static void keyb_broadcast(sKbData *data);
-static void keyb_startDebugger(void);
 
 void keyb_driverLoop(void) {
 	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
@@ -85,12 +83,11 @@ void keyb_driverLoop(void) {
 	close(id);
 }
 
-void keyb_handleKey(sKbData *data) {
-	/* F12 starts the kernel-debugging-console */
-	if(!data->isBreak && data->keycode == VK_F12)
-		keyb_startDebugger();
-	else
-		keyb_broadcast(data);
+void keyb_broadcast(sKbData *data) {
+	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
+		if(clients[i])
+			send(clients[i],MSG_KB_EVENT,data,sizeof(*data));
+	}
 }
 
 static size_t keyb_find_client(int fd) {
@@ -100,36 +97,4 @@ static size_t keyb_find_client(int fd) {
 			return i;
 	}
 	return MAX_CLIENTS;
-}
-
-static void keyb_broadcast(sKbData *data) {
-	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
-		if(clients[i])
-			send(clients[i],MSG_KM_EVENT,data,sizeof(*data));
-	}
-}
-
-static void keyb_startDebugger(void) {
-	/* switch to vga-text-mode */
-	int fd = open("/dev/video",IO_MSGS);
-	if(fd >= 0) {
-		video_setMode(fd,video_getMode(fd));
-		close(fd);
-	}
-
-	/* disable vterm to prevent that it writes to VESA memory or so (might write garbage to VGA) */
-	fd = open("/dev/vterm0",IO_MSGS);
-	if(fd >= 0)
-		vterm_setEnabled(fd,false);
-
-	/* start debugger */
-	debug();
-
-	/* restore video-mode */
-	/* TODO this is not perfect since it causes problems when we're in GUI-mode.
-	 * But its for debugging, so its ok, I think :) */
-	if(fd >= 0) {
-		vterm_setEnabled(fd,true);
-		close(fd);
-	}
 }

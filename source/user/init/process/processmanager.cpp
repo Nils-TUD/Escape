@@ -63,9 +63,6 @@ void ProcessManager::start() {
 		ifs >> *drv;
 		_procs.push_back(drv);
 	}
-	// add login-shell
-	_procs.push_back(new LoginProcess("login0","vterm0"));
-	_procs.push_back(new LoginProcess("login1","vterm1"));
 
 	// load processes
 	Progress pg(KERNEL_PERCENT,0,_procs.size());
@@ -76,7 +73,7 @@ void ProcessManager::start() {
 	}
 
 	// finally enable vterm, which exchanges the loading-screen with its own stuff
-	setVTermEnabled(true);
+	/* TODO setVTermEnabled(true); */
 	unlocku(&_lock);
 }
 
@@ -113,7 +110,7 @@ void ProcessManager::died(pid_t pid) {
 
 void ProcessManager::shutdown() {
 	locku(&_lock);
-	setVTermEnabled(false);
+	/* TODO setVTermEnabled(false); */
 	addRunning();
 	_downProg = new Progress(0,_procs.size(),_procs.size());
 	_downProg->paintBar();
@@ -197,34 +194,5 @@ void ProcessManager::waitForFS() {
 	while(fd < 0 && retries < DriverProcess::MAX_WAIT_RETRIES);
 	if(fd < 0)
 		throw init_error("Timeout reached: unable to open /dev/fs");
-	close(fd);
-}
-
-void ProcessManager::setVTermEnabled(bool enabled) {
-	// open vterm
-	int fd = open("/dev/vterm0",IO_MSGS);
-	if(fd < 0)
-		throw init_error("Unable to open vterm0 for enabling it");
-
-	if(enabled) {
-		if(vterm_select(fd,0) < 0)
-			throw init_error("Unable to select vterm0");
-		if(vterm_setEnabled(fd,true) < 0)
-			throw init_error("Unable to send enable-msg to vterm");
-	}
-	else {
-		// switch to VGA-mode
-		int vidFd = open("/dev/video",IO_MSGS);
-		if(vidFd < 0)
-			throw init_error("Unable to open /dev/video");
-		if(video_setMode(vidFd,video_getMode(vidFd)) < 0)
-			throw init_error("Unable to switch to video");
-		close(vidFd);
-
-		// disable vterm
-		if(vterm_setEnabled(fd,false) < 0)
-			throw init_error("Unable to send disable-msg to vterm");
-	}
-
 	close(fd);
 }

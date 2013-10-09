@@ -100,7 +100,8 @@ sVTMode *vbe_collectModes(size_t n,size_t *count) {
 			res[*count].height = info->yResolution;
 			res[*count].bitsPerPixel = info->bitsPerPixel;
 			/* a text mode wouldn't be supported (see above) */
-			res[*count].device = VID_MODE_TYPE_GRAPHICAL;
+			res[*count].mode = VID_MODE_GRAPHICAL;
+			res[*count].type = VID_MODE_TYPE_GUI | VID_MODE_TYPE_TUI;
 			max--;
 		}
 		(*count)++;

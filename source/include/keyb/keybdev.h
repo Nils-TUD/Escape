@@ -26,8 +26,8 @@
 void keyb_driverLoop(void);
 
 /**
- * Handles the given key-event, i.e. it broadcasts it to all active clients
+ * Broadcasts the key-event to all active clients
  *
  * @param data the key-event
  */
-void keyb_handleKey(sKbData *data);
+void keyb_broadcast(sKbData *data);

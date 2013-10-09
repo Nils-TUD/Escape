@@ -21,6 +21,7 @@
 #include <esc/driver/video.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/mem.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
@@ -29,11 +30,13 @@
 using namespace std;
 
 Progress::Progress(size_t startSkip,size_t finished,size_t itemCount)
-		: _fd(-1), _startSkip(startSkip), _itemCount(itemCount), _finished(finished),
+		: _fd(-1), _shm(), _startSkip(startSkip), _itemCount(itemCount), _finished(finished),
 		  _vtSize(sVTSize()) {
 }
 
 Progress::~Progress() {
+	if(_shm)
+		munmap(_shm);
 	if(_fd >= 0)
 		close(_fd);
 }
@@ -48,7 +51,7 @@ void Progress::itemStarting(const string& s) {
 		}
 		// send to screen
 		size_type y = getPadY() + BAR_HEIGHT + 2 + BAR_TEXT_PAD;
-		paintTo(_emptyBar,getPadX(),y,sizeof(_emptyBar));
+		paintTo(_emptyBar,getPadX(),y,sizeof(_emptyBar) / 2,1);
 	}
 }
 
@@ -76,7 +79,7 @@ void Progress::updateBar() {
 			_emptyBar[i * 2 + 1] = i < filled ? 0x70 : 0x07;
 		}
 		// send to screen
-		paintTo(_emptyBar,getPadX() + 1 + skipSize,getPadY() + 1,fillSize * 2);
+		paintTo(_emptyBar,getPadX() + 1 + skipSize,getPadY() + 1,fillSize,1);
 	}
 }
 
@@ -84,7 +87,7 @@ void Progress::paintBar() {
 	if(connect()) {
 		/* clear screen */
 		char *zeros = (char*)calloc(_vtSize.width * _vtSize.height * 2,1);
-		paintTo(zeros,0,0,_vtSize.width * _vtSize.height * 2);
+		paintTo(zeros,0,0,_vtSize.width,_vtSize.height);
 		free(zeros);
 
 		const char color = 0x07;
@@ -97,14 +100,14 @@ void Progress::paintBar() {
 		}
 		_emptyBar[(BAR_WIDTH - 2) * 2] = '\xBB';
 		_emptyBar[(BAR_WIDTH - 2) * 2 + 1] = color;
-		paintTo(_emptyBar,getPadX(),getPadY(),(BAR_WIDTH - 1) * 2);
+		paintTo(_emptyBar,getPadX(),getPadY(),BAR_WIDTH - 1,1);
 
 		// bottom
 		_emptyBar[0] = '\xC8';
 		_emptyBar[1] = color;
 		_emptyBar[(BAR_WIDTH - 2) * 2] = '\xBC';
 		_emptyBar[(BAR_WIDTH - 2) * 2 + 1] = color;
-		paintTo(_emptyBar,getPadX(),getPadY() + BAR_HEIGHT + 1,(BAR_WIDTH - 1) * 2);
+		paintTo(_emptyBar,getPadX(),getPadY() + BAR_HEIGHT + 1,BAR_WIDTH - 1,1);
 
 		// left and right
 		memclear(_emptyBar,sizeof(_emptyBar));
@@ -113,26 +116,48 @@ void Progress::paintBar() {
 			_emptyBar[1] = color;
 			_emptyBar[(BAR_WIDTH - 2) * 2] = '\xBA';
 			_emptyBar[(BAR_WIDTH - 2) * 2 + 1] = color;
-			paintTo(_emptyBar,getPadX(),getPadY() + y + 1,(BAR_WIDTH - 1) * 2);
+			paintTo(_emptyBar,getPadX(),getPadY() + y + 1,BAR_WIDTH - 1,1);
 		}
 	}
 	updateBar();
 }
 
-void Progress::paintTo(const void *data,int x,int y,size_t size) {
-	if(seek(_fd,_vtSize.width * y * 2 + x * 2,SEEK_SET) < 0)
-		cerr << "Unable to seek in video" << endl;
-	if(write(_fd,data,size) < 0)
-		cerr << "Unable to write to video" << endl;
+void Progress::paintTo(const void *data,int x,int y,size_t width,size_t height) {
+	uint start = _vtSize.width * y * 2 + x * 2;
+	memcpy(_shm + start,data,width * height * 2);
+	video_update(_fd,start,width * height * 2);
 }
 
 bool Progress::connect() {
 	if(_fd >= 0)
 		return true;
-	_fd = open("/dev/video",IO_WRITE | IO_MSGS);
+	_fd = open("/dev/vga",IO_WRITE | IO_MSGS);
 	if(_fd < 0)
 		return false;
-	if(video_getSize(_fd,&_vtSize) < 0)
-		error("Unable to receive size of screen");
+
+	ssize_t modeCnt = video_getModeCount(_fd);
+	if(modeCnt < 0)
+		error("Unable to get mode count");
+	sVTMode *modes = new sVTMode[modeCnt];
+	if(video_getModes(_fd,modes,modeCnt) < 0)
+		error("Unable to get modes");
+	for(ssize_t i = 0; i < modeCnt; ++i) {
+		if(modes[i].width >= VGA_COLS && modes[i].height >= VGA_ROWS) {
+			int fd = shm_open("init-vga",IO_READ | IO_WRITE | IO_CREATE,0777);
+			if(fd < 0)
+				error("Unable to open vga shm");
+			_shm = (char*)mmap(NULL,modes[i].width * modes[i].height * 2,0,PROT_READ | PROT_WRITE,
+				MAP_SHARED,fd,0);
+			close(fd);
+			if(video_setMode(_fd,modes[i].id,"init-vga",true) < 0)
+				error("Unable to set mode");
+			_vtSize.width = modes[i].width;
+			_vtSize.height = modes[i].height;
+			break;
+		}
+	}
+	if(!_shm)
+		error("Unable to mmap vga shm");
+	delete[] modes;
 	return true;
 }

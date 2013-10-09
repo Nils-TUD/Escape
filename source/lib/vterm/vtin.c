@@ -43,20 +43,16 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 			switch(keycode) {
 				case VK_PGUP:
 					vtctrl_scroll(vt,vt->rows);
-					unlocku(&vt->lock);
-					return;
+					goto out;
 				case VK_PGDOWN:
 					vtctrl_scroll(vt,-vt->rows);
-					unlocku(&vt->lock);
-					return;
+					goto out;
 				case VK_UP:
 					vtctrl_scroll(vt,1);
-					unlocku(&vt->lock);
-					return;
+					goto out;
 				case VK_DOWN:
 					vtctrl_scroll(vt,-1);
-					unlocku(&vt->lock);
-					return;
+					goto out;
 			}
 		}
 
@@ -69,16 +65,14 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 							if(kill(vt->shellPid,SIG_INTRPT) < 0)
 								printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
 						}
-						unlocku(&vt->lock);
-						return;
+						goto out;
 					case VK_D:
 						vt->inbufEOF = true;
 						if(vt->readLine)
 							vtin_rlFlushBuf(vt);
 						if(rb_length(vt->inbuf) == 0)
 							fcntl(vt->sid,F_SETDATA,true);
-						unlocku(&vt->lock);
-						return;
+						goto out;
 				}
 			}
 
@@ -107,6 +101,8 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 		if(vt->echo && vt->setCursor)
 			vt->setCursor(vt);
 	}
+
+out:
 	unlocku(&vt->lock);
 }
 
@@ -145,7 +141,7 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 
 				/* overwrite line */
 				/* TODO just refresh the required part */
-				vtctrl_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
+				vtctrl_markDirty(vt,vt->row * vt->cols * 2,vt->cols * 2);
 			}
 		}
 		break;

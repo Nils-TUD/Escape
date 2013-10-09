@@ -30,7 +30,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define SKIP_LOGIN			0
+#define SKIP_LOGIN			1
 #define SHELL_PATH			"/bin/shell"
 #define MAX_VTERM_NAME_LEN	10
 
@@ -41,7 +41,6 @@ static sGroup *groupList;
 static sUser *userList = NULL;
 
 int main(int argc,char **argv) {
-	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
 	const char *shargs[] = {NULL,NULL,NULL};
 	char un[MAX_USERNAME_LEN + 1];
 	char pw[MAX_PW_LEN + 1];
@@ -55,18 +54,16 @@ int main(int argc,char **argv) {
 	if(argc != 2)
 		error("Usage: %s <vterm>",argv[0]);
 
-	/* open stdin */
-	strcat(drvPath,argv[1]);
-	/* parse vterm-number from "vtermX" */
-	vterm = atoi(argv[1] + 5);
+	/* parse vterm-number from "/dev/vtermX" */
+	vterm = atoi(argv[1] + 10);
 	/* note: we do always pass IO_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
-	if((fd = open(drvPath,IO_READ | IO_MSGS)) != STDIN_FILENO)
-		error("Unable to open '%s' for STDIN: Got fd %d",drvPath,fd);
+	if((fd = open(argv[1],IO_READ | IO_MSGS)) != STDIN_FILENO)
+		error("Unable to open '%s' for STDIN: Got fd %d",argv[1],fd);
 
 	/* open stdout */
-	if((fd = open(drvPath,IO_WRITE | IO_MSGS)) != STDOUT_FILENO)
-		error("Unable to open '%s' for STDOUT: Got fd %d",drvPath,fd);
+	if((fd = open(argv[1],IO_WRITE | IO_MSGS)) != STDOUT_FILENO)
+		error("Unable to open '%s' for STDOUT: Got fd %d",argv[1],fd);
 
 	/* dup stdout to stderr */
 	if((fd = dup(fd)) != STDERR_FILENO)

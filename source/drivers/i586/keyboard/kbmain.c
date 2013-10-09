@@ -188,7 +188,7 @@ static void kbIntrptHandler(A_UNUSED int sig) {
 	uint8_t sc = inbyte(IOPORT_KB_DATA);
 	sKbData data;
 	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc))
-		keyb_handleKey(&data);
+		keyb_broadcast(&data);
 }
 
 static void kb_waitOutBuf(void) {

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/fsinterface.h>
 
 /* represents a not-printable character */
 #define NPRINT			'\0'
@@ -31,14 +32,28 @@ typedef struct {
 	char alt;
 } sKeymapEntry;
 
+/* a keymap */
+typedef struct {
+	char path[MAX_PATH_LEN];
+	ulong refs;
+	sKeymapEntry *entries;
+} sKeymap;
+
 /**
- * Parses the given file and returns the keymap. The keymap is allocated in one block,
- * so that you can simply do "map[keycode].xyz" to get a mapping from it.
+ * Requests the keymap-object for the given file. If it already exists, the existing instance is
+ * returned. Otherwise, it parses the given file and creates a new object.
  *
  * @param file the keymap-file
  * @return the keymap (or NULL)
  */
-sKeymapEntry *km_parse(const char *file);
+sKeymap *km_request(const char *file);
+
+/**
+ * Releases the given keymap
+ *
+ * @param map the keymap
+ */
+void km_release(sKeymap *map);
 
 /**
  * Translates the given keycode + isBreak to the corresponding modifiers and character
@@ -50,4 +65,4 @@ sKeymapEntry *km_parse(const char *file);
  * @param modifier will be set to the current modifiers
  * @return the character
  */
-char km_translateKeycode(sKeymapEntry *map,bool isBreak,uchar keycode,uchar *modifier);
+char km_translateKeycode(sKeymap *map,bool isBreak,uchar keycode,uchar *modifier);

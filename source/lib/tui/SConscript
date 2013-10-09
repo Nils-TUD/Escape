@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeLib(target = 'tui', source = env.Glob('*.c'))

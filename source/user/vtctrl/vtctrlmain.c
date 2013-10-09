@@ -56,10 +56,12 @@ int main(int argc,const char *argv[]) {
 
 		printf("Available modes:\n");
 		for(i = 0; i < count; i++) {
-			printf("%c %5d: %3u x %3u cells, %2ubpp, %s\n",
+			printf("%c %5d: %3u x %3u cells, %2ubpp, %s (%s,%s)\n",
 					mode == modes[i].id ? '*' : ' ',modes[i].id,
 					modes[i].width,modes[i].height,modes[i].bitsPerPixel,
-					modes[i].device == VID_MODE_TYPE_TEXT ? "text" : "graphical");
+					modes[i].mode == VID_MODE_TEXT ? "text     " : "graphical",
+					(modes[i].type & VID_MODE_TYPE_TUI) ? "tui" : "-",
+					(modes[i].type & VID_MODE_TYPE_GUI) ? "gui" : "-");
 		}
 		free(modes);
 	}

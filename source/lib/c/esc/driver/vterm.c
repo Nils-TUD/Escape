@@ -25,11 +25,6 @@
 
 static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *resp);
 
-int vterm_setEnabled(int fd,bool enabled) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,enabled ? MSG_VT_ENABLE : MSG_VT_DISABLE,0,&resp);
-}
-
 int vterm_setEcho(int fd,bool echo) {
 	sDataMsg resp;
 	return vterm_doCtrl(fd,echo ? MSG_VT_EN_ECHO : MSG_VT_DIS_ECHO,0,&resp);
@@ -38,11 +33,6 @@ int vterm_setEcho(int fd,bool echo) {
 int vterm_setReadline(int fd,bool readline) {
 	sDataMsg resp;
 	return vterm_doCtrl(fd,readline ? MSG_VT_EN_RDLINE : MSG_VT_DIS_RDLINE,0,&resp);
-}
-
-int vterm_setReadKB(int fd,bool enRead) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,enRead ? MSG_VT_EN_RDKB : MSG_VT_DIS_RDKB,0,&resp);
 }
 
 int vterm_setNavi(int fd,bool navi) {
@@ -58,15 +48,6 @@ int vterm_backup(int fd) {
 int vterm_restore(int fd) {
 	sDataMsg resp;
 	return vterm_doCtrl(fd,MSG_VT_RESTORE,0,&resp);
-}
-
-int vterm_getDevice(int fd,char *buffer,size_t max) {
-	sDataMsg resp;
-	int res = vterm_doCtrl(fd,MSG_VT_GETDEVICE,0,&resp);
-	if(res < 0)
-		return res;
-	strnzcpy(buffer,resp.d,max);
-	return 0;
 }
 
 int vterm_setShellPid(int fd,pid_t pid) {
@@ -90,12 +71,6 @@ int vterm_getSize(int fd,sVTSize *size) {
 	if(resp.arg1 == sizeof(sVTSize))
 		memcpy(size,&resp.d,resp.arg1);
 	return resp.arg1;
-}
-
-int vterm_select(int fd,int vterm) {
-	sArgsMsg msg;
-	msg.arg1 = vterm;
-	return send(fd,MSG_VT_SELECT,&msg,sizeof(msg));
 }
 
 ssize_t vterm_getModeCount(int fd) {

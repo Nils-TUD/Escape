@@ -66,38 +66,33 @@
 #define INPUT_BUF_SIZE				128
 #define PACK_BUF_SIZE				32
 
+#define MAX_CLIENTS					2
+
+static size_t findClient(inode_t cid);
+static void broadcast(sMouseData *data);
 static void irqHandler(int sig);
 static void kb_init(void);
 static void kb_checkCmd(void);
 static uint16_t kb_read(void);
 static uint8_t kb_writeMouse(uint8_t cmd);
 
-/* a mouse-packet */
-typedef struct {
-	union {
-		uchar	yOverflow : 1,
-			xOverflow : 1,
-			ySign : 1,
-			xSign : 1,
-			: 1,
-			middleBtn : 1,
-			rightBtn : 1,
-			leftBtn : 1;
-		uchar all;
-	} status;
-	char xcoord;
-	char ycoord;
-	char zcoord;
-} sMousePacket;
+typedef union {
+	uchar	yOverflow : 1,
+		xOverflow : 1,
+		ySign : 1,
+		xSign : 1,
+		: 1,
+		middleBtn : 1,
+		rightBtn : 1,
+		leftBtn : 1;
+	uchar all;
+} uStatus;
 
 static uchar byteNo = 0;
 static int sid;
 static sMsg msg;
-static sRingBuf *rbuf;
 static bool wheel = false;
-static sMousePacket packBuf[PACK_BUF_SIZE];
-static size_t packReadPos = 0;
-static size_t packWritePos = 0;
+static inode_t clients[MAX_CLIENTS];
 
 int main(void) {
 	msgid_t mid;
@@ -107,11 +102,6 @@ int main(void) {
 		error("Unable to request io-ports");
 
 	kb_init();
-
-	/* create input-buffer */
-	rbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(rbuf == NULL)
-		error("Unable to create ring-buffers");
 
 	/* reg intrpt-handler */
 	if(signal(SIG_INTRPT_MOUSE,irqHandler) == SIG_ERR)
@@ -124,46 +114,30 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		int fd;
-
-		/* put mouse-packages into rbuf */
-		if(packReadPos != packWritePos) {
-			while(packReadPos != packWritePos) {
-				/* write the message in our ringbuffer */
-				sMousePacket *pack = packBuf + packReadPos;
-				sMouseData mdata;
-				mdata.x = pack->xcoord;
-				mdata.y = pack->ycoord;
-				mdata.z = pack->zcoord;
-				mdata.buttons = (pack->status.leftBtn << 2) |
-					(pack->status.rightBtn << 1) |
-					(pack->status.middleBtn << 0);
-				rb_write(rbuf,&mdata);
-				packReadPos = (packReadPos + 1) % PACK_BUF_SIZE;
-			}
-			if(rb_length(rbuf) > 0)
-				fcntl(sid,F_SETDATA,true);
-		}
-
-		fd = getwork(sid,&mid,&msg,sizeof(msg),0);
+		int fd = getwork(sid,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
 				printe("[MOUSE] Unable to get work");
 		}
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
-					/* offset is ignored here */
-					size_t count = msg.args.arg2 / sizeof(sMouseData);
-					sMouseData *buffer = (sMouseData*)malloc(count * sizeof(sMouseData));
-					msg.args.arg1 = 0;
-					if(buffer)
-						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sMouseData);
-					msg.args.arg2 = rb_length(rbuf) > 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1) {
-						send(fd,MSG_DEV_READ_RESP,buffer,msg.args.arg1);
-						free(buffer);
+				case MSG_DEV_OPEN: {
+					size_t i = findClient(0);
+					if(i == MAX_CLIENTS)
+						msg.args.arg1 = -ENOMEM;
+					else {
+						clients[i] = fd;
+						msg.args.arg1 = 0;
+					}
+					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_DEV_CLOSE: {
+					size_t i = findClient(fd);
+					if(i != MAX_CLIENTS) {
+						clients[i] = 0;
+						close(fd);
 					}
 				}
 				break;
@@ -177,46 +151,65 @@ int main(void) {
 	}
 
 	/* cleanup */
-	rb_destroy(rbuf);
 	relport(IOPORT_KB_CTRL);
 	relport(IOPORT_KB_DATA);
 	close(sid);
 	return EXIT_SUCCESS;
 }
 
+static size_t findClient(inode_t cid) {
+	size_t i;
+	for(i = 0; i < MAX_CLIENTS; ++i) {
+		if(clients[i] == cid)
+			return i;
+	}
+	return MAX_CLIENTS;
+}
+
+static void broadcast(sMouseData *data) {
+	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
+		if(clients[i])
+			send(clients[i],MSG_MS_EVENT,data,sizeof(*data));
+	}
+}
+
 static void irqHandler(A_UNUSED int sig) {
 	uint8_t status;
-	sMousePacket *pack;
+	static sMouseData mdata;
 
 	/* check if there is mouse-data */
 	status = inbyte(IOPORT_KB_CTRL);
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return;
 
-	pack = packBuf + packWritePos;
 	switch(byteNo) {
-		case 0:
-			pack->status.all = inbyte(IOPORT_KB_DATA);
+		case 0: {
+			uStatus st;
+			st.all = inbyte(IOPORT_KB_DATA);
+			mdata.buttons = (st.leftBtn << 2) | (st.rightBtn << 1) | (st.middleBtn << 0);
 			byteNo++;
-			break;
+		}
+		break;
 		case 1:
-			pack->xcoord = inbyte(IOPORT_KB_DATA);
+			mdata.x = inbyte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 2:
-			pack->ycoord = inbyte(IOPORT_KB_DATA);
+			mdata.y = inbyte(IOPORT_KB_DATA);
 			if(wheel)
 				byteNo++;
-			else
+			else {
 				byteNo = 0;
+				mdata.z = 0;
+			}
 			break;
 		case 3:
-			pack->zcoord = inbyte(IOPORT_KB_DATA);
+			mdata.z = inbyte(IOPORT_KB_DATA);
 			byteNo = 0;
 			break;
 	}
 	if(byteNo == 0)
-		packWritePos = (packWritePos + 1) % PACK_BUF_SIZE;
+		broadcast(&mdata);
 }
 
 static void kb_init(void) {

@@ -78,5 +78,5 @@ static void kbIntrptHandler(A_UNUSED int sig) {
 	sKbData data;
 	uint64_t sc = kbRegs[KEYBOARD_DATA];
 	if(kb_set2_getKeycode(&data.isBreak,&data.keycode,sc))
-		keyb_handleKey(&data);
+		keyb_broadcast(&data);
 }

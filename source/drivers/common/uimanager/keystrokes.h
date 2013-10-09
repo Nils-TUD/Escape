@@ -17,23 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
 #include <esc/messages.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int video_setCursor(int fd,const sVTPos *pos);
-int video_getSize(int fd,sVTSize *size);
-int video_getMode(int fd);
-int video_setMode(int fd,int mode,const char *shm,bool switchMode);
-int video_update(int fd,uint start,uint count);
-ssize_t video_getModeCount(int fd);
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count);
-
-#ifdef __cplusplus
-}
-#endif
+void keys_init(void);
+void keys_createTextConsole(void);
+bool keys_handleKey(sKmData *data);

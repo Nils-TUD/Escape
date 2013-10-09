@@ -20,20 +20,32 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "vesascreen.h"
 
-int video_setCursor(int fd,const sVTPos *pos);
-int video_getSize(int fd,sVTSize *size);
-int video_getMode(int fd);
-int video_setMode(int fd,int mode,const char *shm,bool switchMode);
-int video_update(int fd,uint start,uint count);
-ssize_t video_getModeCount(int fd);
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count);
+typedef uint32_t tColor;
 
-#ifdef __cplusplus
-}
-#endif
+/* the colors */
+typedef enum {
+	/* 0 */ BLACK,
+	/* 1 */ BLUE,
+	/* 2 */ GREEN,
+	/* 3 */ CYAN,
+	/* 4 */ RED,
+	/* 5 */ MARGENTA,
+	/* 6 */ ORANGE,
+	/* 7 */ WHITE,
+	/* 8 */ GRAY,
+	/* 9 */ LIGHTBLUE,
+	/* 10 */ LIGHTGREEN,
+	/* 11 */ LIGHTCYAN,
+	/* 12 */ LIGHTRED,
+	/* 13 */ LIGHTMARGENTA,
+	/* 14 */ LIGHTORANGE,
+	/* 15 */ LIGHTWHITE
+} eColor;
+
+uint8_t *vesat_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color);
+uint8_t *vesat_getColor(tColor col);
+void vesat_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len);
+void vesat_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row);

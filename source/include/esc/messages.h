@@ -48,9 +48,12 @@
 /* tells the kernel for MSG_DEV_READ_RESP that it shouldn't use arg2 for setting data readable */
 #define READABLE_DONT_SET			2
 
+/* the modes */
+#define VID_MODE_TEXT				0
+#define VID_MODE_GRAPHICAL			1
 /* the mode types */
-#define VID_MODE_TYPE_TEXT			0
-#define VID_MODE_TYPE_GRAPHICAL		1
+#define VID_MODE_TYPE_TUI			1
+#define VID_MODE_TYPE_GUI			2
 
 /* == messages == */
 /* default response */
@@ -138,43 +141,49 @@
 #define MSG_VID_GETMODE				502 /* gets the current video-mode */
 #define MSG_VID_SETMODE				503	/* sets the video-mode */
 #define MSG_VID_GETMODES            504 /* gets all video-modes */
+#define MSG_VID_UPDATE				505 /* updates a part of the screen */
 
 #define MSG_VT_EN_ECHO				600	/* enables that the vterm echo's typed characters */
 #define MSG_VT_DIS_ECHO				601	/* disables echo */
 #define MSG_VT_EN_RDLINE			602	/* enables the readline-feature */
 #define MSG_VT_DIS_RDLINE			603	/* disables the readline-feature */
-#define MSG_VT_EN_RDKB				604	/* allows vterm to read from keyboard */
-#define MSG_VT_DIS_RDKB				605	/* prohibits vterm to read from keyboard */
-#define MSG_VT_EN_NAVI				606	/* enables navigation (page-up, arrow-up, ... ) */
-#define MSG_VT_DIS_NAVI				607	/* disables navigation */
-#define MSG_VT_BACKUP				608	/* backups the screen */
-#define MSG_VT_RESTORE				609	/* restores the screen */
-#define MSG_VT_SHELLPID				610	/* gives the vterm the shell-pid */
-#define MSG_VT_GETSIZE				611	/* writes into sVTSize */
-#define MSG_VT_ENABLE				612	/* enables vterm */
-#define MSG_VT_DISABLE				613	/* disables vterm */
-#define MSG_VT_SELECT				614	/* selects the vterm */
-#define MSG_VT_GETMODES				615 /* like MSG_VID_GETMODES, but for all available backends */
-#define MSG_VT_GETMODE				616 /* get the current video mode */
-#define MSG_VT_SETMODE				617 /* sets a specified video mode */
-#define MSG_VT_GETDEVICE			618 /* returns the path to the current video device */
+#define MSG_VT_EN_NAVI				604	/* enables navigation (page-up, arrow-up, ... ) */
+#define MSG_VT_DIS_NAVI				605	/* disables navigation */
+#define MSG_VT_BACKUP				606	/* backups the screen */
+#define MSG_VT_RESTORE				607	/* restores the screen */
+#define MSG_VT_SHELLPID				608	/* gives the vterm the shell-pid */
+#define MSG_VT_GETSIZE				609	/* writes into sVTSize */
+#define MSG_VT_GETMODES				610 /* like MSG_VID_GETMODES, but for all available backends */
+#define MSG_VT_GETMODE				611 /* get the current video mode */
+#define MSG_VT_SETMODE				612 /* sets a specified video mode */
 
-#define MSG_KM_SET					700	/* sets a keymap, expects the keymap-path as argument */
-#define MSG_KM_EVENT				701	/* the message-id for sending events to the listeners */
+#define MSG_KB_EVENT				700 /* events that the keyboard-driver sends */
 
-#define MSG_KE_ADDLISTENER			800	/* adds a listener (see KE_EV_*) */
-#define MSG_KE_REMLISTENER			801	/* removes a listener */
+#define MSG_MS_EVENT				800 /* events that the mouse-driver sends */
 
-#define MSG_PCI_GET_BY_CLASS		900	/* searches for a pci device with given class */
-#define MSG_PCI_GET_BY_ID			901	/* searches for a pci device with given id */
-#define MSG_PCI_GET_LIST			902 /* get device-count or a device by index */
+#define MSG_KM_SET					900	/* sets a keymap, expects the keymap-path as argument */
+#define MSG_KM_EVENT				901	/* the message-id for sending events to the listeners */
+#define MSG_KM_GETMODES				902 /* gets all video-modes */
+#define MSG_KM_GETMODE				903 /* get current video mode */
+#define MSG_KM_SETMODE				904 /* sets the video-mode */
+#define MSG_KM_ATTACH				905 /* is used to attach to the ctrl-session */
+#define MSG_KM_GETID				906 /* get the id to use for attach */
+#define MSG_KM_UPDATE				907 /* updates a part of the screen */
+#define MSG_KM_SETCURSOR			908	/* expects sVTPos */
 
-#define MSG_INIT_REBOOT				1000 /* requests a reboot */
-#define MSG_INIT_SHUTDOWN			1001 /* requests a shutdown */
-#define MSG_INIT_IAMALIVE			1002 /* tells init that the shutdown-request has been received
+#define MSG_KE_ADDLISTENER			1000	/* adds a listener (see KE_EV_*) */
+#define MSG_KE_REMLISTENER			1001	/* removes a listener */
+
+#define MSG_PCI_GET_BY_CLASS		1100	/* searches for a pci device with given class */
+#define MSG_PCI_GET_BY_ID			1101	/* searches for a pci device with given id */
+#define MSG_PCI_GET_LIST			1102 /* get device-count or a device by index */
+
+#define MSG_INIT_REBOOT				1200 /* requests a reboot */
+#define MSG_INIT_SHUTDOWN			1201 /* requests a shutdown */
+#define MSG_INIT_IAMALIVE			1202 /* tells init that the shutdown-request has been received
 											and that you promise to terminate as soon as possible */
 
-#define MSG_DISK_GETSIZE			1100 /* get the size of a device */
+#define MSG_DISK_GETSIZE			1300 /* get the size of a device */
 
 /* == responses == */
 /* fs */
@@ -184,7 +193,7 @@
 									 (id) == MSG_DEV_WRITE || \
 									 (id) == MSG_DEV_CLOSE)
 
-/* the data read from the keyboard */
+/* the data send from the keyboard */
 typedef struct {
 	/* the keycode (see keycodes.h) */
 	uchar keycode;
@@ -192,22 +201,32 @@ typedef struct {
 	uchar isBreak;
 } sKbData;
 
-typedef struct {
-	/* the keycode (see keycodes.h) */
-	uchar keycode;
-	/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT, STATE_BREAK) */
-	uchar modifier;
-	/* the character, translated by the current keymap */
-	char character;
-} sKmData;
-
-/* the data read from the mouse */
+/* the data send from the mouse */
 typedef struct {
 	gpos_t x;
 	gpos_t y;
 	gpos_t z;
 	uchar buttons;
 } sMouseData;
+
+/* the data send from the kmmanager */
+typedef struct {
+	enum {
+		KM_EV_KEYBOARD,
+		KM_EV_MOUSE
+	} type;
+	union {
+		struct {
+			/* the keycode (see keycodes.h) */
+			uchar keycode;
+			/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT, STATE_BREAK) */
+			uchar modifier;
+			/* the character, translated by the current keymap */
+			char character;
+		} keyb;
+		sMouseData mouse;
+	} d;
+} sKmData;
 
 typedef struct {
 	gsize_t width;					/* x-resolution */
@@ -226,7 +245,8 @@ typedef struct {
 	uint width;
 	uint height;
 	uchar bitsPerPixel;
-	size_t device;
+	int mode;
+	int type;
 } sVTMode;
 
 typedef struct {

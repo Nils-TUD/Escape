@@ -26,13 +26,14 @@
 extern "C" {
 #endif
 
-int video_setCursor(int fd,const sVTPos *pos);
-int video_getSize(int fd,sVTSize *size);
-int video_getMode(int fd);
-int video_setMode(int fd,int mode,const char *shm,bool switchMode);
-int video_update(int fd,uint start,uint count);
-ssize_t video_getModeCount(int fd);
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count);
+int uimng_getId(int fd);
+int uimng_attach(int fd,int id);
+int uimng_getMode(int fd);
+int uimng_setMode(int fd,int mode,const char *shm);
+int uimng_setCursor(int fd,const sVTPos *pos);
+int uimng_update(int fd,uint start,uint count);
+ssize_t uimng_getModeCount(int fd);
+int uimng_getModes(int fd,sVTMode *modes,size_t count);
 
 #ifdef __cplusplus
 }

@@ -57,7 +57,6 @@ private:
 	Process *getByPid(pid_t pid);
 	void addRunning();
 	void waitForFS();
-	void setVTermEnabled(bool enabled);
 
 private:
 	tULock _lock;

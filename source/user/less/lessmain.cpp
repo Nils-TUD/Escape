@@ -114,8 +114,7 @@ int main(int argc,char *argv[]) {
 	emptyLine.assign(consSize.width,' ');
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	string vtermPath = string("/dev/") + env::get("TERM");
-	vt.open(vtermPath.c_str());
+	vt.open(env::get("TERM").c_str());
 
 	// read the first lines into it
 	seenEOF = false;

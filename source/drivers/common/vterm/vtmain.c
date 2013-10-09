@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/driver/video.h>
+#include <esc/driver/uimng.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>
@@ -43,64 +44,62 @@
 #define MAX_SEQREQ			20
 
 static int vtermThread(void *vterm);
-static void sigUsr1(int sig);
-static void kmMngThread(void);
+static void uimInputThread(void);
 
-static sVTermCfg cfg;
 static sVTerm vterm;
 
 int main(int argc,char **argv) {
-	size_t i;
-	int drvId;
-
-	if(argc < 5) {
-		fprintf(stderr,"Usage: %s <cols> <rows> <name> <driver>...\n",argv[0]);
+	if(argc < 4) {
+		fprintf(stderr,"Usage: %s <cols> <rows> <name>\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 
-	cfg.readKb = true;
-	cfg.enabled = false;
-	/* open video-devices */
-	cfg.devCount = argc - 4;
-	cfg.devFds = (int*)malloc(sizeof(int) * cfg.devCount);
-	cfg.devNames = (char**)malloc(sizeof(char*) * cfg.devCount);
-	for(i = 4; i < (size_t)argc; i++) {
-		cfg.devNames[i - 4] = strdup(argv[i]);
-		if(cfg.devNames[i - 4] == NULL) {
-			printe("Unable to clone device name");
-			return EXIT_FAILURE;
-		}
-		cfg.devFds[i - 4] = open(argv[i],IO_READ | IO_WRITE | IO_MSGS);
-		if(cfg.devFds[i - 4] < 0) {
-			printe("Unable to open '%s'",cfg.devFds[i - 4]);
-			return EXIT_FAILURE;
-		}
-	}
-	if(cfg.devCount == 0) {
-		fprintf(stderr,"No video devices\n");
-		return EXIT_FAILURE;
-	}
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 
 	/* reg device */
-	drvId = createdev(argv[3],DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+	int drvId = createdev(path,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 	if(drvId < 0)
-		error("Unable to register device '%s'",argv[3]);
+		error("Unable to register device '%s'",path);
 
 	/* init vterms */
-	if(!vt_init(drvId,&vterm,argv[3],&cfg,atoi(argv[1]),atoi(argv[2])))
+	if(!vt_init(drvId,&vterm,argv[3],atoi(argv[1]),atoi(argv[2])))
 		error("Unable to init vterms");
 
 	/* start thread to handle the vterm */
 	if(startthread(vtermThread,&vterm) < 0)
-		error("Unable to start thread for vterm %d",i);
+		error("Unable to start thread for vterm %s",path);
 
-	/* receive from kmmanager in this thread */
-	kmMngThread();
+	/* receive input-events from uimanager in this thread */
+	uimInputThread();
 
 	/* clean up */
 	close(drvId);
 	vtctrl_destroy(&vterm);
 	return EXIT_SUCCESS;
+}
+
+static void uimInputThread(void) {
+	int uiminFd = open("/dev/uim-input",IO_MSGS);
+	if(uiminFd < 0)
+		error("Unable to open '/dev/uim-input'");
+	if(uimng_attach(uiminFd,vterm.uimngid) < 0)
+		error("Unable to attach to uimanager");
+
+	/* now we're the active client. update screen */
+	vtctrl_markScrDirty(&vterm);
+	vt_update(&vterm);
+
+	/* read from uimanager and handle the keys */
+	while(1) {
+		sKmData kmData;
+		ssize_t count = IGNSIGS(receive(uiminFd,NULL,&kmData,sizeof(kmData)));
+		if(count > 0 && kmData.type == KM_EV_KEYBOARD) {
+			vtin_handleKey(&vterm,kmData.d.keyb.keycode,kmData.d.keyb.modifier,kmData.d.keyb.character);
+			vt_update(&vterm);
+		}
+	}
+	close(uiminFd);
 }
 
 static int vtermThread(void *vtptr) {
@@ -118,15 +117,16 @@ static int vtermThread(void *vtptr) {
 					int avail;
 					size_t count = msg.args.arg2;
 					char *data = (char*)malloc(count);
-					msg.args.arg1 = vtin_gets(vt,data,count,&avail);
+					msg.args.arg1 = 0;
 					msg.args.arg2 = READABLE_DONT_SET;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1) {
-						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1);
-						free(data);
-					}
+					if(data)
+						msg.args.arg1 = vtin_gets(vt,data,count,&avail);
 					else
-						printe("[VTERM] Not enough memory");
+						printe("[VTERM] Not enough memory to read %zu bytes",count);
+					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					if(msg.args.arg1)
+						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1);
+					free(data);
 				}
 				break;
 				case MSG_DEV_WRITE: {
@@ -138,26 +138,20 @@ static int vtermThread(void *vtptr) {
 						if(IGNSIGS(receive(fd,&mid,data,c + 1)) >= 0) {
 							data[c] = '\0';
 							vtout_puts(vt,data,c,true);
-							if(cfg.enabled)
-								vt_update(vt);
+							vt_update(vt);
 							msg.args.arg1 = c;
 						}
 						free(data);
 					}
 					else
-						printe("[VTERM] Not enough memory");
+						printe("[VTERM] Not enough memory to write %zu bytes",c + 1);
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_VT_SELECT: {
-					vt_enable(vt,true);
 				}
 				break;
 
 				case MSG_VT_GETMODES: {
 					size_t count;
-					sVTMode *modes = vtctrl_getModes(&cfg,msg.args.arg1,&count,false);
+					sVTMode *modes = vtctrl_getModes(vt,msg.args.arg1,&count);
 					if(modes) {
 						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
 						free(modes);
@@ -170,38 +164,23 @@ static int vtermThread(void *vtptr) {
 				break;
 
 				case MSG_VT_SETMODE: {
-					msg.args.arg1 = vtctrl_setVideoMode(&cfg,vt,msg.args.arg1);
-					if((int)msg.args.arg1 >= 0)
-						vt_enable(vt,false);
+					msg.args.arg1 = vtctrl_setVideoMode(vt,msg.args.arg1);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
 				case MSG_VT_SHELLPID:
-				case MSG_VT_ENABLE:
-				case MSG_VT_DISABLE:
 				case MSG_VT_EN_ECHO:
 				case MSG_VT_DIS_ECHO:
 				case MSG_VT_EN_RDLINE:
 				case MSG_VT_DIS_RDLINE:
-				case MSG_VT_EN_RDKB:
-				case MSG_VT_DIS_RDKB:
 				case MSG_VT_EN_NAVI:
 				case MSG_VT_DIS_NAVI:
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
 				case MSG_VT_GETMODE:
-				case MSG_VT_GETDEVICE:
-					msg.data.arg1 = vtctrl_control(vt,&cfg,mid,msg.data.d);
-					/* reenable us, if necessary */
-					if(mid == MSG_VT_ENABLE)
-						vt_enable(vt,true);
-					/* wakeup thread to start reading from keyboard again */
-					if(mid == MSG_VT_ENABLE || mid == MSG_VT_EN_RDKB) {
-						if(kill(getpid(),SIG_USR1) < 0)
-							perror("Unable to send SIG_USR1");
-					}
+					msg.data.arg1 = vtctrl_control(vt,mid,msg.data.d);
 					vt_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
@@ -214,42 +193,4 @@ static int vtermThread(void *vtptr) {
 		}
 	}
 	return 0;
-}
-
-static void sigUsr1(A_UNUSED int sig) {
-	/* ignore */
-}
-
-static void kmMngThread(void) {
-	ssize_t count;
-	sKmData kmData[KB_DATA_BUF_SIZE];
-	int kbFd;
-
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
-		error("Unable to announce SIG_USR1-handler");
-
-	kbFd = open("/dev/kmmanager",IO_READ);
-	if(kbFd < 0)
-		error("Unable to open '/dev/kmmanager'");
-
-	while(1) {
-		/* if we shouldn't read from keyboard, wait for ever; we'll get waked up by a signal */
-		if(!cfg.enabled || !cfg.readKb) {
-			wait(EV_NOEVENT,0);
-			continue;
-		}
-
-		/* read from keyboard and handle the keys */
-		count = read(kbFd,kmData,sizeof(kmData));
-		if(count > 0) {
-			sKmData *kmsg = kmData;
-			count /= sizeof(sKmData);
-			while(count-- > 0) {
-				vtin_handleKey(&vterm,kmsg->keycode,kmsg->modifier,kmsg->character);
-				kmsg++;
-			}
-			vt_update(&vterm);
-		}
-	}
-	close(kbFd);
 }

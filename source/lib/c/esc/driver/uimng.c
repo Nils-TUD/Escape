@@ -18,34 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
-#include <esc/messages.h>
+#include <esc/driver/uimng.h>
 #include <esc/io.h>
 #include <string.h>
 
-int video_setCursor(int fd,const sVTPos *pos) {
-	sDataMsg msg;
-	memcpy(&msg.d,pos,sizeof(sVTPos));
-	return send(fd,MSG_VID_SETCURSOR,&msg,sizeof(msg));
-}
-
-int video_getSize(int fd,sVTSize *size) {
-	sDataMsg msg;
-	int res = send(fd,MSG_VID_GETSIZE,NULL,0);
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	if(msg.arg1 != sizeof(sVTSize))
-		return msg.arg1;
-	memcpy(size,&msg.d,sizeof(sVTSize));
-	return 0;
-}
-
-int video_getMode(int fd) {
+int uimng_getId(int fd) {
 	sArgsMsg msg;
-	int res = send(fd,MSG_VID_GETMODE,NULL,0);
+	ssize_t res = send(fd,MSG_KM_GETID,NULL,0);
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -54,12 +33,34 @@ int video_getMode(int fd) {
 	return msg.arg1;
 }
 
-int video_setMode(int fd,int mode,const char *shm,bool switchMode) {
+int uimng_attach(int fd,int id) {
+	sArgsMsg msg;
+	msg.arg1 = id;
+	ssize_t res = send(fd,MSG_KM_ATTACH,&msg,sizeof(msg));
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}
+
+int uimng_getMode(int fd) {
+	sArgsMsg msg;
+	ssize_t res = send(fd,MSG_KM_GETMODE,NULL,0);
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	return msg.arg1;
+}
+
+int uimng_setMode(int fd,int mode,const char *shm) {
 	sStrMsg msg;
 	msg.arg1 = mode;
-	msg.arg2 = switchMode;
 	strnzcpy(msg.s1,shm,sizeof(msg.s1));
-	int res = send(fd,MSG_VID_SETMODE,&msg,sizeof(msg));
+	ssize_t res = send(fd,MSG_KM_SETMODE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -68,11 +69,17 @@ int video_setMode(int fd,int mode,const char *shm,bool switchMode) {
 	return msg.arg1;
 }
 
-int video_update(int fd,uint start,uint count) {
+int uimng_setCursor(int fd,const sVTPos *pos) {
+	sDataMsg msg;
+	memcpy(&msg.d,pos,sizeof(sVTPos));
+	return send(fd,MSG_KM_SETCURSOR,&msg,sizeof(msg));
+}
+
+int uimng_update(int fd,uint start,uint count) {
 	sArgsMsg msg;
 	msg.arg1 = start;
 	msg.arg2 = count;
-	int res = send(fd,MSG_VID_UPDATE,&msg,sizeof(msg));
+	int res = send(fd,MSG_KM_UPDATE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -81,24 +88,23 @@ int video_update(int fd,uint start,uint count) {
 	return msg.arg1;
 }
 
-ssize_t video_getModeCount(int fd) {
-	sMsg msg;
-	msg.args.arg1 = 0;
-	ssize_t res = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg.args));
+ssize_t uimng_getModeCount(int fd) {
+	sArgsMsg msg;
+	msg.arg1 = 0;
+	int res = send(fd,MSG_KM_GETMODES,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg.args)));
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
-	return msg.args.arg1;
+	return msg.arg1;
 }
 
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count) {
+int uimng_getModes(int fd,sVTMode *modes,size_t count) {
 	sArgsMsg msg;
-	ssize_t err;
 	msg.arg1 = count;
-	err = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg));
-	if(err < 0)
-		return err;
+	int res = send(fd,MSG_KM_GETMODES,&msg,sizeof(msg));
+	if(res < 0)
+		return res;
 	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
 }

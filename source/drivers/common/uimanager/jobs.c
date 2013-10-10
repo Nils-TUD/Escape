@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include "keystrokes.h"
+#include "clients.h"
 #include "jobs.h"
 
 typedef struct {
@@ -64,6 +65,10 @@ void jobs_wait(void) {
 
 int jobs_getId(void) {
 	locku(&lck);
+	if(sll_length(&jobs) >= MAX_CLIENTS) {
+		unlocku(&lck);
+		return -1;
+	}
 	int id = 0;
 	for(sSLNode *n = sll_begin(&jobs); n != NULL; ) {
 		sJob *job = (sJob*)n->data;

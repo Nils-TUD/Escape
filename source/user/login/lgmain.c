@@ -30,7 +30,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define SKIP_LOGIN			1
+#define SKIP_LOGIN			0
 #define SHELL_PATH			"/bin/shell"
 #define MAX_VTERM_NAME_LEN	10
 
@@ -49,6 +49,7 @@ int main(void) {
 	size_t groupCount,usercount,pwcount;
 	int fd;
 	char *termPath = getenv("TERM");
+	char *termName = termPath + SSTRLEN("/dev/");
 
 	/* note: we do always pass IO_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
@@ -63,8 +64,11 @@ int main(void) {
 	if((fd = dup(fd)) != STDERR_FILENO)
 		error("Unable to duplicate STDOUT to STDERR: Got fd %d",fd);
 
+	/* refresh the istty property for stdin since the attempt during constructor calls failed */
+	fisatty(stdin);
+
 	printf("\n\n");
-	printf("\033[co;9]Welcome to Escape v%s, %s!\033[co]\n\n",ESCAPE_VERSION,termPath);
+	printf("\033[co;9]Welcome to Escape v%s, %s!\033[co]\n\n",ESCAPE_VERSION,termName);
 	printf("Please login to get a shell.\n");
 	printf("Hint: use hrniels/test, jon/doe or root/root ;)\n\n");
 
@@ -117,8 +121,8 @@ int main(void) {
 	groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
 	if(!groups)
 		error("Unable to collect group-ids");
-	gvt = group_getByName(groupList,termPath);
-	/* add the process to the corresponding vterm-group */
+	gvt = group_getByName(groupList,termName);
+	/* add the process to the corresponding ui-group */
 	if(gvt)
 		groups[groupCount++] = gvt->gid;
 	if(setgroups(groupCount,groups) < 0)

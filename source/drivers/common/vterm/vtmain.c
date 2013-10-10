@@ -28,6 +28,7 @@
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <esc/ringbuffer.h>
+#include <usergroup/group.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +62,18 @@ int main(int argc,char **argv) {
 	int drvId = createdev(path,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 	if(drvId < 0)
 		error("Unable to register device '%s'",path);
+
+	/* we want to give only users that are in the ui-group access to this vterm */
+	size_t gcount;
+	sGroup *groups = group_parseFromFile(GROUPS_PATH,&gcount);
+	sGroup *uigrp = group_getByName(groups,argv[3]);
+	if(uigrp != NULL) {
+		if(chown(path,ROOT_UID,uigrp->gid) < 0)
+			printe("Unable to add ui-group to group-list");
+	}
+	else
+		printe("Unable to find ui-group '%s'",argv[3]);
+	group_free(groups);
 
 	/* init vterms */
 	if(!vt_init(drvId,&vterm,argv[3],atoi(argv[1]),atoi(argv[2])))

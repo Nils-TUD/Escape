@@ -22,6 +22,8 @@
 
 #include "keymap.h"
 
+#define MAX_CLIENTS						8	/* we have 8 ui groups atm */
+
 typedef struct {
 	const char *name;
 	sScreenMode *modes;

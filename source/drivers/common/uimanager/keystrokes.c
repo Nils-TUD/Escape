@@ -32,8 +32,10 @@
 #include "jobs.h"
 
 #define MAX_FILEDESCS	16
+
 #define VTERM_PROG		"/sbin/vterm"
 #define LOGIN_PROG		"/bin/login"
+
 #define WINMNG_PROG		"/sbin/winmanager"
 #define DESKTOP_PROG	"/bin/desktop"
 
@@ -50,14 +52,19 @@ void keys_init(void) {
 		error("Unable to create keystrokes lock");
 }
 
-static void keys_createConsole(const char *prefix,size_t preflen,const char *mng,const char *cols,
-						const char *rows,const char *login) {
-	char name[preflen + 11];
-	char path[SSTRLEN("/dev/") + preflen + 11];
+static void keys_createConsole(const char *mng,const char *cols,const char *rows,const char *login) {
+	char name[SSTRLEN("ui") + 11];
+	char path[SSTRLEN("/dev/ui") + 11];
 
 	locku(&lck);
 	int id = jobs_getId();
-	snprintf(name,sizeof(name),"%s%d",prefix,id);
+	if(id < 0) {
+		fprintf(stderr,"Maximum number of clients reached\n");
+		unlocku(&lck);
+		return;
+	}
+
+	snprintf(name,sizeof(name),"ui%d",id);
 	snprintf(path,sizeof(path),"/dev/%s",name);
 
 	int mngPid = fork();
@@ -104,13 +111,11 @@ error:
 }
 
 void keys_createTextConsole(void) {
-	keys_createConsole("vterm",SSTRLEN("vterm"),
-		VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG);
+	keys_createConsole(VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG);
 }
 
 void keys_createGUIConsole(void) {
-	keys_createConsole("winmng",SSTRLEN("winmng"),
-		WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,DESKTOP_PROG);
+	keys_createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,DESKTOP_PROG);
 }
 
 bool keys_handleKey(sUIMData *data) {

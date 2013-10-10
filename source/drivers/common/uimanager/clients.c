@@ -27,15 +27,15 @@
 
 #include "clients.h"
 
-#define MAX_CLIENTS					64
+#define MAX_CLIENT_FDS					64
 
-static sClient *clients[MAX_CLIENTS];
+static sClient *clients[MAX_CLIENT_FDS];
 static sSLList *clientList;
-static int active = MAX_CLIENTS;
-static int activeIdx = MAX_CLIENTS;
+static int active = MAX_CLIENT_FDS;
+static int activeIdx = MAX_CLIENT_FDS;
 
 sClient *cli_getActive(void) {
-	if(active != MAX_CLIENTS)
+	if(active != MAX_CLIENT_FDS)
 		return clients[active];
 	return NULL;
 }
@@ -47,8 +47,8 @@ sClient *cli_get(int id) {
 
 static void cli_switch(int incr) {
 	int oldActive = active;
-	int oldMode = active == MAX_CLIENTS ? -1 : clients[active]->screenMode->id;
-	if(activeIdx == MAX_CLIENTS)
+	int oldMode = active == MAX_CLIENT_FDS ? -1 : clients[active]->screenMode->id;
+	if(activeIdx == MAX_CLIENT_FDS)
 		activeIdx = 0;
 	else
 		activeIdx = (activeIdx + incr) % sll_length(clientList);
@@ -56,9 +56,9 @@ static void cli_switch(int incr) {
 	if(sll_length(clientList) > 0)
 		active = ((sClient*)sll_get(clientList,activeIdx))->id;
 	else
-		activeIdx = active = MAX_CLIENTS;
+		activeIdx = active = MAX_CLIENT_FDS;
 
-	if(active != MAX_CLIENTS && active != oldActive) {
+	if(active != MAX_CLIENT_FDS && active != oldActive) {
 		sClient *cli = clients[active];
 		assert(cli->screenMode);
 
@@ -84,7 +84,7 @@ void cli_prev(void) {
 }
 
 void cli_send(const void *msg,size_t size) {
-	if(active == MAX_CLIENTS)
+	if(active == MAX_CLIENT_FDS)
 		return;
 	send(clients[active]->id,MSG_UIM_EVENT,msg,size);
 }
@@ -108,7 +108,7 @@ int cli_add(int id,sKeymap *map) {
 
 int cli_attach(int id,int randid) {
 	sClient *cli = NULL;
-	for(int i = 0; i < MAX_CLIENTS; ++i) {
+	for(int i = 0; i < MAX_CLIENT_FDS; ++i) {
 		if(clients[i] && clients[i]->randid == randid) {
 			if(cli)
 				return -EEXIST;
@@ -130,9 +130,9 @@ int cli_attach(int id,int randid) {
 void cli_detach(int id) {
 	if(clients[id]) {
 		bool shouldSwitch = false;
-		if(activeIdx != MAX_CLIENTS && sll_get(clientList,activeIdx) == clients[id]) {
-			active = MAX_CLIENTS;
-			activeIdx = MAX_CLIENTS;
+		if(activeIdx != MAX_CLIENT_FDS && sll_get(clientList,activeIdx) == clients[id]) {
+			active = MAX_CLIENT_FDS;
+			activeIdx = MAX_CLIENT_FDS;
 			shouldSwitch = true;
 		}
 		sll_removeFirstWith(clientList,clients[id]);
@@ -146,7 +146,7 @@ void cli_detach(int id) {
 void cli_remove(int id) {
 	sClient *cli = clients[id];
 	assert(cli != NULL);
-	for(int i = 0; i < MAX_CLIENTS; ++i) {
+	for(int i = 0; i < MAX_CLIENT_FDS; ++i) {
 		if(id != i && clients[i] == cli)
 			clients[i] = NULL;
 	}

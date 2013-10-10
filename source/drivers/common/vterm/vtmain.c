@@ -182,6 +182,12 @@ static int vtermThread(void *vtptr) {
 				}
 				break;
 
+				case MSG_UIM_GETKEYMAP: {
+					msg.str.arg1 = uimng_getKeymap(vt->uimng,msg.str.s1,sizeof(msg.str.s1));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.str));
+				}
+				break;
+
 				case MSG_UIM_SETKEYMAP: {
 					msg.args.arg1 = uimng_setKeymap(vt->uimng,msg.str.s1);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

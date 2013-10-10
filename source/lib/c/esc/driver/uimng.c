@@ -45,16 +45,25 @@ int uimng_attach(int fd,int id) {
 	return msg.arg1;
 }
 
+int uimng_getKeymap(int fd,char *str,size_t size) {
+	sStrMsg msg;
+	ssize_t res = send(fd,MSG_UIM_GETKEYMAP,NULL,0);
+	if(res < 0)
+		return res;
+	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	if(res < 0)
+		return res;
+	strnzcpy(str,msg.s1,size);
+	return msg.arg1;
+}
+
 int uimng_setKeymap(int fd,const char *map) {
 	sStrMsg msg;
 	strnzcpy(msg.s1,map,sizeof(msg.s1));
 	ssize_t res = send(fd,MSG_UIM_SETKEYMAP,&msg,sizeof(msg));
-	if(res < 0) {
-		close(fd);
+	if(res < 0)
 		return res;
-	}
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	close(fd);
 	if(res < 0)
 		return res;
 	return msg.arg1;

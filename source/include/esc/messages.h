@@ -149,10 +149,11 @@
 
 #define MSG_MS_EVENT				800 /* events that the mouse-driver sends */
 
-#define MSG_UIM_SETKEYMAP			900	/* sets a keymap, expects the keymap-path as argument */
-#define MSG_UIM_EVENT				901	/* the message-id for sending events to the listeners */
-#define MSG_UIM_ATTACH				902 /* is used to attach to the ctrl-session */
-#define MSG_UIM_GETID				903 /* get the id to use for attach */
+#define MSG_UIM_GETKEYMAP			900 /* gets the current keymap path */
+#define MSG_UIM_SETKEYMAP			901	/* sets a keymap, expects the keymap-path as argument */
+#define MSG_UIM_EVENT				902	/* the message-id for sending events to the listeners */
+#define MSG_UIM_ATTACH				903 /* is used to attach to the ctrl-session */
+#define MSG_UIM_GETID				904 /* get the id to use for attach */
 
 #define MSG_PCI_GET_BY_CLASS		1000	/* searches for a pci device with given class */
 #define MSG_PCI_GET_BY_ID			1001	/* searches for a pci device with given id */

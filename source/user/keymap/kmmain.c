@@ -35,6 +35,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char **argv) {
+	char path[MAX_PATH_LEN];
 	char *kmname = NULL;
 
 	int res = ca_parse(argc,argv,CA_NO_FREE,"set=s",&kmname);
@@ -47,7 +48,6 @@ int main(int argc,const char **argv) {
 
 	/* set keymap? */
 	if(kmname != NULL) {
-		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
 		if(uimng_setKeymap(STDIN_FILENO,path) < 0)
 			printe("Setting the keymap '%s' failed",kmname);
@@ -56,13 +56,28 @@ int main(int argc,const char **argv) {
 	}
 	/* list all keymaps */
 	else {
+		sFileInfo curInfo;
+		uimng_getKeymap(STDIN_FILENO,path,sizeof(path));
+		if(stat(path,&curInfo) < 0)
+			printe("Unable to stat current keymap (%s)",path);
+
 		sDirEntry e;
 		DIR *dir = opendir(KEYMAP_DIR);
 		if(!dir)
 			error("Unable to open '%s'",KEYMAP_DIR);
 		while(readdir(dir,&e)) {
-			if(strcmp(e.name,".") != 0 && strcmp(e.name,"..") != 0)
-				printf("%s\n",e.name);
+			if(strcmp(e.name,".") != 0 && strcmp(e.name,"..") != 0) {
+				char fpath[MAX_PATH_LEN];
+				snprintf(fpath,sizeof(fpath),"%s/%s",KEYMAP_DIR,e.name);
+				sFileInfo finfo;
+				if(stat(fpath,&finfo) < 0)
+					printe("Unable to stat '%s'",fpath);
+
+				if(finfo.inodeNo == curInfo.inodeNo && finfo.device == curInfo.device)
+					printf("* %s\n",e.name);
+				else
+					printf("  %s\n",e.name);
+			}
 		}
 		closedir(dir);
 	}

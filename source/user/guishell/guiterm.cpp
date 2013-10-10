@@ -156,8 +156,10 @@ void GUITerm::run() {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
 
+				case MSG_UIM_GETKEYMAP:
 				case MSG_UIM_SETKEYMAP:
 				case MSG_VT_SETMODE:
+					/* TODO */
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

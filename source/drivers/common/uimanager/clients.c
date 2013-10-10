@@ -89,12 +89,42 @@ void cli_send(const void *msg,size_t size) {
 	send(clients[active]->id,MSG_UIM_EVENT,msg,size);
 }
 
-int cli_add(int id,sKeymap *map) {
+static int cli_getByRandId(int randid,sClient **cli) {
+	*cli = NULL;
+	for(int i = 0; i < MAX_CLIENT_FDS; ++i) {
+		if(clients[i] && clients[i]->randid == randid) {
+			if(*cli)
+				return -EEXIST;
+			*cli = clients[i];
+		}
+	}
+	return *cli == NULL ? -EINVAL : 0;
+}
+
+int cli_add(int id,const char *keymap) {
 	assert(clients[id] == NULL);
 	clients[id] = (sClient*)malloc(sizeof(sClient));
+	if(clients[id] == NULL)
+		return -ENOMEM;
+
+	/* generate a unique id */
+	sClient *dummy;
+	int randid;
+	do {
+		randid = rand();
+	}
+	while(cli_getByRandId(randid,&dummy) == 0);
+
+	/* request keymap */
+	clients[id]->randid = randid;
+	clients[id]->map = km_request(keymap);
+	if(clients[id]->map == NULL) {
+		free(clients[id]);
+		clients[id] = NULL;
+		return -EINVAL;
+	}
+
 	clients[id]->id = id;
-	clients[id]->randid = rand();
-	clients[id]->map = map;
 	clients[id]->screen = NULL;
 	clients[id]->screenMode = NULL;
 	clients[id]->screenShmName = NULL;
@@ -107,23 +137,23 @@ int cli_add(int id,sKeymap *map) {
 }
 
 int cli_attach(int id,int randid) {
-	sClient *cli = NULL;
-	for(int i = 0; i < MAX_CLIENT_FDS; ++i) {
-		if(clients[i] && clients[i]->randid == randid) {
-			if(cli)
-				return -EEXIST;
-			cli = clients[i];
-		}
-	}
+	int res;
+	sClient *cli;
+	if((res = cli_getByRandId(randid,&cli)) != 0)
+		return res;
 
 	if(clientList == NULL && (clientList = sll_create()) == NULL)
 		return -ENOMEM;
 
 	clients[id] = cli;
+	/* change id. we attached the event-channel and this one should receive them */
 	clients[id]->id = id;
 	active = id;
 	activeIdx = sll_length(clientList);
-	sll_append(clientList,clients[id]);
+	if(!sll_append(clientList,clients[id])) {
+		clients[id] = NULL;
+		return -ENOMEM;
+	}
 	return 0;
 }
 

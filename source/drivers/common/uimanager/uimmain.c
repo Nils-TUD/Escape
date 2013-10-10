@@ -44,13 +44,13 @@ static int kbClientThread(void *arg);
 static int ctrlThread(A_UNUSED void *arg);
 static int inputThread(A_UNUSED void *arg);
 
+static char defKeymapPath[MAX_PATH_LEN];
 static sKeymap *defmap;
 static tULock lck;
 static sScreen *screens;
 static size_t screenCount;
 
 int main(int argc,char *argv[]) {
-	char path[MAX_PATH_LEN];
 	char *newline;
 	FILE *f;
 
@@ -99,13 +99,13 @@ int main(int argc,char *argv[]) {
 	f = fopen(KEYMAP_FILE,"r");
 	if(f == NULL)
 		error("[UIM] Unable to open %s",KEYMAP_FILE);
-	fgets(path,MAX_PATH_LEN,f);
-	if((newline = strchr(path,'\n')))
+	fgets(defKeymapPath,MAX_PATH_LEN,f);
+	if((newline = strchr(defKeymapPath,'\n')))
 		*newline = '\0';
 	fclose(f);
 
 	/* load default map */
-	defmap = km_request(path);
+	defmap = km_request(defKeymapPath);
 	if(!defmap)
 		error("[UIM] Unable to load default keymap");
 
@@ -238,7 +238,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 			switch(mid) {
 				case MSG_DEV_OPEN: {
 					locku(&lck);
-					msg.args.arg1 = cli_add(fd,defmap);;
+					msg.args.arg1 = cli_add(fd,defKeymapPath);
 					unlocku(&lck);
 					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
 				}
@@ -258,12 +258,23 @@ static int ctrlThread(A_UNUSED void *arg) {
 				}
 				break;
 
+				case MSG_UIM_GETKEYMAP: {
+					sClient *cli = cli_get(fd);
+					msg.str.arg1 = cli->map != NULL;
+					strnzcpy(msg.str.s1,cli->map->path,sizeof(msg.str.s1));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.str));
+				}
+				break;
+
 				case MSG_UIM_SETKEYMAP: {
 					char *str = msg.str.s1;
 					str[sizeof(msg.str.s1) - 1] = '\0';
 					msg.args.arg1 = -EINVAL;
 					sKeymap *newMap = km_request(str);
 					if(newMap) {
+						/* we don't need to lock this, because the client is only removed if this
+						 * device is closed. since this device is only handled by one thread, it
+						 * can't happen now */
 						sClient *client = cli_getActive();
 						if(client) {
 							km_release(client->map);
@@ -363,6 +374,10 @@ static int inputThread(A_UNUSED void *arg) {
 				case MSG_UIM_ATTACH: {
 					locku(&lck);
 					msg.args.arg1 = cli_attach(fd,msg.args.arg1);
+					/* TODO actually, we should remove the entire client if this failed to make it
+					 * harder to hijack a foreign session via brute-force. but this would destroy
+					 * our lock-strategy because we assume currently that only the other device
+					 * destroys the session on close. */
 					unlocku(&lck);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}

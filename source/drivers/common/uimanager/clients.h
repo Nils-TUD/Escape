@@ -46,7 +46,7 @@ typedef struct {
 	int type;
 } sClient;
 
-int cli_add(int id,sKeymap *map);
+int cli_add(int id,const char *keymap);
 sClient *cli_getActive(void);
 sClient *cli_get(int id);
 void cli_next(void);

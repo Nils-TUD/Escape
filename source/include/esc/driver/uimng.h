@@ -28,6 +28,7 @@ extern "C" {
 
 int uimng_getId(int fd);
 int uimng_attach(int fd,int id);
+int uimng_getKeymap(int fd,char *str,size_t size);
 int uimng_setKeymap(int fd,const char *map);
 
 #ifdef __cplusplus

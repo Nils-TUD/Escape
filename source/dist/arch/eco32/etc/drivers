@@ -1,5 +1,5 @@
-video
-	/dev/video 0770 output
+vga
+	/dev/vga 0770 output
 zero
 	/dev/zero 0666 root
 random
@@ -7,11 +7,7 @@ random
 null
 	/dev/null 0666 root
 keyboard
-	/dev/keyboard 0440 input
-kmmanager
-	/dev/kmmanager 0550 input
-	/dev/keyevents 0110 input
-vterm 80 25 /dev/vterm0 /dev/video
-	/dev/vterm0 0770 vterm0
-vterm 80 25 /dev/vterm1 /dev/video
-	/dev/vterm1 0770 vterm1
+	/dev/keyboard 0110 input
+uimanager /dev/vga
+	/dev/uim-ctrl 0110 input
+	/dev/uim-input 0110 input

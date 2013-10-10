@@ -701,6 +701,14 @@ int vprinte(const char *prefix,va_list ap);
 int isatty(int fd);
 
 /**
+ * Tests and stores whether the given file stream refers to a terminal.
+ *
+ * @param f the file stream
+ * @return true if it referrs to a terminal
+ */
+int fisatty(FILE *f);
+
+/**
  * The lseek() function repositions the offset of the open file associated with the file descriptor
  * fd to the argument offset according to the directive whence as follows:
  * 	SEEK_SET: The offset is set to offset bytes.

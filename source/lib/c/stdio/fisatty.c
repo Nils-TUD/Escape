@@ -19,32 +19,8 @@
 
 #include <esc/common.h>
 #include "iobuf.h"
-#include <errno.h>
 #include <stdio.h>
 
-int bgetc(FILE *f) {
-	sIOBuf *buf = &f->in;
-	if(f->eof || buf->buffer == NULL)
-		return EOF;
-	if(buf->fd >= 0) {
-		/* flush stdout if we're stdin and stdin is a TTY */
-		if(f == stdin && f->istty == 1)
-			fflush(stdout);
-		if(buf->pos >= buf->max) {
-			ssize_t count = IGNSIGS(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
-			if(count < 0) {
-				f->error = (int)count;
-				return EOF;
-			}
-			if(count == 0) {
-				f->eof = true;
-				return EOF;
-			}
-			buf->pos = 0;
-			buf->max = count;
-		}
-	}
-	else if(buf->pos >= buf->max)
-		return EOF;
-	return buf->buffer[buf->pos++];
+int fisatty(FILE *file) {
+	return file->istty = isatty(file->in.fd);
 }

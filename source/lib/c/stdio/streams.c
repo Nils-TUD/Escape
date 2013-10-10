@@ -48,8 +48,6 @@ void initStdio(void) {
 		error("Unable to init stdin");
 
 	stdin->istty = isatty(STDIN_FILENO);
-	if(errno != 0)
-		stdin->istty = -1;
 }
 
 static void deinitStdio(A_UNUSED void *dummy) {

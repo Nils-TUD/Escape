@@ -19,9 +19,6 @@
 
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
-#include <esc/arch/i586/vm86.h>
-#include <esc/driver/vterm.h>
-#include <esc/driver/video.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/debug.h>

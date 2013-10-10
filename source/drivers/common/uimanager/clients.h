@@ -24,24 +24,24 @@
 
 typedef struct {
 	const char *name;
-	sVTMode *modes;
+	sScreenMode *modes;
 	size_t modeCount;
-} sBackend;
+} sScreen;
 
 typedef struct {
 	int id;
 	int randid;
 	sKeymap *map;
-	sBackend *backend;
-	sVTMode *backendMode;
-	sVTPos cursor;
-	char *backendShmName;
-	int backendFd;
-	enum {
-		CONS_TYPE_NONE,
-		CONS_TYPE_TEXT,
-		CONS_TYPE_GRAPHICS,
-	} type;
+	sScreen *screen;
+	sScreenMode *screenMode;
+	char *screenShmName;
+	int screenFd;
+	struct {
+		gpos_t x;
+		gpos_t y;
+		int cursor;
+	} cursor;
+	int type;
 } sClient;
 
 int cli_add(int id,sKeymap *map);

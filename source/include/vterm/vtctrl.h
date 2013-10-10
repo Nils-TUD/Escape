@@ -43,6 +43,8 @@ typedef void (*fSetCursor)(sVTerm *vt);
 
 /* our vterm-state */
 struct sVTerm {
+	/* a pointer that can be used arbitrarily */
+	void *data;
 	/* identification */
 	uchar index;
 	int sid;
@@ -67,9 +69,6 @@ struct sVTerm {
 	/* ui-manager for input and output */
 	int uimng;
 	int uimngid;
-	/* our shared memory for the screen */
-	int scrMode;
-	char *scrShm;
 	/* speaker fd */
 	int speaker;
 	/* the first line with content */
@@ -142,7 +141,7 @@ typedef enum {
  * @param mode the video mode
  * @return true if successfull
  */
-bool vtctrl_init(sVTerm *vt,sVTMode *mode);
+bool vtctrl_init(sVTerm *vt,sScreenMode *mode);
 
 /**
  * Handles the control-commands
@@ -187,25 +186,6 @@ void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height);
  * @param vt the vterm
  */
 void vtctrl_destroy(sVTerm *vt);
-
-/**
- * Collects the available modes from all video-devices.
- *
- * @param n the number of modes to collect (0 = count)
- * @param count will be set to the number of collected modes or the total number
- * @return the modes array or NULL
- */
-sVTMode *vtctrl_getModes(sVTerm *vt,size_t n,size_t *count);
-
-/**
- * Sets the video mode <mode> and resizes the vterm accordingly.
- *
- * @param cfg the config
- * @param vt the terminal
- * @param mode the mode to set
- * @return 0 on success
- */
-int vtctrl_setVideoMode(sVTerm *vt,int mode);
 
 /**
  * Resizes the size of the terminal to <cols> x <rows>.

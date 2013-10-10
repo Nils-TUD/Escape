@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/screen.h>
 #include <gui/application.h>
 #include <gui/window.h>
 #include <gui/popupwindow.h>
@@ -26,7 +27,6 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/mem.h>
-#include <esc/driver/vesa.h>
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -40,32 +40,22 @@ static void sighandler(int) {
 namespace gui {
 	Application *Application::_inst = nullptr;
 
-	Application::Application()
-			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _vesaInfo(), _windows(), _created(),
+	Application::Application(const char *winmng)
+			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
 			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr) {
 		if(crtlocku(&_queuelock) < 0)
 			throw app_error("Unable to create queue lock");
 
-		msgid_t mid;
-		_winFd = open("/dev/winmanager",IO_MSGS);
+		if(winmng == NULL)
+			winmng = getenv("TERM");
+
+		_winFd = open(winmng,IO_MSGS);
 		if(_winFd < 0)
 			throw app_error("Unable to open window-manager");
 
-		{
-			int fd = open("/dev/vesa",IO_MSGS);
-			if(fd < 0)
-				throw app_error("Unable to open vesa");
-
-			// request screen infos from vesa
-			if(send(fd,MSG_VESA_GETMODE,&_msg,sizeof(_msg.args)) < 0)
-				throw app_error("Unable to send get-mode-request to vesa");
-			if(IGNSIGS(receive(fd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
-					_msg.data.arg1 != 0) {
-				throw app_error("Unable to read the get-mode-response from vesa");
-			}
-			memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
-			close(fd);
-		}
+		// request screen infos from vesa
+		if(screen_getMode(_winFd,&_screenMode) < 0)
+			throw app_error("Unable to get mode");
 
 		if(signal(SIG_USR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
@@ -247,8 +237,8 @@ namespace gui {
 
 		Window *w = getWindowById(win);
 		if(w) {
-			Pos npos(max(0,min((gpos_t)_vesaInfo.width - 1,pos.x - w->getPos().x)),
-			         max(0,min((gpos_t)_vesaInfo.height - 1,pos.y - w->getPos().y)));
+			Pos npos(max(0,min((gpos_t)_screenMode.width - 1,pos.x - w->getPos().x)),
+			         max(0,min((gpos_t)_screenMode.height - 1,pos.y - w->getPos().y)));
 			if(released) {
 				MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,movedZ,npos,_mouseBtns);
 				w->onMouseReleased(event);

@@ -25,7 +25,8 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/sllist.h>
-#include <esc/driver/vesa.h>
+#include <esc/driver/screen.h>
+#include <esc/driver/uimng.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,10 @@
 #include "window.h"
 #include "listener.h"
 
+#define PIXEL_SIZE	(mode.bitsPerPixel / 8)
+#define ABS(a)		((a) < 0 ? -(a) : (a))
+
+static int win_findMode(gsize_t width,gsize_t height,sScreenMode *modePtr);
 static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height);
 static void win_destroyBuf(sWindow *win);
 static gwinid_t win_getTop(void);
@@ -48,75 +53,83 @@ static void win_notifyWinCreate(gwinid_t id,const char *title);
 static void win_notifyWinActive(gwinid_t id);
 static void win_notifyWinDestroy(gwinid_t id);
 
-static int vesa;
+static int uimng;
 static int drvId;
-static sVESAInfo vesaInfo;
+static sScreenMode mode;
 
-static bool enabled = false;
 static sMsg msg;
 static uint8_t *shmem;
 static size_t activeWindow = WINDOW_COUNT;
 static size_t topWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
-bool win_init(int sid) {
-	msgid_t mid;
-	gwinid_t i;
-	int fd;
-
+int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname) {
 	drvId = sid;
+	uimng = uifd;
 
 	/* mark windows unused */
-	for(i = 0; i < WINDOW_COUNT; i++)
+	for(gwinid_t i = 0; i < WINDOW_COUNT; i++)
 		windows[i].id = WINID_UNUSED;
 
-	vesa = open("/dev/vesa",IO_WRITE | IO_MSGS);
-	if(vesa < 0)
-		error("Unable to open /dev/vesa");
+	/* find desired mode */
+	if(win_findMode(width,height,&mode) < 0)
+		error("Unable to find suitable mode");
 
-	/* request screen infos from vesa */
-	if(send(vesa,MSG_VESA_GETMODE,&msg,sizeof(msg.args)) < 0)
-		error("Unable to send get-mode-request to vesa");
-	if(IGNSIGS(receive(vesa,&mid,&msg,sizeof(msg))) < 0 ||
-			mid != MSG_VESA_GETMODE_RESP || msg.data.arg1 != 0)
-		error("Unable to read the get-mode-response from vesa");
-
-	/* store */
-	memcpy(&vesaInfo,msg.data.d,sizeof(sVESAInfo));
-
-	fd = shm_open(VESA_SHM_NAME,IO_READ | IO_WRITE,VESA_SHM_PERM);
+	/* create shm */
+	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0666);
 	if(fd < 0)
-		error("Unable to open shm file '%s'",VESA_SHM_NAME);
-	size_t screenSize = vesaInfo.width * vesaInfo.height * (vesaInfo.bitsPerPixel / 8);
+		error("Unable to create shm file '%s'",shmname);
+	size_t screenSize = mode.width * mode.height * (mode.bitsPerPixel / 8);
 	shmem = (uint8_t*)mmap(NULL,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	close(fd);
 	if(shmem == NULL)
 		error("Unable to join shared memory 'vesa'");
-	return true;
+	return mode.id;
 }
 
-bool win_isEnabled(void) {
-	return enabled;
+static int win_findMode(gsize_t width,gsize_t height,sScreenMode *modePtr) {
+	ssize_t i,count,res;
+	size_t bestmode;
+	uint bestdiff = UINT_MAX;
+	sScreenMode *modes;
+
+	/* get all modes */
+	count = screen_getModeCount(uimng);
+	if(count < 0)
+		return count;
+	modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
+	if(!modes)
+		return -ENOMEM;
+	if((res = screen_getModes(uimng,modes,count)) < 0) {
+		free(modes);
+		return res;
+	}
+
+	/* search for the best matching mode */
+	bestmode = count;
+	for(i = 0; i < count; i++) {
+		if(modes[i].type & VID_MODE_TYPE_GUI) {
+			uint pixdiff = ABS((int)(modes[i].width * modes[i].height) - (int)(width * height));
+			if(pixdiff < bestdiff) {
+				bestmode = i;
+				bestdiff = pixdiff;
+			}
+		}
+	}
+	memcpy(modePtr,modes + bestmode,sizeof(sScreenMode));
+	free(modes);
+	return 0;
 }
 
-void win_setEnabled(bool en) {
-	enabled = en;
-	if(send(vesa,en ? MSG_VESA_ENABLE : MSG_VESA_DISABLE,NULL,0))
-		error("Unable to enable/disable vesa");
-}
-
-gpos_t win_getScreenWidth(void) {
-	return vesaInfo.width;
-}
-
-gpos_t win_getScreenHeight(void) {
-	return vesaInfo.height;
+const sScreenMode *win_getMode(void) {
+	return &mode;
 }
 
 void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
 	msg.args.arg3 = cursor;
-	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
+	send(uimng,MSG_SCR_SETCURSOR,&msg,sizeof(msg.args));
 }
 
 static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height) {
@@ -125,14 +138,14 @@ static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height) 
 	win->shmfd = shm_open(name,IO_READ | IO_WRITE | IO_CREATE,0644);
 	if(win->shmfd < 0)
 		return win->shmfd;
-	win->shmaddr = mmap(NULL,width * height * (vesaInfo.bitsPerPixel / 8),0,
+	win->shmaddr = mmap(NULL,width * height * (mode.bitsPerPixel / 8),0,
 			PROT_READ | PROT_WRITE,MAP_SHARED,win->shmfd,0);
 	if(win->shmaddr == NULL) {
 		close(win->shmfd);
 		shm_unlink(name);
 		return errno;
 	}
-	memclear(win->shmaddr,width * height * (vesaInfo.bitsPerPixel / 8));
+	memclear(win->shmaddr,width * height * (mode.bitsPerPixel / 8));
 	return 0;
 }
 
@@ -175,11 +188,6 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 		}
 	}
 	return WINID_UNUSED;
-}
-
-void win_updateScreen(void) {
-	send(vesa,MSG_VESA_SETMODE,NULL,0);
-	win_notifyVesa(0,0,vesaInfo.width,vesaInfo.height);
 }
 
 void win_destroyWinsOf(inode_t cid,gpos_t mouseX,gpos_t mouseY) {
@@ -300,7 +308,7 @@ void win_previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	msg.args.arg3 = width;
 	msg.args.arg4 = height;
 	msg.args.arg5 = 2;
-	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+	/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
 }
 
 void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
@@ -310,7 +318,7 @@ void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 	msg.args.arg3 = w->width;
 	msg.args.arg4 = w->height;
 	msg.args.arg5 = 2;
-	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+	/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
 }
 
 void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
@@ -328,7 +336,7 @@ void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 
 		/* remove preview */
 		msg.args.arg5 = 0;
-		send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+		/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
 
 		if(width < oldWidth) {
 			sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
@@ -359,7 +367,7 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 
 	/* remove preview */
 	msg.args.arg5 = 0;
-	send(vesa,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));
+	/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
 
 	/* save old position */
 	old->x = windows[window].x;
@@ -434,10 +442,10 @@ static bool win_validateRect(sRectangle *r) {
 		r->width += r->x;
 		r->x = 0;
 	}
-	if(r->x >= (gpos_t)vesaInfo.width || r->y >= (gpos_t)vesaInfo.height)
+	if(r->x >= (gpos_t)mode.width || r->y >= (gpos_t)mode.height)
 		return false;
-	r->width = MIN(vesaInfo.width - r->x,r->width);
-	r->height = MIN(vesaInfo.height - r->y,r->height);
+	r->width = MIN(mode.width - r->x,r->width);
+	r->height = MIN(mode.height - r->y,r->height);
 	return true;
 }
 
@@ -536,10 +544,10 @@ static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t
 	gpos_t ysave = y;
 	size_t count = width * PIXEL_SIZE;
 	gpos_t maxy = y + height;
-	mem += (y * vesaInfo.width + x) * PIXEL_SIZE;
+	mem += (y * mode.width + x) * PIXEL_SIZE;
 	while(y < maxy) {
 		memclear(mem,count);
-		mem += vesaInfo.width * PIXEL_SIZE;
+		mem += mode.width * PIXEL_SIZE;
 		y++;
 	}
 
@@ -554,9 +562,9 @@ static void win_copyRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t 
 	gpos_t endy = y + height;
 	size_t count = width * PIXEL_SIZE;
 	size_t srcAdd = windows[id].width * PIXEL_SIZE;
-	size_t dstAdd = vesaInfo.width * PIXEL_SIZE;
+	size_t dstAdd = mode.width * PIXEL_SIZE;
 	src = (uint8_t*)windows[id].shmaddr + (y * windows[id].width + x) * PIXEL_SIZE;
-	dst = mem + ((windows[id].y + y) * vesaInfo.width + (windows[id].x + x)) * PIXEL_SIZE;
+	dst = mem + ((windows[id].y + y) * mode.width + (windows[id].x + x)) * PIXEL_SIZE;
 
 	while(y < endy) {
 		memcpy(dst,src,count);
@@ -575,9 +583,9 @@ static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	}
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
-	msg.args.arg3 = MIN(vesaInfo.width - x,width);
-	msg.args.arg4 = MIN(vesaInfo.height - y,height);
-	send(vesa,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
+	msg.args.arg3 = MIN(mode.width - x,width);
+	msg.args.arg4 = MIN(mode.height - y,height);
+	send(uimng,MSG_SCR_UPDATE,&msg,sizeof(msg.args));
 }
 
 static void win_notifyWinCreate(gwinid_t id,const char *title) {

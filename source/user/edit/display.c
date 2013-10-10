@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/vterm.h>
 #include <esc/io.h>
 #include <esc/messages.h>
@@ -35,7 +36,7 @@
 static void displ_updateLines(size_t start,size_t count);
 static void displ_printStatus(void);
 
-static sVTSize consSize;
+static sScreenMode mode;
 static size_t firstLine = 0;
 static size_t dirtyStart = 0;
 static size_t dirtyCount;
@@ -47,13 +48,13 @@ static int curY = 0;
 static sFileBuffer *buffer;
 
 void displ_init(sFileBuffer *buf) {
-	if(vterm_getSize(STDOUT_FILENO,&consSize) < 0)
+	if(screen_getMode(STDOUT_FILENO,&mode) < 0)
 		error("Unable to get screensize");
 
 	/* one line for status-information :) */
-	consSize.height--;
+	mode.rows--;
 	buffer = buf;
-	dirtyCount = consSize.height;
+	dirtyCount = mode.rows;
 
 	/* backup screen */
 	vterm_backup(STDOUT_FILENO);
@@ -119,7 +120,7 @@ void displ_mvCurHor(uint type) {
 }
 
 void displ_mvCurVertPage(bool up) {
-	displ_mvCurVert(up ? -consSize.height : consSize.height);
+	displ_mvCurVert(up ? -mode.rows : mode.rows);
 }
 
 void displ_mvCurVert(int lineCount) {
@@ -132,14 +133,14 @@ void displ_mvCurVert(int lineCount) {
 	else
 		curY += lineCount;
 	/* for files smaller than consSize.height */
-	if(total < consSize.height && curY >= (int)total)
+	if(total < mode.rows && curY >= (int)total)
 		curY = total - 1;
-	else if(curY >= (int)consSize.height) {
-		if(total >= consSize.height)
-			firstLine = MIN(total - consSize.height,firstLine + (curY - consSize.height) + 1);
+	else if(curY >= (int)mode.rows) {
+		if(total >= mode.rows)
+			firstLine = MIN(total - mode.rows,firstLine + (curY - mode.rows) + 1);
 		else
-			firstLine = MIN(total,firstLine + (curY - consSize.height) + 1);
-		curY = consSize.height - 1;
+			firstLine = MIN(total,firstLine + (curY - mode.rows) + 1);
+		curY = mode.rows - 1;
 	}
 	else if(curY < 0) {
 		firstLine = MAX(0,(int)firstLine + curY);
@@ -151,7 +152,7 @@ void displ_mvCurVert(int lineCount) {
 	curXDispl = MIN((int)line->displLen,MAX(curXVirtDispl,curXDispl));
 	/* anything to update? */
 	if(oldFirst != firstLine)
-		displ_markDirty(firstLine,consSize.height);
+		displ_markDirty(firstLine,mode.rows);
 }
 
 void displ_markDirty(size_t start,size_t count) {
@@ -165,7 +166,7 @@ void displ_markDirty(size_t start,size_t count) {
 			dirtyStart = start;
 		dirtyCount = MAX(oldstart + dirtyCount,start + count) - dirtyStart;
 	}
-	dirtyCount = MIN(dirtyCount,consSize.height - (dirtyStart - firstLine));
+	dirtyCount = MIN(dirtyCount,mode.rows - (dirtyStart - firstLine));
 }
 
 void displ_update(void) {
@@ -181,8 +182,8 @@ size_t displ_getCharLen(char c) {
 int displ_getSaveFile(char *file,size_t bufSize) {
 	size_t i;
 	char *res;
-	printf("\033[go;%d;%d]",0,consSize.height - 1);
-	for(i = 0; i < consSize.width; i++)
+	printf("\033[go;%d;%d]",0,mode.rows - 1);
+	for(i = 0; i < mode.cols; i++)
 		putchar(' ');
 	putchar('\r');
 	vterm_setReadline(STDOUT_FILENO,true);
@@ -191,7 +192,7 @@ int displ_getSaveFile(char *file,size_t bufSize) {
 		printf("\033[si;1]%s\033[si;0]",buffer->filename);
 	res = fgetl(file,bufSize,stdin);
 	vterm_setReadline(STDOUT_FILENO,false);
-	displ_markDirty(firstLine + consSize.height - 1,1);
+	displ_markDirty(firstLine + mode.rows - 1,1);
 	displ_update();
 	return res ? 0 : EOF;
 }
@@ -206,7 +207,7 @@ static void displ_updateLines(size_t start,size_t count) {
 		if(start < sll_length(buffer->lines)) {
 			for(n = sll_nodeAt(buffer->lines,start); n != NULL && count > 0; n = n->next, count--) {
 				line = (sLine*)n->data;
-				for(j = 0, i = 0; i < line->length && j < consSize.width; i++) {
+				for(j = 0, i = 0; i < line->length && j < mode.cols; i++) {
 					char c = line->str[i];
 					switch(c) {
 						case '\t':
@@ -225,12 +226,12 @@ static void displ_updateLines(size_t start,size_t count) {
 							break;
 					}
 				}
-				for(; j < consSize.width; j++)
+				for(; j < mode.cols; j++)
 					putchar(' ');
 			}
 		}
 		for(; count > 0; count--) {
-			for(i = 0; i < consSize.width; i++)
+			for(i = 0; i < mode.cols; i++)
 				putchar(' ');
 		}
 		fflush(stdout);
@@ -241,11 +242,11 @@ static void displ_updateLines(size_t start,size_t count) {
 
 static void displ_printStatus(void) {
 	size_t fileLen = buffer->filename ? strlen(buffer->filename) : 0;
-	char *tmp = (char*)emalloc(consSize.width + 1);
-	printf("\033[go;%d;%d]",0,consSize.height + 1);
-	snprintf(tmp,consSize.width + 1,"Cursor @ %zd : %d",firstLine + curY + 1,curX + 1);
+	char *tmp = (char*)emalloc(mode.cols + 1);
+	printf("\033[go;%d;%d]",0,mode.rows + 1);
+	snprintf(tmp,mode.cols + 1,"Cursor @ %zd : %d",firstLine + curY + 1,curX + 1);
 	printf("\033[co;0;7]%-*s%s%c\033[co]",
-			consSize.width - fileLen - 1,tmp,
+			mode.cols - fileLen - 1,tmp,
 			buffer->filename ? buffer->filename : "",buffer->modified ? '*' : ' ');
 	efree(tmp);
 }

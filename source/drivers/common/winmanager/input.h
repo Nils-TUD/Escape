@@ -21,4 +21,14 @@
 
 #include <esc/common.h>
 
-int keyboard_start(void *drvIdPtr);
+typedef struct {
+	int winFd;
+	int uimngFd;
+	int uimngId;
+	int mode;
+	const char *shmname;
+} sInputThread;
+
+gpos_t input_getMouseX(void);
+gpos_t input_getMouseY(void);
+int input_thread(void *arg);

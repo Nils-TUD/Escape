@@ -108,7 +108,7 @@ int main(void) {
 		error("Unable to announce interrupt-handler");
 
 	/* reg device */
-	sid = createdev("/dev/mouse",DEV_TYPE_CHAR,DEV_READ);
+	sid = createdev("/dev/mouse",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
 	if(sid < 0)
 		error("Unable to register device 'mouse'");
 
@@ -191,11 +191,11 @@ static void irqHandler(A_UNUSED int sig) {
 		}
 		break;
 		case 1:
-			mdata.x = inbyte(IOPORT_KB_DATA);
+			mdata.x = (char)inbyte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 2:
-			mdata.y = inbyte(IOPORT_KB_DATA);
+			mdata.y = (char)inbyte(IOPORT_KB_DATA);
 			if(wheel)
 				byteNo++;
 			else {
@@ -204,7 +204,7 @@ static void irqHandler(A_UNUSED int sig) {
 			}
 			break;
 		case 3:
-			mdata.z = inbyte(IOPORT_KB_DATA);
+			mdata.z = (char)inbyte(IOPORT_KB_DATA);
 			byteNo = 0;
 			break;
 	}

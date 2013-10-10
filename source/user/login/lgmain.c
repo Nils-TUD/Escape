@@ -40,37 +40,31 @@ static sPasswd *pwList = NULL;
 static sGroup *groupList;
 static sUser *userList = NULL;
 
-int main(int argc,char **argv) {
-	const char *shargs[] = {NULL,NULL,NULL};
+int main(void) {
 	char un[MAX_USERNAME_LEN + 1];
 	char pw[MAX_PW_LEN + 1];
 	sUser *u;
 	sGroup *gvt;
 	gid_t *groups;
 	size_t groupCount,usercount,pwcount;
-	int vterm;
 	int fd;
+	char *termPath = getenv("TERM");
 
-	if(argc != 2)
-		error("Usage: %s <vterm>",argv[0]);
-
-	/* parse vterm-number from "/dev/vtermX" */
-	vterm = atoi(argv[1] + 10);
 	/* note: we do always pass IO_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
-	if((fd = open(argv[1],IO_READ | IO_MSGS)) != STDIN_FILENO)
-		error("Unable to open '%s' for STDIN: Got fd %d",argv[1],fd);
+	if((fd = open(termPath,IO_READ | IO_MSGS)) != STDIN_FILENO)
+		error("Unable to open '%s' for STDIN: Got fd %d",termPath,fd);
 
 	/* open stdout */
-	if((fd = open(argv[1],IO_WRITE | IO_MSGS)) != STDOUT_FILENO)
-		error("Unable to open '%s' for STDOUT: Got fd %d",argv[1],fd);
+	if((fd = open(termPath,IO_WRITE | IO_MSGS)) != STDOUT_FILENO)
+		error("Unable to open '%s' for STDOUT: Got fd %d",termPath,fd);
 
 	/* dup stdout to stderr */
 	if((fd = dup(fd)) != STDERR_FILENO)
 		error("Unable to duplicate STDOUT to STDERR: Got fd %d",fd);
 
 	printf("\n\n");
-	printf("\033[co;9]Welcome to Escape v%s, %s!\033[co]\n\n",ESCAPE_VERSION,argv[1]);
+	printf("\033[co;9]Welcome to Escape v%s, %s!\033[co]\n\n",ESCAPE_VERSION,termPath);
 	printf("Please login to get a shell.\n");
 	printf("Hint: use hrniels/test, jon/doe or root/root ;)\n\n");
 
@@ -123,7 +117,7 @@ int main(int argc,char **argv) {
 	groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
 	if(!groups)
 		error("Unable to collect group-ids");
-	gvt = group_getByName(groupList,argv[1]);
+	gvt = group_getByName(groupList,termPath);
 	/* add the process to the corresponding vterm-group */
 	if(gvt)
 		groups[groupCount++] = gvt->gid;
@@ -139,8 +133,7 @@ int main(int argc,char **argv) {
 	setenv("USER",u->name);
 
 	/* exchange with shell */
-	shargs[0] = argv[0];
-	shargs[1] = argv[1];
+	const char *shargs[] = {SHELL_PATH,NULL};
 	exec(SHELL_PATH,shargs);
 
 	/* not reached */

@@ -23,6 +23,7 @@
 #include <esc/driver/vterm.h>
 #include <esc/driver.h>
 #include <esc/thread.h>
+#include <gui/window.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -31,40 +32,67 @@
 using namespace std;
 
 GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
-	: _sid(sid), _run(true), _vt(nullptr), _sh(sh), _cfg(),
+	: _sid(sid), _run(true), _vt(nullptr), _mode(), _sh(sh),
 	  _rbuffer(new char[READ_BUF_SIZE + 1]), _rbufPos(0) {
-	// open speaker
-	int speakerFd = open("/dev/speaker",IO_MSGS);
-	if(speakerFd < 0)
-		error("Unable to open '/dev/speaker'");
-
-	// give term a dummy video-device
-	_cfg.devCount = 1;
-	_cfg.devFds = (int*)malloc(sizeof(int) * 1);
-	_cfg.devFds[0] = -1;
-
 	// create and init vterm
 	_vt = (sVTerm*)malloc(sizeof(sVTerm));
 	if(!_vt)
 		error("Not enough mem for vterm");
+
+	// open speaker
+	_vt->speaker = open("/dev/speaker",IO_MSGS);
+	if(_vt->speaker < 0)
+		error("Unable to open '/dev/speaker'");
+
+	_vt->data = this;
 	_vt->index = 0;
 	_vt->sid = sid;
 	_vt->defForeground = BLACK;
 	_vt->defBackground = WHITE;
+	_vt->setCursor = setCursor;
 	if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
 		error("Unable to get env-var TERM");
-	if(!vtctrl_init(_vt,DEF_COLS,DEF_ROWS,0,-1,speakerFd))
+
+	_mode.cols = DEF_COLS;
+	_mode.rows = DEF_ROWS;
+	_mode.type = VID_MODE_TYPE_TUI;
+	_mode.mode = VID_MODE_GRAPHICAL;
+	if(!vtctrl_init(_vt,&_mode))
 		error("Unable to init vterm");
-	_vt->active = true;
+
 	_sh->setVTerm(_vt);
 }
 
 GUITerm::~GUITerm() {
 	delete[] _rbuffer;
-	free(_cfg.devFds);
 	vtctrl_destroy(_vt);
 	free(_vt);
 	close(_sid);
+}
+
+void GUITerm::setCursor(sVTerm *vt) {
+	gpos_t x,y;
+	if(vt->upScroll != 0 || vt->col != vt->lastCol || vt->row != vt->lastRow) {
+		/* draw no cursor if it's not visible by setting it to an invalid location */
+		if(vt->firstVisLine + vt->rows <= vt->currLine + vt->row) {
+			x = vt->cols;
+			y = vt->rows;
+		}
+		else {
+			x = vt->col;
+			y = vt->row;
+		}
+		static_cast<GUITerm*>(vt->data)->_sh->setCursor();
+		vt->lastCol = x;
+		vt->lastRow = y;
+	}
+}
+
+void GUITerm::prepareMode() {
+	gui::Application *app = gui::Application::getInstance();
+	_mode.bitsPerPixel = app->getColorDepth();
+	_mode.width = _sh->getWindow()->getSize().width;
+	_mode.height = _sh->getWindow()->getSize().height;
 }
 
 void GUITerm::run() {
@@ -94,44 +122,46 @@ void GUITerm::run() {
 					write(fd,&msg);
 					break;
 
-				case MSG_VT_GETMODES: {
+				case MSG_SCR_GETMODES: {
 					if(msg.args.arg1 == 0) {
 						msg.args.arg1 = 1;
 						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					}
 					else {
-						gui::Application *app = gui::Application::getInstance();
-						sVTMode mode = {0,_vt->cols,_vt->rows,app->getColorDepth(),VID_MODE_TYPE_GRAPHICAL};
-						send(fd,MSG_DEF_RESPONSE,&mode,sizeof(sVTMode));
+						prepareMode();
+						send(fd,MSG_DEF_RESPONSE,&_mode,sizeof(_mode));
 					}
 				}
 				break;
 
+				case MSG_SCR_GETMODE: {
+					msg.data.arg1 = 0;
+					prepareMode();
+					memcpy(msg.data.d,&_mode,sizeof(_mode));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+				}
+				break;
+
 				case MSG_VT_SHELLPID:
-				case MSG_VT_ENABLE:
-				case MSG_VT_DISABLE:
 				case MSG_VT_EN_ECHO:
 				case MSG_VT_DIS_ECHO:
 				case MSG_VT_EN_RDLINE:
 				case MSG_VT_DIS_RDLINE:
-				case MSG_VT_EN_RDKB:
-				case MSG_VT_DIS_RDKB:
 				case MSG_VT_EN_NAVI:
 				case MSG_VT_DIS_NAVI:
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
-				case MSG_VT_GETSIZE:
-				case MSG_VT_GETMODE:
-					msg.data.arg1 = vtctrl_control(_vt,&_cfg,mid,msg.data.d);
+				case MSG_VT_ISVTERM:
+					msg.data.arg1 = vtctrl_control(_vt,mid,msg.data.d);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
 
+				case MSG_UIM_SETKEYMAP:
+				case MSG_VT_SETMODE:
 				default:
-				case MSG_VT_SETMODE: {
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
+					break;
 			}
 			_sh->update();
 		}

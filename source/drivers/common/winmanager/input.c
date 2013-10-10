@@ -21,87 +21,105 @@
 #include <esc/io.h>
 #include <esc/driver.h>
 #include <esc/messages.h>
+#include <esc/thread.h>
+#include <esc/esccodes.h>
+#include <esc/driver/uimng.h>
+#include <esc/driver/screen.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
-#include "mouse.h"
+#include "input.h"
 #include "window.h"
 
-#define MOUSE_DATA_BUF_SIZE	128
+static void handleKbMessage(sUIMData *data);
+static void handleMouseMessage(int winFd,sUIMData *data);
 
-static void handleMouseMessage(int drvId,sMouseData *mdata);
-
-static sMsg msg;
 static uchar buttons = 0;
 static gpos_t curX = 0;
 static gpos_t curY = 0;
 static uchar cursor = CURSOR_DEFAULT;
-static sMouseData mouseData[MOUSE_DATA_BUF_SIZE];
 static sWindow *mouseWin = NULL;
-static int winmng = -1;
 
-int mouse_start(void *drvIdPtr) {
-	int drvId = *(int*)drvIdPtr;
-	int mouse = open("/dev/mouse",IO_READ);
-	if(mouse < 0)
-		error("Unable to open /dev/mouse");
-	winmng = open("/dev/winmanager",IO_MSGS);
-	if(winmng < 0)
-		error("Unable to open /dev/winmanager");
-
-	while(1) {
-		ssize_t count = IGNSIGS(read(mouse,mouseData,sizeof(mouseData)));
-		if(count < 0)
-			printe("[WINM] Unable to read from mouse");
-		else {
-			sMouseData *msd;
-			if(!win_isEnabled())
-				continue;
-
-			msd = mouseData;
-			count /= sizeof(sMouseData);
-			while(count-- > 0) {
-				handleMouseMessage(drvId,msd);
-				msd++;
-			}
-		}
-	}
-	close(winmng);
-	close(mouse);
-	return 0;
-}
-
-gpos_t mouse_getX(void) {
+gpos_t input_getMouseX(void) {
 	return curX;
 }
 
-gpos_t mouse_getY(void) {
+gpos_t input_getMouseY(void) {
 	return curY;
 }
 
-static void handleMouseMessage(int drvId,sMouseData *mdata) {
+int input_thread(void *arg) {
+	sInputThread *in = (sInputThread*)arg;
+
+	int uiminFd = open("/dev/uim-input",IO_MSGS);
+	if(uiminFd < 0)
+		error("Unable to open '/dev/uim-input'");
+	if(uimng_attach(uiminFd,in->uimngId) < 0)
+		error("Unable to attach to uimanager");
+
+	/* now that we're attached, set the desired mode */
+	if(screen_setMode(in->uimngFd,VID_MODE_TYPE_GUI,in->mode,in->shmname,true) < 0)
+		error("Unable to set mode");
+
+	/* read from uimanager and handle the keys */
+	while(1) {
+		sUIMData uiEvent;
+		ssize_t count = IGNSIGS(receive(uiminFd,NULL,&uiEvent,sizeof(uiEvent)));
+		if(count > 0) {
+			switch(uiEvent.type) {
+				case KM_EV_KEYBOARD:
+					handleKbMessage(&uiEvent);
+					break;
+
+				case KM_EV_MOUSE:
+					handleMouseMessage(in->winFd,&uiEvent);
+					break;
+			}
+		}
+	}
+	close(uiminFd);
+	return 0;
+}
+
+static void handleKbMessage(sUIMData *data) {
+	sWindow *active = win_getActive();
+	if(!active)
+		return;
+
+	sArgsMsg msg;
+	msg.arg1 = data->d.keyb.keycode;
+	msg.arg2 = (data->d.keyb.modifier & STATE_BREAK) ? 1 : 0;
+	msg.arg3 = active->id;
+	msg.arg4 = data->d.keyb.character;
+	msg.arg5 = data->d.keyb.modifier;
+	send(active->owner,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg));
+}
+
+static void handleMouseMessage(int winFd,sUIMData *data) {
+	sArgsMsg msg;
 	gpos_t oldx = curX,oldy = curY;
 	bool btnChanged = false;
 	sWindow *w,*wheelWin = NULL;
-	curX = MAX(0,MIN(win_getScreenWidth() - 1,curX + mdata->x));
-	curY = MAX(0,MIN(win_getScreenHeight() - 1,curY - mdata->y));
+	curX = MAX(0,MIN((gpos_t)win_getMode()->width - 1,curX + data->d.mouse.x));
+	curY = MAX(0,MIN((gpos_t)win_getMode()->height - 1,curY - data->d.mouse.y));
 
 	/* set active window */
-	if(mdata->buttons != buttons) {
+	if(data->d.mouse.buttons != buttons) {
 		btnChanged = true;
-		buttons = mdata->buttons;
+		buttons = data->d.mouse.buttons;
 		if(buttons) {
 			w = win_getAt(curX,curY);
 			if(w) {
 				/* do that via message passing so that only one thread performs changes on the
 				 * windows */
-				msg.args.arg1 = w->id;
-				send(winmng,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg.args));
+				msg.arg1 = w->id;
+				send(winFd,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg));
 			}
 			mouseWin = w;
 		}
 	}
-	else if(mdata->z)
+	else if(data->d.mouse.z)
 		wheelWin = win_getAt(curX,curY);
 
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
@@ -135,14 +153,14 @@ static void handleMouseMessage(int drvId,sMouseData *mdata) {
 	/* send to window */
 	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
 	if(w) {
-		msg.args.arg1 = curX;
-		msg.args.arg2 = curY;
-		msg.args.arg3 = mdata->x;
-		msg.args.arg4 = -mdata->y;
-		msg.args.arg5 = mdata->z;
-		msg.args.arg6 = mdata->buttons;
-		msg.args.arg7 = w->id;
-		send(w->owner,MSG_WIN_MOUSE_EV,&msg,sizeof(msg.args));
+		msg.arg1 = curX;
+		msg.arg2 = curY;
+		msg.arg3 = data->d.mouse.x;
+		msg.arg4 = -data->d.mouse.y;
+		msg.arg5 = data->d.mouse.z;
+		msg.arg6 = data->d.mouse.buttons;
+		msg.arg7 = w->id;
+		send(w->owner,MSG_WIN_MOUSE_EV,&msg,sizeof(msg));
 	}
 
 	if(btnChanged && !buttons)

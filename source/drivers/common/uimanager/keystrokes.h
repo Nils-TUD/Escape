@@ -22,4 +22,5 @@
 
 void keys_init(void);
 void keys_createTextConsole(void);
-bool keys_handleKey(sKmData *data);
+void keys_createGUIConsole(void);
+bool keys_handleKey(sUIMData *data);

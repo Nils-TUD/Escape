@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeCProg('sbin', target = 'vesatext', source = env.Glob('*.c'), LIBS = ['vbe', 'tui'])

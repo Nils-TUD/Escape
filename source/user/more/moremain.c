@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/vterm.h>
 #include <esc/cmdargs.h>
 #include <esc/esccodes.h>
@@ -41,7 +42,7 @@ int main(int argc,const char *argv[]) {
 	const char **args;
 	FILE *vt,*in = stdin;
 	size_t line,col;
-	sVTSize consSize;
+	sScreenMode mode;
 	int vtFd;
 	int c;
 
@@ -71,7 +72,7 @@ int main(int argc,const char *argv[]) {
 	vtFd = fileno(vt);
 	vterm_setReadline(vtFd,false);
 	/* get vterm-size */
-	if(vterm_getSize(vtFd,&consSize) < 0)
+	if(screen_getMode(vtFd,&mode) < 0)
 		error("Unable to get vterm-size");
 
 	/* read until vterm is full, ask for continue, and so on */
@@ -81,11 +82,11 @@ int main(int argc,const char *argv[]) {
 		putchar(c);
 		col++;
 
-		if(col == consSize.width - 1 || c == '\n') {
+		if(col == mode.cols - 1 || c == '\n') {
 			line++;
 			col = 0;
 		}
-		if(line == consSize.height - 1) {
+		if(line == mode.rows - 1) {
 			fflush(stdout);
 			waitForKeyPress(vt);
 			line = 0;

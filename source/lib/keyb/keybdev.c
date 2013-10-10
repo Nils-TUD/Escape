@@ -18,8 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/vterm.h>
-#include <esc/driver/video.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/debug.h>

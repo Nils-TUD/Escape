@@ -30,9 +30,7 @@
 #include <shell/history.h>
 
 static void usage(char *name) {
-	fprintf(stderr,"Usage: \n");
-	fprintf(stderr,"	Interactive:		%s <vterm>\n",name);
-	fprintf(stderr,"	Non-Interactive:	%s -e <yourCmd>\n",name);
+	fprintf(stderr,"Usage: %s [-e <command>]\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -40,8 +38,8 @@ int main(int argc,char **argv) {
 	long pid;
 	char *buffer;
 
-	/* we need either the vterm as argument or "-e <cmd>" */
-	if((argc != 2 && argc != 3) || isHelpCmd(argc,argv)) {
+	/* we need either no args or "-e <cmd>" */
+	if((argc != 1 && argc != 3) || isHelpCmd(argc,argv)) {
 		usage(argv[0]);
 		return EXIT_FAILURE;
 	}
@@ -66,9 +64,6 @@ int main(int argc,char **argv) {
 	pid = getpid();
 	if(vterm_setShellPid(STDOUT_FILENO,pid) < 0)
 		error("Unable to send pid to vterm");
-
-	/* set vterm as env-variable */
-	setenv("TERM",argv[1]);
 
 	while(1) {
 		/* create buffer (history will free it) */

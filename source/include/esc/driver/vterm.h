@@ -32,11 +32,8 @@ int vterm_setNavi(int fd,bool navi);
 int vterm_backup(int fd);
 int vterm_restore(int fd);
 int vterm_setShellPid(int fd,pid_t pid);
-int vterm_getSize(int fd,sVTSize *size);
-int vterm_getMode(int fd);
 int vterm_setMode(int fd,int mode);
-ssize_t vterm_getModeCount(int fd);
-int vterm_getModes(int fd,sVTMode *modes,size_t count);
+int vterm_isVTerm(int fd);
 
 #ifdef __cplusplus
 }

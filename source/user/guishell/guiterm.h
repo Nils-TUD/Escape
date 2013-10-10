@@ -54,13 +54,15 @@ private:
 
 	void read(int fd,sMsg *msg);
 	void write(int fd,sMsg *msg);
+	void prepareMode();
+	static void setCursor(sVTerm *vt);
 
 private:
 	int _sid;
 	volatile bool _run;
 	sVTerm *_vt;
+	sScreenMode _mode;
 	std::shared_ptr<ShellControl> _sh;
-	sVTermCfg _cfg;
 	char *_rbuffer;
 	size_t _rbufPos;
 };

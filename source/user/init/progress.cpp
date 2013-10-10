@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
+#include <esc/driver/screen.h>
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/mem.h>
@@ -30,8 +30,7 @@
 using namespace std;
 
 Progress::Progress(size_t startSkip,size_t finished,size_t itemCount)
-		: _fd(-1), _shm(), _startSkip(startSkip), _itemCount(itemCount), _finished(finished),
-		  _vtSize(sVTSize()) {
+	: _fd(-1), _shm(), _startSkip(startSkip), _itemCount(itemCount), _finished(finished), _mode() {
 }
 
 Progress::~Progress() {
@@ -86,8 +85,8 @@ void Progress::updateBar() {
 void Progress::paintBar() {
 	if(connect()) {
 		/* clear screen */
-		char *zeros = (char*)calloc(_vtSize.width * _vtSize.height * 2,1);
-		paintTo(zeros,0,0,_vtSize.width,_vtSize.height);
+		char *zeros = (char*)calloc(_mode.cols * _mode.rows * 2,1);
+		paintTo(zeros,0,0,_mode.cols,_mode.rows);
 		free(zeros);
 
 		const char color = 0x07;
@@ -123,35 +122,34 @@ void Progress::paintBar() {
 }
 
 void Progress::paintTo(const void *data,int x,int y,size_t width,size_t height) {
-	memcpy(_shm + _vtSize.width * y * 2 + x * 2,data,width * height * 2);
-	video_update(_fd,x,y,width,height);
+	memcpy(_shm + _mode.cols * y * 2 + x * 2,data,width * height * 2);
+	screen_update(_fd,x,y,width,height);
 }
 
 bool Progress::connect() {
 	if(_fd >= 0)
 		return true;
-	_fd = open("/dev/vga",IO_WRITE | IO_MSGS);
+	_fd = open("/dev/vga",IO_MSGS);
 	if(_fd < 0)
 		return false;
 
-	ssize_t modeCnt = video_getModeCount(_fd);
+	ssize_t modeCnt = screen_getModeCount(_fd);
 	if(modeCnt < 0)
 		error("Unable to get mode count");
-	sVTMode *modes = new sVTMode[modeCnt];
-	if(video_getModes(_fd,modes,modeCnt) < 0)
+	sScreenMode *modes = new sScreenMode[modeCnt];
+	if(screen_getModes(_fd,modes,modeCnt) < 0)
 		error("Unable to get modes");
 	for(ssize_t i = 0; i < modeCnt; ++i) {
-		if(modes[i].width >= VGA_COLS && modes[i].height >= VGA_ROWS) {
-			int fd = shm_open("init-vga",IO_READ | IO_WRITE | IO_CREATE,0777);
+		if(modes[i].cols >= VGA_COLS && modes[i].rows >= VGA_ROWS) {
+			int fd = shm_open("init-vga",IO_READ | IO_WRITE | IO_CREATE,0666);
 			if(fd < 0)
 				error("Unable to open vga shm");
-			_shm = (char*)mmap(NULL,modes[i].width * modes[i].height * 2,0,PROT_READ | PROT_WRITE,
+			_shm = (char*)mmap(NULL,modes[i].cols * modes[i].rows * 2,0,PROT_READ | PROT_WRITE,
 				MAP_SHARED,fd,0);
 			close(fd);
-			if(video_setMode(_fd,modes[i].id,"init-vga",true) < 0)
+			if(screen_setMode(_fd,VID_MODE_TYPE_TUI,modes[i].id,"init-vga",true) < 0)
 				error("Unable to set mode");
-			_vtSize.width = modes[i].width;
-			_vtSize.height = modes[i].height;
+			memcpy(&_mode,modes + i,sizeof(sScreenMode));
 			break;
 		}
 	}

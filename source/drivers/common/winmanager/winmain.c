@@ -25,41 +25,63 @@
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
+#include <esc/driver/uimng.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "window.h"
-#include "mouse.h"
-#include "keyboard.h"
+#include "input.h"
 #include "listener.h"
 #include "infodev.h"
 
 static sMsg msg;
 static gsize_t screenWidth;
 static gsize_t screenHeight;
+static sInputThread inputData;
 
-int main(void) {
+int main(int argc,char *argv[]) {
 	int drvId;
 	msgid_t mid;
+	char path[MAX_PATH_LEN];
 
-	drvId = createdev("/dev/winmanager",DEV_TYPE_SERVICE,DEV_CLOSE);
+	if(argc != 4) {
+		fprintf(stderr,"Usage: %s <width> <height> <name>\n",argv[0]);
+		return 1;
+	}
+
+	/* connect to ui-manager */
+	int uimng = open("/dev/uim-ctrl",IO_MSGS);
+	if(uimng < 0)
+		error("Unable to open uim-ctrl");
+	int uimngId = uimng_getId(uimng);
+	if(uimngId < 0)
+		error("Unable to get uimng id");
+
+	/* create device */
+	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
+	drvId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create device winmanager");
 
-	listener_init(drvId);
-	if(!win_init(drvId))
+	/* init window stuff */
+	inputData.winFd = drvId;
+	inputData.uimngFd = uimng;
+	inputData.uimngId = uimngId;
+	inputData.shmname = argv[3];
+	inputData.mode = win_init(drvId,uimng,atoi(argv[1]),atoi(argv[2]),argv[3]);
+	if(inputData.mode < 0)
 		return EXIT_FAILURE;
 
-	screenWidth = win_getScreenWidth();
-	screenHeight = win_getScreenHeight();
-
-	if(startthread(mouse_start,&drvId) < 0)
+	/* start helper threads */
+	listener_init(drvId);
+	if(startthread(input_thread,&inputData) < 0)
 		error("Unable to start thread for mouse-handler");
-	if(startthread(keyboard_start,&drvId) < 0)
-		error("Unable to start thread for keyboard-handler");
 	if(startthread(infodev_thread,NULL) < 0)
 		error("Unable to start thread for the infodev");
+
+	screenWidth = win_getMode()->width;
+	screenHeight = win_getMode()->height;
 
 	while(1) {
 		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
@@ -79,7 +101,7 @@ int main(void) {
 					msg.args.arg2 = win_create(x,y,width,height,fd,style,titleBarHeight,msg.str.s1);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style != WIN_STYLE_DESKTOP)
-						win_setActive(msg.args.arg2,false,mouse_getX(),mouse_getY());
+						win_setActive(msg.args.arg2,false,input_getMouseX(),input_getMouseY());
 				}
 				break;
 
@@ -87,14 +109,14 @@ int main(void) {
 					gwinid_t wid = (gwinid_t)msg.args.arg1;
 					sWindow *win = win_get(wid);
 					if(win)
-						win_setActive(wid,true,mouse_getX(),mouse_getY());
+						win_setActive(wid,true,input_getMouseX(),input_getMouseY());
 				}
 				break;
 
 				case MSG_WIN_DESTROY: {
 					gwinid_t wid = (gwinid_t)msg.args.arg1;
 					if(win_exists(wid))
-						win_destroy(wid,mouse_getX(),mouse_getY());
+						win_destroy(wid,input_getMouseX(),input_getMouseY());
 				}
 				break;
 
@@ -102,10 +124,10 @@ int main(void) {
 					gwinid_t wid = (gwinid_t)msg.args.arg1;
 					gpos_t x = (gpos_t)msg.args.arg2;
 					gpos_t y = (gpos_t)msg.args.arg3;
-					bool finish = (bool)msg.args.arg4;
+					bool finished = (bool)msg.args.arg4;
 					sWindow *win = win_get(wid);
-					if(win_isEnabled() && win && x < (gpos_t)screenWidth && y < (gpos_t)screenHeight) {
-						if(finish)
+					if(win && x < (gpos_t)screenWidth && y < (gpos_t)screenHeight) {
+						if(finished)
 							win_moveTo(wid,x,y,win->width,win->height);
 						else
 							win_previewMove(wid,x,y);
@@ -119,9 +141,9 @@ int main(void) {
 					gpos_t y = (gpos_t)msg.args.arg3;
 					gsize_t width = (gsize_t)msg.args.arg4;
 					gsize_t height = (gsize_t)msg.args.arg5;
-					bool finish = (bool)msg.args.arg6;
-					if(win_isEnabled() && win_exists(wid)) {
-						if(finish) {
+					bool finished = (bool)msg.args.arg6;
+					if(win_exists(wid)) {
+						if(finished) {
 							win_resize(wid,x,y,width,height);
 							/* wid is already set */
 							send(fd,MSG_WIN_RESIZE_RESP,&msg,sizeof(msg.args));
@@ -139,7 +161,7 @@ int main(void) {
 					gsize_t width = (gsize_t)msg.args.arg4;
 					gsize_t height = (gsize_t)msg.args.arg5;
 					sWindow *win = win_get(wid);
-					if(win_isEnabled() && win != NULL) {
+					if(win != NULL) {
 						if((gpos_t)(x + width) > x &&
 								(gpos_t)(y + height) > y && x + width <= win->width &&
 								y + height <= win->height) {
@@ -171,22 +193,15 @@ int main(void) {
 				}
 				break;
 
-				case MSG_WIN_ENABLE:
-					win_setEnabled(true);
-					win_updateScreen();
-					/* notify the keyboard-thread; it has announced the handler */
-					if(kill(getpid(),SIG_USR1) < 0)
-						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
-					break;
-
-				case MSG_WIN_DISABLE:
-					win_setEnabled(false);
-					if(kill(getpid(),SIG_USR1) < 0)
-						printe("[WINM] Unable to send signal USR1 to keyboard-thread");
-					break;
+				case MSG_SCR_GETMODE: {
+					msg.data.arg1 = 0;
+					memcpy(msg.data.d,win_getMode(),sizeof(sScreenMode));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+				}
+				break;
 
 				case MSG_DEV_CLOSE:
-					win_destroyWinsOf(fd,mouse_getX(),mouse_getY());
+					win_destroyWinsOf(fd,input_getMouseX(),input_getMouseY());
 					close(fd);
 					break;
 

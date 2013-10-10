@@ -34,6 +34,14 @@
 #define MAX_FILEDESCS	16
 #define VTERM_PROG		"/sbin/vterm"
 #define LOGIN_PROG		"/bin/login"
+#define WINMNG_PROG		"/sbin/winmanager"
+#define DESKTOP_PROG	"/bin/desktop"
+
+#define TUI_DEF_COLS	"100"
+#define TUI_DEF_ROWS	"37"
+
+#define GUI_DEF_RES_X	"1024"
+#define GUI_DEF_RES_Y	"768"
 
 static tULock lck;
 
@@ -42,26 +50,27 @@ void keys_init(void) {
 		error("Unable to create keystrokes lock");
 }
 
-void keys_createTextConsole(void) {
-	char name[SSTRLEN("vterm") + 11];
-	char path[SSTRLEN("/dev/vterm") + 11];
+static void keys_createConsole(const char *prefix,size_t preflen,const char *mng,const char *cols,
+						const char *rows,const char *login) {
+	char name[preflen + 11];
+	char path[SSTRLEN("/dev/") + preflen + 11];
 
 	locku(&lck);
 	int id = jobs_getId();
-	snprintf(name,sizeof(name),"vterm%d",id);
+	snprintf(name,sizeof(name),"%s%d",prefix,id);
 	snprintf(path,sizeof(path),"/dev/%s",name);
 
-	int vtPid = fork();
-	if(vtPid < 0)
+	int mngPid = fork();
+	if(mngPid < 0)
 		goto error;
-	if(vtPid == 0) {
+	if(mngPid == 0) {
 		/* close all but stdin, stdout, stderr */
 		for(int i = 3; i < MAX_FILEDESCS; ++i)
 			close(i);
 
-		const char *args[] = {VTERM_PROG,"100","37",name,NULL};
-		exec(VTERM_PROG,args);
-		printe("[UIM] exec with vterm failed");
+		const char *args[] = {mng,cols,rows,name,NULL};
+		exec(mng,args);
+		printe("[UIM] exec with %s failed",mng);
 		return;
 	}
 
@@ -69,20 +78,23 @@ void keys_createTextConsole(void) {
 	while(open(path,IO_MSGS) < 0)
 		sleep(20);
 
-	int shPid = fork();
-	if(shPid < 0)
+	int loginPid = fork();
+	if(loginPid < 0)
 		goto error;
-	if(shPid == 0) {
+	if(loginPid == 0) {
 		/* close all; login will open different streams */
 		for(int i = 0; i < MAX_FILEDESCS; ++i)
 			close(i);
 
-		const char *args[] = {LOGIN_PROG,path,NULL};
-		exec(LOGIN_PROG,args);
-		printe("[UIM] exec with login failed");
+		/* set env-var for childs */
+		setenv("TERM",path);
+
+		const char *args[] = {login,NULL};
+		exec(login,args);
+		printe("[UIM] exec with %s failed",login);
 	}
 
-	jobs_add(id,shPid,vtPid);
+	jobs_add(id,loginPid,mngPid);
 	unlocku(&lck);
 	return;
 
@@ -91,7 +103,17 @@ error:
 	unlocku(&lck);
 }
 
-bool keys_handleKey(sKmData *data) {
+void keys_createTextConsole(void) {
+	keys_createConsole("vterm",SSTRLEN("vterm"),
+		VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG);
+}
+
+void keys_createGUIConsole(void) {
+	keys_createConsole("winmng",SSTRLEN("winmng"),
+		WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,DESKTOP_PROG);
+}
+
+bool keys_handleKey(sUIMData *data) {
 	if(data->d.keyb.modifier & STATE_BREAK)
 		return false;
 
@@ -109,6 +131,7 @@ bool keys_handleKey(sKmData *data) {
 			keys_createTextConsole();
 			return true;
 		case VK_G:
+			keys_createGUIConsole();
 			return true;
 		case VK_LEFT:
 			cli_prev();

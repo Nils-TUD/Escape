@@ -26,8 +26,6 @@
 #define WINDOW_COUNT					32
 #define WINID_UNUSED					WINDOW_COUNT
 
-#define PIXEL_SIZE						(vesaInfo.bitsPerPixel / 8)
-
 #define WIN_STYLE_DEFAULT				0
 #define WIN_STYLE_POPUP					1
 #define WIN_STYLE_DESKTOP				2
@@ -54,31 +52,18 @@ typedef struct {
  * Inits all window-stuff
  *
  * @param sid the device-id
- * @return true on success
+ * @param uifd the uimanager fd
+ * @param width the desired screen width
+ * @param height the desired screen height
+ * @param shmname the shared memory name
+ * @return the mode id on success
  */
-bool win_init(int sid);
+int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname);
 
 /**
- * @return whether the window-manager is enabled
+ * @return the current mode
  */
-bool win_isEnabled(void);
-
-/**
- * Enables or disables the window-manager
- *
- * @param en the new value
- */
-void win_setEnabled(bool en);
-
-/**
- * @return the screen-width
- */
-gpos_t win_getScreenWidth(void);
-
-/**
- * @return the screen-height
- */
-gpos_t win_getScreenHeight(void);
+const sScreenMode *win_getMode(void);
 
 /**
  * Sets the cursor at given position (writes to vesa)
@@ -104,11 +89,6 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  */
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
 	gsize_t titleBarHeight,const char *title);
-
-/**
- * Updates the whole screen
- */
-void win_updateScreen(void);
 
 /**
  * Destroys all windows of the given thread

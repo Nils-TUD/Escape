@@ -22,16 +22,15 @@
 
 typedef struct {
 	int id;
-	uint rows;
-	uint cols;
-	int modeid;
-	void *mode;
+	sScreenMode *mode;
+	int type;
+	void *data;
 	char *shm;
 } sTUIClient;
 
-typedef int (*fSetMode)(sTUIClient *client,const char *shmname,int mid,bool switchMode);
-typedef void (*fSetCursor)(sTUIClient *client,uint row,uint col);
+typedef int (*fSetMode)(sTUIClient *client,const char *shmname,int mid,int type,bool switchMode);
+typedef void (*fSetCursor)(sTUIClient *client,gpos_t x,gpos_t y,int cursor);
 typedef int (*fUpdateScreen)(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
-void tui_driverLoop(const char *name,sVTMode *modelist,size_t count,fSetMode setMode,
+void tui_driverLoop(const char *name,sScreenMode *modelist,size_t count,fSetMode setMode,
 					fSetCursor setCursor,fUpdateScreen updateScreen);

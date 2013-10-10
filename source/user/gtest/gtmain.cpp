@@ -56,8 +56,8 @@ static int pbThread(void *arg);
 
 static volatile bool run = true;
 
-int main(void) {
-	Application *app = Application::getInstance();
+int main() {
+	Application *app = Application::create();
 	addWindow(app,win0());
 	addWindow(app,win01());
 	addWindow(app,win1());

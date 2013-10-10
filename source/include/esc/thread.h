@@ -393,7 +393,7 @@ static inline int gsemdown(int sem) {
  *
  * @param id the sem-id
  */
-static inline int gsemclose(int sem) {
+static inline void gsemclose(int sem) {
 	close(sem);
 }
 

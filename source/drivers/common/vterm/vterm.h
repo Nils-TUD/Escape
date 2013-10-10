@@ -35,6 +35,24 @@
 bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows);
 
 /**
+ * Collects the available modes from all video-devices.
+ *
+ * @param n the number of modes to collect (0 = count)
+ * @param count will be set to the number of collected modes or the total number
+ * @return the modes array or NULL
+ */
+sScreenMode *vt_getModes(sVTerm *vt,size_t n,size_t *count);
+
+/**
+ * Sets the given video-mode
+ *
+ * @param vt the vterm
+ * @param mode the mode number
+ * @return 0 on success
+ */
+int vt_setVideoMode(sVTerm *vt,int mode);
+
+/**
  * Updates the dirty range
  *
  * @param vt the vterm

@@ -25,7 +25,7 @@
 #include "bmp.h"
 #include "vesa.h"
 
-void bmp_draw(sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
+void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	uint8_t *data = (uint8_t*)bmp->data;
 	gpos_t w = bmp->infoHeader->width, h = bmp->infoHeader->height;
 	gpos_t cx,cy;
@@ -36,7 +36,7 @@ void bmp_draw(sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 		for(cx = 0; cx < w; cx++) {
 			uint32_t col = data[2] << 16 | data[1] << 8 | data[0];
 			if(col != TRANSPARENCY)
-				func(cx + x,y + (h - cy - 1),col);
+				func(scr,cx + x,y + (h - cy - 1),col);
 			data += 3;
 		}
 		/* lines are 4-byte aligned */
@@ -111,7 +111,10 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	bmp->data = malloc(bmp->dataSize);
 	if(bmp->data == NULL)
 		goto errorColorTbl;
-	seek(fd,bmp->fileHeader->dataOffset,SEEK_SET);
+	if(seek(fd,bmp->fileHeader->dataOffset,SEEK_SET) < 0) {
+		printe("Unable to seek to %zu\n",bmp->fileHeader->dataOffset);
+		goto errorData;
+	}
 	res = IGNSIGS(read(fd,bmp->data,bmp->dataSize));
 	if(res != (ssize_t)bmp->dataSize) {
 		printe("Invalid image '%s'",filename);

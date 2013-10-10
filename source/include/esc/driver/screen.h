@@ -20,12 +20,18 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/messages.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int keymap_set(const char *map);
+int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor);
+int screen_getMode(int fd,sScreenMode *mode);
+int screen_setMode(int fd,int type,int mode,const char *shm,bool switchMode);
+int screen_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+ssize_t screen_getModeCount(int fd);
+ssize_t screen_getModes(int fd,sScreenMode *modes,size_t count);
 
 #ifdef __cplusplus
 }

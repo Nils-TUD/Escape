@@ -28,12 +28,12 @@ using namespace std;
 
 static int childWaitThread(void *arg);
 
-int main(void) {
+int main() {
 	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
 	Shortcut sc2("/etc/calc.bmp","/bin/gcalc");
 	Shortcut sc3("/etc/fileman.bmp","/bin/fileman");
 	Shortcut sc4("/etc/gtest.bmp","/bin/gtest");
-	Application *app = Application::getInstance();
+	Application *app = Application::create();
 	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize());
 	win->addShortcut(&sc1);
 	win->addShortcut(&sc2);

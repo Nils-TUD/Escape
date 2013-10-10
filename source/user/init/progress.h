@@ -51,10 +51,10 @@ public:
 
 private:
 	size_type getPadX() const {
-		return (_vtSize.width - BAR_WIDTH) / 2;
+		return (_mode.cols - BAR_WIDTH) / 2;
 	}
 	size_type getPadY() const {
-		return (_vtSize.height / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
+		return (_mode.rows / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
 	}
 	void updateBar();
 	void paintTo(const void *data,int x,int y,size_t width,size_t height);
@@ -66,6 +66,6 @@ private:
 	size_t _startSkip;
 	size_t _itemCount;
 	size_t _finished;
-	sVTSize _vtSize;
+	sScreenMode _mode;
 	char _emptyBar[BAR_WIDTH * 2];
 };

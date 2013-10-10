@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
@@ -200,8 +200,8 @@ int main(int argc,char **argv) {
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// get console-size
-	sVTSize consSize;
-	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
+	sScreenMode mode;
+	if(screen_getMode(STDIN_FILENO,&mode) < 0)
 		error("Unable to determine screensize");
 
 	// print header
@@ -229,7 +229,7 @@ int main(int argc,char **argv) {
 			float cyclePercent = 0;
 			if(p->cycles() != 0)
 				cyclePercent = (float)(100. / (totalCycles / (double)p->cycles()));
-			size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
+			size_t cmdwidth = min(mode.cols - width2cmd,p->command().length());
 			string cmd = p->command().substr(0,cmdwidth);
 
 			cout << setw(maxPid) << p->pid() << " ";

@@ -19,13 +19,14 @@
 
 #include <esc/common.h>
 #include <esc/driver.h>
-#include <esc/driver/video.h>
+#include <esc/driver/screen.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/ringbuffer.h>
 #include <esc/messages.h>
 #include <esc/keycodes.h>
+#include <esc/esccodes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -45,8 +46,8 @@ static int inputThread(A_UNUSED void *arg);
 
 static sKeymap *defmap;
 static tULock lck;
-static sBackend *backends;
-static size_t backendCount;
+static sScreen *screens;
+static size_t screenCount;
 
 int main(int argc,char *argv[]) {
 	char path[MAX_PATH_LEN];
@@ -64,11 +65,11 @@ int main(int argc,char *argv[]) {
 	keys_init();
 	srand(time(NULL));
 
-	/* open backend-devices */
-	backendCount = argc - 1;
-	backends = (sBackend*)malloc(sizeof(sBackend) * backendCount);
+	/* open screen-devices */
+	screenCount = argc - 1;
+	screens = (sScreen*)malloc(sizeof(sScreen) * screenCount);
 	for(int i = 1; i < argc; i++) {
-		sBackend *be = backends + i - 1;
+		sScreen *be = screens + i - 1;
 		be->name = strdup(argv[i]);
 		if(be->name == NULL) {
 			printe("Unable to clone device name");
@@ -81,13 +82,13 @@ int main(int argc,char *argv[]) {
 		}
 
 		/* get modes */
-		be->modeCount = video_getModeCount(fd);
-		be->modes = (sVTMode*)malloc(be->modeCount * sizeof(sVTMode));
+		be->modeCount = screen_getModeCount(fd);
+		be->modes = (sScreenMode*)malloc(be->modeCount * sizeof(sScreenMode));
 		if(!be->modes) {
 			printe("Unable to allocate modes for '%s'",be->name);
 			return EXIT_FAILURE;
 		}
-		if(video_getModes(fd,be->modes,be->modeCount) < 0) {
+		if(screen_getModes(fd,be->modes,be->modeCount) < 0) {
 			printe("Unable to get modes for '%s'",be->name);
 			return EXIT_FAILURE;
 		}
@@ -135,7 +136,7 @@ static int mouseClientThread(A_UNUSED void *arg) {
 		if(res < 0)
 			printe("[UIM] receive from mouse failed");
 
-		sKmData data;
+		sUIMData data;
 		data.type = KM_EV_MOUSE;
 		memcpy(&data.d.mouse,&mouseData,sizeof(mouseData));
 		locku(&lck);
@@ -158,26 +159,33 @@ static int kbClientThread(A_UNUSED void *arg) {
 			printe("[UIM] receive from keyboard failed");
 
 		/* translate keycode */
-		sKmData data;
+		sUIMData data;
 		data.type = KM_EV_KEYBOARD;
 		data.d.keyb.keycode = kbData.keycode;
+
 		locku(&lck);
 		sClient *active = cli_getActive();
 		data.d.keyb.character = km_translateKeycode(
 				active ? active->map : defmap,kbData.isBreak,kbData.keycode,&data.d.keyb.modifier);
-		if(!keys_handleKey(&data))
-			cli_send(&data,sizeof(data));
 		unlocku(&lck);
+
+		/* we can't lock this because if we do a fork, the child might connect to us and we might
+		 * wait until he has registered a device -> deadlock */
+		if(!keys_handleKey(&data)) {
+			locku(&lck);
+			cli_send(&data,sizeof(data));
+			unlocku(&lck);
+		}
 	}
 	return EXIT_SUCCESS;
 }
 
-static bool findBackend(int mid,sVTMode **mode,sBackend **be) {
-	for(size_t i = 0; i < backendCount; ++i) {
-		for(size_t j = 0; j < backends[i].modeCount; ++j) {
-			if(backends[i].modes[j].id == mid) {
-				*mode = backends[i].modes + j;
-				*be = backends + i;
+static bool findBackend(int mid,sScreenMode **mode,sScreen **be) {
+	for(size_t i = 0; i < screenCount; ++i) {
+		for(size_t j = 0; j < screens[i].modeCount; ++j) {
+			if(screens[i].modes[j].id == mid) {
+				*mode = screens[i].modes + j;
+				*be = screens + i;
 				return true;
 			}
 		}
@@ -185,27 +193,28 @@ static bool findBackend(int mid,sVTMode **mode,sBackend **be) {
 	return false;
 }
 
-static int setMode(sClient *cli,int mid,const char *shm) {
-	if(cli->backend) {
-		close(cli->backendFd);
-		free(cli->backendShmName);
-		cli->backend = NULL;
+static int setMode(sClient *cli,int type,int mid,const char *shm) {
+	if(cli->screen) {
+		close(cli->screenFd);
+		free(cli->screenShmName);
+		cli->screen = NULL;
 	}
 
-	sVTMode *mode;
-	sBackend *be;
+	sScreenMode *mode;
+	sScreen *be;
 	if(findBackend(mid,&mode,&be)) {
-		cli->backendFd = open(be->name,IO_MSGS);
-		if(cli->backendFd < 0)
-			return cli->backendFd;
+		cli->type = type;
+		cli->screenFd = open(be->name,IO_MSGS);
+		if(cli->screenFd < 0)
+			return cli->screenFd;
 		int res;
-		if((res = video_setMode(cli->backendFd,mid,shm,true)) < 0) {
-			close(cli->backendFd);
+		if((res = screen_setMode(cli->screenFd,cli->type,mid,shm,true)) < 0) {
+			close(cli->screenFd);
 			return res;
 		}
-		cli->backend = be;
-		cli->backendMode = mode;
-		cli->backendShmName = strdup(shm);
+		cli->screen = be;
+		cli->screenMode = mode;
+		cli->screenShmName = strdup(shm);
 		return 0;
 	}
 	return -EINVAL;
@@ -243,75 +252,13 @@ static int ctrlThread(A_UNUSED void *arg) {
 				}
 				break;
 
-				case MSG_KM_GETID: {
+				case MSG_UIM_GETID: {
 					msg.args.arg1 = cli_get(fd)->randid;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
-				case MSG_KM_GETMODES: {
-					size_t count = 0;
-					for(size_t i = 0; i < backendCount; ++i)
-						count += backends[i].modeCount;
-					if(msg.args.arg1 == 0) {
-						msg.args.arg1 = count;
-						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					}
-					else {
-						sVTMode *modes = (sVTMode*)malloc(count * sizeof(sVTMode));
-						size_t pos = 0;
-						if(modes) {
-							for(size_t i = 0; i < backendCount; ++i) {
-								memcpy(modes + pos,backends[i].modes,backends[i].modeCount * sizeof(sVTMode));
-								pos += backends[i].modeCount;
-							}
-						}
-						send(fd,MSG_DEF_RESPONSE,modes,pos * sizeof(sVTMode));
-						free(modes);
-					}
-				}
-				break;
-
-				case MSG_KM_GETMODE: {
-					sClient *cli = cli_get(fd);
-					msg.args.arg1 = cli->backend ? cli->backendMode->id : -EINVAL;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_KM_SETMODE: {
-					int modeid = (int)msg.str.arg1;
-					sClient *cli = cli_get(fd);
-					msg.args.arg1 = setMode(cli,modeid,msg.str.s1);
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_KM_SETCURSOR: {
-					sClient *cli = cli_get(fd);
-					if(cli == cli_getActive()) {
-						sVTPos *pos = (sVTPos*)msg.data.d;
-						cli->cursor.col = pos->col;
-						cli->cursor.row = pos->row;
-						video_setCursor(cli->backendFd,pos);
-					}
-				}
-				break;
-
-				case MSG_KM_UPDATE: {
-					gpos_t x = (gpos_t)msg.args.arg1;
-					gpos_t y = (gpos_t)msg.args.arg2;
-					gsize_t width = (gsize_t)msg.args.arg3;
-					gsize_t height = (gsize_t)msg.args.arg4;
-					sClient *cli = cli_get(fd);
-					msg.args.arg1 = 0;
-					if(cli == cli_getActive())
-						msg.args.arg1 = video_update(cli->backendFd,x,y,width,height);
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_KM_SET: {
+				case MSG_UIM_SETKEYMAP: {
 					char *str = msg.str.s1;
 					str[sizeof(msg.str.s1) - 1] = '\0';
 					msg.args.arg1 = -EINVAL;
@@ -325,6 +272,74 @@ static int ctrlThread(A_UNUSED void *arg) {
 						}
 					}
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_SCR_GETMODES: {
+					size_t count = 0;
+					for(size_t i = 0; i < screenCount; ++i)
+						count += screens[i].modeCount;
+					if(msg.args.arg1 == 0) {
+						msg.args.arg1 = count;
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					}
+					else {
+						sScreenMode *modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
+						size_t pos = 0;
+						if(modes) {
+							for(size_t i = 0; i < screenCount; ++i) {
+								memcpy(modes + pos,screens[i].modes,
+									screens[i].modeCount * sizeof(sScreenMode));
+								pos += screens[i].modeCount;
+							}
+						}
+						send(fd,MSG_DEF_RESPONSE,modes,pos * sizeof(sScreenMode));
+						free(modes);
+					}
+				}
+				break;
+
+				case MSG_SCR_GETMODE: {
+					sClient *cli = cli_get(fd);
+					msg.data.arg1 = -EINVAL;
+					if(cli->screen) {
+						msg.data.arg1 = 0;
+						memcpy(msg.data.d,cli->screenMode,sizeof(*cli->screenMode));
+					}
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+				}
+				break;
+
+				case MSG_SCR_SETMODE: {
+					int modeid = (int)msg.str.arg1;
+					int type = msg.str.arg2;
+					sClient *cli = cli_get(fd);
+					msg.args.arg1 = setMode(cli,type,modeid,msg.str.s1);
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_SCR_SETCURSOR: {
+					sClient *cli = cli_get(fd);
+					if(cli == cli_getActive()) {
+						cli->cursor.x = msg.args.arg1;
+						cli->cursor.y = msg.args.arg2;
+						cli->cursor.cursor = msg.args.arg3;
+						screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor);
+					}
+				}
+				break;
+
+				case MSG_SCR_UPDATE: {
+					gpos_t x = (gpos_t)msg.args.arg1;
+					gpos_t y = (gpos_t)msg.args.arg2;
+					gsize_t width = (gsize_t)msg.args.arg3;
+					gsize_t height = (gsize_t)msg.args.arg4;
+					sClient *cli = cli_get(fd);
+					msg.args.arg1 = 0;
+					if(cli == cli_getActive())
+						msg.args.arg1 = screen_update(cli->screenFd,x,y,width,height);
+					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 			}
@@ -345,7 +360,7 @@ static int inputThread(A_UNUSED void *arg) {
 			printe("[UIM] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_KM_ATTACH: {
+				case MSG_UIM_ATTACH: {
 					locku(&lck);
 					msg.args.arg1 = cli_attach(fd,msg.args.arg1);
 					unlocku(&lck);

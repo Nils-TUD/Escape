@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/keymap.h>
+#include <esc/driver/uimng.h>
 #include <esc/proc.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
@@ -49,7 +49,7 @@ int main(int argc,const char **argv) {
 	if(kmname != NULL) {
 		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
-		if(keymap_set(path) < 0)
+		if(uimng_setKeymap(STDIN_FILENO,path) < 0)
 			printe("Setting the keymap '%s' failed",kmname);
 		else
 			printf("Successfully changed keymap to '%s'\n",kmname);

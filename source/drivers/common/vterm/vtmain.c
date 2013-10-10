@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/uimng.h>
 #include <esc/driver.h>
 #include <esc/io.h>
@@ -92,7 +92,7 @@ static void uimInputThread(void) {
 
 	/* read from uimanager and handle the keys */
 	while(1) {
-		sKmData kmData;
+		sUIMData kmData;
 		ssize_t count = IGNSIGS(receive(uiminFd,NULL,&kmData,sizeof(kmData)));
 		if(count > 0 && kmData.type == KM_EV_KEYBOARD) {
 			vtin_handleKey(&vterm,kmData.d.keyb.keycode,kmData.d.keyb.modifier,kmData.d.keyb.character);
@@ -149,11 +149,11 @@ static int vtermThread(void *vtptr) {
 				}
 				break;
 
-				case MSG_VT_GETMODES: {
+				case MSG_SCR_GETMODES: {
 					size_t count;
-					sVTMode *modes = vtctrl_getModes(vt,msg.args.arg1,&count);
+					sScreenMode *modes = vt_getModes(vt,msg.args.arg1,&count);
 					if(modes) {
-						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sVTMode) * count);
+						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sScreenMode) * count);
 						free(modes);
 					}
 					else {
@@ -163,9 +163,21 @@ static int vtermThread(void *vtptr) {
 				}
 				break;
 
-				case MSG_VT_SETMODE: {
-					msg.args.arg1 = vtctrl_setVideoMode(vt,msg.args.arg1);
+				case MSG_SCR_GETMODE: {
+					msg.data.arg1 = screen_getMode(vt->uimng,(sScreenMode*)msg.data.d);
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+				}
+				break;
+
+				case MSG_UIM_SETKEYMAP: {
+					msg.args.arg1 = uimng_setKeymap(vt->uimng,msg.str.s1);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_VT_SETMODE: {
+					msg.data.arg1 = vt_setVideoMode(vt,msg.data.arg1);
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 
@@ -178,8 +190,7 @@ static int vtermThread(void *vtptr) {
 				case MSG_VT_DIS_NAVI:
 				case MSG_VT_BACKUP:
 				case MSG_VT_RESTORE:
-				case MSG_VT_GETSIZE:
-				case MSG_VT_GETMODE:
+				case MSG_VT_ISVTERM:
 					msg.data.arg1 = vtctrl_control(vt,mid,msg.data.d);
 					vt_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));

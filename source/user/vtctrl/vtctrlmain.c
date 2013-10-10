@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
@@ -41,24 +42,24 @@ int main(int argc,const char *argv[]) {
 	}
 
 	if(list) {
-		sVTMode *modes;
-		ssize_t i,count = vterm_getModeCount(STDIN_FILENO);
+		sScreenMode *modes;
+		sScreenMode curMode;
+		ssize_t i,count = screen_getModeCount(STDIN_FILENO);
 		if(count < 0)
 			error("Unable to get number of modes");
-		mode = vterm_getMode(STDIN_FILENO);
-		if(mode < 0)
+		if(screen_getMode(STDIN_FILENO,&curMode) < 0)
 			error("Unable to get the current mode");
-		modes = (sVTMode*)malloc(sizeof(sVTMode) * count);
+		modes = (sScreenMode*)malloc(sizeof(sScreenMode) * count);
 		if(!modes)
 			error("Unable to allocate buffer for modes");
-		if(vterm_getModes(STDIN_FILENO,modes,count) < 0)
+		if(screen_getModes(STDIN_FILENO,modes,count) < 0)
 			error("Unable to get modes");
 
 		printf("Available modes:\n");
 		for(i = 0; i < count; i++) {
-			printf("%c %5d: %3u x %3u cells, %2ubpp, %s (%s,%s)\n",
+			printf("%c %5d: %3u x %3u cells, %4u x %4u pixels, %2ubpp, %s (%s,%s)\n",
 					mode == modes[i].id ? '*' : ' ',modes[i].id,
-					modes[i].width,modes[i].height,modes[i].bitsPerPixel,
+					modes[i].cols,modes[i].rows,modes[i].width,modes[i].height,modes[i].bitsPerPixel,
 					modes[i].mode == VID_MODE_TEXT ? "text     " : "graphical",
 					(modes[i].type & VID_MODE_TYPE_TUI) ? "tui" : "-",
 					(modes[i].type & VID_MODE_TYPE_GUI) ? "gui" : "-");

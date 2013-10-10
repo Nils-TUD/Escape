@@ -84,12 +84,13 @@ typedef struct {
 /**
  * Draws the given bitmap at given position
  *
+ * @param scr the screen
  * @param bmp the bitmap
  * @param x the x-coordinate
  * @param y the y-coordinate
  * @param func the function to set a pixel
  */
-void bmp_draw(sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func);
+void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func);
 
 /**
  * Loads a bitmap from given file

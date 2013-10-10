@@ -1,7 +1,7 @@
 vga
 	/dev/vga 0770 output
-vesatext
-	/dev/vesatext 0770 output
+vesa
+	/dev/vesa 0770 output
 zero
 	/dev/zero 0666 root
 random
@@ -14,6 +14,6 @@ keyboard
 	/dev/keyboard 0110 input
 mouse
 	/dev/mouse 0110 input
-uimanager /dev/vga /dev/vesatext
+uimanager /dev/vga /dev/vesa
 	/dev/uim-ctrl 0110 input
 	/dev/uim-input 0110 input

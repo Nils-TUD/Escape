@@ -64,7 +64,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 	if(it != _shortcuts.end()) {
 		int pid = fork();
 		if(pid == 0) {
-			const char *args[2] = {nullptr,nullptr};
+			const char *args[] = {nullptr,nullptr};
 			args[0] = it->second->getApp().c_str();
 			exec(args[0],args);
 		}

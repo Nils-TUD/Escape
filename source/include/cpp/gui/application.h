@@ -69,12 +69,19 @@ namespace gui {
 		typedef Sender<gwinid_t> destroyedev_type;
 
 		/**
+		 * Creates an instance of this class
+		 *
+		 * @param winmng the path to win-manager device (the env-var TERM is used if it is NULL)
+		 * @return the created instance
+		 */
+		static Application *create(const char *winmng = NULL) {
+			return _inst = new Application(winmng);
+		}
+
+		/**
 		 * @return the instance of the class
 		 */
 		static Application *getInstance() {
-			// TODO multithreading..
-			if(_inst == nullptr)
-				_inst = new Application();
 			return _inst;
 		}
 
@@ -86,13 +93,13 @@ namespace gui {
 		 * @return the size of the screen
 		 */
 		Size getScreenSize() const {
-			return Size(_vesaInfo.width,_vesaInfo.height);
+			return Size(_screenMode.width,_screenMode.height);
 		}
 		/**
 		 * @return the color-depth
 		 */
 		uchar getColorDepth() const {
-			return _vesaInfo.bitsPerPixel;
+			return _screenMode.bitsPerPixel;
 		}
 
 		/**
@@ -169,7 +176,7 @@ namespace gui {
 		/**
 		 * Constructor. Protected because its a singleton
 		 */
-		Application();
+		Application(const char *winmng);
 		/**
 		 * Destructor. Closes the connection to vesa and the window-manager
 		 */
@@ -198,8 +205,8 @@ namespace gui {
 		/**
 		 * @return the information received from vesa
 		 */
-		const sVESAInfo *getVesaInfo() const {
-			return &_vesaInfo;
+		const sScreenMode *getScreenMode() const {
+			return &_screenMode;
 		}
 		/**
 		 * Requests an update for the window with given id and the given rectangle.
@@ -240,7 +247,7 @@ namespace gui {
 		sMsg _msg;
 		bool _run;
 		uchar _mouseBtns;
-		sVESAInfo _vesaInfo;
+		sScreenMode _screenMode;
 		std::vector<std::shared_ptr<Window>> _windows;
 		createdev_type _created;
 		activatedev_type _activated;

@@ -43,7 +43,7 @@
 using namespace gui;
 using namespace std;
 
-static int guiProc(void);
+static int guiProc(const char *oldterm);
 static int termThread(void *arg);
 static int shellMain(void);
 
@@ -93,6 +93,7 @@ int main(int argc,char **argv) {
 	close(sid);
 
 	// set term as env-variable
+	char *oldterm = strdup(getenv("TERM"));
 	char tmppath[SSTRLEN("guiterm") + 12];
 	snprintf(tmppath,MAX_PATH_LEN + 1,"guiterm%zu",no);
 	setenv("TERM",tmppath);
@@ -100,7 +101,7 @@ int main(int argc,char **argv) {
 	// start the gui and the device in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.
 	if((childPid = fork()) == 0)
-		return guiProc();
+		return guiProc(oldterm);
 	else if(childPid < 0)
 		error("fork failed");
 
@@ -140,7 +141,7 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static int guiProc(void) {
+static int guiProc(const char *oldterm) {
 	// re-register device
 	int sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 	unlockg(GUI_SHELL_LOCK);
@@ -153,7 +154,7 @@ static int guiProc(void) {
 
 	// now start GUI
 	Font font;
-	Application *app = Application::getInstance();
+	Application *app = Application::create(oldterm);
 	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100),
 			Size(font.getSize().width * DEF_COLS + 2,font.getSize().height * DEF_ROWS + 4));
 	shared_ptr<Panel> root = w->getRootPanel();

@@ -107,21 +107,24 @@ sVESAScreen *vesascr_request(sVbeModeInfo *minfo) {
 	return scr;
 }
 
-void vesascr_reset(sVESAScreen *scr) {
+void vesascr_reset(sVESAScreen *scr,int type) {
 	scr->lastCol = scr->cols;
 	scr->lastRow = scr->rows;
 	memclear(scr->frmbuf,
 		scr->mode->xResolution * scr->mode->yResolution * (scr->mode->bitsPerPixel / 8));
-	for(int y = 0; y < scr->rows; y++) {
-		for(int x = 0; x < scr->cols; x++) {
-			scr->content[y * scr->cols * 2 + x * 2] = ' ';
-			scr->content[y * scr->cols * 2 + x * 2 + 1] = 0x07;
+	if(type == VID_MODE_TYPE_TUI) {
+		for(int y = 0; y < scr->rows; y++) {
+			for(int x = 0; x < scr->cols; x++) {
+				scr->content[y * scr->cols * 2 + x * 2] = ' ';
+				scr->content[y * scr->cols * 2 + x * 2 + 1] = 0x07;
+			}
 		}
 	}
 }
 
 void vesascr_release(sVESAScreen *scr) {
 	if(--scr->refs == 0) {
+		free(scr->whOnBlCache);
 		free(scr->content);
 		munmap(scr->frmbuf);
 		sll_removeFirstWith(screens,scr);

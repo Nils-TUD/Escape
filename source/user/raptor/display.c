@@ -100,7 +100,7 @@ bool displ_init(void) {
 	}
 
 	/* get screen size */
-	if((res = video_getSize(video,&ssize)) < 0) {
+	if((res = screen_getSize(video,&ssize)) < 0) {
 		fprintf(stderr,"Unable to get screensize: %s\n",strerror(-res));
 		return false;
 	}

@@ -40,7 +40,7 @@ int main() {
 		cerr << e.what() << endl;
 	}
 
-	Application *app = Application::getInstance();
+	Application *app = Application::create();
 	shared_ptr<Window> w = make_control<Window>("File manager",Pos(100,100),Size(400,300));
 	shared_ptr<Panel> root = w->getRootPanel();
 	shared_ptr<FileList> filelist = make_control<FileList>();

@@ -25,14 +25,14 @@ using namespace std;
 
 namespace gui {
 	Color::color_type Color::toCurMode() const {
-		const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
-		comp_type red = getRed() >> (8 - vesaInfo->redMaskSize);
-		comp_type green = getGreen() >> (8 - vesaInfo->greenMaskSize);
-		comp_type blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
-		color_type val = (red << vesaInfo->redFieldPosition) |
-				(green << vesaInfo->greenFieldPosition) |
-				(blue << vesaInfo->blueFieldPosition);
-		if(vesaInfo->bitsPerPixel == 32)
+		const sScreenMode *mode = Application::getInstance()->getScreenMode();
+		comp_type red = getRed() >> (8 - mode->redMaskSize);
+		comp_type green = getGreen() >> (8 - mode->greenMaskSize);
+		comp_type blue = getBlue() >> (8 - mode->blueMaskSize);
+		color_type val = (red << mode->redFieldPosition) |
+				(green << mode->greenFieldPosition) |
+				(blue << mode->blueFieldPosition);
+		if(mode->bitsPerPixel == 32)
 			val |= (color_type)getAlpha() << 24;
 		return val;
 	}

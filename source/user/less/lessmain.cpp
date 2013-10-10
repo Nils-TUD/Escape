@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/vterm.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
@@ -57,7 +58,7 @@ static string filename;
 static bool seenEOF;
 static LineContainer *lines;
 static size_t startLine = 0;
-static sVTSize consSize;
+static sScreenMode mode;
 static string emptyLine;
 
 static void usage(const char* name) {
@@ -101,24 +102,24 @@ int main(int argc,char *argv[]) {
 		in = stdin;
 	}
 
-	if(vterm_getSize(STDOUT_FILENO,&consSize) < 0)
-		error("Unable to get screensize");
+	if(screen_getMode(STDOUT_FILENO,&mode) < 0)
+		error("Unable to get screen mode");
 	// one line for the status
-	consSize.height--;
-	lines = new LineContainer(consSize.width);
+	mode.rows--;
+	lines = new LineContainer(mode.cols);
 
 	// backup screen
 	vterm_backup(STDOUT_FILENO);
 
 	// create empty line
-	emptyLine.assign(consSize.width,' ');
+	emptyLine.assign(mode.cols,' ');
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	vt.open(env::get("TERM").c_str());
 
 	// read the first lines into it
 	seenEOF = false;
-	readLines(consSize.height);
+	readLines(mode.rows);
 
 	// stop readline and navigation
 	vterm_setReadline(STDOUT_FILENO,false);
@@ -152,10 +153,10 @@ int main(int argc,char *argv[]) {
 					scrollDown(1);
 					break;
 				case VK_PGUP:
-					scrollDown(-consSize.height);
+					scrollDown(-mode.rows);
 					break;
 				case VK_PGDOWN:
-					scrollDown(consSize.height);
+					scrollDown(mode.rows);
 					break;
 			}
 		}
@@ -183,15 +184,15 @@ static void scrollDown(long l) {
 		else
 			startLine = 0;
 	}
-	else if(lines->size() >= consSize.height)
+	else if(lines->size() >= mode.rows)
 		startLine += l;
 
-	if(l == 0 || startLine > lines->size() - consSize.height) {
-		readLines(l == 0 ? 0 : startLine + consSize.height);
-		if(lines->size() < consSize.height)
+	if(l == 0 || startLine > lines->size() - mode.rows) {
+		readLines(l == 0 ? 0 : startLine + mode.rows);
+		if(lines->size() < mode.rows)
 			startLine = 0;
-		else if(l == 0 || startLine > lines->size() - consSize.height)
-			startLine = lines->size() - consSize.height;
+		else if(l == 0 || startLine > lines->size() - mode.rows)
+			startLine = lines->size() - mode.rows;
 	}
 
 	if(oldStart != startLine)
@@ -200,17 +201,17 @@ static void scrollDown(long l) {
 
 static void refreshScreen(void) {
 	size_t j = 0;
-	LineContainer::size_type end = startLine + min(lines->size(),(size_t)consSize.height);
+	LineContainer::size_type end = startLine + min(lines->size(),(size_t)mode.rows);
 	// walk to the top of the screen
 	cout << "\033[mh]";
 	for(LineContainer::size_type i = startLine; i < end; ++i, ++j) {
 		cout << lines->get(i);
-		if(j < consSize.height - 1)
+		if(j < mode.rows - 1)
 			cout << '\n';
 	}
-	for(; j < consSize.height; ++j) {
+	for(; j < mode.rows; ++j) {
 		cout << emptyLine;
-		if(j < consSize.height - 1)
+		if(j < mode.rows - 1)
 			cout << '\n';
 	}
 	printStatus(seenEOF ? nullptr : "?");
@@ -219,20 +220,20 @@ static void refreshScreen(void) {
 
 static void printStatus(const char *totalStr) {
 	ostringstream lineStr;
-	size_t end = min(lines->size(),(size_t)consSize.height);
+	size_t end = min(lines->size(),(size_t)mode.rows);
 	lineStr << "Lines " << (startLine + 1) << "-" << (startLine + end) << " / ";
 	if(!totalStr)
 		lineStr << lines->size();
 	else
 		lineStr << totalStr;
 	cout << "\033[co;0;7]";
-	cout << lineStr.str() << setw(consSize.width - lineStr.str().length()) << right << filename;
+	cout << lineStr.str() << setw(mode.cols - lineStr.str().length()) << right << filename;
 	cout << left << "\033[co]";
 }
 
 static void readLines(size_t end) {
 	int lineCount = 0;
-	int lineLen = consSize.width;
+	int lineLen = mode.cols;
 	string line;
 	static const char *states[] = {"|","/","-","\\","|","/","-"};
 	int state = 0;

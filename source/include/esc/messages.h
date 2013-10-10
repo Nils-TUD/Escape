@@ -107,17 +107,8 @@
 /* == Other messages == */
 #define MSG_SPEAKER_BEEP			100	/* performs a beep */
 
-#define MSG_VESA_UPDATE				200	/* updates a region of the screen */
-#define MSG_VESA_CURSOR				201	/* sets the cursor */
-#define MSG_VESA_GETMODE			202	/* gets the vesa-mode */
-#define MSG_VESA_GETMODE_RESP		100203	/* response for the get-mode-request */
-#define MSG_VESA_SETMODE			204	/* sets the vesa-mode */
-#define MSG_VESA_ENABLE				205	/* enables vesa */
-#define MSG_VESA_DISABLE			206	/* disables vesa */
-#define MSG_VESA_PREVIEWRECT		207 /* sets the preview-rectangle */
-
 #define MSG_WIN_CREATE				300	/* creates a window */
-#define MSG_WIN_CREATE_RESP			100301	/* the create-response */
+#define MSG_WIN_CREATE_RESP			301	/* the create-response */
 #define MSG_WIN_MOVE				302	/* moves a window */
 #define MSG_WIN_UPDATE				303	/* requests an update of a window */
 #define MSG_WIN_SET_ACTIVE_EV		304	/* sets the active window */
@@ -136,12 +127,11 @@
 #define MSG_WIN_RESIZE_RESP			317	/* a resize has been finished */
 #define MSG_WIN_UPDATE_RESP			318 /* an update has been finished */
 
-#define MSG_VID_SETCURSOR			500	/* expects sVTPos */
-#define MSG_VID_GETSIZE				501	/* writes into sVTSize */
-#define MSG_VID_GETMODE				502 /* gets the current video-mode */
-#define MSG_VID_SETMODE				503	/* sets the video-mode */
-#define MSG_VID_GETMODES            504 /* gets all video-modes */
-#define MSG_VID_UPDATE				505 /* updates a part of the screen */
+#define MSG_SCR_SETCURSOR			500	/* sets the cursor */
+#define MSG_SCR_GETMODE				501 /* gets information about the current video-mode */
+#define MSG_SCR_SETMODE				502	/* sets the video-mode */
+#define MSG_SCR_GETMODES            503 /* gets all video-modes */
+#define MSG_SCR_UPDATE				504 /* updates a part of the screen */
 
 #define MSG_VT_EN_ECHO				600	/* enables that the vterm echo's typed characters */
 #define MSG_VT_DIS_ECHO				601	/* disables echo */
@@ -152,38 +142,28 @@
 #define MSG_VT_BACKUP				606	/* backups the screen */
 #define MSG_VT_RESTORE				607	/* restores the screen */
 #define MSG_VT_SHELLPID				608	/* gives the vterm the shell-pid */
-#define MSG_VT_GETSIZE				609	/* writes into sVTSize */
-#define MSG_VT_GETMODES				610 /* like MSG_VID_GETMODES, but for all available backends */
-#define MSG_VT_GETMODE				611 /* get the current video mode */
-#define MSG_VT_SETMODE				612 /* sets a specified video mode */
+#define MSG_VT_ISVTERM				609 /* dummy message on which only vterm answers with no error */
+#define MSG_VT_SETMODE				610 /* requests vterm to set the video-mode */
 
 #define MSG_KB_EVENT				700 /* events that the keyboard-driver sends */
 
 #define MSG_MS_EVENT				800 /* events that the mouse-driver sends */
 
-#define MSG_KM_SET					900	/* sets a keymap, expects the keymap-path as argument */
-#define MSG_KM_EVENT				901	/* the message-id for sending events to the listeners */
-#define MSG_KM_GETMODES				902 /* gets all video-modes */
-#define MSG_KM_GETMODE				903 /* get current video mode */
-#define MSG_KM_SETMODE				904 /* sets the video-mode */
-#define MSG_KM_ATTACH				905 /* is used to attach to the ctrl-session */
-#define MSG_KM_GETID				906 /* get the id to use for attach */
-#define MSG_KM_UPDATE				907 /* updates a part of the screen */
-#define MSG_KM_SETCURSOR			908	/* expects sVTPos */
+#define MSG_UIM_SETKEYMAP			900	/* sets a keymap, expects the keymap-path as argument */
+#define MSG_UIM_EVENT				901	/* the message-id for sending events to the listeners */
+#define MSG_UIM_ATTACH				902 /* is used to attach to the ctrl-session */
+#define MSG_UIM_GETID				903 /* get the id to use for attach */
 
-#define MSG_KE_ADDLISTENER			1000	/* adds a listener (see KE_EV_*) */
-#define MSG_KE_REMLISTENER			1001	/* removes a listener */
+#define MSG_PCI_GET_BY_CLASS		1000	/* searches for a pci device with given class */
+#define MSG_PCI_GET_BY_ID			1001	/* searches for a pci device with given id */
+#define MSG_PCI_GET_LIST			1002 /* get device-count or a device by index */
 
-#define MSG_PCI_GET_BY_CLASS		1100	/* searches for a pci device with given class */
-#define MSG_PCI_GET_BY_ID			1101	/* searches for a pci device with given id */
-#define MSG_PCI_GET_LIST			1102 /* get device-count or a device by index */
-
-#define MSG_INIT_REBOOT				1200 /* requests a reboot */
-#define MSG_INIT_SHUTDOWN			1201 /* requests a shutdown */
-#define MSG_INIT_IAMALIVE			1202 /* tells init that the shutdown-request has been received
+#define MSG_INIT_REBOOT				1100 /* requests a reboot */
+#define MSG_INIT_SHUTDOWN			1101 /* requests a shutdown */
+#define MSG_INIT_IAMALIVE			1102 /* tells init that the shutdown-request has been received
 											and that you promise to terminate as soon as possible */
 
-#define MSG_DISK_GETSIZE			1300 /* get the size of a device */
+#define MSG_DISK_GETSIZE			1200 /* get the size of a device */
 
 /* == responses == */
 /* fs */
@@ -226,38 +206,24 @@ typedef struct {
 		} keyb;
 		sMouseData mouse;
 	} d;
-} sKmData;
+} sUIMData;
 
 typedef struct {
-	gsize_t width;					/* x-resolution */
-	gsize_t height;					/* y-resolution */
-	uchar bitsPerPixel;				/* Bits per pixel                  */
+	int id;
+	uint cols;
+	uint rows;
+	uint width;
+	uint height;
+	uchar bitsPerPixel;
 	uchar redMaskSize;				/* Size of direct color red mask   */
 	uchar redFieldPosition;			/* Bit posn of lsb of red mask     */
 	uchar greenMaskSize;			/* Size of direct color green mask */
 	uchar greenFieldPosition;		/* Bit posn of lsb of green mask   */
 	uchar blueMaskSize;				/* Size of direct color blue mask  */
 	uchar blueFieldPosition;		/* Bit posn of lsb of blue mask    */
-} sVESAInfo;
-
-typedef struct {
-	int id;
-	uint width;
-	uint height;
-	uchar bitsPerPixel;
 	int mode;
 	int type;
-} sVTMode;
-
-typedef struct {
-	uint col;
-	uint row;
-} sVTPos;
-
-typedef struct {
-	uint width;
-	uint height;
-} sVTSize;
+} sScreenMode;
 
 typedef struct {
 	struct tm time;

@@ -25,7 +25,7 @@
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
-#include <esc/driver/video.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/uimng.h>
 #include <esc/conf.h>
 #include <esc/mem.h>
@@ -46,14 +46,12 @@
 
 static void vtctrl_buildTitle(sVTerm *vt);
 
-bool vtctrl_init(sVTerm *vt,sVTMode *mode) {
+bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 	size_t i,len;
 	uchar color;
 	char *ptr;
-	vt->cols = mode->width;
-	vt->rows = mode->height;
-	vt->scrShm = NULL;
-	vt->scrMode = -1;
+	vt->cols = mode->cols;
+	vt->rows = mode->rows;
 
 	/* by default we have no handlers for that */
 	vt->setCursor = NULL;
@@ -129,87 +127,6 @@ void vtctrl_destroy(sVTerm *vt) {
 	free(vt->buffer);
 	free(vt->titleBar);
 	free(vt->rlBuffer);
-}
-
-sVTMode *vtctrl_getModes(sVTerm *vt,size_t n,size_t *count) {
-	ssize_t res;
-	if(n == 0) {
-		*count = uimng_getModeCount(vt->uimng);
-		return NULL;
-	}
-
-	sVTMode *modes = (sVTMode*)malloc(n * sizeof(sVTMode));
-	if(!modes)
-		return NULL;
-	if((res = uimng_getModes(vt->uimng,modes,n)) < 0) {
-		free(modes);
-		*count = res;
-		return NULL;
-	}
-	*count = n;
-	return modes;
-}
-
-static int vtctrl_doSetMode(sVTerm *vt,const char *shmname,uint cols,uint rows,int mid) {
-	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0777);
-	if(fd < 0)
-		return fd;
-	vt->scrShm = mmap(NULL,cols * rows * 2,0,PROT_READ | PROT_WRITE,
-		MAP_SHARED,fd,0);
-	close(fd);
-	if(!vt->scrShm)
-		return -ENOMEM;
-	int res = uimng_setMode(vt->uimng,mid,shmname);
-	if(res < 0) {
-		munmap(vt->scrShm);
-		shm_unlink(shmname);
-		return res;
-	}
-	return 0;
-}
-
-int vtctrl_setVideoMode(sVTerm *vt,int mode) {
-	/* get all modes */
-	size_t i,count;
-	vtctrl_getModes(vt,0,&count);
-	sVTMode *modes = vtctrl_getModes(vt,count,&count);
-	if(!modes)
-		return -ENOMEM;
-
-	ssize_t res;
-	for(i = 0; i < count; i++) {
-		if(modes[i].id == mode) {
-			/* destroy current stuff */
-			if(vt->scrShm) {
-				munmap(vt->scrShm);
-				shm_unlink(vt->name);
-			}
-
-			/* try to set new mode */
-			res = vtctrl_doSetMode(vt,vt->name,modes[i].width,modes[i].height,modes[i].id);
-			if(res < 0)
-				goto error;
-
-			/* resize vterm if necessary */
-			if(vt->cols != modes[i].width || vt->rows != modes[i].height) {
-				if(!vtctrl_resize(vt,modes[i].width,modes[i].height)) {
-					res = vtctrl_doSetMode(vt,vt->name,vt->cols,vt->rows,vt->scrMode);
-					if(res < 0)
-						error("Unable to restore old mode");
-					res = -ENOMEM;
-					goto error;
-				}
-			}
-			vt->scrMode = mode;
-			free(modes);
-			return 0;
-		}
-	}
-	res = -EINVAL;
-
-error:
-	free(modes);
-	return res;
 }
 
 bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
@@ -322,9 +239,6 @@ int vtctrl_control(sVTerm *vt,uint cmd,void *data) {
 		case MSG_VT_DIS_NAVI:
 			vt->navigation = false;
 			break;
-		case MSG_VT_GETMODE:
-			res = vt->scrMode;
-			break;
 		case MSG_VT_BACKUP:
 			if(!vt->screenBackup)
 				vt->screenBackup = (char*)malloc(vt->rows * vt->cols * 2);
@@ -346,14 +260,9 @@ int vtctrl_control(sVTerm *vt,uint cmd,void *data) {
 				vtctrl_markScrDirty(vt);
 			}
 			break;
-		case MSG_VT_GETSIZE: {
-			sVTSize *size = (sVTSize*)data;
-			size->width = vt->cols;
-			/* one line for the title */
-			size->height = vt->rows - 1;
-			res = sizeof(sVTSize);
-		}
-		break;
+		case MSG_VT_ISVTERM:
+			res = 1;
+			break;
 	}
 	unlocku(&vt->lock);
 	return res;

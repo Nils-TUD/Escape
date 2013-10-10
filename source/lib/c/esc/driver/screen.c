@@ -18,48 +18,39 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
+#include <esc/driver/screen.h>
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <string.h>
 
-int video_setCursor(int fd,const sVTPos *pos) {
-	sDataMsg msg;
-	memcpy(&msg.d,pos,sizeof(sVTPos));
-	return send(fd,MSG_VID_SETCURSOR,&msg,sizeof(msg));
-}
-
-int video_getSize(int fd,sVTSize *size) {
-	sDataMsg msg;
-	int res = send(fd,MSG_VID_GETSIZE,NULL,0);
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	if(msg.arg1 != sizeof(sVTSize))
-		return msg.arg1;
-	memcpy(size,&msg.d,sizeof(sVTSize));
-	return 0;
-}
-
-int video_getMode(int fd) {
+int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor) {
 	sArgsMsg msg;
-	int res = send(fd,MSG_VID_GETMODE,NULL,0);
+	msg.arg1 = x;
+	msg.arg2 = y;
+	msg.arg3 = cursor;
+	return send(fd,MSG_SCR_SETCURSOR,&msg,sizeof(msg));
+}
+
+int screen_getMode(int fd,sScreenMode *mode) {
+	sDataMsg msg;
+	int res = send(fd,MSG_SCR_GETMODE,NULL,0);
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
+	if(msg.arg1 == 0)
+		memcpy(mode,msg.d,sizeof(sScreenMode));
 	return msg.arg1;
 }
 
-int video_setMode(int fd,int mode,const char *shm,bool switchMode) {
+int screen_setMode(int fd,int type,int mode,const char *shm,bool switchMode) {
 	sStrMsg msg;
 	msg.arg1 = mode;
-	msg.arg2 = switchMode;
+	msg.arg2 = type;
+	msg.arg3 = switchMode;
 	strnzcpy(msg.s1,shm,sizeof(msg.s1));
-	int res = send(fd,MSG_VID_SETMODE,&msg,sizeof(msg));
+	int res = send(fd,MSG_SCR_SETMODE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -68,13 +59,13 @@ int video_setMode(int fd,int mode,const char *shm,bool switchMode) {
 	return msg.arg1;
 }
 
-int video_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+int screen_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sArgsMsg msg;
 	msg.arg1 = x;
 	msg.arg2 = y;
 	msg.arg3 = width;
 	msg.arg4 = height;
-	int res = send(fd,MSG_VID_UPDATE,&msg,sizeof(msg));
+	int res = send(fd,MSG_SCR_UPDATE,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -83,10 +74,10 @@ int video_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	return msg.arg1;
 }
 
-ssize_t video_getModeCount(int fd) {
+ssize_t screen_getModeCount(int fd) {
 	sMsg msg;
 	msg.args.arg1 = 0;
-	ssize_t res = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg.args));
+	ssize_t res = send(fd,MSG_SCR_GETMODES,&msg,sizeof(msg.args));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg.args)));
@@ -95,12 +86,12 @@ ssize_t video_getModeCount(int fd) {
 	return msg.args.arg1;
 }
 
-ssize_t video_getModes(int fd,sVTMode *modes,size_t count) {
+ssize_t screen_getModes(int fd,sScreenMode *modes,size_t count) {
 	sArgsMsg msg;
 	ssize_t err;
 	msg.arg1 = count;
-	err = send(fd,MSG_VID_GETMODES,&msg,sizeof(msg));
+	err = send(fd,MSG_SCR_GETMODES,&msg,sizeof(msg));
 	if(err < 0)
 		return err;
-	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
+	return IGNSIGS(receive(fd,NULL,modes,sizeof(sScreenMode) * count));
 }

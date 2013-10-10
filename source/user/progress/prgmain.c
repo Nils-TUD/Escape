@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
 #include <esc/messages.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
@@ -32,14 +32,14 @@ static void sigTerm(A_UNUSED int sig) {
 }
 
 int main(void) {
-	sVTSize consSize;
+	sScreenMode mode;
 	size_t maxWidth;
 	size_t p,i,j;
 	if(signal(SIG_TERM,sigTerm) == SIG_ERR)
 		error("Unable to set term-handler");
-	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
+	if(screen_getMode(STDIN_FILENO,&mode) < 0)
 		error("Unable to get vterm-size");
-	maxWidth = consSize.width - 3;
+	maxWidth = mode.cols - 3;
 
 	printf("Waiting for fun...\n");
 	for(p = 0; p <= 100; p++) {

@@ -50,6 +50,16 @@ int vterm_restore(int fd) {
 	return vterm_doCtrl(fd,MSG_VT_RESTORE,0,&resp);
 }
 
+int vterm_isVTerm(int fd) {
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_ISVTERM,0,&resp);
+}
+
+int vterm_setMode(int fd,int mode) {
+	sDataMsg resp;
+	return vterm_doCtrl(fd,MSG_VT_SETMODE,mode,&resp);
+}
+
 int vterm_setShellPid(int fd,pid_t pid) {
 	int res;
 	sDataMsg msg;
@@ -61,40 +71,6 @@ int vterm_setShellPid(int fd,pid_t pid) {
 	if(res < 0)
 		return res;
 	return msg.arg1;
-}
-
-int vterm_getSize(int fd,sVTSize *size) {
-	sDataMsg resp;
-	int res = vterm_doCtrl(fd,MSG_VT_GETSIZE,0,&resp);
-	if(res < 0)
-		return res;
-	if(resp.arg1 == sizeof(sVTSize))
-		memcpy(size,&resp.d,resp.arg1);
-	return resp.arg1;
-}
-
-ssize_t vterm_getModeCount(int fd) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_GETMODES,0,&resp);
-}
-
-int vterm_getMode(int fd) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_GETMODE,0,&resp);
-}
-
-int vterm_setMode(int fd,int mode) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_SETMODE,mode,&resp);
-}
-
-int vterm_getModes(int fd,sVTMode *modes,size_t count) {
-	sArgsMsg msg;
-	msg.arg1 = count;
-	int res = send(fd,MSG_VT_GETMODES,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
 }
 
 static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *resp) {

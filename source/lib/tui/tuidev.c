@@ -25,13 +25,13 @@
 
 #define MAX_CLIENTS				16
 
-static sVTMode *modes;
+static sScreenMode *modes;
 static size_t modeCount;
 static sTUIClient clients[MAX_CLIENTS];
 
 static size_t tui_find_client(inode_t cid);
 
-void tui_driverLoop(const char *name,sVTMode *modelist,size_t mcount,fSetMode setMode,
+void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMode setMode,
 					fSetCursor setCursor,fUpdateScreen updateScreen) {
 	modes = modelist;
 	modeCount = mcount;
@@ -59,6 +59,8 @@ void tui_driverLoop(const char *name,sVTMode *modelist,size_t mcount,fSetMode se
 						clients[i].id = fd;
 						clients[i].shm = NULL;
 						clients[i].mode = NULL;
+						clients[i].type = VID_MODE_TYPE_TUI;
+						clients[i].data = NULL;
 						msg.args.arg1 = 0;
 					}
 					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
@@ -68,14 +70,14 @@ void tui_driverLoop(const char *name,sVTMode *modelist,size_t mcount,fSetMode se
 				case MSG_DEV_CLOSE: {
 					size_t i = tui_find_client(fd);
 					if(i != MAX_CLIENTS) {
-						setMode(clients + i,"",-1,false);
+						setMode(clients + i,"",-1,VID_MODE_TYPE_TUI,false);
 						clients[i].id = 0;
 						close(fd);
 					}
 				}
 				break;
 
-				case MSG_VID_UPDATE: {
+				case MSG_SCR_UPDATE: {
 					gpos_t x = (gpos_t)msg.args.arg1;
 					gpos_t y = (gpos_t)msg.args.arg2;
 					gsize_t width = (gsize_t)msg.args.arg3;
@@ -88,33 +90,39 @@ void tui_driverLoop(const char *name,sVTMode *modelist,size_t mcount,fSetMode se
 				}
 				break;
 
-				case MSG_VID_GETMODES: {
+				case MSG_SCR_GETMODES: {
 					if(msg.args.arg1 == 0) {
 						msg.args.arg1 = modeCount;
 						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					}
 					else
-						send(fd,MSG_DEF_RESPONSE,modes,modeCount * sizeof(sVTMode));
+						send(fd,MSG_DEF_RESPONSE,modes,modeCount * sizeof(sScreenMode));
 				}
 				break;
 
-				case MSG_VID_GETMODE: {
+				case MSG_SCR_GETMODE: {
 					size_t i = tui_find_client(fd);
-					msg.args.arg1 = i != MAX_CLIENTS ? clients[i].modeid : -EINVAL;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					msg.data.arg1 = -EINVAL;
+					if(clients[i].mode) {
+						msg.data.arg1 = 0;
+						memcpy(msg.data.d,clients[i].mode,sizeof(*clients[i].mode));
+						clients[i].mode->type = clients[i].type;
+					}
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 
-				case MSG_VID_SETMODE: {
+				case MSG_SCR_SETMODE: {
 					size_t i;
 					int modeno = msg.str.arg1;
-					bool switchMode = msg.str.arg2;
+					int type = msg.str.arg2;
+					bool switchMode = msg.str.arg3;
 					msg.args.arg1 = -EINVAL;
 					for(i = 0; i < modeCount ; i++) {
 						if(modeno == modes[i].id) {
 							size_t j = tui_find_client(fd);
 							if(j != MAX_CLIENTS)
-								msg.args.arg1 = setMode(clients + j,msg.str.s1,i,switchMode);
+								msg.args.arg1 = setMode(clients + j,msg.str.s1,i,type,switchMode);
 							break;
 						}
 					}
@@ -122,22 +130,14 @@ void tui_driverLoop(const char *name,sVTMode *modelist,size_t mcount,fSetMode se
 				}
 				break;
 
-				case MSG_VID_SETCURSOR: {
+				case MSG_SCR_SETCURSOR: {
 					size_t i = tui_find_client(fd);
 					if(i != MAX_CLIENTS && clients[i].mode) {
-						sVTPos *pos = (sVTPos*)msg.data.d;
-						setCursor(clients + i,pos->row,pos->col);
+						gpos_t x = (gpos_t)msg.args.arg1;
+						gpos_t y = (gpos_t)msg.args.arg2;
+						int cursor = (int)msg.args.arg3;
+						setCursor(clients + i,x,y,cursor);
 					}
-				}
-				break;
-
-				case MSG_VID_GETSIZE: {
-					size_t i = tui_find_client(fd);
-					sVTSize *size = (sVTSize*)msg.data.d;
-					size->width = i != MAX_CLIENTS ? clients[i].cols : 0;
-					size->height = i != MAX_CLIENTS ? clients[i].rows : 0;
-					msg.data.arg1 = sizeof(sVTSize);
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
+#include <esc/driver/screen.h>
 #include <esc/driver.h>
 #include <esc/sllist.h>
 #include <stdlib.h>
@@ -47,7 +47,7 @@ sClient *cli_get(int id) {
 
 static void cli_switch(int incr) {
 	int oldActive = active;
-	int oldMode = active == MAX_CLIENTS ? -1 : clients[active]->backendMode->id;
+	int oldMode = active == MAX_CLIENTS ? -1 : clients[active]->screenMode->id;
 	if(activeIdx == MAX_CLIENTS)
 		activeIdx = 0;
 	else
@@ -60,14 +60,17 @@ static void cli_switch(int incr) {
 
 	if(active != MAX_CLIENTS && active != oldActive) {
 		sClient *cli = clients[active];
-		assert(cli->backendMode);
+		assert(cli->screenMode);
 
-		if(video_setMode(cli->backendFd,cli->backendMode->id,cli->backendShmName,
-				oldMode != cli->backendMode->id) < 0)
+		if(screen_setMode(cli->screenFd,cli->type,cli->screenMode->id,cli->screenShmName,
+				oldMode != cli->screenMode->id) < 0)
 			printe("[UIM] Unable to set mode");
-		if(video_setCursor(cli->backendFd,&cli->cursor) < 0)
+		if(screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor) < 0)
 			printe("[UIM] Unable to set cursor");
-		if(video_update(cli->backendFd,0,0,cli->backendMode->width,cli->backendMode->height) < 0)
+
+		gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
+		gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
+		if(screen_update(cli->screenFd,0,0,w,h) < 0)
 			printe("[UIM] Screen update failed");
 	}
 }
@@ -83,7 +86,7 @@ void cli_prev(void) {
 void cli_send(const void *msg,size_t size) {
 	if(active == MAX_CLIENTS)
 		return;
-	send(clients[active]->id,MSG_KM_EVENT,msg,size);
+	send(clients[active]->id,MSG_UIM_EVENT,msg,size);
 }
 
 int cli_add(int id,sKeymap *map) {
@@ -92,13 +95,14 @@ int cli_add(int id,sKeymap *map) {
 	clients[id]->id = id;
 	clients[id]->randid = rand();
 	clients[id]->map = map;
-	clients[id]->backend = NULL;
-	clients[id]->backendMode = NULL;
-	clients[id]->backendShmName = NULL;
-	clients[id]->backendFd = -1;
-	clients[id]->cursor.col = 0;
-	clients[id]->cursor.row = 0;
-	clients[id]->type = CONS_TYPE_NONE;
+	clients[id]->screen = NULL;
+	clients[id]->screenMode = NULL;
+	clients[id]->screenShmName = NULL;
+	clients[id]->screenFd = -1;
+	clients[id]->cursor.x = 0;
+	clients[id]->cursor.y = 0;
+	clients[id]->cursor.cursor = CURSOR_DEFAULT;
+	clients[id]->type = VID_MODE_TYPE_TUI;
 	return 0;
 }
 
@@ -147,7 +151,7 @@ void cli_remove(int id) {
 			clients[i] = NULL;
 	}
 	cli_detach(id);
-	free(cli->backendShmName);
-	close(cli->backendFd);
+	free(cli->screenShmName);
+	close(cli->screenFd);
 	free(cli);
 }

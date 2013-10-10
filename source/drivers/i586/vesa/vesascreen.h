@@ -20,8 +20,20 @@
 #pragma once
 
 #include <esc/common.h>
-#include "window.h"
+#include <vbe/vbe.h>
 
-int mouse_start(void *drvIdPtr);
-gpos_t mouse_getX(void);
-gpos_t mouse_getY(void);
+typedef struct {
+	uint refs;
+	uint8_t *frmbuf;
+	uint8_t *whOnBlCache;
+	uint8_t *content;
+	sVbeModeInfo *mode;
+	uint8_t cols;
+	uint8_t rows;
+	uint8_t lastCol;
+	uint8_t lastRow;
+} sVESAScreen;
+
+sVESAScreen *vesascr_request(sVbeModeInfo *minfo);
+void vesascr_reset(sVESAScreen *scr,int type);
+void vesascr_release(sVESAScreen *scr);

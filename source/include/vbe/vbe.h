@@ -104,14 +104,14 @@ sVbeModeInfo *vbe_getModeInfo(uint mode);
  * @param count will be set to the number of found modes
  * @return the array or NULL
  */
-sVTMode *vbe_collectModes(size_t n,size_t *count);
+sScreenMode *vbe_collectModes(size_t n,size_t *count);
 
 /**
  * Free's the previously via vbe_collectModes allocated mode.
  *
  * @param modes the modes
  */
-void vbe_freeModes(sVTMode *modes);
+void vbe_freeModes(sScreenMode *modes);
 
 /**
  * Tries to find the most suitable mode for the given settings

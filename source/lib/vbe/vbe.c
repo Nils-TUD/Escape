@@ -83,12 +83,12 @@ sVbeModeInfo *vbe_getModeInfo(uint mode) {
 	return NULL;
 }
 
-sVTMode *vbe_collectModes(size_t n,size_t *count) {
+sScreenMode *vbe_collectModes(size_t n,size_t *count) {
 	sSLNode *node;
-	sVTMode *res = NULL;
+	sScreenMode *res = NULL;
 	ssize_t max = n ? (ssize_t)MIN(n,sll_length(modes)) : -1;
 	if(n)
-		res = (sVTMode*)malloc(sizeof(sVTMode) * max);
+		res = (sScreenMode*)malloc(sizeof(sScreenMode) * max);
 	*count = 0;
 	for(node = sll_begin(modes); (max == -1 || max > 0) && node != NULL ; node = node->next) {
 		sVbeModeInfo *info = (sVbeModeInfo*)node->data;
@@ -99,6 +99,12 @@ sVTMode *vbe_collectModes(size_t n,size_t *count) {
 			res[*count].width = info->xResolution;
 			res[*count].height = info->yResolution;
 			res[*count].bitsPerPixel = info->bitsPerPixel;
+			res[*count].redMaskSize = info->redMaskSize;
+			res[*count].redFieldPosition = info->redFieldPosition;
+			res[*count].greenMaskSize = info->greenMaskSize;
+			res[*count].greenFieldPosition = info->greenFieldPosition;
+			res[*count].blueMaskSize = info->blueMaskSize;
+			res[*count].blueFieldPosition = info->blueFieldPosition;
 			/* a text mode wouldn't be supported (see above) */
 			res[*count].mode = VID_MODE_GRAPHICAL;
 			res[*count].type = VID_MODE_TYPE_GUI | VID_MODE_TYPE_TUI;
@@ -109,7 +115,7 @@ sVTMode *vbe_collectModes(size_t n,size_t *count) {
 	return res;
 }
 
-void vbe_freeModes(sVTMode *m) {
+void vbe_freeModes(sScreenMode *m) {
 	free(m);
 }
 

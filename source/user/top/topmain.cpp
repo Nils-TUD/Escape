@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/vterm.h>
 #include <esc/esccodes.h>
 #include <esc/keycodes.h>
@@ -83,13 +84,13 @@ static bool compareProcs(const process* a,const process* b) {
 static void display(void) {
 	locku(&displayLock);
 	size_t cpubarwidth;
-	sVTSize consSize;
-	if(vterm_getSize(STDIN_FILENO,&consSize) < 0) {
+	sScreenMode mode;
+	if(screen_getMode(STDIN_FILENO,&mode) < 0) {
 		printe("Unable to determine screensize; falling back to 80x25");
-		consSize.width = 80;
-		consSize.height = 25;
+		mode.cols = 80;
+		mode.rows = 25;
 	}
-	cpubarwidth = consSize.width - SSTRLEN("  99 [10000/10000MB]  ");
+	cpubarwidth = mode.cols - SSTRLEN("  99 [10000/10000MB]  ");
 
 	vector<cpu*> cpus = cpu::get_list();
 	vector<process*> procs = process::get_list(false,0,true);
@@ -97,8 +98,8 @@ static void display(void) {
 	memusage mem = memusage::get();
 
 	cout << "\e[go;0;0]";
-	for(uint y = 0; y < consSize.height; ++y) {
-		for(uint x = 0; x < consSize.width; ++x)
+	for(uint y = 0; y < mode.rows; ++y) {
+		for(uint x = 0; x < mode.cols; ++x)
 			cout << " ";
 	}
 	cout << "\e[go;0;0]";
@@ -129,7 +130,7 @@ static void display(void) {
 	cout << right << setw(wvirt) << " VIRT" << setw(wphys) << " PHYS" << setw(wshm) << " SHR";
 	cout << setw(wcpu) << " CPU%" << setw(wmem) << " MEM%";
 	cout << setw(wtime) << " TIME" << " Command";
-	for(uint x = cmdbegin + SSTRLEN(" Command"); x < consSize.width; ++x)
+	for(uint x = cmdbegin + SSTRLEN(" Command"); x < mode.cols; ++x)
 		cout << ' ';
 	cout << "\n\e[co]";
 
@@ -143,10 +144,10 @@ static void display(void) {
 
 	size_t i = 0;
 	size_t y = cpus.size() + 4;
-	size_t yoff = MIN(yoffset,MAX(0,(ssize_t)procs.size() - (ssize_t)(consSize.height - y)));
+	size_t yoff = MIN(yoffset,MAX(0,(ssize_t)procs.size() - (ssize_t)(mode.rows - y)));
 	auto it = procs.begin();
 	advance(it,yoff);
-	for(; y < consSize.height && it != procs.end(); ++it, ++i) {
+	for(; y < mode.rows && it != procs.end(); ++it, ++i) {
 		char time[12];
 		const process &p = **it;
 		sUser *user = user_getById(users,p.uid());
@@ -174,8 +175,8 @@ static void display(void) {
 		cout << setw(wtime) << time;
 
 		cout << " ";
-		cout.write(p.command().c_str(),min(p.command().length(),consSize.width - cmdbegin - 1));
-		if(++y >= consSize.height)
+		cout.write(p.command().c_str(),min(p.command().length(),mode.cols - cmdbegin - 1));
+		if(++y >= mode.rows)
 			break;
 		cout << "\n";
 	}

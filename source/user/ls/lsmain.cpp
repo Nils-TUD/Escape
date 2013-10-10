@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
 #include <esc/width.h>
 #include <esc/messages.h>
 #include <usergroup/user.h>
@@ -112,7 +112,7 @@ static uint flags;
 
 int main(int argc,char *argv[]) {
 	size_t widths[WIDTHS_COUNT] = {0};
-	sVTSize consSize;
+	sScreenMode mode;
 	sUser *userList = nullptr;
 	sGroup *groupList = nullptr;
 
@@ -144,7 +144,7 @@ int main(int argc,char *argv[]) {
 		path = env::get("CWD");
 
 	// get console-size
-	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
+	if(screen_getMode(STDIN_FILENO,&mode) < 0)
 		error("Unable to determine screensize");
 
 	// read users and groups
@@ -236,7 +236,7 @@ int main(int argc,char *argv[]) {
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
-			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= consSize.width) {
+			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= mode.cols) {
 				cout << '\n';
 				pos = 0;
 			}

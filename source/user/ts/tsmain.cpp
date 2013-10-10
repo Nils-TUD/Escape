@@ -21,7 +21,7 @@
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
-#include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
 #include <info/thread.h>
 #include <string.h>
 #include <stdio.h>
@@ -154,8 +154,8 @@ int main(int argc,char **argv) {
 	std::sort(threads.begin(),threads.end(),compareThreads);
 
 	// get console-size
-	sVTSize consSize;
-	if(vterm_getSize(STDIN_FILENO,&consSize) < 0)
+	sScreenMode mode;
+	if(screen_getMode(STDIN_FILENO,&mode) < 0)
 		error("Unable to determine screensize");
 
 	// print header
@@ -180,7 +180,7 @@ int main(int argc,char **argv) {
 		float cyclePercent = 0;
 		if(t->cycles() != 0)
 			cyclePercent = (float)(100. / (totalCycles / (double)t->cycles()));
-		size_t cmdwidth = min(consSize.width - (width2cmd + 1 + count_digits(t->pid(),10)),
+		size_t cmdwidth = min(mode.cols - (width2cmd + 1 + count_digits(t->pid(),10)),
 				t->procName().length());
 		string procName = t->procName().substr(0,cmdwidth);
 

@@ -146,7 +146,7 @@ void ShellControl::paint(Graphics &g) {
 }
 
 void ShellControl::doUpdate() {
-	if(_vt->upLength > 0) {
+	if(_vt->upWidth > 0) {
 		makeDirty(true);
 		getWindow()->layout();
 		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
@@ -155,15 +155,15 @@ void ShellControl::doUpdate() {
 		if(_vt->upScroll != 0)
 			repaint();
 		else {
-			size_t startRow = _vt->upStart / (_vt->cols * 2);
-			size_t rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
-			Rectangle up = linesToRect(startRow,rowCount);
+			Rectangle up = linesToRect(_vt->upRow,_vt->upHeight);
 			Size font = getGraphics()->getFont().getSize();
 			repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
 		}
 		_vt->upScroll = 0;
-		_vt->upStart = 0;
-		_vt->upLength = 0;
+		_vt->upCol = _vt->cols;
+		_vt->upRow = _vt->rows;
+		_vt->upWidth = 0;
+		_vt->upHeight = 0;
 	}
 }
 

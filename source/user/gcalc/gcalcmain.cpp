@@ -106,8 +106,8 @@ static void keyPressed(UIElement &,const KeyEvent &e) {
 	textfield->repaint();
 }
 
-int main(void) {
-	Application *app = Application::getInstance();
+int main() {
+	Application *app = Application::create();
 	win = make_control<Window>("Calculator",Pos(250,250));
 	win->keyPressed().subscribe(func_recv(keyPressed));
 	shared_ptr<Panel> root = win->getRootPanel();

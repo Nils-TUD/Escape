@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/driver/screen.h>
 #include <esc/driver/uimng.h>
 #include <esc/thread.h>
 #include <esc/io.h>
@@ -25,6 +26,7 @@
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/conf.h>
+#include <esc/mem.h>
 #include <esc/messages.h>
 #include <stdio.h>
 #include <signal.h>
@@ -40,13 +42,16 @@
 
 #define ABS(x)			((x) > 0 ? (x) : -(x))
 
-static int vt_findMode(int uimng,uint cols,uint rows,sVTMode *mode);
+static int vt_findMode(int uimng,uint cols,uint rows,sScreenMode *mode);
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
 static int vt_dateThread(void *arg);
 
+static int scrMode = -1;
+static char *scrShm = NULL;
+
 bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
-	sVTMode mode;
+	sScreenMode mode;
 	int res;
 
 	/* connect to ui-manager */
@@ -76,7 +81,7 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 		return false;
 
 	/* set video mode */
-	res = vtctrl_setVideoMode(vterm,mode.id);
+	res = vt_setVideoMode(vterm,mode.id);
 	if(res < 0)
 		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
 
@@ -91,20 +96,20 @@ void vt_update(sVTerm *vt) {
 	unlocku(&vt->lock);
 }
 
-static int vt_findMode(int uimng,uint cols,uint rows,sVTMode *mode) {
+static int vt_findMode(int uimng,uint cols,uint rows,sScreenMode *mode) {
 	ssize_t i,count,res;
 	size_t bestmode;
 	uint bestdiff = UINT_MAX;
-	sVTMode *modes;
+	sScreenMode *modes;
 
 	/* get all modes */
-	count = uimng_getModeCount(uimng);
+	count = screen_getModeCount(uimng);
 	if(count < 0)
 		return count;
-	modes = (sVTMode*)malloc(count * sizeof(sVTMode));
+	modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
 	if(!modes)
 		return -ENOMEM;
-	if((res = uimng_getModes(uimng,modes,count)) < 0) {
+	if((res = screen_getModes(uimng,modes,count)) < 0) {
 		free(modes);
 		return res;
 	}
@@ -113,14 +118,14 @@ static int vt_findMode(int uimng,uint cols,uint rows,sVTMode *mode) {
 	bestmode = count;
 	for(i = 0; i < count; i++) {
 		if(modes[i].type & VID_MODE_TYPE_TUI) {
-			uint pixdiff = ABS((int)(modes[i].width * modes[i].height) - (int)(cols * rows));
+			uint pixdiff = ABS((int)(modes[i].rows * modes[i].cols) - (int)(cols * rows));
 			if(pixdiff < bestdiff) {
 				bestmode = i;
 				bestdiff = pixdiff;
 			}
 		}
 	}
-	memcpy(mode,modes + bestmode,sizeof(sVTMode));
+	memcpy(mode,modes + bestmode,sizeof(sScreenMode));
 	free(modes);
 	return 0;
 }
@@ -139,7 +144,7 @@ static void vt_doUpdate(sVTerm *vt) {
 		uint upRow = vt->upRow;
 		size_t upHeight = vt->upHeight;
 		if(upRow == 0) {
-			memcpy(vt->scrShm + vt->upCol * 2,vt->titleBar,vt->upWidth * 2);
+			memcpy(scrShm + vt->upCol * 2,vt->titleBar,vt->upWidth * 2);
 			upRow++;
 			upHeight--;
 		}
@@ -149,16 +154,16 @@ static void vt_doUpdate(sVTerm *vt) {
 			size_t offset = upRow * vt->cols * 2 + vt->upCol * 2;
 			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + offset;
 			if(vt->upWidth == vt->cols)
-				memcpy(vt->scrShm + offset,startPos,vt->upWidth * upHeight * 2);
+				memcpy(scrShm + offset,startPos,vt->upWidth * upHeight * 2);
 			else {
 				for(size_t i = 0; i < upHeight; ++i) {
-					memcpy(vt->scrShm + offset + i * vt->cols * 2,
+					memcpy(scrShm + offset + i * vt->cols * 2,
 						startPos + i * vt->cols * 2,vt->upWidth * 2);
 				}
 			}
 		}
 
-		if(uimng_update(vt->uimng,vt->upCol,vt->upRow,vt->upWidth,vt->upHeight) < 0)
+		if(screen_update(vt->uimng,vt->upCol,vt->upRow,vt->upWidth,vt->upHeight) < 0)
 			printe("[VTERM] Unable to update screen");
 	}
 	vt_setCursor(vt);
@@ -171,21 +176,103 @@ static void vt_doUpdate(sVTerm *vt) {
 	vt->upScroll = 0;
 }
 
+sScreenMode *vt_getModes(sVTerm *vt,size_t n,size_t *count) {
+	ssize_t res;
+	if(n == 0) {
+		*count = screen_getModeCount(vt->uimng);
+		return NULL;
+	}
+
+	/* TODO actually, we need to filter out the only-gui-modes here */
+	sScreenMode *modes = (sScreenMode*)malloc(n * sizeof(sScreenMode));
+	if(!modes)
+		return NULL;
+	if((res = screen_getModes(vt->uimng,modes,n)) < 0) {
+		free(modes);
+		*count = res;
+		return NULL;
+	}
+	*count = n;
+	return modes;
+}
+
+static int vt_doSetMode(sVTerm *vt,const char *shmname,uint cols,uint rows,int mid) {
+	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0777);
+	if(fd < 0)
+		return fd;
+	scrShm = mmap(NULL,cols * rows * 2,0,PROT_READ | PROT_WRITE,
+		MAP_SHARED,fd,0);
+	close(fd);
+	if(!scrShm)
+		return -ENOMEM;
+	int res = screen_setMode(vt->uimng,VID_MODE_TYPE_TUI,mid,shmname,true);
+	if(res < 0) {
+		munmap(scrShm);
+		shm_unlink(shmname);
+		return res;
+	}
+	return 0;
+}
+
+int vt_setVideoMode(sVTerm *vt,int mode) {
+	/* get all modes */
+	size_t i,count;
+	vt_getModes(vt,0,&count);
+	sScreenMode *modes = vt_getModes(vt,count,&count);
+	if(!modes)
+		return -ENOMEM;
+
+	ssize_t res;
+	for(i = 0; i < count; i++) {
+		if(modes[i].id == mode) {
+			/* destroy current stuff */
+			if(scrShm) {
+				munmap(scrShm);
+				shm_unlink(vt->name);
+			}
+
+			/* try to set new mode */
+			res = vt_doSetMode(vt,vt->name,modes[i].cols,modes[i].rows,modes[i].id);
+			if(res < 0)
+				goto error;
+
+			/* resize vterm if necessary */
+			if(vt->cols != modes[i].cols || vt->rows != modes[i].rows) {
+				if(!vtctrl_resize(vt,modes[i].cols,modes[i].rows)) {
+					res = vt_doSetMode(vt,vt->name,vt->cols,vt->rows,scrMode);
+					if(res < 0)
+						error("Unable to restore old mode");
+					res = -ENOMEM;
+					goto error;
+				}
+			}
+			scrMode = mode;
+			free(modes);
+			return 0;
+		}
+	}
+	res = -EINVAL;
+
+error:
+	free(modes);
+	return res;
+}
+
 static void vt_setCursor(sVTerm *vt) {
-	sVTPos pos;
+	gpos_t x,y;
 	if(vt->upScroll != 0 || vt->col != vt->lastCol || vt->row != vt->lastRow) {
 		/* draw no cursor if it's not visible by setting it to an invalid location */
 		if(vt->firstVisLine + vt->rows <= vt->currLine + vt->row) {
-			pos.col = vt->cols;
-			pos.row = vt->rows;
+			x = vt->cols;
+			y = vt->rows;
 		}
 		else {
-			pos.col = vt->col;
-			pos.row = vt->row;
+			x = vt->col;
+			y = vt->row;
 		}
-		uimng_setCursor(vt->uimng,&pos);
-		vt->lastCol = pos.col;
-		vt->lastRow = pos.row;
+		screen_setCursor(vt->uimng,x,y,CURSOR_DEFAULT);
+		vt->lastCol = x;
+		vt->lastRow = y;
 	}
 }
 
@@ -207,8 +294,8 @@ static int vt_dateThread(A_UNUSED void *arg) {
 			*title++ = dateStr[j];
 			*title++ = LIGHTGRAY | (BLUE << 4);
 		}
-		memcpy(vt->scrShm + (vt->cols - len) * 2,vt->titleBar + (vt->cols - len) * 2,len * 2);
-		if(uimng_update(vt->uimng,vt->cols - len,0,len * 2,1) < 0)
+		memcpy(scrShm + (vt->cols - len) * 2,vt->titleBar + (vt->cols - len) * 2,len * 2);
+		if(screen_update(vt->uimng,vt->cols - len,0,len * 2,1) < 0)
 			printe("[VTERM] Unable to update screen");
 		unlocku(&vt->lock);
 

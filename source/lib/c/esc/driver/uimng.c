@@ -24,7 +24,7 @@
 
 int uimng_getId(int fd) {
 	sArgsMsg msg;
-	ssize_t res = send(fd,MSG_KM_GETID,NULL,0);
+	ssize_t res = send(fd,MSG_UIM_GETID,NULL,0);
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -36,7 +36,7 @@ int uimng_getId(int fd) {
 int uimng_attach(int fd,int id) {
 	sArgsMsg msg;
 	msg.arg1 = id;
-	ssize_t res = send(fd,MSG_KM_ATTACH,&msg,sizeof(msg));
+	ssize_t res = send(fd,MSG_UIM_ATTACH,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
@@ -45,68 +45,17 @@ int uimng_attach(int fd,int id) {
 	return msg.arg1;
 }
 
-int uimng_getMode(int fd) {
-	sArgsMsg msg;
-	ssize_t res = send(fd,MSG_KM_GETMODE,NULL,0);
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	return msg.arg1;
-}
-
-int uimng_setMode(int fd,int mode,const char *shm) {
+int uimng_setKeymap(int fd,const char *map) {
 	sStrMsg msg;
-	msg.arg1 = mode;
-	strnzcpy(msg.s1,shm,sizeof(msg.s1));
-	ssize_t res = send(fd,MSG_KM_SETMODE,&msg,sizeof(msg));
-	if(res < 0)
+	strnzcpy(msg.s1,map,sizeof(msg.s1));
+	ssize_t res = send(fd,MSG_UIM_SETKEYMAP,&msg,sizeof(msg));
+	if(res < 0) {
+		close(fd);
 		return res;
+	}
 	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	close(fd);
 	if(res < 0)
 		return res;
 	return msg.arg1;
-}
-
-int uimng_setCursor(int fd,const sVTPos *pos) {
-	sDataMsg msg;
-	memcpy(&msg.d,pos,sizeof(sVTPos));
-	return send(fd,MSG_KM_SETCURSOR,&msg,sizeof(msg));
-}
-
-int uimng_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	sArgsMsg msg;
-	msg.arg1 = x;
-	msg.arg2 = y;
-	msg.arg3 = width;
-	msg.arg4 = height;
-	int res = send(fd,MSG_KM_UPDATE,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	return msg.arg1;
-}
-
-ssize_t uimng_getModeCount(int fd) {
-	sArgsMsg msg;
-	msg.arg1 = 0;
-	int res = send(fd,MSG_KM_GETMODES,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	return msg.arg1;
-}
-
-int uimng_getModes(int fd,sVTMode *modes,size_t count) {
-	sArgsMsg msg;
-	msg.arg1 = count;
-	int res = send(fd,MSG_KM_GETMODES,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	return IGNSIGS(receive(fd,NULL,modes,sizeof(sVTMode) * count));
 }

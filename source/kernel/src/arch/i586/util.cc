@@ -60,6 +60,8 @@ void Util::panicArch() {
 }
 
 void Util::switchToVGA() {
+	/* TODO */
+#if 0
 	OpenFile *file;
 	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/vga",&file) == 0) {
 		ssize_t res;
@@ -82,6 +84,7 @@ void Util::switchToVGA() {
 		}
 		file->close(KERNEL_PID);
 	}
+#endif
 }
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {

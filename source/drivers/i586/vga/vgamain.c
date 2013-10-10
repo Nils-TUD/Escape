@@ -28,6 +28,7 @@
 #include <esc/messages.h>
 #include <tui/tuidev.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -41,47 +42,17 @@
 #define CURSOR_DATA_LOCLOW		0x0F
 #define CURSOR_DATA_LOCHIGH		0x0E
 
-static int vga_setMode(sTUIClient *client,const char *shmname,int mid,bool switchMode);
-static void vga_setCursor(sTUIClient *client,uint row,uint col);
-static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-
-static sVTMode modes[] = {
-	{0x0001,40,25,4,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
-	{0x0003,80,25,4,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
+static sScreenMode modes[] = {
+	{0x0001,40,25,0,0,4,0,0,0,0,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
+	{0x0003,80,25,0,0,4,0,0,0,0,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
 };
 
 /* our state */
 static uint8_t *vgaData;
 static bool usebios = true;
 
-int main(int argc,char **argv) {
-	if(argc > 1 && strcmp(argv[1],"nobios") == 0) {
-		printf("[VGA] Disabled bios-calls; mode-switching will not be possible\n");
-		fflush(stdout);
-		usebios = false;
-	}
-
-	/* reserve ports for cursor */
-	if(reqports(CURSOR_PORT_INDEX,2) < 0)
-		error("[VGA] Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
-
-	/* map VGA memory */
-	uintptr_t phys = VGA_ADDR;
-	vgaData = (uint8_t*)regaddphys(&phys,VGA_SIZE,0);
-	if(vgaData == NULL)
-		error("[VGA] Unable to acquire vga-memory (%p)",phys);
-
-	sVTMode *availModes = usebios ? modes : modes + 1;
-	size_t availModeCnt = usebios ? ARRAY_SIZE(modes) : 1;
-	tui_driverLoop("/dev/vga",availModes,availModeCnt,vga_setMode,vga_setCursor,vga_updateScreen);
-
-	/* clean up */
-	munmap(vgaData);
-	relports(CURSOR_PORT_INDEX,2);
-	return EXIT_SUCCESS;
-}
-
-static int vga_setMode(sTUIClient *client,const char *shmname,int mid,bool switchMode) {
+static int vga_setMode(sTUIClient *client,const char *shmname,int mid,int type,bool switchMode) {
+	assert(type == VID_MODE_TYPE_TUI);
 	if(switchMode && usebios && mid >= 0) {
 		int res;
 		sVM86Regs regs;
@@ -101,32 +72,30 @@ static int vga_setMode(sTUIClient *client,const char *shmname,int mid,bool switc
 		munmap(client->shm);
 	client->mode = NULL;
 	client->shm = NULL;
+	client->type = type;
 
 	if(mid >= 0) {
 		/* join shared memory */
 		int fd = shm_open(shmname,IO_READ | IO_WRITE,0);
 		if(fd < 0)
 			return fd;
-		client->shm = mmap(NULL,modes[mid].width * modes[mid].height * 2,0,PROT_READ | PROT_WRITE,
+		client->shm = mmap(NULL,modes[mid].cols * modes[mid].rows * 2,0,PROT_READ | PROT_WRITE,
 			MAP_SHARED,fd,0);
 		close(fd);
 		if(client->shm == NULL)
 			return errno;
 		client->mode = modes + mid;
-		client->cols = modes[mid].width;
-		client->rows = modes[mid].height;
-		client->modeid = modes[mid].id;
 	}
 	return 0;
 }
 
-static void vga_setCursor(sTUIClient *client,uint row,uint col) {
+static void vga_setCursor(sTUIClient *client,gpos_t x,gpos_t y,A_UNUSED int cursor) {
 	uint position;
 	/* remove cursor, if it is out of bounds */
-	if(row >= client->rows || col >= client->cols)
+	if(y >= (gpos_t)client->mode->rows || x >= (gpos_t)client->mode->cols)
 		position = 0x7D0;
 	else
-		position = (row * client->cols) + col;
+		position = (y * client->mode->cols) + x;
 
 	/* cursor LOW port to vga INDEX register */
 	outbyte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
@@ -137,21 +106,48 @@ static void vga_setCursor(sTUIClient *client,uint row,uint col) {
 }
 
 static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	sVTMode *mode = client->mode;
+	sScreenMode *mode = client->mode;
 	if(!mode)
 		return -EINVAL;
-	if((gpos_t)(x + width) < x || x + width > mode->width ||
-		(gpos_t)(y + height) < y || y + height > mode->height)
+	if((gpos_t)(x + width) < x || x + width > mode->cols ||
+		(gpos_t)(y + height) < y || y + height > mode->rows)
 		return -EINVAL;
 
-	if(width == mode->width)
-		memcpy(vgaData + y * mode->width * 2,client->shm + y * mode->width * 2,height * mode->width * 2);
+	if(width == mode->cols)
+		memcpy(vgaData + y * mode->cols * 2,client->shm + y * mode->cols * 2,height * mode->cols * 2);
 	else {
-		size_t offset = y * mode->width * 2 + x * 2;
+		size_t offset = y * mode->cols * 2 + x * 2;
 		for(gsize_t i = 0; i < height; i++) {
 			memcpy(vgaData + offset,client->shm + offset,width * 2);
-			offset += mode->width * 2;
+			offset += mode->cols * 2;
 		}
 	}
 	return 0;
+}
+
+int main(int argc,char **argv) {
+	if(argc > 1 && strcmp(argv[1],"nobios") == 0) {
+		printf("[VGA] Disabled bios-calls; mode-switching will not be possible\n");
+		fflush(stdout);
+		usebios = false;
+	}
+
+	/* reserve ports for cursor */
+	if(reqports(CURSOR_PORT_INDEX,2) < 0)
+		error("[VGA] Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
+
+	/* map VGA memory */
+	uintptr_t phys = VGA_ADDR;
+	vgaData = (uint8_t*)regaddphys(&phys,VGA_SIZE,0);
+	if(vgaData == NULL)
+		error("[VGA] Unable to acquire vga-memory (%p)",phys);
+
+	sScreenMode *availModes = usebios ? modes : modes + 1;
+	size_t availModeCnt = usebios ? ARRAY_SIZE(modes) : 1;
+	tui_driverLoop("/dev/vga",availModes,availModeCnt,vga_setMode,vga_setCursor,vga_updateScreen);
+
+	/* clean up */
+	munmap(vgaData);
+	relports(CURSOR_PORT_INDEX,2);
+	return EXIT_SUCCESS;
 }

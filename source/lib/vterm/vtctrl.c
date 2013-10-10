@@ -289,10 +289,11 @@ void vtctrl_markScrDirty(sVTerm *vt) {
 }
 
 void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
+	int x = vt->upCol, y = vt->upRow;
 	vt->upCol = MIN(vt->upCol,col);
 	vt->upRow = MIN(vt->upRow,row);
-	vt->upWidth = MAX(vt->upWidth,width);
-	vt->upHeight = MAX(vt->upHeight,height);
+	vt->upWidth = MAX(x + vt->upWidth,col + width) - vt->upCol;
+	vt->upHeight = MAX(y + vt->upHeight,row + height) - vt->upRow;
 	assert(vt->upWidth <= vt->cols);
 	assert(vt->upHeight <= vt->rows);
 }

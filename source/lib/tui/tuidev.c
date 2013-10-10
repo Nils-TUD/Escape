@@ -38,7 +38,7 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 
 	int id = createdev(name,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
-		error("[VGA] Unable to register device '%s'",name);
+		error("Unable to register device '%s'",name);
 
 	/* wait for messages */
 	while(1) {
@@ -47,7 +47,7 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[VGA] Unable to get work");
+			printe("Unable to get work");
 		else {
 			/* see what we have to do */
 			switch(mid) {

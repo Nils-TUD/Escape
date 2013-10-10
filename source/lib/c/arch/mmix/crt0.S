@@ -45,7 +45,9 @@
 _start:
 	LDOU	$0,$254,0
 	UNSAVE	0,$0
-	# call init_tls(entryPoint,TLSStart,TLSSize)
+	# call init_tls(entryPoint,TLSStart,TLSSize,argc,argv)
+	SET		$7,$1
+	SET		$8,$2
 	PUSHJ	$3,init_tls
 	# it returns the entrypoint; 0 if we're the initial thread
 	BZ		$3,initialThread

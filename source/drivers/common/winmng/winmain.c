@@ -86,7 +86,7 @@ int main(int argc,char *argv[]) {
 	while(1) {
 		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[WINM] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_WIN_CREATE: {
@@ -170,7 +170,7 @@ int main(int argc,char *argv[]) {
 							send(fd,MSG_WIN_UPDATE_RESP,&msg,sizeof(msg.args));
 						}
 						else {
-							printe("[WINM] Got illegal update-params: %d,%d %zu,%zu",
+							printe("Got illegal update-params: %d,%d %zu,%zu",
 									x,y,width,height);
 						}
 					}

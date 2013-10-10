@@ -49,10 +49,17 @@ _start:
 	ldw		$4,$29,0			# entrypoint
 	ldw		$5,$29,4			# TLS start
 	ldw		$6,$29,8			# TLS size
-	# remove them from stack and setup a small stack-frame
-	sub		$29,$29,32 - 12
-	# call init_tls(entryPoint,TLSStart,TLSSize)
+	ldw		$7,$29,12			# argc
+	bne		$4,$0,1f			# skip that for threads
+	ldw		$8,$29,16			# argv
+1:
+	# setup a small stackframe
+	sub		$29,$29,32
+	# pass argv via stack
+	stw		$8,$29,16
+	# call init_tls(entryPoint,TLSStart,TLSSize,argc,argv)
 	jal		init_tls
+	add		$29,$29,12
 	# it returns the entrypoint; 0 if we're the initial thread
 	beq		$2,$0,initialThread
 	# we're an additional thread, so call the desired function

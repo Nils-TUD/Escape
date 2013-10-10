@@ -82,7 +82,7 @@ bool cmds_execute(int cmd,int fd,sMsg *msg,void *data) {
 	/* TODO don't use the preprocessor for that! */
 #if REQ_THREAD_COUNT > 0
 	if(!tpool_addRequest(commands[cmd - MSG_FS_OPEN],fd,msg,sizeof(sMsg),data))
-		printf("[FS] Not enough mem for request %d\n",cmd);
+		printe("Not enough mem for request %d",cmd);
 #else
 	commands[cmd - MSG_FS_OPEN](fd,msg,data);
 #endif

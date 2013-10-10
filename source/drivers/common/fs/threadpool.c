@@ -46,7 +46,7 @@ void tpool_init(void) {
 	for(i = 0; i < REQ_THREAD_COUNT; i++) {
 		int tid = startthread((fThreadEntry)tpool_idle,threads + i);
 		if(tid < 0)
-			error("[FS] Unable to start request-thread %d\n",i);
+			error("Unable to start request-thread %d\n",i);
 		threads[i].id = i + 1;
 		threads[i].tid = tid;
 		threads[i].state = RT_STATE_IDLE;

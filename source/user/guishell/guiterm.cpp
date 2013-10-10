@@ -102,7 +102,7 @@ void GUITerm::run() {
 		int fd = getwork(_sid,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			if(fd != -ENOCLIENT)
-				printe("[GUISH] Unable to get client");
+				printe("Unable to get client");
 			// append the buffer now to reduce delays
 			if(_rbufPos > 0) {
 				_rbuffer[_rbufPos] = '\0';

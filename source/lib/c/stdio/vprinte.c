@@ -23,8 +23,11 @@
 #include <stdarg.h>
 #include <errno.h>
 
+char *__progname = NULL;
+
 int vprinte(const char *prefix,va_list ap) {
 	char *msg;
+	fprintf(stderr,"[%s] ",__progname);
 	vfprintf(stderr,prefix,ap);
 	if(errno != 0) {
 		msg = strerror(errno);

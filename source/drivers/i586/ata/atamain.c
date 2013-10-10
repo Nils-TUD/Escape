@@ -66,14 +66,14 @@ static int drive_thread(void *arg) {
 	sATADevice *ataDev = ctrl_getDevice(dev->device);
 	sPartition *part = ataDev ? ataDev->partTable + dev->partition : NULL;
 	if(ataDev == NULL || part == NULL || ataDev->present == 0 || part->present == 0)
-		error("[ATA] Invalid device/partition");
+		error("Invalid device/partition");
 
 	while(1) {
 		msgid_t mid;
 		int fd = getwork(dev->fd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[ATA] Unable to get client");
+				printe("Unable to get client");
 		}
 		else {
 			ATA_PR2("Got message %d",mid);
@@ -146,7 +146,7 @@ int main(int argc,char **argv) {
 
 	for(i = 1; i < drvCount; i++) {
 		if(startthread(drive_thread, drives + i) < 0)
-			error("[ATA] Unable to start thread");
+			error("Unable to start thread");
 	}
 	drive_thread(drives + 0);
 

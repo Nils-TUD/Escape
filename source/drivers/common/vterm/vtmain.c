@@ -122,7 +122,7 @@ static int vtermThread(void *vtptr) {
 	while(1) {
 		int fd = getwork(vt->sid,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[VTERM] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_DEV_READ: {
@@ -135,7 +135,7 @@ static int vtermThread(void *vtptr) {
 					if(data)
 						msg.args.arg1 = vtin_gets(vt,data,count,&avail);
 					else
-						printe("[VTERM] Not enough memory to read %zu bytes",count);
+						printe("Not enough memory to read %zu bytes",count);
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1)
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1);
@@ -157,7 +157,7 @@ static int vtermThread(void *vtptr) {
 						free(data);
 					}
 					else
-						printe("[VTERM] Not enough memory to write %zu bytes",c + 1);
+						printe("Not enough memory to write %zu bytes",c + 1);
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;

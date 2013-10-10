@@ -481,7 +481,7 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 	msg.args.arg3 = mouseX;
 	msg.args.arg4 = mouseY;
 	if(send(windows[id].owner,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args)) < 0)
-		printe("[WINM] Unable to send active-event for window %u",id);
+		printe("Unable to send active-event for window %u",id);
 }
 
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r) {

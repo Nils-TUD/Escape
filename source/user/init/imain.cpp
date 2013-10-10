@@ -44,22 +44,17 @@ static volatile int timeout = false;
 static int state = STATE_RUN;
 
 int main(void) {
-	if(getpid() != 0) {
-		cerr << "It's not good to start init twice ;)" << endl;
-		return EXIT_FAILURE;
-	}
+	if(getpid() != 0)
+		error("It's not good to start init twice ;)");
 
-	if(startthread(driverThread,nullptr) < 0) {
-		cerr << "Unable to start driver-thread" << endl;
-		return EXIT_FAILURE;
-	}
+	if(startthread(driverThread,nullptr) < 0)
+		error("Unable to start driver-thread");
 
 	try {
 		pm.start();
 	}
 	catch(const init_error& e) {
-		cerr << "Unable to init system: " << e.what() << endl;
-		return EXIT_FAILURE;
+		error("Unable to init system: %s",e.what());
 	}
 
 	// loop and wait forever
@@ -73,7 +68,7 @@ int main(void) {
 				pm.restart(st.pid);
 		}
 		catch(const init_error& e) {
-			cerr << "Unable to react on child-death: " << e.what() << endl;
+			printe("Unable to react on child-death: %s",e.what());
 		}
 	}
 	return EXIT_SUCCESS;
@@ -96,7 +91,7 @@ static int driverThread(A_UNUSED void *arg) {
 		int fd = getwork(drv,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[INIT] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			switch(mid) {
@@ -104,7 +99,7 @@ static int driverThread(A_UNUSED void *arg) {
 					if(state == STATE_RUN) {
 						state = STATE_REBOOT;
 						if(alarm(SHUTDOWN_TIMEOUT) < 0)
-							printe("[INIT] Unable to set alarm");
+							printe("Unable to set alarm");
 						pm.shutdown();
 					}
 					break;
@@ -113,7 +108,7 @@ static int driverThread(A_UNUSED void *arg) {
 					if(state == STATE_RUN) {
 						state = STATE_SHUTDOWN;
 						if(alarm(SHUTDOWN_TIMEOUT) < 0)
-							printe("[INIT] Unable to set alarm");
+							printe("Unable to set alarm");
 						pm.shutdown();
 					}
 					break;

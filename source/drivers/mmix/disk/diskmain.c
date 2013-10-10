@@ -54,7 +54,7 @@
 #define DEBUG				0
 
 #define DISK_LOG(fmt,...)	do { \
-		printf("[DISK] "); \
+		printf("[disk] "); \
 		printf(fmt,## __VA_ARGS__); \
 		printf("\n"); \
 		fflush(stdout); \
@@ -62,7 +62,7 @@
 
 #if DEBUG
 #define DISK_DBG(fmt,...)	do { \
-		printf("[DISK] "); \
+		printf("[disk] "); \
 		printf(fmt,## __VA_ARGS__); \
 		printf("\n"); \
 		fflush(stdout); \
@@ -130,7 +130,7 @@ int main(int argc,char **argv) {
 		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[DISK] Unable to get client");
+				printe("Unable to get client");
 		}
 		else {
 			switch(mid) {

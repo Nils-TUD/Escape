@@ -118,7 +118,7 @@ void ProcessManager::shutdown() {
 		if(!p->isDead() && p->isKillable()) {
 			cout << "Sending SIG_TERM to " << p->pid() << endl;
 			if(kill(p->pid(),SIG_TERM) < 0)
-				printe("[INIT] Unable to send the term-signal to %d",p->pid());
+				printe("Unable to send the term-signal to %d",p->pid());
 		}
 	}
 	unlocku(&_lock);
@@ -146,7 +146,7 @@ void ProcessManager::finalize(int task) {
 		if(!p->isAlive() && !p->isDead() && p->isKillable()) {
 			cout << "Sending SIG_KILL to " << p->pid() << endl;
 			if(kill(p->pid(),SIG_KILL) < 0)
-				printe("[INIT] Unable to send the kill-signal to %d",p->pid());
+				printe("Unable to send the kill-signal to %d",p->pid());
 		}
 	}
 	_downProg->allTerminated();

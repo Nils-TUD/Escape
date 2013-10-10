@@ -41,7 +41,7 @@ _start:
 
 	# now replace with init
 	mov		$progName,%esi						# arg1: path
-	pushl	$args								# arg2: arguments
+	mov		$args,%edi							# arg2: arguments
 	mov		$SYSCALL_EXEC,%eax					# set syscall-number
 	mov		$1f,%edx
 	mov		%esp,%ecx

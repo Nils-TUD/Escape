@@ -64,14 +64,14 @@ static void cli_switch(int incr) {
 
 		if(screen_setMode(cli->screenFd,cli->type,cli->screenMode->id,cli->screenShmName,
 				oldMode != cli->screenMode->id) < 0)
-			printe("[UIM] Unable to set mode");
+			printe("Unable to set mode");
 		if(screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor) < 0)
-			printe("[UIM] Unable to set cursor");
+			printe("Unable to set cursor");
 
 		gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
 		gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
 		if(screen_update(cli->screenFd,0,0,w,h) < 0)
-			printe("[UIM] Screen update failed");
+			printe("Screen update failed");
 	}
 }
 

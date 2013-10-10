@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeCProg('sbin', target = 'uimanager', source = env.Glob('*.c'))

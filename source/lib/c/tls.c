@@ -23,10 +23,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
+extern void initHeap(void);
+
 static tULock tlsLock;
 static uint *tlsCopy = NULL;
-
-extern void initHeap(void);
+extern char *__progname;
 
 /**
  * TODO: Actually this is not exactly the model described in doc/thread-local-storage.pdf.
@@ -46,11 +47,17 @@ extern void initHeap(void);
  */
 
 /* make gcc happy */
-uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize);
+uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,int argc,char *argv[]);
 
-uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize) {
+uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
 	static bool initialized = false;
 	if(!initialized) {
+		char *name = argv[0];
+		while((name = strchr(name,'/')) != NULL) {
+			name++;
+			__progname = name;
+		}
+
 		initHeap();
 		if(crtlocku(&tlsLock) < 0)
 			error("Unable to create TLS lock");

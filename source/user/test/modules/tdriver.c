@@ -118,7 +118,7 @@ static int getRequests(A_UNUSED void *arg) {
 		int cfd = getwork(id,&mid,&msg,sizeof(msg),GW_MARKUSED);
 		if(cfd < 0) {
 			if(cfd != -EINTR)
-				printe("[TEST] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			sTestRequest *req = (sTestRequest*)malloc(sizeof(sTestRequest));

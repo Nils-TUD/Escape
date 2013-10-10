@@ -51,9 +51,9 @@ void jobs_wait(void) {
 		sExitState state;
 		waitchild(&state);
 		if(state.signal != SIG_COUNT)
-			printf("Child %d terminated because of signal %d\n",state.pid,state.signal);
+			printf("[uimng] Child %d terminated because of signal %d\n",state.pid,state.signal);
 		else
-			printf("Child %d terminated with exitcode %d\n",state.pid,state.exitCode);
+			printf("[uimng] Child %d terminated with exitcode %d\n",state.pid,state.exitCode);
 		fflush(stdout);
 		jobs_terminate(state.pid);
 

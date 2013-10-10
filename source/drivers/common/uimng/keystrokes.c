@@ -36,7 +36,7 @@
 #define VTERM_PROG		"/sbin/vterm"
 #define LOGIN_PROG		"/bin/login"
 
-#define WINMNG_PROG		"/sbin/winmanager"
+#define WINMNG_PROG		"/sbin/winmng"
 #define DESKTOP_PROG	"/bin/desktop"
 
 #define TUI_DEF_COLS	"100"
@@ -59,7 +59,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 	locku(&lck);
 	int id = jobs_getId();
 	if(id < 0) {
-		fprintf(stderr,"Maximum number of clients reached\n");
+		fprintf(stderr,"[uimng] Maximum number of clients reached\n");
 		unlocku(&lck);
 		return;
 	}
@@ -77,7 +77,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 		const char *args[] = {mng,cols,rows,name,NULL};
 		exec(mng,args);
-		printe("[UIM] exec with %s failed",mng);
+		printe("exec with %s failed",mng);
 		return;
 	}
 
@@ -98,7 +98,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 		const char *args[] = {login,NULL};
 		exec(login,args);
-		printe("[UIM] exec with %s failed",login);
+		printe("exec with %s failed",login);
 	}
 
 	jobs_add(id,loginPid,mngPid);
@@ -106,7 +106,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 	return;
 
 error:
-	printe("[UIM] fork failed");
+	printe("fork failed");
 	unlocku(&lck);
 }
 

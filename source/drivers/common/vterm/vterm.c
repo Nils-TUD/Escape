@@ -164,7 +164,7 @@ static void vt_doUpdate(sVTerm *vt) {
 		}
 
 		if(screen_update(vt->uimng,vt->upCol,vt->upRow,vt->upWidth,vt->upHeight) < 0)
-			printe("[VTERM] Unable to update screen");
+			printe("Unable to update screen");
 	}
 	vt_setCursor(vt);
 
@@ -296,7 +296,7 @@ static int vt_dateThread(A_UNUSED void *arg) {
 		}
 		memcpy(scrShm + (vt->cols - len) * 2,vt->titleBar + (vt->cols - len) * 2,len * 2);
 		if(screen_update(vt->uimng,vt->cols - len,0,len * 2,1) < 0)
-			printe("[VTERM] Unable to update screen");
+			printe("Unable to update screen");
 		unlocku(&vt->lock);
 
 		/* wait a second */

@@ -62,7 +62,7 @@ static int infodev_handler(void *arg) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[FSINFO] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			switch(mid) {
@@ -89,7 +89,7 @@ int infodev_thread(A_UNUSED void *arg) {
 
 void infodev_shutdown(void) {
 	if(kill(getpid(),SIG_USR1) < 0)
-		printe("[FS] Unable to send signal to me");
+		printe("Unable to send signal to me");
 }
 
 static void sigUsr1(A_UNUSED int sig) {

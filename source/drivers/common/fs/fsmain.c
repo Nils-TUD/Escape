@@ -79,7 +79,7 @@ int main(int argc,char *argv[]) {
 	if(root == NULL)
 		error("Unable to get root mount-point");
 	cmds_setRoot(rootDev,root);
-	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->device,argv[3]);
+	printf("[fs] Mounted '%s' with fs '%s' at '/'\n",root->device,argv[3]);
 	fflush(stdout);
 
 	/* register device */
@@ -98,7 +98,7 @@ int main(int argc,char *argv[]) {
 				/* no requests anymore and we should shutdown? */
 				if(!run)
 					break;
-				printe("[FS] Unable to get work");
+				printe("Unable to get work");
 			}
 		}
 		else {
@@ -106,7 +106,7 @@ int main(int argc,char *argv[]) {
 			if(mid == MSG_FS_WRITE) {
 				data = malloc(msg.args.arg4);
 				if(!data || IGNSIGS(receive(fd,NULL,data,msg.args.arg4)) < 0) {
-					printf("[FS] Illegal request\n");
+					printe("Illegal request");
 					close(fd);
 					continue;
 				}

@@ -46,7 +46,7 @@ int main(void) {
 	while(1) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[ZERO] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_DEV_READ: {
@@ -54,7 +54,7 @@ int main(void) {
 					size_t count = msg.args.arg2;
 					void *data = count <= BUF_SIZE ? zeros : calloc(count,1);
 					if(!data) {
-						printe("[ZERO] Unable to alloc mem");
+						printe("Unable to alloc mem");
 						count = 0;
 					}
 					msg.args.arg1 = count;

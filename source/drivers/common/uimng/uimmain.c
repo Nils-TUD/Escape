@@ -98,7 +98,7 @@ int main(int argc,char *argv[]) {
 	/* determine default keymap */
 	f = fopen(KEYMAP_FILE,"r");
 	if(f == NULL)
-		error("[UIM] Unable to open %s",KEYMAP_FILE);
+		error("Unable to open %s",KEYMAP_FILE);
 	fgets(defKeymapPath,MAX_PATH_LEN,f);
 	if((newline = strchr(defKeymapPath,'\n')))
 		*newline = '\0';
@@ -107,17 +107,17 @@ int main(int argc,char *argv[]) {
 	/* load default map */
 	defmap = km_request(defKeymapPath);
 	if(!defmap)
-		error("[UIM] Unable to load default keymap");
+		error("Unable to load default keymap");
 
 	/* start helper threads */
 	if(startthread(kbClientThread,NULL) < 0)
-		error("[UIM] Unable to start thread for reading from kb");
+		error("Unable to start thread for reading from kb");
 	if(startthread(mouseClientThread,NULL) < 0)
-		error("[UIM] Unable to start thread for reading from mouse");
+		error("Unable to start thread for reading from mouse");
 	if(startthread(inputThread,NULL) < 0)
-		error("[UIM] Unable to start thread for handling uim-input");
+		error("Unable to start thread for handling uim-input");
 	if(startthread(ctrlThread,NULL) < 0)
-		error("[UIM] Unable to start thread for handling uim-ctrl");
+		error("Unable to start thread for handling uim-ctrl");
 
 	/* now wait for terminated childs */
 	jobs_wait();
@@ -128,13 +128,13 @@ static int mouseClientThread(A_UNUSED void *arg) {
 	/* open mouse */
 	int kbFd = open("/dev/mouse",IO_MSGS);
 	if(kbFd < 0)
-		error("[UIM] Unable to open '/dev/mouse'");
+		error("Unable to open '/dev/mouse'");
 
 	while(1) {
 		sMouseData mouseData;
 		ssize_t res = IGNSIGS(receive(kbFd,NULL,&mouseData,sizeof(mouseData)));
 		if(res < 0)
-			printe("[UIM] receive from mouse failed");
+			printe("receive from mouse failed");
 
 		sUIMData data;
 		data.type = KM_EV_MOUSE;
@@ -148,15 +148,15 @@ static int mouseClientThread(A_UNUSED void *arg) {
 
 static int kbClientThread(A_UNUSED void *arg) {
 	/* open keyboard */
-	int kbFd = open("/dev/keyboard",IO_MSGS);
+	int kbFd = open("/dev/keyb",IO_MSGS);
 	if(kbFd < 0)
-		error("[UIM] Unable to open '/dev/keyboard'");
+		error("Unable to open '/dev/keyb'");
 
 	while(1) {
 		sKbData kbData;
 		ssize_t res = IGNSIGS(receive(kbFd,NULL,&kbData,sizeof(kbData)));
 		if(res < 0)
-			printe("[UIM] receive from keyboard failed");
+			printe("receive from keyboard failed");
 
 		/* translate keycode */
 		sUIMData data;
@@ -223,7 +223,7 @@ static int setMode(sClient *cli,int type,int mid,const char *shm) {
 static int ctrlThread(A_UNUSED void *arg) {
 	int id = createdev("/dev/uim-ctrl",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
-		error("[UIM] Unable to register device 'uim-ctrl'");
+		error("Unable to register device 'uim-ctrl'");
 
 	/* create first client */
 	keys_createTextConsole();
@@ -233,7 +233,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 		msgid_t mid;
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[UIM] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_DEV_OPEN: {
@@ -362,13 +362,13 @@ static int ctrlThread(A_UNUSED void *arg) {
 static int inputThread(A_UNUSED void *arg) {
 	int id = createdev("/dev/uim-input",DEV_TYPE_CHAR,DEV_CLOSE);
 	if(id < 0)
-		error("[UIM] Unable to register device 'uim-input'");
+		error("Unable to register device 'uim-input'");
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[UIM] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_UIM_ATTACH: {

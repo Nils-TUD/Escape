@@ -45,7 +45,7 @@ int infodev_thread(A_UNUSED void *arg) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[WININFO] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			switch(mid) {

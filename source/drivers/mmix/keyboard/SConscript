@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeCProg('sbin', target = 'keyboard', source = env.Glob('*.c'), LIBS = ['keyb'])

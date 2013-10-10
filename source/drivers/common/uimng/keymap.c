@@ -44,7 +44,7 @@ sKeymap *km_request(const char *file) {
 	if(maps == NULL) {
 		maps = sll_create();
 		if(maps == NULL)
-			error("[UIM] Unable to create maps-list");
+			error("Unable to create maps-list");
 	}
 
 	/* do we already have the keymap? */

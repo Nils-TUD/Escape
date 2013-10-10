@@ -82,7 +82,7 @@ int main(void) {
 		fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[SPK] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			switch(mid) {
@@ -125,7 +125,7 @@ static void timerIntrptHandler(A_UNUSED int sig) {
 			intrptTarget = 0;
 			intrptCount = 0;
 			if(signal(SIG_INTRPT_TIMER,SIG_DFL) == SIG_ERR)
-				printe("[SPK] Unable to unset signal-handler");
+				printe("Unable to unset signal-handler");
 		}
 	}
 }

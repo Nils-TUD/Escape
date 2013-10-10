@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg('sbin', target = 'winmng', source = env.Glob('*.c'))

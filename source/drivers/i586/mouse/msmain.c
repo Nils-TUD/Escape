@@ -117,7 +117,7 @@ int main(void) {
 		int fd = getwork(sid,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[MOUSE] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			switch(mid) {

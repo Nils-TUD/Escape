@@ -6,8 +6,7 @@ random
 	/dev/random 0666 root
 null
 	/dev/null 0666 root
-keyboard
-	/dev/keyboard 0110 input
-uimanager /dev/vga
+keyb
+	/dev/keyb 0110 input
+uimng /dev/vga
 	/dev/uim-ctrl 0110 input
-	/dev/uim-input 0110 input

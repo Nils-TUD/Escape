@@ -63,7 +63,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 						/* send interrupt to shell */
 						if(vt->shellPid) {
 							if(kill(vt->shellPid,SIG_INTRPT) < 0)
-								printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
+								printe("Unable to send SIG_INTRPT to %d",vt->shellPid);
 						}
 						goto out;
 					case VK_D:

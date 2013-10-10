@@ -26,21 +26,21 @@
 
 /* for printing debug-infos */
 #define ATA_PR1(fmt,...)	/*do { \
-		printf("[ATA] "); \
+		printf("[ata] "); \
 		printf(fmt,## __VA_ARGS__); \
 		printf("\n"); \
 		fflush(stdout); \
 	} while(0);*/
 
 #define ATA_PR2(fmt,...)	/*do { \
-		printf("[ATA] "); \
+		printf("[ata] "); \
 		printf(fmt,## __VA_ARGS__); \
 		printf("\n"); \
 		fflush(stdout); \
 	} while(0);*/
 
 #define ATA_LOG(fmt,...)	do { \
-		printf("[ATA] "); \
+		printf("[ata] "); \
 		printf(fmt,## __VA_ARGS__); \
 		printf("\n"); \
 		fflush(stdout); \

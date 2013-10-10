@@ -62,7 +62,7 @@ int main(int argc,char **argv) {
 		msgid_t mid;
 		fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[RAND] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
 				case MSG_DEV_READ: {

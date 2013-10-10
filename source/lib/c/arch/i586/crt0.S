@@ -51,7 +51,7 @@ _start:
 	pop		%eax
 	pop		%edx
 	pop		%ecx
-	# call init_tls(entryPoint,TLSStart,TLSSize)
+	# call init_tls(entryPoint,TLSStart,TLSSize,argc,argv)
 	call	init_tls
 	# it returns the entrypoint; 0 if we're the initial thread
 	test	%eax,%eax

@@ -62,7 +62,7 @@ static int vga_setMode(sTUIClient *client,const char *shmname,int mid,int type,b
 		regs.ax |= 0x80;
 		res = vm86int(0x10,&regs,NULL);
 		if(res < 0) {
-			printe("[VGA] Unable to set vga-mode. Disabling BIOS-calls!");
+			printe("Unable to set vga-mode. Disabling BIOS-calls!");
 			usebios = false;
 		}
 	}
@@ -134,13 +134,13 @@ int main(int argc,char **argv) {
 
 	/* reserve ports for cursor */
 	if(reqports(CURSOR_PORT_INDEX,2) < 0)
-		error("[VGA] Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
+		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* map VGA memory */
 	uintptr_t phys = VGA_ADDR;
 	vgaData = (uint8_t*)regaddphys(&phys,VGA_SIZE,0);
 	if(vgaData == NULL)
-		error("[VGA] Unable to acquire vga-memory (%p)",phys);
+		error("Unable to acquire vga-memory (%p)",phys);
 
 	sScreenMode *availModes = usebios ? modes : modes + 1;
 	size_t availModeCnt = usebios ? ARRAY_SIZE(modes) : 1;

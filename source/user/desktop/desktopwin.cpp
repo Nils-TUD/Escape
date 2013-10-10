@@ -69,7 +69,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 			exec(args[0],args);
 		}
 		else if(pid < 0)
-			printe("[DESKTOP] Unable to create child-process");
+			printe("Unable to create child-process");
 	}
 }
 

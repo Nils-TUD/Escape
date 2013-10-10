@@ -36,9 +36,9 @@ static int id;
 static size_t keyb_find_client(inode_t cid);
 
 void keyb_driverLoop(void) {
-	id = createdev("/dev/keyboard",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
+	id = createdev("/dev/keyb",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
-		error("Unable to register device 'keyboard'");
+		error("Unable to register device 'keyb'");
 
 	/* wait for commands */
 	while(1) {
@@ -46,7 +46,7 @@ void keyb_driverLoop(void) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != -EINTR)
-				printe("[KB] Unable to get work");
+				printe("Unable to get work");
 		}
 		else {
 			switch(mid) {

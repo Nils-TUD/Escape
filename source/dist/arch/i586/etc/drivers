@@ -10,10 +10,10 @@ null
 	/dev/null 0666 root
 speaker
 	/dev/speaker 0110 audio
-keyboard
-	/dev/keyboard 0110 input
+keyb
+	/dev/keyb 0110 input
 mouse
 	/dev/mouse 0110 input
-uimanager /dev/vga /dev/vesa
+uimng /dev/vga /dev/vesa
 	/dev/uim-ctrl 0110 input
 	/dev/uim-input 0110 input

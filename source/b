@@ -204,12 +204,12 @@ case "$cmd" in
 			./boot/$ESC_TARGET/$script $build \
 				"$ESC_SIM_FLAGS -s $build/map/$binary.map -p 1234" >log.txt &
 		fi
-		
+
 		# wait until the simulator listens on port 1234
 		while [ "`lsof -i :1234 | grep LISTEN`" = "" ]; do
 			sleep 1
 		done
-		
+
 		# run gdb
 		tmp=$(mktemp)
 		echo "target remote localhost:1234" >> $tmp
@@ -218,6 +218,10 @@ case "$cmd" in
 			addr=`$crossdir/bin/$cross-readelf -S $build/bin/escape | grep .text | \
 				xargs | cut -d ' ' -f 5`
 			echo "add-symbol-file $build/bin/escape 0x$addr" >> $tmp
+		fi
+		# add dynamic libraries
+		if [ "$ESC_LINKTYPE" = "dynamic" ]; then
+			./tools/genshlibs4gdb.sh $build/bin/$binary $build/bin $crossdir/$cross/lib >> $tmp
 		fi
 		$gdb $build/bin/$binary --command=$tmp
 		if [ "$ESC_TARGET" = "i586" ]; then
@@ -252,7 +256,7 @@ case "$cmd" in
 		;;
 	list)
 		echo "Start of section .text:"
-		ls -1 $build/bin | grep -v '\.a$' | while read l; do	
+		ls -1 $build/bin | grep -v '\.a$' | while read l; do
 			$crossdir/bin/$cross-readelf -S $build/bin/$l | \
 				grep "\.text " | awk "{ printf(\"%20s: %s\n\",\"$l\",\$5) }"
 		done

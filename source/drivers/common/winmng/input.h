@@ -22,10 +22,10 @@
 #include <esc/common.h>
 
 typedef struct {
-	int winFd;
 	int uimngFd;
 	int uimngId;
 	int mode;
+	const char *winmng;
 	const char *shmname;
 } sInputThread;
 

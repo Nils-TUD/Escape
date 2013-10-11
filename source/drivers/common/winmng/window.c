@@ -159,7 +159,7 @@ static void win_destroyBuf(sWindow *win) {
 	shm_unlink(name);
 }
 
-gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
+gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
 		gsize_t titleBarHeight,const char *title) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
@@ -192,7 +192,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner
 	return WINID_UNUSED;
 }
 
-void win_destroyWinsOf(inode_t cid,gpos_t mouseX,gpos_t mouseY) {
+void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY) {
 	gwinid_t id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
 		if(windows[id].id != WINID_UNUSED && windows[id].owner == cid)

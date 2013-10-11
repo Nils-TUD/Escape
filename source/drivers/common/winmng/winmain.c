@@ -65,9 +65,9 @@ int main(int argc,char *argv[]) {
 		error("Unable to create device winmanager");
 
 	/* init window stuff */
-	inputData.winFd = drvId;
 	inputData.uimngFd = uimng;
 	inputData.uimngId = uimngId;
+	inputData.winmng = path;
 	inputData.shmname = argv[3];
 	inputData.mode = win_init(drvId,uimng,atoi(argv[1]),atoi(argv[2]),argv[3]);
 	if(inputData.mode < 0)

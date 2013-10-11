@@ -52,6 +52,11 @@ gpos_t input_getMouseY(void) {
 int input_thread(void *arg) {
 	sInputThread *in = (sInputThread*)arg;
 
+	/* open ourself to send set-active-requests to us */
+	int winMng = open(in->winmng,IO_MSGS);
+	if(winMng < 0)
+		error("Unable to open '%s'",in->winmng);
+
 	int uiminFd = open("/dev/uim-input",IO_MSGS);
 	if(uiminFd < 0)
 		error("Unable to open '/dev/uim-input'");
@@ -73,12 +78,13 @@ int input_thread(void *arg) {
 					break;
 
 				case KM_EV_MOUSE:
-					handleMouseMessage(in->winFd,&uiEvent);
+					handleMouseMessage(winMng,&uiEvent);
 					break;
 			}
 		}
 	}
 	close(uiminFd);
+	close(winMng);
 	return 0;
 }
 

@@ -81,23 +81,23 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  * @param y the y-coordinate
  * @param width the width
  * @param height the height
- * @param owner the owner-id
+ * @param owner the client-fd
  * @param style style-attributes
  * @param titleBarHeight the height of the titlebar of that window
  * @param title the title of the window
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,inode_t owner,uint style,
+gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
 	gsize_t titleBarHeight,const char *title);
 
 /**
  * Destroys all windows of the given thread
  *
- * @param cid the client-id
+ * @param cid the client-fd
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_destroyWinsOf(inode_t cid,gpos_t mouseX,gpos_t mouseY);
+void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY);
 
 /**
  * Destroys the given window

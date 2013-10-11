@@ -34,12 +34,14 @@
 #	define DBGDL(x,...)
 #endif
 
+#define MAX_MEM			(1024 * 64)
+
 typedef struct sSharedLib sSharedLib;
 struct sSharedLib {
 	uchar isDSO;
 	const char *name;
 	int fd;
-	uintptr_t mainTextAddr;
+	uintptr_t textAddr;
 	uintptr_t loadAddr;
 	size_t textSize;
 	Elf32_Dyn *dyn;
@@ -62,14 +64,22 @@ extern sSLList *libs;
 void load_error(const char *fmt,...);
 
 /**
+ * Inits the heap
+ */
+void load_initHeap(void);
+
+/**
  * The start-function. Gets the file-descriptor for the program to load from the kernel
  *
  * @param binFd the file-descriptor
  * @param tlsStart pointer to the tlsStart argument for the program to load
  * @param tlsSize pointer to the tlsSize argument for the program to load
+ * @param argc argc for the program
+ * @param argv argv for the program
  * @return the entryPoint to jump at
  */
-uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize);
+uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
+	uintptr_t,uintptr_t,size_t,int argc,char **argv);
 
 /**
  * Determines the value of the given tag in the dynamic-section

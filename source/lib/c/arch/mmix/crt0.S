@@ -23,7 +23,7 @@
 .global sigRetFunc
 .extern main
 .extern exit
-.extern init_tls
+.extern __libc_preinit
 .extern _init
 
 #include "esc/syscalls.h"
@@ -45,10 +45,10 @@
 _start:
 	LDOU	$0,$254,0
 	UNSAVE	0,$0
-	# call init_tls(entryPoint,TLSStart,TLSSize,argc,argv)
+	# call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
 	SET		$7,$1
 	SET		$8,$2
-	PUSHJ	$3,init_tls
+	PUSHJ	$3,__libc_preinit
 	# it returns the entrypoint; 0 if we're the initial thread
 	BZ		$3,initialThread
 	# we're an additional thread, so call the desired function

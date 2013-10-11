@@ -22,11 +22,21 @@
 #include <esc/sllist.h>
 #include "init.h"
 #include "setup.h"
+#include "lookup.h"
+
+typedef uintptr_t (*fPreinit)(uintptr_t,uint *,size_t,int,char *[]);
 
 static void load_initLib(sSharedLib *l);
 
-void load_init(void) {
+void load_init(int argc,char **argv) {
 	sSLNode *n;
+
+	uintptr_t addr;
+	if(lookup_byName(NULL,"__libc_preinit",&addr)) {
+		fPreinit preinit = (fPreinit)addr;
+		preinit(0,0,0,argc,argv);
+	}
+
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		load_initLib(l);

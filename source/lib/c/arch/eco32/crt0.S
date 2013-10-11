@@ -25,7 +25,7 @@
 .global sigRetFunc
 .extern main
 .extern exit
-.extern init_tls
+.extern __libc_preinit
 .extern _init
 
 #  Initial stack:
@@ -57,8 +57,8 @@ _start:
 	sub		$29,$29,32
 	# pass argv via stack
 	stw		$8,$29,16
-	# call init_tls(entryPoint,TLSStart,TLSSize,argc,argv)
-	jal		init_tls
+	# call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	jal		__libc_preinit
 	add		$29,$29,12
 	# it returns the entrypoint; 0 if we're the initial thread
 	beq		$2,$0,initialThread

@@ -25,8 +25,8 @@
 
 extern void initHeap(void);
 
-static tULock tlsLock;
 static uint *tlsCopy = NULL;
+extern tULock __libc_lck;
 extern char *__progname;
 
 /**
@@ -47,9 +47,9 @@ extern char *__progname;
  */
 
 /* make gcc happy */
-uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,int argc,char *argv[]);
+uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,int argc,char *argv[]);
 
-uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
+uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
 	static bool initialized = false;
 	if(!initialized) {
 		char *name = argv[0];
@@ -58,15 +58,15 @@ uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED i
 			__progname = name;
 		}
 
+		if(crtlocku(&__libc_lck) < 0)
+			error("Unable to create libc lock");
 		initHeap();
-		if(crtlocku(&tlsLock) < 0)
-			error("Unable to create TLS lock");
 		initialized = true;
 	}
 
 	if(tlsSize) {
 		size_t i;
-		locku(&tlsLock);
+		locku(&__libc_lck);
 		/* create copy if not already done */
 		if(tlsCopy == NULL) {
 			tlsCopy = (uint*)malloc(tlsSize);
@@ -80,7 +80,7 @@ uintptr_t init_tls(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED i
 			tlsStart[i] = tlsCopy[i];
 		/* put pointer to TCB in TCB */
 		tlsStart[tlsSize - 1] = (uint)(tlsStart + tlsSize - 1);
-		unlocku(&tlsLock);
+		unlocku(&__libc_lck);
 	}
 	return entryPoint;
 }

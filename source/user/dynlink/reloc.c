@@ -59,10 +59,10 @@ static void load_relocLib(sSharedLib *l) {
 	 * is changed for all processes that use that region */
 	lockg(RELOC_LOCK,LOCK_EXCLUSIVE);
 	/* make text writable because we may have to change something in it */
-	if(mprotect((void*)(l->loadAddr ? l->loadAddr : l->mainTextAddr),PROT_EXEC | PROT_READ | PROT_WRITE) < 0)
+	if(mprotect((void*)(l->loadAddr ? l->loadAddr : l->textAddr),PROT_EXEC | PROT_READ | PROT_WRITE) < 0)
 		load_error("Unable to make text (@ %p) of %s writable",l->loadAddr,l->name);
 
-	DBGDL("Relocating stuff of %s (loaded @ %p)\n",l->name,l->loadAddr ? l->loadAddr : l->mainTextAddr);
+	DBGDL("Relocating stuff of %s (loaded @ %p)\n",l->name,l->loadAddr ? l->loadAddr : l->textAddr);
 
 	rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
 	if(rel) {
@@ -150,9 +150,9 @@ static void load_relocLib(sSharedLib *l) {
 	}
 
 	/* make text non-writable again */
-	if(mprotect((void*)(l->loadAddr ? l->loadAddr : l->mainTextAddr),PROT_EXEC | PROT_READ) < 0) {
+	if(mprotect((void*)(l->loadAddr ? l->loadAddr : l->textAddr),PROT_EXEC | PROT_READ) < 0) {
 		load_error("Unable to make text (@ %x) of %s non-writable",
-				l->loadAddr ? l->loadAddr : l->mainTextAddr,l->name);
+				l->loadAddr ? l->loadAddr : l->textAddr,l->name);
 	}
 	unlockg(RELOC_LOCK);
 

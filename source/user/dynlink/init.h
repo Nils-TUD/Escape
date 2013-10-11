@@ -23,5 +23,8 @@
 
 /**
  * Calls the init-function in all libraries
+ *
+ * @param argc argc for the program
+ * @param argv argv for the program
  */
-void load_init(void);
+void load_init(int argc,char **argv);

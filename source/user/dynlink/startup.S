@@ -24,8 +24,10 @@
 .global sigRetFunc
 .global _start
 .global lookup_resolveStart
+.extern __libc_preinit
 .extern __libc_init
 .extern lookup_resolve
+.extern load_initHeap
 .extern load_setupProg
 .extern getpid_wrapper
 
@@ -48,12 +50,23 @@
 #  +------------------+
 
 _start:
-	# we have no TLS, so don't waste time
+	call	load_initHeap
+	# call __libc_preinit first
+	mov		(%esp),%ebx
+	mov		4(%esp),%eax
+	mov		8(%esp),%edx
+	mov		12(%esp),%ecx
+	add		$16,%esp
+	call	__libc_preinit
+	push	%ecx
+	push	%edx
+	push	%eax
+	# now call __libc_init
 	call	__libc_init
-	pop		%eax
 	# pass pointers to TLSSize and TLSStart to load_setupProg
 	lea		4(%esp),%edx
 	lea		8(%esp),%ecx
+	mov		%ebx,%eax
 	call	load_setupProg
 	# load_setupProg returns the entrypoint
 	jmp		*%eax

@@ -28,6 +28,8 @@
 
 sSLList *libs = NULL;
 
+extern void initHeap(void);
+
 void load_error(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
@@ -51,7 +53,17 @@ uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	return 0;
 }
 
-uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize) {
+void load_initHeap(void) {
+	initHeap();
+#ifndef NDEBUG
+	/* allocate a lot of memory at the beginning to make the beginning of shared libraries more
+	 * predictable */
+	free(malloc(MAX_MEM));
+#endif
+}
+
+uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
+		A_UNUSED uintptr_t a,A_UNUSED uintptr_t b,A_UNUSED size_t c,int argc,char **argv) {
 	sSharedLib *prog;
 	uintptr_t entryPoint;
 
@@ -83,8 +95,10 @@ uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize) {
 	sSLNode *n,*m;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		debugf("[%d] Loaded %s @ %p .. %p with deps: ",
-				getpid(),l->name,l->loadAddr,l->loadAddr + l->textSize);
+		uintptr_t addr;
+		lookup_byName(NULL,"_start",&addr);
+		debugf("[%d] Loaded %s @ %p .. %p (text @ %p) with deps: ",
+				getpid(),l->name,l->loadAddr,l->loadAddr + l->textSize,addr);
 		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
 			sSharedLib *dl = (sSharedLib*)m->data;
 			debugf("%s ",dl->name);
@@ -97,7 +111,7 @@ uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize) {
 	load_reloc();
 
 	/* call global constructors */
-	load_init();
+	load_init(argc,argv);
 
 	return entryPoint;
 }

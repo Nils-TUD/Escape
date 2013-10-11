@@ -57,6 +57,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	if(memcmp(eheader.e_ident,ELFMAG,4) != 0)
 		load_error("Invalid ELF-magic");
 
+	/* read segments */
 	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
@@ -148,7 +149,7 @@ uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 					if(l->isDSO)
 						l->loadAddr = addr;
 					else
-						l->mainTextAddr = addr;
+						l->textAddr = addr;
 					l->textSize = pheader.p_memsz;
 				}
 				else if(!l->isDSO && pheader.p_type == PT_TLS) {

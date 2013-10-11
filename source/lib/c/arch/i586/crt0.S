@@ -25,7 +25,7 @@
 .global sigRetFunc
 .extern main
 .extern exit
-.extern init_tls
+.extern __libc_preinit
 .extern _init
 
 #  Initial stack:
@@ -51,8 +51,8 @@ _start:
 	pop		%eax
 	pop		%edx
 	pop		%ecx
-	# call init_tls(entryPoint,TLSStart,TLSSize,argc,argv)
-	call	init_tls
+	# call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	call	__libc_preinit
 	# it returns the entrypoint; 0 if we're the initial thread
 	test	%eax,%eax
 	je		initialThread

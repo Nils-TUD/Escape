@@ -61,15 +61,15 @@ fConstr libcConstr[1] A_INIT = {
 	__libc_init
 };
 
-static tULock threadLock;
+/* this lock is shared with tls.c */
+tULock __libc_lck;
 static size_t threadCount = 1;
-static tULock exitLock;
 static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
 int startthread(fThreadEntry entryPoint,void *arg) {
 	int res;
-	locku(&threadLock);
+	locku(&__libc_lck);
 	// we have to increase it first since we don't know when the thread starts to run. if he does
 	// and exists before we get to the line below, it might call the exit-functions because
 	// threadCount hasn't been increased yet.
@@ -78,14 +78,14 @@ int startthread(fThreadEntry entryPoint,void *arg) {
 	// undo that, if an error occurred
 	if(res < 0)
 		threadCount--;
-	unlocku(&threadLock);
+	unlocku(&__libc_lck);
 	return res;
 }
 
 int __cxa_atexit(void (*f)(void *),void *p,void *d) {
-	locku(&exitLock);
+	locku(&__libc_lck);
 	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
+		unlocku(&__libc_lck);
 		return -ENOMEM;
 	}
 
@@ -93,7 +93,7 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 	exitFuncs[exitFuncCount].p = p;
 	exitFuncs[exitFuncCount].d = d;
 	exitFuncCount++;
-	unlocku(&exitLock);
+	unlocku(&__libc_lck);
 	return 0;
 }
 
@@ -103,22 +103,17 @@ void __cxa_finalize(A_UNUSED void *d) {
 	if(threadCount == 0)
 		return;
 
-	locku(&threadLock);
+	locku(&__libc_lck);
 	/* if we're the last thread, call the exit-functions */
 	if(--threadCount == 0) {
 		ssize_t i;
 		for(i = exitFuncCount - 1; i >= 0; i--)
 			exitFuncs[i].f(exitFuncs[i].p);
 	}
-	unlocku(&threadLock);
+	unlocku(&__libc_lck);
 }
 
 void __libc_init(void) {
-	if(crtlocku(&exitLock) < 0)
-		error("Unable to create exit lock");
-	if(crtlocku(&threadLock) < 0)
-		error("Unable to create thread lock");
-	/* tell kernel address of sigRetFunc */
 	if(signal(SIG_RET,(fSignal)&sigRetFunc) == SIG_ERR)
 		error("Unable to set signal return address");
 	initHeap();

@@ -24,6 +24,7 @@
 #include <esc/messages.h>
 #include <esc/esccodes.h>
 #include <esc/io.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -31,85 +32,58 @@
 #include <errno.h>
 #include "game.h"
 
-static int kmMngThread(void *arg);
-static void sigUsr1(int sig);
 static void sigTimer(int sig);
+static void sigInt(int sig);
 static void qerror(const char *msg,...);
-static void quit(void);
 
 static time_t tsc = 0;
+static volatile bool run = true;
 
-int main(void) {
-	/* backup screen and stop vterm to read from keyboard */
-	vterm_backup(STDOUT_FILENO);
-	vterm_setReadline(STDOUT_FILENO,false);
-
-	if(!game_init()) {
-		quit();
-		exit(EXIT_FAILURE);
+int main(int argc,char *argv[]) {
+	if((argc != 1 && argc != 3) || isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: %s [<cols> <rows>]\n",argv[0]);
+		return EXIT_FAILURE;
 	}
+
+	uint cols = 100;
+	uint rows = 37;
+	if(argc == 3) {
+		cols = atoi(argv[1]);
+		rows = atoi(argv[2]);
+	}
+
+	game_init(cols,rows);
 
 	if(signal(SIG_INTRPT_TIMER,sigTimer) == SIG_ERR)
 		qerror("Unable to set sig-handler");
-	if(startthread(kmMngThread,NULL) < 0)
-		qerror("Unable to start thread");
+	if(signal(SIG_INTRPT,sigInt) == SIG_ERR)
+		qerror("Unable to set sig-handler");
 
 	game_tick(tsc);
-	while(1) {
+	while(run) {
 		/* wait until we get a signal */
 		wait(EV_NOEVENT,0);
 		if(!game_tick(tsc))
 			break;
 	}
 
-	quit();
+	game_deinit();
 	return EXIT_SUCCESS;
-}
-
-static int kmMngThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
-		error("Unable to set SIG_USR1-handler");
-	while(1) {
-		int c,cmd,n1,n2,n3;
-		if((c = fgetc(stdin)) == EOF) {
-			printe("Unable to read from stdin");
-			break;
-		}
-		if(c != '\033') {
-			printe("Got bogus data from stdin");
-			continue;
-		}
-		cmd = freadesc(stdin,&n1,&n2,&n3);
-		if(cmd != ESCC_KEYCODE) {
-			printe("Got bogus data from stdin");
-			continue;
-		}
-		game_handleKey(n2,n3,n1);
-	}
-	return 0;
-}
-
-static void sigUsr1(A_UNUSED int sig) {
-	exit(EXIT_SUCCESS);
 }
 
 static void sigTimer(A_UNUSED int sig) {
 	tsc++;
 }
 
+static void sigInt(A_UNUSED int sig) {
+	run = false;
+}
+
 static void qerror(const char *msg,...) {
 	va_list ap;
-	quit();
+	game_deinit();
 	va_start(ap,msg);
 	vprinte(msg,ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
-}
-
-static void quit(void) {
-	game_deinit();
-	if(kill(getpid(),SIG_USR1) < 0)
-		printe("Unable to send SIG_USR1");
-	vterm_setReadline(STDOUT_FILENO,true);
-	vterm_restore(STDOUT_FILENO);
 }

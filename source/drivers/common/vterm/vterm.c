@@ -40,9 +40,6 @@
 #include <vterm/vtout.h>
 #include "vterm.h"
 
-#define ABS(x)			((x) > 0 ? (x) : -(x))
-
-static int vt_findMode(int uimng,uint cols,uint rows,sScreenMode *mode);
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
 static int vt_dateThread(void *arg);
@@ -61,7 +58,7 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	vterm->uimngid = uimng_getId(vterm->uimng);
 
 	/* find a suitable mode */
-	res = vt_findMode(vterm->uimng,cols,rows,&mode);
+	res = screen_findTextMode(vterm->uimng,cols,rows,&mode);
 	if(res < 0) {
 		fprintf(stderr,"Unable to find a suitable mode: %s\n",strerror(-res));
 		return false;
@@ -94,40 +91,6 @@ void vt_update(sVTerm *vt) {
 	locku(&vt->lock);
 	vt_doUpdate(vt);
 	unlocku(&vt->lock);
-}
-
-static int vt_findMode(int uimng,uint cols,uint rows,sScreenMode *mode) {
-	ssize_t i,count,res;
-	size_t bestmode;
-	uint bestdiff = UINT_MAX;
-	sScreenMode *modes;
-
-	/* get all modes */
-	count = screen_getModeCount(uimng);
-	if(count < 0)
-		return count;
-	modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
-	if(!modes)
-		return -ENOMEM;
-	if((res = screen_getModes(uimng,modes,count)) < 0) {
-		free(modes);
-		return res;
-	}
-
-	/* search for the best matching mode */
-	bestmode = count;
-	for(i = 0; i < count; i++) {
-		if(modes[i].type & VID_MODE_TYPE_TUI) {
-			uint pixdiff = ABS((int)(modes[i].rows * modes[i].cols) - (int)(cols * rows));
-			if(pixdiff < bestdiff) {
-				bestmode = i;
-				bestdiff = pixdiff;
-			}
-		}
-	}
-	memcpy(mode,modes + bestmode,sizeof(sScreenMode));
-	free(modes);
-	return 0;
 }
 
 static void vt_doUpdate(sVTerm *vt) {

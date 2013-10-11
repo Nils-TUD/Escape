@@ -28,7 +28,7 @@
 #include "game.h"
 #include "bar.h"
 #include "objlist.h"
-#include "display.h"
+#include "ui.h"
 
 #define KEYCODE_COUNT		128
 #define TICK_SLICE			10
@@ -46,17 +46,14 @@ static long timerFreq;
 static uchar pressed[KEYCODE_COUNT];
 static uint addPlainInt;
 
-bool game_init(void) {
+bool game_init(uint cols,uint rows) {
 	timerFreq = sysconf(CONF_TIMER_FREQ);
-	if(timerFreq < 0) {
-		fprintf(stderr,"Unable to get timer-frequency\n");
-		return false;
-	}
+	if(timerFreq < 0)
+		error("Unable to get timer-frequency");
 	addPlainInt = ADDPLAIN_INTERVAL;
 
 	score = 0;
-	if(!displ_init())
-		return false;
+	ui_init(cols,rows);
 	srand(time(NULL));
 	bar_init();
 	objlist_create();
@@ -64,7 +61,7 @@ bool game_init(void) {
 }
 
 void game_deinit(void) {
-	displ_destroy();
+	ui_destroy();
 }
 
 uint game_getScore(void) {
@@ -96,7 +93,7 @@ bool game_tick(time_t gtime) {
 			score = 0;
 		else
 			score += scoreChg;
-		displ_update();
+		ui_update();
 	}
 	return !stop;
 }

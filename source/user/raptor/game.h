@@ -25,7 +25,7 @@
 #define SCORE_MISS		(-2)
 #define SCORE_SELFHIT	(-4)
 
-bool game_init(void);
+bool game_init(uint cols,uint rows);
 
 void game_deinit(void);
 

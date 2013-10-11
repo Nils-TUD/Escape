@@ -23,16 +23,14 @@
 #include <esc/io.h>
 #include <esc/messages.h>
 
-#define WIDTH				(ssize.width)
-#define HEIGHT				(ssize.height)
+#define WIDTH				(mode.cols)
+#define HEIGHT				(mode.rows)
 #define PADDING				1
 #define GWIDTH				(WIDTH - PADDING * 2)
 #define GHEIGHT				(HEIGHT - PADDING * 2)
 
-extern sVTSize ssize;
+extern sScreenMode mode;
 
-bool displ_init(void);
-
-void displ_destroy(void);
-
-void displ_update(void);
+void ui_init(uint cols,uint rows);
+void ui_destroy(void);
+void ui_update(void);

@@ -18,15 +18,19 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/video.h>
-#include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
+#include <esc/driver/uimng.h>
 #include <esc/io.h>
 #include <esc/conf.h>
 #include <esc/messages.h>
+#include <esc/mem.h>
+#include <esc/thread.h>
+#include <esc/esccodes.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "display.h"
+#include <signal.h>
+#include "ui.h"
 #include "bar.h"
 #include "object.h"
 #include "objlist.h"
@@ -38,11 +42,12 @@
 #define XYCHAR(x,y)			((y) * WIDTH * 2 + (x) * 2)
 #define XYCOL(x,y)			((y) * WIDTH * 2 + (x) * 2 + 1)
 
-static void displ_drawScore(void);
-static void displ_drawObjects(void);
-static void displ_drawBar(void);
-static void displ_restoreBackup(void);
-static void displ_setBackup(void);
+static int ui_inputThread(void *arg);
+static void ui_drawScore(void);
+static void ui_drawObjects(void);
+static void ui_drawBar(void);
+static void ui_restoreBackup(void);
+static void ui_setBackup(void);
 
 static const uchar airplane[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
 	0xDA, 0x07, 0xC4, 0x07, 0xBF, 0x07,
@@ -78,67 +83,99 @@ static const uchar bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
 	0x04, 0x04
 };
 
-sVTSize ssize;
-static int video;
-static uchar *buffer = NULL;
+sScreenMode mode;
+static int uimng;
+static int uiid;
+static char shmname[SSTRLEN("raptor") + 12];
+static uchar *shm = NULL;
 static uchar *backup = NULL;
 
-bool displ_init(void) {
-	/* get current device */
-	char device[MAX_PATH_LEN];
-	int res = vterm_getDevice(STDIN_FILENO,device,sizeof(device));
-	if(res < 0) {
-		fprintf(stderr,"Unable to get video-device: %s\n",strerror(-res));
-		return false;
-	}
+void ui_init(uint cols,uint rows) {
+	/* open uimanager */
+	uimng = open("/dev/uim-ctrl",IO_MSGS);
+	if(uimng < 0)
+		error("Unable to open video-device '/dev/uim-ctrl'");
 
-	/* open it */
-	video = open(device,IO_WRITE | IO_MSGS);
-	if(video < 0) {
-		fprintf(stderr,"Unable to open video-device '%s': %s\n",device,strerror(-video));
-		return false;
-	}
+	/* find desired mode */
+	if(screen_findTextMode(uimng,cols,rows,&mode) < 0)
+		error("Unable to find text mode with %dx%d",cols,rows);
 
-	/* get screen size */
-	if((res = screen_getSize(video,&ssize)) < 0) {
-		fprintf(stderr,"Unable to get screensize: %s\n",strerror(-res));
-		return false;
-	}
+	/* get id for attachment of the input-thread */
+	uiid = uimng_getId(uimng);
+	if(uiid < 0)
+		error("Unable to get ui-id");
 
-	/* first line is the title */
-	HEIGHT--;
-	buffer = (uchar*)malloc(WIDTH * HEIGHT * 2);
-	if(!buffer) {
-		printe("Unable to alloc mem for buffer");
-		return false;
+	/* open shm */
+	int shmfd,id = 0;
+	do {
+		snprintf(shmname,sizeof(shmname),"raptor%d",++id);
+		shmfd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0666);
 	}
+	while(shmfd < 0);
+
+	/* map it */
+	shm = mmap(NULL,WIDTH * HEIGHT * 2,0,PROT_READ | PROT_WRITE,MAP_SHARED,shmfd,0);
+	if(shm == NULL)
+		error("Unable to mmap shared memory");
+
+	/* set mode */
+	if(screen_setMode(uimng,VID_MODE_TYPE_TUI,mode.id,shmname,true) < 0)
+		error("Unable to set mode");
+
+	/* start input thread */
+	if(startthread(ui_inputThread,NULL) < 0)
+		error("Unable to start input-thread");
+
+	/* create basic screen */
 	backup = (uchar*)malloc(WIDTH * HEIGHT * 2);
-	if(!backup) {
-		printe("Unable to alloc mem for backup");
-		return false;
-	}
-	displ_setBackup();
-	return true;
+	if(!backup)
+		error("Unable to alloc mem for backup");
+	ui_setBackup();
 }
 
-void displ_destroy(void) {
-	close(video);
-	free(buffer);
+static void sigUsr1(A_UNUSED int sig) {
+	exit(EXIT_SUCCESS);
+}
+
+static int ui_inputThread(A_UNUSED void *arg) {
+	int uiminFd = open("/dev/uim-input",IO_MSGS);
+	if(uiminFd < 0)
+		error("Unable to open '/dev/uim-input'");
+	if(uimng_attach(uiminFd,uiid) < 0)
+		error("Unable to attach to uimanager");
+
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+		error("Unable to set SIG_USR1-handler");
+	/* read from uimanager and handle the keys */
+	while(1) {
+		sUIMData kmData;
+		ssize_t count = IGNSIGS(receive(uiminFd,NULL,&kmData,sizeof(kmData)));
+		if(count > 0 && kmData.type == KM_EV_KEYBOARD)
+			game_handleKey(kmData.d.keyb.keycode,kmData.d.keyb.modifier,kmData.d.keyb.character);
+	}
+	close(uiminFd);
+	return 0;
+}
+
+void ui_destroy(void) {
+	if(kill(getpid(),SIG_USR1) < 0)
+		printe("Unable to send SIG_USR1");
+	close(uimng);
+	munmap(shm);
+	shm_unlink(shmname);
 	free(backup);
 }
 
-void displ_update(void) {
-	displ_restoreBackup();
-	displ_drawBar();
-	displ_drawObjects();
-	displ_drawScore();
-	if(seek(video,WIDTH * 2,SEEK_SET) < 0)
-		printe("Seek to %d failed",WIDTH * 2);
-	if(write(video,buffer,WIDTH * HEIGHT * 2) < 0)
-		printe("Write to video-device failed");
+void ui_update(void) {
+	ui_restoreBackup();
+	ui_drawBar();
+	ui_drawObjects();
+	ui_drawScore();
+	if(screen_update(uimng,0,0,WIDTH,HEIGHT) < 0)
+		printe("Unable to update screen");
 }
 
-static void displ_drawScore(void) {
+static void ui_drawScore(void) {
 	size_t x,i;
 	char scoreStr[SCORE_WIDTH];
 	snprintf(scoreStr,sizeof(scoreStr),"%*u",SCORE_WIDTH - 2,game_getScore());
@@ -146,7 +183,7 @@ static void displ_drawScore(void) {
 		backup[XYCHAR(x,3)] = scoreStr[i];
 }
 
-static void displ_drawObjects(void) {
+static void ui_drawObjects(void) {
 	int y;
 	sSLNode *n;
 	sObject *o;
@@ -183,26 +220,26 @@ static void displ_drawObjects(void) {
 		}
 
 		for(y = o->y + PADDING; y < o->y + PADDING + o->height; y++) {
-			memcpy(buffer + XYCHAR(o->x + PADDING,y),src,o->width * 2);
+			memcpy(shm + XYCHAR(o->x + PADDING,y),src,o->width * 2);
 			src += o->width * 2;
 		}
 	}
 }
 
-static void displ_drawBar(void) {
+static void ui_drawBar(void) {
 	size_t x,start,end;
 	bar_getDim(&start,&end);
 	for(x = start + PADDING; x <= end; x++) {
-		buffer[XYCHAR(x,HEIGHT - 2)] = 0xDB;
-		buffer[XYCOL(x,HEIGHT - 2)] = 0x07;
+		shm[XYCHAR(x,HEIGHT - 2)] = 0xDB;
+		shm[XYCOL(x,HEIGHT - 2)] = 0x07;
 	}
 }
 
-static void displ_restoreBackup(void) {
-	memcpy(buffer,backup,WIDTH * HEIGHT * 2);
+static void ui_restoreBackup(void) {
+	memcpy(shm,backup,WIDTH * HEIGHT * 2);
 }
 
-static void displ_setBackup(void) {
+static void ui_setBackup(void) {
 	size_t i,x,y;
 	const char *title = "Score:";
 	/* fill bg */

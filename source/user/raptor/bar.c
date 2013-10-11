@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include "display.h"
+#include "ui.h"
 #include "bar.h"
 
 #define BAR_WIDTH		6

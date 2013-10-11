@@ -22,6 +22,9 @@
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <string.h>
+#include <stdlib.h>
+
+#define ABS(x)			((x) > 0 ? (x) : -(x))
 
 int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor) {
 	sArgsMsg msg;
@@ -29,6 +32,40 @@ int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor) {
 	msg.arg2 = y;
 	msg.arg3 = cursor;
 	return send(fd,MSG_SCR_SETCURSOR,&msg,sizeof(msg));
+}
+
+int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode) {
+	ssize_t i,count,res;
+	size_t bestmode;
+	uint bestdiff = UINT_MAX;
+	sScreenMode *modes;
+
+	/* get all modes */
+	count = screen_getModeCount(fd);
+	if(count < 0)
+		return count;
+	modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
+	if(!modes)
+		return -ENOMEM;
+	if((res = screen_getModes(fd,modes,count)) < 0) {
+		free(modes);
+		return res;
+	}
+
+	/* search for the best matching mode */
+	bestmode = count;
+	for(i = 0; i < count; i++) {
+		if(modes[i].type & VID_MODE_TYPE_TUI) {
+			uint pixdiff = ABS((int)(modes[i].rows * modes[i].cols) - (int)(cols * rows));
+			if(pixdiff < bestdiff) {
+				bestmode = i;
+				bestdiff = pixdiff;
+			}
+		}
+	}
+	memcpy(mode,modes + bestmode,sizeof(sScreenMode));
+	free(modes);
+	return 0;
 }
 
 int screen_getMode(int fd,sScreenMode *mode) {

@@ -68,7 +68,10 @@ void VFS::init() {
 	sys = CREATE(VFSDir,KERNEL_PID,root,(char*)"system");
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipes"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods"));
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm"));
+	VFSNode *node = CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm");
+	/* the user should be able to create shms as well */
+	node->chmod(KERNEL_PID,0777);
+	VFSNode::release(node);
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"sems"));
 	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes");
 	VFSNode::release(CREATE(VFSSelfLink,KERNEL_PID,procsNode,(char*)"self"));

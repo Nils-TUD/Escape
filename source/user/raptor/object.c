@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "object.h"
-#include "display.h"
+#include "ui.h"
 
 sObject *obj_createAirplain(int x,int y,int direction,int speed) {
 	return obj_create(TYPE_AIRPLANE,x,y,AIRPLANE_WIDTH,AIRPLANE_HEIGHT,direction,speed);

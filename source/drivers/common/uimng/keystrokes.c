@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/driver/vterm.h>
+#include <esc/driver/screen.h>
 #include <esc/keycodes.h>
 #include <esc/esccodes.h>
 #include <esc/proc.h>
@@ -30,8 +31,11 @@
 #include "keystrokes.h"
 #include "clients.h"
 #include "jobs.h"
+#include "screens.h"
 
 #define MAX_FILEDESCS	16
+
+#define VGA_MODE		3
 
 #define VTERM_PROG		"/sbin/vterm"
 #define LOGIN_PROG		"/bin/login"
@@ -110,40 +114,34 @@ error:
 	unlocku(&lck);
 }
 
+static void keys_switchToVGA(void) {
+	sScreen *scr;
+	sScreenMode *mode;
+	if(screens_find(VGA_MODE,&mode,&scr)) {
+		int fd = open(scr->name,IO_MSGS);
+		if(fd < 0) {
+			printe("Unable to open '%s'",scr->name);
+			return;
+		}
+		int res = screen_setMode(fd,VID_MODE_TYPE_TUI,VGA_MODE,"",true);
+		close(fd);
+		if(res < 0)
+			printe("Unable to set mode %d",VGA_MODE);
+	}
+	else
+		printe("Unable to find screen for mode %d",VGA_MODE);
+}
+
+void keys_enterDebugger(void) {
+	keys_switchToVGA();
+	debug();
+	cli_reactivate(VGA_MODE);
+}
+
 void keys_createTextConsole(void) {
 	keys_createConsole(VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG);
 }
 
 void keys_createGUIConsole(void) {
 	keys_createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,DESKTOP_PROG);
-}
-
-bool keys_handleKey(sUIMData *data) {
-	if(data->d.keyb.modifier & STATE_BREAK)
-		return false;
-
-	if(data->d.keyb.keycode == VK_F12) {
-		/* TODO switch video mode */
-		debug();
-		return true;
-	}
-
-	if(!(data->d.keyb.modifier & STATE_CTRL))
-		return false;
-
-	switch(data->d.keyb.keycode) {
-		case VK_T:
-			keys_createTextConsole();
-			return true;
-		case VK_G:
-			keys_createGUIConsole();
-			return true;
-		case VK_LEFT:
-			cli_prev();
-			return true;
-		case VK_RIGHT:
-			cli_next();
-			return true;
-	}
-	return false;
 }

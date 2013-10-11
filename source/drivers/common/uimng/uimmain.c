@@ -36,6 +36,7 @@
 #include "clients.h"
 #include "keystrokes.h"
 #include "jobs.h"
+#include "screens.h"
 
 #define KEYMAP_FILE					"/etc/keymap"
 
@@ -47,8 +48,6 @@ static int inputThread(A_UNUSED void *arg);
 static char defKeymapPath[MAX_PATH_LEN];
 static sKeymap *defmap;
 static tULock lck;
-static sScreen *screens;
-static size_t screenCount;
 
 int main(int argc,char *argv[]) {
 	char *newline;
@@ -63,37 +62,8 @@ int main(int argc,char *argv[]) {
 		error("Unable to create uimanager-lock");
 	jobs_init();
 	keys_init();
+	screens_init(argc - 1,argv + 1);
 	srand(time(NULL));
-
-	/* open screen-devices */
-	screenCount = argc - 1;
-	screens = (sScreen*)malloc(sizeof(sScreen) * screenCount);
-	for(int i = 1; i < argc; i++) {
-		sScreen *be = screens + i - 1;
-		be->name = strdup(argv[i]);
-		if(be->name == NULL) {
-			printe("Unable to clone device name");
-			return EXIT_FAILURE;
-		}
-		int fd = open(be->name,IO_READ | IO_WRITE | IO_MSGS);
-		if(fd < 0) {
-			printe("Unable to open '%s'",be->name);
-			return EXIT_FAILURE;
-		}
-
-		/* get modes */
-		be->modeCount = screen_getModeCount(fd);
-		be->modes = (sScreenMode*)malloc(be->modeCount * sizeof(sScreenMode));
-		if(!be->modes) {
-			printe("Unable to allocate modes for '%s'",be->name);
-			return EXIT_FAILURE;
-		}
-		if(screen_getModes(fd,be->modes,be->modeCount) < 0) {
-			printe("Unable to get modes for '%s'",be->name);
-			return EXIT_FAILURE;
-		}
-		close(fd);
-	}
 
 	/* determine default keymap */
 	f = fopen(KEYMAP_FILE,"r");
@@ -146,6 +116,43 @@ static int mouseClientThread(A_UNUSED void *arg) {
 	return EXIT_SUCCESS;
 }
 
+static bool handleKey(sUIMData *data) {
+	if(data->d.keyb.modifier & STATE_BREAK)
+		return false;
+
+	if(data->d.keyb.keycode == VK_F12) {
+		locku(&lck);
+		keys_enterDebugger();
+		unlocku(&lck);
+		return true;
+	}
+
+	if(!(data->d.keyb.modifier & STATE_CTRL))
+		return false;
+
+	switch(data->d.keyb.keycode) {
+		/* we can't lock this because if we do a fork, the child might connect to us and we might
+		 * wait until he has registered a device -> deadlock */
+		case VK_T:
+			keys_createTextConsole();
+			return true;
+		case VK_G:
+			keys_createGUIConsole();
+			return true;
+		case VK_LEFT:
+			locku(&lck);
+			cli_prev();
+			unlocku(&lck);
+			return true;
+		case VK_RIGHT:
+			locku(&lck);
+			cli_next();
+			unlocku(&lck);
+			return true;
+	}
+	return false;
+}
+
 static int kbClientThread(A_UNUSED void *arg) {
 	/* open keyboard */
 	int kbFd = open("/dev/keyb",IO_MSGS);
@@ -169,55 +176,14 @@ static int kbClientThread(A_UNUSED void *arg) {
 				active ? active->map : defmap,kbData.isBreak,kbData.keycode,&data.d.keyb.modifier);
 		unlocku(&lck);
 
-		/* we can't lock this because if we do a fork, the child might connect to us and we might
-		 * wait until he has registered a device -> deadlock */
-		if(!keys_handleKey(&data)) {
+		/* the create-console commands can't be locked */
+		if(!handleKey(&data)) {
 			locku(&lck);
 			cli_send(&data,sizeof(data));
 			unlocku(&lck);
 		}
 	}
 	return EXIT_SUCCESS;
-}
-
-static bool findBackend(int mid,sScreenMode **mode,sScreen **be) {
-	for(size_t i = 0; i < screenCount; ++i) {
-		for(size_t j = 0; j < screens[i].modeCount; ++j) {
-			if(screens[i].modes[j].id == mid) {
-				*mode = screens[i].modes + j;
-				*be = screens + i;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-static int setMode(sClient *cli,int type,int mid,const char *shm) {
-	if(cli->screen) {
-		close(cli->screenFd);
-		free(cli->screenShmName);
-		cli->screen = NULL;
-	}
-
-	sScreenMode *mode;
-	sScreen *be;
-	if(findBackend(mid,&mode,&be)) {
-		cli->type = type;
-		cli->screenFd = open(be->name,IO_MSGS);
-		if(cli->screenFd < 0)
-			return cli->screenFd;
-		int res;
-		if((res = screen_setMode(cli->screenFd,cli->type,mid,shm,true)) < 0) {
-			close(cli->screenFd);
-			return res;
-		}
-		cli->screen = be;
-		cli->screenMode = mode;
-		cli->screenShmName = strdup(shm);
-		return 0;
-	}
-	return -EINVAL;
 }
 
 static int ctrlThread(A_UNUSED void *arg) {
@@ -287,24 +253,15 @@ static int ctrlThread(A_UNUSED void *arg) {
 				break;
 
 				case MSG_SCR_GETMODES: {
-					size_t count = 0;
-					for(size_t i = 0; i < screenCount; ++i)
-						count += screens[i].modeCount;
-					if(msg.args.arg1 == 0) {
-						msg.args.arg1 = count;
+					size_t n = msg.args.arg1;
+					sScreenMode *modes = n == 0 ? NULL : (sScreenMode*)malloc(n* sizeof(sScreenMode));
+					ssize_t res = screens_getModes(modes,n);
+					if(n == 0) {
+						msg.args.arg1 = res;
 						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 					}
 					else {
-						sScreenMode *modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
-						size_t pos = 0;
-						if(modes) {
-							for(size_t i = 0; i < screenCount; ++i) {
-								memcpy(modes + pos,screens[i].modes,
-									screens[i].modeCount * sizeof(sScreenMode));
-								pos += screens[i].modeCount;
-							}
-						}
-						send(fd,MSG_DEF_RESPONSE,modes,pos * sizeof(sScreenMode));
+						send(fd,MSG_DEF_RESPONSE,modes,res > 0 ? msg.args.arg1 * sizeof(sScreenMode) : 0);
 						free(modes);
 					}
 				}
@@ -324,8 +281,11 @@ static int ctrlThread(A_UNUSED void *arg) {
 				case MSG_SCR_SETMODE: {
 					int modeid = (int)msg.str.arg1;
 					int type = msg.str.arg2;
+					/* lock that to prevent that we interfere with e.g. the debugger keystroke */
+					locku(&lck);
 					sClient *cli = cli_get(fd);
-					msg.args.arg1 = setMode(cli,type,modeid,msg.str.s1);
+					msg.args.arg1 = screens_setMode(cli,type,modeid,msg.str.s1);
+					unlocku(&lck);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;

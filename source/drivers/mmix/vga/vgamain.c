@@ -38,7 +38,7 @@
 #define MAX_COLS				128
 
 static sScreenMode modes[] = {
-	{0x0001,COLS,ROWS,0,0,4,0,0,0,0,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
+	{0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
 };
 
 /* our state */
@@ -58,14 +58,16 @@ static int vga_setMode(sTUIClient *client,const char *shmname,int mid,int type,A
 	client->type = type;
 
 	/* join shared memory */
-	int fd = shm_open(shmname,IO_READ | IO_WRITE,0);
-	if(fd < 0)
-		return fd;
-	client->shm = mmap(NULL,modes[mid].cols * modes[mid].rows * 2,0,PROT_READ | PROT_WRITE,
-		MAP_SHARED,fd,0);
-	close(fd);
-	if(client->shm == NULL)
-		return errno;
+	if(*shmname) {
+		int fd = shm_open(shmname,IO_READ | IO_WRITE,0);
+		if(fd < 0)
+			return fd;
+		client->shm = mmap(NULL,modes[mid].cols * modes[mid].rows * 2,0,PROT_READ | PROT_WRITE,
+			MAP_SHARED,fd,0);
+		close(fd);
+		if(client->shm == NULL)
+			return errno;
+	}
 	client->mode = modes + mid;
 	return 0;
 }
@@ -88,7 +90,7 @@ static void vga_setCursor(A_UNUSED sTUIClient *client,gpos_t x,gpos_t y,A_UNUSED
 
 static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	sScreenMode *mode = client->mode;
-	if(!mode)
+	if(!mode || !client->shm)
 		return -EINVAL;
 	if((gpos_t)(x + width) < x || x + width > mode->cols ||
 		(gpos_t)(y + height) < y || y + height > mode->rows)

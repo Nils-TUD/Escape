@@ -17,10 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <esc/common.h>
 #include <esc/messages.h>
 
 void keys_init(void);
 void keys_createTextConsole(void);
 void keys_createGUIConsole(void);
-bool keys_handleKey(sUIMData *data);
+void keys_enterDebugger(void);

@@ -60,21 +60,17 @@ void Util::panicArch() {
 }
 
 void Util::switchToVGA() {
-	/* TODO */
-#if 0
 	OpenFile *file;
 	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/vga",&file) == 0) {
 		ssize_t res;
-		sArgsMsg msg;
-		file->sendMsg(KERNEL_PID,MSG_VID_GETMODE,NULL,0,NULL,0);
-		for(int i = 0; i < 100; i++) {
-			res = file->receiveMsg(KERNEL_PID,NULL,&msg,sizeof(msg),false);
-			if(res >= 0)
-				break;
-			Thread::switchAway();
-		}
+		sStrMsg msg;
+		msg.arg1 = 3;
+		msg.arg2 = VID_MODE_TYPE_TUI;
+		msg.arg3 = true;
+		/* use an empty shm-name here. we don't need that anyway */
+		msg.s1[0] = '\0';
+		res = file->sendMsg(KERNEL_PID,MSG_SCR_SETMODE,&msg,sizeof(msg),NULL,0);
 		if(res >= 0) {
-			file->sendMsg(KERNEL_PID,MSG_VID_SETMODE,&msg,sizeof(msg),NULL,0);
 			for(int i = 0; i < 100; i++) {
 				res = file->receiveMsg(KERNEL_PID,NULL,NULL,0,false);
 				if(res >= 0)
@@ -84,7 +80,6 @@ void Util::switchToVGA() {
 		}
 		file->close(KERNEL_PID);
 	}
-#endif
 }
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {

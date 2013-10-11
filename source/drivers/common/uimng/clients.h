@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <esc/common.h>
 #include <esc/messages.h>
 
@@ -49,6 +51,7 @@ typedef struct {
 int cli_add(int id,const char *keymap);
 sClient *cli_getActive(void);
 sClient *cli_get(int id);
+void cli_reactivate(int oldMode);
 void cli_next(void);
 void cli_prev(void);
 int cli_attach(int id,int randid);

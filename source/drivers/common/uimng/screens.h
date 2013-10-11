@@ -20,29 +20,11 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/rect.h>
+#include <esc/messages.h>
 
-/**
- * Paints the given rect s a preview-rectangle with the given thickness in <shmem>. If <thickness>
- * is 0, it is removed.
- *
- * @param shmem the screen memory
- * @param x the x-coordinate
- * @param y the y-coordinate
- * @param width the width
- * @param height the height
- * @param thickness the thickness of the lines
- */
-void preview_set(uint8_t *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness);
+#include "clients.h"
 
-/**
- * Ensures that the currently set preview-rectangle is painted again, if the given rectangle
- * intersects with it.
- *
- * @param shmem the screen memory
- * @param x the x-coordinate
- * @param y the y-coordinate
- * @param width the width
- * @param height the height
- */
-void preview_updateRect(uint8_t *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+void screens_init(int cnt,char *names[]);
+bool screens_find(int mid,sScreenMode **mode,sScreen **scr);
+ssize_t screens_getModes(sScreenMode *modes,size_t n);
+int screens_setMode(sClient *cli,int type,int mid,const char *shm);

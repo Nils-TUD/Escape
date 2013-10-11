@@ -45,6 +45,22 @@ sClient *cli_get(int id) {
 	return clients[id];
 }
 
+void cli_reactivate(int oldMode) {
+	sClient *cli = clients[active];
+	assert(cli->screenMode);
+
+	if(screen_setMode(cli->screenFd,cli->type,cli->screenMode->id,cli->screenShmName,
+			oldMode != cli->screenMode->id) < 0)
+		printe("Unable to set mode");
+	if(screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor) < 0)
+		printe("Unable to set cursor");
+
+	gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
+	gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
+	if(screen_update(cli->screenFd,0,0,w,h) < 0)
+		printe("Screen update failed");
+}
+
 static void cli_switch(int incr) {
 	int oldActive = active;
 	int oldMode = active == MAX_CLIENT_FDS ? -1 : clients[active]->screenMode->id;
@@ -58,21 +74,8 @@ static void cli_switch(int incr) {
 	else
 		activeIdx = active = MAX_CLIENT_FDS;
 
-	if(active != MAX_CLIENT_FDS && active != oldActive) {
-		sClient *cli = clients[active];
-		assert(cli->screenMode);
-
-		if(screen_setMode(cli->screenFd,cli->type,cli->screenMode->id,cli->screenShmName,
-				oldMode != cli->screenMode->id) < 0)
-			printe("Unable to set mode");
-		if(screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor) < 0)
-			printe("Unable to set cursor");
-
-		gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
-		gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
-		if(screen_update(cli->screenFd,0,0,w,h) < 0)
-			printe("Screen update failed");
-	}
+	if(active != MAX_CLIENT_FDS && active != oldActive)
+		cli_reactivate(oldMode);
 }
 
 void cli_next(void) {

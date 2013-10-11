@@ -34,6 +34,7 @@
 
 #include "window.h"
 #include "listener.h"
+#include "preview.h"
 
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
 #define ABS(a)		((a) < 0 ? -(a) : (a))
@@ -46,19 +47,20 @@ static bool win_validateRect(sRectangle *r);
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
 static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r);
-static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-static void win_copyRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id);
-static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+static void win_clearRegion(uint8_t *mem,const sRectangle *r);
+static void win_copyRegion(uint8_t *mem,const sRectangle *r,gwinid_t id);
 static void win_notifyWinCreate(gwinid_t id,const char *title);
 static void win_notifyWinActive(gwinid_t id);
 static void win_notifyWinDestroy(gwinid_t id);
 
 static int uimng;
 static int drvId;
+
 static sScreenMode mode;
+static uint8_t *shmem;
 
 static sMsg msg;
-static uint8_t *shmem;
+
 static size_t activeWindow = WINDOW_COUNT;
 static size_t topWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
@@ -83,7 +85,7 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname) 
 	shmem = (uint8_t*)mmap(NULL,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	close(fd);
 	if(shmem == NULL)
-		error("Unable to join shared memory 'vesa'");
+		error("Unable to join shared memory '%s'",shmname);
 	return mode.id;
 }
 
@@ -303,22 +305,12 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 }
 
 void win_previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	msg.args.arg1 = x;
-	msg.args.arg2 = y;
-	msg.args.arg3 = width;
-	msg.args.arg4 = height;
-	msg.args.arg5 = 2;
-	/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
+	preview_set(shmem,x,y,width,height,2);
 }
 
 void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 	sWindow *w = windows + window;
-	msg.args.arg1 = x;
-	msg.args.arg2 = y;
-	msg.args.arg3 = w->width;
-	msg.args.arg4 = w->height;
-	msg.args.arg5 = 2;
-	/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
+	preview_set(shmem,x,y,w->width,w->height,2);
 }
 
 void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
@@ -335,8 +327,7 @@ void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 		windows[window].height = height;
 
 		/* remove preview */
-		msg.args.arg5 = 0;
-		/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
+		preview_set(shmem,0,0,0,0,0);
 
 		if(width < oldWidth) {
 			sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
@@ -366,8 +357,7 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 	sRectangle *new = (sRectangle*)malloc(sizeof(sRectangle));
 
 	/* remove preview */
-	msg.args.arg5 = 0;
-	/* TODO send(uimng,MSG_VESA_PREVIEWRECT,&msg,sizeof(msg.args));*/
+	preview_set(shmem,0,0,0,0,0);
 
 	/* save old position */
 	old->x = windows[window].x;
@@ -415,7 +405,7 @@ void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) 
 	r->window = win->id;
 	if(win_validateRect(r)) {
 		if(topWindow == window)
-			win_copyRegion(shmem,r->x,r->y,r->width,r->height,window);
+			win_copyRegion(shmem,r,window);
 		else
 			win_repaint(r,win,win->z);
 	}
@@ -465,10 +455,10 @@ static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 
 		/* if it doesn't belong to a window, we have to clear it */
 		if(rect->window == WINDOW_COUNT)
-			win_clearRegion(shmem,rect->x,rect->y,rect->width,rect->height);
+			win_clearRegion(shmem,rect);
 		/* otherwise copy from the window buffer */
 		else
-			win_copyRegion(shmem,rect->x,rect->y,rect->width,rect->height,rect->window);
+			win_copyRegion(shmem,rect,rect->window);
 	}
 
 	/* free list elements */
@@ -540,27 +530,28 @@ static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t 
 	sll_append(list,r);
 }
 
-static void win_clearRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	gpos_t ysave = y;
-	size_t count = width * PIXEL_SIZE;
-	gpos_t maxy = y + height;
-	mem += (y * mode.width + x) * PIXEL_SIZE;
+static void win_clearRegion(uint8_t *mem,const sRectangle *r) {
+	gpos_t y = r->y;
+	size_t count = r->width * PIXEL_SIZE;
+	gpos_t maxy = y + r->height;
+	mem += (y * mode.width + r->x) * PIXEL_SIZE;
 	while(y < maxy) {
 		memclear(mem,count);
 		mem += mode.width * PIXEL_SIZE;
 		y++;
 	}
 
-	win_notifyVesa(x,ysave,width,height);
+	preview_updateRect(mem,r->x,r->y,r->width,r->height);
+	win_notifyUimng(r->x,r->y,r->width,r->height);
 }
 
-static void win_copyRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gwinid_t id) {
-	x -= windows[id].x;
-	y -= windows[id].y;
+static void win_copyRegion(uint8_t *mem,const sRectangle *r,gwinid_t id) {
+	gpos_t x = r->x - windows[id].x;
+	gpos_t y = r->y - windows[id].y;
 
 	uint8_t *src,*dst;
-	gpos_t endy = y + height;
-	size_t count = width * PIXEL_SIZE;
+	gpos_t endy = y + r->height;
+	size_t count = r->width * PIXEL_SIZE;
 	size_t srcAdd = windows[id].width * PIXEL_SIZE;
 	size_t dstAdd = mode.width * PIXEL_SIZE;
 	src = (uint8_t*)windows[id].shmaddr + (y * windows[id].width + x) * PIXEL_SIZE;
@@ -573,10 +564,11 @@ static void win_copyRegion(uint8_t *mem,gpos_t x,gpos_t y,gsize_t width,gsize_t 
 		y++;
 	}
 
-	win_notifyVesa(windows[id].x + x,windows[id].y + (endy - height),width,height);
+	preview_updateRect(mem,windows[id].x + x,windows[id].y + (endy - r->height),r->width,r->height);
+	win_notifyUimng(windows[id].x + x,windows[id].y + (endy - r->height),r->width,r->height);
 }
 
-static void win_notifyVesa(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	if(x < 0) {
 		width += x;
 		x = 0;

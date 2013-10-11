@@ -197,6 +197,16 @@ void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
  */
 void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
+/**
+ * Notifies the UI-manager that the given rectangle has changed.
+ *
+ * @param x the x-coordinate
+ * @param y the y-coordinate
+ * @param width the width
+ * @param height the height
+ */
+void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
 #if DEBUGGING
 
 void win_dbg_print(void);

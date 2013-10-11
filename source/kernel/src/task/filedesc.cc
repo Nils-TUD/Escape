@@ -173,7 +173,7 @@ OpenFile *FileDesc::unassoc(Proc *p,int fd) {
 }
 
 void FileDesc::print(OStream &os,const Proc *p) {
-	os.writef("File descriptors of %d:\n",p->getPid());
+	os.writef("File descriptors (current max=%zu):\n",p->fileDescsSize);
 	for(size_t i = 0; i < p->fileDescsSize; i++) {
 		if(p->fileDescs[i] != NULL) {
 			os.writef("\t%-2d: ",i);

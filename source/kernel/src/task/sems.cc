@@ -22,14 +22,22 @@
 #include <sys/task/proc.h>
 #include <errno.h>
 
-void Sems::init(Proc *p) {
-	memclear(p->sems,sizeof(p->sems));
+int Sems::init(Proc *p) {
+	p->sems = (Entry**)cache_calloc(INIT_SEMS_COUNT,sizeof(Entry*));
+	if(p->sems == NULL)
+		return -ENOMEM;
+	p->semsSize = INIT_SEMS_COUNT;
+	return 0;
 }
 
 int Sems::clone(Proc *p,const Proc *old) {
 	int res = 0;
 	old->lock(PLOCK_SEMS);
-	for(size_t i = 0; i < MAX_SEM_COUNT; ++i) {
+	p->sems = (Entry**)cache_calloc(old->semsSize,sizeof(Entry*));
+	if(!p->sems)
+		goto error;
+	p->semsSize = old->semsSize;
+	for(size_t i = 0; i < old->semsSize; ++i) {
 		Entry *e = old->sems[i];
 		if(e) {
 			p->sems[i] = new Entry(*e);
@@ -37,35 +45,72 @@ int Sems::clone(Proc *p,const Proc *old) {
 				while(i-- > 0)
 					delete p->sems[i];
 				res = -ENOMEM;
-				goto error;
+				goto errorFree;
 			}
 		}
 		else
 			p->sems[i] = NULL;
 	}
+	old->unlock(PLOCK_SEMS);
+	return 0;
+
+errorFree:
+	cache_free(p->sems);
 error:
 	old->unlock(PLOCK_SEMS);
 	return res;
 }
 
 int Sems::create(Proc *p,uint value) {
+	int res;
+	Entry **sems;
+	Entry *e = new Entry(value);
+	if(!e)
+		return -ENOMEM;
+
 	p->lock(PLOCK_SEMS);
-	for(size_t i = 0; i < MAX_SEM_COUNT; ++i) {
+	/* search for a free entry */
+	for(size_t i = 0; i < p->semsSize; ++i) {
 		if(p->sems[i] == NULL) {
-			p->sems[i] = new Entry(value);
-			int res = p->sems[i] ? i : -ENOMEM;
+			p->sems[i] = e;
 			p->unlock(PLOCK_SEMS);
-			return res;
+			return i;
 		}
 	}
+
+	/* too many? */
+	if(p->semsSize == MAX_SEM_COUNT) {
+		res = -EMFILE;
+		goto error;
+	}
+
+	/* realloc the array */
+	sems = (Entry**)cache_realloc(p->sems,p->semsSize * sizeof(Entry*) * 2);
+	if(!sems) {
+		res = -ENOMEM;
+		goto error;
+	}
+	memclear(sems + p->semsSize,p->semsSize * sizeof(Entry*));
+
+	/* insert entry */
+	res = p->semsSize;
+	sems[res] = e;
+	p->semsSize *= 2;
+	p->sems = sems;
+
 	p->unlock(PLOCK_SEMS);
-	return -EMFILE;
+	return res;
+
+error:
+	delete e;
+	p->unlock(PLOCK_SEMS);
+	return res;
 }
 
 int Sems::op(Proc *p,int sem,int amount) {
 	p->lock(PLOCK_SEMS);
 	Entry *e = p->sems[sem];
-	if(sem < 0 || sem >= MAX_SEM_COUNT || !e) {
+	if(sem < 0 || sem >= (int)p->semsSize || !e) {
 		p->unlock(PLOCK_SEMS);
 		return -EINVAL;
 	}
@@ -85,7 +130,7 @@ int Sems::op(Proc *p,int sem,int amount) {
 }
 
 void Sems::destroy(Proc *p,int sem) {
-	if(sem < 0 || sem >= MAX_SEM_COUNT)
+	if(sem < 0 || sem >= (int)p->semsSize)
 		return;
 
 	p->lock(PLOCK_SEMS);
@@ -96,11 +141,23 @@ void Sems::destroy(Proc *p,int sem) {
 	p->unlock(PLOCK_SEMS);
 }
 
-void Sems::destroyAll(Proc *p) {
+void Sems::destroyAll(Proc *p,bool complete) {
 	p->lock(PLOCK_SEMS);
-	for(size_t i = 0; i < MAX_SEM_COUNT; ++i) {
+	for(size_t i = 0; i < p->semsSize; ++i) {
 		delete p->sems[i];
 		p->sems[i] = NULL;
 	}
+	if(complete) {
+		cache_free(p->sems);
+		p->sems = NULL;
+	}
 	p->unlock(PLOCK_SEMS);
+}
+
+void Sems::print(OStream &os,const Proc *p) {
+	os.writef("Semaphores (current max=%zu):\n",p->semsSize);
+	for(size_t i = 0; i < p->semsSize; i++) {
+		if(p->sems[i] != NULL)
+			os.writef("\t%-2d: %u (%d refs)\n",i,p->sems[i]->s.getValue(),p->sems[i]->refs);
+	}
 }

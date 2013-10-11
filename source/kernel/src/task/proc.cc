@@ -93,7 +93,8 @@ void ProcBase::init() {
 	p->stats.totalScheds = 0;
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
-	Sems::init(p);
+	if(Sems::init(p) < 0)
+		Util::panic("Unable to init semaphores");
 	memclear(p->locks,sizeof(p->locks));
 	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
 		p->mutexes[i] = Mutex();
@@ -337,7 +338,7 @@ errorAdd:
 errorCmd:
 	Cache::free((void*)p->command);
 errorSems:
-	Sems::destroyAll(p);
+	Sems::destroyAll(p,true);
 errorPdir:
 	p->getPageDir()->destroy();
 errorProc:
@@ -482,7 +483,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	p->stats.totalScheds = 0;
 	p->virtmem.resetStats();
 	/* semaphores don't survive execs */
-	Sems::destroyAll(p);
+	Sems::destroyAll(p,false);
 
 #if DEBUG_CREATIONS
 	Term().writef("EXEC: proc %d:%s\n",p->pid,p->command);
@@ -632,7 +633,7 @@ void ProcBase::destroy(pid_t pid) {
 
 void ProcBase::doDestroy(Proc *p) {
 	/* release resources */
-	Sems::destroyAll(p);
+	Sems::destroyAll(p,true);
 	FileDesc::destroy(p);
 	Groups::leave(p->pid);
 	Env::removeFor(p->pid);
@@ -799,6 +800,7 @@ void ProcBase::print(OStream &os) const {
 	virtmem.print(os);
 	Env::printAllOf(os,pid);
 	FileDesc::print(os,static_cast<const Proc*>(this));
+	Sems::print(os,static_cast<const Proc*>(this));
 	VFSFS::printFSChans(os,static_cast<const Proc*>(this));
 	os.popIndent();
 	os.writef("\tThreads:\n");

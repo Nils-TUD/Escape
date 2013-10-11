@@ -22,11 +22,14 @@
 #include <sys/common.h>
 #include <sys/cppsupport.h>
 #include <sys/semaphore.h>
+#include <sys/ostream.h>
 
 class Proc;
 
 class Sems {
 	Sems() = delete;
+
+	static const size_t INIT_SEMS_COUNT		= 8;
 
 public:
 	struct Entry : public CacheAllocatable {
@@ -37,10 +40,11 @@ public:
 		Semaphore s;
 	};
 
-	static void init(Proc *p);
+	static int init(Proc *p);
 	static int clone(Proc *p,const Proc *old);
 	static int create(Proc *p,uint value);
 	static int op(Proc *p,int sem,int amount);
 	static void destroy(Proc *p,int sem);
-	static void destroyAll(Proc *p);
+	static void destroyAll(Proc *p,bool complete);
+	static void print(OStream &os,const Proc *p);
 };

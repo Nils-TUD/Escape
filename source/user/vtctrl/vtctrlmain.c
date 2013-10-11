@@ -58,7 +58,7 @@ int main(int argc,const char *argv[]) {
 		printf("Available modes:\n");
 		for(i = 0; i < count; i++) {
 			printf("%c %5d: %3u x %3u cells, %4u x %4u pixels, %2ubpp, %s (%s,%s)\n",
-					mode == modes[i].id ? '*' : ' ',modes[i].id,
+					curMode.id == modes[i].id ? '*' : ' ',modes[i].id,
 					modes[i].cols,modes[i].rows,modes[i].width,modes[i].height,modes[i].bitsPerPixel,
 					modes[i].mode == VID_MODE_TEXT ? "text     " : "graphical",
 					(modes[i].type & VID_MODE_TYPE_TUI) ? "tui" : "-",

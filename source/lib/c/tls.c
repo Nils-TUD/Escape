@@ -52,7 +52,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,int 
 uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
 	static bool initialized = false;
 	if(!initialized) {
-		char *name = argv[0];
+		char *name = __progname = argv[0];
 		while((name = strchr(name,'/')) != NULL) {
 			name++;
 			__progname = name;

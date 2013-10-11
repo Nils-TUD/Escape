@@ -174,6 +174,7 @@ ullong strtoull(const char *nptr,char **endptr,int base);
 
 /**
  * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
+ * Note that this function is not thread-safe!
  *
  * @return the random number
  */

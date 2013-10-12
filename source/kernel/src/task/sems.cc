@@ -150,6 +150,7 @@ void Sems::destroyAll(Proc *p,bool complete) {
 	if(complete) {
 		cache_free(p->sems);
 		p->sems = NULL;
+		p->semsSize = 0;
 	}
 	p->unlock(PLOCK_SEMS);
 }

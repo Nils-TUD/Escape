@@ -111,7 +111,6 @@ struct sVTerm {
 	size_t rlBufPos;
 	char *rlBuffer;
 	char *buffer;
-	char *titleBar;
 };
 
 /* the colors */

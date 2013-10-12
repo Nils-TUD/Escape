@@ -42,7 +42,6 @@
 
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
-static int vt_dateThread(void *arg);
 
 static int scrMode = -1;
 static char *scrShm = NULL;
@@ -81,9 +80,6 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	res = vt_setVideoMode(vterm,mode.id);
 	if(res < 0)
 		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
-
-	/*if(startthread(vt_dateThread,vterm) < 0)
-		error("Unable to start date-thread");*/
 	return true;
 }
 
@@ -97,32 +93,21 @@ static void vt_doUpdate(sVTerm *vt) {
 	/* if we should scroll, mark the whole screen (without title) as dirty */
 	if(vt->upScroll != 0) {
 		vt->upCol = 0;
-		vt->upRow = MIN(vt->upRow,1);
+		vt->upRow = MIN(vt->upRow,0);
 		vt->upHeight = vt->rows - vt->upRow;
 		vt->upWidth = vt->cols;
 	}
 
 	if(vt->upWidth > 0) {
-		/* update title-bar? */
-		uint upRow = vt->upRow;
-		size_t upHeight = vt->upHeight;
-		if(upRow == 0) {
-			memcpy(scrShm + vt->upCol * 2,vt->titleBar,vt->upWidth * 2);
-			upRow++;
-			upHeight--;
-		}
-
-		/* update content? */
-		if(upHeight > 0) {
-			size_t offset = upRow * vt->cols * 2 + vt->upCol * 2;
-			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + offset;
-			if(vt->upWidth == vt->cols)
-				memcpy(scrShm + offset,startPos,vt->upWidth * upHeight * 2);
-			else {
-				for(size_t i = 0; i < upHeight; ++i) {
-					memcpy(scrShm + offset + i * vt->cols * 2,
-						startPos + i * vt->cols * 2,vt->upWidth * 2);
-				}
+		/* update content */
+		size_t offset = vt->upRow * vt->cols * 2 + vt->upCol * 2;
+		char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + offset;
+		if(vt->upWidth == vt->cols)
+			memcpy(scrShm + offset,startPos,vt->upWidth * vt->upHeight * 2);
+		else {
+			for(size_t i = 0; i < vt->upHeight; ++i) {
+				memcpy(scrShm + offset + i * vt->cols * 2,
+					startPos + i * vt->cols * 2,vt->upWidth * 2);
 			}
 		}
 
@@ -237,33 +222,4 @@ static void vt_setCursor(sVTerm *vt) {
 		vt->lastCol = x;
 		vt->lastRow = y;
 	}
-}
-
-static int vt_dateThread(A_UNUSED void *arg) {
-	size_t j,len;
-	sVTerm *vt = (sVTerm*)arg;
-	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
-	while(1) {
-		/* get date and format it */
-		time_t now = time(NULL);
-		struct tm *date = gmtime(&now);
-		len = strftime(dateStr,sizeof(dateStr),"%a, %d. %b %Y, %H:%M:%S",date);
-
-		/* update vterm-title-bar */
-		char *title;
-		locku(&vt->lock);
-		title = vt->titleBar + (vt->cols - len) * 2;
-		for(j = 0; j < len; j++) {
-			*title++ = dateStr[j];
-			*title++ = LIGHTGRAY | (BLUE << 4);
-		}
-		memcpy(scrShm + (vt->cols - len) * 2,vt->titleBar + (vt->cols - len) * 2,len * 2);
-		if(screen_update(vt->uimng,vt->cols - len,0,len * 2,1) < 0)
-			printe("Unable to update screen");
-		unlocku(&vt->lock);
-
-		/* wait a second */
-		sleep(1000);
-	}
-	return EXIT_SUCCESS;
 }

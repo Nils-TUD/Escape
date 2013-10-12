@@ -41,11 +41,6 @@
 /* the number of chars to keep in history */
 #define INITIAL_RLBUF_SIZE	50
 
-#define TITLE_BAR_COLOR		0x17
-#define OS_TITLE			"Escape v"ESCAPE_VERSION
-
-static void vtctrl_buildTitle(sVTerm *vt);
-
 bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 	size_t i,len;
 	uchar color;
@@ -91,11 +86,6 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 		printe("Unable to allocate mem for vterm-buffer");
 		return false;
 	}
-	vt->titleBar = (char*)malloc(vt->cols * 2);
-	if(vt->titleBar == NULL) {
-		printe("Unable to allocate mem for vterm-titlebar");
-		return false;
-	}
 	vt->rlBufSize = INITIAL_RLBUF_SIZE;
 	vt->rlBufPos = 0;
 	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
@@ -118,15 +108,12 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 		*ptr++ = ' ';
 		*ptr++ = color;
 	}
-
-	vtctrl_buildTitle(vt);
 	return true;
 }
 
 void vtctrl_destroy(sVTerm *vt) {
 	rb_destroy(vt->inbuf);
 	free(vt->buffer);
-	free(vt->titleBar);
 	free(vt->rlBuffer);
 }
 
@@ -137,16 +124,8 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		size_t c,r,color;
 		size_t ccols = MIN(cols,vt->cols);
 		char *buf,*oldBuf,*old = vt->buffer;
-		char *oldTitle = vt->titleBar;
 		vt->buffer = (char*)malloc(rows * HISTORY_SIZE * cols * 2);
 		if(vt->buffer == NULL) {
-			vt->buffer = old;
-			unlocku(&vt->lock);
-			return false;
-		}
-		vt->titleBar = (char*)malloc(cols * 2);
-		if(vt->titleBar == NULL) {
-			vt->titleBar = oldTitle;
 			vt->buffer = old;
 			unlocku(&vt->lock);
 			return false;
@@ -203,9 +182,7 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->upWidth = 0;
 		vt->upHeight = 0;
 		vtctrl_markScrDirty(vt);
-		vtctrl_buildTitle(vt);
 		free(old);
-		free(oldTitle);
 		res = true;
 	}
 	unlocku(&vt->lock);
@@ -297,25 +274,4 @@ void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
 	vt->upHeight = MAX(y + vt->upHeight,row + height) - vt->upRow;
 	assert(vt->upWidth <= vt->cols);
 	assert(vt->upHeight <= vt->rows);
-}
-
-static void vtctrl_buildTitle(sVTerm *vt) {
-	size_t i,j,len;
-	char *ptr = vt->titleBar;
-	char *s = vt->name;
-	for(i = 0; *s; i++) {
-		*ptr++ = *s++;
-		*ptr++ = TITLE_BAR_COLOR;
-	}
-	for(; i < vt->cols; i++) {
-		*ptr++ = ' ';
-		*ptr++ = TITLE_BAR_COLOR;
-	}
-	len = strlen(OS_TITLE);
-	i = (((vt->cols * 2) / 2) - len) & ~0x1;
-	ptr = vt->titleBar;
-	for(j = 0; j < len; j++) {
-		ptr[i + j * 2] = OS_TITLE[j];
-		ptr[i + j * 2 + 1] = TITLE_BAR_COLOR;
-	}
 }

@@ -232,20 +232,20 @@ static bool vtout_handleEscape(sVTerm *vt,char **str) {
 
 	switch(cmd) {
 		case ESCC_MOVE_LEFT:
-			vt->col = MIN(vt->cols - 1,vt->col - n1);
+			vt->col = MAX(0,MIN((int)vt->cols - 1,(int)vt->col - n1));
 			break;
 		case ESCC_MOVE_RIGHT:
-			vt->col = MIN(vt->cols - 1,vt->col + n1);
+			vt->col = MAX(0,MIN((int)vt->cols - 1,(int)vt->col + n1));
 			break;
 		case ESCC_MOVE_UP:
-			vt->row = MAX(1,MAX(vt->rows - 1,vt->row - n1));
+			vt->row = MAX(0,MIN((int)vt->rows - 1,(int)vt->row - n1));
 			break;
 		case ESCC_MOVE_DOWN:
-			vt->row = MIN(vt->rows - 1,vt->row + n1);
+			vt->row = MAX(0,MIN((int)vt->rows - 1,(int)vt->row + n1));
 			break;
 		case ESCC_MOVE_HOME:
 			vt->col = 0;
-			vt->row = 1;
+			vt->row = 0;
 			break;
 		case ESCC_MOVE_LINESTART:
 			vt->col = 0;
@@ -267,7 +267,7 @@ static bool vtout_handleEscape(sVTerm *vt,char **str) {
 			break;
 		case ESCC_GOTO_XY:
 			vt->col = MIN(vt->cols - 1,(size_t)n1);
-			vt->row = MIN(vt->rows - 2,(size_t)n2) + 1;
+			vt->row = MIN(vt->rows - 1,(size_t)n2);
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)

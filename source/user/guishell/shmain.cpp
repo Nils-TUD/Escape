@@ -52,9 +52,8 @@ static int shellMain(void);
 static char *drvName;
 static GUITerm *gt;
 static int childPid;
-static int maintid;
 
-static void sigUsr1(A_UNUSED int sig) {
+static void sigUsr2(A_UNUSED int sig) {
 	Application::getInstance()->exit();
 }
 
@@ -73,8 +72,6 @@ int main(int argc,char **argv) {
 		fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
 		return EXIT_FAILURE;
 	}
-
-	maintid = gettid();
 
 	// use a lock here to ensure that no one uses our guiterm-number
 	lockg(GUI_SHELL_LOCK,LOCK_EXCLUSIVE);
@@ -137,7 +134,7 @@ int main(int argc,char **argv) {
 
 	// notify the child that we're done
 	if(kill(childPid,SIG_USR2) < 0)
-		printe("Unable to send SIG_USR1 to child");
+		printe("Unable to send SIG_USR2 to child");
 	return EXIT_SUCCESS;
 }
 
@@ -149,7 +146,7 @@ static int guiProc(const char *oldterm) {
 		error("Unable to re-register device %s",drvName);
 	delete[] drvName;
 
-	if(signal(SIG_USR2,sigUsr1) == SIG_ERR)
+	if(signal(SIG_USR2,sigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
 
 	// now start GUI
@@ -159,7 +156,8 @@ static int guiProc(const char *oldterm) {
 	root->getTheme().setPadding(0);
 	shared_ptr<ShellControl> sh = make_control<ShellControl>();
 	gt = new GUITerm(sid,sh,DEF_COLS,DEF_ROWS);
-	if(startthread(termThread,gt) < 0)
+	int tid;
+	if((tid = startthread(termThread,gt)) < 0)
 		error("Unable to start term-thread");
 	root->setLayout(make_layout<BorderLayout>());
 	root->add(make_control<ScrollPane>(sh),BorderLayout::CENTER);
@@ -168,17 +166,22 @@ static int guiProc(const char *oldterm) {
 	app->addWindow(w);
 	int res = app->run();
 	sh->sendEOF();
-	// wait until the shell has terminated the child processes
-	IGNSIGS(join(maintid));
-	gt->stop();
+	// notify the other thread and wait for him
+	if(kill(getpid(),SIG_USR2) < 0)
+		printe("Unable to send SIG_USR2 to ourself");
+	join(tid);
+	delete gt;
 	return res;
 }
 
+static void termSigUsr2(A_UNUSED int sig) {
+	gt->stop();
+}
+
 static int termThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR2,sigUsr1) == SIG_ERR)
+	if(signal(SIG_USR2,termSigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
 	gt->run();
-	delete gt;
 	return 0;
 }
 

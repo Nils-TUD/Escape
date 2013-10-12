@@ -79,9 +79,13 @@ int main(void) {
 #else
 		printf("Username: ");
 		fgetl(un,sizeof(un),stdin);
+		/* if an error occurred, e.g. the user pressed ^D, ensure that we unset the error */
+		clearerr(stdin);
 		vterm_setEcho(STDOUT_FILENO,false);
+
 		printf("Password: ");
 		fgetl(pw,sizeof(pw),stdin);
+		clearerr(stdin);
 		vterm_setEcho(STDOUT_FILENO,true);
 		putchar('\n');
 #endif

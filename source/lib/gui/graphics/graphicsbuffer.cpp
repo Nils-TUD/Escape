@@ -73,8 +73,14 @@ namespace gui {
 		_updating = false;
 		if(_lost.el) {
 			_lost.el->makeDirty(true);
-			if(_lost.rect.empty())
-				_lost.el->repaint(true);
+			if(_lost.rect.empty()) {
+				// TODO temporary fix for our offset-bug. this prevents paint-errors in e.g. the
+				// guishell
+				if(_lost.el->getParent())
+					_lost.el->getParent()->repaint(true);
+				else
+					_lost.el->repaint(true);
+			}
 			else
 				_lost.el->repaintRect(_lost.rect.getPos(),_lost.rect.getSize(),true);
 			_lost.el = nullptr;

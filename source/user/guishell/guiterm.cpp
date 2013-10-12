@@ -31,7 +31,7 @@
 
 using namespace std;
 
-GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
+GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh,uint cols,uint rows)
 	: _sid(sid), _run(true), _vt(nullptr), _mode(), _sh(sh),
 	  _rbuffer(new char[READ_BUF_SIZE + 1]), _rbufPos(0) {
 	// create and init vterm
@@ -53,8 +53,8 @@ GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh)
 	if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
 		error("Unable to get env-var TERM");
 
-	_mode.cols = DEF_COLS;
-	_mode.rows = DEF_ROWS;
+	_mode.cols = cols;
+	_mode.rows = rows;
 	_mode.type = VID_MODE_TYPE_TUI;
 	_mode.mode = VID_MODE_GRAPHICAL;
 	if(!vtctrl_init(_vt,&_mode))
@@ -71,26 +71,18 @@ GUITerm::~GUITerm() {
 }
 
 void GUITerm::setCursor(sVTerm *vt) {
-	gpos_t x,y;
-	if(vt->upScroll != 0 || vt->col != vt->lastCol || vt->row != vt->lastRow) {
-		/* draw no cursor if it's not visible by setting it to an invalid location */
-		if(vt->firstVisLine + vt->rows <= vt->currLine + vt->row) {
-			x = vt->cols;
-			y = vt->rows;
-		}
-		else {
-			x = vt->col;
-			y = vt->row;
-		}
+	if(vt->col != vt->lastCol || vt->row != vt->lastRow) {
 		static_cast<GUITerm*>(vt->data)->_sh->setCursor();
-		vt->lastCol = x;
-		vt->lastRow = y;
+		vt->lastCol = vt->col;
+		vt->lastRow = vt->row;
 	}
 }
 
 void GUITerm::prepareMode() {
 	gui::Application *app = gui::Application::getInstance();
 	_mode.bitsPerPixel = app->getColorDepth();
+	_mode.cols = _vt->cols;
+	_mode.rows = _vt->rows;
 	_mode.width = _sh->getWindow()->getSize().width;
 	_mode.height = _sh->getWindow()->getSize().height;
 }

@@ -39,15 +39,18 @@ private:
 	static const gsize_t PADDING		= 3;
 	static const gsize_t TEXTSTARTX		= 3;
 	static const gsize_t TEXTSTARTY		= 3;
-	static const gsize_t CURSOR_WIDTH	= 2;
-	static const gsize_t DEF_WIDTH		= 600;
-	static const gsize_t DEF_HEIGHT		= 400;
+	static const gsize_t CURSOR_HEIGHT	= 2;
 	static const gui::Color BGCOLOR;
 	static const gui::Color FGCOLOR;
 	static const gui::Color CURSOR_COLOR;
 
+	static gui::Size getSizeFor(const gui::Size &fontSize,uint cols,uint rows) {
+		return gui::Size(TEXTSTARTX * 2 + cols * fontSize.width,
+			TEXTSTARTY * 2 + rows * (fontSize.height + PADDING));
+	}
+
 public:
-	ShellControl() : Control(), _lastCol(0), _lastRow(0), _vt(nullptr) {
+	ShellControl() : Control(), _lastCol(0), _lastRow(0), _locked(), _vt(nullptr) {
 	}
 	virtual ~ShellControl() {
 	}
@@ -85,9 +88,16 @@ private:
 	void paintRow(gui::Graphics &g,size_t cwidth,size_t cheight,char *buf,gpos_t y);
 	void update();
 	void doUpdate();
-	bool setCursor();
+	void setCursor() {
+		locku(&_vt->lock);
+		doSetCursor();
+		unlocku(&_vt->lock);
+	}
+	void doSetCursor();
+	void resizeVTerm(const gui::Size &size);
 
 	size_t _lastCol;
 	size_t _lastRow;
+	bool _locked;
 	sVTerm *_vt;
 };

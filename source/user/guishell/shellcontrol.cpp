@@ -94,6 +94,14 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 
 void ShellControl::resizeTo(const Size &size) {
 	Control::resizeTo(size);
+	// if we come from a locked section, just do that later
+	if(_locked)
+		Application::getInstance()->executeLater(std::make_bind1_memfun(size,this,&ShellControl::resizeVTerm));
+	else
+		resizeVTerm(size);
+}
+
+void ShellControl::resizeVTerm(const Size &size) {
 	size_t parentheight = getParent()->getSize().height - gui::ScrollPane::BAR_SIZE;
 	vtctrl_resize(_vt,getCols(size.width),getRows(parentheight));
 }
@@ -106,14 +114,15 @@ void ShellControl::sendEOF() {
 Size ShellControl::getPrefSize() const {
 	size_t rows = (HISTORY_SIZE * _vt->rows) - _vt->firstLine;
 	Size font = getGraphics()->getFont().getSize();
-	return Size(TEXTSTARTX + _vt->cols * font.width,TEXTSTARTY + rows * (font.height + PADDING));
+	return getSizeFor(font,_vt->cols,rows);
 }
 
 Size ShellControl::getUsedSize(const Size &avail) const {
 	// we have to take the change in vtctrl_resize into account that will follow based on our result
 	size_t rows = (HISTORY_SIZE * _vt->rows) - (_vt->firstLine + (_vt->rows - getRows(avail.height)));
 	Size font = getGraphics()->getFont().getSize();
-	return Size(avail.width,TEXTSTARTY + rows * (font.height + PADDING));
+	Size s = getSizeFor(font,_vt->cols,rows);
+	return Size(avail.width,s.height);
 }
 
 Size ShellControl::rectToLines(const Rectangle &r) const {
@@ -131,7 +140,8 @@ Rectangle ShellControl::linesToRect(size_t start,size_t count) const {
 }
 
 void ShellControl::paint(Graphics &g) {
-	locku(&_vt->lock);
+	if(!_locked)
+		locku(&_vt->lock);
 	Rectangle paintrect = g.getPaintRect();
 	if(!paintrect.empty()) {
 		Size dirty = rectToLines(paintrect);
@@ -140,77 +150,108 @@ void ShellControl::paint(Graphics &g) {
 		g.setColor(BGCOLOR);
 		g.fillRect(paintrect.getPos(),paintrect.getSize());
 
+		// paint content
 		paintRows(g,dirty.width,dirty.height);
+
+		// draw cursor
+		Size csize = g.getFont().getSize();
+		size_t hidden = (HISTORY_SIZE * _vt->rows) - _vt->firstLine - _vt->rows;
+		g.setColor(CURSOR_COLOR);
+		g.fillRect(TEXTSTARTX + _vt->col * csize.width,
+				TEXTSTARTY + (hidden + _vt->row + 1) * (csize.height + PADDING),
+				csize.width,CURSOR_HEIGHT);
+		_lastCol = _vt->col;
+		_lastRow = _vt->row;
 	}
-	unlocku(&_vt->lock);
+	if(!_locked)
+		unlocku(&_vt->lock);
 }
 
 void ShellControl::doUpdate() {
+	locku(&_vt->lock);
+	// prevent self-deadlock
+	_locked = true;
 	if(_vt->upWidth > 0) {
+		Size font = getGraphics()->getFont().getSize();
+
+		// our size may have changed
 		makeDirty(true);
 		getWindow()->layout();
-		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
-		sp->scrollToBottom();
 
-		if(_vt->upScroll != 0)
-			repaint();
-		else {
-			Rectangle up = linesToRect(_vt->upRow,_vt->upHeight);
-			Size font = getGraphics()->getFont().getSize();
-			repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+		// clear old cursor
+		if(_vt->upScroll != 0) {
+			if(_vt->firstLine == 0) {
+				makeDirty(true);
+				// TODO actually, it should be possible to repaint ourself here. but this seems to
+				// be a problem with the paint-rect-calculation which is wrong if our offset is < 0
+				// or so. I don't know what's the problem there.
+				getParent()->repaint(false);
+			}
+			else {
+				size_t hidden = (HISTORY_SIZE * _vt->rows) - _vt->firstLine - _vt->rows;
+				makeDirty(true);
+				repaintRect(Pos(TEXTSTARTX + _lastCol * font.width,
+								TEXTSTARTY + (hidden + _lastRow - _vt->upScroll + 1) * (font.height + PADDING)),
+							Size(font.width,CURSOR_HEIGHT),false);
+			}
 		}
+
+		// scroll to bottom
+		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
+		sp->scrollToBottom(false);
+
+		// repaint affected lines
+		Rectangle up = linesToRect(_vt->upRow,_vt->upHeight);
+		makeDirty(true);
+		repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+
 		_vt->upScroll = 0;
 		_vt->upCol = _vt->cols;
 		_vt->upRow = _vt->rows;
 		_vt->upWidth = 0;
 		_vt->upHeight = 0;
 	}
+	else
+		doSetCursor();
+	_locked = false;
+	unlocku(&_vt->lock);
 }
 
 void ShellControl::update() {
 	Application::getInstance()->executeLater(std::make_memfun(this,&ShellControl::doUpdate));
 }
 
-bool ShellControl::setCursor() {
-	if(_lastCol != _vt->col || _lastRow != _vt->row) {
+void ShellControl::doSetCursor() {
+	if(_vt->col != _lastCol || _vt->row != _lastRow) {
 		Graphics *g = getGraphics();
 		Size csize = g->getFont().getSize();
-		uint8_t *buf = (uint8_t*)_vt->buffer + ((_vt->firstVisLine + _lastRow) *
-				_vt->cols + _lastCol) * 2;
-		assert((size_t)(buf[1] >> 4) < ARRAY_SIZE(COLORS));
+		size_t hidden = (HISTORY_SIZE * _vt->rows) - _vt->firstLine - _vt->rows;
+
 		// clear old cursor
-		g->setColor(COLORS[buf[1] >> 4]);
-		g->fillRect(TEXTSTARTX + _lastCol * csize.width,
-				TEXTSTARTY + (_lastRow + 1) * (csize.height + PADDING),
-				csize.width,CURSOR_WIDTH);
+		makeDirty(true);
+		repaintRect(Pos(TEXTSTARTX + _lastCol * csize.width,
+						TEXTSTARTY + (hidden + _lastRow + 1) * (csize.height + PADDING)),
+					Size(csize.width,CURSOR_HEIGHT),false);
 
 		// draw new one
-		g->setColor(CURSOR_COLOR);
-		g->fillRect(TEXTSTARTX + _vt->col * csize.width,
-				TEXTSTARTY + (_vt->row + 1) * (csize.height + PADDING),
-				csize.width,CURSOR_WIDTH);
-		_lastCol = _vt->col;
-		_lastRow = _vt->row;
-		return true;
+		makeDirty(true);
+		repaintRect(Pos(TEXTSTARTX + _vt->col * csize.width,
+						TEXTSTARTY + (hidden + _vt->row + 1) * (csize.height + PADDING)),
+					Size(csize.width,CURSOR_HEIGHT));
 	}
-	return false;
 }
 
 void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 	Size csize = g.getFont().getSize();
 	gpos_t y = TEXTSTARTY + start * (csize.height + PADDING);
 	char *buf = _vt->buffer + (_vt->firstLine + start) * _vt->cols * 2;
+	char *max = _vt->buffer + _vt->rows * HISTORY_SIZE * _vt->cols * 2;
 
-	// paint title-bar?
-	if(start == 0) {
-		paintRow(g,csize.width,csize.height,_vt->titleBar,y);
-		buf += _vt->cols * 2;
-		y += csize.height + PADDING;
-		count--;
-	}
-
-	while(count-- > 0) {
+	while(count-- > 0 && buf < max) {
 		paintRow(g,csize.width,csize.height,buf,y);
+		/* clear cursor line */
+		g.setColor(BGCOLOR);
+		g.fillRect(TEXTSTARTX,y + csize.height + PADDING,getSize().width - TEXTSTARTX * 2,CURSOR_HEIGHT);
 		buf += _vt->cols * 2;
 		y += csize.height + PADDING;
 	}
@@ -223,17 +264,20 @@ void ShellControl::paintRow(Graphics &g,size_t cwidth,size_t cheight,char *buf,g
 	for(size_t j = 0; j < _vt->cols; j++) {
 		char c = *buf++;
 		uchar col = *buf++;
+
 		// color-change?
 		if(col != lastCol) {
 			lastCol = col;
 			g.setColor(COLORS[lastCol & 0xF]);
 		}
+
 		// draw background
 		if(lastCol >> 4 != WHITE) {
 			g.setColor(COLORS[lastCol >> 4]);
 			g.fillRect(x,y,cwidth,cheight + PADDING);
 			g.setColor(COLORS[lastCol & 0xF]);
 		}
+
 		// draw char
 		g.drawChar(x,y + PADDING,c);
 		x += cwidth;

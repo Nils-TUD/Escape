@@ -67,31 +67,37 @@ namespace gui {
 		 *
 		 * @param x the amount to scroll horizontally (negative for left, positive for right)
 		 * @param y the amount to scroll vertically (negative for up, positive for down)
+		 * @param update whether to request an update
 		 */
-		void scrollBy(int x,int y);
+		void scrollBy(int x,int y,bool update = true);
 		/**
 		 * Scrolls up/down by the given amount of pages
 		 *
 		 * @param x the pages in x-direction (negative for left, positive for right)
 		 * @param y the pages in y-direction (negative for up, positive for down)
+		 * @param update whether to request an update
 		 */
-		void scrollPages(int x,int y) {
-			scrollBy(x * SCROLL_FACTOR,y * SCROLL_FACTOR);
+		void scrollPages(int x,int y,bool update = true) {
+			scrollBy(x * SCROLL_FACTOR,y * SCROLL_FACTOR,update);
 		}
 
 		/**
 		 * Scrolls to the left
+		 *
+		 * @param update whether to request an update
 		 */
-		void scrollToTop() {
-			scrollBy(0,std::min(0,_ctrl->getPos().y));
+		void scrollToTop(bool update = true) {
+			scrollBy(0,std::min(0,_ctrl->getPos().y),update);
 		}
 		/**
 		 * Scrolls to the bottom
+		 *
+		 * @param update whether to request an update
 		 */
-		void scrollToBottom() {
+		void scrollToBottom(bool update = true) {
 			Size visible = getVisible();
 			Size max = visible - _ctrl->getSize();
-			scrollBy(0,_ctrl->getPos().y - max.height);
+			scrollBy(0,_ctrl->getPos().y - max.height,update);
 		}
 
 		virtual bool layout() {

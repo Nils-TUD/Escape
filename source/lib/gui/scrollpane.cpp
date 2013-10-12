@@ -48,7 +48,7 @@ namespace gui {
 			_ctrl->moveTo(newPos);
 	}
 
-	void ScrollPane::scrollBy(int x,int y) {
+	void ScrollPane::scrollBy(int x,int y,bool update) {
 		Graphics *g = getGraphics();
 		Size visible = getVisible();
 		Pos cpos = _ctrl->getPos();
@@ -59,13 +59,13 @@ namespace gui {
 				x = max(cpos.x,x);
 				_ctrl->moveTo(Pos(cpos.x - x,cpos.y));
 				if(-x >= (int)visible.width)
-					repaint();
+					repaint(update);
 				else {
 					// move cols right and repaint the first few cols
 					g->moveCols(0,0,visible.width + x,visible.height,x);
-					repaintRect(Pos(0,0),Size(-x,visible.height));
+					repaintRect(Pos(0,0),Size(-x,visible.height),update);
 					makeDirty(true);
-					repaintRect(Pos(0,visible.height),Size(getSize().width,BAR_SIZE));
+					repaintRect(Pos(0,visible.height),Size(getSize().width,BAR_SIZE),update);
 				}
 			}
 			// scroll right, i.e. move content left
@@ -73,13 +73,13 @@ namespace gui {
 				x = min(cpos.x - minX,x);
 				_ctrl->moveTo(Pos(cpos.x - x,cpos.y));
 				if(x >= (int)visible.width)
-					repaint();
+					repaint(update);
 				else {
 					// move cols left and repaint the last few cols
 					g->moveCols(x,0,(gsize_t)(visible.width - x),visible.height,x);
-					repaintRect(Pos(visible.width - x,0),Size(x,visible.height));
+					repaintRect(Pos(visible.width - x,0),Size(x,visible.height),update);
 					makeDirty(true);
-					repaintRect(Pos(0,visible.height),Size(getSize().width,BAR_SIZE));
+					repaintRect(Pos(0,visible.height),Size(getSize().width,BAR_SIZE),update);
 				}
 			}
 		}
@@ -90,7 +90,7 @@ namespace gui {
 				y = max(cpos.y,y);
 				_ctrl->moveTo(Pos(cpos.x,cpos.y - y));
 				if(-y >= (int)visible.height)
-					repaint();
+					repaint(update);
 				else {
 					// move rows down and repaint the first few rows
 					g->moveRows(0,0,visible.width,visible.height + y,y);
@@ -104,13 +104,13 @@ namespace gui {
 				y = min(cpos.y - minY,y);
 				_ctrl->moveTo(Pos(cpos.x,cpos.y - y));
 				if(y >= (int)visible.height)
-					repaint();
+					repaint(update);
 				else {
 					// move rows up and repaint the last few rows
 					g->moveRows(0,y,visible.width,visible.height - y,y);
-					repaintRect(Pos(0,visible.height - y),Size(visible.width,y));
+					repaintRect(Pos(0,visible.height - y),Size(visible.width,y),update);
 					makeDirty(true);
-					repaintRect(Pos(visible.width,0),Size(BAR_SIZE,getSize().height));
+					repaintRect(Pos(visible.width,0),Size(BAR_SIZE,getSize().height),update);
 				}
 			}
 		}

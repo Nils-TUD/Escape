@@ -39,6 +39,8 @@
 
 #define GUI_SHELL_LOCK		0x4129927
 #define MAX_VTERM_NAME_LEN	10
+#define DEF_COLS			80
+#define DEF_ROWS			25
 
 using namespace gui;
 using namespace std;
@@ -153,19 +155,17 @@ static int guiProc(const char *oldterm) {
 		error("Unable to set signal-handler");
 
 	// now start GUI
-	Font font;
 	Application *app = Application::create(oldterm);
-	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100),
-			Size(font.getSize().width * DEF_COLS + 2,font.getSize().height * DEF_ROWS + 4));
+	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100));
 	shared_ptr<Panel> root = w->getRootPanel();
 	root->getTheme().setPadding(0);
 	shared_ptr<ShellControl> sh = make_control<ShellControl>();
-	gt = new GUITerm(sid,sh);
+	gt = new GUITerm(sid,sh,DEF_COLS,DEF_ROWS);
 	if(startthread(termThread,gt) < 0)
 		error("Unable to start term-thread");
 	root->setLayout(make_layout<BorderLayout>());
 	root->add(make_control<ScrollPane>(sh),BorderLayout::CENTER);
-	w->show();
+	w->show(true);
 	w->requestFocus(sh.get());
 	app->addWindow(w);
 	int res = app->run();

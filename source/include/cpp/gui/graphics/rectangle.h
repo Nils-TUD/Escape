@@ -25,7 +25,14 @@
 #include <iostream>
 
 namespace gui {
+	class Rectangle;
+
+	Rectangle unify(const Rectangle &r1,const Rectangle &r2);
+	Rectangle intersection(const Rectangle &r1,const Rectangle &r2);
+
 	class Rectangle {
+		friend Rectangle unify(const Rectangle &r1,const Rectangle &r2);
+
 	public:
 		explicit Rectangle() : _pos(), _size() {
 		}
@@ -63,6 +70,4 @@ namespace gui {
 		Pos _pos;
 		Size _size;
 	};
-
-	Rectangle intersection(const Rectangle &r1,const Rectangle &r2);
 }

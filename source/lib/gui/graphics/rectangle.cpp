@@ -20,8 +20,19 @@
 #include <esc/common.h>
 #include <esc/rect.h>
 #include <gui/graphics/rectangle.h>
+#include <algorithm>
 
 namespace gui {
+	Rectangle unify(const Rectangle &r1,const Rectangle &r2) {
+		Rectangle res = r1;
+		int x = r1._pos.x, y = r1._pos.y;
+		res._pos.x = std::min(r1._pos.x,r2._pos.x);
+		res._pos.y = std::min(r1._pos.y,r2._pos.y);
+		res._size.width = std::max(x + r1._size.width,r2._pos.x + r2._size.width) - r1._pos.x;
+		res._size.height = std::max(y + r1._size.height,r2._pos.y + r2._size.height) - r1._pos.y;
+		return res;
+	}
+
 	Rectangle intersection(const Rectangle &r1,const Rectangle &r2) {
 		sRectangle sr1,sr2,res;
 		sr1.x = r1.getPos().x;

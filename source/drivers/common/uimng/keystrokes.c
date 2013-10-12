@@ -41,7 +41,7 @@
 #define LOGIN_PROG		"/bin/login"
 
 #define WINMNG_PROG		"/sbin/winmng"
-#define DESKTOP_PROG	"/bin/desktop"
+#define GLOGIN_PROG	"/bin/glogin"
 
 #define TUI_DEF_COLS	"100"
 #define TUI_DEF_ROWS	"37"
@@ -143,5 +143,5 @@ void keys_createTextConsole(void) {
 }
 
 void keys_createGUIConsole(void) {
-	keys_createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,DESKTOP_PROG);
+	keys_createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,GLOGIN_PROG);
 }

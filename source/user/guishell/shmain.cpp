@@ -96,9 +96,7 @@ int main(int argc,char **argv) {
 
 	// set term as env-variable
 	char *oldterm = strdup(getenv("TERM"));
-	char tmppath[SSTRLEN("guiterm") + 12];
-	snprintf(tmppath,MAX_PATH_LEN + 1,"guiterm%zu",no);
-	setenv("TERM",tmppath);
+	setenv("TERM",drvName);
 
 	// start the gui and the device in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.

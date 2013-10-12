@@ -56,7 +56,8 @@ void keys_init(void) {
 		error("Unable to create keystrokes lock");
 }
 
-static void keys_createConsole(const char *mng,const char *cols,const char *rows,const char *login) {
+static void keys_createConsole(const char *mng,const char *cols,const char *rows,const char *login,
+							   const char *termVar) {
 	char name[SSTRLEN("ui") + 11];
 	char path[SSTRLEN("/dev/ui") + 11];
 
@@ -98,7 +99,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 			close(i);
 
 		/* set env-var for childs */
-		setenv("TERM",path);
+		setenv(termVar,path);
 
 		const char *args[] = {login,NULL};
 		exec(login,args);
@@ -139,9 +140,9 @@ void keys_enterDebugger(void) {
 }
 
 void keys_createTextConsole(void) {
-	keys_createConsole(VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG);
+	keys_createConsole(VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG,"TERM");
 }
 
 void keys_createGUIConsole(void) {
-	keys_createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,GLOGIN_PROG);
+	keys_createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,GLOGIN_PROG,"WINMNG");
 }

@@ -47,7 +47,7 @@ namespace gui {
 			throw app_error("Unable to create queue lock");
 
 		if(winmng == NULL)
-			winmng = getenv("TERM");
+			winmng = getenv("WINMNG");
 
 		_winFd = open(winmng,IO_MSGS);
 		if(_winFd < 0)

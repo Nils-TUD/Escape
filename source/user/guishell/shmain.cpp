@@ -45,7 +45,7 @@
 using namespace gui;
 using namespace std;
 
-static int guiProc(const char *oldterm);
+static int guiProc(void);
 static int termThread(void *arg);
 static int shellMain(void);
 
@@ -92,13 +92,12 @@ int main(int argc,char **argv) {
 	close(sid);
 
 	// set term as env-variable
-	char *oldterm = strdup(getenv("TERM"));
 	setenv("TERM",drvName);
 
 	// start the gui and the device in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.
 	if((childPid = fork()) == 0)
-		return guiProc(oldterm);
+		return guiProc();
 	else if(childPid < 0)
 		error("fork failed");
 
@@ -138,7 +137,7 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static int guiProc(const char *oldterm) {
+static int guiProc(void) {
 	// re-register device
 	int sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
 	unlockg(GUI_SHELL_LOCK);
@@ -150,7 +149,7 @@ static int guiProc(const char *oldterm) {
 		error("Unable to set signal-handler");
 
 	// now start GUI
-	Application *app = Application::create(oldterm);
+	Application *app = Application::create(getenv("WINMNG"));
 	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100));
 	shared_ptr<Panel> root = w->getRootPanel();
 	root->getTheme().setPadding(0);

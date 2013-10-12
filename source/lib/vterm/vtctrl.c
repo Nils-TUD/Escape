@@ -85,6 +85,7 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;
+	vt->screenBackup = NULL;
 	vt->buffer = (char*)malloc(vt->rows * HISTORY_SIZE * vt->cols * 2);
 	if(vt->buffer == NULL) {
 		printe("Unable to allocate mem for vterm-buffer");

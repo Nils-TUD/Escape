@@ -383,7 +383,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
-		if(EXPECT_FALSE(closed)) {
+		if(EXPECT_FALSE(closed || !isAlive())) {
 			SpinLock::release(&waitLock);
 			return -EDESTROYED;
 		}

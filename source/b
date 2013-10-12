@@ -43,6 +43,13 @@ else
 	exit 1
 fi
 
+# determine linktype
+if [ "$ESC_LINKTYPE" != "static" ] && [ "$ESC_TARGET" = "i586" ]; then
+	ESC_LINKTYPE=dynamic
+else
+	ESC_LINKTYPE=static
+fi
+
 # don't change anything below!
 cross="$ESC_TARGET-elf-escape"
 crossdir="/opt/escape-cross-$ESC_TARGET"
@@ -161,7 +168,7 @@ case "$cmd" in
 		;;
 esac
 
-echo "Working with $ESC_TARGET in $ESC_BUILD mode"
+echo "Working with $ESC_TARGET in $ESC_BUILD mode, using $ESC_LINKTYPE linking"
 
 if $dobuild; then
 	echo "Building Escape with $cpus jobs..."

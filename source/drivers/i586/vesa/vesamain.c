@@ -44,7 +44,7 @@ static sScreenMode *modes;
 
 static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int type,bool switchMode) {
 	assert(type == VID_MODE_TYPE_TUI || type == VID_MODE_TYPE_GUI);
-	sVbeModeInfo *minfo = NULL;
+	sScreenMode *minfo = NULL;
 	if(mid >= 0) {
 		minfo = vbe_getModeInfo(modes[mid].id);
 		if(minfo == NULL)
@@ -70,7 +70,7 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int ty
 
 		/* set this mode */
 		if(switchMode)
-			res = vbe_setMode(scr->mode->modeNo);
+			res = vbe_setMode(scr->mode->id);
 
 		/* join shared memory */
 		if(res == 0) {
@@ -80,7 +80,7 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int ty
 				return fd;
 			}
 			size_t size = type == VID_MODE_TYPE_TUI ? modes[mid].cols * modes[mid].rows * 2 :
-				(size_t)(minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8));
+				(size_t)(minfo->width * minfo->height * (minfo->bitsPerPixel / 8));
 			client->shm = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 			close(fd);
 			if(client->shm == NULL) {
@@ -115,8 +115,8 @@ static int vesacli_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t wid
 		}
 	}
 	else {
-		if((gpos_t)(x + width) < x || x + width > scr->mode->xResolution ||
-			(gpos_t)(y + height) < y || y + height > scr->mode->yResolution)
+		if((gpos_t)(x + width) < x || x + width > scr->mode->width ||
+			(gpos_t)(y + height) < y || y + height > scr->mode->height)
 			return -EINVAL;
 
 		vesa_update(scr,client->shm,x,y,width,height);

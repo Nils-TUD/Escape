@@ -27,13 +27,13 @@ typedef struct {
 	uint8_t *frmbuf;
 	uint8_t *whOnBlCache;
 	uint8_t *content;
-	sVbeModeInfo *mode;
+	sScreenMode *mode;
 	uint8_t cols;
 	uint8_t rows;
 	uint8_t lastCol;
 	uint8_t lastRow;
 } sVESAScreen;
 
-sVESAScreen *vesascr_request(sVbeModeInfo *minfo);
+sVESAScreen *vesascr_request(sScreenMode *minfo);
 void vesascr_reset(sVESAScreen *scr,int type);
 void vesascr_release(sVESAScreen *scr);

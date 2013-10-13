@@ -55,10 +55,11 @@ typedef struct {
  * @param uifd the uimanager fd
  * @param width the desired screen width
  * @param height the desired screen height
+ * @param bpp the desired bits per pixel
  * @param shmname the shared memory name
  * @return the mode id on success
  */
-int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname);
+int win_init(int sid,int uifd,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname);
 
 /**
  * @return the current mode

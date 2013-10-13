@@ -57,7 +57,7 @@ static int vesascr_initWhOnBl(sVESAScreen *scr) {
 	return 0;
 }
 
-sVESAScreen *vesascr_request(sVbeModeInfo *minfo) {
+sVESAScreen *vesascr_request(sScreenMode *minfo) {
 	if(screens == NULL && (screens = sll_create()) == NULL)
 		return NULL;
 
@@ -65,7 +65,7 @@ sVESAScreen *vesascr_request(sVbeModeInfo *minfo) {
 	sVESAScreen *scr = NULL;
 	for(sSLNode *n = sll_begin(screens); n != NULL; n = n->next) {
 		scr = (sVESAScreen*)n->data;
-		if(scr->mode->modeNo == minfo->modeNo) {
+		if(scr->mode->id == minfo->id) {
 			scr->refs++;
 			return scr;
 		}
@@ -74,9 +74,9 @@ sVESAScreen *vesascr_request(sVbeModeInfo *minfo) {
 	/* ok, create a new one */
 	scr = (sVESAScreen*)malloc(sizeof(sVESAScreen));
 	scr->refs = 1;
-	scr->cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
+	scr->cols = minfo->width / (FONT_WIDTH + PAD * 2);
 	/* leave at least one pixel free for the cursor */
-	scr->rows = (minfo->yResolution - 1) / (FONT_HEIGHT + PAD * 2);
+	scr->rows = (minfo->height - 1) / (FONT_HEIGHT + PAD * 2);
 	scr->mode = minfo;
 	if(!sll_append(screens,scr)) {
 		free(scr);
@@ -84,8 +84,8 @@ sVESAScreen *vesascr_request(sVbeModeInfo *minfo) {
 	}
 
 	/* map framebuffer */
-	size_t size = minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8);
-	uintptr_t phys = minfo->physBasePtr;
+	size_t size = minfo->width * minfo->height * (minfo->bitsPerPixel / 8);
+	uintptr_t phys = minfo->physaddr;
 	scr->frmbuf = regaddphys(&phys,size,0);
 	if(scr->frmbuf == NULL) {
 		sll_removeFirstWith(screens,scr);
@@ -111,7 +111,7 @@ void vesascr_reset(sVESAScreen *scr,int type) {
 	scr->lastCol = scr->cols;
 	scr->lastRow = scr->rows;
 	memclear(scr->frmbuf,
-		scr->mode->xResolution * scr->mode->yResolution * (scr->mode->bitsPerPixel / 8));
+		scr->mode->width * scr->mode->height * (scr->mode->bitsPerPixel / 8));
 	if(type == VID_MODE_TYPE_TUI) {
 		for(int y = 0; y < scr->rows; y++) {
 			for(int x = 0; x < scr->cols; x++) {

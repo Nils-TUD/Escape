@@ -25,8 +25,6 @@
 
 typedef uint32_t tColor;
 
-typedef void (*fSetPixel)(sVESAScreen *scr,gpos_t x,gpos_t y,tColor color);
-
 void vesa_init(void);
 void vesa_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
 void vesa_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);

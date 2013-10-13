@@ -29,14 +29,16 @@ void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	uint8_t *data = (uint8_t*)bmp->data;
 	gpos_t w = bmp->infoHeader->width, h = bmp->infoHeader->height;
 	gpos_t cx,cy;
+	size_t bpp = scr->mode->bitsPerPixel / 8;
 	/* we assume RGB 24bit here */
 	assert(bmp->infoHeader->compression == BI_RGB);
 	assert(bmp->infoHeader->bitCount == 24);
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w; cx++) {
-			uint32_t col = data[2] << 16 | data[1] << 8 | data[0];
-			if(col != TRANSPARENCY)
-				func(scr,cx + x,y + (h - cy - 1),col);
+			if((data[2] << 16 | data[1] << 8 | data[0]) != TRANSPARENCY) {
+				uint8_t *pos = scr->frmbuf + ((y + (h - cy - 1)) * scr->mode->width + cx + x) * bpp;
+				func(scr->mode,pos,data);
+			}
 			data += 3;
 		}
 		/* lines are 4-byte aligned */

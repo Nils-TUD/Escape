@@ -39,7 +39,6 @@
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
 #define ABS(a)		((a) < 0 ? -(a) : (a))
 
-static int win_findMode(gsize_t width,gsize_t height,sScreenMode *modePtr);
 static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height);
 static void win_destroyBuf(sWindow *win);
 static gwinid_t win_getTop(void);
@@ -65,7 +64,7 @@ static size_t activeWindow = WINDOW_COUNT;
 static size_t topWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
-int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname) {
+int win_init(int sid,int uifd,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
 	drvId = sid;
 	uimng = uifd;
 
@@ -74,7 +73,7 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname) 
 		windows[i].id = WINID_UNUSED;
 
 	/* find desired mode */
-	if(win_findMode(width,height,&mode) < 0)
+	if(screen_findGraphicsMode(uifd,width,height,bpp,&mode) < 0)
 		error("Unable to find suitable mode");
 
 	/* create shm */
@@ -85,42 +84,8 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname) 
 	shmem = (uint8_t*)mmap(NULL,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	close(fd);
 	if(shmem == NULL)
-		error("Unable to join shared memory '%s'",shmname);
+		error("Unable to map shared memory '%s'",shmname);
 	return mode.id;
-}
-
-static int win_findMode(gsize_t width,gsize_t height,sScreenMode *modePtr) {
-	ssize_t i,count,res;
-	size_t bestmode;
-	uint bestdiff = UINT_MAX;
-	sScreenMode *modes;
-
-	/* get all modes */
-	count = screen_getModeCount(uimng);
-	if(count < 0)
-		return count;
-	modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
-	if(!modes)
-		return -ENOMEM;
-	if((res = screen_getModes(uimng,modes,count)) < 0) {
-		free(modes);
-		return res;
-	}
-
-	/* search for the best matching mode */
-	bestmode = count;
-	for(i = 0; i < count; i++) {
-		if(modes[i].type & VID_MODE_TYPE_GUI) {
-			uint pixdiff = ABS((int)(modes[i].width * modes[i].height) - (int)(width * height));
-			if(pixdiff < bestdiff) {
-				bestmode = i;
-				bestdiff = pixdiff;
-			}
-		}
-	}
-	memcpy(modePtr,modes + bestmode,sizeof(sScreenMode));
-	free(modes);
-	return 0;
 }
 
 const sScreenMode *win_getMode(void) {

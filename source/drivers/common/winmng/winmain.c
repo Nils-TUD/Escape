@@ -35,6 +35,8 @@
 #include "listener.h"
 #include "infodev.h"
 
+#define DEF_BPP		16
+
 static sMsg msg;
 static gsize_t screenWidth;
 static gsize_t screenHeight;
@@ -69,7 +71,7 @@ int main(int argc,char *argv[]) {
 	inputData.uimngId = uimngId;
 	inputData.winmng = path;
 	inputData.shmname = argv[3];
-	inputData.mode = win_init(drvId,uimng,atoi(argv[1]),atoi(argv[2]),argv[3]);
+	inputData.mode = win_init(drvId,uimng,atoi(argv[1]),atoi(argv[2]),DEF_BPP,argv[3]);
 	if(inputData.mode < 0)
 		return EXIT_FAILURE;
 

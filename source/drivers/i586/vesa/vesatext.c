@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <vbe/vbe.h>
 #include <string.h>
 
 #include "vesatext.h"
@@ -27,15 +28,10 @@
 #define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
-typedef uint8_t *(*fSetPixel)(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color);
-
 static void vesat_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
 static void vesat_drawCharLoop16(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t *fg,uint8_t *bg);
 static void vesat_drawCharLoop24(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t *fg,uint8_t *bg);
 static void vesat_drawCharLoop32(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t *fg,uint8_t *bg);
-static uint8_t *vesat_setPixel16(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color);
-static uint8_t *vesat_setPixel24(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color);
-static uint8_t *vesat_setPixel32(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color);
 static void vesat_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color);
 
 static uint8_t colors[][3] = {
@@ -57,16 +53,8 @@ static uint8_t colors[][3] = {
 	/* LIWHITE */ {0xFF,0xFF,0xFF},
 };
 
-static fSetPixel setPixel[] = {
-	/*  0 bpp */	NULL,
-	/*  8 bpp */	NULL,
-	/* 16 bpp */	vesat_setPixel16,
-	/* 24 bpp */	vesat_setPixel24,
-	/* 32 bpp */	vesat_setPixel32
-};
-
 uint8_t *vesat_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color) {
-	return setPixel[scr->mode->bitsPerPixel / 8](scr,vid,color);
+	return vbe_setPixelAt(scr->mode,vid,color);
 }
 
 uint8_t *vesat_getColor(tColor col) {
@@ -98,7 +86,7 @@ void vesat_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row) {
 
 static void vesat_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
 	gpos_t y;
-	gsize_t rx = scr->mode->xResolution;
+	gsize_t rx = scr->mode->width;
 	size_t pxSize = scr->mode->bitsPerPixel / 8;
 	uint8_t *vid;
 	/* don't print the same again ;) */
@@ -139,7 +127,7 @@ static void vesat_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint
 static void vesat_drawCharLoop16(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t *fg,uint8_t *bg) {
 	int x,y;
 	uint8_t *vidwork;
-	gsize_t rx = scr->mode->xResolution;
+	gsize_t rx = scr->mode->width;
 	uint8_t rms = scr->mode->redMaskSize;
 	uint8_t gms = scr->mode->greenMaskSize;
 	uint8_t bms = scr->mode->blueMaskSize;
@@ -177,7 +165,7 @@ static void vesat_drawCharLoop16(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t
 static void vesat_drawCharLoop24(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t *fg,uint8_t *bg) {
 	int x,y;
 	uint8_t *vidwork;
-	gsize_t rx = scr->mode->xResolution;
+	gsize_t rx = scr->mode->width;
 	uint8_t rms = scr->mode->redMaskSize;
 	uint8_t gms = scr->mode->greenMaskSize;
 	uint8_t bms = scr->mode->blueMaskSize;
@@ -217,7 +205,7 @@ static void vesat_drawCharLoop24(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t
 static void vesat_drawCharLoop32(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t *fg,uint8_t *bg) {
 	int x,y;
 	uint8_t *vidwork;
-	gsize_t rx = scr->mode->xResolution;
+	gsize_t rx = scr->mode->width;
 	uint8_t rms = scr->mode->redMaskSize;
 	uint8_t gms = scr->mode->greenMaskSize;
 	uint8_t bms = scr->mode->blueMaskSize;
@@ -252,45 +240,10 @@ static void vesat_drawCharLoop32(sVESAScreen *scr,uint8_t *vid,uint8_t c,uint8_t
 	}
 }
 
-static uint8_t *vesat_setPixel16(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color) {
-	uint8_t red = color[0] >> (8 - scr->mode->redMaskSize);
-	uint8_t green = color[1] >> (8 - scr->mode->greenMaskSize);
-	uint8_t blue = color[2] >> (8 - scr->mode->blueMaskSize);
-	uint16_t val = (red << scr->mode->redFieldPosition) |
-			(green << scr->mode->greenFieldPosition) |
-			(blue << scr->mode->blueFieldPosition);
-	*((uint16_t*)vidwork) = val;
-	return vidwork + 2;
-}
-
-static uint8_t *vesat_setPixel24(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color) {
-	uint8_t red = color[0] >> (8 - scr->mode->redMaskSize);
-	uint8_t green = color[1] >> (8 - scr->mode->greenMaskSize);
-	uint8_t blue = color[2] >> (8 - scr->mode->blueMaskSize);
-	uint32_t val = (red << scr->mode->redFieldPosition) |
-			(green << scr->mode->greenFieldPosition) |
-			(blue << scr->mode->blueFieldPosition);
-	vidwork[2] = val >> 16;
-	vidwork[1] = val >> 8;
-	vidwork[0] = val & 0xFF;
-	return vidwork + 3;
-}
-
-static uint8_t *vesat_setPixel32(sVESAScreen *scr,uint8_t *vidwork,uint8_t *color) {
-	uint8_t red = color[0] >> (8 - scr->mode->redMaskSize);
-	uint8_t green = color[1] >> (8 - scr->mode->greenMaskSize);
-	uint8_t blue = color[2] >> (8 - scr->mode->blueMaskSize);
-	uint32_t val = (red << scr->mode->redFieldPosition) |
-			(green << scr->mode->greenFieldPosition) |
-			(blue << scr->mode->blueFieldPosition);
-	*((uint32_t*)vidwork) = val;
-	return vidwork + 4;
-}
-
 static void vesat_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color) {
-	gsize_t xres = scr->mode->xResolution;
+	gsize_t xres = scr->mode->width;
 	gsize_t pxSize = scr->mode->bitsPerPixel / 8;
-	fSetPixel pxFunc = setPixel[pxSize];
+	fSetPixel pxFunc = vbe_getPixelFunc(scr->mode);
 	gpos_t x,y = FONT_HEIGHT + PAD;
 	uint8_t *vid = scr->frmbuf +
 			row * (FONT_HEIGHT + PAD * 2) * xres * pxSize +
@@ -298,6 +251,6 @@ static void vesat_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t colo
 	uint8_t *vidwork = vid + y * xres * pxSize;
 	for(x = 0; x < CURSOR_LEN; x++) {
 		uint8_t *colPtr = colors[color];
-		vidwork = pxFunc(scr,vidwork,colPtr);
+		vidwork = pxFunc(scr->mode,vidwork,colPtr);
 	}
 }

@@ -81,6 +81,8 @@ typedef enum {
 	memYUV	= 7,				/* Direct color YUV memory model */
 } eMemModel;
 
+typedef uint8_t *(*fSetPixel)(sScreenMode *mode,uint8_t *vidwork,uint8_t *color);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,7 +96,7 @@ void vbe_init(void);
  * @param mode the mode-number
  * @return information about the given mode (or NULL if not found)
  */
-sVbeModeInfo *vbe_getModeInfo(uint mode);
+sScreenMode *vbe_getModeInfo(int mode);
 
 /**
  * Allocates an array of sVTMode-objects and fills them with the supported modes. If n is 0, only
@@ -114,16 +116,6 @@ sScreenMode *vbe_collectModes(size_t n,size_t *count);
 void vbe_freeModes(sScreenMode *modes);
 
 /**
- * Tries to find the most suitable mode for the given settings
- *
- * @param resX the x-resolution
- * @param resY the y-resolution
- * @param bpp bits per pixel
- * @return the mode or 0 if no matching mode found
- */
-uint vbe_findMode(uint resX,uint resY,uint bpp);
-
-/**
  * @return the current mode-number
  */
 uint vbe_getMode(void);
@@ -135,6 +127,33 @@ uint vbe_getMode(void);
  * @return 0 on success
  */
 int vbe_setMode(uint mode);
+
+/**
+ * Sets a pixel with color <color> at position <x>,<y> in <frmbuf>.
+ *
+ * @param mode the screen mode
+ * @param frmbuf the framebuffer
+ * @param x the x-position
+ * @param y the y-position
+ * @param color the color (in the corresponding format)
+ */
+void vbe_setPixel(sScreenMode *mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color);
+
+/**
+ * Sets a pixel with color <color> at <pos> and returns the position of the next pixel.
+ *
+ * @param mode the screen mode
+ * @param pos the position in the framebuffer where to put the pixel
+ * @param color the color (in the corresponding format)
+ * @return the position of the next pixel
+ */
+uint8_t *vbe_setPixelAt(sScreenMode *mode,uint8_t *pos,uint8_t *color);
+
+/**
+ * @param mode the screen mode
+ * @return the function to put a pixel in the given mode
+ */
+fSetPixel vbe_getPixelFunc(sScreenMode *mode);
 
 #ifdef __cplusplus
 }

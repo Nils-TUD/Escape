@@ -222,6 +222,7 @@ typedef struct {
 	uchar greenFieldPosition;		/* Bit posn of lsb of green mask   */
 	uchar blueMaskSize;				/* Size of direct color blue mask  */
 	uchar blueFieldPosition;		/* Bit posn of lsb of blue mask    */
+	uintptr_t physaddr;
 	int mode;
 	int type;
 } sScreenMode;

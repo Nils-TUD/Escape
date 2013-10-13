@@ -28,6 +28,7 @@ extern "C" {
 
 int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor);
 int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode);
+int screen_findGraphicsMode(int fd,gsize_t width,gsize_t height,gcoldepth_t bpp,sScreenMode *mode);
 int screen_getMode(int fd,sScreenMode *mode);
 int screen_setMode(int fd,int type,int mode,const char *shm,bool switchMode);
 int screen_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height);

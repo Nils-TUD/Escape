@@ -38,7 +38,7 @@
 #define MAX_COLS				128
 
 static sScreenMode modes[] = {
-	{0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
+	{0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VIDEO_MEM,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
 };
 
 /* our state */

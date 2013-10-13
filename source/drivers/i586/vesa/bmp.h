@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <vbe/vbe.h>
 #include "vesa.h"
 
 /* compression-modes */

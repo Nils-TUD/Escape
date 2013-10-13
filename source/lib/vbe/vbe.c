@@ -33,7 +33,6 @@
 
 /* This is mostly borrowed from doc/vbecore.pdf */
 
-#define ABS(x)								((x) > 0 ? (x) : -(x))
 #define VM86_DATA_ADDR						0x80000
 #define MAX_MODE_COUNT						256
 /* for setting a mode: (VBE v2.0+) use linear (flat) frame buffer */
@@ -72,13 +71,11 @@ void vbe_init(void) {
 	vbe_detectModes();
 }
 
-sVbeModeInfo *vbe_getModeInfo(uint mode) {
-	sSLNode *n;
-	sVbeModeInfo *info;
-	for(n = sll_begin(modes); n != NULL; n = n->next) {
-		info = (sVbeModeInfo*)n->data;
-		if(info->modeNo == mode)
-			return info;
+sScreenMode *vbe_getModeInfo(int modeno) {
+	for(sSLNode *n = sll_begin(modes); n != NULL; n = n->next) {
+		sScreenMode *mode = (sScreenMode*)n->data;
+		if(mode->id == modeno)
+			return mode;
 	}
 	return NULL;
 }
@@ -91,23 +88,9 @@ sScreenMode *vbe_collectModes(size_t n,size_t *count) {
 		res = (sScreenMode*)malloc(sizeof(sScreenMode) * max);
 	*count = 0;
 	for(node = sll_begin(modes); (max == -1 || max > 0) && node != NULL ; node = node->next) {
-		sVbeModeInfo *info = (sVbeModeInfo*)node->data;
-		if(!vbe_isSupported(info))
-			continue;
+		sScreenMode *info = (sScreenMode*)node->data;
 		if(n) {
-			res[*count].id = info->modeNo;
-			res[*count].width = info->xResolution;
-			res[*count].height = info->yResolution;
-			res[*count].bitsPerPixel = info->bitsPerPixel;
-			res[*count].redMaskSize = info->redMaskSize;
-			res[*count].redFieldPosition = info->redFieldPosition;
-			res[*count].greenMaskSize = info->greenMaskSize;
-			res[*count].greenFieldPosition = info->greenFieldPosition;
-			res[*count].blueMaskSize = info->blueMaskSize;
-			res[*count].blueFieldPosition = info->blueFieldPosition;
-			/* a text mode wouldn't be supported (see above) */
-			res[*count].mode = VID_MODE_GRAPHICAL;
-			res[*count].type = VID_MODE_TYPE_GUI | VID_MODE_TYPE_TUI;
+			memcpy(res + *count,info,sizeof(sScreenMode));
 			max--;
 		}
 		(*count)++;
@@ -117,37 +100,6 @@ sScreenMode *vbe_collectModes(size_t n,size_t *count) {
 
 void vbe_freeModes(sScreenMode *m) {
 	free(m);
-}
-
-uint vbe_findMode(uint resX,uint resY,uint bpp) {
-	sSLNode *n;
-	sVbeModeInfo *info;
-	uint best = 0;
-	size_t pixdiff, bestpixdiff = ABS(320 * 200 - resX * resY);
-	size_t depthdiff, bestdepthdiff = 8 >= bpp ? 8 - bpp : (bpp - 8) * 2;
-	for(n = sll_begin(modes); n != NULL; n = n->next) {
-		info = (sVbeModeInfo*)n->data;
-		/* skip unsupported modes */
-		if(!vbe_isSupported(info))
-			continue;
-
-		/* exact match? */
-		if(info->xResolution == resX && info->yResolution == resY && info->bitsPerPixel == bpp)
-			return info->modeNo;
-
-		/* Otherwise, compare to the closest match so far, remember if best */
-		pixdiff = ABS(info->xResolution * info->yResolution - resX * resY);
-		if(info->bitsPerPixel >= bpp)
-			depthdiff = info->bitsPerPixel - bpp;
-		else
-			depthdiff = (bpp - info->bitsPerPixel) * 2;
-		if(bestpixdiff > pixdiff || (bestpixdiff == pixdiff && bestdepthdiff > depthdiff)) {
-			best = info->modeNo;
-			bestpixdiff = pixdiff;
-			bestdepthdiff = depthdiff;
-		}
-	}
-	return best;
 }
 
 uint vbe_getMode(void) {
@@ -238,7 +190,6 @@ static void vbe_detectModes(void) {
 	uint16_t *p;
 	size_t i;
 	sVbeModeInfo mode;
-	sVbeModeInfo *modeCpy;
 	FILE *f = fopen("/system/devices/vbe","w");
 	if(!f)
 		printe("Unable to open /system/devices/vbe for writing");
@@ -269,10 +220,25 @@ static void vbe_detectModes(void) {
 						mode.modeAttributes,
 						mode.physBasePtr);
 			}
-			modeCpy = (sVbeModeInfo*)malloc(sizeof(sVbeModeInfo));
-			if(modeCpy != NULL) {
-				memcpy(modeCpy,&mode,sizeof(sVbeModeInfo));
-				sll_append(modes,modeCpy);
+
+			if(vbe_isSupported(&mode)) {
+				sScreenMode *scrMode = (sScreenMode*)malloc(sizeof(sScreenMode));
+				if(scrMode != NULL) {
+					scrMode->id = mode.modeNo;
+					scrMode->width = mode.xResolution;
+					scrMode->height = mode.yResolution;
+					scrMode->bitsPerPixel = mode.bitsPerPixel;
+					scrMode->redMaskSize = mode.redMaskSize;
+					scrMode->redFieldPosition = mode.redFieldPosition;
+					scrMode->greenMaskSize = mode.greenMaskSize;
+					scrMode->greenFieldPosition = mode.greenFieldPosition;
+					scrMode->blueMaskSize = mode.blueMaskSize;
+					scrMode->blueFieldPosition = mode.blueFieldPosition;
+					scrMode->physaddr = mode.physBasePtr;
+					scrMode->mode = VID_MODE_GRAPHICAL;
+					scrMode->type = VID_MODE_TYPE_GUI | VID_MODE_TYPE_TUI;
+					sll_append(modes,scrMode);
+				}
 			}
 		}
 	}

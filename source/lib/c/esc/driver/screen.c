@@ -34,27 +34,32 @@ int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor) {
 	return send(fd,MSG_SCR_SETCURSOR,&msg,sizeof(msg));
 }
 
-int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode) {
-	ssize_t i,count,res;
-	size_t bestmode;
-	uint bestdiff = UINT_MAX;
-	sScreenMode *modes;
-
+static ssize_t screen_collectModes(int fd,sScreenMode **modes) {
 	/* get all modes */
-	count = screen_getModeCount(fd);
+	ssize_t res,count = screen_getModeCount(fd);
 	if(count < 0)
 		return count;
-	modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
-	if(!modes)
+	*modes = (sScreenMode*)malloc(count * sizeof(sScreenMode));
+	if(!*modes)
 		return -ENOMEM;
-	if((res = screen_getModes(fd,modes,count)) < 0) {
+	if((res = screen_getModes(fd,*modes,count)) < 0) {
 		free(modes);
 		return res;
 	}
+	return count;
+}
+
+int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode) {
+	size_t bestmode;
+	uint bestdiff = UINT_MAX;
+	sScreenMode *modes;
+	ssize_t count = screen_collectModes(fd,&modes);
+	if(count < 0)
+		return count;
 
 	/* search for the best matching mode */
 	bestmode = count;
-	for(i = 0; i < count; i++) {
+	for(ssize_t i = 0; i < count; i++) {
 		if(modes[i].type & VID_MODE_TYPE_TUI) {
 			uint pixdiff = ABS((int)(modes[i].rows * modes[i].cols) - (int)(cols * rows));
 			if(pixdiff < bestdiff) {
@@ -64,6 +69,42 @@ int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode) {
 		}
 	}
 	memcpy(mode,modes + bestmode,sizeof(sScreenMode));
+	free(modes);
+	return 0;
+}
+
+int screen_findGraphicsMode(int fd,gsize_t width,gsize_t height,gcoldepth_t bpp,sScreenMode *mode) {
+	sScreenMode *modes;
+	ssize_t count = screen_collectModes(fd,&modes);
+	if(count < 0)
+		return count;
+
+	/* search for the best matching mode */
+	uint best = 0;
+	size_t pixdiff, bestpixdiff = ABS(320 * 200 - width * height);
+	size_t depthdiff, bestdepthdiff = 8 >= bpp ? 8 - bpp : (bpp - 8) * 2;
+	for(ssize_t i = 0; i < count; i++) {
+		if(modes[i].type & VID_MODE_TYPE_GUI) {
+			/* exact match? */
+			if(modes[i].width == width && modes[i].height == height && modes[i].bitsPerPixel == bpp) {
+				best = i;
+				break;
+			}
+
+			/* Otherwise, compare to the closest match so far, remember if best */
+			pixdiff = ABS(modes[i].width * modes[i].height - width * height);
+			if(modes[i].bitsPerPixel >= bpp)
+				depthdiff = modes[i].bitsPerPixel - bpp;
+			else
+				depthdiff = (bpp - modes[i].bitsPerPixel) * 2;
+			if(bestpixdiff > pixdiff || (bestpixdiff == pixdiff && bestdepthdiff > depthdiff)) {
+				best = modes[i].id;
+				bestpixdiff = pixdiff;
+				bestdepthdiff = depthdiff;
+			}
+		}
+	}
+	memcpy(mode,modes + best,sizeof(sScreenMode));
 	free(modes);
 	return 0;
 }

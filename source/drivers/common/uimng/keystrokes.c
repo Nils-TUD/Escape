@@ -41,7 +41,7 @@
 #define LOGIN_PROG		"/bin/login"
 
 #define WINMNG_PROG		"/sbin/winmng"
-#define GLOGIN_PROG	"/bin/glogin"
+#define GLOGIN_PROG		"/bin/glogin"
 
 #define TUI_DEF_COLS	"100"
 #define TUI_DEF_ROWS	"37"

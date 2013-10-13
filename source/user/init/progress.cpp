@@ -141,7 +141,7 @@ bool Progress::connect() {
 		error("Unable to get modes");
 	for(ssize_t i = 0; i < modeCnt; ++i) {
 		if(modes[i].cols >= VGA_COLS && modes[i].rows >= VGA_ROWS) {
-			int fd = shm_open("init-vga",IO_READ | IO_WRITE | IO_CREATE,0666);
+			int fd = shm_open("init-vga",IO_READ | IO_WRITE | IO_CREATE,0644);
 			if(fd < 0)
 				error("Unable to open vga shm");
 			_shm = (char*)mmap(NULL,modes[i].cols * modes[i].rows * 2,0,PROT_READ | PROT_WRITE,

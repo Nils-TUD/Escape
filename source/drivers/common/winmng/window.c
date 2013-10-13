@@ -78,7 +78,7 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,const char *shmname) 
 		error("Unable to find suitable mode");
 
 	/* create shm */
-	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0666);
+	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0644);
 	if(fd < 0)
 		error("Unable to create shm file '%s'",shmname);
 	size_t screenSize = mode.width * mode.height * (mode.bitsPerPixel / 8);

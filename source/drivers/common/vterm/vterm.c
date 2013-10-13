@@ -145,7 +145,7 @@ sScreenMode *vt_getModes(sVTerm *vt,size_t n,size_t *count) {
 }
 
 static int vt_doSetMode(sVTerm *vt,const char *shmname,uint cols,uint rows,int mid) {
-	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0777);
+	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0644);
 	if(fd < 0)
 		return fd;
 	scrShm = mmap(NULL,cols * rows * 2,0,PROT_READ | PROT_WRITE,

@@ -112,7 +112,7 @@ int vbprintf(FILE *f,const char *fmt,va_list ap);
 int bback(FILE *file);
 int bgetc(FILE *f);
 char *bgets(FILE *f,char *str,size_t size);
-int breadn(FILE *f,int *num,size_t length,int c);
+int breadn(FILE *f,llong *num,size_t length,int c);
 int breads(FILE *f,size_t length,char *str);
 int vbscanf(FILE *f,const char *fmt,va_list ap);
 

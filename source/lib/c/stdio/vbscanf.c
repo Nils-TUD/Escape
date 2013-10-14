@@ -32,11 +32,10 @@
 
 int vbscanf(FILE *f,const char *fmt,va_list ap) {
 	char *str = NULL,c,rc = 0;
-	int *n,count = 0;
-	uint *u;
+	int count = 0;
 	int length;
+	int flags;
 	bool readFlags;
-	bool shortPtr;
 	bool discard;
 
 	while(1) {
@@ -58,7 +57,7 @@ int vbscanf(FILE *f,const char *fmt,va_list ap) {
 		READERR(count,bback(f));
 
 		/* read flags */
-		shortPtr = false;
+		flags = 0;
 		discard = false;
 		readFlags = true;
 		while(readFlags) {
@@ -68,7 +67,15 @@ int vbscanf(FILE *f,const char *fmt,va_list ap) {
 					fmt++;
 					break;
 				case 'h':
-					shortPtr = true;
+					flags |= FFL_SHORT;
+					fmt++;
+					break;
+				case 'l':
+					flags |= FFL_LONG;
+					fmt++;
+					break;
+				case 'L':
+					flags |= FFL_LONGLONG;
 					fmt++;
 					break;
 				default:
@@ -95,24 +102,19 @@ int vbscanf(FILE *f,const char *fmt,va_list ap) {
 			case 'X':
 			case 'u':
 			case 'd': {
-				int val = 0;
+				llong val = 0;
 				READERR(count,breadn(f,&val,length,c));
 				/* store value */
 				if(!discard) {
-					if(c == 'd') {
-						n = va_arg(ap, int*);
-						if(shortPtr)
-							*(short*)n = val;
-						else
-							*n = val;
-					}
-					else {
-						u = va_arg(ap, uint*);
-						if(shortPtr)
-							*(ushort*)u = val;
-						else
-							*u = val;
-					}
+					void *n = va_arg(ap, void*);
+					if(flags & FFL_SHORT)
+						*(short*)n = val;
+					else if(flags & FFL_LONG)
+						*(long*)n = val;
+					else if(flags & FFL_LONGLONG)
+						*(llong*)n = val;
+					else
+						*(int*)n = val;
 					count++;
 				}
 			}

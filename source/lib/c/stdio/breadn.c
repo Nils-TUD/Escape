@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <ctype.h>
 
-int breadn(FILE *f,int *num,size_t length,int c) {
+int breadn(FILE *f,llong *num,size_t length,int c) {
 	bool neg = false;
-	int val = 0;
+	llong val = 0;
 	size_t digits = 0;
 	uint base;
 	/* handle '-' */

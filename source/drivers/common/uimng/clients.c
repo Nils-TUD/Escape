@@ -21,18 +21,29 @@
 #include <esc/driver/screen.h>
 #include <esc/driver.h>
 #include <esc/sllist.h>
+#include <esc/mem.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
 
 #include "clients.h"
+#include "header.h"
 
 #define MAX_CLIENT_FDS					64
 
 static sClient *clients[MAX_CLIENT_FDS];
-static sSLList *clientList;
-static int active = MAX_CLIENT_FDS;
-static int activeIdx = MAX_CLIENT_FDS;
+static sClient *idx2cli[MAX_CLIENTS];
+static size_t cliCount = 0;
+static size_t active = MAX_CLIENT_FDS;
+static size_t activeIdx = MAX_CLIENT_FDS;
+
+bool cli_isActive(size_t idx) {
+	return activeIdx == idx;
+}
+
+bool cli_exists(size_t idx) {
+	return idx2cli[idx] != NULL;
+}
 
 sClient *cli_getActive(void) {
 	if(active != MAX_CLIENT_FDS)
@@ -43,6 +54,10 @@ sClient *cli_getActive(void) {
 sClient *cli_get(int id) {
 	assert(clients[id] != NULL);
 	return clients[id];
+}
+
+size_t cli_getCount(void) {
+	return cliCount;
 }
 
 void cli_reactivate(int oldMode) {
@@ -57,20 +72,23 @@ void cli_reactivate(int oldMode) {
 
 	gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
 	gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
+	header_rebuild(cli,NULL,NULL);
 	if(screen_update(cli->screenFd,0,0,w,h) < 0)
 		printe("Screen update failed");
 }
 
 static void cli_switch(int incr) {
-	int oldActive = active;
+	size_t oldActive = active;
 	int oldMode = active == MAX_CLIENT_FDS ? -1 : clients[active]->screenMode->id;
 	if(activeIdx == MAX_CLIENT_FDS)
 		activeIdx = 0;
-	else
-		activeIdx = (activeIdx + incr) % sll_length(clientList);
-
-	if(sll_length(clientList) > 0)
-		active = ((sClient*)sll_get(clientList,activeIdx))->id;
+	if(cliCount > 0) {
+		do {
+			activeIdx = (activeIdx + incr) % MAX_CLIENTS;
+		}
+		while(idx2cli[activeIdx] == NULL);
+		active = idx2cli[activeIdx]->id;
+	}
 	else
 		activeIdx = active = MAX_CLIENT_FDS;
 
@@ -84,6 +102,16 @@ void cli_next(void) {
 
 void cli_prev(void) {
 	cli_switch(-1);
+}
+
+void cli_switchTo(size_t idx) {
+	assert(idx < MAX_CLIENTS);
+	if(idx != activeIdx && idx2cli[idx] != NULL) {
+		int oldMode = active == MAX_CLIENT_FDS ? -1 : clients[active]->screenMode->id;
+		activeIdx = idx;
+		active = idx2cli[activeIdx]->id;
+		cli_reactivate(oldMode);
+	}
 }
 
 void cli_send(const void *msg,size_t size) {
@@ -130,12 +158,15 @@ int cli_add(int id,const char *keymap) {
 	clients[id]->id = id;
 	clients[id]->screen = NULL;
 	clients[id]->screenMode = NULL;
+	clients[id]->screenShm = NULL;
 	clients[id]->screenShmName = NULL;
 	clients[id]->screenFd = -1;
+	clients[id]->header = NULL;
 	clients[id]->cursor.x = 0;
 	clients[id]->cursor.y = 0;
 	clients[id]->cursor.cursor = CURSOR_DEFAULT;
 	clients[id]->type = VID_MODE_TYPE_TUI;
+	clients[id]->idx = -1;
 	return 0;
 }
 
@@ -144,32 +175,38 @@ int cli_attach(int id,int randid) {
 	sClient *cli;
 	if((res = cli_getByRandId(randid,&cli)) != 0)
 		return res;
-
-	if(clientList == NULL && (clientList = sll_create()) == NULL)
-		return -ENOMEM;
+	if(cliCount >= MAX_CLIENTS)
+		return -EBUSY;
 
 	clients[id] = cli;
 	/* change id. we attached the event-channel and this one should receive them */
 	clients[id]->id = id;
 	active = id;
-	activeIdx = sll_length(clientList);
-	if(!sll_append(clientList,clients[id])) {
-		clients[id] = NULL;
-		return -ENOMEM;
+
+	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
+		if(idx2cli[i] == NULL) {
+			idx2cli[i] = cli;
+			cli->idx = i;
+			activeIdx = i;
+			cliCount++;
+			break;
+		}
 	}
 	return 0;
 }
 
 void cli_detach(int id) {
 	if(clients[id]) {
+		assert(idx2cli[clients[id]->idx] == clients[id]);
 		bool shouldSwitch = false;
-		if(activeIdx != MAX_CLIENT_FDS && sll_get(clientList,activeIdx) == clients[id]) {
+		if(activeIdx != MAX_CLIENT_FDS && idx2cli[activeIdx] == clients[id]) {
 			active = MAX_CLIENT_FDS;
 			activeIdx = MAX_CLIENT_FDS;
 			shouldSwitch = true;
 		}
-		sll_removeFirstWith(clientList,clients[id]);
+		idx2cli[clients[id]->idx] = NULL;
 		clients[id] = NULL;
+		cliCount--;
 		/* do that here because we need to remove us from the list first */
 		if(shouldSwitch)
 			cli_next();
@@ -184,6 +221,9 @@ void cli_remove(int id) {
 			clients[i] = NULL;
 	}
 	cli_detach(id);
+	if(cli->screenShm)
+		munmap(cli->screenShm);
+	free(cli->header);
 	free(cli->screenShmName);
 	close(cli->screenFd);
 	free(cli);

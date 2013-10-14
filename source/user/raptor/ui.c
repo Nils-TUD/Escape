@@ -105,18 +105,13 @@ void ui_init(uint cols,uint rows) {
 	if(uiid < 0)
 		error("Unable to get ui-id");
 
-	/* open shm */
-	int shmfd,id = 0;
+	/* create shm */
+	int res,id = 0;
 	do {
 		snprintf(shmname,sizeof(shmname),"raptor%d",++id);
-		shmfd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0666);
+		res = screen_createShm(&mode,(char**)&shm,shmname,VID_MODE_TYPE_TUI,0644);
 	}
-	while(shmfd < 0);
-
-	/* map it */
-	shm = mmap(NULL,WIDTH * HEIGHT * 2,0,PROT_READ | PROT_WRITE,MAP_SHARED,shmfd,0);
-	if(shm == NULL)
-		error("Unable to mmap shared memory");
+	while(res < 0);
 
 	/* set mode */
 	if(screen_setMode(uimng,VID_MODE_TYPE_TUI,mode.id,shmname,true) < 0)

@@ -21,8 +21,10 @@
 
 #include <esc/common.h>
 
-#include "vesascreen.h"
+#include "clients.h"
 
-void vesa_init(void);
-void vesa_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
-void vesa_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+void header_init(void);
+size_t header_getHeight(int type);
+size_t header_getSize(sScreenMode *mode,int type);
+bool header_update(sClient *cli,gsize_t *width,gsize_t *height);
+bool header_rebuild(sClient *cli,gsize_t *width,gsize_t *height);

@@ -1,4 +1,8 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg('sbin', target = 'uimng', source = env.Glob('*.c'))
+
+if env['ARCH'] == 'i586':
+	env.EscapeCProg('sbin', target = 'uimng', source = env.Glob('*.c'), LIBS = ['vbetext'])
+else:
+	env.EscapeCProg('sbin', target = 'uimng', source = env.Glob('*.c'))

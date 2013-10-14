@@ -141,12 +141,9 @@ bool Progress::connect() {
 		error("Unable to get modes");
 	for(ssize_t i = 0; i < modeCnt; ++i) {
 		if(modes[i].cols >= VGA_COLS && modes[i].rows >= VGA_ROWS) {
-			int fd = shm_open("init-vga",IO_READ | IO_WRITE | IO_CREATE,0644);
-			if(fd < 0)
-				error("Unable to open vga shm");
-			_shm = (char*)mmap(NULL,modes[i].cols * modes[i].rows * 2,0,PROT_READ | PROT_WRITE,
-				MAP_SHARED,fd,0);
-			close(fd);
+			int res = screen_createShm(modes + i,&_shm,"init-vga",VID_MODE_TYPE_TUI,0644);
+			if(res < 0)
+				error("Unable to create vga shm");
 			if(screen_setMode(_fd,VID_MODE_TYPE_TUI,modes[i].id,"init-vga",true) < 0)
 				error("Unable to set mode");
 			memcpy(&_mode,modes + i,sizeof(sScreenMode));

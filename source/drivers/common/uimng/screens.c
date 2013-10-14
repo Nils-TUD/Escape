@@ -19,11 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/driver/screen.h>
+#include <esc/mem.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "screens.h"
 #include "clients.h"
+#include "header.h"
 
 static sScreen *screens;
 static size_t screenCount;
@@ -65,6 +67,17 @@ bool screens_find(int mid,sScreenMode **mode,sScreen **scr) {
 	return false;
 }
 
+void screens_adjustMode(sScreenMode *mode) {
+	if(mode->type & VID_MODE_TYPE_GUI) {
+		mode->height -= header_getHeight(VID_MODE_TYPE_GUI);
+		mode->guiHeaderSize += header_getHeight(VID_MODE_TYPE_GUI);
+	}
+	if(mode->type & VID_MODE_TYPE_TUI) {
+		mode->rows -= header_getHeight(VID_MODE_TYPE_TUI);
+		mode->tuiHeaderSize += header_getHeight(VID_MODE_TYPE_TUI);
+	}
+}
+
 ssize_t screens_getModes(sScreenMode *modes,size_t n) {
 	size_t count = 0;
 	for(size_t i = 0; i < screenCount; ++i)
@@ -81,6 +94,8 @@ ssize_t screens_getModes(sScreenMode *modes,size_t n) {
 	for(size_t i = 0; i < screenCount; ++i) {
 		memcpy(modes + pos,screens[i].modes,
 			screens[i].modeCount * sizeof(sScreenMode));
+		for(size_t j = 0; j < screens[i].modeCount; ++j)
+			screens_adjustMode(modes + pos + j);
 		pos += screens[i].modeCount;
 	}
 	return n;
@@ -89,26 +104,57 @@ ssize_t screens_getModes(sScreenMode *modes,size_t n) {
 int screens_setMode(sClient *cli,int type,int mid,const char *shm) {
 	if(cli->screen) {
 		close(cli->screenFd);
+		munmap(cli->screenShm);
+		free(cli->header);
 		free(cli->screenShmName);
 		cli->screen = NULL;
 	}
+	cli->screen = NULL;
+	cli->screenMode = NULL;
+	cli->screenShm = NULL;
+	cli->screenShmName = NULL;
+	cli->header = NULL;
 
+	int res = -EINVAL;
 	sScreenMode *mode;
 	sScreen *scr;
-	if(screens_find(mid,&mode,&scr)) {
-		cli->type = type;
-		cli->screenFd = open(scr->name,IO_MSGS);
-		if(cli->screenFd < 0)
-			return cli->screenFd;
-		int res;
-		if((res = screen_setMode(cli->screenFd,cli->type,mid,shm,true)) < 0) {
-			close(cli->screenFd);
-			return res;
-		}
-		cli->screen = scr;
-		cli->screenMode = mode;
-		cli->screenShmName = strdup(shm);
-		return 0;
+	if(!screens_find(mid,&mode,&scr))
+		goto error;
+
+	/* open screen */
+	cli->type = type;
+	cli->screenFd = open(scr->name,IO_MSGS);
+	if(cli->screenFd < 0) {
+		res = cli->screenFd;
+		goto error;
 	}
-	return -EINVAL;
+
+	/* create header-line */
+	cli->header = (char*)malloc(header_getSize(mode,type));
+	if(cli->header == NULL) {
+		res = -ENOMEM;
+		goto errorClose;
+	}
+
+	/* open shm */
+	res = screen_joinShm(mode,&cli->screenShm,shm,type);
+	if(res < 0)
+		goto errorHeader;
+
+	/* set screen mode */
+	if((res = screen_setMode(cli->screenFd,cli->type,mid,shm,true)) < 0)
+		goto errorUnmap;
+	cli->screen = scr;
+	cli->screenMode = mode;
+	cli->screenShmName = strdup(shm);
+	return 0;
+
+errorUnmap:
+	munmap(cli->screenShm);
+errorHeader:
+	free(cli->header);
+errorClose:
+	close(cli->screenFd);
+error:
+	return res;
 }

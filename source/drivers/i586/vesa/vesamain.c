@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
+#include <esc/driver/screen.h>
 #include <esc/io.h>
 #include <esc/driver.h>
 #include <esc/debug.h>
@@ -33,11 +34,11 @@
 #include <stdlib.h>
 
 #include <vbe/vbe.h>
+#include <vbetext/vbetext.h>
 
 #include "vesa.h"
 #include "vesatext.h"
 #include "vesascreen.h"
-#include "font.h"
 
 static size_t modeCount;
 static sScreenMode *modes;
@@ -59,6 +60,7 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int ty
 	client->shm = NULL;
 	client->mode = NULL;
 	client->type = type;
+	client->data = NULL;
 
 	int res = 0;
 	if(minfo) {
@@ -74,18 +76,10 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int ty
 
 		/* join shared memory */
 		if(res == 0) {
-			int fd = shm_open(shmname,IO_READ | IO_WRITE,0);
-			if(fd < 0) {
+			res = screen_joinShm(modes + mid,&client->shm,shmname,type);
+			if(res < 0) {
 				vesascr_release(scr);
-				return fd;
-			}
-			size_t size = type == VID_MODE_TYPE_TUI ? modes[mid].cols * modes[mid].rows * 2 :
-				(size_t)(minfo->width * minfo->height * (minfo->bitsPerPixel / 8));
-			client->shm = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
-			close(fd);
-			if(client->shm == NULL) {
-				vesascr_release(scr);
-				return errno;
+				return res;
 			}
 			client->mode = modes + mid;
 			client->data = scr;

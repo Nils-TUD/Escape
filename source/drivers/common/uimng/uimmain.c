@@ -37,12 +37,14 @@
 #include "keystrokes.h"
 #include "jobs.h"
 #include "screens.h"
+#include "header.h"
 
 #define KEYMAP_FILE					"/etc/keymap"
 
 static int mouseClientThread(void *arg);
 static int kbClientThread(void *arg);
 static int ctrlThread(A_UNUSED void *arg);
+static int header_thread(A_UNUSED void *arg);
 static int inputThread(A_UNUSED void *arg);
 
 static char defKeymapPath[MAX_PATH_LEN];
@@ -62,6 +64,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to create uimanager-lock");
 	jobs_init();
 	keys_init();
+	header_init();
 	screens_init(argc - 1,argv + 1);
 	srand(time(NULL));
 
@@ -88,6 +91,8 @@ int main(int argc,char *argv[]) {
 		error("Unable to start thread for handling uim-input");
 	if(startthread(ctrlThread,NULL) < 0)
 		error("Unable to start thread for handling uim-ctrl");
+	if(startthread(header_thread,NULL) < 0)
+		error("Unable to start thread for drawing the header");
 
 	/* now wait for terminated childs */
 	jobs_wait();
@@ -131,6 +136,18 @@ static bool handleKey(sUIMData *data) {
 		return false;
 
 	switch(data->d.keyb.keycode) {
+		case VK_0:
+		case VK_1:
+		case VK_2:
+		case VK_3:
+		case VK_4:
+		case VK_5:
+		case VK_6:
+		case VK_7:
+			locku(&lck);
+			cli_switchTo(data->d.keyb.keycode - VK_0);
+			unlocku(&lck);
+			return true;
 		/* we can't lock this because if we do a fork, the child might connect to us and we might
 		 * wait until he has registered a device -> deadlock */
 		case VK_T:
@@ -273,6 +290,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 					if(cli->screen) {
 						msg.data.arg1 = 0;
 						memcpy(msg.data.d,cli->screenMode,sizeof(*cli->screenMode));
+						screens_adjustMode((sScreenMode*)msg.data.d);
 					}
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
@@ -285,6 +303,12 @@ static int ctrlThread(A_UNUSED void *arg) {
 					locku(&lck);
 					sClient *cli = cli_get(fd);
 					msg.args.arg1 = screens_setMode(cli,type,modeid,msg.str.s1);
+					/* update header */
+					if(msg.args.arg1 == 0) {
+						gsize_t width,height;
+						if(header_update(cli,&width,&height))
+							screen_update(cli->screenFd,0,0,width,height);
+					}
 					unlocku(&lck);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
@@ -296,6 +320,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 						cli->cursor.x = msg.args.arg1;
 						cli->cursor.y = msg.args.arg2;
 						cli->cursor.cursor = msg.args.arg3;
+						cli->cursor.y += header_getHeight(cli->type);
 						screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor);
 					}
 				}
@@ -308,13 +333,30 @@ static int ctrlThread(A_UNUSED void *arg) {
 					gsize_t height = (gsize_t)msg.args.arg4;
 					sClient *cli = cli_get(fd);
 					msg.args.arg1 = 0;
-					if(cli == cli_getActive())
+					if(cli == cli_getActive()) {
+						y += header_getHeight(cli->type);
 						msg.args.arg1 = screen_update(cli->screenFd,x,y,width,height);
+					}
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 			}
 		}
+	}
+	return 0;
+}
+
+static int header_thread(A_UNUSED void *arg) {
+	while(1) {
+		locku(&lck);
+		sClient *active = cli_getActive();
+		if(active && active->screenMode) {
+			gsize_t width,height;
+			if(header_rebuild(active,&width,&height))
+				screen_update(active->screenFd,0,0,width,height);
+		}
+		unlocku(&lck);
+		sleep(1000);
 	}
 	return 0;
 }
@@ -334,6 +376,13 @@ static int inputThread(A_UNUSED void *arg) {
 				case MSG_UIM_ATTACH: {
 					locku(&lck);
 					msg.args.arg1 = cli_attach(fd,msg.args.arg1);
+					/* update header */
+					if(msg.args.arg1 == 0) {
+						gsize_t width,height;
+						sClient *cli = cli_get(fd);
+						if(header_update(cli,&width,&height))
+							screen_update(cli->screenFd,0,0,width,height);
+					}
 					/* TODO actually, we should remove the entire client if this failed to make it
 					 * harder to hijack a foreign session via brute-force. but this would destroy
 					 * our lock-strategy because we assume currently that only the other device

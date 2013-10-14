@@ -235,6 +235,8 @@ static void vbe_detectModes(void) {
 					scrMode->blueMaskSize = mode.blueMaskSize;
 					scrMode->blueFieldPosition = mode.blueFieldPosition;
 					scrMode->physaddr = mode.physBasePtr;
+					scrMode->tuiHeaderSize = 0;
+					scrMode->guiHeaderSize = 0;
 					scrMode->mode = VID_MODE_GRAPHICAL;
 					scrMode->type = VID_MODE_TYPE_GUI | VID_MODE_TYPE_TUI;
 					sll_append(modes,scrMode);

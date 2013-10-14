@@ -223,6 +223,8 @@ typedef struct {
 	uchar blueMaskSize;				/* Size of direct color blue mask  */
 	uchar blueFieldPosition;		/* Bit posn of lsb of blue mask    */
 	uintptr_t physaddr;
+	size_t tuiHeaderSize;
+	size_t guiHeaderSize;
 	int mode;
 	int type;
 } sScreenMode;

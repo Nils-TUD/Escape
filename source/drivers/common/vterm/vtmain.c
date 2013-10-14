@@ -164,11 +164,9 @@ static int vtermThread(void *vtptr) {
 
 				case MSG_SCR_GETMODES: {
 					size_t count;
-					sScreenMode *modes = vt_getModes(vt,msg.args.arg1,&count);
-					if(modes) {
+					sScreenMode *modes = vt_getModes(&count);
+					if(msg.args.arg1)
 						send(fd,MSG_DEF_RESPONSE,modes,sizeof(sScreenMode) * count);
-						free(modes);
-					}
 					else {
 						msg.args.arg1 = count;
 						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

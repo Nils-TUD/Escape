@@ -34,11 +34,14 @@ typedef struct {
 
 typedef struct {
 	int id;
+	int idx;
 	int randid;
 	sKeymap *map;
 	sScreen *screen;
 	sScreenMode *screenMode;
+	char *screenShm;
 	char *screenShmName;
+	char *header;
 	int screenFd;
 	struct {
 		gpos_t x;
@@ -49,11 +52,15 @@ typedef struct {
 } sClient;
 
 int cli_add(int id,const char *keymap);
+bool cli_isActive(size_t idx);
+bool cli_exists(size_t idx);
 sClient *cli_getActive(void);
 sClient *cli_get(int id);
+size_t cli_getCount(void);
 void cli_reactivate(int oldMode);
 void cli_next(void);
 void cli_prev(void);
+void cli_switchTo(size_t idx);
 int cli_attach(int id,int randid);
 void cli_detach(int id);
 void cli_send(const void *msg,size_t size);

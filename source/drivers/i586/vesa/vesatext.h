@@ -20,32 +20,10 @@
 #pragma once
 
 #include <esc/common.h>
+#include <vbetext/vbetext.h>
 
 #include "vesascreen.h"
 
-typedef uint32_t tColor;
-
-/* the colors */
-typedef enum {
-	/* 0 */ BLACK,
-	/* 1 */ BLUE,
-	/* 2 */ GREEN,
-	/* 3 */ CYAN,
-	/* 4 */ RED,
-	/* 5 */ MARGENTA,
-	/* 6 */ ORANGE,
-	/* 7 */ WHITE,
-	/* 8 */ GRAY,
-	/* 9 */ LIGHTBLUE,
-	/* 10 */ LIGHTGREEN,
-	/* 11 */ LIGHTCYAN,
-	/* 12 */ LIGHTRED,
-	/* 13 */ LIGHTMARGENTA,
-	/* 14 */ LIGHTORANGE,
-	/* 15 */ LIGHTWHITE
-} eColor;
-
 uint8_t *vesat_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color);
-uint8_t *vesat_getColor(tColor col);
 void vesat_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len);
 void vesat_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row);

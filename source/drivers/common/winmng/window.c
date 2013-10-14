@@ -77,14 +77,9 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,gcoldepth_t bpp,const
 		error("Unable to find suitable mode");
 
 	/* create shm */
-	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0644);
-	if(fd < 0)
+	int res = screen_createShm(&mode,(char**)&shmem,shmname,VID_MODE_TYPE_GUI,0644);
+	if(res < 0)
 		error("Unable to create shm file '%s'",shmname);
-	size_t screenSize = mode.width * mode.height * (mode.bitsPerPixel / 8);
-	shmem = (uint8_t*)mmap(NULL,screenSize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
-	close(fd);
-	if(shmem == NULL)
-		error("Unable to map shared memory '%s'",shmname);
 	return mode.id;
 }
 

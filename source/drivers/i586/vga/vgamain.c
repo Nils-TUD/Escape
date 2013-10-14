@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
 #include <esc/arch/i586/vm86.h>
+#include <esc/driver/screen.h>
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/mem.h>
@@ -43,8 +44,8 @@
 #define CURSOR_DATA_LOCHIGH		0x0E
 
 static sScreenMode modes[] = {
-	{0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
-	{0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
+	{0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
+	{0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI},
 };
 
 /* our state */
@@ -77,14 +78,9 @@ static int vga_setMode(sTUIClient *client,const char *shmname,int mid,int type,b
 	if(mid >= 0) {
 		if(*shmname) {
 			/* join shared memory */
-			int fd = shm_open(shmname,IO_READ | IO_WRITE,0);
-			if(fd < 0)
-				return fd;
-			client->shm = mmap(NULL,modes[mid].cols * modes[mid].rows * 2,0,PROT_READ | PROT_WRITE,
-				MAP_SHARED,fd,0);
-			close(fd);
-			if(client->shm == NULL)
-				return errno;
+			int res = screen_joinShm(modes + mid,&client->shm,shmname,type);
+			if(res < 0)
+				return res;
 		}
 		client->mode = modes + mid;
 	}

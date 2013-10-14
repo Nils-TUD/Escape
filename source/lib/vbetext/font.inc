@@ -19,10 +19,6 @@
 
 #include <esc/common.h>
 
-#include "font.h"
-
-#define FONT_COUNT	(ARRAY_SIZE(font8x16) / FONT_HEIGHT)
-
 const uchar font8x16[] = {
 	/* 8x16 */
 	/* 0x00 */

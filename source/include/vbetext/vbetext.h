@@ -20,12 +20,39 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/messages.h>
 
 #define FONT_WIDTH	8
 #define FONT_HEIGHT	16
 #define PAD			0
+#define FONT_COUNT	256
 
 #define PIXEL_SET(c,x,y)				\
 	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) - 1)))
+
+typedef uint32_t tColor;
+
+/* the colors */
+typedef enum {
+	/* 0 */ BLACK,
+	/* 1 */ BLUE,
+	/* 2 */ GREEN,
+	/* 3 */ CYAN,
+	/* 4 */ RED,
+	/* 5 */ MARGENTA,
+	/* 6 */ ORANGE,
+	/* 7 */ WHITE,
+	/* 8 */ GRAY,
+	/* 9 */ LIGHTBLUE,
+	/* 10 */ LIGHTGREEN,
+	/* 11 */ LIGHTCYAN,
+	/* 12 */ LIGHTRED,
+	/* 13 */ LIGHTMARGENTA,
+	/* 14 */ LIGHTORANGE,
+	/* 15 */ LIGHTWHITE
+} eColor;
+
+uint8_t *vbet_getColor(tColor col);
+void vbet_drawChar(sScreenMode *mode,uint8_t *frmbuf,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
 
 extern const uchar font8x16[];

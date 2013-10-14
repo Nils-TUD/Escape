@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeLib(target = 'vbetext', source = env.Glob('*.c'), LIBS = ['vbe'])

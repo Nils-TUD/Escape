@@ -46,8 +46,8 @@
 #define TUI_DEF_COLS	"100"
 #define TUI_DEF_ROWS	"37"
 
-#define GUI_DEF_RES_X	"1024"
-#define GUI_DEF_RES_Y	"768"
+#define GUI_DEF_RES_X	"800"
+#define GUI_DEF_RES_Y	"600"
 
 static tULock lck;
 

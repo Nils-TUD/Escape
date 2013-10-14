@@ -21,13 +21,12 @@
 #include <esc/mem.h>
 #include <esc/sllist.h>
 #include <vbe/vbe.h>
+#include <vbetext/vbetext.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "vesascreen.h"
 #include "vesatext.h"
-#include "font.h"
-#include "font.inc"
 
 static int vesascr_initWhOnBl(sVESAScreen *scr);
 
@@ -40,8 +39,8 @@ static int vesascr_initWhOnBl(sVESAScreen *scr) {
 		return -ENOMEM;
 
 	uint8_t *cc = scr->whOnBlCache;
-	uint8_t *white = vesat_getColor(WHITE);
-	uint8_t *black = vesat_getColor(BLACK);
+	uint8_t *white = vbet_getColor(WHITE);
+	uint8_t *black = vbet_getColor(BLACK);
 	for(size_t i = 0; i < FONT_COUNT; i++) {
 		for(int y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
 			for(int x = 0; x < FONT_WIDTH + PAD * 2; x++) {

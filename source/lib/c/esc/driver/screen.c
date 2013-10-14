@@ -21,6 +21,7 @@
 #include <esc/driver/screen.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/mem.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -47,6 +48,35 @@ static ssize_t screen_collectModes(int fd,sScreenMode **modes) {
 		return res;
 	}
 	return count;
+}
+
+static int screen_openShm(sScreenMode *mode,char **addr,const char *name,int type,int flags,uint perms) {
+	/* open shm */
+	int fd = shm_open(name,flags,perms);
+	if(fd < 0)
+		return fd;
+	size_t size;
+	if(type == VID_MODE_TYPE_TUI)
+		size = mode->cols * (mode->rows + mode->tuiHeaderSize) * 2;
+	else
+		size = mode->width * (mode->height + mode->guiHeaderSize) * (mode->bitsPerPixel / 8);
+	*addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	close(fd);
+	if(*addr == NULL)
+		return -ENOMEM;
+	if(type == VID_MODE_TYPE_TUI)
+		*addr += mode->tuiHeaderSize * mode->cols * 2;
+	else
+		*addr += mode->guiHeaderSize * mode->width * (mode->bitsPerPixel / 8);
+	return 0;
+}
+
+int screen_joinShm(sScreenMode *mode,char **addr,const char *name,int type) {
+	return screen_openShm(mode,addr,name,type,IO_READ | IO_WRITE,0);
+}
+
+int screen_createShm(sScreenMode *mode,char **addr,const char *name,int type,uint perms) {
+	return screen_openShm(mode,addr,name,type,IO_READ | IO_WRITE | IO_CREATE,perms);
 }
 
 int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode) {
@@ -98,7 +128,7 @@ int screen_findGraphicsMode(int fd,gsize_t width,gsize_t height,gcoldepth_t bpp,
 			else
 				depthdiff = (bpp - modes[i].bitsPerPixel) * 2;
 			if(bestpixdiff > pixdiff || (bestpixdiff == pixdiff && bestdepthdiff > depthdiff)) {
-				best = modes[i].id;
+				best = i;
 				bestpixdiff = pixdiff;
 				bestdepthdiff = depthdiff;
 			}

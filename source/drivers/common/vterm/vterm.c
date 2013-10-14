@@ -43,7 +43,9 @@
 static void vt_doUpdate(sVTerm *vt);
 static void vt_setCursor(sVTerm *vt);
 
-static int scrMode = -1;
+static sScreenMode *modes = NULL;
+static size_t modeCount = 0;
+static sScreenMode *curMode = NULL;
 static char *scrShm = NULL;
 
 bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
@@ -55,6 +57,15 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	if(vterm->uimng < 0)
 		error("Unable to open '/dev/uim-ctrl'");
 	vterm->uimngid = uimng_getId(vterm->uimng);
+
+	/* get all modes */
+	modeCount = screen_getModeCount(vterm->uimng);
+	/* TODO actually, we need to filter out the only-gui-modes here */
+	modes = (sScreenMode*)malloc(modeCount * sizeof(sScreenMode));
+	if(!modes)
+		error("Unable to create modes array");
+	if((res = screen_getModes(vterm->uimng,modes,modeCount)) < 0)
+		error("Unable to get modes");
 
 	/* find a suitable mode */
 	res = screen_findTextMode(vterm->uimng,cols,rows,&mode);
@@ -124,36 +135,16 @@ static void vt_doUpdate(sVTerm *vt) {
 	vt->upScroll = 0;
 }
 
-sScreenMode *vt_getModes(sVTerm *vt,size_t n,size_t *count) {
-	ssize_t res;
-	if(n == 0) {
-		*count = screen_getModeCount(vt->uimng);
-		return NULL;
-	}
-
-	/* TODO actually, we need to filter out the only-gui-modes here */
-	sScreenMode *modes = (sScreenMode*)malloc(n * sizeof(sScreenMode));
-	if(!modes)
-		return NULL;
-	if((res = screen_getModes(vt->uimng,modes,n)) < 0) {
-		free(modes);
-		*count = res;
-		return NULL;
-	}
-	*count = n;
+sScreenMode *vt_getModes(size_t *count) {
+	*count = modeCount;
 	return modes;
 }
 
-static int vt_doSetMode(sVTerm *vt,const char *shmname,uint cols,uint rows,int mid) {
-	int fd = shm_open(shmname,IO_READ | IO_WRITE | IO_CREATE,0644);
-	if(fd < 0)
-		return fd;
-	scrShm = mmap(NULL,cols * rows * 2,0,PROT_READ | PROT_WRITE,
-		MAP_SHARED,fd,0);
-	close(fd);
-	if(!scrShm)
-		return -ENOMEM;
-	int res = screen_setMode(vt->uimng,VID_MODE_TYPE_TUI,mid,shmname,true);
+static int vt_doSetMode(sVTerm *vt,const char *shmname,sScreenMode *mode) {
+	int res = screen_createShm(mode,&scrShm,shmname,VID_MODE_TYPE_TUI,0644);
+	if(res < 0)
+		return res;
+	res = screen_setMode(vt->uimng,VID_MODE_TYPE_TUI,mode->id,shmname,true);
 	if(res < 0) {
 		munmap(scrShm);
 		shm_unlink(shmname);
@@ -163,15 +154,8 @@ static int vt_doSetMode(sVTerm *vt,const char *shmname,uint cols,uint rows,int m
 }
 
 int vt_setVideoMode(sVTerm *vt,int mode) {
-	/* get all modes */
-	size_t i,count;
-	vt_getModes(vt,0,&count);
-	sScreenMode *modes = vt_getModes(vt,count,&count);
-	if(!modes)
-		return -ENOMEM;
-
 	ssize_t res;
-	for(i = 0; i < count; i++) {
+	for(size_t i = 0; i < modeCount; i++) {
 		if(modes[i].id == mode) {
 			/* destroy current stuff */
 			if(scrShm) {
@@ -180,30 +164,24 @@ int vt_setVideoMode(sVTerm *vt,int mode) {
 			}
 
 			/* try to set new mode */
-			res = vt_doSetMode(vt,vt->name,modes[i].cols,modes[i].rows,modes[i].id);
+			res = vt_doSetMode(vt,vt->name,modes + i);
 			if(res < 0)
-				goto error;
+				return res;
 
 			/* resize vterm if necessary */
 			if(vt->cols != modes[i].cols || vt->rows != modes[i].rows) {
 				if(!vtctrl_resize(vt,modes[i].cols,modes[i].rows)) {
-					res = vt_doSetMode(vt,vt->name,vt->cols,vt->rows,scrMode);
+					res = vt_doSetMode(vt,vt->name,curMode);
 					if(res < 0)
 						error("Unable to restore old mode");
-					res = -ENOMEM;
-					goto error;
+					return -ENOMEM;
 				}
 			}
-			scrMode = mode;
-			free(modes);
+			curMode = modes + i;
 			return 0;
 		}
 	}
-	res = -EINVAL;
-
-error:
-	free(modes);
-	return res;
+	return -EINVAL;
 }
 
 static void vt_setCursor(sVTerm *vt) {

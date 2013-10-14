@@ -17,3 +17,5 @@ Important information:
 	- pt- and pd-entries:	see intel manual, vol3a, page 116
 	- pmode exceptions:		see intel manual, vol3a, page 191
 	- idt-descriptors:		see intel manual, vol3a, page 202
+
+https://en.wikipedia.org/wiki/Code_page_437

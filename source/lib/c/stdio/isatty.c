@@ -25,7 +25,7 @@
 #include <assert.h>
 
 int isatty(int fd) {
-	int res = vterm_isVTerm(fd);
+	int res = vterm_isVTerm(fd) == 1;
 	/* this is not considered as an error in this case */
 	/* note that we include no-exec-perm here because we assume that we can always send messages
 	 * with stdin when it is connected to a vterm. */

@@ -77,12 +77,13 @@ void SMPBase::setId(cpuid_t old,cpuid_t newid) {
 }
 
 void SMPBase::updateRuntimes() {
+	uint64_t now = Thread::getTSC();
 	for(auto cpu = cpuList.begin(); cpu != cpuList.end(); ++cpu) {
-		cpu->lastTotal = Thread::getTSC() - cpu->lastUpdate;
-		cpu->lastUpdate = Thread::getTSC();
+		cpu->lastTotal = now - cpu->lastUpdate;
+		cpu->lastUpdate = now;
 		if(cpu->thread && !(cpu->thread->getFlags() & T_IDLE)) {
 			/* we want to measure the last second only */
-			uint64_t cycles = Thread::getTSC() - cpu->thread->getStats().cycleStart;
+			uint64_t cycles = now - cpu->thread->getStats().cycleStart;
 			cpu->curCycles = MIN(cpu->lastTotal,cpu->curCycles + cycles);
 		}
 		cpu->lastCycles = cpu->curCycles;

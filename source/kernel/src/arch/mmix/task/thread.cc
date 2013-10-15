@@ -233,6 +233,4 @@ void ThreadBase::doSwitch() {
 		n->stats.cycleStart = CPU::rdtsc();
 		Thread::doSwitchTo(&old->saveArea,&n->saveArea,n->getProc()->getPageDir()->getRV(),n->getTid());
 	}
-	else
-		n->stats.cycleStart = CPU::rdtsc();
 }

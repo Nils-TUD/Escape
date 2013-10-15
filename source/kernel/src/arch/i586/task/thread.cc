@@ -198,10 +198,8 @@ void ThreadBase::doSwitch() {
 			               n->getProc() != old->getProc());
 		}
 	}
-	else {
-		n->stats.cycleStart = CPU::rdtsc();
+	else
 		SpinLock::release(&switchLock);
-	}
 }
 
 void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {

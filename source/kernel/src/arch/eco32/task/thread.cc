@@ -160,8 +160,6 @@ void ThreadBase::doSwitch() {
 			Thread::resume(n->getProc()->getPageDir()->getPhysAddr(),&n->saveArea,n->kstackFrame);
 		}
 	}
-	else
-		n->stats.cycleStart = CPU::rdtsc();
 }
 
 void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {

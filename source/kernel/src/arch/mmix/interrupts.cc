@@ -134,8 +134,12 @@ bool Interrupts::dynTrap(IntrptStackFrame *stack,int irqNo) {
 
 	/* only handle signals, if we come directly from user-mode */
 	t = Thread::getRunning();
-	if(t->hasSignalQuick() && ((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0))
-		UEnv::handleSignal(t,stack);
+	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0) {
+		if(t->haveHigherPrio())
+			Thread::switchAway();
+		if(t->hasSignalQuick())
+			UEnv::handleSignal(t,stack);
+	}
 	leaveKernel(t);
 	return t->getFlags() & T_IDLE;
 }

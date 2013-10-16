@@ -88,8 +88,13 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = Thread::getRunning();
-	if(t->hasSignalQuick() && ((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)))
-		UEnv::handleSignal(t,stack);
+	if((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)) {
+		if(t->haveHigherPrio())
+			Thread::switchAway();
+		if(t->hasSignalQuick())
+			UEnv::handleSignal(t,stack);
+	}
+
 	t->popIntrptLevel();
 }
 

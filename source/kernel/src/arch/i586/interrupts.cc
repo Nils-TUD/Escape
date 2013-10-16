@@ -153,8 +153,12 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(level == 1 && t->hasSignalQuick())
-		UEnv::handleSignal(t,stack);
+	if(level == 1) {
+		if(t->haveHigherPrio())
+			Thread::switchAway();
+		if(t->hasSignalQuick())
+			UEnv::handleSignal(t,stack);
+	}
 
 	t->popIntrptLevel();
 }

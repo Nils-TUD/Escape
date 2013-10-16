@@ -393,6 +393,16 @@ public:
 	uint64_t getRuntime() const;
 
 	/**
+	 * Tests whether there are other threads with a higher priority than this one.
+	 *
+	 * @return true if so
+	 */
+	bool haveHigherPrio() {
+		ulong mask = Sched::getReadyMask();
+		return mask & ~((1UL << (priority + 1)) - 1);
+	}
+
+	/**
 	 * @param thread the thread
 	 * @return the cycles of the given thread
 	 */

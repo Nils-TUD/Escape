@@ -44,6 +44,7 @@
  */
 
 klock_t Sched::lock;
+ulong Sched::readyMask = 0;
 DList<Thread> Sched::rdyQueues[MAX_PRIO + 1];
 DList<Thread> Sched::evlists[EV_COUNT];
 size_t Sched::rdyCount;
@@ -65,6 +66,28 @@ void Sched::addIdleThread(Thread *t) {
 		}
 	}
 	SpinLock::release(&lock);
+}
+
+void Sched::enqueue(Thread *t) {
+	uint8_t prio = t->getPriority();
+	rdyQueues[prio].append(t);
+	readyMask |= 1UL << prio;
+	rdyCount++;
+}
+
+void Sched::enqueueQuick(Thread *t) {
+	uint8_t prio = t->getPriority();
+	rdyQueues[prio].prepend(t);
+	readyMask |= 1UL << prio;
+	rdyCount++;
+}
+
+void Sched::dequeue(Thread *t) {
+	uint8_t prio = t->getPriority();
+	rdyQueues[prio].remove(t);
+	if(rdyQueues[prio].length() == 0)
+		readyMask &= ~(1UL << prio);
+	rdyCount--;
 }
 
 Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
@@ -96,8 +119,7 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 				case Thread::READY:
 					assert(old->event == 0);
 					old->setState(Thread::READY);
-					rdyQueues[old->getPriority()].append(old);
-					rdyCount++;
+					enqueue(old);
 					break;
 				case Thread::BLOCKED:
 				case Thread::ZOMBIE:
@@ -122,6 +144,8 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 				rdyQueues[i].append(t);
 				continue;
 			}
+			if(rdyQueues[i].length() == 0)
+				readyMask &= ~(1UL << i);
 			rdyCount--;
 			break;
 		}
@@ -153,10 +177,10 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
 		if(t->getPriority() > 0) {
 			if(t->getState() == Thread::READY)
-				rdyQueues[t->getPriority()].remove(t);
+				dequeue(t);
 			t->setPriority(t->getPriority() - 1);
 			if(t->getState() == Thread::READY)
-				rdyQueues[t->getPriority()].append(t);
+				enqueue(t);
 		}
 		t->prioGoodCnt = 0;
 	}
@@ -165,10 +189,10 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 		if(t->getPriority() < MAX_PRIO) {
 			if(++t->prioGoodCnt == PRIO_FORGIVE_CNT) {
 				if(t->getState() == Thread::READY)
-					rdyQueues[t->getPriority()].remove(t);
+					dequeue(t);
 				t->setPriority(t->getPriority() + 1);
 				if(t->getState() == Thread::READY)
-					rdyQueues[t->getPriority()].append(t);
+					enqueue(t);
 				t->prioGoodCnt = 0;
 			}
 		}
@@ -231,8 +255,7 @@ void Sched::setReady(Thread *t) {
 	}
 	else if(setReadyState(t)) {
 		assert(t->event == 0);
-		rdyQueues[t->getPriority()].append(t);
-		rdyCount++;
+		enqueue(t);
 	}
 }
 
@@ -246,13 +269,12 @@ void Sched::setReadyQuick(Thread *t) {
 	}
 	else if(t->getState() == Thread::READY) {
 		assert(t->event == 0);
-		rdyQueues[t->getPriority()].remove(t);
-		rdyQueues[t->getPriority()].prepend(t);
+		dequeue(t);
+		enqueueQuick(t);
 	}
 	else if(setReadyState(t)) {
 		assert(t->event == 0);
-		rdyQueues[t->getPriority()].prepend(t);
-		rdyCount++;
+		enqueueQuick(t);
 	}
 }
 
@@ -278,8 +300,7 @@ void Sched::setBlocked(Thread *t) {
 			break;
 		case Thread::READY:
 			t->setState(Thread::BLOCKED);
-			rdyQueues[t->getPriority()].remove(t);
-			rdyCount--;
+			dequeue(t);
 			break;
 		default:
 			vassert(false,"Invalid state for setBlocked (%d)",t->getState());
@@ -304,8 +325,7 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 				break;
 			case Thread::READY:
 				t->setState(Thread::READY_SUSP);
-				rdyQueues[t->getPriority()].remove(t);
-				rdyCount--;
+				dequeue(t);
 				break;
 			default:
 				vassert(false,"Thread %d has invalid state for suspending (%d)",t->getTid(),t->getState());
@@ -327,8 +347,7 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 				break;
 			case Thread::READY_SUSP:
 				t->setState(Thread::READY);
-				rdyQueues[t->getPriority()].append(t);
-				rdyCount++;
+				enqueue(t);
 				break;
 			default:
 				vassert(false,"Thread %d has invalid state for resuming (%d)",t->getTid(),t->getState());
@@ -350,8 +369,7 @@ void Sched::removeThread(Thread *t) {
 			removeFromEventlist(t);
 			break;
 		case Thread::READY:
-			rdyQueues[t->getPriority()].remove(t);
-			rdyCount--;
+			dequeue(t);
 			break;
 		default:
 			/* TODO threads can die during swap, right? */

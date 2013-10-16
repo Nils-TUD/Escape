@@ -95,6 +95,13 @@ public:
 	static bool wakeupThread(Thread *t,uint event);
 
 	/**
+	 * @return the current ready-mask. 1 bit per priority.
+	 */
+	static ulong getReadyMask() {
+		return readyMask;
+	}
+
+	/**
 	 * Blocks the given thread
 	 *
 	 * @param t the thread
@@ -212,11 +219,15 @@ private:
 	 */
 	static void removeThread(Thread *t);
 
+	static void enqueue(Thread *t);
+	static void enqueueQuick(Thread *t);
+	static void dequeue(Thread *t);
 	static void removeFromEventlist(Thread *t);
 	static bool setReadyState(Thread *t);
 	static void print(OStream &os,DList<Thread> *q);
 
 	static klock_t lock;
+	static ulong readyMask;
 	static DList<Thread> rdyQueues[];
 	static DList<Thread> evlists[EV_COUNT];
 	static size_t rdyCount;

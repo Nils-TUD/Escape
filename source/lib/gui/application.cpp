@@ -48,6 +48,8 @@ namespace gui {
 
 		if(winmng == NULL)
 			winmng = getenv("WINMNG");
+		if(winmng == NULL)
+			throw app_error("Env-var WINMNG not set");
 
 		_winFd = open(winmng,IO_MSGS);
 		if(_winFd < 0)

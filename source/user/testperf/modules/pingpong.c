@@ -37,6 +37,7 @@ typedef struct {
 static void client(void);
 static void server(void);
 static void server_fast(void);
+static void send_recv_alone(void);
 
 static size_t messageCount = 100000;
 
@@ -44,6 +45,7 @@ int mod_sendrecv(int argc,char *argv[]) {
 	int pid;
 	if(argc > 2)
 		messageCount = atoi(argv[2]);
+	send_recv_alone();
 	if((pid = fork()) == 0)
 		server_fast();
 	else {
@@ -71,7 +73,7 @@ int mod_pingpong(int argc,char *argv[]) {
 }
 
 static void client(void) {
-	uint64_t begin,total,end;
+	uint64_t begin,end;
 	size_t i;
 	sIPCMsg msg;
 	int fd;
@@ -90,8 +92,7 @@ static void client(void) {
 			printe("Message-receiving failed");
 	}
 	end = rdtsc();
-	total = end - begin;
-	printf("%Lu cycles, per msg: %Lu\n",total,total / messageCount);
+	printf("%Lu cycles, per msg: %Lu\n",end - begin,(end - begin) / messageCount);
 	close(fd);
 }
 
@@ -129,4 +130,44 @@ static void server_fast(void) {
 		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
 			printe("Message-receiving failed");
 	}
+}
+
+static void send_recv_alone(void) {
+	sIPCMsg msg;
+	uint64_t begin,end;
+	const size_t testcount = 1000;
+	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
+	if(dev < 0) {
+		printe("Unable to create device");
+		return;
+	}
+
+	int fd = open("/dev/pingpong",IO_MSGS);
+	if(fd < 0) {
+		printe("Unable to open device");
+		return;
+	}
+
+	begin = rdtsc();
+	for(size_t i = 0; i < testcount; i++) {
+		if(send(fd,0,&msg,sizeof(msg)) < 0)
+			printe("Message-sending failed");
+	}
+	end = rdtsc();
+	printf("send   : %Lu cycles, per call: %Lu\n",end - begin,(end - begin) / testcount);
+
+	int cfd;
+	while((cfd = getwork(dev,NULL,&msg,sizeof(msg),GW_NOBLOCK)) >= 0)
+		send(cfd,MSG_DEF_RESPONSE,&msg,sizeof(msg));
+
+	begin = rdtsc();
+	for(size_t i = 0; i < testcount; i++) {
+		if(receive(fd,0,&msg,sizeof(msg)) < 0)
+			printe("Message-sending failed");
+	}
+	end = rdtsc();
+	printf("receive: %Lu cycles, per call: %Lu\n",end - begin,(end - begin) / testcount);
+
+	close(fd);
+	close(dev);
 }

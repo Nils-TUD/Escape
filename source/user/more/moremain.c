@@ -62,6 +62,8 @@ int main(int argc,const char *argv[]) {
 		if(!in)
 			error("Unable to open '%s'",args[0]);
 	}
+	else if(isatty(STDIN_FILENO))
+		error("If stdin is a terminal, you have to provide a file");
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	strnzcpy(vtermPath,getenv("TERM"),sizeof(vtermPath));

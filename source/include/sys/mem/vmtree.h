@@ -20,25 +20,41 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/col/dlisttreap.h>
 #include <sys/mutex.h>
 
 class Region;
 class VirtMem;
 class OStream;
 
-struct VMRegion {
+struct VMRegion : public DListTreapNode<uintptr_t> {
+    explicit VMRegion(Region *_reg,uintptr_t _virt) : DListTreapNode<uintptr_t>(_virt), reg(_reg) {
+    }
+
+    virtual bool matches(uintptr_t key);
+
+    /**
+     * @return the virtual address of this region
+     */
+    uintptr_t virt() const {
+    	return key();
+    }
+    /**
+     * Sets the virtual address. Note that this is ONLY possible if you are sure that it doesn't
+     * change the order in the tree!
+     */
+    void virt(uintptr_t _virt) {
+    	key(_virt);
+    }
+
 	Region *reg;
-	uintptr_t virt;
-	/* for the treap */
-	uint32_t priority;
-	VMRegion *left;
-	VMRegion *right;
-	/* for the linked list */
-	VMRegion *next;
 };
 
 class VMTree {
 public:
+	typedef DListTreap<VMRegion>::iterator iterator;
+	typedef DListTreap<VMRegion>::const_iterator const_iterator;
+
 	/**
 	 * Does NOT initialize the object
 	 */
@@ -65,12 +81,17 @@ public:
 	 *
 	 * @return the list of trees
 	 */
-	static VMTree *reqTree();
+	static VMTree *reqTree() {
+		regMutex.down();
+		return regList;
+	}
 
 	/**
 	 * Releases the linked list of trees again
 	 */
-	static void relTree();
+	static void relTree() {
+		regMutex.up();
+	}
 
 	/**
 	 * @return the virtmem object it belongs to
@@ -79,16 +100,29 @@ public:
 		return virtmem;
 	}
 	/**
-	 * @return the first vm-region in this tree
-	 */
-	VMRegion *first() const {
-		return begin;
-	}
-	/**
 	 * @return the next tree
 	 */
 	VMTree *getNext() const {
 		return next;
+	}
+
+	/**
+	 * @return the beginning of the vm-region list
+	 */
+	iterator begin() {
+		return regs.begin();
+	}
+	const_iterator cbegin() const {
+		return regs.cbegin();
+	}
+	/**
+	 * @return the end of the vm-region list
+	 */
+	iterator end() {
+		return regs.end();
+	}
+	const_iterator cend() const {
+		return regs.cend();
 	}
 
 	/**
@@ -107,7 +141,9 @@ public:
 	 * @param addr the address to search for
 	 * @return the region or NULL if not found
 	 */
-	VMRegion *getByAddr(uintptr_t addr) const;
+	VMRegion *getByAddr(uintptr_t addr) const {
+		return regs.find(addr);
+	}
 
 	/**
 	 * Finds a vm-region in the tree by a region. That is, it walks through the linked list,
@@ -134,24 +170,9 @@ public:
 	 */
 	void remove(VMRegion *reg);
 
-	/**
-	 * Prints the tree
-	 *
-	 * @param os the output-stream
-	 */
-	void print(OStream &os) const;
-
 private:
-	static void doRemove(VMRegion **p,VMRegion *reg);
-	static void doPrint(OStream &os,const VMRegion *n,int layer);
-
 	VirtMem *virtmem;
-	/* the linked list */
-	VMRegion *begin;
-	VMRegion *end;
-	/* the tree */
-	VMRegion *root;
-	uint32_t priority;
+	DListTreap<VMRegion> regs;
 	VMTree *next;
 
 	/* mutex for accessing/changing the list of all vm-regions */
@@ -159,12 +180,3 @@ private:
 	static VMTree *regList;
 	static VMTree *regListEnd;
 };
-
-inline VMTree *VMTree::reqTree() {
-	regMutex.down();
-	return regList;
-}
-
-inline void VMTree::relTree() {
-	regMutex.up();
-}

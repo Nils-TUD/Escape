@@ -358,7 +358,7 @@ private:
 	int demandLoad(VMRegion *vm,uintptr_t addr);
 	int loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount);
 	uintptr_t findFreeStack(size_t byteCount,ulong rflags);
-	VMRegion *isOccupied(uintptr_t start,uintptr_t end) const;
+	bool isOccupied(uintptr_t start,uintptr_t end) const;
 	uintptr_t getFirstUsableAddr() const;
 	const char *getRegName(const VMRegion *vm) const;
 

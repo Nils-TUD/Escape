@@ -208,12 +208,12 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 	if(cloneProc) {
 		for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 			if(src->stackRegions[i])
-				t->stackRegions[i] = p->getVM()->getRegion(src->stackRegions[i]->virt);
+				t->stackRegions[i] = p->getVM()->getRegion(src->stackRegions[i]->virt());
 			else
 				t->stackRegions[i] = NULL;
 		}
 		if(src->tlsRegion)
-			t->tlsRegion = p->getVM()->getRegion(src->tlsRegion->virt);
+			t->tlsRegion = p->getVM()->getRegion(src->tlsRegion->virt());
 		else
 			t->tlsRegion = NULL;
 		t->intrptLevel = src->intrptLevel;
@@ -341,9 +341,9 @@ void ThreadBase::print(OStream &os) const {
 	this->printEvMask(os);
 	os.writef("\n");
 	os.writef("LastCPU=%d\n",cpu);
-	os.writef("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt : 0);
+	os.writef("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt() : 0);
 	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
-		os.writef("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt : 0);
+		os.writef("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt() : 0);
 		if(i < STACK_REG_COUNT - 1)
 			os.writef(", ");
 	}

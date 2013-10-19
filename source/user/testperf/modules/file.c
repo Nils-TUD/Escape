@@ -25,7 +25,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "file.h"
+#include "../modules.h"
 
 #define TEST_COUNT		1000
 

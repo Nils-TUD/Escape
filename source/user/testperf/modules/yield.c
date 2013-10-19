@@ -23,7 +23,7 @@
 #include <esc/time.h>
 #include <stdio.h>
 
-#include "yield.h"
+#include "../modules.h"
 
 #define LOCK_IDENT		0x1234
 #define THREAD_COUNT	2

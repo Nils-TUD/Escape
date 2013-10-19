@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include "tesccodes.h"
 #include <esc/esccodes.h>
 #include <esc/test.h>
 

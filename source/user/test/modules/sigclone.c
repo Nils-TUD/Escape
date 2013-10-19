@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "sigclone.h"
+#include "../modules.h"
 
 static tid_t parent = -1;
 static tid_t child = -1;

@@ -23,7 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "thread.h"
+
+#include "../modules.h"
 
 #define THREAD_COUNT	10
 #define LOCK_IDENT		0x11111111

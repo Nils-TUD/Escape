@@ -23,7 +23,7 @@
 #include <esc/io.h>
 #include <stdio.h>
 
-#include "locks.h"
+#include "../modules.h"
 
 #define GLOBAL_IDENT	0x88212723
 #define LOCAL_IDENT		0x88212724

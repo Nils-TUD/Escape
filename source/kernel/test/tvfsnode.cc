@@ -24,11 +24,10 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
-#include "tvfsnode.h"
-#include "testutils.h"
 #include <esc/test.h>
 #include <string.h>
 #include <errno.h>
+#include "testutils.h"
 
 static void test_vfsn();
 static void test_vfs_node_resolvePath();

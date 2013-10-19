@@ -23,25 +23,7 @@
 #include <string.h>
 #include <esc/messages.h>
 
-#include "modules/speed.h"
-#include "modules/tdriver.h"
-#include "modules/debug.h"
-#include "modules/fault.h"
-#include "modules/thread.h"
-#include "modules/fork.h"
-#include "modules/procswarm.h"
-#include "modules/mem.h"
-#include "modules/stack.h"
-#include "modules/forkbomb.h"
-#include "modules/tls.h"
-#include "modules/pipe.h"
-#include "modules/sigclone.h"
-#include "modules/fsreads.h"
-#include "modules/ooc.h"
-#include "modules/highcpu.h"
-#include "modules/drvparallel.h"
-#include "modules/maxthreads.h"
-#include "modules/pagefaults.h"
+#include "modules.h"
 
 #define NAME_LEN 10
 

@@ -22,7 +22,6 @@
 #include <esc/test.h>
 #include <esc/hashmap.h>
 #include <sys/video.h>
-#include "thashmap.h"
 #include "testutils.h"
 
 #define TEST_MAP_SIZE	16

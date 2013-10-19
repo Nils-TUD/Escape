@@ -23,7 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "fsreads.h"
+
+#include "../modules.h"
 
 #define THREAD_COUNT	16
 #define BUF_SIZE		4096

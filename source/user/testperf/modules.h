@@ -17,8 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <esc/common.h>
 
-#include <esc/test.h>
-
-extern sTestModule tModVFSn;
+extern int mod_getpid(int,char**);
+extern int mod_yield(int,char**);
+extern int mod_fork(int,char**);
+extern int mod_startthread(int,char**);
+extern int mod_file(int,char**);
+extern int mod_mmap(int,char**);
+extern int mod_sendrecv(int,char**);
+extern int mod_pingpong(int,char**);
+extern int mod_pipe(int,char**);
+extern int mod_readzeros(int,char**);
+extern int mod_writenull(int,char**);
+extern int mod_memops(int,char**);
+extern int mod_locks(int,char**);

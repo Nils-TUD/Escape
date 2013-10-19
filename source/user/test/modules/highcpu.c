@@ -21,7 +21,8 @@
 #include <esc/thread.h>
 #include <stdio.h>
 #include <string.h>
-#include "highcpu.h"
+
+#include "../modules.h"
 
 static int evilThread(A_UNUSED void *arg);
 

@@ -22,7 +22,8 @@
 #include <esc/thread.h>
 #include <stdio.h>
 #include <string.h>
-#include "procswarm.h"
+
+#include "../modules.h"
 
 int mod_procswarm(int argc,char *argv[]) {
 	size_t i,count = 100;

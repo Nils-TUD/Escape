@@ -26,8 +26,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "tsetjmp.h"
-
 /* forward declarations */
 static void test_setjmp(void);
 

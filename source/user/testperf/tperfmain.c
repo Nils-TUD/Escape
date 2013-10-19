@@ -22,18 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "modules/getpid.h"
-#include "modules/yield.h"
-#include "modules/fork.h"
-#include "modules/startthread.h"
-#include "modules/file.h"
-#include "modules/mmap.h"
-#include "modules/pingpong.h"
-#include "modules/pipe.h"
-#include "modules/readzeros.h"
-#include "modules/writenull.h"
-#include "modules/memops.h"
-#include "modules/locks.h"
+#include "modules.h"
 
 #define NAME_LEN 16
 

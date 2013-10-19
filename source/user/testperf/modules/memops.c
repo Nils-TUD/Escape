@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "memops.h"
+#include "../modules.h"
 
 typedef void (*memop_func)(void *a,void *b,size_t len);
 

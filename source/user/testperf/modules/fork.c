@@ -22,7 +22,8 @@
 #include <esc/time.h>
 #include <stdio.h>
 #include <string.h>
-#include "fork.h"
+
+#include "../modules.h"
 
 #define TEST_COUNT		1000
 

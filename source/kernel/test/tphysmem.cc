@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/mem/physmem.h>
 #include <esc/test.h>
-#include "tphysmem.h"
 #include "testutils.h"
 
 #define FRAME_COUNT 50

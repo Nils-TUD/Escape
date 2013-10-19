@@ -26,7 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include "pingpong.h"
+
+#include "../modules.h"
 
 #define DATA_SIZE	4
 

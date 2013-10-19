@@ -26,7 +26,6 @@
 #include <esc/test.h>
 #include <assert.h>
 #include "testutils.h"
-#include "tproc.h"
 
 /* forward declarations */
 static void test_proc();

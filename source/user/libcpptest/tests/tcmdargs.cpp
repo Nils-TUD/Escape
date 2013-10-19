@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <iostream>
-#include "tcmdargs.h"
 
 using namespace std;
 

@@ -21,7 +21,8 @@
 #include <stdio.h>
 #include <esc/proc.h>
 #include <signal.h>
-#include "stack.h"
+
+#include "../modules.h"
 
 static void sigHandler(int sig);
 static void f(int a);

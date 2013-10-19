@@ -27,7 +27,8 @@
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
-#include "tdriver.h"
+
+#include "../modules.h"
 
 #define MY_LOCK			0x487912ee
 #define CLIENT_COUNT	10

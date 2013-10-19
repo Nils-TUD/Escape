@@ -22,8 +22,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "tenv.h"
-
 /* forward declarations */
 static void test_env(void);
 static void test_setget(void);

@@ -25,8 +25,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "tmem.h"
-
 /* forward declarations */
 static void test_mem(void);
 static void test_mmap_file(void);

@@ -22,7 +22,7 @@
 #include <esc/time.h>
 #include <stdio.h>
 
-#include "mmap.h"
+#include "../modules.h"
 
 #define MMAP1_COUNT		1000
 #define MMAP2_COUNT		100

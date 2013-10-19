@@ -23,7 +23,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "drvparallel.h"
+
+#include "../modules.h"
 
 #define MSG_PARA_FIB	10000
 

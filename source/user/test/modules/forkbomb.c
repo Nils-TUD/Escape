@@ -23,7 +23,8 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
-#include "forkbomb.h"
+
+#include "../modules.h"
 
 #define MAX_PIDS	8192
 

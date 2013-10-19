@@ -24,8 +24,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "trect.h"
-
 static void test_rect(void);
 static void test_contains(void);
 static void test_splitEmpty(void);

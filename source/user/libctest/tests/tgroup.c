@@ -21,7 +21,6 @@
 #include <usergroup/group.h>
 #include <esc/test.h>
 #include <stdlib.h>
-#include "tgroup.h"
 
 static void test_group(void);
 static void test_basics(void);

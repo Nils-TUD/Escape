@@ -22,7 +22,6 @@
 #include <sys/video.h>
 #include <esc/ringbuffer.h>
 #include <esc/test.h>
-#include "tringbuffer.h"
 #include "testutils.h"
 
 /* forward declarations */

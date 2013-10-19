@@ -24,7 +24,6 @@
 #include <sys/video.h>
 #include <sys/cppsupport.h>
 #include <esc/test.h>
-#include "tregion.h"
 #include "testutils.h"
 
 /* forward declarations */

@@ -21,7 +21,8 @@
 #include <esc/proc.h>
 #include <stdio.h>
 #include <string.h>
-#include "fork.h"
+
+#include "../modules.h"
 
 int mod_fork(int argc,char *argv[]) {
 	size_t i,count = 100;

@@ -20,7 +20,8 @@
 #include <esc/common.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "mem.h"
+
+#include "../modules.h"
 
 #define STEP_SIZE 1024
 

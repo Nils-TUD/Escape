@@ -21,7 +21,6 @@
 #include <usergroup/user.h>
 #include <esc/test.h>
 #include <stdlib.h>
-#include "tuser.h"
 
 static void test_user(void);
 static void test_basics(void);

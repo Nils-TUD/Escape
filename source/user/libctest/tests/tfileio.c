@@ -23,8 +23,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "tfileio.h"
-
 /* forward declarations */
 static void test_fileio(void);
 static bool test_fileio_checkPrint(int recvRes,int expRes,char *recvStr,const char *expStr);

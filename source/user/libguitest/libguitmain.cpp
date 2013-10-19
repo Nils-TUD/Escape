@@ -21,7 +21,7 @@
 #include <esc/test.h>
 #include <stdio.h>
 
-#include "tests/tsubscriber.h"
+extern sTestModule tModSubscriber;
 
 int main(void) {
 	test_register(&tModSubscriber);

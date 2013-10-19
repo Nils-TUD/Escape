@@ -25,8 +25,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "tdir.h"
-
 /* forward declarations */
 static void test_dir(void);
 static void test_opendir(void);

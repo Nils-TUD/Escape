@@ -21,7 +21,6 @@
 #include <sys/mem/physmemareas.h>
 #include <sys/util.h>
 #include <esc/test.h>
-#include "tphysmemareas.h"
 #include "testutils.h"
 
 /* forward declarations */

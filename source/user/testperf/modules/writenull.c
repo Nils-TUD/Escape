@@ -22,7 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include "writenull.h"
+
+#include "../modules.h"
 
 #define PACKET_SIZE		0x4000
 #define PACKET_COUNT	100000

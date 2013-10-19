@@ -19,12 +19,10 @@
 
 #include <sys/common.h>
 #include <sys/video.h>
+#include <esc/test.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-
-#include "tstring.h"
-#include <esc/test.h>
 
 /* forward declarations */
 static void test_string();

@@ -19,7 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include "debug.h"
+
+#include "../modules.h"
 
 int mod_debug(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	debug();

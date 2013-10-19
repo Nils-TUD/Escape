@@ -22,7 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ooc.h"
+
+#include "../modules.h"
 
 typedef struct sString sString;
 typedef struct ClassString ClassString;

@@ -24,7 +24,6 @@
 #include <esc/test.h>
 #include <sys/video.h>
 #include <stdarg.h>
-#include "tkheap.h"
 #include "testutils.h"
 
 /* forward declarations */

@@ -21,7 +21,6 @@
 #include <usergroup/passwd.h>
 #include <esc/test.h>
 #include <stdlib.h>
-#include "tuser.h"
 
 static void test_passwd(void);
 static void test_basics(void);

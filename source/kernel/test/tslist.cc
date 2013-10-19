@@ -21,7 +21,6 @@
 #include <sys/col/slist.h>
 #include <sys/col/islist.h>
 #include <esc/test.h>
-#include "tslist.h"
 #include "testutils.h"
 
 /* a bit of c++ magic to use the same test both for SList and ISList */

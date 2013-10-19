@@ -22,7 +22,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include "maxthreads.h"
+
+#include "../modules.h"
 
 #define LOCK_IDENT	0x44112241
 

@@ -21,7 +21,6 @@
 #include <sys/mem/pagedir.h>
 #include <sys/mem/dynarray.h>
 #include <esc/test.h>
-#include "tdynarray.h"
 #include "testutils.h"
 
 /* use the sllnode-area here and start a bit above to be sure that its not used yet */

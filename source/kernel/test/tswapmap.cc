@@ -23,8 +23,6 @@
 #include <sys/mem/cache.h>
 #include <esc/test.h>
 
-#include "tswapmap.h"
-
 static void test_swapmap();
 static void test_swapmap1();
 static void test_swapmap2();

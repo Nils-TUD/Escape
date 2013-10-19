@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "pipe.h"
+#include "../modules.h"
 
 static void pipeReadChild(void);
 static void pipeReadParent(void);

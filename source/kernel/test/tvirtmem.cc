@@ -25,7 +25,6 @@
 #include <sys/task/proc.h>
 #include <sys/video.h>
 #include <esc/test.h>
-#include "tvirtmem.h"
 #include "testutils.h"
 
 /* forward declarations */

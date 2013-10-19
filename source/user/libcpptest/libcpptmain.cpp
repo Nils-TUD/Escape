@@ -21,18 +21,18 @@
 #include <esc/test.h>
 #include <stdio.h>
 
-#include "tests/tstring.h"
-#include "tests/tvector.h"
-#include "tests/tlist.h"
-#include "tests/talgorithm.h"
-#include "tests/tstreams.h"
-#include "tests/tfunctional.h"
-#include "tests/tbintree.h"
-#include "tests/tmap.h"
-#include "tests/tcmdargs.h"
-#include "tests/tsmartptr.h"
+extern sTestModule tModString;
+extern sTestModule tModVector;
+extern sTestModule tModList;
+extern sTestModule tModAlgo;
+extern sTestModule tModStreams;
+extern sTestModule tModFunctional;
+extern sTestModule tModBintree;
+extern sTestModule tModMap;
+extern sTestModule tModCmdArgs;
+extern sTestModule tModSmartPtr;
 #ifndef __eco32__
-#include "tests/ttuple.h"
+extern sTestModule tModTuple;
 #endif
 
 int main(void) {

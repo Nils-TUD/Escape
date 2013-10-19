@@ -22,7 +22,7 @@
 #include <esc/time.h>
 #include <stdio.h>
 
-#include "getpid.h"
+#include "../modules.h"
 
 #define SYSC_COUNT		100000
 

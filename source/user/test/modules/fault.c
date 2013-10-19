@@ -24,7 +24,8 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
-#include "fault.h"
+
+#include "../modules.h"
 
 static void sig_segf(A_UNUSED int sig) {
 	fflush(stdout);

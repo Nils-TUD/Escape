@@ -24,32 +24,33 @@
 #include <sys/task/proc.h>
 #include <sys/task/terminator.h>
 #include <sys/boot.h>
-#include <sys/video.h>
+#include <sys/log.h>
+#include <esc/test.h>
 
-#include "tkheap.h"
-#include "tdynarray.h"
-#include "tpaging.h"
-#include "tproc.h"
-#include "tphysmem.h"
-#include "tsched.h"
-#include "tstring.h"
-#include "tvfsnode.h"
-#include "tsignals.h"
-#include "tringbuffer.h"
-#include "tesccodes.h"
-#include "tswapmap.h"
-#include "tregion.h"
-#include "tvirtmem.h"
-#include "thashmap.h"
-#include "tctype.h"
-#include "tvmreg.h"
-#include "tvmfreemap.h"
-#include "tphysmemareas.h"
-#include "tslist.h"
 /* TODO find a better solution */
 #ifdef __mmix__
-#include "arch/mmix/taddrspace.h"
+extern sTestModule tModAddrSpace;
 #endif
+extern sTestModule tModVMReg;
+extern sTestModule tModVMFree;
+extern sTestModule tModCtype;
+extern sTestModule tModMM;
+extern sTestModule tModDynArray;
+extern sTestModule tModPaging;
+extern sTestModule tModProc;
+extern sTestModule tModHashMap;
+extern sTestModule tModKHeap;
+extern sTestModule tModRegion;
+extern sTestModule tModRBuffer;
+extern sTestModule tModSched;
+extern sTestModule tModString;
+extern sTestModule tModVFSn;
+extern sTestModule tModSignals;
+extern sTestModule tModEscCodes;
+extern sTestModule tModSwapMap;
+extern sTestModule tModVmm;
+extern sTestModule tModPmemAreas;
+extern sTestModule tModSList;
 
 /* make gcc happy */
 EXTERN_C void bspstart(BootInfo *mbp);

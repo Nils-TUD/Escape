@@ -17,9 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
-#include <esc/test.h>
 
-extern sTestModule tModSubscriber;
+extern int mod_speed(int,char**);
+extern int mod_driver(int,char**);
+extern int mod_debug(int,char**);
+extern int mod_fault(int,char**);
+extern int mod_thread(int,char**);
+extern int mod_fork(int,char**);
+extern int mod_forkbomb(int,char**);
+extern int mod_procswarm(int,char**);
+extern int mod_mem(int,char**);
+extern int mod_stack(int,char**);
+extern int mod_tls(int,char**);
+extern int mod_pipe(int,char**);
+extern int mod_sigclone(int,char**);
+extern int mod_fsreads(int,char**);
+extern int mod_ooc(int,char**);
+extern int mod_highcpu(int,char**);
+extern int mod_drvparallel(int,char**);
+extern int mod_maxthreads(int,char**);
+extern int mod_pagefaults(int,char**);

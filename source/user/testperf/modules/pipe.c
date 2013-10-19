@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pipe.h"
+#include "../modules.h"
 
 #define WRITE_COUNT		10000
 

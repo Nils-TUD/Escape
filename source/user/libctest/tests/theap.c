@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "theap.h"
-
 #define SINGLE_BYTE_COUNT 10000
 
 /* forward declarations */

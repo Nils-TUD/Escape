@@ -27,7 +27,7 @@
 #include <time.h>
 #include <errno.h>
 
-#include "speed.h"
+#include "../modules.h"
 
 int mod_speed(int argc,char *argv[]) {
 	int fd;

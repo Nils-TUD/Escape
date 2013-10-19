@@ -21,7 +21,6 @@
 #include <esc/sllist.h>
 #include <esc/test.h>
 #include <stdlib.h>
-#include "tsllist.h"
 
 /* forward declarations */
 static void test_sllist(void);

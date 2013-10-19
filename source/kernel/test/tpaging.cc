@@ -23,10 +23,9 @@
 #include <sys/task/thread.h>
 #include <sys/mem/physmem.h>
 #include <sys/video.h>
+#include <esc/test.h>
 #include <assert.h>
 #include <string.h>
-#include <esc/test.h>
-#include "tpaging.h"
 #include "testutils.h"
 
 /* forward declarations */

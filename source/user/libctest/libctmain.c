@@ -22,18 +22,18 @@
 #include <esc/test.h>
 #include <stdlib.h>
 
-#include "tests/theap.h"
-#include "tests/tfileio.h"
-#include "tests/tdir.h"
-#include "tests/tenv.h"
-#include "tests/tfs.h"
-#include "tests/tgroup.h"
-#include "tests/tuser.h"
-#include "tests/trect.h"
-#include "tests/tpasswd.h"
-#include "tests/tmem.h"
-#include "tests/tsllist.h"
-#include "tests/tsetjmp.h"
+extern sTestModule tModHeap;
+extern sTestModule tModFileio;
+extern sTestModule tModDir;
+extern sTestModule tModEnv;
+extern sTestModule tModFs;
+extern sTestModule tModGroup;
+extern sTestModule tModUser;
+extern sTestModule tModPasswd;
+extern sTestModule tModRect;
+extern sTestModule tModMem;
+extern sTestModule tModSLList;
+extern sTestModule tModSetjmp;
 
 int main(void) {
 	if(getuid() != ROOT_UID)

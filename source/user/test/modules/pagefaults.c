@@ -23,7 +23,8 @@
 #include <esc/thread.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "pagefaults.h"
+
+#include "../modules.h"
 
 #define REG_SIZE		(1024 * 1024 * 4)
 #define THREAD_COUNT	4

@@ -160,7 +160,9 @@ void PageDir::mapKernelSpace() {
 void PageDir::gdtFinished() {
 	/* make first page-table not-present */
 	proc0PD[0] = 0;
-	flushTLB();
+	/* remove each page explicitly; they are global */
+	for(size_t i = 0; i < PT_ENTRY_COUNT; ++i)
+		FLUSHADDR(i << PAGE_SIZE_SHIFT);
 }
 
 uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {

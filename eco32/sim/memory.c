@@ -229,8 +229,8 @@ void memoryInit(char *romImageName, char *progImageName, int memSize) {
   /* allocate main memory */
   memorySize = memSize * M;
   mem = malloc(memorySize);
-  if (mem == NULL) {
-    error("cannot allocate main memory");
+  if (memorySize == 0 || mem == NULL) {
+    error("cannot allocate main memory of size %zu", memorySize);
   }
   /* possibly load ROM image */
   if (romImageName == NULL) {

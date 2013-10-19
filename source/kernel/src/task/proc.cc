@@ -718,9 +718,6 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 	procLock.down();
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
-			/* avoid deadlock; at other places we acquire the PLOCK_PROG first and procLock afterwards */
-			procLock.up();
-			request(p->pid,PLOCK_PROG);
 			if(state) {
 				state->pid = p->pid;
 				state->exitCode = p->stats.exitCode;
@@ -731,10 +728,8 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				state->ownFrames = p->virtmem.getPeakOwnFrames();
 				state->sharedFrames = p->virtmem.getPeakSharedFrames();
 				state->swapped = p->virtmem.getSwapCount();
-				release(&*p,PLOCK_PROG);
-				return p->pid;
 			}
-			release(&*p,PLOCK_PROG);
+			procLock.up();
 			return p->pid;
 		}
 	}

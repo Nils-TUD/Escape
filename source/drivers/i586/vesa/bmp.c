@@ -36,8 +36,10 @@ void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	for(cy = 0; cy < h; cy++) {
 		for(cx = 0; cx < w; cx++) {
 			if((data[2] << 16 | data[1] << 8 | data[0]) != TRANSPARENCY) {
-				uint8_t *pos = scr->frmbuf + ((y + (h - cy - 1)) * scr->mode->width + cx + x) * bpp;
-				func(scr->mode,pos,data);
+				if((gsize_t)x + cx < scr->mode->width) {
+					uint8_t *pos = scr->frmbuf + ((y + (h - cy - 1)) * scr->mode->width + cx + x) * bpp;
+					func(scr->mode,pos,data);
+				}
 			}
 			data += 3;
 		}

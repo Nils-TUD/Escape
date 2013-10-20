@@ -83,10 +83,8 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 					gsize_t width = (gsize_t)msg.args.arg3;
 					gsize_t height = (gsize_t)msg.args.arg4;
 					size_t i = tui_find_client(fd);
-					msg.args.arg1 = -EINVAL;
 					if(i != MAX_CLIENTS)
-						msg.args.arg1 = updateScreen(clients + i,x,y,width,height);
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+						updateScreen(clients + i,x,y,width,height);
 				}
 				break;
 

@@ -533,11 +533,7 @@ void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		width += x;
 		x = 0;
 	}
-	msg.args.arg1 = x;
-	msg.args.arg2 = y;
-	msg.args.arg3 = MIN(mode.width - x,width);
-	msg.args.arg4 = MIN(mode.height - y,height);
-	send(uimng,MSG_SCR_UPDATE,&msg,sizeof(msg.args));
+	screen_update(uimng,x,y,MIN(mode.width - x,width),MIN(mode.height - y,height));
 }
 
 static void win_notifyWinCreate(gwinid_t id,const char *title) {

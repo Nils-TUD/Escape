@@ -173,13 +173,7 @@ int screen_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	msg.arg2 = y;
 	msg.arg3 = width;
 	msg.arg4 = height;
-	int res = send(fd,MSG_SCR_UPDATE,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
-	if(res < 0)
-		return res;
-	return msg.arg1;
+	return send(fd,MSG_SCR_UPDATE,&msg,sizeof(msg));
 }
 
 ssize_t screen_getModeCount(int fd) {

@@ -332,12 +332,10 @@ static int ctrlThread(A_UNUSED void *arg) {
 					gsize_t width = (gsize_t)msg.args.arg3;
 					gsize_t height = (gsize_t)msg.args.arg4;
 					sClient *cli = cli_get(fd);
-					msg.args.arg1 = 0;
 					if(cli == cli_getActive()) {
 						y += header_getHeight(cli->type);
-						msg.args.arg1 = screen_update(cli->screenFd,x,y,width,height);
+						screen_update(cli->screenFd,x,y,width,height);
 					}
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 			}

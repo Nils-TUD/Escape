@@ -202,15 +202,6 @@ namespace gui {
 			return _body;
 		}
 
-		virtual Size getPrefSize() const {
-			Size bsize = _body->getPreferredSize();
-			if(_header) {
-				Size hsize = _header->getPreferredSize();
-				return Size(std::max(hsize.width,bsize.width) + 2,hsize.height + bsize.height + 2);
-			}
-			return Size(bsize.width + 2,bsize.height + 2);
-		}
-
 		virtual bool layout() {
 			bool res = false;
 			if(_header)
@@ -292,6 +283,14 @@ namespace gui {
 		}
 
 	private:
+		virtual Size getPrefSize() const {
+			Size bsize = _body->getPreferredSize();
+			if(_header) {
+				Size hsize = _header->getPreferredSize();
+				return Size(std::max(hsize.width,bsize.width) + 2,hsize.height + bsize.height + 2);
+			}
+			return Size(bsize.width + 2,bsize.height + 2);
+		}
 		virtual void setFocus(Control *c);
 		/**
 		 * @return the current position to move to

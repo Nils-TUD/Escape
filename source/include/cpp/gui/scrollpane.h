@@ -42,14 +42,6 @@ namespace gui {
 			: Control(pos,size), _ctrl(ctrl), _update(), _focus(0), _doingLayout() {
 		}
 
-		virtual Size getPrefSize() const {
-			return maxsize(_ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE),Size(MIN_SIZE,MIN_SIZE));
-		}
-
-		virtual Size getUsedSize(const Size &avail) const {
-			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
-		}
-
 		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
 			if(rect.empty())
 				return rect;
@@ -163,6 +155,12 @@ namespace gui {
 		}
 
 	private:
+		virtual Size getPrefSize() const {
+			return maxsize(_ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE),Size(MIN_SIZE,MIN_SIZE));
+		}
+		virtual Size getUsedSize(const Size &avail) const {
+			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
+		}
 		Size getVisible() {
 			return Size(std::max<gsize_t>(0,getSize().width - BAR_SIZE),
 					std::max<gsize_t>(0,getSize().height - BAR_SIZE));

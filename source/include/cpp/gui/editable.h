@@ -75,7 +75,6 @@ namespace gui {
 		void removeLast();
 		void removeNext();
 
-		virtual Size getPrefSize() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onMouseMoved(const MouseEvent &e);
@@ -87,6 +86,7 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
+		virtual Size getPrefSize() const;
 		int getPosAt(gpos_t x);
 		void moveCursor(int amount);
 		void moveCursorTo(size_t pos);

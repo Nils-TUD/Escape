@@ -41,8 +41,6 @@ namespace gui {
 			makeDirty(true);
 		}
 
-		virtual Size getPrefSize() const;
-
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const {
 			UIElement::print(os, rec, indent);
 			os << " text='" << _text << "'";
@@ -52,6 +50,8 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
+		virtual Size getPrefSize() const;
+
 		std::string _text;
 	};
 }

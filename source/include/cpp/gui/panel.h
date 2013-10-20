@@ -43,21 +43,6 @@ namespace gui {
 			: Control(pos,size), _focus(nullptr), _controls(), _layout(l), _doingLayout() {
 		}
 
-		virtual Size getPrefSize() const {
-			if(_layout) {
-				gsize_t pad = getTheme().getPadding();
-				return _layout->getPreferredSize() + Size(pad * 2,pad * 2);
-			}
-			return Size();
-		}
-		virtual Size getUsedSize(const Size &avail) const {
-			if(_layout) {
-				gsize_t pad = getTheme().getPadding();
-				Size padsize = Size(pad * 2,pad * 2);
-				return _layout->getUsedSize(subsize(avail,padsize)) + padsize;
-			}
-			return UIElement::getUsedSize(avail);
-		}
 		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
 			if(rect.empty())
 				return rect;
@@ -88,7 +73,7 @@ namespace gui {
 		 * Performs a layout-calculation for this panel and all childs
 		 */
 		virtual bool layout();
-		
+
 		/**
 		 * The event-callbacks
 		 *
@@ -154,6 +139,21 @@ namespace gui {
 	private:
 		void passToCtrl(const MouseEvent &e,bool focus);
 
+		virtual Size getPrefSize() const {
+			if(_layout) {
+				gsize_t pad = getTheme().getPadding();
+				return _layout->getPreferredSize() + Size(pad * 2,pad * 2);
+			}
+			return Size();
+		}
+		virtual Size getUsedSize(const Size &avail) const {
+			if(_layout) {
+				gsize_t pad = getTheme().getPadding();
+				Size padsize = Size(pad * 2,pad * 2);
+				return _layout->getUsedSize(subsize(avail,padsize)) + padsize;
+			}
+			return UIElement::getUsedSize(avail);
+		}
 		virtual void setParent(UIElement *e) {
 			Control::setParent(e);
 			for(auto it = _controls.begin(); it != _controls.end(); ++it)

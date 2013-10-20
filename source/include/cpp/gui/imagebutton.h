@@ -22,11 +22,12 @@ namespace gui {
 			return _img;
 		}
 
-		virtual Size getPrefSize() const;
 		virtual void paintBorder(Graphics &g);
 		virtual void paintBackground(Graphics &g);
 
 	private:
+		virtual Size getPrefSize() const;
+
 		std::shared_ptr<Image> _img;
 		bool _border;
 	};

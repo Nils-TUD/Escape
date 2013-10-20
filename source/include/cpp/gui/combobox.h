@@ -84,7 +84,6 @@ namespace gui {
 			makeDirty(true);
 		}
 
-		virtual Size getPrefSize() const;
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 
@@ -94,6 +93,7 @@ namespace gui {
 		}
 
 	protected:
+		virtual Size getPrefSize() const;
 		void removeWindow() {
 			Application::getInstance()->removeWindow(_win);
 			_win.reset();

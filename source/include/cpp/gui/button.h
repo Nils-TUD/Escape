@@ -51,7 +51,6 @@ namespace gui {
 			makeDirty(true);
 		}
 
-		virtual Size getPrefSize() const;
 		virtual void onFocusGained();
 		virtual void onFocusLost();
 		virtual void onKeyPressed(const KeyEvent &e);
@@ -74,6 +73,7 @@ namespace gui {
 		virtual void paint(Graphics &g);
 
 	private:
+		virtual Size getPrefSize() const;
 		void setPressed(bool pressed) {
 			_pressed = pressed;
 			makeDirty(true);

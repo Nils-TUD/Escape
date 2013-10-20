@@ -74,7 +74,6 @@ namespace gui {
 			getParent()->setFocus(nullptr);
 		}
 
-	protected:
 		/**
 		 * Resizes the ui-element to given size
 		 *
@@ -89,6 +88,7 @@ namespace gui {
 		 */
 		virtual void moveTo(const Pos &pos);
 
+	protected:
 		/**
 		 * @return the control that has the focus (not a panel!) or nullptr if no one
 		 */

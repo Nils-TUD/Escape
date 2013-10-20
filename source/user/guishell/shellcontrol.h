@@ -72,12 +72,11 @@ public:
 	}
 
 	void sendEOF();
-
-	virtual gui::Size getPrefSize() const;
-	virtual gui::Size getUsedSize(const gui::Size &avail) const;
 	virtual void paint(gui::Graphics &g);
 
 private:
+	virtual gui::Size getPrefSize() const;
+	virtual gui::Size getUsedSize(const gui::Size &avail) const;
 	gui::Size rectToLines(const gui::Rectangle &r) const;
 	gui::Rectangle linesToRect(size_t start,size_t count) const;
 	void setVTerm(sVTerm *vt) {

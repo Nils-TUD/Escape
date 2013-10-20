@@ -52,7 +52,8 @@ static shared_ptr<Window> win4(void);
 static shared_ptr<Window> win5(void);
 static shared_ptr<Window> win6(void);
 static shared_ptr<Window> win7(void);
-static int pbThread(void *arg);
+static shared_ptr<Window> win8(void);
+static int updateThread(void *arg);
 
 static volatile bool run = true;
 
@@ -67,6 +68,7 @@ int main() {
 	addWindow(app,win5());
 	addWindow(app,win6());
 	addWindow(app,win7());
+	addWindow(app,win8());
 	cout.flush();
 	int res = app->run();
 	run = false;
@@ -93,8 +95,6 @@ static shared_ptr<Window> win0(void) {
 			make_control<ProgressBar>("Progress3...",Pos(0,0),Size(50,0))),BorderLayout::SOUTH);
 	p->add(make_control<ScrollPane>(
 			make_control<ProgressBar>("Progress4...")),BorderLayout::WEST);
-	//if(startthread(pbThread,pb) < 0)
-	//	cerr << "[GUITEST] Unable to start thread" << endl;
 	w->show(true);
 	return w;
 }
@@ -296,29 +296,64 @@ static shared_ptr<Window> win7(void) {
 	return win;
 }
 
-static int pbThread(void *arg) {
-	ProgressBar *pb = (ProgressBar*)arg;
+static shared_ptr<Button> btns[5];
+static shared_ptr<ProgressBar> progbar;
+
+static shared_ptr<Window> win8(void) {
+	shared_ptr<Window> win = make_control<Window>("Window 8",Pos(500,200),Size(400,300));
+	shared_ptr<Panel> root = win->getRootPanel();
+	root->getTheme().setPadding(2);
+
+	for(size_t i = 0; i < ARRAY_SIZE(btns); ++i) {
+		char name[SSTRLEN("my button") + 12];
+		snprintf(name,sizeof(name),"my button%zu",i);
+		btns[i] = make_control<Button>(name);
+		root->add(btns[i]);
+		btns[i]->moveTo(Pos(i * 10,i * 40));
+		btns[i]->resizeTo(btns[i]->getPreferredSize());
+	}
+	progbar = make_control<ProgressBar>("my progress");
+	root->add(progbar);
+	progbar->moveTo(Pos(100,200));
+	progbar->resizeTo(progbar->getPreferredSize());
+
+	if(startthread(updateThread,NULL) < 0)
+		error("Unable to start update-thread");
+	win->show(false);
+	return win;
+}
+
+static int updateThread(A_UNUSED void *arg) {
 	bool forward = true;
 	while(run) {
-		if(pb != nullptr) {
-			Application::getInstance()->executeLater(make_lambda([pb,&forward] {
-				size_t pos = pb->getPosition();
-				if(forward) {
-					if(pos < 100)
-						pb->setPosition(pos + 1);
-					else
-						forward = false;
+		Application::getInstance()->executeLater(make_lambda([&forward] {
+			size_t pos = progbar->getPosition();
+			if(forward) {
+				if(pos < 100)
+					progbar->setPosition(pos + 1);
+				else
+					forward = false;
+			}
+			else {
+				if(pos > 0)
+					progbar->setPosition(pos - 1);
+				else
+					forward = true;
+			}
+
+			if(progbar->getPosition() % 5 == 0) {
+				for(size_t i = 0; i < ARRAY_SIZE(btns); ++i) {
+					Size winsize = btns[i]->getWindow()->getSize();
+					gpos_t x = rand() % (winsize.width - btns[i]->getSize().width);
+					gpos_t y = rand() % (winsize.height - btns[i]->getSize().height);
+					btns[i]->moveTo(Pos(x,y));
 				}
-				else {
-					if(pos > 0)
-						pb->setPosition(pos - 1);
-					else
-						forward = true;
-				}
-				pb->repaint();
-			}));
-		}
-		sleep(10);
+				btns[0]->getParent()->repaint();
+			}
+			else
+				progbar->repaint();
+		}));
+		sleep(50);
 	}
 	return 0;
 }

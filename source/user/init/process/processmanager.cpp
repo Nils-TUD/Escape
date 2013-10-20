@@ -69,9 +69,6 @@ void ProcessManager::start() {
 		(*it)->load();
 		pg.itemLoaded();
 	}
-
-	// finally enable vterm, which exchanges the loading-screen with its own stuff
-	/* TODO setVTermEnabled(true); */
 	unlocku(&_lock);
 }
 
@@ -108,7 +105,6 @@ void ProcessManager::died(pid_t pid) {
 
 void ProcessManager::shutdown() {
 	locku(&_lock);
-	/* TODO setVTermEnabled(false); */
 	addRunning();
 	_downProg = new Progress(0,_procs.size(),_procs.size());
 	_downProg->paintBar();

@@ -69,7 +69,7 @@ public:
 	}
 
 	virtual bool isKillable() const {
-		return name() != "video";
+		return name() != "vga";
 	}
 	const std::vector<Device>& devices() const {
 		return _devices;

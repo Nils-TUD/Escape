@@ -34,8 +34,10 @@ Progress::Progress(size_t startSkip,size_t finished,size_t itemCount)
 }
 
 Progress::~Progress() {
-	if(_shm)
+	if(_shm) {
 		munmap(_shm);
+		shm_unlink("init-vga");
+	}
 	if(_fd >= 0)
 		close(_fd);
 }

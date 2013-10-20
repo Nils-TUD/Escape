@@ -36,6 +36,13 @@ extern "C" {
 #endif
 
 /**
+ * Adds the given rect to r. That means r will enclose r and the given one after the call
+ *
+ * @param r the first rectangle
+ */
+void rectAddTo(sRectangle *r,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
+/**
  * Adds r2 to r1. That means r1 will enclose r1 and r2 after the call
  *
  * @param r1 the first rectangle

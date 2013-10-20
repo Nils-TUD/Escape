@@ -20,34 +20,73 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/messages.h>
+#include <esc/sllist.h>
+#include <esc/thread.h>
+#include <esc/rect.h>
 #include <tui/tuidev.h>
 #include <stdlib.h>
 
+#define DIFF(a,b)				((a) > (b) ? ((a) - (b)) : ((b) - (a)))
+
 #define MAX_CLIENTS				16
+#define MAX_REQC				30
+#define MAX_RECTS				16
+
+typedef struct {
+	gpos_t x;
+	gpos_t y;
+	int cursor;
+	int client;
+} sNewCursor;
 
 static sScreenMode *modes;
 static size_t modeCount;
 static sTUIClient clients[MAX_CLIENTS];
+static fUpdateScreen updateScreen;
+static fSetCursor setCursor;
 
+static size_t mergeTolerance[] = {
+	/* 0 = unused */	0,
+	/* 1 = tui */		10,
+	/* 2 = gui */		40
+};
+static sRectangle rects[MAX_RECTS];
+static size_t rectCount;
+static sNewCursor newCursor;
+
+static void tui_addUpdate(int cli,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+static void tui_addCursor(int cli,gpos_t x,gpos_t y,int cursor);
+static void tui_update(void);
 static size_t tui_find_client(inode_t cid);
 
 void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMode setMode,
-					fSetCursor setCursor,fUpdateScreen updateScreen) {
+					fSetCursor setCur,fUpdateScreen updScreen) {
 	modes = modelist;
 	modeCount = mcount;
+	updateScreen = updScreen;
+	setCursor = setCur;
 
 	int id = createdev(name,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device '%s'",name);
+
+	size_t reqc = 0;
+	newCursor.client = -1;
 
 	/* wait for messages */
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
 
-		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			printe("Unable to get work");
+		int fd = getwork(id,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		if(fd < 0 || reqc >= MAX_REQC) {
+			if(fd != -ENOCLIENT)
+				printe("Unable to get work");
+			reqc = 0;
+			tui_update();
+		}
+		if(fd == -ENOCLIENT)
+			wait(EV_CLIENT,id);
 		else {
 			/* see what we have to do */
 			switch(mid) {
@@ -84,7 +123,7 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 					gsize_t height = (gsize_t)msg.args.arg4;
 					size_t i = tui_find_client(fd);
 					if(i != MAX_CLIENTS)
-						updateScreen(clients + i,x,y,width,height);
+						tui_addUpdate(i,x,y,width,height);
 				}
 				break;
 
@@ -134,7 +173,7 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 						gpos_t x = (gpos_t)msg.args.arg1;
 						gpos_t y = (gpos_t)msg.args.arg2;
 						int cursor = (int)msg.args.arg3;
-						setCursor(clients + i,x,y,cursor);
+						tui_addCursor(i,x,y,cursor);
 					}
 				}
 				break;
@@ -145,6 +184,58 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 					break;
 			}
 		}
+	}
+}
+
+static void tui_addUpdate(int cli,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	/* first check if we can merge this rectangle with another one.
+	 * maybe we have even got exactly this rectangle... */
+	bool present = false;
+	size_t tolerance = mergeTolerance[clients[cli].type];
+	for(size_t i = 0; i < rectCount; ++i) {
+		sRectangle *r = rects + i;
+		if(r->window == cli &&
+			(size_t)DIFF(r->x,x) < tolerance && (size_t)DIFF(r->y,y) < tolerance &&
+			DIFF(r->width,width) < tolerance && DIFF(r->height,height) < tolerance) {
+			/* mergable, so do it */
+			rectAddTo(r,x,y,width,height);
+			present = true;
+			break;
+		}
+	}
+	/* if not present yet, add it */
+	if(!present) {
+		if(rectCount == MAX_RECTS)
+			tui_update();
+		sRectangle *add = rects + rectCount++;
+		add->x = x;
+		add->y = y;
+		add->width = width;
+		add->height = height;
+		add->window = cli;
+	}
+}
+
+static void tui_addCursor(int cli,gpos_t x,gpos_t y,int cursor) {
+	if(newCursor.client == cli) {
+		newCursor.x = x;
+		newCursor.y = y;
+		newCursor.cursor = cursor;
+	}
+	else
+		setCursor(clients + cli,x,y,cursor);
+}
+
+static void tui_update(void) {
+	for(size_t i = 0; i < rectCount; ++i) {
+		sRectangle *r = rects + i;
+		updateScreen(clients + r->window,r->x,r->y,r->width,r->height);
+	}
+	rectCount = 0;
+
+	if(newCursor.client != -1) {
+		setCursor(clients + newCursor.client,newCursor.x,newCursor.y,newCursor.cursor);
+		newCursor.client = -1;
 	}
 }
 

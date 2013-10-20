@@ -22,6 +22,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+void rectAddTo(sRectangle *r,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	sRectangle r2 = {
+		.x = x,
+		.y = y,
+		.width = width,
+		.height = height
+	};
+	rectAdd(r,&r2);
+}
+
 void rectAdd(sRectangle *r1,const sRectangle *r2) {
 	int x = r1->x, y = r1->y;
 	r1->x = MIN(r1->x,r2->x);

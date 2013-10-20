@@ -30,16 +30,18 @@
 
 static void getWindows(FILE *str);
 
-int infodev_thread(A_UNUSED void *arg) {
+int infodev_thread(void *arg) {
+	char path[MAX_PATH_LEN];
 	sMsg msg;
 	msgid_t mid;
 	int id;
 
-	id = createdev("/system/windows",DEV_TYPE_FILE,DEV_READ);
+	snprintf(path,sizeof(path),"/system/%s-windows",arg);
+	id = createdev(path,DEV_TYPE_FILE,DEV_READ);
 	if(id < 0)
-		error("Unable to create file /system/windows");
-	if(chmod("/system/windows",0644) < 0)
-		error("Unable to chmod /system/windows");
+		error("Unable to create file %s",path);
+	if(chmod(path,0644) < 0)
+		error("Unable to chmod %s",path);
 
 	while(1) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);

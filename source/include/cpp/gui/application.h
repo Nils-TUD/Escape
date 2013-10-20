@@ -103,6 +103,13 @@ namespace gui {
 		}
 
 		/**
+		 * @return the path to the window-manager
+		 */
+		const char *getWinMng() const {
+			return _winmng;
+		}
+
+		/**
 		 * @param id the window-id
 		 * @return the window with given id or nullptr
 		 */
@@ -256,5 +263,6 @@ namespace gui {
 		tULock _queuelock;
 		bool _listening;
 		Theme _defTheme;
+		const char *_winmng;
 	};
 }

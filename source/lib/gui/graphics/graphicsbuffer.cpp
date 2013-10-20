@@ -19,17 +19,23 @@ namespace gui {
 		if(!_win->isCreated())
 			return;
 
+		// get window-manager name
+		const char *winmng = Application::getInstance()->getWinMng();
+		const char *p;
+		while((p = strchr(winmng,'/')) != NULL)
+			winmng = p + 1;
+
 		// attach to shared memory region, created by winmanager
-		char name[16];
-		snprintf(name, sizeof(name), "win-%d", _win->getId());
+		char name[32];
+		snprintf(name, sizeof(name),"%s-win%d",winmng,_win->getId());
 		_fd = shm_open(name,IO_READ | IO_WRITE,0644);
 		if(_fd < 0)
-			throw std::io_exception(string("Unable to open shm file ") + name, _fd);
+			throw std::io_exception(string("Unable to open shm file ") + name,_fd);
 		_pixels = static_cast<uint8_t*>(mmap(NULL,_size.width * _size.height * (_bpp / 8),0,
 				PROT_READ | PROT_WRITE,MAP_SHARED,_fd,0));
 		if(_pixels == NULL) {
 			close(_fd);
-			throw std::io_exception(string("Unable to mmap shm file ") + name, errno);
+			throw std::io_exception(string("Unable to mmap shm file ") + name,errno);
 		}
 	}
 

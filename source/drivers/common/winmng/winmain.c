@@ -35,7 +35,7 @@
 #include "listener.h"
 #include "infodev.h"
 
-#define DEF_BPP		16
+#define DEF_BPP		24
 
 static sMsg msg;
 static gsize_t screenWidth;
@@ -79,7 +79,7 @@ int main(int argc,char *argv[]) {
 	listener_init(drvId);
 	if(startthread(input_thread,&inputData) < 0)
 		error("Unable to start thread for mouse-handler");
-	if(startthread(infodev_thread,NULL) < 0)
+	if(startthread(infodev_thread,argv[3]) < 0)
 		error("Unable to start thread for the infodev");
 
 	screenWidth = win_getMode()->width;
@@ -100,7 +100,7 @@ int main(int argc,char *argv[]) {
 					uint style = msg.str.arg6;
 					gsize_t titleBarHeight = msg.str.arg7;
 					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,fd,style,titleBarHeight,msg.str.s1);
+					msg.args.arg2 = win_create(x,y,width,height,fd,style,titleBarHeight,msg.str.s1,argv[3]);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style != WIN_STYLE_DESKTOP)
 						win_setActive(msg.args.arg2,false,input_getMouseX(),input_getMouseY());
@@ -146,7 +146,7 @@ int main(int argc,char *argv[]) {
 					bool finished = (bool)msg.args.arg6;
 					if(win_exists(wid)) {
 						if(finished) {
-							win_resize(wid,x,y,width,height);
+							win_resize(wid,x,y,width,height,argv[3]);
 							/* wid is already set */
 							send(fd,MSG_WIN_RESIZE_RESP,&msg,sizeof(msg.args));
 						}

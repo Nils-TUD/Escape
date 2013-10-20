@@ -42,7 +42,8 @@ namespace gui {
 
 	Application::Application(const char *winmng)
 			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
-			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr) {
+			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr),
+			  _winmng() {
 		if(crtlocku(&_queuelock) < 0)
 			throw app_error("Unable to create queue lock");
 
@@ -50,6 +51,7 @@ namespace gui {
 			winmng = getenv("WINMNG");
 		if(winmng == NULL)
 			throw app_error("Env-var WINMNG not set");
+		_winmng = winmng;
 
 		_winFd = open(winmng,IO_MSGS);
 		if(_winFd < 0)

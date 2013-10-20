@@ -39,7 +39,7 @@
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
 #define ABS(a)		((a) < 0 ? -(a) : (a))
 
-static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height);
+static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
 static void win_destroyBuf(sWindow *win);
 static gwinid_t win_getTop(void);
 static bool win_validateRect(sRectangle *r);
@@ -94,9 +94,9 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	send(uimng,MSG_SCR_SETCURSOR,&msg,sizeof(msg.args));
 }
 
-static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height) {
-	char name[16];
-	snprintf(name,sizeof(name),"win-%d",id);
+static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng) {
+	char name[32];
+	snprintf(name,sizeof(name),"%s-win%d",winmng,id);
 	win->shmfd = shm_open(name,IO_READ | IO_WRITE | IO_CREATE,0644);
 	if(win->shmfd < 0)
 		return win->shmfd;
@@ -120,11 +120,11 @@ static void win_destroyBuf(sWindow *win) {
 }
 
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-		gsize_t titleBarHeight,const char *title) {
+		gsize_t titleBarHeight,const char *title,const char *winmng) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNUSED) {
-			if(win_createBuf(windows + i,i,width,height) < 0)
+			if(win_createBuf(windows + i,i,width,height,winmng) < 0)
 				return WINID_UNUSED;
 
 			windows[i].id = i;
@@ -273,10 +273,10 @@ void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 	preview_set(shmem,x,y,w->width,w->height,2);
 }
 
-void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height,const char *winmng) {
 	/* exchange buffer */
 	win_destroyBuf(windows + window);
-	assert(win_createBuf(windows + window,window,width,height) == 0);
+	assert(win_createBuf(windows + window,window,width,height,winmng) == 0);
 
 	if(x != windows[window].x || y != windows[window].y)
 		win_moveTo(window,x,y,width,height);

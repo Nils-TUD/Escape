@@ -38,7 +38,7 @@
 typedef void (*header_func)(sScreenMode *mode,char *header,uint *col,char c,char color);
 
 static void header_readCPUUsage(void);
-static void header_buildTitle(sClient *cli);
+static void header_buildTitle(sClient *cli,gsize_t *width,gsize_t *height,bool force);
 
 typedef struct {
 	int usage;
@@ -46,22 +46,26 @@ typedef struct {
 } sCPUUsage;
 
 static sCPUUsage *cpuUsage = NULL;
+static sCPUUsage *lastUsage = NULL;
 static size_t cpuCount;
 
 void header_init(void) {
 	cpuCount = sysconf(CONF_CPU_COUNT);
 	cpuUsage = (sCPUUsage*)calloc(cpuCount,sizeof(sCPUUsage));
-	if(!cpuUsage)
+	lastUsage = (sCPUUsage*)calloc(cpuCount,sizeof(sCPUUsage));
+	if(!cpuUsage || !lastUsage)
 		error("Not enough memory for cpu array");
 	/* until the first update... */
 	for(size_t i = 0; i < cpuCount; ++i)
 		snprintf(cpuUsage[i].str,sizeof(cpuUsage[i].str),"%2d",0);
 }
 
-size_t header_getSize(sScreenMode *mode,int type) {
+size_t header_getSize(sScreenMode *mode,int type,gpos_t x) {
 	if(type == VID_MODE_TYPE_TUI)
-		return mode->cols * 2;
-	return mode->width * (mode->bitsPerPixel / 8) * FONT_HEIGHT;
+		return x * 2;
+	/* always update the whole width because it simplifies the copy it shouldn't be much slower
+	 * than doing a loop with 1 memcpy per line */
+	return x * (mode->bitsPerPixel / 8) * FONT_HEIGHT;
 }
 
 size_t header_getHeight(int type) {
@@ -70,39 +74,35 @@ size_t header_getHeight(int type) {
 	return FONT_HEIGHT;
 }
 
-static bool header_setSize(sClient *cli,gsize_t *width,gsize_t *height) {
-	if(!cli->screenMode)
-		return false;
-	if(width && height) {
-		if(cli->type == VID_MODE_TYPE_TUI) {
-			*width = cli->screenMode->cols;
-			*height = 1;
-		}
-		else {
-			*width = cli->screenMode->width;
-			*height = FONT_HEIGHT;
+static void header_doUpdate(sClient *cli,gsize_t width,gsize_t height) {
+	if(cli->type == VID_MODE_TYPE_TUI || width == cli->screenMode->width)
+		memcpy(cli->screenShm,cli->header,header_getSize(cli->screenMode,cli->type,width));
+	else {
+		size_t off = 0;
+		size_t len = width * (cli->screenMode->bitsPerPixel / 8) * FONT_HEIGHT;
+		size_t inc = cli->screenMode->width * (cli->screenMode->bitsPerPixel / 8);
+		for(gsize_t y = 0; y < height; y++) {
+			memcpy(cli->screenShm + off,cli->header + off,len);
+			off += inc;
 		}
 	}
-	return true;
 }
 
 bool header_update(sClient *cli,gsize_t *width,gsize_t *height) {
-	if(!header_setSize(cli,width,height))
-		return false;
-
-	header_buildTitle(cli);
-	memcpy(cli->screenShm,cli->header,header_getSize(cli->screenMode,cli->type));
-	return true;
+	*width = *height = 0;
+	header_buildTitle(cli,width,height,true);
+	if(*width > 0)
+		header_doUpdate(cli,*width,*height);
+	return *width > 0;
 }
 
 bool header_rebuild(sClient *cli,gsize_t *width,gsize_t *height) {
-	if(!header_setSize(cli,width,height))
-		return false;
-
 	header_readCPUUsage();
-	header_buildTitle(cli);
-	memcpy(cli->screenShm,cli->header,header_getSize(cli->screenMode,cli->type));
-	return true;
+	*width = *height = 0;
+	header_buildTitle(cli,width,height,false);
+	if(*width > 0)
+		header_doUpdate(cli,*width,*height);
+	return *width > 0;
 }
 
 static void header_readCPUUsage(void) {
@@ -148,47 +148,75 @@ static void header_putcGUI(sScreenMode *mode,char *header,uint *col,char c,char 
 	(*col)++;
 }
 
-static void header_buildTitle(sClient *cli) {
+static void header_makeDirty(sClient *cli,size_t cols,gsize_t *width,gsize_t *height) {
+	if(cli->type == VID_MODE_TYPE_TUI) {
+		*width = cols;
+		*height = 1;
+	}
+	else {
+		*width = cols * FONT_WIDTH;
+		*height = FONT_HEIGHT;
+	}
+}
+
+static void header_buildTitle(sClient *cli,gsize_t *width,gsize_t *height,bool force) {
+	if(!cli->screenMode)
+		return;
+
 	uint col = 0;
 	header_func func = cli->type == VID_MODE_TYPE_GUI ? header_putcGUI : header_putcTUI;
 
 	/* print CPU usage */
+	bool changed = false;
 	size_t maxCpus = MIN(cpuCount,8);
 	for(size_t i = 0; i < maxCpus; i++) {
-		func(cli->screenMode,cli->header,&col,' ',CPU_USAGE_COLOR);
-		func(cli->screenMode,cli->header,&col,cpuUsage[i].str[0],CPU_USAGE_COLOR);
-		func(cli->screenMode,cli->header,&col,cpuUsage[i].str[1],CPU_USAGE_COLOR);
+		if(force || cpuUsage[i].usage != lastUsage[i].usage) {
+			func(cli->screenMode,cli->header,&col,' ',CPU_USAGE_COLOR);
+			func(cli->screenMode,cli->header,&col,cpuUsage[i].str[0],CPU_USAGE_COLOR);
+			func(cli->screenMode,cli->header,&col,cpuUsage[i].str[1],CPU_USAGE_COLOR);
+			changed = true;
+		}
+		else
+			col += 3;
 	}
-	if(cpuCount > maxCpus) {
-		func(cli->screenMode,cli->header,&col,' ',CPU_USAGE_COLOR);
-		func(cli->screenMode,cli->header,&col,'.',CPU_USAGE_COLOR);
-		func(cli->screenMode,cli->header,&col,'.',CPU_USAGE_COLOR);
+	memcpy(lastUsage,cpuUsage,cpuCount * sizeof(sCPUUsage));
+	if(force || changed) {
+		if(cpuCount > maxCpus) {
+			func(cli->screenMode,cli->header,&col,' ',CPU_USAGE_COLOR);
+			func(cli->screenMode,cli->header,&col,'.',CPU_USAGE_COLOR);
+			func(cli->screenMode,cli->header,&col,'.',CPU_USAGE_COLOR);
+		}
+		header_makeDirty(cli,col,width,height);
 	}
 
-	/* print sep */
-	func(cli->screenMode,cli->header,&col,0xC7,TITLE_BAR_COLOR);
+	if(force) {
+		/* print sep */
+		func(cli->screenMode,cli->header,&col,0xC7,TITLE_BAR_COLOR);
 
-	/* fill with '-' */
-	while(col < cli->screenMode->cols)
-		func(cli->screenMode,cli->header,&col,0xC4,TITLE_BAR_COLOR);
+		/* fill with '-' */
+		while(col < cli->screenMode->cols)
+			func(cli->screenMode,cli->header,&col,0xC4,TITLE_BAR_COLOR);
 
-	/* print OS name */
-	size_t len = strlen(OS_TITLE);
-	col = (cli->screenMode->cols - len) / 2;
-	for(size_t i = 0; i < len; i++)
-		func(cli->screenMode,cli->header,&col,OS_TITLE[i],TITLE_BAR_COLOR);
+		/* print OS name */
+		size_t len = strlen(OS_TITLE);
+		col = (cli->screenMode->cols - len) / 2;
+		for(size_t i = 0; i < len; i++)
+			func(cli->screenMode,cli->header,&col,OS_TITLE[i],TITLE_BAR_COLOR);
 
-	/* print clients */
-	size_t clients = cli_getCount();
-	col = cli->screenMode->cols - clients * 3 - 1;
-	func(cli->screenMode,cli->header,&col,0xB6,TITLE_BAR_COLOR);
-	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
-		if(!cli_exists(i))
-			continue;
+		/* print clients */
+		size_t clients = cli_getCount();
+		col = cli->screenMode->cols - clients * 3 - 1;
+		func(cli->screenMode,cli->header,&col,0xB6,TITLE_BAR_COLOR);
+		for(size_t i = 0; i < MAX_CLIENTS; ++i) {
+			if(!cli_exists(i))
+				continue;
 
-		char color = cli_isActive(i) ? ACTIVE_CLI_COLOR : INACTIVE_CLI_COLOR;
-		func(cli->screenMode,cli->header,&col,' ',color);
-		func(cli->screenMode,cli->header,&col,' ',color);
-		func(cli->screenMode,cli->header,&col,'0' + i,color);
+			char color = cli_isActive(i) ? ACTIVE_CLI_COLOR : INACTIVE_CLI_COLOR;
+			func(cli->screenMode,cli->header,&col,' ',color);
+			func(cli->screenMode,cli->header,&col,' ',color);
+			func(cli->screenMode,cli->header,&col,'0' + i,color);
+		}
+
+		header_makeDirty(cli,cli->screenMode->cols,width,height);
 	}
 }

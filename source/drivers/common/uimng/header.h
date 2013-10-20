@@ -25,6 +25,6 @@
 
 void header_init(void);
 size_t header_getHeight(int type);
-size_t header_getSize(sScreenMode *mode,int type);
+size_t header_getSize(sScreenMode *mode,int type,gpos_t x);
 bool header_update(sClient *cli,gsize_t *width,gsize_t *height);
 bool header_rebuild(sClient *cli,gsize_t *width,gsize_t *height);

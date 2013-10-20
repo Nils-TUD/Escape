@@ -72,7 +72,8 @@ void cli_reactivate(int oldMode) {
 
 	gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
 	gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
-	header_rebuild(cli,NULL,NULL);
+	gsize_t dw,dh;
+	header_update(cli,&dw,&dh);
 	if(screen_update(cli->screenFd,0,0,w,h) < 0)
 		printe("Screen update failed");
 }

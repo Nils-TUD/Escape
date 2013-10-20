@@ -130,7 +130,8 @@ int screens_setMode(sClient *cli,int type,int mid,const char *shm) {
 	}
 
 	/* create header-line */
-	cli->header = (char*)malloc(header_getSize(mode,type));
+	cli->header = (char*)malloc(header_getSize(mode,type,
+		type == VID_MODE_TYPE_TUI ? mode->cols : mode->width));
 	if(cli->header == NULL) {
 		res = -ENOMEM;
 		goto errorClose;

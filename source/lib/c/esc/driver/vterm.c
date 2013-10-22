@@ -26,61 +26,54 @@
 static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *resp);
 
 int vterm_setEcho(int fd,bool echo) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,echo ? MSG_VT_EN_ECHO : MSG_VT_DIS_ECHO,0,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,echo ? MSG_VT_EN_ECHO : MSG_VT_DIS_ECHO,0,&msg);
 }
 
 int vterm_setReadline(int fd,bool readline) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,readline ? MSG_VT_EN_RDLINE : MSG_VT_DIS_RDLINE,0,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,readline ? MSG_VT_EN_RDLINE : MSG_VT_DIS_RDLINE,0,&msg);
 }
 
 int vterm_setNavi(int fd,bool navi) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,navi ? MSG_VT_EN_NAVI : MSG_VT_DIS_NAVI,0,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,navi ? MSG_VT_EN_NAVI : MSG_VT_DIS_NAVI,0,&msg);
 }
 
 int vterm_backup(int fd) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_BACKUP,0,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,MSG_VT_BACKUP,0,&msg);
 }
 
 int vterm_restore(int fd) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_RESTORE,0,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,MSG_VT_RESTORE,0,&msg);
 }
 
 int vterm_isVTerm(int fd) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_ISVTERM,0,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,MSG_VT_ISVTERM,0,&msg);
 }
 
 int vterm_setMode(int fd,int mode) {
-	sDataMsg resp;
-	return vterm_doCtrl(fd,MSG_VT_SETMODE,mode,&resp);
+	sDataMsg msg;
+	return vterm_doCtrl(fd,MSG_VT_SETMODE,mode,&msg);
 }
 
 int vterm_setShellPid(int fd,pid_t pid) {
-	int res;
 	sDataMsg msg;
 	memcpy(&msg.d,&pid,sizeof(pid_t));
-	res = send(fd,MSG_VT_SHELLPID,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	msgid_t mid = MSG_VT_SHELLPID;
+	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;
 }
 
-static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *resp) {
-	sArgsMsg msg;
-	msg.arg1 = arg1;
-	int res = send(fd,msgid,&msg,sizeof(msg));
+static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *msg) {
+	msg->arg1 = arg1;
+	ssize_t res = IGNSIGS(sendrecv(fd,&msgid,msg,sizeof(*msg)));
 	if(res < 0)
 		return res;
-	res = IGNSIGS(receive(fd,NULL,resp,sizeof(sDataMsg)));
-	if(res < 0)
-		return res;
-	return resp->arg1;
+	return msg->arg1;
 }

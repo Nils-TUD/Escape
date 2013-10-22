@@ -230,6 +230,19 @@ A_CHECKRET static inline ssize_t receive(int fd,msgid_t *id,void *msg,size_t siz
 }
 
 /**
+ * Sends a message to the device identified by <fd> and receives the response.
+ *
+ * @param fd the file-descriptor
+ * @param id the msg-id; will hold the received message-id afterwards
+ * @param msg the message (may be NULL)
+ * @param size the size of the message
+ * @return 0 on success or < 0 if an error occurred
+ */
+A_CHECKRET static inline ssize_t sendrecv(int fd,msgid_t *id,void *msg,size_t size) {
+	return syscall4(SYSCALL_SENDRECV,fd,(ulong)id,(ulong)msg,size);
+}
+
+/**
  * Duplicates the given file-descriptor
  *
  * @param fd the file-descriptor

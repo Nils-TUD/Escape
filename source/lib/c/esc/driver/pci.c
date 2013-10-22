@@ -57,12 +57,7 @@ static int pci_getDevice(sMsg *msg,msgid_t mid,sPCIDevice *dev) {
 	fd = open("/dev/pci",IO_MSGS);
 	if(fd < 0)
 		return fd;
-	res = send(fd,mid,msg,sizeof(msg->args));
-	if(res < 0) {
-		close(fd);
-		return res;
-	}
-	res = IGNSIGS(receive(fd,NULL,msg,sizeof(msg->data)));
+	res = IGNSIGS(sendrecv(fd,&mid,msg,sizeof(*msg)));
 	if(res < 0) {
 		close(fd);
 		return res;

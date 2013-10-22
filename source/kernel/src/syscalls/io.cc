@@ -326,6 +326,39 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
+int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
+	int fd = (int)SYSC_ARG1(stack);
+	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);
+	void *data = (void*)SYSC_ARG3(stack);
+	size_t size = SYSC_ARG4(stack);
+	Proc *p = t->getProc();
+
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
+		SYSC_ERROR(stack,-EFAULT);
+	/* can't be sent by user-programs */
+	if(EXPECT_FALSE(IS_DEVICE_MSG(*id)))
+		SYSC_ERROR(stack,-EPERM);
+
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* send msg */
+	ssize_t res = file->sendMsg(p->getPid(),*id,data,size,NULL,0);
+	if(EXPECT_FALSE(res < 0)) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,res);
+	}
+
+	/* receive response */
+	res = file->receiveMsg(p->getPid(),id,data,size,false);
+	FileDesc::release(file);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::dup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 

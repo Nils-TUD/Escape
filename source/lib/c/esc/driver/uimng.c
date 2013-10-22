@@ -24,10 +24,8 @@
 
 int uimng_getId(int fd) {
 	sArgsMsg msg;
-	ssize_t res = send(fd,MSG_UIM_GETID,NULL,0);
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	msgid_t mid = MSG_UIM_GETID;
+	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -36,10 +34,8 @@ int uimng_getId(int fd) {
 int uimng_attach(int fd,int id) {
 	sArgsMsg msg;
 	msg.arg1 = id;
-	ssize_t res = send(fd,MSG_UIM_ATTACH,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	msgid_t mid = MSG_UIM_ATTACH;
+	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -60,10 +56,8 @@ int uimng_getKeymap(int fd,char *str,size_t size) {
 int uimng_setKeymap(int fd,const char *map) {
 	sStrMsg msg;
 	strnzcpy(msg.s1,map,sizeof(msg.s1));
-	ssize_t res = send(fd,MSG_UIM_SETKEYMAP,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	msgid_t mid = MSG_UIM_SETKEYMAP;
+	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;

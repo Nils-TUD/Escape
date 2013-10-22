@@ -85,12 +85,11 @@ static void client(void) {
 	}
 	while(fd < 0);
 
+	msgid_t mid = 0;
 	begin = rdtsc();
 	for(i = 0; i < messageCount; i++) {
-		if(send(fd,0,&msg,sizeof(msg)) < 0)
-			printe("Message-sending failed");
-		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
-			printe("Message-receiving failed");
+		if(sendrecv(fd,&mid,&msg,sizeof(msg)) < 0)
+			printe("sendrecv failed");
 	}
 	end = rdtsc();
 	printf("%Lu cycles, per msg: %Lu\n",end - begin,(end - begin) / messageCount);
@@ -126,10 +125,8 @@ static void server_fast(void) {
 	}
 	fd = getwork(dev,&mid,&msg,sizeof(msg),0);
 	while(1) {
-		if(send(fd,0,&msg,sizeof(msg)) < 0)
-			printe("Message-sending failed");
-		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
-			printe("Message-receiving failed");
+		if(sendrecv(fd,&mid,&msg,sizeof(msg)) < 0)
+			printe("sendrecv failed");
 	}
 }
 

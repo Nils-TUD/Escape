@@ -157,11 +157,9 @@ int screen_setMode(int fd,int type,int mode,const char *shm,bool switchMode) {
 	msg.arg1 = mode;
 	msg.arg2 = type;
 	msg.arg3 = switchMode;
+	msgid_t mid = MSG_SCR_SETMODE;
 	strnzcpy(msg.s1,shm,sizeof(msg.s1));
-	int res = send(fd,MSG_SCR_SETMODE,&msg,sizeof(msg));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg)));
+	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -178,11 +176,9 @@ int screen_update(int fd,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 
 ssize_t screen_getModeCount(int fd) {
 	sMsg msg;
+	msgid_t mid = MSG_SCR_GETMODES;
 	msg.args.arg1 = 0;
-	ssize_t res = send(fd,MSG_SCR_GETMODES,&msg,sizeof(msg.args));
-	if(res < 0)
-		return res;
-	res = IGNSIGS(receive(fd,NULL,&msg,sizeof(msg.args)));
+	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg.args)));
 	if(res < 0)
 		return res;
 	return msg.args.arg1;

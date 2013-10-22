@@ -296,6 +296,10 @@ error:
 	return -ENOMEM;
 }
 
+void PageDirBase::freeFrame(uintptr_t virt,frameno_t frame) {
+	PhysMem::free(frame,PhysMem::USR);
+}
+
 size_t PageDirBase::unmapFromCur(uintptr_t virt,size_t count,bool freeFrames) {
 	return Proc::getCurPageDir()->unmap(virt,count,freeFrames);
 }
@@ -323,7 +327,7 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 		pte = pt[pageNo % PT_ENTRY_COUNT];
 		if(freeFrames && (pte & (PTE_READABLE | PTE_WRITABLE | PTE_EXECUTABLE))) {
 			if(freeFrames)
-				PhysMem::free(PTE_FRAMENO(pte),PhysMem::USR);
+				freeFrame(virt,PTE_FRAMENO(pte));
 		}
 		pt[pageNo % PT_ENTRY_COUNT] = 0;
 

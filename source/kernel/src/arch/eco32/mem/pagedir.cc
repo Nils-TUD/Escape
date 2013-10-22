@@ -329,6 +329,10 @@ error:
 	return -ENOMEM;
 }
 
+void PageDirBase::freeFrame(uintptr_t virt,frameno_t frame) {
+	PhysMem::free(frame,PhysMem::USR);
+}
+
 size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	size_t pts = 0;
@@ -349,7 +353,7 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 		if(pte->present) {
 			pte->present = false;
 			if(freeFrames)
-				PhysMem::free(pte->frameNumber,PhysMem::USR);
+				freeFrame(virt,pte->frameNumber);
 		}
 		pte->exists = false;
 

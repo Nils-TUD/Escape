@@ -599,27 +599,38 @@ void VirtMem::doRemove(VMRegion *vm) {
 		sync(vm);
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
 		for(size_t i = 0; i < pcount; i++) {
-			ssize_t pts;
 			bool freeFrame = !(vm->reg->getFlags() & RF_NOFREE);
+			frameno_t frameNo = 0;
 			if(vm->reg->getPageFlags(i) & PF_COPYONWRITE) {
 				bool foundOther;
-				frameno_t frameNo = getPageDir()->getFrameNo(virt);
+				frameNo = getPageDir()->getFrameNo(virt);
 				/* we can free the frame if there is no other user */
 				addShared(-CopyOnWrite::remove(frameNo,&foundOther));
 				freeFrame = !foundOther;
 			}
+
+			if(freeFrame) {
+				if(frameNo == 0)
+					frameNo = getPageDir()->getFrameNo(virt);
+				PageDir::freeFrame(virt,frameNo);
+			}
+
 			if(vm->reg->getPageFlags(i) & PF_SWAPPED)
 				addSwap(-1);
-			pts = getPageDir()->unmap(virt,1,freeFrame);
 			if(!(vm->reg->getPageFlags(i) & (PF_COPYONWRITE | PF_DEMANDLOAD))) {
 				if(vm->reg->getFlags() & (RF_NOFREE | RF_SHAREABLE))
 					addShared(-1);
 				else
 					addOwn(-1);
 			}
-			addOwn(-pts);
+
 			virt += PAGE_SIZE;
 		}
+
+		/* now unmap it (do it here to prevent multiple calls for it (locking, ...) */
+		ssize_t pts = getPageDir()->unmap(vm->virt(),pcount,false);
+		addOwn(-pts);
+
 		/* store next free stack-address, if its a stack */
 		if(vm->virt() + vm->reg->getByteCount() > freeStackAddr && (vm->reg->getFlags() & RF_STACK))
 			freeStackAddr = vm->virt() + vm->reg->getByteCount();

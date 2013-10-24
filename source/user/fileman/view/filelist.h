@@ -23,6 +23,7 @@
 #include <gui/layout/flowlayout.h>
 #include <gui/panel.h>
 #include <gui/imagebutton.h>
+#include <gui/scrollpane.h>
 #include <gui/label.h>
 #include <file.h>
 #include <list>
@@ -33,12 +34,13 @@ class FileList : public gui::Panel {
 		explicit FileObject(FileList &list,const std::file &file)
 			: Panel(gui::make_layout<gui::FlowLayout>(
 					gui::FlowLayout::CENTER,gui::FlowLayout::VERTICAL,4)), _list(list) {
-			std::string path = file.is_dir() ? "/etc/folder.bmp" : "/etc/file.bmp";
-			std::shared_ptr<gui::ImageButton> img = gui::make_control<gui::ImageButton>(
-					gui::Image::loadImage(path),false);
-			std::shared_ptr<gui::Label> lbl = gui::make_control<gui::Label>(file.name());
+			using namespace std;
+			using namespace gui;
+			string path = file.is_dir() ? "/etc/folder.bmp" : "/etc/file.bmp";
+			shared_ptr<ImageButton> img = make_control<ImageButton>(Image::loadImage(path),false);
+			shared_ptr<Label> lbl = make_control<Label>(file.name());
 			if(file.is_dir())
-				img->clicked().subscribe(gui::bind1_mem_recv(file,this,&FileObject::onClick));
+				img->clicked().subscribe(bind1_mem_recv(file,this,&FileObject::onClick));
 			add(img);
 			add(lbl);
 		}
@@ -61,28 +63,31 @@ public:
 	}
 
 	void loadDir(const std::string &path) {
-		std::list<std::file> files;
+		using namespace std;
+		list<file> files;
 		try {
-			std::vector<sDirEntry> entries = std::file(path).list_files(false);
+			vector<sDirEntry> entries = file(path).list_files(false);
 			for(auto it = entries.begin(); it != entries.end(); ++it)
-				files.push_back(std::file(path,it->name));
-			files.sort([] (const std::file &a,const std::file &b) {
+				files.push_back(file(path,it->name));
+			files.sort([] (const file &a,const file &b) {
 				if(a.is_dir() == b.is_dir())
 					return a.name() < b.name();
 				return a.is_dir();
 			});
 			setList(files);
 		}
-		catch(const std::io_exception& e) {
-			std::cerr << e.what() << std::endl;
+		catch(const io_exception& e) {
+			cerr << e.what() << endl;
 		}
 	}
+
 	void setList(const std::list<std::file> &files) {
 		removeAll();
 		_files = files;
 		for(auto it = _files.begin(); it != _files.end(); ++it)
 			add(gui::make_control<FileObject>(*this,*it));
 		layout();
+		static_cast<gui::ScrollPane*>(getParent())->scrollToTop(false);
 		repaint();
 	}
 

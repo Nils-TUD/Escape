@@ -150,8 +150,8 @@ namespace gui {
 		virtual void layoutChanged() {
 			if(_doingLayout)
 				return;
-			if(layout())
-				repaint();
+			layout();
+			repaint();
 		}
 
 	private:

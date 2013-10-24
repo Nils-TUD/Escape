@@ -251,7 +251,7 @@ namespace gui {
 
 	private:
 		int _winFd;
-		sMsg _msg;
+		int _winEvFd;
 		bool _run;
 		uchar _mouseBtns;
 		sScreenMode _screenMode;

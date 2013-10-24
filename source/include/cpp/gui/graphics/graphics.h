@@ -282,14 +282,6 @@ namespace gui {
 
 	private:
 		/**
-		 * Ensures that there is no outstanding repaint for the given UIElement anymore.
-		 *
-		 * @param el the UIElement
-		 */
-		void detach(UIElement *el) {
-			_buf->detach(el);
-		}
-		/**
 		 * @return the graphics-buffer
 		 */
 		GraphicsBuffer* getBuffer() const {

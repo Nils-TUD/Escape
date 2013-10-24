@@ -118,20 +118,16 @@ namespace gui {
 
 	void UIElement::repaint(bool update) {
 		if(_g && isDirty()) {
-			if(!_g->getBuffer()->isReady())
-				_g->getBuffer()->lostPaint(this);
+			Window *win;
+			if(_parent && (win = getWindow()) && !win->_repainting)
+				win->repaintRect(getWindowPos(),getSize(),update);
 			else {
-				Window *win;
-				if(_parent && (win = getWindow()) && !win->_repainting)
-					win->repaintRect(getWindowPos(),getSize(),update);
-				else {
-					paint(*_g);
-					debug();
-					if(update)
-						_g->requestUpdate();
-				}
-				makeClean();
+				paint(*_g);
+				debug();
+				if(update)
+					_g->requestUpdate();
 			}
+			makeClean();
 		}
 	}
 
@@ -157,20 +153,16 @@ namespace gui {
 
 	void UIElement::repaintRect(const Pos &pos,const Size &size,bool update) {
 		if(_g && isDirty()) {
-			if(!_g->getBuffer()->isReady())
-				_g->getBuffer()->lostPaint(this,Rectangle(pos,size));
+			Window *win;
+			if(_parent && (win = getWindow()) && !win->_repainting)
+				win->repaintRect(getWindowPos() + pos,size,update);
 			else {
-				Window *win;
-				if(_parent && (win = getWindow()) && !win->_repainting)
-					win->repaintRect(getWindowPos() + pos,size,update);
-				else {
-					paintRect(*_g,pos,size);
-					debug();
-					if(update)
-						_g->requestUpdate();
-				}
-				makeClean();
+				paintRect(*_g,pos,size);
+				debug();
+				if(update)
+					_g->requestUpdate();
 			}
+			makeClean();
 		}
 	}
 

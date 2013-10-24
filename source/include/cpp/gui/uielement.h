@@ -87,8 +87,6 @@ namespace gui {
 		 * Destructor. Free's the memory
 		 */
 		virtual ~UIElement() {
-			if(_g)
-				_g->detach(this);
 			delete _g;
 		}
 

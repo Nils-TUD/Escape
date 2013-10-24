@@ -35,6 +35,7 @@
 #include "window.h"
 #include "listener.h"
 #include "preview.h"
+#include "input.h"
 
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
 #define ABS(a)		((a) < 0 ? -(a) : (a))
@@ -67,6 +68,7 @@ static sWindow windows[WINDOW_COUNT];
 int win_init(int sid,int uifd,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
 	drvId = sid;
 	uimng = uifd;
+	srand(time(NULL));
 
 	/* mark windows unused */
 	for(gwinid_t i = 0; i < WINDOW_COUNT; i++)
@@ -120,7 +122,7 @@ static void win_destroyBuf(sWindow *win) {
 }
 
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-		gsize_t titleBarHeight,const char *title,const char *winmng) {
+		gsize_t titleBarHeight,const char *title,const char *winmng,int *randId) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNUSED) {
@@ -142,6 +144,8 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 			windows[i].width = width;
 			windows[i].height = height;
 			windows[i].owner = owner;
+			windows[i].evfd = -1;
+			windows[i].randId = *randId = rand();
 			windows[i].style = style;
 			windows[i].titleBarHeight = titleBarHeight;
 			windows[i].ready = false;
@@ -150,6 +154,21 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 		}
 	}
 	return WINID_UNUSED;
+}
+
+void win_attach(gwinid_t winid,int fd,int randId) {
+	if(win_exists(winid) && windows[winid].randId == randId && windows[winid].evfd == -1) {
+		windows[winid].evfd = fd;
+		if(windows[winid].style != WIN_STYLE_DESKTOP)
+			win_setActive(winid,false,input_getMouseX(),input_getMouseY());
+	}
+}
+
+void win_detachAll(int fd) {
+	for(size_t i = 0; i < WINDOW_COUNT; ++i) {
+		if(windows[i].evfd == fd)
+			windows[i].evfd = -1;
+	}
 }
 
 void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY) {
@@ -426,11 +445,14 @@ static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
 }
 
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
+	if(windows[id].evfd == -1)
+		return;
+
 	msg.args.arg1 = id;
 	msg.args.arg2 = isActive;
 	msg.args.arg3 = mouseX;
 	msg.args.arg4 = mouseY;
-	if(send(windows[id].owner,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args)) < 0)
+	if(send(windows[id].evfd,MSG_WIN_SET_ACTIVE_EV,&msg,sizeof(msg.args)) < 0)
 		printe("Unable to send active-event for window %u",id);
 }
 

@@ -41,7 +41,7 @@ namespace gui {
 	Application *Application::_inst = nullptr;
 
 	Application::Application(const char *winmng)
-			: _winFd(-1), _msg(), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
+			: _winFd(-1), _winEvFd(-1), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
 			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr),
 			  _winmng() {
 		if(crtlocku(&_queuelock) < 0)
@@ -56,6 +56,12 @@ namespace gui {
 		_winFd = open(winmng,IO_MSGS);
 		if(_winFd < 0)
 			throw app_error("Unable to open window-manager");
+
+		char path[MAX_PATH_LEN];
+		snprintf(path,sizeof(path),"%s-events",winmng);
+		_winEvFd = open(path,IO_MSGS);
+		if(_winEvFd < 0)
+			throw app_error("Unable to open window-manager's event channel");
 
 		// request screen infos from vesa
 		if(screen_getMode(_winFd,&_screenMode) < 0)
@@ -88,14 +94,15 @@ namespace gui {
 
 		// subscribe to window-events
 		{
-			_msg.args.arg1 = MSG_WIN_CREATE_EV;
-			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
+			sArgsMsg msg;
+			msg.arg1 = MSG_WIN_CREATE_EV;
+			if(send(_winEvFd,MSG_WIN_ADDLISTENER,&msg,sizeof(msg)) < 0)
 				throw app_error("Unable to announce create-listener");
-			_msg.args.arg1 = MSG_WIN_DESTROY_EV;
-			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
+			msg.arg1 = MSG_WIN_DESTROY_EV;
+			if(send(_winEvFd,MSG_WIN_ADDLISTENER,&msg,sizeof(msg)) < 0)
 				throw app_error("Unable to announce destroy-listener");
-			_msg.args.arg1 = MSG_WIN_ACTIVE_EV;
-			if(send(_winFd,MSG_WIN_ADDLISTENER,&_msg,sizeof(_msg.args)) < 0)
+			msg.arg1 = MSG_WIN_ACTIVE_EV;
+			if(send(_winEvFd,MSG_WIN_ADDLISTENER,&msg,sizeof(msg)) < 0)
 				throw app_error("Unable to announce active-listener");
 		}
 	}
@@ -103,6 +110,7 @@ namespace gui {
 	Application::~Application() {
 		while(_windows.size() > 0)
 			removeWindow(*_windows.begin());
+		close(_winEvFd);
 		close(_winFd);
 	}
 
@@ -113,11 +121,12 @@ namespace gui {
 	int Application::run() {
 		msgid_t mid;
 		while(_run) {
-			int res = receive(_winFd,&mid,&_msg,sizeof(_msg));
+			sMsg msg;
+			int res = receive(_winEvFd,&mid,&msg,sizeof(msg));
 			if(res < 0 && res != -EINTR)
 				throw app_error(string("Read from window-manager failed: ") + strerror(-res));
 			if(res >= 0)
-				handleMessage(mid,&_msg);
+				handleMessage(mid,&msg);
 			handleQueue();
 		}
 		return EXIT_SUCCESS;
@@ -137,29 +146,11 @@ namespace gui {
 
 	void Application::handleMessage(msgid_t mid,sMsg *msg) {
 		switch(mid) {
-			case MSG_WIN_CREATE_RESP: {
-				gwinid_t tmpId = msg->args.arg1;
-				gwinid_t id = msg->args.arg2;
-				// notify the window that it has been created
-				Window *w = getWindowById(tmpId);
-				if(w)
-					w->onCreated(id);
-			}
-			break;
-
 			case MSG_WIN_RESIZE_RESP: {
 				gwinid_t win = (gwinid_t)msg->args.arg1;
 				Window *w = getWindowById(win);
 				if(w)
 					w->onResized();
-			}
-			break;
-
-			case MSG_WIN_UPDATE_RESP: {
-				gwinid_t win = (gwinid_t)msg->args.arg1;
-				Window *w = getWindowById(win);
-				if(w)
-					w->onUpdated();
 			}
 			break;
 
@@ -285,67 +276,80 @@ namespace gui {
 			rsize.width = wsize.width - rpos.x;
 		if(rpos.y + rsize.height > wsize.height)
 			rsize.height = wsize.height - rpos.y;
-		_msg.args.arg1 = id;
-		_msg.args.arg2 = rpos.x;
-		_msg.args.arg3 = rpos.y;
-		_msg.args.arg4 = rsize.width;
-		_msg.args.arg5 = rsize.height;
-		if(send(_winFd,MSG_WIN_UPDATE,&_msg,sizeof(_msg.args)) < 0)
+		sArgsMsg msg;
+		msg.arg1 = id;
+		msg.arg2 = rpos.x;
+		msg.arg3 = rpos.y;
+		msg.arg4 = rsize.width;
+		msg.arg5 = rsize.height;
+		msgid_t mid = MSG_WIN_UPDATE;
+		if(SENDRECV_IGNSIGS(_winFd,&mid,&msg,sizeof(msg)) < 0)
 			throw app_error("Unable to request win-update");
 	}
 
 	void Application::requestActiveWindow(gwinid_t wid) {
-		_msg.args.arg1 = wid;
-		if(send(_winFd,MSG_WIN_SET_ACTIVE,&_msg,sizeof(_msg.args)) < 0)
+		sArgsMsg msg;
+		msg.arg1 = wid;
+		if(send(_winFd,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg)) < 0)
 			throw app_error("Unable to set window to active");
 	}
 
 	void Application::addWindow(shared_ptr<Window> win) {
 		_windows.push_back(win);
 
-		_msg.str.arg1 = win->getPos().x;
-		_msg.str.arg2 = win->getPos().y;
-		_msg.str.arg3 = win->getSize().width;
-		_msg.str.arg4 = win->getSize().height;
-		_msg.str.arg5 = win->getId();
-		_msg.str.arg6 = win->getStyle();
-		_msg.str.arg7 = win->getTitleBarHeight();
+		sMsg msg;
+		msg.str.arg1 = win->getPos().x;
+		msg.str.arg2 = win->getPos().y;
+		msg.str.arg3 = win->getSize().width;
+		msg.str.arg4 = win->getSize().height;
+		msg.str.arg5 = win->getStyle();
+		msg.str.arg6 = win->getTitleBarHeight();
 		if(win->hasTitleBar())
-			strnzcpy(_msg.str.s1,win->getTitle().c_str(),sizeof(_msg.str.s1));
+			strnzcpy(msg.str.s1,win->getTitle().c_str(),sizeof(msg.str.s1));
 		else
-			_msg.str.s1[0] = '\0';
-		if(send(_winFd,MSG_WIN_CREATE,&_msg,sizeof(_msg.str)) < 0) {
+			msg.str.s1[0] = '\0';
+		msgid_t mid = MSG_WIN_CREATE;
+		if(SENDRECV_IGNSIGS(_winFd,&mid,&msg,sizeof(msg)) < 0) {
 			_windows.erase_first(win);
 			throw app_error("Unable to announce window to window-manager");
 		}
+		win->onCreated(msg.args.arg1);
+
+		msg.args.arg1 = win->getId();
+		// arg2 does already contain the randId
+		if(send(_winEvFd,MSG_WIN_ATTACH,&msg,sizeof(msg.args)) < 0)
+			throw app_error("Unable to attach window to event-channel");
 	}
 
 	void Application::removeWindow(shared_ptr<Window> win) {
 		if(_windows.erase_first(win)) {
+			sArgsMsg msg;
 			// let window-manager destroy our window
-			_msg.args.arg1 = win->getId();
-			if(send(_winFd,MSG_WIN_DESTROY,&_msg,sizeof(_msg.args)) < 0)
+			msg.arg1 = win->getId();
+			if(send(_winFd,MSG_WIN_DESTROY,&msg,sizeof(msg)) < 0)
 				throw app_error("Unable to destroy window");
 		}
 	}
 
 	void Application::moveWindow(Window *win,bool finish) {
-		_msg.args.arg1 = win->getId();
-		_msg.args.arg2 = win->getMovePos().x;
-		_msg.args.arg3 = win->getMovePos().y;
-		_msg.args.arg4 = finish;
-		if(send(_winFd,MSG_WIN_MOVE,&_msg,sizeof(_msg.args)) < 0)
+		sArgsMsg msg;
+		msg.arg1 = win->getId();
+		msg.arg2 = win->getMovePos().x;
+		msg.arg3 = win->getMovePos().y;
+		msg.arg4 = finish;
+		if(send(_winFd,MSG_WIN_MOVE,&msg,sizeof(msg)) < 0)
 			throw app_error("Unable to move window");
 	}
 
 	void Application::resizeWindow(Window *win,bool finish) {
-		_msg.args.arg1 = win->getId();
-		_msg.args.arg2 = win->getMovePos().x;
-		_msg.args.arg3 = win->getMovePos().y;
-		_msg.args.arg4 = win->getResizeSize().width;
-		_msg.args.arg5 = win->getResizeSize().height;
-		_msg.args.arg6 = finish;
-		if(send(_winFd,MSG_WIN_RESIZE,&_msg,sizeof(_msg.args)) < 0)
+		sArgsMsg msg;
+		msg.arg1 = win->getId();
+		msg.arg2 = win->getMovePos().x;
+		msg.arg3 = win->getMovePos().y;
+		msg.arg4 = win->getResizeSize().width;
+		msg.arg5 = win->getResizeSize().height;
+		msg.arg6 = finish;
+		if(send(_winFd,MSG_WIN_RESIZE,&msg,sizeof(msg)) < 0)
 			throw app_error("Unable to resize window");
 	}
 

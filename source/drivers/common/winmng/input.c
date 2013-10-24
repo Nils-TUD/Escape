@@ -90,7 +90,7 @@ int input_thread(void *arg) {
 
 static void handleKbMessage(sUIMData *data) {
 	sWindow *active = win_getActive();
-	if(!active)
+	if(!active || active->evfd == -1)
 		return;
 
 	sArgsMsg msg;
@@ -99,7 +99,7 @@ static void handleKbMessage(sUIMData *data) {
 	msg.arg3 = active->id;
 	msg.arg4 = data->d.keyb.character;
 	msg.arg5 = data->d.keyb.modifier;
-	send(active->owner,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg));
+	send(active->evfd,MSG_WIN_KEYBOARD_EV,&msg,sizeof(msg));
 }
 
 static void handleMouseMessage(int winFd,sUIMData *data) {
@@ -158,7 +158,7 @@ static void handleMouseMessage(int winFd,sUIMData *data) {
 
 	/* send to window */
 	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
-	if(w) {
+	if(w && w->evfd != -1) {
 		msg.arg1 = curX;
 		msg.arg2 = curY;
 		msg.arg3 = data->d.mouse.x;
@@ -166,7 +166,7 @@ static void handleMouseMessage(int winFd,sUIMData *data) {
 		msg.arg5 = data->d.mouse.z;
 		msg.arg6 = data->d.mouse.buttons;
 		msg.arg7 = w->id;
-		send(w->owner,MSG_WIN_MOUSE_EV,&msg,sizeof(msg));
+		send(w->evfd,MSG_WIN_MOUSE_EV,&msg,sizeof(msg));
 	}
 
 	if(btnChanged && !buttons)

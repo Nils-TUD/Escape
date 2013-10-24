@@ -91,7 +91,7 @@ static int clientthread(A_UNUSED void *arg) {
 		sMsg msg;
 		msg.args.arg1 = n;
 		msgid_t mid = MSG_PARA_FIB;
-		if(IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg))) < 0)
+		if(SENDRECV_IGNSIGS(fd,&mid,&msg,sizeof(msg)) < 0)
 			printe("sendrecv failed");
 		printf("[%d] fib(%d) = %lu\n",gettid(),n,msg.args.arg1);
 		fflush(stdout);

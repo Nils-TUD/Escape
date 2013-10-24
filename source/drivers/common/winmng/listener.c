@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/sllist.h>
 #include <esc/driver.h>
+#include <esc/thread.h>
 #include <esc/io.h>
 #include <stdlib.h>
 #include "listener.h"
@@ -29,14 +30,15 @@ typedef struct {
 	msgid_t mid;
 } sWinListener;
 
+static tULock lck;
 static int drvId;
-static sSLList *list = NULL;
+static sSLList list;
 
 void listener_init(int id) {
 	drvId = id;
-	list = sll_create();
-	if(!list)
-		error("Unable to create window-listener-list");
+	sll_init(&list,malloc,free);
+	if(crtlocku(&lck) < 0)
+		error("Unable to create listener-lock");
 }
 
 bool listener_add(int client,msgid_t mid) {
@@ -45,7 +47,10 @@ bool listener_add(int client,msgid_t mid) {
 		return false;
 	l->client = client;
 	l->mid = mid;
-	if(!sll_append(list,l)) {
+	locku(&lck);
+	bool res = sll_append(&list,l);
+	unlocku(&lck);
+	if(!res) {
 		free(l);
 		return false;
 	}
@@ -53,21 +58,43 @@ bool listener_add(int client,msgid_t mid) {
 }
 
 void listener_notify(msgid_t mid,const sMsg *msg,size_t size) {
-	sSLNode *n;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
+	locku(&lck);
+	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;
 		if(l->mid == mid)
 			send(l->client,mid,msg,size);
 	}
+	unlocku(&lck);
 }
 
 void listener_remove(int client,msgid_t mid) {
-	sSLNode *n;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
+	locku(&lck);
+	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;
 		if(l->client == client && l->mid == mid) {
-			sll_removeFirstWith(list,l);
-			return;
+			sll_removeFirstWith(&list,l);
+			free(l);
+			break;
 		}
 	}
+	unlocku(&lck);
+}
+
+void listener_removeAll(int client) {
+	locku(&lck);
+	sSLNode *p = NULL;
+	for(sSLNode *n = sll_begin(&list); n != NULL; ) {
+		sWinListener *l = (sWinListener*)n->data;
+		if(l->client == client) {
+			sSLNode *next = n->next;
+			sll_removeNode(&list,n,p);
+			free(l);
+			n = next;
+		}
+		else {
+			p = n;
+			n = n->next;
+		}
+	}
+	unlocku(&lck);
 }

@@ -78,9 +78,6 @@ namespace gui {
 		friend class UIElement;
 
 	private:
-		// used for creation
-		static gwinid_t NEXT_TMP_ID;
-
 		// minimum window-size
 		static const gsize_t MIN_WIDTH;
 		static const gsize_t MIN_HEIGHT;

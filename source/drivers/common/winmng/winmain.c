@@ -37,10 +37,60 @@
 
 #define DEF_BPP		24
 
-static sMsg msg;
 static gsize_t screenWidth;
 static gsize_t screenHeight;
 static sInputThread inputData;
+
+static int eventThread(void *arg) {
+	char path[MAX_PATH_LEN];
+	const char *name = (const char*)arg;
+	snprintf(path,sizeof(path),"/dev/%s-events",name);
+	int evId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
+	if(evId < 0)
+		error("Unable to create device winmanager");
+
+	while(1) {
+		sMsg msg;
+		msgid_t mid;
+		int fd = getwork(evId,&mid,&msg,sizeof(msg),0);
+		if(fd < 0)
+			printe("Unable to get work");
+		else {
+			switch(mid) {
+				case MSG_WIN_ATTACH: {
+					gwinid_t winid = msg.args.arg1;
+					int randId = msg.args.arg2;
+					win_attach(winid,fd,randId);
+				}
+				break;
+
+				case MSG_WIN_ADDLISTENER: {
+					msgid_t msgid = (msgid_t)msg.args.arg1;
+					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
+							msgid == MSG_WIN_ACTIVE_EV)
+						listener_add(fd,msgid);
+				}
+				break;
+
+				case MSG_WIN_REMLISTENER: {
+					msgid_t msgid = (msgid_t)msg.args.arg1;
+					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
+							msgid == MSG_WIN_ACTIVE_EV)
+						listener_remove(fd,msgid);
+				}
+				break;
+
+				case MSG_DEV_CLOSE:
+					listener_removeAll(fd);
+					win_detachAll(fd);
+					close(fd);
+					break;
+			}
+		}
+	}
+	close(evId);
+	return 0;
+}
 
 int main(int argc,char *argv[]) {
 	int drvId;
@@ -81,11 +131,14 @@ int main(int argc,char *argv[]) {
 		error("Unable to start thread for mouse-handler");
 	if(startthread(infodev_thread,argv[3]) < 0)
 		error("Unable to start thread for the infodev");
+	if(startthread(eventThread,argv[3]) < 0)
+		error("Unable to start thread for the event-channel");
 
 	screenWidth = win_getMode()->width;
 	screenHeight = win_getMode()->height;
 
 	while(1) {
+		sMsg msg;
 		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
 			printe("Unable to get work");
@@ -96,14 +149,13 @@ int main(int argc,char *argv[]) {
 					gpos_t y = (gpos_t)msg.str.arg2;
 					gsize_t width = (gsize_t)msg.str.arg3;
 					gsize_t height = (gsize_t)msg.str.arg4;
-					gwinid_t tmpWinId = (gwinid_t)msg.str.arg5;
-					uint style = msg.str.arg6;
-					gsize_t titleBarHeight = msg.str.arg7;
-					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,fd,style,titleBarHeight,msg.str.s1,argv[3]);
+					uint style = msg.str.arg5;
+					gsize_t titleBarHeight = msg.str.arg6;
+					int randId;
+					msg.args.arg1 = win_create(x,y,width,height,fd,style,titleBarHeight,
+						msg.str.s1,argv[3],&randId);
+					msg.args.arg2 = randId;
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
-					if(style != WIN_STYLE_DESKTOP)
-						win_setActive(msg.args.arg2,false,input_getMouseX(),input_getMouseY());
 				}
 				break;
 
@@ -145,10 +197,10 @@ int main(int argc,char *argv[]) {
 					gsize_t height = (gsize_t)msg.args.arg5;
 					bool finished = (bool)msg.args.arg6;
 					if(win_exists(wid)) {
+						int evid = win_get(wid)->evfd;
 						if(finished) {
 							win_resize(wid,x,y,width,height,argv[3]);
-							/* wid is already set */
-							send(fd,MSG_WIN_RESIZE_RESP,&msg,sizeof(msg.args));
+							send(evid,MSG_WIN_RESIZE_RESP,&msg,sizeof(msg.args));
 						}
 						else
 							win_previewResize(x,y,width,height);
@@ -176,22 +228,6 @@ int main(int argc,char *argv[]) {
 									x,y,width,height);
 						}
 					}
-				}
-				break;
-
-				case MSG_WIN_ADDLISTENER: {
-					msgid_t msgid = (msgid_t)msg.args.arg1;
-					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
-							msgid == MSG_WIN_ACTIVE_EV)
-						listener_add(fd,msgid);
-				}
-				break;
-
-				case MSG_WIN_REMLISTENER: {
-					msgid_t msgid = (msgid_t)msg.args.arg1;
-					if(msgid == MSG_WIN_CREATE_EV || msgid == MSG_WIN_DESTROY_EV ||
-							msgid == MSG_WIN_ACTIVE_EV)
-						listener_remove(fd,msgid);
 				}
 				break;
 

@@ -64,7 +64,7 @@ int vterm_setShellPid(int fd,pid_t pid) {
 	sDataMsg msg;
 	memcpy(&msg.d,&pid,sizeof(pid_t));
 	msgid_t mid = MSG_VT_SHELLPID;
-	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
+	ssize_t res = SENDRECV_IGNSIGS(fd,&mid,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -72,7 +72,7 @@ int vterm_setShellPid(int fd,pid_t pid) {
 
 static int vterm_doCtrl(int fd,msgid_t msgid,ulong arg1,sDataMsg *msg) {
 	msg->arg1 = arg1;
-	ssize_t res = IGNSIGS(sendrecv(fd,&msgid,msg,sizeof(*msg)));
+	ssize_t res = SENDRECV_IGNSIGS(fd,&msgid,msg,sizeof(*msg));
 	if(res < 0)
 		return res;
 	return msg->arg1;

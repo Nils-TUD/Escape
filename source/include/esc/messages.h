@@ -126,6 +126,7 @@
 #define MSG_WIN_ACTIVE_EV			316	/* a window has been set to active */
 #define MSG_WIN_RESIZE_RESP			317	/* a resize has been finished */
 #define MSG_WIN_UPDATE_RESP			318 /* an update has been finished */
+#define MSG_WIN_ATTACH				319 /* connect an event-channel to the request-channel */
 
 #define MSG_SCR_SETCURSOR			500	/* sets the cursor */
 #define MSG_SCR_GETMODE				501 /* gets information about the current video-mode */

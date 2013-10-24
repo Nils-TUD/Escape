@@ -16,9 +16,6 @@ using namespace std;
 
 namespace gui {
 	void GraphicsBuffer::allocBuffer() {
-		if(!_win->isCreated())
-			return;
-
 		// get window-manager name
 		const char *winmng = Application::getInstance()->getWinMng();
 		const char *p;
@@ -53,53 +50,8 @@ namespace gui {
 		_pos.y = min((gpos_t)screenSize.height - 1,pos.y);
 	}
 
-	void GraphicsBuffer::detach(UIElement *el) {
-		if(_lost.el == el)
-			_lost.el = nullptr;
-	}
-
-	void GraphicsBuffer::lostPaint(UIElement* el,Rectangle rect) {
-		// note that this is necessary because we may not be able to repaint multiple rectangles
-		// later, since the state of the element might have changed in the meanwhile. therefore,
-		// we might repaint the wrong rectangle. so, if we get multiple requests while waiting
-		// for an update, we have to be more careful and better repaint more than less.
-
-		// nothing lost yet?
-		if(_lost.el == nullptr)
-			_lost = LostRepaint(el,rect);
-		// if it's the same element, repaint the whole element
-		else if(_lost.el == el)
-			_lost.rect = Rectangle();
-		// otherwise repaint the whole window
-		else
-			_lost = LostRepaint(el->getWindow(),Rectangle());
-	}
-
-	void GraphicsBuffer::onUpdated() {
-		_updating = false;
-		if(_lost.el) {
-			_lost.el->makeDirty(true);
-			if(_lost.rect.empty()) {
-				// TODO temporary fix for our offset-bug. this prevents paint-errors in e.g. the
-				// guishell
-				if(_lost.el->getParent())
-					_lost.el->getParent()->repaint(true);
-				else
-					_lost.el->repaint(true);
-			}
-			else
-				_lost.el->repaintRect(_lost.rect.getPos(),_lost.rect.getSize(),true);
-			_lost.el = nullptr;
-		}
-	}
-
 	void GraphicsBuffer::requestUpdate(const Pos &pos,const Size &size) {
-		if(!_updating && _win->isCreated()) {
+		if(_win->isCreated())
 			Application::getInstance()->requestWinUpdate(_win->getId(),pos,size);
-			// don't touch our buffer until the update has been done. otherwise we might see
-			// half-finished paints on the screen. if the application tries to paint something
-			// in the meanwhile, we note that (_lostpaint) and repaint afterwards.
-			_updating = true;
-		}
 	}
 }

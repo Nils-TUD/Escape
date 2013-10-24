@@ -40,16 +40,6 @@ namespace gui {
 		friend class Graphics;
 		friend class UIElement;
 
-		struct LostRepaint {
-			UIElement *el;
-			Rectangle rect;
-
-			LostRepaint() : el(), rect() {
-			}
-			LostRepaint(UIElement* _el,const Rectangle &_rect) : el(_el), rect(_rect) {
-			}
-		};
-
 	public:
 		/**
 		 * Constructor
@@ -61,8 +51,7 @@ namespace gui {
 		 */
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
 			: _win(win), _pos(pos), _size(size), _bpp(bpp), _minx(0),_miny(0),
-			  _maxx(size.width - 1), _maxy(size.height - 1), _lost(),
-			  _fd(-1), _pixels(nullptr), _updating(false) {
+			  _maxx(size.width - 1), _maxy(size.height - 1), _fd(-1), _pixels(nullptr) {
 		}
 		/**
 		 * Destructor
@@ -102,7 +91,7 @@ namespace gui {
 		 * @return true if we're ready to paint
 		 */
 		bool isReady() const {
-			return !_updating && _pixels;
+			return _pixels;
 		}
 
 		/**
@@ -116,10 +105,10 @@ namespace gui {
 		GraphicsBuffer &operator=(const GraphicsBuffer &g);
 
 		/**
-		 * @return the buffer (might be nullptr)
+		 * @return the buffer
 		 */
 		uint8_t *getBuffer() const {
-			return _updating ? nullptr : _pixels;
+			return _pixels;
 		}
 		/**
 		 * Sets the coordinates for this buffer
@@ -131,29 +120,6 @@ namespace gui {
 		void resizeTo(const Size &size) {
 			_size = size;
 		}
-		/**
-		 * Sets that we're currently updating.
-		 */
-		void setUpdating() {
-			_updating = true;
-		}
-		/**
-		 * Ensures that there is no outstanding repaint for the given UIElement anymore.
-		 *
-		 * @param el the UIElement
-		 */
-		void detach(UIElement *el);
-		/**
-		 * Stores the repaint description for execution as soon as the last repaint was acknowledged.
-		 *
-		 * @param el the UIElement
-		 * @param rect the rectangle (optional)
-		 */
-		void lostPaint(UIElement* el,Rectangle rect = Rectangle());
-		/**
-		 * Called on a finished update
-		 */
-		void onUpdated();
 		/**
 		 * Allocates _pixels
 		 */
@@ -204,10 +170,8 @@ namespace gui {
 		gcoldepth_t _bpp;
 		// dirty region
 		gpos_t _minx,_miny,_maxx,_maxy;
-		LostRepaint _lost;
 		// buffer for this window; controls use this, too (don't have their own)
 		int _fd;
 		uint8_t *_pixels;
-		bool _updating;
 	};
 }

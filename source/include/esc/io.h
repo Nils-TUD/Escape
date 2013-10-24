@@ -66,6 +66,15 @@
 		__err; \
 	})
 
+/* do a sendrecv() and skip tries that failed because of a signal */
+#define SENDRECV_IGNSIGS(fd,mid,msg,size) ({ \
+	int __err = sendrecv(fd,mid,msg,size); \
+	while(__err == -EINTR) { \
+		__err = receive(fd,mid,msg,size); \
+	} \
+	__err; \
+})
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -231,6 +240,8 @@ A_CHECKRET static inline ssize_t receive(int fd,msgid_t *id,void *msg,size_t siz
 
 /**
  * Sends a message to the device identified by <fd> and receives the response.
+ * Note that if you get interrupted by a signal, you'll receive -EINTR, but the message will
+ * have been already sent in all cases, because it can only happen during the receive.
  *
  * @param fd the file-descriptor
  * @param id the msg-id; will hold the received message-id afterwards

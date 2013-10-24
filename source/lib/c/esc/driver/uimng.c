@@ -25,7 +25,7 @@
 int uimng_getId(int fd) {
 	sArgsMsg msg;
 	msgid_t mid = MSG_UIM_GETID;
-	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
+	ssize_t res = SENDRECV_IGNSIGS(fd,&mid,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -35,7 +35,7 @@ int uimng_attach(int fd,int id) {
 	sArgsMsg msg;
 	msg.arg1 = id;
 	msgid_t mid = MSG_UIM_ATTACH;
-	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
+	ssize_t res = SENDRECV_IGNSIGS(fd,&mid,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	return msg.arg1;
@@ -57,7 +57,7 @@ int uimng_setKeymap(int fd,const char *map) {
 	sStrMsg msg;
 	strnzcpy(msg.s1,map,sizeof(msg.s1));
 	msgid_t mid = MSG_UIM_SETKEYMAP;
-	ssize_t res = IGNSIGS(sendrecv(fd,&mid,&msg,sizeof(msg)));
+	ssize_t res = SENDRECV_IGNSIGS(fd,&mid,&msg,sizeof(msg));
 	if(res < 0)
 		return res;
 	return msg.arg1;

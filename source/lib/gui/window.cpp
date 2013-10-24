@@ -53,14 +53,13 @@ namespace gui {
 	}
 
 
-	gwinid_t Window::NEXT_TMP_ID		= 0xFFFF;
 	const gsize_t Window::MIN_WIDTH		= 40;
 	const gsize_t Window::MIN_HEIGHT	= 40;
 	const gsize_t Window::HEADER_SIZE	= 28;
 
 	Window::Window(const Pos &pos,const Size &size,Style style)
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
-			_id(NEXT_TMP_ID--), _created(false), _style(style),
+			_id(-1), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
 			_isActive(false), _repainting(false), _movePos(pos), _resizeSize(getSize()),
 			_gbuf(nullptr), _header(), _body(make_control<Panel>(Pos(1,1),getSize() - Size(2,2))),
@@ -69,7 +68,7 @@ namespace gui {
 	}
 	Window::Window(const string &title,const Pos &pos,const Size &size,Style style)
 		: UIElement(pos,Size(max(MIN_WIDTH,size.width),max(MIN_HEIGHT,size.height))),
-			_id(NEXT_TMP_ID--), _created(false), _style(style),
+			_id(-1), _created(false), _style(style),
 			_inTitle(false), _inResizeLeft(false), _inResizeRight(false), _inResizeBottom(false),
 			_isActive(false), _repainting(false), _movePos(pos), _resizeSize(getSize()), _gbuf(nullptr),
 			_header(make_control<WindowTitleBar>(title,Pos(1,1),Size(getSize().width - 2,HEADER_SIZE))),
@@ -144,7 +143,6 @@ namespace gui {
 			if(_movePos.x != getPos().x || _resizeSize != getSize()) {
 				if(resizing) {
 					prepareResize(_movePos,_resizeSize);
-					_gbuf->setUpdating();
 					Application::getInstance()->resizeWindow(this,true);
 				}
 			}
@@ -378,7 +376,6 @@ namespace gui {
 		if(_movePos.x != x || rsize != _resizeSize) {
 			_movePos.x = x;
 			_resizeSize = rsize;
-			_gbuf->setUpdating();
 			Application::getInstance()->resizeWindow(this,false);
 		}
 	}
@@ -467,16 +464,11 @@ namespace gui {
 
 	void Window::onResized() {
 		_gbuf->allocBuffer();
-		_gbuf->onUpdated();
 		// force a complete repaint
 		if(_header)
 			_header->makeDirty(true);
 		_body->makeDirty(true);
 		repaint();
-	}
-
-	void Window::onUpdated() {
-		_gbuf->onUpdated();
 	}
 
 	void Window::print(std::ostream &os, bool rec, size_t indent) const {

@@ -41,6 +41,8 @@ typedef struct {
 	gsize_t height;
 	gwinid_t id;
 	int owner;
+	int evfd;
+	int randId;
 	uint style;
 	gsize_t titleBarHeight;
 	int shmfd;
@@ -82,15 +84,32 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  * @param y the y-coordinate
  * @param width the width
  * @param height the height
- * @param owner the client-fd
+ * @param owner the window-owner (fd)
  * @param style style-attributes
  * @param titleBarHeight the height of the titlebar of that window
  * @param title the title of the window
  * @param winmng the window-manager name
+ * @param randId will be set to the randId of the window
  * @return the window-id or WINID_UNUSED if no slot is free
  */
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-	gsize_t titleBarHeight,const char *title,const char *winmng);
+	gsize_t titleBarHeight,const char *title,const char *winmng,int *randId);
+
+/**
+ * Attaches the given fd as event-channel to the window with id winid
+ *
+ * @param winid the window-id
+ * @param fd the fd for the event-channel
+ * @param randId the random id of the window
+ */
+void win_attach(gwinid_t winid,int fd,int randId);
+
+/**
+ * Detaches the given fd from the windows that uses it.
+ *
+ * @param fd the fd for the event-channel
+ */
+void win_detachAll(int fd);
 
 /**
  * Destroys all windows of the given thread

@@ -28,6 +28,8 @@
 #include <file.h>
 #include <list>
 
+#include "pathbar.h"
+
 class FileList : public gui::Panel {
 	class FileObject : public gui::Panel {
 	public:
@@ -59,7 +61,9 @@ class FileList : public gui::Panel {
 	};
 
 public:
-	explicit FileList() : Panel(gui::make_layout<gui::IconLayout>(gui::IconLayout::HORIZONTAL,4)) {
+	explicit FileList(std::shared_ptr<PathBar> pathbar)
+		: Panel(gui::make_layout<gui::IconLayout>(gui::IconLayout::HORIZONTAL,4)),
+		  _pathbar(pathbar), _files() {
 	}
 
 	void loadDir(const std::string &path) {
@@ -75,6 +79,7 @@ public:
 				return a.is_dir();
 			});
 			setList(files);
+			_pathbar->setPath(this,path);
 		}
 		catch(const io_exception& e) {
 			cerr << e.what() << endl;
@@ -92,5 +97,6 @@ public:
 	}
 
 private:
+	std::shared_ptr<PathBar> _pathbar;
 	std::list<std::file> _files;
 };

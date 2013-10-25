@@ -24,6 +24,7 @@
 #include "model/favorite.h"
 #include "view/favorites.h"
 #include "view/filelist.h"
+#include "view/pathbar.h"
 
 using namespace std;
 using namespace gui;
@@ -43,8 +44,10 @@ int main() {
 	Application *app = Application::create();
 	shared_ptr<Window> w = make_control<Window>("File manager",Pos(100,100),Size(400,300));
 	shared_ptr<Panel> root = w->getRootPanel();
-	shared_ptr<FileList> filelist = make_control<FileList>();
+	shared_ptr<PathBar> pathbar = make_control<PathBar>();
+	shared_ptr<FileList> filelist = make_control<FileList>(pathbar);
 	root->setLayout(make_layout<BorderLayout>());
+	root->add(pathbar,BorderLayout::NORTH);
 	root->add(make_control<Favorites>(filelist,favlist),BorderLayout::WEST);
 	root->add(make_control<ScrollPane>(filelist),BorderLayout::CENTER);
 	filelist->loadDir("/");

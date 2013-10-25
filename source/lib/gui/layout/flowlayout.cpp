@@ -40,10 +40,10 @@ namespace gui {
 	Size FlowLayout::getSizeWith(const Size&,size_func) const {
 		if(_ctrls.size() == 0)
 			return Size();
-		Size max = getMaxSize();
+		Size size = _sameSize ? getMaxSize() : getTotalSize();
 		if(_orientation == HORIZONTAL)
-			return Size(max.width * _ctrls.size() + _gap * (_ctrls.size() - 1),max.height);
-		return Size(max.width,max.height * _ctrls.size() + _gap * (_ctrls.size() - 1));
+			return Size(size.width * _ctrls.size() + _gap * (_ctrls.size() - 1),size.height);
+		return Size(size.width,size.height * _ctrls.size() + _gap * (_ctrls.size() - 1));
 	}
 
 	bool FlowLayout::rearrange() {
@@ -53,17 +53,17 @@ namespace gui {
 		bool res = false;
 		gsize_t pad = _p->getTheme().getPadding();
 		Size size = _p->getSize() - Size(pad * 2,pad * 2);
-		Size max = getMaxSize();
+		Size all = _sameSize ? getMaxSize() : getTotalSize();
 		Pos pos(pad,pad);
 
 		if(_orientation == VERTICAL) {
 			swap(pos.x,pos.y);
 			swap(size.width,size.height);
-			swap(max.width,max.height);
+			swap(all.width,all.height);
 		}
 
-		gsize_t totalWidth = max.width * _ctrls.size() + _gap * (_ctrls.size() - 1);
-		pos.y = size.height / 2 - max.height / 2;
+		gsize_t totalWidth = all.width * _ctrls.size() + _gap * (_ctrls.size() - 1);
+		pos.y = size.height / 2 - all.height / 2;
 		switch(_align) {
 			case FRONT:
 				pos.x = pad;
@@ -78,17 +78,38 @@ namespace gui {
 
 		if(_orientation == VERTICAL) {
 			swap(pos.x,pos.y);
-			swap(max.width,max.height);
+			swap(all.width,all.height);
 		}
 
 		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
-			res |= configureControl(*it,pos,max);
+			Size csize = _sameSize ? all : (*it)->getPreferredSize();
+			res |= configureControl(*it,pos,csize);
 			if(_orientation == VERTICAL)
-				pos.y += max.height + _gap;
+				pos.y += csize.height + _gap;
 			else
-				pos.x += max.width + _gap;
+				pos.x += csize.width + _gap;
 		}
 		return res;
+	}
+
+	Size FlowLayout::getTotalSize() const {
+		Size total;
+		for(auto it = _ctrls.begin(); it != _ctrls.end(); ++it) {
+			Size size = (*it)->getPreferredSize();
+			if(_orientation == VERTICAL) {
+				total.height += size.height;
+				total.width = max(total.width,size.width);
+			}
+			else {
+				total.width += size.width;
+				total.height = max(total.height,size.height);
+			}
+		}
+		if(_orientation == VERTICAL)
+			total.height /= _ctrls.size();
+		else
+			total.width /= _ctrls.size();
+		return total;
 	}
 
 	Size FlowLayout::getMaxSize() const {

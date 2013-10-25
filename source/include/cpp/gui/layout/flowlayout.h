@@ -25,7 +25,8 @@
 
 namespace gui {
 	/**
-	 * The flowlayout puts all controls side by side with their minimum widths and heights.
+	 * The flowlayout puts all controls side by side with either the max of all widths/heights or
+	 * the preferred width/height of each.
 	 * The alignment of all controls can be left, center and right.
 	 */
 	class FlowLayout : public Layout {
@@ -46,11 +47,13 @@ namespace gui {
 		 * Constructor
 		 *
 		 * @param align the alignment of the controls
+		 * @param sameSize whether all controls should have the same width/height
 		 * @param orientation the orientation
 		 * @param gap the gap between the controls (default 2)
 		 */
-		FlowLayout(Align align,Orientation orientation = HORIZONTAL,gsize_t gap = DEF_GAP)
-			: Layout(), _align(align), _orientation(orientation), _gap(gap), _p(), _ctrls() {
+		FlowLayout(Align align,bool sameSize = true,Orientation orientation = HORIZONTAL,gsize_t gap = DEF_GAP)
+			: Layout(), _sameSize(sameSize), _align(align), _orientation(orientation), _gap(gap),
+			  _p(), _ctrls() {
 		}
 
 		virtual void add(Panel *p,std::shared_ptr<Control> c,pos_type pos);
@@ -63,8 +66,10 @@ namespace gui {
 		virtual Size getSizeWith(const Size &avail,size_func func) const;
 
 	private:
+		Size getTotalSize() const;
 		Size getMaxSize() const;
 
+		bool _sameSize;
 		Align _align;
 		Orientation _orientation;
 		gsize_t _gap;

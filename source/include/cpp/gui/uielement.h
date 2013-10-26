@@ -144,6 +144,17 @@ namespace gui {
 		}
 
 		/**
+		 * Determines what size would be used if <avail> was available. By default, this
+		 * is always the maximum of getPreferredSize() and <avail>.
+		 *
+		 * @param avail the available size
+		 * @return the size that would be used
+		 */
+		virtual Size getUsedSize(const Size &avail) const {
+			return maxsize(getPreferredSize(),avail);
+		}
+
+		/**
 		 * @return the theme of this ui-element
 		 */
 		Theme &getTheme() {
@@ -317,17 +328,6 @@ namespace gui {
 		 * @return the preferred size of this ui-element
 		 */
 		virtual Size getPrefSize() const = 0;
-
-		/**
-		 * Determines what size would be used if <avail> was available. By default, this
-		 * is always the maximum of getPreferredSize() and <avail>.
-		 *
-		 * @param avail the available size
-		 * @return the size that would be used
-		 */
-		virtual Size getUsedSize(const Size &avail) const {
-			return maxsize(getPreferredSize(),avail);
-		}
 
 		/**
 		 * Sets the position

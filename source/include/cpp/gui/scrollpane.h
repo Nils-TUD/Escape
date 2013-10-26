@@ -49,6 +49,10 @@ namespace gui {
 			return intersection(rect,Rectangle(getWindowPos(),visible));
 		}
 
+		virtual Size getUsedSize(const Size &avail) const {
+			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
+		}
+
 		virtual void onMouseMoved(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
@@ -158,9 +162,6 @@ namespace gui {
 	private:
 		virtual Size getPrefSize() const {
 			return maxsize(_ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE),Size(MIN_SIZE,MIN_SIZE));
-		}
-		virtual Size getUsedSize(const Size &avail) const {
-			return maxsize(avail,Size(MIN_SIZE,MIN_SIZE));
 		}
 		Size getVisible() {
 			return Size(std::max<gsize_t>(0,getSize().width - BAR_SIZE),

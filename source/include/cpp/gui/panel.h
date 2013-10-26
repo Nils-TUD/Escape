@@ -64,6 +64,15 @@ namespace gui {
 			return _parent->getVisibleRect(intersection(rect,Rectangle(getWindowPos(),getSize())));
 		}
 
+		virtual Size getUsedSize(const Size &avail) const {
+			if(_layout) {
+				gsize_t pad = getTheme().getPadding();
+				Size padsize = Size(pad * 2,pad * 2);
+				return _layout->getUsedSize(subsize(avail,padsize)) + padsize;
+			}
+			return UIElement::getUsedSize(avail);
+		}
+
 		/**
 		 * @return the layout
 		 */
@@ -160,14 +169,6 @@ namespace gui {
 				return _layout->getPreferredSize() + Size(pad * 2,pad * 2);
 			}
 			return Size();
-		}
-		virtual Size getUsedSize(const Size &avail) const {
-			if(_layout) {
-				gsize_t pad = getTheme().getPadding();
-				Size padsize = Size(pad * 2,pad * 2);
-				return _layout->getUsedSize(subsize(avail,padsize)) + padsize;
-			}
-			return UIElement::getUsedSize(avail);
 		}
 		virtual void setParent(UIElement *e) {
 			Control::setParent(e);

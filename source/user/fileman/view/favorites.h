@@ -25,12 +25,12 @@
 #include <iostream>
 #include <vector>
 
-#include "../model/favorite.h"
+#include "../model/link.h"
 #include "filelist.h"
 
 class Favorites : public gui::Panel {
 public:
-	typedef std::vector<Favorite> favlist_type;
+	typedef std::vector<Link> favlist_type;
 
 	explicit Favorites(std::shared_ptr<FileList> filelist,const favlist_type &favs)
 			: Panel(gui::make_layout<gui::FlowLayout>(
@@ -44,7 +44,7 @@ public:
 	}
 
 private:
-	void onButtonClick(const Favorite &fav,gui::UIElement&) const {
+	void onButtonClick(const Link &fav,gui::UIElement&) const {
 		_filelist->loadDir(fav.getPath());
 	}
 

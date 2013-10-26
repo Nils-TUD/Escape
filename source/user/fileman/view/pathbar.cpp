@@ -31,8 +31,8 @@ void PathBar::setPath(FileList *list,const string &path) {
 	removeAll();
 	Path parts(path);
 	for(auto it = parts.begin(); it != parts.end(); ++it) {
-		shared_ptr<Button> btn = make_control<Button>(it->first);
-		btn->clicked().subscribe(bind1_mem_recv(it->second,this,&PathBar::onClick));
+		shared_ptr<Button> btn = make_control<Button>(it->getTitle());
+		btn->clicked().subscribe(bind1_mem_recv(it->getPath(),this,&PathBar::onClick));
 		add(btn);
 	}
 	layout();

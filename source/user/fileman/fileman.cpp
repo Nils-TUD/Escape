@@ -23,7 +23,7 @@
 #include <gui/border.h>
 #include <env.h>
 
-#include "model/favorite.h"
+#include "model/link.h"
 #include "view/favorites.h"
 #include "view/filelist.h"
 #include "view/pathbar.h"
@@ -32,14 +32,14 @@ using namespace std;
 using namespace gui;
 
 int main() {
-	vector<Favorite> favlist;
-	favlist.push_back(Favorite("Root","/"));
+	vector<Link> favlist;
+	favlist.push_back(Link("Root","/"));
 	try {
-		favlist.push_back(Favorite("Home",env::get("HOME")));
+		favlist.push_back(Link("Home",env::get("HOME")));
 	}
 	catch(const io_exception& e) {
 		// TODO temporary
-		favlist.push_back(Favorite("Home","/home/hrniels"));
+		favlist.push_back(Link("Home","/home/hrniels"));
 		cerr << e.what() << endl;
 	}
 

@@ -26,10 +26,10 @@ Path::list_type Path::buildParts(const string &path) {
 	char tmp[MAX_PATH_LEN];
 	list_type parts;
 	abspath(tmp,sizeof(tmp),path.c_str());
-	parts.push_back(make_pair("/","/"));
+	parts.push_back(Link("/","/"));
 	char *s,*p = tmp + 1;
 	while((s = strchr(p,'/'))) {
-		parts.push_back(make_pair(string(p,s - p),string(tmp,s - tmp)));
+		parts.push_back(Link(string(p,s - p),string(tmp,s - tmp)));
 		p = s + 1;
 	}
 	return parts;

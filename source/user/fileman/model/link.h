@@ -21,11 +21,11 @@
 
 #include <string>
 
-class Favorite {
+class Link {
 public:
-	explicit Favorite() : _title(), _path() {
+	explicit Link() : _title(), _path() {
 	}
-	explicit Favorite(const std::string &title,const std::string &path) : _title(title), _path(path) {
+	explicit Link(const std::string &title,const std::string &path) : _title(title), _path(path) {
 	}
 
 	const std::string &getTitle() const {

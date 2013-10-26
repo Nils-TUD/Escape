@@ -23,9 +23,11 @@
 #include <string>
 #include <vector>
 
+#include "link.h"
+
 class Path {
 public:
-	typedef std::vector<std::pair<std::string,std::string>> list_type;
+	typedef std::vector<Link> list_type;
 	typedef list_type::const_iterator iterator;
 
 	explicit Path(const std::string &path) : _parts(buildParts(path)) {

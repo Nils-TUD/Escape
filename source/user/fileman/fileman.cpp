@@ -19,6 +19,7 @@
 
 #include <gui/window.h>
 #include <gui/scrollpane.h>
+#include <gui/splitpanel.h>
 #include <env.h>
 
 #include "model/favorite.h"
@@ -48,8 +49,12 @@ int main() {
 	shared_ptr<FileList> filelist = make_control<FileList>(pathbar);
 	root->setLayout(make_layout<BorderLayout>());
 	root->add(pathbar,BorderLayout::NORTH);
-	root->add(make_control<Favorites>(filelist,favlist),BorderLayout::WEST);
-	root->add(make_control<ScrollPane>(filelist),BorderLayout::CENTER);
+
+	shared_ptr<SplitPanel> splitpan = make_control<SplitPanel>(VERTICAL);
+	splitpan->add(make_control<Favorites>(filelist,favlist));
+	splitpan->add(make_control<ScrollPane>(filelist));
+	root->add(splitpan,BorderLayout::CENTER);
+
 	filelist->loadDir("/");
 	w->show();
 	app->addWindow(w);

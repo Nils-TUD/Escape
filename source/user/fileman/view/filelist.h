@@ -70,6 +70,7 @@ public:
 		using namespace std;
 		list<file> files;
 		try {
+			_pathbar->setPath(this,path);
 			vector<sDirEntry> entries = file(path).list_files(false);
 			for(auto it = entries.begin(); it != entries.end(); ++it)
 				files.push_back(file(path,it->name));
@@ -79,7 +80,6 @@ public:
 				return a.is_dir();
 			});
 			setList(files);
-			_pathbar->setPath(this,path);
 		}
 		catch(const io_exception& e) {
 			cerr << e.what() << endl;

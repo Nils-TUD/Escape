@@ -26,6 +26,7 @@ namespace gui {
 	class Panel;
 	class ScrollPane;
 	class Layout;
+	class SplitPanel;
 
 	/**
 	 * The abstract base class for all controls
@@ -34,6 +35,7 @@ namespace gui {
 		friend class Panel;
 		friend class ScrollPane;
 		friend class Layout;
+		friend class SplitPanel;
 
 	public:
 		/**

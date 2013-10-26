@@ -33,6 +33,7 @@ namespace gui {
 	class Control;
 	class ScrollPane;
 	class Layout;
+	class SplitPanel;
 
 	template<typename T,typename... Args>
 	inline std::shared_ptr<T> make_control(Args&&... args) {
@@ -49,6 +50,7 @@ namespace gui {
 		friend class Control;
 		friend class ScrollPane;
 		friend class Layout;
+		friend class SplitPanel;
 
 	public:
 		typedef unsigned id_type;

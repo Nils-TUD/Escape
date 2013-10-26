@@ -29,6 +29,7 @@
 #include <gui/combobox.h>
 #include <gui/checkbox.h>
 #include <gui/progressbar.h>
+#include <gui/splitter.h>
 #include <gui/scrollpane.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
@@ -153,6 +154,7 @@ static shared_ptr<Window> win2(void) {
 
 	shared_ptr<Button> b = make_control<Button>("Try it!");
 	root->add(b);
+	root->add(make_control<Splitter>(VERTICAL));
 	shared_ptr<Editable> e = make_control<Editable>();
 	root->add(e);
 	shared_ptr<ComboBox> cb = make_control<ComboBox>();
@@ -210,6 +212,7 @@ static shared_ptr<Window> win4(void) {
 
 	shared_ptr<Button> b = make_control<Button>("Try it!");
 	p->add(b);
+	p->add(make_control<Splitter>(HORIZONTAL));
 	shared_ptr<Editable> e = make_control<Editable>();
 	p->add(e);
 	shared_ptr<ComboBox> cb = make_control<ComboBox>();

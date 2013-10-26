@@ -78,7 +78,7 @@ namespace gui {
 		virtual Size getPrefSize() const;
 
 		Orientation _orientation;
-		int _position;
+		double _position;
 		bool _moving;
 		bool _refreshing;
 	};

@@ -87,7 +87,7 @@ namespace gui {
 
 	void SplitPanel::onMouseMoved(const MouseEvent &e) {
 		if(_moving) {
-			int oldpos = _position;
+			double oldpos = _position;
 			if(_orientation == VERTICAL)
 				_position = 100.0 * ((double)e.getPos().x / getSize().width);
 			else

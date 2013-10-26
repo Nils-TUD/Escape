@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/syscalls.h>
+#include <esc/conf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,16 @@ static inline uint64_t tsctotime(uint64_t tsc) {
 	uint64_t tmp = tsc;
 	syscall1(SYSCALL_TSCTOTIME,(ulong)&tmp);
 	return tmp;
+}
+
+/**
+ * Determines the number of cycles for the given number of microseconds
+ *
+ * @param usecs the number of microseconds
+ * @return the number of cycles
+ */
+static inline uint64_t timetotsc(uint64_t usecs) {
+	return usecs * ((ulong)sysconf(CONF_TICKS_PER_SEC) / 1000000ULL);
 }
 
 #ifdef __cplusplus

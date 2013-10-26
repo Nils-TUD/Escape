@@ -29,6 +29,7 @@
 #include <functor.h>
 #include <memory>
 #include <vector>
+#include <list>
 #include <signal.h>
 
 namespace gui {
@@ -62,6 +63,16 @@ namespace gui {
 		friend class Window;
 		friend class GraphicsBuffer;
 		friend class Color;
+
+		struct TimeoutFunctor {
+			TimeoutFunctor() : tsc(), functor() {
+			}
+			TimeoutFunctor(uint64_t _tsc,std::Functor<void> *_functor) : tsc(_tsc), functor(_functor) {
+			}
+
+			uint64_t tsc;
+			std::Functor<void> *functor;
+		};
 
 	public:
 		typedef Sender<gwinid_t,const std::string&> createdev_type;
@@ -163,11 +174,17 @@ namespace gui {
 		 * @param functor the functor to call
 		 */
 		void executeLater(std::Functor<void> *functor) {
-			locku(&_queuelock);
-			_queue.push_back(functor);
-			unlocku(&_queuelock);
-			kill(getpid(),SIG_USR1);
+			executeIn(0,functor);
 		}
+
+		/**
+		 * Executes the given functor after <msecs> milliseconds. That is, it uses alarm() to get
+		 * a signal later which will then execute the function.
+		 *
+		 * @param msecs the number of milliseconds to wait
+		 * @param functor the functor to call
+		 */
+		void executeIn(uint msecs,std::Functor<void> *functor);
 
 		/**
 		 * Starts the message-loop
@@ -204,6 +221,8 @@ namespace gui {
 		// prevent copying
 		Application(const Application &a);
 		Application &operator=(const Application &a);
+
+		static void sigalarm(int);
 
 		void notifyCreate(gwinid_t id,const std::string& title);
 		void notifyActive(gwinid_t id);
@@ -259,7 +278,7 @@ namespace gui {
 		createdev_type _created;
 		activatedev_type _activated;
 		destroyedev_type _destroyed;
-		std::vector<std::Functor<void>*> _queue;
+		std::list<TimeoutFunctor> _timequeue;
 		tULock _queuelock;
 		bool _listening;
 		Theme _defTheme;

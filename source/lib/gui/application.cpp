@@ -27,6 +27,7 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/mem.h>
+#include <esc/time.h>
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
@@ -42,8 +43,8 @@ namespace gui {
 
 	Application::Application(const char *winmng)
 			: _winFd(-1), _winEvFd(-1), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
-			  _activated(), _destroyed(), _queuelock(), _listening(false), _defTheme(nullptr),
-			  _winmng() {
+			  _activated(), _destroyed(), _timequeue(), _queuelock(), _listening(false),
+			  _defTheme(nullptr), _winmng() {
 		if(crtlocku(&_queuelock) < 0)
 			throw app_error("Unable to create queue lock");
 
@@ -69,6 +70,8 @@ namespace gui {
 
 		if(signal(SIG_USR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
+		if(signal(SIG_ALARM,sigalarm) == SIG_ERR)
+			throw app_error("Unable to announce ALARM signal handler");
 
 		// init default theme
 		_defTheme.setColor(Theme::CTRL_BACKGROUND,Color(0x88,0x88,0x88));
@@ -114,6 +117,25 @@ namespace gui {
 		close(_winFd);
 	}
 
+	void Application::executeIn(uint msecs,std::Functor<void> *functor) {
+		locku(&_queuelock);
+		uint64_t tsc = rdtsc() + timetotsc(msecs * 1000);
+		std::list<TimeoutFunctor>::iterator it;
+		for(it = _timequeue.begin(); it != _timequeue.end(); ++it) {
+			if(it->tsc > tsc)
+				break;
+		}
+		if(msecs == 0)
+			kill(getpid(),SIG_USR1);
+		else if(it == _timequeue.begin())
+			alarm(msecs);
+		_timequeue.insert(it,TimeoutFunctor(tsc,functor));
+		unlocku(&_queuelock);
+	}
+
+	void Application::sigalarm(int) {
+	}
+
 	void Application::exit() {
 		_run = false;
 	}
@@ -134,12 +156,15 @@ namespace gui {
 
 	void Application::handleQueue() {
 		locku(&_queuelock);
-		while(!_queue.empty()) {
-			std::Functor<void> *functor = _queue.front();
-			unlocku(&_queuelock);
-			(*functor)();
-			locku(&_queuelock);
-			_queue.erase(_queue.begin());
+		uint64_t now = rdtsc();
+		for(auto it = _timequeue.begin(); it != _timequeue.end(); ) {
+			auto cur = it++;
+			if(cur->tsc <= now) {
+				unlocku(&_queuelock);
+				(*(cur->functor))();
+				locku(&_queuelock);
+				_timequeue.erase(cur);
+			}
 		}
 		unlocku(&_queuelock);
 	}

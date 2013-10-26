@@ -119,8 +119,15 @@ namespace gui {
 	}
 
 	void ScrollPane::onMouseMoved(const MouseEvent &e) {
-		scrollRelatively((_focus & FOCUS_HORSB) ? e.getXMovement() : 0,
-						 (_focus & FOCUS_VERTSB) ? e.getYMovement() : 0);
+		if(_focus & (FOCUS_HORSB | FOCUS_VERTSB)) {
+			bool moving = _move.x || _move.y;
+			_move.x += (_focus & FOCUS_HORSB) ? e.getXMovement() : 0;
+			_move.y += (_focus & FOCUS_VERTSB) ? e.getYMovement() : 0;
+			if(!moving) {
+				Application::getInstance()->executeIn(SCROLL_TIMEOUT,
+					make_memfun(this,&ScrollPane::performScroll));
+			}
+		}
 	}
 	void ScrollPane::onMouseReleased(A_UNUSED const MouseEvent &e) {
 		_focus &= ~(FOCUS_HORSB | FOCUS_VERTSB);

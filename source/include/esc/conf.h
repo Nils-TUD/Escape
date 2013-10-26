@@ -27,6 +27,7 @@
 #define CONF_LOG				4
 #define CONF_PAGE_SIZE			5
 #define CONF_CPU_COUNT			7
+#define CONF_TICKS_PER_SEC		9
 
 #ifdef __cplusplus
 extern "C" {

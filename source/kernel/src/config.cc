@@ -89,6 +89,9 @@ long Config::get(int id) {
 		case SMP:
 			res = smp;
 			break;
+		case TICKS_PER_SEC:
+			res = CPU::getSpeed();
+			break;
 		default:
 			res = -EINVAL;
 			break;

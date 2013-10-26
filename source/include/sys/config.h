@@ -36,6 +36,7 @@ public:
 		LINEBYLINE,
 		CPU_COUNT,
 		SMP,
+		TICKS_PER_SEC,
 	};
 
 	/**

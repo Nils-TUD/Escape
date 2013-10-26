@@ -28,18 +28,25 @@ namespace gui {
 		static const unsigned int FOCUS_HORSB	= 2;
 		static const unsigned int FOCUS_VERTSB	= 4;
 
+		static const uint SCROLL_TIMEOUT		= 20;
+
 		static const gsize_t SCROLL_FACTOR;
 		static const gsize_t MIN_BAR_SIZE;
+
+		struct Movement {
+			int x;
+			int y;
+		};
 
 	public:
 		static const gsize_t BAR_SIZE;
 		static const gsize_t MIN_SIZE;
 
 		ScrollPane(std::shared_ptr<Control> ctrl)
-			: Control(), _ctrl(ctrl), _update(), _focus(0), _doingLayout() {
+			: Control(), _ctrl(ctrl), _update(), _focus(0), _doingLayout(), _move() {
 		}
 		ScrollPane(std::shared_ptr<Control> ctrl,const Pos &pos,const Size &size)
-			: Control(pos,size), _ctrl(ctrl), _update(), _focus(0), _doingLayout() {
+			: Control(pos,size), _ctrl(ctrl), _update(), _focus(0), _doingLayout(), _move() {
 		}
 
 		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
@@ -160,6 +167,11 @@ namespace gui {
 		}
 
 	private:
+		void performScroll() {
+			scrollRelatively(_move.x,_move.y);
+			_move.x = _move.y = 0;
+		}
+
 		virtual Size getPrefSize() const {
 			return maxsize(_ctrl->getPreferredSize() + Size(BAR_SIZE,BAR_SIZE),Size(MIN_SIZE,MIN_SIZE));
 		}
@@ -191,5 +203,6 @@ namespace gui {
 		Rectangle _update;
 		unsigned int _focus;
 		bool _doingLayout;
+		Movement _move;
 	};
 }

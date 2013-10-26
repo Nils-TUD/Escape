@@ -29,6 +29,7 @@
 #include <gui/combobox.h>
 #include <gui/checkbox.h>
 #include <gui/progressbar.h>
+#include <gui/border.h>
 #include <gui/splitter.h>
 #include <gui/scrollpane.h>
 #include <esc/proc.h>
@@ -54,6 +55,7 @@ static shared_ptr<Window> win5(void);
 static shared_ptr<Window> win6(void);
 static shared_ptr<Window> win7(void);
 static shared_ptr<Window> win8(void);
+static shared_ptr<Window> win9(void);
 static int updateThread(void *arg);
 
 static volatile bool run = true;
@@ -70,6 +72,7 @@ int main() {
 	addWindow(app,win6());
 	addWindow(app,win7());
 	addWindow(app,win8());
+	addWindow(app,win9());
 	cout.flush();
 	int res = app->run();
 	run = false;
@@ -322,6 +325,22 @@ static shared_ptr<Window> win8(void) {
 
 	if(startthread(updateThread,NULL) < 0)
 		error("Unable to start update-thread");
+	win->show(false);
+	return win;
+}
+
+static shared_ptr<Window> win9(void) {
+	shared_ptr<Window> win = make_control<Window>("Window 9",Pos(100,250),Size(300,200));
+	shared_ptr<Panel> root = win->getRootPanel();
+	root->setLayout(make_layout<BorderLayout>());
+	root->getTheme().setPadding(2);
+
+	root->add(make_control<Border>(make_control<Label>("left4"),Border::LEFT,4),BorderLayout::EAST);
+	root->add(make_control<Border>(make_control<Label>("top2"),Border::TOP,2),BorderLayout::NORTH);
+	root->add(make_control<Border>(make_control<Label>("right3"),Border::RIGHT,3),BorderLayout::WEST);
+	root->add(make_control<Border>(make_control<Label>("bottom1"),Border::BOTTOM,1),BorderLayout::SOUTH);
+	root->add(make_control<Border>(make_control<Label>("all2"),Border::ALL,2),BorderLayout::CENTER);
+
 	win->show(false);
 	return win;
 }

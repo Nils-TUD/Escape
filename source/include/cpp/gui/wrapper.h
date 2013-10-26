@@ -36,6 +36,18 @@ namespace gui {
 			return UIElement::isDirty() || _ctrl->isDirty();
 		}
 
+		virtual void onMouseWheel(const MouseEvent &e) {
+			MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
+					  e.getPos() - _ctrl->getPos(),e.getButtonMask());
+			_ctrl->onMouseWheel(ce);
+		}
+		virtual void onMousePressed(const MouseEvent &e) {
+			MouseEvent ce(e.getType(),e.getXMovement(),e.getYMovement(),e.getWheelMovement(),
+					  e.getPos() - _ctrl->getPos(),e.getButtonMask());
+			_ctrl->onMousePressed(ce);
+			_focus = _ctrl.get();
+		}
+
 		virtual bool layout();
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 
@@ -63,12 +75,15 @@ namespace gui {
 
 		virtual void layoutChanged();
 
+		virtual void onFocusGained() {
+			Control::onFocusGained();
+			_ctrl->onFocusGained();
+		}
 		virtual Control *getFocus() {
 			if(_focus)
 				return _focus->getFocus();
 			return nullptr;
 		}
-
 		virtual void setFocus(Control *c) {
 			_focus = c;
 			_parent->setFocus(c ? this : nullptr);

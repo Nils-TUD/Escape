@@ -67,11 +67,6 @@ namespace gui {
 				return Panel::getFocus();
 			return this;
 		}
-		virtual const Control *getFocus() const {
-			if(!_moving)
-				return Panel::getFocus();
-			return this;
-		}
 
 	private:
 		void init() {

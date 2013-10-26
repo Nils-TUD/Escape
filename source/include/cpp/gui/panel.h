@@ -147,11 +147,6 @@ namespace gui {
 		/**
 		 * @return the control that has the focus (not a panel!) or nullptr if no one
 		 */
-		virtual const Control *getFocus() const {
-			if(_focus)
-				return _focus->getFocus();
-			return nullptr;
-		}
 		virtual Control *getFocus() {
 			if(_focus)
 				return _focus->getFocus();

@@ -20,10 +20,10 @@
 #pragma once
 
 #include <esc/common.h>
-#include <gui/control.h>
+#include <gui/wrapper.h>
 
 namespace gui {
-	class ScrollPane : public Control {
+	class ScrollPane : public Wrapper {
 		static const unsigned int FOCUS_CTRL	= 1;
 		static const unsigned int FOCUS_HORSB	= 2;
 		static const unsigned int FOCUS_VERTSB	= 4;
@@ -43,10 +43,10 @@ namespace gui {
 		static const gsize_t MIN_SIZE;
 
 		ScrollPane(std::shared_ptr<Control> ctrl)
-			: Control(), _ctrl(ctrl), _update(), _focus(0), _doingLayout(), _move() {
+			: Wrapper(ctrl), _update(), _focus(0), _move() {
 		}
 		ScrollPane(std::shared_ptr<Control> ctrl,const Pos &pos,const Size &size)
-			: Control(pos,size), _ctrl(ctrl), _update(), _focus(0), _doingLayout(), _move() {
+			: Wrapper(ctrl,pos,size), _update(), _focus(0), _move() {
 		}
 
 		virtual Rectangle getVisibleRect(const Rectangle &rect) const {
@@ -111,27 +111,11 @@ namespace gui {
 			return res;
 		}
 
-		virtual bool isDirty() const {
-			return UIElement::isDirty() || _ctrl->isDirty();
-		}
-
-		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
-
 	protected:
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
 		virtual bool resizeTo(const Size &size);
-		virtual bool moveTo(const Pos &pos) {
-			bool res = Control::moveTo(pos);
-			// don't move the control, its position is relative to us. just refresh the paint-region
-			_ctrl->setRegion();
-			return res;
-		}
-		virtual void setRegion() {
-			Control::setRegion();
-			_ctrl->setRegion();
-		}
 
 		virtual void onFocusGained() {
 			Control::onFocusGained();
@@ -145,18 +129,6 @@ namespace gui {
 			if(_focus)
 				return this;
 			return nullptr;
-		}
-		virtual const Control *getFocus() const {
-			if(_focus & FOCUS_CTRL)
-				return _ctrl->getFocus();
-			if(_focus)
-				return this;
-			return nullptr;
-		}
-
-		virtual void setParent(UIElement *e) {
-			Control::setParent(e);
-			_ctrl->setParent(this);
 		}
 
 		virtual void layoutChanged() {
@@ -190,7 +162,7 @@ namespace gui {
 				_focus = FOCUS_CTRL;
 			else
 				_focus &= ~FOCUS_CTRL;
-			_parent->setFocus(this);
+			Wrapper::setFocus(c);
 		}
 
 	private:
@@ -199,10 +171,8 @@ namespace gui {
 		gsize_t getBarSize(gsize_t ctrlSize,gsize_t viewable);
 
 	private:
-		std::shared_ptr<Control> _ctrl;
 		Rectangle _update;
 		unsigned int _focus;
-		bool _doingLayout;
 		Movement _move;
 	};
 }

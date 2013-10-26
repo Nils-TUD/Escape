@@ -31,9 +31,8 @@
 
 namespace gui {
 	class Control;
-	class ScrollPane;
 	class Layout;
-	class SplitPanel;
+	class Wrapper;
 
 	template<typename T,typename... Args>
 	inline std::shared_ptr<T> make_control(Args&&... args) {
@@ -48,9 +47,8 @@ namespace gui {
 		friend class Window;
 		friend class Panel;
 		friend class Control;
-		friend class ScrollPane;
 		friend class Layout;
-		friend class SplitPanel;
+		friend class Wrapper;
 
 	public:
 		typedef unsigned id_type;
@@ -263,6 +261,12 @@ namespace gui {
 		}
 
 		/**
+		 * Will be called by a child if it's layout has changed
+		 */
+		virtual void layoutChanged() {
+		}
+
+		/**
 		 * Prints this UI element to <os>, starting with given indent.
 		 *
 		 * @param os the ostream
@@ -317,12 +321,6 @@ namespace gui {
 		// trouble. Means, better don't allow it at all :)
 		UIElement(const UIElement &e);
 		UIElement &operator=(const UIElement &e);
-
-		/**
-		 * Will be called by a child if it's layout has changed
-		 */
-		virtual void layoutChanged() {
-		}
 
 		/**
 		 * Helper for getPreferredSize(). Has to be implemented by subclasses!

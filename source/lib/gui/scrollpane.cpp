@@ -247,13 +247,4 @@ namespace gui {
 			return 0;
 		return max(MIN_BAR_SIZE,(gsize_t)(viewable / ((double)ctrlSize / viewable)));
 	}
-
-	void ScrollPane::print(std::ostream &os, bool rec, size_t indent) const {
-		UIElement::print(os,rec,indent);
-		if(rec) {
-			os << " {\n";
-			_ctrl->print(os,rec,indent + 2);
-			os << '\n' << std::setw(indent) << "" << "}";
-		}
-	}
 }

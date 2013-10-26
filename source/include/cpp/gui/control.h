@@ -24,18 +24,16 @@
 
 namespace gui {
 	class Panel;
-	class ScrollPane;
 	class Layout;
-	class SplitPanel;
+	class Wrapper;
 
 	/**
 	 * The abstract base class for all controls
 	 */
 	class Control : public UIElement {
 		friend class Panel;
-		friend class ScrollPane;
 		friend class Layout;
-		friend class SplitPanel;
+		friend class Wrapper;
 
 	public:
 		/**
@@ -61,6 +59,14 @@ namespace gui {
 		 */
 		virtual bool layout() {
 			return false;
+		}
+
+		/**
+		 * @return the control that has the focus (not a panel!) or nullptr if no one
+		 */
+		virtual Control *getFocus() {
+			// panel returns the focused control on the panel; a control does already return itself
+			return this;
 		}
 
 		/**
@@ -94,17 +100,6 @@ namespace gui {
 
 	protected:
 		/**
-		 * @return the control that has the focus (not a panel!) or nullptr if no one
-		 */
-		virtual Control *getFocus() {
-			// panel returns the focused control on the panel; a control does already return itself
-			return this;
-		}
-		virtual const Control *getFocus() const {
-			return this;
-		}
-
-		/**
 		 * Sets the parent of this control (used by Panel)
 		 *
 		 * @param e the parent
@@ -117,6 +112,10 @@ namespace gui {
 		virtual void setRegion();
 
 	private:
+		const Control *getFocus() const {
+			return const_cast<const Control*>(const_cast<Control*>(this)->getFocus());
+		}
+
 		Pos getParentOff(UIElement *c) const;
 	};
 }

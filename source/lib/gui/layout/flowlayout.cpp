@@ -57,7 +57,6 @@ namespace gui {
 		Pos pos(pad,pad);
 
 		if(_orientation == VERTICAL) {
-			swap(pos.x,pos.y);
 			swap(size.width,size.height);
 			swap(all.width,all.height);
 		}
@@ -66,7 +65,6 @@ namespace gui {
 		pos.y = size.height / 2 - all.height / 2;
 		switch(_align) {
 			case FRONT:
-				pos.x = pad;
 				break;
 			case CENTER:
 				pos.x = (size.width / 2) - (totalWidth / 2);

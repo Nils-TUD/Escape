@@ -78,15 +78,17 @@ namespace gui {
 		 * Resizes the ui-element to given size
 		 *
 		 * @param size the new size
+		 * @return true if it has changed
 		 */
-		virtual void resizeTo(const Size &size);
+		virtual bool resizeTo(const Size &size);
 		/**
 		 * Moves the ui-element to x,y.
 		 *
 		 * @param x the new x-position
 		 * @param y the new y-position
+		 * @return true if it has changed
 		 */
-		virtual void moveTo(const Pos &pos);
+		virtual bool moveTo(const Pos &pos);
 
 	protected:
 		/**

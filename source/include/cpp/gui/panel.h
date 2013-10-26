@@ -131,8 +131,8 @@ namespace gui {
 	protected:
 		virtual void paint(Graphics &g);
 
-		virtual void resizeTo(const Size &size);
-		virtual void moveTo(const Pos &pos);
+		virtual bool resizeTo(const Size &size);
+		virtual bool moveTo(const Pos &pos);
 		virtual void setRegion();
 
 		/**

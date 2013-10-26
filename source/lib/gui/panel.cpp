@@ -72,7 +72,7 @@ namespace gui {
 		return res;
 	}
 
-	void Panel::resizeTo(const Size &size) {
+	bool Panel::resizeTo(const Size &size) {
 		gpos_t diffw = getSize().width - size.width;
 		gpos_t diffh = getSize().height - size.height;
 
@@ -83,11 +83,13 @@ namespace gui {
 				_layout->rearrange();
 				_doingLayout = false;
 				getParent()->layoutChanged();
+				return true;
 			}
 		}
+		return false;
 	}
 
-	void Panel::moveTo(const Pos &pos) {
+	bool Panel::moveTo(const Pos &pos) {
 		Pos cur = getPos();
 		Control::moveTo(pos);
 
@@ -95,7 +97,9 @@ namespace gui {
 		if(cur != pos) {
 			for(auto it = _controls.begin(); it != _controls.end(); ++it)
 				(*it)->setRegion();
+			return true;
 		}
+		return false;
 	}
 
 	void Panel::setRegion() {

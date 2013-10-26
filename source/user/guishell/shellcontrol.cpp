@@ -92,13 +92,16 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 	doUpdate();
 }
 
-void ShellControl::resizeTo(const Size &size) {
-	Control::resizeTo(size);
-	// if we come from a locked section, just do that later
-	if(_locked)
-		Application::getInstance()->executeLater(std::make_bind1_memfun(size,this,&ShellControl::resizeVTerm));
-	else
-		resizeVTerm(size);
+bool ShellControl::resizeTo(const Size &size) {
+	bool res = Control::resizeTo(size);
+	if(res) {
+		// if we come from a locked section, just do that later
+		if(_locked)
+			Application::getInstance()->executeLater(std::make_bind1_memfun(size,this,&ShellControl::resizeVTerm));
+		else
+			resizeVTerm(size);
+	}
+	return res;
 }
 
 void ShellControl::resizeVTerm(const Size &size) {

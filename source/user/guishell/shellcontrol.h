@@ -60,7 +60,7 @@ public:
 	ShellControl &operator=(const ShellControl &e);
 
 	virtual void onKeyPressed(const gui::KeyEvent &e);
-	virtual void resizeTo(const gui::Size &size);
+	virtual bool resizeTo(const gui::Size &size);
 
 	gsize_t getCols(size_t avail) const {
 		size_t fontwidth = getGraphics()->getFont().getSize().width;

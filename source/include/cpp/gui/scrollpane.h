@@ -110,11 +110,12 @@ namespace gui {
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
 
-		virtual void resizeTo(const Size &size);
-		virtual void moveTo(const Pos &pos) {
-			Control::moveTo(pos);
+		virtual bool resizeTo(const Size &size);
+		virtual bool moveTo(const Pos &pos) {
+			bool res = Control::moveTo(pos);
 			// don't move the control, its position is relative to us. just refresh the paint-region
 			_ctrl->setRegion();
+			return res;
 		}
 		virtual void setRegion() {
 			Control::setRegion();

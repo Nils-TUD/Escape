@@ -30,14 +30,15 @@ namespace gui {
 	const gsize_t ScrollPane::MIN_BAR_SIZE		= 10;
 	const gsize_t ScrollPane::SCROLL_FACTOR		= 100;
 
-	void ScrollPane::resizeTo(const Size &size) {
+	bool ScrollPane::resizeTo(const Size &size) {
+		bool res = false;
 		// ensure that we reach the minimum size
 		Size rsize = maxsize(Size(MIN_SIZE,MIN_SIZE),size);
-		Control::resizeTo(rsize);
+		res |= Control::resizeTo(rsize);
 
 		// determine what size the control will actually use, if it gets visiblex X visibley.
 		Size visible = rsize - Size(BAR_SIZE,BAR_SIZE);
-		_ctrl->resizeTo(_ctrl->getUsedSize(visible));
+		res |= _ctrl->resizeTo(_ctrl->getUsedSize(visible));
 
 		// ensure that the position of the control is in the allowed range; of course, this changes
 		// as soon as the size of the scrollpane or the control changes
@@ -45,7 +46,8 @@ namespace gui {
 		gpos_t minY = visible.height - _ctrl->getSize().height;
 		Pos newPos = minpos(Pos(0,0),maxpos(Pos(minX,minY),_ctrl->getPos()));
 		if(_ctrl->getPos() != newPos)
-			_ctrl->moveTo(newPos);
+			res |= _ctrl->moveTo(newPos);
+		return res;
 	}
 
 	void ScrollPane::scrollBy(int x,int y,bool update) {

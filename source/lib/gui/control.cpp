@@ -37,18 +37,22 @@ namespace gui {
 		}
 	}
 
-	void Control::resizeTo(const Size &size) {
-		makeDirty(_size != size);
-		getParent()->makeDirty(_size != size);
+	bool Control::resizeTo(const Size &size) {
+		bool changed = _size != size;
+		makeDirty(changed);
+		getParent()->makeDirty(changed);
 		_size = size;
 		setRegion();
+		return changed;
 	}
 
-	void Control::moveTo(const Pos &pos) {
-		makeDirty(_pos != pos);
-		getParent()->makeDirty(_pos != pos);
+	bool Control::moveTo(const Pos &pos) {
+		bool changed = _pos != pos;
+		makeDirty(changed);
+		getParent()->makeDirty(changed);
 		_pos = pos;
 		setRegion();
+		return changed;
 	}
 
 	void Control::setRegion() {

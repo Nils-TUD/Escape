@@ -36,11 +36,11 @@ def find_symbol(coderegs, addr):
 def get_symbols(binary):
 	symbols = []
 	res = subprocess.check_output(
-		crossdir + "/bin/" + cross + "-nm -Cl " + builddir + "/dist/" + binary + " | grep -i ' t '",
+		crossdir + "/bin/" + cross + "-nm -Cl " + builddir + "/dist/" + binary + " | grep -i ' \\(t\\|w\\) '",
 		shell=True
 	)
 	for l in res.split("\n"):
-		match = re.match('([0-9a-f]+) (?:T|t) ([^\t]+)(?:\t(.*))?$', l)
+		match = re.match('([0-9a-f]+) (?:T|t|W|w) ([^\t]+)(?:\t(.*))?$', l)
 		if match:
 			symbols.append((int(match.group(1), 16), match.group(2), match.group(3)))
 	symbols.sort(key=lambda tup: tup[0], reverse=True)
@@ -57,20 +57,43 @@ def sigint_handler(signum, frame):
 	sys.exit(1)
 
 # don't echo the stuff the user pasted
-enable_echo(sys.stdin.fileno(), False)
+if sys.stdin.isatty():
+	enable_echo(sys.stdin.fileno(), False)
 signal.signal(signal.SIGINT, sigint_handler)
+
+# wait for start of backtrace
+while True:
+	line = sys.stdin.readline()
+	if line == '============= snip =============\n':
+		print line[:-1]
+		break
 
 # read the regions and build a code-region- and symbol-list
 coderegs = []
 while True:
 	line = sys.stdin.readline()
+	if line[0:9] == 'Pagefault' or line == 'User-Stacktrace:\n':
+		break
+
 	print line[:-1]
 	match = re.match('\\s*(\\S+)[\\S\\s]+([0-9a-f:]+) - ([0-9a-f:]+) \\(\s*\\d+K\\) (.*?Ex.*|-x-s)', line)
 	if match:
 		syms = get_symbols(match.group(1))
 		coderegs.append((match.group(1), str_to_addr(match.group(2)), str_to_addr(match.group(3)), syms))
-	elif line == 'User-Stacktrace:\n':
-		break
+
+# decode pagefault address
+match = re.match('Pagefault for address ([0-9a-f:]+) @ ([0-9a-f:]+)', line)
+if match:
+	pfaddr = str_to_addr(match.group(1))
+	addr = str_to_addr(match.group(2))
+	(lib, sym) = find_symbol(coderegs, addr)
+	liboff = addr - libaddr(lib)
+	funcoff = liboff - sym[0]
+	sys.stdout.write("Pagefault for %#010x\n" % (pfaddr));
+	sys.stdout.write("          at  %#010x (%s+%#x): %s+%#x (%s)\n"
+		% (addr, lib[0], liboff, sym[1], funcoff, sym[2]));
+else:
+	print line[:-1]
 
 # decode backtrace
 while True:
@@ -89,5 +112,6 @@ while True:
 	else:
 		print line[:-1]
 
-enable_echo(sys.stdin.fileno(), True)
+if sys.stdin.isatty():
+	enable_echo(sys.stdin.fileno(), True)
 

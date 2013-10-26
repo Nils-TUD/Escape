@@ -41,6 +41,17 @@ public:
 	static const size_t MAX_STACK_DEPTH		= 100;
 
 	/**
+	 * Stores the pagefault information to print it later for debugging purposes
+	 *
+	 * @param addr the address for which it occurred
+	 * @param ip the address where it occurred
+	 */
+	static void setpf(uintptr_t addr,uintptr_t ip) {
+		pfaddr = addr;
+		pfip = ip;
+	}
+
+	/**
 	 * PANIC: Displays the given message and halts
 	 *
 	 * @param fmt the format of the message to display
@@ -170,4 +181,6 @@ private:
 	static uint lastRand;
 	static klock_t randLock;
 	static uint64_t profStart;
+	static uintptr_t pfaddr;
+	static uintptr_t pfip;
 };

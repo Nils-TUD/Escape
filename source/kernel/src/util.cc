@@ -42,6 +42,8 @@ uint Util::randc = 12345;
 uint Util::lastRand = 0;
 klock_t Util::randLock;
 uint64_t Util::profStart;
+uintptr_t Util::pfaddr;
+uintptr_t Util::pfip;
 
 int Util::rand() {
 	SpinLock::acquire(&randLock);
@@ -102,6 +104,8 @@ void Util::vpanic(const char *fmt,va_list ap) {
 		log.writef("\n============= snip =============\n");
 		log.writef("Region overview:\n");
 		t->getProc()->getVM()->printShort(log,"\t");
+		if(pfip != 0)
+			log.writef("\nPagefault for address %p @ %p\n",pfaddr,pfip);
 		printStackTrace(vl,getUserStackTrace());
 		log.writef("============= snip =============\n\n");
 	}

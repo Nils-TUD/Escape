@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
+#include <gui/orientation.h>
 #include <gui/control.h>
 
 namespace gui {
@@ -35,10 +36,6 @@ namespace gui {
 			FRONT,
 			CENTER,
 			BACK,
-		};
-		enum Orientation {
-			HORIZONTAL,
-			VERTICAL
 		};
 
 		static const gsize_t DEF_GAP	= 2;

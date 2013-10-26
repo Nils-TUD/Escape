@@ -38,8 +38,8 @@ const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 DesktopWin::DesktopWin(const Size &size)
 	: Window(Pos(0,0),size,DESKTOP),
 	  _winPanel(make_control<Panel>(Pos(0,0),Size(0,TASKBAR_HEIGHT),
-			  	make_layout<FlowLayout>(FlowLayout::FRONT,true,FlowLayout::HORIZONTAL,4))),
-	  _iconPanel(make_control<Panel>(make_layout<IconLayout>(IconLayout::VERTICAL,PADDING))),
+			  	make_layout<FlowLayout>(FlowLayout::FRONT,true,HORIZONTAL,4))),
+	  _iconPanel(make_control<Panel>(make_layout<IconLayout>(VERTICAL,PADDING))),
 	  _active(nullptr), _windows(), _shortcuts() {
 	shared_ptr<Panel> root = getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());

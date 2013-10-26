@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
+#include <gui/orientation.h>
 #include <gui/control.h>
 
 namespace gui {
@@ -33,11 +34,6 @@ namespace gui {
 												const Size &size) const;
 
 	public:
-		enum Preferred {
-			HORIZONTAL,
-			VERTICAL
-		};
-
 		static const gsize_t DEF_GAP	= 2;
 
 		/**
@@ -46,7 +42,7 @@ namespace gui {
 		 * @param pref the preferred direction
 		 * @param gap the gap between the controls (default 2)
 		 */
-		IconLayout(Preferred pref,gsize_t gap = DEF_GAP)
+		IconLayout(Orientation pref,gsize_t gap = DEF_GAP)
 			: Layout(), _pref(pref), _gap(gap), _p(), _ctrls() {
 		}
 
@@ -64,7 +60,7 @@ namespace gui {
 		void doLayout(size_t cols,size_t rows,gsize_t pad,Size &size,layout_func layout = 0) const;
 
 	private:
-		Preferred _pref;
+		Orientation _pref;
 		gsize_t _gap;
 		Panel *_p;
 		std::vector<std::shared_ptr<Control>> _ctrls;

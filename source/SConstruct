@@ -5,15 +5,13 @@ sys.path.insert(0, 'tools')
 import install
 
 target = os.environ.get('ESC_TARGET') or 'x86_64'
-if target == 'i586':
-	crossver = '4.6.3'
-elif target == 'eco32':
+if target == 'eco32':
 	crossver = '4.4.3'
 elif target == 'mmix':
 	crossver = '4.6.3'
 else:
-	print "Please define ESC_TARGET to i586, eco32 or mmix first!"
-	Exit(1)
+	crossver = '4.6.3'
+	target = 'i586'
 cross = target + '-elf-escape'
 crossdir = '/opt/escape-cross-' + target
 

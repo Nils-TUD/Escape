@@ -22,11 +22,14 @@
 #include <esc/common.h>
 
 #define PANIC_ON_PAGEFAULT	1
+#define IRQ_COUNT			0x3A
 
 class Thread;
+class LAPIC;
 
 class Interrupts : public InterruptsBase {
 	friend class InterruptsBase;
+	friend class LAPIC;
 
 	Interrupts() = delete;
 
@@ -47,6 +50,7 @@ private:
 		IRQ_FLOPPY			= IRQ_MASTER_BASE + 6,
 		/* IRQ_MASTER_BASE + 7 = ? */
 		IRQ_CMOS_RTC		= IRQ_MASTER_BASE + 8,
+		IRQ_LAPIC			= IRQ_MASTER_BASE + 9,
 		IRQ_MOUSE			= IRQ_MASTER_BASE + 12,
 		IRQ_ATA1			= IRQ_MASTER_BASE + 14,
 		IRQ_ATA2			= IRQ_MASTER_BASE + 15,
@@ -189,13 +193,6 @@ private:
 		EX_CO_PROC_ERROR	= 0x10,
 	};
 
-	typedef void (*handler_func)(Thread *t,IntrptStackFrame *stack);
-	struct Interrupt {
-		handler_func handler;
-		const char *name;
-		int signal;
-	};
-
 	static void syscall(IntrptStackFrame *stack) asm("syscall_handler");
 
 	/**
@@ -214,18 +211,11 @@ private:
 	static void ipiCallback(Thread *t,IntrptStackFrame *stack);
 	static void printPFInfo(OStream &os,Thread *t,IntrptStackFrame *stack,uintptr_t pfaddr);
 
-	/* total number of interrupts */
-	static size_t intrptCount;
 	static uintptr_t *pfAddrs;
 	/* stuff to count exceptions */
 	static size_t exCount;
 	static uint32_t lastEx;
-	static const Interrupt intrptList[];
 };
-
-inline size_t InterruptsBase::getCount() {
-	return Interrupts::intrptCount;
-}
 
 inline uint8_t InterruptsBase::getVectorFor(uint8_t irq) {
 	return irq + 0x20;

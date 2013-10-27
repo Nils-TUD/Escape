@@ -170,6 +170,13 @@ public:
 	}
 
 	/**
+	 * @return the bus speed in Hz
+	 */
+	static uint64_t getBusSpeed() {
+		return busHz;
+	}
+
+	/**
 	 * @return the value of a control-register
 	 */
 	static uint32_t getCR0() {
@@ -291,6 +298,7 @@ private:
 	/* the information about our cpu */
 	static Info *cpus;
 	static uint64_t cpuHz;
+	static uint64_t busHz;
 };
 
 inline uint64_t CPUBase::getSpeed() {

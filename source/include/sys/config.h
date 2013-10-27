@@ -37,6 +37,7 @@ public:
 		CPU_COUNT,
 		SMP,
 		TICKS_PER_SEC,
+		FORCE_PIT,
 	};
 
 	/**
@@ -69,5 +70,6 @@ private:
 	static bool lineByLine;
 	static bool doLog;
 	static bool smp;
+	static bool forcePIT;
 	static char swapDev[];
 };

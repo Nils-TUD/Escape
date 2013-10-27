@@ -30,28 +30,6 @@ class Timer : public TimerBase {
 	static const int MEASURE_COUNT			= 10;
 	static const int REQUIRED_MATCHES		= 5;
 
-	static const uint BASE_FREQUENCY		= 1193182;
-	static const uint IOPORT_CTRL 			= 0x43;
-	static const uint IOPORT_CHAN0DIV 		= 0x40;
-
-	/* counter to select */
-	static const uint CTRL_CHAN0			= 0x00;
-	static const uint CTRL_CHAN1			= 0x40;
-	static const uint CTRL_CHAN2			= 0x80;
-	/* read/write mode */
-	static const uint CTRL_RWLO				= 0x10;	/* low byte only */
-	static const uint CTRL_RWHI				= 0x20;	/* high byte only */
-	static const uint CTRL_RWLOHI			= 0x30;	/* low byte first, then high byte */
-	/* mode */
-	static const uint CTRL_MODE1 			= 0x02;	/* programmable one shot */
-	static const uint CTRL_MODE2 			= 0x04;	/* rate generator */
-	static const uint CTRL_MODE3 			= 0x06;	/* square wave generator */
-	static const uint CTRL_MODE4 			= 0x08;	/* software triggered strobe */
-	static const uint CTRL_MODE5 			= 0x0A;	/* hardware triggered strobe */
-	/* count mode */
-	static const uint CTRL_CNTBIN16 		= 0x00;	/* binary 16 bit */
-	static const uint CTRL_CNTBCD 			= 0x01;	/* BCD */
-
 public:
 	/**
 	 * Waits for <us> microseconds.
@@ -63,15 +41,24 @@ public:
 	/**
 	 * Detects the CPU-speed
 	 *
+	 * @param busHz will be set to the bus frequency
 	 * @return the speed in Hz
 	 */
-	static uint64_t detectCPUSpeed();
+	static uint64_t detectCPUSpeed(uint64_t *busHz);
+
+	/**
+	 * Starts the timer
+	 */
+	static void start();
 
 private:
-	static uint64_t determineSpeed(int instrCount);
+	static uint64_t determineSpeed(int instrCount,uint64_t *busHz);
 
 	static uint64_t cpuMhz;
 };
+
+inline void TimerBase::archInit() {
+}
 
 inline uint64_t TimerBase::cyclesToTime(uint64_t cycles) {
 	return cycles / Timer::cpuMhz;

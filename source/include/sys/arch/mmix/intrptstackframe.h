@@ -22,3 +22,4 @@
 #include <esc/common.h>
 
 typedef uint64_t IntrptStackFrame;
+typedef void (*irqhandler_func)(IntrptStackFrame *stack,int irqNo);

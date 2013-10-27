@@ -28,10 +28,8 @@
 #include <errno.h>
 
 /* total elapsed milliseconds */
-time_t TimerBase::elapsedMsecs = 0;
-time_t TimerBase::lastResched = 0;
+TimerBase::PerCPU *TimerBase::perCPU = NULL;
 time_t TimerBase::lastRuntimeUpdate = 0;
-size_t TimerBase::timerIntrpts = 0;
 
 klock_t TimerBase::lock;
 TimerBase::Listener TimerBase::listenObjs[LISTENER_COUNT];
@@ -40,6 +38,10 @@ TimerBase::Listener *TimerBase::listener = NULL;
 
 void TimerBase::init() {
 	archInit();
+
+	perCPU = (PerCPU*)cache_calloc(SMP::getCPUCount(),sizeof(PerCPU));
+	if(!perCPU)
+		Util::panic("Unable to create per-cpu-array");
 
 	/* init objects */
 	listenObjs->next = NULL;
@@ -117,51 +119,54 @@ void TimerBase::removeThread(tid_t tid) {
 bool TimerBase::intrpt() {
 	bool res,foundThread = false;
 	time_t timeInc = 1000 / FREQUENCY_DIV;
+	cpuid_t cpu = Thread::getRunning()->getCPU();
 
-	SpinLock::acquire(&lock);
-	timerIntrpts++;
-	elapsedMsecs += timeInc;
+	perCPU[cpu].timerIntrpts++;
+	perCPU[cpu].elapsedMsecs += timeInc;
 
-	if((elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
-		Thread::updateRuntimes();
-		SMP::updateRuntimes();
-		lastRuntimeUpdate = elapsedMsecs;
-	}
-
-	/* look if there are threads to wakeup */
-	for(Listener *l = listener; l != NULL; ) {
-		/* stop if we have to continue waiting for this one */
-		/* note that multiple listeners may have l->time = 0 */
-		if(l->time > timeInc) {
-			l->time -= timeInc;
-			break;
+	if(cpu == 0) {
+		SpinLock::acquire(&lock);
+		if((perCPU[cpu].elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
+			Thread::updateRuntimes();
+			SMP::updateRuntimes();
+			lastRuntimeUpdate = perCPU[cpu].elapsedMsecs;
 		}
 
-		timeInc -= l->time;
-		/* wake up thread */
-		if(l->block) {
-			Thread::getById(l->tid)->unblock();
-			foundThread = true;
+		/* look if there are threads to wakeup */
+		for(Listener *l = listener; l != NULL; ) {
+			/* stop if we have to continue waiting for this one */
+			/* note that multiple listeners may have l->time = 0 */
+			if(l->time > timeInc) {
+				l->time -= timeInc;
+				break;
+			}
+
+			timeInc -= l->time;
+			/* wake up thread */
+			if(l->block) {
+				Thread::getById(l->tid)->unblock();
+				foundThread = true;
+			}
+			else
+				Signals::addSignalFor(l->tid,SIG_ALARM);
+			/* remove from list */
+			listener = l->next;
+			Listener *tl = l->next;
+			/* put on freelist */
+			l->next = freeList;
+			freeList = l;
+			/* to next */
+			l = tl;
 		}
-		else
-			Signals::addSignalFor(l->tid,SIG_ALARM);
-		/* remove from list */
-		listener = l->next;
-		Listener *tl = l->next;
-		/* put on freelist */
-		l->next = freeList;
-		freeList = l;
-		/* to next */
-		l = tl;
+		SpinLock::release(&lock);
 	}
 
 	/* if a process has been waked up or the time-slice is over, reschedule */
 	res = false;
-	if(foundThread || (elapsedMsecs - lastResched) >= TIMESLICE) {
-		lastResched = elapsedMsecs;
+	if(foundThread || (perCPU[cpu].elapsedMsecs - perCPU[cpu].lastResched) >= TIMESLICE) {
+		perCPU[cpu].lastResched = perCPU[cpu].elapsedMsecs;
 		res = true;
 	}
-	SpinLock::release(&lock);
 	return res;
 }
 

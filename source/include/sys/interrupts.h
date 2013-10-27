@@ -32,9 +32,18 @@
 #endif
 
 class OStream;
+class Thread;
 
 class InterruptsBase {
 	InterruptsBase() = delete;
+
+protected:
+	struct Interrupt {
+		irqhandler_func handler;
+		const char *name;
+		int signal;
+		ulong count;
+	};
 
 public:
 	/**
@@ -67,6 +76,16 @@ public:
 	 * @param stack the interrupt-stack
 	 */
 	static void printStackFrame(OStream &os,const IntrptStackFrame *stack);
+
+	/**
+	 * Prints statistics about the occurred interrupts
+	 *
+	 * @param os the output-stream
+	 */
+	static void print(OStream &os);
+
+protected:
+	static Interrupt intrptList[];
 };
 
 #ifdef __i386__

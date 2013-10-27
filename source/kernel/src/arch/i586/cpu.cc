@@ -132,6 +132,7 @@ static const char *intel6Models[] = {
 /* the information about our cpu */
 CPU::Info *CPU::cpus;
 uint64_t CPU::cpuHz;
+uint64_t CPU::busHz;
 
 void CPU::detect() {
 	uint32_t eax,ebx,edx,unused;
@@ -143,8 +144,8 @@ void CPU::detect() {
 			Util::panic("Not enough mem for CPU-infos");
 
 		/* detect the speed just once */
-		cpuHz = Timer::detectCPUSpeed();
-		Log::get().writef("Detected %zu Mhz CPU",cpuHz / 1000000);
+		cpuHz = Timer::detectCPUSpeed(&busHz);
+		Log::get().writef("Detected %Lu Mhz CPU on a %Lu Mhz bus",cpuHz / 1000000,busHz / 1000000);
 	}
 
 	/* get vendor-string */

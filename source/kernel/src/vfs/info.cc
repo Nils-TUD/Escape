@@ -49,6 +49,7 @@ void VFSInfo::init() {
 	VFSNode::release(CREATE(MemUsageFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(CPUFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(StatsFile,KERNEL_PID,sysNode));
+	VFSNode::release(CREATE(IRQsFile,KERNEL_PID,sysNode));
 	VFSNode::release(sysNode);
 }
 
@@ -267,6 +268,13 @@ void VFSInfo::virtMemReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 
 	OStringStream os;
 	p->getPageDir()->print(os,PD_PART_USER);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
+}
+
+void VFSInfo::irqsReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **buffer) {
+	OStringStream os;
+	Interrupts::print(os);
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }

@@ -17,18 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <sys/common.h>
+#include <sys/interrupts.h>
+#include <sys/ostream.h>
 
-#include <esc/common.h>
+size_t InterruptsBase::getCount() {
+	ulong total = 0;
+	for(size_t i = 0; i < IRQ_COUNT; ++i)
+		total += intrptList[i].count;
+	return total;
+}
 
-#define REG_COUNT 32
-
-/* the saved registers */
-struct IntrptStackFrame {
-	uint32_t r[REG_COUNT];
-	uint32_t psw;
-	uint32_t irqNo;
-} A_PACKED;
-
-class Thread;
-typedef void (*irqhandler_func)(Thread *t,IntrptStackFrame *stack);
+void InterruptsBase::print(OStream &os) {
+	for(size_t i = 0; i < IRQ_COUNT; ++i) {
+		const Interrupt *irq = intrptList + i;
+		if(strcmp(irq->name,"??") != 0)
+			os.writef("%-20s: %lu\n",irq->name,irq->count);
+	}
+}

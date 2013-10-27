@@ -67,6 +67,7 @@ uintptr_t smpstart() {
 
 	/* start all APs */
 	SMP::start();
+	Timer::start();
 
 	/* load initloader */
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
@@ -91,6 +92,7 @@ void apstart() {
 	/* setup IDT for this cpu and enable its local APIC */
 	IDT::init();
 	LAPIC::enable();
+	Timer::start();
 	/* init FPU and detect our CPU */
 	FPU::preinit();
 	CPU::detect();

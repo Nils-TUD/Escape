@@ -21,16 +21,30 @@
 
 #include <sys/common.h>
 #include <sys/mem/physmem.h>
+#include <sys/interrupts.h>
 #include <assert.h>
+
+class Timer;
 
 class LAPIC {
 	LAPIC() = delete;
 
-	enum {
+	friend class Timer;
+
+	enum Register {
 		REG_APICID				= 0x20,
 		REG_SPURINT				= 0xF0,
 		REG_ICR_LOW				= 0x300,
 		REG_ICR_HIGH			= 0x310,
+		REG_LVT_TIMER			= 0x320,
+		REG_LVT_THERMAL			= 0x330,
+		REG_LVT_PERFCNT			= 0x340,
+		REG_LVT_LINT0			= 0x350,
+		REG_LVT_LINT1			= 0x360,
+		REG_LVT_ERROR			= 0x370,
+		REG_TIMER_ICR			= 0x380,
+		REG_TIMER_CCR			= 0x390,
+		REG_TIMER_DCR			= 0x3E0,
 		REG_TASK_PRIO			= 0x80,
 		REG_EOI					= 0xB0
 	};
@@ -39,13 +53,13 @@ class LAPIC {
 		SPURINT_APIC_EN			= 1 << 8
 	};
 
-	enum {
+	enum DeliveryMode {
 		ICR_DELMODE_FIXED		= 0x0 << 8,
 		ICR_DELMODE_LOWPRIO		= 0x1 << 8,
 		ICR_DELMODE_SMI			= 0x2 << 8,
 		ICR_DELMODE_NMI			= 0x4 << 8,
 		ICR_DELMODE_INIT		= 0x5 << 8,
-		ICR_DELMODE_STARTUP		= 0x6 << 8
+		ICR_DELMODE_SIPI		= 0x6 << 8
 	};
 
 	enum {
@@ -68,6 +82,12 @@ class LAPIC {
 		ICR_TRIGMODE_LEVEL		= 0x1 << 15
 	};
 
+	enum Mode {
+		MODE_ONESHOT			= 0x0 << 17,
+		MODE_PERIODIC			= 0x1 << 17,
+		MODE_TSCDEADLINE		= 0x2 << 17,
+	};
+
 	enum {
 		ICR_DESTSHORT_NO		= 0x0 << 18,
 		ICR_DESTSHORT_SELF		= 0x1 << 18,
@@ -79,6 +99,8 @@ class LAPIC {
 	static const uint32_t APIC_BASE_EN			= 1 << 11;
 
 public:
+	static const int TIMER_DIVIDER				= 16;
+
 	static void init();
 
 	static cpuid_t getId() {
@@ -92,7 +114,10 @@ public:
 	}
 	static void enable() {
 		write(REG_SPURINT,SPURINT_APIC_EN);
+		write(REG_TASK_PRIO,0);
+		write(REG_TIMER_DCR,0x3);	// set divider to 16
 	}
+	static void enableTimer();
 
 	static void sendIPITo(cpuid_t id,uint8_t vector) {
 		writeIPI(id << 24,ICR_DESTSHORT_NO | ICR_LEVEL_ASSERT |
@@ -104,7 +129,7 @@ public:
 	}
 	static void sendStartupIPI(uintptr_t startAddr) {
 		writeIPI(0,ICR_DESTSHORT_NOTSELF | ICR_LEVEL_ASSERT |
-				ICR_DEST_PHYS | ICR_DELMODE_STARTUP | ((startAddr / PAGE_SIZE) & 0xFF));
+				ICR_DEST_PHYS | ICR_DELMODE_SIPI | ((startAddr / PAGE_SIZE) & 0xFF));
 	}
 	static void eoi() {
 		write(REG_EOI,0);
@@ -112,6 +137,10 @@ public:
 
 private:
 	static void writeIPI(uint32_t high,uint32_t low);
+
+    static void setLVT(Register reg,uint vector,DeliveryMode dlv,Mode mode) {
+        write(reg,dlv | vector | mode);
+    }
 
 	static uint32_t read(uint32_t reg) {
 		assert(enabled);

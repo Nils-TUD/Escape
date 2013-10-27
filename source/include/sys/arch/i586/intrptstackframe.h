@@ -100,3 +100,6 @@ struct VM86IntrptStackFrame : public IntrptStackFrame {
 	uint16_t vm86gs;
 	uint16_t : 16;
 } A_PACKED;
+
+class Thread;
+typedef void (*irqhandler_func)(Thread *t,IntrptStackFrame *stack);

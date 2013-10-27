@@ -19,18 +19,30 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/ports.h>
+#include <sys/arch/i586/lapic.h>
+#include <sys/arch/i586/pic.h>
+#include <sys/arch/i586/pit.h>
 #include <sys/task/timer.h>
+#include <sys/task/smp.h>
 #include <sys/cpu.h>
+#include <sys/config.h>
 
 uint64_t Timer::cpuMhz;
 
-void TimerBase::archInit() {
-	/* change timer divisor */
-	uint freq = Timer::BASE_FREQUENCY / Timer::FREQUENCY_DIV;
-	Ports::out<uint8_t>(Timer::IOPORT_CTRL,Timer::CTRL_CHAN0 | Timer::CTRL_RWLOHI |
-	              Timer::CTRL_MODE2 | Timer::CTRL_CNTBIN16);
-	Ports::out<uint8_t>(Timer::IOPORT_CHAN0DIV,freq & 0xFF);
-	Ports::out<uint8_t>(Timer::IOPORT_CHAN0DIV,freq >> 8);
+void Timer::start() {
+	bool isBSP = SMP::isBSP();
+	if(!Config::get(Config::FORCE_PIT) && LAPIC::isAvailable()) {
+		if(isBSP) {
+			/* "disable" the PIT by setting it to one-shot-mode. so it'll be dead after the first IRQ */
+			PIT::enableOneShot(PIT::CHAN0,0);
+		}
+		LAPIC::enableTimer();
+	}
+	else if(isBSP) {
+		/* change timer divisor */
+		uint freq = PIT::BASE_FREQUENCY / Timer::FREQUENCY_DIV;
+		PIT::enablePeriodic(PIT::CHAN0,freq);
+	}
 }
 
 void Timer::wait(uint us) {
@@ -40,19 +52,20 @@ void Timer::wait(uint us) {
 		CPU::pause();
 }
 
-uint64_t Timer::detectCPUSpeed() {
+uint64_t Timer::detectCPUSpeed(uint64_t *busHz) {
 	int bestMatches = -1;
 	uint64_t bestHz = 0;
+	uint64_t bestBusHz = 0;
 	for(int i = 1; i <= MEASURE_COUNT; i++) {
 		bool found = true;
-		uint64_t ref = determineSpeed(0x1000 * i * 10);
+		uint64_t ref = determineSpeed(0x1000 * i * 10,busHz);
 		/* no tick at all? */
 		if(ref == 0)
 			continue;
 
 		int j;
 		for(j = 0; j < REQUIRED_MATCHES; j++) {
-			uint64_t hz = determineSpeed(0x1000 * i * 10);
+			uint64_t hz = determineSpeed(0x1000 * i * 10,busHz);
 			/* not in tolerance? */
 			if(((ref - hz) > 0 && (ref - hz) > TOLERANCE) ||
 				((hz - ref) > 0 && (hz - ref) > TOLERANCE)) {
@@ -62,26 +75,26 @@ uint64_t Timer::detectCPUSpeed() {
 		}
 		if(found) {
 			bestHz = ref;
+			bestBusHz = *busHz;
 			break;
 		}
 		/* store our best result */
 		if(j > bestMatches) {
 			bestMatches = j;
 			bestHz = ref;
+			bestBusHz = *busHz;
 		}
 	}
 	/* ok give up and use the best result so far */
 	cpuMhz = bestHz / 1000000;
+	*busHz = bestBusHz;
 	return bestHz;
 }
 
-uint64_t Timer::determineSpeed(int instrCount) {
-	/* set PIT channel 0 to single-shot mode */
-	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0 | CTRL_RWLOHI |
-			CTRL_MODE2 | CTRL_CNTBIN16);
-	/* set reload-value to 65535 */
-	Ports::out<uint8_t>(IOPORT_CHAN0DIV,0xFF);
-	Ports::out<uint8_t>(IOPORT_CHAN0DIV,0xFF);
+uint64_t Timer::determineSpeed(int instrCount,uint64_t *busHz) {
+	/* set PIT and LAPIC counter to -1 */
+	PIT::enablePeriodic(PIT::CHAN0,0xFFFF);
+	LAPIC::write(LAPIC::REG_TIMER_ICR,0xFFFFFFFF);
 
 	/* now spend some time and measure the number of cycles */
 	uint64_t before = CPU::rdtsc();
@@ -89,12 +102,15 @@ uint64_t Timer::determineSpeed(int instrCount) {
 		;
 	uint64_t after = CPU::rdtsc();
 
-	/* read current count */
-	Ports::out<uint8_t>(IOPORT_CTRL,CTRL_CHAN0);
-	uint32_t left = Ports::in<uint8_t>(IOPORT_CHAN0DIV);
-	left |= Ports::in<uint8_t>(IOPORT_CHAN0DIV) << 8;
+	/* read current counts */
+	uint32_t lapicCnt = LAPIC::read(LAPIC::REG_TIMER_CCR);
+	uint32_t left = PIT::getCounter(PIT::CHAN0);
 	/* if there was no tick at all, we have to increase instrCount */
 	if(left == 0xFFFF)
 		return 0;
-	return (after - before) * (BASE_FREQUENCY / (0xFFFF - left));
+
+	/* calculate frequencies */
+	ulong picTime = PIT::BASE_FREQUENCY / (0xFFFF - left);
+	*busHz = (0xFFFFFFFF - lapicCnt) * picTime * LAPIC::TIMER_DIVIDER;
+	return (after - before) * picTime;
 }

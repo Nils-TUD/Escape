@@ -50,6 +50,7 @@ class VFSInfo {
 	static void cpuReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void statsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void memUsageReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void irqsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 
 public:
 	/**
@@ -66,6 +67,7 @@ public:
 	GEN_INFO_FILECLASS(CPUFile,"cpu",cpuReadCallback);
 	GEN_INFO_FILECLASS(StatsFile,"stats",statsReadCallback);
 	GEN_INFO_FILECLASS(MemUsageFile,"memusage",memUsageReadCallback);
+	GEN_INFO_FILECLASS(IRQsFile,"irqs",irqsReadCallback);
 
 	static ssize_t readHelper(pid_t pid,VFSNode *node,void *buffer,off_t offset,
 			size_t count,size_t dataSize,read_func callback);

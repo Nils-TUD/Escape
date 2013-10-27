@@ -30,6 +30,7 @@
 bool Config::lineByLine = false;
 bool Config::doLog = true;
 bool Config::smp = true;
+bool Config::forcePIT = false;
 char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void Config::parseBootParams(int argc,const char *const *argv) {
@@ -92,6 +93,9 @@ long Config::get(int id) {
 		case TICKS_PER_SEC:
 			res = CPU::getSpeed();
 			break;
+		case FORCE_PIT:
+			res = forcePIT;
+			break;
 		default:
 			res = -EINVAL;
 			break;
@@ -108,4 +112,6 @@ void Config::set(const char *name,const char *value) {
 		lineByLine = true;
 	else if(strcmp(name,"nosmp") == 0)
 		smp = false;
+	else if(strcmp(name,"forcepit") == 0)
+		forcePIT = true;
 }

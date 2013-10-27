@@ -21,6 +21,8 @@
 
 #include <esc/common.h>
 
+#define IRQ_COUNT		32
+
 class Thread;
 
 class Interrupts : public InterruptsBase {
@@ -59,26 +61,13 @@ class Interrupts : public InterruptsBase {
 	static const ulong DISK_CTRL			= 0;
 	static const ulong DISK_IEN				= 0x02;
 
-	typedef void (*handler_func)(IntrptStackFrame *stack);
-	struct Interrupt {
-		handler_func handler;
-		const char *name;
-		int signal;
-	};
+	static void defHandler(Thread *t,IntrptStackFrame *stack);
+	static void debug(Thread *t,IntrptStackFrame *stack);
+	static void exTrap(Thread *t,IntrptStackFrame *stack);
+	static void exPageFault(Thread *t,IntrptStackFrame *stack);
+	static void irqTimer(Thread *t,IntrptStackFrame *stack);
+	static void irqKB(Thread *t,IntrptStackFrame *stack);
+	static void irqDisk(Thread *t,IntrptStackFrame *stack);
 
-	static void defHandler(IntrptStackFrame *stack);
-	static void debug(IntrptStackFrame *stack);
-	static void exTrap(IntrptStackFrame *stack);
-	static void exPageFault(IntrptStackFrame *stack);
-	static void irqTimer(IntrptStackFrame *stack);
-	static void irqKB(IntrptStackFrame *stack);
-	static void irqDisk(IntrptStackFrame *stack);
-
-	static size_t irqCount;
 	static uintptr_t pfaddr;
-	static const Interrupt intrptList[];
 };
-
-inline size_t InterruptsBase::getCount() {
-	return Interrupts::irqCount;
-}

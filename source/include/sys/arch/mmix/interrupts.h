@@ -21,6 +21,8 @@
 
 #include <esc/common.h>
 
+#define IRQ_COUNT			64
+
 class Thread;
 
 class Interrupts : public InterruptsBase {
@@ -65,13 +67,6 @@ class Interrupts : public InterruptsBase {
 	static const ulong DISK_CTRL			= 0;
 	static const ulong DISK_IEN				= 0x02;
 
-	typedef void (*handler_func)(IntrptStackFrame *stack,int irqNo);
-	struct Interrupt {
-		handler_func handler;
-		const char *name;
-		int signal;
-	};
-
 	static void forcedTrap(IntrptStackFrame *stack) asm("intrpt_forcedTrap");
 	static bool dynTrap(IntrptStackFrame *stack,int irqNo) asm("intrpt_dynTrap");
 
@@ -82,11 +77,4 @@ class Interrupts : public InterruptsBase {
 	static void irqKB(IntrptStackFrame *stack,int irqNo);
 	static void irqTimer(IntrptStackFrame *stack,int irqNo);
 	static void irqDisk(IntrptStackFrame *stack,int irqNo);
-
-	static size_t irqCount;
-	static const Interrupt intrptList[];
 };
-
-inline size_t InterruptsBase::getCount() {
-	return Interrupts::irqCount;
-}

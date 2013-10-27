@@ -43,6 +43,7 @@
 #include <sys/mem/physmemareas.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/swapmap.h>
+#include <sys/interrupts.h>
 #include <sys/boot.h>
 #include <sys/cpu.h>
 #include <string.h>
@@ -115,6 +116,7 @@ static View views[] = {
 	{"locks",		Lock::print},
 	{"events",		Sched::printEventLists},
 	{"smp",			SMP::print},
+	{"irqs",		Interrupts::print},
 };
 
 static size_t _argc;

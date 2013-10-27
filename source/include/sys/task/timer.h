@@ -37,6 +37,13 @@ class TimerBase {
 		Listener *next;
 	};
 
+	struct PerCPU {
+		/* total elapsed milliseconds */
+		time_t elapsedMsecs;
+		time_t lastResched;
+		size_t timerIntrpts;
+	};
+
 	static const size_t LISTENER_COUNT		= 1024;
 
 public:
@@ -54,14 +61,14 @@ public:
 	 * @return the number of timer-interrupts so far
 	 */
 	static size_t getIntrptCount() {
-		return timerIntrpts;
+		return perCPU[0].timerIntrpts;
 	}
 
 	/**
 	 * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
 	 */
 	static time_t getTimestamp() {
-		return elapsedMsecs;
+		return perCPU[0].elapsedMsecs;
 	}
 
 	/**
@@ -114,13 +121,9 @@ private:
 	 */
 	static void archInit();
 
-	/* total elapsed milliseconds */
-	static time_t elapsedMsecs;
-	static time_t lastResched;
-	static time_t lastRuntimeUpdate;
-	static size_t timerIntrpts;
-
 	static klock_t lock;
+	static PerCPU *perCPU;
+	static time_t lastRuntimeUpdate;
 	static Listener listenObjs[LISTENER_COUNT];
 	static Listener *freeList;
 	/* processes that should be waked up to a specified time */

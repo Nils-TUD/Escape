@@ -34,12 +34,10 @@ typedef struct {
 } sTestModule;
 
 static sTestModule modules[] = {
-	{"speed",mod_speed},
 	{"driver",mod_driver},
 	{"debug",mod_debug},
 	{"fault",mod_fault},
 	{"thread",mod_thread},
-	{"fork",mod_fork},
 	{"forkbomb",mod_forkbomb},
 	{"procswarm",mod_procswarm},
 	{"mem",mod_mem},

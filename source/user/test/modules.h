@@ -19,12 +19,10 @@
 
 #include <esc/common.h>
 
-extern int mod_speed(int,char**);
 extern int mod_driver(int,char**);
 extern int mod_debug(int,char**);
 extern int mod_fault(int,char**);
 extern int mod_thread(int,char**);
-extern int mod_fork(int,char**);
 extern int mod_forkbomb(int,char**);
 extern int mod_procswarm(int,char**);
 extern int mod_mem(int,char**);

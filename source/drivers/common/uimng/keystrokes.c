@@ -82,8 +82,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 		const char *args[] = {mng,cols,rows,name,NULL};
 		exec(mng,args);
-		printe("exec with %s failed",mng);
-		return;
+		error("exec with %s failed",mng);
 	}
 
 	/* TODO not good */
@@ -103,7 +102,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 		const char *args[] = {login,NULL};
 		exec(login,args);
-		printe("exec with %s failed",login);
+		error("exec with %s failed",login);
 	}
 
 	jobs_add(id,loginPid,mngPid);

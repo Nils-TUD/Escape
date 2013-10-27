@@ -79,7 +79,7 @@ static void header_doUpdate(sClient *cli,gsize_t width,gsize_t height) {
 		memcpy(cli->screenShm,cli->header,header_getSize(cli->screenMode,cli->type,width));
 	else {
 		size_t off = 0;
-		size_t len = width * (cli->screenMode->bitsPerPixel / 8) * FONT_HEIGHT;
+		size_t len = width * (cli->screenMode->bitsPerPixel / 8);
 		size_t inc = cli->screenMode->width * (cli->screenMode->bitsPerPixel / 8);
 		for(gsize_t y = 0; y < height; y++) {
 			memcpy(cli->screenShm + off,cli->header + off,len);

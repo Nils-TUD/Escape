@@ -65,7 +65,7 @@ static void pipeReadChild(void) {
 		/* child */
 		close(fd[0]);
 		for(c = 0; c < 10; c++) {
-			snprintf(buf,10,"test%d",c);
+			snprintf(buf,10,"test%zd",c);
 			if(write(fd[1],buf,strlen(buf)) < 0)
 				error("Write failed");
 			sleep(10);
@@ -110,7 +110,7 @@ static void pipeReadParent(void) {
 		/* parent */
 		close(fd[0]);
 		for(c = 0; c < 10; c++) {
-			snprintf(buf,10,"test%d",c);
+			snprintf(buf,10,"test%zd",c);
 			if(write(fd[1],buf,strlen(buf)) < 0)
 				error("Write failed");
 			sleep(10);

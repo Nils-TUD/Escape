@@ -8,3 +8,5 @@ env.InstallFiles('$DISTDIR', 'arch/$ARCH', scan=1)
 env.InstallFiles('$DISTDIR/etc', 'etc', scan=1)
 env.InstallFiles('$DISTDIR/home', 'home', scan=1)
 env.InstallFiles('$DISTDIR/root', 'root', scan=1)
+
+env.Command('zeros', '/bin/dd', '$SOURCE if=/dev/zero of=$TARGET bs=1024 count=2048')

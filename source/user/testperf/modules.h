@@ -32,3 +32,4 @@ extern int mod_readzeros(int,char**);
 extern int mod_writenull(int,char**);
 extern int mod_memops(int,char**);
 extern int mod_locks(int,char**);
+extern int mod_chgsize(int,char**);

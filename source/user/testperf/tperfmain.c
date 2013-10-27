@@ -46,6 +46,7 @@ static sTestModule modules[] = {
 	{"writenull",	mod_writenull},
 	{"memops",		mod_memops},
 	{"locks",		mod_locks},
+	{"chgsize",		mod_chgsize},
 };
 
 int main(int argc,char *argv[]) {

@@ -76,7 +76,7 @@ while True:
 		break
 
 	print line[:-1]
-	match = re.match('\\s*(\\S+)[\\S\\s]+([0-9a-f:]+) - ([0-9a-f:]+) \\(\s*\\d+K\\) (.*?Ex.*|-x-s)', line)
+	match = re.match('\\s*(\\S+)\\s+([0-9a-f:]+) - ([0-9a-f:]+) \\(\s*\\d+K\\) (.*?Ex.*|-x-s)', line)
 	if match:
 		syms = get_symbols(match.group(1))
 		coderegs.append((match.group(1), str_to_addr(match.group(2)), str_to_addr(match.group(3)), syms))

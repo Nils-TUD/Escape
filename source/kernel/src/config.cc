@@ -31,6 +31,7 @@ bool Config::lineByLine = false;
 bool Config::doLog = true;
 bool Config::smp = true;
 bool Config::forcePIT = false;
+bool Config::forcePIC = false;
 char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void Config::parseBootParams(int argc,const char *const *argv) {
@@ -96,6 +97,9 @@ long Config::get(int id) {
 		case FORCE_PIT:
 			res = forcePIT;
 			break;
+		case FORCE_PIC:
+			res = forcePIC;
+			break;
 		default:
 			res = -EINVAL;
 			break;
@@ -114,4 +118,6 @@ void Config::set(const char *name,const char *value) {
 		smp = false;
 	else if(strcmp(name,"forcepit") == 0)
 		forcePIT = true;
+	else if(strcmp(name,"forcepic") == 0)
+		forcePIC = true;
 }

@@ -65,9 +65,31 @@ public:
 	static void init();
 
 	/**
+	 * Disables the PIC
+	 */
+	static void disable() {
+		/* mask all interrupts */
+		Ports::out<uint8_t>(PORT_MASTER_DATA,0xFF);
+		Ports::out<uint8_t>(PORT_SLAVE_DATA,0xFF);
+	}
+
+	/**
+	 * Masks the given interrupt
+	 */
+	static void mask(int irq) {
+		uint port = PORT_MASTER_DATA;
+		if(irq  >= Interrupts::IRQ_SLAVE_BASE) {
+			port = PORT_SLAVE_DATA;
+			irq -= 8;
+		}
+		uint8_t mask = Ports::in<uint8_t>(port);
+		Ports::out<uint8_t>(port,mask | irq);
+	}
+
+	/**
 	 * Sends an EOI for the given interrupt-number
 	 */
-	static void eoi(uint32_t intrptNo) {
+	static void eoi(int intrptNo) {
 		/* do we have to send EOI? */
 		if(intrptNo >= Interrupts::IRQ_MASTER_BASE &&
 				intrptNo <= Interrupts::IRQ_MASTER_BASE + Interrupts::IRQ_NUM) {

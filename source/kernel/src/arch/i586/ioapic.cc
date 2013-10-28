@@ -25,53 +25,85 @@
 #include <sys/video.h>
 #include <assert.h>
 
+klock_t IOAPIC::lck;
 size_t IOAPIC::count;
 IOAPIC::Instance IOAPIC::ioapics[MAX_IOAPICS];
+uint IOAPIC::isa2gsi[ISA_IRQ_COUNT];
 
-void IOAPIC::add(uint8_t id,uint8_t version,uintptr_t addr) {
+void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
 	if(count >= MAX_IOAPICS)
 		Util::panic("Limit of I/O APICs (%d) reached",MAX_IOAPICS);
 
-	ioapics[count].id = id;
-	ioapics[count].version = version;
-	ioapics[count].addr = (uint32_t*)PageDir::makeAccessible(addr,1);
+	/* lazy init isa2gsi to identity mapping */
+	if(count == 0) {
+		for(size_t i = 0; i < ISA_IRQ_COUNT; ++i)
+			isa2gsi[i] = i;
+	}
+
+	Instance *inst = ioapics + count;
+	inst->id = id;
+	inst->addr = (uint32_t*)PageDir::makeAccessible(addr,1);
+	inst->baseGSI = baseGSI;
+	inst->version = getVersion(ioapics + count);
+	inst->count = getMax(ioapics + count) + 1;
 	assert((addr & (PAGE_SIZE - 1)) == 0);
 	count++;
 }
 
-void IOAPIC::setRedirection(uint8_t dstApic,uint8_t srcIRQ,uint8_t dstInt,uint8_t type,
-		uint8_t polarity,uint8_t triggerMode) {
-#if 0
+void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
+		Polarity polarity,TriggerMode triggerMode) {
 	uint8_t vector = Interrupts::getVectorFor(srcIRQ);
-	cpuid_t lapicId = SMP::getCurId();
-	IOAPIC::Instance *ioapic = get(dstApic);
-	if(ioapic == NULL)
-		Util::panic("Unable to find I/O APIC with id %#x\n",dstApic);
-	write(ioapic,IOAPIC_REG_REDTBL + dstInt * 2 + 1,lapicId << 24);
-	write(ioapic,IOAPIC_REG_REDTBL + dstInt * 2,
-			RED_INT_MASK_DIS | RED_DESTMODE_PHYS | (polarity << 13) |
-			(triggerMode << 15) | (type << 8) | vector);
-#endif
+	if(exists(vector))
+		return;
+
+	assert(srcIRQ < ISA_IRQ_COUNT);
+	isa2gsi[srcIRQ] = gsi;
+
+	cpuid_t lapicId = LAPIC::getId();
+	IOAPIC::Instance *ioapic = get(gsi);
+	if(ioapic != NULL) {
+		gsi -= ioapic->baseGSI;
+		write(ioapic,IOAPIC_REG_REDTBL + gsi * 2 + 1,lapicId << 24);
+		write(ioapic,IOAPIC_REG_REDTBL + gsi * 2,
+			RED_INT_MASK_DIS | RED_DESTMODE_PHYS | polarity | triggerMode | delivery | vector);
+	}
+}
+
+bool IOAPIC::exists(uint vector) {
+	for(size_t i = 0; i < count; i++) {
+		for(uint gsi = ioapics[i].baseGSI; gsi < ioapics[i].baseGSI + ioapics[i].count; ++gsi) {
+			uint32_t lower = read(ioapics + i,IOAPIC_REG_REDTBL + gsi * 2);
+			if((lower & 0xFF) == vector)
+				return true;
+		}
+	}
+	return false;
+}
+
+IOAPIC::Instance *IOAPIC::get(uint gsi) {
+	for(size_t i = 0; i < count; i++) {
+		if(gsi >= ioapics[i].baseGSI && gsi < ioapics[i].baseGSI + ioapics[i].count)
+			return ioapics + i;
+	}
+	return NULL;
 }
 
 void IOAPIC::print(OStream &os) {
+	static const char *pols[] = {"High","Low "};
+	static const char *triggers[] = {"Edge ","Level"};
+	static const char *delivery[] = {"Fix","Low","SMI","???","NMI","INI","???","Ext"};
 	os.writef("I/O APICs:\n");
 	for(size_t i = 0; i < count; i++) {
 		os.writef("%d:\n",i);
 		os.writef("\tid = %#x\n",ioapics[i].id);
 		os.writef("\tversion = %#x\n",ioapics[i].version);
-		os.writef("\tvirt. addr. = %#x\n",ioapics[i].addr);
+		os.writef("\taddress = %p\n",ioapics[i].addr);
 		for(size_t j = 0; j < RED_COUNT; j++) {
-			os.writef("\tred[%d]: %#x:%#x\n",j,read(ioapics + i,IOAPIC_REG_REDTBL + j * 2),
-					read(ioapics + i,IOAPIC_REG_REDTBL + j * 2 + 1));
+			uint32_t lower = read(ioapics + i,IOAPIC_REG_REDTBL + j * 2);
+			uint32_t upper = read(ioapics + i,IOAPIC_REG_REDTBL + j * 2 + 1);
+			os.writef("\t[%2d]: LAPIC=%d, pol=%s, trig=%s, del=%s vec=%2d, en=%d\n",
+				j,upper >> 24,pols[(lower >> 13) & 0x1],triggers[(lower >> 15) & 1],
+				delivery[(lower >> 8) & 0x7],lower & 0xFF,!(lower & 0x10000));
 		}
 	}
-}
-
-IOAPIC::Instance *IOAPIC::get(uint8_t id) {
-	for(size_t i = 0; i < count; i++) {
-		if(ioapics[i].id == id)
-			return ioapics + i;
-	}
-	return NULL;
 }

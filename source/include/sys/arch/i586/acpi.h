@@ -41,6 +41,13 @@ class ACPI {
 		uint8_t xchecksum;
 	} A_PACKED;
 
+	/* special RSDT: FACP */
+	struct RSDTFACP {
+		sRSDT head;
+		uint32_t :32;
+		uint32_t DSDT;
+	} A_PACKED;
+
 	/* APIC entry in RSDT */
 	struct APIC {
 		uint8_t type;
@@ -54,14 +61,6 @@ class ACPI {
 		TYPE_INTR	= 2,
 	};
 
-	/* special APIC-entry: Local APIC */
-	struct LAPIC {
-		APIC head;
-		uint8_t cpu;
-		uint8_t id;
-		uint32_t flags;
-	} A_PACKED;
-
 	/* special RSDT: for APIC */
 	struct RSDTAPIC {
 		sRSDT head;
@@ -70,12 +69,44 @@ class ACPI {
 	    APIC apics[];
 	} A_PACKED;
 
-	/* special RSDT: FACP */
-	struct RSDTFACP {
-		sRSDT head;
-		uint32_t :32;
-		uint32_t DSDT;
+	/* special APIC-entry: Local APIC */
+	struct APICLAPIC {
+		APIC head;
+		uint8_t cpu;
+		uint8_t id;
+		uint32_t flags;
 	} A_PACKED;
+
+	/* special APIC-entry: I/O APIC */
+	struct APICIOAPIC {
+		APIC head;
+		uint8_t id;
+		uint8_t : 8;
+		uint32_t address;
+		uint32_t baseGSI;
+	} A_PACKED;
+
+	/* special APIC-entry: Interrupt Source Override */
+	struct APICIntSO {
+		APIC head;
+		uint8_t bus;
+		uint8_t source;
+		uint32_t gsi;
+		uint16_t flags;
+	} A_PACKED;
+
+	enum {
+		INTI_POL_MASK			= 0x3,
+		INTI_POL_BUS			= 0x0,
+		INTI_POL_HIGH_ACTIVE	= 0x1,
+		INTI_POL_LOW_ACTIVE		= 0x3,
+	};
+	enum {
+		INTI_TRIGGER_MASK		= 0xC,
+		INTI_TRIG_BUS			= 0x0,
+		INTI_TRIG_EDGE			= 0x4,
+		INTI_TRIG_LEVEL			= 0xC,
+	};
 
 public:
 	/**

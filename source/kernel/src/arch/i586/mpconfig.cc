@@ -39,12 +39,45 @@ bool MPConfig::find() {
 	return mpf != NULL;
 }
 
+void MPConfig::handleIOInt(IOIntrptEntry *ioint) {
+	IOAPIC::Polarity pol;
+	IOAPIC::TriggerMode trig;
+	IOAPIC::DeliveryMode del;
+	/* assume high active if it conforms to the bus specification */
+	/* TODO consider other buses */
+	if(ioint->polarity == POL_HIGH_ACTIVE || ioint->polarity == POL_BUS)
+		pol = IOAPIC::RED_POL_HIGH_ACTIVE;
+	else
+		pol = IOAPIC::RED_POL_LOW_ACTIVE;
+	/* assume edge-triggered if it conforms to the bus specification */
+	if(ioint->triggerMode == TRIG_EDGE || ioint->triggerMode == TRIG_BUS)
+		trig = IOAPIC::RED_TRIGGER_EDGE;
+	else
+		trig = IOAPIC::RED_TRIGGER_LEVEL;
+	switch(ioint->intrptType) {
+		default:
+		case TYPE_INT:
+			del = IOAPIC::RED_DEL_FIXED;
+			break;
+		case TYPE_NMI:
+			del = IOAPIC::RED_DEL_NMI;
+			break;
+		case TYPE_SMI:
+			del = IOAPIC::RED_DEL_SMI;
+			break;
+		case TYPE_EXTINT:
+			del = IOAPIC::RED_DEL_EXTINT;
+			break;
+	}
+	IOAPIC::setRedirection(ioint->srcBusIRQ,ioint->dstIOAPICInt,del,pol,trig);
+}
+
 void MPConfig::parse() {
 	if(!mpf)
 		return;
 
 	Proc *proc;
-	IOAPIC *ioapic;
+	MPIOAPIC *ioapic;
 	IOIntrptEntry *ioint;
 	TableHeader *tbl = (TableHeader*)(KERNEL_AREA | mpf->mpConfigTable);
 
@@ -65,15 +98,14 @@ void MPConfig::parse() {
 				ptr += MPCTE_LEN_BUS;
 				break;
 			case MPCTE_TYPE_IOAPIC:
-				ioapic = (IOAPIC*)ptr;
+				ioapic = (MPIOAPIC*)ptr;
 				if(ioapic->enabled)
-					::IOAPIC::add(ioapic->ioAPICId,ioapic->ioAPICVersion,ioapic->baseAddr);
+					IOAPIC::add(ioapic->ioAPICId,ioapic->baseAddr,0);
 				ptr += MPCTE_LEN_IOAPIC;
 				break;
 			case MPCTE_TYPE_IOIRQ:
 				ioint = (IOIntrptEntry*)ptr;
-				::IOAPIC::setRedirection(ioint->dstIOAPICId,ioint->srcBusIRQ,ioint->dstIOAPICInt,
-						ioint->intrptType,ioint->polarity,ioint->triggerMode);
+				handleIOInt(ioint);
 				ptr += MPCTE_LEN_IOIRQ;
 				break;
 			case MPCTE_TYPE_LIRQ:

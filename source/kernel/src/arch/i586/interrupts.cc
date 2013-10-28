@@ -22,6 +22,7 @@
 #include <sys/arch/i586/task/ioports.h>
 #include <sys/arch/i586/pic.h>
 #include <sys/arch/i586/lapic.h>
+#include <sys/arch/i586/ioapic.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/cache.h>
@@ -36,6 +37,7 @@
 #include <sys/interrupts.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/config.h>
 #include <esc/keycodes.h>
 #include <esc/syscalls.h>
 
@@ -118,6 +120,26 @@ void InterruptsBase::init() {
 	Interrupts::pfAddrs = (uintptr_t*)Cache::alloc(SMP::getCPUCount() * sizeof(uintptr_t));
 	if(Interrupts::pfAddrs == NULL)
 		Util::panic("Unable to alloc memory for pagefault-addresses");
+
+	if(!Config::get(Config::FORCE_PIC) && IOAPIC::enabled()) {
+		/* identity map ISA irqs that have no interrupt source override */
+		uint isaIRQs[] = {0,1,3,4,6,8,12,14,15};
+		for(size_t i = 0; i < ARRAY_SIZE(isaIRQs); ++i) {
+			IOAPIC::setRedirection(isaIRQs[i],isaIRQs[i],IOAPIC::RED_DEL_FIXED,
+				IOAPIC::RED_POL_HIGH_ACTIVE,IOAPIC::RED_TRIGGER_EDGE);
+		}
+		PIC::disable();
+	}
+	else {
+		PIC::init();
+	}
+}
+
+void Interrupts::eoi(int irq) {
+	if(irq == IRQ_LAPIC || IOAPIC::enabled())
+		LAPIC::eoi();
+	else
+		PIC::eoi(irq);
 }
 
 void Interrupts::syscall(IntrptStackFrame *stack) {
@@ -149,6 +171,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	else {
 		Log::get().writef("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
 				intrpt->name,stack->getIP(),t->getProc()->getPid(),t->getProc()->getProgram());
+		Interrupts::eoi(stack->intrptNo);
 	}
 
 	/* handle signal */
@@ -256,12 +279,7 @@ void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
 			res = true;
 	}
 	res |= Timer::intrpt();
-
-	if(stack->intrptNo == IRQ_LAPIC)
-		LAPIC::eoi();
-	else
-		PIC::eoi(stack->intrptNo);
-
+	eoi(stack->intrptNo);
 	if(res)
 		Thread::switchAway();
 }
@@ -274,7 +292,8 @@ void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		if(Signals::addSignal(intrpt->signal) && (t->getFlags() & T_IDLE))
 			res = true;
 	}
-	PIC::eoi(stack->intrptNo);
+	eoi(stack->intrptNo);
+
 	/* in debug-mode, start the logviewer when the keyboard is not present yet */
 	/* (with a present keyboard-device we would steal him the scancodes) */
 	/* this way, we can debug the system in the startup-phase without affecting timings

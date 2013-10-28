@@ -22,6 +22,7 @@
 #include <sys/arch/i586/lapic.h>
 #include <sys/arch/i586/pic.h>
 #include <sys/arch/i586/pit.h>
+#include <sys/arch/i586/ioapic.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
@@ -29,12 +30,16 @@
 
 uint64_t Timer::cpuMhz;
 
-void Timer::start() {
-	bool isBSP = SMP::isBSP();
+void Timer::start(bool isBSP) {
 	if(!Config::get(Config::FORCE_PIT) && LAPIC::isAvailable()) {
 		if(isBSP) {
 			/* "disable" the PIT by setting it to one-shot-mode. so it'll be dead after the first IRQ */
 			PIT::enableOneShot(PIT::CHAN0,0);
+			/* mask it as well */
+			if(IOAPIC::enabled())
+				IOAPIC::mask(IOAPIC::irq_to_gsi(Interrupts::IRQ_TIMER));
+			else
+				PIC::mask(Interrupts::IRQ_TIMER);
 		}
 		LAPIC::enableTimer();
 	}

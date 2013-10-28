@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/acpi.h>
 #include <sys/arch/i586/lapic.h>
+#include <sys/arch/i586/ioapic.h>
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/dir.h>
@@ -136,10 +137,40 @@ void ACPI::parse() {
 				APIC *apic = rapic->apics;
 				while(apic < (APIC*)((uintptr_t)(*it) + (*it)->length)) {
 					/* we're only interested in the local APICs */
-					if(apic->type == TYPE_LAPIC) {
-						LAPIC *lapic = (LAPIC*)apic;
-						if(lapic->flags & 0x1)
-							SMP::addCPU(lapic->id == id,lapic->id,false);
+					switch(apic->type) {
+						case TYPE_LAPIC: {
+							APICLAPIC *lapic = (APICLAPIC*)apic;
+							if(lapic->flags & 0x1)
+								SMP::addCPU(lapic->id == id,lapic->id,false);
+						}
+						break;
+
+						case TYPE_IOAPIC: {
+							APICIOAPIC *ioapic = (APICIOAPIC*)apic;
+							IOAPIC::add(ioapic->id,ioapic->address,ioapic->baseGSI);
+						}
+						break;
+
+						case TYPE_INTR: {
+							APICIntSO *intr = (APICIntSO*)apic;
+							IOAPIC::Polarity pol;
+							IOAPIC::TriggerMode trig;
+							/* assume high active if it conforms to the bus specification */
+							/* TODO consider other buses */
+							if((intr->flags & INTI_POL_MASK) == INTI_POL_HIGH_ACTIVE ||
+								(intr->flags & INTI_POL_MASK) == INTI_POL_BUS)
+								pol = IOAPIC::RED_POL_HIGH_ACTIVE;
+							else
+								pol = IOAPIC::RED_POL_LOW_ACTIVE;
+							/* assume edge-triggered if it conforms to the bus specification */
+							if((intr->flags & INTI_TRIGGER_MASK) == INTI_TRIG_EDGE ||
+									(intr->flags & INTI_TRIGGER_MASK) == INTI_TRIG_BUS)
+								trig = IOAPIC::RED_TRIGGER_EDGE;
+							else
+								trig = IOAPIC::RED_TRIGGER_LEVEL;
+							IOAPIC::setRedirection(intr->source,intr->gsi,IOAPIC::RED_DEL_FIXED,pol,trig);
+						}
+						break;
 					}
 					apic = (APIC*)((uintptr_t)apic + apic->length);
 				}

@@ -38,6 +38,7 @@ public:
 		SMP,
 		TICKS_PER_SEC,
 		FORCE_PIT,
+		FORCE_PIC,
 	};
 
 	/**
@@ -71,5 +72,6 @@ private:
 	static bool doLog;
 	static bool smp;
 	static bool forcePIT;
+	static bool forcePIC;
 	static char swapDev[];
 };

@@ -39,7 +39,6 @@ public:
 	static const int IRQ_MASTER_BASE 		= 0x20;
 	static const int IRQ_SLAVE_BASE			= 0x28;
 
-private:
 	/* IRQs */
 	enum {
 		IRQ_TIMER			= IRQ_MASTER_BASE + 0,
@@ -193,6 +192,7 @@ private:
 		EX_CO_PROC_ERROR	= 0x10,
 	};
 
+private:
 	static void syscall(IntrptStackFrame *stack) asm("syscall_handler");
 
 	/**
@@ -209,6 +209,8 @@ private:
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
 	static void ipiTerm(Thread *t,IntrptStackFrame *stack);
 	static void ipiCallback(Thread *t,IntrptStackFrame *stack);
+
+	static void eoi(int irq);
 	static void printPFInfo(OStream &os,Thread *t,IntrptStackFrame *stack,uintptr_t pfaddr);
 
 	static uintptr_t *pfAddrs;

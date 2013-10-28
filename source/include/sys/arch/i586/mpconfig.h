@@ -57,7 +57,7 @@ class MPConfig {
 		uint32_t reserved[2];
 	} A_PACKED;
 
-	struct IOAPIC {
+	struct MPIOAPIC {
 		uint8_t type;
 		uint8_t ioAPICId;
 		uint8_t ioAPICVersion;
@@ -77,6 +77,23 @@ class MPConfig {
 		uint8_t dstIOAPICId;
 		uint8_t dstIOAPICInt;
 	} A_PACKED;
+
+	enum {
+		POL_BUS				= 0x0,
+		POL_HIGH_ACTIVE		= 0x1,
+		POL_LOW_ACTIVE		= 0x3,
+	};
+	enum {
+		TRIG_BUS			= 0x0,
+		TRIG_EDGE			= 0x1,
+		TRIG_LEVEL			= 0x3,
+	};
+	enum {
+		TYPE_INT			= 0,
+		TYPE_NMI			= 1,
+		TYPE_SMI			= 2,
+		TYPE_EXTINT			= 3,
+	};
 
 	struct LocalIntrptEntry {
 		uint8_t type;
@@ -117,6 +134,7 @@ public:
 	static void parse();
 
 private:
+	static void handleIOInt(IOIntrptEntry *ioint);
 	static FloatPtr *search();
 	static FloatPtr *searchIn(uintptr_t start,size_t length);
 

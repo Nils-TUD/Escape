@@ -135,6 +135,10 @@ public:
 		write(REG_EOI,0);
 	}
 
+	static uint32_t getCounter() {
+		return read(REG_TIMER_CCR);
+	}
+
 private:
 	static void writeIPI(uint32_t high,uint32_t low);
 

@@ -24,6 +24,7 @@
 #include <sys/arch/i586/idt.h>
 #include <sys/arch/i586/pic.h>
 #include <sys/arch/i586/acpi.h>
+#include <sys/arch/i586/ioapic.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
@@ -69,7 +70,6 @@ static const BootTask tasks[] = {
 	{"Initializing scheduler...",Sched::init},
 	{"Start logging to VFS...",Log::vfsIsReady},
 	{"Initializing interrupts...",Interrupts::init},
-	{"Initializing PIC...",PIC::init},
 	{"Initializing IDT...",IDT::init},
 	{"Initializing timer...",Timer::init},
 	{"Initializing signal handling...",Signals::init},

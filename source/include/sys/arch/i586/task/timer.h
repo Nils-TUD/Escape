@@ -49,7 +49,7 @@ public:
 	/**
 	 * Starts the timer
 	 */
-	static void start();
+	static void start(bool isBSP);
 
 private:
 	static uint64_t determineSpeed(int instrCount,uint64_t *busHz);

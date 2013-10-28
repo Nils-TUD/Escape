@@ -112,20 +112,17 @@ static void header_readCPUUsage(void) {
 			int no;
 			uint64_t total,used;
 			/* read CPU number */
-			ssize_t res = fscanf(f,"%*s %d:",&no);
-			assert(res == 1);
-			/* read total cycles and used cycles */
-			res = fscanf(f,"%*s%Lu%*s",&total);
-			assert(res == 1);
-			res = fscanf(f,"%*s%Lu%*s",&used);
-			assert(res == 1);
-
-			cpuUsage[no].usage = 100 * (used / (double)total);
-			cpuUsage[no].usage = MAX(0,MIN(cpuUsage[no].usage,99));
-			snprintf(cpuUsage[no].str,sizeof(cpuUsage[no].str),"%2d",cpuUsage[no].usage);
+			if(fscanf(f,"%*s %d:",&no) == 1 &&
+				fscanf(f,"%*s%Lu%*s",&total) == 1 &&
+				fscanf(f,"%*s%Lu%*s",&used) == 1) {
+				cpuUsage[no].usage = 100 * (used / (double)total);
+				cpuUsage[no].usage = MAX(0,MIN(cpuUsage[no].usage,99));
+				snprintf(cpuUsage[no].str,sizeof(cpuUsage[no].str),"%2d",cpuUsage[no].usage);
+			}
 
 			/* read until the next cpu */
-			assert(fgetc(f) == '\n');
+			if(fgetc(f) != '\n')
+				break;
 			while(!feof(f) && fgetc(f) == '\t') {
 				while(!feof(f) && fgetc(f) != '\n')
 					;

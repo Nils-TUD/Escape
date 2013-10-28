@@ -145,7 +145,8 @@ void CPU::detect() {
 
 		/* detect the speed just once */
 		cpuHz = Timer::detectCPUSpeed(&busHz);
-		Log::get().writef("Detected %Lu Mhz CPU on a %Lu Mhz bus",cpuHz / 1000000,busHz / 1000000);
+		Log::get().writef("Detected %u %Lu Mhz CPU(s) on a %Lu Mhz bus\n",
+			SMP::getCPUCount(),cpuHz / 1000000,busHz / 1000000);
 	}
 
 	/* get vendor-string */

@@ -22,7 +22,7 @@
 #include <sys/mem/pagedir.h>
 #include <sys/task/smp.h>
 #include <sys/util.h>
-#include <sys/video.h>
+#include <sys/log.h>
 #include <assert.h>
 
 klock_t IOAPIC::lck;
@@ -46,6 +46,8 @@ void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
 	inst->baseGSI = baseGSI;
 	inst->version = getVersion(ioapics + count);
 	inst->count = getMax(ioapics + count) + 1;
+	Log::get().writef("IOAPIC: id=%#x version=%#x addr=%p gsis=%u..%u\n",
+		inst->id,inst->version,inst->addr,inst->baseGSI,inst->baseGSI + inst->count - 1);
 	assert((addr & (PAGE_SIZE - 1)) == 0);
 	count++;
 }
@@ -55,6 +57,9 @@ void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
 	uint8_t vector = Interrupts::getVectorFor(srcIRQ);
 	if(exists(vector))
 		return;
+
+	Log::get().writef("INTSO: irq=%u gsi=%u del=%d pol=%d trig=%d\n",
+		srcIRQ,gsi,(delivery >> 8) & 7,(polarity >> 13) & 1,(triggerMode >> 15) & 1);
 
 	assert(srcIRQ < ISA_IRQ_COUNT);
 	isa2gsi[srcIRQ] = gsi;

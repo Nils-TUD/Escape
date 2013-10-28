@@ -92,6 +92,8 @@ void ACPI::addTable(sRSDT *tbl,size_t i,uintptr_t &curDest,uintptr_t destEnd) {
 }
 
 void ACPI::parse() {
+	Log::get().writef("Parsing ACPI tables...\n");
+
 	sRSDT *rsdt = (sRSDT*)rsdp->rsdtAddr;
 	size_t size = sizeof(uint32_t);
 	/* check for extended system descriptor table */

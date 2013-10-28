@@ -41,8 +41,6 @@ void SMPBase::init() {
 		addCPU(true,0,true);
 		setId(0,0);
 	}
-
-	Log::get().writef("%zu CPUs found",cpuCount);
 }
 
 void SMPBase::disable() {
@@ -59,6 +57,7 @@ void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
 	CPU *cpu = new CPU(id,bootstrap,ready);
 	if(!cpu)
 		Util::panic("Unable to allocate mem for CPU");
+	Log::get().writef("CPU: bsp=%d id=%u\n",bootstrap,id);
 	cpuList.append(cpu);
 	cpuCount++;
 }

@@ -27,11 +27,13 @@
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
+#include <sys/log.h>
 
 uint64_t Timer::cpuMhz;
 
 void Timer::start(bool isBSP) {
 	if(!Config::get(Config::FORCE_PIT) && LAPIC::isAvailable()) {
+		Log::get().writef("CPU %d uses LAPIC as timer device\n",SMP::getCurId());
 		if(isBSP) {
 			/* "disable" the PIT by setting it to one-shot-mode. so it'll be dead after the first IRQ */
 			PIT::enableOneShot(PIT::CHAN0,0);
@@ -44,6 +46,7 @@ void Timer::start(bool isBSP) {
 		LAPIC::enableTimer();
 	}
 	else if(isBSP) {
+		Log::get().writef("CPU %d uses PIT as timer device\n",SMP::getCurId());
 		/* change timer divisor */
 		uint freq = PIT::BASE_FREQUENCY / Timer::FREQUENCY_DIV;
 		PIT::enablePeriodic(PIT::CHAN0,freq);

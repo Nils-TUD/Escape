@@ -22,6 +22,7 @@
 #include <sys/arch/i586/mpconfig.h>
 #include <sys/mem/pagedir.h>
 #include <sys/task/smp.h>
+#include <sys/log.h>
 #include <sys/util.h>
 
 /* bios data area contains address of EBDA and the base memory size */
@@ -84,6 +85,7 @@ void MPConfig::parse() {
 	if(tbl->signature != MPC_SIGNATURE)
 		Util::panic("MP Config Table has invalid signature\n");
 
+	Log::get().writef("Parsing MP configuration table...\n");
 	uint8_t *ptr = (uint8_t*)tbl + sizeof(TableHeader);
 	for(size_t i = 0; i < tbl->entryCount; i++) {
 		switch(*ptr) {

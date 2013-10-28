@@ -48,10 +48,9 @@ void Boot::start(BootInfo *info) {
 	drawProgressBar();
 	for(size_t i = 0; i < taskList.count; i++) {
 		const BootTask *task = taskList.tasks + i;
-		Log::get().writef("%s",task->name);
+		Log::get().writef("%s\n",task->name);
 		taskStarted(task->name);
 		task->execute();
-		Log::get().writef("%|s","done");
 		taskFinished();
 	}
 

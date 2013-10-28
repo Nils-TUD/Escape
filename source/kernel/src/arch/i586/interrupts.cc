@@ -122,6 +122,7 @@ void InterruptsBase::init() {
 		Util::panic("Unable to alloc memory for pagefault-addresses");
 
 	if(!Config::get(Config::FORCE_PIC) && IOAPIC::enabled()) {
+		Log::get().writef("Using IOAPIC for interrupts\n");
 		/* identity map ISA irqs that have no interrupt source override */
 		uint isaIRQs[] = {0,1,3,4,6,8,12,14,15};
 		for(size_t i = 0; i < ARRAY_SIZE(isaIRQs); ++i) {
@@ -131,6 +132,7 @@ void InterruptsBase::init() {
 		PIC::disable();
 	}
 	else {
+		Log::get().writef("Using PIC for interrupts\n");
 		PIC::init();
 	}
 }

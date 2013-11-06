@@ -88,62 +88,55 @@ Escape has currently the following features:
     * common
         * fs: The filesystem. Has a nearly complete ext2-rev0 fs and a iso9660
           fs. Additionally it manages mount-points.
-        * kmmanager: The keymap-manager knows the current keymap (can be
-          changed), reads from keyboard, translates the keycodes to characters
-          and provides them for other processes.
-        * ui: Registers keyboard-shortcuts at kmmanager and allows this way to
-          switch the virtual terminal via CTRL+1-6. CTRL+7 switches to the GUI.
-        * vterm: An abstraction-layer for user-processes. It reads from
-          kmmanager, writes to the video-driver and registers multiple virtual
-          terminals as devices. They can be used to read characters or write
-          characters (terminal-like).
+        * uimng: multiplexes input- and output-devices between its clients.
+	  A client gets an UI which supplies him with keyboard- and mouse-
+	  events and provides him a screen. Both text- and graphical interfaces
+	  are supported. uimng has keyboard-shortcuts for creating UIs and
+	  switching between them.
+        * vterm: A text-interface client of uimng that provides a layer of
+	  abstraction for user-processes that are textbased.
+        * winmng: A GUI client of uimng that Manages all existing windows. Gets
+	  keyboard- and mouse-events from uimng and forwards it to the
+	  corresponding application.
         * random/null/zero: Like /dev/{random,null,zero} in e.g. Linux
-        * winmanager: Manages all existing windows. Reads from kmmanager and
-          mouse and passes it to the corresponding application. Additionally it
-          can move and resize windows and is responsible for setting the
-          corresponding mouse-cursor (default, resize, ...).
     * x86
         * ata: Reading and writing from/to ATA/ATAPI-devices. It supports
           PIO-mode and DMA, LBA28 and LBA48.
-        * cmos: Provides the current date.
-        * keyboard: Gets notified about keyboard-interrupts, converts the
-          scancodes to keycodes and stores them in a ringbuffer. Other
-          processes can read them.
-        * mouse: Gets notified about mouse-interrupts, stores the information
-          in a ring-buffer and gives other processes read-access to them.
+        * rtc: Provides the current date and time.
+        * keyb: Gets notified about keyboard-interrupts, converts the
+          scancodes to keycodes and broadcasts them to all clients.
+        * mouse: Gets notified about mouse-interrupts and broadcasts them to
+	  all clients.
         * pci: Collects the available PCI-devices and gives others access to
           them. This is e.g. used by ata to find the IDE-controller.
         * speaker: Produces beeps with the PC-speaker with a specified
           frequency and duration.
-        * vesa: Reads the supported VESA-modes from BIOS (via VM86), determines
-          the best matching mode and sets it. It creates a shared-memory-region
-          which all GUI-processes use directly. On demand it copies a part of
-          it to the VESA-memory. Additionally one can let VESA draw the mouse-
-          cursor at a specified position and it is also responsible for drawing
-          the window-move/resize-preview-rectangle.
-        * vesatext: VESA driver for text-mode. Can be used as an alternative to
-          the video-driver (VGA-text)
-        * video: Can be used to write to the VGA-textmode-memory.
+        * vesa: An output-device for uimng that supports both text-modes and
+	  graphical modes. It uses the BIOS via VM86-mode to get and set video
+	  modes. Clients establish a shared-memory for the screen and send a
+	  message to vesa in order to write a specific region from shm to the
+	  framebuffer.
+        * vga: An output-device for uimng that supports only text-mode. The
+	  interface works like the one of vesa.
     * ECO32/MMIX  
       Both architectures have the same devices atm (the only difference is that
       ECO32-devices are accessed with 32-bit words and MMIX-devices with 64-bit
       words).
         * disk: the disk-driver and therefore the equivalent to ata on x86.
-        * keyboard: the keyboard-driver
+        * keyb: the keyboard-driver
         * rtc: the real-time-clock. This is a dummy atm, because both machines
           don't provide a real-time-clock. Therefore, a timestamp is simply
           increased once a second, starting with 0 :)
-        * video: the video-driver (text-based)
+        * vga: the VGA-driver
 * **user**  
   There are quite a few user-programs so that you can do something with Escape
   ;) The most important ones are:
     * initloader: Is included in the kernel and is used as the first process.
-      Loads the boot-modules (disk-driver, pci (on x86 only), cmos/rtc and fs
+      Loads the boot-modules (disk-driver, pci (on x86 only), rtc and fs
       because we need them to load other drivers and user-apps from the disk).
       After that it replaces itself with init.
-    * init: Is responsible for loading the drivers and login-shells. Which
-      drivers should be loaded is determined by /etc/drivers. It starts one
-      login-shell for each vterm.
+    * init: Is responsible for loading the drivers. Which drivers should be
+      loaded is determined by /etc/drivers.
     * dynlink: the dynamic linker of Escape that is started by the kernel, if
       the requested application is dynamically linked. It receives the fd for
       the executable, loads all dependencies, does the relocation and
@@ -163,6 +156,8 @@ Escape has currently the following features:
     * ts: analogously to ps, ts lists all threads
     * power: for reboot / shutdown using init.
     * keymap: A tool to change the current keymap (us and german is available)
+    * vtctrl: A tool for changing the size of the vterm, i.e. the video-mode.
+    * lspci/lsacpi: list PCI-devices and ACPI tables
     * ...
 
 
@@ -177,9 +172,9 @@ Getting started
    into /opt/escape-cross-$arch.
 2. Now you can build escape:  
    `$ cd ../source`  
-   `$ export ESC_TARGET=$arch` # choose $arch appropriately  
+   `$ export ESC_TARGET=$arch` # choose $arch, if necessary (default: i586)  
    `$ ./b`
-3. To start it, you have to choose a boot-script at boot/$ESC_TARGET/.
+3. To start it, you have to choose a boot-script at boot/`$ESC_TARGET`/.
    E.g.:  
    `$ ./b run qemu-cd`
 4. For further information, take a look at `./b -h`

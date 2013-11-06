@@ -21,23 +21,4 @@
 
 #include <esc/common.h>
 
-#define APP_TYPE_USER		0
-#define APP_TYPE_DEVICE		1
-#define APP_TYPE_FS			2
-
-/* information about an application */
-typedef struct {
-	uint type;
-	char *name;
-	char *start;
-	char *desc;
-} sApp;
-
-/**
- * Reads all info specified by <definition> into <app>.
- *
- * @param definition the permissions of the application
- * @param app the app to write to
- * @return the position after parsing in <definition> or NULL if an error occurred
- */
-char *app_fromString(const char *definition,sApp *app);
+int shell_cmdHelp(int argc,char **argv);

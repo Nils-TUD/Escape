@@ -27,6 +27,7 @@
 #include "cmd/env.h"
 #include "cmd/pwd.h"
 #include "cmd/cd.h"
+#include "cmd/help.h"
 #include "cmd/include.h"
 #include "exec/env.h"
 #include "exec/value.h"
@@ -54,6 +55,7 @@ static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"pwd"		}, SSTRLEN("pwd"),		shell_cmdPwd	,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"cd"		}, SSTRLEN("cd"),		shell_cmdCd		,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"include"	}, SSTRLEN("include"),	shell_cmdInclude,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"help"		}, SSTRLEN("help"),		shell_cmdHelp	,-1},
 };
 
 sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,bool searchPath) {

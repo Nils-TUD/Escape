@@ -159,7 +159,7 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 void win_attach(gwinid_t winid,int fd,int randId) {
 	if(win_exists(winid) && windows[winid].randId == randId && windows[winid].evfd == -1) {
 		windows[winid].evfd = fd;
-		if(windows[winid].style != WIN_STYLE_DESKTOP)
+		if(activeWindow == WINDOW_COUNT || windows[winid].style != WIN_STYLE_DESKTOP)
 			win_setActive(winid,false,input_getMouseX(),input_getMouseY());
 	}
 }

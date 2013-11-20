@@ -257,6 +257,124 @@ namespace gui {
 		}
 	}
 
+	void Graphics::colorFadeRect(Orientation orientation,const Color &col1,const Color &col2,
+		const Pos &pos,const Size &size) {
+		if(!getPixels() || size.empty())
+			return;
+
+		int rdiff = col2.getRed() - col1.getRed();
+		int gdiff = col2.getGreen() - col1.getGreen();
+		int bdiff = col2.getBlue() - col1.getBlue();
+		int adiff = col2.getAlpha() - col1.getAlpha();
+
+		size_t colorfadelen = orientation == VERTICAL ? size.height : size.width;
+		DblColor step(rdiff / (double)colorfadelen,gdiff / (double)colorfadelen,
+			bdiff / (double)colorfadelen,adiff / (double)colorfadelen);
+		DblColor cur(col1);
+
+		Color old = getColor();
+		setColor(col1);
+		if(orientation == VERTICAL) {
+			gpos_t endy = pos.y + size.height;
+			for(gpos_t y = pos.y; y < endy; ++y) {
+				drawHorLine(y,pos.x,pos.x + size.width);
+				cur += step;
+				setColor(cur.get());
+			}
+		}
+		else {
+			gpos_t endx = pos.x + size.width;
+			for(gpos_t x = pos.x; x < endx; ++x) {
+				drawVertLine(x,pos.y,pos.y + size.height);
+				cur += step;
+				setColor(cur.get());
+			}
+		}
+		setColor(old);
+	}
+
+	void Graphics::fillTriangle(const Pos &p1,const Pos &p2,const Pos &p3) {
+		if(!getPixels())
+			return;
+
+		// half-space function algorithm; based on devmaster.net/posts/6145/advanced-rasterization
+
+		// 28.4 fixed-point coordinates
+		const gpos_t y1 = p1.y << 4;
+		const gpos_t y2 = p2.y << 4;
+		const gpos_t y3 = p3.y << 4;
+
+		const gpos_t x1 = p1.x << 4;
+		const gpos_t x2 = p2.x << 4;
+		const gpos_t x3 = p3.x << 4;
+
+		// bounding rectangle
+		gpos_t minx = (min(x1, min(x2, x3)) + 0xF) >> 4;
+		gpos_t maxx = (max(x1, max(x2, x3)) + 0xF) >> 4;
+		gpos_t miny = (min(y1, min(y2, y3)) + 0xF) >> 4;
+		gpos_t maxy = (max(y1, max(y2, y3)) + 0xF) >> 4;
+		bool res1 = validatePoint(minx,miny) != 0;
+		bool res2 = validatePoint(maxx,maxy) != 0;
+		if(res1 && res2)
+			return;
+		updateMinMax(Pos(minx,miny));
+		updateMinMax(Pos(maxx,maxy));
+
+		// deltas
+		const gpos_t dx12 = x1 - x2;
+		const gpos_t dx23 = x2 - x3;
+		const gpos_t dx31 = x3 - x1;
+
+		const gpos_t dy12 = y1 - y2;
+		const gpos_t dy23 = y2 - y3;
+		const gpos_t dy31 = y3 - y1;
+
+		// fixed-point deltas
+		const gpos_t fdx12 = dx12 << 4;
+		const gpos_t fdx23 = dx23 << 4;
+		const gpos_t fdx31 = dx31 << 4;
+
+		const gpos_t fdy12 = dy12 << 4;
+		const gpos_t fdy23 = dy23 << 4;
+		const gpos_t fdy31 = dy31 << 4;
+
+		// half-edge constants
+		gpos_t c1 = dy12 * x1 - dx12 * y1;
+		gpos_t c2 = dy23 * x2 - dx23 * y2;
+		gpos_t c3 = dy31 * x3 - dx31 * y3;
+
+		// correct for fill convention
+		if(dy12 < 0 || (dy12 == 0 && dx12 > 0))
+			c1++;
+		if(dy23 < 0 || (dy23 == 0 && dx23 > 0))
+			c2++;
+		if(dy31 < 0 || (dy31 == 0 && dx31 > 0))
+			c3++;
+
+		gpos_t cy1 = c1 + dx12 * (miny << 4) - dy12 * (minx << 4);
+		gpos_t cy2 = c2 + dx23 * (miny << 4) - dy23 * (minx << 4);
+		gpos_t cy3 = c3 + dx31 * (miny << 4) - dy31 * (minx << 4);
+
+		for(gpos_t y = miny; y < maxy; y++) {
+			gpos_t cx1 = cy1;
+			gpos_t cx2 = cy2;
+			gpos_t cx3 = cy3;
+
+			for(gpos_t x = minx; x < maxx; x++) {
+				if(cx1 > 0 && cx2 > 0 && cx3 > 0)
+					doSetPixel(x,y);
+
+				cx1 -= fdy12;
+				cx2 -= fdy23;
+				cx3 -= fdy31;
+			}
+
+			cy1 += fdx12;
+			cy2 += fdx23;
+			cy3 += fdx31;
+		}
+	}
+
 	void Graphics::requestUpdate() {
 		Rectangle dirty = _buf->getDirtyRect();
 		if(dirty.empty())

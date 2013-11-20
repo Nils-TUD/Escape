@@ -68,6 +68,18 @@ class DesktopWin : public gui::Window {
 		onclick_type::subscr_type _sub;
 	};
 
+	class Background : public gui::Panel {
+	public:
+		Background(std::shared_ptr<gui::Layout> l) : gui::Panel(l) {
+		}
+
+	protected:
+		virtual void paintBackground(gui::Graphics &g) {
+			const gui::Color &bg = getTheme().getColor(gui::Theme::CTRL_BACKGROUND);
+			g.colorFadeRect(gui::VERTICAL,bg,bg + 30,gui::Pos(0,0),getSize());
+		}
+	};
+
 public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
@@ -104,7 +116,7 @@ private:
 
 private:
 	std::shared_ptr<gui::Panel> _winPanel;
-	std::shared_ptr<gui::Panel> _iconPanel;
+	std::shared_ptr<Background> _iconPanel;
 	WinButton *_active;
 	std::map<gwinid_t,std::shared_ptr<WinButton>> _windows;
 	std::map<std::shared_ptr<gui::ImageButton>,Shortcut*> _shortcuts;

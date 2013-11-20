@@ -138,6 +138,7 @@ namespace gui {
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 
 	protected:
+		virtual void paintBackground(Graphics &g);
 		virtual void paint(Graphics &g);
 
 		virtual bool resizeTo(const Size &size);

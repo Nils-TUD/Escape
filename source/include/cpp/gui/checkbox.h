@@ -27,8 +27,7 @@
 namespace gui {
 	class Checkbox : public Control {
 	private:
-		static const gsize_t CROSS_SIZE;
-		static const gsize_t CROSS_PADDING	= 4;
+		static const gsize_t CROSS_PADDING	= 3;
 		static const gsize_t TEXT_PADDING	= 4;
 
 	public:

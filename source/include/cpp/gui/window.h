@@ -62,6 +62,12 @@ namespace gui {
 			makeDirty(true);
 		}
 
+	protected:
+		virtual void paintBackground(Graphics &g) {
+			const Color &bg = getTheme().getColor(Theme::CTRL_BACKGROUND);
+			g.colorFadeRect(VERTICAL,bg,bg + 30,Pos(0,0),getSize());
+		}
+
 	private:
 		void init();
 		void onButtonClick(UIElement& el);

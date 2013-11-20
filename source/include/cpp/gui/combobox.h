@@ -31,7 +31,7 @@ namespace gui {
 
 	private:
 		static const gsize_t BTN_SIZE	= 20;
-		static const gsize_t ARROW_PAD	= 4;
+		static const gsize_t ARROW_PAD	= 8;
 		static const gsize_t MAX_WIDTH	= 200;
 
 		class ItemWindow : public PopupWindow {

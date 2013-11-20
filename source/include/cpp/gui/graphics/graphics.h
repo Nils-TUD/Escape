@@ -26,6 +26,8 @@
 #include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/rectangle.h>
+#include <gui/orientation.h>
+#include <math.h>
 #include <assert.h>
 
 namespace gui {
@@ -45,6 +47,30 @@ namespace gui {
 		static const int OUT_RIGHT		= 2;
 		static const int OUT_BOTTOM		= 4;
 		static const int OUT_LEFT		= 8;
+
+		struct DblColor {
+			explicit DblColor(const Color &c) : r(c.getRed()), g(c.getGreen()), b(c.getBlue()), a(c.getAlpha()) {
+			}
+			explicit DblColor(double _r,double _g,double _b,double _a) : r(_r), g(_g), b(_b), a(_a) {
+			}
+
+			Color get() const {
+				Color::comp_type rc = std::max(0,std::min(255,static_cast<int>(round(r))));
+				Color::comp_type gc = std::max(0,std::min(255,static_cast<int>(round(g))));
+				Color::comp_type bc = std::max(0,std::min(255,static_cast<int>(round(b))));
+				Color::comp_type ac = std::max(0,std::min(255,static_cast<int>(round(a))));
+				return Color(rc,gc,bc,ac);
+			}
+
+			void operator+=(const DblColor &c) {
+				r += c.r;
+				g += c.g;
+				b += c.b;
+				a += c.a;
+			}
+
+			double r,g,b,a;
+		};
 
 	public:
 		/**
@@ -213,6 +239,45 @@ namespace gui {
 		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 			fillRect(Pos(x,y),Size(width,height));
 		}
+
+		/**
+		 * Fills the given rectangle with a color-fade from <col1> to <col2>.
+		 *
+		 * @param orientation whether the color-fade should be horizontal or vertical
+		 * @param col1 the start-color
+		 * @param col2 the end-color
+		 * @param pos the position
+		 * @param size the size
+		 */
+		void colorFadeRect(Orientation orientation,const Color &col1,const Color &col2,
+			const Pos &pos,const Size &size);
+		void colorFadeRect(Orientation orientation,const Color &col1,const Color &col2,
+			gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+			colorFadeRect(orientation,col1,col2,Pos(x,y),Size(width,height));
+		}
+
+		/**
+		 * Draws the triangle defined by <p1>, <p2> and <p3>.
+		 *
+		 * @param p1 the first point
+		 * @param p2 the second point
+		 * @param p3 the third point
+		 */
+		void drawTriangle(const Pos &p1,const Pos &p2,const Pos &p3) {
+			drawLine(p1,p2);
+			drawLine(p2,p3);
+			drawLine(p3,p1);
+		}
+
+		/**
+		 * Fills the triangle defined by <p1>, <p2> and <p3>. Note that the three points HAVE TO be
+		 * in counter-clockwise order!
+		 *
+		 * @param p1 the first point
+		 * @param p2 the second point
+		 * @param p3 the third point
+		 */
+		void fillTriangle(const Pos &p1,const Pos &p2,const Pos &p3);
 
 		/**
 		 * @return the offset of the control in the window

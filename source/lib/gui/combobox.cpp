@@ -57,9 +57,8 @@ namespace gui {
 		g.setColor(tf);
 		for(auto it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
 			if(_highlighted == (int)distance(_cb->_items.begin(),it)) {
-				g.setColor(sb);
-				g.fillRect(SELPAD,y + SELPAD,
-						getSize().width - SELPAD * 2,
+				g.colorFadeRect(VERTICAL,sb,sb + 20,SELPAD,y + SELPAD,
+						getSize().width - SELPAD * 2 - 1,
 						itemHeight + getTheme().getTextPadding() * 2 - SELPAD * 2);
 				g.setColor(sf);
 			}
@@ -125,20 +124,20 @@ namespace gui {
 		}
 
 		// paint button border and bg
-		g.setColor(getTheme().getColor(Theme::BTN_BACKGROUND));
-		g.fillRect(textWidth + 2,1,btnWidth - 3,size.height - 2);
+		const Color &bg = getTheme().getColor(Theme::BTN_BACKGROUND);
+		g.colorFadeRect(VERTICAL,bg,bg + 20,textWidth + 2,1,btnWidth - 3,size.height - 2);
 		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
 		g.drawRect(textWidth + 1,0,btnWidth - 1,size.height);
 
 		// paint triangle
 		size_t pressedPad = _pressed ? 1 : 0;
+		Pos t1(size.width - btnWidth / 2,size.height - ARROW_PAD + pressedPad);
+		Pos t2(size.width - ARROW_PAD,ARROW_PAD + pressedPad);
+		Pos t3(textWidth + ARROW_PAD,ARROW_PAD + pressedPad);
+		g.setColor(getTheme().getColor(Theme::CTRL_DARKBACK));
+		g.fillTriangle(t1,t2,t3);
 		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-		g.drawLine(textWidth + ARROW_PAD,ARROW_PAD + pressedPad,
-				size.width - ARROW_PAD,ARROW_PAD + pressedPad);
-		g.drawLine(textWidth + ARROW_PAD,ARROW_PAD + pressedPad,
-				size.width - btnWidth / 2,size.height - ARROW_PAD + pressedPad);
-		g.drawLine(size.width - ARROW_PAD,ARROW_PAD + pressedPad,
-				size.width - btnWidth / 2,size.height - ARROW_PAD + pressedPad);
+		g.drawTriangle(t1,t2,t3);
 	}
 
 	void ComboBox::onMousePressed(const MouseEvent &e) {

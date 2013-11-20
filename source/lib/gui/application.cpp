@@ -83,13 +83,13 @@ namespace gui {
 		_defTheme.setColor(Theme::CTRL_DARKBACK,Color(0x60,0x60,0x60));
 		_defTheme.setColor(Theme::BTN_BACKGROUND,Color(0x70,0x70,0x70));
 		_defTheme.setColor(Theme::BTN_FOREGROUND,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::SEL_BACKGROUND,Color(0x00,0x00,0xFF));
+		_defTheme.setColor(Theme::SEL_BACKGROUND,Color(0x11,0x44,0x94));
 		_defTheme.setColor(Theme::SEL_FOREGROUND,Color(0xFF,0xFF,0xFF));
 		_defTheme.setColor(Theme::TEXT_BACKGROUND,Color(0xFF,0xFF,0xFF));
 		_defTheme.setColor(Theme::TEXT_FOREGROUND,Color(0x00,0x00,0x00));
-		_defTheme.setColor(Theme::WIN_TITLE_ACT_BG,Color(0,0,0xFF));
+		_defTheme.setColor(Theme::WIN_TITLE_ACT_BG,Color(0x11,0x44,0x94));
 		_defTheme.setColor(Theme::WIN_TITLE_ACT_FG,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::WIN_TITLE_INACT_BG,Color(0,0,0x80));
+		_defTheme.setColor(Theme::WIN_TITLE_INACT_BG,Color(0x3d,0x4b,0x60));
 		_defTheme.setColor(Theme::WIN_TITLE_INACT_FG,Color(0xFF,0xFF,0xFF));
 		_defTheme.setColor(Theme::WIN_BORDER,Color(0x55,0x55,0x55));
 		_defTheme.setPadding(2);

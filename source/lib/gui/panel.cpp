@@ -108,13 +108,17 @@ namespace gui {
 			(*it)->setRegion();
 	}
 
+	void Panel::paintBackground(Graphics &g) {
+		Rectangle prect = g.getPaintRect();
+		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
+		g.fillRect(prect.getPos(),prect.getSize());
+	}
+
 	void Panel::paint(Graphics &g) {
 		bool dirty = UIElement::isDirty();
 		Rectangle prect = g.getPaintRect();
 		bool ispart = prect.getSize() != getSize();
-		// fill bg
-		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
-		g.fillRect(prect.getPos(),prect.getSize());
+		paintBackground(g);
 
 		// now paint controls
 		for(auto it = _controls.begin(); it != _controls.end(); ++it) {

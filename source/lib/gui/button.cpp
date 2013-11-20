@@ -67,8 +67,8 @@ namespace gui {
 
 	void Button::paintBackground(Graphics &g) {
 		Size size = getSize();
-		g.setColor(getTheme().getColor(Theme::BTN_BACKGROUND));
-		g.fillRect(1,1,size.width - 2,size.height - 2);
+		const Color &col = getTheme().getColor(Theme::BTN_BACKGROUND);
+		g.colorFadeRect(VERTICAL,col,col + 20,1,1,size.width - 2,size.height - 2);
 	}
 
 	void Button::paintBorder(Graphics &g) {

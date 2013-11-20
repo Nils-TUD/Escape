@@ -24,13 +24,11 @@
 using namespace std;
 
 namespace gui {
-	const gsize_t Checkbox::CROSS_SIZE = 24;
-
 	Size Checkbox::getPrefSize() const {
 		gsize_t fwidth = getGraphics()->getFont().getStringWidth(_text);
 		gsize_t fheight = getGraphics()->getFont().getSize().height;
-		return Size(fwidth + TEXT_PADDING + CROSS_PADDING + CROSS_SIZE,
-					max((gsize_t)(fheight + getTheme().getTextPadding() * 2),CROSS_SIZE));
+		return Size(fwidth + TEXT_PADDING + CROSS_PADDING + fheight,
+					max((gsize_t)(fheight + getTheme().getTextPadding() * 2),fheight));
 	}
 
 	void Checkbox::onFocusGained() {
@@ -56,35 +54,48 @@ namespace gui {
 
 	void Checkbox::paint(Graphics &g) {
 		gsize_t cheight = g.getFont().getSize().height;
-		gsize_t boxSize = getSize().height;
+		gsize_t height = getSize().height;
+		gsize_t boxSize = cheight;
+		gpos_t boxy = (height - boxSize) / 2;
 
 		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
 		g.fillRect(Pos(0,0),getSize());
 
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
-		g.fillRect(1,1,boxSize - 2,boxSize - 2);
+		g.fillRect(1,boxy,boxSize - 1,boxSize - 1);
 
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
-		g.drawLine(boxSize - 1,0,boxSize - 1,boxSize - 1);
-		g.drawLine(0,boxSize - 1,boxSize - 1,boxSize - 1);
+		g.drawLine(boxSize,boxy,boxSize,boxy + boxSize);
+		g.drawLine(0,boxy + boxSize,boxSize,boxy + boxSize);
 		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-		g.drawLine(0,0,boxSize - 1,0);
-		g.drawLine(0,0,0,boxSize - 1);
+		g.drawLine(0,boxy,boxSize,boxy);
+		g.drawLine(0,boxy,0,boxy + boxSize);
 
 		if(_checked) {
 			g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-			g.drawLine(CROSS_PADDING,CROSS_PADDING,
-					boxSize - CROSS_PADDING,boxSize - CROSS_PADDING);
-			g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING,
-					CROSS_PADDING,boxSize - CROSS_PADDING);
+			g.drawLine(3,boxy + boxSize / 2,boxSize / 2,boxy + boxSize - 3);
+			g.drawLine(4,boxy + boxSize / 2,boxSize / 2 + 1,boxy + boxSize - 3);
+			g.drawLine(5,boxy + boxSize / 2,boxSize / 2 + 1,boxy + boxSize - 3);
+			g.drawLine(boxSize / 2,boxy + boxSize - 3,boxSize - 2,boxy + 2);
 			g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
-			g.drawLine(CROSS_PADDING,CROSS_PADDING + 1,
-					boxSize - CROSS_PADDING,boxSize - CROSS_PADDING + 1);
-			g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING + 1,
-					CROSS_PADDING,boxSize - CROSS_PADDING + 1);
+			g.drawLine(6,boxy + boxSize / 2,boxSize / 2 + 1,boxy + boxSize - 3);
+			g.drawLine(boxSize / 2,boxy + boxSize - 2,boxSize - 2,boxy + 2);
+
+#if 0
+			g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
+			g.drawLine(CROSS_PADDING,boxy + CROSS_PADDING,
+					boxSize - CROSS_PADDING,boxy + boxSize - CROSS_PADDING - 2);
+			g.drawLine(boxSize - CROSS_PADDING,boxy + CROSS_PADDING,
+					CROSS_PADDING,boxy + boxSize - CROSS_PADDING - 2);
+			g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
+			g.drawLine(CROSS_PADDING,boxy + CROSS_PADDING + 1,
+					boxSize - CROSS_PADDING,boxy + boxSize - CROSS_PADDING - 1);
+			g.drawLine(boxSize - CROSS_PADDING,boxy + CROSS_PADDING + 1,
+					CROSS_PADDING,boxy + boxSize - CROSS_PADDING - 1);
+#endif
 		}
 
 		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
-		g.drawString(boxSize + TEXT_PADDING,(boxSize - cheight) / 2 + 1,_text);
+		g.drawString(boxSize + TEXT_PADDING,(height - cheight) / 2 + 1,_text);
 	}
 }

@@ -203,7 +203,7 @@ namespace gui {
 
 		// horizontal scrollbar
 		gpos_t ybarPos = visible.height;
-		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
 		g.drawRect(0,ybarPos,visible.width,BAR_SIZE);
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(1,ybarPos + 1,visible.width - 2,BAR_SIZE - 2);
@@ -215,7 +215,7 @@ namespace gui {
 
 		// vertical scrollbar
 		gpos_t xbarPos = visible.width;
-		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
+		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
 		g.drawRect(xbarPos,0,BAR_SIZE,visible.height);
 		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBACK));
 		g.fillRect(xbarPos + 1,1,BAR_SIZE - 2,visible.height - 2);

@@ -129,4 +129,28 @@ namespace gui {
 	 * Writes the given color into the given stream
 	 */
 	std::ostream &operator<<(std::ostream &s,const Color &c);
+
+	static inline Color operator-(const Color &col1,const Color &col2) {
+		return Color(std::max(0,col1.getRed() - col2.getRed()),
+			std::max(0,col1.getGreen() - col2.getGreen()),
+			std::max(0,col1.getBlue() - col2.getBlue()),
+			std::max(0,col1.getAlpha() - col2.getAlpha()));
+	}
+	static inline Color operator+(const Color &col1,const Color &col2) {
+		return Color(std::min(255,col1.getRed() + col2.getRed()),
+			std::min(255,col1.getGreen() + col2.getGreen()),
+			std::min(255,col1.getBlue() + col2.getBlue()),
+			std::min(255,col1.getAlpha() + col2.getAlpha()));
+	}
+
+	static inline Color operator-(const Color &col,Color::comp_type amount) {
+		return Color(std::max(0,col.getRed() - amount),
+			std::max(0,col.getGreen() - amount),
+			std::max(0,col.getBlue() - amount));
+	}
+	static inline Color operator+(const Color &col,Color::comp_type amount) {
+		return Color(std::min(255,col.getRed() + amount),
+			std::min(255,col.getGreen() + amount),
+			std::min(255,col.getBlue() + amount));
+	}
 }

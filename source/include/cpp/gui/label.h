@@ -21,16 +21,17 @@
 
 #include <esc/common.h>
 #include <gui/control.h>
+#include <gui/enums.h>
 #include <string>
 
 namespace gui {
 	class Label : public Control {
 	public:
-		Label(const std::string &text)
-			: Control(), _text(text) {
+		Label(const std::string &text,Align align = FRONT)
+			: Control(), _text(text), _align(align) {
 		}
-		Label(const std::string &text,const Pos &pos,const Size &size)
-			: Control(pos,size), _text(text) {
+		Label(const std::string &text,const Pos &pos,const Size &size,Align align = FRONT)
+			: Control(pos,size), _text(text), _align(align) {
 		}
 
 		const std::string &getText() const {
@@ -53,5 +54,6 @@ namespace gui {
 		virtual Size getPrefSize() const;
 
 		std::string _text;
+		Align _align;
 	};
 }

@@ -29,8 +29,22 @@ namespace gui {
 	}
 
 	void Label::paint(Graphics &g) {
+		Size fontsize = g.getFont().getSize();
 		gsize_t pad = getTheme().getTextPadding();
 		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
-		g.drawString(pad,pad,_text);
+
+		gpos_t y = (getSize().height - fontsize.height) / 2;
+		size_t fontlen = fontsize.width * _text.length();
+		switch(_align) {
+			case FRONT:
+				g.drawString(pad,y,_text);
+				break;
+			case CENTER:
+				g.drawString((getSize().width - fontlen) / 2,y,_text);
+				break;
+			case BACK:
+				g.drawString(getSize().width - fontlen - pad,y,_text);
+				break;
+		}
 	}
 }

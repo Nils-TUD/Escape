@@ -44,28 +44,28 @@ namespace gui {
 
 	public:
 		// the different purposes for which colors are used
-		static const colid_type CTRL_BACKGROUND		= 0;
-		static const colid_type CTRL_FOREGROUND		= 1;
-		static const colid_type CTRL_BORDER			= 2;
-		static const colid_type CTRL_LIGHTBORDER	= 3;
-		static const colid_type CTRL_DARKBORDER		= 4;
-		static const colid_type CTRL_LIGHTBACK		= 5;
-		static const colid_type CTRL_DARKBACK		= 6;
-		static const colid_type BTN_BACKGROUND		= 7;
-		static const colid_type BTN_FOREGROUND		= 8;
-		static const colid_type SEL_BACKGROUND		= 9;
-		static const colid_type SEL_FOREGROUND		= 10;
-		static const colid_type TEXT_BACKGROUND		= 11;
-		static const colid_type TEXT_FOREGROUND		= 12;
-		static const colid_type WIN_TITLE_ACT_BG	= 13;
-		static const colid_type WIN_TITLE_ACT_FG	= 14;
-		static const colid_type WIN_TITLE_INACT_BG	= 15;
-		static const colid_type WIN_TITLE_INACT_FG	= 16;
-		static const colid_type WIN_BORDER			= 17;
+		static const colid_type CTRL_BACKGROUND;
+		static const colid_type CTRL_FOREGROUND;
+		static const colid_type CTRL_BORDER;
+		static const colid_type CTRL_LIGHTBORDER;
+		static const colid_type CTRL_DARKBORDER;
+		static const colid_type CTRL_LIGHTBACK;
+		static const colid_type CTRL_DARKBACK;
+		static const colid_type BTN_BACKGROUND;
+		static const colid_type BTN_FOREGROUND;
+		static const colid_type SEL_BACKGROUND;
+		static const colid_type SEL_FOREGROUND;
+		static const colid_type TEXT_BACKGROUND;
+		static const colid_type TEXT_FOREGROUND;
+		static const colid_type WIN_TITLE_ACT_BG;
+		static const colid_type WIN_TITLE_ACT_FG;
+		static const colid_type WIN_TITLE_INACT_BG;
+		static const colid_type WIN_TITLE_INACT_FG;
+		static const colid_type WIN_BORDER;
 
 	private:
-		static const colid_type PADDING				= 18;
-		static const colid_type TEXT_PADDING		= 19;
+		static const colid_type PADDING;
+		static const colid_type TEXT_PADDING;
 
 	public:
 		/**

@@ -23,6 +23,28 @@
 using namespace std;
 
 namespace gui {
+	// the different purposes for which colors are used
+	const Theme::colid_type Theme::CTRL_BACKGROUND		= 0;
+	const Theme::colid_type Theme::CTRL_FOREGROUND		= 1;
+	const Theme::colid_type Theme::CTRL_BORDER			= 2;
+	const Theme::colid_type Theme::CTRL_LIGHTBORDER		= 3;
+	const Theme::colid_type Theme::CTRL_DARKBORDER		= 4;
+	const Theme::colid_type Theme::CTRL_LIGHTBACK		= 5;
+	const Theme::colid_type Theme::CTRL_DARKBACK		= 6;
+	const Theme::colid_type Theme::BTN_BACKGROUND		= 7;
+	const Theme::colid_type Theme::BTN_FOREGROUND		= 8;
+	const Theme::colid_type Theme::SEL_BACKGROUND		= 9;
+	const Theme::colid_type Theme::SEL_FOREGROUND		= 10;
+	const Theme::colid_type Theme::TEXT_BACKGROUND		= 11;
+	const Theme::colid_type Theme::TEXT_FOREGROUND		= 12;
+	const Theme::colid_type Theme::WIN_TITLE_ACT_BG		= 13;
+	const Theme::colid_type Theme::WIN_TITLE_ACT_FG		= 14;
+	const Theme::colid_type Theme::WIN_TITLE_INACT_BG	= 15;
+	const Theme::colid_type Theme::WIN_TITLE_INACT_FG	= 16;
+	const Theme::colid_type Theme::WIN_BORDER			= 17;
+	const Theme::colid_type Theme::PADDING				= 18;
+	const Theme::colid_type Theme::TEXT_PADDING		= 19;
+
 	Theme& Theme::operator=(const Theme& t) {
 		if(&t == this)
 			return *this;

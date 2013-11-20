@@ -88,6 +88,13 @@ namespace gui {
 		static Application *create(const char *winmng = NULL) {
 			return _inst = new Application(winmng);
 		}
+		/**
+		 * Destroys the instance of this class
+		 */
+		static void destroy() {
+			delete _inst;
+			_inst = NULL;
+		}
 
 		/**
 		 * @return the instance of the class

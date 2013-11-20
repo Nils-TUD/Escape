@@ -48,6 +48,8 @@ static int eventThread(void *arg) {
 	int evId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(evId < 0)
 		error("Unable to create device winmanager");
+	if(chmod(path,0111) < 0)
+		error("Unable to chmod %s",path);
 
 	while(1) {
 		sMsg msg;
@@ -115,6 +117,8 @@ int main(int argc,char *argv[]) {
 	drvId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create device winmanager");
+	if(chmod(path,0111) < 0)
+		error("Unable to chmod %s",path);
 
 	/* init window stuff */
 	inputData.uimngFd = uimng;

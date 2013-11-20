@@ -26,4 +26,10 @@ namespace gui {
 		HORIZONTAL,
 		VERTICAL
 	};
+
+	enum Align {
+		FRONT,
+		CENTER,
+		BACK,
+	};
 }

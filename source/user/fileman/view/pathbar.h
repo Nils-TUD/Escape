@@ -29,7 +29,7 @@ class FileList;
 class PathBar : public gui::Panel {
 public:
 	explicit PathBar()
-		: gui::Panel(gui::make_layout<gui::FlowLayout>(gui::FlowLayout::FRONT,false)), _list() {
+		: gui::Panel(gui::make_layout<gui::FlowLayout>(gui::FRONT,false)), _list() {
 	}
 
 	void setPath(FileList *list,const std::string &path);

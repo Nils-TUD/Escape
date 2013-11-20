@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
-#include <gui/orientation.h>
+#include <gui/enums.h>
 #include <gui/control.h>
 
 namespace gui {

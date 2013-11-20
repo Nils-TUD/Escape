@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <gui/orientation.h>
+#include <gui/enums.h>
 #include <gui/splitter.h>
 #include <gui/panel.h>
 

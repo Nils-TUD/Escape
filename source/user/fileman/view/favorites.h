@@ -34,7 +34,7 @@ public:
 
 	explicit Favorites(std::shared_ptr<FileList> filelist,const favlist_type &favs)
 			: Panel(gui::make_layout<gui::FlowLayout>(
-					gui::FlowLayout::FRONT,true,gui::VERTICAL,4)),
+					gui::FRONT,true,gui::VERTICAL,4)),
 			  _filelist(filelist) {
 		for(auto it = favs.begin(); it != favs.end(); ++it) {
 			std::shared_ptr<gui::Button> b = gui::make_control<gui::Button>(it->getTitle());

@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #include <gui/layout/layout.h>
-#include <gui/orientation.h>
+#include <gui/enums.h>
 #include <gui/control.h>
 
 namespace gui {
@@ -32,12 +32,6 @@ namespace gui {
 	 */
 	class FlowLayout : public Layout {
 	public:
-		enum Align {
-			FRONT,
-			CENTER,
-			BACK,
-		};
-
 		static const gsize_t DEF_GAP	= 2;
 
 		/**

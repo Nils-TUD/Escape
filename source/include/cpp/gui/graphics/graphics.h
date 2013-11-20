@@ -26,7 +26,7 @@
 #include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/rectangle.h>
-#include <gui/orientation.h>
+#include <gui/enums.h>
 #include <math.h>
 #include <assert.h>
 

@@ -35,7 +35,7 @@ class FileList : public gui::Panel {
 	public:
 		explicit FileObject(FileList &list,const std::file &file)
 			: Panel(gui::make_layout<gui::FlowLayout>(
-					gui::FlowLayout::CENTER,true,gui::VERTICAL,4)), _list(list) {
+					gui::CENTER,true,gui::VERTICAL,4)), _list(list) {
 			using namespace std;
 			using namespace gui;
 			string path = file.is_dir() ? "/etc/folder.bmp" : "/etc/file.bmp";

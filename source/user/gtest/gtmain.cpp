@@ -153,7 +153,7 @@ static shared_ptr<Window> win1(void) {
 static shared_ptr<Window> win2(void) {
 	shared_ptr<Window> w = make_control<Window>("Window 2",Pos(450,150),Size(400,100));
 	shared_ptr<Panel> root = w->getRootPanel();
-	root->setLayout(make_layout<FlowLayout>(FlowLayout::FRONT,true,HORIZONTAL,5));
+	root->setLayout(make_layout<FlowLayout>(FRONT,true,HORIZONTAL,5));
 
 	shared_ptr<Button> b = make_control<Button>("Try it!");
 	root->add(b);
@@ -180,7 +180,7 @@ static shared_ptr<Window> win2(void) {
 static shared_ptr<Window> win3(void) {
 	shared_ptr<Window> w = make_control<Window>("Window 3",Pos(450,350),Size(400,100));
 	shared_ptr<Panel> root = w->getRootPanel();
-	root->setLayout(make_layout<FlowLayout>(FlowLayout::CENTER,true,HORIZONTAL,1));
+	root->setLayout(make_layout<FlowLayout>(CENTER,true,HORIZONTAL,1));
 
 	shared_ptr<Button> b = make_control<Button>("Try it!");
 	root->add(b);
@@ -209,7 +209,7 @@ static shared_ptr<Window> win4(void) {
 	root->getTheme().setPadding(0);
 	root->setLayout(make_layout<BorderLayout>());
 	shared_ptr<Panel> p = make_control<Panel>(
-			make_layout<FlowLayout>(FlowLayout::BACK,true,VERTICAL,10));
+			make_layout<FlowLayout>(BACK,true,VERTICAL,10));
 	shared_ptr<ScrollPane> sp = make_control<ScrollPane>(p);
 	root->add(sp,BorderLayout::CENTER);
 

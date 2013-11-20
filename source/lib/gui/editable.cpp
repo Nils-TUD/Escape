@@ -227,11 +227,13 @@ namespace gui {
 		int count = getMaxCharNum(g);
 		gpos_t ystart = (size.height - fsize.height) / 2;
 		int start = _begin;
-		count = MIN((int)_str.length(),count);
+
+		string text = _secret ? string(_str.length(),'*') : _str;
+		count = MIN((int)text.length(),count);
 
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,size.width - 2,size.height - 2);
-		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
+		g.setColor(getTheme().getColor(_focused ? Theme::CTRL_DARKBORDER : Theme::CTRL_BORDER));
 		g.drawRect(Pos(0,0),size);
 
 		gsize_t pad = getTheme().getTextPadding();
@@ -248,23 +250,23 @@ namespace gui {
 			/* part before selection */
 			if(start < _selStart) {
 				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
-				g.drawString(pad,ystart,_str,start,MIN(count,_selStart));
+				g.drawString(pad,ystart,text,start,MIN(count,_selStart));
 			}
 			/* selection */
 			g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
-			g.drawString(pad + fsize.width * spos,ystart,_str,MAX(start,_selStart),
+			g.drawString(pad + fsize.width * spos,ystart,text,MAX(start,_selStart),
 					(MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))));
 			/* part behind selection */
 			if(_selEnd < start + count) {
 				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
 				spos = _selEnd - start;
-				g.drawString(pad + spos * fsize.width,ystart,_str,_selEnd,
-					MIN(count - spos,MIN((int)_str.length() - start,(int)_str.length() - _selEnd)));
+				g.drawString(pad + spos * fsize.width,ystart,text,_selEnd,
+					MIN(count - spos,MIN((int)text.length() - start,(int)text.length() - _selEnd)));
 			}
 		}
 		else {
 			g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
-			g.drawString(pad,ystart,_str,start,count);
+			g.drawString(pad,ystart,text,start,count);
 		}
 
 		if(_focused) {

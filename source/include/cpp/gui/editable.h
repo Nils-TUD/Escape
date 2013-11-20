@@ -36,13 +36,13 @@ namespace gui {
 		static const gsize_t DEF_WIDTH;
 
 	public:
-		Editable()
+		Editable(bool secret = false)
 			: Control(), _cursor(0), _begin(0), _focused(false), _selecting(false),
-			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
+			  _startSel(false), _secret(secret), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		}
-		Editable(const Pos &pos,const Size &size)
+		Editable(const Pos &pos,const Size &size,bool secret = false)
 			: Control(pos,size), _cursor(0), _begin(0), _focused(false), _selecting(false),
-			  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
+			  _startSel(false), _secret(secret), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str() {
 		}
 
 		size_t getCursorPos() const {
@@ -110,6 +110,7 @@ namespace gui {
 		bool _focused;
 		bool _selecting;
 		bool _startSel;
+		bool _secret;
 		uchar _selDir;
 		int _selStart;
 		int _selEnd;

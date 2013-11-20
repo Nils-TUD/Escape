@@ -67,7 +67,7 @@ namespace gui {
 		for(auto it = _controls.begin(); it != _controls.end(); ++it)
 			res |= (*it)->layout();
 		_doingLayout = false;
-		if(res)
+		if(res && getParent())
 			getParent()->layoutChanged();
 		return res;
 	}
@@ -82,7 +82,8 @@ namespace gui {
 				_doingLayout = true;
 				_layout->rearrange();
 				_doingLayout = false;
-				getParent()->layoutChanged();
+				if(getParent())
+					getParent()->layoutChanged();
 				return true;
 			}
 		}

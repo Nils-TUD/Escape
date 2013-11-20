@@ -45,8 +45,10 @@ namespace gui {
 				: PopupWindow(pos,size), _cb(cb), _highlighted(cb->_selected) {
 			}
 
-			void onMouseMoved(const MouseEvent &e);
-			void onMouseReleased(const MouseEvent &e);
+			virtual void onKeyPressed(const KeyEvent &e);
+			virtual void onKeyReleased(const KeyEvent &e);
+			virtual void onMouseMoved(const MouseEvent &e);
+			virtual void onMouseReleased(const MouseEvent &e);
 			void close(const Pos &pos);
 
 		protected:
@@ -62,28 +64,43 @@ namespace gui {
 		};
 
 	public:
+		typedef Sender<UIElement&> onchange_type;
+
 		ComboBox()
-			: Control(), _selected(-1), _pressed(false), _win(), _items() {
+			: Control(), _selected(-1), _pressed(false), _focused(false), _changed(), _win(), _items() {
 		}
 		ComboBox(const Pos &pos,const Size &size)
-			: Control(pos,size), _selected(-1), _pressed(false), _win(), _items() {
+			: Control(pos,size), _selected(-1), _pressed(false), _focused(false), _changed(), _win(), _items() {
+		}
+
+		onchange_type &changed() {
+			return _changed;
 		}
 
 		void addItem(const std::string &s) {
 			_items.push_back(s);
 			makeDirty(true);
 		}
+		const std::string *getSelectedItem() const {
+			if(_selected == -1)
+				return NULL;
+			return &_items[_selected];
+		}
 		int getSelectedIndex() const {
 			return _selected;
 		}
 		void setSelectedIndex(int index) {
 			if(index >= 0 && index < (int)_items.size())
-				_selected = index;
+				doSetIndex(index);
 			else
-				_selected = -1;
+				doSetIndex(-1);
 			makeDirty(true);
 		}
 
+		virtual void onFocusGained();
+		virtual void onFocusLost();
+		virtual void onKeyPressed(const KeyEvent &e);
+		virtual void onKeyReleased(const KeyEvent &e);
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseReleased(const MouseEvent &e);
 
@@ -98,16 +115,31 @@ namespace gui {
 			Application::getInstance()->removeWindow(_win);
 			_win.reset();
 		}
+		void doSetIndex(int index) {
+			bool diff = _selected != index;
+			_selected = index;
+			if(diff)
+				_changed.send(*this);
+		}
 		void setPressed(bool pressed) {
 			_pressed = pressed;
+			makeDirty(true);
+			repaint();
+		}
+		void setFocused(bool focused) {
+			_focused = focused;
 			makeDirty(true);
 			repaint();
 		}
 		virtual void paint(Graphics &g);
 
 	private:
+		void showPopup();
+
 		int _selected;
 		bool _pressed;
+		bool _focused;
+		onchange_type _changed;
 		std::shared_ptr<ItemWindow> _win;
 		std::vector<std::string> _items;
 	};

@@ -106,6 +106,9 @@ namespace gui {
 		virtual void onMousePressed(const MouseEvent &e);
 		virtual void onMouseWheel(const MouseEvent &e);
 
+		virtual bool resizeTo(const Size &size);
+		virtual bool moveTo(const Pos &pos);
+
 		/**
 		 * Adds the given control to this panel.
 		 *
@@ -141,8 +144,6 @@ namespace gui {
 		virtual void paintBackground(Graphics &g);
 		virtual void paint(Graphics &g);
 
-		virtual bool resizeTo(const Size &size);
-		virtual bool moveTo(const Pos &pos);
 		virtual void setRegion();
 
 		/**

@@ -51,7 +51,6 @@ namespace gui {
 		virtual bool layout();
 		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
 
-	protected:
 		virtual bool resizeTo(const Size &size) {
 			bool res = Control::resizeTo(size);
 			res |= _ctrl->resizeTo(size);
@@ -63,6 +62,8 @@ namespace gui {
 			_ctrl->setRegion();
 			return res;
 		}
+
+	protected:
 		virtual void setRegion() {
 			Control::setRegion();
 			_ctrl->setRegion();

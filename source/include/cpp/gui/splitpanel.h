@@ -54,9 +54,9 @@ namespace gui {
 
 		virtual bool layout();
 
-	protected:
 		virtual bool resizeTo(const Size &size);
 
+	protected:
 		virtual void onFocusGained() {
 			if(!_moving)
 				Panel::onFocusGained();

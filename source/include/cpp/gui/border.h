@@ -48,6 +48,12 @@ namespace gui {
 
 		virtual bool layout();
 
+		virtual bool resizeTo(const Size &size) {
+			bool res = Control::resizeTo(size);
+			res |= _ctrl->resizeTo(size - getBorderSize());
+			return res;
+		}
+
 	protected:
 		virtual void paint(Graphics &g);
 
@@ -71,11 +77,6 @@ namespace gui {
 			if(_locs & TOP)
 				pos.y += _size;
 			return pos;
-		}
-		virtual bool resizeTo(const Size &size) {
-			bool res = Control::resizeTo(size);
-			res |= _ctrl->resizeTo(size - getBorderSize());
-			return res;
 		}
 		virtual Size getPrefSize() const {
 			return _ctrl->getPreferredSize() + getBorderSize();

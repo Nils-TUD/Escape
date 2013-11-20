@@ -111,11 +111,11 @@ namespace gui {
 			return res;
 		}
 
+		virtual bool resizeTo(const Size &size);
+
 	protected:
 		virtual void paint(Graphics &g);
 		virtual void paintRect(Graphics &g,const Pos &pos,const Size &size);
-
-		virtual bool resizeTo(const Size &size);
 
 		virtual void onFocusGained() {
 			Control::onFocusGained();

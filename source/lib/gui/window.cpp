@@ -279,13 +279,7 @@ namespace gui {
 			passMouseToCtrl(_body.get(),e);
 
 		// handle focus-change
-		Control *newFocus = getFocus();
-		if(newFocus != focus) {
-			if(focus)
-				focus->onFocusLost();
-			if(newFocus)
-				newFocus->onFocusGained();
-		}
+		doRequestFocus(getFocus(),focus);
 	}
 
 	void Window::passMouseToCtrl(Control *c,const MouseEvent& e) {
@@ -317,14 +311,24 @@ namespace gui {
 	}
 
 	void Window::requestFocus(Control *c) {
-		if(c == nullptr || c->getWindow() == this) {
-			Control *old = getFocus();
-			if(old != c) {
-				if(old)
-					old->onFocusLost();
-				if(c)
-					c->onFocusGained();
-			}
+		if(c == nullptr || c->getWindow() == this)
+			doRequestFocus(c,getFocus());
+	}
+
+	void Window::doRequestFocus(Control *c,Control *old) {
+		if(old != c) {
+			auto res = find_if(_tabCtrls.begin(),_tabCtrls.end(),
+				[c] (const Control *b) {
+					return c == b;
+				}
+			);
+			if(res != _tabCtrls.end())
+				_tabIt = res;
+
+			if(old)
+				old->onFocusLost();
+			if(c)
+				c->onFocusGained();
 		}
 	}
 
@@ -347,7 +351,7 @@ namespace gui {
 
 	void Window::appendTabCtrl(Control &c) {
 		_tabCtrls.push_back(&c);
-		_tabIt = _tabCtrls.end();
+		_tabIt = _tabCtrls.begin();
 	}
 
 	void Window::resize(int width,int height) {
@@ -460,6 +464,8 @@ namespace gui {
 		_created = true;
 		_gbuf->allocBuffer();
 		repaint();
+		if(_tabCtrls.size() > 0)
+			requestFocus(*_tabIt);
 	}
 
 	void Window::onResized() {

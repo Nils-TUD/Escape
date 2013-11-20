@@ -340,6 +340,7 @@ namespace gui {
 		void resizeMove(int x,int width,int height);
 		void resizeMoveTo(gpos_t x,const Size &size);
 		void prepareResize(const Pos &pos,const Size &size);
+		void doRequestFocus(Control *c,Control *old);
 
 	private:
 		gwinid_t _id;

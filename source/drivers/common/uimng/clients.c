@@ -197,7 +197,7 @@ int cli_attach(int id,int randid) {
 }
 
 void cli_detach(int id) {
-	if(clients[id]) {
+	if(clients[id] && clients[id]->idx != -1) {
 		assert(idx2cli[clients[id]->idx] == clients[id]);
 		bool shouldSwitch = false;
 		if(activeIdx != MAX_CLIENT_FDS && idx2cli[activeIdx] == clients[id]) {

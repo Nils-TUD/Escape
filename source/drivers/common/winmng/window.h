@@ -69,6 +69,17 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,gcoldepth_t bpp,const
 const sScreenMode *win_getMode(void);
 
 /**
+ * Changes the mode to the given one.
+ *
+ * @param width the desired screen width
+ * @param height the desired screen height
+ * @param bpp the desired bits per pixel
+ * @param shmname the shared memory name
+ * @return 0 on success
+ */
+int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname);
+
+/**
  * Sets the cursor at given position (writes to vesa)
  *
  * @param x the x-coordinate
@@ -117,8 +128,9 @@ void win_detachAll(int fd);
  * @param cid the client-fd
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
+ * @param winmng the window-manager name
  */
-void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY);
+void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY,const char *winmng);
 
 /**
  * Destroys the given window
@@ -126,8 +138,9 @@ void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY);
  * @param id the window-id
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
+ * @param winmng the window-manager name
  */
-void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY);
+void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY,const char *winmng);
 
 /**
  * @param id the window-id

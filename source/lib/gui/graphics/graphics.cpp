@@ -32,7 +32,7 @@ namespace gui {
 		Size rsize = size;
 		Pos rpos = pos;
 		Size bsize = _buf->getSize();
-		gsize_t psize = _buf->getColorDepth() / 8;
+		gsize_t psize = Application::getInstance()->getColorDepth() / 8;
 		// TODO really size.width?
 		gsize_t wsize = size.width * psize;
 		gsize_t bwsize = bsize.width * psize;
@@ -74,7 +74,7 @@ namespace gui {
 		Size rsize = size;
 		Pos rpos = pos;
 		Size bsize = _buf->getSize();
-		gsize_t psize = _buf->getColorDepth() / 8;
+		gsize_t psize = Application::getInstance()->getColorDepth() / 8;
 		gsize_t wsize = size.width * psize;
 		gsize_t bwsize = bsize.width * psize;
 		uint8_t *pixels = getPixels();
@@ -251,9 +251,51 @@ namespace gui {
 		updateMinMax(Pos(rpos.x + rsize.width - 1,yend - 1));
 		gpos_t xcur;
 		gpos_t xend = rpos.x + rsize.width;
-		for(; rpos.y < yend; rpos.y++) {
-			for(xcur = rpos.x; xcur < xend; xcur++)
-				doSetPixel(xcur,rpos.y);
+
+		gcoldepth_t bpp = Application::getInstance()->getColorDepth();
+		gsize_t bwidth = _buf->getSize().width;
+		uint8_t *orgaddr = getPixels() + (((_off.y + rpos.y) * bwidth + (_off.x + rpos.x)) * (bpp / 8));
+		gsize_t widthadd = bwidth * (bpp / 8);
+		// optimized versions for the individual color depths
+		// This is necessary if we want to have reasonable speed because the simple version
+		// performs too many function-calls (one to a virtual-function and one to memcpy
+		// that the compiler doesn't inline). Additionally the offset into the
+		// memory-region will be calculated many times.
+		// This version is much quicker :)
+		switch(bpp) {
+			case 16: {
+				for(; rpos.y < yend; rpos.y++) {
+					uint16_t *addr = (uint16_t*)orgaddr;
+					for(xcur = rpos.x; xcur < xend; xcur++)
+						*addr++ = _col;
+					orgaddr += widthadd;
+				}
+			}
+			break;
+
+			case 24: {
+				uint8_t *col = (uint8_t*)&_col;
+				for(; rpos.y < yend; rpos.y++) {
+					uint8_t *addr = orgaddr;
+					for(xcur = rpos.x; xcur < xend; xcur++) {
+						*addr++ = *col;
+						*addr++ = *(col + 1);
+						*addr++ = *(col + 2);
+					}
+					orgaddr += widthadd;
+				}
+			}
+			break;
+
+			case 32: {
+				for(; rpos.y < yend; rpos.y++) {
+					uint32_t *addr = (uint32_t*)orgaddr;
+					for(xcur = rpos.x; xcur < xend; xcur++)
+						*addr++ = _col;
+					orgaddr += widthadd;
+				}
+			}
+			break;
 		}
 	}
 
@@ -372,6 +414,53 @@ namespace gui {
 			cy1 += fdx12;
 			cy2 += fdx23;
 			cy3 += fdx31;
+		}
+	}
+
+	void Graphics::drawCircle(const Pos &p,int radius) {
+		// source: http://members.chello.at/~easyfilter/bresenham.html
+		// TODO calling setPixel() that often isn't really fast
+		gpos_t x = -radius;
+		gpos_t y = 0;
+		gpos_t err = 2 - 2 * radius;			/* II. Quadrant */
+		do {
+			setPixel(Pos(p.x - x,p.y + y));		/*   I. Quadrant */
+			setPixel(Pos(p.x - y, p.y - x));	/*  II. Quadrant */
+			setPixel(Pos(p.x + x, p.y - y));	/* III. Quadrant */
+			setPixel(Pos(p.x + y, p.y + x));	/*  IV. Quadrant */
+
+			radius = err;
+			if(radius <= y)
+				err += ++y * 2 + 1;				/* e_xy+e_y < 0 */
+			if(radius > x || err > y)
+				err += ++x * 2 + 1;				/* e_xy+e_x > 0 or no 2nd y-step */
+		}
+		while(x < 0);
+	}
+
+	void Graphics::fillCircle(const Pos &p,int radius) {
+		gpos_t ystart = p.y - radius;
+		gpos_t yend = p.y + radius;
+		gpos_t xstart = p.x - radius;
+		gpos_t xend = p.x + radius;
+		bool res1 = validatePoint(xstart,ystart) != 0;
+		bool res2 = validatePoint(xend,yend) != 0;
+		if(res1 && res2)
+			return;
+		updateMinMax(Pos(xstart,ystart));
+		updateMinMax(Pos(xend,yend));
+
+		ystart -= p.y;
+		yend -= p.y;
+		xstart -= p.x;
+		xend -= p.x;
+		int r2 = radius * radius;
+		for(gpos_t y = ystart; y <= yend; y++) {
+			gpos_t y2 = y * y;
+			for(gpos_t x = xstart; x <= xend; x++) {
+				if((x * x) + y2 <= r2)
+					doSetPixel(p.x + x,p.y + y);
+			}
 		}
 	}
 

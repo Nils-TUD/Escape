@@ -18,23 +18,29 @@
  */
 
 #include <esc/common.h>
-#include <gui/graphics/graphics.h>
-#include <gui/graphics/graphics16.h>
-#include <gui/graphics/graphics24.h>
-#include <gui/graphics/graphics32.h>
-#include <gui/graphics/graphicfactory.h>
+#include <gui/toggle.h>
 
 namespace gui {
-	Graphics *GraphicFactory::get(GraphicsBuffer *buf,const Size &size) {
-		switch(buf->getColorDepth()) {
-			case 32:
-				return new Graphics32(buf,size);
-			case 24:
-				return new Graphics24(buf,size);
-			case 16:
-				return new Graphics16(buf,size);
-			default:
-				return nullptr;
+	void Toggle::onFocusGained() {
+		Control::onFocusGained();
+		setFocused(true);
+	}
+	void Toggle::onFocusLost() {
+		Control::onFocusLost();
+		setFocused(false);
+	}
+
+	void Toggle::onKeyReleased(const KeyEvent &e) {
+		uchar keycode = e.getKeyCode();
+		UIElement::onKeyReleased(e);
+		if(keycode == VK_ENTER || keycode == VK_SPACE) {
+			if(doSetSelected(!_selected))
+				repaint();
 		}
+	}
+	void Toggle::onMouseReleased(const MouseEvent &e) {
+		UIElement::onMouseReleased(e);
+		if(doSetSelected(!_selected))
+			repaint();
 	}
 }

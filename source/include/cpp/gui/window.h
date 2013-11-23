@@ -327,6 +327,10 @@ namespace gui {
 		 * Called by Application when the window has been updated successfully.
 		 */
 		void onUpdated();
+		/**
+		 * Called by Application when the window should be reset (screen mode changed)
+		 */
+		void onReset();
 
 		// only used by Window itself
 		void init();

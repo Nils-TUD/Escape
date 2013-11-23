@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <gui/graphics/graphicfactory.h>
 #include <gui/control.h>
 #include <gui/window.h>
 #include <typeinfo>
@@ -32,7 +31,7 @@ namespace gui {
 		if(e->getGraphics()) {
 			// we share the memory with the window, so that a control simply paints to that memory
 			// and just the window writes this memory to vesa
-			_g = GraphicFactory::get(e->getGraphics()->getBuffer(),Size(0,0));
+			_g = new Graphics(e->getGraphics()->getBuffer(),Size(0,0));
 			setRegion();
 		}
 	}

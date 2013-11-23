@@ -20,21 +20,31 @@
 #pragma once
 
 #include <esc/common.h>
-#include <gui/graphics/graphics.h>
-#include <gui/graphics/graphicsbuffer.h>
+#include <gui/toggle.h>
 
 namespace gui {
-	/**
-	 * The implementation of graphics for 24bit
-	 */
-	class Graphics24 : public Graphics {
-	public:
-		Graphics24(GraphicsBuffer *buf,const Size &size) : Graphics(buf,size) {
-		}
+	class RadioGroup;
 
-		void fillRect(const Pos &pos,const Size &size);
+	class RadioButton : public Toggle {
+		friend class RadioGroup;
+
+		static const gsize_t TEXT_PADDING	= 6;
+
+	public:
+		explicit RadioButton(RadioGroup &group,const std::string &text);
+		virtual ~RadioButton();
 
 	protected:
-		void doSetPixel(gpos_t x,gpos_t y);
+		virtual void paint(Graphics &g);
+
+	private:
+		virtual Size getPrefSize() const;
+		virtual bool doSetSelected(bool selected);
+		void select(bool selected) {
+			if(Toggle::doSetSelected(selected))
+				repaint();
+		}
+
+		RadioGroup &_group;
 	};
 }

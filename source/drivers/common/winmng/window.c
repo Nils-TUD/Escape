@@ -41,7 +41,7 @@
 #define ABS(a)		((a) < 0 ? -(a) : (a))
 
 static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
-static void win_destroyBuf(sWindow *win);
+static void win_destroyBuf(sWindow *win,const char *winmng);
 static gwinid_t win_getTop(void);
 static bool win_validateRect(sRectangle *r);
 static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
@@ -74,15 +74,7 @@ int win_init(int sid,int uifd,gsize_t width,gsize_t height,gcoldepth_t bpp,const
 	for(gwinid_t i = 0; i < WINDOW_COUNT; i++)
 		windows[i].id = WINID_UNUSED;
 
-	/* find desired mode */
-	if(screen_findGraphicsMode(uifd,width,height,bpp,&mode) < 0)
-		error("Unable to find suitable mode");
-
-	/* create shm */
-	int res = screen_createShm(&mode,(char**)&shmem,shmname,VID_MODE_TYPE_GUI,0644);
-	if(res < 0)
-		error("Unable to create shm file '%s'",shmname);
-	return mode.id;
+	return win_setMode(width,height,bpp,shmname);
 }
 
 const sScreenMode *win_getMode(void) {
@@ -113,12 +105,63 @@ static int win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,c
 	return 0;
 }
 
-static void win_destroyBuf(sWindow *win) {
+static void win_destroyBuf(sWindow *win,const char *winmng) {
 	char name[16];
-	snprintf(name,sizeof(name),"win-%d",win->id);
+	snprintf(name,sizeof(name),"%s-win%d",winmng,win->id);
 	close(win->shmfd);
 	munmap(win->shmaddr);
 	shm_unlink(name);
+}
+
+int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
+	sScreenMode newmode;
+	uint8_t *newshm;
+	/* find desired mode */
+	int res;
+	if((res = screen_findGraphicsMode(uimng,width,height,bpp,&newmode)) < 0)
+		return res;
+
+	/* first destroy the old one because we use the same shm-name again */
+	screen_destroyShm(&mode,(char*)shmem,shmname,VID_MODE_TYPE_GUI);
+
+	/* create shm */
+	if((res = screen_createShm(&newmode,(char**)&newshm,shmname,VID_MODE_TYPE_GUI,0644)) < 0)
+		goto error;
+
+	/* now set that mode */
+	if((res = screen_setMode(uimng,VID_MODE_TYPE_GUI,newmode.id,shmname,true)) < 0)
+		goto error;
+
+	/* now it was successfull */
+	memcpy(&mode,&newmode,sizeof(newmode));
+	shmem = newshm;
+
+	/* recreate window buffers */
+	for(size_t i = 0; i < WINDOW_COUNT; i++) {
+		if(windows[i].id != WINID_UNUSED) {
+			win_destroyBuf(windows + i,shmname);
+			if(win_createBuf(windows + i,i,windows[i].width,windows[i].height,shmname))
+				printe("Unable to recreate window buffer");
+			/* let the window reset everything, i.e. connect to new buffer, repaint, ... */
+			msg.args.arg1 = windows[i].id;
+			if(send(windows[i].evfd,MSG_WIN_RESET_EV,&msg,sizeof(msg.args)) < 0)
+				printe("Unable to send active-event for window %u",windows[i].id);
+		}
+	}
+	return newmode.id;
+
+	/* if it failed, try to set the old mode again */
+error:
+	if(screen_createShm(&mode,(char**)&shmem,shmname,VID_MODE_TYPE_GUI,0644) < 0)
+		error("Unable to create old mode shm");
+	if(screen_setMode(uimng,VID_MODE_TYPE_GUI,mode.id,shmname,true) < 0)
+		error("Unable to set old mode");
+	/* we have to repaint everything */
+	for(size_t i = 0; i < WINDOW_COUNT; i++) {
+		if(windows[i].id != WINID_UNUSED)
+			win_update(i,0,0,windows[i].width,windows[i].height);
+	}
+	return res;
 }
 
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
@@ -171,18 +214,18 @@ void win_detachAll(int fd) {
 	}
 }
 
-void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY) {
+void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY,const char *winmng) {
 	gwinid_t id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
 		if(windows[id].id != WINID_UNUSED && windows[id].owner == cid)
-			win_destroy(id,mouseX,mouseY);
+			win_destroy(id,mouseX,mouseY,winmng);
 	}
 }
 
-void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
+void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY,const char *winmng) {
 	sRectangle *old;
 	/* destroy shm area */
-	win_destroyBuf(windows + id);
+	win_destroyBuf(windows + id,winmng);
 
 	/* mark unused */
 	windows[id].id = WINID_UNUSED;
@@ -294,7 +337,7 @@ void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 
 void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height,const char *winmng) {
 	/* exchange buffer */
-	win_destroyBuf(windows + window);
+	win_destroyBuf(windows + window,winmng);
 	assert(win_createBuf(windows + window,window,width,height,winmng) == 0);
 
 	if(x != windows[window].x || y != windows[window].y)

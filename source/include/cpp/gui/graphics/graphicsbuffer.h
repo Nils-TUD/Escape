@@ -47,10 +47,9 @@ namespace gui {
 		 * @param pos the coordinates of the window
 		 * @param width width of the window
 		 * @param height height of the window
-		 * @param bpp the used color-depth
 		 */
-		GraphicsBuffer(Window *win,const Pos &pos,const Size &size,gcoldepth_t bpp)
-			: _win(win), _pos(pos), _size(size), _bpp(bpp), _minx(0),_miny(0),
+		GraphicsBuffer(Window *win,const Pos &pos,const Size &size)
+			: _win(win), _pos(pos), _size(size), _minx(0),_miny(0),
 			  _maxx(size.width - 1), _maxy(size.height - 1), _fd(-1), _pixels(nullptr) {
 		}
 		/**
@@ -78,13 +77,6 @@ namespace gui {
 		 */
 		Window *getWindow() const {
 			return _win;
-		}
-
-		/**
-		 * @return the color-depth
-		 */
-		gcoldepth_t getColorDepth() const {
-			return _bpp;
 		}
 
 		/**
@@ -166,8 +158,6 @@ namespace gui {
 		Pos _pos;
 		// size of the window
 		Size _size;
-		// used color-depth
-		gcoldepth_t _bpp;
 		// dirty region
 		gpos_t _minx,_miny,_maxx,_maxy;
 		// buffer for this window; controls use this, too (don't have their own)

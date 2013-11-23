@@ -127,6 +127,8 @@
 #define MSG_WIN_RESIZE_RESP			317	/* a resize has been finished */
 #define MSG_WIN_UPDATE_RESP			318 /* an update has been finished */
 #define MSG_WIN_ATTACH				319 /* connect an event-channel to the request-channel */
+#define MSG_WIN_RESET_EV			320 /* asks the app to reset everything */
+#define MSG_WIN_SETMODE				321 /* sets the screen mode */
 
 #define MSG_SCR_SETCURSOR			500	/* sets the cursor */
 #define MSG_SCR_GETMODE				501 /* gets information about the current video-mode */

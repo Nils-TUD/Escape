@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
+#include <esc/driver/screen.h>
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/event/subscriber.h>
 #include <gui/theme.h>
@@ -119,6 +120,28 @@ namespace gui {
 		uchar getColorDepth() const {
 			return _screenMode.bitsPerPixel;
 		}
+
+		/**
+		 * @return the current screen mode
+		 */
+		const sScreenMode *getMode() const {
+			return &_screenMode;
+		}
+
+		/**
+		 * Collects all supported screen modes.
+		 *
+		 * @return the modes
+		 */
+		std::vector<sScreenMode> getModes() const;
+
+		/**
+		 * Sets the given mode
+		 *
+		 * @param mode the mode
+		 * @return 0 on success
+		 */
+		int setMode(const sScreenMode &mode);
 
 		/**
 		 * @return the path to the window-manager

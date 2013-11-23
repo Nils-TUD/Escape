@@ -26,6 +26,7 @@
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/driver/uimng.h>
+#include <esc/driver/screen.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,20 +38,10 @@
 
 #define DEF_BPP		24
 
-static gsize_t screenWidth;
-static gsize_t screenHeight;
 static sInputThread inputData;
+static int evId;
 
-static int eventThread(void *arg) {
-	char path[MAX_PATH_LEN];
-	const char *name = (const char*)arg;
-	snprintf(path,sizeof(path),"/dev/%s-events",name);
-	int evId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
-	if(evId < 0)
-		error("Unable to create device winmanager");
-	if(chmod(path,0111) < 0)
-		error("Unable to chmod %s",path);
-
+static int eventThread(A_UNUSED void *arg) {
 	while(1) {
 		sMsg msg;
 		msgid_t mid;
@@ -112,11 +103,19 @@ int main(int argc,char *argv[]) {
 	if(uimngId < 0)
 		error("Unable to get uimng id");
 
+	/* create event-device */
+	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
+	evId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
+	if(evId < 0)
+		error("Unable to create device /dev/%s-events",argv[3]);
+	if(chmod(path,0111) < 0)
+		error("Unable to chmod %s",path);
+
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 	drvId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drvId < 0)
-		error("Unable to create device winmanager");
+		error("Unable to create device /dev/%s",argv[3]);
 	if(chmod(path,0111) < 0)
 		error("Unable to chmod %s",path);
 
@@ -127,7 +126,7 @@ int main(int argc,char *argv[]) {
 	inputData.shmname = argv[3];
 	inputData.mode = win_init(drvId,uimng,atoi(argv[1]),atoi(argv[2]),DEF_BPP,argv[3]);
 	if(inputData.mode < 0)
-		return EXIT_FAILURE;
+		error("Setting mode %zu%zu@%d failed",atoi(argv[1]),atoi(argv[2]),DEF_BPP);
 
 	/* start helper threads */
 	listener_init(drvId);
@@ -137,9 +136,6 @@ int main(int argc,char *argv[]) {
 		error("Unable to start thread for the infodev");
 	if(startthread(eventThread,argv[3]) < 0)
 		error("Unable to start thread for the event-channel");
-
-	screenWidth = win_getMode()->width;
-	screenHeight = win_getMode()->height;
 
 	while(1) {
 		sMsg msg;
@@ -174,7 +170,7 @@ int main(int argc,char *argv[]) {
 				case MSG_WIN_DESTROY: {
 					gwinid_t wid = (gwinid_t)msg.args.arg1;
 					if(win_exists(wid))
-						win_destroy(wid,input_getMouseX(),input_getMouseY());
+						win_destroy(wid,input_getMouseX(),input_getMouseY(),argv[3]);
 				}
 				break;
 
@@ -184,7 +180,7 @@ int main(int argc,char *argv[]) {
 					gpos_t y = (gpos_t)msg.args.arg3;
 					bool finished = (bool)msg.args.arg4;
 					sWindow *win = win_get(wid);
-					if(win && x < (gpos_t)screenWidth && y < (gpos_t)screenHeight) {
+					if(win && x < (gpos_t)win_getMode()->width && y < (gpos_t)win_getMode()->height) {
 						if(finished)
 							win_moveTo(wid,x,y,win->width,win->height);
 						else
@@ -235,6 +231,36 @@ int main(int argc,char *argv[]) {
 				}
 				break;
 
+				case MSG_SCR_GETMODES: {
+					size_t n = msg.args.arg1;
+					sScreenMode *modes;
+					ssize_t res = screen_collectModes(uimng,&modes);
+					if(n == 0) {
+						size_t count = 0;
+						for(ssize_t i = 0; i < res; ++i) {
+							if(modes[i].type & VID_MODE_TYPE_GUI)
+								count++;
+						}
+						msg.args.arg1 = count;
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+					}
+					else {
+						ssize_t pos = 0;
+						size_t count = 0;
+						for(ssize_t i = 0; i < res; ++i) {
+							if(modes[i].type & VID_MODE_TYPE_GUI) {
+								count++;
+								if(pos != i)
+									memcpy(modes + pos,modes + i,sizeof(sScreenMode));
+								pos++;
+							}
+						}
+						send(fd,MSG_DEF_RESPONSE,modes,count * sizeof(sScreenMode));
+					}
+					free(modes);
+				}
+				break;
+
 				case MSG_SCR_GETMODE: {
 					msg.data.arg1 = 0;
 					memcpy(msg.data.d,win_getMode(),sizeof(sScreenMode));
@@ -242,8 +268,17 @@ int main(int argc,char *argv[]) {
 				}
 				break;
 
+				case MSG_WIN_SETMODE: {
+					gsize_t width = msg.args.arg1;
+					gsize_t height = msg.args.arg2;
+					gcoldepth_t bpp = msg.args.arg3;
+					msg.args.arg1 = win_setMode(width,height,bpp,argv[3]);
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_DEV_CLOSE:
-					win_destroyWinsOf(fd,input_getMouseX(),input_getMouseY());
+					win_destroyWinsOf(fd,input_getMouseX(),input_getMouseY(),argv[3]);
 					close(fd);
 					break;
 

@@ -243,6 +243,17 @@ namespace gui {
 				_destroyed.send(win);
 			}
 			break;
+
+			case MSG_WIN_RESET_EV: {
+				gwinid_t win = (gwinid_t)msg->args.arg1;
+				Window *w = getWindowById(win);
+				// re-request screen infos from vesa
+				if(screen_getMode(_winFd,&_screenMode) < 0)
+					throw app_error("Unable to get mode");
+				if(w)
+					w->onReset();
+			}
+			break;
 		}
 	}
 
@@ -286,6 +297,30 @@ namespace gui {
 				break;
 			}
 		}
+	}
+
+	std::vector<sScreenMode> Application::getModes() const {
+		std::vector<sScreenMode> res;
+		ssize_t count = screen_getModeCount(_winFd);
+		if(count > 0) {
+			sScreenMode *modes = new sScreenMode[count];
+			screen_getModes(_winFd,modes,count);
+			res.assign(modes,modes + count);
+			delete[] modes;
+		}
+		return res;
+	}
+
+	int Application::setMode(const sScreenMode &mode) {
+		sArgsMsg msg;
+		msg.arg1 = mode.width;
+		msg.arg2 = mode.height;
+		msg.arg3 = mode.bitsPerPixel;
+		msgid_t mid = MSG_WIN_SETMODE;
+		ssize_t res = SENDRECV_IGNSIGS(_winFd,&mid,&msg,sizeof(msg));
+		if(res < 0)
+			return res;
+		return msg.arg1;
 	}
 
 	void Application::requestWinUpdate(gwinid_t id,const Pos &pos,const Size &size) {

@@ -35,7 +35,7 @@ int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor) {
 	return send(fd,MSG_SCR_SETCURSOR,&msg,sizeof(msg));
 }
 
-static ssize_t screen_collectModes(int fd,sScreenMode **modes) {
+ssize_t screen_collectModes(int fd,sScreenMode **modes) {
 	/* get all modes */
 	ssize_t res,count = screen_getModeCount(fd);
 	if(count < 0)
@@ -77,6 +77,15 @@ int screen_joinShm(sScreenMode *mode,char **addr,const char *name,int type) {
 
 int screen_createShm(sScreenMode *mode,char **addr,const char *name,int type,uint perms) {
 	return screen_openShm(mode,addr,name,type,IO_READ | IO_WRITE | IO_CREATE,perms);
+}
+
+void screen_destroyShm(sScreenMode *mode,char *addr,const char *name,int type) {
+	if(type == VID_MODE_TYPE_TUI)
+		addr -= mode->tuiHeaderSize * mode->cols * 2;
+	else
+		addr -= mode->guiHeaderSize * mode->width * (mode->bitsPerPixel / 8);
+	munmap(addr);
+	shm_unlink(name);
 }
 
 int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode) {
@@ -185,6 +194,8 @@ ssize_t screen_getModeCount(int fd) {
 }
 
 ssize_t screen_getModes(int fd,sScreenMode *modes,size_t count) {
+	if(count == 0)
+		return screen_getModeCount(fd);
 	sArgsMsg msg;
 	ssize_t err;
 	msg.arg1 = count;

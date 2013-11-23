@@ -29,6 +29,8 @@ extern "C" {
 int screen_setCursor(int fd,gpos_t x,gpos_t y,int cursor);
 int screen_joinShm(sScreenMode *mode,char **addr,const char *name,int type);
 int screen_createShm(sScreenMode *mode,char **addr,const char *name,int type,uint perms);
+void screen_destroyShm(sScreenMode *mode,char *addr,const char *name,int type);
+ssize_t screen_collectModes(int fd,sScreenMode **modes);
 int screen_findTextMode(int fd,uint cols,uint rows,sScreenMode *mode);
 int screen_findGraphicsMode(int fd,gsize_t width,gsize_t height,gcoldepth_t bpp,sScreenMode *mode);
 int screen_getMode(int fd,sScreenMode *mode);

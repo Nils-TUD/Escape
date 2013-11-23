@@ -20,43 +20,18 @@
 #pragma once
 
 #include <esc/common.h>
-#include <gui/graphics/color.h>
-#include <gui/control.h>
-#include <string>
+#include <gui/toggle.h>
 
 namespace gui {
-	class Checkbox : public Control {
+	class Checkbox : public Toggle {
 	private:
 		static const gsize_t CROSS_PADDING	= 3;
 		static const gsize_t TEXT_PADDING	= 4;
 
 	public:
-		Checkbox(const std::string &text)
-			: Control(), _focused(false), _checked(false), _text(text) {
+		Checkbox(const std::string &text) : Toggle(text) {
 		}
-		Checkbox(const std::string &text,const Pos &pos,const Size &size)
-			: Control(pos,size), _focused(false), _checked(false), _text(text) {
-		}
-
-		bool isChecked() const {
-			return _checked;
-		}
-		const std::string &getText() const {
-			return _text;
-		}
-		void setText(const std::string &text) {
-			_text = text;
-			makeDirty(true);
-		}
-
-		virtual void onFocusGained();
-		virtual void onFocusLost();
-		virtual void onKeyReleased(const KeyEvent &e);
-		virtual void onMouseReleased(const MouseEvent &e);
-
-		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const {
-			UIElement::print(os, rec, indent);
-			os << " text='" << _text << "' checked=" << _checked;
+		Checkbox(const std::string &text,const Pos &pos,const Size &size) : Toggle(text,pos,size) {
 		}
 
 	protected:
@@ -64,19 +39,5 @@ namespace gui {
 
 	private:
 		virtual Size getPrefSize() const;
-		void setChecked(bool checked) {
-			_checked = checked;
-			makeDirty(true);
-			repaint();
-		}
-		void setFocused(bool focused) {
-			_focused = focused;
-			makeDirty(true);
-			repaint();
-		}
-
-		bool _focused;
-		bool _checked;
-		std::string _text;
 	};
 }

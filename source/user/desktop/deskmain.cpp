@@ -33,12 +33,14 @@ int main() {
 	Shortcut sc2("/etc/calc.bmp","/bin/gcalc");
 	Shortcut sc3("/etc/fileman.bmp","/bin/fileman");
 	Shortcut sc4("/etc/gtest.bmp","/bin/gtest");
+	Shortcut sc5("/etc/settings.bmp","/bin/gsettings");
 	Application *app = Application::create();
 	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize());
 	win->addShortcut(&sc1);
 	win->addShortcut(&sc2);
 	win->addShortcut(&sc3);
 	win->addShortcut(&sc4);
+	win->addShortcut(&sc5);
 	win->show();
 	if(startthread(childWaitThread,nullptr) < 0)
 		error("Unable to start thread");

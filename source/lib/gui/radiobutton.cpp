@@ -18,50 +18,49 @@
  */
 
 #include <esc/common.h>
-#include <gui/checkbox.h>
-#include <gui/control.h>
-
-using namespace std;
+#include <gui/radiobutton.h>
+#include <gui/radiogroup.h>
+#include <algorithm>
 
 namespace gui {
-	Size Checkbox::getPrefSize() const {
-		gsize_t fwidth = getGraphics()->getFont().getStringWidth(getText());
-		gsize_t fheight = getGraphics()->getFont().getSize().height;
-		return Size(fwidth + TEXT_PADDING + CROSS_PADDING + fheight,
-					max((gsize_t)(fheight + getTheme().getTextPadding() * 2),fheight));
+	RadioButton::RadioButton(RadioGroup &group,const std::string &text) : Toggle(text), _group(group) {
+		_group.add(this);
+	}
+	RadioButton::~RadioButton() {
+		_group.remove(this);
 	}
 
-	void Checkbox::paint(Graphics &g) {
+	bool RadioButton::doSetSelected(bool) {
+		_group.setSelected(this);
+		return true;
+	}
+	Size RadioButton::getPrefSize() const {
+		gsize_t fwidth = getGraphics()->getFont().getStringWidth(getText());
+		gsize_t fheight = getGraphics()->getFont().getSize().height;
+		return Size(fwidth + TEXT_PADDING + 4 + fheight,
+					std::max((gsize_t)(fheight + getTheme().getTextPadding() * 2),fheight));
+	}
+
+	void RadioButton::paint(Graphics &g) {
 		gsize_t cheight = g.getFont().getSize().height;
 		gsize_t height = getSize().height;
-		gsize_t boxSize = cheight;
-		gpos_t boxy = (height - boxSize) / 2;
+		gsize_t circleSize = 4 + cheight;
 
 		g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
 		g.fillRect(Pos(0,0),getSize());
 
-		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
-		g.fillRect(1,boxy,boxSize - 1,boxSize - 1);
+		g.setColor(getTheme().getColor(Theme::CTRL_BORDER));
+		g.drawCircle(Pos(4 + cheight / 2,height / 2),cheight / 2);
 
-		g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
-		g.drawLine(boxSize,boxy,boxSize,boxy + boxSize);
-		g.drawLine(0,boxy + boxSize,boxSize,boxy + boxSize);
-		g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-		g.drawLine(0,boxy,boxSize,boxy);
-		g.drawLine(0,boxy,0,boxy + boxSize);
+		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
+		g.fillCircle(Pos(4 + cheight / 2,height / 2),cheight / 2 - 1);
 
 		if(isSelected()) {
 			g.setColor(getTheme().getColor(Theme::CTRL_DARKBORDER));
-			g.drawLine(3,boxy + boxSize / 2,boxSize / 2,boxy + boxSize - 3);
-			g.drawLine(4,boxy + boxSize / 2,boxSize / 2 + 1,boxy + boxSize - 3);
-			g.drawLine(5,boxy + boxSize / 2,boxSize / 2 + 1,boxy + boxSize - 3);
-			g.drawLine(boxSize / 2,boxy + boxSize - 3,boxSize - 2,boxy + 2);
-			g.setColor(getTheme().getColor(Theme::CTRL_LIGHTBORDER));
-			g.drawLine(6,boxy + boxSize / 2,boxSize / 2 + 1,boxy + boxSize - 3);
-			g.drawLine(boxSize / 2,boxy + boxSize - 2,boxSize - 2,boxy + 2);
+			g.fillCircle(Pos(4 + cheight / 2,height / 2),cheight / 2 - 4);
 		}
 
 		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
-		g.drawString(boxSize + TEXT_PADDING,(height - cheight) / 2 + 1,getText());
+		g.drawString(circleSize + TEXT_PADDING,(height - cheight) / 2 + 1,getText());
 	}
 }

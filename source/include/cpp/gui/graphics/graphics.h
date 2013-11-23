@@ -26,6 +26,7 @@
 #include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/rectangle.h>
+#include <gui/application.h>
 #include <gui/enums.h>
 #include <math.h>
 #include <assert.h>
@@ -82,11 +83,6 @@ namespace gui {
 		Graphics(GraphicsBuffer *buf,const Size &size)
 			: _buf(buf), _minoff(), _off(), _size(size), _col(0), _colInst(0), _font() {
 		}
-		/**
-		 * Destructor
-		 */
-		virtual ~Graphics() {
-		}
 
 		/**
 		 * @return the current font
@@ -134,7 +130,7 @@ namespace gui {
 		 * @param size the width of a row and the number of rows to move
 		 * @param up amount to move up / down
 		 */
-		virtual void moveRows(const Pos &pos,const Size &size,int up);
+		void moveRows(const Pos &pos,const Size &size,int up);
 		void moveRows(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int up) {
 			moveRows(Pos(x,y),Size(width,height),up);
 		}
@@ -147,7 +143,7 @@ namespace gui {
 		 * @param size the number of cols to move and the height of a col
 		 * @param left amount to move left / right
 		 */
-		virtual void moveCols(const Pos &pos,const Size &size,int left);
+		void moveCols(const Pos &pos,const Size &size,int left);
 		void moveCols(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int left) {
 			moveCols(Pos(x,y),Size(width,height),left);
 		}
@@ -158,7 +154,7 @@ namespace gui {
 		 * @param pos the position
 		 * @param c the character
 		 */
-		virtual void drawChar(const Pos &pos,char c);
+		void drawChar(const Pos &pos,char c);
 		void drawChar(gpos_t x,gpos_t y,char c) {
 			drawChar(Pos(x,y),c);
 		}
@@ -170,7 +166,7 @@ namespace gui {
 		 * @param pos the position
 		 * @param str the string
 		 */
-		virtual void drawString(const Pos &pos,const std::string &str);
+		void drawString(const Pos &pos,const std::string &str);
 		void drawString(gpos_t x,gpos_t y,const std::string &str) {
 			drawString(Pos(x,y),str);
 		}
@@ -184,7 +180,7 @@ namespace gui {
 		 * @param start the start-position in the string
 		 * @param count the number of characters
 		 */
-		virtual void drawString(const Pos &pos,const std::string &str,size_t start,size_t count);
+		void drawString(const Pos &pos,const std::string &str,size_t start,size_t count);
 		void drawString(gpos_t x,gpos_t y,const std::string &str,size_t start,size_t count) {
 			drawString(Pos(x,y),str,start,count);
 		}
@@ -195,7 +191,7 @@ namespace gui {
 		 * @param p0 first coordinate
 		 * @param pn last coordinate
 		 */
-		virtual void drawLine(const Pos &p0,const Pos &pn);
+		void drawLine(const Pos &p0,const Pos &pn);
 		void drawLine(gpos_t x0,gpos_t y0,gpos_t xn,gpos_t yn) {
 			drawLine(Pos(x0,y0),Pos(xn,yn));
 		}
@@ -207,7 +203,7 @@ namespace gui {
 		 * @param y1 the first y-coordinate
 		 * @param y2 the second y-coordinate
 		 */
-		virtual void drawVertLine(gpos_t x,gpos_t y1,gpos_t y2);
+		void drawVertLine(gpos_t x,gpos_t y1,gpos_t y2);
 
 		/**
 		 * Draws a horizontal line (optimized compared to drawLine)
@@ -216,7 +212,7 @@ namespace gui {
 		 * @param x1 the first x-coordinate
 		 * @param x2 the second x-coordinate
 		 */
-		virtual void drawHorLine(gpos_t y,gpos_t x1,gpos_t x2);
+		void drawHorLine(gpos_t y,gpos_t x1,gpos_t x2);
 
 		/**
 		 * Draws a rectangle
@@ -224,7 +220,7 @@ namespace gui {
 		 * @param pos the position
 		 * @param size the size
 		 */
-		virtual void drawRect(const Pos &pos,const Size &size);
+		void drawRect(const Pos &pos,const Size &size);
 		void drawRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 			drawRect(Pos(x,y),Size(width,height));
 		}
@@ -235,7 +231,7 @@ namespace gui {
 		 * @param pos the position
 		 * @param size the size
 		 */
-		virtual void fillRect(const Pos &pos,const Size &size);
+		void fillRect(const Pos &pos,const Size &size);
 		void fillRect(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 			fillRect(Pos(x,y),Size(width,height));
 		}
@@ -280,6 +276,22 @@ namespace gui {
 		void fillTriangle(const Pos &p1,const Pos &p2,const Pos &p3);
 
 		/**
+		 * Draws a circle with the center at position <p> and given radius.
+		 *
+		 * @param p the center of the circle
+		 * @param radius the radius
+		 */
+		void drawCircle(const Pos &p,int radius);
+
+		/**
+		 * Fills a circle with the center at position <p> and given radius.
+		 *
+		 * @param p the center of the circle
+		 * @param radius the radius
+		 */
+		void fillCircle(const Pos &p,int radius);
+
+		/**
 		 * @return the offset of the control in the window
 		 */
 		Pos getPos() const {
@@ -318,7 +330,28 @@ namespace gui {
 		/**
 		 * Sets a pixel (without check)
 		 */
-		virtual void doSetPixel(gpos_t x,gpos_t y) = 0;
+		void doSetPixel(gpos_t x,gpos_t y) {
+			gcoldepth_t bpp = Application::getInstance()->getColorDepth();
+			size_t bytespp = bpp / 8;
+			gsize_t bwidth = _buf->getSize().width;
+			uint8_t *addr = getPixels() + ((_off.y + y) * bwidth + (_off.x + x)) * bytespp;
+
+			switch(bpp) {
+				case 16:
+					*(uint16_t*)addr = _col;
+					break;
+				case 24: {
+					uint8_t *col = (uint8_t*)&_col;
+					*addr++ = *col++;
+					*addr++ = *col++;
+					*addr = *col;
+				}
+				break;
+				case 32:
+					*(uint32_t*)addr = _col;
+					break;
+			}
+		}
 		/**
 		 * Adds the given position to the dirty region
 		 */

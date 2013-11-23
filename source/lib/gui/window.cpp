@@ -19,7 +19,6 @@
 
 #include <esc/common.h>
 #include <gui/graphics/color.h>
-#include <gui/graphics/graphicfactory.h>
 #include <gui/window.h>
 #include <gui/uielement.h>
 #include <gui/imagebutton.h>
@@ -82,14 +81,13 @@ namespace gui {
 	}
 
 	void Window::init() {
-		Application *app = Application::getInstance();
 		getTheme().setPadding(0);
-		_gbuf = new GraphicsBuffer(this,getPos(),getSize(),app->getColorDepth());
-		_g = GraphicFactory::get(_gbuf,getSize());
+		_gbuf = new GraphicsBuffer(this,getPos(),getSize());
+		_g = new Graphics(_gbuf,getSize());
 		gsize_t y = 1;
 		gsize_t height = getSize().height - 1;
 		if(_header) {
-			_header->_g = GraphicFactory::get(_gbuf,Size(getSize().width - 2,_header->getSize().height));
+			_header->_g = new Graphics(_gbuf,Size(getSize().width - 2,_header->getSize().height));
 			_header->_g->setOff(Pos(1,1));
 			_header->_g->setMinOff(Pos(1,1));
 			_header->_parent = this;
@@ -97,7 +95,7 @@ namespace gui {
 			y += _header->getSize().height;
 			height -= _header->getSize().height;
 		}
-		_body->_g = GraphicFactory::get(_gbuf,Size(getSize().width - 2,height));
+		_body->_g = new Graphics(_gbuf,Size(getSize().width - 2,height));
 		_body->_g->setOff(Pos(1,y));
 		_body->_g->setMinOff(Pos(1,y));
 		_body->_parent = this;
@@ -475,6 +473,17 @@ namespace gui {
 			_header->makeDirty(true);
 		_body->makeDirty(true);
 		repaint();
+	}
+
+	void Window::onReset() {
+		if(_style == DESKTOP) {
+			prepareResize(Pos(0,0),Application::getInstance()->getScreenSize());
+			Application::getInstance()->resizeWindow(this,true);
+		}
+		else {
+			_gbuf->freeBuffer();
+			onResized();
+		}
 	}
 
 	void Window::print(std::ostream &os, bool rec, size_t indent) const {

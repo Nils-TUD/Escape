@@ -194,13 +194,13 @@ static void vbe_detectModes(void) {
 	if(!f)
 		printe("Unable to open /system/devices/vbe for writing");
 	else {
-		fprintf(f,"VESA VBE Version %d.%d detected (%#x)\n",vbeInfo.version >> 8,
-				vbeInfo.version & 0xF,vbeInfo.oemString);
+		fprintf(f,"VESA VBE Version %d.%d detected (%p)\n",vbeInfo.version >> 8,
+				vbeInfo.version & 0xF,(void*)vbeInfo.oemString);
 		fprintf(f,"Capabilities: %#x\n",vbeInfo.capabilities);
 		fprintf(f,"Signature: %c%c%c%c\n",vbeInfo.signature[0],
 				vbeInfo.signature[1],vbeInfo.signature[2],vbeInfo.signature[3]);
 		fprintf(f,"VideoMemory: %d KiB\n",vbeInfo.totalMemory * 64);
-		fprintf(f,"VideoModes: %#x\n",vbeInfo.videoModesPtr);
+		fprintf(f,"VideoModes: %p\n",(void*)vbeInfo.videoModesPtr);
 		fprintf(f,"\n");
 		fprintf(f,"Available video modes:\n");
 	}
@@ -218,7 +218,7 @@ static void vbe_detectModes(void) {
 						mode.memoryModel == memRGB ? "   RGB" :
 						mode.memoryModel == memYUV ? "   YUV" : "??????",
 						mode.modeAttributes,
-						mode.physBasePtr);
+						(void*)mode.physBasePtr);
 			}
 
 			if(vbe_isSupported(&mode)) {

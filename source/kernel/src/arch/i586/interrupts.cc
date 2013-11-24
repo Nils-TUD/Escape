@@ -79,7 +79,7 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x1D */	{NULL,						"??",					0,					0},
 	/* 0x1E */	{NULL,						"??",					0,					0},
 	/* 0x1F */	{NULL,						"??",					0,					0},
-	/* 0x20 */	{Interrupts::irqTimer,		"Timer",				SIG_INTRPT_TIMER,	0},
+	/* 0x20 */	{Interrupts::irqTimer,		"PIT",					SIG_INTRPT_TIMER,	0},
 	/* 0x21 */	{Interrupts::irqDefault,	"Keyboard",				SIG_INTRPT_KB,		0},
 	/* 0x22 */	{NULL,						"??",					0,					0},
 	/* 0x23 */	{Interrupts::irqDefault,	"COM2",					SIG_INTRPT_COM2,	0},
@@ -88,7 +88,7 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x26 */	{Interrupts::irqDefault,	"Floppy",				SIG_INTRPT_FLOPPY,	0},
 	/* 0x27 */	{NULL,						"??",					0,					0},
 	/* 0x28 */	{Interrupts::irqDefault,	"CMOS",					SIG_INTRPT_CMOS,	0},
-	/* 0x29 */	{Interrupts::irqTimer,		"LAPIC",				SIG_INTRPT_TIMER,	0},
+	/* 0x29 */	{NULL,						"??",					0,					0},
 	/* 0x2A */	{NULL,						"??",					0,					0},
 	/* 0x2B */	{NULL,						"??",					0,					0},
 	/* 0x2C */	{Interrupts::irqDefault,	"Mouse",				SIG_INTRPT_MOUSE,	0},
@@ -97,14 +97,15 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x2F */	{Interrupts::irqDefault,	"ATA2",					SIG_INTRPT_ATA2,	0},
 	/* 0x30 */	{Interrupts::debug,			"Debug-Call",			0,					0},
 	/* 0x31 */	{Syscalls::handle,			"Ack-Signal",			0,					0},
-	/* 0x32 */	{Interrupts::ipiWork,		"Work IPI",				0,					0},
-	/* 0x33 */	{Interrupts::ipiTerm,		"Term IPI",				0,					0},
-	/* 0x34 */	{NULL,						"??",					0,					0},	// Flush TLB
-	/* 0x35 */	{NULL,						"??",					0,					0},	// Wait
-	/* 0x36 */	{NULL,						"??",					0,					0},	// Halt
-	/* 0x37 */	{NULL,						"??",					0,					0},	// Flush TLB-Ack
-	/* 0x38 */	{Interrupts::ipiCallback,	"IPI Callback",			0,					0},
-	/* 0x39 */	{Interrupts::exFatal,		"??",					0,					0},
+	/* 0x32 */	{Interrupts::irqTimer,		"LAPIC",				SIG_INTRPT_TIMER,	0},
+	/* 0x33 */	{Interrupts::ipiWork,		"Work IPI",				0,					0},
+	/* 0x34 */	{Interrupts::ipiTerm,		"Term IPI",				0,					0},
+	/* 0x35 */	{NULL,						"??",					0,					0},	// Flush TLB
+	/* 0x36 */	{NULL,						"??",					0,					0},	// Wait
+	/* 0x37 */	{NULL,						"??",					0,					0},	// Halt
+	/* 0x38 */	{NULL,						"??",					0,					0},	// Flush TLB-Ack
+	/* 0x39 */	{Interrupts::ipiCallback,	"IPI Callback",			0,					0},
+	/* 0x3A */	{Interrupts::exFatal,		"??",					0,					0},
 };
 
 uintptr_t *Interrupts::pfAddrs;
@@ -121,20 +122,22 @@ void InterruptsBase::init() {
 	if(Interrupts::pfAddrs == NULL)
 		Util::panic("Unable to alloc memory for pagefault-addresses");
 
-	if(!Config::get(Config::FORCE_PIC) && IOAPIC::enabled()) {
+	PIC::init();
+	if(IOAPIC::enabled()) {
 		Log::get().writef("Using IOAPIC for interrupts\n");
 		/* identity map ISA irqs that have no interrupt source override */
 		uint isaIRQs[] = {0,1,3,4,6,8,12,14,15};
 		for(size_t i = 0; i < ARRAY_SIZE(isaIRQs); ++i) {
+			if(isaIRQs[i] == 0 && !Config::get(Config::FORCE_PIT))
+				continue;
+
 			IOAPIC::setRedirection(isaIRQs[i],isaIRQs[i],IOAPIC::RED_DEL_FIXED,
 				IOAPIC::RED_POL_HIGH_ACTIVE,IOAPIC::RED_TRIGGER_EDGE);
 		}
 		PIC::disable();
 	}
-	else {
+	else
 		Log::get().writef("Using PIC for interrupts\n");
-		PIC::init();
-	}
 }
 
 void Interrupts::eoi(int irq) {

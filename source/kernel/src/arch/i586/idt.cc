@@ -80,6 +80,7 @@ EXTERN_C void isr53();
 EXTERN_C void isr54();
 EXTERN_C void isr55();
 EXTERN_C void isr56();
+EXTERN_C void isr57();
 /* the handler for a other interrupts */
 EXTERN_C void isrNull();
 
@@ -127,9 +128,9 @@ void IDT::init() {
 	set(29,isr29,DPL_KERNEL);
 	set(30,isr30,DPL_KERNEL);
 	set(31,isr31,DPL_KERNEL);
-	set(32,isr32,DPL_KERNEL);
 
-	/* hardware-interrupts */
+	/* ISA interrupts */
+	set(32,isr32,DPL_KERNEL);
 	set(33,isr33,DPL_KERNEL);
 	set(34,isr34,DPL_KERNEL);
 	set(35,isr35,DPL_KERNEL);
@@ -145,11 +146,12 @@ void IDT::init() {
 	set(45,isr45,DPL_KERNEL);
 	set(46,isr46,DPL_KERNEL);
 	set(47,isr47,DPL_KERNEL);
+
 	/* debug interrupt + ack-signal */
 	set(48,isr48,DPL_USER);
 	set(49,isr49,DPL_USER);
 
-	/* IPIs */
+	/* LAPIC interrupts */
 	set(50,isr50,DPL_KERNEL);
 	set(51,isr51,DPL_KERNEL);
 	set(52,isr52,DPL_KERNEL);
@@ -157,9 +159,10 @@ void IDT::init() {
 	set(54,isr54,DPL_KERNEL);
 	set(55,isr55,DPL_KERNEL);
 	set(56,isr56,DPL_KERNEL);
+	set(57,isr57,DPL_KERNEL);
 
 	/* all other interrupts */
-	for(size_t i = 57; i < 256; i++)
+	for(size_t i = 58; i < 256; i++)
 		set(i,isrNull,DPL_KERNEL);
 
 	/* now we can use our idt */

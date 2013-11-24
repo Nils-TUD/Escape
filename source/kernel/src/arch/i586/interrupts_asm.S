@@ -106,11 +106,12 @@ BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 BUILD_DEF_ISR 50
 BUILD_DEF_ISR 51
-BUILD_DEF_ISR 56
+BUILD_DEF_ISR 52
+BUILD_DEF_ISR 57
 
 # IPI: flush TLB
-.global isr52
-isr52:
+.global isr53
+isr53:
 	pusha
 	# flush TLB
 	mov		%cr3,%eax
@@ -120,8 +121,8 @@ isr52:
 	iret
 
 # IPI: wait
-.global isr53
-isr53:
+.global isr54
+isr54:
 	pusha
 	# tell the CPU that requested the wait that we're waiting
 	lock
@@ -141,8 +142,8 @@ isr53:
 	iret
 
 # IPI: halt
-.global isr54
-isr54:
+.global isr55
+isr55:
 	# tell the CPU that requested the halt that we're halting
 	lock
 	add		$1,(halting)
@@ -153,8 +154,8 @@ isr54:
 	jmp		1b
 
 # IPI: flush TLB ack
-.global isr55
-isr55:
+.global isr56
+isr56:
 	pusha
 	# flush TLB
 	mov		%cr3,%eax

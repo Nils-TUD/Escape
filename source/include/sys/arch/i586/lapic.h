@@ -59,7 +59,8 @@ class LAPIC {
 		ICR_DELMODE_SMI			= 0x2 << 8,
 		ICR_DELMODE_NMI			= 0x4 << 8,
 		ICR_DELMODE_INIT		= 0x5 << 8,
-		ICR_DELMODE_SIPI		= 0x6 << 8
+		ICR_DELMODE_SIPI		= 0x6 << 8,
+		ICR_DELMODE_EXTINT		= 0x7 << 8
 	};
 
 	enum {
@@ -80,6 +81,11 @@ class LAPIC {
 	enum {
 		ICR_TRIGMODE_EDGE		= 0x0 << 15,
 		ICR_TRIGMODE_LEVEL		= 0x1 << 15
+	};
+
+	enum Mask {
+		UNMASKED				= 0x0 << 16,
+		MASKED					= 0x1 << 16
 	};
 
 	enum Mode {
@@ -113,8 +119,10 @@ public:
 		return enabled;
 	}
 	static void enable() {
-		write(REG_SPURINT,SPURINT_APIC_EN);
-		write(REG_TASK_PRIO,0);
+		uint32_t svr = read(REG_SPURINT);
+		if(!(svr & 0x100))
+			write(REG_SPURINT,SPURINT_APIC_EN);
+		write(REG_TASK_PRIO,0x10);
 		write(REG_TIMER_DCR,0x3);	// set divider to 16
 	}
 	static void enableTimer();
@@ -142,8 +150,8 @@ public:
 private:
 	static void writeIPI(uint32_t high,uint32_t low);
 
-    static void setLVT(Register reg,uint vector,DeliveryMode dlv,Mode mode) {
-        write(reg,dlv | vector | mode);
+    static void setLVT(Register reg,uint vector,DeliveryMode dlv,Mask mask = UNMASKED,Mode mode = MODE_ONESHOT) {
+        write(reg,dlv | vector | mode | mask);
     }
 
 	static uint32_t read(uint32_t reg) {

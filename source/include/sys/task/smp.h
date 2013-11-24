@@ -24,13 +24,13 @@
 #include <sys/col/slist.h>
 
 /* the IPIs we can send */
-#define IPI_WORK			50
-#define IPI_TERM			51
-#define IPI_FLUSH_TLB		52
-#define IPI_WAIT			53
-#define IPI_HALT			54
-#define IPI_FLUSH_TLB_ACK	55
-#define IPI_CALLBACK		56
+#define IPI_WORK			51
+#define IPI_TERM			52
+#define IPI_FLUSH_TLB		53
+#define IPI_WAIT			54
+#define IPI_HALT			55
+#define IPI_FLUSH_TLB_ACK	56
+#define IPI_CALLBACK		57
 
 class Sched;
 class OStream;

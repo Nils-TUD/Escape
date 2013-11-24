@@ -23,6 +23,7 @@
 #include <sys/task/smp.h>
 #include <sys/util.h>
 #include <sys/log.h>
+#include <sys/config.h>
 #include <assert.h>
 
 klock_t IOAPIC::lck;
@@ -31,6 +32,8 @@ IOAPIC::Instance IOAPIC::ioapics[MAX_IOAPICS];
 uint IOAPIC::isa2gsi[ISA_IRQ_COUNT];
 
 void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
+	if(Config::get(Config::FORCE_PIC))
+		return;
 	if(count >= MAX_IOAPICS)
 		Util::panic("Limit of I/O APICs (%d) reached",MAX_IOAPICS);
 
@@ -54,6 +57,9 @@ void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
 
 void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
 		Polarity polarity,TriggerMode triggerMode) {
+	if(Config::get(Config::FORCE_PIC))
+		return;
+
 	uint8_t vector = Interrupts::getVectorFor(srcIRQ);
 	if(exists(vector))
 		return;

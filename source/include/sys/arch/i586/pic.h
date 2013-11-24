@@ -93,13 +93,13 @@ public:
 		/* do we have to send EOI? */
 		if(intrptNo >= Interrupts::IRQ_MASTER_BASE &&
 				intrptNo <= Interrupts::IRQ_MASTER_BASE + Interrupts::IRQ_NUM) {
-		    if(intrptNo >= Interrupts::IRQ_SLAVE_BASE) {
-		    	/* notify the slave */
-		        Ports::out<uint8_t>(PORT_SLAVE_CMD,EOI);
-		    }
+			if(intrptNo >= Interrupts::IRQ_SLAVE_BASE) {
+				/* notify the slave */
+				Ports::out<uint8_t>(PORT_SLAVE_CMD,EOI);
+			}
 
-		    /* notify the master */
-		    Ports::out<uint8_t>(PORT_MASTER_CMD,EOI);
-	    }
+			/* notify the master */
+			Ports::out<uint8_t>(PORT_MASTER_CMD,EOI);
+		}
 	}
 };

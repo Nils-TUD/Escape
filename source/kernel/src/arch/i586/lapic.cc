@@ -22,6 +22,7 @@
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/cpu.h>
+#include <sys/config.h>
 #include <assert.h>
 
 bool LAPIC::enabled;
@@ -30,19 +31,20 @@ uintptr_t LAPIC::apicAddr;
 void LAPIC::init() {
 	enabled = false;
 
-	if(CPU::hasFeature(CPU::FEAT_APIC)) {
+	if(CPU::hasFeature(CPU::FEAT_APIC) && !Config::get(Config::FORCE_PIT)) {
 		/* TODO every APIC may have a different address */
 		uint64_t apicBase = CPU::getMSR(MSR_APIC_BASE);
 		if(apicBase & APIC_BASE_EN) {
 			apicAddr = PageDir::makeAccessible(apicBase & 0xFFFFF000,1);
 			enabled = true;
+			CPU::setMSR(MSR_APIC_BASE,apicBase | 0x800);
 		}
 	}
 }
 
 void LAPIC::enableTimer() {
 	write(REG_TIMER_ICR,(CPU::getBusSpeed() / TIMER_DIVIDER) / Timer::FREQUENCY_DIV);
-	setLVT(REG_LVT_TIMER,Interrupts::IRQ_LAPIC,ICR_DELMODE_FIXED,MODE_PERIODIC);
+	setLVT(REG_LVT_TIMER,Interrupts::IRQ_LAPIC,ICR_DELMODE_FIXED,UNMASKED,MODE_PERIODIC);
 }
 
 void LAPIC::writeIPI(uint32_t high,uint32_t low) {

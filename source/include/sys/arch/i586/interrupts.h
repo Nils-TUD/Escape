@@ -22,7 +22,7 @@
 #include <esc/common.h>
 
 #define PANIC_ON_PAGEFAULT	1
-#define IRQ_COUNT			0x3A
+#define IRQ_COUNT			0x3B
 
 class Thread;
 class LAPIC;
@@ -49,12 +49,10 @@ public:
 		IRQ_FLOPPY			= IRQ_MASTER_BASE + 6,
 		/* IRQ_MASTER_BASE + 7 = ? */
 		IRQ_CMOS_RTC		= IRQ_MASTER_BASE + 8,
-		IRQ_LAPIC			= IRQ_MASTER_BASE + 9,
 		IRQ_MOUSE			= IRQ_MASTER_BASE + 12,
 		IRQ_ATA1			= IRQ_MASTER_BASE + 14,
 		IRQ_ATA2			= IRQ_MASTER_BASE + 15,
-		/* irq-number for a syscall */
-		IRQ_SYSCALL			= 0x30
+		IRQ_LAPIC			= IRQ_MASTER_BASE + 18
 	};
 
 	/* Exceptions */

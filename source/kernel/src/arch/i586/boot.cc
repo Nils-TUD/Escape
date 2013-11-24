@@ -139,6 +139,8 @@ void Boot::archStart(BootInfo *info) {
 		mod++;
 	}
 
+	Log::get().writef("Kernel parameters: %s\n",mb->cmdLine);
+
 	/* parse boot parameters */
 	int argc;
 	const char **argv = Boot::parseArgs(mb->cmdLine,&argc);

@@ -78,6 +78,8 @@ void Boot::archStart(BootInfo *binfo) {
 
 	CPU::setSpeed(info.cpuHz);
 
+	Log::get().writef("Kernel parameters: %s\n",binfo->progs[0].command);
+
 	/* parse the boot parameter */
 	int argc;
 	const char **argv = Boot::parseArgs(binfo->progs[0].command,&argc);

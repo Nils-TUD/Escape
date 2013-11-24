@@ -69,6 +69,8 @@ void Boot::archStart(BootInfo *binfo) {
 	info.progs = progs;
 	memcpy((void*)info.progs,binfo->progs,sizeof(LoadProg) * binfo->progCount);
 
+	Log::get().writef("Kernel parameters: %s\n",binfo->progs[0].command);
+
 	/* parse the boot parameter */
 	int argc;
 	const char **argv = parseArgs(binfo->progs[0].command,&argc);

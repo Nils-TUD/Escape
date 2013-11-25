@@ -84,7 +84,7 @@ bool IOAPIC::exists(uint vector) {
 	for(size_t i = 0; i < count; i++) {
 		for(uint gsi = ioapics[i].baseGSI; gsi < ioapics[i].baseGSI + ioapics[i].count; ++gsi) {
 			uint32_t lower = read(ioapics + i,IOAPIC_REG_REDTBL + gsi * 2);
-			if((lower & 0xFF) == vector)
+			if(!(lower & 0x10000) && (lower & 0xFF) == vector)
 				return true;
 		}
 	}

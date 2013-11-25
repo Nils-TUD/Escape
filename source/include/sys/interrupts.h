@@ -58,9 +58,9 @@ public:
 
 	/**
 	 * @param irq the interrupt-number
-	 * @return the vector for the given interrupt
+	 * @return the vector for the given interrupt or -1 if unknown
 	 */
-	static uint8_t getVectorFor(uint8_t irq);
+	static int getVectorFor(uint8_t irq);
 
 	/**
 	 * Handles an interrupt

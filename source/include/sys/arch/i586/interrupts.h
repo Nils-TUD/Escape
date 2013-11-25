@@ -217,6 +217,8 @@ private:
 	static uint32_t lastEx;
 };
 
-inline uint8_t InterruptsBase::getVectorFor(uint8_t irq) {
+inline int InterruptsBase::getVectorFor(uint8_t irq) {
+		if(intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler == NULL)
+			return -1;
 	return irq + 0x20;
 }

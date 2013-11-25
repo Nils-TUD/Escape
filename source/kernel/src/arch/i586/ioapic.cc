@@ -60,8 +60,8 @@ void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
 	if(Config::get(Config::FORCE_PIC))
 		return;
 
-	uint8_t vector = Interrupts::getVectorFor(srcIRQ);
-	if(exists(vector))
+	int vector = Interrupts::getVectorFor(srcIRQ);
+	if(vector == -1 || exists(vector))
 		return;
 
 	Log::get().writef("INTSO: irq=%u gsi=%u del=%d pol=%d trig=%d\n",

@@ -93,7 +93,7 @@ private:
 		unlocku(&_vt->lock);
 	}
 	void doSetCursor();
-	void resizeVTerm(const gui::Size &size);
+	void resizeVTerm(gui::Size size);
 
 	size_t _lastCol;
 	size_t _lastRow;

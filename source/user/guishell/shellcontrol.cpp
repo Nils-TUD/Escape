@@ -104,7 +104,9 @@ bool ShellControl::resizeTo(const Size &size) {
 	return res;
 }
 
-void ShellControl::resizeVTerm(const Size &size) {
+// note that the argument is of type Size instead of const Size& because of the make_bind1_memfun
+// above. it has to be a value-argument.
+void ShellControl::resizeVTerm(Size size) {
 	size_t parentheight = getParent()->getSize().height - gui::ScrollPane::BAR_SIZE;
 	vtctrl_resize(_vt,getCols(size.width),getRows(parentheight));
 }

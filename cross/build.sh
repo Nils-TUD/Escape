@@ -31,6 +31,7 @@ BUILD=$ROOT/$ARCH/build
 DIST=/opt/escape-cross-$ARCH
 SRC=$ROOT/$ARCH/src
 HEADER=$ROOT/include
+BUILD_CC=gcc-4.7
 
 if [ "$2" = "--rebuild" ] || [ ! -d $DIST ] || [ ! -d $SRC ]; then
 	REBUILD=1
@@ -74,7 +75,6 @@ NEWLIB_ARCH=newlib-$NEWLVER.tar.gz
 
 export PREFIX=$DIST
 export TARGET=$ARCH-elf-escape
-mkdir -p $BUILD/gcc $BUILD/binutils $BUILD/newlib
 
 # create dist-dir and chown it to the current user. without this we would need sudo to change anything
 # which becomes a problem when "make install" wants to use the just built cross-compiler which does
@@ -84,26 +84,18 @@ $SUDO chown -R $USER $DIST
 
 # cleanup
 if [ $REBUILD -eq 1 ]; then
-	if [ -d $SRC ]; then
-		if $BUILD_BINUTILS && [ -d $BUILD/binutils ]; then
-			cd $BUILD/binutils
-			make distclean
-			rm -Rf $SRC/binutils
-		fi
-		if $BUILD_GCC && [ -d $BUILD/gcc ]; then
-			cd $BUILD/gcc
-			make distclean
-			rm -Rf $SRC/gcc
-		fi
-		if $BUILD_CPP && [ -d $BUILD/newlib ]; then
-			cd $BUILD/newlib
-			make distclean
-			rm -Rf $SRC/newlib
-		fi
-		cd $ROOT
+	if $BUILD_BINUTILS; then
+		rm -Rf $BUILD/binutils $SRC/binutils
+	fi
+	if $BUILD_GCC; then
+		rm -Rf $BUILD/gcc $SRC/gcc
+	fi
+	if $BUILD_CPP; then
+		rm -Rf $BUILD/newlib $SRC/newlib
 	fi
 	mkdir -p $SRC
 fi
+mkdir -p $BUILD/gcc $BUILD/binutils $BUILD/newlib
 
 # binutils
 if $BUILD_BINUTILS; then
@@ -114,7 +106,7 @@ if $BUILD_BINUTILS; then
 	fi
 	cd $BUILD/binutils
 	if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/binutils/Makefile ]; then
-		$SRC/binutils/configure --target=$TARGET --prefix=$PREFIX --disable-nls --disable-werror
+		CC=$BUILD_CC $SRC/binutils/configure --target=$TARGET --prefix=$PREFIX --disable-nls --disable-werror
 		if [ $? -ne 0 ]; then
 			exit 1
 		fi
@@ -155,7 +147,7 @@ if $BUILD_GCC; then
 	fi
 	cd $BUILD/gcc
 	if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
-		CFLAGS="$CUSTOM_FLAGS" \
+		CC=$BUILD_CC CFLAGS="$CUSTOM_FLAGS" \
 			$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
 			  --enable-languages=c,c++ --with-headers=$HEADER \
 			  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp $ENABLE_THREADS

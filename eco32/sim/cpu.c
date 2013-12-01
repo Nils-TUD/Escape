@@ -89,7 +89,11 @@ static Bool isWriteBreakAddr(Word addr, int opcode) {
 			}
 		}
 	}
-	return baddr == addr;
+  if(baddr == addr) {
+    cPrintf("Write breakpoint reached @ %08X: m[%08X] = %08X\n", pc, addr, mmuReadWord(addr, false));
+    return true;
+  }
+	return false;
 }
 
 

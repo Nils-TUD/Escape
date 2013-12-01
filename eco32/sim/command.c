@@ -146,14 +146,15 @@ static Bool getDecNumber(char *str, int *valptr) {
 
 
 static void showPC(void) {
-  Word pc, psw;
+  Word pc, psw, funcStart;
   Word instr;
 
   pc = cpuGetPC();
   psw = cpuGetPSW();
   instr = mmuReadWord(pc, psw & PSW_UM);
-  cPrintf("PC   %08X     [PC]   %08X   %s\n",
-          pc, instr, disasm(instr, pc));
+  const char *func = traceGetNearestFuncName(pc,&funcStart);
+  cPrintf("PC   %08X (%-28.28s) [PC]   %08X   %s\n",
+          pc, func, instr, disasm(instr, pc));
 }
 
 

@@ -9,86 +9,112 @@
 #include "trace.h"
 #include "map.h"
 
-#define MAX_IDENT_LEN 255
+#define MAX(a,b) 		((a) > (b) ? (a) : (b))
+#define MAX_IDENT_LEN	255
 
 /*
  * The List of all known Functions
  */
-traceFunctionNode* traceFunctionList;
+static size_t nodesCount = 0;
+static size_t nodesSize = 0;
+static traceFunctionNode *nodes;
+
+static int symmap_nodesSort(const void *n1,const void *n2) {
+    const traceFunctionNode *node1 = (const traceFunctionNode*)n1;
+    const traceFunctionNode *node2 = (const traceFunctionNode*)n2;
+    return node1->address > node2->address ? 1 : -1;
+}
 
 /*
  * Append an Entry to the traceFunctionList
  */
-void traceFunctionListAppend(traceFunctionNode* node) {
-	if (traceFunctionList != NULL) {
-	  traceFunctionList->prev = node;
-	  node->next = traceFunctionList;
-	}
-	traceFunctionList = node;
+static int traceFunctionListAppend(traceFunctionNode node) {
+    if(nodesCount >= nodesSize) {
+        nodesSize = MAX(16,nodesSize * 2);
+        nodes = realloc(nodes,nodesSize * sizeof(traceFunctionNode));
+        if(!nodes)
+            return false;
+    }
+    nodes[nodesCount++] = node;
+    return true;
 }
 
 /* Get the Function name spezified by the given address. If there isn't a name, return "Unnamed" */
 char *traceGetFuncName(Word address) {
-	traceFunctionNode* nodebuffer;
-	nodebuffer = traceFunctionList;
-	while (nodebuffer != NULL && nodebuffer->address != address) {
-		nodebuffer = nodebuffer->next;
-	}
-	if (nodebuffer == NULL) {
-		return "<Unnamed>";
-	}
-	return nodebuffer->name;
+    size_t i;
+    for(i = 0; i < nodesCount; ++i) {
+        if(nodes[i].address == address)
+            return nodes[i].name;
+    }
+	return "<Unnamed>";
 }
 
 /* Get the address of the given symbol; 0 if not found */
 Word traceGetAddress(char *name) {
-	traceFunctionNode* nodebuffer;
-	nodebuffer = traceFunctionList;
-	while (nodebuffer != NULL) {
-		if(strcmp(nodebuffer->name,name) == 0)
-			return nodebuffer->address;
-		nodebuffer = nodebuffer->next;
+    size_t i;
+    for(i = 0; i < nodesCount; ++i) {
+		if(strcmp(nodes[i].name,name) == 0)
+			return nodes[i].address;
 	}
 	return 0;
+}
+
+const char *traceGetNearestFuncName(Word address,Word *nearest) {
+    long low = 0, high = nodesCount - 1;
+    while(low <= high) {
+        long i = (low + high) / 2;
+        long res = nodes[i].address > address ? 1 : -1;
+        if(res == 0) {
+            *nearest = nodes[i].address;
+            return nodes[i].name;
+        }
+        if(res < 0) {
+            /* if it's in the upper half and the following one is already larger, we use this.
+             * thereby, we fall back to the last function-start */
+            if((size_t)i < nodesCount - 1 && nodes[i + 1].address > address) {
+                *nearest = nodes[i].address;
+                return nodes[i].name;
+            }
+            low = i + 1;
+        }
+        else
+            high = i - 1;
+    }
+    return "-Unnamed-";
 }
 
 /*
  * Trace the Parse Map and Store the Functions into the traceFunctionNode
  */
-void traceParseMap(char *mapName) {
+int traceParseMap(char *mapName) {
 	  FILE *mapfile;
 	  enum { NAME = 0, SECTION = 1, ADDRESS = 2, END = 3, FAIL = 4 } reading;
 	  char buffer[MAX_IDENT_LEN];
 	  int buff_i;
 	  unsigned int secStart;
 	  traceFunctionNode template;
-	  traceFunctionNode *cpyNode;
 	  char currSection;
 	  char t;
 	  Bool inSegments;
 	  Bool wordready;
 	  Bool lineready;
-	  traceFunctionNode *start;
 
 	  /* open mapfile for reading*/
 	  mapfile = fopen(mapName, "r");
 	  if (mapfile == NULL) {
 	    cPrintf("Error: cannot open map-file '%s'. Tracing will be disabled.\n", mapName);
 	    tracingEnabled = false;
-	    return;
+	    return false;
 	  }
 	  /*initialize data*/
 	  inSegments = false;
 	  wordready = false;
 	  lineready = false;
 	  reading = NAME;
-	  template.next = NULL;
-	  template.prev = NULL;
 	  template.address = 0;
 	  template.name = "";
 	  currSection = 'B';
 	  buff_i = 0;
-	  start = traceFunctionList;
 
 	  /* get a char*/
 	  t = getc(mapfile);
@@ -131,9 +157,11 @@ void traceParseMap(char *mapName) {
 			  }
 			  /* check if the entry is out of the code section = function */
 			  if (currSection == 'C') {
-				  cpyNode = (traceFunctionNode*)malloc(sizeof(traceFunctionNode));
-				  memcpy(cpyNode,&template,sizeof(traceFunctionNode));
-				  traceFunctionListAppend(cpyNode);
+				  if(!traceFunctionListAppend(template)) {
+				      cPrintf("Error: not enough memory for symbol map.\n");
+				      tracingEnabled = false;
+				      return false;
+				  }
 			  }
 
 			  /* reset parser for next line*/
@@ -171,12 +199,14 @@ void traceParseMap(char *mapName) {
 
 	  /* now look for "CODE start 0x...." */
 	  if(inSegments) {
+	  	  size_t i;
 		  /* read "CODE" */
 		  fscanf(mapfile,"tart	0x%08X",&secStart);
 
 		  /* change addresses */
-		  for(cpyNode = traceFunctionList; cpyNode != start; cpyNode = cpyNode->next) {
-			  cpyNode->address += secStart;
-		  }
+	      for(i = 0; i < nodesCount; ++i)
+			  nodes[i].address += secStart;
+		  qsort(nodes,nodesCount,sizeof(traceFunctionNode),symmap_nodesSort);
 	  }
+	  return true;
 }

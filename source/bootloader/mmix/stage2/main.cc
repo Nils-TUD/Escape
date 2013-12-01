@@ -377,8 +377,9 @@ EXTERN_C uintptr_t bootload(size_t memSize) {
 	if(BLOCK_SIZE != 1024)
 		halt("Invalid block size %d; 1024 expected\n",BLOCK_SIZE);
 
-	/* read blockgroup descriptor table */
-	readBlocks(e.groups,le32tocpu(e.superBlock.firstDataBlock) + 1,1);
+	/* read blockgroup descriptor table (copy to buffer first because a block is too large) */
+	readBlocks(buffer,le32tocpu(e.superBlock.firstDataBlock) + 1,1);
+	memcpy(e.groups,buffer,sizeof(e.groups));
 
 	/* read root inode */
 	loadInode(&rootIno,EXT2_ROOT_INO);

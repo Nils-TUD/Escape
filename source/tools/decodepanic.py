@@ -70,9 +70,11 @@ while True:
 
 # read the regions and build a code-region- and symbol-list
 coderegs = []
+syms = get_symbols('/boot/escape')
+coderegs.append(('/boot/escape', 0xc0100000, 0xffffffff, syms))
 while True:
 	line = sys.stdin.readline()
-	if line[0:9] == 'Pagefault' or line == 'User-Stacktrace:\n':
+	if line[0:9] == 'Pagefault' or line == 'User-Stacktrace:\n' or line == 'Kernel-Stacktrace:\n':
 		break
 
 	print line[:-1]

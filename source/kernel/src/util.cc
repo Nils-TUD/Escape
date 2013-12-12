@@ -95,20 +95,22 @@ void Util::vpanic(const char *fmt,va_list ap) {
 	vl.writef("%|s\033[co]\n","");
 
 	/* write information about the running thread to log/screen */
-	if(t != NULL)
-		vl.writef("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getProgram());
-	printStackTrace(vl,getKernelStackTrace());
 	if(t) {
+		vl.writef("Caused by thread %d (%s)\n\n",t->getTid(),t->getProc()->getProgram());
 		printUserState(vl);
+	}
 
-		log.writef("\n============= snip =============\n");
+	log.writef("\n============= snip =============\n");
+	if(t) {
 		log.writef("Region overview:\n");
 		t->getProc()->getVM()->printShort(log,"\t");
-		if(pfip != 0)
-			log.writef("\nPagefault for address %p @ %p\n",pfaddr,pfip);
-		printStackTrace(vl,getUserStackTrace());
-		log.writef("============= snip =============\n\n");
 	}
+	if(pfip != 0)
+		log.writef("\nPagefault for address %p @ %p\n",pfaddr,pfip);
+	printStackTrace(vl,getKernelStackTrace());
+	if(t)
+		printStackTrace(vl,getUserStackTrace());
+	log.writef("============= snip =============\n\n");
 
 	/* write into log only */
 	if(t) {

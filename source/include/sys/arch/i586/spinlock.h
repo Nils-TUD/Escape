@@ -23,16 +23,16 @@
 #include <sys/arch/i586/atomic.h>
 #include <sys/cpu.h>
 
-#if !DEBUG_SPINLOCKS
+#if !DEBUG_LOCKS
 inline void SpinLock::acquire(klock_t *l) {
 	while(!Atomic::cmpnswap(l, 0, 1))
 		CPU::pause();
 }
-#endif
 
 inline bool SpinLock::tryAcquire(klock_t *l) {
 	return Atomic::cmpnswap(l, 0, 1);
 }
+#endif
 
 inline void SpinLock::release(klock_t *l) {
 	asm volatile ("movl	$0,%0" : : "m"(*l) : "memory");

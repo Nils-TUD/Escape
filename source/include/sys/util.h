@@ -41,6 +41,13 @@ public:
 	static const size_t MAX_STACK_DEPTH		= 100;
 
 	/**
+	 * @return true if panic() has been called
+	 */
+	static bool IsPanicStarted() {
+		return panicStarted;
+	}
+
+	/**
 	 * Stores the pagefault information to print it later for debugging purposes
 	 *
 	 * @param addr the address for which it occurred
@@ -176,6 +183,7 @@ private:
 	 */
 	static void panicArch();
 
+	static bool panicStarted;
 	static uint randa;
 	static uint randc;
 	static uint lastRand;

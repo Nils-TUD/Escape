@@ -19,16 +19,25 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/spinlock.h>
 #include <sys/mutex.h>
+#include <sys/util.h>
 
 void Mutex::down() {
 	Thread *t = Thread::getRunning();
+#if DEBUG_LOCKS
+	if(!Util::IsPanicStarted())
+#endif
 	Semaphore::down();
 	t->addResource();
 }
 
 bool Mutex::tryDown() {
+#if DEBUG_LOCKS
+	bool res = Util::IsPanicStarted() || Semaphore::tryDown();
+#else
 	bool res = Semaphore::tryDown();
+#endif
 	if(res)
 		Thread::getRunning()->addResource();
 	return res;

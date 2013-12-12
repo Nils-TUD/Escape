@@ -23,7 +23,7 @@
 #include <sys/util.h>
 #include <stdarg.h>
 
-#if DEBUG_SPINLOCKS
+#if DEBUG_LOCKS
 #define MAX_WAIT_SECS		2
 
 static void panic(const char *msg,...) {
@@ -38,6 +38,9 @@ static void panic(const char *msg,...) {
 }
 
 void SpinLock::acquire(klock_t *l) {
+	if(Util::IsPanicStarted())
+		return;
+
 	Thread *t = Thread::getRunning();
 	unsigned id = t->getTid() + 1;
 	if(*l == id) {
@@ -52,5 +55,9 @@ void SpinLock::acquire(klock_t *l) {
 		}
 		CPU::pause();
 	}
+}
+
+bool SpinLock::tryAcquire(klock_t *l) {
+	return Util::IsPanicStarted() || Atomic::cmpnswap(l, 0, 1);
 }
 #endif

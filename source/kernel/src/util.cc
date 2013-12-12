@@ -44,6 +44,7 @@ klock_t Util::randLock;
 uint64_t Util::profStart;
 uintptr_t Util::pfaddr;
 uintptr_t Util::pfip;
+bool Util::panicStarted = false;
 
 int Util::rand() {
 	SpinLock::acquire(&randLock);
@@ -81,6 +82,8 @@ void Util::panic(const char *fmt, ...) {
 }
 
 void Util::vpanic(const char *fmt,va_list ap) {
+	panicStarted = true;
+
 	VideoLog vl;
 	Video &vid = Video::get();
 	Log &log = Log::get();

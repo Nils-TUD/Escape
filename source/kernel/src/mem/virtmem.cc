@@ -219,10 +219,12 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 		pts = getPageDir()->map(addr,NULL,pageCount,mapFlags);
 		if(pts < 0)
 			goto errMap;
-		if(rflags & MAP_SHARED)
-			addShared(pageCount);
-		else
-			addOwn(pageCount);
+		if(mapFlags & PG_PRESENT) {
+			if(rflags & MAP_SHARED)
+				addShared(pageCount);
+			else
+				addOwn(pageCount);
+		}
 		addOwn(pts);
 	}
 	/* set data-region */
@@ -1126,7 +1128,10 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 				VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 				/* can't fail */
 				assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),&frame,1,mapFlags) == 0);
-				(*mp)->addShared(1);
+				if(vm->reg->getFlags() & RF_SHAREABLE)
+					(*mp)->addShared(1);
+				else
+					(*mp)->addOwn(1);
 			}
 		}
 	}

@@ -611,15 +611,15 @@ void VirtMem::doRemove(VMRegion *vm) {
 				freeFrame = !foundOther;
 			}
 
-			if(freeFrame) {
-				if(frameNo == 0)
-					frameNo = getPageDir()->getFrameNo(virt);
-				PageDir::freeFrame(virt,frameNo);
-			}
-
 			if(vm->reg->getPageFlags(i) & PF_SWAPPED)
 				addSwap(-1);
-			if(!(vm->reg->getPageFlags(i) & (PF_COPYONWRITE | PF_DEMANDLOAD))) {
+			else if(!(vm->reg->getPageFlags(i) & (PF_COPYONWRITE | PF_DEMANDLOAD))) {
+				if(freeFrame) {
+					if(frameNo == 0)
+						frameNo = getPageDir()->getFrameNo(virt);
+					PageDir::freeFrame(virt,frameNo);
+				}
+
 				if(vm->reg->getFlags() & (RF_NOFREE | RF_SHAREABLE))
 					addShared(-1);
 				else

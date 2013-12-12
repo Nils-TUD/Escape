@@ -1193,7 +1193,7 @@ errorFree:
 	Cache::free(tempBuf);
 error:
 	Log::get().writef("Demandload page @ %p for proc %s: %s (%d)\n",addr,
-			Proc::getByPid(pid)->getCommand(),strerror(-err),err);
+			Proc::getByPid(pid)->getProgram(),strerror(-err),err);
 	return -err;
 }
 

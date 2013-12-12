@@ -5,12 +5,8 @@ sys.path.insert(0, 'tools')
 import install
 
 target = os.environ.get('ESC_TARGET') or 'x86_64'
-if target == 'eco32':
-	crossver = '4.4.3'
-elif target == 'mmix':
-	crossver = '4.6.3'
-else:
-	crossver = '4.6.3'
+crossver = '4.8.2'
+if target != 'eco32' and target != 'mmix':
 	target = 'i586'
 cross = target + '-elf-escape'
 crossdir = '/opt/escape-cross-' + target
@@ -105,9 +101,10 @@ hostenv['BINDIR'] = env['BINDIR']
 link_addr = 0x1000
 
 def SetLibDeps(env, lib, libs):
+	env.Depends(lib, '$SYSGCCLIBPATH/crtbeginS.o')
+	env.Depends(lib, '$SYSGCCLIBPATH/crtendS.o')
 	for l in libs:
-		if l != 'gcc':
-			env.Depends(lib, '$BINDIR/lib' + l + '.so')
+		env.Depends(lib, '$BINDIR/lib' + l + '.so')
 	if str(lib[0]) != 'libc.so' and str(lib[0]) != 'libstdc++.so':
 		env.Depends(lib, '$BINDIR/libc.so')
 		env.Depends(lib, '$BINDIR/libstdc++.so')
@@ -121,15 +118,19 @@ def SetProgDeps(env, prog, static, libs, cpp):
 	env.Depends(prog, '$SYSGCCLIBPATH/crt0' + crtsuffix)
 	env.Depends(prog, '$SYSGCCLIBPATH/crt1' + crtsuffix)
 	env.Depends(prog, '$SYSGCCLIBPATH/crtn' + crtsuffix)
+	env.Depends(prog, '$SYSGCCLIBPATH/crtbegin.o')
+	env.Depends(prog, '$SYSGCCLIBPATH/crtend.o')
 	env.Depends(prog, '$BINDIR/libc' + libsuffix)
 	env.Depends(prog, '$BINDIR/libg' + libsuffix)
 	env.Depends(prog, '$BINDIR/libm' + libsuffix)
+	if static:
+		env.Depends(prog, '$SYSGCCLIBPATH/libgcc.a')
+		if env['ARCH'] == 'i586':
+			env.Depends(prog, '$SYSGCCLIBPATH/libgcc_eh.a')
+	else:
+		env.Depends(prog, '$SYSSHGCCPATH/libgcc_s.so.1')
 	if cpp:
 		env.Depends(prog, '$BINDIR/libstdc++' + libsuffix)
-		if static:
-			env.Depends(prog, '$SYSGCCLIBPATH/libgcc.a')
-		else:
-			env.Depends(prog, '$SYSSHGCCPATH/libgcc_s.so.1')
 		env.Depends(prog, '$SYSLIBPATH/libsupc++.a')
 
 def SetLinkAddr(env, static):
@@ -152,6 +153,11 @@ def EscapeDump(env, target, source):
 	env.Depends(dump, '$BINDIR/hostdump')
 	env.Install('$BUILDDIR', dump)
 
+def EscapeGCCLibs(env, static):
+	if static:
+		return ['gcc', 'gcc_eh'] if env['ARCH'] == 'i586' else ['gcc']
+	return ['gcc_s']
+
 def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
 	myenv = env.Clone()
 	static = force_static or env['LINKTYPE'] == 'static'
@@ -159,7 +165,8 @@ def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = Tr
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	if var_addr:
 		SetLinkAddr(myenv, static)
-	prog = myenv.Program(target, source, LIBS = LIBS)
+	gcclibs = EscapeGCCLibs(env, static)
+	prog = myenv.Program(target, source, LIBS = gcclibs + LIBS)
 	SetProgDeps(myenv, prog, static, LIBS, False)
 	myenv.EscapeMap(target + '.map', prog)
 	if prefix != '':
@@ -173,7 +180,9 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 	if static:
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	SetLinkAddr(myenv, static)
-	prog = myenv.Program(target, source, LIBS = ['stdc++', 'supc++'] + LIBS)
+	gcclibs = EscapeGCCLibs(env, static)
+	libs = gcclibs + ['stdc++', 'supc++'] + gcclibs + LIBS
+	prog = myenv.Program(target, source, LIBS = libs)
 	SetProgDeps(myenv, prog, static, LIBS, True)
 	myenv.EscapeMap(target + '.map', prog)
 	myenv.Install('$DISTDIR/' + prefix, prog)

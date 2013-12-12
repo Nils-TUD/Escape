@@ -1,17 +1,17 @@
-diff -rcN src_org/gcc/config.sub src/gcc/config.sub
-*** src_org/gcc/config.sub	2009-11-23 00:09:41.000000000 +0100
---- src/gcc/config.sub	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/config.sub src/gcc/config.sub
+*** src/gcc-org/config.sub	2013-01-11 14:02:58.000000000 +0100
+--- src/gcc/config.sub	2013-11-30 13:07:51.423236217 +0100
 ***************
-*** 336,342 ****
-  	| c[123]* | c30-* | [cjt]90-* | c4x-* | c54x-* | c55x-* | c6x-* \
+*** 378,384 ****
+  	| c[123]* | c30-* | [cjt]90-* | c4x-* \
   	| clipper-* | craynv-* | cydra-* \
   	| d10v-* | d30v-* | dlx-* \
 ! 	| elxsi-* \
   	| f30[01]-* | f700-* | fido-* | fr30-* | frv-* | fx80-* \
   	| h8300-* | h8500-* \
   	| hppa-* | hppa1.[01]-* | hppa2.0-* | hppa2.0[nw]-* | hppa64-* \
---- 336,342 ----
-  	| c[123]* | c30-* | [cjt]90-* | c4x-* | c54x-* | c55x-* | c6x-* \
+--- 378,384 ----
+  	| c[123]* | c30-* | [cjt]90-* | c4x-* \
   	| clipper-* | craynv-* | cydra-* \
   	| d10v-* | d30v-* | dlx-* \
 ! 	| eco32-* | elxsi-* \
@@ -19,8 +19,8 @@ diff -rcN src_org/gcc/config.sub src/gcc/config.sub
   	| h8300-* | h8500-* \
   	| hppa-* | hppa1.[01]-* | hppa2.0-* | hppa2.0[nw]-* | hppa64-* \
 ***************
-*** 575,580 ****
---- 575,584 ----
+*** 634,639 ****
+--- 634,643 ----
   		basic_machine=a29k-amd
   		os=-ebmon
   		;;
@@ -32,25 +32,70 @@ diff -rcN src_org/gcc/config.sub src/gcc/config.sub
   		basic_machine=elxsi-elxsi
   		os=-bsd
 ***************
-*** 1280,1286 ****
-  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-  	      | -kopensolaris* \
+*** 1358,1364 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1284,1290 ----
-  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-  	      | -kopensolaris* \
+--- 1362,1368 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src_org/gcc/gcc/config/eco32/constraints.md src/gcc/gcc/config/eco32/constraints.md
-*** src_org/gcc/gcc/config/eco32/constraints.md	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/constraints.md	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/common/config/eco32/eco32-common.c src/gcc/gcc/common/config/eco32/eco32-common.c
+*** src/gcc-org/gcc/common/config/eco32/eco32-common.c	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/common/config/eco32/eco32-common.c	2013-12-01 09:31:21.246651477 +0100
+***************
+*** 0 ****
+--- 1,39 ----
++ /* Copyright (C) 1997-2013 Free Software Foundation, Inc.
++ 
++ This file is part of GCC.
++ 
++ GCC is free software; you can redistribute it and/or modify
++ it under the terms of the GNU General Public License as published by
++ the Free Software Foundation; either version 3, or (at your option)
++ any later version.
++ 
++ GCC is distributed in the hope that it will be useful,
++ but WITHOUT ANY WARRANTY; without even the implied warranty of
++ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ GNU General Public License for more details.
++ 
++ You should have received a copy of the GNU General Public License
++ along with GCC; see the file COPYING3.  If not see
++ <http://www.gnu.org/licenses/>.  */
++ 
++ #include "config.h"
++ #include "system.h"
++ #include "coretypes.h"
++ #include "tm.h"
++ #include "common/common-target.h"
++ #include "common/common-target-def.h"
++ #include "opts.h"
++ #include "flags.h"
++ 
++ /* Implement TARGET_OPTION_OPTIMIZATION_TABLE.  */
++ static const struct default_options eco32_option_optimization_table[] =
++   {
++     { OPT_LEVELS_1_PLUS, OPT_fomit_frame_pointer, NULL, 1 },
++     { OPT_LEVELS_NONE, 0, NULL, 0 }
++   };
++ 
++ #undef TARGET_OPTION_OPTIMIZATION_TABLE
++ #define TARGET_OPTION_OPTIMIZATION_TABLE eco32_option_optimization_table
++ 
++ struct gcc_targetm_common targetm_common = TARGETM_COMMON_INITIALIZER;
++ 
+diff -rcN src/gcc-org/gcc/config/eco32/constraints.md src/gcc/gcc/config/eco32/constraints.md
+*** src/gcc-org/gcc/config/eco32/constraints.md	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/constraints.md	2013-11-30 13:11:50.863234310 +0100
 ***************
 *** 0 ****
 --- 1,22 ----
@@ -76,12 +121,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/constraints.md src/gcc/gcc/config/eco32/c
 +   "Memory operand that is not an offset address."
 +   (and (match_code "mem")
 +        (match_test "GET_CODE (XEXP (op, 0)) != PLUS")))
-diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
-*** src_org/gcc/gcc/config/eco32/eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/eco32.c	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
+*** src/gcc-org/gcc/config/eco32/eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.c	2013-12-01 13:09:02.754547437 +0100
 ***************
 *** 0 ****
---- 1,564 ----
+--- 1,609 ----
 + #include "config.h"
 + #include "system.h"
 + #include "coretypes.h"
@@ -110,7 +155,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + #include "target-def.h"
 + #include "langhooks.h"
 + #include "cgraph.h"
-+ #include "integrate.h"
++ //#include "integrate.h"
 + #include "df.h"
 + 
 + /*
@@ -169,9 +214,9 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + /*
 +  * returns 1 if x is a valid constant immediate operand 
 +  */
-+  int eco32_legitimate_constant(rtx x) {
-+      return GET_CODE(x) != CONST_DOUBLE;
-+  }
++ bool eco32_legitimate_constant(enum machine_mode mode ATTRIBUTE_UNUSED, rtx x) {
++     return GET_CODE(x) != CONST_DOUBLE;
++ }
 + 
 + /* strict version of legitimate_address. gcc can use this function to test whether it
 +  * needs to rewrite an adress to conform to our addressing modes 
@@ -180,7 +225,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +  *  (mem (reg))
 +  *  (mem (plus (reg) (sign extended 16bit)))
 +  */
-+ int eco32_legitimate_address(enum machine_mode MODE ATTRIBUTE_UNUSED, rtx X) {
++ bool eco32_legitimate_address(enum machine_mode MODE ATTRIBUTE_UNUSED, rtx X) {
 + 	rtx op1,op2;
 + 	if(CONSTANT_ADDRESS_P(X))
 + 		return 1;
@@ -198,7 +243,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + 
 + /* nonstrict version of legitimate_address. we accept the same addressing mode as the
 +  * strict version, indeed. */
-+ int eco32_non_strict_legitimate_address(enum machine_mode MODE ATTRIBUTE_UNUSED, rtx X) {
++ bool eco32_non_strict_legitimate_address(enum machine_mode MODE ATTRIBUTE_UNUSED, rtx X) {
 + 	rtx op1,op2;
 + 	if(CONSTANT_ADDRESS_P(X))
 + 		return 1;
@@ -268,26 +313,28 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +     return 0;
 + }
 + 
-+ rtx eco32_function_arg(int cum, enum machine_mode mode, tree type, 
-+                        bool named ATTRIBUTE_UNUSED) {
++ static rtx eco32_function_arg(cumulative_args_t cum_v, enum machine_mode mode, const_tree type,
++ 						bool named ATTRIBUTE_UNUSED) {
 +     int nregs;
++     CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
++     int arg_num = *cum;
 +     if(mode == VOIDmode) {
 +         /* last time we are called. just return somethin meaningful
 +            which is passed to call and call_value patterns. */
-+         return GEN_INT(cum);
++         return GEN_INT(arg_num);
 +     }
 +     if((nregs = ECO32_ARG_SIZE(mode, type)) > 1) {
 +         int rly_nregs;
-+         if(cum >= 4) {
++         if(arg_num >= 4) {
 +             return NULL_RTX;
 +         }
 +         /* more than one reg is needed, possibly splitting it up half/half 
 +            into regs and stack */
-+         rly_nregs = MIN(4 - cum, nregs);
++         rly_nregs = MIN(4 - arg_num, nregs);
 +         if(rly_nregs < nregs) {
 +             /* crosses register/stack boundary. for such cases we have to return
 +              * the first register used. */
-+             return gen_rtx_REG(mode, cum + 4);
++             return gen_rtx_REG(mode, arg_num + 4);
 +         } else {
 +             int i;
 +             int offset;
@@ -295,15 +342,15 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +             rtx ret = gen_rtx_PARALLEL (mode, rtvec_alloc (nregs));
 +             enum machine_mode m = SImode;
 +             for(i = 0, offset = 0; i < nregs; i++, offset += UNITS_PER_WORD) {
-+                 reg = gen_rtx_REG(m, cum + i + 4);
++                 reg = gen_rtx_REG(m, arg_num + i + 4);
 +                 XVECEXP (ret, 0, i) =
 +                     gen_rtx_EXPR_LIST(VOIDmode, reg, GEN_INT(offset));
 +             }
 +             return ret;
 +         }
 +     } else {
-+         if(cum < 4) {
-+             return gen_rtx_REG(mode, cum + 4);
++         if(arg_num < 4) {
++             return gen_rtx_REG(mode, arg_num + 4);
 +         }
 +     }
 +     return NULL_RTX;
@@ -313,9 +360,10 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +  * argument that must be put in registers. The value must be zero for
 +  * arguments that are passed entirely in registers or that are
 +  * entirely pushed on the stack. */
-+ int eco32_arg_partial_bytes(int *cum, enum machine_mode mode, tree type, 
-+                             bool named ATTRIBUTE_UNUSED) {
++ static int eco32_arg_partial_bytes(cumulative_args_t cum_v, enum machine_mode mode, tree type, 
++                                    bool named ATTRIBUTE_UNUSED) {
 +     int nregs = ECO32_ARG_SIZE(mode, type);
++     CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
 +     if(*cum < 4 && *cum + nregs > 4) {
 +         /* argument crosses register/stack boundary */
 +         return (4 - *cum) * UNITS_PER_WORD;
@@ -327,8 +375,8 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +  * indicated by cum should be passed by reference. This predicate is
 +  * queried after target independent reasons for being passed by
 +  * reference, such as TREE_ADDRESSABLE (type). */
-+ bool eco32_pass_by_reference(int *cum ATTRIBUTE_UNUSED, enum machine_mode mode ATTRIBUTE_UNUSED, 
-+                              tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED) {
++ static bool eco32_pass_by_reference(cumulative_args_t cum_v ATTRIBUTE_UNUSED, enum machine_mode mode ATTRIBUTE_UNUSED, 
++                              const_tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED) {
 +     /* actually, because we want to be ABI compatible with lcc, we pass the argument NOT by 
 +      * reference, as lcc doesnt do so too */
 +     return false;
@@ -355,7 +403,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + 
 + /* This is code for use by TARGET_FUNCTION_VALUE and LIBCALL_VALUE
 +  */
-+ rtx eco32_function_value_impl(enum machine_mode m) {
++ static rtx eco32_function_value_impl(enum machine_mode m, const_rtx fun ATTRIBUTE_UNUSED) {
 +     int nregs = HARD_REGNO_NREGS(2, m);
 +     if(nregs == 1) {
 +         return gen_rtx_REG(m, 2);
@@ -390,12 +438,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +  * in which the caller will see the return value. Otherwise, the hook
 +  * should return an RTX representing the place where a function
 +  * returns a value. */ 
-+ rtx eco32_function_value(tree ret_type, tree fn_decl_or_type ATTRIBUTE_UNUSED, 
++ static rtx eco32_function_value(const_tree ret_type, const_tree fn_decl_or_type ATTRIBUTE_UNUSED, 
 +                          bool outgoing ATTRIBUTE_UNUSED) {
 +     /* This is not used for aggregate function return types. so we always choose
 +      * registers 2 and 3 as the function return registers for scalars. */
 +     enum machine_mode m = TYPE_MODE(ret_type);
-+     return eco32_function_value_impl(m);
++     return eco32_function_value_impl(m, NULL /* we ignore that argument anyway */);
 + }
 + 
 + /* finds out whether we need to save&restore the return address reg. */
@@ -432,14 +480,14 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + 
 +     /* save return adress */
 +     if(eco32_ra_ever_killed()) {
-+         frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(stack_pointer_rtx, -4 + stackptr_off)),  
++         frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(SImode, stack_pointer_rtx, -4 + stackptr_off)),  
 +                                    gen_rtx_REG(SImode, 31));
 +         RTX_FRAME_RELATED_P (frame_rtx) = 1;
 +     }
 + 
 +     /* save the frame pointer, if it is needed now */
 +     if(frame_pointer_needed) {
-+         frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(stack_pointer_rtx, -8 + stackptr_off)), 
++         frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(SImode, stack_pointer_rtx, -8 + stackptr_off)), 
 +                                    hard_frame_pointer_rtx);
 +         RTX_FRAME_RELATED_P (frame_rtx) = 1;
 +     }
@@ -447,7 +495,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +     /* save callee save registers */
 +     for(i=0, j=3; i<FIRST_PSEUDO_REGISTER; i++) {
 +         if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i]) {
-+             frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(stack_pointer_rtx, -4 * j + stackptr_off)), 
++             frame_rtx = emit_move_insn(gen_rtx_MEM(SImode, plus_constant(SImode, stack_pointer_rtx, -4 * j + stackptr_off)), 
 +                                        gen_rtx_REG(SImode, i));
 +             RTX_FRAME_RELATED_P (frame_rtx) = 1;
 +             j++;
@@ -456,7 +504,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + 
 +     /* set the new frame pointer, if it is needed now */
 +     if(frame_pointer_needed) {
-+         frame_rtx = emit_move_insn(hard_frame_pointer_rtx, plus_constant(stack_pointer_rtx, stackptr_off));
++         frame_rtx = emit_move_insn(hard_frame_pointer_rtx, plus_constant(SImode, stack_pointer_rtx, stackptr_off));
 +         RTX_FRAME_RELATED_P (frame_rtx) = 1;
 +     }
 + }
@@ -478,7 +526,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +     for(i=0, j=3; i<FIRST_PSEUDO_REGISTER; i++) {
 +         if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i]) {
 +             emit_move_insn(gen_rtx_REG(SImode, i), 
-+                            gen_rtx_MEM(SImode, plus_constant(frame_start, -4 * j + frameptr_off)));
++                            gen_rtx_MEM(SImode, plus_constant(SImode, frame_start, -4 * j + frameptr_off)));
 +             j++;
 +         }
 +     }
@@ -486,17 +534,17 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +     /* restore return adress */
 +     if(eco32_ra_ever_killed()) {
 +         emit_move_insn(gen_rtx_REG(SImode, 31), 
-+                        gen_rtx_MEM(SImode, plus_constant(frame_start, -4 + frameptr_off)));
++                        gen_rtx_MEM(SImode, plus_constant(SImode, frame_start, -4 + frameptr_off)));
 +     }
 + 
 +     /* restore stack pointer */
-+     emit_move_insn(stack_pointer_rtx, plus_constant(frame_start, frameptr_off));
++     emit_move_insn(stack_pointer_rtx, plus_constant(SImode, frame_start, frameptr_off));
 +     
 +     /* restore frame pointer. this must be last, since the other stuff in here is based on the frame-pointer
 +      * if frame_pointer_needed is true */
 +     if(frame_pointer_needed) {
 +         emit_move_insn(hard_frame_pointer_rtx, 
-+                        gen_rtx_MEM(SImode, plus_constant(frame_start, -8 + frameptr_off)));
++                        gen_rtx_MEM(SImode, plus_constant(SImode, frame_start, -8 + frameptr_off)));
 +     }
 + 	emit_jump_insn(gen_ECO32_return());
 + }
@@ -578,16 +626,24 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 +     }
 + }
 + 
-+ void eco32_setup_incoming_varargs(int *cum, enum machine_mode mode, tree type, int *pretend_args_size, 
++ static void eco32_function_arg_advance(cumulative_args_t cum_v, enum machine_mode mode,
++                                        const_tree type, bool named ATTRIBUTE_UNUSED) {
++     CUMULATIVE_ARGS *cum = get_cumulative_args(cum_v);
++ 	*cum = *cum + ECO32_ARG_SIZE(mode, type);
++ }
++ 
++ static void eco32_setup_incoming_varargs(cumulative_args_t cum_v, enum machine_mode mode, tree type, int *pretend_args_size, 
 +                                   int second_time) {
 +     /* make it point past the last unnamed arg */
-+     int tcum = *cum, tcum_end;
-+     FUNCTION_ARG_ADVANCE (tcum, mode, type, true);
++ 	CUMULATIVE_ARGS tcum, tcum_end;
++ 	tcum = *get_cumulative_args(cum_v);
++ 	eco32_function_arg_advance(pack_cumulative_args(&tcum), mode, type, true);
++ 	
 +     if(tcum < 4 && !second_time) {
 +         /* copy the argument registers to their respective stack
 +          * place */
 +         for(tcum_end = tcum; tcum_end < 4; tcum_end++) {
-+             emit_move_insn(gen_rtx_MEM(SImode, plus_constant(virtual_incoming_args_rtx, tcum_end * UNITS_PER_WORD)), 
++             emit_move_insn(gen_rtx_MEM(SImode, plus_constant(SImode, virtual_incoming_args_rtx, tcum_end * UNITS_PER_WORD)), 
 +                            gen_rtx_REG(SImode, tcum_end + 4));
 +         }
 +     } else {
@@ -601,7 +657,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + }
 + 
 + /* initializes a trampoline */
-+ void eco32_initialize_trampoline(rtx addr ATTRIBUTE_UNUSED, rtx fn_addr ATTRIBUTE_UNUSED, 
++ static void eco32_trampoline_init(rtx addr ATTRIBUTE_UNUSED, tree fn_decl ATTRIBUTE_UNUSED, 
 +                                  rtx static_chain ATTRIBUTE_UNUSED) {
 +     /* empty */
 + }
@@ -609,6 +665,23 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + /* outputs a command that advances the location pointer to a multiple of 2^power */
 + void eco32_asm_output_align(FILE *stream, int power) {
 +     fprintf(stream, "\t.p2align\t%d\n", power);
++ }
++ 
++ /* returns nonzero if the compiler is allowed to try to replace register number from-reg with
++  * register number to-reg. */
++ static bool eco32_can_eliminate(const int from, const int to) {
++ 	return (from == FRAME_POINTER_REGNUM && (to == STACK_POINTER_REGNUM || to == HARD_FRAME_POINTER_REGNUM))
++ 		|| (from == ARG_POINTER_REGNUM && to == STACK_POINTER_REGNUM)
++ 		|| (from == HARD_FRAME_POINTER_REGNUM && to == STACK_POINTER_REGNUM);
++ }
++ 
++ /* Implements FUNCTION_VALUE_REGNO_P.  */
++ static bool eco32_function_value_regno_p(const unsigned int regno) {
++     return regno == 2;
++ }
++ 
++ static unsigned char eco32_class_max_nregs(reg_class_t rclass, enum machine_mode mode) {
++ 	return (GET_MODE_SIZE(mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 + }
 + 
 + /* override target hooks */
@@ -632,6 +705,23 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + #undef TARGET_RETURN_IN_MEMORY
 + #define TARGET_RETURN_IN_MEMORY eco32_return_in_memory
 + 
++ #undef TARGET_FUNCTION_ARG
++ #define TARGET_FUNCTION_ARG eco32_function_arg
++ #undef TARGET_FUNCTION_ARG_ADVANCE
++ #define TARGET_FUNCTION_ARG_ADVANCE eco32_function_arg_advance
++ #undef TARGET_CAN_ELIMINATE
++ #define TARGET_CAN_ELIMINATE eco32_can_eliminate
++ #undef TARGET_LEGITIMATE_CONSTANT_P
++ #define TARGET_LEGITIMATE_CONSTANT_P eco32_legitimate_constant
++ #undef TARGET_TRAMPOLINE_INIT
++ #define TARGET_TRAMPOLINE_INIT eco32_trampoline_init
++ #undef TARGET_LIBCALL_VALUE
++ #define TARGET_LIBCALL_VALUE eco32_function_value_impl
++ #undef TARGET_FUNCTION_VALUE_REGNO_P
++ #define TARGET_FUNCTION_VALUE_REGNO_P eco32_function_value_regno_p
++ #undef TARGET_CLASS_MAX_NREGS
++ #define TARGET_CLASS_MAX_NREGS eco32_class_max_nregs
++ 
 + 
 + /* This target hook offers an alternative to using __builtin_saveregs
 +  * and defining the hook TARGET_EXPAND_BUILTIN_SAVEREGS. Use it to
@@ -646,12 +736,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.c src/gcc/gcc/config/eco32/eco32.c
 + /* Initialize the GCC target structure.  */
 + struct gcc_target targetm = TARGET_INITIALIZER;
 + 
-diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
-*** src_org/gcc/gcc/config/eco32/eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/eco32.h	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
+*** src/gcc-org/gcc/config/eco32/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.h	2013-12-01 14:55:36.994496504 +0100
 ***************
 *** 0 ****
---- 1,748 ----
+--- 1,782 ----
 + /*
 +  * This is the Machine-Description Headerfile of the GCC backend for 
 +  * eco32. Enjoy!
@@ -676,7 +766,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 + 
 + /* 15.2 Controlling the Compilation Driver, gcc */
 + 
-+ /* If defined, a list of pairs of strings, the first of which is a
++ #define DRIVER_SELF_SPECS                                      \
++   "%{msim:-msim -mkernel -fno-builtin} %<msim",   \
++   "%{mkernel:-mkernel -fno-merge-constants -fno-builtin} %<mkernel"
++ 
++ /* OLD VERSION:
++  * If defined, a list of pairs of strings, the first of which is a
 +  * potential command line target to the gcc driver program, and the
 +  * second of which is a space-separated (tabs and other whitespace are
 +  * not supported) list of options with which to replace the first
@@ -686,10 +781,10 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * as the objectformat, which doesn't support merging of data). 
 +  * TODO: we would like to have this for -msim too, but it currently doesn't
 +  * make sense, as the c library is of course compiled without it, and the linker
-+  * would still merge constants then. */
++  * would still merge constants then. 
 + #define TARGET_OPTION_TRANSLATE_TABLE        \
 +     { "-msim",    "-msim -mkernel -fno-builtin" }, \
-+     { "-mkernel", "-mkernel -fno-merge-constants -fno-builtin" } 
++     { "-mkernel", "-mkernel -fno-merge-constants -fno-builtin" }*/
 + 
 + /* A C string constant that tells the GCC driver program options to
 +  * pass to the linker. It can also specify how to translate options
@@ -956,16 +1051,18 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * Eco32 doesnt have index registers. */
 + #define REGNO_OK_FOR_INDEX_P(REGN) 0
 + 
-+ /* A C expression that places additional restrictions on the register
++ /* OLD VERSION (no longer needed):
++   A C expression that places additional restrictions on the register
 +   class to use when it is necessary to copy value x into a register in
 +   class class. The value is a register class; perhaps class, or
-+   perhaps another, smaller class. */
-+ #define PREFERRED_RELOAD_CLASS(X,CLASS) CLASS
++   perhaps another, smaller class. 
++ #define PREFERRED_RELOAD_CLASS(X,CLASS) CLASS*/
 + 
-+ /* A C expression for the maximum number of consecutive registers of
-+  * class class needed to hold a value of mode mode. */
++ /* OLD VERSION (now in eco32.c):
++  * A C expression for the maximum number of consecutive registers of
++  * class class needed to hold a value of mode mode. 
 + #define CLASS_MAX_NREGS(CLASS, MODE) \
-+     ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
++     ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)*/
 + 
 + /* 15.10.1 Basic Stack Layout */
 + 
@@ -990,7 +1087,7 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * stack frame where the pointer to the caller's frame is
 +  * stored. Assume that frameaddr is an RTL expression for the address
 +  * of the stack frame itself. */
-+ #define DYNAMIC_CHAIN_ADDRESS(FP) plus_constant((FP), -8)
++ #define DYNAMIC_CHAIN_ADDRESS(FP) plus_constant(SImode, (FP), -8)
 + 
 + /* Register numbers used for passing a function's static chain
 +  * pointer. */
@@ -1053,10 +1150,11 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 + 
 + /* 15.10.5 Eliminating Frame Pointer and Arg Pointer */
 + 
-+ /* A C expression which is nonzero if a function must have and use a
++ /* OLD VERSION (it's 0 by default now):
++  * A C expression which is nonzero if a function must have and use a
 +  * frame pointer. This expression is evaluated in the reload pass. If
-+  * its value is nonzero the function will have a frame pointer. */
-+ #define FRAME_POINTER_REQUIRED 0
++  * its value is nonzero the function will have a frame pointer. 
++ #define FRAME_POINTER_REQUIRED 0*/
 + 
 + /* If defined, this macro specifies a table of register pairs used to
 +  * eliminate unneeded registers that point into the stack frame. If it
@@ -1070,13 +1168,14 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +         {HARD_FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM}       \
 +     }
 + 
-+ /* A C expression that returns nonzero if the compiler is allowed to
++ /* OLD VERSION (new version in eco32.c):
++  * A C expression that returns nonzero if the compiler is allowed to
 +  * try to replace register number from-reg with register number
-+  * to-reg. */
++  * to-reg.
 + #define CAN_ELIMINATE(FROM, TO)                                         \
 +     ((FROM == FRAME_POINTER_REGNUM && (TO == STACK_POINTER_REGNUM || TO == HARD_FRAME_POINTER_REGNUM)) \
 +      || (FROM == ARG_POINTER_REGNUM && TO == STACK_POINTER_REGNUM)      \
-+      || (FROM == HARD_FRAME_POINTER_REGNUM && TO == STACK_POINTER_REGNUM))
++      || (FROM == HARD_FRAME_POINTER_REGNUM && TO == STACK_POINTER_REGNUM))*/
 + 
 + /* It specifies the initial difference between the specified pair of
 +  * registers. */
@@ -1112,11 +1211,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * the function called is a library function. */
 + #define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE) 1
 + 
-+ /* A C expression that should indicate the number of bytes of its own
++ /* OLD VERSION (no longer needed):
++  * A C expression that should indicate the number of bytes of its own
 +  * arguments that a function pops on returning, or 0 if the function
 +  * pops no arguments and the caller must therefore pop them all after
-+  * the function returns. */
-+ #define RETURN_POPS_ARGS(FUNDECL, FUNTYPE, STACK_SIZE) 0
++  * the function returns. 
++ #define RETURN_POPS_ARGS(FUNDECL, FUNTYPE, STACK_SIZE) 0 */
 + 
 + /* A C expression that should indicate the number of bytes a call
 +  * sequence pops off the stack. It is added to the value of
@@ -1126,10 +1226,11 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 + 
 + /* 15.10.7 Passing Arguments in Registers */
 + 
-+ /* A C expression that controls whether a function argument is passed
-+  * in a register, and which register. */
++ /* OLD VERSION (now in eco32.c):
++  * A C expression that controls whether a function argument is passed
++  * in a register, and which register. 
 + #define FUNCTION_ARG(CUM, MODE, TYPE, NAMED) \
-+     eco32_function_arg((CUM), (MODE), (TYPE), (NAMED))
++     eco32_function_arg((CUM), (MODE), (TYPE), (NAMED))*/
 + 
 + 
 + /* A C type for declaring a variable that is used as the first
@@ -1143,13 +1244,14 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 + #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS) \
 +     (CUM) = 0
 + 
-+ /* A C statement (without semicolon) to update the summarizer variable
++ /* OLD VERSION (now in eco32.c):
++  * A C statement (without semicolon) to update the summarizer variable
 +  * cum to advance past an argument in the argument list. The values
 +  * mode, type and named describe that argument. Once this is done, the
 +  * variable cum is suitable for analyzing the following argument with
-+  * FUNCTION_ARG, etc. */
++  * FUNCTION_ARG, etc. 
 + #define FUNCTION_ARG_ADVANCE(CUM, MODE, TYPE, NAMED) \
-+     (CUM) += ECO32_ARG_SIZE(MODE, TYPE)
++     (CUM) += ECO32_ARG_SIZE(MODE, TYPE)*/
 + 
 + /* A C expression that is nonzero if regno is the number of a hard
 +  * register in which function arguments are sometimes passed. */
@@ -1159,13 +1261,15 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 + 
 + /* 15.10.8 How Scalar Function Values Are Returned */
 + 
-+ /* A C expression that is nonzero if regno is the number of a hard
-+  * register in which the values of called function may come back. */
-+ #define FUNCTION_VALUE_REGNO_P(REGN) ((REGN) == 2)
++ /* OLD VERSION (now in eco32.c):
++  * A C expression that is nonzero if regno is the number of a hard
++  * register in which the values of called function may come back. 
++ #define FUNCTION_VALUE_REGNO_P(REGN) ((REGN) == 2)*/
 + 
-+ /* same as TARGET_FUNCTION_VALUE hook, but just for compiler support
-+  * routines */
-+ #define LIBCALL_VALUE(MODE) eco32_function_value_impl((MODE))
++ /* OLD VERSION (now in eco32.c):
++  * same as TARGET_FUNCTION_VALUE hook, but just for compiler support
++  * routines 
++ #define LIBCALL_VALUE(MODE) eco32_function_value_impl((MODE))*/
 + 
 + /* 15.14 Addressing Modes */
 + 
@@ -1204,19 +1308,21 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +     eco32_non_strict_reg_ok_for_base((x)) 
 + #endif
 + 
-+ /* A C statement or compound statement with a conditional goto label;
++ /* OLD VERSION (no longer needed):
++    A C statement or compound statement with a conditional goto label;
 +    executed if memory address x (an RTX) can have different meanings
 +    depending on the machine mode of the memory reference it is used
-+    for or if the address is valid for some modes but not others. */
-+ #define GO_IF_MODE_DEPENDENT_ADDRESS(addr, label)
++    for or if the address is valid for some modes but not others. 
++ #define GO_IF_MODE_DEPENDENT_ADDRESS(addr, label)*/
 + 
-+ /* A C expression that is nonzero if x is a legitimate constant for an
++ /* OLD VERSION (now in eco32.c):
++  * A C expression that is nonzero if x is a legitimate constant for an
 +  * immediate operand on the target machine. You can assume that x
 +  * satisfies CONSTANT_P, so you need not check this. In fact, `1' is a
 +  * suitable definition for this macro on machines where anything
-+  * CONSTANT_P is valid. */
++  * CONSTANT_P is valid. 
 + #define LEGITIMATE_CONSTANT_P(X) \
-+     eco32_legitimate_constant((X))
++     eco32_legitimate_constant((X))*/
 + 
 + 
 + /* 15.19 Dividing the Output into Sections (Texts, Data, ...) */
@@ -1263,8 +1369,8 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * whose size is size bytes. The variable rounded is the size rounded
 +  * up to whatever alignment the caller wants. use the asm_output_bss function
 +  * defined by gcc in varasm.c. */
-+ #define ASM_OUTPUT_BSS(stream, decl, name, size, rounded) \
-+     asm_output_bss((stream), (decl), (name), (size), (rounded))
++ #define ASM_OUTPUT_ALIGN_BSS(stream, decl, name, size, align) \
++     asm_output_aligned_bss((stream), (decl), (name), (size), (align))
 + 
 + /* 15.21.4 Output and Generation of Labels */
 + 
@@ -1336,13 +1442,14 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * integer. */
 + #define TRAMPOLINE_SIZE 32
 + 
-+ /* A C statement to initialize the variable parts of a
++ /* OLD VERSION (now in eco32.c):#
++  * A C statement to initialize the variable parts of a
 +  * trampoline. addr is an RTX for the address of the trampoline;
 +  * fnaddr is an RTX for the address of the nested function;
 +  * static_chain is an RTX for the static chain value that should be
-+  * passed to the function when it is called. */
++  * passed to the function when it is called. 
 + #define INITIALIZE_TRAMPOLINE(addr, fnaddr, static_chain) \
-+     eco32_initialize_trampoline((addr), (fnaddr), (static_chain))
++     eco32_initialize_trampoline((addr), (fnaddr), (static_chain))*/
 + 
 + 
 + /* A helper macro to compute the size of an argument in
@@ -1394,18 +1501,35 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.h src/gcc/gcc/config/eco32/eco32.h
 +  * sign extends. */
 + #define SHORT_IMMEDIATES_SIGN_EXTEND 1
 + 
++ 
++ /* 17.10.2 Exception Handling Support */
++ 
++ /* A C expression whose value is the Nth register number used for data
++      by exception handlers, or 'INVALID_REGNUM' if fewer than N
++      registers are usable. */
++ /* we use $8 .. $11 for exception stuff since they are caller-saved */
++ #define EH_RETURN_DATA_REGNO(regno)	((regno) < 4 ? 8 + (regno) : INVALID_REGNUM)
++ 
++ /* A C expression whose value is RTL representing a location in which
++      to store the address of an exception handler to which we should
++      return.  It will not be assigned on code paths that return
++      normally. */
++ /* we use the return register here */
++ #define EH_RETURN_HANDLER_RTX   gen_rtx_REG (Pmode, 2)
++ 
++ 
 + /* 17.17 Describing Relative Costs of Operations */
 + 
 + /* Define this macro if it is as good or better to call a constant
 +  * function address than to call an address kept in a register. */
 + #define NO_FUNCTION_CSE 1
 + 
-diff -rcN src_org/gcc/gcc/config/eco32/eco32.md src/gcc/gcc/config/eco32/eco32.md
-*** src_org/gcc/gcc/config/eco32/eco32.md	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/eco32.md	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config/eco32/eco32.md src/gcc/gcc/config/eco32/eco32.md
+*** src/gcc-org/gcc/config/eco32/eco32.md	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.md	2013-12-01 13:02:31.866550550 +0100
 ***************
 *** 0 ****
---- 1,334 ----
+--- 1,402 ----
 + ;; Operand and operator predicates and constraints
 + (include "predicates.md")
 + (include "constraints.md")
@@ -1721,28 +1845,96 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.md src/gcc/gcc/config/eco32/eco32.m
 + ;; and use the negated branch to jump over it if the condition doesn't hold.
 + ;; NOTE: for now, use the long jump even for 32767 limit, since we can't know what the
 + ;;       assembler inserts in between, which would make the distance far again.
-+ (define_insn "*b<code>"
-+ 	[(set (pc) (if_then_else (cond_code:SI (match_operand:SI 1 "register_operand" "r")
-+ 					                       (match_operand:SI 2 "reg_or_0_operand" "rJ")) 
-+ 				 (label_ref (match_operand 0 "" "")) 
++ ;(define_insn "*b<code>"
++ ;	[(set (pc) (if_then_else (cond_code:SI (match_operand:SI 1 "register_operand" "r")
++ ;					                       (match_operand:SI 2 "reg_or_0_operand" "rJ")) 
++ ;				 (label_ref (match_operand 0 "" "")) 
++ ;				 (pc)))]
++ ;	""
++ ;	{
++ ;        switch(get_attr_length(insn)) {
++ ;        case 4: return "b<code> \\t%1, %z2, %0";
++ ;        case 8: return "b<cond_inv> \\t%1, %z2, .LC%=\;j   \\t%0\\n.LC%=:";
++ ;        }
++ ;    }
++ ;    [(set (attr "length") 
++ ;        (if_then_else
++ ;	    (and (ge (minus (match_dup 0) (pc)) (const_int -32767))
++ ;	         (le (minus (match_dup 0) (pc)) (const_int  32768)))
++ ;	    (const_int 4)
++ ;	    (const_int 8)))]
++ ;)
++ 
++ (define_insn "cbranchsi4"
++     [(set (pc) (if_then_else (match_operator 0 "comparison_operator"
++ 	                         [(match_operand:SI 1 "register_operand" "r")
++ 					          (match_operand:SI 2 "reg_or_0_operand" "rJ")])
++ 				 (label_ref (match_operand 3 "" "")) 
 + 				 (pc)))]
 + 	""
 + 	{
 +         switch(get_attr_length(insn)) {
-+         case 4: return "b<code> \\t%1, %z2, %0";
-+         case 8: return "b<cond_inv> \\t%1, %z2, .LC%=\;j   \\t%0\\n.LC%=:";
-+         }
++         	case 4:
++ 				if(GET_CODE(operands[0]) == EQ)
++ 					return "beq %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == NE)
++ 					return "bne %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == LE)
++ 					return "ble %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == GE)
++ 					return "bge %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == LT)
++ 					return "blt %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == GT)
++ 					return "bgt %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == GEU)
++ 					return "bgeu %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == LEU)
++ 					return "bleu %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == GTU)
++ 					return "bgtu %1, %z2, %3";
++ 				else if(GET_CODE(operands[0]) == LTU)
++ 					return "bltu %1, %z2, %3";
++ 				else
++ 					gcc_unreachable();
++ 			
++ 			case 8:
++ 				if(GET_CODE(operands[0]) == EQ)
++ 					return "bne \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == NE)
++ 					return "beq \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == LE)
++ 					return "bgt \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == GE)
++ 					return "blt \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == LT)
++ 					return "bge \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == GT)
++ 					return "ble \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == GEU)
++ 					return "bltu \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == LEU)
++ 					return "bgtu \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == GTU)
++ 					return "bleu \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else if(GET_CODE(operands[0]) == LTU)
++ 					return "bgeu \\t%1, %z2, .LC%=\;j   \\t%3\\n.LC%=:";
++ 				else
++ 					gcc_unreachable();
++ 				break;
++ 		}
 +     }
 +     [(set (attr "length") 
 +         (if_then_else
-+ 	    (and (ge (minus (match_dup 0) (pc)) (const_int -32767))
-+ 	         (le (minus (match_dup 0) (pc)) (const_int  32768)))
++ 	    (and (ge (minus (match_dup 3) (pc)) (const_int -32767))
++ 	         (le (minus (match_dup 3) (pc)) (const_int  32768)))
 + 	    (const_int 4)
 + 	    (const_int 8)))]
 + )
-diff -rcN src_org/gcc/gcc/config/eco32/eco32.opt src/gcc/gcc/config/eco32/eco32.opt
-*** src_org/gcc/gcc/config/eco32/eco32.opt	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/eco32.opt	2011-05-24 12:13:21.000000000 +0200
++ 
+diff -rcN src/gcc-org/gcc/config/eco32/eco32.opt src/gcc/gcc/config/eco32/eco32.opt
+*** src/gcc-org/gcc/config/eco32/eco32.opt	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32.opt	2013-11-30 13:11:50.867234310 +0100
 ***************
 *** 0 ****
 --- 1,9 ----
@@ -1755,14 +1947,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32.opt src/gcc/gcc/config/eco32/eco32.
 + mkernel
 + Target RejectNegative Var(flag_mkernel)
 + -mkernel generates code for a kernel. implies -fno-common and -fno-builtin, and doesn't implicitely link against libc. You will have to provide replacements for \"memcmp\", \"memset\", \"memcpy\" and \"memmove\" functions, which gcc will call occasionally.
-diff -rcN src_org/gcc/gcc/config/eco32/eco32-protos.h src/gcc/gcc/config/eco32/eco32-protos.h
-*** src_org/gcc/gcc/config/eco32/eco32-protos.h	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/eco32-protos.h	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config/eco32/eco32-protos.h src/gcc/gcc/config/eco32/eco32-protos.h
+*** src/gcc-org/gcc/config/eco32/eco32-protos.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/eco32-protos.h	2013-12-01 08:41:04.590675506 +0100
 ***************
 *** 0 ****
---- 1,38 ----
-+ rtx eco32_function_arg(int cum, enum machine_mode mode, tree type, 
-+                        bool named );
+--- 1,28 ----
 + int eco32_is_base_reg(int regn);
 + int eco32_is_base_reg(int regn);
 + int eco32_non_strict_base_reg(int regn);
@@ -1771,37 +1961,29 @@ diff -rcN src_org/gcc/gcc/config/eco32/eco32-protos.h src/gcc/gcc/config/eco32/e
 + int eco32_regno_ok_for_base_p(int regn);
 + int eco32_regno_ok_for_index_p(int regn);
 + int eco32_constant_address_p (rtx x);
-+ int eco32_legitimate_constant(rtx x);
-+ int eco32_legitimate_address(enum machine_mode MODE,rtx X);
-+ int eco32_non_strict_legitimate_address(enum machine_mode MODE,rtx X);
++ bool eco32_legitimate_constant(enum machine_mode mode, rtx x);
++ bool eco32_legitimate_address(enum machine_mode MODE,rtx X);
++ bool eco32_non_strict_legitimate_address(enum machine_mode MODE,rtx X);
 + int eco32_reg_ok_for_base_p(rtx x);
 + int eco32_non_strict_reg_ok_for_base_p(rtx x);
 + rtx eco32_ret_addr_rtx(int count, rtx frame );
 + int eco32_initial_elimination_offset(int from, int to);
-+ int eco32_arg_partial_bytes(int *cum, enum machine_mode mode, tree type, 
-+                             bool named);
-+ bool eco32_pass_by_reference(int *cum, enum machine_mode mode, 
-+                              tree type, bool named);
 + bool eco32_scalar_mode_supported_p(enum machine_mode mode);
-+ rtx eco32_function_value_impl(enum machine_mode m);
-+ rtx eco32_function_value(tree ret_type, tree fn_decl_or_type, bool outgoing);
 + void eco32_prologue(void);
 + void eco32_epilogue(void);
 + enum reg_class reg_class_from_letter(char ch);
 + void eco32_asm_output_labelref(FILE *stream, char const *name);
 + void eco32_print_operand(FILE *file, rtx op, int letter);
 + void eco32_print_operand_address(FILE *stream, rtx x);
-+ void eco32_initialize_trampoline(rtx addr, rtx fn_addr, rtx static_chain);
++ void eco32_trampoline_init(rtx addr, rtx fn_addr, rtx static_chain);
 + void eco32_asm_output_align(FILE *stream, int power);
 + void eco32_target_asm_function_epilogue (FILE *stream, HOST_WIDE_INT locals_size);
-+ void eco32_setup_incoming_varargs(int *cum, enum machine_mode mode, tree type, int *pretend_args_size, 
-+                                   int second_time);
 + 
 + extern rtx compare_op0;
 + extern rtx compare_op1;
-diff -rcN src_org/gcc/gcc/config/eco32/predicates.md src/gcc/gcc/config/eco32/predicates.md
-*** src_org/gcc/gcc/config/eco32/predicates.md	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/eco32/predicates.md	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config/eco32/predicates.md src/gcc/gcc/config/eco32/predicates.md
+*** src/gcc-org/gcc/config/eco32/predicates.md	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/eco32/predicates.md	2013-11-30 13:11:50.867234310 +0100
 ***************
 *** 0 ****
 --- 1,19 ----
@@ -1825,12 +2007,12 @@ diff -rcN src_org/gcc/gcc/config/eco32/predicates.md src/gcc/gcc/config/eco32/pr
 +   (ior (match_operand 0 "register_operand")
 +        (match_test    "GET_CODE(op) == CONST_INT && INTVAL(op) + 0x8000 < 0x10000")))
 \ No newline at end of file
-diff -rcN src_org/gcc/gcc/config/escape.h src/gcc/gcc/config/escape.h
-*** src_org/gcc/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/escape.h	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config/escape.h src/gcc/gcc/config/escape.h
+*** src/gcc-org/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/escape.h	2013-11-30 14:41:27.435191483 +0100
 ***************
 *** 0 ****
---- 1,31 ----
+--- 1,28 ----
 +   #undef   STARTFILE_SPEC
 +   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
 +   
@@ -1858,16 +2040,13 @@ diff -rcN src_org/gcc/gcc/config/escape.h src/gcc/gcc/config/escape.h
 +   #define USE_LD_AS_NEEDED 1
 +   #endif
 +   
-+   #undef TARGET_VERSION
-+   #define TARGET_VERSION fprintf(stderr, " (eco32 escape)");
-+ 
 +   #define NO_IMPLICIT_EXTERN_C
-diff -rcN src_org/gcc/gcc/config.gcc src/gcc/gcc/config.gcc
-*** src_org/gcc/gcc/config.gcc	2010-01-04 16:13:08.000000000 +0100
---- src/gcc/gcc/config.gcc	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/gcc/config.gcc src/gcc/gcc/config.gcc
+*** src/gcc-org/gcc/config.gcc	2013-10-03 02:47:24.000000000 +0200
+--- src/gcc/gcc/config.gcc	2013-11-30 13:09:07.711235609 +0100
 ***************
-*** 407,412 ****
---- 407,419 ----
+*** 554,559 ****
+--- 554,566 ----
   
   # Common parts for widely ported systems.
   case ${target} in
@@ -1879,13 +2058,13 @@ diff -rcN src_org/gcc/gcc/config.gcc src/gcc/gcc/config.gcc
 +   default_use_cxa_atexit=yes
 +   ;;
   *-*-darwin*)
+    tmake_file="t-darwin ${cpu_type}/t-darwin"
     tm_file="${tm_file} darwin.h"
-    case ${target} in
 ***************
-*** 863,868 ****
---- 870,881 ----
-  	extra_parts="crtbegin.o crtend.o"
-  	use_collect2=no
+*** 1018,1023 ****
+--- 1025,1036 ----
+  	tm_defines="${tm_defines} EPIPHANY_STACK_OFFSET=${with_stack_offset:-8}"
+  	extra_headers="epiphany_intrinsics.h"
   	;;
 + eco32-*-*)
 +     cpu_type=eco32
@@ -1894,11 +2073,11 @@ diff -rcN src_org/gcc/gcc/config.gcc src/gcc/gcc/config.gcc
 +     extra_parts="crti.o crtn.o crtbegin.o crtend.o"
 +     ;;
   fr30-*-elf)
-  	tm_file="dbxelf.h elfos.h svr4.h ${tm_file}"
-  	tmake_file=fr30/t-fr30
-diff -rcN src_org/gcc/libgcc/config/eco32/crti.s src/gcc/libgcc/config/eco32/crti.s
-*** src_org/gcc/libgcc/config/eco32/crti.s	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/libgcc/config/eco32/crti.s	2011-05-24 12:13:21.000000000 +0200
+  	tm_file="dbxelf.h elfos.h newlib-stdint.h ${tm_file}"
+  	;;
+diff -rcN src/gcc-org/libgcc/config/eco32/crti.S src/gcc/libgcc/config/eco32/crti.S
+*** src/gcc-org/libgcc/config/eco32/crti.S	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/eco32/crti.S	2013-11-30 13:11:50.871234310 +0100
 ***************
 *** 0 ****
 --- 1,16 ----
@@ -1908,39 +2087,39 @@ diff -rcN src_org/gcc/libgcc/config/eco32/crti.s src/gcc/libgcc/config/eco32/crt
 +         .global _init
 +         .type _init, @function
 + _init:
-+         sub $29, $29, 4
-+         stw $31, $29, 0
++         sub $29, $29, 0x18
++         stw $31, $29, 0x14
 + 
 +         .section .fini
 +         .global _fini
 +         .type _fini, @function
 + _fini:
-+         sub $29, $29, 4
-+         stw $31, $29, 0
++         sub $29, $29, 0x18
++         stw $31, $29, 0x14
 +         
 \ No newline at end of file
-diff -rcN src_org/gcc/libgcc/config/eco32/crtn.s src/gcc/libgcc/config/eco32/crtn.s
-*** src_org/gcc/libgcc/config/eco32/crtn.s	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/libgcc/config/eco32/crtn.s	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/libgcc/config/eco32/crtn.S src/gcc/libgcc/config/eco32/crtn.S
+*** src/gcc-org/libgcc/config/eco32/crtn.S	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/eco32/crtn.S	2013-11-30 13:11:50.871234310 +0100
 ***************
 *** 0 ****
 --- 1,12 ----
 + # epilogues for .init and .fini
 + 
 +         .section .init
-+         ldw $31, $29, 0
-+         add $29, $29, 4
++         ldw $31, $29, 0x14
++         add $29, $29, 0x18
 +         jr $31
 + 
 +         .section .fini
-+         ldw $31, $29, 0
-+         add $29, $29, 4
++         ldw $31, $29, 0x14
++         add $29, $29, 0x18
 +         jr $31
 +  
 \ No newline at end of file
-diff -rcN src_org/gcc/libgcc/config/eco32/t-eco32 src/gcc/libgcc/config/eco32/t-eco32
-*** src_org/gcc/libgcc/config/eco32/t-eco32	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/libgcc/config/eco32/t-eco32	2011-05-24 12:32:42.000000000 +0200
+diff -rcN src/gcc-org/libgcc/config/eco32/t-eco32 src/gcc/libgcc/config/eco32/t-eco32
+*** src/gcc-org/libgcc/config/eco32/t-eco32	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/eco32/t-eco32	2013-11-30 13:11:50.871234310 +0100
 ***************
 *** 0 ****
 --- 1,24 ----
@@ -1968,14 +2147,14 @@ diff -rcN src_org/gcc/libgcc/config/eco32/t-eco32 src/gcc/libgcc/config/eco32/t-
 + $(T)crtn.o: $(srcdir)/config/eco32/crtn.s $(GCC_PASSES)
 + 	$(GCC_FOR_TARGET) $(GCC_CFLAGS) $(MULTILIB_CFLAGS) $(INCLUDES) \
 + 	-c -o $(T)crtn.o -x assembler $(srcdir)/config/eco32/crtn.s
-diff -rcN src_org/gcc/libgcc/config.host src/gcc/libgcc/config.host
-*** src_org/gcc/libgcc/config.host	2009-04-17 13:58:41.000000000 +0200
---- src/gcc/libgcc/config.host	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/libgcc/config.host src/gcc/libgcc/config.host
+*** src/gcc-org/libgcc/config.host	2013-07-09 23:35:57.000000000 +0200
+--- src/gcc/libgcc/config.host	2013-11-30 13:10:12.143235096 +0100
 ***************
-*** 79,84 ****
---- 79,87 ----
-  bfin*-*)
-  	cpu_type=bfin
+*** 102,107 ****
+--- 102,110 ----
+  	;;
+  cr16-*-*)
   	;;
 + eco32*)
 + 	cpu_type=eco32
@@ -1984,41 +2163,41 @@ diff -rcN src_org/gcc/libgcc/config.host src/gcc/libgcc/config.host
   	cpu_type=m68k
   	;;
 ***************
-*** 242,247 ****
---- 245,254 ----
-  	;;
-  crx-*-elf)
+*** 405,410 ****
+--- 408,417 ----
+  cris-*-linux* | crisv32-*-linux*)
+  	tmake_file="$tmake_file cris/t-cris t-fdpbit cris/t-linux"
   	;;
 + eco32-*-*)
 + 	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
 + 	tmake_file="eco32/t-eco32"
 + 	;;
-  fido-*-elf)
-  	;;
-  fr30-*-elf)
-diff -rcN src_org/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
-*** src_org/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2009-04-10 01:23:07.000000000 +0200
---- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2011-05-24 12:13:21.000000000 +0200
+  epiphany-*-elf*)
+  	tmake_file="epiphany/t-epiphany t-fdpbit epiphany/t-custom-eqsf"
+  	extra_parts="$extra_parts crti.o crtint.o crtrunc.o crtm1reg-r43.o crtm1reg-r63.o crtn.o"
+diff -rcN src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
+*** src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-02-03 18:54:05.000000000 +0100
+--- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-11-30 13:10:40.399234871 +0100
 ***************
-*** 38,44 ****
+*** 32,38 ****
+     --disable-libstdcxx-verbose and rebuilding the library.
+     In a freestanding environment, we default to this latter approach.  */
   
+! #if _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
-! #if _GLIBCXX_HOSTED
   	__gnu_cxx::__verbose_terminate_handler;
-  #else
-  	std::abort;
---- 38,44 ----
+--- 32,38 ----
+     --disable-libstdcxx-verbose and rebuilding the library.
+     In a freestanding environment, we default to this latter approach.  */
   
+! #if 1 // _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
-! #if 1 //_GLIBCXX_HOSTED
   	__gnu_cxx::__verbose_terminate_handler;
-  #else
-  	std::abort;
-diff -rcN src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
-*** src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc	2009-04-10 01:23:07.000000000 +0200
---- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2011-05-24 12:13:21.000000000 +0200
+diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
+*** src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc	2013-02-03 18:54:05.000000000 +0100
+--- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2013-11-30 13:11:20.759234550 +0100
 ***************
 *** 24,35 ****
   
@@ -2027,7 +2206,7 @@ diff -rcN src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
 ! #if _GLIBCXX_HOSTED
   #include <cstdlib>
   #include <exception>
-  #include <exception_defines.h>
+  #include <bits/exception_defines.h>
   #include <cxxabi.h>
 ! # include <cstdio>
   
@@ -2040,7 +2219,7 @@ diff -rcN src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
 ! #if 1 //_GLIBCXX_HOSTED
   #include <cstdlib>
   #include <exception>
-  #include <exception_defines.h>
+  #include <bits/exception_defines.h>
   #include <cxxabi.h>
 ! // don't include cstdio here because thats too much trouble
 ! //# include <cstdio>
@@ -2052,7 +2231,7 @@ diff -rcN src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   using namespace std;
   using namespace abi;
 ***************
-*** 60,66 ****
+*** 62,68 ****
   	  int status = -1;
   	  char *dem = 0;
   	  
@@ -2060,7 +2239,7 @@ diff -rcN src_org/gcc/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   
   	  fputs("terminate called after throwing an instance of '", stderr);
   	  if (status == 0)
---- 65,71 ----
+--- 67,73 ----
   	  int status = -1;
   	  char *dem = 0;
   	  

@@ -1,8 +1,45 @@
-diff -rcN src/binutils-org/config.sub src/binutils/config.sub
-*** src/binutils-org/config.sub	2010-06-01 19:53:40.000000000 +0200
---- src/binutils/config.sub	2012-12-16 12:08:11.228372377 +0100
+diff -rcN src/binutils-org/bfd/doc/bfd.texinfo src/binutils/bfd/doc/bfd.texinfo
+*** src/binutils-org/bfd/doc/bfd.texinfo	2010-10-28 13:40:25.000000000 +0200
+--- src/binutils/bfd/doc/bfd.texinfo	2013-12-01 18:15:29.746400977 +0100
 ***************
-*** 1297,1303 ****
+*** 322,328 ****
+  @printindex cp
+  
+  @tex
+! % I think something like @colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+--- 322,328 ----
+  @printindex cp
+  
+  @tex
+! % I think something like @@colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+***************
+*** 333,339 ****
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+--- 333,339 ----
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+diff -rcN src/binutils-org/config.sub src/binutils/config.sub
+*** src/binutils-org/config.sub	2012-04-25 17:53:25.000000000 +0200
+--- src/binutils/config.sub	2013-12-01 18:06:21.374405345 +0100
+***************
+*** 1348,1354 ****
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
   	      | -sym* | -kopensolaris* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
@@ -10,7 +47,7 @@ diff -rcN src/binutils-org/config.sub src/binutils/config.sub
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1297,1303 ----
+--- 1348,1354 ----
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
   	      | -sym* | -kopensolaris* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
@@ -19,10 +56,10 @@ diff -rcN src/binutils-org/config.sub src/binutils/config.sub
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
 diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.c
-*** src/binutils-org/gas/config/tc-mmix.c	2010-06-28 16:06:57.000000000 +0200
---- src/binutils/gas/config/tc-mmix.c	2012-12-16 12:19:51.844388336 +0100
+*** src/binutils-org/gas/config/tc-mmix.c	2012-09-11 11:20:20.000000000 +0200
+--- src/binutils/gas/config/tc-mmix.c	2013-12-01 18:07:58.662404570 +0100
 ***************
-*** 1630,1641 ****
+*** 1637,1648 ****
         /* "$X,0"; SAVE.  */
         if (n_operands != 2
   	  || exp[1].X_op != O_constant
@@ -35,7 +72,7 @@ diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.
         break;
   
       case mmix_operands_unsave:
---- 1630,1642 ----
+--- 1637,1649 ----
         /* "$X,0"; SAVE.  */
         if (n_operands != 2
   	  || exp[1].X_op != O_constant
@@ -50,7 +87,7 @@ diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.
   
       case mmix_operands_unsave:
 ***************
-*** 1655,1661 ****
+*** 1662,1668 ****
         /* "0,$Z"; UNSAVE.  */
         if (n_operands != 2
   	  || exp[0].X_op != O_constant
@@ -58,7 +95,7 @@ diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.
   	  || exp[1].X_op == O_constant
   	  || (exp[1].X_op == O_register
   	      && exp[1].X_add_number > 255))
---- 1656,1662 ----
+--- 1663,1669 ----
         /* "0,$Z"; UNSAVE.  */
         if (n_operands != 2
   	  || exp[0].X_op != O_constant
@@ -67,8 +104,8 @@ diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.
   	  || (exp[1].X_op == O_register
   	      && exp[1].X_add_number > 255))
 ***************
-*** 1665,1670 ****
---- 1666,1672 ----
+*** 1672,1677 ****
+--- 1673,1679 ----
   	  return;
   	}
   
@@ -77,11 +114,11 @@ diff -rcN src/binutils-org/gas/config/tc-mmix.c src/binutils/gas/config/tc-mmix.
   	opcodep[3] = exp[1].X_add_number;
         else
 diff -rcN src/binutils-org/ld/configure.tgt src/binutils/ld/configure.tgt
-*** src/binutils-org/ld/configure.tgt	2011-04-01 14:03:54.000000000 +0200
---- src/binutils/ld/configure.tgt	2012-12-16 12:11:21.676376715 +0100
+*** src/binutils-org/ld/configure.tgt	2012-09-04 14:53:47.000000000 +0200
+--- src/binutils/ld/configure.tgt	2013-12-01 18:08:41.830404226 +0100
 ***************
-*** 419,424 ****
---- 419,425 ----
+*** 465,470 ****
+--- 465,471 ----
   mips*-*-lnews*)		targ_emul=mipslnews ;;
   mips*-*-sysv4*)         targ_emul=elf32btsmip
   			;;
@@ -91,7 +128,7 @@ diff -rcN src/binutils-org/ld/configure.tgt src/binutils/ld/configure.tgt
   			;;
 diff -rcN src/binutils-org/ld/emulparams/elf64mmixescape.sh src/binutils/ld/emulparams/elf64mmixescape.sh
 *** src/binutils-org/ld/emulparams/elf64mmixescape.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/ld/emulparams/elf64mmixescape.sh	2012-12-16 12:12:27.076378205 +0100
+--- src/binutils/ld/emulparams/elf64mmixescape.sh	2013-12-01 18:09:24.622403885 +0100
 ***************
 *** 0 ****
 --- 1,61 ----
@@ -157,8 +194,8 @@ diff -rcN src/binutils-org/ld/emulparams/elf64mmixescape.sh src/binutils/ld/emul
 + # begins.  They grow in opposite directions.  */
 + OTHER_SYMBOLS="PROVIDE (__Stack_start = 0x6000000000000000);"
 diff -rcN src/binutils-org/ld/emultempl/mmixelf.em src/binutils/ld/emultempl/mmixelf.em
-*** src/binutils-org/ld/emultempl/mmixelf.em	2009-09-02 09:25:35.000000000 +0200
---- src/binutils/ld/emultempl/mmixelf.em	2012-12-16 12:13:00.268378961 +0100
+*** src/binutils-org/ld/emultempl/mmixelf.em	2013-03-25 09:06:23.000000000 +0100
+--- src/binutils/ld/emultempl/mmixelf.em	2013-12-01 18:09:55.978403635 +0100
 ***************
 *** 36,43 ****
        difference to mmo, but the sections in elf64mmix will be aligned to a
@@ -166,24 +203,24 @@ diff -rcN src/binutils-org/ld/emultempl/mmixelf.em src/binutils/ld/emultempl/mmi
        full system with shared libraries and demand paging, you will want to
 !      exclude this file.  */
 !   config.magic_demand_paged = FALSE;
-  }
-  EOF
   
+    config.separate_code = `if test "x${SEPARATE_CODE}" = xyes ; then echo TRUE ; else echo FALSE ; fi`;
+  }
 --- 36,43 ----
        difference to mmo, but the sections in elf64mmix will be aligned to a
        page in the linked file, which is non-intuitive.  If there's ever a
        full system with shared libraries and demand paging, you will want to
 !      exclude this file.  
 !   config.magic_demand_paged = FALSE;*/
-  }
-  EOF
   
+    config.separate_code = `if test "x${SEPARATE_CODE}" = xyes ; then echo TRUE ; else echo FALSE ; fi`;
+  }
 diff -rcN src/binutils-org/ld/Makefile.in src/binutils/ld/Makefile.in
-*** src/binutils-org/ld/Makefile.in	2011-03-16 09:37:30.000000000 +0100
---- src/binutils/ld/Makefile.in	2012-12-16 12:13:37.020379798 +0100
+*** src/binutils-org/ld/Makefile.in	2013-03-25 09:06:23.000000000 +0100
+--- src/binutils/ld/Makefile.in	2013-12-01 18:10:44.814403246 +0100
 ***************
-*** 3319,3324 ****
---- 3319,3328 ----
+*** 3564,3569 ****
+--- 3564,3573 ----
   ehppa64linux.c: $(srcdir)/emulparams/hppa64linux.sh \
     $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
   	${GENSCRIPTS} hppa64linux "$(tdir_hppa64linux)"
@@ -195,10 +232,10 @@ diff -rcN src/binutils-org/ld/Makefile.in src/binutils/ld/Makefile.in
     $(srcdir)/emultempl/generic.em $(srcdir)/emultempl/elf-generic.em \
     $(srcdir)/emultempl/mmo.em \
 diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
-*** src/binutils-org/opcodes/mmix-dis.c	2009-12-11 14:42:17.000000000 +0100
---- src/binutils/opcodes/mmix-dis.c	2012-12-16 12:15:57.996383009 +0100
+*** src/binutils-org/opcodes/mmix-dis.c	2012-05-18 03:59:38.000000000 +0200
+--- src/binutils/opcodes/mmix-dis.c	2013-12-01 18:12:42.618402308 +0100
 ***************
-*** 59,65 ****
+*** 58,64 ****
   struct mmix_dis_info
    {
      const char *reg_name[256];
@@ -206,7 +243,7 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
   
      /* Waste a little memory so we don't have to allocate each separately.
         We could have an array with static contents for these, but on the
---- 59,65 ----
+--- 58,64 ----
   struct mmix_dis_info
    {
      const char *reg_name[256];
@@ -215,7 +252,7 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
      /* Waste a little memory so we don't have to allocate each separately.
         We could have an array with static contents for these, but on the
 ***************
-*** 195,201 ****
+*** 194,200 ****
   	case mmix_operands_neg:
   	case mmix_operands_pushj:
   	case mmix_operands_regaddr:
@@ -223,9 +260,9 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
   	case mmix_operands_set:
   	case mmix_operands_save:
   	case mmix_operands_unsave:
---- 195,200 ----
+--- 194,199 ----
 ***************
-*** 212,223 ****
+*** 211,222 ****
   	      return opcodep;
   	  }
   	break;
@@ -238,7 +275,7 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
   	    return opcodep;
   	  break;
   
---- 211,229 ----
+--- 210,228 ----
   	      return opcodep;
   	  }
   	break;
@@ -259,7 +296,7 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
   	  break;
   
 ***************
-*** 490,501 ****
+*** 489,500 ****
   
       case mmix_operands_save:
         /* SAVE - "$X,0".  */
@@ -272,7 +309,7 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
         break;
   
       case mmix_operands_xyz_opt:
---- 496,507 ----
+--- 495,506 ----
   
       case mmix_operands_save:
         /* SAVE - "$X,0".  */
@@ -287,7 +324,7 @@ diff -rcN src/binutils-org/opcodes/mmix-dis.c src/binutils/opcodes/mmix-dis.c
       case mmix_operands_xyz_opt:
 diff -rcN src/binutils-org/opcodes/mmix-opc.c src/binutils/opcodes/mmix-opc.c
 *** src/binutils-org/opcodes/mmix-opc.c	2009-09-02 09:20:30.000000000 +0200
---- src/binutils/opcodes/mmix-opc.c	2012-12-16 12:17:12.284384702 +0100
+--- src/binutils/opcodes/mmix-opc.c	2013-12-01 18:13:53.754401741 +0100
 ***************
 *** 59,64 ****
 --- 59,65 ----

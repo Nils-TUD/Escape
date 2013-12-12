@@ -1,9 +1,9 @@
-diff -rcN src_org/binutils//bfd/archures.c src/binutils//bfd/archures.c
-*** src_org/binutils//bfd/archures.c	2009-09-10 13:47:11.000000000 +0200
---- src/binutils//bfd/archures.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/archures.c src/binutils/bfd/archures.c
+*** src/binutils-org/bfd/archures.c	2012-09-04 14:53:41.000000000 +0200
+--- src/binutils/bfd/archures.c	2013-11-30 10:22:28.403315258 +0100
 ***************
-*** 246,251 ****
---- 246,253 ----
+*** 261,266 ****
+--- 261,268 ----
   .#define bfd_mach_d10v_ts3	3
   .  bfd_arch_d30v,      {* Mitsubishi D30V *}
   .  bfd_arch_dlx,       {* DLX *}
@@ -13,31 +13,31 @@ diff -rcN src_org/binutils//bfd/archures.c src/binutils//bfd/archures.c
   .  bfd_arch_m68hc12,   {* Motorola 68HC12 *}
   .#define bfd_mach_m6812_default 0
 ***************
-*** 473,478 ****
---- 475,481 ----
+*** 520,525 ****
+--- 522,528 ----
   extern const bfd_arch_info_type bfd_d10v_arch;
   extern const bfd_arch_info_type bfd_d30v_arch;
   extern const bfd_arch_info_type bfd_dlx_arch;
 + extern const bfd_arch_info_type bfd_eco32_arch;
+  extern const bfd_arch_info_type bfd_epiphany_arch;
   extern const bfd_arch_info_type bfd_fr30_arch;
   extern const bfd_arch_info_type bfd_frv_arch;
-  extern const bfd_arch_info_type bfd_h8300_arch;
 ***************
-*** 549,554 ****
---- 552,558 ----
+*** 606,611 ****
+--- 609,615 ----
       &bfd_d10v_arch,
       &bfd_d30v_arch,
       &bfd_dlx_arch,
 +     &bfd_eco32_arch,
+      &bfd_epiphany_arch,
       &bfd_fr30_arch,
       &bfd_frv_arch,
-      &bfd_h8300_arch,
-diff -rcN src_org/binutils//bfd/bfd-in2.h src/binutils//bfd/bfd-in2.h
-*** src_org/binutils//bfd/bfd-in2.h	2009-09-10 13:47:11.000000000 +0200
---- src/binutils//bfd/bfd-in2.h	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/bfd-in2.h src/binutils/bfd/bfd-in2.h
+*** src/binutils-org/bfd/bfd-in2.h	2012-09-04 14:53:41.000000000 +0200
+--- src/binutils/bfd/bfd-in2.h	2013-11-30 10:23:40.795314681 +0100
 ***************
-*** 1913,1918 ****
---- 1913,1920 ----
+*** 1990,1995 ****
+--- 1990,1997 ----
   #define bfd_mach_d10v_ts3      3
     bfd_arch_d30v,      /* Mitsubishi D30V */
     bfd_arch_dlx,       /* DLX */
@@ -47,7 +47,7 @@ diff -rcN src_org/binutils//bfd/bfd-in2.h src/binutils//bfd/bfd-in2.h
     bfd_arch_m68hc12,   /* Motorola 68HC12 */
   #define bfd_mach_m6812_default 0
 ***************
-*** 2378,2386 ****
+*** 2483,2491 ****
   of the relocation itself; sometimes they are relative to the start of
   the section containing the relocation.  It depends on the specific target.
   
@@ -57,7 +57,7 @@ diff -rcN src_org/binutils//bfd/bfd-in2.h src/binutils//bfd/bfd-in2.h
     BFD_RELOC_24_PCREL,
     BFD_RELOC_16_PCREL,
     BFD_RELOC_12_PCREL,
---- 2380,2390 ----
+--- 2485,2495 ----
   of the relocation itself; sometimes they are relative to the start of
   the section containing the relocation.  It depends on the specific target.
   
@@ -69,9 +69,9 @@ diff -rcN src_org/binutils//bfd/bfd-in2.h src/binutils//bfd/bfd-in2.h
     BFD_RELOC_24_PCREL,
     BFD_RELOC_16_PCREL,
     BFD_RELOC_12_PCREL,
-diff -rcN src_org/binutils//bfd/config.bfd src/binutils//bfd/config.bfd
-*** src_org/binutils//bfd/config.bfd	2009-08-06 19:38:00.000000000 +0200
---- src/binutils//bfd/config.bfd	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/config.bfd src/binutils/bfd/config.bfd
+*** src/binutils-org/bfd/config.bfd	2012-09-04 16:14:59.000000000 +0200
+--- src/binutils/bfd/config.bfd	2013-11-30 10:24:19.215314375 +0100
 ***************
 *** 81,86 ****
 --- 81,87 ----
@@ -83,8 +83,8 @@ diff -rcN src_org/binutils//bfd/config.bfd src/binutils//bfd/config.bfd
   hppa*)		 targ_archs=bfd_hppa_arch ;;
   i[3-7]86)	 targ_archs=bfd_i386_arch ;;
 ***************
-*** 400,405 ****
---- 401,410 ----
+*** 395,400 ****
+--- 396,405 ----
       targ_defvec=bfd_elf32_d30v_vec
       ;;
   
@@ -92,41 +92,41 @@ diff -rcN src_org/binutils//bfd/config.bfd src/binutils//bfd/config.bfd
 +     targ_defvec=bfd_elf32_eco32_vec
 +     ;;
 + 
-    fido-*-elf* )
-      targ_defvec=bfd_elf32_m68k_vec
-      targ_selvecs="m68kcoff_vec ieee_vec"
-diff -rcN src_org/binutils//bfd/configure src/binutils//bfd/configure
-*** src_org/binutils//bfd/configure	2009-10-16 13:47:47.000000000 +0200
---- src/binutils//bfd/configure	2011-05-29 17:27:24.000000000 +0200
+    epiphany-*-elf)
+      targ_defvec=bfd_elf32_epiphany_vec
+      ;;
+diff -rcN src/binutils-org/bfd/configure src/binutils/bfd/configure
+*** src/binutils-org/bfd/configure	2013-03-25 10:08:07.000000000 +0100
+--- src/binutils/bfd/configure	2013-11-30 10:24:44.555314173 +0100
 ***************
-*** 14806,14811 ****
---- 14806,14812 ----
+*** 15219,15224 ****
+--- 15219,15225 ----
       bfd_elf32_d10v_vec)		tb="$tb elf32-d10v.lo elf32.lo $elf" ;;
       bfd_elf32_d30v_vec)		tb="$tb elf32-d30v.lo elf32.lo $elf" ;;
       bfd_elf32_dlx_big_vec)	tb="$tb elf32-dlx.lo elf32.lo $elf" ;;
 +     bfd_elf32_eco32_vec)	tb="$tb elf32-eco32.lo elf32.lo $elf" ;;
+      bfd_elf32_epiphany_vec)	tb="$tb elf32-epiphany.lo elf32.lo $elf" ;;
       bfd_elf32_fr30_vec)		tb="$tb elf32-fr30.lo elf32.lo $elf" ;;
       bfd_elf32_frv_vec)		tb="$tb elf32-frv.lo elf32.lo $elf" ;;
-      bfd_elf32_frvfdpic_vec)	tb="$tb elf32-frv.lo elf32.lo $elf" ;;
-diff -rcN src_org/binutils//bfd/configure.in src/binutils//bfd/configure.in
-*** src_org/binutils//bfd/configure.in	2009-10-16 13:47:44.000000000 +0200
---- src/binutils//bfd/configure.in	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/configure.in src/binutils/bfd/configure.in
+*** src/binutils-org/bfd/configure.in	2013-03-25 10:08:05.000000000 +0100
+--- src/binutils/bfd/configure.in	2013-11-30 10:25:07.799313988 +0100
 ***************
-*** 694,699 ****
---- 694,700 ----
+*** 711,716 ****
+--- 711,717 ----
       bfd_elf32_d10v_vec)		tb="$tb elf32-d10v.lo elf32.lo $elf" ;;
       bfd_elf32_d30v_vec)		tb="$tb elf32-d30v.lo elf32.lo $elf" ;;
       bfd_elf32_dlx_big_vec)	tb="$tb elf32-dlx.lo elf32.lo $elf" ;;
 +     bfd_elf32_eco32_vec)	tb="$tb elf32-eco32.lo elf32.lo $elf" ;;
+      bfd_elf32_epiphany_vec)	tb="$tb elf32-epiphany.lo elf32.lo $elf" ;;
       bfd_elf32_fr30_vec)		tb="$tb elf32-fr30.lo elf32.lo $elf" ;;
       bfd_elf32_frv_vec)		tb="$tb elf32-frv.lo elf32.lo $elf" ;;
-      bfd_elf32_frvfdpic_vec)	tb="$tb elf32-frv.lo elf32.lo $elf" ;;
-diff -rcN src_org/binutils//bfd/cpu-eco32.c src/binutils//bfd/cpu-eco32.c
-*** src_org/binutils//bfd/cpu-eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//bfd/cpu-eco32.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/cpu-eco32.c src/binutils/bfd/cpu-eco32.c
+*** src/binutils-org/bfd/cpu-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/bfd/cpu-eco32.c	2013-11-30 11:27:20.875284253 +0100
 ***************
 *** 0 ****
---- 1,18 ----
+--- 1,19 ----
 + #include "sysdep.h"
 + #include "bfd.h"
 + #include "libbfd.h"
@@ -143,14 +143,52 @@ diff -rcN src_org/binutils//bfd/cpu-eco32.c src/binutils//bfd/cpu-eco32.c
 +     TRUE,             /* This is indeed the default machine.  */
 +     bfd_default_compatible, 
 +     bfd_default_scan,
++     bfd_arch_default_fill,
 +     0
 + };
-diff -rcN src_org/binutils//bfd/elf32-eco32.c src/binutils//bfd/elf32-eco32.c
-*** src_org/binutils//bfd/elf32-eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//bfd/elf32-eco32.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/doc/bfd.texinfo src/binutils/bfd/doc/bfd.texinfo
+*** src/binutils-org/bfd/doc/bfd.texinfo	2010-10-28 13:40:25.000000000 +0200
+--- src/binutils/bfd/doc/bfd.texinfo	2013-11-30 10:56:28.903299005 +0100
+***************
+*** 322,328 ****
+  @printindex cp
+  
+  @tex
+! % I think something like @colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+--- 322,328 ----
+  @printindex cp
+  
+  @tex
+! % I think something like @@colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+***************
+*** 333,339 ****
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+--- 333,339 ----
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+diff -rcN src/binutils-org/bfd/elf32-eco32.c src/binutils/bfd/elf32-eco32.c
+*** src/binutils-org/bfd/elf32-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/bfd/elf32-eco32.c	2013-11-30 11:22:50.255286408 +0100
 ***************
 *** 0 ****
---- 1,425 ----
+--- 1,420 ----
 + /* BFD backend for eco32 ELF files.  written by litb at university of
 +  * applied sciences in giessen. Large parts are just copied from the
 +  * ggx elf backend specification :), which itself apparently copied
@@ -425,14 +463,9 @@ diff -rcN src_org/binutils//bfd/elf32-eco32.c src/binutils//bfd/elf32-eco32.c
 +                                      unresolved_reloc, warned);
 +         }
 +         
-+         if (sec != NULL && elf_discarded_section (sec)) {
-+             /* For relocs against symbols from removed linkonce sections,
-+                or sections discarded by a linker script, we just want the
-+                section contents zeroed.  Avoid any special processing.  */
-+             _bfd_clear_contents (howto, input_bfd, contents + rel->r_offset);
-+             rel->r_info = 0;
-+             rel->r_addend = 0;
-+             continue;
++         if (sec != NULL && discarded_section (sec)) {
++             RELOC_AGAINST_DISCARDED_SECTION (info, input_bfd, input_section,
++                                              rel, 1, relend, howto, 0, contents);
 +         }
 +         
 +         /* if we link relocatable, don't final link yet */
@@ -576,12 +609,12 @@ diff -rcN src_org/binutils//bfd/elf32-eco32.c src/binutils//bfd/elf32-eco32.c
 + 
 + #include "elf32-target.h"
 + 
-diff -rcN src_org/binutils//bfd/libbfd.h src/binutils//bfd/libbfd.h
-*** src_org/binutils//bfd/libbfd.h	2009-09-02 10:10:55.000000000 +0200
---- src/binutils//bfd/libbfd.h	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/libbfd.h src/binutils/bfd/libbfd.h
+*** src/binutils-org/bfd/libbfd.h	2012-09-04 14:53:42.000000000 +0200
+--- src/binutils/bfd/libbfd.h	2013-11-30 10:25:46.975313676 +0100
 ***************
-*** 806,811 ****
---- 806,812 ----
+*** 912,917 ****
+--- 912,918 ----
     "BFD_RELOC_8",
     "BFD_RELOC_64_PCREL",
     "BFD_RELOC_32_PCREL",
@@ -589,98 +622,98 @@ diff -rcN src_org/binutils//bfd/libbfd.h src/binutils//bfd/libbfd.h
     "BFD_RELOC_24_PCREL",
     "BFD_RELOC_16_PCREL",
     "BFD_RELOC_12_PCREL",
-diff -rcN src_org/binutils//bfd/Makefile.am src/binutils//bfd/Makefile.am
-*** src_org/binutils//bfd/Makefile.am	2009-10-16 13:47:44.000000000 +0200
---- src/binutils//bfd/Makefile.am	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/Makefile.am src/binutils/bfd/Makefile.am
+*** src/binutils-org/bfd/Makefile.am	2013-03-25 10:08:05.000000000 +0100
+--- src/binutils/bfd/Makefile.am	2013-11-30 10:26:40.323313251 +0100
 ***************
-*** 81,86 ****
---- 81,87 ----
+*** 84,89 ****
+--- 84,90 ----
   	cpu-d10v.lo \
   	cpu-d30v.lo \
   	cpu-dlx.lo \
 + 	cpu-eco32.lo \
+  	cpu-epiphany.lo \
   	cpu-fr30.lo \
   	cpu-frv.lo \
-  	cpu-h8300.lo \
 ***************
-*** 152,157 ****
---- 153,159 ----
+*** 165,170 ****
+--- 166,172 ----
   	cpu-d10v.c \
   	cpu-d30v.c \
   	cpu-dlx.c \
 + 	cpu-eco32.c \
+  	cpu-epiphany.c \
   	cpu-fr30.c \
   	cpu-frv.c \
-  	cpu-h8300.c \
 ***************
-*** 277,282 ****
---- 279,285 ----
+*** 299,304 ****
+--- 301,307 ----
   	elf32-d10v.lo \
   	elf32-d30v.lo \
   	elf32-dlx.lo \
 + 	elf32-eco32.lo \
+  	elf32-epiphany.lo \
   	elf32-fr30.lo \
   	elf32-frv.lo \
-  	elf32-gen.lo \
 ***************
-*** 460,465 ****
---- 463,469 ----
+*** 487,492 ****
+--- 490,496 ----
   	elf32-d10v.c \
   	elf32-d30v.c \
   	elf32-dlx.c \
 + 	elf32-eco32.c \
+  	elf32-epiphany.c \
   	elf32-fr30.c \
   	elf32-frv.c \
-  	elf32-gen.c \
-diff -rcN src_org/binutils//bfd/Makefile.in src/binutils//bfd/Makefile.in
-*** src_org/binutils//bfd/Makefile.in	2009-10-16 13:47:48.000000000 +0200
---- src/binutils//bfd/Makefile.in	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/Makefile.in src/binutils/bfd/Makefile.in
+*** src/binutils-org/bfd/Makefile.in	2013-03-25 10:08:08.000000000 +0100
+--- src/binutils/bfd/Makefile.in	2013-11-30 10:27:38.975312784 +0100
 ***************
-*** 376,381 ****
---- 376,382 ----
+*** 383,388 ****
+--- 383,389 ----
   	cpu-d10v.lo \
   	cpu-d30v.lo \
   	cpu-dlx.lo \
 + 	cpu-eco32.lo \
+  	cpu-epiphany.lo \
   	cpu-fr30.lo \
   	cpu-frv.lo \
-  	cpu-h8300.lo \
 ***************
-*** 447,452 ****
---- 448,454 ----
+*** 464,469 ****
+--- 465,471 ----
   	cpu-d10v.c \
   	cpu-d30v.c \
   	cpu-dlx.c \
 + 	cpu-eco32.c \
+  	cpu-epiphany.c \
   	cpu-fr30.c \
   	cpu-frv.c \
-  	cpu-h8300.c \
 ***************
-*** 573,578 ****
---- 575,581 ----
+*** 599,604 ****
+--- 601,607 ----
   	elf32-d10v.lo \
   	elf32-d30v.lo \
   	elf32-dlx.lo \
 + 	elf32-eco32.lo \
+  	elf32-epiphany.lo \
   	elf32-fr30.lo \
   	elf32-frv.lo \
-  	elf32-gen.lo \
 ***************
-*** 756,761 ****
---- 759,765 ----
+*** 787,792 ****
+--- 790,796 ----
   	elf32-d10v.c \
   	elf32-d30v.c \
   	elf32-dlx.c \
 + 	elf32-eco32.c \
+  	elf32-epiphany.c \
   	elf32-fr30.c \
   	elf32-frv.c \
-  	elf32-gen.c \
-diff -rcN src_org/binutils//bfd/reloc.c src/binutils//bfd/reloc.c
-*** src_org/binutils//bfd/reloc.c	2009-09-10 13:47:13.000000000 +0200
---- src/binutils//bfd/reloc.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/reloc.c src/binutils/bfd/reloc.c
+*** src/binutils-org/bfd/reloc.c	2012-09-04 14:53:42.000000000 +0200
+--- src/binutils/bfd/reloc.c	2013-11-30 10:28:01.123312608 +0100
 ***************
-*** 1664,1669 ****
---- 1664,1671 ----
+*** 1672,1677 ****
+--- 1672,1679 ----
   ENUMX
     BFD_RELOC_32_PCREL
   ENUMX
@@ -689,52 +722,134 @@ diff -rcN src_org/binutils//bfd/reloc.c src/binutils//bfd/reloc.c
     BFD_RELOC_24_PCREL
   ENUMX
     BFD_RELOC_16_PCREL
-diff -rcN src_org/binutils//bfd/targets.c src/binutils//bfd/targets.c
-*** src_org/binutils//bfd/targets.c	2009-09-10 13:47:13.000000000 +0200
---- src/binutils//bfd/targets.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/bfd/targets.c src/binutils/bfd/targets.c
+*** src/binutils-org/bfd/targets.c	2012-09-04 14:53:42.000000000 +0200
+--- src/binutils/bfd/targets.c	2013-11-30 10:28:34.479312342 +0100
 ***************
-*** 584,589 ****
---- 584,590 ----
+*** 613,618 ****
+--- 613,619 ----
   extern const bfd_target bfd_elf32_d10v_vec;
   extern const bfd_target bfd_elf32_d30v_vec;
   extern const bfd_target bfd_elf32_dlx_big_vec;
 + extern const bfd_target bfd_elf32_eco32_vec;
+  extern const bfd_target bfd_elf32_epiphany_vec;
   extern const bfd_target bfd_elf32_fr30_vec;
   extern const bfd_target bfd_elf32_frv_vec;
-  extern const bfd_target bfd_elf32_frvfdpic_vec;
 ***************
-*** 917,922 ****
---- 918,924 ----
+*** 986,991 ****
+--- 987,993 ----
   	&bfd_elf32_d10v_vec,
   	&bfd_elf32_d30v_vec,
   	&bfd_elf32_dlx_big_vec,
 +     &bfd_elf32_eco32_vec,
+  	&bfd_elf32_epiphany_vec,
   	&bfd_elf32_fr30_vec,
   	&bfd_elf32_frv_vec,
-  	&bfd_elf32_frvfdpic_vec,
-diff -rcN src_org/binutils//config.sub src/binutils//config.sub
-*** src_org/binutils//config.sub	2009-08-17 06:10:29.000000000 +0200
---- src/binutils//config.sub	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/binutils/doc/binutils.texi src/binutils/binutils/doc/binutils.texi
+*** src/binutils-org/binutils/doc/binutils.texi	2013-03-25 09:06:21.000000000 +0100
+--- src/binutils/binutils/doc/binutils.texi	2013-11-30 10:58:38.667297971 +0100
 ***************
-*** 249,255 ****
-  	| bfin \
+*** 4413,4419 ****
+  
+  @table @env
+  
+! @itemx --input-mach=@var{machine}
+  Set the matching input ELF machine type to @var{machine}.  If
+  @option{--input-mach} isn't specified, it will match any ELF
+  machine types.
+--- 4413,4419 ----
+  
+  @table @env
+  
+! @item --input-mach=@var{machine}
+  Set the matching input ELF machine type to @var{machine}.  If
+  @option{--input-mach} isn't specified, it will match any ELF
+  machine types.
+***************
+*** 4421,4441 ****
+  The supported ELF machine types are, @var{L1OM}, @var{K1OM} and
+  @var{x86-64}.
+  
+! @itemx --output-mach=@var{machine}
+  Change the ELF machine type in the ELF header to @var{machine}.  The
+  supported ELF machine types are the same as @option{--input-mach}.
+  
+! @itemx --input-type=@var{type}
+  Set the matching input ELF file type to @var{type}.  If
+  @option{--input-type} isn't specified, it will match any ELF file types.
+  
+  The supported ELF file types are, @var{rel}, @var{exec} and @var{dyn}.
+  
+! @itemx --output-type=@var{type}
+  Change the ELF file type in the ELF header to @var{type}.  The
+  supported ELF types are the same as @option{--input-type}.
+  
+! @itemx --input-osabi=@var{osabi}
+  Set the matching input ELF file OSABI to @var{osabi}.  If
+  @option{--input-osabi} isn't specified, it will match any ELF OSABIs.
+  
+--- 4421,4441 ----
+  The supported ELF machine types are, @var{L1OM}, @var{K1OM} and
+  @var{x86-64}.
+  
+! @item --output-mach=@var{machine}
+  Change the ELF machine type in the ELF header to @var{machine}.  The
+  supported ELF machine types are the same as @option{--input-mach}.
+  
+! @item --input-type=@var{type}
+  Set the matching input ELF file type to @var{type}.  If
+  @option{--input-type} isn't specified, it will match any ELF file types.
+  
+  The supported ELF file types are, @var{rel}, @var{exec} and @var{dyn}.
+  
+! @item --output-type=@var{type}
+  Change the ELF file type in the ELF header to @var{type}.  The
+  supported ELF types are the same as @option{--input-type}.
+  
+! @item --input-osabi=@var{osabi}
+  Set the matching input ELF file OSABI to @var{osabi}.  If
+  @option{--input-osabi} isn't specified, it will match any ELF OSABIs.
+  
+***************
+*** 4445,4451 ****
+  @var{FreeBSD}, @var{TRU64}, @var{Modesto}, @var{OpenBSD}, @var{OpenVMS},
+  @var{NSK}, @var{AROS} and @var{FenixOS}.
+  
+! @itemx --output-osabi=@var{osabi}
+  Change the ELF OSABI in the ELF header to @var{osabi}.  The
+  supported ELF OSABI are the same as @option{--input-osabi}.
+  
+--- 4445,4451 ----
+  @var{FreeBSD}, @var{TRU64}, @var{Modesto}, @var{OpenBSD}, @var{OpenVMS},
+  @var{NSK}, @var{AROS} and @var{FenixOS}.
+  
+! @item --output-osabi=@var{osabi}
+  Change the ELF OSABI in the ELF header to @var{osabi}.  The
+  supported ELF OSABI are the same as @option{--input-osabi}.
+  
+diff -rcN src/binutils-org/config.sub src/binutils/config.sub
+*** src/binutils-org/config.sub	2012-04-25 17:53:25.000000000 +0200
+--- src/binutils/config.sub	2013-11-30 10:29:37.647311839 +0100
+***************
+*** 265,271 ****
   	| c4x | clipper \
   	| d10v | d30v | dlx | dsp16xx \
+  	| epiphany \
 ! 	| fido | fr30 | frv \
   	| h8300 | h8500 | hppa | hppa1.[01] | hppa2.0 | hppa2.0[nw] | hppa64 \
+  	| hexagon \
   	| i370 | i860 | i960 | ia64 \
-  	| ip2k | iq2000 \
---- 249,255 ----
-  	| bfin \
+--- 265,271 ----
   	| c4x | clipper \
   	| d10v | d30v | dlx | dsp16xx \
+  	| epiphany \
 ! 	| eco32-* | fido | fr30 | frv \
   	| h8300 | h8500 | hppa | hppa1.[01] | hppa2.0 | hppa2.0[nw] | hppa64 \
+  	| hexagon \
   	| i370 | i860 | i960 | ia64 \
-  	| ip2k | iq2000 \
 ***************
-*** 569,574 ****
---- 569,578 ----
+*** 632,637 ****
+--- 632,641 ----
   		basic_machine=a29k-amd
   		os=-ebmon
   		;;
@@ -746,40 +861,40 @@ diff -rcN src_org/binutils//config.sub src/binutils//config.sub
   		basic_machine=elxsi-elxsi
   		os=-bsd
 ***************
-*** 1274,1280 ****
-  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-  	      | -kopensolaris* \
+*** 1348,1354 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1278,1284 ----
-  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
-  	      | -kopensolaris* \
+--- 1352,1358 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+  	      | -sym* | -kopensolaris* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src_org/binutils//configure.ac src/binutils//configure.ac
-*** src_org/binutils//configure.ac	2009-10-16 13:52:23.000000000 +0200
---- src/binutils//configure.ac	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/configure.ac src/binutils/configure.ac
+*** src/binutils-org/configure.ac	2013-03-25 10:10:28.000000000 +0100
+--- src/binutils/configure.ac	2013-11-30 10:30:35.727311376 +0100
 ***************
-*** 651,656 ****
---- 651,659 ----
-    frv-*-*)
-      noconfigdirs="$noconfigdirs ${libgcj}"
+*** 881,886 ****
+--- 881,889 ----
+    d30v-*-*)
+      noconfigdirs="$noconfigdirs gdb"
       ;;
 +   eco32-*-*)
 +     noconfigdirs="$noconfigdirs gold gprof"
 +     ;;
-    moxie-*-*)
-      noconfigdirs="$noconfigdirs ${libgcj}"
-      noconfigdirs="$noconfigdirs gprof"
-diff -rcN src_org/binutils//gas/config/tc-eco32.c src/binutils//gas/config/tc-eco32.c
-*** src_org/binutils//gas/config/tc-eco32.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//gas/config/tc-eco32.c	2011-05-29 17:27:24.000000000 +0200
+    fr30-*-elf*)
+      noconfigdirs="$noconfigdirs gdb"
+      ;;
+diff -rcN src/binutils-org/gas/config/tc-eco32.c src/binutils/gas/config/tc-eco32.c
+*** src/binutils-org/gas/config/tc-eco32.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/gas/config/tc-eco32.c	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,830 ----
@@ -1613,9 +1728,9 @@ diff -rcN src_org/binutils//gas/config/tc-eco32.c src/binutils//gas/config/tc-ec
 +     valueT addr = fixP->fx_where + fixP->fx_frag->fr_address;
 +     return (addr & ~3) + 4;
 + }
-diff -rcN src_org/binutils//gas/config/tc-eco32.h src/binutils//gas/config/tc-eco32.h
-*** src_org/binutils//gas/config/tc-eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//gas/config/tc-eco32.h	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/gas/config/tc-eco32.h src/binutils/gas/config/tc-eco32.h
+*** src/binutils-org/gas/config/tc-eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/gas/config/tc-eco32.h	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,48 ----
@@ -1667,98 +1782,78 @@ diff -rcN src_org/binutils//gas/config/tc-eco32.h src/binutils//gas/config/tc-ec
 +  * valueT for the rounded size. */
 + #define md_section_align(segment, size) (size)
 + 
-diff -rcN src_org/binutils//gas/configure.tgt src/binutils//gas/configure.tgt
-*** src_org/binutils//gas/configure.tgt	2009-09-09 10:13:28.000000000 +0200
---- src/binutils//gas/configure.tgt	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/gas/configure.tgt src/binutils/gas/configure.tgt
+*** src/binutils-org/gas/configure.tgt	2012-09-04 14:53:45.000000000 +0200
+--- src/binutils/gas/configure.tgt	2013-11-30 10:31:06.867311128 +0100
 ***************
-*** 145,150 ****
---- 145,151 ----
+*** 151,156 ****
+--- 151,157 ----
     d10v-*-*)				fmt=elf ;;
     d30v-*-*)				fmt=elf ;;
     dlx-*-*)				fmt=elf ;;
 +   eco32-*-*)            fmt=elf ;;
   
-    fr30-*-*)				fmt=elf ;;
-    frv-*-*linux*)			fmt=elf em=linux;;
-diff -rcN src_org/binutils//gas/Makefile.am src/binutils//gas/Makefile.am
-*** src_org/binutils//gas/Makefile.am	2009-09-07 11:16:06.000000000 +0200
---- src/binutils//gas/Makefile.am	2011-05-29 17:27:24.000000000 +0200
+    epiphany-*-*)				fmt=elf ;;
+  
+diff -rcN src/binutils-org/gas/Makefile.am src/binutils/gas/Makefile.am
+*** src/binutils-org/gas/Makefile.am	2012-09-04 14:53:45.000000000 +0200
+--- src/binutils/gas/Makefile.am	2013-11-30 10:31:47.307310806 +0100
 ***************
-*** 50,55 ****
---- 50,56 ----
-  	d10v \
-  	d30v \
-  	dlx \
-+ 	eco32 \
-  	fr30 \
-  	frv \
-  	h8300 \
-***************
-*** 251,256 ****
---- 252,258 ----
+*** 119,124 ****
+--- 119,125 ----
   	config/tc-d10v.c \
   	config/tc-d30v.c \
   	config/tc-dlx.c \
 + 	config/tc-eco32.c \
+  	config/tc-epiphany.c \
   	config/tc-fr30.c \
   	config/tc-frv.c \
-  	config/tc-h8300.c \
 ***************
-*** 314,319 ****
---- 316,322 ----
+*** 189,194 ****
+--- 190,196 ----
   	config/tc-d10v.h \
   	config/tc-d30v.h \
   	config/tc-dlx.h \
 + 	config/tc-eco32.h \
+  	config/tc-epiphany.h \
   	config/tc-fr30.h \
   	config/tc-frv.h \
-  	config/tc-h8300.h \
-diff -rcN src_org/binutils//gas/Makefile.in src/binutils//gas/Makefile.in
-*** src_org/binutils//gas/Makefile.in	2009-09-07 14:09:27.000000000 +0200
---- src/binutils//gas/Makefile.in	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/gas/Makefile.in src/binutils/gas/Makefile.in
+*** src/binutils-org/gas/Makefile.in	2012-09-04 14:53:45.000000000 +0200
+--- src/binutils/gas/Makefile.in	2013-11-30 10:33:38.551309920 +0100
 ***************
-*** 316,321 ****
---- 316,322 ----
-  	d10v \
-  	d30v \
-  	dlx \
-+ 	eco32 \
-  	fr30 \
-  	frv \
-  	h8300 \
-***************
-*** 515,520 ****
---- 516,522 ----
+*** 387,392 ****
+--- 387,393 ----
   	config/tc-d10v.c \
   	config/tc-d30v.c \
   	config/tc-dlx.c \
 + 	config/tc-eco32.c \
+  	config/tc-epiphany.c \
   	config/tc-fr30.c \
   	config/tc-frv.c \
-  	config/tc-h8300.c \
 ***************
-*** 578,583 ****
---- 580,586 ----
+*** 457,462 ****
+--- 458,464 ----
   	config/tc-d10v.h \
   	config/tc-d30v.h \
   	config/tc-dlx.h \
 + 	config/tc-eco32.h \
+  	config/tc-epiphany.h \
   	config/tc-fr30.h \
   	config/tc-frv.h \
-  	config/tc-h8300.h \
 ***************
-*** 956,961 ****
---- 959,965 ----
+*** 807,812 ****
+--- 809,815 ----
   @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-d10v.Po@am__quote@
   @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-d30v.Po@am__quote@
   @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-dlx.Po@am__quote@
 + @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-eco32.Po@am__quote@
+  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-epiphany.Po@am__quote@
   @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-fr30.Po@am__quote@
   @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-frv.Po@am__quote@
-  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-h8300.Po@am__quote@
 ***************
-*** 1184,1189 ****
---- 1188,1207 ----
+*** 1055,1060 ****
+--- 1058,1077 ----
   @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
   @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-dlx.obj `if test -f 'config/tc-dlx.c'; then $(CYGPATH_W) 'config/tc-dlx.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-dlx.c'; fi`
   
@@ -1776,28 +1871,28 @@ diff -rcN src_org/binutils//gas/Makefile.in src/binutils//gas/Makefile.in
 + @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 + @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-eco32.obj `if test -f 'config/tc-eco32.c'; then $(CYGPATH_W) 'config/tc-eco32.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-eco32.c'; fi`
 + 
-  tc-fr30.o: config/tc-fr30.c
-  @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-fr30.o -MD -MP -MF $(DEPDIR)/tc-fr30.Tpo -c -o tc-fr30.o `test -f 'config/tc-fr30.c' || echo '$(srcdir)/'`config/tc-fr30.c
-  @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-fr30.Tpo $(DEPDIR)/tc-fr30.Po
-diff -rcN src_org/binutils//include/dis-asm.h src/binutils//include/dis-asm.h
-*** src_org/binutils//include/dis-asm.h	2009-08-06 19:38:03.000000000 +0200
---- src/binutils//include/dis-asm.h	2011-05-29 17:27:24.000000000 +0200
+  tc-epiphany.o: config/tc-epiphany.c
+  @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-epiphany.o -MD -MP -MF $(DEPDIR)/tc-epiphany.Tpo -c -o tc-epiphany.o `test -f 'config/tc-epiphany.c' || echo '$(srcdir)/'`config/tc-epiphany.c
+  @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-epiphany.Tpo $(DEPDIR)/tc-epiphany.Po
+diff -rcN src/binutils-org/include/dis-asm.h src/binutils/include/dis-asm.h
+*** src/binutils-org/include/dis-asm.h	2012-09-04 14:53:46.000000000 +0200
+--- src/binutils/include/dis-asm.h	2013-11-30 10:34:14.891309630 +0100
 ***************
-*** 233,238 ****
---- 233,239 ----
+*** 234,239 ****
+--- 234,240 ----
   extern int print_insn_d10v		(bfd_vma, disassemble_info *);
   extern int print_insn_d30v		(bfd_vma, disassemble_info *);
   extern int print_insn_dlx 		(bfd_vma, disassemble_info *);
 + extern int print_insn_eco32		(bfd_vma addr, struct disassemble_info *info);
+  extern int print_insn_epiphany		(bfd_vma, disassemble_info *);
   extern int print_insn_fr30		(bfd_vma, disassemble_info *);
   extern int print_insn_frv		(bfd_vma, disassemble_info *);
-  extern int print_insn_h8300		(bfd_vma, disassemble_info *);
-diff -rcN src_org/binutils//include/elf/common.h src/binutils//include/elf/common.h
-*** src_org/binutils//include/elf/common.h	2009-08-09 15:42:26.000000000 +0200
---- src/binutils//include/elf/common.h	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/include/elf/common.h src/binutils/include/elf/common.h
+*** src/binutils-org/include/elf/common.h	2012-09-04 14:53:47.000000000 +0200
+--- src/binutils/include/elf/common.h	2013-11-30 10:34:53.223309325 +0100
 ***************
-*** 389,394 ****
---- 389,397 ----
+*** 396,401 ****
+--- 396,404 ----
   
   #define EM_CYGNUS_MEP		0xF00D  /* Toshiba MeP */
   
@@ -1807,9 +1902,9 @@ diff -rcN src_org/binutils//include/elf/common.h src/binutils//include/elf/commo
   #define EM_MOXIE                0xFEED  /* Moxie */
   
   /* Old Sunplus S+core7 backend magic number. Written in the absence of an ABI.  */
-diff -rcN src_org/binutils//include/elf/eco32.h src/binutils//include/elf/eco32.h
-*** src_org/binutils//include/elf/eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//include/elf/eco32.h	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/include/elf/eco32.h src/binutils/include/elf/eco32.h
+*** src/binutils-org/include/elf/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/include/elf/eco32.h	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,16 ----
@@ -1829,9 +1924,9 @@ diff -rcN src_org/binutils//include/elf/eco32.h src/binutils//include/elf/eco32.
 + END_RELOC_NUMBERS (R_ECO32_max)
 + 
 + #endif
-diff -rcN src_org/binutils//include/opcode/eco32.h src/binutils//include/opcode/eco32.h
-*** src_org/binutils//include/opcode/eco32.h	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//include/opcode/eco32.h	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/include/opcode/eco32.h src/binutils/include/opcode/eco32.h
+*** src/binutils-org/include/opcode/eco32.h	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/include/opcode/eco32.h	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,138 ----
@@ -1973,22 +2068,22 @@ diff -rcN src_org/binutils//include/opcode/eco32.h src/binutils//include/opcode/
 + 
 + extern struct eco32_opc_info_t eco32_opcodes[NUM_OPS];
 + 
-diff -rcN src_org/binutils//ld/configure.tgt src/binutils//ld/configure.tgt
-*** src_org/binutils//ld/configure.tgt	2009-08-06 19:38:03.000000000 +0200
---- src/binutils//ld/configure.tgt	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/ld/configure.tgt src/binutils/ld/configure.tgt
+*** src/binutils-org/ld/configure.tgt	2012-09-04 14:53:47.000000000 +0200
+--- src/binutils/ld/configure.tgt	2013-11-30 10:35:31.663309019 +0100
 ***************
-*** 149,154 ****
---- 149,155 ----
+*** 157,162 ****
+--- 157,163 ----
   			;;
   dlx-*-elf*)		targ_emul=elf32_dlx
   			;;
 + eco32-*-*)      targ_emul=elf32eco32; targ_extra_emuls="eco32bin" ;;
-  fido*-*-elf*)		targ_emul=m68kelf ;;
-  fr30-*-*)		targ_emul=elf32fr30
+  epiphany-*-elf)		targ_emul=elf32epiphany
   			;;
-diff -rcN src_org/binutils//ld/emulparams/eco32bin.sh src/binutils//ld/emulparams/eco32bin.sh
-*** src_org/binutils//ld/emulparams/eco32bin.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//ld/emulparams/eco32bin.sh	2011-05-29 17:27:24.000000000 +0200
+  fido*-*-elf*)		targ_emul=m68kelf ;;
+diff -rcN src/binutils-org/ld/emulparams/eco32bin.sh src/binutils/ld/emulparams/eco32bin.sh
+*** src/binutils-org/ld/emulparams/eco32bin.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/eco32bin.sh	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,14 ----
@@ -2006,9 +2101,9 @@ diff -rcN src_org/binutils//ld/emulparams/eco32bin.sh src/binutils//ld/emulparam
 + 
 + DATA_ADDR="ALIGN(${TARGET_PAGE_SIZE})"
 + 
-diff -rcN src_org/binutils//ld/emulparams/elf32eco32.sh src/binutils//ld/emulparams/elf32eco32.sh
-*** src_org/binutils//ld/emulparams/elf32eco32.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//ld/emulparams/elf32eco32.sh	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/ld/emulparams/elf32eco32.sh src/binutils/ld/emulparams/elf32eco32.sh
+*** src/binutils-org/ld/emulparams/elf32eco32.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/elf32eco32.sh	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,29 ----
@@ -2041,103 +2136,104 @@ diff -rcN src_org/binutils//ld/emulparams/elf32eco32.sh src/binutils//ld/emulpar
 + # address.
 + EMBEDDED=yes
 + 
-diff -rcN src_org/binutils//ld/Makefile.am src/binutils//ld/Makefile.am
-*** src_org/binutils//ld/Makefile.am	2009-09-01 22:56:51.000000000 +0200
---- src/binutils//ld/Makefile.am	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/ld/ld.texinfo src/binutils/ld/ld.texinfo
+*** src/binutils-org/ld/ld.texinfo	2013-03-25 09:06:23.000000000 +0100
+--- src/binutils/ld/ld.texinfo	2013-11-30 10:59:30.975297554 +0100
 ***************
-*** 151,156 ****
---- 151,157 ----
-  	ecoff_i860.o \
-  	ecoff_sparc.o \
-  	eelf32_spu.o \
-+ 	eeco32bin.o \
-  	ecrisaout.o \
-  	ecriself.o \
-  	ecrislinux.o \
+*** 7863,7869 ****
+  @printindex cp
+  
+  @tex
+! % I think something like @colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+--- 7863,7869 ----
+  @printindex cp
+  
+  @tex
+! % I think something like @@colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
 ***************
-*** 160,165 ****
---- 161,167 ----
-  	ed30velf.o \
-  	edelta68.o \
-  	eelf32_dlx.o \
-+ 	eelf32eco32.o \
-  	eelf32_i960.o \
-  	eelf32_i860.o \
-  	eelf32_sparc.o \
+*** 7874,7880 ****
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+--- 7874,7880 ----
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+diff -rcN src/binutils-org/ld/Makefile.am src/binutils/ld/Makefile.am
+*** src/binutils-org/ld/Makefile.am	2013-03-25 09:06:23.000000000 +0100
+--- src/binutils/ld/Makefile.am	2013-11-30 10:38:57.459307380 +0100
 ***************
-*** 727,732 ****
---- 729,737 ----
-    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
-    ${GEN_DEPENDS}
-  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
-+ eeco32bin.c: $(srcdir)/emulparams/eco32bin.sh $(srcdir)/emultempl/generic.em \
-+   $(srcdir)/scripttempl/eco32bin.sc ${GEN_DEPENDS}
-+ 	${GENSCRIPTS} eco32bin "$(tdir_eco32)"
-  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
-    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
-  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
+*** 182,187 ****
+--- 182,189 ----
+  	ed30v_o.c \
+  	ed30velf.c \
+  	edelta68.c \
++ 	eeco32bin.c \
++ 	eelf32eco32.c \
+  	eelf32_dlx.c \
+  	eelf32_i860.c \
+  	eelf32_i960.c \
 ***************
-*** 768,773 ****
---- 773,781 ----
+*** 882,887 ****
+--- 884,895 ----
   eelf32_dlx.c: $(srcdir)/emulparams/elf32_dlx.sh \
     $(ELF_GEN_DEPS) $(srcdir)/scripttempl/dlx.sc ${GEN_DEPENDS}
   	${GENSCRIPTS} elf32_dlx "$(tdir_elf32_dlx)"
-+ eelf32eco32.c: $(srcdir)/emulparams/elf32eco32.sh \
-+   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-+ 	${GENSCRIPTS} elf32eco32 "$(tdir_eco32)"
-  eelf32xc16x.c: $(srcdir)/emulparams/elf32xc16x.sh \
-    $(ELF_DEPS) $(srcdir)/emultempl/needrelax.em \
-    $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-diff -rcN src_org/binutils//ld/Makefile.in src/binutils//ld/Makefile.in
-*** src_org/binutils//ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
---- src/binutils//ld/Makefile.in	2011-05-29 17:27:24.000000000 +0200
-***************
-*** 437,442 ****
---- 437,443 ----
-  	ecoff_i860.o \
-  	ecoff_sparc.o \
-  	eelf32_spu.o \
-+ 	eeco32bin.o \
-  	ecrisaout.o \
-  	ecriself.o \
-  	ecrislinux.o \
-***************
-*** 446,451 ****
---- 447,453 ----
-  	ed30velf.o \
-  	edelta68.o \
-  	eelf32_dlx.o \
-+ 	eelf32eco32.o \
-  	eelf32_i960.o \
-  	eelf32_i860.o \
-  	eelf32_sparc.o \
-***************
-*** 2068,2073 ****
---- 2070,2078 ----
-    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
-    ${GEN_DEPENDS}
-  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
 + eeco32bin.c: $(srcdir)/emulparams/eco32bin.sh $(srcdir)/emultempl/generic.em \
 +   $(srcdir)/scripttempl/eco32bin.sc ${GEN_DEPENDS}
 + 	${GENSCRIPTS} eco32bin "$(tdir_eco32)"
-  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
-    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
-  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
-***************
-*** 2109,2114 ****
---- 2114,2122 ----
-  eelf32_dlx.c: $(srcdir)/emulparams/elf32_dlx.sh \
-    $(ELF_GEN_DEPS) $(srcdir)/scripttempl/dlx.sc ${GEN_DEPENDS}
-  	${GENSCRIPTS} elf32_dlx "$(tdir_elf32_dlx)"
 + eelf32eco32.c: $(srcdir)/emulparams/elf32eco32.sh \
 +   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 + 	${GENSCRIPTS} elf32eco32 "$(tdir_eco32)"
-  eelf32xc16x.c: $(srcdir)/emulparams/elf32xc16x.sh \
-    $(ELF_DEPS) $(srcdir)/emultempl/needrelax.em \
-    $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-diff -rcN src_org/binutils//ld/scripttempl/eco32bin.sc src/binutils//ld/scripttempl/eco32bin.sc
-*** src_org/binutils//ld/scripttempl/eco32bin.sc	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//ld/scripttempl/eco32bin.sc	2011-05-29 17:27:24.000000000 +0200
+  eelf32_i860.c: $(srcdir)/emulparams/elf32_i860.sh \
+    $(ELF_GEN_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} elf32_i860 "$(tdir_elf32_i860)"
+diff -rcN src/binutils-org/ld/Makefile.in src/binutils/ld/Makefile.in
+*** src/binutils-org/ld/Makefile.in	2013-03-25 09:06:23.000000000 +0100
+--- src/binutils/ld/Makefile.in	2013-11-30 10:40:10.611306797 +0100
+***************
+*** 489,494 ****
+--- 489,496 ----
+  	ed30v_o.c \
+  	ed30velf.c \
+  	edelta68.c \
++ 	eeco32bin.c \
++ 	eelf32eco32.c \
+  	eelf32_dlx.c \
+  	eelf32_i860.c \
+  	eelf32_i960.c \
+***************
+*** 2319,2324 ****
+--- 2321,2332 ----
+    $(srcdir)/emultempl/avrelf.em $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
+    ${GEN_DEPENDS}
+  	${GENSCRIPTS} avrxmega7 "$(tdir_avr2)"
++ eeco32bin.c: $(srcdir)/emulparams/eco32bin.sh $(srcdir)/emultempl/generic.em \
++   $(srcdir)/scripttempl/eco32bin.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} eco32bin "$(tdir_eco32)"
++ eelf32eco32.c: $(srcdir)/emulparams/elf32eco32.sh \
++   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} elf32eco32 "$(tdir_eco32)"
+  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
+    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
+diff -rcN src/binutils-org/ld/scripttempl/eco32bin.sc src/binutils/ld/scripttempl/eco32bin.sc
+*** src/binutils-org/ld/scripttempl/eco32bin.sc	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/scripttempl/eco32bin.sc	2013-11-30 10:43:09.015305376 +0100
 ***************
 *** 0 ****
 --- 1,85 ----
@@ -2226,12 +2322,12 @@ diff -rcN src_org/binutils//ld/scripttempl/eco32bin.sc src/binutils//ld/scriptte
 + }
 + EOF
 + 
-diff -rcN src_org/binutils//opcodes/configure src/binutils//opcodes/configure
-*** src_org/binutils//opcodes/configure	2009-09-07 14:08:04.000000000 +0200
---- src/binutils//opcodes/configure	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/opcodes/configure src/binutils/opcodes/configure
+*** src/binutils-org/opcodes/configure	2012-09-04 16:21:07.000000000 +0200
+--- src/binutils/opcodes/configure	2013-11-30 10:40:48.395306496 +0100
 ***************
-*** 12291,12296 ****
---- 12291,12297 ----
+*** 12498,12503 ****
+--- 12498,12504 ----
   	bfd_d10v_arch)		ta="$ta d10v-dis.lo d10v-opc.lo" ;;
   	bfd_d30v_arch)		ta="$ta d30v-dis.lo d30v-opc.lo" ;;
   	bfd_dlx_arch)		ta="$ta dlx-dis.lo" ;;
@@ -2239,12 +2335,12 @@ diff -rcN src_org/binutils//opcodes/configure src/binutils//opcodes/configure
   	bfd_fr30_arch)          ta="$ta fr30-asm.lo fr30-desc.lo fr30-dis.lo fr30-ibld.lo fr30-opc.lo" using_cgen=yes ;;
   	bfd_frv_arch)           ta="$ta frv-asm.lo frv-desc.lo frv-dis.lo frv-ibld.lo frv-opc.lo" using_cgen=yes ;;
   	bfd_moxie_arch)		ta="$ta moxie-dis.lo moxie-opc.lo" ;;
-diff -rcN src_org/binutils//opcodes/configure.in src/binutils//opcodes/configure.in
-*** src_org/binutils//opcodes/configure.in	2009-09-07 14:07:53.000000000 +0200
---- src/binutils//opcodes/configure.in	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/opcodes/configure.in src/binutils/opcodes/configure.in
+*** src/binutils-org/opcodes/configure.in	2012-11-05 17:29:08.000000000 +0100
+--- src/binutils/opcodes/configure.in	2013-11-30 10:41:10.359306321 +0100
 ***************
-*** 230,235 ****
---- 230,236 ----
+*** 243,248 ****
+--- 243,249 ----
   	bfd_d10v_arch)		ta="$ta d10v-dis.lo d10v-opc.lo" ;;
   	bfd_d30v_arch)		ta="$ta d30v-dis.lo d30v-opc.lo" ;;
   	bfd_dlx_arch)		ta="$ta dlx-dis.lo" ;;
@@ -2252,22 +2348,22 @@ diff -rcN src_org/binutils//opcodes/configure.in src/binutils//opcodes/configure
   	bfd_fr30_arch)          ta="$ta fr30-asm.lo fr30-desc.lo fr30-dis.lo fr30-ibld.lo fr30-opc.lo" using_cgen=yes ;;
   	bfd_frv_arch)           ta="$ta frv-asm.lo frv-desc.lo frv-dis.lo frv-ibld.lo frv-opc.lo" using_cgen=yes ;;
   	bfd_moxie_arch)		ta="$ta moxie-dis.lo moxie-opc.lo" ;;
-diff -rcN src_org/binutils//opcodes/disassemble.c src/binutils//opcodes/disassemble.c
-*** src_org/binutils//opcodes/disassemble.c	2009-09-02 09:20:29.000000000 +0200
---- src/binutils//opcodes/disassemble.c	2011-09-05 17:19:56.000000000 +0200
+diff -rcN src/binutils-org/opcodes/disassemble.c src/binutils/opcodes/disassemble.c
+*** src/binutils-org/opcodes/disassemble.c	2012-09-04 14:53:50.000000000 +0200
+--- src/binutils/opcodes/disassemble.c	2013-11-30 10:41:42.091306068 +0100
 ***************
-*** 34,39 ****
---- 34,40 ----
+*** 36,41 ****
+--- 36,42 ----
   #define ARCH_d10v
   #define ARCH_d30v
   #define ARCH_dlx
 + #define ARCH_eco32
+  #define ARCH_epiphany
   #define ARCH_fr30
   #define ARCH_frv
-  #define ARCH_h8300
 ***************
-*** 167,172 ****
---- 168,178 ----
+*** 178,183 ****
+--- 179,189 ----
         disassemble = print_insn_dlx;
         break;
   #endif
@@ -2279,15 +2375,15 @@ diff -rcN src_org/binutils//opcodes/disassemble.c src/binutils//opcodes/disassem
   #ifdef ARCH_h8300
       case bfd_arch_h8300:
         if (bfd_get_mach (abfd) == bfd_mach_h8300h
-diff -rcN src_org/binutils//opcodes/eco32-dis.c src/binutils//opcodes/eco32-dis.c
-*** src_org/binutils//opcodes/eco32-dis.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//opcodes/eco32-dis.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/opcodes/eco32-dis.c src/binutils/opcodes/eco32-dis.c
+*** src/binutils-org/opcodes/eco32-dis.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/opcodes/eco32-dis.c	2013-11-30 11:28:43.583283594 +0100
 ***************
 *** 0 ****
 --- 1,169 ----
++ #include "sysdep.h"
 + #include <stdint.h>
 + #include <math.h>
-+ #include "sysdep.h"
 + 
 + /* some ports define this, but i don't know what this does. look it
 +  * up! XXX */
@@ -2454,9 +2550,9 @@ diff -rcN src_org/binutils//opcodes/eco32-dis.c src/binutils//opcodes/eco32-dis.
 + }
 + 
 + 
-diff -rcN src_org/binutils//opcodes/eco32-opc.c src/binutils//opcodes/eco32-opc.c
-*** src_org/binutils//opcodes/eco32-opc.c	1970-01-01 01:00:00.000000000 +0100
---- src/binutils//opcodes/eco32-opc.c	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/opcodes/eco32-opc.c src/binutils/opcodes/eco32-opc.c
+*** src/binutils-org/opcodes/eco32-opc.c	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/opcodes/eco32-opc.c	2013-11-30 10:43:09.019305376 +0100
 ***************
 *** 0 ****
 --- 1,74 ----
@@ -2534,31 +2630,31 @@ diff -rcN src_org/binutils//opcodes/eco32-opc.c src/binutils//opcodes/eco32-opc.
 +     { OP_TBWI, INSN_N, "tbwi", FORMAT_N, 0 }
 + };
 + 
-diff -rcN src_org/binutils//opcodes/Makefile.am src/binutils//opcodes/Makefile.am
-*** src_org/binutils//opcodes/Makefile.am	2009-09-07 14:07:53.000000000 +0200
---- src/binutils//opcodes/Makefile.am	2011-05-29 17:27:24.000000000 +0200
+diff -rcN src/binutils-org/opcodes/Makefile.am src/binutils/opcodes/Makefile.am
+*** src/binutils-org/opcodes/Makefile.am	2012-09-04 16:21:06.000000000 +0200
+--- src/binutils/opcodes/Makefile.am	2013-11-30 10:42:08.191305860 +0100
 ***************
-*** 96,101 ****
---- 96,103 ----
+*** 104,109 ****
+--- 104,111 ----
   	d30v-dis.c \
   	d30v-opc.c \
   	dlx-dis.c \
 + 	eco32-dis.c \
 + 	eco32-opc.c \
-  	fr30-asm.c \
-  	fr30-desc.c \
-  	fr30-dis.c \
-diff -rcN src_org/binutils//opcodes/Makefile.in src/binutils//opcodes/Makefile.in
-*** src_org/binutils//opcodes/Makefile.in	2009-09-07 14:08:03.000000000 +0200
---- src/binutils//opcodes/Makefile.in	2011-05-29 17:27:24.000000000 +0200
+  	epiphany-asm.c \
+  	epiphany-desc.c \
+  	epiphany-dis.c \
+diff -rcN src/binutils-org/opcodes/Makefile.in src/binutils/opcodes/Makefile.in
+*** src/binutils-org/opcodes/Makefile.in	2012-09-04 16:21:06.000000000 +0200
+--- src/binutils/opcodes/Makefile.in	2013-11-30 10:42:26.671305713 +0100
 ***************
-*** 366,371 ****
---- 366,373 ----
+*** 375,380 ****
+--- 375,382 ----
   	d30v-dis.c \
   	d30v-opc.c \
   	dlx-dis.c \
 + 	eco32-dis.c \
 + 	eco32-opc.c \
-  	fr30-asm.c \
-  	fr30-desc.c \
-  	fr30-dis.c \
+  	epiphany-asm.c \
+  	epiphany-desc.c \
+  	epiphany-dis.c \

@@ -1,18 +1,18 @@
 diff -rcN src/gcc-org/config.sub src/gcc/config.sub
-*** src/gcc-org/config.sub	2010-05-25 15:22:07.000000000 +0200
---- src/gcc/config.sub	2012-12-16 12:25:49.380396480 +0100
+*** src/gcc-org/config.sub	2013-01-11 14:02:58.000000000 +0100
+--- src/gcc/config.sub	2013-12-01 18:20:13.482398717 +0100
 ***************
-*** 1297,1303 ****
+*** 1358,1364 ****
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-  	      | -sym* | -kopensolaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1297,1303 ----
+--- 1358,1364 ----
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-  	      | -sym* | -kopensolaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
@@ -20,10 +20,10 @@ diff -rcN src/gcc-org/config.sub src/gcc/config.sub
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
 diff -rcN src/gcc-org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 *** src/gcc-org/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/escape.h	2012-12-16 12:26:27.368397345 +0100
+--- src/gcc/gcc/config/escape.h	2013-12-01 18:20:42.166398488 +0100
 ***************
 *** 0 ****
---- 1,36 ----
+--- 1,33 ----
 +   #undef   STARTFILE_SPEC
 +   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
 +   
@@ -55,17 +55,14 @@ diff -rcN src/gcc-org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 +   #ifdef HAVE_LD_AS_NEEDED
 +   #define USE_LD_AS_NEEDED 1
 +   #endif
-+   
-+   #undef TARGET_VERSION
-+   #define TARGET_VERSION fprintf(stderr, " (mmix escape)");
 + 
 +   #define NO_IMPLICIT_EXTERN_C
 diff -rcN src/gcc-org/gcc/config.gcc src/gcc/gcc/config.gcc
-*** src/gcc-org/gcc/config.gcc	2011-07-22 18:44:50.000000000 +0200
---- src/gcc/gcc/config.gcc	2012-12-16 12:27:12.864398381 +0100
+*** src/gcc-org/gcc/config.gcc	2013-10-03 02:47:24.000000000 +0200
+--- src/gcc/gcc/config.gcc	2013-12-01 18:21:10.414398263 +0100
 ***************
-*** 2038,2043 ****
---- 2038,2049 ----
+*** 1955,1960 ****
+--- 1955,1966 ----
   	need_64bit_hwint=yes
   	use_gcc_stdint=wrap
   	;;
@@ -78,36 +75,12 @@ diff -rcN src/gcc-org/gcc/config.gcc src/gcc/gcc/config.gcc
   mn10300-*-*)
   	tm_file="dbxelf.h elfos.h newlib-stdint.h ${tm_file}"
   	if test x$stabs = xyes
-diff -rcN src/gcc-org/gcc/dwarf2out.c src/gcc/gcc/dwarf2out.c
-*** src/gcc-org/gcc/dwarf2out.c	2012-02-16 09:50:02.000000000 +0100
---- src/gcc/gcc/dwarf2out.c	2012-12-16 12:29:21.844401320 +0100
-***************
-*** 22169,22177 ****
-  	      fprintf (asm_out_file, " is_stmt %d", is_stmt ? 1 : 0);
-  	      last_is_stmt = is_stmt;
-  	    }
-! 	  if (SUPPORTS_DISCRIMINATOR && discriminator != 0
-  	      && (dwarf_version >= 4 || !dwarf_strict))
-! 	    fprintf (asm_out_file, " discriminator %d", discriminator);
-  	  fputc ('\n', asm_out_file);
-  
-  	  /* Indicate that line number info exists.  */
---- 22169,22177 ----
-  	      fprintf (asm_out_file, " is_stmt %d", is_stmt ? 1 : 0);
-  	      last_is_stmt = is_stmt;
-  	    }
-! 	  /*if (SUPPORTS_DISCRIMINATOR && discriminator != 0
-  	      && (dwarf_version >= 4 || !dwarf_strict))
-! 	    fprintf (asm_out_file, " discriminator %d", discriminator);*/
-  	  fputc ('\n', asm_out_file);
-  
-  	  /* Indicate that line number info exists.  */
 diff -rcN src/gcc-org/libgcc/config.host src/gcc/libgcc/config.host
-*** src/gcc-org/libgcc/config.host	2011-11-23 23:15:54.000000000 +0100
---- src/gcc/libgcc/config.host	2012-12-16 12:29:47.384401901 +0100
+*** src/gcc-org/libgcc/config.host	2013-07-09 23:35:57.000000000 +0200
+--- src/gcc/libgcc/config.host	2013-12-01 18:22:12.794397766 +0100
 ***************
-*** 440,445 ****
---- 440,449 ----
+*** 785,790 ****
+--- 785,794 ----
   	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
   	tmake_file="${tmake_file} ${cpu_type}/t-${cpu_type}"
   	;;
@@ -116,31 +89,31 @@ diff -rcN src/gcc-org/libgcc/config.host src/gcc/libgcc/config.host
 + 	tmake_file="${tmake_file} ${cpu_type}/t-${cpu_type}"
 + 	;;
   mn10300-*-*)
+  	tmake_file=t-fdpbit
   	;;
-  moxie-*-*)
 diff -rcN src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
-*** src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc	2009-04-09 17:00:19.000000000 +0200
---- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2012-12-16 12:30:06.496402336 +0100
+*** src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-02-03 18:54:05.000000000 +0100
+--- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-12-01 18:22:37.014397573 +0100
 ***************
-*** 38,44 ****
+*** 32,38 ****
+     --disable-libstdcxx-verbose and rebuilding the library.
+     In a freestanding environment, we default to this latter approach.  */
   
+! #if _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
-! #if _GLIBCXX_HOSTED
   	__gnu_cxx::__verbose_terminate_handler;
-  #else
-  	std::abort;
---- 38,44 ----
+--- 32,38 ----
+     --disable-libstdcxx-verbose and rebuilding the library.
+     In a freestanding environment, we default to this latter approach.  */
   
+! #if 1 // _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
-! #if 1 //_GLIBCXX_HOSTED
   	__gnu_cxx::__verbose_terminate_handler;
-  #else
-  	std::abort;
 diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
-*** src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc	2011-01-30 23:39:36.000000000 +0100
---- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2012-12-16 12:30:34.748402980 +0100
+*** src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc	2013-02-03 18:54:05.000000000 +0100
+--- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2013-12-01 18:23:01.426397379 +0100
 ***************
 *** 24,35 ****
   
@@ -159,7 +132,7 @@ diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   
   #include <bits/c++config.h>
   
-! #if 1 //_GLIBCXX_HOSTED
+! #if 1 // _GLIBCXX_HOSTED
   #include <cstdlib>
   #include <exception>
   #include <bits/exception_defines.h>
@@ -190,16 +163,3 @@ diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   
   	  fputs("terminate called after throwing an instance of '", stderr);
   	  if (status == 0)
-diff -rcN src/gcc-org/gcc/gthr-posix.h src/gcc/gcc/gthr-posix.h 
-*** src/gcc-org/gcc/gthr-posix.h	2012-05-12 11:53:05.000000000 +0200
---- src/gcc/gcc/gthr-posix.h	2012-05-12 11:53:34.000000000 +0200
-***************
-*** 40,45 ****
---- 40,46 ----
-  
-  #include <pthread.h>
-  #include <unistd.h>
-+ #include <sched.h>
-  
-  typedef pthread_t __gthread_t;
-  typedef pthread_key_t __gthread_key_t;

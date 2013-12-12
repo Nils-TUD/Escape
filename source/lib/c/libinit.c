@@ -66,6 +66,8 @@ tULock __libc_lck;
 static size_t threadCount = 1;
 static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
+/* crtbegin has a weak reference to that, which is why we have to provide it somewhere */
+void *_Jv_RegisterClasses;
 
 int startthread(fThreadEntry entryPoint,void *arg) {
 	int res;

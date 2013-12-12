@@ -11,10 +11,7 @@ def isIgnored(list, name):
 if env['ARCH'] == 'i586':
 	env.SConscript(env.Glob('*/SConscript'), 'env')
 else:
-	guiapps = ["desktop", "fileman", "gcalc", "gtest", "guishell", "libguitest"]
-    # TODO mmix-ld is unable to link some c++ apps
-	mmixbroken = ["libcpptest"]
-	ignore = guiapps if env['ARCH'] == 'eco32' else guiapps + mmixbroken
+	guiapps = ["desktop", "fileman", "gcalc", "glogin", "gsettings", "gtest", "guishell", "libguitest"]
 	for f in env.Glob('*/SConscript'):
-		if not isIgnored(ignore, str(f)):
+		if not isIgnored(guiapps, str(f)):
 			env.SConscript(f, 'env')

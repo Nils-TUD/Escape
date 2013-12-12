@@ -20,6 +20,10 @@
 #include <stddef.h>
 #include <string.h>
 
+/* this is necessary to prevent that gcc transforms a loop into library-calls
+ * (which might lead to recursion here) */
+#pragma GCC optimize ("no-tree-loop-distribute-patterns")
+
 void *memcpy(void *dest,const void *src,size_t len) {
 	uchar *bdest = (uchar*)dest;
 	uchar *bsrc = (uchar*)src;

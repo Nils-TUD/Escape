@@ -1,18 +1,18 @@
 diff -rcN src/gcc-org/config.sub src/gcc/config.sub
-*** src/gcc-org/config.sub	2010-05-25 15:22:07.000000000 +0200
---- src/gcc/config.sub	2012-12-15 14:59:33.033276980 +0100
+*** src/gcc-org/config.sub	2013-01-11 14:02:58.000000000 +0100
+--- src/gcc/config.sub	2013-12-08 11:58:45.978192221 +0100
 ***************
-*** 1297,1303 ****
+*** 1358,1364 ****
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-  	      | -sym* | -kopensolaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1297,1303 ----
+--- 1358,1364 ----
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-  	      | -sym* | -kopensolaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 ! 	      | -aos* | -aros* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
@@ -20,10 +20,10 @@ diff -rcN src/gcc-org/config.sub src/gcc/config.sub
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
 diff -rcN src/gcc-org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 *** src/gcc-org/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/escape.h	2012-12-15 15:00:10.649277838 +0100
+--- src/gcc/gcc/config/escape.h	2013-12-08 11:58:46.222192226 +0100
 ***************
 *** 0 ****
---- 1,31 ----
+--- 1,30 ----
 +   #undef   STARTFILE_SPEC
 +   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
 +   
@@ -51,58 +51,15 @@ diff -rcN src/gcc-org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 +   #define USE_LD_AS_NEEDED 1
 +   #endif
 +   
-+   #undef TARGET_VERSION
-+   #define TARGET_VERSION fprintf(stderr, " (i386 escape)");
-+ 
 +   #define NO_IMPLICIT_EXTERN_C
-diff -rcN src/gcc-org/gcc/config/t-escape src/gcc/gcc/config/t-escape
-*** src/gcc-org/gcc/config/t-escape	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/t-escape	2012-12-15 15:01:54.749280208 +0100
-***************
-*** 0 ****
---- 1,36 ----
-+ EXTRA_PARTS=crtbegin.o crtbeginS.o crtend.o crtendS.o
 + 
-+ # Build a shared libgcc library for ELF without symbol versioning
-+ # with the GNU linker.
-+ 
-+ SHLIB_EXT = .so
-+ SHLIB_SOLINK = @shlib_base_name@.so
-+ SHLIB_SOVERSION = 1
-+ SHLIB_SONAME = @shlib_base_name@.so.$(SHLIB_SOVERSION)
-+ SHLIB_OBJS = @shlib_objs@
-+ SHLIB_DIR = @multilib_dir@
-+ SHLIB_SLIBDIR_QUAL = @shlib_slibdir_qual@
-+ SHLIB_LC = -lc
-+ SHLIB_MAKE_SOLINK = $(LN_S) $(SHLIB_SONAME) $(SHLIB_DIR)/$(SHLIB_SOLINK)
-+ SHLIB_INSTALL_SOLINK = $(LN_S) $(SHLIB_SONAME) \
-+ 	$$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SOLINK)
-+ 
-+ SHLIB_LINK = $(GCC_FOR_TARGET) $(LIBGCC2_CFLAGS) -shared -Wl,-shared -nodefaultlibs \
-+ 	-Wl,--soname=$(SHLIB_SONAME) \
-+ 	-o $(SHLIB_DIR)/$(SHLIB_SONAME).tmp @multilib_flags@ \
-+ 	$(SHLIB_OBJS) $(SHLIB_LC) && \
-+ 	rm -f $(SHLIB_DIR)/$(SHLIB_SOLINK) && \
-+ 	if [ -f $(SHLIB_DIR)/$(SHLIB_SONAME) ]; then \
-+ 	  mv -f $(SHLIB_DIR)/$(SHLIB_SONAME) \
-+ 		$(SHLIB_DIR)/$(SHLIB_SONAME).backup; \
-+ 	else true; fi && \
-+ 	mv $(SHLIB_DIR)/$(SHLIB_SONAME).tmp $(SHLIB_DIR)/$(SHLIB_SONAME) && \
-+ 	$(SHLIB_MAKE_SOLINK)
-+ # $(slibdir) double quoted to protect it from expansion while building
-+ # libgcc.mk.  We want this delayed until actual install time.
-+ SHLIB_INSTALL = \
-+ 	$$(mkinstalldirs) $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL); \
-+ 	$(INSTALL_DATA) $(SHLIB_DIR)/$(SHLIB_SONAME) \
-+ 	  $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SONAME); \
-+ 	rm -f $$(DESTDIR)$$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SOLINK); \
-+ 	$(SHLIB_INSTALL_SOLINK)
++   #define USE_TM_CLONE_REGISTRY 0
 diff -rcN src/gcc-org/gcc/config.gcc src/gcc/gcc/config.gcc
-*** src/gcc-org/gcc/config.gcc	2011-07-22 18:44:50.000000000 +0200
---- src/gcc/gcc/config.gcc	2012-12-15 15:01:12.757279251 +0100
+*** src/gcc-org/gcc/config.gcc	2013-10-03 02:47:24.000000000 +0200
+--- src/gcc/gcc/config.gcc	2013-12-08 11:58:46.222192226 +0100
 ***************
-*** 482,487 ****
---- 482,493 ----
+*** 554,559 ****
+--- 554,565 ----
   
   # Common parts for widely ported systems.
   case ${target} in
@@ -116,67 +73,84 @@ diff -rcN src/gcc-org/gcc/config.gcc src/gcc/gcc/config.gcc
     tmake_file="t-darwin ${cpu_type}/t-darwin"
     tm_file="${tm_file} darwin.h"
 ***************
-*** 704,709 ****
---- 710,720 ----
+*** 815,820 ****
+--- 821,831 ----
+  esac
   
   case ${target} in
-  # Support site-specific machine types.
 + i[3-7]86-*-escape*)
 +   tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h i386/i386elf.h escape.h"
-+   tmake_file="t-escape i386/t-crtstuff t-svr4"
++   tmake_file="${tmake_file} t-svr4"
 +   use_fixproto=yes
 +   ;;
-  *local*)
-  	rest=`echo ${target} | sed -e "s/$cpu_type-//"`
-  	tm_file=${cpu_type}/$rest.h
+  aarch64*-*-elf)
+  	tm_file="${tm_file} dbxelf.h elfos.h newlib-stdint.h"
+  	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-elf-raw.h"
 diff -rcN src/gcc-org/libgcc/config/t-escape src/gcc/libgcc/config/t-escape
-*** src/gcc-org/libgcc/config/t-escape   1970-01-01 01:00:00.000000000 +0100
---- src/gcc/libgcc/config/t-escape 2013-08-02 21:40:19.211256296 +0200
+*** src/gcc-org/libgcc/config/t-escape	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/t-escape	2013-12-08 12:04:43.406200362 +0100
 ***************
 *** 0 ****
---- 1,3 ----
+--- 1,7 ----
 + CRTSTUFF_T_CFLAGS += -mregparm=3
 + CRTSTUFF_T_CFLAGS_S += -mregparm=3
 + LIBGCC2_CFLAGS += -mregparm=3
++ 
++ # for some reason we need -Wl,-shared as well, i.e. -shared is not enough
++ SHLIB_LDFLAGS = -Wl,-shared -Wl,-soname,$(SHLIB_SONAME)
++ 
 diff -rcN src/gcc-org/libgcc/config.host src/gcc/libgcc/config.host
-*** src/gcc-org/libgcc/config.host	2011-11-23 23:15:54.000000000 +0100
---- src/gcc/libgcc/config.host	2012-12-15 15:03:06.257281837 +0100
+*** src/gcc-org/libgcc/config.host	2013-07-09 23:35:57.000000000 +0200
+--- src/gcc/libgcc/config.host	2013-12-08 11:58:46.222192226 +0100
 ***************
-*** 167,172 ****
---- 167,176 ----
+*** 280,285 ****
+--- 280,289 ----
+  esac
   
   case ${host} in
-  # Support site-specific machine types.
 + i[3-7]86-*-escape*)
 + 	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
-+   tmake_file="${tmake_file} t-escape"
++ 	tmake_file="${tmake_file} t-escape i386/t-crtstuff t-slibgcc t-libgcc-pic t-crtstuff-pic"
 + 	;;
-  *local*)
-  	rest=`echo ${host} | sed -e "s/$cpu_type-//"`
-  	if test -f $srcdir/config/${cpu_type}/t-$rest
-diff -rcN src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
-*** src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc	2009-04-09 17:00:19.000000000 +0200
---- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2012-12-15 15:04:27.237283681 +0100
+  aarch64*-*-elf)
+  	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+  	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
+diff -rcN src/gcc-org/libgcc/gthr-posix.h src/gcc/libgcc/gthr-posix.h
+*** src/gcc-org/libgcc/gthr-posix.h	2013-02-04 20:06:20.000000000 +0100
+--- src/gcc/libgcc/gthr-posix.h	2013-12-08 11:58:46.222192226 +0100
 ***************
-*** 38,44 ****
+*** 33,38 ****
+--- 33,39 ----
+  #define __GTHREADS_CXX0X 1
   
+  #include <pthread.h>
++ #include <sched.h>
+  
+  #if ((defined(_LIBOBJC) || defined(_LIBOBJC_WEAK)) \
+       || !defined(_GTHREAD_USE_MUTEX_TIMEDLOCK))
+diff -rcN src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
+*** src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-02-03 18:54:05.000000000 +0100
+--- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-12-08 11:58:46.222192226 +0100
+***************
+*** 32,38 ****
+     --disable-libstdcxx-verbose and rebuilding the library.
+     In a freestanding environment, we default to this latter approach.  */
+  
+! #if _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
-! #if _GLIBCXX_HOSTED
   	__gnu_cxx::__verbose_terminate_handler;
-  #else
-  	std::abort;
---- 38,44 ----
+--- 32,38 ----
+     --disable-libstdcxx-verbose and rebuilding the library.
+     In a freestanding environment, we default to this latter approach.  */
   
+! #if 1 // _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
-! #if 1 //_GLIBCXX_HOSTED
   	__gnu_cxx::__verbose_terminate_handler;
-  #else
-  	std::abort;
 diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
-*** src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc	2011-01-30 23:39:36.000000000 +0100
---- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2012-12-15 15:04:15.217283408 +0100
+*** src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc	2013-02-03 18:54:05.000000000 +0100
+--- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2013-12-08 11:58:46.222192226 +0100
 ***************
 *** 24,35 ****
   
@@ -195,7 +169,7 @@ diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   
   #include <bits/c++config.h>
   
-! #if 1 //_GLIBCXX_HOSTED
+! #if 1 // _GLIBCXX_HOSTED
   #include <cstdlib>
   #include <exception>
   #include <bits/exception_defines.h>
@@ -226,16 +200,3 @@ diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   
   	  fputs("terminate called after throwing an instance of '", stderr);
   	  if (status == 0)
-diff -rcN src/gcc-org/gcc/gthr-posix.h src/gcc/gcc/gthr-posix.h 
-*** src/gcc-org/gcc/gthr-posix.h	2012-05-12 11:53:05.000000000 +0200
---- src/gcc/gcc/gthr-posix.h	2012-05-12 11:53:34.000000000 +0200
-***************
-*** 40,45 ****
---- 40,46 ----
-  
-  #include <pthread.h>
-  #include <unistd.h>
-+ #include <sched.h>
-  
-  typedef pthread_t __gthread_t;
-  typedef pthread_key_t __gthread_key_t;

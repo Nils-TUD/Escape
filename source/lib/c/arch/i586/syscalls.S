@@ -74,6 +74,7 @@
 __i686.get_pc_thunk.bx:
 	movl (%esp),%eax
 	ret
+.previous
 #endif
 
 .global syscall7

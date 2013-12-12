@@ -32,12 +32,20 @@ typedef struct {
 	void *val;
 } sThreadVal;
 
+static sThreadVal *getThreadValEntry(uint key);
+
 static sSLList *tvalmap[HASHMAP_SIZE];
 
 bool setThreadVal(uint key,void *val) {
 	tid_t tid = gettid();
 	sSLList *list;
-	sThreadVal *tval = (sThreadVal*)malloc(sizeof(sThreadVal));
+	sThreadVal *tval = getThreadValEntry(key);
+	if(tval) {
+		tval->val = val;
+		return true;
+	}
+
+	tval = (sThreadVal*)malloc(sizeof(sThreadVal));
 	if(!tval)
 		return false;
 
@@ -61,6 +69,13 @@ bool setThreadVal(uint key,void *val) {
 }
 
 void *getThreadVal(uint key) {
+	sThreadVal *entry = getThreadValEntry(key);
+	if(!entry)
+		return NULL;
+	return entry->val;
+}
+
+static sThreadVal *getThreadValEntry(uint key) {
 	sSLNode *n;
 	tid_t tid = gettid();
 	sSLList *list = tvalmap[tid % HASHMAP_SIZE];
@@ -69,7 +84,7 @@ void *getThreadVal(uint key) {
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		sThreadVal *tval = (sThreadVal*)n->data;
 		if(tval->tid == tid && tval->key == key)
-			return tval->val;
+			return tval;
 	}
 	return NULL;
 }

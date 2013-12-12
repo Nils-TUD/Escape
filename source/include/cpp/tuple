@@ -174,8 +174,9 @@ namespace std {
 		explicit tuple(Args2&&... args) : _elements(forward<Args2>(args)...) {
 		}
 
-		tuple(const tuple&) = default;
-		tuple(tuple&&) = default;
+		tuple(const tuple &t) : _elements(t._elements) {
+		}
+		tuple(tuple &&t) = default;
 
 		template<typename... Args2>
 		tuple(const tuple<Args2...>& t) : _elements(t._elements) {
@@ -194,6 +195,14 @@ namespace std {
 		}
 
 		// 20.4.2.2, tuple assignment
+		tuple &operator=(tuple &&t) {
+			_elements = std::move(t._elements);
+			return *this;
+		}
+		tuple &operator=(const tuple &t) {
+			_elements = t._elements;
+			return *this;
+		}
 		template<typename... Args2>
 		tuple& operator=(const tuple<Args2...>& t) {
 			_elements = t._elements;

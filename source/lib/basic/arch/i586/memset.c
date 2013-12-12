@@ -20,6 +20,10 @@
 #include <stddef.h>
 #include <string.h>
 
+/* this is necessary to prevent that gcc transforms a loop into library-calls
+ * (which might lead to recursion here) */
+#pragma GCC optimize ("no-tree-loop-distribute-patterns")
+
 void *memset(void *addr,int value,size_t count) {
 	uchar *baddr = (uchar*)addr;
 	/* align it */

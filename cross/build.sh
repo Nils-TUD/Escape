@@ -31,7 +31,7 @@ BUILD=$ROOT/$ARCH/build
 DIST=/opt/escape-cross-$ARCH
 SRC=$ROOT/$ARCH/src
 HEADER=$ROOT/include
-BUILD_CC=gcc-4.7
+BUILD_CC=gcc
 
 if [ "$2" = "--rebuild" ] || [ ! -d $DIST ] || [ ! -d $SRC ]; then
 	REBUILD=1
@@ -40,35 +40,25 @@ else
 fi
 
 echo "Downloading binutils, gcc and newlib..."
-REGPARMS=""
-if [ "$ARCH" = "eco32" ]; then
-	wget -c http://ftp.gnu.org/gnu/binutils/binutils-2.20.1a.tar.bz2
-	wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.4.3/gcc-core-4.4.3.tar.bz2
-	wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.4.3/gcc-g++-4.4.3.tar.bz2
-	wget -c ftp://sources.redhat.com/pub/newlib/newlib-1.15.0.tar.gz
-	BINVER=2.20.1
-	GCCVER=4.4.3
-	NEWLVER=1.15.0
+wget -c http://ftp.gnu.org/gnu/binutils/binutils-2.23.2.tar.bz2
+wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.8.2/gcc-4.8.2.tar.bz2
+wget -c ftp://sources.redhat.com/pub/newlib/newlib-1.20.0.tar.gz
+BINVER=2.23.2
+GCCVER=4.8.2
+NEWLVER=1.20.0
+if [ "$ARCH" = "eco32" ] || [ "$ARCH" = "mmix" ]; then
 	CUSTOM_FLAGS="-g -O2"
 	ENABLE_THREADS=""
+	REGPARMS=""
 else
-	wget -c http://ftp.gnu.org/gnu/binutils/binutils-2.21.1a.tar.bz2
-	wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.6.3/gcc-core-4.6.3.tar.bz2
-	wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.6.3/gcc-g++-4.6.3.tar.bz2
-	wget -c ftp://sources.redhat.com/pub/newlib/newlib-1.20.0.tar.gz
-	BINVER=2.21.1
-	GCCVER=4.6.3
-	NEWLVER=1.20.0
-	CUSTOM_FLAGS="-g -O2 -D_POSIX_THREADS -D_UNIX98_THREAD_MUTEX_ATTRIBUTES -DPTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP"
+	CUSTOM_FLAGS="-g -O2 -D_POSIX_THREADS -D_GTHREAD_USE_MUTEX_INIT_FUNC -DPTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP"
+	CUSTOM_FLAGS="$CUSTOM_FLAGS -D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
 	ENABLE_THREADS=" --enable-threads=posix"
-	if [ "$ARCH" = "i586" ]; then
-		REGPARMS="-mregparm=3"
-	fi
+	REGPARMS="-mregparm=3"
 fi
 
-GCCCORE_ARCH=gcc-core-$GCCVER.tar.bz2
-GCCGPP_ARCH=gcc-g++-$GCCVER.tar.bz2
-BINUTILS_ARCH=binutils-"$BINVER"a.tar.bz2
+GCC_ARCH=gcc-$GCCVER.tar.bz2
+BINUTILS_ARCH=binutils-$BINVER.tar.bz2
 NEWLIB_ARCH=newlib-$NEWLVER.tar.gz
 
 # setup
@@ -131,8 +121,6 @@ if $BUILD_GCC || $BUILD_CPP; then
 	# the mutexes should be initialized with 0
 	if [ "$ARCH" = "eco32" ]; then
 		( cd $DIST/$TARGET && patch -p0 < $SRC/../newlib.diff )
-	else
-		sed --in-place -e 's/#define PTHREAD_MUTEX_INITIALIZER  ((pthread_mutex_t) 0xFFFFFFFF)/#define PTHREAD_MUTEX_INITIALIZER  ((pthread_mutex_t) 0)/g' $DIST/$TARGET/include/pthread.h
 	fi
 fi
 
@@ -140,14 +128,13 @@ fi
 export PATH=$PATH:$PREFIX/bin
 if $BUILD_GCC; then
 	if [ $REBUILD -eq 1 ]; then
-		cat $GCCCORE_ARCH | bunzip2 | tar -C $SRC -xf -
-		cat $GCCGPP_ARCH | bunzip2 | tar -C $SRC -xf -
+		cat $GCC_ARCH | bunzip2 | tar -C $SRC -xf -
 		mv $SRC/gcc-$GCCVER $SRC/gcc
 		cd $ARCH && patch -p0 < gcc.diff
 	fi
 	cd $BUILD/gcc
 	if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
-		CC=$BUILD_CC CFLAGS="$CUSTOM_FLAGS" \
+		CC=$BUILD_CC CFLAGS="$CUSTOM_FLAGS" CXXFLAGS="$CUSTOM_FLAGS" \
 			$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
 			  --enable-languages=c,c++ --with-headers=$HEADER \
 			  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp $ENABLE_THREADS
@@ -163,29 +150,11 @@ if $BUILD_GCC; then
 
 	# libgcc (only i586 supports dynamic linking)
 	if [ "$ARCH" = "i586" ]; then
-		# first, generate crt*S.o and libc for libgcc_s. Its not necessary to have a full libc (we'll have
-		# one later). But at least its necessary to provide the correct startup-files
+		# for libgcc, we need crt*S.o and a libc. they don't need to do something useful, but at
+		# least they have to be present.
 		TMPCRT0=`mktemp`
 		TMPCRT1=`mktemp`
 		TMPCRTN=`mktemp`
-		# crt0 can be empty
-		echo ".section .init" >> $TMPCRT1
-		echo ".global _init" >> $TMPCRT1
-		echo "_init:" >> $TMPCRT1
-		echo "	push	%ebp" >> $TMPCRT1
-		echo "	mov		%esp,%ebp" >> $TMPCRT1
-		echo ".section .fini" >> $TMPCRT1
-		echo ".global _fini" >> $TMPCRT1
-		echo "_fini:" >> $TMPCRT1
-		echo "	push	%ebp" >> $TMPCRT1
-		echo "	mov		%esp,%ebp" >> $TMPCRT1
-
-		echo ".section .init" >> $TMPCRTN
-		echo "	leave" >> $TMPCRTN
-		echo "	ret" >> $TMPCRTN
-		echo ".section .fini" >> $TMPCRTN
-		echo "	leave" >> $TMPCRTN
-		echo "	ret" >> $TMPCRTN
 
 		# assemble them
 		$TARGET-as -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0 || exit 1

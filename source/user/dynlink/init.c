@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/elf.h>
 #include <esc/sllist.h>
+#include <esc/proc.h>
 #include "init.h"
 #include "setup.h"
 #include "lookup.h"
@@ -60,6 +61,7 @@ static void load_initLib(sSharedLib *l) {
 	if(l->isDSO) {
 		uintptr_t initAddr = (uintptr_t)load_getDyn(l->dyn,DT_INIT);
 		if(initAddr) {
+			DBGDL("Calling _init of %s...\n",l->name);
 			void (*initFunc)(void) = (void (*)(void))(initAddr + l->loadAddr);
 			initFunc();
 		}

@@ -42,6 +42,17 @@ void load_error(const char *fmt,...) {
 	exit(1);
 }
 
+bool load_hasDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
+	if(dyn == NULL)
+		load_error("No dynamic entries");
+	while(dyn->d_tag != DT_NULL) {
+		if(dyn->d_tag == tag)
+			return true;
+		dyn++;
+	}
+	return false;
+}
+
 uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	if(dyn == NULL)
 		load_error("No dynamic entries");

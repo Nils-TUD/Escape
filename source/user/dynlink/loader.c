@@ -143,7 +143,7 @@ uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
 				uintptr_t addr = load_addSeg(l->fd,&pheader,loadSeg,l->isDSO);
 				if(addr == 0)
-					load_error("Unable to add segment %d (type %d)",j,pheader.p_type);
+					load_error("Unable to add segment %d (type %d) of DSO %s",j,pheader.p_type,l->name);
 				/* store load-address of text */
 				if(loadSeg == 0) {
 					if(l->isDSO)

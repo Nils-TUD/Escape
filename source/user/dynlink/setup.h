@@ -82,6 +82,15 @@ uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
 	uintptr_t,uintptr_t,size_t,int argc,char **argv);
 
 /**
+ * Searches for the given tag in the dynamic-section
+ *
+ * @param dyn the dynamic section
+ * @param tag the tag to find
+ * @return true if found
+ */
+bool load_hasDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
+
+/**
  * Determines the value of the given tag in the dynamic-section
  *
  * @param dyn the dynamic section

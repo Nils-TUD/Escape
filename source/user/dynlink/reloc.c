@@ -27,8 +27,6 @@
 #include "setup.h"
 #include "lookup.h"
 
-#define RELOC_LOCK	0x6612AACC
-
 static void load_relocLib(sSharedLib *l);
 static void load_adjustCopyGotEntry(const char *name,uintptr_t copyAddr);
 
@@ -55,12 +53,8 @@ static void load_relocLib(sSharedLib *l) {
 		load_relocLib(dl);
 	}
 
-	/* we can't relocate the same region multiple times in parallel, because the region-protection
-	 * is changed for all processes that use that region */
-	lockg(RELOC_LOCK,LOCK_EXCLUSIVE);
-	/* make text writable because we may have to change something in it */
-	if(mprotect((void*)(l->loadAddr ? l->loadAddr : l->textAddr),PROT_EXEC | PROT_READ | PROT_WRITE) < 0)
-		load_error("Unable to make text (@ %p) of %s writable",l->loadAddr,l->name);
+	if(load_hasDyn(l->dyn,DT_TEXTREL))
+		load_error("Unable to reloc library %s: requires a writable text segment\n",l->name);
 
 	DBGDL("Relocating stuff of %s (loaded @ %p)\n",l->name,l->loadAddr ? l->loadAddr : l->textAddr);
 
@@ -83,7 +77,7 @@ static void load_relocLib(sSharedLib *l) {
 				if(sym->st_value == 0) {
 					uintptr_t value;
 					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
-						DBGDL("Unable to find symbol %s\n",l->dynstrtbl + sym->st_name);
+						DBGDL("Unable to find symbol '%s'\n",l->dynstrtbl + sym->st_name);
 					else
 						*ptr = value;
 				}
@@ -98,7 +92,7 @@ static void load_relocLib(sSharedLib *l) {
 				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				if(foundSym == NULL)
-					load_error("Unable to find symbol %s",name);
+					load_error("Unable to find symbol '%s'",name);
 				memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
 				/* set the GOT-Entry in the library of the symbol to the address we've copied
 				 * the value to. TODO I'm not sure if that's the intended way... */
@@ -126,35 +120,29 @@ static void load_relocLib(sSharedLib *l) {
 				if(sym->st_value == 0) {
 					uintptr_t value;
 					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
-						load_error("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
+						load_error("Unable to find symbol '%s'",l->dynstrtbl + sym->st_name);
 					*ptr += value;
 				}
 				else
 				/*if(sym->st_value != 0)*/
 					*ptr += sym->st_value + l->loadAddr;
-				DBGDL("Rel (32) off=%p orgoff=%p symval=%p reloc=%p\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr);
+				DBGDL("Rel (32) off=%p orgoff=%p symval=%p sym='%s' reloc=%p\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,
+						l->dynstrtbl + sym->st_name,*ptr);
 			}
 			else if(relType == R_386_PC32) {
 				uintptr_t *ptr = (uintptr_t*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
-				DBGDL("Rel (PC32) off=%p orgoff=%p symval=%p org=%p reloc=%p\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
-						sym->st_value - rel[x].r_offset - 4);
+				DBGDL("Rel (PC32) off=%p orgoff=%p symval=%p sym='%s' org=%p reloc=%p\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,
+						l->dynstrtbl + sym->st_name,*ptr,sym->st_value - rel[x].r_offset - 4);
 				*ptr = sym->st_value - rel[x].r_offset - 4;
 			}
 			else
-				load_error("In library %s: Unknown relocation: off=%p info=%p\n",
-						l->name,rel[x].r_offset,rel[x].r_info);
+				load_error("In library %s: Unknown relocation: off=%p info=%p type=%d\n",
+						l->name,rel[x].r_offset,rel[x].r_info,relType);
 		}
 	}
-
-	/* make text non-writable again */
-	if(mprotect((void*)(l->loadAddr ? l->loadAddr : l->textAddr),PROT_EXEC | PROT_READ) < 0) {
-		load_error("Unable to make text (@ %x) of %s non-writable",
-				l->loadAddr ? l->loadAddr : l->textAddr,l->name);
-	}
-	unlockg(RELOC_LOCK);
 
 	/* adjust addresses in PLT-jumps */
 	if(l->jmprel) {
@@ -180,7 +168,7 @@ static void load_relocLib(sSharedLib *l) {
 				else {
 					foundSym = lookup_byName(NULL,name,&value);
 					if(!foundSym)
-						load_error("Unable to find symbol %s",name);
+						load_error("Unable to find symbol '%s'",name);
 					*addr = value;
 				}
 				DBGDL("JmpRel off=%p addr=%p reloc=%p (%s)\n",l->jmprel[x].r_offset,addr,value,name);

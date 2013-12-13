@@ -7,7 +7,7 @@ kenv = env.Clone()
 ldconf = 'src/arch/$ARCH/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
-	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti',
+	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti -ffreestanding',
 	CPPFLAGS = ' -DIN_KERNEL=1',
 	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,kernel/' + ldconf,
 	BUILDERS = {'GenSyms' : gensyms}
@@ -46,7 +46,7 @@ def LinkWithSymbols(kenv, name, objects):
 		prefix = '', target = 'pre' + name, source = objects + [name + 'ksyms1.o'],
 		force_static = True, var_addr = False, LIBS = ['gcc']
 	)
-	
+
 	# generate symbol file for built kernel
 	kenv.GenSyms(name + 'ksyms2.cc', prekernel)
 	kenv.Object(name + 'ksyms2.o', name + 'ksyms2.cc')

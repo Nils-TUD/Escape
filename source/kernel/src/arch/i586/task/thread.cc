@@ -198,8 +198,11 @@ void ThreadBase::doSwitch() {
 			               n->getProc() != old->getProc());
 		}
 	}
-	else
+	else {
+		SMP::schedule(cpu,n,cycles);
+		n->stats.cycleStart = CPU::rdtsc();
 		SpinLock::release(&switchLock);
+	}
 }
 
 void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {

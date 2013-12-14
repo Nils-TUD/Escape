@@ -97,9 +97,9 @@ static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,g
 		uint16_t *buf = (uint16_t*)(client->shm + (y + h) * mode->cols * 2 + x * 2);
 		for(size_t w = 0; w < width; w++) {
 			uint16_t d = *buf++;
-			*screen++ = (d >> 8) | (d & 0xFF) << 8;
+			screen[w] = (d >> 8) | (d & 0xFF) << 8;
 		}
-		screen += MAX_COLS - COLS;
+		screen += MAX_COLS;
 	}
 
 	if(lastCol < COLS && lastRow < ROWS) {

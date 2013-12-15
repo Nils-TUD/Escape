@@ -149,9 +149,10 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 		VirtMem *virtmem = NULL;
 		uintptr_t binVirt = getBinary(f,virtmem);
 		if(binVirt != 0) {
-			if(virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0) == 0)
-				return 0;
-			/* if it failed, try to map it on our own. maybe we couldn't lock the other process */
+			res = virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0);
+			if(res != -ESRCH)
+				return res;
+			/* if it failed because we couldn't get the lock, try to map it on our own */
 		}
 	}
 
@@ -671,7 +672,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 	uintptr_t addr;
 	ssize_t res;
 	if(dst == this)
-		return -EINVAL;
+		return -EEXIST;
 
 	if(!acquire())
 		return -ESRCH;
@@ -688,6 +689,15 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 
 	vm->reg->acquire();
 	assert(vm->reg->getFlags() & RF_SHAREABLE);
+
+	/* check whether the process has already mapped this region */
+	/* since this is not really necessary, we forbid it for simplicity */
+	if(dst->regtree.getByReg(vm->reg) != NULL) {
+		vm->reg->release();
+		dst->release();
+		release();
+		return -EEXIST;
+	}
 
 	addr = dstAddr;
 	if(addr == 0)

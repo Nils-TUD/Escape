@@ -60,6 +60,12 @@ size_t cli_getCount(void) {
 	return cliCount;
 }
 
+static int cli_getOldMode(void) {
+	if(active != MAX_CLIENT_FDS && clients[active]->screenMode)
+		return clients[active]->screenMode->id;
+	return -1;
+}
+
 void cli_reactivate(int oldMode) {
 	sClient *cli = clients[active];
 	assert(cli->screenMode);
@@ -80,14 +86,14 @@ void cli_reactivate(int oldMode) {
 
 static void cli_switch(int incr) {
 	size_t oldActive = active;
-	int oldMode = active == MAX_CLIENT_FDS ? -1 : clients[active]->screenMode->id;
+	int oldMode = cli_getOldMode();
 	if(activeIdx == MAX_CLIENT_FDS)
 		activeIdx = 0;
 	if(cliCount > 0) {
 		do {
 			activeIdx = (activeIdx + incr) % MAX_CLIENTS;
 		}
-		while(idx2cli[activeIdx] == NULL);
+		while(idx2cli[activeIdx] == NULL || idx2cli[activeIdx]->screenMode == NULL);
 		active = idx2cli[activeIdx]->id;
 	}
 	else
@@ -108,7 +114,7 @@ void cli_prev(void) {
 void cli_switchTo(size_t idx) {
 	assert(idx < MAX_CLIENTS);
 	if(idx != activeIdx && idx2cli[idx] != NULL) {
-		int oldMode = active == MAX_CLIENT_FDS ? -1 : clients[active]->screenMode->id;
+		int oldMode = cli_getOldMode();
 		activeIdx = idx;
 		active = idx2cli[activeIdx]->id;
 		cli_reactivate(oldMode);

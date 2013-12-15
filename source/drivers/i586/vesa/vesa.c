@@ -126,6 +126,9 @@ void vesa_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gs
 }
 
 static void vesa_doSetCursor(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor) {
+	if(newCursor < 0 || (size_t)newCursor >= ARRAY_SIZE(cursor))
+		return;
+
 	gsize_t curWidth = cursor[newCursor]->infoHeader->width;
 	gsize_t curHeight = cursor[newCursor]->infoHeader->height;
 	gsize_t xres = scr->mode->width;

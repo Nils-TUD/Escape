@@ -151,7 +151,11 @@ void VFSChannel::close(pid_t pid,OpenFile *file) {
 			/* if there are message for the driver we don't want to throw them away */
 			/* note also that we can assume that the driver is still running since we
 			 * would have deleted the whole device-node otherwise */
-			if(sendList.length() > 0)
+			/* don't do the closeFile() if we have send the closed message. in this case the driver
+			 * has to do that. we have to check it this way because if the driver is fast enough he
+			 * might have already removed the close-message (so that sendList is empty). of course,
+			 * will still don't want to call closeFile() here. */
+			if(closeSup || sendList.length() > 0)
 				closed = true;
 			/* otherwise close the file now */
 			else
@@ -403,17 +407,22 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 		SpinLock::acquire(&waitLock);
 	}
 
+	bool finished = false;
 	if(event == EV_CLIENT) {
 		VFSNode::acquireTree();
-		if(EXPECT_TRUE(parent))
+		if(EXPECT_TRUE(parent)) {
 			static_cast<VFSDevice*>(parent)->remMsg();
+			/* only call closeFile() if the driver isn't supposed to do that himself */
+			if(EXPECT_FALSE(closed && list->length() == 0))
+				finished = !static_cast<VFSDevice*>(parent)->supports(DEV_CLOSE);
+		}
 		VFSNode::releaseTree();
 		curClient = msg->thread;
 	}
 	SpinLock::release(&waitLock);
 
 	/* if the client is already gone and we've received the last message, close it */
-	if(EXPECT_FALSE(closed && list->length() == 0))
+	if(EXPECT_FALSE(finished))
 		closeFile();
 
 	if(EXPECT_FALSE(data && msg->length > size)) {

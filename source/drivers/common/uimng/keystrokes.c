@@ -25,6 +25,7 @@
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
+#include <esc/conf.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,8 +33,6 @@
 #include "clients.h"
 #include "jobs.h"
 #include "screens.h"
-
-#define MAX_FILEDESCS	16
 
 #define VGA_MODE		3
 
@@ -77,7 +76,8 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 		goto error;
 	if(mngPid == 0) {
 		/* close all but stdin, stdout, stderr */
-		for(int i = 3; i < MAX_FILEDESCS; ++i)
+		int max = sysconf(CONF_MAX_FDS);
+		for(int i = 3; i < max; ++i)
 			close(i);
 
 		const char *args[] = {mng,cols,rows,name,NULL};
@@ -94,7 +94,8 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 		goto error;
 	if(loginPid == 0) {
 		/* close all; login will open different streams */
-		for(int i = 0; i < MAX_FILEDESCS; ++i)
+		int max = sysconf(CONF_MAX_FDS);
+		for(int i = 0; i < max; ++i)
 			close(i);
 
 		/* set env-var for childs */

@@ -63,7 +63,7 @@ static int screen_openShm(sScreenMode *mode,char **addr,const char *name,int typ
 	*addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	close(fd);
 	if(*addr == NULL)
-		return -ENOMEM;
+		return -errno;
 	if(type == VID_MODE_TYPE_TUI)
 		*addr += mode->tuiHeaderSize * mode->cols * 2;
 	else

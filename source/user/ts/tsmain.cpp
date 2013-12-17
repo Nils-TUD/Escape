@@ -87,11 +87,12 @@ static void usage(const char *name) {
 	cerr << "ID:		The thread id\n";
 	cerr << "STATE:	The thread state (RUN,RDY,BLK,ZOM,SUS)\n";
 	cerr << "PRIO:	The thread priority (high means high priority)\n";
+	cerr << "CPU:	The CPU on which the thread is currently running on\n";
 	cerr << "STACK:	The amount of physical memory used for the stack\n";
 	cerr << "SCHED:	The number of times the thread has been scheduled\n";
 	cerr << "SYSC:	The number of system-calls the thread has executed\n";
 	cerr << "TIME:	The CPU time used by the thread so far in minutes:seconds.milliseconds\n";
-	cerr << "CPU:	The CPU usage in the last second in percent\n";
+	cerr << "CPU%:	The CPU usage in the last second in percent\n";
 	cerr << "PROC:	The name of the process the thread belongs to\n";
 	exit(EXIT_FAILURE);
 }
@@ -163,15 +164,16 @@ int main(int argc,char **argv) {
 	cout << setw(maxTid) << "ID";
 	cout << " " << "STATE";
 	cout << " " << "PRIO";
+	cout << " " << " CPU";
 	cout << " " << setw(maxStack) << "STACK";
 	cout << " " << setw(maxScheds) << "SCHED";
 	cout << " " << setw(maxSyscalls) << "SYSC";
 	cout << " " << setw(maxRuntime + 7) << "TIME";
-	cout << "    CPU PROC" << '\n';
+	cout << "   CPU% PROC" << '\n';
 
 	// calc with to the proc-command
-	size_t width2cmd = maxTid + SSTRLEN("STATE") + SSTRLEN("PRIO") + maxStack + maxScheds +
-			maxSyscalls + maxRuntime;
+	size_t width2cmd = maxTid + SSTRLEN("STATE") + SSTRLEN("PRIO") + SSTRLEN(" CPU") + maxStack +
+			maxScheds + maxSyscalls + maxRuntime;
 	width2cmd += 7 + 7 + SSTRLEN("   CPU ");
 
 	// print threads
@@ -187,6 +189,12 @@ int main(int argc,char **argv) {
 		cout << setw(maxTid) << t->tid() << " ";
 		cout << setw(5) << states[t->state()] << " ";
 		cout << setw(4) << t->prio() << " ";
+		cout << setw(4);
+		if(t->state() == 0)
+			cout << t->cpu();
+		else
+			cout << '-';
+		cout << " ";
 		cout << setw(maxStack - 1) << (t->stackPages() * pageSize) / 1024 << "K ";
 		cout << setw(maxScheds) << t->schedCount() << " ";
 		cout << setw(maxSyscalls) << t->syscalls() << " ";

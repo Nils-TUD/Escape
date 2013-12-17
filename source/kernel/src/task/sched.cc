@@ -90,7 +90,7 @@ void Sched::dequeue(Thread *t) {
 	rdyCount--;
 }
 
-Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
+Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 	SpinLock::acquire(&lock);
 	/* give the old thread a new state */
 	if(old) {
@@ -104,16 +104,11 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
+				old->waitstart = 0;
 				removeFromEventlist(old);
 				SpinLock::release(&lock);
 				return old;
 			}
-
-			/* decrease timeslice correspondingly */
-			if(runtime > old->getStats().timeslice)
-				old->getStats().timeslice = 0;
-			else
-				old->getStats().timeslice -= runtime;
 
 			switch(old->getNewState()) {
 				case Thread::READY:
@@ -168,13 +163,36 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu,uint64_t runtime) {
 	return t;
 }
 
-void Sched::adjustPrio(Thread *t,size_t threadCount) {
-	const uint64_t interval = RUNTIME_UPDATE_INTVAL * (CPU::getSpeed() / 1000);
-	const uint64_t threadSlice = interval / threadCount;
+void Sched::adjustPrio(Thread *t,uint64_t total) {
 	SpinLock::acquire(&lock);
-	uint64_t runtime = interval - t->getStats().timeslice;
-	/* if the thread has used a lot of its timeslice, lower its priority */
-	if(runtime >= threadSlice * PRIO_BAD_SLICE_MULT) {
+	/* if it is still blocked, add the time to the blocked time */
+	if(t->waitstart > 0) {
+		uint64_t now = CPU::rdtsc();
+		t->stats.blocked += now - t->waitstart;
+		t->waitstart = now;
+	}
+
+	/* if the thread was only blocked for a short amount of time, lower its priority */
+	/* that means, if it either used the CPU quite a lot or if it wanted to do that, we consider
+	 * it as evil and thus lower the priority. the reasoning behind this is that it might happen
+	 * that there are more threads that want to burn the CPU than can run in our measurement-
+	 * interval. in this case, it is not enough to only lower the threads that executed. because
+	 * this would lead to a back and forth between these threads (group a executes -> lowered,
+	 * group b executes -> lowered, group a raised, group a executed, ...). */
+	/* this approach has the disadvantage that it is difficult to get raised again if a thread
+	 * wanted to run for a long time but couldn't because there were others. because as long as
+	 * he hasn't got its CPU time (which might be short), he will continue to try it and thus won't
+	 * get a raise. */
+	/* but I think this is ok because it is only a problem if we have a huge amount of threads
+	 * that all want to get CPU time, so that it takes quite long for this actually "good" thread
+	 * to execute. */
+	/* if we consider the case where one process creates CPU intensive threads all the time, for
+	 * example. with the old CPU-time-based strategy, the system was completely unusable because
+	 * of the priority "bouncing". with this system, it stays usable but with the limitation above.
+	 * i.e. if we're having bad luck, a "good" thread might be punished. however, in such a case
+	 * the user just wants to terminate the evil guys anyway instead of continuing to use the
+	 * system. */
+	if(t->stats.blocked < BAD_BLOCK_TIME(total)) {
 		if(t->getPriority() > 0) {
 			if(t->getState() == Thread::READY)
 				dequeue(t);
@@ -184,9 +202,10 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 		}
 		t->prioGoodCnt = 0;
 	}
-	/* otherwise, raise its priority */
-	else if(runtime < threadSlice / PRIO_GOOD_SLICE_DIV) {
+	/* otherwise, if it was blocked most of the time, raise the priority again */
+	else if(t->stats.blocked >= GOOD_BLOCK_TIME(total)) {
 		if(t->getPriority() < MAX_PRIO) {
+			/* but don't do that immediately, but only if it happened multiple times */
 			if(++t->prioGoodCnt == PRIO_FORGIVE_CNT) {
 				if(t->getState() == Thread::READY)
 					dequeue(t);
@@ -197,7 +216,9 @@ void Sched::adjustPrio(Thread *t,size_t threadCount) {
 			}
 		}
 	}
-	t->getStats().timeslice = interval;
+
+	/* reset blocked time */
+	t->stats.blocked = 0;
 	SpinLock::release(&lock);
 }
 
@@ -221,9 +242,7 @@ void Sched::wakeup(uint event,evobj_t object) {
 		auto old = it++;
 		assert(old->event == event);
 		if(old->evobject == 0 || old->evobject == object) {
-			/* important: remove it first from the event-list and set event to 0 */
-			list->remove(&*old);
-			old->event = 0;
+			removeFromEventlist(&*old);
 			setReady(&*old);
 		}
 	}
@@ -235,9 +254,7 @@ bool Sched::wakeupThread(Thread *t,uint event) {
 	bool res = false;
 	SpinLock::acquire(&lock);
 	if(t->event == event) {
-		/* important: remove it first from the event-list and set event to 0 */
-		evlists[event - 1].remove(t);
-		t->event = 0;
+		removeFromEventlist(t);
 		setReady(t);
 		res = true;
 	}
@@ -245,9 +262,22 @@ bool Sched::wakeupThread(Thread *t,uint event) {
 	return res;
 }
 
+void Sched::removeFromEventlist(Thread *t) {
+	if(t->event) {
+		/* important: remove it first from the event-list and set event to 0 */
+		evlists[t->event - 1].remove(t);
+		t->event = 0;
+	}
+}
+
 void Sched::setReady(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return;
+
+	if(t->waitstart > 0) {
+		t->stats.blocked += CPU::rdtsc() - t->waitstart;
+		t->waitstart = 0;
+	}
 
 	if(t->getState() == Thread::RUNNING) {
 		removeFromEventlist(t);
@@ -263,6 +293,11 @@ void Sched::setReadyQuick(Thread *t) {
 	if(t->getFlags() & T_IDLE)
 		return;
 
+	if(t->waitstart > 0) {
+		t->stats.blocked += CPU::rdtsc() - t->waitstart;
+		t->waitstart = 0;
+	}
+
 	if(t->getState() == Thread::RUNNING) {
 		removeFromEventlist(t);
 		t->setNewState(Thread::READY);
@@ -275,13 +310,6 @@ void Sched::setReadyQuick(Thread *t) {
 	else if(setReadyState(t)) {
 		assert(t->event == 0);
 		enqueueQuick(t);
-	}
-}
-
-void Sched::removeFromEventlist(Thread *t) {
-	if(t->event) {
-		evlists[t->event - 1].remove(t);
-		t->event = 0;
 	}
 }
 
@@ -306,6 +334,7 @@ void Sched::setBlocked(Thread *t) {
 			vassert(false,"Invalid state for setBlocked (%d)",t->getState());
 			break;
 	}
+	t->waitstart = CPU::rdtsc();
 }
 
 void Sched::setSuspended(Thread *t,bool blocked) {

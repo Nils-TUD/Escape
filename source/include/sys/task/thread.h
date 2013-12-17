@@ -36,12 +36,11 @@
 #define INITIAL_STACK_PAGES		1
 
 #define MAX_PRIO				4
-#define DEFAULT_PRIO			3
-/* 1 means, 100% of the timeslice, 2 = 200% of the timeslice */
-#define PRIO_BAD_SLICE_MULT		4
-/* 1 means, 100% of the timeslice, 2 means 50% of the timeslice */
-#define PRIO_GOOD_SLICE_DIV		2
-/* number of times a good-ratio has to be reached in a row to raise the priority again */
+/* if a thread was blocked less than BAD_BLOCKED_TIME(t), the priority is lowered */
+#define BAD_BLOCK_TIME(total)	((total) / 6)
+/* if a thread was blocked more than GOOD_BLOCKED_TIME(t), the priority is raised again */
+#define GOOD_BLOCK_TIME(total)	((total) / 2)
+/* number of times a good-blocked-time has to be reached in a row to raise the priority again */
 #define PRIO_FORGIVE_CNT		8
 
 /* reset the runtime and update priorities every 1sec */
@@ -85,7 +84,6 @@ class ThreadBase : public DListItem {
 	friend class Event;
 
 	struct Stats {
-		uint64_t timeslice;
 		/* number of microseconds of runtime this thread has got so far */
 		uint64_t runtime;
 		/* executed cycles in this second */
@@ -93,7 +91,9 @@ class ThreadBase : public DListItem {
 		uint64_t cycleStart;
 		/* executed cycles in the previous second */
 		uint64_t lastCycleCount;
-		/* the number of times we got chosen so far */
+		/* the cycles we were blocked */
+		uint64_t blocked;
+		/* syscall count and scheduling count */
 		ulong syscalls;
 		ulong schedCount;
 	};
@@ -691,6 +691,7 @@ protected:
 	/* the event the thread waits for (if waiting) */
 	uint event;
 	evobj_t evobject;
+	uint64_t waitstart;
 	/* a counter used to raise the priority after a certain number of "good behaviours" */
 	uint8_t prioGoodCnt;
 	uint8_t flags;

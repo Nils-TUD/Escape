@@ -206,7 +206,7 @@ void ThreadBase::doSwitch() {
 	old->stats.curCycleCount += runtime;
 
 	/* choose a new thread to run */
-	Thread *n = Sched::perform(old,old->getCPU(),runtime);
+	Thread *n = Sched::perform(old,old->getCPU());
 	n->stats.schedCount++;
 
 	/* switch thread */

@@ -169,18 +169,17 @@ private:
 	 *
 	 * @param old the current thread
 	 * @param cpu the CPU
-	 * @param runtime the runtime of the current thread in microseconds
 	 * @return the thread to run
 	 */
-	static Thread *perform(Thread *old,cpuid_t cpu,uint64_t runtime);
+	static Thread *perform(Thread *old,cpuid_t cpu);
 
 	/**
 	 * Adjusts the priority of the given thread according to its used timeslice
 	 *
 	 * @param t the thread
-	 * @param threadCount total number of threads
+	 * @param total total number of cycles executed (per CPU)
 	 */
-	static void adjustPrio(Thread *t,size_t threadCount);
+	static void adjustPrio(Thread *t,uint64_t total);
 
 	/**
 	 * Appends the given thread on the ready-queue and sets the state to Thread::READY

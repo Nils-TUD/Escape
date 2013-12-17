@@ -47,10 +47,10 @@ class TimerBase {
 	static const size_t LISTENER_COUNT		= 1024;
 
 public:
-	/* time-slice = 5ms */
+	/* timer period = 5ms */
 	static const unsigned FREQUENCY_DIV		= 200;
-	/* the time that we give one process (60ms) */
-	static const unsigned TIMESLICE			= ((1000 / FREQUENCY_DIV) * 12);
+	/* time-slice for a thread (60ms) */
+	static const unsigned TIMESLICE			= ((1000 / FREQUENCY_DIV) * 4);
 
 	/**
 	 * Initializes the timer

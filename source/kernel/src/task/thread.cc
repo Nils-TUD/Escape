@@ -66,6 +66,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	t->flags = 0;
 	t->initProps();
 	t->state = Thread::RUNNING;
+	t->priority = MAX_PRIO;
 	for(size_t i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = NULL;
 	t->tlsRegion = NULL;
@@ -84,10 +85,10 @@ Thread *ThreadBase::createInitial(Proc *p) {
 void ThreadBase::initProps() {
 	state = Thread::BLOCKED;
 	newState = Thread::READY;
-	priority = DEFAULT_PRIO;
 	prioGoodCnt = 0;
 	event = 0;
 	evobject = 0;
+	waitstart = 0;
 	ignoreSignals = 0;
 	sigHandler = NULL;
 	currentSignal = 0;
@@ -97,11 +98,11 @@ void ThreadBase::initProps() {
 	intrptLevel = 0;
 	threadDir = 0;
 	cpu = 0;
-	stats.timeslice = RUNTIME_UPDATE_INTVAL * (CPU::getSpeed() / 1000);
 	stats.runtime = 0;
 	stats.curCycleCount = 0;
 	stats.lastCycleCount = 0;
 	stats.cycleStart = CPU::rdtsc();
+	stats.blocked = 0;
 	stats.schedCount = 0;
 	stats.syscalls = 0;
 	resources = 0;
@@ -153,20 +154,34 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 void ThreadBase::updateRuntimes() {
 	uint64_t cyclesPerSec = Thread::ticksPerSec();
 	SpinLock::acquire(&lock);
-	size_t threadCount = threads.length();
-	for(auto t = threads.begin(); t != threads.end(); ++t) {
+	/* first store the max priority for all processes (this is no problem, because we're only using
+	 * this as the prio for new threads while holding the same lock, see add()) */
+	for(auto t = threads.begin(); t != threads.end(); ++t)
+		t->thread->proc->priority = MAX_PRIO;
+
+	for(auto it = threads.begin(); it != threads.end(); ++it) {
+		Thread *t = it->thread;
+		Proc *p = t->getProc();
+
 		/* update cycle-stats */
-		if(t->thread->state == Thread::RUNNING) {
+		if(t->state == Thread::RUNNING) {
 			/* we want to measure the last second only */
-			uint64_t cycles = Thread::getTSC() - t->thread->stats.cycleStart;
-			t->thread->stats.lastCycleCount = t->thread->stats.curCycleCount + MIN(cyclesPerSec,cycles);
+			uint64_t cycles = Thread::getTSC() - t->stats.cycleStart;
+			t->stats.lastCycleCount = t->stats.curCycleCount + MIN(cyclesPerSec,cycles);
 		}
 		else
-			t->thread->stats.lastCycleCount = t->thread->stats.curCycleCount;
-		t->thread->stats.curCycleCount = 0;
+			t->stats.lastCycleCount = t->stats.curCycleCount;
+		t->stats.curCycleCount = 0;
 
-		/* raise/lower the priority if necessary */
-		Sched::adjustPrio(t->thread,threadCount);
+		/* don't adjust priority of idle-threads */
+		if(~t->getFlags() & T_IDLE) {
+			/* lower/raise priority of thread, if necessary */
+			Sched::adjustPrio(t,cyclesPerSec);
+
+			/* the process should always receive the minimum of all its thread priorities */
+			if(t->priority < p->priority)
+				p->priority = t->priority;
+		}
 	}
 	SpinLock::release(&lock);
 }
@@ -350,6 +365,7 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("\n");
 	os.writef("Priority = %d\n",priority);
 	os.writef("Runtime = %Lums\n",getRuntime());
+	os.writef("Blocked = %u\n",stats.blocked);
 	os.writef("Scheduled = %u\n",stats.schedCount);
 	os.writef("Syscalls = %u\n",stats.syscalls);
 	os.writef("CurCycleCount = %Lu\n",stats.curCycleCount);
@@ -404,6 +420,8 @@ void ThreadBase::add() {
 	SpinLock::acquire(&lock);
 	threads.append(&threadListItem);
 	tidToThread[tid] = static_cast<Thread*>(this);
+	/* do that here to prevent that one see's a temporary priority, i.e. during the update-phase */
+	priority = proc->getPriority();
 	SpinLock::release(&lock);
 }
 

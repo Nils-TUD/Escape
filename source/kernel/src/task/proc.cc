@@ -84,6 +84,7 @@ void ProcBase::init() {
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	p->entryPoint = 0;
+	p->priority = MAX_PRIO;
 	p->fsChans = SList<VFSFS::FSChan>();
 	p->env = NULL;
 	p->stats.input = 0;
@@ -236,6 +237,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->sgid = cur->sgid;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->flags = 0;
+	p->priority = cur->priority;
 	p->entryPoint = cur->entryPoint;
 	p->fsChans = SList<VFSFS::FSChan>();
 	p->env = NULL;
@@ -777,7 +779,7 @@ void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
 void ProcBase::print(OStream &os) const {
 	size_t own = 0,shared = 0,swap = 0;
 	os.writef("Proc %d:\n",pid);
-	os.writef("\tppid=%d, cmd=%s, entry=%#Px\n",parentPid,command,entryPoint);
+	os.writef("\tppid=%d, cmd=%s, entry=%#Px, priority=%d\n",parentPid,command,entryPoint,priority);
 	os.writef("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
 	os.writef("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
 	os.writef("\tGroups: ");

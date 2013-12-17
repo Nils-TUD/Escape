@@ -76,6 +76,7 @@ class ProcBase : public SListItem {
 	friend class VFSFS;
 	friend class Env;
 	friend class Sems;
+	friend class ThreadBase;
 
 protected:
 	ProcBase() {
@@ -380,6 +381,12 @@ public:
 		return flags;
 	}
 	/**
+	 * @return the minimum priority of all threads in this process
+	 */
+	uint8_t getPriority() const {
+		return priority;
+	}
+	/**
 	 * @return real, effective or saved user-id
 	 */
 	uid_t getRUid() const {
@@ -571,6 +578,8 @@ private:
 	gid_t rgid;
 	gid_t egid;
 	gid_t sgid;
+	/* the minimum priority of all threads; is used for new childs and threads */
+	uint8_t priority;
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
 	VirtMem virtmem;

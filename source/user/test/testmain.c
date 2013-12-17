@@ -48,6 +48,7 @@ static sTestModule modules[] = {
 	{"fsreads",mod_fsreads},
 	{"ooc",mod_ooc},
 	{"highcpu",mod_highcpu},
+	{"highcput",mod_highcputhreads},
 	{"parallel",mod_drvparallel},
 	{"maxthreads",mod_maxthreads},
 	{"pagefaults",mod_pagefaults},

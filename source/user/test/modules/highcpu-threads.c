@@ -18,22 +18,31 @@
  */
 
 #include <esc/common.h>
+#include <esc/thread.h>
+#include <stdio.h>
+#include <string.h>
 
-extern int mod_driver(int,char**);
-extern int mod_debug(int,char**);
-extern int mod_fault(int,char**);
-extern int mod_thread(int,char**);
-extern int mod_forkbomb(int,char**);
-extern int mod_procswarm(int,char**);
-extern int mod_mem(int,char**);
-extern int mod_stack(int,char**);
-extern int mod_tls(int,char**);
-extern int mod_pipe(int,char**);
-extern int mod_sigclone(int,char**);
-extern int mod_fsreads(int,char**);
-extern int mod_ooc(int,char**);
-extern int mod_highcpu(int,char**);
-extern int mod_highcputhreads(int,char**);
-extern int mod_drvparallel(int,char**);
-extern int mod_maxthreads(int,char**);
-extern int mod_pagefaults(int,char**);
+#include "../modules.h"
+
+static int evilThread(void *arg);
+
+int mod_highcputhreads(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	while(1) {
+		int tid = startthread(evilThread,NULL);
+		if(tid < 0)
+			printe("Unable to start thread");
+		//join(tid);
+	}
+	return 0;
+}
+
+static int evilThread(A_UNUSED void *arg) {
+	volatile int i,j;
+	for(j = 0; j < 10; ++j) {
+		for(i = 0; i < 10000000; i++)
+			;
+		putchar('.');
+		fflush(stdout);
+	}
+	return 0;
+}

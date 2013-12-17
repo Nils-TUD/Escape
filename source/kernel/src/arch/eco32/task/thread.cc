@@ -146,7 +146,7 @@ void ThreadBase::doSwitch() {
 	old->stats.curCycleCount += runtime;
 
 	/* choose a new thread to run */
-	Thread *n = Sched::perform(old,old->getCPU(),runtime);
+	Thread *n = Sched::perform(old,old->getCPU());
 	n->stats.schedCount++;
 
 	if(EXPECT_TRUE(n->getTid() != old->getTid())) {

@@ -68,7 +68,8 @@ static int cli_getOldMode(void) {
 
 void cli_reactivate(int oldMode) {
 	sClient *cli = clients[active];
-	assert(cli->screenMode);
+	if(!cli->screenMode)
+		return;
 
 	if(screen_setMode(cli->screenFd,cli->type,cli->screenMode->id,cli->screenShmName,
 			oldMode != cli->screenMode->id) < 0)

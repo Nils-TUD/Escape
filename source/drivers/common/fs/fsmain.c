@@ -83,7 +83,7 @@ int main(int argc,char *argv[]) {
 	fflush(stdout);
 
 	/* register device */
-	id = createdev("/dev/fs",DEV_TYPE_FS,0);
+	id = createdev("/dev/fs",DEV_TYPE_FS,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'fs'");
 
@@ -110,6 +110,10 @@ int main(int argc,char *argv[]) {
 					close(fd);
 					continue;
 				}
+			}
+			else if(mid == MSG_DEV_CLOSE) {
+				close(fd);
+				continue;
 			}
 
 			if(!cmds_execute(mid,fd,&msg,data)) {

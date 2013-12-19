@@ -117,7 +117,6 @@ protected:
 
 private:
 	static Message *getMsg(Thread *t,SList<Message> *list,ushort flags);
-	void closeFile();
 	int isSupported(int op) const;
 
 	int fd;

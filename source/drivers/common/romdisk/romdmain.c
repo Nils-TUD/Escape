@@ -49,7 +49,7 @@ int main(int argc,char **argv) {
 		error("Unable to map file '%s'",argv[2]);
 
 	/* create device */
-	id = createdev("/dev/romdisk",DEV_TYPE_BLOCK,DEV_READ);
+	id = createdev("/dev/romdisk",DEV_TYPE_BLOCK,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'romdisk'");
 
@@ -83,6 +83,10 @@ int main(int argc,char **argv) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
+					break;
 
 				default:
 					msg.args.arg1 = -ENOTSUP;

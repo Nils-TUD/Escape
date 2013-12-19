@@ -34,7 +34,7 @@ int main(void) {
 
 	list_init();
 
-	id = createdev("/dev/pci",DEV_TYPE_SERVICE,0);
+	id = createdev("/dev/pci",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'pci'");
 	if(chmod("/dev/pci",0111) < 0)
@@ -58,6 +58,7 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
+
 				case MSG_PCI_GET_BY_ID: {
 					uchar bus = (uchar)msg.args.arg1;
 					uchar dev = (uchar)msg.args.arg2;
@@ -71,6 +72,7 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
+
 				case MSG_PCI_GET_LIST: {
 					size_t idx = (size_t)msg.args.arg1;
 					if(idx == (size_t)-1)
@@ -87,6 +89,11 @@ int main(void) {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
+					break;
+
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

@@ -31,7 +31,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/null",DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+	id = createdev("/dev/null",DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'null'");
 
@@ -58,6 +58,9 @@ int main(void) {
 					/* write response and pretend that we've written everything */
 					msg.args.arg1 = msg.args.arg2;
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+					break;
+				case MSG_DEV_CLOSE:
+					close(fd);
 					break;
 				default:
 					msg.args.arg1 = -ENOTSUP;

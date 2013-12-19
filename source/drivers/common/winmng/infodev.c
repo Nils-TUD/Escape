@@ -37,7 +37,7 @@ int infodev_thread(void *arg) {
 	int id;
 
 	snprintf(path,sizeof(path),"/system/%s-windows",arg);
-	id = createdev(path,DEV_TYPE_FILE,DEV_READ);
+	id = createdev(path,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to create file %s",path);
 	if(chmod(path,0644) < 0)
@@ -53,6 +53,10 @@ int infodev_thread(void *arg) {
 			switch(mid) {
 				case MSG_DEV_READ:
 					handleFileRead(fd,&msg,getWindows);
+					break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
 					break;
 
 				default:

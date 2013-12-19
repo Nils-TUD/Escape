@@ -283,7 +283,7 @@ bool OpenFile::doClose(pid_t pid) {
 	return false;
 }
 
-int OpenFile::getClient(OpenFile *file,int *fd,uint flags) {
+int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 	Thread *t = Thread::getRunning();
 	if(EXPECT_FALSE(file->devNo != VFS_DEV_NO))
 		return -EPERM;

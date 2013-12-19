@@ -48,7 +48,7 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	if(argc > 3)
 		startFib = atoi(argv[3]);
 
-	dev = createdev("/dev/parallel",DEV_TYPE_SERVICE,0);
+	dev = createdev("/dev/parallel",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(dev < 0)
 		error("Unable to create device '/dev/parallel'");
 
@@ -66,6 +66,11 @@ int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 				fprintf(stderr,"Unable to get work\n");
 		}
 		else {
+			if(mid == MSG_DEV_CLOSE) {
+				close(fd);
+				continue;
+			}
+
 			int tid;
 			sTask *task = (sTask*)malloc(sizeof(sTask));
 			task->n = msg.args.arg1;

@@ -98,7 +98,7 @@ static void client(void) {
 
 static void server(void) {
 	sIPCMsg msg;
-	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
+	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(dev < 0) {
 		printe("Unable to create device");
 		return;
@@ -118,7 +118,7 @@ static void server(void) {
 static void server_fast(void) {
 	sIPCMsg msg;
 	msgid_t mid;
-	int fd,dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
+	int fd,dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(dev < 0) {
 		printe("Unable to create device");
 		return;
@@ -134,7 +134,7 @@ static void send_recv_alone(void) {
 	sIPCMsg msg;
 	uint64_t begin,end;
 	const size_t testcount = 1000;
-	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,0);
+	int dev = createdev("/dev/pingpong",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(dev < 0) {
 		printe("Unable to create device");
 		return;

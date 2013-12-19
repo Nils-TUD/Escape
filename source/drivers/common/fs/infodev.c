@@ -51,7 +51,7 @@ static int infodev_handler(void *arg) {
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce USR1-signal-handler");
 
-	int id = createdev(info->path,DEV_TYPE_FILE,DEV_READ);
+	int id = createdev(info->path,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to create file %s",info->path);
 	if(chmod(info->path,0644) < 0)
@@ -68,6 +68,10 @@ static int infodev_handler(void *arg) {
 			switch(mid) {
 				case MSG_DEV_READ:
 					handleFileRead(fd,&msg,info->getData);
+					break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
 					break;
 
 				default:

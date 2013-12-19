@@ -72,7 +72,7 @@ public:
 	 * @param flags the flags (GW_*)
 	 * @return the error-code or 0
 	 */
-	static int getClient(OpenFile *file,int *fd,uint flags);
+	static int getWork(OpenFile *file,int *fd,uint flags);
 
 	/**
 	 * Checks whether they point to the same file

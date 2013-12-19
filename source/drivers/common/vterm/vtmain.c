@@ -59,7 +59,7 @@ int main(int argc,char **argv) {
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 
 	/* reg device */
-	int drvId = createdev(path,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+	int drvId = createdev(path,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(drvId < 0)
 		error("Unable to register device '%s'",path);
 
@@ -211,6 +211,10 @@ static int vtermThread(void *vtptr) {
 					msg.data.arg1 = vtctrl_control(vt,mid,msg.data.d);
 					vt_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+					break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
 					break;
 
 				default:

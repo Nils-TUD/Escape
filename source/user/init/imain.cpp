@@ -79,7 +79,7 @@ static void sigAlarm(A_UNUSED int sig) {
 }
 
 static int driverThread(A_UNUSED void *arg) {
-	int drv = createdev("/dev/init",DEV_TYPE_SERVICE,0);
+	int drv = createdev("/dev/init",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drv < 0)
 		error("Unable to register device 'init'");
 	if(chmod("/dev/init",0111) < 0)
@@ -118,6 +118,10 @@ static int driverThread(A_UNUSED void *arg) {
 				case MSG_INIT_IAMALIVE:
 					if(state != STATE_RUN)
 						pm.setAlive((pid_t)msg.args.arg1);
+					break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
 					break;
 
 				default:

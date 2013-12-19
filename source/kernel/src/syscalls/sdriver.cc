@@ -47,6 +47,9 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 	if(EXPECT_FALSE(type != DEV_TYPE_FS && (ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE)) != 0))
 		SYSC_ERROR(stack,-EINVAL);
+	/* DEV_CLOSE is mandatory */
+	if(EXPECT_FALSE(~ops & DEV_CLOSE))
+		SYSC_ERROR(stack,-EINVAL);
 
 	/* create device and open it */
 	OpenFile *file;
@@ -83,7 +86,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 
 	/* open a client */
 	int clifd;
-	ssize_t res = OpenFile::getClient(file,&clifd,flags);
+	ssize_t res = OpenFile::getWork(file,&clifd,flags);
 
 	/* release files */
 	FileDesc::release(file);

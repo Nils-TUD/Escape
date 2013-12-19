@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
 		snprintf(drvName,MAX_PATH_LEN + 1,"/dev/guiterm%zu",no);
-		sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+		sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 		if(sid >= 0)
 			break;
 		no++;
@@ -139,7 +139,7 @@ int main(int argc,char **argv) {
 
 static int guiProc(void) {
 	// re-register device
-	int sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE);
+	int sid = createdev(drvName,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	unlockg(GUI_SHELL_LOCK);
 	if(sid < 0)
 		error("Unable to re-register device %s",drvName);

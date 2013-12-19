@@ -107,6 +107,10 @@ static int drive_thread(void *arg) {
 				}
 				break;
 
+				case MSG_DEV_CLOSE:
+					close(fd);
+					break;
+
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
@@ -240,7 +244,7 @@ static void initDrives(void) {
 				else
 					snprintf(name,sizeof(name),"cd%c%d",'a' + ataDev->id,p + 1);
 				strcpy(path + SSTRLEN("/dev/"),name);
-				int fd = createdev(path,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE);
+				int fd = createdev(path,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE);
 				if(fd < 0) {
 					ATA_LOG("Drive %d, Partition %d: Unable to register device '%s'",
 							ataDev->id,p + 1,name);

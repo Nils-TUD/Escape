@@ -62,7 +62,7 @@ int main(void) {
 	int id;
 
 	/* register device */
-	id = createdev("/dev/speaker",DEV_TYPE_SERVICE,0);
+	id = createdev("/dev/speaker",DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'speaker'");
 
@@ -99,6 +99,10 @@ int main(void) {
 					}
 				}
 				break;
+
+				case MSG_DEV_CLOSE:
+					close(fd);
+					break;
 
 				default:
 					msg.args.arg1 = -ENOTSUP;

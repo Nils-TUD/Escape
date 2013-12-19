@@ -148,6 +148,10 @@ void GUITerm::run() {
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;
 
+				case MSG_DEV_CLOSE:
+					close(fd);
+					break;
+
 				case MSG_UIM_GETKEYMAP:
 				case MSG_UIM_SETKEYMAP:
 				case MSG_VT_SETMODE:

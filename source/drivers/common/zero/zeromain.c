@@ -34,7 +34,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/zero",DEV_TYPE_CHAR,DEV_READ);
+	id = createdev("/dev/zero",DEV_TYPE_CHAR,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'zero'");
 
@@ -67,6 +67,9 @@ int main(void) {
 					}
 				}
 				break;
+				case MSG_DEV_CLOSE:
+					close(fd);
+					break;
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

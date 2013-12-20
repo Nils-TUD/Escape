@@ -139,7 +139,7 @@ bool ThreadBase::beginTerm() {
 	SpinLock::acquire(&switchLock);
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	bool res = state != Thread::RUNNING && termHeapCount == 0 && !hasResources();
+	bool res = state != Thread::RUNNING && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		Sched::removeThread(static_cast<Thread*>(this));

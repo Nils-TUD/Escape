@@ -155,8 +155,12 @@ void Interrupts::syscall(IntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(t->hasSignalQuick())
+	if(EXPECT_FALSE(t->hasSignalQuick()))
 		UEnv::handleSignal(t,stack);
+	/* if we should die, don't continue here. otherwise we will continue until we schedule *and* we
+	 * don't have any resources taken in the kernel (which might take some time). */
+	if(EXPECT_FALSE(t->getFlags() & T_WILL_DIE))
+		Thread::switchAway();
 	t->popIntrptLevel();
 }
 
@@ -171,7 +175,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 
 	intrpt = Interrupts::intrptList + stack->intrptNo;
 	intrpt->count++;
-	if(intrpt->handler)
+	if(EXPECT_TRUE(intrpt->handler))
 		intrpt->handler(t,stack);
 	else {
 		Log::get().writef("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
@@ -181,10 +185,10 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(level == 1) {
-		if(t->haveHigherPrio())
+	if(EXPECT_TRUE(level == 1)) {
+		if(EXPECT_FALSE(t->haveHigherPrio() || (t->getFlags() & T_WILL_DIE)))
 			Thread::switchAway();
-		if(t->hasSignalQuick())
+		if(EXPECT_FALSE(t->hasSignalQuick()))
 			UEnv::handleSignal(t,stack);
 	}
 

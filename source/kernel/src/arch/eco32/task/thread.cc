@@ -129,7 +129,7 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 bool ThreadBase::beginTerm() {
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	bool res = getState() != Thread::RUNNING && termHeapCount == 0 && !hasResources();
+	bool res = getState() != Thread::RUNNING && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		Sched::removeThread(static_cast<Thread*>(this));

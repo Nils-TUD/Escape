@@ -99,6 +99,12 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 		else {
 			vassert(old->getState() == Thread::RUNNING || old->getState() == Thread::ZOMBIE,
 					"State %d",old->getState());
+			/* make us a zombie if we should die and have no resources anymore */
+			if(old->getFlags() & T_WILL_DIE) {
+				if(!old->hasResources())
+					old->setNewState(Thread::ZOMBIE);
+			}
+
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
 			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {

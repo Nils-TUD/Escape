@@ -173,8 +173,8 @@ int main(int argc,char **argv) {
 
 	// calc with to the proc-command
 	size_t width2cmd = maxTid + SSTRLEN("STATE") + SSTRLEN("PRIO") + SSTRLEN(" CPU") + maxStack +
-			maxScheds + maxSyscalls + maxRuntime;
-	width2cmd += 7 + 7 + SSTRLEN("   CPU ");
+			maxScheds + maxSyscalls + maxRuntime + 7;
+	width2cmd += 8 + SSTRLEN("   CPU ");
 
 	// print threads
 	for(auto it = threads.begin(); it != threads.end(); ++it) {

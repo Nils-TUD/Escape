@@ -268,9 +268,9 @@ void PhysMem::free(frameno_t frame,FrameType type) {
 	SpinLock::release(&defLock);
 }
 
-bool PhysMem::swapIn(uintptr_t addr) {
+int PhysMem::swapIn(uintptr_t addr) {
 	if(!swapEnabled)
-		return false;
+		return -EFAULT;
 
 	/* get a free job */
 	Thread *t = Thread::getRunning();
@@ -302,7 +302,7 @@ bool PhysMem::swapIn(uintptr_t addr) {
 	t->block();
 	SpinLock::release(&defLock);
 	Thread::switchNoSigs();
-	return true;
+	return 0;
 }
 
 void PhysMem::swapper() {

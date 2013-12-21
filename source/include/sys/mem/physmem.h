@@ -53,7 +53,7 @@ class PhysMem {
 	static const ulong MAX_SWAP_AT_ONCE				= 10;
 	static const ulong SWAPIN_JOB_COUNT				= 64;
 	/* the amount of memory at which we should start to set the region-timestamp */
-	static const size_t REG_TS_BEGIN				= 1024 * PAGE_SIZE;
+	static const size_t REG_TS_BEGIN				= 4 * 1024 * PAGE_SIZE;
 
 public:
 	enum MemType {
@@ -169,9 +169,9 @@ public:
 	 * Swaps the page with given address for the current process in
 	 *
 	 * @param addr the address of the page
-	 * @return true if successfull
+	 * @return 0 if successfull
 	 */
-	static bool swapIn(uintptr_t addr);
+	static int swapIn(uintptr_t addr);
 
 	/**
 	 * Prints information about the pmem-module

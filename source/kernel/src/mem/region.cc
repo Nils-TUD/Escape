@@ -181,8 +181,9 @@ void Region::print(OStream &os,uintptr_t virt) const {
 	if(file) {
 		os.writef("\tFile: ");
 		file->print(os);
+		os.writef("\n");
 	}
-	os.writef("\tTimestamp: %d\n",timestamp);
+	os.writef("\tTimestamp: %Lu\n",timestamp);
 	os.writef("\tProcesses: ");
 	for(auto it = vms.cbegin(); it != vms.cend(); ++it)
 		os.writef("%d ",(*it)->getPid());

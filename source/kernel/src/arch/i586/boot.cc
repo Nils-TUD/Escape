@@ -122,6 +122,11 @@ void Boot::archStart(BootInfo *info) {
 	FPU::preinit();
 	Serial::init();
 
+	/* parse boot parameters (before PhysMem::init()) */
+	int argc;
+	const char **argv = Boot::parseArgs(mb->cmdLine,&argc);
+	Config::parseBootParams(argc,argv);
+
 	/* init physical memory and paging */
 	Proc::preinit();
 	PhysMem::init();
@@ -140,11 +145,6 @@ void Boot::archStart(BootInfo *info) {
 	}
 
 	Log::get().writef("Kernel parameters: %s\n",mb->cmdLine);
-
-	/* parse boot parameters */
-	int argc;
-	const char **argv = Boot::parseArgs(mb->cmdLine,&argc);
-	Config::parseBootParams(argc,argv);
 }
 
 const BootInfo *Boot::getInfo() {

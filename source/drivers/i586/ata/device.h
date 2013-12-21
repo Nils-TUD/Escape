@@ -32,7 +32,7 @@
 /* sleep for 20ms (just for writes; when reading we wait for an interrupt; the status should be ok
  * afterwards) */
 #define PIO_TRANSFER_TIMEOUT		3000
-#define PIO_TRANSFER_SLEEPTIME		20
+#define PIO_TRANSFER_SLEEPTIME		0
 
 #define ATAPI_TRANSFER_TIMEOUT		3000
 #define ATAPI_TRANSFER_SLEEPTIME	20

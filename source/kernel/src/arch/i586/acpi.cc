@@ -26,16 +26,23 @@
 #include <sys/vfs/dir.h>
 #include <sys/mem/pagedir.h>
 #include <sys/log.h>
+#include <sys/config.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <string.h>
 
-#define MAX_ACPI_PAGES		16
+#define MAX_ACPI_PAGES		32
 #define BDA_EBDA			0x40E	/* TODO not always available? */
 #define BIOS_AREA			0xE0000
 
+bool ACPI::enabled = false;
 ACPI::RSDP *ACPI::rsdp;
 ISList<sRSDT*> ACPI::acpiTables;
+
+void ACPI::init() {
+	if((enabled = ACPI::find()))
+		ACPI::parse();
+}
 
 bool ACPI::find() {
 	/* first kb of extended bios data area (EBDA) */
@@ -136,14 +143,18 @@ void ACPI::parse() {
 
 			case ACPI_SIG('A','P','I','C'): {
 				RSDTAPIC *rapic = (RSDTAPIC*)(*it);
+				/* collect the IOAPICs and LAPICs first */
 				APIC *apic = rapic->apics;
 				while(apic < (APIC*)((uintptr_t)(*it) + (*it)->length)) {
-					/* we're only interested in the local APICs */
 					switch(apic->type) {
 						case TYPE_LAPIC: {
 							APICLAPIC *lapic = (APICLAPIC*)apic;
-							if(lapic->flags & 0x1)
+							if(lapic->flags & 0x1) {
 								SMP::addCPU(lapic->id == id,lapic->id,false);
+								/* make bootstrap CPU ready; we're currently running on it */
+								if(lapic->id == id)
+									SMP::setId(id,0);
+							}
 						}
 						break;
 
@@ -152,7 +163,14 @@ void ACPI::parse() {
 							IOAPIC::add(ioapic->id,ioapic->address,ioapic->baseGSI);
 						}
 						break;
+					}
+					apic = (APIC*)((uintptr_t)apic + apic->length);
+				}
 
+				/* now set the redirections */
+				apic = rapic->apics;
+				while(apic < (APIC*)((uintptr_t)(*it) + (*it)->length)) {
+					switch(apic->type) {
 						case TYPE_INTR: {
 							APICIntSO *intr = (APICIntSO*)apic;
 							IOAPIC::Polarity pol;

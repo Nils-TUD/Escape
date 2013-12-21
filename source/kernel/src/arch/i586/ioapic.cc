@@ -64,9 +64,6 @@ void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
 	if(vector == -1 || exists(vector))
 		return;
 
-	Log::get().writef("INTSO: irq=%u gsi=%u del=%d pol=%d trig=%d\n",
-		srcIRQ,gsi,(delivery >> 8) & 7,(polarity >> 13) & 1,(triggerMode >> 15) & 1);
-
 	assert(srcIRQ < ISA_IRQ_COUNT);
 	isa2gsi[srcIRQ] = gsi;
 
@@ -77,6 +74,9 @@ void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
 		write(ioapic,IOAPIC_REG_REDTBL + gsi * 2 + 1,lapicId << 24);
 		write(ioapic,IOAPIC_REG_REDTBL + gsi * 2,
 			RED_INT_MASK_DIS | RED_DESTMODE_PHYS | polarity | triggerMode | delivery | vector);
+
+		Log::get().writef("INTSO: irq=%u gsi=%u del=%d pol=%d trig=%d\n",
+			srcIRQ,gsi,(delivery >> 8) & 7,(polarity >> 13) & 1,(triggerMode >> 15) & 1);
 	}
 }
 

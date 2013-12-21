@@ -155,13 +155,11 @@ private:
     }
 
 	static uint32_t read(uint32_t reg) {
-		assert(enabled);
 		/* volatile is necessary to enforce dword-accesses */
 		return *(volatile uint32_t*)(apicAddr + reg);
 	}
 
 	static void write(uint32_t reg,uint32_t value) {
-		assert(enabled);
 		*(volatile uint32_t*)(apicAddr + reg) = value;
 	}
 

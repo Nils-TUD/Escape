@@ -31,13 +31,15 @@ uintptr_t LAPIC::apicAddr;
 void LAPIC::init() {
 	enabled = false;
 
-	if(CPU::hasFeature(CPU::FEAT_APIC) && !Config::get(Config::FORCE_PIT)) {
+	if(CPU::hasFeature(CPU::FEAT_APIC)) {
 		/* TODO every APIC may have a different address */
 		uint64_t apicBase = CPU::getMSR(MSR_APIC_BASE);
 		if(apicBase & APIC_BASE_EN) {
 			apicAddr = PageDir::makeAccessible(apicBase & 0xFFFFF000,1);
 			enabled = true;
 			CPU::setMSR(MSR_APIC_BASE,apicBase | 0x800);
+			/* enable BSP LAPIC */
+			enable();
 		}
 	}
 }

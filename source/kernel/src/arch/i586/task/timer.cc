@@ -47,6 +47,8 @@ void Timer::start(bool isBSP) {
 	}
 	else if(isBSP) {
 		Log::get().writef("CPU %d uses PIT as timer device\n",SMP::getCurId());
+		if(SMP::getCPUCount() > 1)
+			Log::get().writef("WARNING: using PIT with multiple CPUs means no preemption on APs!\n");
 		/* change timer divisor */
 		uint freq = PIT::BASE_FREQUENCY / Timer::FREQUENCY_DIV;
 		PIT::enablePeriodic(PIT::CHAN0,freq);

@@ -56,34 +56,19 @@ extern volatile uint halting;
 extern volatile uint flushed;
 
 bool SMPBase::initArch() {
-	LAPIC::init();
 	if(LAPIC::isAvailable()) {
-		bool enabled = false;
-		/* try ACPI first to find the LAPICs */
-		if(ACPI::find()) {
-			LAPIC::enable();
-			ACPI::parse();
-			enabled = true;
-		}
-		/* if that's not available, use MPConf */
-		else if(MPConfig::find()) {
-			LAPIC::enable();
+		/* if ACPI is not available, try MPConf */
+		if(!ACPI::isEnabled() && MPConfig::find())
 			MPConfig::parse();
-			enabled = true;
-		}
 
-		if(enabled) {
-			/* if we have not found CPUs by ACPI or MPConf, assume we have only the BSP */
-			if(getCPUCount() == 0) {
-				enabled = false;
-				return false;
-			}
+		/* if we have not found CPUs by ACPI or MPConf, assume we have only the BSP */
+		if(getCPUCount() > 0) {
+			enabled = true;
 			/* from now on, we'll use the logical-id as far as possible; but remember the physical
 			 * one for IPIs, e.g. */
 			cpuid_t id = LAPIC::getId();
 			SMP::log2Phys = (cpuid_t*)Cache::alloc(getCPUCount() * sizeof(cpuid_t));
 			SMP::log2Phys[0] = id;
-			setId(id,0);
 			return true;
 		}
 	}

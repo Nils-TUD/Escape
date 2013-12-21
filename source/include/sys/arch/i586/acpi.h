@@ -110,16 +110,15 @@ class ACPI {
 
 public:
 	/**
-	 * Searches for the root system description pointer.
-	 *
-	 * @return true if found
+	 * Inits ACPI, i.e. finds the root system description pointer and parses the tables.
 	 */
-	static bool find();
+	static void init();
 	/**
-	 * Parses the ACPI tables, stores them in a linked list and adds the found CPUs to the CPU-list
-	 * in the SMP-module.
+	 * @return true if ACPI is available
 	 */
-	static void parse();
+	static bool isEnabled() {
+		return enabled;
+	}
 	/**
 	 * Creates files in the VFS for all ACPI tables
 	 */
@@ -132,10 +131,22 @@ public:
 	static void print(OStream &os);
 
 private:
+	/**
+	 * Searches for the root system description pointer.
+	 *
+	 * @return true if found
+	 */
+	static bool find();
+	/**
+	 * Parses the ACPI tables, stores them in a linked list and adds the found CPUs to the CPU-list
+	 * in the SMP-module.
+	 */
+	static void parse();
 	static void addTable(sRSDT *tbl,size_t i,uintptr_t &curDest,uintptr_t destEnd);
 	static bool sigValid(const RSDP *rsdp);
 	static RSDP *findIn(uintptr_t start,size_t len);
 
+	static bool enabled;
 	static RSDP *rsdp;
 	static ISList<sRSDT*> acpiTables;
 };

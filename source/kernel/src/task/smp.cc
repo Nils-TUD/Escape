@@ -32,12 +32,11 @@
 bool SMPBase::enabled;
 SList<SMP::CPU> SMPBase::cpuList;
 SMP::CPU **SMPBase::cpus;
-size_t SMPBase::cpuCount;
+size_t SMPBase::cpuCount = 0;
 
 void SMPBase::init() {
-	cpuCount = 0;
 	enabled = Config::get(Config::SMP) ? SMP::initArch() : false;
-	if(!enabled) {
+	if(cpuCount == 0) {
 		addCPU(true,0,true);
 		setId(0,0);
 	}
@@ -54,6 +53,9 @@ void SMPBase::disable() {
 }
 
 void SMPBase::addCPU(bool bootstrap,uint8_t id,uint8_t ready) {
+	if(!bootstrap && !Config::get(Config::SMP))
+		return;
+
 	CPU *cpu = new CPU(id,bootstrap,ready);
 	if(!cpu)
 		Util::panic("Unable to allocate mem for CPU");

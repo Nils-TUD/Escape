@@ -60,6 +60,8 @@
 
 static const BootTask tasks[] = {
 	{"Initializing dynarray...",DynArray::init},
+	{"Initializing LAPIC...",LAPIC::init},
+	{"Initializing ACPI...",ACPI::init},
 	{"Initializing SMP...",SMP::init},
 	{"Initializing GDT...",GDT::initBSP},
 	{"Initializing CPU...",CPU::detect},

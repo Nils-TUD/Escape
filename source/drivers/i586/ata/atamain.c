@@ -56,9 +56,6 @@ static sDrive drives[DEVICE_COUNT * PARTITION_COUNT];
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
  * may not have more memory and can't do anything about it */
 static uint16_t buffer[MAX_RW_SIZE / sizeof(uint16_t)];
-/* this lock is required for the shared access to the controller, for example. so, we could do
- * better but I guess atm this is not really necessary. thus, the simple version */
-static tULock atalock;
 
 static int drive_thread(void *arg) {
 	sMsg msg;
@@ -81,23 +78,19 @@ static int drive_thread(void *arg) {
 				case MSG_DEV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					locku(&atalock);
 					msg.args.arg1 = handleRead(ataDev,part,offset,count);
 					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1 > 0)
 						send(fd,MSG_DEV_READ_RESP,buffer,count);
-					unlocku(&atalock);
 				}
 				break;
 
 				case MSG_DEV_WRITE: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					locku(&atalock);
 					msg.args.arg1 = handleWrite(ataDev,part,fd,offset,count);
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
-					unlocku(&atalock);
 				}
 				break;
 
@@ -137,8 +130,6 @@ int main(int argc,char **argv) {
 	}
 
 	/* detect and init all devices */
-	if(crtlocku(&atalock) < 0)
-		error("Unable to create lock");
 	ctrl_init(useDma);
 	initDrives();
 	/* flush prints */

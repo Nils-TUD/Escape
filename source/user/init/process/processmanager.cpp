@@ -22,6 +22,7 @@
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
+#include <esc/elf.h>
 #include <vterm/vtctrl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -147,6 +148,10 @@ void ProcessManager::finalize(int task) {
 	}
 	_downProg->allTerminated();
 
+	cout << "Flushing filesystem buffers..." << endl;
+	if(sync() != 0)
+		printe("Flushing filesystem buffers failed");
+
 	// ask the machine to reboot/shutdown
 	Machine *m = Machine::createInstance();
 	if(task == TASK_REBOOT)
@@ -157,12 +162,17 @@ void ProcessManager::finalize(int task) {
 }
 
 void ProcessManager::addRunning() {
+	size_t bootMods = getBootModCount();
 	file procDir("/system/processes");
 	vector<sDirEntry> procs = procDir.list_files(false);
 	for(auto  it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->name);
-		if(pid != 0 && getByPid(pid) == nullptr)
-			_procs.push_back(new Process(pid));
+		if(pid != 0 && getByPid(pid) == nullptr) {
+			/* the processes 1 .. <bootMods> are always the boot modules. we don't kill them
+			 * because they are essential for the system to be functional (think of demand loading,
+			 * swapping, ...) */
+			_procs.push_back(new Process(pid,pid > (int)bootMods));
+		}
 	}
 	sort(_procs.begin(),_procs.end());
 }
@@ -173,6 +183,33 @@ Process *ProcessManager::getByPid(pid_t pid) {
 			return *it;
 	}
 	return nullptr;
+}
+
+size_t ProcessManager::getBootModCount() const {
+	size_t count = 0;
+	sElfEHeader header;
+	/* count the boot modules that are ELF files; these are the modules that we're loaded at boot */
+	/* (we might have other things like romdisks) */
+	file modDir("/system/mbmods");
+	vector<sDirEntry> mods = modDir.list_files(false);
+	for(auto  it = mods.begin(); it != mods.end(); ++it) {
+		char path[MAX_PATH_LEN];
+		snprintf(path,sizeof(path),"/system/mbmods/%s",it->name);
+		int fd = open(path,IO_READ);
+		if(fd < 0) {
+			printe("Unable to open '%s'",path);
+			continue;
+		}
+		if(read(fd,&header,sizeof(header)) != sizeof(header)) {
+			printe("Unable to read from '%s'",path);
+			close(fd);
+			continue;
+		}
+		if(memcmp(header.e_ident,ELFMAG,4) == 0)
+			count++;
+		close(fd);
+	}
+	return count;
 }
 
 void ProcessManager::waitForFS() {

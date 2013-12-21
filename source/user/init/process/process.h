@@ -25,9 +25,11 @@
 
 class Process {
 public:
-	Process(int id = 0) : _pid(id), _alive(), _dead(), _name(), _args() {
+	Process(int id = 0,bool killable = true)
+		: _pid(id), _alive(), _dead(), _killable(killable), _name(), _args() {
 	}
-	Process(const std::string& procName) : _pid(), _alive(), _dead(), _name(procName), _args() {
+	Process(const std::string& procName)
+		: _pid(), _alive(), _dead(), _killable(true), _name(procName), _args() {
 	}
 	virtual ~Process() {
 	}
@@ -46,7 +48,7 @@ public:
 	}
 
 	virtual bool isKillable() const {
-		return true;
+		return _killable;
 	}
 	int pid() const {
 		return _pid;
@@ -68,6 +70,7 @@ protected:
 	int _pid;
 	bool _alive;
 	bool _dead;
+	bool _killable;
 	std::string _name;
 	std::vector<std::string> _args;
 };

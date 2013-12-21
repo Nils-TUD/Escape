@@ -57,6 +57,7 @@ private:
 	Process *getByPid(pid_t pid);
 	void addRunning();
 	void waitForFS();
+	size_t getBootModCount() const;
 
 private:
 	tULock _lock;

@@ -109,6 +109,21 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* start idle-thread */
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 
+	/* create module files */
+	VFSNode *node;
+	int res = VFSNode::request("/system/mbmods",&node,NULL,0);
+	if(res < 0)
+		Util::panic("Unable to resolve /system/mbmods");
+	for(size_t i = 1; i < info.progCount; i++) {
+		char *modname = (char*)Cache::alloc(12);
+		itoa(modname,12,i);
+		VFSNode *n = CREATE(VFSFile,KERNEL_PID,node,modname,(void*)progs[i].start,progs[i].size);
+		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IRGRP | S_IROTH) != 0)
+			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
+		VFSNode::release(n);
+	}
+	VFSNode::release(node);
+
 	loadedMods = true;
 	for(size_t i = 1; i < info.progCount; i++) {
 		/* parse args */
@@ -120,7 +135,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		/* clone proc */
 		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
-			int res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
+			res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				Util::panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
 			/* we don't want to continue ;) */
@@ -131,7 +146,6 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
-		VFSNode *node;
 		while(VFSNode::request(argv[1],&node,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except

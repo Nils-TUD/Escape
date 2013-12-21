@@ -122,7 +122,21 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 		/* start termination-thread */
 		Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-		bootState++;
+
+		/* create module files */
+		VFSNode *node;
+		int res = VFSNode::request("/system/mbmods",&node,NULL,0);
+		if(res < 0)
+			Util::panic("Unable to resolve /system/mbmods");
+		for(size_t i = 1; i < info.progCount; i++) {
+			char *modname = (char*)Cache::alloc(12);
+			itoa(modname,12,i);
+			VFSNode *n = CREATE(VFSFile,KERNEL_PID,node,modname,(void*)progs[i].start,progs[i].size);
+			if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IRGRP | S_IROTH) != 0)
+				Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
+			VFSNode::release(n);
+		}
+		VFSNode::release(node);
 	}
 	else if((bootState % 2) == 1) {
 		size_t i = (bootState / 2) + 1;
@@ -143,8 +157,6 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		}
 		else if(child < 0)
 			Util::panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
-
-		bootState++;
 	}
 	else {
 		size_t i = bootState / 2;
@@ -163,9 +175,8 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 			Thread::switchAway();
 		}
 		VFSNode::release(node);
-
-		bootState++;
 	}
+	bootState++;
 
 	/* TODO */
 #if 0

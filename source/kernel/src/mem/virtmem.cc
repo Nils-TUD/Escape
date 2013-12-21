@@ -570,8 +570,14 @@ void VirtMem::sync(VMRegion *vm) const {
 
 		for(size_t i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->getByteCount() - i * PAGE_SIZE);
+			/* if the page isn't present, skip it */
+			if(vm->reg->getPageFlags(i) & (PF_DEMANDLOAD | PF_SWAPPED))
+				continue;
+
+			/* just ignore the write-back if we can't seek */
 			if(file->seek(pid,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
+
 			if(pid == cur)
 				file->write(pid,(void*)(vm->virt() + i * PAGE_SIZE),amount);
 			else {

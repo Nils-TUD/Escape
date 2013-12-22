@@ -52,6 +52,7 @@ static sTestModule modules[] = {
 	{"parallel",mod_drvparallel},
 	{"maxthreads",mod_maxthreads},
 	{"pagefaults",mod_pagefaults},
+	{"matmult",mod_matmult},
 };
 
 int main(int argc,char *argv[]) {

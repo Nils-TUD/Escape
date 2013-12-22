@@ -43,6 +43,7 @@ typedef struct {
 	uint64_t runtime;
 	ulong schedCount;
 	ulong syscalls;
+	ulong migrations;
 } sExitState;
 
 #ifdef __cplusplus

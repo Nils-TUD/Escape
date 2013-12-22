@@ -183,6 +183,8 @@ void ThreadBase::doSwitch() {
 		if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
 			VirtMem::setTimestamp(n,cycles);
 		GDT::prepareRun(cpu,n->getProc() != old->getProc(),n);
+		if(cpu != n->getCPU())
+			n->getStats().migrations++;
 		n->setCPU(cpu);
 
 		/* some stats for SMP */

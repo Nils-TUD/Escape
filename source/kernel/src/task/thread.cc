@@ -105,6 +105,7 @@ void ThreadBase::initProps() {
 	stats.blocked = 0;
 	stats.schedCount = 0;
 	stats.syscalls = 0;
+	stats.migrations = 0;
 	resources = 0;
 	termHeapCount = 0;
 	termCallbackCount = 0;
@@ -365,9 +366,10 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("\n");
 	os.writef("Priority = %d\n",priority);
 	os.writef("Runtime = %Lums\n",getRuntime());
-	os.writef("Blocked = %u\n",stats.blocked);
-	os.writef("Scheduled = %u\n",stats.schedCount);
-	os.writef("Syscalls = %u\n",stats.syscalls);
+	os.writef("Blocked = %Lu\n",stats.blocked);
+	os.writef("Scheduled = %lu\n",stats.schedCount);
+	os.writef("Syscalls = %lu\n",stats.syscalls);
+	os.writef("Migrations = %lu\n",stats.migrations);
 	os.writef("CurCycleCount = %Lu\n",stats.curCycleCount);
 	os.writef("LastCycleCount = %Lu\n",stats.lastCycleCount);
 	os.writef("cycleStart = %Lu\n",stats.cycleStart);

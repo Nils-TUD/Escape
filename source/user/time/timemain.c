@@ -82,6 +82,7 @@ int main(int argc,char **argv) {
 		printf("Realtime:		%Lu us\n",tsctotime(end - start));
 		printf("Scheduled:		%lu times\n",state.schedCount);
 		printf("Syscalls:		%lu\n",state.syscalls);
+		printf("Migrations:		%lu\n",state.migrations);
 		printf("Own mem:		%lu KiB\n",state.ownFrames * 4);
 		printf("Shared mem:		%lu KiB\n",state.sharedFrames * 4);
 		printf("Swapped:		%lu KiB\n",state.swapped * 4);

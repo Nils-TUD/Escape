@@ -97,6 +97,7 @@ public:
 		uint64_t runtime;
 		ulong schedCount;
 		ulong syscalls;
+		ulong migrations;
 	};
 
 	struct Stats {
@@ -104,6 +105,7 @@ public:
 		uint64_t totalRuntime;
 		ulong totalSyscalls;
 		ulong totalScheds;
+		ulong totalMigrations;
 		/* I/O stats */
 		ulong input;
 		ulong output;

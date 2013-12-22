@@ -92,6 +92,7 @@ void ProcBase::init() {
 	p->stats.totalRuntime = 0;
 	p->stats.totalSyscalls = 0;
 	p->stats.totalScheds = 0;
+	p->stats.totalMigrations = 0;
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
 	if(Sems::init(p) < 0)
@@ -247,6 +248,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->stats.totalRuntime = 0;
 	p->stats.totalSyscalls = 0;
 	p->stats.totalScheds = 0;
+	p->stats.totalMigrations = 0;
 	p->stats.exitCode = 0;
 	p->stats.exitSignal = SIG_COUNT;
 	p->threads = ISList<Thread*>();
@@ -610,6 +612,7 @@ void ProcBase::killThread(tid_t tid) {
 	p->stats.totalRuntime += t->getStats().runtime;
 	p->stats.totalSyscalls += t->getStats().syscalls;
 	p->stats.totalScheds += t->getStats().schedCount;
+	p->stats.totalMigrations += t->getStats().migrations;
 	t->kill();
 	p->threads.remove(t);
 	if(p->threads.length() == 0) {
@@ -727,6 +730,7 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				state->runtime = Timer::cyclesToTime(p->stats.totalRuntime);
 				state->schedCount = p->stats.totalScheds;
 				state->syscalls = p->stats.totalSyscalls;
+				state->migrations = p->stats.totalMigrations;
 				state->ownFrames = p->virtmem.getPeakOwnFrames();
 				state->sharedFrames = p->virtmem.getPeakSharedFrames();
 				state->swapped = p->virtmem.getSwapCount();

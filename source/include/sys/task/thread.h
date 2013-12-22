@@ -96,6 +96,7 @@ class ThreadBase : public DListItem {
 		/* syscall count and scheduling count */
 		ulong syscalls;
 		ulong schedCount;
+		ulong migrations;
 	};
 
 public:

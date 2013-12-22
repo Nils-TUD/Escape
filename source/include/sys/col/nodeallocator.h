@@ -46,4 +46,5 @@ class NodeAllocator {
 	static DynArray nodeArray;
 	static SListItem *freelist;
 	static klock_t lock;
+	static klock_t extendLock;
 };

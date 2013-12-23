@@ -86,8 +86,12 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 	}
 
 	/* TODO not good */
-	while(open(path,IO_MSGS) < 0)
+	int fd;
+	while((fd = open(path,IO_MSGS)) < 0) {
+		if(fd != -ENOENT)
+			printe("Unable to open '%s'",path);
 		sleep(20);
+	}
 
 	int loginPid = fork();
 	if(loginPid < 0)

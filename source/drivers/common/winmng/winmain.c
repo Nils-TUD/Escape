@@ -105,19 +105,15 @@ int main(int argc,char *argv[]) {
 
 	/* create event-device */
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
-	evId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
+	evId = createdev(path,0111,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(evId < 0)
 		error("Unable to create device /dev/%s-events",argv[3]);
-	if(chmod(path,0111) < 0)
-		error("Unable to chmod %s",path);
 
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
-	drvId = createdev(path,DEV_TYPE_SERVICE,DEV_CLOSE);
+	drvId = createdev(path,0111,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create device /dev/%s",argv[3]);
-	if(chmod(path,0111) < 0)
-		error("Unable to chmod %s",path);
 
 	/* init window stuff */
 	inputData.uimngFd = uimng;

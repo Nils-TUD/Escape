@@ -82,14 +82,10 @@ int main(int argc,char *argv[]) {
 	printf("[fs] Mounted '%s' with fs '%s' at '/'\n",root->device,argv[3]);
 	fflush(stdout);
 
-	/* register device */
-	id = createdev("/dev/fs",DEV_TYPE_FS,DEV_CLOSE);
+	/* register device (exec permission is enough) */
+	id = createdev("/dev/fs",0111,DEV_TYPE_FS,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'fs'");
-
-	/* exec permission is enough */
-	if(chmod("/dev/fs",0111) < 0)
-		error("Unable to set permissions for /dev/fs");
 
 	while(true) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);

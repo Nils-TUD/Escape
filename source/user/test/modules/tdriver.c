@@ -71,7 +71,7 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 			error("Unable to start thread");
 	}
 
-	id = createdev("/dev/bla",DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
+	id = createdev("/dev/bla",0666,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("createdev");
 	fcntl(id,F_SETDATA,true);

@@ -79,11 +79,9 @@ static void sigAlarm(A_UNUSED int sig) {
 }
 
 static int driverThread(A_UNUSED void *arg) {
-	int drv = createdev("/dev/init",DEV_TYPE_SERVICE,DEV_CLOSE);
+	int drv = createdev("/dev/init",0111,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(drv < 0)
 		error("Unable to register device 'init'");
-	if(chmod("/dev/init",0111) < 0)
-		error("Unable to chmod /dev/init");
 	if(signal(SIG_ALARM,sigAlarm) == SIG_ERR)
 		error("Unable to set alarm-handler");
 

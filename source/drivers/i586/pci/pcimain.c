@@ -34,11 +34,9 @@ int main(void) {
 
 	list_init();
 
-	id = createdev("/dev/pci",DEV_TYPE_SERVICE,DEV_CLOSE);
+	id = createdev("/dev/pci",0110,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'pci'");
-	if(chmod("/dev/pci",0111) < 0)
-		error("Unable to change permissions of /dev/pci");
 
 	while(1) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);

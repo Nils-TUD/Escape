@@ -35,8 +35,9 @@
 int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
-	uint type = SYSC_ARG2(stack);
-	uint ops = SYSC_ARG3(stack);
+	mode_t mode = SYSC_ARG2(stack);
+	uint type = SYSC_ARG3(stack);
+	uint ops = SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -53,7 +54,7 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 
 	/* create device and open it */
 	OpenFile *file;
-	int res = VFS::createdev(pid,abspath,type,ops,&file);
+	int res = VFS::createdev(pid,abspath,mode,type,ops,&file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 

@@ -57,12 +57,13 @@ extern "C" {
  * Creates a device at given path.
  *
  * @param path the path
+ * @param mode the mode to set
  * @param type the device-type (DEV_TYPE_*)
  * @param ops the supported operations (DEV_*)
  * @return the file-desc if successfull, < 0 if an error occurred
  */
-A_CHECKRET static inline int createdev(const char *path,uint type,uint ops) {
-	return syscall3(SYSCALL_CRTDEV,(ulong)path,type,ops);
+A_CHECKRET static inline int createdev(const char *path,mode_t mode,uint type,uint ops) {
+	return syscall4(SYSCALL_CRTDEV,(ulong)path,mode,type,ops);
 }
 
 /**

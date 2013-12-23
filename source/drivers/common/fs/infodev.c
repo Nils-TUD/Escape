@@ -51,11 +51,9 @@ static int infodev_handler(void *arg) {
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce USR1-signal-handler");
 
-	int id = createdev(info->path,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
+	int id = createdev(info->path,0444,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to create file %s",info->path);
-	if(chmod(info->path,0644) < 0)
-		error("Unable to chmod %s",info->path);
 
 	while(run) {
 		msgid_t mid;

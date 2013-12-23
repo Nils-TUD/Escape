@@ -33,8 +33,8 @@
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
 
 /* block- and file-devices are none-empty by default, because their data is always available */
-VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,uint type,uint ops,bool &success)
-		: VFSNode(pid,n,buildMode(type),success),
+VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
+		: VFSNode(pid,n,buildMode(type) | (m & 0777),success),
 		  isEmpty(type != DEV_TYPE_BLOCK && type != DEV_TYPE_FILE), funcs(ops), msgCount(0), lastClient() {
 	if(!success)
 		return;
@@ -45,7 +45,7 @@ VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,uint type,uint ops,bool &succe
 }
 
 uint VFSDevice::buildMode(uint type) {
-	uint mode = S_IXUSR | S_IRUSR | S_IWUSR | S_IXGRP | S_IRGRP | S_IWGRP;
+	uint mode = 0;
 	if(type == DEV_TYPE_BLOCK)
 		mode |= MODE_TYPE_BLKDEV;
 	else if(type == DEV_TYPE_CHAR)

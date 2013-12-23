@@ -31,7 +31,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/null",DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
+	id = createdev("/dev/null",0666,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'null'");
 

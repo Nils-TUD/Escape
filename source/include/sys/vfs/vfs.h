@@ -218,12 +218,13 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param path the path to the device
+	 * @param mode the mode to set
 	 * @param type the device-type (DEV_TYPE_*)
 	 * @param ops the supported operations
 	 * @param file will be set to the opened file
 	 * @return 0 if ok, negative if an error occurred
 	 */
-	static int createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file);
+	static int createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file);
 
 	/**
 	 * Waits for the given event. First, the function checks whether we can wait, i.e. if the event

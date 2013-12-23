@@ -45,7 +45,7 @@ int main(void) {
 	if(startthread(refreshThread,NULL) < 0)
 		error("Unable to start RTC-thread");
 
-	id = createdev("/dev/rtc",DEV_TYPE_BLOCK,DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/rtc",0440,DEV_TYPE_BLOCK,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'rtc'");
 

@@ -288,7 +288,7 @@ static bool diskWait(void) {
 
 static void regDrives(void) {
 	createVFSEntry("hda",false);
-	drvId = createdev("/dev/hda1",DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE);
+	drvId = createdev("/dev/hda1",0660,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(drvId < 0) {
 		DISK_LOG("Drive 1, Partition 1: Unable to register device 'hda1'");
 	}

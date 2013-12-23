@@ -56,13 +56,9 @@ int main(void) {
 	if(reqports(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
-	id = createdev("/dev/rtc",DEV_TYPE_BLOCK,DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/rtc",0440,DEV_TYPE_BLOCK,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'rtc'");
-
-	/* give all read- and write-permission */
-	if(chmod("/dev/rtc",S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
-		error("Unable to set permissions for /dev/rtc");
 
 	/* wait for commands */
 	while(1) {

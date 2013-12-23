@@ -62,7 +62,7 @@ int main(void) {
 	int id;
 
 	/* register device */
-	id = createdev("/dev/speaker",DEV_TYPE_SERVICE,DEV_CLOSE);
+	id = createdev("/dev/speaker",0110,DEV_TYPE_SERVICE,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'speaker'");
 

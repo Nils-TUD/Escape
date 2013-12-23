@@ -59,7 +59,7 @@ int main(int argc,char **argv) {
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 
 	/* reg device */
-	int drvId = createdev(path,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
+	int drvId = createdev(path,0770,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(drvId < 0)
 		error("Unable to register device '%s'",path);
 

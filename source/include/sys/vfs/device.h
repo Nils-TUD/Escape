@@ -32,11 +32,12 @@ public:
 	 * @param pid the process-id to use
 	 * @param parent the parent-node
 	 * @param name the node-name
+	 * @param mode the mode to set
 	 * @param type the device-type
 	 * @param ops the supported operations
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,uint type,uint ops,bool &success);
+	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,mode_t mode,uint type,uint ops,bool &success);
 
 	/**
 	 * @param funcs the functions to check

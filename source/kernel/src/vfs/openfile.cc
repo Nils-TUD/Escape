@@ -215,8 +215,9 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 		USER const void *data2,size_t size2) {
 	if(EXPECT_FALSE(devNo != VFS_DEV_NO))
 		return -EPERM;
-	/* the device-messages (open, read, write, close) are always allowed */
-	if(EXPECT_FALSE(!IS_DEVICE_MSG(id) && !(flags & VFS_MSGS)))
+	/* the device-messages (open, read, write, close) are always allowed and the driver can always
+	 * send messages */
+	if(EXPECT_FALSE(!IS_DEVICE_MSG(id) && !(flags & (VFS_MSGS | VFS_DEVICE))))
 		return -EACCES;
 
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
@@ -377,7 +378,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 	bool isDrvUse = false;
 	OpenFile *e;
 	/* ensure that we don't increment usages of an unused slot */
-	assert(flags & (VFS_READ | VFS_WRITE | VFS_MSGS));
+	assert(flags & (VFS_DEVICE | VFS_READ | VFS_WRITE | VFS_MSGS));
 	assert(!(flags & ~userFlags));
 
 	if(devNo == VFS_DEV_NO) {

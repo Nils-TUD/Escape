@@ -36,7 +36,7 @@ static int id;
 static size_t keyb_find_client(inode_t cid);
 
 void keyb_driverLoop(void) {
-	id = createdev("/dev/keyb",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
+	id = createdev("/dev/keyb",0110,DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'keyb'");
 

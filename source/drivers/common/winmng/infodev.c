@@ -37,11 +37,9 @@ int infodev_thread(void *arg) {
 	int id;
 
 	snprintf(path,sizeof(path),"/system/%s-windows",arg);
-	id = createdev(path,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
+	id = createdev(path,0644,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to create file %s",path);
-	if(chmod(path,0644) < 0)
-		error("Unable to chmod %s",path);
 
 	while(1) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);

@@ -204,7 +204,7 @@ static int kbClientThread(A_UNUSED void *arg) {
 }
 
 static int ctrlThread(A_UNUSED void *arg) {
-	int id = createdev("/dev/uim-ctrl",DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
+	int id = createdev("/dev/uim-ctrl",0110,DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'uim-ctrl'");
 
@@ -360,7 +360,7 @@ static int header_thread(A_UNUSED void *arg) {
 }
 
 static int inputThread(A_UNUSED void *arg) {
-	int id = createdev("/dev/uim-input",DEV_TYPE_CHAR,DEV_CLOSE);
+	int id = createdev("/dev/uim-input",0110,DEV_TYPE_CHAR,DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'uim-input'");
 	while(1) {

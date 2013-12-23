@@ -66,7 +66,7 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 	updateScreen = updScreen;
 	setCursor = setCur;
 
-	int id = createdev(name,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE);
+	int id = createdev(name,0110,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device '%s'",name);
 

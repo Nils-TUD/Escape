@@ -111,7 +111,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 	/* create module files */
 	VFSNode *node;
-	int res = VFSNode::request("/system/mbmods",&node,NULL,0);
+	int res = VFSNode::request("/system/mbmods",&node,NULL,VFS_WRITE,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /system/mbmods");
 	for(size_t i = 1; i < info.progCount; i++) {

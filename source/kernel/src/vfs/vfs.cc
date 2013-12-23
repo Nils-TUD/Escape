@@ -577,7 +577,7 @@ int VFS::rmdir(pid_t pid,const char *path) {
 	return 0;
 }
 
-int VFS::createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
+int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file) {
 	VFSNode *dir,*srv;
 
 	/* get name */
@@ -607,12 +607,12 @@ int VFS::createdev(pid_t pid,char *path,uint type,uint ops,OpenFile **file) {
 	}
 
 	/* create node */
-	srv = CREATE(VFSDevice,pid,dir,name,type,ops);
+	srv = CREATE(VFSDevice,pid,dir,name,mode,type,ops);
 	if(!srv) {
 		err = -ENOMEM;
 		goto errorDir;
 	}
-	err = openFile(pid,VFS_MSGS | VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
+	err = openFile(pid,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
 	if(err < 0)
 		goto errDevice;
 	VFSNode::release(srv);

@@ -33,7 +33,7 @@ static void test_splitSide(void);
 static void test_splitCenter(void);
 
 static void assertRect(sRectangle *recv,int x,int y,ushort width,ushort height);
-static sRectangle create(int x,int y,ushort width,ushort height);
+static sRectangle createRect(int x,int y,ushort width,ushort height);
 
 /* our test-module */
 sTestModule tModRect = {
@@ -54,35 +54,35 @@ static void test_contains(void) {
 	test_caseStart("Testing contains");
 
 	{
-		sRectangle r = create(0,0,0,0);
+		sRectangle r = createRect(0,0,0,0);
 		test_assertFalse(rectContains(&r,0,0));
 		test_assertFalse(rectContains(&r,1,0));
 		test_assertFalse(rectContains(&r,0,1));
 	}
 
 	{
-		sRectangle r = create(0,0,1,0);
+		sRectangle r = createRect(0,0,1,0);
 		test_assertFalse(rectContains(&r,0,0));
 		test_assertFalse(rectContains(&r,1,0));
 		test_assertFalse(rectContains(&r,0,1));
 	}
 
 	{
-		sRectangle r = create(0,0,0,1);
+		sRectangle r = createRect(0,0,0,1);
 		test_assertFalse(rectContains(&r,0,0));
 		test_assertFalse(rectContains(&r,1,0));
 		test_assertFalse(rectContains(&r,0,1));
 	}
 
 	{
-		sRectangle r = create(0,0,1,1);
+		sRectangle r = createRect(0,0,1,1);
 		test_assertTrue(rectContains(&r,0,0));
 		test_assertFalse(rectContains(&r,1,0));
 		test_assertFalse(rectContains(&r,0,1));
 	}
 
 	{
-		sRectangle r = create(0,0,2,2);
+		sRectangle r = createRect(0,0,2,2);
 		test_assertTrue(rectContains(&r,0,0));
 		test_assertTrue(rectContains(&r,1,0));
 		test_assertTrue(rectContains(&r,0,1));
@@ -100,8 +100,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(0,0,0,0);
-		sRectangle r2 = create(0,0,0,0);
+		sRectangle r1 = createRect(0,0,0,0);
+		sRectangle r2 = createRect(0,0,0,0);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -113,8 +113,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(0,0,0,0);
-		sRectangle r2 = create(0,0,1,1);
+		sRectangle r1 = createRect(0,0,0,0);
+		sRectangle r2 = createRect(0,0,1,1);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -126,8 +126,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(0,0,2,2);
-		sRectangle r2 = create(2,0,2,2);
+		sRectangle r1 = createRect(0,0,2,2);
+		sRectangle r2 = createRect(2,0,2,2);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -139,8 +139,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(2,0,2,2);
-		sRectangle r2 = create(0,0,2,2);
+		sRectangle r1 = createRect(2,0,2,2);
+		sRectangle r2 = createRect(0,0,2,2);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -152,8 +152,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(0,2,2,2);
-		sRectangle r2 = create(0,0,2,2);
+		sRectangle r1 = createRect(0,2,2,2);
+		sRectangle r2 = createRect(0,0,2,2);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -165,8 +165,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(0,0,2,2);
-		sRectangle r2 = create(0,2,2,2);
+		sRectangle r1 = createRect(0,0,2,2);
+		sRectangle r2 = createRect(0,2,2,2);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -178,8 +178,8 @@ static void test_splitEmpty(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(2,2,2,2);
-		sRectangle r2 = create(0,0,6,6);
+		sRectangle r1 = createRect(2,2,2,2);
+		sRectangle r2 = createRect(0,0,6,6);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertPtr(res,NULL);
 		test_assertSize(count,0);
@@ -197,8 +197,8 @@ static void test_splitHorVert(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(0,0,12,5);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(0,0,12,5);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,1);
 		assertRect(res[0],1,5,10,6);
@@ -211,8 +211,8 @@ static void test_splitHorVert(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(0,2,12,5);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(0,2,12,5);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,2);
 		assertRect(res[0],1,1,10,1);
@@ -226,8 +226,8 @@ static void test_splitHorVert(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(0,1,10,10);
-		sRectangle r2 = create(8,0,3,12);
+		sRectangle r1 = createRect(0,1,10,10);
+		sRectangle r2 = createRect(8,0,3,12);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,1);
 		assertRect(res[0],0,1,8,10);
@@ -240,8 +240,8 @@ static void test_splitHorVert(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(4,0,2,14);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(4,0,2,14);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,2);
 		assertRect(res[0],1,1,3,10);
@@ -259,8 +259,8 @@ static void test_splitCorner(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(0,0,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(0,0,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,2);
 		assertRect(res[0],1,4,10,7);
@@ -274,8 +274,8 @@ static void test_splitCorner(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(8,0,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(8,0,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,2);
 		assertRect(res[0],1,4,10,7);
@@ -289,8 +289,8 @@ static void test_splitCorner(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(0,9,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(0,9,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,2);
 		assertRect(res[0],1,1,10,8);
@@ -304,8 +304,8 @@ static void test_splitCorner(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(8,8,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(8,8,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,2);
 		assertRect(res[0],1,1,10,7);
@@ -323,8 +323,8 @@ static void test_splitSide(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(4,0,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(4,0,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,3);
 		assertRect(res[0],1,4,10,7);
@@ -339,8 +339,8 @@ static void test_splitSide(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(8,4,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(8,4,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,3);
 		assertRect(res[0],1,1,10,3);
@@ -355,8 +355,8 @@ static void test_splitSide(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(4,8,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(4,8,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,3);
 		assertRect(res[0],1,1,10,7);
@@ -371,8 +371,8 @@ static void test_splitSide(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(0,4,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(0,4,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,3);
 		assertRect(res[0],1,1,10,3);
@@ -391,8 +391,8 @@ static void test_splitCenter(void) {
 	oldFree = heapspace();
 	{
 		size_t count;
-		sRectangle r1 = create(1,1,10,10);
-		sRectangle r2 = create(4,4,4,4);
+		sRectangle r1 = createRect(1,1,10,10);
+		sRectangle r2 = createRect(4,4,4,4);
 		sRectangle **res = rectSubstract(&r1,&r2,&count);
 		test_assertSize(count,4);
 		assertRect(res[0],1,1,10,3);
@@ -412,7 +412,7 @@ static void assertRect(sRectangle *recv,int x,int y,ushort width,ushort height) 
 	test_assertUInt(recv->height,height);
 }
 
-static sRectangle create(int x,int y,ushort width,ushort height) {
+static sRectangle createRect(int x,int y,ushort width,ushort height) {
 	sRectangle r;
 	r.x = x;
 	r.y = y;

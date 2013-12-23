@@ -103,7 +103,7 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 
 int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	int fd = open("/system/test",IO_CREATE | IO_WRITE);
+	int fd = create("/system/test",IO_WRITE,0600);
 	if(fd < 0) {
 		printe("open of /system/test failed");
 		return 1;

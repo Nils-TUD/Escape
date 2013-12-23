@@ -352,7 +352,7 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	if(!chan)
 		return -ENOMEM;
 
-	int err = VFS::openPath(p->getPid(),VFS_MSGS,FS_PATH,&chan->file);
+	int err = VFS::openPath(p->getPid(),VFS_MSGS,0,FS_PATH,&chan->file);
 	if(err < 0) {
 		Cache::free(chan);
 		return err;

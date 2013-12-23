@@ -51,15 +51,10 @@ int shm_open(const char *name,int oflag,mode_t mode) {
 	int fd;
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/system/shm/%s",name);
-	fd = open(path,oflag);
-	/* TODO race-condition... */
-	if(fd >= 0 && (oflag & IO_CREATE)) {
-		int res = chmod(path,mode);
-		if(res < 0) {
-			close(fd);
-			return res;
-		}
-	}
+	if(oflag & IO_CREATE)
+		fd = create(path,oflag,mode);
+	else
+		fd = open(path,oflag);
 	return fd;
 }
 

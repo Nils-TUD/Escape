@@ -61,7 +61,7 @@ void Util::panicArch() {
 
 void Util::switchToVGA() {
 	OpenFile *file;
-	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,"/dev/vga",&file) == 0) {
+	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
 		ssize_t res;
 		sStrMsg msg;
 		msg.arg1 = 3;

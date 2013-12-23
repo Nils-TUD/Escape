@@ -85,11 +85,12 @@ public:
 	 *
 	 * @param pid the process-id with which the file should be opened
 	 * @param flags whether it is a virtual or real file and whether you want to read or write
+	 * @param mode the mode to set (if a file is created by this call)
 	 * @param path the path
 	 * @param file will be set to the opened file
 	 * @return 0 if successfull or < 0
 	 */
-	static int openPath(pid_t pid,ushort flags,const char *path,OpenFile **file);
+	static int openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file);
 
 	/**
 	 * Creates a pipe and opens one file for reading and one file for writing.

@@ -356,9 +356,10 @@ static inline void semdestroy(int id) {
  * Creates a global semaphore with given name and initial value 0.
  *
  * @param name the semaphore name
+ * @param mode the mode to set
  * @return the sem-id or the error-code
  */
-int gsemopen(const char *name);
+int gsemcreate(const char *name,mode_t mode);
 
 /**
  * Joins the global semaphore with given name.

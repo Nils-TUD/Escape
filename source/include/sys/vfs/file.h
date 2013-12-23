@@ -33,9 +33,10 @@ public:
 	 * @param pid the process-id
 	 * @param parent the parent-node
 	 * @param name the name
+	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,bool &success);
+	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success);
 
 	/**
 	 * Creates a new file for the memory <data>..<data>+<len>.

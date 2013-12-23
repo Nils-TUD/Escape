@@ -427,7 +427,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	if(!code) {
 		/* resolve path; require a path in real fs */
 		VFSNode *node;
-		if(VFSNode::request(path,&node,NULL,VFS_READ) != -EREALPATH) {
+		if(VFSNode::request(path,&node,NULL,VFS_READ,0) != -EREALPATH) {
 			VFSNode::release(node);
 			release(p,PLOCK_PROG);
 			return -EINVAL;
@@ -462,7 +462,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* we need to do this here without lock, because VFS::openPath will perform a context-switch */
 	if(info.linkerEntry != info.progEntry) {
 		OpenFile *file;
-		if(VFS::openPath(p->pid,VFS_READ,path,&file) < 0)
+		if(VFS::openPath(p->pid,VFS_READ,0,path,&file) < 0)
 			goto error;
 		fd = FileDesc::assoc(p,file);
 		if(fd < 0) {

@@ -33,10 +33,11 @@ public:
 	 * @param pid the process-id
 	 * @param p the parent-node
 	 * @param name the name
+	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSSem(pid_t pid,VFSNode *p,char *name,bool &success)
-			: VFSNode(pid,name,MODE_TYPE_SEM | S_IXUSR | S_IRUSR | S_IWUSR,success), sm() {
+	explicit VFSSem(pid_t pid,VFSNode *p,char *name,mode_t mode,bool &success)
+			: VFSNode(pid,name,MODE_TYPE_SEM | (mode & 0777),success), sm() {
 		if(!success)
 			return;
 

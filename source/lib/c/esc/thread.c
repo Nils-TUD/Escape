@@ -89,10 +89,10 @@ static sThreadVal *getThreadValEntry(uint key) {
 	return NULL;
 }
 
-int gsemopen(const char *name) {
+int gsemcreate(const char *name,mode_t mode) {
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/system/sems/%s",name);
-	return open(path,IO_SEM | IO_CREATE);
+	return create(path,IO_SEM,mode);
 }
 
 int gsemjoin(const char *name) {

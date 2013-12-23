@@ -115,9 +115,10 @@ public:
 	 * @param created will be set to true if the (virtual) node didn't exist and has been created (may
 	 * 	be NULL if you don't care about it)
 	 * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
+	 * @param mode the mode to set (if a file is created)
 	 * @return 0 if successfull or the error-code
 	 */
-	static int request(const char *path,VFSNode **node,bool *created,uint flags);
+	static int request(const char *path,VFSNode **node,bool *created,uint flags,mode_t mode);
 
 	/**
 	 * Releases the given node, i.e. unlocks it.
@@ -454,7 +455,7 @@ protected:
 
 private:
 	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,
-						  uint flags);
+						  uint flags,mode_t mode);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
 	ushort doUnref(bool remove);
 

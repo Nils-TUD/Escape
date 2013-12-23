@@ -36,6 +36,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
+	mode_t mode = (mode_t)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
 	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -47,7 +48,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 
 	/* open the path */
 	OpenFile *file;
-	int res = VFS::openPath(pid,flags,abspath,&file);
+	int res = VFS::openPath(pid,flags,mode,abspath,&file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 

@@ -94,7 +94,7 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 	}
 
 	pid = Proc::getRunning();
-	int res = VFS::openPath(pid,VFS_READ,argv[1],&file);
+	int res = VFS::openPath(pid,VFS_READ,0,argv[1],&file);
 	if(res >= 0) {
 		off_t end = file->seek(pid,0,SEEK_END);
 		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)BYTES_PER_LINE));

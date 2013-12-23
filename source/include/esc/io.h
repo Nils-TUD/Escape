@@ -83,11 +83,23 @@ extern "C" {
  * Opens the given path with given mode and returns the associated file-descriptor
  *
  * @param path the path to open
- * @param mode the mode
+ * @param flags the open flags (IO_*)
  * @return the file-descriptor; negative if error
  */
-A_CHECKRET static inline int open(const char *path,uint mode) {
-	return syscall2(SYSCALL_OPEN,(ulong)path,mode);
+A_CHECKRET static inline int open(const char *path,uint flags) {
+	return syscall3(SYSCALL_OPEN,(ulong)path,flags,FILE_DEF_MODE);
+}
+
+/**
+ * Creates the given path with given flags and mode and returns the associated file-descriptor
+ *
+ * @param path the path to open
+ * @param flags the open flags (IO_*)
+ * @param mode the mode for the created file
+ * @return the file-descriptor; negative if error
+ */
+A_CHECKRET static inline int create(const char *path,uint flags,mode_t mode) {
+	return syscall3(SYSCALL_OPEN,(ulong)path,flags | IO_CREATE,mode);
 }
 
 /**

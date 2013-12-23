@@ -45,7 +45,7 @@
 
 void VFSInfo::init() {
 	VFSNode *sysNode;
-	VFSNode::request("/system",&sysNode,NULL,VFS_NOACCESS);
+	VFSNode::request("/system",&sysNode,NULL,VFS_NOACCESS,0);
 	VFSNode::release(CREATE(MemUsageFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(CPUFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(StatsFile,KERNEL_PID,sysNode));

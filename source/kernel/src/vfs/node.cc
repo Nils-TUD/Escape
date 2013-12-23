@@ -193,7 +193,7 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 	return res;
 }
 
-int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags) {
+int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags,mode_t mode) {
 	const VFSNode *dir,*n = get(0);
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
@@ -284,7 +284,7 @@ int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags) {
 			err = -EREALPATH;
 		/* should we create a default-file? */
 		else if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
-			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created,flags);
+			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created,flags,mode);
 		else
 			err = -ENOENT;
 	}
@@ -453,7 +453,7 @@ char *VFSNode::generateId(pid_t pid) {
 }
 
 int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,
-						uint flags) {
+						uint flags,mode_t mode) {
 	size_t nameLen;
 	int err;
 	/* can we create files in this directory? */
@@ -478,9 +478,9 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 
 	/* now create the node and pass the node-number back */
 	if(flags & VFS_SEM)
-		*child = CREATE(VFSSem,pid,dir,nameCpy);
+		*child = CREATE(VFSSem,pid,dir,nameCpy,mode);
 	else
-		*child = CREATE(VFSFile,pid,dir,nameCpy);
+		*child = CREATE(VFSFile,pid,dir,nameCpy,mode);
 
 	if(*child == NULL) {
 		Cache::free(nameCpy);

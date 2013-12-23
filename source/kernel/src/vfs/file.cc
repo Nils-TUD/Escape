@@ -29,8 +29,8 @@
 #include <string.h>
 #include <errno.h>
 
-VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,bool &success)
-		: VFSNode(pid,n,FILE_DEF_MODE,success), dynamic(true), size(), pos(), data() {
+VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
+		: VFSNode(pid,n,S_IFREG | (m & 0777),success), dynamic(true), size(), pos(), data() {
 	if(!success)
 		return;
 	append(p);

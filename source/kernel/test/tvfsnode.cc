@@ -72,7 +72,7 @@ static void test_vfs_node_resolvePath() {
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 	int err;
 	VFSNode *node;
-	if((err = VFSNode::request(a,&node,NULL,VFS_READ)) != 0) {
+	if((err = VFSNode::request(a,&node,NULL,VFS_READ,0)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
 		return false;
 	}
@@ -87,15 +87,15 @@ static void test_vfs_node_getPath() {
 
 	test_caseStart("Testing vfs_node_getPath()");
 
-	VFSNode::request("/system",&node,NULL,VFS_READ);
+	VFSNode::request("/system",&node,NULL,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/system");
 	VFSNode::release(node);
 
-	VFSNode::request("/system/processes",&node,NULL,VFS_READ);
+	VFSNode::request("/system/processes",&node,NULL,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/system/processes");
 	VFSNode::release(node);
 
-	VFSNode::request("/system/processes/0",&node,NULL,VFS_READ);
+	VFSNode::request("/system/processes/0",&node,NULL,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/system/processes/0");
 	VFSNode::release(node);
 
@@ -113,18 +113,18 @@ static void test_vfs_node_file_refs() {
 	checkMemoryBefore(false);
 	size_t nodesBefore = VFSNode::getNodeCount();
 
-	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,"/system/foobar",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar",&f1),0);
 	n = f1->getNode();
 	test_assertSSize(f1->write(pid,buffer,strlen(buffer)),strlen(buffer));
 	test_assertSize(n->getRefCount(),2);
 	f1->close(pid);
 	test_assertSize(n->getRefCount(),1);
 
-	test_assertInt(VFS::openPath(pid,VFS_READ,"/system/foobar",&f2),0);
+	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/system/foobar",&f2),0);
 	test_assertSize(n->getRefCount(),2);
 	test_assertInt(VFS::unlink(pid,"/system/foobar"),0);
 	test_assertSize(n->getRefCount(),1);
-	test_assertInt(VFS::openPath(pid,VFS_READ,"/system/foobar",&f3),-ENOENT);
+	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/system/foobar",&f3),-ENOENT);
 	memclear(buffer,sizeof(buffer));
 	test_assertTrue(f2->read(pid,buffer,sizeof(buffer)) > 0);
 	test_assertStr(buffer,"This is a test!");
@@ -148,16 +148,16 @@ static void test_vfs_node_dir_refs() {
 
 	test_assertInt(VFS::mkdir(pid,"/system/foobar"),0);
 	test_assertInt(VFS::mkdir(pid,"/system/foobar/test"),0);
-	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,"/system/foobar/myfile1",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar/myfile1",&f1),0);
 	f1->close(pid);
-	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,"/system/foobar/myfile2",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar/myfile2",&f1),0);
 	f1->close(pid);
 
-	test_assertInt(VFSNode::request("/system/foobar",&n,NULL,0),0);
+	test_assertInt(VFSNode::request("/system/foobar",&n,NULL,0,0),0);
 	test_assertSize(n->getRefCount(),2);
 	VFSNode::release(n);
 	test_assertSize(n->getRefCount(),1);
-	test_assertInt(VFS::openPath(pid,VFS_READ,"/system/foobar",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/system/foobar",&f1),0);
 	test_assertSize(n->getRefCount(),2);
 
 	const VFSNode *f = n->openDir(false,&valid);

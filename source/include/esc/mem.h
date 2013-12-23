@@ -103,7 +103,7 @@ static inline int munmap(void *addr) {
 
 /**
  * Creates a file in /system/shm/ with given name and opens it with <oflag>. If <oflag> contains
- * IO_CREATE, <mode> is set via chmod. This file is intended to be mapped with mmap().
+ * IO_CREATE, <mode> is used for the permissions. This file is intended to be mapped with mmap().
  *
  * @param name the filename
  * @param oflag the open flags

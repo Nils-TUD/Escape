@@ -153,7 +153,7 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 }
 
 void ThreadBase::updateRuntimes() {
-	uint64_t cyclesPerSec = Thread::ticksPerSec();
+	uint64_t cyclesPerSec = CPU::getSpeed();
 	SpinLock::acquire(&lock);
 	/* first store the max priority for all processes (this is no problem, because we're only using
 	 * this as the prio for new threads while holding the same lock, see add()) */
@@ -167,7 +167,7 @@ void ThreadBase::updateRuntimes() {
 		/* update cycle-stats */
 		if(t->state == Thread::RUNNING) {
 			/* we want to measure the last second only */
-			uint64_t cycles = Thread::getTSC() - t->stats.cycleStart;
+			uint64_t cycles = CPU::rdtsc() - t->stats.cycleStart;
 			t->stats.lastCycleCount = t->stats.curCycleCount + MIN(cyclesPerSec,cycles);
 		}
 		else

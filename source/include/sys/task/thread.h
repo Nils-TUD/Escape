@@ -23,6 +23,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
 #include <sys/task/terminator.h>
+#include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/vmtree.h>
 #include <sys/mem/virtmem.h>
@@ -196,16 +197,6 @@ public:
 	 * @return 0 on success
 	 */
 	static int extendStack(uintptr_t address);
-
-	/**
-	 * @return the current timestamp (this should be comparable with stats.cycleStart)
-	 */
-	static uint64_t getTSC();
-
-	/**
-	 * @return the ticks per second (this should be comparable with stats.cycleStart)
-	 */
-	static uint64_t ticksPerSec();
 
 	/**
 	 * Updates the runtime-percentage of all threads
@@ -391,7 +382,9 @@ public:
 	 * @param thread the thread
 	 * @return the runtime of the given thread
 	 */
-	uint64_t getRuntime() const;
+	uint64_t getRuntime() const {
+		return Timer::cyclesToTime(stats.runtime);
+	}
 
 	/**
 	 * Tests whether there are other threads with a higher priority than this one.

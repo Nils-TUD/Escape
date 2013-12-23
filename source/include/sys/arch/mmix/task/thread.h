@@ -78,11 +78,3 @@ inline void Thread::popSpecRegs() {
 	KSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
 	CPU::setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
 }
-
-inline uint64_t ThreadBase::getTSC() {
-	return CPU::rdtsc();
-}
-
-inline uint64_t ThreadBase::ticksPerSec() {
-	return CPU::getSpeed();
-}

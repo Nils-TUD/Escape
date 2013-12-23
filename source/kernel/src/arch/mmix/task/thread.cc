@@ -176,16 +176,6 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	nt->tempStack = -1;
 }
 
-uint64_t ThreadBase::getRuntime() const {
-	if(getState() == Thread::RUNNING) {
-		/* if the thread is running, we must take the time since the last scheduling of that thread
-		 * into account. this is especially a problem with idle-threads */
-		uint64_t cycles = CPU::rdtsc();
-		return Timer::cyclesToTime(stats.runtime + (cycles - stats.cycleStart));
-	}
-	return Timer::cyclesToTime(stats.runtime);
-}
-
 bool ThreadBase::beginTerm() {
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */

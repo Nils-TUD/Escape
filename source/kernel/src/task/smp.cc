@@ -78,7 +78,7 @@ void SMPBase::setId(cpuid_t old,cpuid_t newid) {
 }
 
 void SMPBase::updateRuntimes() {
-	uint64_t now = Thread::getTSC();
+	uint64_t now = ::CPU::rdtsc();
 	for(auto cpu = cpuList.begin(); cpu != cpuList.end(); ++cpu) {
 		cpu->lastTotal = now - cpu->lastUpdate;
 		cpu->lastUpdate = now;

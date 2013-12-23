@@ -157,8 +157,10 @@ void ThreadBase::updateRuntimes() {
 	SpinLock::acquire(&lock);
 	/* first store the max priority for all processes (this is no problem, because we're only using
 	 * this as the prio for new threads while holding the same lock, see add()) */
-	for(auto t = threads.begin(); t != threads.end(); ++t)
+	for(auto t = threads.begin(); t != threads.end(); ++t) {
 		t->thread->proc->priority = MAX_PRIO;
+		t->thread->proc->stats.lastCycles = 0;
+	}
 
 	for(auto it = threads.begin(); it != threads.end(); ++it) {
 		Thread *t = it->thread;
@@ -172,6 +174,8 @@ void ThreadBase::updateRuntimes() {
 		}
 		else
 			t->stats.lastCycleCount = t->stats.curCycleCount;
+		p->getStats().totalRuntime += t->stats.lastCycleCount;
+		p->getStats().lastCycles += t->stats.lastCycleCount;
 		t->stats.curCycleCount = 0;
 
 		/* don't adjust priority of idle-threads */

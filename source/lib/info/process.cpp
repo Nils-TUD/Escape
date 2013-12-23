@@ -58,23 +58,14 @@ namespace info {
 			delete p;
 			return NULL;
 		}
-
-		file dir(string("/system/processes/") + name + "/threads");
-		vector<sDirEntry> files = dir.list_files(false);
-		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
-			thread *t = thread::get_thread(pid,strtoul(it->name,NULL,10));
-			p->add_thread(t);
-		}
 		return p;
 	}
 
 	process::process(const process& p)
 		: _fullcmd(p._fullcmd), _pid(p._pid), _ppid(p._ppid), _uid(p._uid), _gid(p._gid),
 		  _pages(p._pages), _ownFrames(p._ownFrames), _sharedFrames(p._sharedFrames),
-		  _swapped(p._swapped), _input(p._input), _output(p._output), _cycles(p._cycles),
-		  _runtime(p._runtime), _threads(), _cmd(p._cmd) {
-		for(std::vector<thread*>::const_iterator it = p._threads.begin(); it != p._threads.end(); ++it)
-			_threads.push_back(new thread(**it));
+		  _swapped(p._swapped), _cycles(p._cycles), _runtime(p._runtime), _input(p._input),
+		  _output(p._output), _cmd(p._cmd) {
 	}
 
 	process& process::operator =(const process& p) {
@@ -92,33 +83,7 @@ namespace info {
 		_input = p._input;
 		_output = p._output;
 		_cmd = p._cmd;
-		destroy();
-		_threads.clear();
-		for(std::vector<thread*>::const_iterator it = p._threads.begin(); it != p._threads.end(); ++it)
-			_threads.push_back(new thread(**it));
 		return *this;
-	}
-
-	void process::destroy() {
-		for(std::vector<thread*>::iterator it = _threads.begin(); it != _threads.end(); ++it)
-			delete *it;
-	}
-
-	process::cycle_type process::cycles() const {
-		if(_cycles == (cycle_type)-1) {
-			_cycles = 0;
-			for(vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
-				_cycles += (*it)->cycles();
-		}
-		return _cycles;
-	}
-	process::cycle_type process::runtime() const {
-		if(_runtime == (time_type)-1) {
-			_runtime = 0;
-			for(vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
-				_runtime += (*it)->runtime();
-		}
-		return _runtime;
 	}
 
 	istream& operator >>(istream& is,process& p) {
@@ -144,6 +109,10 @@ namespace info {
 		is.ignore(unlimited,' ') >> p._swapped;
 		is.ignore(unlimited,' ') >> p._input;
 		is.ignore(unlimited,' ') >> p._output;
+		is.ignore(unlimited,' ') >> p._runtime;
+		is.setf(istream::hex);
+		is.ignore(unlimited,' ') >> p._cycles;
+		is.setf(istream::dec);
 		return is;
 	}
 
@@ -158,7 +127,6 @@ namespace info {
 		os << "\tswpFrames : " << p.swapped() << "\n";
 		os << "\tinput     : " << p.input() << "\n";
 		os << "\toutput    : " << p.output() << "\n";
-		os << "\tthreads   : " << p.threads().size() << "\n";
 		os << "\truntime   : " << p.runtime() << "\n";
 		os << "\tcycles    : " << p.cycles() << "\n";
 		return os;

@@ -99,6 +99,8 @@ void VFSInfo::procReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 			"%-16s%lu\n"
 			"%-16s%lu\n"
 			"%-16s%lu\n"
+			"%-16s%Lu\n"
+			"%-16s%016Lx\n"
 			,
 			"Pid:",p->getPid(),
 			"ParentPid:",p->getParentPid(),
@@ -110,7 +112,9 @@ void VFSInfo::procReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 			"SharedFrames:",shared,
 			"Swapped:",swapped,
 			"Read:",p->getStats().input,
-			"Write:",p->getStats().output
+			"Write:",p->getStats().output,
+			"Runtime:",p->getRuntime(),
+			"Cycles:",p->getStats().lastCycles
 		);
 	}
 	*buffer = os.keepString();

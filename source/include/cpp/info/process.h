@@ -44,14 +44,11 @@ namespace info {
 	public:
 		process(bool fullcmd = false)
 			: _fullcmd(fullcmd), _pid(0), _ppid(0), _uid(0), _gid(0), _pages(0), _ownFrames(0),
-			  _sharedFrames(0), _swapped(0), _input(0), _output(0), _cycles(-1), _runtime(-1),
-			  _threads(), _cmd() {
+			  _sharedFrames(0), _swapped(0), _cycles(0), _runtime(0), _input(0), _output(0),
+			  _cmd() {
 		}
 		process(const process& p);
 		process& operator =(const process& p);
-		~process() {
-			destroy();
-		}
 
 		pid_type pid() const {
 			return _pid;
@@ -77,30 +74,23 @@ namespace info {
 		size_type swapped() const {
 			return _swapped;
 		}
-		cycle_type cycles() const;
-		cycle_type runtime() const;
+		cycle_type cycles() const {
+			return _cycles;
+		}
+		cycle_type runtime() const {
+			return _runtime;
+		}
 		size_type input() const {
 			return _input;
 		}
 		size_type output() const {
 			return _output;
 		}
-		const std::vector<thread*>& threads() const {
-			return _threads;
-		}
-		void add_thread(thread* t) {
-			_threads.push_back(t);
-			// we need to refresh that afterwards
-			_cycles = -1;
-			_runtime = -1;
-		}
 		const std::string& command() const {
 			return _cmd;
 		}
 
 	private:
-		void destroy();
-
 		bool _fullcmd;
 		pid_type _pid;
 		pid_type _ppid;
@@ -110,11 +100,10 @@ namespace info {
 		size_type _ownFrames;
 		size_type _sharedFrames;
 		size_type _swapped;
-		mutable size_type _input;
-		mutable size_type _output;
-		mutable cycle_type _cycles;
-		mutable time_type _runtime;
-		std::vector<thread*> _threads;
+		cycle_type _cycles;
+		time_type _runtime;
+		size_type _input;
+		size_type _output;
 		std::string _cmd;
 	};
 

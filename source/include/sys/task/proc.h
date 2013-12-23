@@ -103,6 +103,7 @@ public:
 	struct Stats {
 		/* thread stats */
 		uint64_t totalRuntime;
+		uint64_t lastCycles;
 		ulong totalSyscalls;
 		ulong totalScheds;
 		ulong totalMigrations;
@@ -498,6 +499,13 @@ public:
 	}
 
 	/**
+	 * @return the total runtime of this process
+	 */
+	uint64_t getRuntime() const {
+		return Timer::cyclesToTime(stats.totalRuntime);
+	}
+
+	/**
 	 * @return the threads-directory in the VFS
 	 */
 	inode_t getThreadsDir() const {
@@ -558,6 +566,7 @@ private:
 	 */
 	static void terminateArch(Proc *p);
 
+	void initProps();
 	static void notifyProcDied(pid_t parent);
 	static int getExitState(pid_t ppid,USER ExitState *state);
 	static void doRemoveRegions(Proc *p,bool remStack);

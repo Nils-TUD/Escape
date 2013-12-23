@@ -85,16 +85,7 @@ void ProcBase::init() {
 	p->flags = 0;
 	p->entryPoint = 0;
 	p->priority = MAX_PRIO;
-	p->fsChans = SList<VFSFS::FSChan>();
-	p->env = NULL;
-	p->stats.input = 0;
-	p->stats.output = 0;
-	p->stats.totalRuntime = 0;
-	p->stats.totalSyscalls = 0;
-	p->stats.totalScheds = 0;
-	p->stats.totalMigrations = 0;
-	p->stats.exitCode = 0;
-	p->stats.exitSignal = SIG_COUNT;
+	p->initProps();
 	if(Sems::init(p) < 0)
 		Util::panic("Unable to init semaphores");
 	memclear(p->locks,sizeof(p->locks));
@@ -111,7 +102,6 @@ void ProcBase::init() {
 		Util::panic("Not enough mem to init file-descriptors of init-process");
 
 	/* create first thread */
-	p->threads = ISList<Thread*>();
 	if(!p->threads.append(Thread::init(p)))
 		Util::panic("Unable to append the initial thread");
 
@@ -120,6 +110,21 @@ void ProcBase::init() {
 
 	/* add to procs */
 	add(p);
+}
+
+void ProcBase::initProps() {
+	fsChans = SList<VFSFS::FSChan>();
+	env = NULL;
+	stats.input = 0;
+	stats.output = 0;
+	stats.totalRuntime = 0;
+	stats.lastCycles = 0;
+	stats.totalSyscalls = 0;
+	stats.totalScheds = 0;
+	stats.totalMigrations = 0;
+	stats.exitCode = 0;
+	stats.exitSignal = SIG_COUNT;
+	threads = ISList<Thread*>();
 }
 
 const char *ProcBase::getProgram() const {
@@ -237,21 +242,10 @@ int ProcBase::clone(uint8_t flags) {
 	p->egid = cur->egid;
 	p->sgid = cur->sgid;
 	p->sigRetAddr = cur->sigRetAddr;
-	p->flags = 0;
 	p->priority = cur->priority;
 	p->entryPoint = cur->entryPoint;
-	p->fsChans = SList<VFSFS::FSChan>();
-	p->env = NULL;
 	p->flags = flags;
-	p->stats.input = 0;
-	p->stats.output = 0;
-	p->stats.totalRuntime = 0;
-	p->stats.totalSyscalls = 0;
-	p->stats.totalScheds = 0;
-	p->stats.totalMigrations = 0;
-	p->stats.exitCode = 0;
-	p->stats.exitSignal = SIG_COUNT;
-	p->threads = ISList<Thread*>();
+	p->initProps();
 	if((res = Sems::clone(p,cur)) < 0)
 		goto errorPdir;
 
@@ -609,7 +603,9 @@ void ProcBase::killThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	assert(p != NULL);
-	p->stats.totalRuntime += t->getStats().runtime;
+	/* add the runtime that we haven't seen during our periodic update */
+	p->stats.totalRuntime += t->stats.curCycleCount;
+	p->stats.lastCycles += t->stats.curCycleCount;
 	p->stats.totalSyscalls += t->getStats().syscalls;
 	p->stats.totalScheds += t->getStats().schedCount;
 	p->stats.totalMigrations += t->getStats().migrations;

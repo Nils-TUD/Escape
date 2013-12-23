@@ -81,8 +81,9 @@ public:
 	 *
 	 * @param event the event
 	 * @param object the object
+	 * @param all if true, all are waked up, otherwise only the first one
 	 */
-	static void wakeup(uint event,evobj_t object);
+	static void wakeup(uint event,evobj_t object,bool all = true);
 
 	/**
 	 * Wakes up the thread <t> for given event. That means, if it does not wait for it, it is

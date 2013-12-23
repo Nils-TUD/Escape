@@ -240,7 +240,7 @@ void Sched::wait(Thread *t,uint event,evobj_t object) {
 	SpinLock::release(&lock);
 }
 
-void Sched::wakeup(uint event,evobj_t object) {
+void Sched::wakeup(uint event,evobj_t object,bool all) {
 	assert(event >= 1 && event <= EV_COUNT);
 	DList<Thread> *list = evlists + event - 1;
 	SpinLock::acquire(&lock);
@@ -250,6 +250,8 @@ void Sched::wakeup(uint event,evobj_t object) {
 		if(old->evobject == 0 || old->evobject == object) {
 			removeFromEventlist(&*old);
 			setReady(&*old);
+			if(!all)
+				break;
 		}
 	}
 	SpinLock::release(&lock);

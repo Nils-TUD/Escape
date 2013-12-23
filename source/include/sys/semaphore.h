@@ -23,13 +23,13 @@
 
 class Semaphore {
 public:
-	explicit Semaphore(uint value = 1) : value(value), waiting(0), lock() {
+	explicit Semaphore(int value = 1) : value(value), lock() {
 	}
 
 	/**
 	 * @return the current value
 	 */
-	uint getValue() const {
+	int getValue() const {
 		return value;
 	}
 
@@ -52,7 +52,6 @@ public:
 	void up();
 
 private:
-	uint value;
-	uint waiting;
+	int value;
 	klock_t lock;
 };

@@ -24,10 +24,14 @@
 
 class Mutex : public Semaphore {
 public:
-	explicit Mutex() : Semaphore(1) {
+	explicit Mutex() : Semaphore(1), holder(-1), depth(0) {
 	}
 
 	void down();
 	bool tryDown();
 	void up();
+
+private:
+	tid_t holder;
+	short depth;
 };

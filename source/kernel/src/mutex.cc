@@ -25,26 +25,44 @@
 
 void Mutex::down() {
 	Thread *t = Thread::getRunning();
+	if(holder != t->getTid()) {
 #if DEBUG_LOCKS
-	if(!Util::IsPanicStarted())
+		if(!Util::IsPanicStarted())
 #endif
-	Semaphore::down();
-	t->addResource();
+		Semaphore::down();
+		holder = t->getTid();
+		t->addResource();
+	}
+	depth++;
 }
 
 bool Mutex::tryDown() {
+	Thread *t = Thread::getRunning();
+	if(holder == t->getTid()) {
+		depth++;
+		return true;
+	}
+
 #if DEBUG_LOCKS
 	bool res = Util::IsPanicStarted() || Semaphore::tryDown();
 #else
 	bool res = Semaphore::tryDown();
 #endif
-	if(res)
-		Thread::getRunning()->addResource();
+	if(res) {
+		holder = t->getTid();
+		t->addResource();
+		depth++;
+	}
 	return res;
 }
 
 void Mutex::up() {
 	Thread *t = Thread::getRunning();
-	Semaphore::up();
-	t->remResource();
+	assert(holder == t->getTid());
+	assert(depth > 0);
+	if(--depth == 0) {
+		holder = -1;
+		t->remResource();
+		Semaphore::up();
+	}
 }

@@ -65,7 +65,7 @@ static void printCPUBar(size_t barwidth,double ratio,cpu::id_type id) {
 
 static void printMemBar(size_t barwidth,size_t used,size_t total,const char *name) {
 	char stats[14];
-	snprintf(stats,sizeof(stats),"%u/%uMB",used / (1024 * 1024),total / (1024 * 1024));
+	snprintf(stats,sizeof(stats),"%zu/%zuMB",used / (1024 * 1024),total / (1024 * 1024));
 	double ratio = total == 0 ? 0 : used / (double)(total);
 	printBar(barwidth,ratio,name);
 	cout << right << setw(13) << stats << "]\n";

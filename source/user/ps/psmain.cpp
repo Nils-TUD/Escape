@@ -156,18 +156,18 @@ int main(int argc,char **argv) {
 
 			sUser *u = !numeric ? user_getById(userList,p->uid()) : nullptr;
 			if(!u || numeric) {
-				if((x = count_digits((ulong)p->uid(),10)) > maxUid)
+				if((x = count_digits((ulong)p->uid(),10)) > (size_t)maxUid)
 					maxUid = x;
 			}
-			else if((x = strlen(u->name)) > maxUid)
+			else if((x = strlen(u->name)) > (size_t)maxUid)
 				maxUid = x;
 
 			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : nullptr;
 			if(!g || numeric) {
-				if((x = count_digits((ulong)p->gid(),10)) > maxGid)
+				if((x = count_digits((ulong)p->gid(),10)) > (size_t)maxGid)
 					maxGid = x;
 			}
-			else if((x = strlen(g->name)) > maxGid)
+			else if((x = strlen(g->name)) > (size_t)maxGid)
 				maxGid = x;
 
 			if(p->ownFrames() > maxPmem)

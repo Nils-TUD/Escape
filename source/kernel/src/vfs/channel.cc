@@ -90,6 +90,7 @@ ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
 	res = VFS::openFile(par->getOwner(),VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
 	if(res < 0)
 		goto errOpen;
+	/* getByPid() is ok because if the parent-node exists, the owner does always exist, too */
 	p = Proc::getByPid(par->getOwner());
 	fd = FileDesc::assoc(p,clifile);
 	if(fd < 0) {

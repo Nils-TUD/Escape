@@ -74,6 +74,5 @@ public:
 
 private:
 	static Proc *getProc(VFSNode *node,size_t *dataSize,void **buffer);
-	static pid_t getPid(VFSNode *node,size_t *dataSize,void **buffer);
 	static Thread *getThread(VFSNode *node,size_t *dataSize,void **buffer);
 };

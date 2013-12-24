@@ -60,63 +60,70 @@ void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 		return;
 
 	OStringStream os;
-	os.writef("Kernel:\n");
-	call = Util::getKernelStackTraceOf(t);
-	while(call && call->addr != 0) {
-		os.writef("\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
-		call++;
+
+	/* we have a thread-ref, which garantees that the process isn't destroyed */
+	Proc *p = Proc::getByPid(t->getProc()->getPid());
+	if(p) {
+		os.writef("Kernel:\n");
+		call = Util::getKernelStackTraceOf(t);
+		while(call && call->addr != 0) {
+			os.writef("\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
+			call++;
+		}
+		os.writef("User:\n");
+		call = Util::getUserStackTraceOf(t);
+		while(call && call->addr != 0) {
+			os.writef("\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
+			call++;
+		}
 	}
-	os.writef("User:\n");
-	call = Util::getUserStackTraceOf(t);
-	while(call && call->addr != 0) {
-		os.writef("\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
-		call++;
-	}
+	Thread::relRef(t);
+
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
 
 void VFSInfo::procReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	pid_t pid = getPid(node,dataSize,buffer);
-	if(pid == INVALID_PID)
+	Proc *p = getProc(node,dataSize,buffer);
+	if(p == NULL)
 		return;
 
 	OStringStream os;
-	Proc *p = Proc::getByPid(pid);
-	if(p) {
-		size_t pages,own,shared,swapped;
-		p->getVM()->getMemUsage(&pages);
-		Proc::getMemUsageOf(pid,&own,&shared,&swapped);
-		os.writef(
-			"%-16s%u\n"
-			"%-16s%u\n"
-			"%-16s%u\n"
-			"%-16s%u\n"
-			"%-16s%s\n"
-			"%-16s%zu\n"
-			"%-16s%lu\n"
-			"%-16s%lu\n"
-			"%-16s%lu\n"
-			"%-16s%lu\n"
-			"%-16s%lu\n"
-			"%-16s%Lu\n"
-			"%-16s%016Lx\n"
-			,
-			"Pid:",p->getPid(),
-			"ParentPid:",p->getParentPid(),
-			"Uid:",p->getEUid(),
-			"Gid:",p->getEGid(),
-			"Command:",p->getCommand(),
-			"Pages:",pages,
-			"OwnFrames:",own,
-			"SharedFrames:",shared,
-			"Swapped:",swapped,
-			"Read:",p->getStats().input,
-			"Write:",p->getStats().output,
-			"Runtime:",p->getRuntime(),
-			"Cycles:",p->getStats().lastCycles
-		);
-	}
+
+	size_t pages,own,shared,swapped;
+	p->getVM()->getMemUsage(&pages);
+	Proc::getMemUsageOf(p->getPid(),&own,&shared,&swapped);
+	os.writef(
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%s\n"
+		"%-16s%zu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%lu\n"
+		"%-16s%Lu\n"
+		"%-16s%016Lx\n"
+		,
+		"Pid:",p->getPid(),
+		"ParentPid:",p->getParentPid(),
+		"Uid:",p->getEUid(),
+		"Gid:",p->getEGid(),
+		"Command:",p->getCommand(),
+		"Pages:",pages,
+		"OwnFrames:",own,
+		"SharedFrames:",shared,
+		"Swapped:",swapped,
+		"Read:",p->getStats().input,
+		"Write:",p->getStats().output,
+		"Runtime:",p->getRuntime(),
+		"Cycles:",p->getStats().lastCycles
+	);
+	Proc::relRef(p);
+
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
@@ -128,39 +135,46 @@ void VFSInfo::threadReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 		return;
 
 	OStringStream os;
-	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
-		uintptr_t stackBegin = 0,stackEnd = 0;
-		if(t->getStackRange(&stackBegin,&stackEnd,i))
-			stackPages += (stackEnd - stackBegin) / PAGE_SIZE;
-	}
 
-	os.writef(
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%s\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%zu\n"
-		"%-16s%zu\n"
-		"%-16s%zu\n"
-		"%-16s%Lu\n"
-		"%-16s%016Lx\n"
-		"%-16s%u\n"
-		,
-		"Tid:",t->getTid(),
-		"Pid:",t->getProc()->getPid(),
-		"ProcName:",t->getProc()->getCommand(),
-		"State:",t->getState(),
-		"Flags:",t->getFlags() & T_IDLE,
-		"Priority:",t->getPriority(),
-		"StackPages:",stackPages,
-		"SchedCount:",t->getStats().schedCount,
-		"Syscalls:",t->getStats().syscalls,
-		"Runtime:",t->getRuntime(),
-		"Cycles:",t->getStats().lastCycleCount,
-		"CPU:",t->getCPU()
-	);
+	/* we have a thread-ref, which garantees that the process isn't destroyed */
+	Proc *p = Proc::getByPid(t->getProc()->getPid());
+	if(p) {
+		for(size_t i = 0; i < STACK_REG_COUNT; i++) {
+			uintptr_t stackBegin = 0,stackEnd = 0;
+			if(t->getStackRange(&stackBegin,&stackEnd,i))
+				stackPages += (stackEnd - stackBegin) / PAGE_SIZE;
+		}
+
+		os.writef(
+			"%-16s%u\n"
+			"%-16s%u\n"
+			"%-16s%s\n"
+			"%-16s%u\n"
+			"%-16s%u\n"
+			"%-16s%u\n"
+			"%-16s%zu\n"
+			"%-16s%zu\n"
+			"%-16s%zu\n"
+			"%-16s%Lu\n"
+			"%-16s%016Lx\n"
+			"%-16s%u\n"
+			,
+			"Tid:",t->getTid(),
+			"Pid:",p->getPid(),
+			"ProcName:",p->getCommand(),
+			"State:",t->getState(),
+			"Flags:",t->getFlags() & T_IDLE,
+			"Priority:",t->getPriority(),
+			"StackPages:",stackPages,
+			"SchedCount:",t->getStats().schedCount,
+			"Syscalls:",t->getStats().syscalls,
+			"Runtime:",t->getRuntime(),
+			"Cycles:",t->getStats().lastCycleCount,
+			"CPU:",t->getCPU()
+		);
+	}
+	Thread::relRef(t);
+
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
@@ -244,23 +258,25 @@ void VFSInfo::memUsageReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void 
 }
 
 void VFSInfo::regionsReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	pid_t pid = getPid(node,dataSize,buffer);
-	if(pid == INVALID_PID)
+	Proc *p = getProc(node,dataSize,buffer);
+	if(!p)
 		return;
 
 	OStringStream os;
-	Proc::getByPid(pid)->getVM()->printRegions(os);
+	p->getVM()->printRegions(os);
+	Proc::relRef(p);
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
 
 void VFSInfo::mapsReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	pid_t pid = getPid(node,dataSize,buffer);
-	if(pid == INVALID_PID)
+	Proc *p = getProc(node,dataSize,buffer);
+	if(!p)
 		return;
 
 	OStringStream os;
-	Proc::getByPid(pid)->getVM()->printMaps(os);
+	p->getVM()->printMaps(os);
+	Proc::relRef(p);
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
@@ -272,6 +288,7 @@ void VFSInfo::virtMemReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 
 	OStringStream os;
 	p->getPageDir()->print(os,PD_PART_USER);
+	Proc::relRef(p);
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
@@ -290,23 +307,12 @@ Proc *VFSInfo::getProc(VFSNode *node,size_t *dataSize,void **buffer) {
 		*dataSize = 0;
 		*buffer = NULL;
 	}
-	else
-		p = Proc::getByPid(atoi(node->parent->name));
+	else {
+		pid_t pid = atoi(node->parent->name);
+		p = Proc::getRef(pid);
+	}
 	VFSNode::releaseTree();
 	return p;
-}
-
-pid_t VFSInfo::getPid(VFSNode *node,size_t *dataSize,void **buffer) {
-	pid_t pid = INVALID_PID;
-	VFSNode::acquireTree();
-	if(!node->isAlive()) {
-		*dataSize = 0;
-		*buffer = NULL;
-	}
-	else
-		pid = atoi(node->parent->name);
-	VFSNode::releaseTree();
-	return pid;
 }
 
 Thread *VFSInfo::getThread(VFSNode *node,size_t *dataSize,void **buffer) {
@@ -316,8 +322,10 @@ Thread *VFSInfo::getThread(VFSNode *node,size_t *dataSize,void **buffer) {
 		*dataSize = 0;
 		*buffer = NULL;
 	}
-	else
-		t = Thread::getById(atoi(node->parent->name));
+	else {
+		tid_t tid = atoi(node->getParent()->name);
+		t = Thread::getRef(tid);
+	}
 	VFSNode::releaseTree();
 	return t;
 }

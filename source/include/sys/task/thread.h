@@ -131,7 +131,9 @@ public:
 	/**
 	 * @return the number of existing threads
 	 */
-	static size_t getCount();
+	static size_t getCount() {
+		return threads.length();
+	}
 
 	/**
 	 * @return the currently running thread
@@ -150,6 +152,22 @@ public:
 	 * @return the thread or NULL if not found
 	 */
 	static Thread *getById(tid_t tid);
+
+	/**
+	 * Checks whether the given thread exists and adds a reference if so.
+	 *
+	 * @param tid the tid of the thread
+	 * @return if it exists, the thread
+	 */
+	static Thread *getRef(tid_t tid);
+
+	/**
+	 * Releases the reference of given thread that has been added previously by getRef(). If there
+	 * are no further references, the thread is destroyed.
+	 *
+	 * @param t the thread
+	 */
+	static void relRef(const Thread *t);
 
 	/**
 	 * Pushes the given thread back to the idle-list
@@ -674,6 +692,8 @@ private:
 protected:
 	/* thread id */
 	tid_t tid;
+	/* the number of references to this thread */
+	mutable ushort refs;
 	/* the process we belong to */
 	Proc *proc;
 	/* the signal-data, managed by the signals-module */
@@ -732,7 +752,8 @@ private:
 	static DList<ListItem> threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;
-	static klock_t lock;
+	static klock_t refLock;
+	static Mutex mutex;
 };
 
 #ifdef __i386__

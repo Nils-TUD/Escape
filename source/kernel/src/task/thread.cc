@@ -47,7 +47,30 @@
 DList<Thread::ListItem> ThreadBase::threads;
 Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
-klock_t ThreadBase::lock;
+klock_t ThreadBase::refLock;
+Mutex ThreadBase::mutex;
+
+Thread *ThreadBase::getRef(tid_t tid) {
+	if(tid >= ARRAY_SIZE(tidToThread))
+		return NULL;
+
+	SpinLock::acquire(&refLock);
+	Thread *t = tidToThread[tid];
+	if(t)
+		t->refs++;
+	SpinLock::release(&refLock);
+	return t;
+}
+
+void ThreadBase::relRef(const Thread *t) {
+	SpinLock::acquire(&refLock);
+	if(--t->refs == 0) {
+		Proc::relRef(t->proc);
+		const_cast<Thread*>(t)->remove();
+		Cache::free(const_cast<Thread*>(t));
+	}
+	SpinLock::release(&refLock);
+}
 
 Thread *ThreadBase::init(Proc *p) {
 	/* create thread for init */
@@ -114,13 +137,7 @@ void ThreadBase::initProps() {
 	reqFrames = ISList<frameno_t>();
 	threadListItem = ListItem(static_cast<Thread*>(this));
 	signalListItem = ListItem(static_cast<Thread*>(this));
-}
-
-size_t ThreadBase::getCount() {
-	SpinLock::acquire(&lock);
-	size_t len = threads.length();
-	SpinLock::release(&lock);
-	return len;
+	refs = 1;
 }
 
 int ThreadBase::extendStack(uintptr_t address) {
@@ -154,7 +171,7 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 
 void ThreadBase::updateRuntimes() {
 	uint64_t cyclesPerSec = CPU::getSpeed();
-	SpinLock::acquire(&lock);
+	mutex.down();
 	/* first store the max priority for all processes (this is no problem, because we're only using
 	 * this as the prio for new threads while holding the same lock, see add()) */
 	for(auto t = threads.begin(); t != threads.end(); ++t) {
@@ -188,7 +205,7 @@ void ThreadBase::updateRuntimes() {
 				p->priority = t->priority;
 		}
 	}
-	SpinLock::release(&lock);
+	mutex.up();
 }
 
 bool ThreadBase::reserveFrames(size_t count) {
@@ -216,15 +233,26 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 	if(t == NULL)
 		return -ENOMEM;
 
-	t->tid = getFreeTid();
-	if(t->getTid() == INVALID_TID) {
-		err = -ENOTHREADS;
-		goto errThread;
-	}
 	t->proc = p;
 	t->flags = tflags;
-
 	t->initProps();
+
+	/* determine tid (ensure that nobody else gets the same) and insert into thread-list */
+	mutex.down();
+	t->tid = getFreeTid();
+	if(t->tid == INVALID_TID) {
+		mutex.up();
+		Cache::free(t);
+		return -ENOTHREADS;
+	}
+	t->add();
+	/* do that here to prevent that one see's a temporary priority, i.e. during the update-phase */
+	t->priority = p->getPriority();
+	mutex.up();
+
+	/* we don't want to destroy the process first because we have a pointer to it */
+	Proc::getRef(p->getPid());
+
 	if(cloneProc) {
 		for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 			if(src->stackRegions[i])
@@ -248,7 +276,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 			err = p->getVM()->map(0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,
 					MAP_TLS,NULL,0,&t->tlsRegion);
 			if(err < 0)
-				goto errThread;
+				goto errAdd;
 		}
 	}
 
@@ -256,8 +284,6 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 	if((err = createArch(src,t,cloneProc)) < 0)
 		goto errClone;
 
-	/* insert into thread-list */
-	t->add();
 
 	/* append to idle-list if its an idle-thread */
 	if(tflags & T_IDLE)
@@ -279,13 +305,12 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 
 errAppendIdle:
 	Signals::removeHandlerFor(t->getTid());
-	t->remove();
 	freeArch(t);
 errClone:
 	if(t->tlsRegion != NULL)
 		p->getVM()->remove(t->tlsRegion);
-errThread:
-	Cache::free(t);
+errAdd:
+	relRef(t);
 	return err;
 }
 
@@ -317,9 +342,8 @@ void ThreadBase::kill() {
 	/* notify the process about it */
 	Sched::wakeup(EV_THREAD_DIED,(evobj_t)proc);
 
-	/* finally, destroy thread */
-	remove();
-	Cache::free(this);
+	/* unref and release. if there is nobody else, we'll destroy everything */
+	relRef((Thread*)this);
 }
 
 void ThreadBase::makeUnrunnable() {
@@ -408,7 +432,6 @@ void ThreadBase::print(OStream &os) const {
 tid_t ThreadBase::getFreeTid() {
 	size_t count = 0;
 	tid_t res = INVALID_TID;
-	SpinLock::acquire(&lock);
 	while(count < MAX_THREAD_COUNT) {
 		if(nextTid >= MAX_THREAD_COUNT)
 			nextTid = 0;
@@ -418,22 +441,17 @@ tid_t ThreadBase::getFreeTid() {
 		}
 		count++;
 	}
-	SpinLock::release(&lock);
 	return res;
 }
 
 void ThreadBase::add() {
-	SpinLock::acquire(&lock);
 	threads.append(&threadListItem);
 	tidToThread[tid] = static_cast<Thread*>(this);
-	/* do that here to prevent that one see's a temporary priority, i.e. during the update-phase */
-	priority = proc->getPriority();
-	SpinLock::release(&lock);
 }
 
 void ThreadBase::remove() {
-	SpinLock::acquire(&lock);
+	mutex.down();
 	threads.remove(&threadListItem);
 	tidToThread[tid] = NULL;
-	SpinLock::release(&lock);
+	mutex.up();
 }

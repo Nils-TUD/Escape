@@ -143,6 +143,22 @@ public:
 	static Proc *getByPid(pid_t pid);
 
 	/**
+	 * Checks whether the given process exists and adds a reference if so.
+	 *
+	 * @param pid the pid of the process
+	 * @return if it exists, the process
+	 */
+	static Proc *getRef(pid_t pid);
+
+	/**
+	 * Releases the reference of given process that has been added previously by getRef(). If there
+	 * are no further references, the process is destroyed.
+	 *
+	 * @param p the process
+	 */
+	static void relRef(const Proc *p);
+
+	/**
 	 * Requests the process with given id and given lock.
 	 *
 	 * @param pid the process-id
@@ -357,6 +373,12 @@ public:
 	 * @param l the lock
 	 */
 	void lock(size_t l) const;
+	/**
+	 * Tries to request the given lock of this process. This has to be a mutex!
+	 *
+	 * @param l the lock
+	 */
+	bool tryLock(size_t l) const;
 	/**
 	 * Releases the given lock of this process
 	 *
@@ -590,6 +612,8 @@ private:
 	gid_t sgid;
 	/* the minimum priority of all threads; is used for new childs and threads */
 	uint8_t priority;
+	/* the number of references to this process */
+	mutable ushort refs;
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
 	VirtMem virtmem;
@@ -624,6 +648,7 @@ private:
 	static pid_t nextPid;
 	static Mutex procLock;
 	static Mutex childLock;
+	static klock_t refLock;
 };
 
 #ifdef __i386__
@@ -666,24 +691,26 @@ inline Proc *ProcBase::getByPid(pid_t pid) {
 }
 
 inline Proc *ProcBase::request(pid_t pid,size_t l) {
-	Proc *p = getByPid(pid);
+	Proc *p = getRef(pid);
 	if(p)
 		p->lock(l);
 	return p;
 }
 
 inline Proc *ProcBase::tryRequest(pid_t pid,size_t l) {
-	Proc *p = getByPid(pid);
-	assert(l == PLOCK_PROG);
+	Proc *p = getRef(pid);
 	if(p) {
-		if(!p->mutexes[l - PLOCK_COUNT].tryDown())
+		if(!p->tryLock(l)) {
+			relRef(p);
 			return NULL;
+		}
 	}
 	return p;
 }
 
 inline void ProcBase::release(const Proc *p,size_t l) {
 	p->unlock(l);
+	relRef(p);
 }
 
 inline void ProcBase::lock(size_t l) const {
@@ -691,6 +718,11 @@ inline void ProcBase::lock(size_t l) const {
 		mutexes[l - PLOCK_COUNT].down();
 	else
 		SpinLock::acquire(locks + l);
+}
+
+inline bool ProcBase::tryLock(size_t l) const {
+	assert(l == PLOCK_PROG);
+	return mutexes[l - PLOCK_COUNT].tryDown();
 }
 
 inline void ProcBase::unlock(size_t l) const {

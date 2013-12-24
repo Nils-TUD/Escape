@@ -67,6 +67,32 @@ Proc *ProcBase::pidToProc[MAX_PROC_COUNT];
 pid_t ProcBase::nextPid = 1;
 Mutex ProcBase::procLock;
 Mutex ProcBase::childLock;
+klock_t ProcBase::refLock;
+
+Proc *ProcBase::getRef(pid_t pid) {
+	if(pid >= ARRAY_SIZE(pidToProc))
+		return NULL;
+
+	SpinLock::acquire(&refLock);
+	Proc *p = pidToProc[pid];
+	if(p)
+		p->refs++;
+	SpinLock::release(&refLock);
+	return p;
+}
+
+void ProcBase::relRef(const Proc *p) {
+	SpinLock::acquire(&refLock);
+	if(--p->refs == 0) {
+		/* free the last resources and remove us from vfs */
+		Cache::free((char*)p->command);
+		VFS::removeProcess(p->pid);
+		/* remove and free */
+		remove(const_cast<Proc*>(p));
+		Cache::free(const_cast<Proc*>(p));
+	}
+	SpinLock::release(&refLock);
+}
 
 void ProcBase::init() {
 	/* init the first process */
@@ -125,6 +151,7 @@ void ProcBase::initProps() {
 	stats.exitCode = 0;
 	stats.exitSignal = SIG_COUNT;
 	threads = ISList<Thread*>();
+	refs = 1;
 }
 
 const char *ProcBase::getProgram() const {
@@ -226,10 +253,6 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorCur;
 	}
 
-	/* clone page-dir */
-	if((res = PageDir::cloneKernelspace(p->getPageDir(),curThread->getTid())) < 0)
-		goto errorProc;
-
 	/* set basic attributes */
 	p->parentPid = cur->pid;
 	memclear(p->locks,sizeof(p->locks));
@@ -246,14 +269,12 @@ int ProcBase::clone(uint8_t flags) {
 	p->entryPoint = cur->entryPoint;
 	p->flags = flags;
 	p->initProps();
-	if((res = Sems::clone(p,cur)) < 0)
-		goto errorPdir;
 
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
 	if(p->command == NULL) {
 		res = -ENOMEM;
-		goto errorSems;
+		goto errorProc;
 	}
 
 	/* determine pid; ensure that nobody can get this pid, too */
@@ -277,6 +298,14 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorAdd;
 	}
 
+	/* clone page-dir */
+	if((res = PageDir::cloneKernelspace(p->getPageDir(),curThread->getTid())) < 0)
+		goto errorVFS;
+
+	/* clone semaphores */
+	if((res = Sems::clone(p,cur)) < 0)
+		goto errorPdir;
+
 	/* join group of parent */
 	p->groups = NULL;
 	Groups::join(p,cur);
@@ -284,7 +313,7 @@ int ProcBase::clone(uint8_t flags) {
 	/* clone regions */
 	p->virtmem.init(p->pid);
 	if((res = cur->virtmem.cloneAll(&p->virtmem)) < 0)
-		goto errorVFS;
+		goto errorGroups;
 
 	/* clone current thread */
 	if((res = Thread::create(curThread,&nt,p,0,true)) < 0)
@@ -328,17 +357,20 @@ errorThread:
 	nt->kill();
 errorRegs:
 	doRemoveRegions(p,true);
-errorVFS:
+errorGroups:
 	Groups::leave(p->pid);
-	VFS::removeProcess(p->pid);
-errorAdd:
-	remove(p);
-errorCmd:
-	Cache::free((void*)p->command);
-errorSems:
 	Sems::destroyAll(p,true);
 errorPdir:
 	p->getPageDir()->destroy();
+errorVFS:
+	VFS::removeProcess(p->pid);
+errorAdd:
+	relRef(p);
+	/* relRef does already do the next 3 operations. at least, if there are no references anymore.
+	 * of course it might happen that during that time, somebody else added a reference. */
+	goto errorCur;
+errorCmd:
+	Cache::free((void*)p->command);
 errorProc:
 	Cache::free(p);
 errorCur:
@@ -633,6 +665,7 @@ void ProcBase::destroy(pid_t pid) {
 }
 
 void ProcBase::doDestroy(Proc *p) {
+	assert(p->threads.length() == 0);
 	/* release resources */
 	Sems::destroyAll(p,true);
 	FileDesc::destroy(p);
@@ -642,7 +675,6 @@ void ProcBase::doDestroy(Proc *p) {
 	p->virtmem.destroy();
 	Lock::releaseAll(p->pid);
 	terminateArch(p);
-	p->threads.clear();
 
 	/* we are a zombie now, so notify parent that he can get our exit-state */
 	p->flags &= ~P_PREZOMBIE;
@@ -673,14 +705,11 @@ void ProcBase::kill(pid_t pid) {
 	procLock.up();
 	childLock.up();
 
-	/* free the last resources and remove us from vfs */
-	Cache::free((char*)p->command);
-	VFS::removeProcess(p->pid);
-
-	/* remove and free */
-	remove(p);
+	/* unref and release. if there is nobody else, we'll destroy everything */
+	SpinLock::acquire(&refLock);
+	p->refs--;
+	SpinLock::release(&refLock);
 	release(p,PLOCK_PROG);
-	Cache::free(p);
 }
 
 void ProcBase::notifyProcDied(pid_t parent) {
@@ -779,7 +808,8 @@ void ProcBase::printAllPDs(OStream &os,uint parts,bool regions) {
 void ProcBase::print(OStream &os) const {
 	size_t own = 0,shared = 0,swap = 0;
 	os.writef("Proc %d:\n",pid);
-	os.writef("\tppid=%d, cmd=%s, entry=%#Px, priority=%d\n",parentPid,command,entryPoint,priority);
+	os.writef("\tppid=%d, cmd=%s, entry=%#Px, priority=%d, refs=%d\n",
+		parentPid,command,entryPoint,priority,refs);
 	os.writef("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
 	os.writef("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
 	os.writef("\tGroups: ");

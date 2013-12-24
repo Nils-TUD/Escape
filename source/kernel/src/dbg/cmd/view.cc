@@ -160,45 +160,57 @@ int cons_cmd_view(OStream &os,size_t argc,char **argv) {
 
 static void view_proc(OStream &os) {
 	Proc *p = view_getProc(os);
-	if(p != NULL)
+	if(p != NULL) {
 		p->print(os);
+		Proc::relRef(p);
+	}
 }
 static void view_thread(OStream &os) {
 	const Thread *t = view_getThread(os);
-	if(t != NULL)
+	if(t != NULL) {
 		t->print(os);
+		Thread::relRef(t);
+	}
 }
 static void view_pdirall(OStream &os) {
 	Proc *p = view_getProc(os);
-	if(p != NULL)
+	if(p != NULL) {
 		p->getPageDir()->print(os,PD_PART_ALL);
+		Proc::relRef(p);
+	}
 }
 static void view_pdiruser(OStream &os) {
 	Proc *p = view_getProc(os);
-	if(p != NULL)
+	if(p != NULL) {
 		p->getPageDir()->print(os,PD_PART_USER);
+		Proc::relRef(p);
+	}
 }
 static void view_pdirkernel(OStream &os) {
 	Proc *p = view_getProc(os);
-	if(p != NULL)
+	if(p != NULL) {
 		p->getPageDir()->print(os,PD_PART_KERNEL);
+		Proc::relRef(p);
+	}
 }
 static void view_regions(OStream &os) {
 	if(_argc < 3)
 		Proc::printAllRegions(os);
 	else {
 		Proc *p = view_getProc(os);
-		if(p != NULL)
+		if(p != NULL) {
 			p->getVM()->printRegions(os);
+			Proc::relRef(p);
+		}
 	}
 }
 
 static Proc *view_getProc(OStream &os) {
 	Proc *p;
 	if(_argc > 2)
-		p = Proc::getByPid(atoi(_argv[2]));
+		p = Proc::getRef(atoi(_argv[2]));
 	else
-		p = Proc::getByPid(Proc::getRunning());
+		p = Proc::getRef(Proc::getRunning());
 	if(p == NULL)
 		os.writef("Unable to find process '%s'\n",_argv[2]);
 	return p;
@@ -207,9 +219,9 @@ static Proc *view_getProc(OStream &os) {
 static const Thread *view_getThread(OStream &os) {
 	const Thread *t;
 	if(_argc > 2)
-		t = Thread::getById(atoi(_argv[2]));
+		t = Thread::getRef(atoi(_argv[2]));
 	else
-		t = Thread::getRunning();
+		t = Thread::getRef(Thread::getRunning()->getTid());
 	if(t == NULL)
 		os.writef("Unable to find thread '%s'\n",_argv[2]);
 	return t;

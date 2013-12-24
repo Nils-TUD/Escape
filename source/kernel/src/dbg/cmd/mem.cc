@@ -92,7 +92,7 @@ int cons_cmd_mem(OStream &os,size_t argc,char **argv) {
 	}
 
 	if(argc > 1) {
-		proc = Proc::getByPid(strtoul(argv[1],NULL,10));
+		proc = Proc::getRef(strtoul(argv[1],NULL,10));
 		if(!proc) {
 			os.writef("The process with pid %d does not exist\n",strtoul(argv[1],NULL,10));
 			return -ESRCH;
@@ -101,9 +101,11 @@ int cons_cmd_mem(OStream &os,size_t argc,char **argv) {
 			addr = (uintptr_t)strtoul(argv[2],NULL,16);
 	}
 	else
-		proc = Proc::getByPid(Proc::getRunning());
+		proc = Proc::getRef(Proc::getRunning());
 
 	MemNaviBackend backend(proc,addr);
+	Proc::relRef(proc);
+
 	Console::navigation(os,&backend);
 	return 0;
 }

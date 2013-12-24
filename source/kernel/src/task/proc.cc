@@ -177,13 +177,13 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 }
 
 void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
-	Proc *p = request(pid,PLOCK_REGIONS);
+	Proc *p = request(pid,PLOCK_PROG);
 	if(p) {
 		*own = p->virtmem.getOwnFrames();
 		*shared = p->virtmem.getSharedFrames();
 		*swapped = p->virtmem.getSwappedFrames();
 		*own = *own + p->getKMemUsage();
-		release(p,PLOCK_REGIONS);
+		release(p,PLOCK_PROG);
 	}
 }
 

@@ -51,15 +51,15 @@
 static uint8_t buffer[PAGE_SIZE];
 
 bool VirtMem::acquire() const {
-	return Proc::request(pid,PLOCK_REGIONS) != NULL;
+	return Proc::request(pid,PLOCK_PROG) != NULL;
 }
 
 bool VirtMem::tryAquire() const {
-	return Proc::tryRequest(pid,PLOCK_REGIONS) != NULL;
+	return Proc::tryRequest(pid,PLOCK_PROG) != NULL;
 }
 
 void VirtMem::release() const {
-	Proc::release(Proc::getByPid(pid),PLOCK_REGIONS);
+	Proc::release(Proc::getByPid(pid),PLOCK_PROG);
 }
 
 uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {

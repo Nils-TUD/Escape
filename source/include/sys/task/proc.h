@@ -56,13 +56,12 @@
 #define P_BOOT				8
 
 #define PLOCK_COUNT			4
-#define PMUTEX_COUNT		2
+#define PMUTEX_COUNT		1
 #define PLOCK_ENV			0
 #define PLOCK_FDS			1
 #define PLOCK_SEMS			2
 #define PLOCK_PORTS			3
-#define PLOCK_REGIONS		4
-#define PLOCK_PROG			5	/* clone, exec, threads */
+#define PLOCK_PROG			4	/* clone, exec, threads and virtmem */
 
 class Groups;
 class FileDesc;
@@ -674,8 +673,8 @@ inline Proc *ProcBase::request(pid_t pid,size_t l) {
 }
 
 inline Proc *ProcBase::tryRequest(pid_t pid,size_t l) {
-	assert(l == PLOCK_REGIONS || l == PLOCK_PROG);
 	Proc *p = getByPid(pid);
+	assert(l == PLOCK_PROG);
 	if(p) {
 		if(!p->mutexes[l - PLOCK_COUNT].tryDown())
 			return NULL;
@@ -688,14 +687,14 @@ inline void ProcBase::release(const Proc *p,size_t l) {
 }
 
 inline void ProcBase::lock(size_t l) const {
-	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
+	if(l == PLOCK_PROG)
 		mutexes[l - PLOCK_COUNT].down();
 	else
 		SpinLock::acquire(locks + l);
 }
 
 inline void ProcBase::unlock(size_t l) const {
-	if(l == PLOCK_REGIONS || l == PLOCK_PROG)
+	if(l == PLOCK_PROG)
 		mutexes[l - PLOCK_COUNT].up();
 	else
 		SpinLock::release(locks + l);

@@ -50,7 +50,6 @@ void VFSFS::removeProc(pid_t pid) {
 }
 
 int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
-	const Proc *p = Proc::getByPid(pid);
 	ssize_t res = -ENOMEM;
 	size_t pathLen = strlen(path);
 	sStrMsg msg;
@@ -67,9 +66,13 @@ int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 
 	/* send msg to fs */
 	msg.arg1 = flags;
-	msg.arg2 = p->getEUid();
-	msg.arg3 = p->getEGid();
-	msg.arg4 = p->getPid();
+	const Proc *p = Proc::getRef(pid);
+	if(p) {
+		msg.arg2 = p->getEUid();
+		msg.arg3 = p->getEGid();
+		msg.arg4 = p->getPid();
+		Proc::relRef(p);
+	}
 	memcpy(msg.s1,path,pathLen + 1);
 	res = fs->sendMsg(pid,MSG_FS_OPEN,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
@@ -123,10 +126,13 @@ int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileI
 
 	/* send msg to fs */
 	if(path) {
-		const Proc *p = Proc::getByPid(pid);
-		msg.str.arg1 = p->getEUid();
-		msg.str.arg2 = p->getEGid();
-		msg.str.arg3 = p->getPid();
+		const Proc *p = Proc::getRef(pid);
+		if(p) {
+			msg.str.arg1 = p->getEUid();
+			msg.str.arg2 = p->getEGid();
+			msg.str.arg3 = p->getPid();
+			Proc::relRef(p);
+		}
 		memcpy(msg.str.s1,path,pathLen + 1);
 		res = fs->sendMsg(pid,MSG_FS_STAT,&msg,sizeof(msg.str),NULL,0);
 	}
@@ -286,7 +292,6 @@ void VFSFS::close(pid_t pid,inode_t inodeNo,dev_t devNo) {
 
 int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = -ENOMEM;
-	const Proc *p = Proc::getByPid(pid);
 	sStrMsg msg;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
@@ -305,9 +310,13 @@ int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg
 	if(path2)
 		strcpy(msg.s2,path2);
 	msg.arg1 = arg1;
-	msg.arg2 = p->getEUid();
-	msg.arg3 = p->getEGid();
-	msg.arg4 = p->getPid();
+	const Proc *p = Proc::getRef(pid);
+	if(p) {
+		msg.arg2 = p->getEUid();
+		msg.arg3 = p->getEGid();
+		msg.arg4 = p->getPid();
+		Proc::relRef(p);
+	}
 	res = fs->sendMsg(pid,cmd,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
 		goto error;
@@ -326,7 +335,9 @@ error:
 }
 
 int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
-	Proc *p = Proc::getByPid(pid);
+	Proc *p = Proc::getRef(pid);
+	if(!p)
+		return -ESRCH;
 	/* check if there's a free channel */
 	SpinLock::acquire(&fsChanLock);
 	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
@@ -336,12 +347,14 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 				p->fsChans.remove(&*it);
 				delete &*it;
 				SpinLock::release(&fsChanLock);
+				Proc::relRef(p);
 				return -EDESTROYED;
 			}
 			if(node)
 				*node = it->file->getNode();
 			it->active = true;
 			SpinLock::release(&fsChanLock);
+			Proc::relRef(p);
 			*file = it->file;
 			return 0;
 		}
@@ -349,11 +362,14 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	SpinLock::release(&fsChanLock);
 
 	FSChan *chan = new FSChan();
-	if(!chan)
+	if(!chan) {
+		Proc::relRef(p);
 		return -ENOMEM;
+	}
 
-	int err = VFS::openPath(p->getPid(),VFS_MSGS,0,FS_PATH,&chan->file);
+	int err = VFS::openPath(pid,VFS_MSGS,0,FS_PATH,&chan->file);
 	if(err < 0) {
+		Proc::relRef(p);
 		Cache::free(chan);
 		return err;
 	}
@@ -364,19 +380,23 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 	if(node)
 		*node = chan->file->getNode();
 	*file = chan->file;
+	Proc::relRef(p);
 	return 0;
 }
 
 void VFSFS::releaseFile(pid_t pid,OpenFile *file) {
-	Proc *p = Proc::getByPid(pid);
-	SpinLock::acquire(&fsChanLock);
-	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
-		if(it->file == file) {
-			it->active = false;
-			break;
+	Proc *p = Proc::getRef(pid);
+	if(p) {
+		SpinLock::acquire(&fsChanLock);
+		for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
+			if(it->file == file) {
+				it->active = false;
+				break;
+			}
 		}
+		SpinLock::release(&fsChanLock);
+		Proc::relRef(p);
 	}
-	SpinLock::release(&fsChanLock);
 }
 
 void VFSFS::printFSChans(OStream &os,const Proc *p) {

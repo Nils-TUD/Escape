@@ -157,15 +157,19 @@ int ThreadBase::extendStack(uintptr_t address) {
 
 bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) const {
 	bool res = false;
-	if(stackRegions[stackNo] != NULL)
-		res = proc->getVM()->getRegRange(stackRegions[stackNo],start,end,false);
+	if(stackRegions[stackNo] != NULL) {
+		proc->getVM()->getRegRange(stackRegions[stackNo],start,end,false);
+		res = true;
+	}
 	return res;
 }
 
 bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 	bool res = false;
-	if(tlsRegion != NULL)
-		res = proc->getVM()->getRegRange(tlsRegion,start,end,false);
+	if(tlsRegion != NULL) {
+		proc->getVM()->getRegRange(tlsRegion,start,end,false);
+		res = true;
+	}
 	return res;
 }
 

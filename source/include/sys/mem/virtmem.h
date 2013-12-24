@@ -103,8 +103,8 @@ public:
 	/**
 	 * @return the id of the process that owns this virtual memory
 	 */
-	pid_t getPid() const {
-		return pid;
+	const Proc *getProc() const {
+		return proc;
 	}
 	/**
 	 * @return the page-directory
@@ -216,9 +216,8 @@ public:
 	 * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
 	 *  accessible byte)
 	 * @param locked whether to lock the regions of the given process during the operation
-	 * @return true if the region exists
 	 */
-	bool getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) const;
+	void getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) const;
 
 	/**
 	 * Removes all regions, optionally including stack.
@@ -316,10 +315,10 @@ private:
 	/**
 	 * Inits this object
 	 *
-	 * @param pid the pid to set
+	 * @param p the process to which this object belongs
 	 */
-	void init(pid_t pid) {
-		this->pid = pid;
+	void init(Proc *p) {
+		proc = p;
 		ownFrames = sharedFrames = swapped = 0;
 		freeStackAddr = dataAddr = 0;
 		peakOwnFrames = peakSharedFrames = swapCount = 0;
@@ -362,7 +361,7 @@ private:
 	uintptr_t getFirstUsableAddr() const;
 	const char *getRegName(const VMRegion *vm) const;
 
-	bool acquire() const;
+	void acquire() const;
 	bool tryAquire() const;
 	void release() const;
 
@@ -382,7 +381,7 @@ private:
 		swapCount += amount < 0 ? -amount : amount;
 	}
 
-	pid_t pid;
+	Proc *proc;
 	/* the physical address for the page-directory of this process */
 	PageDir pagedir;
 	/* the number of frames the process owns, i.e. no cow, no shared stuff, no regaddphys.

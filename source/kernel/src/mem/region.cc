@@ -186,7 +186,7 @@ void Region::print(OStream &os,uintptr_t virt) const {
 	os.writef("\tTimestamp: %Lu\n",timestamp);
 	os.writef("\tProcesses: ");
 	for(auto it = vms.cbegin(); it != vms.cend(); ++it)
-		os.writef("%d ",(*it)->getPid());
+		os.writef("%d ",(*it)->getProc()->getPid());
 	os.writef("\n");
 	os.writef("\tPages (%d):\n",BYTES_2_PAGES(byteCount));
 	for(size_t i = 0, x = BYTES_2_PAGES(byteCount); i < x; i++) {

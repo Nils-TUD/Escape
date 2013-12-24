@@ -132,7 +132,7 @@ void ProcBase::init() {
 		Util::panic("Unable to append the initial thread");
 
 	/* init virt mem */
-	p->virtmem.init(p->pid);
+	p->virtmem.init(p);
 
 	/* add to procs */
 	add(p);
@@ -311,7 +311,7 @@ int ProcBase::clone(uint8_t flags) {
 	Groups::join(p,cur);
 
 	/* clone regions */
-	p->virtmem.init(p->pid);
+	p->virtmem.init(p);
 	if((res = cur->virtmem.cloneAll(&p->virtmem)) < 0)
 		goto errorGroups;
 

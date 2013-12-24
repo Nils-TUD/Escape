@@ -27,6 +27,8 @@
 #include <sys/video.h>
 #include <string.h>
 
+klock_t Groups::lock;
+
 bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 	gid_t *grpCpy = NULL;
 	if(count > 0) {
@@ -43,84 +45,100 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 		Cache::free(grpCpy);
 		return false;
 	}
-	g->lock = 0;
 	g->refCount = 1;
 	g->count = count;
 	g->groups = grpCpy;
 	leave(pid);
-	Proc *p = Proc::getByPid(pid);
+	Proc *p = Proc::getRef(pid);
 	if(!p) {
 		Cache::free(g);
 		Cache::free(grpCpy);
 		return false;
 	}
 	p->groups = g;
+	Proc::relRef(p);
 	return true;
 }
 
 void Groups::join(Proc *dst,Proc *src) {
+	SpinLock::acquire(&lock);
 	Entries *g = src->groups;
 	dst->groups = g;
-	if(g) {
-		SpinLock::acquire(&g->lock);
+	if(g)
 		g->refCount++;
-		SpinLock::release(&g->lock);
-	}
+	SpinLock::release(&lock);
 }
 
 size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
-	Entries *g = getByPid(pid);
-	if(count == 0)
-		return g ? g->count : 0;
-	if(g) {
-		count = MIN(g->count,count);
-		memcpy(list,g->groups,count * sizeof(gid_t));
-		return count;
+	size_t res = 0;
+	Proc *p = Proc::getRef(pid);
+	if(p) {
+		SpinLock::acquire(&lock);
+		Entries *g = p->groups;
+		/* we can't hold the reference during the access to user-memory. we might die */
+		/* since we're holding the spinlock now, nobody can destroy the groups anyway */
+		Proc::relRef(p);
+		if(count == 0)
+			res = g ? g->count : 0;
+		else if(g) {
+			res = MIN(g->count,count);
+			memcpy(list,g->groups,res * sizeof(gid_t));
+		}
+		SpinLock::release(&lock);
 	}
-	return 0;
+	return res;
 }
 
 bool Groups::contains(pid_t pid,gid_t gid) {
-	Entries *g = getByPid(pid);
-	if(g) {
-		for(size_t i = 0; i < g->count; i++) {
-			if(g->groups[i] == gid)
-				return true;
+	bool res = false;
+	Proc *p = Proc::getRef(pid);
+	if(p) {
+		SpinLock::acquire(&lock);
+		Entries *g = p->groups;
+		if(g) {
+			for(size_t i = 0; i < g->count; i++) {
+				if(g->groups[i] == gid) {
+					res = true;
+					break;
+				}
+			}
 		}
+		SpinLock::release(&lock);
+		Proc::relRef(p);
 	}
-	return false;
+	return res;
 }
 
 void Groups::leave(pid_t pid) {
-	Proc *p = Proc::getByPid(pid);
+	Proc *p = Proc::getRef(pid);
 	if(!p)
 		return;
+	SpinLock::acquire(&lock);
 	Entries *g = p->groups;
 	if(g) {
-		SpinLock::acquire(&g->lock);
 		if(--g->refCount == 0) {
 			Cache::free(g->groups);
 			Cache::free(g);
 		}
-		SpinLock::release(&g->lock);
 	}
+	SpinLock::release(&lock);
 	p->groups = NULL;
+	Proc::relRef(p);
 }
 
 void Groups::print(OStream &os,pid_t pid) {
-	Entries *g = getByPid(pid);
-	if(g) {
-		os.writef("[refs: %u] ",g->refCount);
-		for(size_t i = 0; i < g->count; i++)
-			os.writef("%u ",g->groups[i]);
+	Proc *p = Proc::getRef(pid);
+	if(p) {
+		SpinLock::acquire(&lock);
+		Entries *g = p->groups;
+		if(g) {
+			os.writef("[refs: %u] ",g->refCount);
+			for(size_t i = 0; i < g->count; i++)
+				os.writef("%u ",g->groups[i]);
+		}
+		else
+			os.writef("-");
+		SpinLock::release(&lock);
+		Proc::relRef(p);
 	}
-	else
-		os.writef("-");
-}
-
-Groups::Entries *Groups::getByPid(pid_t pid) {
-	Proc *p = Proc::getByPid(pid);
-	if(!p)
-		return NULL;
-	return p->groups;
 }

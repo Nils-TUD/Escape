@@ -29,7 +29,6 @@ class Groups {
 
 public:
 	struct Entries {
-		klock_t lock;
 		int refCount;
 		size_t count;
 		gid_t *groups;
@@ -90,5 +89,5 @@ public:
 	static void print(OStream &os,pid_t pid);
 
 private:
-	static Entries *getByPid(pid_t pid);
+	static klock_t lock;
 };

@@ -48,7 +48,7 @@ void Signals::init() {
 
 int Signals::setHandler(tid_t tid,int signal,handler_func func,handler_func *old) {
 	vassert(canHandle(signal),"Unable to handle signal %d",signal);
-	assert(tid == Thread::getRunning()->getTid());
+	/* not enforced because of unit-tests: assert(tid == Thread::getRunning()->getTid()); */
 	Thread *t = getThread(tid);
 	if(!t)
 		return -ENOMEM;

@@ -128,6 +128,7 @@ int VM86::create() {
 }
 
 int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area) {
+	int err;
 	if(area && BYTES_2_PAGES(area->size) > VM86_MAX_MEMPAGES)
 		return -EINVAL;
 	if(interrupt >= VM86_IVT_SIZE)
@@ -135,29 +136,34 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	Thread *t = Thread::getRunning();
 
 	/* check whether there still is a vm86-task */
-	Thread *vm86t = Thread::getById(vm86Tid);
-	if(vm86t == NULL || !(vm86t->getProc()->getFlags() & P_VM86))
+	Thread *vm86t = Thread::getRef(vm86Tid);
+	if(vm86t == NULL)
 		return -ESRCH;
+	if(!(vm86t->getProc()->getFlags() & P_VM86)) {
+		err = -ESRCH;
+		goto errorNoVM86;
+	}
 
 	/* ensure that only one thread at a time can use the vm86-task */
 	vm86Lock.down();
 	/* store information in calling process */
 	caller = t->getTid();
 	if(!copyInfo(interrupt,regs,area)) {
-		finish();
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto errorCopy;
 	}
 
 	/* reserve frames for vm86-thread */
 	if(info.area) {
 		if(!vm86t->reserveFrames(BYTES_2_PAGES(info.area->size))) {
-			finish();
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto errorCopy;
 		}
 	}
 
 	/* make vm86 ready */
 	vm86t->unblock();
+	Thread::relRef(vm86t);
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
@@ -175,6 +181,12 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	/* mark as done */
 	finish();
 	return vm86Res;
+
+errorCopy:
+	finish();
+errorNoVM86:
+	Thread::relRef(vm86t);
+	return err;
 }
 
 void VM86::handleGPF(VM86IntrptStackFrame *stack) {
@@ -387,12 +399,13 @@ void VM86::start() {
 
 void VM86::stop(VM86IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
-	Thread *ct = Thread::getById(caller);
+	Thread *ct = Thread::getRef(caller);
 	vm86Res = 0;
 	if(ct != NULL) {
 		copyRegResult(stack);
 		vm86Res = storeAreaResult();
 		ct->unblock();
+		Thread::relRef(ct);
 	}
 
 	/* block us and do a switch */
@@ -404,8 +417,13 @@ void VM86::stop(VM86IntrptStackFrame *stack) {
 }
 
 void VM86::finish() {
-	if(info.area)
-		Thread::getById(vm86Tid)->discardFrames();
+	if(info.area) {
+		Thread *vm86t = Thread::getRef(vm86Tid);
+		if(vm86t) {
+			vm86t->discardFrames();
+			Thread::relRef(vm86t);
+		}
+	}
 	clearInfo();
 	caller = INVALID_TID;
 	vm86Lock.up();

@@ -55,13 +55,12 @@
 #define P_FS				4
 #define P_BOOT				8
 
-#define PLOCK_COUNT			4
+#define PLOCK_COUNT			3
 #define PMUTEX_COUNT		1
-#define PLOCK_ENV			0
-#define PLOCK_FDS			1
-#define PLOCK_SEMS			2
-#define PLOCK_PORTS			3
-#define PLOCK_PROG			4	/* clone, exec, threads and virtmem */
+#define PLOCK_FDS			0
+#define PLOCK_SEMS			1
+#define PLOCK_PORTS			2
+#define PLOCK_PROG			3	/* clone, exec, threads and virtmem */
 
 class Groups;
 class FileDesc;

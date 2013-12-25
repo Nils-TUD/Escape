@@ -27,53 +27,39 @@
 #include <sys/video.h>
 #include <string.h>
 
+klock_t Env::lock;
+
 bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 	while(1) {
-		Proc *p = Proc::request(pid,PLOCK_ENV);
-		if(!p)
-			return false;
-		EnvVar *var = getiOf(p,&index);
+		EnvVar *var = requestiVarOf(pid,&index);
 		if(var != NULL) {
 			bool res = true;
-			if(dst) {
-				p->addLock(PLOCK_ENV);
+			if(dst)
 				strnzcpy(dst,var->name,size);
-				p->remLock(PLOCK_ENV);
-			}
-			Proc::release(p,PLOCK_ENV);
+			release();
 			return res;
 		}
-		if(p->getPid() == 0) {
-			Proc::release(p,PLOCK_ENV);
+
+		pid = getPPid(pid);
+		if(pid == INVALID_PID)
 			break;
-		}
-		pid = p->getParentPid();
-		Proc::release(p,PLOCK_ENV);
 	}
 	return false;
 }
 
 bool Env::get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 	while(1) {
-		Proc *p = Proc::request(pid,PLOCK_ENV);
-		if(!p)
-			return false;
-		p->addLock(PLOCK_ENV);
-		EnvVar *var = getOf(p,name);
+		EnvVar *var = requestVarOf(pid,name);
 		if(var != NULL) {
 			if(dst)
 				strnzcpy(dst,var->value,size);
-			p->remLock(PLOCK_ENV);
-			Proc::release(p,PLOCK_ENV);
+			release();
 			return true;
 		}
-		p->remLock(PLOCK_ENV);
-		if(p->getPid() == 0) {
-			Proc::release(p,PLOCK_ENV);
+
+		pid = getPPid(pid);
+		if(pid == INVALID_PID)
 			break;
-		}
-		pid = p->getParentPid();
-		Proc::release(p,PLOCK_ENV);
 	}
 	return false;
 }
@@ -92,10 +78,7 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorNameCpy;
 
 	/* at first we have to look whether the var already exists for the given process */
-	p = Proc::request(pid,PLOCK_ENV);
-	if(!p)
-		goto errorValCpy;
-	var = getOf(p,nameCpy);
+	var = requestVarOf(pid,nameCpy);
 	if(var != NULL) {
 		char *oldVal = var->value;
 		/* set value */
@@ -103,29 +86,34 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		/* we don't need the previous value anymore */
 		Cache::free(oldVal);
 		Cache::free(nameCpy);
-		Proc::release(p,PLOCK_ENV);
+		release();
 		return true;
 	}
 
 	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
-	var = new EnvVar(exists(p,nameCpy),nameCpy,valueCpy);
+	var = new EnvVar(exists(pid,nameCpy),nameCpy,valueCpy);
 	if(var == NULL)
-		goto errorProc;
+		goto errorValCpy;
 
 	/* append to list */
-	if(!p->env) {
-		p->env = new SList<EnvVar>();
-		if(!p->env)
-			goto errorVar;
+	SpinLock::acquire(&lock);
+	p = Proc::getRef(pid);
+	if(p) {
+		if(!p->env) {
+			p->env = new SList<EnvVar>();
+			if(!p->env)
+				goto errorVar;
+		}
+		p->env->append(var);
+		Proc::relRef(p);
 	}
-	p->env->append(var);
-	Proc::release(p,PLOCK_ENV);
+	SpinLock::release(&lock);
 	return true;
 
 errorVar:
+	Proc::relRef(p);
+	SpinLock::release(&lock);
 	delete var;
-errorProc:
-	Proc::release(p,PLOCK_ENV);
 errorValCpy:
 	Cache::free(valueCpy);
 errorNameCpy:
@@ -134,7 +122,8 @@ errorNameCpy:
 }
 
 void Env::removeFor(pid_t pid) {
-	Proc *p = Proc::request(pid,PLOCK_ENV);
+	SpinLock::acquire(&lock);
+	Proc *p = Proc::getRef(pid);
 	if(p) {
 		if(p->env) {
 			for(auto var = p->env->begin(); var != p->env->end(); ) {
@@ -146,8 +135,9 @@ void Env::removeFor(pid_t pid) {
 			delete p->env;
 			p->env = NULL;
 		}
-		Proc::release(p,PLOCK_ENV);
+		Proc::relRef(p);
 	}
+	SpinLock::release(&lock);
 }
 
 void Env::printAllOf(OStream &os,pid_t pid) {
@@ -162,34 +152,69 @@ void Env::printAllOf(OStream &os,pid_t pid) {
 	}
 }
 
-bool Env::exists(const Proc *p,const char *name) {
+bool Env::exists(pid_t pid,const char *name) {
 	while(1) {
-		EnvVar *var = getOf(p,name);
-		if(var != NULL)
+		EnvVar *var = requestVarOf(pid,name);
+		if(var != NULL) {
+			release();
 			return true;
-		if(p->getPid() == 0)
+		}
+
+		pid = getPPid(pid);
+		if(pid == INVALID_PID)
 			break;
-		p = Proc::getByPid(p->getParentPid());
 	}
 	return false;
 }
 
-Env::EnvVar *Env::getiOf(const Proc *p,size_t *index) {
-	if(!p->env)
-		return NULL;
-	for(auto var = p->env->begin(); var != p->env->end(); ++var) {
-		if(!var->dup && (*index)-- == 0)
-			return &*var;
+Env::EnvVar *Env::requestiVarOf(pid_t pid,size_t *index) {
+	SList<EnvVar> *env = request(pid);
+	if(env) {
+		for(auto var = env->begin(); var != env->end(); ++var) {
+			if(!var->dup && (*index)-- == 0)
+				return &*var;
+		}
 	}
+	release();
 	return NULL;
 }
 
-Env::EnvVar *Env::getOf(const Proc *p,USER const char *name) {
-	if(!p->env)
-		return NULL;
-	for(auto var = p->env->begin(); var != p->env->end(); ++var) {
-		if(strcmp(var->name,name) == 0)
-			return &*var;
+Env::EnvVar *Env::requestVarOf(pid_t pid,USER const char *name) {
+	SList<EnvVar> *env = request(pid);
+	if(env) {
+		for(auto var = env->begin(); var != env->end(); ++var) {
+			if(strcmp(var->name,name) == 0)
+				return &*var;
+		}
 	}
+	release();
 	return NULL;
+}
+
+pid_t Env::getPPid(pid_t pid) {
+	if(pid == 0)
+		return INVALID_PID;
+	const Proc *p = Proc::getRef(pid);
+	if(!p)
+		return INVALID_PID;
+	pid = p->getParentPid();
+	Proc::relRef(p);
+	return pid;
+}
+
+SList<Env::EnvVar> *Env::request(pid_t pid) {
+	SpinLock::acquire(&lock);
+	Thread::addLock(&lock);
+	const Proc *p = Proc::getRef(pid);
+	if(!p)
+		return NULL;
+
+	SList<EnvVar> *env = p->env;
+	Proc::relRef(p);
+	return env;
+}
+
+void Env::release() {
+	Thread::remLock(&lock);
+	SpinLock::release(&lock);
 }

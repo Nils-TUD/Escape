@@ -86,7 +86,12 @@ public:
 	static void printAllOf(OStream &os,pid_t pid);
 
 private:
-	static bool exists(const Proc *p,const char *name);
-	static EnvVar *getiOf(const Proc *p,size_t *index);
-	static EnvVar *getOf(const Proc *p,const char *name);
+	static bool exists(pid_t pid,const char *name);
+	static EnvVar *requestiVarOf(pid_t pid,size_t *index);
+	static EnvVar *requestVarOf(pid_t pid,const char *name);
+	static pid_t getPPid(pid_t pid);
+	static SList<EnvVar> *request(pid_t pid);
+	static void release();
+
+	static klock_t lock;
 };

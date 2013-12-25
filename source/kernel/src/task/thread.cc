@@ -383,15 +383,16 @@ void ThreadBase::printShort(OStream &os) const {
 void ThreadBase::print(OStream &os) const {
 	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getProgram());
 	os.pushIndent();
-	os.writef("Flags=%#x\n",flags);
-	os.writef("State=%s\n",getStateName(state));
-	os.writef("Events=");
+	os.writef("References = %d\n",refs);
+	os.writef("Flags = %#x\n",flags);
+	os.writef("State = %s\n",getStateName(state));
+	os.writef("Events = ");
 	this->printEvMask(os);
 	os.writef("\n");
-	os.writef("LastCPU=%d\n",cpu);
-	os.writef("TlsRegion=%p, ",tlsRegion ? tlsRegion->virt() : 0);
+	os.writef("LastCPU = %d\n",cpu);
+	os.writef("TlsRegion = %p, ",tlsRegion ? tlsRegion->virt() : 0);
 	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
-		os.writef("stackRegion%zu=%p",i,stackRegions[i] ? stackRegions[i]->virt() : 0);
+		os.writef("stackRegion%zu = %p",i,stackRegions[i] ? stackRegions[i]->virt() : 0);
 		if(i < STACK_REG_COUNT - 1)
 			os.writef(", ");
 	}

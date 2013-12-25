@@ -69,15 +69,22 @@ size_t VFSNode::allocated;
 VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 		: lock(), name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
 		  parent(), prev(), firstChild(), lastChild(), next() {
-	const Proc *p = pid != INVALID_PID ? Proc::getByPid(pid) : NULL;
 	if(this == nullptr || name == NULL || nameLen > MAX_NAME_LEN) {
 		success = false;
 		return;
 	}
 
 	nameLen = strlen(name);
-	uid = p ? p->getEUid() : ROOT_UID;
-	gid = p ? p->getEGid() : ROOT_GID;
+	const Proc *p = pid != INVALID_PID ? Proc::getRef(pid) : NULL;
+	if(p) {
+		uid = p->getEUid();
+		gid = p->getEGid();
+		Proc::relRef(p);
+	}
+	else {
+		uid = ROOT_UID;
+		gid = ROOT_GID;
+	}
 }
 
 const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
@@ -159,29 +166,35 @@ const char *VFSNode::getPath() const {
 
 int VFSNode::chmod(pid_t pid,mode_t m) {
 	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
 	/* root can chmod everything; others can only chmod their own files */
-	if(p && p->getEUid() != uid && p->getEUid() != ROOT_UID)
-		res = -EPERM;
-	else
+	if(p) {
+		if(p->getEUid() != uid && p->getEUid() != ROOT_UID)
+			res = -EPERM;
+		Proc::relRef(p);
+	}
+	if(res == 0)
 		mode = (mode & ~MODE_PERM) | (m & MODE_PERM);
 	return res;
 }
 
 int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getByPid(pid);
-	/* root can chown everything; others can only chown their own files */
-	if(p && p->getEUid() != uid && p->getEUid() != ROOT_UID)
-		res = -EPERM;
-	else if(p && p->getEUid() != ROOT_UID) {
-		/* users can't change the owner */
-		if(nuid != (uid_t)-1 && nuid != uid && nuid != p->getEUid())
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
+	if(p) {
+		/* root can chown everything; others can only chown their own files */
+		if(p->getEUid() != uid && p->getEUid() != ROOT_UID)
 			res = -EPERM;
-		/* users can change the group only to a group they're a member of */
-		else if(ngid != (gid_t)-1 && ngid != gid && ngid != p->getEGid() &&
-				!Groups::contains(p->getPid(),ngid))
-			res = -EPERM;
+		else if(p->getEUid() != ROOT_UID) {
+			/* users can't change the owner */
+			if(nuid != (uid_t)-1 && nuid != uid && nuid != p->getEUid())
+				res = -EPERM;
+			/* users can change the group only to a group they're a member of */
+			else if(ngid != (gid_t)-1 && ngid != gid && ngid != p->getEGid() &&
+					!Groups::contains(p->getPid(),ngid))
+				res = -EPERM;
+		}
+		Proc::relRef(p);
 	}
 
 	if(res == 0) {

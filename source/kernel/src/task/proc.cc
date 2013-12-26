@@ -84,14 +84,16 @@ Proc *ProcBase::getRef(pid_t pid) {
 void ProcBase::relRef(const Proc *p) {
 	SpinLock::acquire(&refLock);
 	if(--p->refs == 0) {
-		/* free the last resources and remove us from vfs */
-		Cache::free((char*)p->command);
-		VFS::removeProcess(p->pid);
-		/* remove and free */
+		/* remove it first and release the spinlock */
 		remove(const_cast<Proc*>(p));
+		SpinLock::release(&refLock);
+
+		/* now, nobody can get the process anymore, so we can destroy everything without worrying */
+		Cache::free((char*)p->command);
 		Cache::free(const_cast<Proc*>(p));
 	}
-	SpinLock::release(&refLock);
+	else
+		SpinLock::release(&refLock);
 }
 
 void ProcBase::init() {
@@ -704,6 +706,9 @@ void ProcBase::kill(pid_t pid) {
 	}
 	procLock.up();
 	childLock.up();
+
+	/* now its gone, so remove it from VFS */
+	VFS::removeProcess(p->pid);
 
 	/* unref and release. if there is nobody else, we'll destroy everything */
 	SpinLock::acquire(&refLock);

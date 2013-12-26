@@ -27,10 +27,6 @@ typedef int vmreg_t;
 typedef uintptr_t frameno_t;
 typedef uint klock_t;
 
-#ifdef __eco32__
-#define nullptr					0
-#endif
-
 #ifndef NDEBUG
 #define DEBUGGING 1
 #endif

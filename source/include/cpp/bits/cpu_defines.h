@@ -19,11 +19,4 @@
 
 #pragma once
 
-#ifdef __eco32__
-#	define constexpr
-#	define nullptr		NULL
-#	define noexcept	throw()
-#	define CASTOP_EXPLICIT
-#else
-#	define CASTOP_EXPLICIT explicit
-#endif
+#define CASTOP_EXPLICIT explicit

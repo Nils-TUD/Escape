@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef __eco32__
 #include <esc/common.h>
 #include <esc/test.h>
 #include <stdlib.h>
@@ -137,5 +136,3 @@ static void test_basic(void) {
 
 	test_caseSucceeded();
 }
-
-#endif

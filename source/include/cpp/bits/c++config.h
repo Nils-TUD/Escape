@@ -90,7 +90,7 @@
 
 // Macro for constexpr, to support in mixed 03/0x mode.
 #ifndef _GLIBCXX_CONSTEXPR
-# if defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(__eco32__)
+# if defined(__GXX_EXPERIMENTAL_CXX0X__)
 #  define _GLIBCXX_CONSTEXPR constexpr
 #  define _GLIBCXX_USE_CONSTEXPR constexpr
 # else
@@ -152,12 +152,10 @@
 */
 namespace std
 {
-#ifndef __eco32__
   typedef __SIZE_TYPE__ 	size_t;
-#endif
   typedef __PTRDIFF_TYPE__	ptrdiff_t;
 
-#if defined(__GXX_EXPERIMENTAL_CXX0X__) && !defined(__eco32__)
+#if defined(__GXX_EXPERIMENTAL_CXX0X__)
   typedef decltype(nullptr)	nullptr_t;
 #endif
 }

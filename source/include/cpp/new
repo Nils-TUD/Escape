@@ -91,22 +91,6 @@ namespace std
  *  does nothing) may not be replaced by a user's program.
 */
 
-// workaround for eco32: since we use an older gcc version, it is slightly different. this fixes
-// the problem of non-existent size_t in std:: or ambiguous typedefs of size_t.
-#ifdef __eco32__
-void* operator new(size_t) throw (std::bad_alloc);
-void* operator new[](size_t) throw (std::bad_alloc);
-void operator delete(void*) throw();
-void operator delete[](void*) throw();
-void* operator new(size_t, const std::nothrow_t&) throw();
-void* operator new[](size_t, const std::nothrow_t&) throw();
-void operator delete(void*, const std::nothrow_t&) throw();
-void operator delete[](void*, const std::nothrow_t&) throw();
-
-// Default placement versions of operator new.
-inline void* operator new(size_t, void* __p) throw() { return __p; }
-inline void* operator new[](size_t, void* __p) throw() { return __p; }
-#else
 void* operator new(std::size_t) throw (std::bad_alloc);
 void* operator new[](std::size_t) throw (std::bad_alloc);
 void operator delete(void*) throw();
@@ -119,7 +103,6 @@ void operator delete[](void*, const std::nothrow_t&) throw();
 // Default placement versions of operator new.
 inline void* operator new(std::size_t, void* __p) throw() { return __p; }
 inline void* operator new[](std::size_t, void* __p) throw() { return __p; }
-#endif
 
 // Default placement versions of operator delete.
 inline void  operator delete  (void*, void*) throw() { }

@@ -55,12 +55,7 @@
 #define A_INIT					__attribute__((section(".ctors")))
 #define A_UNUSED				__attribute__((unused))
 #define A_INLINE				__attribute__((inline))
-/* the gcc version used for eco32 doesn't support that yet */
-#ifndef __eco32__
-#	define A_UNREACHED			__builtin_unreachable()
-#else
-#	define A_UNREACHED
-#endif
+#define A_UNREACHED				__builtin_unreachable()
 #define A_REGPARM(x)			__attribute__((regparm(x)))
 
 #ifdef __cplusplus

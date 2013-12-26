@@ -31,9 +31,7 @@ extern sTestModule tModBintree;
 extern sTestModule tModMap;
 extern sTestModule tModCmdArgs;
 extern sTestModule tModSmartPtr;
-#ifndef __eco32__
 extern sTestModule tModTuple;
-#endif
 
 int main(void) {
 	test_register(&tModString);
@@ -46,9 +44,7 @@ int main(void) {
 	test_register(&tModMap);
 	test_register(&tModCmdArgs);
 	test_register(&tModSmartPtr);
-#ifndef __eco32__
 	test_register(&tModTuple);
-#endif
 	test_start();
 	/* flush stdout because cout will be closed before stdout is flushed by exit(). thus, that flush
 	 * will fail because the file has already been closed. */

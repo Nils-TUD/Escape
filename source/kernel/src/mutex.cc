@@ -29,9 +29,11 @@ void Mutex::down() {
 #if DEBUG_LOCKS
 		if(!Util::IsPanicStarted())
 #endif
+		/* add resource now since we'll change the global state of the semaphore (decreasing its
+		 * value to indicate that we're waiting). so, we can't terminate then. */
+		t->addResource();
 		Semaphore::down();
 		holder = t->getTid();
-		t->addResource();
 	}
 	depth++;
 }
@@ -49,8 +51,8 @@ bool Mutex::tryDown() {
 	bool res = Semaphore::tryDown();
 #endif
 	if(res) {
-		holder = t->getTid();
 		t->addResource();
+		holder = t->getTid();
 		depth++;
 	}
 	return res;

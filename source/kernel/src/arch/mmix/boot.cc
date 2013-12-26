@@ -166,7 +166,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
-		while(VFSNode::request(argv[1],&node,NULL,VFS_NOACCESS) < 0) {
+		while(VFSNode::request(argv[1],&node,NULL,VFS_NOACCESS,0) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make

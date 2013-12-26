@@ -381,7 +381,7 @@ void ThreadBase::printShort(OStream &os) const {
 }
 
 void ThreadBase::print(OStream &os) const {
-	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getProgram());
+	os.writef("Thread %d: (process %d:%s)\n",tid,proc->getPid(),proc->getCommand());
 	os.pushIndent();
 	os.writef("References = %d\n",refs);
 	os.writef("Flags = %#x\n",flags);
@@ -398,7 +398,7 @@ void ThreadBase::print(OStream &os) const {
 	}
 	os.writef("\n");
 	os.writef("Priority = %d\n",priority);
-	os.writef("Runtime = %Lums\n",getRuntime());
+	os.writef("Runtime = %Luus\n",getRuntime());
 	os.writef("Blocked = %Lu\n",stats.blocked);
 	os.writef("Scheduled = %lu\n",stats.schedCount);
 	os.writef("Syscalls = %lu\n",stats.syscalls);

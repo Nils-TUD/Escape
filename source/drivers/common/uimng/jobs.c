@@ -35,6 +35,7 @@ typedef struct {
 	int vtermPid;
 } sJob;
 
+static sJob *jobs_get(int id);
 static void jobs_terminate(int pid);
 
 static tULock lck;
@@ -83,14 +84,22 @@ int jobs_getId(void) {
 	return id;
 }
 
-void jobs_add(int id,int shPid,int vtermPid) {
+bool jobs_exists(int id) {
+	locku(&lck);
+	sJob *job = jobs_get(id);
+	bool res = job != NULL;
+	unlocku(&lck);
+	return res;
+}
+
+void jobs_add(int id,int vtermPid) {
 	locku(&lck);
 	sJob *job = (sJob*)malloc(sizeof(sJob));
 	if(!job)
 		goto error;
 
 	job->id = id;
-	job->shPid = shPid;
+	job->shPid = -1;
 	job->vtermPid = vtermPid;
 	if(!sll_append(&jobs,job))
 		goto error;
@@ -100,6 +109,23 @@ void jobs_add(int id,int shPid,int vtermPid) {
 error:
 	printe("Unable to add job");
 	unlocku(&lck);
+}
+
+void jobs_setLoginPid(int id,int pid) {
+	locku(&lck);
+	sJob *job = jobs_get(id);
+	if(job)
+		job->shPid = pid;
+	unlocku(&lck);
+}
+
+static sJob *jobs_get(int id) {
+	for(sSLNode *n = sll_begin(&jobs); n != NULL; n = n->next) {
+		sJob *job = (sJob*)n->data;
+		if(job->id == id)
+			return job;
+	}
+	return NULL;
 }
 
 static void jobs_terminate(int pid) {

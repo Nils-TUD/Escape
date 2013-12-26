@@ -102,19 +102,6 @@ ssize_t screens_getModes(sScreenMode *modes,size_t n) {
 }
 
 int screens_setMode(sClient *cli,int type,int mid,const char *shm) {
-	if(cli->screen) {
-		close(cli->screenFd);
-		munmap(cli->screenShm);
-		free(cli->header);
-		free(cli->screenShmName);
-		cli->screen = NULL;
-	}
-	cli->screen = NULL;
-	cli->screenMode = NULL;
-	cli->screenShm = NULL;
-	cli->screenShmName = NULL;
-	cli->header = NULL;
-
 	int res = -EINVAL;
 	sScreenMode *mode;
 	sScreen *scr;
@@ -122,40 +109,54 @@ int screens_setMode(sClient *cli,int type,int mid,const char *shm) {
 		goto error;
 
 	/* open screen */
-	cli->type = type;
-	cli->screenFd = open(scr->name,IO_MSGS);
-	if(cli->screenFd < 0) {
-		res = cli->screenFd;
+	int fd = open(scr->name,IO_MSGS);
+	if(fd < 0) {
+		res = fd;
 		goto error;
 	}
 
 	/* create header-line */
-	cli->header = (char*)malloc(header_getSize(mode,type,
+	char *header = (char*)malloc(header_getSize(mode,type,
 		type == VID_MODE_TYPE_TUI ? mode->cols : mode->width));
-	if(cli->header == NULL) {
+	if(header == NULL) {
 		res = -ENOMEM;
 		goto errorClose;
 	}
 
 	/* open shm */
-	res = screen_joinShm(mode,&cli->screenShm,shm,type);
+	char *newShm;
+	res = screen_joinShm(mode,&newShm,shm,type);
 	if(res < 0)
 		goto errorHeader;
 
 	/* set screen mode */
-	if((res = screen_setMode(cli->screenFd,cli->type,mid,shm,true)) < 0)
+	if((res = screen_setMode(fd,type,mid,shm,true)) < 0)
 		goto errorUnmap;
+
+	/* destroy old stuff */
+	if(cli->screen) {
+		close(cli->screenFd);
+		munmap(cli->screenShm);
+		free(cli->header);
+		free(cli->screenShmName);
+	}
+
+	/* store new stuff */
+	cli->type = type;
+	cli->screenFd = fd;
 	cli->screen = scr;
 	cli->screenMode = mode;
+	cli->screenShm = newShm;
 	cli->screenShmName = strdup(shm);
+	cli->header = header;
 	return 0;
 
 errorUnmap:
-	munmap(cli->screenShm);
+	munmap(newShm);
 errorHeader:
-	free(cli->header);
+	free(header);
 errorClose:
-	close(cli->screenFd);
+	close(fd);
 error:
 	return res;
 }

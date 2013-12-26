@@ -24,4 +24,6 @@
 void jobs_init(void);
 void jobs_wait(void);
 int jobs_getId(void);
-void jobs_add(int id,int shPid,int vtermPid);
+bool jobs_exists(int id);
+void jobs_add(int id,int vtermPid);
+void jobs_setLoginPid(int id,int pid);

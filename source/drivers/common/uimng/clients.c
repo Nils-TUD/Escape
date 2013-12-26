@@ -213,12 +213,12 @@ void cli_detach(int id) {
 			shouldSwitch = true;
 		}
 		idx2cli[clients[id]->idx] = NULL;
-		clients[id] = NULL;
 		cliCount--;
 		/* do that here because we need to remove us from the list first */
 		if(shouldSwitch)
 			cli_next();
 	}
+	clients[id] = NULL;
 }
 
 void cli_remove(int id) {

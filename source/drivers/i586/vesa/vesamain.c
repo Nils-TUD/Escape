@@ -68,7 +68,6 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int ty
 		sVESAScreen *scr = vesascr_request(minfo);
 		if(!scr)
 			return -EFAULT;
-		vesascr_reset(scr,type);
 
 		/* set this mode */
 		if(switchMode)
@@ -81,6 +80,8 @@ static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int ty
 				vesascr_release(scr);
 				return res;
 			}
+			/* it worked; reset screen and store new stuff */
+			vesascr_reset(scr,type);
 			client->mode = modes + mid;
 			client->data = scr;
 		}

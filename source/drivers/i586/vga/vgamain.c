@@ -63,8 +63,8 @@ static int vga_setMode(sTUIClient *client,const char *shmname,int mid,int type,b
 		regs.ax |= 0x80;
 		res = vm86int(0x10,&regs,NULL);
 		if(res < 0) {
-			printe("Unable to set vga-mode. Disabling BIOS-calls!");
-			usebios = false;
+			printe("Unable to set vga-mode");
+			return res;
 		}
 	}
 

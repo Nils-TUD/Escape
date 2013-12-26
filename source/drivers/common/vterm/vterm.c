@@ -89,8 +89,10 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 
 	/* set video mode */
 	res = vt_setVideoMode(vterm,mode.id);
-	if(res < 0)
+	if(res < 0) {
 		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
+		return false;
+	}
 	return true;
 }
 
@@ -146,8 +148,7 @@ static int vt_doSetMode(sVTerm *vt,const char *shmname,sScreenMode *mode) {
 		return res;
 	res = screen_setMode(vt->uimng,VID_MODE_TYPE_TUI,mode->id,shmname,true);
 	if(res < 0) {
-		munmap(scrShm);
-		shm_unlink(shmname);
+		screen_destroyShm(mode,scrShm,shmname,VID_MODE_TYPE_TUI);
 		return res;
 	}
 	return 0;
@@ -157,16 +158,31 @@ int vt_setVideoMode(sVTerm *vt,int mode) {
 	ssize_t res;
 	for(size_t i = 0; i < modeCount; i++) {
 		if(modes[i].id == mode) {
-			/* destroy current stuff */
+			/* rename old shm as a backup */
+			char *scrShmTmp = scrShm;
+			char tmpname[32];
 			if(scrShm) {
-				munmap(scrShm);
-				shm_unlink(vt->name);
+				snprintf(tmpname,sizeof(tmpname),"%s-tmp",vt->name);
+				if((res = shm_rename(vt->name,tmpname)) < 0)
+					return res;
 			}
 
 			/* try to set new mode */
 			res = vt_doSetMode(vt,vt->name,modes + i);
-			if(res < 0)
+			if(res < 0) {
+				scrShm = scrShmTmp;
+				if(scrShm) {
+					if(shm_rename(tmpname,vt->name) < 0)
+						error("Unable to restore old mode by renaming; exiting");
+				}
 				return res;
+			}
+
+			if(scrShmTmp) {
+				/* the new mode is set, so destroy the old stuff. we have to re-set the mode anyway if
+				 * something fails below */
+				screen_destroyShm(curMode,scrShmTmp,tmpname,curMode->type);
+			}
 
 			/* resize vterm if necessary */
 			if(vt->cols != modes[i].cols || vt->rows != modes[i].rows) {

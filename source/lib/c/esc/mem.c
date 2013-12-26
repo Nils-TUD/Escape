@@ -58,6 +58,14 @@ int shm_open(const char *name,int oflag,mode_t mode) {
 	return fd;
 }
 
+int shm_rename(const char *old,const char *newName) {
+	char pathOld[MAX_PATH_LEN];
+	char pathNew[MAX_PATH_LEN];
+	snprintf(pathOld,sizeof(pathOld),"/system/shm/%s",old);
+	snprintf(pathNew,sizeof(pathNew),"/system/shm/%s",newName);
+	return rename(pathOld,pathNew);
+}
+
 int shm_unlink(const char *name) {
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/system/shm/%s",name);

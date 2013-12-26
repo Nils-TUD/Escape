@@ -73,7 +73,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 	int mngPid = fork();
 	if(mngPid < 0)
-		goto error;
+		goto errorFork;
 	if(mngPid == 0) {
 		/* close all but stdin, stdout, stderr */
 		int max = sysconf(CONF_MAX_FDS);
@@ -85,17 +85,22 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 		error("exec with %s failed",mng);
 	}
 
+	jobs_add(id,mngPid);
+
 	/* TODO not good */
 	int fd;
 	while((fd = open(path,IO_MSGS)) < 0) {
 		if(fd != -ENOENT)
 			printe("Unable to open '%s'",path);
+		if(!jobs_exists(id))
+			goto errorOpen;
 		sleep(20);
 	}
+	close(fd);
 
 	int loginPid = fork();
 	if(loginPid < 0)
-		goto error;
+		goto errorFork;
 	if(loginPid == 0) {
 		/* close all; login will open different streams */
 		int max = sysconf(CONF_MAX_FDS);
@@ -110,12 +115,13 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 		error("exec with %s failed",login);
 	}
 
-	jobs_add(id,loginPid,mngPid);
+	jobs_setLoginPid(id,loginPid);
 	unlocku(&lck);
 	return;
 
-error:
+errorFork:
 	printe("fork failed");
+errorOpen:
 	unlocku(&lck);
 }
 

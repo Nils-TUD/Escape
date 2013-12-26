@@ -62,8 +62,11 @@ static int screen_openShm(sScreenMode *mode,char **addr,const char *name,int typ
 		size = mode->width * (mode->height + mode->guiHeaderSize) * (mode->bitsPerPixel / 8);
 	*addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	close(fd);
-	if(*addr == NULL)
+	if(*addr == NULL) {
+		if(flags & IO_CREATE)
+			shm_unlink(name);
 		return -errno;
+	}
 	if(type == VID_MODE_TYPE_TUI)
 		*addr += mode->tuiHeaderSize * mode->cols * 2;
 	else

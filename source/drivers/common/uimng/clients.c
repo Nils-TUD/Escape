@@ -123,7 +123,8 @@ void cli_switchTo(size_t idx) {
 }
 
 void cli_send(const void *msg,size_t size) {
-	if(active == MAX_CLIENT_FDS)
+	/* if the client is not attached yet, don't send him messages */
+	if(active == MAX_CLIENT_FDS || clients[active]->idx == -1)
 		return;
 	send(clients[active]->id,MSG_UIM_EVENT,msg,size);
 }

@@ -63,10 +63,6 @@ int input_thread(void *arg) {
 	if(uimng_attach(uiminFd,in->uimngId) < 0)
 		error("Unable to attach to uimanager");
 
-	/* now that we're attached, set the desired mode */
-	if(screen_setMode(in->uimngFd,VID_MODE_TYPE_GUI,in->mode,in->shmname,true) < 0)
-		error("Unable to set mode");
-
 	/* read from uimanager and handle the keys */
 	while(1) {
 		sUIMData uiEvent;

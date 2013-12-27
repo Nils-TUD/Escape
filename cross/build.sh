@@ -150,11 +150,31 @@ if $BUILD_GCC; then
 
 	# libgcc (only i586 supports dynamic linking)
 	if [ "$ARCH" = "i586" ]; then
-		# for libgcc, we need crt*S.o and a libc. they don't need to do something useful, but at
-		# least they have to be present.
+		# for libgcc, we need crt*S.o and a libc. crt1S.o and crtnS.o need to be working. the others
+		# don't need to do something useful, but at least they have to be present.
 		TMPCRT0=`mktemp`
 		TMPCRT1=`mktemp`
 		TMPCRTN=`mktemp`
+		
+		# we need the function prologs and epilogs. otherwise the INIT entry in the dynamic section
+		# won't be created (and the init- and fini-sections don't work).
+		echo ".section .init" >> $TMPCRT1
+		echo ".global _init" >> $TMPCRT1
+		echo "_init:" >> $TMPCRT1
+		echo "	push	%ebp" >> $TMPCRT1
+		echo "	mov		%esp,%ebp" >> $TMPCRT1
+		echo ".section .fini" >> $TMPCRT1
+		echo ".global _fini" >> $TMPCRT1
+		echo "_fini:" >> $TMPCRT1
+		echo "	push	%ebp" >> $TMPCRT1
+		echo "	mov		%esp,%ebp" >> $TMPCRT1
+
+		echo ".section .init" >> $TMPCRTN
+		echo "	leave" >> $TMPCRTN
+		echo "	ret" >> $TMPCRTN
+		echo ".section .fini" >> $TMPCRTN
+		echo "	leave" >> $TMPCRTN
+		echo "	ret" >> $TMPCRTN
 
 		# assemble them
 		$TARGET-as -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0 || exit 1

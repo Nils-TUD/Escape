@@ -79,7 +79,7 @@ namespace std {
 		pointer get() const noexcept {
 			return _ptr;
 		}
-		CASTOP_EXPLICIT operator bool() const noexcept {
+		explicit operator bool() const noexcept {
 			return get() != nullptr;
 		}
 
@@ -145,7 +145,7 @@ namespace std {
 		pointer get() const noexcept {
 			return _ptr;
 		}
-		CASTOP_EXPLICIT operator bool() const noexcept {
+		explicit operator bool() const noexcept {
 			return get() != nullptr;
 		}
 

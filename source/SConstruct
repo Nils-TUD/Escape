@@ -23,7 +23,10 @@ env = Environment(
 			+ ' -Wmissing-declarations -Wno-long-long',
 	ASFLAGS = '-Wa,--warn -DIN_ASM',
 	ENV = {'PATH' : crossdir + "/bin:" + os.environ['PATH']},
-	CPPPATH = ['#include', '#include/cpp'],
+	CPPPATH = [
+		'#include', '#include/cpp',
+		crossdir + '/include/c++/' + crossver, crossdir + '/include/c++/' + crossver + '/' + cross
+	],
 	CXX = cross + '-g++',
 	LD = cross + '-ld',
 	AS = cross + '-as',

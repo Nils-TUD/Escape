@@ -291,7 +291,7 @@ namespace std {
 		/**
 		 * @return true if this smart_ptr is not empty
 		 */
-		CASTOP_EXPLICIT operator bool() const noexcept {
+		explicit operator bool() const noexcept {
 			return get() != nullptr;
 		}
 

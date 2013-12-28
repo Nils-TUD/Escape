@@ -32,6 +32,7 @@ typedef bool (*fWriteBlocks)(void *h,const void *buffer,size_t start,size_t bloc
 typedef struct sCBlock {
 	struct sCBlock *prev;
 	struct sCBlock *next;
+	struct sCBlock *hnext;
 	size_t blockNo;
 	ushort dirty;
 	ushort refs;
@@ -46,10 +47,13 @@ typedef struct {
 	size_t blockSize;
 	fReadBlocks read;
 	fWriteBlocks write;
-	sCBlock *usedBlocks;
+	sCBlock **hashmap;
 	sCBlock *oldestBlock;
+	sCBlock *newestBlock;
 	sCBlock *freeBlocks;
 	sCBlock *blockCache;
+	void *blockmem;
+	ulong blockshm;
 	size_t hits;
 	size_t misses;
 } sBlockCache;
@@ -58,8 +62,9 @@ typedef struct {
  * Inits the block-cache
  *
  * @param c the block-cache
+ * @param fd the file descriptor for the disk device
  */
-void bcache_init(sBlockCache *c);
+void bcache_init(sBlockCache *c,int fd);
 
 /**
  * Destroyes the given cache

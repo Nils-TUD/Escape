@@ -21,12 +21,14 @@
 #include <esc/debug.h>
 #include <esc/thread.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 
 #include "blockcache.h"
 #include "threadpool.h"
 
 #define ALLOC_LOCK	0xF7180000
+#define HASH_SIZE	256
 
 /**
  * Aquires the tpool_lock, depending on <mode>, for the given block
@@ -43,24 +45,32 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 /**
  * Fetches a block-cache-entry
  */
-static sCBlock *bcache_getBlock(sBlockCache *c);
+static sCBlock *bcache_getBlock(sBlockCache *c,block_t blockNo);
 
-void bcache_init(sBlockCache *c) {
+void bcache_init(sBlockCache *c,int fd) {
 	size_t i;
 	sCBlock *bentry;
-	c->usedBlocks = NULL;
+	c->hashmap = (sCBlock**)calloc(HASH_SIZE,sizeof(sCBlock*));
+	assert(c->hashmap != NULL);
 	c->freeBlocks = NULL;
 	c->oldestBlock = NULL;
-	c->blockCache = (sCBlock*)malloc(c->blockCacheSize * sizeof(sCBlock));
-	vassert(c->blockCache != NULL,"Unable to alloc mem for blockcache");
+	c->newestBlock = NULL;
+	if(sharebuf(fd,c->blockCacheSize * c->blockSize,&c->blockmem,&c->blockshm) < 0) {
+		if(c->blockmem == NULL)
+			error("Unable to create block cache");
+		printe("Unable to share buffer with disk driver");
+	}
+	c->blockCache = malloc(c->blockCacheSize * sizeof(sCBlock));
+	assert(c->blockCache != NULL);
 	bentry = c->blockCache;
 	for(i = 0; i < c->blockCacheSize; i++) {
 		bentry->blockNo = 0;
-		bentry->buffer = NULL;
+		bentry->buffer = (char*)c->blockmem + i * c->blockSize;
 		bentry->dirty = false;
 		bentry->refs = 0;
 		bentry->prev = (i < c->blockCacheSize - 1) ? bentry + 1 : NULL;
 		bentry->next = c->freeBlocks;
+		bentry->hnext = NULL;
 		c->freeBlocks = bentry;
 		bentry++;
 	}
@@ -69,14 +79,16 @@ void bcache_init(sBlockCache *c) {
 }
 
 void bcache_destroy(sBlockCache *c) {
-	c->usedBlocks = NULL;
 	c->freeBlocks = NULL;
 	c->oldestBlock = NULL;
+	c->newestBlock = NULL;
+	destroybuf(c->blockmem,c->blockshm);
+	free(c->hashmap);
 	free(c->blockCache);
 }
 
 void bcache_flush(sBlockCache *c) {
-	sCBlock *bentry = c->usedBlocks;
+	sCBlock *bentry = c->newestBlock;
 	while(bentry != NULL) {
 		assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 		if(bentry->dirty) {
@@ -131,7 +143,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	/* search for the block. perhaps it's already in cache */
-	bentry = c->usedBlocks;
+	bentry = c->hashmap[blockNo % HASH_SIZE];
 	while(bentry != NULL) {
 		if(bentry->blockNo == blockNo) {
 			/* remove from list and put at the beginning of the usedlist because it was
@@ -146,26 +158,19 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 					bentry->next->prev = bentry->prev;
 				/* put at the beginning */
 				bentry->prev = NULL;
-				bentry->next = c->usedBlocks;
+				bentry->next = c->newestBlock;
 				bentry->next->prev = bentry;
-				c->usedBlocks = bentry;
+				c->newestBlock = bentry;
 			}
 			bcache_acquire(bentry,mode);
 			c->hits++;
 			return bentry;
 		}
-		bentry = bentry->next;
+		bentry = bentry->hnext;
 	}
 
 	/* init cached block */
-	block = bcache_getBlock(c);
-	if(block->buffer == NULL) {
-		block->buffer = malloc(c->blockSize);
-		if(block->buffer == NULL) {
-			assert(tpool_unlock(ALLOC_LOCK) == 0);
-			return NULL;
-		}
-	}
+	block = bcache_getBlock(c,blockNo);
 	block->blockNo = blockNo;
 	block->dirty = false;
 	block->refs = 0;
@@ -187,7 +192,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 	return block;
 }
 
-static sCBlock *bcache_getBlock(sBlockCache *c) {
+static sCBlock *bcache_getBlock(sBlockCache *c,block_t blockNo) {
 	sCBlock *block = c->freeBlocks;
 	if(block != NULL) {
 		/* remove from freelist and put in usedlist */
@@ -195,13 +200,17 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 		if(c->freeBlocks)
 			c->freeBlocks->prev = NULL;
 		/* block->prev is already NULL */
-		block->next = c->usedBlocks;
+		block->next = c->newestBlock;
 		if(block->next)
 			block->next->prev = block;
-		c->usedBlocks = block;
+		c->newestBlock = block;
 		/* update oldest */
 		if(c->oldestBlock == NULL)
 			c->oldestBlock = block;
+		/* insert into hashmap */
+		sCBlock **list = &c->hashmap[blockNo % HASH_SIZE];
+		block->hnext = *list;
+		*list = block;
 		return block;
 	}
 
@@ -210,12 +219,35 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 	assert(block->refs == 0);
 	c->oldestBlock = block->prev;
 	c->oldestBlock->next = NULL;
+	/* remove from hashmap */
+	bool diffhash = block->blockNo % HASH_SIZE != blockNo % HASH_SIZE;
+	if(diffhash) {
+		sCBlock **list = &c->hashmap[block->blockNo % HASH_SIZE];
+		sCBlock *b = *list, *p = NULL;
+		while(b != NULL) {
+			if(b == block) {
+				if(p)
+					p->hnext = b->hnext;
+				else
+					*list = b->hnext;
+				break;
+			}
+			p = b;
+			b = b->hnext;
+		}
+	}
 	/* put at beginning of usedlist */
 	block->prev = NULL;
-	block->next = c->usedBlocks;
+	block->next = c->newestBlock;
 	if(block->next)
 		block->next->prev = block;
-	c->usedBlocks = block;
+	c->newestBlock = block;
+	/* insert into hashmap */
+	if(diffhash) {
+		sCBlock **list = &c->hashmap[blockNo % HASH_SIZE];
+		block->hnext = *list;
+		*list = block;
+	}
 	/* if it is dirty we have to write it first to disk */
 	if(block->dirty) {
 		vassert(c->write != NULL,"Block %d dirty, but no write-function",block->blockNo);
@@ -229,7 +261,7 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 void bcache_printStats(FILE *f,sBlockCache *c) {
 	float hitrate;
 	size_t used = 0,dirty = 0;
-	sCBlock *bentry = c->usedBlocks;
+	sCBlock *bentry = c->newestBlock;
 	while(bentry != NULL) {
 		used++;
 		if(bentry->dirty)
@@ -254,7 +286,7 @@ void bcache_print(sBlockCache *c) {
 	size_t i = 0;
 	sCBlock *block;
 	printf("Used blocks:\n\t");
-	block = c->usedBlocks;
+	block = c->newestBlock;
 	while(block != NULL) {
 		if(++i % 8 == 0)
 			printf("\n\t");

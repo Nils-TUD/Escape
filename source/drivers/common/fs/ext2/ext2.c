@@ -86,9 +86,6 @@ void *ext2_init(const char *device,char **usedDev,int *errcode) {
 	 * super-block! */
 	e->blockCache.blockCacheSize = EXT2_BCACHE_SIZE;
 	e->blockCache.blockSize = EXT2_BLK_SIZE(e);
-	e->blockCache.freeBlocks = NULL;
-	e->blockCache.usedBlocks = NULL;
-	e->blockCache.oldestBlock = NULL;
 	e->blockCache.handle = e;
 	/* cast is ok, because the only difference is that ext2_rw_* receive a sExt2* as first argument
 	 * and read/write expect void* */
@@ -103,7 +100,7 @@ void *ext2_init(const char *device,char **usedDev,int *errcode) {
 
 	/* init caches */
 	ext2_icache_init(e);
-	bcache_init(&e->blockCache);
+	bcache_init(&e->blockCache,e->drvFds[0]);
 
 	/* report used device */
 	*usedDev = malloc(strlen(device) + 1);

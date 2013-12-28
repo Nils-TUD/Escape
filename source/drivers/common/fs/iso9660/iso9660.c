@@ -52,11 +52,7 @@ void *iso_init(const char *device,char **usedDev,int *errcode) {
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++)
 		iso->drvFds[i] = -1;
 	iso->blockCache.handle = iso;
-	iso->blockCache.blockCache = NULL;
 	iso->blockCache.blockCacheSize = ISO_BCACHE_SIZE;
-	iso->blockCache.freeBlocks = NULL;
-	iso->blockCache.usedBlocks = NULL;
-	iso->blockCache.oldestBlock = NULL;
 	/* cast is ok, because the only difference is that iso_rw_* receive a sISO9660* as first argument
 	 * and read/write expect void* */
 	iso->blockCache.read = (fReadBlocks)iso_rw_readBlocks;
@@ -142,7 +138,7 @@ static int iso_setup(const char *device,sISO9660 *iso) {
 	iso->blockCache.blockSize = ISO_BLK_SIZE(iso);
 
 	iso_direc_init(iso);
-	bcache_init(&iso->blockCache);
+	bcache_init(&iso->blockCache,iso->drvFds[0]);
 	return 0;
 }
 

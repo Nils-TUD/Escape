@@ -29,32 +29,6 @@
 #define MAX_MSG_SIZE				128
 #define MAX_MSGSTR_LEN				63
 
-/* cursors */
-#define CURSOR_DEFAULT				0
-#define CURSOR_RESIZE_L				1
-#define CURSOR_RESIZE_BR			2
-#define CURSOR_RESIZE_VERT			3
-#define CURSOR_RESIZE_BL			4
-#define CURSOR_RESIZE_R				5
-#define CURSOR_RESIZE_WIDTH			6
-
-/* the possible km-events to listen to; KE_EV_PRESSED, KE_EV_RELEASED and KE_EV_KEYCODE,
- * KE_EV_CHARACTER are mutually exclusive, each */
-#define KE_EV_PRESSED				1
-#define KE_EV_RELEASED				2
-#define KE_EV_KEYCODE				4
-#define KE_EV_CHARACTER				8
-
-/* tells the kernel for MSG_DEV_READ_RESP that it shouldn't use arg2 for setting data readable */
-#define READABLE_DONT_SET			2
-
-/* the modes */
-#define VID_MODE_TEXT				0
-#define VID_MODE_GRAPHICAL			1
-/* the mode types */
-#define VID_MODE_TYPE_TUI			1
-#define VID_MODE_TYPE_GUI			2
-
 /* == messages == */
 /* default response */
 #define MSG_DEF_RESPONSE			100000
@@ -72,6 +46,9 @@
 #define MSG_DEV_WRITE_RESP			100003
 #define MSG_DEV_CLOSE_RESP			100004
 #define MSG_DEV_SHFILE_RESP			100005
+
+/* tells the kernel for MSG_DEV_READ_RESP that it shouldn't use arg2 for setting data readable */
+#define READABLE_DONT_SET			2
 
 /* requests to fs */
 #define MSG_FS_OPEN					100
@@ -171,14 +148,28 @@
 
 #define MSG_DISK_GETSIZE			1200 /* get the size of a device */
 
-/* == responses == */
-/* fs */
 
 #define IS_DEVICE_MSG(id)			((id) == MSG_DEV_OPEN || \
 									 (id) == MSG_DEV_READ || \
 									 (id) == MSG_DEV_WRITE || \
 									 (id) == MSG_DEV_CLOSE || \
 									 (id) == MSG_DEV_SHFILE)
+
+/* cursors */
+#define CURSOR_DEFAULT				0
+#define CURSOR_RESIZE_L				1
+#define CURSOR_RESIZE_BR			2
+#define CURSOR_RESIZE_VERT			3
+#define CURSOR_RESIZE_BL			4
+#define CURSOR_RESIZE_R				5
+#define CURSOR_RESIZE_WIDTH			6
+
+/* the modes */
+#define VID_MODE_TEXT				0
+#define VID_MODE_GRAPHICAL			1
+/* the mode types */
+#define VID_MODE_TYPE_TUI			1
+#define VID_MODE_TYPE_GUI			2
 
 /* the data send from the keyboard */
 typedef struct {

@@ -17,31 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
+#include <esc/fsinterface.h>
+#include <fs/fsdev.h>
+#include <fs/mount.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#define MAX_PATH_LEN	64
-#define MAX_CMD_LEN		128
-#define MAX_PROG_COUNT	8
+#include "ext2.h"
 
-#define BL_DISK_ID		0
-#define BL_FS_ID		1
-#define BL_RTC_ID		2
-#define BL_K_ID			3
+int main(int argc,char *argv[]) {
+	char fspath[MAX_PATH_LEN];
+	if(argc != 3)
+		error("Usage: %s <wait> <devicePath>",argv[0]);
 
-/* a program we should load */
-struct LoadProg {
-	char path[MAX_PATH_LEN];
-	char command[MAX_PATH_LEN];
-	uint id;
-	uintptr_t start;
-	size_t size;
-};
+	/* build fs device name */
+	char *dev = strrchr(argv[2],'/');
+	if(!dev)
+		error("Invalid device path '%s'",argv[2]);
+	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
 
-struct BootInfo {
-	size_t progCount;
-	const LoadProg *progs;
-	size_t memSize;
-	size_t diskSize;
-};
+	printf("[ext2] Mounting '%s' at '/'\n",argv[2]);
+	fflush(stdout);
+
+	mount_init();
+	mount_addFS(ext2_getFS());
+	return fs_driverLoop(argv[2],fspath,FS_TYPE_EXT2);
+}

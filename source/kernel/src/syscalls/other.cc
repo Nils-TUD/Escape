@@ -51,6 +51,21 @@ int Syscalls::sysconf(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
+int Syscalls::sysconfstr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	int id = SYSC_ARG1(stack);
+	char *buf = (char*)SYSC_ARG2(stack);
+	size_t len = SYSC_ARG3(stack);
+
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buf,len)))
+		SYSC_ERROR(stack,-EINVAL);
+
+	const char *res = Config::getStr(id);
+	if(!res)
+		SYSC_ERROR(stack,-EINVAL);
+	strnzcpy(buf,res,len);
+	SYSC_RET1(stack,0);
+}
+
 int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t))))

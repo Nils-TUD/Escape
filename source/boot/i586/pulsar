@@ -4,15 +4,15 @@ create_cd $1/dist $1/cd.iso
 
 cat >$1/config-$ESC_MAC <<EOF
 root escape
-exec boot/escape
+exec boot/escape root=/dev/iso9660-romdisk
 load sbin/romdisk /dev/romdisk /system/mbmods/4
 load sbin/rtc /dev/rtc
-load sbin/fs /dev/fs /dev/romdisk iso9660
+load sbin/iso9660 /dev/iso9660-romdisk /dev/romdisk
 load sbin/pci /dev/pci
 load cd.iso
 EOF
 
-files="boot/escape sbin/romdisk sbin/rtc sbin/fs sbin/pci"
+files="boot/escape sbin/romdisk sbin/rtc sbin/iso9660 sbin/pci"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp cd.iso $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

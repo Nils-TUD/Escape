@@ -23,3 +23,7 @@
 long sysconf(int id) {
 	return syscall1(SYSCALL_GETCONF,id);
 }
+
+int sysconfstr(int id,char *buf,size_t len) {
+	return syscall3(SYSCALL_GETCONFSTR,id,(ulong)buf,len);
+}

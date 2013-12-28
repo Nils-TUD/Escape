@@ -1,0 +1,6 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg(
+	'sbin', target = 'iso9660', source = env.Glob('*.c'), force_static = True, LIBS = ['fs']
+)

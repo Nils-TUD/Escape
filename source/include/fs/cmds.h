@@ -20,28 +20,9 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/messages.h>
+#include <fs/mount.h>
 
-#define MAX_PATH_LEN	64
-#define MAX_CMD_LEN		128
-#define MAX_PROG_COUNT	8
-
-#define BL_DISK_ID		0
-#define BL_FS_ID		1
-#define BL_RTC_ID		2
-#define BL_K_ID			3
-
-/* a program we should load */
-struct LoadProg {
-	char path[MAX_PATH_LEN];
-	char command[MAX_PATH_LEN];
-	uint id;
-	uintptr_t start;
-	size_t size;
-};
-
-struct BootInfo {
-	size_t progCount;
-	const LoadProg *progs;
-	size_t memSize;
-	size_t diskSize;
-};
+sFSInst *cmds_getRoot(void);
+void cmds_setRoot(dev_t dev,sFSInst *fs);
+bool cmds_execute(int cmd,int fd,sMsg *msg,void *data);

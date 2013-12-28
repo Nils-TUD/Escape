@@ -158,6 +158,7 @@ private:
 	static int loadmods(Thread *t,IntrptStackFrame *stack);
 	static int debugc(Thread *t,IntrptStackFrame *stack);
 	static int sysconf(Thread *t,IntrptStackFrame *stack);
+	static int sysconfstr(Thread *t,IntrptStackFrame *stack);
 	static int tsctotime(Thread *t,IntrptStackFrame *stack);
 
 #ifdef __i386__

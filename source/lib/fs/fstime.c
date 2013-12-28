@@ -17,31 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
+#include <esc/driver.h>
+#include <fs/fstime.h>
+#include <stdio.h>
+#include <time.h>
 
-#define MAX_PATH_LEN	64
-#define MAX_CMD_LEN		128
-#define MAX_PROG_COUNT	8
+static int timeFd = -1;
 
-#define BL_DISK_ID		0
-#define BL_FS_ID		1
-#define BL_RTC_ID		2
-#define BL_K_ID			3
-
-/* a program we should load */
-struct LoadProg {
-	char path[MAX_PATH_LEN];
-	char command[MAX_PATH_LEN];
-	uint id;
-	uintptr_t start;
-	size_t size;
-};
-
-struct BootInfo {
-	size_t progCount;
-	const LoadProg *progs;
-	size_t memSize;
-	size_t diskSize;
-};
+time_t timestamp(void) {
+	sRTCInfo info;
+	/* open CMOS and read date */
+	if(timeFd < 0) {
+		/* not already open, so do it */
+		timeFd = open(TIME_DEVICE,IO_READ);
+		if(timeFd < 0)
+			return 0;
+	}
+	else {
+		/* seek back to beginning */
+		if(seek(timeFd,0,SEEK_SET) < 0)
+			return 0;
+	}
+	if(IGNSIGS(read(timeFd,&info,sizeof(info))) < 0)
+		return 0;
+	return mktime(&info.time);
+}

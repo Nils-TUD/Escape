@@ -31,12 +31,11 @@
 #include <sys/video.h>
 #include <sys/spinlock.h>
 #include <sys/cppsupport.h>
+#include <sys/config.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
 #include <errno.h>
-
-#define FS_PATH				"/dev/fs"
 
 klock_t VFSFS::fsChanLock;
 
@@ -367,7 +366,7 @@ int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
 		return -ENOMEM;
 	}
 
-	int err = VFS::openPath(pid,VFS_MSGS,0,FS_PATH,&chan->file);
+	int err = VFS::openPath(pid,VFS_MSGS,0,Config::getStr(Config::ROOT_DEVICE),&chan->file);
 	if(err < 0) {
 		Proc::relRef(p);
 		Cache::free(chan);

@@ -32,6 +32,7 @@ bool Config::doLog = true;
 bool Config::smp = true;
 bool Config::forcePIT = false;
 bool Config::forcePIC = false;
+char Config::rootDev[MAX_BPVAL_LEN + 1] = "";
 char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void Config::parseBootParams(int argc,const char *const *argv) {
@@ -57,6 +58,9 @@ void Config::parseBootParams(int argc,const char *const *argv) {
 const char *Config::getStr(int id) {
 	const char *res = NULL;
 	switch(id) {
+		case ROOT_DEVICE:
+			res = rootDev;
+			break;
 		case SWAP_DEVICE:
 			res = *swapDev ? swapDev : NULL;
 			break;
@@ -108,7 +112,9 @@ long Config::get(int id) {
 }
 
 void Config::set(const char *name,const char *value) {
-	if(strcmp(name,"swapdev") == 0)
+	if(strcmp(name,"root") == 0)
+		strcpy(rootDev,value);
+	else if(strcmp(name,"swapdev") == 0)
 		strcpy(swapDev,value);
 	else if(strcmp(name,"nolog") == 0)
 		doLog = false;

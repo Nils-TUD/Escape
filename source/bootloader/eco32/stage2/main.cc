@@ -21,7 +21,7 @@
 #include <esc/endian.h>
 #include <esc/elf.h>
 #include <sys/boot.h>
-#include "../../../drivers/common/fs/ext2/ext2.h"
+#include "../../../drivers/common/ext2/ext2.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -53,10 +53,10 @@ EXTERN_C BootInfo *bootload(size_t memSize);
 
 /* the tasks we should load */
 static LoadProg progs[MAX_PROG_COUNT] = {
-	{"/boot/escape","/boot/escape",BL_K_ID,0,0},
+	{"/boot/escape","/boot/escape root=/dev/ext2-hda1",BL_K_ID,0,0},
 	{"/sbin/disk","/sbin/disk /system/devices/disk",BL_DISK_ID,0,0},
 	{"/sbin/rtc","/sbin/rtc /dev/rtc",BL_RTC_ID,0,0},
-	{"/sbin/fs","/sbin/fs /dev/fs /dev/hda1 ext2",BL_FS_ID,0,0},
+	{"/sbin/ext2","/sbin/ext2 /dev/ext2-hda1 /dev/hda1",BL_FS_ID,0,0},
 };
 static BootInfo bootinfo;
 

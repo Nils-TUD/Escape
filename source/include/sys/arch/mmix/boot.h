@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#define MAX_PATH_LEN	32
+#define MAX_PATH_LEN	64
 #define MAX_CMD_LEN		128
 #define MAX_PROG_COUNT	8
 

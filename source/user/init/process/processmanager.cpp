@@ -23,6 +23,7 @@
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <esc/elf.h>
+#include <esc/conf.h>
 #include <vterm/vtctrl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -213,11 +214,15 @@ size_t ProcessManager::getBootModCount() const {
 }
 
 void ProcessManager::waitForFS() {
+	char rootDev[MAX_PATH_LEN];
+	if(sysconfstr(CONF_ROOT_DEVICE,rootDev,sizeof(rootDev)) < 0)
+		throw init_error("Unable to get root-device");
+
 	// wait for fs; we need it for exec
 	int fd;
 	int retries = 0;
 	do {
-		fd = open("/dev/fs",IO_READ | IO_WRITE);
+		fd = open(rootDev,IO_READ | IO_WRITE);
 		if(fd < 0)
 			yield();
 		retries++;

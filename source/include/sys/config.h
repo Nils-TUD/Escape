@@ -30,6 +30,7 @@ public:
 		TIMER_FREQ,
 		MAX_PROCS,
 		MAX_FDS,
+		ROOT_DEVICE,
 		SWAP_DEVICE,
 		LOG,
 		PAGESIZE,
@@ -73,5 +74,6 @@ private:
 	static bool smp;
 	static bool forcePIT;
 	static bool forcePIC;
+	static char rootDev[];
 	static char swapDev[];
 };

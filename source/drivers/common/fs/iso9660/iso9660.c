@@ -232,6 +232,7 @@ void iso_print(FILE *f,void *h) {
 	sISOVolDate *date;
 	fprintf(f,"\tIdentifier: %.5s\n",desc->identifier);
 	fprintf(f,"\tSize: %u bytes\n",desc->data.primary.volSpaceSize.littleEndian * ISO_BLK_SIZE(i));
+	fprintf(f,"\tBlocksize: %u bytes\n",ISO_BLK_SIZE(i));
 	fprintf(f,"\tSystemIdent: %.32s\n",desc->data.primary.systemIdent);
 	fprintf(f,"\tVolumeIdent: %.32s\n",desc->data.primary.volumeIdent);
 	date = &desc->data.primary.created;
@@ -308,7 +309,7 @@ void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer) {
 }
 
 void iso_dbg_printVolDesc(sISOVolDesc *desc) {
-	printf("VolumeDescriptor @ %x\n",desc);
+	printf("VolumeDescriptor @ %p\n",desc);
 	printf("	version: 0x%02x\n",desc->version);
 	printf("	identifier: %.5s\n",desc->identifier);
 	switch(desc->type) {

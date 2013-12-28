@@ -23,6 +23,7 @@
 #include <esc/mem.h>
 #include <esc/thread.h>
 #include <esc/io.h>
+#include <usergroup/group.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -322,6 +323,8 @@ static void regDrives(void) {
 		DISK_LOG("Drive 1, Partition 1: Unable to register device 'hda1'");
 	}
 	else {
+		if(chown("/dev/hda1",-1,GROUP_STORAGE) < 0)
+			error("Unable to set group for '%s'","/dev/hda1");
 		DISK_LOG("Registered device 'hda1' (device 1, partition 1)");
 		createVFSEntry("hda1",true);
 	}

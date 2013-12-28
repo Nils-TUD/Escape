@@ -22,6 +22,7 @@
 #include <esc/io.h>
 #include <esc/mem.h>
 #include <esc/messages.h>
+#include <usergroup/group.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -56,6 +57,8 @@ int main(int argc,char **argv) {
 	id = createdev("/dev/romdisk",0400,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'romdisk'");
+	if(chown("/dev/romdisk",-1,GROUP_STORAGE) < 0)
+		error("Unable to set group for '%s'","/dev/romdisk");
 
 	/* data is always available */
 	if(fcntl(id,F_SETDATA,true) < 0)

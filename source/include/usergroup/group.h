@@ -26,7 +26,7 @@
 #define MAX_GROUPNAME_LEN	31
 
 /* fixed because boot-modules can't use the fs and thus, can't read /etc/groups */
-#define GROUP_STORAGE		10
+#define GROUP_STORAGE		12
 
 typedef struct sGroup {
 	gid_t gid;

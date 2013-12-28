@@ -1048,7 +1048,7 @@ const char *VirtMem::getRegName(const VMRegion *vm) const {
 		name = vm->reg->getFile()->getPath();
 	else {
 		if(proc->getEntryPoint() >= vm->virt() && proc->getEntryPoint() < vm->virt() + vm->reg->getByteCount())
-			name = proc->getCommand();
+			name = proc->getProgram();
 		else
 			name = "???";
 	}

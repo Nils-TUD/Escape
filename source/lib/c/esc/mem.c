@@ -20,8 +20,12 @@
 #include <esc/common.h>
 #include <esc/mem.h>
 #include <esc/fsinterface.h>
+#include <esc/atomic.h>
+#include <esc/proc.h>
 #include <stdio.h>
 #include <errno.h>
+
+static long shmcnt = 0;
 
 /* just a convenience for the user which sets errno if the return-value is zero (not enough mem) */
 void *chgsize(ssize_t count) {
@@ -45,6 +49,19 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
 	if(res >= -200 && res < 0)
 		return NULL;
 	return (void*)res;
+}
+
+int pshm_create(int oflag,mode_t mode,ulong *name) {
+	*name = atomic_add(&shmcnt,+1);
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/system/processes/%d/shm/%ld",getpid(),*name);
+	return create(path,oflag | IO_CREATE,mode);
+}
+
+int pshm_unlink(ulong name) {
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"/system/processes/%d/shm/%ld",getpid(),name);
+	return unlink(path);
 }
 
 int shm_open(const char *name,int oflag,mode_t mode) {

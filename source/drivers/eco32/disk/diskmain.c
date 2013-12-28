@@ -28,10 +28,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 
 #define SECTOR_SIZE			512
 #define START_SECTOR		128		/* part 0 */
 #define MAX_RW_SIZE			(SECTOR_SIZE * 8)
+#define MAX_CLIENT_FD		64
 
 #define DISK_CTRL			0		/* control register */
 #define DISK_CNT			1		/* sector count register */
@@ -82,10 +84,11 @@ static void createVFSEntry(const char *name,bool isPart);
 static uint32_t *diskRegs;
 static uint32_t *diskBuf;
 static int drvId;
-static uint diskCap = 0;
-static uint partCap = 0;
+static ulong diskCap = 0;
+static ulong partCap = 0;
 static sMsg msg;
 static uint32_t buffer[MAX_RW_SIZE / sizeof(uint32_t)];
+static char *shbufs[MAX_CLIENT_FD];
 
 int main(int argc,char **argv) {
 	msgid_t mid;
@@ -112,7 +115,7 @@ int main(int argc,char **argv) {
 	if(diskCap == 0)
 		error("Disk not found");
 
-	DISK_LOG("Found disk with %u sectors (%u bytes)",diskCap / SECTOR_SIZE,diskCap);
+	DISK_LOG("Found disk with %lu sectors (%lu bytes)",diskCap / SECTOR_SIZE,diskCap);
 
 	/* detect and init all devices */
 	regDrives();
@@ -134,15 +137,33 @@ int main(int argc,char **argv) {
 		}
 		else {
 			switch(mid) {
+				case MSG_DEV_OPEN: {
+					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
+					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_DEV_SHFILE: {
+					size_t size = msg.args.arg1;
+					char *path = msg.str.s1;
+					assert(shbufs[fd] == NULL);
+					shbufs[fd] = joinbuf(path,size);
+					msg.args.arg1 = shbufs[fd] != NULL;
+					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_DEV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
+					ssize_t shmemoff = msg.args.arg3;
 					uint roffset = ROUND_DN(offset,SECTOR_SIZE);
 					uint rcount = ROUND_UP(count,SECTOR_SIZE);
+					void *buf = shmemoff == -1 ? (void*)buffer : shbufs[fd] + shmemoff;
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
-						if(rcount <= MAX_RW_SIZE) {
-							if(diskRead(buffer,START_SECTOR + roffset / SECTOR_SIZE,
+						if(shmemoff != -1 || rcount <= MAX_RW_SIZE) {
+							if(diskRead(buf,START_SECTOR + roffset / SECTOR_SIZE,
 									rcount / SECTOR_SIZE)) {
 								msg.data.arg1 = rcount;
 							}
@@ -150,21 +171,23 @@ int main(int argc,char **argv) {
 					}
 					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buffer,msg.data.arg1);
+					if(shmemoff == -1 && msg.args.arg1 > 0)
+						send(fd,MSG_DEV_READ_RESP,buf,msg.data.arg1);
 				}
 				break;
 
 				case MSG_DEV_WRITE: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
+					ssize_t shmemoff = msg.args.arg3;
 					uint roffset = ROUND_DN(offset,SECTOR_SIZE);
 					uint rcount = ROUND_UP(count,SECTOR_SIZE);
+					void *buf = shmemoff == -1 ? (void*)buffer : shbufs[fd] + shmemoff;
 					msg.args.arg1 = 0;
 					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
-						if(rcount <= MAX_RW_SIZE) {
-							if(IGNSIGS(receive(fd,&mid,buffer,rcount)) > 0) {
-								if(diskWrite(buffer,START_SECTOR + roffset / SECTOR_SIZE,
+						if(shmemoff != -1 || rcount <= MAX_RW_SIZE) {
+							if(shmemoff != -1 || IGNSIGS(receive(fd,&mid,buf,rcount)) > 0) {
+								if(diskWrite(buf,START_SECTOR + roffset / SECTOR_SIZE,
 										rcount / SECTOR_SIZE)) {
 									msg.args.arg1 = rcount;
 								}
@@ -181,9 +204,14 @@ int main(int argc,char **argv) {
 				}
 				break;
 
-				case MSG_DEV_CLOSE:
+				case MSG_DEV_CLOSE: {
+					if(shbufs[fd]) {
+						munmap(shbufs[fd]);
+						shbufs[fd] = NULL;
+					}
 					close(fd);
-					break;
+				}
+				break;
 
 				default:
 					msg.args.arg1 = -ENOTSUP;
@@ -288,7 +316,8 @@ static bool diskWait(void) {
 
 static void regDrives(void) {
 	createVFSEntry("hda",false);
-	drvId = createdev("/dev/hda1",0660,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE);
+	drvId = createdev("/dev/hda1",0660,DEV_TYPE_BLOCK,
+		DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(drvId < 0) {
 		DISK_LOG("Drive 1, Partition 1: Unable to register device 'hda1'");
 	}
@@ -312,12 +341,12 @@ static void createVFSEntry(const char *name,bool isPart) {
 
 	if(isPart) {
 		fprintf(f,"%-15s%d\n","Start:",START_SECTOR);
-		fprintf(f,"%-15s%d\n","Sectors:",(diskCap / SECTOR_SIZE) - START_SECTOR);
+		fprintf(f,"%-15s%ld\n","Sectors:",(diskCap / SECTOR_SIZE) - START_SECTOR);
 	}
 	else {
 		fprintf(f,"%-15s%s\n","Vendor:","THM");
 		fprintf(f,"%-15s%s\n","Model:","ECO32 Disk");
-		fprintf(f,"%-15s%d\n","Sectors:",diskCap / SECTOR_SIZE);
+		fprintf(f,"%-15s%ld\n","Sectors:",diskCap / SECTOR_SIZE);
 	}
 	fclose(f);
 }

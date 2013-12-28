@@ -20,9 +20,45 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/messages.h>
+#include <esc/mem.h>
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
+
+int sharebuf(int dev,size_t size,void **mem,ulong *name) {
+	/* create shm file */
+	*mem = NULL;
+	int fd = pshm_create(IO_READ | IO_WRITE,0666,name);
+	if(fd < 0)
+		return fd;
+
+	/* mmap it */
+	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	if(!addr) {
+		int res = -errno;
+		pshm_unlink(*name);
+		return res;
+	}
+
+	/* share it with device; if it doesn't work, we don't care here */
+	int res = sharefile(dev,addr);
+	*mem = addr;
+	return res;
+}
+
+void *joinbuf(const char *path,size_t size) {
+	int fd = open(path,IO_READ | IO_WRITE);
+	if(fd < 0)
+		return NULL;
+	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	close(fd);
+	return res;
+}
+
+void destroybuf(void *mem,ulong name) {
+	pshm_unlink(name);
+	munmap(mem);
+}
 
 bool isfile(const char *path) {
 	sFileInfo info;

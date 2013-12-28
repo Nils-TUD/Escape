@@ -42,7 +42,7 @@ extern klock_t waitLock;
 
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IXUSR | S_IRUSR | S_IWUSR,success), fd(-1),
-		  used(false), closed(false), curClient(), sendList(), recvList() {
+		  used(false), closed(false), shmem(NULL), shmemSize(0), curClient(), sendList(), recvList() {
 	if(!success)
 		return;
 
@@ -172,10 +172,17 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 	return sendList.length() + recvList.length();
 }
 
+static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,size_t bufsize) {
+	return shmem && (uintptr_t)buffer >= (uintptr_t)shmem &&
+		(uintptr_t)buffer + bufsize > (uintptr_t)buffer &&
+		(uintptr_t)buffer + bufsize <= (uintptr_t)shmem + shmsize;
+}
+
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	ssize_t res;
 	sArgsMsg msg;
 	Thread *t = Thread::getRunning();
+	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 
 	if((res = isSupported(DEV_READ)) < 0)
 		return res;
@@ -191,6 +198,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	/* send msg to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
+	msg.arg3 = useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1;
 	res = file->sendMsg(pid,MSG_DEV_READ,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
 		return res;
@@ -219,12 +227,15 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	if((long)msg.arg1 <= 0)
 		return msg.arg1;
 
-	/* read data */
-	t->addResource();
-	do
-		res = file->receiveMsg(pid,NULL,buffer,count,true);
-	while(res == -EINTR);
-	t->remResource();
+	res = msg.arg1;
+	if(!useshm) {
+		/* read data */
+		t->addResource();
+		do
+			res = file->receiveMsg(pid,NULL,buffer,count,true);
+		while(res == -EINTR);
+		t->remResource();
+	}
 	return res;
 }
 
@@ -232,6 +243,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	ssize_t res;
 	sArgsMsg msg;
 	Thread *t = Thread::getRunning();
+	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 
 	if((res = isSupported(DEV_WRITE)) < 0)
 		return res;
@@ -239,7 +251,8 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	/* send msg and data to driver */
 	msg.arg1 = offset;
 	msg.arg2 = count;
-	res = file->sendMsg(pid,MSG_DEV_WRITE,&msg,sizeof(msg),buffer,count);
+	msg.arg3 = useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1;
+	res = file->sendMsg(pid,MSG_DEV_WRITE,&msg,sizeof(msg),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
 
@@ -255,6 +268,42 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	t->remResource();
 	if(res < 0)
 		return res;
+	return msg.arg1;
+}
+
+int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
+	ssize_t res;
+	sStrMsg msg;
+	Thread *t = Thread::getRunning();
+
+	if(shmem != NULL)
+		return -EEXIST;
+	if((res = isSupported(DEV_SHFILE)) < 0)
+		return res;
+
+	/* send msg to driver */
+	msg.arg1 = size;
+	strnzcpy(msg.s1,path,sizeof(msg.s1));
+	res = file->sendMsg(pid,MSG_DEV_SHFILE,&msg,sizeof(msg),NULL,0);
+	if(res < 0)
+		return res;
+
+	/* read response */
+	t->addResource();
+	do {
+		msgid_t mid;
+		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		vassert(res < 0 || mid == MSG_DEV_SHFILE_RESP,"mid=%u, res=%zd, node=%s:%p",
+				mid,res,getPath(),this);
+	}
+	while(res == -EINTR);
+	t->remResource();
+	if(res < 0)
+		return res;
+	if((int)msg.arg1 < 0)
+		return msg.arg1;
+	shmem = cliaddr;
+	shmemSize = size;
 	return msg.arg1;
 }
 

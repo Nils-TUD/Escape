@@ -109,13 +109,14 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 73 */	{semop,				"semcrt",			1},
 	/* 74 */	{semdestroy,		"semdestroy",		1},
 	/* 75 */	{sendrecv,			"sendrecv",			4},
+	/* 76 */	{sharefile,			"sharefile",		2},
 #ifdef __i386__
-	/* 76 */	{reqports,			"reqports",   		2},
-	/* 77 */	{relports,			"relports",    		2},
-	/* 78 */	{vm86int,			"vm86int",    		4},
-	/* 79 */	{vm86start,			"vm86start",    	0},
+	/* 77 */	{reqports,			"reqports",   		2},
+	/* 78 */	{relports,			"relports",    		2},
+	/* 79 */	{vm86int,			"vm86int",    		4},
+	/* 80 */	{vm86start,			"vm86start",    	0},
 #else
-	/* 76 */	{debug,				"debug",    		0},
+	/* 77 */	{debug,				"debug",    		0},
 #endif
 };
 

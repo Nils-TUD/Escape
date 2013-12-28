@@ -96,6 +96,22 @@ public:
 		return node->getPath();
 	}
 	/**
+	 * Copies the path into <dst>.
+	 *
+	 * @param dst the destination
+	 * @param size the size of <dst>
+	 */
+	void getPathTo(char *dst,size_t size) const {
+		if(path) {
+			assert(devNo != VFS_DEV_NO);
+			strnzcpy(dst,path,size);
+		}
+		else {
+			assert(devNo == VFS_DEV_NO);
+			node->getPathTo(dst,size);
+		}
+	}
+	/**
 	 * @return the device number
 	 */
 	dev_t getDev() const {
@@ -211,6 +227,17 @@ public:
 	 * @return the number of written bytes (or < 0 if an error occurred)
 	 */
 	ssize_t receiveMsg(pid_t pid,msgid_t *id,void *data,size_t size,bool forceBlock);
+
+	/**
+	 * Shares a file with the device that hosts this channel.
+	 *
+	 * @param pid the process-id
+	 * @param path the path to the file
+	 * @param cliaddr the address where the client of this channel has mapped it
+	 * @param size the size of the mmap'd file
+	 * @return 0 on success
+	 */
+	int sharefile(pid_t pid,const char *path,void *cliaddr,size_t size);
 
 	/**
 	 * Closes this file. That means it calls Proc::closeFile() and decrements the reference-count

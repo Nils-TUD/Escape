@@ -64,29 +64,31 @@
 #define MSG_DEV_READ				51
 #define MSG_DEV_WRITE				52
 #define MSG_DEV_CLOSE				53
+#define MSG_DEV_SHFILE				54
 
 /* respones of devices */
 #define MSG_DEV_OPEN_RESP			100001
 #define MSG_DEV_READ_RESP			100002
 #define MSG_DEV_WRITE_RESP			100003
 #define MSG_DEV_CLOSE_RESP			100004
+#define MSG_DEV_SHFILE_RESP			100005
 
 /* requests to fs */
-#define MSG_FS_OPEN					54
-#define MSG_FS_READ					55
-#define MSG_FS_WRITE				56
-#define MSG_FS_CLOSE				57
-#define MSG_FS_STAT					58
-#define MSG_FS_SYNC					59
-#define MSG_FS_LINK					60
-#define MSG_FS_UNLINK				61
-#define MSG_FS_MKDIR				62
-#define MSG_FS_RMDIR				63
-#define MSG_FS_MOUNT				64
-#define MSG_FS_UNMOUNT				65
-#define MSG_FS_ISTAT				66
-#define MSG_FS_CHMOD				67
-#define MSG_FS_CHOWN				68
+#define MSG_FS_OPEN					100
+#define MSG_FS_READ					101
+#define MSG_FS_WRITE				102
+#define MSG_FS_CLOSE				103
+#define MSG_FS_STAT					104
+#define MSG_FS_SYNC					105
+#define MSG_FS_LINK					106
+#define MSG_FS_UNLINK				107
+#define MSG_FS_MKDIR				108
+#define MSG_FS_RMDIR				109
+#define MSG_FS_MOUNT				110
+#define MSG_FS_UNMOUNT				111
+#define MSG_FS_ISTAT				112
+#define MSG_FS_CHMOD				113
+#define MSG_FS_CHOWN				114
 
 /* responses of fs */
 #define MSG_FS_OPEN_RESP			100005
@@ -105,7 +107,7 @@
 #define MSG_FS_CHOWN_RESP			100018
 
 /* == Other messages == */
-#define MSG_SPEAKER_BEEP			100	/* performs a beep */
+#define MSG_SPEAKER_BEEP			200	/* performs a beep */
 
 #define MSG_WIN_CREATE				300	/* creates a window */
 #define MSG_WIN_CREATE_RESP			301	/* the create-response */
@@ -175,7 +177,8 @@
 #define IS_DEVICE_MSG(id)			((id) == MSG_DEV_OPEN || \
 									 (id) == MSG_DEV_READ || \
 									 (id) == MSG_DEV_WRITE || \
-									 (id) == MSG_DEV_CLOSE)
+									 (id) == MSG_DEV_CLOSE || \
+									 (id) == MSG_DEV_SHFILE)
 
 /* the data send from the keyboard */
 typedef struct {

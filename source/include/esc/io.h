@@ -266,6 +266,53 @@ A_CHECKRET static inline ssize_t sendrecv(int fd,msgid_t *id,void *msg,size_t si
 }
 
 /**
+ * Shares the file, denoted by <mem>, with the device, denoted by <dev>. That is, it sends
+ * a message to the device and asks him to join that memory, if he wants to. The parameter <mem>
+ * has to point to the beginning of the area where a file has been mmap'd.
+ * If a read or write is performed using <mem> as buffer, the data will be exchanged over this
+ * shared memory instead of copying it twice.
+ *
+ * @param dev the file descriptor to the device
+ * @param fd the file descriptor to the shared-memory-file
+ * @param mem the memory area where <fd> has been mmap'd
+ * @return 0 on success
+ */
+A_CHECKRET static inline int sharefile(int dev,void *mem) {
+	return syscall2(SYSCALL_SHAREFILE,dev,(ulong)mem);
+}
+
+/**
+ * Uses pshm_create() to create a shared memory file, mmap's it with size <size> and shares it with
+ * the device denoted by <dev>. If everything worked except for the sharing, *mem will be non-zero
+ * but the function returns a negative error-code.
+ *
+ * @param dev the file descriptor to the device
+ * @param size the size of the buffer
+ * @param mem will be set to the buffer address (!= NULL means only the sharing failed)
+ * @param name will be set to the shared memory name
+ * @return 0 on success
+ */
+int sharebuf(int dev,size_t size,void **mem,ulong *name);
+
+/**
+ * Joins the given shared memory file, i.e. opens <path> and mmaps it.
+ *
+ * @param path the sh-mem file
+ * @param size the size to pass to mmap
+ * @return the address or NULL
+ */
+void *joinbuf(const char *path,size_t size);
+
+/**
+ * Destroys the shared memory file, that has been created by sharebuf. That is, it unlinks the file
+ * and munmaps the given memory region
+ *
+ * @param mem the memory region
+ * @param name the name of the shared memory file
+ */
+void destroybuf(void *mem,ulong name);
+
+/**
  * Duplicates the given file-descriptor
  *
  * @param fd the file-descriptor

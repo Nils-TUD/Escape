@@ -250,6 +250,16 @@ ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t s
 	return err;
 }
 
+int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
+	if(EXPECT_FALSE(devNo != VFS_DEV_NO))
+		return -EPERM;
+
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
+		return -ENOTSUP;
+
+	return static_cast<VFSChannel*>(node)->sharefile(pid,this,p,cliaddr,size);
+}
+
 bool OpenFile::close(pid_t pid) {
 	SpinLock::acquire(&lock);
 	bool res = doClose(pid);

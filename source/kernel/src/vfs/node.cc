@@ -130,13 +130,13 @@ void VFSNode::getInfo(pid_t pid,USER sFileInfo *info) const {
 	info->size = getSize(pid);
 }
 
-const char *VFSNode::getPath() const {
-	/* TODO the +1 is necessary for eco32 (alignment bug) */
-	static char path[MAX_PATH_LEN + 1];
+void VFSNode::getPathTo(char *dst,size_t size) const {
 	size_t nlen,len = 0,total = 0;
 	const VFSNode *n = this;
-	if(!n->isAlive())
-		return "<destroyed>";
+	if(!n->isAlive()) {
+		strnzcpy(dst,"<destroyed>",size);
+		return;
+	}
 
 	while(n->parent != NULL) {
 		/* name + slash */
@@ -145,23 +145,22 @@ const char *VFSNode::getPath() const {
 	}
 
 	/* not nice, but ensures that we don't overwrite something :) */
-	if(total > MAX_PATH_LEN)
-		total = MAX_PATH_LEN;
+	if(total > size)
+		total = size;
 
 	n = this;
 	len = total;
 	while(n->parent != NULL) {
 		nlen = n->nameLen + 1;
 		/* insert the new element */
-		*(path + total - nlen) = '/';
-		memcpy(path + total + 1 - nlen,n->name,nlen - 1);
+		*(dst + total - nlen) = '/';
+		memcpy(dst + total + 1 - nlen,n->name,nlen - 1);
 		total -= nlen;
 		n = n->parent;
 	}
 
 	/* terminate */
-	*(path + len) = '\0';
-	return (char*)path;
+	*(dst + len) = '\0';
 }
 
 int VFSNode::chmod(pid_t pid,mode_t m) {

@@ -288,7 +288,18 @@ public:
 	 *
 	 * @return the path
 	 */
-	const char *getPath() const;
+	const char *getPath() const {
+		static char path[MAX_PATH_LEN];
+		getPathTo(path,sizeof(path));
+		return path;
+	}
+	/**
+	 * Copies the path into <dst>.
+	 *
+	 * @param dst the destination
+	 * @param size the size of <dst>
+	 */
+	void getPathTo(char *dst,size_t size) const;
 
 	/**
 	 * Changes the mode of this node

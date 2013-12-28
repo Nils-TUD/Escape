@@ -667,6 +667,12 @@ inode_t VFS::createProcess(pid_t pid) {
 		goto errorDir;
 	VFSNode::release(nn);
 
+	/* create shm-dir */
+	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"shm");
+	if(nn == NULL)
+		goto errorDir;
+	VFSNode::release(nn);
+
 	/* create threads-dir */
 	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"threads");
 	if(nn == NULL)
@@ -738,7 +744,7 @@ errorDir:
 
 void VFS::removeThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
-	VFSNode *n= VFSNode::get(t->getThreadDir());
+	VFSNode *n = VFSNode::get(t->getThreadDir());
 	n->destroy();
 }
 

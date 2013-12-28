@@ -360,6 +360,30 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
+int Syscalls::sharefile(Thread *t,IntrptStackFrame *stack) {
+	char tmppath[MAX_PATH_LEN];
+	int dev = (int)SYSC_ARG1(stack);
+	void *mem = (void*)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+
+	/* get device file */
+	OpenFile *file = FileDesc::request(p,dev);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* get file path */
+	ssize_t size = p->getVM()->getShareInfo(reinterpret_cast<uintptr_t>(mem),tmppath,sizeof(tmppath));
+	if(EXPECT_FALSE(size < 0))
+		SYSC_ERROR(stack,size);
+
+	/* share file */
+	int res = file->sharefile(p->getPid(),tmppath,mem,size);
+	FileDesc::release(file);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::dup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 

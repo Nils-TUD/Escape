@@ -466,6 +466,23 @@ uintptr_t VirtMem::getBinary(OpenFile *file,VirtMem *&binOwner) {
 	return res;
 }
 
+ssize_t VirtMem::getShareInfo(uintptr_t addr,char *path,size_t size) {
+	ssize_t res = -ENOENT;
+	acquire();
+	VMRegion *reg = regtree.getByAddr(addr);
+	if(!reg)
+		goto error;
+	if(reg->virt() != addr || ~reg->reg->getFlags() & RF_SHAREABLE || !reg->reg->getFile()) {
+		res = -EINVAL;
+		goto error;
+	}
+	reg->reg->getFile()->getPathTo(path,size);
+	res = reg->reg->getByteCount();
+error:
+	release();
+	return res;
+}
+
 int VirtMem::pagefault(uintptr_t addr,bool write) {
 	Thread *t = Thread::getRunning();
 	VMRegion *reg;

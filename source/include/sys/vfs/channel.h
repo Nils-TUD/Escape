@@ -104,6 +104,18 @@ public:
 	ssize_t receive(pid_t pid,ushort flags,msgid_t *id,void *data,size_t size,bool block,
 	                bool ignoreSigs);
 
+	/**
+	 * Shares a file with the device that hosts this channel.
+	 *
+	 * @param pid the process-id
+	 * @param file the file
+	 * @param path the path to the file
+	 * @param cliaddr the address where the client of this channel has mapped it
+	 * @param size the size of the mmap'd file
+	 * @return 0 on success
+	 */
+	int sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size);
+
 	virtual ssize_t open(pid_t pid,OpenFile *file,uint flags);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual size_t getSize(pid_t pid) const;
@@ -122,6 +134,8 @@ private:
 	int fd;
 	bool used;
 	bool closed;
+	void *shmem;
+	size_t shmemSize;
 	Thread *curClient;
 	/* a list for sending messages to the device */
 	SList<Message> sendList;

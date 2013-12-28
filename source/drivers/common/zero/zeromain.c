@@ -18,23 +18,27 @@
  */
 
 #include <esc/common.h>
+#include <esc/messages.h>
 #include <esc/driver.h>
+#include <esc/mem.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <esc/messages.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 
-#define BUF_SIZE	(16 * 1024)
+#define BUF_SIZE		(16 * 1024)
+#define MAX_CLIENT_FD	256
 
 static sMsg msg;
 static char zeros[BUF_SIZE];
+static char *shbufs[MAX_CLIENT_FD];
 
 int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/zero",0444,DEV_TYPE_CHAR,DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/zero",0444,DEV_TYPE_CHAR,DEV_SHFILE | DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'zero'");
 
@@ -49,27 +53,58 @@ int main(void) {
 			printe("Unable to get work");
 		else {
 			switch(mid) {
+				case MSG_DEV_OPEN: {
+					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
+					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_DEV_SHFILE: {
+					size_t size = msg.args.arg1;
+					char *path = msg.str.s1;
+					assert(shbufs[fd] == NULL);
+					shbufs[fd] = joinbuf(path,size);
+					msg.args.arg1 = shbufs[fd] != NULL;
+					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_DEV_READ: {
+					void *data = NULL;
 					/* offset is ignored here */
 					size_t count = msg.args.arg2;
-					void *data = count <= BUF_SIZE ? zeros : calloc(count,1);
-					if(!data) {
-						printe("Unable to alloc mem");
-						count = 0;
+					ssize_t shmemoff = msg.args.arg3;
+					msg.args.arg2 = READABLE_DONT_SET;
+					if(shmemoff != -1) {
+						assert(shbufs[fd] != NULL);
+						memset(shbufs[fd] + shmemoff,0,count);
+					}
+					else {
+						data = count <= BUF_SIZE ? zeros : calloc(count,1);
+						if(!data) {
+							printe("Unable to alloc mem");
+							count = 0;
+						}
 					}
 					msg.args.arg1 = count;
-					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(count) {
+					if(shmemoff == -1 && count) {
 						send(fd,MSG_DEV_READ_RESP,data,count);
 						if(count > BUF_SIZE)
 							free(data);
 					}
 				}
 				break;
-				case MSG_DEV_CLOSE:
+
+				case MSG_DEV_CLOSE: {
+					if(shbufs[fd]) {
+						munmap(shbufs[fd]);
+						shbufs[fd] = NULL;
+					}
 					close(fd);
-					break;
+				}
+				break;
+
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

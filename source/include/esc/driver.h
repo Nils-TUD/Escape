@@ -37,6 +37,7 @@
 #define DEV_READ					2
 #define DEV_WRITE					4
 #define DEV_CLOSE					8
+#define DEV_SHFILE					16
 
 #define DEV_TYPE_FS					0
 #define DEV_TYPE_BLOCK				1

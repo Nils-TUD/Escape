@@ -199,7 +199,8 @@ bool PhysMem::reserve(size_t frameCount) {
 
 	/* swapping not possible? */
 	Thread *t = Thread::getRunning();
-	if(!swapEnabled || t->getTid() == ATA_TID || t->getTid() == swapperThread->getTid()) {
+	if(!swapEnabled || !swapperThread ||
+			t->getTid() == ATA_TID || t->getTid() == swapperThread->getTid()) {
 		SpinLock::release(&defLock);
 		return false;
 	}

@@ -60,8 +60,9 @@ void Util::panicArch() {
 }
 
 void Util::switchToVGA() {
+	pid_t pid = Proc::getRunning();
 	OpenFile *file;
-	if(VFS::openPath(KERNEL_PID,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
+	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
 		ssize_t res;
 		sStrMsg msg;
 		msg.arg1 = 3;
@@ -69,16 +70,16 @@ void Util::switchToVGA() {
 		msg.arg3 = true;
 		/* use an empty shm-name here. we don't need that anyway */
 		msg.s1[0] = '\0';
-		res = file->sendMsg(KERNEL_PID,MSG_SCR_SETMODE,&msg,sizeof(msg),NULL,0);
+		res = file->sendMsg(pid,MSG_SCR_SETMODE,&msg,sizeof(msg),NULL,0);
 		if(res >= 0) {
 			for(int i = 0; i < 100; i++) {
-				res = file->receiveMsg(KERNEL_PID,NULL,NULL,0,false);
+				res = file->receiveMsg(pid,NULL,NULL,0,false);
 				if(res >= 0)
 					break;
 				Thread::switchAway();
 			}
 		}
-		file->close(KERNEL_PID);
+		file->close(pid);
 	}
 }
 

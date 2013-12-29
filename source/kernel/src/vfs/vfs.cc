@@ -60,29 +60,38 @@ void VFS::init() {
 	 *   |   |- shm
 	 *   |   |- sems
 	 *   |   |- devices
+	 *   |   |- fs
 	 *   |   \- processes
 	 *   |       \- self
 	 *   \- dev
 	 */
-	root = CREATE(VFSDir,KERNEL_PID,nullptr,(char*)"");
-	sys = CREATE(VFSDir,KERNEL_PID,root,(char*)"system");
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipes"));
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods"));
-	VFSNode *node = CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm");
+	root = CREATE(VFSDir,KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
+	sys = CREATE(VFSDir,KERNEL_PID,root,(char*)"system",DIR_DEF_MODE);
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipes",DIR_DEF_MODE));
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods",DIR_DEF_MODE));
+	VFSNode *node = CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
 	/* the user should be able to create shms as well */
 	node->chmod(KERNEL_PID,0777);
 	VFSNode::release(node);
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"sems"));
-	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes");
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"sems",DIR_DEF_MODE));
+	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes",DIR_DEF_MODE);
 	VFSNode::release(CREATE(VFSSelfLink,KERNEL_PID,procsNode,(char*)"self"));
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"devices"));
-	devNode = CREATE(VFSDir,KERNEL_PID,root,(char*)"dev");
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
+	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"fs",DIR_DEF_MODE));
+	devNode = CREATE(VFSDir,KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);
 	VFSNode::release(devNode);
 	VFSNode::release(procsNode);
 	VFSNode::release(sys);
 	VFSNode::release(root);
 
-	VFSInfo::init();
+	VFSInfo::init(sys);
+}
+
+void VFS::mountAll(Proc *p) {
+	if(MountSpace::mount(p,"/dev",reinterpret_cast<OpenFile*>(devNode)) < 0)
+		Util::panic("Unable to mount /dev");
+	if(MountSpace::mount(p,"/system",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
+		Util::panic("Unable to mount /dev");
 }
 
 int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
@@ -123,32 +132,31 @@ int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 	return 0;
 }
 
-int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file) {
-	/* resolve path */
-	bool created;
-	VFSNode *node;
-	int err = VFSNode::request(path,&node,&created,flags,mode);
-	if(err == -EREALPATH) {
-		const Proc *p = Proc::getByPid(pid);
-		/* unfortunatly we have to check for fs here. because e.g. if the user tries to mount the
-		 * device "/realfile" the userspace has no opportunity to distinguish between virtual
-		 * and real files. therefore fs will try to open this path and shoot itself in the foot... */
-		/* TODO there has to be a better solution */
-		if(p->getFlags() & P_FS)
-			return -ENOENT;
+int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,OpenFile **res) {
+	Proc *p = Proc::getByPid(pid);
+	int err = MountSpace::request(p,path,begin,res);
+	if(err < 0)
+		return err;
 
-		/* send msg to fs and wait for reply */
-		err = VFSFS::openPath(pid,flags,path,file);
-		if(err < 0)
-			return err;
-
-		/* store the path for debugging purposes */
-		(*file)->setPath(strdup(path));
+	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
+	if(IS_NODE(*res) && !(flags & VFS_NONODERES)) {
+		VFSNode *node = reinterpret_cast<VFSNode*>(*res);
+		err = VFSNode::request(*begin,&node,NULL,flags,mode);
+		*res = reinterpret_cast<OpenFile*>(node);
 	}
-	else {
-		/* handle virtual files */
-		if(err < 0)
-			return err;
+	return err;
+}
+
+int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file) {
+	OpenFile *fsFile;
+	const char *begin;
+	int err = request(pid,path,flags,mode,&begin,&fsFile);
+	if(err < 0)
+		return err;
+
+	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
+	if(IS_NODE(fsFile)) {
+		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
 
 		/* if its a device, create the channel-node */
 		inode_t nodeNo = node->getNo();
@@ -185,6 +193,19 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 		}
 		VFSNode::release(node);
 	}
+	else {
+		/* send msg to fs and wait for reply */
+		err = VFSFS::openPath(pid,fsFile,flags,begin,file);
+		if(err < 0) {
+			/* only release it on error. otherwise we've stored it in <file> and will release it as
+			 * soon as <file> is closed */
+			MountSpace::release(fsFile);
+			return err;
+		}
+
+		/* store the path for debugging purposes */
+		(*file)->setPath(strdup(path));
+	}
 
 	/* append? */
 	if(flags & VFS_APPEND) {
@@ -199,7 +220,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 
 int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	/* resolve pipe-path */
-	VFSNode *node;
+	VFSNode *node = NULL;
 	int err = VFSNode::request("/system/pipes",&node,NULL,VFS_READ,0);
 	if(err < 0)
 		return err;
@@ -237,7 +258,7 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_
 	/* cleanup flags */
 	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
 
-	if(EXPECT_FALSE(node && (err = hasAccess(pid,node,flags)) < 0))
+	if(EXPECT_FALSE(devNo == VFS_DEV_NO && (err = hasAccess(pid,node,flags)) < 0))
 		return err;
 
 	/* determine free file */
@@ -245,39 +266,335 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_
 }
 
 int VFS::stat(pid_t pid,const char *path,USER sFileInfo *info) {
-	VFSNode *node;
-	int res = VFSNode::request(path,&node,NULL,VFS_READ,0);
-	if(res == -EREALPATH)
-		res = VFSFS::stat(pid,path,info);
-	else if(res == 0) {
+	OpenFile *fsFile;
+	const char *begin;
+	int err = request(pid,path,VFS_READ,0,&begin,&fsFile);
+	if(err < 0)
+		return err;
+
+	if(IS_NODE(fsFile)) {
+		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
 		node->getInfo(pid,info);
 		VFSNode::release(node);
 	}
-	return res;
+	else {
+		err = VFSFS::stat(pid,fsFile,begin,info);
+		info->device = fsFile->getNodeNo();
+		MountSpace::release(fsFile);
+	}
+	return err;
 }
 
 int VFS::chmod(pid_t pid,const char *path,mode_t mode) {
-	VFSNode *node;
-	int res = VFSNode::request(path,&node,NULL,VFS_READ,0);
-	if(res == -EREALPATH)
-		res = VFSFS::chmod(pid,path,mode);
-	else if(res == 0) {
-		res = node->chmod(pid,mode);
+	OpenFile *fsFile;
+	const char *begin;
+	int err = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
+	if(err < 0)
+		return err;
+
+	if(IS_NODE(fsFile)) {
+		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
+		err = node->chmod(pid,mode);
 		VFSNode::release(node);
 	}
-	return res;
+	else {
+		err = VFSFS::chmod(pid,fsFile,begin,mode);
+		MountSpace::release(fsFile);
+	}
+	return err;
 }
 
 int VFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
-	VFSNode *node;
-	int res = VFSNode::request(path,&node,NULL,VFS_READ,0);
-	if(res == -EREALPATH)
-		res = VFSFS::chown(pid,path,uid,gid);
-	else if(res == 0) {
-		res = node->chown(pid,uid,gid);
+	OpenFile *fsFile;
+	const char *begin;
+	int err = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
+	if(err < 0)
+		return err;
+
+	if(IS_NODE(fsFile)) {
+		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
+		err = node->chown(pid,uid,gid);
 		VFSNode::release(node);
 	}
+	else {
+		err = VFSFS::chown(pid,fsFile,begin,uid,gid);
+		MountSpace::release(fsFile);
+	}
+	return err;
+}
+
+int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
+	char newPathCpy[MAX_PATH_LEN + 1];
+	char *name,*namecpy,backup;
+	size_t len;
+	VFSNode *oldNode = NULL,*newNode = NULL;
+	VFSNode *link;
+	int res;
+
+	OpenFile *oldFsFile,*newFsFile;
+	const char *oldBegin,*newBegin;
+	int oldRes = request(pid,oldPath,VFS_READ,0,&oldBegin,&oldFsFile);
+	if(oldRes < 0)
+		return oldRes;
+	int newRes = request(pid,newPath,VFS_WRITE,0,&newBegin,&newFsFile);
+	oldNode = reinterpret_cast<VFSNode*>(oldFsFile);
+	newNode = reinterpret_cast<VFSNode*>(newFsFile);
+	if(newRes < 0) {
+		res = newRes;
+		goto errorRelease;
+	}
+	if(oldFsFile != newFsFile) {
+		res = -EXDEV;
+		goto errorRelease;
+	}
+
+	if(!IS_NODE(oldFsFile)) {
+		res = VFSFS::link(pid,oldFsFile,oldBegin,newBegin);
+		MountSpace::release(oldFsFile);
+		MountSpace::release(newFsFile);
+		return res;
+	}
+
+	/* TODO prevent recursion? */
+
+	/* copy path because we have to change it */
+	len = strlen(newBegin);
+	strcpy(newPathCpy,newBegin);
+	/* check whether the directory exists */
+	name = VFSNode::basename((char*)newPathCpy,&len);
+	backup = *name;
+	VFSNode::dirname((char*)newPathCpy,len);
+	newRes = VFSNode::request(newPathCpy,&newNode,NULL,VFS_WRITE,0);
+	if(newRes < 0) {
+		res = -ENOENT;
+		goto errorRelease;
+	}
+
+	/* links to directories not allowed */
+	if(S_ISDIR(oldNode->getMode())) {
+		res = -EISDIR;
+		goto errorRelease;
+	}
+
+	/* make copy of name */
+	*name = backup;
+	len = strlen(name);
+	namecpy = (char*)Cache::alloc(len + 1);
+	if(namecpy == NULL) {
+		res = -ENOMEM;
+		goto errorRelease;
+	}
+	strcpy(namecpy,name);
+	/* file exists? */
+	if(newNode->findInDir(namecpy,len) != NULL) {
+		res = -EEXIST;
+		goto errorName;
+	}
+	/* check permissions */
+	if((res = hasAccess(pid,newNode,VFS_WRITE)) < 0)
+		goto errorName;
+	/* now create link */
+	if((link = CREATE(VFSLink,pid,newNode,namecpy,oldNode)) == NULL) {
+		res = -ENOMEM;
+		goto errorName;
+	}
+	VFSNode::release(link);
+	VFSNode::release(newNode);
+	VFSNode::release(oldNode);
+	return 0;
+
+errorName:
+	Cache::free(namecpy);
+errorRelease:
+	if(IS_NODE(oldNode))
+		VFSNode::release(oldNode);
+	if(IS_NODE(newNode))
+		VFSNode::release(newNode);
 	return res;
+}
+
+int VFS::unlink(pid_t pid,const char *path) {
+	OpenFile *fsFile;
+	const char *begin;
+	int err = request(pid,path,VFS_WRITE | VFS_NOLINKRES,0,&begin,&fsFile);
+	if(err < 0)
+		return err;
+
+	if(IS_NODE(fsFile)) {
+		VFSNode *n = reinterpret_cast<VFSNode*>(fsFile);
+		if(S_ISDIR(n->getMode())) {
+			VFSNode::release(n);
+			return -EISDIR;
+		}
+
+		/* check permissions */
+		err = -EPERM;
+		if(n->getOwner() == KERNEL_PID || (err = hasAccess(pid,n,VFS_WRITE)) < 0 ||
+				IS_DEVICE(n->getMode())) {
+			VFSNode::release(n);
+			return err;
+		}
+		VFSNode::release(n);
+		n->destroy();
+	}
+	else {
+		err = VFSFS::unlink(pid,fsFile,begin);
+		MountSpace::release(fsFile);
+	}
+
+	return err;
+}
+
+int VFS::mkdir(pid_t pid,const char *path) {
+	char pathCpy[MAX_PATH_LEN + 1];
+	char *name,*namecpy,backup;
+	VFSNode *child;
+
+	/* get the parent-directory */
+	OpenFile *fsFile;
+	const char *begin;
+	int res = request(pid,path,VFS_WRITE | VFS_NONODERES,0,&begin,&fsFile);
+	if(res < 0)
+		return res;
+
+	if(!IS_NODE(fsFile)) {
+		res = VFSFS::mkdir(pid,fsFile,begin);
+		MountSpace::release(fsFile);
+		return res;
+	}
+
+	/* copy path because we'll change it */
+	size_t len = strlen(begin);
+	if(len >= MAX_PATH_LEN)
+		return -ENAMETOOLONG;
+
+	strcpy(pathCpy,begin);
+	/* extract name and directory */
+	name = VFSNode::basename(pathCpy,&len);
+	backup = *name;
+	VFSNode::dirname(pathCpy,len);
+
+	/* get parent dir */
+	VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
+	res = VFSNode::request(pathCpy,&node,NULL,VFS_WRITE,0);
+	if(res < 0)
+		goto errorRel;
+
+	/* alloc space for name and copy it over */
+	*name = backup;
+	len = strlen(name);
+	namecpy = (char*)Cache::alloc(len + 1);
+	if(namecpy == NULL) {
+		res = -ENOMEM;
+		goto errorRel;
+	}
+	strcpy(namecpy,name);
+
+	/* does it exist? */
+	if(node->findInDir(namecpy,len) != NULL) {
+		res = -EEXIST;
+		goto errorFree;
+	}
+
+	/* create dir */
+	/* check permissions */
+	if((res = hasAccess(pid,node,VFS_WRITE)) < 0)
+		goto errorFree;
+	child = CREATE(VFSDir,pid,node,namecpy,DIR_DEF_MODE);
+	if(child == NULL) {
+		res = -ENOMEM;
+		goto errorFree;
+	}
+
+	VFSNode::release(child);
+	VFSNode::release(node);
+	return 0;
+
+errorFree:
+	Cache::free(namecpy);
+errorRel:
+	VFSNode::release(node);
+	return res;
+}
+
+int VFS::rmdir(pid_t pid,const char *path) {
+	OpenFile *fsFile;
+	const char *begin;
+	int res = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
+	if(res < 0)
+		return res;
+
+	if(!IS_NODE(fsFile)) {
+		res = VFSFS::rmdir(pid,fsFile,begin);
+		MountSpace::release(fsFile);
+		return res;
+	}
+
+	/* check permissions */
+	VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
+	res = -EPERM;
+	if(node->getOwner() == KERNEL_PID || (res = hasAccess(pid,node,VFS_WRITE)) < 0) {
+		VFSNode::release(node);
+		return res;
+	}
+	res = node->isEmptyDir();
+	if(res < 0) {
+		VFSNode::release(node);
+		return res;
+	}
+	VFSNode::release(node);
+	node->destroy();
+	return 0;
+}
+
+int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file) {
+	VFSNode *dir = NULL,*srv;
+
+	/* get name */
+	size_t len = strlen(path);
+	char *name = VFSNode::basename(path,&len);
+	name = strdup(name);
+	if(!name)
+		return -ENOMEM;
+
+	/* check whether the directory exists */
+	VFSNode::dirname(path,len);
+	int err = VFSNode::request(path,&dir,NULL,VFS_READ,0);
+	if(err < 0) {
+		Cache::free(name);
+		return err;
+	}
+
+	/* ensure its a directory */
+	if(!S_ISDIR(dir->getMode()))
+		goto errorDir;
+
+	/* check whether the device does already exist */
+	if(dir->findInDir(name,strlen(name)) != NULL) {
+		err = -EEXIST;
+		goto errorDir;
+	}
+
+	/* create node */
+	srv = CREATE(VFSDevice,pid,dir,name,mode,type,ops);
+	if(!srv) {
+		err = -ENOMEM;
+		goto errorDir;
+	}
+	err = openFile(pid,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
+	if(err < 0)
+		goto errDevice;
+	VFSNode::release(srv);
+	VFSNode::release(dir);
+	return err;
+
+errDevice:
+	VFSNode::release(srv);
+	VFSNode::release(srv);
+errorDir:
+	VFSNode::release(dir);
+	/* the release has already free'd the name */
+	return err;
 }
 
 bool VFS::hasMsg(VFSNode *node) {
@@ -360,274 +677,6 @@ error:
 	return res;
 }
 
-int VFS::mount(pid_t pid,const char *device,const char *path,uint type) {
-	VFSNode *node;
-	int err = VFSNode::request(path,&node,NULL,VFS_READ,0);
-	if(err != -EREALPATH) {
-		if(err == 0)
-			VFSNode::release(node);
-		return -EPERM;
-	}
-	return VFSFS::mount(pid,device,path,type);
-}
-
-int VFS::unmount(pid_t pid,const char *path) {
-	VFSNode *node;
-	int err = VFSNode::request(path,&node,NULL,VFS_READ,0);
-	if(err != -EREALPATH) {
-		if(err == 0)
-			VFSNode::release(node);
-		return -EPERM;
-	}
-	return VFSFS::unmount(pid,path);
-}
-
-int VFS::sync(pid_t pid) {
-	return VFSFS::sync(pid);
-}
-
-int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
-	char newPathCpy[MAX_PATH_LEN + 1];
-	char *name,*namecpy,backup;
-	size_t len;
-	VFSNode *oldNode,*newNode,*link;
-	int res;
-
-	/* first check whether it is a realpath */
-	int oldRes = VFSNode::request(oldPath,&oldNode,NULL,VFS_READ,0);
-	int newRes = VFSNode::request(newPath,&newNode,NULL,VFS_WRITE,0);
-	if(oldRes == -EREALPATH) {
-		if(newRes != -EREALPATH) {
-			res = -EXDEV;
-			goto errorRelease;
-		}
-		return VFSFS::link(pid,oldPath,newPath);
-	}
-	if(oldRes < 0) {
-		res = oldRes;
-		goto errorRelease;
-	}
-	if(newRes >= 0) {
-		res = -EEXIST;
-		goto errorRelease;
-	}
-
-	/* TODO prevent recursion? */
-
-	/* copy path because we have to change it */
-	len = strlen(newPath);
-	strcpy(newPathCpy,newPath);
-	/* check whether the directory exists */
-	name = VFSNode::basename((char*)newPathCpy,&len);
-	backup = *name;
-	VFSNode::dirname((char*)newPathCpy,len);
-	newRes = VFSNode::request(newPathCpy,&newNode,NULL,VFS_WRITE,0);
-	if(newRes < 0) {
-		res = -ENOENT;
-		goto errorRelease;
-	}
-
-	/* links to directories not allowed */
-	if(S_ISDIR(oldNode->getMode())) {
-		res = -EISDIR;
-		goto errorRelease;
-	}
-
-	/* make copy of name */
-	*name = backup;
-	len = strlen(name);
-	namecpy = (char*)Cache::alloc(len + 1);
-	if(namecpy == NULL) {
-		res = -ENOMEM;
-		goto errorRelease;
-	}
-	strcpy(namecpy,name);
-	/* file exists? */
-	if(newNode->findInDir(namecpy,len) != NULL) {
-		res = -EEXIST;
-		goto errorName;
-	}
-	/* check permissions */
-	if((res = hasAccess(pid,newNode,VFS_WRITE)) < 0)
-		goto errorName;
-	/* now create link */
-	if((link = CREATE(VFSLink,pid,newNode,namecpy,oldNode)) == NULL) {
-		res = -ENOMEM;
-		goto errorName;
-	}
-	VFSNode::release(link);
-	VFSNode::release(newNode);
-	VFSNode::release(oldNode);
-	return 0;
-
-errorName:
-	Cache::free(namecpy);
-errorRelease:
-	VFSNode::release(oldNode);
-	VFSNode::release(newNode);
-	return res;
-}
-
-int VFS::unlink(pid_t pid,const char *path) {
-	VFSNode *n;
-	int res = VFSNode::request(path,&n,NULL,VFS_WRITE | VFS_NOLINKRES,0);
-	if(res == -EREALPATH)
-		return VFSFS::unlink(pid,path);
-	if(res < 0)
-		return -ENOENT;
-
-	if(S_ISDIR(n->getMode())) {
-		VFSNode::release(n);
-		return -EISDIR;
-	}
-
-	/* check permissions */
-	res = -EPERM;
-	if(n->getOwner() == KERNEL_PID || (res = hasAccess(pid,n,VFS_WRITE)) < 0 ||
-			IS_DEVICE(n->getMode())) {
-		VFSNode::release(n);
-		return res;
-	}
-	VFSNode::release(n);
-	n->destroy();
-	return 0;
-}
-
-int VFS::mkdir(pid_t pid,const char *path) {
-	char pathCpy[MAX_PATH_LEN + 1];
-	size_t len = strlen(path);
-	VFSNode *node,*child;
-
-	/* copy path because we'll change it */
-	if(len >= MAX_PATH_LEN)
-		return -ENAMETOOLONG;
-	strcpy(pathCpy,path);
-
-	/* extract name and directory */
-	char *name = VFSNode::basename(pathCpy,&len);
-	char backup = *name;
-	VFSNode::dirname(pathCpy,len);
-
-	/* get the parent-directory */
-	int res = VFSNode::request(pathCpy,&node,NULL,VFS_WRITE,0);
-	/* special-case: directories in / should be created in the real fs! */
-	if(res == -EREALPATH || (res >= 0 && strcmp(pathCpy,"/") == 0)) {
-		VFSNode::release(node);
-		/* let fs handle the request */
-		return VFSFS::mkdir(pid,path);
-	}
-	if(res < 0)
-		return res;
-
-	/* alloc space for name and copy it over */
-	*name = backup;
-	len = strlen(name);
-	char *namecpy = (char*)Cache::alloc(len + 1);
-	if(namecpy == NULL) {
-		res = -ENOMEM;
-		goto errorRel;
-	}
-	strcpy(namecpy,name);
-	/* does it exist? */
-	if(node->findInDir(namecpy,len) != NULL) {
-		res = -EEXIST;
-		goto errorFree;
-	}
-	/* create dir */
-	/* check permissions */
-	if((res = hasAccess(pid,node,VFS_WRITE)) < 0)
-		goto errorFree;
-	child = CREATE(VFSDir,pid,node,namecpy);
-	if(child == NULL) {
-		res = -ENOMEM;
-		goto errorFree;
-	}
-	VFSNode::release(child);
-	VFSNode::release(node);
-	return 0;
-
-errorFree:
-	Cache::free(namecpy);
-errorRel:
-	VFSNode::release(node);
-	return res;
-}
-
-int VFS::rmdir(pid_t pid,const char *path) {
-	VFSNode *node;
-	int res = VFSNode::request(path,&node,NULL,VFS_WRITE,0);
-	if(res == -EREALPATH)
-		return VFSFS::rmdir(pid,path);
-	if(res < 0)
-		return -ENOENT;
-
-	/* check permissions */
-	res = -EPERM;
-	if(node->getOwner() == KERNEL_PID || (res = hasAccess(pid,node,VFS_WRITE)) < 0) {
-		VFSNode::release(node);
-		return res;
-	}
-	res = node->isEmptyDir();
-	if(res < 0) {
-		VFSNode::release(node);
-		return res;
-	}
-	VFSNode::release(node);
-	node->destroy();
-	return 0;
-}
-
-int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file) {
-	VFSNode *dir,*srv;
-
-	/* get name */
-	size_t len = strlen(path);
-	char *name = VFSNode::basename(path,&len);
-	name = strdup(name);
-	if(!name)
-		return -ENOMEM;
-
-	/* check whether the directory exists */
-	VFSNode::dirname(path,len);
-	int err = VFSNode::request(path,&dir,NULL,VFS_READ,0);
-	/* this includes -EREALPATH since devices have to be created in the VFS */
-	if(err < 0) {
-		Cache::free(name);
-		return err;
-	}
-
-	/* ensure its a directory */
-	if(!S_ISDIR(dir->getMode()))
-		goto errorDir;
-
-	/* check whether the device does already exist */
-	if(dir->findInDir(name,strlen(name)) != NULL) {
-		err = -EEXIST;
-		goto errorDir;
-	}
-
-	/* create node */
-	srv = CREATE(VFSDevice,pid,dir,name,mode,type,ops);
-	if(!srv) {
-		err = -ENOMEM;
-		goto errorDir;
-	}
-	err = openFile(pid,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
-	if(err < 0)
-		goto errDevice;
-	VFSNode::release(srv);
-	VFSNode::release(dir);
-	return err;
-
-errDevice:
-	VFSNode::release(srv);
-	VFSNode::release(srv);
-errorDir:
-	VFSNode::release(dir);
-	/* the release has already free'd the name */
-	return err;
-}
-
 inode_t VFS::createProcess(pid_t pid) {
 	VFSNode *proc = procsNode,*dir,*nn;
 	int res = -ENOMEM;
@@ -639,7 +688,7 @@ inode_t VFS::createProcess(pid_t pid) {
 	itoa(name,12,pid);
 
 	/* create dir */
-	dir = CREATE(VFSDir,KERNEL_PID,proc,name);
+	dir = CREATE(VFSDir,KERNEL_PID,proc,name,DIR_DEF_MODE);
 	if(dir == NULL)
 		goto errorName;
 
@@ -667,14 +716,20 @@ inode_t VFS::createProcess(pid_t pid) {
 		goto errorDir;
 	VFSNode::release(nn);
 
+	/* create mountspace-info-node */
+	nn = CREATE(VFSInfo::MountSpaceFile,KERNEL_PID,dir);
+	if(nn == NULL)
+		goto errorDir;
+	VFSNode::release(nn);
+
 	/* create shm-dir */
-	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"shm");
+	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"shm",0777);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create threads-dir */
-	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"threads");
+	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"threads",DIR_DEF_MODE);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
@@ -699,7 +754,6 @@ void VFS::removeProcess(pid_t pid) {
 	const Proc *p = Proc::getByPid(pid);
 	VFSNode *node = VFSNode::get(p->getThreadsDir());
 	node->getParent()->destroy();
-	VFSFS::removeProc(pid);
 }
 
 inode_t VFS::createThread(tid_t tid) {
@@ -714,7 +768,7 @@ inode_t VFS::createThread(tid_t tid) {
 
 	/* create dir */
 	n = VFSNode::get(t->getProc()->getThreadsDir());
-	dir = CREATE(VFSDir,KERNEL_PID,n,name);
+	dir = CREATE(VFSDir,KERNEL_PID,n,name,DIR_DEF_MODE);
 	if(dir == NULL) {
 		Cache::free(name);
 		goto errorDir;

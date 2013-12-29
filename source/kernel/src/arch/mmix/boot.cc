@@ -124,7 +124,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 
 		/* create module files */
-		VFSNode *node;
+		VFSNode *node = NULL;
 		int res = VFSNode::request("/system/mbmods",&node,NULL,VFS_WRITE,0);
 		if(res < 0)
 			Util::panic("Unable to resolve /system/mbmods");
@@ -160,7 +160,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	}
 	else {
 		size_t i = bootState / 2;
-		VFSNode *node;
+		VFSNode *node = NULL;
 		int argc;
 		const char **argv = Boot::parseArgs(progs[i].command,&argc);
 
@@ -177,6 +177,18 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		VFSNode::release(node);
 	}
 	bootState++;
+
+	/* if we're done, mount root filesystem */
+	if(bootState == bootFinished) {
+		Proc *p = Proc::getByPid(Proc::getRunning());
+		OpenFile *file;
+		const char *rootDev = Config::getStr(Config::ROOT_DEVICE);
+		int res;
+		if((res = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,0,rootDev,&file)) < 0)
+			Util::panic("Unable to open root device '%s': %s",rootDev,strerror(-res));
+		if((res = MountSpace::mount(p,"/",file)) < 0)
+			Util::panic("Unable to mount /: %s",strerror(-res));
+	}
 
 	/* TODO */
 #if 0

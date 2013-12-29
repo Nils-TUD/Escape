@@ -56,7 +56,6 @@ static const char *msgs[] = {
 	/* 31 (ENOPROCS) */			"No more process-slots available",
 	/* 32 (ENOTHREADS) */		"No more thread-slots available",
 	/* 33 (EPIPE) */			"Broken pipe",
-	/* 34 (EREALPATH) */		"Path is unknown to the kernel and should thus be passed to fs",
 };
 
 char *strerror(int errnum) {

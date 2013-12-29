@@ -117,6 +117,7 @@ static View views[] = {
 	{"events",		Sched::printEventLists},
 	{"smp",			SMP::print},
 	{"irqs",		Interrupts::print},
+	{"mounts",		MountSpace::printAll},
 };
 
 static size_t _argc;

@@ -39,7 +39,7 @@
 #include "dir.h"
 #include "rw.h"
 
-static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt);
+static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags);
 static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags);
 static void ext2_close(void *h,inode_t ino);
 static int ext2_stat(void *h,inode_t ino,sFileInfo *info);
@@ -224,26 +224,25 @@ bool ext2_bgHasBackups(sExt2 *e,block_t i) {
 
 void ext2_print(FILE *f,void *h) {
 	sExt2 *e = (sExt2*)h;
-	fprintf(f,"\tTotal blocks: %u\n",le32tocpu(e->superBlock.blockCount));
-	fprintf(f,"\tTotal inodes: %u\n",le32tocpu(e->superBlock.inodeCount));
-	fprintf(f,"\tFree blocks: %u\n",le32tocpu(e->superBlock.freeBlockCount));
-	fprintf(f,"\tFree inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
-	fprintf(f,"\tBlocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
-	fprintf(f,"\tInodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
-	fprintf(f,"\tBlocksize: %u\n",EXT2_BLK_SIZE(e));
-	fprintf(f,"\tCapacity: %u bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"\tFree: %u bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"\tMount count: %u\n",le16tocpu(e->superBlock.mountCount));
-	fprintf(f,"\tMax mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
-	fprintf(f,"\tBlock cache:\n");
+	fprintf(f,"Total blocks: %u\n",le32tocpu(e->superBlock.blockCount));
+	fprintf(f,"Total inodes: %u\n",le32tocpu(e->superBlock.inodeCount));
+	fprintf(f,"Free blocks: %u\n",le32tocpu(e->superBlock.freeBlockCount));
+	fprintf(f,"Free inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
+	fprintf(f,"Blocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
+	fprintf(f,"Inodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
+	fprintf(f,"Blocksize: %u\n",EXT2_BLK_SIZE(e));
+	fprintf(f,"Capacity: %u bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
+	fprintf(f,"Free: %u bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
+	fprintf(f,"Mount count: %u\n",le16tocpu(e->superBlock.mountCount));
+	fprintf(f,"Max mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
+	fprintf(f,"Block cache:\n");
 	bcache_printStats(f,&e->blockCache);
-	fprintf(f,"\tInode cache:\n");
+	fprintf(f,"Inode cache:\n");
 	ext2_icache_print(f,e);
 }
 
-static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,
-		bool resLastMnt) {
-	return ext2_path_resolve((sExt2*)h,u,path,flags,dev,resLastMnt);
+static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags) {
+	return ext2_path_resolve((sExt2*)h,u,path,flags);
 }
 
 static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
@@ -298,7 +297,7 @@ static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
 	info->createtime = le32tocpu(cnode->inode.createtime);
 	info->blockCount = le32tocpu(cnode->inode.blocks);
 	info->blockSize = EXT2_BLK_SIZE(e);
-	info->device = mount_getDevByHandle(h);
+	info->device = 0;
 	info->uid = le16tocpu(cnode->inode.uid);
 	info->gid = le16tocpu(cnode->inode.gid);
 	info->inodeNo = cnode->inodeNo;

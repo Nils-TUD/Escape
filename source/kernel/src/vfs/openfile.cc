@@ -102,8 +102,10 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 	int res = 0;
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);
-	else
-		res = VFSFS::istat(pid,nodeNo,devNo,info);
+	else {
+		res = VFSFS::istat(pid,chan,nodeNo,info);
+		info->device = chan->getNodeNo();
+	}
 	return res;
 }
 
@@ -127,7 +129,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	else {
 		if(whence == SEEK_END) {
 			sFileInfo info;
-			res = VFSFS::istat(pid,nodeNo,devNo,&info);
+			res = VFSFS::istat(pid,chan,nodeNo,&info);
 			if(EXPECT_FALSE(res < 0))
 				return res;
 			/* can't be < 0, therefore it will always be kept */
@@ -164,7 +166,7 @@ ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 	}
 	else {
 		/* query the fs-device to read from the inode */
-		readBytes = VFSFS::read(pid,nodeNo,devNo,buffer,position,count);
+		readBytes = VFSFS::read(pid,chan,nodeNo,buffer,position,count);
 	}
 
 	if(EXPECT_TRUE(readBytes > 0)) {
@@ -194,7 +196,7 @@ ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 	}
 	else {
 		/* query the fs-device to write to the inode */
-		writtenBytes = VFSFS::write(pid,nodeNo,devNo,buffer,position,count);
+		writtenBytes = VFSFS::write(pid,chan,nodeNo,buffer,position,count);
 	}
 
 	if(EXPECT_TRUE(writtenBytes > 0)) {
@@ -260,6 +262,10 @@ int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
 	return static_cast<VFSChannel*>(node)->sharefile(pid,this,p,cliaddr,size);
 }
 
+int OpenFile::syncfs(pid_t pid) {
+	return VFSFS::syncfs(pid,chan);
+}
+
 bool OpenFile::close(pid_t pid) {
 	SpinLock::acquire(&lock);
 	bool res = doClose(pid);
@@ -281,8 +287,14 @@ bool OpenFile::doClose(pid_t pid) {
 			if(devNo == VFS_DEV_NO)
 				node->close(pid,this);
 			/* VFSFS::close won't cause a context-switch; therefore we can keep the lock */
-			else
-				VFSFS::close(pid,nodeNo,devNo);
+			else {
+				VFSFS::close(pid,chan,nodeNo);
+				/* note that although this might call doClose() as well, we can't deadlock here
+				 * because we hold a reference to chan. that is, either we're first in getting the
+				 * lock of chan in which case everything is fine. or the other one is first in which
+				 * case he won't close the file because we have still a reference */
+				MountSpace::release(chan);
+			}
 
 			/* mark unused */
 			Cache::free(path);
@@ -459,7 +471,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		e->node = const_cast<VFSNode*>(n);
 	}
 	else
-		e->node = NULL;
+		e->chan = (OpenFile*)n;
 	e->owner = pid;
 	e->flags = flags;
 	e->refCount = 1;

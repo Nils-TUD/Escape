@@ -43,14 +43,11 @@
 #include <string.h>
 #include <errno.h>
 
-void VFSInfo::init() {
-	VFSNode *sysNode;
-	VFSNode::request("/system",&sysNode,NULL,VFS_NOACCESS,0);
+void VFSInfo::init(VFSNode *sysNode) {
 	VFSNode::release(CREATE(MemUsageFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(CPUFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(StatsFile,KERNEL_PID,sysNode));
 	VFSNode::release(CREATE(IRQsFile,KERNEL_PID,sysNode));
-	VFSNode::release(sysNode);
 }
 
 void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
@@ -288,6 +285,18 @@ void VFSInfo::virtMemReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 
 	OStringStream os;
 	p->getPageDir()->print(os,PD_PART_USER);
+	Proc::relRef(p);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
+}
+
+void VFSInfo::mountSpaceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
+	Proc *p = getProc(node,dataSize,buffer);
+	if(!p)
+		return;
+
+	OStringStream os;
+	MountSpace::print(os,p);
 	Proc::relRef(p);
 	*buffer = os.keepString();
 	*dataSize = os.getLength();

@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <fs/fsdev.h>
 
 #define REQ_THREAD_COUNT	0
 
@@ -32,10 +33,11 @@
 #define tpool_unlock(x)		0
 #endif
 
-typedef void (*fReqHandler)(int fd,sMsg *msg,void *data);
+typedef void (*fReqHandler)(sFileSystem *fs,int fd,sMsg *msg,void *data);
 
 typedef struct {
 	fReqHandler handler;
+	sFileSystem *fs;
 	int fd;
 	sMsg msg;
 	void *data;
@@ -51,4 +53,5 @@ typedef struct {
 void tpool_init(void);
 void tpool_shutdown(void);
 size_t tpool_tidToId(tid_t tid);
-bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,void *data);
+bool tpool_addRequest(fReqHandler handler,sFileSystem *fs,int fd,const sMsg *msg,
+	size_t msgSize,void *data);

@@ -206,7 +206,7 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 }
 
 int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags,mode_t mode) {
-	const VFSNode *dir,*n = get(0);
+	const VFSNode *dir,*n = *node;
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->getProc()->getPid() : KERNEL_PID;
@@ -214,11 +214,9 @@ int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags,mo
 	bool valid;
 	if(created)
 		*created = false;
+	if(n == NULL)
+		n = get(0);
 	*node = NULL;
-
-	/* no absolute path? */
-	if(*path != '/')
-		return -EINVAL;
 
 	/* skip slashes */
 	while(*path == '/')
@@ -288,14 +286,8 @@ int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags,mo
 	err = 0;
 	if(n == NULL) {
 		dir->closeDir(true);
-		/* not existing file/dir in root-directory means that we should ask fs */
-		/* Note: this means that no one can create (additional) virtual nodes in the root-directory,
-		 * which is intended. The existing virtual nodes in the root-directory, of course, hide
-		 * possibly existing directory-entries in the real filesystem with the same name. */
-		if(depth == 0)
-			err = -EREALPATH;
 		/* should we create a default-file? */
-		else if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
+		if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
 			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created,flags,mode);
 		else
 			err = -ENOENT;
@@ -343,8 +335,10 @@ void VFSNode::dirname(char *path,size_t len) {
 		return;
 
 	/* remove last path component */
-	while(*p != '/')
+	while(len > 0 && *p != '/') {
 		p--;
+		len--;
+	}
 
 	/* set new end */
 	*(p + 1) = '\0';

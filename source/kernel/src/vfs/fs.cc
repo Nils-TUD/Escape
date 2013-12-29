@@ -37,31 +37,14 @@
 #include <string.h>
 #include <errno.h>
 
-klock_t VFSFS::fsChanLock;
-
-void VFSFS::removeProc(pid_t pid) {
-	Proc *p = Proc::getByPid(pid);
-	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ) {
-		auto old = it++;
-		old->file->close(pid);
-		delete &*old;
-	}
-}
-
-int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
+int VFSFS::openPath(pid_t pid,OpenFile *fsFile,uint flags,const char *path,OpenFile **file) {
 	ssize_t res = -ENOMEM;
 	size_t pathLen = strlen(path);
 	sStrMsg msg;
 	inode_t inode;
-	dev_t dev;
 
 	if(pathLen > MAX_MSGSTR_LEN)
 		return -ENAMETOOLONG;
-	VFSNode *node;
-	OpenFile *fs;
-	res = requestFile(pid,&node,&fs);
-	if(res < 0)
-		return res;
 
 	/* send msg to fs */
 	msg.arg1 = flags;
@@ -73,41 +56,34 @@ int VFSFS::openPath(pid_t pid,uint flags,const char *path,OpenFile **file) {
 		Proc::relRef(p);
 	}
 	memcpy(msg.s1,path,pathLen + 1);
-	res = fs->sendMsg(pid,MSG_FS_OPEN,&msg,sizeof(msg),NULL,0);
+	res = fsFile->sendMsg(pid,MSG_FS_OPEN,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
-		goto error;
+		return res;
 
 	/* receive response */
 	do
-		res = fs->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
+		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
 	while(res == -EINTR);
 	if(res < 0)
-		goto error;
+		return res;
 
 	inode = msg.arg1;
-	dev = msg.arg2;
-	if(inode < 0) {
-		res = inode;
-		goto error;
-	}
+	if(inode < 0)
+		return inode;
 
 	/* now open the file */
-	res = VFS::openFile(pid,flags,NULL,inode,dev,file);
-
-error:
-	releaseFile(pid,fs);
-	return res;
+	return VFS::openFile(pid,flags,reinterpret_cast<VFSNode*>(fsFile),inode,fsFile->getNodeNo(),file);
 }
 
-int VFSFS::istat(pid_t pid,inode_t ino,dev_t devNo,USER sFileInfo *info) {
-	return doStat(pid,NULL,ino,devNo,info);
+int VFSFS::istat(pid_t pid,OpenFile *fsFile,inode_t ino,USER sFileInfo *info) {
+	return doStat(pid,fsFile,NULL,ino,info);
 }
 
-int VFSFS::stat(pid_t pid,const char *path,USER sFileInfo *info) {
-	return doStat(pid,path,0,0,info);
+int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,USER sFileInfo *info) {
+	return doStat(pid,fsFile,path,0,info);
 }
 
-int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileInfo *info) {
+int VFSFS::doStat(pid_t pid,OpenFile *fsFile,const char *path,inode_t ino,USER sFileInfo *info) {
 	ssize_t res = -ENOMEM;
 	size_t pathLen = 0;
 	sMsg msg;
@@ -117,11 +93,6 @@ int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileI
 		if(pathLen > MAX_MSGSTR_LEN)
 			return -ENAMETOOLONG;
 	}
-	OpenFile *fs;
-	VFSNode *node;
-	res = requestFile(pid,&node,&fs);
-	if(res < 0)
-		return res;
 
 	/* send msg to fs */
 	if(path) {
@@ -133,163 +104,130 @@ int VFSFS::doStat(pid_t pid,const char *path,inode_t ino,dev_t devNo,USER sFileI
 			Proc::relRef(p);
 		}
 		memcpy(msg.str.s1,path,pathLen + 1);
-		res = fs->sendMsg(pid,MSG_FS_STAT,&msg,sizeof(msg.str),NULL,0);
+		res = fsFile->sendMsg(pid,MSG_FS_STAT,&msg,sizeof(msg.str),NULL,0);
 	}
 	else {
 		msg.args.arg1 = ino;
-		msg.args.arg2 = devNo;
-		res = fs->sendMsg(pid,MSG_FS_ISTAT,&msg,sizeof(msg.args),NULL,0);
+		res = fsFile->sendMsg(pid,MSG_FS_ISTAT,&msg,sizeof(msg.args),NULL,0);
 	}
 	if(res < 0)
-		goto error;
+		return res;
 
 	/* receive response */
 	do
-		res = fs->receiveMsg(pid,NULL,&msg,sizeof(msg.data),true);
+		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg.data),true);
 	while(res == -EINTR);
 	if(res < 0)
-		goto error;
+		return res;
 	res = msg.data.arg1;
 
 	/* copy file-info */
 	if(res == 0)
 		memcpy(info,msg.data.d,sizeof(sFileInfo));
-
-error:
-	releaseFile(pid,fs);
 	return res;
 }
 
-ssize_t VFSFS::read(pid_t pid,inode_t inodeNo,dev_t devNo,USER void *buffer,off_t offset,
+ssize_t VFSFS::read(pid_t pid,OpenFile *fsFile,inode_t inodeNo,USER void *buffer,off_t offset,
 		size_t count) {
 	sArgsMsg msg;
-	VFSNode *node;
-	OpenFile *fs;
-	ssize_t res = requestFile(pid,&node,&fs);
-	if(res < 0)
-		return res;
 
 	/* send msg to fs */
 	msg.arg1 = inodeNo;
-	msg.arg2 = devNo;
-	msg.arg3 = offset;
-	msg.arg4 = count;
-	res = fs->sendMsg(pid,MSG_FS_READ,&msg,sizeof(msg),NULL,0);
+	msg.arg2 = offset;
+	msg.arg3 = count;
+	ssize_t res = fsFile->sendMsg(pid,MSG_FS_READ,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
-		goto error;
+		return res;
 
 	/* read response */
 	do
-		res = fs->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
+		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
 	while(res == -EINTR);
 	if(res < 0)
-		goto error;
+		return res;
 
 	/* handle response */
 	res = msg.arg1;
 	if(res <= 0)
-		goto error;
+		return res;
 
 	/* read data */
 	do
-		res = fs->receiveMsg(pid,NULL,buffer,count,true);
+		res = fsFile->receiveMsg(pid,NULL,buffer,count,true);
 	while(res == -EINTR);
-
-error:
-	releaseFile(pid,fs);
 	return res;
 }
 
-ssize_t VFSFS::write(pid_t pid,inode_t inodeNo,dev_t devNo,USER const void *buffer,off_t offset,
+ssize_t VFSFS::write(pid_t pid,OpenFile *fsFile,inode_t inodeNo,USER const void *buffer,off_t offset,
 		size_t count) {
 	sArgsMsg msg;
-	VFSNode *node;
-	OpenFile *fs;
-	ssize_t res = requestFile(pid,&node,&fs);
-	if(res < 0)
-		return res;
 
 	/* send msg and data */
 	msg.arg1 = inodeNo;
-	msg.arg2 = devNo;
-	msg.arg3 = offset;
-	msg.arg4 = count;
-	res = fs->sendMsg(pid,MSG_FS_WRITE,&msg,sizeof(msg),buffer,count);
+	msg.arg2 = offset;
+	msg.arg3 = count;
+	ssize_t res = fsFile->sendMsg(pid,MSG_FS_WRITE,&msg,sizeof(msg),buffer,count);
 	if(res < 0)
-		goto error;
+		return res;
 
 	/* read response */
 	do
-		res = fs->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
+		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
 	while(res == -EINTR);
 	if(res < 0)
-		goto error;
-	res = msg.arg1;
-
-error:
-	releaseFile(pid,fs);
-	return res;
+		return res;
+	return msg.arg1;
 }
 
-int VFSFS::chmod(pid_t pid,const char *path,mode_t mode) {
-	return pathReqHandler(pid,path,NULL,mode,MSG_FS_CHMOD);
+int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
+	return pathReqHandler(pid,fsFile,path,NULL,mode,MSG_FS_CHMOD);
 }
 
-int VFSFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
+int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid) {
 	/* TODO better solution? */
-	return pathReqHandler(pid,path,NULL,(uid << 16) | (gid & 0xFFFF),MSG_FS_CHOWN);
+	return pathReqHandler(pid,fsFile,path,NULL,(uid << 16) | (gid & 0xFFFF),MSG_FS_CHOWN);
 }
 
-int VFSFS::link(pid_t pid,const char *oldPath,const char *newPath) {
-	return pathReqHandler(pid,oldPath,newPath,0,MSG_FS_LINK);
+int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
+	return pathReqHandler(pid,fsFile,oldPath,newPath,0,MSG_FS_LINK);
 }
 
-int VFSFS::unlink(pid_t pid,const char *path) {
-	return pathReqHandler(pid,path,NULL,0,MSG_FS_UNLINK);
+int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
+	return pathReqHandler(pid,fsFile,path,NULL,0,MSG_FS_UNLINK);
 }
 
-int VFSFS::mkdir(pid_t pid,const char *path) {
-	return pathReqHandler(pid,path,NULL,0,MSG_FS_MKDIR);
+int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
+	return pathReqHandler(pid,fsFile,path,NULL,0,MSG_FS_MKDIR);
 }
 
-int VFSFS::rmdir(pid_t pid,const char *path) {
-	return pathReqHandler(pid,path,NULL,0,MSG_FS_RMDIR);
+int VFSFS::rmdir(pid_t pid,OpenFile *fsFile,const char *path) {
+	return pathReqHandler(pid,fsFile,path,NULL,0,MSG_FS_RMDIR);
 }
 
-int VFSFS::mount(pid_t pid,const char *device,const char *path,uint type) {
-	return pathReqHandler(pid,device,path,type,MSG_FS_MOUNT);
-}
-
-int VFSFS::unmount(pid_t pid,const char *path) {
-	return pathReqHandler(pid,path,NULL,0,MSG_FS_UNMOUNT);
-}
-
-int VFSFS::sync(pid_t pid) {
-	OpenFile *fs;
-	int res = requestFile(pid,NULL,&fs);
+int VFSFS::syncfs(pid_t pid,OpenFile *fsFile) {
+	sArgsMsg msg;
+	ssize_t res = fsFile->sendMsg(pid,MSG_FS_SYNCFS,NULL,0,NULL,0);
 	if(res < 0)
 		return res;
-	res = fs->sendMsg(pid,MSG_FS_SYNC,NULL,0,NULL,0);
-	releaseFile(pid,fs);
-	return res;
-}
 
-void VFSFS::close(pid_t pid,inode_t inodeNo,dev_t devNo) {
-	sArgsMsg msg;
-	OpenFile *fs;
-	int res = requestFile(pid,NULL,&fs);
+	/* read response */
+	do
+		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
+	while(res == -EINTR);
 	if(res < 0)
-		return;
-
-	/* write message to fs */
-	msg.arg1 = inodeNo;
-	msg.arg2 = devNo;
-	fs->sendMsg(pid,MSG_FS_CLOSE,&msg,sizeof(msg),NULL,0);
-	/* no response necessary, therefore no wait, too */
-	releaseFile(pid,fs);
+		return res;
+	return msg.arg1;
 }
 
-int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg1,uint cmd) {
+void VFSFS::close(pid_t pid,OpenFile *fsFile,inode_t inodeNo) {
+	/* write message to fs */
+	sArgsMsg msg;
+	msg.arg1 = inodeNo;
+	fsFile->sendMsg(pid,MSG_FS_CLOSE,&msg,sizeof(msg),NULL,0);
+	/* no response necessary, therefore no wait, too */
+}
+
+int VFSFS::pathReqHandler(pid_t pid,OpenFile *fsFile,const char *path1,const char *path2,uint arg1,uint cmd) {
 	int res = -ENOMEM;
 	sStrMsg msg;
 
@@ -297,12 +235,6 @@ int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg
 		return -ENAMETOOLONG;
 	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
 		return -ENAMETOOLONG;
-
-	OpenFile *fs;
-	VFSNode *node;
-	res = requestFile(pid,&node,&fs);
-	if(res < 0)
-		return res;
 
 	/* send msg */
 	strcpy(msg.s1,path1);
@@ -316,92 +248,15 @@ int VFSFS::pathReqHandler(pid_t pid,const char *path1,const char *path2,uint arg
 		msg.arg4 = p->getPid();
 		Proc::relRef(p);
 	}
-	res = fs->sendMsg(pid,cmd,&msg,sizeof(msg),NULL,0);
+	res = fsFile->sendMsg(pid,cmd,&msg,sizeof(msg),NULL,0);
 	if(res < 0)
-		goto error;
+		return res;
 
 	/* read response */
 	do
-		res = fs->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
+		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
 	while(res == -EINTR);
 	if(res < 0)
-		goto error;
-	res = msg.arg1;
-
-error:
-	releaseFile(pid,fs);
-	return res;
-}
-
-int VFSFS::requestFile(pid_t pid,VFSNode **node,OpenFile **file) {
-	Proc *p = Proc::getRef(pid);
-	if(!p)
-		return -ESRCH;
-	/* check if there's a free channel */
-	SpinLock::acquire(&fsChanLock);
-	for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
-		if(!it->active) {
-			if(!it->file->getNode()->isAlive()) {
-				/* remove channel */
-				p->fsChans.remove(&*it);
-				delete &*it;
-				SpinLock::release(&fsChanLock);
-				Proc::relRef(p);
-				return -EDESTROYED;
-			}
-			if(node)
-				*node = it->file->getNode();
-			it->active = true;
-			SpinLock::release(&fsChanLock);
-			Proc::relRef(p);
-			*file = it->file;
-			return 0;
-		}
-	}
-	SpinLock::release(&fsChanLock);
-
-	FSChan *chan = new FSChan();
-	if(!chan) {
-		Proc::relRef(p);
-		return -ENOMEM;
-	}
-
-	int err = VFS::openPath(pid,VFS_MSGS,0,Config::getStr(Config::ROOT_DEVICE),&chan->file);
-	if(err < 0) {
-		Proc::relRef(p);
-		Cache::free(chan);
-		return err;
-	}
-
-	SpinLock::acquire(&fsChanLock);
-	p->fsChans.append(chan);
-	SpinLock::release(&fsChanLock);
-	if(node)
-		*node = chan->file->getNode();
-	*file = chan->file;
-	Proc::relRef(p);
-	return 0;
-}
-
-void VFSFS::releaseFile(pid_t pid,OpenFile *file) {
-	Proc *p = Proc::getRef(pid);
-	if(p) {
-		SpinLock::acquire(&fsChanLock);
-		for(auto it = p->fsChans.begin(); it != p->fsChans.end(); ++it) {
-			if(it->file == file) {
-				it->active = false;
-				break;
-			}
-		}
-		SpinLock::release(&fsChanLock);
-		Proc::relRef(p);
-	}
-}
-
-void VFSFS::printFSChans(OStream &os,const Proc *p) {
-	SpinLock::acquire(&fsChanLock);
-	os.writef("FS-Channels:\n");
-	for(auto it = p->fsChans.cbegin(); it != p->fsChans.cend(); ++it)
-		os.writef("\t%s (%s)\n",it->file->getNode()->getPath(),it->active ? "active" : "not active");
-	SpinLock::release(&fsChanLock);
+		return res;
+	return msg.arg1;
 }

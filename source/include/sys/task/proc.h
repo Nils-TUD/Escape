@@ -29,6 +29,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>
 #include <sys/task/sems.h>
+#include <sys/task/mountspace.h>
 #include <sys/vfs/fs.h>
 #include <sys/col/slist.h>
 #include <sys/col/islist.h>
@@ -52,8 +53,7 @@
 /* process flags */
 #define P_ZOMBIE			1
 #define P_PREZOMBIE			2
-#define P_FS				4
-#define P_BOOT				8
+#define P_BOOT				4
 
 #define PLOCK_COUNT			3
 #define PMUTEX_COUNT		1
@@ -75,6 +75,7 @@ class ProcBase : public SListItem {
 	friend class Env;
 	friend class Sems;
 	friend class ThreadBase;
+	friend class MountSpace;
 
 protected:
 	ProcBase() {
@@ -624,8 +625,8 @@ private:
 	/* process local semaphores */
 	Sems::Entry **sems;
 	size_t semsSize;
-	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
-	SList<VFSFS::FSChan> fsChans;
+	/* the mount space */
+	MountSpace *mounts;
 	/* environment-variables of this process */
 	SList<Env::EnvVar> *env;
 	/* the directory-node-number in the VFS of this process */

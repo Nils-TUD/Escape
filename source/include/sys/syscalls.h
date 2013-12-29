@@ -92,13 +92,16 @@ private:
 	static int fstat(Thread *t,IntrptStackFrame *stack);
 	static int chmod(Thread *t,IntrptStackFrame *stack);
 	static int chown(Thread *t,IntrptStackFrame *stack);
-	static int sync(Thread *t,IntrptStackFrame *stack);
+	static int syncfs(Thread *t,IntrptStackFrame *stack);
 	static int link(Thread *t,IntrptStackFrame *stack);
 	static int unlink(Thread *t,IntrptStackFrame *stack);
 	static int mkdir(Thread *t,IntrptStackFrame *stack);
 	static int rmdir(Thread *t,IntrptStackFrame *stack);
 	static int mount(Thread *t,IntrptStackFrame *stack);
 	static int unmount(Thread *t,IntrptStackFrame *stack);
+	static int getmsid(Thread *t,IntrptStackFrame *stack);
+	static int clonems(Thread *t,IntrptStackFrame *stack);
+	static int joinms(Thread *t,IntrptStackFrame *stack);
 
 	// mem
 	static int chgsize(Thread *t,IntrptStackFrame *stack);

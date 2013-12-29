@@ -149,9 +149,17 @@ void ProcessManager::finalize(int task) {
 	}
 	_downProg->allTerminated();
 
-	cout << "Flushing filesystem buffers..." << endl;
-	if(sync() != 0)
-		printe("Flushing filesystem buffers failed");
+	/* we only need to flush the root fs here. all others are flushed by the fs-instances that we
+	 * terminate (they should react on that) */
+	cout << "Flushing filesystem buffers of /..." << endl;
+	int fd = open("/",IO_READ);
+	if(fd < 0)
+		printe("Unable to open /");
+	else {
+		if(syncfs(fd) != 0)
+			printe("Flushing filesystem buffers of / failed");
+		close(fd);
+	}
 
 	// ask the machine to reboot/shutdown
 	Machine *m = Machine::createInstance();

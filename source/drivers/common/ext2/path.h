@@ -29,9 +29,6 @@
  * @param u the user
  * @param path the path
  * @param flags the flags with which to open the file
- * @param dev should be set to the device-number
- * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-Number or EXT2_BAD_INO
  */
-inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t *dev,
-		bool resLastMnt);
+inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags);

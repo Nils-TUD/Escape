@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <fs/fsdev.h>
 
-int infodev_thread(A_UNUSED void *arg);
+int infodev_start(const char *path,sFileSystem *fs);
 void infodev_shutdown(void);

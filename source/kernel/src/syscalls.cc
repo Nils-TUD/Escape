@@ -66,12 +66,12 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 30 */	{send,				"send",    			4},
 	/* 31 */	{receive,			"receive",    		3},
 	/* 32 */	{getcycles,			"getcycles",    	0},
-	/* 33 */	{sync,				"sync",    			0},
+	/* 33 */	{syncfs,			"syncfs",    		1},
 	/* 34 */	{link,				"link",    			2},
 	/* 35 */	{unlink,			"unlink",    		1},
 	/* 36 */	{mkdir,				"mkdir",    		1},
 	/* 37 */	{rmdir,				"rmdir",    		1},
-	/* 38 */	{mount,				"mount",    		3},
+	/* 38 */	{mount,				"mount",    		2},
 	/* 39 */	{unmount,			"unmount",    		1},
 	/* 40 */	{waitchild,			"waitchild",    	1},
 	/* 41 */	{tell,				"tell",    			2},
@@ -111,13 +111,16 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 75 */	{sendrecv,			"sendrecv",			4},
 	/* 76 */	{sharefile,			"sharefile",		2},
 	/* 77 */	{sysconfstr,		"sysconfstr",		3},
+	/* 78 */	{getmsid,			"getmsid",			0},
+	/* 79 */	{clonems,			"clonems",			0},
+	/* 80 */	{joinms,			"joinms",			1},
 #ifdef __i386__
-	/* 78 */	{reqports,			"reqports",   		2},
-	/* 79 */	{relports,			"relports",    		2},
-	/* 80 */	{vm86int,			"vm86int",    		4},
-	/* 81 */	{vm86start,			"vm86start",    	0},
+	/* 81 */	{reqports,			"reqports",   		2},
+	/* 82 */	{relports,			"relports",    		2},
+	/* 83 */	{vm86int,			"vm86int",    		4},
+	/* 84 */	{vm86start,			"vm86start",    	0},
 #else
-	/* 78 */	{debug,				"debug",    		0},
+	/* 81 */	{debug,				"debug",    		0},
 #endif
 };
 

@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <fs/fsdev.h>
-#include <fs/mount.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,11 +35,5 @@ int main(int argc,char *argv[]) {
 	if(!dev)
 		error("Invalid device path '%s'",argv[2]);
 	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
-
-	printf("[ext2] Mounting '%s' at '/'\n",argv[2]);
-	fflush(stdout);
-
-	mount_init();
-	mount_addFS(ext2_getFS());
-	return fs_driverLoop(argv[2],fspath,FS_TYPE_EXT2);
+	return fs_driverLoop("ext2",argv[2],fspath,ext2_getFS());
 }

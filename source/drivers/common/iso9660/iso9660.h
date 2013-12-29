@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
-#include <fs/mount.h>
+#include <fs/fsdev.h>
 #include <fs/blockcache.h>
 #include <fs/threadpool.h>
 
@@ -264,11 +264,9 @@ sFileSystem *iso_getFS(void);
  * @param u the user
  * @param path the path
  * @param flags the flags
- * @param dev should be set to the device-number
- * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt);
+inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags);
 
 /**
  * Mount-entry for open()

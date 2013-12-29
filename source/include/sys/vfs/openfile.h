@@ -41,12 +41,14 @@ enum {
 	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
 	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
 	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
+	VFS_NONODERES = 1024	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
 };
 
 class VFS;
 class VMTree;
 class FileDesc;
 class ThreadBase;
+class MountSpace;
 
 /* an entry in the global file table */
 class OpenFile {
@@ -54,6 +56,7 @@ class OpenFile {
 	friend class VMTree;
 	friend class FileDesc;
 	friend class ThreadBase;
+	friend class MountSpace;
 
 	OpenFile() = delete;
 
@@ -240,6 +243,13 @@ public:
 	int sharefile(pid_t pid,const char *path,void *cliaddr,size_t size);
 
 	/**
+	 * Writes all cached blocks of the affected filesystem to disk.
+	 *
+	 * @param pid the process-id
+	 */
+	int syncfs(pid_t pid);
+
+	/**
 	 * Closes this file. That means it calls Proc::closeFile() and decrements the reference-count
 	 * in the global file table. If there are no references anymore it releases the slot.
 	 *
@@ -322,8 +332,12 @@ private:
 	off_t position;
 	/* node-number */
 	inode_t nodeNo;
-	/* the node, if devNo == VFS_DEV_NO, otherwise null */
-	VFSNode *node;
+	union {
+		/* the node, if devNo == VFS_DEV_NO */
+		VFSNode *node;
+		/* the channel to the fs instance if devNo != VFS_DEV_NO */
+		OpenFile *chan;
+	};
 	/* the device-number */
 	dev_t devNo;
 	/* for real files: the path; for virt files: NULL */

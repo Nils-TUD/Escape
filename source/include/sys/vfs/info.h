@@ -51,12 +51,13 @@ class VFSInfo {
 	static void statsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void memUsageReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void irqsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void mountSpaceReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 
 public:
 	/**
 	 * Creates the vfs-info nodes
 	 */
-	static void init();
+	static void init(VFSNode *sysNode);
 
 	GEN_INFO_FILECLASS(TraceFile,"trace",traceReadCallback);
 	GEN_INFO_FILECLASS(ProcFile,"info",procReadCallback);
@@ -68,6 +69,7 @@ public:
 	GEN_INFO_FILECLASS(StatsFile,"stats",statsReadCallback);
 	GEN_INFO_FILECLASS(MemUsageFile,"memusage",memUsageReadCallback);
 	GEN_INFO_FILECLASS(IRQsFile,"irqs",irqsReadCallback);
+	GEN_INFO_FILECLASS(MountSpaceFile,"mountspace",mountSpaceReadCallback);
 
 	static ssize_t readHelper(pid_t pid,VFSNode *node,void *buffer,off_t offset,
 			size_t count,size_t dataSize,read_func callback);

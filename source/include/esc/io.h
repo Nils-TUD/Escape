@@ -376,15 +376,14 @@ A_CHECKRET static inline int rmdir(const char *path) {
 }
 
 /**
- * Mounts <device> at <path> with fs <type>
+ * Mounts the device denoted by <fd> at <path>
  *
- * @param device the device-path
+ * @param fd the file-descriptor to the filesystem that should be mounted
  * @param path the path to mount at
- * @param type the fs-type
  * @return 0 on success
  */
-A_CHECKRET static inline int mount(const char *device,const char *path,uint type) {
-	return syscall3(SYSCALL_MOUNT,(ulong)device,(ulong)path,type);
+A_CHECKRET static inline int mount(int fd,const char *path) {
+	return syscall2(SYSCALL_MOUNT,fd,(ulong)path);
 }
 
 /**
@@ -398,12 +397,40 @@ A_CHECKRET static inline int unmount(const char *path) {
 }
 
 /**
- * Writes all dirty objects of the filesystem to disk
+ * @return the id of the mountspace of the current process
+ */
+static inline int getmsid(void) {
+	return syscall0(SYSCALL_GETMSID);
+}
+
+/**
+ * Clones the mountspace of the current process. That is, it creates a new mountspace for which
+ * mount and unmount operations don't affect others.
  *
+ * @return the new mountspace id on success
+ */
+static inline int clonems(void) {
+	return syscall0(SYSCALL_CLONEMS);
+}
+
+/**
+ * Joins the mountspace denoted by <id>.
+ *
+ * @param id the mountspace to join
  * @return 0 on success
  */
-A_CHECKRET static inline int sync(void) {
-	return syscall0(SYSCALL_SYNC);
+static inline int joinms(int id) {
+	return syscall1(SYSCALL_JOINMS,id);
+}
+
+/**
+ * Writes all dirty objects of the affected filesystem to disk
+ *
+ * @param fd the file-descriptor to some file on that fs
+ * @return 0 on success
+ */
+A_CHECKRET static inline int syncfs(int fd) {
+	return syscall1(SYSCALL_SYNCFS,fd);
 }
 
 /**

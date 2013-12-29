@@ -25,7 +25,7 @@
 #include <esc/endian.h>
 #include <fs/threadpool.h>
 #include <fs/blockcache.h>
-#include <fs/mount.h>
+#include <fs/fsdev.h>
 
 #define DISK_SECTOR_SIZE						512
 #define EXT2_BLK_SIZE(e)					\

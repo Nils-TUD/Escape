@@ -75,7 +75,10 @@ static void test_basics(void) {
 	test_assertInt(unlink("/newdir/file2"),0);
 
 	test_assertInt(rmdir("/newdir"),0);
-	test_assertInt(sync(),0);
+	int fd = open("/",IO_READ);
+	test_assertTrue(fd >= 0);
+	test_assertInt(syncfs(fd),0);
+	close(fd);
 
 	test_caseSucceeded();
 }

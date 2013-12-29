@@ -69,7 +69,6 @@ void *iso_init(const char *device,char **usedDev,int *errcode) {
 	else {
 		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
 		char path[SSTRLEN("/dev/cda1") + 1];
-		dev_t dev = 0x1234;
 		inode_t ino;
 		sFSUser u;
 		u.uid = ROOT_UID;
@@ -83,7 +82,7 @@ void *iso_init(const char *device,char **usedDev,int *errcode) {
 			/* try to find our kernel. if we've found it, it's likely that the user wants to
 			 * boot from this device. unfortunatly there doesn't seem to be an easy way
 			 * to find out the real boot-device from GRUB */
-			ino = iso_dir_resolve(iso,&u,"/boot/escape",IO_READ,&dev,false);
+			ino = iso_dir_resolve(iso,&u,"/boot/escape",IO_READ);
 			if(ino >= 0)
 				break;
 
@@ -174,8 +173,8 @@ sFileSystem *iso_getFS(void) {
 	return fs;
 }
 
-inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
-	return iso_dir_resolve((sISO9660*)h,u,path,flags,dev,resLastMnt);
+inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags) {
+	return iso_dir_resolve((sISO9660*)h,u,path,flags);
 }
 
 inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags) {
@@ -200,7 +199,7 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	info->createtime = ts;
 	info->blockCount = e->entry.extentSize.littleEndian / ISO_BLK_SIZE(i);
 	info->blockSize = ISO_BLK_SIZE(i);
-	info->device = mount_getDevByHandle(h);
+	info->device = 0;
 	info->uid = 0;
 	info->gid = 0;
 	info->inodeNo = e->id;
@@ -227,20 +226,20 @@ void iso_print(FILE *f,void *h) {
 	sISO9660 *i = (sISO9660*)h;
 	sISOVolDesc *desc = &i->primary;
 	sISOVolDate *date;
-	fprintf(f,"\tIdentifier: %.5s\n",desc->identifier);
-	fprintf(f,"\tSize: %u bytes\n",desc->data.primary.volSpaceSize.littleEndian * ISO_BLK_SIZE(i));
-	fprintf(f,"\tBlocksize: %u bytes\n",ISO_BLK_SIZE(i));
-	fprintf(f,"\tSystemIdent: %.32s\n",desc->data.primary.systemIdent);
-	fprintf(f,"\tVolumeIdent: %.32s\n",desc->data.primary.volumeIdent);
+	fprintf(f,"Identifier: %.5s\n",desc->identifier);
+	fprintf(f,"Size: %u bytes\n",desc->data.primary.volSpaceSize.littleEndian * ISO_BLK_SIZE(i));
+	fprintf(f,"Blocksize: %u bytes\n",ISO_BLK_SIZE(i));
+	fprintf(f,"SystemIdent: %.32s\n",desc->data.primary.systemIdent);
+	fprintf(f,"VolumeIdent: %.32s\n",desc->data.primary.volumeIdent);
 	date = &desc->data.primary.created;
-	fprintf(f,"\tCreated: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
+	fprintf(f,"Created: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
 			date->year,date->month,date->day,date->hour,date->minute,date->second);
 	date = &desc->data.primary.modified;
-	fprintf(f,"\tModified: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
+	fprintf(f,"Modified: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
 			date->year,date->month,date->day,date->hour,date->minute,date->second);
-	fprintf(f,"\tBlock cache:\n");
+	fprintf(f,"Block cache:\n");
 	bcache_printStats(f,&i->blockCache);
-	fprintf(f,"\tDirectory entry cache:\n");
+	fprintf(f,"Directory entry cache:\n");
 	iso_dire_print(f,i);
 }
 

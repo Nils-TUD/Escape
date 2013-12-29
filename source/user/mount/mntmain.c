@@ -20,42 +20,37 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <esc/cmdargs.h>
+#include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
-#define FS_NAME_LEN	12
+#define MOUNT_LOCK		0x77573912
 
-typedef struct {
-	uint type;
-	char name[FS_NAME_LEN];
-} sFSType;
-
-static sFSType types[] = {
-	{FS_TYPE_EXT2,"ext2"},
-	{FS_TYPE_ISO9660,"iso9660"},
-};
+static bool run = true;
 
 static void usage(const char *name) {
-	size_t i;
-	fprintf(stderr,"Usage: %s <device> <path> <type>\n",name);
-	fprintf(stderr,"	Types: ");
-	for(i = 0; i < ARRAY_SIZE(types); i++)
-		fprintf(stderr,"%s ",types[i].name);
-	fprintf(stderr,"\n");
+	fprintf(stderr,"Usage: %s <device> <path> <fs>\n",name);
+	fprintf(stderr,"	For example, %s /dev/hda1 /mnt ext2, where ext2 is a program\n",name);
+	fprintf(stderr,"	in PATH that takes the device as argument 2 and creates\n");
+	fprintf(stderr,"	/dev/ext2-hda1 (in this case).\n");
 	exit(EXIT_FAILURE);
 }
 
+static void sigchild(A_UNUSED int sig) {
+	run = false;
+}
+
 int main(int argc,const char *argv[]) {
+	char fsdev[MAX_PATH_LEN];
 	char *path = NULL;
 	char *dev = NULL;
-	char *stype = NULL;
-	size_t i;
-	uint type;
+	char *fs = NULL;
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"=s* =s* =s*",&dev,&path,&stype);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"=s* =s* =s*",&dev,&path,&fs);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
@@ -63,16 +58,53 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	for(i = 0; i < ARRAY_SIZE(types); i++) {
-		if(strcmp(types[i].name,stype) == 0) {
-			type = types[i].type;
-			break;
+	if(signal(SIG_CHILD_TERM,sigchild) == SIG_ERR)
+		error("Unable to announce signal handler");
+
+	/* build fs-device */
+	char *devname = strrchr(dev,'/');
+	char *fsname = strrchr(fs,'/');
+	if(!devname)
+		error("Invalid device name!");
+	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",fsname ? fsname + 1 : fs,devname + 1);
+
+	/* ensure that we don't start it twice */
+	lockg(MOUNT_LOCK,LOCK_EXCLUSIVE);
+
+	/* is it already started? */
+	int fd = open(fsdev,IO_MSGS);
+	if(fd == -ENOENT) {
+		/* ok, do so now */
+		int pid = fork();
+		if(pid < 0) {
+			unlockg(MOUNT_LOCK);
+			error("fork failed");
+		}
+		if(pid == 0) {
+			const char *args[] = {fs,fsdev,dev,NULL};
+			execp(fs,args);
+			error("exec failed");
+		}
+		else {
+			/* wait until fs-device is present */
+			while(run && (fd = open(fsdev,IO_MSGS)) == -ENOENT)
+				sleep(5);
+			if(!run)
+				errno = ENOENT;
 		}
 	}
-	if(i >= ARRAY_SIZE(types))
-		error("Unknown type '%s'",argv[3]);
+	if(fd < 0) {
+		unlockg(MOUNT_LOCK);
+		error("Unable to open '%s'",fsdev);
+	}
 
-	if(mount(dev,path,type) < 0)
-		error("Unable to mount '%s' @ '%s' with type %d",dev,path,type);
+	/* now mount it */
+	if(mount(fd,path) < 0) {
+		unlockg(MOUNT_LOCK);
+		error("Unable to mount '%s' @ '%s' with fs %s",dev,path,fs);
+	}
+
+	close(fd);
+	unlockg(MOUNT_LOCK);
 	return EXIT_SUCCESS;
 }

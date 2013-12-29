@@ -114,6 +114,8 @@ void ProcBase::init() {
 	p->entryPoint = 0;
 	p->priority = MAX_PRIO;
 	p->initProps();
+	MountSpace::create(p);
+	VFS::mountAll(p);
 	if(Sems::init(p) < 0)
 		Util::panic("Unable to init semaphores");
 	memclear(p->locks,sizeof(p->locks));
@@ -141,7 +143,6 @@ void ProcBase::init() {
 }
 
 void ProcBase::initProps() {
-	fsChans = SList<VFSFS::FSChan>();
 	env = NULL;
 	stats.input = 0;
 	stats.output = 0;
@@ -172,10 +173,6 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 	const char *curargs = args;
 	if(command)
 		Cache::free((char*)command);
-
-	/* store flag for the fs driver; TODO this is an ugly hack */
-	if(strstr(cmd,"/dev/fs") != NULL)
-		flags |= P_FS;
 
 	/* determine total length */
 	for(int i = 0; i < argc; ++i) {
@@ -271,6 +268,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->entryPoint = cur->entryPoint;
 	p->flags = flags;
 	p->initProps();
+	MountSpace::inherit(p,cur);
 
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
@@ -374,6 +372,7 @@ errorAdd:
 errorCmd:
 	Cache::free((void*)p->command);
 errorProc:
+	MountSpace::leave(p);
 	Cache::free(p);
 errorCur:
 	release(cur,PLOCK_PROG);
@@ -456,16 +455,6 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	if(p->pid != 0 && p->threads.length() > 1) {
 		release(p,PLOCK_PROG);
 		return -EINVAL;
-	}
-
-	if(!code) {
-		/* resolve path; require a path in real fs */
-		VFSNode *node;
-		if(VFSNode::request(path,&node,NULL,VFS_READ,0) != -EREALPATH) {
-			VFSNode::release(node);
-			release(p,PLOCK_PROG);
-			return -EINVAL;
-		}
 	}
 
 	argc = 0;
@@ -676,6 +665,7 @@ void ProcBase::doDestroy(Proc *p) {
 	doRemoveRegions(p,true);
 	p->virtmem.destroy();
 	Lock::releaseAll(p->pid);
+	MountSpace::leave(p);
 	terminateArch(p);
 
 	/* we are a zombie now, so notify parent that he can get our exit-state */
@@ -833,7 +823,6 @@ void ProcBase::print(OStream &os) const {
 	Env::printAllOf(os,pid);
 	FileDesc::print(os,static_cast<const Proc*>(this));
 	Sems::print(os,static_cast<const Proc*>(this));
-	VFSFS::printFSChans(os,static_cast<const Proc*>(this));
 	os.popIndent();
 	os.writef("\tThreads:\n");
 	for(auto t = threads.cbegin(); t != threads.cend(); ++t) {

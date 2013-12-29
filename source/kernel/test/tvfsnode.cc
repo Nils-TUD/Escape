@@ -71,7 +71,7 @@ static void test_vfs_node_resolvePath() {
 
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 	int err;
-	VFSNode *node;
+	VFSNode *node = NULL;
 	if((err = VFSNode::request(a,&node,NULL,VFS_READ,0)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
 		return false;
@@ -87,14 +87,17 @@ static void test_vfs_node_getPath() {
 
 	test_caseStart("Testing vfs_node_getPath()");
 
+	node = NULL;
 	VFSNode::request("/system",&node,NULL,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/system");
 	VFSNode::release(node);
 
+	node = NULL;
 	VFSNode::request("/system/processes",&node,NULL,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/system/processes");
 	VFSNode::release(node);
 
+	node = NULL;
 	VFSNode::request("/system/processes/0",&node,NULL,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/system/processes/0");
 	VFSNode::release(node);
@@ -153,6 +156,7 @@ static void test_vfs_node_dir_refs() {
 	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar/myfile2",&f1),0);
 	f1->close(pid);
 
+	n = NULL;
 	test_assertInt(VFSNode::request("/system/foobar",&n,NULL,0,0),0);
 	test_assertSize(n->getRefCount(),2);
 	VFSNode::release(n);

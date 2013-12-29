@@ -420,9 +420,17 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::sync(Thread *t,IntrptStackFrame *stack) {
-	pid_t pid = t->getProc()->getPid();
-	int res = VFS::sync(pid);
+int Syscalls::syncfs(Thread *t,IntrptStackFrame *stack) {
+	int fd = (int)SYSC_ARG1(stack);
+	Proc *p = t->getProc();
+
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	int res = file->syncfs(p->getPid());
+	FileDesc::release(file);
+
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -486,31 +494,56 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
-	char absdev[MAX_PATH_LEN + 1];
-	pid_t pid = t->getProc()->getPid();
-	const char *device = (const char*)SYSC_ARG1(stack);
+	int fd = SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
-	uint type = (uint)SYSC_ARG3(stack);
+
 	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(!absolutizePath(absdev,sizeof(absdev),device)))
-		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::mount(pid,absdev,abspath,type);
+	/* get device file */
+	OpenFile *file = FileDesc::request(t->getProc(),fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* mount it */
+	int res = MountSpace::mount(t->getProc(),abspath,file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+
+	FileDesc::release(file);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
-	pid_t pid = t->getProc()->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
+
 	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::unmount(pid,abspath);
+	int res = MountSpace::unmount(t->getProc(),abspath);
 	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+int Syscalls::getmsid(Thread *t,IntrptStackFrame *stack) {
+	int id = MountSpace::getId(t->getProc());
+	SYSC_RET1(stack,id);
+}
+
+int Syscalls::clonems(Thread *t,IntrptStackFrame *stack) {
+	int res = MountSpace::clone(t->getProc());
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
+	int id = SYSC_ARG1(stack);
+
+	int res = MountSpace::join(t->getProc(),id);
+	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }

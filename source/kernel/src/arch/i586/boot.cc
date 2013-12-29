@@ -67,8 +67,8 @@ static const BootTask tasks[] = {
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing FPU...",FPU::init},
 	{"Initializing VFS...",VFS::init},
-	{"Creating ACPI files...",ACPI::create_files},
 	{"Initializing processes...",Proc::init},
+	{"Creating ACPI files...",ACPI::create_files},
 	{"Initializing scheduler...",Sched::init},
 	{"Start logging to VFS...",Log::vfsIsReady},
 	{"Initializing interrupts...",Interrupts::init},
@@ -187,7 +187,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		return 0;
 
 	/* create module files */
-	VFSNode *node;
+	VFSNode *node = NULL;
 	int res = VFSNode::request("/system/mbmods",&node,NULL,VFS_WRITE,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /system/mbmods");
@@ -238,6 +238,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
+		node = NULL;
 		while(VFSNode::request(argv[1],&node,NULL,VFS_NOACCESS,0) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
@@ -251,6 +252,15 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		Boot::taskFinished();
 		mod++;
 	}
+
+	/* now all boot-modules are loaded, so mount root filesystem */
+	Proc *p = Proc::getByPid(Proc::getRunning());
+	OpenFile *file;
+	const char *rootDev = Config::getStr(Config::ROOT_DEVICE);
+	if((res = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,0,rootDev,&file)) < 0)
+		Util::panic("Unable to open root device '%s': %s",rootDev,strerror(-res));
+	if((res = MountSpace::mount(p,"/",file)) < 0)
+		Util::panic("Unable to mount /: %s",strerror(-res));
 
 	/* start the swapper-thread. it will never return */
 	if(PhysMem::canSwap())

@@ -36,8 +36,8 @@
 #include <string.h>
 #include <errno.h>
 
-VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,bool &success)
-		: VFSNode(pid,n,DIR_DEF_MODE,success) {
+VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
+		: VFSNode(pid,n,DIR_DEF_MODE | (m & 0777),success) {
 	VFSNode *l;
 	if(!success)
 		return;
@@ -85,45 +85,12 @@ size_t VFSDir::getSize(A_UNUSED pid_t pid) const {
 	return byteCount;
 }
 
-ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t offset,size_t count) {
-	void *fsBytes = NULL,*fsBytesDup;
+ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
+		off_t offset,size_t count) {
+	VFSDirEntry *fsBytes = NULL;
 	const VFSNode *n,*first;
 	assert(buffer != NULL);
-
-	/* the root-directory is distributed on the fs-device and the kernel */
-	/* therefore we have to read it from the fs-device, too */
-	/* but don't do that if we're the kernel (vfsr does not work then) */
 	size_t byteCount = 0;
-	size_t fsByteCount = 0;
-	if(parent == NULL && pid != KERNEL_PID) {
-		const size_t bufSize = 1024;
-		size_t c,curSize = bufSize;
-		fsBytes = Cache::alloc(bufSize);
-		if(fsBytes != NULL) {
-			OpenFile *rfile;
-			Thread::addHeapAlloc(fsBytes);
-			if(VFSFS::openPath(pid,VFS_READ,"/",&rfile) == 0) {
-				while((c = rfile->read(pid,(uint8_t*)fsBytes + fsByteCount,bufSize)) > 0) {
-					fsByteCount += c;
-					if(c < bufSize)
-						break;
-
-					curSize += bufSize;
-					fsBytesDup = Cache::realloc(fsBytes,curSize);
-					if(fsBytesDup == NULL) {
-						byteCount = 0;
-						goto error;
-					}
-					Thread::remHeapAlloc(fsBytes);
-					fsBytes = fsBytesDup;
-					Thread::addHeapAlloc(fsBytes);
-				}
-				rfile->close(pid);
-			}
-			Thread::remHeapAlloc(fsBytes);
-		}
-		byteCount += fsByteCount;
-	}
 
 	bool valid;
 	first = n = openDir(true,&valid);
@@ -139,12 +106,11 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 		}
 
 		/* now allocate mem on the heap and copy all data into it */
-		fsBytesDup = Cache::realloc(fsBytes,byteCount);
-		if(fsBytesDup == NULL)
+		fsBytes = (VFSDirEntry*)Cache::alloc(byteCount);
+		if(fsBytes == NULL)
 			byteCount = 0;
 		else {
-			VFSDirEntry *dirEntry = (VFSDirEntry*)((uint8_t*)fsBytesDup + fsByteCount);
-			fsBytes = fsBytesDup;
+			VFSDirEntry *dirEntry = fsBytes;
 			Thread::addHeapAlloc(fsBytes);
 			Thread::addLock(&VFSNode::treeLock);
 			n = first;
@@ -178,7 +144,6 @@ ssize_t VFSDir::read(pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,off_t o
 		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
 		Thread::remHeapAlloc(fsBytes);
 	}
-error:
 	Cache::free(fsBytes);
 	return byteCount;
 }

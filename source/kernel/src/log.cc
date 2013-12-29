@@ -42,7 +42,7 @@
 Log Log::inst;
 
 void Log::vfsIsReady() {
-	VFSNode *dir,*stdin;
+	VFSNode *dir = NULL,*stdin = NULL;
 	OpenFile *inFile;
 	pid_t pid = Proc::getRunning();
 

@@ -19,11 +19,30 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(void) {
-	if(sync() < 0)
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s <path>\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char **argv) {
+	const char *path;
+	int res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
+		usage(argv[0]);
+
+	int fd = open(path,IO_READ);
+	if(fd < 0)
+		error("open of '%s' failed",path);
+	if(syncfs(fd) < 0)
 		error("Sync failed");
+	close(fd);
 	return EXIT_SUCCESS;
 }

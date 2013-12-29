@@ -60,6 +60,8 @@
 #define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | \
 									 VFS_APPEND | VFS_NOBLOCK | VFS_EXCLUSIVE)
 
+class Proc;
+
 class VFS {
 	VFS() = delete;
 
@@ -68,6 +70,13 @@ public:
 	 * Initializes the virtual file system
 	 */
 	static void init();
+
+	/**
+	 * Mounts the virtual filesystems into the given process. Should only be used by init.
+	 *
+	 * @param p the process
+	 */
+	static void mountAll(Proc *p);
 
 	/**
 	 * Checks whether the process with given id has permission to use <n> with the given flags
@@ -149,33 +158,6 @@ public:
 	 * @return 0 on success
 	 */
 	static int chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
-
-	/**
-	 * Mounts <device> at <path> with given type.
-	 *
-	 * @param pid the process-id
-	 * @param device the device to mount
-	 * @param path the path to mount the device at
-	 * @param type the type of file-system to use
-	 * @return 0 on success
-	 */
-	static int mount(pid_t pid,const char *device,const char *path,uint type);
-
-	/**
-	 * Unmounts the given path
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @return 0 on success
-	 */
-	static int unmount(pid_t pid,const char *path);
-
-	/**
-	 * Writes all cached blocks to disk.
-	 *
-	 * @param pid the process-id
-	 */
-	static int sync(pid_t pid);
 
 	/**
 	 * Creates a link @ <newPath> to <oldPath>
@@ -285,6 +267,8 @@ private:
 	static bool hasMsg(VFSNode *node);
 	static bool hasData(VFSNode *node);
 	static bool hasWork(VFSNode *node);
+	static int request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,
+		OpenFile **res);
 
 	static VFSNode *procsNode;
 	static VFSNode *devNode;

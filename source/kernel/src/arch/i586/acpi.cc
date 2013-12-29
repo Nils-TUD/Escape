@@ -203,10 +203,10 @@ void ACPI::parse() {
 void ACPI::create_files() {
 	/* create /system/acpi */
 	bool created;
-	VFSNode *sys;
+	VFSNode *sys = NULL;
 	if(VFSNode::request("/system",&sys,&created,VFS_WRITE,0) != 0)
 		return;
-	VFSNode *acpidir = CREATE(VFSDir,KERNEL_PID,sys,(char*)"acpi");
+	VFSNode *acpidir = CREATE(VFSDir,KERNEL_PID,sys,(char*)"acpi",DIR_DEF_MODE);
 	if(!acpidir)
 		goto error;
 

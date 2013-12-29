@@ -70,7 +70,7 @@ size_t tpool_tidToId(tid_t tid) {
 	return 0;
 }
 
-bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,void *data) {
+bool tpool_addRequest(fReqHandler handler,sFileSystem *fs,int fd,const sMsg *msg,size_t msgSize,void *data) {
 	size_t i;
 	while(true) {
 		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
@@ -83,6 +83,7 @@ bool tpool_addRequest(fReqHandler handler,int fd,const sMsg *msg,size_t msgSize,
 					return false;
 				}
 				req->handler = handler;
+				req->fs = fs;
 				req->fd = fd;
 				req->data = data;
 				memcpy(&req->msg,msg,msgSize);
@@ -108,7 +109,7 @@ static int tpool_idle(sReqThread *t) {
 
 		/* handle request */
 		t->state = RT_STATE_BUSY;
-		t->req->handler(t->req->fd,&t->req->msg,t->req->data);
+		t->req->handler(t->req->fs,t->req->fd,&t->req->msg,t->req->data);
 
 		/* clean up */
 		close(t->req->fd);

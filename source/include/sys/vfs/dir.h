@@ -38,9 +38,10 @@ public:
 	 * @param pid the process-id
 	 * @param parent the parent-node
 	 * @param name the name
+	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSDir(pid_t pid,VFSNode *parent,char *name,bool &success);
+	explicit VFSDir(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success);
 
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual size_t getSize(pid_t pid) const;

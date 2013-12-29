@@ -22,8 +22,8 @@
 #include <esc/fsinterface.h>
 #include <esc/driver.h>
 #include <fs/fsdev.h>
-#include <fs/mount.h>
 #include <fs/threadpool.h>
+#include <fs/infodev.h>
 #include <fs/cmds.h>
 #include <signal.h>
 #include <stdio.h>
@@ -33,24 +33,28 @@ static void sigTermHndl(int sig);
 static void shutdown(void);
 
 static volatile bool run = true;
+static sFileSystem *fs;
 
-int fs_driverLoop(const char *diskDev,const char *fsDev,int type) {
+int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSystem *_fs) {
+	size_t clientCount = 0;
 	if(signal(SIG_TERM,sigTermHndl) == SIG_ERR)
 		error("Unable to set signal-handler for SIG_TERM");
 
+	fs = _fs;
+	int err = 0;
+	char *useddev;
+	fs->handle = fs->init(diskDev,&useddev,&err);
+	if(err < 0)
+		error("Unable to init filesystem");
+	printf("[%s] Mounted '%s'\n",name,useddev);
+	fflush(stdout);
+
+	if(infodev_start(fsDev,fs) < 0)
+		error("Unable to start infodev-handler");
 	tpool_init();
 
-	/* create root-fs */
-	dev_t rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/",diskDev,type);
-	if(rootDev < 0)
-		error("Unable to add root mount-point");
-	sFSInst *root = mount_get(rootDev);
-	if(root == NULL)
-		error("Unable to get root mount-point");
-	cmds_setRoot(rootDev,root);
-
 	/* register device (exec permission is enough) */
-	int id = createdev(fsDev,0111,DEV_TYPE_FS,DEV_CLOSE);
+	int id = createdev(fsDev,0111,DEV_TYPE_FS,DEV_OPEN | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'fs'");
 
@@ -69,19 +73,27 @@ int fs_driverLoop(const char *diskDev,const char *fsDev,int type) {
 		else {
 			void *data = NULL;
 			if(mid == MSG_FS_WRITE) {
-				data = malloc(msg.args.arg4);
-				if(!data || IGNSIGS(receive(fd,NULL,data,msg.args.arg4)) < 0) {
+				data = malloc(msg.args.arg3);
+				if(!data || IGNSIGS(receive(fd,NULL,data,msg.args.arg3)) < 0) {
 					printe("Illegal request");
 					close(fd);
 					continue;
 				}
 			}
+			else if(mid == MSG_DEV_OPEN) {
+				clientCount++;
+				msg.args.arg1 = 0;
+				send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+				continue;
+			}
 			else if(mid == MSG_DEV_CLOSE) {
 				close(fd);
+				if(--clientCount == 0)
+					break;
 				continue;
 			}
 
-			if(!cmds_execute(mid,fd,&msg,data)) {
+			if(!cmds_execute(fs,mid,fd,&msg,data)) {
 				msg.args.arg1 = -ENOTSUP;
 				send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 			}
@@ -89,6 +101,8 @@ int fs_driverLoop(const char *diskDev,const char *fsDev,int type) {
 	}
 
 	/* clean up */
+	printf("Shutting down '%s'\n",fsDev);
+	infodev_shutdown();
 	tpool_shutdown();
 	shutdown();
 	close(id);
@@ -102,11 +116,7 @@ static void sigTermHndl(A_UNUSED int sig) {
 }
 
 static void shutdown(void) {
-	size_t i;
-	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
-		sFSInst *inst = mount_get(i);
-		if(inst && inst->fs->sync != NULL)
-			inst->fs->sync(inst->handle);
-	}
+	if(fs->sync)
+		fs->sync(fs->handle);
 	exit(EXIT_SUCCESS);
 }

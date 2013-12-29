@@ -19,7 +19,6 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <fs/mount.h>
 #include <fs/blockcache.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,9 +36,8 @@
  */
 static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen);
 
-inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
+inode_t iso_dir_resolve(sISO9660 *h,A_UNUSED sFSUser *u,const char *path,uint flags) {
 	size_t extLoc,extSize;
-	dev_t mntDev;
 	const char *p = path;
 	ssize_t pos;
 	inode_t res;
@@ -80,18 +78,6 @@ inode_t iso_dir_resolve(sISO9660 *h,sFSUser *u,const char *path,uint flags,dev_t
 				while(*p == '/')
 					p++;
 				/* "/" at the end is optional */
-				if(!resLastMnt && !*p)
-					break;
-
-				/* is it a mount-point? */
-				res = GET_INODENO(extLoc + i,blockSize,(uintptr_t)e - (uintptr_t)blk->buffer);
-				mntDev = mount_getByLoc(*dev,res);
-				if(mntDev >= 0) {
-					sFSInst *inst = mount_get(mntDev);
-					*dev = mntDev;
-					bcache_release(blk);
-					return inst->fs->resPath(inst->handle,u,p,flags,dev,resLastMnt);
-				}
 				if(!*p)
 					break;
 

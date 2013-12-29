@@ -55,10 +55,6 @@
 #define ENOPROCS					31	/* No more process-slots available */
 #define ENOTHREADS					32	/* No more thread-slots available */
 #define EPIPE						33	/* Broken pipe */
-#if IN_KERNEL
-#define EREALPATH					34	/* Indicates that a path is unknown to the kernel and should
-											therefore be passed to fs */
-#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -132,6 +132,10 @@ int main(void) {
 	if(setgroups(groupCount,groups) < 0)
 		error("Unable to set groups");
 
+	/* give this process hierarchy its own mountspace */
+	if(clonems() < 0)
+		error("Unable to clone mountspace");
+
 	/* cd to home-dir */
 	if(isdir(u->home))
 		setenv("CWD",u->home);

@@ -21,8 +21,6 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <fs/mount.h>
+#include <fs/fsdev.h>
 
-sFSInst *cmds_getRoot(void);
-void cmds_setRoot(dev_t dev,sFSInst *fs);
-bool cmds_execute(int cmd,int fd,sMsg *msg,void *data);
+bool cmds_execute(sFileSystem *fs,int cmd,int fd,sMsg *msg,void *data);

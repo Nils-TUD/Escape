@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/endian.h>
-#include <fs/mount.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -33,10 +32,9 @@
 #include "file.h"
 #include "dir.h"
 
-inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t *dev,bool resLastMnt) {
+inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags) {
 	sExt2CInode *cnode = NULL;
 	inode_t res;
-	dev_t mntDev;
 	const char *p = path;
 	int err;
 	ssize_t pos;
@@ -68,17 +66,6 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags,dev_t 
 			while(*p == '/')
 				p++;
 			/* "/" at the end is optional */
-			if(!resLastMnt && !*p)
-				break;
-
-			/* is it a mount-point? */
-			mntDev = mount_getByLoc(*dev,res);
-			if(mntDev >= 0) {
-				sFSInst *inst = mount_get(mntDev);
-				*dev = mntDev;
-				ext2_icache_release(e,cnode);
-				return inst->fs->resPath(inst->handle,u,p,flags,dev,resLastMnt);
-			}
 			if(!*p)
 				break;
 

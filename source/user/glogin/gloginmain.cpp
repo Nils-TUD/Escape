@@ -215,6 +215,10 @@ int main(void) {
 	if(setuid(u->uid) < 0)
 		error("Unable to set uid");
 
+	/* give this process hierarchy its own mountspace */
+	if(clonems() < 0)
+		error("Unable to clone mountspace");
+
 	// cd to home-dir
 	if(isdir(u->home))
 		setenv("CWD",u->home);

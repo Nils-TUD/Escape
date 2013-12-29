@@ -37,13 +37,24 @@
 #define MODE_TYPE_SERVDEV			(0x0500000 | S_IFSERV)
 
 /* the device-number of the VFS */
-#define VFS_DEV_NO					((dev_t)0xFF)
+#define VFS_DEV_NO					0
 
 #define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 #define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
 #define IS_SEM(mode)				(((mode) & MODE_TYPE_SEM) != 0)
 #define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
+
+#ifdef __mmix__
+/* unfortunatly, we can't use the cheap solution that we use for the other architectures on mmix.
+ * because on mmix we don't have regions in virtual memory for nodes, gft, ..., but allocate one
+ * page at once and access it over the direct mapped space. thus, we search in the node-pages for
+ * this pointer to check whether its a node or not. */
+#	define IS_NODE(p)				VFSNode::isValidNode(p)
+#else
+#	define IS_NODE(p)				((uintptr_t)p >= VFSNODE_AREA && \
+ 									 (uintptr_t)p <= VFSNODE_AREA + VFSNODE_AREA_SIZE)
+#endif
 
 class VFSDevice;
 class VFSDir;
@@ -72,6 +83,16 @@ public:
 	 */
 	static bool isValid(inode_t nodeNo) {
 		return nodeNo >= 0 && nodeNo < (inode_t)nodeArray.getObjCount();
+	}
+	/**
+	 * Checks wether the given pointer is a pointer to a node or better: if its in the node-area
+	 * in memory.
+	 *
+	 * @param node the node pointer
+	 * @return true if so
+	 */
+	static bool isValidNode(const void *node) {
+		return nodeArray.getIndex(node) != -1;
 	}
 
 	/**
@@ -111,8 +132,8 @@ public:
 	 * prevent that by acquiring the tree-lock.
 	 *
 	 * @param path the path to resolve
-	 * @param node the node for that path (will be set)
-	 * @param created will be set to true if the (virtual) node didn't exist and has been created (may
+	 * @param node the node where to start and it will be set to the resulting node
+	 * @param created will be set to true if the node didn't exist and has been created (may
 	 * 	be NULL if you don't care about it)
 	 * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
 	 * @param mode the mode to set (if a file is created)

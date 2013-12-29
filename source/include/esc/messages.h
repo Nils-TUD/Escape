@@ -56,16 +56,14 @@
 #define MSG_FS_WRITE				102
 #define MSG_FS_CLOSE				103
 #define MSG_FS_STAT					104
-#define MSG_FS_SYNC					105
+#define MSG_FS_SYNCFS				105
 #define MSG_FS_LINK					106
 #define MSG_FS_UNLINK				107
 #define MSG_FS_MKDIR				108
 #define MSG_FS_RMDIR				109
-#define MSG_FS_MOUNT				110
-#define MSG_FS_UNMOUNT				111
-#define MSG_FS_ISTAT				112
-#define MSG_FS_CHMOD				113
-#define MSG_FS_CHOWN				114
+#define MSG_FS_ISTAT				110
+#define MSG_FS_CHMOD				111
+#define MSG_FS_CHOWN				112
 
 /* responses of fs */
 #define MSG_FS_OPEN_RESP			100005
@@ -77,11 +75,10 @@
 #define MSG_FS_UNLINK_RESP			100011
 #define MSG_FS_MKDIR_RESP			100012
 #define MSG_FS_RMDIR_RESP			100013
-#define MSG_FS_MOUNT_RESP			100014
-#define MSG_FS_UNMOUNT_RESP			100015
-#define MSG_FS_ISTAT_RESP			100016
-#define MSG_FS_CHMOD_RESP			100017
-#define MSG_FS_CHOWN_RESP			100018
+#define MSG_FS_ISTAT_RESP			100014
+#define MSG_FS_CHMOD_RESP			100015
+#define MSG_FS_CHOWN_RESP			100016
+#define MSG_FS_SYNCFS_RESP			100017
 
 /* == Other messages == */
 #define MSG_SPEAKER_BEEP			200	/* performs a beep */

@@ -93,7 +93,7 @@ istream& operator >>(istream& is,Device& dev) {
 
 istream& operator >>(istream& is,DriverProcess& drv) {
 	is >> drv._name;
-	while(!is.eof() && is.peek() != '\t') {
+	while(is.good() && is.peek() != '\t') {
 		string arg;
 		is >> arg;
 		drv._args.push_back(arg);

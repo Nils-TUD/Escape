@@ -27,7 +27,7 @@ namespace info {
 	std::vector<cpu*> cpu::get_list() {
 		std::vector<cpu*> list;
 		ifstream f("/system/cpu");
-		while(!f.eof()) {
+		while(f.good()) {
 			cpu *c = new cpu;
 			f >> *c;
 			list.push_back(c);

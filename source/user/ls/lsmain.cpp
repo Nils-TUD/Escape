@@ -275,15 +275,26 @@ static bool compareEntries(const lsfile* a,const lsfile* b) {
 }
 
 static vector<lsfile*> getEntries(const string& path) {
-	file dir(path);
 	vector<lsfile*> res;
-	if(dir.is_dir()) {
-		vector<sDirEntry> files = dir.list_files(flags & F_ALL);
-		for(auto it = files.begin(); it != files.end(); ++it)
-			res.push_back(buildFile(file(path,it->name)));
+	try {
+		file dir(path);
+		if(dir.is_dir()) {
+			vector<sDirEntry> files = dir.list_files(flags & F_ALL);
+			for(auto it = files.begin(); it != files.end(); ++it) {
+				try {
+					res.push_back(buildFile(file(path,it->name)));
+				}
+				catch(const exception &e) {
+					fprintf(stderr,"Skipping '%s/%s': %s\n",path.c_str(),it->name,e.what());
+				}
+			}
+		}
+		else
+			res.push_back(buildFile(dir));
 	}
-	else
-		res.push_back(buildFile(dir));
+	catch(const exception &e) {
+		fprintf(stderr,"Skipping '%s': %s\n",path.c_str(),e.what());
+	}
 	return res;
 }
 

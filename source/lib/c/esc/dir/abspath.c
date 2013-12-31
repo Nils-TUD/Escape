@@ -64,10 +64,10 @@ size_t abspath(char *dst,size_t dstSize,const char *src) {
 		pos = strchri(p,'/');
 
 		/* simply skip '.' */
-		if(pos == 1 && strncmp(p,".",1) == 0)
+		if(pos == 1 && p[0] == '.')
 			p += 2;
 		/* one layer back */
-		else if(pos == 2 && strncmp(p,"..",2) == 0) {
+		else if(pos == 2 && p[0] == '.' && p[1] == '.') {
 			if(layer > 0) {
 				char *start = pathtemp;
 				/* to last slash */

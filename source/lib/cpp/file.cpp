@@ -25,11 +25,11 @@
 
 namespace std {
 	file::file(const string& p)
-		: _info(sFileInfo()), _parent(string()), _name(string()) {
+		: _info(), _parent(), _name() {
 		init(p,"");
 	}
 	file::file(const string& p,const string& n)
-		: _info(sFileInfo()), _parent(string()), _name(string()) {
+		: _info(), _parent(), _name() {
 		init(p,n);
 	}
 	file::file(const file& f)
@@ -63,22 +63,28 @@ namespace std {
 	}
 
 	void file::init(const string& p,const string& n) {
-		string apath(p);
-		env::absolutify(apath);
-		if(apath.size() > 1 && apath[apath.size() - 1] == '/')
-			apath.erase(apath.end() - 1);
-		if(!n.empty()) {
-			if(apath.size() > 1)
-				apath += "/";
-			apath += n;
+		char apath[MAX_PATH_LEN];
+		size_t len = abspath(apath,sizeof(apath),p.c_str());
+		if(len > 1) {
+			/* remove ending slash */
+			apath[len - 1] = '\0';
 		}
-		string::size_type pos = apath.rfind('/');
-		if(!n.empty())
-			_name = n;
+		if(n.empty()) {
+			char *pos = strrchr(apath,'/');
+			if(len == 1)
+				_name = "";
+			else {
+				_name = string(pos + 1,apath + len);
+				if(pos == apath)
+					pos[1] = '\0';
+				else
+					pos[0] = '\0';
+			}
+		}
 		else
-			_name = string(apath.begin() + pos + 1,apath.end());
-		_parent = string(apath.begin(),apath.begin() + pos + 1);
-		int res = stat(apath.c_str(),&_info);
+			_name = n;
+		_parent = apath;
+		int res = stat(path().c_str(),&_info);
 		if(res < 0)
 			throw io_exception("stat failed",-res);
 	}

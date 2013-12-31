@@ -42,7 +42,7 @@ inode_t iso_dir_resolve(sISO9660 *h,A_UNUSED sFSUser *u,const char *path,uint fl
 	ssize_t pos;
 	inode_t res;
 	sCBlock *blk;
-	size_t i,blockSize = ISO_BLK_SIZE(h);
+	size_t i,off,blockSize = ISO_BLK_SIZE(h);
 
 	while(*p == '/')
 		p++;
@@ -55,6 +55,7 @@ inode_t iso_dir_resolve(sISO9660 *h,A_UNUSED sFSUser *u,const char *path,uint fl
 	while(*p) {
 		const sISODirEntry *e;
 		i = 0;
+		off = 0;
 		blk = bcache_request(&h->blockCache,extLoc,BMODE_READ);
 		if(blk == NULL)
 			return -ENOBUFS;
@@ -63,6 +64,9 @@ inode_t iso_dir_resolve(sISO9660 *h,A_UNUSED sFSUser *u,const char *path,uint fl
 		while((uintptr_t)e < (uintptr_t)blk->buffer + blockSize) {
 			/* continue with next block? */
 			if(e->length == 0) {
+				off += blockSize;
+				if(off >= extSize)
+					break;
 				bcache_release(blk);
 				blk = bcache_request(&h->blockCache,extLoc + ++i,BMODE_READ);
 				if(blk == NULL)

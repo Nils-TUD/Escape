@@ -135,12 +135,14 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 		start = length - (slash - str) - 1;
 		length -= slash - str + 1;
 		str += slash - str + 1;
+		/* if there is a slash in the path, we don't want to search in PATH */
+		paths[0] = NULL;
 	}
 
 	/* we don't want to look in a directory twice */
-	if(paths[1] && strcmp(paths[0],paths[1]) == 0 && searchPath)
+	if(paths[1] && paths[0] && searchPath && strcmp(paths[0],paths[1]) == 0)
 		paths[1] = NULL;
-	else if(paths[2] && strcmp(paths[0],paths[2]) == 0 && searchPath) {
+	else if(paths[2] && paths[0] && searchPath && strcmp(paths[0],paths[2]) == 0) {
 		free(paths[2]);
 		paths[2] = NULL;
 	}

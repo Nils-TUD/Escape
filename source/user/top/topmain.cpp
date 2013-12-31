@@ -83,105 +83,110 @@ static bool compareProcs(const process* a,const process* b) {
 
 static void display(void) {
 	locku(&displayLock);
-	size_t cpubarwidth;
-	sScreenMode mode;
-	if(screen_getMode(STDIN_FILENO,&mode) < 0) {
-		printe("Unable to determine screensize; falling back to 80x25");
-		mode.cols = 80;
-		mode.rows = 25;
-	}
-	cpubarwidth = mode.cols - SSTRLEN("  99 [10000/10000MB]  ");
+	try {
+		size_t cpubarwidth;
+		sScreenMode mode;
+		if(screen_getMode(STDIN_FILENO,&mode) < 0) {
+			printe("Unable to determine screensize; falling back to 80x25");
+			mode.cols = 80;
+			mode.rows = 25;
+		}
+		cpubarwidth = mode.cols - SSTRLEN("  99 [10000/10000MB]  ");
 
-	vector<cpu*> cpus = cpu::get_list();
-	vector<process*> procs = process::get_list(false,0,true);
-	std::sort(procs.begin(),procs.end(),compareProcs);
-	memusage mem = memusage::get();
+		vector<cpu*> cpus = cpu::get_list();
+		vector<process*> procs = process::get_list(false,0,true);
+		std::sort(procs.begin(),procs.end(),compareProcs);
+		memusage mem = memusage::get();
 
-	cout << "\e[go;0;0]";
-	for(uint y = 0; y < mode.rows; ++y) {
-		for(uint x = 0; x < mode.cols; ++x)
-			cout << " ";
-	}
-	cout << "\e[go;0;0]";
+		cout << "\e[go;0;0]";
+		for(uint y = 0; y < mode.rows; ++y) {
+			for(uint x = 0; x < mode.cols; ++x)
+				cout << " ";
+		}
+		cout << "\e[go;0;0]";
 
-	for(auto it = cpus.begin(); it != cpus.end(); ++it) {
-		double ratio = (*it)->usedCycles() / (double)((*it)->totalCycles());
-		printCPUBar(cpubarwidth,ratio,(*it)->id());
-	}
-	freevector(cpus);
+		for(auto it = cpus.begin(); it != cpus.end(); ++it) {
+			double ratio = (*it)->usedCycles() / (double)((*it)->totalCycles());
+			printCPUBar(cpubarwidth,ratio,(*it)->id());
+		}
+		freevector(cpus);
 
-	printMemBar(cpubarwidth,mem.used(),mem.total(),"Mem");
-	printMemBar(cpubarwidth,mem.swapUsed(),mem.swapTotal(),"Swp");
-	cout << "\n";
-
-	size_t wpid = 5;
-	size_t wuser = 10;
-	size_t wvirt = 6;
-	size_t wphys = 6;
-	size_t wshm = 6;
-	size_t wcpu = 6;
-	size_t wmem = 6;
-	size_t wtime = 11;
-	size_t cmdbegin = wpid + wuser + wvirt + wphys + wshm + wcpu + wmem + wtime;
-
-	// print header
-	cout << "\e[co;0;7]";
-	cout << right << setw(wpid) << " PID" << left << setw(wuser) << " USER";
-	cout << right << setw(wvirt) << " VIRT" << setw(wphys) << " PHYS" << setw(wshm) << " SHR";
-	cout << setw(wcpu) << " CPU%" << setw(wmem) << " MEM%";
-	cout << setw(wtime) << " TIME" << " Command";
-	for(uint x = cmdbegin + SSTRLEN(" Command"); x < mode.cols; ++x)
-		cout << ' ';
-	cout << "\n\e[co]";
-
-	// print threads
-	size_t totalframes = 0;
-	cpu::cycle_type totalcycles = 0;
-	for(auto it = procs.begin(); it != procs.end(); ++it) {
-		totalframes += (*it)->ownFrames();
-		totalcycles += (*it)->cycles();
-	}
-
-	size_t i = 0;
-	size_t y = cpus.size() + 4;
-	size_t yoff = MIN(yoffset,MAX(0,(ssize_t)procs.size() - (ssize_t)(mode.rows - y)));
-	auto it = procs.begin();
-	advance(it,yoff);
-	for(; y < mode.rows && it != procs.end(); ++it, ++i) {
-		char time[12];
-		const process &p = **it;
-		sUser *user = user_getById(users,p.uid());
-
-		cout << setw(wpid) << p.pid();
-		cout << " " << left << setw(wuser - 1);
-		if(user)
-			cout.write(user->name,min(strlen(user->name),wuser - 1));
-		else
-			cout << p.uid();
-
-		cout << right << setw(wvirt - 1) << ((p.pages() * pagesize) / 1024) << "K";
-		cout << setw(wphys - 1) << ((p.ownFrames() * pagesize) / 1024) << "K";
-		cout << setw(wshm - 1) << ((p.sharedFrames() * pagesize) / 1024) << "K";
-
-		cout << setw(wcpu) << setprecision(1) << (100.0 * (p.cycles() / (double)totalcycles));
-		cout << setw(wmem) << setprecision(1) << (100.0 * (p.ownFrames() / (double)totalframes));
-
-		process::cycle_type ms = p.runtime() / 1000;
-		process::cycle_type mins = ms / (60 * 1000);
-		ms %= 60 * 1000;
-		process::cycle_type secs = ms / 1000;
-		ms %= 1000;
-		snprintf(time,sizeof(time),"%Lu:%02Lu.%03Lu",mins,secs,ms);
-		cout << setw(wtime) << time;
-
-		cout << " ";
-		cout.write(p.command().c_str(),min(p.command().length(),mode.cols - cmdbegin - 1));
-		if(++y >= mode.rows)
-			break;
+		printMemBar(cpubarwidth,mem.used(),mem.total(),"Mem");
+		printMemBar(cpubarwidth,mem.swapUsed(),mem.swapTotal(),"Swp");
 		cout << "\n";
+
+		size_t wpid = 5;
+		size_t wuser = 10;
+		size_t wvirt = 6;
+		size_t wphys = 6;
+		size_t wshm = 6;
+		size_t wcpu = 6;
+		size_t wmem = 6;
+		size_t wtime = 11;
+		size_t cmdbegin = wpid + wuser + wvirt + wphys + wshm + wcpu + wmem + wtime;
+
+		// print header
+		cout << "\e[co;0;7]";
+		cout << right << setw(wpid) << " PID" << left << setw(wuser) << " USER";
+		cout << right << setw(wvirt) << " VIRT" << setw(wphys) << " PHYS" << setw(wshm) << " SHR";
+		cout << setw(wcpu) << " CPU%" << setw(wmem) << " MEM%";
+		cout << setw(wtime) << " TIME" << " Command";
+		for(uint x = cmdbegin + SSTRLEN(" Command"); x < mode.cols; ++x)
+			cout << ' ';
+		cout << "\n\e[co]";
+
+		// print threads
+		size_t totalframes = 0;
+		cpu::cycle_type totalcycles = 0;
+		for(auto it = procs.begin(); it != procs.end(); ++it) {
+			totalframes += (*it)->ownFrames();
+			totalcycles += (*it)->cycles();
+		}
+
+		size_t i = 0;
+		size_t y = cpus.size() + 4;
+		size_t yoff = MIN(yoffset,MAX(0,(ssize_t)procs.size() - (ssize_t)(mode.rows - y)));
+		auto it = procs.begin();
+		advance(it,yoff);
+		for(; y < mode.rows && it != procs.end(); ++it, ++i) {
+			char time[12];
+			const process &p = **it;
+			sUser *user = user_getById(users,p.uid());
+
+			cout << setw(wpid) << p.pid();
+			cout << " " << left << setw(wuser - 1);
+			if(user)
+				cout.write(user->name,min(strlen(user->name),wuser - 1));
+			else
+				cout << p.uid();
+
+			cout << right << setw(wvirt - 1) << ((p.pages() * pagesize) / 1024) << "K";
+			cout << setw(wphys - 1) << ((p.ownFrames() * pagesize) / 1024) << "K";
+			cout << setw(wshm - 1) << ((p.sharedFrames() * pagesize) / 1024) << "K";
+
+			cout << setw(wcpu) << setprecision(1) << (100.0 * (p.cycles() / (double)totalcycles));
+			cout << setw(wmem) << setprecision(1) << (100.0 * (p.ownFrames() / (double)totalframes));
+
+			process::cycle_type ms = p.runtime() / 1000;
+			process::cycle_type mins = ms / (60 * 1000);
+			ms %= 60 * 1000;
+			process::cycle_type secs = ms / 1000;
+			ms %= 1000;
+			snprintf(time,sizeof(time),"%Lu:%02Lu.%03Lu",mins,secs,ms);
+			cout << setw(wtime) << time;
+
+			cout << " ";
+			cout.write(p.command().c_str(),min(p.command().length(),mode.cols - cmdbegin - 1));
+			if(++y >= mode.rows)
+				break;
+			cout << "\n";
+		}
+		freevector(procs);
+		cout.flush();
 	}
-	freevector(procs);
-	cout.flush();
+	catch(const exception &e) {
+		cerr << "Update failed: " << e.what() << endl;
+	}
 	unlocku(&displayLock);
 }
 

@@ -124,11 +124,15 @@ int main(int argc,char **argv) {
 
 	/* parse users and groups from file */
 	userList = user_parseFromFile(USERS_PATH,nullptr);
-	if(!userList)
-		error("Unable to parse users from file");
+	if(!userList) {
+		numeric = true;
+		printe("Warning: unable to parse users from file");
+	}
 	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
-	if(!groupList)
-		error("Unable to parse groups from file");
+	if(!groupList) {
+		numeric = true;
+		printe("Warning: unable to parse groups from file");
+	}
 
 	uid_t uid = own ? getuid() : 0;
 	vector<process*> procs = process::get_list(false,0,true);

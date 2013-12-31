@@ -150,11 +150,15 @@ int main(int argc,char *argv[]) {
 	// read users and groups
 	if(flags & F_LONG) {
 		userList = user_parseFromFile(USERS_PATH,nullptr);
-		if(!userList)
-			error("Unable to parse users from file");
+		if(!userList) {
+			printe("Warning: unable to parse users from file");
+			flags |= F_NUMERIC;
+		}
 		groupList = group_parseFromFile(GROUPS_PATH,nullptr);
-		if(!groupList)
-			error("Unable to parse groups from file");
+		if(!groupList) {
+			printe("Unable to parse groups from file");
+			flags |= F_NUMERIC;
+		}
 	}
 
 	// get entries and sort them

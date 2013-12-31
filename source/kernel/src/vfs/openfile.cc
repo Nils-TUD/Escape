@@ -365,6 +365,7 @@ void OpenFile::printAll(OStream &os) {
 			os.writef("\t\tdevNo: %d\n",f->devNo);
 			os.writef("\t\tpos: %Od\n",f->position);
 			os.writef("\t\trefCount: %d\n",f->refCount);
+			os.writef("\t\tusageCount: %d\n",f->usageCount);
 			if(f->owner == KERNEL_PID)
 				os.writef("\t\towner: %d (kernel)\n",f->owner);
 			else {

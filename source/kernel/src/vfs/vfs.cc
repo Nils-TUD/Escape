@@ -331,28 +331,33 @@ int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	VFSNode *link;
 	int res;
 
-	OpenFile *oldFsFile,*newFsFile;
+	OpenFile *oldFsFile = NULL,*newFsFile = NULL;
 	const char *oldBegin,*newBegin;
 	int oldRes = request(pid,oldPath,VFS_READ,0,&oldBegin,&oldFsFile);
 	if(oldRes < 0)
 		return oldRes;
-	int newRes = request(pid,newPath,VFS_WRITE,0,&newBegin,&newFsFile);
+	int newRes = request(pid,newPath,VFS_WRITE | VFS_NONODERES,0,&newBegin,&newFsFile);
 	oldNode = reinterpret_cast<VFSNode*>(oldFsFile);
 	newNode = reinterpret_cast<VFSNode*>(newFsFile);
 	if(newRes < 0) {
 		res = newRes;
 		goto errorRelease;
 	}
-	if(oldFsFile != newFsFile) {
-		res = -EXDEV;
-		goto errorRelease;
-	}
 
 	if(!IS_NODE(oldFsFile)) {
+		if(oldFsFile != newFsFile) {
+			res = -EXDEV;
+			goto errorRelease;
+		}
 		res = VFSFS::link(pid,oldFsFile,oldBegin,newBegin);
 		MountSpace::release(oldFsFile);
 		MountSpace::release(newFsFile);
 		return res;
+	}
+
+	if(!IS_NODE(newFsFile)) {
+		res = -EXDEV;
+		goto errorRelease;
 	}
 
 	/* TODO prevent recursion? */
@@ -408,8 +413,12 @@ errorName:
 errorRelease:
 	if(IS_NODE(oldNode))
 		VFSNode::release(oldNode);
+	else
+		MountSpace::release(oldFsFile);
 	if(IS_NODE(newNode))
 		VFSNode::release(newNode);
+	else
+		MountSpace::release(newFsFile);
 	return res;
 }
 

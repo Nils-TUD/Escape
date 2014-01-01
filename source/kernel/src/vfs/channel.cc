@@ -527,11 +527,12 @@ VFSChannel::Message *VFSChannel::getMsg(Thread *t,SList<Message> *list,ushort fl
 
 void VFSChannel::print(OStream &os) const {
 	const SList<Message> *lists[] = {&sendList,&recvList};
+	os.writef("%-8s: snd=%zu rcv=%zu used=%d closed=%d fd=%02d shm=%zuK\n",
+		name,sendList.length(),recvList.length(),used,closed,fd,shmem ? shmemSize / 1024 : 0);
 	for(size_t i = 0; i < ARRAY_SIZE(lists); i++) {
-		size_t count = lists[i]->length();
-		os.writef("Channel %s %s: (%zu,%s)\n",name,i ? "recvs" : "sends",count,used ? "used" : "-");
 		for(auto it = lists[i]->cbegin(); it != lists[i]->cend(); ++it) {
-			os.writef("\tid=%u len=%zu, thread=%d:%d:%s\n",it->id,it->length,
+			os.writef("\t%s id=%u len=%zu, thread=%d:%d:%s\n",i == 0 ? "->" : "<-",
+					it->id,it->length,
 					it->thread ? it->thread->getTid() : -1,
 					it->thread ? it->thread->getProc()->getPid() : -1,
 					it->thread ? it->thread->getProc()->getProgram() : "");

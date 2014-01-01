@@ -34,6 +34,8 @@
 
 klock_t OpenFile::gftLock;
 DynArray OpenFile::gftArray(sizeof(OpenFile),GFT_AREA,GFT_AREA_SIZE);
+OpenFile *OpenFile::usedList = NULL;
+OpenFile *OpenFile::exclList = NULL;
 OpenFile *OpenFile::gftFreeList = NULL;
 extern klock_t waitLock;
 
@@ -307,7 +309,6 @@ bool OpenFile::doClose(pid_t pid) {
 
 			/* mark unused */
 			Cache::free(path);
-			flags = 0;
 			releaseFile(this);
 			return true;
 		}
@@ -388,8 +389,10 @@ void OpenFile::printAll(OStream &os) {
 				else
 					os.writef("\t\tFile: '%s'\n",f->getPath());
 			}
-			else
+			else {
 				os.writef("\t\tFile: '%s'\n",f->getPath());
+				os.writef("\t\tFS: '%s'\n",f->node->isAlive() ? f->node->getPath() : "<destroyed>");
+			}
 		}
 	}
 }
@@ -422,31 +425,33 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		return -EINVAL;
 
 	SpinLock::acquire(&gftLock);
-	/* for devices it doesn't matter whether we use an existing file or a new one, because it is
-	 * no problem when multiple threads use it for writing */
+	/* devices and files can't be used exclusively */
 	if(!isDrvUse) {
-		/* TODO walk through used-list and pick first from freelist */
-		ushort rwFlags = flags & userFlags;
-		for(i = 0; i < FILE_COUNT; i++) {
-			e = (OpenFile*)gftArray.getObj(i);
-			/* used slot and same node? */
-			if(e->flags != 0) {
+		/* check if somebody has this file currently exclusively */
+		e = exclList;
+		while(e) {
+			assert(e->flags != 0);
+			/* same file? */
+			if(e->devNo == devNo && e->nodeNo == nodeNo) {
+				assert(e->flags & VFS_EXCLUSIVE);
+				SpinLock::release(&gftLock);
+				return -EBUSY;
+			}
+			e = e->next;
+		}
+
+		/* if we want to have it exclusively, check if it is already open */
+		if(flags & VFS_EXCLUSIVE) {
+			e = usedList;
+			while(e) {
+				assert(e->flags != 0);
+				assert(~e->flags & VFS_EXCLUSIVE);
 				/* same file? */
 				if(e->devNo == devNo && e->nodeNo == nodeNo) {
-					if(e->owner == pid) {
-						/* if the flags are the same we don't need a new file */
-						if((e->flags & userFlags) == rwFlags) {
-							e->incRefs();
-							SpinLock::release(&gftLock);
-							*f = e;
-							return 0;
-						}
-					}
-					else if((rwFlags & VFS_EXCLUSIVE) || (e->flags & VFS_EXCLUSIVE)) {
-						SpinLock::release(&gftLock);
-						return -EBUSY;
-					}
+					SpinLock::release(&gftLock);
+					return -EBUSY;
 				}
+				e = e->next;
 			}
 		}
 	}
@@ -473,6 +478,16 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		gftFreeList = gftFreeList->next;
 		*f = e;
 	}
+
+	/* insert in corresponding list */
+	if(flags & VFS_EXCLUSIVE) {
+		e->next = exclList;
+		exclList = e;
+	}
+	else {
+		e->next = usedList;
+		usedList = e;
+	}
 	SpinLock::release(&gftLock);
 
 	/* count references of virtual nodes */
@@ -491,6 +506,22 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 
 void OpenFile::releaseFile(OpenFile *file) {
 	SpinLock::acquire(&gftLock);
+	OpenFile *e = (file->flags & VFS_EXCLUSIVE) ? exclList : usedList;
+	OpenFile *p = NULL;
+	while(e) {
+		if(e == file)
+			break;
+		p = e;
+		e = e->next;
+	}
+	assert(e);
+	if(p)
+		p->next = e->next;
+	else if(file->flags & VFS_EXCLUSIVE)
+		exclList = e->next;
+	else
+		usedList = e->next;
+	file->flags = 0;
 	file->next = gftFreeList;
 	gftFreeList = file;
 	SpinLock::release(&gftLock);

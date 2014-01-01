@@ -344,5 +344,7 @@ private:
 	/* global file table (expands dynamically) */
 	static klock_t gftLock;
 	static DynArray gftArray;
+	static OpenFile *usedList;
+	static OpenFile *exclList;
 	static OpenFile *gftFreeList;
 };

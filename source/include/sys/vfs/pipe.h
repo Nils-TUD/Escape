@@ -48,7 +48,7 @@ public:
 	virtual size_t getSize(pid_t pid) const;
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
 	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
-	virtual void close(pid_t pid,OpenFile *file);
+	virtual void close(pid_t pid,OpenFile *file,int msgid);
 
 private:
 	uint8_t noReader;

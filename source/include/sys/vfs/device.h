@@ -118,7 +118,7 @@ public:
 	int getWork(uint flags);
 
 	virtual size_t getSize(pid_t pid) const;
-	virtual void close(pid_t pid,OpenFile *file);
+	virtual void close(pid_t pid,OpenFile *file,int msgid);
 	virtual void print(OStream &os) const;
 
 private:

@@ -65,7 +65,7 @@ size_t VFSDevice::getSize(A_UNUSED pid_t pid) const {
 	return msgCount;
 }
 
-void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file) {
+void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int msgid) {
 	/* wakeup all threads that may be waiting for this node so they can check
 	 * whether they are affected by the remove of this device and perform the corresponding
 	 * action */

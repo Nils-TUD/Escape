@@ -29,6 +29,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include "files.h"
+
 static void cmds_open(sFileSystem *fs,int fd,sMsg *msg);
 static void cmds_read(sFileSystem *fs,int fd,sMsg *msg);
 static void cmds_write(sFileSystem *fs,int fd,sMsg *msg,void *data);
@@ -74,18 +76,77 @@ bool cmds_execute(sFileSystem *fs,int cmd,int fd,sMsg *msg,void *data) {
 }
 
 static void cmds_open(sFileSystem *fs,int fd,sMsg *msg) {
-	uint flags = msg->args.arg1;
+	uint flags = msg->str.arg1;
 	inode_t no;
 	sFSUser u;
 	u.uid = msg->str.arg2;
 	u.gid = msg->str.arg3;
 	u.pid = msg->str.arg4;
 	no = fs->resPath(fs->handle,&u,msg->str.s1,flags);
-	if(no >= 0)
+	if(no >= 0) {
 		msg->args.arg1 = fs->open(fs->handle,&u,no,flags);
+		if((int)msg->args.arg1 >= 0) {
+			int res = files_open(fd,no);
+			if(res < 0) {
+				fs->close(fs->handle,no);
+				msg->args.arg1 = res;
+			}
+		}
+	}
 	else
 		msg->args.arg1 = -ENOENT;
 	send(fd,MSG_FS_OPEN_RESP,msg,sizeof(msg->args));
+}
+
+static void cmds_istat(sFileSystem *fs,int fd,sMsg *msg) {
+	FSFile *file = files_get(fd);
+	sFileInfo *info = (sFileInfo*)&(msg->data.d);
+	msg->data.arg1 = fs->stat(fs->handle,file->ino,info);
+	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
+}
+
+static void cmds_read(sFileSystem *fs,int fd,sMsg *msg) {
+	FSFile *file = files_get(fd);
+	uint offset = msg->args.arg1;
+	size_t count = msg->args.arg2;
+	void *buffer = NULL;
+	if(fs->read == NULL)
+		msg->args.arg1 = -ENOTSUP;
+	else {
+		buffer = malloc(count);
+		if(buffer == NULL)
+			msg->args.arg1 = -ENOMEM;
+		else
+			msg->args.arg1 = fs->read(fs->handle,file->ino,buffer,offset,count);
+	}
+	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
+	if(buffer) {
+		if(msg->args.arg1 > 0)
+			send(fd,MSG_DEV_READ_RESP,buffer,msg->args.arg1);
+		free(buffer);
+	}
+}
+
+static void cmds_write(sFileSystem *fs,int fd,sMsg *msg,void *data) {
+	FSFile *file = files_get(fd);
+	uint offset = msg->args.arg1;
+	size_t count = msg->args.arg2;
+	if(fs->readonly)
+		msg->args.arg1 = -EROFS;
+	else if(fs->write == NULL)
+		msg->args.arg1 = -ENOTSUP;
+	/* write to file */
+	else
+		msg->args.arg1 = fs->write(fs->handle,file->ino,data,offset,count);
+	/* send response */
+	send(fd,MSG_DEV_WRITE_RESP,msg,sizeof(msg->args));
+}
+
+static void cmds_close(sFileSystem *fs,int fd,A_UNUSED sMsg *msg) {
+	FSFile *file = files_get(fd);
+	fs->close(fs->handle,file->ino);
+	files_close(fd);
+	close(fd);
 }
 
 static void cmds_stat(sFileSystem *fs,int fd,sMsg *msg) {
@@ -100,13 +161,6 @@ static void cmds_stat(sFileSystem *fs,int fd,sMsg *msg) {
 		msg->data.arg1 = no;
 	else
 		msg->data.arg1 = fs->stat(fs->handle,no,info);
-	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
-}
-
-static void cmds_istat(sFileSystem *fs,int fd,sMsg *msg) {
-	inode_t ino = (inode_t)msg->args.arg1;
-	sFileInfo *info = (sFileInfo*)&(msg->data.d);
-	msg->data.arg1 = fs->stat(fs->handle,ino,info);
 	send(fd,MSG_FS_STAT_RESP,msg,sizeof(msg->data));
 }
 
@@ -153,43 +207,6 @@ static void cmds_chown(sFileSystem *fs,int fd,sMsg *msg) {
 			msg->args.arg1 = fs->chown(fs->handle,&u,ino,uid,gid);
 	}
 	send(fd,MSG_FS_CHOWN_RESP,msg,sizeof(msg->args));
-}
-
-static void cmds_read(sFileSystem *fs,int fd,sMsg *msg) {
-	inode_t ino = (inode_t)msg->args.arg1;
-	uint offset = msg->args.arg2;
-	size_t count = msg->args.arg3;
-	void *buffer = NULL;
-	if(fs->read == NULL)
-		msg->args.arg1 = -ENOTSUP;
-	else {
-		buffer = malloc(count);
-		if(buffer == NULL)
-			msg->args.arg1 = -ENOMEM;
-		else
-			msg->args.arg1 = fs->read(fs->handle,ino,buffer,offset,count);
-	}
-	send(fd,MSG_FS_READ_RESP,msg,sizeof(msg->args));
-	if(buffer) {
-		if(msg->args.arg1 > 0)
-			send(fd,MSG_FS_READ_RESP,buffer,msg->args.arg1);
-		free(buffer);
-	}
-}
-
-static void cmds_write(sFileSystem *fs,int fd,sMsg *msg,void *data) {
-	inode_t ino = (inode_t)msg->args.arg1;
-	uint offset = msg->args.arg2;
-	size_t count = msg->args.arg3;
-	if(fs->readonly)
-		msg->args.arg1 = -EROFS;
-	else if(fs->write == NULL)
-		msg->args.arg1 = -ENOTSUP;
-	/* write to file */
-	else
-		msg->args.arg1 = fs->write(fs->handle,ino,data,offset,count);
-	/* send response */
-	send(fd,MSG_FS_WRITE_RESP,msg,sizeof(msg->args));
 }
 
 static char *splitPath(char *path) {
@@ -328,9 +345,4 @@ static void cmds_syncfs(sFileSystem *fs,A_UNUSED int fd,A_UNUSED sMsg *msg) {
 		fs->sync(fs->handle);
 	msg->args.arg1 = 0;
 	send(fd,MSG_FS_SYNCFS_RESP,msg,sizeof(msg->args));
-}
-
-static void cmds_close(sFileSystem *fs,A_UNUSED int fd,sMsg *msg) {
-	inode_t ino = msg->args.arg1;
-	fs->close(fs->handle,ino);
 }

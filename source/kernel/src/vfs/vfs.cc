@@ -155,57 +155,64 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 		return err;
 
 	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
+	VFSNode *node;
+	msgid_t openmsg;
 	if(IS_NODE(fsFile)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-
-		/* if its a device, create the channel-node */
-		inode_t nodeNo = node->getNo();
-		if(IS_DEVICE(node->getMode())) {
-			VFSNode *child;
-			/* check if we can access the device */
-			if((err = hasAccess(pid,node,flags)) < 0) {
-				VFSNode::release(node);
-				return err;
-			}
-			child = CREATE(VFSChannel,pid,node);
-			if(child == NULL) {
-				VFSNode::release(node);
-				return -ENOMEM;
-			}
-			VFSNode::release(node);
-			node = child;
-		}
-
-		/* open file */
-		err = openFile(pid,flags,node,nodeNo,VFS_DEV_NO,file);
-		if(err < 0) {
-			VFSNode::release(node);
-			return err;
-		}
-
-		/* give the node a chance to react on it */
-		err = node->open(pid,*file,flags);
-		if(err < 0) {
-			/* close removes the channel device-node, if it is one */
-			(*file)->close(pid);
-			VFSNode::release(node);
-			return err;
-		}
-		VFSNode::release(node);
+		node = reinterpret_cast<VFSNode*>(fsFile);
+		openmsg = MSG_DEV_OPEN;
 	}
+	/* otherwise use the device-node of the fs */
 	else {
-		/* send msg to fs and wait for reply */
-		err = VFSFS::openPath(pid,fsFile,flags,begin,file);
-		if(err < 0) {
-			/* only release it on error. otherwise we've stored it in <file> and will release it as
-			 * soon as <file> is closed */
-			MountSpace::release(fsFile);
+		/* ensure that nobody can destroy that in the meantime by adding a reference */
+		VFSNode::acquireTree();
+		node = fsFile->getNode();
+		if(node->getParent())
+			node = VFSNode::request(node->getParent()->getNo());
+		VFSNode::releaseTree();
+		openmsg = MSG_FS_OPEN;
+	}
+
+	/* if its a device, create the channel-node */
+	inode_t nodeNo = node->getNo();
+	if(IS_DEVICE(node->getMode())) {
+		VFSNode *child;
+		/* check if we can access the device */
+		if((err = hasAccess(pid,node,flags)) < 0) {
+			VFSNode::release(node);
 			return err;
 		}
-
-		/* store the path for debugging purposes */
-		(*file)->setPath(strdup(path));
+		child = CREATE(VFSChannel,pid,node);
+		VFSNode::release(node);
+		if(child == NULL)
+			return -ENOMEM;
+		node = child;
 	}
+
+	/* give the node a chance to react on it */
+	err = node->open(pid,begin,flags,openmsg);
+	if(err < 0) {
+		VFSNode::release(node);
+		if(!IS_NODE(fsFile))
+			MountSpace::release(fsFile);
+		return err;
+	}
+
+	/* open file */
+	if(IS_NODE(fsFile))
+		err = openFile(pid,flags,node,nodeNo,VFS_DEV_NO,file);
+	else
+		err = openFile(pid,flags,node,err,fsFile->getNodeNo(),file);
+	if(err < 0) {
+		VFSNode::release(node);
+		if(!IS_NODE(fsFile))
+			MountSpace::release(fsFile);
+		return err;
+	}
+
+	/* store the path for debugging purposes */
+	if(!IS_NODE(fsFile))
+		(*file)->setPath(strdup(path));
+	VFSNode::release(node);
 
 	/* append? */
 	if(flags & VFS_APPEND) {

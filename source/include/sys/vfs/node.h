@@ -111,17 +111,15 @@ public:
 
 	/**
 	 * Requests the node for the given node-number and increases the references. That is, you should
-	 * call release() if you're done.
+	 * call release() if you're done. Note that the function assumes that you hold the tree-lock!
 	 *
 	 * @param nodeNo the node number
 	 * @return the node
 	 */
 	static VFSNode *request(inode_t nodeNo) {
-		acquireTree();
 		VFSNode *n = get(nodeNo);
 		if(n)
 			n->increaseRefs();
-		releaseTree();
 		return n;
 	}
 
@@ -373,10 +371,12 @@ public:
 	 * Gives the implementation a chance to react on a open of this node.
 	 *
 	 * @param pid the process-id
-	 * @param file the open-file
+	 * @param path the path (behind the mountpoint)
 	 * @param flags the open-flags
+	 * @param msgid the message-id to use (only important for channel)
 	 */
-	virtual ssize_t open(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED uint flags) {
+	virtual ssize_t open(A_UNUSED pid_t pid,A_UNUSED const char *path,A_UNUSED uint flags,
+			A_UNUSED int msgid) {
 		return 0;
 	}
 
@@ -438,8 +438,9 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param file the open-file
+	 * @param msgid the message-id to use (only important for channel)
 	 */
-	virtual void close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file) {
+	virtual void close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int msgid) {
 		unref();
 	}
 

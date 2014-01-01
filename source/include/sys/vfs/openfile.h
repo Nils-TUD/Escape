@@ -332,12 +332,8 @@ private:
 	off_t position;
 	/* node-number */
 	inode_t nodeNo;
-	union {
-		/* the node, if devNo == VFS_DEV_NO */
-		VFSNode *node;
-		/* the channel to the fs instance if devNo != VFS_DEV_NO */
-		OpenFile *chan;
-	};
+	/* the node, if devNo == VFS_DEV_NO, the channel-node to fs for otherwise */
+	VFSNode *node;
 	/* the device-number */
 	dev_t devNo;
 	/* for real files: the path; for virt files: NULL */

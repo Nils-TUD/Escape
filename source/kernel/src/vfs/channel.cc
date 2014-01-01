@@ -73,13 +73,17 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
-ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
+ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	ssize_t res = -ENOENT;
-	sArgsMsg msg;
+	sMsg msg;
 	OpenFile *clifile;
 	Proc *p;
 	bool haveTree = true;
 	Thread *t = Thread::getRunning();
+	size_t pathLen = 0;
+
+	if(path && (pathLen = strlen(path)) > MAX_MSGSTR_LEN)
+		return -ENAMETOOLONG;
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
@@ -108,28 +112,32 @@ ssize_t VFSChannel::open(pid_t pid,OpenFile *file,uint flags) {
 		goto errAssoc;
 
 	/* send msg to driver */
-	msg.arg1 = flags;
-	res = file->sendMsg(pid,MSG_DEV_OPEN,&msg,sizeof(msg),NULL,0);
+	msg.str.arg1 = flags;
+	p = Proc::getByPid(pid);
+	if(p) {
+		msg.str.arg2 = p->getEUid();
+		msg.str.arg3 = p->getEGid();
+		msg.str.arg4 = p->getPid();
+	}
+	if(path)
+		memcpy(msg.str.s1,path,pathLen + 1);
+	res = send(pid,0,msgid,&msg,sizeof(msg.str),NULL,0);
 	if(res < 0)
 		goto errSend;
 
 	/* receive response */
 	t->addResource();
-	do {
-		msgid_t mid;
-		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
-		vassert(res < 0 || mid == MSG_DEV_OPEN_RESP,"mid=%u, res=%zd, node=%s:%p",
-		        mid,res,getPath(),this);
-	}
+	do
+		res = receive(pid,0,NULL,&msg,sizeof(msg),true,false);
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
 		goto errSend;
-	if((long)msg.arg1 < 0) {
-		res = msg.arg1;
+	if((long)msg.args.arg1 < 0) {
+		res = msg.args.arg1;
 		goto errSend;
 	}
-	return 0;
+	return msg.args.arg1;
 
 errSend:
 	FileDesc::unassoc(p,fd);
@@ -141,7 +149,7 @@ errOpen:
 	return res;
 }
 
-void VFSChannel::close(pid_t pid,OpenFile *file) {
+void VFSChannel::close(pid_t pid,OpenFile *file,int msgid) {
 	if(!isAlive())
 		unref();
 	else {
@@ -149,7 +157,7 @@ void VFSChannel::close(pid_t pid,OpenFile *file) {
 			destroy();
 		/* if there is only the device left, do the real close */
 		else if(unref() == 1) {
-			file->sendMsg(pid,MSG_DEV_CLOSE,NULL,0,NULL,0);
+			send(pid,0,msgid,NULL,0,NULL,0);
 			closed = true;
 		}
 	}
@@ -170,6 +178,27 @@ off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whenc
 
 size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 	return sendList.length() + recvList.length();
+}
+
+int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
+	/* send msg to fs */
+	ssize_t res = send(pid,0,MSG_FS_ISTAT,NULL,0,NULL,0);
+	if(res < 0)
+		return res;
+
+	/* receive response */
+	sDataMsg msg;
+	do
+		res = receive(pid,0,NULL,&msg,sizeof(msg),true,false);
+	while(res == -EINTR);
+	if(res < 0)
+		return res;
+	res = msg.arg1;
+
+	/* copy file-info */
+	if(res == 0)
+		memcpy(info,msg.d,sizeof(sFileInfo));
+	return res;
 }
 
 static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,size_t bufsize) {

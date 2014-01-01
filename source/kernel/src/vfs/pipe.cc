@@ -54,7 +54,7 @@ size_t VFSPipe::getSize(A_UNUSED pid_t pid) const {
 	return total;
 }
 
-void VFSPipe::close(pid_t pid,OpenFile *file) {
+void VFSPipe::close(pid_t pid,OpenFile *file,A_UNUSED int msgid) {
 	/* if there are still more than 1 user, notify the other */
 	if(unref() > 0) {
 		/* if thats the read-end, save that there is no reader anymore and wakeup the writers */

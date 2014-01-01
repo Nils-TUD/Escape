@@ -50,7 +50,8 @@ int mod_readzeros(int argc,char **argv) {
 	}
 	uint64_t end = rdtsc();
 
-	destroybuf(buf,name);
+	if(useshm)
+		destroybuf(buf,name);
 	close(fd);
 
 	printf("cycles=%12Lu per-msg=%5Lu throughput=%Lu MB/s (%db packets)\n",

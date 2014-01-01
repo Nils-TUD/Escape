@@ -97,17 +97,17 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	OpenFile *client = FileDesc::request(p,clifd);
-	if(!client) {
-		/* we have to set the channel unused again; otherwise its ignored for ever */
-		static_cast<VFSChannel*>(client->getNode())->setUsed(false);
+	if(!client)
 		SYSC_ERROR(stack,-EBADF);
-	}
 
 	/* receive a message */
 	res = client->receiveMsg(p->getPid(),id,data,size,false);
 	FileDesc::release(client);
 
-	if(EXPECT_FALSE(res < 0))
+	if(EXPECT_FALSE(res < 0)) {
+		/* we have to set the channel unused again; otherwise its ignored for ever */
+		static_cast<VFSChannel*>(client->getNode())->setUsed(false);
 		SYSC_ERROR(stack,res);
+	}
 	SYSC_RET1(stack,clifd);
 }

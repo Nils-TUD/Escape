@@ -109,18 +109,23 @@ static void cmds_read(sFileSystem *fs,int fd,sMsg *msg) {
 	FSFile *file = files_get(fd);
 	uint offset = msg->args.arg1;
 	size_t count = msg->args.arg2;
+	ssize_t shmemoff = msg->args.arg3;
 	void *buffer = NULL;
 	if(fs->read == NULL)
 		msg->args.arg1 = -ENOTSUP;
 	else {
-		buffer = malloc(count);
+		if(shmemoff == -1)
+			buffer = malloc(count);
+		else
+			buffer = (char*)file->shm + shmemoff;
 		if(buffer == NULL)
 			msg->args.arg1 = -ENOMEM;
 		else
 			msg->args.arg1 = fs->read(fs->handle,file->ino,buffer,offset,count);
 	}
+	msg->args.arg2 = READABLE_DONT_SET;
 	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
-	if(buffer) {
+	if(buffer && shmemoff == -1) {
 		if(msg->args.arg1 > 0)
 			send(fd,MSG_DEV_READ_RESP,buffer,msg->args.arg1);
 		free(buffer);

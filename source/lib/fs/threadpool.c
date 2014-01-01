@@ -109,11 +109,13 @@ static int tpool_idle(sReqThread *t) {
 
 		/* handle request */
 		t->state = RT_STATE_BUSY;
+		bool needsFree = t->req->data && (ssize_t)t->req->msg.args.arg3 == -1;
 		t->req->handler(t->req->fs,t->req->fd,&t->req->msg,t->req->data);
 
 		/* clean up */
 		close(t->req->fd);
-		free(t->req->data);
+		if(needsFree)
+			free(t->req->data);
 		free(t->req);
 		t->req = NULL;
 

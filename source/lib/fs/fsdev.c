@@ -29,6 +29,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
+
+#include "files.h"
 
 static void sigTermHndl(int sig);
 static void shutdown(void);
@@ -55,7 +58,7 @@ int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSy
 	tpool_init();
 
 	/* register device (exec permission is enough) */
-	int id = createdev(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
+	int id = createdev(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE);
 	if(id < 0)
 		error("Unable to register device 'fs'");
 
@@ -86,6 +89,17 @@ int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSy
 					}
 					break;
 
+					case MSG_DEV_SHFILE: {
+						size_t size = msg.args.arg1;
+						char *path = msg.str.s1;
+						FSFile *file = files_get(fd);
+						assert(file->shm == NULL);
+						file->shm = joinbuf(path,size);
+						msg.args.arg1 = file->shm != NULL;
+						send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
 					case MSG_DEV_READ: {
 						mid = MSG_FS_READ;
 					}
@@ -93,11 +107,19 @@ int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSy
 
 					case MSG_DEV_WRITE: {
 						mid = MSG_FS_WRITE;
-						data = malloc(msg.args.arg2);
-						if(!data || IGNSIGS(receive(fd,NULL,data,msg.args.arg2)) < 0) {
-							printe("Illegal request");
-							close(fd);
-							continue;
+						size_t size = msg.args.arg2;
+						ssize_t shmemoff = msg.args.arg3;
+						if(shmemoff == -1) {
+							data = malloc(size);
+							if(!data || IGNSIGS(receive(fd,NULL,data,msg.args.arg2)) < 0) {
+								printe("Illegal request");
+								close(fd);
+								continue;
+							}
+						}
+						else {
+							FSFile *file = files_get(fd);
+							data = (char*)file->shm + shmemoff;
 						}
 					}
 					break;

@@ -214,6 +214,7 @@ void cli_detach(int id) {
 			shouldSwitch = true;
 		}
 		idx2cli[clients[id]->idx] = NULL;
+		clients[id]->idx = -1;
 		cliCount--;
 		/* do that here because we need to remove us from the list first */
 		if(shouldSwitch)

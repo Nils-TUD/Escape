@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#define BUF_SIZE		512
+#define BUF_SIZE		8192
 #define NPRINT_CHAR		'.'
 #define OUT_FORMAT_OCT	'o'
 #define OUT_FORMAT_DEC	'd'
@@ -34,7 +34,6 @@
 #define MAX_BASE		16
 
 static char ascii[MAX_BASE];
-static uchar buffer[BUF_SIZE];
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
@@ -102,11 +101,18 @@ int main(int argc,const char *argv[]) {
 			error("Unable to open '%s'",args[0]);
 	}
 
+	ulong shname;
+	uchar *shmem;
+	if(sharebuf(fileno(in),BUF_SIZE,(void**)&shmem,&shname) < 0) {
+		if(shmem == NULL)
+			error("Unable to mmap buffer");
+	}
+
 	i = 0;
 	while(count < 0 || count > 0) {
 		size_t x,c;
 		c = count >= 0 ? MIN(count,BUF_SIZE) : BUF_SIZE;
-		c = fread(buffer,sizeof(char),c,in);
+		c = fread(shmem,sizeof(char),c,in);
 		if(c == 0)
 			break;
 
@@ -117,19 +123,19 @@ int main(int argc,const char *argv[]) {
 				printf("%08x: ",i);
 			}
 
-			if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
-				ascii[i % base] = buffer[x];
+			if(isprint(shmem[x]) && shmem[x] < 0x80 && !isspace(shmem[x]))
+				ascii[i % base] = shmem[x];
 			else
 				ascii[i % base] = NPRINT_CHAR;
 			switch(format) {
 				case OUT_FORMAT_DEC:
-					printf("%03d ",buffer[x]);
+					printf("%03d ",shmem[x]);
 					break;
 				case OUT_FORMAT_HEX:
-					printf("%02x ",buffer[x]);
+					printf("%02x ",shmem[x]);
 					break;
 				case OUT_FORMAT_OCT:
-					printf("%03o ",buffer[x]);
+					printf("%03o ",shmem[x]);
 					break;
 			}
 		}
@@ -142,6 +148,7 @@ int main(int argc,const char *argv[]) {
 
 	printAscii(base,i);
 
+	destroybuf(shmem,shname);
 	if(args[0])
 		fclose(in);
 	return EXIT_SUCCESS;

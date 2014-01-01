@@ -23,7 +23,7 @@
 #include <sys/vfs/node.h>
 #include <esc/fsinterface.h>
 
-#define MAX_VFS_FILE_SIZE			(64 * K)
+#define MAX_VFS_FILE_SIZE			(128 * K)
 #define MAX_GETWORK_DEVICES			16
 
 #define DEV_OPEN					1

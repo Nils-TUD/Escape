@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/time.h>
+#include <esc/mem.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -31,8 +32,8 @@
 
 typedef ssize_t (*test_func)(int fd,void *buf,size_t count);
 
-static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000};
-static char buffer[0x10000];
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000};
+static char buffer[0x20000];
 
 static void test_openseekclose(const char *path) {
 	uint64_t openTotal = 0, closeTotal = 0, seekTotal = 0;
@@ -67,7 +68,7 @@ static void test_openseekclose(const char *path) {
 	printf("close     : %Lu cycles/call\n",closeTotal / TEST_COUNT);
 }
 
-static void test_readwrite(const char *path,const char *name,int flags,test_func func) {
+static void test_readwrite(const char *path,const char *name,int flags,test_func func,bool shared) {
 	uint64_t start,end;
 	uint64_t times[ARRAY_SIZE(sizes)] = {0};
 	int fd = open(path,flags);
@@ -75,12 +76,21 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 		printe("open failed");
 		return;
 	}
+
+	ulong shname;
+	void *shmem;
+	if(!shared)
+		shmem = mmap(NULL,sizeof(buffer),0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
+	else if(sharebuf(fd,sizeof(buffer),&shmem,&shname) < 0)
+		printe("Unable to share memory");
+	if(!shmem)
+		error("Unable to map shared memory");
+
 	size_t i,j;
 	for(i = 0; i < TEST_COUNT; ++i) {
 		for(j = 0; j < ARRAY_SIZE(sizes); ++j) {
-			assert(sizes[j] <= sizeof(buffer));
 			start = rdtsc();
-			ssize_t res = func(fd,buffer,sizes[j]);
+			ssize_t res = func(fd,shmem,sizes[j]);
 			end = rdtsc();
 			times[j] += end - start;
 			if(res != (ssize_t)sizes[j]) {
@@ -93,11 +103,15 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 			}
 		}
 	}
+
+	if(shared)
+		destroybuf(shmem,shname);
 	close(fd);
 	for(j = 0; j < ARRAY_SIZE(sizes); ++j) {
-		printf("%s(%3zuK): %6Lu cycles/call, %Lu MB/s\n",
+		printf("%s(%3zuK): %6Lu cycles/call, %Lu MB/s (%s)\n",
 				name,sizes[j] / 1024,times[j] / TEST_COUNT,
-				(sizes[j] * TEST_COUNT) / tsctotime(times[j]));
+				(sizes[j] * TEST_COUNT) / tsctotime(times[j]),
+				shared ? "shared" : "non-shared");
 	}
 }
 
@@ -120,15 +134,17 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	printf("Using /system/test...\n");
 	test_openseekclose("/system/test");
 	fflush(stdout);
-	test_readwrite("/system/test","read",IO_READ,read);
+	test_readwrite("/system/test","read",IO_READ,read,false);
 	fflush(stdout);
-	test_readwrite("/system/test","write",IO_WRITE,(test_func)write);
+	test_readwrite("/system/test","write",IO_WRITE,(test_func)write,false);
 	fflush(stdout);
 
 	printf("Using /home/hrniels/testdir/bbc.bmp...\n");
 	test_openseekclose("/home/hrniels/testdir/bbc.bmp");
 	fflush(stdout);
-	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read);
+	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,false);
+	fflush(stdout);
+	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,true);
 	fflush(stdout);
 	return 0;
 }

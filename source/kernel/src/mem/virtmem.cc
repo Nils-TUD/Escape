@@ -154,6 +154,10 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 			if(res != -ESRCH)
 				return res;
 			/* if it failed because we couldn't get the lock, try to map it on our own */
+			/* but now if it's writable. in this case it HAVE TO be the same frames. so the user
+			 * should retry that in this case */
+			if(res < 0 && (rflags & PROT_WRITE))
+				return -EBUSY;
 		}
 	}
 

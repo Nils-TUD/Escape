@@ -26,10 +26,12 @@
 #include <esc/debug.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
+#include <esc/mem.h>
 #include <signal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "ata.h"
 #include "controller.h"
@@ -38,6 +40,7 @@
 
 #define MAX_RW_SIZE		4096
 #define RETRY_COUNT		3
+#define MAX_CLIENT_FD	256
 
 typedef struct {
 	int fd;
@@ -45,8 +48,8 @@ typedef struct {
 	uint partition;
 } sDrive;
 
-static ulong handleRead(sATADevice *device,sPartition *part,uint offset,uint count);
-static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint offset,uint count);
+static ulong handleRead(sATADevice *device,sPartition *part,uint16_t *buf,uint offset,uint count);
+static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint16_t *buf,uint offset,uint count);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
@@ -56,6 +59,7 @@ static sDrive drives[DEVICE_COUNT * PARTITION_COUNT];
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
  * may not have more memory and can't do anything about it */
 static uint16_t buffer[MAX_RW_SIZE / sizeof(uint16_t)];
+static char *shbufs[MAX_CLIENT_FD];
 
 static int drive_thread(void *arg) {
 	sMsg msg;
@@ -75,21 +79,45 @@ static int drive_thread(void *arg) {
 		else {
 			ATA_PR2("Got message %d",mid);
 			switch(mid) {
+				case MSG_DEV_OPEN: {
+					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
+					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_DEV_SHFILE: {
+					size_t size = msg.args.arg1;
+					char *path = msg.str.s1;
+					assert(shbufs[fd] == NULL);
+					/* ensure that we don't cause pagefaults when accessing this memory. therefore,
+					 * we populate it immediately and lock it into memory. additionally, we specify
+					 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
+					 * to swap (which would cause a deadlock, because we're doing that). */
+					shbufs[fd] = joinbuf(path,size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
+					msg.args.arg1 = shbufs[fd] != NULL;
+					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_DEV_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					msg.args.arg1 = handleRead(ataDev,part,offset,count);
+					ssize_t shmemoff = msg.args.arg3;
+					uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)shbufs[fd] + (shmemoff >> 1);
+					msg.args.arg1 = handleRead(ataDev,part,buf,offset,count);
 					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buffer,count);
+					if(shmemoff == -1 && msg.args.arg1 > 0)
+						send(fd,MSG_DEV_READ_RESP,buf,count);
 				}
 				break;
 
 				case MSG_DEV_WRITE: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
-					msg.args.arg1 = handleWrite(ataDev,part,fd,offset,count);
+					ssize_t shmemoff = msg.args.arg3;
+					uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)shbufs[fd] + (shmemoff >> 1);
+					msg.args.arg1 = handleWrite(ataDev,part,fd,buf,offset,count);
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
@@ -100,9 +128,14 @@ static int drive_thread(void *arg) {
 				}
 				break;
 
-				case MSG_DEV_CLOSE:
+				case MSG_DEV_CLOSE: {
+					if(shbufs[fd]) {
+						munmap(shbufs[fd]);
+						shbufs[fd] = NULL;
+					}
 					close(fd);
-					break;
+				}
+				break;
 
 				default:
 					msg.args.arg1 = -ENOTSUP;
@@ -155,7 +188,7 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static ulong handleRead(sATADevice *ataDev,sPartition *part,uint offset,uint count) {
+static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint offset,uint count) {
 	/* we have to check whether it is at least one sector. otherwise ATA can't
 	 * handle the request */
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
@@ -167,7 +200,7 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint offset,uint cou
 			for(i = 0; i < RETRY_COUNT; i++) {
 				if(i > 0)
 					ATA_LOG("Read failed; retry %zu",i);
-				if(ataDev->rwHandler(ataDev,OP_READ,buffer,
+				if(ataDev->rwHandler(ataDev,OP_READ,buf,
 						offset / ataDev->secSize + part->start,
 						ataDev->secSize,rcount / ataDev->secSize)) {
 					return count;
@@ -182,20 +215,22 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint offset,uint cou
 	return 0;
 }
 
-static ulong handleWrite(sATADevice *ataDev,sPartition *part,int fd,uint offset,uint count) {
+static ulong handleWrite(sATADevice *ataDev,sPartition *part,int fd,uint16_t *buf,uint offset,uint count) {
 	msgid_t mid;
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
 		if(count <= MAX_RW_SIZE) {
 			size_t i;
-			ssize_t res = IGNSIGS(receive(fd,&mid,buffer,count));
-			if(res <= 0)
-				return res;
+			if(buf == buffer) {
+				ssize_t res = IGNSIGS(receive(fd,&mid,buffer,count));
+				if(res <= 0)
+					return res;
+			}
 
 			ATA_PR2("Writing %d bytes @ %x to device %d",count,offset,ataDev->id);
 			for(i = 0; i < RETRY_COUNT; i++) {
 				if(i > 0)
 					ATA_LOG("Write failed; retry %zu",i);
-				if(ataDev->rwHandler(ataDev,OP_WRITE,buffer,
+				if(ataDev->rwHandler(ataDev,OP_WRITE,buf,
 						offset / ataDev->secSize + part->start,
 						ataDev->secSize,count / ataDev->secSize)) {
 					return count;
@@ -235,7 +270,8 @@ static void initDrives(void) {
 				else
 					snprintf(name,sizeof(name),"cd%c%d",'a' + ataDev->id,p + 1);
 				strcpy(path + SSTRLEN("/dev/"),name);
-				int fd = createdev(path,0660,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE);
+				int fd = createdev(path,0660,DEV_TYPE_BLOCK,
+					DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE);
 				if(fd < 0) {
 					ATA_LOG("Drive %d, Partition %d: Unable to register device '%s'",
 							ataDev->id,p + 1,name);

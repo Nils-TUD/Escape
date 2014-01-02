@@ -37,7 +37,7 @@ static void mmapunmap(void) {
 		int j;
 		for(j = 0; j < MMAP1_COUNT; ++j) {
 			start = rdtsc();
-			void *addr = mmap(NULL,sizes[i],0,MAP_PRIVATE,PROT_READ | PROT_WRITE,-1,0);
+			void *addr = mmap(NULL,sizes[i],0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
 			end = rdtsc();
 			mmapTotal += end - start;
 			if(!addr) {
@@ -66,7 +66,7 @@ static void multimmap(void) {
 		int j;
 		for(j = 0; j < MMAP2_COUNT; ++j) {
 			start = rdtsc();
-			addrs[j] = mmap(NULL,sizes[i],0,MAP_PRIVATE,PROT_READ | PROT_WRITE,-1,0);
+			addrs[j] = mmap(NULL,sizes[i],0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
 			end = rdtsc();
 			mmapTotal += end - start;
 			if(!addrs[j]) {

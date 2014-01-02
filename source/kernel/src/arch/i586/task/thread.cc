@@ -44,7 +44,7 @@ int ThreadBase::initArch(Thread *t) {
 
 void ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
-	int res = proc->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+	int res = proc->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 0);
 	assert(res == 0);
 }
@@ -64,7 +64,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			return -ENOMEM;
 
 		/* add a new stack-region */
-		int res = dst->getProc()->getVM()->map(0,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+		int res = dst->getProc()->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
 			dst->getProc()->getPageDir()->unmap(dst->kernelStack,1,true);

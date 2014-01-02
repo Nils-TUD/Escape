@@ -281,7 +281,8 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 
 	/* add the region */
 	VMRegion *vm;
-	if((res = t->getProc()->getVM()->map(pheader->p_vaddr,memsz,pheader->p_filesz,prot,flags,file,
+	uintptr_t addr = pheader->p_vaddr;
+	if((res = t->getProc()->getVM()->map(&addr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
 		Log::get().writef("[LOADER] Unable to add region: %s\n",strerror(-res));
 		t->discardFrames();

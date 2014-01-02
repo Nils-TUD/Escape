@@ -176,7 +176,7 @@ public:
 	 * @param vmreg will be set to the created region
 	 * @return 0 on success or a negative error-code
 	 */
-	int map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,OpenFile *f,
+	int map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int flags,OpenFile *f,
 			off_t offset,VMRegion **vmreg);
 
 	/**
@@ -248,17 +248,25 @@ public:
 	void unmap(VMRegion *vm);
 
 	/**
+	 * Removes the region at <virt>.
+	 *
+	 * @param virt the virtual address
+	 * @return 0 on success
+	 */
+	int unmap(uintptr_t virt);
+
+	/**
 	 * Joins virtmem <dst> to the region <rno> of this virtmem. This can only be used for shared-
 	 * memory!
 	 *
 	 * @param rno the region-number in the source-process
 	 * @param dst the destination-virtmem
 	 * @param nvm the new created region
-	 * @param dstVirt the virtual address where to create that region (0 = auto)
+	 * @param dstVirt the virtual address where to create that region (NULL = auto)
 	 * @param flags the map flags
 	 * @return 0 on success or the negative error-code
 	 */
-	int join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstVirt,ulong flags);
+	int join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstVirt,ulong flags);
 
 	/**
 	 * Clones all regions of this virtmem (current) into the destination-virtmem

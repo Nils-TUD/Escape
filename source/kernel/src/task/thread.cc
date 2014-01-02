@@ -275,7 +275,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 		if(src->tlsRegion != NULL) {
 			uintptr_t tlsStart,tlsEnd;
 			src->getProc()->getVM()->getRegRange(src->tlsRegion,&tlsStart,&tlsEnd,false);
-			err = p->getVM()->map(0,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,
+			err = p->getVM()->map(NULL,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,
 					MAP_TLS,NULL,0,&t->tlsRegion);
 			if(err < 0)
 				goto errAdd;

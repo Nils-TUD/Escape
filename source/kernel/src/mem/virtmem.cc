@@ -134,12 +134,13 @@ error:
 	return 0;
 }
 
-int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flags,OpenFile *f,
+int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int flags,OpenFile *f,
                  off_t offset,VMRegion **vmreg) {
 	int res;
 	VMRegion *vm;
 	Region *reg;
 	ulong rflags = flags | prot;
+	uintptr_t virt = addr ? *addr : 0;
 	Thread *t = Thread::getRunning();
 	size_t oldSh,oldOwn;
 	size_t pageCount = BYTES_2_PAGES(length);
@@ -150,7 +151,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 		VirtMem *virtmem = NULL;
 		uintptr_t binVirt = getBinary(f,virtmem);
 		if(binVirt != 0) {
-			res = virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0,rflags);
+			res = virtmem->join(binVirt,this,vmreg,addr,rflags);
 			if(res != -ESRCH)
 				return res;
 			/* if it failed because we couldn't get the lock, try to map it on our own */
@@ -190,16 +191,16 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 	res = -EINVAL;
 	if(rflags & MAP_FIXED) {
 		/* ok, the user has choosen a place. check it */
-		if(!regtree.available(addr,length))
+		if(!regtree.available(virt,length))
 			goto errProc;
 	}
 	else {
 		/* find a suitable place */
 		if(rflags & MAP_STACK)
-			addr = findFreeStack(length,rflags);
+			virt = findFreeStack(length,rflags);
 		else
-			addr = freemap.allocate(ROUND_PAGE_UP(length));
-		if(addr == 0)
+			virt = freemap.allocate(ROUND_PAGE_UP(length));
+		if(virt == 0)
 			goto errProc;
 	}
 
@@ -211,7 +212,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 	if(!reg->addTo(this))
 		goto errReg;
 	reg->acquire();
-	vm = regtree.add(reg,addr);
+	vm = regtree.add(reg,virt);
 	if(vm == NULL)
 		goto errAdd;
 
@@ -220,7 +221,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 
 	/* map into process */
 	if(~rflags & MAP_NOMAP) {
-		ssize_t pts = getPageDir()->map(addr,NULL,pageCount,0);
+		ssize_t pts = getPageDir()->map(virt,NULL,pageCount,0);
 		if(pts < 0)
 			goto errMap;
 		addOwn(pts);
@@ -236,8 +237,10 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 
 	/* set data-region */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE))
-		dataAddr = addr;
+		dataAddr = *addr;
 
+	if(addr)
+		*addr = virt;
 	*vmreg = vm;
 	reg->release();
 	release();
@@ -246,7 +249,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 errPf:
 	addShared(oldSh - getSharedFrames());
 	addOwn(oldOwn - getOwnFrames());
-	getPageDir()->unmap(addr,pageCount,true);
+	getPageDir()->unmap(*addr,pageCount,true);
 errMap:
 	regtree.remove(vm);
 errAdd:
@@ -564,6 +567,18 @@ void VirtMem::unmap(VMRegion *vm) {
 	release();
 }
 
+int VirtMem::unmap(uintptr_t virt) {
+	int res = 0;
+	acquire();
+	VMRegion *vm = regtree.getByAddr(virt);
+	if(vm)
+		doUnmap(vm);
+	else
+		res = -ENOENT;
+	release();
+	return res;
+}
+
 void VirtMem::sync(VMRegion *vm) const {
 	OpenFile *file = vm->reg->getFile();
 	if((vm->reg->getFlags() & RF_SHAREABLE) && (vm->reg->getFlags() & RF_WRITABLE) && file) {
@@ -685,7 +700,7 @@ void VirtMem::doUnmap(VMRegion *vm) {
 	}
 }
 
-int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAddr,ulong flags) {
+int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAddr,ulong flags) {
 	size_t swCount,pageCount,presentCount;
 	size_t oldSh,oldOwn;
 	uintptr_t addr;
@@ -727,8 +742,8 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 		goto errRel;
 	}
 
-	addr = dstAddr;
-	if(addr == 0)
+	addr = dstAddr ? *dstAddr : 0;
+	if(addr == 0 || (~flags & MAP_FIXED))
 		addr = dst->freemap.allocate(ROUND_PAGE_UP(vm->reg->getByteCount()));
 	else if(dst->regtree.getByAddr(addr) != NULL)
 		goto errRel;
@@ -767,6 +782,8 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 	if(flags & MAP_LOCKED)
 		vm->reg->setFlags(vm->reg->getFlags() | RF_LOCKED);
 
+	if(dstAddr)
+		*dstAddr = addr;
 	vm->reg->release();
 	dst->release();
 	release();

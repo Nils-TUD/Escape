@@ -85,7 +85,7 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 
 	/* add region */
 	VMRegion *vm;
-	int res = t->getProc()->getVM()->map(addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+	int res = t->getProc()->getVM()->map(&addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
 
 	/* release file */
 	if(EXPECT_TRUE(f))
@@ -101,7 +101,6 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
-	t->getProc()->getVM()->getRegRange(vm,&addr,0,true);
 	SYSC_RET1(stack,addr);
 }
 
@@ -120,10 +119,9 @@ int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
 	void *virt = (void*)SYSC_ARG1(stack);
-	VMRegion *reg = t->getProc()->getVM()->getRegion((uintptr_t)virt);
-	if(EXPECT_FALSE(reg == NULL))
-		SYSC_ERROR(stack,-ENOENT);
-	t->getProc()->getVM()->unmap(reg);
+	int res = t->getProc()->getVM()->unmap((uintptr_t)virt);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 

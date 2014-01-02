@@ -28,7 +28,7 @@
 
 #include "../modules.h"
 
-#define TEST_COUNT		1000
+#define TEST_COUNT		2000
 
 typedef ssize_t (*test_func)(int fd,void *buf,size_t count);
 
@@ -146,5 +146,8 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	fflush(stdout);
 	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,true);
 	fflush(stdout);
+
+	if(unlink("/system/test") < 0)
+		printe("Unable to unlink test-file");
 	return 0;
 }

@@ -190,6 +190,24 @@ public:
 	int protect(uintptr_t addr,ulong flags);
 
 	/**
+	 * Locks the region @ <addr>.
+	 *
+	 * @param addr the virtual address
+	 * @param flags the flags
+	 * @return 0 on success
+	 */
+	int lock(uintptr_t addr,int flags);
+
+	/**
+	 * Locks all regions of this virtual address space.
+	 *
+	 * @param addr the virtual address
+	 * @param flags the flags
+	 * @return 0 on success
+	 */
+	int lockall();
+
+	/**
 	 * This is a helper-function for determining the real memory-usage of all processes. It counts
 	 * the number of present frames in all regions of the given process and divides them for each
 	 * region by the number of region-users. It does not count cow-pages!
@@ -232,6 +250,17 @@ public:
 	 * @param locked whether to lock the regions of the given process during the operation
 	 */
 	void getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool locked) const;
+
+	/**
+	 * Queries the start- and end-address of the region at <virt>.
+	 *
+	 * @param virt the virtual address that is somewhere in the region
+	 * @param start will be set to the start-address
+	 * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
+	 *  accessible byte)
+	 * @return 0 on success
+	 */
+	int getRegRange(uintptr_t virt,uintptr_t *start,uintptr_t *end);
 
 	/**
 	 * Removes all regions, optionally including stack.
@@ -373,6 +402,8 @@ private:
 	static void setSwappedOut(Region *reg,size_t index);
 	static void setSwappedIn(Region *reg,size_t index,frameno_t frameNo);
 
+	int lockRegion(VMRegion *vm,int flags);
+	int populatePages(VMRegion *vm,size_t count);
 	int doPagefault(uintptr_t addr,VMRegion *vm,bool write);
 	void sync(VMRegion *vm) const;
 	void doUnmap(VMRegion *vm);

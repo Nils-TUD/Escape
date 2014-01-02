@@ -102,6 +102,28 @@ static inline int munmap(void *addr) {
 }
 
 /**
+ * Locks the region denoted by <addr> and makes sure that all pages of that region are in memory..
+ *
+ * @param addr the address of the region
+ * @param flags only MAP_NOSWAP is supported atm
+ * @return 0 on success
+ */
+static inline int mlock(void *addr,int flags) {
+	return syscall2(SYSCALL_MLOCK,(ulong)addr,flags);
+}
+
+/**
+ * Locks all regions currently in the address space and makes sure that all pages are in memory.
+ * Note that this will not start swapping, if necessary, but report an error if there is not enough
+ * memory.
+ *
+ * @return 0 on success
+ */
+static inline int mlockall(void) {
+	return syscall0(SYSCALL_MLOCKALL);
+}
+
+/**
  * Creates a file in /system/processes/<pid>/shm/ with a unique name and <oflag> as flags for create.
  * The file is intended to be mapped with mmap().
  *

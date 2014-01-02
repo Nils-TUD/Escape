@@ -172,10 +172,16 @@ int main(int argc,char **argv) {
 	f = fopen("/system/devices/ata","w");
 	fclose(f);
 
+	/* start drive threads */
 	for(i = 1; i < drvCount; i++) {
 		if(startthread(drive_thread, drives + i) < 0)
 			error("Unable to start thread");
 	}
+
+	/* mlock all regions to prevent that we're swapped out */
+	if(mlockall() < 0)
+		error("Unable to mlock regions");
+
 	drive_thread(drives + 0);
 
 	/* clean up */

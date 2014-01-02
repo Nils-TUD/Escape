@@ -123,6 +123,10 @@ int main(int argc,char **argv) {
 	/* flush prints */
 	fflush(stdout);
 
+	/* mlock all regions to prevent that we're swapped out */
+	if(mlockall() < 0)
+		error("Unable to mlock regions");
+
 	/* enable interrupts */
 	diskRegs[DISK_CTRL] = DISK_IEN | DISK_DONE;
 

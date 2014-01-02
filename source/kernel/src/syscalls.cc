@@ -114,13 +114,15 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 78 */	{getmsid,			"getmsid",			0},
 	/* 79 */	{clonems,			"clonems",			0},
 	/* 80 */	{joinms,			"joinms",			1},
+	/* 81 */	{mlock,				"mlock",			2},
+	/* 82 */	{mlockall,			"mlockall",			0},
 #ifdef __i386__
-	/* 81 */	{reqports,			"reqports",   		2},
-	/* 82 */	{relports,			"relports",    		2},
-	/* 83 */	{vm86int,			"vm86int",    		4},
-	/* 84 */	{vm86start,			"vm86start",    	0},
+	/* 83 */	{reqports,			"reqports",   		2},
+	/* 84 */	{relports,			"relports",    		2},
+	/* 85 */	{vm86int,			"vm86int",    		4},
+	/* 86 */	{vm86start,			"vm86start",    	0},
 #else
-	/* 81 */	{debug,				"debug",    		0},
+	/* 83 */	{debug,				"debug",    		0},
 #endif
 };
 

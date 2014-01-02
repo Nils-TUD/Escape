@@ -125,6 +125,38 @@ int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+int Syscalls::mlock(Thread *t,IntrptStackFrame *stack) {
+	void *virt = (void*)SYSC_ARG1(stack);
+	int flags = (int)SYSC_ARG2(stack);
+	if(flags & ~MAP_NOSWAP)
+		SYSC_ERROR(stack,-EINVAL);
+
+	/* reserve frames in advance with swapping? */
+	if(~flags & MAP_NOSWAP) {
+		uintptr_t start,end;
+		int res = t->getProc()->getVM()->getRegRange((uintptr_t)virt,&start,&end);
+		if(res < 0)
+			SYSC_ERROR(stack,res);
+
+		size_t pages = BYTES_2_PAGES(end - start);
+		if(!t->reserveFrames(pages,true))
+			SYSC_ERROR(stack,-ENOMEM);
+	}
+
+	int res = t->getProc()->getVM()->lock((uintptr_t)virt,flags);
+	t->discardFrames();
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+int Syscalls::mlockall(Thread *t,IntrptStackFrame *stack) {
+	int res = t->getProc()->getVM()->lockall();
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);

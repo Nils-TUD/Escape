@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 
-#define DISK_PID			2
 #define KEYBOARD_PID		12	/* just for debugging */
 
 /* special process-flag for x86 */

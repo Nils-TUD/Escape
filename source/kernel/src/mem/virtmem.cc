@@ -229,10 +229,9 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 
 	if(rflags & MAP_POPULATE) {
 		assert(~rflags & MAP_NOMAP);
-		size_t pages = vm->reg->getPageCount();
-		for(size_t i = 0; i < pages; i++)
-			if(doPagefault(vm->virt() + i * PAGE_SIZE,vm,!!(rflags & PROT_WRITE)) != 0)
-				goto errPf;
+		res = populatePages(vm,pageCount);
+		if(res < 0)
+			goto errPf;
 	}
 
 	/* set data-region */
@@ -311,6 +310,73 @@ error:
 	vmreg->reg->release();
 	release();
 	return res;
+}
+
+int VirtMem::lock(uintptr_t addr,int flags) {
+	acquire();
+	VMRegion *vm = regtree.getByAddr(addr);
+	if(vm == NULL) {
+		release();
+		return -ENXIO;
+	}
+	int res = lockRegion(vm,flags);
+	release();
+	return res;
+}
+
+int VirtMem::lockall() {
+	int res = 0;
+	acquire();
+	for(auto vm = regtree.begin(); vm != regtree.end(); ++vm) {
+		res = lockRegion(&*vm,MAP_NOSWAP);
+		if(res < 0)
+			break;
+	}
+	release();
+	return res;
+}
+
+int VirtMem::lockRegion(VMRegion *vm,int flags) {
+	Thread *t = Thread::getRunning();
+	int res = 0;
+	vm->reg->acquire();
+	size_t pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
+
+	/* already locked? */
+	if(vm->reg->getFlags() & RF_LOCKED)
+		goto error;
+
+	/* should we populate it but fail if there is not enough mem? */
+	if(flags & MAP_NOSWAP) {
+		size_t swCount;
+		size_t presentCount = vm->reg->pageCount(&swCount);
+		if(!t->reserveFrames(pageCount - presentCount,false)) {
+			res = -ENOMEM;
+			goto error;
+		}
+	}
+
+	/* fault-in all pages that are not present yet */
+	res = populatePages(vm,pageCount);
+	if(res < 0)
+		goto error;
+
+	vm->reg->setFlags(vm->reg->getFlags() | RF_LOCKED);
+error:
+	vm->reg->release();
+	return res;
+}
+
+int VirtMem::populatePages(VMRegion *vm,size_t count) {
+	bool write = !!(vm->reg->getFlags() & PROT_WRITE);
+	for(size_t i = 0; i < count; i++) {
+		if(vm->reg->getPageFlags(i) & (PF_DEMANDLOAD | PF_COPYONWRITE | PF_SWAPPED)) {
+			int res;
+			if((res = doPagefault(vm->virt() + i * PAGE_SIZE,vm,write)) != 0)
+				return res;
+		}
+	}
+	return 0;
 }
 
 void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
@@ -454,6 +520,18 @@ void VirtMem::getRegRange(VMRegion *vm,uintptr_t *start,uintptr_t *end,bool lock
 		*end = vm->virt() + vm->reg->getByteCount();
 	if(locked)
 		release();
+}
+
+int VirtMem::getRegRange(uintptr_t virt,uintptr_t *start,uintptr_t *end) {
+	int res = 0;
+	acquire();
+	VMRegion *reg = regtree.getByAddr(virt);
+	if(reg)
+		getRegRange(reg,start,end,false);
+	else
+		res = -ENOENT;
+	release();
+	return res;
 }
 
 uintptr_t VirtMem::getBinary(OpenFile *file,VirtMem *&binOwner) {
@@ -765,13 +843,9 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 
 	/* fault-in all pages that are not present yet */
 	if(flags & MAP_POPULATE) {
-		bool write = !!(vm->reg->getFlags() & PROT_WRITE);
-		for(size_t i = 0; i < pageCount; i++) {
-			if(vm->reg->getPageFlags(i) & (PF_DEMANDLOAD | PF_COPYONWRITE | PF_SWAPPED)) {
-				if(doPagefault(vm->virt() + i * PAGE_SIZE,vm,write) != 0)
-					goto errUnmap;
-			}
-		}
+		res = populatePages(vm,pageCount);
+		if(res < 0)
+			goto errUnmap;
 	}
 
 	dst->addShared(presentCount);
@@ -1279,10 +1353,6 @@ Region *VirtMem::getLRURegion() {
 	uint64_t ts = std::numeric_limits<uint64_t>::max();
 	VMTree *tree = VMTree::reqTree();
 	for(; tree != NULL; tree = tree->getNext()) {
-		/* the disk-driver is not swappable */
-		if(tree->getVM()->proc->getPid() == DISK_PID)
-			continue;
-
 		/* same as below; we have to try to acquire the mutex, otherwise we risk a deadlock */
 		if(tree->getVM()->tryAquire()) {
 			for(auto vm = tree->cbegin(); vm != tree->cend(); ++vm) {

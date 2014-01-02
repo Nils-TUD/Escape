@@ -70,14 +70,14 @@ static size_t pageCount = 0;
 static size_t pageSize = 0;
 
 /* the lock for the heap */
-static tULock mlock;
+static tULock heapLock;
 static bool initialized = false;
 
 void initHeap(void) {
 	if(initialized)
 		return;
 
-	if(crtlocku(&mlock) < 0)
+	if(crtlocku(&heapLock) < 0)
 		error("Unable to create heap lock");
 	initialized = true;
 }
@@ -89,7 +89,7 @@ void *malloc(size_t size) {
 	if(size == 0)
 		return NULL;
 
-	locku(&mlock);
+	locku(&heapLock);
 
 	/* align and we need 3 ulongs for the guards */
 	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 4;
@@ -107,7 +107,7 @@ void *malloc(size_t size) {
 	/* no area found? */
 	if(area == NULL) {
 		if(!loadNewSpace(size)) {
-			unlocku(&mlock);
+			unlocku(&heapLock);
 			return NULL;
 		}
 		/* we can assume that it fits */
@@ -128,7 +128,7 @@ void *malloc(size_t size) {
 		if(freeList == NULL) {
 			if(!loadNewAreas()) {
 				/* TODO we may have changed something... */
-				unlocku(&mlock);
+				unlocku(&heapLock);
 				return NULL;
 			}
 		}
@@ -164,7 +164,7 @@ void *malloc(size_t size) {
 	begin[1] = size - sizeof(ulong) * 4;
 	begin[2] = GUARD_MAGIC;
 	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-	unlocku(&mlock);
+	unlocku(&heapLock);
 	return begin + 3;
 }
 
@@ -192,7 +192,7 @@ void free(void *addr) {
 	assert(begin[2] == GUARD_MAGIC);
 	assert(begin[begin[1] / sizeof(ulong) + 3] == GUARD_MAGIC);
 
-	locku(&mlock);
+	locku(&heapLock);
 
 	/* mark as free */
 	begin[0] = FREE_MAGIC;
@@ -286,7 +286,7 @@ void free(void *addr) {
 		usableList = area;
 	}
 
-	unlocku(&mlock);
+	unlocku(&heapLock);
 }
 
 void *realloc(void *addr,size_t size) {
@@ -302,14 +302,14 @@ void *realloc(void *addr,size_t size) {
 	assert(begin[2] == GUARD_MAGIC);
 	assert(begin[begin[1] / sizeof(ulong) + 3] == GUARD_MAGIC);
 
-	locku(&mlock);
+	locku(&heapLock);
 
 	/* align and we need 3 ulongs for the guards */
 	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 4;
 
 	/* ignore shrinks */
 	if(size < area->size) {
-		unlocku(&mlock);
+		unlocku(&heapLock);
 		return addr;
 	}
 
@@ -344,7 +344,7 @@ void *realloc(void *addr,size_t size) {
 				begin[1] = size - sizeof(ulong) * 4;
 				begin[2] = GUARD_MAGIC;
 				begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-				unlocku(&mlock);
+				unlocku(&heapLock);
 				return begin + 3;
 			}
 
@@ -355,7 +355,7 @@ void *realloc(void *addr,size_t size) {
 		a = a->next;
 	}
 
-	unlocku(&mlock);
+	unlocku(&heapLock);
 
 	/* the areas are not big enough, so allocate a new one */
 	a = malloc(size);

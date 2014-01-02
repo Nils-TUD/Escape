@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 
-#define DISK_PID			1
 #define KEYBOARD_PID		8	/* just for debugging */
 
 class Proc : public ProcBase {

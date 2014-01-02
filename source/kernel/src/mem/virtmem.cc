@@ -96,8 +96,9 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 
 	/* create region */
 	VMRegion *vm;
+	/* for specifically requested physical memory, don't free it and don't swap it out */
 	res = map(0,bCount,0,PROT_READ | (writable ? PROT_WRITE : 0),
-			*phys ? (MAP_NOMAP | MAP_NOFREE) : MAP_NOMAP,NULL,0,&vm);
+			*phys ? (MAP_NOMAP | MAP_NOFREE | MAP_LOCKED) : MAP_NOMAP,NULL,0,&vm);
 	if(res < 0) {
 		if(!*phys)
 			PhysMem::freeContiguous(frames[0],pages);
@@ -138,8 +139,10 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 	int res;
 	VMRegion *vm;
 	Region *reg;
-	ulong pgFlags = f != NULL ? PF_DEMANDLOAD : 0;
 	ulong rflags = flags | prot;
+	Thread *t = Thread::getRunning();
+	size_t oldSh,oldOwn;
+	size_t pageCount = BYTES_2_PAGES(length);
 	assert(length > 0 && length >= loadCount);
 
 	/* for files: try to find another process with that file */
@@ -147,7 +150,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 		VirtMem *virtmem = NULL;
 		uintptr_t binVirt = getBinary(f,virtmem);
 		if(binVirt != 0) {
-			res = virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0);
+			res = virtmem->join(binVirt,this,vmreg,rflags & MAP_FIXED ? addr : 0,rflags);
 			if(res != -ESRCH)
 				return res;
 			/* if it failed because we couldn't get the lock, try to map it on our own */
@@ -156,6 +159,14 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 
 	acquire();
 
+	/* should we populate it but fail if there is not enough mem? */
+	if((rflags & (MAP_POPULATE | MAP_NOSWAP)) == (MAP_POPULATE | MAP_NOSWAP)) {
+		if(!t->reserveFrames(pageCount,false)) {
+			res = -ENOMEM;
+			goto errProc;
+		}
+	}
+
 	/* if it's a data-region.. */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE)) {
 		/* if we already have the real data-region */
@@ -163,7 +174,7 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 			/* using a fixed address is not allowed in this case */
 			if(rflags & MAP_FIXED) {
 				res = -EINVAL;
-				goto error;
+				goto errProc;
 			}
 			/* in every case, it can't be growable */
 			rflags &= ~MAP_GROWABLE;
@@ -190,64 +201,58 @@ int VirtMem::map(uintptr_t addr,size_t length,size_t loadCount,int prot,int flag
 
 	/* create region */
 	res = -ENOMEM;
-	reg = CREATE(Region,f,length,loadCount,offset,pgFlags,rflags);
+	reg = CREATE(Region,f,length,loadCount,offset,PF_DEMANDLOAD,rflags);
 	if(!reg)
 		goto errProc;
 	if(!reg->addTo(this))
 		goto errReg;
+	reg->acquire();
 	vm = regtree.add(reg,addr);
 	if(vm == NULL)
 		goto errAdd;
 
+	oldSh = getSharedFrames();
+	oldOwn = getOwnFrames();
+
 	/* map into process */
 	if(~rflags & MAP_NOMAP) {
-		ssize_t pts;
-		uint mapFlags = 0;
-		size_t pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
-		if(!(pgFlags & PF_DEMANDLOAD)) {
-			mapFlags |= PG_PRESENT;
-			if(rflags & PROT_EXEC)
-				mapFlags |= PG_EXECUTABLE;
-		}
-		if(rflags & PROT_WRITE)
-			mapFlags |= PG_WRITABLE;
-		pts = getPageDir()->map(addr,NULL,pageCount,mapFlags);
+		ssize_t pts = getPageDir()->map(addr,NULL,pageCount,0);
 		if(pts < 0)
 			goto errMap;
-		if(mapFlags & PG_PRESENT) {
-			if(rflags & MAP_SHARED)
-				addShared(pageCount);
-			else
-				addOwn(pageCount);
-		}
 		addOwn(pts);
 	}
+
+	if(rflags & MAP_POPULATE) {
+		assert(~rflags & MAP_NOMAP);
+		size_t pages = vm->reg->getPageCount();
+		for(size_t i = 0; i < pages; i++)
+			if(doPagefault(vm->virt() + i * PAGE_SIZE,vm,!!(rflags & PROT_WRITE)) != 0)
+				goto errPf;
+	}
+
 	/* set data-region */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE))
 		dataAddr = addr;
-	release();
 
-	if(DISABLE_DEMLOAD || (rflags & MAP_POPULATE)) {
-		/* ensure that we don't discard frames that we might need afterwards */
-		Thread *t = Thread::getRunning();
-		size_t oldres = t->getReservedFrmCnt();
-		t->discardFrames();
-		for(size_t i = 0; i < vm->reg->getPageCount(); i++)
-			pagefault(vm->virt() + i * PAGE_SIZE,false);
-		t->reserveFrames(oldres);
-	}
 	*vmreg = vm;
+	reg->release();
+	release();
 	return 0;
 
+errPf:
+	addShared(oldSh - getSharedFrames());
+	addOwn(oldOwn - getOwnFrames());
+	getPageDir()->unmap(addr,pageCount,true);
 errMap:
 	regtree.remove(vm);
 errAdd:
 	reg->remFrom(this);
+	reg->release();
 errReg:
 	delete reg;
 errProc:
+	t->discardFrames();
 	release();
-error:
 	return res;
 }
 
@@ -485,7 +490,7 @@ error:
 
 int VirtMem::pagefault(uintptr_t addr,bool write) {
 	Thread *t = Thread::getRunning();
-	VMRegion *reg;
+	VMRegion *vmreg;
 
 	/* we can swap here; note that we don't need page-tables in this case, they're always present */
 	if(!t->reserveFrames(1))
@@ -493,13 +498,15 @@ int VirtMem::pagefault(uintptr_t addr,bool write) {
 
 	VirtMem *vm = t->getProc()->getVM();
 	vm->acquire();
-	reg = vm->regtree.getByAddr(addr);
-	if(reg == NULL) {
+	vmreg = vm->regtree.getByAddr(addr);
+	if(vmreg == NULL) {
 		vm->release();
 		t->discardFrames();
 		return -EFAULT;
 	}
-	int res = vm->doPagefault(addr,reg,write);
+	vmreg->reg->acquire();
+	int res = vm->doPagefault(addr,vmreg,write);
+	vmreg->reg->release();
 	vm->release();
 	t->discardFrames();
 	return res;
@@ -508,9 +515,7 @@ int VirtMem::pagefault(uintptr_t addr,bool write) {
 int VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 	int res;
 	size_t page = (addr - vm->virt()) / PAGE_SIZE;
-	ulong flags;
-	vm->reg->acquire();
-	flags = vm->reg->getPageFlags(page);
+	ulong flags = vm->reg->getPageFlags(page);
 	addr &= ~(PAGE_SIZE - 1);
 	if(flags & PF_DEMANDLOAD) {
 		res = demandLoad(vm,addr);
@@ -536,7 +541,6 @@ int VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 		 * has already been handled. */
 		res = (!write || (vm->reg->getFlags() & RF_WRITABLE)) ? 0 : -EFAULT;
 	}
-	vm->reg->release();
 	return res;
 }
 
@@ -677,10 +681,12 @@ void VirtMem::doUnmap(VMRegion *vm) {
 	}
 }
 
-int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAddr) {
-	size_t sw,pageCount;
+int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAddr,ulong flags) {
+	size_t swCount,pageCount,presentCount;
+	size_t oldSh,oldOwn;
 	uintptr_t addr;
 	ssize_t res;
+	Thread *t = Thread::getRunning();
 	if(dst == this)
 		return -EEXIST;
 
@@ -699,13 +705,22 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 	vm->reg->acquire();
 	assert(vm->reg->getFlags() & RF_SHAREABLE);
 
+	pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
+	presentCount = vm->reg->pageCount(&swCount);
+
+	/* should we populate it but fail if there is not enough mem? */
+	if((flags & (MAP_POPULATE | MAP_NOSWAP)) == (MAP_POPULATE | MAP_NOSWAP)) {
+		if(!t->reserveFrames(pageCount - presentCount,false)) {
+			res = -ENOMEM;
+			goto errRel;
+		}
+	}
+
 	/* check whether the process has already mapped this region */
 	/* since this is not really necessary, we forbid it for simplicity */
 	if(dst->regtree.getByReg(vm->reg) != NULL) {
-		vm->reg->release();
-		dst->release();
-		release();
-		return -EEXIST;
+		res = -EEXIST;
+		goto errRel;
 	}
 
 	addr = dstAddr;
@@ -722,18 +737,41 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstAdd
 		goto errAdd;
 
 	/* shared, so content-frames to shared, ptables to own */
-	pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
 	res = getPageDir()->clonePages(dst->getPageDir(),vm->virt(),(*nvm)->virt(),pageCount,true);
 	if(res < 0)
 		goto errRem;
-	dst->addShared(vm->reg->pageCount(&sw));
+
+	oldSh = dst->getSharedFrames();
+	oldOwn = dst->getOwnFrames();
+
+	/* fault-in all pages that are not present yet */
+	if(flags & MAP_POPULATE) {
+		bool write = !!(vm->reg->getFlags() & PROT_WRITE);
+		for(size_t i = 0; i < pageCount; i++) {
+			if(vm->reg->getPageFlags(i) & (PF_DEMANDLOAD | PF_COPYONWRITE | PF_SWAPPED)) {
+				if(doPagefault(vm->virt() + i * PAGE_SIZE,vm,write) != 0)
+					goto errUnmap;
+			}
+		}
+	}
+
+	dst->addShared(presentCount);
 	dst->addOwn(res);
-	dst->addSwap(sw);
+	dst->addSwap(swCount);
+
+	/* lock the region, if desired */
+	if(flags & MAP_LOCKED)
+		vm->reg->setFlags(vm->reg->getFlags() | RF_LOCKED);
+
 	vm->reg->release();
 	dst->release();
 	release();
 	return 0;
 
+errUnmap:
+	dst->addShared(oldSh - dst->getSharedFrames());
+	dst->addOwn(oldOwn - dst->getOwnFrames());
+	getPageDir()->unmap(vm->virt(),pageCount,false);
 errRem:
 	vm->reg->remFrom(dst);
 errAdd:
@@ -742,6 +780,7 @@ errReg:
 	if(dstAddr == 0)
 		dst->freemap.free(addr,ROUND_PAGE_UP(vm->reg->getByteCount()));
 errRel:
+	t->discardFrames();
 	vm->reg->release();
 errProc:
 	dst->release();
@@ -1059,12 +1098,13 @@ void VirtMem::printMaps(OStream &os) const {
 	acquire();
 	for(auto vm = regtree.cbegin(); vm != regtree.cend(); ++vm) {
 		vm->reg->acquire();
-		os.writef("%-24s %p - %p (%5zuK) %c%c%c%c",getRegName(&*vm),vm->virt(),
+		os.writef("%-30s %p..%p (%5zuK) %c%c%c%c%c",getRegName(&*vm),vm->virt(),
 				vm->virt() + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K,
-				(vm->reg->getFlags() & RF_WRITABLE) ? 'w' : '-',
-				(vm->reg->getFlags() & RF_EXECUTABLE) ? 'x' : '-',
-				(vm->reg->getFlags() & RF_GROWABLE) ? 'g' : '-',
-				(vm->reg->getFlags() & RF_SHAREABLE) ? 's' : '-');
+				(vm->reg->getFlags() & RF_WRITABLE) ? 'W' : 'w',
+				(vm->reg->getFlags() & RF_EXECUTABLE) ? 'X' : 'x',
+				(vm->reg->getFlags() & RF_GROWABLE) ? 'G' : 'g',
+				(vm->reg->getFlags() & RF_SHAREABLE) ? 'S' : 's',
+				(vm->reg->getFlags() & RF_LOCKED) ? 'L' : 'l');
 		vm->reg->release();
 		os.writef("\n");
 	}
@@ -1135,6 +1175,9 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 			uint mapFlags = PG_PRESENT;
 			if(vm->reg->getFlags() & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
+			/* this doesn't seem to make a lot of sense but is necessary for initloader */
+			if(vm->reg->getFlags() & RF_EXECUTABLE)
+				mapFlags |= PG_EXECUTABLE;
 			for(auto mp = vm->reg->vmbegin(); mp != vm->reg->vmend(); ++mp) {
 				/* the region may be mapped to a different virtual address */
 				VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
@@ -1223,7 +1266,7 @@ Region *VirtMem::getLRURegion() {
 		if(tree->getVM()->tryAquire()) {
 			for(auto vm = tree->cbegin(); vm != tree->cend(); ++vm) {
 				size_t count = 0;
-				if((vm->reg->getFlags() & RF_NOFREE) || vm->reg->getTimestamp() >= ts)
+				if(vm->reg->getTimestamp() >= ts)
 					continue;
 
 				/* we can't block here because otherwise we risk a deadlock. suppose that fs has to
@@ -1231,11 +1274,14 @@ Region *VirtMem::getLRURegion() {
 				 * is finished and lock the region for that, the swapper will find this region at this
 				 * place locked. so we have to skip it in this case to be able to continue. */
 				if(vm->reg->tryAquire()) {
-					size_t pages = BYTES_2_PAGES(vm->reg->getByteCount());
-					for(size_t j = 0; j < pages; j++) {
-						if(!(vm->reg->getPageFlags(j) & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
-							count++;
-							break;
+					/* skip locked regions */
+					if(~vm->reg->getFlags() & RF_LOCKED) {
+						size_t pages = BYTES_2_PAGES(vm->reg->getByteCount());
+						for(size_t j = 0; j < pages; j++) {
+							if(!(vm->reg->getPageFlags(j) & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
+								count++;
+								break;
+							}
 						}
 					}
 					if(count > 0) {

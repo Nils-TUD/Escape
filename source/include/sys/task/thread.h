@@ -560,13 +560,14 @@ public:
 
 	/**
 	 * Reserves <count> frames for this thread. That means, it swaps in memory, if
-	 * necessary, allocates that frames and stores them in the thread. You can get them later with
-	 * getFrame(). You can free not needed frames with discardFrames().
+	 * necessary and <swap> is true, allocates that frames and stores them in the thread.
+	 * You can get them later with getFrame(). You can free not needed frames with discardFrames().
 	 *
 	 * @param count the number of frames to reserve
+	 * @param swap whether to swap or just return false if there is not enough
 	 * @return true on success
 	 */
-	bool reserveFrames(size_t count);
+	bool reserveFrames(size_t count,bool swap = true);
 
 	/**
 	 * Removes one frame from the collection of frames of this thread. This will always succeed,

@@ -82,7 +82,7 @@ int main(int argc,char **argv) {
 					size_t shmsize = msg.args.arg1;
 					char *path = msg.str.s1;
 					assert(shbufs[fd] == NULL);
-					shbufs[fd] = joinbuf(path,shmsize);
+					shbufs[fd] = joinbuf(path,shmsize,0);
 					msg.args.arg1 = shbufs[fd] != NULL;
 					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
 				}

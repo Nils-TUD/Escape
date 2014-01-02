@@ -51,23 +51,33 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	off_t binOffset = SYSC_ARG7(stack);
 	OpenFile *f = NULL;
 
+#if DISABLE_DEMLOAD
+	flags |= MAP_POPULATE;
+#endif
+
 	/* check args */
 	if(EXPECT_FALSE(byteCount == 0 || loadCount > byteCount))
 		SYSC_ERROR(stack,-EINVAL);
+	if(flags & ~MAP_USER_FLAGS)
+		SYSC_ERROR(stack,-EINVAL);
+
 	if(flags & MAP_FIXED) {
 		if(EXPECT_FALSE(addr & (PAGE_SIZE - 1)))
 			SYSC_ERROR(stack,-EINVAL);
 		if(EXPECT_FALSE(addr == 0 || addr + byteCount < addr || addr + byteCount > INTERP_TEXT_BEGIN))
 			SYSC_ERROR(stack,-EINVAL);
 	}
+
 	if(EXPECT_FALSE((flags & MAP_TLS) && t->getTLSRegion() != NULL))
 		SYSC_ERROR(stack,-EINVAL);
-	if((~flags & MAP_NOMAP) && ((flags & MAP_TLS) || fd == -1)) {
+
+	if((flags & (MAP_POPULATE | MAP_NOSWAP)) == MAP_POPULATE) {
 		if(EXPECT_FALSE(!t->reserveFrames(BYTES_2_PAGES(byteCount))))
 			SYSC_ERROR(stack,-ENOMEM);
 	}
+
+	/* get file */
 	if(EXPECT_TRUE(fd != -1)) {
-		/* get file */
 		f = FileDesc::request(t->getProc(),fd);
 		if(EXPECT_FALSE(f == NULL))
 			SYSC_ERROR(stack,-EBADF);
@@ -76,13 +86,17 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	/* add region */
 	VMRegion *vm;
 	int res = t->getProc()->getVM()->map(addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+
+	/* release file */
 	if(EXPECT_TRUE(f))
 		FileDesc::release(f);
+
 	/* save tls-region-number */
 	if(EXPECT_FALSE(flags & MAP_TLS)) {
 		if(EXPECT_TRUE(res == 0))
 			t->setTLSRegion(vm);
 	}
+
 	t->discardFrames();
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);

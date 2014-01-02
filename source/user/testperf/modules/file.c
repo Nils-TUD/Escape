@@ -81,7 +81,7 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 	void *shmem;
 	if(!shared)
 		shmem = mmap(NULL,sizeof(buffer),0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
-	else if(sharebuf(fd,sizeof(buffer),&shmem,&shname) < 0)
+	else if(sharebuf(fd,sizeof(buffer),&shmem,&shname,0) < 0)
 		printe("Unable to share memory");
 	if(!shmem)
 		error("Unable to map shared memory");

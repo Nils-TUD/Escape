@@ -94,7 +94,7 @@ static void test_1() {
 	checkMemoryBefore(true);
 	t->reserveFrames(4);
 	test_assertTrue(p->getVM()->map(0,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ,MAP_SHARED,NULL,0,&rno) == 0);
-	test_assertTrue(p->getVM()->join(rno->virt(),clone->getVM(),&rno2,0) == 0);
+	test_assertTrue(p->getVM()->join(rno->virt(),clone->getVM(),&rno2,0,0) == 0);
 	clone->getVM()->unmap(rno2);
 	p->getVM()->unmap(rno);
 	t->discardFrames();

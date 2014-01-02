@@ -61,7 +61,7 @@ int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
 				Log::get().writef("[LOADER] Unexpected end; load segment %d not finished\n",loadSegNo);
 				return -ENOEXEC;
 			}
-			if(addSegment(NULL,pheader,loadSegNo,TYPE_PROG) < 0)
+			if(addSegment(NULL,pheader,loadSegNo,TYPE_PROG,MAP_POPULATE) < 0)
 				return -ENOEXEC;
 			/* copy the data and zero the rest, if necessary */
 			PageDir::copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
@@ -173,7 +173,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		}
 
 		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-			if(addSegment(file,&pheader,loadSeg,type) < 0)
+			if(addSegment(file,&pheader,loadSeg,type,0) < 0)
 				goto failed;
 			if(pheader.p_type == PT_TLS) {
 				uintptr_t tlsStart;
@@ -218,9 +218,9 @@ failed:
 	return -ENOEXEC;
 }
 
-int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type) {
+int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type,int mflags) {
 	Thread *t = Thread::getRunning();
-	int res,prot = 0,flags = type == TYPE_INTERP ? 0 : MAP_FIXED;
+	int res,prot = 0,flags = type == TYPE_INTERP ? mflags : MAP_FIXED | mflags;
 	size_t memsz = pheader->p_memsz;
 
 	/* determine protection flags */

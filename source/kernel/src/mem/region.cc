@@ -210,7 +210,8 @@ void Region::printFlags(OStream &os) const {
 		{"St",RF_STACK},
 		{"NoFree",RF_NOFREE},
 		{"TLS",RF_TLS},
-		{"GrDwn",RF_GROWS_DOWN}
+		{"GrDwn",RF_GROWS_DOWN},
+		{"Lo",RF_LOCKED},
 	};
 	for(size_t i = 0; i < ARRAY_SIZE(flagNames); i++) {
 		if(flags & flagNames[i].no)

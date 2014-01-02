@@ -187,7 +187,7 @@ void PhysMem::freeContiguous(frameno_t first,size_t count) {
 	SpinLock::release(&contLock);
 }
 
-bool PhysMem::reserve(size_t frameCount) {
+bool PhysMem::reserve(size_t frameCount,bool swap) {
 	SpinLock::acquire(&defLock);
 	size_t free = getFreeDef();
 	uframes += frameCount;
@@ -199,7 +199,7 @@ bool PhysMem::reserve(size_t frameCount) {
 
 	/* swapping not possible? */
 	Thread *t = Thread::getRunning();
-	if(!swapEnabled || !swapperThread ||
+	if(!swap || !swapEnabled || !swapperThread ||
 			t->getTid() == ATA_TID || t->getTid() == swapperThread->getTid()) {
 		SpinLock::release(&defLock);
 		return false;

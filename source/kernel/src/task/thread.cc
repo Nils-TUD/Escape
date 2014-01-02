@@ -212,18 +212,16 @@ void ThreadBase::updateRuntimes() {
 	mutex.up();
 }
 
-bool ThreadBase::reserveFrames(size_t count) {
+bool ThreadBase::reserveFrames(size_t count,bool swap) {
 	while(count > 0) {
-		if(!PhysMem::reserve(count)) {
+		if(!PhysMem::reserve(count,swap)) {
 			discardFrames();
 			return false;
 		}
 		for(size_t i = count; i > 0; i--) {
 			frameno_t frm = PhysMem::allocate(PhysMem::USR);
-			if(!frm) {
-				discardFrames();
-				return false;
-			}
+			if(!frm)
+				break;
 			reqFrames.append(frm);
 			count--;
 		}

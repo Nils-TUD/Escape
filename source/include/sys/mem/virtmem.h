@@ -31,8 +31,6 @@
 #	define DISABLE_DEMLOAD	0
 #endif
 
-#define MAX_REGUSE_COUNT	8192
-
 #define RNO_TEXT			0
 #define RNO_RODATA			1
 #define RNO_DATA			2
@@ -41,16 +39,21 @@
 #define PROT_WRITE			RF_WRITABLE
 #define PROT_EXEC			RF_EXECUTABLE
 
-#define MAP_SHARED			RF_SHAREABLE
 #define MAP_PRIVATE			0
-#define MAP_STACK			RF_STACK
+#define MAP_SHARED			RF_SHAREABLE
 #define MAP_GROWABLE		RF_GROWABLE
 #define MAP_GROWSDOWN		RF_GROWS_DOWN
-#define MAP_NOFREE			RF_NOFREE
+#define MAP_STACK			RF_STACK
 #define MAP_TLS				RF_TLS
-#define MAP_POPULATE		256UL
-#define MAP_NOMAP			512UL
-#define MAP_FIXED			1024UL
+#define MAP_LOCKED			RF_LOCKED
+#define MAP_POPULATE		64UL
+#define MAP_NOSWAP			128UL
+#define MAP_FIXED			256UL
+#define MAP_NOMAP			512UL		/* kernel-intern */
+#define MAP_NOFREE			RF_NOFREE	/* kernel-intern */
+
+#define MAP_USER_FLAGS		(MAP_SHARED | MAP_GROWABLE | MAP_GROWSDOWN | MAP_STACK | MAP_TLS | \
+ 							 MAP_LOCKED | MAP_POPULATE | MAP_NOSWAP | MAP_FIXED)
 
 class Proc;
 class Thread;
@@ -252,9 +255,10 @@ public:
 	 * @param dst the destination-virtmem
 	 * @param nvm the new created region
 	 * @param dstVirt the virtual address where to create that region (0 = auto)
+	 * @param flags the map flags
 	 * @return 0 on success or the negative error-code
 	 */
-	int join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstVirt);
+	int join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t dstVirt,ulong flags);
 
 	/**
 	 * Clones all regions of this virtmem (current) into the destination-virtmem

@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-int sharebuf(int dev,size_t size,void **mem,ulong *name) {
+int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	/* create shm file */
 	*mem = NULL;
 	int fd = pshm_create(IO_READ | IO_WRITE,0666,name);
@@ -33,7 +33,7 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name) {
 		return fd;
 
 	/* mmap it */
-	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
 	if(!addr) {
 		int res = -errno;
 		pshm_unlink(*name);
@@ -46,11 +46,11 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name) {
 	return res;
 }
 
-void *joinbuf(const char *path,size_t size) {
+void *joinbuf(const char *path,size_t size,int flags) {
 	int fd = open(path,IO_READ | IO_WRITE);
 	if(fd < 0)
 		return NULL;
-	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
+	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
 	close(fd);
 	return res;
 }

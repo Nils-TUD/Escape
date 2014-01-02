@@ -31,14 +31,15 @@
 #define PF_DEMANDLOAD		2UL
 #define PF_SWAPPED			4UL
 
-#define RF_GROWABLE			1UL
-#define RF_SHAREABLE		2UL
-#define RF_WRITABLE			4UL
-#define RF_EXECUTABLE		8UL
-#define RF_STACK			16UL
-#define RF_NOFREE			32UL	/* means that the memory should not be free'd on release */
-#define RF_TLS				64UL	/* needed to distinguish TLS-regions from others */
-#define RF_GROWS_DOWN		128UL
+#define RF_SHAREABLE		1UL
+#define RF_GROWABLE			2UL
+#define RF_GROWS_DOWN		4UL
+#define RF_STACK			8UL
+#define RF_TLS				16UL	/* needed to distinguish TLS-regions from others */
+#define RF_LOCKED			32UL
+#define RF_NOFREE			1024UL	/* means that the memory should not be free'd on release */
+#define RF_WRITABLE			2048UL
+#define RF_EXECUTABLE		4096UL
 
 class OStream;
 class VirtMem;

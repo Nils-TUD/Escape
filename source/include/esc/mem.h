@@ -24,20 +24,20 @@
 
 /* protection-flags */
 #define PROT_READ			0
-#define PROT_WRITE			4UL
-#define PROT_EXEC			8UL
+#define PROT_WRITE			2048UL
+#define PROT_EXEC			4096UL
 
 /* mapping flags */
-#define MAP_PRIVATE			0
-#define MAP_GROWABLE		1UL
-#define MAP_SHARED			2UL
-#define MAP_STACK			16UL
-#define MAP_NOFREE			32UL
-#define MAP_TLS				64UL
-#define MAP_GROWSDOWN		128UL
-#define MAP_POPULATE		256UL
-#define MAP_NOMAP			512UL
-#define MAP_FIXED			1024UL
+#define MAP_PRIVATE			0		/* make the region non-sharable */
+#define MAP_SHARED			1UL		/* make the region shareable */
+#define MAP_GROWABLE		2UL		/* make the region growable (e.g. heap, stack) */
+#define MAP_GROWSDOWN		4UL		/* for growable regions: let them grow downwards */
+#define MAP_STACK			8UL		/* for stack regions */
+#define MAP_TLS				16UL	/* for TLS regions */
+#define MAP_LOCKED			32UL	/* lock the region in memory, i.e. don't swap it out */
+#define MAP_POPULATE		64UL	/* fault-in all pages at the beginning */
+#define MAP_NOSWAP			128UL	/* if not enough memory for the mapping, don't swap but fail */
+#define MAP_FIXED			256UL	/* put the region exactly at the given address */
 
 #ifdef __cplusplus
 extern "C" {

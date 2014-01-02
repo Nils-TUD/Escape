@@ -103,7 +103,7 @@ int main(int argc,const char *argv[]) {
 
 	ulong shname;
 	uchar *shmem;
-	if(sharebuf(fileno(in),BUF_SIZE,(void**)&shmem,&shname) < 0) {
+	if(sharebuf(fileno(in),BUF_SIZE,(void**)&shmem,&shname,0) < 0) {
 		if(shmem == NULL)
 			error("Unable to mmap buffer");
 	}

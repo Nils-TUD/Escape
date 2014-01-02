@@ -144,9 +144,10 @@ public:
 	 * Panics if its not possible to make that frames available (swapping disabled, partition full, ...)
 	 *
 	 * @param frameCount the number of frames you need
+	 * @param swap whether to actually swap if necessary (or return an error)
 	 * @return true on success
 	 */
-	static bool reserve(size_t frameCount);
+	static bool reserve(size_t frameCount,bool swap);
 
 	/**
 	 * Allocates one frame. Assumes that it is available. You should announce it with reserve()

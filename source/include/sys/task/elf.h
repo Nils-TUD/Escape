@@ -83,7 +83,7 @@ public:
 
 private:
 	static int doLoadFromFile(const char *path,int type,StartupInfo *info);
-	static int addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type);
+	static int addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type,int mflags);
 };
 
 #ifdef __i386__

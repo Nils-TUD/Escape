@@ -290,18 +290,20 @@ A_CHECKRET static inline int sharefile(int dev,void *mem) {
  * @param size the size of the buffer
  * @param mem will be set to the buffer address (!= NULL means only the sharing failed)
  * @param name will be set to the shared memory name
+ * @param flags the flags to pass to mmap (besides MAP_SHARED)
  * @return 0 on success
  */
-int sharebuf(int dev,size_t size,void **mem,ulong *name);
+int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags);
 
 /**
  * Joins the given shared memory file, i.e. opens <path> and mmaps it.
  *
  * @param path the sh-mem file
  * @param size the size to pass to mmap
+ * @param flags the flags to pass to mmap (besides MAP_SHARED)
  * @return the address or NULL
  */
-void *joinbuf(const char *path,size_t size);
+void *joinbuf(const char *path,size_t size,int flags);
 
 /**
  * Destroys the shared memory file, that has been created by sharebuf. That is, it unlinks the file

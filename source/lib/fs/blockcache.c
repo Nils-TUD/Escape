@@ -54,7 +54,7 @@ void bcache_init(sBlockCache *c,int fd) {
 	c->freeBlocks = NULL;
 	c->oldestBlock = NULL;
 	c->newestBlock = NULL;
-	if(sharebuf(fd,c->blockCacheSize * c->blockSize,&c->blockmem,&c->blockshm) < 0) {
+	if(sharebuf(fd,c->blockCacheSize * c->blockSize,&c->blockmem,&c->blockshm,0) < 0) {
 		if(c->blockmem == NULL)
 			error("Unable to create block cache");
 		printe("Unable to share buffer with disk driver");

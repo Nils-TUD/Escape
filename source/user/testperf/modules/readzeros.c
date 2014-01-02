@@ -40,7 +40,7 @@ int mod_readzeros(int argc,char **argv) {
 
 	void *buf = buffer;
 	ulong name;
-	if(useshm && sharebuf(fd,PACKET_SIZE,&buf,&name) < 0)
+	if(useshm && sharebuf(fd,PACKET_SIZE,&buf,&name,0) < 0)
 		printe("Unable to share buffer");
 
 	uint64_t start = rdtsc();

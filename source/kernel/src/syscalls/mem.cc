@@ -98,7 +98,7 @@ int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!(prot & (PROT_WRITE | PROT_READ | PROT_EXEC))))
 		SYSC_ERROR(stack,-EINVAL);
 
-	int res = t->getProc()->getVM()->regctrl((uintptr_t)addr,prot);
+	int res = t->getProc()->getVM()->protect((uintptr_t)addr,prot);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -109,11 +109,11 @@ int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
 	VMRegion *reg = t->getProc()->getVM()->getRegion((uintptr_t)virt);
 	if(EXPECT_FALSE(reg == NULL))
 		SYSC_ERROR(stack,-ENOENT);
-	t->getProc()->getVM()->remove(reg);
+	t->getProc()->getVM()->unmap(reg);
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
+int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
@@ -131,7 +131,7 @@ int Syscalls::regaddphys(Thread *t,IntrptStackFrame *stack) {
 			SYSC_ERROR(stack,-ENOMEM);
 	}
 
-	uintptr_t addr = t->getProc()->getVM()->addPhys(&physCpy,bytes,align,true);
+	uintptr_t addr = t->getProc()->getVM()->mapphys(&physCpy,bytes,align,true);
 	if(EXPECT_TRUE(!physCpy && !align))
 		t->discardFrames();
 	if(EXPECT_FALSE(addr == 0))

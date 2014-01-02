@@ -78,7 +78,7 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
  *   will be used.
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *regaddphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
+void *mmapphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
 
 /**
  * Changes the protection of the region denoted by the given address.

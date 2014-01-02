@@ -108,7 +108,7 @@ private:
 	static int mmap(Thread *t,IntrptStackFrame *stack);
 	static int mprotect(Thread *t,IntrptStackFrame *stack);
 	static int munmap(Thread *t,IntrptStackFrame *stack);
-	static int regaddphys(Thread *t,IntrptStackFrame *stack);
+	static int mmapphys(Thread *t,IntrptStackFrame *stack);
 
 	// proc
 	static int getpid(Thread *t,IntrptStackFrame *stack);

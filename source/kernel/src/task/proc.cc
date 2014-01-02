@@ -769,7 +769,7 @@ void ProcBase::doRemoveRegions(Proc *p,bool remStack) {
 	 * region-range, which is not possible anymore, because the region is already gone. */
 	for(auto t = p->threads.begin(); t != p->threads.end(); ++t)
 		(*t)->removeRegions(remStack);
-	p->virtmem.removeAll(remStack);
+	p->virtmem.unmapAll(remStack);
 }
 
 void ProcBase::printAll(OStream &os) {

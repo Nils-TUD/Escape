@@ -116,7 +116,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 1);
 		if(res < 0) {
 			/* remove register-stack */
-			dst->getProc()->getVM()->remove(dst->stackRegions[0]);
+			dst->getProc()->getVM()->unmap(dst->stackRegions[0]);
 			dst->stackRegions[0] = NULL;
 			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
 			return res;
@@ -129,7 +129,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 void ThreadBase::freeArch(Thread *t) {
 	for(int i = 0; i < 2; i++) {
 		if(t->stackRegions[i] != NULL) {
-			t->getProc()->getVM()->remove(t->stackRegions[i]);
+			t->getProc()->getVM()->unmap(t->stackRegions[i]);
 			t->stackRegions[i] = NULL;
 		}
 	}

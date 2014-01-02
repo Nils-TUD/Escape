@@ -43,7 +43,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 7 */ 	{read,				"read",    			3},
 	/* 8 */		{createdev,			"createdev",    	3},
 	/* 9 */		{chgsize,			"chgsize",    		1},
-	/* 10 */	{regaddphys,		"regaddphys",    	2},
+	/* 10 */	{mmapphys,			"mmapphys",    		2},
 	/* 11 */	{write,				"write",    		3},
 	/* 12 */	{yield,				"yield",    		0},
 	/* 13 */	{dup,				"dup",    			1},

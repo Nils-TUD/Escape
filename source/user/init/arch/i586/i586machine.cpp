@@ -82,7 +82,7 @@ void i586Machine::rebootACPI() {
 	switch(method) {
 		case SYS_MEM: {
 			uintptr_t phys = addr;
-			volatile uint8_t *virt = reinterpret_cast<volatile uint8_t *>(regaddphys(&phys,1,0));
+			volatile uint8_t *virt = reinterpret_cast<volatile uint8_t *>(mmapphys(&phys,1,0));
 			if(!virt) {
 				printe("Unable to map %p",addr);
 				return;

@@ -62,7 +62,7 @@ void VirtMem::release() const {
 	proc->unlock(PLOCK_PROG);
 }
 
-uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {
+uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {
 	Thread *t = Thread::getRunning();
 	ssize_t res;
 	size_t pages = BYTES_2_PAGES(bCount);
@@ -126,7 +126,7 @@ uintptr_t VirtMem::addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 
 errorRel:
 	release();
-	remove(vm);
+	unmap(vm);
 error:
 	Thread::remHeapAlloc(frames);
 	Cache::free(frames);
@@ -251,7 +251,7 @@ error:
 	return res;
 }
 
-int VirtMem::regctrl(uintptr_t addr,ulong flags) {
+int VirtMem::protect(uintptr_t addr,ulong flags) {
 	size_t pgcount;
 	int res = -EPERM;
 	acquire();
@@ -540,19 +540,19 @@ int VirtMem::doPagefault(uintptr_t addr,VMRegion *vm,bool write) {
 	return res;
 }
 
-void VirtMem::removeAll(bool remStack) {
+void VirtMem::unmapAll(bool remStack) {
 	acquire();
 	for(auto vm = regtree.begin(); vm != regtree.end(); ) {
 		auto old = vm++;
 		if((!(old->reg->getFlags() & RF_STACK) || remStack))
-			doRemove(&*old);
+			doUnmap(&*old);
 	}
 	release();
 }
 
-void VirtMem::remove(VMRegion *vm) {
+void VirtMem::unmap(VMRegion *vm) {
 	acquire();
-	doRemove(vm);
+	doUnmap(vm);
 	release();
 }
 
@@ -602,7 +602,7 @@ void VirtMem::sync(VMRegion *vm) const {
 	}
 }
 
-void VirtMem::doRemove(VMRegion *vm) {
+void VirtMem::doUnmap(VMRegion *vm) {
 	vm->reg->acquire();
 	size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
 	assert(vm->reg->remFrom(this));

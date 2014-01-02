@@ -84,7 +84,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 
 void ThreadBase::freeArch(Thread *t) {
 	if(t->stackRegions[0] != NULL) {
-		t->getProc()->getVM()->remove(t->stackRegions[0]);
+		t->getProc()->getVM()->unmap(t->stackRegions[0]);
 		t->stackRegions[0] = NULL;
 	}
 	PhysMem::free(t->kstackFrame,PhysMem::KERN);

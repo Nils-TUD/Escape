@@ -116,7 +116,7 @@ static int vga_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,g
 int main(void) {
 	/* map VGA memory */
 	uintptr_t phys = VIDEO_MEM;
-	vgaData = (uint64_t*)regaddphys(&phys,MAX_COLS * ROWS * sizeof(uint64_t),0);
+	vgaData = (uint64_t*)mmapphys(&phys,MAX_COLS * ROWS * sizeof(uint64_t),0);
 	if(vgaData == NULL)
 		error("Unable to acquire vga-memory (%p)",VIDEO_MEM);
 

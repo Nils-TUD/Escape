@@ -102,11 +102,11 @@ int main(int argc,char **argv) {
 		error("Unable to announce disk-signal-handler");
 
 	phys = DISK_BASE;
-	diskRegs = (uint32_t*)regaddphys(&phys,16,0);
+	diskRegs = (uint32_t*)mmapphys(&phys,16,0);
 	if(diskRegs == NULL)
 		error("Unable to map disk registers");
 	phys = DISK_BUF;
-	diskBuf = (uint32_t*)regaddphys(&phys,MAX_RW_SIZE,0);
+	diskBuf = (uint32_t*)mmapphys(&phys,MAX_RW_SIZE,0);
 	if(diskBuf == NULL)
 		error("Unable to map disk buffer");
 

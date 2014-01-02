@@ -158,7 +158,7 @@ public:
 	 * @param writable whether it should be mapped writable
 	 * @return the virtual address or 0 if failed
 	 */
-	uintptr_t addPhys(uintptr_t *phys,size_t bCount,size_t align,bool writable);
+	uintptr_t mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writable);
 
 	/**
 	 * Maps a region to this VM.
@@ -184,7 +184,7 @@ public:
 	 * @param flags the new flags (RF_WRITABLE or 0)
 	 * @return 0 on success
 	 */
-	int regctrl(uintptr_t addr,ulong flags);
+	int protect(uintptr_t addr,ulong flags);
 
 	/**
 	 * This is a helper-function for determining the real memory-usage of all processes. It counts
@@ -235,14 +235,14 @@ public:
 	 *
 	 * @param remStack whether to remove the stack too
 	 */
-	void removeAll(bool remStack);
+	void unmapAll(bool remStack);
 
 	/**
 	 * Removes the given region
 	 *
 	 * @param vm the region
 	 */
-	void remove(VMRegion *vm);
+	void unmap(VMRegion *vm);
 
 	/**
 	 * Joins virtmem <dst> to the region <rno> of this virtmem. This can only be used for shared-
@@ -363,7 +363,7 @@ private:
 
 	int doPagefault(uintptr_t addr,VMRegion *vm,bool write);
 	void sync(VMRegion *vm) const;
-	void doRemove(VMRegion *vm);
+	void doUnmap(VMRegion *vm);
 	size_t doGrow(VMRegion *vm,ssize_t amount);
 	int demandLoad(VMRegion *vm,uintptr_t addr);
 	int loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount);
@@ -395,7 +395,7 @@ private:
 	Proc *proc;
 	/* the physical address for the page-directory of this process */
 	PageDir pagedir;
-	/* the number of frames the process owns, i.e. no cow, no shared stuff, no regaddphys.
+	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapphys.
 	 * paging-structures are counted, too */
 	ulong ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */

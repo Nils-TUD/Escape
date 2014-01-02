@@ -35,7 +35,7 @@ void *chgsize(ssize_t count) {
 	return (void*)addr;
 }
 
-void *regaddphys(uintptr_t *phys,size_t count,size_t align) {
+void *mmapphys(uintptr_t *phys,size_t count,size_t align) {
 	intptr_t addr = syscall3(SYSCALL_MAPPHYS,(ulong)phys,count,align);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)

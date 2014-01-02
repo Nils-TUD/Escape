@@ -136,7 +136,7 @@ int main(int argc,char **argv) {
 
 	/* map VGA memory */
 	uintptr_t phys = VGA_ADDR;
-	vgaData = (uint8_t*)regaddphys(&phys,VGA_SIZE,0);
+	vgaData = (uint8_t*)mmapphys(&phys,VGA_SIZE,0);
 	if(vgaData == NULL)
 		error("Unable to acquire vga-memory (%p)",phys);
 

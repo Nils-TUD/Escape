@@ -56,7 +56,7 @@ static uint64_t *kbRegs;
 
 int main(void) {
 	uintptr_t phys = KEYBOARD_BASE;
-	kbRegs = (uint64_t*)regaddphys(&phys,2 * sizeof(uint64_t),0);
+	kbRegs = (uint64_t*)mmapphys(&phys,2 * sizeof(uint64_t),0);
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
 

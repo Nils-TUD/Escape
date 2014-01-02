@@ -49,13 +49,13 @@ static void test_1() {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	Proc *clone;
-	test_caseStart("Testing VirtMem::add() and VirtMem::remove()");
+	test_caseStart("Testing VirtMem::add() and VirtMem::unmap()");
 
 	checkMemoryBefore(true);
 	t->reserveFrames(1);
 	test_assertTrue(p->getVM()->map(0x1000,PAGE_SIZE,PAGE_SIZE,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_FIXED,NULL,0,&rno) == 0);
-	p->getVM()->remove(rno);
+	p->getVM()->unmap(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -67,9 +67,9 @@ static void test_1() {
 			MAP_PRIVATE | MAP_FIXED,NULL,0,&rno2) == 0);
 	test_assertTrue(p->getVM()->map(0x10000,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_GROWABLE | MAP_FIXED,NULL,0,&rno3) == 0);
-	p->getVM()->remove(rno);
-	p->getVM()->remove(rno2);
-	p->getVM()->remove(rno3);
+	p->getVM()->unmap(rno);
+	p->getVM()->unmap(rno2);
+	p->getVM()->unmap(rno3);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -81,9 +81,9 @@ static void test_1() {
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,&rno2) == 0);
 	test_assertTrue(p->getVM()->map(0,PAGE_SIZE * 5,PAGE_SIZE * 5,PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_STACK | MAP_GROWABLE,NULL,0,&rno3) == 0);
-	p->getVM()->remove(rno);
-	p->getVM()->remove(rno2);
-	p->getVM()->remove(rno3);
+	p->getVM()->unmap(rno);
+	p->getVM()->unmap(rno2);
+	p->getVM()->unmap(rno3);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -95,8 +95,8 @@ static void test_1() {
 	t->reserveFrames(4);
 	test_assertTrue(p->getVM()->map(0,PAGE_SIZE * 4,PAGE_SIZE * 4,PROT_READ,MAP_SHARED,NULL,0,&rno) == 0);
 	test_assertTrue(p->getVM()->join(rno->virt(),clone->getVM(),&rno2,0) == 0);
-	clone->getVM()->remove(rno2);
-	p->getVM()->remove(rno);
+	clone->getVM()->unmap(rno2);
+	p->getVM()->unmap(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -124,7 +124,7 @@ static void test_2() {
 	test_assertSSize(p->getVM()->grow(rno->virt(),1),end);
 	p->getVM()->getRegRange(rno,&start,&end,true);
 	test_assertSSize(p->getVM()->grow(rno->virt(),-3),end);
-	p->getVM()->remove(rno);
+	p->getVM()->unmap(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 
@@ -142,7 +142,7 @@ static void test_2() {
 	test_assertSSize(p->getVM()->grow(rno->virt(),1),start);
 	p->getVM()->getRegRange(rno,&start,&end,true);
 	test_assertSSize(p->getVM()->grow(rno->virt(),-1),start);
-	p->getVM()->remove(rno);
+	p->getVM()->unmap(rno);
 	t->discardFrames();
 	checkMemoryAfter(true);
 

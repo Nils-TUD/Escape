@@ -85,7 +85,7 @@ sVESAScreen *vesascr_request(sScreenMode *minfo) {
 	/* map framebuffer */
 	size_t size = minfo->width * minfo->height * (minfo->bitsPerPixel / 8);
 	uintptr_t phys = minfo->physaddr;
-	scr->frmbuf = regaddphys(&phys,size,0);
+	scr->frmbuf = mmapphys(&phys,size,0);
 	if(scr->frmbuf == NULL) {
 		sll_removeFirstWith(screens,scr);
 		free(scr);

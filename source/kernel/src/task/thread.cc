@@ -312,7 +312,7 @@ errAppendIdle:
 	freeArch(t);
 errClone:
 	if(t->tlsRegion != NULL)
-		p->getVM()->remove(t->tlsRegion);
+		p->getVM()->unmap(t->tlsRegion);
 errAdd:
 	relRef(t);
 	return err;
@@ -322,7 +322,7 @@ void ThreadBase::kill() {
 	assert(state == Thread::ZOMBIE);
 	/* remove tls */
 	if(tlsRegion != NULL) {
-		proc->getVM()->remove(tlsRegion);
+		proc->getVM()->unmap(tlsRegion);
 		tlsRegion = NULL;
 	}
 

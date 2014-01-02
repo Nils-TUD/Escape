@@ -94,7 +94,7 @@ static int drive_thread(void *arg) {
 					 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
 					 * to swap (which would cause a deadlock, because we're doing that). */
 					shbufs[fd] = joinbuf(path,size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
-					msg.args.arg1 = shbufs[fd] != NULL;
+					msg.args.arg1 = shbufs[fd] != NULL ? 0 : -errno;
 					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
 				}
 				break;

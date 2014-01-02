@@ -95,7 +95,7 @@ int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSy
 						FSFile *file = files_get(fd);
 						assert(file->shm == NULL);
 						file->shm = joinbuf(path,size,0);
-						msg.args.arg1 = file->shm != NULL;
+						msg.args.arg1 = file->shm != NULL ? 0 : -errno;
 						send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
 					}
 					break;

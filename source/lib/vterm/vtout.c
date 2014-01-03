@@ -25,6 +25,7 @@
 #include <esc/esccodes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <vterm/vtout.h>
 #include <vterm/vtin.h>
@@ -101,7 +102,6 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 		}
 		str++;
 	}
-
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
 		vtctrl_scroll(vt,vt->firstVisLine - vt->currLine);
@@ -144,9 +144,8 @@ void vtout_putchar(sVTerm *vt,char c) {
 
 		case '\t':
 			i = TAB_WIDTH - vt->col % TAB_WIDTH;
-			while(i-- > 0) {
+			while(i-- > 0)
 				vtout_putchar(vt,' ');
-			}
 			break;
 
 		default: {
@@ -154,11 +153,11 @@ void vtout_putchar(sVTerm *vt,char c) {
 			if(vt->col >= vt->cols)
 				vtout_putchar(vt,'\n');
 
-			i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
-
 			/* write to buffer */
-			vt->buffer[i] = c;
-			vt->buffer[i + 1] = (vt->background << 4) | vt->foreground;
+			assert(vt->currLine + vt->row < HISTORY_SIZE * vt->rows);
+			char *line  = vt->lines[vt->currLine + vt->row];
+			line[vt->col * 2] = c;
+			line[vt->col * 2 + 1] = (vt->background << 4) | vt->foreground;
 
 			/* TODO don't update the complete remaining line */
 			vtctrl_markDirty(vt,vt->col,vt->row,vt->cols - vt->col,1);
@@ -169,25 +168,19 @@ void vtout_putchar(sVTerm *vt,char c) {
 }
 
 static void vtout_newLine(sVTerm *vt) {
-	char *src,*dst;
-	size_t i,count = (HISTORY_SIZE * vt->rows - vt->firstLine) * vt->cols * 2;
+	char **dst;
+	size_t count = (HISTORY_SIZE * vt->rows - vt->firstLine) * sizeof(char*);
 	/* move one line back */
-	if(vt->firstLine > 0) {
-		dst = vt->buffer + ((vt->firstLine - 1) * vt->cols * 2);
+	if(vt->firstLine > 0)
 		vt->firstLine--;
-	}
-	/* overwrite first line */
-	else
-		dst = vt->buffer + (vt->firstLine * vt->cols * 2);
-	src = dst + vt->cols * 2;
-	memmove(dst,src,count);
+	dst = vt->lines + vt->firstLine;
+	char *first = dst[0];
+	memmove(dst,dst + 1,count);
 
-	/* clear last line */
-	dst = vt->buffer + (vt->currLine + vt->row - 1) * vt->cols * 2;
-	for(i = 0; i < vt->cols * 2; i += 2) {
-		*dst++ = 0x20;
-		*dst++ = (vt->defBackground << 4) | vt->defForeground;
-	}
+	/* use first line for last one and clear it */
+	char **line = vt->lines + vt->currLine + vt->row - 1;
+	*line = first;
+	memcpy(*line,vt->emptyLine,vt->cols * 2);
 
 	/* we've scrolled one line up */
 	vt->upScroll++;
@@ -196,9 +189,9 @@ static void vtout_newLine(sVTerm *vt) {
 static void vtout_delete(sVTerm *vt,size_t count) {
 	if((!vt->readLine && vt->col >= count) || (vt->readLine && vt->rlBufPos >= count)) {
 		if(!vt->readLine || vt->echo) {
-			size_t i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
 			/* move the characters back in the buffer */
-			memmove(vt->buffer + i - 2 * count,vt->buffer + i,(vt->cols - vt->col) * 2);
+			char *line = vt->lines[vt->currLine + vt->row];
+			memmove(line + (vt->col - count) * 2,line + vt->col * 2,(vt->cols - vt->col) * 2);
 			vt->col -= count;
 		}
 

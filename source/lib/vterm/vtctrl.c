@@ -41,21 +41,19 @@
 /* the number of chars to keep in history */
 #define INITIAL_RLBUF_SIZE	50
 
+static char **vtctrl_createLines(size_t cols,size_t rows);
+static void vtctrl_freeLines(char **lines,size_t rows);
+
 bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
-	size_t i,len;
-	uchar color;
-	char *ptr;
-	vt->cols = mode->cols;
-	vt->rows = mode->rows;
-
-	/* by default we have no handlers for that */
-	vt->setCursor = NULL;
-
 	/* init state */
 	if(crtlocku(&vt->lock) < 0) {
 		printe("Unable to create vterm lock");
 		return false;
 	}
+	/* by default we have no handlers for that */
+	vt->setCursor = NULL;
+	vt->cols = mode->cols;
+	vt->rows = mode->rows;
 	vt->col = 0;
 	vt->row = vt->rows - 1;
 	vt->lastCol = 0;
@@ -81,8 +79,8 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;
 	vt->screenBackup = NULL;
-	vt->buffer = (char*)malloc(vt->rows * HISTORY_SIZE * vt->cols * 2);
-	if(vt->buffer == NULL) {
+	vt->lines = vtctrl_createLines(vt->cols,vt->rows);
+	if(!vt->lines) {
 		printe("Unable to allocate mem for vterm-buffer");
 		return false;
 	}
@@ -101,19 +99,28 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 		return false;
 	}
 
-	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
-	ptr = vt->buffer;
-	color = (vt->background << 4) | vt->foreground;
-	for(i = 0, len = vt->rows * HISTORY_SIZE * vt->cols * 2; i < len; i += 2) {
-		*ptr++ = ' ';
-		*ptr++ = color;
+	/* create and init empty line */
+	vt->emptyLine = (char*)malloc(vt->cols * 2);
+	if(!vt->emptyLine) {
+		printe("Unable to allocate memory for empty line");
+		return false;
 	}
+	uchar color = (vt->background << 4) | vt->foreground;
+	for(size_t j = 0; j < vt->cols; ++j) {
+		vt->emptyLine[j * 2] = ' ';
+		vt->emptyLine[j * 2 + 1] = color;
+	}
+
+	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
+	for(size_t i = 0; i < vt->rows * HISTORY_SIZE; ++i)
+		memcpy(vt->lines[i],vt->emptyLine,vt->cols * 2);
 	return true;
 }
 
 void vtctrl_destroy(sVTerm *vt) {
 	rb_destroy(vt->inbuf);
-	free(vt->buffer);
+	vtctrl_freeLines(vt->lines,vt->rows);
+	free(vt->emptyLine);
 	free(vt->rlBuffer);
 }
 
@@ -121,35 +128,36 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	bool res = false;
 	locku(&vt->lock);
 	if(vt->cols != cols || vt->rows != rows) {
-		size_t c,r,color;
+		size_t c,r,oldr,color;
 		size_t ccols = MIN(cols,vt->cols);
-		char *buf,*oldBuf,*old = vt->buffer;
-		vt->buffer = (char*)malloc(rows * HISTORY_SIZE * cols * 2);
-		if(vt->buffer == NULL) {
-			vt->buffer = old;
+		char *buf,*oldBuf,**old = vt->lines;
+		vt->lines = vtctrl_createLines(cols,rows);
+		if(!vt->lines) {
+			vt->lines = old;
 			unlocku(&vt->lock);
 			return false;
 		}
 
-		buf = vt->buffer;
 		color = (vt->background << 4) | vt->foreground;
 		r = 0;
 		if(rows > vt->rows) {
 			size_t limit = (rows - vt->rows) * HISTORY_SIZE;
 			for(; r < limit; r++) {
+				buf = vt->lines[r];
 				for(c = 0; c < cols; c++) {
 					*buf++ = ' ';
 					*buf++ = color;
 				}
 			}
-			oldBuf = old;
+			oldr = 0;
 		}
 		else
-			oldBuf = old + (vt->rows - rows) * HISTORY_SIZE * vt->cols * 2;
-		for(; r < rows * HISTORY_SIZE; r++) {
+			oldr = (vt->rows - rows) * HISTORY_SIZE;
+		for(; r < rows * HISTORY_SIZE; r++, oldr++) {
+			buf = vt->lines[r];
+			oldBuf = old[oldr];
 			memcpy(buf,oldBuf,ccols * 2);
 			buf += ccols * 2;
-			oldBuf += vt->cols * 2;
 			for(c = ccols; c < cols; c++) {
 				*buf++ = ' ';
 				*buf++ = color;
@@ -173,6 +181,7 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->firstVisLine += vt->rows - rows;
 
 		/* TODO update screenbackup */
+		vtctrl_freeLines(old,vt->rows);
 		vt->col = MIN(vt->col,cols - 1);
 		vt->row = MIN(rows - 1,rows - (vt->rows - vt->row));
 		vt->cols = cols;
@@ -182,7 +191,6 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->upWidth = 0;
 		vt->upHeight = 0;
 		vtctrl_markScrDirty(vt);
-		free(old);
 		res = true;
 	}
 	unlocku(&vt->lock);
@@ -220,17 +228,23 @@ int vtctrl_control(sVTerm *vt,uint cmd,void *data) {
 		case MSG_VT_BACKUP:
 			if(!vt->screenBackup)
 				vt->screenBackup = (char*)malloc(vt->rows * vt->cols * 2);
-			memcpy(vt->screenBackup,
-					vt->buffer + vt->firstVisLine * vt->cols * 2,
-					vt->rows * vt->cols * 2);
+			if(vt->screenBackup) {
+				for(size_t r = 0; r < vt->rows; ++r) {
+					memcpy(vt->screenBackup + r * vt->cols * 2,
+						vt->lines[vt->firstVisLine + r],vt->cols * 2);
+				}
+			}
+			else
+				res = -ENOMEM;
 			vt->backupCol = vt->col;
 			vt->backupRow = vt->row;
 			break;
 		case MSG_VT_RESTORE:
 			if(vt->screenBackup) {
-				memcpy(vt->buffer + vt->firstVisLine * vt->cols * 2,
-						vt->screenBackup,
-						vt->rows * vt->cols * 2);
+				for(size_t r = 0; r < vt->rows; ++r) {
+					memcpy(vt->lines[vt->firstVisLine + r],
+						vt->screenBackup + r * vt->cols * 2,vt->cols * 2);
+				}
 				free(vt->screenBackup);
 				vt->screenBackup = NULL;
 				vt->col = vt->backupCol;
@@ -274,4 +288,22 @@ void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
 	vt->upHeight = MAX(y + vt->upHeight,row + height) - vt->upRow;
 	assert(vt->upWidth <= vt->cols);
 	assert(vt->upHeight <= vt->rows);
+}
+
+static char **vtctrl_createLines(size_t cols,size_t rows) {
+	char **res = (char**)malloc(rows * HISTORY_SIZE * sizeof(char*));
+	if(res == NULL)
+		return NULL;
+	for(size_t i = 0; i < rows * HISTORY_SIZE; ++i) {
+		res[i] = (char*)malloc(cols * 2);
+		if(res[i] == NULL)
+			return NULL;
+	}
+	return res;
+}
+
+static void vtctrl_freeLines(char **lines,size_t rows) {
+	for(size_t i = 0; i < rows * HISTORY_SIZE; ++i)
+		free(lines[i]);
+	free(lines);
 }

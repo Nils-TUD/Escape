@@ -110,7 +110,8 @@ struct sVTerm {
 	size_t rlBufSize;
 	size_t rlBufPos;
 	char *rlBuffer;
-	char *buffer;
+	char **lines;
+	char *emptyLine;
 };
 
 /* the colors */

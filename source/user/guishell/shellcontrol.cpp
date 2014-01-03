@@ -249,16 +249,16 @@ void ShellControl::doSetCursor() {
 void ShellControl::paintRows(Graphics &g,size_t start,size_t count) {
 	Size csize = g.getFont().getSize();
 	gpos_t y = TEXTSTARTY + start * (csize.height + PADDING);
-	char *buf = _vt->buffer + (_vt->firstLine + start) * _vt->cols * 2;
-	char *max = _vt->buffer + _vt->rows * HISTORY_SIZE * _vt->cols * 2;
+	size_t r = _vt->firstLine + start;
+	size_t max = _vt->rows * HISTORY_SIZE;
 
-	while(count-- > 0 && buf < max) {
-		paintRow(g,csize.width,csize.height,buf,y);
+	while(count-- > 0 && r < max) {
+		paintRow(g,csize.width,csize.height,_vt->lines[r],y);
 		/* clear cursor line */
 		g.setColor(BGCOLOR);
 		g.fillRect(TEXTSTARTX,y + csize.height + PADDING,getSize().width - TEXTSTARTX * 2,CURSOR_HEIGHT);
-		buf += _vt->cols * 2;
 		y += csize.height + PADDING;
+		r++;
 	}
 }
 

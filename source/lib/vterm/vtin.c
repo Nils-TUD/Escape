@@ -126,10 +126,9 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 			size_t bufPos = vtin_rlGetBufPos(vt);
 			if(bufPos > 0) {
 				if(vt->echo) {
-					size_t i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2);
-					i += (vt->col * 2);
 					/* move the characters back in the buffer */
-					memmove(vt->buffer + i - 2,vt->buffer + i,(vt->cols - vt->col) * 2);
+					char *line = vt->lines[vt->currLine + vt->row];
+					memmove(line + (vt->col - 1) * 2,line + vt->col * 2,(vt->cols - vt->col) * 2);
 					vt->col--;
 				}
 

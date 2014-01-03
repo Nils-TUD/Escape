@@ -34,6 +34,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <assert.h>
 
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
@@ -113,15 +114,13 @@ static void vt_doUpdate(sVTerm *vt) {
 
 	if(vt->upWidth > 0) {
 		/* update content */
+		assert(vt->upCol + vt->upWidth <= vt->cols);
+		assert(vt->upRow + vt->upHeight <= vt->rows);
 		size_t offset = vt->upRow * vt->cols * 2 + vt->upCol * 2;
-		char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + offset;
-		if(vt->upWidth == vt->cols)
-			memcpy(scrShm + offset,startPos,vt->upWidth * vt->upHeight * 2);
-		else {
-			for(size_t i = 0; i < vt->upHeight; ++i) {
-				memcpy(scrShm + offset + i * vt->cols * 2,
-					startPos + i * vt->cols * 2,vt->upWidth * 2);
-			}
+		char **lines = vt->lines + vt->firstVisLine + vt->upRow;
+		for(size_t i = 0; i < vt->upHeight; ++i) {
+			memcpy(scrShm + offset + i * vt->cols * 2,
+				lines[i] + vt->upCol * 2,vt->upWidth * 2);
 		}
 
 		if(screen_update(vt->uimng,vt->upCol,vt->upRow,vt->upWidth,vt->upHeight) < 0)

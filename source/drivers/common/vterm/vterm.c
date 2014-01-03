@@ -181,7 +181,7 @@ int vt_setVideoMode(sVTerm *vt,int mode) {
 			if(scrShmTmp) {
 				/* the new mode is set, so destroy the old stuff. we have to re-set the mode anyway if
 				 * something fails below */
-				screen_destroyShm(curMode,scrShmTmp,tmpname,curMode->type);
+				screen_destroyShm(curMode,scrShmTmp,tmpname,VID_MODE_TYPE_TUI);
 			}
 
 			/* resize vterm if necessary */

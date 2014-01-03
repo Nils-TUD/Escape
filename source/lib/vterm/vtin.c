@@ -41,6 +41,12 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	if(!(modifier & STATE_BREAK)) {
 		if((modifier & STATE_SHIFT) && vt->navigation) {
 			switch(keycode) {
+				case VK_HOME:
+					vtctrl_scroll(vt,vt->rows * HISTORY_SIZE);
+					goto out;
+				case VK_END:
+					vtctrl_scroll(vt,-vt->rows * HISTORY_SIZE);
+					goto out;
 				case VK_PGUP:
 					vtctrl_scroll(vt,vt->rows);
 					goto out;

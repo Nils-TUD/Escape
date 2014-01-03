@@ -201,14 +201,14 @@ void ShellControl::doUpdate() {
 			}
 		}
 
-		// scroll to bottom
-		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
-		sp->scrollToBottom(false);
-
 		// repaint affected lines
 		Rectangle up = linesToRect(_vt->upRow,_vt->upHeight);
 		makeDirty(true);
 		repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+
+		// scroll to bottom
+		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
+		sp->scrollToBottom(false);
 
 		_vt->upScroll = 0;
 		_vt->upCol = _vt->cols;

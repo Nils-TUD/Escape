@@ -741,8 +741,8 @@ int ProcBase::waitChild(USER ExitState *state) {
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 	procLock.down();
-	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
-		if(p->parentPid == ppid && (p->flags & P_ZOMBIE)) {
+	for(auto p = procs.begin(); p != procs.end(); ++p) {
+		if(p->parentPid == ppid && (p->flags & (P_ZOMBIE | P_KILLED)) == P_ZOMBIE) {
 			if(state) {
 				state->pid = p->pid;
 				state->exitCode = p->stats.exitCode;
@@ -755,6 +755,8 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				state->sharedFrames = p->virtmem.getPeakSharedFrames();
 				state->swapped = p->virtmem.getSwapCount();
 			}
+			/* ensure that we don't kill it twice */
+			p->flags |= P_KILLED;
 			procLock.up();
 			return p->pid;
 		}

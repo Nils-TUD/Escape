@@ -54,6 +54,7 @@
 #define P_ZOMBIE			1
 #define P_PREZOMBIE			2
 #define P_BOOT				4
+#define P_KILLED			8
 
 #define PLOCK_COUNT			3
 #define PMUTEX_COUNT		1

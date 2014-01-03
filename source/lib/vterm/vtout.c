@@ -31,12 +31,14 @@
 #include <vterm/vtin.h>
 #include <vterm/vtctrl.h>
 
+static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty);
 static void vtout_newLine(sVTerm *vt);
 static void vtout_delete(sVTerm *vt,size_t count);
 static void vtout_beep(sVTerm *vt);
 static bool vtout_handleEscape(sVTerm *vt,char **str);
 
 void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
+	size_t oldRow;
 	char c,*start = str;
 	locku(&vt->lock);
 
@@ -78,23 +80,31 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 		vt->escapePos = -1;
 	}
 
+	oldRow = vt->row;
 	while((c = *str)) {
 		if(c == '\033') {
 			str++;
 			/* if the escape-code is incomplete, store what we have so far and wait for
 			 * further input */
+			size_t oldEscRow = vt->row;
 			if(!vtout_handleEscape(vt,&str)) {
 				size_t count = MIN(MAX_ESCC_LENGTH,len - (str - start));
 				memcpy(vt->escapeBuf,str,count);
 				vt->escapePos = count;
 				break;
 			}
+
+			/* if that changed the position, mark the so far updated part dirty */
+			if(oldEscRow != vt->row) {
+				vtctrl_markDirty(vt,0,oldRow,vt->cols,oldEscRow - oldRow + 1);
+				oldRow = vt->row;
+			}
 			continue;
 		}
 		if(vt->printToRL)
 			vtin_rlPutchar(vt,c);
 		else {
-			vtout_putchar(vt,c);
+			vtout_doPutchar(vt,c,false);
 			if(resetRead) {
 				vt->rlBufPos = 0;
 				vt->rlStartCol = vt->col;
@@ -102,6 +112,9 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 		}
 		str++;
 	}
+
+	/* mark dirty */
+	vtctrl_markDirty(vt,0,oldRow,vt->cols,vt->row - oldRow + 1);
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
 		vtctrl_scroll(vt,vt->firstVisLine - vt->currLine);
@@ -109,8 +122,10 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 }
 
 void vtout_putchar(sVTerm *vt,char c) {
-	size_t i;
+	vtout_doPutchar(vt,c,true);
+}
 
+static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty) {
 	/* move all one line up, if necessary */
 	if(vt->row >= vt->rows) {
 		vtout_newLine(vt);
@@ -142,11 +157,12 @@ void vtout_putchar(sVTerm *vt,char c) {
 			vtout_delete(vt,1);
 			break;
 
-		case '\t':
-			i = TAB_WIDTH - vt->col % TAB_WIDTH;
+		case '\t': {
+			size_t i = TAB_WIDTH - vt->col % TAB_WIDTH;
 			while(i-- > 0)
 				vtout_putchar(vt,' ');
-			break;
+		}
+		break;
 
 		default: {
 			/* do an explicit newline if necessary */
@@ -159,8 +175,8 @@ void vtout_putchar(sVTerm *vt,char c) {
 			line[vt->col * 2] = c;
 			line[vt->col * 2 + 1] = (vt->background << 4) | vt->foreground;
 
-			/* TODO don't update the complete remaining line */
-			vtctrl_markDirty(vt,vt->col,vt->row,vt->cols - vt->col,1);
+			if(markDirty)
+				vtctrl_markDirty(vt,vt->col,vt->row,1,1);
 			vt->col++;
 		}
 		break;

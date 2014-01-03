@@ -36,8 +36,6 @@
 #include <cmdargs.h>
 #include <file.h>
 
-#define MIN_WIDTH_FOR_UIDGID	90
-
 using namespace std;
 using namespace info;
 

@@ -87,7 +87,7 @@ const char **Boot::parseArgs(const char *line,int *argc) {
 	while(*line) {
 		if(*line == ' ') {
 			if(args[j][0]) {
-				if(j + 1 >= MAX_ARG_COUNT)
+				if(j + 2 >= MAX_ARG_COUNT)
 					break;
 				args[j][i] = '\0';
 				j++;
@@ -101,6 +101,7 @@ const char **Boot::parseArgs(const char *line,int *argc) {
 	}
 	*argc = j + 1;
 	args[j][i] = '\0';
+	args[j + 1] = NULL;
 	return (const char**)args;
 }
 

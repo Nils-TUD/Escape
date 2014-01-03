@@ -106,6 +106,56 @@ namespace std {
 		return *this;
 	}
 
+	void ostream::writeUPadLeft(unsigned long long u,int base,streamsize &nwidth,streamsize &pwidth) {
+		// determine width
+		nwidth = 0;
+		pwidth = ios::width();
+		if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
+			nwidth = getullwidth(u,base);
+			if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
+				switch(base) {
+					case 16:
+						nwidth += 2;
+						break;
+					case 8:
+						nwidth += 1;
+						break;
+				}
+			}
+		}
+		// pad left - spaces
+		if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
+			writePad(pwidth - nwidth);
+		if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
+			switch(base) {
+				case 16:
+					_sb->put('0');
+					_sb->put((ios_base::flags() & ios_base::uppercase) ? 'X' : 'x');
+					break;
+				case 8:
+					_sb->put('0');
+					break;
+			}
+		}
+	}
+
+	void ostream::writePadLeft(long long n,streamsize &nwidth,streamsize &pwidth) {
+		nwidth = 0;
+		pwidth = ios::width();
+		// determine width
+		if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
+			nwidth = getllwidth(n);
+			if(ios_base::flags() & ios_base::showpos)
+				nwidth++;
+		}
+		// pad left
+		if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
+			writePad(pwidth - nwidth);
+		// print '+' or ' ' instead of '-'
+		if(ios_base::flags() & ios_base::showpos)
+			_sb->put('+');
+	}
+
 	void ostream::writeDouble(long double d) {
 		sentry se(*this);
 		if(se) {

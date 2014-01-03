@@ -191,20 +191,8 @@ namespace std {
 			sentry se(*this);
 			if(se) {
 				try {
-					streamsize nwidth = 0;
-					streamsize pwidth = ios::width();
-					// determine width
-					if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-						nwidth = getllwidth(n);
-						if(ios_base::flags() & ios_base::showpos)
-							nwidth++;
-					}
-					// pad left
-					if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
-						writePad(pwidth - nwidth);
-					// print '+' or ' ' instead of '-'
-					if(ios_base::flags() & ios_base::showpos)
-						_sb->put('+');
+					streamsize nwidth,pwidth;
+					writePadLeft(n,nwidth,pwidth);
 					// print number
 					writeSChars(n);
 					// pad right
@@ -226,36 +214,8 @@ namespace std {
 			if(se) {
 				try {
 					int base = ios_base::get_base();
-					// determine width
-					streamsize nwidth = 0;
-					streamsize pwidth = ios::width();
-					if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-						nwidth = getullwidth(u,base);
-						if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
-							switch(base) {
-								case 16:
-									nwidth += 2;
-									break;
-								case 8:
-									nwidth += 1;
-									break;
-							}
-						}
-					}
-					// pad left - spaces
-					if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
-						writePad(pwidth - nwidth);
-					if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
-						switch(base) {
-							case 16:
-								_sb->put('0');
-								_sb->put((ios_base::flags() & ios_base::uppercase) ? 'X' : 'x');
-								break;
-							case 8:
-								_sb->put('0');
-								break;
-						}
-					}
+					streamsize nwidth,pwidth;
+					writeUPadLeft(u,base,nwidth,pwidth);
 					// print number
 					if(ios_base::flags() & ios_base::uppercase)
 						writeUChars(u,base,numTableBig);
@@ -293,6 +253,9 @@ namespace std {
 		void writeDouble(long double d);
 		void writeDoubleChars(long double d);
 		void writePad(streamsize count);
+
+		void writeUPadLeft(unsigned long long u,int base,streamsize &nwidth,streamsize &pwidth);
+		void writePadLeft(long long n,streamsize &nwidth,streamsize &pwidth);
 
 	private:
 		streambuf* _sb;

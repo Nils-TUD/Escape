@@ -40,6 +40,7 @@
 #include <vterm/vtout.h>
 #include "vterm.h"
 
+#define BUF_SIZE		4096
 #define KB_DATA_BUF_SIZE	128
 /* max number of requests handled in a row; we have to look sometimes for the keyboard.. */
 #define MAX_SEQREQ			20
@@ -48,6 +49,7 @@ static int vtermThread(void *vterm);
 static void uimInputThread(void);
 
 static sVTerm vterm;
+static char buffer[BUF_SIZE];
 
 int main(int argc,char **argv) {
 	if(argc < 4) {
@@ -129,7 +131,7 @@ static int vtermThread(void *vtptr) {
 					/* offset is ignored here */
 					int avail;
 					size_t count = msg.args.arg2;
-					char *data = (char*)malloc(count);
+					char *data = count <= BUF_SIZE ? buffer : (char*)malloc(count);
 					msg.args.arg1 = 0;
 					msg.args.arg2 = READABLE_DONT_SET;
 					if(data)
@@ -139,25 +141,26 @@ static int vtermThread(void *vtptr) {
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1)
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1);
-					free(data);
+					if(count > BUF_SIZE)
+						free(data);
 				}
 				break;
 				case MSG_DEV_WRITE: {
-					char *data;
-					size_t c = msg.args.arg2;
-					data = (char*)malloc(c + 1);
+					size_t count = msg.args.arg2;
+					char *data = count <= BUF_SIZE ? buffer : (char*)malloc(count + 1);
 					msg.args.arg1 = 0;
 					if(data) {
-						if(IGNSIGS(receive(fd,&mid,data,c + 1)) >= 0) {
-							data[c] = '\0';
-							vtout_puts(vt,data,c,true);
+						if(IGNSIGS(receive(fd,&mid,data,count + 1)) >= 0) {
+							data[count] = '\0';
+							vtout_puts(vt,data,count,true);
 							vt_update(vt);
-							msg.args.arg1 = c;
+							msg.args.arg1 = count;
 						}
-						free(data);
+						if(count > BUF_SIZE)
+							free(data);
 					}
 					else
-						printe("Not enough memory to write %zu bytes",c + 1);
+						printe("Not enough memory to write %zu bytes",count + 1);
 					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;

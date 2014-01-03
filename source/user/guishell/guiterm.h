@@ -34,6 +34,10 @@ private:
 	 * The total size of the buffer
 	 */
 	static const size_t READ_BUF_SIZE	= 512;
+	/**
+	 * The size of the buffer for the read/write data
+	 */
+	static const size_t CLIENT_BUF_SIZE	= 4096;
 
 public:
 	GUITerm(int sid,std::shared_ptr<ShellControl> sh,uint cols,uint rows);
@@ -61,5 +65,6 @@ private:
 	sScreenMode _mode;
 	std::shared_ptr<ShellControl> _sh;
 	char *_rbuffer;
+	char *_buffer;
 	size_t _rbufPos;
 };

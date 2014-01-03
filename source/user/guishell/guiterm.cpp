@@ -33,7 +33,7 @@ using namespace std;
 
 GUITerm::GUITerm(int sid,shared_ptr<ShellControl> sh,uint cols,uint rows)
 	: _sid(sid), _run(true), _vt(nullptr), _mode(), _sh(sh),
-	  _rbuffer(new char[READ_BUF_SIZE + 1]), _rbufPos(0) {
+	  _rbuffer(new char[READ_BUF_SIZE + 1]), _buffer(new char[CLIENT_BUF_SIZE]), _rbufPos(0) {
 	// create and init vterm
 	_vt = (sVTerm*)malloc(sizeof(sVTerm));
 	if(!_vt)
@@ -169,33 +169,38 @@ void GUITerm::run() {
 void GUITerm::read(int fd,sMsg *msg) {
 	// offset is ignored here
 	size_t count = msg->args.arg2;
-	char *data = (char*)malloc(count);
-	int avail;
-	msg->args.arg1 = vtin_gets(_vt,data,count,&avail);
-	msg->args.arg2 = avail;
+	char *data = count <= CLIENT_BUF_SIZE ? _buffer : (char*)malloc(count);
+	msg->args.arg1 = -ENOMEM;
+	msg->args.arg2 = READABLE_DONT_SET;
+	if(data) {
+		int avail;
+		msg->args.arg1 = vtin_gets(_vt,data,count,&avail);
+		msg->args.arg2 = avail;
+	}
 	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
-	if(msg->args.arg1) {
+	if(data && msg->args.arg1) {
 		send(fd,MSG_DEV_READ_RESP,data,msg->args.arg1);
-		free(data);
+		if(count > CLIENT_BUF_SIZE)
+			free(data);
 	}
 }
 
 void GUITerm::write(int fd,sMsg *msg) {
 	msgid_t mid;
 	size_t amount;
-	size_t c = msg->args.arg2;
-	char *data = (char*)malloc(c + 1);
+	size_t count = msg->args.arg2;
+	char *data = count <= CLIENT_BUF_SIZE ? _buffer : (char*)malloc(count + 1);
 	msg->args.arg1 = 0;
 	if(data) {
-		if(IGNSIGS(receive(fd,&mid,data,c + 1)) >= 0) {
+		if(IGNSIGS(receive(fd,&mid,data,count + 1)) >= 0) {
 			char *dataWork = data;
-			msg->args.arg1 = c;
-			dataWork[c] = '\0';
-			while(c > 0) {
-				amount = MIN(c,READ_BUF_SIZE - _rbufPos);
+			msg->args.arg1 = count;
+			dataWork[count] = '\0';
+			while(count > 0) {
+				amount = MIN(count,READ_BUF_SIZE - _rbufPos);
 				memcpy(_rbuffer + _rbufPos,dataWork,amount);
 
-				c -= amount;
+				count -= amount;
 				_rbufPos += amount;
 				dataWork += amount;
 				if(_rbufPos >= READ_BUF_SIZE) {
@@ -205,7 +210,8 @@ void GUITerm::write(int fd,sMsg *msg) {
 				}
 			}
 		}
-		free(data);
+		if(count > CLIENT_BUF_SIZE)
+			free(data);
 	}
 	send(fd,MSG_DEV_WRITE_RESP,msg,sizeof(msg->args));
 }

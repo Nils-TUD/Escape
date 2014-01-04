@@ -1,0 +1,3 @@
+#!/bin/sh
+. boot/$ESC_TARGET/images.sh
+create_mini_cd $1/dist $1/cd-mini.iso 1

@@ -1,6 +1,6 @@
 #!/bin/sh
 . boot/$ESC_TARGET/images.sh
-create_cd $1/dist $1/cd.iso
+create_mini_cd $1/dist $1/cd-mini.iso 0
 
 cat >$1/config-$ESC_MAC <<EOF
 root escape

@@ -22,6 +22,22 @@ EOF
 		-boot-load-size 4 -boot-info-table -o "$dst" "$src" 1>&2
 }
 
+create_mini_cd() {
+	src="$1"
+	dst="$2"
+
+	dir=`mktemp -d`
+	cp -Rf $src/* $dir
+	if [ "$3" = "1" ]; then
+		# remove test-files
+		rm -Rf $dir/zeros $dir/home/hrniels/* $dir/home/jon/* $dir/root/*
+	fi
+	# strip all binaries. just ignore the error for others
+	find $dir -type f | xargs strip -s 2>/dev/null
+	create_cd $dir $dst
+	rm -Rf $dir
+}
+
 create_disk() {
 	src="$1"
 	dst="$2"

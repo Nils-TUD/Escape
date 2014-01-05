@@ -59,9 +59,7 @@ static void test_tolower();
 static void test_toupper();
 static void test_isalnumstr();
 static void test_strmatch();
-static void test_strtold();
 static void test_strtol();
-static void test_ecvt();
 
 /* our test-module */
 sTestModule tModString = {
@@ -103,9 +101,7 @@ static void test_string() {
 	test_toupper();
 	test_isalnumstr();
 	test_strmatch();
-	test_strtold();
 	test_strtol();
-	test_ecvt();
 }
 
 static void test_atoi() {
@@ -836,40 +832,6 @@ static void test_strmatch() {
 	test_caseSucceeded();
 }
 
-static void test_strtold() {
-	struct StrtoldTest {
-		const char *str;
-		long double res;
-	};
-	StrtoldTest tests[] = {
-		{"1234",		1234L},
-		{" 12.34",		12.34L},
-		{".5",			.5L},
-		{" INF",		INFINITY},
-		{"-infINITY",	-INFINITY},
-		{"NAN",			NAN},
-		{"  \tnan",		NAN},
-		{"+6.0e2",		6.0e2L},
-		{"-12.34E10",	-12.34E10L},
-		{"0xABC.DEp2",	0xABC.DEp2L},
-		{"0xA.",		0xAL},
-	};
-	size_t i;
-	long double res;
-	char *end;
-	test_caseStart("Testing strtold()");
-
-	for(i = 0; i < ARRAY_SIZE(tests); i++) {
-		res = strtold(tests[i].str,NULL);
-		test_assertTrue(res == tests[i].res);
-		res = strtold(tests[i].str,&end);
-		test_assertTrue(res == tests[i].res);
-		test_assertTrue(*end == '\0');
-	}
-
-	test_caseSucceeded();
-}
-
 static void test_strtol() {
 	struct StrtolTest {
 		const char *str;
@@ -904,34 +866,6 @@ static void test_strtol() {
 		res = strtol(tests[i].str,NULL,tests[i].base);
 		test_assertLInt(res,tests[i].res);
 	}
-
-	test_caseSucceeded();
-}
-
-static void test_ecvt() {
-	int decpt,sign;
-	char *s;
-	test_caseStart("Testing ecvt()");
-
-	s = ecvt(1234.5678,3,&decpt,&sign);
-	test_assertStr(s,"123");
-	test_assertInt(decpt,4);
-	test_assertInt(sign,0);
-
-	s = ecvt(0,1,&decpt,&sign);
-	test_assertStr(s,"");
-	test_assertInt(decpt,0);
-	test_assertInt(sign,0);
-
-	s = ecvt(0.23,4,&decpt,&sign);
-	test_assertStr(s,"2300");
-	test_assertInt(decpt,0);
-	test_assertInt(sign,0);
-
-	s = ecvt(-10.33,12,&decpt,&sign);
-	test_assertStr(s,"103300000000");
-	test_assertInt(decpt,2);
-	test_assertInt(sign,1);
 
 	test_caseSucceeded();
 }

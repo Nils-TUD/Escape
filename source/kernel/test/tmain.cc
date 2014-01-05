@@ -53,7 +53,6 @@ extern sTestModule tModPmemAreas;
 extern sTestModule tModSList;
 extern sTestModule tModDList;
 extern sTestModule tModTreap;
-extern sTestModule tModMath;
 extern sTestModule tModPathTree;
 
 /* make gcc happy */
@@ -102,7 +101,6 @@ void bspstart(BootInfo *bootinfo) {
 	test_register(&tModSList);
 	test_register(&tModDList);
 	test_register(&tModTreap);
-	test_register(&tModMath);
 	test_register(&tModPathTree);
 	test_start();
 

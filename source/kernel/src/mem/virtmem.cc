@@ -493,8 +493,8 @@ void VirtMem::setTimestamp(Thread *t,uint64_t timestamp) {
 	}
 }
 
-float VirtMem::getMemUsage(size_t *pages) const {
-	float rpages = 0;
+size_t VirtMem::getMemUsage(size_t *pages) const {
+	size_t rpages = 0;
 	*pages = 0;
 	acquire();
 	for(auto vm = regtree.cbegin(); vm != regtree.cend(); ++vm) {
@@ -505,7 +505,8 @@ float VirtMem::getMemUsage(size_t *pages) const {
 				count++;
 		}
 		*pages += pageCount;
-		rpages += (float)count / vm->reg->refCount();
+		/* to prevent floating point arithmetic, multiply it with the page-size */
+		rpages += (count * PAGE_SIZE) / vm->reg->refCount();
 	}
 	release();
 	return rpages;

@@ -215,7 +215,7 @@ void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swappe
 
 void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
-	float dReal = 0;
+	size_t dReal = 0;
 	procLock.down();
 	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
 		size_t pown = 0,psh = 0,pswap = 0;
@@ -227,7 +227,7 @@ void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) 
 	procLock.up();
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
-	*dataReal = (size_t)(dReal + CopyOnWrite::getFrmCount()) * PAGE_SIZE;
+	*dataReal = dReal + (CopyOnWrite::getFrmCount() * PAGE_SIZE);
 }
 
 int ProcBase::clone(uint8_t flags) {

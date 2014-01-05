@@ -178,8 +178,8 @@ void Cache::print(OStream &os) {
 }
 
 void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t free) {
-	size_t memTotal = (size_t)(VID_COLS * (mem / (double)maxMem));
-	size_t full = (size_t)(memTotal * ((total - free) / (double)total));
+	size_t memTotal = maxMem == 0 ? 0 : (VID_COLS * mem) / maxMem;
+	size_t full = total == 0 ? 0 : (memTotal * (total - free)) / total;
 	for(size_t i = 0; i < VID_COLS; i++) {
 		if(i < full)
 			os.writef("%c",0xDB);

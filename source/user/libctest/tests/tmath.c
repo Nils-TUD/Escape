@@ -22,9 +22,9 @@
 #include <math.h>
 #include <assert.h>
 
-static void test_math();
-static void test_round();
-static void test_roundf();
+static void test_math(void);
+static void test_round(void);
+static void test_roundf(void);
 
 /* our test-module */
 sTestModule tModMath = {
@@ -32,12 +32,12 @@ sTestModule tModMath = {
 	&test_math
 };
 
-static void test_math() {
+static void test_math(void) {
 	test_round();
 	test_roundf();
 }
 
-static void test_round() {
+static void test_round(void) {
 	test_caseStart("Testing round()");
 
 	test_assertDouble(round(0.1),0.0);
@@ -51,7 +51,7 @@ static void test_round() {
 	test_caseSucceeded();
 }
 
-static void test_roundf() {
+static void test_roundf(void) {
 	test_caseStart("Testing roundf()");
 
 	test_assertFloat(roundf(0.1f),0.0f);

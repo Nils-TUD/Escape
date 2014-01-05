@@ -215,9 +215,9 @@ public:
 	 * one usage of the region).
 	 *
 	 * @param pages will point to the number of pages (size of virtual-memory)
-	 * @return the number of used frames for this process
+	 * @return the used memory for this process in bytes
 	 */
-	float getMemUsage(size_t *pages) const;
+	size_t getMemUsage(size_t *pages) const;
 
 	/**
 	 * Requests the information we need to share the file that is mapped at <addr>. That is, the

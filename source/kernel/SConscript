@@ -7,11 +7,18 @@ kenv = env.Clone()
 ldconf = 'src/arch/$ARCH/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
+	CFLAGS = ' -ffreestanding',
 	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti -ffreestanding',
 	CPPFLAGS = ' -DIN_KERNEL=1',
 	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,kernel/' + ldconf,
 	BUILDERS = {'GenSyms' : gensyms}
 )
+
+if kenv['ARCH'] == 'i586':
+	kenv.Append(
+		CFLAGS = ' -msoft-float',
+		CXXFLAGS = ' -msoft-float'
+	)
 
 #kenv.Append(
 #	CPPFLAGS = ' -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list='	+

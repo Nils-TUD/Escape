@@ -28,7 +28,7 @@
 /* forward declarations */
 static void test_mem(void);
 static void test_mmap_file(void);
-static void test_mmap_shared_file(void);
+static void test_mmap_shared_file(const char *path);
 
 /* our test-module */
 sTestModule tModMem = {
@@ -38,7 +38,13 @@ sTestModule tModMem = {
 
 static void test_mem(void) {
 	test_mmap_file();
-	test_mmap_shared_file();
+	test_mmap_shared_file("/system/foobar");
+	sFileInfo info;
+	if(stat(".",&info) < 0)
+		error("Unable to stat .");
+	/* don't try that on readonly-filesystems */
+	if((info.mode & S_IWUSR))
+		test_mmap_shared_file("foobar");
 }
 
 static void test_mmap_file(void) {
@@ -67,16 +73,16 @@ static void test_mmap_file(void) {
 	test_caseSucceeded();
 }
 
-static void test_mmap_shared_file(void) {
+static void test_mmap_shared_file(const char *path) {
 	void *addr;
 	size_t i;
 	FILE *f;
 	int fd;
 
-	test_caseStart("Testing mmap() with a file and write-back");
+	test_caseStart("Testing mmap() of '%s' with write-back",path);
 
 	/* create file with test content */
-	f = fopen("foobar","w+");
+	f = fopen(path,"w+");
 	if(!f) {
 		test_assertFalse(true);
 		return;
@@ -86,7 +92,7 @@ static void test_mmap_shared_file(void) {
 	fclose(f);
 
 	/* open file and mmap it */
-	fd = open("foobar",IO_READ | IO_WRITE);
+	fd = open(path,IO_READ | IO_WRITE);
 	if(fd < 0) {
 		test_assertFalse(true);
 		return;
@@ -107,7 +113,7 @@ static void test_mmap_shared_file(void) {
 	munmap(addr);
 
 	/* check new content */
-	f = fopen("foobar","r");
+	f = fopen(path,"r");
 	if(!f) {
 		test_assertFalse(true);
 		return;
@@ -116,7 +122,7 @@ static void test_mmap_shared_file(void) {
 		test_assertInt(fgetc(f),'0' + (10 - (i % 10)));
 	fclose(f);
 
-	test_assertInt(unlink("foobar"),0);
+	test_assertInt(unlink(path),0);
 
 	test_caseSucceeded();
 }

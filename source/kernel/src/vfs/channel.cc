@@ -82,6 +82,20 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
+void VFSChannel::discardMsgs() {
+	SpinLock::acquire(&waitLock);
+	// remove from parent
+	VFSNode::acquireTree();
+	if(getParent())
+		static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
+	VFSNode::releaseTree();
+
+	// now clear lists
+	sendList.deleteAll();
+	recvList.deleteAll();
+	SpinLock::release(&waitLock);
+}
+
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	ssize_t res = -ENOENT;
 	sMsg msg;

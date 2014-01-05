@@ -50,6 +50,7 @@
 #define F_SETUNUSED				4
 #define F_SEMUP					5
 #define F_SEMDOWN				6
+#define F_DISMSGS				7
 
 /* seek-types */
 #define SEEK_SET				0

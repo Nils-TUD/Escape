@@ -146,7 +146,7 @@ static void keys_switchToVGA(void) {
 void keys_enterDebugger(void) {
 	keys_switchToVGA();
 	debug();
-	cli_reactivate(VGA_MODE);
+	cli_reactivate(cli_getActive(),cli_getActive(),VGA_MODE);
 }
 
 void keys_createTextConsole(void) {

@@ -57,7 +57,7 @@ bool cli_exists(size_t idx);
 sClient *cli_getActive(void);
 sClient *cli_get(int id);
 size_t cli_getCount(void);
-void cli_reactivate(int oldMode);
+void cli_reactivate(sClient *cli,sClient *old,int oldMode);
 void cli_next(void);
 void cli_prev(void);
 void cli_switchTo(size_t idx);

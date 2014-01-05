@@ -66,16 +66,27 @@ static int cli_getOldMode(void) {
 	return -1;
 }
 
-void cli_reactivate(int oldMode) {
-	if(active == MAX_CLIENT_FDS || !clients[active]->screenMode)
+void cli_reactivate(sClient *cli,sClient *old,int oldMode) {
+	if(cli == NULL || !cli->screenMode)
 		return;
 
-	sClient *cli = clients[active];
+	/* before switching, discard all messages that are in flight from the old client. because we
+	 * might have send e.g. some update-messages which haven't been handled yet and of course we
+	 * don't want the screen-driver to handle them afterwards since that would overwrite something
+	 * of the new client. note that this is no problem because if we switch back to the old client,
+	 * we'll update everything anyway. */
+	if(old && old->screenMode)
+		fcntl(old->screenFd,F_DISMSGS,0);
+
 	if(screen_setMode(cli->screenFd,cli->type,cli->screenMode->id,cli->screenShmName,
 			oldMode != cli->screenMode->id) < 0)
 		printe("Unable to set mode");
 	if(screen_setCursor(cli->screenFd,cli->cursor.x,cli->cursor.y,cli->cursor.cursor) < 0)
 		printe("Unable to set cursor");
+
+	/* now everything is complete, so set the new active client */
+	active = cli->id;
+	activeIdx = cli->idx;
 
 	gsize_t w = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->cols : cli->screenMode->width;
 	gsize_t h = cli->type == VID_MODE_TYPE_TUI ? cli->screenMode->rows : cli->screenMode->height;
@@ -86,22 +97,32 @@ void cli_reactivate(int oldMode) {
 }
 
 static void cli_switch(int incr) {
-	size_t oldActive = active;
 	int oldMode = cli_getOldMode();
-	if(activeIdx == MAX_CLIENT_FDS)
-		activeIdx = 0;
+	sClient *oldcli = activeIdx != MAX_CLIENT_FDS ? idx2cli[activeIdx] : NULL;
+	size_t newActive,oldActive = active;
+	size_t newActiveIdx,oldActiveIdx = activeIdx;
+	/* set current client to nothing */
+	active = activeIdx = MAX_CLIENT_FDS;
+
+	newActiveIdx = oldActiveIdx;
+	if(oldActiveIdx == MAX_CLIENT_FDS)
+		newActiveIdx = 0;
 	if(cliCount > 0) {
 		do {
-			activeIdx = (activeIdx + incr) % MAX_CLIENTS;
+			newActiveIdx = (newActiveIdx + incr) % MAX_CLIENTS;
 		}
-		while(idx2cli[activeIdx] == NULL || idx2cli[activeIdx]->screenMode == NULL);
-		active = idx2cli[activeIdx]->id;
+		while(idx2cli[newActiveIdx] == NULL || idx2cli[newActiveIdx]->screenMode == NULL);
+		newActive = idx2cli[newActiveIdx]->id;
 	}
 	else
-		activeIdx = active = MAX_CLIENT_FDS;
+		newActiveIdx = newActive = MAX_CLIENT_FDS;
 
-	if(active != MAX_CLIENT_FDS && active != oldActive)
-		cli_reactivate(oldMode);
+	if(newActive != MAX_CLIENT_FDS && newActive != oldActive)
+		cli_reactivate(idx2cli[newActiveIdx],oldcli,oldMode);
+	else {
+		active = newActive;
+		activeIdx = newActiveIdx;
+	}
 }
 
 void cli_next(void) {
@@ -116,9 +137,7 @@ void cli_switchTo(size_t idx) {
 	assert(idx < MAX_CLIENTS);
 	if(idx != activeIdx && idx2cli[idx] != NULL) {
 		int oldMode = cli_getOldMode();
-		activeIdx = idx;
-		active = idx2cli[activeIdx]->id;
-		cli_reactivate(oldMode);
+		cli_reactivate(idx2cli[idx],activeIdx != MAX_CLIENT_FDS ? idx2cli[activeIdx] : NULL,oldMode);
 	}
 }
 

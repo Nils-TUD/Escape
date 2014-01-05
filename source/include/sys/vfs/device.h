@@ -80,20 +80,20 @@ public:
 	}
 
 	/**
-	 * Increases the message-count for this device
+	 * Increases the message-count for this device by <count>
 	 */
-	void addMsg() {
+	void addMsgs(ulong count) {
 		// we hold the waitlock currently anyway, therefore unlocked
-		msgCount++;
+		msgCount += count;
 	}
 
 	/**
-	 * Decreases the message-count for this device
+	 * Decreases the message-count for this device by <count>
 	 */
-	void remMsg() {
+	void remMsgs(ulong count) {
 		// we hold the waitlock currently anyway, therefore unlocked
-		assert(msgCount > 0);
-		msgCount--;
+		assert(msgCount >= count);
+		msgCount -= count;
 	}
 
 	/**

@@ -54,6 +54,15 @@ VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 void VFSChannel::invalidate() {
 	/* notify potentially waiting clients */
 	Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
+	// luckily, we have the treelock here which is also used for all other calls to addMsgs/remMsgs.
+	// but we get the number of messages in VFS::waitFor() without the treelock. but in this case it
+	// doesn't really hurt to remove messages, because we would just give up waiting once, probably
+	// call getwork afterwards which will see that there is actually no new message anymore.
+	// (we can't acquire the waitlock because we use these locks in the opposite order below)
+	// note also that we only get here if there are no references to this node anymore. so it's safe
+	// to access the lists.
+	if(getParent())
+		static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
 	recvList.deleteAll();
 	sendList.deleteAll();
 }
@@ -409,9 +418,9 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	if(list == &sendList) {
 		VFSNode::acquireTree();
 		if(EXPECT_TRUE(parent)) {
-			static_cast<VFSDevice*>(parent)->addMsg();
+			static_cast<VFSDevice*>(parent)->addMsgs(1);
 			if(EXPECT_FALSE(msg2))
-				static_cast<VFSDevice*>(parent)->addMsg();
+				static_cast<VFSDevice*>(parent)->addMsgs(1);
 			Sched::wakeup(EV_CLIENT,(evobj_t)parent);
 		}
 		VFSNode::releaseTree();
@@ -479,7 +488,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	if(event == EV_CLIENT) {
 		VFSNode::acquireTree();
 		if(EXPECT_TRUE(parent))
-			static_cast<VFSDevice*>(parent)->remMsg();
+			static_cast<VFSDevice*>(parent)->remMsgs(1);
 		VFSNode::releaseTree();
 		curClient = msg->thread;
 	}

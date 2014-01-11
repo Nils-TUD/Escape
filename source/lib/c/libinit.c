@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/debug.h>
 #include <signal.h>
 #include <errno.h>
@@ -62,7 +63,7 @@ fConstr libcConstr[1] A_INIT = {
 };
 
 /* this lock is shared with tls.c */
-tULock __libc_lck;
+tUserSem __libc_sem;
 static size_t threadCount = 1;
 static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
@@ -71,7 +72,7 @@ void *_Jv_RegisterClasses;
 
 int startthread(fThreadEntry entryPoint,void *arg) {
 	int res;
-	locku(&__libc_lck);
+	usemdown(&__libc_sem);
 	// we have to increase it first since we don't know when the thread starts to run. if he does
 	// and exists before we get to the line below, it might call the exit-functions because
 	// threadCount hasn't been increased yet.
@@ -80,14 +81,14 @@ int startthread(fThreadEntry entryPoint,void *arg) {
 	// undo that, if an error occurred
 	if(res < 0)
 		threadCount--;
-	unlocku(&__libc_lck);
+	usemup(&__libc_sem);
 	return res;
 }
 
 int __cxa_atexit(void (*f)(void *),void *p,void *d) {
-	locku(&__libc_lck);
+	usemdown(&__libc_sem);
 	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&__libc_lck);
+		usemup(&__libc_sem);
 		return -ENOMEM;
 	}
 
@@ -95,7 +96,7 @@ int __cxa_atexit(void (*f)(void *),void *p,void *d) {
 	exitFuncs[exitFuncCount].p = p;
 	exitFuncs[exitFuncCount].d = d;
 	exitFuncCount++;
-	unlocku(&__libc_lck);
+	usemup(&__libc_sem);
 	return 0;
 }
 
@@ -105,14 +106,14 @@ void __cxa_finalize(A_UNUSED void *d) {
 	if(threadCount == 0)
 		return;
 
-	locku(&__libc_lck);
+	usemdown(&__libc_sem);
 	/* if we're the last thread, call the exit-functions */
 	if(--threadCount == 0) {
 		ssize_t i;
 		for(i = exitFuncCount - 1; i >= 0; i--)
 			exitFuncs[i].f(exitFuncs[i].p);
 	}
-	unlocku(&__libc_lck);
+	usemup(&__libc_sem);
 }
 
 void __libc_init(void) {

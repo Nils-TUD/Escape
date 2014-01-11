@@ -46,7 +46,7 @@ static void vtctrl_freeLines(char **lines,size_t rows);
 
 bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 	/* init state */
-	if(crtlocku(&vt->lock) < 0) {
+	if(usemcrt(&vt->usem,1) < 0) {
 		printe("Unable to create vterm lock");
 		return false;
 	}
@@ -126,7 +126,7 @@ void vtctrl_destroy(sVTerm *vt) {
 
 bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	bool res = false;
-	locku(&vt->lock);
+	usemdown(&vt->usem);
 	if(vt->cols != cols || vt->rows != rows) {
 		size_t c,r,oldr,color;
 		size_t ccols = MIN(cols,vt->cols);
@@ -134,7 +134,7 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->lines = vtctrl_createLines(cols,rows);
 		if(!vt->lines) {
 			vt->lines = old;
-			unlocku(&vt->lock);
+			usemup(&vt->usem);
 			return false;
 		}
 
@@ -193,13 +193,13 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vtctrl_markScrDirty(vt);
 		res = true;
 	}
-	unlocku(&vt->lock);
+	usemup(&vt->usem);
 	return res;
 }
 
 int vtctrl_control(sVTerm *vt,uint cmd,void *data) {
 	int res = 0;
-	locku(&vt->lock);
+	usemdown(&vt->usem);
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
 			vt->shellPid = *(pid_t*)data;
@@ -256,7 +256,7 @@ int vtctrl_control(sVTerm *vt,uint cmd,void *data) {
 			res = 1;
 			break;
 	}
-	unlocku(&vt->lock);
+	usemup(&vt->usem);
 	return res;
 }
 

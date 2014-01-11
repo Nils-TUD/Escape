@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@
 extern void initHeap(void);
 
 static uint *tlsCopy = NULL;
-extern tULock __libc_lck;
+extern tUserSem __libc_sem;
 extern char *__progname;
 
 /**
@@ -58,7 +59,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UN
 			__progname = name;
 		}
 
-		if(crtlocku(&__libc_lck) < 0)
+		if(usemcrt(&__libc_sem,1) < 0)
 			error("Unable to create libc lock");
 		initHeap();
 		initialized = true;
@@ -66,7 +67,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UN
 
 	if(tlsSize) {
 		size_t i;
-		locku(&__libc_lck);
+		usemdown(&__libc_sem);
 		/* create copy if not already done */
 		if(tlsCopy == NULL) {
 			tlsCopy = (uint*)malloc(tlsSize);
@@ -80,7 +81,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UN
 			tlsStart[i] = tlsCopy[i];
 		/* put pointer to TCB in TCB */
 		tlsStart[tlsSize - 1] = (uint)(tlsStart + tlsSize - 1);
-		unlocku(&__libc_lck);
+		usemup(&__libc_sem);
 	}
 	return entryPoint;
 }

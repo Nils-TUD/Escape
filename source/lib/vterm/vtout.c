@@ -40,7 +40,7 @@ static bool vtout_handleEscape(sVTerm *vt,char **str);
 void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	size_t oldRow;
 	char c,*start = str;
-	locku(&vt->lock);
+	usemdown(&vt->usem);
 
 	/* are we waiting to finish an escape-code? */
 	if(vt->escapePos >= 0) {
@@ -71,7 +71,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 			}
 			/* otherwise try again next time */
 			else {
-				unlocku(&vt->lock);
+				usemup(&vt->usem);
 				return;
 			}
 		}
@@ -118,7 +118,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
 		vtctrl_scroll(vt,vt->firstVisLine - vt->currLine);
-	unlocku(&vt->lock);
+	usemup(&vt->usem);
 }
 
 void vtout_putchar(sVTerm *vt,char c) {

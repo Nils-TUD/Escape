@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/dir.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,25 +28,29 @@
 #include "../modules.h"
 
 #define THREAD_COUNT	10
-#define LOCK_IDENT		0x11111111
+
+static tUserSem usem;
 
 static int myThread(A_UNUSED void *arg) {
 	size_t i;
-	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
+	usemdown(&usem);
 	printf("Thread %d starts\n",gettid());
 	fflush(stdout);
-	unlock(LOCK_IDENT);
+	usemup(&usem);
 	for(i = 0; i < 10; i++)
 		sleep(100);
-	lock(LOCK_IDENT,LOCK_EXCLUSIVE);
+	usemdown(&usem);
 	printf("Thread %d is done\n",gettid());
 	fflush(stdout);
-	unlock(LOCK_IDENT);
+	usemup(&usem);
 	return 0;
 }
 
 int mod_thread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int threads[THREAD_COUNT];
+	if(usemcrt(&usem,1) < 0)
+		error("Unable to create lock");
+
 	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++)
 		assert((threads[i] = startthread(myThread,NULL)) >= 0);

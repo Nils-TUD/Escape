@@ -146,7 +146,7 @@ Rectangle ShellControl::linesToRect(size_t start,size_t count) const {
 
 void ShellControl::paint(Graphics &g) {
 	if(!_locked)
-		locku(&_vt->lock);
+		usemdown(&_vt->usem);
 	Rectangle paintrect = g.getPaintRect();
 	if(!paintrect.empty()) {
 		Size dirty = rectToLines(paintrect);
@@ -169,11 +169,11 @@ void ShellControl::paint(Graphics &g) {
 		_lastRow = _vt->row;
 	}
 	if(!_locked)
-		unlocku(&_vt->lock);
+		usemup(&_vt->usem);
 }
 
 void ShellControl::doUpdate() {
-	locku(&_vt->lock);
+	usemdown(&_vt->usem);
 	// prevent self-deadlock
 	_locked = true;
 	if(_vt->upWidth > 0) {
@@ -219,7 +219,7 @@ void ShellControl::doUpdate() {
 	else
 		doSetCursor();
 	_locked = false;
-	unlocku(&_vt->lock);
+	usemup(&_vt->usem);
 }
 
 void ShellControl::update() {

@@ -23,7 +23,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>
 #include <esc/messages.h>
-#include <esc/thread.h>
+#include <esc/sync.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +50,7 @@ struct sVTerm {
 	int sid;
 	char name[MAX_VT_NAME_LEN + 1];
 	/* to lock this vterm */
-	tULock lock;
+	tUserSem usem;
 	/* function-pointers */
 	fSetCursor setCursor;
 	/* number of cols/rows on the screen */

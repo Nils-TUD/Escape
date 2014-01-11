@@ -20,8 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/col/treap.h>
 #include <sys/mem/dynarray.h>
 #include <sys/vfs/node.h>
+#include <sys/semaphore.h>
 #include <errno.h>
 #include <assert.h>
 
@@ -57,6 +59,30 @@ class OpenFile {
 	friend class FileDesc;
 	friend class ThreadBase;
 	friend class MountSpace;
+
+	struct UniqueId {
+		explicit UniqueId(dev_t d,inode_t i) : dev(d), ino(i) {
+		}
+
+		dev_t dev;
+		inode_t ino;
+	};
+
+	struct SemTreapNode : public TreapNode<UniqueId> {
+		explicit SemTreapNode(const UniqueId &id) : TreapNode<UniqueId>(id), sem() {
+		}
+
+		Semaphore sem;
+	};
+
+	friend bool operator<(const UniqueId &a,const UniqueId &b) {
+		if(a.dev == b.dev)
+			return a.ino < b.ino;
+		return a.dev < b.dev;
+	}
+	friend bool operator==(const UniqueId &a,const UniqueId &b) {
+		return a.dev == b.dev && a.ino == b.ino;
+	}
 
 	OpenFile() = delete;
 
@@ -338,6 +364,7 @@ private:
 	dev_t devNo;
 	/* for real files: the path; for virt files: NULL */
 	char *path;
+	SemTreapNode *sem;
 	/* for the freelist */
 	OpenFile *next;
 
@@ -347,4 +374,6 @@ private:
 	static OpenFile *usedList;
 	static OpenFile *exclList;
 	static OpenFile *gftFreeList;
+	static klock_t semLock;
+	static Treap<SemTreapNode> sems;
 };

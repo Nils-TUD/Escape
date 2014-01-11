@@ -21,7 +21,7 @@
 
 #define IOBUF_H_
 #include <esc/common.h>
-#include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/sllist.h>
 
 #define IN_BUFFER_SIZE		1024
@@ -81,7 +81,7 @@ typedef struct {
 	size_t max;
 	uchar dynamic;
 	char *buffer;
-	tULock lck;
+	tUserSem usem;
 } sIOBuf;
 
 typedef struct {

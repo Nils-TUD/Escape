@@ -148,16 +148,13 @@ private:
 	static int sleep(Thread *t,IntrptStackFrame *stack);
 	static int yield(Thread *t,IntrptStackFrame *stack);
 	static int wait(Thread *t,IntrptStackFrame *stack);
-	static int waitunlock(Thread *t,IntrptStackFrame *stack);
 	static int notify(Thread *t,IntrptStackFrame *stack);
-	static int lock(Thread *t,IntrptStackFrame *stack);
-	static int unlock(Thread *t,IntrptStackFrame *stack);
 	static int join(Thread *t,IntrptStackFrame *stack);
 	static int suspend(Thread *t,IntrptStackFrame *stack);
 	static int resume(Thread *t,IntrptStackFrame *stack);
-	static int semcreate(Thread *t,IntrptStackFrame *stack);
+	static int semcrt(Thread *t,IntrptStackFrame *stack);
 	static int semop(Thread *t,IntrptStackFrame *stack);
-	static int semdestroy(Thread *t,IntrptStackFrame *stack);
+	static int semdestr(Thread *t,IntrptStackFrame *stack);
 
 	// other
 	static int loadmods(Thread *t,IntrptStackFrame *stack);

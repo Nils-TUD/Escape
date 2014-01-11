@@ -24,7 +24,6 @@
 #include <sys/vfs/fs.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
-#include <sys/vfs/sem.h>
 #include <sys/vfs/vfs.h>
 #include <sys/ostream.h>
 #include <esc/messages.h>
@@ -37,6 +36,8 @@ DynArray OpenFile::gftArray(sizeof(OpenFile),GFT_AREA,GFT_AREA_SIZE);
 OpenFile *OpenFile::usedList = NULL;
 OpenFile *OpenFile::exclList = NULL;
 OpenFile *OpenFile::gftFreeList = NULL;
+klock_t OpenFile::semLock;
+Treap<OpenFile::SemTreapNode> OpenFile::sems;
 extern klock_t waitLock;
 
 void OpenFile::decUsages() {
@@ -92,14 +93,23 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 		}
 		case F_SEMUP:
 		case F_SEMDOWN: {
-			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_SEM(node->getMode())))
-				return -EINVAL;
-			if(EXPECT_FALSE(~flags & VFS_SEM))
-				return -EPERM;
+			if(sem == NULL) {
+				SpinLock::acquire(&semLock);
+				if(sem == NULL) {
+					UniqueId id(devNo,nodeNo);
+					sem = sems.find(id);
+					if(sem == NULL) {
+						sem = new SemTreapNode(id);
+						sems.insert(sem);
+					}
+				}
+				SpinLock::release(&semLock);
+			}
+
 			if(cmd == F_SEMUP)
-				static_cast<VFSSem*>(node)->up();
+				sem->sem.up();
 			else
-				static_cast<VFSSem*>(node)->down();
+				sem->sem.down();
 			return 0;
 		}
 	}
@@ -313,8 +323,7 @@ bool OpenFile::doClose(pid_t pid) {
 		if(usageCount <= 1) {
 			node->close(pid,this,devNo == VFS_DEV_NO ? MSG_DEV_CLOSE : MSG_FS_CLOSE);
 
-			/* mark unused */
-			Cache::free(path);
+			/* free it */
 			releaseFile(this);
 			return true;
 		}
@@ -382,6 +391,8 @@ void OpenFile::printAll(OStream &os) {
 			os.writef("\t\tpos: %Od\n",f->position);
 			os.writef("\t\trefCount: %d\n",f->refCount);
 			os.writef("\t\tusageCount: %d\n",f->usageCount);
+			if(f->sem)
+				os.writef("\t\tsem: %d\n",f->sem->sem.getValue());
 			if(f->owner == KERNEL_PID)
 				os.writef("\t\towner: %d (kernel)\n",f->owner);
 			else {
@@ -507,10 +518,19 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 	e->devNo = devNo;
 	e->nodeNo = nodeNo;
 	e->path = NULL;
+	e->sem = NULL;
 	return 0;
 }
 
 void OpenFile::releaseFile(OpenFile *file) {
+	Cache::free(file->path);
+	if(file->sem) {
+		SpinLock::acquire(&semLock);
+		sems.remove(file->sem);
+		SpinLock::release(&semLock);
+		delete file->sem;
+	}
+
 	SpinLock::acquire(&gftLock);
 	OpenFile *e = (file->flags & VFS_EXCLUSIVE) ? exclList : usedList;
 	OpenFile *p = NULL;

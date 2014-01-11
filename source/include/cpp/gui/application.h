@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/driver/screen.h>
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/event/subscriber.h>
@@ -309,7 +310,7 @@ namespace gui {
 		activatedev_type _activated;
 		destroyedev_type _destroyed;
 		std::list<TimeoutFunctor> _timequeue;
-		tULock _queuelock;
+		tUserSem _queueSem;
 		bool _listening;
 		Theme _defTheme;
 		const char *_winmng;

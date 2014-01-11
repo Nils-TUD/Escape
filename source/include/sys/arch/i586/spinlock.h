@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/arch/i586/atomic.h>
+#include <sys/atomic.h>
 #include <sys/cpu.h>
 
 #if !DEBUG_LOCKS

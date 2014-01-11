@@ -45,7 +45,7 @@ using namespace std;
 
 void ProcessManager::start() {
 	// TODO this is not exception-safe
-	locku(&_lock);
+	usemdown(&_sem);
 	waitForFS();
 
 	// set basic env-vars
@@ -71,42 +71,42 @@ void ProcessManager::start() {
 		(*it)->load();
 		pg.itemLoaded();
 	}
-	unlocku(&_lock);
+	usemup(&_sem);
 }
 
 void ProcessManager::restart(pid_t pid) {
 	Process *p;
-	locku(&_lock);
+	usemdown(&_sem);
 	p = getByPid(pid);
 	if(p)
 		p->load();
-	unlocku(&_lock);
+	usemup(&_sem);
 }
 
 void ProcessManager::setAlive(pid_t pid) {
 	Process *p;
-	locku(&_lock);
+	usemdown(&_sem);
 	p = getByPid(pid);
 	if(p) {
 		p->setAlive();
 		cout << "Process " << pid << " is alive and promised to terminate ASAP" << endl;
 	}
-	unlocku(&_lock);
+	usemup(&_sem);
 }
 
 void ProcessManager::died(pid_t pid) {
 	Process *p;
-	locku(&_lock);
+	usemdown(&_sem);
 	p = getByPid(pid);
 	if(p) {
 		p->setDead();
 		_downProg->itemTerminated();
 	}
-	unlocku(&_lock);
+	usemup(&_sem);
 }
 
 void ProcessManager::shutdown() {
-	locku(&_lock);
+	usemdown(&_sem);
 	addRunning();
 	_downProg = new Progress(0,_procs.size(),_procs.size());
 	_downProg->paintBar();
@@ -119,11 +119,11 @@ void ProcessManager::shutdown() {
 				printe("Unable to send the term-signal to %d",p->pid());
 		}
 	}
-	unlocku(&_lock);
+	usemup(&_sem);
 }
 
 void ProcessManager::finalize(int task) {
-	locku(&_lock);
+	usemdown(&_sem);
 	_downProg->itemStarting("Timout reached, killing remaining processes...");
 
 	// remove all except video (we don't get notified about all terminated processes; just about
@@ -167,7 +167,7 @@ void ProcessManager::finalize(int task) {
 		m->reboot(*_downProg);
 	else
 		m->shutdown(*_downProg);
-	unlocku(&_lock);
+	usemup(&_sem);
 }
 
 void ProcessManager::addRunning() {

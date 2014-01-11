@@ -37,7 +37,7 @@ static size_t vtin_rlGetBufPos(sVTerm *vt);
 static bool vtin_rlHandleKeycode(sVTerm *vt,uchar keycode);
 
 void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
-	locku(&vt->lock);
+	usemdown(&vt->usem);
 	if(!(modifier & STATE_BREAK)) {
 		if((modifier & STATE_SHIFT) && vt->navigation) {
 			switch(keycode) {
@@ -109,12 +109,12 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	}
 
 out:
-	unlocku(&vt->lock);
+	usemup(&vt->usem);
 }
 
 size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail) {
 	size_t res = 0;
-	locku(&vt->lock);
+	usemdown(&vt->usem);
 	if(buffer)
 		res = rb_readn(vt->inbuf,buffer,count);
 	if(rb_length(vt->inbuf) == 0)
@@ -122,7 +122,7 @@ size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail) {
 	*avail = vt->inbufEOF || rb_length(vt->inbuf) > 0;
 	if(*avail == 0)
 		fcntl(vt->sid,F_SETDATA,false);
-	unlocku(&vt->lock);
+	usemup(&vt->usem);
 	return res;
 }
 

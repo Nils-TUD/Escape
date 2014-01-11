@@ -95,7 +95,7 @@ bool tpool_addRequest(fReqHandler handler,sFileSystem *fs,int fd,const sMsg *msg
 			}
 		}
 		/* wait until there is a free slot */
-		waitunlock(EV_USER2,0,STATE_LOCK);
+		// TODO waitunlock(EV_USER2,0,STATE_LOCK);
 	}
 	/* unreachable */
 	return false;
@@ -125,7 +125,7 @@ static int tpool_idle(sReqThread *t) {
 		notify(acceptTid,EV_USER2);
 		/* we have to use waitunlock here to ensure that we don't miss the notify from the
 		 * accept thread */
-		waitunlock(EV_USER1,0,STATE_LOCK);
+		// TODO waitunlock(EV_USER1,0,STATE_LOCK);
 	}
 	return 0;
 }

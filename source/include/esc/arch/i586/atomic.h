@@ -20,9 +20,9 @@
 #pragma once
 
 static inline bool atomic_cmpnswap(long volatile *ptr,long oldval,long newval) {
-    return __sync_bool_compare_and_swap(ptr, oldval, newval);
+    return __sync_bool_compare_and_swap(ptr,oldval,newval);
 }
 
 static inline long atomic_add(long volatile *ptr,long value) {
-    return __sync_fetch_and_add(ptr, value);
+    return __sync_fetch_and_add(ptr,value);
 }

@@ -19,20 +19,25 @@
 
 #pragma once
 
-static inline bool atomic_cmpnswap(long volatile *ptr,long oldval,long newval) {
-	__asm__ volatile ("PUT	rP,%0\n" : : "r"(oldval));
-	__asm__ volatile (
-		"CSWAP	%0,%1,0\n"
-		: "+r"(newval)
-		: "r"(ptr)
-		: "memory"
-	);
-	return newval == 1;
+#include <esc/common.h>
+
+static inline int usemcrt(tUserSem *sem,long val) {
+	sem->value = val;
+	sem->sem = semcrt(0);
+	return sem->sem;
 }
 
-static inline long atomic_add(long volatile *ptr,long value) {
-	long old = *ptr;
-	while(!atomic_cmpnswap(ptr,old,old + value))
-		old = *ptr;
-	return old;
+static inline void usemdown(tUserSem *sem) {
+	/* 1 means free, <= 0 means taken */
+	if(__sync_fetch_and_add(&sem->value,-1) <= 0)
+		semdown(sem->sem);
+}
+
+static inline void usemup(tUserSem *sem) {
+	if(__sync_fetch_and_add(&sem->value,+1) < 0)
+		semup(sem->sem);
+}
+
+static inline void usemdestr(tUserSem *sem) {
+	semdestr(sem->sem);
 }

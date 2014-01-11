@@ -44,7 +44,7 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 		}
 		f->in.pos = 0;
 		f->in.max = buffer ? size : 0;
-		if(crtlocku(&f->in.lck) < 0)
+		if(usemcrt(&f->in.usem,1) < 0)
 			goto error;
 		f->out.dynamic = 0;
 	}
@@ -64,7 +64,7 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 		}
 		f->out.pos = 0;
 		f->out.max = buffer ? size : (dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE);
-		if(crtlocku(&f->out.lck) < 0)
+		if(usemcrt(&f->out.usem,1) < 0)
 			goto errorRd;
 		f->out.dynamic = dynamic;
 	}
@@ -74,7 +74,7 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 
 errorRd:
 	if(flags & IO_READ)
-		remlocku(&f->in.lck);
+		usemdestr(&f->in.usem);
 error:
 	if(!buffer) {
 		free(f->out.buffer);

@@ -23,6 +23,7 @@
 #include <esc/esccodes.h>
 #include <esc/keycodes.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/conf.h>
 #include <info/process.h>
 #include <info/thread.h>
@@ -45,7 +46,7 @@ static volatile bool run = true;
 static size_t pagesize;
 static ssize_t yoffset;
 static sUser *users;
-static tULock displayLock;
+static tUserSem displaySem;
 
 template<typename T>
 static void printBar(size_t barwidth,double ratio,const T& name) {
@@ -82,7 +83,7 @@ static bool compareProcs(const process* a,const process* b) {
 }
 
 static void display(void) {
-	locku(&displayLock);
+	usemdown(&displaySem);
 	try {
 		size_t cpubarwidth;
 		sScreenMode mode;
@@ -187,7 +188,7 @@ static void display(void) {
 	catch(const exception &e) {
 		cerr << "Update failed: " << e.what() << endl;
 	}
-	unlocku(&displayLock);
+	usemup(&displaySem);
 }
 
 static int refreshThread(void*) {
@@ -207,7 +208,7 @@ int main(void) {
 	pagesize = sysconf(CONF_PAGE_SIZE);
 	users = user_parseFromFile(USERS_PATH,&usercount);
 
-	if(crtlocku(&displayLock) < 0)
+	if(usemcrt(&displaySem,1) < 0)
 		error("Unable to create display lock");
 
 	int tid = startthread(refreshThread,nullptr);

@@ -22,6 +22,7 @@
 #include <esc/driver/screen.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/io.h>
 #include <esc/ringbuffer.h>
 #include <esc/messages.h>
@@ -49,7 +50,7 @@ static int inputThread(A_UNUSED void *arg);
 
 static char defKeymapPath[MAX_PATH_LEN];
 static sKeymap *defmap;
-static tULock lck;
+static tUserSem usem;
 
 int main(int argc,char *argv[]) {
 	char *newline;
@@ -60,7 +61,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(crtlocku(&lck) < 0)
+	if(usemcrt(&usem,1) < 0)
 		error("Unable to create uimanager-lock");
 	jobs_init();
 	keys_init();
@@ -114,9 +115,9 @@ static int mouseClientThread(A_UNUSED void *arg) {
 		sUIMData data;
 		data.type = KM_EV_MOUSE;
 		memcpy(&data.d.mouse,&mouseData,sizeof(mouseData));
-		locku(&lck);
+		usemdown(&usem);
 		cli_send(&data,sizeof(data));
-		unlocku(&lck);
+		usemup(&usem);
 	}
 	return EXIT_SUCCESS;
 }
@@ -126,9 +127,9 @@ static bool handleKey(sUIMData *data) {
 		return false;
 
 	if(data->d.keyb.keycode == VK_F12) {
-		locku(&lck);
+		usemdown(&usem);
 		keys_enterDebugger();
-		unlocku(&lck);
+		usemup(&usem);
 		return true;
 	}
 
@@ -144,9 +145,9 @@ static bool handleKey(sUIMData *data) {
 		case VK_5:
 		case VK_6:
 		case VK_7:
-			locku(&lck);
+			usemdown(&usem);
 			cli_switchTo(data->d.keyb.keycode - VK_0);
-			unlocku(&lck);
+			usemup(&usem);
 			return true;
 		/* we can't lock this because if we do a fork, the child might connect to us and we might
 		 * wait until he has registered a device -> deadlock */
@@ -157,14 +158,14 @@ static bool handleKey(sUIMData *data) {
 			keys_createGUIConsole();
 			return true;
 		case VK_LEFT:
-			locku(&lck);
+			usemdown(&usem);
 			cli_prev();
-			unlocku(&lck);
+			usemup(&usem);
 			return true;
 		case VK_RIGHT:
-			locku(&lck);
+			usemdown(&usem);
 			cli_next();
-			unlocku(&lck);
+			usemup(&usem);
 			return true;
 	}
 	return false;
@@ -187,17 +188,17 @@ static int kbClientThread(A_UNUSED void *arg) {
 		data.type = KM_EV_KEYBOARD;
 		data.d.keyb.keycode = kbData.keycode;
 
-		locku(&lck);
+		usemdown(&usem);
 		sClient *active = cli_getActive();
 		data.d.keyb.character = km_translateKeycode(
 				active ? active->map : defmap,kbData.isBreak,kbData.keycode,&data.d.keyb.modifier);
-		unlocku(&lck);
+		usemup(&usem);
 
 		/* the create-console commands can't be locked */
 		if(!handleKey(&data)) {
-			locku(&lck);
+			usemdown(&usem);
 			cli_send(&data,sizeof(data));
-			unlocku(&lck);
+			usemup(&usem);
 		}
 	}
 	return EXIT_SUCCESS;
@@ -220,18 +221,18 @@ static int ctrlThread(A_UNUSED void *arg) {
 		else {
 			switch(mid) {
 				case MSG_DEV_OPEN: {
-					locku(&lck);
+					usemdown(&usem);
 					msg.args.arg1 = cli_add(fd,defKeymapPath);
-					unlocku(&lck);
+					usemup(&usem);
 					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 
 				case MSG_DEV_CLOSE: {
-					locku(&lck);
+					usemdown(&usem);
 					cli_remove(fd);
 					close(fd);
-					unlocku(&lck);
+					usemup(&usem);
 				}
 				break;
 
@@ -300,7 +301,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 					int modeid = (int)msg.str.arg1;
 					int type = msg.str.arg2;
 					/* lock that to prevent that we interfere with e.g. the debugger keystroke */
-					locku(&lck);
+					usemdown(&usem);
 					sClient *cli = cli_get(fd);
 					msg.args.arg1 = screens_setMode(cli,type,modeid,msg.str.s1);
 					/* update header */
@@ -309,7 +310,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 						if(header_update(cli,&width,&height))
 							screen_update(cli->screenFd,0,0,width,height);
 					}
-					unlocku(&lck);
+					usemup(&usem);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
@@ -346,14 +347,14 @@ static int ctrlThread(A_UNUSED void *arg) {
 
 static int header_thread(A_UNUSED void *arg) {
 	while(1) {
-		locku(&lck);
+		usemdown(&usem);
 		sClient *active = cli_getActive();
 		if(active && active->screenMode) {
 			gsize_t width,height;
 			if(header_rebuild(active,&width,&height))
 				screen_update(active->screenFd,0,0,width,height);
 		}
-		unlocku(&lck);
+		usemup(&usem);
 		sleep(1000);
 	}
 	return 0;
@@ -372,7 +373,7 @@ static int inputThread(A_UNUSED void *arg) {
 		else {
 			switch(mid) {
 				case MSG_UIM_ATTACH: {
-					locku(&lck);
+					usemdown(&usem);
 					msg.args.arg1 = cli_attach(fd,msg.args.arg1);
 					/* update header */
 					if(msg.args.arg1 == 0) {
@@ -385,16 +386,16 @@ static int inputThread(A_UNUSED void *arg) {
 					 * harder to hijack a foreign session via brute-force. but this would destroy
 					 * our lock-strategy because we assume currently that only the other device
 					 * destroys the session on close. */
-					unlocku(&lck);
+					usemup(&usem);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
 				}
 				break;
 
 				case MSG_DEV_CLOSE: {
-					locku(&lck);
+					usemdown(&usem);
 					cli_detach(fd);
 					close(fd);
-					unlocku(&lck);
+					usemup(&usem);
 				}
 				break;
 			}

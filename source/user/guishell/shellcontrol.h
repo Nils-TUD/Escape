@@ -88,9 +88,9 @@ private:
 	void update();
 	void doUpdate();
 	void setCursor() {
-		locku(&_vt->lock);
+		usemdown(&_vt->usem);
 		doSetCursor();
-		unlocku(&_vt->lock);
+		usemup(&_vt->usem);
 	}
 	void doSetCursor();
 	void resizeVTerm(gui::Size size);

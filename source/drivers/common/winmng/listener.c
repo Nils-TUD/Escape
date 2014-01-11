@@ -21,6 +21,7 @@
 #include <esc/sllist.h>
 #include <esc/driver.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/io.h>
 #include <stdlib.h>
 #include "listener.h"
@@ -30,14 +31,14 @@ typedef struct {
 	msgid_t mid;
 } sWinListener;
 
-static tULock lck;
+static tUserSem usem;
 static int drvId;
 static sSLList list;
 
 void listener_init(int id) {
 	drvId = id;
 	sll_init(&list,malloc,free);
-	if(crtlocku(&lck) < 0)
+	if(usemcrt(&usem,1) < 0)
 		error("Unable to create listener-lock");
 }
 
@@ -47,9 +48,9 @@ bool listener_add(int client,msgid_t mid) {
 		return false;
 	l->client = client;
 	l->mid = mid;
-	locku(&lck);
+	usemdown(&usem);
 	bool res = sll_append(&list,l);
-	unlocku(&lck);
+	usemup(&usem);
 	if(!res) {
 		free(l);
 		return false;
@@ -58,17 +59,17 @@ bool listener_add(int client,msgid_t mid) {
 }
 
 void listener_notify(msgid_t mid,const sMsg *msg,size_t size) {
-	locku(&lck);
+	usemdown(&usem);
 	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;
 		if(l->mid == mid)
 			send(l->client,mid,msg,size);
 	}
-	unlocku(&lck);
+	usemup(&usem);
 }
 
 void listener_remove(int client,msgid_t mid) {
-	locku(&lck);
+	usemdown(&usem);
 	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;
 		if(l->client == client && l->mid == mid) {
@@ -77,11 +78,11 @@ void listener_remove(int client,msgid_t mid) {
 			break;
 		}
 	}
-	unlocku(&lck);
+	usemup(&usem);
 }
 
 void listener_removeAll(int client) {
-	locku(&lck);
+	usemdown(&usem);
 	sSLNode *p = NULL;
 	for(sSLNode *n = sll_begin(&list); n != NULL; ) {
 		sWinListener *l = (sWinListener*)n->data;
@@ -96,5 +97,5 @@ void listener_removeAll(int client) {
 			n = n->next;
 		}
 	}
-	unlocku(&lck);
+	usemup(&usem);
 }

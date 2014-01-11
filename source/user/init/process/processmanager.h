@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/thread.h>
+#include <esc/sync.h>
 #include <vector>
 #include "process.h"
 #include "../progress.h"
@@ -35,8 +35,8 @@ private:
 	static const size_t KERNEL_PERCENT	= 40;
 
 public:
-	ProcessManager() : _lock(), _downProg(nullptr), _procs() {
-		if(crtlocku(&_lock) < 0)
+	ProcessManager() : _sem(), _downProg(nullptr), _procs() {
+		if(usemcrt(&_sem,1) < 0)
 			throw init_error("Unable to create process-manager lock");
 	}
 	~ProcessManager() {
@@ -60,7 +60,7 @@ private:
 	size_t getBootModCount() const;
 
 private:
-	tULock _lock;
+	tUserSem _sem;
 	Progress *_downProg;
 	std::vector<Process*> _procs;
 };

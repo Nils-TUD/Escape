@@ -22,7 +22,6 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
-#include <sys/task/lock.h>
 #include <sys/task/timer.h>
 #include <sys/task/filedesc.h>
 #include <sys/task/sems.h>
@@ -36,7 +35,7 @@
 
 #define MAX_WAIT_OBJECTS		32
 
-static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident);
+static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime);
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
@@ -106,21 +105,7 @@ int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	evobj_t object = (evobj_t)SYSC_ARG2(stack);
 	time_t maxWaitTime = SYSC_ARG3(stack);
 
-	int res = doWait(t->getProc(),event,object,maxWaitTime,KERNEL_PID,0);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
-int Syscalls::waitunlock(Thread *t,IntrptStackFrame *stack) {
-	uint event = (uint)SYSC_ARG1(stack);
-	evobj_t object = (evobj_t)SYSC_ARG2(stack);
-	ulong ident = SYSC_ARG3(stack);
-	bool global = (bool)SYSC_ARG4(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	/* wait and release the lock before going to sleep */
-	int res = doWait(t->getProc(),event,object,0,global ? INVALID_PID : pid,ident);
+	int res = doWait(t->getProc(),event,object,maxWaitTime);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -135,29 +120,6 @@ int Syscalls::notify(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 	Sched::wakeupThread(nt,event);
 	SYSC_RET1(stack,0);
-}
-
-int Syscalls::lock(Thread *t,IntrptStackFrame *stack) {
-	ulong ident = SYSC_ARG1(stack);
-	bool global = (bool)SYSC_ARG2(stack);
-	ushort flags = (uint)SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	int res = Lock::acquire(global ? INVALID_PID : pid,ident,flags);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
-int Syscalls::unlock(Thread *t,IntrptStackFrame *stack) {
-	ulong ident = SYSC_ARG1(stack);
-	bool global = (bool)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	int res = Lock::release(global ? INVALID_PID : pid,ident);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
 }
 
 int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
@@ -196,7 +158,7 @@ int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::semcreate(Thread *t,IntrptStackFrame *stack) {
+int Syscalls::semcrt(Thread *t,IntrptStackFrame *stack) {
 	uint value = (uint)SYSC_ARG1(stack);
 	int res = Sems::create(t->getProc(),value);
 	if(res < 0)
@@ -213,13 +175,13 @@ int Syscalls::semop(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::semdestroy(Thread *t,IntrptStackFrame *stack) {
+int Syscalls::semdestr(Thread *t,IntrptStackFrame *stack) {
 	int sem = (int)SYSC_ARG1(stack);
 	Sems::destroy(t->getProc(),sem);
 	SYSC_RET1(stack,0);
 }
 
-static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime,pid_t pid,ulong ident) {
+static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime) {
 	OpenFile *file = NULL;
 	/* first request the files from the file-descriptors */
 	if(IS_FILE_EVENT(event)) {
@@ -234,7 +196,7 @@ static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime,pid_t pid
 		return -EINVAL;
 	if(IS_FILE_EVENT(event))
 		object = (evobj_t)file;
-	int res = VFS::waitFor(event,object,maxWaitTime,true,pid,ident);
+	int res = VFS::waitFor(event,object,maxWaitTime,true);
 
 	/* release them */
 	if(IS_FILE_EVENT(event))

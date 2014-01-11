@@ -43,9 +43,9 @@ namespace gui {
 
 	Application::Application(const char *winmng)
 			: _winFd(-1), _winEvFd(-1), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
-			  _activated(), _destroyed(), _timequeue(), _queuelock(), _listening(false),
+			  _activated(), _destroyed(), _timequeue(), _queueSem(), _listening(false),
 			  _defTheme(nullptr), _winmng() {
-		if(crtlocku(&_queuelock) < 0)
+		if(usemcrt(&_queueSem,1) < 0)
 			throw app_error("Unable to create queue lock");
 
 		if(winmng == NULL)
@@ -118,7 +118,7 @@ namespace gui {
 	}
 
 	void Application::executeIn(uint msecs,std::Functor<void> *functor) {
-		locku(&_queuelock);
+		usemdown(&_queueSem);
 		uint64_t tsc = rdtsc() + timetotsc(msecs * 1000);
 		std::list<TimeoutFunctor>::iterator it;
 		for(it = _timequeue.begin(); it != _timequeue.end(); ++it) {
@@ -130,7 +130,7 @@ namespace gui {
 		else if(it == _timequeue.begin())
 			alarm(msecs);
 		_timequeue.insert(it,TimeoutFunctor(tsc,functor));
-		unlocku(&_queuelock);
+		usemup(&_queueSem);
 	}
 
 	void Application::sigalarm(int) {
@@ -155,18 +155,18 @@ namespace gui {
 	}
 
 	void Application::handleQueue() {
-		locku(&_queuelock);
+		usemdown(&_queueSem);
 		uint64_t now = rdtsc();
 		for(auto it = _timequeue.begin(); it != _timequeue.end(); ) {
 			auto cur = it++;
 			if(cur->tsc <= now) {
-				unlocku(&_queuelock);
+				usemup(&_queueSem);
 				(*(cur->functor))();
-				locku(&_queuelock);
+				usemdown(&_queueSem);
 				_timequeue.erase(cur);
 			}
 		}
-		unlocku(&_queuelock);
+		usemup(&_queueSem);
 	}
 
 	void Application::handleMessage(msgid_t mid,sMsg *msg) {

@@ -24,6 +24,7 @@
 #include <esc/esccodes.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
 #include <stdio.h>
@@ -48,10 +49,10 @@
 #define GUI_DEF_RES_X	"800"
 #define GUI_DEF_RES_Y	"600"
 
-static tULock lck;
+static tUserSem usem;
 
 void keys_init(void) {
-	if(crtlocku(&lck) < 0)
+	if(usemcrt(&usem,1) < 0)
 		error("Unable to create keystrokes lock");
 }
 
@@ -60,11 +61,11 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 	char name[SSTRLEN("ui") + 11];
 	char path[SSTRLEN("/dev/ui") + 11];
 
-	locku(&lck);
+	usemdown(&usem);
 	int id = jobs_getId();
 	if(id < 0) {
 		fprintf(stderr,"[uimng] Maximum number of clients reached\n");
-		unlocku(&lck);
+		usemup(&usem);
 		return;
 	}
 
@@ -116,13 +117,13 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 	}
 
 	jobs_setLoginPid(id,loginPid);
-	unlocku(&lck);
+	usemup(&usem);
 	return;
 
 errorFork:
 	printe("fork failed");
 errorOpen:
-	unlocku(&lck);
+	usemup(&usem);
 }
 
 static void keys_switchToVGA(void) {

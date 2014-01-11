@@ -20,25 +20,30 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/thread.h>
 
-static inline int crtlocku(tULock *l) {
-	l->value = 1;
-	l->sem = semcreate(0);
-	return l->sem;
-}
+class Atomic {
+	Atomic() = delete;
 
-static inline void locku(tULock *l) {
-	/* 1 means free, <= 0 means taken */
-	if(__sync_fetch_and_add(&l->value, -1) <= 0)
-		semdown(l->sem);
-}
+public:
+	/**
+	 * Adds <value> to *<ptr> and returns the old value
+	 */
+	template<typename T, typename Y>
+	static T add(T volatile *ptr, Y value);
 
-static inline void unlocku(tULock *l) {
-	if(__sync_fetch_and_add(&l->value, +1) < 0)
-		semup(l->sem);
-}
+	/**
+	 * Compare and swap
+	 */
+	template<typename T, typename Y>
+	static bool cmpnswap(T volatile *ptr, Y oldval, Y newval);
+};
 
-static inline void remlocku(tULock *l) {
-	semdestroy(l->sem);
-}
+#ifdef __i386__
+#include <sys/arch/i586/atomic.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/atomic.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/atomic.h>
+#endif

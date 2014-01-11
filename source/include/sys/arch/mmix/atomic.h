@@ -21,21 +21,18 @@
 
 #include <esc/common.h>
 
-static inline int crtlocku(tULock *l) {
-	l->value = 1;
-	l->sem = semcreate(1);
-	return l->sem;
+template<typename T, typename Y>
+T Atomic::add(T volatile *ptr, Y value) {
+	T old = *ptr;
+	*ptr += value;
+	return old;
 }
 
-static inline void locku(tULock *l) {
-	/* TODO eco32 has no atomic compare and swap instruction or similar :/ */
-	semdown(l->sem);
-}
-
-static inline void unlocku(tULock *l) {
-	semup(l->sem);
-}
-
-static inline void remlocku(tULock *l) {
-	semdestroy(l->sem);
+template<typename T, typename Y>
+bool Atomic::cmpnswap(T volatile *ptr, Y oldval, Y newval) {
+	if(*ptr == oldval) {
+		*ptr = newval;
+		return true;
+	}
+	return false;
 }

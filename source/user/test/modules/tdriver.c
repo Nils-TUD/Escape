@@ -23,6 +23,7 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -30,7 +31,6 @@
 
 #include "../modules.h"
 
-#define MY_LOCK			0x487912ee
 #define CLIENT_COUNT	10
 
 typedef struct {
@@ -45,6 +45,7 @@ static volatile int closeCount = 0;
 static int respId = 1;
 static sMsg msg;
 static int id;
+static tUserSem psem;
 
 static int clientThread(void *arg);
 static int getRequests(void *arg);
@@ -52,10 +53,10 @@ static int handleRequest(void *arg);
 static void printffl(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
-	lockg(MY_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
+	usemdown(&psem);
 	vprintf(fmt,ap);
 	fflush(stdout);
-	unlockg(MY_LOCK);
+	usemup(&psem);
 	va_end(ap);
 }
 
@@ -65,6 +66,8 @@ static void sigUsr1(A_UNUSED int sig) {
 
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
+	if(usemcrt(&psem,1) < 0)
+		error("Unable to create lock");
 
 	for(i = 0; i < CLIENT_COUNT; i++) {
 		if(startthread(clientThread,NULL) < 0)

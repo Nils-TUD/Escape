@@ -23,7 +23,6 @@
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
 #include <sys/task/elf.h>
-#include <sys/task/lock.h>
 #include <sys/task/env.h>
 #include <sys/task/uenv.h>
 #include <sys/task/groups.h>
@@ -664,7 +663,6 @@ void ProcBase::doDestroy(Proc *p) {
 	Env::removeFor(p->pid);
 	doRemoveRegions(p,true);
 	p->virtmem.destroy();
-	Lock::releaseAll(p->pid);
 	MountSpace::leave(p);
 	terminateArch(p);
 

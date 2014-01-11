@@ -20,22 +20,25 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/atomic.h>
 
-EXTERN_C void mmix_locku(long *l);
-
-static inline int crtlocku(tULock *l) {
-	l->value = 0;
-	return 0;
+static inline int usemcrt(tUserSem *sem,long val) {
+	sem->value = val;
+	sem->sem = semcrt(0);
+	return sem->sem;
 }
 
-static inline void locku(tULock *l) {
-	/* TODO use CSWAP to build an atomic add and use a semaphore as backup, as on x86 */
-	mmix_locku(&l->value);
+static inline void usemdown(tUserSem *sem) {
+	/* 1 means free, <= 0 means taken */
+	if(atomic_add(&sem->value,-1) <= 0)
+		semdown(sem->sem);
 }
 
-static inline void unlocku(tULock *l) {
-	__sync_lock_release(&l->value);
+static inline void usemup(tUserSem *sem) {
+	if(atomic_add(&sem->value,+1) < 0)
+		semup(sem->sem);
 }
 
-static inline void remlocku(A_UNUSED tULock *l) {
+static inline void usemdestr(tUserSem *sem) {
+	semdestr(sem->sem);
 }

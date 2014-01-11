@@ -37,24 +37,30 @@
 #include "shellcontrol.h"
 #include "guiterm.h"
 
-#define GUI_SHELL_LOCK		0x4129927
-#define MAX_VTERM_NAME_LEN	10
 #define DEF_COLS			80
 #define DEF_ROWS			25
 
 using namespace gui;
 using namespace std;
 
-static int guiProc(void);
-static int termThread(void *arg);
-static int shellMain(void);
+static int guiProc(const char *devName);
+static int shellMain(const char *devName);
 
-static char *drvName;
 static GUITerm *gt;
-static int childPid;
 
 static void sigUsr2(A_UNUSED int sig) {
 	Application::getInstance()->exit();
+}
+
+static void termSigUsr2(A_UNUSED int sig) {
+	gt->stop();
+}
+
+static int termThread(A_UNUSED void *arg) {
+	if(signal(SIG_USR2,termSigUsr2) == SIG_ERR)
+		error("Unable to set signal-handler");
+	gt->run();
+	return 0;
 }
 
 int main(int argc,char **argv) {
@@ -73,77 +79,30 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	// use a lock here to ensure that no one uses our guiterm-number
-	lockg(GUI_SHELL_LOCK,LOCK_EXCLUSIVE);
-
-	// announce device; try to find an unused device-name because maybe a user wants
-	// to start us multiple times
-	int sid;
-	size_t no = 0;
-	drvName = new char[MAX_PATH_LEN + 1];
-	do {
-		snprintf(drvName,MAX_PATH_LEN + 1,"/dev/guiterm%zu",no);
-		sid = createdev(drvName,0777,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
-		if(sid >= 0)
-			break;
-		no++;
-	}
-	while(sid < 0);
-	close(sid);
+	// use a local path to have a unique name
+	char devName[MAX_PATH_LEN];
+	snprintf(devName,sizeof(devName),"/system/processes/%d/guiterm",getpid());
 
 	// set term as env-variable
-	setenv("TERM",drvName);
+	setenv("TERM",devName);
 
-	// start the gui and the device in a separate process. this way, the forks the shell performs
+	// start the shell in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.
+	int childPid;
 	if((childPid = fork()) == 0)
-		return guiProc();
+		return shellMain(devName);
 	else if(childPid < 0)
 		error("fork failed");
 
-	// wait until the device is announced
-	char *drvPath = new char[MAX_PATH_LEN + 1];
-	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%zu",no);
-	int fin;
-	do {
-		fin = open(drvPath,IO_READ | IO_MSGS);
-		if(fin < 0)
-			yield();
-	}
-	while(fin < 0);
-
-	// redirect fds so that stdin, stdout and stderr refer to our device
-	if(redirect(STDIN_FILENO,fin) < 0)
-		error("Unable to redirect STDIN to %d",fin);
-	int fout = open(drvPath,IO_WRITE | IO_MSGS);
-	if(fout < 0)
-		error("Unable to open '%s' for writing",drvPath);
-	if(redirect(STDOUT_FILENO,fout) < 0)
-		error("Unable to redirect STDOUT to %d",fout);
-	if(redirect(STDERR_FILENO,fout) < 0)
-		error("Unable to redirect STDERR to %d",fout);
-	delete[] drvPath;
-
-	// give vterm our pid
-	long pid = getpid();
-	if(vterm_setShellPid(fin,pid) < 0)
-		error("Unable to set shell-pid");
-
-	shellMain();
-
-	// notify the child that we're done
-	if(kill(childPid,SIG_USR2) < 0)
-		printe("Unable to send SIG_USR2 to child");
+	guiProc(devName);
 	return EXIT_SUCCESS;
 }
 
-static int guiProc(void) {
+static int guiProc(const char *devName) {
 	// re-register device
-	int sid = createdev(drvName,0777,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
-	unlockg(GUI_SHELL_LOCK);
+	int sid = createdev(devName,0777,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(sid < 0)
-		error("Unable to re-register device %s",drvName);
-	delete[] drvName;
+		error("Unable to re-register device %s",devName);
 
 	if(signal(SIG_USR2,sigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
@@ -173,34 +132,48 @@ static int guiProc(void) {
 	return res;
 }
 
-static void termSigUsr2(A_UNUSED int sig) {
-	gt->stop();
-}
+static int shellMain(const char *devName) {
+	// wait until the device is announced
+	int fin;
+	do {
+		fin = open(devName,IO_READ | IO_MSGS);
+		if(fin < 0)
+			yield();
+	}
+	while(fin < 0);
 
-static int termThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR2,termSigUsr2) == SIG_ERR)
-		error("Unable to set signal-handler");
-	gt->run();
-	return 0;
-}
+	// redirect fds so that stdin, stdout and stderr refer to our device
+	if(redirect(STDIN_FILENO,fin) < 0)
+		error("Unable to redirect STDIN to %d",fin);
+	int fout = open(devName,IO_WRITE | IO_MSGS);
+	if(fout < 0)
+		error("Unable to open '%s' for writing",devName);
+	if(redirect(STDOUT_FILENO,fout) < 0)
+		error("Unable to redirect STDOUT to %d",fout);
+	if(redirect(STDERR_FILENO,fout) < 0)
+		error("Unable to redirect STDERR to %d",fout);
 
-static int shellMain(void) {
+	// give vterm our pid
+	long pid = getpid();
+	if(vterm_setShellPid(fin,pid) < 0)
+		error("Unable to set shell-pid");
+
 	printf("\033[co;9]Welcome to Escape v%s!\033[co]\n",ESCAPE_VERSION);
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
-	/* TODO temporary */
-	setenv("USER","hrniels");
-
+	int res = EXIT_SUCCESS;
 	while(1) {
 		// create buffer (history will free it)
 		char *buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
 		if(buffer == nullptr)
 			error("Not enough memory");
 
-		if(!shell_prompt())
-			return EXIT_FAILURE;
+		if(!shell_prompt()) {
+			res = EXIT_FAILURE;
+			break;
+		}
 
 		// read command
 		if(shell_readLine(buffer,MAX_CMD_LEN) < 0)
@@ -212,5 +185,9 @@ static int shellMain(void) {
 		shell_executeCmd(buffer,false);
 		shell_addToHistory(buffer);
 	}
-	return EXIT_SUCCESS;
+
+	// notify the parent that we're done
+	if(kill(getppid(),SIG_USR2) < 0)
+		printe("Unable to send SIG_USR2 to parent");
+	return res;
 }

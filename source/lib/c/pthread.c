@@ -25,7 +25,7 @@
 
 static pthread_key_t next_key = 0x12345678;
 static long lockCount = 0;
-static tULock locks[MAX_LOCKS];
+static tUserSem usems[MAX_LOCKS];
 
 int pthread_key_create(pthread_key_t* key,A_UNUSED void (*func)(void*)) {
     *key = next_key++;
@@ -57,20 +57,20 @@ int pthread_setspecific(pthread_key_t key,void* data) {
 int pthread_mutex_init(pthread_mutex_t *mutex,A_UNUSED const pthread_mutexattr_t *attr) {
     int id = atomic_add(&lockCount,+1);
     *mutex = id;
-    return crtlocku(locks + id);
+    return usemcrt(usems + id,1);
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
-    locku(locks + *mutex);
+    usemdown(usems + *mutex);
     return 0;
 }
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
-    unlocku(locks + *mutex);
+    usemup(usems + *mutex);
     return 0;
 }
 
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
-    remlocku(locks + *mutex);
+    usemdestr(usems + *mutex);
     return 0;
 }

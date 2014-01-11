@@ -98,9 +98,9 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 }
 
 void vt_update(sVTerm *vt) {
-	locku(&vt->lock);
+	usemdown(&vt->usem);
 	vt_doUpdate(vt);
-	unlocku(&vt->lock);
+	usemup(&vt->usem);
 }
 
 static void vt_doUpdate(sVTerm *vt) {

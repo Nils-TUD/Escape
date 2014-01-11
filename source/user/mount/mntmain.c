@@ -28,8 +28,6 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#define MOUNT_LOCK		0x77573912
-
 static bool run = true;
 
 static void usage(const char *name) {
@@ -68,43 +66,34 @@ int main(int argc,const char *argv[]) {
 		error("Invalid device name!");
 	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",fsname ? fsname + 1 : fs,devname + 1);
 
-	/* ensure that we don't start it twice */
-	lockg(MOUNT_LOCK,LOCK_EXCLUSIVE);
-
 	/* is it already started? */
 	int fd = open(fsdev,IO_MSGS);
-	if(fd == -ENOENT) {
-		/* ok, do so now */
-		int pid = fork();
-		if(pid < 0) {
-			unlockg(MOUNT_LOCK);
-			error("fork failed");
-		}
-		if(pid == 0) {
-			const char *args[] = {fs,fsdev,dev,NULL};
-			execp(fs,args);
-			error("exec failed");
-		}
-		else {
-			/* wait until fs-device is present */
-			while(run && (fd = open(fsdev,IO_MSGS)) == -ENOENT)
-				sleep(5);
-			if(!run)
-				errno = ENOENT;
-		}
+	if(fd != -ENOENT)
+		error("%s is already mounted by %s.",dev,fsdev);
+
+	/* ok, do so now */
+	int pid = fork();
+	if(pid < 0)
+		error("fork failed");
+	if(pid == 0) {
+		const char *args[] = {fs,fsdev,dev,NULL};
+		execp(fs,args);
+		error("exec failed");
 	}
-	if(fd < 0) {
-		unlockg(MOUNT_LOCK);
+	else {
+		/* wait until fs-device is present */
+		while(run && (fd = open(fsdev,IO_MSGS)) == -ENOENT)
+			sleep(5);
+		if(!run)
+			errno = ENOENT;
+	}
+	if(fd < 0)
 		error("Unable to open '%s'",fsdev);
-	}
 
 	/* now mount it */
-	if(mount(fd,path) < 0) {
-		unlockg(MOUNT_LOCK);
+	if(mount(fd,path) < 0)
 		error("Unable to mount '%s' @ '%s' with fs %s",dev,path,fs);
-	}
 
 	close(fd);
-	unlockg(MOUNT_LOCK);
 	return EXIT_SUCCESS;
 }

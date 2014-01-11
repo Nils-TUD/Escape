@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <sys/atomic.h>
 #include <sys/task/sems.h>
 #include <sys/task/proc.h>
 #include <errno.h>
@@ -33,29 +34,17 @@ int Sems::init(Proc *p) {
 int Sems::clone(Proc *p,const Proc *old) {
 	int res = 0;
 	old->lock(PLOCK_SEMS);
-	p->sems = (Entry**)cache_calloc(old->semsSize,sizeof(Entry*));
-	if(!p->sems)
+	p->sems = (Entry**)cache_alloc(old->semsSize * sizeof(Entry*));
+	if(!p->sems) {
+		res = -ENOMEM;
 		goto error;
-	p->semsSize = old->semsSize;
-	for(size_t i = 0; i < old->semsSize; ++i) {
-		Entry *e = old->sems[i];
-		if(e) {
-			p->sems[i] = new Entry(*e);
-			if(!p->sems[i]) {
-				while(i-- > 0)
-					delete p->sems[i];
-				res = -ENOMEM;
-				goto errorFree;
-			}
-		}
-		else
-			p->sems[i] = NULL;
 	}
-	old->unlock(PLOCK_SEMS);
-	return 0;
-
-errorFree:
-	cache_free(p->sems);
+	p->semsSize = old->semsSize;
+	memcpy(p->sems,old->sems,old->semsSize * sizeof(Entry*));
+	for(size_t i = 0; i < old->semsSize; ++i) {
+		if(p->sems[i])
+			Atomic::add(&p->sems[i]->refs,+1);
+	}
 error:
 	old->unlock(PLOCK_SEMS);
 	return res;
@@ -108,13 +97,14 @@ error:
 }
 
 int Sems::op(Proc *p,int sem,int amount) {
+	Entry *e;
 	p->lock(PLOCK_SEMS);
-	Entry *e = p->sems[sem];
-	if(sem < 0 || sem >= (int)p->semsSize || !e) {
-		p->unlock(PLOCK_SEMS);
-		return -EINVAL;
-	}
-	e->refs++;
+	if(sem < 0 || sem >= (int)p->semsSize)
+		goto error;
+	e = p->sems[sem];
+	if(!e)
+		goto error;
+	Atomic::add(&e->refs,+1);
 	p->unlock(PLOCK_SEMS);
 
 	if(amount < 0)
@@ -122,11 +112,13 @@ int Sems::op(Proc *p,int sem,int amount) {
 	else
 		e->s.up();
 
-	p->lock(PLOCK_SEMS);
-	if(--e->refs == 0)
+	if(Atomic::add(&e->refs,-1) == 1)
 		delete e;
-	p->unlock(PLOCK_SEMS);
 	return 0;
+
+error:
+	p->unlock(PLOCK_SEMS);
+	return -EINVAL;
 }
 
 void Sems::destroy(Proc *p,int sem) {
@@ -135,7 +127,7 @@ void Sems::destroy(Proc *p,int sem) {
 
 	p->lock(PLOCK_SEMS);
 	Entry *e = p->sems[sem];
-	if(e && --e->refs == 0)
+	if(e && Atomic::add(&e->refs,-1) == 1)
 		delete e;
 	p->sems[sem] = NULL;
 	p->unlock(PLOCK_SEMS);
@@ -144,7 +136,8 @@ void Sems::destroy(Proc *p,int sem) {
 void Sems::destroyAll(Proc *p,bool complete) {
 	p->lock(PLOCK_SEMS);
 	for(size_t i = 0; i < p->semsSize; ++i) {
-		delete p->sems[i];
+		if(p->sems[i] && Atomic::add(&p->sems[i]->refs,-1) == 1)
+			delete p->sems[i];
 		p->sems[i] = NULL;
 	}
 	if(complete) {

@@ -23,6 +23,7 @@
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -31,7 +32,7 @@
 
 static int refreshThread(void *arg);
 
-static tULock dlock;
+static tUserSem usem;
 static sMsg msg;
 static sRTCInfo info;
 static time_t timestamp;
@@ -40,7 +41,7 @@ int main(void) {
 	msgid_t mid;
 	int id;
 
-	if(crtlocku(&dlock) < 0)
+	if(usemcrt(&usem,1) < 0)
 		error("Unable to create lock");
 	if(startthread(refreshThread,NULL) < 0)
 		error("Unable to start RTC-thread");
@@ -67,9 +68,9 @@ int main(void) {
 					if(msg.args.arg1) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
-						locku(&dlock);
+						usemdown(&usem);
 						send(fd,MSG_DEV_READ_RESP,(uchar*)&info + offset,msg.args.arg1);
-						unlocku(&dlock);
+						usemup(&usem);
 					}
 				}
 				break;
@@ -95,11 +96,11 @@ static int refreshThread(A_UNUSED void *arg) {
 	struct tm *gmt;
 	while(1) {
 		/* ensure that the driver-loop doesn't access the date in the meanwhile */
-		locku(&dlock);
+		usemdown(&usem);
 		timestamp++;
 		gmt = gmtime(&timestamp);
 		memcpy(&info.time,gmt,sizeof(struct tm));
-		unlocku(&dlock);
+		usemup(&usem);
 		sleep(1000);
 	}
 	return 0;

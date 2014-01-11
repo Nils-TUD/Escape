@@ -88,23 +88,3 @@ static sThreadVal *getThreadValEntry(uint key) {
 	}
 	return NULL;
 }
-
-int gsemcreate(const char *name,mode_t mode) {
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/sems/%s",name);
-	return create(path,IO_SEM,mode);
-}
-
-int gsemjoin(const char *name) {
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/sems/%s",name);
-	return open(path,IO_SEM);
-}
-
-int waitunlock(uint event,evobj_t object,ulong ident) {
-	return syscall4(SYSCALL_WAITUNLOCK,event,object,ident,false);
-}
-
-int waitunlockg(uint event,evobj_t object,ulong ident) {
-	return syscall4(SYSCALL_WAITUNLOCK,event,object,ident,true);
-}

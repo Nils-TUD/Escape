@@ -29,7 +29,6 @@
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
 #include <sys/task/thread.h>
-#include <sys/task/lock.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
 #include <sys/vfs/node.h>
@@ -113,7 +112,6 @@ static View views[] = {
 #endif
 	{"timer",		Timer::print},
 	{"boot",		Boot::print},
-	{"locks",		Lock::print},
 	{"events",		Sched::printEventLists},
 	{"smp",			SMP::print},
 	{"irqs",		Interrupts::print},

@@ -446,6 +446,26 @@ static inline void close(int fd) {
 }
 
 /**
+ * Performs the semaphore up-operation on the given file.
+ *
+ * @param fd the file-descriptor
+ * @return 0 on success
+ */
+static inline int fsemup(int fd) {
+	return fcntl(fd,F_SEMUP,0);
+}
+
+/**
+ * Performs the semaphore down-operation on the given file.
+ *
+ * @param fd the file-descriptor
+ * @return 0 on success
+ */
+static inline int fsemdown(int fd) {
+	return fcntl(fd,F_SEMDOWN,0);
+}
+
+/**
  * Checks whether the given path points to a regular file
  *
  * @param path the (absolute!) path

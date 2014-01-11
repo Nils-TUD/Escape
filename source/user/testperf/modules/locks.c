@@ -19,38 +19,24 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/time.h>
 #include <esc/io.h>
 #include <stdio.h>
 
 #include "../modules.h"
 
-#define GLOBAL_IDENT	0x88212723
-#define LOCAL_IDENT		0x88212724
-#define TEST_COUNT		10000
+#define TEST_COUNT		100000
 
-typedef int (*fLock)(ulong ident,uint flags);
-typedef int (*fUnlock)(ulong ident);
-
-static int sem_lock(ulong ident,A_UNUSED uint flags) {
-	return semdown(ident);
-}
-static int sem_unlock(ulong ident) {
-	return semup(ident);
-}
-static int gsem_lock(ulong ident,A_UNUSED uint flags) {
-	return gsemdown(ident);
-}
-static int gsem_unlock(ulong ident) {
-	return gsemup(ident);
-}
+typedef int (*fLock)(int id);
+typedef int (*fUnlock)(int id);
 
 static void run_test(ulong ident,fLock lockFunc,fUnlock unlockFunc) {
 	uint64_t start,end;
 	uint64_t lockTotal = 0,unlockTotal = 0;
 	for(int i = 0; i < TEST_COUNT; ++i) {
 		start = rdtsc();
-		lockFunc(ident,LOCK_EXCLUSIVE);
+		lockFunc(ident);
 		end = rdtsc();
 		lockTotal += end - start;
 
@@ -65,32 +51,24 @@ static void run_test(ulong ident,fLock lockFunc,fUnlock unlockFunc) {
 }
 
 int mod_locks(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	printf("Local locks...\n");
-	fflush(stdout);
-	run_test(LOCAL_IDENT,lock,unlock);
-
-	printf("Global locks...\n");
-	fflush(stdout);
-	run_test(GLOBAL_IDENT,lockg,unlockg);
-
 	printf("Local Semaphores...\n");
 	fflush(stdout);
-	int sem = semcreate(1);
+	int sem = semcrt(1);
 	if(sem < 0) {
 		printe("Unable to get sem");
 		return 1;
 	}
-	run_test(sem,sem_lock,sem_unlock);
-	semdestroy(sem);
+	run_test(sem,semdown,semup);
+	semdestr(sem);
 
 	printf("Global Semaphores...\n");
 	fflush(stdout);
-	int gsem = gsemcreate("testperf",0700);
+	int gsem = open("/system",IO_READ);
 	if(gsem < 0) {
 		printe("Unable to get sem");
 		return 1;
 	}
-	run_test(gsem,gsem_lock,gsem_unlock);
-	gsemclose(gsem);
+	run_test(gsem,fsemdown,fsemup);
+	close(gsem);
 	return 0;
 }

@@ -32,7 +32,6 @@
 #include <sys/vfs/openfile.h>
 #include <sys/task/proc.h>
 #include <sys/task/groups.h>
-#include <sys/task/lock.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
@@ -58,7 +57,6 @@ void VFS::init() {
 	 *   |   |- pipes
 	 *   |   |- mbmods
 	 *   |   |- shm
-	 *   |   |- sems
 	 *   |   |- devices
 	 *   |   |- fs
 	 *   |   \- processes
@@ -73,7 +71,6 @@ void VFS::init() {
 	/* the user should be able to create shms as well */
 	node->chmod(KERNEL_PID,0777);
 	VFSNode::release(node);
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"sems",DIR_DEF_MODE));
 	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes",DIR_DEF_MODE);
 	VFSNode::release(CREATE(VFSSelfLink,KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
@@ -626,7 +623,7 @@ bool VFS::hasWork(VFSNode *node) {
 	return IS_DEVICE(node->getMode()) && static_cast<VFSDevice*>(node)->hasWork();
 }
 
-int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t pid,ulong ident) {
+int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block) {
 	Thread *t = Thread::getRunning();
 	bool isFirstWait = true;
 	int res;
@@ -668,8 +665,6 @@ int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t p
 
 		/* wait */
 		t->wait(event,object);
-		if(pid != KERNEL_PID)
-			Lock::release(pid,ident);
 		if(isFirstWait && maxWaitTime != 0)
 			Timer::sleepFor(t->getTid(),maxWaitTime,true);
 		SpinLock::release(&waitLock);
@@ -683,8 +678,6 @@ int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block,pid_t p
 	}
 
 noWait:
-	if(pid != KERNEL_PID)
-		Lock::release(pid,ident);
 	SpinLock::release(&waitLock);
 	res = 0;
 error:

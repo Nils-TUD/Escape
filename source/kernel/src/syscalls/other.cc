@@ -24,7 +24,6 @@
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/task/thread.h>
-#include <sys/task/lock.h>
 #include <sys/dbg/console.h>
 #include <sys/syscalls.h>
 #include <sys/log.h>

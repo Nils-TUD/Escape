@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <esc/sync.h>
 #include <esc/sllist.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -38,11 +39,11 @@ typedef struct {
 static sJob *jobs_get(int id);
 static void jobs_terminate(int pid);
 
-static tULock lck;
+static tUserSem usem;
 static sSLList jobs;
 
 void jobs_init(void) {
-	if(crtlocku(&lck) < 0)
+	if(usemcrt(&usem,1) < 0)
 		error("Unable to create jobs lock");
 	sll_init(&jobs,malloc,free);
 }
@@ -65,9 +66,9 @@ void jobs_wait(void) {
 }
 
 int jobs_getId(void) {
-	locku(&lck);
+	usemdown(&usem);
 	if(sll_length(&jobs) >= MAX_CLIENTS) {
-		unlocku(&lck);
+		usemup(&usem);
 		return -1;
 	}
 	int id = 0;
@@ -80,20 +81,20 @@ int jobs_getId(void) {
 		else
 			n = n->next;
 	}
-	unlocku(&lck);
+	usemup(&usem);
 	return id;
 }
 
 bool jobs_exists(int id) {
-	locku(&lck);
+	usemdown(&usem);
 	sJob *job = jobs_get(id);
 	bool res = job != NULL;
-	unlocku(&lck);
+	usemup(&usem);
 	return res;
 }
 
 void jobs_add(int id,int vtermPid) {
-	locku(&lck);
+	usemdown(&usem);
 	sJob *job = (sJob*)malloc(sizeof(sJob));
 	if(!job)
 		goto error;
@@ -103,20 +104,20 @@ void jobs_add(int id,int vtermPid) {
 	job->vtermPid = vtermPid;
 	if(!sll_append(&jobs,job))
 		goto error;
-	unlocku(&lck);
+	usemup(&usem);
 	return;
 
 error:
 	printe("Unable to add job");
-	unlocku(&lck);
+	usemup(&usem);
 }
 
 void jobs_setLoginPid(int id,int pid) {
-	locku(&lck);
+	usemdown(&usem);
 	sJob *job = jobs_get(id);
 	if(job)
 		job->shPid = pid;
-	unlocku(&lck);
+	usemup(&usem);
 }
 
 static sJob *jobs_get(int id) {
@@ -129,7 +130,7 @@ static sJob *jobs_get(int id) {
 }
 
 static void jobs_terminate(int pid) {
-	locku(&lck);
+	usemdown(&usem);
 	for(sSLNode *n = sll_begin(&jobs); n != NULL; n = n->next) {
 		sJob *job = (sJob*)n->data;
 		if(job->shPid == pid || job->vtermPid == pid) {
@@ -151,5 +152,5 @@ static void jobs_terminate(int pid) {
 			break;
 		}
 	}
-	unlocku(&lck);
+	usemup(&usem);
 }

@@ -50,6 +50,25 @@ static void run_test(ulong ident,fLock lockFunc,fUnlock unlockFunc) {
 	printf("unlock(): %Lu cycles/call\n",unlockTotal / TEST_COUNT);
 }
 
+static int sem1;
+static int sem2;
+
+static int thread_pingpong(A_UNUSED void *arg) {
+	uint64_t start,end;
+	int s1 = arg ? sem1 : sem2;
+	int s2 = arg ? sem2 : sem1;
+	start = rdtsc();
+	for(int i = 0; i < TEST_COUNT; ++i) {
+		semdown(s1);
+		semup(s2);
+	}
+	end = rdtsc();
+	semdown(sem1);
+	printf("[%3d] %Lu cycles/pingpong\n",gettid(),(end - start) / TEST_COUNT);
+	semup(sem1);
+	return 0;
+}
+
 int mod_locks(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	printf("Local Semaphores...\n");
 	fflush(stdout);
@@ -70,5 +89,21 @@ int mod_locks(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	}
 	run_test(gsem,fsemdown,fsemup);
 	close(gsem);
+
+	printf("Semaphore pingpong...\n");
+	fflush(stdout);
+	sem1 = semcrt(1);
+	sem2 = semcrt(0);
+	if(sem1 < 0 || sem2 < 0) {
+		printe("Unable to create sems");
+		return 1;
+	}
+	if(startthread(thread_pingpong,(void*)0) < 0 || startthread(thread_pingpong,(void*)1) < 0) {
+		printe("Unable to start thread");
+		return 1;
+	}
+	join(0);
+	semdestr(sem2);
+	semdestr(sem1);
 	return 0;
 }

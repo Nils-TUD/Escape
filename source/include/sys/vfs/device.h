@@ -106,7 +106,7 @@ public:
 		/* we don't have to lock this, because its only called in unref(), which can only
 		 * be called when the treelock is held. i.e. it is not possible during getwork() */
 		if(lastClient == client)
-			lastClient = NULL;
+			lastClient = client->next;
 	}
 
 	/**

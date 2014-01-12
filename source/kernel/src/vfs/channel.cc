@@ -61,8 +61,10 @@ void VFSChannel::invalidate() {
 	// (we can't acquire the waitlock because we use these locks in the opposite order below)
 	// note also that we only get here if there are no references to this node anymore. so it's safe
 	// to access the lists.
-	if(getParent())
+	if(getParent()) {
 		static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
+		static_cast<VFSDevice*>(getParent())->clientRemoved(this);
+	}
 	recvList.deleteAll();
 	sendList.deleteAll();
 }

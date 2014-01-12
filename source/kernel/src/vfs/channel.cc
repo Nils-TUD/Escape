@@ -102,8 +102,8 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	ssize_t res = -ENOENT;
 	sMsg msg;
 	OpenFile *clifile;
-	Proc *p;
-	bool haveTree = true;
+	Proc *p,*pp;
+	pid_t ppid;
 	Thread *t = Thread::getRunning();
 	size_t pathLen = 0;
 
@@ -115,26 +115,27 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	VFSNode::acquireTree();
 	VFSNode *par = getParent();
 	if(!par)
-		goto errOpen;
-	res = VFS::openFile(par->getOwner(),VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
+		goto errTree;
+	ppid = par->getOwner();
+	res = VFS::openFile(ppid,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
 	if(res < 0)
-		goto errOpen;
+		goto errTree;
 	/* getByPid() is ok because if the parent-node exists, the owner does always exist, too */
-	p = Proc::getByPid(par->getOwner());
-	fd = FileDesc::assoc(p,clifile);
-	if(fd < 0) {
-		res = fd;
-		goto errAssoc;
-	}
+	pp = Proc::getByPid(ppid);
+	fd = FileDesc::assoc(pp,clifile);
+	/* we can't hold the tree-lock during close() */
 	VFSNode::releaseTree();
-	haveTree = false;
+	if(fd < 0) {
+		clifile->close(ppid);
+		return fd;
+	}
 
 	/* do we need to send an open to the driver? */
 	res = isSupported(DEV_OPEN);
 	if(res == -ENOTSUP)
 		return 0;
 	if(res < 0)
-		goto errAssoc;
+		goto errNoTree;
 
 	/* send msg to driver */
 	msg.str.arg1 = flags;
@@ -148,7 +149,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 		memcpy(msg.str.s1,path,pathLen + 1);
 	res = send(pid,0,msgid,&msg,sizeof(msg.str),NULL,0);
 	if(res < 0)
-		goto errSend;
+		goto errNoTree;
 
 	/* receive response */
 	t->addResource();
@@ -157,20 +158,27 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
-		goto errSend;
+		goto errNoTree;
 	if((long)msg.args.arg1 < 0) {
 		res = msg.args.arg1;
-		goto errSend;
+		goto errNoTree;
 	}
 	return msg.args.arg1;
 
-errSend:
-	FileDesc::unassoc(p,fd);
-errAssoc:
-	clifile->close(par->getOwner());
-errOpen:
-	if(haveTree)
-		VFSNode::releaseTree();
+errNoTree:
+	/* the parent process might be dead now (in this case he would have already closed the file) */
+	pp = Proc::getRef(ppid);
+	if(pp) {
+		/* the file might have been closed already */
+		clifile = FileDesc::unassoc(pp,fd);
+		if(clifile)
+			clifile->close(ppid);
+		Proc::relRef(pp);
+	}
+	return res;
+
+errTree:
+	VFSNode::releaseTree();
 	return res;
 }
 

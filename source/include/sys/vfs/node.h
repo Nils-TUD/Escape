@@ -505,7 +505,6 @@ protected:
 	VFSNode *parent;
 	VFSNode *prev;
 	VFSNode *firstChild;
-	VFSNode *lastChild;
 public:
 	VFSNode *next;
 

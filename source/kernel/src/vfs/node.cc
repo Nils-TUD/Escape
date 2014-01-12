@@ -66,7 +66,7 @@ size_t VFSNode::allocated;
  * working with it */
 VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 		: lock(), name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
-		  parent(), prev(), firstChild(), lastChild(), next() {
+		  parent(), prev(), firstChild(), next() {
 	if(this == nullptr || name == NULL || nameLen > MAX_NAME_LEN) {
 		success = false;
 		return;
@@ -362,12 +362,11 @@ const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen) const {
 void VFSNode::append(VFSNode *p) {
 	if(p != NULL) {
 		SpinLock::acquire(&treeLock);
-		if(p->firstChild == NULL)
-			p->firstChild = this;
-		if(p->lastChild != NULL)
-			p->lastChild->next = this;
-		prev = p->lastChild;
-		p->lastChild = this;
+		prev = NULL;
+		next = p->firstChild;
+		if(next)
+			next->prev = this;
+		p->firstChild = this;
 		SpinLock::release(&treeLock);
 	}
 	parent = p;
@@ -412,13 +411,10 @@ ushort VFSNode::doUnref(bool remove) {
 			parent->firstChild = next;
 		if(next)
 			next->prev = prev;
-		else if(parent)
-			parent->lastChild = prev;
 
 		prev = NULL;
 		next = NULL;
 		firstChild = NULL;
-		lastChild = NULL;
 		parent = NULL;
 
 		/* free name (do that afterwards, unlocked) */
@@ -541,7 +537,6 @@ void VFSNode::print(OStream &os) const {
 	if(this) {
 		os.writef("\tname: %s\n",name ? name : "NULL");
 		os.writef("\tfirstChild: %p\n",firstChild);
-		os.writef("\tlastChild: %p\n",lastChild);
 		os.writef("\tnext: %p\n",next);
 		os.writef("\tprev: %p\n",prev);
 		os.writef("\towner: %d\n",owner);

@@ -38,3 +38,4 @@ extern int mod_drvparallel(int,char**);
 extern int mod_maxthreads(int,char**);
 extern int mod_pagefaults(int,char**);
 extern int mod_matmult(int,char**);
+extern int mod_rwlock(int,char**);

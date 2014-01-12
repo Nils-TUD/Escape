@@ -22,10 +22,24 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
+#define RW_READ		0
+#define RW_WRITE	1
+
 typedef struct {
 	int sem;
 	long value;
 } tUserSem;
+
+typedef struct {
+	// semaphore for blocking
+	int sem;
+	// -1 if somebody writes, >0 if we're reading
+	volatile int count;
+	// the number of waiters
+	int waits;
+	// for accessing the members of this structure
+	tUserSem mutex;
+} tRWLock;
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +117,38 @@ static inline void usemup(tUserSem *sem);
  * @param sem the semaphore
  */
 static inline void usemdestr(tUserSem *sem);
+
+/**
+ * Creates a readers-writer lock. Multiply readers can use the lock in parallel, while a writer
+ * always has to be alone.
+ *
+ * @param l the lock
+ * @return 0 on success
+ */
+int rwcrt(tRWLock *l);
+
+/**
+ * Requests the given readers-writer-lock for <op>.
+ *
+ * @param l the lock
+ * @param op the operation (RW_READ or RW_WRITE)
+ */
+void rwreq(tRWLock *l,int op);
+
+/**
+ * Releases the given readers-writer-lock again for <op>.
+ *
+ * @param l the lock
+ * @param op the operation (RW_READ or RW_WRITE)
+ */
+void rwrel(tRWLock *l,int op);
+
+/**
+ * Destroys the readers-writer-lock.
+ *
+ * @param l the lock
+ */
+void rwdestr(tRWLock *l);
 
 #ifdef __cplusplus
 }

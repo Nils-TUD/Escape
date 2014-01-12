@@ -53,6 +53,7 @@ static sTestModule modules[] = {
 	{"maxthreads",mod_maxthreads},
 	{"pagefaults",mod_pagefaults},
 	{"matmult",mod_matmult},
+	{"rwlock",mod_rwlock},
 };
 
 int main(int argc,char *argv[]) {

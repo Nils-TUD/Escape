@@ -133,7 +133,8 @@ void VFSDevice::print(OStream &os) const {
 	bool valid;
 	const VFSNode *chan = openDir(false,&valid);
 	if(valid) {
-		os.writef("%s (%s):\n",name,isEmpty ? "empty" : "full");
+		os.writef("%s (%s, lastClient=%s):\n",
+			name,isEmpty ? "empty" : "full",lastClient ? lastClient->getName() : "-");
 		while(chan != NULL) {
 			os.pushIndent();
 			chan->print(os);

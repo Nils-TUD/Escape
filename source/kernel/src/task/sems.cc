@@ -152,6 +152,6 @@ void Sems::print(OStream &os,const Proc *p) {
 	os.writef("Semaphores (current max=%zu):\n",p->semsSize);
 	for(size_t i = 0; i < p->semsSize; i++) {
 		if(p->sems[i] != NULL)
-			os.writef("\t%-2d: %u (%d refs)\n",i,p->sems[i]->s.getValue(),p->sems[i]->refs);
+			os.writef("\t%-2d: %d (%d refs)\n",i,p->sems[i]->s.getValue(),p->sems[i]->refs);
 	}
 }

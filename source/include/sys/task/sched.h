@@ -32,17 +32,16 @@
 #define EV_MUTEX					4		/* kernel-intern */
 #define EV_PIPE_FULL				5		/* kernel-intern */
 #define EV_PIPE_EMPTY				6		/* kernel-intern */
-#define EV_REQ_FREE					7		/* kernel-intern */
-#define EV_USER1					8
-#define EV_USER2					9
-#define EV_SWAP_JOB					10		/* kernel-intern */
-#define EV_SWAP_WORK				11		/* kernel-intern */
-#define EV_SWAP_FREE				12		/* kernel-intern */
-#define EV_VMM_DONE					13		/* kernel-intern */
-#define EV_THREAD_DIED				14		/* kernel-intern */
-#define EV_CHILD_DIED				15		/* kernel-intern */
-#define EV_TERMINATION				16		/* kernel-intern */
-#define EV_COUNT					17
+#define EV_USER1					7
+#define EV_USER2					8
+#define EV_SWAP_JOB					9		/* kernel-intern */
+#define EV_SWAP_WORK				10		/* kernel-intern */
+#define EV_SWAP_FREE				11		/* kernel-intern */
+#define EV_VMM_DONE					12		/* kernel-intern */
+#define EV_THREAD_DIED				13		/* kernel-intern */
+#define EV_CHILD_DIED				14		/* kernel-intern */
+#define EV_TERMINATION				15		/* kernel-intern */
+#define EV_COUNT					15
 
 #define IS_FILE_EVENT(ev)			((ev) >= EV_CLIENT && (ev) <= EV_DATA_READABLE)
 #define IS_USER_NOTIFY_EVENT(ev)	((ev) == EV_USER1 || (ev) == EV_USER2)

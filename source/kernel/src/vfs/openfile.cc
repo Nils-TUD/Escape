@@ -532,6 +532,7 @@ void OpenFile::releaseFile(OpenFile *file) {
 	}
 
 	SpinLock::acquire(&gftLock);
+	assert(file->flags != 0);
 	OpenFile *e = (file->flags & VFS_EXCLUSIVE) ? exclList : usedList;
 	OpenFile *p = NULL;
 	while(e) {

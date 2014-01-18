@@ -167,11 +167,13 @@ static void test_vfs_node_dir_refs() {
 	const VFSNode *f = n->openDir(false,&valid);
 	test_assertTrue(valid);
 
-	test_assertStr(f->getName(),".");
+	test_assertStr(f->getName(),"myfile2");
 	f = f->next;
-	test_assertStr(f->getName(),"..");
+	test_assertStr(f->getName(),"myfile1");
 	f = f->next;
 	test_assertStr(f->getName(),"test");
+	f = f->next;
+	test_assertStr(f->getName(),"..");
 
 	test_assertInt(VFS::rmdir(pid,"/system/foobar/test"),0);
 	test_assertInt(VFS::unlink(pid,"/system/foobar/myfile1"),0);

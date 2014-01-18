@@ -60,13 +60,13 @@ static void test_insert() {
 
 		i = mytree.find("/",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("",end);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 
 		i = mytree.find("/../..",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("",end);
+		test_assertStr(end,"../..");
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}
@@ -81,13 +81,30 @@ static void test_insert() {
 
 		i = mytree.find("/foo",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("",end);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"foo");
 		test_assertPtr(i->getData(),(void*)0x11);
 
 		i = mytree.find("/foo/bar/test",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("bar/test",end);
+		test_assertStr(end,"bar/test");
+		test_assertPtr(i->getData(),(void*)0x11);
+	}
+	checkMemoryAfter(false);
+
+	checkMemoryBefore(false);
+	{
+		PathTree<void> mytree;
+		test_assertInt(mytree.insert("/",(void*)0x11),0);
+		test_assertInt(mytree.insert("/foo",(void*)0x12),0);
+		test_assertInt(mytree.insert("/foo/bar",(void*)0x13),0);
+
+		mytree.remove("/foo");
+
+		i = mytree.find("/foo",&end);
+		test_assertTrue(i != NULL);
+		test_assertStr(end,"foo");
+		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}
 	checkMemoryAfter(false);
@@ -105,43 +122,49 @@ static void test_insert() {
 		test_assertInt(mytree.insert("/bar",(void*)0x66),-EEXIST);
 		test_assertInt(mytree.insert("/bar/foo",(void*)0x66),0);
 
-		i = mytree.find("/");
+		i = mytree.find("/",&end);
 		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 
 		i = mytree.find("/test",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("test",end);
+		test_assertStr(end,"test");
 		test_assertPtr(i->getData(),(void*)0x11);
 
-		i = mytree.find("/foo");
+		i = mytree.find("/foo",&end);
 		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"foo");
 		test_assertPtr(i->getData(),(void*)0x22);
 
-		i = mytree.find("/foo/test");
+		i = mytree.find("/foo/test",&end);
 		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"test");
 		test_assertPtr(i->getData(),(void*)0x33);
 
-		i = mytree.find("/bar");
+		i = mytree.find("/bar",&end);
 		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"bar");
 		test_assertPtr(i->getData(),(void*)0x44);
 
-		i = mytree.find("/bar/foo/hier/test");
+		i = mytree.find("/bar/foo/hier/test",&end);
 		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"test");
 		test_assertPtr(i->getData(),(void*)0x55);
 
 		i = mytree.find("/bar///foo/./hier/../hier/test/1//2//3///",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("1//2//3///",end);
+		test_assertStr(end,"1//2//3///");
 		test_assertPtr(i->getData(),(void*)0x55);
 
-		i = mytree.find("/bar/foo");
+		i = mytree.find("/bar/foo",&end);
 		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"foo");
 		test_assertPtr(i->getData(),(void*)0x66);
 	}
@@ -180,7 +203,7 @@ static void test_clone() {
 
 		i = mytree2.find("/test",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("test",end);
+		test_assertStr(end,"test");
 		test_assertPtr(i->getData(),(void*)0x11);
 
 		i = mytree2.find("/foo");
@@ -205,7 +228,7 @@ static void test_clone() {
 
 		i = mytree2.find("/bar///foo/./hier/../hier/test/1//2//3///",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr("1//2//3///",end);
+		test_assertStr(end,"1//2//3///");
 		test_assertPtr(i->getData(),(void*)0x55);
 
 		i = mytree2.find("/bar/foo");

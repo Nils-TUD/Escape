@@ -124,7 +124,7 @@ public:
 	int insert(const char *path,T *data) {
 		const char *pathend = path;
 		PathTreeItem<T> *last;
-		find(pathend,last);
+		find(pathend,last,false);
 		/* is root missing? */
 		if(!last) {
 			PathTreeItem<T> *i = createItem("/",1);
@@ -177,7 +177,7 @@ public:
 	 */
 	PathTreeItem<T> *find(const char *path,const char **end = NULL) {
 		PathTreeItem<T> *last;
-		PathTreeItem<T> *match = find(path,last);
+		PathTreeItem<T> *match = find(path,last,true);
 		if(end)
 			*end = path;
 		return match;
@@ -192,7 +192,7 @@ public:
 	T *remove(const char *path) {
 		T *res = NULL;
 		PathTreeItem<T> *last;
-		PathTreeItem<T> *match = find(path,last);
+		PathTreeItem<T> *match = find(path,last,false);
 		if(last && match == last && !*path) {
 			res = match->getData();
 			last->_data = NULL;
@@ -241,9 +241,10 @@ public:
 	}
 
 private:
-	PathTreeItem<T> *find(const char *&path,PathTreeItem<T> *&last) {
+	PathTreeItem<T> *find(const char *&path,PathTreeItem<T> *&last,bool pathToMatch) {
 		PathTreeItem<T> *n = _root;
 		PathTreeItem<T> *match = n && n->_data ? n : NULL;
+		const char *mpath = path;
 		last = NULL;
 		while(n) {
 			last = n;
@@ -254,10 +255,17 @@ private:
 			last = n;
 			n = findAt(n,path,len);
 			if(n) {
-				if(n->_data)
-					match = n;
 				path += len;
+				if(n->_data) {
+					match = n;
+					mpath = path;
+				}
 			}
+		}
+		if(match && pathToMatch) {
+			while(*mpath == '/')
+				mpath++;
+			path = mpath;
 		}
 		return match;
 	}

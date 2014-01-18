@@ -68,24 +68,23 @@ int main(int argc,const char *argv[]) {
 
 	/* is it already started? */
 	int fd = open(fsdev,IO_MSGS);
-	if(fd != -ENOENT)
-		error("%s is already mounted by %s.",dev,fsdev);
-
-	/* ok, do so now */
-	int pid = fork();
-	if(pid < 0)
-		error("fork failed");
-	if(pid == 0) {
-		const char *args[] = {fs,fsdev,dev,NULL};
-		execp(fs,args);
-		error("exec failed");
-	}
-	else {
-		/* wait until fs-device is present */
-		while(run && (fd = open(fsdev,IO_MSGS)) == -ENOENT)
-			sleep(5);
-		if(!run)
-			errno = ENOENT;
+	if(fd == -ENOENT) {
+		/* ok, do so now */
+		int pid = fork();
+		if(pid < 0)
+			error("fork failed");
+		if(pid == 0) {
+			const char *args[] = {fs,fsdev,dev,NULL};
+			execp(fs,args);
+			error("exec failed");
+		}
+		else {
+			/* wait until fs-device is present */
+			while(run && (fd = open(fsdev,IO_MSGS)) == -ENOENT)
+				sleep(5);
+			if(!run)
+				errno = ENOENT;
+		}
 	}
 	if(fd < 0)
 		error("Unable to open '%s'",fsdev);

@@ -302,11 +302,14 @@ private:
 
 	void printRec(OStream &os,PathTreeItem<T> *item,int layer,fPrintItem printItem) const {
 		if(item) {
-			os.writef("%*s%-*s -> ",layer,"",12 - layer,item->_name);
-			if(printItem)
-				printItem(os,item->_data);
-			else
-				os.writef("%p",item->_data);
+			os.writef("%*s%-*s",layer,"",12 - layer,item->_name);
+			if(item->_data) {
+				os.writef(" -> ");
+				if(printItem)
+					printItem(os,item->_data);
+				else
+					os.writef("%p",item->_data);
+			}
 			os.writef("\n");
 			PathTreeItem<T> *n = item->_child;
 			while(n) {

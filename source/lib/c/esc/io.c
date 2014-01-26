@@ -37,12 +37,14 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	if(!addr) {
 		int res = -errno;
 		pshm_unlink(*name);
+		close(fd);
 		return res;
 	}
 
 	/* share it with device; if it doesn't work, we don't care here */
 	int res = sharefile(dev,addr);
 	*mem = addr;
+	close(fd);
 	return res;
 }
 

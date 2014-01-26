@@ -71,6 +71,9 @@ class OpenFile {
 	struct SemTreapNode : public TreapNode<UniqueId> {
 		explicit SemTreapNode(const UniqueId &id) : TreapNode<UniqueId>(id), sem() {
 		}
+	    virtual void print(OStream &os) {
+			os.writef("f=(%d,%d) sem.value=%d\n",key().dev,key().ino,sem.getValue());
+	    }
 
 		Semaphore sem;
 	};

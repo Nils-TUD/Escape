@@ -47,6 +47,9 @@ struct VMRegion : public DListTreapNode<uintptr_t> {
     	key(_virt);
     }
 
+    virtual void print(OStream &os) {
+		os.writef("virt=%p region=%p\n",virt(),reg);
+    }
 	Region *reg;
 };
 

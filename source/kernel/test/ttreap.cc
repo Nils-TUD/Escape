@@ -37,6 +37,8 @@ sTestModule tModTreap = {
 struct MyNode : public TreapNode<int> {
     MyNode(int k,int _data) : TreapNode<int>(k),data(_data) {
     }
+    virtual void print(OStream &) {
+    }
     int data;
 };
 

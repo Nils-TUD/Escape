@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/cppsupport.h>
+#include <sys/ostream.h>
 
 /**
  * A node in the treap. You may create a subclass of this to add data to your nodes.
@@ -64,6 +65,13 @@ public:
     void key(key_t key) {
         _key = key;
     }
+
+    /**
+     * Prints this node into <os>
+     *
+     * @param os the ostream
+     */
+    virtual void print(OStream &os) = 0;
 
 private:
     key_t _key;
@@ -173,7 +181,18 @@ public:
             else
                 p = &(*p)->_right;
         }
+        assert(*p == node);
         remove_from(p, node);
+    }
+
+    /**
+     * Prints this treap into the given ostream
+     *
+     * @param os the ostream
+     */
+    void print(OStream &os) {
+        printRec(os,_root,0);
+        os.writef("\n");
     }
 
 private:
@@ -208,6 +227,17 @@ private:
         // no child: simply remove us from parent
         else
             *p = nullptr;
+    }
+
+    void printRec(OStream &os,node_t *n,int layer) {
+        if(n) {
+            n->print(os);
+            os.writef("%*s|-(l) ",layer * 2,"");
+            printRec(os,n->_left,layer + 1);
+            os.writef("\n");
+            os.writef("%*s|-(r) ",layer * 2,"");
+            printRec(os,n->_right,layer + 1);
+        }
     }
 
     int _prio;

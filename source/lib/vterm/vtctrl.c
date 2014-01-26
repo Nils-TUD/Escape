@@ -41,6 +41,7 @@
 /* the number of chars to keep in history */
 #define INITIAL_RLBUF_SIZE	50
 
+static char *vtctrl_createEmptyLine(sVTerm *vt,size_t cols);
 static char **vtctrl_createLines(size_t cols,size_t rows);
 static void vtctrl_freeLines(char **lines,size_t rows);
 
@@ -100,15 +101,10 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode) {
 	}
 
 	/* create and init empty line */
-	vt->emptyLine = (char*)malloc(vt->cols * 2);
+	vt->emptyLine = vtctrl_createEmptyLine(vt,vt->cols);
 	if(!vt->emptyLine) {
 		printe("Unable to allocate memory for empty line");
 		return false;
-	}
-	uchar color = (vt->background << 4) | vt->foreground;
-	for(size_t j = 0; j < vt->cols; ++j) {
-		vt->emptyLine[j * 2] = ' ';
-		vt->emptyLine[j * 2 + 1] = color;
 	}
 
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
@@ -130,10 +126,18 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	if(vt->cols != cols || vt->rows != rows) {
 		size_t c,r,oldr,color;
 		size_t ccols = MIN(cols,vt->cols);
-		char *buf,*oldBuf,**old = vt->lines;
+		char *buf,*oldBuf,**old = vt->lines,*oldempty = vt->emptyLine;
 		vt->lines = vtctrl_createLines(cols,rows);
 		if(!vt->lines) {
 			vt->lines = old;
+			usemup(&vt->usem);
+			return false;
+		}
+
+		vt->emptyLine = vtctrl_createEmptyLine(vt,cols);
+		if(!vt->emptyLine) {
+			vt->lines = old;
+			vt->emptyLine = oldempty;
 			usemup(&vt->usem);
 			return false;
 		}
@@ -182,6 +186,7 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 
 		/* TODO update screenbackup */
 		vtctrl_freeLines(old,vt->rows);
+		free(oldempty);
 		vt->col = MIN(vt->col,cols - 1);
 		vt->row = MIN(rows - 1,rows - (vt->rows - vt->row));
 		vt->cols = cols;
@@ -288,6 +293,19 @@ void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
 	vt->upHeight = MAX(y + vt->upHeight,row + height) - vt->upRow;
 	assert(vt->upWidth <= vt->cols);
 	assert(vt->upHeight <= vt->rows);
+}
+
+static char *vtctrl_createEmptyLine(sVTerm *vt,size_t cols) {
+	/* create and init empty line */
+	char *emptyLine = (char*)malloc(cols * 2);
+	if(!emptyLine)
+		return NULL;
+	uchar color = (vt->background << 4) | vt->foreground;
+	for(size_t j = 0; j < cols; ++j) {
+		emptyLine[j * 2] = ' ';
+		emptyLine[j * 2 + 1] = color;
+	}
+	return emptyLine;
 }
 
 static char **vtctrl_createLines(size_t cols,size_t rows) {

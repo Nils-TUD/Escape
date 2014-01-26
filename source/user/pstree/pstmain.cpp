@@ -121,8 +121,10 @@ int main(int argc,char **argv) {
 			// get parent node
 			ProcNode *pnode;
 			map_type::iterator parent = pmap.find(p->ppid());
-			if(parent == pmap.end())
+			if(parent == pmap.end()) {
 				pnode = new ProcNode(NULL);
+				pmap[p->ppid()] = pnode;
+			}
 			else
 				pnode = parent->second;
 

@@ -204,11 +204,14 @@ void ShellControl::doUpdate() {
 		// repaint affected lines
 		Rectangle up = linesToRect(_vt->upRow,_vt->upHeight);
 		makeDirty(true);
-		repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1));
+
+		// don't update if we're going to scroll afterwards
+		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
+		repaintRect(up.getPos() - getPos(),up.getSize() + Size(0,font.height + PADDING - 1),
+			sp->isAtBottom());
 
 		// scroll to bottom
-		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
-		sp->scrollToBottom(false);
+		sp->scrollToBottom();
 
 		_vt->upScroll = 0;
 		_vt->upCol = _vt->cols;

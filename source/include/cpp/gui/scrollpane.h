@@ -103,6 +103,21 @@ namespace gui {
 			scrollBy(0,_ctrl->getPos().y - max.height,update);
 		}
 
+		/**
+		 * @return true if the control in the scrollpane is at the top currently
+		 */
+		bool isAtTop() {
+			return _ctrl->getPos().y == 0;
+		}
+		/**
+		 * @return true if the control in the scrollpane is at the bottom currently
+		 */
+		bool isAtBottom() {
+			Size visible = getVisible();
+			Size max = visible - _ctrl->getSize();
+			return _ctrl->getPos().y == (gpos_t)max.height;
+		}
+
 		virtual bool layout() {
 			_doingLayout = true;
 			bool res = _ctrl->layout();

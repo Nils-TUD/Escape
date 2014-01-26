@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/mem.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -48,5 +49,7 @@ FSFile *files_get(size_t id) {
 
 void files_close(size_t id) {
 	assert(id < fileSize);
+	if(files[id].shm)
+		munmap(files[id].shm);
 	files[id].ino = 0;
 }

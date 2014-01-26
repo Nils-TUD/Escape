@@ -397,9 +397,9 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		/* when shared, simply copy the flags; otherwise: if present, we use copy-on-write */
 		if((pte & PTE_WRITABLE) && (!share && (pte & PTE_PRESENT)))
 			pte &= ~PTE_WRITABLE;
+		assert(!(*dpt & PTE_PRESENT));
 		*dpt = pte;
-		if(dst == cur)
-			FLUSHADDR(virtDst);
+		/* we never need a flush here because it was not present before */
 
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
 		if(!share && (pte & PTE_PRESENT)) {

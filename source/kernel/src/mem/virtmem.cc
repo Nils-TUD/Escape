@@ -540,13 +540,13 @@ int VirtMem::getRegRange(uintptr_t virt,uintptr_t *start,uintptr_t *end) {
 	if(reg)
 		getRegRange(reg,start,end,false);
 	else
-		res = -ENOENT;
+		res = -ENXIO;
 	release();
 	return res;
 }
 
 ssize_t VirtMem::getShareInfo(uintptr_t addr,char *path,size_t size) {
-	ssize_t res = -ENOENT;
+	ssize_t res = -ENXIO;
 	acquire();
 	VMRegion *reg = regtree.getByAddr(addr);
 	if(!reg)
@@ -641,7 +641,7 @@ int VirtMem::unmap(uintptr_t virt) {
 	if(vm)
 		doUnmap(vm);
 	else
-		res = -ENOENT;
+		res = -ENXIO;
 	release();
 	return res;
 }
@@ -777,7 +777,8 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 	size_t swCount,pageCount,presentCount;
 	size_t oldSh,oldOwn;
 	uintptr_t addr;
-	ssize_t res;
+	int res = -ENOMEM;
+	ssize_t pts;
 	Thread *t = Thread::getRunning();
 	if(dst == this)
 		return -EEXIST;
@@ -791,8 +792,10 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 	}
 
 	VMRegion *vm = regtree.getByAddr(srcAddr);
-	if(vm == NULL)
+	if(vm == NULL) {
+		res = -ENXIO;
 		goto errProc;
+	}
 
 	vm->reg->acquire();
 	assert(vm->reg->getFlags() & RF_SHAREABLE);
@@ -802,10 +805,8 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 
 	/* should we populate it but fail if there is not enough mem? */
 	if((flags & (MAP_POPULATE | MAP_NOSWAP)) == (MAP_POPULATE | MAP_NOSWAP)) {
-		if(!t->reserveFrames(pageCount - presentCount,false)) {
-			res = -ENOMEM;
+		if(!t->reserveFrames(pageCount - presentCount,false))
 			goto errRel;
-		}
 	}
 
 	/* check whether the process has already mapped this region */
@@ -829,8 +830,8 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 		goto errAdd;
 
 	/* shared, so content-frames to shared, ptables to own */
-	res = getPageDir()->clonePages(dst->getPageDir(),vm->virt(),(*nvm)->virt(),pageCount,true);
-	if(res < 0)
+	pts = getPageDir()->clonePages(dst->getPageDir(),vm->virt(),(*nvm)->virt(),pageCount,true);
+	if(pts < 0)
 		goto errRem;
 
 	oldSh = dst->getSharedFrames();
@@ -838,7 +839,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 
 	/* fault-in all pages that are not present yet */
 	if(flags & MAP_POPULATE) {
-		res = populatePages(vm,pageCount);
+		res = populatePages(*nvm,pageCount);
 		if(res < 0)
 			goto errUnmap;
 	}
@@ -847,12 +848,12 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 		goto errUnmap;
 
 	dst->addShared(presentCount);
-	dst->addOwn(res);
+	dst->addOwn(pts);
 	dst->addSwap(swCount);
 
 	/* lock the region, if desired */
 	if(flags & MAP_LOCKED)
-		vm->reg->setFlags(vm->reg->getFlags() | RF_LOCKED);
+		(*nvm)->reg->setFlags((*nvm)->reg->getFlags() | RF_LOCKED);
 
 	if(dstAddr)
 		*dstAddr = addr;
@@ -878,7 +879,7 @@ errRel:
 errProc:
 	dst->release();
 	release();
-	return -ENOMEM;
+	return res;
 }
 
 int VirtMem::cloneAll(VirtMem *dst) {

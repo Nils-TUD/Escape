@@ -67,9 +67,9 @@ llong atoll(const char *nptr);
  * @param target the target-string (needs max. 12 elements)
  * @param targetSize the size of <target>
  * @param n the integer
- * @return the target-string
+ * @return the number of chars written
  */
-char *itoa(char *target,size_t targetSize,int n);
+size_t itoa(char *target,size_t targetSize,int n);
 
 /**
  * The memchr() function looks for the first occurrence of c within count characters in

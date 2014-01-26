@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-char *itoa(char *target,size_t targetSize,int n) {
+size_t itoa(char *target,size_t targetSize,int n) {
 	char *s = target,*a = target,*b;
 
 	assert(target != NULL);
@@ -54,5 +54,5 @@ char *itoa(char *target,size_t targetSize,int n) {
 		*a++ = *b;
 		*b-- = t;
 	}
-	return target;
+	return s - target;
 }

@@ -2,7 +2,7 @@ Escape
 ======
 
 Escape is a UNIX-like microkernel operating system on which I'm working since
-october 2008. It's implemented in ANSI C, C++ and a bit assembler. Except that
+october 2008. It's implemented in C, C++ and a bit assembler. Except that
 I'm using the bootloader GRUB and the libraries that GCC provides (libgcc,
 libsupc++), I've developed the whole OS by myself.  
 Escape runs on x86, ECO32 and MMIX.
@@ -22,33 +22,34 @@ General structure
 
 Escape consists of a kernel, drivers, libraries and user-applications. The
 kernel is responsible for processes, threads, memory-management, a virtual
-file system (VFS) and some other things. Drivers run in userspace and work
+file system (VFS) and some other things. Drivers run in user-space and work
 via message-passing. They do not necessarily access the hardware and should
 therefore more seen as an instance that provides a service.  
 The VFS is one of the central points of Escape. Besides the opportunity to
-create files and folders in it, it is used by the kernel to provide
-information about the system for the userspace (memory-usage, CPU, running
-processes, ...). Most important, it is used to communicate with devices,
+create files and folders in it, it is used to provide information about the
+state of the system for the user-space (memory-usage, CPU, running
+processes, ...). Most important, the VFS is used to communicate with devices,
 which are registered and handled by drivers. That means, each device gets
 a node in the VFS over which it can be accessed. So, for example an
 `open("/dev/zero",...)` would open the device "zero". Afterwards one can use
 the received file-descriptor to communicate with it.  
 Basically, the communication works over messages. Escape provides the
-system-calls send and receive for that purpose. Additionally, Escape defines
-standard-messages for open,read,write and close, which devices may support.
-For example, when using the read system-call with a file-descriptor for a
-device, Escape will send the read-standard-message to the corresponding
-driver and handle the communication for the user-program. As soon as the
-answer is available, the result is passed back to the user-program that
-called read. The same mechanism is used for the "real" file-system, which
-is realized by the driver "fs". Escape defines messages for that purpose
-and handles the communication with fs when a user-program accesses a "real"
-file.  
+system-calls `send` and `receive` for that purpose. Additionally, Escape defines
+standard-messages for `open`, `read`, `write` and `close`, which devices
+may support. For example, when using the `read` system-call with a
+file-descriptor for a device, Escape will send the read-standard-message to
+the corresponding device and handle the communication for the user-program.
+As soon as the answer is available, the result is passed back to the
+user-program that called `read`.  
+The same mechanism is used for "real" filesystems (on a disk, cd, ...), which
+can be mounted somewhere in the VFS. If a file is opened which belongs to one
+of these mounted filesystems, the kernel will handle the communication with
+the driver that has been registers as being responsible for this filesystem.  
 Because of this mechanism the user-space doesn't have to distinguish between
-virtual files, real files and devices. So, for example the tool cat can simply
-do an open and use read to read from that file and write to write to stdout.
-
-
+virtual files, "real" files and devices. So, for example the tool cat can
+simply do an `open` and use `read` to read from that file and `write` to
+write to stdout.  
+ 
 Features
 --------
 
@@ -57,11 +58,11 @@ Escape has currently the following features:
 * **Kernel**
     * Memory-management supporting copy-on-write, text-sharing,
       shared-libraries, shared-memory, mapping of physical mem (e.g. VESA-mem),
-      demand-loading, swapping (not finished yet) and thread-local-storage.
+      demand-loading, swapping and thread-local-storage
     * Process- and thread-management, event-system, ELF-loader, environment-
       variables, scheduler, signal-management (signals are also used to pass
       interrupts to drivers) and timer-management (for sleeping and
-      preemption).
+      preemption)
     * SMP-support, CPU-detection and CPU-speed-calculation, FPU-support
       VM86-task to perform BIOS-calls
     * Virtual file system for driver-access, accessing the real-filesystem,

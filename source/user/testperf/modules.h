@@ -28,7 +28,7 @@ extern int mod_mmap(int,char**);
 extern int mod_sendrecv(int,char**);
 extern int mod_pingpong(int,char**);
 extern int mod_pipe(int,char**);
-extern int mod_readzeros(int,char**);
+extern int mod_reading(int,char**);
 extern int mod_writenull(int,char**);
 extern int mod_memops(int,char**);
 extern int mod_locks(int,char**);

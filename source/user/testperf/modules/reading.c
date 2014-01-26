@@ -25,17 +25,16 @@
 
 #include "../modules.h"
 
-#define PACKET_SIZE		0x4000
+#define PACKET_SIZE		(64 * 1024)
 #define PACKET_COUNT	100000
 
 static char buffer[PACKET_SIZE];
 
-int mod_readzeros(int argc,char **argv) {
-	bool useshm = argc < 3 ? true : strcmp(argv[2],"noshm") != 0;
-	int fd = open("/dev/zero",IO_READ);
+static void do_read(const char *path,bool useshm) {
+	int fd = open(path,IO_READ);
 	if(fd < 0) {
-		printe("Unable to open /dev/zero");
-		return 1;
+		printe("Unable to open %s",path);
+		return;
 	}
 
 	void *buf = buffer;
@@ -43,19 +42,48 @@ int mod_readzeros(int argc,char **argv) {
 	if(useshm && sharebuf(fd,PACKET_SIZE,&buf,&name,0) < 0)
 		printe("Unable to share buffer");
 
-	uint64_t start = rdtsc();
+	uint64_t total = 0;
 	for(int i = 0; i < PACKET_COUNT; ++i) {
-		if(read(fd,buf,PACKET_SIZE) != PACKET_SIZE)
-			printe("read failed");
+		uint64_t start = rdtsc();
+		if(read(fd,buf,PACKET_SIZE) != PACKET_SIZE) {
+			printe("read of %s failed",path);
+			return;
+		}
+		total += rdtsc() - start;
+
+		if(seek(fd,SEEK_SET,0) < 0) {
+			printe("seek in %s failed",path);
+			return;
+		}
 	}
-	uint64_t end = rdtsc();
 
 	if(useshm)
 		destroybuf(buf,name);
 	close(fd);
 
-	printf("cycles=%12Lu per-msg=%5Lu throughput=%Lu MB/s (%db packets)\n",
-	       end - start,(end - start) / PACKET_COUNT,
-	       (PACKET_SIZE * PACKET_COUNT) / tsctotime(end - start),PACKET_SIZE);
+	printf("%-16s: cycles=%12Lu per-read=%5Lu throughput=%Lu MB/s (%db packets)\n",
+	       path,total,total / PACKET_COUNT,
+	       ((uint64_t)PACKET_SIZE * PACKET_COUNT) / tsctotime(total),PACKET_SIZE);
+	fflush(stdout);
+}
+
+int mod_reading(int argc,char **argv) {
+	bool useshm = argc < 3 ? true : strcmp(argv[2],"noshm") != 0;
+	int fd = create("/system/test",IO_WRITE,0600);
+	if(fd < 0) {
+		printe("open of /system/test failed");
+		return 1;
+	}
+	if(write(fd,buffer,sizeof(buffer)) != sizeof(buffer)) {
+		printe("write failed");
+		return 1;
+	}
+	close(fd);
+
+	do_read("/dev/zero",useshm);
+	do_read("/dev/romdisk",useshm);
+	do_read("/system/test",false);
+	if(unlink("/system/test") < 0)
+		printe("Unlink of /system/test failed");
 	return 0;
 }

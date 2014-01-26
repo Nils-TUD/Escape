@@ -21,6 +21,7 @@
 #include <esc/mem.h>
 #include <esc/time.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../modules.h"
 
@@ -29,7 +30,7 @@
 
 static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000};
 
-static void mmapunmap(void) {
+static void mmapunmap(int flags,int fd) {
 	uint64_t start,end;
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(sizes); ++i) {
@@ -37,7 +38,7 @@ static void mmapunmap(void) {
 		int j;
 		for(j = 0; j < MMAP1_COUNT; ++j) {
 			start = rdtsc();
-			void *addr = mmap(NULL,sizes[i],0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
+			void *addr = mmap(NULL,sizes[i],0,PROT_READ | PROT_WRITE,flags,fd,0);
 			end = rdtsc();
 			mmapTotal += end - start;
 			if(!addr) {
@@ -90,8 +91,33 @@ static void multimmap(void) {
 
 int mod_mmap(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	printf("A sequence of mmap's and munmap's...\n");
-	mmapunmap();
+	mmapunmap(MAP_PRIVATE,-1);
+	fflush(stdout);
+
 	printf("A sequence of mmap's, followed by a sequence of munmap's...\n");
 	multimmap();
+	fflush(stdout);
+
+	{
+		const char *path = "/home/hrniels/testdir/bbc.bmp";
+		printf("mmap of %s...\n",path);
+		int fd = open(path,IO_READ);
+		if(fd < 0)
+			error("Unable to open '%s'",path);
+		mmapunmap(MAP_SHARED,fd);
+		close(fd);
+		fflush(stdout);
+	}
+
+	{
+		const char *path = "/bin/init";
+		printf("mmap of %s...\n",path);
+		int fd = open(path,IO_READ);
+		if(fd < 0)
+			error("Unable to open '%s'",path);
+		mmapunmap(MAP_SHARED,fd);
+		close(fd);
+		fflush(stdout);
+	}
 	return 0;
 }

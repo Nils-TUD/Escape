@@ -115,6 +115,63 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 	}
 }
 
+static int _sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
+	/* create shm file */
+	*mem = NULL;
+	int fd = pshm_create(IO_READ | IO_WRITE,0666,name);
+	if(fd < 0)
+		return fd;
+
+	/* mmap it */
+	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
+	if(!addr) {
+		int res = -errno;
+		pshm_unlink(*name);
+		close(fd);
+		return res;
+	}
+
+	/* share it with device; if it doesn't work, we don't care here */
+	int res = 0;//sharefile(dev,addr);
+	*mem = addr;
+	close(fd);
+	return res;
+}
+
+static void test_sharebuf(const char *path,size_t bufsize) {
+	uint64_t start,end,sharetime,destrtime;
+
+	sharetime = 0;
+	destrtime = 0;
+	for(int i = 0; i < TEST_COUNT; ++i) {
+		int fd = open(path,IO_READ);
+		if(fd < 0) {
+			printe("open failed");
+			return;
+		}
+
+		ulong shname;
+		void *shmem;
+		start = rdtsc();
+		if(_sharebuf(fd,bufsize,&shmem,&shname,0) < 0)
+			printe("Unable to share memory");
+		end = rdtsc();
+		if(!shmem)
+			error("Unable to map shared memory");
+		sharetime += end - start;
+
+		start = rdtsc();
+		destroybuf(shmem,shname);
+		end = rdtsc();
+		destrtime += end - start;
+
+		close(fd);
+	}
+
+	printf("sharebuf  (%6zub): %Lu cycles/call\n",bufsize,sharetime / TEST_COUNT);
+	printf("destroybuf(%6zub): %Lu cycles/call\n",bufsize,destrtime / TEST_COUNT);
+}
+
 int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
 	int fd = create("/system/test",IO_WRITE,0600);
@@ -145,6 +202,12 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,false);
 	fflush(stdout);
 	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,true);
+	fflush(stdout);
+
+	printf("Testing sharebuf and destroybuf...\n");
+	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE));
+	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE) * 4);
+	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE) * 16);
 	fflush(stdout);
 
 	if(unlink("/system/test") < 0)

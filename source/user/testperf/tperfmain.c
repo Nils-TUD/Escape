@@ -42,7 +42,7 @@ static sTestModule modules[] = {
 	{"sendrecv",	mod_sendrecv},
 	{"pingpong",	mod_pingpong},
 	{"pipe",		mod_pipe},
-	{"readzeros",	mod_readzeros},
+	{"reading",		mod_reading},
 	{"writenull",	mod_writenull},
 	{"memops",		mod_memops},
 	{"locks",		mod_locks},

@@ -96,7 +96,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			if(sem == NULL) {
 				SpinLock::acquire(&semLock);
 				if(sem == NULL) {
-					UniqueId id(devNo,nodeNo);
+					FileId id(devNo,nodeNo);
 					sem = sems.find(id);
 					if(sem == NULL) {
 						sem = new SemTreapNode(id);

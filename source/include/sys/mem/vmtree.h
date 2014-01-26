@@ -21,6 +21,9 @@
 
 #include <sys/common.h>
 #include <sys/col/dlisttreap.h>
+#include <sys/col/slist.h>
+#include <sys/mem/shfiles.h>
+#include <sys/vfs/fileid.h>
 #include <sys/mutex.h>
 
 class Region;
@@ -28,7 +31,8 @@ class VirtMem;
 class OStream;
 
 struct VMRegion : public DListTreapNode<uintptr_t> {
-    explicit VMRegion(Region *_reg,uintptr_t _virt) : DListTreapNode<uintptr_t>(_virt), reg(_reg) {
+    explicit VMRegion(Region *_reg,uintptr_t _virt)
+    	: DListTreapNode<uintptr_t>(_virt), fileuse(), reg(_reg) {
     }
 
     virtual bool matches(uintptr_t key);
@@ -50,6 +54,8 @@ struct VMRegion : public DListTreapNode<uintptr_t> {
     virtual void print(OStream &os) {
 		os.writef("virt=%p region=%p\n",virt(),reg);
     }
+
+    ShFiles::FileUsage *fileuse;
 	Region *reg;
 };
 

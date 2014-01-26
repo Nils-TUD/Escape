@@ -24,6 +24,7 @@
 #include <sys/mem/copyonwrite.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/swapmap.h>
+#include <sys/mem/shfiles.h>
 #include <sys/task/smp.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
@@ -148,14 +149,20 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 
 	/* for files: try to find another process with that file */
 	if(f && (rflags & MAP_SHARED)) {
-		VirtMem *virtmem = NULL;
-		uintptr_t binVirt = getBinary(f,virtmem);
-		if(binVirt != 0) {
-			res = virtmem->join(binVirt,this,vmreg,addr,rflags);
-			if(res != -ESRCH)
-				return res;
-			/* if it failed because we couldn't get the lock, try to map it on our own */
-			/* but now if it's writable. in this case it HAVE TO be the same frames. so the user
+		pid_t pid;
+		uintptr_t shaddr;
+		if(ShFiles::get(f,&shaddr,&pid)) {
+			Proc *owner = Proc::getRef(pid);
+			res = -ESRCH;
+			if(owner) {
+				res = owner->getVM()->join(shaddr,this,vmreg,addr,rflags);
+				Proc::relRef(owner);
+				if(res != -ESRCH && res != -ENXIO)
+					return res;
+			}
+
+			/* if it failed because it's gone or we couldn't get the lock, try to map it on our own */
+			/* but not if it's writable. in this case it HAVE TO be the same frames. so the user
 			 * should retry that in this case */
 			if(res < 0 && (rflags & PROT_WRITE))
 				return -EBUSY;
@@ -233,6 +240,9 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 		if(res < 0)
 			goto errPf;
 	}
+
+	if((rflags & MAP_SHARED) && (res = ShFiles::add(vm,proc->getPid())) < 0)
+		goto errPf;
 
 	/* set data-region */
 	if((rflags & (PROT_WRITE | MAP_GROWABLE | MAP_STACK)) == (PROT_WRITE | MAP_GROWABLE))
@@ -535,28 +545,6 @@ int VirtMem::getRegRange(uintptr_t virt,uintptr_t *start,uintptr_t *end) {
 	return res;
 }
 
-uintptr_t VirtMem::getBinary(OpenFile *file,VirtMem *&binOwner) {
-	uintptr_t res = 0;
-	VMTree *tree = VMTree::reqTree();
-	for(; tree != NULL; tree = tree->getNext()) {
-		/* if we can't acquire the lock, don't consider this tree */
-		if(tree->getVM()->tryAquire()) {
-			for(auto vm = tree->cbegin(); vm != tree->cend(); ++vm) {
-				/* if its shareable and the binary fits, return region-number */
-				if((vm->reg->getFlags() & RF_SHAREABLE) && vm->reg->getFile() &&
-						vm->reg->getFile()->isSameFile(file)) {
-					res = vm->virt();
-					binOwner = tree->getVM();
-					break;
-				}
-			}
-			tree->getVM()->release();
-		}
-	}
-	VMTree::relTree();
-	return res;
-}
-
 ssize_t VirtMem::getShareInfo(uintptr_t addr,char *path,size_t size) {
 	ssize_t res = -ENOENT;
 	acquire();
@@ -754,6 +742,9 @@ void VirtMem::doUnmap(VMRegion *vm) {
 			freemap.free(vm->virt(),ROUND_PAGE_UP(vm->reg->getByteCount()));
 		if(vm->virt() == dataAddr)
 			dataAddr = 0;
+		/* remove from shared tree */
+		if(vm->reg->getFlags() & RF_SHAREABLE)
+			ShFiles::remove(vm);
 		/* now destroy region */
 		vm->reg->release();
 		/* do the remove BEFORE the free */
@@ -771,6 +762,9 @@ void VirtMem::doUnmap(VMRegion *vm) {
 		addShared(-vm->reg->pageCount(&sw));
 		addOwn(-pts);
 		addSwap(-sw);
+		/* remove from shared tree */
+		if(vm->reg->getFlags() & RF_SHAREABLE)
+			ShFiles::remove(vm);
 		/* give the memory back to the free-area, if its in there */
 		if(vm->virt() >= FREE_AREA_BEGIN)
 			freemap.free(vm->virt(),ROUND_PAGE_UP(vm->reg->getByteCount()));
@@ -848,6 +842,9 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 		if(res < 0)
 			goto errUnmap;
 	}
+
+	if((res = ShFiles::add(*nvm,dst->getProc()->getPid())) < 0)
+		goto errUnmap;
 
 	dst->addShared(presentCount);
 	dst->addOwn(res);
@@ -944,6 +941,8 @@ int VirtMem::cloneAll(VirtMem *dst) {
 				size_t sw;
 				dst->addShared(nvm->reg->pageCount(&sw));
 				dst->addSwap(sw);
+				/* ignore it here if it fails */
+				ShFiles::add(nvm,dst->getProc()->getPid());
 			}
 			/* add frames to copy-on-write, if not shared */
 			else {

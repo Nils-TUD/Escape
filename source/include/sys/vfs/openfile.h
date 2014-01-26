@@ -23,6 +23,7 @@
 #include <sys/col/treap.h>
 #include <sys/mem/dynarray.h>
 #include <sys/vfs/node.h>
+#include <sys/vfs/fileid.h>
 #include <sys/semaphore.h>
 #include <errno.h>
 #include <assert.h>
@@ -60,32 +61,16 @@ class OpenFile {
 	friend class ThreadBase;
 	friend class MountSpace;
 
-	struct UniqueId {
-		explicit UniqueId(dev_t d,inode_t i) : dev(d), ino(i) {
+	struct SemTreapNode : public TreapNode<FileId> {
+		explicit SemTreapNode(const FileId &id) : TreapNode<FileId>(id), sem() {
 		}
 
-		dev_t dev;
-		inode_t ino;
-	};
-
-	struct SemTreapNode : public TreapNode<UniqueId> {
-		explicit SemTreapNode(const UniqueId &id) : TreapNode<UniqueId>(id), sem() {
-		}
 	    virtual void print(OStream &os) {
 			os.writef("f=(%d,%d) sem.value=%d\n",key().dev,key().ino,sem.getValue());
 	    }
 
 		Semaphore sem;
 	};
-
-	friend bool operator<(const UniqueId &a,const UniqueId &b) {
-		if(a.dev == b.dev)
-			return a.ino < b.ino;
-		return a.dev < b.dev;
-	}
-	friend bool operator==(const UniqueId &a,const UniqueId &b) {
-		return a.dev == b.dev && a.ino == b.ino;
-	}
 
 	OpenFile() = delete;
 

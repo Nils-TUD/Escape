@@ -23,7 +23,11 @@
 #include <esc/atomic.h>
 #include <esc/proc.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
+
+/* prefill the space for getpid() with '/'. they will simply be ignored by the kernel */
+#define PSHM_PATH	"/system/processes/////////////shm/"
 
 static long shmcnt = 0;
 
@@ -51,17 +55,23 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
 	return (void*)res;
 }
 
+static const char *pshm_buildpath(char *path,ulong name) {
+	char *pidpos = path + SSTRLEN("/system/processes/");
+	size_t len = itoa(pidpos,12,getpid());
+	pidpos[len] = '/';
+	itoa(path + SSTRLEN(PSHM_PATH),12,name);
+	return path;
+}
+
 int pshm_create(int oflag,mode_t mode,ulong *name) {
+	char path[MAX_PATH_LEN] = PSHM_PATH;
 	*name = atomic_add(&shmcnt,+1);
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/processes/%d/shm/%ld",getpid(),*name);
-	return create(path,oflag | IO_CREATE,mode);
+	return create(pshm_buildpath(path,*name),oflag | IO_CREATE,mode);
 }
 
 int pshm_unlink(ulong name) {
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/processes/%d/shm/%ld",getpid(),name);
-	return unlink(path);
+	char path[MAX_PATH_LEN] = PSHM_PATH;
+	return unlink(pshm_buildpath(path,name));
 }
 
 int shm_open(const char *name,int oflag,mode_t mode) {

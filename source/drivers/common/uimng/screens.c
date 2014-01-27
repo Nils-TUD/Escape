@@ -101,7 +101,7 @@ ssize_t screens_getModes(sScreenMode *modes,size_t n) {
 	return n;
 }
 
-int screens_setMode(sClient *cli,int type,int mid,const char *shm) {
+int screens_setMode(sClient *cli,int type,int mid,const char *shm,bool set) {
 	int res = -EINVAL;
 	sScreenMode *mode;
 	sScreen *scr;
@@ -130,7 +130,7 @@ int screens_setMode(sClient *cli,int type,int mid,const char *shm) {
 		goto errorHeader;
 
 	/* set screen mode */
-	if((res = screen_setMode(fd,type,mid,shm,true)) < 0)
+	if(set && (res = screen_setMode(fd,type,mid,shm,true)) < 0)
 		goto errorUnmap;
 
 	/* destroy old stuff */

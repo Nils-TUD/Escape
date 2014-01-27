@@ -57,16 +57,10 @@ int input_thread(void *arg) {
 	if(winMng < 0)
 		error("Unable to open '%s'",in->winmng);
 
-	int uiminFd = open("/dev/uim-input",IO_MSGS);
-	if(uiminFd < 0)
-		error("Unable to open '/dev/uim-input'");
-	if(uimng_attach(uiminFd,in->uimngId) < 0)
-		error("Unable to attach to uimanager");
-
 	/* read from uimanager and handle the keys */
 	while(1) {
 		sUIMData uiEvent;
-		ssize_t count = IGNSIGS(receive(uiminFd,NULL,&uiEvent,sizeof(uiEvent)));
+		ssize_t count = IGNSIGS(receive(in->uiminFd,NULL,&uiEvent,sizeof(uiEvent)));
 		if(count > 0) {
 			switch(uiEvent.type) {
 				case KM_EV_KEYBOARD:
@@ -79,7 +73,6 @@ int input_thread(void *arg) {
 			}
 		}
 	}
-	close(uiminFd);
 	close(winMng);
 	return 0;
 }

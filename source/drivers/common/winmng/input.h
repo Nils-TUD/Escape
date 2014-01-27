@@ -23,7 +23,7 @@
 
 typedef struct {
 	int uimngFd;
-	int uimngId;
+	int uiminFd;
 	int mode;
 	const char *winmng;
 	const char *shmname;

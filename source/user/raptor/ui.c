@@ -86,6 +86,7 @@ static const uchar bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
 sScreenMode mode;
 static int uimng;
 static int uiid;
+static int uiminFd;
 static char shmname[SSTRLEN("raptor") + 12];
 static uchar *shm = NULL;
 static uchar *backup = NULL;
@@ -104,6 +105,13 @@ void ui_init(uint cols,uint rows) {
 	uiid = uimng_getId(uimng);
 	if(uiid < 0)
 		error("Unable to get ui-id");
+
+	/* attach to input-channel */
+	uiminFd = open("/dev/uim-input",IO_MSGS);
+	if(uiminFd < 0)
+		error("Unable to open '/dev/uim-input'");
+	if(uimng_attach(uiminFd,uiid) < 0)
+		error("Unable to attach to uimanager");
 
 	/* create shm */
 	int res,id = 0;
@@ -133,12 +141,6 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 static int ui_inputThread(A_UNUSED void *arg) {
-	int uiminFd = open("/dev/uim-input",IO_MSGS);
-	if(uiminFd < 0)
-		error("Unable to open '/dev/uim-input'");
-	if(uimng_attach(uiminFd,uiid) < 0)
-		error("Unable to attach to uimanager");
-
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to set SIG_USR1-handler");
 	/* read from uimanager and handle the keys */

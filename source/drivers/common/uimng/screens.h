@@ -28,4 +28,4 @@ void screens_init(int cnt,char *names[]);
 bool screens_find(int mid,sScreenMode **mode,sScreen **scr);
 void screens_adjustMode(sScreenMode *mode);
 ssize_t screens_getModes(sScreenMode *modes,size_t n);
-int screens_setMode(sClient *cli,int type,int mid,const char *shm);
+int screens_setMode(sClient *cli,int type,int mid,const char *shm,bool set);

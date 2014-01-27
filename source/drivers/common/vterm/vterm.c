@@ -49,7 +49,7 @@ static size_t modeCount = 0;
 static sScreenMode *curMode = NULL;
 static char *scrShm = NULL;
 
-bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
+int vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	sScreenMode mode;
 	int res;
 
@@ -72,7 +72,7 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	res = screen_findTextMode(vterm->uimng,cols,rows,&mode);
 	if(res < 0) {
 		fprintf(stderr,"Unable to find a suitable mode: %s\n",strerror(-res));
-		return false;
+		return res;
 	}
 
 	/* open speaker */
@@ -86,15 +86,8 @@ bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows) {
 	vterm->setCursor = vt_setCursor;
 	memcpy(vterm->name,name,MAX_VT_NAME_LEN + 1);
 	if(!vtctrl_init(vterm,&mode))
-		return false;
-
-	/* set video mode */
-	res = vt_setVideoMode(vterm,mode.id);
-	if(res < 0) {
-		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
-		return false;
-	}
-	return true;
+		return -ENOMEM;
+	return mode.id;
 }
 
 void vt_update(sVTerm *vt) {

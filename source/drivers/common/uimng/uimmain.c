@@ -303,9 +303,11 @@ static int ctrlThread(A_UNUSED void *arg) {
 					/* lock that to prevent that we interfere with e.g. the debugger keystroke */
 					usemdown(&usem);
 					sClient *cli = cli_get(fd);
-					msg.args.arg1 = screens_setMode(cli,type,modeid,msg.str.s1);
+					/* only set this mode if it's the active client */
+					bool isactive = cli == cli_getActive();
+					msg.args.arg1 = screens_setMode(cli,type,modeid,msg.str.s1,isactive);
 					/* update header */
-					if(msg.args.arg1 == 0) {
+					if(isactive && msg.args.arg1 == 0) {
 						gsize_t width,height;
 						if(header_update(cli,&width,&height))
 							screen_update(cli->screenFd,0,0,width,height);

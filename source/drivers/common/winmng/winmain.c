@@ -115,9 +115,16 @@ int main(int argc,char *argv[]) {
 	if(drvId < 0)
 		error("Unable to create device /dev/%s",argv[3]);
 
+	/* open input device and attach */
+	int uiminFd = open("/dev/uim-input",IO_MSGS);
+	if(uiminFd < 0)
+		error("Unable to open '/dev/uim-input'");
+	if(uimng_attach(uiminFd,uimngId) < 0)
+		error("Unable to attach to uimanager");
+
 	/* init window stuff */
 	inputData.uimngFd = uimng;
-	inputData.uimngId = uimngId;
+	inputData.uiminFd = uiminFd;
 	inputData.winmng = path;
 	inputData.shmname = argv[3];
 	inputData.mode = win_init(drvId,uimng,atoi(argv[1]),atoi(argv[2]),DEF_BPP,argv[3]);

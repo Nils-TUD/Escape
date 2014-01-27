@@ -46,7 +46,7 @@
 #define MAX_SEQREQ			20
 
 static int vtermThread(void *vterm);
-static void uimInputThread(void);
+static void uimInputThread(int uiminFd);
 
 static sVTerm vterm;
 static char buffer[BUF_SIZE];
@@ -78,15 +78,33 @@ int main(int argc,char **argv) {
 	group_free(groups);
 
 	/* init vterms */
-	if(!vt_init(drvId,&vterm,argv[3],atoi(argv[1]),atoi(argv[2])))
+	int modeid = vt_init(drvId,&vterm,argv[3],atoi(argv[1]),atoi(argv[2]));
+	if(modeid < 0)
 		error("Unable to init vterms");
+
+	/* open uimng's input device */
+	int uiminFd = open("/dev/uim-input",IO_MSGS);
+	if(uiminFd < 0)
+		error("Unable to open '/dev/uim-input'");
+	if(uimng_attach(uiminFd,vterm.uimngid) < 0)
+		error("Unable to attach to uimanager");
+
+	/* set video mode */
+	int res = vt_setVideoMode(&vterm,modeid);
+	if(res < 0) {
+		fprintf(stderr,"Unable to set mode: %s\n",strerror(-res));
+		return res;
+	}
+	/* now we're the active client. update screen */
+	vtctrl_markScrDirty(&vterm);
+	vt_update(&vterm);
 
 	/* start thread to handle the vterm */
 	if(startthread(vtermThread,&vterm) < 0)
 		error("Unable to start thread for vterm %s",path);
 
 	/* receive input-events from uimanager in this thread */
-	uimInputThread();
+	uimInputThread(uiminFd);
 
 	/* clean up */
 	close(drvId);
@@ -94,17 +112,7 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void uimInputThread(void) {
-	int uiminFd = open("/dev/uim-input",IO_MSGS);
-	if(uiminFd < 0)
-		error("Unable to open '/dev/uim-input'");
-	if(uimng_attach(uiminFd,vterm.uimngid) < 0)
-		error("Unable to attach to uimanager");
-
-	/* now we're the active client. update screen */
-	vtctrl_markScrDirty(&vterm);
-	vt_update(&vterm);
-
+static void uimInputThread(int uiminFd) {
 	/* read from uimanager and handle the keys */
 	while(1) {
 		sUIMData kmData;

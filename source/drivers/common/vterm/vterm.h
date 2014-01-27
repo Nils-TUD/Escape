@@ -30,9 +30,9 @@
  * @param name the device name
  * @param cols the number of desired cols
  * @param rows the number of desired rows
- * @return true if successfull
+ * @return the mode id on success
  */
-bool vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows);
+int vt_init(int id,sVTerm *vterm,const char *name,uint cols,uint rows);
 
 /**
  * Returns the available modes from all video-devices.

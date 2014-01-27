@@ -17,23 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <esc/common.h>
-#include <esc/fsinterface.h>
-#include <fs/fsdev.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <vbetext/vbetext.h>
 
-#include "ext2.h"
+#include "vesascreen.h"
 
-int main(int argc,char *argv[]) {
-	char fspath[MAX_PATH_LEN];
-	if(argc != 3)
-		error("Usage: %s <wait> <devicePath>",argv[0]);
-
-	/* build fs device name */
-	char *dev = strrchr(argv[2],'/');
-	if(!dev)
-		error("Invalid device path '%s'",argv[2]);
-	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
-	return fs_driverLoop("ext2",argv[2],fspath,ext2_getFS());
-}
+uint8_t *vesatui_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color);
+void vesatui_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len);
+void vesatui_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row);

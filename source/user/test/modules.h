@@ -33,7 +33,7 @@ extern int mod_sigclone(int,char**);
 extern int mod_fsreads(int,char**);
 extern int mod_ooc(int,char**);
 extern int mod_highcpu(int,char**);
-extern int mod_highcputhreads(int,char**);
+extern int mod_highcput(int,char**);
 extern int mod_drvparallel(int,char**);
 extern int mod_maxthreads(int,char**);
 extern int mod_pagefaults(int,char**);

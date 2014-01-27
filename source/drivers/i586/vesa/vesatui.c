@@ -22,24 +22,24 @@
 #include <vbetext/vbetext.h>
 #include <string.h>
 
-#include "vesatext.h"
+#include "vesatui.h"
 
 #define CURSOR_LEN						FONT_WIDTH
 #define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
-static void vesat_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
-static void vesat_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color);
+static void vesatui_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
+static void vesatui_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color);
 
-uint8_t *vesat_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color) {
+uint8_t *vesatui_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color) {
 	return vbe_setPixelAt(scr->mode,vid,color);
 }
 
-void vesat_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len) {
+void vesatui_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len) {
 	while(len-- > 0) {
 		uint8_t c = *str++;
 		uint8_t color = *str++;
-		vesat_drawChar(scr,col,row,c,color);
+		vesatui_drawChar(scr,col,row,c,color);
 		if(col >= scr->cols - 1) {
 			row++;
 			col = 0;
@@ -49,16 +49,16 @@ void vesat_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,s
 	}
 }
 
-void vesat_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row) {
+void vesatui_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row) {
 	if(scr->lastCol < scr->cols && scr->lastRow < scr->rows)
-		vesat_drawCursor(scr,scr->lastCol,scr->lastRow,BLACK);
+		vesatui_drawCursor(scr,scr->lastCol,scr->lastRow,BLACK);
 	if(col < scr->cols && row < scr->rows)
-		vesat_drawCursor(scr,col,row,WHITE);
+		vesatui_drawCursor(scr,col,row,WHITE);
 	scr->lastCol = col;
 	scr->lastRow = row;
 }
 
-static void vesat_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
+static void vesatui_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
 	gpos_t y;
 	gsize_t rx = scr->mode->width;
 	size_t pxSize = scr->mode->bitsPerPixel / 8;
@@ -85,7 +85,7 @@ static void vesat_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint
 		vbet_drawChar(scr->mode,scr->frmbuf,col,row,c,color);
 }
 
-static void vesat_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color) {
+static void vesatui_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color) {
 	gsize_t xres = scr->mode->width;
 	gsize_t pxSize = scr->mode->bitsPerPixel / 8;
 	fSetPixel pxFunc = vbe_getPixelFunc(scr->mode);

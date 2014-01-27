@@ -26,7 +26,7 @@
 #include <stdlib.h>
 
 #include "vesascreen.h"
-#include "vesatext.h"
+#include "vesatui.h"
 
 static int vesascr_initWhOnBl(sVESAScreen *scr);
 
@@ -46,10 +46,10 @@ static int vesascr_initWhOnBl(sVESAScreen *scr) {
 			for(int x = 0; x < FONT_WIDTH + PAD * 2; x++) {
 				if(y >= PAD && y < FONT_HEIGHT + PAD && x >= PAD && x < FONT_WIDTH + PAD &&
 						PIXEL_SET(i,x - PAD,y - PAD)) {
-					cc = vesat_setPixel(scr,cc,white);
+					cc = vesatui_setPixel(scr,cc,white);
 				}
 				else
-					cc = vesat_setPixel(scr,cc,black);
+					cc = vesatui_setPixel(scr,cc,black);
 			}
 		}
 	}

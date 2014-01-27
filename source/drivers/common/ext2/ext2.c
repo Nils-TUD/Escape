@@ -39,6 +39,9 @@
 #include "dir.h"
 #include "rw.h"
 
+static void *ext2_init(const char *device,char **usedDev,int *errcode);
+static void ext2_deinit(void *h);
+static sFileSystem *ext2_getFS(void);
 static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags);
 static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags);
 static void ext2_close(void *h,inode_t ino);
@@ -53,8 +56,22 @@ static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
 static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
 static void ext2_sync(void *h);
 static bool ext2_isPowerOf(uint x,uint y);
+static void ext2_print(FILE *f,void *h);
 
-void *ext2_init(const char *device,char **usedDev,int *errcode) {
+int main(int argc,char *argv[]) {
+	char fspath[MAX_PATH_LEN];
+	if(argc != 3)
+		error("Usage: %s <wait> <devicePath>",argv[0]);
+
+	/* build fs device name */
+	char *dev = strrchr(argv[2],'/');
+	if(!dev)
+		error("Invalid device path '%s'",argv[2]);
+	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
+	return fs_driverLoop("ext2",argv[2],fspath,ext2_getFS());
+}
+
+static void *ext2_init(const char *device,char **usedDev,int *errcode) {
 	int res;
 	size_t i;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
@@ -124,7 +141,7 @@ failed:
 	return NULL;
 }
 
-void ext2_deinit(void *h) {
+static void ext2_deinit(void *h) {
 	size_t i;
 	sExt2 *e = (sExt2*)h;
 	/* write pending changes */
@@ -141,7 +158,7 @@ void ext2_deinit(void *h) {
 	free(e);
 }
 
-sFileSystem *ext2_getFS(void) {
+static sFileSystem *ext2_getFS(void) {
 	sFileSystem *fs = malloc(sizeof(sFileSystem));
 	if(!fs)
 		return NULL;
@@ -165,80 +182,6 @@ sFileSystem *ext2_getFS(void) {
 	fs->sync = ext2_sync;
 	fs->print = ext2_print;
 	return fs;
-}
-
-int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
-	int mask;
-	uint16_t mode = le16tocpu(cnode->inode.mode);
-	if(u->uid == ROOT_UID) {
-		/* root has exec-permission if at least one has exec-permission */
-		if(perms & MODE_EXEC)
-			return (mode & MODE_EXEC) ? 0 : -EACCES;
-		/* root can read and write in all cases */
-		return 0;
-	}
-
-	if(le16tocpu(cnode->inode.uid) == u->uid)
-		mask = (mode >> 6) & 0x7;
-	else if(le16tocpu(cnode->inode.gid) == u->gid || isingroup(u->pid,le16tocpu(cnode->inode.gid)) == 1)
-		mask = (mode >> 3) & 0x7;
-	else
-		mask = mode & 0x7;
-
-	if((perms & MODE_READ) && !(mask & MODE_READ))
-		return -EACCES;
-	if((perms & MODE_WRITE) && !(mask & MODE_WRITE))
-		return -EACCES;
-	if((perms & MODE_EXEC) && !(mask & MODE_EXEC))
-		return -EACCES;
-	return 0;
-}
-
-block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
-	return (inodeNo - 1) / le32tocpu(e->superBlock.inodesPerGroup);
-}
-
-block_t ext2_getGroupOfBlock(sExt2 *e,block_t block) {
-	return block / le32tocpu(e->superBlock.blocksPerGroup);
-}
-
-block_t ext2_getGroupOfInode(sExt2 *e,inode_t inodeNo) {
-	return inodeNo / le32tocpu(e->superBlock.inodesPerGroup);
-}
-
-size_t ext2_getBlockGroupCount(sExt2 *e) {
-	size_t bpg = le32tocpu(e->superBlock.blocksPerGroup);
-	return (le32tocpu(e->superBlock.blockCount) + bpg - 1) / bpg;
-}
-
-bool ext2_bgHasBackups(sExt2 *e,block_t i) {
-	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
-	 * the backup */
-	if(!(le32tocpu(e->superBlock.featureRoCompat) & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
-		return true;
-	/* block-group 0 is handled manually */
-	if(i == 1)
-		return true;
-	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
-}
-
-void ext2_print(FILE *f,void *h) {
-	sExt2 *e = (sExt2*)h;
-	fprintf(f,"Total blocks: %u\n",le32tocpu(e->superBlock.blockCount));
-	fprintf(f,"Total inodes: %u\n",le32tocpu(e->superBlock.inodeCount));
-	fprintf(f,"Free blocks: %u\n",le32tocpu(e->superBlock.freeBlockCount));
-	fprintf(f,"Free inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
-	fprintf(f,"Blocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
-	fprintf(f,"Inodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
-	fprintf(f,"Blocksize: %u\n",EXT2_BLK_SIZE(e));
-	fprintf(f,"Capacity: %u bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"Free: %u bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"Mount count: %u\n",le16tocpu(e->superBlock.mountCount));
-	fprintf(f,"Max mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
-	fprintf(f,"Block cache:\n");
-	bcache_printStats(f,&e->blockCache);
-	fprintf(f,"Inode cache:\n");
-	ext2_icache_print(f,e);
 }
 
 static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags) {
@@ -393,6 +336,80 @@ static bool ext2_isPowerOf(uint x,uint y) {
 		x /= y;
 	}
 	return true;
+}
+
+static void ext2_print(FILE *f,void *h) {
+	sExt2 *e = (sExt2*)h;
+	fprintf(f,"Total blocks: %u\n",le32tocpu(e->superBlock.blockCount));
+	fprintf(f,"Total inodes: %u\n",le32tocpu(e->superBlock.inodeCount));
+	fprintf(f,"Free blocks: %u\n",le32tocpu(e->superBlock.freeBlockCount));
+	fprintf(f,"Free inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
+	fprintf(f,"Blocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
+	fprintf(f,"Inodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
+	fprintf(f,"Blocksize: %u\n",EXT2_BLK_SIZE(e));
+	fprintf(f,"Capacity: %u bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
+	fprintf(f,"Free: %u bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
+	fprintf(f,"Mount count: %u\n",le16tocpu(e->superBlock.mountCount));
+	fprintf(f,"Max mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
+	fprintf(f,"Block cache:\n");
+	bcache_printStats(f,&e->blockCache);
+	fprintf(f,"Inode cache:\n");
+	ext2_icache_print(f,e);
+}
+
+int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
+	int mask;
+	uint16_t mode = le16tocpu(cnode->inode.mode);
+	if(u->uid == ROOT_UID) {
+		/* root has exec-permission if at least one has exec-permission */
+		if(perms & MODE_EXEC)
+			return (mode & MODE_EXEC) ? 0 : -EACCES;
+		/* root can read and write in all cases */
+		return 0;
+	}
+
+	if(le16tocpu(cnode->inode.uid) == u->uid)
+		mask = (mode >> 6) & 0x7;
+	else if(le16tocpu(cnode->inode.gid) == u->gid || isingroup(u->pid,le16tocpu(cnode->inode.gid)) == 1)
+		mask = (mode >> 3) & 0x7;
+	else
+		mask = mode & 0x7;
+
+	if((perms & MODE_READ) && !(mask & MODE_READ))
+		return -EACCES;
+	if((perms & MODE_WRITE) && !(mask & MODE_WRITE))
+		return -EACCES;
+	if((perms & MODE_EXEC) && !(mask & MODE_EXEC))
+		return -EACCES;
+	return 0;
+}
+
+block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
+	return (inodeNo - 1) / le32tocpu(e->superBlock.inodesPerGroup);
+}
+
+block_t ext2_getGroupOfBlock(sExt2 *e,block_t block) {
+	return block / le32tocpu(e->superBlock.blocksPerGroup);
+}
+
+block_t ext2_getGroupOfInode(sExt2 *e,inode_t inodeNo) {
+	return inodeNo / le32tocpu(e->superBlock.inodesPerGroup);
+}
+
+size_t ext2_getBlockGroupCount(sExt2 *e) {
+	size_t bpg = le32tocpu(e->superBlock.blocksPerGroup);
+	return (le32tocpu(e->superBlock.blockCount) + bpg - 1) / bpg;
+}
+
+bool ext2_bgHasBackups(sExt2 *e,block_t i) {
+	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
+	 * the backup */
+	if(!(le32tocpu(e->superBlock.featureRoCompat) & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
+		return true;
+	/* block-group 0 is handled manually */
+	if(i == 1)
+		return true;
+	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
 }
 
 #if DEBUGGING

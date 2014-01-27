@@ -18,152 +18,131 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch/i586/ports.h>
+#include <esc/driver/screen.h>
 #include <esc/io.h>
 #include <esc/driver.h>
+#include <esc/debug.h>
 #include <esc/mem.h>
 #include <esc/rect.h>
 #include <esc/messages.h>
-#include <vbe/vbe.h>
+#include <tui/tuidev.h>
+#include <errno.h>
 #include <string.h>
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "vesa.h"
-#include "bmp.h"
+#include <vbe/vbe.h>
+#include <vbetext/vbetext.h>
+
+#include "vesatui.h"
+#include "vesagui.h"
 #include "vesascreen.h"
 
-#define CURSOR_LEFT_OFF					10
-#define CURSOR_DEFAULT_FILE				"/etc/cursor_def.bmp"
-#define CURSOR_RESIZE_L_FILE			"/etc/cursor_resl.bmp"
-#define CURSOR_RESIZE_BR_FILE			"/etc/cursor_resbr.bmp"
-#define CURSOR_RESIZE_VERT_FILE			"/etc/cursor_resvert.bmp"
-#define CURSOR_RESIZE_BL_FILE			"/etc/cursor_resbl.bmp"
-#define CURSOR_RESIZE_R_FILE			"/etc/cursor_resr.bmp"
+static size_t modeCount;
+static sScreenMode *modes;
 
-static void vesa_doSetCursor(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor);
-static void vesa_copyRegion(sVESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
-		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
-
-static uint8_t *cursorCopy;
-static gpos_t lastX = 0;
-static gpos_t lastY = 0;
-static uint8_t curCursor = CURSOR_DEFAULT;
-static sBitmap *cursor[6];
-
-void vesa_init(void) {
-	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
-	if(cursor[0] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_DEFAULT_FILE);
-	cursor[1] = bmp_loadFromFile(CURSOR_RESIZE_L_FILE);
-	if(cursor[1] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_RESIZE_L_FILE);
-	cursor[2] = bmp_loadFromFile(CURSOR_RESIZE_BR_FILE);
-	if(cursor[2] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_RESIZE_BR_FILE);
-	cursor[3] = bmp_loadFromFile(CURSOR_RESIZE_VERT_FILE);
-	if(cursor[3] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_RESIZE_VERT_FILE);
-	cursor[4] = bmp_loadFromFile(CURSOR_RESIZE_BL_FILE);
-	if(cursor[4] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_RESIZE_BL_FILE);
-	cursor[5] = bmp_loadFromFile(CURSOR_RESIZE_R_FILE);
-	if(cursor[5] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_RESIZE_R_FILE);
-
-	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
-	cursorCopy = (uint8_t*)malloc(curWidth * curHeight * 4);
-	if(cursorCopy == NULL)
-		error("Unable to create cursor copy");
-}
-
-void vesa_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor) {
-	if(newCursor == CURSOR_RESIZE_L || newCursor == CURSOR_RESIZE_BL)
-		newCurX -= CURSOR_LEFT_OFF;
-	vesa_doSetCursor(scr,shmem,newCurX,newCurY,newCursor);
-}
-
-void vesa_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	sScreenMode *minfo = scr->mode;
-	sRectangle upRec,curRec,intersec;
-	gpos_t y1,y2;
-	gsize_t xres = minfo->width;
-	gsize_t yres = minfo->height;
-	gsize_t pxSize = minfo->bitsPerPixel / 8;
-	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
-	size_t count;
-	uint8_t *src,*dst;
-	y1 = y;
-	y2 = MIN(yres,y + height);
-	width = MIN(xres - x,width);
-	count = width * pxSize;
-
-	/* copy from shared-mem to video-mem */
-	dst = (uint8_t*)scr->frmbuf + (y1 * xres + x) * pxSize;
-	src = (uint8_t*)shmem + (y1 * xres + x) * pxSize;
-	while(y1 < y2) {
-		memcpy(dst,src,count);
-		src += xres * pxSize;
-		dst += xres * pxSize;
-		y1++;
+static int vesacli_setMode(sTUIClient *client,const char *shmname,int mid,int type,bool switchMode) {
+	assert(type == VID_MODE_TYPE_TUI || type == VID_MODE_TYPE_GUI);
+	sScreenMode *minfo = NULL;
+	if(mid >= 0) {
+		minfo = vbe_getModeInfo(modes[mid].id);
+		if(minfo == NULL)
+			return -EINVAL;
 	}
 
-	upRec.x = x;
-	upRec.y = y;
-	upRec.width = width;
-	upRec.height = height;
+	/* undo previous mapping */
+	if(client->shm) {
+		munmap(client->shm);
+		vesascr_release(client->data);
+	}
+	client->shm = NULL;
+	client->mode = NULL;
+	client->type = type;
+	client->data = NULL;
 
-	/* look if we have to update the cursor-copy */
-	curRec.x = lastX;
-	curRec.y = lastY;
-	curRec.width = curWidth;
-	curRec.height = curHeight;
-	if(rectIntersect(&curRec,&upRec,&intersec)) {
-		vesa_copyRegion(scr,shmem,cursorCopy,intersec.width,intersec.height,
-			intersec.x,intersec.y,intersec.x - lastX,intersec.y - lastY,xres,curWidth,yres);
-		bmp_draw(scr,cursor[curCursor],lastX,lastY,vbe_getPixelFunc(scr->mode));
+	int res = 0;
+	if(minfo) {
+		/* request screen */
+		sVESAScreen *scr = vesascr_request(minfo);
+		if(!scr)
+			return -EFAULT;
+
+		/* set this mode */
+		if(switchMode)
+			res = vbe_setMode(scr->mode->id);
+
+		/* join shared memory */
+		if(res == 0) {
+			res = screen_joinShm(modes + mid,&client->shm,shmname,type);
+			if(res < 0) {
+				vesascr_release(scr);
+				return res;
+			}
+			/* it worked; reset screen and store new stuff */
+			vesascr_reset(scr,type);
+			client->mode = modes + mid;
+			client->data = scr;
+		}
+	}
+	return res;
+}
+
+static int vesacli_updateScreen(sTUIClient *client,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	sVESAScreen *scr = (sVESAScreen*)client->data;
+	if(!scr)
+		return -EINVAL;
+
+	if(client->type == VID_MODE_TYPE_TUI) {
+		if((gpos_t)(x + width) < x || x + width > client->mode->cols ||
+			(gpos_t)(y + height) < y || y + height > client->mode->rows)
+			return -EINVAL;
+
+		size_t offset = y * client->mode->cols * 2 + x * 2;
+		if(width == client->mode->cols)
+			vesatui_drawChars(scr,x,y,(uint8_t*)client->shm + offset,width * height);
+		else {
+			for(gsize_t i = 0; i < height; ++i) {
+				vesatui_drawChars(scr,x,y + i,
+					(uint8_t*)client->shm + offset + i * client->mode->cols * 2,width);
+			}
+		}
+	}
+	else {
+		if((gpos_t)(x + width) < x || x + width > scr->mode->width ||
+			(gpos_t)(y + height) < y || y + height > scr->mode->height)
+			return -EINVAL;
+
+		vesagui_update(scr,client->shm,x,y,width,height);
+	}
+	return 0;
+}
+
+static void vesacli_setCursor(sTUIClient *client,gpos_t x,gpos_t y,int cursor) {
+	sVESAScreen *scr = (sVESAScreen*)client->data;
+	if(scr) {
+		if(client->type == VID_MODE_TYPE_TUI)
+			vesatui_setCursor(scr,x,y);
+		else
+			vesagui_setCursor(scr,client->shm,x,y,cursor);
 	}
 }
 
-static void vesa_doSetCursor(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor) {
-	if(newCursor < 0 || (size_t)newCursor >= ARRAY_SIZE(cursor))
-		return;
+int main(void) {
+	/* load available modes etc. */
+	vbe_init();
+	vesagui_init();
 
-	gsize_t curWidth = cursor[newCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[newCursor]->infoHeader->height;
-	gsize_t xres = scr->mode->width;
-	gsize_t yres = scr->mode->height;
-	/* validate position */
-	x = MIN(x,(int)(xres - 1));
-	y = MIN(y,(int)(yres - 1));
-
-	if(lastX != x || lastY != y) {
-		gsize_t upHeight = MIN(curHeight,yres - lastY);
-		/* copy old content back */
-		vesa_copyRegion(scr,cursorCopy,scr->frmbuf,curWidth,upHeight,0,0,lastX,lastY,curWidth,xres,curHeight);
-		/* save content */
-		vesa_copyRegion(scr,shmem,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
+	/* get modes */
+	vbe_collectModes(0,&modeCount);
+	modes = vbe_collectModes(modeCount,&modeCount);
+	for(size_t i = 0; i < modeCount; i++) {
+		modes[i].cols = modes[i].width / (FONT_WIDTH + PAD * 2);
+		modes[i].rows = (modes[i].height - 1) / (FONT_HEIGHT + PAD * 2);
 	}
 
-	bmp_draw(scr,cursor[newCursor],x,y,vbe_getPixelFunc(scr->mode));
-	lastX = x;
-	lastY = y;
-	curCursor = newCursor;
-}
-
-static void vesa_copyRegion(sVESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
-		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1) {
-	gpos_t maxy = MIN(h1,y1 + height);
-	gsize_t pxSize = scr->mode->bitsPerPixel / 8;
-	size_t count = MIN(w2 - x2,MIN(w1 - x1,width)) * pxSize;
-	size_t srcInc = w1 * pxSize;
-	size_t dstInc = w2 * pxSize;
-	src += (y1 * w1 + x1) * pxSize;
-	dst += (y2 * w2 + x2) * pxSize;
-	while(y1 < maxy) {
-		memcpy(dst,src,count);
-		src += srcInc;
-		dst += dstInc;
-		y1++;
-	}
+	tui_driverLoop("/dev/vesa",modes,modeCount,vesacli_setMode,vesacli_setCursor,
+		vesacli_updateScreen);
+	return EXIT_SUCCESS;
 }

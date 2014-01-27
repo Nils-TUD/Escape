@@ -17,12 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
+#include <esc/thread.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "vesascreen.h"
+#include "../modules.h"
 
-void vesa_init(void);
-void vesa_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
-void vesa_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+static int evilThread(void *arg);
+
+int mod_highcput(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	while(1) {
+		int tid = startthread(evilThread,NULL);
+		if(tid < 0)
+			printe("Unable to start thread");
+		//join(tid);
+	}
+	return 0;
+}
+
+static int evilThread(A_UNUSED void *arg) {
+	volatile int i,j;
+	for(j = 0; j < 10; ++j) {
+		for(i = 0; i < 10000000; i++)
+			;
+		putchar('.');
+		fflush(stdout);
+	}
+	return 0;
+}

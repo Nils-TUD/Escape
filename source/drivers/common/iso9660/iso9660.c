@@ -35,9 +35,33 @@
 
 #define MAX_DEVICE_OPEN_RETRIES		1000
 
+static void *iso_init(const char *device,char **usedDev,int *errcode);
 static int iso_setup(const char *device,sISO9660 *iso);
+static void iso_deinit(void *h);
+static sFileSystem *iso_getFS(void);
+static inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags);
+static inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags);
+static void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino);
+static int iso_stat(void *h,inode_t ino,sFileInfo *info);
+static ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count);
+static time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate);
+static void iso_print(FILE *f,void *h);
 
-void *iso_init(const char *device,char **usedDev,int *errcode) {
+int main(int argc,char *argv[]) {
+	char fspath[MAX_PATH_LEN];
+	if(argc != 3)
+		error("Usage: %s <wait> <devicePath>",argv[0]);
+
+	/* build fs device name */
+	char *dev = strrchr(argv[2],'/');
+	/* it might also be 'cdrom' */
+	if(!dev)
+		dev = argv[2] - 1;
+	snprintf(fspath,sizeof(fspath),"/dev/iso9660-%s",dev + 1);
+	return fs_driverLoop("iso9660",argv[2],fspath,iso_getFS());
+}
+
+static void *iso_init(const char *device,char **usedDev,int *errcode) {
 	int res;
 	size_t i;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
@@ -145,7 +169,7 @@ static int iso_setup(const char *device,sISO9660 *iso) {
 	return 0;
 }
 
-void iso_deinit(void *h) {
+static void iso_deinit(void *h) {
 	size_t i;
 	sISO9660 *iso = (sISO9660*)h;
 	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
@@ -155,7 +179,7 @@ void iso_deinit(void *h) {
 	bcache_destroy(&iso->blockCache);
 }
 
-sFileSystem *iso_getFS(void) {
+static sFileSystem *iso_getFS(void) {
 	sFileSystem *fs = malloc(sizeof(sFileSystem));
 	if(!fs)
 		return NULL;
@@ -180,20 +204,20 @@ sFileSystem *iso_getFS(void) {
 	return fs;
 }
 
-inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags) {
+static inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags) {
 	return iso_dir_resolve((sISO9660*)h,u,path,flags);
 }
 
-inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags) {
+static inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags) {
 	/* nothing to do */
 	return ino;
 }
 
-void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
+static void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
 	/* nothing to do */
 }
 
-int iso_stat(void *h,inode_t ino,sFileInfo *info) {
+static int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	time_t ts;
 	sISO9660 *i = (sISO9660*)h;
 	const sISOCDirEntry *e = iso_direc_get(i,ino);
@@ -220,16 +244,16 @@ int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	return 0;
 }
 
-ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+static ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 
-time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate) {
+static time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate) {
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
 }
 
-void iso_print(FILE *f,void *h) {
+static void iso_print(FILE *f,void *h) {
 	sISO9660 *i = (sISO9660*)h;
 	sISOVolDesc *desc = &i->primary;
 	sISOVolDate *date;

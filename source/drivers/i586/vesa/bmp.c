@@ -23,7 +23,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "bmp.h"
-#include "vesa.h"
 
 void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	uint8_t *data = (uint8_t*)bmp->data;

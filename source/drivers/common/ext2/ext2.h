@@ -352,29 +352,6 @@ typedef struct {
 } sExt2;
 
 /**
- * Inits the ext2-filesystem
- *
- * @param device the device-path
- * @param usedDev will be set to the used device
- * @param errcode will be set to the occurred error, if NULL is returned
- * @return the ext2-handle
- */
-void *ext2_init(const char *device,char **usedDev,int *errcode);
-
-/**
- * Deinits the ext2-filesystem
- *
- * @param h the handle
- */
-void ext2_deinit(void *h);
-
-/**
- * Builds an instance of the filesystem and returns it
- * @return the instance or NULL if failed
- */
-sFileSystem *ext2_getFS(void);
-
-/**
  * Checks whether the given user has the permission <perms> for <cnode>. <perms> should
  * contain the bits from each entity, i.e. for example S_IRUSR | S_IRGRP |
  * S_IROTH when reading should be performed.
@@ -428,14 +405,6 @@ size_t ext2_getBlockGroupCount(sExt2 *e);
  * @return true if so
  */
 bool ext2_bgHasBackups(sExt2 *e,block_t i);
-
-/**
- * Prints statistics and information to the given file
- *
- * @param f the file
- * @param h the handle
- */
-void ext2_print(FILE *f,void *h);
 
 
 #if DEBUGGING

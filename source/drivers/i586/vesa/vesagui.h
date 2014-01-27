@@ -17,24 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <esc/common.h>
-#include <esc/fsinterface.h>
-#include <fs/fsdev.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "iso9660.h"
+#include "vesascreen.h"
 
-int main(int argc,char *argv[]) {
-	char fspath[MAX_PATH_LEN];
-	if(argc != 3)
-		error("Usage: %s <wait> <devicePath>",argv[0]);
-
-	/* build fs device name */
-	char *dev = strrchr(argv[2],'/');
-	/* it might also be 'cdrom' */
-	if(!dev)
-		dev = argv[2] - 1;
-	snprintf(fspath,sizeof(fspath),"/dev/iso9660-%s",dev + 1);
-	return fs_driverLoop("iso9660",argv[2],fspath,iso_getFS());
-}
+void vesagui_init(void);
+void vesagui_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
+void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);

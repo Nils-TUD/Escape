@@ -5,7 +5,7 @@ Import('env')
 myenv = env.Clone()
 myenv.Append(LINKFLAGS = ' -nostartfiles')
 prog = myenv.EscapeCProg(
-	'bin', target = 'initloader', source = '$ARCH/main.S',
+	'bin', target = 'initloader', source = myenv.Glob('$ARCH/*.S'),
 	force_static = True, var_addr = False
 )
 myenv.EscapeDump('user_initloader.dump', prog)

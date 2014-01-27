@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #include <vbe/vbe.h>
-#include "vesa.h"
+#include "vesagui.h"
 
 /* compression-modes */
 #define BI_RGB			0	/* uncompressed */

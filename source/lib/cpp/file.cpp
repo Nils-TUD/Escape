@@ -67,7 +67,7 @@ namespace std {
 		size_t len = abspath(apath,sizeof(apath),p.c_str());
 		if(len > 1) {
 			/* remove ending slash */
-			apath[len - 1] = '\0';
+			apath[--len] = '\0';
 		}
 		if(n.empty()) {
 			char *pos = strrchr(apath,'/');

@@ -23,6 +23,7 @@
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <esc/io.h>
+#include <esc/conf.h>
 #include <iostream>
 
 #include "driverprocess.h"
@@ -45,12 +46,20 @@ void DriverProcess::load() {
 	string path = string("/sbin/") + name();
 	_pid = fork();
 	if(_pid == 0) {
+		// keep only stdin, stdout and stderr
+		int maxfds = sysconf(CONF_MAX_FDS);
+		for(int i = 3; i < maxfds; ++i)
+			close(i);
+
+		// build args and exec
 		const char **argv = new const char*[_args.size() + 2];
 		argv[0] = path.c_str();
 		for(size_t i = 0; i < _args.size(); i++)
 			argv[i + 1] = _args[i].c_str();
 		argv[_args.size() + 1] = nullptr;
 		exec(argv[0],argv);
+
+		// if we're here, there's something wrong
 		cerr << "Exec of '" << path << "' failed" << endl;
 		exit(EXIT_FAILURE);
 	}

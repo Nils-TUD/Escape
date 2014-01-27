@@ -5,7 +5,7 @@ include(FWS_PATH.'init.php');
 $license = <<<EOF
 /**
  * \$Id\$
- * Copyright (C) 2008 - 2011 Nils Asmussen
+ * Copyright (C) 2008 - 2014 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

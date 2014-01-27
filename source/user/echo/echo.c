@@ -1,6 +1,6 @@
 /**
  * $Id: edmain.c 1082 2011-10-17 20:43:22Z nasmussen $
- * Copyright (C) 2008 - 2011 Nils Asmussen
+ * Copyright (C) 2008 - 2014 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

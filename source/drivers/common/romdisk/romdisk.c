@@ -1,6 +1,6 @@
 /**
  * $Id: randmain.c 1091 2011-11-12 22:08:05Z nasmussen $
- * Copyright (C) 2008 - 2011 Nils Asmussen
+ * Copyright (C) 2008 - 2014 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

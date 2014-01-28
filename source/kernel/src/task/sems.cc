@@ -151,7 +151,9 @@ void Sems::destroyAll(Proc *p,bool complete) {
 void Sems::print(OStream &os,const Proc *p) {
 	os.writef("Semaphores (current max=%zu):\n",p->semsSize);
 	for(size_t i = 0; i < p->semsSize; i++) {
-		if(p->sems[i] != NULL)
-			os.writef("\t%-2d: %d (%d refs)\n",i,p->sems[i]->s.getValue(),p->sems[i]->refs);
+		if(p->sems[i] != NULL) {
+			os.writef("\t%-2d (%p): %d (%d refs)\n",
+				i,&p->sems[i]->s,p->sems[i]->s.getValue(),p->sems[i]->refs);
+		}
 	}
 }

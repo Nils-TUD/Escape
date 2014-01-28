@@ -41,9 +41,8 @@ static tid_t acceptTid;
 static sReqThread threads[REQ_THREAD_COUNT];
 
 void tpool_init(void) {
-	size_t i;
 	acceptTid = gettid();
-	for(i = 0; i < REQ_THREAD_COUNT; i++) {
+	for(int i = 0; i < REQ_THREAD_COUNT; i++) {
 		int tid = startthread((fThreadEntry)tpool_idle,threads + i);
 		if(tid < 0)
 			error("Unable to start request-thread %d\n",i);
@@ -54,15 +53,13 @@ void tpool_init(void) {
 }
 
 void tpool_shutdown(void) {
-	size_t i;
 	run = false;
-	for(i = 0; i < REQ_THREAD_COUNT; i++)
+	for(int i = 0; i < REQ_THREAD_COUNT; i++)
 		notify(threads[i].tid,EV_USER1);
 }
 
 size_t tpool_tidToId(tid_t tid) {
-	size_t i;
-	for(i = 0; i < REQ_THREAD_COUNT; i++) {
+	for(int i = 0; i < REQ_THREAD_COUNT; i++) {
 		if(threads[i].tid == tid)
 			return threads[i].id;
 	}
@@ -71,10 +68,9 @@ size_t tpool_tidToId(tid_t tid) {
 }
 
 bool tpool_addRequest(fReqHandler handler,sFileSystem *fs,int fd,const sMsg *msg,size_t msgSize,void *data) {
-	size_t i;
 	while(true) {
 		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
-		for(i = 0; i < REQ_THREAD_COUNT; i++) {
+		for(int i = 0; i < REQ_THREAD_COUNT; i++) {
 			if(threads[i].state == RT_STATE_IDLE) {
 				sFSRequest *req = (sFSRequest*)malloc(sizeof(sFSRequest));
 				if(!req) {

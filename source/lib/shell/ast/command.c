@@ -100,8 +100,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	sRedirFile *redirOut,*redirIn,*redirErr;
 	sRedirFd *redirFdesc;
 	char path[MAX_CMD_LEN] = APPS_DIR;
-	int pid,prevPid = -1;
-	int pipeFds[2],prevPipe,errFd;
+	int pid,pipeFds[2],prevPipe,errFd;
 	curCmd = run_requestId();
 
 	if(!setSigHdl) {
@@ -294,7 +293,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 		compl_free(shcmd);
 		ast_destroyExecCmd(cmd);
-		prevPid = pid;
 		prevPipe = pipeFds[0];
 	}
 

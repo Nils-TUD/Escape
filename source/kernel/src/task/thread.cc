@@ -390,7 +390,7 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("TlsRegion = %p, ",tlsRegion ? tlsRegion->virt() : 0);
 	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		os.writef("stackRegion%zu = %p",i,stackRegions[i] ? stackRegions[i]->virt() : 0);
-		if(i < STACK_REG_COUNT - 1)
+		if(i + 1 < STACK_REG_COUNT)
 			os.writef(", ");
 	}
 	os.writef("\n");

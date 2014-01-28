@@ -1,5 +1,6 @@
 %{
 	#include <stdio.h>
+	#include <stdlib.h>
 	#define YYSTYPE int
 	int yylex (void);
 	void yyerror (char const *);
@@ -20,7 +21,7 @@ input:	/* empty */
 ;
 
 line:		'\n'
-			| exp '\n'								{ printf ("\t%d\n", $1); } 
+			| exp '\n'								{ printf ("\t%d\n", $1); }
 ;
 
 exp:		T_NUMBER								{ $$ = $1; }

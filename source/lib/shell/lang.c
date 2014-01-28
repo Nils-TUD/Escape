@@ -74,10 +74,3 @@ void yyerror(const char *s,...) {
 		vlyyerror(yylloc,s,ap);
 	va_end(ap);
 }
-
-void lyyerror(YYLTYPE t,const char *s,...) {
-	va_list ap;
-	va_start(ap,s);
-	vlyyerror(t,s,ap);
-	va_end(ap);
-}

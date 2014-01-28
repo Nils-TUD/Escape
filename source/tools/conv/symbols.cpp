@@ -133,7 +133,7 @@ static char *sym_loadShSyms(FILE *f,const Elf32_Ehdr *eheader) {
 	Elf32_Shdr sheader;
 	unsigned char *datPtr;
 	char *shsymbols;
-	datPtr = (unsigned char*)(eheader->e_shoff + eheader->e_shstrndx * eheader->e_shentsize);
+	datPtr = reinterpret_cast<unsigned char*>(eheader->e_shoff + eheader->e_shstrndx * eheader->e_shentsize);
 	readat(f,(off_t)datPtr,&sheader,sizeof(Elf32_Shdr));
 	shsymbols = (char*)malloc(sheader.sh_size);
 	if(shsymbols == NULL)
@@ -145,7 +145,7 @@ static char *sym_loadShSyms(FILE *f,const Elf32_Ehdr *eheader) {
 static Elf32_Shdr *sym_getSecByName(FILE *f,const Elf32_Ehdr *eheader,char *syms,const char *name) {
 	static Elf32_Shdr section[1];
 	int i;
-	unsigned char *datPtr = (unsigned char*)eheader->e_shoff;
+	unsigned char *datPtr = reinterpret_cast<unsigned char*>(eheader->e_shoff);
 	for(i = 0; i < eheader->e_shnum; datPtr += eheader->e_shentsize, i++) {
 		readat(f,(off_t)datPtr,section,sizeof(Elf32_Shdr));
 		if(strcmp(syms + section->sh_name,name) == 0)

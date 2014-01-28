@@ -28,6 +28,7 @@
 #include <sys/dbg/cmd/dump.h>
 #include <sys/dbg/cmd/step.h>
 #include <sys/dbg/cmd/break.h>
+#include <sys/dbg/cmd/locks.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/cache.h>
 #include <sys/task/smp.h>
@@ -63,6 +64,9 @@ Console::Command Console::commands[] = {
 	{"mem",		cons_cmd_mem},
 	{"m",		cons_cmd_mem},
 	{"panic",	cons_cmd_panic},
+#ifdef DEBUG_LOCKS
+	{"locks",	cons_cmd_locks},
+#endif
 #ifdef __i386__
 	{"step",	cons_cmd_step},
 	{"s",		cons_cmd_step},

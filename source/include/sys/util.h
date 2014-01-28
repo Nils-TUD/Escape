@@ -46,6 +46,15 @@ public:
 	static bool IsPanicStarted() {
 		return panicStarted;
 	}
+	/**
+	 * Setts whether we started a panic which will disable locks (this is only intended for the
+	 * kernel debugger).
+	 *
+	 * @param val the new value
+	 */
+	static void setPanicStarted(bool val) {
+		panicStarted = val;
+	}
 
 	/**
 	 * Stores the pagefault information to print it later for debugging purposes

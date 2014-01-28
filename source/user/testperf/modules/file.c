@@ -115,29 +115,6 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 	}
 }
 
-static int _sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
-	/* create shm file */
-	*mem = NULL;
-	int fd = pshm_create(IO_READ | IO_WRITE,0666,name);
-	if(fd < 0)
-		return fd;
-
-	/* mmap it */
-	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
-	if(!addr) {
-		int res = -errno;
-		pshm_unlink(*name);
-		close(fd);
-		return res;
-	}
-
-	/* share it with device; if it doesn't work, we don't care here */
-	int res = 0;//sharefile(dev,addr);
-	*mem = addr;
-	close(fd);
-	return res;
-}
-
 static void test_sharebuf(const char *path,size_t bufsize) {
 	uint64_t start,end,sharetime,destrtime;
 
@@ -153,7 +130,7 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 		ulong shname;
 		void *shmem;
 		start = rdtsc();
-		if(_sharebuf(fd,bufsize,&shmem,&shname,0) < 0)
+		if(sharebuf(fd,bufsize,&shmem,&shname,0) < 0)
 			printe("Unable to share memory");
 		end = rdtsc();
 		if(!shmem)

@@ -23,8 +23,10 @@
 #include <sys/semaphore.h>
 
 class Mutex : public Semaphore {
+	static const tid_t INVALID = 0xFFFF;
+
 public:
-	explicit Mutex() : Semaphore(1), holder(-1), depth(0) {
+	explicit Mutex() : Semaphore(1), holder(INVALID), depth(0) {
 	}
 
 	void down();

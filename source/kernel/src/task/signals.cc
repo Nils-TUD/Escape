@@ -148,7 +148,7 @@ bool Signals::addSignalFor(tid_t tid,int signal) {
 	}
 	SpinLock::release(&lock);
 	/* without locking because the scheduler calls Signals::hasSignalFor) */
-	if(res)
+	if(res && !t->isIgnoringSigs())
 		t->unblockQuick();
 	return res;
 }
@@ -158,17 +158,18 @@ bool Signals::addSignal(int signal) {
 	SpinLock::acquire(&listLock);
 	for(auto it = sigThreads.begin(); it != sigThreads.end(); ++it) {
 		SpinLock::acquire(&lock);
+		Thread *t = &*it->thread;
 		bool added = false;
-		if(it->thread->sigHandler[signal] && it->thread->sigHandler[signal] != SIG_IGN) {
-			add(it->thread,signal);
+		if(t->sigHandler[signal] && t->sigHandler[signal] != SIG_IGN) {
+			add(t,signal);
 			added = true;
 			res = true;
 		}
 		SpinLock::release(&lock);
 		/* without locking because the scheduler calls Signals::hasSignalFor).
 		 * the listlock is ok because we don't grab it in hasSignalFor. */
-		if(added)
-			it->thread->unblockQuick();
+		if(added && !t->isIgnoringSigs())
+			t->unblockQuick();
 	}
 	SpinLock::release(&listLock);
 	return res;

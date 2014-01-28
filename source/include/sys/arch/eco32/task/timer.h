@@ -40,11 +40,6 @@ public:
 	 * Acknoleges a timer-interrupt
 	 */
 	static void ackIntrpt();
-
-	/**
-	 * @return the elapsed milliseconds since the last timer-interrupt
-	 */
-	static time_t getTimeSinceIRQ();
 };
 
 inline void TimerBase::archInit() {

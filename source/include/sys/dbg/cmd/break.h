@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 /**
  * Manages breakpoints
  *

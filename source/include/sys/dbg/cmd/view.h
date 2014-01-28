@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 /**
  * Lets the user view various kind of information about the current state of the system. This works
  * by calling *_print() or similar, capture the output and display it via cons_viewLines().

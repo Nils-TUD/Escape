@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+class OStream;
+
 /**
  * Reads a file and displays them via cons_viewLines()
  *

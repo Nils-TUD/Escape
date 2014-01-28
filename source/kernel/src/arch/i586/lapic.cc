@@ -45,7 +45,7 @@ void LAPIC::init() {
 }
 
 void LAPIC::enableTimer() {
-	write(REG_TIMER_ICR,(CPU::getBusSpeed() / TIMER_DIVIDER) / Timer::FREQUENCY_DIV);
+	setTimer((CPU::getBusSpeed() / TIMER_DIVIDER) / Timer::FREQUENCY_DIV);
 	setLVT(REG_LVT_TIMER,Interrupts::IRQ_LAPIC,ICR_DELMODE_FIXED,UNMASKED,MODE_PERIODIC);
 }
 

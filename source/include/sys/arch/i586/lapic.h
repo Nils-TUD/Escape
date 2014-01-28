@@ -24,12 +24,8 @@
 #include <sys/interrupts.h>
 #include <assert.h>
 
-class Timer;
-
 class LAPIC {
 	LAPIC() = delete;
-
-	friend class Timer;
 
 	enum Register {
 		REG_APICID				= 0x20,
@@ -143,7 +139,10 @@ public:
 		write(REG_EOI,0);
 	}
 
-	static uint32_t getCounter() {
+	static void setTimer(uint32_t value) {
+		write(REG_TIMER_ICR,value);
+	}
+	static uint32_t getTimer() {
 		return read(REG_TIMER_CCR);
 	}
 

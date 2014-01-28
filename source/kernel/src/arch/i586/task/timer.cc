@@ -105,7 +105,7 @@ uint64_t Timer::determineSpeed(int instrCount,uint64_t *busHz) {
 	/* set PIT and LAPIC counter to -1 */
 	PIT::enablePeriodic(PIT::CHAN0,0xFFFF);
 	if(LAPIC::isAvailable())
-		LAPIC::write(LAPIC::REG_TIMER_ICR,0xFFFFFFFF);
+		LAPIC::setTimer(0xFFFFFFFF);
 
 	/* now spend some time and measure the number of cycles */
 	uint64_t before = CPU::rdtsc();
@@ -117,7 +117,7 @@ uint64_t Timer::determineSpeed(int instrCount,uint64_t *busHz) {
 	uint32_t left = PIT::getCounter(PIT::CHAN0);
 	uint32_t lapicCnt = 0;
 	if(LAPIC::isAvailable())
-		lapicCnt = LAPIC::read(LAPIC::REG_TIMER_CCR);
+		lapicCnt = LAPIC::getTimer();
 	/* if there was no tick at all, we have to increase instrCount */
 	if(left == 0xFFFF)
 		return 0;

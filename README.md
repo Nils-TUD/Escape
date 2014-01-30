@@ -14,7 +14,12 @@ the successor of MIX, which is the abstract machine that is used in the famous
 bookseries The Art of Computer Programming. More precisely, Escape runs only
 on [GIMMIX](http://homepages.thm.de/~hg53/gimmix/), a simulator for MMIX
 developed by myself for my master thesis (the differences are minimal, but
-currently required for Escape).
+currently required for Escape).  
+
+If you just want to take a quick look, you'll find
+[screenshots](https://github.com/Nils-TUD/Escape/wiki/Screenshots) and
+ready-to-use [images](https://github.com/Nils-TUD/Escape/wiki/Images) in
+the wiki.
 
 
 General structure

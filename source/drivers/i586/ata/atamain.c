@@ -199,7 +199,7 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 	 * handle the request */
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
 		uint rcount = ROUND_UP(count,ataDev->secSize);
-		if(rcount <= MAX_RW_SIZE) {
+		if(buf != buffer || rcount <= MAX_RW_SIZE) {
 			size_t i;
 			ATA_PR2("Reading %d bytes @ %x from device %d",
 					rcount,offset,ataDev->id);
@@ -224,7 +224,7 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 static ulong handleWrite(sATADevice *ataDev,sPartition *part,int fd,uint16_t *buf,uint offset,uint count) {
 	msgid_t mid;
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
-		if(count <= MAX_RW_SIZE) {
+		if(buf != buffer || count <= MAX_RW_SIZE) {
 			size_t i;
 			if(buf == buffer) {
 				ssize_t res = IGNSIGS(receive(fd,&mid,buffer,count));

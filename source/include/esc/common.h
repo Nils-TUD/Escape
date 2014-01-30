@@ -24,7 +24,7 @@
 #include <esc/types.h>
 #include <stdarg.h>
 
-#define ESCAPE_VERSION	"0.4"
+#define ESCAPE_VERSION	"0.5"
 
 #ifndef NDEBUG
 #define DEBUGGING 1

@@ -848,7 +848,7 @@ static void test_strtol() {
 		{"055",			0,	055},
 		{"AbC",			16,	0xABC},
 		{"0xaBC",		0,	0xABC},
-		{"0x80000000",	16,	std::numeric_limits<long>::min()},
+		{sizeof(long) == 8 ? "0x8000000000000000" : "0x80000000",16,std::numeric_limits<long>::min()},
 		{"aiz",			36,	13643},
 		{"01101",		2,	13},
 		{"0",			7,	0},

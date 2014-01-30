@@ -105,8 +105,7 @@ static bool test_fileio_checkScan(uint recvRes,uint expRes,const char *fmt,...) 
 
 static void test_fileio_print(void) {
 	char str[200];
-	size_t i;
-	int res;
+	int i,res;
 
 	test_caseStart("Testing *printf()");
 
@@ -154,13 +153,13 @@ static void test_fileio_print(void) {
 	if(!test_fileio_checkPrint(res,-1,str,"09,   ff, 00001111"))
 		return;
 
-	res = snprintf(str,sizeof(str),"%p%zn, %hx",0xdeadbeef,&i,0x12345678);
+	res = snprintf(str,sizeof(str),"%p%n, %hx",0xdeadbeef,&i,0x12345678);
 	if(sizeof(uintptr_t) == 4) {
 		if(!test_fileio_checkPrint(res,-1,str,"dead:beef, 5678") || !test_assertSize(i,9))
 			return;
 	}
 	else if(sizeof(uintptr_t) == 8) {
-		if(!test_fileio_checkPrint(res,-1,str,"0000:0000:dead:beef, 5678") || !test_assertSize(i,9))
+		if(!test_fileio_checkPrint(res,-1,str,"0000:0000:dead:beef, 5678") || !test_assertSize(i,19))
 			return;
 	}
 	else

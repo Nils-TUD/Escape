@@ -47,6 +47,7 @@ typedef struct {
 
 static sCPUUsage *cpuUsage = NULL;
 static sCPUUsage *lastUsage = NULL;
+static size_t lastClientCount = 0;
 static size_t cpuCount;
 
 void header_init(void) {
@@ -186,7 +187,8 @@ static void header_buildTitle(sClient *cli,gsize_t *width,gsize_t *height,bool f
 		header_makeDirty(cli,col,width,height);
 	}
 
-	if(force) {
+	size_t clients = cli_getCount();
+	if(force || clients != lastClientCount) {
 		/* print sep */
 		func(cli->screenMode,cli->header,&col,0xC7,TITLE_BAR_COLOR);
 
@@ -201,7 +203,6 @@ static void header_buildTitle(sClient *cli,gsize_t *width,gsize_t *height,bool f
 			func(cli->screenMode,cli->header,&col,OS_TITLE[i],TITLE_BAR_COLOR);
 
 		/* print clients */
-		size_t clients = cli_getCount();
 		col = cli->screenMode->cols - clients * 3 - 1;
 		func(cli->screenMode,cli->header,&col,0xB6,TITLE_BAR_COLOR);
 		for(size_t i = 0; i < MAX_CLIENTS; ++i) {
@@ -215,5 +216,6 @@ static void header_buildTitle(sClient *cli,gsize_t *width,gsize_t *height,bool f
 		}
 
 		header_makeDirty(cli,cli->screenMode->cols,width,height);
+		lastClientCount = clients;
 	}
 }

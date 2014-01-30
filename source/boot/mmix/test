@@ -1,19 +1,11 @@
 #!/bin/sh
+. boot/images.sh
+
 gimmix=../gimmix
 gimsim=$gimmix/build/gimmix
 gimmon=$gimmix/build/tests/manual/hexmon.rom
 
-dir=`mktemp -d`
-cp -R $1/dist/* $dir
-sudo ./boot/perms.sh $dir
-# use escape_test as kernel
-sudo mv $dir/boot/escape $dir/boot/escape_def
-sudo mv $dir/boot/escape_test $dir/boot/escape
-./tools/disk.py create --part ext2r0 64 $dir $1/hd.img --flat --nogrub 1>&2
-sudo rm -Rf $dir
-
-dd if=$1/bootloader/mmix/stage1/stage1.bin of=$1/hd.img bs=512 count=1 conv=notrunc 1>&2
-dd if=$1/bootloader/mmix/stage2/stage2.elf of=$1/hd.img bs=512 seek=1 conv=notrunc 1>&2
+create_ecommix_disk $1 $1/hd.img test
 
 $gimsim -r $gimmon -o log.txt -c -t 1 -i --script=boot/$ESC_TARGET/gimmix.start \
 	-d $1/hd.img -b -s $1/map/escape_test.map $2

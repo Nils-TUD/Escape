@@ -1,18 +1,10 @@
 #!/bin/sh
+. boot/images.sh
+
 eco32=../eco32
 ecosim=$eco32/build/bin/sim
 ecomon=$eco32/build/monitor/monitor.bin
 
-dir=`mktemp -d`
-cp -R $1/dist/* $dir
-sudo ./boot/perms.sh $dir
-# use escape_test as kernel
-sudo mv $dir/boot/escape $dir/boot/escape_def
-sudo mv $dir/boot/escape_test $dir/boot/escape
-./tools/disk.py create --part ext2r0 64 $dir $1/hd.img --flat --nogrub 1>&2
-sudo rm -Rf $dir
-
-dd if=$1/bootloader/eco32/stage1/stage1.bin of=$1/hd.img bs=512 count=1 conv=notrunc 1>&2
-dd if=$1/bootloader/eco32/stage2/stage2.bin of=$1/hd.img bs=512 seek=1 conv=notrunc 1>&2
+create_ecommix_disk $1 $1/hd.img test
 
 $ecosim -r $ecomon -o log.txt -m 64 -c -t 1 -i -s $1/map/escape_test.map -n -d $1/hd.img $2

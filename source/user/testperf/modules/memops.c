@@ -38,7 +38,7 @@ static void memset_func(void *a,A_UNUSED void *b,size_t len) {
 }
 
 static const size_t AREA_SIZE   = 4096;
-static const uint TEST_COUNT    = 1000;
+static const uint TEST_COUNT    = 10000;
 
 int mod_memops(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	do_test("memcpy", memcpy_func);

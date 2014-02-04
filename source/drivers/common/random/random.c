@@ -21,18 +21,23 @@
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/messages.h>
+#include <esc/mem.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
+#include <assert.h>
+
+#define MAX_CLIENT_FD	256
 
 static sMsg msg;
+static char *shbufs[MAX_CLIENT_FD];
 
 int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/random",0444,DEV_TYPE_CHAR,DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/random",0444,DEV_TYPE_CHAR,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'random'");
 
@@ -45,16 +50,37 @@ int main(void) {
 	while(1) {
 		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			printe("[RAND] Unable to get work");
+			printe("Unable to get work");
 		else {
 			switch(mid) {
+				case MSG_DEV_OPEN: {
+					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
+					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_DEV_SHFILE: {
+					size_t size = msg.args.arg1;
+					char *path = msg.str.s1;
+					assert(shbufs[fd] == NULL);
+					shbufs[fd] = joinbuf(path,size,0);
+					msg.args.arg1 = shbufs[fd] != NULL ? 0 : -errno;
+					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
 				case MSG_DEV_READ: {
 					/* offset is ignored here */
 					size_t count = (size_t)msg.args.arg2;
-					uint *data = (uint*)malloc(count);
+					ssize_t shmemoff = msg.args.arg3;
+					ushort *data;
+					if(shmemoff == -1)
+						data = (ushort*)malloc(count);
+					else
+						data = (ushort*)(shbufs[fd] + shmemoff);
 					msg.args.arg1 = 0;
 					if(data) {
-						ushort *d = (ushort*)data;
+						ushort *d = data;
 						msg.args.arg1 = count;
 						count /= sizeof(ushort);
 						while(count-- > 0)
@@ -62,15 +88,22 @@ int main(void) {
 					}
 					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1) {
+					if(shmemoff == -1 && msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1 / sizeof(uint));
 						free(data);
 					}
 				}
 				break;
-				case MSG_DEV_CLOSE:
+
+				case MSG_DEV_CLOSE: {
+					if(shbufs[fd]) {
+						munmap(shbufs[fd]);
+						shbufs[fd] = NULL;
+					}
 					close(fd);
-					break;
+				}
+				break;
+
 				default:
 					msg.args.arg1 = -ENOTSUP;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));

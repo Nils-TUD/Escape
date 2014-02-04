@@ -38,7 +38,7 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/zero",0444,DEV_TYPE_CHAR,DEV_SHFILE | DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/zero",0444,DEV_TYPE_CHAR,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'zero'");
 

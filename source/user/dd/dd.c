@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/cmdargs.h>
+#include <esc/time.h>
 #include <esc/dir.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,26 +69,38 @@ int main(int argc,const char *argv[]) {
 			error("Unable to open '%s'",outFile);
 	}
 
+	uint64_t start = rdtsc(), end;
 	{
+		ulong shname;
+		uchar *shmem;
+		if(sharebuf(fileno(in),bs,(void**)&shmem,&shname,0) < 0) {
+			if(shmem == NULL)
+				error("Unable to mmap buffer");
+		}
+
 		size_t result;
-		void *buffer = malloc(bs);
 		ullong limit = (ullong)count * bs;
 		while(run && (!count || total < limit)) {
-			if((result = fread(buffer,1,bs,in)) == 0)
+			if((result = fread(shmem,1,bs,in)) == 0)
 				break;
-			if(fwrite(buffer,1,bs,out) == 0)
+			if(fwrite(shmem,1,bs,out) == 0)
 				break;
 			total += result;
 		}
+
 		if(ferror(in))
 			error("Read failed");
 		if(ferror(out))
 			error("Write failed");
-		free(buffer);
+		destroybuf(shmem,shname);
 	}
+	end = rdtsc();
 
-	printf("Wrote %Lu bytes in %.3lf packages, each %zu bytes long\n",
-			total,total / (double)bs,bs);
+	uint64_t usecs = tsctotime(end - start);
+	printf("%zu records in\n",count);
+	printf("%zu records out\n",count);
+	printf("%Lu bytes (%.1lf MB) copied, %.1lf s, %.1lf MB/s\n",
+		total,total / 1000000.0,usecs / 1000000.0,total / (double)usecs);
 
 	if(inFile)
 		fclose(in);

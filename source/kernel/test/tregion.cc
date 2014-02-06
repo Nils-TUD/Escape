@@ -49,7 +49,7 @@ static void test_1() {
 	test_caseStart("Testing Region::create() & Region::destroy()");
 
 	checkMemoryBefore(false);
-	reg = CREATE(Region,nullptr,124,124,123,PF_DEMANDLOAD,RF_GROWABLE);
+	reg = createObj<Region>(nullptr,124,124,123,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertPtr(reg->getFile(),NULL);
 	test_assertULInt(reg->getFlags(),RF_GROWABLE);
@@ -60,7 +60,7 @@ static void test_1() {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	reg = CREATE(Region,(OpenFile*)0x1234,PAGE_SIZE + 1,PAGE_SIZE + 1,124,0,RF_STACK | RF_GROWS_DOWN);
+	reg = createObj<Region>((OpenFile*)0x1234,PAGE_SIZE + 1,PAGE_SIZE + 1,124,0,RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	test_assertPtr(reg->getFile(),(void*)0x1234);
 	test_assertULInt(reg->getFlags(),RF_STACK | RF_GROWS_DOWN);
@@ -79,7 +79,7 @@ static void test_2() {
 	test_caseStart("Testing Region::grow()");
 
 	checkMemoryBefore(false);
-	reg = CREATE(Region,nullptr,PAGE_SIZE,PAGE_SIZE,123,PF_DEMANDLOAD,RF_GROWABLE);
+	reg = createObj<Region>(nullptr,PAGE_SIZE,PAGE_SIZE,123,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
@@ -98,7 +98,7 @@ static void test_2() {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	reg = CREATE(Region,nullptr,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
+	reg = createObj<Region>(nullptr,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
@@ -123,7 +123,7 @@ static void test_2() {
 	checkMemoryAfter(false);
 
 	checkMemoryBefore(false);
-	reg = CREATE(Region,nullptr,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
+	reg = createObj<Region>(nullptr,PAGE_SIZE,0,123,PF_DEMANDLOAD,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
 	test_assertSize(reg->getByteCount(),PAGE_SIZE);
 	test_assertULInt(reg->getPageFlags(0),PF_DEMANDLOAD);
@@ -156,10 +156,10 @@ static void test_3() {
 	test_caseStart("Testing Region::clone()");
 
 	checkMemoryBefore(false);
-	reg = CREATE(Region,(OpenFile*)0x1234,PAGE_SIZE,0,123,PF_DEMANDLOAD,
+	reg = createObj<Region>((OpenFile*)0x1234,PAGE_SIZE,0,123,PF_DEMANDLOAD,
 			RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);
 	test_assertTrue(reg != NULL);
-	reg2 = CLONE(Region,*reg,&vm);
+	reg2 = cloneObj<Region>(*reg,&vm);
 	test_assertTrue(reg2 != NULL);
 	test_assertPtr(reg2->getFile(),(void*)0x1234);
 	test_assertULInt(reg2->getFlags(),RF_GROWABLE | RF_STACK | RF_GROWS_DOWN);

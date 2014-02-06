@@ -476,7 +476,7 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 	memcpy(nameCpy,path,nameLen + 1);
 
 	/* now create the node and pass the node-number back */
-	*child = CREATE(VFSFile,pid,dir,nameCpy,mode);
+	*child = createObj<VFSFile>(pid,dir,nameCpy,mode);
 	if(*child == NULL) {
 		Cache::free(nameCpy);
 		return -ENOMEM;

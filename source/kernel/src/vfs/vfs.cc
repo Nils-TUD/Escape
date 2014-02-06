@@ -63,19 +63,19 @@ void VFS::init() {
 	 *   |       \- self
 	 *   \- dev
 	 */
-	root = CREATE(VFSDir,KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
-	sys = CREATE(VFSDir,KERNEL_PID,root,(char*)"system",DIR_DEF_MODE);
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"pipes",DIR_DEF_MODE));
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"mbmods",DIR_DEF_MODE));
-	VFSNode *node = CREATE(VFSDir,KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
+	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
+	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"system",DIR_DEF_MODE);
+	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"pipes",DIR_DEF_MODE));
+	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"mbmods",DIR_DEF_MODE));
+	VFSNode *node = createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
 	/* the user should be able to create shms as well */
 	node->chmod(KERNEL_PID,0777);
 	VFSNode::release(node);
-	procsNode = CREATE(VFSDir,KERNEL_PID,sys,(char*)"processes",DIR_DEF_MODE);
-	VFSNode::release(CREATE(VFSSelfLink,KERNEL_PID,procsNode,(char*)"self"));
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
-	VFSNode::release(CREATE(VFSDir,KERNEL_PID,sys,(char*)"fs",DIR_DEF_MODE));
-	devNode = CREATE(VFSDir,KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);
+	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"processes",DIR_DEF_MODE);
+	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
+	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
+	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"fs",DIR_DEF_MODE));
+	devNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);
 	VFSNode::release(devNode);
 	VFSNode::release(procsNode);
 	VFSNode::release(sys);
@@ -178,7 +178,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 			VFSNode::release(node);
 			return err;
 		}
-		child = CREATE(VFSChannel,pid,node);
+		child = createObj<VFSChannel>(pid,node);
 		VFSNode::release(node);
 		if(child == NULL)
 			return -ENOMEM;
@@ -230,7 +230,7 @@ int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 		return err;
 
 	/* create pipe */
-	VFSNode *pipeNode = CREATE(VFSPipe,pid,node);
+	VFSNode *pipeNode = createObj<VFSPipe>(pid,node);
 	VFSNode::release(node);
 	if(pipeNode == NULL)
 		return -ENOMEM;
@@ -403,7 +403,7 @@ int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	if((res = hasAccess(pid,newNode,VFS_WRITE)) < 0)
 		goto errorName;
 	/* now create link */
-	if((link = CREATE(VFSLink,pid,newNode,namecpy,oldNode)) == NULL) {
+	if((link = createObj<VFSLink>(pid,newNode,namecpy,oldNode)) == NULL) {
 		res = -ENOMEM;
 		goto errorName;
 	}
@@ -513,7 +513,7 @@ int VFS::mkdir(pid_t pid,const char *path) {
 	/* check permissions */
 	if((res = hasAccess(pid,node,VFS_WRITE)) < 0)
 		goto errorFree;
-	child = CREATE(VFSDir,pid,node,namecpy,DIR_DEF_MODE);
+	child = createObj<VFSDir>(pid,node,namecpy,DIR_DEF_MODE);
 	if(child == NULL) {
 		res = -ENOMEM;
 		goto errorFree;
@@ -589,7 +589,7 @@ int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile 
 	}
 
 	/* create node */
-	srv = CREATE(VFSDevice,pid,dir,name,mode,type,ops);
+	srv = createObj<VFSDevice>(pid,dir,name,mode,type,ops);
 	if(!srv) {
 		err = -ENOMEM;
 		goto errorDir;
@@ -697,48 +697,48 @@ inode_t VFS::createProcess(pid_t pid) {
 	itoa(name,12,pid);
 
 	/* create dir */
-	dir = CREATE(VFSDir,KERNEL_PID,proc,name,DIR_DEF_MODE);
+	dir = createObj<VFSDir>(KERNEL_PID,proc,name,DIR_DEF_MODE);
 	if(dir == NULL)
 		goto errorName;
 
 	/* create process-info-node */
-	nn = CREATE(VFSInfo::ProcFile,KERNEL_PID,dir);
+	nn = createObj<VFSInfo::ProcFile>(KERNEL_PID,dir);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create virt-mem-info-node */
-	nn = CREATE(VFSInfo::VirtMemFile,KERNEL_PID,dir);
+	nn = createObj<VFSInfo::VirtMemFile>(KERNEL_PID,dir);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create regions-info-node */
-	nn = CREATE(VFSInfo::RegionsFile,KERNEL_PID,dir);
+	nn = createObj<VFSInfo::RegionsFile>(KERNEL_PID,dir);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create maps-info-node */
-	nn = CREATE(VFSInfo::MapFile,KERNEL_PID,dir);
+	nn = createObj<VFSInfo::MapFile>(KERNEL_PID,dir);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create mountspace-info-node */
-	nn = CREATE(VFSInfo::MountSpaceFile,KERNEL_PID,dir);
+	nn = createObj<VFSInfo::MountSpaceFile>(KERNEL_PID,dir);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create shm-dir */
-	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"shm",0777);
+	nn = createObj<VFSDir>(KERNEL_PID,dir,(char*)"shm",0777);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create threads-dir */
-	nn = CREATE(VFSDir,KERNEL_PID,dir,(char*)"threads",DIR_DEF_MODE);
+	nn = createObj<VFSDir>(KERNEL_PID,dir,(char*)"threads",DIR_DEF_MODE);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
@@ -777,20 +777,20 @@ inode_t VFS::createThread(tid_t tid) {
 
 	/* create dir */
 	n = VFSNode::get(t->getProc()->getThreadsDir());
-	dir = CREATE(VFSDir,KERNEL_PID,n,name,DIR_DEF_MODE);
+	dir = createObj<VFSDir>(KERNEL_PID,n,name,DIR_DEF_MODE);
 	if(dir == NULL) {
 		Cache::free(name);
 		goto errorDir;
 	}
 
 	/* create info-node */
-	n = CREATE(VFSInfo::ThreadFile,KERNEL_PID,dir);
+	n = createObj<VFSInfo::ThreadFile>(KERNEL_PID,dir);
 	if(n == NULL)
 		goto errorInfo;
 	VFSNode::release(n);
 
 	/* create trace-node */
-	n = CREATE(VFSInfo::TraceFile,KERNEL_PID,dir);
+	n = createObj<VFSInfo::TraceFile>(KERNEL_PID,dir);
 	if(n == NULL)
 		goto errorInfo;
 	VFSNode::release(n);

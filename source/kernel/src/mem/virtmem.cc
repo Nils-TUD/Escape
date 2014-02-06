@@ -213,7 +213,7 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 
 	/* create region */
 	res = -ENOMEM;
-	reg = CREATE(Region,f,length,loadCount,offset,PF_DEMANDLOAD,rflags);
+	reg = createObj<Region>(f,length,loadCount,offset,PF_DEMANDLOAD,rflags);
 	if(!reg)
 		goto errProc;
 	if(!reg->addTo(this))
@@ -914,7 +914,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 				reg = vm->reg;
 			}
 			else {
-				reg = CLONE(Region,*vm->reg,dst);
+				reg = cloneObj<Region>(*vm->reg,dst);
 				if(reg == NULL)
 					goto errorRel;
 			}

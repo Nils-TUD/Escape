@@ -206,7 +206,7 @@ void ACPI::create_files() {
 	VFSNode *sys = NULL;
 	if(VFSNode::request("/system",&sys,&created,VFS_WRITE,0) != 0)
 		return;
-	VFSNode *acpidir = CREATE(VFSDir,KERNEL_PID,sys,(char*)"acpi",DIR_DEF_MODE);
+	VFSNode *acpidir = createObj<VFSDir>(KERNEL_PID,sys,(char*)"acpi",DIR_DEF_MODE);
 	if(!acpidir)
 		goto error;
 
@@ -215,7 +215,8 @@ void ACPI::create_files() {
 		char *name = (char*)Cache::calloc(1,5);
 		if(name) {
 			strncpy(name,(char*)&(*it)->signature,4);
-			VFSNode *node = CREATE(VFSFile,KERNEL_PID,acpidir,name,*it,(*it)->length);
+			VFSNode *node = createObj<VFSFile>(
+				KERNEL_PID,acpidir,name,*it,static_cast<size_t>((*it)->length));
 			if(!node) {
 				Log::get().writef("Unable to create ACPI table %s\n",name);
 				Cache::free(name);

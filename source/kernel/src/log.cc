@@ -48,7 +48,7 @@ void Log::vfsIsReady() {
 
 	/* open log-file */
 	assert(VFSNode::request(LOG_DIR,&dir,NULL,VFS_CREATE,FILE_DEF_MODE) == 0);
-	LogFile *logNode = CREATE(LogFile,KERNEL_PID,dir);
+	LogFile *logNode = createObj<LogFile>(KERNEL_PID,dir);
 	/* reserve the whole file here to prevent that we want to increase it later which might need to
 	 * deadlocks if we log something at a bad place */
 	logNode->reserve(MAX_VFS_FILE_SIZE);

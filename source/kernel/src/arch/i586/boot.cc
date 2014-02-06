@@ -195,7 +195,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	for(size_t i = 0; i < mb->modsCount; i++) {
 		char *modname = (char*)Cache::alloc(12);
 		itoa(modname,12,i);
-		VFSNode *n = CREATE(VFSFile,KERNEL_PID,node,modname,(void*)mod->modStart,
+		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->modStart,
 				mod->modEnd - mod->modStart);
 		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IRGRP | S_IROTH) != 0)
 			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);

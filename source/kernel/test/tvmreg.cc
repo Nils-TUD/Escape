@@ -85,7 +85,7 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 
 	/* create */
 	for(size_t i = 0; i < TEST_REG_COUNT; i++) {
-		Region *r = CREATE(Region,nullptr,PAGE_SIZE,0,0,0,0);
+		Region *r = createObj<Region>(nullptr,PAGE_SIZE,0,0,0,0);
 		regs[i] = tree.add(r,addrs[i]);
 	}
 

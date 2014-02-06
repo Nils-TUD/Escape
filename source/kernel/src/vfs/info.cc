@@ -44,10 +44,10 @@
 #include <errno.h>
 
 void VFSInfo::init(VFSNode *sysNode) {
-	VFSNode::release(CREATE(MemUsageFile,KERNEL_PID,sysNode));
-	VFSNode::release(CREATE(CPUFile,KERNEL_PID,sysNode));
-	VFSNode::release(CREATE(StatsFile,KERNEL_PID,sysNode));
-	VFSNode::release(CREATE(IRQsFile,KERNEL_PID,sysNode));
+	VFSNode::release(createObj<MemUsageFile>(KERNEL_PID,sysNode));
+	VFSNode::release(createObj<CPUFile>(KERNEL_PID,sysNode));
+	VFSNode::release(createObj<StatsFile>(KERNEL_PID,sysNode));
+	VFSNode::release(createObj<IRQsFile>(KERNEL_PID,sysNode));
 }
 
 void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {

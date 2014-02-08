@@ -23,5 +23,8 @@
 
 char *asget(FILE *f,size_t *length) {
 	*length = f->out.pos;
-	return f->out.buffer;
+	char *res = f->out.buffer;
+	f->out.buffer = NULL;
+	f->out.pos = 0;
+	return res;
 }

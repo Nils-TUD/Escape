@@ -727,14 +727,15 @@ off_t lseek(int fd,off_t offset,uint whence);
  * to that stream using the ordinary functions fprintf, fputc, ..., and the characters will be
  * stored in a string, that is automatically extended if necessary.
  * When the string is completely filled, you can call asget() to get the buffer and the total
- * length. Please call fclose() to free all resources.
+ * length.
  *
  * @return the created stream
  */
 FILE *ascreate(void);
 
 /**
- * Returns the allocated buffer and its length
+ * Returns the allocated buffer and its length and sets the buffer to NULL. That is, you own the
+ * buffer afterwards and are supposed to free it.
  *
  * @param f the stream
  * @param length will be set to the total length

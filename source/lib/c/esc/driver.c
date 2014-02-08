@@ -22,6 +22,7 @@
 #include <esc/messages.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 
 void handleFileRead(int fd,sMsg *msg,fGetData getData) {
 	size_t total;
@@ -50,4 +51,5 @@ void handleFileRead(int fd,sMsg *msg,fGetData getData) {
 	if((long)msg->args.arg1 > 0)
 		send(fd,MSG_DEV_READ_RESP,data + offset,msg->args.arg1);
 	fclose(str);
+	free(data);
 }

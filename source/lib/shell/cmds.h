@@ -21,4 +21,11 @@
 
 #include <esc/common.h>
 
+int shell_cmdCd(int argc,char **argv);
+int shell_cmdEcho(int argc,char *argv[]);
+int shell_cmdEnv(int argc,char **argv);
+int shell_cmdHelp(int argc,char **argv);
 int shell_cmdInclude(int argc,char **argv);
+int shell_cmdJobs(int argc,char **argv);
+int shell_cmdKill(int argc,char **argv);
+int shell_cmdPwd(int argc,char **argv);

@@ -23,12 +23,7 @@
 #include <string.h>
 
 #include "completion.h"
-#include "cmd/echo.h"
-#include "cmd/env.h"
-#include "cmd/pwd.h"
-#include "cmd/cd.h"
-#include "cmd/help.h"
-#include "cmd/include.h"
+#include "cmds.h"
 #include "exec/env.h"
 #include "exec/value.h"
 
@@ -55,6 +50,8 @@ static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"pwd"		}, SSTRLEN("pwd"),		shell_cmdPwd	,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"cd"		}, SSTRLEN("cd"),		shell_cmdCd		,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"include"	}, SSTRLEN("include"),	shell_cmdInclude,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"kill"		}, SSTRLEN("kill"),		shell_cmdKill	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"jobs"		}, SSTRLEN("jobs"),		shell_cmdJobs	,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"help"		}, SSTRLEN("help"),		shell_cmdHelp	,-1},
 };
 

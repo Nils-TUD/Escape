@@ -19,10 +19,15 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <stdio.h>
+#include <esc/dir.h>
+#include <esc/io.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <string.h>
+#include <stdio.h>
+#include <signal.h>
+
+#include "../cmds.h"
+#include "../ast/command.h"
 
 #define SIG_NAME_LEN		7
 
@@ -38,25 +43,25 @@ static sSigName signals[] = {
 	{"SIGINT",SIG_INTRPT}
 };
 
-static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-L] [-s <signal>] <pid>...\n",name);
+static int usage(const char *name) {
+	fprintf(stderr,"Usage: %s [-L] [-s <signal>] <pid>|<jobid>...\n",name);
 	fprintf(stderr,"	<signal> may be: SIGKILL, SIGTERM, SIGINT, KILL, TERM, INT\n");
-	exit(EXIT_FAILURE);
+	return EXIT_FAILURE;
 }
 
-int main(int argc,const char *argv[]) {
+int shell_cmdKill(int argc,char **argv) {
 	int sig = SIG_KILL;
 	char *ssig = NULL;
 	bool list = false;
 	size_t i;
 
-	int res = ca_parse(argc,argv,0,"L s=s",&list,&ssig);
+	int res = ca_parse(argc,(const char**)argv,0,"L s=s",&list,&ssig);
 	if(res < 0) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
-		usage(argv[0]);
+		return usage(argv[0]);
 	}
 	if(ca_hasHelp())
-		usage(argv[0]);
+		return usage(argv[0]);
 
 	/* translate signal-name to signal-number */
 	if(ssig) {
@@ -78,15 +83,21 @@ int main(int argc,const char *argv[]) {
 		/* kill processes */
 		const char **args = ca_getFree();
 		while(*args) {
-			pid_t pid = atoi(*args);
-			if(pid > 0) {
-				if(kill(pid,sig) < 0)
-					fprintf(stderr,"Unable to send signal %d to %d\n",sig,pid);
+			if((*args)[0] == '%') {
+				tJobId cmd = atoi(*args + 1);
+				ast_termProcsOfJob(cmd);
 			}
-			else if(strcmp(*args,"0") != 0)
-				fprintf(stderr,"Unable to kill process with pid '%s'\n",*args);
-			else
-				fprintf(stderr,"You can't kill 'init'\n");
+			else {
+				pid_t pid = atoi(*args);
+				if(pid > 0) {
+					if(kill(pid,sig) < 0)
+						fprintf(stderr,"Unable to send signal %d to %d\n",sig,pid);
+				}
+				else if(strcmp(*args,"0") != 0)
+					fprintf(stderr,"Unable to kill process with pid '%s'\n",*args);
+				else
+					fprintf(stderr,"You can't kill 'init'\n");
+			}
 			args++;
 		}
 	}

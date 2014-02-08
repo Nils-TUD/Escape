@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <shell/shell.h>
-#include "include.h"
+#include "../cmds.h"
 
 int shell_cmdInclude(int argc,char **argv) {
 	if(argc != 2) {

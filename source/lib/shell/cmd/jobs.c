@@ -17,8 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
 
-int shell_cmdEnv(int argc,char **argv);
+#include "../cmds.h"
+#include "../exec/jobs.h"
+
+int shell_cmdJobs(A_UNUSED int argc,A_UNUSED char **argv) {
+	jobs_print();
+	return EXIT_SUCCESS;
+}

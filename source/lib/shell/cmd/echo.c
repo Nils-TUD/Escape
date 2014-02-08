@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <stdio.h>
 #include <string.h>
-#include "echo.h"
+#include "../cmds.h"
 
 int shell_cmdEcho(int argc,char *argv[]) {
 	int i = 1;

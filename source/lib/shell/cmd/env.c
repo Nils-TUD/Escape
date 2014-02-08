@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "env.h"
+#include "../cmds.h"
 
 #define MAX_ENV_LEN		255
 

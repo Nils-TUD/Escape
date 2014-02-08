@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <stdio.h>
-#include "help.h"
+#include "../cmds.h"
 
 int shell_cmdHelp(A_UNUSED int argc,A_UNUSED char **argv) {
 	printf("The shell provides a small scripting-language. It supports pipes," );

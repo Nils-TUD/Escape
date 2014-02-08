@@ -22,7 +22,7 @@
 #include <esc/dir.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "pwd.h"
+#include "../cmds.h"
 
 int shell_cmdPwd(A_UNUSED int argc,A_UNUSED char **argv) {
 	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));

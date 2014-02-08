@@ -37,9 +37,10 @@
 
 #include <shell/shell.h>
 #include <shell/history.h>
+#include "ast/command.h"
+#include "exec/jobs.h"
 #include "completion.h"
 #include "parser.h"
-#include "exec/running.h"
 
 #define USERS_FILE		"/etc/users"
 
@@ -60,7 +61,7 @@ bool curIsStream = false;
 sEnv *curEnv = NULL;
 
 void shell_init(int argc,const char **argv) {
-	run_init();
+	jobs_init();
 	curEnv = env_create(NULL);
 	env_addArgs(curEnv,argc,argv);
 	if(signal(SIG_INTRPT,shell_sigIntrpt) == SIG_ERR)
@@ -107,9 +108,10 @@ int shell_executeCmd(char *line,bool isFile) {
 	/* we need to reset the scanner if an error happened */
 	if(res != 0)
 		yylex_destroy();
-	run_gc();
+	jobs_gc();
 	if(isFile)
 		fclose(curStream);
+	ast_catchZombies();
 	return res;
 }
 
@@ -145,6 +147,7 @@ int shell_readLine(char *buffer,size_t max) {
 			cursorPos = 0;
 			resetReadLine = false;
 			printf("\n");
+			ast_catchZombies();
 			shell_prompt();
 			continue;
 		}

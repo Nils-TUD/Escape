@@ -23,62 +23,71 @@
 
 #define CMD_ID_ALL			0
 
-typedef uint tCmdId;
+typedef uint tJobId;
 
-typedef struct sRunningProc sRunningProc;
-struct sRunningProc {
+typedef struct {
+	bool background;
 	bool removable;
-	tCmdId cmdId;
+	char *command;
+	tJobId jobId;
 	pid_t pid;
-};
+} sJob;
 
 /**
- * Initializes the run-module
+ * Initializes the jobs-module
  */
-void run_init(void);
+void jobs_init(void);
 
 /**
- * Requests a new command-id
+ * Requests a new job-id
  *
- * @return the command-id
+ * @return the job-id
  */
-tCmdId run_requestId(void);
+tJobId jobs_requestId(void);
 
 /**
- * Adds the given process to the given command
+ * Adds the given process to the given job
  *
- * @param cmdId the command-id
+ * @param jobId the job-id
  * @param pid the pid
- * @return the entry on success or NULL on failure
+ * @param argc argument count
+ * @param argv the arguments
+ * @param background whether it runs in background
+ * @return true on success or false on failure
  */
-bool run_addProc(tCmdId cmdId,pid_t pid);
+bool jobs_addProc(tJobId jobId,pid_t pid,int argc,char **argv,bool background);
 
 /**
- * Returns the <i>'th running process of the given command
+ * Returns the <i>'th running process of the given job
  *
- * @param cmdId the command-id
+ * @param jobId the job-id
  * @param i the number
  * @return the process or NULL
  */
-sRunningProc *run_getXProcOf(tCmdId cmdId,int i);
+sJob *jobs_getXProcOf(tJobId jobId,int i);
 
 /**
  * Searches for the running process with given id
  *
- * @param cmdId the command-id (CMD_ID_ALL to search in all commands)
+ * @param jobId the job-id (CMD_ID_ALL to search in all job)
  * @param pid the process-id
  * @return the information about the process or NULL
  */
-sRunningProc *run_findProc(tCmdId cmdId,pid_t pid);
+sJob *jobs_findProc(tJobId jobId,pid_t pid);
 
 /**
- * Removes and free's all removable processes
+ * Removes and free's all removable jobs
  */
-void run_gc(void);
+void jobs_gc(void);
+
+/**
+ * Prints all jobs to stdout
+ */
+void jobs_print(void);
 
 /**
  * Removes the process with given id from the running ones
  *
  * @param pid the pid
  */
-void run_remProc(pid_t pid);
+void jobs_remProc(pid_t pid);

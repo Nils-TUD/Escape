@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "cd.h"
+#include "../cmds.h"
 
 int shell_cmdCd(int argc,char **argv) {
 	char path[MAX_PATH_LEN];

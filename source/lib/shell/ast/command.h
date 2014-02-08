@@ -23,6 +23,7 @@
 #include <esc/sllist.h>
 #include "node.h"
 #include "../exec/env.h"
+#include "../exec/jobs.h"
 
 typedef struct {
 	bool runInBG;
@@ -45,6 +46,18 @@ sASTNode *ast_createCommand(void);
  * @return the value
  */
 sValue *ast_execCommand(sEnv *e,sCommand *n);
+
+/**
+ * Termiates processes of the given command.
+ *
+ * @param cmd the command id
+ */
+void ast_termProcsOfJob(tJobId cmd);
+
+/**
+ * Catch all zombies that are around
+ */
+void ast_catchZombies(void);
 
 /**
  * Sets whether this command should return the output

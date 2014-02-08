@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "../mem.h"
-#include "../exec/running.h"
+#include "../exec/jobs.h"
 #include "../exec/value.h"
 #include "../exec/env.h"
 #include "../ast/redirfile.h"
@@ -60,11 +60,7 @@ static sValue *ast_readCmdOutput(int *pipe);
 /**
  * Waits for all processes of the current command
  */
-static int ast_waitForCmd(void);
-/**
- * Terminates all processes of the current command
- */
-static void ast_termProcsOfCmd(void);
+static int ast_waitForJob(void);
 /**
  * Signal-handler for processes in background
  */
@@ -72,14 +68,17 @@ static void ast_sigChildHndl(int sig);
 /**
  * Removes the given proc (called in sigChildHndl)
  */
-static void ast_removeProc(sRunningProc *p,int res);
+static void ast_removeProc(sJob *p,int res);
+/**
+ * Waits for a child and removes it
+ */
+static bool ast_catchZombie(void);
 
 static bool setSigHdl = false;
 static int curResult = 0;
 static volatile size_t curWaitCount = 0;
-static tCmdId curCmd = 0;
-static int diedProc = -1;
-static int diedRes = -1;
+static volatile size_t zombies = 0;
+static tJobId curJob = 0;
 
 sASTNode *ast_createCommand(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
@@ -101,7 +100,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	sRedirFd *redirFdesc;
 	char path[MAX_CMD_LEN] = APPS_DIR;
 	int pid,pipeFds[2],prevPipe,errFd;
-	curCmd = run_requestId();
+	curJob = jobs_requestId();
 
 	if(!setSigHdl) {
 		setSigHdl = true;
@@ -238,7 +237,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				close(pipeFds[0]);
 		}
 		else {
-			diedProc = -1;
 			if((pid = fork()) == 0) {
 				/* redirect fds */
 				if(redirFdesc->type == REDIR_OUT2ERR)
@@ -268,7 +266,9 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				printe("Fork of '%s%s' failed",path,shcmd[0]->name);
 			else {
 				curWaitCount++;
-				run_addProc(curCmd,pid);
+				jobs_addProc(curJob,pid,cmd->exprCount,cmd->exprs,n->runInBG);
+				if(n->runInBG)
+					printf("%%%d: job started with pid %d\n",curJob,pid);
 				/* always close write-end */
 				close(pipeFds[1]);
 				/* close error-redirection */
@@ -281,13 +281,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				/* otherwise we need it for the next process or ourself */
 				if(!n->retOutput && cmdNo == cmdCount - 1)
 					close(pipeFds[0]);
-
-				/* if the process has died before run_addProc() was called, we didn't know him.
-				 * Now we do, so remove him */
-				if(diedProc != -1) {
-					sRunningProc *rp = run_findProc(CMD_ID_ALL,diedProc);
-					ast_removeProc(rp,diedRes);
-				}
 			}
 		}
 
@@ -301,13 +294,35 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		return ast_readCmdOutput(pipeFds);
 	/* wait for childs if we should not run this in background */
 	if(!n->runInBG)
-		return val_createInt(ast_waitForCmd());
+		return val_createInt(ast_waitForJob());
 	return val_createInt(res);
 
 error:
 	compl_free(shcmd);
 	ast_destroyExecCmd(cmd);
 	return val_createInt(res);
+}
+
+void ast_catchZombies(void) {
+	while(zombies > 0) {
+		if(!ast_catchZombie())
+			break;
+	}
+}
+
+void ast_termProcsOfJob(tJobId cmd) {
+	sJob *p;
+	int i = 0;
+	p = jobs_getXProcOf(cmd,i);
+	while(p != NULL) {
+		/* send SIG_INTRPT */
+		if(kill(p->pid,SIG_INTRPT) < 0)
+			printe("Unable to send SIG_INTRPT to process %d",p->pid);
+		jobs_remProc(p->pid);
+		/* to next */
+		i++;
+		p = jobs_getXProcOf(cmd,i);
+	}
 }
 
 static int ast_redirFromFile(sEnv *e,sRedirFile *redir) {
@@ -379,71 +394,61 @@ static sValue *ast_readCmdOutput(int *pipeFds) {
 	return val_createInt(1);
 }
 
-static int ast_waitForCmd() {
-	int res;
+static int ast_waitForJob() {
 	if(lang_isInterrupted())
-		ast_termProcsOfCmd();
+		ast_termProcsOfJob(curJob);
 	else {
-		while(curWaitCount > 0) {
-			res = wait(EV_NOEVENT,0);
-			if(res == -EINTR) {
-				if(lang_isInterrupted()) {
-					ast_termProcsOfCmd();
-					break;
-				}
-			}
-			else if(res < 0) {
-				printe("Unable to wait");
-				break;
-			}
-		}
+		while(curWaitCount > 0 && ast_catchZombie())
+			;
 	}
-	run_gc();
+	jobs_gc();
 	return curResult;
 }
 
-static void ast_termProcsOfCmd(void) {
-	sRunningProc *p;
-	int i = 0;
-	p = run_getXProcOf(curCmd,i);
-	while(p != NULL) {
-		/* send SIG_INTRPT */
-		if(kill(p->pid,SIG_INTRPT) < 0)
-			printe("Unable to send SIG_INTRPT to process %d",p->pid);
-		run_remProc(p->pid);
-		/* to next */
-		i++;
-		p = run_getXProcOf(curCmd,i);
+static bool ast_catchZombie(void) {
+	sJob *p;
+	sExitState state;
+	int res = -1;
+	while(res != 0) {
+		res = waitchild(&state);
+		if(res == -EINTR) {
+			if(lang_isInterrupted()) {
+				ast_termProcsOfJob(curJob);
+				return false;
+			}
+		}
+		else if(res < 0) {
+			if(res != -ECHILD)
+				printe("Unable to wait");
+			else
+				zombies = 0;
+			return false;
+		}
 	}
+
+	zombies--;
+	p = jobs_findProc(CMD_ID_ALL,state.pid);
+	if(state.signal != SIG_COUNT)
+		printf("Process %d was terminated by signal %d\n",state.pid,state.signal);
+	else if(p && p->background) {
+		printf("%%%d: '%s' with pid %d exited with status %d\n",
+			p->jobId,p->command,p->pid,state.exitCode);
+	}
+
+	if(p)
+		ast_removeProc(p,res);
+	return true;
 }
 
 static void ast_sigChildHndl(A_UNUSED int sig) {
-	sRunningProc *p;
-	sExitState state;
-	int res = waitchild(&state);
-	if(res < 0) {
-		printe("Unable to wait for child");
-		return;
-	}
-	if(state.signal != SIG_COUNT)
-		printf("\nProcess %d was terminated by signal %d\n",state.pid,state.signal);
-	p = run_findProc(CMD_ID_ALL,state.pid);
-	if(p)
-		ast_removeProc(p,res);
-	/* otherwise remember the pid */
-	else {
-		diedProc = state.pid;
-		diedRes = res;
-	}
+	zombies++;
 }
 
-static void ast_removeProc(sRunningProc *p,int res) {
-	if(p->cmdId == curCmd && curWaitCount > 0) {
+static void ast_removeProc(sJob *p,int res) {
+	if(p->jobId == curJob && curWaitCount > 0) {
 		curResult = res;
 		curWaitCount--;
 	}
-	/*else
-		printf("\n[%d] process %d finished with %d\n",p->cmdId,p->pid,state.exitCode);*/
 	p->removable = true;
 }
 

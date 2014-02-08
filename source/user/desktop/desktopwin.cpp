@@ -35,8 +35,8 @@ const Color DesktopWin::BGCOLOR = Color(0xd5,0xe6,0xf3);
 const Color DesktopWin::ACTIVE_COLOR = Color(0x90,0x90,0x90);
 const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 
-DesktopWin::DesktopWin(const Size &size)
-	: Window(Pos(0,0),size,DESKTOP),
+DesktopWin::DesktopWin(const Size &size,int childsm)
+	: Window(Pos(0,0),size,DESKTOP), _childsm(childsm),
 	  _winPanel(make_control<Panel>(Pos(0,0),Size(0,TASKBAR_HEIGHT),
 			  	make_layout<FlowLayout>(FRONT,true,HORIZONTAL,4))),
 	  _iconPanel(make_control<Background>(make_layout<IconLayout>(VERTICAL,PADDING))),
@@ -70,6 +70,8 @@ void DesktopWin::onIconClick(UIElement& el) {
 		}
 		else if(pid < 0)
 			printe("Unable to create child-process");
+		else
+			semup(_childsm);
 	}
 }
 

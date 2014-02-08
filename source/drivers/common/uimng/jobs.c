@@ -51,17 +51,19 @@ void jobs_init(void) {
 void jobs_wait(void) {
 	while(true) {
 		sExitState state;
-		waitchild(&state);
-		if(state.signal != SIG_COUNT)
-			printf("[uimng] Child %d terminated because of signal %d\n",state.pid,state.signal);
-		else
-			printf("[uimng] Child %d terminated with exitcode %d\n",state.pid,state.exitCode);
-		fflush(stdout);
-		jobs_terminate(state.pid);
+		int res = waitchild(&state);
+		if(res == 0) {
+			if(state.signal != SIG_COUNT)
+				printf("[uimng] Child %d terminated because of signal %d\n",state.pid,state.signal);
+			else
+				printf("[uimng] Child %d terminated with exitcode %d\n",state.pid,state.exitCode);
+			fflush(stdout);
+			jobs_terminate(state.pid);
 
-		/* if no jobs are left, create a new one */
-		if(sll_length(&jobs) == 0)
-			keys_createTextConsole();
+			/* if no jobs are left, create a new one */
+			if(sll_length(&jobs) == 0)
+				keys_createTextConsole();
+		}
 	}
 }
 

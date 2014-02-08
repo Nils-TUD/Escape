@@ -28,14 +28,19 @@ using namespace std;
 
 static int childWaitThread(void *arg);
 
+static int childsm;
+
 int main() {
+	if((childsm = semcrt(0)) < 0)
+		error("Unable to create semaphore");
+
 	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
 	Shortcut sc2("/etc/calc.bmp","/bin/gcalc");
 	Shortcut sc3("/etc/fileman.bmp","/bin/fileman");
 	Shortcut sc4("/etc/gtest.bmp","/bin/gtest");
 	Shortcut sc5("/etc/settings.bmp","/bin/gsettings");
 	Application *app = Application::create();
-	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize());
+	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize(),childsm);
 	win->addShortcut(&sc1);
 	win->addShortcut(&sc2);
 	win->addShortcut(&sc3);
@@ -49,7 +54,11 @@ int main() {
 }
 
 static int childWaitThread(A_UNUSED void *arg) {
-	while(1)
-		waitchild(nullptr);
+	while(1) {
+		semdown(childsm);
+		sExitState state;
+		if(waitchild(&state) < 0)
+			printe("waitchild");
+	}
 	return 0;
 }

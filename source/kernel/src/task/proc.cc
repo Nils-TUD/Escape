@@ -713,11 +713,16 @@ void ProcBase::notifyProcDied(pid_t parent) {
 int ProcBase::waitChild(USER ExitState *state) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
-	int res;
 	/* check if there is already a dead child-proc */
 	childLock.down();
-	res = getExitState(p->pid,state);
+	int res = getExitState(p->pid,state);
 	if(res < 0) {
+		/* no childs at all */
+		childLock.up();
+		return res;
+	}
+
+	while(res == 0) {
 		/* wait for child */
 		t->wait(EV_CHILD_DIED,(evobj_t)p);
 		childLock.up();
@@ -725,12 +730,12 @@ int ProcBase::waitChild(USER ExitState *state) {
 		/* don't continue here if we were interrupted by a signal */
 		if(t->hasSignalQuick())
 			return -EINTR;
+		childLock.down();
 		res = getExitState(p->pid,state);
 		if(res < 0)
 			return res;
 	}
-	else
-		childLock.up();
+	childLock.up();
 
 	/* finally kill the process */
 	kill(res);
@@ -739,28 +744,32 @@ int ProcBase::waitChild(USER ExitState *state) {
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 	procLock.down();
+	size_t childs = 0;
 	for(auto p = procs.begin(); p != procs.end(); ++p) {
-		if(p->parentPid == ppid && (p->flags & (P_ZOMBIE | P_KILLED)) == P_ZOMBIE) {
-			if(state) {
-				state->pid = p->pid;
-				state->exitCode = p->stats.exitCode;
-				state->signal = p->stats.exitSignal;
-				state->runtime = Timer::cyclesToTime(p->stats.totalRuntime);
-				state->schedCount = p->stats.totalScheds;
-				state->syscalls = p->stats.totalSyscalls;
-				state->migrations = p->stats.totalMigrations;
-				state->ownFrames = p->virtmem.getPeakOwnFrames();
-				state->sharedFrames = p->virtmem.getPeakSharedFrames();
-				state->swapped = p->virtmem.getSwapCount();
+		if(p->parentPid == ppid) {
+			childs++;
+			if((p->flags & (P_ZOMBIE | P_KILLED)) == P_ZOMBIE) {
+				if(state) {
+					state->pid = p->pid;
+					state->exitCode = p->stats.exitCode;
+					state->signal = p->stats.exitSignal;
+					state->runtime = Timer::cyclesToTime(p->stats.totalRuntime);
+					state->schedCount = p->stats.totalScheds;
+					state->syscalls = p->stats.totalSyscalls;
+					state->migrations = p->stats.totalMigrations;
+					state->ownFrames = p->virtmem.getPeakOwnFrames();
+					state->sharedFrames = p->virtmem.getPeakSharedFrames();
+					state->swapped = p->virtmem.getSwapCount();
+				}
+				/* ensure that we don't kill it twice */
+				p->flags |= P_KILLED;
+				procLock.up();
+				return p->pid;
 			}
-			/* ensure that we don't kill it twice */
-			p->flags |= P_KILLED;
-			procLock.up();
-			return p->pid;
 		}
 	}
 	procLock.up();
-	return -ECHILD;
+	return childs > 0 ? 0 : -ECHILD;
 }
 
 void ProcBase::doRemoveRegions(Proc *p,bool remStack) {

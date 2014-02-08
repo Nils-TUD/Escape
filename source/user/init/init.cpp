@@ -60,15 +60,16 @@ int main(void) {
 	// loop and wait forever
 	while(1) {
 		sExitState st;
-		waitchild(&st);
-		try {
-			if(state != STATE_RUN)
-				pm.died(st.pid);
-			else
-				pm.restart(st.pid);
-		}
-		catch(const init_error& e) {
-			printe("Unable to react on child-death: %s",e.what());
+		if(waitchild(&st) == 0) {
+			try {
+				if(state != STATE_RUN)
+					pm.died(st.pid);
+				else
+					pm.restart(st.pid);
+			}
+			catch(const init_error& e) {
+				printe("Unable to react on child-death: %s",e.what());
+			}
 		}
 	}
 	return EXIT_SUCCESS;

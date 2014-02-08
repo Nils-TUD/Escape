@@ -88,7 +88,7 @@ public:
 	static const gsize_t TASKBAR_HEIGHT;
 
 public:
-	DesktopWin(const gui::Size &size);
+	DesktopWin(const gui::Size &size,int childsm);
 
 	void addShortcut(Shortcut *sc) {
 		// do that first for exception-safety
@@ -115,6 +115,7 @@ private:
 	void onIconClick(UIElement& el);
 
 private:
+	int _childsm;
 	std::shared_ptr<gui::Panel> _winPanel;
 	std::shared_ptr<Background> _iconPanel;
 	WinButton *_active;

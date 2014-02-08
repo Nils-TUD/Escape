@@ -84,8 +84,8 @@ char *shell_histDown(void) {
 
 void shell_histPrint(void) {
 	ssize_t i;
-	printf("History: (write=%d,read=%d,size=%d)\n",histWritePos,histReadPos,histSize);
+	printf("History: (write=%zd,read=%zd,size=%zd)\n",histWritePos,histReadPos,histSize);
 	for(i = 0; i < histSize; i++)
-		printf("%d: %s\n",i,history[i]);
+		printf("%zd: %s\n",i,history[i]);
 	printf("\n");
 }

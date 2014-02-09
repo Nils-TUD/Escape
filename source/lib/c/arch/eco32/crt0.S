@@ -84,7 +84,7 @@ threadExit:
 
 # all signal-handler return to this "function"
 sigRetFunc:
-	add		$4,$0,SYSCALL_ACKSIG
+	add		$4,$0,ASM_SYSC_ACKSIG
 	trap
 	# never reached
 #endif

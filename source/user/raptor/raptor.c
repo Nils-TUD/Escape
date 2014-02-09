@@ -62,7 +62,7 @@ int main(int argc,char *argv[]) {
 	game_tick(tsc);
 	while(run) {
 		/* wait until we get a signal */
-		wait(EV_NOEVENT,0);
+		sleep(1000);
 		if(!game_tick(tsc))
 			break;
 	}

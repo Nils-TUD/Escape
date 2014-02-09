@@ -109,42 +109,6 @@ static inline int sleep(time_t msecs) {
 }
 
 /**
- * The same as wait(), but waits at most <max> milliseconds.
- *
- * @param event the event to wait for
- * @param object the object to wait for
- * @param max the maximum number of milliseconds to wait (0 = unlimited)
- * @return 0 on success and a negative error-code if failed
- */
-static inline int waituntil(uint event,evobj_t object,time_t max) {
-	return syscall3(SYSCALL_WAIT,event,object,max);
-}
-
-/**
- * Waits until <event> occurs for <object>. If <object> is 0, it will wakeup as soon as <event>
- * occurs for any object.
- *
- * @param event the event to wait for
- * @param object the object to wait for
- * @return 0 on success and a negative error-code if failed
- */
-static inline int wait(uint event,evobj_t object) {
-	return waituntil(event,object,0);
-}
-
-/**
- * Notifies the given thread about the given events. If it was waiting for them, it will be
- * waked up.
- *
- * @param tid the thread-id to notify
- * @param events the events on which you want to wake up
- * @return 0 on success and a negative error-code if failed
- */
-static inline int notify(tid_t tid,uint events) {
-	return syscall2(SYSCALL_NOTIFY,tid,events);
-}
-
-/**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
  *
  * @param tid the thread-id (0 = wait until all other threads died)

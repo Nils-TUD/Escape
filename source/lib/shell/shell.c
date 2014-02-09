@@ -43,6 +43,7 @@
 #include "parser.h"
 
 #define USERS_FILE		"/etc/users"
+#define INBUF_SIZE		128
 
 static void shell_sigIntrpt(int sig);
 static size_t shell_toNextWord(char *buffer,size_t icharcount,size_t *icursorPos);
@@ -116,8 +117,12 @@ int shell_executeCmd(char *line,bool isFile) {
 }
 
 int shell_readLine(char *buffer,size_t max) {
+	char inbuf[INBUF_SIZE];
+	char escbuf[MAX_ESCC_LENGTH];
+	ssize_t ibpos = 0;
+	ssize_t iblen = 0;
 	size_t cursorPos = 0;
-	size_t i = 0;
+	size_t i = 0, o = 0;
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
@@ -130,48 +135,74 @@ int shell_readLine(char *buffer,size_t max) {
 
 	/* ensure that the line is empty */
 	*buffer = '\0';
-	while(i < max) {
-		char c = 0;
-		int cmd,n1,n2,n3;
-		/* ensure that stdout is flushed and wait until input is available; wait gets interrupted
-		 * for signals; fgetc() won't (more precisely: it is, but it repeats the call) */
+	while(o < max) {
+		int n1,n2,n3;
+		/* ensure that stdout is flushed because we might block */
 		fflush(stdout);
-		/* only wait if the buffer is empty; otherwise we might wait until the next keypress
-		 * because if we have already read everything from vterm, we'll wait until there is
-		 * more data to read. */
-		if(favail(stdin) == 0)
-			wait(EV_DATA_READABLE,STDIN_FILENO);
-		/* maybe we've received a ^C. if so do a reset */
-		if(resetReadLine) {
-			i = 0;
-			cursorPos = 0;
-			resetReadLine = false;
-			printf("\n");
-			ast_catchZombies();
-			shell_prompt();
+		/* no more chars left? so read more from stdin */
+		if(ibpos >= iblen) {
+			ibpos = 0;
+			iblen = read(STDIN_FILENO,inbuf,sizeof(inbuf));
+			/* received signal? */
+			if(iblen == -EINTR) {
+				/* do a reset on ^C */
+				if(resetReadLine) {
+					i = 0;
+					o = 0;
+					cursorPos = 0;
+					resetReadLine = false;
+					printf("\n");
+					ast_catchZombies();
+					shell_prompt();
+				}
+				continue;
+			}
+			/* EOF? */
+			if(iblen <= 0) {
+				if(vterm_setReadline(STDOUT_FILENO,true) < 0)
+					error("Unable to reenable readline");
+				return iblen;
+			}
+		}
+
+		/* read from inbuf to escbuf */
+		if(inbuf[ibpos] == '\033')
+			ibpos++;
+		while(i < MAX_ESCC_LENGTH && ibpos < iblen) {
+			escbuf[i++] = inbuf[ibpos];
+			if(inbuf[ibpos++] == ']')
+				break;
+		}
+		escbuf[i] = '\0';
+
+		/* parse escape code */
+		const char *escbufptr = escbuf;
+		int cmd = escc_get(&escbufptr,&n1,&n2,&n3);
+		if(cmd == ESCC_INCOMPLETE) {
+			/* invalid escape code? */
+			if(ibpos < iblen) {
+				ibpos = iblen;
+				i = 0;
+			}
 			continue;
 		}
-		/* stop if we were unable to read from stdin */
-		if((c = fgetc(stdin)) == EOF) {
-			if(vterm_setReadline(STDOUT_FILENO,true) < 0)
-				error("Unable to reenable readline");
-			return ferror(stdin);
-		}
-		if(c != '\033')
-			continue;
-		cmd = freadesc(stdin,&n1,&n2,&n3);
-		/* skip other escape-codes */
+
+		/* esc code is complete, so start at the beginning next time */
+		i = 0;
+		/* skip other escape-codes or incomplete ones */
 		if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 			continue;
 
+		/* handle special keycodes */
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {
-			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i) || !isprint(n1))
+			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&o) || !isprint(n1))
 				continue;
 		}
 		if(n1 == '\t') {
-			shell_complete(buffer,&cursorPos,&i);
+			shell_complete(buffer,&cursorPos,&o);
 			continue;
 		}
+
 		/* if another key has been pressed, reset tab-counting */
 		tabCount = 0;
 
@@ -181,20 +212,20 @@ int shell_readLine(char *buffer,size_t max) {
 
 		/* put the newline at the end */
 		if(n1 == '\n') {
-			buffer[i++] = n1;
+			buffer[o++] = n1;
 			break;
 		}
 		/* not at the end */
-		if(cursorPos < i) {
+		if(cursorPos < o) {
 			size_t x;
 			/* at first move all one char forward */
-			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
+			memmove(buffer + cursorPos + 1,buffer + cursorPos,o - cursorPos);
 			buffer[cursorPos] = n1;
 			/* now write the chars to vterm */
-			for(x = cursorPos + 1; x <= i; x++)
+			for(x = cursorPos + 1; x <= o; x++)
 				putchar(buffer[x]);
 			/* and walk backwards */
-			printf("\033[ml;%d]",i - cursorPos);
+			printf("\033[ml;%d]",o - cursorPos);
 		}
 		/* we are at the end of the input */
 		else {
@@ -203,14 +234,14 @@ int shell_readLine(char *buffer,size_t max) {
 		}
 
 		cursorPos++;
-		i++;
+		o++;
 	}
 
 	if(vterm_setReadline(STDOUT_FILENO,true) < 0)
 		error("Unable to reenable readline");
 
-	buffer[i] = '\0';
-	return i;
+	buffer[o] = '\0';
+	return o;
 }
 
 bool shell_handleSpecialKey(char *buffer,int keycode,int modifier,size_t *cursorPos,

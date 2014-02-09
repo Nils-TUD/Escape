@@ -84,7 +84,7 @@ sigRetFunc:
 	# we have to use int instead of sysenter here because sysexit does not restore ecx,edx and eflags.
 	# so, if we have started the signal during an interrupt/exception and were thus not prepared for
 	# loosing one of those, we would get into trouble.
-	mov		$SYSCALL_ACKSIG,%eax
-	int		$ACKSIG_IRQ
+	mov		$ASM_SYSC_ACKSIG,%eax
+	int		$ASM_IRQ_ACKSIG
 	# never reached
 #endif

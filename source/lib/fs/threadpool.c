@@ -55,7 +55,7 @@ void tpool_init(void) {
 void tpool_shutdown(void) {
 	run = false;
 	for(int i = 0; i < REQ_THREAD_COUNT; i++)
-		notify(threads[i].tid,EV_USER1);
+		; // TODO notify(threads[i].tid,EV_USER1);
 }
 
 size_t tpool_tidToId(tid_t tid) {
@@ -85,7 +85,7 @@ bool tpool_addRequest(fReqHandler handler,sFileSystem *fs,int fd,const sMsg *msg
 				memcpy(&req->msg,msg,msgSize);
 				threads[i].req = req;
 				threads[i].state = RT_STATE_HASWORK;
-				notify(threads[i].tid,EV_USER1);
+				// TODO notify(threads[i].tid,EV_USER1);
 				tpool_unlock(STATE_LOCK);
 				return true;
 			}
@@ -99,7 +99,7 @@ bool tpool_addRequest(fReqHandler handler,sFileSystem *fs,int fd,const sMsg *msg
 
 static int tpool_idle(sReqThread *t) {
 	/* wait until we have work */
-	wait(EV_USER1,0);
+	// TODO wait(EV_USER1,0);
 	while(run) {
 		assert(t->state == RT_STATE_HASWORK);
 
@@ -118,7 +118,7 @@ static int tpool_idle(sReqThread *t) {
 		/* we're ready for new requests */
 		tpool_lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		t->state = RT_STATE_IDLE;
-		notify(acceptTid,EV_USER2);
+		// TODO notify(acceptTid,EV_USER2);
 		/* we have to use waitunlock here to ensure that we don't miss the notify from the
 		 * accept thread */
 		// TODO waitunlock(EV_USER1,0,STATE_LOCK);

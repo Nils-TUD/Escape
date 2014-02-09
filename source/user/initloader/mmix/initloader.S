@@ -26,12 +26,12 @@
 
 _start:
 	# load modules first; wait until we're finished ($0 = 0)
-	SET		$0,SYSCALL_LOADMODS
+	SET		$0,ASM_SYSC_LOADMODS
 	TRAP	0,0,0
 	BNZ		$0,_start
 
 	# now replace with init
-	SET		$0,SYSCALL_EXEC
+	SET		$0,ASM_SYSC_EXEC
 	GETA	$1,progName
 	GETA	$2,args
 	TRAP	0,0,0

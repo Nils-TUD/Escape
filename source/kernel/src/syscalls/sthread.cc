@@ -33,10 +33,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define MAX_WAIT_OBJECTS		32
-
-static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime);
-
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
 }
@@ -100,28 +96,6 @@ int Syscalls::yield(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::wait(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	uint event = (uint)SYSC_ARG1(stack);
-	evobj_t object = (evobj_t)SYSC_ARG2(stack);
-	time_t maxWaitTime = SYSC_ARG3(stack);
-
-	int res = doWait(t->getProc(),event,object,maxWaitTime);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
-int Syscalls::notify(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	uint event = SYSC_ARG2(stack);
-	Thread *nt = Thread::getById(tid);
-
-	if(EXPECT_FALSE(!IS_USER_NOTIFY_EVENT(event) || nt == NULL))
-		SYSC_ERROR(stack,-EINVAL);
-	Sched::wakeupThread(nt,event);
-	SYSC_RET1(stack,0);
-}
-
 int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 	if(tid != 0) {
@@ -179,27 +153,4 @@ int Syscalls::semdestr(Thread *t,IntrptStackFrame *stack) {
 	int sem = (int)SYSC_ARG1(stack);
 	Sems::destroy(t->getProc(),sem);
 	SYSC_RET1(stack,0);
-}
-
-static int doWait(Proc *p,uint event,evobj_t object,time_t maxWaitTime) {
-	OpenFile *file = NULL;
-	/* first request the files from the file-descriptors */
-	if(IS_FILE_EVENT(event)) {
-		/* translate fd to node-number */
-		file = FileDesc::request(p,(int)object);
-		if(EXPECT_FALSE(file == NULL))
-			return -EBADF;
-	}
-
-	/* now wait */
-	if(EXPECT_FALSE(!IS_USER_WAIT_EVENT(event)))
-		return -EINVAL;
-	if(IS_FILE_EVENT(event))
-		object = (evobj_t)file;
-	int res = VFS::waitFor(event,object,maxWaitTime,true);
-
-	/* release them */
-	if(IS_FILE_EVENT(event))
-		FileDesc::release(file);
-	return res;
 }

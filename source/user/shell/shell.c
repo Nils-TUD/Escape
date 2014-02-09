@@ -75,9 +75,10 @@ int main(int argc,char **argv) {
 			return EXIT_FAILURE;
 
 		/* read command */
-		if(shell_readLine(buffer,MAX_CMD_LEN) < 0)
+		int res = shell_readLine(buffer,MAX_CMD_LEN);
+		if(res < 0)
 			error("Unable to read from STDIN");
-		if(feof(stdin))
+		if(res == 0)
 			break;
 
 		/* execute it */

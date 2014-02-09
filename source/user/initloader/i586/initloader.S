@@ -26,14 +26,14 @@
 
 _start:
 	# load modules first
-	mov		$SYSCALL_LOADMODS,%eax
+	mov		$ASM_SYSC_LOADMODS,%eax
 	mov		$1f,%edx
 	mov		%esp,%ecx
 	sysenter
 1:
 
 	# load vm86-task
-	mov		$SYSCALL_VM86START,%eax
+	mov		$ASM_SYSC_VM86START,%eax
 	mov		$1f,%edx
 	mov		%esp,%ecx
 	sysenter
@@ -42,7 +42,7 @@ _start:
 	# now replace with init
 	mov		$progName,%esi						# arg1: path
 	mov		$args,%edi							# arg2: arguments
-	mov		$SYSCALL_EXEC,%eax					# set syscall-number
+	mov		$ASM_SYSC_EXEC,%eax					# set syscall-number
 	mov		$1f,%edx
 	mov		%esp,%ecx
 	sysenter

@@ -147,8 +147,6 @@ private:
 	static int alarm(Thread *t,IntrptStackFrame *stack);
 	static int sleep(Thread *t,IntrptStackFrame *stack);
 	static int yield(Thread *t,IntrptStackFrame *stack);
-	static int wait(Thread *t,IntrptStackFrame *stack);
-	static int notify(Thread *t,IntrptStackFrame *stack);
 	static int join(Thread *t,IntrptStackFrame *stack);
 	static int suspend(Thread *t,IntrptStackFrame *stack);
 	static int resume(Thread *t,IntrptStackFrame *stack);

@@ -56,6 +56,7 @@ static sNewCursor newCursor;
 
 static void tui_addUpdate(int cli,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 static void tui_addCursor(int cli,gpos_t x,gpos_t y,int cursor);
+static bool tui_isDirty(void);
 static void tui_update(void);
 static size_t tui_find_client(inode_t cid);
 
@@ -78,15 +79,13 @@ void tui_driverLoop(const char *name,sScreenMode *modelist,size_t mcount,fSetMod
 		sMsg msg;
 		msgid_t mid;
 
-		int fd = getwork(id,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		int fd = getwork(id,&mid,&msg,sizeof(msg),tui_isDirty() ? GW_NOBLOCK : 0);
 		if(fd < 0 || reqc >= MAX_REQC) {
 			if(fd != -ENOCLIENT)
 				printe("Unable to get work");
 			reqc = 0;
 			tui_update();
 		}
-		if(fd == -ENOCLIENT)
-			wait(EV_CLIENT,id);
 		else {
 			/* see what we have to do */
 			switch(mid) {
@@ -224,6 +223,10 @@ static void tui_addCursor(int cli,gpos_t x,gpos_t y,int cursor) {
 	}
 	else
 		setCursor(clients + cli,x,y,cursor);
+}
+
+static bool tui_isDirty(void) {
+	return rectCount > 0 || newCursor.client != -1;
 }
 
 static void tui_update(void) {

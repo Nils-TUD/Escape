@@ -26,11 +26,11 @@
 
 _start:
 	# load modules first
-	add		$4,$0,SYSCALL_LOADMODS
+	add		$4,$0,ASM_SYSC_LOADMODS
 	trap
 
 	# now replace with init
-	add		$4,$0,SYSCALL_EXEC				# set syscall-number
+	add		$4,$0,ASM_SYSC_EXEC				# set syscall-number
 	add		$5,$0,progName					# set path
 	add		$6,$0,args						# set arguments
 	trap

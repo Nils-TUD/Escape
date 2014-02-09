@@ -127,8 +127,8 @@ lookup_resolveFinish:
 
 # all signal-handler return to this "function"
 sigRetFunc:
-	mov		$SYSCALL_ACKSIG,%eax
-	int		$ACKSIG_IRQ
+	mov		$ASM_SYSC_ACKSIG,%eax
+	int		$ASM_IRQ_ACKSIG
 	# never reached
 
 #ifdef CALLTRACE_PID

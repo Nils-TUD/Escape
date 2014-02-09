@@ -57,6 +57,6 @@ int mod_forkbomb(int argc,char *argv[]) {
 		i++;
 	}
 
-	wait(EV_NOEVENT,0);
+	sleep(1000 * 10000);
 	return 0;
 }

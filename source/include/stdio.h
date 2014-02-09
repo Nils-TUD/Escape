@@ -308,14 +308,6 @@ int getc(FILE *file);
 int getchar(void);
 
 /**
- * Reads from STDIN (or till EOF) into the given buffer
- *
- * @param buffer the buffer
- * @return buffer on success or NULL
- */
-char *gets(char *buffer);
-
-/**
  * Prints the given character to <file>
  *
  * @param c the character
@@ -524,16 +516,7 @@ int printf(const char *fmt,...);
 int fprintf(FILE *file,const char *fmt,...);
 
 /**
- * Like printf(), but prints to the given string
- *
- * @param str the string to print to
- * @param fmt the format
- * @return the number of written chars
- */
-int sprintf(char *str,const char *fmt,...);
-
-/**
- * Like sprintf(), but with max length
+ * Like printf(), but prints to <str>.
  *
  * @param str the string to print to
  * @param n the size of <str>
@@ -573,16 +556,6 @@ int vprintf(const char *fmt,va_list ap);
  * @return the number of written chars
  */
 int vfprintf(FILE *file,const char *fmt,va_list ap);
-
-/**
- * Like vprintf(), but prints to <str>
- *
- * @param str the string to print to
- * @param fmt the format
- * @param ap the argument-list
- * @return the number of written chars
- */
-int vsprintf(char *str,const char *fmt,va_list ap);
 
 /**
  * Reads data in the specified format from STDIN. Supports:

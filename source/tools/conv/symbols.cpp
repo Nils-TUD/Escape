@@ -99,7 +99,7 @@ const char *sym_resolve(unsigned long addr) {
 		}
 		file = file->next;
 	}
-	sprintf(symbolName,"%lu",addr);
+	snprintf(symbolName,sizeof(symbolName),"%lu",addr);
 	specialChars(symbolName,cleanSymbolName,sizeof(cleanSymbolName));
 	return cleanSymbolName;
 }

@@ -211,7 +211,7 @@ static sContext *getCurrent(unsigned long tid) {
 		contexts[tid].root->next = NULL;
 		contexts[tid].root->child = NULL;
 		contexts[tid].root->parent = NULL;
-		sprintf(contexts[tid].root->name,"Thread %lu",tid);
+		snprintf(contexts[tid].root->name,sizeof(contexts[tid].root->name),"Thread %lu",tid);
 		contexts[tid].root->time = 0;
 		contexts[tid].root->calls = 0;
 		contexts[tid].root->running = 1;

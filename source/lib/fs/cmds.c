@@ -123,7 +123,6 @@ static void cmds_read(sFileSystem *fs,int fd,sMsg *msg) {
 		else
 			msg->args.arg1 = fs->read(fs->handle,file->ino,buffer,offset,count);
 	}
-	msg->args.arg2 = READABLE_DONT_SET;
 	send(fd,MSG_DEV_READ_RESP,msg,sizeof(msg->args));
 	if(buffer && shmemoff == -1) {
 		if(msg->args.arg1 > 0)

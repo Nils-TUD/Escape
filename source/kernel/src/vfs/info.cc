@@ -312,7 +312,7 @@ void VFSInfo::irqsReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **bu
 Proc *VFSInfo::getProc(VFSNode *node,size_t *dataSize,void **buffer) {
 	Proc *p = NULL;
 	VFSNode::acquireTree();
-	if(!node->isAlive()) {
+	if(!node->isAlive() || node->parent->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
 	}
@@ -327,12 +327,12 @@ Proc *VFSInfo::getProc(VFSNode *node,size_t *dataSize,void **buffer) {
 Thread *VFSInfo::getThread(VFSNode *node,size_t *dataSize,void **buffer) {
 	Thread *t = NULL;
 	VFSNode::acquireTree();
-	if(!node->isAlive()) {
+	if(!node->isAlive() || node->parent->name == NULL) {
 		*dataSize = 0;
 		*buffer = NULL;
 	}
 	else {
-		tid_t tid = atoi(node->getParent()->name);
+		tid_t tid = atoi(node->parent->name);
 		t = Thread::getRef(tid);
 	}
 	VFSNode::releaseTree();

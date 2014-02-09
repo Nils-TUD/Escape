@@ -37,13 +37,10 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/random",0444,DEV_TYPE_CHAR,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/random",0444,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'random'");
 
-	/* random numbers are always available ;) */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("fcntl");
 	srand(time(NULL));
 
 	/* wait for commands */
@@ -86,7 +83,6 @@ int main(void) {
 						while(count-- > 0)
 							*d++ = rand();
 					}
-					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(shmemoff == -1 && msg.args.arg1) {
 						send(fd,MSG_DEV_READ_RESP,data,msg.args.arg1 / sizeof(uint));

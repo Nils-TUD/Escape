@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/vfs/node.h>
+#include <sys/semaphore.h>
 #include <esc/messages.h>
 #include <errno.h>
 
@@ -58,25 +59,24 @@ public:
 	}
 
 	/**
-	 * @return true if data can be read from the server (is available)
+	 * Blocks until data is readable
 	 */
-	bool isReadable() const {
-		return !isEmpty;
+	void down() {
+		sem.down();
 	}
-
 	/**
-	 * Sets whether data is available
+	 * Checks whether there is data to read
 	 *
-	 * @param readable the new value
-	 * @return 0 on success
+	 * @return true if so
 	 */
-	int setReadable(bool readable);
-
+	bool tryDown() {
+		return sem.tryDown();
+	}
 	/**
-	 * @return true if there is work
+	 * Makes data readable, i.e. wakes up a waiting client
 	 */
-	bool hasWork() const {
-		return msgCount > 0;
+	void up() {
+		sem.up();
 	}
 
 	/**
@@ -125,8 +125,8 @@ private:
 	static uint buildMode(uint type);
 	void wakeupClients(bool locked);
 
-	/* whether there is data to read or not */
-	bool isEmpty;
+	/* for char-devs: to block until there is data to read */
+	Semaphore sem;
 	/* implemented functions */
 	uint funcs;
 	/* total number of messages in all channels (for the device, not the clients) */

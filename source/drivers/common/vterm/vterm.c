@@ -149,7 +149,6 @@ static int vtermThread(A_UNUSED void *arg) {
 					size_t count = msg.args.arg2;
 					char *data = count <= BUF_SIZE ? buffer : (char*)malloc(count);
 					msg.args.arg1 = 0;
-					msg.args.arg2 = READABLE_DONT_SET;
 					if(data)
 						msg.args.arg1 = vtin_gets(&vterm,data,count,&avail);
 					else

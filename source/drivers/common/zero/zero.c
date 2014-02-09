@@ -38,13 +38,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/zero",0444,DEV_TYPE_CHAR,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
+	id = createdev("/dev/zero",0444,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'zero'");
-
-	/* 0's are always available ;) */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("fcntl");
 
 	/* wait for commands */
 	while(1) {
@@ -74,7 +70,6 @@ int main(void) {
 					/* offset is ignored here */
 					size_t count = msg.args.arg2;
 					ssize_t shmemoff = msg.args.arg3;
-					msg.args.arg2 = READABLE_DONT_SET;
 					if(shmemoff != -1) {
 						assert(shbufs[fd] != NULL);
 						memset(shbufs[fd] + shmemoff,0,count);

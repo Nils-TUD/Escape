@@ -105,7 +105,6 @@ static int drive_thread(void *arg) {
 					ssize_t shmemoff = msg.args.arg3;
 					uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)shbufs[fd] + (shmemoff >> 1);
 					msg.args.arg1 = handleRead(ataDev,part,buf,offset,count);
-					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(shmemoff == -1 && msg.args.arg1 > 0)
 						send(fd,MSG_DEV_READ_RESP,buf,count);

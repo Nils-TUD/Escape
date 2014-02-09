@@ -45,7 +45,7 @@
 /* fcntl-commands */
 #define F_GETFL					0
 #define F_SETFL					1
-#define F_SETDATA				2
+#define F_WAKE_READER			2
 #define F_GETACCESS				3
 #define F_SETUNUSED				4
 #define F_SEMUP					5

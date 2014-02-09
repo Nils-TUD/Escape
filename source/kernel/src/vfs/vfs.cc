@@ -160,12 +160,8 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	}
 	/* otherwise use the device-node of the fs */
 	else {
-		/* ensure that nobody can destroy that in the meantime by adding a reference */
-		VFSNode::acquireTree();
 		node = fsFile->getNode();
-		if(node->getParent())
-			node = VFSNode::request(node->getParent()->getNo());
-		VFSNode::releaseTree();
+		node = VFSNode::request(node->getParent()->getNo());
 		openmsg = MSG_FS_OPEN;
 	}
 
@@ -608,82 +604,6 @@ errorDir:
 	VFSNode::release(dir);
 	/* the release has already free'd the name */
 	return err;
-}
-
-bool VFS::hasMsg(VFSNode *node) {
-	return IS_CHANNEL(node->getMode()) && static_cast<VFSChannel*>(node)->hasReply();
-}
-
-bool VFS::hasData(VFSNode *node) {
-	return IS_DEVICE(node->getParent()->getMode()) &&
-			static_cast<VFSDevice*>(node->getParent())->isReadable();
-}
-
-bool VFS::hasWork(VFSNode *node) {
-	return IS_DEVICE(node->getMode()) && static_cast<VFSDevice*>(node)->hasWork();
-}
-
-int VFS::waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block) {
-	Thread *t = Thread::getRunning();
-	bool isFirstWait = true;
-	int res;
-
-	/* transform the files into vfs-nodes */
-	if(IS_FILE_EVENT(event)) {
-		OpenFile *file = (OpenFile*)object;
-		if(file->getDev() != VFS_DEV_NO)
-			return -EPERM;
-		object = (evobj_t)file->getNode();
-	}
-
-	while(true) {
-		/* we have to lock this region to ensure that if we've found out that we can sleep, no one
-		 * sends us an event before we've finished the Event::waitObjects(). otherwise, it would be
-		 * possible that we never wake up again, because we have missed the event and get no other
-		 * one. */
-		SpinLock::acquire(&waitLock);
-		/* check whether we can wait */
-		if(IS_FILE_EVENT(event)) {
-			VFSNode *n = (VFSNode*)object;
-			if(!n->isAlive()) {
-				SpinLock::release(&waitLock);
-				res = -EDESTROYED;
-				goto error;
-			}
-			if((event == EV_CLIENT) && hasWork(n))
-				goto noWait;
-			else if((event == EV_RECEIVED_MSG) && hasMsg(n))
-				goto noWait;
-			else if((event == EV_DATA_READABLE) && hasData(n))
-				goto noWait;
-		}
-
-		if(!block) {
-			SpinLock::release(&waitLock);
-			return -EWOULDBLOCK;
-		}
-
-		/* wait */
-		t->wait(event,object);
-		if(isFirstWait && maxWaitTime != 0)
-			Timer::sleepFor(t->getTid(),maxWaitTime,true);
-		SpinLock::release(&waitLock);
-
-		Thread::switchAway();
-		if(t->hasSignalQuick()) {
-			res = -EINTR;
-			goto error;
-		}
-		isFirstWait = false;
-	}
-
-noWait:
-	SpinLock::release(&waitLock);
-	res = 0;
-error:
-	if(maxWaitTime != 0)
-		Timer::removeThread(t->getTid());
-	return res;
 }
 
 inode_t VFS::createProcess(pid_t pid) {

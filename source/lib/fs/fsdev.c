@@ -62,10 +62,6 @@ int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSy
 	if(id < 0)
 		error("Unable to register device 'fs'");
 
-	/* we always have data to read */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("Unable to set data");
-
 	while(true) {
 		sMsg msg;
 		msgid_t mid;

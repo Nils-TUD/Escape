@@ -77,7 +77,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 						if(vt->readLine)
 							vtin_rlFlushBuf(vt);
 						if(rb_length(vt->inbuf) == 0)
-							fcntl(vt->sid,F_SETDATA,true);
+							fcntl(vt->sid,F_WAKE_READER,0);
 						goto out;
 				}
 			}
@@ -101,7 +101,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);
 		rb_writen(vt->inbuf,escape,strlen(escape));
 		if(empty)
-			fcntl(vt->sid,F_SETDATA,true);
+			fcntl(vt->sid,F_WAKE_READER,0);
 	}
 	if(!(modifier & STATE_BREAK)) {
 		if(vt->echo && vt->setCursor)
@@ -120,8 +120,8 @@ size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail) {
 	if(rb_length(vt->inbuf) == 0)
 		vt->inbufEOF = false;
 	*avail = vt->inbufEOF || rb_length(vt->inbuf) > 0;
-	if(*avail == 0)
-		fcntl(vt->sid,F_SETDATA,false);
+	if(*avail > 0)
+		fcntl(vt->sid,F_WAKE_READER,0);
 	usemup(&vt->usem);
 	return res;
 }
@@ -216,8 +216,8 @@ static void vtin_rlFlushBuf(sVTerm *vt) {
 		i++;
 	}
 
-	if(len == 0)
-		fcntl(vt->sid,F_SETDATA,true);
+	if(i > 0 && len == 0)
+		fcntl(vt->sid,F_WAKE_READER,0);
 }
 
 static size_t vtin_rlGetBufPos(sVTerm *vt) {

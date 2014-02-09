@@ -70,27 +70,18 @@ void VFSChannel::invalidate() {
 }
 
 int VFSChannel::isSupported(int op) const {
-	VFSNode::acquireTree();
-	if(!isAlive()) {
-		VFSNode::releaseTree();
+	if(!isAlive())
 		return -EDESTROYED;
-	}
 	/* if the driver doesn't implement read, its an error */
-	if(!static_cast<VFSDevice*>(parent)->supports(op)) {
-		VFSNode::releaseTree();
+	if(!static_cast<VFSDevice*>(parent)->supports(op))
 		return -ENOTSUP;
-	}
-	VFSNode::releaseTree();
 	return 0;
 }
 
 void VFSChannel::discardMsgs() {
 	SpinLock::acquire(&waitLock);
 	// remove from parent
-	VFSNode::acquireTree();
-	if(getParent())
-		static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
-	VFSNode::releaseTree();
+	static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
 
 	// now clear lists
 	sendList.deleteAll();
@@ -112,19 +103,14 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
-	VFSNode::acquireTree();
 	VFSNode *par = getParent();
-	if(!par)
-		goto errTree;
 	ppid = par->getOwner();
 	res = VFS::openFile(ppid,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
 	if(res < 0)
-		goto errTree;
+		return res;
 	/* getByPid() is ok because if the parent-node exists, the owner does always exist, too */
 	pp = Proc::getByPid(ppid);
 	fd = FileDesc::assoc(pp,clifile);
-	/* we can't hold the tree-lock during close() */
-	VFSNode::releaseTree();
 	if(fd < 0) {
 		clifile->close(ppid);
 		return fd;
@@ -135,7 +121,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	if(res == -ENOTSUP)
 		return 0;
 	if(res < 0)
-		goto errNoTree;
+		goto error;
 
 	/* send msg to driver */
 	msg.str.arg1 = flags;
@@ -149,7 +135,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 		memcpy(msg.str.s1,path,pathLen + 1);
 	res = send(pid,0,msgid,&msg,sizeof(msg.str),NULL,0);
 	if(res < 0)
-		goto errNoTree;
+		goto error;
 
 	/* receive response */
 	t->addResource();
@@ -158,14 +144,14 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
-		goto errNoTree;
+		goto error;
 	if((long)msg.args.arg1 < 0) {
 		res = msg.args.arg1;
-		goto errNoTree;
+		goto error;
 	}
 	return msg.args.arg1;
 
-errNoTree:
+error:
 	/* the parent process might be dead now (in this case he would have already closed the file) */
 	pp = Proc::getRef(ppid);
 	if(pp) {
@@ -175,10 +161,6 @@ errNoTree:
 			clifile->close(ppid);
 		Proc::relRef(pp);
 	}
-	return res;
-
-errTree:
-	VFSNode::releaseTree();
 	return res;
 }
 
@@ -243,21 +225,24 @@ static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,siz
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	ssize_t res;
 	sArgsMsg msg;
-	Thread *t = Thread::getRunning();
-	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 
 	if((res = isSupported(DEV_READ)) < 0)
 		return res;
 
-	/* first do a quick check. waitFor is only necessary to make sure that we don't miss a message. */
-	if(!static_cast<VFSDevice*>(getParent())->isReadable()) {
-		/* wait until there is data available, if necessary */
-		res = VFS::waitFor(EV_DATA_READABLE,(evobj_t)file,0,file->shouldBlock());
-		if(res < 0)
-			return res;
+	/* if it's a char-device, block until there is data to read */
+	VFSDevice *dev = static_cast<VFSDevice*>(getParent());
+	if(S_ISCHR(dev->getMode())) {
+		if(!file->shouldBlock()) {
+			if(!dev->tryDown())
+				return -EWOULDBLOCK;
+		}
+		else
+			dev->down();
 	}
 
 	/* send msg to driver */
+	Thread *t = Thread::getRunning();
+	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 	msg.arg1 = offset;
 	msg.arg2 = count;
 	msg.arg3 = useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1;
@@ -280,12 +265,6 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		return res;
 
 	/* handle response */
-	if(msg.arg2 != READABLE_DONT_SET) {
-		VFSNode::acquireTree();
-		if(parent)
-			static_cast<VFSDevice*>(parent)->setReadable(msg.arg2);
-		VFSNode::releaseTree();
-	}
 	if((long)msg.arg1 <= 0)
 		return msg.arg1;
 
@@ -440,21 +419,17 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 
 	/* notify the driver */
 	if(list == &sendList) {
-		VFSNode::acquireTree();
-		if(EXPECT_TRUE(parent)) {
+		static_cast<VFSDevice*>(parent)->addMsgs(1);
+		if(EXPECT_FALSE(msg2))
 			static_cast<VFSDevice*>(parent)->addMsgs(1);
-			if(EXPECT_FALSE(msg2))
-				static_cast<VFSDevice*>(parent)->addMsgs(1);
-			Sched::wakeup(EV_CLIENT,(evobj_t)parent);
-		}
-		VFSNode::releaseTree();
+		Sched::wakeup(EV_CLIENT,(evobj_t)parent,false);
 	}
 	else {
 		/* notify other possible waiters */
 		if(recipient)
 			recipient->unblock();
 		else
-			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
+			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,false);
 	}
 	SpinLock::release(&waitLock);
 	return 0;
@@ -510,10 +485,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	}
 
 	if(event == EV_CLIENT) {
-		VFSNode::acquireTree();
-		if(EXPECT_TRUE(parent))
-			static_cast<VFSDevice*>(parent)->remMsgs(1);
-		VFSNode::releaseTree();
+		static_cast<VFSDevice*>(parent)->remMsgs(1);
 		curClient = msg->thread;
 	}
 	SpinLock::release(&waitLock);

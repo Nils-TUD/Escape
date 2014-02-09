@@ -47,9 +47,6 @@
 #define MSG_DEV_CLOSE_RESP			100004
 #define MSG_DEV_SHFILE_RESP			100005
 
-/* tells the kernel for MSG_DEV_READ_RESP that it shouldn't use arg2 for setting data readable */
-#define READABLE_DONT_SET			2
-
 /* requests to fs */
 #define MSG_FS_OPEN					100
 #define MSG_FS_READ					101

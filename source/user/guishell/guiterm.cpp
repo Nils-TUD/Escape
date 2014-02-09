@@ -170,7 +170,6 @@ void GUITerm::read(int fd,sMsg *msg) {
 	size_t count = msg->args.arg2;
 	char *data = count <= CLIENT_BUF_SIZE ? _buffer : (char*)malloc(count);
 	msg->args.arg1 = -ENOMEM;
-	msg->args.arg2 = READABLE_DONT_SET;
 	if(data) {
 		int avail;
 		msg->args.arg1 = vtin_gets(_vt,data,count,&avail);

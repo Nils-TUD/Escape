@@ -96,6 +96,8 @@ public:
 	/**
 	 * Acquires the tree-lock. While holding this lock, the whole VFS-tree-structure can't change
 	 * including the node-names. This lock can NOT be grabbed while holding the node-lock!
+	 * However, when you're having a reference to a node, the parent does ALWAYS exist, too. It
+	 * might not have a name anymore and might be unreachable, but everything else is still there.
 	 */
 	static void acquireTree() {
 		SpinLock::acquire(&treeLock);

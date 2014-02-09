@@ -60,10 +60,6 @@ int main(int argc,char **argv) {
 	if(chown("/dev/romdisk",-1,GROUP_STORAGE) < 0)
 		error("Unable to set group for '%s'","/dev/romdisk");
 
-	/* data is always available */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("fcntl");
-
 	/* wait for commands */
 	while(1) {
 		msgid_t mid;
@@ -95,7 +91,6 @@ int main(int argc,char **argv) {
 					msg.args.arg1 = 0;
 					if(offset + count <= size && offset + count > offset)
 						msg.data.arg1 = count;
-					msg.args.arg2 = READABLE_DONT_SET;
 					if(shmemoff != -1)
 						memcpy(shbufs[fd] + shmemoff,addr + offset,msg.data.arg1);
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));

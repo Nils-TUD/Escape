@@ -57,15 +57,6 @@ public:
 	}
 
 	/**
-	 * Checks whether the channel has a reply for the client
-	 *
-	 * @return true if so
-	 */
-	bool hasReply() const {
-		return recvList.length() > 0;
-	}
-
-	/**
 	 * Checks whether the channel has work to do for the server
 	 *
 	 * @return true if so

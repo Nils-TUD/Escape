@@ -174,7 +174,6 @@ int main(int argc,char **argv) {
 							}
 						}
 					}
-					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					if(shmemoff == -1 && msg.args.arg1 > 0)
 						send(fd,MSG_DEV_READ_RESP,buf,msg.data.arg1);

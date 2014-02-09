@@ -108,7 +108,7 @@ int main(void) {
 		error("Unable to announce interrupt-handler");
 
 	/* reg device */
-	sid = createdev("/dev/mouse",0110,DEV_TYPE_CHAR,DEV_OPEN | DEV_CLOSE);
+	sid = createdev("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 	if(sid < 0)
 		error("Unable to register device 'mouse'");
 

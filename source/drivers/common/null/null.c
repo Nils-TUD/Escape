@@ -31,13 +31,9 @@ int main(void) {
 	int id;
 	msgid_t mid;
 
-	id = createdev("/dev/null",0666,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
+	id = createdev("/dev/null",0666,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to register device 'null'");
-
-	/* /dev/null produces no output, so always available to prevent blocking */
-	if(fcntl(id,F_SETDATA,true) < 0)
-		error("fcntl");
 
 	/* wait for commands */
 	while(1) {
@@ -48,7 +44,6 @@ int main(void) {
 			switch(mid) {
 				case MSG_DEV_READ:
 					msg.args.arg1 = 0;
-					msg.args.arg2 = READABLE_DONT_SET;
 					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
 					break;
 				case MSG_DEV_WRITE:

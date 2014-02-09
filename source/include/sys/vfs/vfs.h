@@ -33,15 +33,15 @@
 #define DEV_SHFILE					16
 
 #define DEV_TYPE_FS					0
-#define DEV_TYPE_BLOCK				1
-#define DEV_TYPE_CHAR				2
-#define DEV_TYPE_FILE				3
-#define DEV_TYPE_SERVICE			4
+#define DEV_TYPE_CHAR				1
+#define DEV_TYPE_BLOCK				2
+#define DEV_TYPE_SERVICE			3
+#define DEV_TYPE_FILE				4
 
 /* fcntl-commands */
 #define F_GETFL						0
 #define F_SETFL						1
-#define F_SETDATA					2
+#define F_WAKE_READER				2
 #define F_GETACCESS					3
 #define F_SETUNUSED					4
 #define F_SEMUP						5
@@ -209,19 +209,6 @@ public:
 	 * @return 0 if ok, negative if an error occurred
 	 */
 	static int createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file);
-
-	/**
-	 * Waits for the given event. First, the function checks whether we can wait, i.e. if the event
-	 * to wait for has already arrived. If not, we wait until one of the events arrived.
-	 *
-	 * @param event the event to wait for
-	 * @param object the object to wait for (is expected to be a OpenFile*, if its a file-wait)
-	 * @param maxWaitTime the maximum time to wait (in milliseconds)
-	 * @param block whether we should wait if necessary (otherwise it will be checked only whether
-	 *  we can wait and if so, -EWOULDBLOCK is returned. if not, 0 is returned.)
-	 * @return 0 on success
-	 */
-	static int waitFor(uint event,evobj_t object,time_t maxWaitTime,bool block);
 
 	/**
 	 * Creates a process-node with given pid

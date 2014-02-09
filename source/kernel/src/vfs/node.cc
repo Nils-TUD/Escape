@@ -368,6 +368,10 @@ void VFSNode::append(VFSNode *p) {
 			next->prev = this;
 		p->firstChild = this;
 		SpinLock::release(&treeLock);
+
+		SpinLock::acquire(&p->lock);
+		p->refCount++;
+		SpinLock::release(&p->lock);
 	}
 	parent = p;
 }
@@ -415,7 +419,6 @@ ushort VFSNode::doUnref(bool remove) {
 		prev = NULL;
 		next = NULL;
 		firstChild = NULL;
-		parent = NULL;
 
 		/* free name (do that afterwards, unlocked) */
 		if(IS_ON_HEAP(name))
@@ -428,8 +431,10 @@ ushort VFSNode::doUnref(bool remove) {
 	if(nameptr)
 		Cache::free(const_cast<char*>(nameptr));
 	/* if there are no references anymore, we can put the node on the freelist */
-	if(norefs)
+	if(norefs) {
+		parent->unref();
 		delete this;
+	}
 	return remRefs;
 }
 

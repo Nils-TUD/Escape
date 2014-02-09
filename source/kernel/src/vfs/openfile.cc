@@ -55,25 +55,27 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 	switch(cmd) {
 		case F_GETACCESS:
 			return flags & (VFS_READ | VFS_WRITE | VFS_MSGS);
+
 		case F_GETFL:
 			return flags & VFS_NOBLOCK;
+
 		case F_SETFL:
 			SpinLock::acquire(&lock);
 			flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DEVICE;
 			flags |= arg & VFS_NOBLOCK;
 			SpinLock::release(&lock);
 			return 0;
-		case F_SETDATA: {
+
+		case F_WAKE_READER: {
 			VFSNode *n = node;
 			int res = 0;
-			SpinLock::acquire(&waitLock);
 			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_DEVICE(n->getMode())))
 				res = -EINVAL;
 			else
-				res = static_cast<VFSDevice*>(n)->setReadable((bool)arg);
-			SpinLock::release(&waitLock);
+				static_cast<VFSDevice*>(n)->up();
 			return res;
 		}
+
 		case F_SETUNUSED: {
 			VFSNode *n = node;
 			int res = 0;
@@ -85,12 +87,14 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			SpinLock::release(&waitLock);
 			return res;
 		}
+
 		case F_DISMSGS: {
 			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode())))
 				return -EINVAL;
 			static_cast<VFSChannel*>(node)->discardMsgs();
 			return 0;
 		}
+
 		case F_SEMUP:
 		case F_SEMDOWN: {
 			if(sem == NULL) {
@@ -144,10 +148,7 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 		if(res == 0)
 			memcpy(info,msg.d,sizeof(sFileInfo));
 		/* set device id */
-		VFSNode::acquireTree();
-		if(chan->getParent())
-			info->device = chan->getParent()->getNo();
-		VFSNode::releaseTree();
+		info->device = chan->getParent()->getNo();
 	}
 	return res;
 }

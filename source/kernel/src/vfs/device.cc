@@ -35,7 +35,7 @@
 /* block- and file-devices are none-empty by default, because their data is always available */
 VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
 		: VFSNode(pid,n,buildMode(type) | (m & 0777),success),
-		  isEmpty(type != DEV_TYPE_BLOCK && type != DEV_TYPE_FILE), funcs(ops), msgCount(0), lastClient() {
+		  sem(0), funcs(ops), msgCount(0), lastClient() {
 	if(!success)
 		return;
 
@@ -72,16 +72,6 @@ void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int ms
 	/* do that first because otherwise the client-nodes are already gone :) */
 	wakeupClients(true);
 	destroy();
-}
-
-int VFSDevice::setReadable(bool readable) {
-	if(!supports(DEV_READ))
-		return -ENOTSUP;
-	bool wasEmpty = isEmpty;
-	isEmpty = !readable;
-	if(wasEmpty && readable)
-		wakeupClients(true);
-	return 0;
 }
 
 int VFSDevice::getWork(uint flags) {
@@ -133,8 +123,8 @@ void VFSDevice::print(OStream &os) const {
 	bool valid;
 	const VFSNode *chan = openDir(false,&valid);
 	if(valid) {
-		os.writef("%s (%s, lastClient=%s):\n",
-			name,isEmpty ? "empty" : "full",lastClient ? lastClient->getName() : "-");
+		os.writef("%s (sem=%d, lastClient=%s):\n",
+			name,sem.getValue(),lastClient ? lastClient->getName() : "-");
 		while(chan != NULL) {
 			os.pushIndent();
 			chan->print(os);

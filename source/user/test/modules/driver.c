@@ -77,7 +77,6 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	id = createdev("/dev/bla",0666,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("createdev");
-	fcntl(id,F_SETDATA,true);
 
 	if(startthread(getRequests,NULL) < 0)
 		error("Unable to start thread");
@@ -157,7 +156,6 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,
 					req->msg.args.arg1,req->msg.args.arg2);
 			req->msg.args.arg1 = req->msg.args.arg2;
-			req->msg.args.arg2 = READABLE_DONT_SET;
 			itoa(resp,sizeof(resp),respId++);
 			send(req->fd,MSG_DEV_READ_RESP,&req->msg,sizeof(req->msg.args));
 			send(req->fd,MSG_DEV_READ_RESP,resp,sizeof(resp));

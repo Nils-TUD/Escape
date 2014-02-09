@@ -147,10 +147,9 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 		assert(false);
 	}
 
-	/* if we've not entered the kernel by a trap, we have to decrease $30, because when returning
-	 * from the signal, we'll always enter it by a trap, so that $30 will be increased */
-	if(stack->irqNo != 20)
-		stack->r[30] -= 4;
+	/* we have to decrease $30, because when returning from the signal, we'll enter it by a trap,
+	 * so that $30 will be increased */
+	stack->r[30] -= 4;
 
 	memcpy(sp - REG_COUNT,stack->r,REG_COUNT * sizeof(uint32_t));
 	/* signal-number as arguments */

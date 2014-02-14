@@ -48,4 +48,4 @@ fi
 # now write image to usb-stick
 sudo dd if=$1/usb.img of=$ESC_USBDEV
 
-sudo rm -Rf $tmp
+rm -Rf $tmp

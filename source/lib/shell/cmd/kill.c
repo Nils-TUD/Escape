@@ -60,7 +60,7 @@ int shell_cmdKill(int argc,char **argv) {
 		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		return usage(argv[0]);
 	}
-	if(ca_hasHelp())
+	if((!list && ca_getFreeCount() == 0) || ca_hasHelp())
 		return usage(argv[0]);
 
 	/* translate signal-name to signal-number */

@@ -58,14 +58,14 @@ void Sched::init() {
 }
 
 void Sched::addIdleThread(Thread *t) {
-	lock.acquire();
+	lock.down();
 	for(size_t i = 0; i < SMP::getCPUCount(); ++i) {
 		if(idleThreads[i] == NULL) {
 			idleThreads[i] = t;
 			break;
 		}
 	}
-	lock.release();
+	lock.up();
 }
 
 void Sched::enqueue(Thread *t) {
@@ -91,7 +91,7 @@ void Sched::dequeue(Thread *t) {
 }
 
 Thread *Sched::perform(Thread *old,cpuid_t cpu) {
-	lock.acquire();
+	lock.down();
 	/* give the old thread a new state */
 	if(old) {
 		if(old->getFlags() & T_IDLE)
@@ -112,7 +112,7 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 				old->setNewState(Thread::READY);
 				old->waitstart = 0;
 				removeFromEventlist(old);
-				lock.release();
+				lock.up();
 				return old;
 			}
 
@@ -165,12 +165,12 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 	if(rdyCount > 0)
 		SMP::wakeupCPU();
 
-	lock.release();
+	lock.up();
 	return t;
 }
 
 void Sched::adjustPrio(Thread *t,uint64_t total) {
-	lock.acquire();
+	lock.down();
 	/* if it is still blocked, add the time to the blocked time */
 	if(t->waitstart > 0) {
 		uint64_t now = CPU::rdtsc();
@@ -225,11 +225,11 @@ void Sched::adjustPrio(Thread *t,uint64_t total) {
 
 	/* reset blocked time */
 	t->stats.blocked = 0;
-	lock.release();
+	lock.up();
 }
 
 void Sched::wait(Thread *t,uint event,evobj_t object) {
-	lock.acquire();
+	lock.down();
 	assert(t->event == 0);
 	assert(Thread::getRunning() == t);
 	t->event = event;
@@ -237,13 +237,13 @@ void Sched::wait(Thread *t,uint event,evobj_t object) {
 	setBlocked(t);
 	if(event)
 		evlists[event - 1].append(t);
-	lock.release();
+	lock.up();
 }
 
 void Sched::wakeup(uint event,evobj_t object,bool all) {
 	assert(event >= 1 && event <= EV_COUNT);
 	DList<Thread> *list = evlists + event - 1;
-	lock.acquire();
+	lock.down();
 	for(auto it = list->begin(); it != list->end(); ) {
 		auto old = it++;
 		assert(old->event == event);
@@ -254,19 +254,19 @@ void Sched::wakeup(uint event,evobj_t object,bool all) {
 				break;
 		}
 	}
-	lock.release();
+	lock.up();
 }
 
 bool Sched::wakeupThread(Thread *t,uint event) {
 	assert(event >= 1 && event <= EV_COUNT);
 	bool res = false;
-	lock.acquire();
+	lock.down();
 	if(t->event == event) {
 		removeFromEventlist(t);
 		setReady(t);
 		res = true;
 	}
-	lock.release();
+	lock.up();
 	return res;
 }
 
@@ -394,12 +394,12 @@ void Sched::setSuspended(Thread *t,bool blocked) {
 }
 
 void Sched::removeThread(Thread *t) {
-	lock.acquire();
+	lock.down();
 	switch(t->getState()) {
 		case Thread::RUNNING:
 			t->setNewState(Thread::ZOMBIE);
 			SMP::killThread(t);
-			lock.release();
+			lock.up();
 			return;
 		case Thread::ZOMBIE:
 		case Thread::BLOCKED:
@@ -415,7 +415,7 @@ void Sched::removeThread(Thread *t) {
 	}
 	t->setState(Thread::ZOMBIE);
 	t->setNewState(Thread::ZOMBIE);
-	lock.release();
+	lock.up();
 }
 
 bool Sched::setReadyState(Thread *t) {

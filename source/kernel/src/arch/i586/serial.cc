@@ -38,11 +38,11 @@ void Serial::init() {
 void Serial::out(uint16_t port,uint8_t byte) {
 	assert(port < ARRAY_SIZE(ports));
 	uint16_t ioport = ports[port];
-	lock.acquire();
+	lock.down();
 	while(isTransmitEmpty(ioport) == 0)
 		;
 	Ports::out<uint8_t>(ioport,byte);
-	lock.release();
+	lock.up();
 }
 
 int Serial::isTransmitEmpty(uint16_t port) {

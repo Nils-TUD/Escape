@@ -37,7 +37,7 @@ static void panic(const char *msg,...) {
 	va_end(ap);
 }
 
-void SpinLock::acquire() {
+void SpinLock::down() {
 	if(Util::IsPanicStarted())
 		return;
 
@@ -57,7 +57,7 @@ void SpinLock::acquire() {
 	}
 }
 
-bool SpinLock::tryAcquire() {
+bool SpinLock::tryDown() {
 	return Util::IsPanicStarted() || Atomic::cmpnswap(&lock, 0, 1);
 }
 #endif

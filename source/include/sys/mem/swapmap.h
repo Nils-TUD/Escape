@@ -100,17 +100,17 @@ private:
 };
 
 inline void SwapMap::incRefs(ulong block) {
-	lock.acquire();
+	lock.down();
 	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
 	swapBlocks[block].refCount++;
-	lock.release();
+	lock.up();
 }
 
 inline bool SwapMap::isUsed(ulong block) {
 	bool res;
-	lock.acquire();
+	lock.down();
 	assert(block < totalBlocks);
 	res = swapBlocks[block].refCount > 0;
-	lock.release();
+	lock.up();
 	return res;
 }

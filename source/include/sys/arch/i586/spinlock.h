@@ -24,16 +24,16 @@
 #include <sys/cpu.h>
 
 #if !DEBUG_LOCKS
-inline void SpinLock::acquire() {
+inline void SpinLock::down() {
 	while(!Atomic::cmpnswap(&lock, 0, 1))
 		CPU::pause();
 }
 
-inline bool SpinLock::tryAcquire() {
+inline bool SpinLock::tryDown() {
 	return Atomic::cmpnswap(&lock, 0, 1);
 }
 #endif
 
-inline void SpinLock::release() {
+inline void SpinLock::up() {
 	asm volatile ("movl	$0,%0" : : "m"(lock) : "memory");
 }

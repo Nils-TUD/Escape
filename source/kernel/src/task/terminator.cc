@@ -30,22 +30,22 @@ SpinLock Terminator::lock;
 
 void Terminator::start() {
 	Thread *t = Thread::getRunning();
-	lock.acquire();
+	lock.down();
 	while(1) {
 		if(deadThreads.length() == 0) {
 			t->wait(EV_TERMINATION,0);
-			lock.release();
+			lock.up();
 
 			Thread::switchAway();
 
-			lock.acquire();
+			lock.down();
 		}
 
 		while(deadThreads.length() > 0) {
 			Thread *dt = deadThreads.removeFirst();
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
-			lock.release();
+			lock.up();
 
 			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
@@ -54,18 +54,18 @@ void Terminator::start() {
 			}
 			Proc::killThread(dt->getTid());
 
-			lock.acquire();
+			lock.down();
 		}
 	}
 }
 
 void Terminator::addDead(Thread *t) {
-	lock.acquire();
+	lock.down();
 	/* ensure that we don't add a thread twice */
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(deadThreads.append(t));
 		Sched::wakeup(EV_TERMINATION,0);
 	}
-	lock.release();
+	lock.up();
 }

@@ -34,14 +34,14 @@ int ShFiles::add(VMRegion *vmreg,pid_t pid) {
 		if(!fuse)
 			return -ENOMEM;
 
-		lock.acquire();
+		lock.down();
 		/* does anybody else have this file already? */
 		FileNode *fn = tree.find(fid);
 		if(!fn) {
 			/* ok, create a new node for it */
 			fn = new FileNode(fid);
 			if(!fn) {
-				lock.release();
+				lock.up();
 				delete fuse;
 				return -ENOMEM;
 			}
@@ -49,7 +49,7 @@ int ShFiles::add(VMRegion *vmreg,pid_t pid) {
 		}
 		/* append us to users */
 		fn->usages.append(fuse);
-		lock.release();
+		lock.up();
 
 		vmreg->fileuse = fuse;
 	}
@@ -58,14 +58,14 @@ int ShFiles::add(VMRegion *vmreg,pid_t pid) {
 
 bool ShFiles::get(OpenFile *f,uintptr_t *addr,pid_t *pid) {
 	FileId fid(f->getDev(),f->getNodeNo());
-	lock.acquire();
+	lock.down();
 	FileNode *fn = tree.find(fid);
 	if(fn) {
 		FileUsage *fuse = &*fn->usages.begin();
 		*addr = fuse->addr;
 		*pid = fuse->pid;
 	}
-	lock.release();
+	lock.up();
 	return fn != NULL;
 }
 
@@ -74,7 +74,7 @@ void ShFiles::remove(VMRegion *vmreg) {
 		OpenFile *f = vmreg->reg->getFile();
 		FileId fid(f->getDev(),f->getNodeNo());
 
-		lock.acquire();
+		lock.down();
 		/* find our file; it has to exist because we're a user of it */
 		FileNode *fn = tree.find(fid);
 		assert(fn);
@@ -85,7 +85,7 @@ void ShFiles::remove(VMRegion *vmreg) {
 			tree.remove(fn);
 			delete fn;
 		}
-		lock.release();
+		lock.up();
 
 		delete vmreg->fileuse;
 		vmreg->fileuse = NULL;

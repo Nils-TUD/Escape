@@ -105,7 +105,7 @@ void apstart() {
 static void idlestart() {
 	if(!SMP::isBSP()) {
 		/* unlock the temporary kernel-stack, so that other CPUs can use it */
-		aplock.release();
+		aplock.up();
 	}
 	thread_idle();
 }

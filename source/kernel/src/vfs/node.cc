@@ -92,7 +92,7 @@ const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
 	else
 		p = static_cast<const VFSLink*>(this)->resolve();
 	if(locked)
-		treeLock.acquire();
+		treeLock.down();
 	*valid = p->name != NULL;
 	return p->firstChild;
 }
@@ -361,17 +361,17 @@ const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen) const {
 
 void VFSNode::append(VFSNode *p) {
 	if(p != NULL) {
-		treeLock.acquire();
+		treeLock.down();
 		prev = NULL;
 		next = p->firstChild;
 		if(next)
 			next->prev = this;
 		p->firstChild = this;
-		treeLock.release();
+		treeLock.up();
 
-		p->lock.acquire();
+		p->lock.down();
 		p->refCount++;
-		p->lock.release();
+		p->lock.up();
 	}
 	parent = p;
 }
@@ -395,13 +395,13 @@ ushort VFSNode::doUnref(bool remove) {
 		}
 	}
 
-	treeLock.acquire();
+	treeLock.down();
 	/* don't decrease the refs twice with remove */
 	if(!remove || name) {
-		lock.acquire();
+		lock.down();
 		remRefs = --refCount;
 		norefs = remRefs == 0;
-		lock.release();
+		lock.up();
 	}
 
 	/* take care that we don't destroy the node twice */
@@ -426,7 +426,7 @@ ushort VFSNode::doUnref(bool remove) {
 		name = NULL;
 	}
 
-	treeLock.release();
+	treeLock.up();
 
 	if(nameptr)
 		Cache::free(const_cast<char*>(nameptr));
@@ -450,9 +450,9 @@ char *VFSNode::generateId(pid_t pid) {
 	itoa(name,size,pid);
 	size_t len = strlen(name);
 	*(name + len) = '.';
-	nodesLock.acquire();
+	nodesLock.down();
 	uint id = nextUsageId++;
-	nodesLock.release();
+	nodesLock.up();
 	itoa(name + len + 1,size - (len + 1),id);
 	return name;
 }
@@ -493,11 +493,11 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 
 void *VFSNode::operator new(size_t) throw() {
 	VFSNode *node = NULL;
-	nodesLock.acquire();
+	nodesLock.down();
 	if(freeList == NULL) {
 		size_t oldCount = nodeArray.getObjCount();
 		if(!nodeArray.extend()) {
-			nodesLock.release();
+			nodesLock.up();
 			return NULL;
 		}
 		freeList = get(oldCount);
@@ -511,7 +511,7 @@ void *VFSNode::operator new(size_t) throw() {
 	node = freeList;
 	freeList = freeList->next;
 	allocated++;
-	nodesLock.release();
+	nodesLock.up();
 	return node;
 }
 
@@ -522,19 +522,19 @@ void VFSNode::operator delete(void *ptr) throw() {
 	node->name = NULL;
 	node->nameLen = 0;
 	node->owner = INVALID_PID;
-	nodesLock.acquire();
+	nodesLock.down();
 	node->next = freeList;
 	freeList = node;
 	allocated--;
-	nodesLock.release();
+	nodesLock.up();
 }
 
 void VFSNode::printTree(OStream &os) {
 	os.writef("VFS:\n");
 	os.writef("/\n");
-	treeLock.acquire();
+	treeLock.down();
 	doPrintTree(os,1,get(0));
-	treeLock.release();
+	treeLock.up();
 }
 
 void VFSNode::print(OStream &os) const {

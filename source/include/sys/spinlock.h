@@ -28,9 +28,9 @@ public:
 	explicit SpinLock() : lock(0) {
 	}
 
-	void acquire();
-	bool tryAcquire();
-	void release();
+	void down();
+	bool tryDown();
+	void up();
 
 private:
 	uint lock;

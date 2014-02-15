@@ -100,13 +100,13 @@ public:
 	 * might not have a name anymore and might be unreachable, but everything else is still there.
 	 */
 	static void acquireTree() {
-		treeLock.acquire();
+		treeLock.down();
 	}
 	/**
 	 * Releases the tree-lock.
 	 */
 	static void releaseTree() {
-		treeLock.release();
+		treeLock.up();
 	}
 
 	/**
@@ -284,7 +284,7 @@ public:
 	 */
 	void closeDir(bool locked) const {
 		if(locked)
-			treeLock.release();
+			treeLock.up();
 	}
 
 	/**
@@ -480,9 +480,9 @@ protected:
 
 	const VFSNode *increaseRefs() const {
 		/* TODO use atomic ops */
-		lock.acquire();
+		lock.down();
 		refCount++;
-		lock.release();
+		lock.up();
 		return this;
 	}
 

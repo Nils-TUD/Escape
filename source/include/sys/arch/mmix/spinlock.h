@@ -22,10 +22,10 @@
 #include <sys/common.h>
 
 /* mmix does not support smp */
-inline void SpinLock::acquire() {
+inline void SpinLock::down() {
 }
-inline bool SpinLock::tryAcquire() {
+inline bool SpinLock::tryDown() {
 	return true;
 }
-inline void SpinLock::release() {
+inline void SpinLock::up() {
 }

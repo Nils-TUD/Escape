@@ -154,8 +154,8 @@ private:
 
 inline bool KHeap::addMemory(uintptr_t addr,size_t size) {
 	bool res;
-	lock.acquire();
+	lock.down();
 	res = doAddMemory(addr,size);
-	lock.release();
+	lock.up();
 	return res;
 }

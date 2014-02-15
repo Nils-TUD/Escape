@@ -250,8 +250,8 @@ inline bool PhysMem::shouldSetRegTimestamp() {
 	bool res;
 	if(!swapEnabled)
 		return false;
-	defLock.acquire();
+	defLock.down();
 	res = getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
-	defLock.release();
+	defLock.up();
 	return res;
 }

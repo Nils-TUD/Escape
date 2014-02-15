@@ -96,7 +96,7 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorValCpy;
 
 	/* append to list */
-	lock.acquire();
+	lock.down();
 	p = Proc::getRef(pid);
 	if(p) {
 		if(!p->env) {
@@ -107,12 +107,12 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		p->env->append(var);
 		Proc::relRef(p);
 	}
-	lock.release();
+	lock.up();
 	return true;
 
 errorVar:
 	Proc::relRef(p);
-	lock.release();
+	lock.up();
 	delete var;
 errorValCpy:
 	Cache::free(valueCpy);
@@ -122,7 +122,7 @@ errorNameCpy:
 }
 
 void Env::removeFor(pid_t pid) {
-	lock.acquire();
+	lock.down();
 	Proc *p = Proc::getRef(pid);
 	if(p) {
 		if(p->env) {
@@ -137,7 +137,7 @@ void Env::removeFor(pid_t pid) {
 		}
 		Proc::relRef(p);
 	}
-	lock.release();
+	lock.up();
 }
 
 void Env::printAllOf(OStream &os,pid_t pid) {
@@ -203,7 +203,7 @@ pid_t Env::getPPid(pid_t pid) {
 }
 
 SList<Env::EnvVar> *Env::request(pid_t pid) {
-	lock.acquire();
+	lock.down();
 	Thread::addLock(&lock);
 	const Proc *p = Proc::getRef(pid);
 	if(!p)
@@ -216,5 +216,5 @@ SList<Env::EnvVar> *Env::request(pid_t pid) {
 
 void Env::release() {
 	Thread::remLock(&lock);
-	lock.release();
+	lock.up();
 }

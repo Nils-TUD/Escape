@@ -141,17 +141,17 @@ private:
 
 	static uint32_t read(Instance *ioapic,uint32_t reg) {
 		/* we only use it in the setup-phase with a single CPU, but to be sure... */
-		lck.acquire();
+		lck.down();
 		select(ioapic,reg);
 		uint32_t val = ioapic->addr[IOWIN];
-		lck.release();
+		lck.up();
 		return val;
 	}
 	static void write(Instance *ioapic,uint32_t reg,uint32_t value) {
-		lck.acquire();
+		lck.down();
 		select(ioapic,reg);
 		ioapic->addr[IOWIN] = value;
-		lck.release();
+		lck.up();
 	}
 	static void select(Instance *ioapic,uint32_t reg) {
 		volatile uint8_t *addr = reinterpret_cast<volatile uint8_t*>(ioapic->addr + IOREGSEL);

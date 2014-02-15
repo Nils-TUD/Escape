@@ -53,22 +53,22 @@ Thread *ThreadBase::getRef(tid_t tid) {
 	if(tid >= ARRAY_SIZE(tidToThread))
 		return NULL;
 
-	refLock.acquire();
+	refLock.down();
 	Thread *t = tidToThread[tid];
 	if(t)
 		t->refs++;
-	refLock.release();
+	refLock.up();
 	return t;
 }
 
 void ThreadBase::relRef(const Thread *t) {
-	refLock.acquire();
+	refLock.down();
 	if(--t->refs == 0) {
 		Proc::relRef(t->proc);
 		const_cast<Thread*>(t)->remove();
 		Cache::free(const_cast<Thread*>(t));
 	}
-	refLock.release();
+	refLock.up();
 }
 
 Thread *ThreadBase::init(Proc *p) {
@@ -325,7 +325,7 @@ void ThreadBase::kill() {
 
 	/* release resources */
 	for(size_t i = 0; i < termLockCount; i++)
-		termLocks[i]->release();
+		termLocks[i]->up();
 	for(size_t i = 0; i < termHeapCount; i++)
 		Cache::free(termHeapAllocs[i]);
 	for(size_t i = 0; i < termUsageCount; i++)

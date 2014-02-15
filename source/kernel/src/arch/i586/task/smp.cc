@@ -77,7 +77,7 @@ bool SMPBase::initArch() {
 
 void SMPBase::pauseOthers() {
 retry:
-	if(smpLock.tryAcquire()) {
+	if(smpLock.tryDown()) {
 		cpuid_t cur = getCurId();
 		/* wait until all CPUs left the last wait. otherwise, if we're too fast so that they haven't
 		 * done that yet, they might get stuck in the loop that waits for waitlock to become 0
@@ -96,7 +96,7 @@ retry:
 		/* wait until all CPUs are paused */
 		while(waiting < count)
 			::CPU::pause();
-		smpLock.release();
+		smpLock.up();
 	}
 	else {
 		Atomic::add(&waiting,+1);
@@ -112,7 +112,7 @@ void SMPBase::resumeOthers() {
 }
 
 void SMPBase::haltOthers() {
-	if(smpLock.tryAcquire()) {
+	if(smpLock.tryDown()) {
 		cpuid_t cur = getCurId();
 		halting = 0;
 		size_t count = 0;
@@ -127,7 +127,7 @@ void SMPBase::haltOthers() {
 		/* wait until all CPUs are halted */
 		while(halting < count)
 			::CPU::pause();
-		smpLock.release();
+		smpLock.up();
 	}
 	else {
 		Atomic::add(&halting,+1);
@@ -137,7 +137,7 @@ void SMPBase::haltOthers() {
 }
 
 void SMPBase::ensureTLBFlushed() {
-	if(smpLock.tryAcquire()) {
+	if(smpLock.tryDown()) {
 		cpuid_t cur = getCurId();
 		flushed = 0;
 		size_t count = 0;
@@ -150,7 +150,7 @@ void SMPBase::ensureTLBFlushed() {
 		/* wait until all CPUs have flushed their TLB */
 		while(halting == 0 && flushed < count)
 			::CPU::pause();
-		smpLock.release();
+		smpLock.up();
 	}
 	else {
 		::CPU::setCR3(::CPU::getCR3());
@@ -159,14 +159,14 @@ void SMPBase::ensureTLBFlushed() {
 }
 
 void SMP::apIsRunning() {
-	smpLock.acquire();
+	smpLock.down();
 	cpuid_t phys = LAPIC::getId();
 	cpuid_t log = GDT::getCPUId();
 	log2Phys[log] = phys;
 	setId(phys,log);
 	setReady(log);
 	seenAPs++;
-	smpLock.release();
+	smpLock.up();
 }
 
 void SMPBase::start() {

@@ -87,10 +87,10 @@ public:
 	 * Clears the screen
 	 */
 	void clearScreen() {
-		lock.acquire();
+		lock.down();
 		clear();
 		col = row = 0;
-		lock.release();
+		lock.up();
 	}
 
 	virtual void writec(char c);

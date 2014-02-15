@@ -27,36 +27,36 @@
 #define printEventTrace(...)
 
 void Semaphore::down() {
-	lock.acquire();
+	lock.down();
 	if(--value < 0) {
 		Thread *t = Thread::getRunning();
 		printEventTrace(Util::getKernelStackTrace(),"[%d] Waiting for %#x ",t->getTid(),this);
 		t->wait(EV_MUTEX,(evobj_t)this);
-		lock.release();
+		lock.up();
 		Thread::switchNoSigs();
-		lock.acquire();
+		lock.down();
 	}
 	printEventTrace(Util::getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),this);
-	lock.release();
+	lock.up();
 }
 
 bool Semaphore::tryDown() {
 	bool res = false;
-	lock.acquire();
+	lock.down();
 	if(value > 0) {
 		printEventTrace(Util::getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),this);
 		value--;
 		res = true;
 	}
-	lock.release();
+	lock.up();
 	return res;
 }
 
 void Semaphore::up() {
-	lock.acquire();
+	lock.down();
 	if(++value <= 0)
 		Sched::wakeup(EV_MUTEX,(evobj_t)this,false);
 	printEventTrace(Util::getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->getTid(),this,
 			waiting ? "(Waking up)" : "(No wakeup)");
-	lock.release();
+	lock.up();
 }

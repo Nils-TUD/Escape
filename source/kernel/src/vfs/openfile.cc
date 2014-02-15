@@ -41,14 +41,14 @@ Treap<OpenFile::SemTreapNode> OpenFile::sems;
 extern SpinLock waitLock;
 
 void OpenFile::decUsages() {
-	lock.acquire();
+	lock.down();
 	assert(usageCount > 0);
 	usageCount--;
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
 	if(EXPECT_FALSE(usageCount == 0 && refCount == 0))
 		doClose(Proc::getRunning());
-	lock.release();
+	lock.up();
 }
 
 int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
@@ -60,10 +60,10 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			return flags & VFS_NOBLOCK;
 
 		case F_SETFL:
-			lock.acquire();
+			lock.down();
 			flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DEVICE;
 			flags |= arg & VFS_NOBLOCK;
-			lock.release();
+			lock.up();
 			return 0;
 
 		case F_WAKE_READER: {
@@ -79,12 +79,12 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 		case F_SETUNUSED: {
 			VFSNode *n = node;
 			int res = 0;
-			waitLock.acquire();
+			waitLock.down();
 			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(n->getMode())))
 				res = -EINVAL;
 			else
 				static_cast<VFSChannel*>(n)->setUsed(false);
-			waitLock.release();
+			waitLock.up();
 			return res;
 		}
 
@@ -98,7 +98,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 		case F_SEMUP:
 		case F_SEMDOWN: {
 			if(sem == NULL) {
-				semLock.acquire();
+				semLock.down();
 				if(sem == NULL) {
 					FileId id(devNo,nodeNo);
 					sem = sems.find(id);
@@ -107,7 +107,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 						sems.insert(sem);
 					}
 				}
-				semLock.release();
+				semLock.up();
 			}
 
 			if(cmd == F_SEMUP)
@@ -159,13 +159,13 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	/* don't lock it during VFSFS::istat(). we don't need it in this case because position is
 	 * simply set and never restored to oldPos */
 	if(devNo == VFS_DEV_NO || whence != SEEK_END)
-		lock.acquire();
+		lock.down();
 
 	off_t oldPos = position;
 	if(devNo == VFS_DEV_NO) {
 		res = node->seek(pid,position,offset,whence);
 		if(EXPECT_FALSE(res < 0)) {
-			lock.release();
+			lock.up();
 			return res;
 		}
 		position = res;
@@ -195,7 +195,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 		res = position;
 
 	if(devNo == VFS_DEV_NO || whence != SEEK_END)
-		lock.release();
+		lock.up();
 	return res;
 }
 
@@ -206,9 +206,9 @@ ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 	/* use the read-handler */
 	ssize_t readBytes = node->read(pid,this,buffer,position,count);
 	if(EXPECT_TRUE(readBytes > 0)) {
-		lock.acquire();
+		lock.down();
 		position += readBytes;
-		lock.release();
+		lock.up();
 	}
 
 	if(EXPECT_TRUE(readBytes > 0 && pid != KERNEL_PID)) {
@@ -228,9 +228,9 @@ ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 	/* write to the node */
 	ssize_t writtenBytes = node->write(pid,this,buffer,position,count);
 	if(EXPECT_TRUE(writtenBytes > 0)) {
-		lock.acquire();
+		lock.down();
 		position += writtenBytes;
-		lock.release();
+		lock.up();
 	}
 
 	if(EXPECT_TRUE(writtenBytes > 0 && pid != KERNEL_PID)) {
@@ -305,9 +305,9 @@ int OpenFile::syncfs(pid_t pid) {
 }
 
 bool OpenFile::close(pid_t pid) {
-	lock.acquire();
+	lock.down();
 	bool res = doClose(pid);
-	lock.release();
+	lock.up();
 	return res;
 }
 
@@ -340,17 +340,17 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 		return -EPERM;
 
 	while(true) {
-		waitLock.acquire();
+		waitLock.down();
 		*fd = static_cast<VFSDevice*>(file->node)->getWork(flags);
 		/* if we've found one or we shouldn't block, stop here */
 		if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK))) {
-			waitLock.release();
+			waitLock.up();
 			return *fd >= 0 ? 0 : -ENOCLIENT;
 		}
 
 		/* wait for a client (accept signals) */
 		t->wait(EV_CLIENT,(evobj_t)file->node);
-		waitLock.release();
+		waitLock.up();
 
 		Thread::switchAway();
 		if(EXPECT_FALSE(t->hasSignalQuick()))
@@ -442,7 +442,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 	if(EXPECT_FALSE(isDrvUse && (flags & VFS_EXCLUSIVE)))
 		return -EINVAL;
 
-	gftLock.acquire();
+	gftLock.down();
 	/* devices and files can't be used exclusively */
 	if(!isDrvUse) {
 		/* check if somebody has this file currently exclusively */
@@ -452,7 +452,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 			/* same file? */
 			if(e->devNo == devNo && e->nodeNo == nodeNo) {
 				assert(e->flags & VFS_EXCLUSIVE);
-				gftLock.release();
+				gftLock.up();
 				return -EBUSY;
 			}
 			e = e->next;
@@ -466,7 +466,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 				assert(~e->flags & VFS_EXCLUSIVE);
 				/* same file? */
 				if(e->devNo == devNo && e->nodeNo == nodeNo) {
-					gftLock.release();
+					gftLock.up();
 					return -EBUSY;
 				}
 				e = e->next;
@@ -479,7 +479,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		size_t j;
 		i = gftArray.getObjCount();
 		if(!gftArray.extend()) {
-			gftLock.release();
+			gftLock.up();
 			return -ENFILE;
 		}
 		/* put all except i on the freelist */
@@ -506,7 +506,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		e->next = usedList;
 		usedList = e;
 	}
-	gftLock.release();
+	gftLock.up();
 
 	/* count references of virtual nodes */
 	n->increaseRefs();
@@ -526,13 +526,13 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 void OpenFile::releaseFile(OpenFile *file) {
 	Cache::free(file->path);
 	if(file->sem) {
-		semLock.acquire();
+		semLock.down();
 		sems.remove(file->sem);
-		semLock.release();
+		semLock.up();
 		delete file->sem;
 	}
 
-	gftLock.acquire();
+	gftLock.down();
 	assert(file->flags != 0);
 	OpenFile *e = (file->flags & VFS_EXCLUSIVE) ? exclList : usedList;
 	OpenFile *p = NULL;
@@ -552,5 +552,5 @@ void OpenFile::releaseFile(OpenFile *file) {
 	file->flags = 0;
 	file->next = gftFreeList;
 	gftFreeList = file;
-	gftLock.release();
+	gftLock.up();
 }

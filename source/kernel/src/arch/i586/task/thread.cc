@@ -132,19 +132,19 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 }
 
 bool ThreadBase::beginTerm() {
-	switchLock.acquire();
+	switchLock.down();
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
 	bool res = state != Thread::RUNNING && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		Sched::removeThread(static_cast<Thread*>(this));
-	switchLock.release();
+	switchLock.up();
 	return res;
 }
 
 void Thread::initialSwitch() {
-	switchLock.acquire();
+	switchLock.down();
 	cpuid_t cpu = GDT::getCPUId();
 	Thread *cur = Sched::perform(NULL,cpu);
 	cur->stats.schedCount++;
@@ -161,7 +161,7 @@ void ThreadBase::doSwitch() {
 	Thread *old = Thread::getRunning();
 	/* lock this, because Sched::perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
-	switchLock.acquire();
+	switchLock.down();
 
 	/* update runtime-stats */
 	uint64_t cycles = CPU::rdtsc();
@@ -199,7 +199,7 @@ void ThreadBase::doSwitch() {
 	else {
 		SMP::schedule(cpu,n,cycles);
 		n->stats.cycleStart = CPU::rdtsc();
-		switchLock.release();
+		switchLock.up();
 	}
 }
 

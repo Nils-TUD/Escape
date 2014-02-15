@@ -74,9 +74,9 @@ void *Cache::alloc(size_t size) {
 done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		lock.acquire();
+		lock.down();
 		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
-		lock.release();
+		lock.up();
 	}
 #endif
 	return res;
@@ -117,10 +117,10 @@ void Cache::free(void *p) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		lock.acquire();
+		lock.down();
 		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[F] %Px %zu ",
 		                      p,caches[area[0]].objSize);
-		lock.release();
+		lock.up();
 	}
 #endif
 
@@ -139,11 +139,11 @@ void Cache::free(void *p) {
 
 	/* put on freelist */
 	Entry *c = caches + area[0];
-	lock.acquire();
+	lock.down();
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
-	lock.release();
+	lock.up();
 }
 
 size_t Cache::getOccMem() {
@@ -190,7 +190,7 @@ void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t fr
 }
 
 void *Cache::get(Entry *c,size_t i) {
-	lock.acquire();
+	lock.down();
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -199,7 +199,7 @@ void *Cache::get(Entry *c,size_t i) {
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)KHeap::allocSpace(pageCount);
 		if(space == NULL) {
-			lock.release();
+			lock.up();
 			return NULL;
 		}
 
@@ -226,6 +226,6 @@ void *Cache::get(Entry *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
-	lock.release();
+	lock.up();
 	return area + 2;
 }

@@ -718,7 +718,7 @@ inline void ProcBase::lock(size_t l) const {
 	if(l == PLOCK_PROG)
 		mutexes[l - PLOCK_COUNT].down();
 	else
-		locks[l].acquire();
+		locks[l].down();
 }
 
 inline bool ProcBase::tryLock(size_t l) const {
@@ -730,7 +730,7 @@ inline void ProcBase::unlock(size_t l) const {
 	if(l == PLOCK_PROG)
 		mutexes[l - PLOCK_COUNT].up();
 	else
-		locks[l].release();
+		locks[l].up();
 }
 
 inline size_t ProcBase::getCount() {

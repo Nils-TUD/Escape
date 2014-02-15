@@ -28,19 +28,19 @@
 Video Video::inst;
 
 void Video::backup(char *buffer,ushort *r,ushort *c) const {
-	lock.acquire();
+	lock.down();
 	copyScrToMem(buffer,screen(),VID_ROWS);
 	*r = row;
 	*c = col;
-	lock.release();
+	lock.up();
 }
 
 void Video::restore(const char *buffer,ushort r,ushort c) {
-	lock.acquire();
+	lock.down();
 	copyMemToScr(screen(),buffer,VID_ROWS);
 	row = r;
 	col = c;
-	lock.release();
+	lock.up();
 }
 
 void Video::writec(char c) {

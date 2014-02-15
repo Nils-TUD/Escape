@@ -233,35 +233,35 @@ private:
 
 inline void Sched::block(Thread *t) {
 	assert(t != NULL);
-	lock.acquire();
+	lock.down();
 	setBlocked(t);
-	lock.release();
+	lock.up();
 }
 
 inline void Sched::unblock(Thread *t) {
 	assert(t != NULL);
-	lock.acquire();
+	lock.down();
 	setReady(t);
-	lock.release();
+	lock.up();
 }
 
 inline void Sched::unblockQuick(Thread *t) {
 	assert(t != NULL);
-	lock.acquire();
+	lock.down();
 	setReadyQuick(t);
-	lock.release();
+	lock.up();
 }
 
 inline void Sched::suspend(Thread *t) {
 	assert(t != NULL);
-	lock.acquire();
+	lock.down();
 	setSuspended(t,true);
-	lock.release();
+	lock.up();
 }
 
 inline void Sched::unsuspend(Thread *t) {
 	assert(t != NULL);
-	lock.acquire();
+	lock.down();
 	setSuspended(t,false);
-	lock.release();
+	lock.up();
 }

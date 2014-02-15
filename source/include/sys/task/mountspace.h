@@ -125,9 +125,9 @@ public:
 	 * @param p the process
 	 */
 	static void leave(Proc *p) {
-		lock.acquire();
+		lock.down();
 		doLeave(p);
-		lock.release();
+		lock.up();
 	}
 
 	/**

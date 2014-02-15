@@ -61,19 +61,19 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 }
 
 void Groups::join(Proc *dst,Proc *src) {
-	lock.acquire();
+	lock.down();
 	Entries *g = src->groups;
 	dst->groups = g;
 	if(g)
 		g->refCount++;
-	lock.release();
+	lock.up();
 }
 
 size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
 	size_t res = 0;
 	Proc *p = Proc::getRef(pid);
 	if(p) {
-		lock.acquire();
+		lock.down();
 		Entries *g = p->groups;
 		/* we can't hold the reference during the access to user-memory. we might die */
 		/* since we're holding the spinlock now, nobody can destroy the groups anyway */
@@ -84,7 +84,7 @@ size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
 			res = MIN(g->count,count);
 			memcpy(list,g->groups,res * sizeof(gid_t));
 		}
-		lock.release();
+		lock.up();
 	}
 	return res;
 }
@@ -93,7 +93,7 @@ bool Groups::contains(pid_t pid,gid_t gid) {
 	bool res = false;
 	Proc *p = Proc::getRef(pid);
 	if(p) {
-		lock.acquire();
+		lock.down();
 		Entries *g = p->groups;
 		if(g) {
 			for(size_t i = 0; i < g->count; i++) {
@@ -103,7 +103,7 @@ bool Groups::contains(pid_t pid,gid_t gid) {
 				}
 			}
 		}
-		lock.release();
+		lock.up();
 		Proc::relRef(p);
 	}
 	return res;
@@ -113,7 +113,7 @@ void Groups::leave(pid_t pid) {
 	Proc *p = Proc::getRef(pid);
 	if(!p)
 		return;
-	lock.acquire();
+	lock.down();
 	Entries *g = p->groups;
 	if(g) {
 		if(--g->refCount == 0) {
@@ -121,7 +121,7 @@ void Groups::leave(pid_t pid) {
 			Cache::free(g);
 		}
 	}
-	lock.release();
+	lock.up();
 	p->groups = NULL;
 	Proc::relRef(p);
 }
@@ -129,7 +129,7 @@ void Groups::leave(pid_t pid) {
 void Groups::print(OStream &os,pid_t pid) {
 	Proc *p = Proc::getRef(pid);
 	if(p) {
-		lock.acquire();
+		lock.down();
 		Entries *g = p->groups;
 		if(g) {
 			os.writef("[refs: %u] ",g->refCount);
@@ -138,7 +138,7 @@ void Groups::print(OStream &os,pid_t pid) {
 		}
 		else
 			os.writef("-");
-		lock.release();
+		lock.up();
 		Proc::relRef(p);
 	}
 }

@@ -300,17 +300,17 @@ private:
 	 * Increases the references of this file
 	 */
 	void incRefs() {
-		lock.acquire();
+		lock.down();
 		refCount++;
-		lock.release();
+		lock.up();
 	}
 	/**
 	 * Increments the number of usages of this file
 	 */
 	void incUsages() {
-		lock.acquire();
+		lock.down();
 		usageCount++;
-		lock.release();
+		lock.up();
 	}
 	/**
 	 * Decrements the number of usages of this file

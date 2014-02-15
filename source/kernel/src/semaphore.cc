@@ -41,22 +41,19 @@ void Semaphore::down() {
 }
 
 bool Semaphore::tryDown() {
-	bool res = false;
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	if(value > 0) {
 		printEventTrace(Util::getKernelStackTrace(),"[%d] L %#x ",Thread::getRunning()->getTid(),this);
 		value--;
-		res = true;
+		return true;
 	}
-	lock.up();
-	return res;
+	return false;
 }
 
 void Semaphore::up() {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	if(++value <= 0)
 		Sched::wakeup(EV_MUTEX,(evobj_t)this,false);
 	printEventTrace(Util::getKernelStackTrace(),"[%d] U %#x %s ",Thread::getRunning()->getTid(),this,
 			waiting ? "(Waking up)" : "(No wakeup)");
-	lock.up();
 }

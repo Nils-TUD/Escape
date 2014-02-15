@@ -21,6 +21,7 @@
 #include <sys/arch/i586/serial.h>
 #include <sys/arch/i586/ports.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 #include <assert.h>
 
 const uint16_t Serial::ports[] = {
@@ -38,11 +39,10 @@ void Serial::init() {
 void Serial::out(uint16_t port,uint8_t byte) {
 	assert(port < ARRAY_SIZE(ports));
 	uint16_t ioport = ports[port];
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	while(isTransmitEmpty(ioport) == 0)
 		;
 	Ports::out<uint8_t>(ioport,byte);
-	lock.up();
 }
 
 int Serial::isTransmitEmpty(uint16_t port) {

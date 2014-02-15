@@ -53,22 +53,20 @@ Thread *ThreadBase::getRef(tid_t tid) {
 	if(tid >= ARRAY_SIZE(tidToThread))
 		return NULL;
 
-	refLock.down();
+	LockGuard<SpinLock> g(&refLock);
 	Thread *t = tidToThread[tid];
 	if(t)
 		t->refs++;
-	refLock.up();
 	return t;
 }
 
 void ThreadBase::relRef(const Thread *t) {
-	refLock.down();
+	LockGuard<SpinLock> g(&refLock);
 	if(--t->refs == 0) {
 		Proc::relRef(t->proc);
 		const_cast<Thread*>(t)->remove();
 		Cache::free(const_cast<Thread*>(t));
 	}
-	refLock.up();
 }
 
 Thread *ThreadBase::init(Proc *p) {
@@ -174,7 +172,7 @@ bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
 
 void ThreadBase::updateRuntimes() {
 	uint64_t cyclesPerSec = CPU::getSpeed();
-	mutex.down();
+	LockGuard<Mutex> g(&mutex);
 	/* first store the max priority for all processes (this is no problem, because we're only using
 	 * this as the prio for new threads while holding the same lock, see add()) */
 	for(auto t = threads.begin(); t != threads.end(); ++t) {
@@ -208,7 +206,6 @@ void ThreadBase::updateRuntimes() {
 				p->priority = t->priority;
 		}
 	}
-	mutex.up();
 }
 
 bool ThreadBase::reserveFrames(size_t count,bool swap) {
@@ -239,17 +236,17 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 	t->initProps();
 
 	/* determine tid (ensure that nobody else gets the same) and insert into thread-list */
-	mutex.down();
-	t->tid = getFreeTid();
-	if(t->tid == INVALID_TID) {
-		mutex.up();
-		Cache::free(t);
-		return -ENOTHREADS;
+	{
+		LockGuard<Mutex> g(&mutex);
+		t->tid = getFreeTid();
+		if(t->tid == INVALID_TID) {
+			Cache::free(t);
+			return -ENOTHREADS;
+		}
+		t->add();
+		/* do that here to prevent that one see's a temporary priority, i.e. during the update-phase */
+		t->priority = p->getPriority();
 	}
-	t->add();
-	/* do that here to prevent that one see's a temporary priority, i.e. during the update-phase */
-	t->priority = p->getPriority();
-	mutex.up();
 
 	/* we don't want to destroy the process first because we have a pointer to it */
 	Proc::getRef(p->getPid());
@@ -452,8 +449,7 @@ void ThreadBase::add() {
 }
 
 void ThreadBase::remove() {
-	mutex.down();
+	LockGuard<Mutex> g(&mutex);
 	threads.remove(&threadListItem);
 	tidToThread[tid] = NULL;
-	mutex.up();
 }

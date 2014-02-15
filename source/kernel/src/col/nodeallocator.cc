@@ -61,8 +61,7 @@ void *NodeAllocator::allocate() {
 
 void NodeAllocator::free(void *ptr) {
 	SListItem *n = (SListItem*)ptr;
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	n->next(freelist);
 	freelist = n;
-	lock.up();
 }

@@ -53,12 +53,10 @@ void TimerBase::init() {
 }
 
 int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	Listener *l = freeList;
-	if(l == NULL) {
-		lock.up();
+	if(l == NULL)
 		return -ENOMEM;
-	}
 
 	/* remove from freelist */
 	freeList = freeList->next;
@@ -89,12 +87,11 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	/* put process to sleep */
 	if(block)
 		Thread::getById(tid)->block();
-	lock.up();
 	return 0;
 }
 
 void TimerBase::removeThread(tid_t tid) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	Listener *p = NULL;
 	for(Listener *l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
@@ -113,7 +110,6 @@ void TimerBase::removeThread(tid_t tid) {
 			break;
 		}
 	}
-	lock.up();
 }
 
 bool TimerBase::intrpt() {
@@ -125,7 +121,7 @@ bool TimerBase::intrpt() {
 	perCPU[cpu].elapsedMsecs += timeInc;
 
 	if(cpu == 0) {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		if((perCPU[cpu].elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
 			Thread::updateRuntimes();
 			SMP::updateRuntimes();
@@ -158,7 +154,6 @@ bool TimerBase::intrpt() {
 			/* to next */
 			l = tl;
 		}
-		lock.up();
 	}
 
 	/* if a process has been waked up or the time-slice is over, reschedule */

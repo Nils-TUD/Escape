@@ -32,7 +32,7 @@ SList<CopyOnWrite::Entry> CopyOnWrite::frames[HEAP_SIZE];
 SpinLock CopyOnWrite::lock;
 
 size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	/* find the cow-entry */
 	Entry *cow = getByFrame(frameNumber,true);
 	vassert(cow != NULL,"No COW entry for frame %#x and address %p",frameNumber,address);
@@ -50,28 +50,24 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 		PageDir::copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
 	else
 		delete cow;
-	lock.up();
 	return 1;
 }
 
 bool CopyOnWrite::add(frameno_t frameNo) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	Entry *cow = getByFrame(frameNo,false);
 	if(!cow) {
 		cow = new Entry(frameNo);
-		if(cow == NULL) {
-			lock.up();
+		if(cow == NULL)
 			return false;
-		}
 		frames[frameNo % HEAP_SIZE].append(cow);
 	}
 	cow->refCount++;
-	lock.up();
 	return true;
 }
 
 size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	/* find the cow-entry */
 	Entry *cow = getByFrame(frameNo,true);
 	vassert(cow != NULL,"For frameNo %#x",frameNo);
@@ -79,16 +75,14 @@ size_t CopyOnWrite::remove(frameno_t frameNo,bool *foundOther) {
 	*foundOther = cow->refCount > 0;
 	if(cow->refCount == 0)
 		delete cow;
-	lock.up();
 	return 1;
 }
 
 size_t CopyOnWrite::getFrmCount() {
+	LockGuard<SpinLock> g(&lock);
 	size_t count = 0;
-	lock.down();
 	for(size_t i = 0; i < HEAP_SIZE; i++)
 		count += frames[i].length();
-	lock.up();
 	return count;
 }
 

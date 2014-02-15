@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 #include <sys/cpu.h>
 #include <string.h>
 #include <assert.h>
@@ -314,17 +315,11 @@ inline void PageDirBase::zeroToUser(void *dst,size_t count) {
 }
 
 inline ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
-	ssize_t pts;
-	PageDir::lock.down();
-	pts = static_cast<PageDir*>(this)->doMap(virt,frames,count,flags);
-	PageDir::lock.up();
-	return pts;
+	LockGuard<SpinLock> g(&PageDir::lock);
+	return static_cast<PageDir*>(this)->doMap(virt,frames,count,flags);
 }
 
 inline size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
-	size_t pts;
-	PageDir::lock.down();
-	pts = static_cast<PageDir*>(this)->doUnmap(virt,count,freeFrames);
-	PageDir::lock.up();
-	return pts;
+	LockGuard<SpinLock> g(&PageDir::lock);
+	return static_cast<PageDir*>(this)->doUnmap(virt,count,freeFrames);
 }

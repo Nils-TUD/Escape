@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 
 #ifdef __i386__
 #include <sys/arch/i586/mem/physmem.h>
@@ -247,11 +248,9 @@ private:
 };
 
 inline bool PhysMem::shouldSetRegTimestamp() {
-	bool res;
 	if(!swapEnabled)
 		return false;
-	defLock.down();
-	res = getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
-	defLock.up();
-	return res;
+
+	LockGuard<SpinLock> g(&defLock);
+	return getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
 }

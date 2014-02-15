@@ -145,8 +145,8 @@ size_t PhysMem::getFreeFrames(uint types) {
 }
 
 ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
+	LockGuard<SpinLock> g(&contLock);
 	size_t c = 0;
-	contLock.down();
 	/* align in physical memory */
 	size_t i = ROUND_UP(BITMAP_START_FRAME,align);
 	i -= BITMAP_START_FRAME;
@@ -167,24 +167,20 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 		i -= BITMAP_START_FRAME;
 	}
 
-	if(c != count) {
-		contLock.up();
+	if(c != count)
 		return -ENOMEM;
-	}
 
 	/* the bitmap starts managing the memory at itself */
 	i += BITMAP_START_FRAME;
 	doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 	printEventTrace(Util::getKernelStackTrace(),"[AC] %x:%zu ",i,count);
-	contLock.up();
 	return i;
 }
 
 void PhysMem::freeContiguous(frameno_t first,size_t count) {
-	contLock.down();
+	LockGuard<SpinLock> g(&contLock);
 	printEventTrace(Util::getKernelStackTrace(),"[FC] %x:%zu ",first,count);
 	doMarkRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
-	contLock.up();
 }
 
 bool PhysMem::reserve(size_t frameCount,bool swap) {
@@ -222,16 +218,15 @@ bool PhysMem::reserve(size_t frameCount,bool swap) {
 }
 
 frameno_t PhysMem::allocate(FrameType type) {
-	frameno_t frm = 0;
-	defLock.down();
+	LockGuard<SpinLock> g(&defLock);
 	printEventTrace(Util::getKernelStackTrace(),"[A] %x ",*(stack - 1));
 	/* remove the memory from the available one when we're not yet initialized */
 	if(!initialized)
-		frm = PhysMemAreas::alloc(1);
-	else if(type == CRIT) {
+		return PhysMemAreas::alloc(1);
+	if(type == CRIT) {
 		if(cframes > 0) {
-			frm = *(--stack);
 			cframes--;
+			return *(--stack);
 		}
 	}
 	else if(type == KERN) {
@@ -242,31 +237,29 @@ frameno_t PhysMem::allocate(FrameType type) {
 		}
 		/* return 0 otherwise */
 		if(kframes > 0) {
-			frm = *(--stack);
 			kframes--;
+			return *(--stack);
 		}
 	}
 	else {
 		size_t free = getFreeDef();
 		if(free > (kframes + cframes)) {
 			assert(uframes > 0);
-			frm = *(--stack);
 			uframes--;
+			return *(--stack);
 		}
 	}
-	defLock.up();
-	return frm;
+	return 0;
 }
 
 void PhysMem::free(frameno_t frame,FrameType type) {
-	defLock.down();
+	LockGuard<SpinLock> g(&defLock);
 	printEventTrace(Util::getKernelStackTrace(),"[F] %x ",frame);
 	if(type == CRIT)
 		cframes++;
 	else if(type == KERN)
 		kframes++;
 	markUsed(frame,false);
-	defLock.up();
 }
 
 int PhysMem::swapIn(uintptr_t addr) {

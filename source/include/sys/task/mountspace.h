@@ -125,9 +125,8 @@ public:
 	 * @param p the process
 	 */
 	static void leave(Proc *p) {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		doLeave(p);
-		lock.up();
 	}
 
 	/**

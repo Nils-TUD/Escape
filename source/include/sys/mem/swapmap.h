@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/mem/pagedir.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 #include <assert.h>
 
 #define INVALID_BLOCK		0xFFFFFFFF
@@ -100,17 +101,13 @@ private:
 };
 
 inline void SwapMap::incRefs(ulong block) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
 	swapBlocks[block].refCount++;
-	lock.up();
 }
 
 inline bool SwapMap::isUsed(ulong block) {
-	bool res;
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	assert(block < totalBlocks);
-	res = swapBlocks[block].refCount > 0;
-	lock.up();
-	return res;
+	return swapBlocks[block].refCount > 0;
 }

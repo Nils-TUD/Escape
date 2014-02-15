@@ -122,7 +122,7 @@ errorNameCpy:
 }
 
 void Env::removeFor(pid_t pid) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	Proc *p = Proc::getRef(pid);
 	if(p) {
 		if(p->env) {
@@ -137,7 +137,6 @@ void Env::removeFor(pid_t pid) {
 		}
 		Proc::relRef(p);
 	}
-	lock.up();
 }
 
 void Env::printAllOf(OStream &os,pid_t pid) {

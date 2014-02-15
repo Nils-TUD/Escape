@@ -480,9 +480,8 @@ protected:
 
 	const VFSNode *increaseRefs() const {
 		/* TODO use atomic ops */
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		refCount++;
-		lock.up();
 		return this;
 	}
 

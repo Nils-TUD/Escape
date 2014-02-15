@@ -132,14 +132,13 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 }
 
 bool ThreadBase::beginTerm() {
-	switchLock.down();
+	LockGuard<SpinLock> g(&switchLock);
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
 	bool res = state != Thread::RUNNING && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		Sched::removeThread(static_cast<Thread*>(this));
-	switchLock.up();
 	return res;
 }
 

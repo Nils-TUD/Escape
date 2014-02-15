@@ -41,7 +41,7 @@ void *KHeap::alloc(size_t size) {
 	/* align and we need 3 ulongs for the guards */
 	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 
 	/* find a suitable area */
 	MemArea *prev = NULL;
@@ -55,10 +55,8 @@ void *KHeap::alloc(size_t size) {
 
 	/* no area found? */
 	if(area == NULL) {
-		if(!loadNewSpace(size)) {
-			lock.up();
+		if(!loadNewSpace(size))
 			return NULL;
-		}
 		/* we can assume that it fits */
 		area = usableList;
 		/* remove from usable-list */
@@ -77,7 +75,6 @@ void *KHeap::alloc(size_t size) {
 		if(freeList == NULL) {
 			if(!loadNewAreas()) {
 				/* TODO we may have changed something... */
-				lock.up();
 				return NULL;
 			}
 		}
@@ -103,7 +100,6 @@ void *KHeap::alloc(size_t size) {
 	begin[0] = size - sizeof(ulong) * 3;
 	begin[1] = GUARD_MAGIC;
 	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-	lock.up();
 	return begin + 2;
 }
 
@@ -126,7 +122,7 @@ void KHeap::free(void *addr) {
 	assert(begin[1] == GUARD_MAGIC);
 	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
 
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 
 	/* find the area with given address */
 	MemArea *oprev = NULL;
@@ -139,10 +135,8 @@ void KHeap::free(void *addr) {
 	}
 
 	/* area not found? */
-	if(area == NULL) {
-		lock.up();
+	if(area == NULL)
 		return;
-	}
 
 	/* find the previous and next free areas */
 	MemArea *prev = NULL;
@@ -224,7 +218,6 @@ void KHeap::free(void *addr) {
 		area->next = usableList;
 		usableList = area;
 	}
-	lock.up();
 }
 
 void *KHeap::realloc(void *addr,size_t size) {
@@ -233,72 +226,69 @@ void *KHeap::realloc(void *addr,size_t size) {
 
 	ulong *begin = (ulong*)addr - 2;
 
-	lock.down();
+	MemArea *area,*a;
+	{
+		LockGuard<SpinLock> g(&lock);
 
-	/* find the area with given address */
-	MemArea *area = occupiedMap[getHash(begin)];
-	while(area != NULL) {
-		if(area->address == begin)
-			break;
-		area = area->next;
-	}
-
-	/* area not found? */
-	if(area == NULL) {
-		lock.up();
-		return NULL;
-	}
-
-	/* align and we need 3 ulongs for the guards */
-	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
-
-	/* ignore shrinks */
-	if(size < area->size) {
-		lock.up();
-		return addr;
-	}
-
-	MemArea *a = usableList;
-	MemArea *prev = NULL;
-	while(a != NULL) {
-		/* found the area behind? */
-		if((uintptr_t)a->address == (uintptr_t)area->address + area->size) {
-			/* if the size of both is big enough we can use them */
-			if(area->size + a->size >= size) {
-				/* space left? */
-				if(size < area->size + a->size) {
-					/* so move the area forward */
-					a->address = (void*)((uintptr_t)area->address + size);
-					a->size = (area->size + a->size) - size;
-				}
-				/* otherwise we don't need a anymore */
-				else {
-					/* remove a from usable-list */
-					if(prev == NULL)
-						usableList = a->next;
-					else
-						prev->next = a->next;
-					/* free a */
-					a->next = freeList;
-					freeList = a;
-				}
-
-				area->size = size;
-				/* reset guards */
-				begin[0] = size - sizeof(ulong) * 3;
-				begin[1] = GUARD_MAGIC;
-				begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-				lock.up();
-				return begin + 2;
-			}
-
-			/* makes no sense to continue since we've found the area behind */
-			break;
+		/* find the area with given address */
+		area = occupiedMap[getHash(begin)];
+		while(area != NULL) {
+			if(area->address == begin)
+				break;
+			area = area->next;
 		}
-		prev = a;
-		a = a->next;
+
+		/* area not found? */
+		if(area == NULL)
+			return NULL;
+
+		/* align and we need 3 ulongs for the guards */
+		size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
+
+		/* ignore shrinks */
+		if(size < area->size)
+			return addr;
+
+		a = usableList;
+		MemArea *prev = NULL;
+		while(a != NULL) {
+			/* found the area behind? */
+			if((uintptr_t)a->address == (uintptr_t)area->address + area->size) {
+				/* if the size of both is big enough we can use them */
+				if(area->size + a->size >= size) {
+					/* space left? */
+					if(size < area->size + a->size) {
+						/* so move the area forward */
+						a->address = (void*)((uintptr_t)area->address + size);
+						a->size = (area->size + a->size) - size;
+					}
+					/* otherwise we don't need a anymore */
+					else {
+						/* remove a from usable-list */
+						if(prev == NULL)
+							usableList = a->next;
+						else
+							prev->next = a->next;
+						/* free a */
+						a->next = freeList;
+						freeList = a;
+					}
+
+					area->size = size;
+					/* reset guards */
+					begin[0] = size - sizeof(ulong) * 3;
+					begin[1] = GUARD_MAGIC;
+					begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
+					return begin + 2;
+				}
+
+				/* makes no sense to continue since we've found the area behind */
+				break;
+			}
+			prev = a;
+			a = a->next;
+		}
 	}
-	lock.up();
 
 	/* the areas are not big enough, so allocate a new one */
 	a = (MemArea*)alloc(size);

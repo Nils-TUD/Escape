@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 
 class OStream;
 
@@ -141,17 +142,14 @@ private:
 
 	static uint32_t read(Instance *ioapic,uint32_t reg) {
 		/* we only use it in the setup-phase with a single CPU, but to be sure... */
-		lck.down();
+		LockGuard<SpinLock> g(&lck);
 		select(ioapic,reg);
-		uint32_t val = ioapic->addr[IOWIN];
-		lck.up();
-		return val;
+		return ioapic->addr[IOWIN];
 	}
 	static void write(Instance *ioapic,uint32_t reg,uint32_t value) {
-		lck.down();
+		LockGuard<SpinLock> g(&lck);
 		select(ioapic,reg);
 		ioapic->addr[IOWIN] = value;
-		lck.up();
 	}
 	static void select(Instance *ioapic,uint32_t reg) {
 		volatile uint8_t *addr = reinterpret_cast<volatile uint8_t*>(ioapic->addr + IOREGSEL);

@@ -27,21 +27,18 @@ int MountSpace::next_id = 0;
 SList<MountSpace> MountSpace::list;
 
 int MountSpace::getId(Proc *p) {
-	lock.down();
-	int id = p->mounts->id;
-	lock.up();
-	return id;
+	LockGuard<SpinLock> guard(&lock);
+	return p->mounts->id;
 }
 
 int MountSpace::request(Proc *p,const char *path,const char **end,OpenFile **file) {
-	lock.down();
-	PathTreeItem<OpenFile> *match = p->mounts->tree.find(path,end);
-	if(!match) {
-		lock.up();
-		return -ENOENT;
+	{
+		LockGuard<SpinLock> guard(&lock);
+		PathTreeItem<OpenFile> *match = p->mounts->tree.find(path,end);
+		if(!match)
+			return -ENOENT;
+		*file = match->getData();
 	}
-	*file = match->getData();
-	lock.up();
 	if(!IS_NODE(*file))
 		(*file)->incUsages();
 	return 0;
@@ -55,16 +52,16 @@ void MountSpace::release(OpenFile *file) {
 int MountSpace::mount(Proc *p,const char *path,OpenFile *file) {
 	if(!IS_NODE(file))
 		file->incRefs();
-	lock.down();
-	int res = p->mounts->tree.insert(path,file);
-	lock.up();
-	return res;
+	LockGuard<SpinLock> guard(&lock);
+	return p->mounts->tree.insert(path,file);
 }
 
 int MountSpace::unmount(Proc *p,const char *path) {
-	lock.down();
-	OpenFile *file = p->mounts->tree.remove(path);
-	lock.up();
+	OpenFile *file;
+	{
+		LockGuard<SpinLock> guard(&lock);
+		file = p->mounts->tree.remove(path);
+	}
 	if(file) {
 		if(!IS_NODE(file))
 			file->close(p->getPid());
@@ -75,21 +72,18 @@ int MountSpace::unmount(Proc *p,const char *path) {
 
 void MountSpace::create(Proc *p) {
 	assert(p->getPid() == 0);
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	p->mounts = new MountSpace();
 	if(p->mounts == NULL)
 		Util::panic("Unable to create initial mountspace");
 	list.append(p->mounts);
-	lock.up();
 }
 
 int MountSpace::clone(Proc *p) {
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	MountSpace *ms = new MountSpace();
-	if(ms == NULL) {
-		lock.up();
+	if(ms == NULL)
 		return -ENOMEM;
-	}
 
 	int res = ms->tree.replaceWith(p->mounts->tree);
 	if(res == 0) {
@@ -100,32 +94,26 @@ int MountSpace::clone(Proc *p) {
 	}
 	else
 		delete ms;
-
-	lock.up();
 	return res;
 }
 
 void MountSpace::inherit(Proc *dst,Proc *src) {
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	dst->mounts = src->mounts;
 	dst->mounts->refs++;
-	lock.up();
 }
 
 int MountSpace::join(Proc *p,int id) {
-	int res = -ENOENT;
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	for(auto it = list.begin(); it != list.end(); ++it) {
 		if(it->id == id) {
 			doLeave(p);
 			p->mounts = &*it;
 			it->refs++;
-			res = 0;
-			break;
+			return 0;
 		}
 	}
-	lock.up();
-	return res;
+	return -ENOENT;
 }
 
 void MountSpace::doLeave(Proc *p) {
@@ -146,20 +134,18 @@ void MountSpace::printItem(OStream &os,OpenFile *file) {
 }
 
 void MountSpace::printAll(OStream &os) {
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	for(auto it = list.cbegin(); it != list.cend(); ++it) {
 		os.writef("MountSpace %d (%d refs):\n",it->id,it->refs);
 		it->tree.print(os,printItem);
 	}
-	lock.up();
 }
 
 void MountSpace::print(OStream &os,Proc *p) {
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	MountSpace *ms = p->mounts;
 	os.writef("Id: %d\n",ms->id);
 	os.writef("Refs: %d\n",ms->refs);
 	os.writef("Tree:\n");
 	ms->tree.print(os,printItem);
-	lock.up();
 }

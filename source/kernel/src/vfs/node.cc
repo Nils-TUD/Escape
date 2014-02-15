@@ -361,17 +361,17 @@ const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen) const {
 
 void VFSNode::append(VFSNode *p) {
 	if(p != NULL) {
-		treeLock.down();
-		prev = NULL;
-		next = p->firstChild;
-		if(next)
-			next->prev = this;
-		p->firstChild = this;
-		treeLock.up();
+		{
+			LockGuard<SpinLock> g(&treeLock);
+			prev = NULL;
+			next = p->firstChild;
+			if(next)
+				next->prev = this;
+			p->firstChild = this;
+		}
 
-		p->lock.down();
+		LockGuard<SpinLock> g(&p->lock);
 		p->refCount++;
-		p->lock.up();
 	}
 	parent = p;
 }
@@ -395,38 +395,37 @@ ushort VFSNode::doUnref(bool remove) {
 		}
 	}
 
-	treeLock.down();
-	/* don't decrease the refs twice with remove */
-	if(!remove || name) {
-		lock.down();
-		remRefs = --refCount;
-		norefs = remRefs == 0;
-		lock.up();
+	{
+		LockGuard<SpinLock> g1(&treeLock);
+		/* don't decrease the refs twice with remove */
+		if(!remove || name) {
+			LockGuard<SpinLock> g2(&lock);
+			remRefs = --refCount;
+			norefs = remRefs == 0;
+		}
+
+		/* take care that we don't destroy the node twice */
+		if(norefs)
+			invalidate();
+		if((norefs || remove) && name) {
+			/* remove from parent and release (attention: maybe its not yet in the tree) */
+			if(prev)
+				prev->next = next;
+			else if(parent)
+				parent->firstChild = next;
+			if(next)
+				next->prev = prev;
+
+			prev = NULL;
+			next = NULL;
+			firstChild = NULL;
+
+			/* free name (do that afterwards, unlocked) */
+			if(IS_ON_HEAP(name))
+				nameptr = name;
+			name = NULL;
+		}
 	}
-
-	/* take care that we don't destroy the node twice */
-	if(norefs)
-		invalidate();
-	if((norefs || remove) && name) {
-		/* remove from parent and release (attention: maybe its not yet in the tree) */
-		if(prev)
-			prev->next = next;
-		else if(parent)
-			parent->firstChild = next;
-		if(next)
-			next->prev = prev;
-
-		prev = NULL;
-		next = NULL;
-		firstChild = NULL;
-
-		/* free name (do that afterwards, unlocked) */
-		if(IS_ON_HEAP(name))
-			nameptr = name;
-		name = NULL;
-	}
-
-	treeLock.up();
 
 	if(nameptr)
 		Cache::free(const_cast<char*>(nameptr));
@@ -450,9 +449,11 @@ char *VFSNode::generateId(pid_t pid) {
 	itoa(name,size,pid);
 	size_t len = strlen(name);
 	*(name + len) = '.';
-	nodesLock.down();
-	uint id = nextUsageId++;
-	nodesLock.up();
+	uint id;
+	{
+		LockGuard<SpinLock> g(&nodesLock);
+		id = nextUsageId++;
+	}
 	itoa(name + len + 1,size - (len + 1),id);
 	return name;
 }
@@ -492,14 +493,12 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 }
 
 void *VFSNode::operator new(size_t) throw() {
+	LockGuard<SpinLock> g(&nodesLock);
 	VFSNode *node = NULL;
-	nodesLock.down();
 	if(freeList == NULL) {
 		size_t oldCount = nodeArray.getObjCount();
-		if(!nodeArray.extend()) {
-			nodesLock.up();
+		if(!nodeArray.extend())
 			return NULL;
-		}
 		freeList = get(oldCount);
 		for(size_t i = oldCount; i < nodeArray.getObjCount() - 1; i++) {
 			node = get(i);
@@ -511,7 +510,6 @@ void *VFSNode::operator new(size_t) throw() {
 	node = freeList;
 	freeList = freeList->next;
 	allocated++;
-	nodesLock.up();
 	return node;
 }
 
@@ -522,19 +520,17 @@ void VFSNode::operator delete(void *ptr) throw() {
 	node->name = NULL;
 	node->nameLen = 0;
 	node->owner = INVALID_PID;
-	nodesLock.down();
+	LockGuard<SpinLock> g(&nodesLock);
 	node->next = freeList;
 	freeList = node;
 	allocated--;
-	nodesLock.up();
 }
 
 void VFSNode::printTree(OStream &os) {
 	os.writef("VFS:\n");
 	os.writef("/\n");
-	treeLock.down();
+	LockGuard<SpinLock> g(&treeLock);
 	doPrintTree(os,1,get(0));
-	treeLock.up();
 }
 
 void VFSNode::print(OStream &os) const {

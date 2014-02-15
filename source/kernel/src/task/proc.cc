@@ -72,27 +72,25 @@ Proc *ProcBase::getRef(pid_t pid) {
 	if(pid >= ARRAY_SIZE(pidToProc))
 		return NULL;
 
-	refLock.down();
+	LockGuard<SpinLock> guard(&refLock);
 	Proc *p = pidToProc[pid];
 	if(p)
 		p->refs++;
-	refLock.up();
 	return p;
 }
 
 void ProcBase::relRef(const Proc *p) {
-	refLock.down();
-	if(--p->refs == 0) {
-		/* remove it first and release the spinlock */
-		remove(const_cast<Proc*>(p));
-		refLock.up();
-
+	bool lastRef;
+	{
+		LockGuard<SpinLock> guard(&refLock);
+		if((lastRef = (--p->refs == 0)))
+			remove(const_cast<Proc*>(p));
+	}
+	if(lastRef) {
 		/* now, nobody can get the process anymore, so we can destroy everything without worrying */
 		Cache::free((char*)p->command);
 		Cache::free(const_cast<Proc*>(p));
 	}
-	else
-		refLock.up();
 }
 
 void ProcBase::init() {
@@ -215,15 +213,16 @@ void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swappe
 void ProcBase::getMemUsage(size_t *dataShared,size_t *dataOwn,size_t *dataReal) {
 	size_t pages,ownMem = 0,shMem = 0;
 	size_t dReal = 0;
-	procLock.down();
-	for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
-		size_t pown = 0,psh = 0,pswap = 0;
-		getMemUsageOf(p->pid,&pown,&psh,&pswap);
-		ownMem += pown;
-		shMem += psh;
-		dReal += p->virtmem.getMemUsage(&pages);
+	{
+		LockGuard<Mutex> guard(&procLock);
+		for(auto p = procs.cbegin(); p != procs.cend(); ++p) {
+			size_t pown = 0,psh = 0,pswap = 0;
+			getMemUsageOf(p->pid,&pown,&psh,&pswap);
+			ownMem += pown;
+			shMem += psh;
+			dReal += p->virtmem.getMemUsage(&pages);
+		}
 	}
-	procLock.up();
 	*dataOwn = ownMem * PAGE_SIZE;
 	*dataShared = shMem * PAGE_SIZE;
 	*dataReal = dReal + (CopyOnWrite::getFrmCount() * PAGE_SIZE);
@@ -670,9 +669,8 @@ void ProcBase::doDestroy(Proc *p) {
 	p->flags &= ~P_PREZOMBIE;
 	p->flags |= P_ZOMBIE;
 	/* ensure that the parent-wakeup doesn't get lost */
-	childLock.down();
+	LockGuard<Mutex> g(&childLock);
 	notifyProcDied(p->parentPid);
-	childLock.up();
 }
 
 void ProcBase::kill(pid_t pid) {
@@ -681,27 +679,28 @@ void ProcBase::kill(pid_t pid) {
 		return;
 
 	/* give childs the ppid 0 */
-	childLock.down();
-	procLock.down();
-	for(auto cp = procs.begin(); cp != procs.end(); ++cp) {
-		if(cp->parentPid == p->pid) {
-			cp->parentPid = 0;
-			/* if this process has already died, the parent can't wait for it since its dying
-			 * right now. therefore notify init of it */
-			if(cp->flags & P_ZOMBIE)
-				notifyProcDied(0);
+	{
+		LockGuard<Mutex> g1(&childLock);
+		LockGuard<Mutex> g2(&procLock);
+		for(auto cp = procs.begin(); cp != procs.end(); ++cp) {
+			if(cp->parentPid == p->pid) {
+				cp->parentPid = 0;
+				/* if this process has already died, the parent can't wait for it since its dying
+				 * right now. therefore notify init of it */
+				if(cp->flags & P_ZOMBIE)
+					notifyProcDied(0);
+			}
 		}
 	}
-	procLock.up();
-	childLock.up();
 
 	/* now its gone, so remove it from VFS */
 	VFS::removeProcess(p->pid);
 
 	/* unref and release. if there is nobody else, we'll destroy everything */
-	refLock.down();
-	p->refs--;
-	refLock.up();
+	{
+		LockGuard<SpinLock> g2(&refLock);
+		p->refs--;
+	}
 	release(p,PLOCK_PROG);
 }
 
@@ -743,7 +742,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 }
 
 int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
-	procLock.down();
+	LockGuard<Mutex> g(&procLock);
 	size_t childs = 0;
 	for(auto p = procs.begin(); p != procs.end(); ++p) {
 		if(p->parentPid == ppid) {
@@ -763,12 +762,10 @@ int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
 				}
 				/* ensure that we don't kill it twice */
 				p->flags |= P_KILLED;
-				procLock.up();
 				return p->pid;
 			}
 		}
 	}
-	procLock.up();
 	return childs > 0 ? 0 : -ECHILD;
 }
 
@@ -913,10 +910,9 @@ void ProcBase::add(Proc *p) {
 }
 
 void ProcBase::remove(Proc *p) {
-	procLock.down();
+	LockGuard<Mutex> g(&procLock);
 	procs.remove(p);
 	pidToProc[p->pid] = NULL;
-	procLock.up();
 }
 
 

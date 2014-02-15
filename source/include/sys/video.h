@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/ostream.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 #include <assert.h>
 #include <stdarg.h>
 
@@ -87,10 +88,9 @@ public:
 	 * Clears the screen
 	 */
 	void clearScreen() {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		clear();
 		col = row = 0;
-		lock.up();
 	}
 
 	virtual void writec(char c);

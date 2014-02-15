@@ -41,14 +41,13 @@ Treap<OpenFile::SemTreapNode> OpenFile::sems;
 extern SpinLock waitLock;
 
 void OpenFile::decUsages() {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	assert(usageCount > 0);
 	usageCount--;
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
 	if(EXPECT_FALSE(usageCount == 0 && refCount == 0))
 		doClose(Proc::getRunning());
-	lock.up();
 }
 
 int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
@@ -59,12 +58,12 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 		case F_GETFL:
 			return flags & VFS_NOBLOCK;
 
-		case F_SETFL:
-			lock.down();
+		case F_SETFL: {
+			LockGuard<SpinLock> g(&lock);
 			flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_CREATE | VFS_DEVICE;
 			flags |= arg & VFS_NOBLOCK;
-			lock.up();
 			return 0;
+		}
 
 		case F_WAKE_READER: {
 			VFSNode *n = node;
@@ -78,14 +77,11 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 
 		case F_SETUNUSED: {
 			VFSNode *n = node;
-			int res = 0;
-			waitLock.down();
+			LockGuard<SpinLock> g(&waitLock);
 			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(n->getMode())))
-				res = -EINVAL;
-			else
-				static_cast<VFSChannel*>(n)->setUsed(false);
-			waitLock.up();
-			return res;
+				return -EINVAL;
+			static_cast<VFSChannel*>(n)->setUsed(false);
+			return 0;
 		}
 
 		case F_DISMSGS: {
@@ -98,7 +94,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 		case F_SEMUP:
 		case F_SEMDOWN: {
 			if(sem == NULL) {
-				semLock.down();
+				LockGuard<SpinLock> g(&semLock);
 				if(sem == NULL) {
 					FileId id(devNo,nodeNo);
 					sem = sems.find(id);
@@ -107,7 +103,6 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 						sems.insert(sem);
 					}
 				}
-				semLock.up();
 			}
 
 			if(cmd == F_SEMUP)
@@ -206,9 +201,8 @@ ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
 	/* use the read-handler */
 	ssize_t readBytes = node->read(pid,this,buffer,position,count);
 	if(EXPECT_TRUE(readBytes > 0)) {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		position += readBytes;
-		lock.up();
 	}
 
 	if(EXPECT_TRUE(readBytes > 0 && pid != KERNEL_PID)) {
@@ -228,9 +222,8 @@ ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
 	/* write to the node */
 	ssize_t writtenBytes = node->write(pid,this,buffer,position,count);
 	if(EXPECT_TRUE(writtenBytes > 0)) {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		position += writtenBytes;
-		lock.up();
 	}
 
 	if(EXPECT_TRUE(writtenBytes > 0 && pid != KERNEL_PID)) {
@@ -305,10 +298,8 @@ int OpenFile::syncfs(pid_t pid) {
 }
 
 bool OpenFile::close(pid_t pid) {
-	lock.down();
-	bool res = doClose(pid);
-	lock.up();
-	return res;
+	LockGuard<SpinLock> g(&lock);
+	return doClose(pid);
 }
 
 bool OpenFile::doClose(pid_t pid) {
@@ -340,17 +331,16 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 		return -EPERM;
 
 	while(true) {
-		waitLock.down();
-		*fd = static_cast<VFSDevice*>(file->node)->getWork(flags);
-		/* if we've found one or we shouldn't block, stop here */
-		if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK))) {
-			waitLock.up();
-			return *fd >= 0 ? 0 : -ENOCLIENT;
-		}
+		{
+			LockGuard<SpinLock> g(&waitLock);
+			*fd = static_cast<VFSDevice*>(file->node)->getWork(flags);
+			/* if we've found one or we shouldn't block, stop here */
+			if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK)))
+				return *fd >= 0 ? 0 : -ENOCLIENT;
 
-		/* wait for a client (accept signals) */
-		t->wait(EV_CLIENT,(evobj_t)file->node);
-		waitLock.up();
+			/* wait for a client (accept signals) */
+			t->wait(EV_CLIENT,(evobj_t)file->node);
+		}
 
 		Thread::switchAway();
 		if(EXPECT_FALSE(t->hasSignalQuick()))
@@ -442,71 +432,67 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 	if(EXPECT_FALSE(isDrvUse && (flags & VFS_EXCLUSIVE)))
 		return -EINVAL;
 
-	gftLock.down();
-	/* devices and files can't be used exclusively */
-	if(!isDrvUse) {
-		/* check if somebody has this file currently exclusively */
-		e = exclList;
-		while(e) {
-			assert(e->flags != 0);
-			/* same file? */
-			if(e->devNo == devNo && e->nodeNo == nodeNo) {
-				assert(e->flags & VFS_EXCLUSIVE);
-				gftLock.up();
-				return -EBUSY;
-			}
-			e = e->next;
-		}
-
-		/* if we want to have it exclusively, check if it is already open */
-		if(flags & VFS_EXCLUSIVE) {
-			e = usedList;
+	{
+		LockGuard<SpinLock> g(&gftLock);
+		/* devices and files can't be used exclusively */
+		if(!isDrvUse) {
+			/* check if somebody has this file currently exclusively */
+			e = exclList;
 			while(e) {
 				assert(e->flags != 0);
-				assert(~e->flags & VFS_EXCLUSIVE);
 				/* same file? */
 				if(e->devNo == devNo && e->nodeNo == nodeNo) {
-					gftLock.up();
+					assert(e->flags & VFS_EXCLUSIVE);
 					return -EBUSY;
 				}
 				e = e->next;
 			}
-		}
-	}
 
-	/* if there is no free slot anymore, extend our dyn-array */
-	if(EXPECT_FALSE(gftFreeList == NULL)) {
-		size_t j;
-		i = gftArray.getObjCount();
-		if(!gftArray.extend()) {
-			gftLock.up();
-			return -ENFILE;
+			/* if we want to have it exclusively, check if it is already open */
+			if(flags & VFS_EXCLUSIVE) {
+				e = usedList;
+				while(e) {
+					assert(e->flags != 0);
+					assert(~e->flags & VFS_EXCLUSIVE);
+					/* same file? */
+					if(e->devNo == devNo && e->nodeNo == nodeNo)
+						return -EBUSY;
+					e = e->next;
+				}
+			}
 		}
-		/* put all except i on the freelist */
-		for(j = i + 1; j < gftArray.getObjCount(); j++) {
-			e = (OpenFile*)gftArray.getObj(j);
-			e->next = gftFreeList;
-			gftFreeList = e;
-		}
-		*f = e = (OpenFile*)gftArray.getObj(i);
-	}
-	else {
-		/* use the first from the freelist */
-		e = gftFreeList;
-		gftFreeList = gftFreeList->next;
-		*f = e;
-	}
 
-	/* insert in corresponding list */
-	if(flags & VFS_EXCLUSIVE) {
-		e->next = exclList;
-		exclList = e;
+		/* if there is no free slot anymore, extend our dyn-array */
+		if(EXPECT_FALSE(gftFreeList == NULL)) {
+			size_t j;
+			i = gftArray.getObjCount();
+			if(!gftArray.extend())
+				return -ENFILE;
+			/* put all except i on the freelist */
+			for(j = i + 1; j < gftArray.getObjCount(); j++) {
+				e = (OpenFile*)gftArray.getObj(j);
+				e->next = gftFreeList;
+				gftFreeList = e;
+			}
+			*f = e = (OpenFile*)gftArray.getObj(i);
+		}
+		else {
+			/* use the first from the freelist */
+			e = gftFreeList;
+			gftFreeList = gftFreeList->next;
+			*f = e;
+		}
+
+		/* insert in corresponding list */
+		if(flags & VFS_EXCLUSIVE) {
+			e->next = exclList;
+			exclList = e;
+		}
+		else {
+			e->next = usedList;
+			usedList = e;
+		}
 	}
-	else {
-		e->next = usedList;
-		usedList = e;
-	}
-	gftLock.up();
 
 	/* count references of virtual nodes */
 	n->increaseRefs();
@@ -526,13 +512,14 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 void OpenFile::releaseFile(OpenFile *file) {
 	Cache::free(file->path);
 	if(file->sem) {
-		semLock.down();
-		sems.remove(file->sem);
-		semLock.up();
+		{
+			LockGuard<SpinLock> g(&semLock);
+			sems.remove(file->sem);
+		}
 		delete file->sem;
 	}
 
-	gftLock.down();
+	LockGuard<SpinLock> g(&gftLock);
 	assert(file->flags != 0);
 	OpenFile *e = (file->flags & VFS_EXCLUSIVE) ? exclList : usedList;
 	OpenFile *p = NULL;
@@ -552,5 +539,4 @@ void OpenFile::releaseFile(OpenFile *file) {
 	file->flags = 0;
 	file->next = gftFreeList;
 	gftFreeList = file;
-	gftLock.up();
 }

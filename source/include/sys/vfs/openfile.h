@@ -300,17 +300,15 @@ private:
 	 * Increases the references of this file
 	 */
 	void incRefs() {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		refCount++;
-		lock.up();
 	}
 	/**
 	 * Increments the number of usages of this file
 	 */
 	void incUsages() {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		usageCount++;
-		lock.up();
 	}
 	/**
 	 * Decrements the number of usages of this file

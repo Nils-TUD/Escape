@@ -60,12 +60,11 @@ void Terminator::start() {
 }
 
 void Terminator::addDead(Thread *t) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	/* ensure that we don't add a thread twice */
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(deadThreads.append(t));
 		Sched::wakeup(EV_TERMINATION,0);
 	}
-	lock.up();
 }

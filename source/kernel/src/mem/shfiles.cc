@@ -34,22 +34,22 @@ int ShFiles::add(VMRegion *vmreg,pid_t pid) {
 		if(!fuse)
 			return -ENOMEM;
 
-		lock.down();
-		/* does anybody else have this file already? */
-		FileNode *fn = tree.find(fid);
-		if(!fn) {
-			/* ok, create a new node for it */
-			fn = new FileNode(fid);
+		{
+			LockGuard<SpinLock> g(&lock);
+			/* does anybody else have this file already? */
+			FileNode *fn = tree.find(fid);
 			if(!fn) {
-				lock.up();
-				delete fuse;
-				return -ENOMEM;
+				/* ok, create a new node for it */
+				fn = new FileNode(fid);
+				if(!fn) {
+					delete fuse;
+					return -ENOMEM;
+				}
+				tree.insert(fn);
 			}
-			tree.insert(fn);
+			/* append us to users */
+			fn->usages.append(fuse);
 		}
-		/* append us to users */
-		fn->usages.append(fuse);
-		lock.up();
 
 		vmreg->fileuse = fuse;
 	}
@@ -58,15 +58,15 @@ int ShFiles::add(VMRegion *vmreg,pid_t pid) {
 
 bool ShFiles::get(OpenFile *f,uintptr_t *addr,pid_t *pid) {
 	FileId fid(f->getDev(),f->getNodeNo());
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	FileNode *fn = tree.find(fid);
 	if(fn) {
 		FileUsage *fuse = &*fn->usages.begin();
 		*addr = fuse->addr;
 		*pid = fuse->pid;
+		return true;
 	}
-	lock.up();
-	return fn != NULL;
+	return false;
 }
 
 void ShFiles::remove(VMRegion *vmreg) {
@@ -74,18 +74,19 @@ void ShFiles::remove(VMRegion *vmreg) {
 		OpenFile *f = vmreg->reg->getFile();
 		FileId fid(f->getDev(),f->getNodeNo());
 
-		lock.down();
-		/* find our file; it has to exist because we're a user of it */
-		FileNode *fn = tree.find(fid);
-		assert(fn);
-		/* remove us */
-		fn->usages.remove(vmreg->fileuse);
-		/* remove the entire shared-file if there are no other users */
-		if(fn->usages.length() == 0) {
-			tree.remove(fn);
-			delete fn;
+		{
+			LockGuard<SpinLock> g(&lock);
+			/* find our file; it has to exist because we're a user of it */
+			FileNode *fn = tree.find(fid);
+			assert(fn);
+			/* remove us */
+			fn->usages.remove(vmreg->fileuse);
+			/* remove the entire shared-file if there are no other users */
+			if(fn->usages.length() == 0) {
+				tree.remove(fn);
+				delete fn;
+			}
 		}
-		lock.up();
 
 		delete vmreg->fileuse;
 		vmreg->fileuse = NULL;

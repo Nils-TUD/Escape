@@ -201,18 +201,15 @@ void PageDir::unmapFromTemp(size_t count) {
 int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	Thread *t = Thread::getById(tid);
 	PageDir *cur = Proc::getCurPageDir();
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 
 	/* allocate frames */
 	frameno_t pdirFrame = PhysMem::allocate(PhysMem::KERN);
-	if(pdirFrame == 0) {
-		PageDir::lock.up();
+	if(pdirFrame == 0)
 		return -ENOMEM;
-	}
 	frameno_t stackPtFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackPtFrame == 0) {
 		PhysMem::free(pdirFrame,PhysMem::KERN);
-		PageDir::lock.up();
 		return -ENOMEM;
 	}
 
@@ -260,12 +257,11 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 		dst->freeKStack = KERNEL_STACK_AREA + PAGE_SIZE;
 	else
 		dst->freeKStack = KERNEL_STACK_AREA;
-	PageDir::lock.up();
 	return 0;
 }
 
 uintptr_t PageDir::createKernelStack() {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	uintptr_t addr = freeKStack;
 	uintptr_t end = KERNEL_STACK_AREA + KERNEL_STACK_AREA_SIZE;
 	uintptr_t ptables = getPTables(Proc::getCurPageDir());
@@ -284,21 +280,19 @@ uintptr_t PageDir::createKernelStack() {
 		addr = 0;
 	else
 		freeKStack = addr + PAGE_SIZE;
-	lock.up();
 	return addr;
 }
 
 void PageDir::removeKernelStack(uintptr_t addr) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	if(addr < freeKStack)
 		freeKStack = addr;
 	doUnmap(addr,1,true);
-	lock.up();
 }
 
 void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	uintptr_t ptables = pdir->getPTables(Proc::getCurPageDir());
 	PageDir::pde_t *pd = (PageDir::pde_t*)PAGEDIR(ptables);
 	/* free page-tables for kernel-stack */
@@ -311,63 +305,56 @@ void PageDirBase::destroy() {
 	}
 	/* free page-dir */
 	PhysMem::free(pdir->own >> PAGE_SIZE_SHIFT,PhysMem::KERN);
-	PageDir::lock.up();
 }
 
 bool PageDirBase::isPresent(uintptr_t virt) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	bool res = false;
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	uintptr_t ptables = pdir->getPTables(Proc::getCurPageDir());
 	PageDir::pde_t *pd = (PageDir::pde_t*)PAGEDIR(ptables);
 	if((pd[ADDR_TO_PDINDEX(virt)] & (PDE_PRESENT | PDE_EXISTS)) == (PDE_PRESENT | PDE_EXISTS)) {
 		PageDir::pte_t *pt = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 		res = (*pt & (PTE_PRESENT | PTE_EXISTS)) == (PTE_PRESENT | PTE_EXISTS);
 	}
-	PageDir::lock.up();
 	return res;
 }
 
 frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	uintptr_t ptables = pdir->getPTables(Proc::getCurPageDir());
 	PageDir::pde_t *pde = (PageDir::pde_t*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
 	PageDir::pte_t *pt = (PageDir::pte_t*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-	frameno_t res = PTE_FRAMENO(*pt);
-	PageDir::lock.up();
 	assert((*pde & (PDE_PRESENT | PDE_EXISTS)) == (PDE_PRESENT | PDE_EXISTS));
 	assert((*pt & (PTE_PRESENT | PTE_EXISTS)) == (PTE_PRESENT | PTE_EXISTS));
-	return res;
+	return PTE_FRAMENO(*pt);
 }
 
 frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	PageDir *pdir = Proc::getCurPageDir();
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	frameno_t frame = Thread::getRunning()->getFrame();
 	pdir->doMap(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,loadCount);
 	pdir->doUnmap(TEMP_MAP_AREA,1,false);
-	PageDir::lock.up();
 	return frame;
 }
 
 void PageDirBase::copyToFrame(frameno_t frame,const void *src) {
 	PageDir *pdir = Proc::getCurPageDir();
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	pdir->doMap(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,src,PAGE_SIZE);
 	pdir->doUnmap(TEMP_MAP_AREA,1,false);
-	PageDir::lock.up();
 }
 
 void PageDirBase::copyFromFrame(frameno_t frame,void *dst) {
 	PageDir *pdir = Proc::getCurPageDir();
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	pdir->doMap(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	memcpy(dst,(void*)TEMP_MAP_AREA,PAGE_SIZE);
 	pdir->doUnmap(TEMP_MAP_AREA,1,false);
-	PageDir::lock.up();
 }
 
 ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,
@@ -378,7 +365,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;
 	size_t orgCount = count;
 	assert(this != dst && (this == cur || dst == cur));
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	uintptr_t srctables = src->getPTables(cur);
 	uintptr_t dsttables = dst->getPTables(cur);
 	PageDir::pde_t *dstpdir = (PageDir::pde_t*)PAGEDIR(dsttables);
@@ -413,7 +400,6 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		count--;
 	}
 	SMP::flushTLB(src);
-	PageDir::lock.up();
 	return pts;
 
 error:
@@ -427,7 +413,6 @@ error:
 		orgVirtSrc += PAGE_SIZE;
 		orgCount--;
 	}
-	PageDir::lock.up();
 	return -ENOMEM;
 }
 
@@ -623,14 +608,13 @@ size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
 
 size_t PageDirBase::getPTableCount() const {
 	size_t count = 0;
-	PageDir::lock.down();
+	LockGuard<SpinLock> g(&PageDir::lock);
 	uintptr_t ptables = static_cast<const PageDir*>(this)->getPTables(Proc::getCurPageDir());
 	PageDir::pde_t *pdirAddr = (PageDir::pde_t*)PAGEDIR(ptables);
 	for(size_t i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
 		if(pdirAddr[i] & PDE_PRESENT)
 			count++;
 	}
-	PageDir::lock.up();
 	return count;
 }
 

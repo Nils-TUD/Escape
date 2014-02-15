@@ -25,21 +25,17 @@
 #include <string.h>
 
 bool DynArray::extend() {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 
 	/* region full? */
-	if(areaBegin + objCount * objSize + PAGE_SIZE > areaBegin + areaSize) {
-		lock.up();
+	if(areaBegin + objCount * objSize + PAGE_SIZE > areaBegin + areaSize)
 		return false;
-	}
 
 	Region *reg = regions;
 	if(reg == NULL) {
 		reg = regions = freeList;
-		if(reg == NULL) {
-			lock.up();
+		if(reg == NULL)
 			return false;
-		}
 		freeList = freeList->next;
 		reg->addr = areaBegin;
 		reg->size = 0;
@@ -50,14 +46,12 @@ bool DynArray::extend() {
 	if(PageDir::mapToCur(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
 		reg->next = freeList;
 		freeList = reg;
-		lock.up();
 		return false;
 	}
 	memclear((void*)addr,PAGE_SIZE);
 	totalPages++;
 	reg->size += PAGE_SIZE;
 	objCount = reg->size / objSize;
-	lock.up();
 	return true;
 }
 

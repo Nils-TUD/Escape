@@ -74,9 +74,8 @@ void *Cache::alloc(size_t size) {
 done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
-		lock.up();
 	}
 #endif
 	return res;
@@ -117,10 +116,9 @@ void Cache::free(void *p) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		lock.down();
+		LockGuard<SpinLock> g(&lock);
 		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[F] %Px %zu ",
 		                      p,caches[area[0]].objSize);
-		lock.up();
 	}
 #endif
 
@@ -139,11 +137,10 @@ void Cache::free(void *p) {
 
 	/* put on freelist */
 	Entry *c = caches + area[0];
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
-	lock.up();
 }
 
 size_t Cache::getOccMem() {
@@ -190,7 +187,7 @@ void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t fr
 }
 
 void *Cache::get(Entry *c,size_t i) {
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -198,10 +195,8 @@ void *Cache::get(Entry *c,size_t i) {
 		size_t objs = bytes / totalObjSize;
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)KHeap::allocSpace(pageCount);
-		if(space == NULL) {
-			lock.up();
+		if(space == NULL)
 			return NULL;
-		}
 
 		/* if the remaining space is big enough (it won't bring advantages to add dozens e.g. 8
 		 * byte large areas to the heap), add it to the fallback-heap */
@@ -226,6 +221,5 @@ void *Cache::get(Entry *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
-	lock.up();
 	return area + 2;
 }

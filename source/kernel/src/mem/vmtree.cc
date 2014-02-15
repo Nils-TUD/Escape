@@ -43,7 +43,7 @@ bool VMRegion::matches(uintptr_t k) {
 }
 
 void VMTree::addTree(VirtMem *vm,VMTree *tree) {
-	regMutex.down();
+	LockGuard<Mutex> g(&regMutex);
 	if(regListEnd)
 		regListEnd->next = tree;
 	else
@@ -52,11 +52,10 @@ void VMTree::addTree(VirtMem *vm,VMTree *tree) {
 	tree->virtmem = vm;
 	tree->next = NULL;
 	tree->regs.clear();
-	regMutex.up();
 }
 
 void VMTree::remTree(VMTree *tree) {
-	regMutex.down();
+	LockGuard<Mutex> g(&regMutex);
 	VMTree *p = NULL;
 	for(VMTree *t = regList; t != NULL; p = t, t = t->next) {
 		if(t == tree) {
@@ -69,7 +68,6 @@ void VMTree::remTree(VMTree *tree) {
 			break;
 		}
 	}
-	regMutex.up();
 }
 
 bool VMTree::available(uintptr_t addr,size_t size) const {

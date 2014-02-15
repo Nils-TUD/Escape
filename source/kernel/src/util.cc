@@ -47,17 +47,14 @@ uintptr_t Util::pfip;
 bool Util::panicStarted = false;
 
 int Util::rand() {
-	randLock.down();
+	LockGuard<SpinLock> g(&randLock);
 	lastRand = randa * lastRand + randc;
-	int res = (int)((uint)(lastRand / 65536) % 32768);
-	randLock.up();
-	return res;
+	return (int)((uint)(lastRand / 65536) % 32768);
 }
 
 void Util::srand(uint seed) {
-	randLock.down();
+	LockGuard<SpinLock> g(&randLock);
 	lastRand = seed;
-	randLock.up();
 }
 
 void Util::startTimer() {

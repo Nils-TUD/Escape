@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
+#include <sys/lockguard.h>
 #include <assert.h>
 
 class Cache;
@@ -153,9 +154,6 @@ private:
 };
 
 inline bool KHeap::addMemory(uintptr_t addr,size_t size) {
-	bool res;
-	lock.down();
-	res = doAddMemory(addr,size);
-	lock.up();
-	return res;
+	LockGuard<SpinLock> g(&lock);
+	return doAddMemory(addr,size);
 }

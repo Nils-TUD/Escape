@@ -79,14 +79,13 @@ int VFSChannel::isSupported(int op) const {
 }
 
 void VFSChannel::discardMsgs() {
-	waitLock.down();
+	LockGuard<SpinLock> g(&waitLock);
 	// remove from parent
 	static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
 
 	// now clear lists
 	sendList.deleteAll();
 	recvList.deleteAll();
-	waitLock.up();
 }
 
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
@@ -403,7 +402,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
-	waitLock.down();
+	LockGuard<SpinLock> g(&waitLock);
 
 	/* set recipient */
 	if(flags & VFS_DEVICE)
@@ -431,7 +430,6 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		else
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,false);
 	}
-	waitLock.up();
 	return 0;
 }
 

@@ -64,10 +64,8 @@ off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) 
 }
 
 int VFSFile::reserve(size_t newSize) {
-	lock.down();
-	int res = doReserve(newSize);
-	lock.up();
-	return res;
+	LockGuard<SpinLock> g(&lock);
+	return doReserve(newSize);
 }
 
 int VFSFile::doReserve(size_t newSize) {
@@ -91,8 +89,8 @@ size_t VFSFile::getSize(A_UNUSED pid_t pid) const {
 
 ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
                       off_t offset,size_t count) {
+	LockGuard<SpinLock> g(&lock);
 	size_t byteCount = 0;
-	lock.down();
 	if(data != NULL) {
 		if(offset > pos)
 			offset = pos;
@@ -103,20 +101,17 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 			Thread::remLock(&lock);
 		}
 	}
-	lock.up();
 	return byteCount;
 }
 
 ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
                        off_t offset,size_t count) {
 	/* need to create cache? */
-	lock.down();
+	LockGuard<SpinLock> g(&lock);
 	if(data == NULL || size < offset + count) {
 		int res = doReserve(MAX(offset + count,VFS_INITIAL_WRITECACHE));
-		if(res < 0) {
-			lock.up();
+		if(res < 0)
 			return res;
-		}
 	}
 
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
@@ -126,6 +121,5 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	Thread::remLock(&lock);
 	/* we have checked size for overflow. so it is ok here */
 	pos = MAX(pos,(off_t)(offset + count));
-	lock.up();
 	return count;
 }

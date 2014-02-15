@@ -40,24 +40,24 @@
 uint Util::randa = 1103515245;
 uint Util::randc = 12345;
 uint Util::lastRand = 0;
-klock_t Util::randLock;
+SpinLock Util::randLock;
 uint64_t Util::profStart;
 uintptr_t Util::pfaddr;
 uintptr_t Util::pfip;
 bool Util::panicStarted = false;
 
 int Util::rand() {
-	SpinLock::acquire(&randLock);
+	randLock.acquire();
 	lastRand = randa * lastRand + randc;
 	int res = (int)((uint)(lastRand / 65536) % 32768);
-	SpinLock::release(&randLock);
+	randLock.release();
 	return res;
 }
 
 void Util::srand(uint seed) {
-	SpinLock::acquire(&randLock);
+	randLock.acquire();
 	lastRand = seed;
-	SpinLock::release(&randLock);
+	randLock.release();
 }
 
 void Util::startTimer() {

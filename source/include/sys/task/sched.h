@@ -223,7 +223,7 @@ private:
 	static bool setReadyState(Thread *t);
 	static void print(OStream &os,DList<Thread> *q);
 
-	static klock_t lock;
+	static SpinLock lock;
 	static ulong readyMask;
 	static DList<Thread> rdyQueues[];
 	static DList<Thread> evlists[EV_COUNT];
@@ -233,35 +233,35 @@ private:
 
 inline void Sched::block(Thread *t) {
 	assert(t != NULL);
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	setBlocked(t);
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 inline void Sched::unblock(Thread *t) {
 	assert(t != NULL);
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	setReady(t);
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 inline void Sched::unblockQuick(Thread *t) {
 	assert(t != NULL);
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	setReadyQuick(t);
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 inline void Sched::suspend(Thread *t) {
 	assert(t != NULL);
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	setSuspended(t,true);
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 inline void Sched::unsuspend(Thread *t) {
 	assert(t != NULL);
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	setSuspended(t,false);
-	SpinLock::release(&lock);
+	lock.release();
 }

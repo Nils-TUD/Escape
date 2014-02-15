@@ -43,7 +43,7 @@ public:
 private:
 	static void startup() asm("thread_startup");
 	static bool save(ThreadRegs *saveArea) asm("thread_save");
-	static bool resume(uintptr_t pageDir,const ThreadRegs *saveArea,klock_t *lock,bool newProc)
+	static bool resume(uintptr_t pageDir,const ThreadRegs *saveArea,SpinLock *lock,bool newProc)
 		asm("thread_resume");
 
 	uintptr_t kernelStack;

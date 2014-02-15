@@ -46,7 +46,7 @@
 
 VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;
-klock_t waitLock;
+SpinLock waitLock;
 
 void VFS::init() {
 	VFSNode *root,*sys;

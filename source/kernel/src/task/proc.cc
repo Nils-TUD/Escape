@@ -66,33 +66,33 @@ Proc *ProcBase::pidToProc[MAX_PROC_COUNT];
 pid_t ProcBase::nextPid = 1;
 Mutex ProcBase::procLock;
 Mutex ProcBase::childLock;
-klock_t ProcBase::refLock;
+SpinLock ProcBase::refLock;
 
 Proc *ProcBase::getRef(pid_t pid) {
 	if(pid >= ARRAY_SIZE(pidToProc))
 		return NULL;
 
-	SpinLock::acquire(&refLock);
+	refLock.acquire();
 	Proc *p = pidToProc[pid];
 	if(p)
 		p->refs++;
-	SpinLock::release(&refLock);
+	refLock.release();
 	return p;
 }
 
 void ProcBase::relRef(const Proc *p) {
-	SpinLock::acquire(&refLock);
+	refLock.acquire();
 	if(--p->refs == 0) {
 		/* remove it first and release the spinlock */
 		remove(const_cast<Proc*>(p));
-		SpinLock::release(&refLock);
+		refLock.release();
 
 		/* now, nobody can get the process anymore, so we can destroy everything without worrying */
 		Cache::free((char*)p->command);
 		Cache::free(const_cast<Proc*>(p));
 	}
 	else
-		SpinLock::release(&refLock);
+		refLock.release();
 }
 
 void ProcBase::init() {
@@ -699,9 +699,9 @@ void ProcBase::kill(pid_t pid) {
 	VFS::removeProcess(p->pid);
 
 	/* unref and release. if there is nobody else, we'll destroy everything */
-	SpinLock::acquire(&refLock);
+	refLock.acquire();
 	p->refs--;
-	SpinLock::release(&refLock);
+	refLock.release();
 	release(p,PLOCK_PROG);
 }
 

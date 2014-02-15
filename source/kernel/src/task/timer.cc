@@ -31,7 +31,7 @@
 TimerBase::PerCPU *TimerBase::perCPU = NULL;
 time_t TimerBase::lastRuntimeUpdate = 0;
 
-klock_t TimerBase::lock;
+SpinLock TimerBase::lock;
 TimerBase::Listener TimerBase::listenObjs[LISTENER_COUNT];
 TimerBase::Listener *TimerBase::freeList;
 TimerBase::Listener *TimerBase::listener = NULL;
@@ -53,10 +53,10 @@ void TimerBase::init() {
 }
 
 int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	Listener *l = freeList;
 	if(l == NULL) {
-		SpinLock::release(&lock);
+		lock.release();
 		return -ENOMEM;
 	}
 
@@ -89,12 +89,12 @@ int TimerBase::sleepFor(tid_t tid,time_t msecs,bool block) {
 	/* put process to sleep */
 	if(block)
 		Thread::getById(tid)->block();
-	SpinLock::release(&lock);
+	lock.release();
 	return 0;
 }
 
 void TimerBase::removeThread(tid_t tid) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	Listener *p = NULL;
 	for(Listener *l = listener; l != NULL; p = l, l = l->next) {
 		if(l->tid == tid) {
@@ -113,7 +113,7 @@ void TimerBase::removeThread(tid_t tid) {
 			break;
 		}
 	}
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 bool TimerBase::intrpt() {
@@ -125,7 +125,7 @@ bool TimerBase::intrpt() {
 	perCPU[cpu].elapsedMsecs += timeInc;
 
 	if(cpu == 0) {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		if((perCPU[cpu].elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
 			Thread::updateRuntimes();
 			SMP::updateRuntimes();
@@ -158,7 +158,7 @@ bool TimerBase::intrpt() {
 			/* to next */
 			l = tl;
 		}
-		SpinLock::release(&lock);
+		lock.release();
 	}
 
 	/* if a process has been waked up or the time-slice is over, reschedule */

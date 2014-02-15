@@ -81,5 +81,5 @@ private:
 	static Entry *getByFrame(frameno_t frameNo,bool dec);
 
 	static SList<Entry> frames[];
-	static klock_t lock;
+	static SpinLock lock;
 };

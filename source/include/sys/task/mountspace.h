@@ -125,9 +125,9 @@ public:
 	 * @param p the process
 	 */
 	static void leave(Proc *p) {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		doLeave(p);
-		SpinLock::release(&lock);
+		lock.release();
 	}
 
 	/**
@@ -153,7 +153,7 @@ private:
 	ulong refs;
 	PathTree<OpenFile> tree;
 
-	static klock_t lock;
+	static SpinLock lock;
 	static int next_id;
 	static SList<MountSpace> list;
 };

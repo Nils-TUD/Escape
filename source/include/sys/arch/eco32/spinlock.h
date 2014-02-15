@@ -22,10 +22,10 @@
 #include <sys/common.h>
 
 /* eco32 does not support smp */
-inline void SpinLock::acquire(klock_t *) {
+inline void SpinLock::acquire() {
 }
-inline bool SpinLock::tryAcquire(klock_t *) {
+inline bool SpinLock::tryAcquire() {
 	return true;
 }
-inline void SpinLock::release(klock_t *) {
+inline void SpinLock::release() {
 }

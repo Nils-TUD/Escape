@@ -100,13 +100,13 @@ public:
 	 * might not have a name anymore and might be unreachable, but everything else is still there.
 	 */
 	static void acquireTree() {
-		SpinLock::acquire(&treeLock);
+		treeLock.acquire();
 	}
 	/**
 	 * Releases the tree-lock.
 	 */
 	static void releaseTree() {
-		SpinLock::release(&treeLock);
+		treeLock.release();
 	}
 
 	/**
@@ -284,7 +284,7 @@ public:
 	 */
 	void closeDir(bool locked) const {
 		if(locked)
-			SpinLock::release(&treeLock);
+			treeLock.release();
 	}
 
 	/**
@@ -480,9 +480,9 @@ protected:
 
 	const VFSNode *increaseRefs() const {
 		/* TODO use atomic ops */
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		refCount++;
-		SpinLock::release(&lock);
+		lock.release();
 		return this;
 	}
 
@@ -492,7 +492,7 @@ private:
 	ushort doUnref(bool remove);
 
 protected:
-	mutable klock_t lock;
+	mutable SpinLock lock;
 	const char *name;
 	size_t nameLen;
 	/* number of open files for this node */
@@ -516,7 +516,7 @@ private:
 	/* a pointer to the first free node (which points to the next and so on) */
 	static VFSNode *freeList;
 	static uint nextUsageId;
-	static klock_t nodesLock;
-	static klock_t treeLock;
+	static SpinLock nodesLock;
+	static SpinLock treeLock;
 	static size_t allocated;
 };

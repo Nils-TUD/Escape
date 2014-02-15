@@ -226,14 +226,14 @@ public:
 	 *
 	 * @param l the lock
 	 */
-	static void addLock(klock_t *l);
+	static void addLock(SpinLock *l);
 
 	/**
 	 * Removes the given lock from the term-lock-list
 	 *
 	 * @param l the lock
 	 */
-	static void remLock(klock_t *l);
+	static void remLock(SpinLock *l);
 
 	/**
 	 * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
@@ -733,7 +733,7 @@ protected:
 	/* a list with heap-allocations that should be free'd on thread-termination */
 	void *termHeapAllocs[TERM_RESOURCE_CNT];
 	/* a list of locks that should be released on thread-termination */
-	klock_t *termLocks[TERM_RESOURCE_CNT];
+	SpinLock *termLocks[TERM_RESOURCE_CNT];
 	/* a list of file-usages that should be decremented on thread-termination */
 	OpenFile *termUsages[TERM_USAGE_CNT];
 	/* a list of callbacks that should be called on thread-termination */
@@ -753,7 +753,7 @@ private:
 	static DList<ListItem> threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;
-	static klock_t refLock;
+	static SpinLock refLock;
 	static Mutex mutex;
 };
 
@@ -786,13 +786,13 @@ inline void ThreadBase::switchNoSigs() {
 	t->ignoreSignals = 0;
 }
 
-inline void ThreadBase::addLock(klock_t *l) {
+inline void ThreadBase::addLock(SpinLock *l) {
 	Thread *cur = getRunning();
 	assert(cur->termLockCount < TERM_RESOURCE_CNT);
 	cur->termLocks[cur->termLockCount++] = l;
 }
 
-inline void ThreadBase::remLock(klock_t *l) {
+inline void ThreadBase::remLock(SpinLock *l) {
 	Thread *cur = getRunning();
 	assert(cur->termLockCount > 0 && cur->termLocks[cur->termLockCount - 1] == l);
 	cur->termLockCount--;

@@ -57,5 +57,5 @@ public:
 	static void remove(VMRegion *vmreg);
 
 	static Treap<FileNode> tree;
-	static klock_t lock;
+	static SpinLock lock;
 };

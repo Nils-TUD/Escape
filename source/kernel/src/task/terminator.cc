@@ -26,26 +26,26 @@
 #include <assert.h>
 
 ISList<Thread*> Terminator::deadThreads;
-klock_t Terminator::lock;
+SpinLock Terminator::lock;
 
 void Terminator::start() {
 	Thread *t = Thread::getRunning();
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	while(1) {
 		if(deadThreads.length() == 0) {
 			t->wait(EV_TERMINATION,0);
-			SpinLock::release(&lock);
+			lock.release();
 
 			Thread::switchAway();
 
-			SpinLock::acquire(&lock);
+			lock.acquire();
 		}
 
 		while(deadThreads.length() > 0) {
 			Thread *dt = deadThreads.removeFirst();
 			/* release the lock while we're killing the thread; the process-module may use us
 			 * in this time to add another thread */
-			SpinLock::release(&lock);
+			lock.release();
 
 			while(!dt->beginTerm()) {
 				/* ensure that we idle to receive interrupts */
@@ -54,18 +54,18 @@ void Terminator::start() {
 			}
 			Proc::killThread(dt->getTid());
 
-			SpinLock::acquire(&lock);
+			lock.acquire();
 		}
 	}
 }
 
 void Terminator::addDead(Thread *t) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	/* ensure that we don't add a thread twice */
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(deadThreads.append(t));
 		Sched::wakeup(EV_TERMINATION,0);
 	}
-	SpinLock::release(&lock);
+	lock.release();
 }

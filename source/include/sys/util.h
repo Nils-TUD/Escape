@@ -196,7 +196,7 @@ private:
 	static uint randa;
 	static uint randc;
 	static uint lastRand;
-	static klock_t randLock;
+	static SpinLock randLock;
 	static uint64_t profStart;
 	static uintptr_t pfaddr;
 	static uintptr_t pfip;

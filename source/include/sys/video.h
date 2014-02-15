@@ -87,10 +87,10 @@ public:
 	 * Clears the screen
 	 */
 	void clearScreen() {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		clear();
 		col = row = 0;
-		SpinLock::release(&lock);
+		lock.release();
 	}
 
 	virtual void writec(char c);
@@ -111,7 +111,7 @@ private:
 	ulong col;
 	ulong row;
 	uchar color;
-	mutable klock_t lock;
+	mutable SpinLock lock;
 	static Video inst;
 };
 

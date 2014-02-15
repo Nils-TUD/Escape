@@ -40,7 +40,7 @@ EXTERN_C void apProtMode();
 
 cpuid_t *SMP::log2Phys;
 
-static klock_t smpLock;
+static SpinLock smpLock;
 static volatile size_t seenAPs = 0;
 static uint8_t trampoline[] = {
 #if DEBUGGING
@@ -76,9 +76,8 @@ bool SMPBase::initArch() {
 }
 
 void SMPBase::pauseOthers() {
-	static klock_t lock;
 retry:
-	if(SpinLock::tryAcquire(&lock)) {
+	if(smpLock.tryAcquire()) {
 		cpuid_t cur = getCurId();
 		/* wait until all CPUs left the last wait. otherwise, if we're too fast so that they haven't
 		 * done that yet, they might get stuck in the loop that waits for waitlock to become 0
@@ -97,7 +96,7 @@ retry:
 		/* wait until all CPUs are paused */
 		while(waiting < count)
 			::CPU::pause();
-		SpinLock::release(&lock);
+		smpLock.release();
 	}
 	else {
 		Atomic::add(&waiting,+1);
@@ -113,8 +112,7 @@ void SMPBase::resumeOthers() {
 }
 
 void SMPBase::haltOthers() {
-	static klock_t lock;
-	if(SpinLock::tryAcquire(&lock)) {
+	if(smpLock.tryAcquire()) {
 		cpuid_t cur = getCurId();
 		halting = 0;
 		size_t count = 0;
@@ -129,7 +127,7 @@ void SMPBase::haltOthers() {
 		/* wait until all CPUs are halted */
 		while(halting < count)
 			::CPU::pause();
-		SpinLock::release(&lock);
+		smpLock.release();
 	}
 	else {
 		Atomic::add(&halting,+1);
@@ -139,8 +137,7 @@ void SMPBase::haltOthers() {
 }
 
 void SMPBase::ensureTLBFlushed() {
-	static klock_t lock;
-	if(SpinLock::tryAcquire(&lock)) {
+	if(smpLock.tryAcquire()) {
 		cpuid_t cur = getCurId();
 		flushed = 0;
 		size_t count = 0;
@@ -153,7 +150,7 @@ void SMPBase::ensureTLBFlushed() {
 		/* wait until all CPUs have flushed their TLB */
 		while(halting == 0 && flushed < count)
 			::CPU::pause();
-		SpinLock::release(&lock);
+		smpLock.release();
 	}
 	else {
 		::CPU::setCR3(::CPU::getCR3());
@@ -162,14 +159,14 @@ void SMPBase::ensureTLBFlushed() {
 }
 
 void SMP::apIsRunning() {
-	SpinLock::acquire(&smpLock);
+	smpLock.acquire();
 	cpuid_t phys = LAPIC::getId();
 	cpuid_t log = GDT::getCPUId();
 	log2Phys[log] = phys;
 	setId(phys,log);
 	setReady(log);
 	seenAPs++;
-	SpinLock::release(&smpLock);
+	smpLock.release();
 }
 
 void SMPBase::start() {

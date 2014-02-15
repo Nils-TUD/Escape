@@ -27,7 +27,7 @@
 #include <sys/video.h>
 #include <string.h>
 
-klock_t Env::lock;
+SpinLock Env::lock;
 
 bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 	while(1) {
@@ -96,7 +96,7 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		goto errorValCpy;
 
 	/* append to list */
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	p = Proc::getRef(pid);
 	if(p) {
 		if(!p->env) {
@@ -107,12 +107,12 @@ bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
 		p->env->append(var);
 		Proc::relRef(p);
 	}
-	SpinLock::release(&lock);
+	lock.release();
 	return true;
 
 errorVar:
 	Proc::relRef(p);
-	SpinLock::release(&lock);
+	lock.release();
 	delete var;
 errorValCpy:
 	Cache::free(valueCpy);
@@ -122,7 +122,7 @@ errorNameCpy:
 }
 
 void Env::removeFor(pid_t pid) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	Proc *p = Proc::getRef(pid);
 	if(p) {
 		if(p->env) {
@@ -137,7 +137,7 @@ void Env::removeFor(pid_t pid) {
 		}
 		Proc::relRef(p);
 	}
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 void Env::printAllOf(OStream &os,pid_t pid) {
@@ -203,7 +203,7 @@ pid_t Env::getPPid(pid_t pid) {
 }
 
 SList<Env::EnvVar> *Env::request(pid_t pid) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	Thread::addLock(&lock);
 	const Proc *p = Proc::getRef(pid);
 	if(!p)
@@ -216,5 +216,5 @@ SList<Env::EnvVar> *Env::request(pid_t pid) {
 
 void Env::release() {
 	Thread::remLock(&lock);
-	SpinLock::release(&lock);
+	lock.release();
 }

@@ -38,7 +38,7 @@
 
 #define PRINT_MSGS			0
 
-extern klock_t waitLock;
+extern SpinLock waitLock;
 
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IXUSR | S_IRUSR | S_IWUSR,success), fd(-1),
@@ -79,14 +79,14 @@ int VFSChannel::isSupported(int op) const {
 }
 
 void VFSChannel::discardMsgs() {
-	SpinLock::acquire(&waitLock);
+	waitLock.acquire();
 	// remove from parent
 	static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
 
 	// now clear lists
 	sendList.deleteAll();
 	recvList.deleteAll();
-	SpinLock::release(&waitLock);
+	waitLock.release();
 }
 
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
@@ -403,7 +403,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 
 	/* note that we do that here, because memcpy can fail because the page is swapped out for
 	 * example. we can't hold the lock during that operation */
-	SpinLock::acquire(&waitLock);
+	waitLock.acquire();
 
 	/* set recipient */
 	if(flags & VFS_DEVICE)
@@ -431,7 +431,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		else
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,false);
 	}
-	SpinLock::release(&waitLock);
+	waitLock.release();
 	return 0;
 }
 
@@ -457,19 +457,19 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	}
 
 	/* wait until a message arrives */
-	SpinLock::acquire(&waitLock);
+	waitLock.acquire();
 	while((msg = getMsg(t,list,flags)) == NULL) {
 		if(EXPECT_FALSE(!block)) {
-			SpinLock::release(&waitLock);
+			waitLock.release();
 			return -EWOULDBLOCK;
 		}
 		/* if the channel has already been closed, there is no hope of success here */
 		if(EXPECT_FALSE(closed || !isAlive())) {
-			SpinLock::release(&waitLock);
+			waitLock.release();
 			return -EDESTROYED;
 		}
 		t->wait(event,(evobj_t)waitNode);
-		SpinLock::release(&waitLock);
+		waitLock.release();
 
 		if(EXPECT_FALSE(ignoreSigs))
 			Thread::switchNoSigs();
@@ -481,14 +481,14 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 		/* if we waked up and there is no message, the driver probably died */
 		if(EXPECT_FALSE(!isAlive()))
 			return -EDESTROYED;
-		SpinLock::acquire(&waitLock);
+		waitLock.acquire();
 	}
 
 	if(event == EV_CLIENT) {
 		static_cast<VFSDevice*>(parent)->remMsgs(1);
 		curClient = msg->thread;
 	}
-	SpinLock::release(&waitLock);
+	waitLock.release();
 
 	if(EXPECT_FALSE(data && msg->length > size)) {
 		Cache::free(msg);

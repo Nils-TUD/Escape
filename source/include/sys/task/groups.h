@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 
 class Proc;
 class OStream;
@@ -89,5 +90,5 @@ public:
 	static void print(OStream &os,pid_t pid);
 
 private:
-	static klock_t lock;
+	static SpinLock lock;
 };

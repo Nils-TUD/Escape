@@ -74,6 +74,6 @@ private:
 	bool logToSer;
 	OpenFile *logFile;
 	bool vfsReady;
-	klock_t lock;
+	SpinLock lock;
 	static Log inst;
 };

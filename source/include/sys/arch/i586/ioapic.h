@@ -141,24 +141,24 @@ private:
 
 	static uint32_t read(Instance *ioapic,uint32_t reg) {
 		/* we only use it in the setup-phase with a single CPU, but to be sure... */
-		SpinLock::acquire(&lck);
+		lck.acquire();
 		select(ioapic,reg);
 		uint32_t val = ioapic->addr[IOWIN];
-		SpinLock::release(&lck);
+		lck.release();
 		return val;
 	}
 	static void write(Instance *ioapic,uint32_t reg,uint32_t value) {
-		SpinLock::acquire(&lck);
+		lck.acquire();
 		select(ioapic,reg);
 		ioapic->addr[IOWIN] = value;
-		SpinLock::release(&lck);
+		lck.release();
 	}
 	static void select(Instance *ioapic,uint32_t reg) {
 		volatile uint8_t *addr = reinterpret_cast<volatile uint8_t*>(ioapic->addr + IOREGSEL);
 		*addr = reg;
 	}
 
-	static klock_t lck;
+	static SpinLock lck;
 	static size_t count;
 	static Instance ioapics[MAX_IOAPICS];
 	static uint isa2gsi[ISA_IRQ_COUNT];

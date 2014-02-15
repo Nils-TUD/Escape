@@ -34,7 +34,7 @@
 #include <assert.h>
 #include <errno.h>
 
-static klock_t switchLock;
+static SpinLock switchLock;
 
 int ThreadBase::initArch(Thread *t) {
 	t->kernelStack = t->getProc()->getPageDir()->createKernelStack();
@@ -85,9 +85,6 @@ void ThreadBase::freeArch(Thread *t) {
 }
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
-	/* ensure that we won't get interrupted */
-	klock_t lock = 0;
-	SpinLock::acquire(&lock);
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	frameno_t frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
@@ -107,7 +104,6 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	*dst = (ulong)nt;
 
 	PageDir::unmapFromTemp(1);
-	SpinLock::release(&lock);
 	/* parent */
 	return 0;
 }
@@ -136,19 +132,19 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 }
 
 bool ThreadBase::beginTerm() {
-	SpinLock::acquire(&switchLock);
+	switchLock.acquire();
 	/* at first the thread can't run to do that. if its not running, its important that no resources
 	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
 	bool res = state != Thread::RUNNING && !hasResources();
 	/* ensure that the thread won't be chosen again */
 	if(res)
 		Sched::removeThread(static_cast<Thread*>(this));
-	SpinLock::release(&switchLock);
+	switchLock.release();
 	return res;
 }
 
 void Thread::initialSwitch() {
-	SpinLock::acquire(&switchLock);
+	switchLock.acquire();
 	cpuid_t cpu = GDT::getCPUId();
 	Thread *cur = Sched::perform(NULL,cpu);
 	cur->stats.schedCount++;
@@ -165,7 +161,7 @@ void ThreadBase::doSwitch() {
 	Thread *old = Thread::getRunning();
 	/* lock this, because Sched::perform() may make us ready and we can't be chosen by another CPU
 	 * until we've really switched the thread (kernelstack, ...) */
-	SpinLock::acquire(&switchLock);
+	switchLock.acquire();
 
 	/* update runtime-stats */
 	uint64_t cycles = CPU::rdtsc();
@@ -203,7 +199,7 @@ void ThreadBase::doSwitch() {
 	else {
 		SMP::schedule(cpu,n,cycles);
 		n->stats.cycleStart = CPU::rdtsc();
-		SpinLock::release(&switchLock);
+		switchLock.release();
 	}
 }
 

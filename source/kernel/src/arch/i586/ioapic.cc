@@ -26,7 +26,7 @@
 #include <sys/config.h>
 #include <assert.h>
 
-klock_t IOAPIC::lck;
+SpinLock IOAPIC::lck;
 size_t IOAPIC::count;
 IOAPIC::Instance IOAPIC::ioapics[MAX_IOAPICS];
 uint IOAPIC::isa2gsi[ISA_IRQ_COUNT];

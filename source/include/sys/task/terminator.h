@@ -43,5 +43,5 @@ private:
 	static void addDead(Thread *t);
 
 	static ISList<Thread*> deadThreads;
-	static klock_t lock;
+	static SpinLock lock;
 };

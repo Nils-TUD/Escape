@@ -300,17 +300,17 @@ private:
 	 * Increases the references of this file
 	 */
 	void incRefs() {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		refCount++;
-		SpinLock::release(&lock);
+		lock.release();
 	}
 	/**
 	 * Increments the number of usages of this file
 	 */
 	void incUsages() {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		usageCount++;
-		SpinLock::release(&lock);
+		lock.release();
 	}
 	/**
 	 * Decrements the number of usages of this file
@@ -333,7 +333,7 @@ private:
 	static void releaseFile(OpenFile *file);
 	bool doClose(pid_t pid);
 
-	klock_t lock;
+	SpinLock lock;
 	/* read OR write; flags = 0 => entry unused */
 	ushort flags;
 	/* the owner of this file */
@@ -357,11 +357,11 @@ private:
 	OpenFile *next;
 
 	/* global file table (expands dynamically) */
-	static klock_t gftLock;
+	static SpinLock gftLock;
 	static DynArray gftArray;
 	static OpenFile *usedList;
 	static OpenFile *exclList;
 	static OpenFile *gftFreeList;
-	static klock_t semLock;
+	static SpinLock semLock;
 	static Treap<SemTreapNode> sems;
 };

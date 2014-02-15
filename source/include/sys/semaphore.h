@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 
 class Semaphore {
 public:
@@ -53,5 +54,5 @@ public:
 
 private:
 	int value;
-	klock_t lock;
+	SpinLock lock;
 };

@@ -96,21 +96,21 @@ private:
 	static size_t freeBlocks;
 	static Block *swapBlocks;
 	static Block *freeList;
-	static klock_t lock;
+	static SpinLock lock;
 };
 
 inline void SwapMap::incRefs(ulong block) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	assert(block < totalBlocks && swapBlocks[block].refCount > 0);
 	swapBlocks[block].refCount++;
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 inline bool SwapMap::isUsed(ulong block) {
 	bool res;
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	assert(block < totalBlocks);
 	res = swapBlocks[block].refCount > 0;
-	SpinLock::release(&lock);
+	lock.release();
 	return res;
 }

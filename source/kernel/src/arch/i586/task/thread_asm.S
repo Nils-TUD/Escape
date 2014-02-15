@@ -55,7 +55,7 @@ thread_save:
 	leave
 	ret
 
-# bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,klock_t lock,bool newProc);
+# bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,uint *lock,bool newProc);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp

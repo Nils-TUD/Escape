@@ -37,27 +37,27 @@ static void panic(const char *msg,...) {
 	va_end(ap);
 }
 
-void SpinLock::acquire(klock_t *l) {
+void SpinLock::acquire() {
 	if(Util::IsPanicStarted())
 		return;
 
 	Thread *t = Thread::getRunning();
 	unsigned id = t->getTid() + 1;
-	if(*l == id) {
+	if(lock == id) {
 		panic("Self-deadlock");
 		return;
 	}
 	uint64_t max = CPU::rdtsc() + (MAX_WAIT_SECS * CPU::getSpeed());
-	while(!Atomic::cmpnswap(l, 0U, id)) {
+	while(!Atomic::cmpnswap(&lock, 0U, id)) {
 		if(CPU::rdtsc() > max) {
-			panic("Acquiring spinlock %p took too long",l);
+			panic("Acquiring spinlock %p took too long",this);
 			return;
 		}
 		CPU::pause();
 	}
 }
 
-bool SpinLock::tryAcquire(klock_t *l) {
-	return Util::IsPanicStarted() || Atomic::cmpnswap(l, 0, 1);
+bool SpinLock::tryAcquire() {
+	return Util::IsPanicStarted() || Atomic::cmpnswap(&lock, 0, 1);
 }
 #endif

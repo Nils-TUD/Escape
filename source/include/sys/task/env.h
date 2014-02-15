@@ -93,5 +93,5 @@ private:
 	static SList<EnvVar> *request(pid_t pid);
 	static void release();
 
-	static klock_t lock;
+	static SpinLock lock;
 };

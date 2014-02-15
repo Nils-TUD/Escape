@@ -102,6 +102,6 @@ private:
 #if DEBUGGING
 	static bool aafEnabled;
 #endif
-	static klock_t lock;
+	static SpinLock lock;
 	static Entry caches[];
 };

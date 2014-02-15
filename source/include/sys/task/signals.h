@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 
 #define SIG_COUNT			19
 
@@ -210,8 +211,8 @@ private:
 	static void removePending(Thread *t,int sig);
 	static Thread *getThread(tid_t tid);
 
-	static klock_t lock;
-	static klock_t listLock;
+	static SpinLock lock;
+	static SpinLock listLock;
 	static PendingSig signals[SIGNAL_COUNT];
 	static PendingSig *freelist;
 };

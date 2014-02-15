@@ -149,13 +149,13 @@ private:
 	/* currently occupied memory */
 	static size_t memUsage;
 	static size_t pages;
-	static klock_t lock;
+	static SpinLock lock;
 };
 
 inline bool KHeap::addMemory(uintptr_t addr,size_t size) {
 	bool res;
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	res = doAddMemory(addr,size);
-	SpinLock::release(&lock);
+	lock.release();
 	return res;
 }

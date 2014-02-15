@@ -225,8 +225,8 @@ private:
 	static size_t stackPages;
 	static uintptr_t stackBegin;
 	static frameno_t *stack;
-	static klock_t contLock;
-	static klock_t defLock;
+	static SpinLock contLock;
+	static SpinLock defLock;
 	static bool initialized;
 
 	/* for swapping */
@@ -250,8 +250,8 @@ inline bool PhysMem::shouldSetRegTimestamp() {
 	bool res;
 	if(!swapEnabled)
 		return false;
-	SpinLock::acquire(&defLock);
+	defLock.acquire();
 	res = getFreeDef() * PAGE_SIZE < REG_TS_BEGIN;
-	SpinLock::release(&defLock);
+	defLock.release();
 	return res;
 }

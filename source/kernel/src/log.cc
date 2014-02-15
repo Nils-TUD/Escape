@@ -76,7 +76,7 @@ void Log::vfsIsReady() {
 }
 
 void Log::writec(char c) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(c != '\0' && Config::get(Config::LOG) && !vfsReady)
 		toSerial(c);
 	if(c == '\0' || bufPos >= BUF_SIZE)
@@ -94,7 +94,7 @@ void Log::writec(char c) {
 			case '\t':
 				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
 				if(col == 0) {
-					SpinLock::release(&lock);
+					lock.release();
 					writec(' ');
 					return;
 				}
@@ -102,14 +102,14 @@ void Log::writec(char c) {
 			default:
 				col = (col + 1) % VID_COLS;
 				if(col == 0) {
-					SpinLock::release(&lock);
+					lock.release();
 					writec('\n');
 					return;
 				}
 				break;
 		}
 	}
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 uchar Log::pipepad() const {

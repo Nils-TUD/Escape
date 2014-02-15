@@ -34,7 +34,7 @@ size_t SwapMap::totalBlocks = 0;
 size_t SwapMap::freeBlocks = 0;
 SwapMap::Block *SwapMap::swapBlocks = NULL;
 SwapMap::Block *SwapMap::freeList = NULL;
-klock_t SwapMap::lock;
+SpinLock SwapMap::lock;
 
 bool SwapMap::init(size_t swapSize) {
 	totalBlocks = swapSize / PAGE_SIZE;
@@ -56,28 +56,28 @@ bool SwapMap::init(size_t swapSize) {
 }
 
 ulong SwapMap::alloc() {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(!freeList) {
-		SpinLock::release(&lock);
+		lock.release();
 		return INVALID_BLOCK;
 	}
 	Block *block = freeList;
 	freeList = freeList->next;
 	block->refCount = 1;
 	freeBlocks--;
-	SpinLock::release(&lock);
+	lock.release();
 	return block - swapBlocks;
 }
 
 void SwapMap::free(ulong block) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	assert(block < totalBlocks);
 	if(--swapBlocks[block].refCount == 0) {
 		swapBlocks[block].next = freeList;
 		freeList = swapBlocks + block;
 		freeBlocks++;
 	}
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 void SwapMap::print(OStream &os) {

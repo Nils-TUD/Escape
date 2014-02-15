@@ -640,7 +640,7 @@ private:
 	/* threads of this process */
 	ISList<Thread*> threads;
 	/* locks for this process */
-	mutable klock_t locks[PLOCK_COUNT];
+	mutable SpinLock locks[PLOCK_COUNT];
 	mutable Mutex mutexes[PMUTEX_COUNT];
 
 	static Proc first;
@@ -649,7 +649,7 @@ private:
 	static pid_t nextPid;
 	static Mutex procLock;
 	static Mutex childLock;
-	static klock_t refLock;
+	static SpinLock refLock;
 };
 
 #ifdef __i386__
@@ -718,7 +718,7 @@ inline void ProcBase::lock(size_t l) const {
 	if(l == PLOCK_PROG)
 		mutexes[l - PLOCK_COUNT].down();
 	else
-		SpinLock::acquire(locks + l);
+		locks[l].acquire();
 }
 
 inline bool ProcBase::tryLock(size_t l) const {
@@ -730,7 +730,7 @@ inline void ProcBase::unlock(size_t l) const {
 	if(l == PLOCK_PROG)
 		mutexes[l - PLOCK_COUNT].up();
 	else
-		SpinLock::release(locks + l);
+		locks[l].release();
 }
 
 inline size_t ProcBase::getCount() {

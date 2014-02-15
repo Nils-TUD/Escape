@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 
 class Serial {
 	Serial() = delete;
@@ -60,5 +61,5 @@ private:
 	static void initPort(uint16_t port);
 
 	static const uint16_t ports[];
-	static klock_t lock;
+	static SpinLock lock;
 };

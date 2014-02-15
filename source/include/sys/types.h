@@ -20,5 +20,3 @@
 #pragma once
 
 #include <esc/common.h>
-
-typedef uintptr_t klock_t;

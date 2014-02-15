@@ -46,29 +46,29 @@
 DList<Thread::ListItem> ThreadBase::threads;
 Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
-klock_t ThreadBase::refLock;
+SpinLock ThreadBase::refLock;
 Mutex ThreadBase::mutex;
 
 Thread *ThreadBase::getRef(tid_t tid) {
 	if(tid >= ARRAY_SIZE(tidToThread))
 		return NULL;
 
-	SpinLock::acquire(&refLock);
+	refLock.acquire();
 	Thread *t = tidToThread[tid];
 	if(t)
 		t->refs++;
-	SpinLock::release(&refLock);
+	refLock.release();
 	return t;
 }
 
 void ThreadBase::relRef(const Thread *t) {
-	SpinLock::acquire(&refLock);
+	refLock.acquire();
 	if(--t->refs == 0) {
 		Proc::relRef(t->proc);
 		const_cast<Thread*>(t)->remove();
 		Cache::free(const_cast<Thread*>(t));
 	}
-	SpinLock::release(&refLock);
+	refLock.release();
 }
 
 Thread *ThreadBase::init(Proc *p) {
@@ -325,7 +325,7 @@ void ThreadBase::kill() {
 
 	/* release resources */
 	for(size_t i = 0; i < termLockCount; i++)
-		SpinLock::release(termLocks[i]);
+		termLocks[i]->release();
 	for(size_t i = 0; i < termHeapCount; i++)
 		Cache::free(termHeapAllocs[i]);
 	for(size_t i = 0; i < termUsageCount; i++)

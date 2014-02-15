@@ -64,9 +64,9 @@ off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) 
 }
 
 int VFSFile::reserve(size_t newSize) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	int res = doReserve(newSize);
-	SpinLock::release(&lock);
+	lock.release();
 	return res;
 }
 
@@ -92,7 +92,7 @@ size_t VFSFile::getSize(A_UNUSED pid_t pid) const {
 ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
                       off_t offset,size_t count) {
 	size_t byteCount = 0;
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(data != NULL) {
 		if(offset > pos)
 			offset = pos;
@@ -103,18 +103,18 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 			Thread::remLock(&lock);
 		}
 	}
-	SpinLock::release(&lock);
+	lock.release();
 	return byteCount;
 }
 
 ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
                        off_t offset,size_t count) {
 	/* need to create cache? */
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(data == NULL || size < offset + count) {
 		int res = doReserve(MAX(offset + count,VFS_INITIAL_WRITECACHE));
 		if(res < 0) {
-			SpinLock::release(&lock);
+			lock.release();
 			return res;
 		}
 	}
@@ -126,6 +126,6 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	Thread::remLock(&lock);
 	/* we have checked size for overflow. so it is ok here */
 	pos = MAX(pos,(off_t)(offset + count));
-	SpinLock::release(&lock);
+	lock.release();
 	return count;
 }

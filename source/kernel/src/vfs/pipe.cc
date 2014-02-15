@@ -75,18 +75,18 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 	/* wait until data is available */
 	if(!isAlive())
 		return -EDESTROYED;
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	while(list.length() == 0) {
 		t->wait(EV_PIPE_FULL,(evobj_t)this);
-		SpinLock::release(&lock);
+		lock.release();
 
 		Thread::switchAway();
 
 		if(t->hasSignalQuick())
 			return -EINTR;
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		if(!isAlive()) {
-			SpinLock::release(&lock);
+			lock.release();
 			return -EDESTROYED;
 		}
 	}
@@ -94,7 +94,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 	PipeData *data = &*list.begin();
 	/* empty message indicates EOF */
 	if(data->length == 0) {
-		SpinLock::release(&lock);
+		lock.release();
 		return 0;
 	}
 
@@ -124,15 +124,15 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 			 * we may cause a deadlock here */
 			Sched::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
 			t->wait(EV_PIPE_FULL,(evobj_t)this);
-			SpinLock::release(&lock);
+			lock.release();
 
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back.. */
 			Thread::switchNoSigs();
 
-			SpinLock::acquire(&lock);
+			lock.acquire();
 			if(!isAlive()) {
-				SpinLock::release(&lock);
+				lock.release();
 				return -EDESTROYED;
 			}
 		}
@@ -141,7 +141,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		if(data->length == 0)
 			break;
 	}
-	SpinLock::release(&lock);
+	lock.release();
 	/* wakeup all threads that wait for writing in this node */
 	Sched::wakeup(EV_PIPE_EMPTY,(evobj_t)this);
 	return totalBytes;
@@ -159,27 +159,27 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	if(count) {
 		if(!isAlive())
 			return -EDESTROYED;
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		while((total + count) >= MAX_VFS_FILE_SIZE) {
 			t->wait(EV_PIPE_EMPTY,(evobj_t)this);
-			SpinLock::release(&lock);
+			lock.release();
 
 			Thread::switchNoSigs();
 
 			/* if we wake up and there is no pipe-reader anymore, send a signal to us so that we
 			 * either terminate or react on that signal. */
-			SpinLock::acquire(&lock);
+			lock.acquire();
 			if(!isAlive()) {
-				SpinLock::release(&lock);
+				lock.release();
 				return -EDESTROYED;
 			}
 			if(noReader) {
-				SpinLock::release(&lock);
+				lock.release();
 				Proc::addSignalFor(pid,SIG_PIPE_CLOSED);
 				return -EPIPE;
 			}
 		}
-		SpinLock::release(&lock);
+		lock.release();
 	}
 
 	/* build pipe-data */
@@ -195,15 +195,15 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	}
 
 	/* append */
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(!isAlive()) {
-		SpinLock::release(&lock);
+		lock.release();
 		Cache::free(data);
 		return -EDESTROYED;
 	}
 	list.append(data);
 	total += count;
-	SpinLock::release(&lock);
+	lock.release();
 	Sched::wakeup(EV_PIPE_FULL,(evobj_t)this);
 	return count;
 }

@@ -29,7 +29,7 @@ const uint16_t Serial::ports[] = {
 	/* COM3 */	0x2F8,
 	/* COM4 */	0x3E8
 };
-klock_t Serial::lock;
+SpinLock Serial::lock;
 
 void Serial::init() {
 	initPort(ports[COM1]);
@@ -38,11 +38,11 @@ void Serial::init() {
 void Serial::out(uint16_t port,uint8_t byte) {
 	assert(port < ARRAY_SIZE(ports));
 	uint16_t ioport = ports[port];
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	while(isTransmitEmpty(ioport) == 0)
 		;
 	Ports::out<uint8_t>(ioport,byte);
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 int Serial::isTransmitEmpty(uint16_t port) {

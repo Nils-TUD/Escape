@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/spinlock.h>
 
 class OStream;
 
@@ -121,7 +122,7 @@ private:
 	 */
 	static void archInit();
 
-	static klock_t lock;
+	static SpinLock lock;
 	static PerCPU *perCPU;
 	static time_t lastRuntimeUpdate;
 	static Listener listenObjs[LISTENER_COUNT];

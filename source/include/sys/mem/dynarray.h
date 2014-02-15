@@ -134,7 +134,7 @@ public:
 	bool extend();
 
 private:
-	mutable klock_t lock;
+	mutable SpinLock lock;
 	/* number of objects currently avaiable */
 	size_t objCount;
 	size_t objSize;

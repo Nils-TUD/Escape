@@ -281,10 +281,10 @@ private:
 	static pde_t proc0PD[PAGE_SIZE / sizeof(pde_t)];
 	/* the page-table for process 0 */
 	static pte_t proc0PT[PAGE_SIZE / sizeof(pte_t)];
-	static klock_t tmpMapLock;
+	static SpinLock tmpMapLock;
 	/* TODO we could maintain different locks for userspace and kernelspace; since just the kernel is
 	 * shared. it would be better to have a global lock for that and a pagedir-lock for the userspace */
-	static klock_t lock;
+	static SpinLock lock;
 	static uintptr_t freeAreaAddr;
 };
 
@@ -315,16 +315,16 @@ inline void PageDirBase::zeroToUser(void *dst,size_t count) {
 
 inline ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
 	ssize_t pts;
-	SpinLock::acquire(&PageDir::lock);
+	PageDir::lock.acquire();
 	pts = static_cast<PageDir*>(this)->doMap(virt,frames,count,flags);
-	SpinLock::release(&PageDir::lock);
+	PageDir::lock.release();
 	return pts;
 }
 
 inline size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	size_t pts;
-	SpinLock::acquire(&PageDir::lock);
+	PageDir::lock.acquire();
 	pts = static_cast<PageDir*>(this)->doUnmap(virt,count,freeFrames);
-	SpinLock::release(&PageDir::lock);
+	PageDir::lock.release();
 	return pts;
 }

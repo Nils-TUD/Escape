@@ -40,7 +40,7 @@ EXTERN_C void bspstart(BootInfo *mbp);
 EXTERN_C uintptr_t smpstart();
 EXTERN_C void apstart();
 static void idlestart();
-extern klock_t aplock;
+extern SpinLock aplock;
 
 static uint8_t initloader[] = {
 #if DEBUGGING
@@ -105,7 +105,7 @@ void apstart() {
 static void idlestart() {
 	if(!SMP::isBSP()) {
 		/* unlock the temporary kernel-stack, so that other CPUs can use it */
-		SpinLock::release(&aplock);
+		aplock.release();
 	}
 	thread_idle();
 }

@@ -23,29 +23,29 @@
 
 DynArray NodeAllocator::nodeArray(sizeof(IListNode<void*>),SLLNODE_AREA,SLLNODE_AREA_SIZE);
 SListItem *NodeAllocator::freelist = NULL;
-klock_t NodeAllocator::lock;
-klock_t NodeAllocator::extendLock;
+SpinLock NodeAllocator::lock;
+SpinLock NodeAllocator::extendLock;
 
 void *NodeAllocator::allocate() {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(EXPECT_FALSE(freelist == NULL)) {
 		/* now extend the array with a different lock. the problem is that pagedir calls free()
 		 * if he removes a frame-number from the thread-local frame-list. since nodeArray.extend()
 		 * uses pagedir, we have to make sure that this works without deadlock. */
-		SpinLock::release(&lock);
-		SpinLock::acquire(&extendLock);
+		lock.release();
+		extendLock.acquire();
 		/* note that we might do the extension here unnecessarily multiple times if multiple callers
 		 * come here in parallel. but this will happen very rarely and doesn't really hurt. so, for
 		 * simplicity, I'll keep it this way. */
 		size_t oldCount = nodeArray.getObjCount();
 		bool res = nodeArray.extend();
 		size_t newCount = nodeArray.getObjCount();
-		SpinLock::release(&extendLock);
+		extendLock.release();
 		if(!res)
 			return NULL;
 
 		/* now grab the other lock again for the shared access to the freelist */
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		for(size_t i = oldCount; i < newCount; i++) {
 			SListItem *n = (SListItem*)nodeArray.getObj(i);
 			n->next(freelist);
@@ -55,14 +55,14 @@ void *NodeAllocator::allocate() {
 
 	SListItem *n = freelist;
 	freelist = freelist->next();
-	SpinLock::release(&lock);
+	lock.release();
 	return n;
 }
 
 void NodeAllocator::free(void *ptr) {
 	SListItem *n = (SListItem*)ptr;
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	n->next(freelist);
 	freelist = n;
-	SpinLock::release(&lock);
+	lock.release();
 }

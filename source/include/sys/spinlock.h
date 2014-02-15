@@ -24,12 +24,16 @@
 #define DEBUG_LOCKS		0
 
 class SpinLock {
-	SpinLock() = delete;
-
 public:
-	static void acquire(klock_t *l);
-	static bool tryAcquire(klock_t *l);
-	static void release(klock_t *l);
+	explicit SpinLock() : lock(0) {
+	}
+
+	void acquire();
+	bool tryAcquire();
+	void release();
+
+private:
+	uint lock;
 };
 
 #ifdef __i386__

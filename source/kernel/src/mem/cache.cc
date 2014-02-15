@@ -37,7 +37,7 @@
 #define SIZE_THRESHOLD		128
 #define HEAP_THRESHOLD		512
 
-klock_t Cache::lock;
+SpinLock Cache::lock;
 Cache::Entry Cache::caches[] = {
 	{16,0,0,NULL},
 	{32,0,0,NULL},
@@ -74,9 +74,9 @@ void *Cache::alloc(size_t size) {
 done:
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[A] %Px %zu ",res,size);
-		SpinLock::release(&lock);
+		lock.release();
 	}
 #endif
 	return res;
@@ -117,10 +117,10 @@ void Cache::free(void *p) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		SpinLock::acquire(&lock);
+		lock.acquire();
 		Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),"\n[F] %Px %zu ",
 		                      p,caches[area[0]].objSize);
-		SpinLock::release(&lock);
+		lock.release();
 	}
 #endif
 
@@ -139,11 +139,11 @@ void Cache::free(void *p) {
 
 	/* put on freelist */
 	Entry *c = caches + area[0];
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	area[0] = (ulong)c->freeList;
 	c->freeList = area;
 	c->freeObjs++;
-	SpinLock::release(&lock);
+	lock.release();
 }
 
 size_t Cache::getOccMem() {
@@ -190,7 +190,7 @@ void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t fr
 }
 
 void *Cache::get(Entry *c,size_t i) {
-	SpinLock::acquire(&lock);
+	lock.acquire();
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
@@ -199,7 +199,7 @@ void *Cache::get(Entry *c,size_t i) {
 		size_t rem = bytes - objs * totalObjSize;
 		ulong *space = (ulong*)KHeap::allocSpace(pageCount);
 		if(space == NULL) {
-			SpinLock::release(&lock);
+			lock.release();
 			return NULL;
 		}
 
@@ -226,6 +226,6 @@ void *Cache::get(Entry *c,size_t i) {
 	area[1] = GUARD_MAGIC;
 	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
 	c->freeObjs--;
-	SpinLock::release(&lock);
+	lock.release();
 	return area + 2;
 }

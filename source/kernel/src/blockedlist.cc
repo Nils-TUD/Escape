@@ -18,25 +18,24 @@
  */
 
 #include <sys/common.h>
+#include <sys/blockedlist.h>
 #include <sys/task/thread.h>
-#include <sys/semaphore.h>
 #include <assert.h>
 
-bool BaseSem::down(SpinLock *lck,bool allowSigs) {
-	value--;
-	if(value < 0 || waiters.length() > 0) {
-		Thread *t = Thread::getRunning();
-		waiters.block(t);
-		lck->up();
-		if(allowSigs)
-			Thread::switchAway();
-		else
-			Thread::switchNoSigs();
-		if(allowSigs && t->hasSignalQuick()) {
-			up();
-			return false;
-		}
-		lck->down();
-	}
-	return true;
+void BlockedList::block(Thread *t) {
+	assert(t == Thread::getRunning());
+	list.append(t);
+	Sched::block(t);
+}
+
+void BlockedList::wakeup() {
+	Thread *t = list.removeFirst();
+	if(t)
+		Sched::unblock(t);
+}
+
+void BlockedList::wakeupAll() {
+	for(auto it = list.begin(); it != list.end(); ++it)
+		Sched::unblock(&*it);
+	list.clear();
 }

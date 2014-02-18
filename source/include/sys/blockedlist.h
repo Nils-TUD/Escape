@@ -17,26 +17,44 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
-#include <sys/semaphore.h>
-#include <assert.h>
+#pragma once
 
-bool BaseSem::down(SpinLock *lck,bool allowSigs) {
-	value--;
-	if(value < 0 || waiters.length() > 0) {
-		Thread *t = Thread::getRunning();
-		waiters.block(t);
-		lck->up();
-		if(allowSigs)
-			Thread::switchAway();
-		else
-			Thread::switchNoSigs();
-		if(allowSigs && t->hasSignalQuick()) {
-			up();
-			return false;
-		}
-		lck->down();
+#include <sys/common.h>
+#include <sys/col/slist.h>
+#include <sys/task/sched.h>
+
+class Thread;
+
+/**
+ * A list of waiting threads.
+ */
+class BlockedList {
+public:
+	explicit BlockedList() : list() {
 	}
-	return true;
-}
+
+	size_t length() const {
+		return list.length();
+	}
+
+	/**
+	 * Blocks the given thread, which HAS TO be the current one. That is, it enqueues it to the
+	 * waiting-threads-list and sets the thread-status to BLOCKED.
+	 *
+	 * @param t the thread
+	 */
+	void block(Thread *t);
+
+	/**
+	 * Wakes up the next thread
+	 */
+	void wakeup();
+
+	/**
+	 * Wakes up all waiting threads
+	 */
+	void wakeupAll();
+
+private:
+	SList<Thread> list;
+};

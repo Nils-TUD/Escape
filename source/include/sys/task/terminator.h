@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/col/islist.h>
+#include <sys/semaphore.h>
 
 class Thread;
 
@@ -44,4 +45,5 @@ private:
 
 	static ISList<Thread*> deadThreads;
 	static SpinLock lock;
+	static BaseSem sem;
 };

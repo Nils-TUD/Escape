@@ -40,8 +40,7 @@
 #define EV_VMM_DONE					12		/* kernel-intern */
 #define EV_THREAD_DIED				13		/* kernel-intern */
 #define EV_CHILD_DIED				14		/* kernel-intern */
-#define EV_TERMINATION				15		/* kernel-intern */
-#define EV_COUNT					15
+#define EV_COUNT					14
 
 #define IS_FILE_EVENT(ev)			((ev) >= EV_CLIENT && (ev) <= EV_DATA_READABLE)
 #define IS_USER_NOTIFY_EVENT(ev)	((ev) == EV_USER1 || (ev) == EV_USER2)

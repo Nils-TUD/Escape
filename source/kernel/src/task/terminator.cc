@@ -27,35 +27,27 @@
 
 ISList<Thread*> Terminator::deadThreads;
 SpinLock Terminator::lock;
+BaseSem Terminator::sem(0);
 
 void Terminator::start() {
 	Thread *t = Thread::getRunning();
 	lock.down();
 	while(1) {
-		if(deadThreads.length() == 0) {
-			t->wait(EV_TERMINATION,0);
-			lock.up();
+		sem.down(&lock);
 
+		Thread *dt = deadThreads.removeFirst();
+		/* release the lock while we're killing the thread; the process-module may use us
+		 * in this time to add another thread */
+		lock.up();
+
+		while(!dt->beginTerm()) {
+			/* ensure that we idle to receive interrupts */
+			Timer::sleepFor(t->getTid(),20,true);
 			Thread::switchAway();
-
-			lock.down();
 		}
+		Proc::killThread(dt->getTid());
 
-		while(deadThreads.length() > 0) {
-			Thread *dt = deadThreads.removeFirst();
-			/* release the lock while we're killing the thread; the process-module may use us
-			 * in this time to add another thread */
-			lock.up();
-
-			while(!dt->beginTerm()) {
-				/* ensure that we idle to receive interrupts */
-				Timer::sleepFor(t->getTid(),20,true);
-				Thread::switchAway();
-			}
-			Proc::killThread(dt->getTid());
-
-			lock.down();
-		}
+		lock.down();
 	}
 }
 
@@ -65,6 +57,6 @@ void Terminator::addDead(Thread *t) {
 	if(!(t->getFlags() & T_WILL_DIE)) {
 		t->setFlags(t->getFlags() | T_WILL_DIE);
 		assert(deadThreads.append(t));
-		Sched::wakeup(EV_TERMINATION,0);
+		sem.up();
 	}
 }

@@ -469,7 +469,6 @@ const char *Sched::getEventName(uint event) {
 		"VMM_DONE",
 		"THREAD_DIED",
 		"CHILD_DIED",
-		"TERMINATION",
 	};
 	return names[event - 1];
 }

@@ -235,8 +235,8 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 			if(!dev->tryDown())
 				return -EWOULDBLOCK;
 		}
-		else
-			dev->down();
+		else if(!dev->down())
+			return -EINTR;
 	}
 
 	/* send msg to driver */

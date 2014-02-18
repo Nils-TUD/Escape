@@ -60,9 +60,11 @@ public:
 
 	/**
 	 * Blocks until data is readable
+	 *
+	 * @return true if successfull (otherwise we've been interrupted by a signal)
 	 */
-	void down() {
-		sem.down();
+	bool down() {
+		return sem.down(true);
 	}
 	/**
 	 * Checks whether there is data to read

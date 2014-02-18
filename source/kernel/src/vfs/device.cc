@@ -141,8 +141,8 @@ void VFSDevice::wakeupClients(bool locked) {
 	const VFSNode *n = openDir(locked,&valid);
 	if(valid) {
 		while(n != NULL) {
-			Sched::wakeup(EV_DATA_READABLE,(evobj_t)n);
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)n);
+			sem.up();
 			n = n->next;
 		}
 	}

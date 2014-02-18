@@ -20,6 +20,7 @@
 #include <esc/common.h>
 
 extern int mod_driver(int,char**);
+extern int mod_driverread(int,char**);
 extern int mod_debug(int,char**);
 extern int mod_fault(int,char**);
 extern int mod_thread(int,char**);

@@ -85,17 +85,15 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{sysconf,			"sysconf",   		1},
 	{getwork,			"getwork",    		6},
 	{join,				"join",    			1},
-	{suspend,			"suspend",    		1},
-	{resume,			"resume",    		1},
 	{fstat,				"fstat",    		2},
 	{mmap,				"mmap",    			7},
 	{mprotect,			"mprotect",    		2},
 	{munmap,			"munmap",    		1},
 	{getenvito,			"getenvito",    	3},
-
-	/* 50 */
 	{getenvto,			"getenvto",    		3},
 	{setenv,			"setenv",    		2},
+
+	/* 50 */
 	{getuid,			"getuid",    		0},
 	{setuid,			"setuid",    		1},
 	{geteuid,			"geteuid",    		0},
@@ -104,10 +102,10 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{setgid,			"setgid",    		1},
 	{getegid,			"getegid",    		0},
 	{setegid,			"setegid",   		1},
-
-	/* 60 */
 	{chmod,				"chmod",    		2},
 	{chown,				"chown",    		3},
+
+	/* 60 */
 	{getgroups,			"getgroups",    	2},
 	{setgroups,			"setgroups",    	2},
 	{isingroup,			"isingroup",    	2},
@@ -116,10 +114,10 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{semcrt,			"semcrt",			1},
 	{semop,				"semop",			1},
 	{semdestr,			"semdestr",			1},
-
-	/* 70 */
 	{sendrecv,			"sendrecv",			4},
 	{sharefile,			"sharefile",		2},
+
+	/* 70 */
 	{sysconfstr,		"sysconfstr",		3},
 	{getmsid,			"getmsid",			0},
 	{clonems,			"clonems",			0},

@@ -110,28 +110,6 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::suspend(Thread *t,IntrptStackFrame *stack) {
-	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	Thread *tt = Thread::getById(tid);
-	/* just threads from the own process */
-	if(EXPECT_FALSE(tt == NULL || tt->getTid() == t->getTid() ||
-			tt->getProc()->getPid() != t->getProc()->getPid()))
-		SYSC_ERROR(stack,-EINVAL);
-	tt->suspend();
-	SYSC_RET1(stack,0);
-}
-
-int Syscalls::resume(Thread *t,IntrptStackFrame *stack) {
-	tid_t tid = (tid_t)SYSC_ARG1(stack);
-	Thread *tt = Thread::getById(tid);
-	/* just threads from the own process */
-	if(EXPECT_FALSE(tt == NULL || tt->getTid() == t->getTid() ||
-			tt->getProc()->getPid() != t->getProc()->getPid()))
-		SYSC_ERROR(stack,-EINVAL);
-	tt->unsuspend();
-	SYSC_RET1(stack,0);
-}
-
 int Syscalls::semcrt(Thread *t,IntrptStackFrame *stack) {
 	uint value = (uint)SYSC_ARG1(stack);
 	int res = Sems::create(t->getProc(),value);

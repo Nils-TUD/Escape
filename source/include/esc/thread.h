@@ -119,26 +119,6 @@ static inline int join(tid_t tid) {
 }
 
 /**
- * Suspends a thread from the own process. That means it is blocked until resume() is called.
- *
- * @param tid the thread-id
- * @return 0 on success
- */
-static inline int suspend(tid_t tid) {
-	return syscall1(SYSCALL_SUSPEND,tid);
-}
-
-/**
- * Resumes a thread from the own process that has been suspended previously
- *
- * @param tid the thread-id
- * @return 0 on success
- */
-static inline int resume(tid_t tid) {
-	return syscall1(SYSCALL_RESUME,tid);
-}
-
-/**
  * Sets the thread-value with given key to given value (for the current thread)
  *
  * @param key the key

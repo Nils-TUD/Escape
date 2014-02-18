@@ -120,20 +120,6 @@ public:
 	static void unblockQuick(Thread *t);
 
 	/**
-	 * Suspends the given thread
-	 *
-	 * @param t the thread
-	 */
-	static void suspend(Thread *t);
-
-	/**
-	 * Resumes the given thread
-	 *
-	 * @param t the thread
-	 */
-	static void unsuspend(Thread *t);
-
-	/**
 	 * Prints the status of the scheduler
 	 *
 	 * @param os the output-stream
@@ -200,15 +186,6 @@ private:
 	static void setBlocked(Thread *t);
 
 	/**
-	 * Suspends / resumes the given thread. That means it will be put into a state
-	 * that ensures that it can't be chosen until its resumed.
-	 *
-	 * @param t the thread
-	 * @param blocked whether to block or unblock it
-	 */
-	static void setSuspended(Thread *t,bool blocked);
-
-	/**
 	 * Removes the given thread from the scheduler (depending on the state)
 	 *
 	 * @param t the thread
@@ -246,16 +223,4 @@ inline void Sched::unblockQuick(Thread *t) {
 	assert(t != NULL);
 	LockGuard<SpinLock> g(&lock);
 	setReadyQuick(t);
-}
-
-inline void Sched::suspend(Thread *t) {
-	assert(t != NULL);
-	LockGuard<SpinLock> g(&lock);
-	setSuspended(t,true);
-}
-
-inline void Sched::unsuspend(Thread *t) {
-	assert(t != NULL);
-	LockGuard<SpinLock> g(&lock);
-	setSuspended(t,false);
 }

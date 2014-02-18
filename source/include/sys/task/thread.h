@@ -112,13 +112,7 @@ public:
 		RUNNING,
 		READY,
 		BLOCKED,
-		ZOMBIE,
-		/* suspended => CAN'T run. will be set to blocked when resumed (also used for swapping) */
-		BLOCKED_SUSP,
-		/* same as ST_BLOCKED_SUSP, but will be set to ready when done */
-		READY_SUSP,
-		/* same as ST_BLOCKED_SUSP, but will be set to zombie when done */
-		ZOMBIE_SUSP
+		ZOMBIE
 	};
 
 	ThreadBase() = delete;
@@ -527,16 +521,6 @@ public:
 	void unblockQuick();
 
 	/**
-	 * Suspends this thread. ONLY CALLED by event.
-	 */
-	void suspend();
-
-	/**
-	 * Resumes this thread. ONLY CALLED by event.
-	 */
-	void unsuspend();
-
-	/**
 	 * Checks whether this thread has the given region for stack
 	 *
 	 * @param vm the region
@@ -873,16 +857,6 @@ inline void ThreadBase::unblock() {
 
 inline void ThreadBase::unblockQuick() {
 	Sched::unblockQuick(static_cast<Thread*>(this));
-}
-
-inline void ThreadBase::suspend() {
-	assert(this != NULL);
-	Sched::suspend(static_cast<Thread*>(this));
-}
-
-inline void ThreadBase::unsuspend() {
-	assert(this != NULL);
-	Sched::unsuspend(static_cast<Thread*>(this));
 }
 
 inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {

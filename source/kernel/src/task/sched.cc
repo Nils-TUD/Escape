@@ -315,12 +315,7 @@ void Sched::setReadyQuick(Thread *t) {
 void Sched::setBlocked(Thread *t) {
 	switch(t->getState()) {
 		case Thread::ZOMBIE:
-		case Thread::ZOMBIE_SUSP:
 		case Thread::BLOCKED:
-		case Thread::BLOCKED_SUSP:
-			break;
-		case Thread::READY_SUSP:
-			t->setState(Thread::BLOCKED_SUSP);
 			break;
 		case Thread::RUNNING:
 			t->setNewState(Thread::BLOCKED);
@@ -334,54 +329,6 @@ void Sched::setBlocked(Thread *t) {
 			break;
 	}
 	t->waitstart = CPU::rdtsc();
-}
-
-void Sched::setSuspended(Thread *t,bool blocked) {
-	/* TODO what if we're waiting for an event? */
-	if(blocked) {
-		switch(t->getState()) {
-			/* already suspended, so ignore it */
-			case Thread::BLOCKED_SUSP:
-			case Thread::ZOMBIE_SUSP:
-			case Thread::READY_SUSP:
-				break;
-			case Thread::BLOCKED:
-				t->setState(Thread::BLOCKED_SUSP);
-				break;
-			case Thread::ZOMBIE:
-				t->setState(Thread::ZOMBIE_SUSP);
-				break;
-			case Thread::READY:
-				t->setState(Thread::READY_SUSP);
-				dequeue(t);
-				break;
-			default:
-				vassert(false,"Thread %d has invalid state for suspending (%d)",t->getTid(),t->getState());
-				break;
-		}
-	}
-	else {
-		switch(t->getState()) {
-			/* not suspended, so ignore it */
-			case Thread::BLOCKED:
-			case Thread::ZOMBIE:
-			case Thread::READY:
-				break;
-			case Thread::BLOCKED_SUSP:
-				t->setState(Thread::BLOCKED);
-				break;
-			case Thread::ZOMBIE_SUSP:
-				t->setState(Thread::ZOMBIE);
-				break;
-			case Thread::READY_SUSP:
-				t->setState(Thread::READY);
-				enqueue(t);
-				break;
-			default:
-				vassert(false,"Thread %d has invalid state for resuming (%d)",t->getTid(),t->getState());
-				break;
-		}
-	}
 }
 
 void Sched::removeThread(Thread *t) {
@@ -410,12 +357,7 @@ void Sched::removeThread(Thread *t) {
 bool Sched::setReadyState(Thread *t) {
 	switch(t->getState()) {
 		case Thread::ZOMBIE:
-		case Thread::ZOMBIE_SUSP:
 		case Thread::READY:
-		case Thread::READY_SUSP:
-			return false;
-		case Thread::BLOCKED_SUSP:
-			t->setState(Thread::READY_SUSP);
 			return false;
 		case Thread::BLOCKED:
 			removeFromEventlist(t);

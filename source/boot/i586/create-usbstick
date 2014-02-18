@@ -34,8 +34,8 @@ title Escape - Test
 kernel /boot/escape_test
 EOF
 
-# create disk. 32 MB should be enough
-./tools/disk.py create --part ext3 32 $tmp $1/usb.img
+# create disk. 64 MB should be enough
+./tools/disk.py create --part ext3 64 $tmp $1/usb.img
 
 echo "\033[1mThe following operation will write $1/usb.img on $ESC_USBDEV\033[0m"
 echo -n "Continue? [y/n]: "

@@ -65,10 +65,11 @@
 
 frameno_t VM86::frameNos[(1024 * K) / PAGE_SIZE];
 tid_t VM86::vm86Tid = INVALID_TID;
-volatile tid_t VM86::caller = INVALID_TID;
 VM86::Info VM86::info;
 int VM86::vm86Res = -1;
-Mutex VM86::vm86Lock;
+Mutex VM86::lock;
+Semaphore VM86::reqSem(0);
+Semaphore VM86::doneSem(0);
 
 int VM86::create() {
 	/* already present? */
@@ -117,11 +118,6 @@ int VM86::create() {
 	/* give it a name */
 	p->setCommand("VM86",0,"");
 
-	/* block us; we get waked up as soon as someone wants to use us */
-	t->block();
-	Thread::switchAway();
-
-	/* ok, we're back again... */
 	start();
 	/* never reached */
 	return 0;
@@ -133,7 +129,6 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 		return -EINVAL;
 	if(interrupt >= VM86_IVT_SIZE)
 		return -EINVAL;
-	Thread *t = Thread::getRunning();
 
 	/* check whether there still is a vm86-task */
 	Thread *vm86t = Thread::getRef(vm86Tid);
@@ -145,9 +140,8 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	}
 
 	/* ensure that only one thread at a time can use the vm86-task */
-	vm86Lock.down();
+	lock.down();
 	/* store information in calling process */
-	caller = t->getTid();
 	if(!copyInfo(interrupt,regs,area)) {
 		err = -ENOMEM;
 		goto errorCopy;
@@ -160,15 +154,11 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 			goto errorCopy;
 		}
 	}
-
-	/* make vm86 ready */
-	vm86t->unblock();
 	Thread::relRef(vm86t);
 
-	/* block the calling thread and then do a switch */
-	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
-	t->block();
-	Thread::switchAway();
+	/* notify vm86-task and wait for response */
+	reqSem.up();
+	doneSem.down();
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
@@ -343,7 +333,9 @@ void VM86::pushl(VM86IntrptStackFrame *stack,uint32_t l) {
 
 void VM86::start() {
 	Thread *t = Thread::getRunning();
-	assert(caller != INVALID_TID);
+
+	/* wait until there is something to do */
+	reqSem.down();
 
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
@@ -398,19 +390,9 @@ void VM86::start() {
 }
 
 void VM86::stop(VM86IntrptStackFrame *stack) {
-	Thread *t = Thread::getRunning();
-	Thread *ct = Thread::getRef(caller);
-	vm86Res = 0;
-	if(ct != NULL) {
-		copyRegResult(stack);
-		vm86Res = storeAreaResult();
-		ct->unblock();
-		Thread::relRef(ct);
-	}
-
-	/* block us and do a switch */
-	t->block();
-	Thread::switchAway();
+	copyRegResult(stack);
+	vm86Res = storeAreaResult();
+	doneSem.up();
 
 	/* lets start with a new request :) */
 	start();
@@ -425,8 +407,7 @@ void VM86::finish() {
 		}
 	}
 	clearInfo();
-	caller = INVALID_TID;
-	vm86Lock.up();
+	lock.up();
 }
 
 void VM86::copyRegResult(VM86IntrptStackFrame *stack) {

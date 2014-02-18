@@ -104,8 +104,9 @@ private:
 
 	static frameno_t frameNos[];
 	static tid_t vm86Tid;
-	static volatile tid_t caller;
 	static Info info;
 	static int vm86Res;
-	static Mutex vm86Lock;
+	static Mutex lock;
+	static Semaphore reqSem;
+	static Semaphore doneSem;
 };

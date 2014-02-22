@@ -25,27 +25,20 @@
 #include <sys/spinlock.h>
 
 /* the events we can wait for */
-#define EV_NOEVENT					0
-#define EV_CLIENT					1
-#define EV_RECEIVED_MSG				2
-#define EV_DATA_READABLE			3
-#define EV_MUTEX					4		/* kernel-intern */
-#define EV_PIPE_FULL				5		/* kernel-intern */
-#define EV_PIPE_EMPTY				6		/* kernel-intern */
-#define EV_USER1					7
-#define EV_USER2					8
-#define EV_SWAP_JOB					9		/* kernel-intern */
-#define EV_SWAP_WORK				10		/* kernel-intern */
-#define EV_SWAP_FREE				11		/* kernel-intern */
-#define EV_VMM_DONE					12		/* kernel-intern */
-#define EV_THREAD_DIED				13		/* kernel-intern */
-#define EV_CHILD_DIED				14		/* kernel-intern */
-#define EV_COUNT					14
-
-#define IS_FILE_EVENT(ev)			((ev) >= EV_CLIENT && (ev) <= EV_DATA_READABLE)
-#define IS_USER_NOTIFY_EVENT(ev)	((ev) == EV_USER1 || (ev) == EV_USER2)
-#define IS_USER_WAIT_EVENT(ev)		((ev) == EV_NOEVENT || IS_FILE_EVENT((ev)) || \
- 									 IS_USER_NOTIFY_EVENT((ev)))
+enum {
+	EV_NOEVENT,
+	EV_CLIENT,
+	EV_RECEIVED_MSG,
+	EV_MUTEX,
+	EV_PIPE_FULL,
+	EV_PIPE_EMPTY,
+	EV_SWAP_JOB,
+	EV_SWAP_WORK,
+	EV_SWAP_FREE,
+	EV_THREAD_DIED,
+	EV_CHILD_DIED,
+	EV_COUNT = EV_CHILD_DIED,
+};
 
 class Thread;
 class ThreadBase;

@@ -399,16 +399,12 @@ const char *Sched::getEventName(uint event) {
 	static const char *names[] = {
 		"CLIENT",
 		"RECEIVED_MSG",
-		"DATA_READABLE",
 		"MUTEX",
 		"PIPE_FULL",
 		"PIPE_EMPTY",
-		"USER1",
-		"USER2",
 		"SWAP_JOB",
 		"SWAP_WORK",
 		"SWAP_FREE",
-		"VMM_DONE",
 		"THREAD_DIED",
 		"CHILD_DIED",
 	};

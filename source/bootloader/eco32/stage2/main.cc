@@ -33,7 +33,6 @@
 #define SPB					(BLOCK_SIZE / SEC_SIZE)			/* sectors per block */
 #define BLOCKS_TO_SECS(x)	((x) << (le32tocpu(e.superBlock.logBlockSize) + 1))
 #define GROUP_COUNT			8								/* no. of block groups to load */
-#define PAGE_SIZE			4096
 
 /* hardcoded here; the monitor will choose them later */
 #define BOOT_DISK			0

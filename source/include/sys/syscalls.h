@@ -149,6 +149,7 @@ private:
 	static int yield(Thread *t,IntrptStackFrame *stack);
 	static int join(Thread *t,IntrptStackFrame *stack);
 	static int semcrt(Thread *t,IntrptStackFrame *stack);
+	static int semcrtirq(Thread *t,IntrptStackFrame *stack);
 	static int semop(Thread *t,IntrptStackFrame *stack);
 	static int semdestr(Thread *t,IntrptStackFrame *stack);
 

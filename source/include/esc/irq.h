@@ -19,36 +19,38 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/cppsupport.h>
-#include <sys/semaphore.h>
-#include <sys/ostream.h>
+#include <esc/common.h>
+#include <esc/syscalls.h>
+#include <esc/sync.h>
 
-class Proc;
+/* TODO later, this should be more generic and less architecture specific */
+typedef enum {
+	IRQ_SEM_TIMER,
+	IRQ_SEM_KEYB,
+	IRQ_SEM_COM1,
+	IRQ_SEM_COM2,
+	IRQ_SEM_FLOPPY,
+	IRQ_SEM_CMOS,
+	IRQ_SEM_ATA1,
+	IRQ_SEM_ATA2,
+	IRQ_SEM_MOUSE,
+} IRQ;
 
-class Sems {
-	Sems() = delete;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	static const size_t INIT_SEMS_COUNT		= 8;
+/**
+ * Creates a new process-local semaphore that is attached to the given IRQ. That is, as soon as the
+ * IRQ arrives, the semaphore is up'ed.
+ *
+ * @param irq the IRQ to attach it to
+ * @return the semaphore id or a negative error-code
+ */
+A_CHECKRET static inline int semcrtirq(IRQ irq) {
+	return syscall1(SYSCALL_SEMCRTIRQ,irq);
+}
 
-public:
-	struct Entry : public CacheAllocatable {
-		explicit Entry(uint value,int irq) : refs(1), irq(irq), s(value) {
-		}
-
-		int refs;
-		int irq;
-		Semaphore s;
-	};
-
-	static int init(Proc *p);
-	static int clone(Proc *p,const Proc *old);
-	static int create(Proc *p,uint value,int irq = -1);
-	static int op(Proc *p,int sem,int amount);
-	static void destroy(Proc *p,int sem);
-	static void destroyAll(Proc *p,bool complete);
-	static void print(OStream &os,const Proc *p);
-
-private:
-	static void unref(Entry *e);
-};
+#ifdef __cplusplus
+}
+#endif

@@ -25,6 +25,7 @@
 #include <esc/esccodes.h>
 #include <esc/io.h>
 #include <esc/cmdargs.h>
+#include <esc/irq.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -32,7 +33,6 @@
 #include <errno.h>
 #include "game.h"
 
-static void sigTimer(int sig);
 static void sigInt(int sig);
 static void qerror(const char *msg,...);
 
@@ -54,25 +54,23 @@ int main(int argc,char *argv[]) {
 
 	game_init(cols,rows);
 
-	if(signal(SIG_INTRPT_TIMER,sigTimer) == SIG_ERR)
-		qerror("Unable to set sig-handler");
+	int tsem = semcrtirq(IRQ_SEM_TIMER);
+	if(tsem < 0)
+		qerror("Unable to create irq-semaphore");
 	if(signal(SIG_INTRPT,sigInt) == SIG_ERR)
 		qerror("Unable to set sig-handler");
 
 	game_tick(tsc);
 	while(run) {
-		/* wait until we get a signal */
-		sleep(1000);
+		/* wait for next timer-interrupt. */
+		semdown(tsem);
+		tsc++;
 		if(!game_tick(tsc))
 			break;
 	}
 
 	game_deinit();
 	return EXIT_SUCCESS;
-}
-
-static void sigTimer(A_UNUSED int sig) {
-	tsc++;
 }
 
 static void sigInt(A_UNUSED int sig) {

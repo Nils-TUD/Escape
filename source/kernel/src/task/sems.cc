@@ -50,10 +50,10 @@ error:
 	return res;
 }
 
-int Sems::create(Proc *p,uint value) {
+int Sems::create(Proc *p,uint value,int irq) {
 	int res;
 	Entry **sems;
-	Entry *e = new Entry(value);
+	Entry *e = new Entry(value,irq);
 	if(!e)
 		return -ENOMEM;
 
@@ -62,6 +62,8 @@ int Sems::create(Proc *p,uint value) {
 	for(size_t i = 0; i < p->semsSize; ++i) {
 		if(p->sems[i] == NULL) {
 			p->sems[i] = e;
+			if(e->irq != -1)
+				Interrupts::attachSem(&e->s,e->irq);
 			p->unlock(PLOCK_SEMS);
 			return i;
 		}
@@ -86,13 +88,14 @@ int Sems::create(Proc *p,uint value) {
 	sems[res] = e;
 	p->semsSize *= 2;
 	p->sems = sems;
-
+	if(e->irq != -1)
+		Interrupts::attachSem(&e->s,e->irq);
 	p->unlock(PLOCK_SEMS);
 	return res;
 
 error:
-	delete e;
 	p->unlock(PLOCK_SEMS);
+	delete e;
 	return res;
 }
 
@@ -112,8 +115,7 @@ int Sems::op(Proc *p,int sem,int amount) {
 	else
 		e->s.up();
 
-	if(Atomic::add(&e->refs,-1) == 1)
-		delete e;
+	unref(e);
 	return 0;
 
 error:
@@ -127,8 +129,7 @@ void Sems::destroy(Proc *p,int sem) {
 
 	p->lock(PLOCK_SEMS);
 	Entry *e = p->sems[sem];
-	if(e && Atomic::add(&e->refs,-1) == 1)
-		delete e;
+	unref(e);
 	p->sems[sem] = NULL;
 	p->unlock(PLOCK_SEMS);
 }
@@ -136,8 +137,7 @@ void Sems::destroy(Proc *p,int sem) {
 void Sems::destroyAll(Proc *p,bool complete) {
 	p->lock(PLOCK_SEMS);
 	for(size_t i = 0; i < p->semsSize; ++i) {
-		if(p->sems[i] && Atomic::add(&p->sems[i]->refs,-1) == 1)
-			delete p->sems[i];
+		unref(p->sems[i]);
 		p->sems[i] = NULL;
 	}
 	if(complete) {
@@ -148,12 +148,20 @@ void Sems::destroyAll(Proc *p,bool complete) {
 	p->unlock(PLOCK_SEMS);
 }
 
+void Sems::unref(Entry *e) {
+	if(e && Atomic::add(&e->refs,-1) == 1) {
+		if(e->irq != -1)
+			Interrupts::detachSem(&e->s,e->irq);
+		delete e;
+	}
+}
+
 void Sems::print(OStream &os,const Proc *p) {
 	os.writef("Semaphores (current max=%zu):\n",p->semsSize);
 	for(size_t i = 0; i < p->semsSize; i++) {
 		if(p->sems[i] != NULL) {
-			os.writef("\t%-2d (%p): %d (%d refs)\n",
-				i,&p->sems[i]->s,p->sems[i]->s.getValue(),p->sems[i]->refs);
+			os.writef("\t%-2d (%p): %d (%d refs) (irq=%d)\n",
+				i,&p->sems[i]->s,p->sems[i]->s.getValue(),p->sems[i]->refs,p->sems[i]->irq);
 		}
 	}
 }

@@ -72,8 +72,6 @@ int main(int argc,char **argv) {
 		end = rdtsc();
 		if(res < 0)
 			error("Wait failed");
-		if(signal(SIG_INTRPT_TIMER,SIG_DFL) == SIG_ERR)
-			error("Unable to unset signal-handler");
 		printf("\n");
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)

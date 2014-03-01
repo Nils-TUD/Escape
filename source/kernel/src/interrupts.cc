@@ -20,6 +20,31 @@
 #include <sys/common.h>
 #include <sys/interrupts.h>
 #include <sys/ostream.h>
+#include <sys/log.h>
+
+SpinLock InterruptsBase::userIrqsLock;
+ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
+
+void InterruptsBase::attachSem(Semaphore *sem,size_t irq) {
+	LockGuard<SpinLock> g(&userIrqsLock);
+	assert(irq < IRQ_SEM_COUNT);
+	userIrqs[irq].append(sem);
+}
+
+void InterruptsBase::detachSem(Semaphore *sem,size_t irq) {
+	LockGuard<SpinLock> g(&userIrqsLock);
+	assert(irq < IRQ_SEM_COUNT);
+	userIrqs[irq].remove(sem);
+}
+
+bool InterruptsBase::fireIrq(size_t irq) {
+	LockGuard<SpinLock> g(&userIrqsLock);
+	assert(irq < IRQ_SEM_COUNT);
+	ISList<Semaphore*> *list = userIrqs + irq;
+	for(auto it = list->begin(); it != list->end(); ++it)
+		(*it)->up();
+	return list->length() > 0;
+}
 
 size_t InterruptsBase::getCount() {
 	ulong total = 0;

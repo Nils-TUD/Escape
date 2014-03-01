@@ -37,7 +37,7 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,int signal) {
+int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,A_UNUSED int signal) {
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
@@ -49,17 +49,6 @@ int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,int signal) {
 	memcpy(sregs,sp,sizeof(KSpecRegs));
 	sp += 5;
 	curStack[-15] = (uint64_t)sp;	/* $254 */
-
-	/* reenable device-interrupts */
-	switch(signal) {
-		case SIG_INTRPT_KB: {
-			uint64_t *regs = (uint64_t*)KEYBOARD_BASE;
-			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
-			break;
-		}
-		/* not necessary for disk here; the device will reenable interrupts as soon as a new
-		 * command is started */
-	}
 	return 0;
 }
 

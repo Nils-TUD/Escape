@@ -220,7 +220,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call UEnv::handleSignal(), which might cause a thread-switch */
-	if(!Signals::addSignal(SIG_INTRPT_KB)) {
+	if(!fireIrq(IRQ_SEM_KEYB)) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
@@ -229,7 +229,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
-	bool res = Signals::addSignal(SIG_INTRPT_TIMER);
+	bool res = fireIrq(IRQ_SEM_TIMER);
 	res |= Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res)
@@ -240,7 +240,7 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* see Interrupts::irqKb() */
 	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
-	if(!Signals::addSignal(SIG_INTRPT_ATA1))
+	if(!fireIrq(IRQ_SEM_ATA1))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 	else
 		Thread::switchAway();

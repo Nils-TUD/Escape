@@ -309,12 +309,12 @@ struct sATAController {
 	uchar id;
 	uchar useIrq;
 	uchar useDma;
-	volatile uchar gotIrq;
 	/* I/O-ports for the controllers */
 	uint16_t portBase;
 	/* I/O-ports for bus-mastering */
 	uint16_t bmrBase;
 	int irq;
+	int irqsem;
 	sPRD *dma_prdt_phys;
 	sPRD *dma_prdt_virt;
 	void *dma_buf_phys;

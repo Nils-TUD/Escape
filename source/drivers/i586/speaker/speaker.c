@@ -23,6 +23,7 @@
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/conf.h>
+#include <esc/irq.h>
 #include <esc/messages.h>
 #include <stdio.h>
 #include <signal.h>
@@ -35,26 +36,27 @@
 #define IOPORT_KB_CTRL_B			0x61
 
 /**
+ * Plays the sound with given frequency for given duration
+ *
+ * @param freq the frequency
+ * @param dur the duration in milliseconds
+ */
+static void playSound(uint freq,uint dur);
+
+/**
  * Starts the sound with given frequency
  *
  * @param frequency the frequency
  */
-static void playSound(uint frequency);
+static void startSound(uint frequency);
 
 /**
  * Stops the sound
  */
 static void stopSound(void);
 
-/**
- * The timer-interrupt-handler
- */
-static void timerIntrptHandler(int sig);
-
 static sMsg msg;
 static long timerFreq;
-static size_t intrptCount = 0;
-static size_t intrptTarget = 0;
 
 int main(void) {
 	int fd;
@@ -89,14 +91,8 @@ int main(void) {
 				case MSG_SPEAKER_BEEP: {
 					uint freq = msg.args.arg1;
 					uint dur = msg.args.arg2;
-					if(freq > 0 && dur > 0) {
-						/* add timer-interrupt listener */
-						if(signal(SIG_INTRPT_TIMER,timerIntrptHandler) != SIG_ERR) {
-							playSound(freq);
-							intrptCount = 0;
-							intrptTarget = dur;
-						}
-					}
+					if(freq > 0 && dur > 0)
+						playSound(freq,dur);
 				}
 				break;
 
@@ -120,21 +116,25 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void timerIntrptHandler(A_UNUSED int sig) {
-	if(intrptTarget > 0) {
-		intrptCount += 1000 / timerFreq;
-		if(intrptCount >= intrptTarget) {
-			stopSound();
-			/* reset */
-			intrptTarget = 0;
-			intrptCount = 0;
-			if(signal(SIG_INTRPT_TIMER,SIG_DFL) == SIG_ERR)
-				printe("Unable to unset signal-handler");
-		}
+static void playSound(uint freq,uint dur) {
+	int tsem = semcrtirq(IRQ_SEM_TIMER);
+	if(tsem < 0) {
+		printe("Unable to create irq-semaphore");
+		return;
 	}
+
+	startSound(freq);
+	// TODO actually, it would be better not to block in this thread, because we make it unusable
+	// for other clients during that time
+	while(dur > 0) {
+		semdown(tsem);
+		dur -= 1000 / timerFreq;
+	}
+	stopSound();
+	semdestr(tsem);
 }
 
-static void playSound(uint frequency) {
+static void startSound(uint frequency) {
 	uint f;
 	uint8_t tmp;
 

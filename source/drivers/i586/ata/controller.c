@@ -23,6 +23,7 @@
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
+#include <esc/irq.h>
 #include <esc/io.h>
 #include <esc/mem.h>
 #include <signal.h>
@@ -43,7 +44,6 @@
 
 #define DMA_BUF_SIZE				(64 * 1024)
 
-static void ctrl_intrptHandler(int sig);
 static bool ctrl_isBusResponding(sATAController* ctrl);
 
 static sPCIDevice ideCtrl;
@@ -59,11 +59,11 @@ void ctrl_init(bool useDma) {
 			ideCtrl.bus,ideCtrl.dev,ideCtrl.func,ideCtrl.vendorId,ideCtrl.deviceId,ideCtrl.revId);
 
 	ctrls[0].id = DEVICE_PRIMARY;
-	ctrls[0].irq = SIG_INTRPT_ATA1;
+	ctrls[0].irq = IRQ_SEM_ATA1;
 	ctrls[0].portBase = PORTBASE_PRIMARY;
 
 	ctrls[1].id = DEVICE_SECONDARY;
-	ctrls[1].irq = SIG_INTRPT_ATA2;
+	ctrls[1].irq = IRQ_SEM_ATA2;
 	ctrls[1].portBase = PORTBASE_SECONDARY;
 
 	/* request io-ports for bus-mastering */
@@ -78,7 +78,6 @@ void ctrl_init(bool useDma) {
 		ATA_PR2("Initializing controller %d",ctrls[i].id);
 		ctrls[i].useIrq = true;
 		ctrls[i].useDma = false;
-		ctrls[i].gotIrq = false;
 
 		/* request ports */
 		/* for some reason virtualbox requires an additional port (9 instead of 8). Otherwise
@@ -96,8 +95,9 @@ void ctrl_init(bool useDma) {
 		}
 
 		/* set interrupt-handler */
-		if(signal(ctrls[i].irq,ctrl_intrptHandler) == SIG_ERR)
-			error("Unable to announce sig-handler ctrls %d (%d)",ctrls[i].id,ctrls[i].irq);
+		ctrls[i].irqsem = semcrtirq(ctrls[i].irq);
+		if(ctrls[i].irqsem < 0)
+			error("Unable to create irq-semaphore for IRQ %d",ctrls[i].irq);
 
 		/* init DMA */
 		ctrls[i].bmrBase = ideCtrl.bars[IDE_CTRL_BAR].addr;
@@ -176,25 +176,10 @@ void ctrl_softReset(sATAController *ctrl) {
 	while((status & (CMD_ST_BUSY | CMD_ST_READY)) != CMD_ST_READY);
 }
 
-void ctrl_resetIrq(sATAController *ctrl) {
-	ctrl->gotIrq = false;
-}
-
 void ctrl_waitIntrpt(sATAController *ctrl) {
-	time_t elapsed = 0;
 	if(!ctrl->useIrq)
 		return;
-	while(!ctrl->gotIrq) {
-		/* if we reached the timeout, it seems that waiting for interrupts does not work for
-		 * this controller. so disable it */
-		if(elapsed > IRQ_TIMEOUT) {
-			ATA_LOG("Controller %d: IRQ-Timeout reached; stopping to use interrupts",ctrl->id);
-			ctrl->useIrq = false;
-			return;
-		}
-		sleep(IRQ_POLL_INTERVAL);
-		elapsed += IRQ_POLL_INTERVAL;
-	}
+	semdown(ctrl->irqsem);
 }
 
 int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t set,uint8_t unset) {
@@ -214,16 +199,6 @@ int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t 
 			elapsed++;
 	}
 	return -1;
-}
-
-static void ctrl_intrptHandler(int sig) {
-	size_t i;
-	for(i = 0; i < 2; i++) {
-		if(ctrls[i].irq == sig) {
-			ctrls[i].gotIrq = true;
-			break;
-		}
-	}
 }
 
 void ctrl_wait(sATAController *ctrl) {

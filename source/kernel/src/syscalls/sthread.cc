@@ -110,6 +110,14 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
+	int irq = (int)SYSC_ARG1(stack);
+	int res = Sems::create(t->getProc(),0,irq);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::semcrt(Thread *t,IntrptStackFrame *stack) {
 	uint value = (uint)SYSC_ARG1(stack);
 	int res = Sems::create(t->getProc(),value);

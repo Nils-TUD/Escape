@@ -124,6 +124,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{joinms,			"joinms",			1},
 	{mlock,				"mlock",			2},
 	{mlockall,			"mlockall",			0},
+	{semcrtirq,			"semcrtirq",		1},
 #ifdef __i386__
 	{reqports,			"reqports",   		2},
 	{relports,			"relports",    		2},

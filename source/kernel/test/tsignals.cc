@@ -37,14 +37,6 @@ sTestModule tModSignals = {
 static int signals[] = {
 	SIG_ILL_INSTR,
 	SIG_TERM,
-	SIG_INTRPT_ATA1,
-	SIG_INTRPT_ATA2,
-	SIG_INTRPT_CMOS,
-	SIG_INTRPT_COM1,
-	SIG_INTRPT_COM2,
-	SIG_INTRPT_FLOPPY,
-	SIG_INTRPT_KB,
-	SIG_INTRPT_TIMER,
 	SIG_SEGFAULT
 };
 
@@ -72,24 +64,24 @@ static void test_setHandler() {
 	Signals::handler_func handler,old;
 
 	test_caseStart("Testing Signals::setHandler()");
-	test_assertInt(Signals::setHandler(t2->getTid(),SIG_INTRPT_ATA1,(Signals::handler_func)0x123,&old),0);
+	test_assertInt(Signals::setHandler(t2->getTid(),SIG_CHILD_TERM,(Signals::handler_func)0x123,&old),0);
 	test_caseSucceeded();
 
 	test_caseStart("Adding a signal for somebody else");
-	test_assertTrue(Signals::addSignal(SIG_INTRPT_ATA1));
+	test_assertTrue(Signals::addSignal(SIG_CHILD_TERM));
 	test_assertTrue(Signals::hasSignalFor(t2->getTid()));
 	test_caseSucceeded();
 
 	test_caseStart("Adding a signal for us");
-	test_assertInt(Signals::setHandler(t1->getTid(),SIG_INTRPT_ATA2,(Signals::handler_func)0x456,&old),0);
-	test_assertTrue(Signals::addSignal(SIG_INTRPT_ATA2));
+	test_assertInt(Signals::setHandler(t1->getTid(),SIG_ALARM,(Signals::handler_func)0x456,&old),0);
+	test_assertTrue(Signals::addSignal(SIG_ALARM));
 	test_assertTrue(Signals::hasSignalFor(t1->getTid()));
 	test_assertTrue(Signals::checkAndStart(t1->getTid(),&sig,&handler));
-	test_assertTrue(sig == SIG_INTRPT_ATA2);
+	test_assertTrue(sig == SIG_ALARM);
 	test_assertTrue(handler == (Signals::handler_func)0x456);
 	test_assertTrue(Signals::ackHandling(t1->getTid()) == sig);
 	test_assertFalse(Signals::hasSignalFor(t1->getTid()));
-	test_assertTrue(Signals::unsetHandler(t1->getTid(),SIG_INTRPT_ATA2) == (Signals::handler_func)0x456);
+	test_assertTrue(Signals::unsetHandler(t1->getTid(),SIG_ALARM) == (Signals::handler_func)0x456);
 	test_caseSucceeded();
 
 	test_caseStart("Adding signal for own process");
@@ -121,7 +113,7 @@ static void test_setHandler() {
 
 	test_caseStart("Testing Signals::unsetHandler()");
 	test_assertSize(Signals::getHandlerCount(),2);
-	Signals::unsetHandler(t2->getTid(),SIG_INTRPT_ATA1);
+	Signals::unsetHandler(t2->getTid(),SIG_CHILD_TERM);
 	Signals::unsetHandler(t1->getTid(),SIG_TERM);
 	test_assertSize(Signals::getHandlerCount(),0);
 	test_caseSucceeded();
@@ -159,9 +151,9 @@ static void test_setHandler() {
 	test_caseStart("Testing Signals::removeHandlerFor)");
 	test_assertInt(Signals::setHandler(t1->getTid(),SIG_TERM,(Signals::handler_func)0x456,&old),0);
 	test_assertInt(Signals::setHandler(t1->getTid(),SIG_SEGFAULT,(Signals::handler_func)0x456,&old),0);
-	test_assertInt(Signals::setHandler(t1->getTid(),SIG_INTRPT_ATA1,(Signals::handler_func)0x456,&old),0);
-	test_assertInt(Signals::setHandler(t2->getTid(),SIG_INTRPT_ATA1,(Signals::handler_func)0x1337,&old),0);
-	test_assertInt(Signals::setHandler(t2->getTid(),SIG_INTRPT_COM1,(Signals::handler_func)0x1337,&old),0);
+	test_assertInt(Signals::setHandler(t1->getTid(),SIG_CHILD_TERM,(Signals::handler_func)0x456,&old),0);
+	test_assertInt(Signals::setHandler(t2->getTid(),SIG_CHILD_TERM,(Signals::handler_func)0x1337,&old),0);
+	test_assertInt(Signals::setHandler(t2->getTid(),SIG_ALARM,(Signals::handler_func)0x1337,&old),0);
 	Signals::removeHandlerFor(t2->getTid());
 	test_assertSize(Signals::getHandlerCount(),3);
 	Signals::removeHandlerFor(t1->getTid());

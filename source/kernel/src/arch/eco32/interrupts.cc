@@ -36,38 +36,38 @@
 #define DEBUG_PAGEFAULTS	0
 
 InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
-	/* 0x00 */	{Interrupts::defHandler,	"Terminal 0 Xmtr",			0,					0},
-	/* 0x01 */	{Interrupts::defHandler,	"Terminal 0 Rcvr",			0,					0},
-	/* 0x02 */	{Interrupts::defHandler,	"Terminal 1 Xmtr",			0,					0},
-	/* 0x03 */	{Interrupts::defHandler,	"Terminal 1 Rcvr",			0,					0},
-	/* 0x04 */	{Interrupts::irqKB,			"Keyboard",					SIG_INTRPT_KB,		0},
-	/* 0x05 */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x06 */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x07 */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x08 */	{Interrupts::irqDisk,		"Disk",						SIG_INTRPT_ATA1,	0},
-	/* 0x09 */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x0A */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x0B */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x0C */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x0D */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x0E */	{Interrupts::irqTimer,		"Timer",					SIG_INTRPT_TIMER,	0},
-	/* 0x0F */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x10 */	{Interrupts::defHandler,	"Bus timeout ex.",			0,					0},
-	/* 0x11 */	{Interrupts::defHandler,	"Ill. instr. ex.",			0,					0},
-	/* 0x12 */	{Interrupts::defHandler,	"Prv. instr. ex.",			0,					0},
-	/* 0x13 */	{Interrupts::defHandler,	"Divide ex.",				0,					0},
-	/* 0x14 */	{Interrupts::exTrap,		"Trap ex.",					0,					0},
-	/* 0x15 */	{Interrupts::defHandler,	"TLB miss ex.",				0,					0},
-	/* 0x16 */	{Interrupts::exPageFault,	"TLB write ex.",			0,					0},
-	/* 0x17 */	{Interrupts::exPageFault,	"TLB invalid ex.",			0,					0},
-	/* 0x18 */	{Interrupts::defHandler,	"Ill. addr. ex.",			0,					0},
-	/* 0x19 */	{Interrupts::defHandler,	"Prv. addr. ex.",			0,					0},
-	/* 0x1A */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x1B */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x1C */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x1D */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x1E */	{Interrupts::defHandler,	"??",						0,					0},
-	/* 0x1F */	{Interrupts::defHandler,	"??",						0,					0},
+	/* 0x00 */	{Interrupts::defHandler,	"Terminal 0 Xmtr",			-1,					0},
+	/* 0x01 */	{Interrupts::defHandler,	"Terminal 0 Rcvr",			-1,					0},
+	/* 0x02 */	{Interrupts::defHandler,	"Terminal 1 Xmtr",			-1,					0},
+	/* 0x03 */	{Interrupts::defHandler,	"Terminal 1 Rcvr",			-1,					0},
+	/* 0x04 */	{Interrupts::irqKB,			"Keyboard",					IRQ_SEM_KEYB,		0},
+	/* 0x05 */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x06 */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x07 */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x08 */	{Interrupts::irqDisk,		"Disk",						IRQ_SEM_ATA1,		0},
+	/* 0x09 */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x0A */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x0B */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x0C */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x0D */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x0E */	{Interrupts::irqTimer,		"Timer",					IRQ_SEM_TIMER,		0},
+	/* 0x0F */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x10 */	{Interrupts::defHandler,	"Bus timeout ex.",			-1,					0},
+	/* 0x11 */	{Interrupts::defHandler,	"Ill. instr. ex.",			-1,					0},
+	/* 0x12 */	{Interrupts::defHandler,	"Prv. instr. ex.",			-1,					0},
+	/* 0x13 */	{Interrupts::defHandler,	"Divide ex.",				-1,					0},
+	/* 0x14 */	{Interrupts::exTrap,		"Trap ex.",					-1,					0},
+	/* 0x15 */	{Interrupts::defHandler,	"TLB miss ex.",				-1,					0},
+	/* 0x16 */	{Interrupts::exPageFault,	"TLB write ex.",			-1,					0},
+	/* 0x17 */	{Interrupts::exPageFault,	"TLB invalid ex.",			-1,					0},
+	/* 0x18 */	{Interrupts::defHandler,	"Ill. addr. ex.",			-1,					0},
+	/* 0x19 */	{Interrupts::defHandler,	"Prv. addr. ex.",			-1,					0},
+	/* 0x1A */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x1B */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x1C */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x1D */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x1E */	{Interrupts::defHandler,	"??",						-1,					0},
+	/* 0x1F */	{Interrupts::defHandler,	"??",						-1,					0},
 };
 
 uintptr_t Interrupts::pfaddr = 0;
@@ -153,7 +153,7 @@ void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqTimer(Thread *t,A_UNUSED IntrptStackFrame *stack) {
-	bool res = Signals::addSignal(SIG_INTRPT_TIMER);
+	bool res = fireIrq(IRQ_SEM_TIMER);
 	res |= Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res) {
@@ -180,7 +180,7 @@ void Interrupts::irqKB(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call UEnv::handleSignal(), which might cause a thread-switch */
-	if(!Signals::addSignal(SIG_INTRPT_KB)) {
+	if(!fireIrq(IRQ_SEM_KEYB)) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
@@ -192,7 +192,7 @@ void Interrupts::irqDisk(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	/* see Interrupts::irqKb() */
 	uint32_t *diskRegs = (uint32_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
-	if(!Signals::addSignal(SIG_INTRPT_ATA1))
+	if(!fireIrq(IRQ_SEM_ATA1))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 	else
 		Thread::switchAway();

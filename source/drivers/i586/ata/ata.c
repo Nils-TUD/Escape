@@ -179,7 +179,6 @@ static bool ata_setupCommand(sATADevice *device,uint64_t lba,size_t secCount,uin
 	ctrl_wait(ctrl);
 
 	ATA_PR2("Resetting control-register");
-	ctrl_resetIrq(ctrl);
 	/* reset control-register */
 	ctrl_outb(ctrl,ATA_REG_CONTROL,device->ctrl->useIrq ? 0 : CTRL_NIEN);
 

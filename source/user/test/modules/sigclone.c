@@ -29,30 +29,31 @@
 
 #include "../modules.h"
 
-static tid_t parent = -1;
-static tid_t child = -1;
+static pid_t parent = -1;
+static pid_t child = -1;
 static size_t parentCount = 0;
 static size_t childCount = 0;
 
-static void timerIRQ(A_UNUSED int sig) {
-	if(gettid() == parent)
+static void sigint(A_UNUSED int sig) {
+	if(getpid() == parent) {
 		parentCount++;
+		kill(child,SIGINT);
+	}
 	else
 		childCount++;
 }
 
 int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int res;
-	parent = gettid();
-	if(signal(SIG_INTRPT_TIMER,timerIRQ) == SIG_ERR)
+	parent = getpid();
+	if(signal(SIG_INTRPT,sigint) == SIG_ERR)
 		error("Unable to set sighandler");
 
-	if(fork() == 0) {
-		child = gettid();
-		sleep(20);
-		sleep(20);
-		sleep(20);
-		printf("Child got %d\n",childCount);
+	if((child = fork()) == 0) {
+		printf("Please give me a SIGINT!\n");
+		fflush(stdout);
+		sleep(1000000);
+		printf("Child got %d signals\n",childCount);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -61,6 +62,6 @@ int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		res = waitchild(NULL);
 	}
 	while(res == -EINTR);
-	printf("Parent got %d\n",parentCount);
+	printf("Parent got %d signals\n",parentCount);
 	return 0;
 }

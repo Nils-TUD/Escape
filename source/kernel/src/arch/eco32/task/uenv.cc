@@ -31,19 +31,9 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,int signal) {
+int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
-	/* reenable device-interrupts */
-	switch(signal) {
-		case SIG_INTRPT_KB: {
-			uint32_t *regs = (uint32_t*)KEYBOARD_BASE;
-			regs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
-			break;
-		}
-		/* not necessary for disk here; the device will reenable interrupts as soon as a new
-		 * command is started */
-	}
 	return 0;
 }
 

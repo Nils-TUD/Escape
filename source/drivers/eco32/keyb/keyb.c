@@ -28,6 +28,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/driver/vterm.h>
 #include <esc/mem.h>
+#include <esc/irq.h>
 #include <keyb/keybdev.h>
 #include <string.h>
 #include <stdlib.h>
@@ -50,7 +51,7 @@
 #define TIMEOUT				60
 #define SLEEP_TIME			20
 
-static void kbIntrptHandler(int sig);
+static int kbIrqThread(A_UNUSED void *arg);
 
 static uint32_t *kbRegs;
 
@@ -60,9 +61,8 @@ int main(void) {
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
 
-	/* we want to get notified about keyboard interrupts */
-	if(signal(SIG_INTRPT_KB,kbIntrptHandler) == SIG_ERR)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
+	if(startthread(kbIrqThread,NULL) < 0)
+		error("Unable to start irq-thread");
 
 	/* enable interrupts */
 	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
@@ -74,9 +74,20 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(A_UNUSED int sig) {
-	sKbData data;
-	uint32_t sc = kbRegs[KEYBOARD_DATA];
-	if(kb_set2_getKeycode(&data.isBreak,&data.keycode,sc))
-		keyb_broadcast(&data);
+static int kbIrqThread(A_UNUSED void *arg) {
+	int sem = semcrtirq(IRQ_SEM_KEYB);
+	if(sem < 0)
+		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);
+	while(1) {
+		semdown(sem);
+
+		uint32_t sc = kbRegs[KEYBOARD_DATA];
+		sKbData data;
+		if(kb_set2_getKeycode(&data.isBreak,&data.keycode,sc))
+			keyb_broadcast(&data);
+
+		/* re-enable interrupts; the kernel has disabled it in order to get into userland */
+		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
+	}
+	return 0;
 }

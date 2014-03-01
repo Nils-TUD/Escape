@@ -127,13 +127,6 @@ void ctrl_inwords(sATAController *ctrl,uint16_t reg,uint16_t *buf,size_t count);
 void ctrl_softReset(sATAController *ctrl);
 
 /**
- * Resets the interrupt-counter for given controller
- *
- * @param ctrl the controller
- */
-void ctrl_resetIrq(sATAController *ctrl);
-
-/**
  * Waits for an interrupt with given controller
  *
  * @param ctrl the controller

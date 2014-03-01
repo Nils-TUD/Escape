@@ -24,6 +24,7 @@
 #include <esc/driver.h>
 #include <esc/ringbuffer.h>
 #include <esc/messages.h>
+#include <esc/irq.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -70,7 +71,7 @@
 
 static size_t findClient(inode_t cid);
 static void broadcast(sMouseData *data);
-static void irqHandler(int sig);
+static int irqThread(void *arg);
 static void kb_init(void);
 static void kb_checkCmd(void);
 static uint16_t kb_read(void);
@@ -103,14 +104,14 @@ int main(void) {
 
 	kb_init();
 
-	/* reg intrpt-handler */
-	if(signal(SIG_INTRPT_MOUSE,irqHandler) == SIG_ERR)
-		error("Unable to announce interrupt-handler");
-
 	/* reg device */
 	sid = createdev("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 	if(sid < 0)
 		error("Unable to register device 'mouse'");
+
+	/* reg intrpt-handler */
+	if(startthread(irqThread,NULL) < 0)
+		error("Unable to start irq-thread");
 
 	/* wait for commands */
 	while(1) {
@@ -173,43 +174,49 @@ static void broadcast(sMouseData *data) {
 	}
 }
 
-static void irqHandler(A_UNUSED int sig) {
-	uint8_t status;
-	static sMouseData mdata;
+static int irqThread(A_UNUSED void *arg) {
+	sMouseData mdata;
 
-	/* check if there is mouse-data */
-	status = inbyte(IOPORT_KB_CTRL);
-	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
-		return;
+	int sem = semcrtirq(IRQ_SEM_MOUSE);
+	if(sem < 0)
+		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_MOUSE);
+	while(1) {
+		semdown(sem);
 
-	switch(byteNo) {
-		case 0: {
-			uStatus st;
-			st.all = inbyte(IOPORT_KB_DATA);
-			mdata.buttons = (st.leftBtn << 2) | (st.rightBtn << 1) | (st.middleBtn << 0);
-			byteNo++;
-		}
-		break;
-		case 1:
-			mdata.x = (char)inbyte(IOPORT_KB_DATA);
-			byteNo++;
-			break;
-		case 2:
-			mdata.y = (char)inbyte(IOPORT_KB_DATA);
-			if(wheel)
+		/* check if there is mouse-data */
+		uint8_t status = inbyte(IOPORT_KB_CTRL);
+		if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
+			continue;
+
+		switch(byteNo) {
+			case 0: {
+				uStatus st;
+				st.all = inbyte(IOPORT_KB_DATA);
+				mdata.buttons = (st.leftBtn << 2) | (st.rightBtn << 1) | (st.middleBtn << 0);
 				byteNo++;
-			else {
-				byteNo = 0;
-				mdata.z = 0;
 			}
 			break;
-		case 3:
-			mdata.z = (char)inbyte(IOPORT_KB_DATA);
-			byteNo = 0;
-			break;
+			case 1:
+				mdata.x = (char)inbyte(IOPORT_KB_DATA);
+				byteNo++;
+				break;
+			case 2:
+				mdata.y = (char)inbyte(IOPORT_KB_DATA);
+				if(wheel)
+					byteNo++;
+				else {
+					byteNo = 0;
+					mdata.z = 0;
+				}
+				break;
+			case 3:
+				mdata.z = (char)inbyte(IOPORT_KB_DATA);
+				byteNo = 0;
+				break;
+		}
+		if(byteNo == 0)
+			broadcast(&mdata);
 	}
-	if(byteNo == 0)
-		broadcast(&mdata);
 }
 
 static void kb_init(void) {

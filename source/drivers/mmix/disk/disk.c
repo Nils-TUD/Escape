@@ -23,6 +23,7 @@
 #include <esc/mem.h>
 #include <esc/thread.h>
 #include <esc/io.h>
+#include <esc/irq.h>
 #include <usergroup/group.h>
 #include <signal.h>
 #include <stdio.h>
@@ -74,7 +75,6 @@
 #define DISK_DBG(...)
 #endif
 
-static void diskInterrupt(int sig);
 static ulong getDiskCapacity(void);
 static bool diskRead(void *buf,ulong secNo,ulong secCount);
 static bool diskWrite(const void *buf,ulong secNo,ulong secCount);
@@ -82,6 +82,7 @@ static bool diskWait(void);
 static void regDrives(void);
 static void createVFSEntry(const char *name,bool isPart);
 
+static int irqSm;
 static uint64_t *diskRegs;
 static uint64_t *diskBuf;
 static int drvId;
@@ -98,8 +99,9 @@ int main(int argc,char **argv) {
 	if(argc < 2)
 		error("Usage: %s <wait>",argv[0]);
 
-	if(signal(SIG_INTRPT_ATA1,diskInterrupt) == SIG_ERR)
-		error("Unable to announce disk-signal-handler");
+	irqSm = semcrtirq(IRQ_SEM_ATA1);
+	if(irqSm < 0)
+		error("Unable to create irq-semaphore");
 
 	phys = DISK_BASE;
 	diskRegs = (uint64_t*)mmapphys(&phys,16,0);
@@ -126,9 +128,6 @@ int main(int argc,char **argv) {
 	/* mlock all regions to prevent that we're swapped out */
 	if(mlockall() < 0)
 		error("Unable to mlock regions");
-
-	/* enable interrupts */
-	diskRegs[DISK_CTRL] = DISK_IEN | DISK_DONE;
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that the disk is registered */
 	FILE *f = fopen("/system/devices/disk","w");
@@ -309,9 +308,9 @@ static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
 static bool diskWait(void) {
 	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
 	if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
-		sleep(IRQ_TIMEOUT);
+		semdown(irqSm);
 		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
-			DISK_LOG("Waiting for interrupt: Timeout reached, giving up");
+			DISK_LOG("Waiting for interrupt: waked up with invalid status (%#x)",*diskCtrlReg);
 			return false;
 		}
 	}

@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#define SIG_COUNT			19
+#define SIG_COUNT			10
 
 #define SIG_IGN				((fSignal)-3)			/* ignore signal */
 #define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
@@ -37,18 +37,9 @@
 #define SIG_PIPE_CLOSED		4						/* sent to the pipe-writer when reader died */
 #define SIG_CHILD_TERM		5						/* sent to parent-proc */
 #define SIG_INTRPT			6						/* used to interrupt a process; used by shell */
-#define SIG_INTRPT_TIMER	7						/* timer-interrupt */
-#define SIG_INTRPT_KB		8						/* keyboard-interrupt */
-#define SIG_INTRPT_COM1		9						/* com1-interrupt */
-#define SIG_INTRPT_COM2		10						/* com2-interrupt */
-#define SIG_INTRPT_FLOPPY	11						/* floppy-interrupt */
-#define SIG_INTRPT_CMOS		12						/* cmos-interrupt */
-#define SIG_INTRPT_ATA1		13						/* ata1-interrupt */
-#define SIG_INTRPT_ATA2		14						/* ata2-interrupt */
-#define SIG_INTRPT_MOUSE	15						/* mouse-interrupt */
-#define SIG_ALARM			16						/* for alarm() */
-#define SIG_USR1			17						/* can be used for everything */
-#define SIG_USR2			18						/* can be used for everything */
+#define SIG_ALARM			7						/* for alarm() */
+#define SIG_USR1			8						/* can be used for everything */
+#define SIG_USR2			9						/* can be used for everything */
 
 /* standarg signal-names */
 #define SIGABRT				SIG_KILL

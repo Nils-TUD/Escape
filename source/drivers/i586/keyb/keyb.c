@@ -23,6 +23,7 @@
 #include <esc/io.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
+#include <esc/irq.h>
 #include <esc/thread.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
@@ -71,7 +72,7 @@
 #define TIMEOUT						60
 #define SLEEP_TIME					20
 
-static void kbIntrptHandler(int sig);
+static int kbIrqThread(void *arg);
 static void kb_waitOutBuf(void);
 static void kb_waitInBuf(void);
 
@@ -166,8 +167,8 @@ int main(void) {
 	while(1);*/
 
 	/* we want to get notified about keyboard interrupts */
-	if(signal(SIG_INTRPT_KB,kbIntrptHandler) == SIG_ERR)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
+	if(startthread(kbIrqThread,NULL) < 0)
+		error("Unable to start IRQ-thread");
 
 	keyb_driverLoop();
 
@@ -178,14 +179,22 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(A_UNUSED int sig) {
-	if(!(inbyte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
-		return;
+static int kbIrqThread(A_UNUSED void *arg) {
+	int sem = semcrtirq(IRQ_SEM_KEYB);
+	if(sem < 0)
+		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);
+	while(1) {
+		semdown(sem);
 
-	uint8_t sc = inbyte(IOPORT_KB_DATA);
-	sKbData data;
-	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc))
-		keyb_broadcast(&data);
+		if(!(inbyte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
+			continue;
+
+		uint8_t sc = inbyte(IOPORT_KB_DATA);
+		sKbData data;
+		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc))
+			keyb_broadcast(&data);
+	}
+	return 0;
 }
 
 static void kb_waitOutBuf(void) {

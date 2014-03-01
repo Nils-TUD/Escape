@@ -75,16 +75,6 @@ public:
 	static void wakeup(uint event,evobj_t object,bool all = true);
 
 	/**
-	 * Wakes up the thread <t> for given event. That means, if it does not wait for it, it is
-	 * not waked up.
-	 *
-	 * @param t the thread
-	 * @param event the event
-	 * @return true if waked up
-	 */
-	static bool wakeupThread(Thread *t,uint event);
-
-	/**
 	 * @return the current ready-mask. 1 bit per priority.
 	 */
 	static ulong getReadyMask() {

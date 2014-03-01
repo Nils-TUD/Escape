@@ -205,7 +205,7 @@ bool PhysMem::reserve(size_t frameCount,bool swap) {
 	do {
 		/* notify swapper-thread */
 		if(!swapping)
-			Sched::wakeupThread(swapperThread,EV_SWAP_WORK);
+			Sched::wakeup(EV_SWAP_WORK,0);
 		t->wait(EV_SWAP_FREE,0);
 		defLock.up();
 		Thread::switchNoSigs();
@@ -291,7 +291,7 @@ int PhysMem::swapIn(uintptr_t addr) {
 
 	/* notify the swapper, if necessary */
 	if(!swapping)
-		Sched::wakeupThread(swapperThread,EV_SWAP_WORK);
+		Sched::wakeup(EV_SWAP_WORK,0);
 	/* wait until its done */
 	t->block();
 	defLock.up();

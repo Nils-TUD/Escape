@@ -250,17 +250,6 @@ void Sched::wakeup(uint event,evobj_t object,bool all) {
 	}
 }
 
-bool Sched::wakeupThread(Thread *t,uint event) {
-	assert(event >= 1 && event <= EV_COUNT);
-	LockGuard<SpinLock> g(&lock);
-	if(t->event == event) {
-		removeFromEventlist(t);
-		setReady(t);
-		return true;
-	}
-	return false;
-}
-
 void Sched::removeFromEventlist(Thread *t) {
 	if(t->event) {
 		/* important: remove it first from the event-list and set event to 0 */

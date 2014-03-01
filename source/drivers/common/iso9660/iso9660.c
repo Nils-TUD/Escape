@@ -152,10 +152,9 @@ static int iso_setup(const char *device,sISO9660 *iso) {
 			error("Unable to read volume descriptor from device");
 		/* check identifier */
 		if(strncmp(iso->primary.identifier,"CD001",sizeof(iso->primary.identifier)) != 0) {
-			fprintf(stderr,"Identifier of primary volume invalid (%02x:%02x:%02x:%02x:%02x)\n",
+			error("Identifier of primary volume invalid (%02x:%02x:%02x:%02x:%02x)",
 				iso->primary.identifier[0],iso->primary.identifier[1],iso->primary.identifier[2],
 				iso->primary.identifier[3],iso->primary.identifier[4]);
-			exit(EXIT_FAILURE);
 		}
 		/* we need just the primary one */
 		if(iso->primary.type == ISO_VOL_TYPE_PRIMARY)

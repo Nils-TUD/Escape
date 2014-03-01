@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/col/nodeallocator.h>
+#include <sys/col/node.h>
 #include <sys/spinlock.h>
 #include <sys/mem/dynarray.h>
 #include <sys/mem/pagedir.h>

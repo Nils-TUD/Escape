@@ -22,7 +22,6 @@
 #include <esc/common.h>
 #include <sys/arch/mmix/mem/addrspace.h>
 #include <sys/mem/physmemareas.h>
-#include <sys/boot.h>
 #include <string.h>
 #include <assert.h>
 

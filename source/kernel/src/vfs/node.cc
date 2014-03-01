@@ -37,6 +37,7 @@
 #include <sys/task/proc.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/boot.h>
 #include <sys/cppsupport.h>
 #include <string.h>
 #include <assert.h>

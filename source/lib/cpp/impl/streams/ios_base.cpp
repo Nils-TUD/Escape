@@ -25,31 +25,6 @@
 #include <string.h>
 
 namespace std {
-	extern ifstream _cin;
-	extern ofstream _cout;
-	extern ofstream _cerr;
-	extern ofstream _clog;
-
-	int ios_base::Init::init_cnt = 0;
-
-	ios_base::Init::Init() {
-		if(init_cnt++ == 0) {
-			_cin.open((int)STDIN_FILENO);
-			_cin.tie(&cout);
-			_cout.open((int)STDOUT_FILENO);
-			_cerr.open((int)STDERR_FILENO);
-			_cerr.tie(&cout);
-			_clog.open((int)STDERR_FILENO);
-		}
-	}
-	ios_base::Init::~Init() {
-		if(--init_cnt == 0) {
-			cout.flush();
-			cerr.flush();
-			clog.flush();
-		}
-	}
-
 	const ios_base::fmtflags ios_base::boolalpha	= 1 << 0;
 	const ios_base::fmtflags ios_base::dec			= 1 << 1;
 	const ios_base::fmtflags ios_base::fixed		= 1 << 2;

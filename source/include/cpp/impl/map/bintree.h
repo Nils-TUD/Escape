@@ -260,7 +260,7 @@ namespace std {
 			return end();
 		}
 		const_iterator find(const Key& k) const {
-			iterator it = find(k);
+			iterator it = const_cast<bintree*>(this)->find(k);
 			return const_iterator(it.node());
 		}
 

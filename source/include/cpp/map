@@ -195,7 +195,7 @@ namespace std {
 			return it->second;
 		}
 		const T& at(const key_type& x) const {
-			iterator it = _tree.find(x);
+			const_iterator it = _tree.find(x);
 			if(it == _tree.end())
 				throw out_of_range("Key not found");
 			return it->second;

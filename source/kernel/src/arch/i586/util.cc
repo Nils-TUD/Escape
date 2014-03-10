@@ -34,6 +34,7 @@
 #include <sys/video.h>
 #include <sys/util.h>
 #include <sys/log.h>
+#include <ipc/ipcbuf.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <errno.h>
@@ -63,14 +64,12 @@ void Util::switchToVGA() {
 	pid_t pid = Proc::getRunning();
 	OpenFile *file;
 	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
-		ssize_t res;
-		sStrMsg msg;
-		msg.arg1 = 3;
-		msg.arg2 = VID_MODE_TYPE_TUI;
-		msg.arg3 = true;
+		char buffer[IPC_DEF_SIZE];
+		ipc::IPCBuf ib(buffer,sizeof(buffer));
 		/* use an empty shm-name here. we don't need that anyway */
-		msg.s1[0] = '\0';
-		res = file->sendMsg(pid,MSG_SCR_SETMODE,&msg,sizeof(msg),NULL,0);
+		ib << 3 << VID_MODE_TYPE_GUI << true << ipc::CString("");
+
+		ssize_t res = file->sendMsg(pid,MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
 		if(res >= 0) {
 			for(int i = 0; i < 100; i++) {
 				res = file->receiveMsg(pid,NULL,NULL,0,false);

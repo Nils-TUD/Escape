@@ -25,6 +25,7 @@
 #include <time.h>
 
 /* general */
+#define IPC_DEF_SIZE				256
 #define MAX_MSG_ARGS				10
 #define MAX_MSG_SIZE				128
 #define MAX_MSGSTR_LEN				63

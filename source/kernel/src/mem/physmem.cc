@@ -33,6 +33,7 @@
 #include <sys/log.h>
 #include <sys/video.h>
 #include <sys/spinlock.h>
+#include <ipc/ipcbuf.h>
 #include <esc/messages.h>
 #include <assert.h>
 #include <string.h>
@@ -312,11 +313,16 @@ void PhysMem::swapper() {
 		swapEnabled = false;
 	}
 	else {
+		char buffer[IPC_DEF_SIZE];
+		ipc::IPCBuf ib(buffer,sizeof(buffer));
+
 		/* get device-size and init swap-map */
-		sArgsMsg msg;
 		assert(swapFile->sendMsg(pid,MSG_DISK_GETSIZE,NULL,0,NULL,0) >= 0);
-		assert(swapFile->receiveMsg(pid,NULL,&msg,sizeof(msg),false) >= 0);
-		if(!SwapMap::init(msg.arg1)) {
+		assert(swapFile->receiveMsg(pid,NULL,ib.buffer(),ib.max(),false) >= 0);
+
+		size_t disksize;
+		ib >> disksize;
+		if(!SwapMap::init(disksize)) {
 			swapEnabled = false;
 			swapFile->close(pid);
 		}

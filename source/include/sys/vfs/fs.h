@@ -106,9 +106,4 @@ public:
 	 * @return 0 on success
 	 */
 	static int rmdir(pid_t pid,OpenFile *fsFile,const char *path);
-
-private:
-	/* The request-handler for sending a path and receiving a result */
-	static int pathReqHandler(pid_t pid,OpenFile *fsFile,const char *path1,const char *path2,
-		uint arg1,uint cmd);
 };

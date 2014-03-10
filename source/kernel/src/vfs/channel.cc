@@ -32,6 +32,7 @@
 #include <sys/spinlock.h>
 #include <sys/log.h>
 #include <esc/messages.h>
+#include <ipc/ipcbuf.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -89,16 +90,13 @@ void VFSChannel::discardMsgs() {
 }
 
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res = -ENOENT;
-	sMsg msg;
 	OpenFile *clifile;
 	Proc *p,*pp;
 	pid_t ppid;
 	Thread *t = Thread::getRunning();
-	size_t pathLen = 0;
-
-	if(path && (pathLen = strlen(path)) > MAX_MSGSTR_LEN)
-		return -ENAMETOOLONG;
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
@@ -122,33 +120,39 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	if(res < 0)
 		goto error;
 
-	/* send msg to driver */
-	msg.str.arg1 = flags;
 	p = Proc::getByPid(pid);
-	if(p) {
-		msg.str.arg2 = p->getEUid();
-		msg.str.arg3 = p->getEGid();
-		msg.str.arg4 = p->getPid();
-	}
+	assert(p != NULL);
+
+	/* send msg to driver */
+	ib << flags;
+	ib << p->getEUid() << p->getEGid() << p->getPid();
 	if(path)
-		memcpy(msg.str.s1,path,pathLen + 1);
-	res = send(pid,0,msgid,&msg,sizeof(msg.str),NULL,0);
+		ib << ipc::CString(path);
+	if(ib.error()) {
+		res = -EINVAL;
+		goto error;
+	}
+	res = send(pid,0,msgid,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		goto error;
 
 	/* receive response */
+	ib.reset();
 	t->addResource();
 	do
-		res = receive(pid,0,NULL,&msg,sizeof(msg),true,false);
+		res = receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
 		goto error;
-	if((long)msg.args.arg1 < 0) {
-		res = msg.args.arg1;
+
+	inode_t ino;
+	ib >> ino;
+	if(ib.error())
+		ino = -EINVAL;
+	if(ino < 0)
 		goto error;
-	}
-	return msg.args.arg1;
+	return ino;
 
 error:
 	/* the parent process might be dead now (in this case he would have already closed the file) */
@@ -195,24 +199,28 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 }
 
 int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
 	/* send msg to fs */
 	ssize_t res = send(pid,0,MSG_FS_ISTAT,NULL,0,NULL,0);
 	if(res < 0)
 		return res;
 
 	/* receive response */
-	sDataMsg msg;
 	do
-		res = receive(pid,0,NULL,&msg,sizeof(msg),true,false);
+		res = receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
 	while(res == -EINTR);
 	if(res < 0)
 		return res;
-	res = msg.arg1;
 
-	/* copy file-info */
-	if(res == 0)
-		memcpy(info,msg.d,sizeof(sFileInfo));
-	return res;
+	int err;
+	ib >> err >> *info;
+	if(err < 0)
+		return err;
+	if(ib.error())
+		return -EINVAL;
+	return 0;
 }
 
 static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,size_t bufsize) {
@@ -222,8 +230,9 @@ static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,siz
 }
 
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
+	char ibuffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
-	sArgsMsg msg;
 
 	if((res = isSupported(DEV_READ)) < 0)
 		return res;
@@ -242,19 +251,18 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	/* send msg to driver */
 	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
-	msg.arg1 = offset;
-	msg.arg2 = count;
-	msg.arg3 = useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1;
-	res = file->sendMsg(pid,MSG_DEV_READ,&msg,sizeof(msg),NULL,0);
+	ib << offset << count << (useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1);
+	res = file->sendMsg(pid,MSG_DEV_READ,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
 	/* read response and ensure that we don't get killed until we've received both messages
 	 * (otherwise the channel might get in an inconsistent state) */
 	t->addResource();
+	ib.reset();
 	do {
 		msgid_t mid;
-		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
 		vassert(res < 0 || mid == MSG_DEV_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
 	}
@@ -264,11 +272,13 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		return res;
 
 	/* handle response */
-	if((long)msg.arg1 <= 0)
-		return msg.arg1;
+	ib >> res;
+	if(res < 0)
+		return res;
+	if(ib.error())
+		return -EINVAL;
 
-	res = msg.arg1;
-	if(!useshm) {
+	if(!useshm && res > 0) {
 		/* read data */
 		t->addResource();
 		do
@@ -280,8 +290,9 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 }
 
 ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
+	char ibuffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
-	sArgsMsg msg;
 	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 
@@ -289,18 +300,17 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 		return res;
 
 	/* send msg and data to driver */
-	msg.arg1 = offset;
-	msg.arg2 = count;
-	msg.arg3 = useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1;
-	res = file->sendMsg(pid,MSG_DEV_WRITE,&msg,sizeof(msg),useshm ? NULL : buffer,count);
+	ib << offset << count << (useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1);
+	res = file->sendMsg(pid,MSG_DEV_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
 
 	/* read response */
+	ib.reset();
 	t->addResource();
 	do {
 		msgid_t mid;
-		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
 		vassert(res < 0 || mid == MSG_DEV_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
 	}
@@ -308,12 +318,15 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	t->remResource();
 	if(res < 0)
 		return res;
-	return msg.arg1;
+
+	ib >> res;
+	return ib.error() ? -EINVAL : res;
 }
 
 int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
+	char ibuffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
-	sStrMsg msg;
 	Thread *t = Thread::getRunning();
 
 	if(shmem != NULL)
@@ -322,17 +335,19 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* send msg to driver */
-	msg.arg1 = size;
-	strnzcpy(msg.s1,path,sizeof(msg.s1));
-	res = file->sendMsg(pid,MSG_DEV_SHFILE,&msg,sizeof(msg),NULL,0);
+	ib << size << ipc::CString(path);
+	if(ib.error())
+		return -EINVAL;
+	res = file->sendMsg(pid,MSG_DEV_SHFILE,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
 	/* read response */
+	ib.reset();
 	t->addResource();
 	do {
 		msgid_t mid;
-		res = file->receiveMsg(pid,&mid,&msg,sizeof(msg),true);
+		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
 		vassert(res < 0 || mid == MSG_DEV_SHFILE_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
 	}
@@ -340,11 +355,16 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	t->remResource();
 	if(res < 0)
 		return res;
-	if((int)msg.arg1 < 0)
-		return msg.arg1;
+
+	/* handle response */
+	ib >> res;
+	if(res < 0)
+		return res;
+	if(ib.error())
+		return -EINVAL;
 	shmem = cliaddr;
 	shmemSize = size;
-	return msg.arg1;
+	return res;
 }
 
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,

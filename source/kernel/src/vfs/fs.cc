@@ -32,102 +32,100 @@
 #include <sys/spinlock.h>
 #include <sys/cppsupport.h>
 #include <sys/config.h>
+#include <ipc/ipcbuf.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
 #include <errno.h>
 
-int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,USER sFileInfo *info) {
-	ssize_t res = -ENOMEM;
-	size_t pathLen = 0;
-	sMsg msg;
-
-	pathLen = strlen(path);
-	if(pathLen > MAX_MSGSTR_LEN)
-		return -ENAMETOOLONG;
-
-	/* send msg to fs */
-	const Proc *p = Proc::getRef(pid);
-	if(p) {
-		msg.str.arg1 = p->getEUid();
-		msg.str.arg2 = p->getEGid();
-		msg.str.arg3 = p->getPid();
-		Proc::relRef(p);
-	}
-	memcpy(msg.str.s1,path,pathLen + 1);
-	res = fsFile->sendMsg(pid,MSG_FS_STAT,&msg,sizeof(msg.str),NULL,0);
-	if(res < 0)
-		return res;
-
-	/* receive response */
-	do
-		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg.data),true);
-	while(res == -EINTR);
-	if(res < 0)
-		return res;
-	res = msg.data.arg1;
-
-	/* copy file-info */
-	if(res == 0)
-		memcpy(info,msg.data.d,sizeof(sFileInfo));
-	return res;
-}
-
-int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
-	return pathReqHandler(pid,fsFile,path,NULL,mode,MSG_FS_CHMOD);
-}
-
-int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid) {
-	/* TODO better solution? */
-	return pathReqHandler(pid,fsFile,path,NULL,(uid << 16) | (gid & 0xFFFF),MSG_FS_CHOWN);
-}
-
-int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
-	return pathReqHandler(pid,fsFile,oldPath,newPath,0,MSG_FS_LINK);
-}
-
-int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
-	return pathReqHandler(pid,fsFile,path,NULL,0,MSG_FS_UNLINK);
-}
-
-int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
-	return pathReqHandler(pid,fsFile,path,NULL,0,MSG_FS_MKDIR);
-}
-
-int VFSFS::rmdir(pid_t pid,OpenFile *fsFile,const char *path) {
-	return pathReqHandler(pid,fsFile,path,NULL,0,MSG_FS_RMDIR);
-}
-
-int VFSFS::pathReqHandler(pid_t pid,OpenFile *fsFile,const char *path1,const char *path2,uint arg1,uint cmd) {
-	int res = -ENOMEM;
-	sStrMsg msg;
-
-	if(strlen(path1) > MAX_MSGSTR_LEN)
-		return -ENAMETOOLONG;
-	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
-		return -ENAMETOOLONG;
+static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,ipc::IPCBuf &ib) {
+	ssize_t res;
+	if(ib.error())
+		return -EINVAL;
 
 	/* send msg */
-	strcpy(msg.s1,path1);
-	if(path2)
-		strcpy(msg.s2,path2);
-	msg.arg1 = arg1;
-	const Proc *p = Proc::getRef(pid);
-	if(p) {
-		msg.arg2 = p->getEUid();
-		msg.arg3 = p->getEGid();
-		msg.arg4 = p->getPid();
-		Proc::relRef(p);
-	}
-	res = fsFile->sendMsg(pid,cmd,&msg,sizeof(msg),NULL,0);
+	res = fsFile->sendMsg(pid,cmd,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
 	/* read response */
+	ib.reset();
 	do
-		res = fsFile->receiveMsg(pid,NULL,&msg,sizeof(msg),true);
+		res = fsFile->receiveMsg(pid,NULL,ib.buffer(),ib.max(),true);
 	while(res == -EINTR);
 	if(res < 0)
 		return res;
-	return msg.arg1;
+
+	int err;
+	ib >> err;
+	return ib.error() ? -EINVAL : err;
+}
+
+int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,USER sFileInfo *info) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+
+	ssize_t res = communicate(pid,fsFile,MSG_FS_STAT,ib);
+	if(res < 0)
+		return res;
+
+	ib >> *info;
+	return 0;
+}
+
+int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path) << mode;
+	return communicate(pid,fsFile,MSG_FS_CHMOD,ib);
+}
+
+int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path) << uid << gid;
+	return communicate(pid,fsFile,MSG_FS_CHOWN,ib);
+}
+
+int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(oldPath) << ipc::CString(newPath);
+	return communicate(pid,fsFile,MSG_FS_LINK,ib);
+}
+
+int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	return communicate(pid,fsFile,MSG_FS_UNLINK,ib);
+}
+
+int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	return communicate(pid,fsFile,MSG_FS_MKDIR,ib);
+}
+
+int VFSFS::rmdir(pid_t pid,OpenFile *fsFile,const char *path) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	return communicate(pid,fsFile,MSG_FS_RMDIR,ib);
 }

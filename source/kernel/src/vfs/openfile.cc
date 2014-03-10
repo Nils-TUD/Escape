@@ -26,6 +26,7 @@
 #include <sys/vfs/device.h>
 #include <sys/vfs/vfs.h>
 #include <sys/ostream.h>
+#include <ipc/ipcbuf.h>
 #include <esc/messages.h>
 #include <errno.h>
 
@@ -120,7 +121,8 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);
 	else {
-		sDataMsg msg;
+		char buffer[IPC_DEF_SIZE];
+		ipc::IPCBuf ib(buffer,sizeof(buffer));
 		Thread *t = Thread::getRunning();
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 
@@ -132,16 +134,15 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 		/* receive response */
 		t->addResource();
 		do
-			res = chan->receive(pid,0,NULL,&msg,sizeof(msg),true,false);
+			res = chan->receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
 		while(res == -EINTR);
 		t->remResource();
 		if(res < 0)
 			return res;
-		res = msg.arg1;
 
-		/* copy file-info */
-		if(res == 0)
-			memcpy(info,msg.d,sizeof(sFileInfo));
+		ib >> res >> *info;
+		if(ib.error())
+			res = -EINVAL;
 		/* set device id */
 		info->device = chan->getParent()->getNo();
 	}
@@ -276,10 +277,12 @@ int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
 }
 
 int OpenFile::syncfs(pid_t pid) {
+	char buffer[IPC_DEF_SIZE];
+	ipc::IPCBuf buf(buffer,sizeof(buffer));
+
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))
 		return -EPERM;
 
-	sArgsMsg msg;
 	Thread *t = Thread::getRunning();
 	VFSChannel *chan = static_cast<VFSChannel*>(node);
 	ssize_t res = chan->send(pid,0,MSG_FS_SYNCFS,NULL,0,NULL,0);
@@ -289,12 +292,14 @@ int OpenFile::syncfs(pid_t pid) {
 	/* read response */
 	t->addResource();
 	do
-		res = chan->receive(pid,0,NULL,&msg,sizeof(msg),true,false);
+		res = chan->receive(pid,0,NULL,buf.buffer(),buf.max(),true,false);
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
 		return res;
-	return msg.arg1;
+
+	buf >> res;
+	return buf.error() ? -EINVAL : res;
 }
 
 bool OpenFile::close(pid_t pid) {

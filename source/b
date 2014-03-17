@@ -239,8 +239,8 @@ case "$cmd" in
 		$crossdir/bin/$cross-readelf -aW $build/bin/$binary | c++filt | less
 		;;
 	constr=*)
-    	./tools/listconstr.sh $crossdir $cross $build/bin/$binary
-        ;;
+		./tools/listconstr.sh $crossdir $cross $build/bin/$binary
+		;;
 	nm=*)
 		$crossdir/bin/$cross-nm -SC $build/bin/$binary | sort | less
 		;;

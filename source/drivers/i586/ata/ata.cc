@@ -162,7 +162,7 @@ static bool ata_setupCommand(sATADevice *device,uint64_t lba,size_t secCount,uin
 			return false;
 		}
 		if(secCount & 0xFF00) {
-			ATA_LOG("Trying to read %u sectors with LBA28",secCount);
+			ATA_LOG("Trying to read %zu sectors with LBA28",secCount);
 			return false;
 		}
 

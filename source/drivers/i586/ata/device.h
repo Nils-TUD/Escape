@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/irq.h>
 #include "partition.h"
 
 #define OP_READ						0
@@ -313,7 +314,7 @@ struct sATAController {
 	uint16_t portBase;
 	/* I/O-ports for bus-mastering */
 	uint16_t bmrBase;
-	int irq;
+	IRQ irq;
 	int irqsem;
 	sPRD *dma_prdt_phys;
 	sPRD *dma_prdt_virt;

@@ -27,6 +27,8 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/mem.h>
+#include <ipc/clientdevice.h>
+#include <ipc/ipcstream.h>
 #include <signal.h>
 #include <errno.h>
 #include <stdio.h>
@@ -38,15 +40,12 @@
 #include "device.h"
 #include "partition.h"
 
+using namespace ipc;
+
 #define MAX_RW_SIZE		4096
 #define RETRY_COUNT		3
-#define MAX_CLIENT_FD	256
 
-typedef struct {
-	int fd;
-	uint device;
-	uint partition;
-} sDrive;
+class ATAPartitionDevice;
 
 static ulong handleRead(sATADevice *device,sPartition *part,uint16_t *buf,uint offset,uint count);
 static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint16_t *buf,uint offset,uint count);
@@ -54,96 +53,87 @@ static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
 static size_t drvCount = 0;
-static sDrive drives[DEVICE_COUNT * PARTITION_COUNT];
+static ATAPartitionDevice *devs[DEVICE_COUNT * PARTITION_COUNT];
 /* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
  * may not have more memory and can't do anything about it */
 static uint16_t buffer[MAX_RW_SIZE / sizeof(uint16_t)];
-static char *shbufs[MAX_CLIENT_FD];
+
+class ATAPartitionDevice : public ClientDevice<> {
+public:
+	explicit ATAPartitionDevice(uint dev,uint part,const char *name,mode_t mode)
+		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE),
+		  _ataDev(ctrl_getDevice(dev)),
+		  _part(_ataDev ? _ataDev->partTable + part : NULL) {
+		set(MSG_DEV_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
+		set(MSG_DEV_READ,std::make_memfun(this,&ATAPartitionDevice::read));
+		set(MSG_DISK_GETSIZE,std::make_memfun(this,&ATAPartitionDevice::getsize));
+
+		if(_ataDev == NULL || _part == NULL || _ataDev->present == 0 || _part->present == 0)
+			throw IPCException("Invalid device/partition");
+	}
+
+	void shfile(IPCStream &is) {
+		CStringBuf<MAX_PATH_LEN> path;
+		size_t size;
+
+		Client *c = get(is.fd());
+		is >> size >> path;
+		assert(c->shm() == NULL && !is.error());
+
+		/* ensure that we don't cause pagefaults when accessing this memory. therefore,
+		 * we populate it immediately and lock it into memory. additionally, we specify
+		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
+		 * to swap (which would cause a deadlock, because we're doing that). */
+		c->shm(static_cast<char*>(joinbuf(path.str(),size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
+
+		is << (c->shm() != NULL ? 0 : -errno) << Send(MSG_DEV_SHFILE_RESP);
+	}
+
+	void read(IPCStream &is) {
+		size_t offset,count;
+		ssize_t shmemoff;
+		is >> offset >> count >> shmemoff;
+		assert(!is.error());
+
+		uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (shmemoff >> 1);
+		size_t res = handleRead(_ataDev,_part,buf,offset,count);
+
+		is << res << Send(MSG_DEV_READ_RESP);
+		if(shmemoff == -1 && res > 0)
+			is << SendData(MSG_DEV_READ_RESP,buf,res);
+	}
+
+	void write(IPCStream &is) {
+		size_t offset,count;
+		ssize_t shmemoff;
+		is >> offset >> count >> shmemoff;
+		assert(!is.error());
+
+		uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (shmemoff >> 1);
+		size_t res = handleWrite(_ataDev,_part,is.fd(),buf,offset,count);
+
+		is << res << Send(MSG_DEV_WRITE_RESP);
+	}
+
+	void getsize(IPCStream &is) {
+		is << (_part->size * _ataDev->secSize) << Send(MSG_DEF_RESPONSE);
+	}
+
+private:
+	sATADevice *_ataDev;
+	sPartition *_part;
+};
 
 static int drive_thread(void *arg) {
-	sMsg msg;
-	sDrive *dev = (sDrive*)arg;
-	sATADevice *ataDev = ctrl_getDevice(dev->device);
-	sPartition *part = ataDev ? ataDev->partTable + dev->partition : NULL;
-	if(ataDev == NULL || part == NULL || ataDev->present == 0 || part->present == 0)
-		error("Invalid device/partition");
-
-	while(1) {
-		msgid_t mid;
-		int fd = getwork(dev->fd,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get client");
-		}
-		else {
-			ATA_PR2("Got message %d",mid);
-			switch(mid) {
-				case MSG_DEV_OPEN: {
-					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
-					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DEV_SHFILE: {
-					size_t size = msg.args.arg1;
-					char *path = msg.str.s1;
-					assert(shbufs[fd] == NULL);
-					/* ensure that we don't cause pagefaults when accessing this memory. therefore,
-					 * we populate it immediately and lock it into memory. additionally, we specify
-					 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
-					 * to swap (which would cause a deadlock, because we're doing that). */
-					shbufs[fd] = joinbuf(path,size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
-					msg.args.arg1 = shbufs[fd] != NULL ? 0 : -errno;
-					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DEV_READ: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					ssize_t shmemoff = msg.args.arg3;
-					uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)shbufs[fd] + (shmemoff >> 1);
-					msg.args.arg1 = handleRead(ataDev,part,buf,offset,count);
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(shmemoff == -1 && msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buf,count);
-				}
-				break;
-
-				case MSG_DEV_WRITE: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					ssize_t shmemoff = msg.args.arg3;
-					uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)shbufs[fd] + (shmemoff >> 1);
-					msg.args.arg1 = handleWrite(ataDev,part,fd,buf,offset,count);
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DISK_GETSIZE: {
-					msg.args.arg1 = part->size * ataDev->secSize;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DEV_CLOSE: {
-					if(shbufs[fd]) {
-						munmap(shbufs[fd]);
-						shbufs[fd] = NULL;
-					}
-					close(fd);
-				}
-				break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-			ATA_PR2("Done\n");
-		}
+	try {
+		ATAPartitionDevice *dev = reinterpret_cast<ATAPartitionDevice*>(arg);
+		dev->loop();
 	}
+	catch(const IPCException &e) {
+		printe("%s",e.what());
+	}
+	return 0;
 }
 
 int main(int argc,char **argv) {
@@ -173,7 +163,7 @@ int main(int argc,char **argv) {
 
 	/* start drive threads */
 	for(i = 1; i < drvCount; i++) {
-		if(startthread(drive_thread, drives + i) < 0)
+		if(startthread(drive_thread, devs[i]) < 0)
 			error("Unable to start thread");
 	}
 
@@ -181,7 +171,7 @@ int main(int argc,char **argv) {
 	if(mlockall() < 0)
 		error("Unable to mlock regions");
 
-	drive_thread(drives + 0);
+	drive_thread(devs[0]);
 
 	/* clean up */
 	relports(ATA_REG_BASE_PRIMARY,8);
@@ -189,7 +179,7 @@ int main(int argc,char **argv) {
 	relport(ATA_REG_BASE_PRIMARY + ATA_REG_CONTROL);
 	relport(ATA_REG_BASE_SECONDARY + ATA_REG_CONTROL);
 	for(i = 0; i < drvCount; i++)
-		close(drives[i].fd);
+		delete devs[i];
 	return EXIT_SUCCESS;
 }
 
@@ -215,7 +205,7 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 			return 0;
 		}
 	}
-	ATA_LOG("Invalid read-request: offset=%u, count=%u, partSize=%u (device %d)",
+	ATA_LOG("Invalid read-request: offset=%u, count=%u, partSize=%zu (device %d)",
 			offset,count,part->size * ataDev->secSize,ataDev->id);
 	return 0;
 }
@@ -245,7 +235,7 @@ static ulong handleWrite(sATADevice *ataDev,sPartition *part,int fd,uint16_t *bu
 			return 0;
 		}
 	}
-	ATA_LOG("Invalid write-request: offset=%u, count=%u, partSize=%u (device %d)",
+	ATA_LOG("Invalid write-request: offset=%u, count=%u, partSize=%zu (device %d)",
 			offset,count,part->size * ataDev->secSize,ataDev->id);
 	return 0;
 }
@@ -254,8 +244,7 @@ static void initDrives(void) {
 	uint deviceIds[] = {DEVICE_PRIM_MASTER,DEVICE_PRIM_SLAVE,DEVICE_SEC_MASTER,DEVICE_SEC_SLAVE};
 	char name[SSTRLEN("hda1") + 1];
 	char path[MAX_PATH_LEN] = "/dev/";
-	size_t i,p;
-	for(i = 0; i < DEVICE_COUNT; i++) {
+	for(size_t i = 0; i < DEVICE_COUNT; i++) {
 		sATADevice *ataDev = ctrl_getDevice(deviceIds[i]);
 		if(ataDev->present == 0)
 			continue;
@@ -268,31 +257,29 @@ static void initDrives(void) {
 		createVFSEntry(ataDev,NULL,name);
 
 		/* register device for every partition */
-		for(p = 0; p < PARTITION_COUNT; p++) {
+		for(size_t p = 0; p < PARTITION_COUNT; p++) {
 			if(ataDev->partTable[p].present) {
 				if(!ataDev->info.general.isATAPI)
-					snprintf(name,sizeof(name),"hd%c%d",'a' + ataDev->id,p + 1);
+					snprintf(name,sizeof(name),"hd%c%zu",'a' + ataDev->id,p + 1);
 				else
-					snprintf(name,sizeof(name),"cd%c%d",'a' + ataDev->id,p + 1);
+					snprintf(name,sizeof(name),"cd%c%zu",'a' + ataDev->id,p + 1);
 				strcpy(path + SSTRLEN("/dev/"),name);
-				int fd = createdev(path,0770,DEV_TYPE_BLOCK,
-					DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE);
-				if(fd < 0) {
-					ATA_LOG("Drive %d, Partition %d: Unable to register device '%s'",
-							ataDev->id,p + 1,name);
-				}
-				else {
-					ATA_LOG("Registered device '%s' (device %d, partition %d)",
+
+				try {
+					devs[drvCount] = new ATAPartitionDevice(ataDev->id,p,path,0770);
+					ATA_LOG("Registered device '%s' (device %d, partition %zu)",
 							name,ataDev->id,p + 1);
+
 					/* set group */
 					strcpy(path + SSTRLEN("/dev/"),name);
 					if(chown(path,-1,GROUP_STORAGE) < 0)
 						ATA_LOG("Unable to set group for '%s'",path);
 					createVFSEntry(ataDev,ataDev->partTable + p,name);
-					drives[drvCount].device = ataDev->id;
-					drives[drvCount].partition = p;
-					drives[drvCount].fd = fd;
 					drvCount++;
+				}
+				catch(const IPCException &) {
+					ATA_LOG("Drive %d, Partition %zu: Unable to register device '%s'",
+							ataDev->id,p + 1,name);
 				}
 			}
 		}
@@ -341,8 +328,8 @@ static void createVFSEntry(sATADevice *ataDev,sPartition *part,const char *name)
 		fprintf(f,"%-15s%d\n","DMA:",ataDev->info.capabilities.DMA);
 	}
 	else {
-		fprintf(f,"%-15s%d\n","Start:",part->start);
-		fprintf(f,"%-15s%d\n","Sectors:",part->size);
+		fprintf(f,"%-15s%zu\n","Start:",part->start);
+		fprintf(f,"%-15s%zu\n","Sectors:",part->size);
 	}
 
 	fclose(f);

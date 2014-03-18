@@ -27,7 +27,7 @@
 #include <esc/thread.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
-#include <keyb/keybdev.h>
+#include <ipc/clientdevice.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -75,6 +75,8 @@
 static int kbIrqThread(void *arg);
 static void kb_waitOutBuf(void);
 static void kb_waitInBuf(void);
+
+static ipc::ClientDevice<> *dev = NULL;
 
 int main(void) {
 	uint8_t kbdata;
@@ -170,7 +172,13 @@ int main(void) {
 	if(startthread(kbIrqThread,NULL) < 0)
 		error("Unable to start IRQ-thread");
 
-	keyb_driverLoop();
+	try {
+		dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+		dev->loop();
+	}
+	catch(const ipc::IPCException &e) {
+		printe("%s",e.what());
+	}
 
 	/* clean up */
 	relport(IOPORT_PIC);
@@ -180,6 +188,7 @@ int main(void) {
 }
 
 static int kbIrqThread(A_UNUSED void *arg) {
+	char buffer[IPC_DEF_SIZE];
 	int sem = semcrtirq(IRQ_SEM_KEYB);
 	if(sem < 0)
 		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);
@@ -191,8 +200,11 @@ static int kbIrqThread(A_UNUSED void *arg) {
 
 		uint8_t sc = inbyte(IOPORT_KB_DATA);
 		sKbData data;
-		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc))
-			keyb_broadcast(&data);
+		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc)) {
+			ipc::IPCBuf ib(buffer,sizeof(buffer));
+			ib << data;
+			dev->broadcast(MSG_KB_EVENT,ib);
+		}
 	}
 	return 0;
 }

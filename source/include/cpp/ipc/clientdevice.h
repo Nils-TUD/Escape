@@ -50,11 +50,16 @@ class ClientDevice : public Device {
 
 public:
 	explicit ClientDevice(const char *name,mode_t mode,uint type,uint ops)
-		: Device(name,mode,type,ops | DEV_OPEN), _clients() {
+		: Device(name,mode,type,ops | DEV_OPEN), _clients(), _sem() {
 		set(MSG_DEV_OPEN,std::make_memfun(this,&ClientDevice::open));
 		if(ops & DEV_SHFILE)
 			set(MSG_DEV_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
 		set(MSG_DEV_CLOSE,std::make_memfun(this,&ClientDevice::close));
+		if(usemcrt(&_sem,1) < 0)
+			throw IPCException("Unable to create user-semaphore");
+	}
+	virtual ~ClientDevice() {
+		usemdestr(&_sem);
 	}
 
 	C *get(int fd) {
@@ -67,11 +72,25 @@ public:
 		assert(it != _clients.end());
 		return it->second;
 	}
+
+	void broadcast(msgid_t mid,IPCBuf &ib) {
+		usemdown(&_sem);
+		for(auto it = _clients.begin(); it != _clients.end(); ++it)
+			send(it->first,mid,ib.buffer(),ib.pos());
+		usemup(&_sem);
+	}
+
 	void add(int fd,C *c) {
+		usemdown(&_sem);
 		_clients[fd] = c;
+		usemup(&_sem);
 	}
 	void remove(int fd) {
+		C *c = get(fd);
+		usemdown(&_sem);
 		_clients.erase(fd);
+		delete c;
+		usemup(&_sem);
 	}
 
 protected:
@@ -95,14 +114,13 @@ protected:
 	}
 
 	void close(IPCStream &is) {
-		C *c = get(is.fd());
-		_clients.erase(is.fd());
-		delete c;
+		remove(is.fd());
 		Device::close(is);
 	}
 
 private:
 	map_type _clients;
+	tUserSem _sem;
 };
 
 }

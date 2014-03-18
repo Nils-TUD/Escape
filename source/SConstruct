@@ -184,7 +184,7 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	SetLinkAddr(myenv, static)
 	gcclibs = EscapeGCCLibs(env, static)
-	libs = gcclibs + ['stdc++', 'supc++'] + gcclibs + LIBS
+	libs = gcclibs + ['stdc++', 'supc++'] + LIBS + ['stdc++', 'supc++'] + gcclibs
 	prog = myenv.Program(target, source, LIBS = libs)
 	SetProgDeps(myenv, prog, static, LIBS, True)
 	myenv.EscapeMap(target + '.map', prog)

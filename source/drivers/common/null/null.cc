@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <ipc/device.h>
+#include <ipc/proto/device.h>
 #include <stdio.h>
 
 using namespace ipc;
@@ -32,16 +33,16 @@ public:
 	}
 
 	void read(IPCStream &is) {
-		is << static_cast<ssize_t>(0) << Send(MSG_DEV_READ_RESP);
+		is << DevRead::Response(0,NULL);
 	}
 
 	void write(IPCStream &is) {
-		size_t offset,count;
-		/* skip the data-message */
-		is >> offset >> count >> ReceiveData(NULL,0);
+		/* dummy-implementations are ok here; this way we skip the data-message */
+		DevWrite<>::Request r;
+		is >> r;
 
 		/* write response and pretend that we've written everything */
-		is << count << Send(MSG_DEV_WRITE_RESP);
+		is << DevWrite<>::Response(r.count);
 	}
 };
 

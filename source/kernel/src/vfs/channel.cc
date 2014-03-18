@@ -33,6 +33,7 @@
 #include <sys/log.h>
 #include <esc/messages.h>
 #include <ipc/ipcbuf.h>
+#include <ipc/proto/device.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -124,10 +125,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	assert(p != NULL);
 
 	/* send msg to driver */
-	ib << flags;
-	ib << p->getEUid() << p->getEGid() << p->getPid();
-	if(path)
-		ib << ipc::CString(path);
+	ib << ipc::DevOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),ipc::CString(path));
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;
@@ -146,13 +144,13 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	if(res < 0)
 		goto error;
 
-	inode_t ino;
-	ib >> ino;
-	if(ib.error())
-		ino = -EINVAL;
-	if(ino < 0)
-		goto error;
-	return ino;
+	{
+		ipc::DevOpen::Response r;
+		ib >> r;
+		if(r.res < 0)
+			goto error;
+		return r.res;
+	}
 
 error:
 	/* the parent process might be dead now (in this case he would have already closed the file) */
@@ -251,7 +249,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	/* send msg to driver */
 	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
-	ib << offset << count << (useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1);
+	ib << ipc::DevRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
 	res = file->sendMsg(pid,MSG_DEV_READ,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
@@ -272,21 +270,20 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		return res;
 
 	/* handle response */
-	ib >> res;
-	if(res < 0)
-		return res;
-	if(ib.error())
-		return -EINVAL;
+	ipc::DevRead::Response r;
+	ib >> r;
+	if(r.res < 0)
+		return r.res;
 
-	if(!useshm && res > 0) {
+	if(!useshm && r.res > 0) {
 		/* read data */
 		t->addResource();
 		do
-			res = file->receiveMsg(pid,NULL,buffer,count,true);
-		while(res == -EINTR);
+			r.res = file->receiveMsg(pid,NULL,buffer,count,true);
+		while(r.res == -EINTR);
 		t->remResource();
 	}
-	return res;
+	return r.res;
 }
 
 ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
@@ -300,7 +297,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 		return res;
 
 	/* send msg and data to driver */
-	ib << offset << count << (useshm ? (uintptr_t)buffer - (uintptr_t)shmem : -1);
+	ib << ipc::DevWrite<>::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
 	res = file->sendMsg(pid,MSG_DEV_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
@@ -319,8 +316,9 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	if(res < 0)
 		return res;
 
-	ib >> res;
-	return ib.error() ? -EINVAL : res;
+	ipc::DevWrite<>::Response r;
+	ib >> r;
+	return r.res;
 }
 
 int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
@@ -335,7 +333,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* send msg to driver */
-	ib << size << ipc::CString(path);
+	ib << ipc::DevShFile::Request(size,ipc::CString(path));
 	if(ib.error())
 		return -EINVAL;
 	res = file->sendMsg(pid,MSG_DEV_SHFILE,ib.buffer(),ib.pos(),NULL,0);
@@ -357,14 +355,13 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* handle response */
-	ib >> res;
-	if(res < 0)
-		return res;
-	if(ib.error())
-		return -EINVAL;
+	ipc::DevShFile::Response r;
+	ib >> r;
+	if(r.res < 0)
+		return r.res;
 	shmem = cliaddr;
 	shmemSize = size;
-	return res;
+	return 0;
 }
 
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,

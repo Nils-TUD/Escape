@@ -96,9 +96,23 @@ private:
 };
 
 struct CString {
-	explicit CString(const char *str) : _str(str), _len(strlen(str)) {
+	explicit CString() : _str(), _len() {
 	}
-	explicit CString(const char *str,size_t len) : _str(str), _len(len) {
+	explicit CString(const char *s) : _str(const_cast<char*>(s)), _len(strlen(s)) {
+	}
+	explicit CString(const char *s,size_t len) : _str(const_cast<char*>(s)), _len(len) {
+	}
+	explicit CString(char *s,size_t len) : _str(s), _len(len) {
+	}
+
+	char *str() {
+		return _str;
+	}
+	const char *str() const {
+		return _str;
+	}
+	size_t length() const {
+		return _len;
 	}
 
 	friend IPCBuf &operator<<(IPCBuf &is,const CString &s) {
@@ -106,9 +120,17 @@ struct CString {
 		is.put(s._str,s._len);
 		return is;
 	}
+	friend IPCBuf &operator>>(IPCBuf &is,CString &s) {
+		size_t len;
+		is >> len;
+		s._len = MIN(len,s._len - 1);
+		is.fetch(s._str,s._len);
+		s._str[s._len] = '\0';
+		return is;
+	}
 
 private:
-	const char *_str;
+	char *_str;
 	size_t _len;
 };
 

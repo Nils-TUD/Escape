@@ -31,6 +31,9 @@ struct Send;
 struct Receive;
 class IPCStream;
 
+static inline IPCStream &operator<<(IPCStream &is,const CString &str);
+static inline IPCStream &operator>>(IPCStream &is,CString &str);
+
 template<size_t SIZE>
 static inline IPCStream &operator<<(IPCStream &is,const CStringBuf<SIZE> &s);
 template<size_t SIZE>
@@ -39,6 +42,8 @@ static inline IPCStream &operator>>(IPCStream &is,CStringBuf<SIZE> &s);
 class IPCStream {
 	friend struct Send;
 	friend struct Receive;
+	friend IPCStream &operator<<(IPCStream &is,const CString &str);
+	friend IPCStream &operator>>(IPCStream &is,CString &str);
 	template<size_t SIZE>
 	friend IPCStream &operator<<(IPCStream &is,const CStringBuf<SIZE> &s);
 	template<size_t SIZE>
@@ -134,13 +139,26 @@ static inline IPCStream &operator>>(IPCStream &is,std::string &str) {
 	return is;
 }
 
+static inline IPCStream &operator<<(IPCStream &is,const CString &str) {
+	is.startWriting();
+	is._buf << str;
+	return is;
+}
+static inline IPCStream &operator>>(IPCStream &is,CString &str) {
+	is.startReading();
+	is._buf >> str;
+	return is;
+}
+
 template<size_t SIZE>
 static inline IPCStream &operator<<(IPCStream &is,const CStringBuf<SIZE> &s) {
+	is.startWriting();
 	is._buf << s;
 	return is;
 }
 template<size_t SIZE>
 static inline IPCStream &operator>>(IPCStream &is,CStringBuf<SIZE> &s) {
+	is.startReading();
 	is._buf >> s;
 	return is;
 }
@@ -150,9 +168,11 @@ struct Send {
 	}
 
 	void operator()(IPCStream &is) {
-		ssize_t res = ::send(is.fd(), _mid, is._buf.buffer(), is._buf.pos());
+		A_UNUSED ssize_t res = ::send(is.fd(), _mid, is._buf.buffer(), is._buf.pos());
+#ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			throw IPCException("send failed");
+#endif
 		is.reset();
 	}
 
@@ -162,9 +182,11 @@ private:
 
 struct Receive {
 	void operator()(IPCStream &is) {
-		ssize_t res = ::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max());
+		A_UNUSED ssize_t res = ::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max());
+#ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			throw IPCException("send failed");
+#endif
 	}
 };
 
@@ -183,9 +205,11 @@ struct SendData {
 	}
 
 	void operator()(IPCStream &is) {
-		ssize_t res = ::send(is.fd(), _mid, _data, _size);
+		A_UNUSED ssize_t res = ::send(is.fd(), _mid, _data, _size);
+#ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			throw IPCException("send failed");
+#endif
 	}
 
 private:
@@ -199,9 +223,11 @@ struct ReceiveData {
 	}
 
 	void operator()(IPCStream &is) {
-		ssize_t res = ::receive(is.fd(), NULL, _data, _size);
+		A_UNUSED ssize_t res = ::receive(is.fd(), NULL, _data, _size);
+#ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			throw IPCException("receive failed");
+#endif
 	}
 
 private:

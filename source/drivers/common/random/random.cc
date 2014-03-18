@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <ipc/clientdevice.h>
+#include <ipc/proto/device.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -33,26 +34,23 @@ public:
 
 	void read(IPCStream &is) {
 		Client *c = get(is.fd());
-		size_t offset, count;
-		ssize_t shmemoff;
-		is >> offset >> count >> shmemoff;
+		DevRead::Request r;
+		is >> r;
 		assert(!is.error());
 
 		ssize_t res = 0;
-		ushort *data = (shmemoff == -1) ? (ushort*)malloc(count) : (ushort*)(c->shm() + shmemoff);
+		ushort *data = (r.shmemoff == -1) ? (ushort*)malloc(r.count) : (ushort*)(c->shm() + r.shmemoff);
 		if(data) {
 			ushort *d = data;
-			res = count;
-			count /= sizeof(ushort);
-			while(count-- > 0)
+			res = r.count;
+			r.count /= sizeof(ushort);
+			while(r.count-- > 0)
 				*d++ = rand();
 		}
 
-		is << res << Send(MSG_DEV_READ_RESP);
-		if(shmemoff == -1 && res) {
-			is << SendData(MSG_DEV_READ_RESP,data,count);
+		is << DevRead::Response(res,r.shmemoff == -1 && res ? data : NULL);
+		if(r.shmemoff == -1 && res)
 			free(data);
-		}
 	}
 };
 

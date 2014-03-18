@@ -21,6 +21,7 @@
 #include <esc/mem.h>
 #include <usergroup/group.h>
 #include <ipc/clientdevice.h>
+#include <ipc/proto/disk.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -39,23 +40,20 @@ public:
 
 	void read(IPCStream &is) {
 		Client *c = get(is.fd());
-		size_t offset,count,res;
-		ssize_t shmemoff;
-		is >> offset >> count >> shmemoff;
+		DevRead::Request r;
+		is >> r;
 
-		res = 0;
-		if(offset + count <= disksize && offset + count > offset)
-			res = count;
-		if(shmemoff != -1)
-			memcpy(c->shm() + shmemoff,diskaddr + offset,res);
+		ssize_t res = 0;
+		if(r.offset + r.count <= disksize && r.offset + r.count > r.offset)
+			res = r.count;
+		if(r.shmemoff != -1)
+			memcpy(c->shm() + r.shmemoff,diskaddr + r.offset,res);
 
-		is << res << Send(MSG_DEV_READ_RESP);
-		if(shmemoff == -1 && res > 0)
-			is << SendData(MSG_DEV_READ_RESP,diskaddr + offset,res);
+		is << DevRead::Response(res,r.shmemoff == -1 && res > 0 ? diskaddr + r.offset : NULL);
 	}
 
 	void size(IPCStream &is) {
-		is << (disksize + 1) << Send(MSG_DEF_RESPONSE);
+		is << DiskSize::Response(disksize);
 	}
 };
 

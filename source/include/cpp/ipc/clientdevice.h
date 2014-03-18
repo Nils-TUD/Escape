@@ -21,7 +21,9 @@
 
 #include <ipc/device.h>
 #include <ipc/ipcstream.h>
+#include <ipc/proto/device.h>
 #include <esc/mem.h>
+#include <esc/sync.h>
 
 namespace ipc {
 
@@ -97,20 +99,20 @@ protected:
 	void open(IPCStream &is) {
 		add(is.fd(),new C);
 
-		is << 0 << Send(MSG_DEV_OPEN_RESP);
+		is << DevOpen::Response(0);
 	}
 
 	void shfile(IPCStream &is) {
-		CStringBuf<MAX_PATH_LEN> path;
-		size_t size;
+		char path[MAX_PATH_LEN];
+		DevShFile::Request r(path,sizeof(path));
 
 		C *c = get(is.fd());
-		is >> size >> path;
+		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
-		c->shm(static_cast<char*>(joinbuf(path.str(),size,0)));
+		c->shm(static_cast<char*>(joinbuf(r.path.str(),r.size,0)));
 
-		is << (c->shm() != NULL ? 0 : -errno) << Send(MSG_DEV_SHFILE_RESP);
+		is << DevShFile::Response(c->shm() != NULL ? 0 : -errno);
 	}
 
 	void close(IPCStream &is) {

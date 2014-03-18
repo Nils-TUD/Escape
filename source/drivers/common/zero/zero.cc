@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <ipc/clientdevice.h>
 #include <ipc/ipcstream.h>
+#include <ipc/proto/device.h>
 #include <stdlib.h>
 
 using namespace ipc;
@@ -27,6 +28,7 @@ using namespace ipc;
 #define BUF_SIZE		(16 * 1024)
 
 static char zeros[BUF_SIZE];
+
 
 class ZeroDevice : public ClientDevice<> {
 public:
@@ -37,30 +39,26 @@ public:
 
 	void read(IPCStream &is) {
 		Client *c = get(is.fd());
-		void *data = NULL;
-		size_t offset, count;
-		ssize_t shmemoff;
-		is >> offset >> count >> shmemoff;
+		DevRead::Request r;
+		is >> r;
 		assert(!is.error());
 
-		if(shmemoff != -1) {
+		void *data = NULL;
+		if(r.shmemoff != -1) {
 			assert(c->shm() != NULL);
-			memset(c->shm() + shmemoff,0,count);
+			memset(c->shm() + r.shmemoff,0,r.count);
 		}
 		else {
-			data = count <= BUF_SIZE ? zeros : calloc(count,1);
+			data = r.count <= BUF_SIZE ? zeros : calloc(r.count,1);
 			if(!data) {
 				printe("Unable to alloc mem");
-				count = 0;
+				r.count = 0;
 			}
 		}
 
-		is << count << Send(MSG_DEV_READ_RESP);
-		if(shmemoff == -1 && count) {
-			is << SendData(MSG_DEV_READ_RESP,data,count);
-			if(count > BUF_SIZE)
-				free(data);
-		}
+		is << DevRead::Response(r.count,r.shmemoff != -1 ? data : NULL);
+		if(r.shmemoff == -1 && r.count > BUF_SIZE)
+			free(data);
 	}
 };
 

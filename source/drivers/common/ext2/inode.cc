@@ -383,7 +383,7 @@ void ext2_inode_print(sExt2Inode *inode) {
 	printf("\tflags=0x%08x\n",le32tocpu(inode->flags));
 	printf("\tosd1=0x%08x\n",le32tocpu(inode->osd1));
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
-		printf("\tblock%d=%d\n",i,le32tocpu(inode->dBlocks[i]));
+		printf("\tblock%zu=%d\n",i,le32tocpu(inode->dBlocks[i]));
 	printf("\tsinglyIBlock=%d\n",le32tocpu(inode->singlyIBlock));
 	printf("\tdoublyIBlock=%d\n",le32tocpu(inode->doublyIBlock));
 	printf("\ttriplyIBlock=%d\n",le32tocpu(inode->triplyIBlock));

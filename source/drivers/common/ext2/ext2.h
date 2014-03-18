@@ -23,7 +23,6 @@
 #include <esc/sllist.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
-#include <fs/threadpool.h>
 #include <fs/blockcache.h>
 #include <fs/fsdev.h>
 

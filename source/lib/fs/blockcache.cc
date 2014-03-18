@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/thread.h>
 #include <fs/blockcache.h>
-#include <fs/threadpool.h>
+#include <fs/fsdev.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -59,7 +59,7 @@ void bcache_init(sBlockCache *c,int fd) {
 			error("Unable to create block cache");
 		printe("Unable to share buffer with disk driver");
 	}
-	c->blockCache = malloc(c->blockCacheSize * sizeof(sCBlock));
+	c->blockCache = static_cast<sCBlock*>(malloc(c->blockCacheSize * sizeof(sCBlock)));
 	assert(c->blockCache != NULL);
 	bentry = c->blockCache;
 	for(i = 0; i < c->blockCacheSize; i++) {
@@ -267,11 +267,11 @@ void bcache_printStats(FILE *f,sBlockCache *c) {
 			dirty++;
 		bentry = bentry->next;
 	}
-	fprintf(f,"\t\tTotal blocks: %u\n",c->blockCacheSize);
-	fprintf(f,"\t\tUsed blocks: %u\n",used);
-	fprintf(f,"\t\tDirty blocks: %u\n",dirty);
-	fprintf(f,"\t\tHits: %u\n",c->hits);
-	fprintf(f,"\t\tMisses: %u\n",c->misses);
+	fprintf(f,"\t\tTotal blocks: %zu\n",c->blockCacheSize);
+	fprintf(f,"\t\tUsed blocks: %zu\n",used);
+	fprintf(f,"\t\tDirty blocks: %zu\n",dirty);
+	fprintf(f,"\t\tHits: %zu\n",c->hits);
+	fprintf(f,"\t\tMisses: %zu\n",c->misses);
 	if(c->hits == 0)
 		hitrate = 0;
 	else
@@ -289,7 +289,7 @@ void bcache_print(sBlockCache *c) {
 	while(block != NULL) {
 		if(++i % 8 == 0)
 			printf("\n\t");
-		printf("%d ",block->blockNo);
+		printf("%zu ",block->blockNo);
 		block = block->next;
 	}
 	printf("\n");

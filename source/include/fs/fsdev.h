@@ -21,7 +21,12 @@
 
 #include <esc/common.h>
 #include <esc/fsinterface.h>
+#include <ipc/clientdevice.h>
 #include <stdio.h>
+
+#define tpool_lock(...)		0
+#define tpool_unlock(...)	0
+#define REQ_THREAD_COUNT	0
 
 typedef struct {
 	uid_t uid;
@@ -70,4 +75,45 @@ typedef struct {
 	fFSSync sync;			/* optional */
 } sFileSystem;
 
-int fs_driverLoop(const char *name,const char *diskDev,const char *fsDev,sFileSystem *fs);
+struct OpenFile : public ipc::Client {
+public:
+	explicit OpenFile() : Client(), ino() {
+	}
+	explicit OpenFile(inode_t _ino) : Client(), ino(_ino) {
+	}
+
+	inode_t ino;
+};
+
+class FSDevice : public ipc::ClientDevice<OpenFile> {
+public:
+	static FSDevice *getInstance() {
+		return _inst;
+	}
+
+	explicit FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const char *fsDev);
+	virtual ~FSDevice();
+
+	void loop();
+
+	void devopen(ipc::IPCStream &is);
+	void devclose(ipc::IPCStream &is);
+	void open(ipc::IPCStream &is);
+	void read(ipc::IPCStream &is);
+	void write(ipc::IPCStream &is);
+	void close(ipc::IPCStream &is);
+	void stat(ipc::IPCStream &is);
+	void istat(ipc::IPCStream &is);
+	void syncfs(ipc::IPCStream &is);
+	void link(ipc::IPCStream &is);
+	void unlink(ipc::IPCStream &is);
+	void mkdir(ipc::IPCStream &is);
+	void rmdir(ipc::IPCStream &is);
+	void chmod(ipc::IPCStream &is);
+	void chown(ipc::IPCStream &is);
+
+private:
+	sFileSystem *_fs;
+	size_t _clients;
+	static FSDevice *_inst;
+};

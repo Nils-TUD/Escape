@@ -58,7 +58,15 @@ int main(int argc,char *argv[]) {
 	if(!dev)
 		dev = argv[2] - 1;
 	snprintf(fspath,sizeof(fspath),"/dev/iso9660-%s",dev + 1);
-	return fs_driverLoop("iso9660",argv[2],fspath,iso_getFS());
+
+	try {
+		FSDevice fsdev(iso_getFS(),"iso9660",argv[2],fspath);
+		fsdev.loop();
+	}
+	catch(const ipc::IPCException &e) {
+		printe("%s",e.what());
+	}
+	return 0;
 }
 
 static void *iso_init(const char *device,char **usedDev,int *errcode) {
@@ -99,7 +107,7 @@ static void *iso_init(const char *device,char **usedDev,int *errcode) {
 		u.gid = ROOT_GID;
 		u.pid = getpid();
 		for(i = 0; i < 4; i++) {
-			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + i);
+			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + (int)i);
 			if(iso_setup(path,iso) < 0)
 				continue;
 
@@ -125,7 +133,7 @@ static void *iso_init(const char *device,char **usedDev,int *errcode) {
 	}
 
 	/* report used device */
-	*usedDev = malloc(strlen(device) + 1);
+	*usedDev = static_cast<char*>(malloc(strlen(device) + 1));
 	if(!*usedDev) {
 		printe("Not enough mem for device-name");
 		bcache_destroy(&iso->blockCache);
@@ -179,7 +187,7 @@ static void iso_deinit(void *h) {
 }
 
 static sFileSystem *iso_getFS(void) {
-	sFileSystem *fs = malloc(sizeof(sFileSystem));
+	sFileSystem *fs = static_cast<sFileSystem*>(malloc(sizeof(sFileSystem)));
 	if(!fs)
 		return NULL;
 	fs->type = FS_TYPE_ISO9660;
@@ -278,7 +286,7 @@ static void iso_print(FILE *f,void *h) {
 void iso_dbg_printPathTbl(sISO9660 *h) {
 	size_t tblSize = h->primary.data.primary.pathTableSize.littleEndian;
 	size_t secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
-	sISOPathTblEntry *pe = malloc(ROUND_UP(tblSize,ATAPI_SECTOR_SIZE));
+	sISOPathTblEntry *pe = static_cast<sISOPathTblEntry*>(malloc(ROUND_UP(tblSize,ATAPI_SECTOR_SIZE)));
 	sISOPathTblEntry *start = pe;
 	if(iso_rw_readSectors(h,pe,h->primary.data.primary.lPathTblLoc,secCount) != 0) {
 		free(start);

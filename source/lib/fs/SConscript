@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(target = 'fs', source = env.Glob('*.c'))
+env.EscapeLib(target = 'fs', source = env.Glob('*.cc'))

@@ -1,6 +1,6 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg(
-	'sbin', target = 'iso9660', source = env.Glob('*.c'), force_static = True, LIBS = ['fs']
+env.EscapeCXXProg(
+	'sbin', target = 'iso9660', source = env.Glob('*.cc'), force_static = True, LIBS = ['fs']
 )

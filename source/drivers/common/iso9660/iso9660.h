@@ -23,7 +23,6 @@
 #include <esc/fsinterface.h>
 #include <fs/fsdev.h>
 #include <fs/blockcache.h>
-#include <fs/threadpool.h>
 
 #define ATAPI_SECTOR_SIZE			2048
 #define ISO_BLK_SIZE(iso)			((iso)->primary.data.primary.logBlkSize.littleEndian)

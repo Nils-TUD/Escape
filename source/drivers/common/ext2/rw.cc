@@ -21,6 +21,7 @@
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/thread.h>
+#include <fs/fsdev.h>
 #include <stdio.h>
 
 #include "rw.h"

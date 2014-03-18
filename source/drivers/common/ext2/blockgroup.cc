@@ -22,6 +22,7 @@
 #include <esc/thread.h>
 #include <esc/endian.h>
 #include <fs/blockcache.h>
+#include <fs/fsdev.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -108,11 +109,11 @@ void ext2_bg_print(sExt2 *e,block_t no,sExt2BlockGrp *bg) {
 	printf("	freeInodes = %d\n",le16tocpu(bg->freeInodeCount));
 	printf("	usedDirCount = %d\n",le16tocpu(bg->usedDirCount));
 	ext2_bg_printRanges(e,"Blocks",no * blocksPerGroup,
-			MIN(blocksPerGroup,
-			le32tocpu(e->superBlock.blockCount) - (no * blocksPerGroup)),bbitmap->buffer);
+			MIN(blocksPerGroup,le32tocpu(e->superBlock.blockCount) - (no * blocksPerGroup)),
+			static_cast<uint8_t*>(bbitmap->buffer));
 	ext2_bg_printRanges(e,"Inodes",no * inodesPerGroup,
-			MIN(inodesPerGroup,
-			le32tocpu(e->superBlock.inodeCount) - (no * inodesPerGroup)),ibitmap->buffer);
+			MIN(inodesPerGroup,le32tocpu(e->superBlock.inodeCount) - (no * inodesPerGroup)),
+			static_cast<uint8_t*>(ibitmap->buffer));
 	bcache_release(ibitmap);
 	bcache_release(bbitmap);
 }
@@ -133,7 +134,7 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t 
 			if(bitmap[i] & j) {
 				if(lastFree) {
 					if(start < i * 8 + a) {
-						printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+						printf("%lu .. %lu, ",first + start,first + i * 8 + a - 1);
 						if(++pcount % 4 == 0)
 							printf("\n\t\t");
 					}
@@ -149,7 +150,7 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t 
 	}
 freeDone:
 	if(lastFree && start < i * 8 + a)
-		printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+		printf("%lu .. %lu, ",first + start,first + i * 8 + a - 1);
 	printf("\n");
 
 	pcount = 0;
@@ -168,7 +169,7 @@ freeDone:
 			}
 			else if(!lastFree) {
 				if(start < i * 8 + a) {
-					printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+					printf("%lu .. %lu, ",first + start,first + i * 8 + a - 1);
 					if(++pcount % 4 == 0)
 						printf("\n\t\t");
 				}
@@ -179,7 +180,7 @@ freeDone:
 	}
 usedDone:
 	if(!lastFree && start < i * 8 + a)
-		printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+		printf("%lu .. %lu, ",first + start,first + i * 8 + a - 1);
 	printf("\n");
 }
 

@@ -21,6 +21,7 @@
 #include <esc/thread.h>
 #include <esc/endian.h>
 #include <fs/blockcache.h>
+#include <fs/fsdev.h>
 #include <assert.h>
 
 #include "ext2.h"

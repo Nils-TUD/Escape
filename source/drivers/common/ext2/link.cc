@@ -51,7 +51,7 @@ int ext2_link_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,sExt2CInode *cnode,con
 	/* TODO we don't have to read the whole directory at once */
 
 	/* read directory-entries */
-	buf = malloc(dirSize + tlen);
+	buf = static_cast<uint8_t*>(malloc(dirSize + tlen));
 	if(buf == NULL)
 		return -ENOMEM;
 	if((res = ext2_file_readIno(e,dir,buf,0,dirSize)) != dirSize) {
@@ -121,7 +121,7 @@ int ext2_link_delete(sExt2 *e,sFSUser *u,sExt2CInode *pdir,sExt2CInode *dir,cons
 		return res;
 
 	/* read directory-entries */
-	buf = malloc(dirSize);
+	buf = static_cast<uint8_t*>(malloc(dirSize));
 	if(buf == NULL)
 		return -ENOMEM;
 	if((res = ext2_file_readIno(e,dir,buf,0,dirSize)) != dirSize) {

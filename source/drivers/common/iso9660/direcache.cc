@@ -83,5 +83,5 @@ void iso_dire_print(FILE *f,sISO9660 *h) {
 			freeEntries++;
 	}
 	fprintf(f,"\t\tTotal entries: %u\n",ISO_DIRE_CACHE_SIZE);
-	fprintf(f,"\t\tUsed entries: %u\n",ISO_DIRE_CACHE_SIZE - freeEntries);
+	fprintf(f,"\t\tUsed entries: %zu\n",ISO_DIRE_CACHE_SIZE - freeEntries);
 }

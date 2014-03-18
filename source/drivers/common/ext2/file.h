@@ -48,10 +48,10 @@ int ext2_file_delete(sExt2 *e,sExt2CInode *cnode);
  *
  * @param e the ext2-handle
  * @param cnode the cached inode
- * @param delete if set the block-numbers in the inode will not be overwritten
+ * @param del if set the block-numbers in the inode will not be overwritten
  * @return 0 on success
  */
-int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
+int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool del);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the inode with given number. Sets

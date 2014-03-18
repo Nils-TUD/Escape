@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/thread.h>
+#include <fs/fsdev.h>
 #include <stdio.h>
 
 #include "iso9660.h"

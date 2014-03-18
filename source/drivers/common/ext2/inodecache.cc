@@ -23,6 +23,7 @@
 #include <esc/thread.h>
 #include <esc/endian.h>
 #include <fs/blockcache.h>
+#include <fs/fsdev.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -170,10 +171,10 @@ void ext2_icache_print(FILE *f,sExt2 *e) {
 			dirty++;
 	}
 	fprintf(f,"\t\tTotal entries: %u\n",EXT2_ICACHE_SIZE);
-	fprintf(f,"\t\tUsed entries: %u\n",used);
-	fprintf(f,"\t\tDirty entries: %u\n",dirty);
-	fprintf(f,"\t\tHits: %u\n",e->icacheHits);
-	fprintf(f,"\t\tMisses: %u\n",e->icacheMisses);
+	fprintf(f,"\t\tUsed entries: %zu\n",used);
+	fprintf(f,"\t\tDirty entries: %zu\n",dirty);
+	fprintf(f,"\t\tHits: %zu\n",e->icacheHits);
+	fprintf(f,"\t\tMisses: %zu\n",e->icacheMisses);
 	if(e->icacheHits == 0)
 		hitrate = 0;
 	else

@@ -68,7 +68,15 @@ int main(int argc,char *argv[]) {
 	if(!dev)
 		error("Invalid device path '%s'",argv[2]);
 	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
-	return fs_driverLoop("ext2",argv[2],fspath,ext2_getFS());
+
+	try {
+		FSDevice fsdev(ext2_getFS(),"ext2",argv[2],fspath);
+		fsdev.loop();
+	}
+	catch(const ipc::IPCException &e) {
+		printe("%s",e.what());
+	}
+	return 0;
 }
 
 static void *ext2_init(const char *device,char **usedDev,int *errcode) {
@@ -119,7 +127,7 @@ static void *ext2_init(const char *device,char **usedDev,int *errcode) {
 	bcache_init(&e->blockCache,e->drvFds[0]);
 
 	/* report used device */
-	*usedDev = malloc(strlen(device) + 1);
+	*usedDev = static_cast<char*>(malloc(strlen(device) + 1));
 	if(!*usedDev) {
 		printe("Not enough mem for device-name");
 		*errcode = -ENOMEM;
@@ -159,7 +167,7 @@ static void ext2_deinit(void *h) {
 }
 
 static sFileSystem *ext2_getFS(void) {
-	sFileSystem *fs = malloc(sizeof(sFileSystem));
+	sFileSystem *fs = static_cast<sFileSystem*>(malloc(sizeof(sFileSystem)));
 	if(!fs)
 		return NULL;
 	fs->type = FS_TYPE_EXT2;
@@ -346,9 +354,9 @@ static void ext2_print(FILE *f,void *h) {
 	fprintf(f,"Free inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
 	fprintf(f,"Blocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
 	fprintf(f,"Inodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
-	fprintf(f,"Blocksize: %u\n",EXT2_BLK_SIZE(e));
-	fprintf(f,"Capacity: %u bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"Free: %u bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
+	fprintf(f,"Blocksize: %zu\n",EXT2_BLK_SIZE(e));
+	fprintf(f,"Capacity: %zu bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
+	fprintf(f,"Free: %zu bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
 	fprintf(f,"Mount count: %u\n",le16tocpu(e->superBlock.mountCount));
 	fprintf(f,"Max mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
 	fprintf(f,"Block cache:\n");
@@ -418,7 +426,7 @@ void ext2_printBlockGroups(sExt2 *e) {
 	size_t i,count = ext2_getBlockGroupCount(e);
 	printf("Blockgroups:\n");
 	for(i = 0; i < count; i++) {
-		printf(" Block %d\n",i);
+		printf(" Block %zu\n",i);
 		ext2_bg_print(e,i,e->groups + i);
 	}
 }

@@ -75,7 +75,7 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 			c = MIN(leftBytes,blockSize - offset);
 			if(e->entry.flags & ISO_FILEFL_DIR)
 				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,
-						blk->buffer,offset,c);
+						static_cast<uint8_t*>(blk->buffer),offset,c);
 			else
 				memcpy(bufWork,(void*)((uintptr_t)blk->buffer + offset),c);
 			bufWork += c;

@@ -79,7 +79,7 @@ int ext2_file_delete(sExt2 *e,sExt2CInode *cnode) {
 	return 0;
 }
 
-int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
+int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool del) {
 	int res;
 	size_t i;
 	/* free direct blocks */
@@ -88,21 +88,21 @@ int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 			break;
 		if((res = ext2_bm_freeBlock(e,le32tocpu(cnode->inode.dBlocks[i]))) < 0)
 			return res;
-		if(!delete)
+		if(!del)
 			cnode->inode.dBlocks[i] = cputole32(0);
 	}
 	/* indirect */
 	if(le32tocpu(cnode->inode.singlyIBlock)) {
 		if((res = ext2_file_freeIndirBlock(e,le32tocpu(cnode->inode.singlyIBlock))) < 0)
 			return res;
-		if(!delete)
+		if(!del)
 			cnode->inode.singlyIBlock = cputole32(0);
 	}
 	/* double indirect */
 	if(le32tocpu(cnode->inode.doublyIBlock)) {
 		if((res = ext2_file_freeDIndirBlock(e,le32tocpu(cnode->inode.doublyIBlock))) < 0)
 			return res;
-		if(!delete)
+		if(!del)
 			cnode->inode.doublyIBlock = cputole32(0);
 	}
 	/* triple indirect */
@@ -126,11 +126,11 @@ int ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 		bcache_release(blocks);
 		if((res = ext2_bm_freeBlock(e,le32tocpu(cnode->inode.triplyIBlock))) < 0)
 			return res;
-		if(!delete)
+		if(!del)
 			cnode->inode.triplyIBlock = cputole32(0);
 	}
 
-	if(!delete) {
+	if(!del) {
 		/* reset size */
 		cnode->inode.size = cputole32(0);
 		cnode->inode.blocks = cputole32(0);

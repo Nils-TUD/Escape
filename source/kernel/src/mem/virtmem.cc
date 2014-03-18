@@ -1194,13 +1194,15 @@ void VirtMem::printMaps(OStream &os) const {
 	acquire();
 	for(auto vm = regtree.cbegin(); vm != regtree.cend(); ++vm) {
 		vm->reg->acquire();
-		os.writef("%-30s %p..%p (%5zuK) %c%c%c%c%c",getRegName(&*vm),vm->virt(),
+		os.writef("%-30s %p..%p (%5zuK) %c%c%c%c%c%c%c",getRegName(&*vm),vm->virt(),
 				vm->virt() + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K,
 				(vm->reg->getFlags() & RF_WRITABLE) ? 'W' : 'w',
 				(vm->reg->getFlags() & RF_EXECUTABLE) ? 'X' : 'x',
 				(vm->reg->getFlags() & RF_GROWABLE) ? 'G' : 'g',
 				(vm->reg->getFlags() & RF_SHAREABLE) ? 'S' : 's',
-				(vm->reg->getFlags() & RF_LOCKED) ? 'L' : 'l');
+				(vm->reg->getFlags() & RF_LOCKED) ? 'L' : 'l',
+				(vm->reg->getFlags() & RF_GROWS_DOWN) ? 'D' : 'd',
+				(vm->reg->getFlags() & RF_NOFREE) ? 'f' : 'F');
 		vm->reg->release();
 		os.writef("\n");
 	}
@@ -1210,7 +1212,7 @@ void VirtMem::printMaps(OStream &os) const {
 void VirtMem::printShort(OStream &os,const char *prefix) const {
 	acquire();
 	for(auto vm = regtree.cbegin(); vm != regtree.cend(); ++vm) {
-		os.writef("%s%-24s %p - %p (%5zuK) ",prefix,getRegName(&*vm),vm->virt(),
+		os.writef("%s%-24s %p..%p (%5zuK) ",prefix,getRegName(&*vm),vm->virt(),
 				vm->virt() + vm->reg->getByteCount() - 1,vm->reg->getByteCount() / K);
 		vm->reg->printFlags(os);
 		os.writef("\n");

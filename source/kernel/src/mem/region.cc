@@ -199,22 +199,12 @@ void Region::print(OStream &os,uintptr_t virt) const {
 }
 
 void Region::printFlags(OStream &os) const {
-	struct {
-		const char *name;
-		ulong no;
-	} flagNames[] = {
-		{"Gr",RF_GROWABLE},
-		{"Sh",RF_SHAREABLE},
-		{"Wr",RF_WRITABLE},
-		{"Ex",RF_EXECUTABLE},
-		{"St",RF_STACK},
-		{"NoFree",RF_NOFREE},
-		{"TLS",RF_TLS},
-		{"GrDwn",RF_GROWS_DOWN},
-		{"Lo",RF_LOCKED},
-	};
-	for(size_t i = 0; i < ARRAY_SIZE(flagNames); i++) {
-		if(flags & flagNames[i].no)
-			os.writef("%s ",flagNames[i].name);
-	}
+	os.writef("%c%c%c%c%c%c%c",
+		(flags & RF_WRITABLE) ? 'W' : 'w',
+		(flags & RF_EXECUTABLE) ? 'X' : 'x',
+		(flags & RF_GROWABLE) ? 'G' : 'g',
+		(flags & RF_SHAREABLE) ? 'S' : 's',
+		(flags & RF_LOCKED) ? 'L' : 'l',
+		(flags & RF_GROWS_DOWN) ? 'D' : 'd',
+		(flags & RF_NOFREE) ? 'f' : 'F');
 }

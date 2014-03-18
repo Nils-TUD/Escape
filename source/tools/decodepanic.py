@@ -78,7 +78,7 @@ while True:
 		break
 
 	print line[:-1]
-	match = re.match('\\s*(\\S+)\\s+([0-9a-f:]+) - ([0-9a-f:]+) \\(\s*\\d+K\\) (.*?Ex.*|-x-s)', line)
+	match = re.match('\\s*(\\S+)\\s+([0-9a-f:]+)\.\.([0-9a-f:]+) \\(\s*\\d+K\\) .*?X.*?S', line)
 	if match:
 		syms = get_symbols(match.group(1))
 		coderegs.append((match.group(1), str_to_addr(match.group(2)), str_to_addr(match.group(3)), syms))
@@ -104,7 +104,7 @@ while True:
 	if match:
 		addr = str_to_addr(match.group(2))
 		(lib, sym) = find_symbol(coderegs, addr)
-		liboff = addr - libaddr(lib)
+		liboff = addr - lib[1]
 		funcoff = liboff - sym[0]
 		sys.stdout.write("\t=>: %#010x (%s+%#x)\n" % (addr, lib[0], liboff))
 		sys.stdout.write("\t    %s+%#x (%s)\n" % (sym[1], funcoff, sym[2]))

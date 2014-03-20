@@ -29,7 +29,6 @@ using namespace ipc;
 
 static char zeros[BUF_SIZE];
 
-
 class ZeroDevice : public ClientDevice<> {
 public:
 	explicit ZeroDevice(const char *name,mode_t mode)

@@ -25,6 +25,8 @@
 #include <esc/ringbuffer.h>
 #include <esc/messages.h>
 #include <esc/irq.h>
+#include <ipc/clientdevice.h>
+#include <ipc/proto/input.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -67,10 +69,6 @@
 #define INPUT_BUF_SIZE				128
 #define PACK_BUF_SIZE				32
 
-#define MAX_CLIENTS					2
-
-static size_t findClient(inode_t cid);
-static void broadcast(sMouseData *data);
 static int irqThread(void *arg);
 static void kb_init(void);
 static void kb_checkCmd(void);
@@ -91,64 +89,26 @@ typedef union {
 
 static uchar byteNo = 0;
 static int sid;
-static sMsg msg;
 static bool wheel = false;
-static inode_t clients[MAX_CLIENTS];
+static ipc::ClientDevice<> *dev = NULL;
 
 int main(void) {
-	msgid_t mid;
-
 	/* request io-ports */
 	if(reqport(IOPORT_KB_CTRL) < 0 || reqport(IOPORT_KB_DATA) < 0)
 		error("Unable to request io-ports");
 
 	kb_init();
 
-	/* reg device */
-	sid = createdev("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
-	if(sid < 0)
-		error("Unable to register device 'mouse'");
-
 	/* reg intrpt-handler */
 	if(startthread(irqThread,NULL) < 0)
 		error("Unable to start irq-thread");
 
-	/* wait for commands */
-	while(1) {
-		int fd = getwork(sid,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_DEV_OPEN: {
-					size_t i = findClient(0);
-					if(i == MAX_CLIENTS)
-						msg.args.arg1 = -ENOMEM;
-					else {
-						clients[i] = fd;
-						msg.args.arg1 = 0;
-					}
-					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DEV_CLOSE: {
-					size_t i = findClient(fd);
-					if(i != MAX_CLIENTS) {
-						clients[i] = 0;
-						close(fd);
-					}
-				}
-				break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
+	try {
+		dev = new ipc::ClientDevice<>("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+		dev->loop();
+	}
+	catch(const ipc::IPCException &e) {
+		printe("%s",e.what());
 	}
 
 	/* cleanup */
@@ -158,24 +118,9 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static size_t findClient(inode_t cid) {
-	size_t i;
-	for(i = 0; i < MAX_CLIENTS; ++i) {
-		if(clients[i] == cid)
-			return i;
-	}
-	return MAX_CLIENTS;
-}
-
-static void broadcast(sMouseData *data) {
-	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
-		if(clients[i])
-			send(clients[i],MSG_MS_EVENT,data,sizeof(*data));
-	}
-}
-
 static int irqThread(A_UNUSED void *arg) {
-	sMouseData mdata;
+	char buffer[IPC_DEF_SIZE];
+	ipc::Mouse::Event ev;
 
 	int sem = semcrtirq(IRQ_SEM_MOUSE);
 	if(sem < 0)
@@ -192,30 +137,34 @@ static int irqThread(A_UNUSED void *arg) {
 			case 0: {
 				uStatus st;
 				st.all = inbyte(IOPORT_KB_DATA);
-				mdata.buttons = (st.leftBtn << 2) | (st.rightBtn << 1) | (st.middleBtn << 0);
+				ev.buttons = (st.leftBtn << 2) | (st.rightBtn << 1) | (st.middleBtn << 0);
 				byteNo++;
 			}
 			break;
 			case 1:
-				mdata.x = (char)inbyte(IOPORT_KB_DATA);
+				ev.x = (char)inbyte(IOPORT_KB_DATA);
 				byteNo++;
 				break;
 			case 2:
-				mdata.y = (char)inbyte(IOPORT_KB_DATA);
+				ev.y = (char)inbyte(IOPORT_KB_DATA);
 				if(wheel)
 					byteNo++;
 				else {
 					byteNo = 0;
-					mdata.z = 0;
+					ev.z = 0;
 				}
 				break;
 			case 3:
-				mdata.z = (char)inbyte(IOPORT_KB_DATA);
+				ev.z = (char)inbyte(IOPORT_KB_DATA);
 				byteNo = 0;
 				break;
 		}
-		if(byteNo == 0)
-			broadcast(&mdata);
+
+		if(byteNo == 0) {
+			ipc::IPCBuf ib(buffer,sizeof(buffer));
+			ib << ev;
+			dev->broadcast(ipc::Mouse::Event::MID,ib);
+		}
 	}
 }
 

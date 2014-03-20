@@ -28,6 +28,7 @@
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <ipc/clientdevice.h>
+#include <ipc/proto/input.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -199,11 +200,11 @@ static int kbIrqThread(A_UNUSED void *arg) {
 			continue;
 
 		uint8_t sc = inbyte(IOPORT_KB_DATA);
-		sKbData data;
-		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,sc)) {
+		ipc::Keyb::Event ev;
+		if(kb_set1_getKeycode(&ev.isBreak,&ev.keycode,sc)) {
 			ipc::IPCBuf ib(buffer,sizeof(buffer));
-			ib << data;
-			dev->broadcast(MSG_KB_EVENT,ib);
+			ib << ev;
+			dev->broadcast(ipc::Keyb::Event::MID,ib);
 		}
 	}
 	return 0;

@@ -22,10 +22,6 @@
 #include <esc/common.h>
 #include "vtctrl.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Prints the given string
  *
@@ -43,7 +39,3 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead);
  * @param c the character
  */
 void vtout_putchar(sVTerm *vt,char c);
-
-#ifdef __cplusplus
-}
-#endif

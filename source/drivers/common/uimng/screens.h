@@ -21,11 +21,18 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <ipc/proto/screen.h>
+#include <vector>
 
 #include "clients.h"
 
-void screens_init(int cnt,char *names[]);
-bool screens_find(int mid,sScreenMode **mode,sScreen **scr);
-void screens_adjustMode(sScreenMode *mode);
-ssize_t screens_getModes(sScreenMode *modes,size_t n);
-int screens_setMode(sClient *cli,int type,int mid,const char *shm,bool set);
+class ScreenMng {
+public:
+	static void init(int cnt,char *names[]);
+	static bool find(int mid,ipc::Screen::Mode *mode,ipc::Screen **scr);
+	static void adjustMode(ipc::Screen::Mode *mode);
+	static ssize_t getModes(ipc::Screen::Mode *modes,size_t n);
+
+private:
+	static std::vector<ipc::Screen*> _screens;
+};

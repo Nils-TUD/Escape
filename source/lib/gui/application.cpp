@@ -18,11 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <gui/application.h>
 #include <gui/window.h>
 #include <gui/popupwindow.h>
 #include <esc/messages.h>
+#include <esc/esccodes.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <esc/io.h>
@@ -41,33 +40,20 @@ static void sighandler(int) {
 namespace gui {
 	Application *Application::_inst = nullptr;
 
-	Application::Application(const char *winmng)
-			: _winFd(-1), _winEvFd(-1), _run(true), _mouseBtns(0), _screenMode(), _windows(), _created(),
-			  _activated(), _destroyed(), _timequeue(), _queueSem(), _listening(false),
-			  _defTheme(nullptr), _winmng() {
-		if(usemcrt(&_queueSem,1) < 0)
-			throw app_error("Unable to create queue lock");
-
+	const char *Application::getWinMng(const char *winmng) {
 		if(winmng == NULL)
 			winmng = getenv("WINMNG");
 		if(winmng == NULL)
 			throw app_error("Env-var WINMNG not set");
-		_winmng = winmng;
+		return winmng;
+	}
 
-		_winFd = open(winmng,IO_MSGS);
-		if(_winFd < 0)
-			throw app_error("Unable to open window-manager");
-
-		char path[MAX_PATH_LEN];
-		snprintf(path,sizeof(path),"%s-events",winmng);
-		_winEvFd = open(path,IO_MSGS);
-		if(_winEvFd < 0)
-			throw app_error("Unable to open window-manager's event channel");
-
-		// request screen infos from vesa
-		if(screen_getMode(_winFd,&_screenMode) < 0)
-			throw app_error("Unable to get mode");
-
+	Application::Application(const char *winmng)
+			: _winMngName(getWinMng(winmng)), _winMng(_winMngName),
+			  _winEv((std::string(_winMngName) + "-events").c_str()), _run(true), _mouseBtns(0),
+			  _screenMode(_winMng.getMode()), _windows(), _created(), _activated(), _destroyed(),
+			  _timequeue(), _queueMutex(), _listening(false), _defTheme(nullptr) {
+		// announce signal handlers
 		if(signal(SIG_USR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
 		if(signal(SIG_ALARM,sigalarm) == SIG_ERR)
@@ -96,29 +82,18 @@ namespace gui {
 		_defTheme.setTextPadding(4);
 
 		// subscribe to window-events
-		{
-			sArgsMsg msg;
-			msg.arg1 = MSG_WIN_CREATE_EV;
-			if(send(_winEvFd,MSG_WIN_ADDLISTENER,&msg,sizeof(msg)) < 0)
-				throw app_error("Unable to announce create-listener");
-			msg.arg1 = MSG_WIN_DESTROY_EV;
-			if(send(_winEvFd,MSG_WIN_ADDLISTENER,&msg,sizeof(msg)) < 0)
-				throw app_error("Unable to announce destroy-listener");
-			msg.arg1 = MSG_WIN_ACTIVE_EV;
-			if(send(_winEvFd,MSG_WIN_ADDLISTENER,&msg,sizeof(msg)) < 0)
-				throw app_error("Unable to announce active-listener");
-		}
+		_winEv.subscribe(ipc::WinMngEvents::Event::TYPE_CREATED);
+		_winEv.subscribe(ipc::WinMngEvents::Event::TYPE_ACTIVE);
+		_winEv.subscribe(ipc::WinMngEvents::Event::TYPE_DESTROYED);
 	}
 
 	Application::~Application() {
 		while(_windows.size() > 0)
 			removeWindow(*_windows.begin());
-		close(_winEvFd);
-		close(_winFd);
 	}
 
 	void Application::executeIn(uint msecs,std::Functor<void> *functor) {
-		usemdown(&_queueSem);
+		std::lock_guard<std::mutex> guard(_queueMutex);
 		uint64_t tsc = rdtsc() + timetotsc(msecs * 1000);
 		std::list<TimeoutFunctor>::iterator it;
 		for(it = _timequeue.begin(); it != _timequeue.end(); ++it) {
@@ -130,7 +105,6 @@ namespace gui {
 		else if(it == _timequeue.begin())
 			alarm(msecs);
 		_timequeue.insert(it,TimeoutFunctor(tsc,functor));
-		usemup(&_queueSem);
 	}
 
 	void Application::sigalarm(int) {
@@ -141,115 +115,90 @@ namespace gui {
 	}
 
 	int Application::run() {
-		msgid_t mid;
 		while(_run) {
-			sMsg msg;
-			int res = receive(_winEvFd,&mid,&msg,sizeof(msg));
+			ipc::WinMngEvents::Event ev;
+			ssize_t res = receive(_winEv.fd(),NULL,&ev,sizeof(ev));
 			if(res < 0 && res != -EINTR)
-				throw app_error(string("Read from window-manager failed: ") + strerror(-res));
+				VTHROWE("receive from event-channel",res);
 			if(res >= 0)
-				handleMessage(mid,&msg);
+				handleEvent(ev);
 			handleQueue();
 		}
 		return EXIT_SUCCESS;
 	}
 
 	void Application::handleQueue() {
-		usemdown(&_queueSem);
+		_queueMutex.lock();
 		uint64_t now = rdtsc();
 		for(auto it = _timequeue.begin(); it != _timequeue.end(); ) {
 			auto cur = it++;
 			if(cur->tsc <= now) {
-				usemup(&_queueSem);
+				_queueMutex.unlock();
 				(*(cur->functor))();
-				usemdown(&_queueSem);
+				_queueMutex.lock();
 				_timequeue.erase(cur);
 			}
 		}
-		usemup(&_queueSem);
+		_queueMutex.unlock();
 	}
 
-	void Application::handleMessage(msgid_t mid,sMsg *msg) {
-		switch(mid) {
-			case MSG_WIN_RESIZE_RESP: {
-				gwinid_t win = (gwinid_t)msg->args.arg1;
-				Window *w = getWindowById(win);
+	void Application::handleEvent(const ipc::WinMngEvents::Event &ev) {
+		switch(ev.type) {
+			case ipc::WinMngEvents::Event::TYPE_RESIZE: {
+				Window *w = getWindowById(ev.wid);
 				if(w)
 					w->onResized();
 			}
 			break;
 
-			case MSG_WIN_MOUSE_EV: {
-				gpos_t x = (gpos_t)msg->args.arg1;
-				gpos_t y = (gpos_t)msg->args.arg2;
-				short movedX = (short)msg->args.arg3;
-				short movedY = (short)msg->args.arg4;
-				short movedZ = (short)msg->args.arg5;
-				uchar buttons = (uchar)msg->args.arg6;
-				gwinid_t win = (gwinid_t)msg->args.arg7;
-				passToWindow(win,Pos(x,y),movedX,movedY,movedZ,buttons);
-			}
-			break;
+			case ipc::WinMngEvents::Event::TYPE_MOUSE:
+				passToWindow(ev.wid,Pos(ev.d.mouse.x,ev.d.mouse.y),
+					ev.d.mouse.movedX,ev.d.mouse.movedY,ev.d.mouse.movedZ,ev.d.mouse.buttons);
+				break;
 
-			case MSG_WIN_KEYBOARD_EV: {
-				uchar keycode = (uchar)msg->args.arg1;
-				bool isBreak = (bool)msg->args.arg2;
-				gwinid_t win = (gwinid_t)msg->args.arg3;
-				char character = (char)msg->args.arg4;
-				uchar modifier = (uchar)msg->args.arg5;
-				Window *w = getWindowById(win);
+			case ipc::WinMngEvents::Event::TYPE_KEYBOARD: {
+				Window *w = getWindowById(ev.wid);
 				if(w) {
-					if(isBreak) {
-						KeyEvent e(KeyEvent::KEY_RELEASED,keycode,character,modifier);
+					if(ev.d.keyb.modifier & STATE_BREAK) {
+						KeyEvent e(KeyEvent::KEY_RELEASED,
+							ev.d.keyb.keycode,ev.d.keyb.character,ev.d.keyb.modifier);
 						w->onKeyReleased(e);
 					}
 					else {
-						KeyEvent e(KeyEvent::KEY_PRESSED,keycode,character,modifier);
+						KeyEvent e(KeyEvent::KEY_PRESSED,
+							ev.d.keyb.keycode,ev.d.keyb.character,ev.d.keyb.modifier);
 						w->onKeyPressed(e);
 					}
 				}
 			}
 			break;
 
-			case MSG_WIN_SET_ACTIVE_EV: {
-				gwinid_t win = (gwinid_t)msg->args.arg1;
-				bool isActive = (bool)msg->args.arg2;
-				gpos_t mouseX = (gpos_t)msg->args.arg3;
-				gpos_t mouseY = (gpos_t)msg->args.arg4;
-				Window *w = getWindowById(win);
+			case ipc::WinMngEvents::Event::TYPE_SET_ACTIVE: {
+				Window *w = getWindowById(ev.wid);
 				if(w) {
-					w->updateActive(isActive);
-					if(isActive)
-						closePopups(w->getId(),Pos(mouseX,mouseY));
+					w->updateActive(ev.d.setactive.active);
+					if(ev.d.setactive.active)
+						closePopups(w->getId(),Pos(ev.d.setactive.mouseX,ev.d.setactive.mouseY));
 				}
 			}
 			break;
 
-			case MSG_WIN_CREATE_EV: {
-				gwinid_t win = (gwinid_t)msg->str.arg1;
-				string title(msg->str.s1);
-				_created.send(win,title);
-			}
-			break;
+			case ipc::WinMngEvents::Event::TYPE_CREATED:
+				_created.send(ev.wid,ev.d.created.title);
+				break;
 
-			case MSG_WIN_ACTIVE_EV: {
-				gwinid_t win = (gwinid_t)msg->args.arg1;
-				_activated.send(win);
-			}
-			break;
+			case ipc::WinMngEvents::Event::TYPE_ACTIVE:
+				_activated.send(ev.wid);
+				break;
 
-			case MSG_WIN_DESTROY_EV: {
-				gwinid_t win = (gwinid_t)msg->args.arg1;
-				_destroyed.send(win);
-			}
-			break;
+			case ipc::WinMngEvents::Event::TYPE_DESTROYED:
+				_destroyed.send(ev.wid);
+				break;
 
-			case MSG_WIN_RESET_EV: {
-				gwinid_t win = (gwinid_t)msg->args.arg1;
-				Window *w = getWindowById(win);
+			case ipc::WinMngEvents::Event::TYPE_RESET: {
+				Window *w = getWindowById(ev.wid);
 				// re-request screen infos from vesa
-				if(screen_getMode(_winFd,&_screenMode) < 0)
-					throw app_error("Unable to get mode");
+				_screenMode = _winMng.getMode();
 				if(w)
 					w->onReset();
 			}
@@ -299,30 +248,6 @@ namespace gui {
 		}
 	}
 
-	std::vector<sScreenMode> Application::getModes() const {
-		std::vector<sScreenMode> res;
-		ssize_t count = screen_getModeCount(_winFd);
-		if(count > 0) {
-			sScreenMode *modes = new sScreenMode[count];
-			screen_getModes(_winFd,modes,count);
-			res.assign(modes,modes + count);
-			delete[] modes;
-		}
-		return res;
-	}
-
-	int Application::setMode(const sScreenMode &mode) {
-		sArgsMsg msg;
-		msg.arg1 = mode.width;
-		msg.arg2 = mode.height;
-		msg.arg3 = mode.bitsPerPixel;
-		msgid_t mid = MSG_WIN_SETMODE;
-		ssize_t res = SENDRECV_IGNSIGS(_winFd,&mid,&msg,sizeof(msg));
-		if(res < 0)
-			return res;
-		return msg.arg1;
-	}
-
 	void Application::requestWinUpdate(gwinid_t id,const Pos &pos,const Size &size) {
 		Window *w = getWindowById(id);
 		Size wsize = w->getSize();
@@ -336,81 +261,32 @@ namespace gui {
 			rsize.width = wsize.width - rpos.x;
 		if(rpos.y + rsize.height > wsize.height)
 			rsize.height = wsize.height - rpos.y;
-		sArgsMsg msg;
-		msg.arg1 = id;
-		msg.arg2 = rpos.x;
-		msg.arg3 = rpos.y;
-		msg.arg4 = rsize.width;
-		msg.arg5 = rsize.height;
-		msgid_t mid = MSG_WIN_UPDATE;
-		if(SENDRECV_IGNSIGS(_winFd,&mid,&msg,sizeof(msg)) < 0)
-			throw app_error("Unable to request win-update");
-	}
-
-	void Application::requestActiveWindow(gwinid_t wid) {
-		sArgsMsg msg;
-		msg.arg1 = wid;
-		if(send(_winFd,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg)) < 0)
-			throw app_error("Unable to set window to active");
+		_winMng.update(id,rpos.x,rpos.y,rsize.width,rsize.height);
 	}
 
 	void Application::addWindow(shared_ptr<Window> win) {
+		gwinid_t id = _winMng.create(win->getPos().x,win->getPos().y,
+			win->getSize().width,win->getSize().height,win->getStyle(),
+			win->getTitleBarHeight(),win->hasTitleBar() ? win->getTitle().c_str() : "");
 		_windows.push_back(win);
-
-		sMsg msg;
-		msg.str.arg1 = win->getPos().x;
-		msg.str.arg2 = win->getPos().y;
-		msg.str.arg3 = win->getSize().width;
-		msg.str.arg4 = win->getSize().height;
-		msg.str.arg5 = win->getStyle();
-		msg.str.arg6 = win->getTitleBarHeight();
-		if(win->hasTitleBar())
-			strnzcpy(msg.str.s1,win->getTitle().c_str(),sizeof(msg.str.s1));
-		else
-			msg.str.s1[0] = '\0';
-		msgid_t mid = MSG_WIN_CREATE;
-		if(SENDRECV_IGNSIGS(_winFd,&mid,&msg,sizeof(msg)) < 0) {
-			_windows.erase_first(win);
-			throw app_error("Unable to announce window to window-manager");
-		}
-		win->onCreated(msg.args.arg1);
-
-		msg.args.arg1 = win->getId();
-		// arg2 does already contain the randId
-		if(send(_winEvFd,MSG_WIN_ATTACH,&msg,sizeof(msg.args)) < 0)
-			throw app_error("Unable to attach window to event-channel");
+		win->onCreated(id);
+		_winEv.attach(win->getId());
 	}
 
 	void Application::removeWindow(shared_ptr<Window> win) {
 		if(_windows.erase_first(win)) {
-			sArgsMsg msg;
 			// let window-manager destroy our window
-			msg.arg1 = win->getId();
-			if(send(_winFd,MSG_WIN_DESTROY,&msg,sizeof(msg)) < 0)
-				throw app_error("Unable to destroy window");
+			_winMng.destroy(win->getId());
 		}
 	}
 
 	void Application::moveWindow(Window *win,bool finish) {
-		sArgsMsg msg;
-		msg.arg1 = win->getId();
-		msg.arg2 = win->getMovePos().x;
-		msg.arg3 = win->getMovePos().y;
-		msg.arg4 = finish;
-		if(send(_winFd,MSG_WIN_MOVE,&msg,sizeof(msg)) < 0)
-			throw app_error("Unable to move window");
+		_winMng.move(win->getId(),win->getMovePos().x,win->getMovePos().y,finish);
 	}
 
 	void Application::resizeWindow(Window *win,bool finish) {
-		sArgsMsg msg;
-		msg.arg1 = win->getId();
-		msg.arg2 = win->getMovePos().x;
-		msg.arg3 = win->getMovePos().y;
-		msg.arg4 = win->getResizeSize().width;
-		msg.arg5 = win->getResizeSize().height;
-		msg.arg6 = finish;
-		if(send(_winFd,MSG_WIN_RESIZE,&msg,sizeof(msg)) < 0)
-			throw app_error("Unable to resize window");
+		_winMng.resize(win->getId(),win->getMovePos().x,win->getMovePos().y,
+			win->getResizeSize().width,win->getResizeSize().height,finish);
 	}
 
 	Window *Application::getWindowById(gwinid_t id) {

@@ -103,13 +103,8 @@ int main(void) {
 	if(startthread(irqThread,NULL) < 0)
 		error("Unable to start irq-thread");
 
-	try {
-		dev = new ipc::ClientDevice<>("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
-		dev->loop();
-	}
-	catch(const ipc::IPCException &e) {
-		printe("%s",e.what());
-	}
+	dev = new ipc::ClientDevice<>("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	dev->loop();
 
 	/* cleanup */
 	relport(IOPORT_KB_CTRL);
@@ -163,7 +158,12 @@ static int irqThread(A_UNUSED void *arg) {
 		if(byteNo == 0) {
 			ipc::IPCBuf ib(buffer,sizeof(buffer));
 			ib << ev;
-			dev->broadcast(ipc::Mouse::Event::MID,ib);
+			try {
+				dev->broadcast(ipc::Mouse::Event::MID,ib);
+			}
+			catch(const std::exception &e) {
+				printe("%s",e.what());
+			}
 		}
 	}
 }

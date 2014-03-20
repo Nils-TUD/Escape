@@ -45,7 +45,7 @@ FSDevice::FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const ch
 	: ClientDevice(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
 	  _fs(fs), _clients(0) {
 	set(MSG_DEV_OPEN,std::make_memfun(this,&FSDevice::devopen));
-	set(MSG_DEV_CLOSE,std::make_memfun(this,&FSDevice::devclose));
+	set(MSG_DEV_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);
 	set(MSG_FS_OPEN,std::make_memfun(this,&FSDevice::open));
 	set(MSG_DEV_READ,std::make_memfun(this,&FSDevice::read));
 	set(MSG_DEV_WRITE,std::make_memfun(this,&FSDevice::write));
@@ -53,25 +53,27 @@ FSDevice::FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const ch
 	set(MSG_FS_STAT,std::make_memfun(this,&FSDevice::stat));
 	set(MSG_FS_ISTAT,std::make_memfun(this,&FSDevice::istat));
 	set(MSG_FS_SYNCFS,std::make_memfun(this,&FSDevice::syncfs));
+	set(MSG_FS_LINK,std::make_memfun(this,&FSDevice::link));
+	set(MSG_FS_UNLINK,std::make_memfun(this,&FSDevice::unlink));
 	set(MSG_FS_MKDIR,std::make_memfun(this,&FSDevice::mkdir));
 	set(MSG_FS_RMDIR,std::make_memfun(this,&FSDevice::rmdir));
 	set(MSG_FS_CHMOD,std::make_memfun(this,&FSDevice::chmod));
 	set(MSG_FS_CHOWN,std::make_memfun(this,&FSDevice::chown));
 
 	if(signal(SIG_TERM,sigTermHndl) == SIG_ERR)
-		throw IPCException("Unable to set signal-handler for SIG_TERM");
+		throw std::default_error("Unable to set signal-handler for SIG_TERM");
 
 	int err = 0;
 	char *useddev;
 	fs->handle = fs->init(diskDev,&useddev,&err);
 	if(err < 0)
-		throw IPCException("Unable to init filesystem");
+		VTHROWE("fs->init",err);
 
 	printf("[%s] Mounted '%s'\n",name,useddev);
 	fflush(stdout);
 
-	if(infodev_start(fsDev,fs) < 0)
-		throw IPCException("Unable to start infodev-handler");
+	if((err = infodev_start(fsDev,fs)) < 0)
+		VTHROWE("infodev_start",err);
 	_inst = this;
 }
 
@@ -91,7 +93,7 @@ void FSDevice::loop() {
 				/* no requests anymore and we should shutdown? */
 				if(isStopped())
 					break;
-				throw IPCException("getwork failed");
+				printe("getwork failed");
 			}
 			continue;
 		}
@@ -122,7 +124,7 @@ void FSDevice::open(IPCStream &is) {
 	if(no >= 0) {
 		no = _fs->open(_fs->handle,&u,no,flags);
 		if(no >= 0)
-			add(is.fd(),new OpenFile(no));
+			add(is.fd(),new OpenFile(is.fd(),no));
 	}
 	is << no << Send(MSG_FS_OPEN_RESP);
 }

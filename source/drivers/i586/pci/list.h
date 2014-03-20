@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <ipc/proto/pci.h>
 
 #define IOPORT_PCI_CFG_DATA			0xCFC
 #define IOPORT_PCI_CFG_ADDR			0xCF8
@@ -37,7 +37,7 @@ void list_init(void);
  * @param subClass the subclass
  * @return the device or NULL
  */
-sPCIDevice *list_getByClass(uchar baseClass,uchar subClass);
+ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass);
 
 /**
  * Finds a PCI-device by bus, dev and func
@@ -47,13 +47,13 @@ sPCIDevice *list_getByClass(uchar baseClass,uchar subClass);
  * @param func the function
  * @return the device or NULL
  */
-sPCIDevice *list_getById(uchar bus,uchar dev,uchar func);
+ipc::PCI::Device *list_getById(uchar bus,uchar dev,uchar func);
 
 /**
  * @param i the number
  * @return the PCI-device number <i>
  */
-sPCIDevice *list_get(size_t i);
+ipc::PCI::Device *list_get(size_t i);
 
 /**
  * @return the number of devices

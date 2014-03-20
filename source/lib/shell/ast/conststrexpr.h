@@ -28,6 +28,10 @@ typedef struct {
 	bool hasQuotes;
 } sConstStrExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an const-str-node
  *
@@ -60,3 +64,7 @@ void ast_printConstStrExpr(sConstStrExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyConstStrExpr(sConstStrExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

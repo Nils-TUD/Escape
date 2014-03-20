@@ -20,10 +20,11 @@
 #pragma once
 
 #include <esc/common.h>
+#include <ipc/proto/ui.h>
 
 typedef struct {
-	int uimngFd;
-	int uiminFd;
+	ipc::UI *ui;
+	ipc::UIEvents *uiev;
 	int mode;
 	const char *winmng;
 	const char *shmname;

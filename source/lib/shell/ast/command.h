@@ -31,6 +31,10 @@ typedef struct {
 	sSLList *subList;
 } sCommand;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a command
  *
@@ -97,3 +101,7 @@ void ast_printCommand(sCommand *s,uint layer);
  * @param n the command
  */
 void ast_destroyCommand(sCommand *n);
+
+#ifdef __cplusplus
+}
+#endif

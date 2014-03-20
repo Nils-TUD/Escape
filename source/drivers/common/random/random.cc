@@ -48,20 +48,17 @@ public:
 				*d++ = rand();
 		}
 
-		is << DevRead::Response(res,r.shmemoff == -1 && res ? data : NULL);
-		if(r.shmemoff == -1 && res)
+		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		if(r.shmemoff == -1 && res) {
+			is << SendData(DevRead::Response::MID,data,res);
 			free(data);
+		}
 	}
 };
 
 int main() {
 	srand(time(NULL));
-	try {
-		RandomDevice dev("/dev/random",0444);
-		dev.loop();
-	}
-	catch(const IPCException &e) {
-		printe("%s",e.what());
-	}
+	RandomDevice dev("/dev/random",0444);
+	dev.loop();
 	return EXIT_SUCCESS;
 }

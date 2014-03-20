@@ -21,6 +21,10 @@
 
 typedef int tIntType;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Resets the position
  */
@@ -42,3 +46,7 @@ bool lang_isInterrupted(void);
  * @param s the error-message
  */
 void yyerror(char const *s,...);
+
+#ifdef __cplusplus
+}
+#endif

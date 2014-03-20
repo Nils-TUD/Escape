@@ -19,13 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/arch/i586/ports.h>
-#include <esc/driver/pci.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/irq.h>
 #include <esc/io.h>
 #include <esc/mem.h>
+#include <ipc/proto/pci.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,19 +44,23 @@
 
 #define DMA_BUF_SIZE				(64 * 1024)
 
+using namespace ipc;
+
 static bool ctrl_isBusResponding(sATAController* ctrl);
 
-static sPCIDevice ideCtrl;
+static PCI::Device ideCtrl;
 static sATAController ctrls[2];
 
 void ctrl_init(bool useDma) {
 	ssize_t i,j;
 
 	/* get ide-controller from pci */
-	if(pci_getByClass(IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS,&ideCtrl) < 0)
-		error("Unable to find IDE-controller (%d:%d)",IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS);
-	ATA_LOG("Found IDE-controller (%d.%d.%d): vendorId %x, deviceId %x, rev %x",
-			ideCtrl.bus,ideCtrl.dev,ideCtrl.func,ideCtrl.vendorId,ideCtrl.deviceId,ideCtrl.revId);
+	{
+		PCI pci("/dev/pci");
+		ideCtrl = pci.getByClass(IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS);
+		ATA_LOG("Found IDE-controller (%d.%d.%d): vendorId %x, deviceId %x, rev %x",
+				ideCtrl.bus,ideCtrl.dev,ideCtrl.func,ideCtrl.vendorId,ideCtrl.deviceId,ideCtrl.revId);
+	}
 
 	ctrls[0].id = DEVICE_PRIMARY;
 	ctrls[0].irq = IRQ_SEM_ATA1;

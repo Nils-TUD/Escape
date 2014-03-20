@@ -130,26 +130,4 @@ namespace std {
 			: runtime_error(arg) {
 		}
 	};
-
-	/**
-	 * For IO-errors
-	 */
-	class io_exception : public exception {
-	public:
-		explicit io_exception(const string& s,int err)
-			: _error(err), _msg(s + ": " + strerror(err)) {
-		}
-		virtual ~io_exception() throw () {
-		}
-
-		int error() const {
-			return _error;
-		}
-		virtual const char* what() const throw () {
-			return _msg.c_str();
-		}
-	private:
-		int _error;
-		string _msg;
-	};
 }

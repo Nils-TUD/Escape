@@ -43,11 +43,11 @@ namespace std {
 	string env::get(const string& name) {
 		char *val = getenv(name.c_str());
 		if(!val)
-			throw io_exception(string("Unable to get value of ") + name,errno);
+			throw default_error(string("Unable to get value of ") + name,errno);
 		return string(val);
 	}
 	void env::set(const string& name,const string& value) {
 		if(setenv(name.c_str(),value.c_str()) < 0)
-			throw io_exception("Unable to set env-variable",errno);
+			throw default_error("Unable to set env-variable",errno);
 	}
 }

@@ -24,10 +24,7 @@
 #include <esc/esccodes.h>
 #include <esc/messages.h>
 #include <esc/sync.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <ipc/proto/ui.h>
 
 #define TAB_WIDTH			4
 #define HISTORY_SIZE		12
@@ -67,8 +64,7 @@ struct sVTerm {
 	uchar foreground;
 	uchar background;
 	/* ui-manager for input and output */
-	int uimng;
-	int uimngid;
+	ipc::UI *ui;
 	/* speaker fd */
 	int speaker;
 	/* the first line with content */
@@ -141,7 +137,7 @@ typedef enum {
  * @param mode the video mode
  * @return true if successfull
  */
-bool vtctrl_init(sVTerm *vt,sScreenMode *mode);
+bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode);
 
 /**
  * Handles the control-commands
@@ -149,10 +145,11 @@ bool vtctrl_init(sVTerm *vt,sScreenMode *mode);
  * @param vt the vterm
  * @param cfg global configuration
  * @param cmd the command
- * @param data the data
+ * @param arg1 first argument
+ * @param arg2 second argument
  * @return the result
  */
-int vtctrl_control(sVTerm *vt,uint cmd,void *data);
+int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative) (unlocked)
@@ -196,7 +193,3 @@ void vtctrl_destroy(sVTerm *vt);
  * @return true if it has changed something
  */
 bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows);
-
-#ifdef __cplusplus
-}
-#endif

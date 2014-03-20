@@ -173,13 +173,8 @@ int main(void) {
 	if(startthread(kbIrqThread,NULL) < 0)
 		error("Unable to start IRQ-thread");
 
-	try {
-		dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
-		dev->loop();
-	}
-	catch(const ipc::IPCException &e) {
-		printe("%s",e.what());
-	}
+	dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	dev->loop();
 
 	/* clean up */
 	relport(IOPORT_PIC);
@@ -204,7 +199,12 @@ static int kbIrqThread(A_UNUSED void *arg) {
 		if(kb_set1_getKeycode(&ev.isBreak,&ev.keycode,sc)) {
 			ipc::IPCBuf ib(buffer,sizeof(buffer));
 			ib << ev;
-			dev->broadcast(ipc::Keyb::Event::MID,ib);
+			try {
+				dev->broadcast(ipc::Keyb::Event::MID,ib);
+			}
+			catch(const std::exception &e) {
+				printe("%s",e.what());
+			}
 		}
 	}
 	return 0;

@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg('bin', target = 'shell', source = env.Glob('*.c'), LIBS = ['shell'])
+env.EscapeCXXProg('bin', target = 'shell', source = env.Glob('*.cc'), LIBS = ['shell'])

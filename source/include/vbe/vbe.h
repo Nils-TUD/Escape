@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <ipc/proto/screen.h>
 
 #define VBEERR_UNSUPPORTED		-10000
 #define VBEERR_GETINFO_FAILED	-10001
@@ -81,7 +82,7 @@ typedef enum {
 	memYUV	= 7,				/* Direct color YUV memory model */
 } eMemModel;
 
-typedef uint8_t *(*fSetPixel)(sScreenMode *mode,uint8_t *vidwork,uint8_t *color);
+typedef uint8_t *(*fSetPixel)(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,7 +97,7 @@ void vbe_init(void);
  * @param mode the mode-number
  * @return information about the given mode (or NULL if not found)
  */
-sScreenMode *vbe_getModeInfo(int mode);
+ipc::Screen::Mode *vbe_getModeInfo(int mode);
 
 /**
  * Allocates an array of sVTMode-objects and fills them with the supported modes. If n is 0, only
@@ -106,14 +107,14 @@ sScreenMode *vbe_getModeInfo(int mode);
  * @param count will be set to the number of found modes
  * @return the array or NULL
  */
-sScreenMode *vbe_collectModes(size_t n,size_t *count);
+ipc::Screen::Mode *vbe_collectModes(size_t n,size_t *count);
 
 /**
  * Free's the previously via vbe_collectModes allocated mode.
  *
  * @param modes the modes
  */
-void vbe_freeModes(sScreenMode *modes);
+void vbe_freeModes(ipc::Screen::Mode *modes);
 
 /**
  * @return the current mode-number
@@ -137,7 +138,7 @@ int vbe_setMode(uint mode);
  * @param y the y-position
  * @param color the color (in the corresponding format)
  */
-void vbe_setPixel(sScreenMode *mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color);
+void vbe_setPixel(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color);
 
 /**
  * Sets a pixel with color <color> at <pos> and returns the position of the next pixel.
@@ -147,13 +148,13 @@ void vbe_setPixel(sScreenMode *mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *c
  * @param color the color (in the corresponding format)
  * @return the position of the next pixel
  */
-uint8_t *vbe_setPixelAt(sScreenMode *mode,uint8_t *pos,uint8_t *color);
+uint8_t *vbe_setPixelAt(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t *color);
 
 /**
  * @param mode the screen mode
  * @return the function to put a pixel in the given mode
  */
-fSetPixel vbe_getPixelFunc(sScreenMode *mode);
+fSetPixel vbe_getPixelFunc(const ipc::Screen::Mode &mode);
 
 #ifdef __cplusplus
 }

@@ -37,7 +37,7 @@ int main() {
 	try {
 		favlist.push_back(Link("Home",env::get("HOME")));
 	}
-	catch(const io_exception& e) {
+	catch(const default_error& e) {
 		// TODO temporary
 		favlist.push_back(Link("Home","/home/hrniels"));
 		cerr << e.what() << endl;

@@ -3,4 +3,4 @@
 Import('env')
 
 src = [env.Glob('*.cpp'), env.Glob('*/*.cpp'), env.Glob('arch/$ARCH/*.cpp')]
-env.EscapeCXXProg('bin', target = 'init', source = src, LIBS = ['usergroup'])
+env.EscapeCXXProg('bin', target = 'init', source = src, LIBS = ['usergroup','ipc'])

@@ -15,4 +15,4 @@ parser = myenv.CFile(target = 'parser', source = 'calc.y')
 cppfiles = myenv.Glob('*.cpp')
 myenv.Depends(cppfiles, [lexer, parser])
 
-myenv.EscapeCXXProg('bin', target = 'gcalc', source = cppfiles + [lexer, parser[0]], LIBS = ['gui'])
+myenv.EscapeCXXProg('bin', target = 'gcalc', source = cppfiles + [lexer, parser[0]], LIBS = ['gui', 'ipc'])

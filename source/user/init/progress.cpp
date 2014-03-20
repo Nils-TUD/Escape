@@ -18,8 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/mem.h>
 #include <stdlib.h>
@@ -30,14 +28,12 @@
 using namespace std;
 
 Progress::Progress(size_t startSkip,size_t finished,size_t itemCount)
-	: _fd(-1), _shm(), _startSkip(startSkip), _itemCount(itemCount), _finished(finished), _mode() {
+	: _startSkip(startSkip), _itemCount(itemCount), _finished(finished), _scr(), _fb() {
 }
 
 Progress::~Progress() {
-	if(_shm)
-		screen_destroyShm(&_mode,_shm,"init-vga",VID_MODE_TYPE_TUI);
-	if(_fd >= 0)
-		close(_fd);
+	delete _scr;
+	delete _fb;
 }
 
 void Progress::itemStarting(const string& s) {
@@ -85,8 +81,8 @@ void Progress::updateBar() {
 void Progress::paintBar() {
 	if(connect()) {
 		/* clear screen */
-		char *zeros = (char*)calloc(_mode.cols * _mode.rows * 2,1);
-		paintTo(zeros,0,0,_mode.cols,_mode.rows);
+		char *zeros = (char*)calloc(_fb->mode().cols * _fb->mode().rows * 2,1);
+		paintTo(zeros,0,0,_fb->mode().cols,_fb->mode().rows);
 		free(zeros);
 
 		const char color = 0x07;
@@ -122,36 +118,25 @@ void Progress::paintBar() {
 }
 
 void Progress::paintTo(const void *data,int x,int y,size_t width,size_t height) {
-	memcpy(_shm + _mode.cols * y * 2 + x * 2,data,width * height * 2);
-	screen_update(_fd,x,y,width,height);
+	memcpy(_fb->addr() + _fb->mode().cols * y * 2 + x * 2,data,width * height * 2);
+	_scr->update(x,y,width,height);
 }
 
 bool Progress::connect() {
-	if(_fd >= 0)
+	if(_scr)
 		return true;
-	_fd = open("/dev/vga",IO_MSGS);
-	if(_fd < 0)
-		return false;
 
-	ssize_t modeCnt = screen_getModeCount(_fd);
-	if(modeCnt < 0)
-		error("Unable to get mode count");
-	sScreenMode *modes = new sScreenMode[modeCnt];
-	if(screen_getModes(_fd,modes,modeCnt) < 0)
-		error("Unable to get modes");
-	for(ssize_t i = 0; i < modeCnt; ++i) {
-		if(modes[i].cols >= VGA_COLS && modes[i].rows >= VGA_ROWS) {
-			int res = screen_createShm(modes + i,&_shm,"init-vga",VID_MODE_TYPE_TUI,0644);
-			if(res < 0)
-				error("Unable to create vga shm");
-			if(screen_setMode(_fd,VID_MODE_TYPE_TUI,modes[i].id,"init-vga",true) < 0)
-				error("Unable to set mode");
-			memcpy(&_mode,modes + i,sizeof(sScreenMode));
-			break;
-		}
+	// if this fails, try again later
+	try {
+		_scr = new ipc::Screen("/dev/vga");
 	}
-	if(!_shm)
-		error("Unable to mmap vga shm");
-	delete[] modes;
+	catch(...) {
+		return false;
+	}
+
+	// this should succeed. if it does not, it's ok to die
+	ipc::Screen::Mode mode = _scr->findTextMode(VGA_COLS,VGA_ROWS);
+	_fb = new ipc::FrameBuffer(mode,"init-vga",VID_MODE_TYPE_TUI,0644);
+	_scr->setMode(VID_MODE_TYPE_TUI,mode.id,"init-vga",true);
 	return true;
 }

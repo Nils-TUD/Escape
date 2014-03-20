@@ -28,6 +28,10 @@ typedef struct {
 	sSLList *list;
 } sCmdExprList;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a command-expression-list-node
  *
@@ -66,3 +70,7 @@ void ast_printCmdExprList(sCmdExprList *s,uint layer);
  * @param n the list
  */
 void ast_destroyCmdExprList(sCmdExprList *n);
+
+#ifdef __cplusplus
+}
+#endif

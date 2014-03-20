@@ -28,10 +28,10 @@
 
 #include <vterm/vtctrl.h>
 
-class GUITerm;
+class GUIVTermDevice;
 
 class ShellControl : public gui::Control {
-	friend class GUITerm;
+	friend class GUIVTermDevice;
 
 private:
 	static const gui::Color COLORS[16];

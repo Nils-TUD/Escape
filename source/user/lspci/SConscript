@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg('bin', target = 'lspci', source = env.Glob('*.c'))
+env.EscapeCXXProg('bin', target = 'lspci', source = env.Glob('*.cc'))

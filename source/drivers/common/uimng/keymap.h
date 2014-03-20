@@ -40,6 +40,11 @@ typedef struct {
 } sKeymap;
 
 /**
+ * @return the default keymap
+ */
+sKeymap *km_getDefault(void);
+
+/**
  * Requests the keymap-object for the given file. If it already exists, the existing instance is
  * returned. Otherwise, it parses the given file and creates a new object.
  *
@@ -65,4 +70,4 @@ void km_release(sKeymap *map);
  * @param modifier will be set to the current modifiers
  * @return the character
  */
-char km_translateKeycode(sKeymap *map,bool isBreak,uchar keycode,uchar *modifier);
+char km_translateKeycode(const sKeymap *map,bool isBreak,uchar keycode,uchar *modifier);

@@ -18,8 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/mem.h>
 #include <esc/debug.h>

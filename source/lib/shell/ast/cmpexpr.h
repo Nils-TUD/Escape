@@ -36,6 +36,10 @@ typedef struct {
 	sASTNode *operand2;
 } sCmpExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an compare-node with: <operand1> <operation> <operand2>
  *
@@ -69,3 +73,7 @@ void ast_printCmpExpr(sCmpExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyCmpExpr(sCmpExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

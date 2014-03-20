@@ -27,13 +27,11 @@
 
 using namespace ipc;
 
-static size_t disksize;
-static char *diskaddr;
-
 class RomDiskDevice : public ClientDevice<> {
 public:
-	explicit RomDiskDevice(const char *name,mode_t mode)
-		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
+	explicit RomDiskDevice(const char *name,mode_t mode,size_t disksize,char *diskaddr)
+		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE),
+		  _disksize(disksize), _diskaddr(diskaddr) {
 		set(MSG_DEV_READ,std::make_memfun(this,&RomDiskDevice::read));
 		set(MSG_DISK_GETSIZE,std::make_memfun(this,&RomDiskDevice::size));
 	}
@@ -44,17 +42,23 @@ public:
 		is >> r;
 
 		ssize_t res = 0;
-		if(r.offset + r.count <= disksize && r.offset + r.count > r.offset)
+		if(r.offset + r.count <= _disksize && r.offset + r.count > r.offset)
 			res = r.count;
 		if(r.shmemoff != -1)
-			memcpy(c->shm() + r.shmemoff,diskaddr + r.offset,res);
+			memcpy(c->shm() + r.shmemoff,_diskaddr + r.offset,res);
 
-		is << DevRead::Response(res,r.shmemoff == -1 && res > 0 ? diskaddr + r.offset : NULL);
+		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		if(r.shmemoff == -1 && res)
+			is << SendData(DevRead::Response::MID,_diskaddr + r.offset,res);
 	}
 
 	void size(IPCStream &is) {
-		is << DiskSize::Response(disksize);
+		is << DiskSize::Response(_disksize) << Send(DiskSize::Response::MID);
 	}
+
+private:
+	size_t _disksize;
+	char *_diskaddr;
 };
 
 int main(int argc,char **argv) {
@@ -68,21 +72,15 @@ int main(int argc,char **argv) {
 	int fd = open(argv[2],IO_READ);
 	if(fd < 0)
 		error("Unable to open module '%s'",argv[2]);
-	disksize = info.size;
-	diskaddr = static_cast<char*>(mmap(NULL,disksize,disksize,PROT_READ,MAP_PRIVATE,fd,0));
+	char *diskaddr = static_cast<char*>(mmap(NULL,info.size,info.size,PROT_READ,MAP_PRIVATE,fd,0));
 	if(!diskaddr)
 		error("Unable to map file '%s'",argv[2]);
 	close(fd);
 
-	try {
-		RomDiskDevice romdisk("/dev/romdisk",0400);
-		if(chown("/dev/romdisk",-1,GROUP_STORAGE) < 0)
-			error("chown for /dev/romdisk failed");
-		romdisk.loop();
-	}
-	catch(const IPCException &e) {
-		printe("%s",e.what());
-	}
+	RomDiskDevice romdisk("/dev/romdisk",0400,info.size,diskaddr);
+	if(chown("/dev/romdisk",-1,GROUP_STORAGE) < 0)
+		error("chown for /dev/romdisk failed");
+	romdisk.loop();
 
 	/* clean up */
 	munmap(diskaddr);

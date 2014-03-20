@@ -26,7 +26,6 @@
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
-#include <esc/driver/vterm.h>
 #include <esc/mem.h>
 #include <esc/irq.h>
 #include <keyb/keybdev.h>

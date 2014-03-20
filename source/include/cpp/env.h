@@ -21,7 +21,7 @@
 
 #include <string>
 #include <map>
-#include <stdexcept>
+#include <vthrow.h>
 
 namespace std {
 	/**
@@ -31,7 +31,7 @@ namespace std {
 	public:
 		/**
 		 * @return a map of with all environment-variables and their value
-		 * @throws io_exception if the fetch of a value fails
+		 * @throws default_error if the fetch of a value fails
 		 */
 		static map<string,string> list();
 
@@ -49,7 +49,7 @@ namespace std {
 		 *
 		 * @param name the name
 		 * @return the value
-		 * @throws io_exception if the fetch fails
+		 * @throws default_error if the fetch fails
 		 */
 		static string get(const string& name);
 
@@ -58,7 +58,7 @@ namespace std {
 		 *
 		 * @param name the name
 		 * @param value the new value
-		 * @throws io_exception if the fetch fails
+		 * @throws default_error if the fetch fails
 		 */
 		static void set(const string& name,const string& value);
 

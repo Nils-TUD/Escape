@@ -81,7 +81,7 @@ public:
 			});
 			setList(files);
 		}
-		catch(const io_exception& e) {
+		catch(const default_error& e) {
 			cerr << e.what() << endl;
 		}
 	}

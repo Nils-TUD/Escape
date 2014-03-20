@@ -45,6 +45,7 @@ static int infodev_handler(A_UNUSED void *arg) {
 		error("Invalid device name '%s'",path);
 	snprintf(devpath,sizeof(devpath),"/system/fs/%s",devname);
 
+	// TODO use the new IPC API
 	int id = createdev(devpath,0444,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
 	if(id < 0)
 		error("Unable to create file %s",devpath);

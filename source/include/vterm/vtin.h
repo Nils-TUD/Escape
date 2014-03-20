@@ -22,10 +22,6 @@
 #include <esc/common.h>
 #include "vtctrl.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Handles the given keycode with modifiers and character
  *
@@ -54,7 +50,3 @@ size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail);
  * @param c the character
  */
 void vtin_rlPutchar(sVTerm *vt,char c);
-
-#ifdef __cplusplus
-}
-#endif

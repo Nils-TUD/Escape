@@ -40,6 +40,10 @@ typedef struct {
 	sASTNode *redirErr;
 } sExecSubCmd;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an if-statement-node with the condition, then- and else-list
  *
@@ -76,3 +80,7 @@ void ast_printSubCmd(sSubCmd *s,uint layer);
  * @param n the command
  */
 void ast_destroySubCmd(sSubCmd *n);
+
+#ifdef __cplusplus
+}
+#endif

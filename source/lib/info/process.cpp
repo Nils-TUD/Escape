@@ -39,7 +39,7 @@ namespace info {
 				if(p)
 					procs.push_back(p);
 			}
-			catch(const io_exception&) {
+			catch(const default_error&) {
 			}
 		}
 		return procs;

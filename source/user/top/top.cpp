@@ -18,8 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <esc/driver/vterm.h>
 #include <esc/esccodes.h>
 #include <esc/keycodes.h>
 #include <esc/thread.h>
@@ -30,6 +28,7 @@
 #include <info/cpu.h>
 #include <info/memusage.h>
 #include <usergroup/user.h>
+#include <ipc/proto/vterm.h>
 #include <env.h>
 #include <fstream>
 #include <iomanip>
@@ -47,6 +46,7 @@ static size_t pagesize;
 static ssize_t yoffset;
 static sUser *users;
 static tUserSem displaySem;
+static ipc::VTerm vterm(std::env::get("TERM").c_str());
 
 template<typename T>
 static void printBar(size_t barwidth,double ratio,const T& name) {
@@ -86,12 +86,7 @@ static void display(void) {
 	usemdown(&displaySem);
 	try {
 		size_t cpubarwidth;
-		sScreenMode mode;
-		if(screen_getMode(STDIN_FILENO,&mode) < 0) {
-			printe("Unable to determine screensize; falling back to 80x25");
-			mode.cols = 80;
-			mode.rows = 25;
-		}
+		ipc::Screen::Mode mode = vterm.getMode();
 		cpubarwidth = mode.cols - SSTRLEN("  99 [10000/10000MB]  ");
 
 		vector<cpu*> cpus = cpu::get_list();
@@ -200,9 +195,9 @@ static int refreshThread(void*) {
 }
 
 int main(void) {
-	vterm_setNavi(STDIN_FILENO,false);
-	vterm_setReadline(STDIN_FILENO,false);
-	vterm_backup(STDIN_FILENO);
+	vterm.setFlag(ipc::VTerm::FL_NAVI,false);
+	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
+	vterm.backup();
 
 	size_t usercount;
 	pagesize = sysconf(CONF_PAGE_SIZE);
@@ -253,8 +248,8 @@ int main(void) {
 	}
 	join(tid);
 
-	vterm_setNavi(STDIN_FILENO,true);
-	vterm_setReadline(STDIN_FILENO,true);
-	vterm_restore(STDIN_FILENO);
+	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
+	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+	vterm.restore();
 	return EXIT_SUCCESS;
 }

@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/vterm.h>
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/driver.h>
@@ -27,6 +26,7 @@
 #include <gui/application.h>
 #include <gui/window.h>
 #include <gui/scrollpane.h>
+#include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -46,7 +46,7 @@ using namespace std;
 static int guiProc(const char *devName);
 static int shellMain(const char *devName);
 
-static GUITerm *gt;
+static GUIVTermDevice *gt;
 
 static void sigUsr2(A_UNUSED int sig) {
 	Application::getInstance()->exit();
@@ -59,7 +59,7 @@ static void termSigUsr2(A_UNUSED int sig) {
 static int termThread(A_UNUSED void *arg) {
 	if(signal(SIG_USR2,termSigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
-	gt->run();
+	gt->loop();
 	return 0;
 }
 
@@ -99,11 +99,6 @@ int main(int argc,char **argv) {
 }
 
 static int guiProc(const char *devName) {
-	// re-register device
-	int sid = createdev(devName,0777,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE);
-	if(sid < 0)
-		error("Unable to re-register device %s",devName);
-
 	if(signal(SIG_USR2,sigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
 
@@ -113,7 +108,7 @@ static int guiProc(const char *devName) {
 	shared_ptr<Panel> root = w->getRootPanel();
 	root->getTheme().setPadding(0);
 	shared_ptr<ShellControl> sh = make_control<ShellControl>();
-	gt = new GUITerm(sid,sh,DEF_COLS,DEF_ROWS);
+	gt = new GUIVTermDevice(devName,0777,sh,DEF_COLS,DEF_ROWS);
 	int tid;
 	if((tid = startthread(termThread,gt)) < 0)
 		error("Unable to start term-thread");
@@ -154,9 +149,10 @@ static int shellMain(const char *devName) {
 		error("Unable to redirect STDERR to %d",fout);
 
 	// give vterm our pid
-	long pid = getpid();
-	if(vterm_setShellPid(fin,pid) < 0)
-		error("Unable to set shell-pid");
+	{
+		ipc::VTerm vterm(fin);
+		vterm.setShellPid(getpid());
+	}
 
 	printf("\033[co;9]Welcome to Escape v%s!\033[co]\n",ESCAPE_VERSION);
 	printf("\n");

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <ipc/proto/screen.h>
 #include <string>
 
 class Progress {
@@ -51,21 +51,20 @@ public:
 
 private:
 	size_type getPadX() const {
-		return (_mode.cols - BAR_WIDTH) / 2;
+		return (_fb->mode().cols - BAR_WIDTH) / 2;
 	}
 	size_type getPadY() const {
-		return (_mode.rows / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
+		return (_fb->mode().rows / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
 	}
 	void updateBar();
 	void paintTo(const void *data,int x,int y,size_t width,size_t height);
 	bool connect();
 
 private:
-	int _fd;
-	char *_shm;
 	size_t _startSkip;
 	size_t _itemCount;
 	size_t _finished;
-	sScreenMode _mode;
+	ipc::Screen *_scr;
+	ipc::FrameBuffer *_fb;
 	char _emptyBar[BAR_WIDTH * 2];
 };

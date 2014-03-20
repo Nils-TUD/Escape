@@ -29,6 +29,10 @@ typedef struct {
 	sASTNode *operand2;
 } sBinaryOpExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an binary-op-node with: <operand1> <operation> <operand2>
  *
@@ -62,3 +66,7 @@ void ast_printBinOpExpr(sBinaryOpExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyBinOpExpr(sBinaryOpExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

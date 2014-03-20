@@ -1,4 +1,6 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('sbin', target = 'romdisk', source = env.Glob('*.cc'), force_static = True)
+env.EscapeCXXProg(
+	'sbin', target = 'romdisk', source = env.Glob('*.cc'), force_static = True, LIBS = ['ipc']
+)

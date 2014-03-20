@@ -21,9 +21,12 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <ipc/proto/winmng.h>
+
+typedef ipc::WinMngEvents::Event::Type ev_type;
 
 void listener_init(int id);
-bool listener_add(int client,msgid_t mid);
-void listener_notify(msgid_t mid,const sMsg *msg,size_t size);
-void listener_remove(int client,msgid_t mid);
+bool listener_add(int client,ev_type type);
+void listener_notify(const ipc::WinMngEvents::Event *ev);
+void listener_remove(int client,ev_type type);
 void listener_removeAll(int client);

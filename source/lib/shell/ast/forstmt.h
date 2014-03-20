@@ -30,6 +30,10 @@ typedef struct {
 	sASTNode *stmtList;
 } sForStmt;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an for-statement-node
  *
@@ -64,3 +68,7 @@ void ast_printForStmt(sForStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyForStmt(sForStmt *n);
+
+#ifdef __cplusplus
+}
+#endif

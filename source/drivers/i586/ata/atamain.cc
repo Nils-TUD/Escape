@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <vthrow.h>
 
 #include "ata.h"
 #include "controller.h"
@@ -48,7 +49,7 @@ using namespace ipc;
 class ATAPartitionDevice;
 
 static ulong handleRead(sATADevice *device,sPartition *part,uint16_t *buf,uint offset,uint count);
-static ulong handleWrite(sATADevice *device,sPartition *part,int fd,uint16_t *buf,uint offset,uint count);
+static ulong handleWrite(sATADevice *device,sPartition *part,uint16_t *buf,uint offset,uint count);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
@@ -67,53 +68,53 @@ public:
 		  _part(_ataDev ? _ataDev->partTable + part : NULL) {
 		set(MSG_DEV_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
 		set(MSG_DEV_READ,std::make_memfun(this,&ATAPartitionDevice::read));
+		set(MSG_DEV_WRITE,std::make_memfun(this,&ATAPartitionDevice::write));
 		set(MSG_DISK_GETSIZE,std::make_memfun(this,&ATAPartitionDevice::getsize));
 
 		if(_ataDev == NULL || _part == NULL || _ataDev->present == 0 || _part->present == 0)
-			throw IPCException("Invalid device/partition");
+			VTHROW("Invalid device/partition (dev=" << dev << ",part=" << part << ")");
 	}
 
 	void shfile(IPCStream &is) {
-		CStringBuf<MAX_PATH_LEN> path;
-		size_t size;
-
+		char path[MAX_PATH_LEN];
 		Client *c = get(is.fd());
-		is >> size >> path;
+		DevShFile::Request r(path,sizeof(path));
+		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
 		/* ensure that we don't cause pagefaults when accessing this memory. therefore,
 		 * we populate it immediately and lock it into memory. additionally, we specify
 		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
 		 * to swap (which would cause a deadlock, because we're doing that). */
-		c->shm(static_cast<char*>(joinbuf(path.str(),size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
+		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
 
-		is << (c->shm() != NULL ? 0 : -errno) << Send(MSG_DEV_SHFILE_RESP);
+		is << DevShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(DevShFile::Response::MID);
 	}
 
 	void read(IPCStream &is) {
-		size_t offset,count;
-		ssize_t shmemoff;
-		is >> offset >> count >> shmemoff;
+		DevRead::Request r;
+		is >> r;
 		assert(!is.error());
 
-		uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (shmemoff >> 1);
-		size_t res = handleRead(_ataDev,_part,buf,offset,count);
+		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (r.shmemoff >> 1);
+		size_t res = handleRead(_ataDev,_part,buf,r.offset,r.count);
 
-		is << res << Send(MSG_DEV_READ_RESP);
-		if(shmemoff == -1 && res > 0)
-			is << SendData(MSG_DEV_READ_RESP,buf,res);
+		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		if(r.shmemoff == -1 && res > 0)
+			is << SendData(DevRead::Response::MID,buf,res);
 	}
 
 	void write(IPCStream &is) {
-		size_t offset,count;
-		ssize_t shmemoff;
-		is >> offset >> count >> shmemoff;
+		DevWrite::Request r;
+		is >> r;
+		if(r.shmemoff == -1)
+			is >> ReceiveData(buffer,sizeof(buffer));
 		assert(!is.error());
 
-		uint16_t *buf = shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (shmemoff >> 1);
-		size_t res = handleWrite(_ataDev,_part,is.fd(),buf,offset,count);
+		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (r.shmemoff >> 1);
+		size_t res = handleWrite(_ataDev,_part,buf,r.offset,r.count);
 
-		is << res << Send(MSG_DEV_WRITE_RESP);
+		is << DevWrite::Response(res) << Send(DevWrite::Response::MID);
 	}
 
 	void getsize(IPCStream &is) {
@@ -126,13 +127,8 @@ private:
 };
 
 static int drive_thread(void *arg) {
-	try {
-		ATAPartitionDevice *dev = reinterpret_cast<ATAPartitionDevice*>(arg);
-		dev->loop();
-	}
-	catch(const IPCException &e) {
-		printe("%s",e.what());
-	}
+	ATAPartitionDevice *dev = reinterpret_cast<ATAPartitionDevice*>(arg);
+	dev->loop();
 	return 0;
 }
 
@@ -210,17 +206,10 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 	return 0;
 }
 
-static ulong handleWrite(sATADevice *ataDev,sPartition *part,int fd,uint16_t *buf,uint offset,uint count) {
-	msgid_t mid;
+static ulong handleWrite(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint offset,uint count) {
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
 		if(buf != buffer || count <= MAX_RW_SIZE) {
 			size_t i;
-			if(buf == buffer) {
-				ssize_t res = IGNSIGS(receive(fd,&mid,buffer,count));
-				if(res <= 0)
-					return res;
-			}
-
 			ATA_PR2("Writing %d bytes @ %x to device %d",count,offset,ataDev->id);
 			for(i = 0; i < RETRY_COUNT; i++) {
 				if(i > 0)
@@ -277,7 +266,7 @@ static void initDrives(void) {
 					createVFSEntry(ataDev,ataDev->partTable + p,name);
 					drvCount++;
 				}
-				catch(const IPCException &) {
+				catch(const std::exception &) {
 					ATA_LOG("Drive %d, Partition %zu: Unable to register device '%s'",
 							ataDev->id,p + 1,name);
 				}

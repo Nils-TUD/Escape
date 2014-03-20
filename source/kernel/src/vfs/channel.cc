@@ -147,8 +147,10 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	{
 		ipc::DevOpen::Response r;
 		ib >> r;
-		if(r.res < 0)
+		if(r.res < 0) {
+			res = r.res;
 			goto error;
+		}
 		return r.res;
 	}
 
@@ -297,7 +299,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 		return res;
 
 	/* send msg and data to driver */
-	ib << ipc::DevWrite<>::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
+	ib << ipc::DevWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
 	res = file->sendMsg(pid,MSG_DEV_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
@@ -316,7 +318,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	if(res < 0)
 		return res;
 
-	ipc::DevWrite<>::Response r;
+	ipc::DevWrite::Response r;
 	ib >> r;
 	return r.res;
 }
@@ -506,6 +508,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	waitLock.up();
 
 	if(EXPECT_FALSE(data && msg->length > size)) {
+		Log::get().writef("INVALID: len=%zu, size=%zu\n",msg->length,size);
 		Cache::free(msg);
 		return -EINVAL;
 	}

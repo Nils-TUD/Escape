@@ -55,19 +55,17 @@ public:
 			}
 		}
 
-		is << DevRead::Response(r.count,r.shmemoff != -1 ? data : NULL);
-		if(r.shmemoff == -1 && r.count > BUF_SIZE)
-			free(data);
+		is << DevRead::Response(r.count) << Send(DevRead::Response::MID);
+		if(r.shmemoff == -1 && r.count) {
+			is << SendData(DevRead::Response::MID,data,r.count);
+			if(r.count > BUF_SIZE)
+				free(data);
+		}
 	}
 };
 
 int main(void) {
-	try {
-		ZeroDevice dev("/dev/zero",0444);
-		dev.loop();
-	}
-	catch(const IPCException &e) {
-		printe("%s",e.what());
-	}
+	ZeroDevice dev("/dev/zero",0444);
+	dev.loop();
 	return EXIT_SUCCESS;
 }

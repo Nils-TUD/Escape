@@ -18,18 +18,29 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/vterm.h>
 #include <esc/messages.h>
+#include <esc/io.h>
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
 
 int isatty(int fd) {
-	int res = vterm_isVTerm(fd) == 1;
+	/* TODO actually, we are supposed to use the C++ IPC API, but this doesn't work here without
+	 * pulling a bag of C++ dependencies into all C apps */
+	int val = 0;
+	ssize_t res = send(fd,MSG_VT_ISVTERM,NULL,0);
+	if(res < 0)
+		goto err;
+	res = receive(fd,NULL,&val,sizeof(val));
+	if(res < 0)
+		goto err;
+
 	/* this is not considered as an error in this case */
 	/* note that we include no-exec-perm here because we assume that we can always send messages
 	 * with stdin when it is connected to a vterm. */
 	if(errno == ENOTSUP || errno == EACCES)
 		errno = 0;
-	return res;
+
+err:
+	return val == 1;
 }

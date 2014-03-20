@@ -54,6 +54,10 @@ struct sASTNode {
 	void *data;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Prints the tree
  *
@@ -77,3 +81,7 @@ sValue *ast_execute(sEnv *e,sASTNode *n);
  * @param n the node
  */
 void ast_destroy(sASTNode *n);
+
+#ifdef __cplusplus
+}
+#endif

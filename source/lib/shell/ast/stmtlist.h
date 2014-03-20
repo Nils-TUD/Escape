@@ -28,6 +28,10 @@ typedef struct {
 	sSLList *list;
 } sStmtList;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a statement-list-node
  *
@@ -67,3 +71,7 @@ void ast_printStmtList(sStmtList *s,uint layer);
  * @param n the list
  */
 void ast_destroyStmtList(sStmtList *n);
+
+#ifdef __cplusplus
+}
+#endif

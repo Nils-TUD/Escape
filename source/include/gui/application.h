@@ -23,16 +23,18 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/sync.h>
-#include <esc/driver/screen.h>
-#include <gui/graphics/graphicsbuffer.h>
+#include <gui/graphics/size.h>
+#include <gui/graphics/pos.h>
 #include <gui/event/subscriber.h>
 #include <gui/theme.h>
+#include <ipc/proto/winmng.h>
 #include <exception>
 #include <functor.h>
 #include <memory>
 #include <vector>
 #include <list>
 #include <signal.h>
+#include <mutex>
 
 namespace gui {
 	class Window;
@@ -125,7 +127,7 @@ namespace gui {
 		/**
 		 * @return the current screen mode
 		 */
-		const sScreenMode *getMode() const {
+		const ipc::Screen::Mode *getMode() const {
 			return &_screenMode;
 		}
 
@@ -134,21 +136,24 @@ namespace gui {
 		 *
 		 * @return the modes
 		 */
-		std::vector<sScreenMode> getModes() const;
+		std::vector<ipc::Screen::Mode> getModes() {
+			return _winMng.getModes();
+		}
 
 		/**
 		 * Sets the given mode
 		 *
 		 * @param mode the mode
-		 * @return 0 on success
 		 */
-		int setMode(const sScreenMode &mode);
+		void setMode(const ipc::Screen::Mode &mode) {
+			_winMng.setMode(mode.width,mode.height,mode.bitsPerPixel);
+		}
 
 		/**
 		 * @return the path to the window-manager
 		 */
 		const char *getWinMng() const {
-			return _winmng;
+			return _winMngName;
 		}
 
 		/**
@@ -167,7 +172,9 @@ namespace gui {
 		/**
 		 * Requests that this window should be the active one
 		 */
-		void requestActiveWindow(gwinid_t wid);
+		void requestActiveWindow(gwinid_t wid) {
+			_winMng.setActive(wid);
+		}
 
 		/**
 		 * The event senders
@@ -237,12 +244,11 @@ namespace gui {
 		 */
 		virtual ~Application();
 		/**
-		 * Handles the given message
+		 * Handles the given event
 		 *
-		 * @param mid the message-id
-		 * @param msg the received message
+		 * @param ev the event
 		 */
-		virtual void handleMessage(msgid_t mid,sMsg *msg);
+		virtual void handleEvent(const ipc::WinMngEvents::Event &ev);
 		/**
 		 * Calls all functors in the queue
 		 */
@@ -262,7 +268,7 @@ namespace gui {
 		/**
 		 * @return the information received from vesa
 		 */
-		const sScreenMode *getScreenMode() const {
+		const ipc::Screen::Mode *getScreenMode() const {
 			return &_screenMode;
 		}
 		/**
@@ -300,19 +306,21 @@ namespace gui {
 		void closePopups(gwinid_t id,const Pos &pos);
 
 	private:
-		int _winFd;
-		int _winEvFd;
+		static const char *getWinMng(const char *winmng);
+
+		const char *_winMngName;
+		ipc::WinMng _winMng;
+		ipc::WinMngEvents _winEv;
 		bool _run;
 		uchar _mouseBtns;
-		sScreenMode _screenMode;
+		ipc::Screen::Mode _screenMode;
 		std::vector<std::shared_ptr<Window>> _windows;
 		createdev_type _created;
 		activatedev_type _activated;
 		destroyedev_type _destroyed;
 		std::list<TimeoutFunctor> _timequeue;
-		tUserSem _queueSem;
+		std::mutex _queueMutex;
 		bool _listening;
 		Theme _defTheme;
-		const char *_winmng;
 	};
 }

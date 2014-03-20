@@ -47,7 +47,7 @@ namespace info {
 					threads.push_back(t);
 				}
 			}
-			catch(const io_exception&) {
+			catch(const default_error&) {
 			}
 		}
 		return threads;

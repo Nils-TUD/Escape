@@ -59,13 +59,8 @@ int main(int argc,char *argv[]) {
 		dev = argv[2] - 1;
 	snprintf(fspath,sizeof(fspath),"/dev/iso9660-%s",dev + 1);
 
-	try {
-		FSDevice fsdev(iso_getFS(),"iso9660",argv[2],fspath);
-		fsdev.loop();
-	}
-	catch(const ipc::IPCException &e) {
-		printe("%s",e.what());
-	}
+	FSDevice fsdev(iso_getFS(),"iso9660",argv[2],fspath);
+	fsdev.loop();
 	return 0;
 }
 

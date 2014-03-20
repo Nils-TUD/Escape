@@ -28,6 +28,10 @@ typedef struct {
 	sASTNode *stmtList;
 } sWhileStmt;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an while-statement-node
  *
@@ -60,3 +64,7 @@ void ast_printWhileStmt(sWhileStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyWhileStmt(sWhileStmt *n);
+
+#ifdef __cplusplus
+}
+#endif

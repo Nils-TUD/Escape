@@ -34,7 +34,7 @@ if env['ARCH'] == 'i586':
 	crt1 = shenv.Object('crt1S.o', 'arch/$ARCH/crt1.S')
 	crtn = shenv.Object('crtnS.o', 'arch/$ARCH/crtn.S')
 	shenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])
-	
+
 	shlib = shenv.SharedLibrary(
 		target = 'c',
 		source = acsrc + assrc + csrc + baseacsrc + baseassrc

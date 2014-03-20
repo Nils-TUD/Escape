@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/messages.h>
+#include <ipc/proto/vterm.h>
 
 #define WIDTH				(mode.cols)
 #define HEIGHT				(mode.rows)
@@ -29,7 +30,7 @@
 #define GWIDTH				(WIDTH - PADDING * 2)
 #define GHEIGHT				(HEIGHT - PADDING * 2)
 
-extern sScreenMode mode;
+extern ipc::Screen::Mode mode;
 
 void ui_init(uint cols,uint rows);
 void ui_destroy(void);

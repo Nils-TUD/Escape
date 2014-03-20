@@ -18,11 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <esc/width.h>
 #include <esc/messages.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
+#include <ipc/proto/vterm.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -112,7 +111,6 @@ static uint flags;
 
 int main(int argc,char *argv[]) {
 	size_t widths[WIDTHS_COUNT] = {0};
-	sScreenMode mode;
 	sUser *userList = nullptr;
 	sGroup *groupList = nullptr;
 
@@ -144,8 +142,8 @@ int main(int argc,char *argv[]) {
 		path = env::get("CWD");
 
 	// get console-size
-	if(screen_getMode(STDIN_FILENO,&mode) < 0)
-		error("Unable to determine screensize");
+	ipc::VTerm vterm(std::env::get("TERM").c_str());
+	ipc::Screen::Mode mode = vterm.getMode();
 
 	// read users and groups
 	if(flags & F_LONG) {
@@ -167,7 +165,7 @@ int main(int argc,char *argv[]) {
 		entries = getEntries(path);
 		sort(entries.begin(),entries.end(),compareEntries);
 	}
-	catch(const io_exception& e) {
+	catch(const default_error& e) {
 		cerr << "Unable to read dir-entries: " << e.what() << '\n';
 		exit(EXIT_FAILURE);
 	}

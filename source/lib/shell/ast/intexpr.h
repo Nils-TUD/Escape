@@ -28,6 +28,10 @@ typedef struct {
 	tIntType val;
 } sIntExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an integer-value
  *
@@ -59,3 +63,7 @@ void ast_printIntExpr(sIntExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyIntExpr(sIntExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

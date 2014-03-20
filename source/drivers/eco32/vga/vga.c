@@ -24,8 +24,6 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/messages.h>
-#include <esc/driver/screen.h>
-#include <tui/tuidev.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

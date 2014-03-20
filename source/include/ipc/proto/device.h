@@ -95,87 +95,22 @@ struct DevRead {
 		ssize_t shmemoff;
 	};
 
-	struct Response {
-		static const msgid_t MSG = MSG_DEV_READ_RESP;
-
-		explicit Response() {
-		}
-		explicit Response(ssize_t count,void *buffer) : res(count), data(buffer) {
-		}
-
-		friend IPCStream &operator<<(IPCStream &is,const Response &r) {
-			is << r.res << Send(MSG);
-			if(r.res && r.data)
-				is << SendData(MSG,r.data,r.res);
-			return is;
-		}
-		friend IPCBuf &operator>>(IPCBuf &is,Response &r) {
-			/* don't receive the data here, because this involves kernel-stuff */
-			is >> r.res;
-			if(is.error())
-				r.res = -EINVAL;
-			return is;
-		}
-		friend IPCStream &operator>>(IPCStream &is,Response &r) {
-			size_t max = r.res;
-			is >> r.res;
-			if(r.res && r.data)
-				is >> ReceiveData(r.data,max);
-			if(is.error())
-				r.res = -EINVAL;
-			return is;
-		}
-
-		ssize_t res;
-		void *data;
-	};
+	typedef DefaultResponse<ssize_t,MSG_DEV_READ_RESP> Response;
 };
 
-typedef void *(*alloc_func)(size_t size);
-typedef void (*free_func)(void *ptr);
-
-static inline void *_alloc_dummy(size_t) {
-	return NULL;
-}
-static inline void _free_dummy(void*) {
-}
-
-template<alloc_func ALLOC = _alloc_dummy,free_func FREE = _free_dummy>
 struct DevWrite {
 	struct Request {
 		static const msgid_t MSG = MSG_DEV_WRITE;
 
 		explicit Request() {
 		}
-		explicit Request(size_t _offset,size_t _count,ssize_t _shmemoff,void *_data = NULL)
-			: offset(_offset), count(_count), shmemoff(_shmemoff), data(_data) {
-		}
-		~Request() {
-			FREE(data);
-		}
-
-		friend IPCBuf &operator<<(IPCBuf &ib,const Request &r) {
-			/* again no send for the kernel */
-			return ib << r.offset << r.count << r.shmemoff;
-		}
-		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.offset << r.count << r.shmemoff << Send(MSG) << SendData(MSG,r.data,r.count);
-		}
-		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			is >> r.offset >> r.count >> r.shmemoff;
-			if(r.shmemoff == -1) {
-				r.data = ALLOC(r.count);
-				is >> ReceiveData(r.data,r.count);
-			}
-			else
-				r.data = NULL;
-			return is;
+		explicit Request(size_t _offset,size_t _count,ssize_t _shmemoff)
+			: offset(_offset), count(_count), shmemoff(_shmemoff) {
 		}
 
 		size_t offset;
 		size_t count;
 		ssize_t shmemoff;
-		void *data;
 	};
 
 	typedef DefaultResponse<ssize_t,MSG_DEV_WRITE_RESP> Response;

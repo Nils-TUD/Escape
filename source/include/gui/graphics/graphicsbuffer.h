@@ -50,7 +50,7 @@ namespace gui {
 		 */
 		GraphicsBuffer(Window *win,const Pos &pos,const Size &size)
 			: _win(win), _pos(pos), _size(size), _minx(0),_miny(0),
-			  _maxx(size.width - 1), _maxy(size.height - 1), _fd(-1), _pixels(nullptr) {
+			  _maxx(size.width - 1), _maxy(size.height - 1), _pixels(nullptr) {
 		}
 		/**
 		 * Destructor
@@ -161,7 +161,6 @@ namespace gui {
 		// dirty region
 		gpos_t _minx,_miny,_maxx,_maxy;
 		// buffer for this window; controls use this, too (don't have their own)
-		int _fd;
 		uint8_t *_pixels;
 	};
 }

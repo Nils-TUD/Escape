@@ -77,9 +77,9 @@ typedef struct {
 
 struct OpenFile : public ipc::Client {
 public:
-	explicit OpenFile() : Client(), ino() {
+	explicit OpenFile(int fd) : Client(fd), ino() {
 	}
-	explicit OpenFile(inode_t _ino) : Client(), ino(_ino) {
+	explicit OpenFile(int fd,inode_t _ino) : Client(fd), ino(_ino) {
 	}
 
 	inode_t ino;

@@ -20,51 +20,41 @@
 #pragma once
 
 #include <esc/common.h>
-#include <vterm/vtctrl.h>
+#include <ipc/vtermdevice.h>
 
 #include "shellcontrol.h"
 
-class GUITerm {
-private:
-	/**
-	 * The min-size of the buffer before we pass it to the shell-control
-	 */
-	static const size_t UPDATE_BUF_SIZE	= 256;
+class GUIVTermDevice : public ipc::VTermDevice {
 	/**
 	 * The total size of the buffer
 	 */
 	static const size_t READ_BUF_SIZE	= 512;
-	/**
-	 * The size of the buffer for the read/write data
-	 */
-	static const size_t CLIENT_BUF_SIZE	= 4096;
 
 public:
-	GUITerm(int sid,std::shared_ptr<ShellControl> sh,uint cols,uint rows);
-	virtual ~GUITerm();
+	explicit GUIVTermDevice(const char *path,mode_t mode,
+		std::shared_ptr<ShellControl> sh,uint cols,uint rows);
+	virtual ~GUIVTermDevice();
 
-	void run();
-	void stop() {
-		_run = false;
-	}
+	void loop();
 
 private:
-	// no cloning
-	GUITerm(const GUITerm& gt);
-	GUITerm& operator=(const GUITerm& gt);
+	virtual void setVideoMode(int) {
+		VTHROW("Not supported");
+	}
+	virtual void update() {
+		/* we do the update after every request anyway */
+	}
 
-	void read(int fd,sMsg *msg);
-	void write(int fd,sMsg *msg);
+	void write(ipc::IPCStream &is);
+	void getMode(ipc::IPCStream &is);
+	void getModes(ipc::IPCStream &is);
+
 	void prepareMode();
 	static void setCursor(sVTerm *vt);
 
-private:
-	int _sid;
-	volatile bool _run;
-	sVTerm *_vt;
-	sScreenMode _mode;
+	sVTerm _vt;
+	ipc::Screen::Mode _mode;
 	std::shared_ptr<ShellControl> _sh;
 	char *_rbuffer;
-	char *_buffer;
 	size_t _rbufPos;
 };

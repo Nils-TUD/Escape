@@ -27,6 +27,10 @@ typedef struct {
 	sASTNode *expr;
 } sExprStmt;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an expression-statement-node
  *
@@ -58,3 +62,7 @@ void ast_printExprStmt(sExprStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyExprStmt(sExprStmt *n);
+
+#ifdef __cplusplus
+}
+#endif

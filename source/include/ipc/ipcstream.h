@@ -22,8 +22,11 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <ipc/ipcbuf.h>
-#include <ipc/exception.h>
 #include <string>
+
+#ifndef IN_KERNEL
+#	include <vthrow.h>
+#endif
 
 namespace ipc {
 
@@ -66,6 +69,10 @@ public:
 	}
 	explicit IPCStream(const char *dev,uint mode = IO_MSGS)
 		: _fd(open(dev,mode)), _buf(new char[DEF_SIZE],DEF_SIZE), _flags(FL_OPEN | FL_ALLOC) {
+#ifndef IN_KERNEL
+		if(_fd < 0)
+			VTHROWE("open",_fd);
+#endif
 	}
 	~IPCStream() {
 		if(_flags & FL_ALLOC)
@@ -168,10 +175,12 @@ struct Send {
 	}
 
 	void operator()(IPCStream &is) {
+		// ensure that we don't send the data that we've received last time
+		is.startWriting();
 		A_UNUSED ssize_t res = ::send(is.fd(), _mid, is._buf.buffer(), is._buf.pos());
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
-			throw IPCException("send failed");
+			VTHROWE("send",res);
 #endif
 		is.reset();
 	}
@@ -182,10 +191,10 @@ private:
 
 struct Receive {
 	void operator()(IPCStream &is) {
-		A_UNUSED ssize_t res = ::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max());
+		A_UNUSED ssize_t res = IGNSIGS(::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max()));
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
-			throw IPCException("send failed");
+			VTHROWE("receive",res);
 #endif
 	}
 };
@@ -195,6 +204,7 @@ struct SendReceive : public Send, public Receive {
 	}
 
 	void operator()(IPCStream &is) {
+		// TODO use the sendrcv syscall
 		Send::operator()(is);
 		Receive::operator()(is);
 	}
@@ -208,7 +218,7 @@ struct SendData {
 		A_UNUSED ssize_t res = ::send(is.fd(), _mid, _data, _size);
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
-			throw IPCException("send failed");
+			VTHROWE("send",res);
 #endif
 	}
 
@@ -223,10 +233,10 @@ struct ReceiveData {
 	}
 
 	void operator()(IPCStream &is) {
-		A_UNUSED ssize_t res = ::receive(is.fd(), NULL, _data, _size);
+		A_UNUSED ssize_t res = IGNSIGS(::receive(is.fd(), NULL, _data, _size));
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
-			throw IPCException("receive failed");
+			VTHROWE("receive",res);
 #endif
 	}
 

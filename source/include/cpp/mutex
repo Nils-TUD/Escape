@@ -1,0 +1,76 @@
+// -*- C++ -*-
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#pragma once
+
+#include <esc/common.h>
+#include <esc/sync.h>
+#include <stdexcept>
+
+namespace std {
+
+class mutex {
+public:
+	explicit mutex() : _usem() {
+		// actually, the constructor should not throw, but this doesn't fit for us
+		if(usemcrt(&_usem,1) < 0)
+			throw runtime_error("unable to create mutex");
+	}
+	~mutex() {
+		usemdestr(&_usem);
+	}
+
+	mutex(const mutex&) = delete;
+	mutex& operator=(const mutex&) = delete;
+
+	void lock() {
+		usemdown(&_usem);
+	}
+	bool try_lock() {
+		return usemtrydown(&_usem);
+	}
+	void unlock() {
+		usemup(&_usem);
+	}
+
+private:
+	tUserSem _usem;
+};
+
+template<class Mutex>
+class lock_guard {
+public:
+	typedef Mutex mutex_type;
+
+	explicit lock_guard(mutex_type &m) : pm(m) {
+		pm.lock();
+	}
+	~lock_guard() {
+		pm.unlock();
+	}
+
+	lock_guard(lock_guard const&) = delete;
+	lock_guard& operator=(lock_guard const&) = delete;
+
+private:
+	mutex_type &pm;
+};
+
+}

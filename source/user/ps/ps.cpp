@@ -18,14 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
 #include <info/process.h>
 #include <info/thread.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
+#include <ipc/proto/vterm.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +34,7 @@
 #include <algorithm>
 #include <cmdargs.h>
 #include <file.h>
+#include <env.h>
 
 using namespace std;
 using namespace info;
@@ -202,9 +202,8 @@ int main(int argc,char **argv) {
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// get console-size
-	sScreenMode mode;
-	if(screen_getMode(STDIN_FILENO,&mode) < 0)
-		error("Unable to determine screensize");
+	ipc::VTerm vterm(std::env::get("TERM").c_str());
+	ipc::Screen::Mode mode = vterm.getMode();
 
 	// print header
 	cout << setw(maxPid) << "ID";

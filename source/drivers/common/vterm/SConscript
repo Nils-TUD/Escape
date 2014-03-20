@@ -1,4 +1,6 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg('sbin', target = 'vterm', source = env.Glob('*.c'), LIBS = ['vterm', 'usergroup'])
+env.EscapeCXXProg(
+	'sbin', target = 'vterm', source = env.Glob('*.cc'), LIBS = ['vterm', 'usergroup', 'ipc']
+)

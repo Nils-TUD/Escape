@@ -32,6 +32,11 @@ static inline void usemdown(tUserSem *sem) {
 	semdown(sem->sem);
 }
 
+static inline bool usemtrydown(tUserSem *sem) {
+	/* FIXME implement that for eco32 */
+	return false;
+}
+
 static inline void usemup(tUserSem *sem) {
 	semup(sem->sem);
 }

@@ -34,6 +34,10 @@ static inline void usemdown(tUserSem *sem) {
 		semdown(sem->sem);
 }
 
+static inline bool usemtrydown(tUserSem *sem) {
+	return atomic_add(&sem->value,-1) > 0;
+}
+
 static inline void usemup(tUserSem *sem) {
 	if(atomic_add(&sem->value,+1) < 0)
 		semup(sem->sem);

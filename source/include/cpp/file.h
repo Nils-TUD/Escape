@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/io.h>
-#include <stdexcept>
+#include <vthrow.h>
 #include <string>
 #include <vector>
 #include <time.h>
@@ -41,7 +41,7 @@ namespace std {
 		 * Builds a file-object for given path
 		 *
 		 * @param path the path (has not to be absolute)
-		 * @throws io_exception if stat fails
+		 * @throws default_error if stat fails
 		 */
 		file(const string& path);
 		/**
@@ -49,7 +49,7 @@ namespace std {
 		 *
 		 * @param parent the parent-path (has not to be absolute)
 		 * @param name the filename
-		 * @throws io_exception if stat fails
+		 * @throws default_error if stat fails
 		 */
 		file(const string& parent,const string& name);
 		/**
@@ -176,7 +176,7 @@ namespace std {
 		 *
 		 * @param parent the parent-path
 		 * @param name the filename
-		 * @throws io_exception if stat fails
+		 * @throws default_error if stat fails
 		 */
 		void init(const string& parent,const string& name);
 

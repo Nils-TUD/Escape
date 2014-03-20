@@ -33,26 +33,21 @@ public:
 	}
 
 	void read(IPCStream &is) {
-		is << DevRead::Response(0,NULL);
+		is << DevRead::Response(0) << Send(DevRead::Response::MID);
 	}
 
 	void write(IPCStream &is) {
-		/* dummy-implementations are ok here; this way we skip the data-message */
-		DevWrite<>::Request r;
-		is >> r;
+		/* skip the data-message */
+		DevWrite::Request r;
+		is >> r >> ReceiveData(NULL,0);
 
 		/* write response and pretend that we've written everything */
-		is << DevWrite<>::Response(r.count);
+		is << DevWrite::Response(r.count) << Send(DevWrite::Response::MID);
 	}
 };
 
 int main() {
-	try {
-		NullDevice dev("/dev/null",0666);
-		dev.loop();
-	}
-	catch(const IPCException &e) {
-		printe("%s",e.what());
-	}
+	NullDevice dev("/dev/null",0666);
+	dev.loop();
 	return EXIT_SUCCESS;
 }

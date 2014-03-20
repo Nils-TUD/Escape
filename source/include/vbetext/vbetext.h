@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <ipc/proto/screen.h>
 
 #define FONT_WIDTH	8
 #define FONT_HEIGHT	16
@@ -53,6 +53,7 @@ typedef enum {
 } eColor;
 
 uint8_t *vbet_getColor(tColor col);
-void vbet_drawChar(sScreenMode *mode,uint8_t *frmbuf,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
+void vbet_drawChar(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,
+	uint8_t c,uint8_t color);
 
 extern const uchar font8x16[];

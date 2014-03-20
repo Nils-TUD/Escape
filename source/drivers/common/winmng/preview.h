@@ -33,7 +33,7 @@
  * @param height the height
  * @param thickness the thickness of the lines
  */
-void preview_set(uint8_t *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness);
+void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness);
 
 /**
  * Ensures that the currently set preview-rectangle is painted again, if the given rectangle
@@ -45,4 +45,4 @@ void preview_set(uint8_t *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,g
  * @param width the width
  * @param height the height
  */
-void preview_updateRect(uint8_t *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+void preview_updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);

@@ -6,6 +6,7 @@ myenv = env.Clone()
 builddir = myenv.Dir('$BUILDDIR/lib/shell')
 myenv.Append(
 	CFLAGS = ' -DYYERROR_VERBOSE -I lib/shell -I ' + builddir.abspath,
+	CXXFLAGS = ' -I lib/shell -I ' + builddir.abspath,
 	LEXFLAGS = '--nounistd',
 	YACCFLAGS = '-t -d'
 )
@@ -13,8 +14,7 @@ myenv.Append(
 lexer = myenv.CFile(target = 'lex.c', source = 'script.l')
 parser = myenv.CFile(target = 'parser', source = 'script.y')
 
-cfiles = [f for f in myenv.Glob('*.c') if 'lex.c' not in str(f) and 'parser.c' not in str(f)]
-cfiles += [f for f in myenv.Glob('*/*.c') if 'lex.c' not in str(f) and 'parser.c' not in str(f)]
-myenv.Depends(cfiles, [lexer, parser])
+ccfiles = [myenv.Glob('*.cc'), myenv.Glob('*/*.cc')]
+myenv.Depends(ccfiles, [lexer, parser])
 
-myenv.EscapeLib(target = 'shell', source = cfiles + [lexer, parser[0]])
+myenv.EscapeLib(target = 'shell', source = ccfiles + ['lang.c', lexer, parser[0]])

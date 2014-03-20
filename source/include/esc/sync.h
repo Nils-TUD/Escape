@@ -105,6 +105,15 @@ static inline int usemcrt(tUserSem *sem,long val);
 static inline void usemdown(tUserSem *sem);
 
 /**
+ * Tries to performs the down-operation on the given user-semaphore, i.e. decrements it.
+ * If the value is <= 0, it returns false. Otherwise it has grabbed the lock and returns true.
+ *
+ * @param sem the semaphore
+ * @return bool true if the lock has been taken
+ */
+static inline bool usemtrydown(tUserSem *sem);
+
+/**
  * Performs the up-operation on the given user-semaphore, i.e. increments it.
  *
  * @param sem the semaphore

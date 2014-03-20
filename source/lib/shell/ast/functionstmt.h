@@ -30,6 +30,10 @@ typedef struct {
 	sEnv *env;
 } sFunctionStmt;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a function-statement-node
  *
@@ -79,3 +83,7 @@ void ast_destroyFunctionStmt(sFunctionStmt *n);
  * @param n the statement
  */
 void ast_killFunctionStmt(sFunctionStmt *n);
+
+#ifdef __cplusplus
+}
+#endif

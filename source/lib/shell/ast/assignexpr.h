@@ -30,6 +30,10 @@ typedef struct {
 	sASTNode *index;
 } sAssignExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an assign-node with given variable and the expression to evaluate.
  *
@@ -64,3 +68,7 @@ void ast_printAssignExpr(sAssignExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyAssignExpr(sAssignExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

@@ -81,27 +81,18 @@
 #define MSG_SPEAKER_BEEP			200	/* performs a beep */
 
 #define MSG_WIN_CREATE				300	/* creates a window */
-#define MSG_WIN_CREATE_RESP			301	/* the create-response */
-#define MSG_WIN_MOVE				302	/* moves a window */
-#define MSG_WIN_UPDATE				303	/* requests an update of a window */
-#define MSG_WIN_SET_ACTIVE_EV		304	/* sets the active window */
-#define MSG_WIN_DESTROY				305	/* destroys a window */
-#define MSG_WIN_RESIZE				306	/* resizes a window */
-#define MSG_WIN_ENABLE				307	/* enables the window-manager */
-#define MSG_WIN_DISABLE				308	/* disables the window-manager */
-#define MSG_WIN_MOUSE_EV			309	/* a mouse-event sent by the window-manager */
-#define MSG_WIN_KEYBOARD_EV			310	/* a keyboard-event sent by the window-manager */
-#define MSG_WIN_CREATE_EV			311	/* a window has been created */
-#define MSG_WIN_DESTROY_EV			312	/* a window has been destroyed */
-#define MSG_WIN_ADDLISTENER			313	/* announces a listener for CREATE_EV or DESTROY_EV */
-#define MSG_WIN_REMLISTENER			314	/* removes a listener for CREATE_EV or DESTROY_EV */
-#define MSG_WIN_SET_ACTIVE			315	/* requests that a window is set to the active one */
-#define MSG_WIN_ACTIVE_EV			316	/* a window has been set to active */
-#define MSG_WIN_RESIZE_RESP			317	/* a resize has been finished */
-#define MSG_WIN_UPDATE_RESP			318 /* an update has been finished */
-#define MSG_WIN_ATTACH				319 /* connect an event-channel to the request-channel */
-#define MSG_WIN_RESET_EV			320 /* asks the app to reset everything */
-#define MSG_WIN_SETMODE				321 /* sets the screen mode */
+#define MSG_WIN_MOVE				301	/* moves a window */
+#define MSG_WIN_UPDATE				302	/* requests an update of a window */
+#define MSG_WIN_DESTROY				303	/* destroys a window */
+#define MSG_WIN_RESIZE				304	/* resizes a window */
+#define MSG_WIN_ENABLE				305	/* enables the window-manager */
+#define MSG_WIN_DISABLE				306	/* disables the window-manager */
+#define MSG_WIN_ADDLISTENER			307	/* announces a listener for CREATE_EV or DESTROY_EV */
+#define MSG_WIN_REMLISTENER			308	/* removes a listener for CREATE_EV or DESTROY_EV */
+#define MSG_WIN_SET_ACTIVE			309	/* requests that a window is set to the active one */
+#define MSG_WIN_ATTACH				310 /* connect an event-channel to the request-channel */
+#define MSG_WIN_SETMODE				311 /* sets the screen mode */
+#define MSG_WIN_EVENT				312 /* for all events */
 
 #define MSG_SCR_SETCURSOR			500	/* sets the cursor */
 #define MSG_SCR_GETMODE				501 /* gets information about the current video-mode */
@@ -109,17 +100,13 @@
 #define MSG_SCR_GETMODES            503 /* gets all video-modes */
 #define MSG_SCR_UPDATE				504 /* updates a part of the screen */
 
-#define MSG_VT_EN_ECHO				600	/* enables that the vterm echo's typed characters */
-#define MSG_VT_DIS_ECHO				601	/* disables echo */
-#define MSG_VT_EN_RDLINE			602	/* enables the readline-feature */
-#define MSG_VT_DIS_RDLINE			603	/* disables the readline-feature */
-#define MSG_VT_EN_NAVI				604	/* enables navigation (page-up, arrow-up, ... ) */
-#define MSG_VT_DIS_NAVI				605	/* disables navigation */
-#define MSG_VT_BACKUP				606	/* backups the screen */
-#define MSG_VT_RESTORE				607	/* restores the screen */
-#define MSG_VT_SHELLPID				608	/* gives the vterm the shell-pid */
-#define MSG_VT_ISVTERM				609 /* dummy message on which only vterm answers with no error */
-#define MSG_VT_SETMODE				610 /* requests vterm to set the video-mode */
+#define MSG_VT_GETFLAG				600	/* gets a flag */
+#define MSG_VT_SETFLAG				601	/* sets a flag */
+#define MSG_VT_BACKUP				602	/* backups the screen */
+#define MSG_VT_RESTORE				603	/* restores the screen */
+#define MSG_VT_SHELLPID				604	/* gives the vterm the shell-pid */
+#define MSG_VT_ISVTERM				605 /* dummy message on which only vterm answers with no error */
+#define MSG_VT_SETMODE				606 /* requests vterm to set the video-mode */
 
 #define MSG_KB_EVENT				700 /* events that the keyboard-driver sends */
 
@@ -133,7 +120,8 @@
 
 #define MSG_PCI_GET_BY_CLASS		1000	/* searches for a pci device with given class */
 #define MSG_PCI_GET_BY_ID			1001	/* searches for a pci device with given id */
-#define MSG_PCI_GET_LIST			1002 /* get device-count or a device by index */
+#define MSG_PCI_GET_BY_INDEX		1002
+#define MSG_PCI_GET_COUNT			1003
 
 #define MSG_INIT_REBOOT				1100 /* requests a reboot */
 #define MSG_INIT_SHUTDOWN			1101 /* requests a shutdown */
@@ -165,98 +153,10 @@
 #define VID_MODE_TYPE_TUI			1
 #define VID_MODE_TYPE_GUI			2
 
-/* the data send from the keyboard */
-typedef struct {
-	/* the keycode (see keycodes.h) */
-	uchar keycode;
-	/* whether the key was released */
-	uchar isBreak;
-} sKbData;
-
-/* the data send from the mouse */
-typedef struct {
-	gpos_t x;
-	gpos_t y;
-	gpos_t z;
-	uchar buttons;
-} sMouseData;
-
-/* the data send from the kmmanager */
-typedef struct {
-	enum {
-		KM_EV_KEYBOARD,
-		KM_EV_MOUSE
-	} type;
-	union {
-		struct {
-			/* the keycode (see keycodes.h) */
-			uchar keycode;
-			/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT, STATE_BREAK) */
-			uchar modifier;
-			/* the character, translated by the current keymap */
-			char character;
-		} keyb;
-		sMouseData mouse;
-	} d;
-} sUIMData;
-
-typedef struct {
-	int id;
-	uint cols;
-	uint rows;
-	uint width;
-	uint height;
-	uchar bitsPerPixel;
-	uchar redMaskSize;				/* Size of direct color red mask   */
-	uchar redFieldPosition;			/* Bit posn of lsb of red mask     */
-	uchar greenMaskSize;			/* Size of direct color green mask */
-	uchar greenFieldPosition;		/* Bit posn of lsb of green mask   */
-	uchar blueMaskSize;				/* Size of direct color blue mask  */
-	uchar blueFieldPosition;		/* Bit posn of lsb of blue mask    */
-	uintptr_t physaddr;
-	size_t tuiHeaderSize;
-	size_t guiHeaderSize;
-	int mode;
-	int type;
-} sScreenMode;
-
 typedef struct {
 	struct tm time;
 	uint microsecs;
 } sRTCInfo;
-
-typedef struct {
-	enum {BAR_MEM,BAR_IO} type;
-	enum {
-		BAR_MEM_32			= 0x1,
-		BAR_MEM_64			= 0x2,
-		BAR_MEM_PREFETCH	= 0x4
-	};
-	uintptr_t addr;
-	size_t size;
-	uint flags;
-} sPCIBar;
-
-typedef enum {
-	PCI_TYPE_GENERIC			= 0,
-	PCI_TYPE_PCI_PCI_BRIDGE		= 1,
-	PCI_TYPE_CARD_BUS_BRIDGE	= 2,
-} ePCIDevType;
-
-typedef struct {
-	uchar bus;
-	uchar dev;
-	uchar func;
-	uchar type;
-	ushort deviceId;
-	ushort vendorId;
-	uchar baseClass;
-	uchar subClass;
-	uchar progInterface;
-	uchar revId;
-	uchar irq;
-	sPCIBar bars[6];
-} sPCIDevice;
 
 /* for messages with integer arguments only */
 typedef struct {

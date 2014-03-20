@@ -48,10 +48,10 @@ namespace std {
 		vector<sDirEntry> v;
 		sDirEntry e;
 		if(!is_dir())
-			throw io_exception("list_files failed: No directory",0);
+			throw default_error("list_files failed: No directory",0);
 		DIR *dir = opendir(path().c_str());
 		if(dir == nullptr)
-			throw io_exception("opendir failed",errno);
+			throw default_error("opendir failed",errno);
 		bool res;
 		while((res = readdir(dir,&e))) {
 			if((pattern.empty() || strmatch(pattern.c_str(),e.name)) &&
@@ -86,6 +86,6 @@ namespace std {
 		_parent = apath;
 		int res = stat(path().c_str(),&_info);
 		if(res < 0)
-			throw io_exception("stat failed",-res);
+			throw default_error("stat failed",-res);
 	}
 }

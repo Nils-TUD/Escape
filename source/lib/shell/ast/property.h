@@ -29,6 +29,10 @@ typedef struct {
 	char *name;
 } sProperty;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a property
  *
@@ -62,3 +66,7 @@ void ast_printProperty(sProperty *s,uint layer);
  * @param n the expression
  */
 void ast_destroyProperty(sProperty *n);
+
+#ifdef __cplusplus
+}
+#endif

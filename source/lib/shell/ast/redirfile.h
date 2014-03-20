@@ -31,6 +31,10 @@ typedef struct {
 	sASTNode *expr;
 } sRedirFile;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an redirect-file-node with the condition, then- and else-list
  *
@@ -54,3 +58,7 @@ void ast_printRedirFile(sRedirFile *s,uint layer);
  * @param n the redirfile
  */
 void ast_destroyRedirFile(sRedirFile *n);
+
+#ifdef __cplusplus
+}
+#endif

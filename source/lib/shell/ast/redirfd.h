@@ -30,6 +30,10 @@ typedef struct {
 	uchar type;
 } sRedirFd;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an redirect-fd-node with the condition, then- and else-list
  *
@@ -52,3 +56,7 @@ void ast_printRedirFd(sRedirFd *s,uint layer);
  * @param n the redirfd
  */
 void ast_destroyRedirFd(sRedirFd *n);
+
+#ifdef __cplusplus
+}
+#endif

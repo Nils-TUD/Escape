@@ -34,6 +34,10 @@ typedef struct {
 	sASTNode *operand1;
 } sUnaryOpExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a unary-op-expression-node
  *
@@ -66,3 +70,7 @@ void ast_printUnaryOpExpr(sUnaryOpExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyUnaryOpExpr(sUnaryOpExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

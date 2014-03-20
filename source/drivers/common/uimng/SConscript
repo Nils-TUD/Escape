@@ -3,6 +3,6 @@
 Import('env')
 
 if env['ARCH'] == 'i586':
-	env.EscapeCProg('sbin', target = 'uimng', source = env.Glob('*.c'), LIBS = ['vbetext'])
+	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['ipc','vbetext'])
 else:
-	env.EscapeCProg('sbin', target = 'uimng', source = env.Glob('*.c'))
+	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['ipc'])

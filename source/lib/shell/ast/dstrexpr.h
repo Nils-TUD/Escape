@@ -28,6 +28,10 @@ typedef struct {
 	sSLList *list;
 } sDStrExpr;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an dynamic-string-expression
  *
@@ -66,3 +70,7 @@ void ast_printDStrExpr(sDStrExpr *s,uint layer);
  * @param n the expression
  */
 void ast_destroyDStrExpr(sDStrExpr *n);
+
+#ifdef __cplusplus
+}
+#endif

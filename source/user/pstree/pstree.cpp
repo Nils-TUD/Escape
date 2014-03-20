@@ -18,13 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
 #include <esc/cmdargs.h>
 #include <info/process.h>
+#include <ipc/proto/vterm.h>
 #include <iostream>
 #include <iomanip>
 #include <map>
 #include <stdlib.h>
+#include <env.h>
 
 using namespace std;
 using namespace info;
@@ -44,7 +45,7 @@ struct ProcNode {
 
 typedef map<pid_t,ProcNode*> map_type;
 
-static sScreenMode mode;
+static ipc::Screen::Mode mode;
 static char *prefix;
 
 static void usage(const char *name) {
@@ -96,8 +97,8 @@ int main(int argc,char **argv) {
 	int pid = argc > 1 ? atoi(argv[1]) : 0;
 
 	// get console-size
-	if(screen_getMode(STDIN_FILENO,&mode) < 0)
-		error("Unable to determine screensize");
+	ipc::VTerm vterm(std::env::get("TERM").c_str());
+	mode = vterm.getMode();
 	prefix = new char[mode.cols];
 	memset(prefix,' ',mode.cols);
 

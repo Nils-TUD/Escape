@@ -29,6 +29,10 @@ typedef struct {
 	sASTNode *elseList;
 } sIfStmt;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an if-statement-node with the condition, then- and else-list
  *
@@ -62,3 +66,7 @@ void ast_printIfStmt(sIfStmt *s,uint layer);
  * @param n the statement
  */
 void ast_destroyIfStmt(sIfStmt *n);
+
+#ifdef __cplusplus
+}
+#endif

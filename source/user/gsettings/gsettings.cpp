@@ -29,7 +29,7 @@ using namespace std;
 using namespace gui;
 
 static shared_ptr<ComboBox> combo;
-static vector<sScreenMode> modes;
+static vector<ipc::Screen::Mode> modes;
 
 static void onCancel(UIElement &) {
 	Application::getInstance()->exit();
@@ -38,8 +38,12 @@ static void onCancel(UIElement &) {
 static void onApply(UIElement &) {
 	ssize_t sel = combo->getSelectedIndex();
 	if(sel >= 0) {
-		if(Application::getInstance()->setMode(modes[sel]) < 0)
-			printe("Unable to set mode");
+		try {
+			Application::getInstance()->setMode(modes[sel]);
+		}
+		catch(const std::exception &e) {
+			printe("%s",e.what());
+		}
 	}
 }
 
@@ -53,7 +57,7 @@ int main() {
 	grid->add(make_control<Label>("Screenmode:"),GridPos(0,0));
 
 	combo = make_control<ComboBox>();
-	const sScreenMode *curmode = app->getMode();
+	const ipc::Screen::Mode *curmode = app->getMode();
 	modes = app->getModes();
 	for(auto it = modes.begin(); it != modes.end(); ++it) {
 		ostringstream os;

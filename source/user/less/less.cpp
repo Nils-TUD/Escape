@@ -18,12 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/screen.h>
-#include <esc/driver/vterm.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/esccodes.h>
 #include <esc/dir.h>
+#include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmdargs.h>
@@ -58,7 +57,8 @@ static string filename;
 static bool seenEOF;
 static LineContainer *lines;
 static size_t startLine = 0;
-static sScreenMode mode;
+static ipc::VTerm vterm(std::env::get("TERM").c_str());
+static ipc::Screen::Mode mode;
 static string emptyLine;
 
 static void usage(const char* name) {
@@ -102,14 +102,14 @@ int main(int argc,char *argv[]) {
 		in = stdin;
 	}
 
-	if(screen_getMode(STDOUT_FILENO,&mode) < 0)
-		error("Unable to get screen mode");
+	// get vterm size
+	mode = vterm.getMode();
 	// one line for the status
 	mode.rows--;
 	lines = new LineContainer(mode.cols);
 
 	// backup screen
-	vterm_backup(STDOUT_FILENO);
+	vterm.backup();
 
 	// create empty line
 	emptyLine.assign(mode.cols,' ');
@@ -122,8 +122,8 @@ int main(int argc,char *argv[]) {
 	readLines(mode.rows);
 
 	// stop readline and navigation
-	vterm_setReadline(STDOUT_FILENO,false);
-	vterm_setNavi(STDOUT_FILENO,false);
+	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
+	vterm.setFlag(ipc::VTerm::FL_NAVI,false);
 
 	refreshScreen();
 
@@ -171,9 +171,9 @@ int main(int argc,char *argv[]) {
 
 static void resetVterm(void) {
 	cout << endl;
-	vterm_setReadline(STDOUT_FILENO,true);
-	vterm_setNavi(STDOUT_FILENO,true);
-	vterm_restore(STDOUT_FILENO);
+	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
+	vterm.restore();
 }
 
 static void scrollDown(long l) {

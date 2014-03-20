@@ -28,6 +28,10 @@ typedef struct {
 	sSLList *list;
 } sExprList;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a expression-list-node
  *
@@ -67,3 +71,7 @@ void ast_printExprList(sExprList *s,uint layer);
  * @param n the list
  */
 void ast_destroyExprList(sExprList *n);
+
+#ifdef __cplusplus
+}
+#endif

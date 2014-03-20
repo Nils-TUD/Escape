@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <ipc/ipcstream.h>
 #include <ipc/proto/default.h>
 
 namespace ipc {

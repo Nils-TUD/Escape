@@ -25,6 +25,36 @@
 
 namespace ipc {
 
+template<class T,msgid_t M>
+struct SimpleRequest {
+	static const msgid_t MID = M;
+
+	friend IPCStream &operator<<(IPCStream &is,const T &r) {
+		return is << r << Send(MID);
+	}
+	friend IPCStream &operator>>(IPCStream &is,T &r) {
+		return is >> r;
+	}
+};
+
+template<msgid_t MID>
+struct EmptyRequest {
+	friend IPCStream &operator<<(IPCStream &is,const EmptyRequest &) {
+		is << Send(MID);
+		return is;
+	}
+};
+
+template<class T>
+struct SimpleResponse {
+	friend IPCStream &operator<<(IPCStream &is,const T &r) {
+		return is << r << Send(MSG_DEF_RESPONSE);
+	}
+	friend IPCStream &operator>>(IPCStream &is,T &r) {
+		return is >> Receive() >> r;
+	}
+};
+
 template<typename T,msgid_t MID>
 struct DefaultResponse {
 	explicit DefaultResponse() : res() {
@@ -50,14 +80,6 @@ struct DefaultResponse {
 	}
 
 	T res;
-};
-
-template<msgid_t MID>
-struct EmptyRequest {
-	friend IPCStream &operator<<(IPCStream &is,const EmptyRequest &) {
-		is << Send(MID);
-		return is;
-	}
 };
 
 }

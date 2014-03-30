@@ -1,4 +1,4 @@
 #!/bin/sh
 . boot/$ESC_TARGET/images.sh
 create_cd $1/dist $1/cd.iso
-$ESC_QEMU -m 128 -serial stdio -cdrom $1/cd.iso $2 | tee log.txt
+$ESC_QEMU -m 128 -net nic,model=ne2k_pci -net user -serial stdio -cdrom $1/cd.iso $2 | tee log.txt

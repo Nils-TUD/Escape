@@ -127,6 +127,8 @@
 
 #define MSG_DISK_GETSIZE			1200 /* get the size of a device */
 
+#define MSG_NIC_GETMAC				1300
+
 
 #define IS_DEVICE_MSG(id)			((id) == MSG_FILE_OPEN || \
 									 (id) == MSG_FILE_READ || \

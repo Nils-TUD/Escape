@@ -88,9 +88,9 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x26 */	{Interrupts::irqDefault,	"Floppy",				IRQ_SEM_FLOPPY,		0},
 	/* 0x27 */	{NULL,						"??",					-1,					0},
 	/* 0x28 */	{Interrupts::irqDefault,	"CMOS",					IRQ_SEM_CMOS,		0},
-	/* 0x29 */	{NULL,						"??",					-1,					0},
+	/* 0x29 */	{Interrupts::irqDefault,	"NE2K",					IRQ_SEM_NE2K,		0},
 	/* 0x2A */	{NULL,						"??",					-1,					0},
-	/* 0x2B */	{NULL,						"??",					-1,					0},
+	/* 0x2B */	{Interrupts::irqDefault,	"NE2K",					IRQ_SEM_NE2K,		0},
 	/* 0x2C */	{Interrupts::irqDefault,	"Mouse",				IRQ_SEM_MOUSE,		0},
 	/* 0x2D */	{NULL,						"??",					-1,					0},
 	/* 0x2E */	{Interrupts::irqDefault,	"ATA1",					IRQ_SEM_ATA1,		0},
@@ -126,7 +126,7 @@ void InterruptsBase::init() {
 	if(IOAPIC::enabled()) {
 		Log::get().writef("Using IOAPIC for interrupts\n");
 		/* identity map ISA irqs that have no interrupt source override */
-		uint isaIRQs[] = {0,1,3,4,6,8,12,14,15};
+		uint isaIRQs[] = {0,1,3,4,6,8,9,11,12,14,15};
 		for(size_t i = 0; i < ARRAY_SIZE(isaIRQs); ++i) {
 			if(isaIRQs[i] == 0 && !Config::get(Config::FORCE_PIT))
 				continue;

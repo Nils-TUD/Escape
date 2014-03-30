@@ -183,11 +183,14 @@ void ACPI::parse() {
 							else
 								pol = IOAPIC::RED_POL_LOW_ACTIVE;
 							/* assume edge-triggered if it conforms to the bus specification */
-							if((intr->flags & INTI_TRIGGER_MASK) == INTI_TRIG_EDGE ||
-									(intr->flags & INTI_TRIGGER_MASK) == INTI_TRIG_BUS)
+							/* TODO always use edge triggered. otherwise we might run into an endless
+							 * irq loop because we have to go into userland to shut the irq down in
+							 * some cases */
+							/*if((intr->flags & INTI_TRIGGER_MASK) == INTI_TRIG_EDGE ||
+									(intr->flags & INTI_TRIGGER_MASK) == INTI_TRIG_BUS)*/
 								trig = IOAPIC::RED_TRIGGER_EDGE;
-							else
-								trig = IOAPIC::RED_TRIGGER_LEVEL;
+							/*else
+								trig = IOAPIC::RED_TRIGGER_LEVEL;*/
 							IOAPIC::setRedirection(intr->source,intr->gsi,IOAPIC::RED_DEL_FIXED,pol,trig);
 						}
 						break;

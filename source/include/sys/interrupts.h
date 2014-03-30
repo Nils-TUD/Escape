@@ -59,6 +59,7 @@ public:
 		IRQ_SEM_ATA1,
 		IRQ_SEM_ATA2,
 		IRQ_SEM_MOUSE,
+		IRQ_SEM_NE2K,
 	};
 
 	/**

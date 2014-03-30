@@ -28,6 +28,10 @@ void BlockedList::block(Thread *t) {
 	Sched::block(t);
 }
 
+void BlockedList::remove(Thread *t) {
+	list.remove(t);
+}
+
 void BlockedList::wakeup() {
 	Thread *t = list.removeFirst();
 	if(t)

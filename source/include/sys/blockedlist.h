@@ -46,6 +46,13 @@ public:
 	void block(Thread *t);
 
 	/**
+	 * Removes the given thread from the list.
+	 *
+	 * @param t the thread
+	 */
+	void remove(Thread *t);
+
+	/**
 	 * Wakes up the next thread
 	 */
 	void wakeup();

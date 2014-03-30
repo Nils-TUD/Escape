@@ -33,6 +33,7 @@ bool BaseSem::down(SpinLock *lck,bool allowSigs) {
 		else
 			Thread::switchNoSigs();
 		if(allowSigs && t->hasSignalQuick()) {
+			waiters.remove(t);
 			up();
 			return false;
 		}

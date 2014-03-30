@@ -17,24 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "route.h"
 
-#define be16tocpu(x)	(x)
-#define be32tocpu(x)	(x)
-#define cputobe16(x)	(x)
-#define cputobe32(x)	(x)
+std::vector<Route*> Route::_table;
 
-uint16_t le16tocpu(uint16_t in);
-uint32_t le32tocpu(uint32_t in);
-uint16_t cputole16(uint16_t in);
-uint32_t cputole32(uint32_t in);
-
-#ifdef __cplusplus
+const Route *Route::find(const IPv4Addr &ip) {
+	for(auto it = _table.begin(); it != _table.end(); ++it) {
+		if(((*it)->flags & FL_UP) && (*it)->dest.sameNetwork(ip,(*it)->netmask))
+			return *it;
+	}
+	return NULL;
 }
-#endif
+
+int Route::insert(const IPv4Addr &dest,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NIC *nic) {
+	// if we should use the gateway, it has to be a valid host
+	if((flags & FL_USE_GW) && !gw.isHost(nm))
+		return -EINVAL;
+	if(!nm.isNetmask() || !nic)
+		return -EINVAL;
+
+	auto it = _table.begin();
+	for(; it != _table.end(); ++it) {
+		if(nm >= (*it)->netmask)
+			break;
+	}
+	_table.insert(it,new Route(dest,nm,gw,flags,nic));
+	return 0;
+}

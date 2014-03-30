@@ -55,6 +55,7 @@
 #define ENOPROCS					31	/* No more process-slots available */
 #define ENOTHREADS					32	/* No more thread-slots available */
 #define EPIPE						33	/* Broken pipe */
+#define ENETUNREACH					34	/* Network unreachable */
 
 #ifdef __cplusplus
 extern "C" {

@@ -25,3 +25,12 @@
 #define le32tocpu(x)	(x)
 #define cputole16(x)	(x)
 #define cputole32(x)	(x)
+
+#define be16tocpu(x)	((((x) & 0xFF) << 8) | ((x) >> 8))
+#define be32tocpu(x)	((((x) & 0xFF) << 24) | \
+						 (((x) & 0xFF00) << 8) | \
+						 (((x) & 0xFF0000) >> 8) | \
+						  ((x) >> 24))
+
+#define cputobe16(x)	be16tocpu(x)
+#define cputobe32(x)	be32tocpu(x)

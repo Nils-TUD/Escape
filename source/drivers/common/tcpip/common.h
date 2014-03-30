@@ -21,20 +21,17 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct Empty {
+	size_t size() const {
+		return 0;
+	}
+};
 
-#define be16tocpu(x)	(x)
-#define be32tocpu(x)	(x)
-#define cputobe16(x)	(x)
-#define cputobe32(x)	(x)
+template<class T = Empty>
+class Ethernet;
+template<class T = Empty>
+class IPv4;
 
-uint16_t le16tocpu(uint16_t in);
-uint32_t le32tocpu(uint32_t in);
-uint16_t cputole16(uint16_t in);
-uint32_t cputole32(uint32_t in);
-
-#ifdef __cplusplus
-}
-#endif
+enum {
+	ETHER_HEAD_SIZE		= 6 + 6 + 2
+};

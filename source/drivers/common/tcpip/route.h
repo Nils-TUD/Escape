@@ -20,21 +20,31 @@
 #pragma once
 
 #include <esc/common.h>
+#include <vector>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "ipv4addr.h"
+#include "nic.h"
 
-#define be16tocpu(x)	(x)
-#define be32tocpu(x)	(x)
-#define cputobe16(x)	(x)
-#define cputobe32(x)	(x)
+class Route {
+public:
+	enum {
+		FL_USE_GW	= 0x1,
+		FL_UP		= 0x2,
+	};
 
-uint16_t le16tocpu(uint16_t in);
-uint32_t le32tocpu(uint32_t in);
-uint16_t cputole16(uint16_t in);
-uint32_t cputole32(uint32_t in);
+	explicit Route(const IPv4Addr &dst,const IPv4Addr &nm,const IPv4Addr &gw,uint fl,NIC *n)
+		: dest(dst), netmask(nm), gateway(gw), flags(fl), nic(n) {
+	}
 
-#ifdef __cplusplus
-}
-#endif
+	static const Route *find(const IPv4Addr &ip);
+	static int insert(const IPv4Addr &ip,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NIC *nic);
+
+	IPv4Addr dest;
+	IPv4Addr netmask;
+	IPv4Addr gateway;
+	uint flags;
+	NIC *nic;
+
+private:
+	static std::vector<Route*> _table;
+};

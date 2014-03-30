@@ -56,6 +56,7 @@ static const char *msgs[] = {
 	/* 31 (ENOPROCS) */			"No more process-slots available",
 	/* 32 (ENOTHREADS) */		"No more thread-slots available",
 	/* 33 (EPIPE) */			"Broken pipe",
+	/* 34 (ENETUNREACH) */		"Network unreachable",
 };
 
 char *strerror(int errnum) {

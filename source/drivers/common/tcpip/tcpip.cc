@@ -28,6 +28,7 @@
 #include "arp.h"
 #include "icmp.h"
 #include "route.h"
+#include "udp.h"
 
 static tUserSem sem;
 
@@ -91,6 +92,8 @@ int main(int argc,char **) {
 			printe("Unable to send echo packet");
 		if(ICMP::sendEcho(IPv4Addr(173,194,44,87),echo3,sizeof(echo3),0xFF83,1) < 0)
 			printe("Unable to send echo packet");
+		if(UDP::send(IPv4Addr(192,168,2,102),56123,7654,echo3,sizeof(echo3)) < 0)
+			printe("Unable to send UDP packet");
 	}
 	else {
 		if(ICMP::sendEcho(IPv4Addr(10,0,2,2),echo1,sizeof(echo1),0xFF88,1) < 0)

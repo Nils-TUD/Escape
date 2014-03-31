@@ -98,8 +98,8 @@ ssize_t ARP::handleRequest(NIC &nic,const ARP *packet) {
 	arp->cmd = cputobe16(CMD_REPLY);
 
 	arp->hwTarget = packet->hwSender;
-	arp->hwSender = nic.mac();
 	arp->ipTarget = packet->ipSender;
+	arp->hwSender = nic.mac();
 	arp->ipSender = nic.ip();
 
 	return pkt.send(nic,packet->hwSender,pkt.size(),ARP::ETHER_TYPE);

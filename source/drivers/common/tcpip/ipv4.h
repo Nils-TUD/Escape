@@ -28,6 +28,7 @@
 #include "nic.h"
 #include "icmp.h"
 #include "route.h"
+#include "udp.h"
 
 template<class T>
 class IPv4 {
@@ -45,11 +46,15 @@ public:
 		return sizeof(IPv4) - sizeof(payload) + payload.size();
 	}
 
-	static ssize_t send(Ethernet<IPv4> *pkt,size_t sz,const IPv4Addr &ip,uint8_t protocol) {
+	static ssize_t send(Ethernet<IPv4<T>> *pkt,size_t sz,const IPv4Addr &ip,uint8_t protocol) {
 		const Route *route = Route::find(ip);
 		if(!route)
 			return -ENETUNREACH;
+		return sendOver(route,pkt,sz,ip,protocol);
+	}
 
+	static ssize_t sendOver(const Route *route,Ethernet<IPv4<T>> *pkt,size_t sz,const IPv4Addr &ip,
+			uint8_t protocol) {
 		IPv4<T> &h = pkt->payload;
 		h.versionSize = (4 << 4) | 5;
 		h.typeOfService = 0;
@@ -76,11 +81,18 @@ public:
 				return ICMP::receive(nic,icmpPkt,sz);
 			}
 			break;
+
+			case UDP::IP_PROTO: {
+				Ethernet<IPv4<UDP>> *udpPkt = reinterpret_cast<Ethernet<IPv4<UDP>>*>(packet);
+				// TODO if(sz >= udpPkt->size())
+				return UDP::receive(nic,udpPkt,sz);
+			}
+			break;
 		}
 		return -ENOTSUP;
 	}
 
-	static uint16_t genChecksum(uint16_t *data,uint16_t length) {
+	static uint16_t genChecksum(const uint16_t *data,uint16_t length) {
 		uint32_t sum = 0;
 		for(; length > 1; length -= 2) {
 			sum += *data++;
@@ -122,6 +134,10 @@ static inline std::ostream &operator<<(std::ostream &os,const IPv4<> &p) {
 		case ICMP::IP_PROTO: {
 			const ICMP *icmp = reinterpret_cast<const ICMP*>(&p.payload);
 			return os << *icmp;
+		}
+		case UDP::IP_PROTO: {
+			const UDP *udp = reinterpret_cast<const UDP*>(&p.payload);
+			return os << *udp;
 		}
 	}
 	return os << "Unknown payload\n";

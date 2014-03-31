@@ -21,13 +21,15 @@
 
 #include <esc/common.h>
 #include <esc/endian.h>
-#include <ostream>
+#include <iostream>
 
 #include "common.h"
 #include "macaddr.h"
 #include "arp.h"
 #include "ipv4.h"
 #include "nic.h"
+
+static std::ostream &operator<<(std::ostream &os,const Ethernet<> &p);
 
 template<class T>
 class Ethernet {
@@ -40,6 +42,7 @@ public:
 		src = nic.mac();
 		dst = dest;
 		type = cputobe16(_type);
+		std::cout << "Sending " << *reinterpret_cast<Ethernet<>*>(this) << std::endl;
 		return nic.write(this,sz);
 	}
 

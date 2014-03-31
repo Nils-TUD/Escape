@@ -205,6 +205,21 @@ bool Syscalls::absolutizePath(char *dst,size_t size,const char *src) {
 	if(slen < 0 || !PageDir::isInUserSpace((uintptr_t)src,slen))
 		return false;
 	if(*src != '/') {
+		/* translate "abc://def" to "/dev/abc/def" */
+		for(ssize_t i = 0; i < slen; ++i) {
+			if(src[i] == ':') {
+				if(i + 2 < slen && src[i + 1] == '/' && src[i + 2] == '/') {
+					strncpy(dst,"/dev/",SSTRLEN("/dev/"));
+					strncpy(dst + SSTRLEN("/dev/"),src,i);
+					strnzcpy(dst + SSTRLEN("/dev/") + i,src + i + 2,slen - i - 1);
+					return true;
+				}
+				/* in general, : is invalid in paths */
+				else
+					return false;
+			}
+		}
+
 		pid_t pid = Proc::getRunning();
 		if(Env::get(pid,"CWD",dst,size)) {
 			len = strlen(dst);

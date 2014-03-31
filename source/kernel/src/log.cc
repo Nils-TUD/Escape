@@ -47,7 +47,7 @@ void Log::vfsIsReady() {
 	pid_t pid = Proc::getRunning();
 
 	/* open log-file */
-	assert(VFSNode::request(LOG_DIR,&dir,NULL,VFS_CREATE,FILE_DEF_MODE) == 0);
+	assert(VFSNode::request(LOG_DIR,NULL,&dir,NULL,VFS_CREATE,FILE_DEF_MODE) == 0);
 	LogFile *logNode = createObj<LogFile>(KERNEL_PID,dir);
 	/* reserve the whole file here to prevent that we want to increase it later which might need to
 	 * deadlocks if we log something at a bad place */
@@ -60,7 +60,7 @@ void Log::vfsIsReady() {
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
-	assert(VFSNode::request(DUMMY_STDIN,&stdin,NULL,VFS_CREATE,FILE_DEF_MODE) == 0);
+	assert(VFSNode::request(DUMMY_STDIN,NULL,&stdin,NULL,VFS_CREATE,FILE_DEF_MODE) == 0);
 	assert(VFS::openFile(pid,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
 	VFSNode::release(stdin);
 	assert(FileDesc::assoc(Proc::getByPid(pid),inFile) == 0);

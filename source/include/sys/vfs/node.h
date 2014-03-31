@@ -130,6 +130,7 @@ public:
 	 * prevent that by acquiring the tree-lock.
 	 *
 	 * @param path the path to resolve
+	 * @param end if not NULL, is set to the position where the function stopped
 	 * @param node the node where to start and it will be set to the resulting node
 	 * @param created will be set to true if the node didn't exist and has been created (may
 	 * 	be NULL if you don't care about it)
@@ -137,7 +138,8 @@ public:
 	 * @param mode the mode to set (if a file is created)
 	 * @return 0 if successfull or the error-code
 	 */
-	static int request(const char *path,VFSNode **node,bool *created,uint flags,mode_t mode);
+	static int request(const char *path,const char **end,VFSNode **node,bool *created,
+		uint flags,mode_t mode);
 
 	/**
 	 * Releases the given node, i.e. unlocks it.

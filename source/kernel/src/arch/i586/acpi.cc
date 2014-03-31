@@ -207,7 +207,7 @@ void ACPI::create_files() {
 	/* create /system/acpi */
 	bool created;
 	VFSNode *sys = NULL;
-	if(VFSNode::request("/system",&sys,&created,VFS_WRITE,0) != 0)
+	if(VFSNode::request("/system",NULL,&sys,&created,VFS_WRITE,0) != 0)
 		return;
 	VFSNode *acpidir = createObj<VFSDir>(KERNEL_PID,sys,(char*)"acpi",DIR_DEF_MODE);
 	if(!acpidir)

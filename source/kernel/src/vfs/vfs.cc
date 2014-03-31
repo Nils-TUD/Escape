@@ -138,7 +138,8 @@ int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char 
 	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
 	if(IS_NODE(*res) && !(flags & VFS_NONODERES)) {
 		VFSNode *node = reinterpret_cast<VFSNode*>(*res);
-		err = VFSNode::request(*begin,&node,NULL,flags,mode);
+		const char *vpath = *begin;
+		err = VFSNode::request(vpath,begin,&node,NULL,flags,mode);
 		*res = reinterpret_cast<OpenFile*>(node);
 	}
 	return err;
@@ -221,7 +222,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
 	/* resolve pipe-path */
 	VFSNode *node = NULL;
-	int err = VFSNode::request("/system/pipes",&node,NULL,VFS_READ,0);
+	int err = VFSNode::request("/system/pipes",NULL,&node,NULL,VFS_READ,0);
 	if(err < 0)
 		return err;
 
@@ -369,7 +370,7 @@ int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	name = VFSNode::basename((char*)newPathCpy,&len);
 	backup = *name;
 	VFSNode::dirname((char*)newPathCpy,len);
-	newRes = VFSNode::request(newPathCpy,&newNode,NULL,VFS_WRITE,0);
+	newRes = VFSNode::request(newPathCpy,NULL,&newNode,NULL,VFS_WRITE,0);
 	if(newRes < 0) {
 		res = -ENOENT;
 		goto errorRelease;
@@ -485,7 +486,7 @@ int VFS::mkdir(pid_t pid,const char *path) {
 
 	/* get parent dir */
 	VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-	res = VFSNode::request(pathCpy,&node,NULL,VFS_WRITE,0);
+	res = VFSNode::request(pathCpy,NULL,&node,NULL,VFS_WRITE,0);
 	if(res < 0)
 		goto errorRel;
 
@@ -568,7 +569,7 @@ int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile 
 
 	/* check whether the directory exists */
 	VFSNode::dirname(path,len);
-	int err = VFSNode::request(path,&dir,NULL,VFS_READ,0);
+	int err = VFSNode::request(path,NULL,&dir,NULL,VFS_READ,0);
 	if(err < 0) {
 		Cache::free(name);
 		return err;

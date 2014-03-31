@@ -204,7 +204,8 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 	return res;
 }
 
-int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags,mode_t mode) {
+int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *created,
+		uint flags,mode_t mode) {
 	const VFSNode *dir,*n = *node;
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
@@ -302,6 +303,8 @@ int VFSNode::request(const char *path,VFSNode **node,bool *created,uint flags,mo
 			err = -ENOENT;
 		dir->closeDir(true);
 	}
+	if(end)
+		*end = path;
 	return err;
 
 done:

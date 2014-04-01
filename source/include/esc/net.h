@@ -20,29 +20,21 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/net.h>
-
-struct Empty {
-	size_t size() const {
-		return 0;
-	}
-};
-
-template<class T = Empty>
-class Ethernet;
-template<class T = Empty>
-class IPv4;
 
 enum {
-	ETHER_HEAD_SIZE		= 6 + 6 + 2
+	AF_INIT		= 1
 };
 
-struct ReadRequest {
-	void *data;
-	size_t count;
-};
+typedef uint16_t port_t;
 
-static const uint16_t WELL_KNOWN_PORTS		= 0;
-static const uint16_t REGISTERED_PORTS		= 1024;
-static const uint16_t PRIVATE_PORTS			= 49152;
-static const uint16_t PRIVATE_PORTS_CNT		= 65536 - PRIVATE_PORTS;
+typedef struct {
+	uint16_t family;		/* AF_* */
+	union {
+		char data[14];
+		struct {
+			port_t port;
+			uint32_t addr;
+		} ipv4;
+	} d;
+} sSockAddr;
+

@@ -24,7 +24,12 @@
 #include <ostream>
 #include <iomanip>
 
+class IPv4Addr;
+static std::istream &operator>>(std::istream &is,IPv4Addr &a);
+
 class IPv4Addr {
+	friend std::istream &operator>>(std::istream &is,IPv4Addr &a);
+
 public:
 	static const size_t LEN	= 4;
 
@@ -97,6 +102,15 @@ static inline bool operator<=(const IPv4Addr &a,const IPv4Addr &b) {
 	return !operator>(a,b);
 }
 
+static inline std::istream &operator>>(std::istream &is,IPv4Addr &a) {
+	char tmp[5];
+	for(int i = 0; i < 4; ++i) {
+		// getline stops if n-1 chars have been stored. let it consume '.'/':'
+		is.getline(tmp,sizeof(tmp),i == 3 ? ':' : '.');
+		a._bytes[i] = atoi(tmp);
+	}
+	return is;
+}
 static inline std::ostream &operator<<(std::ostream &os,const IPv4Addr &a) {
 	return os << a.bytes()[0] << "." << a.bytes()[1] << "."
 			<< a.bytes()[2] << "." << a.bytes()[3];

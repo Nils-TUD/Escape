@@ -21,28 +21,33 @@
 
 #include <esc/common.h>
 #include <esc/net.h>
+#include <bitset>
 
-struct Empty {
-	size_t size() const {
+template<size_t N>
+class PortMng {
+public:
+	explicit PortMng(port_t base) : _base(base), _firstfree(0), _ports() {
+	}
+
+	port_t allocate() {
+		for(port_t p = _firstfree; p < N; ++p) {
+			if(!_ports[p]) {
+				_ports[p] = true;
+				_firstfree = p + 1;
+				return _base + p;
+			}
+		}
 		return 0;
 	}
+	void release(port_t port) {
+		assert(port >= _base && port < _base + N);
+		_ports[port - _base] = false;
+		_firstfree = port - _base;
+	}
+
+private:
+	port_t _base;
+	port_t _firstfree;
+	std::bitset<N> _ports;
 };
 
-template<class T = Empty>
-class Ethernet;
-template<class T = Empty>
-class IPv4;
-
-enum {
-	ETHER_HEAD_SIZE		= 6 + 6 + 2
-};
-
-struct ReadRequest {
-	void *data;
-	size_t count;
-};
-
-static const uint16_t WELL_KNOWN_PORTS		= 0;
-static const uint16_t REGISTERED_PORTS		= 1024;
-static const uint16_t PRIVATE_PORTS			= 49152;
-static const uint16_t PRIVATE_PORTS_CNT		= 65536 - PRIVATE_PORTS;

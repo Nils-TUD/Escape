@@ -57,6 +57,8 @@ static const char *msgs[] = {
 	/* 32 (ENOTHREADS) */		"No more thread-slots available",
 	/* 33 (EPIPE) */			"Broken pipe",
 	/* 34 (ENETUNREACH) */		"Network unreachable",
+	/* 35 (EAGAIN) */			"Resource temporarily unavailable",
+	/* 36 (EADDRINUSE) */		"The given address is in use",
 };
 
 char *strerror(int errnum) {

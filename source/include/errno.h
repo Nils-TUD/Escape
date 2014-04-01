@@ -56,6 +56,8 @@
 #define ENOTHREADS					32	/* No more thread-slots available */
 #define EPIPE						33	/* Broken pipe */
 #define ENETUNREACH					34	/* Network unreachable */
+#define EAGAIN						35	/* Resource temporarily unavailable */
+#define EADDRINUSE					36	/* The given address is in use */
 
 #ifdef __cplusplus
 extern "C" {

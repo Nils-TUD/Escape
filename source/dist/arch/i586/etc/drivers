@@ -16,6 +16,10 @@ mouse
 	/dev/mouse 0110 input
 ne2k
 	/dev/ne2k 0110 root
+lo
+	/dev/lo 0110 root
+tcpip
+	/dev/udp 0777 root
 uimng /dev/vga /dev/vesa
 	/dev/uim-ctrl 0110 input
 	/dev/uim-input 0110 input

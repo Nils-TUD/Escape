@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('bin', target = 'tcpip', source = env.Glob('*.cc'), force_static = True)
+env.EscapeCXXProg('sbin', target = 'tcpip', source = env.Glob('*.cc'))

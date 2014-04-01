@@ -49,16 +49,6 @@ public:
 	}
 
 	/**
-	 * @param id the msg-id to check
-	 * @return true if the server accepts the given message
-	 */
-	bool accepts(uint id) const {
-		if(IS_FS(mode) && id != MSG_FS_OPEN_RESP)
-			return true;
-		return false;
-	}
-
-	/**
 	 * Blocks until data is readable
 	 *
 	 * @return true if successfull (otherwise we've been interrupted by a signal)

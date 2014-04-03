@@ -1,0 +1,213 @@
+// -*- C++ -*-
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#pragma once
+
+#include <string>
+#include <stdexcept>
+
+// for istream, ostream
+namespace std {
+
+template<size_t N>
+class bitset {
+public:
+	// bit reference:
+	class reference {
+		friend class bitset;
+		reference(bitset<N> *bs,size_t pos) noexcept : _bitset(bs), _pos(pos) {
+		}
+	public:
+		~reference() noexcept {
+		}
+
+		reference& operator=(bool x) noexcept {
+			_bitset->_set(_pos,x);
+			return *this;
+		}
+		bool operator~() const noexcept {
+			return !(*const_cast<const bitset<N>*>(_bitset))[_pos];
+		}
+		operator bool() const noexcept {
+			return (*const_cast<const bitset<N>*>(_bitset))[_pos];
+		}
+		reference& flip() noexcept {
+			return operator=(!(*this)());
+		}
+
+	private:
+		bitset<N> *_bitset;
+		size_t _pos;
+	};
+
+	friend class reference;
+
+	// 20.5.1 constructors:
+	constexpr bitset() noexcept : _bits() {
+	}
+	explicit bitset(const bitset<N> &b) {
+		memcpy(_bits,b._bits,sizeof(_bits));
+	}
+
+	// 20.5.2 bitset operations:
+	bitset<N>& operator&=(const bitset<N>& rhs) noexcept {
+		for(size_t i = 0; i < ARRAY_SIZE(_bits); ++i)
+			_bits[i] &= rhs._bits[i];
+		return *this;
+	}
+	bitset<N>& operator|=(const bitset<N>& rhs) noexcept {
+		for(size_t i = 0; i < ARRAY_SIZE(_bits); ++i)
+			_bits[i] |= rhs._bits[i];
+		return *this;
+	}
+	bitset<N>& operator^=(const bitset<N>& rhs) noexcept {
+		for(size_t i = 0; i < ARRAY_SIZE(_bits); ++i)
+			_bits[i] ^= rhs._bits[i];
+		return *this;
+	}
+
+	bitset<N>& operator<<=(size_t pos) noexcept;
+	bitset<N>& operator>>=(size_t pos) noexcept;
+
+	bitset<N>& set() noexcept {
+		memset(_bits,0xFF,sizeof(_bits));
+		return *this;
+	}
+	bitset<N>& set(size_t pos,bool val = true) {
+		if(pos >= N)
+			throw out_of_range("invalid bit position");
+		_set(pos,val);
+		return *this;
+	}
+
+	bitset<N>& reset() noexcept {
+		memset(_bits,0,sizeof(_bits));
+		return *this;
+	}
+	bitset<N>& reset(size_t pos) {
+		return set(pos,false);
+	}
+	bitset<N> operator~() const noexcept {
+		return bitset<N>(*this).flip();
+	}
+
+	bitset<N>& flip() noexcept {
+		for(size_t i = 0; i < ARRAY_SIZE(_bits); ++i)
+			_bits[i] = ~_bits[i];
+		return *this;
+	}
+	bitset<N>& flip(size_t pos) {
+		if(pos >= N)
+			throw out_of_range("invalid bit position");
+		return set(pos,!operator[](pos));
+	}
+
+	unsigned long to_ulong() const {
+		if(N > sizeof(unsigned long))
+			throw overflow_error("not representable as unsigned long");
+		return _bits[0];
+	}
+	unsigned long long to_ullong() const {
+		if(N > sizeof(unsigned long long))
+			throw overflow_error("not representable as unsigned long long");
+		return (unsigned long long)_bits[1] << (sizeof(unsigned long) * 8) | _bits[0];
+	}
+	string to_string(char zero = '0',char one = '1') const {
+		string res(N,zero);
+		for(size_t i = 0; i < N; ++i) {
+			if(operator[](i))
+				res[i] = one;
+		}
+		return res;
+	}
+
+	// element access:
+	constexpr bool operator[](size_t pos) const {
+		return !!(_bits[idx(pos)] & bitpos(pos));
+	}
+	reference operator[](size_t pos) {
+		return reference(this,pos);
+	}
+
+	size_t count() const noexcept {
+		size_t cnt = 0;
+		for(size_t i = 0; i < N; ++i) {
+			if(operator[](i))
+				cnt++;
+		}
+		return cnt;
+	}
+	constexpr size_t size() const noexcept {
+		return N;
+	}
+
+	bool operator==(const bitset<N>& rhs) const noexcept {
+		return memcmp(_bits,rhs._bits,sizeof(_bits));
+	}
+	bool operator!=(const bitset<N>& rhs) const noexcept {
+		return !operator==(rhs);
+	}
+	bool test(size_t pos) const {
+		if(pos >= N)
+			throw out_of_range("invalid bit position");
+		return operator[](pos);
+	}
+	bool all() const noexcept {
+		return *this == bitset<N>().set();
+	}
+	bool any() const noexcept {
+		return !none();
+	}
+	bool none() const noexcept {
+		return *this == bitset<N>();
+	}
+
+private:
+	void _set(size_t pos,bool val) {
+		if(val)
+        	_bits[idx(pos)] |= bitpos(pos);
+        else
+        	_bits[idx(pos)] &= ~bitpos(pos);
+	}
+
+    static size_t idx(uint bit) {
+        return bit / (sizeof(ulong) * 8);
+    }
+    static size_t bitpos(uint bit) {
+        return 1UL << (bit % (sizeof(ulong) * 8));
+    }
+
+	ulong _bits[(N + sizeof(ulong) * 8 - 1) / (sizeof(ulong) * 8)];
+};
+
+template<size_t N>
+bitset<N> operator&(const bitset<N>& lhs, const bitset<N>& rhs) noexcept {
+	return bitset<N>(lhs) &= rhs;
+}
+template<size_t N>
+bitset<N> operator|(const bitset<N>& lhs, const bitset<N>& rhs) noexcept {
+	return bitset<N>(lhs) |= rhs;
+}
+template<size_t N>
+bitset<N> operator^(const bitset<N>& lhs, const bitset<N>& rhs) noexcept {
+	return bitset<N>(lhs) ^= rhs;
+}
+
+}

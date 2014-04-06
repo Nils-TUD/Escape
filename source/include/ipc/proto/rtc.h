@@ -1,6 +1,6 @@
 /**
  * $Id$
- * Copyright (C) 2008 - 2014 Nils Asmussen
+ * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,22 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/io.h>
-#include <esc/driver.h>
-#include <time.h>
-#include "timeintern.h"
+#pragma once
 
-int readdate(struct RTCInfo *info) {
-	/* open CMOS and read date */
-	int err;
-	int fd = open(TIME_DEVICE,IO_READ);
-	if(fd < 0)
-		return fd;
-	if((err = IGNSIGS(read(fd,info,sizeof(struct RTCInfo)))) < 0) {
-		close(fd);
-		return err;
-	}
-	close(fd);
-	return 0;
+#include <esc/common.h>
+#include <esc/messages.h>
+
+namespace ipc {
+
+/**
+ * The IPC-interface for the RTC device.
+ */
+struct RTC {
+	typedef RTCInfo Info;
+};
+
 }

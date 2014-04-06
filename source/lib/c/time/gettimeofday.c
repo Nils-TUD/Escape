@@ -22,7 +22,7 @@
 #include "timeintern.h"
 
 int gettimeofday(struct timeval *tv) {
-	sRTCInfo info;
+	struct RTCInfo info;
 	int res = readdate(&info);
 	if(res < 0)
 		return 0;

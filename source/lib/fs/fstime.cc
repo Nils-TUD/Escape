@@ -26,7 +26,7 @@
 static int timeFd = -1;
 
 time_t timestamp(void) {
-	sRTCInfo info;
+	struct RTCInfo info;
 	/* open CMOS and read date */
 	if(timeFd < 0) {
 		/* not already open, so do it */

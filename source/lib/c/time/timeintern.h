@@ -34,4 +34,4 @@
 
 extern const uchar daysPerMonth[2][12];
 
-int readdate(sRTCInfo *info);
+int readdate(struct RTCInfo *info);

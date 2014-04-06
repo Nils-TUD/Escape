@@ -25,6 +25,9 @@
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <esc/time.h>
+#include <ipc/proto/device.h>
+#include <ipc/proto/rtc.h>
+#include <ipc/device.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -42,68 +45,55 @@
 #define CMOS_REG_MONTH		0x8		/* 01-12 */
 #define CMOS_REG_YEAR		0x9		/* 00-99 */
 
-static void rtc_readInfo(sRTCInfo *info);
+static void rtc_readInfo(ipc::RTC::Info *info);
 static uint rtc_decodeBCD(uint8_t val);
 static uint8_t rtc_read(uint8_t reg);
 
-static sMsg msg;
+class RTCDevice : public ipc::Device {
+public:
+	explicit RTCDevice(const char *path,mode_t mode)
+		: ipc::Device(path,mode,DEV_TYPE_BLOCK,DEV_READ) {
+		set(MSG_DEV_READ,std::make_memfun(this,&RTCDevice::read));
+	}
+
+	void read(ipc::IPCStream &is) {
+		ipc::DevRead::Request r;
+		is >> r;
+
+		ssize_t res = r.count;
+		if(r.offset + r.count <= r.offset)
+			res = -EINVAL;
+		else if(r.offset > sizeof(ipc::RTC::Info))
+			res = 0;
+		else if(r.offset + r.count > sizeof(ipc::RTC::Info))
+			res = sizeof(ipc::RTC::Info) - r.offset;
+
+		is << ipc::DevRead::Response(res) << ipc::Send(MSG_DEV_READ_RESP);
+		if(res > 0) {
+			/* we assume that the system booted at X secs + 0 us, because we don't know
+			 * the microseconds at boot-time. */
+			ipc::RTC::Info info;
+			rtc_readInfo(&info);
+			info.microsecs = (uint)(tsctotime(rdtsc())) % 1000000;
+			is << ipc::SendData(MSG_DEV_READ_RESP,(uchar*)&info + r.offset,res);
+		}
+	}
+};
 
 int main(void) {
-	msgid_t mid;
-	int id;
-
 	/* request io-ports */
 	if(reqports(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
-	id = createdev("/dev/rtc",0440,DEV_TYPE_BLOCK,DEV_READ | DEV_CLOSE);
-	if(id < 0)
-		error("Unable to register device 'rtc'");
-
-	/* wait for commands */
-	while(1) {
-		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			printe("Unable to get work");
-		else {
-			switch(mid) {
-				case MSG_DEV_READ: {
-					uint offset = msg.args.arg1;
-					uint count = msg.args.arg2;
-					msg.args.arg1 = count;
-					if(offset + count <= offset || offset + count > sizeof(sRTCInfo))
-						msg.args.arg1 = 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1) {
-						/* we assume that the system booted at X secs + 0 us, because we don't know
-						 * the microseconds at boot-time. */
-						sRTCInfo info;
-						rtc_readInfo(&info);
-						info.microsecs = (uint)(tsctotime(rdtsc())) % 1000000;
-						send(fd,MSG_DEV_READ_RESP,(uchar*)&info + offset,msg.args.arg1);
-					}
-				}
-				break;
-
-				case MSG_DEV_CLOSE:
-					close(fd);
-					break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
-	}
+	RTCDevice dev("/dev/rtc",0444);
+	dev.loop();
 
 	/* clean up */
-	close(id);
 	relports(IOPORT_CMOS_INDEX,2);
 	return EXIT_SUCCESS;
 }
 
-static void rtc_readInfo(sRTCInfo *info) {
+static void rtc_readInfo(ipc::RTC::Info *info) {
 	info->time.tm_mday = rtc_decodeBCD(rtc_read(CMOS_REG_MONTHDAY)) - 1;
 	info->time.tm_mon = rtc_decodeBCD(rtc_read(CMOS_REG_MONTH)) - 1;
 	info->time.tm_year = rtc_decodeBCD(rtc_read(CMOS_REG_YEAR));

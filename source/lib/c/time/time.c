@@ -23,7 +23,7 @@
 
 time_t time(time_t *timer) {
 	time_t ts;
-	sRTCInfo info;
+	struct RTCInfo info;
 	int res = readdate(&info);
 	if(res < 0)
 		return 0;

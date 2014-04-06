@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/messages.h>
+#include <ipc/filedev.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -28,56 +29,33 @@
 #include "window.h"
 #include "infodev.h"
 
-static void getWindows(FILE *str);
+class WinInfoDevice : public ipc::FileDevice {
+public:
+	explicit WinInfoDevice(const char *path,mode_t mode)
+		: ipc::FileDevice(path,mode) {
+	}
+
+	virtual std::string handleRead() {
+		std::ostringstream os;
+		size_t i;
+		for(i = 0; i < WINDOW_COUNT; i++) {
+			sWindow *w = win_get(i);
+			if(w) {
+				os << "Window " << w->id << "\n";
+				os << "\tOwner: " << w->owner << "\n";
+				os << "\tPosition: " << w->x << "," << w->y << "," << w->z << "\n";
+				os << "\tSize: " << w->width << " x " << w->height << "\n";
+				os << "\tStyle: 0x" << std::hex << w->style << std::dec;
+			}
+		}
+		return os.str();
+	}
+};
 
 int infodev_thread(void *arg) {
 	char path[MAX_PATH_LEN];
-	sMsg msg;
-	msgid_t mid;
-	int id;
-
 	snprintf(path,sizeof(path),"/system/%s-windows",(const char*)arg);
-	id = createdev(path,0644,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
-	if(id < 0)
-		error("Unable to create file %s",path);
-
-	while(1) {
-		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_DEV_READ:
-					handleFileRead(fd,&msg,getWindows);
-					break;
-
-				case MSG_DEV_CLOSE:
-					close(fd);
-					break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
-	}
-	/* never reached */
+	WinInfoDevice dev(path,0444);
+	dev.loop();
 	return 0;
-}
-
-static void getWindows(FILE *str) {
-	size_t i;
-	for(i = 0; i < WINDOW_COUNT; i++) {
-		sWindow *w = win_get(i);
-		if(w) {
-			fprintf(str,"Window %d:\n",w->id);
-			fprintf(str,"\tOwner: %d\n",w->owner);
-			fprintf(str,"\tPosition: %d,%d,%d\n",w->x,w->y,w->z);
-			fprintf(str,"\tSize: %lu x %lu\n",w->width,w->height);
-			fprintf(str,"\tStyle: %#x\n",w->style);
-		}
-	}
 }

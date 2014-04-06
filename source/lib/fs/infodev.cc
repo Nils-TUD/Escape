@@ -22,64 +22,40 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <fs/infodev.h>
+#include <ipc/filedev.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <signal.h>
 
+class FSFileDevice;
+
+static int infodev_handler(A_UNUSED void *arg);
 static void sigUsr1(A_UNUSED int sig);
-static void getFSInfo(FILE *str);
 
-static volatile bool run = true;
 static sFileSystem *fs;
-static const char *path;
+static const char *fspath;
+static FSFileDevice *dev;
 
-static int infodev_handler(A_UNUSED void *arg) {
-	char devpath[MAX_PATH_LEN];
-	sMsg msg;
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
-		error("Unable to announce USR1-signal-handler");
-
-	char *devname = strrchr(path,'/');
-	if(!devname)
-		error("Invalid device name '%s'",path);
-	snprintf(devpath,sizeof(devpath),"/system/fs/%s",devname);
-
-	// TODO use the new IPC API
-	int id = createdev(devpath,0444,DEV_TYPE_FILE,DEV_READ | DEV_CLOSE);
-	if(id < 0)
-		error("Unable to create file %s",devpath);
-
-	while(run) {
-		msgid_t mid;
-		int fd = getwork(id,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_DEV_READ:
-					handleFileRead(fd,&msg,getFSInfo);
-					break;
-
-				case MSG_DEV_CLOSE:
-					close(fd);
-					break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
+class FSFileDevice : public ipc::FileDevice {
+public:
+	explicit FSFileDevice(const char *path,mode_t mode)
+		: ipc::FileDevice(path,mode) {
 	}
-	close(id);
-	return 0;
-}
+
+	virtual std::string handleRead() {
+		FILE *str = ascreate();
+		if(str) {
+			fs->print(str,fs->handle);
+			fclose(str);
+			return asget(str,NULL);
+		}
+		return "";
+	}
+};
 
 int infodev_start(const char *_path,sFileSystem *_fs) {
-	path = _path;
+	fspath = _path;
 	fs = _fs;
 	int res;
 	if((res = startthread(infodev_handler,NULL)) < 0)
@@ -87,15 +63,26 @@ int infodev_start(const char *_path,sFileSystem *_fs) {
 	return 0;
 }
 
-void infodev_shutdown(void) {
-	if(kill(getpid(),SIG_USR1) < 0)
-		printe("Unable to send signal to me");
+static int infodev_handler(A_UNUSED void *arg) {
+	char devpath[MAX_PATH_LEN];
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+		error("Unable to announce USR1-signal-handler");
+
+	char *devname = strrchr(fspath,'/');
+	if(!devname)
+		error("Invalid device name '%s'",fspath);
+	snprintf(devpath,sizeof(devpath),"/system/fs/%s",devname);
+
+	dev = new FSFileDevice(devpath,0444);
+	dev->loop();
+	return 0;
 }
 
 static void sigUsr1(A_UNUSED int sig) {
-	run = false;
+	dev->stop();
 }
 
-static void getFSInfo(FILE *str) {
-	fs->print(str,fs->handle);
+void infodev_shutdown(void) {
+	if(kill(getpid(),SIG_USR1) < 0)
+		printe("Unable to send signal to me");
 }

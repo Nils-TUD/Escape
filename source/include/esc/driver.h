@@ -90,17 +90,6 @@ A_CHECKRET static inline int getwork(int fd,msgid_t *mid,void *msg,size_t size,u
 	return syscall4(SYSCALL_GETWORK,(fd << 2) | flags,(ulong)mid,(ulong)msg,size);
 }
 
-/**
- * A convenience method which handles the message MSG_DEV_READ for DEV_TYPE_FILE. It extracts
- * the input-parameters from the message, calls getData() to build the complete file and sends
- * the requested part to the client.
- *
- * @param fd the file-descriptor for the client
- * @param msg the received message
- * @param getData the function to build the complete file
- */
-void handleFileRead(int fd,sMsg *msg,fGetData getData);
-
 #ifdef __cplusplus
 }
 #endif

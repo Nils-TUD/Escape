@@ -75,6 +75,8 @@ help() {
 	echo "    dis=<prog>:              run objdump -SC <prog> (the cross-compiler version)"
 	echo "    elf=<prog>:              run readelf -a <prog> (the cross-compiler version)"
 	echo "    nm=<prog>:               run nm -SC <prog> (the cross-compiler version)"
+	echo "    nms=<prog>:              run nm -SC --size-sort <prog> (the cross-compiler"
+	echo "                             version)"
 	echo "    constr=<prog>:           list the contructor calls of <prog>"
 	echo "    straddr=<prog> <str>:    search for the string <str> in <prog> and display"
 	echo "                             the addresses"
@@ -143,7 +145,7 @@ case "$cmd" in
 			exit 1
 		fi
 		;;
-	straddr=*|dis=*|elf=*|constr=*|nm=*|dbg=*)
+	straddr=*|dis=*|elf=*|constr=*|nm=*|nms=*|dbg=*)
 		if [ "`echo $cmd | grep '^straddr='`" != "" ] && [ "$script" = "" ]; then
 			echo "Usage: $0 $cmd <string>" >&2
 			exit 1
@@ -243,6 +245,9 @@ case "$cmd" in
 		;;
 	nm=*)
 		$crossdir/bin/$cross-nm -SC $build/bin/$binary | sort | less
+		;;
+	nms=*)
+		$crossdir/bin/$cross-nm -SC --size-sort $build/bin/$binary | less
 		;;
 	straddr=*)
 		echo "Strings containing '$script' in $binary:"

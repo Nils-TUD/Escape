@@ -90,7 +90,7 @@ static void win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,
 	winMode.guiHeaderSize = winMode.tuiHeaderSize = 0;
 	winMode.width = width;
 	winMode.height = height;
-	win->fb = new ipc::FrameBuffer(winMode,name,VID_MODE_TYPE_GUI,0666);
+	win->fb = new ipc::FrameBuffer(winMode,name,ipc::Screen::MODE_TYPE_GUI,0666);
 	memclear(win->fb->addr(),width * height * (mode.bitsPerPixel / 8));
 }
 
@@ -107,8 +107,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 
 	try {
 		std::unique_ptr<ipc::FrameBuffer> newfb(
-			new ipc::FrameBuffer(newmode,shmname,VID_MODE_TYPE_GUI,0644));
-		ui->setMode(VID_MODE_TYPE_GUI,newmode.id,shmname,true);
+			new ipc::FrameBuffer(newmode,shmname,ipc::Screen::MODE_TYPE_GUI,0644));
+		ui->setMode(ipc::Screen::MODE_TYPE_GUI,newmode.id,shmname,true);
 
 		mode = newmode;
 		fb = newfb.release();
@@ -128,8 +128,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 		}
 	}
 	catch(const std::exception &e) {
-		fb = new ipc::FrameBuffer(mode,shmname,VID_MODE_TYPE_GUI,0644);
-		ui->setMode(VID_MODE_TYPE_GUI,mode.id,shmname,true);
+		fb = new ipc::FrameBuffer(mode,shmname,ipc::Screen::MODE_TYPE_GUI,0644);
+		ui->setMode(ipc::Screen::MODE_TYPE_GUI,mode.id,shmname,true);
 		/* we have to repaint everything */
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i].id != WINID_UNUSED)

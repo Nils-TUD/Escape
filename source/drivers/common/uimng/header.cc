@@ -62,7 +62,7 @@ void header_init(void) {
 }
 
 size_t header_getSize(const ipc::Screen::Mode &mode,int type,gpos_t x) {
-	if(type == VID_MODE_TYPE_TUI)
+	if(type == ipc::Screen::MODE_TYPE_TUI)
 		return x * 2;
 	/* always update the whole width because it simplifies the copy it shouldn't be much slower
 	 * than doing a loop with 1 memcpy per line */
@@ -70,13 +70,13 @@ size_t header_getSize(const ipc::Screen::Mode &mode,int type,gpos_t x) {
 }
 
 size_t header_getHeight(int type) {
-	if(type == VID_MODE_TYPE_TUI)
+	if(type == ipc::Screen::MODE_TYPE_TUI)
 		return 1;
 	return FONT_HEIGHT;
 }
 
 static void header_doUpdate(UIClient *cli,gsize_t width,gsize_t height) {
-	if(cli->type() == VID_MODE_TYPE_TUI || width == cli->fb()->mode().width)
+	if(cli->type() == ipc::Screen::MODE_TYPE_TUI || width == cli->fb()->mode().width)
 		memcpy(cli->fb()->addr(),cli->header(),header_getSize(cli->fb()->mode(),cli->type(),width));
 	else {
 		size_t off = 0;
@@ -147,7 +147,7 @@ static void header_putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,
 }
 
 static void header_makeDirty(UIClient *cli,size_t cols,gsize_t *width,gsize_t *height) {
-	if(cli->type() == VID_MODE_TYPE_TUI) {
+	if(cli->type() == ipc::Screen::MODE_TYPE_TUI) {
 		*width = cols;
 		*height = 1;
 	}
@@ -162,7 +162,7 @@ static void header_buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool 
 		return;
 
 	uint col = 0;
-	header_func func = cli->type() == VID_MODE_TYPE_GUI ? header_putcGUI : header_putcTUI;
+	header_func func = cli->type() == ipc::Screen::MODE_TYPE_GUI ? header_putcGUI : header_putcTUI;
 	const ipc::Screen::Mode &mode = cli->fb()->mode();
 
 	/* print CPU usage */

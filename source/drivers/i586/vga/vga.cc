@@ -55,7 +55,7 @@ public:
 	}
 
 	virtual void setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
-		if(type != VID_MODE_TYPE_TUI)
+		if(type != ipc::Screen::MODE_TYPE_TUI)
 			throw std::default_error("Invalid mode type");
 
 		if(sw && usebios && mode) {
@@ -144,11 +144,11 @@ int main(int argc,char **argv) {
 	std::vector<Screen::Mode> modes;
 	if(usebios) {
 		modes.push_back(((Screen::Mode){
-			0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI
+			0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,ipc::Screen::MODE_TEXT,ipc::Screen::MODE_TYPE_TUI
 		}));
 	}
 	modes.push_back(((Screen::Mode){
-		0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,VID_MODE_TEXT,VID_MODE_TYPE_TUI
+		0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,ipc::Screen::MODE_TEXT,ipc::Screen::MODE_TYPE_TUI
 	}));
 
 	VGAScreenDevice dev(modes,"/dev/vga",0111);

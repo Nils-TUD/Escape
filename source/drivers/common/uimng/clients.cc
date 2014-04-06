@@ -36,7 +36,7 @@ size_t UIClient::_clientCount = 0;
 
 UIClient::UIClient(int f)
 	: Client(f), _idx(-1), _evfd(-1), _randid(-1), _map(), _screen(),
-	  _fb(), _header(), _cursor(), _type(VID_MODE_TYPE_TUI) {
+	  _fb(), _header(), _cursor(), _type(ipc::Screen::MODE_TYPE_TUI) {
 	UIClient *dummy;
 	do {
 		_randid = rand();
@@ -54,8 +54,6 @@ UIClient::UIClient(int f)
 
 	if(!succ)
 		VTHROW("Max. number of clients reached");
-
-	_cursor.cursor = CURSOR_DEFAULT;
 }
 
 UIClient::~UIClient() {
@@ -81,8 +79,8 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	/* now everything is complete, so set the new active client */
 	_active = cli->_idx;
 
-	gsize_t w = cli->_type == VID_MODE_TYPE_TUI ? cli->_fb->mode().cols : cli->_fb->mode().width;
-	gsize_t h = cli->_type == VID_MODE_TYPE_TUI ? cli->_fb->mode().rows : cli->_fb->mode().height;
+	gsize_t w = cli->_type == ipc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().cols : cli->_fb->mode().width;
+	gsize_t h = cli->_type == ipc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().rows : cli->_fb->mode().height;
 	gsize_t dw,dh;
 	header_update(cli,&dw,&dh);
 	cli->_screen->update(0,0,w,h);
@@ -127,7 +125,7 @@ void UIClient::setMode(int ntype,const ipc::Screen::Mode &mode,ipc::Screen *scr,
 
 	/* set new stuff */
 	_header = new char[
-		header_getSize(mode,ntype,ntype == VID_MODE_TYPE_TUI ? mode.cols : mode.width)];
+		header_getSize(mode,ntype,ntype == ipc::Screen::MODE_TYPE_TUI ? mode.cols : mode.width)];
 	_screen = scr;
 	_fb = nfb.release();
 	_type = ntype;

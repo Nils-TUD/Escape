@@ -54,6 +54,30 @@ public:
 		int type;
 	};
 
+	/* the modes */
+	enum {
+		MODE_TEXT,
+		MODE_GRAPHICAL,
+	};
+
+	/* the mode types */
+	enum {
+		MODE_TYPE_TUI	= 1,
+		MODE_TYPE_GUI	= 2,
+	};
+
+	/* cursors */
+	enum {
+		CURSOR_DEFAULT,
+		CURSOR_RESIZE_L,
+		CURSOR_RESIZE_BR,
+		CURSOR_RESIZE_VERT,
+		CURSOR_RESIZE_BL,
+		CURSOR_RESIZE_R
+	};
+
+	static const size_t CURSOR_RESIZE_WIDTH	= 6;
+
 	/**
 	 * Opens the given device
 	 *
@@ -84,7 +108,7 @@ public:
 	 * @pre setMode() has to be called before to share the framebuffer
 	 * @throws if the send failed
 	 */
-	void setCursor(gpos_t x,gpos_t y,int cursor) {
+	void setCursor(gpos_t x,gpos_t y,int cursor = 0) {
 		_is << x << y << cursor << Send(MSG_SCR_SETCURSOR);
 	}
 
@@ -120,7 +144,7 @@ public:
 	/**
 	 * Sets the given mode and shares the shared-memory <shm> with the device.
 	 *
-	 * @param type the screen type (VID_MODE_TYPE_{TUI,GUI})
+	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @param mode the mode-id to set
 	 * @param shm the shared-memory file used as the framebuffer
 	 * @param switchMode whether to actually set the given mode
@@ -223,7 +247,7 @@ public:
 	 *
 	 * @param mode the mode to use
 	 * @param name the shared-memory file
-	 * @param type the screen type (VID_MODE_TYPE_{TUI,GUI})
+	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @throws if the operation failed
 	 */
 	explicit FrameBuffer(const Screen::Mode &mode,const char *file,int type)
@@ -235,7 +259,7 @@ public:
 	 *
 	 * @param mode the mode to use
 	 * @param file the shared-memory file
-	 * @param type the screen type (VID_MODE_TYPE_{TUI,GUI})
+	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @param perms the permissions to give to the file
 	 * @throws if the operation failed
 	 */

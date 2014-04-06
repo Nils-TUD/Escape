@@ -20,13 +20,12 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/thread.h>
+#include <ipc/device.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "../modules.h"
-
-#define MSG_PARA_FIB	10000
 
 typedef struct {
 	int n;
@@ -37,73 +36,61 @@ static int clientthread(void *arg);
 static int fib(int n);
 static int fibthread(void *arg);
 
+class FibDevice : public ipc::Device {
+public:
+	explicit FibDevice(const char *path,mode_t mode) : ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		set(0x1234,std::make_memfun(this,&FibDevice::fib));
+	}
+
+	void fib(ipc::IPCStream &is) {
+		int n;
+		is >> n;
+
+		int tid;
+		sTask *task = (sTask*)malloc(sizeof(sTask));
+		task->n = n;
+		task->fd = is.fd();
+		if((tid = startthread(fibthread,task)) < 0) {
+			fprintf(stderr,"Unable to start thread\n");
+			free(task);
+		}
+		else {
+			printf("[%d] started\n",tid);
+			fflush(stdout);
+		}
+	}
+};
+
 static size_t clientCount = 10;
 static size_t startFib = 20;
 
 int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	size_t i;
-	int dev;
 	if(argc > 2)
 		clientCount = atoi(argv[2]);
 	if(argc > 3)
 		startFib = atoi(argv[3]);
 
-	dev = createdev("/dev/parallel",0111,DEV_TYPE_SERVICE,DEV_CLOSE);
-	if(dev < 0)
-		error("Unable to create device '/dev/parallel'");
-
-	for(i = 0; i < clientCount; i++) {
+	FibDevice dev("/dev/parallel",0111);
+	for(size_t i = 0; i < clientCount; i++) {
 		if(startthread(clientthread,NULL) < 0)
 			error("Unable to start client-thread");
 	}
 
-	while(1) {
-		sMsg msg;
-		msgid_t mid;
-		int fd = getwork(dev,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				fprintf(stderr,"Unable to get work\n");
-		}
-		else {
-			if(mid == MSG_DEV_CLOSE) {
-				close(fd);
-				continue;
-			}
-
-			int tid;
-			sTask *task = (sTask*)malloc(sizeof(sTask));
-			task->n = msg.args.arg1;
-			task->fd = fd;
-			if((tid = startthread(fibthread,task)) < 0) {
-				fprintf(stderr,"Unable to start thread\n");
-				free(task);
-				break;
-			}
-			printf("[%d] started\n",tid);
-			fflush(stdout);
-		}
-	}
-
-	close(dev);
+	dev.loop();
 	return EXIT_SUCCESS;
 }
 
 static int clientthread(A_UNUSED void *arg) {
 	int n = startFib;
-	int fd = open("/dev/parallel",IO_MSGS);
+	ipc::IPCStream is("/dev/parallel");
 	while(1) {
-		sMsg msg;
-		msg.args.arg1 = n;
-		msgid_t mid = MSG_PARA_FIB;
-		if(SENDRECV_IGNSIGS(fd,&mid,&msg,sizeof(msg)) < 0)
-			printe("sendrecv failed");
-		printf("[%d] fib(%d) = %lu\n",gettid(),n,msg.args.arg1);
+		int res;
+		is << n << ipc::SendReceive(0x1234) >> res;
+		printf("[%d] fib(%d) = %d\n",gettid(),n,res);
 		fflush(stdout);
 		n++;
 		sleep(200);
 	}
-	close(fd);
 	return 0;
 }
 
@@ -114,10 +101,11 @@ static int fib(int n) {
 }
 
 static int fibthread(void *arg) {
-	sArgsMsg msg;
 	sTask *task = (sTask*)arg;
-	msg.arg1 = fib(task->n);
-	send(task->fd,MSG_DEF_RESPONSE,&msg,sizeof(msg));
+	int res = fib(task->n);
+	ipc::IPCStream is(task->fd);
+	is << res << ipc::Send(MSG_DEF_RESPONSE);
+
 	free(task);
 	printf("[%d] Done...\n",gettid());
 	fflush(stdout);

@@ -26,9 +26,6 @@
 
 /* general */
 #define IPC_DEF_SIZE				256
-#define MAX_MSG_ARGS				10
-#define MAX_MSG_SIZE				128
-#define MAX_MSGSTR_LEN				63
 
 /* == messages == */
 /* default response */
@@ -97,7 +94,7 @@
 #define MSG_SCR_SETCURSOR			500	/* sets the cursor */
 #define MSG_SCR_GETMODE				501 /* gets information about the current video-mode */
 #define MSG_SCR_SETMODE				502	/* sets the video-mode */
-#define MSG_SCR_GETMODES            503 /* gets all video-modes */
+#define MSG_SCR_GETMODES			503 /* gets all video-modes */
 #define MSG_SCR_UPDATE				504 /* updates a part of the screen */
 
 #define MSG_VT_GETFLAG				600	/* gets a flag */
@@ -136,71 +133,3 @@
 									 (id) == MSG_DEV_WRITE || \
 									 (id) == MSG_DEV_CLOSE || \
 									 (id) == MSG_DEV_SHFILE)
-
-/* cursors */
-#define CURSOR_DEFAULT				0
-#define CURSOR_RESIZE_L				1
-#define CURSOR_RESIZE_BR			2
-#define CURSOR_RESIZE_VERT			3
-#define CURSOR_RESIZE_BL			4
-#define CURSOR_RESIZE_R				5
-#define CURSOR_RESIZE_WIDTH			6
-
-/* the modes */
-#define VID_MODE_TEXT				0
-#define VID_MODE_GRAPHICAL			1
-/* the mode types */
-#define VID_MODE_TYPE_TUI			1
-#define VID_MODE_TYPE_GUI			2
-
-typedef struct {
-	struct tm time;
-	uint microsecs;
-} sRTCInfo;
-
-/* for messages with integer arguments only */
-typedef struct {
-	ulong arg1;
-	ulong arg2;
-	ulong arg3;
-	ulong arg4;
-	ulong arg5;
-	ulong arg6;
-	ulong arg7;
-	ulong arg8;
-} sArgsMsg;
-
-/* for messages with a few integer arguments and one or two strings */
-typedef struct {
-	ulong arg1;
-	ulong arg2;
-	ulong arg3;
-	ulong arg4;
-	ulong arg5;
-	ulong arg6;
-	ulong arg7;
-	ulong arg8;
-	char s1[MAX_MSGSTR_LEN + 1];
-	char s2[MAX_MSGSTR_LEN + 1];
-} sStrMsg;
-
-/* for messages with a few integer arguments and a data-part */
-typedef struct {
-	ulong arg1;
-	ulong arg2;
-	ulong arg3;
-	ulong arg4;
-	ulong arg5;
-	ulong arg6;
-	ulong arg7;
-	ulong arg8;
-	char d[MAX_MSG_SIZE];
-} sDataMsg;
-
-/* the message we're using for communication; most of the time its nice to have all message-types
- * in one union to be able to use all of them (one after another, of course) */
-typedef union {
-	sArgsMsg args;
-	sStrMsg str;
-	sDataMsg data;
-} sMsg;

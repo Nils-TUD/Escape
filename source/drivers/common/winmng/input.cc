@@ -36,7 +36,7 @@ static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data);
 static uchar buttons = 0;
 static gpos_t curX = 0;
 static gpos_t curY = 0;
-static uchar cursor = CURSOR_DEFAULT;
+static uchar cursor = ipc::Screen::CURSOR_DEFAULT;
 static sWindow *mouseWin = NULL;
 
 gpos_t input_getMouseX(void) {
@@ -112,24 +112,24 @@ static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data) {
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
 	if(!buttons) {
 		w = mouseWin ? mouseWin : win_getAt(curX,curY);
-		cursor = CURSOR_DEFAULT;
+		cursor = ipc::Screen::CURSOR_DEFAULT;
 		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
 			gsize_t tbh = w->titleBarHeight;
 			bool left = curY >= (gpos_t)(w->y + tbh) &&
-					curX < (gpos_t)(w->x + CURSOR_RESIZE_WIDTH);
+					curX < (gpos_t)(w->x + ipc::Screen::CURSOR_RESIZE_WIDTH);
 			bool right = curY >= (gpos_t)(w->y + tbh) &&
-					curX >= (gpos_t)(w->x + w->width - CURSOR_RESIZE_WIDTH);
-			bool bottom = curY >= (gpos_t)(w->y + w->height - CURSOR_RESIZE_WIDTH);
+					curX >= (gpos_t)(w->x + w->width - ipc::Screen::CURSOR_RESIZE_WIDTH);
+			bool bottom = curY >= (gpos_t)(w->y + w->height - ipc::Screen::CURSOR_RESIZE_WIDTH);
 			if(left && bottom)
-				cursor = CURSOR_RESIZE_BL;
+				cursor = ipc::Screen::CURSOR_RESIZE_BL;
 			else if(left)
-				cursor = CURSOR_RESIZE_L;
+				cursor = ipc::Screen::CURSOR_RESIZE_L;
 			if(right && bottom)
-				cursor = CURSOR_RESIZE_BR;
+				cursor = ipc::Screen::CURSOR_RESIZE_BR;
 			else if(right)
-				cursor = CURSOR_RESIZE_R;
+				cursor = ipc::Screen::CURSOR_RESIZE_R;
 			else if(bottom && !left)
-				cursor = CURSOR_RESIZE_VERT;
+				cursor = ipc::Screen::CURSOR_RESIZE_VERT;
 		}
 	}
 

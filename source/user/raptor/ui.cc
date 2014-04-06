@@ -103,7 +103,7 @@ void ui_init(uint cols,uint rows) {
 	do {
 		snprintf(shmname,sizeof(shmname),"raptor%d",++id);
 		try {
-			fb = new ipc::FrameBuffer(mode,shmname,VID_MODE_TYPE_TUI,0644);
+			fb = new ipc::FrameBuffer(mode,shmname,ipc::Screen::MODE_TYPE_TUI,0644);
 		}
 		catch(...) {
 		}
@@ -111,7 +111,7 @@ void ui_init(uint cols,uint rows) {
 	while(fb == NULL);
 
 	/* set mode */
-	ui->setMode(VID_MODE_TYPE_TUI,mode.id,shmname,true);
+	ui->setMode(ipc::Screen::MODE_TYPE_TUI,mode.id,shmname,true);
 
 	/* start input thread */
 	if(startthread(ui_inputThread,NULL) < 0)

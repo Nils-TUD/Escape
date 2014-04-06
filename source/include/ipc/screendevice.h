@@ -156,7 +156,7 @@ private:
 		C *c = this->get(is.fd());
 		/* better perform outstanding updates to not access a deleted client */
 		performUpdate();
-		setScreenMode(c,"",NULL,VID_MODE_TYPE_TUI,false);
+		setScreenMode(c,"",NULL,ipc::Screen::MODE_TYPE_TUI,false);
 		ClientDevice<C>::close(is);
 	}
 

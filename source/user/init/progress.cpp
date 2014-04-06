@@ -136,7 +136,7 @@ bool Progress::connect() {
 
 	// this should succeed. if it does not, it's ok to die
 	ipc::Screen::Mode mode = _scr->findTextMode(VGA_COLS,VGA_ROWS);
-	_fb = new ipc::FrameBuffer(mode,"init-vga",VID_MODE_TYPE_TUI,0644);
-	_scr->setMode(VID_MODE_TYPE_TUI,mode.id,"init-vga",true);
+	_fb = new ipc::FrameBuffer(mode,"init-vga",ipc::Screen::MODE_TYPE_TUI,0644);
+	_scr->setMode(ipc::Screen::MODE_TYPE_TUI,mode.id,"init-vga",true);
 	return true;
 }

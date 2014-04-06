@@ -243,8 +243,8 @@ static void vtSetVideoMode(int mode) {
 			/* try to set new mode */
 			try {
 				std::unique_ptr<ipc::FrameBuffer> nfb(
-					new ipc::FrameBuffer(*it,vterm.name,VID_MODE_TYPE_TUI,0644));
-				vterm.ui->setMode(VID_MODE_TYPE_TUI,it->id,vterm.name,true);
+					new ipc::FrameBuffer(*it,vterm.name,ipc::Screen::MODE_TYPE_TUI,0644));
+				vterm.ui->setMode(ipc::Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
 				fb = nfb.release();
 			}
 			catch(const std::default_error &e) {
@@ -261,7 +261,7 @@ static void vtSetVideoMode(int mode) {
 					fb = fbtmp;
 					if(fb) {
 						fb->rename(vterm.name);
-						vterm.ui->setMode(VID_MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
+						vterm.ui->setMode(ipc::Screen::MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
 					}
 					VTHROWE("vtctrl_resize(" << it->cols << "," << it->rows << ")",-ENOMEM);
 				}
@@ -286,7 +286,7 @@ static void vtSetCursor(sVTerm *vt) {
 			x = vt->col;
 			y = vt->row;
 		}
-		vt->ui->setCursor(x,y,CURSOR_DEFAULT);
+		vt->ui->setCursor(x,y);
 		vt->lastCol = x;
 		vt->lastRow = y;
 	}

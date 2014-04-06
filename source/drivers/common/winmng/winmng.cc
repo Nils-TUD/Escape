@@ -151,7 +151,7 @@ public:
 		if(n == 0) {
 			size_t count = 0;
 			for(auto m = modes.begin(); m != modes.end(); ++m) {
-				if(m->type & VID_MODE_TYPE_GUI)
+				if(m->type & ipc::Screen::MODE_TYPE_GUI)
 					count++;
 			}
 			is << count << ipc::Send(MSG_DEF_RESPONSE);
@@ -160,7 +160,7 @@ public:
 			size_t pos = 0;
 			ipc::Screen::Mode *marray = new ipc::Screen::Mode[n];
 			for(auto m = modes.begin(); pos < n && m != modes.end(); ++m) {
-				if(m->type & VID_MODE_TYPE_GUI)
+				if(m->type & ipc::Screen::MODE_TYPE_GUI)
 					marray[pos++] = *m;
 			}
 			is << pos << ipc::Send(MSG_DEF_RESPONSE);

@@ -60,8 +60,8 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 
 	_mode.cols = cols;
 	_mode.rows = rows;
-	_mode.type = VID_MODE_TYPE_TUI;
-	_mode.mode = VID_MODE_GRAPHICAL;
+	_mode.type = ipc::Screen::MODE_TYPE_TUI;
+	_mode.mode = ipc::Screen::MODE_GRAPHICAL;
 	if(!vtctrl_init(&_vt,&_mode))
 		error("Unable to init vterm");
 

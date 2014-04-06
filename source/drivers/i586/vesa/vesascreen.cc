@@ -111,7 +111,7 @@ void vesascr_reset(sVESAScreen *scr,int type) {
 	scr->lastRow = scr->rows;
 	memclear(scr->frmbuf,
 		scr->mode->width * scr->mode->height * (scr->mode->bitsPerPixel / 8));
-	if(type == VID_MODE_TYPE_TUI) {
+	if(type == ipc::Screen::MODE_TYPE_TUI) {
 		for(int y = 0; y < scr->rows; y++) {
 			for(int x = 0; x < scr->cols; x++) {
 				scr->content[y * scr->cols * 2 + x * 2] = ' ';

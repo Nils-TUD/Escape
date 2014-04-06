@@ -61,11 +61,10 @@ public:
 	void set(msgid_t op,handler_type *handler,bool reply = true);
 	void unset(msgid_t op);
 	void loop();
+	void handleMsg(msgid_t mid,IPCStream &is);
 
 protected:
 	void reply(IPCStream &is,int errcode);
-	void handleMsg(msgid_t mid,IPCStream &is);
-
 	void close(IPCStream &is) {
 		::close(is.fd());
 	}

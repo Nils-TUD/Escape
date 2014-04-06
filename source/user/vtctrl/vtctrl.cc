@@ -51,9 +51,9 @@ int main(int argc,const char *argv[]) {
 			printf("%c %5d: %3u x %3u cells, %4u x %4u pixels, %2ubpp, %s (%s,%s)\n",
 					curMode.id == it->id ? '*' : ' ',it->id,
 					it->cols,it->rows,it->width,it->height,it->bitsPerPixel,
-					it->mode == VID_MODE_TEXT ? "text     " : "graphical",
-					(it->type & VID_MODE_TYPE_TUI) ? "tui" : "-",
-					(it->type & VID_MODE_TYPE_GUI) ? "gui" : "-");
+					it->mode == ipc::Screen::MODE_TEXT ? "text     " : "graphical",
+					(it->type & ipc::Screen::MODE_TYPE_TUI) ? "tui" : "-",
+					(it->type & ipc::Screen::MODE_TYPE_GUI) ? "gui" : "-");
 		}
 	}
 	else

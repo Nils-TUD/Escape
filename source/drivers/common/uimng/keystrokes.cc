@@ -130,7 +130,7 @@ static void keys_switchToVGA(void) {
 	ipc::Screen::Mode mode;
 	if(ScreenMng::find(VGA_MODE,&mode,&scr)) {
 		try {
-			scr->setMode(VID_MODE_TYPE_TUI,VGA_MODE,"",true);
+			scr->setMode(ipc::Screen::MODE_TYPE_TUI,VGA_MODE,"",true);
 		}
 		catch(const std::exception &e) {
 			printe("Unable to switch to VGA: %s",e.what());

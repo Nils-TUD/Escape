@@ -237,8 +237,8 @@ static void vbe_detectModes(void) {
 					scrMode->physaddr = mode.physBasePtr;
 					scrMode->tuiHeaderSize = 0;
 					scrMode->guiHeaderSize = 0;
-					scrMode->mode = VID_MODE_GRAPHICAL;
-					scrMode->type = VID_MODE_TYPE_GUI | VID_MODE_TYPE_TUI;
+					scrMode->mode = ipc::Screen::MODE_GRAPHICAL;
+					scrMode->type = ipc::Screen::MODE_TYPE_GUI | ipc::Screen::MODE_TYPE_TUI;
 					sll_append(modes,scrMode);
 				}
 			}

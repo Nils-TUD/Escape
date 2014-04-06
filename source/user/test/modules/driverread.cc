@@ -24,12 +24,30 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/sync.h>
+#include <ipc/proto/device.h>
+#include <ipc/device.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
 
 #include "../modules.h"
+
+class DummyDevice : public ipc::Device {
+public:
+	explicit DummyDevice(const char *path,mode_t mode) : ipc::Device(path,mode,DEV_TYPE_CHAR,DEV_READ) {
+		set(MSG_DEV_READ,std::make_memfun(this,&DummyDevice::read));
+	}
+
+	void read(ipc::IPCStream &is) {
+		static int resp = 4;
+		ipc::DevRead::Request r;
+		is >> r;
+
+		is << sizeof(resp) << ipc::Send(MSG_DEV_READ_RESP);
+		is << ipc::SendData(MSG_DEV_READ_RESP,&resp,sizeof(resp));
+	}
+};
 
 static int clientThread(A_UNUSED void *arg) {
 	int buf;
@@ -45,42 +63,32 @@ static int clientThread(A_UNUSED void *arg) {
 }
 
 int mod_driverread(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	int id = createdev("/dev/bla",0666,DEV_TYPE_CHAR,DEV_READ | DEV_CLOSE);
-	if(id < 0)
-		error("createdev");
+	DummyDevice dev("/dev/bla",0666);
+
 	if(startthread(clientThread,NULL) < 0)
 		error("startthread");
 
-	if(fcntl(id,F_WAKE_READER,0) < 0)
+	if(fcntl(dev.id(),F_WAKE_READER,0) < 0)
 		error("fcntl");
-	if(fcntl(id,F_WAKE_READER,0) < 0)
+	if(fcntl(dev.id(),F_WAKE_READER,0) < 0)
 		error("fcntl");
 
-	sMsg msg;
-	msgid_t mid;
-	int resp = 4;
+	char buffer[32];
 	for(int i = 0; i < 2; ++i) {
-		int cfd = getwork(id,&mid,&msg,sizeof(msg),0);
+		msgid_t mid;
+		int cfd = getwork(dev.id(),&mid,buffer,sizeof(buffer),0);
 		if(cfd < 0)
 			printe("getwork failed");
 		else {
-			switch(mid) {
-				case MSG_DEV_READ:
-					msg.args.arg1 = msg.args.arg2;
-					send(cfd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
-					send(cfd,MSG_DEV_READ_RESP,&resp,sizeof(resp));
-					break;
-				case MSG_DEV_CLOSE:
-					close(cfd);
-					break;
-			}
+			ipc::IPCStream is(cfd,buffer,sizeof(buffer));
+			dev.handleMsg(mid,is);
 		}
 	}
 
 	fprintf(stderr,"Waiting a second...\n");
 	sleep(1000);
 	fprintf(stderr,"Closing device\n");
-	close(id);
+	close(dev.id());
 	fprintf(stderr,"Waiting for client to notice it...\n");
 	join(0);
 	fprintf(stderr,"Shutting down.\n");

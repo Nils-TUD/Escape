@@ -67,7 +67,7 @@ void Util::switchToVGA() {
 		char buffer[IPC_DEF_SIZE];
 		ipc::IPCBuf ib(buffer,sizeof(buffer));
 		/* use an empty shm-name here. we don't need that anyway */
-		ib << 3 << VID_MODE_TYPE_GUI << true << ipc::CString("");
+		ib << 3 << 1 << true << ipc::CString("");
 
 		ssize_t res = file->sendMsg(pid,MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
 		if(res >= 0) {

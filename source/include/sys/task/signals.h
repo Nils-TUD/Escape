@@ -214,7 +214,7 @@ inline bool Signals::canHandle(int signal) {
 }
 
 inline bool Signals::canSend(int signal) {
-	return signal = SIG_KILL || signal == SIG_TERM || signal == SIG_INTRPT ||
+	return signal == SIG_KILL || signal == SIG_TERM || signal == SIG_INTRPT ||
 			signal == SIG_USR1 || signal == SIG_USR2;
 }
 

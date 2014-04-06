@@ -33,8 +33,8 @@ class UIMngDevice : public ipc::ClientDevice<UIClient> {
 public:
 	explicit UIMngDevice(const char *name,mode_t mode,std::mutex &mutex)
 		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE), _mutex(mutex) {
-		set(MSG_DEV_OPEN,std::make_memfun(this,&UIMngDevice::open));
-		set(MSG_DEV_CLOSE,std::make_memfun(this,&UIMngDevice::close),false);
+		set(MSG_FILE_OPEN,std::make_memfun(this,&UIMngDevice::open));
+		set(MSG_FILE_CLOSE,std::make_memfun(this,&UIMngDevice::close),false);
 		set(MSG_UIM_GETID,std::make_memfun(this,&UIMngDevice::getId));
 		set(MSG_UIM_GETKEYMAP,std::make_memfun(this,&UIMngDevice::getKeymap));
 		set(MSG_UIM_SETKEYMAP,std::make_memfun(this,&UIMngDevice::setKeymap));
@@ -166,7 +166,7 @@ public:
 	explicit UIMngEvDevice(const char *name,mode_t mode,std::mutex &mutex)
 		: Device(name,mode,DEV_TYPE_SERVICE,DEV_CLOSE), _mutex(mutex) {
 		set(MSG_UIM_ATTACH,std::make_memfun(this,&UIMngEvDevice::attach));
-		set(MSG_DEV_CLOSE,std::make_memfun(this,&UIMngEvDevice::close));
+		set(MSG_FILE_CLOSE,std::make_memfun(this,&UIMngEvDevice::close));
 	}
 
 	void attach(ipc::IPCStream &is) {

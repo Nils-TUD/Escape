@@ -318,7 +318,7 @@ bool OpenFile::doClose(pid_t pid) {
 		/* if we have used a file-descriptor to get here, the usages are at least 1; otherwise it is
 		 * 0, because it is used kernel-intern only and not passed to other "users". */
 		if(usageCount <= 1) {
-			node->close(pid,this,devNo == VFS_DEV_NO ? MSG_DEV_CLOSE : MSG_FS_CLOSE);
+			node->close(pid,this,devNo == VFS_DEV_NO ? MSG_FILE_CLOSE : MSG_FS_CLOSE);
 
 			/* free it */
 			releaseFile(this);

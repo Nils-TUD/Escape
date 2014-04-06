@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <ipc/ipcstream.h>
 #include <ipc/device.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <ipc/proto/vterm.h>
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
@@ -38,8 +38,8 @@ protected:
 public:
 	explicit VTermDevice(const char *name,mode_t mode,sVTerm *vterm)
 		: Device(name,mode,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE), _vterm(vterm) {
-		set(MSG_DEV_READ,std::make_memfun(this,&VTermDevice::read));
-		set(MSG_DEV_WRITE,std::make_memfun(this,&VTermDevice::write));
+		set(MSG_FILE_READ,std::make_memfun(this,&VTermDevice::read));
+		set(MSG_FILE_WRITE,std::make_memfun(this,&VTermDevice::write));
 		set(MSG_VT_GETFLAG,std::make_memfun(this,&VTermDevice::getFlag));
 		set(MSG_VT_SETFLAG,std::make_memfun(this,&VTermDevice::setFlag));
 		set(MSG_VT_BACKUP,std::make_memfun(this,&VTermDevice::backup));
@@ -50,7 +50,7 @@ public:
 	}
 
 	void read(IPCStream &is) {
-		DevRead::Request r;
+		FileRead::Request r;
 		is >> r;
 		assert(!is.error());
 
@@ -61,16 +61,16 @@ public:
 			res = vtin_gets(_vterm,data,r.count,&avail);
 		}
 
-		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		is << FileRead::Response(res) << Send(FileRead::Response::MID);
 		if(res) {
-			is << SendData(DevRead::Response::MID,data,res);
+			is << SendData(FileRead::Response::MID,data,res);
 			if(r.count > BUF_SIZE)
 				free(data);
 		}
 	}
 
 	void write(IPCStream &is) {
-		DevWrite::Request r;
+		FileWrite::Request r;
 		is >> r;
 		assert(!is.error());
 
@@ -86,7 +86,7 @@ public:
 				free(data);
 		}
 
-		is << DevWrite::Response(res) << Send(DevWrite::Response::MID);
+		is << FileWrite::Response(res) << Send(FileWrite::Response::MID);
 	}
 
 	void setMode(ipc::IPCStream &is) {

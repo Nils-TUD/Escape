@@ -57,24 +57,24 @@ int main(void) {
 			printe("Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DEV_READ: {
+				case MSG_FILE_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
 					msg.args.arg1 = count;
 					if(offset + count <= offset || offset + count > sizeof(sRTCInfo))
 						msg.args.arg1 = 0;
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_FILE_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
 						/* ensure that the refresh-thread doesn't access the date in the
 						 * meanwhile */
 						usemdown(&usem);
-						send(fd,MSG_DEV_READ_RESP,(uchar*)&info + offset,msg.args.arg1);
+						send(fd,MSG_FILE_READ_RESP,(uchar*)&info + offset,msg.args.arg1);
 						usemup(&usem);
 					}
 				}
 				break;
 
-				case MSG_DEV_CLOSE:
+				case MSG_FILE_CLOSE:
 					close(fd);
 					break;
 

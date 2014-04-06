@@ -33,7 +33,7 @@
 #include <sys/log.h>
 #include <esc/messages.h>
 #include <ipc/ipcbuf.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -125,7 +125,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	assert(p != NULL);
 
 	/* send msg to driver */
-	ib << ipc::DevOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),ipc::CString(path));
+	ib << ipc::FileOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),ipc::CString(path));
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;
@@ -145,7 +145,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 		goto error;
 
 	{
-		ipc::DevOpen::Response r;
+		ipc::FileOpen::Response r;
 		ib >> r;
 		if(r.res < 0) {
 			res = r.res;
@@ -251,8 +251,8 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	/* send msg to driver */
 	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
-	ib << ipc::DevRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
-	res = file->sendMsg(pid,MSG_DEV_READ,ib.buffer(),ib.pos(),NULL,0);
+	ib << ipc::FileRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
+	res = file->sendMsg(pid,MSG_FILE_READ,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -263,7 +263,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	do {
 		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-		vassert(res < 0 || mid == MSG_DEV_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
+		vassert(res < 0 || mid == MSG_FILE_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
 	}
 	while(res == -EINTR);
@@ -272,7 +272,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		return res;
 
 	/* handle response */
-	ipc::DevRead::Response r;
+	ipc::FileRead::Response r;
 	ib >> r;
 	if(r.res < 0)
 		return r.res;
@@ -299,8 +299,8 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 		return res;
 
 	/* send msg and data to driver */
-	ib << ipc::DevWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
-	res = file->sendMsg(pid,MSG_DEV_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
+	ib << ipc::FileWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
+	res = file->sendMsg(pid,MSG_FILE_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
 
@@ -310,7 +310,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	do {
 		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-		vassert(res < 0 || mid == MSG_DEV_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
+		vassert(res < 0 || mid == MSG_FILE_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
 	}
 	while(res == -EINTR);
@@ -318,7 +318,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	if(res < 0)
 		return res;
 
-	ipc::DevWrite::Response r;
+	ipc::FileWrite::Response r;
 	ib >> r;
 	return r.res;
 }
@@ -335,10 +335,10 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* send msg to driver */
-	ib << ipc::DevShFile::Request(size,ipc::CString(path));
+	ib << ipc::FileShFile::Request(size,ipc::CString(path));
 	if(ib.error())
 		return -EINVAL;
-	res = file->sendMsg(pid,MSG_DEV_SHFILE,ib.buffer(),ib.pos(),NULL,0);
+	res = file->sendMsg(pid,MSG_FILE_SHFILE,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -348,7 +348,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	do {
 		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-		vassert(res < 0 || mid == MSG_DEV_SHFILE_RESP,"mid=%u, res=%zd, node=%s:%p",
+		vassert(res < 0 || mid == MSG_FILE_SHFILE_RESP,"mid=%u, res=%zd, node=%s:%p",
 				mid,res,getPath(),this);
 	}
 	while(res == -EINTR);
@@ -357,7 +357,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* handle response */
-	ipc::DevShFile::Response r;
+	ipc::FileShFile::Response r;
 	ib >> r;
 	if(r.res < 0)
 		return r.res;

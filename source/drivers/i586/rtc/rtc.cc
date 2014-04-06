@@ -25,7 +25,7 @@
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <esc/time.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <ipc/proto/rtc.h>
 #include <ipc/device.h>
 #include <stdio.h>
@@ -53,11 +53,11 @@ class RTCDevice : public ipc::Device {
 public:
 	explicit RTCDevice(const char *path,mode_t mode)
 		: ipc::Device(path,mode,DEV_TYPE_BLOCK,DEV_READ) {
-		set(MSG_DEV_READ,std::make_memfun(this,&RTCDevice::read));
+		set(MSG_FILE_READ,std::make_memfun(this,&RTCDevice::read));
 	}
 
 	void read(ipc::IPCStream &is) {
-		ipc::DevRead::Request r;
+		ipc::FileRead::Request r;
 		is >> r;
 
 		ssize_t res = r.count;
@@ -68,14 +68,14 @@ public:
 		else if(r.offset + r.count > sizeof(ipc::RTC::Info))
 			res = sizeof(ipc::RTC::Info) - r.offset;
 
-		is << ipc::DevRead::Response(res) << ipc::Send(MSG_DEV_READ_RESP);
+		is << ipc::FileRead::Response(res) << ipc::Send(MSG_FILE_READ_RESP);
 		if(res > 0) {
 			/* we assume that the system booted at X secs + 0 us, because we don't know
 			 * the microseconds at boot-time. */
 			ipc::RTC::Info info;
 			rtc_readInfo(&info);
 			info.microsecs = (uint)(tsctotime(rdtsc())) % 1000000;
-			is << ipc::SendData(MSG_DEV_READ_RESP,(uchar*)&info + r.offset,res);
+			is << ipc::SendData(MSG_FILE_READ_RESP,(uchar*)&info + r.offset,res);
 		}
 	}
 };

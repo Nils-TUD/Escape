@@ -117,7 +117,7 @@ void GUIVTermDevice::getModes(ipc::IPCStream &is) {
 }
 
 void GUIVTermDevice::write(ipc::IPCStream &is) {
-	ipc::DevWrite::Request r;
+	ipc::FileWrite::Request r;
 	is >> r;
 	assert(!is.error());
 
@@ -147,7 +147,7 @@ void GUIVTermDevice::write(ipc::IPCStream &is) {
 			free(data);
 	}
 
-	is << ipc::DevWrite::Response(res) << ipc::Send(ipc::DevWrite::Response::MID);
+	is << ipc::FileWrite::Response(res) << ipc::Send(ipc::FileWrite::Response::MID);
 }
 
 void GUIVTermDevice::setCursor(sVTerm *vt) {

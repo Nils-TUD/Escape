@@ -21,7 +21,7 @@
 
 #include <ipc/device.h>
 #include <ipc/ipcstream.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <esc/mem.h>
 #include <esc/sync.h>
 #include <vthrow.h>
@@ -59,10 +59,10 @@ class ClientDevice : public Device {
 public:
 	explicit ClientDevice(const char *name,mode_t mode,uint type,uint ops)
 		: Device(name,mode,type,ops | DEV_OPEN), _clients(), _sem() {
-		set(MSG_DEV_OPEN,std::make_memfun(this,&ClientDevice::open));
+		set(MSG_FILE_OPEN,std::make_memfun(this,&ClientDevice::open));
 		if(ops & DEV_SHFILE)
-			set(MSG_DEV_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
-		set(MSG_DEV_CLOSE,std::make_memfun(this,&ClientDevice::close),false);
+			set(MSG_FILE_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
+		set(MSG_FILE_CLOSE,std::make_memfun(this,&ClientDevice::close),false);
 		int res;
 		if((res = usemcrt(&_sem,1)) < 0)
 			VTHROWE("usemcrt",res);
@@ -113,19 +113,19 @@ protected:
 	void open(IPCStream &is) {
 		add(is.fd(),new C(is.fd()));
 
-		is << DevOpen::Response(0) << Send(DevOpen::Response::MID);
+		is << FileOpen::Response(0) << Send(FileOpen::Response::MID);
 	}
 
 	void shfile(IPCStream &is) {
 		C *c = get(is.fd());
 		char path[MAX_PATH_LEN];
-		DevShFile::Request r(path,sizeof(path));
+		FileShFile::Request r(path,sizeof(path));
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
 		c->shm(static_cast<char*>(joinbuf(r.path.str(),r.size,0)));
 
-		is << DevShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(DevShFile::Response::MID);
+		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(FileShFile::Response::MID);
 	}
 
 	void close(IPCStream &is) {

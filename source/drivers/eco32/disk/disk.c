@@ -141,23 +141,23 @@ int main(int argc,char **argv) {
 		}
 		else {
 			switch(mid) {
-				case MSG_DEV_OPEN: {
+				case MSG_FILE_OPEN: {
 					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
-					send(fd,MSG_DEV_OPEN_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_FILE_OPEN_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 
-				case MSG_DEV_SHFILE: {
+				case MSG_FILE_SHFILE: {
 					size_t size = msg.args.arg1;
 					char *path = msg.str.s1;
 					assert(shbufs[fd] == NULL);
 					shbufs[fd] = joinbuf(path,size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
 					msg.args.arg1 = shbufs[fd] != NULL ? 0 : -errno;
-					send(fd,MSG_DEV_SHFILE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_FILE_SHFILE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 
-				case MSG_DEV_READ: {
+				case MSG_FILE_READ: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
 					ssize_t shmemoff = msg.args.arg3;
@@ -173,13 +173,13 @@ int main(int argc,char **argv) {
 							}
 						}
 					}
-					send(fd,MSG_DEV_READ_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_FILE_READ_RESP,&msg,sizeof(msg.args));
 					if(shmemoff == -1 && msg.args.arg1 > 0)
-						send(fd,MSG_DEV_READ_RESP,buf,msg.data.arg1);
+						send(fd,MSG_FILE_READ_RESP,buf,msg.data.arg1);
 				}
 				break;
 
-				case MSG_DEV_WRITE: {
+				case MSG_FILE_WRITE: {
 					uint offset = msg.args.arg1;
 					uint count = msg.args.arg2;
 					ssize_t shmemoff = msg.args.arg3;
@@ -197,7 +197,7 @@ int main(int argc,char **argv) {
 							}
 						}
 					}
-					send(fd,MSG_DEV_WRITE_RESP,&msg,sizeof(msg.args));
+					send(fd,MSG_FILE_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
 
@@ -207,7 +207,7 @@ int main(int argc,char **argv) {
 				}
 				break;
 
-				case MSG_DEV_CLOSE: {
+				case MSG_FILE_CLOSE: {
 					if(shbufs[fd]) {
 						munmap(shbufs[fd]);
 						shbufs[fd] = NULL;

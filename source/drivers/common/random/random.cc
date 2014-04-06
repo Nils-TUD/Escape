@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <ipc/clientdevice.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -29,12 +29,12 @@ class RandomDevice : public ClientDevice<> {
 public:
 	explicit RandomDevice(const char *name,mode_t mode)
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
-		set(MSG_DEV_READ,std::make_memfun(this,&RandomDevice::read));
+		set(MSG_FILE_READ,std::make_memfun(this,&RandomDevice::read));
 	}
 
 	void read(IPCStream &is) {
 		Client *c = get(is.fd());
-		DevRead::Request r;
+		FileRead::Request r;
 		is >> r;
 		assert(!is.error());
 
@@ -48,9 +48,9 @@ public:
 				*d++ = rand();
 		}
 
-		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		is << FileRead::Response(res) << Send(FileRead::Response::MID);
 		if(r.shmemoff == -1 && res) {
-			is << SendData(DevRead::Response::MID,data,res);
+			is << SendData(FileRead::Response::MID,data,res);
 			free(data);
 		}
 	}

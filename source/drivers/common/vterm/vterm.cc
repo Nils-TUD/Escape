@@ -29,7 +29,7 @@
 #include <esc/ringbuffer.h>
 #include <usergroup/group.h>
 #include <ipc/proto/ui.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <ipc/proto/vterm.h>
 #include <ipc/vtermdevice.h>
 #include <signal.h>

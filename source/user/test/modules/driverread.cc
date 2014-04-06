@@ -24,7 +24,7 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/sync.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <ipc/device.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,16 +36,16 @@
 class DummyDevice : public ipc::Device {
 public:
 	explicit DummyDevice(const char *path,mode_t mode) : ipc::Device(path,mode,DEV_TYPE_CHAR,DEV_READ) {
-		set(MSG_DEV_READ,std::make_memfun(this,&DummyDevice::read));
+		set(MSG_FILE_READ,std::make_memfun(this,&DummyDevice::read));
 	}
 
 	void read(ipc::IPCStream &is) {
 		static int resp = 4;
-		ipc::DevRead::Request r;
+		ipc::FileRead::Request r;
 		is >> r;
 
-		is << sizeof(resp) << ipc::Send(MSG_DEV_READ_RESP);
-		is << ipc::SendData(MSG_DEV_READ_RESP,&resp,sizeof(resp));
+		is << sizeof(resp) << ipc::Send(MSG_FILE_READ_RESP);
+		is << ipc::SendData(MSG_FILE_READ_RESP,&resp,sizeof(resp));
 	}
 };
 

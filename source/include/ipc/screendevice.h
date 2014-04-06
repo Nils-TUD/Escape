@@ -65,7 +65,7 @@ public:
 		this->set(MSG_SCR_GETMODES,std::make_memfun(this,&ScreenDevice::getModes));
 		this->set(MSG_SCR_SETCURSOR,std::make_memfun(this,&ScreenDevice::setCursor),false);
 		this->set(MSG_SCR_UPDATE,std::make_memfun(this,&ScreenDevice::update),false);
-		this->set(MSG_DEV_CLOSE,std::make_memfun(this,&ScreenDevice::close),false);
+		this->set(MSG_FILE_CLOSE,std::make_memfun(this,&ScreenDevice::close),false);
 	}
 
 	virtual void setScreenMode(C *c,const char *shm,Screen::Mode *mode,int type,bool sw) = 0;

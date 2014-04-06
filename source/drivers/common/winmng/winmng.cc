@@ -53,7 +53,7 @@ public:
 		set(MSG_SCR_GETMODES,std::make_memfun(this,&WinMngDevice::getModes));
 		set(MSG_SCR_GETMODE,std::make_memfun(this,&WinMngDevice::getMode));
 		set(MSG_WIN_SETMODE,std::make_memfun(this,&WinMngDevice::setMode));
-		set(MSG_DEV_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
+		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
 	}
 
 	void create(ipc::IPCStream &is) {
@@ -198,7 +198,7 @@ public:
 		set(MSG_WIN_ATTACH,std::make_memfun(this,&WinMngEventDevice::attach),false);
 		set(MSG_WIN_ADDLISTENER,std::make_memfun(this,&WinMngEventDevice::addListener),false);
 		set(MSG_WIN_REMLISTENER,std::make_memfun(this,&WinMngEventDevice::remListener),false);
-		set(MSG_DEV_CLOSE,std::make_memfun(this,&WinMngEventDevice::close),false);
+		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngEventDevice::close),false);
 	}
 
 	void attach(ipc::IPCStream &is) {

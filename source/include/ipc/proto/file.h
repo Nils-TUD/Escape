@@ -26,9 +26,9 @@
 
 namespace ipc {
 
-struct DevOpen {
+struct FileOpen {
 	struct Request {
-		static const msgid_t MSG = MSG_DEV_OPEN;
+		static const msgid_t MSG = MSG_FILE_OPEN;
 
 		explicit Request(char *buffer,size_t size) : path(buffer,size) {
 		}
@@ -50,12 +50,12 @@ struct DevOpen {
 		CString path;
 	};
 
-	typedef DefaultResponse<int,MSG_DEV_OPEN_RESP> Response;
+	typedef DefaultResponse<int,MSG_FILE_OPEN_RESP> Response;
 };
 
-struct DevShFile {
+struct FileShFile {
 	struct Request {
-		static const msgid_t MSG = MSG_DEV_SHFILE;
+		static const msgid_t MSG = MSG_FILE_SHFILE;
 
 		explicit Request(char *buffer,size_t _size) : path(buffer,_size) {
 		}
@@ -77,12 +77,12 @@ struct DevShFile {
 		CString path;
 	};
 
-	typedef DefaultResponse<int,MSG_DEV_SHFILE_RESP> Response;
+	typedef DefaultResponse<int,MSG_FILE_SHFILE_RESP> Response;
 };
 
-struct DevRead {
+struct FileRead {
 	struct Request {
-		static const msgid_t MSG = MSG_DEV_READ;
+		static const msgid_t MSG = MSG_FILE_READ;
 
 		explicit Request() {
 		}
@@ -95,12 +95,12 @@ struct DevRead {
 		ssize_t shmemoff;
 	};
 
-	typedef DefaultResponse<ssize_t,MSG_DEV_READ_RESP> Response;
+	typedef DefaultResponse<ssize_t,MSG_FILE_READ_RESP> Response;
 };
 
-struct DevWrite {
+struct FileWrite {
 	struct Request {
-		static const msgid_t MSG = MSG_DEV_WRITE;
+		static const msgid_t MSG = MSG_FILE_WRITE;
 
 		explicit Request() {
 		}
@@ -113,7 +113,7 @@ struct DevWrite {
 		ssize_t shmemoff;
 	};
 
-	typedef DefaultResponse<ssize_t,MSG_DEV_WRITE_RESP> Response;
+	typedef DefaultResponse<ssize_t,MSG_FILE_WRITE_RESP> Response;
 };
 
 }

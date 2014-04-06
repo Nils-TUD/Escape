@@ -45,11 +45,11 @@ static void sigTermHndl(A_UNUSED int sig) {
 FSDevice::FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const char *fsDev)
 	: ClientDevice(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
 	  _fs(fs), _clients(0) {
-	set(MSG_DEV_OPEN,std::make_memfun(this,&FSDevice::devopen));
-	set(MSG_DEV_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);
+	set(MSG_FILE_OPEN,std::make_memfun(this,&FSDevice::devopen));
+	set(MSG_FILE_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);
 	set(MSG_FS_OPEN,std::make_memfun(this,&FSDevice::open));
-	set(MSG_DEV_READ,std::make_memfun(this,&FSDevice::read));
-	set(MSG_DEV_WRITE,std::make_memfun(this,&FSDevice::write));
+	set(MSG_FILE_READ,std::make_memfun(this,&FSDevice::read));
+	set(MSG_FILE_WRITE,std::make_memfun(this,&FSDevice::write));
 	set(MSG_FS_CLOSE,std::make_memfun(this,&FSDevice::close));
 	set(MSG_FS_STAT,std::make_memfun(this,&FSDevice::stat));
 	set(MSG_FS_ISTAT,std::make_memfun(this,&FSDevice::istat));
@@ -106,7 +106,7 @@ void FSDevice::loop() {
 
 void FSDevice::devopen(IPCStream &is) {
 	_clients++;
-	is << 0 << Send(MSG_DEV_OPEN_RESP);
+	is << 0 << Send(MSG_FILE_OPEN_RESP);
 }
 
 void FSDevice::devclose(IPCStream &is) {
@@ -150,10 +150,10 @@ void FSDevice::read(IPCStream &is) {
 			res = _fs->read(_fs->handle,file->ino,buffer,offset,count);
 	}
 
-	is << res << Send(MSG_DEV_READ_RESP);
+	is << res << Send(MSG_FILE_READ_RESP);
 	if(buffer && shmemoff == -1) {
 		if(res > 0)
-			is << SendData(MSG_DEV_READ_RESP,buffer,res);
+			is << SendData(MSG_FILE_READ_RESP,buffer,res);
 		free(buffer);
 	}
 }
@@ -177,7 +177,7 @@ void FSDevice::write(IPCStream &is) {
 	else
 		res = _fs->write(_fs->handle,file->ino,data,offset,count);
 
-	is << res << Send(MSG_DEV_WRITE_RESP);
+	is << res << Send(MSG_FILE_WRITE_RESP);
 	if(shmemoff == -1)
 		delete[] data;
 }

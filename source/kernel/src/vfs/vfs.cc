@@ -156,7 +156,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	msgid_t openmsg;
 	if(IS_NODE(fsFile)) {
 		node = reinterpret_cast<VFSNode*>(fsFile);
-		openmsg = MSG_DEV_OPEN;
+		openmsg = MSG_FILE_OPEN;
 	}
 	/* otherwise use the device-node of the fs */
 	else {

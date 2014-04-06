@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <ipc/device.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <stdio.h>
 
 using namespace ipc;
@@ -28,21 +28,21 @@ class NullDevice : public Device {
 public:
 	explicit NullDevice(const char *name,mode_t mode)
 		: Device(name,mode,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE) {
-		set(MSG_DEV_READ,std::make_memfun(this,&NullDevice::read));
-		set(MSG_DEV_WRITE,std::make_memfun(this,&NullDevice::write));
+		set(MSG_FILE_READ,std::make_memfun(this,&NullDevice::read));
+		set(MSG_FILE_WRITE,std::make_memfun(this,&NullDevice::write));
 	}
 
 	void read(IPCStream &is) {
-		is << DevRead::Response(0) << Send(DevRead::Response::MID);
+		is << FileRead::Response(0) << Send(FileRead::Response::MID);
 	}
 
 	void write(IPCStream &is) {
 		/* skip the data-message */
-		DevWrite::Request r;
+		FileWrite::Request r;
 		is >> r >> ReceiveData(NULL,0);
 
 		/* write response and pretend that we've written everything */
-		is << DevWrite::Response(r.count) << Send(DevWrite::Response::MID);
+		is << FileWrite::Response(r.count) << Send(FileWrite::Response::MID);
 	}
 };
 

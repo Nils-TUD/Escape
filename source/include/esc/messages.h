@@ -31,19 +31,19 @@
 /* default response */
 #define MSG_DEF_RESPONSE			100000
 
-/* requests to device */
-#define MSG_DEV_OPEN				50
-#define MSG_DEV_READ				51
-#define MSG_DEV_WRITE				52
-#define MSG_DEV_CLOSE				53
-#define MSG_DEV_SHFILE				54
+/* requests to file-device */
+#define MSG_FILE_OPEN				50
+#define MSG_FILE_READ				51
+#define MSG_FILE_WRITE				52
+#define MSG_FILE_CLOSE				53
+#define MSG_FILE_SHFILE				54
 
-/* respones of devices */
-#define MSG_DEV_OPEN_RESP			100001
-#define MSG_DEV_READ_RESP			100002
-#define MSG_DEV_WRITE_RESP			100003
-#define MSG_DEV_CLOSE_RESP			100004
-#define MSG_DEV_SHFILE_RESP			100005
+/* responses of file-devices */
+#define MSG_FILE_OPEN_RESP			100001
+#define MSG_FILE_READ_RESP			100002
+#define MSG_FILE_WRITE_RESP			100003
+#define MSG_FILE_CLOSE_RESP			100004
+#define MSG_FILE_SHFILE_RESP		100005
 
 /* requests to fs */
 #define MSG_FS_OPEN					100
@@ -128,8 +128,8 @@
 #define MSG_DISK_GETSIZE			1200 /* get the size of a device */
 
 
-#define IS_DEVICE_MSG(id)			((id) == MSG_DEV_OPEN || \
-									 (id) == MSG_DEV_READ || \
-									 (id) == MSG_DEV_WRITE || \
-									 (id) == MSG_DEV_CLOSE || \
-									 (id) == MSG_DEV_SHFILE)
+#define IS_DEVICE_MSG(id)			((id) == MSG_FILE_OPEN || \
+									 (id) == MSG_FILE_READ || \
+									 (id) == MSG_FILE_WRITE || \
+									 (id) == MSG_FILE_CLOSE || \
+									 (id) == MSG_FILE_SHFILE)

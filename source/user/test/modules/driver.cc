@@ -24,7 +24,7 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/sync.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -132,9 +132,9 @@ static int getRequests(A_UNUSED void *arg) {
 			memcpy(&req->buffer,buffer,sizeof(buffer));
 			req->tid = gettid();
 			req->data = NULL;
-			if(mid == MSG_DEV_WRITE) {
+			if(mid == MSG_FILE_WRITE) {
 				ipc::IPCStream is(cfd,buffer,sizeof(buffer));
-				ipc::DevWrite::Request r;
+				ipc::FileWrite::Request r;
 				is >> r;
 
 				req->data = malloc(r.count);
@@ -155,41 +155,41 @@ static int handleRequest(void *arg) {
 
 	ipc::IPCStream is(req->fd,req->buffer,sizeof(req->buffer));
 	switch(req->mid) {
-		case MSG_DEV_OPEN: {
+		case MSG_FILE_OPEN: {
 			char param[32];
-			ipc::DevOpen::Request r(param,sizeof(param));
+			ipc::FileOpen::Request r(param,sizeof(param));
 			is >> r;
 
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,r.flags);
 
-			is << ipc::DevOpen::Response(0) << ipc::Send(MSG_DEV_OPEN_RESP);
+			is << ipc::FileOpen::Response(0) << ipc::Send(MSG_FILE_OPEN_RESP);
 		}
 		break;
 
-		case MSG_DEV_READ: {
-			ipc::DevRead::Request r;
+		case MSG_FILE_READ: {
+			ipc::FileRead::Request r;
 			is >> r;
 
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,r.offset,r.count);
 
-			is << ipc::DevRead::Response(r.count) << ipc::Send(MSG_DEV_READ_RESP);
+			is << ipc::FileRead::Response(r.count) << ipc::Send(MSG_FILE_READ_RESP);
 			itoa(resp,sizeof(resp),respId++);
-			is << ipc::SendData(MSG_DEV_READ_RESP,resp,sizeof(resp));
+			is << ipc::SendData(MSG_FILE_READ_RESP,resp,sizeof(resp));
 		}
 		break;
 
-		case MSG_DEV_WRITE: {
-			ipc::DevWrite::Request r;
+		case MSG_FILE_WRITE: {
+			ipc::FileWrite::Request r;
 			is >> r;
 
 			printffl("--[%d,%d] Write: offset=%u, count=%u, data='%s'\n",gettid(),req->fd,
 					r.count,r.offset,req->data);
 
-			is << ipc::DevWrite::Response(r.count) << ipc::Send(MSG_DEV_WRITE_RESP);
+			is << ipc::FileWrite::Response(r.count) << ipc::Send(MSG_FILE_WRITE_RESP);
 		}
 		break;
 
-		case MSG_DEV_CLOSE: {
+		case MSG_FILE_CLOSE: {
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
 			closeCount++;
 			close(req->fd);

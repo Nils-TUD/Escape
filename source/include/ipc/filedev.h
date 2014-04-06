@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <ipc/device.h>
 #include <memory>
 #include <vthrow.h>
@@ -31,12 +31,12 @@ class FileDevice : public Device {
 public:
 	explicit FileDevice(const char *path,mode_t mode)
 		: Device(path,mode,DEV_TYPE_FILE,DEV_READ | DEV_WRITE) {
-		set(MSG_DEV_READ,std::make_memfun(this,&FileDevice::read));
-		set(MSG_DEV_WRITE,std::make_memfun(this,&FileDevice::write));
+		set(MSG_FILE_READ,std::make_memfun(this,&FileDevice::read));
+		set(MSG_FILE_WRITE,std::make_memfun(this,&FileDevice::write));
 	}
 
 	void read(IPCStream &is) {
-		DevRead::Request r;
+		FileRead::Request r;
 		is >> r;
 		if(r.offset + (off_t)r.count < r.offset)
 			VTHROWE("Invalid offset/count (" << r.offset << "," << r.count << ")",-EINVAL);
@@ -50,20 +50,20 @@ public:
 		else
 			res = r.count;
 
-		is << DevRead::Response(res) << Send(MSG_DEV_READ_RESP);
+		is << FileRead::Response(res) << Send(MSG_FILE_READ_RESP);
 		if(res)
-			is << SendData(MSG_DEV_READ_RESP,content.c_str(),res);
+			is << SendData(MSG_FILE_READ_RESP,content.c_str(),res);
 	}
 
 	void write(IPCStream &is) {
-		DevWrite::Request r;
+		FileWrite::Request r;
 		is >> r;
 
 		std::unique_ptr<uint8_t[]> data(new uint8_t[r.count]);
 		is >> ReceiveData(data.get(),r.count);
 		ssize_t res = handleWrite(r.offset,data.get(),r.count);
 
-		is << DevWrite::Response(res) << Send(MSG_DEV_WRITE_RESP);
+		is << FileWrite::Response(res) << Send(MSG_FILE_WRITE_RESP);
 	}
 
 private:

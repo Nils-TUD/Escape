@@ -66,9 +66,9 @@ public:
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE),
 		  _ataDev(ctrl_getDevice(dev)),
 		  _part(_ataDev ? _ataDev->partTable + part : NULL) {
-		set(MSG_DEV_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
-		set(MSG_DEV_READ,std::make_memfun(this,&ATAPartitionDevice::read));
-		set(MSG_DEV_WRITE,std::make_memfun(this,&ATAPartitionDevice::write));
+		set(MSG_FILE_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
+		set(MSG_FILE_READ,std::make_memfun(this,&ATAPartitionDevice::read));
+		set(MSG_FILE_WRITE,std::make_memfun(this,&ATAPartitionDevice::write));
 		set(MSG_DISK_GETSIZE,std::make_memfun(this,&ATAPartitionDevice::getsize));
 
 		if(_ataDev == NULL || _part == NULL || _ataDev->present == 0 || _part->present == 0)
@@ -78,7 +78,7 @@ public:
 	void shfile(IPCStream &is) {
 		char path[MAX_PATH_LEN];
 		Client *c = get(is.fd());
-		DevShFile::Request r(path,sizeof(path));
+		FileShFile::Request r(path,sizeof(path));
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
@@ -88,24 +88,24 @@ public:
 		 * to swap (which would cause a deadlock, because we're doing that). */
 		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
 
-		is << DevShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(DevShFile::Response::MID);
+		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(FileShFile::Response::MID);
 	}
 
 	void read(IPCStream &is) {
-		DevRead::Request r;
+		FileRead::Request r;
 		is >> r;
 		assert(!is.error());
 
 		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (r.shmemoff >> 1);
 		size_t res = handleRead(_ataDev,_part,buf,r.offset,r.count);
 
-		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		is << FileRead::Response(res) << Send(FileRead::Response::MID);
 		if(r.shmemoff == -1 && res > 0)
-			is << SendData(DevRead::Response::MID,buf,res);
+			is << SendData(FileRead::Response::MID,buf,res);
 	}
 
 	void write(IPCStream &is) {
-		DevWrite::Request r;
+		FileWrite::Request r;
 		is >> r;
 		if(r.shmemoff == -1)
 			is >> ReceiveData(buffer,sizeof(buffer));
@@ -114,7 +114,7 @@ public:
 		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (r.shmemoff >> 1);
 		size_t res = handleWrite(_ataDev,_part,buf,r.offset,r.count);
 
-		is << DevWrite::Response(res) << Send(DevWrite::Response::MID);
+		is << FileWrite::Response(res) << Send(FileWrite::Response::MID);
 	}
 
 	void getsize(IPCStream &is) {

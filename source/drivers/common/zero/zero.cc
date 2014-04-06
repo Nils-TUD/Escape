@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <ipc/clientdevice.h>
 #include <ipc/ipcstream.h>
-#include <ipc/proto/device.h>
+#include <ipc/proto/file.h>
 #include <stdlib.h>
 
 using namespace ipc;
@@ -33,12 +33,12 @@ class ZeroDevice : public ClientDevice<> {
 public:
 	explicit ZeroDevice(const char *name,mode_t mode)
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
-		set(MSG_DEV_READ,std::make_memfun(this,&ZeroDevice::read));
+		set(MSG_FILE_READ,std::make_memfun(this,&ZeroDevice::read));
 	}
 
 	void read(IPCStream &is) {
 		Client *c = get(is.fd());
-		DevRead::Request r;
+		FileRead::Request r;
 		is >> r;
 		assert(!is.error());
 
@@ -55,9 +55,9 @@ public:
 			}
 		}
 
-		is << DevRead::Response(r.count) << Send(DevRead::Response::MID);
+		is << FileRead::Response(r.count) << Send(FileRead::Response::MID);
 		if(r.shmemoff == -1 && r.count) {
-			is << SendData(DevRead::Response::MID,data,r.count);
+			is << SendData(FileRead::Response::MID,data,r.count);
 			if(r.count > BUF_SIZE)
 				free(data);
 		}

@@ -32,13 +32,13 @@ public:
 	explicit RomDiskDevice(const char *name,mode_t mode,size_t disksize,char *diskaddr)
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE),
 		  _disksize(disksize), _diskaddr(diskaddr) {
-		set(MSG_DEV_READ,std::make_memfun(this,&RomDiskDevice::read));
+		set(MSG_FILE_READ,std::make_memfun(this,&RomDiskDevice::read));
 		set(MSG_DISK_GETSIZE,std::make_memfun(this,&RomDiskDevice::size));
 	}
 
 	void read(IPCStream &is) {
 		Client *c = get(is.fd());
-		DevRead::Request r;
+		FileRead::Request r;
 		is >> r;
 
 		ssize_t res = 0;
@@ -47,9 +47,9 @@ public:
 		if(r.shmemoff != -1)
 			memcpy(c->shm() + r.shmemoff,_diskaddr + r.offset,res);
 
-		is << DevRead::Response(res) << Send(DevRead::Response::MID);
+		is << FileRead::Response(res) << Send(FileRead::Response::MID);
 		if(r.shmemoff == -1 && res)
-			is << SendData(DevRead::Response::MID,_diskaddr + r.offset,res);
+			is << SendData(FileRead::Response::MID,_diskaddr + r.offset,res);
 	}
 
 	void size(IPCStream &is) {

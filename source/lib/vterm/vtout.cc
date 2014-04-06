@@ -149,8 +149,7 @@ static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty) {
 			break;
 
 		case '\a':
-			if(vt->speaker >= 0)
-				vtout_beep(vt);
+			vtout_beep(vt);
 			break;
 
 		case '\b':
@@ -220,17 +219,13 @@ static void vtout_delete(sVTerm *vt,size_t count) {
 		/* TODO just refresh the required part */
 		vtctrl_markDirty(vt,0,vt->row,vt->cols,1);
 	}
-	else {
-		if(vt->speaker >= 0)
-			vtout_beep(vt);
-	}
+	else
+		vtout_beep(vt);
 }
 
 static void vtout_beep(sVTerm *vt) {
-	sArgsMsg msg;
-	msg.arg1 = 1000;
-	msg.arg2 = 60;
-	send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg));
+	if(vt->speaker)
+		vt->speaker->beep(1000,60);
 }
 
 static bool vtout_handleEscape(sVTerm *vt,char **str) {

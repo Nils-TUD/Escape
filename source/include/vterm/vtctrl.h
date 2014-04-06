@@ -25,6 +25,7 @@
 #include <esc/messages.h>
 #include <esc/sync.h>
 #include <ipc/proto/ui.h>
+#include <ipc/proto/speaker.h>
 
 #define TAB_WIDTH			4
 #define HISTORY_SIZE		12
@@ -65,8 +66,8 @@ struct sVTerm {
 	uchar background;
 	/* ui-manager for input and output */
 	ipc::UI *ui;
-	/* speaker fd */
-	int speaker;
+	/* speaker */
+	ipc::Speaker *speaker;
 	/* the first line with content */
 	size_t firstLine;
 	/* the line where row+col starts */

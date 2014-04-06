@@ -25,6 +25,8 @@
 #include <esc/conf.h>
 #include <esc/irq.h>
 #include <esc/messages.h>
+#include <ipc/proto/speaker.h>
+#include <ipc/device.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -35,39 +37,29 @@
 #define IOPORT_PIT_CTRL_WORD_REG	0x43
 #define IOPORT_KB_CTRL_B			0x61
 
-/**
- * Plays the sound with given frequency for given duration
- *
- * @param freq the frequency
- * @param dur the duration in milliseconds
- */
 static void playSound(uint freq,uint dur);
-
-/**
- * Starts the sound with given frequency
- *
- * @param frequency the frequency
- */
 static void startSound(uint frequency);
-
-/**
- * Stops the sound
- */
 static void stopSound(void);
 
-static sMsg msg;
+class SpeakerDevice : public ipc::Device {
+public:
+	explicit SpeakerDevice(const char *path,mode_t mode)
+		: ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		set(MSG_SPEAKER_BEEP,std::make_memfun(this,&SpeakerDevice::beep));
+	}
+
+	void beep(ipc::IPCStream &is) {
+		uint freq,dur;
+		is >> freq >> dur;
+
+		if(freq > 0 && dur > 0)
+			playSound(freq,dur);
+	}
+};
+
 static long timerFreq;
 
 int main(void) {
-	int fd;
-	msgid_t mid;
-	int id;
-
-	/* register device */
-	id = createdev("/dev/speaker",0110,DEV_TYPE_SERVICE,DEV_CLOSE);
-	if(id < 0)
-		error("Unable to register device 'speaker'");
-
 	timerFreq = sysconf(CONF_TIMER_FREQ);
 	if(timerFreq < 0)
 		error("Unable to get timer-frequency");
@@ -80,39 +72,12 @@ int main(void) {
 	if(reqports(IOPORT_KB_CTRL_B,2) < 0)
 		error("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 
-	while(1) {
-		fd = getwork(id,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_SPEAKER_BEEP: {
-					uint freq = msg.args.arg1;
-					uint dur = msg.args.arg2;
-					if(freq > 0 && dur > 0)
-						playSound(freq,dur);
-				}
-				break;
-
-				case MSG_DEV_CLOSE:
-					close(fd);
-					break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
-	}
+	SpeakerDevice dev("/dev/speaker",0110);
+	dev.loop();
 
 	/* clean up */
 	relports(IOPORT_KB_CTRL_B,2);
 	relports(IOPORT_PIT_SPEAKER,2);
-	close(id);
-
 	return EXIT_SUCCESS;
 }
 

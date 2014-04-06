@@ -41,9 +41,13 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 	/* TODO MSG_UIM_{GET,SET}KEYMAP are not supported yet */
 
 	// open speaker
-	_vt.speaker = open("/dev/speaker",IO_MSGS);
-	if(_vt.speaker < 0)
-		error("Unable to open '/dev/speaker'");
+	try {
+		_vt.speaker = new ipc::Speaker("/dev/speaker");
+	}
+	catch(const std::exception &e) {
+		/* ignore errors here. in this case we simply don't use it */
+		printe("%s",e.what());
+	}
 
 	_vt.data = this;
 	_vt.index = 0;
@@ -65,6 +69,7 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 }
 
 GUIVTermDevice::~GUIVTermDevice() {
+	delete _vt.speaker;
 	delete[] _rbuffer;
 	vtctrl_destroy(&_vt);
 }

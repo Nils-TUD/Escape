@@ -176,8 +176,13 @@ static int vtInit(int id,const char *name,uint cols,uint rows) {
 	ipc::Screen::Mode mode = vterm.ui->findTextModeIn(modes,cols,rows);
 
 	/* open speaker */
-	vterm.speaker = open("/dev/speaker",IO_MSGS);
-	/* ignore errors here. in this case we simply don't use it */
+	try {
+		vterm.speaker = new ipc::Speaker("/dev/speaker");
+	}
+	catch(const std::exception &e) {
+		/* ignore errors here. in this case we simply don't use it */
+		printe("%s",e.what());
+	}
 
 	vterm.index = 0;
 	vterm.sid = id;

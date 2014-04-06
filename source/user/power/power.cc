@@ -18,37 +18,34 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/init.h>
-#include <esc/messages.h>
-#include <esc/proc.h>
+#include <esc/cmdargs.h>
+#include <ipc/proto/init.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-static int init_default(msgid_t mid);
-
-int init_reboot(void) {
-	return init_default(MSG_INIT_REBOOT);
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s -r|-s\n",name);
+	exit(EXIT_FAILURE);
 }
 
-int init_shutdown(void) {
-	return init_default(MSG_INIT_SHUTDOWN);
-}
+int main(int argc,const char *argv[]) {
+	bool reboot = false;
+	bool shutdown = false;
+	int res;
 
-int init_iamalive(void) {
-	sArgsMsg msg;
-	int res,fd = open("/dev/init",IO_MSGS);
-	if(fd < 0)
-		return fd;
-	msg.arg1 = getpid();
-	res = send(fd,MSG_INIT_IAMALIVE,&msg,sizeof(msg));
-	close(fd);
-	return res;
-}
+	res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
+	if(res < 0 || (!reboot && !shutdown) || (reboot && shutdown)) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
+		usage(argv[0]);
 
-static int init_default(msgid_t mid) {
-	int res,fd = open("/dev/init",IO_MSGS);
-	if(fd < 0)
-		return fd;
-	res = send(fd,mid,NULL,0);
-	close(fd);
-	return res;
+	ipc::Init init("/dev/init");
+	if(reboot)
+		init.reboot();
+	else if(shutdown)
+		init.shutdown();
+	return EXIT_SUCCESS;
 }

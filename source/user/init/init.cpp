@@ -22,6 +22,7 @@
 #include <esc/thread.h>
 #include <esc/driver.h>
 #include <esc/messages.h>
+#include <ipc/device.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <iostream>
@@ -29,19 +30,54 @@
 #include "process/processmanager.h"
 #include "initerror.h"
 
-using namespace std;
-
 #define SHUTDOWN_TIMEOUT		3000
 #define STATE_RUN				0
 #define STATE_REBOOT			1
 #define STATE_SHUTDOWN			2
 
+class InitDevice;
+
 static void sigAlarm(int sig);
 static int driverThread(void *arg);
 
 static ProcessManager pm;
-static volatile int timeout = false;
 static int state = STATE_RUN;
+static InitDevice *dev;
+
+class InitDevice : public ipc::Device {
+public:
+	explicit InitDevice(const char *path,mode_t mode) : ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		set(MSG_INIT_REBOOT,std::make_memfun(this,&InitDevice::reboot),false);
+		set(MSG_INIT_SHUTDOWN,std::make_memfun(this,&InitDevice::shutdown),false);
+		set(MSG_INIT_IAMALIVE,std::make_memfun(this,&InitDevice::iamalive),false);
+	}
+
+	void reboot(ipc::IPCStream &) {
+		if(state == STATE_RUN) {
+			state = STATE_REBOOT;
+			if(alarm(SHUTDOWN_TIMEOUT) < 0)
+				printe("Unable to set alarm");
+			pm.shutdown();
+		}
+	}
+
+	void shutdown(ipc::IPCStream &) {
+		if(state == STATE_RUN) {
+			state = STATE_SHUTDOWN;
+			if(alarm(SHUTDOWN_TIMEOUT) < 0)
+				printe("Unable to set alarm");
+			pm.shutdown();
+		}
+	}
+
+	void iamalive(ipc::IPCStream &is) {
+		pid_t pid;
+		is >> pid;
+
+		if(state != STATE_RUN)
+			pm.setAlive(pid);
+	}
+};
 
 int main(void) {
 	if(getpid() != 0)
@@ -76,65 +112,24 @@ int main(void) {
 }
 
 static void sigAlarm(A_UNUSED int sig) {
-	timeout = true;
+	dev->stop();
 }
 
 static int driverThread(A_UNUSED void *arg) {
-	int drv = createdev("/dev/init",0111,DEV_TYPE_SERVICE,DEV_CLOSE);
-	if(drv < 0)
-		error("Unable to register device 'init'");
 	if(signal(SIG_ALARM,sigAlarm) == SIG_ERR)
 		error("Unable to set alarm-handler");
 
-	while(!timeout) {
-		msgid_t mid;
-		sMsg msg;
-		int fd = getwork(drv,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get work");
-		}
-		else {
-			switch(mid) {
-				case MSG_INIT_REBOOT:
-					if(state == STATE_RUN) {
-						state = STATE_REBOOT;
-						if(alarm(SHUTDOWN_TIMEOUT) < 0)
-							printe("Unable to set alarm");
-						pm.shutdown();
-					}
-					break;
-
-				case MSG_INIT_SHUTDOWN:
-					if(state == STATE_RUN) {
-						state = STATE_SHUTDOWN;
-						if(alarm(SHUTDOWN_TIMEOUT) < 0)
-							printe("Unable to set alarm");
-						pm.shutdown();
-					}
-					break;
-
-				case MSG_INIT_IAMALIVE:
-					if(state != STATE_RUN)
-						pm.setAlive((pid_t)msg.args.arg1);
-					break;
-
-				case MSG_DEV_CLOSE:
-					close(fd);
-					break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
+	try {
+		dev = new InitDevice("/dev/init",0111);
+		dev->loop();
+	}
+	catch(const std::exception &e) {
+		printe("%s",e.what());
 	}
 
 	if(state == STATE_REBOOT)
 		pm.finalize(ProcessManager::TASK_REBOOT);
 	else
 		pm.finalize(ProcessManager::TASK_SHUTDOWN);
-	close(drv);
 	return 0;
 }

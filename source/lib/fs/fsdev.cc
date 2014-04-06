@@ -18,12 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver/init.h>
 #include <esc/fsinterface.h>
 #include <esc/driver.h>
 #include <esc/time.h>
 #include <esc/dir.h>
 #include <ipc/clientdevice.h>
+#include <ipc/proto/init.h>
 #include <fs/fsdev.h>
 #include <fs/infodev.h>
 #include <signal.h>
@@ -37,7 +37,8 @@ FSDevice *FSDevice::_inst;
 
 static void sigTermHndl(A_UNUSED int sig) {
 	/* notify init that we're alive and promise to terminate as soon as possible */
-	init_iamalive();
+	ipc::Init init("/dev/init");
+	init.iamalive();
 	FSDevice::getInstance()->stop();
 }
 
@@ -266,7 +267,7 @@ static char *splitPath(char *path) {
 	}
 	else {
 		name = strdup(path);
-		/* we know that path resides in sStrMsg */
+		/* we know that path is MAX_PATH_LEN long */
 		strcpy(path,"/");
 	}
 	return name;

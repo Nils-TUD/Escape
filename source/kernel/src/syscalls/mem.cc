@@ -83,9 +83,18 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 			SYSC_ERROR(stack,-EBADF);
 	}
 
-	/* add region */
+	/* map memory */
 	VMRegion *vm;
-	int res = t->getProc()->getVM()->map(&addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+	int res;
+	do {
+		/* we have to retry it if it failed because another process is not available atm. */
+		/* TODO that is a really stupid solution */
+		res = t->getProc()->getVM()->map(&addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
+		/* give the other process a chance to finish */
+		if(res == -EBUSY)
+			Thread::switchAway();
+	}
+	while(res == -EBUSY);
 
 	/* release file */
 	if(EXPECT_TRUE(f))

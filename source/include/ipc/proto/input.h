@@ -25,6 +25,9 @@
 
 namespace ipc {
 
+/**
+ * The keyboard-event sent by the keyboard-device
+ */
 struct Keyb {
 	struct Event {
 		static const msgid_t MID = MSG_KB_EVENT;
@@ -36,6 +39,9 @@ struct Keyb {
 	};
 };
 
+/**
+ * The mouse-event sent by the mouse-device
+ */
 struct Mouse {
 	struct Event {
 		static const msgid_t MID = MSG_MS_EVENT;

@@ -31,11 +31,23 @@
 
 namespace ipc {
 
+/**
+ * The base-class for all virtual-terminal devices. Supports all vterm-operations, but not the UI-
+ * and Screen-operations (should be added by the subclass).
+ */
 class VTermDevice : public Device {
 protected:
 	static const size_t BUF_SIZE	= 4096;
 
 public:
+	/**
+	 * Creates the device at given path.
+	 *
+	 * @param path the path
+	 * @param mode the permissions to set
+	 * @param vterm the vterm-instance
+	 * @throws if the operation failed
+	 */
 	explicit VTermDevice(const char *name,mode_t mode,sVTerm *vterm)
 		: Device(name,mode,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE), _vterm(vterm) {
 		set(MSG_FILE_READ,std::make_memfun(this,&VTermDevice::read));
@@ -49,6 +61,18 @@ public:
 		set(MSG_VT_SETMODE,std::make_memfun(this,&VTermDevice::setMode));
 	}
 
+	/**
+	 * Sets the video mode to <mode>. Has to be implemented by the subclass.
+	 *
+	 * @param mode the video mode
+	 */
+	virtual void setVideoMode(int mode) = 0;
+	/**
+	 * Should update the display in case something changed. Has to be implemented by the subclass.
+	 */
+	virtual void update() = 0;
+
+private:
 	void read(IPCStream &is) {
 		FileRead::Request r;
 		is >> r;
@@ -121,10 +145,6 @@ public:
 	void isVTerm(IPCStream &is) {
 		handleControlMsg(is,MSG_VT_ISVTERM,0,0);
 	}
-
-private:
-	virtual void setVideoMode(int mode) = 0;
-	virtual void update() = 0;
 
 	void handleControlMsg(IPCStream &is,msgid_t mid,int arg1,int arg2) {
 		int res = vtctrl_control(_vterm,mid,arg1,arg2);

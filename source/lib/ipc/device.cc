@@ -23,10 +23,10 @@
 
 namespace ipc {
 
-Device::Device(const char *name,mode_t mode,uint type,uint ops)
-	: _ops(), _id(createdev(name,mode,type,ops | DEV_CLOSE)), _run(true) {
+Device::Device(const char *path,mode_t mode,uint type,uint ops)
+	: _ops(), _id(createdev(path,mode,type,ops | DEV_CLOSE)), _run(true) {
 	if(_id < 0)
-		VTHROWE("createdev(" << name << ")",_id);
+		VTHROWE("createdev(" << path << ")",_id);
 	set(MSG_FILE_CLOSE,std::make_memfun(this,&Device::close),false);
 }
 

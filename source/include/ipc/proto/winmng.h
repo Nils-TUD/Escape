@@ -44,6 +44,19 @@ public:
 	explicit WinMng(const char *path) : UI(path) {
 	}
 
+	/**
+	 * Creates a new window.
+	 *
+	 * @param x the x coordinate
+	 * @param y the y coordinate
+	 * @param w the width
+	 * @param h the height
+	 * @param style flags for the window
+	 * @param titleHeight the height of the titlebar
+	 * @param title the title
+	 * @return the window-id
+	 * @throws if the operation failed
+	 */
 	gwinid_t create(gpos_t x,gpos_t y,gsize_t w,gsize_t h,uint style,gsize_t titleHeight,const char *title) {
 		gwinid_t res;
 		_is << x << y << w << h << style << titleHeight << CString(title);
@@ -53,22 +66,64 @@ public:
 		return res;
 	}
 
+	/**
+	 * Activates the window with given id, i.e. pulls it to the front.
+	 *
+	 * @param wid the window-id
+	 * @throws if the send failed
+	 */
 	void setActive(gwinid_t wid) {
 		_is << wid << ipc::Send(MSG_WIN_SET_ACTIVE);
 	}
 
+	/**
+	 * Destroys the window with given id.
+	 *
+	 * @param wid the window-id
+	 * @throws if the send failed
+	 */
 	void destroy(gwinid_t wid) {
 		_is << wid << ipc::Send(MSG_WIN_DESTROY);
 	}
 
+	/**
+	 * Moves the window with given id to <x>,<y>.
+	 *
+	 * @param wid the window-id
+	 * @param x the new x coordinate
+	 * @param y the new y coordinate
+	 * @param finished whether to actually move the window (instead of showing the preview)
+	 * @throws if the send failed
+	 */
 	void move(gwinid_t wid,gpos_t x,gpos_t y,bool finished) {
 		_is << wid << x << y << finished << ipc::Send(MSG_WIN_MOVE);
 	}
 
+	/**
+	 * Resizes the window with given id.
+	 *
+	 * @param wid the window-id
+	 * @param x the new x coordinate
+	 * @param y the new y coordinate
+	 * @param width the width
+	 * @param height the height
+	 * @param finished whether to actually resize the window (instead of showing the preview)
+	 * @throws if the send failed
+	 */
 	void resize(gwinid_t wid,gpos_t x,gpos_t y,gsize_t width,gsize_t height,bool finished) {
 		_is << wid << x << y << width << height << finished << ipc::Send(MSG_WIN_RESIZE);
 	}
 
+	/**
+	 * Updates the given rectangle of the window with given id.
+	 *
+	 * @param wid the window-id
+	 * @param x the x coordinate
+	 * @param y the y coordinate
+	 * @param width the width
+	 * @param height the height
+	 * @throws if the operation failed
+	 */
 	void update(gwinid_t wid,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		int res;
 		_is << wid << x << y << width << height << ipc::SendReceive(MSG_WIN_UPDATE) >> res;
@@ -76,6 +131,14 @@ public:
 			VTHROWE("update(" << x << "," << y << "," << width << "," << height << ")",res);
 	}
 
+	/**
+	 * Sets the given mode.
+	 *
+	 * @param width the width
+	 * @param height the height
+	 * @param bpp the color depth
+	 * @throws if the operation failed
+	 */
 	void setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
 		int res;
 		_is << width << height << bpp << ipc::SendReceive(MSG_WIN_SETMODE) >> res;

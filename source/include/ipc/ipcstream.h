@@ -42,6 +42,10 @@ static inline IPCStream &operator<<(IPCStream &is,const CStringBuf<SIZE> &s);
 template<size_t SIZE>
 static inline IPCStream &operator>>(IPCStream &is,CStringBuf<SIZE> &s);
 
+/**
+ * The higher-level IPC-stream which adds more convenience to IPCBuf and is supposed to be used in
+ * userspace.
+ */
 class IPCStream {
 	friend struct Send;
 	friend struct Receive;
@@ -61,12 +65,31 @@ class IPCStream {
 public:
 	static const size_t DEF_SIZE	= 512;
 
+	/**
+	 * Attaches this IPCStream to the file with given fd. The buffer is allocated on the heap.
+	 *
+	 * @param f the file-descriptor
+	 */
 	explicit IPCStream(int f)
 		: _fd(f), _buf(new char[DEF_SIZE],DEF_SIZE), _flags(FL_ALLOC) {
 	}
+	/**
+	 * Attaches this IPCStream to the file with given fd and uses the given buffer.
+	 *
+	 * @param f the file-descriptor
+	 * @param buf the buffer
+	 * @param size the buffer size
+	 */
 	explicit IPCStream(int f,char *buf,size_t size)
 		: _fd(f), _buf(buf,size), _flags() {
 	}
+	/**
+	 * Opens the given device and attaches this IPCStream to it.
+	 *
+	 * @param dev the device
+	 * @param mode the flags for open (IO_MSGS by default)
+	 * @throws if the operation failed
+	 */
 	explicit IPCStream(const char *dev,uint mode = IO_MSGS)
 		: _fd(open(dev,mode)), _buf(new char[DEF_SIZE],DEF_SIZE), _flags(FL_OPEN | FL_ALLOC) {
 #ifndef IN_KERNEL
@@ -74,6 +97,11 @@ public:
 			VTHROWE("open",_fd);
 #endif
 	}
+
+	/**
+	 * Cleans up, i.e. deletes the buffer, closes the device etc., depending on what operations
+	 * have been performed in at construction.
+	 */
 	~IPCStream() {
 		if(_flags & FL_ALLOC)
 			delete[] _buf.buffer();
@@ -81,16 +109,29 @@ public:
 			close(_fd);
 	}
 
+	/**
+	 * @return the file-descriptor
+	 */
 	int fd() const {
 		return _fd;
 	}
+	/**
+	 * @return true if an error has occurred during reading or writing
+	 */
 	bool error() const {
 		return _buf.error();
 	}
+	/**
+	 * Resets the position
+	 */
 	void reset() {
 		_buf.reset();
 	}
 
+	/**
+	 * Puts the given item into the stream. Note that this automatically puts the stream into
+	 * writing mode, if it is not already in it.
+	 */
 	template<typename T>
 	IPCStream &operator<<(const T& value) {
 		startWriting();
@@ -102,6 +143,10 @@ public:
 		_buf.put(data,size);
 	}
 
+	/**
+	 * Reads the given item from the stream. Note that this automatically puts the stream into
+	 * reading mode, if it is not already in it.
+	 */
 	template<typename T>
 	IPCStream &operator>>(T &value) {
 		startReading();
@@ -170,6 +215,9 @@ static inline IPCStream &operator>>(IPCStream &is,CStringBuf<SIZE> &s) {
 	return is;
 }
 
+/**
+ * Can be "put into" a stream to send the current content of the stream to the file it is attached to.
+ */
 struct Send {
 	explicit Send(msgid_t mid) : _mid(mid) {
 	}
@@ -189,6 +237,9 @@ private:
 	msgid_t _mid;
 };
 
+/**
+ * Can be "put into" a stream to receive a message from the file it is attached to.
+ */
 struct Receive {
 	void operator()(IPCStream &is) {
 		A_UNUSED ssize_t res = IGNSIGS(::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max()));
@@ -199,6 +250,9 @@ struct Receive {
 	}
 };
 
+/**
+ * Can be "put into" a stream to send and receive a message from the file it is attached to.
+ */
 struct SendReceive : public Send, public Receive {
 	explicit SendReceive(msgid_t mid) : Send(mid), Receive() {
 	}
@@ -210,6 +264,10 @@ struct SendReceive : public Send, public Receive {
 	}
 };
 
+/**
+ * Can be "put into" a stream to send plain data (independent of the stream content) to the file it
+ * is attached to.
+ */
 struct SendData {
 	explicit SendData(msgid_t mid,const void *data,size_t size) : _mid(mid), _data(data), _size(size) {
 	}
@@ -228,6 +286,9 @@ private:
 	size_t _size;
 };
 
+/**
+ * Can be "put into" a stream to receive data from the file it is attached to into a given buffer.
+ */
 struct ReceiveData {
 	explicit ReceiveData(void *data,size_t size) : _data(data), _size(size) {
 	}

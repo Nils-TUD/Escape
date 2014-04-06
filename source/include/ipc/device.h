@@ -28,8 +28,10 @@
 
 namespace ipc {
 
+/**
+ * The base class for all devices
+ */
 class Device {
-
 public:
 	typedef std::Functor<void,IPCStream&> handler_type;
 	struct Handler {
@@ -43,24 +45,73 @@ public:
 	};
 	typedef std::map<msgid_t,Handler> oplist_type;
 
-	explicit Device(const char *name,mode_t mode,uint type,uint ops);
+	/**
+	 * Creates the device at given path
+	 *
+	 * @param path the path
+	 * @param mode the permissions to set
+	 * @param type the type of device
+	 * @param ops the supported operations (DEV_*)
+	 */
+	explicit Device(const char *path,mode_t mode,uint type,uint ops);
+	/**
+	 * Closes the device
+	 */
 	virtual ~Device();
+
+	/**
+	 * No copying/cloning
+	 */
 	Device(const Device &) = delete;
 	Device &operator=(const Device &) = delete;
 
+	/**
+	 * @return the file-descriptor for the device
+	 */
 	int id() const {
 		return _id;
 	}
+	/**
+	 * @return true if the device-loop should stop
+	 */
 	bool isStopped() const {
 		return !_run;
 	}
+	/**
+	 * Stops the device-loop.
+	 */
 	void stop() {
 		_run = false;
 	}
 
+	/**
+	 * Registers the given handler for <op>.
+	 *
+	 * @param op the operation (message-id)
+	 * @param handler your desired handler
+	 * @param reply if the operation has a reply
+	 */
 	void set(msgid_t op,handler_type *handler,bool reply = true);
+
+	/**
+	 * Unregisters the handler for <op>.
+	 *
+	 * @param op the operation (message-id)
+	 */
 	void unset(msgid_t op);
+
+	/**
+	 * Executes the device-loop, i.e. uses getwork() to get a messages and handles it with the
+	 * appropriate handler.
+	 */
 	void loop();
+
+	/**
+	 * Calls the handler for the given message
+	 *
+	 * @param mid the message-id
+	 * @param is the ipc-stream for the client
+	 */
 	void handleMsg(msgid_t mid,IPCStream &is);
 
 protected:

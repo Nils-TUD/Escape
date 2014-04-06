@@ -27,14 +27,44 @@
 
 namespace ipc {
 
+/**
+ * This class is intended to make it easy to provide on-demand-generated files. It supports reading
+ * and writing, but needs help by a subclass to actually do the read/write.
+ */
 class FileDevice : public Device {
 public:
+	/**
+	 * Creates the device
+	 *
+	 * @param path the path
+	 * @param mode the permissions to set
+	 */
 	explicit FileDevice(const char *path,mode_t mode)
 		: Device(path,mode,DEV_TYPE_FILE,DEV_READ | DEV_WRITE) {
 		set(MSG_FILE_READ,std::make_memfun(this,&FileDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&FileDevice::write));
 	}
 
+	/**
+	 * Has to be implemented by the subclass.
+	 *
+	 * @return the whole content of the file
+	 */
+	virtual std::string handleRead() = 0;
+
+	/**
+	 * Should be implemented by the subclass, if writing should be supported.
+	 *
+	 * @param offset the offset
+	 * @param data the data to write
+	 * @param size the number of bytes
+	 * @return the number of written bytes (or the error-code)
+	 */
+	virtual ssize_t handleWrite(size_t,const void *,size_t) {
+		return -ENOTSUP;
+	}
+
+private:
 	void read(IPCStream &is) {
 		FileRead::Request r;
 		is >> r;
@@ -64,12 +94,6 @@ public:
 		ssize_t res = handleWrite(r.offset,data.get(),r.count);
 
 		is << FileWrite::Response(res) << Send(MSG_FILE_WRITE_RESP);
-	}
-
-private:
-	virtual std::string handleRead() = 0;
-	virtual ssize_t handleWrite(size_t,const void *,size_t) {
-		return -ENOTSUP;
 	}
 };
 

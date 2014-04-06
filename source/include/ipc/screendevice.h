@@ -29,6 +29,9 @@
 
 namespace ipc {
 
+/**
+ * The Client for the ScreenDevice
+ */
 class ScreenClient : public Client {
 public:
 	explicit ScreenClient(int fd) : Client(fd), mode(), fb() {
@@ -42,6 +45,10 @@ public:
 	FrameBuffer *fb;
 };
 
+/**
+ * The base-class for all screen-devices which handles most of the operations except the actual
+ * mode setting, updating and cursor painting.
+ */
 template<typename C = ScreenClient>
 class ScreenDevice : public ClientDevice<C> {
 	static const size_t MAX_REQC	= 30;
@@ -57,8 +64,15 @@ class ScreenDevice : public ClientDevice<C> {
 	};
 
 public:
-	explicit ScreenDevice(const std::vector<Screen::Mode> &modes,const char *name,mode_t mode)
-		: ClientDevice<C>(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE),
+	/**
+	 * Creates the device at given path.
+	 *
+	 * @param modes the supported modes
+	 * @param path the path
+	 * @param mode the permissions to set
+	 */
+	explicit ScreenDevice(const std::vector<Screen::Mode> &modes,const char *path,mode_t mode)
+		: ClientDevice<C>(path,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE),
 		  _modes(modes), _rects(), _newCursor(), _reqc() {
 		this->set(MSG_SCR_GETMODE,std::make_memfun(this,&ScreenDevice::getMode));
 		this->set(MSG_SCR_SETMODE,std::make_memfun(this,&ScreenDevice::setMode));
@@ -68,10 +82,43 @@ public:
 		this->set(MSG_FILE_CLOSE,std::make_memfun(this,&ScreenDevice::close),false);
 	}
 
+	/**
+	 * Sets the screen mode. Has to be implemented by the subclass.
+	 *
+	 * @param c the client
+	 * @param shm the shared memory file
+	 * @param mode the mode to set
+	 * @param type the mode-type
+	 * @param sw whether to switch to that mode
+	 * @throws if the operation failed
+	 */
 	virtual void setScreenMode(C *c,const char *shm,Screen::Mode *mode,int type,bool sw) = 0;
+
+	/**
+	 * Sets the cursor. Has to be implemented by the subclass.
+	 *
+	 * @param c the client
+	 * @param x the x-position
+	 * @param y the y-position
+	 * @param cursor the cursor shape
+	 * @throws if the operation failed
+	 */
 	virtual void setScreenCursor(C *c,gpos_t x,gpos_t y,int cursor) = 0;
+
+	/**
+	 * Updates the given rectangle. Has to be implemented by the subclass.
+	 *
+	 * @param c the client
+	 * @param x the x-position
+	 * @param y the y-position
+	 * @param width the width
+	 * @param height the height
+	 */
 	virtual void updateScreen(C *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height) = 0;
 
+	/**
+	 * Executes the device-loop.
+	 */
 	void loop() {
 		char buf[IPC_DEF_SIZE];
 		while(!this->isStopped()) {

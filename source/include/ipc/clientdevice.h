@@ -28,6 +28,9 @@
 
 namespace ipc {
 
+/**
+ * Default client for ClientDevice.
+ */
 class Client {
 public:
 	explicit Client(int fd) : _fd(fd), _shm() {
@@ -51,14 +54,26 @@ private:
 	char *_shm;
 };
 
+/**
+ * A device that maintains a list of clients.
+ */
 template<class C = Client>
 class ClientDevice : public Device {
 	typedef std::map<int,C*> map_type;
 	typedef typename map_type::iterator iterator;
 
 public:
-	explicit ClientDevice(const char *name,mode_t mode,uint type,uint ops)
-		: Device(name,mode,type,ops | DEV_OPEN), _clients(), _sem() {
+	/**
+	 * Creates the device at given path.
+	 *
+	 * @param path the path
+	 * @param mode the permissions to set
+	 * @param type the device type
+	 * @param ops the supported operations (DEV_*)
+	 * @throws if the operation failed
+	 */
+	explicit ClientDevice(const char *path,mode_t mode,uint type,uint ops)
+		: Device(path,mode,type,ops | DEV_OPEN), _clients(), _sem() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&ClientDevice::open));
 		if(ops & DEV_SHFILE)
 			set(MSG_FILE_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
@@ -67,10 +82,16 @@ public:
 		if((res = usemcrt(&_sem,1)) < 0)
 			VTHROWE("usemcrt",res);
 	}
+	/**
+	 * Cleans up
+	 */
 	virtual ~ClientDevice() {
 		usemdestr(&_sem);
 	}
 
+	/**
+	 * @return the client with given file-descriptor
+	 */
 	C *get(int fd) {
 		typename map_type::iterator it = _clients.find(fd);
 		assert(it != _clients.end());
@@ -82,13 +103,12 @@ public:
 		return it->second;
 	}
 
-	iterator begin() {
-		return _clients.begin();
-	}
-	iterator end() {
-		return _clients.end();
-	}
-
+	/**
+	 * Broadcasts the given message to all clients
+	 *
+	 * @param mid the message-id
+	 * @param ib the IPCBuf to send
+	 */
 	void broadcast(msgid_t mid,IPCBuf &ib) {
 		usemdown(&_sem);
 		for(auto it = _clients.begin(); it != _clients.end(); ++it)
@@ -96,11 +116,22 @@ public:
 		usemup(&_sem);
 	}
 
+	/**
+	 * Adds the given client to the list
+	 *
+	 * @param fd the file-descriptor
+	 * @param c the client
+	 */
 	void add(int fd,C *c) {
 		usemdown(&_sem);
 		_clients[fd] = c;
 		usemup(&_sem);
 	}
+	/**
+	 * Removes the given client from the list
+	 *
+	 * @param fd the file-descriptor
+	 */
 	void remove(int fd) {
 		C *c = get(fd);
 		usemdown(&_sem);

@@ -26,6 +26,9 @@
 
 namespace ipc {
 
+/**
+ * The MSG_FILE_OPEN command that is sent by the kernel to devices if open() was called on them.
+ */
 struct FileOpen {
 	struct Request {
 		static const msgid_t MSG = MSG_FILE_OPEN;
@@ -53,6 +56,9 @@ struct FileOpen {
 	typedef DefaultResponse<int,MSG_FILE_OPEN_RESP> Response;
 };
 
+/**
+ * The MSG_FILE_OPEN command that is sent by the kernel to devices if shfile() was called on them.
+ */
 struct FileShFile {
 	struct Request {
 		static const msgid_t MSG = MSG_FILE_SHFILE;
@@ -80,6 +86,9 @@ struct FileShFile {
 	typedef DefaultResponse<int,MSG_FILE_SHFILE_RESP> Response;
 };
 
+/**
+ * The MSG_FILE_OPEN command that is sent by the kernel to devices if read() was called on them.
+ */
 struct FileRead {
 	struct Request {
 		static const msgid_t MSG = MSG_FILE_READ;
@@ -98,6 +107,9 @@ struct FileRead {
 	typedef DefaultResponse<ssize_t,MSG_FILE_READ_RESP> Response;
 };
 
+/**
+ * The MSG_FILE_OPEN command that is sent by the kernel to devices if write() was called on them.
+ */
 struct FileWrite {
 	struct Request {
 		static const msgid_t MSG = MSG_FILE_WRITE;

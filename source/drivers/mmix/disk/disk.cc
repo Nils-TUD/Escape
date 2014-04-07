@@ -25,6 +25,8 @@
 #include <esc/io.h>
 #include <esc/irq.h>
 #include <usergroup/group.h>
+#include <ipc/proto/disk.h>
+#include <ipc/clientdevice.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +37,6 @@
 #define SECTOR_SIZE			512
 #define START_SECTOR		128		/* part 0 */
 #define MAX_RW_SIZE			(SECTOR_SIZE * 8)
-#define MAX_CLIENT_FD		64
 
 #define DISK_CTRL			0		/* control register */
 #define DISK_CNT			1		/* sector count register */
@@ -75,11 +76,12 @@
 #define DISK_DBG(...)
 #endif
 
+using namespace ipc;
+
 static ulong getDiskCapacity(void);
 static bool diskRead(void *buf,ulong secNo,ulong secCount);
 static bool diskWrite(const void *buf,ulong secNo,ulong secCount);
 static bool diskWait(void);
-static void regDrives(void);
 static void createVFSEntry(const char *name,bool isPart);
 
 static int irqSm;
@@ -88,12 +90,82 @@ static uint64_t *diskBuf;
 static int drvId;
 static ulong diskCap = 0;
 static ulong partCap = 0;
-static sMsg msg;
 static uint64_t buffer[MAX_RW_SIZE / sizeof(uint64_t)];
-static char *shbufs[MAX_CLIENT_FD];
+
+class DiskDevice : public ClientDevice<> {
+public:
+	explicit DiskDevice(const char *name,mode_t mode)
+		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE) {
+		set(MSG_FILE_SHFILE,std::make_memfun(this,&DiskDevice::shfile));
+		set(MSG_FILE_READ,std::make_memfun(this,&DiskDevice::read));
+		set(MSG_FILE_WRITE,std::make_memfun(this,&DiskDevice::write));
+		set(MSG_DISK_GETSIZE,std::make_memfun(this,&DiskDevice::getsize));
+	}
+
+	void shfile(IPCStream &is) {
+		char path[MAX_PATH_LEN];
+		Client *c = get(is.fd());
+		FileShFile::Request r(path,sizeof(path));
+		is >> r;
+		assert(c->shm() == NULL && !is.error());
+
+		/* ensure that we don't cause pagefaults when accessing this memory. therefore,
+		 * we populate it immediately and lock it into memory. additionally, we specify
+		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
+		 * to swap (which would cause a deadlock, because we're doing that). */
+		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
+
+		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(FileShFile::Response::MID);
+	}
+
+	void read(IPCStream &is) {
+		FileRead::Request r;
+		is >> r;
+		assert(!is.error());
+
+		size_t roffset = ROUND_DN(r.offset,SECTOR_SIZE);
+		size_t rcount = ROUND_UP(r.count,SECTOR_SIZE);
+		void *buf = r.shmemoff == -1 ? (void*)buffer : get(is.fd())->shm() + r.shmemoff;
+		ssize_t res = 0;
+		if(roffset + rcount <= partCap && roffset + rcount > roffset) {
+			if(r.shmemoff != -1 || rcount <= MAX_RW_SIZE) {
+				if(diskRead(buf,START_SECTOR + roffset / SECTOR_SIZE,rcount / SECTOR_SIZE))
+					res = rcount;
+			}
+		}
+
+		is << FileRead::Response(res) << Send(FileRead::Response::MID);
+		if(r.shmemoff == -1 && res > 0)
+			is << SendData(FileRead::Response::MID,buf,res);
+	}
+
+	void write(IPCStream &is) {
+		FileWrite::Request r;
+		is >> r;
+		if(r.shmemoff == -1)
+			is >> ReceiveData(buffer,sizeof(buffer));
+		assert(!is.error());
+
+		size_t roffset = ROUND_DN(r.offset,SECTOR_SIZE);
+		size_t rcount = ROUND_UP(r.count,SECTOR_SIZE);
+		void *buf = r.shmemoff == -1 ? (void*)buffer : get(is.fd())->shm() + r.shmemoff;
+		ssize_t res = 0;
+		if(roffset + rcount <= partCap && roffset + rcount > roffset) {
+			if(r.shmemoff != -1 || rcount <= MAX_RW_SIZE) {
+				if(diskWrite(buf,START_SECTOR + roffset / SECTOR_SIZE,rcount / SECTOR_SIZE))
+					res = rcount;
+			}
+		}
+
+		is << FileWrite::Response(res) << Send(FileWrite::Response::MID);
+	}
+
+	void getsize(IPCStream &is) {
+		is << partCap << Send(MSG_DEF_RESPONSE);
+	}
+};
 
 int main(int argc,char **argv) {
-	msgid_t mid;
 	uintptr_t phys;
 
 	if(argc < 2)
@@ -121,7 +193,12 @@ int main(int argc,char **argv) {
 	DISK_LOG("Found disk with %lu sectors (%lu bytes)",diskCap / SECTOR_SIZE,diskCap);
 
 	/* detect and init all devices */
-	regDrives();
+	createVFSEntry("hda",false);
+	DiskDevice dev("/dev/hda1",0770);
+	if(chown("/dev/hda1",-1,GROUP_STORAGE) < 0)
+		error("Unable to set group for '%s'","/dev/hda1");
+	DISK_LOG("Registered device 'hda1' (device 1, partition 1)");
+	createVFSEntry("hda1",true);
 	/* flush prints */
 	fflush(stdout);
 
@@ -133,106 +210,13 @@ int main(int argc,char **argv) {
 	FILE *f = fopen("/system/devices/disk","w");
 	fclose(f);
 
-	while(1) {
-		int fd = getwork(drvId,&mid,&msg,sizeof(msg),0);
-		if(fd < 0) {
-			if(fd != -EINTR)
-				printe("Unable to get client");
-		}
-		else {
-			switch(mid) {
-				case MSG_FILE_OPEN: {
-					msg.args.arg1 = fd < MAX_CLIENT_FD ? 0 : -ENOMEM;
-					send(fd,MSG_FILE_OPEN_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_FILE_SHFILE: {
-					size_t size = msg.args.arg1;
-					char *path = msg.str.s1;
-					assert(shbufs[fd] == NULL);
-					shbufs[fd] = joinbuf(path,size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
-					msg.args.arg1 = shbufs[fd] != NULL ? 0 : -errno;
-					send(fd,MSG_FILE_SHFILE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_FILE_READ: {
-					ulong offset = msg.args.arg1;
-					ulong count = msg.args.arg2;
-					ssize_t shmemoff = msg.args.arg3;
-					ulong roffset = ROUND_DN(offset,SECTOR_SIZE);
-					ulong rcount = ROUND_UP(count,SECTOR_SIZE);
-					void *buf = shmemoff == -1 ? (void*)buffer : shbufs[fd] + shmemoff;
-					msg.args.arg1 = 0;
-					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
-						if(shmemoff != -1 || rcount <= MAX_RW_SIZE) {
-							if(diskRead(buf,START_SECTOR + roffset / SECTOR_SIZE,
-									rcount / SECTOR_SIZE)) {
-								msg.data.arg1 = rcount;
-							}
-						}
-					}
-					send(fd,MSG_FILE_READ_RESP,&msg,sizeof(msg.args));
-					if(shmemoff == -1 && msg.args.arg1 > 0)
-						send(fd,MSG_FILE_READ_RESP,buf,msg.data.arg1);
-				}
-				break;
-
-				case MSG_FILE_WRITE: {
-					ulong offset = msg.args.arg1;
-					ulong count = msg.args.arg2;
-					ssize_t shmemoff = msg.args.arg3;
-					ulong roffset = ROUND_DN(offset,SECTOR_SIZE);
-					ulong rcount = ROUND_UP(count,SECTOR_SIZE);
-					void *buf = shmemoff == -1 ? (void*)buffer : shbufs[fd] + shmemoff;
-					msg.args.arg1 = 0;
-					if(roffset + rcount <= partCap && roffset + rcount > roffset) {
-						if(shmemoff != -1 || rcount <= MAX_RW_SIZE) {
-							if(shmemoff != -1 || IGNSIGS(receive(fd,&mid,buf,rcount)) > 0) {
-								if(diskWrite(buf,START_SECTOR + roffset / SECTOR_SIZE,
-										rcount / SECTOR_SIZE)) {
-									msg.args.arg1 = rcount;
-								}
-							}
-						}
-					}
-					send(fd,MSG_FILE_WRITE_RESP,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_DISK_GETSIZE: {
-					msg.args.arg1 = partCap;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-				}
-				break;
-
-				case MSG_FILE_CLOSE: {
-					if(shbufs[fd]) {
-						munmap(shbufs[fd]);
-						shbufs[fd] = NULL;
-					}
-					close(fd);
-				}
-				break;
-
-				default:
-					msg.args.arg1 = -ENOTSUP;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.args));
-					break;
-			}
-		}
-	}
+	dev.loop();
 
 	/* clean up */
 	munmap(diskBuf);
 	munmap(diskRegs);
 	close(drvId);
 	return EXIT_SUCCESS;
-}
-
-static void diskInterrupt(A_UNUSED int sig) {
-	/* simply ignore the signal; most important is to interrupt the sleep call */
 }
 
 static ulong getDiskCapacity(void) {
@@ -315,21 +299,6 @@ static bool diskWait(void) {
 		}
 	}
 	return (*diskCtrlReg & DISK_ERR) == 0;
-}
-
-static void regDrives(void) {
-	createVFSEntry("hda",false);
-	drvId = createdev("/dev/hda1",0770,DEV_TYPE_BLOCK,
-		DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE);
-	if(drvId < 0) {
-		DISK_LOG("Drive 1, Partition 1: Unable to register device 'hda1'");
-	}
-	else {
-		if(chown("/dev/hda1",-1,GROUP_STORAGE) < 0)
-			error("Unable to set group for '%s'","/dev/hda1");
-		DISK_LOG("Registered device 'hda1' (device 1, partition 1)");
-		createVFSEntry("hda1",true);
-	}
 }
 
 static void createVFSEntry(const char *name,bool isPart) {

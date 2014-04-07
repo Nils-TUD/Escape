@@ -28,7 +28,8 @@
 #include <esc/ringbuffer.h>
 #include <esc/mem.h>
 #include <esc/irq.h>
-#include <keyb/keybdev.h>
+#include <ipc/proto/input.h>
+#include <ipc/clientdevice.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,6 +53,7 @@
 
 static int kbIrqThread(A_UNUSED void *arg);
 
+static ipc::ClientDevice<> *dev = NULL;
 static uint64_t *kbRegs;
 
 int main(void) {
@@ -67,7 +69,8 @@ int main(void) {
 	/* enable interrupts */
 	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 
-	keyb_driverLoop();
+	dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	dev->loop();
 
 	/* clean up */
 	munmap(kbRegs);
@@ -75,6 +78,7 @@ int main(void) {
 }
 
 static int kbIrqThread(A_UNUSED void *arg) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	int sem = semcrtirq(IRQ_SEM_KEYB);
 	if(sem < 0)
 		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);
@@ -82,9 +86,18 @@ static int kbIrqThread(A_UNUSED void *arg) {
 		semdown(sem);
 
 		uint64_t sc = kbRegs[KEYBOARD_DATA];
-		sKbData data;
-		if(kb_set2_getKeycode(&data.isBreak,&data.keycode,sc))
-			keyb_broadcast(&data);
+
+		ipc::Keyb::Event ev;
+		if(kb_set2_getKeycode(&ev.isBreak,&ev.keycode,sc)) {
+			ipc::IPCBuf ib(buffer,sizeof(buffer));
+			ib << ev;
+			try {
+				dev->broadcast(ipc::Keyb::Event::MID,ib);
+			}
+			catch(const std::exception &e) {
+				printe("%s",e.what());
+			}
+		}
 
 		/* re-enable interrupts; the kernel has disabled it in order to get into userland */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;

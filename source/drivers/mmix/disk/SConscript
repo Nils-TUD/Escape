@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCProg('sbin', target = 'disk', source = env.Glob('*.c'))
+env.EscapeCXXProg('sbin', target = 'disk', source = env.Glob('*.cc'), LIBS = ['ipc'])

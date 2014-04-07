@@ -1,6 +1,6 @@
 /**
  * $Id$
- * Copyright (C) 2008 - 2014 Nils Asmussen
+ * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,37 +20,86 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/messages.h>
+#include <ipc/proto/default.h>
 #include <ostream>
 #include <iomanip>
+#include <vthrow.h>
 
-class MACAddr {
+namespace ipc {
+
+/**
+ * The IPC-interface for NIC devices.
+ */
+class NIC {
 public:
-	static const size_t LEN	= 6;
+	/**
+	 * Represents a MAC address
+	 */
+	class MAC {
+	public:
+		static const size_t LEN	= 6;
 
-	static MACAddr broadcast() {
-		return MACAddr(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF);
+		static MAC broadcast() {
+			return MAC(0xFF,0xFF,0xFF,0xFF,0xFF,0xFF);
+		}
+
+		explicit MAC() : _bytes() {
+		}
+		explicit MAC(const uint8_t *bytes) : MAC(bytes[0],bytes[1],bytes[2],bytes[3],bytes[4],bytes[5]) {
+		}
+		explicit MAC(uint8_t b1,uint8_t b2,uint8_t b3,uint8_t b4,uint8_t b5,uint8_t b6) {
+			_bytes[0] = b1;
+			_bytes[1] = b2;
+			_bytes[2] = b3;
+			_bytes[3] = b4;
+			_bytes[4] = b5;
+			_bytes[5] = b6;
+		}
+
+		const uint8_t *bytes() const {
+			return _bytes;
+		}
+
+	private:
+		uint8_t _bytes[LEN];
+	} A_PACKED;
+
+	/**
+	 * Opens the given device
+	 *
+	 * @param path the path to the device
+	 * @param flags the open-flags
+	 * @throws if the operation failed
+	 */
+	explicit NIC(const char *path,uint flags = IO_MSGS) : _is(path,flags) {
 	}
 
-	explicit MACAddr() : _bytes() {
-	}
-	explicit MACAddr(uint8_t b1,uint8_t b2,uint8_t b3,uint8_t b4,uint8_t b5,uint8_t b6) {
-		_bytes[0] = b1;
-		_bytes[1] = b2;
-		_bytes[2] = b3;
-		_bytes[3] = b4;
-		_bytes[4] = b5;
-		_bytes[5] = b6;
+	/**
+	 * @return the file-descriptor
+	 */
+	int fd() const {
+		return _is.fd();
 	}
 
-	const uint8_t *bytes() const {
-		return _bytes;
+	/**
+	 * @return the MAC address of the NIC
+	 * @throws if the operation failed
+	 */
+	MAC getMAC() {
+		int res;
+		MAC addr;
+		_is << SendReceive(MSG_NIC_GETMAC) >> res >> addr;
+		if(res < 0)
+			VTHROWE("getMAC()",res);
+		return addr;
 	}
 
 private:
-	uint8_t _bytes[LEN];
-} A_PACKED;
+	IPCStream _is;
+};
 
-static inline bool operator==(const MACAddr &a,const MACAddr &b) {
+static inline bool operator==(const NIC::MAC &a,const NIC::MAC &b) {
 	return a.bytes()[0] == b.bytes()[0] &&
 		a.bytes()[1] == b.bytes()[1] &&
 		a.bytes()[2] == b.bytes()[2] &&
@@ -58,10 +107,10 @@ static inline bool operator==(const MACAddr &a,const MACAddr &b) {
 		a.bytes()[4] == b.bytes()[4] &&
 		a.bytes()[5] == b.bytes()[5];
 }
-static inline bool operator!=(const MACAddr &a,const MACAddr &b) {
+static inline bool operator!=(const NIC::MAC &a,const NIC::MAC &b) {
 	return !operator==(a,b);
 }
-static inline bool operator<(const MACAddr &a,const MACAddr &b) {
+static inline bool operator<(const NIC::MAC &a,const NIC::MAC &b) {
 	uint64_t vala = ((uint64_t)a.bytes()[0] << 40) | ((uint64_t)a.bytes()[1] << 32) |
 					(a.bytes()[2] << 24) | (a.bytes()[3] << 16) |
 					(a.bytes()[4] <<  8) | (a.bytes()[5] <<  0);
@@ -71,7 +120,7 @@ static inline bool operator<(const MACAddr &a,const MACAddr &b) {
 	return vala < valb;
 }
 
-static inline std::ostream &operator<<(std::ostream &os,const MACAddr &a) {
+static inline std::ostream &operator<<(std::ostream &os,const NIC::MAC &a) {
 	return os << std::hex
 		<< std::setfill('0') << std::setw(2) << a.bytes()[0] << ":"
 		<< std::setfill('0') << std::setw(2) << a.bytes()[1] << ":"
@@ -80,4 +129,6 @@ static inline std::ostream &operator<<(std::ostream &os,const MACAddr &a) {
 		<< std::setfill('0') << std::setw(2) << a.bytes()[4] << ":"
 		<< std::setfill('0') << std::setw(2) << a.bytes()[5]
 		<< std::dec;
+}
+
 }

@@ -31,7 +31,7 @@ const Route *Route::find(const IPv4Addr &ip) {
 	return NULL;
 }
 
-int Route::insert(const IPv4Addr &dest,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NIC *nic) {
+int Route::insert(const IPv4Addr &dest,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NICDevice *nic) {
 	// if we should use the gateway, it has to be a valid host
 	if((flags & FL_USE_GW) && !gw.isHost(nm))
 		return -EINVAL;

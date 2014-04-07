@@ -25,7 +25,6 @@
 #include <map>
 
 #include "common.h"
-#include "macaddr.h"
 #include "ipv4addr.h"
 #include "nic.h"
 
@@ -47,7 +46,7 @@ class ARP {
 	};
 
 	typedef std::vector<Packet> pending_type;
-	typedef std::map<IPv4Addr,MACAddr> cache_type;
+	typedef std::map<IPv4Addr,ipc::NIC::MAC> cache_type;
 
 public:
 	enum {
@@ -59,7 +58,7 @@ public:
 	}
 
 	template<class T>
-	static ssize_t send(NIC &nic,Ethernet<T> *packet,size_t size,const IPv4Addr &ip,uint16_t type) {
+	static ssize_t send(NICDevice &nic,Ethernet<T> *packet,size_t size,const IPv4Addr &ip,uint16_t type) {
 		cache_type::iterator it = _cache.find(ip);
 
 		// if we don't know the MAC address yet, start an ARP request and add packet to pending list
@@ -73,14 +72,14 @@ public:
 		// otherwise just send the packet
 		return packet->send(nic,it->second,size,type);
 	}
-	static ssize_t receive(NIC &nic,Ethernet<ARP> *packet,size_t size);
+	static ssize_t receive(NICDevice &nic,Ethernet<ARP> *packet,size_t size);
 
-	static ssize_t requestMAC(NIC &nic,const IPv4Addr &ip);
+	static ssize_t requestMAC(NICDevice &nic,const IPv4Addr &ip);
 
 private:
 	static int createPending(const void *packet,size_t size,const IPv4Addr &ip,uint16_t type);
-	static void sendPending(NIC &nic);
-	static ssize_t handleRequest(NIC &nic,const ARP *packet);
+	static void sendPending(NICDevice &nic);
+	static ssize_t handleRequest(NICDevice &nic,const ARP *packet);
 
 public:
 	uint16_t hwAddrFmt;
@@ -89,9 +88,9 @@ public:
 	uint8_t protoAddrSize;
 	uint16_t cmd;
 
-	MACAddr hwSender;
+	ipc::NIC::MAC hwSender;
 	IPv4Addr ipSender;
-	MACAddr hwTarget;
+	ipc::NIC::MAC hwTarget;
 	IPv4Addr ipTarget;
 
 private:

@@ -24,6 +24,7 @@
 #include <esc/mem.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <ipc/clientdevice.h>
 #include <assert.h>
 #include <string.h>
 #include <list>
@@ -31,7 +32,7 @@
 #include "common.h"
 #include "ipv4addr.h"
 
-class Socket {
+class Socket : public ipc::Client {
 public:
 	struct Packet {
 		const void *data;
@@ -43,19 +44,9 @@ public:
 		}
 	};
 
-	explicit Socket(int fd) : _fd(fd), _shm(), _pending() {
+	explicit Socket(int fd) : ipc::Client(fd), _pending() {
 	}
 	virtual ~Socket() {
-		if(_shm)
-			munmap(_shm);
-	}
-
-	char *shm() {
-		return _shm;
-	}
-	void shm(char *ptr) {
-		assert(_shm == NULL);
-		_shm = ptr;
 	}
 
 	virtual ssize_t sendto(const sSockAddr *sa,const void *buffer,size_t size) = 0;
@@ -86,19 +77,17 @@ public:
 	}
 
 private:
-	void reply(const IPv4Addr &ip,void *dst,const void *src,size_t size) {
-		sArgsMsg msg;
+	void reply(const IPv4Addr &,void *dst,const void *src,size_t size) {
 		if(dst != NULL)
 			memcpy(dst,src,size);
-		msg.arg1 = size;
-		msg.arg2 = ip.value();
-		send(_fd,MSG_DEV_READ_RESP,&msg,sizeof(msg));
+
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+		ipc::IPCStream is(fd(),buffer,sizeof(buffer));
+		is << ipc::FileRead::Response(size) << ipc::Send(ipc::FileRead::Response::MID);
 		if(dst == NULL)
-			send(_fd,MSG_DEV_READ_RESP,src,size);
+			is << ipc::SendData(ipc::FileRead::Response::MID,src,size);
 	}
 
-	int _fd;
-	char *_shm;
 	ReadRequest _pending;
 	std::list<Packet> _packets;
 };

@@ -24,7 +24,6 @@
 #include <iostream>
 
 #include "common.h"
-#include "macaddr.h"
 #include "arp.h"
 #include "ipv4.h"
 #include "nic.h"
@@ -38,7 +37,7 @@ public:
 		return sizeof(dst) + sizeof(src) + sizeof(type) + payload.size();
 	}
 
-	ssize_t send(NIC &nic,const MACAddr &dest,size_t sz,uint16_t _type) {
+	ssize_t send(NICDevice &nic,const ipc::NIC::MAC &dest,size_t sz,uint16_t _type) {
 		src = nic.mac();
 		dst = dest;
 		type = cputobe16(_type);
@@ -46,7 +45,7 @@ public:
 		return nic.write(this,sz);
 	}
 
-	static ssize_t receive(NIC &nic,Ethernet *packet,size_t sz) {
+	static ssize_t receive(NICDevice &nic,Ethernet *packet,size_t sz) {
 		switch(be16tocpu(packet->type)) {
 			case ARP::ETHER_TYPE: {
 				Ethernet<ARP> *arpPkt = reinterpret_cast<Ethernet<ARP>*>(packet);
@@ -65,8 +64,8 @@ public:
 		return -EINVAL;
 	}
 
-	MACAddr dst;
-	MACAddr src;
+	ipc::NIC::MAC dst;
+	ipc::NIC::MAC src;
 	uint16_t type;
 	T payload;
 } A_PACKED;

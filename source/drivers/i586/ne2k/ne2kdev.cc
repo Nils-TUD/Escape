@@ -127,18 +127,18 @@
  * The range from 0x4000 to 0x5000 is used as a buffer for transmitting packets.
  */
 
-Ne2k::Ne2k(sPCIDevice *nic,int sid)
+Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid)
 		: _sid(sid), _basePort(), _mac(), _nextPacket(), _listsem(), _first(), _last() {
 	if(usemcrt(&_listsem,1) < 0)
 		error("Unable to create semaphore");
 
 	for(size_t i = 0; i < 6; i++) {
-		if(nic->bars[i].addr && nic->bars[i].type == sPCIBar::BAR_IO) {
-			if(reqports(nic->bars[i].addr,nic->bars[i].size) < 0) {
+		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
+			if(reqports(nic.bars[i].addr,nic.bars[i].size) < 0) {
 				error("Unable to request io-ports %d..%d",
-						nic->bars[i].addr,nic->bars[i].addr + nic->bars[i].size - 1);
+						nic.bars[i].addr,nic.bars[i].addr + nic.bars[i].size - 1);
 			}
-			_basePort = nic->bars[i].addr;
+			_basePort = nic.bars[i].addr;
 		}
 	}
 

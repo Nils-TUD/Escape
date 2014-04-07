@@ -46,7 +46,7 @@ public:
 			uint16_t id,uint16_t seq) {
 		return send(ip,payload,nbytes,0,CMD_ECHO,id,seq);
 	}
-	static ssize_t receive(NIC &nic,Ethernet<IPv4<ICMP>> *packet,size_t sz);
+	static ssize_t receive(NICDevice &nic,Ethernet<IPv4<ICMP>> *packet,size_t sz);
 
 private:
 	static ssize_t send(const IPv4Addr &ip,const void *payload,size_t nbytes,

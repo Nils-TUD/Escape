@@ -24,6 +24,8 @@
 #include <esc/messages.h>
 #include <esc/sync.h>
 #include <esc/irq.h>
+#include <ipc/proto/nic.h>
+#include <ipc/proto/pci.h>
 
 class Ne2k {
 	struct Packet {
@@ -45,10 +47,10 @@ public:
 	static const unsigned VENDOR_ID		= 0x10ec;
 	static const unsigned DEVICE_ID		= 0x8029;
 
-	explicit Ne2k(sPCIDevice *nic,int sid);
+	explicit Ne2k(const ipc::PCI::Device &nic,int sid);
 
-	const uint8_t *mac() const {
-		return _mac;
+	ipc::NIC::MAC mac() const {
+		return ipc::NIC::MAC(_mac);
 	}
 
 	ssize_t send(const void *packet,size_t size);

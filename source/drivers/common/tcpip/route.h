@@ -32,18 +32,18 @@ public:
 		FL_UP		= 0x2,
 	};
 
-	explicit Route(const IPv4Addr &dst,const IPv4Addr &nm,const IPv4Addr &gw,uint fl,NIC *n)
+	explicit Route(const IPv4Addr &dst,const IPv4Addr &nm,const IPv4Addr &gw,uint fl,NICDevice *n)
 		: dest(dst), netmask(nm), gateway(gw), flags(fl), nic(n) {
 	}
 
 	static const Route *find(const IPv4Addr &ip);
-	static int insert(const IPv4Addr &ip,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NIC *nic);
+	static int insert(const IPv4Addr &ip,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NICDevice *nic);
 
 	IPv4Addr dest;
 	IPv4Addr netmask;
 	IPv4Addr gateway;
 	uint flags;
-	NIC *nic;
+	NICDevice *nic;
 
 private:
 	static std::vector<Route*> _table;

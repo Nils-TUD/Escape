@@ -24,23 +24,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "macaddr.h"
+#include "common.h"
 #include "ipv4addr.h"
 
-class NIC {
+class NICDevice : public ipc::NIC {
 public:
-	explicit NIC(const char *path,const IPv4Addr &addr)
-			: _fd(open(path,IO_MSGS | IO_READ | IO_WRITE)), _mac(getMAC()), _ip(addr),
-			  _subnetmask(255,255,255,0) {
-		// TODO throw exception
-		if(_fd < 0)
-			error("open failed");
+	explicit NICDevice(const char *path,const IPv4Addr &addr)
+		: ipc::NIC(path,IO_MSGS | IO_READ | IO_WRITE), _mac(getMAC()), _ip(addr),
+		  _subnetmask(255,255,255,0) {
 	}
 
-	int fd() const {
-		return _fd;
-	}
-	const MACAddr &mac() const {
+	const ipc::NIC::MAC &mac() const {
 		return _mac;
 	}
 	const IPv4Addr &ip() const {
@@ -51,24 +45,14 @@ public:
 	}
 
 	ssize_t read(void *buffer,size_t size) {
-		return ::read(_fd,buffer,size);
+		return ::read(fd(),buffer,size);
 	}
 	ssize_t write(const void *buffer,size_t size) {
-		return ::write(_fd,buffer,size);
+		return ::write(fd(),buffer,size);
 	}
 
 private:
-	MACAddr getMAC() {
-		sArgsMsg msg;
-		if(send(_fd,MSG_NIC_GETMAC,NULL,0) < 0)
-			error("Unable to send getmac-message");
-		if(receive(_fd,NULL,&msg,sizeof(msg)) < 0)
-			error("Unable to receive getmac-message");
-		return MACAddr(msg.arg1,msg.arg2,msg.arg3,msg.arg4,msg.arg5,msg.arg6);
-	}
-
-	int _fd;
-	MACAddr _mac;
+	ipc::NIC::MAC _mac;
 	IPv4Addr _ip;
 	IPv4Addr _subnetmask;
 };

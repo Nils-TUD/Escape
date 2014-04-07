@@ -86,7 +86,7 @@ ssize_t UDP::send(const IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,si
 	return res;
 }
 
-ssize_t UDP::receive(NIC &,Ethernet<IPv4<UDP>> *packet,size_t) {
+ssize_t UDP::receive(NICDevice&,Ethernet<IPv4<UDP>> *packet,size_t) {
 	const UDP *udp = &packet->payload.payload;
 	socket_map::iterator it = _socks.find(be16tocpu(udp->dstPort));
 	if(it != _socks.end())

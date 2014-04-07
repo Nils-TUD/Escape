@@ -73,7 +73,7 @@ public:
 		return ARP::send(*route->nic,pkt,sz,ip,ETHER_TYPE);
 	}
 
-	static ssize_t receive(NIC &nic,Ethernet<IPv4> *packet,size_t sz) {
+	static ssize_t receive(NICDevice &nic,Ethernet<IPv4> *packet,size_t sz) {
 		switch(packet->payload.protocol) {
 			case ICMP::IP_PROTO: {
 				Ethernet<IPv4<ICMP>> *icmpPkt = reinterpret_cast<Ethernet<IPv4<ICMP>>*>(packet);

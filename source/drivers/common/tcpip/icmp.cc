@@ -56,7 +56,7 @@ ssize_t ICMP::handleEcho(Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 		be16tocpu(icmp->identifier),be16tocpu(icmp->sequence));
 }
 
-ssize_t ICMP::receive(NIC &,Ethernet<IPv4<ICMP>> *packet,size_t sz) {
+ssize_t ICMP::receive(NICDevice&,Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 	const ICMP *icmp = &packet->payload.payload;
 	switch(icmp->type) {
 		case CMD_ECHO_REPLY:

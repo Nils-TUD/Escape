@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/net.h>
+#include <ipc/proto/nic.h>
 
 struct Empty {
 	size_t size() const {

@@ -32,6 +32,9 @@
 
 class UDPSocket : public Socket {
 public:
+	explicit UDPSocket(int fd) : Socket(fd) {
+		assert(false);
+	}
 	explicit UDPSocket(int fd,const IPv4Addr &ip,int port);
 	virtual ~UDPSocket();
 
@@ -60,7 +63,7 @@ public:
 	}
 
 	static ssize_t send(const IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,size_t nbytes);
-	static ssize_t receive(NIC &nic,Ethernet<IPv4<UDP>> *packet,size_t sz);
+	static ssize_t receive(NICDevice &nic,Ethernet<IPv4<UDP>> *packet,size_t sz);
 
 private:
 	static ssize_t addSocket(UDPSocket *sock,port_t port) {

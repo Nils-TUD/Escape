@@ -23,16 +23,6 @@
 #include <esc/messages.h>
 #include <stdio.h>
 
-#ifdef __i386__
-#include <esc/arch/i586/driver.h>
-#endif
-#ifdef __eco32__
-#include <esc/arch/eco32/driver.h>
-#endif
-#ifdef __mmix__
-#include <esc/arch/mmix/driver.h>
-#endif
-
 #define DEV_OPEN					1
 #define DEV_READ					2
 #define DEV_WRITE					4

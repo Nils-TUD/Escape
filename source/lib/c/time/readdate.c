@@ -19,14 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/driver.h>
 #include <time.h>
 #include "timeintern.h"
 
 int readdate(struct RTCInfo *info) {
 	/* open CMOS and read date */
 	int err;
-	int fd = open(TIME_DEVICE,IO_READ);
+	int fd = open("/dev/rtc",IO_READ);
 	if(fd < 0)
 		return fd;
 	if((err = IGNSIGS(read(fd,info,sizeof(struct RTCInfo)))) < 0) {

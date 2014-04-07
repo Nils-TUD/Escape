@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/driver.h>
 #include <fs/fstime.h>
 #include <stdio.h>
 #include <time.h>
@@ -30,7 +29,7 @@ time_t timestamp(void) {
 	/* open CMOS and read date */
 	if(timeFd < 0) {
 		/* not already open, so do it */
-		timeFd = open(TIME_DEVICE,IO_READ);
+		timeFd = open("/dev/rtc",IO_READ);
 		if(timeFd < 0)
 			return 0;
 	}

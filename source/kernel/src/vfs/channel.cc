@@ -91,7 +91,7 @@ void VFSChannel::discardMsgs() {
 }
 
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res = -ENOENT;
 	OpenFile *clifile;
@@ -199,7 +199,7 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 }
 
 int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	/* send msg to fs */
@@ -230,7 +230,7 @@ static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,siz
 }
 
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
-	char ibuffer[IPC_DEF_SIZE];
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
 
@@ -289,7 +289,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 }
 
 ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
-	char ibuffer[IPC_DEF_SIZE];
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
 	Thread *t = Thread::getRunning();
@@ -324,7 +324,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 }
 
 int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
-	char ibuffer[IPC_DEF_SIZE];
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
 	Thread *t = Thread::getRunning();
@@ -507,17 +507,17 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	}
 	waitLock.up();
 
-	if(EXPECT_FALSE(data && msg->length > size)) {
-		Log::get().writef("INVALID: len=%zu, size=%zu\n",msg->length,size);
-		Cache::free(msg);
-		return -EINVAL;
-	}
-
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
 	Log::get().writef("%2d:%2d(%-12.12s) <- %6d (%4d b) %#x (%s)\n",
 			t->getTid(),pid,p ? p->getProgram() : "??",msg->id,msg->length,this,getPath());
 #endif
+
+	if(EXPECT_FALSE(data && msg->length > size)) {
+		Log::get().writef("INVALID: len=%zu, size=%zu\n",msg->length,size);
+		Cache::free(msg);
+		return -EINVAL;
+	}
 
 	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
 	Thread::addHeapAlloc(msg);

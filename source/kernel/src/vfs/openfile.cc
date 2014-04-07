@@ -121,7 +121,7 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);
 	else {
-		char buffer[IPC_DEF_SIZE];
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCBuf ib(buffer,sizeof(buffer));
 		Thread *t = Thread::getRunning();
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
@@ -277,7 +277,7 @@ int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
 }
 
 int OpenFile::syncfs(pid_t pid) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf buf(buffer,sizeof(buffer));
 
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))

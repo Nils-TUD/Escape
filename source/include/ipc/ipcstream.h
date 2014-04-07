@@ -71,16 +71,16 @@ public:
 	 * @param f the file-descriptor
 	 */
 	explicit IPCStream(int f)
-		: _fd(f), _buf(new char[DEF_SIZE],DEF_SIZE), _flags(FL_ALLOC) {
+		: _fd(f), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE), _flags(FL_ALLOC) {
 	}
 	/**
 	 * Attaches this IPCStream to the file with given fd and uses the given buffer.
 	 *
 	 * @param f the file-descriptor
-	 * @param buf the buffer
+	 * @param buf the buffer (word-aligned!)
 	 * @param size the buffer size
 	 */
-	explicit IPCStream(int f,char *buf,size_t size)
+	explicit IPCStream(int f,ulong *buf,size_t size)
 		: _fd(f), _buf(buf,size), _flags() {
 	}
 	/**
@@ -91,10 +91,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit IPCStream(const char *dev,uint mode = IO_MSGS)
-		: _fd(open(dev,mode)), _buf(new char[DEF_SIZE],DEF_SIZE), _flags(FL_OPEN | FL_ALLOC) {
+		: _fd(open(dev,mode)), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE),
+		  _flags(FL_OPEN | FL_ALLOC) {
 #ifndef IN_KERNEL
 		if(_fd < 0)
-			VTHROWE("open",_fd);
+			VTHROWE("open(" << dev << ")",_fd);
 #endif
 	}
 

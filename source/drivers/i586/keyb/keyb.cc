@@ -184,7 +184,7 @@ int main(void) {
 }
 
 static int kbIrqThread(A_UNUSED void *arg) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	int sem = semcrtirq(IRQ_SEM_KEYB);
 	if(sem < 0)
 		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);

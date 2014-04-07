@@ -64,7 +64,7 @@ void Util::switchToVGA() {
 	pid_t pid = Proc::getRunning();
 	OpenFile *file;
 	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
-		char buffer[IPC_DEF_SIZE];
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCBuf ib(buffer,sizeof(buffer));
 		/* use an empty shm-name here. we don't need that anyway */
 		ib << 3 << 1 << true << ipc::CString("");

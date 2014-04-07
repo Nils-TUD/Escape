@@ -313,7 +313,7 @@ void PhysMem::swapper() {
 		swapEnabled = false;
 	}
 	else {
-		char buffer[IPC_DEF_SIZE];
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 		/* get device-size and init swap-map */

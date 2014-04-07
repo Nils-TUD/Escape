@@ -23,6 +23,7 @@
 #include <esc/debug.h>
 #include <esc/dir.h>
 #include <esc/endian.h>
+#include <fs/fsdev.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>

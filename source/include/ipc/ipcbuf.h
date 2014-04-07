@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <string.h>
+#include <assert.h>
 
 namespace ipc {
 
@@ -34,27 +35,29 @@ public:
 	/**
 	 * Creates a new IPCBuf with given buffer
 	 *
-	 * @param buf the buffer
+	 * @param buf the buffer (word-aligned!)
 	 * @param size the size of the buffer
 	 */
-	explicit IPCBuf(char *buf,size_t size) : _buf(buf), _pos(0), _size(size) {
+	explicit IPCBuf(ulong *buf,size_t size)
+		: _buf(reinterpret_cast<uint8_t*>(buf)), _pos(0), _size(size) {
+		assert((reinterpret_cast<uintptr_t>(buf) & (sizeof(ulong) - 1)) == 0);
 	}
 
 	/**
 	 * @return the buffer
 	 */
-	char *buffer() {
-		return _buf;
+	ulong *buffer() {
+		return reinterpret_cast<ulong*>(_buf);
 	}
-	const char *buffer() const {
-		return _buf;
+	const ulong *buffer() const {
+		return reinterpret_cast<ulong*>(_buf);
 	}
 
 	/**
 	 * @return true if an error has occurred during reading or writing
 	 */
 	bool error() const {
-		return _pos > _size;
+		return _pos > align(_size);
 	}
 	/**
 	 * @return the current position (the number of bytes written or the number of bytes to read)
@@ -82,15 +85,19 @@ public:
 	template<typename T>
 	IPCBuf &operator<<(const T& value) {
 		if(EXPECT_TRUE(checkSpace(sizeof(T)))) {
-			*reinterpret_cast<T*>(_buf + _pos) = value;
-			_pos += sizeof(T);
+			// note that we align it before the write to allow the use of the low-level receive()
+			// to receive just one item without having to worry about alignment.
+			size_t pos = align(_pos);
+			*reinterpret_cast<T*>(_buf + pos) = value;
+			_pos = pos + sizeof(T);
 		}
 		return *this;
 	}
 	void put(const void *data,size_t size) {
 		if(EXPECT_TRUE(checkSpace(size))) {
-			memcpy(_buf + _pos,data,size);
-			_pos += size;
+			size_t pos = align(_pos);
+			memcpy(_buf + pos,data,size);
+			_pos = pos + size;
 		}
 	}
 
@@ -100,8 +107,9 @@ public:
 	template<typename T>
 	IPCBuf &operator>>(T &value) {
 		if(EXPECT_TRUE(checkSpace(sizeof(T)))) {
-			value = *reinterpret_cast<T*>(_buf + _pos);
-			_pos += sizeof(T);
+			size_t pos = align(_pos);
+			value = *reinterpret_cast<T*>(_buf + pos);
+			_pos = pos + sizeof(T);
 		}
 		else
 			value = T();
@@ -109,21 +117,25 @@ public:
 	}
 	void fetch(void *data,size_t size) {
 		if(EXPECT_TRUE(checkSpace(size))) {
+			size_t pos = align(_pos);
 			memcpy(data,_buf + _pos,size);
-			_pos += size;
+			_pos = pos + size;
 		}
 	}
 
 private:
+	static inline size_t align(size_t sz) {
+		return (sz + sizeof(ulong) - 1) & ~(sizeof(ulong) - 1);
+	}
 	bool checkSpace(size_t bytes) {
 		if(EXPECT_FALSE(_pos + bytes > _size)) {
-			_pos = _size + 1;
+			_pos = align(_size) + 1;
 			return false;
 		}
 		return true;
 	}
 
-	char *_buf;
+	uint8_t *_buf;
 	size_t _pos;
 	size_t _size;
 };

@@ -73,7 +73,7 @@ int mod_driverread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	if(fcntl(dev.id(),F_WAKE_READER,0) < 0)
 		error("fcntl");
 
-	char buffer[32];
+	ulong buffer[8];
 	for(int i = 0; i < 2; ++i) {
 		msgid_t mid;
 		int cfd = getwork(dev.id(),&mid,buffer,sizeof(buffer),0);

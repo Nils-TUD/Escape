@@ -53,7 +53,7 @@ void Device::unset(msgid_t op) {
 }
 
 void Device::loop() {
-	char buf[IPC_DEF_SIZE];
+	ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
 	while(_run) {
 		msgid_t mid;
 		int fd = getwork(_id,&mid,buf,sizeof(buf),0);

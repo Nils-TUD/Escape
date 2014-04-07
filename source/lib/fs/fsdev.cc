@@ -85,7 +85,7 @@ FSDevice::~FSDevice() {
 }
 
 void FSDevice::loop() {
-	char buf[IPC_DEF_SIZE];
+	ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
 	while(1) {
 		msgid_t mid;
 		int fd = getwork(id(),&mid,buf,sizeof(buf),isStopped() ? GW_NOBLOCK : 0);

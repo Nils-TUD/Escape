@@ -38,7 +38,7 @@ typedef struct {
 	int fd;
 	msgid_t mid;
 	tid_t tid;
-	char buffer[64];
+	ulong buffer[64];
 	void *data;
 } sTestRequest;
 
@@ -113,7 +113,7 @@ static int clientThread(A_UNUSED void *arg) {
 }
 
 static int getRequests(A_UNUSED void *arg) {
-	char buffer[64];
+	ulong buffer[64];
 	int tid;
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");

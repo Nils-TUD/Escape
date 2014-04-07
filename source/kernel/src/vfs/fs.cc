@@ -62,7 +62,7 @@ static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,ipc::IPCBuf &ib) {
 }
 
 int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,USER sFileInfo *info) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
@@ -77,7 +77,7 @@ int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,USER sFileInfo *info
 }
 
 int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
@@ -86,7 +86,7 @@ int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
 }
 
 int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
@@ -95,7 +95,7 @@ int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid
 }
 
 int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
@@ -104,7 +104,7 @@ int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPa
 }
 
 int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
@@ -113,7 +113,7 @@ int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
 }
 
 int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
@@ -122,7 +122,7 @@ int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
 }
 
 int VFSFS::rmdir(pid_t pid,OpenFile *fsFile,const char *path) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);

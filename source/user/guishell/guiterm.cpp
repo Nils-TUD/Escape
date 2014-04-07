@@ -75,7 +75,7 @@ GUIVTermDevice::~GUIVTermDevice() {
 }
 
 void GUIVTermDevice::loop() {
-	char buf[IPC_DEF_SIZE];
+	ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
 	while(!isStopped()) {
 		msgid_t mid;
 		int fd = getwork(id(),&mid,buf,sizeof(buf),_rbufPos > 0 ? GW_NOBLOCK : 0);

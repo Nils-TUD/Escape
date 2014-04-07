@@ -120,7 +120,7 @@ public:
 	 * Executes the device-loop.
 	 */
 	void loop() {
-		char buf[IPC_DEF_SIZE];
+		ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
 		while(!this->isStopped()) {
 			msgid_t mid;
 			int fd = getwork(this->id(),&mid,buf,sizeof(buf),isDirty() ? GW_NOBLOCK : 0);

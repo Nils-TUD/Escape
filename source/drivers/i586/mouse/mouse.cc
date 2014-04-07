@@ -114,7 +114,7 @@ int main(void) {
 }
 
 static int irqThread(A_UNUSED void *arg) {
-	char buffer[IPC_DEF_SIZE];
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::Mouse::Event ev;
 
 	int sem = semcrtirq(IRQ_SEM_MOUSE);

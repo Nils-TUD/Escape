@@ -22,17 +22,8 @@
 #include <esc/common.h>
 #include <esc/fsinterface.h>
 #include <ipc/clientdevice.h>
+#include <fs/common.h>
 #include <stdio.h>
-
-#define tpool_lock(...)		0
-#define tpool_unlock(...)	0
-#define REQ_THREAD_COUNT	0
-
-typedef struct {
-	uid_t uid;
-	gid_t gid;
-	pid_t pid;
-} sFSUser;
 
 /* The handler for the functions of the filesystem */
 typedef void *(*fFSInit)(const char *device,char **usedDev,int *errcode);

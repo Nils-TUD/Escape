@@ -130,11 +130,12 @@ def SetProgDeps(env, prog, static, libs, cpp):
 		env.Depends(prog, '$SYSGCCLIBPATH/libgcc.a')
 		if env['ARCH'] == 'i586':
 			env.Depends(prog, '$SYSGCCLIBPATH/libgcc_eh.a')
+		if cpp:
+			env.Depends(prog, '$SYSLIBPATH/libsupc++.a')
 	else:
 		env.Depends(prog, '$SYSSHGCCPATH/libgcc_s.so.1')
 	if cpp:
 		env.Depends(prog, '$BINDIR/libstdc++' + libsuffix)
-		env.Depends(prog, '$SYSLIBPATH/libsupc++.a')
 
 def SetLinkAddr(env, static):
 	global link_addr
@@ -184,7 +185,9 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	SetLinkAddr(myenv, static)
 	gcclibs = EscapeGCCLibs(env, static)
-	libs = gcclibs + ['stdc++', 'supc++'] + LIBS + ['stdc++', 'supc++'] + gcclibs
+	libs = gcclibs + ['stdc++'] + LIBS + ['stdc++'] + gcclibs
+	if static:
+		libs += ['supc++']
 	prog = myenv.Program(target, source, LIBS = libs)
 	SetProgDeps(myenv, prog, static, LIBS, True)
 	myenv.EscapeMap(target + '.map', prog)

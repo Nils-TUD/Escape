@@ -2,5 +2,12 @@
 
 Import('env')
 myenv = env.Clone()
-myenv.Append(LINKFLAGS = ' -nodefaultlibs')
-myenv.EscapeLib(target = 'stdc++', source = [myenv.Glob('*.cpp'), myenv.Glob('*/*/*.cpp')], LIBS = ['c'])
+# we need --whole-archive to put all stuff from libsupc++.a into the shared library
+myenv.Append(LINKFLAGS = ' -nodefaultlibs -Wl,--whole-archive')
+# tell scons that it is ok to link that .a file into the shared library (has been built with -fPIC)
+myenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
+myenv.EscapeLib(
+	target = 'stdc++',
+	source = [myenv.Glob('*.cpp'), myenv.Glob('*/*/*.cpp'), '/opt/escape-cross-i586/lib/libsupc++.a'],
+	LIBS = ['c']
+)

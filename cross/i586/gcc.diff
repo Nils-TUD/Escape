@@ -200,3 +200,53 @@ diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/
   
   	  fputs("terminate called after throwing an instance of '", stderr);
   	  if (status == 0)
+diff -rcN src/gcc-org/libstdc++-v3/configure src/gcc/libstdc++-v3/configure
+*** src/gcc-org/libstdc++-v3/configure	2013-05-24 20:10:37.000000000 +0200
+--- src/gcc/libstdc++-v3/configure	2014-04-08 09:07:30.736074231 +0200
+***************
+*** 11057,11062 ****
+--- 11057,11070 ----
+    shlibpath_var=LD_LIBRARY_PATH
+    ;;
+  
++ escape*)
++   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${shared_ext}$versuffix'
++   need_lib_prefix=no
++   need_version=no
++   dynamic_linker='/bin/dynlink'
++   hardcode_into_libs=yes
++   ;;
++ 
+  *)
+    dynamic_linker=no
+    ;;
+***************
+*** 13168,13173 ****
+--- 13176,13185 ----
+  	    ;;
+  	esac
+        ;;
++       
++       escape*)
++       	ld_shlibs_CXX=yes
++       	;;
+  
+        tandem*)
+          case $cc_basename in
+***************
+*** 14557,14562 ****
+--- 14569,14582 ----
+    dynamic_linker='GNU/Linux ld.so'
+    ;;
+  
++ escape*)
++   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${shared_ext}$versuffix'
++   need_lib_prefix=no
++   need_version=no
++   dynamic_linker='/bin/dynlink'
++   hardcode_into_libs=yes
++   ;;
++ 
+  netbsd*)
+    version_type=sunos
+    need_lib_prefix=no

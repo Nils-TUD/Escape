@@ -26,6 +26,7 @@
 #include <esc/irq.h>
 #include <ipc/proto/nic.h>
 #include <ipc/proto/pci.h>
+#include <mutex>
 
 class Ne2k {
 	struct Packet {
@@ -40,10 +41,6 @@ class Ne2k {
 	};
 
 public:
-	/* TODO wrong place */
-	static const unsigned NIC_CLASS		= 0x02;
-	static const unsigned NIC_SUBCLASS	= 0x00;
-
 	static const unsigned VENDOR_ID		= 0x10ec;
 	static const unsigned DEVICE_ID		= 0x8029;
 
@@ -79,7 +76,7 @@ private:
 	uint16_t _basePort;
 	uint8_t _mac[6];
 	uint8_t _nextPacket;
-	tUserSem _listsem;
+	std::mutex _listmutex;
 	Packet *_first;
 	Packet *_last;
 };

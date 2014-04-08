@@ -33,6 +33,9 @@ namespace ipc {
  */
 class NIC {
 public:
+	static const unsigned PCI_CLASS		= 0x02;
+	static const unsigned PCI_SUBCLASS	= 0x00;
+
 	/**
 	 * Represents a MAC address
 	 */

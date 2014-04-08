@@ -41,6 +41,10 @@ public:
 		set(MSG_NIC_GETMAC,std::make_memfun(this,&Ne2kDevice::getMac));
 	}
 
+	ipc::NIC::MAC mac() const {
+		return _ne2k.mac();
+	}
+
 	void read(ipc::IPCStream &is) {
 		ipc::Client *c = get(is.fd());
 		ipc::FileRead::Request r;
@@ -87,7 +91,7 @@ private:
 
 int main(void) {
 	ipc::PCI pci("/dev/pci");
-	ipc::PCI::Device nic = pci.getByClass(Ne2k::NIC_CLASS,Ne2k::NIC_SUBCLASS);
+	ipc::PCI::Device nic = pci.getByClass(ipc::NIC::PCI_CLASS,ipc::NIC::PCI_SUBCLASS);
 	if(nic.deviceId != Ne2k::DEVICE_ID || nic.vendorId != Ne2k::VENDOR_ID) {
 		error("NIC is no NE2K (found %d.%d.%d: vendor=%hx, device=%hx)",
 				nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
@@ -95,9 +99,14 @@ int main(void) {
 
 	printf("[ne2k] found PCI-device %d.%d.%d: vendor=%hx, device=%hx\n",
 			nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
-	fflush(stdout);
 
 	Ne2kDevice dev("/dev/ne2k",0770,nic);
+
+	ipc::NIC::MAC mac = dev.mac();
+	printf("[ne2k] NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x\n",
+		mac.bytes()[0],mac.bytes()[1],mac.bytes()[2],mac.bytes()[3],mac.bytes()[4],mac.bytes()[5]);
+	fflush(stdout);
+
 	dev.loop();
 	return EXIT_SUCCESS;
 }

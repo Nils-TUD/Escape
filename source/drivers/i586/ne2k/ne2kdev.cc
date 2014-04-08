@@ -91,6 +91,9 @@
 #define PAGE_STOP		0x80		/* should not exceed 0x80 in 16-bit mode */
 #define PAGE_SZ			256			/* bytes per page */
 
+// TODO some OSs set that to 64
+#define MIN_PKT_SIZE	60
+
 /*
  * The ne2k has a internal memory of 32KiB, which is split into pages of 256 bytes each.
  * It looks like this (note that this is based on the bochs model; I don't know about real HW):
@@ -128,10 +131,7 @@
  */
 
 Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid)
-		: _sid(sid), _basePort(), _mac(), _nextPacket(), _listsem(), _first(), _last() {
-	if(usemcrt(&_listsem,1) < 0)
-		error("Unable to create semaphore");
-
+		: _sid(sid), _basePort(), _mac(), _nextPacket(), _listmutex(), _first(), _last() {
 	for(size_t i = 0; i < 6; i++) {
 		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
 			if(reqports(nic.bars[i].addr,nic.bars[i].size) < 0) {
@@ -160,9 +160,6 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid)
 	accessPROM(0,32,prom,PROM_READ);
 	for(size_t i = 0; i < 6; ++i)
 		_mac[i] = prom[i] & 0xFF;
-
-	printf("[ne2k] NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x\n",
-		_mac[0],_mac[1],_mac[2],_mac[3],_mac[4],_mac[5]);
 
 	/* set the MAC address */
 	writeReg(REG_CMD,CMD_STP | CMD_PAGE1 | CMD_COMPLDMA);
@@ -224,9 +221,6 @@ void Ne2k::accessPROM(uint16_t offset,size_t size,void *buffer,Mode mode) {
 	writeReg(REG_ISR,ISR_RDC);
 }
 
-// TODO some OSs set that to 64
-#define MIN_PKT_SIZE	60
-
 ssize_t Ne2k::send(const void *packet,size_t size) {
 	/* take care not to overwrite the receive buffer */
 	if(size > (PAGE_RX - PAGE_TX) * PAGE_SZ)
@@ -248,18 +242,17 @@ ssize_t Ne2k::fetch(void *buffer,size_t size) {
 	Packet *pkt = NULL;
 	ssize_t res = 0;
 
-	usemdown(&_listsem);
-	if(_first) {
-		if(size < _first->length) {
-			usemup(&_listsem);
-			return -EINVAL;
+	{
+		std::lock_guard<std::mutex> guard(_listmutex);
+		if(_first) {
+			if(size < _first->length)
+				return -EINVAL;
+			pkt = _first;
+			_first = _first->next;
+			if(!_first)
+				_last = NULL;
 		}
-		pkt = _first;
-		_first = _first->next;
-		if(!_first)
-			_last = NULL;
 	}
-	usemup(&_listsem);
 
 	if(pkt) {
 		memcpy(buffer,pkt->data,pkt->length);
@@ -303,15 +296,16 @@ void Ne2k::receive() {
 		writeReg(REG_BNRY,_nextPacket == PAGE_RX ? (PAGE_STOP - 1) : _nextPacket - 1);
 
 		/* insert into list */
-		usemdown(&_listsem);
-		pkt->next = NULL;
-		if(_last)
-			_last->next = pkt;
-		else
-			_first = pkt;
-		_last = pkt;
+		{
+			std::lock_guard<std::mutex> guard(_listmutex);
+			pkt->next = NULL;
+			if(_last)
+				_last->next = pkt;
+			else
+				_first = pkt;
+			_last = pkt;
+		}
 		fcntl(_sid,F_WAKE_READER,0);
-		usemup(&_listsem);
 	}
 }
 

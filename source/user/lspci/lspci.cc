@@ -24,52 +24,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "pcilist.h"
+#include "names.h"
 
-static void printDevice(ipc::PCI::Device *device,int verbose);
-static sPCIDeviceInfo *getDevice(ipc::PCI::Device *dev);
-static sPCIVendor *getVendor(ipc::PCI::Device *dev);
-static sPCIClassCode *getClass(ipc::PCI::Device *dev);
+static void printDevice(const ipc::PCI::Device *device,int verbose) {
+	Vendor *vendor = PCINames::vendors.find(device->vendorId);
+	Device *dev = NULL;
+	if(vendor)
+		dev = vendor->getDevice(device->deviceId);
 
-static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-v]\n",name);
-	exit(EXIT_FAILURE);
-}
-
-int main(int argc,const char *argv[]) {
-	int verbose = 0;
-	int res = ca_parse(argc,argv,CA_NO_FREE,"v",&verbose);
-	if(res < 0) {
-		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
-		usage(argv[0]);
+	BaseClass *base = PCINames::classes.find(device->baseClass);
+	SubClass *sub = NULL;
+	ProgIF *pif = NULL;
+	if(base) {
+		sub = base->subclasses.find(device->subClass);
+		if(sub)
+			pif = sub->progifs.find(device->progInterface);
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
-	ipc::PCI pci("/dev/pci");
-	size_t count = pci.getCount();
-	for(size_t i = 0; i < count; ++i) {
-		try {
-			ipc::PCI::Device dev = pci.getByIndex(i);
-			printDevice(&dev,verbose);
-		}
-		catch(const std::exception &e) {
-			printe("%s",e.what());
-		}
-	}
-	return EXIT_SUCCESS;
-}
+	printf("%02x:%02x:%x ",device->bus,device->dev,device->func);
 
-static void printDevice(ipc::PCI::Device *device,int verbose) {
-	sPCIVendor *pven = getVendor(device);
-	sPCIDeviceInfo *pdev = getDevice(device);
-	sPCIClassCode *pclass = getClass(device);
-	printf("%02x:%02x:%x %s: %s %s (rev %02x)\n",
-	       device->bus,device->dev,device->func,
-	       pclass ? pclass->baseDesc : "?",
-	       pven ? pven->vendorFull : "?",
-	       pdev ? pdev->chipDesc : "?",
-		   device->revId);
+	if(base)
+		printf("%s: ",base->getName().c_str());
+	else
+		printf("%02x: ",device->baseClass);
+	if(sub)
+		printf("%s (",sub->getName().c_str());
+	else
+		printf("%02x (",device->subClass);
+	if(pif)
+		printf("%s) ",pif->getName().c_str());
+	else
+		printf("%02x) ",device->progInterface);
+
+	if(vendor)
+		printf("%s ",vendor->getName().c_str());
+	else
+		printf("%04x ",device->vendorId);
+	if(dev)
+		printf("%s ",dev->getName().c_str());
+	else
+		printf("%04x ",device->vendorId);
+
+	printf("(rev %02x)\n",device->revId);
+
 	if(verbose) {
 		printf("\tID: %04x:%04x\n",device->vendorId,device->deviceId);
 		if(device->type == ipc::PCI::GENERIC) {
@@ -95,31 +92,44 @@ static void printDevice(ipc::PCI::Device *device,int verbose) {
 	}
 }
 
-static sPCIDeviceInfo *getDevice(ipc::PCI::Device *dev) {
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(pciDevices); i++) {
-		if(pciDevices[i].vendorId == dev->vendorId && pciDevices[i].deviceId == dev->deviceId)
-			return pciDevices + i;
-	}
-	return NULL;
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s [-v]\n",name);
+	exit(EXIT_FAILURE);
 }
 
-static sPCIVendor *getVendor(ipc::PCI::Device *dev) {
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(pciVendors); i++) {
-		if(pciVendors[i].vendorId == dev->vendorId)
-			return pciVendors + i;
-	}
-	return NULL;
+// TODO temporary until we moved the collections into a general usable library
+extern "C" void *cache_alloc(size_t size);
+extern "C" void cache_free(void *ptr);
+
+extern "C" void *cache_alloc(size_t size) {
+	return malloc(size);
+}
+extern "C" void cache_free(void *ptr) {
+	free(ptr);
 }
 
-static sPCIClassCode *getClass(ipc::PCI::Device *dev) {
-	size_t i;
-	for(i = 0; i < ARRAY_SIZE(pciClassCodes); i++) {
-		if(pciClassCodes[i].baseClass == dev->baseClass &&
-				pciClassCodes[i].SubClass == dev->subClass &&
-				pciClassCodes[i].progIf == dev->progInterface)
-			return pciClassCodes + i;
+int main(int argc,const char *argv[]) {
+	int verbose = 0;
+	int res = ca_parse(argc,argv,CA_NO_FREE,"v",&verbose);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
 	}
-	return NULL;
+	if(ca_hasHelp())
+		usage(argv[0]);
+
+	PCINames::load(PCI_IDS_FILE);
+
+	ipc::PCI pci("/dev/pci");
+	size_t count = pci.getCount();
+	for(size_t i = 0; i < count; ++i) {
+		try {
+			ipc::PCI::Device dev = pci.getByIndex(i);
+			printDevice(&dev,verbose);
+		}
+		catch(const std::exception &e) {
+			printe("%s",e.what());
+		}
+	}
+	return EXIT_SUCCESS;
 }

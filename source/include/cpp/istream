@@ -283,7 +283,6 @@ namespace std {
 			if(se) {
 				bool neg = false;
 				try {
-					static const char *numTable = "0123456789abcdef";
 					int base = ios_base::get_base();
 
 					// handle '-'
@@ -311,7 +310,7 @@ namespace std {
 							break;
 						}
 						tc = tolower(tc);
-						if(tc >= '0' && tc <= numTable[base - 1]) {
+						if((base <= 10 && isdigit(tc)) || (base <= 16 && isxdigit(tc))) {
 							if(base > 10 && tc >= 'a')
 								n = n * base + (10 + tc - 'a');
 							else

@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCXXProg('bin', target = 'net-arp', source = env.Glob('*.cc'), LIBS = ['ipc', 'info'])

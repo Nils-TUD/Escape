@@ -43,7 +43,10 @@
 extern SpinLock waitLock;
 
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
-		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | S_IXUSR | S_IRUSR | S_IWUSR,success), fd(-1),
+		/* permissions are basically irrelevant here since the userland can't open a channel directly. */
+		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
+		/* otherwise, if root uses that device, the driver is unable to open this channel. */
+		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
 		  used(false), closed(false), shmem(NULL), shmemSize(0), curClient(), sendList(), recvList() {
 	if(!success)
 		return;

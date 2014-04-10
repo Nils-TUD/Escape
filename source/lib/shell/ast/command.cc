@@ -99,7 +99,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	size_t cmdNo,cmdCount;
 	sRedirFile *redirOut,*redirIn,*redirErr;
 	sRedirFd *redirFdesc;
-	char path[MAX_CMD_LEN] = APPS_DIR;
+	char path[MAX_CMD_LEN];
 	int pid,pipeFds[2],prevPipe,errFd;
 	curJob = jobs_requestId();
 
@@ -255,7 +255,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 					close(pipeFds[0]);
 
 				/* exec */
-				strcat(path,shcmd[0]->name);
+				snprintf(path,sizeof(path),"%s/%s",shcmd[0]->path,shcmd[0]->name);
 				exec(path,(const char**)cmd->exprs);
 
 				/* if we're here, there is something wrong */
@@ -264,7 +264,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				exit(EXIT_FAILURE);
 			}
 			else if(pid < 0)
-				printe("Fork of '%s%s' failed",path,shcmd[0]->name);
+				printe("Fork of '%s/%s' failed",shcmd[0]->path,shcmd[0]->name);
 			else {
 				curWaitCount++;
 				jobs_addProc(curJob,pid,cmd->exprCount,cmd->exprs,n->runInBG);

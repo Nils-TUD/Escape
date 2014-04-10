@@ -36,6 +36,7 @@ typedef int (*fCommand)(int argc,char **argv);
 typedef struct {
 	uchar type;
 	ushort mode;
+	char path[MAX_PATH_LEN];
 	char name[MAX_CMDNAME_LEN + 1];
 	size_t nameLen;
 	fCommand func;

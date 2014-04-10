@@ -45,14 +45,14 @@ static void compl_freeCache(sDirCache *dc);
 
 static sDirCache dirCache[DIR_CACHE_SIZE];
 static sShellCmd commands[] = {
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"echo"		}, SSTRLEN("echo"),		shell_cmdEcho	,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"env"		}, SSTRLEN("env"),		shell_cmdEnv	,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"pwd"		}, SSTRLEN("pwd"),		shell_cmdPwd	,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"cd"		}, SSTRLEN("cd"),		shell_cmdCd		,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"include"	}, SSTRLEN("include"),	shell_cmdInclude,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"kill"		}, SSTRLEN("kill"),		shell_cmdKill	,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"jobs"		}, SSTRLEN("jobs"),		shell_cmdJobs	,-1},
-	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH),{"help"		}, SSTRLEN("help"),		shell_cmdHelp	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"echo"		}, SSTRLEN("echo"),		shell_cmdEcho	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"env"			}, SSTRLEN("env"),		shell_cmdEnv	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"pwd"			}, SSTRLEN("pwd"),		shell_cmdPwd	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"cd"			}, SSTRLEN("cd"),		shell_cmdCd		,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"include"		}, SSTRLEN("include"),	shell_cmdInclude,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"kill"		}, SSTRLEN("kill"),		shell_cmdKill	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"jobs"		}, SSTRLEN("jobs"),		shell_cmdJobs	,-1},
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"help"		}, SSTRLEN("help"),		shell_cmdHelp	,-1},
 };
 
 sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,bool searchPath) {
@@ -331,6 +331,7 @@ static sDirCache *compl_getCache(const char *path) {
 		cmd->mode = 0;
 		cmd->complStart = 0;
 		cmd->func = NULL;
+		strnzcpy(cmd->path,path,sizeof(cmd->path));
 		strnzcpy(cmd->name,e.name,sizeof(cmd->name));
 		cmd->nameLen = strlen(cmd->name);
 	}

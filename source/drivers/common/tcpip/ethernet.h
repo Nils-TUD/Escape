@@ -26,7 +26,7 @@
 #include "common.h"
 #include "arp.h"
 #include "ipv4.h"
-#include "nic.h"
+#include "link.h"
 
 static std::ostream &operator<<(std::ostream &os,const Ethernet<> &p);
 
@@ -37,27 +37,27 @@ public:
 		return sizeof(dst) + sizeof(src) + sizeof(type) + payload.size();
 	}
 
-	ssize_t send(NICDevice &nic,const ipc::NIC::MAC &dest,size_t sz,uint16_t _type) {
-		src = nic.mac();
+	ssize_t send(Link &link,const ipc::NIC::MAC &dest,size_t sz,uint16_t _type) {
+		src = link.mac();
 		dst = dest;
 		type = cputobe16(_type);
 		std::cout << "Sending " << *reinterpret_cast<Ethernet<>*>(this) << std::endl;
-		return nic.write(this,sz);
+		return link.write(this,sz);
 	}
 
-	static ssize_t receive(NICDevice &nic,Ethernet *packet,size_t sz) {
+	static ssize_t receive(Link &link,Ethernet *packet,size_t sz) {
 		switch(be16tocpu(packet->type)) {
 			case ARP::ETHER_TYPE: {
 				Ethernet<ARP> *arpPkt = reinterpret_cast<Ethernet<ARP>*>(packet);
 				if(sz >= arpPkt->size())
-					return ARP::receive(nic,arpPkt,sz);
+					return ARP::receive(link,arpPkt,sz);
 			}
 			break;
 
 			case IPv4<>::ETHER_TYPE: {
 				Ethernet<IPv4<>> *ipPkt = reinterpret_cast<Ethernet<IPv4<>>*>(packet);
 				if(sz >= ipPkt->size())
-					return IPv4<>::receive(nic,ipPkt,sz);
+					return IPv4<>::receive(link,ipPkt,sz);
 			}
 			break;
 		}

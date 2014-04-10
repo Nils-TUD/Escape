@@ -89,7 +89,10 @@ private:
 	Ne2k _ne2k;
 };
 
-int main(void) {
+int main(int argc,char **argv) {
+	if(argc != 2)
+		error("Usage: %s <device>\n",argv[0]);
+
 	ipc::PCI pci("/dev/pci");
 	ipc::PCI::Device nic = pci.getByClass(ipc::NIC::PCI_CLASS,ipc::NIC::PCI_SUBCLASS);
 	if(nic.deviceId != Ne2k::DEVICE_ID || nic.vendorId != Ne2k::VENDOR_ID) {
@@ -100,7 +103,7 @@ int main(void) {
 	printf("[ne2k] found PCI-device %d.%d.%d: vendor=%hx, device=%hx\n",
 			nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
 
-	Ne2kDevice dev("/dev/ne2k",0770,nic);
+	Ne2kDevice dev(argv[1],0770,nic);
 
 	ipc::NIC::MAC mac = dev.mac();
 	printf("[ne2k] NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x\n",

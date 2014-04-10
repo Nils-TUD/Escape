@@ -40,6 +40,8 @@ public:
 	 * Represents a MAC address
 	 */
 	class MAC {
+		friend std::istream &operator>>(std::istream &is,NIC::MAC &a);
+
 	public:
 		static const size_t LEN	= 6;
 
@@ -124,14 +126,27 @@ static inline bool operator<(const NIC::MAC &a,const NIC::MAC &b) {
 }
 
 static inline std::ostream &operator<<(std::ostream &os,const NIC::MAC &a) {
-	return os << std::hex
-		<< std::setfill('0') << std::setw(2) << a.bytes()[0] << ":"
-		<< std::setfill('0') << std::setw(2) << a.bytes()[1] << ":"
-		<< std::setfill('0') << std::setw(2) << a.bytes()[2] << ":"
-		<< std::setfill('0') << std::setw(2) << a.bytes()[3] << ":"
-		<< std::setfill('0') << std::setw(2) << a.bytes()[4] << ":"
-		<< std::setfill('0') << std::setw(2) << a.bytes()[5]
-		<< std::dec;
+	return os << std::hex << std::setfill('0')
+		<< std::setw(2) << a.bytes()[0] << ":"
+		<< std::setw(2) << a.bytes()[1] << ":"
+		<< std::setw(2) << a.bytes()[2] << ":"
+		<< std::setw(2) << a.bytes()[3] << ":"
+		<< std::setw(2) << a.bytes()[4] << ":"
+		<< std::setw(2) << a.bytes()[5]
+		<< std::setfill(' ') << std::dec;
+}
+inline std::istream &operator>>(std::istream &is,NIC::MAC &a) {
+	is >> std::hex;
+	for(size_t i = 0; i < NIC::MAC::LEN; ++i) {
+		unsigned val;
+		is >> val;
+		if(i < NIC::MAC::LEN - 1) {
+			// skip ':'
+			is.get();
+		}
+		a._bytes[i] = val;
+	}
+	return is >> std::dec;
 }
 
 }

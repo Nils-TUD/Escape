@@ -17,42 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
-#include <esc/messages.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "common.h"
-#include "ipv4addr.h"
+#include "linkmng.h"
 
-class NICDevice : public ipc::NIC {
-public:
-	explicit NICDevice(const char *path,const IPv4Addr &addr)
-		: ipc::NIC(path,IO_MSGS | IO_READ | IO_WRITE), _mac(getMAC()), _ip(addr),
-		  _subnetmask(255,255,255,0) {
-	}
-
-	const ipc::NIC::MAC &mac() const {
-		return _mac;
-	}
-	const IPv4Addr &ip() const {
-		return _ip;
-	}
-	const IPv4Addr &subnetMask() const {
-		return _subnetmask;
-	}
-
-	ssize_t read(void *buffer,size_t size) {
-		return ::read(fd(),buffer,size);
-	}
-	ssize_t write(const void *buffer,size_t size) {
-		return ::write(fd(),buffer,size);
-	}
-
-private:
-	ipc::NIC::MAC _mac;
-	IPv4Addr _ip;
-	IPv4Addr _subnetmask;
-};
+std::vector<Link*> LinkMng::_links;

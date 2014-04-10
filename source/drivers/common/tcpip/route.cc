@@ -23,19 +23,12 @@
 
 std::vector<Route*> Route::_table;
 
-const Route *Route::find(const IPv4Addr &ip) {
-	for(auto it = _table.begin(); it != _table.end(); ++it) {
-		if(((*it)->flags & FL_UP) && (*it)->dest.sameNetwork(ip,(*it)->netmask))
-			return *it;
-	}
-	return NULL;
-}
-
-int Route::insert(const IPv4Addr &dest,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NICDevice *nic) {
+int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
+		const ipc::Net::IPv4Addr &gw,uint flags,Link *link) {
 	// if we should use the gateway, it has to be a valid host
-	if((flags & FL_USE_GW) && !gw.isHost(nm))
+	if((flags & ipc::Net::FL_USE_GW) && !gw.isHost(nm))
 		return -EINVAL;
-	if(!nm.isNetmask() || !nic)
+	if(!nm.isNetmask() || !link)
 		return -EINVAL;
 
 	auto it = _table.begin();
@@ -43,6 +36,44 @@ int Route::insert(const IPv4Addr &dest,const IPv4Addr &nm,const IPv4Addr &gw,uin
 		if(nm >= (*it)->netmask)
 			break;
 	}
-	_table.insert(it,new Route(dest,nm,gw,flags,nic));
+	_table.insert(it,new Route(dest,nm,gw,flags,link));
 	return 0;
+}
+
+const Route *Route::find(const ipc::Net::IPv4Addr &ip) {
+	for(auto it = _table.begin(); it != _table.end(); ++it) {
+		if(((*it)->flags & ipc::Net::FL_UP) && (*it)->dest.sameNetwork(ip,(*it)->netmask))
+			return *it;
+	}
+	return NULL;
+}
+
+int Route::setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status) {
+	for(auto it = _table.begin(); it != _table.end(); ++it) {
+		if((*it)->dest == ip) {
+			if(status == ipc::Net::DOWN)
+				(*it)->flags &= ~ipc::Net::FL_UP;
+			else
+				(*it)->flags |= ipc::Net::FL_UP;
+			return 0;
+		}
+	}
+	return -ENOENT;
+}
+
+int Route::remove(const ipc::Net::IPv4Addr &ip) {
+	for(auto it = _table.begin(); it != _table.end(); ++it) {
+		if((*it)->dest == ip) {
+			_table.erase(it);
+			return 0;
+		}
+	}
+	return -ENOENT;
+}
+
+void Route::print(std::ostream &os) {
+	for(auto it = _table.begin(); it != _table.end(); ++it) {
+		os << (*it)->dest << " " << (*it)->gateway << " " << (*it)->netmask << " ";
+		os << (*it)->flags << " " << (*it)->link->name() << "\n";
+	}
 }

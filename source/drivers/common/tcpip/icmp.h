@@ -23,8 +23,7 @@
 #include <esc/endian.h>
 
 #include "common.h"
-#include "ipv4addr.h"
-#include "nic.h"
+#include "link.h"
 #include "arp.h"
 
 class ICMP {
@@ -42,14 +41,14 @@ public:
 		return sizeof(ICMP);
 	}
 
-	static ssize_t sendEcho(const IPv4Addr &ip,const void *payload,size_t nbytes,
+	static ssize_t sendEcho(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 			uint16_t id,uint16_t seq) {
 		return send(ip,payload,nbytes,0,CMD_ECHO,id,seq);
 	}
-	static ssize_t receive(NICDevice &nic,Ethernet<IPv4<ICMP>> *packet,size_t sz);
+	static ssize_t receive(Link &link,Ethernet<IPv4<ICMP>> *packet,size_t sz);
 
 private:
-	static ssize_t send(const IPv4Addr &ip,const void *payload,size_t nbytes,
+	static ssize_t send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 		uint8_t code,uint8_t type,uint16_t id,uint16_t seq);
 	static ssize_t handleEcho(Ethernet<IPv4<ICMP>> *packet,size_t sz);
 

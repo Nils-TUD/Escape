@@ -23,7 +23,7 @@
 #include "icmp.h"
 #include "ipv4.h"
 
-ssize_t ICMP::send(const IPv4Addr &ip,const void *payload,size_t nbytes,
+ssize_t ICMP::send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 		uint8_t code,uint8_t type,uint16_t id,uint16_t seq) {
 	if(nbytes > 256)
 		return -EINVAL;
@@ -56,7 +56,7 @@ ssize_t ICMP::handleEcho(Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 		be16tocpu(icmp->identifier),be16tocpu(icmp->sequence));
 }
 
-ssize_t ICMP::receive(NICDevice&,Ethernet<IPv4<ICMP>> *packet,size_t sz) {
+ssize_t ICMP::receive(Link&,Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 	const ICMP *icmp = &packet->payload.payload;
 	switch(icmp->type) {
 		case CMD_ECHO_REPLY:

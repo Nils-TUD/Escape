@@ -23,9 +23,8 @@
 #include <esc/endian.h>
 
 #include "common.h"
-#include "ipv4addr.h"
 #include "arp.h"
-#include "nic.h"
+#include "link.h"
 #include "icmp.h"
 #include "route.h"
 #include "udp.h"
@@ -46,15 +45,16 @@ public:
 		return sizeof(IPv4) - sizeof(payload) + payload.size();
 	}
 
-	static ssize_t send(Ethernet<IPv4<T>> *pkt,size_t sz,const IPv4Addr &ip,uint8_t protocol) {
+	static ssize_t send(Ethernet<IPv4<T>> *pkt,size_t sz,
+			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
 		const Route *route = Route::find(ip);
 		if(!route)
 			return -ENETUNREACH;
 		return sendOver(route,pkt,sz,ip,protocol);
 	}
 
-	static ssize_t sendOver(const Route *route,Ethernet<IPv4<T>> *pkt,size_t sz,const IPv4Addr &ip,
-			uint8_t protocol) {
+	static ssize_t sendOver(const Route *route,Ethernet<IPv4<T>> *pkt,size_t sz,
+			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
 		IPv4<T> &h = pkt->payload;
 		h.versionSize = (4 << 4) | 5;
 		h.typeOfService = 0;
@@ -63,29 +63,29 @@ public:
 		h.fragOffset = cputobe16(DONT_FRAGMENT);
 		h.timeToLive = 64;
 		h.protocol = protocol;
-		h.src = route->nic->ip();
+		h.src = route->link->ip();
 		h.dst = ip;
 		h.checksum = 0;
 		h.checksum = genChecksum(reinterpret_cast<uint16_t*>(&h),sizeof(IPv4) - sizeof(h.payload));
 
-		if(route->flags & Route::FL_USE_GW)
-			return ARP::send(*route->nic,pkt,sz,route->gateway,ETHER_TYPE);
-		return ARP::send(*route->nic,pkt,sz,ip,ETHER_TYPE);
+		if(route->flags & ipc::Net::FL_USE_GW)
+			return ARP::send(*route->link,pkt,sz,route->gateway,ETHER_TYPE);
+		return ARP::send(*route->link,pkt,sz,ip,ETHER_TYPE);
 	}
 
-	static ssize_t receive(NICDevice &nic,Ethernet<IPv4> *packet,size_t sz) {
+	static ssize_t receive(Link &link,Ethernet<IPv4> *packet,size_t sz) {
 		switch(packet->payload.protocol) {
 			case ICMP::IP_PROTO: {
 				Ethernet<IPv4<ICMP>> *icmpPkt = reinterpret_cast<Ethernet<IPv4<ICMP>>*>(packet);
 				// TODO if(sz >= icmpPkt->size())
-				return ICMP::receive(nic,icmpPkt,sz);
+				return ICMP::receive(link,icmpPkt,sz);
 			}
 			break;
 
 			case UDP::IP_PROTO: {
 				Ethernet<IPv4<UDP>> *udpPkt = reinterpret_cast<Ethernet<IPv4<UDP>>*>(packet);
 				// TODO if(sz >= udpPkt->size())
-				return UDP::receive(nic,udpPkt,sz);
+				return UDP::receive(link,udpPkt,sz);
 			}
 			break;
 		}
@@ -115,8 +115,8 @@ public:
 	uint8_t timeToLive;
 	uint8_t protocol;
 	uint16_t checksum;
-	IPv4Addr src;
-	IPv4Addr dst;
+	ipc::Net::IPv4Addr src;
+	ipc::Net::IPv4Addr dst;
 	T payload;
 } A_PACKED;
 

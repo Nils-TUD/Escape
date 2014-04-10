@@ -90,8 +90,11 @@ private:
 	std::list<Packet> _packets;
 };
 
-int main(void) {
-	LoDevice dev("/dev/lo",0777);
+int main(int argc,char **argv) {
+	if(argc != 2)
+		error("Usage: %s <device>\n",argv[0]);
+
+	LoDevice dev(argv[1],0777);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

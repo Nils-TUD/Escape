@@ -22,28 +22,28 @@
 #include <esc/common.h>
 #include <vector>
 
-#include "ipv4addr.h"
-#include "nic.h"
+#include "common.h"
+#include "link.h"
 
 class Route {
 public:
-	enum {
-		FL_USE_GW	= 0x1,
-		FL_UP		= 0x2,
-	};
-
-	explicit Route(const IPv4Addr &dst,const IPv4Addr &nm,const IPv4Addr &gw,uint fl,NICDevice *n)
-		: dest(dst), netmask(nm), gateway(gw), flags(fl), nic(n) {
+	explicit Route(const ipc::Net::IPv4Addr &dst,const ipc::Net::IPv4Addr &nm,
+			const ipc::Net::IPv4Addr &gw,uint fl,Link *l)
+		: dest(dst), netmask(nm), gateway(gw), flags(fl), link(l) {
 	}
 
-	static const Route *find(const IPv4Addr &ip);
-	static int insert(const IPv4Addr &ip,const IPv4Addr &nm,const IPv4Addr &gw,uint flags,NICDevice *nic);
+	static int insert(const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,
+		const ipc::Net::IPv4Addr &gw,uint flags,Link *link);
+	static const Route *find(const ipc::Net::IPv4Addr &ip);
+	static int setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status);
+	static int remove(const ipc::Net::IPv4Addr &ip);
+	static void print(std::ostream &os);
 
-	IPv4Addr dest;
-	IPv4Addr netmask;
-	IPv4Addr gateway;
+	ipc::Net::IPv4Addr dest;
+	ipc::Net::IPv4Addr netmask;
+	ipc::Net::IPv4Addr gateway;
 	uint flags;
-	NICDevice *nic;
+	Link *link;
 
 private:
 	static std::vector<Route*> _table;

@@ -27,8 +27,8 @@
 PortMng<PRIVATE_PORTS_CNT> UDPSocket::_ports(PRIVATE_PORTS);
 UDP::socket_map UDP::_socks;
 
-UDPSocket::UDPSocket(int fd,const IPv4Addr &ip,int port)
-	: Socket(fd), _dstIp(ip), _srcPort(0), _dstPort(port) {
+UDPSocket::UDPSocket(int f,const ipc::Net::IPv4Addr &ip,int port)
+	: Socket(f), _dstIp(ip), _srcPort(0), _dstPort(port) {
 }
 
 UDPSocket::~UDPSocket() {
@@ -40,7 +40,7 @@ UDPSocket::~UDPSocket() {
 }
 
 ssize_t UDPSocket::sendto(const sSockAddr *sa,const void *buffer,size_t size) {
-	IPv4Addr addr = sa ? IPv4Addr(sa->d.ipv4.addr) : _dstIp;
+	ipc::Net::IPv4Addr addr = sa ? ipc::Net::IPv4Addr(sa->d.ipv4.addr) : _dstIp;
 	port_t port = sa ? sa->d.ipv4.port : _dstPort;
 
 	// do we still need a local port?
@@ -61,7 +61,7 @@ ssize_t UDPSocket::receive(void *buffer,size_t size) {
 	return Socket::receive(buffer,size);
 }
 
-ssize_t UDP::send(const IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,size_t nbytes) {
+ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,size_t nbytes) {
 	const Route *route = Route::find(ip);
 	if(!route)
 		return -ENETUNREACH;
@@ -78,7 +78,7 @@ ssize_t UDP::send(const IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,si
 	memcpy(udp + 1,data,nbytes);
 
 	udp->checksum = 0;
-	udp->checksum = genChecksum(route->nic->ip(),ip,
+	udp->checksum = genChecksum(route->link->ip(),ip,
 		reinterpret_cast<uint16_t*>(udp),sizeof(UDP) + nbytes);
 
 	ssize_t res = IPv4<UDP>::sendOver(route,pkt,total,ip,IP_PROTO);
@@ -86,7 +86,7 @@ ssize_t UDP::send(const IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,si
 	return res;
 }
 
-ssize_t UDP::receive(NICDevice&,Ethernet<IPv4<UDP>> *packet,size_t) {
+ssize_t UDP::receive(Link&,Ethernet<IPv4<UDP>> *packet,size_t) {
 	const UDP *udp = &packet->payload.payload;
 	socket_map::iterator it = _socks.find(be16tocpu(udp->dstPort));
 	if(it != _socks.end())
@@ -94,10 +94,11 @@ ssize_t UDP::receive(NICDevice&,Ethernet<IPv4<UDP>> *packet,size_t) {
 	return 0;
 }
 
-uint16_t UDP::genChecksum(const IPv4Addr &src,const IPv4Addr &dst,const uint16_t *header,size_t sz) {
+uint16_t UDP::genChecksum(const ipc::Net::IPv4Addr &src,const ipc::Net::IPv4Addr &dst,
+		const uint16_t *header,size_t sz) {
 	struct {
-		IPv4Addr src;
-		IPv4Addr dst;
+		ipc::Net::IPv4Addr src;
+		ipc::Net::IPv4Addr dst;
 		uint16_t proto;
 		uint16_t dataSize;
 	} A_PACKED pseudoHeader = {

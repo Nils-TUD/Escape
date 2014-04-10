@@ -25,24 +25,23 @@
 #include <map>
 
 #include "common.h"
-#include "ipv4addr.h"
-#include "nic.h"
+#include "link.h"
 #include "socket.h"
 #include "portmng.h"
 
 class UDPSocket : public Socket {
 public:
-	explicit UDPSocket(int fd) : Socket(fd) {
+	explicit UDPSocket(int f) : Socket(f) {
 		assert(false);
 	}
-	explicit UDPSocket(int fd,const IPv4Addr &ip,int port);
+	explicit UDPSocket(int f,const ipc::Net::IPv4Addr &ip,port_t port);
 	virtual ~UDPSocket();
 
 	virtual ssize_t sendto(const sSockAddr *sa,const void *buffer,size_t size);
 	virtual ssize_t receive(void *buffer,size_t size);
 
 private:
-	IPv4Addr _dstIp;
+	ipc::Net::IPv4Addr _dstIp;
 	port_t _srcPort;
 	port_t _dstPort;
 	static PortMng<PRIVATE_PORTS_CNT> _ports;
@@ -62,8 +61,9 @@ public:
 		return sizeof(UDP);
 	}
 
-	static ssize_t send(const IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,size_t nbytes);
-	static ssize_t receive(NICDevice &nic,Ethernet<IPv4<UDP>> *packet,size_t sz);
+	static ssize_t send(const ipc::Net::IPv4Addr &ip,port_t srcp,port_t dstp,
+		const void *data,size_t nbytes);
+	static ssize_t receive(Link &link,Ethernet<IPv4<UDP>> *packet,size_t sz);
 
 private:
 	static ssize_t addSocket(UDPSocket *sock,port_t port) {
@@ -78,7 +78,8 @@ private:
 		if(it != _socks.end() && it->second == sock)
 			_socks.erase(it);
 	}
-	static uint16_t genChecksum(const IPv4Addr &src,const IPv4Addr &dst,const uint16_t *header,size_t sz);
+	static uint16_t genChecksum(const ipc::Net::IPv4Addr &src,const ipc::Net::IPv4Addr &dst,
+		const uint16_t *header,size_t sz);
 
 public:
     port_t srcPort;

@@ -28,7 +28,7 @@
 ARP::pending_type ARP::_pending;
 ARP::cache_type ARP::_cache;
 
-int ARP::createPending(const void *packet,size_t size,const IPv4Addr &ip,uint16_t type) {
+int ARP::createPending(const void *packet,size_t size,const ipc::Net::IPv4Addr &ip,uint16_t type) {
 	Packet pkt;
 	pkt.dest = ip;
 	pkt.size = size;
@@ -41,11 +41,11 @@ int ARP::createPending(const void *packet,size_t size,const IPv4Addr &ip,uint16_
 	return 0;
 }
 
-void ARP::sendPending(NICDevice &nic) {
+void ARP::sendPending(Link &link) {
 	for(auto it = _pending.begin(); it < _pending.end(); ) {
 		cache_type::iterator entry = _cache.find(it->dest);
 		if(entry != _cache.end()) {
-			it->pkt->send(nic,entry->second,it->size,it->type);
+			it->pkt->send(link,entry->second,it->size,it->type);
 			_pending.erase(it);
 			free(it->pkt);
 		}
@@ -54,27 +54,27 @@ void ARP::sendPending(NICDevice &nic) {
 	}
 }
 
-ssize_t ARP::requestMAC(NICDevice &nic,const IPv4Addr &ip) {
+ssize_t ARP::requestMAC(Link &link,const ipc::Net::IPv4Addr &ip) {
 	Ethernet<ARP> pkt;
 	ARP *arp = &pkt.payload;
 
 	arp->hwAddrFmt = cputobe16(HW_ADDR_ETHER);
 	arp->hwAddrSize = sizeof(ipc::NIC::MAC);
 	arp->protoAddrFmt = cputobe16(IPv4<>::ETHER_TYPE);
-	arp->protoAddrSize = IPv4Addr::LEN;
+	arp->protoAddrSize = ipc::Net::IPv4Addr::LEN;
 	arp->cmd = cputobe16(CMD_REQUEST);
 
 	arp->hwTarget = ipc::NIC::MAC();
 	arp->ipTarget = ip;
-	arp->hwSender = nic.mac();
-	arp->ipSender = nic.ip();
+	arp->hwSender = link.mac();
+	arp->ipSender = link.ip();
 
-	return pkt.send(nic,ipc::NIC::MAC::broadcast(),pkt.size(),ARP::ETHER_TYPE);
+	return pkt.send(link,ipc::NIC::MAC::broadcast(),pkt.size(),ARP::ETHER_TYPE);
 }
 
-ssize_t ARP::handleRequest(NICDevice &nic,const ARP *packet) {
+ssize_t ARP::handleRequest(Link &link,const ARP *packet) {
 	// not a valid host in our network?
-	if(!packet->ipSender.isHost(nic.subnetMask()))
+	if(!packet->ipSender.isHost(link.subnetMask()))
 		return -EINVAL;
 	// TODO multicast is invalid too
 	if(packet->hwSender == ipc::NIC::MAC::broadcast())
@@ -84,7 +84,7 @@ ssize_t ARP::handleRequest(NICDevice &nic,const ARP *packet) {
 	_cache[packet->ipSender] = packet->hwSender;
 
 	// not for us?
-	if(packet->ipTarget != nic.ip())
+	if(packet->ipTarget != link.ip())
 		return 0;
 
 	// reply our MAC address to sender
@@ -94,28 +94,33 @@ ssize_t ARP::handleRequest(NICDevice &nic,const ARP *packet) {
 	arp->hwAddrFmt = cputobe16(HW_ADDR_ETHER);
 	arp->hwAddrSize = sizeof(ipc::NIC::MAC);
 	arp->protoAddrFmt = cputobe16(IPv4<>::ETHER_TYPE);
-	arp->protoAddrSize = IPv4Addr::LEN;
+	arp->protoAddrSize = ipc::Net::IPv4Addr::LEN;
 	arp->cmd = cputobe16(CMD_REPLY);
 
 	arp->hwTarget = packet->hwSender;
 	arp->ipTarget = packet->ipSender;
-	arp->hwSender = nic.mac();
-	arp->ipSender = nic.ip();
+	arp->hwSender = link.mac();
+	arp->ipSender = link.ip();
 
-	return pkt.send(nic,packet->hwSender,pkt.size(),ARP::ETHER_TYPE);
+	return pkt.send(link,packet->hwSender,pkt.size(),ARP::ETHER_TYPE);
 }
 
-ssize_t ARP::receive(NICDevice &nic,Ethernet<ARP> *packet,size_t) {
+ssize_t ARP::receive(Link &link,Ethernet<ARP> *packet,size_t) {
 	const ARP &arp = packet->payload;
 	switch(be16tocpu(arp.cmd)) {
 		case CMD_REQUEST:
-			return handleRequest(nic,&arp);
+			return handleRequest(link,&arp);
 
 		case CMD_REPLY:
 			std::cout << "Got MAC " << arp.hwSender << " for IP " << arp.ipSender << std::endl;
 			_cache[arp.ipSender] = arp.hwSender;
-			sendPending(nic);
+			sendPending(link);
 			return 0;
 	}
 	return 0;
+}
+
+void ARP::print(std::ostream &os) {
+	for(auto it = _cache.begin(); it != _cache.end(); ++it)
+		os << it->first << " " << it->second << "\n";
 }

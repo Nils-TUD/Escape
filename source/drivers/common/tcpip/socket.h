@@ -30,21 +30,20 @@
 #include <list>
 
 #include "common.h"
-#include "ipv4addr.h"
 
 class Socket : public ipc::Client {
 public:
 	struct Packet {
 		const void *data;
 		size_t size;
-		IPv4Addr ip;
+		ipc::Net::IPv4Addr ip;
 
-		explicit Packet(const void *_data,size_t _size,const IPv4Addr &_ip)
+		explicit Packet(const void *_data,size_t _size,const ipc::Net::IPv4Addr &_ip)
 			: data(_data), size(_size), ip(_ip) {
 		}
 	};
 
-	explicit Socket(int fd) : ipc::Client(fd), _pending() {
+	explicit Socket(int f) : ipc::Client(f), _pending() {
 	}
 	virtual ~Socket() {
 	}
@@ -67,7 +66,7 @@ public:
 		return 0;
 	}
 
-	void push(const IPv4Addr &ip,const void *data,size_t size) {
+	void push(const ipc::Net::IPv4Addr &ip,const void *data,size_t size) {
 		if(_pending.count >= size) {
 			reply(ip,_pending.data,data,size);
 			_pending.count = 0;
@@ -77,7 +76,7 @@ public:
 	}
 
 private:
-	void reply(const IPv4Addr &,void *dst,const void *src,size_t size) {
+	void reply(const ipc::Net::IPv4Addr &,void *dst,const void *src,size_t size) {
 		if(dst != NULL)
 			memcpy(dst,src,size);
 

@@ -25,8 +25,7 @@
 #include <map>
 
 #include "common.h"
-#include "ipv4addr.h"
-#include "nic.h"
+#include "link.h"
 
 class ARP {
 	enum {
@@ -39,14 +38,14 @@ class ARP {
 	};
 
 	struct Packet {
-		IPv4Addr dest;
+		ipc::Net::IPv4Addr dest;
 		Ethernet<> *pkt;
 		uint16_t type;
 		size_t size;
 	};
 
 	typedef std::vector<Packet> pending_type;
-	typedef std::map<IPv4Addr,ipc::NIC::MAC> cache_type;
+	typedef std::map<ipc::Net::IPv4Addr,ipc::NIC::MAC> cache_type;
 
 public:
 	enum {
@@ -58,7 +57,8 @@ public:
 	}
 
 	template<class T>
-	static ssize_t send(NICDevice &nic,Ethernet<T> *packet,size_t size,const IPv4Addr &ip,uint16_t type) {
+	static ssize_t send(Link &link,Ethernet<T> *packet,size_t size,
+			const ipc::Net::IPv4Addr &ip,uint16_t type) {
 		cache_type::iterator it = _cache.find(ip);
 
 		// if we don't know the MAC address yet, start an ARP request and add packet to pending list
@@ -66,20 +66,25 @@ public:
 			int res = createPending(packet,size,ip,type);
 			if(res < 0)
 				return res;
-			return requestMAC(nic,ip);
+			return requestMAC(link,ip);
 		}
 
 		// otherwise just send the packet
-		return packet->send(nic,it->second,size,type);
+		return packet->send(link,it->second,size,type);
 	}
-	static ssize_t receive(NICDevice &nic,Ethernet<ARP> *packet,size_t size);
+	static ssize_t receive(Link &link,Ethernet<ARP> *packet,size_t size);
 
-	static ssize_t requestMAC(NICDevice &nic,const IPv4Addr &ip);
+	static int remove(const ipc::Net::IPv4Addr &ip) {
+		return _cache.erase(ip) ? 0 : -ENOENT;
+	}
+	static ssize_t requestMAC(Link &link,const ipc::Net::IPv4Addr &ip);
+	static void print(std::ostream &os);
 
 private:
-	static int createPending(const void *packet,size_t size,const IPv4Addr &ip,uint16_t type);
-	static void sendPending(NICDevice &nic);
-	static ssize_t handleRequest(NICDevice &nic,const ARP *packet);
+	static int createPending(const void *packet,size_t size,
+		const ipc::Net::IPv4Addr &ip,uint16_t type);
+	static void sendPending(Link &link);
+	static ssize_t handleRequest(Link &link,const ARP *packet);
 
 public:
 	uint16_t hwAddrFmt;
@@ -89,9 +94,9 @@ public:
 	uint16_t cmd;
 
 	ipc::NIC::MAC hwSender;
-	IPv4Addr ipSender;
+	ipc::Net::IPv4Addr ipSender;
 	ipc::NIC::MAC hwTarget;
-	IPv4Addr ipTarget;
+	ipc::Net::IPv4Addr ipTarget;
 
 private:
 	static pending_type _pending;

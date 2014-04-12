@@ -28,6 +28,8 @@
 class RawEtherSocket : public Socket {
 public:
 	explicit RawEtherSocket(int f,int proto) : Socket(f,proto) {
+		if(proto != ipc::Socket::PROTO_IP && proto != ipc::Socket::PROTO_ANY)
+			VTHROWE("A raw ethernet socket doesn't support protocol " << proto,-ENOTSUP);
 	}
 	virtual ~RawEtherSocket() {
 		sockets.remove(this);

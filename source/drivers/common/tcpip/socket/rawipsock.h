@@ -28,6 +28,10 @@
 class RawIPSocket : public Socket {
 public:
 	explicit RawIPSocket(int f,int proto) : Socket(f,proto) {
+		if(proto != ipc::Socket::PROTO_ICMP && proto != ipc::Socket::PROTO_TCP &&
+				proto != ipc::Socket::PROTO_UDP && proto != ipc::Socket::PROTO_ANY) {
+			VTHROWE("A raw IP socket doesn't support protocol " << proto,-ENOTSUP);
+		}
 	}
 	virtual ~RawIPSocket() {
 		sockets.remove(this);

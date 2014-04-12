@@ -52,15 +52,17 @@ ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 	return res;
 }
 
-ssize_t UDP::receive(Link&,Ethernet<IPv4<UDP>> *packet,size_t) {
-	const UDP *udp = &packet->payload.payload;
+ssize_t UDP::receive(Link&,const Packet &packet) {
+	const Ethernet<IPv4<UDP>> *pkt = packet.data<const Ethernet<IPv4<UDP>>*>();
+	const UDP *udp = &pkt->payload.payload;
 	socket_map::iterator it = _socks.find(be16tocpu(udp->dstPort));
 	if(it != _socks.end()) {
 		ipc::Socket::Addr sa;
 		sa.family = ipc::Socket::AF_INET;
-		sa.d.ipv4.addr = packet->payload.src.value();
+		sa.d.ipv4.addr = pkt->payload.src.value();
 		sa.d.ipv4.port = be16tocpu(udp->srcPort);
-		it->second->push(sa,udp + 1,be16tocpu(udp->dataSize) - sizeof(UDP));
+		size_t offset = reinterpret_cast<const uint8_t*>(udp + 1) - packet.data<uint8_t*>();
+		it->second->push(sa,packet,offset);
 	}
 	return 0;
 }

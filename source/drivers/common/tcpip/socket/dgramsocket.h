@@ -20,32 +20,25 @@
 #pragma once
 
 #include <esc/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
 
-struct Empty {
-	size_t size() const {
-		return 0;
+#include "../common.h"
+#include "../portmng.h"
+#include "socket.h"
+
+class DGramSocket : public Socket {
+public:
+	explicit DGramSocket(int f,int proto) : Socket(f,proto), _localIp(), _localPort() {
+		if(proto != ipc::Socket::PROTO_UDP)
+			VTHROWE("Protocol " << proto << " is not supported by datagram socket",-ENOTSUP);
 	}
+	virtual ~DGramSocket();
+
+	virtual int bind(const ipc::Socket::Addr *sa);
+	virtual ssize_t sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size);
+	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size);
+
+private:
+	ipc::Net::IPv4Addr _localIp;
+	ipc::port_t _localPort;
+	static PortMng<PRIVATE_PORTS_CNT> _ports;
 };
-
-template<class T = Empty>
-class Ethernet;
-template<class T = Empty>
-class IPv4;
-
-enum {
-	ETHER_HEAD_SIZE		= 6 + 6 + 2
-};
-
-struct ReadRequest {
-	void *data;
-	size_t count;
-	bool needsSrc;
-};
-
-static const uint16_t WELL_KNOWN_PORTS		= 0;
-static const uint16_t REGISTERED_PORTS		= 1024;
-static const uint16_t PRIVATE_PORTS			= 49152;
-static const uint16_t PRIVATE_PORTS_CNT		= 65536 - PRIVATE_PORTS;

@@ -25,7 +25,7 @@
 
 ssize_t ICMP::send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 		uint8_t code,uint8_t type,uint16_t id,uint16_t seq) {
-	if(nbytes > 256)
+	if(nbytes > MAX_ECHO_PAYLOAD_SIZE)
 		return -EINVAL;
 
 	const size_t total = Ethernet<IPv4<ICMP>>().size() + nbytes;
@@ -41,14 +41,14 @@ ssize_t ICMP::send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbyte
 	memcpy(icmp + 1,payload,nbytes);
 
 	icmp->checksum = 0;
-	icmp->checksum = IPv4<ICMP>::genChecksum(reinterpret_cast<uint16_t*>(icmp),icmp->size() + nbytes);
+	icmp->checksum = ipc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),icmp->size() + nbytes);
 
 	ssize_t res = IPv4<ICMP>::send(pkt,total,ip,IP_PROTO);
 	free(pkt);
 	return res;
 }
 
-ssize_t ICMP::handleEcho(Ethernet<IPv4<ICMP>> *packet,size_t sz) {
+ssize_t ICMP::handleEcho(const Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 	const ICMP *icmp = &packet->payload.payload;
 	const char *payload = reinterpret_cast<const char*>(icmp + 1);
 	size_t plsz = reinterpret_cast<const char*>(packet) + sz - payload;
@@ -56,14 +56,15 @@ ssize_t ICMP::handleEcho(Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 		be16tocpu(icmp->identifier),be16tocpu(icmp->sequence));
 }
 
-ssize_t ICMP::receive(Link&,Ethernet<IPv4<ICMP>> *packet,size_t sz) {
-	const ICMP *icmp = &packet->payload.payload;
+ssize_t ICMP::receive(Link&,const Packet &packet) {
+	const Ethernet<IPv4<ICMP>> *pkt = packet.data<const Ethernet<IPv4<ICMP>>*>();
+	const ICMP *icmp = &pkt->payload.payload;
 	switch(icmp->type) {
 		case CMD_ECHO_REPLY:
-			break;
+			return 0;
 
 		case CMD_ECHO:
-			return handleEcho(packet,sz);
+			return handleEcho(pkt,packet.size());
 	}
 	return -ENOTSUP;
 }

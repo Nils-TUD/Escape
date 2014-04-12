@@ -22,23 +22,25 @@
 #include <esc/common.h>
 
 #include "../common.h"
-#include "../portmng.h"
 #include "socket.h"
+#include "rawsocketlist.h"
 
-class UDPSocket : public Socket {
+class RawIPSocket : public Socket {
 public:
-	explicit UDPSocket(int f,int type) : Socket(f), _localIp(), _localPort() {
-		if(type != ipc::Socket::SOCK_DGRAM)
-			VTHROWE("Socket type " << type << " is not supported",-ENOTSUP);
+	explicit RawIPSocket(int f,int proto) : Socket(f,proto) {
 	}
-	virtual ~UDPSocket();
+	virtual ~RawIPSocket() {
+		sockets.remove(this);
+	}
 
-	virtual int bind(const ipc::Socket::Addr *sa);
+	virtual int bind(const ipc::Socket::Addr *) {
+		return sockets.add(this);
+	}
 	virtual ssize_t sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size);
-	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size);
+	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size) {
+		sockets.add(this);
+		return Socket::recvfrom(needsSockAddr,buffer,size);
+	}
 
-private:
-	ipc::Net::IPv4Addr _localIp;
-	ipc::port_t _localPort;
-	static PortMng<PRIVATE_PORTS_CNT> _ports;
+	static RawSocketList sockets;
 };

@@ -26,6 +26,7 @@
 
 #include "../common.h"
 #include "../link.h"
+#include "../packet.h"
 
 class ARP {
 	enum {
@@ -37,14 +38,14 @@ class ARP {
 		CMD_REPLY		= 2,
 	};
 
-	struct Packet {
+	struct PendingPacket {
 		ipc::Net::IPv4Addr dest;
 		Ethernet<> *pkt;
 		uint16_t type;
 		size_t size;
 	};
 
-	typedef std::vector<Packet> pending_type;
+	typedef std::vector<PendingPacket> pending_type;
 	typedef std::map<ipc::Net::IPv4Addr,ipc::NIC::MAC> cache_type;
 
 public:
@@ -56,29 +57,9 @@ public:
 		return sizeof(ARP);
 	}
 
-	template<class T>
-	static ssize_t send(Link &link,Ethernet<T> *packet,size_t size,
-			const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type) {
-		ipc::NIC::MAC mac;
-		if(ip == ip.getBroadcast(nm))
-			mac = ipc::NIC::MAC::broadcast();
-		else {
-			cache_type::iterator it = _cache.find(ip);
-
-			// if we don't know the MAC address yet, start an ARP request and add packet to pending list
-			if(it == _cache.end()) {
-				int res = createPending(packet,size,ip,type);
-				if(res < 0)
-					return res;
-				return requestMAC(link,ip);
-			}
-			mac = it->second;
-		}
-
-		// otherwise just send the packet
-		return packet->send(link,mac,size,type);
-	}
-	static ssize_t receive(Link &link,Ethernet<ARP> *packet,size_t size);
+	static ssize_t send(Link &link,Ethernet<> *packet,size_t size,
+			const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type);
+	static ssize_t receive(Link &link,const Packet &packet);
 
 	static int remove(const ipc::Net::IPv4Addr &ip) {
 		return _cache.erase(ip) ? 0 : -ENOENT;

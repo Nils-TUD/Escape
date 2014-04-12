@@ -32,9 +32,13 @@
 #include "proto/arp.h"
 #include "proto/icmp.h"
 #include "proto/udp.h"
+#include "socket/dgramsocket.h"
+#include "socket/rawipsock.h"
+#include "socket/rawethersock.h"
 #include "link.h"
 #include "linkmng.h"
 #include "route.h"
+#include "packet.h"
 
 static std::mutex mutex;
 
@@ -59,19 +63,19 @@ public:
 		ipc::FileOpen::Request r(buffer,sizeof(buffer));
 		is >> r;
 
-		int domain, type, proto;
+		int type = 0, proto = 0;
 		std::istringstream sip(r.path.str());
-		sip >> domain >> type >> proto;
+		sip >> type >> proto;
 
 		int res = 0;
-		if(domain != ipc::Socket::AF_INET)
+		if(type == ipc::Socket::SOCK_DGRAM)
+			add(is.fd(),new DGramSocket(is.fd(),proto));
+		else if(type == ipc::Socket::SOCK_RAW_ETHER)
+			add(is.fd(),new RawEtherSocket(is.fd(),proto));
+		else if(type == ipc::Socket::SOCK_RAW_IP)
+			add(is.fd(),new RawIPSocket(is.fd(),proto));
+		else
 			res = -ENOTSUP;
-		else {
-			if(proto == ipc::Socket::PROTO_UDP)
-				add(is.fd(),new UDPSocket(is.fd(),type));
-			else
-				res = -ENOTSUP;
-		}
 
 		is << ipc::FileOpen::Response(res) << ipc::Send(ipc::FileOpen::Response::MID);
 	}
@@ -81,7 +85,11 @@ public:
 		ipc::Socket::Addr sa;
 		is >> sa;
 
-		int res = sock->bind(&sa);
+		int res;
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			res = sock->bind(&sa);
+		}
 		is << res << ipc::Send(MSG_DEF_RESPONSE);
 	}
 
@@ -166,6 +174,7 @@ public:
 		set(MSG_NET_ROUTE_ADD,std::make_memfun(this,&NetDevice::routeAdd));
 		set(MSG_NET_ROUTE_REM,std::make_memfun(this,&NetDevice::routeRem));
 		set(MSG_NET_ROUTE_CONFIG,std::make_memfun(this,&NetDevice::routeConfig));
+		set(MSG_NET_ROUTE_GET,std::make_memfun(this,&NetDevice::routeGet));
 		set(MSG_NET_ARP_ADD,std::make_memfun(this,&NetDevice::arpAdd));
 		set(MSG_NET_ARP_REM,std::make_memfun(this,&NetDevice::arpRem));
 	}
@@ -175,6 +184,7 @@ public:
 		ipc::CStringBuf<MAX_PATH_LEN> path;
 		is >> name >> path;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = LinkMng::add(name.str(),path.str());
 		if(res == 0) {
 			Link *link = LinkMng::getByName(name.str());
@@ -190,6 +200,7 @@ public:
 		ipc::CStringBuf<Link::NAME_LEN> name;
 		is >> name;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = LinkMng::rem(name.str());
 		is << res << ipc::Send(MSG_DEF_RESPONSE);
 	}
@@ -200,6 +211,7 @@ public:
 		ipc::Net::Status status;
 		is >> name >> ip >> netmask >> status;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = 0;
 		Link *l = LinkMng::getByName(name.str());
 		Link *other;
@@ -223,6 +235,7 @@ public:
 		ipc::CStringBuf<Link::NAME_LEN> name;
 		is >> name;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		Link *link = LinkMng::getByName(name.str());
 		if(!link)
 			is << -ENOENT << ipc::Send(MSG_DEF_RESPONSE);
@@ -235,6 +248,7 @@ public:
 		ipc::Net::IPv4Addr ip,gw,netmask;
 		is >> link >> ip >> gw >> netmask;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = 0;
 		Link *l = LinkMng::getByName(link.str());
 		if(l == NULL)
@@ -252,6 +266,7 @@ public:
 		ipc::Net::IPv4Addr ip;
 		is >> ip;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = Route::remove(ip);
 		is << res << ipc::Send(MSG_DEF_RESPONSE);
 	}
@@ -261,14 +276,32 @@ public:
 		ipc::Net::Status status;
 		is >> ip >> status;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = Route::setStatus(ip,status);
 		is << res << ipc::Send(MSG_DEF_RESPONSE);
+	}
+
+	void routeGet(ipc::IPCStream &is) {
+		ipc::Net::IPv4Addr ip;
+		is >> ip;
+
+		std::lock_guard<std::mutex> guard(mutex);
+		const Route *r = Route::find(ip);
+		if(!r)
+			is << -ENETUNREACH << ipc::Send(MSG_DEF_RESPONSE);
+		else {
+			is << 0;
+			is << (r->flags & ipc::Net::FL_USE_GW ? r->gateway : r->dest);
+			is << ipc::CString(r->link->name().c_str(),r->link->name().length());
+			is << ipc::Send(MSG_DEF_RESPONSE);
+		}
 	}
 
 	void arpAdd(ipc::IPCStream &is) {
 		ipc::Net::IPv4Addr ip;
 		is >> ip;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = 0;
 		const Route *route = Route::find(ip);
 		if(!route)
@@ -282,6 +315,7 @@ public:
 		ipc::Net::IPv4Addr ip;
 		is >> ip;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		int res = ARP::remove(ip);
 		is << res << ipc::Send(MSG_DEF_RESPONSE);
 	}
@@ -295,6 +329,7 @@ public:
 
 	virtual std::string handleRead() {
 		std::ostringstream os;
+		std::lock_guard<std::mutex> guard(mutex);
 		LinkMng::print(os);
 		return os.str();
 	}
@@ -308,6 +343,7 @@ public:
 
 	virtual std::string handleRead() {
 		std::ostringstream os;
+		std::lock_guard<std::mutex> guard(mutex);
 		Route::print(os);
 		return os.str();
 	}
@@ -321,6 +357,7 @@ public:
 
 	virtual std::string handleRead() {
 		std::ostringstream os;
+		std::lock_guard<std::mutex> guard(mutex);
 		ARP::print(os);
 		return os.str();
 	}
@@ -336,14 +373,12 @@ static int receiveThread(void *arg) {
 			break;
 		}
 
-		std::cout << "[" << link->mac() << "] Received packet with " << res << " bytes" << std::endl;
 		if((size_t)res >= sizeof(Ethernet<>)) {
 			std::lock_guard<std::mutex> guard(mutex);
-			Ethernet<> *packet = reinterpret_cast<Ethernet<>*>(buffer);
-			std::cout << *packet << std::endl;
-			ssize_t err = Ethernet<>::receive(*link,packet,res);
+			Packet pkt(buffer,res);
+			ssize_t err = Ethernet<>::receive(*link,pkt);
 			if(err < 0)
-				printe("Invalid packet: %s",strerror(-err));
+				fprintf(stderr,"Invalid packet: %s",strerror(-err));
 		}
 		else
 			printe("Ignoring packet of size %zd",res);
@@ -388,52 +423,6 @@ int main() {
 		error("Unable to start routes-file thread");
 	if(startthread(arpFileThread,NULL) < 0)
 		error("Unable to start arp-file thread");
-
-#if 0
-	char echo1[] = "foo";
-	char echo2[] = "barfoo";
-	char echo3[] = "test";
-
-	Link ne2k("/dev/ne2k",argc == 1 ? ipc::Net::IPv4Addr(192,168,2,110) : ipc::Net::IPv4Addr(10,0,2,3));
-	Link lo("/dev/lo",ipc::Net::IPv4Addr(127,0,0,1));
-
-	Route::insert(
-		ipc::Net::IPv4Addr(192,168,2,0),ipc::Net::IPv4Addr(255,255,255,0),ipc::Net::IPv4Addr(),
-		Route::FL_UP,&ne2k
-	);
-	Route::insert(
-		ipc::Net::IPv4Addr(),ipc::Net::IPv4Addr(),ipc::Net::IPv4Addr(192,168,2,1),
-		Route::FL_UP | Route::FL_USE_GW,&ne2k
-	);
-	Route::insert(
-		ipc::Net::IPv4Addr(127,0,0,1),ipc::Net::IPv4Addr(255,0,0,0),ipc::Net::IPv4Addr(),
-		Route::FL_UP,&lo
-	);
-
-	if(startthread(receiveThread,&ne2k) < 0)
-		error("Unable to start receive thread");
-	if(startthread(receiveThread,&lo) < 0)
-		error("Unable to start receive thread");
-
-	usemdown(&sem);
-	if(argc == 1) {
-		if(ICMP::sendEcho(IPv4Addr(192,168,2,7),echo1,sizeof(echo1),0xFF81,1) < 0)
-			printe("Unable to send echo packet");
-		if(ICMP::sendEcho(IPv4Addr(192,168,2,1),echo2,sizeof(echo2),0xFF82,1) < 0)
-			printe("Unable to send echo packet");
-		if(ICMP::sendEcho(IPv4Addr(173,194,44,87),echo3,sizeof(echo3),0xFF83,1) < 0)
-			printe("Unable to send echo packet");
-		if(UDP::send(IPv4Addr(192,168,2,102),56123,7654,echo3,sizeof(echo3)) < 0)
-			printe("Unable to send UDP packet");
-	}
-	else {
-		if(ICMP::sendEcho(IPv4Addr(10,0,2,2),echo1,sizeof(echo1),0xFF88,1) < 0)
-			printe("Unable to send echo packet");
-		if(ICMP::sendEcho(IPv4Addr(10,0,2,2),echo2,sizeof(echo2),0xFF88,2) < 0)
-			printe("Unable to send echo packet");
-	}
-	usemup(&sem);
-#endif
 
 	NetDevice netdev("/dev/tcpip",0111);
 	netdev.loop();

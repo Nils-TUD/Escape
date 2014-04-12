@@ -39,13 +39,15 @@ public:
 	enum Type {
 		SOCK_STREAM,
 		SOCK_DGRAM,
-		SOCK_RAW
+		SOCK_RAW_ETHER,
+		SOCK_RAW_IP,
 	};
 	enum Protocol {
-		PROTO_UDP,
-		PROTO_TCP,
-		PROTO_ETHERNET,
-		PROTO_IP
+		PROTO_ANY	= 0,
+		PROTO_IP	= 0x0800,
+		PROTO_UDP	= 17,
+		PROTO_TCP	= 6,
+		PROTO_ICMP	= 1,
 	};
 
 	struct Addr {
@@ -65,13 +67,12 @@ public:
 	 * Creates a socket of given type.
 	 *
 	 * @param path the path to the device
-	 * @param domain the communication domain
 	 * @param type the socket type
 	 * @param proto the protocol
 	 * @throws if the operation failed
 	 */
-	explicit Socket(const char *path,Domain domain,Type type,Protocol proto)
-		: _is(buildPath(path,domain,type,proto).c_str()) {
+	explicit Socket(const char *path,Type type,Protocol proto)
+		: _is(buildPath(path,type,proto).c_str()) {
 	}
 
 	/**
@@ -102,7 +103,7 @@ public:
 		_is << req << addr << Send(MSG_SOCK_SENDTO) << SendData(MSG_SOCK_SENDTO,data,size);
 		_is >> Receive() >> resp;
 		if(resp.res < 0)
-			VTHROWE("sendto(" << addr << ")",resp.res);
+			VTHROWE("sendto(" << addr << ", " << size << ")",resp.res);
 	}
 
 	/**
@@ -119,15 +120,15 @@ public:
 		FileWrite::Response resp;
 		_is << req << SendReceive(MSG_SOCK_RECVFROM,false) >> resp >> addr;
 		if(resp.res < 0)
-			VTHROWE("recvfrom(" << addr << ")",resp.res);
+			VTHROWE("recvfrom(" << size << ")",resp.res);
 		_is >> ReceiveData(data,size,false);
 		return resp.res;
 	}
 
 private:
-	static std::string buildPath(const char *path,Domain domain,Type type,Protocol proto) {
+	static std::string buildPath(const char *path,Type type,Protocol proto) {
 		std::ostringstream os;
-		os << path << "/" << domain << " " << type << " " << proto;
+		os << path << "/" << type << " " << proto;
 		return os.str();
 	}
 

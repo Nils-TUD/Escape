@@ -29,7 +29,7 @@ ARP::pending_type ARP::_pending;
 ARP::cache_type ARP::_cache;
 
 int ARP::createPending(const void *packet,size_t size,const ipc::Net::IPv4Addr &ip,uint16_t type) {
-	Packet pkt;
+	PendingPacket pkt;
 	pkt.dest = ip;
 	pkt.size = size;
 	pkt.type = type;
@@ -45,7 +45,7 @@ void ARP::sendPending(Link &link) {
 	for(auto it = _pending.begin(); it < _pending.end(); ) {
 		cache_type::iterator entry = _cache.find(it->dest);
 		if(entry != _cache.end()) {
-			it->pkt->send(link,entry->second,it->size,it->type);
+			Ethernet<>::send(link,entry->second,it->pkt,it->size,it->type);
 			_pending.erase(it);
 			free(it->pkt);
 		}
@@ -69,7 +69,7 @@ ssize_t ARP::requestMAC(Link &link,const ipc::Net::IPv4Addr &ip) {
 	arp->hwSender = link.mac();
 	arp->ipSender = link.ip();
 
-	return pkt.send(link,ipc::NIC::MAC::broadcast(),pkt.size(),ARP::ETHER_TYPE);
+	return Ethernet<ARP>::send(link,ipc::NIC::MAC::broadcast(),&pkt,pkt.size(),ARP::ETHER_TYPE);
 }
 
 ssize_t ARP::handleRequest(Link &link,const ARP *packet) {
@@ -102,11 +102,33 @@ ssize_t ARP::handleRequest(Link &link,const ARP *packet) {
 	arp->hwSender = link.mac();
 	arp->ipSender = link.ip();
 
-	return pkt.send(link,packet->hwSender,pkt.size(),ARP::ETHER_TYPE);
+	return Ethernet<ARP>::send(link,packet->hwSender,&pkt,pkt.size(),ARP::ETHER_TYPE);
 }
 
-ssize_t ARP::receive(Link &link,Ethernet<ARP> *packet,size_t) {
-	const ARP &arp = packet->payload;
+ssize_t ARP::send(Link &link,Ethernet<> *packet,size_t size,const ipc::Net::IPv4Addr &ip,
+		const ipc::Net::IPv4Addr &nm,uint16_t type) {
+	ipc::NIC::MAC mac;
+	if(ip == ip.getBroadcast(nm))
+		mac = ipc::NIC::MAC::broadcast();
+	else {
+		cache_type::iterator it = _cache.find(ip);
+
+		// if we don't know the MAC address yet, start an ARP request and add packet to pending list
+		if(it == _cache.end()) {
+			int res = createPending(packet,size,ip,type);
+			if(res < 0)
+				return res;
+			return requestMAC(link,ip);
+		}
+		mac = it->second;
+	}
+
+	// otherwise just send the packet
+	return Ethernet<>::send(link,mac,packet,size,type);
+}
+
+ssize_t ARP::receive(Link &link,const Packet &packet) {
+	const ARP &arp = packet.data<Ethernet<ARP>*>()->payload;
 	switch(be16tocpu(arp.cmd)) {
 		case CMD_REQUEST:
 			return handleRequest(link,&arp);

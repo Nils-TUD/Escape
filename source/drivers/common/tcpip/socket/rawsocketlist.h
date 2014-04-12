@@ -20,32 +20,41 @@
 #pragma once
 
 #include <esc/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
+#include <algorithm>
+#include <vector>
+#include <errno.h>
 
-struct Empty {
-	size_t size() const {
+class Socket;
+
+class RawSocketList {
+public:
+	typedef std::vector<Socket*> list_type;
+	typedef list_type::iterator iterator;
+
+	iterator begin() {
+		return _socks.begin();
+	}
+	iterator end() {
+		return _socks.end();
+	}
+
+	ssize_t add(Socket *sock) {
+		if(contains(sock))
+			return -EADDRINUSE;
+		_socks.push_back(sock);
 		return 0;
 	}
+	bool contains(Socket *sock) {
+		list_type::iterator it;
+		it = std::find_if(_socks.begin(),_socks.end(),[sock] (Socket *s) {
+			return s == sock;
+		});
+		return it != _socks.end();
+	}
+	void remove(Socket *sock) {
+		_socks.erase_first(sock);
+	}
+
+private:
+	list_type _socks;
 };
-
-template<class T = Empty>
-class Ethernet;
-template<class T = Empty>
-class IPv4;
-
-enum {
-	ETHER_HEAD_SIZE		= 6 + 6 + 2
-};
-
-struct ReadRequest {
-	void *data;
-	size_t count;
-	bool needsSrc;
-};
-
-static const uint16_t WELL_KNOWN_PORTS		= 0;
-static const uint16_t REGISTERED_PORTS		= 1024;
-static const uint16_t PRIVATE_PORTS			= 49152;
-static const uint16_t PRIVATE_PORTS_CNT		= 65536 - PRIVATE_PORTS;

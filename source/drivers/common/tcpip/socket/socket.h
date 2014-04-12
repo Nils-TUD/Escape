@@ -29,22 +29,29 @@
 #include <list>
 
 #include "../common.h"
+#include "../packet.h"
 
 class Socket : public ipc::Client {
 public:
-	struct Packet {
-		const void *data;
-		size_t size;
+	struct QueuedPacket {
+		std::shared_ptr<PacketData> data;
+		size_t offset;
 		ipc::Socket::Addr sa;
 
-		explicit Packet(const void *_data,size_t _size,const ipc::Socket::Addr &_sa)
-			: data(_data), size(_size), sa(_sa) {
+		explicit QueuedPacket(std::shared_ptr<PacketData> _data,size_t _offset,
+				const ipc::Socket::Addr &_sa)
+			: data(_data), offset(_offset), sa(_sa) {
 		}
 	};
 
-	explicit Socket(int f) : ipc::Client(f), _pending() {
+	explicit Socket(int f,int proto = ipc::Socket::PROTO_ANY)
+		: ipc::Client(f), _proto(proto), _pending() {
 	}
 	virtual ~Socket() {
+	}
+
+	int protocol() const {
+		return _proto;
 	}
 
 	virtual int bind(const ipc::Socket::Addr *) {
@@ -53,48 +60,51 @@ public:
 	virtual ssize_t sendto(const ipc::Socket::Addr *,const void *,size_t) {
 		return -ENOTSUP;
 	}
-	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size) {
+	virtual ssize_t recvfrom(bool needsSrc,void *buffer,size_t size) {
 		if(_packets.size() > 0) {
-			Packet pkt = _packets.front();
-			if(pkt.size > size)
-				return -ENOMEM;
-			reply(pkt.sa,needsSockAddr,buffer,pkt.data,size);
-			_packets.pop_front();
-			return 0;
+			const QueuedPacket &pkt = _packets.front();
+			if(pkt.data->size - pkt.offset <= size) {
+				reply(pkt.sa,needsSrc,buffer,pkt.data->data + pkt.offset,pkt.data->size - pkt.offset);
+				_packets.pop_front();
+				return 0;
+			}
 		}
 
 		if(_pending.data)
 			return -EAGAIN;
 		_pending.data = buffer;
 		_pending.count = size;
-		_pending.needsSockAddr = needsSockAddr;
+		_pending.needsSrc = needsSrc;
 		return 0;
 	}
 
-	void push(const ipc::Socket::Addr &sa,const void *data,size_t size) {
-		if(_pending.count >= size) {
-			reply(sa,_pending.needsSockAddr,_pending.data,data,size);
-			_pending.count = 0;
+	void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset = 0) {
+		if(_pending.count > 0) {
+			if(_pending.count >= pkt.size() - offset) {
+				reply(sa,_pending.needsSrc,_pending.data,pkt.data<uint8_t*>() + offset,pkt.size() - offset);
+				_pending.count = 0;
+			}
 		}
 		else
-			_packets.push_back(Packet(data,size,sa));
+			_packets.push_back(QueuedPacket(pkt.copy(),offset,sa));
 	}
 
 private:
-	void reply(const ipc::Socket::Addr &sa,bool needsSockAddr,void *dst,const void *src,size_t size) {
+	void reply(const ipc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,size_t size) {
 		if(dst != NULL)
 			memcpy(dst,src,size);
 
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCStream is(fd(),buffer,sizeof(buffer));
 		is << ipc::FileRead::Response(size);
-		if(needsSockAddr)
+		if(needsSrc)
 			is << sa;
 		is << ipc::Send(ipc::FileRead::Response::MID);
 		if(dst == NULL)
 			is << ipc::SendData(ipc::FileRead::Response::MID,src,size);
 	}
 
+	int _proto;
 	ReadRequest _pending;
-	std::list<Packet> _packets;
+	std::list<QueuedPacket> _packets;
 };

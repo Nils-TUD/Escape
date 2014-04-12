@@ -210,7 +210,7 @@ static uint8_t handleReply(DHCPMsg *msg,NetConfig *cfg) {
 
 static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 	// create socket
-	Socket sock("/dev/socket",Socket::AF_INET,Socket::SOCK_DGRAM,Socket::PROTO_UDP);
+	Socket sock("/dev/socket",Socket::SOCK_DGRAM,Socket::PROTO_UDP);
 
 	// bind the socket to the client-port, because this is fixed in the DHCP protocol
 	ipc::Socket::Addr addr;

@@ -20,32 +20,30 @@
 #pragma once
 
 #include <esc/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
 
-struct Empty {
-	size_t size() const {
-		return 0;
+#include "../common.h"
+#include "socket.h"
+#include "rawsocketlist.h"
+
+class RawEtherSocket : public Socket {
+public:
+	explicit RawEtherSocket(int f,int proto) : Socket(f,proto) {
 	}
+	virtual ~RawEtherSocket() {
+		sockets.remove(this);
+	}
+
+	virtual int bind(const ipc::Socket::Addr *) {
+		return sockets.add(this);
+	}
+	virtual ssize_t sendto(const ipc::Socket::Addr *,const void *,size_t ) {
+		// TODO implement me
+		return -ENOTSUP;
+	}
+	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size) {
+		sockets.add(this);
+		return Socket::recvfrom(needsSockAddr,buffer,size);
+	}
+
+	static RawSocketList sockets;
 };
-
-template<class T = Empty>
-class Ethernet;
-template<class T = Empty>
-class IPv4;
-
-enum {
-	ETHER_HEAD_SIZE		= 6 + 6 + 2
-};
-
-struct ReadRequest {
-	void *data;
-	size_t count;
-	bool needsSrc;
-};
-
-static const uint16_t WELL_KNOWN_PORTS		= 0;
-static const uint16_t REGISTERED_PORTS		= 1024;
-static const uint16_t PRIVATE_PORTS			= 49152;
-static const uint16_t PRIVATE_PORTS_CNT		= 65536 - PRIVATE_PORTS;

@@ -17,35 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
 
-struct Empty {
-	size_t size() const {
-		return 0;
-	}
-};
+#include "rawethersock.h"
 
-template<class T = Empty>
-class Ethernet;
-template<class T = Empty>
-class IPv4;
-
-enum {
-	ETHER_HEAD_SIZE		= 6 + 6 + 2
-};
-
-struct ReadRequest {
-	void *data;
-	size_t count;
-	bool needsSrc;
-};
-
-static const uint16_t WELL_KNOWN_PORTS		= 0;
-static const uint16_t REGISTERED_PORTS		= 1024;
-static const uint16_t PRIVATE_PORTS			= 49152;
-static const uint16_t PRIVATE_PORTS_CNT		= 65536 - PRIVATE_PORTS;
+RawSocketList RawEtherSocket::sockets;

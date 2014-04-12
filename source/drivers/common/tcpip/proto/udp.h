@@ -23,15 +23,15 @@
 #include <esc/endian.h>
 #include <map>
 
-#include "../socket/udpsocket.h"
+#include "../socket/dgramsocket.h"
 #include "../common.h"
 #include "../link.h"
 #include "../portmng.h"
 
 class UDP {
-	friend class UDPSocket;
+	friend class DGramSocket;
 
-	typedef std::map<ipc::port_t,UDPSocket*> socket_map;
+	typedef std::map<ipc::port_t,DGramSocket*> socket_map;
 
 public:
 	enum {
@@ -44,17 +44,17 @@ public:
 
 	static ssize_t send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
 		const void *data,size_t nbytes);
-	static ssize_t receive(Link &link,Ethernet<IPv4<UDP>> *packet,size_t sz);
+	static ssize_t receive(Link &link,const Packet &packet);
 
 private:
-	static ssize_t addSocket(UDPSocket *sock,ipc::port_t port) {
+	static ssize_t addSocket(DGramSocket *sock,ipc::port_t port) {
 		socket_map::iterator it = _socks.find(port);
 		if(it != _socks.end())
 			return it->second != sock ? -EADDRINUSE : 0;
 		_socks[port] = sock;
 		return 0;
 	}
-	static void remSocket(UDPSocket *sock,ipc::port_t port) {
+	static void remSocket(DGramSocket *sock,ipc::port_t port) {
 		socket_map::iterator it = _socks.find(port);
 		if(it != _socks.end() && it->second == sock)
 			_socks.erase(it);

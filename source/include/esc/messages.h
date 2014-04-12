@@ -136,8 +136,9 @@
 #define MSG_NET_ROUTE_ADD			1405 /* adds an entry to the routing table */
 #define MSG_NET_ROUTE_REM			1406 /* removes an entry from the routing table */
 #define MSG_NET_ROUTE_CONFIG		1407 /* sets the status of a routing table entry */
-#define MSG_NET_ARP_ADD				1408 /* resolves an IP address and puts it into the ARP table */
-#define MSG_NET_ARP_REM				1409 /* removes an IP address from the ARP table */
+#define MSG_NET_ROUTE_GET			1408 /* gets the destination for an IP address */
+#define MSG_NET_ARP_ADD				1409 /* resolves an IP address and puts it into the ARP table */
+#define MSG_NET_ARP_REM				1410 /* removes an IP address from the ARP table */
 
 #define MSG_SOCK_BIND				1500 /* bind a socket to an address */
 #define MSG_SOCK_RECVFROM			1501 /* receive data from a socket */

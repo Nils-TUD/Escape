@@ -25,6 +25,7 @@
 #include "../common.h"
 #include "../link.h"
 #include "../route.h"
+#include "../socket/rawipsock.h"
 #include "arp.h"
 #include "icmp.h"
 #include "udp.h"
@@ -66,45 +67,33 @@ public:
 		h.src = route->link->ip();
 		h.dst = ip;
 		h.checksum = 0;
-		h.checksum = genChecksum(reinterpret_cast<uint16_t*>(&h),sizeof(IPv4) - sizeof(h.payload));
+		h.checksum = ipc::Net::ipv4Checksum(
+			reinterpret_cast<uint16_t*>(&h),sizeof(IPv4) - sizeof(h.payload));
 
+		Ethernet<> *epkt = reinterpret_cast<Ethernet<>*>(pkt);
 		if(route->flags & ipc::Net::FL_USE_GW)
-			return ARP::send(*route->link,pkt,sz,route->gateway,route->netmask,ETHER_TYPE);
-		return ARP::send(*route->link,pkt,sz,ip,route->netmask,ETHER_TYPE);
+			return ARP::send(*route->link,epkt,sz,route->gateway,route->netmask,ETHER_TYPE);
+		return ARP::send(*route->link,epkt,sz,ip,route->netmask,ETHER_TYPE);
 	}
 
-	static ssize_t receive(Link &link,Ethernet<IPv4> *packet,size_t sz) {
-		switch(packet->payload.protocol) {
-			case ICMP::IP_PROTO: {
-				Ethernet<IPv4<ICMP>> *icmpPkt = reinterpret_cast<Ethernet<IPv4<ICMP>>*>(packet);
-				// TODO if(sz >= icmpPkt->size())
-				return ICMP::receive(link,icmpPkt,sz);
-			}
-			break;
+	static ssize_t receive(Link &link,const Packet &packet) {
+		const Ethernet<IPv4> *ippkt = packet.data<Ethernet<IPv4>*>();
+		uint8_t proto = ippkt->payload.protocol;
 
-			case UDP::IP_PROTO: {
-				Ethernet<IPv4<UDP>> *udpPkt = reinterpret_cast<Ethernet<IPv4<UDP>>*>(packet);
-				// TODO if(sz >= udpPkt->size())
-				return UDP::receive(link,udpPkt,sz);
-			}
-			break;
+		// give all raw IP socket the received packet
+		for(auto it = RawIPSocket::sockets.begin(); it != RawIPSocket::sockets.end(); ++it) {
+			if((*it)->protocol() == ipc::Socket::PROTO_ANY || (*it)->protocol() == proto)
+				(*it)->push(ipc::Socket::Addr(),packet,ETHER_HEAD_SIZE);
+		}
+
+		switch(proto) {
+			case ICMP::IP_PROTO:
+				return ICMP::receive(link,packet);
+
+			case UDP::IP_PROTO:
+				return UDP::receive(link,packet);
 		}
 		return -ENOTSUP;
-	}
-
-	static uint16_t genChecksum(const uint16_t *data,uint16_t length) {
-		uint32_t sum = 0;
-		for(; length > 1; length -= 2) {
-			sum += *data++;
-			if(sum & 0x80000000)
-				sum = (sum & 0xFFFF) + (sum >> 16);
-		}
-		if(length)
-			sum += *data & 0xFF;
-
-		while(sum >> 16)
-			sum = (sum & 0xFFFF) + (sum >> 16);
-		return ~sum;
 	}
 
 	uint8_t versionSize;

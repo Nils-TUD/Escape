@@ -32,6 +32,8 @@ class ICMP {
 		CMD_ECHO_REPLY	= 0,
 	};
 
+	static const size_t MAX_ECHO_PAYLOAD_SIZE	= 4096;
+
 public:
 	enum {
 		IP_PROTO     	= 1
@@ -45,12 +47,12 @@ public:
 			uint16_t id,uint16_t seq) {
 		return send(ip,payload,nbytes,0,CMD_ECHO,id,seq);
 	}
-	static ssize_t receive(Link &link,Ethernet<IPv4<ICMP>> *packet,size_t sz);
+	static ssize_t receive(Link &link,const Packet &packet);
 
 private:
 	static ssize_t send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 		uint8_t code,uint8_t type,uint16_t id,uint16_t seq);
-	static ssize_t handleEcho(Ethernet<IPv4<ICMP>> *packet,size_t sz);
+	static ssize_t handleEcho(const Ethernet<IPv4<ICMP>> *packet,size_t sz);
 
 public:
 	// header

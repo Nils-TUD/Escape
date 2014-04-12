@@ -21,11 +21,11 @@
 #include <iostream>
 
 #include "../proto/udp.h"
-#include "udpsocket.h"
+#include "dgramsocket.h"
 
-PortMng<PRIVATE_PORTS_CNT> UDPSocket::_ports(PRIVATE_PORTS);
+PortMng<PRIVATE_PORTS_CNT> DGramSocket::_ports(PRIVATE_PORTS);
 
-UDPSocket::~UDPSocket() {
+DGramSocket::~DGramSocket() {
 	if(_localPort != 0) {
 		UDP::remSocket(this,_localPort);
 		if(_localPort >= PRIVATE_PORTS)
@@ -33,7 +33,7 @@ UDPSocket::~UDPSocket() {
 	}
 }
 
-int UDPSocket::bind(const ipc::Socket::Addr *sa) {
+int DGramSocket::bind(const ipc::Socket::Addr *sa) {
 	if(sa->d.ipv4.port >= PRIVATE_PORTS)
 		return -EINVAL;
 	if(_localPort != 0)
@@ -45,7 +45,7 @@ int UDPSocket::bind(const ipc::Socket::Addr *sa) {
 	return res;
 }
 
-ssize_t UDPSocket::sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size) {
+ssize_t DGramSocket::sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size) {
 	if(sa == NULL)
 		return -EINVAL;
 
@@ -60,7 +60,7 @@ ssize_t UDPSocket::sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t 
 	return UDP::send(ipc::Net::IPv4Addr(sa->d.ipv4.addr),_localPort,sa->d.ipv4.port,buffer,size);
 }
 
-ssize_t UDPSocket::recvfrom(bool needsSockAddr,void *buffer,size_t size) {
+ssize_t DGramSocket::recvfrom(bool needsSockAddr,void *buffer,size_t size) {
 	if(_localPort == 0)
 		return -ENOTBOUND;
 

@@ -22,9 +22,13 @@
 #include <esc/common.h>
 #include <esc/endian.h>
 #include <iostream>
+#include <algorithm>
+#include <vector>
 
 #include "../common.h"
 #include "../link.h"
+#include "../packet.h"
+#include "../socket/rawethersock.h"
 #include "arp.h"
 #include "ipv4.h"
 
@@ -37,29 +41,32 @@ public:
 		return sizeof(dst) + sizeof(src) + sizeof(type) + payload.size();
 	}
 
-	ssize_t send(Link &link,const ipc::NIC::MAC &dest,size_t sz,uint16_t _type) {
-		src = link.mac();
-		dst = dest;
-		type = cputobe16(_type);
-		std::cout << "Sending " << *reinterpret_cast<Ethernet<>*>(this) << std::endl;
-		return link.write(this,sz);
+	static ssize_t send(Link &link,const ipc::NIC::MAC &dest,Ethernet<T> *pkt,size_t sz,uint16_t _type) {
+		pkt->src = link.mac();
+		pkt->dst = dest;
+		pkt->type = cputobe16(_type);
+		return link.write(pkt,sz);
 	}
 
-	static ssize_t receive(Link &link,Ethernet *packet,size_t sz) {
-		switch(be16tocpu(packet->type)) {
-			case ARP::ETHER_TYPE: {
-				Ethernet<ARP> *arpPkt = reinterpret_cast<Ethernet<ARP>*>(packet);
-				if(sz >= arpPkt->size())
-					return ARP::receive(link,arpPkt,sz);
-			}
-			break;
+	static ssize_t receive(Link &link,const Packet &packet) {
+		const Ethernet<> *epkt = packet.data<const Ethernet<>*>();
 
-			case IPv4<>::ETHER_TYPE: {
-				Ethernet<IPv4<>> *ipPkt = reinterpret_cast<Ethernet<IPv4<>>*>(packet);
-				if(sz >= ipPkt->size())
-					return IPv4<>::receive(link,ipPkt,sz);
-			}
-			break;
+		// give all raw ethernet socket the received packet
+		for(auto it = RawEtherSocket::sockets.begin(); it != RawEtherSocket::sockets.end(); ++it) {
+			if((*it)->protocol() == ipc::Socket::PROTO_ANY || (*it)->protocol() == epkt->type)
+				(*it)->push(ipc::Socket::Addr(),packet);
+		}
+
+		switch(be16tocpu(epkt->type)) {
+			case ARP::ETHER_TYPE:
+				if(packet.size() >= Ethernet<ARP>().size())
+					return ARP::receive(link,packet);
+				break;
+
+			case IPv4<>::ETHER_TYPE:
+				if(packet.size() >= Ethernet<IPv4<>>().size())
+					return IPv4<>::receive(link,packet);
+				break;
 		}
 		return -EINVAL;
 	}

@@ -142,6 +142,15 @@ public:
 		if(res < 0)
 			VTHROWE("routeRem()",res);
 	}
+	IPv4Addr routeGet(const IPv4Addr &ip,char *linkname,size_t size) {
+		IPv4Addr dest;
+		CString link(linkname,size);
+		int res;
+		_is << ip << SendReceive(MSG_NET_ROUTE_GET) >> res >> dest >> link;
+		if(res < 0)
+			VTHROWE("routeGem()",res);
+		return dest;
+	}
 	void routeConfig(const IPv4Addr &ip,Status status) {
 		int res;
 		_is << ip << status << SendReceive(MSG_NET_ROUTE_CONFIG) >> res;
@@ -160,6 +169,21 @@ public:
 		_is << ip << SendReceive(MSG_NET_ARP_REM) >> res;
 		if(res < 0)
 			VTHROWE("arpRem()",res);
+	}
+
+	static uint16_t ipv4Checksum(const uint16_t *data,uint16_t length) {
+		uint32_t sum = 0;
+		for(; length > 1; length -= 2) {
+			sum += *data++;
+			if(sum & 0x80000000)
+				sum = (sum & 0xFFFF) + (sum >> 16);
+		}
+		if(length)
+			sum += *data & 0xFF;
+
+		while(sum >> 16)
+			sum = (sum & 0xFFFF) + (sum >> 16);
+		return ~sum;
 	}
 
 private:

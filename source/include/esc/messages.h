@@ -132,11 +132,16 @@
 #define MSG_NET_LINK_ADD			1401 /* adds a link */
 #define MSG_NET_LINK_REM			1402 /* removes a link */
 #define MSG_NET_LINK_CONFIG			1403 /* sets the ip, gateway and subnet-mask of a link */
-#define MSG_NET_ROUTE_ADD			1404 /* adds an entry to the routing table */
-#define MSG_NET_ROUTE_REM			1405 /* removes an entry from the routing table */
-#define MSG_NET_ROUTE_CONFIG		1406 /* sets the status of a routing table entry */
-#define MSG_NET_ARP_ADD				1407 /* resolves an IP address and puts it into the ARP table */
-#define MSG_NET_ARP_REM				1408 /* removes an IP address from the ARP table */
+#define MSG_NET_LINK_MAC			1404 /* gets the MAC address of a link */
+#define MSG_NET_ROUTE_ADD			1405 /* adds an entry to the routing table */
+#define MSG_NET_ROUTE_REM			1406 /* removes an entry from the routing table */
+#define MSG_NET_ROUTE_CONFIG		1407 /* sets the status of a routing table entry */
+#define MSG_NET_ARP_ADD				1408 /* resolves an IP address and puts it into the ARP table */
+#define MSG_NET_ARP_REM				1409 /* removes an IP address from the ARP table */
+
+#define MSG_SOCK_BIND				1500 /* bind a socket to an address */
+#define MSG_SOCK_RECVFROM			1501 /* receive data from a socket */
+#define MSG_SOCK_SENDTO				1502 /* send data to a socket */
 
 
 #define IS_DEVICE_MSG(id)			((id) == MSG_FILE_OPEN || \

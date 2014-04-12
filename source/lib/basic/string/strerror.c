@@ -59,6 +59,7 @@ static const char *msgs[] = {
 	/* 34 (ENETUNREACH) */		"Network unreachable",
 	/* 35 (EAGAIN) */			"Resource temporarily unavailable",
 	/* 36 (EADDRINUSE) */		"The given address is in use",
+	/* 37 (ENOTBOUND) */		"Socket is not bound to an address",
 };
 
 char *strerror(int errnum) {

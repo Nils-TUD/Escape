@@ -20,7 +20,6 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/net.h>
 #include <esc/mem.h>
 #include <esc/messages.h>
 #include <esc/io.h>
@@ -29,17 +28,17 @@
 #include <string.h>
 #include <list>
 
-#include "common.h"
+#include "../common.h"
 
 class Socket : public ipc::Client {
 public:
 	struct Packet {
 		const void *data;
 		size_t size;
-		ipc::Net::IPv4Addr ip;
+		ipc::Socket::Addr sa;
 
-		explicit Packet(const void *_data,size_t _size,const ipc::Net::IPv4Addr &_ip)
-			: data(_data), size(_size), ip(_ip) {
+		explicit Packet(const void *_data,size_t _size,const ipc::Socket::Addr &_sa)
+			: data(_data), size(_size), sa(_sa) {
 		}
 	};
 
@@ -48,13 +47,18 @@ public:
 	virtual ~Socket() {
 	}
 
-	virtual ssize_t sendto(const sSockAddr *sa,const void *buffer,size_t size) = 0;
-	virtual ssize_t receive(void *buffer,size_t size) {
+	virtual int bind(const ipc::Socket::Addr *) {
+		return -ENOTSUP;
+	}
+	virtual ssize_t sendto(const ipc::Socket::Addr *,const void *,size_t) {
+		return -ENOTSUP;
+	}
+	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size) {
 		if(_packets.size() > 0) {
 			Packet pkt = _packets.front();
 			if(pkt.size > size)
 				return -ENOMEM;
-			reply(pkt.ip,buffer,pkt.data,size);
+			reply(pkt.sa,needsSockAddr,buffer,pkt.data,size);
 			_packets.pop_front();
 			return 0;
 		}
@@ -63,26 +67,30 @@ public:
 			return -EAGAIN;
 		_pending.data = buffer;
 		_pending.count = size;
+		_pending.needsSockAddr = needsSockAddr;
 		return 0;
 	}
 
-	void push(const ipc::Net::IPv4Addr &ip,const void *data,size_t size) {
+	void push(const ipc::Socket::Addr &sa,const void *data,size_t size) {
 		if(_pending.count >= size) {
-			reply(ip,_pending.data,data,size);
+			reply(sa,_pending.needsSockAddr,_pending.data,data,size);
 			_pending.count = 0;
 		}
 		else
-			_packets.push_back(Packet(data,size,ip));
+			_packets.push_back(Packet(data,size,sa));
 	}
 
 private:
-	void reply(const ipc::Net::IPv4Addr &,void *dst,const void *src,size_t size) {
+	void reply(const ipc::Socket::Addr &sa,bool needsSockAddr,void *dst,const void *src,size_t size) {
 		if(dst != NULL)
 			memcpy(dst,src,size);
 
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCStream is(fd(),buffer,sizeof(buffer));
-		is << ipc::FileRead::Response(size) << ipc::Send(ipc::FileRead::Response::MID);
+		is << ipc::FileRead::Response(size);
+		if(needsSockAddr)
+			is << sa;
+		is << ipc::Send(ipc::FileRead::Response::MID);
 		if(dst == NULL)
 			is << ipc::SendData(ipc::FileRead::Response::MID,src,size);
 	}

@@ -147,7 +147,7 @@ static const char *statusNames[] = {
 };
 
 int main(int argc,char **argv) {
-	ipc::Net net("/dev/net");
+	ipc::Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::link*> links = info::link::get_list();

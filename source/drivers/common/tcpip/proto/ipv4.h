@@ -22,11 +22,11 @@
 #include <esc/common.h>
 #include <esc/endian.h>
 
-#include "common.h"
+#include "../common.h"
+#include "../link.h"
+#include "../route.h"
 #include "arp.h"
-#include "link.h"
 #include "icmp.h"
-#include "route.h"
 #include "udp.h"
 
 template<class T>
@@ -69,8 +69,8 @@ public:
 		h.checksum = genChecksum(reinterpret_cast<uint16_t*>(&h),sizeof(IPv4) - sizeof(h.payload));
 
 		if(route->flags & ipc::Net::FL_USE_GW)
-			return ARP::send(*route->link,pkt,sz,route->gateway,ETHER_TYPE);
-		return ARP::send(*route->link,pkt,sz,ip,ETHER_TYPE);
+			return ARP::send(*route->link,pkt,sz,route->gateway,route->netmask,ETHER_TYPE);
+		return ARP::send(*route->link,pkt,sz,ip,route->netmask,ETHER_TYPE);
 	}
 
 	static ssize_t receive(Link &link,Ethernet<IPv4> *packet,size_t sz) {

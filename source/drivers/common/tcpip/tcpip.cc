@@ -28,61 +28,30 @@
 #include <mutex>
 #include <vector>
 
-#include "ethernet.h"
+#include "proto/ethernet.h"
+#include "proto/arp.h"
+#include "proto/icmp.h"
+#include "proto/udp.h"
 #include "link.h"
 #include "linkmng.h"
-#include "arp.h"
-#include "icmp.h"
 #include "route.h"
-#include "udp.h"
 
 static std::mutex mutex;
 
-static void printPacket(uint8_t *bytes,size_t count) {
-	for(size_t i = 0; i < count; ++i) {
-		printf("%02x ",bytes[i]);
-		if(i % 8 == 7)
-			printf("\n");
-	}
-	printf("\n");
-	fflush(stdout);
-}
+static int receiveThread(void *arg);
 
-static int receiveThread(void *arg) {
-	static uint8_t buffer[4096];
-	Link *link = reinterpret_cast<Link*>(arg);
-	while(link->status() != ipc::Net::KILLED) {
-		ssize_t res = link->read(buffer,sizeof(buffer));
-		if(res < 0) {
-			printe("Reading packet failed");
-			break;
-		}
-
-		std::cout << "[" << link->mac() << "] Received packet with " << res << " bytes" << std::endl;
-		if((size_t)res >= sizeof(Ethernet<>)) {
-			std::lock_guard<std::mutex> guard(mutex);
-			Ethernet<> *packet = reinterpret_cast<Ethernet<>*>(buffer);
-			std::cout << *packet << std::endl;
-			ssize_t err = Ethernet<>::receive(*link,packet,res);
-			if(err < 0)
-				printe("Invalid packet: %s",strerror(-err));
-		}
-		else
-			printe("Ignoring packet of size %zd",res);
-	}
-	delete link;
-	return 0;
-}
-
-class UDPDevice : public ipc::ClientDevice<UDPSocket> {
+class SocketDevice : public ipc::ClientDevice<Socket> {
 public:
-	explicit UDPDevice(const char *path,mode_t mode)
-		: ipc::ClientDevice<UDPSocket>(path,mode,DEV_TYPE_BLOCK,
+	explicit SocketDevice(const char *path,mode_t mode)
+		: ipc::ClientDevice<Socket>(path,mode,DEV_TYPE_BLOCK,
 			DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE) {
-		set(MSG_FILE_OPEN,std::make_memfun(this,&UDPDevice::open));
-		set(MSG_FILE_READ,std::make_memfun(this,&UDPDevice::read));
-		set(MSG_FILE_WRITE,std::make_memfun(this,&UDPDevice::write));
-		set(MSG_FILE_CLOSE,std::make_memfun(this,&UDPDevice::close),false);
+		set(MSG_FILE_OPEN,std::make_memfun(this,&SocketDevice::open));
+		set(MSG_FILE_READ,std::make_memfun(this,&SocketDevice::read));
+		set(MSG_FILE_WRITE,std::make_memfun(this,&SocketDevice::write));
+		set(MSG_FILE_CLOSE,std::make_memfun(this,&SocketDevice::close),false);
+		set(MSG_SOCK_BIND,std::make_memfun(this,&SocketDevice::bind));
+		set(MSG_SOCK_RECVFROM,std::make_memfun(this,&SocketDevice::recvfrom));
+		set(MSG_SOCK_SENDTO,std::make_memfun(this,&SocketDevice::sendto));
 	}
 
 	void open(ipc::IPCStream &is) {
@@ -90,60 +59,99 @@ public:
 		ipc::FileOpen::Request r(buffer,sizeof(buffer));
 		is >> r;
 
-		ipc::Net::IPv4Addr ip;
-		port_t port = 0;
+		int domain, type, proto;
 		std::istringstream sip(r.path.str());
-		sip >> ip >> port;
+		sip >> domain >> type >> proto;
 
-		add(is.fd(),new UDPSocket(is.fd(),ip,port));
-		is << ipc::FileOpen::Response(0) << ipc::Send(ipc::FileOpen::Response::MID);
+		int res = 0;
+		if(domain != ipc::Socket::AF_INET)
+			res = -ENOTSUP;
+		else {
+			if(proto == ipc::Socket::PROTO_UDP)
+				add(is.fd(),new UDPSocket(is.fd(),type));
+			else
+				res = -ENOTSUP;
+		}
+
+		is << ipc::FileOpen::Response(res) << ipc::Send(ipc::FileOpen::Response::MID);
+	}
+
+	void bind(ipc::IPCStream &is) {
+		Socket *sock = get(is.fd());
+		ipc::Socket::Addr sa;
+		is >> sa;
+
+		int res = sock->bind(&sa);
+		is << res << ipc::Send(MSG_DEF_RESPONSE);
 	}
 
 	void read(ipc::IPCStream &is) {
-		UDPSocket *sock = get(is.fd());
+		handleRead(is,false);
+	}
+
+	void recvfrom(ipc::IPCStream &is) {
+		handleRead(is,true);
+	}
+
+	void write(ipc::IPCStream &is) {
+		ipc::FileWrite::Request r;
+		is >> r;
+		handleWrite(is,r,NULL);
+	}
+
+	void sendto(ipc::IPCStream &is) {
+		ipc::FileWrite::Request r;
+		ipc::Socket::Addr sa;
+		is >> r >> sa;
+		handleWrite(is,r,&sa);
+	}
+
+	void close(ipc::IPCStream &is) {
+		std::lock_guard<std::mutex> guard(mutex);
+		ipc::ClientDevice<Socket>::close(is);
+	}
+
+private:
+	void handleRead(ipc::IPCStream &is,bool needsSockAddr) {
+		Socket *sock = get(is.fd());
 		ipc::FileRead::Request r;
 		is >> r;
 
 		ssize_t res;
 		{
+			// TODO check offset!
 			char *data = NULL;
 			if(r.shmemoff != -1)
 				data = sock->shm() + r.shmemoff;
 
 			std::lock_guard<std::mutex> guard(mutex);
-			res = sock->receive(data,r.count);
+			res = sock->recvfrom(needsSockAddr,data,r.count);
 		}
 
 		if(res < 0)
 			is << ipc::FileRead::Response(res) << ipc::Send(ipc::FileRead::Response::MID);
 	}
 
-	void write(ipc::IPCStream &is) {
-		UDPSocket *sock = get(is.fd());
+	void handleWrite(ipc::IPCStream &is,ipc::FileWrite::Request &r,const ipc::Socket::Addr *sa) {
+		Socket *sock = get(is.fd());
 		char *data;
-		ipc::FileWrite::Request r;
-		is >> r;
 		if(r.shmemoff == -1) {
 			data = new char[r.count];
 			is >> ipc::ReceiveData(data,r.count);
 		}
+		// TODO check offset!
 		else
 			data = sock->shm() + r.shmemoff;
 
 		ssize_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			res = sock->sendto(NULL,data,r.count);
+			res = sock->sendto(sa,data,r.count);
 		}
 
 		is << ipc::FileWrite::Response(res) << ipc::Send(ipc::FileWrite::Response::MID);
 		if(r.shmemoff == -1)
 			delete[] data;
-	}
-
-	void close(ipc::IPCStream &is) {
-		std::lock_guard<std::mutex> guard(mutex);
-		ipc::ClientDevice<UDPSocket>::close(is);
 	}
 };
 
@@ -154,6 +162,7 @@ public:
 		set(MSG_NET_LINK_ADD,std::make_memfun(this,&NetDevice::linkAdd));
 		set(MSG_NET_LINK_REM,std::make_memfun(this,&NetDevice::linkRem));
 		set(MSG_NET_LINK_CONFIG,std::make_memfun(this,&NetDevice::linkConfig));
+		set(MSG_NET_LINK_MAC,std::make_memfun(this,&NetDevice::linkMAC));
 		set(MSG_NET_ROUTE_ADD,std::make_memfun(this,&NetDevice::routeAdd));
 		set(MSG_NET_ROUTE_REM,std::make_memfun(this,&NetDevice::routeRem));
 		set(MSG_NET_ROUTE_CONFIG,std::make_memfun(this,&NetDevice::routeConfig));
@@ -198,7 +207,9 @@ public:
 			res = -ENOENT;
 		else if((other = LinkMng::getByIp(ip)) && other != l)
 			res = -EEXIST;
-		else if(!ip.isHost(netmask) || !netmask.isNetmask() || status == ipc::Net::KILLED)
+		else if(ip.value() != 0 && !ip.isHost(netmask))
+			res = -EINVAL;
+		else if(!netmask.isNetmask() || status == ipc::Net::KILLED)
 			res = -EINVAL;
 		else {
 			l->ip(ip);
@@ -206,6 +217,17 @@ public:
 			l->status(status);
 		}
 		is << res << ipc::Send(MSG_DEF_RESPONSE);
+	}
+
+	void linkMAC(ipc::IPCStream &is) {
+		ipc::CStringBuf<Link::NAME_LEN> name;
+		is >> name;
+
+		Link *link = LinkMng::getByName(name.str());
+		if(!link)
+			is << -ENOENT << ipc::Send(MSG_DEF_RESPONSE);
+		else
+			is << 0 << link->mac() << ipc::Send(MSG_DEF_RESPONSE);
 	}
 
 	void routeAdd(ipc::IPCStream &is) {
@@ -304,6 +326,32 @@ public:
 	}
 };
 
+static int receiveThread(void *arg) {
+	static uint8_t buffer[4096];
+	Link *link = reinterpret_cast<Link*>(arg);
+	while(link->status() != ipc::Net::KILLED) {
+		ssize_t res = link->read(buffer,sizeof(buffer));
+		if(res < 0) {
+			printe("Reading packet failed");
+			break;
+		}
+
+		std::cout << "[" << link->mac() << "] Received packet with " << res << " bytes" << std::endl;
+		if((size_t)res >= sizeof(Ethernet<>)) {
+			std::lock_guard<std::mutex> guard(mutex);
+			Ethernet<> *packet = reinterpret_cast<Ethernet<>*>(buffer);
+			std::cout << *packet << std::endl;
+			ssize_t err = Ethernet<>::receive(*link,packet,res);
+			if(err < 0)
+				printe("Invalid packet: %s",strerror(-err));
+		}
+		else
+			printe("Ignoring packet of size %zd",res);
+	}
+	delete link;
+	return 0;
+}
+
 static int linksFileThread(void*) {
 	LinksFileDevice dev("/system/net/links",0444);
 	dev.loop();
@@ -322,18 +370,18 @@ static int arpFileThread(void*) {
 	return 0;
 }
 
-static int udpThread(void*) {
-	UDPDevice dev("/dev/udp",0777);
+static int socketThread(void*) {
+	SocketDevice dev("/dev/socket",0777);
 	dev.loop();
 	return 0;
 }
 
-int main(int argc,char **) {
+int main() {
 	if(mkdir("/system/net") < 0)
 		printe("Unable to create /system/net");
 
-	if(startthread(udpThread,NULL) < 0)
-		error("Unable to start UDP thread");
+	if(startthread(socketThread,NULL) < 0)
+		error("Unable to start socket thread");
 	if(startthread(linksFileThread,NULL) < 0)
 		error("Unable to start links-file thread");
 	if(startthread(routesFileThread,NULL) < 0)
@@ -387,7 +435,7 @@ int main(int argc,char **) {
 	usemup(&sem);
 #endif
 
-	NetDevice netdev("/dev/net",0111);
+	NetDevice netdev("/dev/tcpip",0111);
 	netdev.loop();
 	return 0;
 }

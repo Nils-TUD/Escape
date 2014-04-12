@@ -60,7 +60,7 @@ static void arpRem(ipc::Net &net,int argc,char **argv) {
 }
 
 int main(int argc,char **argv) {
-	ipc::Net net("/dev/net");
+	ipc::Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::arp*> arplist = info::arp::get_list();

@@ -242,20 +242,30 @@ private:
  * Can be "put into" a stream to receive a message from the file it is attached to.
  */
 struct Receive {
+	explicit Receive(bool ignoreSigs = true) : _ignoreSigs(ignoreSigs) {
+	}
+
 	void operator()(IPCStream &is) {
-		A_UNUSED ssize_t res = IGNSIGS(::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max()));
+		ssize_t res;
+		do {
+			res = ::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max());
+		}
+		while(_ignoreSigs && res == -EINTR);
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			VTHROWE("receive",res);
 #endif
 	}
+
+private:
+	bool _ignoreSigs;
 };
 
 /**
  * Can be "put into" a stream to send and receive a message from the file it is attached to.
  */
 struct SendReceive : public Send, public Receive {
-	explicit SendReceive(msgid_t mid) : Send(mid), Receive() {
+	explicit SendReceive(msgid_t mid,bool ignoreSigs = true) : Send(mid), Receive(ignoreSigs) {
 	}
 
 	void operator()(IPCStream &is) {
@@ -291,11 +301,16 @@ private:
  * Can be "put into" a stream to receive data from the file it is attached to into a given buffer.
  */
 struct ReceiveData {
-	explicit ReceiveData(void *data,size_t size) : _data(data), _size(size) {
+	explicit ReceiveData(void *data,size_t size,bool ignoreSigs = true)
+		: _data(data), _size(size), _ignoreSigs(ignoreSigs) {
 	}
 
 	void operator()(IPCStream &is) {
-		A_UNUSED ssize_t res = IGNSIGS(::receive(is.fd(), NULL, _data, _size));
+		ssize_t res;
+		do {
+			res = ::receive(is.fd(), NULL, _data, _size);
+		}
+		while(_ignoreSigs && res == -EINTR);
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			VTHROWE("receive",res);
@@ -305,6 +320,7 @@ struct ReceiveData {
 private:
 	void *_data;
 	size_t _size;
+	bool _ignoreSigs;
 };
 
 static inline IPCStream &operator<<(IPCStream &is,Send op) {

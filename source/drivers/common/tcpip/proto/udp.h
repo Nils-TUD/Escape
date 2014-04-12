@@ -21,36 +21,17 @@
 
 #include <esc/common.h>
 #include <esc/endian.h>
-#include <esc/net.h>
 #include <map>
 
-#include "common.h"
-#include "link.h"
-#include "socket.h"
-#include "portmng.h"
-
-class UDPSocket : public Socket {
-public:
-	explicit UDPSocket(int f) : Socket(f) {
-		assert(false);
-	}
-	explicit UDPSocket(int f,const ipc::Net::IPv4Addr &ip,port_t port);
-	virtual ~UDPSocket();
-
-	virtual ssize_t sendto(const sSockAddr *sa,const void *buffer,size_t size);
-	virtual ssize_t receive(void *buffer,size_t size);
-
-private:
-	ipc::Net::IPv4Addr _dstIp;
-	port_t _srcPort;
-	port_t _dstPort;
-	static PortMng<PRIVATE_PORTS_CNT> _ports;
-};
+#include "../socket/udpsocket.h"
+#include "../common.h"
+#include "../link.h"
+#include "../portmng.h"
 
 class UDP {
 	friend class UDPSocket;
 
-	typedef std::map<port_t,UDPSocket*> socket_map;
+	typedef std::map<ipc::port_t,UDPSocket*> socket_map;
 
 public:
 	enum {
@@ -61,19 +42,19 @@ public:
 		return sizeof(UDP);
 	}
 
-	static ssize_t send(const ipc::Net::IPv4Addr &ip,port_t srcp,port_t dstp,
+	static ssize_t send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
 		const void *data,size_t nbytes);
 	static ssize_t receive(Link &link,Ethernet<IPv4<UDP>> *packet,size_t sz);
 
 private:
-	static ssize_t addSocket(UDPSocket *sock,port_t port) {
+	static ssize_t addSocket(UDPSocket *sock,ipc::port_t port) {
 		socket_map::iterator it = _socks.find(port);
 		if(it != _socks.end())
 			return it->second != sock ? -EADDRINUSE : 0;
 		_socks[port] = sock;
 		return 0;
 	}
-	static void remSocket(UDPSocket *sock,port_t port) {
+	static void remSocket(UDPSocket *sock,ipc::port_t port) {
 		socket_map::iterator it = _socks.find(port);
 		if(it != _socks.end() && it->second == sock)
 			_socks.erase(it);
@@ -82,8 +63,8 @@ private:
 		const uint16_t *header,size_t sz);
 
 public:
-    port_t srcPort;
-    port_t dstPort;
+    ipc::port_t srcPort;
+    ipc::port_t dstPort;
     uint16_t dataSize;
     uint16_t checksum;
 	static socket_map _socks;

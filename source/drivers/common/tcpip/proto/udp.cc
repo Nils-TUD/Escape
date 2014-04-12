@@ -24,44 +24,10 @@
 #include "udp.h"
 #include "ipv4.h"
 
-PortMng<PRIVATE_PORTS_CNT> UDPSocket::_ports(PRIVATE_PORTS);
 UDP::socket_map UDP::_socks;
 
-UDPSocket::UDPSocket(int f,const ipc::Net::IPv4Addr &ip,int port)
-	: Socket(f), _dstIp(ip), _srcPort(0), _dstPort(port) {
-}
-
-UDPSocket::~UDPSocket() {
-	UDP::remSocket(this,_dstPort);
-	if(_srcPort != 0) {
-		UDP::remSocket(this,_srcPort);
-		_ports.release(_srcPort);
-	}
-}
-
-ssize_t UDPSocket::sendto(const sSockAddr *sa,const void *buffer,size_t size) {
-	ipc::Net::IPv4Addr addr = sa ? ipc::Net::IPv4Addr(sa->d.ipv4.addr) : _dstIp;
-	port_t port = sa ? sa->d.ipv4.port : _dstPort;
-
-	// do we still need a local port?
-	if(_srcPort == 0) {
-		_srcPort = _ports.allocate();
-		if(_srcPort == 0)
-			return -EAGAIN;
-		UDP::addSocket(this,_srcPort);
-	}
-
-	return UDP::send(addr,_srcPort,port,buffer,size);
-}
-
-ssize_t UDPSocket::receive(void *buffer,size_t size) {
-	ssize_t res = UDP::addSocket(this,_dstPort);
-	if(res < 0)
-		return res;
-	return Socket::receive(buffer,size);
-}
-
-ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,port_t srcp,port_t dstp,const void *data,size_t nbytes) {
+ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
+		const void *data,size_t nbytes) {
 	const Route *route = Route::find(ip);
 	if(!route)
 		return -ENETUNREACH;
@@ -89,8 +55,13 @@ ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,port_t srcp,port_t dstp,const voi
 ssize_t UDP::receive(Link&,Ethernet<IPv4<UDP>> *packet,size_t) {
 	const UDP *udp = &packet->payload.payload;
 	socket_map::iterator it = _socks.find(be16tocpu(udp->dstPort));
-	if(it != _socks.end())
-		it->second->push(packet->payload.src,udp + 1,be16tocpu(udp->dataSize));
+	if(it != _socks.end()) {
+		ipc::Socket::Addr sa;
+		sa.family = ipc::Socket::AF_INET;
+		sa.d.ipv4.addr = packet->payload.src.value();
+		sa.d.ipv4.port = be16tocpu(udp->srcPort);
+		it->second->push(sa,udp + 1,be16tocpu(udp->dataSize) - sizeof(UDP));
+	}
 	return 0;
 }
 

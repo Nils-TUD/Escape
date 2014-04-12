@@ -24,8 +24,8 @@
 #include <ostream>
 #include <map>
 
-#include "common.h"
-#include "link.h"
+#include "../common.h"
+#include "../link.h"
 
 class ARP {
 	enum {
@@ -58,19 +58,25 @@ public:
 
 	template<class T>
 	static ssize_t send(Link &link,Ethernet<T> *packet,size_t size,
-			const ipc::Net::IPv4Addr &ip,uint16_t type) {
-		cache_type::iterator it = _cache.find(ip);
+			const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type) {
+		ipc::NIC::MAC mac;
+		if(ip == ip.getBroadcast(nm))
+			mac = ipc::NIC::MAC::broadcast();
+		else {
+			cache_type::iterator it = _cache.find(ip);
 
-		// if we don't know the MAC address yet, start an ARP request and add packet to pending list
-		if(it == _cache.end()) {
-			int res = createPending(packet,size,ip,type);
-			if(res < 0)
-				return res;
-			return requestMAC(link,ip);
+			// if we don't know the MAC address yet, start an ARP request and add packet to pending list
+			if(it == _cache.end()) {
+				int res = createPending(packet,size,ip,type);
+				if(res < 0)
+					return res;
+				return requestMAC(link,ip);
+			}
+			mac = it->second;
 		}
 
 		// otherwise just send the packet
-		return packet->send(link,it->second,size,type);
+		return packet->send(link,mac,size,type);
 	}
 	static ssize_t receive(Link &link,Ethernet<ARP> *packet,size_t size);
 

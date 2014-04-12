@@ -23,10 +23,10 @@
 #include <esc/endian.h>
 #include <iostream>
 
-#include "common.h"
+#include "../common.h"
+#include "../link.h"
 #include "arp.h"
 #include "ipv4.h"
-#include "link.h"
 
 static std::ostream &operator<<(std::ostream &os,const Ethernet<> &p);
 

@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <ipc/proto/nic.h>
 #include <ipc/ipcstream.h>
 #include <istream>
 #include <ostream>
@@ -119,6 +120,14 @@ public:
 		_is << CString(link) << ip << nm << status << SendReceive(MSG_NET_LINK_CONFIG) >> res;
 		if(res < 0)
 			VTHROWE("linkConfig(" << link << ")",res);
+	}
+	NIC::MAC linkMAC(const char *link) {
+		NIC::MAC mac;
+		int res;
+		_is << CString(link) << SendReceive(MSG_NET_LINK_MAC) >> res >> mac;
+		if(res < 0)
+			VTHROWE("linkMAC(" << link << ")",res);
+		return mac;
 	}
 
 	void routeAdd(const char *link,const IPv4Addr &ip,const IPv4Addr &gw,const IPv4Addr &nm) {

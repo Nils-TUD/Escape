@@ -58,6 +58,7 @@
 #define ENETUNREACH					34	/* Network unreachable */
 #define EAGAIN						35	/* Resource temporarily unavailable */
 #define EADDRINUSE					36	/* The given address is in use */
+#define ENOTBOUND					37	/* Socket is not bound to an address */
 
 #ifdef __cplusplus
 extern "C" {

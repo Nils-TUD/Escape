@@ -26,7 +26,7 @@ std::vector<Route*> Route::_table;
 int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
 		const ipc::Net::IPv4Addr &gw,uint flags,Link *link) {
 	// if we should use the gateway, it has to be a valid host
-	if((flags & ipc::Net::FL_USE_GW) && !gw.isHost(nm))
+	if((flags & ipc::Net::FL_USE_GW) && (gw.value() == 0 || !gw.isHost(nm)))
 		return -EINVAL;
 	if(!nm.isNetmask() || !link)
 		return -EINVAL;

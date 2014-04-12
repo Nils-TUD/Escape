@@ -20,9 +20,9 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/net.h>
 #include <ipc/proto/nic.h>
 #include <ipc/proto/net.h>
+#include <ipc/proto/socket.h>
 
 struct Empty {
 	size_t size() const {
@@ -42,6 +42,7 @@ enum {
 struct ReadRequest {
 	void *data;
 	size_t count;
+	bool needsSockAddr;
 };
 
 static const uint16_t WELL_KNOWN_PORTS		= 0;

@@ -20,17 +20,17 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/net.h>
+#include <ipc/proto/socket.h>
 #include <bitset>
 
 template<size_t N>
 class PortMng {
 public:
-	explicit PortMng(port_t base) : _base(base), _firstfree(0), _ports() {
+	explicit PortMng(ipc::port_t base) : _base(base), _firstfree(0), _ports() {
 	}
 
-	port_t allocate() {
-		for(port_t p = _firstfree; p < N; ++p) {
+	ipc::port_t allocate() {
+		for(ipc::port_t p = _firstfree; p < N; ++p) {
 			if(!_ports[p]) {
 				_ports[p] = true;
 				_firstfree = p + 1;
@@ -39,15 +39,15 @@ public:
 		}
 		return 0;
 	}
-	void release(port_t port) {
+	void release(ipc::port_t port) {
 		assert(port >= _base && port < _base + N);
 		_ports[port - _base] = false;
 		_firstfree = port - _base;
 	}
 
 private:
-	port_t _base;
-	port_t _firstfree;
+	ipc::port_t _base;
+	ipc::port_t _firstfree;
 	std::bitset<N> _ports;
 };
 

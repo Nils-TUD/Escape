@@ -22,8 +22,8 @@
 #include <esc/common.h>
 #include <esc/endian.h>
 
-#include "common.h"
-#include "link.h"
+#include "../common.h"
+#include "../link.h"
 #include "arp.h"
 
 class ICMP {

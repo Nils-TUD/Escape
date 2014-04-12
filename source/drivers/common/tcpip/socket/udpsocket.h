@@ -21,20 +21,24 @@
 
 #include <esc/common.h>
 
-enum {
-	AF_INIT		= 1
+#include "../common.h"
+#include "../portmng.h"
+#include "socket.h"
+
+class UDPSocket : public Socket {
+public:
+	explicit UDPSocket(int f,int type) : Socket(f), _localIp(), _localPort() {
+		if(type != ipc::Socket::SOCK_DGRAM)
+			VTHROWE("Socket type " << type << " is not supported",-ENOTSUP);
+	}
+	virtual ~UDPSocket();
+
+	virtual int bind(const ipc::Socket::Addr *sa);
+	virtual ssize_t sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size);
+	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size);
+
+private:
+	ipc::Net::IPv4Addr _localIp;
+	ipc::port_t _localPort;
+	static PortMng<PRIVATE_PORTS_CNT> _ports;
 };
-
-typedef uint16_t port_t;
-
-typedef struct {
-	uint16_t family;		/* AF_* */
-	union {
-		char data[14];
-		struct {
-			port_t port;
-			uint32_t addr;
-		} ipv4;
-	} d;
-} sSockAddr;
-

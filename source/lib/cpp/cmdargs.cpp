@@ -81,6 +81,7 @@ namespace std {
 						case 's':
 						case 'd':
 						case 'i':
+						case 'u':
 						case 'x':
 						case 'X':
 						case 'k':
@@ -204,6 +205,12 @@ namespace std {
 				case 'i': {
 					int *n = (int*)ptr;
 					*n = strtol(arg.c_str(),nullptr,10);
+				}
+				break;
+
+				case 'u': {
+					uint *n = (uint*)ptr;
+					*n = strtoul(arg.c_str(),nullptr,10);
 				}
 				break;
 

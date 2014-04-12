@@ -36,7 +36,8 @@ public:
 	explicit Client(int fd) : _fd(fd), _shm() {
 	}
 	virtual ~Client() {
-		munmap(_shm);
+		if(_shm)
+			munmap(_shm);
 	}
 
 	int fd() const {

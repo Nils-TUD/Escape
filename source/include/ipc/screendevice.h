@@ -72,7 +72,7 @@ public:
 	 * @param mode the permissions to set
 	 */
 	explicit ScreenDevice(const std::vector<Screen::Mode> &modes,const char *path,mode_t mode)
-		: ClientDevice<C>(path,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_CLOSE),
+		: ClientDevice<C>(path,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE),
 		  _modes(modes), _rects(), _newCursor(), _reqc() {
 		this->set(MSG_SCR_GETMODE,std::make_memfun(this,&ScreenDevice::getMode));
 		this->set(MSG_SCR_SETMODE,std::make_memfun(this,&ScreenDevice::setMode));

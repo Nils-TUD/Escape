@@ -1,7 +1,7 @@
 vga
-	/dev/vga 0770 output
+	/dev/vga 0110 output
 vesa
-	/dev/vesa 0770 output
+	/dev/vesa 0110 output
 zero
 	/dev/zero 0666 root
 random

@@ -112,7 +112,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{alarm,				"alarm",    		1},
 	{tsctotime,			"tsctotime",    	1},
 	{semcrt,			"semcrt",			1},
-	{semop,				"semop",			1},
+	{semop,				"semop",			2},
 	{semdestr,			"semdestr",			1},
 	{sendrecv,			"sendrecv",			4},
 	{sharefile,			"sharefile",		2},

@@ -140,6 +140,8 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	/* receive response */
 	ib.reset();
 	t->addResource();
+	// TODO this can't work. we can't tolerate signals and then just retry. the next thread-switch
+	// would be stopped because of the signal. so in this case, we're stuck here.
 	do
 		res = receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
 	while(res == -EINTR);

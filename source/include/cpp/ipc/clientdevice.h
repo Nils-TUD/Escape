@@ -33,7 +33,7 @@ namespace ipc {
  */
 class Client {
 public:
-	explicit Client(int fd) : _fd(fd), _shm() {
+	explicit Client(int f) : _fd(f), _shm() {
 	}
 	virtual ~Client() {
 		if(_shm)

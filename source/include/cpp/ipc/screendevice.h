@@ -34,7 +34,7 @@ namespace ipc {
  */
 class ScreenClient : public Client {
 public:
-	explicit ScreenClient(int fd) : Client(fd), mode(), fb() {
+	explicit ScreenClient(int f) : Client(f), mode(), fb() {
 	}
 
 	int type() const {

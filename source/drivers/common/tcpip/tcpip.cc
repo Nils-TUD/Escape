@@ -22,11 +22,13 @@
 #include <esc/driver.h>
 #include <esc/sync.h>
 #include <ipc/filedev.h>
+#include <usergroup/group.h>
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
 #include <mutex>
 #include <vector>
+#include <dns.h>
 
 #include "proto/ethernet.h"
 #include "proto/arp.h"
@@ -411,9 +413,29 @@ static int socketThread(void*) {
 	return 0;
 }
 
+static void createResolvConf() {
+	// create file
+	const char *resolvconf = std::DNS::getResolveFile();
+	int fd = create(resolvconf,IO_WRITE | IO_CREATE,0660);
+	if(fd < 0) {
+		printe("Unable to create %s",resolvconf);
+		return;
+	}
+	close(fd);
+
+	// chown it to the network-group
+	size_t groupCount;
+	sGroup *groups = group_parseFromFile(GROUPS_PATH,&groupCount);
+	sGroup *network = group_getByName(groups,"network");
+	if(!network || chown(resolvconf,0,network->gid) < 0)
+		printe("Unable to chmod %s",resolvconf);
+	group_free(groups);
+}
+
 int main() {
 	if(mkdir("/system/net") < 0)
 		printe("Unable to create /system/net");
+	createResolvConf();
 
 	if(startthread(socketThread,NULL) < 0)
 		error("Unable to start socket thread");

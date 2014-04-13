@@ -24,9 +24,10 @@
 #include <ipc/proto/net.h>
 #include <ipc/proto/socket.h>
 #include <info/link.h>
-#include <cmdargs.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <cmdargs.h>
+#include <dns.h>
 
 using namespace ipc;
 
@@ -184,8 +185,13 @@ int main(int argc,char **argv) {
 
 	// get destination
 	Net::IPv4Addr dest;
-	std::istringstream is(address);
-	is >> dest;
+	try {
+		dest = std::DNS::getHost(address);
+	}
+	catch(const std::exception &e) {
+		std::cerr << "Unable to resolve '" << address << "': " << e.what() << "\n";
+		return EXIT_FAILURE;
+	}
 
 	// find the ip address for the corresponding device
 	Net::IPv4Addr src;
@@ -211,8 +217,10 @@ int main(int argc,char **argv) {
 	uint sent = 0;
 	uint received = 0;
 
+	std::cout << "PING " << address << " (" << dest << ") " << nbytes;
+	std::cout << "(" << total << ") bytes of data." << std::endl;
+
 	uint64_t start = rdtsc();
-	std::cout << "PING " << dest << " " << nbytes << "(" << total << ") bytes of data." << std::endl;
 	for(uint i = 1; !stop && sent < times; ++i) {
 		sendEcho(sock,src,dest,nbytes,i,ttl);
 		sent++;

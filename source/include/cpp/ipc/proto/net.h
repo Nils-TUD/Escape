@@ -214,7 +214,7 @@ static inline bool operator<=(const Net::IPv4Addr &a,const Net::IPv4Addr &b) {
 
 inline std::istream &operator>>(std::istream &is,Net::IPv4Addr &a) {
 	for(size_t i = 0; i < Net::IPv4Addr::LEN; ++i) {
-		unsigned val;
+		unsigned val = 0;
 		is >> val;
 		if(i < Net::IPv4Addr::LEN - 1) {
 			// skip '.'

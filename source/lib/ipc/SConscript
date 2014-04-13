@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeLib(target = 'ipc', source = [env.Glob('*.cc'),env.Glob('*/*.cc')])

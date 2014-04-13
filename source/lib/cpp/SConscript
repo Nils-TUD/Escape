@@ -8,6 +8,9 @@ myenv.Append(LINKFLAGS = ' -nodefaultlibs -Wl,--whole-archive')
 myenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 myenv.EscapeLib(
 	target = 'stdc++',
-	source = [myenv.Glob('*.cpp'), myenv.Glob('*/*/*.cpp'), '/opt/escape-cross-i586/lib/libsupc++.a'],
+	source = [
+		myenv.Glob('*.cpp'), myenv.Glob('*/*.cpp'), myenv.Glob('*/*/*.cpp'),
+		'/opt/escape-cross-i586/lib/libsupc++.a'
+	],
 	LIBS = ['c']
 )

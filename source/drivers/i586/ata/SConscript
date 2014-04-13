@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'sbin', target = 'ata', source = env.Glob('*.cc'), force_static = True, LIBS = ['ipc']
+	'sbin', target = 'ata', source = env.Glob('*.cc'), force_static = True
 )

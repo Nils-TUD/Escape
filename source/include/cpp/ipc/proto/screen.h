@@ -91,7 +91,7 @@ public:
 	 *
 	 * @param fd
 	 */
-	explicit Screen(int fd) : _is(fd) {
+	explicit Screen(int f) : _is(f) {
 	}
 
 	/**
@@ -245,26 +245,26 @@ public:
 	/**
 	 * Joines the framebuffer represented as the file <name>.
 	 *
-	 * @param mode the mode to use
+	 * @param m the mode to use
 	 * @param name the shared-memory file
 	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @throws if the operation failed
 	 */
-	explicit FrameBuffer(const Screen::Mode &mode,const char *file,int type)
-		: _mode(mode), _filename(file),
+	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type)
+		: _mode(m), _filename(file),
 		  _addr(init(_mode,file,type,IO_READ | IO_WRITE,0)), _created(false) {
 	}
 	/**
 	 * Creates the framebuffer represented as the file <name>.
 	 *
-	 * @param mode the mode to use
+	 * @param m the mode to use
 	 * @param file the shared-memory file
 	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @param perms the permissions to give to the file
 	 * @throws if the operation failed
 	 */
-	explicit FrameBuffer(const Screen::Mode &mode,const char *file,int type,uint perms)
-		: _mode(mode), _filename(file),
+	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type,uint perms)
+		: _mode(m), _filename(file),
 		  _addr(init(_mode,file,type,IO_READ | IO_WRITE | IO_CREATE,perms)), _created(true) {
 	}
 

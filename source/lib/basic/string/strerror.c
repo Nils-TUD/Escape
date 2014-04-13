@@ -60,6 +60,8 @@ static const char *msgs[] = {
 	/* 35 (EAGAIN) */			"Resource temporarily unavailable",
 	/* 36 (EADDRINUSE) */		"The given address is in use",
 	/* 37 (ENOTBOUND) */		"Socket is not bound to an address",
+	/* 38 (EHOSTNOTFOUND) */	"Host not found",
+	/* 39 (ETIMEOUT) */			"Operation timed out",
 };
 
 char *strerror(int errnum) {

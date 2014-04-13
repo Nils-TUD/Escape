@@ -24,9 +24,11 @@
 #include <ipc/proto/socket.h>
 #include <ipc/proto/net.h>
 #include <iostream>
+#include <fstream>
 #include <cmdargs.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <dns.h>
 
 using namespace ipc;
 
@@ -287,7 +289,7 @@ static void sigalarm(int) {
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-t <timeout>] <link>",name);
+	fprintf(stderr,"Usage: %s [-t <timeout>] <link>\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -317,6 +319,8 @@ int main(int argc,char **argv) {
 	// connect to network and get mac
 	Net net("/dev/tcpip");
 	NIC::MAC mac = net.linkMAC(link);
+
+	// TODO actually, we have to remove the complete configuration for the given link first
 
 	// add temporary route to be able to send and receive something
 	net.routeAdd(link,Net::IPv4Addr(),Net::IPv4Addr(),Net::IPv4Addr());
@@ -355,6 +359,9 @@ int main(int argc,char **argv) {
 		net.linkConfig(link,cfg.ipAddr,cfg.netmask,ipc::Net::UP);
 		net.routeAdd(link,cfg.ipAddr.getNetwork(cfg.netmask),Net::IPv4Addr(),cfg.netmask);
 		net.routeAdd(link,Net::IPv4Addr(),cfg.router,Net::IPv4Addr());
+
+		std::ofstream os(std::DNS::getResolveFile());
+		os << (cfg.nameserver.value() == 0 ? cfg.router : cfg.nameserver) << "\n";
 	}
 	return 0;
 }

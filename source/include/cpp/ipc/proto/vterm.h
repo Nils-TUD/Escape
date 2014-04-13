@@ -52,9 +52,9 @@ public:
 	/**
 	 * Attaches this object to the given file-descriptor
 	 *
-	 * @param fd
+	 * @param f the file-descriptor
 	 */
-	explicit VTerm(int fd) : UI(fd) {
+	explicit VTerm(int f) : UI(f) {
 	}
 
 	/**

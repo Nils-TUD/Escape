@@ -51,7 +51,7 @@ public:
 
 		explicit MAC() : _bytes() {
 		}
-		explicit MAC(const uint8_t *bytes) : MAC(bytes[0],bytes[1],bytes[2],bytes[3],bytes[4],bytes[5]) {
+		explicit MAC(const uint8_t *b) : MAC(b[0],b[1],b[2],b[3],b[4],b[5]) {
 		}
 		explicit MAC(uint8_t b1,uint8_t b2,uint8_t b3,uint8_t b4,uint8_t b5,uint8_t b6) {
 			_bytes[0] = b1;

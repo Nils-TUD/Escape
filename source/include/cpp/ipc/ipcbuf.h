@@ -87,17 +87,17 @@ public:
 		if(EXPECT_TRUE(checkSpace(sizeof(T)))) {
 			// note that we align it before the write to allow the use of the low-level receive()
 			// to receive just one item without having to worry about alignment.
-			size_t pos = align(_pos);
-			*reinterpret_cast<T*>(_buf + pos) = value;
-			_pos = pos + sizeof(T);
+			size_t apos = align(_pos);
+			*reinterpret_cast<T*>(_buf + apos) = value;
+			_pos = apos + sizeof(T);
 		}
 		return *this;
 	}
 	void put(const void *data,size_t size) {
 		if(EXPECT_TRUE(checkSpace(size))) {
-			size_t pos = align(_pos);
-			memcpy(_buf + pos,data,size);
-			_pos = pos + size;
+			size_t apos = align(_pos);
+			memcpy(_buf + apos,data,size);
+			_pos = apos + size;
 		}
 	}
 
@@ -107,9 +107,9 @@ public:
 	template<typename T>
 	IPCBuf &operator>>(T &value) {
 		if(EXPECT_TRUE(checkSpace(sizeof(T)))) {
-			size_t pos = align(_pos);
-			value = *reinterpret_cast<T*>(_buf + pos);
-			_pos = pos + sizeof(T);
+			size_t apos = align(_pos);
+			value = *reinterpret_cast<T*>(_buf + apos);
+			_pos = apos + sizeof(T);
 		}
 		else
 			value = T();
@@ -117,9 +117,9 @@ public:
 	}
 	void fetch(void *data,size_t size) {
 		if(EXPECT_TRUE(checkSpace(size))) {
-			size_t pos = align(_pos);
+			size_t apos = align(_pos);
 			memcpy(data,_buf + _pos,size);
-			_pos = pos + size;
+			_pos = apos + size;
 		}
 	}
 

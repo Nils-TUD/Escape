@@ -58,7 +58,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	gwinid_t create(gpos_t x,gpos_t y,gsize_t w,gsize_t h,uint style,gsize_t titleHeight,const char *title) {
-		gwinid_t res;
+		int res;
 		_is << x << y << w << h << style << titleHeight << CString(title);
 		_is << ipc::SendReceive(MSG_WIN_CREATE) >> res;
 		if(res < 0)

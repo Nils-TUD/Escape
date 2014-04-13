@@ -45,9 +45,9 @@ public:
 	/**
 	 * Attaches this object to the given file-descriptor
 	 *
-	 * @param fd
+	 * @param f the file-descriptor
 	 */
-	explicit UI(int fd) : Screen(fd) {
+	explicit UI(int f) : Screen(f) {
 	}
 
 	/**

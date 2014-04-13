@@ -144,6 +144,9 @@
 #define MSG_SOCK_RECVFROM			1501 /* receive data from a socket */
 #define MSG_SOCK_SENDTO				1502 /* send data to a socket */
 
+#define MSG_DNS_RESOLVE				1600 /* resolve a name to an address */
+#define MSG_DNS_SET_SERVER			1601 /* set the name server */
+
 
 #define IS_DEVICE_MSG(id)			((id) == MSG_FILE_OPEN || \
 									 (id) == MSG_FILE_READ || \

@@ -41,7 +41,7 @@ namespace info {
 
 	istream& operator >>(istream& is,link& l) {
 		istream::size_type unlimited = numeric_limits<streamsize>::max();
-		uint status;
+		uint status = 0;
 		is >> l._name >> status >> l._mac >> l._ip >> l._subnetmask;
 		is >> l._rxpkts >> l._txpkts >> l._rxbytes >> l._txbytes;
 		is.ignore(unlimited,'\n');

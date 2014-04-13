@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('sbin', target = 'vga', source = env.Glob('*.cc'), LIBS = ['tui','ipc'])
+env.EscapeCXXProg('sbin', target = 'vga', source = env.Glob('*.cc'))

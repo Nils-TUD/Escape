@@ -25,10 +25,6 @@
 int fclose(FILE *stream) {
 	int res = 0;
 	fflush(stream);
-	if(stream->flags & IO_READ)
-		usemdestr(&stream->in.usem);
-	if(stream->flags & IO_WRITE)
-		usemdestr(&stream->out.usem);
 	if(stream->in.fd >= 0) {
 		close(stream->in.fd);
 		free(stream->in.buffer);

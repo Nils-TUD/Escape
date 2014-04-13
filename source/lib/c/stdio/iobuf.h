@@ -81,7 +81,6 @@ typedef struct {
 	size_t max;
 	uchar dynamic;
 	char *buffer;
-	tUserSem usem;
 } sIOBuf;
 
 typedef struct {

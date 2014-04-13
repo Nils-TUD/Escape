@@ -44,8 +44,6 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 		}
 		f->in.pos = 0;
 		f->in.max = buffer ? size : 0;
-		if(usemcrt(&f->in.usem,1) < 0)
-			goto error;
 		f->out.dynamic = 0;
 	}
 	else
@@ -60,21 +58,16 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 			size_t defsize = size != (size_t)-1 ? size : OUT_BUFFER_SIZE;
 			f->out.buffer = (char*)malloc((dynamic ? DYN_BUFFER_SIZE : defsize) + 1);
 			if(f->out.buffer == NULL)
-				goto errorRd;
+				goto error;
 		}
 		f->out.pos = 0;
 		f->out.max = buffer ? size : (dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE);
-		if(usemcrt(&f->out.usem,1) < 0)
-			goto errorRd;
 		f->out.dynamic = dynamic;
 	}
 	else
 		f->out.fd = -1;
 	return true;
 
-errorRd:
-	if(flags & IO_READ)
-		usemdestr(&f->in.usem);
 error:
 	if(!buffer) {
 		free(f->out.buffer);

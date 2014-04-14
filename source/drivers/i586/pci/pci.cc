@@ -46,7 +46,7 @@ public:
 
 		PCI::Device *d = list_getByClass(cls,subcls);
 		int res = d ? 0 : -1;
-		is << res << *d << Send(PCI::RES_MID);
+		is << res << *d << Reply();
 	}
 
 	void getById(IPCStream &is) {
@@ -55,7 +55,7 @@ public:
 
 		PCI::Device *d = list_getById(bus,dev,func);
 		int res = d ? 0 : -1;
-		is << res << *d << Send(PCI::RES_MID);
+		is << res << *d << Reply();
 	}
 
 	void getByIndex(IPCStream &is) {
@@ -64,12 +64,12 @@ public:
 
 		PCI::Device *d = list_get(idx);
 		int res = d ? 0 : -1;
-		is << res << *d << Send(PCI::RES_MID);
+		is << res << *d << Reply();
 	}
 
 	void getCount(IPCStream &is) {
 		ssize_t len = list_length();
-		is << len << Send(PCI::RES_MID);
+		is << len << Reply();
 	}
 };
 

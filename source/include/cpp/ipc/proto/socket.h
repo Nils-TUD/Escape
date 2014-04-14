@@ -100,7 +100,7 @@ public:
 	void sendto(const Addr &addr,const void *data,size_t size) {
 		FileWrite::Request req(0,size,-1);
 		FileWrite::Response resp;
-		_is << req << addr << Send(MSG_SOCK_SENDTO) << SendData(MSG_SOCK_SENDTO,data,size);
+		_is << req << addr << Send(MSG_SOCK_SENDTO) << SendData(data,size,MSG_SOCK_SENDTO);
 		_is >> Receive() >> resp;
 		if(resp.res < 0)
 			VTHROWE("sendto(" << addr << ", " << size << ")",resp.res);

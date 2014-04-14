@@ -70,9 +70,10 @@ void Util::switchToVGA() {
 		ib << 3 << 1 << true << ipc::CString("");
 
 		ssize_t res = file->sendMsg(pid,MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
-		if(res >= 0) {
+		if(res > 0) {
 			for(int i = 0; i < 100; i++) {
-				res = file->receiveMsg(pid,NULL,NULL,0,false);
+				msgid_t mid = res;
+				res = file->receiveMsg(pid,&mid,NULL,0,false);
 				if(res >= 0)
 					break;
 				Thread::switchAway();

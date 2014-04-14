@@ -44,8 +44,8 @@ public:
 		ipc::FileRead::Request r;
 		is >> r;
 
-		is << sizeof(resp) << ipc::Send(MSG_FILE_READ_RESP);
-		is << ipc::SendData(MSG_FILE_READ_RESP,&resp,sizeof(resp));
+		is << sizeof(resp) << ipc::Reply();
+		is << ipc::ReplyData(&resp,sizeof(resp));
 	}
 };
 
@@ -80,7 +80,7 @@ int mod_driverread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		if(cfd < 0)
 			printe("getwork failed");
 		else {
-			ipc::IPCStream is(cfd,buffer,sizeof(buffer));
+			ipc::IPCStream is(cfd,buffer,sizeof(buffer),mid);
 			dev.handleMsg(mid,is);
 		}
 	}

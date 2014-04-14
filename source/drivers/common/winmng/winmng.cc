@@ -66,7 +66,7 @@ public:
 		int res = win_create(x,y,width,height,is.fd(),style,titleBarHeight,
 			title.str(),_name);
 
-		is << res << ipc::Send(MSG_WIN_CREATE);
+		is << res << ipc::Reply();
 	}
 
 	void setActive(ipc::IPCStream &is) {
@@ -140,7 +140,7 @@ public:
 				wid = -EINVAL;
 		}
 
-		is << wid << ipc::Send(MSG_WIN_UPDATE);
+		is << wid << ipc::Reply();
 	}
 
 	void getModes(ipc::IPCStream &is) {
@@ -154,7 +154,7 @@ public:
 				if(m->type & ipc::Screen::MODE_TYPE_GUI)
 					count++;
 			}
-			is << count << ipc::Send(MSG_DEF_RESPONSE);
+			is << count << ipc::Reply();
 		}
 		else {
 			size_t pos = 0;
@@ -163,14 +163,14 @@ public:
 				if(m->type & ipc::Screen::MODE_TYPE_GUI)
 					marray[pos++] = *m;
 			}
-			is << pos << ipc::Send(MSG_DEF_RESPONSE);
-			is << ipc::SendData(MSG_DEF_RESPONSE,marray,pos * sizeof(*marray));
+			is << pos << ipc::Reply();
+			is << ipc::ReplyData(marray,pos * sizeof(*marray));
 			delete[] marray;
 		}
 	}
 
 	void getMode(ipc::IPCStream &is) {
-		is << 0 << *win_getMode() << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << *win_getMode() << ipc::Reply();
 	}
 
 	void setMode(ipc::IPCStream &is) {
@@ -179,7 +179,7 @@ public:
 		is >> width >> height >> bpp;
 
 		int res = win_setMode(width,height,bpp,_name);
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void close(ipc::IPCStream &is) {

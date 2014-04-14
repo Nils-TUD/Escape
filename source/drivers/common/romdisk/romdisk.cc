@@ -47,13 +47,13 @@ public:
 		if(r.shmemoff != -1)
 			memcpy(c->shm() + r.shmemoff,_diskaddr + r.offset,res);
 
-		is << FileRead::Response(res) << Send(FileRead::Response::MID);
+		is << FileRead::Response(res) << Reply();
 		if(r.shmemoff == -1 && res)
-			is << SendData(FileRead::Response::MID,_diskaddr + r.offset,res);
+			is << ReplyData(_diskaddr + r.offset,res);
 	}
 
 	void size(IPCStream &is) {
-		is << DiskSize::Response(_disksize) << Send(DiskSize::Response::MID);
+		is << DiskSize::Response(_disksize) << Reply();
 	}
 
 private:

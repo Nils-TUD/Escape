@@ -61,13 +61,13 @@ public:
 
 	void getId(ipc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		is << c->randId() << ipc::Send(MSG_DEF_RESPONSE);
+		is << c->randId() << ipc::Reply();
 	}
 
 	void getKeymap(ipc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		int res = c->keymap() != NULL ? 0 : -ENOENT;
-		is << res << ipc::CString(c->keymap()->path) << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::CString(c->keymap()->path) << ipc::Reply();
 	}
 
 	void setKeymap(ipc::IPCStream &is) {
@@ -84,7 +84,7 @@ public:
 			c->keymap(newMap);
 			res = 0;
 		}
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void getModes(ipc::IPCStream &is) {
@@ -93,9 +93,9 @@ public:
 
 		ipc::Screen::Mode *modes = n == 0 ? NULL : new ipc::Screen::Mode[n];
 		ssize_t res = ScreenMng::getModes(modes,n);
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 		if(n != 0) {
-			is << ipc::SendData(MSG_DEF_RESPONSE,modes,res > 0 ? res * sizeof(*modes) : 0);
+			is << ipc::ReplyData(modes,res > 0 ? res * sizeof(*modes) : 0);
 			delete[] modes;
 		}
 	}
@@ -105,10 +105,10 @@ public:
 		if(c->fb()) {
 			ipc::Screen::Mode mode = c->fb()->mode();
 			ScreenMng::adjustMode(&mode);
-			is << 0 << mode << ipc::Send(MSG_DEF_RESPONSE);
+			is << 0 << mode << ipc::Reply();
 		}
 		else
-			is << -EINVAL << ipc::Send(MSG_DEF_RESPONSE);
+			is << -EINVAL << ipc::Reply();
 	}
 
 	void setMode(ipc::IPCStream &is) {
@@ -132,7 +132,7 @@ public:
 					c->screen()->update(0,0,width,height);
 			}
 		}
-		is << 0 << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << ipc::Reply();
 	}
 
 	void setCursor(ipc::IPCStream &is) {
@@ -187,7 +187,7 @@ public:
 				c->screen()->update(0,0,width,height);
 		}
 
-		is << 0 << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << ipc::Reply();
 	}
 
 	void close(ipc::IPCStream &is) {

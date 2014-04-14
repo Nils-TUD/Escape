@@ -53,7 +53,7 @@ struct FileOpen {
 		CString path;
 	};
 
-	typedef DefaultResponse<int,MSG_FILE_OPEN_RESP> Response;
+	typedef DefaultResponse<int> Response;
 };
 
 /**
@@ -83,7 +83,7 @@ struct FileShFile {
 		CString path;
 	};
 
-	typedef DefaultResponse<int,MSG_FILE_SHFILE_RESP> Response;
+	typedef DefaultResponse<int> Response;
 };
 
 /**
@@ -104,7 +104,7 @@ struct FileRead {
 		ssize_t shmemoff;
 	};
 
-	typedef DefaultResponse<ssize_t,MSG_FILE_READ_RESP> Response;
+	typedef DefaultResponse<ssize_t> Response;
 };
 
 /**
@@ -125,7 +125,7 @@ struct FileWrite {
 		ssize_t shmemoff;
 	};
 
-	typedef DefaultResponse<ssize_t,MSG_FILE_WRITE_RESP> Response;
+	typedef DefaultResponse<ssize_t> Response;
 };
 
 }

@@ -31,7 +31,8 @@ int isatty(int fd) {
 	ssize_t res = send(fd,MSG_VT_ISVTERM,NULL,0);
 	if(res < 0)
 		goto err;
-	res = receive(fd,NULL,&val,sizeof(val));
+	msgid_t mid = res;
+	res = receive(fd,&mid,&val,sizeof(val));
 	if(res < 0)
 		goto err;
 

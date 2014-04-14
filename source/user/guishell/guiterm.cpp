@@ -94,7 +94,7 @@ void GUIVTermDevice::loop() {
 			continue;
 		}
 
-		ipc::IPCStream is(fd,buf,sizeof(buf));
+		ipc::IPCStream is(fd,buf,sizeof(buf),mid);
 		handleMsg(mid,is);
 		_sh->update();
 	}
@@ -102,17 +102,17 @@ void GUIVTermDevice::loop() {
 
 void GUIVTermDevice::getMode(ipc::IPCStream &is) {
 	prepareMode();
-	is << 0 << _mode << ipc::Send(MSG_DEF_RESPONSE);
+	is << 0 << _mode << ipc::Reply();
 }
 
 void GUIVTermDevice::getModes(ipc::IPCStream &is) {
 	size_t n;
 	is >> n;
 
-	is << static_cast<ssize_t>(1) << ipc::Send(MSG_DEF_RESPONSE);
+	is << static_cast<ssize_t>(1) << ipc::Reply();
 	if(n) {
 		prepareMode();
-		is << ipc::SendData(MSG_DEF_RESPONSE,&_mode,sizeof(ipc::Screen::Mode));
+		is << ipc::ReplyData(&_mode,sizeof(ipc::Screen::Mode));
 	}
 }
 
@@ -147,7 +147,7 @@ void GUIVTermDevice::write(ipc::IPCStream &is) {
 			free(data);
 	}
 
-	is << ipc::FileWrite::Response(res) << ipc::Send(ipc::FileWrite::Response::MID);
+	is << ipc::FileWrite::Response(res) << ipc::Reply();
 }
 
 void GUIVTermDevice::setCursor(sVTerm *vt) {

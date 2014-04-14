@@ -42,7 +42,6 @@
 #define DEV_TYPE_FILE				4
 
 #define GW_NOBLOCK					1
-#define GW_MARKUSED					2
 
 typedef void (*fGetData)(FILE *str);
 

@@ -43,7 +43,7 @@ public:
 		else if(r.offset + r.count > sizeof(ipc::RTC::Info))
 			res = sizeof(ipc::RTC::Info) - r.offset;
 
-		is << ipc::FileRead::Response(res) << ipc::Send(MSG_FILE_READ_RESP);
+		is << ipc::FileRead::Response(res) << ipc::Reply();
 		if(res > 0) {
 			/* eco32 has no RTC. just report the time since boot */
 			ipc::RTC::Info info;
@@ -51,7 +51,7 @@ public:
 			time_t nowsecs = now / 1000000;
 			info.time = *gmtime(&nowsecs);
 			info.microsecs = (uint)now % 1000000;
-			is << ipc::SendData(MSG_FILE_READ_RESP,(uchar*)&info + r.offset,res);
+			is << ipc::ReplyData((uchar*)&info + r.offset,res);
 		}
 	}
 };

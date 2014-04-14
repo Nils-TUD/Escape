@@ -310,6 +310,8 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
 	Proc *p = t->getProc();
+	/* prevent a pagefault during the operation */
+	msgid_t mid = id != NULL ? *id : 0;
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -320,10 +322,12 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
-	ssize_t res = file->receiveMsg(p->getPid(),id,data,size,false);
+	ssize_t res = file->receiveMsg(p->getPid(),&mid,data,size,false);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+	if(id)
+		*id = mid;
 	SYSC_RET1(stack,res);
 }
 
@@ -333,11 +337,14 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
 	Proc *p = t->getProc();
+	msgid_t mid = *id;
 
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(id))))
+		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 	/* can't be sent by user-programs */
-	if(EXPECT_FALSE(IS_DEVICE_MSG(*id)))
+	if(EXPECT_FALSE(IS_DEVICE_MSG(mid)))
 		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
@@ -346,17 +353,19 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
-	ssize_t res = file->sendMsg(p->getPid(),*id,data,size,NULL,0);
+	ssize_t res = file->sendMsg(p->getPid(),mid,data,size,NULL,0);
 	if(EXPECT_FALSE(res < 0)) {
 		FileDesc::release(file);
 		SYSC_ERROR(stack,res);
 	}
 
 	/* receive response */
-	res = file->receiveMsg(p->getPid(),id,data,size,false);
+	mid = res;
+	res = file->receiveMsg(p->getPid(),&mid,data,size,false);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+	*id = mid;
 	SYSC_RET1(stack,res);
 }
 

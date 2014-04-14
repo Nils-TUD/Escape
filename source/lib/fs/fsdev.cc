@@ -99,14 +99,14 @@ void FSDevice::loop() {
 			continue;
 		}
 
-		IPCStream is(fd,buf,sizeof(buf));
+		IPCStream is(fd,buf,sizeof(buf),mid);
 		handleMsg(mid,is);
 	}
 }
 
 void FSDevice::devopen(IPCStream &is) {
 	_clients++;
-	is << 0 << Send(MSG_FILE_OPEN_RESP);
+	is << 0 << Reply();
 }
 
 void FSDevice::devclose(IPCStream &is) {
@@ -127,7 +127,7 @@ void FSDevice::open(IPCStream &is) {
 		if(no >= 0)
 			add(is.fd(),new OpenFile(is.fd(),no));
 	}
-	is << no << Send(MSG_FS_OPEN_RESP);
+	is << no << Reply();
 }
 
 void FSDevice::read(IPCStream &is) {
@@ -150,10 +150,10 @@ void FSDevice::read(IPCStream &is) {
 			res = _fs->read(_fs->handle,file->ino,buffer,offset,count);
 	}
 
-	is << res << Send(MSG_FILE_READ_RESP);
+	is << res << Reply();
 	if(buffer && shmemoff == -1) {
 		if(res > 0)
-			is << SendData(MSG_FILE_READ_RESP,buffer,res);
+			is << ReplyData(buffer,res);
 		free(buffer);
 	}
 }
@@ -177,7 +177,7 @@ void FSDevice::write(IPCStream &is) {
 	else
 		res = _fs->write(_fs->handle,file->ino,data,offset,count);
 
-	is << res << Send(MSG_FILE_WRITE_RESP);
+	is << res << Reply();
 	if(shmemoff == -1)
 		delete[] data;
 }
@@ -201,13 +201,13 @@ void FSDevice::stat(IPCStream &is) {
 	else
 		res = _fs->stat(_fs->handle,no,&info);
 
-	is << res << info << Send(MSG_FS_STAT_RESP);
+	is << res << info << Reply();
 }
 
 void FSDevice::istat(IPCStream &is) {
 	sFileInfo info;
 	int res = _fs->stat(_fs->handle,get(is.fd())->ino,&info);
-	is << res << info << Send(MSG_FS_STAT_RESP);
+	is << res << info << Reply();
 }
 
 void FSDevice::chmod(IPCStream &is) {
@@ -229,7 +229,7 @@ void FSDevice::chmod(IPCStream &is) {
 			res = _fs->chmod(_fs->handle,&u,ino,mode);
 	}
 
-	is << res << Send(MSG_FS_CHMOD_RESP);
+	is << res << Reply();
 }
 
 void FSDevice::chown(IPCStream &is) {
@@ -252,7 +252,7 @@ void FSDevice::chown(IPCStream &is) {
 			res = _fs->chown(_fs->handle,&u,ino,uid,gid);
 	}
 
-	is << res << Send(MSG_FS_CHOWN_RESP);
+	is << res << Reply();
 }
 
 static char *splitPath(char *path) {
@@ -299,7 +299,7 @@ void FSDevice::link(IPCStream &is) {
 		}
 	}
 
-	is << res << Send(MSG_FS_LINK_RESP);
+	is << res << Reply();
 }
 
 void FSDevice::unlink(IPCStream &is) {
@@ -327,7 +327,7 @@ void FSDevice::unlink(IPCStream &is) {
 		}
 	}
 
-	is << res << Send(MSG_FS_UNLINK_RESP);
+	is << res << Reply();
 }
 
 void FSDevice::mkdir(IPCStream &is) {
@@ -352,7 +352,7 @@ void FSDevice::mkdir(IPCStream &is) {
 		free(name);
 	}
 
-	is << res << Send(MSG_FS_MKDIR_RESP);
+	is << res << Reply();
 }
 
 void FSDevice::rmdir(IPCStream &is) {
@@ -377,12 +377,12 @@ void FSDevice::rmdir(IPCStream &is) {
 		free(name);
 	}
 
-	is << res << Send(MSG_FS_RMDIR_RESP);
+	is << res << Reply();
 }
 
 void FSDevice::syncfs(IPCStream &is) {
 	if(_fs->sync)
 		_fs->sync(_fs->handle);
 
-	is << 0 << Send(MSG_FS_SYNCFS_RESP);
+	is << 0 << Reply();
 }

@@ -115,7 +115,7 @@ public:
 		 * to swap (which would cause a deadlock, because we're doing that). */
 		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
 
-		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(FileShFile::Response::MID);
+		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Reply();
 	}
 
 	void read(IPCStream &is) {
@@ -134,9 +134,9 @@ public:
 			}
 		}
 
-		is << FileRead::Response(res) << Send(FileRead::Response::MID);
+		is << FileRead::Response(res) << Reply();
 		if(r.shmemoff == -1 && res > 0)
-			is << SendData(FileRead::Response::MID,buf,res);
+			is << ReplyData(buf,res);
 	}
 
 	void write(IPCStream &is) {
@@ -157,11 +157,11 @@ public:
 			}
 		}
 
-		is << FileWrite::Response(res) << Send(FileWrite::Response::MID);
+		is << FileWrite::Response(res) << Reply();
 	}
 
 	void getsize(IPCStream &is) {
-		is << partCap << Send(MSG_DEF_RESPONSE);
+		is << partCap << Reply();
 	}
 };
 

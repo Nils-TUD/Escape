@@ -120,7 +120,7 @@ static int getRequests(A_UNUSED void *arg) {
 
 	do {
 		msgid_t mid;
-		int cfd = getwork(id,&mid,buffer,sizeof(buffer),GW_MARKUSED);
+		int cfd = getwork(id,&mid,buffer,sizeof(buffer),0);
 		if(cfd < 0) {
 			if(cfd != -EINTR)
 				printe("Unable to get work");
@@ -138,7 +138,7 @@ static int getRequests(A_UNUSED void *arg) {
 				is >> r;
 
 				req->data = malloc(r.count);
-				IGNSIGS(receive(cfd,NULL,req->data,r.count));
+				is >> ipc::ReceiveData(req->data,r.count);
 			}
 			if((tid = startthread(handleRequest,req)) < 0)
 				error("Unable to start thread");
@@ -153,8 +153,8 @@ static int handleRequest(void *arg) {
 	char resp[12];
 	sTestRequest *req = (sTestRequest*)arg;
 
-	ipc::IPCStream is(req->fd,req->buffer,sizeof(req->buffer));
-	switch(req->mid) {
+	ipc::IPCStream is(req->fd,req->buffer,sizeof(req->buffer),req->mid);
+	switch(req->mid & 0xFFFF) {
 		case MSG_FILE_OPEN: {
 			char param[32];
 			ipc::FileOpen::Request r(param,sizeof(param));
@@ -162,7 +162,7 @@ static int handleRequest(void *arg) {
 
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,r.flags);
 
-			is << ipc::FileOpen::Response(0) << ipc::Send(MSG_FILE_OPEN_RESP);
+			is << ipc::FileOpen::Response(0) << ipc::Reply();
 		}
 		break;
 
@@ -172,9 +172,9 @@ static int handleRequest(void *arg) {
 
 			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,r.offset,r.count);
 
-			is << ipc::FileRead::Response(r.count) << ipc::Send(MSG_FILE_READ_RESP);
+			is << ipc::FileRead::Response(r.count) << ipc::Reply();
 			itoa(resp,sizeof(resp),respId++);
-			is << ipc::SendData(MSG_FILE_READ_RESP,resp,sizeof(resp));
+			is << ipc::ReplyData(resp,sizeof(resp));
 		}
 		break;
 
@@ -185,7 +185,7 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Write: offset=%u, count=%u, data='%s'\n",gettid(),req->fd,
 					r.count,r.offset,req->data);
 
-			is << ipc::FileWrite::Response(r.count) << ipc::Send(MSG_FILE_WRITE_RESP);
+			is << ipc::FileWrite::Response(r.count) << ipc::Reply();
 		}
 		break;
 
@@ -200,8 +200,6 @@ static int handleRequest(void *arg) {
 		break;
 	}
 
-	if(req->fd != -1)
-		fcntl(req->fd,F_SETUNUSED,0);
 	free(req->data);
 	free(req);
 	return 0;

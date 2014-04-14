@@ -27,7 +27,6 @@ class VFSChannel : public VFSNode {
 	struct Message : public SListItem {
 		msgid_t id;
 		size_t length;
-		Thread *thread;
 	};
 
 public:
@@ -39,15 +38,6 @@ public:
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
 	explicit VFSChannel(pid_t pid,VFSNode *parent,bool &success);
-
-	/**
-	 * Marks the given channel as used/unused.
-	 *
-	 * @param used whether to mark it used or unused
-	 */
-	void setUsed(bool used) {
-		this->used = used;
-	}
 
 	/**
 	 * @return the file-descriptor for the driver to communicate with this channel
@@ -62,7 +52,7 @@ public:
 	 * @return true if so
 	 */
 	bool hasWork() const {
-		return !used && sendList.length() > 0;
+		return sendList.length() > 0;
 	}
 
 	/**
@@ -133,17 +123,16 @@ protected:
 	virtual void invalidate();
 
 private:
-	static Message *getMsg(Thread *t,SList<Message> *list,ushort flags);
+	static Message *getMsg(SList<Message> *list,msgid_t mid,ushort flags);
 	int isSupported(int op) const;
 
 	int fd;
-	bool used;
 	bool closed;
 	void *shmem;
 	size_t shmemSize;
-	Thread *curClient;
 	/* a list for sending messages to the device */
 	SList<Message> sendList;
 	/* a list for reading messages from the device */
 	SList<Message> recvList;
+	static uint16_t nextRid;
 };

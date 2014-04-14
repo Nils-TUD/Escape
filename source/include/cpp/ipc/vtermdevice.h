@@ -85,9 +85,9 @@ private:
 			res = vtin_gets(_vterm,data,r.count,&avail);
 		}
 
-		is << FileRead::Response(res) << Send(FileRead::Response::MID);
+		is << FileRead::Response(res) << Reply();
 		if(res) {
-			is << SendData(FileRead::Response::MID,data,res);
+			is << ReplyData(data,res);
 			if(r.count > BUF_SIZE)
 				free(data);
 		}
@@ -110,14 +110,14 @@ private:
 				free(data);
 		}
 
-		is << FileWrite::Response(res) << Send(FileWrite::Response::MID);
+		is << FileWrite::Response(res) << Reply();
 	}
 
 	void setMode(ipc::IPCStream &is) {
 		int mode;
 		is >> mode;
 		setVideoMode(mode);
-		is << 0 << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << ipc::Reply();
 	}
 
 	void getFlag(IPCStream &is) {
@@ -149,7 +149,7 @@ private:
 	void handleControlMsg(IPCStream &is,msgid_t mid,int arg1,int arg2) {
 		int res = vtctrl_control(_vterm,mid,arg1,arg2);
 		update();
-		is << res << Send(MSG_DEF_RESPONSE);
+		is << res << Reply();
 	}
 
 protected:

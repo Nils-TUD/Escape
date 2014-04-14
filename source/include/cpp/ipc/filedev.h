@@ -80,9 +80,9 @@ private:
 		else
 			res = r.count;
 
-		is << FileRead::Response(res) << Send(MSG_FILE_READ_RESP);
+		is << FileRead::Response(res) << Reply();
 		if(res)
-			is << SendData(MSG_FILE_READ_RESP,content.c_str(),res);
+			is << ReplyData(content.c_str(),res);
 	}
 
 	void write(IPCStream &is) {
@@ -93,7 +93,7 @@ private:
 		is >> ReceiveData(data.get(),r.count);
 		ssize_t res = handleWrite(r.offset,data.get(),r.count);
 
-		is << FileWrite::Response(res) << Send(MSG_FILE_WRITE_RESP);
+		is << FileWrite::Response(res) << Reply();
 	}
 };
 

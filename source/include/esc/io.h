@@ -47,10 +47,9 @@
 #define F_SETFL					1
 #define F_WAKE_READER			2
 #define F_GETACCESS				3
-#define F_SETUNUSED				4
-#define F_SEMUP					5
-#define F_SEMDOWN				6
-#define F_DISMSGS				7
+#define F_SEMUP					4
+#define F_SEMDOWN				5
+#define F_DISMSGS				6
 
 /* seek-types */
 #define SEEK_SET				0
@@ -231,18 +230,19 @@ A_CHECKRET static inline ssize_t write(int fd,const void *buffer,size_t count) {
  * @param id the msg-id
  * @param msg the message (may be NULL)
  * @param size the size of the message
- * @return 0 on success or < 0 if an error occurred
+ * @return the used message-id on success or < 0 if an error occurred
  */
 static inline ssize_t send(int fd,msgid_t id,const void *msg,size_t size) {
 	return syscall4(SYSCALL_SEND,fd,id,(ulong)msg,size);
 }
 
 /**
- * Receives a message from the device identified by <fd>. Blocks if no message is available.
+ * Receives the message from the device identified by <fd> with id *<id> or the next "for anybody"
+ * message if <id> is NULL or *<id> is 0. Blocks if that message is not available.
  * You may be interrupted by a signal (-EINTR)!
  *
  * @param fd the file-descriptor
- * @param id will be set to the msg-id (may be NULL to skip the message)
+ * @param id will be set to the msg-id (may be NULL)
  * @param msg the message (may be NULL to skip the message)
  * @param size the (max) size of the message
  * @return the size of the message

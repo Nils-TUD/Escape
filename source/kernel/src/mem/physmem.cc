@@ -317,8 +317,9 @@ void PhysMem::swapper() {
 		ipc::IPCBuf ib(buffer,sizeof(buffer));
 
 		/* get device-size and init swap-map */
-		assert(swapFile->sendMsg(pid,MSG_DISK_GETSIZE,NULL,0,NULL,0) >= 0);
-		assert(swapFile->receiveMsg(pid,NULL,ib.buffer(),ib.max(),false) >= 0);
+		msgid_t mid = swapFile->sendMsg(pid,MSG_DISK_GETSIZE,NULL,0,NULL,0);
+		assert((ssize_t)mid > 0);
+		assert(swapFile->receiveMsg(pid,&mid,ib.buffer(),ib.max(),false) >= 0);
 
 		size_t disksize;
 		ib >> disksize;

@@ -76,15 +76,6 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			return res;
 		}
 
-		case F_SETUNUSED: {
-			VFSNode *n = node;
-			LockGuard<SpinLock> g(&waitLock);
-			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(n->getMode())))
-				return -EINVAL;
-			static_cast<VFSChannel*>(n)->setUsed(false);
-			return 0;
-		}
-
 		case F_DISMSGS: {
 			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode())))
 				return -EINVAL;
@@ -133,8 +124,9 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 
 		/* receive response */
 		t->addResource();
+		msgid_t mid = res;
 		do
-			res = chan->receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
+			res = chan->receive(pid,0,&mid,ib.buffer(),ib.max(),true,false);
 		while(res == -EINTR);
 		t->remResource();
 		if(res < 0)
@@ -254,8 +246,7 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 	return err;
 }
 
-ssize_t OpenFile::receiveMsg(pid_t pid,USER msgid_t *id,USER void *data,size_t size,
-		bool forceBlock) {
+ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,bool forceBlock) {
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
@@ -291,8 +282,9 @@ int OpenFile::syncfs(pid_t pid) {
 
 	/* read response */
 	t->addResource();
+	msgid_t mid = res;
 	do
-		res = chan->receive(pid,0,NULL,buf.buffer(),buf.max(),true,false);
+		res = chan->receive(pid,0,&mid,buf.buffer(),buf.max(),true,false);
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
@@ -338,7 +330,7 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 	while(true) {
 		{
 			LockGuard<SpinLock> g(&waitLock);
-			*fd = static_cast<VFSDevice*>(file->node)->getWork(flags);
+			*fd = static_cast<VFSDevice*>(file->node)->getWork();
 			/* if we've found one or we shouldn't block, stop here */
 			if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK)))
 				return *fd >= 0 ? 0 : -ENOCLIENT;

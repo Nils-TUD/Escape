@@ -104,10 +104,9 @@ public:
 	/**
 	 * Searches for a channel of this device-node that should be served
 	 *
-	 * @param flags the getwork-flags
 	 * @return the fd for the channel to retrieve a message from or a an error if there is none
 	 */
-	int getWork(uint flags);
+	int getWork();
 
 	virtual size_t getSize(pid_t pid) const;
 	virtual void close(pid_t pid,OpenFile *file,int msgid);

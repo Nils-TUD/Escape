@@ -30,10 +30,8 @@ struct EmptyRequest {
 	static const msgid_t MID = MSGID;
 };
 
-template<typename T,msgid_t MSGID>
+template<typename T>
 struct DefaultResponse {
-	static const msgid_t MID = MSGID;
-
 	explicit DefaultResponse() : res() {
 	}
 	explicit DefaultResponse(T _res) : res(_res) {

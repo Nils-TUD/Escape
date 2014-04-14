@@ -68,14 +68,14 @@ public:
 		else if(r.offset + r.count > sizeof(ipc::RTC::Info))
 			res = sizeof(ipc::RTC::Info) - r.offset;
 
-		is << ipc::FileRead::Response(res) << ipc::Send(MSG_FILE_READ_RESP);
+		is << ipc::FileRead::Response(res) << ipc::Reply();
 		if(res > 0) {
 			/* we assume that the system booted at X secs + 0 us, because we don't know
 			 * the microseconds at boot-time. */
 			ipc::RTC::Info info;
 			rtc_readInfo(&info);
 			info.microsecs = (uint)(tsctotime(rdtsc())) % 1000000;
-			is << ipc::SendData(MSG_FILE_READ_RESP,(uchar*)&info + r.offset,res);
+			is << ipc::ReplyData((uchar*)&info + r.offset,res);
 		}
 	}
 };

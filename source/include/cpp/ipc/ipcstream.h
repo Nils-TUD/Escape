@@ -31,7 +31,11 @@
 namespace ipc {
 
 struct Send;
+struct Reply;
 struct Receive;
+struct SendData;
+struct ReplyData;
+struct ReceiveData;
 class IPCStream;
 
 static inline IPCStream &operator<<(IPCStream &is,const CString &str);
@@ -48,7 +52,11 @@ static inline IPCStream &operator>>(IPCStream &is,CStringBuf<SIZE> &s);
  */
 class IPCStream {
 	friend struct Send;
+	friend struct Reply;
 	friend struct Receive;
+	friend struct SendData;
+	friend struct ReplyData;
+	friend struct ReceiveData;
 	friend IPCStream &operator<<(IPCStream &is,const CString &str);
 	friend IPCStream &operator>>(IPCStream &is,CString &str);
 	template<size_t SIZE>
@@ -69,9 +77,10 @@ public:
 	 * Attaches this IPCStream to the file with given fd. The buffer is allocated on the heap.
 	 *
 	 * @param f the file-descriptor
+	 * @param mid the message-id to set (for responses)
 	 */
-	explicit IPCStream(int f)
-		: _fd(f), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE), _flags(FL_ALLOC) {
+	explicit IPCStream(int f,msgid_t mid = 0)
+		: _fd(f), _mid(mid), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE), _flags(FL_ALLOC) {
 	}
 	/**
 	 * Attaches this IPCStream to the file with given fd and uses the given buffer.
@@ -79,9 +88,10 @@ public:
 	 * @param f the file-descriptor
 	 * @param buf the buffer (word-aligned!)
 	 * @param size the buffer size
+	 * @param mid the message-id to set (for responses)
 	 */
-	explicit IPCStream(int f,ulong *buf,size_t size)
-		: _fd(f), _buf(buf,size), _flags() {
+	explicit IPCStream(int f,ulong *buf,size_t size,msgid_t mid = 0)
+		: _fd(f), _mid(mid), _buf(buf,size), _flags() {
 	}
 	/**
 	 * Opens the given device and attaches this IPCStream to it.
@@ -91,7 +101,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit IPCStream(const char *dev,uint mode = IO_MSGS)
-		: _fd(open(dev,mode)), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE),
+		: _fd(open(dev,mode)), _mid(), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE),
 		  _flags(FL_OPEN | FL_ALLOC) {
 #ifndef IN_KERNEL
 		if(_fd < 0)
@@ -115,6 +125,15 @@ public:
 	 */
 	int fd() const {
 		return _fd;
+	}
+	/**
+	 * Returns the currently set message id. This has either been got from the last send() call
+	 * for the id for the sent message. Or it has been set during construction.
+	 *
+	 * @return the message-id
+	 */
+	msgid_t msgid() const {
+		return _mid;
 	}
 	/**
 	 * @return true if an error has occurred during reading or writing
@@ -174,6 +193,7 @@ private:
 	}
 
 	int _fd;
+	msgid_t _mid;
 	IPCBuf _buf;
 	uint _flags;
 };
@@ -223,19 +243,37 @@ struct Send {
 	explicit Send(msgid_t mid) : _mid(mid) {
 	}
 
-	void operator()(IPCStream &is) {
+	IPCStream &operator()(IPCStream &is) {
 		// ensure that we don't send the data that we've received last time
 		is.startWriting();
-		A_UNUSED ssize_t res = ::send(is.fd(), _mid, is._buf.buffer(), is._buf.pos());
+		A_UNUSED ssize_t res = ::send(is.fd(),_mid,is._buf.buffer(),is._buf.pos());
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			VTHROWE("send",res);
 #endif
+		// remember the id for the next receive
+		is._mid = res;
 		is.reset();
+		return is;
 	}
 
-private:
+protected:
 	msgid_t _mid;
+};
+
+/**
+ * Can be "put into" a stream to reply the current content of the stream to the file it is attached to.
+ * In this case, the message id set in the IPCStream, i.e. normally the one that has been received
+ * with the last message, is used.
+ */
+struct Reply : public Send {
+	explicit Reply() : Send(0) {
+	}
+
+	IPCStream &operator()(IPCStream &is) {
+		_mid = is._mid;
+		return Send::operator()(is);
+	}
 };
 
 /**
@@ -245,16 +283,17 @@ struct Receive {
 	explicit Receive(bool ignoreSigs = true) : _ignoreSigs(ignoreSigs) {
 	}
 
-	void operator()(IPCStream &is) {
+	IPCStream &operator()(IPCStream &is) {
 		ssize_t res;
 		do {
-			res = ::receive(is.fd(), NULL, is._buf.buffer(), is._buf.max());
+			res = ::receive(is.fd(),&is._mid,is._buf.buffer(),is._buf.max());
 		}
 		while(_ignoreSigs && res == -EINTR);
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			VTHROWE("receive",res);
 #endif
+		return is;
 	}
 
 private:
@@ -265,13 +304,13 @@ private:
  * Can be "put into" a stream to send and receive a message from the file it is attached to.
  */
 struct SendReceive : public Send, public Receive {
-	explicit SendReceive(msgid_t mid,bool ignoreSigs = true) : Send(mid), Receive(ignoreSigs) {
+	explicit SendReceive(msgid_t mid = 0,bool ignoreSigs = true) : Send(mid), Receive(ignoreSigs) {
 	}
 
-	void operator()(IPCStream &is) {
+	IPCStream &operator()(IPCStream &is) {
 		// TODO use the sendrcv syscall
 		Send::operator()(is);
-		Receive::operator()(is);
+		return Receive::operator()(is);
 	}
 };
 
@@ -280,21 +319,37 @@ struct SendReceive : public Send, public Receive {
  * is attached to.
  */
 struct SendData {
-	explicit SendData(msgid_t mid,const void *data,size_t size) : _mid(mid), _data(data), _size(size) {
+	explicit SendData(const void *data,size_t size,msgid_t mid) : _mid(mid), _data(data), _size(size) {
 	}
 
-	void operator()(IPCStream &is) {
-		A_UNUSED ssize_t res = ::send(is.fd(), _mid, _data, _size);
+	IPCStream &operator()(IPCStream &is) {
+		ssize_t res = ::send(is.fd(),_mid,_data,_size);
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			VTHROWE("send",res);
 #endif
+		is._mid = res;
+		return is;
 	}
 
-private:
+protected:
 	msgid_t _mid;
 	const void *_data;
 	size_t _size;
+};
+
+/**
+ * Can be "put into" a stream to send plain data (independent of the stream content) to the file it
+ * is attached to. Like Reply, it uses the message-id from IPCStream.
+ */
+struct ReplyData : public SendData {
+	explicit ReplyData(const void *data,size_t size) : SendData(data,size,0) {
+	}
+
+	IPCStream &operator()(IPCStream &is) {
+		_mid = is._mid;
+		return SendData::operator()(is);
+	}
 };
 
 /**
@@ -305,16 +360,17 @@ struct ReceiveData {
 		: _data(data), _size(size), _ignoreSigs(ignoreSigs) {
 	}
 
-	void operator()(IPCStream &is) {
+	IPCStream &operator()(IPCStream &is) {
 		ssize_t res;
 		do {
-			res = ::receive(is.fd(), NULL, _data, _size);
+			res = ::receive(is.fd(),&is._mid,_data,_size);
 		}
 		while(_ignoreSigs && res == -EINTR);
 #ifndef IN_KERNEL
 		if(EXPECT_FALSE(res < 0))
 			VTHROWE("receive",res);
 #endif
+		return is;
 	}
 
 private:
@@ -324,24 +380,25 @@ private:
 };
 
 static inline IPCStream &operator<<(IPCStream &is,Send op) {
-	op(is);
-	return is;
+	return op(is);
+}
+static inline IPCStream &operator<<(IPCStream &is,Reply op) {
+	return op(is);
 }
 static inline IPCStream &operator>>(IPCStream &is,Receive op) {
-	op(is);
-	return is;
+	return op(is);
 }
 static inline IPCStream &operator<<(IPCStream &is,SendReceive op) {
-	op(is);
-	return is;
+	return op(is);
 }
 static inline IPCStream &operator<<(IPCStream &is,SendData op) {
-	op(is);
-	return is;
+	return op(is);
+}
+static inline IPCStream &operator<<(IPCStream &is,ReplyData op) {
+	return op(is);
 }
 static inline IPCStream &operator>>(IPCStream &is,ReceiveData op) {
-	op(is);
-	return is;
+	return op(is);
 }
 
 }

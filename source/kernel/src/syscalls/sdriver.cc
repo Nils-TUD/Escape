@@ -74,6 +74,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	uint flags = SYSC_ARG1(stack) & 0x3;
 	Proc *p = t->getProc();
 	OpenFile *file;
+	msgid_t mid = *id;
 
 	/* validate pointers */
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t))))
@@ -101,13 +102,11 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* receive a message */
-	res = client->receiveMsg(p->getPid(),id,data,size,false);
+	res = client->receiveMsg(p->getPid(),&mid,data,size,false);
 	FileDesc::release(client);
 
-	if(EXPECT_FALSE(res < 0)) {
-		/* we have to set the channel unused again; otherwise its ignored for ever */
-		static_cast<VFSChannel*>(client->getNode())->setUsed(false);
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	}
+	*id = mid;
 	SYSC_RET1(stack,clifd);
 }

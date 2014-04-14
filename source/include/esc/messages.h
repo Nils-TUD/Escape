@@ -27,23 +27,12 @@
 /* general */
 #define IPC_DEF_SIZE				256
 
-/* == messages == */
-/* default response */
-#define MSG_DEF_RESPONSE			100000
-
 /* requests to file-device */
 #define MSG_FILE_OPEN				50
 #define MSG_FILE_READ				51
 #define MSG_FILE_WRITE				52
 #define MSG_FILE_CLOSE				53
 #define MSG_FILE_SHFILE				54
-
-/* responses of file-devices */
-#define MSG_FILE_OPEN_RESP			100001
-#define MSG_FILE_READ_RESP			100002
-#define MSG_FILE_WRITE_RESP			100003
-#define MSG_FILE_CLOSE_RESP			100004
-#define MSG_FILE_SHFILE_RESP		100005
 
 /* requests to fs */
 #define MSG_FS_OPEN					100
@@ -60,21 +49,7 @@
 #define MSG_FS_CHMOD				111
 #define MSG_FS_CHOWN				112
 
-/* responses of fs */
-#define MSG_FS_OPEN_RESP			100006
-#define MSG_FS_READ_RESP			100007
-#define MSG_FS_WRITE_RESP			100008
-#define MSG_FS_STAT_RESP			100009
-#define MSG_FS_SYNCFS_RESP			100010
-#define MSG_FS_LINK_RESP			100011
-#define MSG_FS_UNLINK_RESP			100012
-#define MSG_FS_MKDIR_RESP			100013
-#define MSG_FS_RMDIR_RESP			100014
-#define MSG_FS_ISTAT_RESP			100015
-#define MSG_FS_CHMOD_RESP			100016
-#define MSG_FS_CHOWN_RESP			100017
-
-/* == Other messages == */
+/* Other messages */
 #define MSG_SPEAKER_BEEP			200	/* performs a beep */
 
 #define MSG_WIN_CREATE				300	/* creates a window */

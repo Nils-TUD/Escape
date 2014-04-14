@@ -133,7 +133,7 @@ public:
 				continue;
 			}
 
-			IPCStream is(fd,buf,sizeof(buf));
+			IPCStream is(fd,buf,sizeof(buf),mid);
 			this->handleMsg(mid,is);
 		}
 	}
@@ -146,7 +146,7 @@ private:
 		is << res;
 		if(res == 0)
 			is << *c->mode;
-		is << Send(MSG_DEF_RESPONSE);
+		is << Reply();
 	}
 
 	void setMode(IPCStream &is) {
@@ -162,7 +162,7 @@ private:
 				break;
 			}
 		}
-		is << 0 << Send(MSG_DEF_RESPONSE);
+		is << 0 << Reply();
 	}
 
 	void getModes(IPCStream &is) {
@@ -170,12 +170,12 @@ private:
 		is >> count;
 
 		if(count == 0)
-			is << _modes.size() << Send(MSG_DEF_RESPONSE);
+			is << _modes.size() << Reply();
 		else if(count > _modes.size())
-			is << static_cast<ssize_t>(-EINVAL) << Send(MSG_DEF_RESPONSE);
+			is << static_cast<ssize_t>(-EINVAL) << Reply();
 		else {
-			is << count << Send(MSG_DEF_RESPONSE);
-			is << SendData(MSG_DEF_RESPONSE,_modes.begin(),count * sizeof(Screen::Mode));
+			is << count << Reply();
+			is << ReplyData(_modes.begin(),count * sizeof(Screen::Mode));
 		}
 	}
 

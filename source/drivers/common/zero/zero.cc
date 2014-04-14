@@ -55,9 +55,9 @@ public:
 			}
 		}
 
-		is << FileRead::Response(r.count) << Send(FileRead::Response::MID);
+		is << FileRead::Response(r.count) << Reply();
 		if(r.shmemoff == -1 && r.count) {
-			is << SendData(FileRead::Response::MID,data,r.count);
+			is << ReplyData(data,r.count);
 			if(r.count > BUF_SIZE)
 				free(data);
 		}

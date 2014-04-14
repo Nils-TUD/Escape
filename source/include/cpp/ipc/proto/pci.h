@@ -31,8 +31,6 @@ namespace ipc {
  */
 class PCI {
 public:
-	static const msgid_t RES_MID	= MSG_DEF_RESPONSE;
-
 	struct Bar {
 		enum {
 			BAR_MEM				= 0,

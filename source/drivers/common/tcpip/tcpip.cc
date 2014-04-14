@@ -79,7 +79,7 @@ public:
 		else
 			res = -ENOTSUP;
 
-		is << ipc::FileOpen::Response(res) << ipc::Send(ipc::FileOpen::Response::MID);
+		is << ipc::FileOpen::Response(res) << ipc::Reply();
 	}
 
 	void bind(ipc::IPCStream &is) {
@@ -92,7 +92,7 @@ public:
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->bind(&sa);
 		}
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void read(ipc::IPCStream &is) {
@@ -139,7 +139,7 @@ private:
 		}
 
 		if(res < 0)
-			is << ipc::FileRead::Response(res) << ipc::Send(ipc::FileRead::Response::MID);
+			is << ipc::FileRead::Response(res) << ipc::Reply();
 	}
 
 	void handleWrite(ipc::IPCStream &is,ipc::FileWrite::Request &r,const ipc::Socket::Addr *sa) {
@@ -159,7 +159,7 @@ private:
 			res = sock->sendto(sa,data,r.count);
 		}
 
-		is << ipc::FileWrite::Response(res) << ipc::Send(ipc::FileWrite::Response::MID);
+		is << ipc::FileWrite::Response(res) << ipc::Reply();
 		if(r.shmemoff == -1)
 			delete[] data;
 	}
@@ -195,7 +195,7 @@ public:
 				delete link;
 			}
 		}
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void linkRem(ipc::IPCStream &is) {
@@ -204,7 +204,7 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = LinkMng::rem(name.str());
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void linkConfig(ipc::IPCStream &is) {
@@ -230,7 +230,7 @@ public:
 			l->subnetMask(netmask);
 			l->status(status);
 		}
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void linkMAC(ipc::IPCStream &is) {
@@ -240,9 +240,9 @@ public:
 		std::lock_guard<std::mutex> guard(mutex);
 		Link *link = LinkMng::getByName(name.str());
 		if(!link)
-			is << -ENOENT << ipc::Send(MSG_DEF_RESPONSE);
+			is << -ENOENT << ipc::Reply();
 		else
-			is << 0 << link->mac() << ipc::Send(MSG_DEF_RESPONSE);
+			is << 0 << link->mac() << ipc::Reply();
 	}
 
 	void routeAdd(ipc::IPCStream &is) {
@@ -261,7 +261,7 @@ public:
 				flags |= ipc::Net::FL_USE_GW;
 			Route::insert(ip,netmask,gw,flags,l);
 		}
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void routeRem(ipc::IPCStream &is) {
@@ -270,7 +270,7 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = Route::remove(ip);
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void routeConfig(ipc::IPCStream &is) {
@@ -280,7 +280,7 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = Route::setStatus(ip,status);
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void routeGet(ipc::IPCStream &is) {
@@ -290,12 +290,12 @@ public:
 		std::lock_guard<std::mutex> guard(mutex);
 		const Route *r = Route::find(ip);
 		if(!r)
-			is << -ENETUNREACH << ipc::Send(MSG_DEF_RESPONSE);
+			is << -ENETUNREACH << ipc::Reply();
 		else {
 			is << 0;
 			is << (r->flags & ipc::Net::FL_USE_GW ? r->gateway : r->dest);
 			is << ipc::CString(r->link->name().c_str(),r->link->name().length());
-			is << ipc::Send(MSG_DEF_RESPONSE);
+			is << ipc::Reply();
 		}
 	}
 
@@ -310,7 +310,7 @@ public:
 			res = -ENOENT;
 		else
 			ARP::requestMAC(*route->link,ip);
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 
 	void arpRem(ipc::IPCStream &is) {
@@ -319,7 +319,7 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = ARP::remove(ip);
-		is << res << ipc::Send(MSG_DEF_RESPONSE);
+		is << res << ipc::Reply();
 	}
 };
 
@@ -378,6 +378,8 @@ static int receiveThread(void *arg) {
 		if((size_t)res >= sizeof(Ethernet<>)) {
 			std::lock_guard<std::mutex> guard(mutex);
 			Packet pkt(buffer,res);
+			std::cout << "Got packet of " << res << " bytes:\n";
+			std::cout << *reinterpret_cast<Ethernet<>*>(buffer) << std::endl;
 			ssize_t err = Ethernet<>::receive(*link,pkt);
 			if(err < 0)
 				fprintf(stderr,"Invalid packet: %s",strerror(-err));

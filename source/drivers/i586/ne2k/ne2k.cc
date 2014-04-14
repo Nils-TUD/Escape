@@ -57,9 +57,9 @@ public:
 			data = new char[r.count];
 		ssize_t res = _ne2k.fetch(data,r.count);
 
-		is << ipc::FileRead::Response(res) << ipc::Send(ipc::FileRead::Response::MID);
+		is << ipc::FileRead::Response(res) << ipc::Reply();
 		if(r.shmemoff == -1 && res) {
-			is << ipc::SendData(ipc::FileRead::Response::MID,data,res);
+			is << ipc::ReplyData(data,res);
 			delete[] data;
 		}
 	}
@@ -76,13 +76,13 @@ public:
 			data = get(is.fd())->shm() + r.shmemoff;
 
 		ssize_t res = _ne2k.send(data,r.count);
-		is << ipc::FileWrite::Response(res) << ipc::Send(ipc::FileWrite::Response::MID);
+		is << ipc::FileWrite::Response(res) << ipc::Reply();
 		if(r.shmemoff == -1)
 			delete[] data;
 	}
 
 	void getMac(ipc::IPCStream &is) {
-		is << 0 << _ne2k.mac() << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << _ne2k.mac() << ipc::Reply();
 	}
 
 private:

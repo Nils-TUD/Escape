@@ -99,9 +99,9 @@ private:
 		is << ipc::FileRead::Response(size);
 		if(needsSrc)
 			is << sa;
-		is << ipc::Send(ipc::FileRead::Response::MID);
+		is << ipc::Reply();
 		if(dst == NULL)
-			is << ipc::SendData(ipc::FileRead::Response::MID,src,size);
+			is << ipc::ReplyData(src,size);
 	}
 
 	int _proto;

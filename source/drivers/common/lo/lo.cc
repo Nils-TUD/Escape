@@ -55,9 +55,9 @@ public:
 		if(r.shmemoff != -1 && res)
 			memcpy(data,pkt.data,res);
 
-		is << ipc::FileRead::Response(res) << ipc::Send(ipc::FileRead::Response::MID);
+		is << ipc::FileRead::Response(res) << ipc::Reply();
 		if(r.shmemoff == -1 && res)
-			is << ipc::SendData(ipc::FileRead::Response::MID,pkt.data,res);
+			is << ipc::ReplyData(pkt.data,res);
 
 		delete[] pkt.data;
 		_packets.pop_back();
@@ -79,11 +79,11 @@ public:
 		_packets.push_back(pkt);
 		fcntl(id(),F_WAKE_READER,0);
 
-		is << ipc::FileWrite::Response(r.count) << ipc::Send(ipc::FileWrite::Response::MID);
+		is << ipc::FileWrite::Response(r.count) << ipc::Reply();
 	}
 
 	void getMac(ipc::IPCStream &is) {
-		is << 0 << ipc::NIC::MAC() << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << ipc::NIC::MAC() << ipc::Reply();
 	}
 
 private:

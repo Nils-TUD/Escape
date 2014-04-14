@@ -85,9 +85,9 @@ static void client(void) {
 	}
 	while(fd < 0);
 
-	msgid_t mid = 0;
 	begin = rdtsc();
 	for(i = 0; i < messageCount; i++) {
+		msgid_t mid = 0;
 		if(sendrecv(fd,&mid,&msg,sizeof(msg)) < 0)
 			printe("sendrecv failed");
 	}
@@ -109,7 +109,7 @@ static void server(void) {
 		if(fd < 0)
 			fprintf(stderr,"Unable to get work\n");
 		else {
-			if(send(fd,0,&msg,sizeof(msg)) < 0)
+			if(send(fd,mid,&msg,sizeof(msg)) < 0)
 				printe("Message-sending failed");
 		}
 	}
@@ -155,12 +155,13 @@ static void send_recv_alone(void) {
 	printf("send   : %Lu cycles, per call: %Lu\n",end - begin,(end - begin) / testcount);
 
 	int cfd;
-	while((cfd = getwork(dev,NULL,&msg,sizeof(msg),GW_NOBLOCK)) >= 0)
-		send(cfd,MSG_DEF_RESPONSE,&msg,sizeof(msg));
+	msgid_t mid;
+	while((cfd = getwork(dev,&mid,&msg,sizeof(msg),GW_NOBLOCK)) >= 0)
+		send(cfd,0,&msg,sizeof(msg));
 
 	begin = rdtsc();
 	for(size_t i = 0; i < testcount; i++) {
-		if(receive(fd,0,&msg,sizeof(msg)) < 0)
+		if(receive(fd,NULL,&msg,sizeof(msg)) < 0)
 			printe("Message-sending failed");
 	}
 	end = rdtsc();

@@ -74,7 +74,7 @@ void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int ms
 	destroy();
 }
 
-int VFSDevice::getWork(uint flags) {
+int VFSDevice::getWork() {
 	const VFSNode *n,*first,*last;
 	bool valid;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
@@ -100,12 +100,9 @@ searchBegin:
 	while(n != NULL && n != last) {
 		/* data available? */
 		if(static_cast<const VFSChannel*>(n)->hasWork()) {
-			VFSNode *res = const_cast<VFSNode*>(n);
-			if(flags & GW_MARKUSED)
-				static_cast<VFSChannel*>(res)->setUsed(true);
-			lastClient = res;
+			lastClient = const_cast<VFSNode*>(n);
 			closeDir(true);
-			return static_cast<VFSChannel*>(res)->getFd();
+			return static_cast<const VFSChannel*>(lastClient)->getFd();
 		}
 		n = n->next;
 	}

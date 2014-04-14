@@ -64,14 +64,14 @@ void Device::loop() {
 			continue;
 		}
 
-		IPCStream is(fd,buf,sizeof(buf));
+		IPCStream is(fd,buf,sizeof(buf),mid);
 		handleMsg(mid,is);
 	}
 }
 
 void Device::reply(IPCStream &is,int errcode) {
 	try {
-		is << errcode << Send(MSG_DEF_RESPONSE);
+		is << errcode << Reply();
 	}
 	catch(...) {
 		printe("Client %d: sending error-code failed: %s",is.fd(),strerror(-errcode));
@@ -79,7 +79,7 @@ void Device::reply(IPCStream &is,int errcode) {
 }
 
 void Device::handleMsg(msgid_t mid,IPCStream &is) {
-	oplist_type::iterator it = _ops.find(mid);
+	oplist_type::iterator it = _ops.find(mid & 0xFFFF);
 	Handler &h = (*it).second;
 	try {
 		if(EXPECT_FALSE(it == _ops.end()))

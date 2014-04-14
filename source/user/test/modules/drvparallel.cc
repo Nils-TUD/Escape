@@ -104,7 +104,7 @@ static int fibthread(void *arg) {
 	sTask *task = (sTask*)arg;
 	int res = fib(task->n);
 	ipc::IPCStream is(task->fd);
-	is << res << ipc::Send(MSG_DEF_RESPONSE);
+	is << res << ipc::Reply();
 
 	free(task);
 	printf("[%d] Done...\n",gettid());

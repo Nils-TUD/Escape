@@ -48,9 +48,9 @@ public:
 				*d++ = rand();
 		}
 
-		is << FileRead::Response(res) << Send(FileRead::Response::MID);
+		is << FileRead::Response(res) << Reply();
 		if(r.shmemoff == -1 && res) {
-			is << SendData(FileRead::Response::MID,data,res);
+			is << ReplyData(data,res);
 			free(data);
 		}
 	}

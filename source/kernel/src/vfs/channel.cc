@@ -42,12 +42,14 @@
 
 extern SpinLock waitLock;
 
+uint16_t VFSChannel::nextRid = 1;
+
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		/* permissions are basically irrelevant here since the userland can't open a channel directly. */
 		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
 		/* otherwise, if root uses that device, the driver is unable to open this channel. */
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
-		  used(false), closed(false), shmem(NULL), shmemSize(0), curClient(), sendList(), recvList() {
+		  closed(false), shmem(NULL), shmemSize(0), sendList(), recvList() {
 	if(!success)
 		return;
 
@@ -101,6 +103,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	Proc *p,*pp;
 	pid_t ppid;
 	Thread *t = Thread::getRunning();
+	msgid_t mid;
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
@@ -142,8 +145,9 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	t->addResource();
 	// TODO this can't work. we can't tolerate signals and then just retry. the next thread-switch
 	// would be stopped because of the signal. so in this case, we're stuck here.
+	mid = res;
 	do
-		res = receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
+		res = receive(pid,0,&mid,ib.buffer(),ib.max(),true,false);
 	while(res == -EINTR);
 	t->remResource();
 	if(res < 0)
@@ -213,8 +217,9 @@ int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
 		return res;
 
 	/* receive response */
+	msgid_t mid = res;
 	do
-		res = receive(pid,0,NULL,ib.buffer(),ib.max(),true,false);
+		res = receive(pid,0,&mid,ib.buffer(),ib.max(),true,false);
 	while(res == -EINTR);
 	if(res < 0)
 		return res;
@@ -265,11 +270,9 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	 * (otherwise the channel might get in an inconsistent state) */
 	t->addResource();
 	ib.reset();
+	msgid_t mid = res;
 	do {
-		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-		vassert(res < 0 || mid == MSG_FILE_READ_RESP,"mid=%u, res=%zd, node=%s:%p",
-				mid,res,getPath(),this);
 	}
 	while(res == -EINTR);
 	t->remResource();
@@ -286,7 +289,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		/* read data */
 		t->addResource();
 		do
-			r.res = file->receiveMsg(pid,NULL,buffer,count,true);
+			r.res = file->receiveMsg(pid,&mid,buffer,count,true);
 		while(r.res == -EINTR);
 		t->remResource();
 	}
@@ -312,11 +315,9 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	/* read response */
 	ib.reset();
 	t->addResource();
+	msgid_t mid = res;
 	do {
-		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-		vassert(res < 0 || mid == MSG_FILE_WRITE_RESP,"mid=%u, res=%zd, node=%s:%p",
-				mid,res,getPath(),this);
 	}
 	while(res == -EINTR);
 	t->remResource();
@@ -350,11 +351,9 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	/* read response */
 	ib.reset();
 	t->addResource();
+	msgid_t mid = res;
 	do {
-		msgid_t mid;
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-		vassert(res < 0 || mid == MSG_FILE_SHFILE_RESP,"mid=%u, res=%zd, node=%s:%p",
-				mid,res,getPath(),this);
 	}
 	while(res == -EINTR);
 	t->remResource();
@@ -374,19 +373,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
                          size_t size1,USER const void *data2,size_t size2) {
 	SList<Message> *list;
-	Thread *t = Thread::getRunning();
 	Message *msg1,*msg2 = NULL;
-	Thread *recipient = t;
-
-#if PRINT_MSGS
-	Proc *p = Proc::getByPid(pid);
-	Log::get().writef("%2d:%2d(%-12.12s) -> %6d (%4d b) %#x (%s)\n",
-			t->getTid(),pid,p ? p->getProgram() : "??",id,size1,this,getPath());
-	if(data2) {
-		Log::get().writef("%2d:%2d(%-12.12s) -> %6d (%4d b) %#x (%s)\n",
-				t->getTid(),pid,p ? p->getProgram() : "??",id,size2,this,getPath());
-	}
-#endif
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(flags & VFS_DEVICE) {
@@ -403,7 +390,6 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		return -ENOMEM;
 
 	msg1->length = size1;
-	msg1->id = id;
 	if(EXPECT_TRUE(data1)) {
 		Thread::addHeapAlloc(msg1);
 		memcpy(msg1 + 1,data1,size1);
@@ -416,7 +402,6 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 			return -ENOMEM;
 
 		msg2->length = size2;
-		msg2->id = id;
 		Thread::addHeapAlloc(msg1);
 		Thread::addHeapAlloc(msg2);
 		memcpy(msg2 + 1,data2,size2);
@@ -424,40 +409,54 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		Thread::remHeapAlloc(msg1);
 	}
 
-	/* note that we do that here, because memcpy can fail because the page is swapped out for
-	 * example. we can't hold the lock during that operation */
-	LockGuard<SpinLock> g(&waitLock);
+	{
+		/* note that we do that here, because memcpy can fail because the page is swapped out for
+		 * example. we can't hold the lock during that operation */
+		LockGuard<SpinLock> g(&waitLock);
 
-	/* set recipient */
-	if(flags & VFS_DEVICE)
-		recipient = id >= MSG_DEF_RESPONSE ? curClient : NULL;
-	msg1->thread = recipient;
-	if(EXPECT_FALSE(data2))
-		msg2->thread = recipient;
+		/* set request id. for clients, we generate a new unique request-id */
+		if(list == &sendList) {
+			id &= 0xFFFF;
+			/* prevent to set the MSB. otherwise the return-value would be negative (on 32-bit) */
+			id |= ((nextRid++) & 0x7FFF) << 16;
+		}
+		/* for devices, we just use whatever the driver gave us */
+		msg1->id = id;
+		if(EXPECT_FALSE(data2))
+			msg2->id = id;
 
-	/* append to list */
-	list->append(msg1);
-	if(EXPECT_FALSE(msg2))
-		list->append(msg2);
-
-	/* notify the driver */
-	if(list == &sendList) {
-		static_cast<VFSDevice*>(parent)->addMsgs(1);
+		/* append to list */
+		list->append(msg1);
 		if(EXPECT_FALSE(msg2))
+			list->append(msg2);
+
+		/* notify the driver */
+		if(list == &sendList) {
 			static_cast<VFSDevice*>(parent)->addMsgs(1);
-		Sched::wakeup(EV_CLIENT,(evobj_t)parent,false);
-	}
-	else {
-		/* notify other possible waiters */
-		if(recipient)
-			recipient->unblock();
-		else
+			if(EXPECT_FALSE(msg2))
+				static_cast<VFSDevice*>(parent)->addMsgs(1);
+			Sched::wakeup(EV_CLIENT,(evobj_t)parent,false);
+		}
+		else {
+			/* notify other possible waiters */
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,false);
+		}
 	}
-	return 0;
+
+#if PRINT_MSGS
+	Thread *t = Thread::getRunning();
+	Proc *p = Proc::getByPid(pid);
+	Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
+			t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size1,this,getPath());
+	if(data2) {
+		Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
+				t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size2,this,getPath());
+	}
+#endif
+	return id;
 }
 
-ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USER void *data,
+ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER void *data,
                             size_t size,bool block,bool ignoreSigs) {
 	SList<Message> *list;
 	Thread *t = Thread::getRunning();
@@ -480,7 +479,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 
 	/* wait until a message arrives */
 	waitLock.down();
-	while((msg = getMsg(t,list,flags)) == NULL) {
+	while((msg = getMsg(list,*id,flags)) == NULL) {
 		if(EXPECT_FALSE(!block)) {
 			waitLock.up();
 			return -EWOULDBLOCK;
@@ -506,16 +505,15 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 		waitLock.down();
 	}
 
-	if(event == EV_CLIENT) {
+	if(event == EV_CLIENT)
 		static_cast<VFSDevice*>(parent)->remMsgs(1);
-		curClient = msg->thread;
-	}
 	waitLock.up();
 
 #if PRINT_MSGS
 	Proc *p = Proc::getByPid(pid);
-	Log::get().writef("%2d:%2d(%-12.12s) <- %6d (%4d b) %#x (%s)\n",
-			t->getTid(),pid,p ? p->getProgram() : "??",msg->id,msg->length,this,getPath());
+	Log::get().writef("%2d:%2d(%-12.12s) <- %5u:%5u (%4d b) %#x (%s)\n",
+			t->getTid(),pid,p ? p->getProgram() : "??",msg->id >> 16,msg->id & 0xFFFF,
+			msg->length,this,getPath());
 #endif
 
 	if(EXPECT_FALSE(data && msg->length > size)) {
@@ -537,15 +535,16 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,USER msgid_t *id,USE
 	return res;
 }
 
-VFSChannel::Message *VFSChannel::getMsg(Thread *t,SList<Message> *list,ushort flags) {
+VFSChannel::Message *VFSChannel::getMsg(SList<Message> *list,msgid_t mid,ushort flags) {
 	/* drivers get always the first message */
 	if(flags & VFS_DEVICE)
 		return list->removeFirst();
 
-	/* find the message for this client-thread */
+	/* find the message for the given id */
 	Message *p = NULL;
 	for(auto it = list->begin(); it != list->end(); p = &*it, ++it) {
-		if(it->thread == NULL || it->thread == t) {
+		/* either it's a "for anybody" message, or the id has to match */
+		if(it->id == mid || (it->id >> 16) == 0) {
 			list->removeAt(p,&*it);
 			return &*it;
 		}
@@ -555,15 +554,12 @@ VFSChannel::Message *VFSChannel::getMsg(Thread *t,SList<Message> *list,ushort fl
 
 void VFSChannel::print(OStream &os) const {
 	const SList<Message> *lists[] = {&sendList,&recvList};
-	os.writef("%-8s: snd=%zu rcv=%zu used=%d closed=%d fd=%02d shm=%zuK\n",
-		name,sendList.length(),recvList.length(),used,closed,fd,shmem ? shmemSize / 1024 : 0);
+	os.writef("%-8s: snd=%zu rcv=%zu closed=%d fd=%02d shm=%zuK\n",
+		name,sendList.length(),recvList.length(),closed,fd,shmem ? shmemSize / 1024 : 0);
 	for(size_t i = 0; i < ARRAY_SIZE(lists); i++) {
 		for(auto it = lists[i]->cbegin(); it != lists[i]->cend(); ++it) {
-			os.writef("\t%s id=%u len=%zu, thread=%d:%d:%s\n",i == 0 ? "->" : "<-",
-					it->id,it->length,
-					it->thread ? it->thread->getTid() : -1,
-					it->thread ? it->thread->getProc()->getPid() : -1,
-					it->thread ? it->thread->getProc()->getProgram() : "");
+			os.writef("\t%s id=%u:%u len=%zu\n",i == 0 ? "->" : "<-",
+				it->id >> 16,it->id & 0xFFFF,it->length);
 		}
 	}
 }

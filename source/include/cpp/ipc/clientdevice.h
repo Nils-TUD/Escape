@@ -145,7 +145,7 @@ protected:
 	void open(IPCStream &is) {
 		add(is.fd(),new C(is.fd()));
 
-		is << FileOpen::Response(0) << Send(FileOpen::Response::MID);
+		is << FileOpen::Response(0) << Reply();
 	}
 
 	void shfile(IPCStream &is) {
@@ -157,7 +157,7 @@ protected:
 
 		c->shm(static_cast<char*>(joinbuf(r.path.str(),r.size,0)));
 
-		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Send(FileShFile::Response::MID);
+		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Reply();
 	}
 
 	void close(IPCStream &is) {

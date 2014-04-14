@@ -27,7 +27,7 @@ namespace ipc {
 
 struct DiskSize {
 	typedef EmptyRequest<MSG_DISK_GETSIZE> Request;
-	typedef DefaultResponse<ssize_t,MSG_DEF_RESPONSE> Response;
+	typedef DefaultResponse<ssize_t> Response;
 };
 
 }

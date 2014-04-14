@@ -74,28 +74,28 @@ public:
 
 	void getMode(ipc::IPCStream &is) {
 		ipc::Screen::Mode mode = vterm.ui->getMode();
-		is << 0 << mode << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << mode << ipc::Reply();
 	}
 
 	void getModes(ipc::IPCStream &is) {
 		size_t n;
 		is >> n;
 
-		is << modes.size() << ipc::Send(MSG_DEF_RESPONSE);
+		is << modes.size() << ipc::Reply();
 		if(n)
-			is << ipc::SendData(MSG_DEF_RESPONSE,modes.begin(),sizeof(ipc::Screen::Mode) * modes.size());
+			is << ipc::ReplyData(modes.begin(),sizeof(ipc::Screen::Mode) * modes.size());
 	}
 
 	void getKeymap(ipc::IPCStream &is) {
 		std::string keymap = vterm.ui->getKeymap();
-		is << 0 << ipc::CString(keymap.c_str(),keymap.length()) << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << ipc::CString(keymap.c_str(),keymap.length()) << ipc::Reply();
 	}
 
 	void setKeymap(ipc::IPCStream &is) {
 		ipc::CStringBuf<MAX_PATH_LEN> path;
 		is >> path;
 		vterm.ui->setKeymap(std::string(path.str()));
-		is << 0 << ipc::Send(MSG_DEF_RESPONSE);
+		is << 0 << ipc::Reply();
 	}
 };
 

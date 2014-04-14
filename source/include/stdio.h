@@ -711,7 +711,7 @@ FILE *ascreate(void);
  * buffer afterwards and are supposed to free it.
  *
  * @param f the stream
- * @param length will be set to the total length
+ * @param length will be set to the total length (may be NULL)
  * @return the buffer
  */
 char *asget(FILE *f,size_t *length);

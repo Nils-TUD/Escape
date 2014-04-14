@@ -22,7 +22,8 @@
 #include <stdio.h>
 
 char *asget(FILE *f,size_t *length) {
-	*length = f->out.pos;
+	if(length)
+		*length = f->out.pos;
 	char *res = f->out.buffer;
 	f->out.buffer = NULL;
 	f->out.pos = 0;

@@ -1296,7 +1296,7 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	frameno_t frame;
 	void *tempBuf;
 	/* note that we currently ignore that the file might have changed in the meantime */
-	int err;
+	ssize_t err;
 	off_t pos = vm->reg->getOffset() + (addr - vm->virt());
 	if((err = vm->reg->getFile()->seek(proc->getPid(),pos,SEEK_SET)) < 0)
 		goto error;

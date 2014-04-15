@@ -45,7 +45,7 @@ public:
 				os << "\tOwner: " << w->owner << "\n";
 				os << "\tPosition: " << w->x << "," << w->y << "," << w->z << "\n";
 				os << "\tSize: " << w->width << " x " << w->height << "\n";
-				os << "\tStyle: 0x" << std::hex << w->style << std::dec;
+				os << "\tStyle: 0x" << std::hex << w->style << std::dec << "\n";
 			}
 		}
 		return os.str();

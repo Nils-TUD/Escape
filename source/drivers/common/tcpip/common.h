@@ -40,6 +40,7 @@ enum {
 };
 
 struct ReadRequest {
+	msgid_t mid;
 	void *data;
 	size_t count;
 	bool needsSrc;

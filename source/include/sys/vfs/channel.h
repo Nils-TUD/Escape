@@ -83,12 +83,21 @@ public:
 	 * @param id will be set to the message-id (if not NULL)
 	 * @param data the buffer to write the message to
 	 * @param size the size of the buffer
-	 * @param block whether to block if no message is available
-	 * @param ignoreSigs whether to ignore signals while sleeping
 	 * @return the number of written bytes on success
 	 */
-	ssize_t receive(pid_t pid,ushort flags,msgid_t *id,void *data,size_t size,bool block,
-	                bool ignoreSigs);
+	ssize_t receive(pid_t pid,ushort flags,msgid_t *id,void *data,size_t size);
+
+	/**
+	 * Cancels the message <mid> that is currently in flight. If the device supports it, it waits
+	 * until it has received the response. This tells us whether the message has been canceled or if
+	 * the response has already been sent.
+	 *
+	 * @param pid the process-id
+	 * @param file the file
+	 * @param mid the message-id to cancel
+	 * @return 0 if it has been canceled, 1 if the reply is already available or < 0 on errors
+	 */
+	int cancel(pid_t pid,OpenFile *file,msgid_t mid);
 
 	/**
 	 * Shares a file with the device that hosts this channel.

@@ -99,6 +99,8 @@ public:
 	}
 };
 
+static TUIVTermDevice *vtdev;
+
 int main(int argc,char **argv) {
 	if(argc < 4) {
 		fprintf(stderr,"Usage: %s <cols> <rows> <name>\n",argv[0]);
@@ -109,7 +111,7 @@ int main(int argc,char **argv) {
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 
 	/* create device */
-	TUIVTermDevice vtdev(path,0770,&vterm);
+	vtdev = new TUIVTermDevice(path,0770,&vterm);
 
 	/* we want to give only users that are in the ui-group access to this vterm */
 	size_t gcount;
@@ -124,7 +126,7 @@ int main(int argc,char **argv) {
 	group_free(groups);
 
 	/* init vterms */
-	int modeid = vtInit(vtdev.id(),argv[3],atoi(argv[1]),atoi(argv[2]));
+	int modeid = vtInit(vtdev->id(),argv[3],atoi(argv[1]),atoi(argv[2]));
 	if(modeid < 0)
 		error("Unable to init vterms");
 
@@ -139,13 +141,14 @@ int main(int argc,char **argv) {
 	vtUpdate();
 
 	/* start thread to handle the vterm */
-	if(startthread(vtermThread,&vtdev) < 0)
+	if(startthread(vtermThread,vtdev) < 0)
 		error("Unable to start thread for vterm %s",path);
 
 	/* receive input-events from uimanager in this thread */
 	uimInputThread(uiev);
 
 	/* clean up */
+	delete vtdev;
 	vtctrl_destroy(&vterm);
 	return EXIT_SUCCESS;
 }
@@ -156,9 +159,11 @@ static void uimInputThread(ipc::UIEvents &uiev) {
 		ipc::UIEvents::Event ev;
 		uiev >> ev;
 		if(ev.type == ipc::UIEvents::Event::TYPE_KEYBOARD) {
+			std::lock_guard<std::mutex> guard(*vterm.mutex);
 			vtin_handleKey(&vterm,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
 			vtUpdate();
 		}
+		vtdev->checkPending();
 	}
 }
 
@@ -196,7 +201,6 @@ static int vtInit(int id,const char *name,uint cols,uint rows) {
 }
 
 static void vtUpdate(void) {
-	usemdown(&vterm.usem);
 	/* if we should scroll, mark the whole screen (without title) as dirty */
 	if(vterm.upScroll != 0) {
 		vterm.upCol = 0;
@@ -226,7 +230,6 @@ static void vtUpdate(void) {
 	vterm.upWidth = 0;
 	vterm.upHeight = 0;
 	vterm.upScroll = 0;
-	usemup(&vterm.usem);
 }
 
 static void vtSetVideoMode(int mode) {

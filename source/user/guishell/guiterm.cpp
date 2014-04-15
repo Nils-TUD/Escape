@@ -37,6 +37,7 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 
 	set(MSG_SCR_GETMODE,std::make_memfun(this,&GUIVTermDevice::getMode));
 	set(MSG_SCR_GETMODES,std::make_memfun(this,&GUIVTermDevice::getModes));
+	set(MSG_FILE_WRITE,std::make_memfun(this,&GUIVTermDevice::write));
 	unset(MSG_VT_SETMODE);
 	/* TODO MSG_UIM_{GET,SET}KEYMAP are not supported yet */
 
@@ -66,6 +67,7 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 		error("Unable to init vterm");
 
 	_sh->setVTerm(&_vt);
+	_sh->setDevice(this);
 }
 
 GUIVTermDevice::~GUIVTermDevice() {
@@ -86,10 +88,14 @@ void GUIVTermDevice::loop() {
 
 			/* append the buffer now to reduce delays */
 			if(_rbufPos > 0) {
-				_rbuffer[_rbufPos] = '\0';
-				vtout_puts(&_vt,_rbuffer,_rbufPos,true);
-				_sh->update();
-				_rbufPos = 0;
+				{
+					std::lock_guard<std::mutex> guard(*_vt.mutex);
+					_rbuffer[_rbufPos] = '\0';
+					vtout_puts(&_vt,_rbuffer,_rbufPos,true);
+					_sh->update();
+					_rbufPos = 0;
+				}
+				checkPending();
 			}
 			continue;
 		}
@@ -137,6 +143,7 @@ void GUIVTermDevice::write(ipc::IPCStream &is) {
 			_rbufPos += amount;
 			dataWork += amount;
 			if(_rbufPos >= READ_BUF_SIZE) {
+				std::lock_guard<std::mutex> guard(*_vt.mutex);
 				_rbuffer[_rbufPos] = '\0';
 				vtout_puts(&_vt,_rbuffer,_rbufPos,true);
 				_rbufPos = 0;
@@ -148,6 +155,7 @@ void GUIVTermDevice::write(ipc::IPCStream &is) {
 	}
 
 	is << ipc::FileWrite::Response(res) << ipc::Reply();
+	checkPending();
 }
 
 void GUIVTermDevice::setCursor(sVTerm *vt) {

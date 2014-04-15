@@ -20,10 +20,10 @@
 #include <esc/common.h>
 #include <ipc/proto/nic.h>
 #include <ipc/clientdevice.h>
+#include <ipc/requestqueue.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <list>
 
 class LoDevice : public ipc::ClientDevice<> {
 	struct Packet {
@@ -33,10 +33,28 @@ class LoDevice : public ipc::ClientDevice<> {
 
 public:
 	explicit LoDevice(const char *path,mode_t mode)
-		: ipc::ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_SHFILE | DEV_READ | DEV_WRITE), _packets() {
+		: ipc::ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
+		  _requests(std::make_memfun(this,&LoDevice::handleRead)), _packets() {
+		set(MSG_DEV_CANCEL,std::make_memfun(this,&LoDevice::cancel));
 		set(MSG_FILE_READ,std::make_memfun(this,&LoDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&LoDevice::write));
 		set(MSG_NIC_GETMAC,std::make_memfun(this,&LoDevice::getMac));
+	}
+
+	void cancel(ipc::IPCStream &is) {
+		msgid_t mid;
+		is >> mid;
+
+		int res;
+		// we answer write-requests always right away, so let the kernel just wait for the response
+		if((mid & 0xFFFF) == MSG_FILE_WRITE)
+			res = 1;
+		else if((mid & 0xFFFF) != MSG_FILE_READ)
+			res = -EINVAL;
+		else
+			res = _requests.cancel(mid);
+
+		is << res << ipc::Reply();
 	}
 
 	void read(ipc::IPCStream &is) {
@@ -48,19 +66,10 @@ public:
 		if(r.shmemoff != -1)
 			data = c->shm() + r.shmemoff;
 
-		assert(_packets.size() > 0);
-
-		Packet pkt = _packets.front();
-		size_t res = r.count >= pkt.size ? pkt.size : -ENOMEM;
-		if(r.shmemoff != -1 && res)
-			memcpy(data,pkt.data,res);
-
-		is << ipc::FileRead::Response(res) << ipc::Reply();
-		if(r.shmemoff == -1 && res)
-			is << ipc::ReplyData(pkt.data,res);
-
-		delete[] pkt.data;
-		_packets.pop_back();
+		if(_packets.size() > 0)
+			handleRead(is.fd(),is.msgid(),data,r.count);
+		else
+			_requests.enqueue(ipc::Request(is.fd(),is.msgid(),data,r.count));
 	}
 
 	void write(ipc::IPCStream &is) {
@@ -77,7 +86,7 @@ public:
 		else
 			memcpy(pkt.data,c->shm() + r.shmemoff,r.count);
 		_packets.push_back(pkt);
-		fcntl(id(),F_WAKE_READER,0);
+		_requests.handle();
 
 		is << ipc::FileWrite::Response(r.count) << ipc::Reply();
 	}
@@ -87,6 +96,27 @@ public:
 	}
 
 private:
+	bool handleRead(int fd,msgid_t mid,char *data,size_t count) {
+		if(_packets.size() == 0)
+			return false;
+
+		Packet pkt = _packets.front();
+		ssize_t res = count >= pkt.size ? pkt.size : -ENOMEM;
+		if(data && res > 0)
+			memcpy(data,pkt.data,res);
+
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+		ipc::IPCStream is(fd,buffer,sizeof(buffer),mid);
+		is << ipc::FileRead::Response(res) << ipc::Reply();
+		if(!data && res > 0)
+			is << ipc::ReplyData(pkt.data,res);
+
+		delete[] pkt.data;
+		_packets.pop_back();
+		return true;
+	}
+
+	ipc::RequestQueue _requests;
 	std::list<Packet> _packets;
 };
 

@@ -143,12 +143,8 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	/* receive response */
 	ib.reset();
 	t->addResource();
-	// TODO this can't work. we can't tolerate signals and then just retry. the next thread-switch
-	// would be stopped because of the signal. so in this case, we're stuck here.
 	mid = res;
-	do
-		res = receive(pid,0,&mid,ib.buffer(),ib.max(),true,false);
-	while(res == -EINTR);
+	res = receive(pid,0,&mid,ib.buffer(),ib.max());
 	t->remResource();
 	if(res < 0)
 		goto error;
@@ -208,6 +204,7 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 }
 
 int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
+	Thread *t = Thread::getRunning();
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
@@ -218,9 +215,9 @@ int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
 
 	/* receive response */
 	msgid_t mid = res;
-	do
-		res = receive(pid,0,&mid,ib.buffer(),ib.max(),true,false);
-	while(res == -EINTR);
+	t->addResource();
+	res = receive(pid,0,&mid,ib.buffer(),ib.max());
+	t->remResource();
 	if(res < 0)
 		return res;
 
@@ -247,17 +244,6 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	if((res = isSupported(DEV_READ)) < 0)
 		return res;
 
-	/* if it's a char-device, block until there is data to read */
-	VFSDevice *dev = static_cast<VFSDevice*>(getParent());
-	if(S_ISCHR(dev->getMode())) {
-		if(!file->shouldBlock()) {
-			if(!dev->tryDown())
-				return -EWOULDBLOCK;
-		}
-		else if(!dev->down())
-			return -EINTR;
-	}
-
 	/* send msg to driver */
 	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
@@ -266,34 +252,44 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	if(res < 0)
 		return res;
 
-	/* read response and ensure that we don't get killed until we've received both messages
-	 * (otherwise the channel might get in an inconsistent state) */
-	t->addResource();
-	ib.reset();
+	/* only allow signals during that operation, if we can cancel it */
 	msgid_t mid = res;
-	do {
-		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-	}
-	while(res == -EINTR);
-	t->remResource();
-	if(res < 0)
-		return res;
-
-	/* handle response */
-	ipc::FileRead::Response r;
-	ib >> r;
-	if(r.res < 0)
-		return r.res;
-
-	if(!useshm && r.res > 0) {
-		/* read data */
+	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : 0;
+	while(1) {
+		/* read response and ensure that we don't get killed until we've received both messages
+		 * (otherwise the channel might get in an inconsistent state) */
 		t->addResource();
-		do
-			r.res = file->receiveMsg(pid,&mid,buffer,count,true);
-		while(r.res == -EINTR);
+		ib.reset();
+		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
 		t->remResource();
+		if(res < 0) {
+			if(res == -EINTR) {
+				int cancelRes = cancel(pid,file,mid);
+				if(cancelRes == 1) {
+					/* if the result is already there, get it, but don't allow signals anymore */
+					flags = 0;
+					continue;
+				}
+				return -EINTR;
+			}
+			return res;
+		}
+
+		/* handle response */
+		ipc::FileRead::Response r;
+		ib >> r;
+		if(r.res < 0)
+			return r.res;
+
+		if(!useshm && r.res > 0) {
+			/* read data */
+			t->addResource();
+			r.res = file->receiveMsg(pid,&mid,buffer,count,0);
+			t->remResource();
+		}
+		return r.res;
 	}
-	return r.res;
+	A_UNREACHED;
 }
 
 ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
@@ -312,21 +308,60 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	if(res < 0)
 		return res;
 
-	/* read response */
+	/* only allow signals during that operation, if we can cancel it */
+	msgid_t mid = res;
+	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : 0;
+	while(1) {
+		/* read response */
+		ib.reset();
+		t->addResource();
+		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
+		t->remResource();
+		if(res < 0) {
+			if(res == -EINTR) {
+				int cancelRes = cancel(pid,file,mid);
+				if(cancelRes == 1) {
+					/* if the result is already there, get it, but don't allow signals anymore */
+					flags = 0;
+					continue;
+				}
+				return -EINTR;
+			}
+			return res;
+		}
+
+		ipc::FileWrite::Response r;
+		ib >> r;
+		return r.res;
+	}
+	A_UNREACHED;
+}
+
+int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
+	Thread *t = Thread::getRunning();
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
+	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+
+	int res;
+	if((res = isSupported(DEV_CANCEL)) < 0)
+		return res;
+
+	ib << mid;
+	res = file->sendMsg(pid,MSG_DEV_CANCEL,ib.buffer(),ib.pos(),NULL,0);
+	if(res < 0)
+		return res;
+
 	ib.reset();
 	t->addResource();
-	msgid_t mid = res;
-	do {
-		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-	}
-	while(res == -EINTR);
+	mid = res;
+	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
 	t->remResource();
 	if(res < 0)
 		return res;
 
-	ipc::FileWrite::Response r;
-	ib >> r;
-	return r.res;
+	/* handle response */
+	ib >> res;
+	return res;
 }
 
 int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
@@ -344,7 +379,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	ib << ipc::FileShFile::Request(size,ipc::CString(path));
 	if(ib.error())
 		return -EINVAL;
-	res = file->sendMsg(pid,MSG_FILE_SHFILE,ib.buffer(),ib.pos(),NULL,0);
+	res = file->sendMsg(pid,MSG_DEV_SHFILE,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -352,10 +387,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	ib.reset();
 	t->addResource();
 	msgid_t mid = res;
-	do {
-		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-	}
-	while(res == -EINTR);
+	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
 	t->remResource();
 	if(res < 0)
 		return res;
@@ -435,11 +467,11 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 			static_cast<VFSDevice*>(parent)->addMsgs(1);
 			if(EXPECT_FALSE(msg2))
 				static_cast<VFSDevice*>(parent)->addMsgs(1);
-			Sched::wakeup(EV_CLIENT,(evobj_t)parent,false);
+			Sched::wakeup(EV_CLIENT,(evobj_t)parent,true);
 		}
 		else {
 			/* notify other possible waiters */
-			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,false);
+			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,true);
 		}
 	}
 
@@ -456,8 +488,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	return id;
 }
 
-ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER void *data,
-                            size_t size,bool block,bool ignoreSigs) {
+ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER void *data,size_t size) {
 	SList<Message> *list;
 	Thread *t = Thread::getRunning();
 	VFSNode *waitNode;
@@ -480,7 +511,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 	/* wait until a message arrives */
 	waitLock.down();
 	while((msg = getMsg(list,*id,flags)) == NULL) {
-		if(EXPECT_FALSE(!block)) {
+		if(EXPECT_FALSE(flags & VFS_NOBLOCK)) {
 			waitLock.up();
 			return -EWOULDBLOCK;
 		}
@@ -492,13 +523,14 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 		t->wait(event,(evobj_t)waitNode);
 		waitLock.up();
 
-		if(EXPECT_FALSE(ignoreSigs))
-			Thread::switchNoSigs();
-		else
+		if(flags & VFS_SIGNALS) {
 			Thread::switchAway();
+			if(EXPECT_FALSE(t->hasSignalQuick()))
+				return -EINTR;
+		}
+		else
+			Thread::switchNoSigs();
 
-		if(EXPECT_FALSE(t->hasSignalQuick()))
-			return -EINTR;
 		/* if we waked up and there is no message, the driver probably died */
 		if(EXPECT_FALSE(!isAlive()))
 			return -EDESTROYED;

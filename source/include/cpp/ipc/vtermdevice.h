@@ -20,14 +20,16 @@
 #pragma once
 
 #include <esc/common.h>
-#include <ipc/ipcstream.h>
-#include <ipc/device.h>
 #include <ipc/proto/file.h>
 #include <ipc/proto/vterm.h>
+#include <ipc/ipcstream.h>
+#include <ipc/requestqueue.h>
+#include <ipc/device.h>
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
 #include <stdlib.h>
+#include <list>
 
 namespace ipc {
 
@@ -49,7 +51,9 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit VTermDevice(const char *name,mode_t mode,sVTerm *vterm)
-		: Device(name,mode,DEV_TYPE_CHAR,DEV_READ | DEV_WRITE | DEV_CLOSE), _vterm(vterm) {
+		: Device(name,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE),
+		  _requests(std::make_memfun(this,&VTermDevice::handleRead)), _vterm(vterm) {
+		set(MSG_DEV_CANCEL,std::make_memfun(this,&VTermDevice::cancel));
 		set(MSG_FILE_READ,std::make_memfun(this,&VTermDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&VTermDevice::write));
 		set(MSG_VT_GETFLAG,std::make_memfun(this,&VTermDevice::getFlag));
@@ -72,25 +76,44 @@ public:
 	 */
 	virtual void update() = 0;
 
+	/**
+	 * Checks whether there are pending read-requests to be served and does so, if there are some.
+	 */
+	void checkPending() {
+		std::lock_guard<std::mutex> guard(*_vterm->mutex);
+		_requests.handle();
+	}
+
 private:
+	void cancel(IPCStream &is) {
+		msgid_t mid;
+		is >> mid;
+
+		int res;
+		// we answer write-requests always right away, so let the kernel just wait for the response
+		if((mid & 0xFFFF) == MSG_FILE_WRITE)
+			res = 1;
+		else if((mid & 0xFFFF) != MSG_FILE_READ)
+			res = -EINVAL;
+		else {
+			std::lock_guard<std::mutex> guard(*_vterm->mutex);
+			res = _requests.cancel(mid);
+		}
+		is << res << Reply();
+	}
+
 	void read(IPCStream &is) {
 		FileRead::Request r;
 		is >> r;
 		assert(!is.error());
 
-		ssize_t res = 0;
-		char *data = r.count <= BUF_SIZE ? _buffer : (char*)malloc(r.count);
-		if(data) {
-			int avail;
-			res = vtin_gets(_vterm,data,r.count,&avail);
-		}
+		char *data = r.count <= BUF_SIZE ? _buffer : new char[r.count];
 
-		is << FileRead::Response(res) << Reply();
-		if(res) {
-			is << ReplyData(data,res);
-			if(r.count > BUF_SIZE)
-				free(data);
-		}
+		std::lock_guard<std::mutex> guard(*_vterm->mutex);
+		if(_requests.size() == 0 && vtin_hasData(_vterm))
+			handleRead(is.fd(),is.msgid(),data,r.count);
+		else
+			_requests.enqueue(Request(is.fd(),is.msgid(),data,r.count));
 	}
 
 	void write(IPCStream &is) {
@@ -98,19 +121,23 @@ private:
 		is >> r;
 		assert(!is.error());
 
-		char *data = r.count <= BUF_SIZE ? _buffer : (char*)malloc(r.count + 1);
+		char *data = r.count < BUF_SIZE ? _buffer : new char[r.count + 1];
 		ssize_t res = 0;
 		if(data) {
 			is >> ReceiveData(data,r.count);
 			data[r.count] = '\0';
-			vtout_puts(_vterm,data,r.count,true);
-			update();
+			{
+				std::lock_guard<std::mutex> guard(*_vterm->mutex);
+				vtout_puts(_vterm,data,r.count,true);
+				update();
+			}
 			res = r.count;
-			if(r.count > BUF_SIZE)
-				free(data);
+			if(r.count >= BUF_SIZE)
+				delete[] data;
 		}
 
 		is << FileWrite::Response(res) << Reply();
+		checkPending();
 	}
 
 	void setMode(ipc::IPCStream &is) {
@@ -148,12 +175,30 @@ private:
 
 	void handleControlMsg(IPCStream &is,msgid_t mid,int arg1,int arg2) {
 		int res = vtctrl_control(_vterm,mid,arg1,arg2);
+		checkPending();
 		update();
 		is << res << Reply();
 	}
 
 protected:
+	bool handleRead(int fd,msgid_t mid,char *data,size_t count) {
+		if(!vtin_hasData(_vterm))
+			return false;
+
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+		IPCStream is(fd,buffer,sizeof(buffer),mid);
+
+		ssize_t res = vtin_gets(_vterm,data,count);
+		is << FileRead::Response(res) << Reply();
+		if(res > 0)
+			is << ReplyData(data,res);
+		if(count > BUF_SIZE)
+			delete[] data;
+		return true;
+	}
+
 	char _buffer[BUF_SIZE];
+	RequestQueue _requests;
 	sVTerm *_vterm;
 };
 

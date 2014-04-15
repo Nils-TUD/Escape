@@ -35,7 +35,11 @@ public:
 
 	virtual int bind(const ipc::Socket::Addr *sa);
 	virtual ssize_t sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size);
-	virtual ssize_t recvfrom(bool needsSockAddr,void *buffer,size_t size);
+	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size) {
+		if(_localPort == 0)
+			return -ENOTBOUND;
+		return Socket::recvfrom(mid,needsSockAddr,buffer,size);
+	}
 
 private:
 	ipc::Net::IPv4Addr _localIp;

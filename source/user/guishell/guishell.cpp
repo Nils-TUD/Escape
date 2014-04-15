@@ -27,12 +27,11 @@
 #include <gui/window.h>
 #include <gui/scrollpane.h>
 #include <ipc/proto/vterm.h>
+#include <shell/shell.h>
+#include <shell/history.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-
-#include <shell/shell.h>
-#include <shell/history.h>
 
 #include "shellcontrol.h"
 #include "guiterm.h"

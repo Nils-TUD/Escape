@@ -31,21 +31,20 @@
 #define DEV_WRITE					4
 #define DEV_CLOSE					8
 #define DEV_SHFILE					16
+#define DEV_CANCEL					32
 
-#define DEV_TYPE_FS					0
-#define DEV_TYPE_CHAR				1
-#define DEV_TYPE_BLOCK				2
-#define DEV_TYPE_SERVICE			3
-#define DEV_TYPE_FILE				4
+#define DEV_TYPE_CHAR				0
+#define DEV_TYPE_BLOCK				1
+#define DEV_TYPE_SERVICE			2
+#define DEV_TYPE_FILE				3
 
 /* fcntl-commands */
 #define F_GETFL						0
 #define F_SETFL						1
-#define F_WAKE_READER				2
-#define F_GETACCESS					3
-#define F_SEMUP						4
-#define F_SEMDOWN					5
-#define F_DISMSGS					6
+#define F_GETACCESS					2
+#define F_SEMUP						3
+#define F_SEMDOWN					4
+#define F_DISMSGS					5
 
 /* seek-types */
 #define SEEK_SET					0

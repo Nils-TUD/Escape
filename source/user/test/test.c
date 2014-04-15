@@ -25,7 +25,7 @@
 
 #include "modules.h"
 
-#define NAME_LEN 10
+#define NAME_LEN 32
 
 typedef int (*fTest)(int argc,char *argv[]);
 typedef struct {
@@ -35,7 +35,7 @@ typedef struct {
 
 static sTestModule modules[] = {
 	{"driver",mod_driver},
-	{"driverread",mod_driverread},
+	{"drivercancel",mod_drivercancel},
 	{"debug",mod_debug},
 	{"fault",mod_fault},
 	{"thread",mod_thread},

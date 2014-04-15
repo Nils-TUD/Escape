@@ -28,18 +28,16 @@
 #define DEV_WRITE					4
 #define DEV_CLOSE					8
 #define DEV_SHFILE					16
+#define DEV_CANCEL					32
 
-/* implements the filesystem messaging interface */
-#define DEV_TYPE_FS					0
-/* supports read or write and has a stream of data that is not always available */
-#define DEV_TYPE_CHAR				1
-/* supports read or write, is a block-oriented device, i.e. random access is supported, and data
- * is always available */
-#define DEV_TYPE_BLOCK				2
+/* supports read or write, is byte-oriented and random access is not supported */
+#define DEV_TYPE_CHAR				0
+/* supports read or write, is a block-oriented device, i.e. random access is supported */
+#define DEV_TYPE_BLOCK				1
 /* has an arbitrary messaging interface */
-#define DEV_TYPE_SERVICE			3
+#define DEV_TYPE_SERVICE			2
 /* normal file */
-#define DEV_TYPE_FILE				4
+#define DEV_TYPE_FILE				3
 
 #define GW_NOBLOCK					1
 

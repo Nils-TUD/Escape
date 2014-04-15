@@ -33,15 +33,20 @@
 void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
 
 /**
+ * @param vt the vterm
+ * @return true if there is data to read
+ */
+bool vtin_hasData(sVTerm *vt);
+
+/**
  * Reads <count> characters from the given vterm into the given buffer.
  *
  * @param vt the vterm
  * @param buffer the buffer to write to (may be NULL)
  * @param count the number of chars to read
- * @param avail will be set to true if there is more input available
  * @return the number of read characters
  */
-size_t vtin_gets(sVTerm *vt,char *buffer,size_t count,int *avail);
+size_t vtin_gets(sVTerm *vt,char *buffer,size_t count);
 
 /**
  * Puts the given charactern into the readline-buffer and handles everything necessary (unlocked)

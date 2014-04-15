@@ -46,10 +46,7 @@ static void vtctrl_freeLines(char **lines,size_t rows);
 
 bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode) {
 	/* init state */
-	if(usemcrt(&vt->usem,1) < 0) {
-		printe("Unable to create vterm lock");
-		return false;
-	}
+	vt->mutex = new std::mutex();
 	/* by default we have no handlers for that */
 	vt->setCursor = NULL;
 	vt->cols = mode->cols;
@@ -121,7 +118,6 @@ void vtctrl_destroy(sVTerm *vt) {
 
 bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	bool res = false;
-	usemdown(&vt->usem);
 	if(vt->cols != cols || vt->rows != rows) {
 		size_t c,r,oldr,color;
 		size_t ccols = MIN(cols,vt->cols);
@@ -129,7 +125,6 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->lines = vtctrl_createLines(cols,rows);
 		if(!vt->lines) {
 			vt->lines = old;
-			usemup(&vt->usem);
 			return false;
 		}
 
@@ -137,7 +132,6 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		if(!vt->emptyLine) {
 			vt->lines = old;
 			vt->emptyLine = oldempty;
-			usemup(&vt->usem);
 			return false;
 		}
 
@@ -197,13 +191,11 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vtctrl_markScrDirty(vt);
 		res = true;
 	}
-	usemup(&vt->usem);
 	return res;
 }
 
 int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2) {
 	int res = 0;
-	usemdown(&vt->usem);
 	switch(cmd) {
 		case MSG_VT_SHELLPID:
 			vt->shellPid = arg1;
@@ -278,7 +270,6 @@ int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2) {
 			res = 1;
 			break;
 	}
-	usemup(&vt->usem);
 	return res;
 }
 

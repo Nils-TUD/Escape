@@ -61,7 +61,7 @@ struct FileOpen {
  */
 struct FileShFile {
 	struct Request {
-		static const msgid_t MSG = MSG_FILE_SHFILE;
+		static const msgid_t MSG = MSG_DEV_SHFILE;
 
 		explicit Request(char *buffer,size_t _size) : path(buffer,_size) {
 		}

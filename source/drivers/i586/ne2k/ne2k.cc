@@ -25,17 +25,21 @@
 #include <ipc/proto/nic.h>
 #include <ipc/proto/pci.h>
 #include <ipc/clientdevice.h>
+#include <ipc/requestqueue.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <mutex>
 
 #include "ne2kdev.h"
 
 class Ne2kDevice : public ipc::ClientDevice<> {
 public:
 	explicit Ne2kDevice(const char *path,mode_t mode,const ipc::PCI::Device &nic)
-		: ipc::ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_SHFILE | DEV_READ | DEV_WRITE),
-		  _ne2k(nic,id()) {
+		: ipc::ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
+		  _ne2k(nic,id(),std::make_memfun(this,&Ne2kDevice::checkPending)),
+		  _requests(std::make_memfun(this,&Ne2kDevice::handleRead)), _mutex() {
+		set(MSG_DEV_CANCEL,std::make_memfun(this,&Ne2kDevice::cancel));
 		set(MSG_FILE_READ,std::make_memfun(this,&Ne2kDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&Ne2kDevice::write));
 		set(MSG_NIC_GETMAC,std::make_memfun(this,&Ne2kDevice::getMac));
@@ -43,6 +47,24 @@ public:
 
 	ipc::NIC::MAC mac() const {
 		return _ne2k.mac();
+	}
+
+	void cancel(ipc::IPCStream &is) {
+		msgid_t mid;
+		is >> mid;
+
+		int res;
+		// we answer write-requests always right away, so let the kernel just wait for the response
+		if((mid & 0xFFFF) == MSG_FILE_WRITE)
+			res = 1;
+		else if((mid & 0xFFFF) != MSG_FILE_READ)
+			res = -EINVAL;
+		else {
+			std::lock_guard<std::mutex> guard(_mutex);
+			res = _requests.cancel(mid);
+		}
+
+		is << res << ipc::Reply();
 	}
 
 	void read(ipc::IPCStream &is) {
@@ -53,14 +75,10 @@ public:
 		char *data = NULL;
 		if(r.shmemoff != -1)
 			data = c->shm() + r.shmemoff;
-		else
-			data = new char[r.count];
-		ssize_t res = _ne2k.fetch(data,r.count);
 
-		is << ipc::FileRead::Response(res) << ipc::Reply();
-		if(r.shmemoff == -1 && res) {
-			is << ipc::ReplyData(data,res);
-			delete[] data;
+		if(!handleRead(is.fd(),is.msgid(),data,r.count)) {
+			std::lock_guard<std::mutex> guard(_mutex);
+			_requests.enqueue(ipc::Request(is.fd(),is.msgid(),data,r.count));
 		}
 	}
 
@@ -86,7 +104,34 @@ public:
 	}
 
 private:
+	// called from ne2k's receive routine
+	void checkPending() {
+		std::lock_guard<std::mutex> guard(_mutex);
+		_requests.handle();
+	}
+
+	bool handleRead(int fd,msgid_t mid,char *data,size_t count) {
+		Ne2k::Packet *pkt = _ne2k.fetch();
+		if(!pkt)
+			return false;
+
+		ssize_t res = count >= pkt->length ? pkt->length : -ENOMEM;
+		if(data && res > 0)
+			memcpy(data,pkt->data,res);
+
+		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+		ipc::IPCStream is(fd,buffer,sizeof(buffer),mid);
+		is << ipc::FileRead::Response(res) << ipc::Reply();
+		if(!data && res > 0)
+			is << ipc::ReplyData(pkt->data,res);
+
+		free(pkt);
+		return true;
+	}
+
 	Ne2k _ne2k;
+	ipc::RequestQueue _requests;
+	std::mutex _mutex;
 };
 
 int main(int argc,char **argv) {

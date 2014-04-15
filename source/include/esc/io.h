@@ -45,11 +45,10 @@
 /* fcntl-commands */
 #define F_GETFL					0
 #define F_SETFL					1
-#define F_WAKE_READER			2
-#define F_GETACCESS				3
-#define F_SEMUP					4
-#define F_SEMDOWN				5
-#define F_DISMSGS				6
+#define F_GETACCESS				2
+#define F_SEMUP					3
+#define F_SEMDOWN				4
+#define F_DISMSGS				5
 
 /* seek-types */
 #define SEEK_SET				0
@@ -264,6 +263,19 @@ A_CHECKRET static inline ssize_t receive(int fd,msgid_t *id,void *msg,size_t siz
  */
 A_CHECKRET static inline ssize_t sendrecv(int fd,msgid_t *id,void *msg,size_t size) {
 	return syscall4(SYSCALL_SENDRECV,fd,(ulong)id,(ulong)msg,size);
+}
+
+/**
+ * Cancels the message <mid> that is currently in flight on the channel denoted by <fd>. If the
+ * device supports it, it waits until it has received the response. This tells us whether the
+ * message has been canceled or if the response has already been sent.
+ *
+ * @param fd the file-descriptor for the channel
+ * @param mid the message-id to cancel
+ * @return 0 if it has been canceled, 1 if the reply is already available or < 0 on errors
+ */
+A_CHECKRET static inline int cancel(int fd,msgid_t mid) {
+	return syscall2(SYSCALL_CANCEL,fd,mid);
 }
 
 /**

@@ -66,7 +66,7 @@ public:
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE),
 		  _ataDev(ctrl_getDevice(dev)),
 		  _part(_ataDev ? _ataDev->partTable + part : NULL) {
-		set(MSG_FILE_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
+		set(MSG_DEV_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
 		set(MSG_FILE_READ,std::make_memfun(this,&ATAPartitionDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&ATAPartitionDevice::write));
 		set(MSG_DISK_GETSIZE,std::make_memfun(this,&ATAPartitionDevice::getsize));

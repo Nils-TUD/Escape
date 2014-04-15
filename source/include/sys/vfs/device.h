@@ -49,29 +49,6 @@ public:
 	}
 
 	/**
-	 * Blocks until data is readable
-	 *
-	 * @return true if successfull (otherwise we've been interrupted by a signal)
-	 */
-	bool down() {
-		return sem.down(true);
-	}
-	/**
-	 * Checks whether there is data to read
-	 *
-	 * @return true if so
-	 */
-	bool tryDown() {
-		return sem.tryDown();
-	}
-	/**
-	 * Makes data readable, i.e. wakes up a waiting client
-	 */
-	void up() {
-		sem.up();
-	}
-
-	/**
 	 * Increases the message-count for this device by <count>
 	 */
 	void addMsgs(ulong count) {
@@ -116,8 +93,6 @@ private:
 	static uint buildMode(uint type);
 	void wakeupClients(bool locked);
 
-	/* for char-devs: to block until there is data to read */
-	Semaphore sem;
 	/* implemented functions */
 	uint funcs;
 	/* total number of messages in all channels (for the device, not the clients) */

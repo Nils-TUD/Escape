@@ -44,7 +44,8 @@ enum {
 	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
 	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
 	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
-	VFS_NONODERES = 1024	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
+	VFS_NONODERES = 1024,	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
+	VFS_SIGNALS = 2048,		/* kernel-intern: allow signals during blocking */
 };
 
 class VFS;
@@ -240,10 +241,21 @@ public:
 	 * @param pid the receiver-process-id
 	 * @param id will be set to the fetched msg-id
 	 * @param data the message to write to
-	 * @param forceBlock if set, the function will block regardless of the NOBLOCK-flag in file
+	 * @param flags additional flags (overwrite flags in the file)
 	 * @return the number of written bytes (or < 0 if an error occurred)
 	 */
-	ssize_t receiveMsg(pid_t pid,msgid_t *id,void *data,size_t size,bool forceBlock);
+	ssize_t receiveMsg(pid_t pid,msgid_t *id,void *data,size_t size,uint flags);
+
+	/**
+	 * Cancels the message <mid> that is currently in flight. If the device supports it, it waits
+	 * until it has received the response. This tells us whether the message has been canceled or if
+	 * the response has already been sent.
+	 *
+	 * @param pid the process-id
+	 * @param mid the message-id to cancel
+	 * @return 0 if it has been canceled, 1 if the reply is already available or < 0 on errors
+	 */
+	int cancel(pid_t pid,msgid_t mid);
 
 	/**
 	 * Shares a file with the device that hosts this channel.

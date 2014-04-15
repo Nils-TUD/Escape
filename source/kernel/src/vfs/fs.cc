@@ -51,9 +51,7 @@ static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,ipc::IPCBuf &ib) {
 	/* read response */
 	ib.reset();
 	msgid_t mid = res;
-	do
-		res = fsFile->receiveMsg(pid,&mid,ib.buffer(),ib.max(),true);
-	while(res == -EINTR);
+	res = fsFile->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
 	if(res < 0)
 		return res;
 

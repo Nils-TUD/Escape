@@ -43,11 +43,10 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check type and ops */
-	if(EXPECT_FALSE(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR && type != DEV_TYPE_FS &&
+	if(EXPECT_FALSE(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR &&
 			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE))
 		SYSC_ERROR(stack,-EINVAL);
-	if(EXPECT_FALSE(type != DEV_TYPE_FS &&
-			(ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE)) != 0))
+	if(EXPECT_FALSE((ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE | DEV_CANCEL)) != 0))
 		SYSC_ERROR(stack,-EINVAL);
 	/* DEV_CLOSE is mandatory */
 	if(EXPECT_FALSE(~ops & DEV_CLOSE))
@@ -102,7 +101,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* receive a message */
-	res = client->receiveMsg(p->getPid(),&mid,data,size,false);
+	res = client->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
 	FileDesc::release(client);
 
 	if(EXPECT_FALSE(res < 0))

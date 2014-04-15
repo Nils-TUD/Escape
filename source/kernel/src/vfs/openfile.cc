@@ -66,16 +66,6 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			return 0;
 		}
 
-		case F_WAKE_READER: {
-			VFSNode *n = node;
-			int res = 0;
-			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_DEVICE(n->getMode())))
-				res = -EINVAL;
-			else
-				static_cast<VFSDevice*>(n)->up();
-			return res;
-		}
-
 		case F_DISMSGS: {
 			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode())))
 				return -EINVAL;
@@ -125,9 +115,7 @@ int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
 		/* receive response */
 		t->addResource();
 		msgid_t mid = res;
-		do
-			res = chan->receive(pid,0,&mid,ib.buffer(),ib.max(),true,false);
-		while(res == -EINTR);
+		res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
 		t->remResource();
 		if(res < 0)
 			return res;
@@ -246,18 +234,25 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 	return err;
 }
 
-ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,bool forceBlock) {
+ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,uint fflags) {
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
-	ssize_t err = static_cast<VFSChannel*>(node)->receive(pid,flags,id,data,size,
-			forceBlock || !(flags & VFS_NOBLOCK),forceBlock);
+	uint newflags = (flags & ~fflags) | fflags;
+	ssize_t err = static_cast<VFSChannel*>(node)->receive(pid,newflags,id,data,size);
 	if(EXPECT_TRUE(err > 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->getStats().input += err;
 	}
 	return err;
+}
+
+int OpenFile::cancel(pid_t pid,msgid_t mid) {
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
+		return -ENOTSUP;
+
+	return static_cast<VFSChannel*>(node)->cancel(pid,this,mid);
 }
 
 int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
@@ -283,9 +278,7 @@ int OpenFile::syncfs(pid_t pid) {
 	/* read response */
 	t->addResource();
 	msgid_t mid = res;
-	do
-		res = chan->receive(pid,0,&mid,buf.buffer(),buf.max(),true,false);
-	while(res == -EINTR);
+	res = chan->receive(pid,0,&mid,buf.buffer(),buf.max());
 	t->remResource();
 	if(res < 0)
 		return res;

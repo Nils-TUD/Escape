@@ -118,7 +118,15 @@ public:
 	size_t recvfrom(Addr &addr,void *data,size_t size) {
 		FileRead::Request req(0,size,-1);
 		FileWrite::Response resp;
-		_is << req << SendReceive(MSG_SOCK_RECVFROM,false) >> resp >> addr;
+		try {
+			_is << req << SendReceive(MSG_SOCK_RECVFROM,false) >> resp >> addr;
+		}
+		catch(const std::default_error &e) {
+			if(e.error() == -EINTR && cancel(_is.fd(),_is.msgid()) == 1)
+				_is >> Receive() >> resp >> addr;
+			else
+				throw;
+		}
 		if(resp.res < 0)
 			VTHROWE("recvfrom(" << size << ")",resp.res);
 		_is >> ReceiveData(data,size,false);

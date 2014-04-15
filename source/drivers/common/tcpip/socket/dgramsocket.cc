@@ -59,10 +59,3 @@ ssize_t DGramSocket::sendto(const ipc::Socket::Addr *sa,const void *buffer,size_
 
 	return UDP::send(ipc::Net::IPv4Addr(sa->d.ipv4.addr),_localPort,sa->d.ipv4.port,buffer,size);
 }
-
-ssize_t DGramSocket::recvfrom(bool needsSockAddr,void *buffer,size_t size) {
-	if(_localPort == 0)
-		return -ENOTBOUND;
-
-	return Socket::recvfrom(needsSockAddr,buffer,size);
-}

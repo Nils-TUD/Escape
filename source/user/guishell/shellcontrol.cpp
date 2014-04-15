@@ -22,12 +22,13 @@
 #include <gui/window.h>
 #include <esc/debug.h>
 #include <esc/driver.h>
-#include <signal.h>
-#include <errno.h>
-#include "shellcontrol.h"
-
 #include <vterm/vtin.h>
 #include <vterm/vtctrl.h>
+#include <signal.h>
+#include <errno.h>
+
+#include "shellcontrol.h"
+#include "guiterm.h"
 
 using namespace gui;
 
@@ -88,8 +89,12 @@ void ShellControl::onKeyPressed(const KeyEvent &e) {
 		modifier |= STATE_SHIFT;
 	if(e.isCtrlDown())
 		modifier |= STATE_CTRL;
-	vtin_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
+	{
+		std::lock_guard<std::mutex> guard(*_vt->mutex);
+		vtin_handleKey(_vt,e.getKeyCode(),modifier,e.getCharacter());
+	}
 	doUpdate();
+	_dev->checkPending();
 }
 
 bool ShellControl::resizeTo(const Size &size) {
@@ -107,11 +112,13 @@ bool ShellControl::resizeTo(const Size &size) {
 // note that the argument is of type Size instead of const Size& because of the make_bind1_memfun
 // above. it has to be a value-argument.
 void ShellControl::resizeVTerm(Size size) {
+	std::lock_guard<std::mutex> guard(*_vt->mutex);
 	size_t parentheight = getParent()->getSize().height - gui::ScrollPane::BAR_SIZE;
 	vtctrl_resize(_vt,getCols(size.width),getRows(parentheight));
 }
 
 void ShellControl::sendEOF() {
+	std::lock_guard<std::mutex> guard(*_vt->mutex);
 	vtin_handleKey(_vt,VK_C,STATE_CTRL,'c');
 	vtin_handleKey(_vt,VK_D,STATE_CTRL,'d');
 }
@@ -146,7 +153,7 @@ Rectangle ShellControl::linesToRect(size_t start,size_t count) const {
 
 void ShellControl::paint(Graphics &g) {
 	if(!_locked)
-		usemdown(&_vt->usem);
+		_vt->mutex->lock();
 	Rectangle paintrect = g.getPaintRect();
 	if(!paintrect.empty()) {
 		Size dirty = rectToLines(paintrect);
@@ -169,11 +176,11 @@ void ShellControl::paint(Graphics &g) {
 		_lastRow = _vt->row;
 	}
 	if(!_locked)
-		usemup(&_vt->usem);
+		_vt->mutex->unlock();
 }
 
 void ShellControl::doUpdate() {
-	usemdown(&_vt->usem);
+	std::lock_guard<std::mutex> guard(*_vt->mutex);
 	// prevent self-deadlock
 	_locked = true;
 	if(_vt->upWidth > 0) {
@@ -222,11 +229,12 @@ void ShellControl::doUpdate() {
 	else
 		doSetCursor();
 	_locked = false;
-	usemup(&_vt->usem);
 }
 
 void ShellControl::update() {
-	Application::getInstance()->executeLater(std::make_memfun(this,&ShellControl::doUpdate));
+	// only insert the callback if there is actually something to do
+	if(_vt->upWidth > 0 || _vt->col != _lastCol || _vt->row != _lastRow)
+		Application::getInstance()->executeLater(std::make_memfun(this,&ShellControl::doUpdate));
 }
 
 void ShellControl::doSetCursor() {

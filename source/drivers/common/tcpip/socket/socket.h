@@ -54,17 +54,28 @@ public:
 		return _proto;
 	}
 
+	virtual int cancel(msgid_t mid) {
+		if(!_pending.count)
+			return 1;
+		if(_pending.mid != mid)
+			return -EINVAL;
+		_pending.count = 0;
+		return 0;
+	}
+
 	virtual int bind(const ipc::Socket::Addr *) {
 		return -ENOTSUP;
 	}
+
 	virtual ssize_t sendto(const ipc::Socket::Addr *,const void *,size_t) {
 		return -ENOTSUP;
 	}
-	virtual ssize_t recvfrom(bool needsSrc,void *buffer,size_t size) {
+
+	virtual ssize_t recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t size) {
 		if(_packets.size() > 0) {
 			const QueuedPacket &pkt = _packets.front();
 			if(pkt.data->size - pkt.offset <= size) {
-				reply(pkt.sa,needsSrc,buffer,pkt.data->data + pkt.offset,pkt.data->size - pkt.offset);
+				reply(mid,pkt.sa,needsSrc,buffer,pkt.data->data + pkt.offset,pkt.data->size - pkt.offset);
 				_packets.pop_front();
 				return 0;
 			}
@@ -72,6 +83,7 @@ public:
 
 		if(_pending.data)
 			return -EAGAIN;
+		_pending.mid = mid;
 		_pending.data = buffer;
 		_pending.count = size;
 		_pending.needsSrc = needsSrc;
@@ -81,7 +93,8 @@ public:
 	void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset = 0) {
 		if(_pending.count > 0) {
 			if(_pending.count >= pkt.size() - offset) {
-				reply(sa,_pending.needsSrc,_pending.data,pkt.data<uint8_t*>() + offset,pkt.size() - offset);
+				reply(_pending.mid,sa,_pending.needsSrc,_pending.data,pkt.data<uint8_t*>() + offset,
+					pkt.size() - offset);
 				_pending.count = 0;
 			}
 		}
@@ -90,12 +103,12 @@ public:
 	}
 
 private:
-	void reply(const ipc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,size_t size) {
+	void reply(msgid_t mid,const ipc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,size_t size) {
 		if(dst != NULL)
 			memcpy(dst,src,size);
 
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-		ipc::IPCStream is(fd(),buffer,sizeof(buffer));
+		ipc::IPCStream is(fd(),buffer,sizeof(buffer),mid);
 		is << ipc::FileRead::Response(size);
 		if(needsSrc)
 			is << sa;

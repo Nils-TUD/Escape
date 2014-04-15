@@ -26,6 +26,7 @@
 #include <esc/sync.h>
 #include <ipc/proto/ui.h>
 #include <ipc/proto/speaker.h>
+#include <mutex>
 
 #define TAB_WIDTH			4
 #define HISTORY_SIZE		12
@@ -48,7 +49,7 @@ struct sVTerm {
 	int sid;
 	char name[MAX_VT_NAME_LEN + 1];
 	/* to lock this vterm */
-	tUserSem usem;
+	std::mutex *mutex;
 	/* function-pointers */
 	fSetCursor setCursor;
 	/* number of cols/rows on the screen */

@@ -77,7 +77,7 @@ public:
 		: Device(path,mode,type,ops | DEV_OPEN), _clients(), _sem() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&ClientDevice::open));
 		if(ops & DEV_SHFILE)
-			set(MSG_FILE_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
+			set(MSG_DEV_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&ClientDevice::close),false);
 		int res;
 		if((res = usemcrt(&_sem,1)) < 0)

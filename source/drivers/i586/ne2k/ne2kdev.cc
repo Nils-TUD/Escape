@@ -130,8 +130,9 @@
  * The range from 0x4000 to 0x5000 is used as a buffer for transmitting packets.
  */
 
-Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid)
-		: _sid(sid), _basePort(), _mac(), _nextPacket(), _listmutex(), _first(), _last() {
+Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
+		: _sid(sid), _basePort(), _mac(), _nextPacket(), _listmutex(), _first(), _last(),
+		  _handler(handler) {
 	for(size_t i = 0; i < 6; i++) {
 		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
 			if(reqports(nic.bars[i].addr,nic.bars[i].size) < 0) {
@@ -238,28 +239,16 @@ ssize_t Ne2k::send(const void *packet,size_t size) {
 	return size;
 }
 
-ssize_t Ne2k::fetch(void *buffer,size_t size) {
+Ne2k::Packet *Ne2k::fetch() {
+	std::lock_guard<std::mutex> guard(_listmutex);
 	Packet *pkt = NULL;
-	ssize_t res = 0;
-
-	{
-		std::lock_guard<std::mutex> guard(_listmutex);
-		if(_first) {
-			if(size < _first->length)
-				return -EINVAL;
-			pkt = _first;
-			_first = _first->next;
-			if(!_first)
-				_last = NULL;
-		}
+	if(_first) {
+		pkt = _first;
+		_first = _first->next;
+		if(!_first)
+			_last = NULL;
 	}
-
-	if(pkt) {
-		memcpy(buffer,pkt->data,pkt->length);
-		res = pkt->length;
-		free(pkt);
-	}
-	return res;
+	return pkt;
 }
 
 void Ne2k::receive() {
@@ -305,7 +294,7 @@ void Ne2k::receive() {
 				_first = pkt;
 			_last = pkt;
 		}
-		fcntl(_sid,F_WAKE_READER,0);
+		(*_handler)();
 	}
 }
 

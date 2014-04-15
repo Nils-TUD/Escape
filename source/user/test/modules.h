@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 extern int mod_driver(int,char**);
-extern int mod_driverread(int,char**);
+extern int mod_drivercancel(int,char**);
 extern int mod_debug(int,char**);
 extern int mod_fault(int,char**);
 extern int mod_thread(int,char**);

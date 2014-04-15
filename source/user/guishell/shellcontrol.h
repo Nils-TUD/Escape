@@ -50,7 +50,8 @@ private:
 	}
 
 public:
-	ShellControl() : Control(), _lastCol(0), _lastRow(0), _locked(), _vt(nullptr) {
+	ShellControl()
+		: Control(), _lastCol(0), _lastRow(0), _locked(), _vt(nullptr), _dev() {
 	}
 	virtual ~ShellControl() {
 	}
@@ -59,6 +60,9 @@ public:
 	ShellControl(const ShellControl &e);
 	ShellControl &operator=(const ShellControl &e);
 
+	void setDevice(GUIVTermDevice *dev) {
+		_dev = dev;
+	}
 	virtual gui::Size getUsedSize(const gui::Size &avail) const;
 	virtual void onKeyPressed(const gui::KeyEvent &e);
 	virtual bool resizeTo(const gui::Size &size);
@@ -88,9 +92,8 @@ private:
 	void update();
 	void doUpdate();
 	void setCursor() {
-		usemdown(&_vt->usem);
+		std::lock_guard<std::mutex> guard(*_vt->mutex);
 		doSetCursor();
-		usemup(&_vt->usem);
 	}
 	void doSetCursor();
 	void resizeVTerm(gui::Size size);
@@ -99,4 +102,5 @@ private:
 	size_t _lastRow;
 	bool _locked;
 	sVTerm *_vt;
+	GUIVTermDevice *_dev;
 };

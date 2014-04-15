@@ -96,7 +96,7 @@ class DiskDevice : public ClientDevice<> {
 public:
 	explicit DiskDevice(const char *name,mode_t mode)
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE) {
-		set(MSG_FILE_SHFILE,std::make_memfun(this,&DiskDevice::shfile));
+		set(MSG_DEV_SHFILE,std::make_memfun(this,&DiskDevice::shfile));
 		set(MSG_FILE_READ,std::make_memfun(this,&DiskDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&DiskDevice::write));
 		set(MSG_DISK_GETSIZE,std::make_memfun(this,&DiskDevice::getsize));

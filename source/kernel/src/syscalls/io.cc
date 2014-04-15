@@ -322,7 +322,7 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* send msg */
-	ssize_t res = file->receiveMsg(p->getPid(),&mid,data,size,false);
+	ssize_t res = file->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
@@ -361,11 +361,29 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 
 	/* receive response */
 	mid = res;
-	res = file->receiveMsg(p->getPid(),&mid,data,size,false);
+	res = file->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	*id = mid;
+	SYSC_RET1(stack,res);
+}
+
+int Syscalls::cancel(Thread *t,IntrptStackFrame *stack) {
+	int fd = (int)SYSC_ARG1(stack);
+	msgid_t id = (msgid_t)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* share file */
+	int res = file->cancel(p->getPid(),id);
+	FileDesc::release(file);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 

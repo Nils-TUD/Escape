@@ -35,7 +35,7 @@
 /* block- and file-devices are none-empty by default, because their data is always available */
 VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
 		: VFSNode(pid,n,buildMode(type) | (m & 0777),success),
-		  sem(0), funcs(ops), msgCount(0), lastClient() {
+		  funcs(ops), msgCount(0), lastClient() {
 	if(!success)
 		return;
 
@@ -52,11 +52,9 @@ uint VFSDevice::buildMode(uint type) {
 		mode |= MODE_TYPE_CHARDEV;
 	else if(type == DEV_TYPE_FILE)
 		mode |= MODE_TYPE_FILEDEV;
-	else if(type == DEV_TYPE_SERVICE)
-		mode |= MODE_TYPE_SERVDEV;
 	else {
-		assert(type == DEV_TYPE_FS);
-		mode |= MODE_TYPE_FSDEV;
+		assert(type == DEV_TYPE_SERVICE);
+		mode |= MODE_TYPE_SERVDEV;
 	}
 	return mode;
 }
@@ -120,8 +118,7 @@ void VFSDevice::print(OStream &os) const {
 	bool valid;
 	const VFSNode *chan = openDir(false,&valid);
 	if(valid) {
-		os.writef("%s (sem=%d, lastClient=%s):\n",
-			name,sem.getValue(),lastClient ? lastClient->getName() : "-");
+		os.writef("%s (lastClient=%s):\n",name,lastClient ? lastClient->getName() : "-");
 		while(chan != NULL) {
 			os.pushIndent();
 			chan->print(os);
@@ -139,7 +136,6 @@ void VFSDevice::wakeupClients(bool locked) {
 	if(valid) {
 		while(n != NULL) {
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)n);
-			sem.up();
 			n = n->next;
 		}
 	}

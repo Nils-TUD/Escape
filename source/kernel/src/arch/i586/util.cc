@@ -73,7 +73,7 @@ void Util::switchToVGA() {
 		if(res > 0) {
 			for(int i = 0; i < 100; i++) {
 				msgid_t mid = res;
-				res = file->receiveMsg(pid,&mid,NULL,0,false);
+				res = file->receiveMsg(pid,&mid,NULL,0,VFS_NOBLOCK);
 				if(res >= 0)
 					break;
 				Thread::switchAway();

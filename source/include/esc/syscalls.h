@@ -108,6 +108,7 @@ enum {
 	SYSCALL_SHAREFILE,
 
 	/* 70 */
+	SYSCALL_CANCEL,
 	SYSCALL_GETCONFSTR,
 	SYSCALL_GETMSID,
 	SYSCALL_CLONEMS,
@@ -140,7 +141,7 @@ enum {
 #define ASM_SYSC_ACKSIG					16
 #define ASM_SYSC_EXEC					18
 #define ASM_SYSC_LOADMODS				20
-#define ASM_SYSC_VM86START				80
+#define ASM_SYSC_VM86START				81
 
 #if !defined(IN_ASM) && defined(__cplusplus)
 static_assert(ASM_SYSC_ACKSIG == SYSCALL_ACKSIG,"ACKSIG is not equal");

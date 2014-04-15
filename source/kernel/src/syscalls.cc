@@ -118,6 +118,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{sharefile,			"sharefile",		2},
 
 	/* 70 */
+	{cancel,			"cancel",			2},
 	{sysconfstr,		"sysconfstr",		3},
 	{getmsid,			"getmsid",			0},
 	{clonems,			"clonems",			0},

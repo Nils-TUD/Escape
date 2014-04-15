@@ -56,7 +56,7 @@ namespace gui {
 		// announce signal handlers
 		if(signal(SIG_USR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
-		if(signal(SIG_ALARM,sigalarm) == SIG_ERR)
+		if(signal(SIG_ALARM,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce ALARM signal handler");
 
 		// init default theme
@@ -94,7 +94,7 @@ namespace gui {
 
 	void Application::executeIn(uint msecs,std::Functor<void> *functor) {
 		std::lock_guard<std::mutex> guard(_queueMutex);
-		uint64_t tsc = rdtsc() + timetotsc(msecs * 1000);
+		uint64_t tsc = rdtsc() + (msecs ? timetotsc(msecs * 1000) : 0);
 		std::list<TimeoutFunctor>::iterator it;
 		for(it = _timequeue.begin(); it != _timequeue.end(); ++it) {
 			if(it->tsc > tsc)
@@ -105,9 +105,6 @@ namespace gui {
 		else if(it == _timequeue.begin())
 			alarm(msecs);
 		_timequeue.insert(it,TimeoutFunctor(tsc,functor));
-	}
-
-	void Application::sigalarm(int) {
 	}
 
 	void Application::exit() {
@@ -129,16 +126,32 @@ namespace gui {
 
 	void Application::handleQueue() {
 		_queueMutex.lock();
-		uint64_t now = rdtsc();
-		for(auto it = _timequeue.begin(); it != _timequeue.end(); ) {
-			auto cur = it++;
-			if(cur->tsc <= now) {
-				_queueMutex.unlock();
-				(*(cur->functor))();
-				_queueMutex.lock();
-				_timequeue.erase(cur);
+		uint64_t next = std::numeric_limits<uint64_t>::max();
+		// repeat until we've seen no calls anymore. this is because we release the lock in between
+		// so that one can insert an item into the queue. if this is a callback with timeout 0, we
+		// might have already got the signal and thus should handle it immediately.
+		uint calls;
+		do {
+			calls = 0;
+			for(auto it = _timequeue.begin(); it != _timequeue.end(); ) {
+				auto cur = it++;
+				if(cur->tsc <= rdtsc()) {
+					_queueMutex.unlock();
+					(*(cur->functor))();
+					_queueMutex.lock();
+					_timequeue.erase(cur);
+					calls++;
+				}
+				else if(cur->tsc < next)
+					next = cur->tsc;
 			}
 		}
+		while(calls > 0);
+
+		// program new wakeup
+		uint64_t now = rdtsc();
+		if(next > now && next != std::numeric_limits<uint64_t>::max())
+			alarm(tsctotime(next - now) / 1000);
 		_queueMutex.unlock();
 	}
 

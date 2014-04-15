@@ -259,8 +259,6 @@ namespace gui {
 		Application(const Application &a);
 		Application &operator=(const Application &a);
 
-		static void sigalarm(int);
-
 		void notifyCreate(gwinid_t id,const std::string& title);
 		void notifyActive(gwinid_t id);
 		void notifyDestroy(gwinid_t id);

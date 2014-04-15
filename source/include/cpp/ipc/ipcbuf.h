@@ -38,8 +38,7 @@ public:
 	 * @param buf the buffer (word-aligned!)
 	 * @param size the size of the buffer
 	 */
-	explicit IPCBuf(ulong *buf,size_t size)
-		: _buf(reinterpret_cast<uint8_t*>(buf)), _pos(0), _size(size) {
+	explicit IPCBuf(ulong *buf,size_t size) : _buf(buf), _pos(0), _size(size) {
 		assert((reinterpret_cast<uintptr_t>(buf) & (sizeof(ulong) - 1)) == 0);
 	}
 
@@ -47,10 +46,10 @@ public:
 	 * @return the buffer
 	 */
 	ulong *buffer() {
-		return reinterpret_cast<ulong*>(_buf);
+		return _buf;
 	}
 	const ulong *buffer() const {
-		return reinterpret_cast<ulong*>(_buf);
+		return _buf;
 	}
 
 	/**
@@ -88,7 +87,7 @@ public:
 			// note that we align it before the write to allow the use of the low-level receive()
 			// to receive just one item without having to worry about alignment.
 			size_t apos = align(_pos);
-			*reinterpret_cast<T*>(_buf + apos) = value;
+			*reinterpret_cast<T*>(_buf + apos / sizeof(ulong)) = value;
 			_pos = apos + sizeof(T);
 		}
 		return *this;
@@ -96,7 +95,7 @@ public:
 	void put(const void *data,size_t size) {
 		if(EXPECT_TRUE(checkSpace(size))) {
 			size_t apos = align(_pos);
-			memcpy(_buf + apos,data,size);
+			memcpy(_buf + apos / sizeof(ulong),data,size);
 			_pos = apos + size;
 		}
 	}
@@ -108,7 +107,7 @@ public:
 	IPCBuf &operator>>(T &value) {
 		if(EXPECT_TRUE(checkSpace(sizeof(T)))) {
 			size_t apos = align(_pos);
-			value = *reinterpret_cast<T*>(_buf + apos);
+			value = *reinterpret_cast<T*>(_buf + apos / sizeof(ulong));
 			_pos = apos + sizeof(T);
 		}
 		else
@@ -118,7 +117,7 @@ public:
 	void fetch(void *data,size_t size) {
 		if(EXPECT_TRUE(checkSpace(size))) {
 			size_t apos = align(_pos);
-			memcpy(data,_buf + _pos,size);
+			memcpy(data,_buf + apos / sizeof(ulong),size);
 			_pos = apos + size;
 		}
 	}
@@ -135,7 +134,7 @@ private:
 		return true;
 	}
 
-	uint8_t *_buf;
+	ulong *_buf;
 	size_t _pos;
 	size_t _size;
 };

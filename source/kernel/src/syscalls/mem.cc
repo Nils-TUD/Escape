@@ -92,7 +92,7 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 		res = t->getProc()->getVM()->map(&addr,byteCount,loadCount,prot,flags,f,binOffset,&vm);
 		/* give the other process a chance to finish */
 		if(res == -EBUSY)
-			Thread::switchAway();
+			Thread::switchNoSigs();
 	}
 	while(res == -EBUSY);
 

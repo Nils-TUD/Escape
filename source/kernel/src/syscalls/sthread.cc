@@ -113,8 +113,12 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
+	char kname[32];
 	int irq = (int)SYSC_ARG1(stack);
-	int res = Sems::create(t->getProc(),0,irq);
+	char *name = (char*)SYSC_ARG2(stack);
+	/* copy it first. it might pagefault */
+	strnzcpy(kname,name,sizeof(kname));
+	int res = Sems::create(t->getProc(),0,irq,kname);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

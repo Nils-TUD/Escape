@@ -191,7 +191,7 @@ void ACPI::parse() {
 								trig = IOAPIC::RED_TRIGGER_EDGE;
 							/*else
 								trig = IOAPIC::RED_TRIGGER_LEVEL;*/
-							IOAPIC::setRedirection(intr->source,intr->gsi,IOAPIC::RED_DEL_FIXED,pol,trig);
+							IOAPIC::configureIrq(intr->source,intr->gsi,IOAPIC::RED_DEL_FIXED,pol,trig);
 						}
 						break;
 					}

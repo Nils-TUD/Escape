@@ -63,11 +63,11 @@ void ctrl_init(bool useDma) {
 	}
 
 	ctrls[0].id = DEVICE_PRIMARY;
-	ctrls[0].irq = IRQ_SEM_ATA1;
+	ctrls[0].irq = CTRL_IRQ_BASE;
 	ctrls[0].portBase = PORTBASE_PRIMARY;
 
 	ctrls[1].id = DEVICE_SECONDARY;
-	ctrls[1].irq = IRQ_SEM_ATA2;
+	ctrls[1].irq = CTRL_IRQ_BASE + 1;
 	ctrls[1].portBase = PORTBASE_SECONDARY;
 
 	/* request io-ports for bus-mastering */
@@ -99,7 +99,9 @@ void ctrl_init(bool useDma) {
 		}
 
 		/* set interrupt-handler */
-		ctrls[i].irqsem = semcrtirq(ctrls[i].irq);
+		char irqname[32];
+		snprintf(irqname,sizeof(irqname),"ATA%zd",i);
+		ctrls[i].irqsem = semcrtirq(ctrls[i].irq,irqname);
 		if(ctrls[i].irqsem < 0)
 			error("Unable to create irq-semaphore for IRQ %d",ctrls[i].irq);
 

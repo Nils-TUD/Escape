@@ -70,7 +70,7 @@ void MPConfig::handleIOInt(IOIntrptEntry *ioint) {
 			del = IOAPIC::RED_DEL_EXTINT;
 			break;
 	}
-	IOAPIC::setRedirection(ioint->srcBusIRQ,ioint->dstIOAPICInt,del,pol,trig);
+	IOAPIC::configureIrq(ioint->srcBusIRQ,ioint->dstIOAPICInt,del,pol,trig);
 }
 
 void MPConfig::parse() {

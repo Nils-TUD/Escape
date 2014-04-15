@@ -23,6 +23,7 @@
 #include <sys/arch/i586/pic.h>
 #include <sys/arch/i586/lapic.h>
 #include <sys/arch/i586/ioapic.h>
+#include <sys/arch/i586/pit.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/cache.h>
@@ -47,65 +48,65 @@
 #define MAX_EX_COUNT			10
 
 InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
-	/* 0x00 */	{Interrupts::exFatal,		"Divide by zero",		-1,					0},
-	/* 0x01 */	{Interrupts::exSStep,		"Single step",			-1,					0},
-	/* 0x02 */	{Interrupts::exFatal,		"Non maskable",			-1,					0},
-	/* 0x03 */	{Interrupts::exFatal,		"Breakpoint",			-1,					0},
-	/* 0x04 */	{Interrupts::exFatal,		"Overflow",				-1,					0},
-	/* 0x05 */	{Interrupts::exFatal,		"Bounds check",			-1,					0},
-	/* 0x06 */	{Interrupts::exFatal,		"Invalid opcode",		-1,					0},
-	/* 0x07 */	{Interrupts::exCoProcNA,	"Co-proc. n/a",			-1,					0},
-	/* 0x08 */	{Interrupts::exFatal,		"Double fault",			-1,					0},
-	/* 0x09 */	{Interrupts::exFatal,		"Co-proc seg. overrun",	-1,					0},
-	/* 0x0A */	{Interrupts::exFatal,		"Invalid TSS",			-1,					0},
-	/* 0x0B */	{Interrupts::exFatal,		"Segment not present",	-1,					0},
-	/* 0x0C */	{Interrupts::exFatal,		"Stack exception",		-1,					0},
-	/* 0x0D */	{Interrupts::exGPF,			"Gen. prot. fault",		-1,					0},
-	/* 0x0E */	{Interrupts::exPF,			"Page fault",			-1,					0},
-	/* 0x0F */	{NULL,						"??",					-1,					0},
-	/* 0x10 */	{Interrupts::exFatal,		"Co-processor error",	-1,					0},
-	/* 0x11 */	{NULL,						"??",					-1,					0},
-	/* 0x12 */	{NULL,						"??",					-1,					0},
-	/* 0x13 */	{NULL,						"??",					-1,					0},
-	/* 0x14 */	{NULL,						"??",					-1,					0},
-	/* 0x15 */	{NULL,						"??",					-1,					0},
-	/* 0x16 */	{NULL,						"??",					-1,					0},
-	/* 0x17 */	{NULL,						"??",					-1,					0},
-	/* 0x18 */	{NULL,						"??",					-1,					0},
-	/* 0x19 */	{NULL,						"??",					-1,					0},
-	/* 0x1A */	{NULL,						"??",					-1,					0},
-	/* 0x1B */	{NULL,						"??",					-1,					0},
-	/* 0x1C */	{NULL,						"??",					-1,					0},
-	/* 0x1D */	{NULL,						"??",					-1,					0},
-	/* 0x1E */	{NULL,						"??",					-1,					0},
-	/* 0x1F */	{NULL,						"??",					-1,					0},
-	/* 0x20 */	{Interrupts::irqTimer,		"PIT",					IRQ_SEM_TIMER,		0},
-	/* 0x21 */	{Interrupts::irqDefault,	"Keyboard",				IRQ_SEM_KEYB,		0},
-	/* 0x22 */	{NULL,						"??",					-1,					0},
-	/* 0x23 */	{Interrupts::irqDefault,	"COM2",					IRQ_SEM_COM2,		0},
-	/* 0x24 */	{Interrupts::irqDefault,	"COM1",					IRQ_SEM_COM1,		0},
-	/* 0x25 */	{NULL,						"??",					-1,					0},
-	/* 0x26 */	{Interrupts::irqDefault,	"Floppy",				IRQ_SEM_FLOPPY,		0},
-	/* 0x27 */	{NULL,						"??",					-1,					0},
-	/* 0x28 */	{Interrupts::irqDefault,	"CMOS",					IRQ_SEM_CMOS,		0},
-	/* 0x29 */	{Interrupts::irqDefault,	"NE2K",					IRQ_SEM_NE2K,		0},
-	/* 0x2A */	{NULL,						"??",					-1,					0},
-	/* 0x2B */	{Interrupts::irqDefault,	"NE2K",					IRQ_SEM_NE2K,		0},
-	/* 0x2C */	{Interrupts::irqDefault,	"Mouse",				IRQ_SEM_MOUSE,		0},
-	/* 0x2D */	{NULL,						"??",					-1,					0},
-	/* 0x2E */	{Interrupts::irqDefault,	"ATA1",					IRQ_SEM_ATA1,		0},
-	/* 0x2F */	{Interrupts::irqDefault,	"ATA2",					IRQ_SEM_ATA2,		0},
-	/* 0x30 */	{Interrupts::debug,			"Debug-Call",			-1,					0},
-	/* 0x31 */	{Syscalls::handle,			"Ack-Signal",			-1,					0},
-	/* 0x32 */	{Interrupts::irqTimer,		"LAPIC",				IRQ_SEM_TIMER,		0},
-	/* 0x33 */	{Interrupts::ipiWork,		"Work IPI",				-1,					0},
-	/* 0x34 */	{Interrupts::ipiTerm,		"Term IPI",				-1,					0},
-	/* 0x35 */	{NULL,						"??",					-1,					0},	// Flush TLB
-	/* 0x36 */	{NULL,						"??",					-1,					0},	// Wait
-	/* 0x37 */	{NULL,						"??",					-1,					0},	// Halt
-	/* 0x38 */	{NULL,						"??",					-1,					0},	// Flush TLB-Ack
-	/* 0x39 */	{Interrupts::ipiCallback,	"IPI Callback",			-1,					0},
-	/* 0x3A */	{Interrupts::exFatal,		"??",					-1,					0},
+	/* 0x00 */	{Interrupts::exFatal,		"Divide by zero",		0},
+	/* 0x01 */	{Interrupts::exSStep,		"Single step",			0},
+	/* 0x02 */	{Interrupts::exFatal,		"Non maskable",			0},
+	/* 0x03 */	{Interrupts::exFatal,		"Breakpoint",			0},
+	/* 0x04 */	{Interrupts::exFatal,		"Overflow",				0},
+	/* 0x05 */	{Interrupts::exFatal,		"Bounds check",			0},
+	/* 0x06 */	{Interrupts::exFatal,		"Invalid opcode",		0},
+	/* 0x07 */	{Interrupts::exCoProcNA,	"Co-proc. n/a",			0},
+	/* 0x08 */	{Interrupts::exFatal,		"Double fault",			0},
+	/* 0x09 */	{Interrupts::exFatal,		"Co-proc seg. overrun",	0},
+	/* 0x0A */	{Interrupts::exFatal,		"Invalid TSS",			0},
+	/* 0x0B */	{Interrupts::exFatal,		"Segment not present",	0},
+	/* 0x0C */	{Interrupts::exFatal,		"Stack exception",		0},
+	/* 0x0D */	{Interrupts::exGPF,			"Gen. prot. fault",		0},
+	/* 0x0E */	{Interrupts::exPF,			"Page fault",			0},
+	/* 0x0F */	{NULL,						"??",					0},
+	/* 0x10 */	{Interrupts::exFatal,		"Co-processor error",	0},
+	/* 0x11 */	{NULL,						"??",					0},
+	/* 0x12 */	{NULL,						"??",					0},
+	/* 0x13 */	{NULL,						"??",					0},
+	/* 0x14 */	{NULL,						"??",					0},
+	/* 0x15 */	{NULL,						"??",					0},
+	/* 0x16 */	{NULL,						"??",					0},
+	/* 0x17 */	{NULL,						"??",					0},
+	/* 0x18 */	{NULL,						"??",					0},
+	/* 0x19 */	{NULL,						"??",					0},
+	/* 0x1A */	{NULL,						"??",					0},
+	/* 0x1B */	{NULL,						"??",					0},
+	/* 0x1C */	{NULL,						"??",					0},
+	/* 0x1D */	{NULL,						"??",					0},
+	/* 0x1E */	{NULL,						"??",					0},
+	/* 0x1F */	{NULL,						"??",					0},
+	/* 0x20 */	{Interrupts::irqTimer,		"PIT",					0},
+	/* 0x21 */	{Interrupts::irqKeyboard,	"Keyboard",				0},
+	/* 0x22 */	{NULL,						"??",					0},
+	/* 0x23 */	{NULL,						"??",					0},
+	/* 0x24 */	{NULL,						"??",					0},
+	/* 0x25 */	{NULL,						"??",					0},
+	/* 0x26 */	{NULL,						"??",					0},
+	/* 0x27 */	{NULL,						"??",					0},
+	/* 0x28 */	{NULL,						"??",					0},
+	/* 0x29 */	{NULL,						"??",					0},
+	/* 0x2A */	{NULL,						"??",					0},
+	/* 0x2B */	{NULL,						"??",					0},
+	/* 0x2C */	{NULL,						"??",					0},
+	/* 0x2D */	{NULL,						"??",					0},
+	/* 0x2E */	{NULL,						"??",					0},
+	/* 0x2F */	{NULL,						"??",					0},
+	/* 0x30 */	{Interrupts::debug,			"Debug-Call",			0},
+	/* 0x31 */	{Syscalls::handle,			"Ack-Signal",			0},
+	/* 0x32 */	{Interrupts::irqTimer,		"LAPIC",				0},
+	/* 0x33 */	{Interrupts::ipiWork,		"Work IPI",				0},
+	/* 0x34 */	{Interrupts::ipiTerm,		"Term IPI",				0},
+	/* 0x35 */	{NULL,						"??",					0},	// Flush TLB
+	/* 0x36 */	{NULL,						"??",					0},	// Wait
+	/* 0x37 */	{NULL,						"??",					0},	// Halt
+	/* 0x38 */	{NULL,						"??",					0},	// Flush TLB-Ack
+	/* 0x39 */	{Interrupts::ipiCallback,	"IPI Callback",			0},
+	/* 0x3A */	{Interrupts::exFatal,		"??",					0},
 };
 
 uintptr_t *Interrupts::pfAddrs;
@@ -125,19 +126,32 @@ void InterruptsBase::init() {
 	PIC::init();
 	if(IOAPIC::enabled()) {
 		Log::get().writef("Using IOAPIC for interrupts\n");
-		/* identity map ISA irqs that have no interrupt source override */
-		uint isaIRQs[] = {0,1,3,4,6,8,9,11,12,14,15};
-		for(size_t i = 0; i < ARRAY_SIZE(isaIRQs); ++i) {
-			if(isaIRQs[i] == 0 && !Config::get(Config::FORCE_PIT))
-				continue;
-
-			IOAPIC::setRedirection(isaIRQs[i],isaIRQs[i],IOAPIC::RED_DEL_FIXED,
-				IOAPIC::RED_POL_HIGH_ACTIVE,IOAPIC::RED_TRIGGER_EDGE);
-		}
+		/* enable PIC and keyboard IRQ */
+		if(Config::get(Config::FORCE_PIT) || !LAPIC::isAvailable())
+			IOAPIC::enableIrq(0);
+		IOAPIC::enableIrq(1);
 		PIC::disable();
 	}
 	else
 		Log::get().writef("Using PIC for interrupts\n");
+}
+
+int InterruptsBase::installHandler(int irq,const char *name) {
+	if(irq < 0 || irq >= 0x10)
+		return -EINVAL;
+
+	size_t idx = irq + Interrupts::IRQ_MASTER_BASE;
+
+	/* keyboard can be replaced */
+	if(intrptList[idx].handler != Interrupts::irqKeyboard && intrptList[idx].handler != NULL)
+		return -EEXIST;
+
+	intrptList[idx].handler = Interrupts::irqDefault;
+	strnzcpy(intrptList[idx].name,name,sizeof(intrptList[idx].name));
+
+	if(IOAPIC::enabled())
+		IOAPIC::enableIrq(irq);
+	return 0;
 }
 
 void Interrupts::eoi(int irq) {
@@ -277,41 +291,33 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 #endif
 }
 
-void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
+void Interrupts::irqTimer(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	assert(t->getIntrptLevel() == 0);
-	bool res = false;
-	const Interrupt *intrpt = intrptList + stack->intrptNo;
-	if(intrpt->userIrq != -1 && t->getCPU() == 0) {
-		/* the idle-task HAS TO switch to another thread if he given somebody a signal. otherwise
-		 * we would wait for the next thread-switch (e.g. caused by a timer-irq). */
-		if(fireIrq(intrpt->userIrq) && (t->getFlags() & T_IDLE))
-			res = true;
-	}
-	res |= Timer::intrpt();
+	bool res = Timer::intrpt();
 	eoi(stack->intrptNo);
 	if(res)
 		Thread::switchAway();
 }
 
+void Interrupts::irqKeyboard(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	assert(t->getIntrptLevel() == 0);
+	/* react on F12 presses during boot-phase until the keyboard driver has installed the default
+	 * irq routine for keyboard interrupts. */
+	Keyboard::Event ev;
+	if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+		Console::start(NULL);
+
+	eoi(stack->intrptNo);
+}
+
 void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	assert(t->getIntrptLevel() == 0);
 	bool res = false;
-	const Interrupt *intrpt = intrptList + stack->intrptNo;
-	if(intrpt->userIrq != -1) {
-		if(fireIrq(intrpt->userIrq) && (t->getFlags() & T_IDLE))
-			res = true;
-	}
+	/* the idle-task HAS TO switch to another thread if he given somebody a signal. otherwise
+	 * we would wait for the next thread-switch (e.g. caused by a timer-irq). */
+	if(fireIrq(stack->intrptNo - IRQ_MASTER_BASE) && (t->getFlags() & T_IDLE))
+		res = true;
 	eoi(stack->intrptNo);
-
-	/* in debug-mode, start the logviewer when the keyboard is not present yet */
-	/* (with a present keyboard-device we would steal him the scancodes) */
-	/* this way, we can debug the system in the startup-phase without affecting timings
-	 * (before viewing the log ;)) */
-	if(stack->intrptNo == IRQ_KEYBOARD && Proc::getByPid(KEYBOARD_PID) == NULL) {
-		Keyboard::Event ev;
-		if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
-			Console::start(NULL);
-	}
 	if(res)
 		Thread::switchAway();
 }

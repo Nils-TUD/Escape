@@ -25,16 +25,24 @@
 SpinLock InterruptsBase::userIrqsLock;
 ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
 
-void InterruptsBase::attachSem(Semaphore *sem,size_t irq) {
+int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name) {
 	LockGuard<SpinLock> g(&userIrqsLock);
 	assert(irq < IRQ_SEM_COUNT);
+	if(userIrqs[irq].length() == 0) {
+		int res = Interrupts::installHandler(irq,name);
+		if(res < 0)
+			return res;
+	}
 	userIrqs[irq].append(sem);
+	return 0;
 }
 
 void InterruptsBase::detachSem(Semaphore *sem,size_t irq) {
 	LockGuard<SpinLock> g(&userIrqsLock);
 	assert(irq < IRQ_SEM_COUNT);
 	userIrqs[irq].remove(sem);
+	if(userIrqs[irq].length() == 0)
+		Interrupts::uninstallHandler(irq);
 }
 
 bool InterruptsBase::fireIrq(size_t irq) {

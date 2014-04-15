@@ -75,6 +75,13 @@ public:
 		RED_DEL_EXTINT		= 7 << 8,
 	};
 
+	struct Config {
+		uint gsi;
+		DeliveryMode delivery;
+		Polarity polarity;
+		TriggerMode triggerMode;
+	};
+
 	/**
 	 * @return true if IOAPICs are present
 	 */
@@ -92,24 +99,30 @@ public:
 	static void add(uint8_t id,uintptr_t addr,uint baseGSI);
 
 	/**
-	 * Inserts the given redirection entry into the corresponding IOAPIC.
-	 * Atm, it is always forwarded to the BSP.
+	 * Configures the given ISA IRQ with given attributes.
 	 *
-	 * @param srcIRQ the ISA IRQ to redirect
-	 * @param gsi the GSI to redirect to
+	 * @param irq the ISA IRQ to redirect to
+	 * @param gsi the GSI to redirect
 	 * @param delivery the delivery mode (fixed, low prio, ...)
 	 * @param polarity the polarity (low or high active)
 	 * @param triggerMode the trigger mode (edge or level)
 	 */
-	static void setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
-			Polarity polarity,TriggerMode triggerMode);
+	static void configureIrq(uint8_t irq,uint8_t gsi,DeliveryMode delivery,Polarity polarity,
+		TriggerMode triggerMode);
+
+	/**
+	 * Enables the given ISA IRQ.
+	 *
+	 * @param irq the ISA IRQ
+	 */
+	static void enableIrq(uint8_t irq);
 
 	/**
 	 * @param isaIRQ the ISA IRQ
 	 * @return the GSI for the given ISA IRQ
 	 */
-	static uint irq_to_gsi(uint8_t isaIRQ) {
-		return isa2gsi[isaIRQ];
+	static uint irqToGsi(uint8_t isaIRQ) {
+		return cfg[isaIRQ].gsi;
 	}
 
 	/**
@@ -159,5 +172,5 @@ private:
 	static SpinLock lck;
 	static size_t count;
 	static Instance ioapics[MAX_IOAPICS];
-	static uint isa2gsi[ISA_IRQ_COUNT];
+	static Config cfg[ISA_IRQ_COUNT];
 };

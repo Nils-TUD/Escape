@@ -74,6 +74,7 @@ private:
 	}
 
 	int _sid;
+	int _irq;
 	uint16_t _basePort;
 	uint8_t _mac[6];
 	uint8_t _nextPacket;

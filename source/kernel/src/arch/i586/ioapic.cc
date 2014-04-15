@@ -29,18 +29,22 @@
 SpinLock IOAPIC::lck;
 size_t IOAPIC::count;
 IOAPIC::Instance IOAPIC::ioapics[MAX_IOAPICS];
-uint IOAPIC::isa2gsi[ISA_IRQ_COUNT];
+IOAPIC::Config IOAPIC::cfg[ISA_IRQ_COUNT];
 
 void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
-	if(Config::get(Config::FORCE_PIC))
+	if(::Config::get(::Config::FORCE_PIC))
 		return;
 	if(count >= MAX_IOAPICS)
 		Util::panic("Limit of I/O APICs (%d) reached",MAX_IOAPICS);
 
-	/* lazy init isa2gsi to identity mapping */
+	/* lazy init config to identity mapping */
 	if(count == 0) {
-		for(size_t i = 0; i < ISA_IRQ_COUNT; ++i)
-			isa2gsi[i] = i;
+		for(size_t i = 0; i < ISA_IRQ_COUNT; ++i) {
+			cfg[i].gsi = i;
+			cfg[i].delivery = IOAPIC::RED_DEL_FIXED;
+			cfg[i].polarity = IOAPIC::RED_POL_HIGH_ACTIVE;
+			cfg[i].triggerMode = IOAPIC::RED_TRIGGER_EDGE;
+		}
 	}
 
 	Instance *inst = ioapics + count;
@@ -55,28 +59,45 @@ void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
 	count++;
 }
 
-void IOAPIC::setRedirection(uint8_t srcIRQ,uint gsi,DeliveryMode delivery,
-		Polarity polarity,TriggerMode triggerMode) {
-	if(Config::get(Config::FORCE_PIC))
+void IOAPIC::configureIrq(uint8_t irq,uint8_t gsi,DeliveryMode delivery,Polarity polarity,
+		TriggerMode triggerMode) {
+	assert(irq < ISA_IRQ_COUNT);
+	if(::Config::get(::Config::FORCE_PIC))
 		return;
 
-	int vector = Interrupts::getVectorFor(srcIRQ);
+	int vector = Interrupts::getVectorFor(irq);
+	if(vector == -1)
+		return;
+
+	IOAPIC::Instance *ioapic = get(gsi);
+	if(ioapic) {
+		cfg[irq].gsi = gsi;
+		cfg[irq].delivery = delivery;
+		cfg[irq].polarity = polarity;
+		cfg[irq].triggerMode = triggerMode;
+		Log::get().writef("INTSO: irq=%u gsi=%u del=%d pol=%d trig=%d\n",
+			irq,gsi,(delivery >> 8) & 7,(polarity >> 13) & 1,(triggerMode >> 15) & 1);
+	}
+}
+
+void IOAPIC::enableIrq(uint8_t irq) {
+	assert(irq < ISA_IRQ_COUNT);
+	if(::Config::get(::Config::FORCE_PIC))
+		return;
+
+	int vector = Interrupts::getVectorFor(irq);
 	if(vector == -1 || exists(vector))
 		return;
 
-	assert(srcIRQ < ISA_IRQ_COUNT);
-	isa2gsi[srcIRQ] = gsi;
-
+	uint8_t gsi = cfg[irq].gsi;
 	cpuid_t lapicId = LAPIC::getId();
 	IOAPIC::Instance *ioapic = get(gsi);
 	if(ioapic != NULL) {
 		gsi -= ioapic->baseGSI;
 		write(ioapic,IOAPIC_REG_REDTBL + gsi * 2 + 1,lapicId << 24);
 		write(ioapic,IOAPIC_REG_REDTBL + gsi * 2,
-			RED_INT_MASK_DIS | RED_DESTMODE_PHYS | polarity | triggerMode | delivery | vector);
-
-		Log::get().writef("INTSO: irq=%u gsi=%u del=%d pol=%d trig=%d\n",
-			srcIRQ,gsi,(delivery >> 8) & 7,(polarity >> 13) & 1,(triggerMode >> 15) & 1);
+			RED_INT_MASK_DIS | RED_DESTMODE_PHYS | cfg[irq].polarity | cfg[irq].triggerMode |
+			cfg[irq].delivery | vector);
 	}
 }
 

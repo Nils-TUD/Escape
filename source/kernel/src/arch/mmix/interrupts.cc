@@ -36,71 +36,82 @@
 #define DEBUG_PAGEFAULTS		0
 
 InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
-	/* 0x00 */	{Interrupts::defHandler,	"Power failure",		0,	0},
-	/* 0x01 */	{Interrupts::defHandler,	"Memory parity error",	0,	0},
-	/* 0x02 */	{Interrupts::defHandler,	"Nonexistent memory",	0,	0},
-	/* 0x03 */	{Interrupts::defHandler,	"Reboot",				0,	0},
-	/* 0x04 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x05 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x06 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x07 */	{Interrupts::defHandler,	"Interval counter",		0,	0},
-	/* 0x08 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x09 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x0A */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x0B */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x0C */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x0D */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x0E */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x0F */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x10 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x11 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x12 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x13 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x14 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x15 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x16 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x17 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x18 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x19 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x1A */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x1B */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x1C */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x1D */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x1E */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x1F */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x20 */	{Interrupts::defHandler,	"Privileged PC",		0,	0},
-	/* 0x21 */	{Interrupts::defHandler,	"Security violation",	0,	0},
-	/* 0x22 */	{Interrupts::defHandler,	"Breaks rules",			0,	0},
-	/* 0x23 */	{Interrupts::defHandler,	"Privileged instr.",	0,	0},
-	/* 0x24 */	{Interrupts::defHandler,	"Privileged access",	0,	0},
-	/* 0x25 */	{Interrupts::exProtFault,	"Execution prot.",		0,	0},
-	/* 0x26 */	{Interrupts::exProtFault,	"Write prot.",			0,	0},
-	/* 0x27 */	{Interrupts::exProtFault,	"Read prot.",			0,	0},
-	/* 0x28 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x29 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x2A */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x2B */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x2C */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x2D */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x2E */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x2F */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x30 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x31 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x32 */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x33 */	{Interrupts::irqDisk,		"Disk",					0,	0},
-	/* 0x34 */	{Interrupts::irqTimer,		"Timer",				0,	0},
-	/* 0x35 */	{Interrupts::defHandler,	"Terminal 0 trans.",	0,	0},
-	/* 0x36 */	{Interrupts::defHandler,	"Terminal 0 recv.",		0,	0},
-	/* 0x37 */	{Interrupts::defHandler,	"Terminal 1 trans.",	0,	0},
-	/* 0x38 */	{Interrupts::defHandler,	"Terminal 1 recv.",		0,	0},
-	/* 0x39 */	{Interrupts::defHandler,	"Terminal 2 trans.",	0,	0},
-	/* 0x3A */	{Interrupts::defHandler,	"Terminal 2 recv.",		0,	0},
-	/* 0x3B */	{Interrupts::defHandler,	"Terminal 3 trans.",	0,	0},
-	/* 0x3C */	{Interrupts::defHandler,	"Terminal 3 recv.",		0,	0},
-	/* 0x3D */	{Interrupts::irqKB,			"Keyboard",				0,	0},
-	/* 0x3E */	{Interrupts::defHandler,	"??",					0,	0},
-	/* 0x3F */	{Interrupts::defHandler,	"??",					0,	0},
+	/* 0x00 */	{Interrupts::defHandler,	"Power failure",		0},
+	/* 0x01 */	{Interrupts::defHandler,	"Memory parity error",	0},
+	/* 0x02 */	{Interrupts::defHandler,	"Nonexistent memory",	0},
+	/* 0x03 */	{Interrupts::defHandler,	"Reboot",				0},
+	/* 0x04 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x05 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x06 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x07 */	{Interrupts::defHandler,	"Interval counter",		0},
+	/* 0x08 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x09 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x0A */	{Interrupts::defHandler,	"??",					0},
+	/* 0x0B */	{Interrupts::defHandler,	"??",					0},
+	/* 0x0C */	{Interrupts::defHandler,	"??",					0},
+	/* 0x0D */	{Interrupts::defHandler,	"??",					0},
+	/* 0x0E */	{Interrupts::defHandler,	"??",					0},
+	/* 0x0F */	{Interrupts::defHandler,	"??",					0},
+	/* 0x10 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x11 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x12 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x13 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x14 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x15 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x16 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x17 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x18 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x19 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x1A */	{Interrupts::defHandler,	"??",					0},
+	/* 0x1B */	{Interrupts::defHandler,	"??",					0},
+	/* 0x1C */	{Interrupts::defHandler,	"??",					0},
+	/* 0x1D */	{Interrupts::defHandler,	"??",					0},
+	/* 0x1E */	{Interrupts::defHandler,	"??",					0},
+	/* 0x1F */	{Interrupts::defHandler,	"??",					0},
+	/* 0x20 */	{Interrupts::defHandler,	"Privileged PC",		0},
+	/* 0x21 */	{Interrupts::defHandler,	"Security violation",	0},
+	/* 0x22 */	{Interrupts::defHandler,	"Breaks rules",			0},
+	/* 0x23 */	{Interrupts::defHandler,	"Privileged instr.",	0},
+	/* 0x24 */	{Interrupts::defHandler,	"Privileged access",	0},
+	/* 0x25 */	{Interrupts::exProtFault,	"Execution prot.",		0},
+	/* 0x26 */	{Interrupts::exProtFault,	"Write prot.",			0},
+	/* 0x27 */	{Interrupts::exProtFault,	"Read prot.",			0},
+	/* 0x28 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x29 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x2A */	{Interrupts::defHandler,	"??",					0},
+	/* 0x2B */	{Interrupts::defHandler,	"??",					0},
+	/* 0x2C */	{Interrupts::defHandler,	"??",					0},
+	/* 0x2D */	{Interrupts::defHandler,	"??",					0},
+	/* 0x2E */	{Interrupts::defHandler,	"??",					0},
+	/* 0x2F */	{Interrupts::defHandler,	"??",					0},
+	/* 0x30 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x31 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x32 */	{Interrupts::defHandler,	"??",					0},
+	/* 0x33 */	{Interrupts::irqDisk,		"Disk",					0},
+	/* 0x34 */	{Interrupts::irqTimer,		"Timer",				0},
+	/* 0x35 */	{Interrupts::defHandler,	"Terminal 0 trans.",	0},
+	/* 0x36 */	{Interrupts::defHandler,	"Terminal 0 recv.",		0},
+	/* 0x37 */	{Interrupts::defHandler,	"Terminal 1 trans.",	0},
+	/* 0x38 */	{Interrupts::defHandler,	"Terminal 1 recv.",		0},
+	/* 0x39 */	{Interrupts::defHandler,	"Terminal 2 trans.",	0},
+	/* 0x3A */	{Interrupts::defHandler,	"Terminal 2 recv.",		0},
+	/* 0x3B */	{Interrupts::defHandler,	"Terminal 3 trans.",	0},
+	/* 0x3C */	{Interrupts::defHandler,	"Terminal 3 recv.",		0},
+	/* 0x3D */	{Interrupts::irqKB,			"Keyboard",				0},
+	/* 0x3E */	{Interrupts::defHandler,	"??",					0},
+	/* 0x3F */	{Interrupts::defHandler,	"??",					0},
 };
+
+int InterruptsBase::installHandler(int irq,const char *) {
+	if(irq < 0x32 || irq >= 0x40)
+		return -EINVAL;
+
+	if(intrptList[irq].handler == Interrupts::defHandler)
+		return -EINVAL;
+
+	/* nothing to do. already installed */
+	return 0;
+}
 
 void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	static_assert(IRQ_COUNT == ARRAY_SIZE(intrptList),"IRQ_COUNT is wrong");
@@ -220,7 +231,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call UEnv::handleSignal(), which might cause a thread-switch */
-	if(!fireIrq(IRQ_SEM_KEYB)) {
+	if(!fireIrq(irqNo)) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
@@ -229,7 +240,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
-	bool res = fireIrq(IRQ_SEM_TIMER);
+	bool res = fireIrq(irqNo);
 	res |= Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res)
@@ -240,7 +251,7 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* see Interrupts::irqKb() */
 	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
-	if(!fireIrq(IRQ_SEM_ATA1))
+	if(!fireIrq(irqNo))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
 	else
 		Thread::switchAway();

@@ -171,7 +171,7 @@ int main(int argc,char **argv) {
 	if(argc < 2)
 		error("Usage: %s <wait>",argv[0]);
 
-	irqSm = semcrtirq(IRQ_SEM_ATA1);
+	irqSm = semcrtirq(8,"Disk");
 	if(irqSm < 0)
 		error("Unable to create irq-semaphore");
 

@@ -41,17 +41,8 @@ public:
 
 	/* IRQs */
 	enum {
-		IRQ_TIMER			= IRQ_MASTER_BASE + 0,
+		IRQ_PIT				= IRQ_MASTER_BASE + 0,
 		IRQ_KEYBOARD		= IRQ_MASTER_BASE + 1,
-		/* IRQ_MASTER_BASE + 2 = cascade */
-		IRQ_COM2			= IRQ_MASTER_BASE + 3,
-		IRQ_COM1			= IRQ_MASTER_BASE + 4,
-		IRQ_FLOPPY			= IRQ_MASTER_BASE + 6,
-		/* IRQ_MASTER_BASE + 7 = ? */
-		IRQ_CMOS_RTC		= IRQ_MASTER_BASE + 8,
-		IRQ_MOUSE			= IRQ_MASTER_BASE + 12,
-		IRQ_ATA1			= IRQ_MASTER_BASE + 14,
-		IRQ_ATA2			= IRQ_MASTER_BASE + 15,
 		IRQ_LAPIC			= IRQ_MASTER_BASE + 18
 	};
 
@@ -203,6 +194,7 @@ private:
 	static void exCoProcNA(Thread *t,IntrptStackFrame *stack);
 	static void exPF(Thread *t,IntrptStackFrame *stack);
 	static void irqTimer(Thread *t,IntrptStackFrame *stack);
+	static void irqKeyboard(Thread *t,IntrptStackFrame *stack);
 	static void irqDefault(Thread *t,IntrptStackFrame *stack);
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
 	static void ipiTerm(Thread *t,IntrptStackFrame *stack);

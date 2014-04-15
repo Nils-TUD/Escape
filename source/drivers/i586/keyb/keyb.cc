@@ -45,6 +45,8 @@
 #define KBC_CMD_DISABLE_MOUSE		0xA7
 #define KBC_CMD_ENABLE_MOUSE		0xA8
 
+#define KEYBOARD_IRQ				1
+
 /* indicates that the output-buffer is full */
 #define STATUS_OUTBUF_FULL			(1 << 0)
 /* indicates that the input-buffer is full */
@@ -185,9 +187,9 @@ int main(void) {
 
 static int kbIrqThread(A_UNUSED void *arg) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	int sem = semcrtirq(IRQ_SEM_KEYB);
+	int sem = semcrtirq(KEYBOARD_IRQ,"Keyboard");
 	if(sem < 0)
-		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);
+		error("Unable to get irq-semaphore for IRQ %d",KEYBOARD_IRQ);
 	while(1) {
 		semdown(sem);
 

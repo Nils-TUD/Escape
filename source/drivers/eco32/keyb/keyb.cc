@@ -78,9 +78,9 @@ int main(void) {
 
 static int kbIrqThread(A_UNUSED void *arg) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	int sem = semcrtirq(IRQ_SEM_KEYB);
+	int sem = semcrtirq(4,"Keyboard");
 	if(sem < 0)
-		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_KEYB);
+		error("Unable to get irq-semaphore for IRQ %d",4);
 	while(1) {
 		semdown(sem);
 

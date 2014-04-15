@@ -44,6 +44,8 @@
 #define BMR_CMD_START				0x1
 #define BMR_CMD_READ				0x8
 
+#define CTRL_IRQ_BASE				14
+
 /**
  * Inits the controllers
  *

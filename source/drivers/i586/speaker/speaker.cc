@@ -23,7 +23,7 @@
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/conf.h>
-#include <esc/irq.h>
+#include <esc/thread.h>
 #include <esc/messages.h>
 #include <ipc/proto/speaker.h>
 #include <ipc/device.h>
@@ -82,21 +82,11 @@ int main(void) {
 }
 
 static void playSound(uint freq,uint dur) {
-	int tsem = semcrtirq(IRQ_SEM_TIMER);
-	if(tsem < 0) {
-		printe("Unable to create irq-semaphore");
-		return;
-	}
-
 	startSound(freq);
 	// TODO actually, it would be better not to block in this thread, because we make it unusable
 	// for other clients during that time
-	while(dur > 0) {
-		semdown(tsem);
-		dur -= 1000 / timerFreq;
-	}
+	sleep(dur);
 	stopSound();
-	semdestr(tsem);
 }
 
 static void startSound(uint frequency) {

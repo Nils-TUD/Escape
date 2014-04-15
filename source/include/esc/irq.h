@@ -23,20 +23,6 @@
 #include <esc/syscalls.h>
 #include <esc/sync.h>
 
-/* TODO later, this should be more generic and less architecture specific */
-typedef enum {
-	IRQ_SEM_TIMER,
-	IRQ_SEM_KEYB,
-	IRQ_SEM_COM1,
-	IRQ_SEM_COM2,
-	IRQ_SEM_FLOPPY,
-	IRQ_SEM_CMOS,
-	IRQ_SEM_ATA1,
-	IRQ_SEM_ATA2,
-	IRQ_SEM_MOUSE,
-	IRQ_SEM_NE2K,
-} IRQ;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,10 +32,11 @@ extern "C" {
  * IRQ arrives, the semaphore is up'ed.
  *
  * @param irq the IRQ to attach it to
+ * @param name the name to display for this IRQ
  * @return the semaphore id or a negative error-code
  */
-A_CHECKRET static inline int semcrtirq(IRQ irq) {
-	return syscall1(SYSCALL_SEMCRTIRQ,irq);
+A_CHECKRET static inline int semcrtirq(int irq,const char *name) {
+	return syscall2(SYSCALL_SEMCRTIRQ,irq,(ulong)name);
 }
 
 #ifdef __cplusplus

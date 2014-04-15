@@ -131,8 +131,8 @@
  */
 
 Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
-		: _sid(sid), _basePort(), _mac(), _nextPacket(), _listmutex(), _first(), _last(),
-		  _handler(handler) {
+		: _sid(sid), _irq(nic.irq), _basePort(), _mac(), _nextPacket(), _listmutex(), _first(),
+		  _last(), _handler(handler) {
 	for(size_t i = 0; i < 6; i++) {
 		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
 			if(reqports(nic.bars[i].addr,nic.bars[i].size) < 0) {
@@ -300,7 +300,7 @@ void Ne2k::receive() {
 
 int Ne2k::irqThread(void *ptr) {
 	Ne2k *ne2k = reinterpret_cast<Ne2k*>(ptr);
-	int irqsem = semcrtirq(IRQ_SEM_NE2K);
+	int irqsem = semcrtirq(ne2k->_irq,"NE2000");
 	if(irqsem < 0)
 		error("Unable to create irq-semaphore");
 	while(1) {

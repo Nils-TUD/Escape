@@ -37,6 +37,8 @@
 #define IOPORT_KB_DATA				0x60
 #define IOPORT_KB_INOUTBUF			0x60
 
+#define MOUSE_IRQ					12
+
 #define KBC_CMD_READ_STATUS			0x20
 #define KBC_CMD_SET_STATUS			0x60
 #define KBC_CMD_DISABLE_MOUSE		0xA7
@@ -117,9 +119,9 @@ static int irqThread(A_UNUSED void *arg) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::Mouse::Event ev;
 
-	int sem = semcrtirq(IRQ_SEM_MOUSE);
+	int sem = semcrtirq(MOUSE_IRQ,"PS/2 Mouse");
 	if(sem < 0)
-		error("Unable to get irq-semaphore for IRQ %d",IRQ_SEM_MOUSE);
+		error("Unable to get irq-semaphore for IRQ %d",MOUSE_IRQ);
 	while(1) {
 		semdown(sem);
 

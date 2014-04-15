@@ -41,26 +41,12 @@ class InterruptsBase {
 protected:
 	struct Interrupt {
 		irqhandler_func handler;
-		const char *name;
-		int userIrq;
+		char name[32];
 		ulong count;
 	};
 
 public:
 	static const size_t IRQ_SEM_COUNT	= 32;
-
-	enum IRQ {
-		IRQ_SEM_TIMER,
-		IRQ_SEM_KEYB,
-		IRQ_SEM_COM1,
-		IRQ_SEM_COM2,
-		IRQ_SEM_FLOPPY,
-		IRQ_SEM_CMOS,
-		IRQ_SEM_ATA1,
-		IRQ_SEM_ATA2,
-		IRQ_SEM_MOUSE,
-		IRQ_SEM_NE2K,
-	};
 
 	/**
 	 * Initializes the interrupts
@@ -86,12 +72,32 @@ public:
 	static void handler(IntrptStackFrame *stack) asm("intrpt_handler");
 
 	/**
+	 * Installs a handler for given IRQ.
+	 *
+	 * @param irq the IRQ number
+	 * @param name the name (just for debugging purposes)
+	 * @return 0 on success
+	 */
+	static int installHandler(int irq,const char *name);
+
+	/**
+	 * Uninstalls the handler for given IRQ.
+	 *
+	 * @param irq the IRQ number
+	 */
+	static void uninstallHandler(int irq) {
+		intrptList[irq].handler = NULL;
+	}
+
+	/**
 	 * Attaches the given semaphore to the given IRQ.
 	 *
 	 * @param sem the semaphore
 	 * @param irq the IRQ
+	 * @param name the name for the IRQ
+	 * @return 0 on success
 	 */
-	static void attachSem(Semaphore *sem,size_t irq);
+	static int attachSem(Semaphore *sem,size_t irq,const char *name);
 
 	/**
 	 * Detaches the given semaphore from the given IRQ.

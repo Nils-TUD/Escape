@@ -39,9 +39,9 @@ void Timer::start(bool isBSP) {
 			PIT::enableOneShot(PIT::CHAN0,0);
 			/* mask it as well */
 			if(IOAPIC::enabled())
-				IOAPIC::mask(IOAPIC::irq_to_gsi(Interrupts::IRQ_TIMER - Interrupts::IRQ_MASTER_BASE));
+				IOAPIC::mask(IOAPIC::irqToGsi(Interrupts::IRQ_PIT - Interrupts::IRQ_MASTER_BASE));
 			else
-				PIC::mask(Interrupts::IRQ_TIMER - Interrupts::IRQ_MASTER_BASE);
+				PIC::mask(Interrupts::IRQ_PIT - Interrupts::IRQ_MASTER_BASE);
 		}
 		LAPIC::enableTimer();
 	}

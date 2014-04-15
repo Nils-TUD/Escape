@@ -50,7 +50,7 @@ error:
 	return res;
 }
 
-int Sems::create(Proc *p,uint value,int irq) {
+int Sems::create(Proc *p,uint value,int irq,const char *name) {
 	int res;
 	Entry **sems;
 	Entry *e = new Entry(value,irq);
@@ -61,9 +61,12 @@ int Sems::create(Proc *p,uint value,int irq) {
 	/* search for a free entry */
 	for(size_t i = 0; i < p->semsSize; ++i) {
 		if(p->sems[i] == NULL) {
+			if(e->irq != -1) {
+				res = Interrupts::attachSem(&e->s,e->irq,name);
+				if(res < 0)
+					goto error;
+			}
 			p->sems[i] = e;
-			if(e->irq != -1)
-				Interrupts::attachSem(&e->s,e->irq);
 			p->unlock(PLOCK_SEMS);
 			return i;
 		}
@@ -85,11 +88,14 @@ int Sems::create(Proc *p,uint value,int irq) {
 
 	/* insert entry */
 	res = p->semsSize;
-	sems[res] = e;
 	p->semsSize *= 2;
 	p->sems = sems;
-	if(e->irq != -1)
-		Interrupts::attachSem(&e->s,e->irq);
+	if(e->irq != -1) {
+		res = Interrupts::attachSem(&e->s,e->irq,name);
+		if(res < 0)
+			goto error;
+	}
+	p->sems[res] = e;
 	p->unlock(PLOCK_SEMS);
 	return res;
 

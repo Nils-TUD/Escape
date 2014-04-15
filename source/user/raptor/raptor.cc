@@ -24,7 +24,7 @@
 #include <esc/esccodes.h>
 #include <esc/io.h>
 #include <esc/cmdargs.h>
-#include <esc/irq.h>
+#include <esc/time.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -32,10 +32,11 @@
 #include <errno.h>
 #include "game.h"
 
+#define INTERVAL		5000 /* us */
+
 static void sigInt(int sig);
 static void qerror(const char *msg,...);
 
-static time_t tsc = 0;
 static volatile bool run = true;
 
 int main(int argc,char *argv[]) {
@@ -51,21 +52,22 @@ int main(int argc,char *argv[]) {
 		rows = atoi(argv[2]);
 	}
 
-	game_init(cols,rows);
-
-	int tsem = semcrtirq(IRQ_SEM_TIMER);
-	if(tsem < 0)
-		qerror("Unable to create irq-semaphore");
 	if(signal(SIG_INTRPT,sigInt) == SIG_ERR)
 		qerror("Unable to set sig-handler");
 
-	game_tick(tsc);
+	ulong ticks = 0;
+	game_init(cols,rows);
 	while(run) {
-		/* wait for next timer-interrupt. */
-		semdown(tsem);
-		tsc++;
-		if(!game_tick(tsc))
+		uint64_t next = rdtsc() + timetotsc(INTERVAL);
+
+		if(!game_tick(ticks))
 			break;
+
+		/* wait for next tick */
+		uint64_t now = rdtsc();
+		if(next > now)
+			sleep(tsctotime(next - now) / 1000);
+		ticks++;
 	}
 
 	game_deinit();

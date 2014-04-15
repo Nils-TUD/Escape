@@ -152,7 +152,9 @@ ipc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	fSignal oldhandler;
 	if((oldhandler = signal(SIG_ALARM,sigalarm)) == SIG_ERR)
 		VTHROW("Unable to set SIG_ALARM handler");
-	alarm(timeout);
+	int res;
+	if((res = alarm(timeout)) < 0)
+		VTHROWE("alarm(" << timeout << ")",res);
 
 	try {
 		// receive response

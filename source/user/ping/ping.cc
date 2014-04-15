@@ -225,7 +225,8 @@ int main(int argc,char **argv) {
 		sendEcho(sock,src,dest,nbytes,i,ttl);
 		sent++;
 
-		alarm(timeout);
+		if(alarm(timeout) < 0)
+			printe("alarm(%u)",timeout);
 
 		try {
 			Socket::Addr addr;

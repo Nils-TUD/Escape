@@ -71,7 +71,7 @@ enum {
 	OPT_PADDING			= 0,
 	OPT_SUBNET_MASK		= 1,
 	OPT_ROUTERS			= 3,
-	OPT_NAME_SERVERS	= 5,
+	OPT_DNS				= 6,
 	OPT_HOSTNAME		= 12,
 	OPT_DOMAIN_NAME		= 15,
 	OPT_BROADCAST		= 28,
@@ -131,7 +131,7 @@ struct NetConfig {
 	Net::IPv4Addr broadcast;
 	Net::IPv4Addr netmask;
 	Net::IPv4Addr router;
-	Net::IPv4Addr nameserver;
+	Net::IPv4Addr dnsServer;
 };
 
 static void buildDiscover(DHCPMsg *msg,NetConfig *cfg) {
@@ -166,7 +166,7 @@ static void buildRequest(DHCPMsg *msg,NetConfig *cfg) {
 	msg->options[i++] = 4;
 	msg->options[i++] = OPT_BROADCAST;
 	msg->options[i++] = OPT_ROUTERS;
-	msg->options[i++] = OPT_NAME_SERVERS;
+	msg->options[i++] = OPT_DNS;
 	msg->options[i++] = OPT_SUBNET_MASK;
 
 	msg->options[i++] = OPT_END;
@@ -201,8 +201,8 @@ static uint8_t handleReply(DHCPMsg *msg,NetConfig *cfg) {
 			case OPT_ROUTERS:
 				cfg->router = Net::IPv4Addr(options);
 				break;
-			case OPT_NAME_SERVERS:
-				cfg->nameserver = Net::IPv4Addr(options);
+			case OPT_DNS:
+				cfg->dnsServer = Net::IPv4Addr(options);
 				break;
 		}
 		options += options[-1];
@@ -354,14 +354,14 @@ int main(int argc,char **argv) {
 		std::cout << "Subnet mask: " << cfg.netmask << "\n";
 		std::cout << "Broadcast  : " << cfg.broadcast << "\n";
 		std::cout << "Router     : " << cfg.router << "\n";
-		std::cout << "Nameserver : " << cfg.nameserver << "\n";
+		std::cout << "DNS server : " << cfg.dnsServer << "\n";
 
 		net.linkConfig(link,cfg.ipAddr,cfg.netmask,ipc::Net::UP);
 		net.routeAdd(link,cfg.ipAddr.getNetwork(cfg.netmask),Net::IPv4Addr(),cfg.netmask);
 		net.routeAdd(link,Net::IPv4Addr(),cfg.router,Net::IPv4Addr());
 
 		std::ofstream os(std::DNS::getResolveFile());
-		os << (cfg.nameserver.value() == 0 ? cfg.router : cfg.nameserver) << "\n";
+		os << (cfg.dnsServer.value() == 0 ? cfg.router : cfg.dnsServer) << "\n";
 	}
 	return 0;
 }

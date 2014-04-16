@@ -126,7 +126,7 @@ public:
 
 int main(int argc,char **argv) {
 	if(argc > 1 && strcmp(argv[1],"nobios") == 0) {
-		printf("[VGA] Disabled bios-calls; mode-switching will not be possible\n");
+		print("Disabled bios-calls; mode-switching will not be possible");
 		fflush(stdout);
 		usebios = false;
 	}

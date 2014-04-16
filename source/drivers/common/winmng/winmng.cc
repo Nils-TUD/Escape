@@ -248,10 +248,12 @@ int main(int argc,char *argv[]) {
 
 	/* create event-device */
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
+	print("Creating window-manager-events at %s",path);
 	WinMngEventDevice evdev(path,0111);
 
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
+	print("Creating window-manager at %s",path);
 	WinMngDevice windev(path,argv[3],0111);
 
 	/* open input device and attach */

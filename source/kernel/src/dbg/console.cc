@@ -214,7 +214,7 @@ void Console::start(const char *initialcmd) {
 			if(res == CONS_EXIT)
 				break;
 			if(res != 0)
-				out->writef("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(-res),res);
+				out->writef("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(res),res);
 		}
 		else
 			out->writef("Unknown command '%s'\n",argv[0]);

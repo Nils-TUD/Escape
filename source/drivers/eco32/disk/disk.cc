@@ -58,22 +58,10 @@
 
 #define DEBUG				0
 
-#define DISK_LOG(fmt,...)	do { \
-		printf("[disk] "); \
-		printf(fmt,## __VA_ARGS__); \
-		printf("\n"); \
-		fflush(stdout); \
-	} while(0);
-
 #if DEBUG
-#define DISK_DBG(fmt,...)	do { \
-		printf("[disk] "); \
-		printf(fmt,## __VA_ARGS__); \
-		printf("\n"); \
-		fflush(stdout); \
-	} while(0);
+#	define DISK_DBG(fmt,...)	print(fmt,## __VA_ARGS__);
 #else
-#define DISK_DBG(...)
+#	define DISK_DBG(...)
 #endif
 
 using namespace ipc;
@@ -115,7 +103,7 @@ public:
 		 * to swap (which would cause a deadlock, because we're doing that). */
 		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
 
-		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Reply();
+		is << FileShFile::Response(c->shm() != NULL ? 0 : errno) << Reply();
 	}
 
 	void read(IPCStream &is) {
@@ -190,14 +178,14 @@ int main(int argc,char **argv) {
 	if(diskCap == 0)
 		error("Disk not found");
 
-	DISK_LOG("Found disk with %lu sectors (%lu bytes)",diskCap / SECTOR_SIZE,diskCap);
+	print("Found disk with %lu sectors (%lu bytes)",diskCap / SECTOR_SIZE,diskCap);
 
 	/* detect and init all devices */
 	createVFSEntry("hda",false);
 	DiskDevice dev("/dev/hda1",0770);
 	if(chown("/dev/hda1",-1,GROUP_STORAGE) < 0)
 		error("Unable to set group for '%s'","/dev/hda1");
-	DISK_LOG("Registered device 'hda1' (device 1, partition 1)");
+	print("Registered device 'hda1' (device 1, partition 1)");
 	createVFSEntry("hda1",true);
 	/* flush prints */
 	fflush(stdout);
@@ -294,7 +282,7 @@ static bool diskWait(void) {
 	if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 		semdown(irqSm);
 		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
-			DISK_LOG("Waiting for interrupt: waked up with invalid status (%#x)",*diskCtrlReg);
+			printe("Waiting for interrupt: waked up with invalid status (%#x)",*diskCtrlReg);
 			return false;
 		}
 	}

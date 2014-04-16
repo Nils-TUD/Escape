@@ -172,11 +172,12 @@ static int irqThread(A_UNUSED void *arg) {
 
 static void kb_init(void) {
 	uint8_t id,cmdByte;
-	/* activate mouse */
+
+	print("Enabling mouse");
 	outbyte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
 	kb_checkCmd();
 
-	/* put mouse in streaming mode */
+	print("Putting mouse in streaming mode");
 	kb_writeMouse(MOUSE_CMD_STREAMING);
 
 	/* read cmd byte */
@@ -185,13 +186,16 @@ static void kb_init(void) {
 	cmdByte = kb_read();
 	outbyte(IOPORT_KB_CTRL,KBC_CMD_SET_STATUS);
 	kb_checkCmd();
+
 	/* somehow cmdByte is 0 in vbox and qemu. we have to enable TRANSPSAUX in this case.
 	 * otherwise we get strange scancodes in the keyboard-driver */
+	print("Enabling IRQs");
 	cmdByte |= KBC_CMDBYTE_TRANSPSAUX | KBC_CMDBYTE_ENABLE_IRQ12 | KBC_CMDBYTE_ENABLE_IRQ1;
 	cmdByte &= ~KBC_CMDBYTE_DISABLE_KB;
 	outbyte(IOPORT_KB_DATA,cmdByte);
 	kb_checkCmd();
 
+	print("Checking whether we have a wheel");
 	/* enable mouse-wheel by setting sample-rate to 200, 100 and 80 and reading the device-id */
 	kb_writeMouse(MOUSE_CMD_SETSAMPLE);
 	kb_writeMouse(200);
@@ -201,12 +205,15 @@ static void kb_init(void) {
 	kb_writeMouse(80);
 	kb_writeMouse(MOUSE_CMD_GETDEVID);
 	id = kb_read();
-	if(id == 3 || id == 4)
+	if(id == 3 || id == 4) {
+		print("Detected mouse-wheel");
 		wheel = true;
+	}
 }
 
 static void kb_checkCmd(void) {
-	while(inbyte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
+	while(inbyte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY)
+		;
 }
 
 static uint16_t kb_read(void) {

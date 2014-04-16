@@ -74,7 +74,7 @@ int main(int argc,char **argv) {
 		// execute a command
 		if(strcmp(argv[1],"-e") == 0)
 			return shell_executeCmd(argv[2],false);
-		fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
+		printe("Invalid shell-usage; Please use %s -e <cmd>",argv[1]);
 		return EXIT_FAILURE;
 	}
 

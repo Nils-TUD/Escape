@@ -135,6 +135,7 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
 		  _last(), _handler(handler) {
 	for(size_t i = 0; i < 6; i++) {
 		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
+			print("Requesting ports %u..%u",nic.bars[i].addr,nic.bars[i].addr + nic.bars[i].size - 1);
 			if(reqports(nic.bars[i].addr,nic.bars[i].size) < 0) {
 				error("Unable to request io-ports %d..%d",
 						nic.bars[i].addr,nic.bars[i].addr + nic.bars[i].size - 1);
@@ -142,6 +143,8 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
 			_basePort = nic.bars[i].addr;
 		}
 	}
+
+	print("Reset device");
 
 	/* reset device */
 	writeReg(REG_CMD,CMD_STP | CMD_COMPLDMA);
@@ -152,9 +155,13 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
 	/* enable loopback control */
 	writeReg(REG_TCR,TCR_LB0);
 
+	print("Disable interrupts");
+
 	/* disable interrupts */
 	writeReg(REG_ISR,0xFF);	// clear bits by writing a 1
 	writeReg(REG_IMR,0);	// mask all interrupts
+
+	print("Read MAC address");
 
 	/* read MAC address from PROM */
 	uint16_t prom[16];
@@ -162,10 +169,14 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
 	for(size_t i = 0; i < 6; ++i)
 		_mac[i] = prom[i] & 0xFF;
 
+	print("Set MAC address");
+
 	/* set the MAC address */
 	writeReg(REG_CMD,CMD_STP | CMD_PAGE1 | CMD_COMPLDMA);
 	for(size_t i = 0; i < 6; ++i)
 		writeReg(REG_PAR0 + i,prom[i] & 0xff);
+
+	print("Setup ringbuffer");
 
 	/* setup packet ringbuffer */
 	writeReg(REG_CMD,CMD_STP | CMD_PAGE1 | CMD_COMPLDMA);
@@ -182,6 +193,8 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
 	/* accept broadcast and runt packets (< 64 bytes) */
 	writeReg(REG_RCR,RCR_AR | RCR_AB);
 	writeReg(REG_TCR,0);
+
+	print("Enable interrupts");
 
 	/* clear pending interrupts, enable them and begin card operation */
 	writeReg(REG_ISR,0xFF);

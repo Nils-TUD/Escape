@@ -157,7 +157,7 @@ protected:
 
 		c->shm(static_cast<char*>(joinbuf(r.path.str(),r.size,0)));
 
-		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Reply();
+		is << FileShFile::Response(c->shm() != NULL ? 0 : errno) << Reply();
 	}
 
 	void close(IPCStream &is) {

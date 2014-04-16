@@ -65,8 +65,9 @@ static const char *msgs[] = {
 };
 
 char *strerror(int errnum) {
-	if((size_t)errnum < ARRAY_SIZE(msgs))
-		return (char*)msgs[errnum];
+	size_t idx = -errnum;
+	if(idx < ARRAY_SIZE(msgs))
+		return (char*)msgs[idx];
 	else
-		return (char*)msgs[0];
+		return "Unknown error";
 }

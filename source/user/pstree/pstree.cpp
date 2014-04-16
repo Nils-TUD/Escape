@@ -152,7 +152,7 @@ int main(int argc,char **argv) {
 
 	map_type::iterator start = pmap.find(pid);
 	if(start == pmap.end())
-		fprintf(stderr,"No process with pid %d\n",pid);
+		printe("No process with pid %d",pid);
 	else
 		printRec(start->second,0);
 	return EXIT_SUCCESS;

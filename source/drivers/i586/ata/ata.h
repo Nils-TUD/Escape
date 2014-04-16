@@ -25,26 +25,9 @@
 #include "device.h"
 
 /* for printing debug-infos */
-#define ATA_PR1(fmt,...)	/*do { \
-		printf("[ata] "); \
-		printf(fmt,## __VA_ARGS__); \
-		printf("\n"); \
-		fflush(stdout); \
-	} while(0);*/
-
-#define ATA_PR2(fmt,...)	/*do { \
-		printf("[ata] "); \
-		printf(fmt,## __VA_ARGS__); \
-		printf("\n"); \
-		fflush(stdout); \
-	} while(0);*/
-
-#define ATA_LOG(fmt,...)	do { \
-		printf("[ata] "); \
-		printf(fmt,## __VA_ARGS__); \
-		printf("\n"); \
-		fflush(stdout); \
-	} while(0);
+#define ATA_PR1(fmt,...)	/*print(fmt,## __VA_ARGS__);*/
+#define ATA_PR2(fmt,...)	/*print(fmt,## __VA_ARGS__);*/
+#define ATA_LOG(fmt,...)	print(fmt,## __VA_ARGS__);
 
 /**
  * Reads or writes from/to an ATA-device

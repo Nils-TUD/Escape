@@ -18,33 +18,16 @@
  */
 
 #include <esc/common.h>
-#include <esc/cmdargs.h>
-#include <esc/dir.h>
-#include <esc/io.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <errno.h>
 
-static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <path> ...\n",name);
-	exit(EXIT_FAILURE);
-}
+extern char __progname[];
 
-int main(int argc,const char *argv[]) {
-	const char **args;
-
-	int res = ca_parse(argc,argv,0,"");
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp())
-		usage(argv[0]);
-
-	args = ca_getFree();
-	while(*args) {
-		if(unlink(*args) < 0)
-			printe("Unable to remove '%s'",*args);
-		args++;
-	}
-	return EXIT_SUCCESS;
+int vprint(const char *msg,va_list ap) {
+	fprintf(stderr,"[%s] ",__progname);
+	vfprintf(stderr,msg,ap);
+	fprintf(stderr,"\n");
+	return 0;
 }

@@ -51,7 +51,7 @@ public:
 		task->n = n;
 		task->fd = is.fd();
 		if((tid = startthread(fibthread,task)) < 0) {
-			fprintf(stderr,"Unable to start thread\n");
+			printe("Unable to start thread");
 			free(task);
 		}
 		else {

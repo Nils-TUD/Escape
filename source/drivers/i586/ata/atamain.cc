@@ -88,7 +88,7 @@ public:
 		 * to swap (which would cause a deadlock, because we're doing that). */
 		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
 
-		is << FileShFile::Response(c->shm() != NULL ? 0 : -errno) << Reply();
+		is << FileShFile::Response(c->shm() != NULL ? 0 : errno) << Reply();
 	}
 
 	void read(IPCStream &is) {

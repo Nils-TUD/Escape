@@ -85,6 +85,12 @@ int main(void) {
 	if(reqports(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
+	ipc::RTC::Info info;
+	rtc_readInfo(&info);
+	print("Date is %d-%02d-%02d %02d:%02d:%02d GMT",
+		info.time.tm_year + 1900,info.time.tm_mon,info.time.tm_mday,
+		info.time.tm_hour,info.time.tm_min,info.time.tm_sec);
+
 	RTCDevice dev("/dev/rtc",0444);
 	dev.loop();
 

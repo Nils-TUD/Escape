@@ -40,10 +40,9 @@
 #endif
 
 static inline long finish(uint32_t res,long err) {
-	if(EXPECT_FALSE(err)) {
-		errno = -err;
+	errno = err;
+	if(EXPECT_FALSE(err))
 		return err;
-	}
 	return res;
 }
 

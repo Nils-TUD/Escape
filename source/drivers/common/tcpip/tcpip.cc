@@ -402,7 +402,7 @@ static int receiveThread(void *arg) {
 			//std::cout << *reinterpret_cast<Ethernet<>*>(buffer) << std::endl;
 			ssize_t err = Ethernet<>::receive(*link,pkt);
 			if(err < 0)
-				fprintf(stderr,"Invalid packet: %s",strerror(-err));
+				fprintf(stderr,"Invalid packet: %s",strerror(err));
 		}
 		else
 			printe("Ignoring packet of size %zd",res);
@@ -438,6 +438,7 @@ static int socketThread(void*) {
 static void createResolvConf() {
 	// create file
 	const char *resolvconf = std::DNS::getResolveFile();
+	print("Creating empty %s",resolvconf);
 	int fd = create(resolvconf,IO_WRITE | IO_CREATE,0660);
 	if(fd < 0) {
 		printe("Unable to create %s",resolvconf);
@@ -455,6 +456,7 @@ static void createResolvConf() {
 }
 
 int main() {
+	print("Creating /system/net");
 	if(mkdir("/system/net") < 0)
 		printe("Unable to create /system/net");
 	createResolvConf();

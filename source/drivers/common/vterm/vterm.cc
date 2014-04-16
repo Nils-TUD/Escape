@@ -110,6 +110,8 @@ int main(int argc,char **argv) {
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 
+	print("Creating vterm at %s",path);
+
 	/* create device */
 	vtdev = new TUIVTermDevice(path,0770,&vterm);
 
@@ -124,6 +126,8 @@ int main(int argc,char **argv) {
 	else
 		printe("Unable to find ui-group '%s'",argv[3]);
 	group_free(groups);
+
+	print("Getting video mode for %s columns, %s rows",argv[1],argv[2]);
 
 	/* init vterms */
 	int modeid = vtInit(vtdev->id(),argv[3],atoi(argv[1]),atoi(argv[2]));
@@ -235,15 +239,19 @@ static void vtUpdate(void) {
 static void vtSetVideoMode(int mode) {
 	for(auto it = modes.begin(); it != modes.end(); ++it) {
 		if(it->id == mode) {
+			print("Setting video mode %d: %dx%dx%d",mode,it->width,it->height,it->bitsPerPixel);
+
 			/* rename old shm as a backup */
 			ipc::FrameBuffer *fbtmp = fb;
 			std::string tmpname;
 			if(fbtmp) {
 				tmpname = fbtmp->filename() + "-tmp";
+				print("Renaming old framebuffer to %s",tmpname.c_str());
 				fbtmp->rename(tmpname);
 			}
 
 			/* try to set new mode */
+			print("Creating new framebuffer named %s",vterm.name);
 			try {
 				std::unique_ptr<ipc::FrameBuffer> nfb(
 					new ipc::FrameBuffer(*it,vterm.name,ipc::Screen::MODE_TYPE_TUI,0644));
@@ -270,7 +278,10 @@ static void vtSetVideoMode(int mode) {
 				}
 			}
 
-			delete fbtmp;
+			if(fbtmp) {
+				print("Deleting old framebuffer");
+				delete fbtmp;
+			}
 			return;
 		}
 	}

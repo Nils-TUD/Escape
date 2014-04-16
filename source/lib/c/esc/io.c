@@ -35,7 +35,7 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	/* mmap it */
 	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
 	if(!addr) {
-		int res = -errno;
+		int res = errno;
 		pshm_unlink(*name);
 		close(fd);
 		return res;

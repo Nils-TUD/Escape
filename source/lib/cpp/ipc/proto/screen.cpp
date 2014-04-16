@@ -106,7 +106,7 @@ char *FrameBuffer::init(Screen::Mode &mode,const char *file,int type,int flags,u
 	if(res == NULL) {
 		if(flags & IO_CREATE)
 			shm_unlink(file);
-		VTHROWE("mmap(" << size << ")",-errno);
+		VTHROWE("mmap(" << size << ")",errno);
 	}
 
 	if(type == ipc::Screen::MODE_TYPE_TUI)

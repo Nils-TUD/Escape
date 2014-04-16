@@ -53,31 +53,31 @@ void i586Machine::rebootACPI() {
 	FACP *facp = reinterpret_cast<FACP*>(mapTable("FACP",&len));
 	if(facp == NULL || len < 129) {
 		if(len < 129)
-			fprintf(stderr,"FACP too small (%zu)\n",len);
+			printe("FACP too small (%zu)",len);
 		return;
 	}
 
 	if(~facp->flags & RESET_REG_SUP) {
-		fprintf(stderr,"ACPI reset unsupported\n");
+		printe("ACPI reset unsupported");
 		return;
 	}
 	if(facp->RESET_REG.regBitWidth != 8) {
-		fprintf(stderr,"Register width invalid (%u)\n",facp->RESET_REG.regBitWidth);
+		printe("Register width invalid (%u)",facp->RESET_REG.regBitWidth);
 		return;
 	}
 	if(facp->RESET_REG.regBitOffset != 0) {
-		fprintf(stderr,"Register offset invalid (%u)\n",facp->RESET_REG.regBitOffset);
+		printe("Register offset invalid (%u)",facp->RESET_REG.regBitOffset);
 		return;
 	}
 	if(facp->RESET_REG.accessSize > 1) {
-		fprintf(stderr,"We need byte access\n");
+		printe("We need byte access");
 		return;
 	}
 
 	uint8_t method = facp->RESET_REG.addressSpace;
 	uint8_t value = facp->RESET_VALUE;
 	uint64_t addr = facp->RESET_REG.address;
-	fprintf(stderr,"Using method=%#x, value=%#x, addr=%#Lx\n",method,value,addr);
+	printe("Using method=%#x, value=%#x, addr=%#Lx",method,value,addr);
 
 	switch(method) {
 		case SYS_MEM: {
@@ -114,7 +114,7 @@ void i586Machine::rebootACPI() {
 		}
 
 		default:
-			fprintf(stderr,"Unknown reset method %#x",method);
+			printe("Unknown reset method %#x",method);
 			break;
 	}
 }
@@ -204,13 +204,13 @@ bool i586Machine::shutdownSupported(ShutdownInfo *info) {
 		ptr++;
 	}
 	if(dsdtLength <= 0) {
-		fprintf(stderr,"_S5 not present\n");
+		printe("_S5 not present");
 		return false;
 	}
 
 	// check for valid AML structure
 	if(!(*(ptr - 1) == 0x08 || (*(ptr - 2) == 0x08 && *(ptr - 1) == '\\')) || *(ptr + 4) != 0x12) {
-		fprintf(stderr,"_S5 parse error\n");
+		printe("_S5 parse error");
 		return false;
 	}
 
@@ -234,7 +234,7 @@ bool i586Machine::shutdownSupported(ShutdownInfo *info) {
 
 	// request ports
 	if(reqports(info->PM1a_CNT,2) < 0 || (info->PM1b_CNT != 0 && reqports(info->PM1b_CNT,2) < 0)) {
-		fprintf(stderr,"Unable to request ports\n");
+		printe("Unable to request ports");
 		return false;
 	}
 	return true;

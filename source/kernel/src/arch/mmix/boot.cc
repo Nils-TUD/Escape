@@ -185,9 +185,9 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		const char *rootDev = Config::getStr(Config::ROOT_DEVICE);
 		int res;
 		if((res = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,0,rootDev,&file)) < 0)
-			Util::panic("Unable to open root device '%s': %s",rootDev,strerror(-res));
+			Util::panic("Unable to open root device '%s': %s",rootDev,strerror(res));
 		if((res = MountSpace::mount(p,"/",file)) < 0)
-			Util::panic("Unable to mount /: %s",strerror(-res));
+			Util::panic("Unable to mount /: %s",strerror(res));
 	}
 
 	/* TODO */

@@ -236,9 +236,3 @@ void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
  * @param height the height
  */
 void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
-
-#if DEBUGGING
-
-void win_dbg_print(void);
-
-#endif

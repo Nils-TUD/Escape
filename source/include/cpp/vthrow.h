@@ -49,7 +49,7 @@ public:
 	explicit default_error(const string& s,int err = 0)
 		: _error(err), _msg(s) {
 		if(err != 0)
-			_msg = _msg + ": " + strerror(-err);
+			_msg = _msg + ": " + strerror(err);
 	}
 	virtual ~default_error() throw() {
 	}

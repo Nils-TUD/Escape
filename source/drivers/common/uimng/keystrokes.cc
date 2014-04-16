@@ -61,13 +61,15 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 	usemdown(&usem);
 	int id = jobs_getId();
 	if(id < 0) {
-		fprintf(stderr,"[uimng] Maximum number of clients reached\n");
+		printe("Maximum number of clients reached");
 		usemup(&usem);
 		return;
 	}
 
 	snprintf(name,sizeof(name),"ui%d",id);
 	snprintf(path,sizeof(path),"/dev/%s",name);
+
+	print("Starting '%s'",name);
 
 	int mngPid = fork();
 	if(mngPid < 0)
@@ -78,6 +80,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 		for(int i = 3; i < max; ++i)
 			close(i);
 
+		print("Executing %s %s %s %s",mng,cols,rows,name);
 		const char *args[] = {mng,cols,rows,name,NULL};
 		exec(mng,args);
 		error("exec with %s failed",mng);
@@ -85,6 +88,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 	jobs_add(id,mngPid);
 
+	print("Waiting for %s",path);
 	/* TODO not good */
 	int fd;
 	while((fd = open(path,IO_MSGS)) < 0) {
@@ -109,6 +113,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 			/* set env-var for childs */
 			setenv(termVar,path);
 
+			print("Executing %s",login);
 			const char *args[] = {login,NULL};
 			exec(login,args);
 			error("exec with %s failed",login);

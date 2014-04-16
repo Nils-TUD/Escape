@@ -283,7 +283,7 @@ static vector<lsfile*> getEntries(const string& path) {
 					res.push_back(buildFile(file(path,it->name)));
 				}
 				catch(const exception &e) {
-					fprintf(stderr,"Skipping '%s/%s': %s\n",path.c_str(),it->name,e.what());
+					printe("Skipping '%s/%s': %s",path.c_str(),it->name,e.what());
 				}
 			}
 		}
@@ -291,7 +291,7 @@ static vector<lsfile*> getEntries(const string& path) {
 			res.push_back(buildFile(dir));
 	}
 	catch(const exception &e) {
-		fprintf(stderr,"Skipping '%s': %s\n",path.c_str(),e.what());
+		printe("Skipping '%s': %s",path.c_str(),e.what());
 	}
 	return res;
 }

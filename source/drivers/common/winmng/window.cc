@@ -100,14 +100,18 @@ static void win_destroyBuf(sWindow *win) {
 }
 
 int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
+	print("Getting video mode for %zux%zux%u",width,height,bpp);
+
 	ipc::Screen::Mode newmode = ui->findGraphicsMode(width,height,bpp);
 
 	/* first destroy the old one because we use the same shm-name again */
 	delete fb;
 
 	try {
+		print("Creating new framebuffer named %s",shmname);
 		std::unique_ptr<ipc::FrameBuffer> newfb(
 			new ipc::FrameBuffer(newmode,shmname,ipc::Screen::MODE_TYPE_GUI,0644));
+		print("Setting mode %d: %zux%zux%u",newmode.id,newmode.width,newmode.height,newmode.bitsPerPixel);
 		ui->setMode(ipc::Screen::MODE_TYPE_GUI,newmode.id,shmname,true);
 
 		mode = newmode;
@@ -128,6 +132,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 		}
 	}
 	catch(const std::exception &e) {
+		printe("%s",e.what());
+		print("Restoring old framebuffer and mode");
 		fb = new ipc::FrameBuffer(mode,shmname,ipc::Screen::MODE_TYPE_GUI,0644);
 		ui->setMode(ipc::Screen::MODE_TYPE_GUI,mode.id,shmname,true);
 		/* we have to repaint everything */
@@ -166,6 +172,8 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 			windows[i].style = style;
 			windows[i].titleBarHeight = titleBarHeight;
 			windows[i].ready = false;
+			print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",
+				i,title,x,y,windows[i].z,width,height);
 			win_notifyWinCreate(i,title);
 			return i;
 		}
@@ -204,6 +212,9 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	/* mark unused */
 	windows[id].id = WINID_UNUSED;
 	win_notifyWinDestroy(id);
+
+	print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",
+		id,windows[id].x,windows[id].y,windows[id].z,windows[id].width,windows[id].height);
 
 	/* repaint window-area */
 	old = (sRectangle*)malloc(sizeof(sRectangle));
@@ -606,21 +617,3 @@ static void win_notifyWinDestroy(gwinid_t id) {
 	ev.wid = id;
 	listener_notify(&ev);
 }
-
-
-#if DEBUGGING
-
-void win_dbg_print(void) {
-	gwinid_t i;
-	sWindow *w = windows;
-	printf("Windows:\n");
-	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNUSED) {
-			printf("\t[%d] @(%d,%d), size=(%lu,%lu), z=%d, owner=%d, style=%d\n",
-					i,w->x,w->y,w->width,w->height,w->z,w->owner,w->style);
-		}
-		w++;
-	}
-}
-
-#endif

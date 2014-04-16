@@ -82,7 +82,7 @@ public:
 		return _inst;
 	}
 
-	explicit FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const char *fsDev);
+	explicit FSDevice(sFileSystem *fs,const char *diskDev,const char *fsDev);
 	virtual ~FSDevice();
 
 	void loop();

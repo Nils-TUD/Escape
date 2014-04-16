@@ -39,7 +39,7 @@ int main(int argc,const char **argv) {
 
 	int res = ca_parse(argc,argv,0,"=s*",&mode);
 	if(res < 0) {
-		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);
 	}
 	if(ca_hasHelp())

@@ -219,7 +219,7 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 		USER const void *data2,size_t size2) {
 	/* the device-messages (open, read, write, close) are always allowed and the driver can always
 	 * send messages */
-	if(EXPECT_FALSE(!IS_DEVICE_MSG(id) && !(flags & (VFS_MSGS | VFS_DEVICE))))
+	if(EXPECT_FALSE(!IS_DEVICE_MSG(id & 0xFFFF) && !(flags & (VFS_MSGS | VFS_DEVICE))))
 		return -EACCES;
 
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))

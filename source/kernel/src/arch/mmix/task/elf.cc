@@ -113,12 +113,12 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 			if(file != NULL) {
 				ssize_t res;
 				if((res = file->seek(t->getProc()->getPid(),sheader->sh_offset,SEEK_SET)) < 0) {
-					Log::get().writef("[LOADER] Unable to seek to reg-section: %s\n",strerror(-res));
+					Log::get().writef("[LOADER] Unable to seek to reg-section: %s\n",strerror(res));
 					return res;
 				}
 				if((res = file->read(t->getProc()->getPid(),stack,sheader->sh_size)) !=
 						(ssize_t)sheader->sh_size) {
-					Log::get().writef("[LOADER] Unable to read reg-section: %s\n",strerror(-res));
+					Log::get().writef("[LOADER] Unable to read reg-section: %s\n",strerror(res));
 					return res;
 				}
 			}

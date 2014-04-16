@@ -175,7 +175,7 @@ int user_writeToFile(const sUser *u,const char *path) {
 	int res;
 	FILE *f = fopen(path,"w");
 	if(!f)
-		return -errno;
+		return errno;
 	res = user_write(u,f);
 	fclose(f);
 	return res;

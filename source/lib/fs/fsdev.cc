@@ -42,7 +42,7 @@ static void sigTermHndl(A_UNUSED int sig) {
 	FSDevice::getInstance()->stop();
 }
 
-FSDevice::FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const char *fsDev)
+FSDevice::FSDevice(sFileSystem *fs,const char *diskDev,const char *fsDev)
 	: ClientDevice(fsDev,0777,DEV_TYPE_SERVICE,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
 	  _fs(fs), _clients(0) {
 	set(MSG_FILE_OPEN,std::make_memfun(this,&FSDevice::devopen));
@@ -70,8 +70,7 @@ FSDevice::FSDevice(sFileSystem *fs,const char *name,const char *diskDev,const ch
 	if(err < 0)
 		VTHROWE("fs->init",err);
 
-	printf("[%s] Mounted '%s'\n",name,useddev);
-	fflush(stdout);
+	print("Mounted '%s' at '/'",useddev);
 
 	if((err = infodev_start(fsDev,fs)) < 0)
 		VTHROWE("infodev_start",err);

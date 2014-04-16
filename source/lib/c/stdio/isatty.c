@@ -39,7 +39,7 @@ int isatty(int fd) {
 	/* this is not considered as an error in this case */
 	/* note that we include no-exec-perm here because we assume that we can always send messages
 	 * with stdin when it is connected to a vterm. */
-	if(errno == ENOTSUP || errno == EACCES)
+	if(errno == -ENOTSUP || errno == -EACCES)
 		errno = 0;
 
 err:

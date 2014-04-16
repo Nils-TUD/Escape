@@ -189,7 +189,7 @@ void buf_store(const char *file) {
 	sSLNode *n;
 	f = fopen(file,"w");
 	if(!f)
-		fprintf(stderr,"Unable to store to '%s'\n",file);
+		printe("Unable to store to '%s'",file);
 	else {
 		for(n = sll_begin(buf.lines); n != NULL; n = n->next) {
 			line = (sLine*)n->data;

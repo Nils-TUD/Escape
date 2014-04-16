@@ -30,5 +30,5 @@
 [ \t]+	/* eat up whitespace */
 
 . {
-	fprintf(stderr,"Error: Unrecognized input: '%s'\n",yytext);
+	printe("Error: Unrecognized input: '%s'",yytext);
 }

@@ -102,7 +102,7 @@ int shell_executeCmd(char *line,bool isFile) {
 	if(isFile) {
 		curStream = fopen(line,"r");
 		if(curStream == NULL)
-			return -errno;
+			return errno;
 		filename = line;
 	}
 	else

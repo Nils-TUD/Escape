@@ -76,8 +76,8 @@
 #define SLEEP_TIME					20
 
 static int kbIrqThread(void *arg);
-static void kb_waitOutBuf(void);
-static void kb_waitInBuf(void);
+static bool kb_waitOutBuf(void);
+static bool kb_waitInBuf(void);
 
 static ipc::ClientDevice<> *dev = NULL;
 
@@ -93,31 +93,46 @@ int main(void) {
 		error("Unable to request io-port",IOPORT_KB_CTRL);
 
 	/* wait for input buffer empty */
-	kb_waitInBuf();
+	if(!kb_waitInBuf())
+		printe("Waiting for input buffer to empty timed out");
 
 	/* first read all bytes from the buffer; maybe there are scancodes... */
 	while(inbyte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL)
 		inbyte(IOPORT_KB_DATA);
 
+	print("Performing self test");
+
 	/* self test */
 	outbyte(IOPORT_KB_CTRL,0xAA);
-	kb_waitOutBuf();
-	kbdata = inbyte(IOPORT_KB_DATA);
-	if(kbdata != 0x55)
-		error("Keyboard-selftest failed: Got 0x%x, expected 0x55",kbdata);
+	if(!kb_waitOutBuf())
+		printe("Self test timed out");
+	else {
+		kbdata = inbyte(IOPORT_KB_DATA);
+		if(kbdata != 0x55)
+			printe("Keyboard-selftest failed: Got 0x%x, expected 0x55",kbdata);
+	}
+
+	print("Testing interface");
 
 	/* test interface */
 	outbyte(IOPORT_KB_CTRL,0xAB);
-	kb_waitOutBuf();
-	kbdata = inbyte(IOPORT_KB_DATA);
-	if(kbdata != 0x00)
-		error("Interface-test failed: Got 0x%x, expected 0x00",kbdata);
+	if(!kb_waitOutBuf())
+		printe("Interface test timed out");
+	else {
+		kbdata = inbyte(IOPORT_KB_DATA);
+		if(kbdata != 0x00)
+			printe("Interface-test failed: Got 0x%x, expected 0x00",kbdata);
+	}
 
 	/* write command byte */
 	outbyte(IOPORT_KB_CTRL,0x60);
-	kb_waitInBuf();
-	outbyte(IOPORT_KB_DATA,CMD_EN_OUTBUF_INTRPT | CMD_INHIBIT_OVERWRITE | CMD_IBM_COMPAT);
-	kb_waitInBuf();
+	if(!kb_waitInBuf())
+		printe("Writing command byte 0x60 timed out");
+	else {
+		outbyte(IOPORT_KB_DATA,CMD_EN_OUTBUF_INTRPT | CMD_INHIBIT_OVERWRITE | CMD_IBM_COMPAT);
+		if(!kb_waitInBuf())
+			printe("Keyboard init timed out");
+	}
 
 #if 0
 	/* reset */
@@ -135,11 +150,16 @@ int main(void) {
 		error("Keyboard-echo failed: Got 0x%x, expected 0xEE",kbdata);
 #endif
 
+	print("Enabling keyboard");
+
 	/* enable keyboard */
 	outbyte(IOPORT_KB_DATA,0xF4);
-	kb_waitOutBuf();
-	/* clear output buffer */
-	kbdata = inbyte(IOPORT_KB_DATA);
+	if(!kb_waitOutBuf())
+		printe("Keyboard enable timed out");
+	else {
+		/* clear output buffer */
+		kbdata = inbyte(IOPORT_KB_DATA);
+	}
 
 	/* disable LEDs
 	kb_waitInBuf();
@@ -187,7 +207,7 @@ int main(void) {
 
 static int kbIrqThread(A_UNUSED void *arg) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	int sem = semcrtirq(KEYBOARD_IRQ,"Keyboard");
+	int sem = semcrtirq(KEYBOARD_IRQ,"PS/2 Keyboard");
 	if(sem < 0)
 		error("Unable to get irq-semaphore for IRQ %d",KEYBOARD_IRQ);
 	while(1) {
@@ -212,7 +232,7 @@ static int kbIrqThread(A_UNUSED void *arg) {
 	return 0;
 }
 
-static void kb_waitOutBuf(void) {
+static bool kb_waitOutBuf(void) {
 	time_t elapsed = 0;
 	uint8_t status;
 	do {
@@ -223,9 +243,10 @@ static void kb_waitOutBuf(void) {
 		}
 	}
 	while((status & STATUS_OUTBUF_FULL) == 0 && elapsed < TIMEOUT);
+	return (status & STATUS_OUTBUF_FULL) != 0;
 }
 
-static void kb_waitInBuf(void) {
+static bool kb_waitInBuf(void) {
 	time_t elapsed = 0;
 	uint8_t status;
 	do {
@@ -236,4 +257,5 @@ static void kb_waitInBuf(void) {
 		}
 	}
 	while((status & STATUS_INBUF_FULL) != 0 && elapsed < TIMEOUT);
+	return (status & STATUS_INBUF_FULL) == 0;
 }

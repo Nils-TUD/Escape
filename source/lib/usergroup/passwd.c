@@ -109,7 +109,7 @@ int pw_writeToFile(const sPasswd *pws,const char *path) {
 	int res;
 	FILE *f = fopen(path,"w");
 	if(!f)
-		return -errno;
+		return errno;
 	res = pw_write(pws,f);
 	fclose(f);
 	return res;

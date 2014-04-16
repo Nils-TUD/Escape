@@ -648,7 +648,24 @@ int fileno(FILE *stream);
 int freadesc(FILE *f,int *n1,int *n2,int *n3);
 
 /**
- * Prints "<prefix>: <lastError>" to stderr
+ * Prints "[program] <msg>\n" to stderr.
+ *
+ * @param msg the message to print
+ * @return the number of written chars
+ */
+int print(const char *msg,...);
+
+/**
+ * The same as print(), but with argument-pointer specified
+ *
+ * @param msg the message to print
+ * @param ap the argument-pointer
+ * @return the number of written chars
+ */
+int vprint(const char *msg,va_list ap);
+
+/**
+ * Prints "[program] <prefix>: <lastError>\n" to stderr
  *
  * @param prefix the prefix of the message
  * @return the number of written chars

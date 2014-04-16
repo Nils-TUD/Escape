@@ -49,7 +49,7 @@ int main(int argc,const char *argv[]) {
 
 	int res = ca_parse(argc,argv,0,"w c l",&fwords,&fbytes,&flines);
 	if(res < 0) {
-		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);
 	}
 	if(ca_hasHelp())
@@ -65,11 +65,11 @@ int main(int argc,const char *argv[]) {
 	else {
 		while(*args) {
 			if(isdir(*args))
-				fprintf(stderr,"'%s' is a directory!\n",*args);
+				printe("'%s' is a directory!",*args);
 			else {
 				FILE *f = fopen(*args,"r");
 				if(!f)
-					fprintf(stderr,"Unable to open '%s'\n",*args);
+					printe("Unable to open '%s'",*args);
 				else {
 					countFile(f);
 					fclose(f);

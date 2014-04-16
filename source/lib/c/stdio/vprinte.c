@@ -23,16 +23,15 @@
 #include <stdarg.h>
 #include <errno.h>
 
-char *__progname = NULL;
+extern char __progname[];
 
 int vprinte(const char *prefix,va_list ap) {
-	char *msg;
+	// this might change because of write()
+	int errcode = errno;
 	fprintf(stderr,"[%s] ",__progname);
 	vfprintf(stderr,prefix,ap);
-	if(errno != 0) {
-		msg = strerror(errno);
-		fprintf(stderr,": %s",msg);
-	}
+	if(errcode != 0)
+		fprintf(stderr,": %s",strerror(errcode));
 	fprintf(stderr,"\n");
 	return 0;
 }

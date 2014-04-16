@@ -91,14 +91,14 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	OpenFile *file;
 	res = VFS::openPath(p->getPid(),VFS_READ | VFS_EXEC,0,path,&file);
 	if(res < 0) {
-		Log::get().writef("[LOADER] Unable to open path '%s': %s\n",path,strerror(-res));
+		Log::get().writef("[LOADER] Unable to open path '%s': %s\n",path,strerror(res));
 		return -ENOEXEC;
 	}
 
 	/* fill bindesc */
 	sFileInfo finfo;
 	if((res = file->fstat(p->getPid(),&finfo)) < 0) {
-		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(-res));
+		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(res));
 		goto failed;
 	}
 	/* set suid and sgid */
@@ -110,7 +110,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	/* first read the header */
 	sElfEHeader eheader;
 	if((readRes = file->read(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
-		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(-readRes));
+		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(readRes));
 		goto failed;
 	}
 
@@ -139,7 +139,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 		sElfPHeader pheader;
 		if((readRes = file->read(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
-					j,path,strerror(-readRes));
+					j,path,strerror(readRes));
 			goto failed;
 		}
 
@@ -186,7 +186,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 					}
 					if((readRes = file->read(p->getPid(),(void*)tlsStart,pheader.p_filesz)) < 0) {
 						Log::get().writef("[LOADER] Reading load segment %d failed: %s\n",
-								loadSeg,strerror(-readRes));
+								loadSeg,strerror(readRes));
 						goto failed;
 					}
 					/* clear tbss */
@@ -284,7 +284,7 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 	uintptr_t addr = pheader->p_vaddr;
 	if((res = t->getProc()->getVM()->map(&addr,memsz,pheader->p_filesz,prot,flags,file,
 			pheader->p_offset,&vm)) < 0) {
-		Log::get().writef("[LOADER] Unable to add region: %s\n",strerror(-res));
+		Log::get().writef("[LOADER] Unable to add region: %s\n",strerror(res));
 		t->discardFrames();
 		return res;
 	}

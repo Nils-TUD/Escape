@@ -145,13 +145,13 @@ int main(int argc,char **argv) {
 				nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
 	}
 
-	printf("[ne2k] found PCI-device %d.%d.%d: vendor=%hx, device=%hx\n",
+	print("Found PCI-device %d.%d.%d: vendor=%hx, device=%hx",
 			nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
 
 	Ne2kDevice dev(argv[1],0770,nic);
 
 	ipc::NIC::MAC mac = dev.mac();
-	printf("[ne2k] NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x\n",
+	print("NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x",
 		mac.bytes()[0],mac.bytes()[1],mac.bytes()[2],mac.bytes()[3],mac.bytes()[4],mac.bytes()[5]);
 	fflush(stdout);
 

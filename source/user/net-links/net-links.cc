@@ -101,7 +101,7 @@ static void linkRem(ipc::Net &net,int argc,char **argv) {
 		}
 	}
 
-	fprintf(stderr,"Unable to find driver-process for '%s'\n",argv[2]);
+	printe("Unable to find driver-process for '%s'",argv[2]);
 }
 
 static void linkSet(ipc::Net &net,int argc,char **argv) {

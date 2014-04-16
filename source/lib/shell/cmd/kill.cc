@@ -57,7 +57,7 @@ int shell_cmdKill(int argc,char **argv) {
 
 	int res = ca_parse(argc,(const char**)argv,0,"L s=s",&list,&ssig);
 	if(res < 0) {
-		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		printe("Invalid arguments: %s",ca_error(res));
 		return usage(argv[0]);
 	}
 	if((!list && ca_getFreeCount() == 0) || ca_hasHelp())
@@ -91,12 +91,12 @@ int shell_cmdKill(int argc,char **argv) {
 				pid_t pid = atoi(*args);
 				if(pid > 0) {
 					if(kill(pid,sig) < 0)
-						fprintf(stderr,"Unable to send signal %d to %d\n",sig,pid);
+						printe("Unable to send signal %d to %d",sig,pid);
 				}
 				else if(strcmp(*args,"0") != 0)
-					fprintf(stderr,"Unable to kill process with pid '%s'\n",*args);
+					printe("Unable to kill process with pid '%s'",*args);
 				else
-					fprintf(stderr,"You can't kill 'init'\n");
+					printe("You can't kill 'init'");
 			}
 			args++;
 		}

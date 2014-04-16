@@ -279,12 +279,10 @@ static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
 
 static bool diskWait(void) {
 	volatile uint64_t *diskCtrlReg = diskRegs + DISK_CTRL;
-	if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
+	while(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
 		semdown(irqSm);
-		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
-			printe("Waiting for interrupt: waked up with invalid status (%#x)",*diskCtrlReg);
-			return false;
-		}
+		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR)))
+			printe("Waiting for interrupt: waked up with invalid status (%#x). Retrying.",*diskCtrlReg);
 	}
 	return (*diskCtrlReg & DISK_ERR) == 0;
 }

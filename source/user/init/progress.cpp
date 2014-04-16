@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/mem.h>
+#include <esc/conf.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
@@ -28,7 +29,8 @@
 using namespace std;
 
 Progress::Progress(size_t startSkip,size_t finished,size_t itemCount)
-	: _startSkip(startSkip), _itemCount(itemCount), _finished(finished), _scr(), _fb() {
+	: _show(!sysconf(CONF_LOG_TO_VGA)), _startSkip(startSkip), _itemCount(itemCount),
+	  _finished(finished), _scr(), _fb() {
 }
 
 Progress::~Progress() {
@@ -37,7 +39,7 @@ Progress::~Progress() {
 }
 
 void Progress::itemStarting(const string& s) {
-	if(connect()) {
+	if(_show && connect()) {
 		// copy text to bar
 		memclear(_emptyBar,sizeof(_emptyBar));
 		for(size_t i = 0; i < s.length(); i++) {
@@ -63,7 +65,7 @@ void Progress::itemTerminated() {
 }
 
 void Progress::updateBar() {
-	if(connect()) {
+	if(_show && connect()) {
 		// fill bar
 		size_type skipSize = (size_type)((BAR_WIDTH - 3) * (_startSkip / 100.0f));
 		size_type fillSize = BAR_WIDTH - 3 - skipSize;
@@ -79,7 +81,7 @@ void Progress::updateBar() {
 }
 
 void Progress::paintBar() {
-	if(connect()) {
+	if(_show && connect()) {
 		/* clear screen */
 		char *zeros = (char*)calloc(_fb->mode().cols * _fb->mode().rows * 2,1);
 		paintTo(zeros,0,0,_fb->mode().cols,_fb->mode().rows);
@@ -118,8 +120,10 @@ void Progress::paintBar() {
 }
 
 void Progress::paintTo(const void *data,int x,int y,size_t width,size_t height) {
-	memcpy(_fb->addr() + _fb->mode().cols * y * 2 + x * 2,data,width * height * 2);
-	_scr->update(x,y,width,height);
+	if(_show) {
+		memcpy(_fb->addr() + _fb->mode().cols * y * 2 + x * 2,data,width * height * 2);
+		_scr->update(x,y,width,height);
+	}
 }
 
 bool Progress::connect() {

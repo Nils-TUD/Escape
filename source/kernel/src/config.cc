@@ -27,6 +27,7 @@
 #include <string.h>
 #include <ctype.h>
 
+bool Config::logToVGA = false;
 bool Config::lineByLine = false;
 bool Config::doLog = true;
 bool Config::smp = true;
@@ -86,7 +87,10 @@ long Config::get(int id) {
 		case PAGESIZE:
 			res = PAGE_SIZE;
 			break;
-		case LINEBYLINE:
+		case LOG_TO_VGA:
+			res = logToVGA;
+			break;
+		case LINE_BY_LINE:
 			res = lineByLine;
 			break;
 		case CPU_COUNT:
@@ -120,6 +124,8 @@ void Config::set(const char *name,const char *value) {
 		doLog = false;
 	else if(strcmp(name,"linebyline") == 0)
 		lineByLine = true;
+	else if(strcmp(name,"logtovga") == 0)
+		logToVGA = true;
 	else if(strcmp(name,"nosmp") == 0)
 		smp = false;
 	else if(strcmp(name,"forcepit") == 0)

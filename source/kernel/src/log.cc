@@ -124,9 +124,13 @@ bool Log::escape(const char **str) {
 
 ssize_t Log::LogFile::write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count) {
 	if(Config::get(Config::LOG) && Log::get().logToSer) {
+		const bool toVGA = Config::get(Config::LOG_TO_VGA);
 		char *str = (char*)buffer;
-		for(size_t i = 0; i < count; i++)
+		for(size_t i = 0; i < count; i++) {
 			toSerial(str[i]);
+			if(toVGA)
+				Video::get().writec(str[i]);
+		}
 	}
 	/* ignore errors here */
 	VFSFile::write(pid,file,buffer,offset,count);

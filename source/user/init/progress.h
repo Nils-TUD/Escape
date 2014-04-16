@@ -61,6 +61,7 @@ private:
 	bool connect();
 
 private:
+	bool _show;
 	size_t _startSkip;
 	size_t _itemCount;
 	size_t _finished;

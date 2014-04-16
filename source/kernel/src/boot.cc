@@ -24,6 +24,7 @@
 #include <sys/boot.h>
 #include <sys/log.h>
 #include <sys/video.h>
+#include <sys/config.h>
 
 #define MAX_ARG_COUNT	8
 #define MAX_ARG_LEN		64
@@ -62,21 +63,25 @@ void Boot::start(BootInfo *info) {
 }
 
 void Boot::taskStarted(const char *text) {
-	Video::get().goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
-	Video::get().writef("%-*s",VID_COLS - BAR_PADX * 2,text);
+	if(!Config::get(Config::LOG_TO_VGA)) {
+		Video::get().goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
+		Video::get().writef("%-*s",VID_COLS - BAR_PADX * 2,text);
+	}
 }
 
 void Boot::taskFinished() {
-	const uint width = BAR_WIDTH - 3;
-	finished++;
-	size_t total = taskList.count + taskList.moduleCount;
-	uint percent = (KERNEL_PERCENT * finished) / total;
-	uint filled = (width * percent) / 100;
-	Video::get().goTo(BAR_PADY + 1,BAR_PADX + 1);
-	if(filled)
-		Video::get().writef("\033[co;0;7]%*s\033[co]",filled," ");
-	if(width - filled)
-		Video::get().writef("%*s",width - filled," ");
+	if(!Config::get(Config::LOG_TO_VGA)) {
+		const uint width = BAR_WIDTH - 3;
+		finished++;
+		size_t total = taskList.count + taskList.moduleCount;
+		uint percent = (KERNEL_PERCENT * finished) / total;
+		uint filled = (width * percent) / 100;
+		Video::get().goTo(BAR_PADY + 1,BAR_PADX + 1);
+		if(filled)
+			Video::get().writef("\033[co;0;7]%*s\033[co]",filled," ");
+		if(width - filled)
+			Video::get().writef("%*s",width - filled," ");
+	}
 }
 
 const char **Boot::parseArgs(const char *line,int *argc) {
@@ -106,24 +111,26 @@ const char **Boot::parseArgs(const char *line,int *argc) {
 }
 
 void Boot::drawProgressBar() {
-	Video &vid = Video::get();
-	/* top */
-	vid.goTo(BAR_PADY,BAR_PADX);
-	vid.writef("\xC9");
-	for(ushort x = 1; x < BAR_WIDTH - 2; x++)
-		vid.writef("\xCD");
-	vid.writef("\xBB");
-	/* left and right */
-	for(ushort y = 0; y < BAR_HEIGHT; y++) {
-		vid.goTo(BAR_PADY + 1 + y,BAR_PADX);
-		vid.writef("\xBA");
-		vid.goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
-		vid.writef("\xBA");
+	if(!Config::get(Config::LOG_TO_VGA)) {
+		Video &vid = Video::get();
+		/* top */
+		vid.goTo(BAR_PADY,BAR_PADX);
+		vid.writef("\xC9");
+		for(ushort x = 1; x < BAR_WIDTH - 2; x++)
+			vid.writef("\xCD");
+		vid.writef("\xBB");
+		/* left and right */
+		for(ushort y = 0; y < BAR_HEIGHT; y++) {
+			vid.goTo(BAR_PADY + 1 + y,BAR_PADX);
+			vid.writef("\xBA");
+			vid.goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
+			vid.writef("\xBA");
+		}
+		/* bottom */
+		vid.goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
+		vid.writef("\xC8");
+		for(ushort x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
+			vid.writef("\xCD");
+		vid.writef("\xBC");
 	}
-	/* bottom */
-	vid.goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
-	vid.writef("\xC8");
-	for(ushort x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
-		vid.writef("\xCD");
-	vid.writef("\xBC");
 }

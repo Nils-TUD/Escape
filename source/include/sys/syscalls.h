@@ -188,7 +188,7 @@ private:
 	static bool absolutizePath(char *dst,size_t size,const char *src);
 
 	static void printEntry(Thread *t,IntrptStackFrame *stack);
-	static void printExit(IntrptStackFrame *stack);
+	static void printExit(Thread *t,IntrptStackFrame *stack);
 
 	/* our syscalls */
 	static const Syscall syscalls[];

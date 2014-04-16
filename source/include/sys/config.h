@@ -34,7 +34,8 @@ public:
 		SWAP_DEVICE,
 		LOG,
 		PAGESIZE,
-		LINEBYLINE,
+		LOG_TO_VGA,
+		LINE_BY_LINE,
 		CPU_COUNT,
 		SMP,
 		TICKS_PER_SEC,
@@ -69,6 +70,7 @@ public:
 private:
 	static void set(const char *name,const char *value);
 
+	static bool logToVGA;
 	static bool lineByLine;
 	static bool doLog;
 	static bool smp;

@@ -176,7 +176,7 @@ void Syscalls::printEntry(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 #endif
 }
 
-void Syscalls::printExit(A_UNUSED IntrptStackFrame *stack) {
+void Syscalls::printExit(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 #if PRINT_SYSCALLS
 	Log::get().writef(" = %p (%d)\n",SYSC_GETRET(stack),SYSC_GETERR(stack));
 #endif
@@ -191,7 +191,7 @@ void Syscalls::handle(Thread *t,IntrptStackFrame *stack) {
 
 	printEntry(t,stack);
 	syscalls[sysCallNo].handler(t,stack);
-	printExit(stack);
+	printExit(t,stack);
 }
 
 uint Syscalls::getArgCount(uint sysCallNo) {

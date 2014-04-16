@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#define TIMEOUT		2	/* wait 2 seconds for the NIC driver to register the device */
+#define TIMEOUT		2000	/* wait 2 ms for the NIC driver to register the device */
 
 static void linkRem(ipc::Net &net,int argc,char **argv);
 
@@ -65,10 +65,14 @@ static void linkAdd(ipc::Net &net,int argc,char **argv) {
 	else if(pid < 0)
 		error("fork");
 	else {
-		time_t start = time(NULL);
 		int res;
-		while(time(NULL) < start + TIMEOUT && (res = open(path,IO_READ)) == -ENOENT)
+		uint duration = 0;
+		while(duration < TIMEOUT && (res = open(path,IO_READ)) == -ENOENT) {
 			sleep(20);
+			duration += 20;
+			// we want to show the error from open, not sleep
+			errno = res;
+		}
 		if(res < 0)
 			error("open");
 

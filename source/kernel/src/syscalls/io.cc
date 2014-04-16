@@ -287,14 +287,17 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
-	/* can't be sent by user-programs */
-	if(EXPECT_FALSE(IS_DEVICE_MSG(id)))
-		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
+
+	/* can only be sent by drivers */
+	if(EXPECT_FALSE(!file->isDevice() && IS_DEVICE_MSG(id & 0xFFFF))) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,-EPERM);
+	}
 
 	/* send msg */
 	ssize_t res = file->sendMsg(p->getPid(),id,data,size,NULL,0);
@@ -343,14 +346,17 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
-	/* can't be sent by user-programs */
-	if(EXPECT_FALSE(IS_DEVICE_MSG(mid)))
-		SYSC_ERROR(stack,-EPERM);
 
 	/* get file */
 	OpenFile *file = FileDesc::request(p,fd);
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
+
+	/* can only be sent by drivers */
+	if(EXPECT_FALSE(!file->isDevice() && IS_DEVICE_MSG(mid & 0xFFFF))) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,-EPERM);
+	}
 
 	/* send msg */
 	ssize_t res = file->sendMsg(p->getPid(),mid,data,size,NULL,0);

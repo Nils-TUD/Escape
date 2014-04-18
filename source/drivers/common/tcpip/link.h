@@ -32,7 +32,7 @@ public:
 
 	explicit Link(const std::string &n,const char *path)
 		: ipc::NIC(path,IO_MSGS | IO_READ | IO_WRITE), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
-		  _name(n), _status(ipc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
+		  _mtu(getMTU()), _name(n), _status(ipc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
 	}
 
 	const std::string &name() const {
@@ -59,6 +59,9 @@ public:
 		_status = nstatus;
 	}
 
+	ulong mtu() const {
+		return _mtu;
+	}
 	const ipc::NIC::MAC &mac() const {
 		return _mac;
 	}
@@ -99,6 +102,7 @@ private:
 	ulong _txpkts;
 	ulong _rxbytes;
 	ulong _txbytes;
+	ulong _mtu;
 	std::string _name;
 	volatile ipc::Net::Status _status;
 	ipc::NIC::MAC _mac;

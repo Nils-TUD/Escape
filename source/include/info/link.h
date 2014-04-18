@@ -37,7 +37,7 @@ namespace info {
 		static std::vector<link*> get_list();
 
 		explicit link()
-			: _rxpkts(), _txpkts(), _rxbytes(), _txbytes(), _name(), _status(),
+			: _rxpkts(), _txpkts(), _rxbytes(), _txbytes(), _mtu(), _name(), _status(),
 		      _mac(), _ip(), _subnetmask() {
 		}
 
@@ -52,6 +52,10 @@ namespace info {
 		}
 		ulong rxbytes() const {
 			return _rxbytes;
+		}
+
+		ulong mtu() const {
+			return _mtu;
 		}
 
 		const std::string &name() const {
@@ -75,6 +79,7 @@ namespace info {
 		ulong _txpkts;
 		ulong _rxbytes;
 		ulong _txbytes;
+		ulong _mtu;
 		std::string _name;
 		ipc::Net::Status _status;
 		ipc::NIC::MAC _mac;

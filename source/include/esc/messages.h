@@ -106,6 +106,7 @@
 #define MSG_DISK_GETSIZE			1200	/* get the size of a device */
 
 #define MSG_NIC_GETMAC				1300	/* get the MAC address of a NIC */
+#define MSG_NIC_GETMTU				1301	/* get the MTU of a NIC */
 
 #define MSG_NET_LINK_ADD			1401	/* adds a link */
 #define MSG_NET_LINK_REM			1402	/* removes a link */

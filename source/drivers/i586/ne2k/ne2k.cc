@@ -43,6 +43,7 @@ public:
 		set(MSG_FILE_READ,std::make_memfun(this,&Ne2kDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&Ne2kDevice::write));
 		set(MSG_NIC_GETMAC,std::make_memfun(this,&Ne2kDevice::getMac));
+		set(MSG_NIC_GETMTU,std::make_memfun(this,&Ne2kDevice::getMTU));
 	}
 
 	ipc::NIC::MAC mac() const {
@@ -101,6 +102,10 @@ public:
 
 	void getMac(ipc::IPCStream &is) {
 		is << 0 << _ne2k.mac() << ipc::Reply();
+	}
+
+	void getMTU(ipc::IPCStream &is) {
+		is << _ne2k.mtu() << ipc::Reply();
 	}
 
 private:

@@ -68,6 +68,7 @@ public:
 			Link *l = *it;
 			os << l->name() << " " << l->status() << " ";
 			os << l->mac() << " " << l->ip() << " " << l->subnetMask() << " ";
+			os << l->mtu() << " ";
 			os << l->rxpackets() << " " << l->txpackets() << " ";
 			os << l->rxbytes() << " " << l->txbytes() << "\n";
 		}

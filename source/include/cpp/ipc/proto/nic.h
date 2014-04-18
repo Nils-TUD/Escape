@@ -88,6 +88,18 @@ public:
 	}
 
 	/**
+	 * @return the maximum transmission unit, i.e. the maximum packet size
+	 * @throws if the operation failed
+	 */
+	ulong getMTU() {
+		long res;
+		_is << SendReceive(MSG_NIC_GETMTU) >> res;
+		if(res < 0)
+			VTHROWE("getMTU()",res);
+		return res;
+	}
+
+	/**
 	 * @return the MAC address of the NIC
 	 * @throws if the operation failed
 	 */

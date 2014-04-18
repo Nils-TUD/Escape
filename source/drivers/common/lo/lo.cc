@@ -32,6 +32,10 @@ class LoDevice : public ipc::ClientDevice<> {
 	};
 
 public:
+	enum {
+		MTU = 64 * 1024
+	};
+
 	explicit LoDevice(const char *path,mode_t mode)
 		: ipc::ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
 		  _requests(std::make_memfun(this,&LoDevice::handleRead)), _packets() {
@@ -39,6 +43,7 @@ public:
 		set(MSG_FILE_READ,std::make_memfun(this,&LoDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&LoDevice::write));
 		set(MSG_NIC_GETMAC,std::make_memfun(this,&LoDevice::getMac));
+		set(MSG_NIC_GETMTU,std::make_memfun(this,&LoDevice::getMTU));
 	}
 
 	void cancel(ipc::IPCStream &is) {
@@ -77,6 +82,11 @@ public:
 		ipc::FileWrite::Request r;
 		is >> r;
 
+		if(r.count > MTU) {
+			is << -EINVAL << ipc::Reply();
+			return;
+		}
+
 		Packet pkt;
 		pkt.data = new uint8_t[r.count];
 		pkt.size = r.count;
@@ -93,6 +103,10 @@ public:
 
 	void getMac(ipc::IPCStream &is) {
 		is << 0 << ipc::NIC::MAC() << ipc::Reply();
+	}
+
+	void getMTU(ipc::IPCStream &is) {
+		is << MTU << ipc::Reply();
 	}
 
 private:

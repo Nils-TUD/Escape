@@ -161,6 +161,7 @@ int main(int argc,char **argv) {
 				std::cout << "\tMAC address : " << (*it)->mac() << "\n";
 				std::cout << "\tIPv4 address: " << (*it)->ip() << "\n";
 				std::cout << "\tSubnet mask : " << (*it)->subnetMask() << "\n";
+				std::cout << "\tMTU         : " << (*it)->mtu() << " Bytes\n";
 				std::cout << "\tStatus      : " << statusNames[(*it)->status()] << "\n";
 				std::cout << "\tReceived    : "
 						  << (*it)->rxpackets() << " Packets, " << (*it)->rxbytes() << " Bytes\n";

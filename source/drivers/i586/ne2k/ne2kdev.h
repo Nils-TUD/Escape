@@ -50,6 +50,7 @@ public:
 	ipc::NIC::MAC mac() const {
 		return ipc::NIC::MAC(_mac);
 	}
+	ulong mtu() const;
 
 	ssize_t send(const void *packet,size_t size);
 	Packet *fetch();

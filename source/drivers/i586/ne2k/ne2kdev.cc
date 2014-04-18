@@ -235,9 +235,13 @@ void Ne2k::accessPROM(uint16_t offset,size_t size,void *buffer,Mode mode) {
 	writeReg(REG_ISR,ISR_RDC);
 }
 
+ulong Ne2k::mtu() const {
+	return (PAGE_RX - PAGE_TX) * PAGE_SZ;
+}
+
 ssize_t Ne2k::send(const void *packet,size_t size) {
 	/* take care not to overwrite the receive buffer */
-	if(size > (PAGE_RX - PAGE_TX) * PAGE_SZ)
+	if(size > mtu())
 		return -ENOSPC;
 
 	/* write data */

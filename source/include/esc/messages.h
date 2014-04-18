@@ -119,9 +119,10 @@
 #define MSG_NET_ARP_ADD				1409	/* resolves an IP address and puts it into the ARP table */
 #define MSG_NET_ARP_REM				1410	/* removes an IP address from the ARP table */
 
-#define MSG_SOCK_BIND				1500	/* bind a socket to an address */
-#define MSG_SOCK_RECVFROM			1501	/* receive data from a socket */
-#define MSG_SOCK_SENDTO				1502	/* send data to a socket */
+#define MSG_SOCK_CONNECT			1500	/* connects a socket to the other endpoint */
+#define MSG_SOCK_BIND				1501	/* bind a socket to an address */
+#define MSG_SOCK_RECVFROM			1502	/* receive data from a socket */
+#define MSG_SOCK_SENDTO				1503	/* send data to a socket */
 
 #define MSG_DNS_RESOLVE				1600	/* resolve a name to an address */
 #define MSG_DNS_SET_SERVER			1601	/* set the name server */

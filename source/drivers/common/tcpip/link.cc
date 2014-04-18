@@ -47,7 +47,7 @@ ssize_t Link::read(void *buffer,size_t size) {
 ssize_t Link::write(const void *buffer,size_t size) {
 	ssize_t res = ::write(fd(),buffer,size);
 	if(res > 0) {
-		PRINT("Sent packet of " << size << " bytes:\n"
+		PRINT("Sent packet of " << res << " bytes:\n"
 			<< *reinterpret_cast<const Ethernet<>*>(buffer));
 		_txpkts++;
 		_txbytes += res;

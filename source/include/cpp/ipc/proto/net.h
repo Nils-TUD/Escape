@@ -171,20 +171,9 @@ public:
 			VTHROWE("arpRem()",res);
 	}
 
-	static uint16_t ipv4Checksum(const uint16_t *data,uint16_t length) {
-		uint32_t sum = 0;
-		for(; length > 1; length -= 2) {
-			sum += *data++;
-			if(sum & 0x80000000)
-				sum = (sum & 0xFFFF) + (sum >> 16);
-		}
-		if(length)
-			sum += *data & 0xFF;
-
-		while(sum >> 16)
-			sum = (sum & 0xFFFF) + (sum >> 16);
-		return ~sum;
-	}
+	static uint16_t ipv4Checksum(const uint16_t *data,uint16_t length);
+	static uint16_t ipv4PayloadChecksum(const IPv4Addr &src,const IPv4Addr &dst,uint16_t protocol,
+		const uint16_t *header,size_t sz);
 
 private:
 	IPCStream _is;

@@ -39,11 +39,25 @@ enum {
 	ETHER_HEAD_SIZE		= 6 + 6 + 2
 };
 
-struct ReadRequest {
+struct PendingRequest {
+	bool isRead() {
+		return (mid & 0xFFFF) == MSG_FILE_READ || (mid & 0xFFFF) == MSG_SOCK_RECVFROM;
+	}
+	bool isWrite() {
+		return (mid & 0xFFFF) == MSG_FILE_WRITE || (mid & 0xFFFF) == MSG_SOCK_SENDTO;
+	}
+
 	msgid_t mid;
-	void *data;
 	size_t count;
-	bool needsSrc;
+	union {
+		struct {
+			void *data;
+			bool needsSrc;
+		} read;
+		struct {
+			uint32_t seqNo;
+		} write;
+	} d;
 };
 
 static const uint16_t WELL_KNOWN_PORTS		= 0;

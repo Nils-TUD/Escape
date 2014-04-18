@@ -44,7 +44,7 @@ ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 	memcpy(udp + 1,data,nbytes);
 
 	udp->checksum = 0;
-	udp->checksum = genChecksum(route->link->ip(),ip,
+	udp->checksum = ipc::Net::ipv4PayloadChecksum(route->link->ip(),ip,IP_PROTO,
 		reinterpret_cast<uint16_t*>(udp),sizeof(UDP) + nbytes);
 
 	ssize_t res = IPv4<UDP>::sendOver(route,pkt,total,ip,IP_PROTO);
@@ -65,32 +65,4 @@ ssize_t UDP::receive(Link&,const Packet &packet) {
 		it->second->push(sa,packet,offset);
 	}
 	return 0;
-}
-
-uint16_t UDP::genChecksum(const ipc::Net::IPv4Addr &src,const ipc::Net::IPv4Addr &dst,
-		const uint16_t *header,size_t sz) {
-	struct {
-		ipc::Net::IPv4Addr src;
-		ipc::Net::IPv4Addr dst;
-		uint16_t proto;
-		uint16_t dataSize;
-	} A_PACKED pseudoHeader = {
-		.src = src,
-		.dst = dst,
-		.proto = cputobe16(IP_PROTO),
-		.dataSize = static_cast<uint16_t>(cputobe16(sz))
-	};
-
-	uint32_t checksum = 0;
-	const uint16_t *data = reinterpret_cast<uint16_t*>(&pseudoHeader);
-	for(size_t i = 0; i < sizeof(pseudoHeader) / 2; ++i)
-		checksum += data[i];
-	for(size_t i = 0; i < sz / 2; ++i)
-		checksum += header[i];
-	if((sz % 2) != 0)
-		checksum += header[sz / 2] & 0xFF;
-
-	while(checksum >> 16)
-		checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	return ~checksum;
 }

@@ -62,6 +62,10 @@ static const char *msgs[] = {
 	/* 37 (ENOTBOUND) */		"Socket is not bound to an address",
 	/* 38 (EHOSTNOTFOUND) */	"Host not found",
 	/* 39 (ETIMEOUT) */			"Operation timed out",
+	/* 40 (EISCONN) */			"Already connected",
+	/* 41 (ECONNFAILED) */		"Connection failed",
+	/* 42 (ENOTCONN) */			"Not connected",
+	/* 43 (ECONNRESET) */		"Connection reset by peer",
 };
 
 char *strerror(int errnum) {

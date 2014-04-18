@@ -20,31 +20,44 @@
 #pragma once
 
 #include <esc/common.h>
+#include <functor.h>
+#include <mutex>
+#include <list>
 
-#include "../common.h"
-#include "socket.h"
-#include "rawsocketlist.h"
+class Timeouts {
+	Timeouts() = delete;
 
-class RawIPSocket : public Socket {
 public:
-	explicit RawIPSocket(int f,int proto) : Socket(f,proto) {
-		if(proto != ipc::Socket::PROTO_ICMP && proto != ipc::Socket::PROTO_TCP &&
-				proto != ipc::Socket::PROTO_UDP && proto != ipc::Socket::PROTO_ANY) {
-			VTHROWE("A raw IP socket doesn't support protocol " << proto,-ENOTSUP);
+	typedef std::Functor<void> callback_type;
+
+	struct Entry {
+		explicit Entry(int _id,callback_type *_cb,uint _timestamp)
+			: id(_id), cb(_cb), timestamp(_timestamp) {
 		}
-	}
-	virtual ~RawIPSocket() {
-		sockets.remove(this);
+
+		int id;
+		callback_type *cb;
+		uint timestamp;
+	};
+
+	static int thread(void*);
+
+	static int allocateId() {
+		return _nextId++;
 	}
 
-	virtual int bind(const ipc::Socket::Addr *) {
-		return sockets.add(this);
-	}
-	virtual ssize_t sendto(msgid_t mid,const ipc::Socket::Addr *sa,const void *buffer,size_t size);
-	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size) {
-		sockets.add(this);
-		return Socket::recvfrom(mid,needsSockAddr,buffer,size);
+	static void program(int id,callback_type *cb,uint msecs);
+
+	static void cancel(int id) {
+		std::lock_guard<std::mutex> guard(_mutex);
+		doCancel(id);
 	}
 
-	static RawSocketList sockets;
+private:
+	static void doCancel(int id);
+
+	static uint _now;
+	static int _nextId;
+	static std::mutex _mutex;
+	static std::list<Entry> _list;
 };

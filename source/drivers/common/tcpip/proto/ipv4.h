@@ -29,6 +29,7 @@
 #include "arp.h"
 #include "icmp.h"
 #include "udp.h"
+#include "tcp.h"
 
 template<class T>
 class IPv4 {
@@ -92,6 +93,9 @@ public:
 
 			case UDP::IP_PROTO:
 				return UDP::receive(link,packet);
+
+			case TCP::IP_PROTO:
+				return TCP::receive(link,packet);
 		}
 		return -ENOTSUP;
 	}
@@ -127,6 +131,10 @@ static inline std::ostream &operator<<(std::ostream &os,const IPv4<> &p) {
 		case UDP::IP_PROTO: {
 			const UDP *udp = reinterpret_cast<const UDP*>(&p.payload);
 			return os << *udp;
+		}
+		case TCP::IP_PROTO: {
+			const TCP *tcp = reinterpret_cast<const TCP*>(&p.payload);
+			return os << *tcp;
 		}
 	}
 	return os << "Unknown payload\n";

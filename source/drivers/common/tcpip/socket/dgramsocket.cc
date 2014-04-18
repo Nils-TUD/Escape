@@ -45,7 +45,7 @@ int DGramSocket::bind(const ipc::Socket::Addr *sa) {
 	return res;
 }
 
-ssize_t DGramSocket::sendto(const ipc::Socket::Addr *sa,const void *buffer,size_t size) {
+ssize_t DGramSocket::sendto(msgid_t,const ipc::Socket::Addr *sa,const void *buffer,size_t size) {
 	if(sa == NULL)
 		return -EINVAL;
 

@@ -59,8 +59,6 @@ private:
 		if(it != _socks.end() && it->second == sock)
 			_socks.erase(it);
 	}
-	static uint16_t genChecksum(const ipc::Net::IPv4Addr &src,const ipc::Net::IPv4Addr &dst,
-		const uint16_t *header,size_t sz);
 
 public:
     ipc::port_t srcPort;

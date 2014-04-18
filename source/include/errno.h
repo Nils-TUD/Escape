@@ -61,6 +61,10 @@
 #define ENOTBOUND					37	/* Socket is not bound to an address */
 #define EHOSTNOTFOUND				38	/* Host not found */
 #define ETIMEOUT					39	/* Operation timed out */
+#define EISCONN						40	/* Already connected */
+#define ECONNFAILED					41	/* Connection failed */
+#define ENOTCONN					42	/* Not connected */
+#define ECONNRESET					43	/* Connection reset by peer */
 
 #ifdef __cplusplus
 extern "C" {

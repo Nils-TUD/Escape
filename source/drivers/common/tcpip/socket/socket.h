@@ -63,38 +63,51 @@ public:
 		return 0;
 	}
 
+	virtual int connect(const ipc::Socket::Addr *,msgid_t) {
+		return -ENOTSUP;
+	}
 	virtual int bind(const ipc::Socket::Addr *) {
 		return -ENOTSUP;
 	}
-
-	virtual ssize_t sendto(const ipc::Socket::Addr *,const void *,size_t) {
+	virtual ssize_t sendto(msgid_t,const ipc::Socket::Addr *,const void *,size_t) {
 		return -ENOTSUP;
+	}
+	virtual void disconnect() {
+		delete this;
 	}
 
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t size) {
+		if(size == 0)
+			return -EINVAL;
+
 		if(_packets.size() > 0) {
 			const QueuedPacket &pkt = _packets.front();
-			if(pkt.data->size - pkt.offset <= size) {
-				reply(mid,pkt.sa,needsSrc,buffer,pkt.data->data + pkt.offset,pkt.data->size - pkt.offset);
+			size_t cpysize = pkt.data->size - pkt.offset;
+			if(cpysize <= size) {
+				if(buffer != NULL)
+					memcpy(buffer,pkt.data->data + pkt.offset,cpysize);
+				reply(mid,pkt.sa,needsSrc,buffer,pkt.data->data + pkt.offset,cpysize);
 				_packets.pop_front();
 				return 0;
 			}
 		}
 
-		if(_pending.data)
+		if(_pending.count > 0)
 			return -EAGAIN;
 		_pending.mid = mid;
-		_pending.data = buffer;
 		_pending.count = size;
-		_pending.needsSrc = needsSrc;
+		_pending.d.read.data = buffer;
+		_pending.d.read.needsSrc = needsSrc;
 		return 0;
 	}
 
-	void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset = 0) {
+	virtual void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset = 0) {
 		if(_pending.count > 0) {
 			if(_pending.count >= pkt.size() - offset) {
-				reply(_pending.mid,sa,_pending.needsSrc,_pending.data,pkt.data<uint8_t*>() + offset,
-					pkt.size() - offset);
+				if(_pending.d.read.data != NULL)
+					memcpy(_pending.d.read.data,pkt.data<uint8_t*>() + offset,pkt.size() - offset);
+				reply(_pending.mid,sa,_pending.d.read.needsSrc,_pending.d.read.data,
+					pkt.data<uint8_t*>() + offset,pkt.size() - offset);
 				_pending.count = 0;
 			}
 		}
@@ -102,22 +115,19 @@ public:
 			_packets.push_back(QueuedPacket(pkt.copy(),offset,sa));
 	}
 
-private:
-	void reply(msgid_t mid,const ipc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,size_t size) {
-		if(dst != NULL)
-			memcpy(dst,src,size);
-
+protected:
+	void reply(msgid_t mid,const ipc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,ssize_t size) {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCStream is(fd(),buffer,sizeof(buffer),mid);
 		is << ipc::FileRead::Response(size);
 		if(needsSrc)
 			is << sa;
 		is << ipc::Reply();
-		if(dst == NULL)
+		if(size > 0 && dst == NULL)
 			is << ipc::ReplyData(src,size);
 	}
 
 	int _proto;
-	ReadRequest _pending;
+	PendingRequest _pending;
 	std::list<QueuedPacket> _packets;
 };

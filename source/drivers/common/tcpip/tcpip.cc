@@ -21,6 +21,7 @@
 #include <esc/thread.h>
 #include <esc/driver.h>
 #include <esc/sync.h>
+#include <esc/time.h>
 #include <ipc/filedev.h>
 #include <usergroup/group.h>
 #include <stdio.h>
@@ -35,12 +36,14 @@
 #include "proto/icmp.h"
 #include "proto/udp.h"
 #include "socket/dgramsocket.h"
+#include "socket/streamsocket.h"
 #include "socket/rawipsock.h"
 #include "socket/rawethersock.h"
 #include "link.h"
 #include "linkmng.h"
 #include "route.h"
 #include "packet.h"
+#include "timeouts.h"
 
 static std::mutex mutex;
 
@@ -56,6 +59,7 @@ public:
 		set(MSG_FILE_WRITE,std::make_memfun(this,&SocketDevice::write));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&SocketDevice::close),false);
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&SocketDevice::cancel));
+		set(MSG_SOCK_CONNECT,std::make_memfun(this,&SocketDevice::connect));
 		set(MSG_SOCK_BIND,std::make_memfun(this,&SocketDevice::bind));
 		set(MSG_SOCK_RECVFROM,std::make_memfun(this,&SocketDevice::recvfrom));
 		set(MSG_SOCK_SENDTO,std::make_memfun(this,&SocketDevice::sendto));
@@ -71,16 +75,39 @@ public:
 		sip >> type >> proto;
 
 		int res = 0;
-		if(type == ipc::Socket::SOCK_DGRAM)
-			add(is.fd(),new DGramSocket(is.fd(),proto));
-		else if(type == ipc::Socket::SOCK_RAW_ETHER)
-			add(is.fd(),new RawEtherSocket(is.fd(),proto));
-		else if(type == ipc::Socket::SOCK_RAW_IP)
-			add(is.fd(),new RawIPSocket(is.fd(),proto));
-		else
-			res = -ENOTSUP;
+		switch(type) {
+			case ipc::Socket::SOCK_DGRAM:
+				add(is.fd(),new DGramSocket(is.fd(),proto));
+				break;
+			case ipc::Socket::SOCK_STREAM:
+				add(is.fd(),new StreamSocket(is.fd(),proto));
+				break;
+			case ipc::Socket::SOCK_RAW_ETHER:
+				add(is.fd(),new RawEtherSocket(is.fd(),proto));
+				break;
+			case ipc::Socket::SOCK_RAW_IP:
+				add(is.fd(),new RawIPSocket(is.fd(),proto));
+				break;
+			default:
+				res = -ENOTSUP;
+				break;
+		}
 
 		is << ipc::FileOpen::Response(res) << ipc::Reply();
+	}
+
+	void connect(ipc::IPCStream &is) {
+		Socket *sock = get(is.fd());
+		ipc::Socket::Addr sa;
+		is >> sa;
+
+		int res;
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			res = sock->connect(&sa,is.msgid());
+		}
+		if(res < 0)
+			is << res << ipc::Reply();
 	}
 
 	void bind(ipc::IPCStream &is) {
@@ -137,8 +164,12 @@ public:
 	}
 
 	void close(ipc::IPCStream &is) {
+		Socket *sock = get(is.fd());
 		std::lock_guard<std::mutex> guard(mutex);
-		ipc::ClientDevice<Socket>::close(is);
+		// don't delete it; let the object itself decide when it is destroyed (for TCP)
+		remove(is.fd(),false);
+		sock->disconnect();
+		Device::close(is);
 	}
 
 private:
@@ -176,10 +207,11 @@ private:
 		ssize_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			res = sock->sendto(sa,data,r.count);
+			res = sock->sendto(is.msgid(),sa,data,r.count);
 		}
 
-		is << ipc::FileWrite::Response(res) << ipc::Reply();
+		if(res != 0)
+			is << ipc::FileWrite::Response(res) << ipc::Reply();
 		if(r.shmemoff == -1)
 			delete[] data;
 	}
@@ -456,6 +488,8 @@ static void createResolvConf() {
 }
 
 int main() {
+	srand(rdtsc());
+
 	print("Creating /system/net");
 	if(mkdir("/system/net") < 0)
 		printe("Unable to create /system/net");
@@ -469,6 +503,8 @@ int main() {
 		error("Unable to start routes-file thread");
 	if(startthread(arpFileThread,NULL) < 0)
 		error("Unable to start arp-file thread");
+	if(startthread(Timeouts::thread,NULL) < 0)
+		error("Unable to start timeout thread");
 
 	NetDevice netdev("/dev/tcpip",0111);
 	netdev.loop();

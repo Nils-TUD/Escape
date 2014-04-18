@@ -76,6 +76,19 @@ public:
 	}
 
 	/**
+	 * Connects to the given remote endpoint.
+	 *
+	 * @param addr the address to connect to
+	 * @throws if the operation failed
+	 */
+	void connect(const Addr &addr) {
+		int res;
+		_is << addr << SendReceive(MSG_SOCK_CONNECT) >> res;
+		if(res < 0)
+			VTHROWE("connect(" << addr << ")",res);
+	}
+
+	/**
 	 * Binds the socket to given address. This assigns a name to the socket, so that others can
 	 * send data to it and you can receive it via recvfrom().
 	 *
@@ -129,7 +142,8 @@ public:
 		}
 		if(resp.res < 0)
 			VTHROWE("recvfrom(" << size << ")",resp.res);
-		_is >> ReceiveData(data,size,false);
+		if(resp.res > 0)
+			_is >> ReceiveData(data,size,false);
 		return resp.res;
 	}
 

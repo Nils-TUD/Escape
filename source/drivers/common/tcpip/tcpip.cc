@@ -402,7 +402,7 @@ static int receiveThread(void *arg) {
 			//std::cout << *reinterpret_cast<Ethernet<>*>(buffer) << std::endl;
 			ssize_t err = Ethernet<>::receive(*link,pkt);
 			if(err < 0)
-				fprintf(stderr,"Invalid packet: %s",strerror(err));
+				std::cerr << "Ignored packet of size " << res << ": " << strerror(err) << "\n";
 		}
 		else
 			printe("Ignoring packet of size %zd",res);

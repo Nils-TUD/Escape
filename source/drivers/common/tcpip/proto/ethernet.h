@@ -79,10 +79,10 @@ public:
 
 static inline std::ostream &operator<<(std::ostream &os,const Ethernet<> &p) {
 	os << "Ethernet packet:\n";
-	os << "  dst = " << p.dst << "\n";
-	os << "  src = " << p.src << "\n";
-	os << "  type = " << std::hex << std::setw(4) << std::showbase
-					  << be16tocpu(p.type) << std::noshowbase << std::dec << "\n";
+	os << "  dst        = " << p.dst << "\n";
+	os << "  src        = " << p.src << "\n";
+	os << "  type       = 0x" << std::hex << std::setw(4) << std::setfill('0')
+					  		<< be16tocpu(p.type) << std::setfill(' ') << std::dec << "\n";
 	switch(be16tocpu(p.type)) {
 		case ARP::ETHER_TYPE: {
 			const ARP *arp = reinterpret_cast<const ARP*>(&p.payload);

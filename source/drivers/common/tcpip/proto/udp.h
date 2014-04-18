@@ -71,9 +71,9 @@ public:
 } A_PACKED;
 
 static inline std::ostream &operator<<(std::ostream &os,const UDP &p) {
-	os << "  UDP payload:\n";
-	os << "  srcPort = " << be16tocpu(p.srcPort) << "\n";
-	os << "  dstPort = " << be16tocpu(p.dstPort) << "\n";
-	os << "  dataSize = " << be16tocpu(p.dataSize) << "\n";
+	os << "UDP payload:\n";
+	os << "  srcPort    = " << be16tocpu(p.srcPort) << "\n";
+	os << "  dstPort    = " << be16tocpu(p.dstPort) << "\n";
+	os << "  dataSize   = " << be16tocpu(p.dataSize) << "\n";
 	return os;
 }

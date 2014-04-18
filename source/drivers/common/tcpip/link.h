@@ -23,6 +23,7 @@
 #include <esc/messages.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 
 #include "common.h"
 
@@ -80,22 +81,8 @@ public:
 		_subnetmask = nm;
 	}
 
-	ssize_t read(void *buffer,size_t size) {
-		ssize_t res = ::read(fd(),buffer,size);
-		if(res > 0) {
-			_rxpkts++;
-			_rxbytes += res;
-		}
-		return res;
-	}
-	ssize_t write(const void *buffer,size_t size) {
-		ssize_t res = ::write(fd(),buffer,size);
-		if(res > 0) {
-			_txpkts++;
-			_txbytes += res;
-		}
-		return res;
-	}
+	ssize_t read(void *buffer,size_t size);
+	ssize_t write(const void *buffer,size_t size);
 
 private:
 	ulong _rxpkts;

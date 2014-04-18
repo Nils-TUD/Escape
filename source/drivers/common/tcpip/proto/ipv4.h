@@ -58,7 +58,7 @@ public:
 			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
 		IPv4<T> &h = pkt->payload;
 		h.versionSize = (4 << 4) | 5;
-		h.typeOfService = 0;
+		h.typeOfServ = 0;
 		h.packetSize = cputobe16(sz - ETHER_HEAD_SIZE);
 		h.packetId = 0;	// TODO ??
 		h.fragOffset = cputobe16(DONT_FRAGMENT);
@@ -97,7 +97,7 @@ public:
 	}
 
 	uint8_t versionSize;
-	uint8_t typeOfService;
+	uint8_t typeOfServ;
 	uint16_t packetSize;
 	uint16_t packetId;
 	uint16_t fragOffset;
@@ -110,15 +110,15 @@ public:
 } A_PACKED;
 
 static inline std::ostream &operator<<(std::ostream &os,const IPv4<> &p) {
-	os << "  IPv4 payload:\n";
-	os << "  typeOfService = " << p.typeOfService << "\n";
+	os << "IPv4 payload:\n";
+	os << "  typeOfServ = " << p.typeOfServ << "\n";
 	os << "  packetSize = " << be16tocpu(p.packetSize) << "\n";
-	os << "  packetId = " << be16tocpu(p.packetId) << "\n";
+	os << "  packetId   = " << be16tocpu(p.packetId) << "\n";
 	os << "  fragOffset = " << be16tocpu(p.fragOffset) << "\n";
 	os << "  timeToLive = " << p.timeToLive << "\n";
-	os << "  protocol = " << std::hex << std::showbase << p.protocol << std::noshowbase << std::dec << "\n";
-	os << "  src = " << p.src << "\n";
-	os << "  dst = " << p.dst << "\n";
+	os << "  protocol   = " << std::hex << std::showbase << p.protocol << std::noshowbase << std::dec << "\n";
+	os << "  src        = " << p.src << "\n";
+	os << "  dst        = " << p.dst << "\n";
 	switch(p.protocol) {
 		case ICMP::IP_PROTO: {
 			const ICMP *icmp = reinterpret_cast<const ICMP*>(&p.payload);

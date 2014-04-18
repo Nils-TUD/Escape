@@ -91,11 +91,11 @@ private:
 } A_PACKED;
 
 static inline std::ostream &operator<<(std::ostream &os,const ARP &p) {
-	os << "  ARP payload:\n";
-	os << "  cmd = " << be16tocpu(p.cmd) << "\n";
-	os << "  hwSender = " << p.hwSender << "\n";
-	os << "  ipSender = " << p.ipSender << "\n";
-	os << "  hwTarget = " << p.hwTarget << "\n";
-	os << "  ipTarget = " << p.ipTarget << "\n";
+	os << "ARP payload:\n";
+	os << "  cmddst     = " << be16tocpu(p.cmd) << "\n";
+	os << "  hwSender   = " << p.hwSender << "\n";
+	os << "  ipSender   = " << p.ipSender << "\n";
+	os << "  hwTarget   = " << p.hwTarget << "\n";
+	os << "  ipTarget   = " << p.ipTarget << "\n";
 	return os;
 }

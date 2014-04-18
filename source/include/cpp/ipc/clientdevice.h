@@ -25,6 +25,7 @@
 #include <esc/mem.h>
 #include <esc/sync.h>
 #include <vthrow.h>
+#include <mutex>
 
 namespace ipc {
 
@@ -74,20 +75,16 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit ClientDevice(const char *path,mode_t mode,uint type,uint ops)
-		: Device(path,mode,type,ops | DEV_OPEN), _clients(), _sem() {
+		: Device(path,mode,type,ops | DEV_OPEN), _clients(), _mutex() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&ClientDevice::open));
 		if(ops & DEV_SHFILE)
 			set(MSG_DEV_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&ClientDevice::close),false);
-		int res;
-		if((res = usemcrt(&_sem,1)) < 0)
-			VTHROWE("usemcrt",res);
 	}
 	/**
 	 * Cleans up
 	 */
 	virtual ~ClientDevice() {
-		usemdestr(&_sem);
 	}
 
 	/**
@@ -111,10 +108,9 @@ public:
 	 * @param ib the IPCBuf to send
 	 */
 	void broadcast(msgid_t mid,IPCBuf &ib) {
-		usemdown(&_sem);
+		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _clients.begin(); it != _clients.end(); ++it)
 			send(it->first,mid,ib.buffer(),ib.pos());
-		usemup(&_sem);
 	}
 
 	/**
@@ -124,21 +120,21 @@ public:
 	 * @param c the client
 	 */
 	void add(int fd,C *c) {
-		usemdown(&_sem);
+		std::lock_guard<std::mutex> guard(_mutex);
 		_clients[fd] = c;
-		usemup(&_sem);
 	}
 	/**
 	 * Removes the given client from the list
 	 *
 	 * @param fd the file-descriptor
+	 * @param del whether to delete the object
 	 */
-	void remove(int fd) {
+	void remove(int fd,bool del = true) {
 		C *c = get(fd);
-		usemdown(&_sem);
+		std::lock_guard<std::mutex> guard(_mutex);
 		_clients.erase(fd);
-		delete c;
-		usemup(&_sem);
+		if(del)
+			delete c;
 	}
 
 protected:
@@ -167,7 +163,7 @@ protected:
 
 private:
 	map_type _clients;
-	tUserSem _sem;
+	std::mutex _mutex;
 };
 
 }

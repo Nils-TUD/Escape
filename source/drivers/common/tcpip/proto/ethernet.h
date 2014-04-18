@@ -68,7 +68,7 @@ public:
 					return IPv4<>::receive(link,packet);
 				break;
 		}
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ipc::NIC::MAC dst;

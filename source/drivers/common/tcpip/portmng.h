@@ -50,4 +50,3 @@ private:
 	ipc::port_t _firstfree;
 	std::bitset<N> _ports;
 };
-

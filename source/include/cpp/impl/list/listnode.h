@@ -43,8 +43,11 @@ namespace std {
 		inline listnode(listnode<T> *p,listnode<T> *n)
 			: _prev(p), _next(n), _data(T()) {
 		}
-		inline listnode(listnode<T> *p,listnode<T> *n,T d)
+		inline listnode(listnode<T> *p,listnode<T> *n,const T& d)
 			: _prev(p), _next(n), _data(d) {
+		}
+		inline listnode(listnode<T> *p,listnode<T> *n,T&& d)
+			: _prev(p), _next(n), _data(std::move(d)) {
 		}
 		inline ~listnode() {
 		}
@@ -73,7 +76,7 @@ namespace std {
 		inline T data() const {
 			return _data;
 		}
-		inline void data(T d) {
+		inline void data(const T& d) {
 			_data = d;
 		}
 

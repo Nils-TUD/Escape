@@ -247,6 +247,9 @@ namespace std {
 		void push_front(const T& x) {
 			insert(begin(),x);
 		}
+		void push_front(T&& x) {
+			insert(begin(),std::move(x));
+		}
 		/**
 		 * Removes the first element of the list
 		 */
@@ -258,6 +261,9 @@ namespace std {
 		 */
 		void push_back(const T& x) {
 			insert(end(),x);
+		}
+		void push_back(T&& x) {
+			insert(end(),std::move(x));
 		}
 		/**
 		 * Removes the last element of the list
@@ -276,18 +282,21 @@ namespace std {
 		iterator insert(iterator position,const T& x) {
 			listnode<T>* node = position.node();
 			listnode<T>* prev = position.prev();
-			listnode<T>* newnode = new listnode<T>(prev,node,x);
-			if(prev)
-				prev->next(newnode);
-			else
-				_first = newnode;
-			if(node)
-				node->prev(newnode);
-			else
-				_last = newnode;
-			_count++;
-			return newnode;
+			return insertNode(node,prev,new listnode<T>(prev,node,x));
 		}
+		/**
+		 * Inserts <x> at <position> into the list.
+		 *
+		 * @param position the position at which you want to insert
+		 * @param x the value to insert
+		 * @return the position of the inserted element
+		 */
+		iterator insert(iterator position,T&& x) {
+			listnode<T>* node = position.node();
+			listnode<T>* prev = position.prev();
+			return insertNode(node,prev,new listnode<T>(prev,node,std::move(x)));
+		}
+
 		/**
 		 * Inserts <n> times <x> at <position> into the list.
 		 *
@@ -581,6 +590,19 @@ namespace std {
 		}
 
 	private:
+		iterator insertNode(listnode<T>* node,listnode<T>* prev,listnode<T>* newnode) {
+			if(prev)
+				prev->next(newnode);
+			else
+				_first = newnode;
+			if(node)
+				node->prev(newnode);
+			else
+				_last = newnode;
+			_count++;
+			return newnode;
+		}
+
 		static T defaultCompare(T a,T b) {
 			return a - b;
 		}

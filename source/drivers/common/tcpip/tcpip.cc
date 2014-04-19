@@ -418,10 +418,10 @@ public:
 };
 
 static int receiveThread(void *arg) {
-	static uint8_t buffer[4096];
 	Link *link = reinterpret_cast<Link*>(arg);
+	uint8_t *buffer = new uint8_t[link->mtu()];
 	while(link->status() != ipc::Net::KILLED) {
-		ssize_t res = link->read(buffer,sizeof(buffer));
+		ssize_t res = link->read(buffer,link->mtu());
 		if(res < 0) {
 			printe("Reading packet failed");
 			break;
@@ -439,6 +439,7 @@ static int receiveThread(void *arg) {
 		else
 			printe("Ignoring packet of size %zd",res);
 	}
+	delete[] buffer;
 	delete link;
 	return 0;
 }

@@ -22,31 +22,34 @@
 #include <esc/common.h>
 #include <ipc/proto/socket.h>
 #include <bitset>
+#include <stdlib.h>
 
 template<size_t N>
 class PortMng {
 public:
-	explicit PortMng(ipc::port_t base) : _base(base), _firstfree(0), _ports() {
+	explicit PortMng(ipc::port_t base) : _base(base), _free(N), _ports() {
 	}
 
 	ipc::port_t allocate() {
-		for(ipc::port_t p = _firstfree; p < N; ++p) {
-			if(!_ports[p]) {
-				_ports[p] = true;
-				_firstfree = p + 1;
-				return _base + p;
-			}
+		// TODO handle that case
+		assert(_free > 0);
+		ipc::port_t p;
+		do {
+			p = rand() % N;
 		}
-		return 0;
+		while(_ports[p]);
+		_ports[p] = true;
+		_free--;
+		return _base + p;
 	}
 	void release(ipc::port_t port) {
 		assert(port >= _base && port < _base + N);
 		_ports[port - _base] = false;
-		_firstfree = port - _base;
+		_free++;
 	}
 
 private:
 	ipc::port_t _base;
-	ipc::port_t _firstfree;
+	size_t _free;
 	std::bitset<N> _ports;
 };

@@ -53,14 +53,16 @@ class SocketDevice : public ipc::ClientDevice<Socket> {
 public:
 	explicit SocketDevice(const char *path,mode_t mode)
 		: ipc::ClientDevice<Socket>(path,mode,DEV_TYPE_BLOCK,
-			DEV_OPEN | DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE) {
+			DEV_OPEN | DEV_CANCEL | DEV_SHFILE | DEV_CREATSIBL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&SocketDevice::open));
 		set(MSG_FILE_READ,std::make_memfun(this,&SocketDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&SocketDevice::write));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&SocketDevice::close),false);
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&SocketDevice::cancel));
+		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&SocketDevice::creatsibl));
 		set(MSG_SOCK_CONNECT,std::make_memfun(this,&SocketDevice::connect));
 		set(MSG_SOCK_BIND,std::make_memfun(this,&SocketDevice::bind));
+		set(MSG_SOCK_LISTEN,std::make_memfun(this,&SocketDevice::listen));
 		set(MSG_SOCK_RECVFROM,std::make_memfun(this,&SocketDevice::recvfrom));
 		set(MSG_SOCK_SENDTO,std::make_memfun(this,&SocketDevice::sendto));
 	}
@@ -75,22 +77,25 @@ public:
 		sip >> type >> proto;
 
 		int res = 0;
-		switch(type) {
-			case ipc::Socket::SOCK_DGRAM:
-				add(is.fd(),new DGramSocket(is.fd(),proto));
-				break;
-			case ipc::Socket::SOCK_STREAM:
-				add(is.fd(),new StreamSocket(is.fd(),proto));
-				break;
-			case ipc::Socket::SOCK_RAW_ETHER:
-				add(is.fd(),new RawEtherSocket(is.fd(),proto));
-				break;
-			case ipc::Socket::SOCK_RAW_IP:
-				add(is.fd(),new RawIPSocket(is.fd(),proto));
-				break;
-			default:
-				res = -ENOTSUP;
-				break;
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			switch(type) {
+				case ipc::Socket::SOCK_DGRAM:
+					add(is.fd(),new DGramSocket(is.fd(),proto));
+					break;
+				case ipc::Socket::SOCK_STREAM:
+					add(is.fd(),new StreamSocket(is.fd(),proto));
+					break;
+				case ipc::Socket::SOCK_RAW_ETHER:
+					add(is.fd(),new RawEtherSocket(is.fd(),proto));
+					break;
+				case ipc::Socket::SOCK_RAW_IP:
+					add(is.fd(),new RawIPSocket(is.fd(),proto));
+					break;
+				default:
+					res = -ENOTSUP;
+					break;
+			}
 		}
 
 		is << ipc::FileOpen::Response(res) << ipc::Reply();
@@ -123,23 +128,48 @@ public:
 		is << res << ipc::Reply();
 	}
 
+	void listen(ipc::IPCStream &is) {
+		Socket *sock = get(is.fd());
+
+		int res;
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			res = sock->listen();
+		}
+		is << res << ipc::Reply();
+	}
+
 	void cancel(ipc::IPCStream &is) {
 		Socket *sock = get(is.fd());
 		msgid_t mid;
 		is >> mid;
 
-		int res;
-		// we answer write-requests always right away, so let the kernel just wait for the response
-		if((mid & 0xFFFF) == MSG_FILE_WRITE)
-			res = 0;
-		else if((mid & 0xFFFF) != MSG_FILE_READ && (mid & 0xFFFF) != MSG_SOCK_RECVFROM)
+		int res,msgtype = mid & 0xFFFF;
+		if(msgtype != MSG_FILE_WRITE && msgtype != MSG_SOCK_SENDTO &&
+				msgtype != MSG_FILE_READ && msgtype != MSG_SOCK_RECVFROM &&
+				msgtype != MSG_DEV_CREATSIBL) {
 			res = -EINVAL;
+		}
 		else {
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->cancel(mid);
 		}
 
 		is << res << ipc::Reply();
+	}
+
+	void creatsibl(ipc::IPCStream &is) {
+		Socket *sock = get(is.fd());
+		ipc::FileCreatSibl::Request r;
+		is >> r;
+
+		int res;
+		{
+			std::lock_guard<std::mutex> guard(mutex);
+			res = sock->accept(is.msgid(),r.nfd,this);
+		}
+		if(res < 0)
+			is << ipc::FileCreatSibl::Response(res) << ipc::Reply();
 	}
 
 	void read(ipc::IPCStream &is) {

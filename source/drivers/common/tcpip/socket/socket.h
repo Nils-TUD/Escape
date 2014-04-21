@@ -69,6 +69,12 @@ public:
 	virtual int bind(const ipc::Socket::Addr *) {
 		return -ENOTSUP;
 	}
+	virtual int listen() {
+		return -ENOTSUP;
+	}
+	virtual int accept(msgid_t,int,ipc::ClientDevice<Socket> *) {
+		return -ENOTSUP;
+	}
 	virtual ssize_t sendto(msgid_t,const ipc::Socket::Addr *,const void *,size_t) {
 		return -ENOTSUP;
 	}

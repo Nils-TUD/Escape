@@ -81,6 +81,12 @@ public:
 	}
 
 	/**
+	 * No copying
+	 */
+	NIC(const NIC&) = delete;
+	NIC &operator=(const NIC&) = delete;
+
+	/**
 	 * @return the file-descriptor
 	 */
 	int fd() const {

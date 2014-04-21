@@ -28,10 +28,18 @@
 #include "../link.h"
 #include "../portmng.h"
 
+#define DEBUG_TCP	0
+
+#if DEBUG_TCP
+#	define PRINT_TCP(locp,remp,fmt,...)	print("%5d,%5d: " fmt,locp,remp,##__VA_ARGS__)
+#else
+#	define PRINT_TCP(...)
+#endif
+
 class TCP {
 	friend class StreamSocket;
 
-	typedef std::map<ipc::port_t,StreamSocket*> socket_map;
+	typedef std::map<uint32_t,StreamSocket*> socket_map;
 
 public:
 	enum {
@@ -57,19 +65,25 @@ public:
 	static void replyReset(const Ethernet<IPv4<TCP>> *pkt);
 
 private:
+	static const char *flagsToStr(uint8_t flags);
 	static ssize_t sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,
 		ipc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
 		uint32_t ackNo,uint16_t winSize);
 
-	static ssize_t addSocket(StreamSocket *sock,ipc::port_t port) {
-		socket_map::iterator it = _socks.find(port);
+	static uint32_t getKey(ipc::port_t localPort,ipc::port_t remotePort) {
+		return ((uint32_t)localPort << 16) | remotePort;
+	}
+	static ssize_t addSocket(StreamSocket *sock,ipc::port_t localPort,ipc::port_t remotePort) {
+		uint32_t key = getKey(localPort,remotePort);
+		socket_map::iterator it = _socks.find(key);
 		if(it != _socks.end())
 			return it->second != sock ? -EADDRINUSE : 0;
-		_socks[port] = sock;
+		_socks[key] = sock;
 		return 0;
 	}
-	static void remSocket(StreamSocket *sock,ipc::port_t port) {
-		socket_map::iterator it = _socks.find(port);
+	static void remSocket(StreamSocket *sock,ipc::port_t localPort,ipc::port_t remotePort) {
+		uint32_t key = getKey(localPort,remotePort);
+		socket_map::iterator it = _socks.find(key);
 		if(it != _socks.end() && it->second == sock)
 			_socks.erase(it);
 	}

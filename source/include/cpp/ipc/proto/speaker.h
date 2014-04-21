@@ -40,6 +40,12 @@ public:
 	}
 
 	/**
+	 * No copying
+	 */
+	Speaker(const Speaker&) = delete;
+	Speaker &operator=(const Speaker&) = delete;
+
+	/**
 	 * Beeps with frequency <freq> for <duration> ms.
 	 *
 	 * @param freq the frequency

@@ -120,8 +120,9 @@
 
 #define MSG_SOCK_CONNECT			1500	/* connects a socket to the other endpoint */
 #define MSG_SOCK_BIND				1501	/* bind a socket to an address */
-#define MSG_SOCK_RECVFROM			1502	/* receive data from a socket */
-#define MSG_SOCK_SENDTO				1503	/* send data to a socket */
+#define MSG_SOCK_LISTEN				1502	/* puts a socket into listening state */
+#define MSG_SOCK_RECVFROM			1503	/* receive data from a socket */
+#define MSG_SOCK_SENDTO				1504	/* send data to a socket */
 
 #define MSG_DNS_RESOLVE				1600	/* resolve a name to an address */
 #define MSG_DNS_SET_SERVER			1601	/* set the name server */

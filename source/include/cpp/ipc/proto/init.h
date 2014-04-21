@@ -41,6 +41,12 @@ public:
 	}
 
 	/**
+	 * No copying
+	 */
+	Init(const Init&) = delete;
+	Init &operator=(const Init&) = delete;
+
+	/**
 	 * Reboots the machine
 	 *
 	 * @throws if the operation failed

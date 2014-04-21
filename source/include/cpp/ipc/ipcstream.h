@@ -110,6 +110,14 @@ public:
 	}
 
 	/**
+	 * No copying; moving only
+	 */
+	IPCStream(const IPCStream&) = delete;
+	IPCStream &operator=(const IPCStream&) = delete;
+	IPCStream(IPCStream &&is) : _fd(is._fd), _mid(is._mid), _buf(std::move(is._buf)), _flags(is._flags) {
+	}
+
+	/**
 	 * Cleans up, i.e. deletes the buffer, closes the device etc., depending on what operations
 	 * have been performed in at construction.
 	 */

@@ -43,6 +43,15 @@ public:
 	}
 
 	/**
+	 * No copying; moving only
+	 */
+	IPCBuf(const IPCBuf&) = delete;
+	IPCBuf &operator=(const IPCBuf&) = delete;
+	IPCBuf(IPCBuf &&is) : _buf(is._buf), _pos(is._pos), _size(is._size) {
+		is._buf = NULL;
+	}
+
+	/**
 	 * @return the buffer
 	 */
 	ulong *buffer() {

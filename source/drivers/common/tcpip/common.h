@@ -23,6 +23,7 @@
 #include <ipc/proto/nic.h>
 #include <ipc/proto/net.h>
 #include <ipc/proto/socket.h>
+#include <ipc/clientdevice.h>
 
 struct Empty {
 	size_t size() const {
@@ -34,6 +35,7 @@ template<class T = Empty>
 class Ethernet;
 template<class T = Empty>
 class IPv4;
+class Socket;
 
 enum {
 	ETHER_HEAD_SIZE		= 6 + 6 + 2
@@ -57,6 +59,11 @@ struct PendingRequest {
 		struct {
 			uint32_t seqNo;
 		} write;
+		struct {
+			int fd;
+			int nfd;
+			ipc::ClientDevice<Socket> *dev;
+		} accept;
 	} d;
 };
 

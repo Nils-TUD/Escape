@@ -35,6 +35,7 @@ public:
 	static const size_t SEND_BUF_SIZE	= 32 * 1024;
 	static const size_t RECV_BUF_SIZE	= 32 * 1024;
 	static const size_t FORCE_PSH_PERC	= 50;
+	static const size_t DEF_MSS			= 536;
 
 	enum State {
 		STATE_CLOSED,
@@ -67,6 +68,11 @@ public:
 		size_t optSize;
 		uint timeout;
 	};
+	struct SynPacket {
+		uint16_t mss;
+		ipc::Socket::Addr src;
+		uint16_t winSize;
+	};
 
 	enum {
 		OPTION_MSS	= 0x2,
@@ -74,7 +80,7 @@ public:
 
 	explicit StreamSocket(int f,int proto)
 			: Socket(f,proto), _timeoutId(Timeouts::allocateId()), _localPort(), _remoteAddr(),
-			  _mss(1024), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(), _rxCircle(), _push() {
+			  _mss(DEF_MSS), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(), _rxCircle(), _push() {
 		if(proto != ipc::Socket::PROTO_TCP)
 			VTHROWE("Protocol " << proto << " is not supported by stream socket",-ENOTSUP);
 
@@ -85,17 +91,22 @@ public:
 
 	virtual int connect(const ipc::Socket::Addr *sa,msgid_t mid);
 	virtual int bind(const ipc::Socket::Addr *sa);
+	virtual int listen();
+	virtual int accept(msgid_t mid,int nfd,ipc::ClientDevice<Socket> *dev);
 	virtual ssize_t sendto(msgid_t mid,const ipc::Socket::Addr *sa,const void *buffer,size_t size);
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size);
 	virtual void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset);
 	virtual void disconnect();
 
 private:
+	void state(State st);
+	static uint16_t parseMSS(const TCP *tcp);
+
 	ipc::Net::IPv4Addr remoteIP() {
 		return ipc::Net::IPv4Addr(_remoteAddr.d.ipv4.addr);
 	}
-	void state(State st) {
-		_state = st;
+	ipc::port_t remotePort() {
+		return _remoteAddr.d.ipv4.port;
 	}
 	bool closing() {
 		return _state == STATE_CLOSED || _state == STATE_CLOSING || _state == STATE_CLOSE_WAIT ||
@@ -116,11 +127,12 @@ private:
 	}
 
 	const char *stateName(State st);
-	void parseOptions(const TCP *tcp);
 	ssize_t sendCtrlPkt(uint8_t flags,MSSOption *opt = NULL,bool forceACK = false);
 	void sendData();
 	void timeout();
 
+	int forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,SynPacket &syn,
+		CircularBuf::seq_type seqNo);
 	void replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size);
 	template<typename T>
 	void replyPending(T result) {

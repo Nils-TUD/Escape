@@ -79,11 +79,16 @@ PortMng<PRIVATE_PORTS_CNT> StreamSocket::_ports(PRIVATE_PORTS);
 
 StreamSocket::~StreamSocket() {
 	if(_localPort != 0) {
-		TCP::remSocket(this,_localPort);
+		TCP::remSocket(this,_localPort,remotePort());
 		if(_localPort >= PRIVATE_PORTS)
 			_ports.release(_localPort);
 	}
 	Timeouts::cancel(_timeoutId);
+}
+
+void StreamSocket::state(State st) {
+	PRINT_TCP(_localPort,remotePort(),"went from %s to %s",stateName(_state),stateName(st));
+	_state = st;
 }
 
 int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
@@ -100,7 +105,7 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 		_localPort = _ports.allocate();
 		if(_localPort == 0)
 			return -EAGAIN;
-		TCP::addSocket(this,_localPort);
+		TCP::addSocket(this,_localPort,remotePort());
 	}
 
 	MSSOption option;
@@ -119,8 +124,43 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 	return 0;
 }
 
-int StreamSocket::bind(const ipc::Socket::Addr *) {
-	return -ENOTSUP;
+int StreamSocket::bind(const ipc::Socket::Addr *sa) {
+	if(_localPort != 0)
+		return -EINVAL;
+	if(sa->d.ipv4.port == 0 || sa->d.ipv4.port >= PRIVATE_PORTS)
+		return -EINVAL;
+
+	_localPort = sa->d.ipv4.port;
+	return TCP::addSocket(this,_localPort,0);
+}
+
+int StreamSocket::listen() {
+	if(_state != STATE_CLOSED)
+		return -EINVAL;
+	if(_localPort == 0)
+		return -ENOTBOUND;
+
+	state(STATE_LISTEN);
+	return 0;
+}
+
+int StreamSocket::accept(msgid_t mid,int nfd,ipc::ClientDevice<Socket> *dev) {
+	if(_state != STATE_LISTEN)
+		return -EINVAL;
+
+	SynPacket syn;
+	CircularBuf::seq_type seqNo;
+	if(_rxCircle.pullctrl(&syn,sizeof(syn),&seqNo))
+		return forkSocket(nfd,mid,dev,syn,seqNo);
+
+	if(_pending.count > 0)
+		return -EAGAIN;
+	_pending.count = 1;
+	_pending.mid = mid;
+	_pending.d.accept.fd = fd();
+	_pending.d.accept.nfd = nfd;
+	_pending.d.accept.dev = dev;
+	return 0;
 }
 
 ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *data,size_t size) {
@@ -133,7 +173,7 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 		return -EINVAL;
 
 	// push it into our txCircle
-	assert(_txCircle.push(seqNo,data,size) == (ssize_t)size);
+	assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,size) == (ssize_t)size);
 	// send it
 	sendData();
 
@@ -171,6 +211,7 @@ void StreamSocket::disconnect() {
 		case STATE_CLOSED:
 		// if we're not connected yet, there is no reason to wait or start the disconnect procedure
 		case STATE_SYN_SENT:
+		case STATE_LISTEN:
 			delete this;
 			return;
 
@@ -204,7 +245,7 @@ void StreamSocket::timeout() {
 
 		case STATE_ESTABLISHED:
 			if(_pending.count > 0) {
-				print("Timeout. Resending data.");
+				PRINT_TCP(_localPort,remotePort(),"timeout. Resending data.");
 				sendData();
 			}
 			break;
@@ -212,10 +253,10 @@ void StreamSocket::timeout() {
 		default: {
 			// if there is an un-ACKed control-packet, resend it
 			if(_ctrlpkt.flags) {
-				print("Timeout. Resending control-packet.");
+				PRINT_TCP(_localPort,remotePort(),"timeout. Resending control-packet.");
 				if(_ctrlpkt.timeout < 8000) {
 					_ctrlpkt.timeout *= 2;
-					ssize_t res = TCP::send(remoteIP(),_localPort,_remoteAddr.d.ipv4.port,
+					ssize_t res = TCP::send(remoteIP(),_localPort,remotePort(),
 						_ctrlpkt.flags,&_ctrlpkt.option,_ctrlpkt.optSize,_ctrlpkt.optSize,
 						_txCircle.nextSeq(),_rxCircle.nextExp(),_rxCircle.windowSize());
 					if(res < 0) {
@@ -255,7 +296,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	uint16_t checksum = ipc::Net::ipv4PayloadChecksum(ip->src,ip->dst,TCP::IP_PROTO,
 		reinterpret_cast<const uint16_t*>(tcp),tcplen);
 	if(checksum != 0) {
-		print("Packet has invalid checksum (%#04x). Dropping",checksum);
+		PRINT_TCP(_localPort,remotePort(),"packet has invalid checksum (%#04x). Dropping",checksum);
 		return;
 	}
 
@@ -263,14 +304,14 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	if(tcp->ctrlFlags & TCP::FL_RST) {
 		// first check if it's valid (in SYN_SENT state the ackNo has to ACK the SYN)
 		if((_state == STATE_SYN_SENT && ackNo == _txCircle.nextExp()) || _rxCircle.isInWindow(seqNo)) {
-			std::cerr << "Received valid RST" << std::endl;
+			PRINT_TCP(_localPort,remotePort(),"received valid RST");
 			switch(_state) {
 				case STATE_LISTEN:
 					// ignore
 					break;
+
+				// this is already done in the client-socket, so just go back to closed.
 				case STATE_SYN_RECEIVED:
-					state(STATE_LISTEN);
-					break;
 				default:
 					state(STATE_CLOSED);
 					replyPending(-ECONNRESET);
@@ -283,15 +324,24 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	bool ackForced = false;
 
 	// in state SYN_SENT we don't have a initialized _rxCircle yet
-	if((tcp->ctrlFlags & ~TCP::FL_ACK) && _state != STATE_SYN_SENT) {
-		// push data
-	  	const uint8_t *data = seglen ? reinterpret_cast<const uint8_t*>(tcp) + dataOff : NULL;
-  		if(_rxCircle.push(seqNo,data,seglen ? seglen : 1) < 0) {
-  			if(synchronized()) {
-				std::cerr << "Received unexpected seq " << seqNo << ": " << _rxCircle << std::endl;
-  				sendCtrlPkt(TCP::FL_ACK);
-  			}
-			return;
+	if(_state != STATE_SYN_SENT && _state != STATE_LISTEN) {
+		// do we have received a non-ACK packet?
+		if(((tcp->ctrlFlags & ~TCP::FL_ACK) || seglen > 0)) {
+			// determine type of packet
+			uint8_t type = seglen ? CircularBuf::TYPE_DATA : CircularBuf::TYPE_CTRL;
+		  	const uint8_t *data = seglen ? reinterpret_cast<const uint8_t*>(tcp) + dataOff : NULL;
+
+		  	// only accept data in established state
+		  	if(type == CircularBuf::TYPE_CTRL || _state == STATE_ESTABLISHED) {
+		  		if(_rxCircle.push(seqNo,type,data,seglen) < 0) {
+		  			if(synchronized()) {
+						PRINT_TCP(_localPort,remotePort(),"received unexpected seq %u, expected %u",
+							seqNo,_rxCircle.nextExp());
+		  				sendCtrlPkt(TCP::FL_ACK);
+		  			}
+					return;
+				}
+			}
 		}
 	}
 
@@ -299,7 +349,8 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	if(tcp->ctrlFlags & TCP::FL_ACK) {
 		int res = _txCircle.forget(ackNo);
 		if(res < 0) {
-			std::cerr << "Received unexpected ack " << ackNo << ": " << _txCircle << std::endl;
+			PRINT_TCP(_localPort,remotePort(),"received unexpected ack %u, expected %u",
+				ackNo,_txCircle.nextSeq());
 			if(!synchronized())
 				TCP::replyReset(epkt);
 			else
@@ -323,13 +374,34 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 
 	// handle state changes
 	switch(_state) {
+		case STATE_LISTEN: {
+			if(tcp->ctrlFlags == TCP::FL_SYN) {
+				SynPacket syn;
+				syn.mss = parseMSS(tcp);
+				syn.winSize = be16tocpu(tcp->windowSize);
+				syn.src.family = ipc::Socket::AF_INET;
+				syn.src.d.ipv4.addr = ip->src.value();
+				syn.src.d.ipv4.port = be16tocpu(tcp->srcPort);
+				// is there already a pending accept?
+				if(_pending.count > 0 && (_pending.mid & 0xFFFF) == MSG_DEV_CREATSIBL) {
+					forkSocket(_pending.d.accept.nfd,_pending.mid,_pending.d.accept.dev,syn,seqNo);
+					_pending.count = 0;
+				}
+				else {
+					if(_rxCircle.push(seqNo,CircularBuf::TYPE_CTRL,&syn,sizeof(SynPacket)) < 0)
+						print("Unable to push SYN packet");
+				}
+			}
+		}
+		break;
+
 		case STATE_SYN_SENT: {
 			if((tcp->ctrlFlags & (TCP::FL_ACK | TCP::FL_SYN)) == (TCP::FL_ACK | TCP::FL_SYN)) {
 				size_t txbufSize = be16tocpu(tcp->windowSize);
 				txbufSize = std::max<size_t>(1024,std::min<size_t>(64 * 1024,txbufSize));
 				_txCircle.init(_txCircle.nextSeq(),txbufSize);
 				_rxCircle.init(seqNo + 1,RECV_BUF_SIZE);
-				parseOptions(tcp);
+				_mss = parseMSS(tcp);
 
 				state(STATE_ESTABLISHED);
 				replyPending<int>(0);
@@ -346,9 +418,18 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		}
 		break;
 
-		case STATE_SYN_RECEIVED:
-			// TODO
-			break;
+		case STATE_SYN_RECEIVED: {
+			if(tcp->ctrlFlags & TCP::FL_ACK) {
+				// answer the accept call
+				assert(_pending.count > 0);
+				ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+				ipc::IPCStream is(_pending.d.accept.fd,buffer,sizeof(buffer),_pending.mid);
+				is << ipc::FileCreatSibl::Response(0) << ipc::Reply();
+				_pending.count = 0;
+				state(STATE_ESTABLISHED);
+			}
+		}
+		break;
 
 		case STATE_FIN_WAIT_1: {
 			if(tcp->ctrlFlags & TCP::FL_FIN) {
@@ -402,7 +483,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		Timeouts::program(_timeoutId,std::make_memfun(this,&StreamSocket::timeout),1000);
 }
 
-void StreamSocket::parseOptions(const TCP *tcp) {
+uint16_t StreamSocket::parseMSS(const TCP *tcp) {
 	size_t dataOff = (tcp->dataOffset >> 4) * 4;
 	size_t optSize = dataOff - sizeof(TCP);
 	if(optSize > 0) {
@@ -412,14 +493,15 @@ void StreamSocket::parseOptions(const TCP *tcp) {
 			switch(optHead->kind) {
 				case OPTION_MSS:
 					const MSSOption *mssOpt = reinterpret_cast<const MSSOption*>(optHead);
-					_mss = mssOpt->mss;
-					break;
+					return mssOpt->mss;
 			}
 
 			options += optHead->length;
 			optSize -= optHead->length;
 		}
 	}
+	// use the default size
+	return DEF_MSS;
 }
 
 ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
@@ -432,7 +514,7 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 	if((flags & ~TCP::FL_ACK) || lastAck != ack || forceACK) {
 		if(lastAck != ack)
 			flags |= TCP::FL_ACK;
-		ssize_t res = TCP::send(remoteIP(),_localPort,_remoteAddr.d.ipv4.port,flags,opt,optSize,optSize,
+		ssize_t res = TCP::send(remoteIP(),_localPort,remotePort(),flags,opt,optSize,optSize,
 			_txCircle.nextSeq(),(flags & TCP::FL_ACK) ? ack : 0,_rxCircle.windowSize());
 		if(res < 0)
 			return res;
@@ -441,7 +523,7 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 	// do we expect an response?
 	if(flags & ~TCP::FL_ACK) {
 		// then remember that we've send the control-packed and wait for the ACK
-		_txCircle.push(_txCircle.nextSeq(),NULL,1);
+		_txCircle.push(_txCircle.nextSeq(),CircularBuf::TYPE_CTRL,NULL,0);
 		_ctrlpkt.flags = flags;
 		_ctrlpkt.optSize = optSize;
 		if(opt)
@@ -453,7 +535,7 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 }
 
 void StreamSocket::sendData() {
-	if(_txCircle.capacity() - _txCircle.windowSize() > 0) {
+	if(_txCircle.hasData() > 0) {
 		CircularBuf::seq_type seqNo = _txCircle.nextExp();
 		CircularBuf::seq_type lastAck = _rxCircle.nextExp();
 		CircularBuf::seq_type ackNo = _rxCircle.getAck();
@@ -466,8 +548,9 @@ void StreamSocket::sendData() {
 			if(amount == 0)
 				break;
 
-			ssize_t res = TCP::send(remoteIP(),_localPort,_remoteAddr.d.ipv4.port,TCP::FL_ACK,
-				buf,amount,0,seqNo,ackNo,_rxCircle.windowSize());
+			// TODO don't use FL_PSH all the time
+			ssize_t res = TCP::send(remoteIP(),_localPort,remotePort(),
+				TCP::FL_ACK | TCP::FL_PSH,buf,amount,0,seqNo,ackNo,_rxCircle.windowSize());
 			if(res < 0) {
 				print("Sending data failed: %s",strerror(res));
 				break;
@@ -478,16 +561,41 @@ void StreamSocket::sendData() {
 		}
 		delete[] buf;
 
-		if(left != _remoteWinSize)
-			Timeouts::program(_timeoutId,std::make_memfun(this,&StreamSocket::timeout),1000);
-		// if we don't have sent any packet, at least send the ACK, if necessary
-		else if(lastAck != ackNo) {
-			ssize_t res = TCP::send(remoteIP(),_localPort,_remoteAddr.d.ipv4.port,TCP::FL_ACK,
-				NULL,0,0,seqNo,ackNo,_rxCircle.windowSize());
-			if(res < 0)
-				print("Sending ACK failed: %s",strerror(res));
+		// no packet sent yet and something to ACK?
+		if(left == _remoteWinSize && lastAck != ackNo) {
+			seqNo = _txCircle.nextSeq();
+			TCP::send(remoteIP(),_localPort,remotePort(),
+				TCP::FL_ACK,buf,0,0,seqNo,ackNo,_rxCircle.windowSize());
 		}
+		else if(left != _remoteWinSize)
+			Timeouts::program(_timeoutId,std::make_memfun(this,&StreamSocket::timeout),1000);
 	}
+}
+
+int StreamSocket::forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,SynPacket &syn,
+		CircularBuf::seq_type seqNo) {
+	StreamSocket *s = new StreamSocket(nfd,ipc::Socket::PROTO_TCP);
+	s->_mss = syn.mss;
+	s->_remoteAddr = syn.src;
+	s->_localPort = _localPort;
+	s->state(STATE_SYN_RECEIVED);
+	syn.winSize = std::max<size_t>(1024,std::min<size_t>(64 * 1024,syn.winSize));
+	s->_txCircle.init(s->_txCircle.nextSeq(),syn.winSize);
+	s->_rxCircle.init(seqNo + 1,RECV_BUF_SIZE);
+	int res = TCP::addSocket(s,s->_localPort,s->remotePort());
+	if(res < 0) {
+		delete s;
+		return res;
+	}
+
+	dev->add(nfd,s);
+	s->sendCtrlPkt(TCP::FL_SYN | TCP::FL_ACK);
+	s->_pending.count = 1;
+	s->_pending.mid = mid;
+	s->_pending.d.accept.fd = fd();
+	s->_pending.d.accept.nfd = nfd;
+	s->_pending.d.accept.dev = dev;
+	return 0;
 }
 
 void StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size) {
@@ -502,6 +610,7 @@ void StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size)
 			_push = false;
 	}
 
+	PRINT_TCP(_localPort,remotePort(),"passed %zd bytes to application",res);
 	reply(mid,_remoteAddr,needsSrc,buffer ? buffer : NULL,buf,res);
 	if(res > 0 && buffer == NULL)
 		delete[] buf;
@@ -519,6 +628,7 @@ const char *StreamSocket::stateName(State st) {
 		[STATE_CLOSING]			= "STATE_CLOSING",
 		[STATE_LAST_ACK]		= "STATE_LAST_ACK",
 		[STATE_TIME_WAIT]		= "STATE_TIME_WAIT",
+		[STATE_LISTEN]			= "STATE_LISTEN",
 	};
 	return names[st];
 }

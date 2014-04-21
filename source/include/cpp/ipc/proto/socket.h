@@ -32,6 +32,9 @@ namespace ipc {
 typedef uint16_t port_t;
 
 class Socket {
+	explicit Socket(int fd) : _close(true), _is(fd) {
+	}
+
 public:
 	enum Domain {
 		AF_INET
@@ -72,7 +75,23 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit Socket(const char *path,Type type,Protocol proto)
-		: _is(buildPath(path,type,proto).c_str()) {
+		: _close(false), _is(buildPath(path,type,proto).c_str(),IO_READ | IO_WRITE | IO_MSGS) {
+	}
+
+	/**
+	 * No copying; moving only
+	 */
+	Socket(const Socket&) = delete;
+	Socket &operator=(const Socket&) = delete;
+	Socket(Socket &&s) : _is(std::move(s._is)) {
+	}
+
+	/**
+	 * Closes the socket
+	 */
+	~Socket() {
+		if(_close)
+			::close(_is.fd());
 	}
 
 	/**
@@ -103,6 +122,46 @@ public:
 	}
 
 	/**
+	 * Puts this socket into the listen-state in order to accept incoming connections.
+	 *
+	 * @throws if the operation failed
+	 */
+	void listen() {
+		int res;
+		_is << SendReceive(MSG_SOCK_LISTEN) >> res;
+		if(res < 0)
+			VTHROWE("listen()",res);
+	}
+
+	/**
+	 * Accepts an incoming connection. To do so, this socket has to be in the listen-state. If no
+	 * incoming connection has been seen yet, this call blocks. If there is any, it creates a new
+	 * socket for that connection and returns it.
+	 *
+	 * @return the socket for the accepted connection
+	 * @throws if the operation failed
+	 */
+	Socket accept() {
+		int fd = creatsibl(_is.fd(),0);
+		if(fd < 0)
+			VTHROWE("accept()",fd);
+		return Socket(fd);
+	}
+
+	/**
+	 * Sends <data> over this socket. This does only work if we already have a connection.
+	 *
+	 * @param data the data to send
+	 * @param size the size of the data
+	 * @throws if the operation failed
+	 */
+	void send(const void *data,size_t size) {
+		ssize_t res = write(_is.fd(),data,size);
+		if(res < 0)
+			VTHROWE("send(" << size << ")",res);
+	}
+
+	/**
 	 * Sends <data> to <addr>.
 	 *
 	 * @param addr the address to send to
@@ -117,6 +176,20 @@ public:
 		_is >> Receive() >> resp;
 		if(resp.res < 0)
 			VTHROWE("sendto(" << addr << ", " << size << ")",resp.res);
+	}
+
+	/**
+	 * Receives <data> over this socket. This does only work if we already have a connection.
+	 *
+	 * @param data the buffer to write to
+	 * @param size the size of the buffer
+	 * @throws if the operation failed
+	 */
+	size_t receive(void *data,size_t size) {
+		ssize_t res = read(_is.fd(),data,size);
+		if(res < 0)
+			VTHROWE("receive(" << size << ")",res);
+		return res;
 	}
 
 	/**
@@ -154,6 +227,7 @@ private:
 		return os.str();
 	}
 
+	bool _close;
 	IPCStream _is;
 };
 

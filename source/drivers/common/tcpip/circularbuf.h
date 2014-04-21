@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <ipc/proto/socket.h>
 #include <algorithm>
 #include <ostream>
 #include <limits>
@@ -70,27 +71,36 @@ class CircularBuf {
 public:
 	typedef uint32_t seq_type;
 
+	enum {
+		TYPE_CTRL,
+		TYPE_DATA
+	};
+
 	/**
 	 * A packet that was pushed. Holds the data with the associated sequence number
 	 */
 	struct SeqPacket {
-		explicit SeqPacket(seq_type _start,const uint8_t *_data,size_t _size)
-			: start(_start), data(_data ? new uint8_t[_size] : NULL), size(_size) {
-			if(_data)
-				memcpy(data,_data,size);
+		explicit SeqPacket(seq_type _start,uint8_t _type,const uint8_t *_data,size_t sz)
+			: start(_start), type(_type), data(sz ? new uint8_t[sz] : NULL), _size(sz) {
+			memcpy(data,_data,_size);
 		}
 		SeqPacket(const SeqPacket&) = delete;
 		SeqPacket &operator=(const SeqPacket&) = delete;
-		SeqPacket(SeqPacket &&p) : start(p.start), data(p.data), size(p.size) {
+		SeqPacket(SeqPacket &&p) : start(p.start), type(p.type), data(p.data), _size(p._size) {
 			p.data = NULL;
 		}
 		~SeqPacket() {
 			delete[] data;
 		}
 
+		size_t size() const {
+			return type == TYPE_CTRL ? 1 : _size;
+		}
+
 		seq_type start;
+		uint8_t type;
 		uint8_t *data;
-		size_t size;
+		size_t _size;
 	};
 
 	/**
@@ -162,11 +172,12 @@ public:
 	 * data will be kept, some will be ignored.
 	 *
 	 * @param seqNo the sequence number of the first byte of the data
+	 * @param type the type (TYPE_{CTRL,DATA})
 	 * @param data the data
 	 * @param size the number of bytes
 	 * @return the number of inserted bytes
 	 */
-	ssize_t push(seq_type seqNo,const void *data,size_t size);
+	ssize_t push(seq_type seqNo,uint8_t type,const void *data,size_t size);
 
 	/**
 	 * ACKs all data that can be ACKed and returns the new ACK position.
@@ -192,7 +203,7 @@ public:
 	 * @param size the size of the buffer
 	 * @return the number of copied bytes
 	 */
-	size_t get(seq_type seqNo,uint8_t *buf,size_t size);
+	size_t get(seq_type seqNo,void *buf,size_t size);
 
 	/**
 	 * Pulls ACKed data into <buf>. That is, it starts at the beginning and copies all data into
@@ -202,7 +213,17 @@ public:
 	 * @param size the size of the buffer
 	 * @return the number of copied bytes
 	 */
-	size_t pull(uint8_t *buf,size_t size);
+	size_t pull(void *buf,size_t size);
+
+	/**
+	 * Pulls the next control-packet out of the circular buffer.
+	 *
+	 * @param buf the buffer to write to
+	 * @param size the size of the buffer
+	 * @param seqNo will be set to the used sequence number
+	 * @return the number of copied bytes or 0 if there was no packet
+	 */
+	size_t pullctrl(void *buf,size_t size,seq_type *seqNo);
 
 	/**
 	 * Prints the state of the circular buffer to <os>.

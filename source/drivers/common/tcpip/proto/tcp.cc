@@ -24,9 +24,26 @@
 #include "tcp.h"
 #include "ipv4.h"
 
-#define PRINT_PACKETS	0
-
 TCP::socket_map TCP::_socks;
+
+const char *TCP::flagsToStr(uint8_t flags) {
+	static const char *names[] = {
+		"FIN","SYN","RST","PSH","ACK","URG","???","???"
+	};
+	static char buf[8 * 4 + 1];
+	char *pos = buf;
+	for(int i = 0; i < 8; ++i) {
+		if(flags & (1 << i)) {
+			strcpy(pos,names[i]);
+			pos += 3;
+			*pos++ = ' ';
+		}
+	}
+	if(pos != buf)
+		pos--;
+	*pos = '\0';
+	return buf;
+}
 
 ssize_t TCP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,uint8_t flags,
 		const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,uint32_t ackNo,uint16_t winSize) {
@@ -54,9 +71,7 @@ ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc:
 
 	const size_t total = Ethernet<IPv4<TCP>>().size() + nbytes;
 
-#if PRINT_PACKETS
-	print("Sent [%#02x] seq=%u ack=%u len=%zu",flags,seqNo,ackNo,nbytes);
-#endif
+	PRINT_TCP(srcp,dstp,"sent [%s] seq=%u ack=%u len=%zu",flagsToStr(flags),seqNo,ackNo,nbytes);
 
 	TCP *tcp = &pkt->payload.payload;
 	tcp->srcPort = cputobe16(srcp);
@@ -94,19 +109,27 @@ ssize_t TCP::receive(Link&,const Packet &packet) {
 	const Ethernet<IPv4<TCP>> *pkt = packet.data<const Ethernet<IPv4<TCP>>*>();
 	const IPv4<TCP> *ip = &pkt->payload;
 	const TCP *tcp = &ip->payload;
-	socket_map::iterator it = _socks.find(be16tocpu(tcp->dstPort));
+	uint16_t srcp = be16tocpu(tcp->srcPort);
+	uint16_t dstp = be16tocpu(tcp->dstPort);
 
-#if PRINT_PACKETS
-	print("Received [%#02x] seq=%u ack=%u len=%zu",
-		tcp->ctrlFlags,be32tocpu(tcp->seqNumber),be32tocpu(tcp->ackNumber),
+	uint32_t key = getKey(dstp,srcp);
+	socket_map::iterator it = _socks.find(key);
+	// if there is no socket for the specified remote port, try to find a listening socket on the
+	// local port (with remote=0).
+	if(it == _socks.end()) {
+		key = getKey(dstp,0);
+		it = _socks.find(key);
+	}
+
+	PRINT_TCP(dstp,srcp,"received [%s] seq=%u ack=%u len=%zu",
+		flagsToStr(tcp->ctrlFlags),be32tocpu(tcp->seqNumber),be32tocpu(tcp->ackNumber),
 		be16tocpu(ip->packetSize) - IPv4<>().size() - ((tcp->dataOffset >> 4) * 4));
-#endif
 
 	if(it != _socks.end()) {
 		ipc::Socket::Addr sa;
 		sa.family = ipc::Socket::AF_INET;
 		sa.d.ipv4.addr = pkt->payload.src.value();
-		sa.d.ipv4.port = be16tocpu(tcp->srcPort);
+		sa.d.ipv4.port = srcp;
 		size_t offset = reinterpret_cast<const uint8_t*>(tcp + 1) - packet.data<uint8_t*>();
 		it->second->push(sa,packet,offset);
 	}

@@ -103,6 +103,12 @@ public:
 	explicit Net(const char *path) : _is(path) {
 	}
 
+	/**
+	 * No copying
+	 */
+	Net(const Net&) = delete;
+	Net &operator=(const Net&) = delete;
+
 	void linkAdd(const char *name,const char *device) {
 		int res;
 		_is << CString(name) << CString(device) << SendReceive(MSG_NET_LINK_ADD) >> res;

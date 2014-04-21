@@ -57,7 +57,7 @@ struct FileOpen {
 };
 
 /**
- * The MSG_FILE_OPEN command that is sent by the kernel to devices if shfile() was called on them.
+ * The MSG_DEV_SHFILE command that is sent by the kernel to devices if shfile() was called on them.
  */
 struct FileShFile {
 	struct Request {
@@ -87,7 +87,37 @@ struct FileShFile {
 };
 
 /**
- * The MSG_FILE_OPEN command that is sent by the kernel to devices if read() was called on them.
+ * The MSG_DEV_CREATSIBL command that is sent by the kernel to devices if creatsibl() was called
+ * on them.
+ */
+struct FileCreatSibl {
+	struct Request {
+		static const msgid_t MSG = MSG_DEV_CREATSIBL;
+
+		explicit Request() {
+		}
+		explicit Request(int _nfd,int _arg) : nfd(_nfd), arg(_arg) {
+		}
+
+		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
+			return is << r.nfd << r.arg;
+		}
+		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
+			return is << r.nfd << r.arg;
+		}
+		friend IPCStream &operator>>(IPCStream &is,Request &r) {
+			return is >> r.nfd >> r.arg;
+		}
+
+		int nfd;
+		int arg;
+	};
+
+	typedef DefaultResponse<int> Response;
+};
+
+/**
+ * The MSG_FILE_READ command that is sent by the kernel to devices if read() was called on them.
  */
 struct FileRead {
 	struct Request {
@@ -108,7 +138,7 @@ struct FileRead {
 };
 
 /**
- * The MSG_FILE_OPEN command that is sent by the kernel to devices if write() was called on them.
+ * The MSG_FILE_WRITE command that is sent by the kernel to devices if write() was called on them.
  */
 struct FileWrite {
 	struct Request {

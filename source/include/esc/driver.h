@@ -24,11 +24,12 @@
 #include <stdio.h>
 
 #define DEV_OPEN					1
-#define DEV_READ					2
-#define DEV_WRITE					4
+#define DEV_READ					2		/* cancelable, if DEV_CANCEL is supported */
+#define DEV_WRITE					4		/* cancelable, if DEV_CANCEL is supported */
 #define DEV_CLOSE					8
 #define DEV_SHFILE					16
 #define DEV_CANCEL					32
+#define DEV_CREATSIBL				64		/* cancelable, if DEV_CANCEL is supported */
 
 /* supports read or write, is byte-oriented and random access is not supported */
 #define DEV_TYPE_CHAR				0

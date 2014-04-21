@@ -119,6 +119,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 
 	/* 70 */
 	{cancel,			"cancel",			2},
+	{creatsibl,			"creatsibl",		2},
 	{sysconfstr,		"sysconfstr",		3},
 	{getmsid,			"getmsid",			0},
 	{clonems,			"clonems",			0},

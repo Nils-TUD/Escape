@@ -262,6 +262,14 @@ int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
 	return static_cast<VFSChannel*>(node)->sharefile(pid,this,p,cliaddr,size);
 }
 
+int OpenFile::creatsibl(pid_t pid,OpenFile *sibl,int arg) {
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
+		return -ENOTSUP;
+
+	return static_cast<VFSChannel*>(node)->creatsibl(
+		pid,this,static_cast<VFSChannel*>(sibl->getNode()),arg);
+}
+
 int OpenFile::syncfs(pid_t pid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf buf(buffer,sizeof(buffer));

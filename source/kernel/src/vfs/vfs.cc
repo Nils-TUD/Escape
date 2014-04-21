@@ -607,6 +607,36 @@ errorDir:
 	return err;
 }
 
+int VFS::creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl) {
+	VFSNode *node = file->getNode();
+	if(!IS_CHANNEL(node->getMode()))
+		return -ENOTSUP;
+
+	/* create sibling */
+	VFSChannel *siblChan = createObj<VFSChannel>(pid,node->getParent());
+	if(siblChan == NULL)
+		return -ENOMEM;
+
+	/* open new file for the sibling */
+	int res = openFile(pid,file->getFlags(),siblChan,siblChan->getNo(),VFS_DEV_NO,sibl);
+	if(res < 0) {
+		VFSNode::release(siblChan);
+		VFSNode::release(siblChan);
+		return res;
+	}
+
+	/* the file holds a reference now */
+	VFSNode::release(siblChan);
+
+	/* talk to the driver */
+	res = file->creatsibl(pid,*sibl,arg);
+	if(res < 0) {
+		(*sibl)->close(pid);
+		return res;
+	}
+	return res;
+}
+
 inode_t VFS::createProcess(pid_t pid) {
 	VFSNode *proc = procsNode,*dir,*nn;
 	int res = -ENOMEM;

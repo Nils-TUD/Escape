@@ -279,6 +279,19 @@ A_CHECKRET static inline int cancel(int fd,msgid_t mid) {
 }
 
 /**
+ * Creates a new sibling channel for the channel denoted by <fd>. The channel is not special in any
+ * sense, but only created with the driver knowing the relation to the channel <fd> instead of
+ * opening a new one. Thus, it can be used to associate channels with each other.
+ *
+ * @param fd the file descriptor for an existing channel
+ * @param arg an arbitrary argument that is passed to the driver
+ * @return the file descriptor for the created sibling channel (or a negative error-code)
+ */
+A_CHECKRET static inline int creatsibl(int fd,int arg) {
+	return syscall2(SYSCALL_CREATSIBL,fd,arg);
+}
+
+/**
  * Shares the file, denoted by <mem>, with the device, denoted by <dev>. That is, it sends
  * a message to the device and asks him to join that memory, if he wants to. The parameter <mem>
  * has to point to the beginning of the area where a file has been mmap'd.

@@ -95,30 +95,50 @@ void VFSChannel::discardMsgs() {
 	recvList.deleteAll();
 }
 
-ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
-	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
-	ssize_t res = -ENOENT;
+int VFSChannel::openForDriver() {
 	OpenFile *clifile;
-	Proc *p,*pp;
-	pid_t ppid;
-	Thread *t = Thread::getRunning();
-	msgid_t mid;
-
-	/* give the driver a file-descriptor for this new client; note that we have to do that
-	 * immediatly because in close() we assume that the device has already one reference to it */
 	VFSNode *par = getParent();
-	ppid = par->getOwner();
-	res = VFS::openFile(ppid,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
+	pid_t ppid = par->getOwner();
+	int res = VFS::openFile(ppid,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
 	if(res < 0)
 		return res;
 	/* getByPid() is ok because if the parent-node exists, the owner does always exist, too */
-	pp = Proc::getByPid(ppid);
+	Proc *pp = Proc::getByPid(ppid);
 	fd = FileDesc::assoc(pp,clifile);
 	if(fd < 0) {
 		clifile->close(ppid);
 		return fd;
 	}
+	return 0;
+}
+
+void VFSChannel::closeForDriver() {
+	/* the parent process might be dead now (in this case he would have already closed the file) */
+	VFSNode *par = getParent();
+	pid_t ppid = par->getOwner();
+	Proc *pp = Proc::getRef(ppid);
+	if(pp) {
+		/* the file might have been closed already */
+		OpenFile *clifile = FileDesc::unassoc(pp,fd);
+		if(clifile)
+			clifile->close(ppid);
+		Proc::relRef(pp);
+	}
+}
+
+ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	ssize_t res = -ENOENT;
+	Proc *p;
+	Thread *t = Thread::getRunning();
+	msgid_t mid;
+
+	/* give the driver a file-descriptor for this new client; note that we have to do that
+	 * immediatly because in close() we assume that the device has already one reference to it */
+	res = openForDriver();
+	if(res < 0)
+		return res;
 
 	/* do we need to send an open to the driver? */
 	res = isSupported(DEV_OPEN);
@@ -160,15 +180,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	}
 
 error:
-	/* the parent process might be dead now (in this case he would have already closed the file) */
-	pp = Proc::getRef(ppid);
-	if(pp) {
-		/* the file might have been closed already */
-		clifile = FileDesc::unassoc(pp,fd);
-		if(clifile)
-			clifile->close(ppid);
-		Proc::relRef(pp);
-	}
+	closeForDriver();
 	return res;
 }
 
@@ -270,7 +282,6 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 					flags = 0;
 					continue;
 				}
-				return -EINTR;
 			}
 			return res;
 		}
@@ -325,7 +336,6 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 					flags = 0;
 					continue;
 				}
-				return -EINTR;
 			}
 			return res;
 		}
@@ -400,6 +410,64 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	shmem = cliaddr;
 	shmemSize = size;
 	return 0;
+}
+
+int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
+	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	Thread *t = Thread::getRunning();
+	msgid_t mid;
+	uint flags;
+
+	int res;
+	if((res = isSupported(DEV_CREATSIBL)) < 0)
+		return res;
+
+	/* first, give the driver a file-descriptor for the new channel */
+	res = sibl->openForDriver();
+	if(res < 0)
+		return res;
+
+	/* send msg to driver */
+	ib << ipc::FileCreatSibl::Request(sibl->fd,arg);
+	res = file->sendMsg(pid,MSG_DEV_CREATSIBL,ib.buffer(),ib.pos(),NULL,0);
+	if(res < 0)
+		goto error;
+
+	/* only allow signals during that operation, if we can cancel it */
+	mid = res;
+	flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : 0;
+	while(1) {
+		/* read response */
+		ib.reset();
+		t->addResource();
+		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
+		t->remResource();
+		if(res < 0) {
+			if(res == -EINTR) {
+				int cancelRes = cancel(pid,file,mid);
+				if(cancelRes == 1) {
+					/* if the result is already there, get it, but don't allow signals anymore */
+					flags = 0;
+					continue;
+				}
+			}
+			goto error;
+		}
+
+		ipc::FileCreatSibl::Response r;
+		ib >> r;
+		if(r.res < 0) {
+			res = r.res;
+			goto error;
+		}
+		return 0;
+	}
+	A_UNREACHED;
+
+error:
+	sibl->closeForDriver();
+	return res;
 }
 
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,

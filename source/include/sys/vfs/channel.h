@@ -112,6 +112,17 @@ public:
 	int sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size);
 
 	/**
+	 * Creates a new sibling-channel for <file>.
+	 *
+	 * @param pid the process-id
+	 * @param file the current channel
+	 * @param sibl the sibling channel
+	 * @param arg an arbitrary argument to send to the driver
+	 * @return 0 on success
+	 */
+	int creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg);
+
+	/**
 	 * Sends the stat-message to this channel. This is only used for fs instances.
 	 *
 	 * @param pid the process-id
@@ -134,6 +145,8 @@ protected:
 private:
 	static Message *getMsg(SList<Message> *list,msgid_t mid,ushort flags);
 	int isSupported(int op) const;
+	int openForDriver();
+	void closeForDriver();
 
 	int fd;
 	bool closed;

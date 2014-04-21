@@ -36,6 +36,7 @@
 /* special device messages */
 #define MSG_DEV_SHFILE				54
 #define MSG_DEV_CANCEL				55
+#define MSG_DEV_CREATSIBL			56
 
 /* requests to fs */
 #define MSG_FS_OPEN					100

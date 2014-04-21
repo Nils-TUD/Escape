@@ -148,6 +148,12 @@ public:
 		return node;
 	}
 	/**
+	 * @return the flags
+	 */
+	ushort getFlags() const {
+		return flags;
+	}
+	/**
 	 * @return true if the file was created for a device (and not a client of the device)
 	 */
 	bool isDevice() const {
@@ -267,6 +273,16 @@ public:
 	 * @return 0 on success
 	 */
 	int sharefile(pid_t pid,const char *path,void *cliaddr,size_t size);
+
+	/**
+	 * Creates a new sibling-channel for this channel.
+	 *
+	 * @param pid the process-id
+	 * @param sibl the OpenFile instance for the sibling channel
+	 * @param arg an arbitrary argument to send to the driver
+	 * @return 0 on success
+	 */
+	int creatsibl(pid_t pid,OpenFile *sibl,int arg);
 
 	/**
 	 * Writes all cached blocks of the affected filesystem to disk.

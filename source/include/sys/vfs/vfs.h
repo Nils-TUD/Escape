@@ -32,6 +32,7 @@
 #define DEV_CLOSE					8
 #define DEV_SHFILE					16
 #define DEV_CANCEL					32
+#define DEV_CREATSIBL				64
 
 #define DEV_TYPE_CHAR				0
 #define DEV_TYPE_BLOCK				1
@@ -206,6 +207,17 @@ public:
 	 * @return 0 if ok, negative if an error occurred
 	 */
 	static int createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file);
+
+	/**
+	 * Creates a new sibling-channel for <file>.
+	 *
+	 * @param pid the process-id
+	 * @param file the current channel
+	 * @param arg an arbitrary argument to send to the driver
+	 * @param sibl will be set to the created sibling channel
+	 * @return 0 on success
+	 */
+	static int creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl);
 
 	/**
 	 * Creates a process-node with given pid

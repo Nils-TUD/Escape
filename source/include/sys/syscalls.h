@@ -89,6 +89,7 @@ private:
 	static int sendrecv(Thread *t,IntrptStackFrame *stack);
 	static int cancel(Thread *t,IntrptStackFrame *stack);
 	static int sharefile(Thread *t,IntrptStackFrame *stack);
+	static int creatsibl(Thread *t,IntrptStackFrame *stack);
 	static int stat(Thread *t,IntrptStackFrame *stack);
 	static int fstat(Thread *t,IntrptStackFrame *stack);
 	static int chmod(Thread *t,IntrptStackFrame *stack);

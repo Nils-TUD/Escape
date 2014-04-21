@@ -83,7 +83,7 @@ public:
 		is >> r;
 
 		if(r.count > MTU) {
-			is << -EINVAL << ipc::Reply();
+			is << ipc::FileWrite::Response(-EINVAL) << ipc::Reply();
 			return;
 		}
 

@@ -90,14 +90,33 @@ public:
 	/**
 	 * @return the client with given file-descriptor
 	 */
-	C *get(int fd) {
+	C *operator[](int fd) {
 		typename map_type::iterator it = _clients.find(fd);
 		assert(it != _clients.end());
 		return it->second;
 	}
-	const C *get(int fd) const {
+	const C *operator[](int fd) const {
 		typename map_type::const_iterator it = _clients.find(fd);
 		assert(it != _clients.end());
+		return it->second;
+	}
+
+	/**
+	 * The same as operator[], but throws an exception if the client does not exist.
+	 *
+	 * @return the client with given file-descriptor
+	 * @throws if the client does not exist
+	 */
+	C *get(int fd) {
+		typename map_type::iterator it = _clients.find(fd);
+		if(it == _clients.end())
+			VTHROWE("No client with id " << fd,-ENOENT);
+		return it->second;
+	}
+	const C *get(int fd) const {
+		typename map_type::const_iterator it = _clients.find(fd);
+		if(it == _clients.end())
+			VTHROWE("No client with id " << fd,-ENOENT);
 		return it->second;
 	}
 

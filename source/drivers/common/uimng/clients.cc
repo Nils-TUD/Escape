@@ -35,14 +35,8 @@ UIClient *UIClient::_allclients[MAX_CLIENTS];
 size_t UIClient::_clientCount = 0;
 
 UIClient::UIClient(int f)
-	: Client(f), _idx(-1), _evfd(-1), _randid(-1), _map(), _screen(),
+	: Client(f), _idx(-1), _evfd(-1), _map(), _screen(),
 	  _fb(), _header(), _cursor(), _type(ipc::Screen::MODE_TYPE_TUI) {
-	UIClient *dummy;
-	do {
-		_randid = rand();
-	}
-	while(getByRandId(_randid,&dummy) == 0);
-
 	bool succ = false;
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
 		if(_allclients[i] == NULL) {
@@ -145,45 +139,23 @@ void UIClient::send(const void *msg,size_t size) {
 	::send(_clients[_active]->_evfd,MSG_UIM_EVENT,msg,size);
 }
 
-int UIClient::getByRandId(int randid,UIClient **cli) {
-	*cli = NULL;
-	for(int i = 0; i < MAX_CLIENTS; ++i) {
-		if(_allclients[i] && _allclients[i]->_randid == randid) {
-			if(*cli)
-				return -EEXIST;
-			*cli = _allclients[i];
-		}
-	}
-	return *cli == NULL ? -EINVAL : 0;
-}
-
-size_t UIClient::attach(int randid,int evfd) {
-	UIClient *cli;
-	if(getByRandId(randid,&cli) != 0)
-		VTHROW("No client with randid " << randid);
+int UIClient::attach(int evfd) {
+	if(_evfd != -1)
+		VTHROWE("There is already an event-channel",-EEXIST);
 	if(_clientCount >= MAX_CLIENTS)
 		VTHROW("Max. number of clients reached");
 
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
 		if(_clients[i] == NULL) {
-			_clients[i] = cli;
-			cli->_evfd = evfd;
-			cli->_idx = i;
+			_clients[i] = this;
+			_evfd = evfd;
+			_idx = i;
 			_active = i;
 			_clientCount++;
 			return i;
 		}
 	}
 	A_UNREACHED;
-}
-
-void UIClient::detach(int evfd) {
-	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
-		if(_allclients[i] && _allclients[i]->_evfd == evfd)
-			_allclients[i] = NULL;
-		if(_clients[i] && _clients[i]->_evfd == evfd)
-			_clients[i]->remove();
-	}
 }
 
 void UIClient::remove() {
@@ -196,6 +168,8 @@ void UIClient::remove() {
 		if(_allclients[i] == this)
 			_allclients[i] = NULL;
 	}
+	if(_evfd != -1)
+		close(_evfd);
 	_clients[_idx] = NULL;
 	_evfd = -1;
 	_idx = -1;

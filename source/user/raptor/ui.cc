@@ -89,13 +89,13 @@ static uchar *backup = NULL;
 
 void ui_init(uint cols,uint rows) {
 	/* open uimanager */
-	ui = new ipc::UI("/dev/uim-ctrl");
+	ui = new ipc::UI("/dev/uimng");
 
 	/* find desired mode */
 	mode = ui->findTextMode(cols,rows);
 
 	/* attach to input-channel */
-	uiev = new ipc::UIEvents("/dev/uim-input",*ui);
+	uiev = new ipc::UIEvents(*ui);
 
 	/* create shm */
 	int id = 0;

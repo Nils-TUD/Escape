@@ -140,7 +140,7 @@ public:
 
 private:
 	void getMode(IPCStream &is) {
-		C *c = this->get(is.fd());
+		C *c = (*this)[is.fd()];
 
 		int res = c->mode ? 0 : -EINVAL;
 		is << res;
@@ -150,7 +150,7 @@ private:
 	}
 
 	void setMode(IPCStream &is) {
-		C *c = this->get(is.fd());
+		C *c = (*this)[is.fd()];
 		int modeno,type;
 		bool switchMode;
 		CStringBuf<MAX_PATH_LEN> path;
@@ -180,7 +180,7 @@ private:
 	}
 
 	void setCursor(IPCStream &is) {
-		C *c = this->get(is.fd());
+		C *c = (*this)[is.fd()];
 		if(c->mode) {
 			gpos_t x,y;
 			int cursor;
@@ -190,7 +190,7 @@ private:
 	}
 
 	void update(IPCStream &is) {
-		C *c = this->get(is.fd());
+		C *c = (*this)[is.fd()];
 		gpos_t x,y;
 		gsize_t width,height;
 		if(c->mode) {
@@ -200,7 +200,7 @@ private:
 	}
 
 	void close(IPCStream &is) {
-		C *c = this->get(is.fd());
+		C *c = (*this)[is.fd()];
 		/* better perform outstanding updates to not access a deleted client */
 		performUpdate();
 		setScreenMode(c,"",NULL,ipc::Screen::MODE_TYPE_TUI,false);

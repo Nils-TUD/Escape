@@ -66,7 +66,7 @@
 #define MSG_WIN_ADDLISTENER			307		/* announces a listener for CREATE_EV or DESTROY_EV */
 #define MSG_WIN_REMLISTENER			308		/* removes a listener for CREATE_EV or DESTROY_EV */
 #define MSG_WIN_SET_ACTIVE			309		/* requests that a window is set to the active one */
-#define MSG_WIN_ATTACH				310		/* connect an event-channel to the request-channel */
+#define MSG_WIN_ATTACH				310		/* connect an event-channel to a window */
 #define MSG_WIN_SETMODE				311		/* sets the screen mode */
 #define MSG_WIN_EVENT				312		/* for all events */
 
@@ -91,8 +91,6 @@
 #define MSG_UIM_GETKEYMAP			900		/* gets the current keymap path */
 #define MSG_UIM_SETKEYMAP			901		/* sets a keymap, expects the keymap-path as argument */
 #define MSG_UIM_EVENT				902		/* the message-id for sending events to the listeners */
-#define MSG_UIM_ATTACH				903		/* is used to attach to the ctrl-session */
-#define MSG_UIM_GETID				904		/* get the id to use for attach */
 
 #define MSG_PCI_GET_BY_CLASS		1000	/* searches for a PCI device with given class */
 #define MSG_PCI_GET_BY_ID			1001	/* searches for a PCI device with given id */

@@ -48,7 +48,7 @@ public:
 
 	void cancel(IPCStream &is) {
 		static int count = 0;
-		MyClient *c = get(is.fd());
+		MyClient *c = (*this)[is.fd()];
 		msgid_t mid;
 		is >> mid;
 
@@ -67,7 +67,7 @@ public:
 	}
 
 	void read(IPCStream &is) {
-		MyClient *c = get(is.fd());
+		MyClient *c = (*this)[is.fd()];
 		FileRead::Request r;
 		is >> r;
 

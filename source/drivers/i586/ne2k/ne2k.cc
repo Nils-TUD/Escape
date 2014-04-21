@@ -69,7 +69,7 @@ public:
 	}
 
 	void read(ipc::IPCStream &is) {
-		ipc::Client *c = get(is.fd());
+		ipc::Client *c = (*this)[is.fd()];
 		ipc::FileRead::Request r;
 		is >> r;
 
@@ -92,7 +92,7 @@ public:
 			is >> ipc::ReceiveData(data,r.count);
 		}
 		else
-			data = get(is.fd())->shm() + r.shmemoff;
+			data = (*this)[is.fd()]->shm() + r.shmemoff;
 
 		ssize_t res = _ne2k.send(data,r.count);
 		is << ipc::FileWrite::Response(res) << ipc::Reply();

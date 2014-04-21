@@ -130,7 +130,7 @@ void FSDevice::open(IPCStream &is) {
 }
 
 void FSDevice::read(IPCStream &is) {
-	OpenFile *file = get(is.fd());
+	OpenFile *file = (*this)[is.fd()];
 	size_t offset,count;
 	ssize_t res,shmemoff;
 	is >> offset >> count >> shmemoff;
@@ -158,7 +158,7 @@ void FSDevice::read(IPCStream &is) {
 }
 
 void FSDevice::write(IPCStream &is) {
-	OpenFile *file = get(is.fd());
+	OpenFile *file = (*this)[is.fd()];
 	size_t offset,count;
 	ssize_t res,shmemoff;
 	is >> offset >> count >> shmemoff;
@@ -182,7 +182,7 @@ void FSDevice::write(IPCStream &is) {
 }
 
 void FSDevice::close(IPCStream &is) {
-	OpenFile *file = get(is.fd());
+	OpenFile *file = (*this)[is.fd()];
 	_fs->close(_fs->handle,file->ino);
 	ClientDevice::close(is);
 }
@@ -205,7 +205,7 @@ void FSDevice::stat(IPCStream &is) {
 
 void FSDevice::istat(IPCStream &is) {
 	sFileInfo info;
-	int res = _fs->stat(_fs->handle,get(is.fd())->ino,&info);
+	int res = _fs->stat(_fs->handle,(*this)[is.fd()]->ino,&info);
 	is << res << info << Reply();
 }
 

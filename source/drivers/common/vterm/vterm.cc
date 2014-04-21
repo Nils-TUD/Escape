@@ -135,7 +135,7 @@ int main(int argc,char **argv) {
 		error("Unable to init vterms");
 
 	/* open uimng's input device */
-	ipc::UIEvents uiev("/dev/uim-input",*vterm.ui);
+	ipc::UIEvents uiev(*vterm.ui);
 
 	/* set video mode */
 	vtSetVideoMode(modeid);
@@ -178,7 +178,7 @@ static int vtermThread(void *arg) {
 }
 
 static int vtInit(int id,const char *name,uint cols,uint rows) {
-	vterm.ui = new ipc::UI("/dev/uim-ctrl");
+	vterm.ui = new ipc::UI("/dev/uimng");
 	modes = vterm.ui->getModes();
 
 	/* find a suitable mode */

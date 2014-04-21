@@ -77,7 +77,7 @@ public:
 
 	void shfile(IPCStream &is) {
 		char path[MAX_PATH_LEN];
-		Client *c = get(is.fd());
+		Client *c = (*this)[is.fd()];
 		FileShFile::Request r(path,sizeof(path));
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
@@ -96,7 +96,7 @@ public:
 		is >> r;
 		assert(!is.error());
 
-		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (r.shmemoff >> 1);
+		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)(*this)[is.fd()]->shm() + (r.shmemoff >> 1);
 		size_t res = handleRead(_ataDev,_part,buf,r.offset,r.count);
 
 		is << FileRead::Response(res) << Reply();
@@ -111,7 +111,7 @@ public:
 			is >> ReceiveData(buffer,sizeof(buffer));
 		assert(!is.error());
 
-		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)get(is.fd())->shm() + (r.shmemoff >> 1);
+		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)(*this)[is.fd()]->shm() + (r.shmemoff >> 1);
 		size_t res = handleWrite(_ataDev,_part,buf,r.offset,r.count);
 
 		is << FileWrite::Response(res) << Reply();

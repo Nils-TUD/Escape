@@ -244,7 +244,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* connect to ui-manager */
-	inputData.ui = new ipc::UI("/dev/uim-ctrl");
+	inputData.ui = new ipc::UI("/dev/uimng");
 
 	/* create event-device */
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
@@ -257,7 +257,7 @@ int main(int argc,char *argv[]) {
 	WinMngDevice windev(path,argv[3],0111);
 
 	/* open input device and attach */
-	inputData.uiev = new ipc::UIEvents("/dev/uim-input",*inputData.ui);
+	inputData.uiev = new ipc::UIEvents(*inputData.ui);
 
 	/* init window stuff */
 	inputData.winmng = path;

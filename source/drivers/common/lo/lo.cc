@@ -63,7 +63,7 @@ public:
 	}
 
 	void read(ipc::IPCStream &is) {
-		ipc::Client *c = get(is.fd());
+		ipc::Client *c = (*this)[is.fd()];
 		ipc::FileRead::Request r;
 		is >> r;
 
@@ -78,7 +78,7 @@ public:
 	}
 
 	void write(ipc::IPCStream &is) {
-		ipc::Client *c = get(is.fd());
+		ipc::Client *c = (*this)[is.fd()];
 		ipc::FileWrite::Request r;
 		is >> r;
 

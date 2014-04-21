@@ -51,16 +51,10 @@ public:
 	}
 
 	/**
-	 * @return the random id for this UI that can be used to attach the event-channel.
-	 * @throws if the operation failed
+	 * No copying
 	 */
-	int getId() {
-		int res;
-		_is << SendReceive(MSG_UIM_GETID) >> res;
-		if(res < 0)
-			VTHROWE("getId()",res);
-		return res;
-	}
+	UI(const UI&) = delete;
+	UI &operator=(const UI&) = delete;
 
 	/**
 	 * @return the currently set keymap file
@@ -113,18 +107,22 @@ public:
 	};
 
 	/**
-	 * Opens the given device and attaches to the given UI-connection
+	 * Attaches this event-channel to the given UI-connection
 	 *
 	 * @param path the path to the device
 	 * @param ui the UI-connection
 	 * @throws if the open failed
 	 */
-	explicit UIEvents(const char *path,UI &ui) : _is(path) {
-		int res;
-		_is << ui.getId() << SendReceive(MSG_UIM_ATTACH) >> res;
-		if(res < 0)
-			VTHROWE("attach()",res);
+	explicit UIEvents(UI &ui) : _is(creatsibl(ui.fd(),0)) {
+		if(_is.fd() < 0)
+			VTHROWE("creatsibl(" << ui.fd() << ",0)",_is.fd());
 	}
+
+	/**
+	 * No copying
+	 */
+	UIEvents(const UIEvents&) = delete;
+	UIEvents &operator=(const UIEvents&) = delete;
 
 	/**
 	 * Reads the next event from this channel.

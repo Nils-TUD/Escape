@@ -18,5 +18,4 @@ tcpip
 	/dev/socket 0770 network
 	/dev/tcpip 0110 network
 uimng /dev/vga /dev/vesa
-	/dev/uim-ctrl 0110 input
-	/dev/uim-input 0110 input
+	/dev/uimng 0110 input

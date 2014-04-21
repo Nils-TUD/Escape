@@ -32,10 +32,10 @@
 class UIMngDevice : public ipc::ClientDevice<UIClient> {
 public:
 	explicit UIMngDevice(const char *name,mode_t mode,std::mutex &mutex)
-		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE), _mutex(mutex) {
+		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CREATSIBL | DEV_CLOSE), _mutex(mutex) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&UIMngDevice::open));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&UIMngDevice::close),false);
-		set(MSG_UIM_GETID,std::make_memfun(this,&UIMngDevice::getId));
+		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&UIMngDevice::creatsibl));
 		set(MSG_UIM_GETKEYMAP,std::make_memfun(this,&UIMngDevice::getKeymap));
 		set(MSG_UIM_SETKEYMAP,std::make_memfun(this,&UIMngDevice::setKeymap));
 		set(MSG_SCR_GETMODES,std::make_memfun(this,&UIMngDevice::getModes));
@@ -59,9 +59,20 @@ public:
 		ipc::ClientDevice<UIClient>::close(is);
 	}
 
-	void getId(ipc::IPCStream &is) {
+	void creatsibl(ipc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		is << c->randId() << ipc::Reply();
+		ipc::FileCreatSibl::Request r;
+		is >> r;
+
+		std::lock_guard<std::mutex> guard(_mutex);
+		c->attach(r.nfd);
+
+		/* update header */
+		gsize_t width,height;
+		if(header_update(c,&width,&height))
+			c->screen()->update(0,0,width,height);
+
+		is << ipc::FileCreatSibl::Response(0) << ipc::Reply();
 	}
 
 	void getKeymap(ipc::IPCStream &is) {
@@ -155,45 +166,6 @@ public:
 			y += header_getHeight(c->type());
 			c->screen()->update(x,y,w,h);
 		}
-	}
-
-private:
-	std::mutex &_mutex;
-};
-
-class UIMngEvDevice : public ipc::Device {
-public:
-	explicit UIMngEvDevice(const char *name,mode_t mode,std::mutex &mutex)
-		: Device(name,mode,DEV_TYPE_SERVICE,DEV_CLOSE), _mutex(mutex) {
-		set(MSG_UIM_ATTACH,std::make_memfun(this,&UIMngEvDevice::attach));
-		set(MSG_FILE_CLOSE,std::make_memfun(this,&UIMngEvDevice::close));
-	}
-
-	void attach(ipc::IPCStream &is) {
-		int randid;
-		is >> randid;
-
-		/* TODO actually, we should remove the entire client if this failed to make it
-		 * harder to hijack a foreign session via brute-force. but this would destroy
-		 * our lock-strategy because we assume currently that only the other device
-		 * destroys the session on close. */
-		{
-			std::lock_guard<std::mutex> guard(_mutex);
-			size_t idx = UIClient::attach(randid,is.fd());
-			/* update header */
-			gsize_t width,height;
-			UIClient *c = UIClient::getByIdx(idx);
-			if(header_update(c,&width,&height))
-				c->screen()->update(0,0,width,height);
-		}
-
-		is << 0 << ipc::Reply();
-	}
-
-	void close(ipc::IPCStream &is) {
-		std::lock_guard<std::mutex> guard(_mutex);
-		UIClient::detach(is.fd());
-		ipc::Device::close(is);
 	}
 
 private:

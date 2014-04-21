@@ -45,7 +45,6 @@
 static int mouseClientThread(void *arg);
 static int kbClientThread(void *arg);
 static int ctrlThread(A_UNUSED void *arg);
-static int inputThread(A_UNUSED void *arg);
 static int headerThread(A_UNUSED void *arg);
 
 static std::mutex mutex;
@@ -67,10 +66,8 @@ int main(int argc,char *argv[]) {
 		error("Unable to start thread for reading from kb");
 	if(startthread(mouseClientThread,NULL) < 0)
 		error("Unable to start thread for reading from mouse");
-	if(startthread(inputThread,NULL) < 0)
-		error("Unable to start thread for handling uim-input");
 	if(startthread(ctrlThread,NULL) < 0)
-		error("Unable to start thread for handling uim-ctrl");
+		error("Unable to start thread for handling uimng");
 	if(startthread(headerThread,NULL) < 0)
 		error("Unable to start thread for drawing the header");
 
@@ -184,17 +181,11 @@ static int kbClientThread(A_UNUSED void *arg) {
 }
 
 static int ctrlThread(A_UNUSED void *arg) {
-	UIMngDevice dev("/dev/uim-ctrl",0110,mutex);
+	UIMngDevice dev("/dev/uimng",0110,mutex);
 
 	/* create first client */
 	keys_createTextConsole();
 
-	dev.loop();
-	return 0;
-}
-
-static int inputThread(A_UNUSED void *arg) {
-	UIMngEvDevice dev("/dev/uim-input",0110,mutex);
 	dev.loop();
 	return 0;
 }

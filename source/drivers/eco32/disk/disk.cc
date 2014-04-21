@@ -92,7 +92,7 @@ public:
 
 	void shfile(IPCStream &is) {
 		char path[MAX_PATH_LEN];
-		Client *c = get(is.fd());
+		Client *c = (*this)[is.fd()];
 		FileShFile::Request r(path,sizeof(path));
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
@@ -113,7 +113,7 @@ public:
 
 		size_t roffset = ROUND_DN(r.offset,SECTOR_SIZE);
 		size_t rcount = ROUND_UP(r.count,SECTOR_SIZE);
-		void *buf = r.shmemoff == -1 ? (void*)buffer : get(is.fd())->shm() + r.shmemoff;
+		void *buf = r.shmemoff == -1 ? (void*)buffer : (*this)[is.fd()]->shm() + r.shmemoff;
 		ssize_t res = 0;
 		if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 			if(r.shmemoff != -1 || rcount <= MAX_RW_SIZE) {
@@ -136,7 +136,7 @@ public:
 
 		size_t roffset = ROUND_DN(r.offset,SECTOR_SIZE);
 		size_t rcount = ROUND_UP(r.count,SECTOR_SIZE);
-		void *buf = r.shmemoff == -1 ? (void*)buffer : get(is.fd())->shm() + r.shmemoff;
+		void *buf = r.shmemoff == -1 ? (void*)buffer : (*this)[is.fd()]->shm() + r.shmemoff;
 		ssize_t res = 0;
 		if(roffset + rcount <= partCap && roffset + rcount > roffset) {
 			if(r.shmemoff != -1 || rcount <= MAX_RW_SIZE) {

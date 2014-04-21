@@ -9,5 +9,4 @@ null
 keyb
 	/dev/keyb 0110 input
 uimng /dev/vga
-	/dev/uim-ctrl 0110 input
-	/dev/uim-input 0110 input
+	/dev/uimng 0110 input

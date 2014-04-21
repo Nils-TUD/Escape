@@ -61,17 +61,12 @@ public:
 		if(idx != _active && exists(idx))
 			reactivate(_clients[idx],getActive(),getOldMode());
 	}
-	static size_t attach(int randId,int evfd);
-	static void detach(int evfd);
 
 	explicit UIClient(int f);
 	~UIClient();
 
 	bool isActive() const {
 		return _idx == _active;
-	}
-	int randId() const {
-		return _randid;
 	}
 
 	const sKeymap *keymap() const {
@@ -101,12 +96,12 @@ public:
 		return _header;
 	}
 
+	int attach(int evfd);
 	void setMode(int type,const ipc::Screen::Mode &mode,ipc::Screen *scr,const char *file,bool set);
 	void setCursor(gpos_t x,gpos_t y,int cursor);
 	void remove();
 
 private:
-	static int getByRandId(int randid,UIClient **cli);
 	static void switchClient(int incr);
 	static int getOldMode() {
 		UIClient *active = getActive();
@@ -119,7 +114,6 @@ private:
 
 	size_t _idx;
 	int _evfd;
-	int _randid;
 	sKeymap *_map;
 	ipc::Screen *_screen;
 	ipc::FrameBuffer *_fb;

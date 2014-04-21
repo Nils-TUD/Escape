@@ -138,7 +138,6 @@ private:
 	/* hide these members since they are not supported */
 	using UI::setCursor;
 	using UI::update;
-	using UI::getId;
 };
 
 }

@@ -33,7 +33,7 @@ public:
 	}
 
 	void read(IPCStream &is) {
-		Client *c = get(is.fd());
+		Client *c = (*this)[is.fd()];
 		FileRead::Request r;
 		is >> r;
 		assert(!is.error());

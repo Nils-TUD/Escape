@@ -165,7 +165,7 @@ private:
 		handleControlMsg(is,MSG_VT_RESTORE,0,0);
 	}
 	void setShellPid(IPCStream &is) {
-		int pid;
+		pid_t pid;
 		is >> pid;
 		handleControlMsg(is,MSG_VT_SHELLPID,pid,0);
 	}

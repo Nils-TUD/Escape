@@ -130,6 +130,10 @@ bool Progress::connect() {
 	if(_scr)
 		return true;
 
+	sFileInfo info;
+	if(stat("/dev/vga",&info) < 0)
+		return false;
+
 	// if this fails, try again later
 	try {
 		_scr = new ipc::Screen("/dev/vga");

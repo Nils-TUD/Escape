@@ -34,7 +34,9 @@
 
 using namespace std;
 
-static void sighandler(int) {
+static void sighandler(int sig) {
+	// re-announce handler
+	signal(sig,sighandler);
 }
 
 namespace gui {

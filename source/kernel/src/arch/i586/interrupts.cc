@@ -169,7 +169,7 @@ void Interrupts::syscall(IntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(EXPECT_FALSE(t->hasSignalQuick()))
+	if(EXPECT_FALSE(t->hasSignal()))
 		UEnv::handleSignal(t,stack);
 	/* if we should die, don't continue here. otherwise we will continue until we schedule *and* we
 	 * don't have any resources taken in the kernel (which might take some time). */
@@ -202,7 +202,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	if(EXPECT_TRUE(level == 1)) {
 		if(EXPECT_FALSE(t->haveHigherPrio() || (t->getFlags() & T_WILL_DIE)))
 			Thread::switchAway();
-		if(EXPECT_FALSE(t->hasSignalQuick()))
+		if(EXPECT_FALSE(t->hasSignal()))
 			UEnv::handleSignal(t,stack);
 	}
 

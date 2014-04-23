@@ -105,7 +105,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 		 * don't have any resources taken in the kernel (which might take some time). */
 		if(t->haveHigherPrio() || (t->getFlags() & T_WILL_DIE))
 			Thread::switchAway();
-		if(t->hasSignalQuick())
+		if(t->hasSignal())
 			UEnv::handleSignal(t,stack);
 	}
 

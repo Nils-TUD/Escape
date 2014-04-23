@@ -560,34 +560,23 @@ void ProcBase::exit(int exitCode) {
 void ProcBase::segFault() {
 	Thread *t = Thread::getRunning();
 	addSignalFor(t->getProc()->pid,SIG_SEGFAULT);
-	/* make sure that next time this exception occurs, the process is killed immediatly. otherwise
-	 * we might get in an endless-loop */
-	Signals::unsetHandler(t->getTid(),SIG_SEGFAULT);
 }
 
-void ProcBase::addSignalFor(pid_t pid,int signal) {
+int ProcBase::addSignalFor(pid_t pid,int signal) {
 	Proc *p = request(pid,PLOCK_PROG);
-	if(p) {
-		bool sent = false;
-		/* don't send a signal to processes that are dying */
-		if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
-			release(p,PLOCK_PROG);
-			return;
-		}
+	if(!p)
+		return -ENOENT;
 
-		for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
-			if(Signals::addSignalFor((*pt)->getTid(),signal))
-				sent = true;
-		}
+	/* don't send a signal to processes that are dying */
+	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
 		release(p,PLOCK_PROG);
-
-		/* no handler and fatal? terminate proc! */
-		if(!sent && Signals::isFatal(signal)) {
-			terminate(pid,1,signal);
-			if(pid == getRunning())
-				Thread::switchAway();
-		}
+		return -ENOENT;
 	}
+
+	for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt)
+		Signals::addSignalFor(*pt,signal);
+	release(p,PLOCK_PROG);
+	return 0;
 }
 
 void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
@@ -727,7 +716,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 		childLock.up();
 		Thread::switchAway();
 		/* don't continue here if we were interrupted by a signal */
-		if(t->hasSignalQuick())
+		if(t->hasSignal())
 			return -EINTR;
 		childLock.down();
 		res = getExitState(p->pid,state);

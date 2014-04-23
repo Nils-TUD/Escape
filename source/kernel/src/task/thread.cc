@@ -110,11 +110,8 @@ void ThreadBase::initProps() {
 	evobject = 0;
 	waitstart = 0;
 	ignoreSignals = 0;
-	sigHandler = NULL;
-	currentSignal = 0;
-	pending.count = 0;
-	pending.first = NULL;
-	pending.last = NULL;
+	memset(sigHandler,0,sizeof(sigHandler));
+	sigmask = 0;
 	intrptLevel = 0;
 	threadDir = 0;
 	cpu = 0;
@@ -289,7 +286,7 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
 	if(cloneProc)
-		Signals::cloneHandler(src->getTid(),t->getTid());
+		memcpy(t->sigHandler,src->sigHandler,sizeof(src->sigHandler));
 
 	/* insert in VFS; thread needs to be inserted for it */
 	t->threadDir = VFS::createThread(t->getTid());
@@ -302,7 +299,6 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 	return 0;
 
 errAppendIdle:
-	Signals::removeHandlerFor(t->getTid());
 	freeArch(t);
 errClone:
 	if(t->tlsRegion != NULL)
@@ -333,7 +329,6 @@ void ThreadBase::kill() {
 	/* remove from all modules we may be announced */
 	makeUnrunnable();
 	Timer::removeThread(tid);
-	Signals::removeHandlerFor(tid);
 	freeArch(static_cast<Thread*>(this));
 	VFS::removeThread(tid);
 
@@ -383,6 +378,7 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("Events = ");
 	this->printEvMask(os);
 	os.writef("\n");
+	Signals::print(static_cast<const Thread*>(this),os);
 	os.writef("LastCPU = %d\n",cpu);
 	os.writef("TlsRegion = %p, ",tlsRegion ? tlsRegion->virt() : 0);
 	for(size_t i = 0; i < STACK_REG_COUNT; i++) {

@@ -443,6 +443,7 @@ static bool ast_catchZombie(void) {
 
 static void ast_sigChildHndl(A_UNUSED int sig) {
 	zombies++;
+	signal(SIG_CHILD_TERM,ast_sigChildHndl);
 }
 
 static void ast_removeProc(sJob *p,int res) {

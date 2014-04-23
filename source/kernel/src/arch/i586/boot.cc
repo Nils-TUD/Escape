@@ -74,7 +74,6 @@ static const BootTask tasks[] = {
 	{"Initializing interrupts...",Interrupts::init},
 	{"Initializing IDT...",IDT::init},
 	{"Initializing timer...",Timer::init},
-	{"Initializing signal handling...",Signals::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 bool Boot::loadedMods = false;

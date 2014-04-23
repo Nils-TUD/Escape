@@ -427,16 +427,10 @@ public:
 	}
 
 	/**
-	 * This is the quick way of checking for signals. Since this is done without locking, it is
-	 * possible that in this moment a signal is added and we miss it. But this isn't bad because
-	 * we'll simply handle it later, as we would have anyway if it had arrived a bit later.
-	 * It might also mean that there actually is no signal to handle because we're currently handling
-	 * one.
-	 *
 	 * @return whether there is a signal to handle
 	 */
-	bool hasSignalQuick() const {
-		return pending.count > 0;
+	bool hasSignal() const {
+		return !ignoreSignals && sigmask != 0;
 	}
 
 	/**
@@ -682,11 +676,9 @@ protected:
 	/* the process we belong to */
 	Proc *proc;
 	/* the signal-data, managed by the signals-module */
-	Signals::handler_func *sigHandler;
-	/* list of pending signals */
-	Signals::PendingQueue pending;
-	/* the signal that the thread is currently handling (if > 0) */
-	int currentSignal;
+	Signals::handler_func sigHandler[SIG_COUNT];
+	/* mask of pending signals */
+	uint32_t sigmask;
 	/* the event the thread waits for (if waiting) */
 	uint event;
 	evobj_t evobject;
@@ -743,7 +735,8 @@ private:
 
 #ifdef __i386__
 #include <sys/arch/i586/task/thread.h>
-static_assert(sizeof(Thread) <= 256,"Thread is too big");
+// TODO TODO lower that again
+static_assert(sizeof(Thread) <= 512,"Thread is too big");
 #endif
 #ifdef __eco32__
 #include <sys/arch/eco32/task/thread.h>
@@ -874,7 +867,7 @@ inline void ThreadBase::removeRegions(bool remStack) {
 			stackRegions[i] = NULL;
 	}
 	/* remove all signal-handler since we've removed the code to handle signals */
-	Signals::removeHandlerFor(tid);
+	memset(sigHandler,0,sizeof(sigHandler));
 }
 
 inline frameno_t ThreadBase::getFrame() {

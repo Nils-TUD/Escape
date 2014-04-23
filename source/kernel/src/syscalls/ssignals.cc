@@ -49,20 +49,16 @@ int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 		if(EXPECT_FALSE(!Signals::canHandle(signal)))
 			SYSC_ERROR(stack,(long)SIG_ERR);
 
-		if(handler == SIG_DFL)
-			old = Signals::unsetHandler(t->getTid(),signal);
-		else {
-			if(EXPECT_FALSE(Signals::setHandler(t->getTid(),signal,handler,&old) < 0))
-				SYSC_ERROR(stack,(long)SIG_ERR);
-		}
+		old = Signals::setHandler(t,signal,handler);
 	}
+	if(old == SIG_ERR)
+		SYSC_ERROR(stack,(long)old);
 	SYSC_RET1(stack,(long)old);
 }
 
-int Syscalls::acksignal(Thread *t,IntrptStackFrame *stack) {
+int Syscalls::acksignal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res;
-	int signal = Signals::ackHandling(t->getTid());
-	if(EXPECT_FALSE((res = UEnv::finishSignalHandler(stack,signal)) < 0))
+	if(EXPECT_FALSE((res = UEnv::finishSignalHandler(stack)) < 0))
 		SYSC_ERROR(stack,res);
 	/* we don't set the error-code on the stack here */
 	return 0;
@@ -75,9 +71,8 @@ int Syscalls::kill(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!Signals::canSend(signal)))
 		SYSC_ERROR(stack,-EINVAL);
 
-	if(pid != INVALID_PID)
-		Proc::addSignalFor(pid,signal);
-	else
-		Signals::addSignal(signal);
+	int res = Proc::addSignalFor(pid,signal);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }

@@ -139,12 +139,13 @@ bool TimerBase::intrpt() {
 
 			timeInc -= l->time;
 			/* wake up thread */
+			Thread *t = Thread::getById(l->tid);
 			if(l->block) {
-				Thread::getById(l->tid)->unblock();
+				t->unblock();
 				foundThread = true;
 			}
 			else
-				Signals::addSignalFor(l->tid,SIG_ALARM);
+				Signals::addSignalFor(t,SIG_ALARM);
 			/* remove from list */
 			listener = l->next;
 			Listener *tl = l->next;

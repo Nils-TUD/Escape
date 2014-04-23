@@ -31,7 +31,7 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
+int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	memcpy(stack->r,sp,REG_COUNT * sizeof(uint32_t));
 	return 0;

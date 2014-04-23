@@ -50,7 +50,7 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 	stack->eax = sig;
 }
 
-int UEnvBase::finishSignalHandler(IntrptStackFrame *stack,A_UNUSED int signal) {
+int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 	uint32_t *esp = (uint32_t*)stack->getSP();
 	if(!PageDir::isInUserSpace((uintptr_t)esp,9 * sizeof(uint32_t))) {
 		Proc::segFault();

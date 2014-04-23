@@ -24,9 +24,9 @@
 
 #define SIG_COUNT			10
 
-#define SIG_IGN				((fSignal)-3)			/* ignore signal */
-#define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
+#define SIG_IGN				((fSignal)-2)			/* ignore signal */
 #define SIG_ERR				((fSignal)-1)			/* error-return */
+#define SIG_DFL				((fSignal)0)			/* reset to default behaviour */
 
 /* the signals */
 #define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
@@ -68,12 +68,12 @@ extern "C" {
  * @param handler the new handler-function
  * @return the previous handler-function or SIG_ERR
  */
-A_CHECKRET static inline fSignal signal(int sig,fSignal handler) {
+static inline fSignal signal(int sig,fSignal handler) {
 	return (fSignal)syscall2(SYSCALL_SETSIGH,sig,(ulong)handler);
 }
 
 /**
- * Sends the given signal to given process (interrupts can't be sended)
+ * Sends the given signal to given process
  *
  * @param pid the process-id
  * @param signal the signal

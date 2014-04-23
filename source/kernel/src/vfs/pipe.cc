@@ -82,7 +82,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 
 		Thread::switchAway();
 
-		if(t->hasSignalQuick())
+		if(t->hasSignal())
 			return -EINTR;
 		lock.down();
 		if(!isAlive()) {

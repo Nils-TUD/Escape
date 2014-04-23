@@ -41,10 +41,9 @@ public:
 	 * Finishes the signal-handling-process
 	 *
 	 * @param stack the interrupt-stack-frame
-	 * @param signal the handled signal
 	 * @return 0 on success
 	 */
-	static int finishSignalHandler(IntrptStackFrame *stack,int signal);
+	static int finishSignalHandler(IntrptStackFrame *stack);
 
 	/**
 	 * Setups the user-stack for given interrupt-stack, when starting the current process

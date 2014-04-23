@@ -214,8 +214,9 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param signal the signal
+	 * @return 0 on success
 	 */
-	static void addSignalFor(pid_t pid,int signal);
+	static int addSignalFor(pid_t pid,int signal);
 
 	/**
 	 * Copies the arguments (for exec) in <args> to <*argBuffer> and takes care that everything

@@ -106,7 +106,7 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
-			if(old->getState() != Thread::ZOMBIE && Signals::hasSignalFor(old->getTid())) {
+			if(old->getState() != Thread::ZOMBIE && old->hasSignal()) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
 				old->waitstart = 0;

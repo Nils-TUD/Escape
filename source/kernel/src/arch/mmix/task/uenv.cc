@@ -37,7 +37,7 @@
 #define KEYBOARD_CTRL		0
 #define KEYBOARD_IEN		0x02
 
-int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack,A_UNUSED int signal) {
+int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */

@@ -61,7 +61,7 @@ static void printffl(const char *fmt,...) {
 }
 
 static void sigUsr1(A_UNUSED int sig) {
-	/* ignore */
+	signal(SIG_USR1,sigUsr1);
 }
 
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {

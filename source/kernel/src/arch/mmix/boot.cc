@@ -55,7 +55,6 @@ static const BootTask tasks[] = {
 	{"Initializing scheduler...",Sched::init},
 	{"Start logging to VFS...",Log::vfsIsReady},
 	{"Initializing timer...",Timer::init},
-	{"Initializing signal handling...",Signals::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 bool Boot::loadedMods = false;

@@ -22,9 +22,23 @@
 #include <esc/common.h>
 
 template<typename T, typename Y>
-T Atomic::add(T volatile *ptr, Y value) {
+T Atomic::fetch_and_add(T volatile *ptr, Y value) {
 	T old = *ptr;
 	*ptr += value;
+	return old;
+}
+
+template<typename T,typename Y>
+T Atomic::fetch_and_or(T volatile *ptr,Y value) {
+	T old = *ptr;
+	*ptr |= value;
+	return old;
+}
+
+template<typename T,typename Y>
+T Atomic::fetch_and_and(T volatile *ptr,Y value) {
+	T old = *ptr;
+	*ptr &= value;
 	return old;
 }
 

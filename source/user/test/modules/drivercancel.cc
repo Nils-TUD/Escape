@@ -81,6 +81,7 @@ static void sigusr1(int) {
 	dev->stop();
 }
 static void sigusr2(int) {
+	signal(SIG_USR2,sigusr2);
 }
 
 static int clientThread(void*) {

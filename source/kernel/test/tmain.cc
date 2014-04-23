@@ -45,7 +45,6 @@ extern sTestModule tModRBuffer;
 extern sTestModule tModSched;
 extern sTestModule tModString;
 extern sTestModule tModVFSn;
-extern sTestModule tModSignals;
 extern sTestModule tModEscCodes;
 extern sTestModule tModSwapMap;
 extern sTestModule tModVmm;
@@ -93,7 +92,6 @@ void bspstart(BootInfo *bootinfo) {
 	test_register(&tModSched);
 	test_register(&tModString);
 	test_register(&tModVFSn);
-	test_register(&tModSignals);
 	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);

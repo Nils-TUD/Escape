@@ -21,12 +21,22 @@
 
 #include <esc/common.h>
 
-template<typename T, typename Y>
-T Atomic::add(T volatile *ptr, Y value) {
-	return __sync_fetch_and_add(ptr, value);
+template<typename T,typename Y>
+T Atomic::fetch_and_add(T volatile *ptr,Y value) {
+	return __sync_fetch_and_add(ptr,value);
 }
 
-template<typename T, typename Y>
-bool Atomic::cmpnswap(T volatile *ptr, Y oldval, Y newval) {
-	return __sync_bool_compare_and_swap(ptr, oldval, newval);
+template<typename T,typename Y>
+T Atomic::fetch_and_or(T volatile *ptr,Y value) {
+	return __sync_fetch_and_or(ptr,value);
+}
+
+template<typename T,typename Y>
+T Atomic::fetch_and_and(T volatile *ptr,Y value) {
+	return __sync_fetch_and_and(ptr,value);
+}
+
+template<typename T,typename Y>
+bool Atomic::cmpnswap(T volatile *ptr,Y oldval,Y newval) {
+	return __sync_bool_compare_and_swap(ptr,oldval,newval);
 }

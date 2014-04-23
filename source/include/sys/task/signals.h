@@ -24,9 +24,9 @@
 
 #define SIG_COUNT			10
 
-#define SIG_IGN				((Signals::handler_func)-3)			/* ignore signal */
-#define SIG_DFL				((Signals::handler_func)-2)			/* reset to default behaviour */
+#define SIG_IGN				((Signals::handler_func)-2)			/* ignore signal */
 #define SIG_ERR				((Signals::handler_func)-1)			/* error-return */
+#define SIG_DFL				((Signals::handler_func)0)			/* reset to default behaviour */
 
 /* the signals */
 #define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
@@ -41,10 +41,6 @@
 #define SIG_USR1			8						/* can be used for everything */
 #define SIG_USR2			9						/* can be used for everything */
 
-#define SIG_CHECK_CUR		0
-#define SIG_CHECK_OTHER		1
-#define SIG_CHECK_NO		2
-
 class Thread;
 class ThreadBase;
 class OStream;
@@ -57,26 +53,6 @@ class Signals {
 public:
 	/* signal-handler-signature */
 	typedef void (*handler_func)(int);
-
-private:
-	struct PendingSig {
-		int sig;
-		PendingSig *next;
-	};
-
-	struct PendingQueue {
-		PendingSig *first;
-		PendingSig *last;
-		size_t count;
-	};
-
-	static const size_t SIGNAL_COUNT	= 8192;
-
-public:
-	/**
-	 * Initializes the signal-handling
-	 */
-	static void init();
 
 	/**
 	 * Checks whether we can handle the given signal
@@ -103,86 +79,32 @@ public:
 	/**
 	 * Sets the given signal-handler for <signal>
 	 *
-	 * @param tid the thread-id
+	 * @param t the current thread
 	 * @param signal the signal
 	 * @param func the handler-function
 	 * @param old will be set to the old handler
 	 * @return 0 on success
 	 */
-	static int setHandler(tid_t tid,int signal,handler_func func,handler_func *old);
-
-	/**
-	 * Removes the signal-handler for <signal>
-	 *
-	 * @param tid the thread-id
-	 * @param signal the signal
-	 * @return the old handler
-	 */
-	static handler_func unsetHandler(tid_t tid,int signal);
-
-	/**
-	 * Removes all handler for the given thread
-	 *
-	 * @param tid the thread-id
-	 */
-	static void removeHandlerFor(tid_t tid);
-
-	/**
-	 * Clones all handler of <parent> for <child>.
-	 *
-	 * @param parent the parent-thread-id
-	 * @param child the child-thread-id
-	 */
-	static void cloneHandler(tid_t parent,tid_t child);
-
-	/**
-	 * Checks whether <tid> has a signal
-	 *
-	 * @param tid the thread-id
-	 * @return true if so
-	 */
-	static bool hasSignalFor(tid_t tid);
+	static handler_func setHandler(Thread *t,int signal,handler_func func);
 
 	/**
 	 * Checks whether the current thread should handle a signal. If so, it sets *sig and *handler
 	 * correspondingly.
 	 *
-	 * @param tid the thread-id of the current thread
+	 * @param t the current thread
 	 * @param sig will be set to the signal to handle, if the current thread has a signal
 	 * @param handler will be set to the handler, if the current thread has a signal
 	 * @return true if there is a signal to handle
 	 */
-	static bool checkAndStart(tid_t tid,int *sig,handler_func *handler);
+	static bool checkAndStart(Thread *t,int *sig,handler_func *handler);
 
 	/**
 	 * Adds the given signal for the given thread
 	 *
-	 * @param tid the thread-id
+	 * @param t the thread
 	 * @param signal the signal
-	 * @return true if the signal has been added
 	 */
-	static bool addSignalFor(tid_t tid,int signal);
-
-	/**
-	 * Adds the given signal to all threads that have announced a handler for it
-	 *
-	 * @param signal the signal
-	 * @return whether the signal has been delivered to somebody
-	 */
-	static bool addSignal(int signal);
-
-	/**
-	 * Acknoledges the current signal with given thread (marks handling as finished)
-	 *
-	 * @param tid the thread-id
-	 * @return the handled signal
-	 */
-	static int ackHandling(tid_t tid);
-
-	/**
-	 * @return the total number of announced handlers
-	 */
-	static size_t getHandlerCount();
+	static void addSignalFor(Thread *t,int signal);
 
 	/**
 	 * @param signal the signal-number
@@ -191,21 +113,12 @@ public:
 	static const char *getName(int signal);
 
 	/**
-	 * Prints all announced signal-handlers
+	 * Prints the signal-handlers of thread t.
 	 *
+	 * @param t the thread
 	 * @param os the output-stream
 	 */
-	static void print(OStream &os);
-
-private:
-	static bool add(Thread *t,int sig);
-	static void removePending(Thread *t,int sig);
-	static Thread *getThread(tid_t tid);
-
-	static SpinLock lock;
-	static SpinLock listLock;
-	static PendingSig signals[SIGNAL_COUNT];
-	static PendingSig *freelist;
+	static void print(const Thread *t,OStream &os);
 };
 
 inline bool Signals::canHandle(int signal) {

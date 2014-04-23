@@ -134,6 +134,7 @@ static int handleReply(IPv4Header *reply) {
 }
 
 static void sigalarm(int) {
+	signal(SIG_ALARM,sigalarm);
 }
 static void sigint(int) {
 	stop = true;

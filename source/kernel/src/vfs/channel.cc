@@ -593,7 +593,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 
 		if(flags & VFS_SIGNALS) {
 			Thread::switchAway();
-			if(EXPECT_FALSE(t->hasSignalQuick()))
+			if(EXPECT_FALSE(t->hasSignal()))
 				return -EINTR;
 		}
 		else

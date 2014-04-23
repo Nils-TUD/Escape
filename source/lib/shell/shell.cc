@@ -94,6 +94,7 @@ static void shell_sigIntrpt(A_UNUSED int sig) {
 	lang_setInterrupted();
 	/* ensure that we start a new readline */
 	resetReadLine = true;
+	signal(SIG_INTRPT,shell_sigIntrpt);
 }
 
 int shell_executeCmd(char *line,bool isFile) {

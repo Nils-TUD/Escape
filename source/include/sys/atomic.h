@@ -28,14 +28,26 @@ public:
 	/**
 	 * Adds <value> to *<ptr> and returns the old value
 	 */
-	template<typename T, typename Y>
-	static T add(T volatile *ptr, Y value);
+	template<typename T,typename Y>
+	static T fetch_and_add(T volatile *ptr,Y value);
+
+	/**
+	 * ORs <value> to *<ptr> and returns the old value
+	 */
+	template<typename T,typename Y>
+	static T fetch_and_or(T volatile *ptr,Y value);
+
+	/**
+	 * ANDs <value> to *<ptr> and returns the old value
+	 */
+	template<typename T,typename Y>
+	static T fetch_and_and(T volatile *ptr,Y value);
 
 	/**
 	 * Compare and swap
 	 */
-	template<typename T, typename Y>
-	static bool cmpnswap(T volatile *ptr, Y oldval, Y newval);
+	template<typename T,typename Y>
+	static bool cmpnswap(T volatile *ptr,Y oldval,Y newval);
 };
 
 #ifdef __i386__

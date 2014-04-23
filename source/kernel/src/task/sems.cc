@@ -43,7 +43,7 @@ int Sems::clone(Proc *p,const Proc *old) {
 	memcpy(p->sems,old->sems,old->semsSize * sizeof(Entry*));
 	for(size_t i = 0; i < old->semsSize; ++i) {
 		if(p->sems[i])
-			Atomic::add(&p->sems[i]->refs,+1);
+			Atomic::fetch_and_add(&p->sems[i]->refs,+1);
 	}
 error:
 	old->unlock(PLOCK_SEMS);
@@ -113,7 +113,7 @@ int Sems::op(Proc *p,int sem,int amount) {
 	e = p->sems[sem];
 	if(!e)
 		goto error;
-	Atomic::add(&e->refs,+1);
+	Atomic::fetch_and_add(&e->refs,+1);
 	p->unlock(PLOCK_SEMS);
 
 	if(amount < 0)
@@ -155,7 +155,7 @@ void Sems::destroyAll(Proc *p,bool complete) {
 }
 
 void Sems::unref(Entry *e) {
-	if(e && Atomic::add(&e->refs,-1) == 1) {
+	if(e && Atomic::fetch_and_add(&e->refs,-1) == 1) {
 		if(e->irq != -1)
 			Interrupts::detachSem(&e->s,e->irq);
 		delete e;

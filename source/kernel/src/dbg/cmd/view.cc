@@ -86,7 +86,6 @@ static View views[] = {
 	{"proc",		view_proc},
 	{"procs",		Proc::printAll},
 	{"sched",		Sched::print},
-	{"signals",		Signals::print},
 	{"thread",		view_thread},
 	{"threads",		Thread::printAll},
 	{"vfstree",		VFSNode::printTree},

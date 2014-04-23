@@ -99,10 +99,10 @@ retry:
 		smpLock.up();
 	}
 	else {
-		Atomic::add(&waiting,+1);
+		Atomic::fetch_and_add(&waiting,+1);
 		while(waitlock)
 			::CPU::pause();
-		Atomic::add(&waiting,-1);
+		Atomic::fetch_and_add(&waiting,-1);
 		goto retry;
 	}
 }
@@ -130,7 +130,7 @@ void SMPBase::haltOthers() {
 		smpLock.up();
 	}
 	else {
-		Atomic::add(&halting,+1);
+		Atomic::fetch_and_add(&halting,+1);
 		while(1)
 			::CPU::halt();
 	}
@@ -154,7 +154,7 @@ void SMPBase::ensureTLBFlushed() {
 	}
 	else {
 		::CPU::setCR3(::CPU::getCR3());
-		Atomic::add(&flushed,+1);
+		Atomic::fetch_and_add(&flushed,+1);
 	}
 }
 

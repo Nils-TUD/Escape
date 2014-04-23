@@ -341,7 +341,7 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 		}
 
 		Thread::switchAway();
-		if(EXPECT_FALSE(t->hasSignalQuick()))
+		if(EXPECT_FALSE(t->hasSignal()))
 			return -EINTR;
 	}
 	A_UNREACHED;

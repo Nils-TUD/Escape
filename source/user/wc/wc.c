@@ -44,7 +44,7 @@ static ulong words = 0;
 
 int main(int argc,const char *argv[]) {
 	uint flags = 0;
-	bool flines = false,fwords = false,fbytes = false;
+	int flines = 0,fwords = 0,fbytes = 0;
 	const char **args;
 
 	int res = ca_parse(argc,argv,0,"w c l",&fwords,&fbytes,&flines);

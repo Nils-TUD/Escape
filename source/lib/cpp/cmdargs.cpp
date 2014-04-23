@@ -229,7 +229,7 @@ namespace std {
 			}
 		}
 		else {
-			bool *b = (bool*)ptr;
+			int *b = (int*)ptr;
 			*b = !arg.empty();
 			if(*b)
 				_free.erase_first(*pos);

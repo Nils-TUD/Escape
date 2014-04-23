@@ -32,7 +32,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	bool list;
+	int list = 0;
 	int mode = -1;
 	int res = ca_parse(argc,argv,CA_NO_FREE,"l s=d",&list,&mode);
 	if(argc == 1 || res < 0 || ca_hasHelp()) {

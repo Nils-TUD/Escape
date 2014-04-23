@@ -30,8 +30,8 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	bool reboot = false;
-	bool shutdown = false;
+	int reboot = 0;
+	int shutdown = 0;
 	int res;
 
 	res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);

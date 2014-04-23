@@ -96,7 +96,7 @@ static void usage(const char *name) {
 int main(int argc,char **argv) {
 	string ssort("pid");
 	pageSize = sysconf(CONF_PAGE_SIZE);
-	bool own = false,numeric = false;
+	int own = 0,numeric = 0;
 	sUser *userList = nullptr;
 	sGroup *groupList = nullptr;
 

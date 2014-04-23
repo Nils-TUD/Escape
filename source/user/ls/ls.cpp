@@ -117,7 +117,7 @@ int main(int argc,char *argv[]) {
 	// parse params
 	cmdargs args(argc,argv,cmdargs::MAX1_FREE);
 	try {
-		bool flong = 0,finode = 0,fall = 0,fdirsize,fnumeric,fdirnum;
+		int flong = 0,finode = 0,fall = 0,fdirsize = 0,fnumeric = 0,fdirnum = 0;
 		args.parse("l i a s n N",&flong,&finode,&fall,&fdirsize,&fnumeric,&fdirnum);
 		if(args.is_help())
 			usage(argv[0]);

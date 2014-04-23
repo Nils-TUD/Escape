@@ -287,7 +287,7 @@ static ssize_t ca_setVal(bool hasVal,bool isEmpty,const char *begin,ssize_t argi
 		}
 	}
 	else {
-		bool *b = (bool*)ptr;
+		int *b = (int*)ptr;
 		*b = argi >= 0;
 		if(argi >= 0)
 			sll_removeFirstWith(freeArgs,(void*)argi);

@@ -35,8 +35,8 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static bool figncase = false;
-static bool freverse = false;
+static int figncase = 0;
+static int freverse = 0;
 
 int main(int argc,char *argv[]) {
 	istream *in = &cin;

@@ -35,6 +35,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/copyonwrite.h>
+#include <sys/mem/useraccess.h>
 #include <sys/interrupts.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -439,7 +440,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	ELF::StartupInfo info;
 	Thread *t = Thread::getRunning();
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
-	size_t argSize;
+	size_t argSize = 0;
 	int argc,fd = -1;
 	if(!p)
 		return -ESRCH;
@@ -464,7 +465,6 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 			return argc;
 		}
 	}
-	Thread::addHeapAlloc(argBuffer);
 
 	/* remove all except stack */
 	doRemoveRegions(p,false);
@@ -515,14 +515,12 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	if(!UEnv::setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
 		goto errorNoRel;
-	Thread::remHeapAlloc(argBuffer);
 	Cache::free(argBuffer);
 	return 0;
 
 error:
 	release(p,PLOCK_PROG);
 errorNoRel:
-	Thread::remHeapAlloc(argBuffer);
 	Cache::free(argBuffer);
 	terminate(p->pid,1,SIG_COUNT);
 	Thread::switchAway();
@@ -555,11 +553,6 @@ void ProcBase::exit(int exitCode) {
 		t->terminate();
 		release(p,PLOCK_PROG);
 	}
-}
-
-void ProcBase::segFault() {
-	Thread *t = Thread::getRunning();
-	addSignalFor(t->getProc()->pid,SIG_SEGFAULT);
 }
 
 int ProcBase::addSignalFor(pid_t pid,int signal) {
@@ -698,7 +691,7 @@ void ProcBase::notifyProcDied(pid_t parent) {
 	Sched::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
-int ProcBase::waitChild(USER ExitState *state) {
+int ProcBase::waitChild(ExitState *state) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	/* check if there is already a dead child-proc */
@@ -730,7 +723,7 @@ int ProcBase::waitChild(USER ExitState *state) {
 	return 0;
 }
 
-int ProcBase::getExitState(pid_t ppid,USER ExitState *state) {
+int ProcBase::getExitState(pid_t ppid,ExitState *state) {
 	LockGuard<Mutex> g(&procLock);
 	size_t childs = 0;
 	for(auto p = procs.begin(); p != procs.end(); ++p) {
@@ -830,7 +823,7 @@ void ProcBase::print(OStream &os) const {
 
 int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
 	int argc = 0;
-	size_t remaining = EXEC_MAX_ARGSIZE;
+	ssize_t remaining = EXEC_MAX_ARGSIZE;
 
 	/* alloc space for the arguments */
 	*argBuffer = (char*)Cache::alloc(EXEC_MAX_ARGSIZE);
@@ -841,7 +834,6 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
-	Thread::addHeapAlloc(*argBuffer);
 	char *bufPos = *argBuffer;
 	const char *const *arg = args;
 	while(1) {
@@ -852,30 +844,23 @@ int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *si
 		if(*arg == NULL)
 			break;
 
-		/* check whether the string is readable */
-		size_t len;
-		if(fromUser && !Syscalls::isStrInUserSpace(*arg,&len))
-			goto error;
-		else
-			len = strlen(*arg);
 		/* ensure that the argument is not longer than the left space */
-		if(len >= remaining)
+		ssize_t len = UserAccess::strlen(*arg);
+		if(len < 0 || len >= remaining)
 			goto error;
 
 		/* copy to heap */
-		memcpy(bufPos,*arg,len + 1);
+		UserAccess::read(bufPos,*arg,len + 1);
 		bufPos += len + 1;
 		remaining -= len + 1;
 		arg++;
 		argc++;
 	}
-	Thread::remHeapAlloc(*argBuffer);
 	/* store args-size and return argc */
 	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
 
 error:
-	Thread::remHeapAlloc(*argBuffer);
 	Cache::free(*argBuffer);
 	return -EFAULT;
 }

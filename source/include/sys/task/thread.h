@@ -55,10 +55,6 @@
 /* use an invalid tid to identify the kernel */
 #define KERNEL_TID				0xFFFE
 
-#define TERM_RESOURCE_CNT		4
-#define TERM_USAGE_CNT			2
-#define TERM_CALLBACK_CNT		1
-
 #define T_IDLE					1
 #define T_WILL_DIE				2
 
@@ -214,63 +210,6 @@ public:
 	 * Updates the runtime-percentage of all threads
 	 */
 	static void updateRuntimes();
-
-	/**
-	 * Adds the given lock to the term-lock-list
-	 *
-	 * @param l the lock
-	 */
-	static void addLock(SpinLock *l);
-
-	/**
-	 * Removes the given lock from the term-lock-list
-	 *
-	 * @param l the lock
-	 */
-	static void remLock(SpinLock *l);
-
-	/**
-	 * Adds the given pointer to the term-heap-allocation-list, which will be free'd if the thread dies
-	 * before it is removed.
-	 *
-	 * @param ptr the pointer to the heap
-	 */
-	static void addHeapAlloc(void *ptr);
-
-	/**
-	 * Removes the given pointer from the term-heap-allocation-list
-	 *
-	 * @param ptr the pointer to the heap
-	 */
-	static void remHeapAlloc(void *ptr);
-
-	/**
-	 * Adds the given file to the file-usage-list. The file-usages will be decreased if the thread dies.
-	 *
-	 * @param file the file
-	 */
-	static void addFileUsage(OpenFile *file);
-
-	/**
-	 * Removes the given file from the file-usage-list.
-	 *
-	 * @param file the file
-	 */
-	static void remFileUsage(OpenFile *file);
-
-	/**
-	 * Adds the given callback to the callback-list. These will be called on thread-termination.
-	 *
-	 * @param callback the callback
-	 */
-	static void addCallback(void (*callback)());
-
-	/**
-	 * Removes the given callback from the callback-list.
-	 *
-	 * @param callback the callback
-	 */
-	static void remCallback(void (*callback)());
 
 	/**
 	 * Prints all threads
@@ -431,6 +370,14 @@ public:
 	 */
 	bool hasSignal() const {
 		return !ignoreSignals && sigmask != 0;
+	}
+
+	/**
+	 * @return true if the thread has got a segfault signal
+	 */
+	bool isFaulted() const {
+		volatile uint32_t *mask = const_cast<volatile uint32_t*>(&sigmask);
+		return (*mask & (1 << SIG_SEGFAULT)) != 0;
 	}
 
 	/**
@@ -706,18 +653,6 @@ protected:
 	size_t intrptLevel;
 	/* the save-area for registers */
 	ThreadRegs saveArea;
-	/* a list with heap-allocations that should be free'd on thread-termination */
-	void *termHeapAllocs[TERM_RESOURCE_CNT];
-	/* a list of locks that should be released on thread-termination */
-	SpinLock *termLocks[TERM_RESOURCE_CNT];
-	/* a list of file-usages that should be decremented on thread-termination */
-	OpenFile *termUsages[TERM_USAGE_CNT];
-	/* a list of callbacks that should be called on thread-termination */
-	terminate_func termCallbacks[TERM_CALLBACK_CNT];
-	uint8_t termHeapCount;
-	uint8_t termLockCount;
-	uint8_t termUsageCount;
-	uint8_t termCallbackCount;
 	ListItem threadListItem;
 	ListItem signalListItem;
 	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
@@ -735,8 +670,7 @@ private:
 
 #ifdef __i386__
 #include <sys/arch/i586/task/thread.h>
-// TODO TODO lower that again
-static_assert(sizeof(Thread) <= 512,"Thread is too big");
+static_assert(sizeof(Thread) <= 256,"Thread is too big");
 #endif
 #ifdef __eco32__
 #include <sys/arch/eco32/task/thread.h>
@@ -761,54 +695,6 @@ inline void ThreadBase::switchNoSigs() {
 	t->ignoreSignals = 1;
 	switchAway();
 	t->ignoreSignals = 0;
-}
-
-inline void ThreadBase::addLock(SpinLock *l) {
-	Thread *cur = getRunning();
-	assert(cur->termLockCount < TERM_RESOURCE_CNT);
-	cur->termLocks[cur->termLockCount++] = l;
-}
-
-inline void ThreadBase::remLock(SpinLock *l) {
-	Thread *cur = getRunning();
-	assert(cur->termLockCount > 0 && cur->termLocks[cur->termLockCount - 1] == l);
-	cur->termLockCount--;
-}
-
-inline void ThreadBase::addHeapAlloc(void *ptr) {
-	Thread *cur = getRunning();
-	assert(cur->termHeapCount < TERM_RESOURCE_CNT);
-	cur->termHeapAllocs[cur->termHeapCount++] = ptr;
-}
-
-inline void ThreadBase::remHeapAlloc(void *ptr) {
-	Thread *cur = getRunning();
-	assert(cur->termHeapCount > 0 && cur->termHeapAllocs[cur->termHeapCount - 1] == ptr);
-	cur->termHeapCount--;
-}
-
-inline void ThreadBase::addFileUsage(OpenFile *file) {
-	Thread *cur = getRunning();
-	assert(cur->termUsageCount < TERM_USAGE_CNT);
-	cur->termUsages[cur->termUsageCount++] = file;
-}
-
-inline void ThreadBase::remFileUsage(OpenFile *file) {
-	Thread *cur = getRunning();
-	assert(cur->termUsageCount > 0 && cur->termUsages[cur->termUsageCount - 1] == file);
-	cur->termUsageCount--;
-}
-
-inline void ThreadBase::addCallback(void (*callback)()) {
-	Thread *cur = getRunning();
-	assert(cur->termCallbackCount < TERM_CALLBACK_CNT);
-	cur->termCallbacks[cur->termCallbackCount++] = callback;
-}
-
-inline void ThreadBase::remCallback(void (*callback)()) {
-	Thread *cur = getRunning();
-	assert(cur->termCallbackCount > 0 && cur->termCallbacks[cur->termCallbackCount - 1] == callback);
-	cur->termCallbackCount--;
 }
 
 inline IntrptStackFrame *ThreadBase::getIntrptStack() const {

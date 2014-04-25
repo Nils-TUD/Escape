@@ -25,6 +25,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/physmemareas.h>
+#include <sys/mem/useraccess.h>
 #include <sys/task/timer.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
@@ -367,9 +368,11 @@ ssize_t VFSInfo::readHelper(A_UNUSED pid_t pid,VFSNode *node,USER void *buffer,o
 	count = MIN(dataSize - offset,count);
 	/* copy */
 	if(count > 0) {
-		Thread::addHeapAlloc(mem);
-		memcpy(buffer,(uint8_t*)mem + offset,count);
-		Thread::remHeapAlloc(mem);
+		int res = UserAccess::write(buffer,(uint8_t*)mem + offset,count);
+		if(res < 0) {
+			Cache::free(mem);
+			return res;
+		}
 	}
 	/* free temp storage */
 	Cache::free(mem);

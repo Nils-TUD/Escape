@@ -124,10 +124,6 @@ void ThreadBase::initProps() {
 	stats.syscalls = 0;
 	stats.migrations = 0;
 	resources = 0;
-	termHeapCount = 0;
-	termCallbackCount = 0;
-	termUsageCount = 0;
-	termLockCount = 0;
 	reqFrames = ISList<frameno_t>();
 	threadListItem = ListItem(static_cast<Thread*>(this));
 	signalListItem = ListItem(static_cast<Thread*>(this));
@@ -315,16 +311,6 @@ void ThreadBase::kill() {
 		proc->getVM()->unmap(tlsRegion);
 		tlsRegion = NULL;
 	}
-
-	/* release resources */
-	for(size_t i = 0; i < termLockCount; i++)
-		termLocks[i]->up();
-	for(size_t i = 0; i < termHeapCount; i++)
-		Cache::free(termHeapAllocs[i]);
-	for(size_t i = 0; i < termUsageCount; i++)
-		termUsages[i]->decUsages();
-	for(size_t i = 0; i < termCallbackCount; i++)
-		termCallbacks[i]();
 
 	/* remove from all modules we may be announced */
 	makeUnrunnable();

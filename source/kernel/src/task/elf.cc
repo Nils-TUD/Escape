@@ -155,7 +155,6 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 				Log::get().writef("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
-			Thread::addHeapAlloc(interpName);
 			if(file->seek(p->getPid(),pheader.p_offset,SEEK_SET) < 0) {
 				Log::get().writef("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
@@ -167,7 +166,6 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 			file->close(p->getPid());
 			/* now load him and stop loading the 'real' program */
 			res = doLoadFromFile(interpName,TYPE_INTERP,info);
-			Thread::remHeapAlloc(interpName);
 			Cache::free(interpName);
 			return res;
 		}
@@ -211,7 +209,6 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	return 0;
 
 failedInterpName:
-	Thread::remHeapAlloc(interpName);
 	Cache::free(interpName);
 failed:
 	file->close(p->getPid());

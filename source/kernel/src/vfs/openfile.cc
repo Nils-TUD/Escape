@@ -97,7 +97,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 	return -EINVAL;
 }
 
-int OpenFile::fstat(pid_t pid,USER sFileInfo *info) const {
+int OpenFile::fstat(pid_t pid,sFileInfo *info) const {
 	ssize_t res = 0;
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);

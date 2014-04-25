@@ -21,6 +21,7 @@
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/task/proc.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/file.h>
@@ -96,9 +97,9 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 			offset = pos;
 		byteCount = MIN((size_t)(pos - offset),count);
 		if(byteCount > 0) {
-			Thread::addLock(&lock);
-			memcpy(buffer,(uint8_t*)data + offset,byteCount);
-			Thread::remLock(&lock);
+			int res = UserAccess::write(buffer,(uint8_t*)data + offset,byteCount);
+			if(res < 0)
+				return res;
 		}
 	}
 	return byteCount;
@@ -106,19 +107,20 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 
 ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
                        off_t offset,size_t count) {
+	int res;
 	/* need to create cache? */
 	LockGuard<SpinLock> g(&lock);
 	if(data == NULL || size < offset + count) {
-		int res = doReserve(MAX(offset + count,VFS_INITIAL_WRITECACHE));
+		res = doReserve(MAX(offset + count,VFS_INITIAL_WRITECACHE));
 		if(res < 0)
 			return res;
 	}
 
 	/* copy the data into the cache; this may segfault, which will leave the the state of the
 	 * file as it was before, except that we've increased the buffer-size */
-	Thread::addLock(&lock);
-	memcpy((uint8_t*)data + offset,buffer,count);
-	Thread::remLock(&lock);
+	if((res = UserAccess::read((uint8_t*)data + offset,buffer,count)) < 0)
+		return res;
+
 	/* we have checked size for overflow. so it is ok here */
 	pos = MAX(pos,(off_t)(offset + count));
 	return count;

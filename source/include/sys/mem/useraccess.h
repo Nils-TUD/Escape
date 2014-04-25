@@ -17,31 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/debug.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
+#pragma once
 
-#include "../modules.h"
+#include <sys/common.h>
 
-static void sig_segf(A_UNUSED int sig) {
-	printf("GOT SIGSEGV!\n");
-	exit(EXIT_FAILURE);
-}
+class UserAccess {
+	UserAccess() = delete;
 
-int mod_fault(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	uint *ptr;
-	int fd;
-	if(signal(SIG_SEGFAULT,sig_segf) == SIG_ERR)
-		error("Unable to set signal-handler");
-	printf("I am evil ^^\n");
-	fd = open((char*)0x12345678,IO_READ);
-	ptr = (uint*)0xFFFFFFFF;
-	*ptr = 1;
-	printf("Never printed\n");
-	close(fd);
-	return EXIT_SUCCESS;
-}
+public:
+	static int read(void *dst,USER const void *src,size_t size);
+	static int write(USER void *dst,const void *src,size_t size);
+	static ssize_t strlen(USER const char *str,size_t max = 0);
+	static int strnzcpy(char *dst,USER const char *str,size_t size);
+	static void copyByte(char *dst,const char *src);
+
+private:
+	static int copy(char *dst,const char *src,size_t size,size_t offset);
+};
+
+#ifdef __i386__
+#include <sys/arch/i586/mem/useraccess.h>
+#endif
+#ifdef __eco32__
+#include <sys/arch/eco32/mem/useraccess.h>
+#endif
+#ifdef __mmix__
+#include <sys/arch/mmix/mem/useraccess.h>
+#endif

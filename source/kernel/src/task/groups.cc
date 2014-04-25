@@ -23,6 +23,7 @@
 #include <sys/task/proc.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
@@ -35,9 +36,8 @@ bool Groups::set(pid_t pid,size_t count,USER const gid_t *groups) {
 		grpCpy = (gid_t*)Cache::alloc(count * sizeof(gid_t));
 		if(!grpCpy)
 			return false;
-		Thread::addHeapAlloc(grpCpy);
-		memcpy(grpCpy,groups,count * sizeof(gid_t));
-		Thread::remHeapAlloc(grpCpy);
+		if(UserAccess::read(grpCpy,groups,count * sizeof(gid_t)) < 0)
+			return false;
 	}
 
 	Entries *g = (Entries*)Cache::alloc(sizeof(Entries));
@@ -74,15 +74,13 @@ size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
 	if(p) {
 		LockGuard<SpinLock> guard(&lock);
 		Entries *g = p->groups;
-		/* we can't hold the reference during the access to user-memory. we might die */
-		/* since we're holding the spinlock now, nobody can destroy the groups anyway */
-		Proc::relRef(p);
 		if(count == 0)
 			res = g ? g->count : 0;
 		else if(g) {
 			res = MIN(g->count,count);
-			memcpy(list,g->groups,res * sizeof(gid_t));
+			UserAccess::write(list,g->groups,res * sizeof(gid_t));
 		}
+		Proc::relRef(p);
 	}
 	return res;
 }

@@ -29,6 +29,7 @@
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/syscalls.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
@@ -149,13 +150,17 @@ int Syscalls::fork(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	/* better work on a copy in kernel memory. it's not worth the trouble here... */
+	Proc::ExitState kstate;
 	Proc::ExitState *state = (Proc::ExitState*)SYSC_ARG1(stack);
 	if(EXPECT_FALSE(state != NULL && !PageDir::isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState))))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = Proc::waitChild(state);
+	int res = Proc::waitChild(&kstate);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+	if(state)
+		UserAccess::write(state,&kstate,sizeof(kstate));
 	SYSC_RET1(stack,0);
 }
 
@@ -175,10 +180,12 @@ int Syscalls::getenvito(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::getenvto(Thread *t,IntrptStackFrame *stack) {
+	char kname[MAX_NAME_LEN];
 	char *buffer = (char*)SYSC_ARG1(stack);
 	size_t size = SYSC_ARG2(stack);
 	const char *name = (const char*)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
+
 	if(EXPECT_FALSE(!Syscalls::isStrInUserSpace(name,NULL)))
 		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(size == 0))
@@ -186,19 +193,29 @@ int Syscalls::getenvto(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(EXPECT_FALSE(!Env::get(pid,name,buffer,size)))
+	int res;
+	if((res = UserAccess::strnzcpy(kname,name,sizeof(kname))) < 0)
+		SYSC_ERROR(stack,res);
+
+	if(EXPECT_FALSE(!Env::get(pid,kname,buffer,size)))
 		SYSC_ERROR(stack,-ENOENT);
 	SYSC_RET1(stack,0);
 }
 
 int Syscalls::setenv(Thread *t,IntrptStackFrame *stack) {
+	char kname[MAX_NAME_LEN];
 	const char *name = (const char*)SYSC_ARG1(stack);
 	const char *value = (const char*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
+
 	if(EXPECT_FALSE(!Syscalls::isStrInUserSpace(name,NULL) || !Syscalls::isStrInUserSpace(value,NULL)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(EXPECT_FALSE(!Env::set(pid,name,value)))
+	int res;
+	if((res = UserAccess::strnzcpy(kname,name,sizeof(kname))) < 0)
+		SYSC_ERROR(stack,res);
+
+	if(EXPECT_FALSE(!Env::set(pid,kname,value)))
 		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }

@@ -266,7 +266,7 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
 }
 
-int VFS::stat(pid_t pid,const char *path,USER sFileInfo *info) {
+int VFS::stat(pid_t pid,const char *path,sFileInfo *info) {
 	OpenFile *fsFile;
 	const char *begin;
 	int err = request(pid,path,VFS_READ,0,&begin,&fsFile);

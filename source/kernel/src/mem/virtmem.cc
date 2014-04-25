@@ -72,7 +72,6 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 		return 0;
 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
-	Thread::addHeapAlloc(frames);
 	if(*phys == 0) {
 		if(align) {
 			ssize_t first = PhysMem::allocateContiguous(pages,align / PAGE_SIZE);
@@ -122,7 +121,6 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 		*phys = frames[0] * PAGE_SIZE;
 	}
 	release();
-	Thread::remHeapAlloc(frames);
 	Cache::free(frames);
 	return vm->virt();
 
@@ -130,7 +128,6 @@ errorRel:
 	release();
 	unmap(vm);
 error:
-	Thread::remHeapAlloc(frames);
 	Cache::free(frames);
 	return 0;
 }
@@ -652,6 +649,7 @@ void VirtMem::sync(VMRegion *vm) const {
 		size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
 		/* this is more complicated because p might not be the current process. in this case we
 		 * can't directly access the memory. */
+		// TODO this is going to change soon
 		pid_t cur = Proc::getRunning();
 		pid_t pid = proc->getPid();
 		uint8_t *buf = NULL;
@@ -659,7 +657,6 @@ void VirtMem::sync(VMRegion *vm) const {
 			buf = (uint8_t*)Cache::alloc(PAGE_SIZE);
 			if(buf == NULL)
 				return;
-			Thread::addHeapAlloc(buf);
 		}
 
 		for(size_t i = 0; i < pcount; i++) {
@@ -685,10 +682,8 @@ void VirtMem::sync(VMRegion *vm) const {
 			}
 		}
 
-		if(cur != pid) {
-			Thread::remHeapAlloc(buf);
+		if(cur != pid)
 			Cache::free(buf);
-		}
 	}
 }
 
@@ -1309,7 +1304,6 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		err = -ENOMEM;
 		goto error;
 	}
-	Thread::addHeapAlloc(tempBuf);
 	err = vm->reg->getFile()->read(proc->getPid(),tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
@@ -1321,7 +1315,6 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	frame = PageDir::demandLoad(tempBuf,loadCount,vm->reg->getFlags());
 
 	/* free resources not needed anymore */
-	Thread::remHeapAlloc(tempBuf);
 	Cache::free(tempBuf);
 
 	/* map into all pagedirs */
@@ -1343,7 +1336,6 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	return 0;
 
 errorFree:
-	Thread::remHeapAlloc(tempBuf);
 	Cache::free(tempBuf);
 error:
 	Log::get().writef("Demandload page @ %p for proc %s: %s (%d)\n",addr,

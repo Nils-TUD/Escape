@@ -55,6 +55,9 @@ public:
 		size_t ptrCount;
 	};
 
+	static const size_t MAX_PTR_COUNT	= 4;
+	static const size_t MAX_PTR_SIZE	= PAGE_SIZE;
+
 private:
 	struct Info {
 		uint16_t interrupt;
@@ -98,8 +101,8 @@ private:
 	static void finish();
 	static void copyRegResult(VM86IntrptStackFrame* stack);
 	static int storeAreaResult();
-	static void copyAreaResult();
-	static bool copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);
+	static int copyAreaResult();
+	static int copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);
 	static void clearInfo();
 
 	static frameno_t frameNos[];

@@ -46,16 +46,13 @@ OpenFile *FileDesc::request(Proc *p,int fd) {
 
 	p->lock(PLOCK_FDS);
 	OpenFile *file = p->fileDescs[fd];
-	if(EXPECT_TRUE(file != NULL)) {
+	if(EXPECT_TRUE(file != NULL))
 		file->incUsages();
-		Thread::addFileUsage(file);
-	}
 	p->unlock(PLOCK_FDS);
 	return file;
 }
 
 void FileDesc::release(OpenFile *file) {
-	Thread::remFileUsage(file);
 	file->decUsages();
 }
 

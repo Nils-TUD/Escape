@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/filedesc.h>
@@ -215,7 +216,7 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 	return sendList.length() + recvList.length();
 }
 
-int VFSChannel::stat(pid_t pid,USER sFileInfo *info) {
+int VFSChannel::stat(pid_t pid,sFileInfo *info) {
 	Thread *t = Thread::getRunning();
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
@@ -474,6 +475,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
                          size_t size1,USER const void *data2,size_t size2) {
 	SList<Message> *list;
 	Message *msg1,*msg2 = NULL;
+	int res;
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(flags & VFS_DEVICE) {
@@ -491,22 +493,20 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 
 	msg1->length = size1;
 	if(EXPECT_TRUE(data1)) {
-		Thread::addHeapAlloc(msg1);
-		memcpy(msg1 + 1,data1,size1);
-		Thread::remHeapAlloc(msg1);
+		if(EXPECT_FALSE((res = UserAccess::read(msg1 + 1,data1,size1)) < 0))
+			goto errorMsg1;
 	}
 
 	if(EXPECT_FALSE(data2)) {
 		msg2 = (Message*)Cache::alloc(sizeof(Message) + size2);
-		if(EXPECT_FALSE(msg2 == NULL))
-			return -ENOMEM;
+		if(EXPECT_FALSE(msg2 == NULL)) {
+			res = -ENOMEM;
+			goto errorMsg1;
+		}
 
 		msg2->length = size2;
-		Thread::addHeapAlloc(msg1);
-		Thread::addHeapAlloc(msg2);
-		memcpy(msg2 + 1,data2,size2);
-		Thread::remHeapAlloc(msg2);
-		Thread::remHeapAlloc(msg1);
+		if(EXPECT_FALSE((res = UserAccess::read(msg2 + 1,data2,size2)) < 0))
+			goto errorMsg2;
 	}
 
 	{
@@ -554,6 +554,12 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	}
 #endif
 	return id;
+
+errorMsg2:
+	Cache::free(msg2);
+errorMsg1:
+	Cache::free(msg1);
+	return res;
 }
 
 ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER void *data,size_t size) {
@@ -622,13 +628,13 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 		return -EINVAL;
 	}
 
-	/* copy data and id; since it may fail we have to ensure that our resources are free'd */
-	Thread::addHeapAlloc(msg);
-	if(EXPECT_TRUE(data))
-		memcpy(data,msg + 1,msg->length);
-	if(EXPECT_FALSE(id))
+	/* copy data and id */
+	if(EXPECT_TRUE(data)) {
+		if(EXPECT_FALSE((res = UserAccess::write(data,msg + 1,msg->length)) < 0))
+			return res;
+	}
+	if(EXPECT_TRUE(id))
 		*id = msg->id;
-	Thread::remHeapAlloc(msg);
 
 	res = msg->length;
 	Cache::free(msg);

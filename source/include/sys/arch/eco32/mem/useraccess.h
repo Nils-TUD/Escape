@@ -17,31 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/debug.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
+#pragma once
 
-#include "../modules.h"
-
-static void sig_segf(A_UNUSED int sig) {
-	printf("GOT SIGSEGV!\n");
-	exit(EXIT_FAILURE);
-}
-
-int mod_fault(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	uint *ptr;
-	int fd;
-	if(signal(SIG_SEGFAULT,sig_segf) == SIG_ERR)
-		error("Unable to set signal-handler");
-	printf("I am evil ^^\n");
-	fd = open((char*)0x12345678,IO_READ);
-	ptr = (uint*)0xFFFFFFFF;
-	*ptr = 1;
-	printf("Never printed\n");
-	close(fd);
-	return EXIT_SUCCESS;
+inline void UserAccess::copyByte(char *dst,const char *src) {
+	*dst = *src;
 }

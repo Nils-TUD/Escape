@@ -281,13 +281,28 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_TRUE(res == -EFAULT && (res = Thread::extendStack(addr)) == 0))
 		return;
 
+	/* pagefault in kernel? */
+	if(t->getIntrptLevel() == 1) {
+		uint8_t *pc = reinterpret_cast<uint8_t*>(stack->getIP());
+		/* UserAccess::copyByte uses the following instructions: */
+		/* 8a 0a mov (%edx),%cl */
+		/* 88 08 mov %cl,(%eax) */
+		if(!(pc[0] == 0x8a && pc[1] == 0x0a) && !(pc[0] == 0x88 && pc[1] == 0x08)) {
+			printPFInfo(Log::get(),t,stack,addr);
+			Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
+			Util::panic("Process segfaulted in kernel with instr. (%02x %02x)",pc[0],pc[1]);
+		}
+		/* skip that instruction */
+		stack->setIP(reinterpret_cast<uint32_t>(pc) + 2);
+	}
+
+#if PANIC_ON_PAGEFAULT
 	printPFInfo(Log::get(),t,stack,addr);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
-#if PANIC_ON_PAGEFAULT
 	Util::setpf(addr,stack->getIP());
 	Util::panic("Process segfaulted");
 #else
-	Proc::segFault();
+	Signals::addSignalFor(t,SIG_SEGFAULT);
 #endif
 }
 

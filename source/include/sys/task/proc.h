@@ -274,7 +274,7 @@ public:
 	 * @param state the state to write to (if not NULL)
 	 * @return 0 on success
 	 */
-	static int waitChild(USER ExitState *state);
+	static int waitChild(ExitState *state);
 
 	/**
 	 * Removes all regions from the given process
@@ -292,12 +292,6 @@ public:
 	 * @param exitCode the exit-code
 	 */
 	static void exit(int exitCode) asm("proc_exit");
-
-	/**
-	 * Sends a SIG_SEGFAULT signal to the current process and performs a thread-switch if the process
-	 * has been terminated.
-	 */
-	static void segFault();
 
 	/**
 	 * Kills the given thread. If the process has no threads afterwards, it is destroyed.
@@ -502,16 +496,6 @@ public:
 	}
 
 	/**
-	 * Adds/removes the given process lock via Thread::{add,rem}Lock
-	 */
-	void addLock(size_t l) {
-		Thread::addLock(locks + l);
-	}
-	void remLock(size_t l) {
-		Thread::remLock(locks + l);
-	}
-
-	/**
 	 * @return the statistics for this process
 	 */
 	Stats &getStats() {
@@ -591,7 +575,7 @@ private:
 
 	void initProps();
 	static void notifyProcDied(pid_t parent);
-	static int getExitState(pid_t ppid,USER ExitState *state);
+	static int getExitState(pid_t ppid,ExitState *state);
 	static void doRemoveRegions(Proc *p,bool remStack);
 	static void doDestroy(Proc *p);
 	static pid_t getFreePid();

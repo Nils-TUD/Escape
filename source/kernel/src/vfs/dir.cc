@@ -21,6 +21,7 @@
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/vfs/vfs.h>
@@ -111,8 +112,6 @@ ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffe
 			byteCount = 0;
 		else {
 			VFSDirEntry *dirEntry = fsBytes;
-			Thread::addHeapAlloc(fsBytes);
-			Thread::addLock(&VFSNode::treeLock);
 			n = first;
 			while(n != NULL) {
 				if(parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
@@ -130,8 +129,6 @@ ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffe
 				dirEntry = (VFSDirEntry*)((uint8_t*)dirEntry + sizeof(VFSDirEntry) + len);
 				n = n->next;
 			}
-			Thread::remLock(&VFSNode::treeLock);
-			Thread::remHeapAlloc(fsBytes);
 		}
 	}
 	closeDir(true);
@@ -140,9 +137,11 @@ ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffe
 		offset = byteCount;
 	byteCount = MIN(byteCount - offset,count);
 	if(byteCount > 0) {
-		Thread::addHeapAlloc(fsBytes);
-		memcpy(buffer,(uint8_t*)fsBytes + offset,byteCount);
-		Thread::remHeapAlloc(fsBytes);
+		int res = UserAccess::write(buffer,(uint8_t*)fsBytes + offset,byteCount);
+		if(res < 0) {
+			Cache::free(fsBytes);
+			return res;
+		}
 	}
 	Cache::free(fsBytes);
 	return byteCount;

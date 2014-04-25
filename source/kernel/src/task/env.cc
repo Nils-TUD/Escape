@@ -23,6 +23,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/spinlock.h>
 #include <sys/video.h>
 #include <string.h>
@@ -35,7 +36,7 @@ bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 		if(var != NULL) {
 			bool res = true;
 			if(dst)
-				strnzcpy(dst,var->name,size);
+				res = UserAccess::strnzcpy(dst,var->name,size) == 0;
 			release();
 			return res;
 		}
@@ -47,14 +48,15 @@ bool Env::geti(pid_t pid,size_t index,USER char *dst,size_t size) {
 	return false;
 }
 
-bool Env::get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
+bool Env::get(pid_t pid,const char *name,USER char *dst,size_t size) {
 	while(1) {
 		EnvVar *var = requestVarOf(pid,name);
 		if(var != NULL) {
+			bool res = true;
 			if(dst)
-				strnzcpy(dst,var->value,size);
+				res = UserAccess::strnzcpy(dst,var->value,size) == 0;
 			release();
-			return true;
+			return res;
 		}
 
 		pid = getPPid(pid);
@@ -64,18 +66,24 @@ bool Env::get(pid_t pid,USER const char *name,USER char *dst,size_t size) {
 	return false;
 }
 
-bool Env::set(pid_t pid,USER const char *name,USER const char *value) {
+bool Env::set(pid_t pid,const char *name,USER const char *value) {
 	char *nameCpy,*valueCpy;
 	EnvVar *var;
 	Proc *p;
+
+	/* copy name */
 	nameCpy = strdup(name);
 	if(!nameCpy)
 		return false;
-	Thread::addHeapAlloc(nameCpy);
-	valueCpy = strdup(value);
-	Thread::remHeapAlloc(nameCpy);
+
+	/* copy value */
+	ssize_t valLen = UserAccess::strlen(value);
+	if(valLen < 0)
+		goto errorNameCpy;
+	valueCpy = (char*)Cache::alloc(valLen + 1);
 	if(!valueCpy)
 		goto errorNameCpy;
+	UserAccess::strnzcpy(valueCpy,value,valLen + 1);
 
 	/* at first we have to look whether the var already exists for the given process */
 	var = requestVarOf(pid,nameCpy);
@@ -178,7 +186,7 @@ Env::EnvVar *Env::requestiVarOf(pid_t pid,size_t *index) {
 	return NULL;
 }
 
-Env::EnvVar *Env::requestVarOf(pid_t pid,USER const char *name) {
+Env::EnvVar *Env::requestVarOf(pid_t pid,const char *name) {
 	SList<EnvVar> *env = request(pid);
 	if(env) {
 		for(auto var = env->begin(); var != env->end(); ++var) {
@@ -203,7 +211,6 @@ pid_t Env::getPPid(pid_t pid) {
 
 SList<Env::EnvVar> *Env::request(pid_t pid) {
 	lock.down();
-	Thread::addLock(&lock);
 	const Proc *p = Proc::getRef(pid);
 	if(!p)
 		return NULL;
@@ -214,6 +221,5 @@ SList<Env::EnvVar> *Env::request(pid_t pid) {
 }
 
 void Env::release() {
-	Thread::remLock(&lock);
 	lock.up();
 }

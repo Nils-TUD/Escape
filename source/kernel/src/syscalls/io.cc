@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/openfile.h>
 #include <sys/vfs/node.h>
@@ -122,6 +123,7 @@ int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
+	sFileInfo kinfo;
 	const char *path = (const char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
@@ -131,13 +133,15 @@ int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::stat(pid,abspath,info);
+	int res = VFS::stat(pid,abspath,&kinfo);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+	UserAccess::write(info,&kinfo,sizeof(kinfo));
 	SYSC_RET1(stack,0);
 }
 
 int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
+	sFileInfo kinfo;
 	int fd = (int)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	Proc *p = t->getProc();
@@ -150,10 +154,11 @@ int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 	/* get info */
-	int res = file->fstat(p->getPid(),info);
+	int res = file->fstat(p->getPid(),&kinfo);
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+	UserAccess::write(info,&kinfo,sizeof(kinfo));
 	SYSC_RET1(stack,0);
 }
 
@@ -474,8 +479,6 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::unassoc(p,fd);
 	if(EXPECT_FALSE(!file->close(p->getPid())))
 		FileDesc::release(file);
-	else
-		Thread::remFileUsage(file);
 	SYSC_RET1(stack,0);
 }
 

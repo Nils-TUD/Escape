@@ -65,7 +65,6 @@ int ELF::finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *i
 		return -ENOEXEC;
 	}
 
-	Thread::addHeapAlloc(secHeaders);
 	if(file->seek(t->getProc()->getPid(),eheader->e_shoff,SEEK_SET) < 0) {
 		Log::get().writef("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
@@ -80,7 +79,6 @@ int ELF::finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *i
 	res = finish(t,eheader,secHeaders,file,info);
 
 error:
-	Thread::remHeapAlloc(secHeaders);
 	Cache::free(secHeaders);
 	return res;
 }

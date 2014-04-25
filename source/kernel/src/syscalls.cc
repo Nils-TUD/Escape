@@ -201,20 +201,27 @@ uint Syscalls::getArgCount(uint sysCallNo) {
 	return syscalls[sysCallNo].argCount;
 }
 
-bool Syscalls::absolutizePath(char *dst,size_t size,const char *src) {
+bool Syscalls::absolutizePath(char *dst,size_t size,USER const char *src) {
 	size_t len = 0;
-	ssize_t slen = strnlen(src,MAX_PATH_LEN);
+	ssize_t slen = UserAccess::strlen(src,MAX_PATH_LEN);
 	if(slen < 0 || !PageDir::isInUserSpace((uintptr_t)src,slen))
 		return false;
-	if(*src != '/') {
+	char c;
+	UserAccess::copyByte(&c,src);
+	if(c != '/') {
 		/* translate "abc://def" to "/dev/abc/def" */
 		for(ssize_t i = 0; i < slen; ++i) {
-			if(src[i] == ':') {
-				if(i + 2 < slen && src[i + 1] == '/' && src[i + 2] == '/') {
+			UserAccess::copyByte(&c,src);
+			if(c == ':') {
+				char c2 = 0,c3 = 0;
+				if(i + 2 < slen) {
+					UserAccess::copyByte(&c2,src + i + 1);
+					UserAccess::copyByte(&c3,src + i + 2);
+				}
+				if(i + 2 < slen && c2 == '/' && c3 == '/') {
 					strncpy(dst,"/dev/",SSTRLEN("/dev/"));
-					strncpy(dst + SSTRLEN("/dev/"),src,i);
-					strnzcpy(dst + SSTRLEN("/dev/") + i,src + i + 2,slen - i - 1);
-					return true;
+					UserAccess::write(dst + SSTRLEN("/dev/"),src,i);
+					return UserAccess::strnzcpy(dst + SSTRLEN("/dev/") + i,src + i + 2,slen - i - 1) == 0;
 				}
 				/* in general, : is invalid in paths */
 				else
@@ -237,6 +244,5 @@ bool Syscalls::absolutizePath(char *dst,size_t size,const char *src) {
 			dst[1] = '\0';
 		}
 	}
-	strnzcpy(dst + len,src,size - len);
-	return true;
+	return UserAccess::strnzcpy(dst + len,src,size - len) == 0;
 }

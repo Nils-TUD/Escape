@@ -129,7 +129,7 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	Console::start(NULL);
 }
 
-void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 #if DEBUG_PAGEFAULTS
 	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
 		exCount++;
@@ -152,14 +152,20 @@ void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_TRUE(res == -EFAULT && (res = Thread::extendStack(pfaddr)) == 0))
 		return;
 
+	/* pagefault in kernel? */
+	if(t->getIntrptLevel() == 1) {
+		/* skip that instruction */
+		stack->r[30] += 4;
+	}
+
+#if PANIC_ON_PAGEFAULT
 	pid_t pid = Proc::getRunning();
 	Log::get().writef("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
-#if PANIC_ON_PAGEFAULT
 	Util::setpf(pfaddr,stack->r[30]);
 	Util::panic("proc %d: page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 #else
-	Proc::segFault();
+	Signals::addSignalFor(t,SIG_SEGFAULT);
 #endif
 }
 

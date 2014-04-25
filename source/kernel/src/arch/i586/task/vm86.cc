@@ -29,6 +29,7 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/log.h>
 #include <sys/mutex.h>
 #include <sys/util.h>
@@ -142,10 +143,8 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 	/* ensure that only one thread at a time can use the vm86-task */
 	lock.down();
 	/* store information in calling process */
-	if(!copyInfo(interrupt,regs,area)) {
-		err = -ENOMEM;
+	if((err = copyInfo(interrupt,regs,area)) < 0)
 		goto errorCopy;
-	}
 
 	/* reserve frames for vm86-thread */
 	if(info.area) {
@@ -162,10 +161,9 @@ int VM86::interrupt(uint16_t interrupt,USER Regs *regs,USER const Memarea *area)
 
 	/* everything is finished :) */
 	if(vm86Res == 0) {
-		Thread::addCallback(finish);
-		memcpy(regs,&info.regs,sizeof(Regs));
-		copyAreaResult();
-		Thread::remCallback(finish);
+		vm86Res = UserAccess::write(regs,&info.regs,sizeof(Regs));
+		if(vm86Res == 0)
+			vm86Res = copyAreaResult();
 	}
 
 	/* mark as done */
@@ -422,15 +420,18 @@ void VM86::copyRegResult(VM86IntrptStackFrame *stack) {
 }
 
 int VM86::storeAreaResult() {
+	int res;
 	if(info.area) {
 		uintptr_t start = info.area->dst / PAGE_SIZE;
 		size_t pages = BYTES_2_PAGES(info.area->size);
 		/* copy the result to heap; we'll copy it later to the calling process */
-		memcpy(info.copies[0],(void*)info.area->dst,info.area->size);
+		if((res = UserAccess::read(info.copies[0],(void*)info.area->dst,info.area->size)) < 0)
+			return res;
 		for(size_t i = 0; i < info.area->ptrCount; i++) {
 			uintptr_t rmAddr = *(uintptr_t*)((uintptr_t)info.copies[0] + info.area->ptr[i].offset);
 			uintptr_t virt = ((rmAddr & 0xFFFF0000) >> 12) | (rmAddr & 0xFFFF);
-			memcpy((void*)info.copies[i + 1],(void*)virt,info.area->ptr[i].size);
+			if((res = UserAccess::read((void*)info.copies[i + 1],(void*)virt,info.area->ptr[i].size)) < 0)
+				return res;
 		}
 		/* undo mapping */
 		PageDir::unmapFromCur(info.area->dst,pages,true);
@@ -441,55 +442,86 @@ int VM86::storeAreaResult() {
 	return 0;
 }
 
-void VM86::copyAreaResult() {
+int VM86::copyAreaResult() {
+	int res = 0;
 	if(info.area) {
-		memcpy(info.area->src,info.copies[0],info.area->size);
+		if((res = UserAccess::write(info.area->src,info.copies[0],info.area->size)) < 0)
+			return res;
 		if(info.area->ptrCount > 0) {
-			for(size_t i = 0; i < info.area->ptrCount; i++)
-				memcpy((void*)info.area->ptr[i].result,info.copies[i + 1],info.area->ptr[i].size);
+			for(size_t i = 0; i < info.area->ptrCount; i++) {
+				if((res = UserAccess::write((void*)info.area->ptr[i].result,info.copies[i + 1],
+						info.area->ptr[i].size)) < 0) {
+					return res;
+				}
+			}
 		}
 	}
+	return 0;
 }
 
-bool VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area) {
+int VM86::copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area) {
+	int res;
 	info.interrupt = interrupt;
-	memcpy(&info.regs,regs,sizeof(Regs));
+	if((res = UserAccess::read(&info.regs,regs,sizeof(Regs))) < 0)
+		return res;
+
 	info.copies = NULL;
 	info.area = NULL;
 	if(area) {
 		/* copy area */
 		info.area = (Memarea*)Cache::alloc(sizeof(Memarea));
 		if(info.area == NULL)
-			return false;
-		memcpy(info.area,area,sizeof(Memarea));
-		/* copy ptrs */
+			return -ENOMEM;
+		if((res = UserAccess::read(info.area,area,sizeof(Memarea))) < 0)
+			goto error;
+
+		/* validate count */
+		res = -EINVAL;
 		info.area->ptr = NULL;
+		if(info.area->ptrCount > MAX_PTR_COUNT)
+			goto error;
+
+		/* copy ptrs */
 		if(info.area->ptrCount > 0) {
 			info.area->ptr = (AreaPtr*)Cache::alloc(sizeof(AreaPtr) * info.area->ptrCount);
 			if(!info.area->ptr) {
-				clearInfo();
-				return false;
+				res = -ENOMEM;
+				goto error;
 			}
-			memcpy(info.area->ptr,area->ptr,sizeof(AreaPtr) * info.area->ptrCount);
+			if((res = UserAccess::read(info.area->ptr,area->ptr,
+					sizeof(AreaPtr) * info.area->ptrCount)) < 0)
+				goto error;
 		}
+
 		/* create buffers for the data-exchange */
-		info.copies = (void**)Cache::calloc(1 + area->ptrCount,sizeof(void*));
+		info.copies = (void**)Cache::calloc(1 + info.area->ptrCount,sizeof(void*));
 		info.copies[0] = Cache::alloc(info.area->size);
 		if(!info.copies[0]) {
-			clearInfo();
-			return false;
+			res = -ENOMEM;
+			goto error;
 		}
-		memcpy(info.copies[0],area->src,area->size);
-		for(size_t i = 0; i < area->ptrCount; i++) {
-			void *copy = Cache::alloc(area->ptr[i].size);
+		if((res = UserAccess::read(info.copies[0],info.area->src,info.area->size)) < 0)
+			goto error;
+
+		for(size_t i = 0; i < info.area->ptrCount; i++) {
+			if(info.area->ptr[i].size > MAX_PTR_SIZE) {
+				res = -EINVAL;
+				goto error;
+			}
+
+			void *copy = Cache::alloc(info.area->ptr[i].size);
 			if(!copy) {
-				clearInfo();
-				return false;
+				res = -ENOMEM;
+				goto error;
 			}
 			info.copies[i + 1] = copy;
 		}
 	}
-	return true;
+	return 0;
+
+error:
+	clearInfo();
+	return res;
 }
 
 void VM86::clearInfo() {

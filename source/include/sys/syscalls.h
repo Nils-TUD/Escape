@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/task/thread.h>
+#include <sys/mem/useraccess.h>
 #include <sys/interrupts.h>
 #include <string.h>
 
@@ -61,7 +62,9 @@ public:
 	 * @return whether the given string is in user-space
 	 */
 	static bool isStrInUserSpace(const char *str,size_t *len) {
-		size_t slen = strlen(str);
+		ssize_t slen = UserAccess::strlen(str);
+		if(slen < 0)
+			return false;
 		if(len)
 			*len = slen;
 		return PageDir::isInUserSpace((uintptr_t)str,slen);

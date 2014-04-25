@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/proc.h>
@@ -71,10 +72,10 @@ void VFSPipe::close(pid_t pid,OpenFile *file,A_UNUSED int msgid) {
 ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
                       off_t offset,size_t count) {
 	Thread *t = Thread::getRunning();
-
-	/* wait until data is available */
 	if(!isAlive())
 		return -EDESTROYED;
+
+	/* wait until data is available */
 	lock.down();
 	while(list.length() == 0) {
 		t->wait(EV_PIPE_FULL,(evobj_t)this);
@@ -91,8 +92,8 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		}
 	}
 
-	PipeData *data = &*list.begin();
 	/* empty message indicates EOF */
+	PipeData *data = &*list.begin();
 	if(data->length == 0) {
 		lock.up();
 		return 0;
@@ -104,9 +105,13 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		vassert(offset >= data->offset,"Illegal offset");
 		vassert((off_t)data->length >= (offset - data->offset),"Illegal offset");
 		size_t byteCount = MIN(data->length - (offset - data->offset),count);
-		Thread::addLock(&lock);
-		memcpy((uint8_t*)buffer + totalBytes,data->data + (offset - data->offset),byteCount);
-		Thread::remLock(&lock);
+		int res = UserAccess::write((uint8_t*)buffer + totalBytes,
+			data->data + (offset - data->offset),byteCount);
+		if(res < 0) {
+			lock.up();
+			return res;
+		}
+
 		/* remove if read completely */
 		if(byteCount + (offset - data->offset) == data->length) {
 			list.removeAt(NULL,data);
@@ -118,6 +123,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 		offset += byteCount;
 		if(count == 0)
 			break;
+
 		/* wait until data is available */
 		while(list.length() == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
@@ -136,6 +142,7 @@ ssize_t VFSPipe::read(A_UNUSED tid_t pid,A_UNUSED OpenFile *file,USER void *buff
 				return -EDESTROYED;
 			}
 		}
+
 		data = &*list.begin();
 		/* keep the empty one for the next transfer */
 		if(data->length == 0)
@@ -189,9 +196,11 @@ ssize_t VFSPipe::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	data->offset = offset;
 	data->length = count;
 	if(count) {
-		Thread::addHeapAlloc(data);
-		memcpy(data->data,buffer,count);
-		Thread::remHeapAlloc(data);
+		int res = UserAccess::read(data->data,buffer,count);
+		if(res < 0) {
+			Cache::free(data);
+			return res;
+		}
 	}
 
 	/* append */

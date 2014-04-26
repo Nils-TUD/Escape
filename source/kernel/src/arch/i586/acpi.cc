@@ -149,12 +149,8 @@ void ACPI::parse() {
 					switch(apic->type) {
 						case TYPE_LAPIC: {
 							APICLAPIC *lapic = (APICLAPIC*)apic;
-							if(lapic->flags & 0x1) {
+							if(lapic->flags & 0x1)
 								SMP::addCPU(lapic->id == id,lapic->id,false);
-								/* make bootstrap CPU ready; we're currently running on it */
-								if(lapic->id == id)
-									SMP::setId(id,0);
-							}
 						}
 						break;
 
@@ -166,6 +162,10 @@ void ACPI::parse() {
 					}
 					apic = (APIC*)((uintptr_t)apic + apic->length);
 				}
+
+				/* make bootstrap CPU ready; we're currently running on it */
+				if(SMP::getCPUCount() > 0)
+					SMP::setId(id,0);
 
 				/* now set the redirections */
 				apic = rapic->apics;

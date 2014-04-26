@@ -118,6 +118,10 @@ void MPConfig::parse() {
 				break;
 		}
 	}
+
+	/* make bootstrap CPU ready; we're currently running on it */
+	if(SMP::getCPUCount() > 0)
+		SMP::setId(::LAPIC::getId(),0);
 }
 
 MPConfig::FloatPtr *MPConfig::search() {

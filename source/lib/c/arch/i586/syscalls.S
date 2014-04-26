@@ -1,29 +1,29 @@
-#
-# $Id$
-# Copyright (C) 2008 - 2009 Nils Asmussen
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2014 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 #include <esc/syscalls.h>
 
 .section .text
 
-# calculates the return address for sysenter and the stackpointer and performs sysenter.
-# this has to be done differently when using it in a shared library because we don't know the
-# absolute address
+// calculates the return address for sysenter and the stackpointer and performs sysenter.
+// this has to be done differently when using it in a shared library because we don't know the
+// absolute address
 .macro DO_SYSENTER
 #ifdef SHAREDLIB
 	call	1f
@@ -38,35 +38,35 @@
 1:
 .endm
 
-# stores the received error-code (in edi) to the global variable errno
+// stores the received error-code (in edi) to the global variable errno
 .macro STORE_ERRNO
 	test	%edi,%edi
-	jz		1f								# no-error?
-	# use GOT for shared-libraries
+	jz		1f								// no-error?
+	// use GOT for shared-libraries
 	#ifdef SHAREDLIB
-	# first get address of GOT
+	// first get address of GOT
 	call	__i686.get_pc_thunk.bx
 	addl	$_GLOBAL_OFFSET_TABLE_,%eax
-	# now access symbol and store errno
+	// now access symbol and store errno
 	mov		errno@GOT(%eax),%eax
 	mov		%edi,(%eax)
 	negl	(%eax)
 	#else
-	# otherwise access errno directly
-	mov		%edi,(errno)					# store error-code
+	// otherwise access errno directly
+	mov		%edi,(errno)					// store error-code
 	negl	(errno)
 	#endif
-	mov		%edi,%eax						# return error-code
+	mov		%edi,%eax						// return error-code
 1:
 .endm
 
 .extern errno
 .extern _GLOBAL_OFFSET_TABLE_
 
-# needed for shared libraries to get the address of the GOT
+// needed for shared libraries to get the address of the GOT
 #ifdef SHAREDLIB
-# put in the linkonce-section to tell the linker that he should put this function in the
-# executable / shared library just once
+// put in the linkonce-section to tell the linker that he should put this function in the
+// executable / shared library just once
 .section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits
 .global __i686.get_pc_thunk.bx
 .hidden  __i686.get_pc_thunk.bx
@@ -84,15 +84,15 @@ syscall7:
 	mov		%esp,%ebp
 	push	%edi
 	push	%esi
-	mov		%edx,%esi						# set arg1
-	mov		%ecx,%edi						# set arg2
-	pushl	24(%ebp)						# push arg7
-	pushl	20(%ebp)						# push arg6
-	pushl	16(%ebp)						# push arg5
-	pushl	12(%ebp)						# push arg4
-	pushl	8(%ebp)							# push arg3
+	mov		%edx,%esi						// set arg1
+	mov		%ecx,%edi						// set arg2
+	pushl	24(%ebp)						// push arg7
+	pushl	20(%ebp)						// push arg6
+	pushl	16(%ebp)						// push arg5
+	pushl	12(%ebp)						// push arg4
+	pushl	8(%ebp)							// push arg3
 	DO_SYSENTER
-	add		$20,%esp						# remove args
+	add		$20,%esp						// remove args
 	STORE_ERRNO
 	pop		%esi
 	pop		%edi

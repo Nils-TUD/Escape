@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-	.set	TERM_BASE,0xF0300000			# terminal base address
-	.set	OUTPUT_BASE,0xFF000000			# output base address
-	.set	TIMER_BASE,0xF0000000			# timer base address
+	.set	TERM_BASE,0xF0300000			// terminal base address
+	.set	OUTPUT_BASE,0xFF000000			// output base address
+	.set	TIMER_BASE,0xF0000000			// timer base address
 	.set	TIMER_REG_CTRL,0
 	.set	TIMER_REG_DIV,4
 	.set	TIMER_CTRL_EXP,0x1
@@ -31,8 +31,8 @@
 	.set	FS_TLB_ELOW,3
 	.set	FS_TSC_HIGH,5
 	.set	FS_TSC_LOW,6
-	.set	CINTRPT_FLAG,1 << 23			# flag for current-interrupt-enable
-	.set	INTRPTS_IN_RAM,1 << 27			# the flag to handle interrupts in RAM (not ROM)
+	.set	CINTRPT_FLAG,1 << 23			// flag for current-interrupt-enable
+	.set	INTRPTS_IN_RAM,1 << 27			// the flag to handle interrupts in RAM (not ROM)
 
 
 	.extern	bootload
@@ -71,88 +71,88 @@ loop:
 	j		loop
 
 start:
-	add		$19,$4,$0						# save $4
-	# setup psw
+	add		$19,$4,$0						// save $4
+	// setup psw
 	mvfs	$8,FS_PSW
-	or		$8,$8,INTRPTS_IN_RAM			# let vector point to RAM
-	and		$8,$8,~CINTRPT_FLAG				# disable interrupts (just to be sure)
+	or		$8,$8,INTRPTS_IN_RAM			// let vector point to RAM
+	and		$8,$8,~CINTRPT_FLAG				// disable interrupts (just to be sure)
 	mvts	$8,FS_PSW
 
-	# initialize the TLB with invalid entries
+	// initialize the TLB with invalid entries
 	add		$16,$0,0xC0000000
-	add		$17,$0,$0						# loop index
-	add		$18,$0,32						# loop end
+	add		$17,$0,$0						// loop index
+	add		$18,$0,32						// loop end
 initTLBLoop:
-	mvts	$17,FS_TLB_INDEX				# set index
-	mvts	$16,FS_TLB_EHIGH				# set entryHi
-	mvts	$0,FS_TLB_ELOW					# set entryLo
-	tbwi									# write TLB entry at index
-	add		$17,$17,1						# $17++
+	mvts	$17,FS_TLB_INDEX				// set index
+	mvts	$16,FS_TLB_EHIGH				// set entryHi
+	mvts	$0,FS_TLB_ELOW					// set entryLo
+	tbwi									// write TLB entry at index
+	add		$17,$17,1						// $17++
 	add		$16,$16,PAGE_SIZE
-	blt		$17,$18,initTLBLoop				# if $17 < $18, jump to initTLBLoop
+	blt		$17,$18,initTLBLoop				// if $17 < $18, jump to initTLBLoop
 
-	# determine CPU speed
+	// determine CPU speed
 	add		$8,$0,TIMER_BASE
-	add		$9,$0,100						# 100ms measurement
+	add		$9,$0,100						// 100ms measurement
 	stw		$9,$8,TIMER_REG_DIV
 	add		$9,$0,TIMER_CTRL_IEN
-	stw		$9,$8,TIMER_REG_CTRL			# enable timer interrupts
+	stw		$9,$8,TIMER_REG_CTRL			// enable timer interrupts
 	mvfs	$9,FS_PSW
-	or		$9,$9,CINTRPT_FLAG				# enable interrupts
-	or 		$9,$9,0xFFFF					# set interrupt mask
+	or		$9,$9,CINTRPT_FLAG				// enable interrupts
+	or 		$9,$9,0xFFFF					// set interrupt mask
 	mvts	$9,FS_PSW
-	add		$0,$0,$0						# nop; we might jump over that
+	add		$0,$0,$0						// nop; we might jump over that
 	add		$18,$0,0
-	# get TSC (low is enough)
+	// get TSC (low is enough)
 	mvfs	$9,FS_TSC_LOW
-	# wait for interrupt
+	// wait for interrupt
 1:
 	beq		$18,$0,1b
-	# get TSC
+	// get TSC
 	mvfs	$10,FS_TSC_LOW
-	# speed = (after - before) * 10
+	// speed = (after - before) * 10
 	sub		$16,$10,$9
-	mulu	$16,$16,10						# store CPU speed in callee save reg
+	mulu	$16,$16,10						// store CPU speed in callee save reg
 	mvfs	$9,FS_PSW
-	and		$9,$9,~CINTRPT_FLAG				# disable interrupts
+	and		$9,$9,~CINTRPT_FLAG				// disable interrupts
 	and		$9,$9,~0xFFFF
 	mvts	$9,FS_PSW
 
-	# load modules
-	add		$4,$19,$0						# give bootload the memory size
-	add		$29,$0,0xC0200000 - 4			# setup stack
-	jal		bootload						# call bootload function
+	// load modules
+	add		$4,$19,$0						// give bootload the memory size
+	add		$29,$0,0xC0200000 - 4			// setup stack
+	jal		bootload						// call bootload function
 
-	add		$5,$0,$16						# give the kernel the CPU speed
-	add		$4,$2,$0						# give the kernel the boot infos
-	add		$31,$0,0xC0000000				# jump to kernel
+	add		$5,$0,$16						// give the kernel the CPU speed
+	add		$4,$2,$0						// give the kernel the boot infos
+	add		$31,$0,0xC0000000				// jump to kernel
 	jr		$31
 
-# void debugChar(char c)
+// void debugChar(char c)
 debugChar:
-	sub		$29,$29,8						# create stack frame
-	stw		$31,$29,0						# save return register
-	stw		$16,$29,4						# save register variable
-	add		$16,$4,0						# save argument
+	sub		$29,$29,8						// create stack frame
+	stw		$31,$29,0						// save return register
+	stw		$16,$29,4						// save register variable
+	add		$16,$4,0						// save argument
 	add		$10,$0,0x0A
 	bne		$4,$10,printCharStart
 	add		$4,$0,0x0D
 	jal		debugChar
 printCharStart:
-	add		$8,$0,TERM_BASE					# set I/O base address
-	add		$10,$0,OUTPUT_BASE				# set output base address
+	add		$8,$0,TERM_BASE					// set I/O base address
+	add		$10,$0,OUTPUT_BASE				// set output base address
 printCharLoop:
-	ldw		$9,$8,(0 << 4 | 8)				# get xmtr status
-	and		$9,$9,1							# xmtr ready?
-	beq		$9,$0,printCharLoop				# no - wait
-	stw		$16,$10,0						# send char to output
-	stw		$16,$8,(0 << 4 | 12)			# send char
-	ldw		$31,$29,0						# restore return register
-	ldw		$16,$29,4						# restore register variable
-	add		$29,$29,8						# release stack frame
-	jr		$31								# return
+	ldw		$9,$8,(0 << 4 | 8)				// get xmtr status
+	and		$9,$9,1							// xmtr ready?
+	beq		$9,$0,printCharLoop				// no - wait
+	stw		$16,$10,0						// send char to output
+	stw		$16,$8,(0 << 4 | 12)			// send char
+	ldw		$31,$29,0						// restore return register
+	ldw		$16,$29,4						// restore register variable
+	add		$29,$29,8						// release stack frame
+	jr		$31								// return
 
-# int dskio(int dskno, char cmd, int sct, Word addr, int nscts)
+// int dskio(int dskno, char cmd, int sct, Word addr, int nscts)
 dskio:
 	add		$4,$5,$0
 	add		$5,$6,$0

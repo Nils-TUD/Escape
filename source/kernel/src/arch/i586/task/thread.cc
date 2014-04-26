@@ -191,8 +191,9 @@ void ThreadBase::doSwitch() {
 		if(!Thread::save(&old->saveArea)) {
 			/* old thread */
 			n->stats.cycleStart = CPU::rdtsc();
-			Thread::resume(n->getProc()->getPageDir()->getPhysAddr(),&n->saveArea,&switchLock,
-			               n->getProc() != old->getProc());
+			uint32_t pdir = n->getProc()->getPageDir()->getPhysAddr();
+			bool chgpdir = n->getProc() != old->getProc();
+			Thread::resume(pdir,&n->saveArea,&switchLock,chgpdir);
 		}
 	}
 	else {

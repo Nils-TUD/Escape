@@ -226,7 +226,7 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 		return -ENOTSUP;
 
 	ssize_t err = static_cast<VFSChannel*>(node)->send(pid,flags,id,data1,size1,data2,size2);
-	if(EXPECT_TRUE(err == 0 && pid != KERNEL_PID)) {
+	if(EXPECT_TRUE(err >= 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
 		p->getStats().output += size1 + size2;

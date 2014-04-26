@@ -197,7 +197,6 @@ private:
 	static void irqKeyboard(Thread *t,IntrptStackFrame *stack);
 	static void irqDefault(Thread *t,IntrptStackFrame *stack);
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
-	static void ipiTerm(Thread *t,IntrptStackFrame *stack);
 	static void ipiCallback(Thread *t,IntrptStackFrame *stack);
 
 	static void eoi(int irq);

@@ -22,7 +22,7 @@
 .global thread_resume
 .extern spinlock_release
 
-# process save area offsets
+// process save area offsets
 .set STATE_ESP,						0
 .set STATE_EDI,						4
 .set STATE_ESI,						8
@@ -30,43 +30,43 @@
 .set STATE_EFLAGS,					16
 .set STATE_EBX,						20
 
-# void thread_idle();
+// void thread_idle();
 thread_idle:
 	sti
 1:
 	hlt
 	jmp			1b
 
-# bool thread_save(ThreadRegs *saveArea);
+// bool thread_save(ThreadRegs *saveArea);
 thread_save:
 	push	%ebp
 	mov		%esp,%ebp
 
-	# save register
+	// save register
 	mov		%ebx,STATE_EBX(%eax)
-	mov		%esp,STATE_ESP(%eax)	# store esp
+	mov		%esp,STATE_ESP(%eax)	// store esp
 	mov		%edi,STATE_EDI(%eax)
 	mov		%esi,STATE_ESI(%eax)
 	mov		%ebp,STATE_EBP(%eax)
-	pushfl							# load eflags
-	popl	STATE_EFLAGS(%eax)		# store
+	pushfl							// load eflags
+	popl	STATE_EFLAGS(%eax)		// store
 
-	mov		$0,%eax					# return 0
+	mov		$0,%eax					// return 0
 	leave
 	ret
 
-# bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,uint *lock,bool newProc);
+// bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,uint *lock,bool newProc);
 thread_resume:
 	push	%ebp
 	mov		%esp,%ebp
 
-	# exchange page-dir, if necessary
-	mov		8(%ebp),%edi			# get newProc
+	// exchange page-dir, if necessary
+	mov		8(%ebp),%edi			// get newProc
 	test	%edi,%edi
-	jz		1f						# dont set the page-dir if its the same process
-	mov		%eax,%cr3				# set page-dir
+	jz		1f						// dont set the page-dir if its the same process
+	mov		%eax,%cr3				// set page-dir
 
-	# now restore registers
+	// now restore registers
 1:
 	mov		STATE_EDI(%edx),%eax
 	mov		STATE_ESI(%edx),%esi
@@ -74,11 +74,11 @@ thread_resume:
 	mov		STATE_ESP(%edx),%esp
 	mov		STATE_EBX(%edx),%ebx
 	pushl	STATE_EFLAGS(%edx)
-	popfl							# load eflags
+	popfl							// load eflags
 
-	# unlock now; the old thread can be used
+	// unlock now; the old thread can be used
 	movl	$0,(%ecx)
 
-	mov		$1,%eax					# return 1
+	mov		$1,%eax					// return 1
 	leave
 	ret

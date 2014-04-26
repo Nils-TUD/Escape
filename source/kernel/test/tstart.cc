@@ -24,6 +24,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/terminator.h>
 #include <sys/boot.h>
+#include <sys/util.h>
 #include <sys/log.h>
 #include <esc/test.h>
 
@@ -54,26 +55,24 @@ extern sTestModule tModDList;
 extern sTestModule tModTreap;
 extern sTestModule tModPathTree;
 
-/* make gcc happy */
-EXTERN_C void bspstart(BootInfo *mbp);
-EXTERN_C uintptr_t smpstart();
-EXTERN_C void apstart();
+EXTERN_C void unittest_run();
+EXTERN_C void unittest_start();
 
-void bspstart(BootInfo *bootinfo) {
-	/* init the kernel */
-	Boot::start(bootinfo);
-
-	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
-	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-
-	/* TODO find a better solution */
-#ifdef __i386__
-	PageDir::gdtFinished();
-#endif
-
-	/* start tests */
+void unittest_start() {
 	/* swapmap (needed for swapmap tests) */
 	SwapMap::init(256 * K);
+
+	/* start the terminator */
+	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
+
+	/* register callback */
+	Boot::setUnittests(unittest_run);
+}
+
+void unittest_run() {
+	/* first unmap all userspace stuff */
+	Proc *p = Proc::getByPid(Proc::getRunning());
+	p->getVM()->unmapAll(true);
 
 #ifdef __mmix__
 	test_register(&tModAddrSpace);
@@ -103,14 +102,6 @@ void bspstart(BootInfo *bootinfo) {
 	test_start();
 
 	/* stay here */
-	while(1);
-}
-
-uintptr_t smpstart() {
-	/* not used */
-	return 0;
-}
-
-void apstart() {
-	/* not used */
+	while(1)
+		CPU::halt();
 }

@@ -92,7 +92,14 @@ static void test_1() {
 	t->discardFrames();
 	checkMemoryAfter(true);
 
+	/* doesn't work on mmix since we would have to leave the kernel and enter it again in order to
+	 * get a new kernel-stack */
+#ifndef __mmix__
 	cpid = Proc::clone(0);
+	if(cpid == 0) {
+		Proc::terminate(0);
+		A_UNREACHED;
+	}
 	test_assertTrue(cpid > 0);
 	clone = Proc::getByPid(cpid);
 
@@ -105,7 +112,9 @@ static void test_1() {
 	t->discardFrames();
 	checkMemoryAfter(true);
 
-	Proc::kill(clone->getPid());
+	Proc::waitChild(NULL);
+	test_assertTrue(Proc::getByPid(cpid) == NULL);
+#endif
 
 	test_caseSucceeded();
 }

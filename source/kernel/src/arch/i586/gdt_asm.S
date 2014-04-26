@@ -19,16 +19,16 @@
 
 .global gdt_flush
 
-# void gdt_flush(tGDTTable *gdt);
+// void gdt_flush(tGDTTable *gdt);
 gdt_flush:
-	lgdt	(%eax)					# load gdt
+	lgdt	(%eax)					// load gdt
 
-	mov		$0x10,%eax				# set the value for the segment-registers
-	mov		%eax,%ds				# reload segments
+	mov		$0x10,%eax				// set the value for the segment-registers
+	mov		%eax,%ds				// reload segments
 	mov		%eax,%es
 	mov		%eax,%fs
 	mov		%eax,%gs
 	mov		%eax,%ss
-	ljmp	$0x08,$2f				# reload code-segment via far-jump
+	ljmp	$0x08,$2f				// reload code-segment via far-jump
 2:
-	ret								# we're done
+	ret								// we're done

@@ -132,7 +132,6 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res = -ENOENT;
 	Proc *p;
-	Thread *t = Thread::getRunning();
 	msgid_t mid;
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
@@ -163,10 +162,8 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 
 	/* receive response */
 	ib.reset();
-	t->addResource();
 	mid = res;
 	res = receive(pid,0,&mid,ib.buffer(),ib.max());
-	t->remResource();
 	if(res < 0)
 		goto error;
 
@@ -217,7 +214,6 @@ size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
 }
 
 int VFSChannel::stat(pid_t pid,sFileInfo *info) {
-	Thread *t = Thread::getRunning();
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 
@@ -228,9 +224,7 @@ int VFSChannel::stat(pid_t pid,sFileInfo *info) {
 
 	/* receive response */
 	msgid_t mid = res;
-	t->addResource();
 	res = receive(pid,0,&mid,ib.buffer(),ib.max());
-	t->remResource();
 	if(res < 0)
 		return res;
 
@@ -258,7 +252,6 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		return res;
 
 	/* send msg to driver */
-	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 	ib << ipc::FileRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
 	res = file->sendMsg(pid,MSG_FILE_READ,ib.buffer(),ib.pos(),NULL,0);
@@ -271,10 +264,8 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	while(1) {
 		/* read response and ensure that we don't get killed until we've received both messages
 		 * (otherwise the channel might get in an inconsistent state) */
-		t->addResource();
 		ib.reset();
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
-		t->remResource();
 		if(res < 0) {
 			if(res == -EINTR) {
 				int cancelRes = cancel(pid,file,mid);
@@ -293,12 +284,9 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		if(r.res < 0)
 			return r.res;
 
-		if(!useshm && r.res > 0) {
-			/* read data */
-			t->addResource();
+		/* read data */
+		if(!useshm && r.res > 0)
 			r.res = file->receiveMsg(pid,&mid,buffer,count,0);
-			t->remResource();
-		}
 		return r.res;
 	}
 	A_UNREACHED;
@@ -308,7 +296,6 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
-	Thread *t = Thread::getRunning();
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 
 	if((res = isSupported(DEV_WRITE)) < 0)
@@ -326,9 +313,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	while(1) {
 		/* read response */
 		ib.reset();
-		t->addResource();
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
-		t->remResource();
 		if(res < 0) {
 			if(res == -EINTR) {
 				int cancelRes = cancel(pid,file,mid);
@@ -349,7 +334,6 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 }
 
 int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
-	Thread *t = Thread::getRunning();
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 
@@ -363,10 +347,8 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 		return res;
 
 	ib.reset();
-	t->addResource();
 	mid = res;
 	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
-	t->remResource();
 	if(res < 0)
 		return res;
 
@@ -379,7 +361,6 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
-	Thread *t = Thread::getRunning();
 
 	if(shmem != NULL)
 		return -EEXIST;
@@ -396,10 +377,8 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 
 	/* read response */
 	ib.reset();
-	t->addResource();
 	msgid_t mid = res;
 	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
-	t->remResource();
 	if(res < 0)
 		return res;
 
@@ -416,7 +395,6 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
-	Thread *t = Thread::getRunning();
 	msgid_t mid;
 	uint flags;
 
@@ -441,9 +419,7 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 	while(1) {
 		/* read response */
 		ib.reset();
-		t->addResource();
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
-		t->remResource();
 		if(res < 0) {
 			if(res == -EINTR) {
 				int cancelRes = cancel(pid,file,mid);

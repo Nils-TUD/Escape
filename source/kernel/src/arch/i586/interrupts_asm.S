@@ -33,27 +33,27 @@ halting:
 flushed:
 	.long	0
 
-# macro to build a default-isr-handler
+// macro to build a default-isr-handler
 .macro BUILD_DEF_ISR no
 	.global isr\no
 	isr\no:
-	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	pushl	$0						# error-code (no error here)
-	pushl	$\no					# the interrupt-number
+	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
+	pushl	$0						// error-code (no error here)
+	pushl	$\no					// the interrupt-number
 	jmp		isrCommon
 .endm
 
-# macro to build an error-isr-handler
+// macro to build an error-isr-handler
 .macro BUILD_ERR_ISR no
 	.global isr\no
 	isr\no:
-	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	# the error-code has already been pushed
-	pushl	$\no					# the interrupt-number
+	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
+	// the error-code has already been pushed
+	pushl	$\no					// the interrupt-number
 	jmp		isrCommon
 .endm
 
-# our ISRs
+// our ISRs
 BUILD_DEF_ISR 0
 BUILD_DEF_ISR 1
 BUILD_DEF_ISR 2
@@ -106,28 +106,27 @@ BUILD_DEF_ISR 48
 BUILD_DEF_ISR 49
 BUILD_DEF_ISR 50
 BUILD_DEF_ISR 51
-BUILD_DEF_ISR 52
-BUILD_DEF_ISR 57
+BUILD_DEF_ISR 56
 
-# IPI: flush TLB
-.global isr53
-isr53:
+// IPI: flush TLB
+.global isr52
+isr52:
 	pusha
-	# flush TLB
+	// flush TLB
 	mov		%cr3,%eax
 	mov		%eax,%cr3
 	call	lapic_eoi
 	popa
 	iret
 
-# IPI: wait
-.global isr54
-isr54:
+// IPI: wait
+.global isr53
+isr53:
 	pusha
-	# tell the CPU that requested the wait that we're waiting
+	// tell the CPU that requested the wait that we're waiting
 	lock
 	add		$1,(waiting)
-	# now wait until its unlocked
+	// now wait until its unlocked
 1:
 	mov		(waitlock),%eax
 	test	%eax,%eax
@@ -135,84 +134,84 @@ isr54:
 	pause
 	jmp		1b
 2:	call	lapic_eoi
-	# tell the CPU that we're done
+	// tell the CPU that we're done
 	lock
 	sub		$1,(waiting)
 	popa
 	iret
 
-# IPI: halt
-.global isr55
-isr55:
-	# tell the CPU that requested the halt that we're halting
+// IPI: halt
+.global isr54
+isr54:
+	// tell the CPU that requested the halt that we're halting
 	lock
 	add		$1,(halting)
-	# now hlt here with interrupts disabled
+	// now hlt here with interrupts disabled
 1:
 	hlt
-	# not reached
+	// not reached
 	jmp		1b
 
-# IPI: flush TLB ack
-.global isr56
-isr56:
+// IPI: flush TLB ack
+.global isr55
+isr55:
 	pusha
-	# flush TLB
+	// flush TLB
 	mov		%cr3,%eax
 	mov		%eax,%cr3
-	# tell the CPU that requested the flush that we've flushed our TLB
+	// tell the CPU that requested the flush that we've flushed our TLB
 	lock
 	add		$1,(flushed)
-	# continue
+	// continue
 	call	lapic_eoi
 	popa
 	iret
 
-# our null-handler for all other interrupts
+// our null-handler for all other interrupts
 .global isrNull
 isrNull:
-	# interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	pushl	$0						# error-code (no error here)
-	pushl	$57						# the interrupt-number
+	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
+	pushl	$0						// error-code (no error here)
+	pushl	$57						// the interrupt-number
 	jmp		isrCommon
 
-# syscall
+// syscall
 .global syscall_entry
 syscall_entry:
-	pushl	$0						# store intrptNo = 0 so that we can distinguish the stack-frames
-	# save registers
+	pushl	$0						// store intrptNo = 0 so that we can distinguish the stack-frames
+	// save registers
 	pusha
 
-	# call c-routine
-	mov		%esp,%eax				# pointer to stack-frame
+	// call c-routine
+	mov		%esp,%eax				// pointer to stack-frame
 	call	syscall_handler
 
-	# restore registers
+	// restore registers
 	popa
 	add		$4,%esp
 	sti
 	sysexit
 
-# the ISR for all interrupts
+// the ISR for all interrupts
 isrCommon:
-	# save registers
+	// save registers
 	pusha
 
-	# set segment-registers for kernel
-	# TODO just necessary for VM86-tasks because ds,es,fs and gs is set to 0 in this case
+	// set segment-registers for kernel
+	// TODO just necessary for VM86-tasks because ds,es,fs and gs is set to 0 in this case
 	mov		$0x23,%eax
 	mov		%eax,%ds
 	mov		%eax,%es
 	mov		%eax,%fs
 	mov		%eax,%gs
 
-	# call c-routine
-	mov		%esp,%eax				# pointer to stack-frame
+	// call c-routine
+	mov		%esp,%eax				// pointer to stack-frame
 	call	intrpt_handler
 
-	# restore registers
+	// restore registers
 	popa
 
-	# remove error-code and interrupt-number from stack and return
+	// remove error-code and interrupt-number from stack and return
 	add		$8,%esp
 	iret

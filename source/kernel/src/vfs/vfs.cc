@@ -758,8 +758,11 @@ errorDir:
 
 void VFS::removeThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
-	VFSNode *n = VFSNode::get(t->getThreadDir());
-	n->destroy();
+	inode_t nodeNo = t->getThreadDir();
+	if(nodeNo != -1) {
+		VFSNode *n = VFSNode::get(nodeNo);
+		n->destroy();
+	}
 }
 
 void VFS::printMsgs(OStream &os) {

@@ -123,7 +123,6 @@ void ThreadBase::initProps() {
 	stats.schedCount = 0;
 	stats.syscalls = 0;
 	stats.migrations = 0;
-	resources = 0;
 	reqFrames = ISList<frameno_t>();
 	threadListItem = ListItem(static_cast<Thread*>(this));
 	signalListItem = ListItem(static_cast<Thread*>(this));
@@ -304,18 +303,39 @@ errAdd:
 	return err;
 }
 
-void ThreadBase::kill() {
-	assert(state == Thread::ZOMBIE);
+void ThreadBase::terminate() {
+	assert(this == Thread::getRunning());
 	/* remove tls */
 	if(tlsRegion != NULL) {
 		proc->getVM()->unmap(tlsRegion);
 		tlsRegion = NULL;
 	}
 
+	/* process stats */
+	proc->stats.totalRuntime += stats.curCycleCount;
+	proc->stats.lastCycles += stats.curCycleCount;
+	proc->stats.totalSyscalls += stats.syscalls;
+	proc->stats.totalScheds += stats.schedCount;
+	proc->stats.totalMigrations += stats.migrations;
+
 	/* remove from all modules we may be announced */
-	makeUnrunnable();
+	Sched::removeThread(static_cast<Thread*>(this));
 	Timer::removeThread(tid);
+	VFS::removeThread(tid);
+	threadDir = -1;
+
+	Terminator::addDead(static_cast<Thread*>(this));
+}
+
+void ThreadBase::kill() {
+	assert(this != Thread::getRunning());
 	freeArch(static_cast<Thread*>(this));
+
+	/* remove tls (will only be done here if the thread-creation failed and we can't call terminate) */
+	if(tlsRegion != NULL) {
+		proc->getVM()->unmap(tlsRegion);
+		tlsRegion = NULL;
+	}
 	VFS::removeThread(tid);
 
 	/* notify the process about it */
@@ -323,10 +343,6 @@ void ThreadBase::kill() {
 
 	/* unref and release. if there is nobody else, we'll destroy everything */
 	relRef((Thread*)this);
-}
-
-void ThreadBase::makeUnrunnable() {
-	Sched::removeThread(static_cast<Thread*>(this));
 }
 
 void ThreadBase::printAll(OStream &os) {

@@ -162,12 +162,6 @@ public:
 	static void pause() {
 		asm volatile ("pause");
 	}
-	/**
-	 * Disables interrupts and halts the CPU
-	 */
-	static void halt() {
-		asm volatile ("cli; hlt");
-	}
 
 	/**
 	 * @return the bus speed in Hz
@@ -300,6 +294,10 @@ private:
 	static uint64_t cpuHz;
 	static uint64_t busHz;
 };
+
+inline void CPUBase::halt() {
+	asm volatile ("cli; hlt");
+}
 
 inline uint64_t CPUBase::getSpeed() {
 	return CPU::cpuHz;

@@ -25,12 +25,11 @@
 
 /* the IPIs we can send */
 #define IPI_WORK			51
-#define IPI_TERM			52
-#define IPI_FLUSH_TLB		53
-#define IPI_WAIT			54
-#define IPI_HALT			55
-#define IPI_FLUSH_TLB_ACK	56
-#define IPI_CALLBACK		57
+#define IPI_FLUSH_TLB		52
+#define IPI_WAIT			53
+#define IPI_HALT			54
+#define IPI_FLUSH_TLB_ACK	55
+#define IPI_CALLBACK		56
 
 class Sched;
 class OStream;
@@ -223,13 +222,6 @@ private:
 			c->curCycles += timestamp - c->thread->getStats().cycleStart;
 		c->thread = n;
 	}
-
-	/**
-	 * Sends an IPI to the CPU that executes it currently, if there is any.
-	 *
-	 * @param t the thread
-	 */
-	static void killThread(Thread *t);
 
 	static CPU *getCPUById(cpuid_t id);
 

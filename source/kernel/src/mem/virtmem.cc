@@ -647,17 +647,9 @@ void VirtMem::sync(VMRegion *vm) const {
 	OpenFile *file = vm->reg->getFile();
 	if((vm->reg->getFlags() & RF_SHAREABLE) && (vm->reg->getFlags() & RF_WRITABLE) && file) {
 		size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
-		/* this is more complicated because p might not be the current process. in this case we
-		 * can't directly access the memory. */
-		// TODO this is going to change soon
-		pid_t cur = Proc::getRunning();
 		pid_t pid = proc->getPid();
-		uint8_t *buf = NULL;
-		if(cur != pid) {
-			buf = (uint8_t*)Cache::alloc(PAGE_SIZE);
-			if(buf == NULL)
-				return;
-		}
+		/* can't and won't be done by a different process */
+		assert(pid == Proc::getRunning());
 
 		for(size_t i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->getByteCount() - i * PAGE_SIZE);
@@ -669,21 +661,9 @@ void VirtMem::sync(VMRegion *vm) const {
 			if(file->seek(pid,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
 
-			if(pid == cur)
-				file->write(pid,(void*)(vm->virt() + i * PAGE_SIZE),amount);
-			else {
-				/* we can't use the temp mapping during file->writeFile() because we might perform a
-				 * context-switch in between. */
-				frameno_t frame = getPageDir()->getFrameNo(vm->virt() + i * PAGE_SIZE);
-				uintptr_t addr = PageDir::getAccess(frame);
-				memcpy(buf,(void*)addr,amount);
-				PageDir::removeAccess();
-				file->write(pid,buf,amount);
-			}
+			/* write our mapped memory to file */
+			file->write(pid,(void*)(vm->virt() + i * PAGE_SIZE),amount);
 		}
-
-		if(cur != pid)
-			Cache::free(buf);
 	}
 }
 

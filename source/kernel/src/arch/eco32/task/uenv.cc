@@ -132,9 +132,8 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(uint32_t))) {
-		Proc::terminate(Proc::getRunning(),1,SIG_SEGFAULT);
-		/* never reached */
-		assert(false);
+		Proc::terminate(1,SIG_SEGFAULT);
+		A_UNREACHED;
 	}
 
 	/* we have to decrease $30, because when returning from the signal, we'll enter it by a trap,

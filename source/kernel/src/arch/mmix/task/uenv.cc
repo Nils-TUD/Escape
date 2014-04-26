@@ -195,9 +195,8 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	IntrptStackFrame *curStack = t->getIntrptStack();
 	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
-		Proc::terminate(Proc::getRunning(),1,SIG_SEGFAULT);
-		/* not reached */
-		assert(false);
+		Proc::terminate(1,SIG_SEGFAULT);
+		A_UNREACHED;
 	}
 
 	/* backup rBB, rWW, rXX, rYY and rZZ */

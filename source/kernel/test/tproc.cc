@@ -39,8 +39,12 @@ sTestModule tModProc = {
 };
 
 static void test_proc() {
+	/* doesn't work on mmix since we would have to leave the kernel and enter it again in order to
+	 * get a new kernel-stack */
+#ifndef __mmix__
 	test_proc_clone();
 	test_thread();
+#endif
 }
 
 /**
@@ -61,12 +65,18 @@ static void test_proc_clone() {
 		pid_t pid;
 		tprintf("Cloning process\n");
 		pid = Proc::clone(0);
-		test_assertTrue(pid > 0);
-		tprintf("Destroying process\n");
-		/* first terminate it, then free resources and finally remove the process */
-		assert(Proc::getByPid(pid)->getMainThread()->beginTerm());
-		Proc::destroy(pid);
-		Proc::kill(pid);
+		if(pid == 0) {
+			tprintf("Destroying myself\n");
+			Proc::terminate(0);
+			A_UNREACHED;
+		}
+		else {
+			test_assertTrue(pid > 0);
+			tprintf("Waiting for child\n");
+			Proc::waitChild(NULL);
+			tprintf("The process should be dead now\n");
+			test_assertTrue(Proc::getByPid(pid) == NULL);
+		}
 	}
 	checkMemoryAfter(false);
 	test_caseSucceeded();
@@ -78,8 +88,7 @@ static void thread_test() {
 	tprintf("thread %d is running...\n",Thread::getRunning()->getTid());
 	threadcnt++;
 
-	Proc::exit(0);
-	Thread::switchAway();
+	Proc::terminateThread(0);
 }
 
 static void test_thread() {

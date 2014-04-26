@@ -27,17 +27,18 @@ if kenv['ARCH'] == 'i586':
 
 src = [kenv.Glob('src/arch/$ARCH/kernel.S')]
 src += [kenv.Glob('src/*.c'), kenv.Glob('src/*/*.c')]
-src += [kenv.Glob('src/*.cc'), kenv.Glob('src/*/*.cc')]
+src += [f for f in kenv.Glob('src/*.cc') if 'start.cc' not in str(f)]
+src += [kenv.Glob('src/*/*.cc')]
 src += [f for f in kenv.Glob('src/*/*/*.c') if 'arch/' not in str(f)]
 src += [f for f in kenv.Glob('src/*/*/*.cc') if 'arch/' not in str(f)]
-src += [f for f in kenv.Glob('src/arch/$ARCH/*.cc') if 'start.cc' not in str(f)]
+src += [kenv.Glob('src/arch/$ARCH/*.cc')]
 src += [kenv.Glob('src/arch/$ARCH/*/*.cc'), kenv.Glob('src/arch/$ARCH/*/*/*.cc')]
 src += [kenv.Glob('src/basic/arch/$ARCH/*.c')]
 src += [kenv.Glob('src/basic/arch/$ARCH/*.S')]
 src += [f for f in kenv.Glob('src/arch/$ARCH/*.S') if 'kernel.S' not in str(f)]
 src += [f for f in kenv.Glob('src/arch/$ARCH/*/*.S')]
 tsrc = [kenv.Glob('test/*.cc'), kenv.Glob('test/arch/$ARCH/*.cc')]
-mainsrc = 'src/arch/$ARCH/start.cc'
+mainsrc = 'src/start.cc'
 
 # works around the problem that we use those sources for two programs. this way, we isolate each
 # source file in its own environment

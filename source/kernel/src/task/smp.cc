@@ -92,18 +92,6 @@ void SMPBase::updateRuntimes() {
 	}
 }
 
-void SMPBase::killThread(Thread *t) {
-	if(cpuCount > 1) {
-		cpuid_t cur = getCurId();
-		for(auto cpu = cpuList.cbegin(); cpu != cpuList.cend(); ++cpu) {
-			if(cpu->id != cur && cpu->ready && cpu->thread == t) {
-				sendIPI(cpu->id,IPI_TERM);
-				break;
-			}
-		}
-	}
-}
-
 void SMPBase::wakeupCPU() {
 	if(cpuCount > 1) {
 		cpuid_t cur = getCurId();

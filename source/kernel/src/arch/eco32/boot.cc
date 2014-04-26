@@ -104,6 +104,8 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* it's not good to do this twice.. */
 	if(loadedMods)
 		return 0;
+	if(unittests != NULL)
+		unittests();
 
 	/* start idle-thread */
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);

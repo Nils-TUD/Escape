@@ -101,11 +101,8 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = Thread::getRunning();
 	if((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)) {
-		/* if we should die, don't continue here. otherwise we will continue until we schedule *and* we
-		 * don't have any resources taken in the kernel (which might take some time). */
-		if(t->haveHigherPrio() || (t->getFlags() & T_WILL_DIE))
+		if(t->haveHigherPrio())
 			Thread::switchAway();
-		if(t->hasSignal())
 			UEnv::handleSignal(t,stack);
 	}
 

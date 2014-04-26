@@ -17,45 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <sys/common.h>
 
-#include <esc/common.h>
+EXTERN_C void unittest_start();
 
-class OStream;
-
-class CPUBase {
-	CPUBase() = delete;
-
-public:
-	/**
-	 * Halts the CPU (for ever)
-	 */
-	static void halt();
-
-	/**
-	 * @return the timestamp-counter value
-	 */
-	static uint64_t rdtsc();
-
-	/**
-	 * @return the speed of the CPU in Hz
-	 */
-	static uint64_t getSpeed();
-
-	/**
-	 * Prints the CPU-information
-	 *
-	 * @param os the output-stream
-	 */
-	static void print(OStream &os);
-};
-
-#ifdef __i386__
-#include <sys/arch/i586/cpu.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/cpu.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/cpu.h>
-#endif
+void unittest_start() {
+	/* no unittests by default */
+}

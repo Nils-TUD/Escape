@@ -156,6 +156,11 @@ private:
 	static uint64_t cpuHz;
 };
 
+inline void CPUBase::halt() {
+	while(1)
+		;
+}
+
 inline uint64_t CPUBase::rdtsc() {
 	uint64_t res;
 	asm volatile ("GET %0, rC" : "=r"(res));

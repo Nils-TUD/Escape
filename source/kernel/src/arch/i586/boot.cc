@@ -184,6 +184,8 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* it's not good to do this twice.. */
 	if(loadedMods)
 		return 0;
+	if(unittests != NULL)
+		unittests();
 
 	/* create module files */
 	VFSNode *node = NULL;

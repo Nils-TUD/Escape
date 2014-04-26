@@ -113,6 +113,13 @@ public:
 	static int loadModules(IntrptStackFrame *stack);
 
 	/**
+	 * Remembers that we should perform the unittests instead of booting
+	 */
+	static void setUnittests(void (*handler)()) {
+		unittests = handler;
+	}
+
+	/**
 	 * Prints all interesting elements of the multi-boot-structure
 	 */
 	static void print(OStream &os);
@@ -126,4 +133,5 @@ private:
 	 */
 	static BootTaskList taskList;
 	static bool loadedMods;
+	static void (*unittests)();
 };

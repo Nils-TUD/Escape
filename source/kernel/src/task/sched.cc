@@ -97,12 +97,7 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 			old->setState(Thread::BLOCKED);
 		else {
 			vassert(old->getState() == Thread::RUNNING || old->getState() == Thread::ZOMBIE,
-					"State %d",old->getState());
-			/* make us a zombie if we should die and have no resources anymore */
-			if(old->getFlags() & T_WILL_DIE) {
-				if(!old->hasResources())
-					old->setNewState(Thread::ZOMBIE);
-			}
+				"State %d",old->getState());
 
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
@@ -324,10 +319,7 @@ void Sched::removeThread(Thread *t) {
 	LockGuard<SpinLock> g(&lock);
 	switch(t->getState()) {
 		case Thread::RUNNING:
-			t->setNewState(Thread::ZOMBIE);
-			SMP::killThread(t);
-			return;
-		case Thread::ZOMBIE:
+			break;
 		case Thread::BLOCKED:
 			removeFromEventlist(t);
 			break;

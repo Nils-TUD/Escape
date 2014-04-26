@@ -53,9 +53,8 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 	uint32_t *esp = (uint32_t*)stack->getSP();
 	if(!PageDir::isInUserSpace((uintptr_t)esp,9 * sizeof(uint32_t))) {
-		Proc::terminate(Proc::getRunning(),1,SIG_SEGFAULT);
-		/* never reached */
-		assert(false);
+		Proc::terminate(1,SIG_SEGFAULT);
+		A_UNREACHED;
 	}
 	/* restore regs */
 	stack->esi = *esp++;

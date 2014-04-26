@@ -100,7 +100,7 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x31 */	{Syscalls::handle,			"Ack-Signal",			0},
 	/* 0x32 */	{Interrupts::irqTimer,		"LAPIC",				0},
 	/* 0x33 */	{Interrupts::ipiWork,		"Work IPI",				0},
-	/* 0x34 */	{Interrupts::ipiTerm,		"Term IPI",				0},
+	/* 0x34 */	{NULL,						"??",					0},
 	/* 0x35 */	{NULL,						"??",					0},	// Flush TLB
 	/* 0x36 */	{NULL,						"??",					0},	// Wait
 	/* 0x37 */	{NULL,						"??",					0},	// Halt
@@ -171,10 +171,6 @@ void Interrupts::syscall(IntrptStackFrame *stack) {
 	t = Thread::getRunning();
 	if(EXPECT_FALSE(t->hasSignal()))
 		UEnv::handleSignal(t,stack);
-	/* if we should die, don't continue here. otherwise we will continue until we schedule *and* we
-	 * don't have any resources taken in the kernel (which might take some time). */
-	if(EXPECT_FALSE(t->getFlags() & T_WILL_DIE))
-		Thread::switchAway();
 	t->popIntrptLevel();
 }
 
@@ -200,7 +196,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	/* handle signal */
 	t = Thread::getRunning();
 	if(EXPECT_TRUE(level == 1)) {
-		if(EXPECT_FALSE(t->haveHigherPrio() || (t->getFlags() & T_WILL_DIE)))
+		if(EXPECT_FALSE(t->haveHigherPrio()))
 			Thread::switchAway();
 		if(EXPECT_FALSE(t->hasSignal()))
 			UEnv::handleSignal(t,stack);
@@ -346,12 +342,6 @@ void Interrupts::ipiWork(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 		SMP::wakeupCPU();
 	/* otherwise switch to non-idle-thread (if there is any) */
 	else
-		Thread::switchAway();
-}
-
-void Interrupts::ipiTerm(Thread *t,A_UNUSED IntrptStackFrame *stack) {
-	/* stop running the thread, if it should die */
-	if(t->getNewState() == Thread::ZOMBIE)
 		Thread::switchAway();
 }
 

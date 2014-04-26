@@ -104,7 +104,6 @@ int OpenFile::fstat(pid_t pid,sFileInfo *info) const {
 	else {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		ipc::IPCBuf ib(buffer,sizeof(buffer));
-		Thread *t = Thread::getRunning();
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 
 		/* send msg to fs */
@@ -113,10 +112,8 @@ int OpenFile::fstat(pid_t pid,sFileInfo *info) const {
 			return res;
 
 		/* receive response */
-		t->addResource();
 		msgid_t mid = res;
 		res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
-		t->remResource();
 		if(res < 0)
 			return res;
 
@@ -277,17 +274,14 @@ int OpenFile::syncfs(pid_t pid) {
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))
 		return -EPERM;
 
-	Thread *t = Thread::getRunning();
 	VFSChannel *chan = static_cast<VFSChannel*>(node);
 	ssize_t res = chan->send(pid,0,MSG_FS_SYNCFS,NULL,0,NULL,0);
 	if(res < 0)
 		return res;
 
 	/* read response */
-	t->addResource();
 	msgid_t mid = res;
 	res = chan->receive(pid,0,&mid,buf.buffer(),buf.max());
-	t->remResource();
 	if(res < 0)
 		return res;
 

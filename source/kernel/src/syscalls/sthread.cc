@@ -55,10 +55,8 @@ int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
-	Proc::exit(exitCode);
-	Thread::switchAway();
-	Util::panic("We shouldn't get here...");
-	SYSC_RET1(stack,0);
+	Proc::terminateThread(exitCode);
+	A_UNREACHED;
 }
 
 int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {

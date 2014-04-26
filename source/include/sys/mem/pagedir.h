@@ -40,7 +40,7 @@
 #define PD_PART_KERNEL			2
 #define PD_PART_KHEAP			4
 #define PD_PART_PTBLS			8
-#define PD_PART_TEMPMAP			16
+#define PD_PART_NOTSHARED		16
 
 class PageDir;
 class OStream;

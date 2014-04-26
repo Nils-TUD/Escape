@@ -113,6 +113,8 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* it's not good to do this twice.. */
 	if(bootState == bootFinished)
 		return 0;
+	if(unittests != NULL)
+		unittests();
 
 	/* note that we can't do more than one Proc::clone at once here, because we have to leave the
 	 * kernel immediatly to choose another stack (the created process gets our stack) */

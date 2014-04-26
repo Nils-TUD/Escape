@@ -26,7 +26,6 @@
 #include <sys/task/env.h>
 #include <sys/task/uenv.h>
 #include <sys/task/groups.h>
-#include <sys/task/terminator.h>
 #include <sys/task/filedesc.h>
 #include <sys/task/timer.h>
 #include <sys/task/sems.h>
@@ -522,11 +521,8 @@ error:
 	release(p,PLOCK_PROG);
 errorNoRel:
 	Cache::free(argBuffer);
-	terminate(p->pid,1,SIG_COUNT);
-	Thread::switchAway();
-	Util::panic("We should not reach this!");
-	/* not reached */
-	return 0;
+	terminate(1,SIG_COUNT);
+	A_UNREACHED;
 }
 
 void ProcBase::join(tid_t tid) {
@@ -543,16 +539,6 @@ void ProcBase::join(tid_t tid) {
 		request(t->getProc()->pid,PLOCK_PROG);
 	}
 	release(p,PLOCK_PROG);
-}
-
-void ProcBase::exit(int exitCode) {
-	Thread *t = Thread::getRunning();
-	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
-	if(p) {
-		p->stats.exitCode = exitCode;
-		t->terminate();
-		release(p,PLOCK_PROG);
-	}
 }
 
 int ProcBase::addSignalFor(pid_t pid,int signal) {
@@ -572,87 +558,100 @@ int ProcBase::addSignalFor(pid_t pid,int signal) {
 	return 0;
 }
 
-void ProcBase::terminate(pid_t pid,int exitCode,int signal) {
-	Proc *p = request(pid,PLOCK_PROG);
-	if(!p)
-		return;
-	/* don't terminate processes twice */
-	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
-		release(p,PLOCK_PROG);
-		return;
-	}
-
-	if(pid == 0)
-		Util::panic("You can't terminate the initial process");
-
-	/* print information to log */
-	if(signal != SIG_COUNT || exitCode != 0) {
-		Log::get().writef("Process %d:%s terminated by signal %d, exitCode %d\n",
-				p->pid,p->command,signal,exitCode);
-	}
-
-	/* store exit-conditions */
-	p->stats.exitCode = exitCode;
-	p->stats.exitSignal = signal;
-
-	/* terminate all threads */
-	for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt)
-		(*pt)->terminate();
-	p->flags |= P_PREZOMBIE;
-	release(p,PLOCK_PROG);
-}
-
-void ProcBase::killThread(tid_t tid) {
-	Thread *t = Thread::getById(tid);
+void ProcBase::terminateThread(int exitCode) {
+	Thread *t = Thread::getRunning();
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	assert(p != NULL);
-	/* add the runtime that we haven't seen during our periodic update */
-	p->stats.totalRuntime += t->stats.curCycleCount;
-	p->stats.lastCycles += t->stats.curCycleCount;
-	p->stats.totalSyscalls += t->getStats().syscalls;
-	p->stats.totalScheds += t->getStats().schedCount;
-	p->stats.totalMigrations += t->getStats().migrations;
-	t->kill();
-	p->threads.remove(t);
-	if(p->threads.length() == 0) {
-		p->stats.exitCode = 0;
-		doDestroy(p);
+
+	/* are we the last one? */
+	if(p->threads.length() == 1) {
+		release(p,PLOCK_PROG);
+		terminate(exitCode,SIG_COUNT);
 	}
-	release(p,PLOCK_PROG);
+	else {
+		t->terminate();
+		release(p,PLOCK_PROG);
+
+		/* we don't want to continue anymore */
+		Thread::switchAway();
+		A_UNREACHED;
+	}
 }
 
-void ProcBase::destroy(pid_t pid) {
-	Proc *p = request(pid,PLOCK_PROG);
-	if(!p)
-		return;
-	for(auto pt = p->threads.begin(); pt != p->threads.end(); ) {
-		auto old = pt++;
-		(*old)->kill();
-		p->threads.remove(*old);
+void ProcBase::killThread(Thread *t) {
+	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
+	if(p) {
+		t->kill();
+		p->threads.remove(t);
+		if(p->threads.length() == 0) {
+			/* we are a zombie now, so notify parent that he can get our exit-state */
+			/* this can only be done if all threads have been killed because we have to kill them
+			 * before the process is killed */
+			p->flags &= ~P_PREZOMBIE;
+			p->flags |= P_ZOMBIE;
+
+			/* ensure that the parent-wakeup doesn't get lost */
+			LockGuard<Mutex> g(&childLock);
+			notifyProcDied(p->parentPid);
+		}
+		release(p,PLOCK_PROG);
 	}
-	p->stats.exitCode = 0;
-	doDestroy(p);
-	release(p,PLOCK_PROG);
 }
 
-void ProcBase::doDestroy(Proc *p) {
-	assert(p->threads.length() == 0);
-	/* release resources */
-	Sems::destroyAll(p,true);
-	FileDesc::destroy(p);
-	Groups::leave(p->pid);
-	Env::removeFor(p->pid);
-	doRemoveRegions(p,true);
-	p->virtmem.destroy();
-	MountSpace::leave(p);
-	terminateArch(p);
+void ProcBase::terminate(int exitCode,int signal) {
+	Thread *t = Thread::getRunning();
+	Proc *p = request(t->getProc()->getPid(),PLOCK_PROG);
+	assert(p != NULL);
 
-	/* we are a zombie now, so notify parent that he can get our exit-state */
-	p->flags &= ~P_PREZOMBIE;
-	p->flags |= P_ZOMBIE;
-	/* ensure that the parent-wakeup doesn't get lost */
-	LockGuard<Mutex> g(&childLock);
-	notifyProcDied(p->parentPid);
+	/* if terminate has already been called, just terminate our own thread */
+	if(p->flags & (P_PREZOMBIE | P_ZOMBIE))
+		t->terminate();
+	else {
+		p->stats.exitCode = exitCode;
+		if(signal != SIG_COUNT)
+			p->stats.exitSignal = signal;
+
+		if(p->getPid() == 0)
+			Util::panic("You can't terminate the initial process");
+
+		/* print information to log */
+		if(signal != SIG_COUNT || exitCode != 0) {
+			Log::get().writef("Process %d:%s terminated by signal %d, exitCode %d\n",
+					p->pid,p->command,signal,exitCode);
+		}
+
+		/* send all other threads the kill signal */
+		for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
+			if(*pt != t)
+				Signals::addSignalFor(*pt,SIG_KILL);
+		}
+		p->flags |= P_PREZOMBIE;
+
+		/* wait until all threads are dead */
+		release(p,PLOCK_PROG);
+		join(0);
+		p = request(p->getPid(),PLOCK_PROG);
+		assert(p != NULL);
+
+		/* release all resources that are not necessary anymore */
+		Sems::destroyAll(p,true);
+		FileDesc::destroy(p);
+		Groups::leave(p->pid);
+		Env::removeFor(p->pid);
+		doRemoveRegions(p,true);
+		MountSpace::leave(p);
+		terminateArch(p);
+
+		/* destroy our own thread, if there still is any (do that last, because this makes us
+		 * a zombie) */
+		assert(p->threads.length() == 1);
+		t->terminate();
+	}
+	release(p,PLOCK_PROG);
+
+	/* switch to somebody else */
+	Thread::switchAway();
+	A_UNREACHED;
 }
 
 void ProcBase::kill(pid_t pid) {
@@ -675,6 +674,8 @@ void ProcBase::kill(pid_t pid) {
 		}
 	}
 
+	/* destroy pagedir and stuff (can only be done by a different process) */
+	p->virtmem.destroy();
 	/* now its gone, so remove it from VFS */
 	VFS::removeProcess(p->pid);
 

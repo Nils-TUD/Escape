@@ -26,9 +26,6 @@
 void Mutex::down() {
 	Thread *t = Thread::getRunning();
 	if(holder != t->getTid()) {
-		/* add resource now since we'll change the global state of the semaphore (decreasing its
-		 * value to indicate that we're waiting). so, we can't terminate then. */
-		t->addResource();
 #if DEBUG_LOCKS
 		if(!Util::IsPanicStarted())
 #endif
@@ -52,7 +49,6 @@ bool Mutex::tryDown() {
 	bool res = Semaphore::tryDown();
 #endif
 	if(res) {
-		t->addResource();
 		holder = t->getTid();
 		depth++;
 	}
@@ -65,7 +61,6 @@ void Mutex::up() {
 	assert(depth > 0);
 	if(--depth == 0) {
 		holder = INVALID;
-		t->remResource();
 		asm volatile ("" : : : "memory");
 		Semaphore::up();
 	}

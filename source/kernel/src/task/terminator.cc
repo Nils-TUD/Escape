@@ -30,33 +30,21 @@ SpinLock Terminator::lock;
 BaseSem Terminator::sem(0);
 
 void Terminator::start() {
-	Thread *t = Thread::getRunning();
 	lock.down();
 	while(1) {
 		sem.down(&lock);
 
 		Thread *dt = deadThreads.removeFirst();
-		/* release the lock while we're killing the thread; the process-module may use us
-		 * in this time to add another thread */
+
+		/* better do that unlocked; we might block on a mutex */
 		lock.up();
-
-		while(!dt->beginTerm()) {
-			/* ensure that we idle to receive interrupts */
-			Timer::sleepFor(t->getTid(),20,true);
-			Thread::switchAway();
-		}
-		Proc::killThread(dt->getTid());
-
+		Proc::killThread(dt);
 		lock.down();
 	}
 }
 
 void Terminator::addDead(Thread *t) {
 	LockGuard<SpinLock> g(&lock);
-	/* ensure that we don't add a thread twice */
-	if(!(t->getFlags() & T_WILL_DIE)) {
-		t->setFlags(t->getFlags() | T_WILL_DIE);
-		assert(deadThreads.append(t));
-		sem.up();
-	}
+	assert(deadThreads.append(t));
+	sem.up();
 }

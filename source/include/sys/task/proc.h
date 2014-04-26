@@ -285,31 +285,29 @@ public:
 	static void removeRegions(pid_t pid,bool remStack);
 
 	/**
-	 * Destroys the current thread. If it's the only thread in the process, the complete process will
-	 * destroyed.
-	 * Note that the actual deletion will be done later!
+	 * Terminates the current thread (volunatily). If it's the only thread in the process, the
+	 * complete process will terminated.
 	 *
 	 * @param exitCode the exit-code
 	 */
-	static void exit(int exitCode) asm("proc_exit");
+	A_NORETURN static void terminateThread(int exitCode) asm("proc_exit");
 
 	/**
-	 * Kills the given thread. If the process has no threads afterwards, it is destroyed.
-	 * This is ONLY called by the terminator-module!
+	 * Kills the given thread, i.e. releases the last resources and removes it from the process
 	 *
-	 * @param tid the thread-id
+	 * @param t the thread
 	 */
-	static void killThread(tid_t tid);
+	static void killThread(Thread *t);
 
 	/**
-	 * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent
-	 * thread fetches the exit-state we'll kill the process
+	 * Marks the current process as zombie and notifies the waiting parent thread. As soon as the
+	 * parent thread fetches the exit-state we'll kill the process.
 	 *
 	 * @param pid the process-id
 	 * @param exitCode the exit-code to store
 	 * @param signal the signal with which it was killed (SIG_COUNT if none)
 	 */
-	static void terminate(pid_t pid,int exitCode,int signal);
+	A_NORETURN static void terminate(int exitCode,int signal = SIG_COUNT);
 
 	/**
 	 * Kills the given process. This is done after the exit-state has been given to the parent.
@@ -317,16 +315,6 @@ public:
 	 * @param pid the process-id
 	 */
 	static void kill(pid_t pid);
-
-	/**
-	 * Destroys the process with given pid, i.e. all threads are killed immediatly, the exit-state
-	 * is stored and all process-resources are free'd. After that, the parent can grab the exit-state.
-	 * Note: This function is only used from the unit-tests. By default, the terminator uses
-	 * Proc::killThread to kill threads, which will destroy the process if no thread is left.
-	 *
-	 * @param pid the process-id
-	 */
-	static void destroy(pid_t pid);
 
 	/**
 	 * Prints all existing processes
@@ -577,7 +565,6 @@ private:
 	static void notifyProcDied(pid_t parent);
 	static int getExitState(pid_t ppid,ExitState *state);
 	static void doRemoveRegions(Proc *p,bool remStack);
-	static void doDestroy(Proc *p);
 	static pid_t getFreePid();
 	static void add(Proc *p);
 	static void remove(Proc *p);

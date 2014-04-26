@@ -130,10 +130,6 @@ void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	/* only handle signals, if we come directly from user-mode */
 	if(t->hasSignal() && ((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0))
 		UEnv::handleSignal(t,stack);
-	/* if we should die, don't continue here. otherwise we will continue until we schedule *and* we
-	 * don't have any resources taken in the kernel (which might take some time). */
-	if(t->getFlags() & T_WILL_DIE)
-		Thread::switchAway();
 	leaveKernel(t);
 }
 
@@ -150,7 +146,7 @@ bool Interrupts::dynTrap(IntrptStackFrame *stack,int irqNo) {
 	/* only handle signals, if we come directly from user-mode */
 	t = Thread::getRunning();
 	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0) {
-		if(t->haveHigherPrio() || (t->getFlags() & T_WILL_DIE))
+		if(t->haveHigherPrio())
 			Thread::switchAway();
 		if(t->hasSignal())
 			UEnv::handleSignal(t,stack);

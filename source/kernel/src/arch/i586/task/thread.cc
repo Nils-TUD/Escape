@@ -31,6 +31,7 @@
 #include <sys/spinlock.h>
 #include <sys/config.h>
 #include <sys/cpu.h>
+#include <sys/util.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -129,17 +130,6 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	nt->saveArea.edi = 0;
 	nt->saveArea.esi = 0;
 	nt->saveArea.eflags = 0;
-}
-
-bool ThreadBase::beginTerm() {
-	LockGuard<SpinLock> g(&switchLock);
-	/* at first the thread can't run to do that. if its not running, its important that no resources
-	 * or heap-allocations are hold. otherwise we would produce a deadlock or memory-leak */
-	bool res = state != Thread::RUNNING && !hasResources();
-	/* ensure that the thread won't be chosen again */
-	if(res)
-		Sched::removeThread(static_cast<Thread*>(this));
-	return res;
 }
 
 void Thread::initialSwitch() {

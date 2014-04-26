@@ -482,8 +482,8 @@ void PageDirBase::print(OStream &os,uint parts) const {
 					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
 					(parts & PD_PART_KERNEL)) ||
 			(i >= ADDR_TO_PDINDEX(TEMP_MAP_AREA) &&
-					i < ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE) &&
-					(parts & PD_PART_TEMPMAP)) ||
+					i <= ADDR_TO_PDINDEX(KERNEL_STACK) &&
+					(parts & TEMP_MAP_AREA)) ||
 			(i >= ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
 					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE) &&
 					(parts & PD_PART_KHEAP)) ||

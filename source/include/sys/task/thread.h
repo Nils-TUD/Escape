@@ -22,7 +22,6 @@
 #include <sys/common.h>
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
-#include <sys/task/terminator.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/vmtree.h>
@@ -56,7 +55,6 @@
 #define KERNEL_TID				0xFFFE
 
 #define T_IDLE					1
-#define T_WILL_DIE				2
 
 #ifdef __i386__
 #include <sys/arch/i586/task/threadconf.h>
@@ -68,8 +66,6 @@
 #include <sys/arch/mmix/task/threadconf.h>
 #endif
 
-typedef void (*terminate_func)();
-
 class Thread;
 class Proc;
 class Event;
@@ -79,6 +75,7 @@ class ThreadBase : public DListItem {
 	friend class Sched;
 	friend class Signals;
 	friend class Event;
+	friend class Terminator;
 
 	struct Stats {
 		/* number of microseconds of runtime this thread has got so far */
@@ -310,26 +307,6 @@ public:
 	}
 
 	/**
-	 * @return true if this thread has active resources
-	 */
-	bool hasResources() const {
-		return resources > 0;
-	}
-	/**
-	 * Increments the resource-counter
-	 */
-	void addResource() {
-		resources++;
-	}
-	/**
-	 * Decrements the resource-counter
-	 */
-	void remResource() {
-		assert(resources > 0);
-		resources--;
-	}
-
-	/**
 	 * @param thread the thread
 	 * @return the runtime of the given thread
 	 */
@@ -410,13 +387,6 @@ public:
 	 * @return the interrupt-level (0 .. MAX_INTRPT_LEVEL - 1)
 	 */
 	size_t getIntrptLevel() const;
-
-	/**
-	 * Checks whether the thread can be terminated. If so, it ensures that it won't be scheduled again.
-	 *
-	 * @return true if it can be terminated now
-	 */
-	bool beginTerm();
 
 	/**
 	 * Retrieves the range of the stack with given number.
@@ -592,13 +562,13 @@ private:
 	static void freeArch(Thread *t);
 
 	/**
-	 * Terminates this thread, i.e. adds it to the terminator and if its the running thread, it
-	 * makes sure that it isn't chosen again.
+	 * Terminates the thread, i.e. releases most of the resources and announces itself to the
+	 * terminator, which will do the rest.
 	 */
 	void terminate();
 
 	/**
-	 * Kills this thread, i.e. releases all resources and destroys it.
+	 * Finally kills this thread, i.e. releases the last resources and notifies the process.
 	 */
 	void kill();
 
@@ -607,7 +577,6 @@ private:
 	}
 
 	void printEvMask(OStream &os) const;
-	void makeUnrunnable();
 	void initProps();
 	static void doSwitch() asm("thread_switch");
 	static Thread *createInitial(Proc *p);
@@ -640,8 +609,6 @@ protected:
 	cpuid_t cpu;
 	/* whether signals should be ignored (while being blocked) */
 	uint8_t ignoreSignals;
-	/* the number of allocated resources (thread can't die until resources=0) */
-	uint8_t resources;
 	/* the stack-region(s) for this thread */
 	VMRegion *stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
@@ -766,13 +733,6 @@ inline void ThreadBase::discardFrames() {
 	frameno_t frm;
 	while((frm = reqFrames.removeFirst()) != 0)
 		PhysMem::free(frm,PhysMem::USR);
-}
-
-inline void ThreadBase::terminate() {
-	/* if its the current one, it can't be chosen again by the scheduler */
-	if(this == getRunning())
-		makeUnrunnable();
-	Terminator::addDead(static_cast<Thread*>(this));
 }
 
 /**

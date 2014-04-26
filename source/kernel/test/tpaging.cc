@@ -62,6 +62,11 @@ static void test_paging_foreign() {
 	Proc *child;
 	Thread *t = Thread::getRunning();
 	pid_t pid = Proc::clone(0);
+	if(pid == 0) {
+		Proc::terminate(0);
+		A_UNREACHED;
+	}
+
 	test_assertTrue(pid > 0);
 	child = Proc::getByPid(pid);
 
@@ -102,9 +107,14 @@ static void test_paging_foreign() {
 	}
 	else
 		test_caseSucceeded();
-	assert(child->getMainThread()->beginTerm());
-	Proc::destroy(child->getPid());
-	Proc::kill(child->getPid());
+
+	/* doesn't work on mmix since we would have to leave the kernel and enter it again in order to
+	 * get a new kernel-stack */
+#ifndef __mmix__
+	/* give the process a chance to terminate */
+	Proc::waitChild(NULL);
+	test_assertTrue(Proc::getByPid(pid) == NULL);
+#endif
 }
 
 static bool test_paging_cycle(uintptr_t addr,size_t count) {

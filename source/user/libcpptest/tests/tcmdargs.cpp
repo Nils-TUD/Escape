@@ -55,7 +55,7 @@ static void test_flags(void) {
 		const char * const argv3[] = {"progname","--flag1x","--flag2",nullptr};
 		const char * const argv4[] = {"progname","--flag1","--flag2",nullptr};
 		const char *format = "flag1 flag2";
-		bool flag1,flag2;
+		int flag1,flag2;
 		cmdargs *a;
 
 		flag1 = flag2 = false;
@@ -163,7 +163,7 @@ static void test_reqNFree(void) {
 		const char * const argv3[] = {"progname","-b=123","--req","val",nullptr};
 		const char * const argv4[] = {"progname","-b=12","--nreq=f","--req=test","free1","-free2","--req",nullptr};
 		const char *format = "b=d* req=s* nreq=X";
-		bool ex;
+		int ex;
 		int b;
 		string req;
 		uint nreq;

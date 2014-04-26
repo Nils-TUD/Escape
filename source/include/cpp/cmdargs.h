@@ -118,7 +118,7 @@ namespace std {
 		 * by spaces.
 		 *
 		 * An example is:
-		 * bool flag;
+		 * int flag;
 		 * string s;
 		 * int d;
 		 * args->parse("flag a=s arg2=d*",&flag,&s,&d);

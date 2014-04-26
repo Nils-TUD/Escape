@@ -130,7 +130,7 @@ size_t Region::pageCount(size_t *swapped) const {
 	return c;
 }
 
-ssize_t Region::grow(ssize_t amount) {
+ssize_t Region::grow(ssize_t amount,size_t *own) {
 	size_t count = BYTES_2_PAGES(byteCount);
 	ssize_t res = 0;
 	assert((flags & RF_GROWABLE));
@@ -154,6 +154,8 @@ ssize_t Region::grow(ssize_t amount) {
 		byteCount += amount * PAGE_SIZE;
 	}
 	else {
+		if(own)
+			*own = 0;
 		if(byteCount < (size_t)-amount * PAGE_SIZE)
 			return -ENOMEM;
 		/* free swapped pages */
@@ -162,6 +164,8 @@ ssize_t Region::grow(ssize_t amount) {
 				SwapMap::free(getSwapBlock(i));
 				res++;
 			}
+			else if(own && (pageFlags[i] & (PF_COPYONWRITE | PF_DEMANDLOAD)) == 0)
+				(*own)++;
 		}
 		if(flags & RF_GROWS_DOWN)
 			memmove(pageFlags,pageFlags + -amount,(count + amount) * sizeof(ulong));

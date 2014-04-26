@@ -220,9 +220,10 @@ public:
 	 * Note that the stack grows downwards, all other regions upwards.
 	 *
 	 * @param amount the number of pages
+	 * @param own will be set to the number of owned frames (if amount < 0)
 	 * @return the number of free'd swapped pages or a negative error-code
 	 */
-	ssize_t grow(ssize_t amount);
+	ssize_t grow(ssize_t amount,size_t *own = NULL);
 
 	/**
 	 * Prints the region

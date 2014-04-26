@@ -1112,7 +1112,8 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 				}
 			}
 		}
-		if((res = vm->reg->grow(amount)) < 0) {
+		size_t own = 0;
+		if((res = vm->reg->grow(amount,&own)) < 0) {
 			vm->reg->release();
 			return 0;
 		}
@@ -1154,7 +1155,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 			if(vm->virt() >= FREE_AREA_BEGIN)
 				freemap.free(virt,-amount * PAGE_SIZE);
 			pts = getPageDir()->unmap(virt,-amount,true);
-			addOwn(-(pts - amount));
+			addOwn(-(pts - own));
 			addSwap(-res);
 		}
 	}

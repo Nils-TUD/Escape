@@ -29,9 +29,11 @@
 
 static void firenforget(void) {
 	size_t i;
-	uint64_t start = rdtsc();
+	uint64_t total = 0;
 	for(i = 0; i < TEST_COUNT; ++i) {
+		uint64_t start = rdtsc();
 		int pid = fork();
+		total += rdtsc() - start;
 		if(pid == 0)
 			exit(0);
 		else if(pid < 0) {
@@ -39,8 +41,7 @@ static void firenforget(void) {
 			return;
 		}
 	}
-	uint64_t end = rdtsc();
-	printf("fork      : %Lu cycles/call\n",(end - start) / TEST_COUNT);
+	printf("fork      : %Lu cycles/call\n",total / TEST_COUNT);
 
 	/* better catch the zombies now */
 	for(i = 0; i < TEST_COUNT; ++i)
@@ -49,8 +50,9 @@ static void firenforget(void) {
 
 static void waitdead(void) {
 	size_t i;
-	uint64_t start = rdtsc();
+	uint64_t total = 0;
 	for(i = 0; i < TEST_COUNT; ++i) {
+		uint64_t start = rdtsc();
 		int pid = fork();
 		if(pid == 0)
 			exit(0);
@@ -59,9 +61,9 @@ static void waitdead(void) {
 			return;
 		}
 		waitchild(NULL);
+		total += rdtsc() - start;
 	}
-	uint64_t end = rdtsc();
-	printf("fork      : %Lu cycles/call\n",(end - start) / TEST_COUNT);
+	printf("fork      : %Lu cycles/call\n",total / TEST_COUNT);
 }
 
 int mod_fork(A_UNUSED int argc,A_UNUSED char *argv[]) {

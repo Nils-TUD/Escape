@@ -96,10 +96,16 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 		return 1;
 	}
 
-	/* now copy the stack */
-	/* copy manually to prevent a function-call (otherwise we would change the stack) */
+	/* we don't need to copy the whole page. but take into account that we call Thread::save, which
+	 * internally does a push, so start 8 bytes earlier */
+	uint32_t esp = CPU::getSP() - 8;
 	ulong *src = (ulong*)t->kernelStack;
-	for(size_t i = 0; i < (PAGE_SIZE / sizeof(ulong)) - 1; i++)
+	size_t off = (esp & (PAGE_SIZE - 1)) / sizeof(ulong);
+	ulong *dstend = dst + (PAGE_SIZE / sizeof(ulong)) - 1;
+	dst += off;
+	src += off;
+	/* copy manually to prevent a function-call (otherwise we would change the stack) */
+	while(dst < dstend)
 		*dst++ = *src++;
 	/* store thread at the top */
 	*dst = (ulong)nt;

@@ -52,27 +52,13 @@ private:
 };
 
 inline Thread *ThreadBase::getRunning() {
-	uint32_t esp;
-	asm volatile (
-		"mov	%%esp,%0;"
-		/* outputs */
-		: "=r" (esp)
-		/* inputs */
-		:
-	);
+	uint32_t esp = CPU::getSP();
 	Thread** tptr = (Thread**)((esp & 0xFFFFF000) + 0xFFC);
 	return *tptr;
 }
 
 inline void ThreadBase::setRunning(Thread *t) {
-	uint32_t esp;
-	asm volatile (
-		"mov	%%esp,%0;"
-		/* outputs */
-		: "=r" (esp)
-		/* inputs */
-		:
-	);
+	uint32_t esp = CPU::getSP();
 	ThreadBase** tptr = (ThreadBase**)((esp & 0xFFFFF000) + 0xFFC);
 	*tptr = t;
 }

@@ -288,6 +288,15 @@ public:
 		);
 	}
 
+	/**
+	 * @return the current stack-pointer
+	 */
+	A_ALWAYS_INLINE static uint32_t getSP() {
+		uint32_t esp;
+		asm volatile ("mov	%%esp,%0;" : "=r" (esp));
+		return esp;
+	}
+
 private:
 	/* the information about our cpu */
 	static Info *cpus;

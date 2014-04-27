@@ -23,6 +23,7 @@
 #include <sys/task/proc.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/pagedir.h>
+#include <sys/mem/useraccess.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/openfile.h>
 #include <sys/boot.h>
@@ -33,27 +34,52 @@
 #include <errno.h>
 #include <assert.h>
 
-#define KEYBOARD_BASE		0x8006000000000000
-#define KEYBOARD_CTRL		0
-#define KEYBOARD_IEN		0x02
+void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
+	IntrptStackFrame *curStack = t->getIntrptStack();
+	KSpecRegs *sregs = t->getSpecRegs();
+
+	ulong *sp = (ulong*)curStack[-15];				/* $254 */
+	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(ulong)))
+		goto error;
+
+	/* backup rBB, rWW, rXX, rYY and rZZ */
+	UserAccess::write(sp - 5,sregs,sizeof(KSpecRegs));
+	sp -= 6;
+	UserAccess::writeVar(sp--,(ulong)curStack[-9]);		/* rJ */
+	UserAccess::writeVar(sp--,(ulong)handler);
+	UserAccess::writeVar(sp,(ulong)sig);
+	curStack[-15] = (ulong)sp;						/* $254 */
+
+	if(t->isFaulted())
+		goto error;
+
+	/* jump to sigRetAddr for setup and finish-code */
+	sregs->rww = t->getProc()->getSigRetAddr();
+	sregs->rxx = 1UL << 63;
+	return;
+
+error:
+	Proc::terminate(1,SIG_SEGFAULT);
+	A_UNREACHED;
+}
 
 int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *curStack = t->getIntrptStack();
-	uint64_t *sp = (uint64_t*)(curStack[-15]);	/* $254 */
+	ulong *sp = (ulong*)(curStack[-15]);			/* $254 */
 
 	/* restore rBB, rWW, rXX, rYY and rZZ */
 	sp += 2;
-	curStack[-9] = *sp++;			/* rJ */
+	UserAccess::readVar((ulong*)(curStack - 9),sp++);			/* rJ */
 	KSpecRegs *sregs = t->getSpecRegs();
-	memcpy(sregs,sp,sizeof(KSpecRegs));
+	UserAccess::read(sregs,sp,sizeof(KSpecRegs));
 	sp += 5;
-	curStack[-15] = (uint64_t)sp;	/* $254 */
+	curStack[-15] = (ulong)sp;						/* $254 */
 	return 0;
 }
 
-bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
-                         const ELF::StartupInfo *info,uintptr_t entryPoint,A_UNUSED int fd) {
+bool UEnvBase::setupProc(int argc,int envc,const char *args,A_UNUSED size_t argsSize,
+         const ELF::StartupInfo *info,uintptr_t entryPoint,A_UNUSED int fd) {
 	Thread *t = Thread::getRunning();
 
 	/*
@@ -68,48 +94,46 @@ bool UEnvBase::setupProc(int argc,const char *args,A_UNUSED size_t argsSize,
 	 * Registers:
 	 * $1 = argc
 	 * $2 = argv
-	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
-	 * $5 = TLSStart (0 if not present)
-	 * $6 = TLSSize (0 if not present)
+	 * $4 = envc
+	 * $5 = envv
+	 * $7 = entryPoint (0 for initial thread, thread-entrypoint for others)
+	 * $8 = TLSStart (0 if not present)
+	 * $9 = TLSSize (0 if not present)
 	 */
 
+	/* we need to know the total number of bytes we'll store on the stack */
+	size_t totalSize = 0;
+	if(argc > 0 || envc > 0) {
+		/* first round the size of the arguments up. then we need argc+1 pointer */
+		totalSize += ROUND_UP(argsSize,sizeof(ulong));
+		totalSize += sizeof(void*) * (argc + 1 + envc + 1);
+	}
+	/* finally we need the stack-end */
+	totalSize += sizeof(ulong);
+
 	/* get register-stack */
-	uint64_t *rsp,*ssp;
+	ulong *rsp,*ssp;
 	t->getStackRange((uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
 	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
 	/* copy arguments on the user-stack (8byte space) */
 	ssp--;
-	char **argv = NULL;
-	if(argc > 0) {
-		argv = (char**)(ssp - argc);
-		/* space for the argument-pointer */
-		ssp -= argc;
-		/* start for the arguments */
-		char *str = (char*)ssp;
-		for(int i = 0; i < argc; i++) {
-			/* start <len> bytes backwards */
-			size_t len = strlen(args) + 1;
-			str -= len;
-			/* store arg-pointer and copy arg */
-			argv[i] = str;
-			memcpy(str,args,len);
-			/* to next */
-			args += len;
-		}
-		/* ensure that we don't overwrites the characters */
-		ssp = (uint64_t*)(((uintptr_t)str & ~(sizeof(uint64_t) - 1)) - sizeof(uint64_t));
-	}
-	*ssp = info->stackBegin;
+	char **argv = copyArgs(argc,args,ssp);
+	char **envv = copyArgs(envc,args,ssp);
+	UserAccess::writeVar(ssp,info->stackBegin);
 
 	/* store argc and argv */
-	rsp[1] = argc;
-	rsp[2] = (uint64_t)argv;
+	UserAccess::writeVar(rsp + 1,(ulong)argc);
+	UserAccess::writeVar(rsp + 2,(ulong)argv);
+	UserAccess::writeVar(rsp + 4,(ulong)envc);
+	UserAccess::writeVar(rsp + 5,(ulong)envv);
 
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
 	UEnv::addArgs(t,info,rsp,ssp,entryPoint,0,false);
+	if(t->isFaulted())
+		return false;
 	return true;
 }
 
@@ -128,9 +152,9 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 *
 	 * Registers:
 	 * $1 = arg
-	 * $4 = entryPoint (0 for initial thread, thread-entrypoint for others)
-	 * $5 = TLSStart (0 if not present)
-	 * $6 = TLSSize (0 if not present)
+	 * $7 = entryPoint (0 for initial thread, thread-entrypoint for others)
+	 * $8 = TLSStart (0 if not present)
+	 * $9 = TLSSize (0 if not present)
 	 */
 
 	/* the thread has to perform an UNSAVE at the beginning to establish the initial state.
@@ -177,56 +201,36 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	}
 
 	/* get register-stack */
-	uint64_t *rsp,*ssp;
+	ulong *rsp,*ssp;
 	t->getStackRange((uintptr_t*)&rsp,NULL,0);
 	/* get software-stack */
 	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
 	/* store location to UNSAVE from and the thread-argument */
-	*--ssp = sinfo.stackBegin;
-	rsp[1] = (uint64_t)arg;
+	UserAccess::writeVar(--ssp,sinfo.stackBegin);
+	UserAccess::writeVar(rsp + 1,(ulong)arg);
 
 	/* add TLS args and entrypoint */
 	UEnv::addArgs(t,&sinfo,rsp,ssp,t->getProc()->getEntryPoint(),tentryPoint,true);
+	if(t->isFaulted())
+		return NULL;
 	return ssp;
 }
 
-void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
-	IntrptStackFrame *curStack = t->getIntrptStack();
-	uint64_t *sp = (uint64_t*)curStack[-15];	/* $254 */
-	if(!PageDir::isInUserSpace((uintptr_t)(sp - 9),9 * sizeof(uint64_t))) {
-		Proc::terminate(1,SIG_SEGFAULT);
-		A_UNREACHED;
-	}
-
-	/* backup rBB, rWW, rXX, rYY and rZZ */
-	KSpecRegs *sregs = t->getSpecRegs();
-	memcpy(sp - 5,sregs,sizeof(KSpecRegs));
-	sp -= 6;
-	*sp-- = curStack[-9];			/* rJ */
-	*sp-- = (uintptr_t)handler;
-	*sp = sig;
-	curStack[-15] = (uint64_t)sp;	/* $254 */
-
-	/* jump to sigRetAddr for setup and finish-code */
-	sregs->rww = t->getProc()->getSigRetAddr();
-	sregs->rxx = 1UL << 63;
-}
-
-void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,ulong *rsp,ulong *ssp,
                    uintptr_t entry,uintptr_t tentry,bool thread) {
 	/* put address and size of the tls-region on the stack */
-	uintptr_t tlsStart,tlsEnd;
+	ulong tlsStart,tlsEnd;
 	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
-		rsp[5] = tlsStart;
-		rsp[6] = tlsEnd - tlsStart;
+		UserAccess::writeVar(rsp + 8,tlsStart);
+		UserAccess::writeVar(rsp + 9,tlsEnd - tlsStart);
 	}
 	else {
 		/* no tls */
-		rsp[5] = 0;
-		rsp[6] = 0;
+		UserAccess::writeVar(rsp + 8,(ulong)0);
+		UserAccess::writeVar(rsp + 9,(ulong)0);
 	}
-	rsp[4] = thread ? tentry : 0;
+	UserAccess::writeVar(rsp + 7,(ulong)(thread ? tentry : 0));
 
 	if(!thread) {
 		/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
@@ -241,6 +245,6 @@ void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t
 	}
 	/* set them in the stack to unsave from in user-space */
 	int rg = *(uint64_t*)info->stackBegin >> 56;
-	rsp[6 + (255 - rg)] = (uint64_t)ssp;
-	rsp[6 + (255 - rg) + 1] = (uint64_t)ssp;
+	UserAccess::writeVar(rsp + 10 + (255 - rg),(ulong)ssp);
+	UserAccess::writeVar(rsp + 10 + (255 - rg) + 1,(ulong)ssp);
 }

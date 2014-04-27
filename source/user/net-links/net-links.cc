@@ -60,7 +60,7 @@ static void linkAdd(ipc::Net &net,int argc,char **argv) {
 	int pid = fork();
 	if(pid == 0) {
 		const char *args[] = {argv[3],path,NULL};
-		exec(argv[3],args);
+		execv(argv[3],args);
 	}
 	else if(pid < 0)
 		error("fork");

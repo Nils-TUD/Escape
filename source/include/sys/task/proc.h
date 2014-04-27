@@ -25,7 +25,6 @@
 #include <sys/mem/vmtree.h>
 #include <sys/mem/vmfreemap.h>
 #include <sys/task/elf.h>
-#include <sys/task/env.h>
 #include <sys/task/thread.h>
 #include <sys/task/groups.h>
 #include <sys/task/sems.h>
@@ -219,17 +218,16 @@ public:
 	static int addSignalFor(pid_t pid,int signal);
 
 	/**
-	 * Copies the arguments (for exec) in <args> to <*argBuffer> and takes care that everything
-	 * is ok. <*argBuffer> will be allocated on the heap, so that is has to be free'd when you're done.
+	 * Copies the arguments (for exec) in <args> to <argBuffer> and takes care that everything
+	 * is ok.
 	 *
 	 * @param args the arguments to copy
-	 * @param argBuffer will point to the location where it has been copied (to be used by
-	 * 	Proc::setupUserStack())
-	 * @param size will point to the size the arguments take in <argBuffer>
+	 * @param argBuffer the buffer where to write to
+	 * @param size the remaining size of the buffer (will be changed)
 	 * @param fromUser whether the arguments are from user-space
 	 * @return the number of arguments on success or < 0
 	 */
-	static int buildArgs(const char *const *args,char **argBuffer,size_t *size,bool fromUser);
+	static int buildArgs(const char *const *args,char *argBuffer,size_t *size,bool fromUser);
 
 	/**
 	 * Clones the current process, gives the new process a clone of the current thread and saves this
@@ -255,11 +253,13 @@ public:
 	 *
 	 * @param path the path to the program
 	 * @param args the arguments
+	 * @param env the environment
 	 * @param code if the program is already in memory, the location of it (used for boot-modules)
 	 * @param size if code != NULL, the size of the program in memory
 	 * @return 0 on success
 	 */
-	static int exec(const char *path,const char *const *args,const void *code,size_t size);
+	static int exec(const char *path,const char *const *args,USER const char *const *env,
+		const void *code,size_t size);
 
 	/**
 	 * Waits until the thread with given thread-id or all other threads of the process are terminated.
@@ -600,8 +600,6 @@ private:
 	size_t semsSize;
 	/* the mount space */
 	MountSpace *mounts;
-	/* environment-variables of this process */
-	SList<Env::EnvVar> *env;
 	/* the directory-node-number in the VFS of this process */
 	inode_t threadsDir;
 	Stats stats;

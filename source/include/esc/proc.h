@@ -50,6 +50,8 @@ typedef struct {
 extern "C" {
 #endif
 
+extern char **environ;
+
 /**
  * @return the process-id
  */
@@ -197,19 +199,27 @@ A_CHECKRET static inline int fork(void) {
  * @param args a NULL-terminated array of arguments
  * @return a negative error-code if failed
  */
-static inline int exec(const char *path,const char **args) {
-	return syscall2(SYSCALL_EXEC,(ulong)path,(ulong)args);
-}
+int execv(const char *path,const char **args);
 
 /**
- * The same as exec(), but if <file> does not contain a slash, the environment variable PATH
+ * The same as execv(), but if <file> does not contain a slash, the environment variable PATH
  * is prepended to <file>. Afterwards exec() is called with that path and <args>.
  *
  * @param file the file to execute
  * @param args a NULL-terminated array of arguments
  * @return a negative error-code if failed
  */
-int execp(const char *file,const char **args);
+int execvp(const char *file,const char **args);
+
+/**
+ * The same as execv(), but instead of the current environment, <env> is passed to the program.
+ *
+ * @param path the program-path
+ * @param args a NULL-terminated array of arguments
+ * @param env a NULL-terminated array of environment-variables
+ * @return a negative error-code if failed
+ */
+int execvpe(const char *path,const char **args,const char **env);
 
 /**
  * Waits until a child terminates and stores information about it into <state>.

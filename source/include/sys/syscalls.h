@@ -182,14 +182,14 @@ private:
 	static uint getArgCount(uint sysCallNo);
 
 	/**
-	 * Checks the given path and makes it absolute.
+	 * Checks the given path and copies it to <dst>.
 	 *
 	 * @param dst the destination array
 	 * @param size the size of <dst>
-	 * @param src the source path to absolutize
+	 * @param src the source path
 	 * @return true if the string is valid
 	 */
-	static bool absolutizePath(char *dst,size_t size,const char *src);
+	static bool copyPath(char *dst,size_t size,const char *src);
 
 	static void printEntry(Thread *t,IntrptStackFrame *stack);
 	static void printExit(Thread *t,IntrptStackFrame *stack);

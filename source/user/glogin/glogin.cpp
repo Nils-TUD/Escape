@@ -241,6 +241,6 @@ int main(void) {
 
 	// exec with desktop
 	const char *args[] = {DESKTOP_PROG,NULL};
-	execp(DESKTOP_PROG,args);
+	execvp(DESKTOP_PROG,args);
 	return EXIT_FAILURE;
 }

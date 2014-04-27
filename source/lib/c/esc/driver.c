@@ -17,35 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
+#include <esc/common.h>
+#include <esc/driver.h>
+#include <esc/dir.h>
 
-.section .text
-
-.global _start
-.global sigRetFunc
-
-_start:
-	// load modules first
-	add		$4,$0,ASM_SYSC_LOADMODS
-	trap
-
-	// now replace with init
-	add		$4,$0,ASM_SYSC_EXEC				// set syscall-number
-	add		$5,$0,progName					// set path
-	add		$6,$0,args						// set arguments
-	add		$7,$0,$0						// set env (NULL)
-	trap
-
-	// we should not reach this
-1:
-	j		1b
-
-// provide just a dummy
-sigRetFunc:
-	j		sigRetFunc
-
-args:
-	.long	progName,0
-
-progName:
-	.asciz	"/bin/init"
+int createdev(const char *path,mode_t mode,uint type,uint ops) {
+	char apath[MAX_PATH_LEN];
+	return syscall4(SYSCALL_CRTDEV,(ulong)abspath(apath,sizeof(apath),path),mode,type,ops);
+}

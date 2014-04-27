@@ -57,7 +57,7 @@ void DriverProcess::load() {
 		for(size_t i = 0; i < _args.size(); i++)
 			argv[i + 1] = _args[i].c_str();
 		argv[_args.size() + 1] = nullptr;
-		exec(argv[0],argv);
+		execv(argv[0],argv);
 
 		// if we're here, there's something wrong
 		cerr << "Exec of '" << path << "' failed" << endl;

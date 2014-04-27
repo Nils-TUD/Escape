@@ -135,7 +135,7 @@ static void pipeChild2Child(void) {
 		/* child */
 		close(fd[0]);
 		redirect(STDOUT_FILENO,fd[1]);
-		exec(args[0],args);
+		execv(args[0],args);
 		error("exec failed");
 	}
 	else if(child > 0) {
@@ -146,7 +146,7 @@ static void pipeChild2Child(void) {
 			/* child */
 			close(fd[1]);
 			redirect(STDIN_FILENO,fd[0]);
-			exec(args[0],args);
+			execv(args[0],args);
 			error("exec failed");
 		}
 		else if(child > 0) {
@@ -176,7 +176,7 @@ static void pipeThrough(void) {
 		/* child */
 		close(fd[0]);
 		redirect(STDOUT_FILENO,fd[1]);
-		exec(args[0],args);
+		execv(args[0],args);
 		error("exec failed");
 	}
 	else if(child > 0) {
@@ -192,7 +192,7 @@ static void pipeThrough(void) {
 			close(fd[2]);
 			redirect(STDOUT_FILENO,fd[3]);
 			redirect(STDIN_FILENO,fd[0]);
-			exec(args[0],args);
+			execv(args[0],args);
 			error("exec failed");
 		}
 		else if(child > 0) {

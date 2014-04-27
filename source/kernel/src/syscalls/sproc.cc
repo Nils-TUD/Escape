@@ -22,7 +22,6 @@
 #include <sys/task/thread.h>
 #include <sys/task/elf.h>
 #include <sys/task/signals.h>
-#include <sys/task/env.h>
 #include <sys/task/uenv.h>
 #include <sys/task/timer.h>
 #include <sys/task/groups.h>
@@ -164,70 +163,15 @@ int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-int Syscalls::getenvito(Thread *t,IntrptStackFrame *stack) {
-	char *buffer = (char*)SYSC_ARG1(stack);
-	size_t size = SYSC_ARG2(stack);
-	size_t index = SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
-	if(EXPECT_FALSE(size == 0))
-		SYSC_ERROR(stack,-EINVAL);
-	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,size)))
-		SYSC_ERROR(stack,-EFAULT);
-
-	if(EXPECT_FALSE(!Env::geti(pid,index,buffer,size)))
-		SYSC_ERROR(stack,-ENOENT);
-	SYSC_RET1(stack,0);
-}
-
-int Syscalls::getenvto(Thread *t,IntrptStackFrame *stack) {
-	char kname[MAX_NAME_LEN];
-	char *buffer = (char*)SYSC_ARG1(stack);
-	size_t size = SYSC_ARG2(stack);
-	const char *name = (const char*)SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	if(EXPECT_FALSE(!Syscalls::isStrInUserSpace(name,NULL)))
-		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(size == 0))
-		SYSC_ERROR(stack,-EINVAL);
-	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)buffer,size)))
-		SYSC_ERROR(stack,-EFAULT);
-
-	int res;
-	if((res = UserAccess::strnzcpy(kname,name,sizeof(kname))) < 0)
-		SYSC_ERROR(stack,res);
-
-	if(EXPECT_FALSE(!Env::get(pid,kname,buffer,size)))
-		SYSC_ERROR(stack,-ENOENT);
-	SYSC_RET1(stack,0);
-}
-
-int Syscalls::setenv(Thread *t,IntrptStackFrame *stack) {
-	char kname[MAX_NAME_LEN];
-	const char *name = (const char*)SYSC_ARG1(stack);
-	const char *value = (const char*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	if(EXPECT_FALSE(!Syscalls::isStrInUserSpace(name,NULL) || !Syscalls::isStrInUserSpace(value,NULL)))
-		SYSC_ERROR(stack,-EFAULT);
-
-	int res;
-	if((res = UserAccess::strnzcpy(kname,name,sizeof(kname))) < 0)
-		SYSC_ERROR(stack,res);
-
-	if(EXPECT_FALSE(!Env::set(pid,kname,value)))
-		SYSC_ERROR(stack,-ENOMEM);
-	SYSC_RET1(stack,0);
-}
-
 int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
-	if(EXPECT_FALSE(!absolutizePath(pathSave,sizeof(pathSave),path)))
+	const char *const *env = (const char *const *)SYSC_ARG3(stack);
+	if(EXPECT_FALSE(!copyPath(pathSave,sizeof(pathSave),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = Proc::exec(pathSave,args,NULL,0);
+	int res = Proc::exec(pathSave,args,env,NULL,0);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

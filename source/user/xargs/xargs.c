@@ -111,7 +111,7 @@ int main(int argc,const char *argv[]) {
 	}
 	args[i] = NULL;
 	/* exchange us with requested command */
-	execp(args[0],args);
+	execvp(args[0],args);
 	return EXIT_SUCCESS;
 }
 

@@ -39,7 +39,7 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	uint type = SYSC_ARG3(stack);
 	uint ops = SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check type and ops */

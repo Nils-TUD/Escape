@@ -26,12 +26,17 @@
 .extern main
 .extern exit
 .extern __libc_preinit
+.extern initenv
 .extern _init
 
 //  Initial stack:
 //  +------------------+  <- top
 //  |     arguments    |
 //  |        ...       |  not present for threads
+//  +------------------+
+//  |       envv       |  not present for threads
+//  +------------------+
+//  |       envc       |  not present for threads
 //  +------------------+
 //  |       argv       |  not present for threads
 //  +------------------+
@@ -69,11 +74,17 @@ _start:
 
 	// initial thread calls main
 initialThread:
+	// init env stuff
+	ldw		$4,$29,40		// envc
+	ldw		$5,$29,44		// envv
+	jal		initenv
+
 	// call function in .init-section
 	jal		_init
+
 	// finally, call main
-	ldw		$4,$29,32
-	ldw		$5,$29,36
+	ldw		$4,$29,32		// argc
+	ldw		$5,$29,36		// argv
 	jal		main
 
 threadExit:

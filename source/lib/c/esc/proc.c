@@ -20,20 +20,31 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/io.h>
+#include <esc/dir.h>
 #include <stdlib.h>
 #include <string.h>
 
-int execp(const char *file,const char **args) {
+int execv(const char *path,const char **args) {
+	char apath[MAX_PATH_LEN];
+	return syscall3(SYSCALL_EXEC,(ulong)abspath(apath,sizeof(apath),path),(ulong)args,(ulong)environ);
+}
+
+int execvpe(const char *path,const char **args,const char **env) {
+	char apath[MAX_PATH_LEN];
+	return syscall3(SYSCALL_EXEC,(ulong)abspath(apath,sizeof(apath),path),(ulong)args,(ulong)env);
+}
+
+int execvp(const char *file,const char **args) {
 	char path[MAX_PATH_LEN];
 	size_t len,flen;
 
 	/* if there is a slash in file, use the default exec */
 	if(strchr(file,'/') != NULL)
-		return exec(file,args);
+		return execv(file,args);
 
 	/* get path */
 	if(getenvto(path,sizeof(path),"PATH") < 0)
-		return exec(file,args);
+		return execv(file,args);
 
 	/* append file */
 	len = strlen(path);
@@ -46,5 +57,5 @@ int execp(const char *file,const char **args) {
 		strcpy(path + len,file);
 
 	/* exec with that path */
-	return exec(path,args);
+	return execv(path,args);
 }

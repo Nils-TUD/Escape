@@ -136,7 +136,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		/* clone proc */
 		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
-			res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
+			res = Proc::exec(argv[0],argv,NULL,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				Util::panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
 			/* we don't want to continue ;) */

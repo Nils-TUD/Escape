@@ -22,89 +22,29 @@
 #include <string.h>
 #include <stdlib.h>
 
-size_t abspath(char *dst,size_t dstSize,const char *src) {
-	char *curtemp,*pathtemp,*p;
-	int layer,pos;
-	size_t count = 0;
-
-	p = (char*)src;
-	pathtemp = dst;
-	layer = 0;
-	if(*p != '/') {
-		char envPath[MAX_PATH_LEN + 1];
-		if(getenvto(envPath,MAX_PATH_LEN + 1,"CWD") < 0)
-			return count;
-		if(dstSize < strlen(envPath))
-			return count;
-		/* copy current to path */
-		*pathtemp++ = '/';
-		*pathtemp = '\0';
-		curtemp = envPath + 1;
-		while(*curtemp) {
-			if(*curtemp == '/')
-				layer++;
-			*pathtemp++ = *curtemp++;
-		}
-		/* append '/' */
-		if(pathtemp[-1] != '/')
-			*pathtemp++ = '/';
-		count = pathtemp - dst;
-	}
-	else {
-		*pathtemp++ = '/';
-		count++;
-		/* skip leading '/' */
-		do {
-			p++;
-		}
-		while(*p == '/');
-	}
-
-	while(*p) {
-		pos = strchri(p,'/');
-
-		/* simply skip '.' */
-		if(pos == 1 && p[0] == '.')
-			p += 2;
-		/* one layer back */
-		else if(pos == 2 && p[0] == '.' && p[1] == '.') {
-			if(layer > 0) {
-				char *start = pathtemp;
-				/* to last slash */
-				pathtemp -= 2;
-				while(*pathtemp != '/')
-					pathtemp--;
-				*++pathtemp = '\0';
-				count -= start - pathtemp;
-				layer--;
+char *abspath(char *dst,size_t dstSize,const char *path) {
+	if(*path != '/') {
+		/* translate "abc://def" to "/dev/abc/def" */
+		const char *p = path;
+		while(*p) {
+			if(p[0] == ':' && p[1] == '/' && p[2] == '/') {
+				size_t slen = p - path;
+				strncpy(dst,"/dev/",SSTRLEN("/dev/"));
+				strncpy(dst + SSTRLEN("/dev/"),path,slen);
+				strnzcpy(dst + SSTRLEN("/dev/") + slen,p + 2,dstSize - (SSTRLEN("/dev/") + slen));
+				return dst;
 			}
-			p += 3;
-		}
-		else {
-			if(dstSize - count < (size_t)(pos + 2))
-				return count;
-			/* append to path */
-			strncpy(pathtemp,p,pos);
-			pathtemp[pos] = '/';
-			pathtemp[pos + 1] = '\0';
-			pathtemp += pos + 1;
-			count += pos + 1;
-			p += pos + 1;
-			layer++;
-		}
-
-		/* one step too far? */
-		if(*(p - 1) == '\0')
-			break;
-
-		/* skip multiple '/' */
-		while(*p == '/')
 			p++;
-	}
+		}
 
-	/* terminate */
-	if(dstSize - count < 2)
-		return count;
-	*pathtemp = '\0';
-	return count;
+		/* prepend CWD */
+		size_t len = getenvto(dst,dstSize,"CWD");
+		if(len < dstSize - 1 && dst[len - 1] != '/') {
+			dst[len++] = '/';
+			dst[len] = '\0';
+		}
+		strnzcpy(dst + len,path,dstSize - len);
+		return dst;
+	}
+	return (char*)path;
 }

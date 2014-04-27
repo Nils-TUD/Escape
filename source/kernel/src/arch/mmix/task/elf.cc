@@ -21,6 +21,7 @@
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
 #include <sys/mem/virtmem.h>
+#include <sys/mem/useraccess.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
@@ -87,17 +88,15 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 		OpenFile *file,ELF::StartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;
-	uint64_t *stack;
+	ulong *stack;
 	if(!t->getStackRange((uintptr_t*)&stack,NULL,0))
 		return -ENOMEM;
-	*stack++ = 0;	/* $0 */
-	*stack++ = 0;	/* $1 */
-	*stack++ = 0;	/* $2 */
-	*stack++ = 0;	/* $3 */
-	*stack++ = 0;	/* $4 */
-	*stack++ = 0;	/* $5 */
-	*stack++ = 0;	/* $6 */
-	*stack++ = 7;	/* rL = 7 */
+
+	/* $0 .. $10 */
+	for(int i = 0; i <= 10; ++i)
+		UserAccess::writeVar(stack++,(ulong)0);
+	/* rL = 11 */
+	UserAccess::writeVar(stack++,(ulong)11);
 
 	/* load the regs-section */
 	uintptr_t datPtr = (uintptr_t)headers;
@@ -121,20 +120,22 @@ static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *header
 				}
 			}
 			else
-				memcpy(stack,(void*)((uintptr_t)eheader + sheader->sh_offset),sheader->sh_size);
-			stack += sheader->sh_size / sizeof(uint64_t);
-			globalNum = sheader->sh_size / sizeof(uint64_t);
+				UserAccess::write(stack,(void*)((uintptr_t)eheader + sheader->sh_offset),sheader->sh_size);
+			stack += sheader->sh_size / sizeof(ulong);
+			globalNum = sheader->sh_size / sizeof(ulong);
 			break;
 		}
 	}
 
 	/* $255 */
-	*stack++ = 0;
+	UserAccess::writeVar(stack++,(ulong)0);
 	/* 12 slots for special registers */
-	memclear(stack,12 * sizeof(uint64_t));
-	stack += 12;
+	for(int i = 0; i < 12; ++i)
+		UserAccess::writeVar(stack++,(ulong)0);
 	/* set rG|rA */
-	*stack = (uint64_t)(255 - globalNum) << 56;
+	UserAccess::writeVar(stack,(ulong)(255 - globalNum) << 56);
 	info->stackBegin = (uintptr_t)stack;
+	if(t->isFaulted())
+		return -EFAULT;
 	return 0;
 }

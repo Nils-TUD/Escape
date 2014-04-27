@@ -27,6 +27,16 @@ class UserAccess {
 public:
 	static int read(void *dst,USER const void *src,size_t size);
 	static int write(USER void *dst,const void *src,size_t size);
+
+	template<typename T>
+	static int readVar(T *dst,USER const T *src) {
+		return read(dst,src,sizeof(T));
+	}
+	template<typename T>
+	static int writeVar(USER T *dst,T src) {
+		return write(dst,&src,sizeof(T));
+	}
+
 	static ssize_t strlen(USER const char *str,size_t max = 0);
 	static int strnzcpy(char *dst,USER const char *str,size_t size);
 	static void copyByte(char *dst,const char *src);

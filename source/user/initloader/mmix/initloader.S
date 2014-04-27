@@ -34,6 +34,7 @@ _start:
 	SET		$0,ASM_SYSC_EXEC
 	GETA	$1,progName
 	GETA	$2,args
+	SET		$3,0
 	TRAP	0,0,0
 
 	// we should not reach this

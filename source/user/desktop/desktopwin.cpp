@@ -66,7 +66,7 @@ void DesktopWin::onIconClick(UIElement& el) {
 		if(pid == 0) {
 			const char *args[] = {nullptr,nullptr};
 			args[0] = it->second->getApp().c_str();
-			exec(args[0],args);
+			execv(args[0],args);
 		}
 		else if(pid < 0)
 			printe("Unable to create child-process");

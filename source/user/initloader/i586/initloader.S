@@ -42,6 +42,7 @@ _start:
 	// now replace with init
 	mov		$progName,%esi						// arg1: path
 	mov		$args,%edi							// arg2: arguments
+	pushl	$0									// arg3: env
 	mov		$ASM_SYSC_EXEC,%eax					// set syscall-number
 	mov		$1f,%edx
 	mov		%esp,%ecx

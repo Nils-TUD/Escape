@@ -28,7 +28,7 @@ class UEnv : public UEnvBase {
 
 	static void startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,
 	                               Signals::handler_func handler);
-	static uint32_t *addArgs(Thread *t,uint32_t *esp,uintptr_t tentryPoint,bool newThread);
+	static ulong *addArgs(Thread *t,ulong *esp,uintptr_t tentryPoint,bool newThread);
 };
 
 inline void UEnvBase::handleSignal(Thread *t,IntrptStackFrame *stack) {

@@ -39,7 +39,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	uint flags = (uint)SYSC_ARG2(stack);
 	mode_t mode = (mode_t)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check flags */
@@ -130,7 +130,7 @@ int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo))))
 		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::stat(pid,abspath,&kinfo);
@@ -168,7 +168,7 @@ int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::chmod(pid,abspath,mode);
@@ -184,7 +184,7 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG3(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::chown(pid,abspath,uid,gid);
@@ -504,9 +504,9 @@ int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = t->getProc()->getPid();
 	const char *oldPath = (const char*)SYSC_ARG1(stack);
 	const char *newPath = (const char*)SYSC_ARG2(stack);
-	if(EXPECT_FALSE(!absolutizePath(oldabs,sizeof(oldabs),oldPath)))
+	if(EXPECT_FALSE(!copyPath(oldabs,sizeof(oldabs),oldPath)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(!absolutizePath(newabs,sizeof(newabs),newPath)))
+	if(EXPECT_FALSE(!copyPath(newabs,sizeof(newabs),newPath)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::link(pid,oldabs,newabs);
@@ -519,7 +519,7 @@ int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = t->getProc()->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::unlink(pid,abspath);
@@ -532,7 +532,7 @@ int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = Proc::getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::mkdir(pid,abspath);
@@ -545,7 +545,7 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = t->getProc()->getPid();
 	const char *path = (const char*)SYSC_ARG1(stack);
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::rmdir(pid,abspath);
@@ -559,7 +559,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	int fd = SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
 
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get device file */
@@ -580,7 +580,7 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	const char *path = (const char*)SYSC_ARG1(stack);
 
-	if(EXPECT_FALSE(!absolutizePath(abspath,sizeof(abspath),path)))
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = MountSpace::unmount(t->getProc(),abspath);

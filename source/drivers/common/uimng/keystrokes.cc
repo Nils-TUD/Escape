@@ -82,7 +82,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 		print("Executing %s %s %s %s",mng,cols,rows,name);
 		const char *args[] = {mng,cols,rows,name,NULL};
-		exec(mng,args);
+		execv(mng,args);
 		error("exec with %s failed",mng);
 	}
 
@@ -115,7 +115,7 @@ static void keys_createConsole(const char *mng,const char *cols,const char *rows
 
 			print("Executing %s",login);
 			const char *args[] = {login,NULL};
-			exec(login,args);
+			execv(login,args);
 			error("exec with %s failed",login);
 		}
 

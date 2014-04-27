@@ -47,6 +47,11 @@ typedef struct {
 	llong rem;
 } lldiv_t;
 
+/**
+ * An array of strings, terminated with NULL
+ */
+extern char **environ;
+
 /* function that compares <a> and <b> and returns:
  * 	<a> <  <b>: negative value
  *  <a> == <b>: 0
@@ -290,11 +295,9 @@ void _Exit(int status);
  * @param value the buffer to write the value to
  * @param valSize the size of the buffer
  * @param name the environment-variable-name
- * @return 0 if successfull
+ * @return the number of written characters if successfull
  */
-A_CHECKRET static inline int getenvto(char *value,size_t valSize,const char *name) {
-	return syscall3(SYSCALL_GETENVTO,(ulong)value,valSize,(ulong)name);
-}
+ssize_t getenvto(char *value,size_t valSize,const char *name);
 
 /**
  * Returns the value of the given environment-variable
@@ -310,11 +313,9 @@ char *getenv(const char *name) A_CHECKRET;
  * @param name the buffer to write the name to
  * @param nameSize the size of the buffer
  * @param index the index
- * @return 0 if successfull
+ * @return the number of written characters if successfull
  */
-static inline int getenvito(char *name,size_t nameSize,size_t index) {
-	return syscall3(SYSCALL_GETENVITO,(ulong)name,nameSize,index);
-}
+ssize_t getenvito(char *name,size_t nameSize,size_t index);
 
 /**
  * Returns the env-variable-name with given index
@@ -331,9 +332,7 @@ char *getenvi(size_t index) A_CHECKRET;
  * @param value the value
  * @return 0 on success
  */
-static inline int setenv(const char *name,const char *value) {
-	return syscall2(SYSCALL_SETENV,(ulong)name,(ulong)value);
-}
+int setenv(const char *name,const char *value);
 
 /**
  * The system function is used to issue a command. Execution of your program will not

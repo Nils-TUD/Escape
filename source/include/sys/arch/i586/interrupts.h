@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 
-#define PANIC_ON_PAGEFAULT	0
 #define IRQ_COUNT			0x3B
 
 class Thread;

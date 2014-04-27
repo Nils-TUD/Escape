@@ -39,7 +39,15 @@ extern "C" {
  * @param src your relative path
  * @return the number of written chars (without null-termination)
  */
-size_t abspath(char *dst,size_t dstSize,const char *src);
+size_t cleanpath(char *dst,size_t dstSize,const char *src);
+
+/**
+ * Builds an absolute path from <path>, if necessary.
+ *
+ * @param path the path
+ * @return the absolute path (might use <path> or a statically allocated array)
+ */
+char *abspath(char *dst,size_t dstSize,const char *path);
 
 /**
  * Removes the last path-component, if possible

@@ -35,7 +35,7 @@ int shell_cmdCd(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	abspath(path,sizeof(path),argv[1]);
+	cleanpath(path,sizeof(path),argv[1]);
 
 	/* retrieve file-info */
 	if(stat(path,&info) < 0) {

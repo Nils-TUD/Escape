@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/pagedir.h>
-#include <sys/task/env.h>
 #include <sys/task/proc.h>
 #include <sys/syscalls.h>
 #include <esc/syscalls.h>
@@ -54,7 +53,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{signal,			"signal",   		2},
 	{acksignal,			"acksignal",    	0},
 	{kill,				"kill",    			2},
-	{exec,				"exec",    			2},
+	{exec,				"exec",    			3},
 	{fcntl,				"fcntl",    		3},
 
 	/* 20 */
@@ -89,14 +88,11 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{mmap,				"mmap",    			7},
 	{mprotect,			"mprotect",    		2},
 	{munmap,			"munmap",    		1},
-	{getenvito,			"getenvito",    	3},
-	{getenvto,			"getenvto",    		3},
-	{setenv,			"setenv",    		2},
-
-	/* 50 */
 	{getuid,			"getuid",    		0},
 	{setuid,			"setuid",    		1},
 	{geteuid,			"geteuid",    		0},
+
+	/* 50 */
 	{seteuid,			"seteuid",    		1},
 	{getgid,			"getgid",    		0},
 	{setgid,			"setgid",    		1},
@@ -104,11 +100,11 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{setegid,			"setegid",   		1},
 	{chmod,				"chmod",    		2},
 	{chown,				"chown",    		3},
-
-	/* 60 */
 	{getgroups,			"getgroups",    	2},
 	{setgroups,			"setgroups",    	2},
 	{isingroup,			"isingroup",    	2},
+
+	/* 60 */
 	{alarm,				"alarm",    		1},
 	{tsctotime,			"tsctotime",    	1},
 	{semcrt,			"semcrt",			1},
@@ -116,11 +112,11 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{semdestr,			"semdestr",			1},
 	{sendrecv,			"sendrecv",			4},
 	{sharefile,			"sharefile",		2},
-
-	/* 70 */
 	{cancel,			"cancel",			2},
 	{creatsibl,			"creatsibl",		2},
 	{sysconfstr,		"sysconfstr",		3},
+
+	/* 70 */
 	{getmsid,			"getmsid",			0},
 	{clonems,			"clonems",			0},
 	{joinms,			"joinms",			1},
@@ -201,48 +197,9 @@ uint Syscalls::getArgCount(uint sysCallNo) {
 	return syscalls[sysCallNo].argCount;
 }
 
-bool Syscalls::absolutizePath(char *dst,size_t size,USER const char *src) {
-	size_t len = 0;
+bool Syscalls::copyPath(char *dst,size_t size,USER const char *src) {
 	ssize_t slen = UserAccess::strlen(src,MAX_PATH_LEN);
 	if(slen < 0 || !PageDir::isInUserSpace((uintptr_t)src,slen))
 		return false;
-	char c;
-	UserAccess::copyByte(&c,src);
-	if(c != '/') {
-		/* translate "abc://def" to "/dev/abc/def" */
-		for(ssize_t i = 0; i < slen; ++i) {
-			UserAccess::copyByte(&c,src);
-			if(c == ':') {
-				char c2 = 0,c3 = 0;
-				if(i + 2 < slen) {
-					UserAccess::copyByte(&c2,src + i + 1);
-					UserAccess::copyByte(&c3,src + i + 2);
-				}
-				if(i + 2 < slen && c2 == '/' && c3 == '/') {
-					strncpy(dst,"/dev/",SSTRLEN("/dev/"));
-					UserAccess::write(dst + SSTRLEN("/dev/"),src,i);
-					return UserAccess::strnzcpy(dst + SSTRLEN("/dev/") + i,src + i + 2,slen - i - 1) == 0;
-				}
-				/* in general, : is invalid in paths */
-				else
-					return false;
-			}
-		}
-
-		pid_t pid = Proc::getRunning();
-		if(Env::get(pid,"CWD",dst,size)) {
-			len = strlen(dst);
-			if(len < size - 1 && dst[len - 1] != '/') {
-				dst[len++] = '/';
-				dst[len] = '\0';
-			}
-		}
-		else {
-			/* assume '/' */
-			len = 1;
-			dst[0] = '/';
-			dst[1] = '\0';
-		}
-	}
-	return UserAccess::strnzcpy(dst + len,src,size - len) == 0;
+	return UserAccess::strnzcpy(dst,src,size) == 0;
 }

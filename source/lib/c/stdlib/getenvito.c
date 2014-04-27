@@ -17,35 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
+#include <esc/common.h>
+#include <stdlib.h>
 
-.section .text
+static size_t envcount(void) {
+	for(size_t i = 0; ; ++i) {
+		if(environ[i] == NULL)
+			return i;
+	}
+	A_UNREACHED;
+}
 
-.global _start
-.global sigRetFunc
+ssize_t getenvito(char *name,size_t nameSize,size_t index) {
+	if(index >= envcount())
+		return -EINVAL;
 
-_start:
-	// load modules first
-	add		$4,$0,ASM_SYSC_LOADMODS
-	trap
-
-	// now replace with init
-	add		$4,$0,ASM_SYSC_EXEC				// set syscall-number
-	add		$5,$0,progName					// set path
-	add		$6,$0,args						// set arguments
-	add		$7,$0,$0						// set env (NULL)
-	trap
-
-	// we should not reach this
-1:
-	j		1b
-
-// provide just a dummy
-sigRetFunc:
-	j		sigRetFunc
-
-args:
-	.long	progName,0
-
-progName:
-	.asciz	"/bin/init"
+	char *val = strchr(environ[index],'=');
+	if(!val)
+		return -EFAULT;
+	*val = '\0';
+	size_t len = strnzcpy(name,environ[index],nameSize);
+	*val = '=';
+	return len;
+}

@@ -27,7 +27,7 @@ class UEnv : public UEnvBase {
 	UEnv() = delete;
 
 	static void startSignalHandler(Thread *t,int sig,Signals::handler_func handler);
-	static void addArgs(Thread *t,const ELF::StartupInfo *info,uint64_t *rsp,uint64_t *ssp,
+	static void addArgs(Thread *t,const ELF::StartupInfo *info,ulong *rsp,ulong *ssp,
 	                    uintptr_t entry,uintptr_t tentry,bool thread);
 };
 

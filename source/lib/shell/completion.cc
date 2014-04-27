@@ -112,7 +112,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 	paths[2] = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(paths[2] == NULL)
 		goto failed;
-	abspath(paths[2],MAX_PATH_LEN + 1,str);
+	cleanpath(paths[2],MAX_PATH_LEN + 1,str);
 	if(length > 0 && *(str + length - 1) != '/') {
 		/* and try the upper directory, too */
 		len = strlen(paths[2]);
@@ -121,7 +121,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 			goto failed;
 		strcpy(paths[1],paths[2]);
 		dirname(paths[1]);
-		/* it makes no sense to look in abspath(line) since line does not end with '/' */
+		/* it makes no sense to look in cleanpath(line) since line does not end with '/' */
 		free(paths[2]);
 		paths[2] = NULL;
 	}

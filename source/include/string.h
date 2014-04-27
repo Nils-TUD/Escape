@@ -174,9 +174,9 @@ char *strncpy(char *to,const char *from,size_t count);
  * @param to the target
  * @param from the source
  * @param size the size of the target
- * @return the target string
+ * @return the number of written characters (without NULL-termination)
  */
-char *strnzcpy(char *to,const char *from,size_t size);
+size_t strnzcpy(char *to,const char *from,size_t size);
 
 /**
  * The strcat() function concatenates str2 onto the end of str1, and returns str1.

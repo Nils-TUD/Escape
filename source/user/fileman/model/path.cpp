@@ -25,7 +25,7 @@ using namespace std;
 Path::list_type Path::buildParts(const string &path) {
 	char tmp[MAX_PATH_LEN];
 	list_type parts;
-	abspath(tmp,sizeof(tmp),path.c_str());
+	cleanpath(tmp,sizeof(tmp),path.c_str());
 	parts.push_back(Link("/","/"));
 	char *s,*p = tmp + 1;
 	while((s = strchr(p,'/'))) {

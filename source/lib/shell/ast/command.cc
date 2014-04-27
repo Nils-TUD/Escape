@@ -256,7 +256,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 				/* exec */
 				snprintf(path,sizeof(path),"%s/%s",shcmd[0]->path,shcmd[0]->name);
-				exec(path,(const char**)cmd->exprs);
+				execv(path,(const char**)cmd->exprs);
 
 				/* if we're here, there is something wrong */
 				printe("Exec of '%s' failed",path);

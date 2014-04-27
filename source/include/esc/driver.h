@@ -57,9 +57,7 @@ extern "C" {
  * @param ops the supported operations (DEV_*)
  * @return the file-desc if successfull, < 0 if an error occurred
  */
-A_CHECKRET static inline int createdev(const char *path,mode_t mode,uint type,uint ops) {
-	return syscall4(SYSCALL_CRTDEV,(ulong)path,mode,type,ops);
-}
+A_CHECKRET int createdev(const char *path,mode_t mode,uint type,uint ops);
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided

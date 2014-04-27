@@ -40,7 +40,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	abspath(apath,MAX_PATH_LEN,argv[1]);
+	cleanpath(apath,MAX_PATH_LEN,argv[1]);
 	if(stat(apath,&info) < 0)
 		error("Unable to read file-information for '%s'",apath);
 

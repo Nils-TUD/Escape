@@ -64,7 +64,7 @@ namespace std {
 
 	void file::init(const string& p,const string& n) {
 		char apath[MAX_PATH_LEN];
-		size_t len = abspath(apath,sizeof(apath),p.c_str());
+		size_t len = cleanpath(apath,sizeof(apath),p.c_str());
 		if(len > 1) {
 			/* remove ending slash */
 			apath[--len] = '\0';

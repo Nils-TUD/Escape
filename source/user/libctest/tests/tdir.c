@@ -28,7 +28,7 @@
 /* forward declarations */
 static void test_dir(void);
 static void test_opendir(void);
-static void test_abspath(void);
+static void test_cleanpath(void);
 
 /* our test-module */
 sTestModule tModDir = {
@@ -38,7 +38,7 @@ sTestModule tModDir = {
 
 static void test_dir(void) {
 	test_opendir();
-	test_abspath();
+	test_cleanpath();
 }
 
 static void test_opendir(void) {
@@ -58,11 +58,11 @@ static void test_opendir(void) {
 	test_caseSucceeded();
 }
 
-static void test_abspath(void) {
+static void test_cleanpath(void) {
 	size_t count;
 	char *path;
 
-	test_caseStart("Testing abspath");
+	test_caseStart("Testing cleanpath");
 
 	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
@@ -72,51 +72,63 @@ static void test_abspath(void) {
 
 	setenv("CWD","/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"/");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"/");
 	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"/bin/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"/bin/bla");
 	test_assertUInt(count,SSTRLEN("/bin/bla/"));
 	test_assertStr(path,"/bin/bla/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"/../bin/../.././bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"/../bin/../.././bla");
 	test_assertUInt(count,SSTRLEN("/bla/"));
 	test_assertStr(path,"/bla/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
 	test_assertUInt(count,SSTRLEN("/bla/"));
 	test_assertStr(path,"/bla/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
 	test_assertUInt(count,SSTRLEN("/bin/bla/"));
 	test_assertStr(path,"/bin/bla/");
 
 	setenv("CWD","/home");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
 	test_assertUInt(count,SSTRLEN("/home/bin/bla/"));
 	test_assertStr(path,"/home/bin/bla/");
 
 	setenv("CWD","/home/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
 	test_assertUInt(count,SSTRLEN("/home/bin/bla/"));
 	test_assertStr(path,"/home/bin/bla/");
 
-	count = abspath(path,3,"/");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"..");
+	test_assertUInt(count,SSTRLEN("/"));
+	test_assertStr(path,"/");
+
+	count = cleanpath(path,MAX_PATH_LEN + 1,"../../.");
+	test_assertUInt(count,SSTRLEN("/"));
+	test_assertStr(path,"/");
+
+	count = cleanpath(path,MAX_PATH_LEN + 1,"./../bin");
+	test_assertUInt(count,SSTRLEN("/bin/"));
+	test_assertStr(path,"/bin/");
+
+	count = cleanpath(path,3,"/");
 	if(count > 3)
 		test_caseFailed("Copied too much");
 
-	count = abspath(path,8,"/bin/bla");
+	count = cleanpath(path,8,"/bin/bla");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	count = abspath(path,8,"/bin/../bla");
+	count = cleanpath(path,8,"/bin/../bla");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	count = abspath(path,8,"///../bin/bla");
+	count = cleanpath(path,8,"///../bin/bla");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 

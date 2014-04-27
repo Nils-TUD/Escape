@@ -17,35 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
+#include <esc/common.h>
+#include <stdlib.h>
 
-.section .text
-
-.global _start
-.global sigRetFunc
-
-_start:
-	// load modules first
-	add		$4,$0,ASM_SYSC_LOADMODS
-	trap
-
-	// now replace with init
-	add		$4,$0,ASM_SYSC_EXEC				// set syscall-number
-	add		$5,$0,progName					// set path
-	add		$6,$0,args						// set arguments
-	add		$7,$0,$0						// set env (NULL)
-	trap
-
-	// we should not reach this
-1:
-	j		1b
-
-// provide just a dummy
-sigRetFunc:
-	j		sigRetFunc
-
-args:
-	.long	progName,0
-
-progName:
-	.asciz	"/bin/init"
+ssize_t getenvto(char *value,size_t valSize,const char *name) {
+	char **var = environ;
+	size_t len = strlen(name);
+	while(*var) {
+		char *val = strchr(*var,'=');
+		if(val) {
+			if(len == (size_t)(val - *var) && strncmp(*var,name,len) == 0)
+				return strnzcpy(value,val + 1,valSize);
+		}
+		var++;
+	}
+	return -ENOENT;
+}

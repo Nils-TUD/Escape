@@ -85,9 +85,7 @@ extern "C" {
  * @param flags the open flags (IO_*)
  * @return the file-descriptor; negative if error
  */
-A_CHECKRET static inline int open(const char *path,uint flags) {
-	return syscall3(SYSCALL_OPEN,(ulong)path,flags,FILE_DEF_MODE);
-}
+A_CHECKRET int open(const char *path,uint flags);
 
 /**
  * Creates the given path with given flags and mode and returns the associated file-descriptor
@@ -97,9 +95,7 @@ A_CHECKRET static inline int open(const char *path,uint flags) {
  * @param mode the mode for the created file
  * @return the file-descriptor; negative if error
  */
-A_CHECKRET static inline int create(const char *path,uint flags,mode_t mode) {
-	return syscall3(SYSCALL_OPEN,(ulong)path,flags | IO_CREATE,mode);
-}
+A_CHECKRET int create(const char *path,uint flags,mode_t mode);
 
 /**
  * Creates a pipe with 2 separate files for reading and writing.
@@ -119,9 +115,7 @@ A_CHECKRET static inline int pipe(int *readFd,int *writeFd) {
  * @param info will be filled
  * @return 0 on success
  */
-A_CHECKRET static inline int stat(const char *path,sFileInfo *info) {
-	return syscall2(SYSCALL_STAT,(ulong)path,(ulong)info);
-}
+A_CHECKRET int stat(const char *path,sFileInfo *info);
 
 /**
  * Retrieves information about the file behind the given file-descriptor
@@ -142,9 +136,7 @@ A_CHECKRET static inline int fstat(int fd,sFileInfo *info) {
  * @param mode the new mode
  * @return 0 on success
  */
-A_CHECKRET static inline int chmod(const char *path,mode_t mode) {
-	return syscall2(SYSCALL_CHMOD,(ulong)path,mode);
-}
+A_CHECKRET int chmod(const char *path,mode_t mode);
 
 /**
  * Changes the owner and group of the file denoted by <path> to <uid> and <gid>, respectively. If
@@ -157,9 +149,7 @@ A_CHECKRET static inline int chmod(const char *path,mode_t mode) {
  * @param gid the new group-id (-1 = do not change)
  * @return 0 on success
  */
-A_CHECKRET static inline int chown(const char *path,uid_t uid,gid_t gid) {
-	return syscall3(SYSCALL_CHOWN,(ulong)path,uid,gid);
-}
+A_CHECKRET int chown(const char *path,uid_t uid,gid_t gid);
 
 /**
  * Asks for the current file-position
@@ -368,9 +358,7 @@ static inline int redirect(int src,int dst) {
  * @param newPath the link-path
  * @return 0 on success
  */
-A_CHECKRET static inline int link(const char *oldPath,const char *newPath) {
-	return syscall2(SYSCALL_LINK,(ulong)oldPath,(ulong)newPath);
-}
+A_CHECKRET int link(const char *oldPath,const char *newPath);
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
@@ -379,9 +367,7 @@ A_CHECKRET static inline int link(const char *oldPath,const char *newPath) {
  * @param path the path
  * @return 0 on success
  */
-A_CHECKRET static inline int unlink(const char *path) {
-	return syscall1(SYSCALL_UNLINK,(ulong)path);
-}
+A_CHECKRET int unlink(const char *path);
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.
@@ -389,9 +375,7 @@ A_CHECKRET static inline int unlink(const char *path) {
  * @param path the path
  * @return 0 on success
  */
-A_CHECKRET static inline int mkdir(const char *path) {
-	return syscall1(SYSCALL_MKDIR,(ulong)path);
-}
+A_CHECKRET int mkdir(const char *path);
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
@@ -399,9 +383,7 @@ A_CHECKRET static inline int mkdir(const char *path) {
  * @param path the path
  * @return 0 on success
  */
-A_CHECKRET static inline int rmdir(const char *path) {
-	return syscall1(SYSCALL_RMDIR,(ulong)path);
-}
+A_CHECKRET int rmdir(const char *path);
 
 /**
  * Mounts the device denoted by <fd> at <path>
@@ -410,9 +392,7 @@ A_CHECKRET static inline int rmdir(const char *path) {
  * @param path the path to mount at
  * @return 0 on success
  */
-A_CHECKRET static inline int mount(int fd,const char *path) {
-	return syscall2(SYSCALL_MOUNT,fd,(ulong)path);
-}
+A_CHECKRET int mount(int fd,const char *path);
 
 /**
  * Unmounts the device mounted at <path>
@@ -420,9 +400,7 @@ A_CHECKRET static inline int mount(int fd,const char *path) {
  * @param path the path
  * @return 0 on success
  */
-A_CHECKRET static inline int unmount(const char *path) {
-	return syscall1(SYSCALL_UNMOUNT,(ulong)path);
-}
+A_CHECKRET int unmount(const char *path);
 
 /**
  * @return the id of the mountspace of the current process

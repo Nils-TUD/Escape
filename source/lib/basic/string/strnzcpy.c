@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-char *strnzcpy(char *to,const char *from,size_t size) {
+size_t strnzcpy(char *to,const char *from,size_t size) {
 	char *res = to;
 
 	vassert(from != NULL,"from == NULL");
@@ -34,5 +34,5 @@ char *strnzcpy(char *to,const char *from,size_t size) {
 	}
 	/* terminate */
 	*to = '\0';
-	return res;
+	return to - res;
 }

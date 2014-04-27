@@ -23,7 +23,6 @@
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
 #include <sys/task/elf.h>
-#include <sys/task/env.h>
 #include <sys/task/uenv.h>
 #include <sys/task/groups.h>
 #include <sys/task/filedesc.h>
@@ -140,7 +139,6 @@ void ProcBase::init() {
 }
 
 void ProcBase::initProps() {
-	env = NULL;
 	stats.input = 0;
 	stats.output = 0;
 	stats.totalRuntime = 0;
@@ -434,36 +432,59 @@ errorReqProc:
 	return res;
 }
 
-int ProcBase::exec(const char *path,USER const char *const *args,const void *code,size_t size) {
+int ProcBase::exec(const char *path,USER const char *const *args,USER const char *const *env,
+		const void *code,size_t size) {
 	char *argBuffer;
 	ELF::StartupInfo info;
 	Thread *t = Thread::getRunning();
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
-	size_t argSize = 0;
-	int argc,fd = -1;
+	size_t argSize = EXEC_MAX_ARGSIZE;
+	int argc,envc,res,fd = -1;
 	if(!p)
 		return -ESRCH;
 	/* don't allow exec when the process should die */
 	if(p->flags & (P_ZOMBIE | P_PREZOMBIE)) {
-		release(p,PLOCK_PROG);
-		return -EDESTROYED;
+		res = -EDESTROYED;
+		goto error;
 	}
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are
 	 * "kernel-threads") */
 	if(p->pid != 0 && p->threads.length() > 1) {
-		release(p,PLOCK_PROG);
-		return -EINVAL;
+		res = -EINVAL;
+		goto error;
 	}
 
 	argc = 0;
+	envc = 0;
 	argBuffer = NULL;
-	if(args != NULL) {
-		argc = buildArgs(args,&argBuffer,&argSize,!code);
-		if(argc < 0) {
-			release(p,PLOCK_PROG);
-			return argc;
+	if(args != NULL || env != NULL) {
+		/* alloc space for the arguments */
+		argBuffer = (char*)Cache::alloc(EXEC_MAX_ARGSIZE);
+		if(argBuffer == NULL) {
+			res = -ENOMEM;
+			goto error;
+		}
+
+		/* copy arguments into buffer */
+		if(args != NULL) {
+			argc = buildArgs(args,argBuffer,&argSize,!code);
+			if(argc < 0) {
+				res = argc;
+				goto errorFree;
+			}
+		}
+
+		/* copy env into buffer */
+		if(env != NULL) {
+			size_t current = EXEC_MAX_ARGSIZE - argSize;
+			envc = buildArgs(env,argBuffer + current,&argSize,!code);
+			if(envc < 0) {
+				res = envc;
+				goto errorFree;
+			}
 		}
 	}
+	argSize = EXEC_MAX_ARGSIZE - argSize;
 
 	/* remove all except stack */
 	doRemoveRegions(p,false);
@@ -471,11 +492,11 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* load program */
 	if(code) {
 		if(ELF::loadFromMem(code,size,&info) < 0)
-			goto error;
+			goto errorTerm;
 	}
 	else {
 		if(ELF::loadFromFile(path,&info) < 0)
-			goto error;
+			goto errorTerm;
 	}
 
 	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
@@ -483,11 +504,11 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	if(info.linkerEntry != info.progEntry) {
 		OpenFile *file;
 		if(VFS::openPath(p->pid,VFS_READ,0,path,&file) < 0)
-			goto error;
+			goto errorTerm;
 		fd = FileDesc::assoc(p,file);
 		if(fd < 0) {
 			file->close(p->pid);
-			goto error;
+			goto errorTerm;
 		}
 	}
 
@@ -511,15 +532,22 @@ int ProcBase::exec(const char *path,USER const char *const *args,const void *cod
 	/* the entry-point is the one of the process, since threads don't start with the dl again */
 	p->entryPoint = info.progEntry;
 	release(p,PLOCK_PROG);
+
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
-	if(!UEnv::setupProc(argc,argBuffer,argSize,&info,info.linkerEntry,fd))
-		goto errorNoRel;
+	if(!UEnv::setupProc(argc,envc,argBuffer,argSize,&info,info.linkerEntry,fd))
+		goto errorTermNoRel;
 	Cache::free(argBuffer);
 	return 0;
 
+errorFree:
+	Cache::free(argBuffer);
 error:
 	release(p,PLOCK_PROG);
-errorNoRel:
+	return res;
+
+errorTerm:
+	release(p,PLOCK_PROG);
+errorTermNoRel:
 	Cache::free(argBuffer);
 	terminate(1,SIG_COUNT);
 	A_UNREACHED;
@@ -637,7 +665,6 @@ void ProcBase::terminate(int exitCode,int signal) {
 		Sems::destroyAll(p,true);
 		FileDesc::destroy(p);
 		Groups::leave(p->pid);
-		Env::removeFor(p->pid);
 		doRemoveRegions(p,true);
 		MountSpace::leave(p);
 		terminateArch(p);
@@ -809,7 +836,6 @@ void ProcBase::print(OStream &os) const {
 	           stats.totalRuntime,stats.totalScheds,stats.totalSyscalls);
 	os.pushIndent();
 	virtmem.print(os);
-	Env::printAllOf(os,pid);
 	FileDesc::print(os,static_cast<const Proc*>(this));
 	Sems::print(os,static_cast<const Proc*>(this));
 	os.popIndent();
@@ -822,48 +848,35 @@ void ProcBase::print(OStream &os) const {
 	os.writef("\n");
 }
 
-int ProcBase::buildArgs(USER const char *const *args,char **argBuffer,size_t *size,bool fromUser) {
-	int argc = 0;
-	ssize_t remaining = EXEC_MAX_ARGSIZE;
-
-	/* alloc space for the arguments */
-	*argBuffer = (char*)Cache::alloc(EXEC_MAX_ARGSIZE);
-	if(*argBuffer == NULL)
-		return -ENOMEM;
-
+int ProcBase::buildArgs(USER const char *const *args,char *argBuffer,size_t *size,bool fromUser) {
 	/* count args and copy them on the kernel-heap */
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
 	 * new process... */
-	char *bufPos = *argBuffer;
+	int argc = 0;
+	char *bufPos = argBuffer;
 	const char *const *arg = args;
 	while(1) {
 		/* check if it is a valid pointer */
 		if(fromUser && !PageDir::isInUserSpace((uintptr_t)arg,sizeof(char*)))
-			goto error;
+			return -EFAULT;
 		/* end of list? */
 		if(*arg == NULL)
 			break;
 
 		/* ensure that the argument is not longer than the left space */
 		ssize_t len = UserAccess::strlen(*arg);
-		if(len < 0 || len >= remaining)
-			goto error;
+		if(len < 0 || len >= (ssize_t)*size)
+			return -EFAULT;
 
 		/* copy to heap */
 		UserAccess::read(bufPos,*arg,len + 1);
 		bufPos += len + 1;
-		remaining -= len + 1;
+		(*size) -= len + 1;
 		arg++;
 		argc++;
 	}
-	/* store args-size and return argc */
-	*size = EXEC_MAX_ARGSIZE - remaining;
 	return argc;
-
-error:
-	Cache::free(*argBuffer);
-	return -EFAULT;
 }
 
 pid_t ProcBase::getFreePid() {

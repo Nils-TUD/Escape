@@ -17,35 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
+#include <esc/common.h>
+#include <stdlib.h>
+#include <string.h>
 
-.section .text
+EXTERN_C void initenv(int envc,char **envv);
 
-.global _start
-.global sigRetFunc
+char **environ;
 
-_start:
-	// load modules first
-	add		$4,$0,ASM_SYSC_LOADMODS
-	trap
+void initenv(int envc,char **envv) {
+	environ = malloc((envc + 1) * sizeof(char*));
+	if(environ == NULL)
+		error("Not enough space for environment");
 
-	// now replace with init
-	add		$4,$0,ASM_SYSC_EXEC				// set syscall-number
-	add		$5,$0,progName					// set path
-	add		$6,$0,args						// set arguments
-	add		$7,$0,$0						// set env (NULL)
-	trap
-
-	// we should not reach this
-1:
-	j		1b
-
-// provide just a dummy
-sigRetFunc:
-	j		sigRetFunc
-
-args:
-	.long	progName,0
-
-progName:
-	.asciz	"/bin/init"
+	int i;
+	for(i = 0; i < envc; ++i) {
+		environ[i] = strdup(envv[i]);
+		if(!environ[i])
+			error("Not enough space for env-var");
+	}
+	environ[i] = NULL;
+}

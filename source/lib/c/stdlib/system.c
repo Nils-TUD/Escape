@@ -40,7 +40,7 @@ int system(const char *cmd) {
 	if(child == 0) {
 		const char *args[] = {"/bin/shell","-e",NULL,NULL};
 		args[2] = cmd;
-		exec(args[0],args);
+		execv(args[0],args);
 
 		/* if we're here there is something wrong */
 		error("Exec of '%s' failed",args[0]);

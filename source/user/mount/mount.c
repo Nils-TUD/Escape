@@ -75,7 +75,7 @@ int main(int argc,const char *argv[]) {
 			error("fork failed");
 		if(pid == 0) {
 			const char *args[] = {fs,fsdev,dev,NULL};
-			execp(fs,args);
+			execvp(fs,args);
 			error("exec failed");
 		}
 		else {

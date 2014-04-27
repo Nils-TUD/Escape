@@ -26,6 +26,7 @@
 .global lookup_resolveStart
 .extern __libc_preinit
 .extern __libc_init
+.extern initenv
 .extern lookup_resolve
 .extern load_initHeap
 .extern load_setupProg
@@ -36,9 +37,13 @@
 //  |     arguments    |
 //  |        ...       |
 //  +------------------+
-//  |       argv       |
+//  |       envv       |  not present for threads
 //  +------------------+
-//  |       argc       |
+//  |       envc       |  not present for threads
+//  +------------------+
+//  |       argv       |  not present for threads
+//  +------------------+
+//  |       argc       |  not present for threads
 //  +------------------+
 //  |     TLSSize      |  0 if not present
 //  +------------------+
@@ -50,24 +55,37 @@
 //  +------------------+
 
 _start:
+	// init heap here first
 	call	load_initHeap
-	// call __libc_preinit first
+
+	// call __libc_preinit
 	mov		(%esp),%ebx
 	mov		4(%esp),%eax
 	mov		8(%esp),%edx
 	mov		12(%esp),%ecx
 	add		$16,%esp
 	call	__libc_preinit
+
+	// since we do not support TLS with dynamic linking yet, just pass arbitrary values as TLS-stuff
 	push	%ecx
 	push	%edx
+	// push entrypoint again
 	push	%eax
+
+	// init env stuff
+	mov		20(%esp),%eax
+	mov		24(%esp),%edx
+	call	initenv
+
 	// now call __libc_init
 	call	__libc_init
+
 	// pass pointers to TLSSize and TLSStart to load_setupProg
 	lea		4(%esp),%edx
 	lea		8(%esp),%ecx
 	mov		%ebx,%eax
 	call	load_setupProg
+
 	// load_setupProg returns the entrypoint
 	jmp		*%eax
 

@@ -32,7 +32,6 @@
 #include <sys/mem/cache.h>
 #include <sys/mem/physmem.h>
 #include <sys/mem/dynarray.h>
-#include <sys/task/env.h>
 #include <sys/task/groups.h>
 #include <sys/task/proc.h>
 #include <sys/util.h>

@@ -56,7 +56,7 @@ int main(int argc,char **argv) {
 		for(i = 1; i < (size_t)argc; i++)
 			args[i - 1] = argv[i];
 		args[argc - 1] = NULL;
-		execp(args[0],args);
+		execvp(args[0],args);
 		error("Exec failed");
 	}
 	else if(waitingPid < 0)

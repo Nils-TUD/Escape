@@ -49,15 +49,16 @@ public:
 	 * Setups the user-stack for given interrupt-stack, when starting the current process
 	 *
 	 * @param argc the argument-count
-	 * @param args the arguments on after another, allocated on the heap; may be NULL
-	 * @param argsSize the total number of bytes for the arguments (just the data)
+	 * @param envc the env-count
+	 * @param args the arguments+env one after another, allocated on the heap; may be NULL
+	 * @param argsSize the total number of bytes for the arguments+env (just the data)
 	 * @param info startup-info
 	 * @param entryPoint the entry-point
 	 * @param fd the file-descriptor for the executable for the dynamic linker (-1 if not needed)
 	 * @return true if successfull
 	 */
-	static bool setupProc(int argc,const char *args,size_t argsSize,const ELF::StartupInfo *info,
-			uintptr_t entryPoint,int fd);
+	static bool setupProc(int argc,int envc,const char *args,size_t argsSize,
+		const ELF::StartupInfo *info,uintptr_t entryPoint,int fd);
 
 	/**
 	 * Setups the user-environment when starting the current thread
@@ -67,6 +68,12 @@ public:
 	 * @return the stack-pointer
 	 */
 	static void *setupThread(const void *arg,uintptr_t tentryPoint) asm("uenv_setupThread");
+
+protected:
+	static ulong *initProcStack(int argc,int envc,const char *args,size_t argsSize,uintptr_t entry);
+	static ulong *initThreadStack(const void *arg,uintptr_t entry);
+	static char **copyArgs(int argc,const char *&args,ulong *&sp);
+	static ulong *addArgs(Thread *t,ulong *sp,uintptr_t tentryPoint,bool newThread);
 };
 
 #ifdef __i386__

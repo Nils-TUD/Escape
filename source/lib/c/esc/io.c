@@ -21,9 +21,69 @@
 #include <esc/io.h>
 #include <esc/messages.h>
 #include <esc/mem.h>
+#include <esc/dir.h>
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
+
+int open(const char *path,uint flags) {
+	char apath[MAX_PATH_LEN];
+	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags,FILE_DEF_MODE);
+}
+
+int create(const char *path,uint flags,mode_t mode) {
+	char apath[MAX_PATH_LEN];
+	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags | IO_CREATE,mode);
+}
+
+int stat(const char *path,sFileInfo *info) {
+	char apath[MAX_PATH_LEN];
+	return syscall2(SYSCALL_STAT,(ulong)abspath(apath,sizeof(apath),path),(ulong)info);
+}
+
+int chmod(const char *path,mode_t mode) {
+	char apath[MAX_PATH_LEN];
+	return syscall2(SYSCALL_CHMOD,(ulong)abspath(apath,sizeof(apath),path),mode);
+}
+
+int chown(const char *path,uid_t uid,gid_t gid) {
+	char apath[MAX_PATH_LEN];
+	return syscall3(SYSCALL_CHOWN,(ulong)abspath(apath,sizeof(apath),path),uid,gid);
+}
+
+int link(const char *oldPath,const char *newPath) {
+	char apath1[MAX_PATH_LEN];
+	char apath2[MAX_PATH_LEN];
+	oldPath = abspath(apath1,sizeof(apath1),oldPath);
+	newPath = abspath(apath2,sizeof(apath2),newPath);
+	return syscall2(SYSCALL_LINK,(ulong)oldPath,(ulong)newPath);
+}
+
+int unlink(const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall1(SYSCALL_UNLINK,(ulong)abspath(apath,sizeof(apath),path));
+}
+
+int mkdir(const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall1(SYSCALL_MKDIR,(ulong)abspath(apath,sizeof(apath),path));
+}
+
+int rmdir(const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall1(SYSCALL_RMDIR,(ulong)abspath(apath,sizeof(apath),path));
+}
+
+int mount(int fd,const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall2(SYSCALL_MOUNT,fd,(ulong)abspath(apath,sizeof(apath),path));
+}
+
+int unmount(const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall1(SYSCALL_UNMOUNT,(ulong)abspath(apath,sizeof(apath),path));
+}
 
 int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	/* create shm file */

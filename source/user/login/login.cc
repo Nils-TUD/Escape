@@ -147,7 +147,7 @@ int main(void) {
 
 	/* exchange with shell */
 	const char *shargs[] = {SHELL_PATH,NULL};
-	exec(SHELL_PATH,shargs);
+	execv(SHELL_PATH,shargs);
 
 	/* not reached */
 	return EXIT_SUCCESS;

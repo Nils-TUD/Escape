@@ -150,7 +150,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 			if(argc < 2)
 				Util::panic("Invalid arguments for boot-module: %s\n",progs[i].path);
 			/* exec */
-			res = Proc::exec(argv[0],argv,(void*)progs[i].start,progs[i].size);
+			res = Proc::exec(argv[0],argv,NULL,(void*)progs[i].start,progs[i].size);
 			if(res < 0)
 				Util::panic("Unable to exec boot-program %s: %d\n",progs[i].path,res);
 			/* we don't want to continue ;) */

@@ -32,6 +32,8 @@
 #include <sys/arch/mmix/intrptstackframe.h>
 #endif
 
+#define PANIC_ON_PAGEFAULT	0
+
 class OStream;
 class Thread;
 

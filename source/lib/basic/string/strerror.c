@@ -73,5 +73,5 @@ char *strerror(int errnum) {
 	if(idx < ARRAY_SIZE(msgs))
 		return (char*)msgs[idx];
 	else
-		return "Unknown error";
+		return (char*)"Unknown error";
 }

@@ -31,7 +31,7 @@ class VFSInfo {
 	class className : public VFSFile {															\
 	public:																						\
 		explicit className(pid_t pid,VFSNode *parent,bool &success)								\
-			: VFSFile(pid,parent,(char*)(fileName),FILE_DEF_MODE,success) {									\
+			: VFSFile(pid,parent,(char*)(fileName),FILE_DEF_MODE,success) {						\
 		}																						\
 		virtual ssize_t read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) {		\
 			return VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));				\

@@ -133,4 +133,5 @@
 									 (id) == MSG_FILE_WRITE || \
 									 (id) == MSG_FILE_CLOSE || \
 									 (id) == MSG_DEV_SHFILE || \
+									 (id) == MSG_DEV_CREATSIBL || \
 									 (id) == MSG_DEV_CANCEL)

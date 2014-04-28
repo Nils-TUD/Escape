@@ -97,7 +97,10 @@ private:
 			res = -EINVAL;
 		else {
 			std::lock_guard<std::mutex> guard(*_vterm->mutex);
-			res = _requests.cancel(mid);
+			if(vtin_hasData(_vterm))
+				res = 1;
+			else
+				res = _requests.cancel(mid);
 		}
 		is << res << Reply();
 	}

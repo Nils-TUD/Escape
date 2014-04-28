@@ -260,18 +260,19 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 
 	/* only allow signals during that operation, if we can cancel it */
 	msgid_t mid = res;
-	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : 0;
+	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : VFS_BLOCK;
 	while(1) {
 		/* read response and ensure that we don't get killed until we've received both messages
 		 * (otherwise the channel might get in an inconsistent state) */
 		ib.reset();
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
 		if(res < 0) {
-			if(res == -EINTR) {
+			if(res == -EINTR || res == -EWOULDBLOCK) {
 				int cancelRes = cancel(pid,file,mid);
 				if(cancelRes == 1) {
-					/* if the result is already there, get it, but don't allow signals anymore */
-					flags = 0;
+					/* if the result is already there, get it, but don't allow signals anymore
+					 * and force blocking */
+					flags = VFS_BLOCK;
 					continue;
 				}
 			}
@@ -309,17 +310,18 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 
 	/* only allow signals during that operation, if we can cancel it */
 	msgid_t mid = res;
-	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : 0;
+	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : VFS_BLOCK;
 	while(1) {
 		/* read response */
 		ib.reset();
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
 		if(res < 0) {
-			if(res == -EINTR) {
+			if(res == -EINTR || res == -EWOULDBLOCK) {
 				int cancelRes = cancel(pid,file,mid);
 				if(cancelRes == 1) {
-					/* if the result is already there, get it, but don't allow signals anymore */
-					flags = 0;
+					/* if the result is already there, get it, but don't allow signals anymore
+					 * and force blocking */
+					flags = VFS_BLOCK;
 					continue;
 				}
 			}
@@ -348,7 +350,7 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 
 	ib.reset();
 	mid = res;
-	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
+	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),VFS_BLOCK);
 	if(res < 0)
 		return res;
 
@@ -414,18 +416,20 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 		goto error;
 
 	/* only allow signals during that operation, if we can cancel it */
+	/* the same for blocking since we have to leave the channel in a consistent state */
 	mid = res;
-	flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : 0;
+	flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : VFS_BLOCK;
 	while(1) {
 		/* read response */
 		ib.reset();
 		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
 		if(res < 0) {
-			if(res == -EINTR) {
+			if(res == -EINTR || res == -EWOULDBLOCK) {
 				int cancelRes = cancel(pid,file,mid);
 				if(cancelRes == 1) {
-					/* if the result is already there, get it, but don't allow signals anymore */
-					flags = 0;
+					/* if the result is already there, get it, but don't allow signals anymore
+					 * and force blocking */
+					flags = VFS_BLOCK;
 					continue;
 				}
 			}
@@ -561,7 +565,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 	/* wait until a message arrives */
 	waitLock.down();
 	while((msg = getMsg(list,*id,flags)) == NULL) {
-		if(EXPECT_FALSE(flags & VFS_NOBLOCK)) {
+		if(EXPECT_FALSE((flags & (VFS_NOBLOCK | VFS_BLOCK)) == VFS_NOBLOCK)) {
 			waitLock.up();
 			return -EWOULDBLOCK;
 		}

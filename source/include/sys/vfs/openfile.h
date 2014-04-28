@@ -46,6 +46,7 @@ enum {
 	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
 	VFS_NONODERES = 1024,	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
 	VFS_SIGNALS = 2048,		/* kernel-intern: allow signals during blocking */
+	VFS_BLOCK = 4096		/* kernel-intern: force blocking */
 };
 
 class VFS;

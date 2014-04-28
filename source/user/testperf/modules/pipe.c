@@ -29,12 +29,6 @@
 #define WRITE_COUNT		10000
 
 static void test_pipe(size_t size) {
-	char *buffer = malloc(size);
-	if(!buffer) {
-		printe("malloc failed");
-		return;
-	}
-
 	int rfd,wfd;
 	if(pipe(&rfd,&wfd) < 0) {
 		printe("pipe failed");
@@ -44,30 +38,38 @@ static void test_pipe(size_t size) {
 	int i;
 	uint64_t start,end;
 	const char *name;
+	void *buf;
+	ulong bufname;
 	if(fork() == 0) {
 		close(wfd);
+		if(sharebuf(rfd,size,&buf,&bufname,0) < 0)
+			printe("Unable to share buffer");
 		name = "read";
 		start = rdtsc();
 		for(i = 0; i < WRITE_COUNT; ++i) {
-			if(read(rfd,buffer,size) < 0) {
+			if(read(rfd,buf,size) < 0) {
 				printe("read failed");
 				return;
 			}
 		}
 		end = rdtsc();
+		destroybuf(buf,bufname);
 		close(rfd);
 	}
 	else {
 		close(rfd);
+		if(sharebuf(wfd,size,&buf,&bufname,0) < 0)
+			printe("Unable to share buffer");
 		name = "write";
 		start = rdtsc();
 		for(i = 0; i < WRITE_COUNT; ++i) {
-			if(write(wfd,buffer,size) < 0) {
+			if(write(wfd,buf,size) < 0) {
 				printe("write failed");
 				return;
 			}
 		}
 		end = rdtsc();
+		destroybuf(buf,bufname);
 		close(wfd);
 		waitchild(NULL);
 	}
@@ -75,7 +77,6 @@ static void test_pipe(size_t size) {
 	printf("[%4d] %s(%3zuK): %6Lu cycles/call, %Lu MB/s\n",
 			getpid(),name,size / 1024,(end - start) / WRITE_COUNT,
 			(size * WRITE_COUNT) / tsctotime(end - start));
-	free(buffer);
 	/* child should exit here */
 	if(strcmp(name,"read") == 0)
 		exit(0);

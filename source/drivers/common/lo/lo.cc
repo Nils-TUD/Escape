@@ -83,6 +83,8 @@ public:
 		is >> r;
 
 		if(r.count > MTU) {
+			/* skip data message */
+			is >> ipc::ReceiveData(NULL,0);
 			is << ipc::FileWrite::Response(-EINVAL) << ipc::Reply();
 			return;
 		}

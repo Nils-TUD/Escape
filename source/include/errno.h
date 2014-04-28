@@ -51,7 +51,7 @@
 #define ENOEXEC						27	/* Execution file format error */
 #define ENFILE						28	/* Too many files open in system */
 #define ENOCLIENT					29	/* No client waiting to be served */
-#define EDESTROYED					30	/* Something existed previously, but has been destroyed */
+#define EDESTROYED					30	/* Object has been destroyed */
 #define ENOPROCS					31	/* No more process-slots available */
 #define ENOTHREADS					32	/* No more thread-slots available */
 #define EPIPE						33	/* Broken pipe */

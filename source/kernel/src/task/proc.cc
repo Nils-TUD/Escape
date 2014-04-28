@@ -238,7 +238,7 @@ int ProcBase::clone(uint8_t flags) {
 	}
 	/* don't allow cloning when the process should die */
 	if(cur->flags & (P_ZOMBIE | P_PREZOMBIE)) {
-		res = -EDESTROYED;
+		res = -EINVAL;
 		goto errorCur;
 	}
 
@@ -382,7 +382,7 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 	int res;
 	/* don't allow new threads when the process should die */
 	if(t->getProc()->flags & (P_ZOMBIE | P_PREZOMBIE))
-		return -EDESTROYED;
+		return -EINVAL;
 
 	/* reserve frames for new stack- and tls-region */
 	size_t pageCount = Thread::getThreadFrmCnt();
@@ -444,7 +444,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,USER const char
 		return -ESRCH;
 	/* don't allow exec when the process should die */
 	if(p->flags & (P_ZOMBIE | P_PREZOMBIE)) {
-		res = -EDESTROYED;
+		res = -EINVAL;
 		goto error;
 	}
 	/* we can't do an exec if we have multiple threads (init can do that, because the threads are

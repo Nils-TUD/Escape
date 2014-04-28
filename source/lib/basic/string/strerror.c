@@ -52,7 +52,7 @@ static const char *msgs[] = {
 	/* 27 (ENOEXEC) */			"Execution file format error",
 	/* 28 (ENFILE) */			"Too many files open in system",
 	/* 29 (ENOCLIENT) */		"No client waiting to be served",
-	/* 30 (EDESTROYED) */		"Something existed previously, but has been destroyed",
+	/* 30 (EDESTROYED) */		"Object has been destroyed",
 	/* 31 (ENOPROCS) */			"No more process-slots available",
 	/* 32 (ENOTHREADS) */		"No more thread-slots available",
 	/* 33 (EPIPE) */			"Broken pipe",

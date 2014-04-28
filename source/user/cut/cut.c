@@ -28,6 +28,7 @@
 
 #define MAX_LINE_LEN	255
 
+static void handleFile(FILE *f,char *delim,int first,int last);
 static void printFields(char *line,const char *delim,int first,int last);
 static void parseFields(const char *fields,int *first,int *last);
 
@@ -43,7 +44,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char **argv) {
-	char line[MAX_LINE_LEN];
 	int first = 1,last = -1;
 	char *fields = NULL;
 	char *delim = (char*)"\t";
@@ -60,10 +60,8 @@ int main(int argc,const char **argv) {
 	parseFields(fields,&first,&last);
 
 	args = ca_getFree();
-	if(args[0] == NULL) {
-		while(fgetl(line,sizeof(line),stdin))
-			printFields(line,delim,first,last);
-	}
+	if(args[0] == NULL)
+		handleFile(stdin,delim,first,last);
 	else {
 		FILE *f;
 		while(*args) {
@@ -76,13 +74,23 @@ int main(int argc,const char **argv) {
 				printe("Unable to open '%s'",*args);
 				continue;
 			}
-			while(fgetl(line,sizeof(line),f))
-				printFields(line,delim,first,last);
+			handleFile(f,delim,first,last);
 			fclose(f);
 			args++;
 		}
 	}
 	return EXIT_SUCCESS;
+}
+
+static void handleFile(FILE *f,char *delim,int first,int last) {
+	char line[MAX_LINE_LEN];
+	while(fgetl(line,sizeof(line),f)) {
+		printFields(line,delim,first,last);
+		if(ferror(stdout)) {
+			printe("Write failed");
+			break;
+		}
+	}
 }
 
 static void printFields(char *line,const char *delim,int first,int last) {

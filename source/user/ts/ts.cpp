@@ -209,6 +209,9 @@ int main(int argc,char **argv) {
 		cout << setfillobj(' ');
 		cout << setw(5) << setprecision(1) << cyclePercent << "% ";
 		cout << t->pid() << ':' << procName << '\n';
+
+		if(cout.bad())
+			error("Write failed");
 	}
 
 	return EXIT_SUCCESS;

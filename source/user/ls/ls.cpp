@@ -248,6 +248,9 @@ int main(int argc,char *argv[]) {
 			cout << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
 			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
+
+		if(cout.bad())
+			error("Write failed");
 	}
 
 	if(!(flags & F_LONG))

@@ -65,6 +65,9 @@ int main(int argc,const char *argv[]) {
 
 	/* check whether we can seek */
 	if(fseek(in,0,SEEK_END) < 0) {
+		/* remove error that fseek() has set */
+		clearerr(in);
+
 		/* no, ok, then the idea is the following:
 		 * we don't need to keep all the memory and do a lot of malloc and realloc. it is sufficient
 		 * to read the stuff block by block and keep only the last few blocks that contain at least
@@ -98,7 +101,7 @@ int main(int argc,const char *argv[]) {
 				first = buf;
 			prev = buf;
 		}
-		while(buf->bytes == BUF_SIZE);
+		while(buf->bytes > 0);
 
 		/* throw away the first blocks if they are not needed */
 		while((lines - first->lines) > n) {
@@ -108,7 +111,7 @@ int main(int argc,const char *argv[]) {
 
 		/* print out the lines */
 		buf = first;
-		while(buf != NULL) {
+		while(!ferror(stdout) && buf != NULL) {
 			for(i = 0; i < buf->bytes; i++) {
 				c = buf->buffer[i];
 				if(lines <= n)
@@ -127,7 +130,7 @@ int main(int argc,const char *argv[]) {
 
 		/* search backwards until we've found the number of requested lines */
 		lines = 0;
-		while(pos > 0 && lines < n) {
+		while(!ferror(in) && pos > 0 && lines < n) {
 			size_t amount = MIN(BUF_SIZE,pos);
 			pos -= amount;
 			fseek(in,pos,SEEK_SET);
@@ -137,18 +140,25 @@ int main(int argc,const char *argv[]) {
 					lines++;
 			}
 		}
+		if(ferror(in))
+			error("Read failed");
 
 		/* print the lines */
 		fseek(in,pos,SEEK_SET);
 		while((c = fgetc(in)) != EOF) {
 			if(lines <= n)
 				putchar(c);
-			if(c == '\n')
+			if(c == '\n') {
+				if(ferror(stdout))
+					break;
 				lines--;
+			}
 		}
-		if(ferror(in))
-			error("Read failed");
 	}
+	if(ferror(in))
+		error("Read failed");
+	if(ferror(stdout))
+		error("Write failed");
 
 	/* clean up */
 	if(args[0])

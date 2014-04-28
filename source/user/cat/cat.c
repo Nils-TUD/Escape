@@ -71,8 +71,11 @@ static void printFile(const char *filename,FILE *file) {
 	size_t count;
 	while((count = fread(buffer,sizeof(char),BUF_SIZE,file)) > 0) {
 		*(buffer + count) = '\0';
-		fputs(buffer,stdout);
+		if(fputs(buffer,stdout) == EOF) {
+			printe("Write failed");
+			break;
+		}
 	}
 	if(count == 0 && ferror(file))
-		printe("Unable to read from %s",filename);
+		printe("Read from %s failed",filename);
 }

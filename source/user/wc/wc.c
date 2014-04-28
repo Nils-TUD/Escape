@@ -113,6 +113,8 @@ static void countFile(FILE *in) {
 			bufPos++;
 		bytes++;
 	}
+	if(ferror(in))
+		printe("Read failed");
 
 	/* last word */
 	if(bufPos > 0) {

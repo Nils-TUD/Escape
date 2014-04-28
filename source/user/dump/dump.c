@@ -109,7 +109,7 @@ int main(int argc,const char *argv[]) {
 	}
 
 	i = 0;
-	while(count < 0 || count > 0) {
+	while(!ferror(stdout) && (count < 0 || count > 0)) {
 		size_t x,c;
 		c = count >= 0 ? MIN(count,BUF_SIZE) : BUF_SIZE;
 		c = fread(shmem,sizeof(char),c,in);
@@ -145,6 +145,8 @@ int main(int argc,const char *argv[]) {
 	}
 	if(ferror(in))
 		error("Read failed");
+	if(ferror(stdout))
+		error("Write failed");
 
 	printAscii(base,i);
 

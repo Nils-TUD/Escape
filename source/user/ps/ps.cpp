@@ -265,6 +265,9 @@ int main(int argc,char **argv) {
 			cout << setfillobj(' ');
 			cout << setw(4) << setprecision(1) << cyclePercent << "% ";
 			cout << cmd << '\n';
+
+			if(cout.bad())
+				error("Write failed");
 		}
 	}
 

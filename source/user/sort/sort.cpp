@@ -71,8 +71,11 @@ int main(int argc,char *argv[]) {
 
 	// sort and print
 	sort(lines.begin(),lines.end(),compareStrs);
-	for(auto it = lines.begin(); it != lines.end(); ++it)
+	for(auto it = lines.begin(); it != lines.end(); ++it) {
 		cout << *it << '\n';
+		if(cout.bad())
+			error("Write failed");
+	}
 	return EXIT_SUCCESS;
 }
 

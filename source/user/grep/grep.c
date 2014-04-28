@@ -61,12 +61,14 @@ int main(int argc,const char *argv[]) {
 	}
 
 	strtolower(pattern);
-	while(fgetl(buffer,MAX_LINE_LEN,in)) {
+	while(!ferror(stdout) && fgetl(buffer,MAX_LINE_LEN,in)) {
 		if(matches(buffer,pattern))
 			puts(buffer);
 	}
 	if(ferror(in))
 		error("Read failed");
+	if(ferror(stdout))
+		error("Write failed");
 
 	if(args[0])
 		fclose(in);

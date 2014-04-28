@@ -80,11 +80,15 @@ int main(int argc,const char *argv[]) {
 		col++;
 
 		if(col == mode.cols - 1 || c == '\n') {
+			if(ferror(stdout))
+				break;
 			line++;
 			col = 0;
 		}
 		if(line == mode.rows - 1) {
 			fflush(stdout);
+			if(ferror(stdout))
+				break;
 			waitForKeyPress(vt);
 			line = 0;
 			col = 0;
@@ -92,6 +96,8 @@ int main(int argc,const char *argv[]) {
 	}
 	if(ferror(in))
 		error("Read failed");
+	if(ferror(stdout))
+		error("Write failed");
 
 	/* clean up */
 	vterm.setFlag(ipc::VTerm::FL_READLINE,true);

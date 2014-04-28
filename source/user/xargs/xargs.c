@@ -83,6 +83,8 @@ int main(int argc,const char *argv[]) {
 				error("Argument too long");
 		}
 	}
+	if(ferror(file))
+		error("Read failed");
 	if(filename != NULL)
 		fclose(file);
 	/* append last one */

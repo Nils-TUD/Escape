@@ -52,13 +52,15 @@ int main(int argc,const char *argv[]) {
 
 	/* read the first n lines*/
 	line = 0;
-	while(line < n && (c = fgetc(in)) != EOF) {
+	while(!ferror(stdout) && line < n && (c = fgetc(in)) != EOF) {
 		putchar(c);
 		if(c == '\n')
 			line++;
 	}
 	if(ferror(in))
 		error("Read failed");
+	if(ferror(stdout))
+		error("Write failed");
 
 	/* clean up */
 	if(args[0])

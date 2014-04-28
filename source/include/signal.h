@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#define SIG_COUNT			10
+#define SIG_COUNT			9
 
 #define SIG_IGN				((fSignal)-2)			/* ignore signal */
 #define SIG_ERR				((fSignal)-1)			/* error-return */
@@ -34,12 +34,11 @@
 #define SIG_TERM			1						/* terminates a proc; catchable */
 #define SIG_ILL_INSTR		2						/* TODO atm unused */
 #define SIG_SEGFAULT		3						/* segmentation fault */
-#define SIG_PIPE_CLOSED		4						/* sent to the pipe-writer when reader died */
-#define SIG_CHILD_TERM		5						/* sent to parent-proc */
-#define SIG_INTRPT			6						/* used to interrupt a process; used by shell */
-#define SIG_ALARM			7						/* for alarm() */
-#define SIG_USR1			8						/* can be used for everything */
-#define SIG_USR2			9						/* can be used for everything */
+#define SIG_CHILD_TERM		4						/* sent to parent-proc */
+#define SIG_INTRPT			5						/* used to interrupt a process; used by shell */
+#define SIG_ALARM			6						/* for alarm() */
+#define SIG_USR1			7						/* can be used for everything */
+#define SIG_USR2			8						/* can be used for everything */
 
 /* standarg signal-names */
 #define SIGABRT				SIG_KILL

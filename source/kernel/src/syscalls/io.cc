@@ -80,47 +80,6 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::pipe(Thread *t,IntrptStackFrame *stack) {
-	int *readFd = (int*)SYSC_ARG1(stack);
-	int *writeFd = (int*)SYSC_ARG2(stack);
-	Proc *p = t->getProc();
-
-	/* make sure that the pointers point to userspace */
-	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)readFd,sizeof(int)) ||
-			!PageDir::isInUserSpace((uintptr_t)writeFd,sizeof(int))))
-		SYSC_ERROR(stack,-EFAULT);
-
-	OpenFile *readFile,*writeFile;
-	int res = VFS::openPipe(p->getPid(),&readFile,&writeFile);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-
-	/* assoc fd with read-file */
-	int kreadFd = FileDesc::assoc(p,readFile);
-	if(EXPECT_FALSE(kreadFd < 0)) {
-		readFile->close(p->getPid());
-		writeFile->close(p->getPid());
-		SYSC_ERROR(stack,kreadFd);
-	}
-
-	/* assoc fd with write-file */
-	int kwriteFd = FileDesc::assoc(p,writeFile);
-	if(EXPECT_FALSE(kwriteFd < 0)) {
-		FileDesc::unassoc(p,kreadFd);
-		readFile->close(p->getPid());
-		writeFile->close(p->getPid());
-		SYSC_ERROR(stack,kwriteFd);
-	}
-
-	/* now copy the fds to userspace; this may fail, but we have file-descriptors for the files,
-	 * so the resources will be free'd in any case. */
-	*readFd = kreadFd;
-	*writeFd = kwriteFd;
-
-	/* yay, we're done! :) */
-	SYSC_RET1(stack,res);
-}
-
 int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	sFileInfo kinfo;

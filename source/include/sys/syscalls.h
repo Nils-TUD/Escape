@@ -78,7 +78,6 @@ private:
 	// io
 	static int open(Thread *t,IntrptStackFrame *stack);
 	static int fcntl(Thread *t,IntrptStackFrame *stack);
-	static int pipe(Thread *t,IntrptStackFrame *stack);
 	static int tell(Thread *t,IntrptStackFrame *stack);
 	static int eof(Thread *t,IntrptStackFrame *stack);
 	static int seek(Thread *t,IntrptStackFrame *stack);

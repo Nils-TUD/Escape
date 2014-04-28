@@ -27,7 +27,6 @@
 
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000
-#define MODE_TYPE_PIPE				0x0020000
 #define MODE_TYPE_DEVMASK			0x0700000
 #define MODE_TYPE_BLKDEV			(0x0100000 | S_IFBLK)
 #define MODE_TYPE_CHARDEV			(0x0200000 | S_IFCHR)
@@ -40,7 +39,6 @@
 
 #define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
-#define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
 #define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
 
 #ifdef __mmix__

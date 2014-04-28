@@ -26,7 +26,6 @@
 #include <sys/vfs/link.h>
 #include <sys/vfs/channel.h>
 #include <sys/vfs/device.h>
-#include <sys/vfs/pipe.h>
 #include <sys/vfs/openfile.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
@@ -49,8 +48,7 @@ static size_t getMaxSize() {
 	return MAX(sizeof(VFSChannel),
 			MAX(sizeof(VFSDevice),
 			MAX(sizeof(VFSDir),
-			MAX(sizeof(VFSFile),
-			MAX(sizeof(VFSLink),sizeof(VFSPipe))))));
+			MAX(sizeof(VFSFile),sizeof(VFSLink)))));
 }
 
 /* all nodes (expand dynamically) */

@@ -8,6 +8,8 @@ random
 	/dev/random 0666 root
 null
 	/dev/null 0666 root
+pipe
+	/dev/pipe 0666 root
 speaker
 	/dev/speaker 0110 audio
 keyb

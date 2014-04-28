@@ -85,6 +85,21 @@ int unmount(const char *path) {
 	return syscall1(SYSCALL_UNMOUNT,(ulong)abspath(apath,sizeof(apath),path));
 }
 
+int pipe(int *readFd,int *writeFd) {
+	/* the permissions are read-write for both. we ensure that the first is for reading only and
+	 * the second for writing only in the pipe-driver. */
+	int fd = open("/dev/pipe",IO_READ | IO_WRITE);
+	if(fd < 0)
+		return fd;
+	*writeFd = fd;
+	*readFd = creatsibl(fd,0);
+	if(*readFd < 0) {
+		close(fd);
+		return *readFd;
+	}
+	return 0;
+}
+
 int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	/* create shm file */
 	*mem = NULL;

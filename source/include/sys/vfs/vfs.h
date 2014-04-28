@@ -102,16 +102,6 @@ public:
 	static int openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file);
 
 	/**
-	 * Creates a pipe and opens one file for reading and one file for writing.
-	 *
-	 * @param pid the process-id
-	 * @param readFile will be set to the file for reading
-	 * @param writeFile will be set to the file for writing
-	 * @return 0 on success
-	 */
-	static int openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile);
-
-	/**
 	 * Opens the file with given number and given flags. That means it walks through the global
 	 * file table and searches for a free entry or an entry for that file.
 	 * Note that multiple processs may read from the same file simultaneously but NOT write!

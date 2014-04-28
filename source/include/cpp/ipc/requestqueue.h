@@ -26,14 +26,17 @@
 namespace ipc {
 
 struct Request {
-	explicit Request(int _fd,msgid_t _mid,char *_data,size_t _count)
-		: fd(_fd), mid(_mid), data(_data), count(_count) {
+	explicit Request() : fd(), mid(), data(), count(), offset() {
+	}
+	explicit Request(int _fd,msgid_t _mid,char *_data,size_t _count,size_t _offset = 0)
+		: fd(_fd), mid(_mid), data(_data), count(_count), offset(_offset) {
 	}
 
 	int fd;
 	msgid_t mid;
 	char *data;
 	size_t count;
+	size_t offset;
 };
 
 class RequestQueue {

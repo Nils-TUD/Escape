@@ -410,24 +410,22 @@ size_t OpenFile::getCount() {
 int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
 	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
 	size_t i;
-	bool isDrvUse = false;
+	bool isDevice = false;
 	OpenFile *e;
 	/* ensure that we don't increment usages of an unused slot */
 	assert(flags & (VFS_DEVICE | VFS_READ | VFS_WRITE | VFS_MSGS));
 	assert(!(flags & ~userFlags));
 
-	if(devNo == VFS_DEV_NO) {
-		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
-		isDrvUse = (n->getMode() & (MODE_TYPE_CHANNEL | MODE_TYPE_PIPE)) ? true : false;
-	}
+	if(devNo == VFS_DEV_NO)
+		isDevice = IS_CHANNEL(n->getMode());
 	/* doesn't work for channels and pipes */
-	if(EXPECT_FALSE(isDrvUse && (flags & VFS_EXCLUSIVE)))
+	if(EXPECT_FALSE(isDevice && (flags & VFS_EXCLUSIVE)))
 		return -EINVAL;
 
 	{
 		LockGuard<SpinLock> g(&gftLock);
 		/* devices and files can't be used exclusively */
-		if(!isDrvUse) {
+		if(!isDevice) {
 			/* check if somebody has this file currently exclusively */
 			e = exclList;
 			while(e) {

@@ -78,10 +78,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{unmount,			"unmount",    		1},
 	{waitchild,			"waitchild",    	1},
 	{tell,				"tell",    			2},
-	{pipe,				"pipe",    			2},
+	{sysconf,			"sysconf",   		1},
 
 	/* 40 */
-	{sysconf,			"sysconf",   		1},
 	{getwork,			"getwork",    		6},
 	{join,				"join",    			1},
 	{fstat,				"fstat",    		2},
@@ -91,9 +90,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{getuid,			"getuid",    		0},
 	{setuid,			"setuid",    		1},
 	{geteuid,			"geteuid",    		0},
+	{seteuid,			"seteuid",    		1},
 
 	/* 50 */
-	{seteuid,			"seteuid",    		1},
 	{getgid,			"getgid",    		0},
 	{setgid,			"setgid",    		1},
 	{getegid,			"getegid",    		0},
@@ -103,9 +102,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{getgroups,			"getgroups",    	2},
 	{setgroups,			"setgroups",    	2},
 	{isingroup,			"isingroup",    	2},
+	{alarm,				"alarm",    		1},
 
 	/* 60 */
-	{alarm,				"alarm",    		1},
 	{tsctotime,			"tsctotime",    	1},
 	{semcrt,			"semcrt",			1},
 	{semop,				"semop",			2},
@@ -115,9 +114,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{cancel,			"cancel",			2},
 	{creatsibl,			"creatsibl",		2},
 	{sysconfstr,		"sysconfstr",		3},
+	{getmsid,			"getmsid",			0},
 
 	/* 70 */
-	{getmsid,			"getmsid",			0},
 	{clonems,			"clonems",			0},
 	{joinms,			"joinms",			1},
 	{mlock,				"mlock",			2},

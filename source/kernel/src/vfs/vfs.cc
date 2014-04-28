@@ -27,7 +27,6 @@
 #include <sys/vfs/link.h>
 #include <sys/vfs/selflink.h>
 #include <sys/vfs/channel.h>
-#include <sys/vfs/pipe.h>
 #include <sys/vfs/device.h>
 #include <sys/vfs/openfile.h>
 #include <sys/task/proc.h>
@@ -54,7 +53,6 @@ void VFS::init() {
 	/*
 	 *  /
 	 *   |- system
-	 *   |   |- pipes
 	 *   |   |- mbmods
 	 *   |   |- shm
 	 *   |   |- devices
@@ -65,7 +63,6 @@ void VFS::init() {
 	 */
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
 	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"system",DIR_DEF_MODE);
-	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"pipes",DIR_DEF_MODE));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"mbmods",DIR_DEF_MODE));
 	VFSNode *node = createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
 	/* the user should be able to create shms as well */
@@ -216,39 +213,6 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 			return err;
 		}
 	}
-	return 0;
-}
-
-int VFS::openPipe(pid_t pid,OpenFile **readFile,OpenFile **writeFile) {
-	/* resolve pipe-path */
-	VFSNode *node = NULL;
-	int err = VFSNode::request("/system/pipes",NULL,&node,NULL,VFS_READ,0);
-	if(err < 0)
-		return err;
-
-	/* create pipe */
-	VFSNode *pipeNode = createObj<VFSPipe>(pid,node);
-	VFSNode::release(node);
-	if(pipeNode == NULL)
-		return -ENOMEM;
-
-	/* open file for reading */
-	err = openFile(pid,VFS_READ,pipeNode,pipeNode->getNo(),VFS_DEV_NO,readFile);
-	if(err < 0) {
-		VFSNode::release(pipeNode);
-		VFSNode::release(pipeNode);
-		return err;
-	}
-
-	/* open file for writing */
-	err = openFile(pid,VFS_WRITE,pipeNode,pipeNode->getNo(),VFS_DEV_NO,writeFile);
-	if(err < 0) {
-		VFSNode::release(pipeNode);
-		/* closeFile removes the pipenode, too */
-		(*readFile)->close(pid);
-		return err;
-	}
-	VFSNode::release(pipeNode);
 	return 0;
 }
 

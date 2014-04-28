@@ -104,9 +104,7 @@ A_CHECKRET int create(const char *path,uint flags,mode_t mode);
  * @param writeFd will be set to the fd for writing
  * @return 0 on success
  */
-A_CHECKRET static inline int pipe(int *readFd,int *writeFd) {
-	return syscall2(SYSCALL_PIPE,(ulong)readFd,(ulong)writeFd);
-}
+A_CHECKRET int pipe(int *readFd,int *writeFd);
 
 /**
  * Retrieves information about the given file

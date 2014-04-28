@@ -381,8 +381,6 @@ const char *Sched::getEventName(uint event) {
 		"CLIENT",
 		"RECEIVED_MSG",
 		"MUTEX",
-		"PIPE_FULL",
-		"PIPE_EMPTY",
 		"SWAP_JOB",
 		"SWAP_WORK",
 		"SWAP_FREE",

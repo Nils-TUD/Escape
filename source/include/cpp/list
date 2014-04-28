@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <algorithm>
 #include <functional>
+#include <limits.h>
 #include <assert.h>
 
 #include <impl/list/listnode.h>

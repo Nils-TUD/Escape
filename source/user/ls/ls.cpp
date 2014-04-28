@@ -329,6 +329,9 @@ static file::size_type getDirSize(const file& d) {
 }
 
 static void printMode(file::mode_type mode) {
+	char exec = 'x';
+	if(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFS(mode) || S_ISSERV(mode))
+		exec = 'm';
 	if(S_ISDIR(mode))
 		cout << 'd';
 	else if(S_ISCHR(mode))
@@ -343,13 +346,13 @@ static void printMode(file::mode_type mode) {
 		cout << '-';
 	printPerm(mode,S_IRUSR,'r');
 	printPerm(mode,S_IWUSR,'w');
-	printPerm(mode,S_IXUSR,'x');
+	printPerm(mode,S_IXUSR,exec);
 	printPerm(mode,S_IRGRP,'r');
 	printPerm(mode,S_IWGRP,'w');
-	printPerm(mode,S_IXGRP,'x');
+	printPerm(mode,S_IXGRP,exec);
 	printPerm(mode,S_IROTH,'r');
 	printPerm(mode,S_IWOTH,'w');
-	printPerm(mode,S_IXOTH,'x');
+	printPerm(mode,S_IXOTH,exec);
 	cout << ' ';
 }
 

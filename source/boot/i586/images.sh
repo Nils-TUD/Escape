@@ -59,6 +59,6 @@ kernel /boot/escape_test
 EOF
 
 	sudo ./boot/perms.sh $dir
-	./tools/disk.py create --part ext2r0 64 "$dir" --part ext2r0 4 - --part nofs 8 - "$dst" 1>&2
+	./tools/disk.py create --part ext2r0 128 "$dir" --part ext2r0 4 - --part nofs 8 - "$dst" 1>&2
 	sudo rm -Rf $dir
 }

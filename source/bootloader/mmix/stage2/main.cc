@@ -39,8 +39,8 @@
 #define START_SECTOR		128		/* part 0 */
 
 typedef struct {
-	sExt2SuperBlock superBlock;
-	sExt2BlockGrp groups[GROUP_COUNT];
+	Ext2SuperBlock superBlock;
+	Ext2BlockGrp groups[GROUP_COUNT];
 } sExt2Simple;
 
 EXTERN_C void flushRegion(void *addr,size_t count);
@@ -61,8 +61,8 @@ static LoadProg progs[MAX_PROG_COUNT] = {
 static BootInfo bootinfo;
 
 static sExt2Simple e;
-static sExt2Inode rootIno;
-static sExt2Inode inoBuf;
+static Ext2Inode rootIno;
+static Ext2Inode inoBuf;
 static Elf64_Ehdr eheader;
 static Elf64_Phdr pheader;
 static Elf64_Shdr sheader;
@@ -94,7 +94,7 @@ static void halt(const char *s,...) {
 	while(1);
 }
 
-static void printInode(sExt2Inode *inode) {
+static void printInode(Ext2Inode *inode) {
 	size_t i;
 	debugf("\tmode=0x%08x\n",le16tocpu(inode->mode));
 	debugf("\tuid=%d\n",le16tocpu(inode->uid));
@@ -143,26 +143,26 @@ static void readFromDisk(block_t blkno,void *buf,size_t offset,size_t nbytes) {
 		memcpy(buf,(char*)buffer + offset,nbytes);
 }
 
-static void loadInode(sExt2Inode *ip,inode_t inodeno) {
-	sExt2BlockGrp *group = e.groups + ((inodeno - 1) / le32tocpu(e.superBlock.inodesPerGroup));
+static void loadInode(Ext2Inode *ip,inode_t inodeno) {
+	Ext2BlockGrp *group = e.groups + ((inodeno - 1) / le32tocpu(e.superBlock.inodesPerGroup));
 	if(group >= e.groups + GROUP_COUNT)
 		halt("Invalid blockgroup of inode %u: %u\n",inodeno,group - e.groups);
-	size_t inodesPerBlock = BLOCK_SIZE / sizeof(sExt2Inode);
+	size_t inodesPerBlock = BLOCK_SIZE / sizeof(Ext2Inode);
 	size_t noInGroup = (inodeno - 1) % le32tocpu(e.superBlock.inodesPerGroup);
 	block_t blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inodeno - 1) % inodesPerBlock;
 	readBlocks(buffer,blockNo,1);
-	memcpy(ip,(uint8_t*)buffer + inodeInBlock * sizeof(sExt2Inode),sizeof(sExt2Inode));
+	memcpy(ip,(uint8_t*)buffer + inodeInBlock * sizeof(Ext2Inode),sizeof(Ext2Inode));
 }
 
-static inode_t searchDir(inode_t dirIno,sExt2Inode *dir,const char *name,size_t nameLen) {
+static inode_t searchDir(inode_t dirIno,Ext2Inode *dir,const char *name,size_t nameLen) {
 	size_t size = le32tocpu(dir->size);
 	if(size > sizeof(buffer))
 		halt("Directory %u larger than %u bytes\n",dirIno,sizeof(buffer));
 
 	readBlocks(buffer,le32tocpu(dir->dBlocks[0]),1);
 	ssize_t rem = size;
-	sExt2DirEntry *entry = (sExt2DirEntry*)buffer;
+	Ext2DirEntry *entry = (Ext2DirEntry*)buffer;
 
 	/* search the directory-entries */
 	while(rem > 0 && le32tocpu(entry->inode) != 0) {
@@ -172,12 +172,12 @@ static inode_t searchDir(inode_t dirIno,sExt2Inode *dir,const char *name,size_t 
 
 		/* to next dir-entry */
 		rem -= le16tocpu(entry->recLen);
-		entry = (sExt2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
+		entry = (Ext2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
 	}
 	return EXT2_BAD_INO;
 }
 
-static block_t getBlock(sExt2Inode *ino,size_t offset) {
+static block_t getBlock(Ext2Inode *ino,size_t offset) {
 	block_t i,block = offset / BLOCK_SIZE;
 	size_t blockSize,blocksPerBlock;
 
@@ -205,7 +205,7 @@ static block_t getBlock(sExt2Inode *ino,size_t offset) {
 	return le32tocpu(*((block_t*)buffer + block % blocksPerBlock));
 }
 
-static inode_t namei(char *path,sExt2Inode *ino) {
+static inode_t namei(char *path,Ext2Inode *ino) {
 	inode_t inodeno;
 	char *p = path;
 	char *q;
@@ -217,7 +217,7 @@ static inode_t namei(char *path,sExt2Inode *ino) {
 		return EXT2_BAD_INO;
 
 	inodeno = EXT2_ROOT_INO;
-	memcpy(ino,&rootIno,sizeof(sExt2Inode));
+	memcpy(ino,&rootIno,sizeof(Ext2Inode));
 
 	/* root? */
 	if(*path == '/' && *(path + 1) == '\0')
@@ -247,7 +247,7 @@ static inode_t namei(char *path,sExt2Inode *ino) {
 	return inodeno;
 }
 
-static uintptr_t copyToMem(sExt2Inode *ino,size_t offset,size_t count,uintptr_t dest) {
+static uintptr_t copyToMem(Ext2Inode *ino,size_t offset,size_t count,uintptr_t dest) {
 	block_t blk;
 	size_t offInBlk,amount,i = 0;
 	while(count > 0) {
@@ -267,7 +267,7 @@ static uintptr_t copyToMem(sExt2Inode *ino,size_t offset,size_t count,uintptr_t 
 	return dest;
 }
 
-static int loadKernel(LoadProg *prog,sExt2Inode *ino) {
+static int loadKernel(LoadProg *prog,Ext2Inode *ino) {
 	size_t j,loadSegNo = 0;
 	uint8_t const *datPtr;
 
@@ -347,7 +347,7 @@ static int loadKernel(LoadProg *prog,sExt2Inode *ino) {
 	return 1;
 }
 
-static int readInProg(LoadProg *prog,sExt2Inode *ino) {
+static int readInProg(LoadProg *prog,Ext2Inode *ino) {
 	/* make page-boundary */
 	loadAddr = ROUND_PAGE_UP(loadAddr);
 	prog->start = loadAddr;

@@ -22,13 +22,18 @@
 #include <esc/common.h>
 #include "ext2.h"
 
-/**
- * Resolves the given path to the inode-number
- *
- * @param e the ext2-handle
- * @param u the user
- * @param path the path
- * @param flags the flags with which to open the file
- * @return the inode-Number or EXT2_BAD_INO
- */
-inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags);
+class Ext2Path {
+	Ext2Path() = delete;
+
+public:
+	/**
+	 * Resolves the given path to the inode-number
+	 *
+	 * @param e the ext2-handle
+	 * @param u the user
+	 * @param path the path
+	 * @param flags the flags with which to open the file
+	 * @return the inode-Number or EXT2_BAD_INO
+	 */
+	static inode_t resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags);
+};

@@ -22,116 +22,151 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-#define BMODE_READ		0x1
-#define BMODE_WRITE		0x2
-
-/* reading/writing of blocks */
-typedef bool (*fReadBlocks)(void *h,void *buffer,block_t start,size_t blockCount);
-typedef bool (*fWriteBlocks)(void *h,const void *buffer,size_t start,size_t blockCount);
-
 /* a cached block */
-typedef struct sCBlock {
-	struct sCBlock *prev;
-	struct sCBlock *next;
-	struct sCBlock *hnext;
+struct CBlock {
+	CBlock *prev;
+	CBlock *next;
+	CBlock *hnext;
 	size_t blockNo;
 	ushort dirty;
 	ushort refs;
 	/* NULL indicates an unused entry */
 	void *buffer;
-} sCBlock;
+};
 
-/* all information about a block-cache */
-typedef struct {
-	void *handle;
-	size_t blockCacheSize;
-	size_t blockSize;
-	fReadBlocks read;
-	fWriteBlocks write;
-	sCBlock **hashmap;
-	sCBlock *oldestBlock;
-	sCBlock *newestBlock;
-	sCBlock *freeBlocks;
-	sCBlock *blockCache;
-	void *blockmem;
-	ulong blockshm;
-	size_t hits;
-	size_t misses;
-} sBlockCache;
+class BlockCache {
+	static const size_t HASH_SIZE	= 256;
 
-/**
- * Inits the block-cache
- *
- * @param c the block-cache
- * @param fd the file descriptor for the disk device
- */
-void bcache_init(sBlockCache *c,int fd);
+public:
+	enum {
+		READ	= 0x1,
+		WRITE	= 0x2,
+	};
 
-/**
- * Destroyes the given cache
- *
- * @param c the block-cache
- */
-void bcache_destroy(sBlockCache *c);
+	/**
+	 * Inits the block-cache
+	 *
+	 * @param fd the file descriptor for the disk device
+	 * @param blocks the number of blocks in the cache
+	 * @param bsize the block size
+	 */
+	explicit BlockCache(int fd,size_t blocks,size_t bsize);
 
-/**
- * Writes all dirty blocks to disk
- *
- * @param c the block-cache
- */
-void bcache_flush(sBlockCache *c);
+	/**
+	 * Destroyes the given cache
+	 */
+	~BlockCache();
 
-/**
- * Marks the given block as dirty
- *
- * @param b the block
- */
-void bcache_markDirty(sCBlock *b);
+	/**
+	 * Reads <blockCount> blocks beginning with <start> into <buffer>.
+	 *
+	 * @param buffer the buffer to write to
+	 * @param start he start block number
+	 * @param blockCount the number of blocks
+	 * @return if successfull
+	 */
+	virtual bool readBlocks(void *buffer,block_t start,size_t blockCount) = 0;
 
-/**
- * Creates a new block-cache-entry for given block-number. Does not read the contents from disk!
- * Uses implicitly BMODE_WRITE.
- * Note that you HAVE TO call bcache_release() when you're done!
- *
- * @param c the block-cache
- * @param blockNo the block-number
- * @return the block or NULL
- */
-sCBlock *bcache_create(sBlockCache *c,block_t blockNo);
+	/**
+	 * Writes <blockCount> blocks beginning with <start> from <buffer>.
+	 *
+	 * @param buffer the buffer to write
+	 * @param start he start block number
+	 * @param blockCount the number of blocks
+	 * @return if successfull
+	 */
+	virtual bool writeBlocks(const void *buffer,size_t start,size_t blockCount) = 0;
 
-/**
- * Requests the block with given number.
- * Note that you HAVE TO call bcache_release() when you're done!
- *
- * @param c the block-cache
- * @param blockNo the block to fetch from disk or from the cache
- * @param mode the mode (BMODE_*)
- * @return the block or NULL
- */
-sCBlock *bcache_request(sBlockCache *c,block_t blockNo,uint mode);
+	/**
+	 * Writes all dirty blocks to disk
+	 */
+	void flush();
 
-/**
- * Releases the given block
- *
- * @param b the block
- */
-void bcache_release(sCBlock *b);
+	/**
+	 * Marks the given block as dirty
+	 *
+	 * @param b the block
+	 */
+	void markDirty(CBlock *b) {
+		b->dirty = true;
+	}
 
-/**
- * Prints statistics about the given blockcache to the given file
- *
- * @param f the file
- * @param c the block-cache
- */
-void bcache_printStats(FILE *f,sBlockCache *c);
+	/**
+	 * Creates a new block-cache-entry for given block-number. Does not read the contents from disk!
+	 * Uses implicitly BMODE_WRITE.
+	 * Note that you HAVE TO call release() when you're done!
+	 *
+	 * @param blockNo the block-number
+	 * @return the block or NULL
+	 */
+	CBlock *create(block_t blockNo) {
+		return doRequest(blockNo,false,WRITE);
+	}
+
+	/**
+	 * Requests the block with given number.
+	 * Note that you HAVE TO call release() when you're done!
+	 *
+	 * @param blockNo the block to fetch from disk or from the cache
+	 * @param mode the mode (BMODE_*)
+	 * @return the block or NULL
+	 */
+	CBlock *request(block_t blockNo,uint mode) {
+		return doRequest(blockNo,true,mode);
+	}
+
+	/**
+	 * Releases the given block
+	 *
+	 * @param b the block
+	 */
+	void release(CBlock *b) {
+		doRelease(b,true);
+	}
+
+	/**
+	 * Prints statistics about the given blockcache to the given file
+	 *
+	 * @param f the file
+	 */
+	void printStats(FILE *f);
 
 #if DEBUGGING
 
-/**
- * Prints the used and free blocks
- *
- * @param c the block-cache
- */
-void bcache_print(sBlockCache *c);
+	/**
+	 * Prints the used and free blocks
+	 */
+	void print();
 
 #endif
+
+private:
+	/**
+	 * Aquires the tpool_lock, depending on <mode>, for the given block
+	 */
+	void acquire(CBlock *b,uint mode);
+	/**
+	 * Releases the tpool_lock for given block
+	 */
+	void doRelease(CBlock *b,bool unlockAlloc);
+	/**
+	 * Requests the given block and reads it from disk if desired
+	 */
+	CBlock *doRequest(block_t blockNo,bool doRead,uint mode);
+	/**
+	 * Fetches a block-cache-entry
+	 */
+	CBlock *getBlock(block_t blockNo);
+
+	size_t _blockCacheSize;
+	size_t _blockSize;
+	CBlock **_hashmap;
+	CBlock *_oldestBlock;
+	CBlock *_newestBlock;
+	CBlock *_freeBlocks;
+	CBlock *_blockCache;
+	void *_blockmem;
+	ulong _blockshm;
+	ulong _hits;
+	ulong _misses;
+};

@@ -20,7 +20,37 @@
 #pragma once
 
 #include <esc/common.h>
-#include <fs/fsdev.h>
+#include <esc/thread.h>
+#include <esc/proc.h>
+#include <fs/filesystem.h>
+#include <vthrow.h>
+#include <signal.h>
 
-int infodev_start(const char *path,sFileSystem *fs);
-void infodev_shutdown(void);
+class InfoDevice {
+public:
+	explicit InfoDevice(const char *path,FileSystem *fs) : _tid(), _path(path), _fs(fs) {
+		int res;
+		if((res = startthread(thread,this)) < 0)
+			VTHROWE("startthread",res);
+		_tid = res;
+	}
+	~InfoDevice() {
+		if(kill(getpid(),SIG_USR1) < 0)
+			printe("Unable to send signal to me");
+		join(_tid);
+	}
+
+	const char *path() const {
+		return _path;
+	}
+	FileSystem *fs() {
+		return _fs;
+	}
+
+private:
+	static int thread(void*);
+
+	tid_t _tid;
+	const char *_path;
+	FileSystem *_fs;
+};

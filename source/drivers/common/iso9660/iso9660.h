@@ -24,15 +24,15 @@
 #include <fs/fsdev.h>
 #include <fs/blockcache.h>
 
+#include "common.h"
+#include "direcache.h"
+
 #define ATAPI_SECTOR_SIZE			2048
-#define ISO_BLK_SIZE(iso)			((iso)->primary.data.primary.logBlkSize.littleEndian)
-#define ISO_BLKS_TO_SECS(iso,blks)	((blks) * ISO_BLK_SIZE((iso)) / ATAPI_SECTOR_SIZE)
 
 #define ISO_BCACHE_SIZE				1024
 #define ISO_DIRE_CACHE_SIZE			128
 
 #define ISO_VOL_DESC_START			0x10
-#define ISO_ROOT_DIR_ID(iso)		ISO_BLK_SIZE(iso)
 
 #define ISO_VOL_TYPE_BOOTRECORD		0
 #define ISO_VOL_TYPE_PRIMARY		1
@@ -58,70 +58,8 @@
  * extents, for example files over 4GiB long. */
 #define ISO_FILEFL_NOT_FINAL		(1 << 7)
 
-/* 32-bit integer that is stored in little- and bigendian */
-typedef struct {
-	uint32_t littleEndian;
-	uint32_t bigEndian;
-} uISOInt32;
-
-/* 16-bit integer that is stored in little- and bigendian */
-typedef struct {
-	uint16_t littleEndian;
-	uint16_t bigEndian;
-} uISOInt16;
-
-/* dates how they are stored in directory-entires */
-typedef struct {
-	uint8_t year;				/* Number of years since 1900. */
-	uint8_t month;				/* Month of the year from 1 to 12. */
-	uint8_t day;					/* Day of the month from 1 to 31. */
-	uint8_t hour;				/* Hour of the day from 0 to 23. */
-	uint8_t minute;				/* Minute of the hour from 0 to 59. */
-	uint8_t second;				/* Second of the minute from 0 to 59. */
-	uint8_t offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East). */
-} A_PACKED sISODirDate;
-
-/* dates how they are stored in the volume-descriptor */
-typedef struct {
-	char year[4];			/* Year from 1 to 9999. */
-	char month[2];			/* Month from 1 to 12. */
-	char day[2];			/* Day from 1 to 31. */
-	char hour[2];			/* Hour from 0 to 23. */
-	char minute[2];			/* Minute from 0 to 59. */
-	char second[2];			/* Second from 0 to 59. */
-	char second100ths[2];	/* Hundredths of a second from 0 to 99. */
-	uint8_t offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East) */
-} A_PACKED sISOVolDate;
-
-/* a directory-entry */
-typedef struct {
-	/* Length of Directory Record. */
-	uint8_t length;
-	/* Extended Attribute Record length. */
-	uint8_t extAttrLen;
-	/* Location of extent (LBA) in both-endian format. */
-	uISOInt32 extentLoc;
-	/* Data length (size of extent) in both-endian format. */
-	uISOInt32 extentSize;
-	/* Recording date and time (see format below). */
-	sISODirDate created;
-	/* File flags (see ISO_FILEFL_*). */
-	uint8_t flags;
-	/*  File unit size for files recorded in interleaved mode, zero otherwise. */
-	uint8_t unitSize;
-	/* Interleave gap size for files recorded in interleaved mode, zero otherwise. */
-	uint8_t gapSize;
-	/* Volume sequence number - the volume that this extent is recorded on. */
-	uISOInt16 volSeqNo;
-	/* Length of file identifier (file name). This terminates with a ';' character followed by
-	 * the file ID number in ASCII coded decimal ('1'). */
-	uint8_t nameLen;
-	/* is padded with a byte so that a directory entry will always start on an even byte number. */
-	char name[];
-} A_PACKED sISODirEntry;
-
 /* an entry in the path-table */
-typedef struct {
+struct ISOPathTblEntry {
 	/* Length of Directory Identifier */
 	uint8_t length;
 	/* Extended Attribute Record Length */
@@ -134,9 +72,9 @@ typedef struct {
 	/* Directory Identifier (name) in d-characters. padded with a zero, if necessary, so
 	 * that each table-entry starts on a even byte number. */
 	char name[];
-} A_PACKED sISOPathTblEntry;
+} A_PACKED;
 
-typedef struct {
+struct ISOVolDesc {
 	/* see ISO_VOL_TYPE_* */
 	uint8_t type;
 	/* always 'CD001' */
@@ -164,27 +102,27 @@ typedef struct {
 			/* unused */
 			uint64_t : 64;
 			/* Number of Logical Blocks in which the volume is recorded */
-			uISOInt32 volSpaceSize;
+			ISOInt32 volSpaceSize;
 			/* unused */
 			uint64_t : 64;
 			uint64_t : 64;
 			uint64_t : 64;
 			uint64_t : 64;
 			/* The size of the set in this logical volume (number of disks). */
-			uISOInt16 volSetSize;
+			ISOInt16 volSetSize;
 			/* The number of this disk in the Volume Set. */
-			uISOInt16 volSeqNo;
+			ISOInt16 volSeqNo;
 			/* The size in bytes of a logical block in both-endian format. */
-			uISOInt16 logBlkSize;
+			ISOInt16 logBlkSize;
 			/* The size in bytes of the path table */
-			uISOInt32 pathTableSize;
+			ISOInt32 pathTableSize;
 			/* LBA location of the (optional) path table for little-endian */
 			uint32_t lPathTblLoc;
 			uint32_t lOptPathTblLoc;
 			/* LBA location of the (optional) path table for big-endian */
 			uint32_t mPathTblLoc;
 			uint32_t mOptPathTblLoc;
-			sISODirEntry rootDir;
+			ISODirEntry rootDir;
 			/* root-entry is padded with one byte */
 			uint8_t : 8;
 			/* Identifier of the volume set of which this volume is a member in d-characters. */
@@ -203,53 +141,96 @@ typedef struct {
 			char abstractFile[36];
 			char bibliographicFile[37];
 			/* dates */
-			sISOVolDate created;
-			sISOVolDate modified;
+			ISOVolDate created;
+			ISOVolDate modified;
 			/* After this date and time, the volume should be considered obsolete. If unspecified,
 			 * then the information is never considered obsolete. */
-			sISOVolDate expires;
+			ISOVolDate expires;
 			/* Date and time from which the volume should be used. If unspecified, the volume may
 			 * be used immediately. */
-			sISOVolDate effective;
+			ISOVolDate effective;
 			/* An 8 bit number specifying the directory records and path table version (always 0x01). */
 			uint8_t fileStructureVersion;
 		} A_PACKED primary;
 	} data;
-} A_PACKED sISOVolDesc;
+} A_PACKED;
 
-/* entries in the directory-entry-cache */
-typedef struct {
-	inode_t id;
-	sISODirEntry entry;
-} sISOCDirEntry;
+class ISO9660FileSystem : public FileSystem {
+public:
+	class ISO9660BlockCache : public BlockCache {
+	public:
+		explicit ISO9660BlockCache(ISO9660FileSystem *fs)
+			: BlockCache(fs->fd,ISO_BCACHE_SIZE,fs->blockSize()), _fs(fs) {
+		}
 
-/* the iso9660-handle (all information we need when working with it) */
-typedef struct {
-	/* the file-descs for the device (one for each thread and one for the initial) */
-	int drvFds[REQ_THREAD_COUNT + 1];
-	sISOVolDesc primary;
-	size_t direcNextFree;
-	sISOCDirEntry direcache[ISO_DIRE_CACHE_SIZE];
-	sBlockCache blockCache;
-} sISO9660;
+		virtual bool readBlocks(void *buffer,block_t start,size_t blockCount);
+		virtual bool writeBlocks(const void *buffer,size_t start,size_t blockCount);
+
+	private:
+		ISO9660FileSystem *_fs;
+	};
+
+	explicit ISO9660FileSystem(const char *device);
+	virtual ~ISO9660FileSystem() {
+		close(fd);
+	}
+
+	size_t blockSize() const {
+		return primary.data.primary.logBlkSize.littleEndian;
+	}
+	size_t blocksToSecs(ulong blks) const {
+		return (blks * blockSize()) / ATAPI_SECTOR_SIZE;
+	}
+	inode_t rootDirId() const {
+		return blockSize();
+	}
+
+	virtual inode_t open(FSUser *u,inode_t ino,uint flags);
+	virtual void close(inode_t ino);
+	virtual inode_t resolve(FSUser *u,const char *path,uint flags);
+	virtual int stat(inode_t ino,sFileInfo *info);
+	virtual ssize_t read(inode_t ino,void *buffer,off_t offset,size_t size);
+	virtual ssize_t write(inode_t ino,const void *buffer,off_t offset,size_t size);
+	virtual int link(FSUser *u,inode_t dstIno,inode_t dirIno,const char *name);
+	virtual int unlink(FSUser *u,inode_t dirIno,const char *name);
+	virtual int mkdir(FSUser *u,inode_t dirIno,const char *name);
+	virtual int rmdir(FSUser *u,inode_t dirIno,const char *name);
+	virtual int chmod(FSUser *u,inode_t dirIno,mode_t mode);
+	virtual int chown(FSUser *u,inode_t dirIno,uid_t uid,gid_t gid);
+	virtual void sync();
+	virtual void print(FILE *f);
+
+private:
+	static int initPrimaryVol(ISO9660FileSystem *fs,const char *device);
+	time_t dirDate2Timestamp(const ISODirDate *ddate);
 
 #if DEBUGGING
 
-/**
- * Prints the path-table
- */
-void iso_dbg_printPathTbl(sISO9660 *h);
-/**
- * Prints an directory-tree
- */
-void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer);
-/**
- * Prints the given volume descriptor
- */
-void iso_dbg_printVolDesc(sISOVolDesc *desc);
-/**
- * Prints the given date
- */
-void iso_dbg_printVolDate(sISOVolDate *date);
+	/**
+	 * Prints the path-table
+	 */
+	void printPathTbl();
+	/**
+	 * Prints an directory-tree
+	 */
+	void printTree(size_t extLoc,size_t extSize,size_t layer);
+	/**
+	 * Prints the given volume descriptor
+	 */
+	void printVolDesc(ISOVolDesc *desc);
+	/**
+	 * Prints the given date
+	 */
+	void printVolDate(ISOVolDate *date);
 
 #endif
+
+public:
+	/* the fd for the device */
+	int fd;
+
+	ISOVolDesc primary;
+	int dummy;
+	ISO9660DirCache dirCache;
+	ISO9660BlockCache blockCache;
+};

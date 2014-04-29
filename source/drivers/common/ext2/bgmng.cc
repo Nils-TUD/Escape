@@ -28,78 +28,63 @@
 #include <stdlib.h>
 
 #include "ext2.h"
-#include "blockgroup.h"
+#include "bgmng.h"
 #include "rw.h"
 
-int ext2_bg_init(sExt2 *e) {
+Ext2BGMng::Ext2BGMng(Ext2FileSystem *fs) : _dirty(false), _groups(), _fs(fs) {
 	/* read block-group-descriptors */
 	int res;
-	size_t bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
-	e->groupsDirty = false;
-	e->groups = (sExt2BlockGrp*)malloc(bcount * EXT2_BLK_SIZE(e));
-	if(e->groups == NULL) {
-		printe("Unable to allocate memory for blockgroups");
-		return -ENOMEM;
+	size_t bcount = _fs->bytesToBlocks(_fs->getBlockGroupCount());
+	_groups = (Ext2BlockGrp*)malloc(bcount * _fs->blockSize());
+	if(_groups == NULL)
+		VTHROWE("Unable to allocate memory for blockgroups",-ENOMEM);
+	if((res = Ext2RW::readBlocks(_fs,_groups,le32tocpu(_fs->sb.get()->firstDataBlock) + 1,bcount)) < 0) {
+		free(_groups);
+		VTHROWE("Unable to read group-table",res);
 	}
-	if((res = ext2_rw_readBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount)) < 0) {
-		free(e->groups);
-		printe("Unable to read group-table");
-		return res;
-	}
-	return 0;
 }
 
-void ext2_bg_destroy(sExt2 *e) {
-	free(e->groups);
-}
-
-void ext2_bg_update(sExt2 *e) {
+void Ext2BGMng::update() {
 	block_t bno;
 	size_t i,count,bcount;
 	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
-	if(!e->groupsDirty)
+	if(!_dirty)
 		goto done;
-	bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
+	bcount = _fs->bytesToBlocks(_fs->getBlockGroupCount());
 
 	/* update main block-group-descriptor-table */
-	if(ext2_rw_writeBlocks(e,e->groups,le32tocpu(e->superBlock.firstDataBlock) + 1,bcount) != 0) {
+	if(Ext2RW::writeBlocks(_fs,_groups,le32tocpu(_fs->sb.get()->firstDataBlock) + 1,bcount) != 0) {
 		printe("Unable to update block-group-descriptor-table in blockgroup 0");
 		goto done;
 	}
 
 	/* update block-group-descriptor backups */
-	bno = le32tocpu(e->superBlock.blocksPerGroup) + EXT2_BLOGRPTBL_BNO;
-	count = ext2_getBlockGroupCount(e);
+	bno = le32tocpu(_fs->sb.get()->blocksPerGroup) + EXT2_BLOGRPTBL_BNO;
+	count = _fs->getBlockGroupCount();
 	for(i = 1; i < count; i++) {
-		if(ext2_bgHasBackups(e,i)) {
-			if(ext2_rw_writeBlocks(e,e->groups,bno,bcount) != 0) {
+		if(_fs->bgHasBackups(i)) {
+			if(Ext2RW::writeBlocks(_fs,_groups,bno,bcount) != 0) {
 				printe("Unable to update block-group-descriptor-table in blockgroup %d",i);
 				goto done;
 			}
 		}
-		bno += le32tocpu(e->superBlock.blocksPerGroup);
+		bno += le32tocpu(_fs->sb.get()->blocksPerGroup);
 	}
 
 	/* now we're in sync */
-	e->groupsDirty = false;
+	_dirty = false;
 done:
 	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }
 
 #if DEBUGGING
-
-/**
- * Prints the given bitmap
- */
-static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t max,
-		uint8_t *bitmap);
-
-void ext2_bg_print(sExt2 *e,block_t no,sExt2BlockGrp *bg) {
-	uint32_t blocksPerGroup = le32tocpu(e->superBlock.blocksPerGroup);
-	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
-	sCBlock *bbitmap = bcache_request(&e->blockCache,le32tocpu(bg->blockBitmap),BMODE_READ);
-	sCBlock *ibitmap = bcache_request(&e->blockCache,le32tocpu(bg->inodeBitmap),BMODE_READ);
+void Ext2BGMng::print(block_t no) {
+	Ext2BlockGrp *bg = get(no);
+	uint32_t blocksPerGroup = le32tocpu(_fs->sb.get()->blocksPerGroup);
+	uint32_t inodesPerGroup = le32tocpu(_fs->sb.get()->inodesPerGroup);
+	CBlock *bbitmap = _fs->blockCache.request(le32tocpu(bg->blockBitmap),BlockCache::READ);
+	CBlock *ibitmap = _fs->blockCache.request(le32tocpu(bg->inodeBitmap),BlockCache::READ);
 	if(!bbitmap || !ibitmap)
 		return;
 	printf("	blockBitmapStart = %d\n",le32tocpu(bg->blockBitmap));
@@ -108,18 +93,17 @@ void ext2_bg_print(sExt2 *e,block_t no,sExt2BlockGrp *bg) {
 	printf("	freeBlocks = %d\n",le16tocpu(bg->freeBlockCount));
 	printf("	freeInodes = %d\n",le16tocpu(bg->freeInodeCount));
 	printf("	usedDirCount = %d\n",le16tocpu(bg->usedDirCount));
-	ext2_bg_printRanges(e,"Blocks",no * blocksPerGroup,
-			MIN(blocksPerGroup,le32tocpu(e->superBlock.blockCount) - (no * blocksPerGroup)),
+	printRanges("Blocks",no * blocksPerGroup,
+			MIN(blocksPerGroup,le32tocpu(_fs->sb.get()->blockCount) - (no * blocksPerGroup)),
 			static_cast<uint8_t*>(bbitmap->buffer));
-	ext2_bg_printRanges(e,"Inodes",no * inodesPerGroup,
-			MIN(inodesPerGroup,le32tocpu(e->superBlock.inodeCount) - (no * inodesPerGroup)),
+	printRanges("Inodes",no * inodesPerGroup,
+			MIN(inodesPerGroup,le32tocpu(_fs->sb.get()->inodeCount) - (no * inodesPerGroup)),
 			static_cast<uint8_t*>(ibitmap->buffer));
-	bcache_release(ibitmap);
-	bcache_release(bbitmap);
+	_fs->blockCache.release(ibitmap);
+	_fs->blockCache.release(bbitmap);
 }
 
-static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t max,
-		uint8_t *bitmap) {
+void Ext2BGMng::printRanges(const char *name,block_t first,block_t max,uint8_t *bitmap) {
 	bool lastFree;
 	size_t pcount,start,i,a,j;
 
@@ -127,7 +111,7 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,block_t first,block_t 
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
 	printf("	Free%s:\n\t\t",name);
-	for(i = 0; i < EXT2_BLK_SIZE(e); a = 0, i++) {
+	for(i = 0; i < _fs->blockSize(); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
 				goto freeDone;
@@ -157,7 +141,7 @@ freeDone:
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
 	printf("	Used%s:\n\t\t",name);
-	for(i = 0; i < EXT2_BLK_SIZE(e); a = 0, i++) {
+	for(i = 0; i < _fs->blockSize(); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
 				goto usedDone;
@@ -183,5 +167,4 @@ usedDone:
 		printf("%lu .. %lu, ",first + start,first + i * 8 + a - 1);
 	printf("\n");
 }
-
 #endif

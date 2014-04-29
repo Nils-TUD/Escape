@@ -32,8 +32,8 @@
 #include "file.h"
 #include "dir.h"
 
-inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags) {
-	sExt2CInode *cnode = NULL;
+inode_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags) {
+	Ext2CInode *cnode = NULL;
 	inode_t res;
 	const char *p = path;
 	int err;
@@ -42,23 +42,23 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags) {
 	while(*p == '/')
 		p++;
 
-	cnode = ext2_icache_request(e,EXT2_ROOT_INO,IMODE_READ);
+	cnode = e->inodeCache.request(EXT2_ROOT_INO,IMODE_READ);
 	if(cnode == NULL)
 		return -ENOBUFS;
 
 	pos = strchri(p,'/');
 	while(*p) {
 		/* we need execute-permission to access the directory */
-		if((err = ext2_hasPermission(cnode,u,MODE_EXEC)) < 0) {
-			ext2_icache_release(e,cnode);
+		if((err = e->hasPermission(cnode,u,MODE_EXEC)) < 0) {
+			e->inodeCache.release(cnode);
 			return err;
 		}
 
-		res = ext2_dir_find(e,cnode,p,pos);
+		res = Ext2Dir::find(e,cnode,p,pos);
 		if(res >= 0) {
 			p += pos;
-			ext2_icache_release(e,cnode);
-			cnode = ext2_icache_request(e,res,IMODE_READ);
+			e->inodeCache.release(cnode);
+			cnode = e->inodeCache.request(res,IMODE_READ);
 			if(cnode == NULL)
 				return -ENOBUFS;
 
@@ -72,7 +72,7 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags) {
 			/* move to childs of this node */
 			pos = strchri(p,'/');
 			if((le16tocpu(cnode->inode.mode) & EXT2_S_IFDIR) == 0) {
-				ext2_icache_release(e,cnode);
+				e->inodeCache.release(cnode);
 				return -ENOTDIR;
 			}
 		}
@@ -83,28 +83,28 @@ inode_t ext2_path_resolve(sExt2 *e,sFSUser *u,const char *path,uint flags) {
 			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
 				/* rerequest inode for writing */
 				res = cnode->inodeNo;
-				ext2_icache_release(e,cnode);
-				cnode = ext2_icache_request(e,res,IMODE_WRITE);
+				e->inodeCache.release(cnode);
+				cnode = e->inodeCache.request(res,IMODE_WRITE);
 				if(cnode == NULL)
 					return -ENOENT;
 				/* ensure that there is no '/' in the name */
 				if(slash)
 					*slash = '\0';
-				err = ext2_file_create(e,u,cnode,p,&res,false);
-				ext2_icache_release(e,cnode);
+				err = Ext2File::create(e,u,cnode,p,&res,false);
+				e->inodeCache.release(cnode);
 				if(err < 0)
 					return err;
 				return res;
 			}
 			else {
-				ext2_icache_release(e,cnode);
+				e->inodeCache.release(cnode);
 				return -ENOENT;
 			}
 		}
 	}
 
 	res = cnode->inodeNo;
-	ext2_icache_release(e,cnode);
+	e->inodeCache.release(cnode);
 	if(res != EXT2_BAD_INO)
 		return res;
 	return -ENOENT;

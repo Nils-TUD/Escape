@@ -30,64 +30,57 @@
 #include "ext2.h"
 #include "rw.h"
 #include "inodecache.h"
-#include "superblock.h"
+#include "sbmng.h"
 
-int ext2_super_init(sExt2 *e) {
+Ext2SBMng::Ext2SBMng(Ext2FileSystem *fs) : _sbDirty(false), _fs(fs) {
 	int res;
-	e->sbDirty = false;
 	/* read sector-based because we need the super-block to be able to read block-based */
-	if((res = ext2_rw_readSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2)) < 0) {
-		printe("Unable to read super-block");
-		return res;
-	}
+	if((res = Ext2RW::readSectors(fs,&_superBlock,EXT2_SUPERBLOCK_SECNO,2)) < 0)
+		VTHROWE("Unable to read super-block",res);
 
 	/* check magic-number */
-	if(le16tocpu(e->superBlock.magic) != EXT2_SUPER_MAGIC) {
-		printe("Invalid super-magic: Got %x, expected %x",
-				le16tocpu(e->superBlock.magic),EXT2_SUPER_MAGIC);
-		return -EINVAL;
+	if(le16tocpu(_superBlock.magic) != EXT2_SUPER_MAGIC) {
+		VTHROW("Invalid super-magic: Got " << le16tocpu(_superBlock.magic)
+										   << ", expected " << EXT2_SUPER_MAGIC);
 	}
 
 	/* check features */
 	/* TODO mount readonly if an unsupported feature is present in featureRoCompat */
-	if(le32tocpu(e->superBlock.featureInCompat) || le32tocpu(e->superBlock.featureRoCompat)) {
-		printe("Unable to use filesystem: Incompatible features");
-		return -ENOTSUP;
-	}
-	return 0;
+	if(le32tocpu(_superBlock.featureInCompat) || le32tocpu(_superBlock.featureRoCompat))
+		VTHROWE("Unable to use filesystem: Incompatible features",-ENOTSUP);
 }
 
-void ext2_super_update(sExt2 *e) {
+void Ext2SBMng::update() {
 	size_t i,count;
 	block_t bno;
 	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
-	if(!e->sbDirty)
+	if(!_sbDirty)
 		goto done;
 
 	/* update main superblock; sector-based because we want to update the super-block without
 	 * anything else (this would happen if the superblock is in the block 0 together with
 	 * the bootrecord) */
-	if(ext2_rw_writeSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2) != 0) {
+	if(Ext2RW::writeSectors(_fs,&_superBlock,EXT2_SUPERBLOCK_SECNO,2) != 0) {
 		printe("Unable to update superblock in blockgroup 0");
 		goto done;
 	}
 
 	/* update superblock backups */
-	bno = le32tocpu(e->superBlock.blocksPerGroup);
-	count = ext2_getBlockGroupCount(e);
+	bno = le32tocpu(_superBlock.blocksPerGroup);
+	count = _fs->getBlockGroupCount();
 	for(i = 1; i < count; i++) {
-		if(ext2_bgHasBackups(e,i)) {
-			if(ext2_rw_writeBlocks(e,&(e->superBlock),bno,1) != 0) {
+		if(_fs->bgHasBackups(i)) {
+			if(Ext2RW::writeBlocks(_fs,&_superBlock,bno,1) != 0) {
 				printe("Unable to update superblock in blockgroup %d",i);
 				goto done;
 			}
 		}
-		bno += le32tocpu(e->superBlock.blocksPerGroup);
+		bno += le32tocpu(_superBlock.blocksPerGroup);
 	}
 
 	/* now we're in sync */
-	e->sbDirty = false;
+	_sbDirty = false;
 done:
 	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }

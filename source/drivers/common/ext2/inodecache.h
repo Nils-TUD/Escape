@@ -20,57 +20,97 @@
 #pragma once
 
 #include <esc/common.h>
-#include "ext2.h"
+#include <stdio.h>
 
-#define IMODE_READ		0x1
-#define IMODE_WRITE		0x2
+#include "inode.h"
 
-/**
- * Inits the inode-cache
- *
- * @param e the ext2-handle
- */
-void ext2_icache_init(sExt2 *e);
+class Ext2FileSystem;
 
-/**
- * Writes all dirty inodes to disk
- *
- * @param e the ext2-handle
- */
-void ext2_icache_flush(sExt2 *e);
+struct Ext2CInode {
+	inode_t inodeNo;
+	ushort dirty;
+	ushort refs;
+	Ext2Inode inode;
+};
 
-/**
- * Marks the given inode dirty
- *
- * @param inode the inode
- */
-void ext2_icache_markDirty(sExt2CInode *inode);
+enum {
+	IMODE_READ	= 0x1,
+	IMODE_WRITE	= 0x2,
+};
 
-/**
- * Requests the inode with given number. That means if it is in the cache you'll simply get it.
- * Otherwise it is fetched from disk and put into the cache. The references of the cache-inode
- * will be increased.
- *
- * @param e the ext2-handle
- * @param no the inode-number
- * @param mode the mode: IMODE_*
- * @return the cached node or NULL
- */
-sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode);
+class Ext2INodeCache {
+public:
+	/**
+	 * Inits the inode-cache
+	 */
+	explicit Ext2INodeCache(Ext2FileSystem *fs);
+	~Ext2INodeCache() {
+		delete[] _cache;
+	}
 
-/**
- * Releases the given inode. That means the references will be decreased and the inode will be
- * removed from cache if there are no more references.
- *
- * @param e the ext2-handle
- * @param inode the inode
- */
-void ext2_icache_release(sExt2 *e,const sExt2CInode *inode);
+	/**
+	 * Writes all dirty inodes to disk
+	 */
+	void flush();
 
-/**
- * Prints statistics and information about the inode-cache into the givne file
- *
- * @param f the file
- * @param e the ext2 handle
- */
-void ext2_icache_print(FILE *f,sExt2 *e);
+	/**
+	 * Marks the given inode dirty
+	 *
+	 * @param inode the inode
+	 */
+	void markDirty(Ext2CInode *inode) {
+		inode->dirty = true;
+	}
+
+	/**
+	 * Requests the inode with given number. That means if it is in the cache you'll simply get it.
+	 * Otherwise it is fetched from disk and put into the cache. The references of the cache-inode
+	 * will be increased.
+	 *
+	 * @param no the inode-number
+	 * @param mode the mode: IMODE_*
+	 * @return the cached node or NULL
+	 */
+	Ext2CInode *request(inode_t no,uint mode);
+
+	/**
+	 * Releases the given inode. That means the references will be decreased and the inode will be
+	 * removed from cache if there are no more references.
+	 *
+	 * @param inode the inode
+	 */
+	void release(const Ext2CInode *inode) {
+		doRelease((Ext2CInode*)inode,true);
+	}
+
+	/**
+	 * Prints statistics and information about the inode-cache into the givne file
+	 *
+	 * @param f the file
+	 */
+	void print(FILE *f);
+
+private:
+	/**
+	 * Aquires the tpool_lock for given mode and inode. Assumes that ALLOC_LOCK is acquired and releases
+	 * it at the end.
+	 */
+	void acquire(Ext2CInode *inode,uint mode);
+	/**
+	 * Releases the given inode
+	 */
+	void doRelease(Ext2CInode *ino,bool unlockAlloc);
+	/**
+	 * Reads the inode from block-cache. Requires inode->inodeNo to be valid!
+	 */
+	void read(Ext2CInode *inode);
+	/**
+	 * Writes the inode back to the cached block, which can be written to disk later
+	 */
+	void write(Ext2CInode *inode);
+
+	size_t _hits;
+	size_t _misses;
+	Ext2CInode *_cache;
+	Ext2FileSystem *_fs;
+};

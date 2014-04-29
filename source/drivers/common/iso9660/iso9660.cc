@@ -33,20 +33,6 @@
 #include "file.h"
 #include "direcache.h"
 
-#define MAX_DEVICE_OPEN_RETRIES		1000
-
-static void *iso_init(const char *device,char **usedDev,int *errcode);
-static int iso_setup(const char *device,sISO9660 *iso);
-static void iso_deinit(void *h);
-static sFileSystem *iso_getFS(void);
-static inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags);
-static inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags);
-static void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino);
-static int iso_stat(void *h,inode_t ino,sFileInfo *info);
-static ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count);
-static time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate);
-static void iso_print(FILE *f,void *h);
-
 int main(int argc,char *argv[]) {
 	char fspath[MAX_PATH_LEN];
 	if(argc != 3)
@@ -59,179 +45,106 @@ int main(int argc,char *argv[]) {
 		dev = argv[2] - 1;
 	snprintf(fspath,sizeof(fspath),"/dev/iso9660-%s",dev + 1);
 
-	FSDevice fsdev(iso_getFS(),argv[2],fspath);
+	ISO9660FileSystem *fs;
+	/* if the device is provided, simply use it */
+	if(strcmp(argv[2],"cdrom") != 0)
+		fs = new ISO9660FileSystem(argv[2]);
+	/* otherwise try all possible ATAPI-drives */
+	else {
+		char path[SSTRLEN("/dev/cda1") + 1];
+		FSUser u;
+		u.uid = ROOT_UID;
+		u.gid = ROOT_GID;
+		u.pid = getpid();
+		int i;
+		for(i = 0; i < 4; i++) {
+			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + (int)i);
+			try {
+				fs = new ISO9660FileSystem(path);
+
+				/* try to find our kernel. if we've found it, it's likely that the user wants to
+				 * boot from this device. unfortunatly there doesn't seem to be an easy way
+				 * to find out the real boot-device from GRUB */
+				inode_t ino = fs->resolve(&u,"/boot/escape",IO_READ);
+				if(ino >= 0)
+					break;
+			}
+			catch(...) {
+				// if the device isn't present, try the next one
+				continue;
+			}
+		}
+
+		/* not found? */
+		if(i >= 4)
+			error("Unable to find cd-device with /boot/escape on it");
+	}
+
+	FSDevice fsdev(fs,fspath);
 	fsdev.loop();
 	return 0;
 }
 
-static void *iso_init(const char *device,char **usedDev,int *errcode) {
-	int res;
-	size_t i;
-	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
-	if(iso == NULL) {
-		*errcode = -ENOMEM;
-		return NULL;
-	}
-
-	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++)
-		iso->drvFds[i] = -1;
-	iso->blockCache.handle = iso;
-	iso->blockCache.blockCacheSize = ISO_BCACHE_SIZE;
-	/* cast is ok, because the only difference is that iso_rw_* receive a sISO9660* as first argument
-	 * and read/write expect void* */
-	iso->blockCache.read = (fReadBlocks)iso_rw_readBlocks;
-	/* no writing here ;) */
-	iso->blockCache.write = NULL;
-
-	/* if the device is provided, simply use it */
-	if(strcmp(device,"cdrom") != 0) {
-		if((res = iso_setup(device,iso)) < 0) {
-			printe("Unable to find device '%s'",device);
-			free(iso);
-			*errcode = res;
-			return NULL;
-		}
-	}
-	/* otherwise try all possible ATAPI-drives */
-	else {
-		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
-		char path[SSTRLEN("/dev/cda1") + 1];
-		inode_t ino;
-		sFSUser u;
-		u.uid = ROOT_UID;
-		u.gid = ROOT_GID;
-		u.pid = getpid();
-		for(i = 0; i < 4; i++) {
-			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + (int)i);
-			if(iso_setup(path,iso) < 0)
-				continue;
-
-			/* try to find our kernel. if we've found it, it's likely that the user wants to
-			 * boot from this device. unfortunatly there doesn't seem to be an easy way
-			 * to find out the real boot-device from GRUB */
-			ino = iso_dir_resolve(iso,&u,"/boot/escape",IO_READ);
-			if(ino >= 0)
-				break;
-
-			/* destroy the block-cache; we'll create a new one with iso_setup() in the next loop */
-			bcache_destroy(&iso->blockCache);
-		}
-
-		/* not found? */
-		if(i >= 4) {
-			free(iso);
-			*errcode = -ENXIO;
-			return NULL;
-		}
-
-		device = path;
-	}
-
-	/* report used device */
-	*usedDev = static_cast<char*>(malloc(strlen(device) + 1));
-	if(!*usedDev) {
-		printe("Not enough mem for device-name");
-		bcache_destroy(&iso->blockCache);
-		free(iso);
-		*errcode = -ENOMEM;
-		return NULL;
-	}
-	strcpy(*usedDev,device);
-	return iso;
+bool ISO9660FileSystem::ISO9660BlockCache::readBlocks(void *buffer,block_t start,size_t blockCount) {
+	return ISO9660RW::readBlocks(_fs,buffer,start,blockCount);
+}
+bool ISO9660FileSystem::ISO9660BlockCache::writeBlocks(const void *,size_t,size_t) {
+	return false;
 }
 
-static int iso_setup(const char *device,sISO9660 *iso) {
-	size_t i;
-	/* now open the device */
-	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
-		iso->drvFds[i] = open(device,IO_WRITE | IO_READ);
-		if(iso->drvFds[i] < 0)
-			return iso->drvFds[i];
-	}
+ISO9660FileSystem::ISO9660FileSystem(const char *device)
+		: FileSystem(), fd(::open(device,IO_READ)), primary(), dummy(initPrimaryVol(this,device)),
+		  dirCache(this), blockCache(this) {
+}
+
+int ISO9660FileSystem::initPrimaryVol(ISO9660FileSystem *fs,const char *device) {
+	/* better do that here in order to not construct the dircache and so on */
+	if(fs->fd < 0)
+		VTHROWE("Unable to open device '" << device << "'",fs->fd);
 
 	/* read volume descriptors */
-	for(i = 0; ; i++) {
-		if(iso_rw_readSectors(iso,&iso->primary,ISO_VOL_DESC_START + i,1) != 0)
+	for(int i = 0; ; i++) {
+		if(ISO9660RW::readSectors(fs,&fs->primary,ISO_VOL_DESC_START + i,1) != 0)
 			error("Unable to read volume descriptor from device");
+
 		/* check identifier */
-		if(strncmp(iso->primary.identifier,"CD001",sizeof(iso->primary.identifier)) != 0) {
+		if(strncmp(fs->primary.identifier,"CD001",sizeof(fs->primary.identifier)) != 0) {
 			error("Identifier of primary volume invalid (%02x:%02x:%02x:%02x:%02x)",
-				iso->primary.identifier[0],iso->primary.identifier[1],iso->primary.identifier[2],
-				iso->primary.identifier[3],iso->primary.identifier[4]);
+				fs->primary.identifier[0],fs->primary.identifier[1],fs->primary.identifier[2],
+				fs->primary.identifier[3],fs->primary.identifier[4]);
 		}
 		/* we need just the primary one */
-		if(iso->primary.type == ISO_VOL_TYPE_PRIMARY)
+		if(fs->primary.type == ISO_VOL_TYPE_PRIMARY)
 			break;
 	}
-
-	iso->blockCache.blockSize = ISO_BLK_SIZE(iso);
-
-	iso_direc_init(iso);
-	bcache_init(&iso->blockCache,iso->drvFds[0]);
 	return 0;
 }
 
-static void iso_deinit(void *h) {
-	size_t i;
-	sISO9660 *iso = (sISO9660*)h;
-	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
-		if(iso->drvFds[i] >= 0)
-			close(iso->drvFds[i]);
-	}
-	bcache_destroy(&iso->blockCache);
+inode_t ISO9660FileSystem::resolve(FSUser *u,const char *path,uint flags) {
+	return ISO9660Dir::resolve(this,u,path,flags);
 }
 
-static sFileSystem *iso_getFS(void) {
-	sFileSystem *fs = static_cast<sFileSystem*>(malloc(sizeof(sFileSystem)));
-	if(!fs)
-		return NULL;
-	fs->type = FS_TYPE_ISO9660;
-	fs->readonly = true;
-	fs->init = iso_init;
-	fs->deinit = iso_deinit;
-	fs->resPath = iso_resPath;
-	fs->open = iso_open;
-	fs->close = iso_close;
-	fs->stat = iso_stat;
-	fs->read = iso_read;
-	fs->write = NULL;
-	fs->link = NULL;
-	fs->unlink = NULL;
-	fs->mkdir = NULL;
-	fs->rmdir = NULL;
-	fs->chmod = NULL;
-	fs->chown = NULL;
-	fs->sync = NULL;
-	fs->print = iso_print;
-	return fs;
-}
-
-static inode_t iso_resPath(void *h,sFSUser *u,const char *path,uint flags) {
-	return iso_dir_resolve((sISO9660*)h,u,path,flags);
-}
-
-static inode_t iso_open(A_UNUSED void *h,A_UNUSED sFSUser *u,inode_t ino,A_UNUSED uint flags) {
+inode_t ISO9660FileSystem::open(FSUser *,inode_t ino,uint) {
 	/* nothing to do */
 	return ino;
 }
 
-static void iso_close(A_UNUSED void *h,A_UNUSED inode_t ino) {
+void ISO9660FileSystem::close(inode_t) {
 	/* nothing to do */
 }
 
-static int iso_stat(void *h,inode_t ino,sFileInfo *info) {
+int ISO9660FileSystem::stat(inode_t ino,sFileInfo *info) {
 	time_t ts;
-	sISO9660 *i = (sISO9660*)h;
-	const sISOCDirEntry *e = iso_direc_get(i,ino);
+	const ISOCDirEntry *e = dirCache.get(ino);
 	if(e == NULL)
 		return -ENOBUFS;
 
-	ts = iso_dirDate2Timestamp(i,&e->entry.created);
+	ts = dirDate2Timestamp(&e->entry.created);
 	info->accesstime = ts;
 	info->modifytime = ts;
 	info->createtime = ts;
-	info->blockCount = e->entry.extentSize.littleEndian / ISO_BLK_SIZE(i);
-	info->blockSize = ISO_BLK_SIZE(i);
+	info->blockCount = e->entry.extentSize.littleEndian / blockSize();
+	info->blockSize = blockSize();
 	info->device = 0;
 	info->uid = 0;
 	info->gid = 0;
@@ -246,22 +159,53 @@ static int iso_stat(void *h,inode_t ino,sFileInfo *info) {
 	return 0;
 }
 
-static ssize_t iso_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
-	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
+ssize_t ISO9660FileSystem::read(inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+	return ISO9660File::read(this,inodeNo,buffer,offset,count);
 }
 
-static time_t iso_dirDate2Timestamp(A_UNUSED sISO9660 *h,const sISODirDate *ddate) {
+ssize_t ISO9660FileSystem::write(inode_t,const void *,off_t,size_t) {
+	return -EROFS;
+}
+
+int ISO9660FileSystem::link(FSUser *,inode_t,inode_t,const char *) {
+	return -EROFS;
+}
+
+int ISO9660FileSystem::unlink(FSUser *,inode_t,const char *) {
+	return -EROFS;
+}
+
+int ISO9660FileSystem::mkdir(FSUser *,inode_t,const char *) {
+	return -EROFS;
+}
+
+int ISO9660FileSystem::rmdir(FSUser *,inode_t,const char *) {
+	return -EROFS;
+}
+
+int ISO9660FileSystem::chmod(FSUser *,inode_t,mode_t) {
+	return -EROFS;
+}
+
+int ISO9660FileSystem::chown(FSUser *,inode_t,uid_t,gid_t) {
+	return -EROFS;
+}
+
+void ISO9660FileSystem::sync() {
+	/* nothing to do */
+}
+
+time_t ISO9660FileSystem::dirDate2Timestamp(const ISODirDate *ddate) {
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
 }
 
-static void iso_print(FILE *f,void *h) {
-	sISO9660 *i = (sISO9660*)h;
-	sISOVolDesc *desc = &i->primary;
-	sISOVolDate *date;
+void ISO9660FileSystem::print(FILE *f) {
+	ISOVolDesc *desc = &primary;
+	ISOVolDate *date;
 	fprintf(f,"Identifier: %.5s\n",desc->identifier);
-	fprintf(f,"Size: %u bytes\n",desc->data.primary.volSpaceSize.littleEndian * ISO_BLK_SIZE(i));
-	fprintf(f,"Blocksize: %u bytes\n",ISO_BLK_SIZE(i));
+	fprintf(f,"Size: %zu bytes\n",desc->data.primary.volSpaceSize.littleEndian * blockSize());
+	fprintf(f,"Blocksize: %zu bytes\n",blockSize());
 	fprintf(f,"SystemIdent: %.32s\n",desc->data.primary.systemIdent);
 	fprintf(f,"VolumeIdent: %.32s\n",desc->data.primary.volumeIdent);
 	date = &desc->data.primary.created;
@@ -271,19 +215,19 @@ static void iso_print(FILE *f,void *h) {
 	fprintf(f,"Modified: %.4s-%.2s-%.2s %.2s:%.2s:%.2s\n",
 			date->year,date->month,date->day,date->hour,date->minute,date->second);
 	fprintf(f,"Block cache:\n");
-	bcache_printStats(f,&i->blockCache);
+	blockCache.printStats(f);
 	fprintf(f,"Directory entry cache:\n");
-	iso_dire_print(f,i);
+	dirCache.print(f);
 }
 
 #if DEBUGGING
 
-void iso_dbg_printPathTbl(sISO9660 *h) {
-	size_t tblSize = h->primary.data.primary.pathTableSize.littleEndian;
+void ISO9660FileSystem::printPathTbl() {
+	size_t tblSize = primary.data.primary.pathTableSize.littleEndian;
 	size_t secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
-	sISOPathTblEntry *pe = static_cast<sISOPathTblEntry*>(malloc(ROUND_UP(tblSize,ATAPI_SECTOR_SIZE)));
-	sISOPathTblEntry *start = pe;
-	if(iso_rw_readSectors(h,pe,h->primary.data.primary.lPathTblLoc,secCount) != 0) {
+	ISOPathTblEntry *pe = static_cast<ISOPathTblEntry*>(malloc(ROUND_UP(tblSize,ATAPI_SECTOR_SIZE)));
+	ISOPathTblEntry *start = pe;
+	if(ISO9660RW::readSectors(this,pe,primary.data.primary.lPathTblLoc,secCount) != 0) {
 		free(start);
 		return;
 	}
@@ -295,20 +239,20 @@ void iso_dbg_printPathTbl(sISO9660 *h) {
 		printf("	name: %s\n",pe->name);
 		printf("---\n");
 		if(pe->length % 2 == 0)
-			pe = (sISOPathTblEntry*)((uintptr_t)pe + sizeof(sISOPathTblEntry) + pe->length);
+			pe = (ISOPathTblEntry*)((uintptr_t)pe + sizeof(ISOPathTblEntry) + pe->length);
 		else
-			pe = (sISOPathTblEntry*)((uintptr_t)pe + sizeof(sISOPathTblEntry) + pe->length + 1);
+			pe = (ISOPathTblEntry*)((uintptr_t)pe + sizeof(ISOPathTblEntry) + pe->length + 1);
 	}
 	free(start);
 }
 
-void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer) {
+void ISO9660FileSystem::printTree(size_t extLoc,size_t extSize,size_t layer) {
 	size_t i;
-	sISODirEntry *e;
-	sISODirEntry *content = (sISODirEntry*)malloc(extSize);
+	ISODirEntry *e;
+	ISODirEntry *content = (ISODirEntry*)malloc(extSize);
 	if(content == NULL)
 		return;
-	if(iso_rw_readSectors(h,content,extLoc,extSize / ATAPI_SECTOR_SIZE) != 0)
+	if(ISO9660RW::readSectors(this,content,extLoc,extSize / ATAPI_SECTOR_SIZE) != 0)
 		return;
 
 	e = content;
@@ -330,14 +274,14 @@ void iso_dbg_printTree(sISO9660 *h,size_t extLoc,size_t extSize,size_t layer) {
 		}
 		if((e->flags & ISO_FILEFL_DIR) && e->name[0] != ISO_FILENAME_PARENT &&
 				e->name[0] != ISO_FILENAME_THIS) {
-			iso_dbg_printTree(h,e->extentLoc.littleEndian,e->extentSize.littleEndian,layer + 1);
+			printTree(e->extentLoc.littleEndian,e->extentSize.littleEndian,layer + 1);
 		}
-		e = (sISODirEntry*)((uintptr_t)e + e->length);
+		e = (ISODirEntry*)((uintptr_t)e + e->length);
 	}
 	free(content);
 }
 
-void iso_dbg_printVolDesc(sISOVolDesc *desc) {
+void ISO9660FileSystem::printVolDesc(ISOVolDesc *desc) {
 	printf("VolumeDescriptor @ %p\n",desc);
 	printf("	version: 0x%02x\n",desc->version);
 	printf("	identifier: %.5s\n",desc->identifier);
@@ -368,16 +312,16 @@ void iso_dbg_printVolDesc(sISOVolDesc *desc) {
 			printf("	volSeqNo: %u\n",desc->data.primary.volSeqNo.littleEndian);
 			printf("	volSpaceSize: %u\n",desc->data.primary.volSpaceSize.littleEndian);
 			printf("	created: ");
-			iso_dbg_printVolDate(&desc->data.primary.created);
+			printVolDate(&desc->data.primary.created);
 			printf("\n");
 			printf("	modified: ");
-			iso_dbg_printVolDate(&desc->data.primary.modified);
+			printVolDate(&desc->data.primary.modified);
 			printf("\n");
 			printf("	expires: ");
-			iso_dbg_printVolDate(&desc->data.primary.expires);
+			printVolDate(&desc->data.primary.expires);
 			printf("\n");
 			printf("	effective: ");
-			iso_dbg_printVolDate(&desc->data.primary.effective);
+			printVolDate(&desc->data.primary.effective);
 			printf("\n");
 			break;
 		case ISO_VOL_TYPE_PARTITION:
@@ -396,7 +340,7 @@ void iso_dbg_printVolDesc(sISOVolDesc *desc) {
 	printf("\n");
 }
 
-void iso_dbg_printVolDate(sISOVolDate *date) {
+void ISO9660FileSystem::printVolDate(ISOVolDate *date) {
 	printf("%.4s-%.2s-%.2s %.2s:%.2s:%.2s.%.2s @%d",
 			date->year,date->month,date->day,date->hour,date->minute,date->second,
 			date->second100ths,date->offset);

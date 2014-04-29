@@ -23,10 +23,9 @@
 
 #define tpool_lock(...)		0
 #define tpool_unlock(...)	0
-#define REQ_THREAD_COUNT	0
 
-typedef struct {
+struct FSUser {
 	uid_t uid;
 	gid_t gid;
 	pid_t pid;
-} sFSUser;
+};

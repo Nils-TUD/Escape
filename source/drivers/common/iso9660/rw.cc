@@ -26,18 +26,10 @@
 #include "iso9660.h"
 #include "rw.h"
 
-int iso_rw_readBlocks(sISO9660 *h,void *buffer,block_t start,size_t blockCount) {
-	return iso_rw_readSectors(h,buffer,ISO_BLKS_TO_SECS(h,start),ISO_BLKS_TO_SECS(h,blockCount));
-}
-
-int iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
+int ISO9660RW::readSectors(ISO9660FileSystem *fs,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
 	off_t off;
-#if REQ_THREAD_COUNT > 0
-	int fd = h->drvFds[tpool_tidToId(gettid())];
-#else
-	int fd = h->drvFds[0];
-#endif
+	int fd = fs->fd;
 	if((off = seek(fd,lba * ATAPI_SECTOR_SIZE,SEEK_SET)) < 0) {
 		printe("Unable to seek to %x",lba * ATAPI_SECTOR_SIZE);
 		return off;
@@ -47,6 +39,5 @@ int iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount) {
 		printe("Unable to read %d sectors @ %x: %zd",secCount,lba * ATAPI_SECTOR_SIZE,res);
 		return res;
 	}
-
 	return 0;
 }

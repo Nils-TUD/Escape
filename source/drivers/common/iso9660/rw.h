@@ -22,6 +22,13 @@
 #include <esc/common.h>
 #include "iso9660.h"
 
-int iso_rw_readBlocks(sISO9660 *h,void *buffer,block_t start,size_t blockCount);
+class ISO9660RW {
+	ISO9660RW() = delete;
 
-int iso_rw_readSectors(sISO9660 *h,void *buffer,uint64_t lba,size_t secCount);
+public:
+	static int readBlocks(ISO9660FileSystem *fs,void *buffer,block_t start,size_t blockCount) {
+		return readSectors(fs,buffer,fs->blocksToSecs(start),fs->blocksToSecs(blockCount));
+	}
+
+	static int readSectors(ISO9660FileSystem *fs,void *buffer,uint64_t lba,size_t secCount);
+};

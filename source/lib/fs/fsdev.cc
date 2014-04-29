@@ -42,15 +42,15 @@ static void sigTermHndl(A_UNUSED int sig) {
 	FSDevice::getInstance()->stop();
 }
 
-FSDevice::FSDevice(sFileSystem *fs,const char *diskDev,const char *fsDev)
+FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
 	: ClientDevice(fsDev,0777,DEV_TYPE_SERVICE,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-	  _fs(fs), _clients(0) {
+	  _fs(fs), _info(fsDev,fs), _clients(0) {
 	set(MSG_FILE_OPEN,std::make_memfun(this,&FSDevice::devopen));
 	set(MSG_FILE_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);
 	set(MSG_FS_OPEN,std::make_memfun(this,&FSDevice::open));
 	set(MSG_FILE_READ,std::make_memfun(this,&FSDevice::read));
 	set(MSG_FILE_WRITE,std::make_memfun(this,&FSDevice::write));
-	set(MSG_FS_CLOSE,std::make_memfun(this,&FSDevice::close));
+	set(MSG_FS_CLOSE,std::make_memfun(this,&FSDevice::close),false);
 	set(MSG_FS_STAT,std::make_memfun(this,&FSDevice::stat));
 	set(MSG_FS_ISTAT,std::make_memfun(this,&FSDevice::istat));
 	set(MSG_FS_SYNCFS,std::make_memfun(this,&FSDevice::syncfs));
@@ -63,24 +63,11 @@ FSDevice::FSDevice(sFileSystem *fs,const char *diskDev,const char *fsDev)
 
 	if(signal(SIG_TERM,sigTermHndl) == SIG_ERR)
 		throw std::default_error("Unable to set signal-handler for SIG_TERM");
-
-	int err = 0;
-	char *useddev;
-	fs->handle = fs->init(diskDev,&useddev,&err);
-	if(err < 0)
-		VTHROWE("fs->init",err);
-
-	print("Mounted '%s' at '/'",useddev);
-
-	if((err = infodev_start(fsDev,fs)) < 0)
-		VTHROWE("infodev_start",err);
 	_inst = this;
 }
 
 FSDevice::~FSDevice() {
-	infodev_shutdown();
-	if(_fs->sync)
-		_fs->sync(_fs->handle);
+	_fs->sync();
 }
 
 void FSDevice::loop() {
@@ -116,13 +103,13 @@ void FSDevice::devclose(IPCStream &is) {
 
 void FSDevice::open(IPCStream &is) {
 	uint flags;
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	is >> flags >> u.uid >> u.gid >> u.pid >> path;
 
-	inode_t no = _fs->resPath(_fs->handle,&u,path.str(),flags);
+	inode_t no = _fs->resolve(&u,path.str(),flags);
 	if(no >= 0) {
-		no = _fs->open(_fs->handle,&u,no,flags);
+		no = _fs->open(&u,no,flags);
 		if(no >= 0)
 			add(is.fd(),new OpenFile(is.fd(),no));
 	}
@@ -136,18 +123,14 @@ void FSDevice::read(IPCStream &is) {
 	is >> offset >> count >> shmemoff;
 
 	void *buffer = NULL;
-	if(_fs->read == NULL)
-		res = -ENOTSUP;
-	else {
-		if(shmemoff == -1)
-			buffer = malloc(count);
-		else
-			buffer = (char*)file->shm() + shmemoff;
-		if(buffer == NULL)
-			res = -ENOMEM;
-		else
-			res = _fs->read(_fs->handle,file->ino,buffer,offset,count);
-	}
+	if(shmemoff == -1)
+		buffer = malloc(count);
+	else
+		buffer = (char*)file->shm() + shmemoff;
+	if(buffer == NULL)
+		res = -ENOMEM;
+	else
+		res = _fs->read(file->ino,buffer,offset,count);
 
 	is << res << Reply();
 	if(buffer && shmemoff == -1) {
@@ -169,12 +152,7 @@ void FSDevice::write(IPCStream &is) {
 		is >> ReceiveData(data,count);
 	}
 
-	if(_fs->readonly)
-		res = -EROFS;
-	else if(_fs->write == NULL)
-		res = -ENOTSUP;
-	else
-		res = _fs->write(_fs->handle,file->ino,data,offset,count);
+	res = _fs->write(file->ino,data,offset,count);
 
 	is << res << Reply();
 	if(shmemoff == -1)
@@ -183,73 +161,61 @@ void FSDevice::write(IPCStream &is) {
 
 void FSDevice::close(IPCStream &is) {
 	OpenFile *file = (*this)[is.fd()];
-	_fs->close(_fs->handle,file->ino);
+	_fs->close(file->ino);
 	ClientDevice::close(is);
 }
 
 void FSDevice::stat(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res;
 	sFileInfo info;
-	inode_t no = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+	inode_t no = _fs->resolve(&u,path.str(),IO_READ);
 	if(no < 0)
 		res = no;
 	else
-		res = _fs->stat(_fs->handle,no,&info);
+		res = _fs->stat(no,&info);
 
 	is << res << info << Reply();
 }
 
 void FSDevice::istat(IPCStream &is) {
 	sFileInfo info;
-	int res = _fs->stat(_fs->handle,(*this)[is.fd()]->ino,&info);
+	int res = _fs->stat((*this)[is.fd()]->ino,&info);
 	is << res << info << Reply();
 }
 
 void FSDevice::chmod(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	uint mode;
 	is >> u.uid >> u.gid >> u.pid >> path >> mode;
 
 	int res;
-	inode_t ino = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+	inode_t ino = _fs->resolve(&u,path.str(),IO_READ);
 	if(ino < 0)
 		res = ino;
-	else {
-		if(_fs->readonly)
-			res = -EROFS;
-		else if(_fs->chmod == NULL)
-			res = -ENOTSUP;
-		else
-			res = _fs->chmod(_fs->handle,&u,ino,mode);
-	}
+	else
+		res = _fs->chmod(&u,ino,mode);
 
 	is << res << Reply();
 }
 
 void FSDevice::chown(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	uid_t uid;
 	gid_t gid;
 	is >> u.uid >> u.gid >> u.pid >> path >> uid >> gid;
 
 	int res;
-	inode_t ino = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+	inode_t ino = _fs->resolve(&u,path.str(),IO_READ);
 	if(ino < 0)
 		res = ino;
-	else {
-		if(_fs->readonly)
-			res = -EROFS;
-		else if(_fs->chown == NULL)
-			res = -ENOTSUP;
-		else
-			res = _fs->chown(_fs->handle,&u,ino,uid,gid);
-	}
+	else
+		res = _fs->chown(&u,ino,uid,gid);
 
 	is << res << Reply();
 }
@@ -273,28 +239,24 @@ static char *splitPath(char *path) {
 }
 
 void FSDevice::link(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> oldPath,newPath;
 	is >> u.uid >> u.gid >> u.pid >> oldPath >> newPath;
 
 	int res;
 	inode_t dirIno,dstIno;
-	dstIno = _fs->resPath(_fs->handle,&u,oldPath.str(),IO_READ);
+	dstIno = _fs->resolve(&u,oldPath.str(),IO_READ);
 	if(dstIno < 0)
 		res = dstIno;
 	else {
 		char *name = splitPath(newPath.str());
 		res = -ENOMEM;
 		if(name) {
-			dirIno = _fs->resPath(_fs->handle,&u,newPath.str(),IO_READ);
+			dirIno = _fs->resolve(&u,newPath.str(),IO_READ);
 			if(dirIno < 0)
 				res = dirIno;
-			else if(_fs->readonly)
-				res = -EROFS;
-			else if(_fs->chown == NULL)
-				res = -ENOTSUP;
 			else
-				res = _fs->link(_fs->handle,&u,dstIno,dirIno,name);
+				res = _fs->link(&u,dstIno,dirIno,name);
 		}
 	}
 
@@ -302,12 +264,12 @@ void FSDevice::link(IPCStream &is) {
 }
 
 void FSDevice::unlink(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res;
-	inode_t dirIno = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+	inode_t dirIno = _fs->resolve(&u,path.str(),IO_READ);
 	if(dirIno < 0)
 		res = dirIno;
 	else {
@@ -315,14 +277,9 @@ void FSDevice::unlink(IPCStream &is) {
 		res = -ENOMEM;
 		if(name) {
 			/* get directory */
-			dirIno = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+			dirIno = _fs->resolve(&u,path.str(),IO_READ);
 			vassert(dirIno >= 0,"Subdir found, but parent not!?");
-			if(_fs->readonly)
-				res = -EROFS;
-			else if(_fs->chown == NULL)
-				res = -ENOTSUP;
-			else
-				res = _fs->unlink(_fs->handle,&u,dirIno,name);
+			res = _fs->unlink(&u,dirIno,name);
 		}
 	}
 
@@ -330,24 +287,18 @@ void FSDevice::unlink(IPCStream &is) {
 }
 
 void FSDevice::mkdir(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res = -ENOMEM;
 	char *name = splitPath(path.str());
 	if(name) {
-		inode_t dirIno = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+		inode_t dirIno = _fs->resolve(&u,path.str(),IO_READ);
 		if(dirIno < 0)
 			res = dirIno;
-		else {
-			if(_fs->readonly)
-				res = -EROFS;
-			else if(_fs->mkdir == NULL)
-				res = -ENOTSUP;
-			else
-				res = _fs->mkdir(_fs->handle,&u,dirIno,name);
-		}
+		else
+			res = _fs->mkdir(&u,dirIno,name);
 		free(name);
 	}
 
@@ -355,24 +306,18 @@ void FSDevice::mkdir(IPCStream &is) {
 }
 
 void FSDevice::rmdir(IPCStream &is) {
-	sFSUser u;
+	FSUser u;
 	CStringBuf<MAX_PATH_LEN> path;
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res = -ENOMEM;
 	char *name = splitPath(path.str());
 	if(name) {
-		inode_t dirIno = _fs->resPath(_fs->handle,&u,path.str(),IO_READ);
+		inode_t dirIno = _fs->resolve(&u,path.str(),IO_READ);
 		if(dirIno < 0)
 			res = dirIno;
-		else {
-			if(_fs->readonly)
-				res = -EROFS;
-			else if(_fs->rmdir == NULL)
-				res = -ENOTSUP;
-			else
-				res = _fs->rmdir(_fs->handle,&u,dirIno,name);
-		}
+		else
+			res = _fs->rmdir(&u,dirIno,name);
 		free(name);
 	}
 
@@ -380,8 +325,7 @@ void FSDevice::rmdir(IPCStream &is) {
 }
 
 void FSDevice::syncfs(IPCStream &is) {
-	if(_fs->sync)
-		_fs->sync(_fs->handle);
+	_fs->sync();
 
 	is << 0 << Reply();
 }

@@ -27,102 +27,61 @@
 #include <assert.h>
 
 #define ALLOC_LOCK	0xF7180000
-#define HASH_SIZE	256
 
-/**
- * Aquires the tpool_lock, depending on <mode>, for the given block
- */
-static void bcache_acquire(sCBlock *b,uint mode);
-/**
- * Releases the tpool_lock for given block
- */
-static void bcache_doRelease(sCBlock *b,bool unlockAlloc);
-/**
- * Requests the given block and reads it from disk if desired
- */
-static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint mode);
-/**
- * Fetches a block-cache-entry
- */
-static sCBlock *bcache_getBlock(sBlockCache *c,block_t blockNo);
-
-void bcache_init(sBlockCache *c,int fd) {
+BlockCache::BlockCache(int fd,size_t blocks,size_t bsize)
+		: _blockCacheSize(blocks), _blockSize(bsize), _hashmap(new CBlock*[HASH_SIZE]()),
+		  _oldestBlock(NULL), _newestBlock(NULL), _freeBlocks(NULL),
+		  _blockCache(new CBlock[blocks]), _blockmem(), _blockshm(), _hits(), _misses() {
 	size_t i;
-	sCBlock *bentry;
-	c->hashmap = (sCBlock**)calloc(HASH_SIZE,sizeof(sCBlock*));
-	assert(c->hashmap != NULL);
-	c->freeBlocks = NULL;
-	c->oldestBlock = NULL;
-	c->newestBlock = NULL;
-	if(sharebuf(fd,c->blockCacheSize * c->blockSize,&c->blockmem,&c->blockshm,0) < 0) {
-		if(c->blockmem == NULL)
-			error("Unable to create block cache");
+	CBlock *bentry;
+	if(sharebuf(fd,_blockCacheSize * _blockSize,&_blockmem,&_blockshm,0) < 0) {
+		if(_blockmem == NULL)
+			VTHROW("Unable to create block cache");
 		printe("Unable to share buffer with disk driver");
 	}
-	c->blockCache = static_cast<sCBlock*>(malloc(c->blockCacheSize * sizeof(sCBlock)));
-	assert(c->blockCache != NULL);
-	bentry = c->blockCache;
-	for(i = 0; i < c->blockCacheSize; i++) {
+	bentry = _blockCache;
+	for(i = 0; i < _blockCacheSize; i++) {
 		bentry->blockNo = 0;
-		bentry->buffer = (char*)c->blockmem + i * c->blockSize;
+		bentry->buffer = (char*)_blockmem + i * _blockSize;
 		bentry->dirty = false;
 		bentry->refs = 0;
-		bentry->prev = (i < c->blockCacheSize - 1) ? bentry + 1 : NULL;
-		bentry->next = c->freeBlocks;
+		bentry->prev = (i < _blockCacheSize - 1) ? bentry + 1 : NULL;
+		bentry->next = _freeBlocks;
 		bentry->hnext = NULL;
-		c->freeBlocks = bentry;
+		_freeBlocks = bentry;
 		bentry++;
 	}
-	c->hits = 0;
-	c->misses = 0;
 }
 
-void bcache_destroy(sBlockCache *c) {
-	c->freeBlocks = NULL;
-	c->oldestBlock = NULL;
-	c->newestBlock = NULL;
-	destroybuf(c->blockmem,c->blockshm);
-	free(c->hashmap);
-	free(c->blockCache);
+BlockCache::~BlockCache() {
+	destroybuf(_blockmem,_blockshm);
+	delete[] _hashmap;
+	delete[] _blockCache;
 }
 
-void bcache_flush(sBlockCache *c) {
-	sCBlock *bentry = c->newestBlock;
+void BlockCache::flush() {
+	CBlock *bentry = _newestBlock;
 	while(bentry != NULL) {
 		assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 		if(bentry->dirty) {
-			vassert(c->write != NULL,"Block %d dirty, but no write-function",bentry->blockNo);
-			bcache_acquire(bentry,BMODE_READ);
-			c->write(c->handle,bentry->buffer,bentry->blockNo,1);
+			acquire(bentry,READ);
+			writeBlocks(bentry->buffer,bentry->blockNo,1);
 			bentry->dirty = false;
-			bcache_doRelease(bentry,false);
+			doRelease(bentry,false);
 		}
 		assert(tpool_unlock(ALLOC_LOCK) == 0);
 		bentry = bentry->next;
 	}
 }
 
-void bcache_markDirty(sCBlock *b) {
-	/*vassert(b->writeRef > 0,"Block %d is read-only!",b->blockNo);*/
-	b->dirty = true;
-}
-
-sCBlock *bcache_create(sBlockCache *c,block_t blockNo) {
-	return bcache_doRequest(c,blockNo,false,BMODE_WRITE);
-}
-
-sCBlock *bcache_request(sBlockCache *c,block_t blockNo,uint mode) {
-	return bcache_doRequest(c,blockNo,true,mode);
-}
-
-static void bcache_acquire(sCBlock *b,uint mode) {
-	assert(!(mode & BMODE_WRITE) || b->refs == 0);
+void BlockCache::acquire(CBlock *b,uint mode) {
+	assert(!(mode & WRITE) || b->refs == 0);
 	b->refs++;
 	assert(tpool_unlock(ALLOC_LOCK) == 0);
-	assert(tpool_lock((uint)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	assert(tpool_lock((uint)b,(mode & WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
-static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
+void BlockCache::doRelease(CBlock *b,bool unlockAlloc) {
 	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	assert(b->refs > 0);
 	b->refs--;
@@ -131,45 +90,41 @@ static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
 	assert(tpool_unlock((uint)b) == 0);
 }
 
-void bcache_release(sCBlock *b) {
-	bcache_doRelease(b,true);
-}
-
-static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint mode) {
-	sCBlock *block,*bentry;
+CBlock *BlockCache::doRequest(block_t blockNo,bool doRead,uint mode) {
+	CBlock *block,*bentry;
 
 	/* acquire tpool_lock for getting a block */
 	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	/* search for the block. perhaps it's already in cache */
-	bentry = c->hashmap[blockNo % HASH_SIZE];
+	bentry = _hashmap[blockNo % HASH_SIZE];
 	while(bentry != NULL) {
 		if(bentry->blockNo == blockNo) {
 			/* remove from list and put at the beginning of the usedlist because it was
 			 * used most recently */
 			if(bentry->prev != NULL) {
 				/* update oldest */
-				if(c->oldestBlock == bentry)
-					c->oldestBlock = bentry->prev;
+				if(_oldestBlock == bentry)
+					_oldestBlock = bentry->prev;
 				/* remove */
 				bentry->prev->next = bentry->next;
 				if(bentry->next)
 					bentry->next->prev = bentry->prev;
 				/* put at the beginning */
 				bentry->prev = NULL;
-				bentry->next = c->newestBlock;
+				bentry->next = _newestBlock;
 				bentry->next->prev = bentry;
-				c->newestBlock = bentry;
+				_newestBlock = bentry;
 			}
-			bcache_acquire(bentry,mode);
-			c->hits++;
+			acquire(bentry,mode);
+			_hits++;
 			return bentry;
 		}
 		bentry = bentry->hnext;
 	}
 
 	/* init cached block */
-	block = bcache_getBlock(c,blockNo);
+	block = getBlock(blockNo);
 	block->blockNo = blockNo;
 	block->dirty = false;
 	block->refs = 0;
@@ -177,52 +132,52 @@ static sCBlock *bcache_doRequest(sBlockCache *c,block_t blockNo,bool doRead,uint
 	/* now read from disk */
 	if(doRead) {
 		/* we need always a write-tpool_lock because we have to read the content into it */
-		bcache_acquire(block,BMODE_WRITE);
-		if(c->read(c->handle,block->buffer,blockNo,1) != 0) {
+		acquire(block,WRITE);
+		if(readBlocks(block->buffer,blockNo,1) != 0) {
 			block->blockNo = 0;
-			bcache_doRelease(block,true);
+			doRelease(block,true);
 			return NULL;
 		}
-		bcache_doRelease(block,false);
+		doRelease(block,false);
 	}
 
-	bcache_acquire(block,mode);
-	c->misses++;
+	acquire(block,mode);
+	_misses++;
 	return block;
 }
 
-static sCBlock *bcache_getBlock(sBlockCache *c,block_t blockNo) {
-	sCBlock *block = c->freeBlocks;
+CBlock *BlockCache::getBlock(block_t blockNo) {
+	CBlock *block = _freeBlocks;
 	if(block != NULL) {
 		/* remove from freelist and put in usedlist */
-		c->freeBlocks = block->next;
-		if(c->freeBlocks)
-			c->freeBlocks->prev = NULL;
+		_freeBlocks = block->next;
+		if(_freeBlocks)
+			_freeBlocks->prev = NULL;
 		/* block->prev is already NULL */
-		block->next = c->newestBlock;
+		block->next = _newestBlock;
 		if(block->next)
 			block->next->prev = block;
-		c->newestBlock = block;
+		_newestBlock = block;
 		/* update oldest */
-		if(c->oldestBlock == NULL)
-			c->oldestBlock = block;
+		if(_oldestBlock == NULL)
+			_oldestBlock = block;
 		/* insert into hashmap */
-		sCBlock **list = &c->hashmap[blockNo % HASH_SIZE];
+		CBlock **list = &_hashmap[blockNo % HASH_SIZE];
 		block->hnext = *list;
 		*list = block;
 		return block;
 	}
 
 	/* take the oldest one */
-	block = c->oldestBlock;
+	block = _oldestBlock;
 	assert(block->refs == 0);
-	c->oldestBlock = block->prev;
-	c->oldestBlock->next = NULL;
+	_oldestBlock = block->prev;
+	_oldestBlock->next = NULL;
 	/* remove from hashmap */
 	bool diffhash = block->blockNo % HASH_SIZE != blockNo % HASH_SIZE;
 	if(diffhash) {
-		sCBlock **list = &c->hashmap[block->blockNo % HASH_SIZE];
-		sCBlock *b = *list, *p = NULL;
+		CBlock **list = &_hashmap[block->blockNo % HASH_SIZE];
+		CBlock *b = *list, *p = NULL;
 		while(b != NULL) {
 			if(b == block) {
 				if(p)
@@ -237,55 +192,54 @@ static sCBlock *bcache_getBlock(sBlockCache *c,block_t blockNo) {
 	}
 	/* put at beginning of usedlist */
 	block->prev = NULL;
-	block->next = c->newestBlock;
+	block->next = _newestBlock;
 	if(block->next)
 		block->next->prev = block;
-	c->newestBlock = block;
+	_newestBlock = block;
 	/* insert into hashmap */
 	if(diffhash) {
-		sCBlock **list = &c->hashmap[blockNo % HASH_SIZE];
+		CBlock **list = &_hashmap[blockNo % HASH_SIZE];
 		block->hnext = *list;
 		*list = block;
 	}
 	/* if it is dirty we have to write it first to disk */
 	if(block->dirty) {
-		vassert(c->write != NULL,"Block %d dirty, but no write-function",block->blockNo);
-		bcache_acquire(block,BMODE_READ);
-		c->write(c->handle,block->buffer,block->blockNo,1);
-		bcache_doRelease(block,false);
+		acquire(block,READ);
+		writeBlocks(block->buffer,block->blockNo,1);
+		doRelease(block,false);
 	}
 	return block;
 }
 
-void bcache_printStats(FILE *f,sBlockCache *c) {
+void BlockCache::printStats(FILE *f) {
 	float hitrate;
 	size_t used = 0,dirty = 0;
-	sCBlock *bentry = c->newestBlock;
+	CBlock *bentry = _newestBlock;
 	while(bentry != NULL) {
 		used++;
 		if(bentry->dirty)
 			dirty++;
 		bentry = bentry->next;
 	}
-	fprintf(f,"\t\tTotal blocks: %zu\n",c->blockCacheSize);
+	fprintf(f,"\t\tTotal blocks: %zu\n",_blockCacheSize);
 	fprintf(f,"\t\tUsed blocks: %zu\n",used);
 	fprintf(f,"\t\tDirty blocks: %zu\n",dirty);
-	fprintf(f,"\t\tHits: %zu\n",c->hits);
-	fprintf(f,"\t\tMisses: %zu\n",c->misses);
-	if(c->hits == 0)
+	fprintf(f,"\t\tHits: %lu\n",_hits);
+	fprintf(f,"\t\tMisses: %lu\n",_misses);
+	if(_hits == 0)
 		hitrate = 0;
 	else
-		hitrate = 100.0f / ((float)(c->misses + c->hits) / c->hits);
+		hitrate = 100.0f / ((float)(_misses + _hits) / _hits);
 	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
 }
 
 #if DEBUGGING
 
-void bcache_print(sBlockCache *c) {
+void BlockCache::print() {
 	size_t i = 0;
-	sCBlock *block;
+	CBlock *block;
 	printf("Used blocks:\n\t");
-	block = c->newestBlock;
+	block = _newestBlock;
 	while(block != NULL) {
 		if(++i % 8 == 0)
 			printf("\n\t");

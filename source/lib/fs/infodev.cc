@@ -28,61 +28,46 @@
 #include <stdarg.h>
 #include <signal.h>
 
-class FSFileDevice;
-
-static int infodev_handler(A_UNUSED void *arg);
-static void sigUsr1(A_UNUSED int sig);
-
-static sFileSystem *fs;
-static const char *fspath;
-static FSFileDevice *dev;
-
 class FSFileDevice : public ipc::FileDevice {
 public:
-	explicit FSFileDevice(const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode) {
+	explicit FSFileDevice(FileSystem *fs,const char *path,mode_t mode)
+		: ipc::FileDevice(path,mode), _fs(fs) {
 	}
 
 	virtual std::string handleRead() {
 		FILE *str = ascreate();
 		if(str) {
-			fs->print(str,fs->handle);
+			_fs->print(str);
+			std::string res = asget(str,NULL);
 			fclose(str);
-			return asget(str,NULL);
+			return res;
 		}
 		return "";
 	}
+
+private:
+	FileSystem *_fs;
 };
 
-int infodev_start(const char *_path,sFileSystem *_fs) {
-	fspath = _path;
-	fs = _fs;
-	int res;
-	if((res = startthread(infodev_handler,NULL)) < 0)
-		return res;
-	return 0;
-}
+static FSFileDevice *dev;
 
-static int infodev_handler(A_UNUSED void *arg) {
-	char devpath[MAX_PATH_LEN];
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
-		error("Unable to announce USR1-signal-handler");
-
-	char *devname = strrchr(fspath,'/');
-	if(!devname)
-		error("Invalid device name '%s'",fspath);
-	snprintf(devpath,sizeof(devpath),"/system/fs/%s",devname);
-
-	dev = new FSFileDevice(devpath,0444);
-	dev->loop();
-	return 0;
-}
-
-static void sigUsr1(A_UNUSED int sig) {
+static void sigUsr1(int) {
 	dev->stop();
 }
 
-void infodev_shutdown(void) {
-	if(kill(getpid(),SIG_USR1) < 0)
-		printe("Unable to send signal to me");
+int InfoDevice::thread(void *arg) {
+	char devpath[MAX_PATH_LEN];
+	InfoDevice *idev = static_cast<InfoDevice*>(arg);
+
+	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+		error("Unable to announce USR1-signal-handler");
+
+	char *devname = strrchr(idev->path(),'/');
+	if(!devname)
+		error("Invalid device name '%s'",idev->path());
+	snprintf(devpath,sizeof(devpath),"/system/fs/%s",devname);
+
+	dev = new FSFileDevice(idev->fs(),devpath,0444);
+	dev->loop();
+	return 0;
 }

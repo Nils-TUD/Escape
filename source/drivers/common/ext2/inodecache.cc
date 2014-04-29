@@ -33,60 +33,35 @@
 #include "rw.h"
 #include "inodecache.h"
 
-#define ALLOC_LOCK	0xF7180001
-
-/**
- * Aquires the tpool_lock for given mode and inode. Assumes that ALLOC_LOCK is acquired and releases
- * it at the end.
- */
-static void ext2_icache_acquire(sExt2CInode *inode,uint mode);
-/**
- * Releases the given inode
- */
-static void ext2_icache_doRelease(sExt2 *e,sExt2CInode *ino,bool unlockAlloc);
-/**
- * Reads the inode from block-cache. Requires inode->inodeNo to be valid!
- */
-static void ext2_icache_read(sExt2 *e,sExt2CInode *inode);
-/**
- * Writes the inode back to the cached block, which can be written to disk later
- */
-static void ext2_icache_write(sExt2 *e,sExt2CInode *inode);
-
-void ext2_icache_init(sExt2 *e) {
+Ext2INodeCache::Ext2INodeCache(Ext2FileSystem *fs)
+		: _hits(), _misses(), _cache(new Ext2CInode[EXT2_ICACHE_SIZE]), _fs(fs) {
 	size_t i;
-	sExt2CInode *inode = e->inodeCache;
+	Ext2CInode *inode = _cache;
 	for(i = 0; i < EXT2_ICACHE_SIZE; i++) {
 		inode->inodeNo = EXT2_BAD_INO;
 		inode->refs = 0;
 		inode->dirty = false;
 		inode++;
 	}
-	e->icacheHits = 0;
-	e->icacheMisses = 0;
 }
 
-void ext2_icache_flush(sExt2 *e) {
-	sExt2CInode *inode,*end = e->inodeCache + EXT2_ICACHE_SIZE;
-	for(inode = e->inodeCache; inode < end; inode++) {
+void Ext2INodeCache::flush() {
+	Ext2CInode *inode,*end = _cache + EXT2_ICACHE_SIZE;
+	for(inode = _cache; inode < end; inode++) {
 		if(inode->dirty) {
 			assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
-			ext2_icache_acquire(inode,IMODE_READ);
-			ext2_icache_write(e,inode);
-			ext2_icache_release(e,inode);
+			acquire(inode,IMODE_READ);
+			write(inode);
+			release(inode);
 		}
 	}
 }
 
-void ext2_icache_markDirty(sExt2CInode *inode) {
-	inode->dirty = true;
-}
-
-sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
+Ext2CInode *Ext2INodeCache::request(inode_t no,uint mode) {
 	/* search for the inode. perhaps it's already in cache */
-	sExt2CInode *startNode = e->inodeCache + (no & (EXT2_ICACHE_SIZE - 1));
-	sExt2CInode *iend = e->inodeCache + EXT2_ICACHE_SIZE;
-	sExt2CInode *inode;
+	Ext2CInode *startNode = _cache + (no & (EXT2_ICACHE_SIZE - 1));
+	Ext2CInode *iend = _cache + EXT2_ICACHE_SIZE;
+	Ext2CInode *inode;
 	if(no <= EXT2_BAD_INO)
 		return NULL;
 
@@ -95,17 +70,17 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 
 	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
-			ext2_icache_acquire(inode,mode);
-			e->icacheHits++;
+			acquire(inode,mode);
+			_hits++;
 			return inode;
 		}
 	}
 	/* look in 0 .. startNode; separate it to make the average-case fast */
 	if(inode == iend) {
-		for(inode = e->inodeCache; inode < startNode; inode++) {
+		for(inode = _cache; inode < startNode; inode++) {
 			if(inode->inodeNo == no) {
-				ext2_icache_acquire(inode,mode);
-				e->icacheHits++;
+				acquire(inode,mode);
+				_hits++;
 				return inode;
 			}
 		}
@@ -120,7 +95,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 			break;
 	}
 	if(inode == iend) {
-		for(inode = e->inodeCache; inode < startNode; inode++) {
+		for(inode = _cache; inode < startNode; inode++) {
 			if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0)
 				break;
 		}
@@ -133,38 +108,34 @@ sExt2CInode *ext2_icache_request(sExt2 *e,inode_t no,uint mode) {
 
 	/* write the old inode back, if necessary */
 	if(inode->dirty && inode->inodeNo != EXT2_BAD_INO) {
-		ext2_icache_acquire(inode,IMODE_READ);
-		ext2_icache_write(e,inode);
-		ext2_icache_doRelease(e,inode,false);
+		acquire(inode,IMODE_READ);
+		write(inode);
+		doRelease(inode,false);
 	}
 
 	/* build node */
 	inode->inodeNo = no;
 	inode->dirty = false;
 	/* first for writing because we have to load it */
-	ext2_icache_acquire(inode,IMODE_WRITE);
+	acquire(inode,IMODE_WRITE);
 
-	ext2_icache_read(e,inode);
+	read(inode);
 
 	/* now use for the requested mode */
 	if(mode != IMODE_WRITE) {
-		ext2_icache_doRelease(e,inode,false);
-		ext2_icache_acquire(inode,mode);
+		doRelease(inode,false);
+		acquire(inode,mode);
 	}
 
-	e->icacheMisses++;
+	_misses++;
 	return inode;
 }
 
-void ext2_icache_release(sExt2 *e,const sExt2CInode *inode) {
-	ext2_icache_doRelease(e,(sExt2CInode*)inode,true);
-}
-
-void ext2_icache_print(FILE *f,sExt2 *e) {
+void Ext2INodeCache::print(FILE *f) {
 	float hitrate;
 	size_t used = 0,dirty = 0;
-	sExt2CInode *inode,*end = e->inodeCache + EXT2_ICACHE_SIZE;
-	for(inode = e->inodeCache; inode < end; inode++) {
+	Ext2CInode *inode,*end = _cache + EXT2_ICACHE_SIZE;
+	for(inode = _cache; inode < end; inode++) {
 		if(inode->inodeNo != EXT2_BAD_INO)
 			used++;
 		if(inode->dirty)
@@ -173,22 +144,22 @@ void ext2_icache_print(FILE *f,sExt2 *e) {
 	fprintf(f,"\t\tTotal entries: %u\n",EXT2_ICACHE_SIZE);
 	fprintf(f,"\t\tUsed entries: %zu\n",used);
 	fprintf(f,"\t\tDirty entries: %zu\n",dirty);
-	fprintf(f,"\t\tHits: %zu\n",e->icacheHits);
-	fprintf(f,"\t\tMisses: %zu\n",e->icacheMisses);
-	if(e->icacheHits == 0)
+	fprintf(f,"\t\tHits: %zu\n",_hits);
+	fprintf(f,"\t\tMisses: %zu\n",_misses);
+	if(_hits == 0)
 		hitrate = 0;
 	else
-		hitrate = 100.0f / ((float)(e->icacheMisses + e->icacheHits) / e->icacheHits);
+		hitrate = 100.0f / ((float)(_misses + _hits) / _hits);
 	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
 }
 
-static void ext2_icache_acquire(sExt2CInode *inode,A_UNUSED uint mode) {
+void Ext2INodeCache::acquire(Ext2CInode *inode,A_UNUSED uint mode) {
 	inode->refs++;
 	assert(tpool_unlock(ALLOC_LOCK) == 0);
 	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
-static void ext2_icache_doRelease(sExt2 *e,sExt2CInode *ino,bool unlockAlloc) {
+void Ext2INodeCache::doRelease(Ext2CInode *ino,bool unlockAlloc) {
 	if(ino == NULL)
 		return;
 
@@ -198,7 +169,7 @@ static void ext2_icache_doRelease(sExt2 *e,sExt2CInode *ino,bool unlockAlloc) {
 	/* if there are no references and no links anymore, we have to delete the file */
 	if(--ino->refs == 0) {
 		if(ino->inode.linkCount == 0) {
-			ext2_file_delete(e,ino);
+			Ext2File::remove(_fs,ino);
 			/* ensure that we don't use the cached inode again */
 			ino->inodeNo = EXT2_BAD_INO;
 			ino->dirty = false;
@@ -209,31 +180,31 @@ static void ext2_icache_doRelease(sExt2 *e,sExt2CInode *ino,bool unlockAlloc) {
 	assert(tpool_unlock((uint)ino) == 0);
 }
 
-static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
-	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
-	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / inodesPerGroup);
-	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
+void Ext2INodeCache::read(Ext2CInode *inode) {
+	uint32_t inodesPerGroup = le32tocpu(_fs->sb.get()->inodesPerGroup);
+	Ext2BlockGrp *group = _fs->bgs.get((inode->inodeNo - 1) / inodesPerGroup);
+	size_t inodesPerBlock = _fs->blockSize() / sizeof(Ext2Inode);
 	size_t noInGroup = (inode->inodeNo - 1) % inodesPerGroup;
 	block_t blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
-	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_READ);
+	CBlock *block = _fs->blockCache.request(blockNo,BlockCache::READ);
 	vassert(block != NULL,"Fetching block %d failed",blockNo);
-	memcpy(&(inode->inode),(uint8_t*)block->buffer + inodeInBlock * sizeof(sExt2Inode),
-			sizeof(sExt2Inode));
-	bcache_release(block);
+	memcpy(&(inode->inode),(uint8_t*)block->buffer + inodeInBlock * sizeof(Ext2Inode),
+			sizeof(Ext2Inode));
+	_fs->blockCache.release(block);
 }
 
-static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
-	uint32_t inodesPerGroup = le32tocpu(e->superBlock.inodesPerGroup);
-	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / inodesPerGroup);
-	size_t inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
+void Ext2INodeCache::write(Ext2CInode *inode) {
+	uint32_t inodesPerGroup = le32tocpu(_fs->sb.get()->inodesPerGroup);
+	Ext2BlockGrp *group = _fs->bgs.get((inode->inodeNo - 1) / inodesPerGroup);
+	size_t inodesPerBlock = _fs->blockSize() / sizeof(Ext2Inode);
 	size_t noInGroup = (inode->inodeNo - 1) % inodesPerGroup;
 	block_t blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inode->inodeNo - 1) % inodesPerBlock;
-	sCBlock *block = bcache_request(&e->blockCache,blockNo,BMODE_WRITE);
+	CBlock *block = _fs->blockCache.request(blockNo,BlockCache::WRITE);
 	vassert(block != NULL,"Fetching block %d failed",blockNo);
-	memcpy((uint8_t*)block->buffer + inodeInBlock * sizeof(sExt2Inode),&(inode->inode),
-			sizeof(sExt2Inode));
-	bcache_markDirty(block);
-	bcache_release(block);
+	memcpy((uint8_t*)block->buffer + inodeInBlock * sizeof(Ext2Inode),&(inode->inode),
+			sizeof(Ext2Inode));
+	_fs->blockCache.markDirty(block);
+	_fs->blockCache.release(block);
 }

@@ -27,23 +27,14 @@
 #include "rw.h"
 #include "ext2.h"
 
-int ext2_rw_readBlocks(sExt2 *e,void *buffer,block_t start,size_t blockCount) {
-	return ext2_rw_readSectors(e,buffer,EXT2_BLKS_TO_SECS(e,start),EXT2_BLKS_TO_SECS(e,blockCount));
-}
-
-int ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount) {
+int Ext2RW::readSectors(Ext2FileSystem *e,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
 	off_t off;
-#if REQ_THREAD_COUNT > 0
-	int fd = e->drvFds[tpool_tidToId(gettid())];
-#else
-	int fd = e->drvFds[0];
-#endif
-	if((off = seek(fd,lba * DISK_SECTOR_SIZE,SEEK_SET)) < 0) {
+	if((off = seek(e->fd,lba * DISK_SECTOR_SIZE,SEEK_SET)) < 0) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return off;
 	}
-	res = IGNSIGS(read(fd,buffer,secCount * DISK_SECTOR_SIZE));
+	res = IGNSIGS(read(e->fd,buffer,secCount * DISK_SECTOR_SIZE));
 	if(res != (ssize_t)secCount * DISK_SECTOR_SIZE) {
 		printe("Unable to read %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return res;
@@ -52,23 +43,14 @@ int ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount) {
 	return 0;
 }
 
-int ext2_rw_writeBlocks(sExt2 *e,const void *buffer,block_t start,size_t blockCount) {
-	return ext2_rw_writeSectors(e,buffer,EXT2_BLKS_TO_SECS(e,start),EXT2_BLKS_TO_SECS(e,blockCount));
-}
-
-int ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCount) {
+int Ext2RW::writeSectors(Ext2FileSystem *e,const void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;
 	off_t off;
-#if REQ_THREAD_COUNT > 0
-	int fd = e->drvFds[tpool_tidToId(gettid())];
-#else
-	int fd = e->drvFds[0];
-#endif
-	if((off = seek(fd,lba * DISK_SECTOR_SIZE,SEEK_SET)) < 0) {
+	if((off = seek(e->fd,lba * DISK_SECTOR_SIZE,SEEK_SET)) < 0) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return off;
 	}
-	if((res = write(fd,buffer,secCount * DISK_SECTOR_SIZE)) != (ssize_t)secCount * DISK_SECTOR_SIZE) {
+	if((res = write(e->fd,buffer,secCount * DISK_SECTOR_SIZE)) != (ssize_t)secCount * DISK_SECTOR_SIZE) {
 		printe("Unable to write %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return res;
 	}

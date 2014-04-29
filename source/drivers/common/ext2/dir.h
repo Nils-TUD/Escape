@@ -20,49 +20,65 @@
 #pragma once
 
 #include <esc/common.h>
-#include "ext2.h"
 
-/**
- * Creates a directory with given name in given directory
- *
- * @param e the ext2-data
- * @param u the user
- * @param dir the directory
- * @param name the name of the new directory
- * @return 0 on success
- */
-int ext2_dir_create(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name);
+struct Ext2CInode;
+class Ext2FileSystem;
+struct FSUser;
 
-/**
- * Finds the inode-number to the entry <name> in <dir>
- *
- * @param e the ext2-data
- * @param dir the directory
- * @param name the name of the entry to find
- * @param nameLen the length of the name
- * @return the inode-number or < 0
- */
-inode_t ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,size_t nameLen);
+struct Ext2DirEntry {
+	inode_t inode;
+	uint16_t recLen;
+	uint16_t nameLen;
+	/* name follows (up to 255 bytes) */
+	char name[];
+} A_PACKED;
 
-/**
- * Finds the inode-number to the entry <name> in the given buffer
- *
- * @param buffer the buffer with all directory-entries
- * @param bufSize the size of the buffer
- * @param name the name of the entry to find
- * @param nameLen the length of the name
- * @return the inode-number or < 0
- */
-inode_t ext2_dir_findIn(sExt2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
+class Ext2Dir {
+	Ext2Dir() = delete;
 
-/**
- * Removes the directory with given name from the given directory. It is required that
- * the directory is empty!
- *
- * @param e the ext2-data
- * @param u the user
- * @param dir the directory
- * @param name the name of the directory to remove
- * @return 0 on success
- */
-int ext2_dir_delete(sExt2 *e,sFSUser *u,sExt2CInode *dir,const char *name);
+public:
+	/**
+	 * Creates a directory with given name in given directory
+	 *
+	 * @param e the ext2-fs
+	 * @param u the user
+	 * @param dir the directory
+	 * @param name the name of the new directory
+	 * @return 0 on success
+	 */
+	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name);
+
+	/**
+	 * Finds the inode-number to the entry <name> in <dir>
+	 *
+	 * @param e the ext2-fs
+	 * @param dir the directory
+	 * @param name the name of the entry to find
+	 * @param nameLen the length of the name
+	 * @return the inode-number or < 0
+	 */
+	static inode_t find(Ext2FileSystem *e,Ext2CInode *dir,const char *name,size_t nameLen);
+
+	/**
+	 * Finds the inode-number to the entry <name> in the given buffer
+	 *
+	 * @param buffer the buffer with all directory-entries
+	 * @param bufSize the size of the buffer
+	 * @param name the name of the entry to find
+	 * @param nameLen the length of the name
+	 * @return the inode-number or < 0
+	 */
+	static inode_t findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
+
+	/**
+	 * Removes the directory with given name from the given directory. It is required that
+	 * the directory is empty!
+	 *
+	 * @param e the ext2-fs
+	 * @param u the user
+	 * @param dir the directory
+	 * @param name the name of the directory to remove
+	 * @return 0 on success
+	 */
+	static int remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name);
+};

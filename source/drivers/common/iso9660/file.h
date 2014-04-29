@@ -22,15 +22,24 @@
 #include <esc/common.h>
 #include "iso9660.h"
 
-/**
- * Reads <count> bytes at <offset> into <buffer> from the given file-id
- *
- * @param h the iso9660-handle
- * @param id the file-id
- * @param buffer the buffer; if NULL the data will be fetched from disk (if not in cache) but
- * 	not copied anywhere
- * @param offset the offset
- * @param count the number of bytes to read
- * @return the number of read bytes
- */
-ssize_t iso_file_read(sISO9660 *h,inode_t id,void *buffer,off_t offset,size_t count);
+class ISO9660File {
+	ISO9660File() = delete;
+
+public:
+	/**
+	 * Reads <count> bytes at <offset> into <buffer> from the given file-id
+	 *
+	 * @param h the iso9660-handle
+	 * @param id the file-id
+	 * @param buffer the buffer; if NULL the data will be fetched from disk (if not in cache) but
+	 * 	not copied anywhere
+	 * @param offset the offset
+	 * @param count the number of bytes to read
+	 * @return the number of read bytes
+	 */
+	static ssize_t read(ISO9660FileSystem *fs,inode_t id,void *buffer,off_t offset,size_t count);
+
+private:
+	static void buildDirEntries(ISO9660FileSystem *h,block_t lba,uint8_t *dst,const uint8_t *src,
+		off_t offset,size_t count);
+};

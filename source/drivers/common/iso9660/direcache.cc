@@ -26,60 +26,57 @@
 #include "direcache.h"
 #include "rw.h"
 
-void iso_direc_init(sISO9660 *h) {
-	size_t i;
-	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++)
-		h->direcache[i].id = 0;
-	h->direcNextFree = 0;
+ISO9660DirCache::ISO9660DirCache(ISO9660FileSystem *h)
+	: _nextFree(0), _cache(new ISOCDirEntry[ISO_DIRE_CACHE_SIZE]()), _fs(h) {
 }
 
-const sISOCDirEntry *iso_direc_get(sISO9660 *h,inode_t id) {
-	const sISODirEntry *e;
-	sCBlock *blk;
+const ISOCDirEntry *ISO9660DirCache::get(inode_t id) {
+	const ISODirEntry *e;
+	CBlock *blk;
 	block_t blockLBA;
 	size_t i,blockSize,offset;
 	int unused = -1;
 
 	/* search in the cache */
 	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++) {
-		if(h->direcache[i].id == id)
-			return (const sISOCDirEntry*)(h->direcache + i);
-		if(unused < 0 && h->direcache[i].id == 0)
+		if(_cache[i].id == id)
+			return _cache + i;
+		if(unused < 0 && _cache[i].id == 0)
 			unused = i;
 	}
 
 	/* overwrite an arbitrary one, if no one is free */
 	if(unused < 0) {
-		unused = h->direcNextFree;
-		h->direcNextFree = (h->direcNextFree + 1) % ISO_DIRE_CACHE_SIZE;
+		unused = _nextFree;
+		_nextFree = (_nextFree + 1) % ISO_DIRE_CACHE_SIZE;
 	}
 
-	if(id == ISO_ROOT_DIR_ID(h)) {
-		e = (const sISODirEntry*)&h->primary.data.primary.rootDir;
-		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
-		h->direcache[unused].id = id;
+	if(id == _fs->rootDirId()) {
+		e = (const ISODirEntry*)&_fs->primary.data.primary.rootDir;
+		memcpy(&(_cache[unused].entry),e,sizeof(ISODirEntry));
+		_cache[unused].id = id;
 	}
 	else {
 		/* load it from disk */
-		blockSize = ISO_BLK_SIZE(h);
+		blockSize = _fs->blockSize();
 		offset = id & (blockSize - 1);
 		blockLBA = id / blockSize + offset / blockSize;
-		blk = bcache_request(&h->blockCache,blockLBA,BMODE_READ);
+		blk = _fs->blockCache.request(blockLBA,BlockCache::READ);
 		if(blk == NULL)
 			return NULL;
-		e = (const sISODirEntry*)((uintptr_t)blk->buffer + (offset % blockSize));
+		e = (const ISODirEntry*)((uintptr_t)blk->buffer + (offset % blockSize));
 		/* don't copy the name! */
-		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
-		h->direcache[unused].id = id;
-		bcache_release(blk);
+		memcpy(&(_cache[unused].entry),e,sizeof(ISODirEntry));
+		_cache[unused].id = id;
+		_fs->blockCache.release(blk);
 	}
-	return (const sISOCDirEntry*)(h->direcache + unused);
+	return _cache + unused;
 }
 
-void iso_dire_print(FILE *f,sISO9660 *h) {
+void ISO9660DirCache::print(FILE *f) {
 	size_t i,freeEntries = 0;
 	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++) {
-		if(h->direcache[i].id == 0)
+		if(_cache[i].id == 0)
 			freeEntries++;
 	}
 	fprintf(f,"\t\tTotal entries: %u\n",ISO_DIRE_CACHE_SIZE);

@@ -31,33 +31,14 @@
 
 #include "ext2.h"
 #include "inodecache.h"
-#include "blockgroup.h"
-#include "superblock.h"
+#include "bgmng.h"
+#include "sbmng.h"
 #include "path.h"
 #include "file.h"
 #include "link.h"
 #include "inode.h"
 #include "dir.h"
 #include "rw.h"
-
-static void *ext2_init(const char *device,char **usedDev,int *errcode);
-static void ext2_deinit(void *h);
-static sFileSystem *ext2_getFS(void);
-static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags);
-static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags);
-static void ext2_close(void *h,inode_t ino);
-static int ext2_stat(void *h,inode_t ino,sFileInfo *info);
-static int ext2_chmod(void *h,sFSUser *u,inode_t inodeNo,mode_t mode);
-static int ext2_chown(void *h,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid);
-static ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count);
-static ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,off_t offset,size_t count);
-static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char *name);
-static int ext2_unlink(void *h,sFSUser *u,inode_t dirIno,const char *name);
-static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
-static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name);
-static void ext2_sync(void *h);
-static bool ext2_isPowerOf(uint x,uint y);
-static void ext2_print(FILE *f,void *h);
 
 int main(int argc,char *argv[]) {
 	char fspath[MAX_PATH_LEN];
@@ -70,141 +51,49 @@ int main(int argc,char *argv[]) {
 		error("Invalid device path '%s'",argv[2]);
 	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
 
-	FSDevice fsdev(ext2_getFS(),argv[2],fspath);
+	FSDevice fsdev(new Ext2FileSystem(argv[2]),fspath);
 	fsdev.loop();
 	return 0;
 }
 
-static void *ext2_init(const char *device,char **usedDev,int *errcode) {
-	int res;
-	size_t i;
-	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
-	if(e == NULL) {
-		*errcode = -ENOMEM;
-		return NULL;
-	}
-	for(i = 0; i <= REQ_THREAD_COUNT; i++)
-		e->drvFds[i] = -1;
-	e->blockCache.blockCache = NULL;
-
-	/* open the device */
-	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
-		e->drvFds[i] = open(device,IO_WRITE | IO_READ);
-		if(e->drvFds[i] < 0) {
-			printe("Unable to find device '%s'",device);
-			*errcode = e->drvFds[i];
-			goto failed;
-		}
-	}
-
-	if((res = ext2_super_init(e)) < 0) {
-		*errcode = res;
-		goto failed;
-	}
-
-	/* Note: we don't need it in ext2_super_init() and we can't use EXT2_BLK_SIZE() without
-	 * super-block! */
-	e->blockCache.blockCacheSize = EXT2_BCACHE_SIZE;
-	e->blockCache.blockSize = EXT2_BLK_SIZE(e);
-	e->blockCache.handle = e;
-	/* cast is ok, because the only difference is that ext2_rw_* receive a sExt2* as first argument
-	 * and read/write expect void* */
-	e->blockCache.read = (fReadBlocks)ext2_rw_readBlocks;
-	e->blockCache.write = (fWriteBlocks)ext2_rw_writeBlocks;
-
-	/* init block-groups */
-	if((res = ext2_bg_init(e)) < 0) {
-		*errcode = res;
-		goto failed;
-	}
-
-	/* init caches */
-	ext2_icache_init(e);
-	bcache_init(&e->blockCache,e->drvFds[0]);
-
-	/* report used device */
-	*usedDev = static_cast<char*>(malloc(strlen(device) + 1));
-	if(!*usedDev) {
-		printe("Not enough mem for device-name");
-		*errcode = -ENOMEM;
-		goto failed;
-	}
-	strcpy(*usedDev,device);
-	return e;
-
-failed:
-	if(e->blockCache.blockCache)
-		bcache_destroy(&e->blockCache);
-	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
-		if(e->drvFds[i] >= 0) {
-			close(e->drvFds[i]);
-			e->drvFds[i] = -1;
-		}
-	}
-	free(e);
-	return NULL;
+bool Ext2FileSystem::Ext2BlockCache::readBlocks(void *buffer,block_t start,size_t blockCount) {
+	return Ext2RW::readBlocks(_fs,buffer,start,blockCount);
 }
 
-static void ext2_deinit(void *h) {
-	size_t i;
-	sExt2 *e = (sExt2*)h;
+bool Ext2FileSystem::Ext2BlockCache::writeBlocks(const void *buffer,size_t start,size_t blockCount) {
+	return Ext2RW::writeBlocks(_fs,buffer,start,blockCount);
+}
+
+Ext2FileSystem::Ext2FileSystem(const char *device)
+		: fd(::open(device,IO_WRITE | IO_READ)), timeFd(-1), sb(this), bgs(this),
+		  inodeCache(this), blockCache(this) {
+	if(fd < 0)
+		VTHROWE("Unable to open device '" << device << "'",fd);
+}
+
+Ext2FileSystem::~Ext2FileSystem() {
 	/* write pending changes */
-	ext2_sync(e);
-	/* clean up */
-	ext2_bg_destroy(e);
-	bcache_destroy(&e->blockCache);
-	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
-		if(e->drvFds[i] >= 0) {
-			close(e->drvFds[i]);
-			e->drvFds[i] = -1;
-		}
-	}
-	free(e);
+	sync();
+	close(timeFd);
+	close(fd);
 }
 
-static sFileSystem *ext2_getFS(void) {
-	sFileSystem *fs = static_cast<sFileSystem*>(malloc(sizeof(sFileSystem)));
-	if(!fs)
-		return NULL;
-	fs->type = FS_TYPE_EXT2;
-	/* TODO later it should depend on not-supported features, the device and similar stuff */
-	fs->readonly = false;
-	fs->init = ext2_init;
-	fs->deinit = ext2_deinit;
-	fs->resPath = ext2_resPath;
-	fs->open = ext2_open;
-	fs->close = ext2_close;
-	fs->stat = ext2_stat;
-	fs->read = ext2_read;
-	fs->write = ext2_write;
-	fs->link = ext2_link;
-	fs->unlink = ext2_unlink;
-	fs->mkdir = ext2_mkdir;
-	fs->rmdir = ext2_rmdir;
-	fs->chmod = ext2_chmod;
-	fs->chown = ext2_chown;
-	fs->sync = ext2_sync;
-	fs->print = ext2_print;
-	return fs;
+inode_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags) {
+	return Ext2Path::resolve(this,u,path,flags);
 }
 
-static inode_t ext2_resPath(void *h,sFSUser *u,const char *path,uint flags) {
-	return ext2_path_resolve((sExt2*)h,u,path,flags);
-}
-
-static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
+inode_t Ext2FileSystem::open(FSUser *u,inode_t ino,uint flags) {
 	int err;
-	sExt2 *e = (sExt2*)h;
 	/* check permissions */
-	sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
+	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
 	uint mode = 0;
 	if(flags & IO_READ)
 		mode |= MODE_READ;
 	if(flags & IO_WRITE)
 		mode |= MODE_WRITE;
 	/* TODO exec? */
-	if((err = ext2_hasPermission(cnode,u,mode)) < 0) {
-		ext2_icache_release(e,cnode);
+	if((err = hasPermission(cnode,u,mode)) < 0) {
+		inodeCache.release(cnode);
 		return err;
 	}
 	/* increase references so that the inode stays in cache until we close it. this is necessary
@@ -212,30 +101,28 @@ static inode_t ext2_open(void *h,sFSUser *u,inode_t ino,uint flags) {
 	 * means that we can never have more open files that inode-cache-slots. so, we might have to
 	 * increase that at sometime. */
 	cnode->refs++;
-	ext2_icache_release(e,cnode);
+	inodeCache.release(cnode);
 
 	/* truncate? */
 	if(flags & IO_TRUNCATE) {
-		cnode = ext2_icache_request(e,ino,IMODE_WRITE);
+		cnode = inodeCache.request(ino,IMODE_WRITE);
 		if(cnode != NULL) {
-			ext2_file_truncate(e,cnode,false);
-			ext2_icache_release(e,cnode);
+			Ext2File::truncate(this,cnode,false);
+			inodeCache.release(cnode);
 		}
 	}
 	return ino;
 }
 
-static void ext2_close(void *h,inode_t ino) {
-	sExt2 *e = (sExt2*)h;
+void Ext2FileSystem::close(inode_t ino) {
 	/* decrease references so that we can remove the cached inode and maybe even delete the file */
-	sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
+	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
 	cnode->refs--;
-	ext2_icache_release(e,cnode);
+	inodeCache.release(cnode);
 }
 
-static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
-	sExt2 *e = (sExt2*)h;
-	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
+int Ext2FileSystem::stat(inode_t ino,sFileInfo *info) {
+	const Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
 	if(cnode == NULL)
 		return -ENOBUFS;
 
@@ -243,7 +130,7 @@ static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
 	info->modifytime = le32tocpu(cnode->inode.modifytime);
 	info->createtime = le32tocpu(cnode->inode.createtime);
 	info->blockCount = le32tocpu(cnode->inode.blocks);
-	info->blockSize = EXT2_BLK_SIZE(e);
+	info->blockSize = blockSize();
 	info->device = 0;
 	info->uid = le16tocpu(cnode->inode.uid);
 	info->gid = le16tocpu(cnode->inode.gid);
@@ -251,117 +138,102 @@ static int ext2_stat(void *h,inode_t ino,sFileInfo *info) {
 	info->linkCount = le16tocpu(cnode->inode.linkCount);
 	info->mode = le16tocpu(cnode->inode.mode);
 	info->size = le32tocpu(cnode->inode.size);
-	ext2_icache_release(e,cnode);
+	inodeCache.release(cnode);
 	return 0;
 }
 
-static int ext2_chmod(void *h,sFSUser *u,inode_t inodeNo,mode_t mode) {
-	return ext2_inode_chmod((sExt2*)h,u,inodeNo,mode);
+int Ext2FileSystem::chmod(FSUser *u,inode_t inodeNo,mode_t mode) {
+	return Ext2INode::chmod(this,u,inodeNo,mode);
 }
 
-static int ext2_chown(void *h,sFSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
-	return ext2_inode_chown((sExt2*)h,u,inodeNo,uid,gid);
+int Ext2FileSystem::chown(FSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
+	return Ext2INode::chown(this,u,inodeNo,uid,gid);
 }
 
-static ssize_t ext2_read(void *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
-	return ext2_file_read((sExt2*)h,inodeNo,buffer,offset,count);
+ssize_t Ext2FileSystem::read(inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+	return Ext2File::read(this,inodeNo,buffer,offset,count);
 }
 
-static ssize_t ext2_write(void *h,inode_t inodeNo,const void *buffer,off_t offset,size_t count) {
-	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
+ssize_t Ext2FileSystem::write(inode_t inodeNo,const void *buffer,off_t offset,size_t count) {
+	return Ext2File::write(this,inodeNo,buffer,offset,count);
 }
 
-static int ext2_link(void *h,sFSUser *u,inode_t dstIno,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
+int Ext2FileSystem::link(FSUser *u,inode_t dstIno,inode_t dirIno,const char *name) {
 	int res;
-	sExt2CInode *dir,*ino;
-	dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
-	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
+	Ext2CInode *dir,*ino;
+	dir = inodeCache.request(dirIno,IMODE_WRITE);
+	ino = inodeCache.request(dstIno,IMODE_WRITE);
 	if(dir == NULL || ino == NULL)
 		res = -ENOBUFS;
 	else if(S_ISDIR(le16tocpu(ino->inode.mode)))
 		res = -EISDIR;
 	else
-		res = ext2_link_create(e,u,dir,ino,name);
-	ext2_icache_release(e,dir);
-	ext2_icache_release(e,ino);
+		res = Ext2Link::create(this,u,dir,ino,name);
+	inodeCache.release(dir);
+	inodeCache.release(ino);
 	return res;
 }
 
-static int ext2_unlink(void *h,sFSUser *u,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
+int Ext2FileSystem::unlink(FSUser *u,inode_t dirIno,const char *name) {
 	int res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return -ENOBUFS;
 
-	res = ext2_link_delete(e,u,NULL,dir,name,false);
-	ext2_icache_release(e,dir);
+	res = Ext2Link::remove(this,u,NULL,dir,name,false);
+	inodeCache.release(dir);
 	return res;
 }
 
-static int ext2_mkdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
+int Ext2FileSystem::mkdir(FSUser *u,inode_t dirIno,const char *name) {
 	int res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return -ENOBUFS;
-	res = ext2_dir_create(e,u,dir,name);
-	ext2_icache_release(e,dir);
+	res = Ext2Dir::create(this,u,dir,name);
+	inodeCache.release(dir);
 	return res;
 }
 
-static int ext2_rmdir(void *h,sFSUser *u,inode_t dirIno,const char *name) {
-	sExt2 *e = (sExt2*)h;
+int Ext2FileSystem::rmdir(FSUser *u,inode_t dirIno,const char *name) {
 	int res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return -ENOBUFS;
 	if(!S_ISDIR(le16tocpu(dir->inode.mode)))
 		return -ENOTDIR;
-	res = ext2_dir_delete(e,u,dir,name);
-	ext2_icache_release(e,dir);
+	res = Ext2Dir::remove(this,u,dir,name);
+	inodeCache.release(dir);
 	return res;
 }
 
-static void ext2_sync(void *h) {
-	sExt2 *e = (sExt2*)h;
-	ext2_super_update(e);
-	ext2_bg_update(e);
+void Ext2FileSystem::sync() {
+	sb.update();
+	bgs.update();
 	/* flush inodes first, because they may create dirty blocks */
-	ext2_icache_flush(e);
-	bcache_flush(&e->blockCache);
+	inodeCache.flush();
+	blockCache.flush();
 }
 
-static bool ext2_isPowerOf(uint x,uint y) {
-	while(x > 1) {
-		if(x % y != 0)
-			return false;
-		x /= y;
-	}
-	return true;
-}
-
-static void ext2_print(FILE *f,void *h) {
-	sExt2 *e = (sExt2*)h;
-	fprintf(f,"Total blocks: %u\n",le32tocpu(e->superBlock.blockCount));
-	fprintf(f,"Total inodes: %u\n",le32tocpu(e->superBlock.inodeCount));
-	fprintf(f,"Free blocks: %u\n",le32tocpu(e->superBlock.freeBlockCount));
-	fprintf(f,"Free inodes: %u\n",le32tocpu(e->superBlock.freeInodeCount));
-	fprintf(f,"Blocks per group: %u\n",le32tocpu(e->superBlock.blocksPerGroup));
-	fprintf(f,"Inodes per group: %u\n",le32tocpu(e->superBlock.inodesPerGroup));
-	fprintf(f,"Blocksize: %zu\n",EXT2_BLK_SIZE(e));
-	fprintf(f,"Capacity: %zu bytes\n",le32tocpu(e->superBlock.blockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"Free: %zu bytes\n",le32tocpu(e->superBlock.freeBlockCount) * EXT2_BLK_SIZE(e));
-	fprintf(f,"Mount count: %u\n",le16tocpu(e->superBlock.mountCount));
-	fprintf(f,"Max mount count: %u\n",le16tocpu(e->superBlock.maxMountCount));
+void Ext2FileSystem::print(FILE *f) {
+	fprintf(f,"Total blocks: %u\n",le32tocpu(sb.get()->blockCount));
+	fprintf(f,"Total inodes: %u\n",le32tocpu(sb.get()->inodeCount));
+	fprintf(f,"Free blocks: %u\n",le32tocpu(sb.get()->freeBlockCount));
+	fprintf(f,"Free inodes: %u\n",le32tocpu(sb.get()->freeInodeCount));
+	fprintf(f,"Blocks per group: %u\n",le32tocpu(sb.get()->blocksPerGroup));
+	fprintf(f,"Inodes per group: %u\n",le32tocpu(sb.get()->inodesPerGroup));
+	fprintf(f,"Blocksize: %zu\n",blockSize());
+	fprintf(f,"Capacity: %zu bytes\n",le32tocpu(sb.get()->blockCount) * blockSize());
+	fprintf(f,"Free: %zu bytes\n",le32tocpu(sb.get()->freeBlockCount) * blockSize());
+	fprintf(f,"Mount count: %u\n",le16tocpu(sb.get()->mountCount));
+	fprintf(f,"Max mount count: %u\n",le16tocpu(sb.get()->maxMountCount));
 	fprintf(f,"Block cache:\n");
-	bcache_printStats(f,&e->blockCache);
+	blockCache.printStats(f);
 	fprintf(f,"Inode cache:\n");
-	ext2_icache_print(f,e);
+	inodeCache.print(f);
 }
 
-int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
+int Ext2FileSystem::hasPermission(Ext2CInode *cnode,FSUser *u,uint perms) {
 	int mask;
 	uint16_t mode = le16tocpu(cnode->inode.mode);
 	if(u->uid == ROOT_UID) {
@@ -388,42 +260,44 @@ int ext2_hasPermission(sExt2CInode *cnode,sFSUser *u,uint perms) {
 	return 0;
 }
 
-block_t ext2_getBlockOfInode(sExt2 *e,inode_t inodeNo) {
-	return (inodeNo - 1) / le32tocpu(e->superBlock.inodesPerGroup);
-}
-
-block_t ext2_getGroupOfBlock(sExt2 *e,block_t block) {
-	return block / le32tocpu(e->superBlock.blocksPerGroup);
-}
-
-block_t ext2_getGroupOfInode(sExt2 *e,inode_t inodeNo) {
-	return inodeNo / le32tocpu(e->superBlock.inodesPerGroup);
-}
-
-size_t ext2_getBlockGroupCount(sExt2 *e) {
-	size_t bpg = le32tocpu(e->superBlock.blocksPerGroup);
-	return (le32tocpu(e->superBlock.blockCount) + bpg - 1) / bpg;
-}
-
-bool ext2_bgHasBackups(sExt2 *e,block_t i) {
+bool Ext2FileSystem::bgHasBackups(block_t i) {
 	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
 	 * the backup */
-	if(!(le32tocpu(e->superBlock.featureRoCompat) & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
+	if(!(le32tocpu(sb.get()->featureRoCompat) & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
 		return true;
 	/* block-group 0 is handled manually */
 	if(i == 1)
 		return true;
-	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
+	return isPowerOf(i,3) || isPowerOf(i,5) || isPowerOf(i,7);
+}
+
+time_t Ext2FileSystem::timestamp() const {
+	struct RTCInfo info;
+	/* open CMOS and read date */
+	if(timeFd < 0) {
+		/* not already open, so do it */
+		timeFd = ::open("/dev/rtc",IO_READ);
+		if(timeFd < 0)
+			return 0;
+	}
+	else {
+		/* seek back to beginning */
+		if(seek(timeFd,0,SEEK_SET) < 0)
+			return 0;
+	}
+	if(IGNSIGS(::read(timeFd,&info,sizeof(info))) < 0)
+		return 0;
+	return mktime(&info.time);
 }
 
 #if DEBUGGING
 
-void ext2_printBlockGroups(sExt2 *e) {
-	size_t i,count = ext2_getBlockGroupCount(e);
+void Ext2FileSystem::printBlockGroups() {
+	size_t i,count = getBlockGroupCount();
 	printf("Blockgroups:\n");
 	for(i = 0; i < count; i++) {
 		printf(" Block %zu\n",i);
-		ext2_bg_print(e,i,e->groups + i);
+		bgs.print(i);
 	}
 }
 

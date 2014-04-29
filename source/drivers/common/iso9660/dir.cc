@@ -28,54 +28,46 @@
 #include "rw.h"
 #include "dir.h"
 
-/* calcuates an imaginary inode-number from block-number and offset in the directory-entries */
-#define GET_INODENO(blockNo,blockSize,offset) (((blockNo) * (blockSize)) + (offset))
-
-/**
- * Checks whether <user> matches <disk>
- */
-static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen);
-
-inode_t iso_dir_resolve(sISO9660 *h,A_UNUSED sFSUser *u,const char *path,uint flags) {
+inode_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED FSUser *u,const char *path,uint flags) {
 	size_t extLoc,extSize;
 	const char *p = path;
 	ssize_t pos;
 	inode_t res;
-	sCBlock *blk;
-	size_t i,off,blockSize = ISO_BLK_SIZE(h);
+	CBlock *blk;
+	size_t i,off,blockSize = h->blockSize();
 
 	while(*p == '/')
 		p++;
 
 	extLoc = h->primary.data.primary.rootDir.extentLoc.littleEndian;
 	extSize = h->primary.data.primary.rootDir.extentSize.littleEndian;
-	res = ISO_ROOT_DIR_ID(h);
+	res = h->rootDirId();
 
 	pos = strchri(p,'/');
 	while(*p) {
-		const sISODirEntry *e;
+		const ISODirEntry *e;
 		i = 0;
 		off = 0;
-		blk = bcache_request(&h->blockCache,extLoc,BMODE_READ);
+		blk = h->blockCache.request(extLoc,BlockCache::READ);
 		if(blk == NULL)
 			return -ENOBUFS;
 
-		e = (const sISODirEntry*)blk->buffer;
+		e = (const ISODirEntry*)blk->buffer;
 		while((uintptr_t)e < (uintptr_t)blk->buffer + blockSize) {
 			/* continue with next block? */
 			if(e->length == 0) {
 				off += blockSize;
 				if(off >= extSize)
 					break;
-				bcache_release(blk);
-				blk = bcache_request(&h->blockCache,extLoc + ++i,BMODE_READ);
+				h->blockCache.release(blk);
+				blk = h->blockCache.request(extLoc + ++i,BlockCache::READ);
 				if(blk == NULL)
 					return -ENOBUFS;
-				e = (const sISODirEntry*)blk->buffer;
+				e = (const ISODirEntry*)blk->buffer;
 				continue;
 			}
 
-			if(iso_dir_match(p,e->name,pos,e->nameLen)) {
+			if(match(p,e->name,pos,e->nameLen)) {
 				p += pos;
 
 				/* skip slashes */
@@ -88,29 +80,29 @@ inode_t iso_dir_resolve(sISO9660 *h,A_UNUSED sFSUser *u,const char *path,uint fl
 				/* move to childs of this node */
 				pos = strchri(p,'/');
 				if((e->flags & ISO_FILEFL_DIR) == 0) {
-					bcache_release(blk);
+					h->blockCache.release(blk);
 					return -ENOTDIR;
 				}
 				extLoc = e->extentLoc.littleEndian;
 				extSize = e->extentSize.littleEndian;
 				break;
 			}
-			e = (const sISODirEntry*)((uintptr_t)e + e->length);
+			e = (const ISODirEntry*)((uintptr_t)e + e->length);
 		}
 		/* no match? */
 		if((uintptr_t)e >= (uintptr_t)blk->buffer + blockSize || e->length == 0) {
-			bcache_release(blk);
+			h->blockCache.release(blk);
 			if(flags & IO_CREATE)
 				return -EROFS;
 			return -ENOENT;
 		}
-		res = GET_INODENO(extLoc + i,blockSize,(uintptr_t)e - (uintptr_t)blk->buffer);
-		bcache_release(blk);
+		res = getIno(extLoc + i,blockSize,(uintptr_t)e - (uintptr_t)blk->buffer);
+		h->blockCache.release(blk);
 	}
 	return res;
 }
 
-static bool iso_dir_match(const char *user,const char *disk,size_t userLen,size_t diskLen) {
+bool ISO9660Dir::match(const char *user,const char *disk,size_t userLen,size_t diskLen) {
 	size_t rpos;
 	if(*disk == ISO_FILENAME_THIS)
 		return userLen == 1 && strcmp(user,".") == 0;

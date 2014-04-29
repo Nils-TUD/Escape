@@ -29,21 +29,15 @@
 #include "direcache.h"
 #include "rw.h"
 
-/**
- * Builds the required dir-entries for the fs-interface from the ISO9660-dir-entries
- */
-static void iso_file_buildDirEntries(sISO9660 *h,block_t lba,uint8_t *dst,const uint8_t *src,
-		off_t offset,size_t count);
-
-ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
-	const sISOCDirEntry *e;
-	sCBlock *blk;
+ssize_t ISO9660File::read(ISO9660FileSystem *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+	const ISOCDirEntry *e;
+	CBlock *blk;
 	uint8_t *bufWork;
 	block_t startBlock;
 	size_t c,i,blockSize,blockCount,leftBytes;
 
 	/* at first we need the direntry */
-	e = iso_direc_get(h,inodeNo);
+	e = h->dirCache.get(inodeNo);
 	if(e == NULL)
 		return -ENOBUFS;
 
@@ -54,7 +48,7 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 	if((offset + count) >= e->entry.extentSize.littleEndian)
 		count = e->entry.extentSize.littleEndian - offset;
 
-	blockSize = ISO_BLK_SIZE(h);
+	blockSize = h->blockSize();
 	startBlock = e->entry.extentLoc.littleEndian + offset / blockSize;
 	offset %= blockSize;
 	blockCount = (offset + count + blockSize - 1) / blockSize;
@@ -66,7 +60,7 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 	bufWork = (uint8_t*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		/* read block */
-		blk = bcache_request(&h->blockCache,startBlock + i,BMODE_READ);
+		blk = h->blockCache.request(startBlock + i,BlockCache::READ);
 		if(blk == NULL)
 			return -ENOBUFS;
 
@@ -74,13 +68,13 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 			/* copy the requested part */
 			c = MIN(leftBytes,blockSize - offset);
 			if(e->entry.flags & ISO_FILEFL_DIR)
-				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,
+				buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,
 						static_cast<uint8_t*>(blk->buffer),offset,c);
 			else
 				memcpy(bufWork,(void*)((uintptr_t)blk->buffer + offset),c);
 			bufWork += c;
 		}
-		bcache_release(blk);
+		h->blockCache.release(blk);
 
 		/* we substract to much, but it matters only if we read an additional block. In this
 		 * case it is correct */
@@ -92,11 +86,11 @@ ssize_t iso_file_read(sISO9660 *h,inode_t inodeNo,void *buffer,off_t offset,size
 	return count;
 }
 
-static void iso_file_buildDirEntries(sISO9660 *h,block_t lba,uint8_t *dst,const uint8_t *src,
+void ISO9660File::buildDirEntries(ISO9660FileSystem *h,block_t lba,uint8_t *dst,const uint8_t *src,
 		off_t offset,size_t count) {
-	const sISODirEntry *e;
+	const ISODirEntry *e;
 	sDirEntry *de,*lastDe;
-	size_t i,blockSize = ISO_BLK_SIZE(h);
+	size_t i,blockSize = h->blockSize();
 	uint8_t *cdst;
 
 	/* TODO the whole stuff here is of course not a good solution. but it works, thats enough
@@ -107,7 +101,7 @@ static void iso_file_buildDirEntries(sISO9660 *h,block_t lba,uint8_t *dst,const 
 	else
 		cdst = dst;
 
-	e = (const sISODirEntry*)src;
+	e = (const ISODirEntry*)src;
 	lastDe = NULL;
 	de = (sDirEntry*)cdst;
 	while((uintptr_t)e < (uintptr_t)src + blockSize) {
@@ -135,7 +129,7 @@ static void iso_file_buildDirEntries(sISO9660 *h,block_t lba,uint8_t *dst,const 
 		de->recLen = (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) + de->nameLen;
 		lastDe = de;
 		de = (sDirEntry*)((uintptr_t)de + de->recLen);
-		e = (const sISODirEntry*)((uintptr_t)e + e->length);
+		e = (const ISODirEntry*)((uintptr_t)e + e->length);
 	}
 
 	if(offset != 0 || count != blockSize) {

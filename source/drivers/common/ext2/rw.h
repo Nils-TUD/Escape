@@ -22,46 +22,55 @@
 #include <esc/common.h>
 #include "ext2.h"
 
-/**
- * Reads <secCount> sectors at <lba> into the given buffer
- *
- * @param e the ext2-handle
- * @param buffer the buffer
- * @param lba the start-sector
- * @param secCount the number of sectors
- * @return 0 if successfull
- */
-int ext2_rw_readSectors(sExt2 *e,void *buffer,uint64_t lba,size_t secCount);
+class Ext2RW {
+	Ext2RW() = delete;
 
-/**
- * Reads <blockCount> blocks at <start> into the given buffer
- *
- * @param e the ext2-handle
- * @param buffer the buffer
- * @param start the start-block
- * @param blockCount the number of blocks
- * @return 0 if successfull
- */
-int ext2_rw_readBlocks(sExt2 *e,void *buffer,block_t start,size_t blockCount);
+public:
+	/**
+	 * Reads <secCount> sectors at <lba> into the given buffer
+	 *
+	 * @param e the ext2-handle
+	 * @param buffer the buffer
+	 * @param lba the start-sector
+	 * @param secCount the number of sectors
+	 * @return 0 if successfull
+	 */
+	static int readSectors(Ext2FileSystem *e,void *buffer,uint64_t lba,size_t secCount);
 
-/**
- * Writes <secCount> sectors at <lba> from the given buffer
- *
- * @param e the ext2-handle
- * @param buffer the buffer
- * @param lba the start-sector
- * @param secCount the number of sectors
- * @return 0 if successfull
- */
-int ext2_rw_writeSectors(sExt2 *e,const void *buffer,uint64_t lba,size_t secCount);
+	/**
+	 * Reads <blockCount> blocks at <start> into the given buffer
+	 *
+	 * @param e the ext2-handle
+	 * @param buffer the buffer
+	 * @param start the start-block
+	 * @param blockCount the number of blocks
+	 * @return 0 if successfull
+	 */
+	static int readBlocks(Ext2FileSystem *e,void *buffer,block_t start,size_t blockCount) {
+		return readSectors(e,buffer,e->blocksToSecs(start),e->blocksToSecs(blockCount));
+	}
 
-/**
- * Writes <blockCount> blocks at <start> from the given buffer
- *
- * @param e the ext2-handle
- * @param buffer the buffer
- * @param start the start-block
- * @param blockCount the number of blocks
- * @return 0 if successfull
- */
-int ext2_rw_writeBlocks(sExt2 *e,const void *buffer,block_t start,size_t blockCount);
+	/**
+	 * Writes <secCount> sectors at <lba> from the given buffer
+	 *
+	 * @param e the ext2-handle
+	 * @param buffer the buffer
+	 * @param lba the start-sector
+	 * @param secCount the number of sectors
+	 * @return 0 if successfull
+	 */
+	static int writeSectors(Ext2FileSystem *e,const void *buffer,uint64_t lba,size_t secCount);
+
+	/**
+	 * Writes <blockCount> blocks at <start> from the given buffer
+	 *
+	 * @param e the ext2-handle
+	 * @param buffer the buffer
+	 * @param start the start-block
+	 * @param blockCount the number of blocks
+	 * @return 0 if successfull
+	 */
+	static int writeBlocks(Ext2FileSystem *e,const void *buffer,block_t start,size_t blockCount) {
+		return writeSectors(e,buffer,e->blocksToSecs(start),e->blocksToSecs(blockCount));
+	}
+};

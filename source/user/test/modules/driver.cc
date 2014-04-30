@@ -81,7 +81,7 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	if(startthread(getRequests,NULL) < 0)
 		error("Unable to start thread");
 
-	join(0);
+	IGNSIGS(join(0));
 	close(id);
 	return EXIT_SUCCESS;
 }

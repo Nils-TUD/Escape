@@ -553,7 +553,7 @@ errorTermNoRel:
 	A_UNREACHED;
 }
 
-void ProcBase::join(tid_t tid) {
+int ProcBase::join(tid_t tid,bool allowSigs) {
 	Thread *t = Thread::getRunning();
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
@@ -562,11 +562,18 @@ void ProcBase::join(tid_t tid) {
 		t->wait(EV_THREAD_DIED,(evobj_t)t->getProc());
 		release(p,PLOCK_PROG);
 
-		Thread::switchNoSigs();
+		if(allowSigs) {
+			Thread::switchAway();
+			if(t->hasSignal())
+				return -EINTR;
+		}
+		else
+			Thread::switchNoSigs();
 
 		request(t->getProc()->pid,PLOCK_PROG);
 	}
 	release(p,PLOCK_PROG);
+	return 0;
 }
 
 int ProcBase::addSignalFor(pid_t pid,int signal) {
@@ -657,7 +664,7 @@ void ProcBase::terminate(int exitCode,int signal) {
 
 		/* wait until all threads are dead */
 		release(p,PLOCK_PROG);
-		join(0);
+		join(0,false);
 		p = request(p->getPid(),PLOCK_PROG);
 		assert(p != NULL);
 

@@ -37,7 +37,7 @@ public:
 	~InfoDevice() {
 		if(kill(getpid(),SIG_USR1) < 0)
 			printe("Unable to send signal to me");
-		join(_tid);
+		IGNSIGS(join(_tid));
 	}
 
 	const char *path() const {

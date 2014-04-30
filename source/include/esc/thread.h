@@ -109,7 +109,8 @@ static inline int sleep(time_t msecs) {
 }
 
 /**
- * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
+ * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process).
+ * If interrupted by a signal, -EINTR is returned.
  *
  * @param tid the thread-id (0 = wait until all other threads died)
  * @return 0 on success

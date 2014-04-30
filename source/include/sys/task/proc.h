@@ -265,8 +265,10 @@ public:
 	 * Waits until the thread with given thread-id or all other threads of the process are terminated.
 	 *
 	 * @param tid the thread to wait for (0 = all other threads)
+	 * @param allowSigs whether to allow to be interrupted
+	 * @return 0 on success
 	 */
-	static void join(tid_t tid);
+	static int join(tid_t tid,bool allowSigs = true);
 
 	/**
 	 * Waits until a child-process terminated and copies its exit-state to <state>.

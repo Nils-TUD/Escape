@@ -106,7 +106,9 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 			SYSC_ERROR(stack,-EINVAL);
 	}
 
-	Proc::join(tid);
+	int res = Proc::join(tid);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 

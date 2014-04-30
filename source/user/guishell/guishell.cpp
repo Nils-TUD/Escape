@@ -121,7 +121,7 @@ static int guiProc(const char *devName) {
 	// notify the other thread and wait for him
 	if(kill(getpid(),SIG_USR2) < 0)
 		printe("Unable to send SIG_USR2 to ourself");
-	join(tid);
+	IGNSIGS(join(tid));
 	delete gt;
 	return res;
 }

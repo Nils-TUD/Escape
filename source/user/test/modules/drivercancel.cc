@@ -111,7 +111,7 @@ static int cancelThread(void*) {
 		fprintf(stderr,"Sending signal...\n");
 		kill(getpid(),SIG_USR2);
 		fprintf(stderr,"Waiting for client thread...\n");
-		join(tid);
+		IGNSIGS(join(tid));
 	}
 	kill(getpid(),SIG_USR1);
 	return 0;
@@ -126,6 +126,6 @@ int mod_drivercancel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		error("Unable to cancel thread");
 
 	dev->loop();
-	join(0);
+	IGNSIGS(join(0));
 	return EXIT_SUCCESS;
 }

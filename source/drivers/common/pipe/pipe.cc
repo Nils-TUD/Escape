@@ -89,15 +89,13 @@ public:
 		FL_WRITE		= 2
 	};
 
-	explicit PipeClient(int f)
-		: ipc::Client(f), partner(), pendingRead(), pendingWrite(), ringbuf(), flags(FL_WRITE) {
+	explicit PipeClient(int f,uint _flags = FL_WRITE)
+		: ipc::Client(f), partner(), pendingRead(), pendingWrite(), ringbuf(), flags(_flags) {
+		if(flags & FL_READ)
+			ringbuf = new VarRingBuf(RINGBUF_SIZE);
 	}
 	virtual ~PipeClient() {
 		delete ringbuf;
-	}
-
-	void initRingbuf() {
-		ringbuf = new VarRingBuf(RINGBUF_SIZE);
 	}
 
 	void replyRead() {
@@ -226,9 +224,7 @@ public:
 		if(c->flags != PipeClient::FL_WRITE)
 			res = -EINVAL;
 		else {
-			PipeClient *nc = new PipeClient(r.nfd);
-			nc->flags = PipeClient::FL_READ;
-			nc->initRingbuf();
+			PipeClient *nc = new PipeClient(r.nfd,PipeClient::FL_READ);
 			nc->partner = c;
 			c->partner = nc;
 			add(r.nfd,nc);

@@ -5,7 +5,7 @@ create_cd() {
 	dst="$2"
 	cat > $src/boot/grub/menu.lst <<EOF
 default 0
-timeout 1
+timeout 3
 
 title Escape
 kernel /boot/escape root=/dev/iso9660-cdrom

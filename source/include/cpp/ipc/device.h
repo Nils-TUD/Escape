@@ -85,6 +85,15 @@ public:
 	}
 
 	/**
+	 * Binds this device to the given thread
+	 *
+	 * @param tid the thread-id
+	 */
+	void bindto(tid_t tid) {
+		::bindto(_id,tid);
+	}
+
+	/**
 	 * Registers the given handler for <op>.
 	 *
 	 * @param op the operation (message-id)

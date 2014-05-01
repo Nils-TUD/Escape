@@ -229,8 +229,9 @@ public:
 	}
 };
 
-static int eventThread(A_UNUSED void *arg) {
+static int eventThread(void *arg) {
 	WinMngEventDevice *evdev = (WinMngEventDevice*)arg;
+	evdev->bindto(gettid());
 	evdev->loop();
 	return 0;
 }

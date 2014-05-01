@@ -74,6 +74,7 @@ private:
 	// driver
 	static int createdev(Thread *t,IntrptStackFrame *stack);
 	static int getwork(Thread *t,IntrptStackFrame *stack);
+	static int bindto(Thread *t,IntrptStackFrame *stack);
 
 	// io
 	static int open(Thread *t,IntrptStackFrame *stack);

@@ -50,7 +50,8 @@ VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
 		/* otherwise, if root uses that device, the driver is unable to open this channel. */
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
-		  closed(false), shmem(NULL), shmemSize(0), sendList(), recvList() {
+		  handler(static_cast<VFSDevice*>(p)->getCreator()), closed(false),
+		  shmem(NULL), shmemSize(0), sendList(), recvList() {
 	if(!success)
 		return;
 
@@ -640,8 +641,8 @@ VFSChannel::Message *VFSChannel::getMsg(SList<Message> *list,msgid_t mid,ushort 
 
 void VFSChannel::print(OStream &os) const {
 	const SList<Message> *lists[] = {&sendList,&recvList};
-	os.writef("%-8s: snd=%zu rcv=%zu closed=%d fd=%02d shm=%zuK\n",
-		name,sendList.length(),recvList.length(),closed,fd,shmem ? shmemSize / 1024 : 0);
+	os.writef("%-8s: snd=%zu rcv=%zu closed=%d handler=%d fd=%02d shm=%zuK\n",
+		name,sendList.length(),recvList.length(),closed,handler,fd,shmem ? shmemSize / 1024 : 0);
 	for(size_t i = 0; i < ARRAY_SIZE(lists); i++) {
 		for(auto it = lists[i]->cbegin(); it != lists[i]->cend(); ++it) {
 			os.writef("\t%s id=%u:%u len=%zu\n",i == 0 ? "->" : "<-",

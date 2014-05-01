@@ -66,6 +66,25 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
+int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {
+	int fd = SYSC_ARG1(stack);
+	tid_t tid = SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+	OpenFile *file;
+
+	/* get file */
+	file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* perform operation */
+	int res = file->bindto(tid);
+	FileDesc::release(file);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	int fd = SYSC_ARG1(stack) >> 2;
 	msgid_t *id = (msgid_t*)SYSC_ARG2(stack);

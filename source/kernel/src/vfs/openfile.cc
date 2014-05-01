@@ -267,6 +267,21 @@ int OpenFile::creatsibl(pid_t pid,OpenFile *sibl,int arg) {
 		pid,this,static_cast<VFSChannel*>(sibl->getNode()),arg);
 }
 
+int OpenFile::bindto(tid_t tid) {
+	if(EXPECT_TRUE(IS_CHANNEL(node->getMode()))) {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		chan->bindto(tid);
+		return 0;
+	}
+
+	if(EXPECT_TRUE(IS_DEVICE(node->getMode()))) {
+		VFSDevice *dev = static_cast<VFSDevice*>(node);
+		dev->bindto(tid);
+		return 0;
+	}
+	return -ENOTSUP;
+}
+
 int OpenFile::syncfs(pid_t pid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf buf(buffer,sizeof(buffer));

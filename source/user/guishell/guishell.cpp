@@ -58,6 +58,9 @@ static void termSigUsr2(A_UNUSED int sig) {
 static int termThread(A_UNUSED void *arg) {
 	if(signal(SIG_USR2,termSigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
+
+	/* we haven't created it, so rebind it to ourself */
+	gt->bindto(gettid());
 	gt->loop();
 	return 0;
 }

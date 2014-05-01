@@ -286,6 +286,14 @@ public:
 	int creatsibl(pid_t pid,OpenFile *sibl,int arg);
 
 	/**
+	 * Binds this file to the given thread.
+	 *
+	 * @param tid the thread-id
+	 * @return 0 on success
+	 */
+	int bindto(tid_t tid);
+
+	/**
 	 * Writes all cached blocks of the affected filesystem to disk.
 	 *
 	 * @param pid the process-id

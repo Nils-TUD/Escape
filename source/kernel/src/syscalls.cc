@@ -122,6 +122,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{mlock,				"mlock",			2},
 	{mlockall,			"mlockall",			0},
 	{semcrtirq,			"semcrtirq",		2},
+	{bindto,			"bindto",			2},
 #ifdef __i386__
 	{reqports,			"reqports",   		2},
 	{relports,			"relports",    		2},

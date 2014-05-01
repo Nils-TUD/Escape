@@ -24,11 +24,13 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <esc/sync.h>
+#include <esc/conf.h>
 #include <ipc/proto/file.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
+#include <mutex>
 
 #include "../modules.h"
 
@@ -37,7 +39,6 @@
 typedef struct {
 	int fd;
 	msgid_t mid;
-	tid_t tid;
 	ulong buffer[64];
 	void *data;
 } sTestRequest;
@@ -45,18 +46,17 @@ typedef struct {
 static volatile int closeCount = 0;
 static int respId = 1;
 static int id;
-static tUserSem psem;
+static std::mutex mutex;
 
 static int clientThread(void *arg);
 static int getRequests(void *arg);
 static int handleRequest(void *arg);
 static void printffl(const char *fmt,...) {
+	std::lock_guard<std::mutex> guard(mutex);
 	va_list ap;
 	va_start(ap,fmt);
-	usemdown(&psem);
 	vprintf(fmt,ap);
 	fflush(stdout);
-	usemup(&psem);
 	va_end(ap);
 }
 
@@ -65,18 +65,14 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	size_t i;
-	if(usemcrt(&psem,1) < 0)
-		error("Unable to create lock");
-
-	for(i = 0; i < CLIENT_COUNT; i++) {
-		if(startthread(clientThread,NULL) < 0)
-			error("Unable to start thread");
-	}
-
 	id = createdev("/dev/bla",0666,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("createdev");
+
+	for(int i = 0; i < CLIENT_COUNT; i++) {
+		if(startthread(clientThread,NULL) < 0)
+			error("Unable to start thread");
+	}
 
 	if(startthread(getRequests,NULL) < 0)
 		error("Unable to start thread");
@@ -89,15 +85,11 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 static int clientThread(A_UNUSED void *arg) {
 	size_t i;
 	char buf[12] = {0};
-	int fd;
+	int fd = open("/dev/bla",IO_READ | IO_WRITE);
+	if(fd < 0)
+		error("open");
 	srand(time(NULL) * gettid());
-	do {
-		fd = open("/dev/bla",IO_READ | IO_WRITE);
-		if(fd < 0)
-			sleep(20);
-	}
-	while(fd < 0);
-	printffl("[%d] Reading...\n",gettid());
+		printffl("[%d] Reading...\n",gettid());
 	if(IGNSIGS(read(fd,buf,sizeof(buf))) < 0)
 		error("read");
 	printffl("[%d] Got: '%s'\n",gettid(),buf);
@@ -118,6 +110,7 @@ static int getRequests(A_UNUSED void *arg) {
 	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 
+	bindto(id,gettid());
 	do {
 		msgid_t mid;
 		int cfd = getwork(id,&mid,buffer,sizeof(buffer),0);
@@ -129,10 +122,9 @@ static int getRequests(A_UNUSED void *arg) {
 			sTestRequest *req = (sTestRequest*)malloc(sizeof(sTestRequest));
 			req->fd = cfd;
 			req->mid = mid;
-			memcpy(&req->buffer,buffer,sizeof(buffer));
-			req->tid = gettid();
+			memcpy(req->buffer,buffer,sizeof(buffer));
 			req->data = NULL;
-			if(mid == MSG_FILE_WRITE) {
+			if((mid & 0xFFFF) == MSG_FILE_WRITE) {
 				ipc::IPCStream is(cfd,buffer,sizeof(buffer));
 				ipc::FileWrite::Request r;
 				is >> r;
@@ -170,7 +162,7 @@ static int handleRequest(void *arg) {
 			ipc::FileRead::Request r;
 			is >> r;
 
-			printffl("--[%d,%d] Read: offset=%u, count=%u\n",gettid(),req->fd,r.offset,r.count);
+			printffl("--[%d,%d] Read: offset=%zu, count=%zu\n",gettid(),req->fd,r.offset,r.count);
 
 			is << ipc::FileRead::Response(r.count) << ipc::Reply();
 			itoa(resp,sizeof(resp),respId++);
@@ -182,7 +174,7 @@ static int handleRequest(void *arg) {
 			ipc::FileWrite::Request r;
 			is >> r;
 
-			printffl("--[%d,%d] Write: offset=%u, count=%u, data='%s'\n",gettid(),req->fd,
+			printffl("--[%d,%d] Write: offset=%zu, count=%zu, data='%s'\n",gettid(),req->fd,
 					r.count,r.offset,req->data);
 
 			is << ipc::FileWrite::Response(r.count) << ipc::Reply();

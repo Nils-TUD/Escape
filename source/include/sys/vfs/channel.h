@@ -47,6 +47,21 @@ public:
 	}
 
 	/**
+	 * @return the thread who handles this channel
+	 */
+	tid_t getHandler() const {
+		return handler;
+	}
+	/**
+	 * Binds this channel to the given thread, i.e. changes the handler
+	 *
+	 * @param tid the thread-id
+	 */
+	void bindto(tid_t tid) {
+		handler = tid;
+	}
+
+	/**
 	 * Checks whether the channel has work to do for the server
 	 *
 	 * @return true if so
@@ -149,6 +164,7 @@ private:
 	void closeForDriver();
 
 	int fd;
+	tid_t handler;
 	bool closed;
 	void *shmem;
 	size_t shmemSize;

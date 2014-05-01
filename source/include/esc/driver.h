@@ -76,6 +76,21 @@ A_CHECKRET static inline int getwork(int fd,msgid_t *mid,void *msg,size_t size,u
 	return syscall4(SYSCALL_GETWORK,(fd << 2) | flags,(ulong)mid,(ulong)msg,size);
 }
 
+/**
+ * Binds the device or channel, referenced by <fd>, to the thread with given id.
+ * For devices it means that all channels are bound to thread <tid>, i.e. thread <tid> will receive
+ * the messages from getwork() from all channels (current and future).
+ * For channels it means that this channel gets bound to thread <tid>, i.e. thread <tid> will receive
+ * the messages from getwork() from channel <fd>.
+ *
+ * @param fd the fd for the device or channel
+ * @param tid the thread-id
+ * @return 0 on success
+ */
+static inline int bindto(int fd,tid_t tid) {
+	return syscall2(SYSCALL_BINDTO,fd,tid);
+}
+
 #ifdef __cplusplus
 }
 #endif

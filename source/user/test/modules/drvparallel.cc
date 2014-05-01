@@ -20,6 +20,8 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/thread.h>
+#include <esc/conf.h>
+#include <ipc/proto/file.h>
 #include <ipc/device.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,57 +29,50 @@
 
 #include "../modules.h"
 
-typedef struct {
-	int n;
-	int fd;
-} sTask;
-
-static int clientthread(void *arg);
-static int fib(int n);
-static int fibthread(void *arg);
+static int clientCount = 10;
+static int startFib = 20;
+static int cpuCount = sysconf(CONF_CPU_COUNT);
+static int *tids = new int[cpuCount];
 
 class FibDevice : public ipc::Device {
 public:
-	explicit FibDevice(const char *path,mode_t mode) : ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+	explicit FibDevice(const char *path,mode_t mode)
+			: ipc::Device(path,mode,DEV_TYPE_SERVICE,DEV_OPEN), _next(0) {
+		set(MSG_FILE_OPEN,std::make_memfun(this,&FibDevice::open));
 		set(0x1234,std::make_memfun(this,&FibDevice::fib));
 	}
 
+	void open(ipc::IPCStream &is) {
+		::bindto(is.fd(),tids[_next]);
+		_next = (_next + 1) % cpuCount;
+
+		is << ipc::FileOpen::Response(0) << ipc::Reply();
+	}
+
 	void fib(ipc::IPCStream &is) {
-		int n;
+		int res,n;
 		is >> n;
 
-		int tid;
-		sTask *task = (sTask*)malloc(sizeof(sTask));
-		task->n = n;
-		task->fd = is.fd();
-		if((tid = startthread(fibthread,task)) < 0) {
-			printe("Unable to start thread");
-			free(task);
-		}
-		else {
-			printf("[%d] started\n",tid);
-			fflush(stdout);
-		}
+		res = calcFib(n);
+		is << res << ipc::Reply();
+		printf("[%d] Done...\n",gettid());
+		fflush(stdout);
 	}
+
+private:
+	static int calcFib(int n) {
+		if(n <= 1)
+			return 1;
+		return calcFib(n - 1) + calcFib(n - 2);
+	}
+
+	size_t _next;
 };
 
-static size_t clientCount = 10;
-static size_t startFib = 20;
-
-int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	if(argc > 2)
-		clientCount = atoi(argv[2]);
-	if(argc > 3)
-		startFib = atoi(argv[3]);
-
-	FibDevice dev("/dev/parallel",0111);
-	for(size_t i = 0; i < clientCount; i++) {
-		if(startthread(clientthread,NULL) < 0)
-			error("Unable to start client-thread");
-	}
-
-	dev.loop();
-	return EXIT_SUCCESS;
+static int driverthread(void *arg) {
+	FibDevice *dev = (FibDevice*)arg;
+	dev->loop();
+	return 0;
 }
 
 static int clientthread(A_UNUSED void *arg) {
@@ -94,20 +89,25 @@ static int clientthread(A_UNUSED void *arg) {
 	return 0;
 }
 
-static int fib(int n) {
-	if(n <= 1)
-		return 1;
-	return fib(n - 1) + fib(n - 2);
-}
+int mod_drvparallel(A_UNUSED int argc,A_UNUSED char *argv[]) {
+	if(argc > 2)
+		clientCount = atoi(argv[2]);
+	if(argc > 3)
+		startFib = atoi(argv[3]);
 
-static int fibthread(void *arg) {
-	sTask *task = (sTask*)arg;
-	int res = fib(task->n);
-	ipc::IPCStream is(task->fd);
-	is << res << ipc::Reply();
+	FibDevice dev("/dev/parallel",0111);
+	for(int i = 0; i < cpuCount; ++i) {
+		tids[i] = startthread(driverthread,&dev);
+		if(tids[i] < 0)
+			error("Unable to start client-thread");
+		if(i == 0)
+			bindto(dev.id(),tids[i]);
+	}
+	for(int i = 0; i < clientCount; i++) {
+		if(startthread(clientthread,NULL) < 0)
+			error("Unable to start client-thread");
+	}
 
-	free(task);
-	printf("[%d] Done...\n",gettid());
-	fflush(stdout);
-	return 0;
+	join(0);
+	return EXIT_SUCCESS;
 }

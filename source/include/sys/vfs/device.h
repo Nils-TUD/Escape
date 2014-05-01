@@ -49,6 +49,20 @@ public:
 	}
 
 	/**
+	 * @return the thread-id of the creator
+	 */
+	tid_t getCreator() const {
+		return creator;
+	}
+	/**
+	 * Binds this device to the given thread, i.e. binds all existing channels to this thread and
+	 * uses <tid> as the default handler for all new channels.
+	 *
+	 * @param tid the thread-id
+	 */
+	void bindto(tid_t tid);
+
+	/**
 	 * Increases the message-count for this device by <count>
 	 */
 	void addMsgs(ulong count) {
@@ -93,6 +107,8 @@ private:
 	static uint buildMode(uint type);
 	void wakeupClients(bool locked);
 
+	/* the thread that created this device. all channels will initially get bound to this one */
+	tid_t creator;
 	/* implemented functions */
 	uint funcs;
 	/* total number of messages in all channels (for the device, not the clients) */

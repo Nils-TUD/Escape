@@ -34,7 +34,7 @@
 
 /* block- and file-devices are none-empty by default, because their data is always available */
 VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
-		: VFSNode(pid,n,buildMode(type) | (m & 0777),success),
+		: VFSNode(pid,n,buildMode(type) | (m & 0777),success), creator(Thread::getRunning()->getTid()),
 		  funcs(ops), msgCount(0), lastClient() {
 	if(!success)
 		return;
@@ -72,6 +72,20 @@ void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int ms
 	destroy();
 }
 
+void VFSDevice::bindto(tid_t tid) {
+	bool valid;
+	const VFSNode *n = openDir(true,&valid);
+	creator = tid;
+	if(valid) {
+		while(n != NULL) {
+			VFSChannel *chan = const_cast<VFSChannel*>(static_cast<const VFSChannel*>(n));
+			chan->bindto(tid);
+			n = n->next;
+		}
+	}
+	closeDir(true);
+}
+
 int VFSDevice::getWork() {
 	const VFSNode *n,*first,*last;
 	bool valid;
@@ -90,6 +104,8 @@ int VFSDevice::getWork() {
 		return -ENOENT;
 	}
 
+	Thread *t = Thread::getRunning();
+	tid_t ourself = t->getTid();
 	first = n;
 	last = lastClient;
 	n = last ? last->next : first;
@@ -97,7 +113,8 @@ int VFSDevice::getWork() {
 searchBegin:
 	while(n != NULL && n != last) {
 		/* data available? */
-		if(static_cast<const VFSChannel*>(n)->hasWork()) {
+		const VFSChannel *chan = static_cast<const VFSChannel*>(n);
+		if(chan->getHandler() == ourself && chan->hasWork()) {
 			lastClient = const_cast<VFSNode*>(n);
 			closeDir(true);
 			return static_cast<const VFSChannel*>(lastClient)->getFd();
@@ -118,7 +135,7 @@ void VFSDevice::print(OStream &os) const {
 	bool valid;
 	const VFSNode *chan = openDir(false,&valid);
 	if(valid) {
-		os.writef("%s (lastClient=%s):\n",name,lastClient ? lastClient->getName() : "-");
+		os.writef("%s (creator=%d, lastClient=%s):\n",name,creator,lastClient ? lastClient->getName() : "-");
 		while(chan != NULL) {
 			os.pushIndent();
 			chan->print(os);

@@ -113,6 +113,7 @@ enum {
 	SYSCALL_MLOCK,
 	SYSCALL_MLOCKALL,
 	SYSCALL_SEMCRTIRQ,
+	SYSCALL_BINDTO,
 #	ifdef __i386__
 	SYSCALL_REQIOPORTS,
 	SYSCALL_RELIOPORTS,
@@ -138,7 +139,7 @@ enum {
 #define ASM_SYSC_ACKSIG					16
 #define ASM_SYSC_EXEC					18
 #define ASM_SYSC_LOADMODS				20
-#define ASM_SYSC_VM86START				78
+#define ASM_SYSC_VM86START				79
 
 #if !defined(IN_ASM) && defined(__cplusplus)
 static_assert(ASM_SYSC_ACKSIG == SYSCALL_ACKSIG,"ACKSIG is not equal");

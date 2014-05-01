@@ -44,8 +44,8 @@
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
 
-static int vtermThread(void *vterm);
-static void uimInputThread(ipc::UIEvents &uiev);
+static int vtermThread(void *arg);
+static int uimInputThread(void *arg);
 static int vtInit(int id,const char *name,uint cols,uint rows);
 static void vtSetVideoMode(int mode);
 static void vtUpdate(void);
@@ -134,22 +134,12 @@ int main(int argc,char **argv) {
 	if(modeid < 0)
 		error("Unable to init vterms");
 
-	/* open uimng's input device */
-	ipc::UIEvents uiev(*vterm.ui);
-
-	/* set video mode */
-	vtSetVideoMode(modeid);
-
-	/* now we're the active client. update screen */
-	vtctrl_markScrDirty(&vterm);
-	vtUpdate();
-
-	/* start thread to handle the vterm */
-	if(startthread(vtermThread,vtdev) < 0)
+	/* start thread to read input-events from uimanager */
+	if(startthread(uimInputThread,&modeid) < 0)
 		error("Unable to start thread for vterm %s",path);
 
-	/* receive input-events from uimanager in this thread */
-	uimInputThread(uiev);
+	/* handle device here */
+	vtermThread(vtdev);
 
 	/* clean up */
 	delete vtdev;
@@ -157,7 +147,21 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void uimInputThread(ipc::UIEvents &uiev) {
+static int uimInputThread(void *arg) {
+	int modeid = *(int*)arg;
+	/* open uimng's input device */
+	ipc::UIEvents uiev(*vterm.ui);
+
+	/* set video mode */
+	vtSetVideoMode(modeid);
+
+	/* now we're the active client. update screen */
+	{
+		std::lock_guard<std::mutex> guard(*vterm.mutex);
+		vtctrl_markScrDirty(&vterm);
+		vtUpdate();
+	}
+
 	/* read from uimanager and handle the keys */
 	while(1) {
 		ipc::UIEvents::Event ev;
@@ -169,6 +173,7 @@ static void uimInputThread(ipc::UIEvents &uiev) {
 		}
 		vtdev->checkPending();
 	}
+	return 0;
 }
 
 static int vtermThread(void *arg) {
@@ -208,6 +213,9 @@ static int vtInit(int id,const char *name,uint cols,uint rows) {
 }
 
 static void vtUpdate(void) {
+	if(!fb)
+		return;
+
 	/* if we should scroll, mark the whole screen (without title) as dirty */
 	if(vterm.upScroll != 0) {
 		vterm.upCol = 0;

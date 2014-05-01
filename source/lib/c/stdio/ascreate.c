@@ -22,5 +22,5 @@
 #include <stdio.h>
 
 FILE *ascreate(void) {
-	return bcreate(-1,IO_WRITE,NULL,-1,true);
+	return bcreate(-1,IO_WRITE,NULL,0,DYN_BUFFER_SIZE,true);
 }

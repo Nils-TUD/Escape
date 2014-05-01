@@ -24,7 +24,7 @@
 
 int vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
 	int res;
-	FILE *sbuf = bcreate(-1,IO_WRITE,str,n - 1,false);
+	FILE *sbuf = bcreate(-1,IO_WRITE,str,0,n - 1,false);
 	if(!sbuf)
 		return EOF;
 	res = vbprintf(sbuf,fmt,ap);

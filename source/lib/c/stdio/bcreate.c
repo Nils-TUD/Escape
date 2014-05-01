@@ -23,12 +23,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
-FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic) {
+FILE *bcreate(int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic) {
 	FILE *f = (FILE*)malloc(sizeof(FILE));
 	if(!f)
 		return NULL;
 
-	if(!binit(f,fd,flags,buffer,size,dynamic)) {
+	if(!binit(f,fd,flags,buffer,insize,outsize,dynamic)) {
 		free(f);
 		return NULL;
 	}

@@ -115,8 +115,8 @@ int breadn(FILE *f,llong *num,size_t length,int c);
 int breads(FILE *f,size_t length,char *str);
 int vbscanf(FILE *f,const char *fmt,va_list ap);
 
-FILE *bcreate(int fd,uint flags,char *buffer,size_t size,bool dynamic);
-bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic);
+FILE *bcreate(int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic);
+bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic);
 
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;

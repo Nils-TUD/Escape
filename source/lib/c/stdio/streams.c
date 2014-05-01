@@ -40,11 +40,11 @@ void initStdio(void) {
 	sll_init(&iostreams,malloc,free);
 	atexit(deinitStdio);
 
-	if(!binit(stdin,STDIN_FILENO,IO_READ,NULL,IN_BUFFER_SIZE,false))
+	if(!binit(stdin,STDIN_FILENO,IO_READ,NULL,IN_BUFFER_SIZE,0,false))
 		error("Unable to init stdin");
-	if(!binit(stdout,STDOUT_FILENO,IO_WRITE,NULL,OUT_BUFFER_SIZE,false))
+	if(!binit(stdout,STDOUT_FILENO,IO_WRITE,NULL,0,OUT_BUFFER_SIZE,false))
 		error("Unable to init stdin");
-	if(!binit(stderr,STDERR_FILENO,IO_WRITE,NULL,ERR_BUFFER_SIZE,false))
+	if(!binit(stderr,STDERR_FILENO,IO_WRITE,NULL,0,ERR_BUFFER_SIZE,false))
 		error("Unable to init stdin");
 
 	stdin->istty = isatty(STDIN_FILENO);

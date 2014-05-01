@@ -23,9 +23,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
+bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic) {
 	assert(buffer == NULL || (flags & (IO_READ | IO_WRITE)) != (IO_READ | IO_WRITE));
-	assert(buffer == NULL || size != (size_t)-1);
+	assert(!(flags & IO_WRITE) || outsize > 0);
 	f->flags = flags;
 	f->eof = false;
 	f->error = 0;
@@ -38,12 +38,12 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 		if(buffer)
 			f->in.buffer = buffer;
 		else {
-			f->in.buffer = (char*)malloc(size != (size_t)-1 ? size + 1 : IN_BUFFER_SIZE + 1);
+			f->in.buffer = (char*)malloc(insize + 1);
 			if(f->in.buffer == NULL)
 				goto error;
 		}
 		f->in.pos = 0;
-		f->in.max = buffer ? size : 0;
+		f->in.max = buffer ? insize : 0;
 		f->out.dynamic = 0;
 	}
 	else
@@ -55,13 +55,12 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t size,bool dynamic) {
 			f->out.buffer = buffer;
 		}
 		else {
-			size_t defsize = size != (size_t)-1 ? size : OUT_BUFFER_SIZE;
-			f->out.buffer = (char*)malloc((dynamic ? DYN_BUFFER_SIZE : defsize) + 1);
+			f->out.buffer = (char*)malloc(outsize + 1);
 			if(f->out.buffer == NULL)
 				goto error;
 		}
 		f->out.pos = 0;
-		f->out.max = buffer ? size : (dynamic ? DYN_BUFFER_SIZE : OUT_BUFFER_SIZE);
+		f->out.max = outsize;
 		f->out.dynamic = dynamic;
 	}
 	else

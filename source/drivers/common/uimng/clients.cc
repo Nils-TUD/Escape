@@ -126,10 +126,12 @@ void UIClient::setMode(int ntype,const ipc::Screen::Mode &mode,ipc::Screen *scr,
 }
 
 void UIClient::setCursor(gpos_t x,gpos_t y,int cursor) {
-	_cursor.x = x;
-	_cursor.y = y + header_getHeight(type());
-	_cursor.cursor = cursor;
-	screen()->setCursor(_cursor.x,_cursor.y,_cursor.cursor);
+	if(screen()) {
+		_cursor.x = x;
+		_cursor.y = y + header_getHeight(type());
+		_cursor.cursor = cursor;
+		screen()->setCursor(_cursor.x,_cursor.y,_cursor.cursor);
+	}
 }
 
 void UIClient::send(const void *msg,size_t size) {

@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <sys/spinlock.h>
 
-#define SIG_COUNT			9
+#define SIG_COUNT			10
 
 #define SIG_IGN				((Signals::handler_func)-2)			/* ignore signal */
 #define SIG_ERR				((Signals::handler_func)-1)			/* error-return */
@@ -39,6 +39,7 @@
 #define SIG_ALARM			6						/* for alarm() */
 #define SIG_USR1			7						/* can be used for everything */
 #define SIG_USR2			8						/* can be used for everything */
+#define SIG_CANCEL			9						/* is sent by cancel() */
 
 class Thread;
 class ThreadBase;
@@ -102,8 +103,9 @@ public:
 	 *
 	 * @param t the thread
 	 * @param signal the signal
+	 * @return true if the signal has been sent successfully (i.e. there is a handler or it's fatal)
 	 */
-	static void addSignalFor(Thread *t,int signal);
+	static bool addSignalFor(Thread *t,int signal);
 
 	/**
 	 * @param signal the signal-number

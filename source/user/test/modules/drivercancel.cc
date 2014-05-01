@@ -38,6 +38,10 @@ public:
 	msgid_t mid;
 };
 
+static void sigcancel(int) {
+	signal(SIG_CANCEL,sigcancel);
+}
+
 class MyCancelDevice : public ClientDevice<MyClient> {
 public:
 	explicit MyCancelDevice(const char *name,mode_t mode)
@@ -55,7 +59,7 @@ public:
 		if(c->mid != mid)
 			is << -EINVAL << Reply();
 		else {
-			bool answer = count++ > 0;
+			bool answer = count++ > 1;
 			if(answer) {
 				ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 				IPCStream resp(is.fd(),buffer,sizeof(buffer),c->mid);
@@ -70,6 +74,11 @@ public:
 		MyClient *c = (*this)[is.fd()];
 		FileRead::Request r;
 		is >> r;
+
+		char data;
+		ssize_t res = ::read(0,&data,sizeof(data));
+		if(res == -EINTR)
+			print("read() was interrupted");
 
 		c->mid = is.msgid();
 	}
@@ -121,7 +130,9 @@ int mod_drivercancel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	dev = new MyCancelDevice("/dev/cancel",0777);
 
 	if(signal(SIG_USR1,sigusr1) == SIG_ERR)
-		error("Unable to announce SIG_INTRPT handler");
+		error("Unable to announce SIG_USR1 handler");
+	if(signal(SIG_CANCEL,sigcancel) == SIG_ERR)
+		error("Unable to announce SIG_CANCEL handler");
 	if(startthread(cancelThread,NULL) < 0)
 		error("Unable to cancel thread");
 

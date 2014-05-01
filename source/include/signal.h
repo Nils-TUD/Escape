@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#define SIG_COUNT			9
+#define SIG_COUNT			10
 
 #define SIG_IGN				((fSignal)-2)			/* ignore signal */
 #define SIG_ERR				((fSignal)-1)			/* error-return */
@@ -39,6 +39,7 @@
 #define SIG_ALARM			6						/* for alarm() */
 #define SIG_USR1			7						/* can be used for everything */
 #define SIG_USR2			8						/* can be used for everything */
+#define SIG_CANCEL			9						/* is sent by cancel() */
 
 /* standarg signal-names */
 #define SIGABRT				SIG_KILL

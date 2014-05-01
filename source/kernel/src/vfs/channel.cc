@@ -340,9 +340,17 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 
+	/* send SIG_CANCEL to the handling thread of this channel (this might be dead; so use getRef) */
+	bool sent = false;
+	Thread *t = Thread::getRef(handler);
+	if(t) {
+		sent = Signals::addSignalFor(t,SIG_CANCEL);
+		Thread::relRef(t);
+	}
+
 	int res;
 	if((res = isSupported(DEV_CANCEL)) < 0)
-		return res;
+		return sent ? 0 : res;
 
 	ib << mid;
 	res = file->sendMsg(pid,MSG_DEV_CANCEL,ib.buffer(),ib.pos(),NULL,0);

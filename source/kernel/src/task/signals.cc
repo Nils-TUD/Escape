@@ -57,13 +57,15 @@ bool Signals::checkAndStart(Thread *t,int *sig,handler_func *handler) {
 	return false;
 }
 
-void Signals::addSignalFor(Thread *t,int signal) {
+bool Signals::addSignalFor(Thread *t,int signal) {
 	assert(signal < SIG_COUNT);
 	if(isFatal(signal) || t->sigHandler[signal] != SIG_DFL) {
 		Atomic::fetch_and_or(&t->sigmask,1 << signal);
 		if(!t->isIgnoringSigs())
 			t->unblock();
+		return true;
 	}
+	return false;
 }
 
 const char *Signals::getName(int signal) {

@@ -79,8 +79,9 @@ public:
 	};
 
 	explicit StreamSocket(int f,int proto)
-			: Socket(f,proto), _timeoutId(Timeouts::allocateId()), _localPort(), _remoteAddr(),
-			  _mss(DEF_MSS), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(), _rxCircle(), _push() {
+			: Socket(f,proto), _closed(false), _timeoutId(Timeouts::allocateId()), _localPort(),
+			  _remoteAddr(), _mss(DEF_MSS), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(),
+			  _rxCircle(), _push() {
 		if(proto != ipc::Socket::PROTO_TCP)
 			VTHROWE("Protocol " << proto << " is not supported by stream socket",-ENOTSUP);
 
@@ -150,6 +151,9 @@ private:
 			_pending.count = 0;
 		}
 	}
+
+	/* true if the client closed the socket */
+	bool _closed;
 
 	/* our id for programming timeouts */
 	int _timeoutId;

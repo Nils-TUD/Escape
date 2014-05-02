@@ -89,6 +89,8 @@ StreamSocket::~StreamSocket() {
 void StreamSocket::state(State st) {
 	PRINT_TCP(_localPort,remotePort(),"went from %s to %s",stateName(_state),stateName(st));
 	_state = st;
+	if(_state == STATE_CLOSED && _closed)
+		delete this;
 }
 
 int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
@@ -206,14 +208,15 @@ ssize_t StreamSocket::recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t siz
 }
 
 void StreamSocket::disconnect() {
+	_closed = true;
 	switch(_state) {
 		// if the socket is completely closed, we can destroy it immediately
 		case STATE_CLOSED:
 		// if we're not connected yet, there is no reason to wait or start the disconnect procedure
 		case STATE_SYN_SENT:
 		case STATE_LISTEN:
-			delete this;
-			return;
+			state(STATE_CLOSED);
+			break;
 
 		case STATE_LAST_ACK:
 		case STATE_FIN_WAIT_1:
@@ -237,11 +240,9 @@ void StreamSocket::disconnect() {
 
 void StreamSocket::timeout() {
 	switch(_state) {
-		case STATE_TIME_WAIT: {
+		case STATE_TIME_WAIT:
 			state(STATE_CLOSED);
-			delete this;
-		}
-		break;
+			break;
 
 		case STATE_ESTABLISHED:
 			if(_pending.count > 0) {
@@ -267,8 +268,8 @@ void StreamSocket::timeout() {
 						_ctrlpkt.timeout);
 				}
 				else {
-					state(STATE_CLOSED);
 					replyPending<int>(-ETIMEOUT);
+					state(STATE_CLOSED);
 				}
 			}
 			else
@@ -313,8 +314,8 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 				// this is already done in the client-socket, so just go back to closed.
 				case STATE_SYN_RECEIVED:
 				default:
-					state(STATE_CLOSED);
 					replyPending(-ECONNRESET);
+					state(STATE_CLOSED);
 					break;
 			}
 		}
@@ -456,8 +457,10 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		break;
 
 		case STATE_LAST_ACK: {
-			if(tcp->ctrlFlags & TCP::FL_ACK)
+			if(tcp->ctrlFlags & TCP::FL_ACK) {
 				state(STATE_CLOSED);
+				return;
+			}
 		}
 		break;
 

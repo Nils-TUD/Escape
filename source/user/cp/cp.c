@@ -29,9 +29,12 @@
 static ulong shmname;
 static void *shm;
 static bool rec = false;
+static bool force = false;
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <source>... <dest>\n",name);
+	fprintf(stderr,"Usage: %s [-rf] <source>... <dest>\n",name);
+	fprintf(stderr,"\t-r    copy directories recursively\n");
+	fprintf(stderr,"\t-f    overwrite existing files\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -47,13 +50,19 @@ static void createBuffer(void) {
 }
 
 static void copyFile(const char *src,const char *dest) {
+	sFileInfo info;
+	if(stat(dest,&info) == 0 && !force) {
+		printe("skipping '%s', '%s' exists",src,dest);
+		return;
+	}
+
 	int infd = open(src,IO_READ);
 	if(infd < 0) {
 		printe("open of '%s' for reading failed",src);
 		return;
 	}
 
-	int outfd = open(dest,IO_WRITE | IO_CREATE);
+	int outfd = open(dest,IO_WRITE | IO_CREATE | IO_TRUNCATE);
 	if(outfd < 0) {
 		close(infd);
 		printe("open of '%s' for writing failed",dest);
@@ -110,7 +119,7 @@ static void copy(const char *src,const char *dest) {
 }
 
 int main(int argc,const char *argv[]) {
-	int res = ca_parse(argc,argv,0,"r",&rec);
+	int res = ca_parse(argc,argv,0,"r f",&rec,&force);
 	if(res < 0 || ca_getFreeCount() < 2) {
 		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);

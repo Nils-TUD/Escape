@@ -158,11 +158,10 @@ public:
 					}
 
 					// destroy current socket and create a new one (ensure that we keep the shm)
-					char *shm = c->shm();
-					c->shm(NULL);
+					std::shared_ptr<SharedMemory> shm = c->sharedmem();
 					delete c;
 					HTTPClient *nc = new HTTPClient(is.fd(),newloc.c_str() + SSTRLEN("http://"),true);
-					nc->shm(shm);
+					nc->sharedmem(shm);
 
 					// just assign the new client to the same slot
 					add(is.fd(),nc);

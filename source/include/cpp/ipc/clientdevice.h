@@ -26,34 +26,59 @@
 #include <esc/sync.h>
 #include <vthrow.h>
 #include <mutex>
+#include <memory>
 
 namespace ipc {
+
+class SharedMemory {
+public:
+	explicit SharedMemory() : addr(), ino(), dev() {
+	}
+	explicit SharedMemory(char *_addr,inode_t _ino,dev_t _dev)
+		: addr(_addr), ino(_ino), dev(_dev) {
+	}
+	~SharedMemory() {
+		if(addr)
+			munmap(addr);
+	}
+
+	char *addr;
+	inode_t ino;
+	dev_t dev;
+};
+
+template<class C>
+class ClientDevice;
 
 /**
  * Default client for ClientDevice.
  */
 class Client {
+	template<class C>
+	friend class ClientDevice;
+
 public:
 	explicit Client(int f) : _fd(f), _shm() {
 	}
 	virtual ~Client() {
-		if(_shm)
-			munmap(_shm);
 	}
 
 	int fd() const {
 		return _fd;
 	}
 	char *shm() {
+		return _shm ? _shm->addr : NULL;
+	}
+	std::shared_ptr<SharedMemory> sharedmem() const {
 		return _shm;
 	}
-	void shm(char *ptr) {
-		_shm = ptr;
+	void sharedmem(const std::shared_ptr<SharedMemory> &s) {
+		_shm = s;
 	}
 
 private:
 	int _fd;
-	char *_shm;
+	std::shared_ptr<SharedMemory> _shm;
 };
 
 /**
@@ -156,6 +181,46 @@ public:
 			delete c;
 	}
 
+	/**
+	 * Joins client <c> to the given shared memory.
+	 *
+	 * @param c the client
+	 * @param path the file path
+	 * @param size the size of the memory
+	 * @param flags the flags to use for joinbuf
+	 * @return 0 on success
+	 */
+	int joinshm(C *c,const char *path,size_t size,uint flags = 0) {
+		sFileInfo info;
+		int res = stat(path,&info);
+
+		if(res == 0) {
+			// check whether we already have this file. we can't map it twice
+			std::lock_guard<std::mutex> guard(_mutex);
+			res = -ENOENT;
+			for(auto it = _clients.begin(); it != _clients.end(); ++it) {
+				C *oc = it->second;
+				if(c != oc && oc->_shm && oc->_shm->ino == info.inodeNo && oc->_shm->dev == info.device) {
+					c->_shm = oc->_shm;
+					res = 0;
+					break;
+				}
+			}
+
+			// if not, map it
+			if(res == -ENOENT) {
+				void *addr = joinbuf(path,size,flags);
+				if(!addr)
+					res = errno;
+				else {
+					c->_shm.reset(new SharedMemory(reinterpret_cast<char*>(addr),info.inodeNo,info.device));
+					res = 0;
+				}
+			}
+		}
+		return res;
+	}
+
 protected:
 	void open(IPCStream &is) {
 		add(is.fd(),new C(is.fd()));
@@ -168,11 +233,10 @@ protected:
 		char path[MAX_PATH_LEN];
 		FileShFile::Request r(path,sizeof(path));
 		is >> r;
+
 		assert(c->shm() == NULL && !is.error());
-
-		c->shm(static_cast<char*>(joinbuf(r.path.str(),r.size,0)));
-
-		is << FileShFile::Response(c->shm() != NULL ? 0 : errno) << Reply();
+		int res = joinshm(c,path,r.size,0);
+		is << FileShFile::Response(res) << Reply();
 	}
 
 	void close(IPCStream &is) {

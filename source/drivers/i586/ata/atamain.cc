@@ -86,9 +86,8 @@ public:
 		 * we populate it immediately and lock it into memory. additionally, we specify
 		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
 		 * to swap (which would cause a deadlock, because we're doing that). */
-		c->shm(static_cast<char*>(joinbuf(path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED)));
-
-		is << FileShFile::Response(c->shm() != NULL ? 0 : errno) << Reply();
+		int res = joinshm(c,path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
+		is << FileShFile::Response(res) << Reply();
 	}
 
 	void read(IPCStream &is) {

@@ -28,6 +28,7 @@ namespace std {
 		_fd = ::open(s,omode);
 		if(_fd < 0)
 			return nullptr;
+		_close = true;
 		_mode = mode;
 		_totalInPos = 0;
 		_inPos = 0;
@@ -79,7 +80,8 @@ namespace std {
 		        fflush(stdout);
 		    if(_fd == STDERR_FILENO)
 		        fflush(stderr);
-			::close(_fd);
+		    if(_close)
+				::close(_fd);
 			_fd = -1;
 		}
 		return this;

@@ -41,7 +41,7 @@ namespace std {
 		 * Creates a new filebuf
 		 */
 		explicit filebuf()
-			: _fd(-1), _inPos(0), _inMax(0), _inBuf(nullptr), _totalInPos(0), _outPos(0),
+			: _fd(-1), _close(false), _inPos(0), _inMax(0), _inBuf(nullptr), _totalInPos(0), _outPos(0),
 			  _outBuf(nullptr), _mode(0) {
 		}
 		/**
@@ -61,7 +61,8 @@ namespace std {
 		filebuf* open(const char* s,ios_base::openmode mode);
 
 		/**
-		 * Uses the given file-descriptor with given open-mode
+		 * Uses the given file-descriptor with given open-mode. It will NOT close the file in the
+		 * destructor.
 		 *
 		 * @param fd the file-descriptor
 		 * @param mode the mode
@@ -130,6 +131,7 @@ namespace std {
 
 	private:
 		int _fd;
+		bool _close;
 		mutable pos_type _inPos;
 		mutable pos_type _inMax;
 		mutable char* _inBuf;

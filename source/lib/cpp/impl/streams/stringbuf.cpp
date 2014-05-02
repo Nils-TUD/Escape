@@ -48,6 +48,11 @@ namespace std {
 			throw bad_state(string("No read-permission or unable to move back"));
 		_pos--;
 	}
+	const stringbuf::char_type *stringbuf::input() const {
+		if(!(_mode & ios_base::in))
+			throw bad_state("file not open for reading");
+		return _str.c_str() + _pos;
+	}
 
 	void stringbuf::put(char_type c) {
 		if(!(_mode & ios_base::out))

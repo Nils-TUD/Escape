@@ -115,6 +115,11 @@ namespace std {
 		_inPos--;
 		_totalInPos--;
 	}
+	const filebuf::char_type *filebuf::input() const {
+		if(_fd < 0 || !(_mode & ios_base::in))
+			throw bad_state("file not open for reading");
+		return _inBuf + _inPos;
+	}
 
 	void filebuf::put(char_type c) {
 		if(_fd < 0 || !(_mode & ios_base::out))

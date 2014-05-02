@@ -93,6 +93,12 @@ namespace std {
 		 * @return the number of available characters
 		 */
 		virtual pos_type available() const;
+		/**
+		 * @return the number of remaining characters in the buffer
+		 */
+		virtual pos_type remaining() const {
+			return _inMax - _inPos;
+		}
 
 		/**
 		 * @return the char at the current position (or EOF)
@@ -112,6 +118,10 @@ namespace std {
 		 * @throws bad_state if reading is not allowed or we're at position 0
 		 */
 		virtual void unget();
+		/**
+		 * @return a pointer to the buffered input data
+		 */
+		virtual const char_type *input() const;
 
 		/**
 		 * Puts the given character into the buffer

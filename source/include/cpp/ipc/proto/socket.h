@@ -32,7 +32,7 @@ namespace ipc {
 typedef uint16_t port_t;
 
 class Socket {
-	explicit Socket(int fd) : _close(true), _is(fd) {
+	explicit Socket(int f) : _close(true), _is(f) {
 	}
 
 public:
@@ -95,6 +95,13 @@ public:
 	}
 
 	/**
+	 * @return the file-descriptor for this socket
+	 */
+	int fd() const {
+		return _is.fd();
+	}
+
+	/**
 	 * Connects to the given remote endpoint.
 	 *
 	 * @param addr the address to connect to
@@ -142,10 +149,10 @@ public:
 	 * @throws if the operation failed
 	 */
 	Socket accept() {
-		int fd = creatsibl(_is.fd(),0);
-		if(fd < 0)
-			VTHROWE("accept()",fd);
-		return Socket(fd);
+		int nfd = creatsibl(_is.fd(),0);
+		if(nfd < 0)
+			VTHROWE("accept()",nfd);
+		return Socket(nfd);
 	}
 
 	/**

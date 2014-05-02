@@ -65,6 +65,7 @@ public:
 	struct CtrlPacket {
 		uint8_t flags;
 		MSSOption option;
+		CircularBuf::seq_type seqNo;
 		size_t optSize;
 		uint timeout;
 	};

@@ -364,7 +364,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 			}
 		}
 		// if this is an ACK for our last control packet, stop waiting for it
-		else if(_ctrlpkt.flags != 0) {
+		else if(ackNo > _ctrlpkt.seqNo && _ctrlpkt.flags != 0) {
 			_ctrlpkt.flags = 0;
 			Timeouts::cancel(_timeoutId);
 		}
@@ -397,18 +397,20 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		break;
 
 		case STATE_SYN_SENT: {
-			if((tcp->ctrlFlags & (TCP::FL_ACK | TCP::FL_SYN)) == (TCP::FL_ACK | TCP::FL_SYN)) {
-				size_t txbufSize = be16tocpu(tcp->windowSize);
-				txbufSize = std::max<size_t>(1024,std::min<size_t>(64 * 1024,txbufSize));
-				_txCircle.init(_txCircle.nextSeq(),txbufSize);
-				_rxCircle.init(seqNo + 1,RECV_BUF_SIZE);
-				_mss = parseMSS(tcp);
+			if(ackNo > _ctrlpkt.seqNo) {
+				if((tcp->ctrlFlags & (TCP::FL_ACK | TCP::FL_SYN)) == (TCP::FL_ACK | TCP::FL_SYN)) {
+					size_t txbufSize = be16tocpu(tcp->windowSize);
+					txbufSize = std::max<size_t>(1024,std::min<size_t>(64 * 1024,txbufSize));
+					_txCircle.init(_txCircle.nextSeq(),txbufSize);
+					_rxCircle.init(seqNo + 1,RECV_BUF_SIZE);
+					_mss = parseMSS(tcp);
 
-				state(STATE_ESTABLISHED);
-				replyPending<int>(0);
+					state(STATE_ESTABLISHED);
+					replyPending<int>(0);
 
-				// since this packet is not in our rxCircle, we have to force the ACK
-				ackForced = true;
+					// since this packet is not in our rxCircle, we have to force the ACK
+					ackForced = true;
+				}
 			}
 		}
 		break;
@@ -420,7 +422,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		break;
 
 		case STATE_SYN_RECEIVED: {
-			if(tcp->ctrlFlags & TCP::FL_ACK) {
+			if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK)) {
 				// answer the accept call
 				assert(_pending.count > 0);
 				ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
@@ -434,12 +436,12 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 
 		case STATE_FIN_WAIT_1: {
 			if(tcp->ctrlFlags & TCP::FL_FIN) {
-				if(tcp->ctrlFlags & TCP::FL_ACK)
+				if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK))
 					state(STATE_TIME_WAIT);
 				else
 					state(STATE_CLOSING);
 			}
-			else if(tcp->ctrlFlags & TCP::FL_ACK)
+			else if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK))
 				state(STATE_FIN_WAIT_2);
 		}
 		break;
@@ -451,13 +453,13 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		break;
 
 		case STATE_CLOSING: {
-			if(tcp->ctrlFlags & TCP::FL_ACK)
+			if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK))
 				state(STATE_TIME_WAIT);
 		}
 		break;
 
 		case STATE_LAST_ACK: {
-			if(tcp->ctrlFlags & TCP::FL_ACK) {
+			if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK)) {
 				state(STATE_CLOSED);
 				return;
 			}
@@ -526,12 +528,13 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 	// do we expect an response?
 	if(flags & ~TCP::FL_ACK) {
 		// then remember that we've send the control-packed and wait for the ACK
-		_txCircle.push(_txCircle.nextSeq(),CircularBuf::TYPE_CTRL,NULL,0);
+		_ctrlpkt.seqNo = _txCircle.nextSeq();
 		_ctrlpkt.flags = flags;
 		_ctrlpkt.optSize = optSize;
 		if(opt)
 			_ctrlpkt.option = *opt;
 		_ctrlpkt.timeout = 1000;
+		_txCircle.push(_txCircle.nextSeq(),CircularBuf::TYPE_CTRL,NULL,0);
 		Timeouts::program(_timeoutId,std::make_memfun(this,&StreamSocket::timeout),_ctrlpkt.timeout);
 	}
 	return 0;

@@ -54,6 +54,7 @@ void Timeouts::doCancel(int id) {
 
 int Timeouts::thread(void*) {
 	while(1) {
+		// TODO we shouldn't wake up all the time when there is no timeout to trigger
 		sleep(100);
 
 		_mutex.lock();

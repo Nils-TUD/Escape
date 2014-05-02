@@ -45,7 +45,7 @@ static void sigcancel(int) {
 class MyCancelDevice : public ClientDevice<MyClient> {
 public:
 	explicit MyCancelDevice(const char *name,mode_t mode)
-		: ClientDevice<MyClient>(name,mode,DEV_TYPE_BLOCK,DEV_CANCEL | DEV_READ) {
+		: ClientDevice<MyClient>(name,mode,DEV_TYPE_BLOCK,DEV_CANCEL | DEV_CANCELSIG | DEV_READ) {
 		set(MSG_FILE_READ,std::make_memfun(this,&MyCancelDevice::read));
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&MyCancelDevice::cancel));
 	}

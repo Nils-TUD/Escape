@@ -244,6 +244,18 @@ static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,siz
 		(uintptr_t)buffer + bufsize <= (uintptr_t)shmem + shmsize;
 }
 
+uint VFSChannel::getReceiveFlags() const {
+	uint flags = 0;
+	/* allow signals if either the cancel message or cancel signal is supported */
+	if(isSupported(DEV_CANCEL | DEV_CANCELSIG) == 0)
+		flags |= VFS_SIGNALS;
+	/* but enforce blocking if the cancel message is not supported since we have to leave the
+	 * channel in a consistent state */
+	if(isSupported(DEV_CANCEL) < 0)
+		flags |= VFS_BLOCK;
+	return flags;
+}
+
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
@@ -259,9 +271,8 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	if(res < 0)
 		return res;
 
-	/* only allow signals during that operation, if we can cancel it */
 	msgid_t mid = res;
-	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : VFS_BLOCK;
+	uint flags = getReceiveFlags();
 	while(1) {
 		/* read response and ensure that we don't get killed until we've received both messages
 		 * (otherwise the channel might get in an inconsistent state) */
@@ -309,9 +320,8 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	if(res < 0)
 		return res;
 
-	/* only allow signals during that operation, if we can cancel it */
 	msgid_t mid = res;
-	uint flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : VFS_BLOCK;
+	uint flags = getReceiveFlags();
 	while(1) {
 		/* read response */
 		ib.reset();
@@ -342,10 +352,12 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 
 	/* send SIG_CANCEL to the handling thread of this channel (this might be dead; so use getRef) */
 	bool sent = false;
-	Thread *t = Thread::getRef(handler);
-	if(t) {
-		sent = Signals::addSignalFor(t,SIG_CANCEL);
-		Thread::relRef(t);
+	if(isSupported(DEV_CANCELSIG) == 0) {
+		Thread *t = Thread::getRef(handler);
+		if(t) {
+			sent = Signals::addSignalFor(t,SIG_CANCEL);
+			Thread::relRef(t);
+		}
 	}
 
 	int res;
@@ -424,10 +436,8 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 	if(res < 0)
 		goto error;
 
-	/* only allow signals during that operation, if we can cancel it */
-	/* the same for blocking since we have to leave the channel in a consistent state */
 	mid = res;
-	flags = (isSupported(DEV_CANCEL) == 0) ? VFS_SIGNALS : VFS_BLOCK;
+	flags = getReceiveFlags();
 	while(1) {
 		/* read response */
 		ib.reset();

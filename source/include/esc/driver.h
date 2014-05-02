@@ -28,8 +28,9 @@
 #define DEV_WRITE					4		/* cancelable, if DEV_CANCEL is supported */
 #define DEV_CLOSE					8
 #define DEV_SHFILE					16
-#define DEV_CANCEL					32
-#define DEV_CREATSIBL				64		/* cancelable, if DEV_CANCEL is supported */
+#define DEV_CANCEL					32		/* cancel-message */
+#define DEV_CANCELSIG				64		/* cancel-signal (SIG_CANCEL) */
+#define DEV_CREATSIBL				128		/* cancelable, if DEV_CANCEL is supported */
 
 /* supports read or write, is byte-oriented and random access is not supported */
 #define DEV_TYPE_CHAR				0

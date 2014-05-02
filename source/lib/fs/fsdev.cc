@@ -102,14 +102,17 @@ void FSDevice::devclose(IPCStream &is) {
 }
 
 void FSDevice::open(IPCStream &is) {
-	uint flags;
+	char path[MAX_PATH_LEN];
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
-	is >> flags >> u.uid >> u.gid >> u.pid >> path;
+	FileOpen::Request r(path,sizeof(path));
+	is >> r;
 
-	inode_t no = _fs->resolve(&u,path.str(),flags);
+	u.gid = r.gid;
+	u.uid = r.uid;
+	u.pid = r.pid;
+	inode_t no = _fs->resolve(&u,path,r.flags);
 	if(no >= 0) {
-		no = _fs->open(&u,no,flags);
+		no = _fs->open(&u,no,r.flags);
 		if(no >= 0)
 			add(is.fd(),new OpenFile(is.fd(),no));
 	}
@@ -118,22 +121,23 @@ void FSDevice::open(IPCStream &is) {
 
 void FSDevice::read(IPCStream &is) {
 	OpenFile *file = (*this)[is.fd()];
-	size_t offset,count;
-	ssize_t res,shmemoff;
-	is >> offset >> count >> shmemoff;
+	FileRead::Request r;
+	is >> r;
 
 	void *buffer = NULL;
-	if(shmemoff == -1)
-		buffer = malloc(count);
+	if(r.shmemoff == -1)
+		buffer = malloc(r.count);
 	else
-		buffer = (char*)file->shm() + shmemoff;
+		buffer = (char*)file->shm() + r.shmemoff;
+
+	ssize_t res;
 	if(buffer == NULL)
 		res = -ENOMEM;
 	else
-		res = _fs->read(file->ino,buffer,offset,count);
+		res = _fs->read(file->ino,buffer,r.offset,r.count);
 
 	is << res << Reply();
-	if(buffer && shmemoff == -1) {
+	if(buffer && r.shmemoff == -1) {
 		if(res > 0)
 			is << ReplyData(buffer,res);
 		free(buffer);
@@ -142,20 +146,18 @@ void FSDevice::read(IPCStream &is) {
 
 void FSDevice::write(IPCStream &is) {
 	OpenFile *file = (*this)[is.fd()];
-	size_t offset,count;
-	ssize_t res,shmemoff;
-	is >> offset >> count >> shmemoff;
+	FileWrite::Request r;
+	is >> r;
 
-	char *data = file->shm() + shmemoff;
-	if(shmemoff == -1) {
-		data = new char[count];
-		is >> ReceiveData(data,count);
+	char *data = file->shm() + r.shmemoff;
+	if(r.shmemoff == -1) {
+		data = new char[r.count];
+		is >> ReceiveData(data,r.count);
 	}
 
-	res = _fs->write(file->ino,data,offset,count);
-
+	ssize_t res = _fs->write(file->ino,data,r.offset,r.count);
 	is << res << Reply();
-	if(shmemoff == -1)
+	if(r.shmemoff == -1)
 		delete[] data;
 }
 

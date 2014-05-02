@@ -140,12 +140,17 @@ namespace std {
 		if(_inPos >= _inMax) {
 			if(!_inBuf)
 				_inBuf = new char[IN_BUF_SIZE];
-			_inMax = IGNSIGS(::read(_fd,_inBuf,IN_BUF_SIZE));
+
+			if(_mode & ios_base::signals)
+				_inMax = ::read(_fd,_inBuf,IN_BUF_SIZE);
+			else
+				_inMax = IGNSIGS(::read(_fd,_inBuf,IN_BUF_SIZE));
+
+			_inPos = 0;
 			if((signed)_inMax <= 0) {
 				_inMax = 0;
 				return false;
 			}
-			_inPos = 0;
 		}
 		return true;
 	}

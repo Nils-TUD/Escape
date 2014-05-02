@@ -106,6 +106,7 @@ namespace std {
 		static const openmode out;			// open for output
 		static const openmode trunc;		// truncate an existing stream when opening
 		static const openmode noblock;		// no block when reading or receiving a msg from devices
+		static const openmode signals;		// stop if a syscall was interrupted by a signal
 
 		typedef unsigned char seekdir;
 		static const seekdir beg;			// seek relative to the beginning of the stream

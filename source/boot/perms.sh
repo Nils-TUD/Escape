@@ -28,6 +28,7 @@ chown -R $root:$root $dir/etc
 chmod -R 0644 $dir/etc
 chmod 0755 $dir/etc
 chmod 0755 $dir/etc/keymaps
+chmod 0755 $dir/etc/net
 chmod 0644 $dir/etc/users
 chmod 0600 $dir/etc/passwd
 # /root

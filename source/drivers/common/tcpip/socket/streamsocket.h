@@ -98,35 +98,42 @@ public:
 	virtual void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset);
 	virtual void disconnect();
 
+	ipc::port_t localPort() const {
+		return _localPort;
+	}
+	ipc::Net::IPv4Addr remoteIP() const {
+		return ipc::Net::IPv4Addr(_remoteAddr.d.ipv4.addr);
+	}
+	ipc::port_t remotePort() const {
+		return _remoteAddr.d.ipv4.port;
+	}
+	const char *state() const {
+		return stateName(_state);
+	}
+
 private:
 	void state(State st);
 	static uint16_t parseMSS(const TCP *tcp);
 
-	ipc::Net::IPv4Addr remoteIP() {
-		return ipc::Net::IPv4Addr(_remoteAddr.d.ipv4.addr);
-	}
-	ipc::port_t remotePort() {
-		return _remoteAddr.d.ipv4.port;
-	}
-	bool closing() {
+	bool closing() const {
 		return _state == STATE_CLOSED || _state == STATE_CLOSING || _state == STATE_CLOSE_WAIT ||
 			_state == STATE_FIN_WAIT_1 || _state == STATE_FIN_WAIT_2 || _state == STATE_LAST_ACK ||
 			_state == STATE_TIME_WAIT;
 	}
-	bool synchronized() {
+	bool synchronized() const {
 		return _state != STATE_CLOSED && _state != STATE_SYN_RECEIVED &&
 			_state != STATE_SYN_SENT && _state != STATE_LISTEN;
 	}
-	bool shouldPush() {
+	bool shouldPush() const {
 		return closing() || (_rxCircle.hasData() && (_push || pushForced()));
 	}
-	bool pushForced() {
+	bool pushForced() const {
 		size_t cap = _rxCircle.capacity();
 		size_t left = _rxCircle.windowSize();
 		return left < (cap * FORCE_PSH_PERC) / 100;
 	}
 
-	const char *stateName(State st);
+	const char *stateName(State st) const;
 	ssize_t sendCtrlPkt(uint8_t flags,MSSOption *opt = NULL,bool forceACK = false);
 	void sendData();
 	void timeout();

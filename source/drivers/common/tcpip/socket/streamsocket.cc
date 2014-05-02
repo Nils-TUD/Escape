@@ -616,7 +616,7 @@ void StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size)
 		delete[] buf;
 }
 
-const char *StreamSocket::stateName(State st) {
+const char *StreamSocket::stateName(State st) const {
 	static const char *names[] = {
 		[STATE_CLOSED]			= "STATE_CLOSED",
 		[STATE_SYN_SENT]		= "STATE_SYN_SENT",

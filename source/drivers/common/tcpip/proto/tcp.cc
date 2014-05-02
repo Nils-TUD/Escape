@@ -138,3 +138,16 @@ ssize_t TCP::receive(Link&,const Packet &packet) {
 		replyReset(pkt);
 	return 0;
 }
+
+void TCP::printSockets(std::ostream &os) {
+	for(auto it = _socks.begin(); it != _socks.end(); ++it) {
+		const Route *r = Route::find(it->second->remoteIP());
+		os << it->second->fd() << " TCP " << it->second->state() << " ";
+		if(r)
+			os << r->link->ip();
+		else
+			os << "?";
+		os << ":" << it->second->localPort() << "->";
+		os << it->second->remoteIP() << ":" << it->second->remotePort() << "\n";
+	}
+}

@@ -46,6 +46,8 @@ public:
 		const void *data,size_t nbytes);
 	static ssize_t receive(Link &link,const Packet &packet);
 
+	static void printSockets(std::ostream &os);
+
 private:
 	static ssize_t addSocket(DGramSocket *sock,ipc::port_t port) {
 		socket_map::iterator it = _socks.find(port);

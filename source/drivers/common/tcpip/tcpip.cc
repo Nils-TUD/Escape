@@ -447,6 +447,21 @@ public:
 	}
 };
 
+class SocketsFileDevice : public ipc::FileDevice {
+public:
+	explicit SocketsFileDevice(const char *path,mode_t mode)
+		: ipc::FileDevice(path,mode) {
+	}
+
+	virtual std::string handleRead() {
+		std::ostringstream os;
+		std::lock_guard<std::mutex> guard(mutex);
+		TCP::printSockets(os);
+		UDP::printSockets(os);
+		return os.str();
+	}
+};
+
 static int receiveThread(void *arg) {
 	Link *link = reinterpret_cast<Link*>(arg);
 	uint8_t *buffer = new uint8_t[link->mtu()];
@@ -488,6 +503,12 @@ static int routesFileThread(void*) {
 
 static int arpFileThread(void*) {
 	ARPFileDevice dev("/system/net/arp",0444);
+	dev.loop();
+	return 0;
+}
+
+static int socketsFileThread(void*) {
+	SocketsFileDevice dev("/system/net/sockets",0444);
 	dev.loop();
 	return 0;
 }
@@ -534,6 +555,8 @@ int main() {
 		error("Unable to start routes-file thread");
 	if(startthread(arpFileThread,NULL) < 0)
 		error("Unable to start arp-file thread");
+	if(startthread(socketsFileThread,NULL) < 0)
+		error("Unable to start sockets-file thread");
 	if(startthread(Timeouts::thread,NULL) < 0)
 		error("Unable to start timeout thread");
 

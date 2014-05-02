@@ -64,6 +64,8 @@ public:
 	static ssize_t receive(Link &link,const Packet &packet);
 	static void replyReset(const Ethernet<IPv4<TCP>> *pkt);
 
+	static void printSockets(std::ostream &os);
+
 private:
 	static const char *flagsToStr(uint8_t flags);
 	static ssize_t sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,

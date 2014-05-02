@@ -66,3 +66,8 @@ ssize_t UDP::receive(Link&,const Packet &packet) {
 	}
 	return 0;
 }
+
+void UDP::printSockets(std::ostream &os) {
+	for(auto it = _socks.begin(); it != _socks.end(); ++it)
+		os << it->second->fd() << " UDP *:" << it->first << "\n";
+}

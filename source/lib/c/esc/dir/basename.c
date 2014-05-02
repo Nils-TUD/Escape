@@ -20,29 +20,19 @@
 #include <esc/dir.h>
 #include <string.h>
 
-char *dirname(char *path) {
+char *basename(char *path) {
 	static char dot[] = ".";
 	if(!path || !path[0])
 		return dot;
 	if((path[0] == '.' || path[0] == '/') && path[1] == '\0')
 		return path;
-	if(path[0] == '.' && path[1] == '.' && path[2] == '\0') {
-		path[1] = '\0';
+	if(path[0] == '.' && path[1] == '.' && path[2] == '\0')
 		return path;
-	}
 
 	size_t len = strlen(path);
 	while(len > 0 && path[len - 1] == '/')
-		len--;
+		path[--len] = '\0';
 	while(len > 0 && path[len - 1] != '/')
 		len--;
-	while(len > 0 && path[len - 1] == '/')
-		len--;
-	if(path[len] == '/')
-		path[len > 0 ? len : 1] = '\0';
-	else {
-		path[0] = '.';
-		path[1] = '\0';
-	}
-	return path;
+	return path + len;
 }

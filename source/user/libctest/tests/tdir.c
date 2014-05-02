@@ -29,6 +29,8 @@
 static void test_dir(void);
 static void test_opendir(void);
 static void test_cleanpath(void);
+static void test_basename(void);
+static void test_dirname(void);
 
 /* our test-module */
 sTestModule tModDir = {
@@ -39,6 +41,8 @@ sTestModule tModDir = {
 static void test_dir(void) {
 	test_opendir();
 	test_cleanpath();
+	test_basename();
+	test_dirname();
 }
 
 static void test_opendir(void) {
@@ -133,6 +137,68 @@ static void test_cleanpath(void) {
 		test_caseFailed("Copied too much");
 
 	free(path);
+
+	test_caseSucceeded();
+}
+
+static void test_basename(void) {
+	struct BasenameTest {
+		const char *input;
+		const char *expected;
+	} tests[] = {
+		{NULL,"."},
+		{"","."},
+		{"/","/"},
+		{".","."},
+		{"..",".."},
+		{"a","a"},
+		{"foo","foo"},
+		{"/foo/bar","bar"},
+		{"/foo/bar/","bar"},
+		{"/foo/bar///","bar"},
+	};
+
+	test_caseStart("Testing basename");
+
+	for(size_t i = 0; i < ARRAY_SIZE(tests); ++i) {
+		char *cpy = tests[i].input ? strdup(tests[i].input) : NULL;
+		test_assertTrue(tests[i].input == NULL || cpy != NULL);
+		test_assertStr(basename(cpy),tests[i].expected);
+		free(cpy);
+	}
+
+	test_caseSucceeded();
+}
+
+static void test_dirname(void) {
+	struct DirnameTest {
+		const char *input;
+		const char *expected;
+	} tests[] = {
+		{NULL,"."},
+		{"","."},
+		{"/","/"},
+		{".","."},
+		{"..","."},
+		{"a","."},
+		{"foo","."},
+		{"/foo/bar","/foo"},
+		{"/foo/bar/","/foo"},
+		{"/foo/bar///","/foo"},
+		{"/a/","/"},
+		{"abc///","."},
+		{"abc//def///","abc"},
+		{"abc/def/.","abc/def"},
+	};
+
+	test_caseStart("Testing dirname");
+
+	for(size_t i = 0; i < ARRAY_SIZE(tests); ++i) {
+		char *cpy = tests[i].input ? strdup(tests[i].input) : NULL;
+		test_assertTrue(tests[i].input == NULL || cpy != NULL);
+		test_assertStr(dirname(cpy),tests[i].expected);
+		free(cpy);
+	}
 
 	test_caseSucceeded();
 }

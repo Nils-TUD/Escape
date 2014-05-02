@@ -50,11 +50,22 @@ size_t cleanpath(char *dst,size_t dstSize,const char *src);
 char *abspath(char *dst,size_t dstSize,const char *path);
 
 /**
- * Removes the last path-component, if possible
+ * Returns the base-name of the given path, i.e. the last path-component. It will not contain a
+ * slash, which is why <path> might get changed.
  *
- * @param path the path
+ * @param path the path to change
+ * @return the base-name
  */
-void dirname(char *path);
+char *basename(char *path);
+
+/**
+ * Returns the directory-name of the given path, i.e. the second last path-component. It might
+ * change <path>.
+ *
+ * @param path the path to change
+ * @return the directory-name
+ */
+char *dirname(char *path);
 
 /**
  * Opens the given directory

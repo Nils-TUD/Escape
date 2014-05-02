@@ -116,11 +116,14 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 	if(length > 0 && *(str + length - 1) != '/') {
 		/* and try the upper directory, too */
 		len = strlen(paths[2]);
-		paths[1] = (char*)malloc(len + 1);
+		/* len + 2 to leave one space for '/' */
+		paths[1] = (char*)malloc(len + 2);
 		if(paths[1] == NULL)
 			goto failed;
 		strcpy(paths[1],paths[2]);
 		dirname(paths[1]);
+		if(strcmp(paths[1],"/") != 0)
+			strcat(paths[1],"/");
 		/* it makes no sense to look in cleanpath(line) since line does not end with '/' */
 		free(paths[2]);
 		paths[2] = NULL;

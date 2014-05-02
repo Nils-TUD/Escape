@@ -128,7 +128,10 @@ void *joinbuf(const char *path,size_t size,int flags) {
 	if(fd < 0)
 		return NULL;
 	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
+	/* keep errno of mmap */
+	int error = errno;
 	close(fd);
+	errno = error;
 	return res;
 }
 

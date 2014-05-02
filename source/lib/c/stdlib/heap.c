@@ -146,7 +146,8 @@ void *malloc(size_t size) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
-		size_t i = 0,*trace = getStackTrace();
+		size_t i = 0;
+		uintptr_t *trace = getStackTrace();
 		debugf("[A] %x %d ",area->address,area->size);
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
@@ -222,7 +223,8 @@ void free(void *addr) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
-		size_t i = 0,*trace = getStackTrace();
+		size_t i = 0;
+		uintptr_t *trace = getStackTrace();
 		debugf("[F] %x %d ",area->address,area->size);
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);

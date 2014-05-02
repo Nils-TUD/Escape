@@ -127,6 +127,7 @@ private:
 
 static int drive_thread(void *arg) {
 	ATAPartitionDevice *dev = reinterpret_cast<ATAPartitionDevice*>(arg);
+	dev->bindto(gettid());
 	dev->loop();
 	return 0;
 }

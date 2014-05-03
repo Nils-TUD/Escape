@@ -175,7 +175,7 @@ if $dobuild; then
 fi
 
 # after building, check whether the requested binary really exists
-if [ "${cmd#*,}" = $cmd ] && [ "$binary" != "" ]; then
+if [ "${cmd#*,}" = "$cmd" ] && [ "$binary" != "" ]; then
     if [ ! -f "$build/bin/$binary" ]; then
         echo "The file $build/bin/$binary does not exist" >&2
         exit 1

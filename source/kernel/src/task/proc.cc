@@ -651,8 +651,10 @@ void ProcBase::terminate(int exitCode,int signal) {
 
 		/* print information to log */
 		if(signal != SIG_COUNT || exitCode != 0) {
-			Log::get().writef("Process %d:%s terminated by signal %d, exitCode %d\n",
-					p->pid,p->command,signal,exitCode);
+			Log::get().writef("Process %d:%s terminated ",p->pid,p->command);
+			if(signal != SIG_COUNT)
+				Log::get().writef("by signal %d ",signal);
+			Log::get().writef("with exitCode %d\n",exitCode);
 		}
 
 		/* send all other threads the kill signal */

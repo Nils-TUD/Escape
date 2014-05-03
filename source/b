@@ -142,6 +142,7 @@ case "$cmd" in
 			exit 1
 		fi
 		;;
+
 	straddr=*|dis=*|elf=*|constr=*|nm=*|nms=*|dbg=*)
 		if [ "`echo $cmd | grep '^straddr='`" != "" ] && [ "$script" = "" ]; then
 			echo "Usage: $0 $cmd <string>" >&2
@@ -149,14 +150,17 @@ case "$cmd" in
 		fi
 		binary=${cmd#*=}
 		;;
+
 	# for clean and distclean, it makes no sense to build it (this might even fail because e.g. scons has
 	# a non existing dependency which might be the reason the user wants to do a clean)
 	clean|distclean)
 		dobuild=false
 		;;
+
 	# check for unknown commands
 	list)
 		;;
+
 	?*)
 		echo "Unknown command '$cmd'" >&2
 		exit 1
@@ -183,12 +187,15 @@ case "$cmd" in
 	clean)
 		scons -c
 		;;
+
 	distclean)
 		rm -Rf build/*
 		;;
+
 	run)
 		./boot/$ESC_TARGET/$script $build "$ESC_SIM_FLAGS"
 		;;
+
 	dbg=*)
 		if [ "$ESC_TARGET" = "i586" ]; then
 			# the problem is that qemu terminates if it receives SIGINT. so, if we want to
@@ -243,21 +250,27 @@ case "$cmd" in
 		fi
 		rm -f $tmp
 		;;
+
 	dis=*)
 		$crossdir/bin/$cross-objdump -SC $build/bin/$binary | less
 		;;
+
 	elf=*)
 		$crossdir/bin/$cross-readelf -aW $build/bin/$binary | c++filt | less
 		;;
+
 	constr=*)
 		./tools/listconstr.sh $crossdir $cross $build/bin/$binary
 		;;
+
 	nm=*)
 		$crossdir/bin/$cross-nm -SC $build/bin/$binary | sort | less
 		;;
+
 	nms=*)
 		$crossdir/bin/$cross-nm -SC --size-sort $build/bin/$binary | less
 		;;
+
 	straddr=*)
 		echo "Strings containing '$script' in $binary:"
 		# find base address of .rodata
@@ -271,6 +284,7 @@ case "$cmd" in
 			sed 's/^ *\[ *\([[:xdigit:]]*\)\] *\(.*\)$/0x\1 \2/' | \
 			awk '{ printf("0x%x: %s %s %s %s %s %s\n",0x'$base' + strtonum($1),$2,$3,$4,$5,$6,$7) }'
 		;;
+
 	list)
 		echo "Start of section .text:"
 		ls -1 $build/bin | grep -v '\.a$' | while read l; do

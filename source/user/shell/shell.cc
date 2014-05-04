@@ -60,22 +60,22 @@ int main(int argc,char **argv) {
 	/* interactive mode */
 
 	/* give vterm our pid */
-	{
-		ipc::VTerm vterm(STDOUT_FILENO);
-		vterm.setShellPid(getpid());
-	}
+	ipc::VTerm vterm(STDOUT_FILENO);
+	vterm.setShellPid(getpid());
 
 	while(1) {
+		size_t width = vterm.getMode().cols;
 		/* create buffer (history will free it) */
-		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
+		buffer = (char*)malloc((width + 1) * sizeof(char));
 		if(buffer == NULL)
 			error("Not enough memory");
 
-		if(!shell_prompt())
+		ssize_t count = shell_prompt();
+		if(count < 0)
 			return EXIT_FAILURE;
 
 		/* read command */
-		int res = shell_readLine(buffer,MAX_CMD_LEN);
+		int res = shell_readLine(buffer,width - count);
 		if(res < 0)
 			error("Unable to read from STDIN");
 		if(res == 0)

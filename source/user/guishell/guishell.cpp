@@ -151,10 +151,8 @@ static int shellMain(const char *devName) {
 		error("Unable to redirect STDERR to %d",fout);
 
 	// give vterm our pid
-	{
-		ipc::VTerm vterm(fin);
-		vterm.setShellPid(getpid());
-	}
+	ipc::VTerm vterm(fin);
+	vterm.setShellPid(getpid());
 
 	printf("\033[co;9]Welcome to Escape v%s!\033[co]\n",ESCAPE_VERSION);
 	printf("\n");
@@ -163,18 +161,20 @@ static int shellMain(const char *devName) {
 
 	int res = EXIT_SUCCESS;
 	while(1) {
+		size_t width = vterm.getMode().cols;
 		// create buffer (history will free it)
-		char *buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
+		char *buffer = (char*)malloc((width + 1) * sizeof(char));
 		if(buffer == nullptr)
 			error("Not enough memory");
 
-		if(!shell_prompt()) {
+		ssize_t count = shell_prompt();
+		if(count < 0) {
 			res = EXIT_FAILURE;
 			break;
 		}
 
 		/* read command */
-		res = shell_readLine(buffer,MAX_CMD_LEN);
+		res = shell_readLine(buffer,width - count);
 		if(res < 0)
 			error("Unable to read from STDIN");
 		if(res == 0)

@@ -25,7 +25,7 @@
 #define MAX_ARG_COUNT		10
 
 #define MAX_CMDNAME_LEN		30
-#define MAX_CMD_LEN			70
+#define MAX_CMD_LEN			256
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,9 +47,9 @@ void shell_init(int argc,const char **argv);
 /**
  * Prints the shell-prompt
  *
- * @return true if successfull
+ * @return the number of printed characters if successfull
  */
-bool shell_prompt(void);
+ssize_t shell_prompt(void);
 
 /**
  * Executes the given line or file

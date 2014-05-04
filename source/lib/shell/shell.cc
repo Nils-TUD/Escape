@@ -73,21 +73,21 @@ void shell_init(int argc,const char **argv) {
 		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 }
 
-bool shell_prompt(void) {
+ssize_t shell_prompt(void) {
 	uid_t uid = getuid();
 	char path[MAX_PATH_LEN + 1];
 	char username[MAX_USERNAME_LEN + 1];
 	if(getenvto(username,sizeof(username),"USER") < 0) {
 		printe("Unable to get USER");
-		return false;
+		return -1;
 	}
 	if(getenvto(path,MAX_PATH_LEN + 1,"CWD") < 0) {
 		printe("Unable to get CWD");
-		return false;
+		return -1;
 	}
-	printf("\033[co;10]%s\033[co]:\033[co;8]%s\033[co] %c ",
+	size_t count = printf("\033[co;10]%s\033[co]:\033[co;8]%s\033[co] %c ",
 			username,path,uid == ROOT_UID ? '#' : '$');
-	return true;
+	return count - SSTRLEN("\033[co;10]\033[co]\033[co;8]\033[co]");
 }
 
 static void shell_sigIntrpt(A_UNUSED int sig) {

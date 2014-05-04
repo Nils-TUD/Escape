@@ -21,8 +21,10 @@
 #include <esc/cmdargs.h>
 #include <esc/dir.h>
 #include <esc/mem.h>
+#include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <env.h>
 
 #define BUFFER_SIZE		(16 * 1024)
 
@@ -30,11 +32,14 @@ static ulong shmname;
 static void *shm;
 static bool rec = false;
 static bool force = false;
+static bool progress = false;
+static ulong cols = 0;
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-rf] <source>... <dest>\n",name);
+	fprintf(stderr,"Usage: %s [-rfp] <source>... <dest>\n",name);
 	fprintf(stderr,"\t-r    copy directories recursively\n");
 	fprintf(stderr,"\t-f    overwrite existing files\n");
+	fprintf(stderr,"\t-p    show a progress bar while copying\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -47,6 +52,17 @@ static void createBuffer(void) {
 	shm = mmap(NULL,BUFFER_SIZE,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	if(!shm)
 		error("mmap");
+}
+
+static void printSize(size_t size) {
+	if(size >= 1024 * 1024 * 1024)
+		printf("%4zu GiB",size / (1024 * 1024 * 1024));
+	else if(size >= 1024 * 1024)
+		printf("%4zu MiB",size / (1024 * 1024));
+	else if(size >= 1024)
+		printf("%4zu KiB",size / 1024);
+	else
+		printf("%4zu B  ",size);
 }
 
 static void copyFile(const char *src,const char *dest) {
@@ -74,12 +90,47 @@ static void copyFile(const char *src,const char *dest) {
 	if(sharefile(outfd,shm) < 0) {}
 
 	ssize_t res;
-	while((res = read(infd,shm,BUFFER_SIZE)) > 0) {
-		if(write(outfd,shm,res) != res) {
-			printe("write to '%s' failed",dest);
-			break;
+	if(progress) {
+		size_t total = filesize(infd);
+		size_t pos = 0;
+		ulong lastSteps = -1;
+		ulong totalSteps = cols - (25 + SSTRLEN(": 0000 KiB of 0000 KiB []"));
+		while((res = read(infd,shm,BUFFER_SIZE)) > 0) {
+			if(write(outfd,shm,res) != res) {
+				printe("write to '%s' failed",dest);
+				break;
+			}
+
+			pos += res;
+			ulong steps = (totalSteps * pos) / total;
+			if(steps != lastSteps) {
+				printf("\r%-25.25s: ",src);
+				printSize(pos);
+				printf(" of ");
+				printSize(total);
+				printf(" [");
+				for(ulong i = 0; i < steps; ++i)
+					putchar('#');
+				for(ulong i = 0; i < totalSteps - steps; ++i)
+					putchar(' ');
+				putchar(']');
+				fflush(stdout);
+				lastSteps = steps;
+			}
+		}
+		if(res == 0)
+			putchar('\n');
+	}
+	else {
+		while((res = read(infd,shm,BUFFER_SIZE)) > 0) {
+			if(write(outfd,shm,res) != res) {
+				printe("write to '%s' failed",dest);
+				break;
+			}
 		}
 	}
+	if(res < 0)
+		printe("read from '%s' failed",src);
 
 	close(outfd);
 	close(infd);
@@ -119,13 +170,18 @@ static void copy(const char *src,const char *dest) {
 }
 
 int main(int argc,const char *argv[]) {
-	int res = ca_parse(argc,argv,0,"r f",&rec,&force);
+	int res = ca_parse(argc,argv,0,"r f p",&rec,&force,&progress);
 	if(res < 0 || ca_getFreeCount() < 2) {
 		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);
 	}
 	if(ca_hasHelp())
 		usage(argv[0]);
+
+	if(progress) {
+		ipc::VTerm vterm(std::env::get("TERM").c_str());
+		cols = vterm.getMode().cols;
+	}
 
 	createBuffer();
 

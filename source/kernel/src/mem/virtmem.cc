@@ -210,7 +210,7 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 
 	/* create region */
 	res = -ENOMEM;
-	reg = createObj<Region>(f,length,loadCount,offset,PF_DEMANDLOAD,rflags);
+	reg = createObj<Region>(f,length,loadCount,offset,(rflags & MAP_NOMAP) ? 0 : PF_DEMANDLOAD,rflags);
 	if(!reg)
 		goto errProc;
 	if(!reg->addTo(this))

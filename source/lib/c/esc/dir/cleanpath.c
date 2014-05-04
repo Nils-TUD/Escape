@@ -23,47 +23,17 @@
 #include <stdlib.h>
 
 size_t cleanpath(char *dst,size_t dstSize,const char *src) {
-	char *curtemp,*pathtemp,*p;
-	int layer,pos;
-	size_t count = 0;
+	char tmp[MAX_PATH_LEN];
+	char *p = abspath(tmp,sizeof(tmp),src);
+	while(*p == '/')
+		p++;
 
-	p = (char*)src;
-	pathtemp = dst;
-	layer = 0;
-	if(*p != '/') {
-		char envPath[MAX_PATH_LEN + 1];
-		if(getenvto(envPath,MAX_PATH_LEN + 1,"CWD") < 0)
-			return count;
-		if(dstSize < strlen(envPath))
-			return count;
-		/* copy current to path */
-		*pathtemp++ = '/';
-		*pathtemp = '\0';
-		curtemp = envPath + 1;
-		while(*curtemp) {
-			if(*curtemp == '/')
-				layer++;
-			*pathtemp++ = *curtemp++;
-		}
-		/* append '/' */
-		if(pathtemp[-1] != '/') {
-			*pathtemp++ = '/';
-			layer++;
-		}
-		count = pathtemp - dst;
-	}
-	else {
-		*pathtemp++ = '/';
-		count++;
-		/* skip leading '/' */
-		do {
-			p++;
-		}
-		while(*p == '/');
-	}
-
+	int layer = 0;
+	size_t count = 1;
+	char *pathtemp = dst;
+	*pathtemp++ = '/';
 	while(*p) {
-		pos = strchri(p,'/');
+		int pos = strchri(p,'/');
 
 		/* simply skip '.' */
 		if(pos == 1 && p[0] == '.')

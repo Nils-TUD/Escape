@@ -32,12 +32,12 @@ int bprintdbl(FILE *f,double d,uint precision) {
 	if(isnan(d)) {
 		if(d < 0)
 			c += RETERR(bputc(f,'-'));
-		c += RETERR(bputs(f,"nan"));
+		c += RETERR(bputs(f,"nan",-1));
 	}
 	else if(isinf(d)) {
 		if(d < 0)
 			c += RETERR(bputc(f,'-'));
-		c += RETERR(bputs(f,"inf"));
+		c += RETERR(bputs(f,"inf",-1));
 	}
 	else {
 		val = (llong)d;

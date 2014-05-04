@@ -21,10 +21,16 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-int bputs(FILE *f,const char *str) {
+int bputs(FILE *f,const char *str,int precision) {
 	char c;
 	const char *begin = str;
-	while((c = *str++))
-		RETERR(bputc(f,c));
+	if(precision != -1) {
+		while((c = *str++) && precision-- > 0)
+			RETERR(bputc(f,c));
+	}
+	else {
+		while((c = *str++))
+			RETERR(bputc(f,c));
+	}
 	return str - begin - 1;
 }

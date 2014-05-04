@@ -22,5 +22,5 @@
 #include <stdio.h>
 
 int fputs(const char *str,FILE *file) {
-	return bputs(file,str);
+	return bputs(file,str,-1);
 }

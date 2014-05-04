@@ -46,12 +46,12 @@ int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
 	if(nan) {
 		if(d < 0)
 			count += RETERR(bputc(f,'-'));
-		count += RETERR(bputs(f,"nan"));
+		count += RETERR(bputs(f,"nan",-1));
 	}
 	else if(inf) {
 		if(d < 0)
 			count += RETERR(bputc(f,'-'));
-		count += RETERR(bputs(f,"inf"));
+		count += RETERR(bputs(f,"inf",-1));
 	}
 	else
 		count += RETERR(bprintdbl(f,d,precision));

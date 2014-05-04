@@ -227,22 +227,15 @@ int vbprintf(FILE *f,const char *fmt,va_list ap) {
 
 			/* string */
 			case 's':
-				b = 0;
 				s = va_arg(ap, char*);
 				if(!s)
 					s = nullbuf;
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
-					width = precision == -1 ? strlen(s) : (uint)precision;
+					width = precision == -1 ? strlen(s) : MIN(strlen(s),(size_t)precision);
 					if(pad > (int)width)
 						count += RETERR(bprintpad(f,pad - width,flags));
 				}
-				if(precision != -1) {
-					b = s[precision];
-					s[precision] = '\0';
-				}
-				n = RETERR(bputs(f,s));
-				if(precision != -1)
-					s[precision] = b;
+				n = RETERR(bputs(f,s,precision));
 				if(pad > n && (flags & FFL_PADRIGHT))
 					count += RETERR(bprintpad(f,pad - n,flags));
 				count += n;

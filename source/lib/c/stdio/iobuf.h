@@ -93,7 +93,7 @@ typedef struct {
 } FILE;
 
 int bputc(FILE *f,int c);
-int bputs(FILE *f,const char *str);
+int bputs(FILE *f,const char *str,int precision);
 int bflush(FILE *f);
 int bprintpad(FILE *f,size_t count,uint flags);
 int bprintn(FILE *f,int n);

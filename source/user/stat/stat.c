@@ -28,48 +28,81 @@
 
 #define MAX_DATE_LEN	64
 
-static void stat_printDate(const char *title,time_t timestamp);
-static const char *stat_getType(sFileInfo *info);
+static void printDate(const char *title,time_t timestamp);
+static const char *getType(sFileInfo *info);
+static void printFileInfo(const char *path,bool useOpen);
 
-int main(int argc,char *argv[]) {
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s [-o] <file>...\n",name);
+	fprintf(stderr,"\t-o   Use open and fstat instead of stat. On devices this has the\n");
+	fprintf(stderr,"\t     effect that a channel is created and you get information about\n");
+	fprintf(stderr,"\t     that channel instead of the device.\n");
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char *argv[]) {
+	bool useOpen = false;
+
+	int res = ca_parse(argc,argv,0,"o",&useOpen);
+	if(res < 0) {
+		printe("Invalid arguments: %s",ca_error(res));
+		usage(argv[0]);
+	}
+	size_t count = count = ca_getFreeCount();
+	if(count == 0 || ca_hasHelp())
+		usage(argv[0]);
+
+	for(size_t i = 0; i < count; ++i)
+		printFileInfo(ca_getFree()[i],useOpen);
+	return EXIT_SUCCESS;
+}
+
+static void printFileInfo(const char *path,bool useOpen) {
 	sFileInfo info;
 	char apath[MAX_PATH_LEN];
+	cleanpath(apath,MAX_PATH_LEN,path);
 
-	if(argc != 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <file>\n",argv[0]);
-		return EXIT_FAILURE;
+	if(useOpen) {
+		int fd = open(apath,IO_READ);
+		if(fd < 0) {
+			printe("open of '%s' for reading failed",apath);
+			return;
+		}
+		if(fstat(fd,&info) < 0) {
+			printe("fstat of '%s' failed",apath);
+			return;
+		}
+		close(fd);
 	}
-
-	cleanpath(apath,MAX_PATH_LEN,argv[1]);
-	if(stat(apath,&info) < 0)
-		error("Unable to read file-information for '%s'",apath);
+	else if(stat(apath,&info) < 0) {
+		printe("stat of '%s' failed",apath);
+		return;
+	}
 
 	printf("'%s' points to:\n",apath);
 	printf("%-15s%d\n","Inode:",info.inodeNo);
 	printf("%-15s%d\n","Device:",info.device);
-	printf("%-15s%s\n","Type:",stat_getType(&info));
+	printf("%-15s%s\n","Type:",getType(&info));
 	printf("%-15s%d Bytes\n","Size:",info.size);
 	printf("%-15s%hd\n","Blocks:",info.blockCount);
-	stat_printDate("Accessed:",info.accesstime);
-	stat_printDate("Modified:",info.modifytime);
-	stat_printDate("Created:",info.createtime);
+	printDate("Accessed:",info.accesstime);
+	printDate("Modified:",info.modifytime);
+	printDate("Created:",info.createtime);
 	printf("%-15s%#ho\n","Mode:",info.mode);
 	printf("%-15s%hd\n","GroupID:",info.gid);
 	printf("%-15s%hd\n","UserID:",info.uid);
 	printf("%-15s%hd\n","Hardlinks:",info.linkCount);
 	printf("%-15s%hd\n","BlockSize:",info.blockSize);
-
-	return EXIT_SUCCESS;
 }
 
-static void stat_printDate(const char *title,time_t timestamp) {
+static void printDate(const char *title,time_t timestamp) {
 	static char dateStr[MAX_DATE_LEN];
 	struct tm *date = gmtime(&timestamp);
 	strftime(dateStr,sizeof(dateStr),"%a, %m/%d/%Y %H:%M:%S",date);
 	printf("%-15s%s\n",title,dateStr);
 }
 
-static const char *stat_getType(sFileInfo *info) {
+static const char *getType(sFileInfo *info) {
 	if(S_ISDIR(info->mode))
 		return "Directory";
 	if(S_ISBLK(info->mode))

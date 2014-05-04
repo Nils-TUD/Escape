@@ -71,7 +71,8 @@ ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc:
 
 	const size_t total = Ethernet<IPv4<TCP>>().size() + nbytes;
 
-	PRINT_TCP(srcp,dstp,"sent [%s] seq=%u ack=%u len=%zu",flagsToStr(flags),seqNo,ackNo,nbytes);
+	PRINT_TCP(srcp,dstp,"sent [%s] seq=%u ack=%u len=%zu win=%u",
+		flagsToStr(flags),seqNo,ackNo,nbytes,winSize);
 
 	TCP *tcp = &pkt->payload.payload;
 	tcp->srcPort = cputobe16(srcp);
@@ -121,9 +122,10 @@ ssize_t TCP::receive(Link&,const Packet &packet) {
 		it = _socks.find(key);
 	}
 
-	PRINT_TCP(dstp,srcp,"received [%s] seq=%u ack=%u len=%zu",
+	PRINT_TCP(dstp,srcp,"received [%s] seq=%u ack=%u len=%zu win=%u",
 		flagsToStr(tcp->ctrlFlags),be32tocpu(tcp->seqNumber),be32tocpu(tcp->ackNumber),
-		be16tocpu(ip->packetSize) - IPv4<>().size() - ((tcp->dataOffset >> 4) * 4));
+		be16tocpu(ip->packetSize) - IPv4<>().size() - ((tcp->dataOffset >> 4) * 4),
+		be16tocpu(tcp->windowSize));
 
 	if(it != _socks.end()) {
 		ipc::Socket::Addr sa;

@@ -127,11 +127,10 @@ public:
 		return _packets;
 	}
 	/**
-	 * @return true if there is any data to pull() (although it might be non-contiguous, so that
-	 *  pull actually returns 0)
+	 * @return the number of bytes to pull()
 	 */
-	bool hasData() const {
-		return _current > 0;
+	size_t available() const {
+		return _current;
 	}
 	/**
 	 * @return the total capacity

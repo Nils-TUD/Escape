@@ -127,7 +127,7 @@ private:
 			_state != STATE_SYN_SENT && _state != STATE_LISTEN;
 	}
 	bool shouldPush() const {
-		return closing() || (_rxCircle.hasData() && (_push || pushForced()));
+		return closing() || (_rxCircle.available() > 0 && (_push || pushForced()));
 	}
 	bool pushForced() const {
 		size_t cap = _rxCircle.capacity();

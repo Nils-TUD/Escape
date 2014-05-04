@@ -174,6 +174,8 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 	if(size > _txCircle.windowSize())
 		return -EINVAL;
 
+	PRINT_TCP(_localPort,remotePort(),"Application wants to send %zu bytes",size);
+
 	// push it into our txCircle
 	assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,size) == (ssize_t)size);
 	// send it
@@ -192,6 +194,9 @@ ssize_t StreamSocket::recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t siz
 		return -EINVAL;
 	if(_state == STATE_CLOSED || _state == STATE_SYN_SENT)
 		return -ENOTCONN;
+
+	PRINT_TCP(_localPort,remotePort(),
+		"Application wants to receives %zu bytes (available=%zu)",size,_rxCircle.available());
 
 	if(shouldPush()) {
 		replyRead(mid,needsSrc,buffer,size);
@@ -543,7 +548,7 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 }
 
 void StreamSocket::sendData() {
-	if(_txCircle.hasData() > 0) {
+	if(_txCircle.available() > 0) {
 		CircularBuf::seq_type seqNo = _txCircle.nextExp();
 		CircularBuf::seq_type lastAck = _rxCircle.nextExp();
 		CircularBuf::seq_type ackNo = _rxCircle.getAck();
@@ -614,7 +619,7 @@ void StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size)
 			buf = new uint8_t[res];
 		res = _rxCircle.pull(buf,size);
 		// if there is no additional data, we're done with pushing, if we were anyway
-		if(!_rxCircle.hasData())
+		if(!_rxCircle.available())
 			_push = false;
 	}
 

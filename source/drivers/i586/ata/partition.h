@@ -40,3 +40,10 @@ typedef struct {
  * @param mbr the content of the first sector
  */
 void part_fillPartitions(sPartition *table,void *mbr);
+
+/**
+ * Prints the given partition table
+ *
+ * @param table the tables to print
+ */
+void part_print(sPartition *table);

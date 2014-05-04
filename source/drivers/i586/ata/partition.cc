@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <stdio.h>
 #include "partition.h"
 
 /* offset of partition-table in MBR */
@@ -51,5 +52,13 @@ void part_fillPartitions(sPartition *table,void *mbr) {
 		table->size = src->size;
 		table++;
 		src++;
+	}
+}
+
+void part_print(sPartition *table) {
+	size_t i;
+	for(i = 0; i < PARTITION_COUNT; i++) {
+		printf("%zu: present=%d start=%zu size=%zu\n",i,table->present,table->start,table->size);
+		table++;
 	}
 }

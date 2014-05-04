@@ -115,6 +115,13 @@ void Progress::paintBar() {
 			_emptyBar[(BAR_WIDTH - 2) * 2 + 1] = color;
 			paintTo(_emptyBar,getPadX(),getPadY() + y + 1,BAR_WIDTH - 1,1);
 		}
+
+		// initial fill
+		for(size_t i = 0; i < _startSkip; i++) {
+			_emptyBar[i * 2] = ' ';
+			_emptyBar[i * 2 + 1] = 0x70;
+		}
+		paintTo(_emptyBar,getPadX() + 1,getPadY() + 1,_startSkip,1);
 	}
 	updateBar();
 }
@@ -146,5 +153,6 @@ bool Progress::connect() {
 	ipc::Screen::Mode mode = _scr->findTextMode(VGA_COLS,VGA_ROWS);
 	_fb = new ipc::FrameBuffer(mode,"init-vga",ipc::Screen::MODE_TYPE_TUI,0644);
 	_scr->setMode(ipc::Screen::MODE_TYPE_TUI,mode.id,"init-vga",true);
+	paintBar();
 	return true;
 }

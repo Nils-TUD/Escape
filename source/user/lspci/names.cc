@@ -79,13 +79,10 @@ void PCINames::load(const char *file) {
 	// the idea here is to mmap the file and not copy the names out of it but store the pointers
 	// this way, we only need to copy the names of the devices, vendors etc. that we actually have
 	// on a particular machine.
-	sFileInfo info;
 	int fd = open(file,IO_READ);
 	if(fd < 0)
 		error("open of %s failed",file);
-	if(fstat(fd,&info) < 0)
-		error("stat of %s failed",file);
-	_fileSize = info.size;
+	_fileSize = filesize(fd);
 	_file = (const char*)mmap(NULL,_fileSize,_fileSize,PROT_READ,MAP_PRIVATE,fd,0);
 	if(_file == NULL)
 		error("mmap of %s failed",file);

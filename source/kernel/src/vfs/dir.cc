@@ -73,7 +73,7 @@ off_t VFSDir::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) c
 	}
 }
 
-size_t VFSDir::getSize(A_UNUSED pid_t pid) const {
+ssize_t VFSDir::getSize(A_UNUSED pid_t pid) {
 	bool valid;
 	size_t byteCount = 0;
 	/* node is already locked */

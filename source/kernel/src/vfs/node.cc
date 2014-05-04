@@ -109,7 +109,7 @@ int VFSNode::isEmptyDir() const {
 	return -EDESTROYED;
 }
 
-void VFSNode::getInfo(pid_t pid,sFileInfo *info) const {
+void VFSNode::getInfo(pid_t pid,sFileInfo *info) {
 	/* some infos are not available here */
 	/* TODO needs to be completed */
 	info->device = VFS_DEV_NO;

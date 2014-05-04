@@ -31,12 +31,13 @@
 #define MSG_FILE_OPEN				50
 #define MSG_FILE_READ				51
 #define MSG_FILE_WRITE				52
-#define MSG_FILE_CLOSE				53
+#define MSG_FILE_SIZE				53
+#define MSG_FILE_CLOSE				54
 
 /* special device messages */
-#define MSG_DEV_SHFILE				54
-#define MSG_DEV_CANCEL				55
-#define MSG_DEV_CREATSIBL			56
+#define MSG_DEV_SHFILE				55
+#define MSG_DEV_CANCEL				56
+#define MSG_DEV_CREATSIBL			57
 
 /* requests to fs */
 #define MSG_FS_OPEN					100

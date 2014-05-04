@@ -66,18 +66,16 @@ int main(int argc,char **argv) {
 		error("Usage: %s <wait> <module>",argv[0]);
 
 	/* mmap the module */
-	sFileInfo info;
-	if(stat(argv[2],&info) < 0)
-		error("Unable to stat '%s'",argv[2]);
 	int fd = open(argv[2],IO_READ);
 	if(fd < 0)
 		error("Unable to open module '%s'",argv[2]);
-	char *diskaddr = static_cast<char*>(mmap(NULL,info.size,info.size,PROT_READ,MAP_PRIVATE,fd,0));
+	ssize_t size = filesize(fd);
+	char *diskaddr = static_cast<char*>(mmap(NULL,size,size,PROT_READ,MAP_PRIVATE,fd,0));
 	if(!diskaddr)
 		error("Unable to map file '%s'",argv[2]);
 	close(fd);
 
-	RomDiskDevice romdisk("/dev/romdisk",0400,info.size,diskaddr);
+	RomDiskDevice romdisk("/dev/romdisk",0400,size,diskaddr);
 	if(chown("/dev/romdisk",-1,GROUP_STORAGE) < 0)
 		error("chown for /dev/romdisk failed");
 	romdisk.loop();

@@ -99,7 +99,7 @@ public:
 	 */
 	int getWork();
 
-	virtual size_t getSize(pid_t pid) const;
+	virtual ssize_t getSize(pid_t pid);
 	virtual void close(pid_t pid,OpenFile *file,int msgid);
 	virtual void print(OStream &os) const;
 

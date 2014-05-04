@@ -59,7 +59,7 @@ uint VFSDevice::buildMode(uint type) {
 	return mode;
 }
 
-size_t VFSDevice::getSize(A_UNUSED pid_t pid) const {
+ssize_t VFSDevice::getSize(A_UNUSED pid_t pid) {
 	return msgCount;
 }
 

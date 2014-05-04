@@ -158,4 +158,11 @@ struct FileWrite {
 	typedef DefaultResponse<ssize_t> Response;
 };
 
+/**
+ * The MSG_FILE_SIZE command that is sent by the kernel to devices if filesize() was called on them.
+ */
+struct FileSize {
+	typedef DefaultResponse<ssize_t> Response;
+};
+
 }

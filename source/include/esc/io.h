@@ -127,6 +127,21 @@ A_CHECKRET static inline int fstat(int fd,sFileInfo *info) {
 }
 
 /**
+ * Retrieves only the size of the file referenced by the given file-descriptor. This is only a
+ * convenience function since internally, fstat() is used.
+ *
+ * @param fd the file-descriptor
+ * @return the size on success
+ */
+static inline ssize_t filesize(int fd) {
+	sFileInfo info;
+	int res = fstat(fd,&info);
+	if(res < 0)
+		return res;
+	return info.size;
+}
+
+/**
  * Changes the permissions of the file denoted by <path> to <mode>. This is always possible if
  * the current process is owned by ROOT_UID. Otherwise only if the current process owns the file.
  *

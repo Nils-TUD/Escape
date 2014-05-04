@@ -210,8 +210,26 @@ off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whenc
 	}
 }
 
-size_t VFSChannel::getSize(A_UNUSED pid_t pid) const {
-	return sendList.length() + recvList.length();
+ssize_t VFSChannel::getSize(pid_t pid) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	if(isSupported(DEV_SIZE) < 0)
+		return 0;
+
+	/* send msg to device */
+	ssize_t res = send(pid,0,MSG_FILE_SIZE,NULL,0,NULL,0);
+	if(res < 0)
+		return res;
+
+	/* receive response */
+	msgid_t mid = res;
+	res = receive(pid,0,&mid,ib.buffer(),ib.max());
+	if(res < 0)
+		return res;
+
+	ib >> res;
+	return res;
 }
 
 int VFSChannel::stat(pid_t pid,sFileInfo *info) {

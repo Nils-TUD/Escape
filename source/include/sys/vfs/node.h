@@ -299,7 +299,7 @@ public:
 	 * @param pid the process-id
 	 * @param info will be filled
 	 */
-	void getInfo(pid_t pid,sFileInfo *info) const;
+	void getInfo(pid_t pid,sFileInfo *info);
 
 	/**
 	 * Determines the path for this node. Note that static memory will be used for that!
@@ -384,7 +384,7 @@ public:
 	 * @param pid the process-id
 	 * @return the size of the file
 	 */
-	virtual size_t getSize(A_UNUSED pid_t pid) const {
+	virtual ssize_t getSize(A_UNUSED pid_t pid) {
 		return 0;
 	}
 

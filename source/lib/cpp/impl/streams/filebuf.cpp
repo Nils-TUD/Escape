@@ -88,10 +88,10 @@ namespace std {
 	}
 
 	filebuf::pos_type filebuf::available() const {
-		sFileInfo info;
-		if(::fstat(_fd,&info) < 0)
-			throw bad_state("fstat() failed");
-		return info.size - _totalInPos;
+		ssize_t size = filesize(_fd);
+		if(size < 0)
+			throw bad_state("filesize() failed");
+		return size - _totalInPos;
 	}
 
 	filebuf::char_type filebuf::peek() const {

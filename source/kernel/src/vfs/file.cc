@@ -84,7 +84,7 @@ int VFSFile::doReserve(size_t newSize) {
 	return 0;
 }
 
-size_t VFSFile::getSize(A_UNUSED pid_t pid) const {
+ssize_t VFSFile::getSize(A_UNUSED pid_t pid) {
 	return pos;
 }
 

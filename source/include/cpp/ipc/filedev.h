@@ -40,9 +40,10 @@ public:
 	 * @param mode the permissions to set
 	 */
 	explicit FileDevice(const char *path,mode_t mode)
-		: Device(path,mode,DEV_TYPE_FILE,DEV_READ | DEV_WRITE) {
+		: Device(path,mode,DEV_TYPE_FILE,DEV_READ | DEV_WRITE | DEV_SIZE) {
 		set(MSG_FILE_READ,std::make_memfun(this,&FileDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&FileDevice::write));
+		set(MSG_FILE_SIZE,std::make_memfun(this,&FileDevice::filesize));
 	}
 
 	/**
@@ -94,6 +95,11 @@ private:
 		ssize_t res = handleWrite(r.offset,data.get(),r.count);
 
 		is << FileWrite::Response(res) << Reply();
+	}
+
+	void filesize(IPCStream &is) {
+		std::string content = handleRead();
+		is << FileSize::Response(content.length()) << Reply();
 	}
 };
 

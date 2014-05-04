@@ -34,6 +34,7 @@
 #define DEV_CANCEL					32
 #define DEV_CANCELSIG				64
 #define DEV_CREATSIBL				128
+#define DEV_SIZE					256
 
 #define DEV_TYPE_CHAR				0
 #define DEV_TYPE_BLOCK				1

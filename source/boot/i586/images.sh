@@ -50,7 +50,7 @@ timeout 3
 title Escape
 kernel /boot/escape root=/dev/ext2-hda1 swapdev=/dev/hda3
 module /sbin/pci /dev/pci
-module /sbin/ata /system/devices/ata nodma
+module /sbin/ata /system/devices/ata
 module /sbin/rtc /dev/rtc
 module /sbin/ext2 /dev/ext2-hda1 /dev/hda1
 

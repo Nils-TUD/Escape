@@ -1,0 +1,81 @@
+From dd6eceedba7ca2a383ffee9d01a3becb6c72e88c Mon Sep 17 00:00:00 2001
+From: Nils Asmussen <nils@os.inf.tu-dresden.de>
+Date: Sun, 4 May 2014 17:20:26 +0200
+Subject: [PATCH 1/1] Fixed bug in PCI bus-mastering DMA.
+
+Previously, the wrong address space was used for DMA
+read/write, because we want to access the RAM, not the
+PCI device address space.
+---
+ hw/ide/pci.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/hw/ide/pci.c b/hw/ide/pci.c
+index d8b1157..194d3f9 100644
+--- a/hw/ide/pci.c
++++ b/hw/ide/pci.c
+@@ -57,14 +57,16 @@ static int bmdma_prepare_buf(IDEDMA *dma, int is_write)
+     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
+     IDEState *s = bmdma_active_if(bm);
+     PCIDevice *pci_dev = PCI_DEVICE(bm->pci_dev);
++    /* we don't care about which CPU we're using here since we access physical RAM anyway */
++    CPUState *cpu = qemu_get_cpu(0);
+     struct {
+         uint32_t addr;
+         uint32_t size;
+     } prd;
+     int l, len;
+
+-    pci_dma_sglist_init(&s->sg, pci_dev,
+-                        s->nsector / (BMDMA_PAGE_SIZE / 512) + 1);
++    qemu_sglist_init(&s->sg, DEVICE(pci_dev),
++                     s->nsector / (BMDMA_PAGE_SIZE / 512) + 1, cpu->as);
+     s->io_buffer_size = 0;
+     for(;;) {
+         if (bm->cur_prd_len == 0) {
+@@ -72,7 +74,7 @@ static int bmdma_prepare_buf(IDEDMA *dma, int is_write)
+             if (bm->cur_prd_last ||
+                 (bm->cur_addr - bm->addr) >= BMDMA_PAGE_SIZE)
+                 return s->io_buffer_size != 0;
+-            pci_dma_read(pci_dev, bm->cur_addr, &prd, 8);
++            dma_memory_rw(cpu->as, bm->cur_addr, &prd, 8, DMA_DIRECTION_TO_DEVICE);
+             bm->cur_addr += 8;
+             prd.addr = le32_to_cpu(prd.addr);
+             prd.size = le32_to_cpu(prd.size);
+@@ -99,7 +101,7 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
+ {
+     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
+     IDEState *s = bmdma_active_if(bm);
+-    PCIDevice *pci_dev = PCI_DEVICE(bm->pci_dev);
++    CPUState *cpu = qemu_get_cpu(0);
+     struct {
+         uint32_t addr;
+         uint32_t size;
+@@ -115,7 +117,7 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
+             if (bm->cur_prd_last ||
+                 (bm->cur_addr - bm->addr) >= BMDMA_PAGE_SIZE)
+                 return 0;
+-            pci_dma_read(pci_dev, bm->cur_addr, &prd, 8);
++            dma_memory_read(cpu->as, bm->cur_addr, &prd, 8);
+             bm->cur_addr += 8;
+             prd.addr = le32_to_cpu(prd.addr);
+             prd.size = le32_to_cpu(prd.size);
+@@ -130,11 +132,11 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
+             l = bm->cur_prd_len;
+         if (l > 0) {
+             if (is_write) {
+-                pci_dma_write(pci_dev, bm->cur_prd_addr,
+-                              s->io_buffer + s->io_buffer_index, l);
++                dma_memory_write(cpu->as, bm->cur_prd_addr,
++                                 s->io_buffer + s->io_buffer_index, l);
+             } else {
+-                pci_dma_read(pci_dev, bm->cur_prd_addr,
+-                             s->io_buffer + s->io_buffer_index, l);
++                dma_memory_read(cpu->as, bm->cur_prd_addr,
++                                s->io_buffer + s->io_buffer_index, l);
+             }
+             bm->cur_prd_addr += l;
+             bm->cur_prd_len -= l;
+--
+1.8.3.2
+

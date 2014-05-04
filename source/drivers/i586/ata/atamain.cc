@@ -167,7 +167,10 @@ int main(int argc,char **argv) {
 	if(mlockall() < 0)
 		error("Unable to mlock regions");
 
-	drive_thread(devs[0]);
+	if(drvCount > 0)
+		drive_thread(devs[0]);
+	else
+		print("No devices. Exiting");
 
 	/* clean up */
 	relports(ATA_REG_BASE_PRIMARY,8);

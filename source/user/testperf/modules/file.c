@@ -115,6 +115,41 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 	}
 }
 
+static void test_stat(const char *path) {
+	uint64_t start,end,total = 0;
+	sFileInfo info;
+	for(int i = 0; i < TEST_COUNT; ++i) {
+		start = rdtsc();
+		int res = stat(path,&info);
+		end = rdtsc();
+		if(res < 0)
+			printe("stat of '%s' failed",path);
+		total += end - start;
+	}
+
+	printf("stat      : %6Lu cycles/call\n",total / TEST_COUNT);
+}
+
+static void test_fstat(const char *path) {
+	uint64_t start,end,total = 0;
+	sFileInfo info;
+	for(int i = 0; i < TEST_COUNT; ++i) {
+		start = rdtsc();
+		int fd = open(path,IO_READ);
+		if(fd >= 0) {
+			if(fstat(fd,&info) < 0)
+				printe("fstat of '%s' failed",path);
+			close(fd);
+		}
+		else
+			printe("open of '%s' failed",path);
+		end = rdtsc();
+		total += end - start;
+	}
+
+	printf("fstat     : %6Lu cycles/call\n",total / TEST_COUNT);
+}
+
 static void test_sharebuf(const char *path,size_t bufsize) {
 	uint64_t start,end,sharetime,destrtime;
 
@@ -172,16 +207,24 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	fflush(stdout);
 	test_readwrite("/system/test","write",IO_WRITE,(test_func)write,false);
 	fflush(stdout);
+	test_stat("/system/test");
+	fflush(stdout);
+	test_fstat("/system/test");
+	fflush(stdout);
 
-	printf("Using /home/hrniels/testdir/bbc.bmp...\n");
+	printf("\nUsing /home/hrniels/testdir/bbc.bmp...\n");
 	test_openseekclose("/home/hrniels/testdir/bbc.bmp");
 	fflush(stdout);
 	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,false);
 	fflush(stdout);
 	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,true);
 	fflush(stdout);
+	test_stat("/home/hrniels/testdir/bbc.bmp");
+	fflush(stdout);
+	test_fstat("/home/hrniels/testdir/bbc.bmp");
+	fflush(stdout);
 
-	printf("Testing sharebuf and destroybuf...\n");
+	printf("\nTesting sharebuf and destroybuf...\n");
 	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE));
 	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE) * 4);
 	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE) * 16);

@@ -195,6 +195,8 @@ ssize_t StreamSocket::recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t siz
 
 	if(shouldPush()) {
 		replyRead(mid,needsSrc,buffer,size);
+		/* inform the sender about our increased window-size */
+		sendCtrlPkt(TCP::FL_ACK,NULL,true);
 		return 0;
 	}
 

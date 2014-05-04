@@ -64,7 +64,7 @@ bool ata_transferPIO(sATADevice *device,uint op,void *buffer,size_t secSize,
 			if(op == OP_READ)
 				ctrl_waitIntrpt(ctrl);
 			res = ctrl_waitUntil(ctrl,PIO_TRANSFER_TIMEOUT,PIO_TRANSFER_SLEEPTIME,
-					CMD_ST_DRQ,CMD_ST_BUSY);
+					CMD_ST_READY,CMD_ST_BUSY);
 			if(res == -1) {
 				ATA_LOG("Device %d: Timeout before PIO-transfer",device->id);
 				return false;

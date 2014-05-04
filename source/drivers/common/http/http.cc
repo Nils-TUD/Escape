@@ -43,7 +43,7 @@ public:
 	// default-value because the ClientDevice-template calls HTTPClient(f); but that code isn't used
 	explicit HTTPClient(int f,const char *url = "",bool _redirected = false)
 		: Client(f), redirected(_redirected), domain(), path("/"), state(STATE_OPEN), contentlen(),
-		  sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP) {
+		  remaining(), headerPos(), header(), sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP) {
 		std::istringstream isurl(url);
 		isurl.getline(domain,'/');
 		isurl.getline(path,'#');
@@ -54,6 +54,9 @@ public:
 	std::string path;
 	State state;
 	size_t contentlen;
+	size_t remaining;
+	size_t headerPos;
+	std::ifstream header;
 	Socket sock;
 };
 
@@ -79,8 +82,9 @@ class HTTPDevice : public ClientDevice<HTTPClient> {
 public:
 	explicit HTTPDevice(const char *name,mode_t mode)
 		: ClientDevice(name,mode,DEV_TYPE_CHAR,
-			DEV_OPEN | DEV_CANCELSIG | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
+			DEV_OPEN | DEV_CANCELSIG | DEV_SIZE | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&HTTPDevice::open));
+		set(MSG_FILE_SIZE,std::make_memfun(this,&HTTPDevice::filesize));
 		set(MSG_FILE_READ,std::make_memfun(this,&HTTPDevice::read));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&HTTPDevice::close),false);
 	}
@@ -98,6 +102,16 @@ public:
 		is << FileOpen::Response(res >= 0 ? 0 : res) << Reply();
 	}
 
+	void filesize(IPCStream &is) {
+		HTTPClient *c = (*this)[is.fd()];
+		ssize_t res = 1;
+		if(c->state != STATE_RESP)
+			res = readHeader(c,is.fd());
+		if(res == 1)
+			res = c->contentlen;
+		is << FileSize::Response(res) << Reply();
+	}
+
 	void read(IPCStream &is) {
 		HTTPClient *c = (*this)[is.fd()];
 		FileRead::Request r;
@@ -106,6 +120,52 @@ public:
 		// take care that the buffer is deleted if an exception throws
 		ScopedBuf buf(r.shmemoff != -1 ? c->shm() + r.shmemoff : new char[r.count],r.shmemoff == -1);
 
+		// at first, we have to send the request and read the header
+		if(c->state != STATE_RESP) {
+			int res = readHeader(c,is.fd());
+			if(res <= 0) {
+				is << FileRead::Response(res) << Reply();
+				return;
+			}
+			// refresh client. it might have changed
+			c = (*this)[is.fd()];
+		}
+
+		// if there is something left in the buffer, reply that first
+		if(c->headerPos < c->header.rdbuf()->remaining()) {
+			size_t amount = std::min(r.count,(size_t)(c->header.rdbuf()->remaining() - c->headerPos));
+			if(r.shmemoff != -1)
+				memcpy(buf.data(),c->header.rdbuf()->input() + c->headerPos,amount);
+			is << FileRead::Response(amount) << Reply();
+			if(r.shmemoff == -1)
+				is << ReplyData(c->header.rdbuf()->input() + c->headerPos,amount);
+			c->remaining -= amount;
+			c->headerPos += amount;
+			return;
+		}
+
+		if(c->state == STATE_RESP) {
+			size_t max = std::min(c->remaining,r.count);
+			size_t count = max;
+			if(count > 0)
+				count = c->sock.receive(buf.data(),max);
+			is << FileRead::Response(count) << Reply();
+			if(r.shmemoff == -1) {
+				if(count)
+					is << ReplyData(buf.data(),count);
+			}
+			c->remaining -= count;
+		}
+	}
+
+	void close(IPCStream &is) {
+		ClientDevice::close(is);
+		// only the started threads receive the close-message. terminate the thread in this case
+		exit(0);
+	}
+
+private:
+	ssize_t readHeader(HTTPClient *c,int fd) {
 		if(c->state == STATE_OPEN) {
 			Socket::Addr addr;
 			addr.family = Socket::AF_INET;
@@ -125,19 +185,16 @@ public:
 		}
 
 		if(c->state == STATE_REQSENT) {
-			std::ifstream resp;
 			// TODO we should make sure, that the stream uses the same buffer-size as the client
 			// to ensure that we can always return all of the remaining data in the buffer
-			resp.open(c->sock.fd(),std::ios_base::in | std::ios_base::signals);
-			while(resp.good()) {
+			c->header.open(c->sock.fd(),std::ios_base::in | std::ios_base::signals);
+			while(c->header.good()) {
 				std::string line;
-				resp.getline(line,'\n');
+				c->header.getline(line,'\n');
 
 				// maybe we received a signal?
-				if(resp.eof()) {
-					is << FileRead::Response(0) << Reply();
-					return;
-				}
+				if(c->header.eof())
+					return 0;
 
 				// redirection?
 				if(line.find("Location: ") == 0) {
@@ -147,69 +204,35 @@ public:
 
 					// check if it's valid (we just ignore multiple redirections here)
 					print("Redirected to %s",newloc.c_str());
-					if(c->redirected) {
-						is << FileRead::Response(-EINVAL) << Reply();
-						return;
-					}
+					if(c->redirected)
+						return -EINVAL;
 					// only http is supported
-					if(strncmp(newloc.c_str(),"http://",7) != 0) {
-						is << FileRead::Response(-ENOTSUP) << Reply();
-						return;
-					}
+					if(strncmp(newloc.c_str(),"http://",7) != 0)
+						return -ENOTSUP;
 
 					// destroy current socket and create a new one (ensure that we keep the shm)
 					std::shared_ptr<SharedMemory> shm = c->sharedmem();
 					delete c;
-					HTTPClient *nc = new HTTPClient(is.fd(),newloc.c_str() + SSTRLEN("http://"),true);
+					HTTPClient *nc = new HTTPClient(fd,newloc.c_str() + SSTRLEN("http://"),true);
 					nc->sharedmem(shm);
 
 					// just assign the new client to the same slot
-					add(is.fd(),nc);
-					// reset the stream to read the request again
-					is.reset();
-					read(is);
-					return;
+					add(fd,nc);
+					return readHeader(nc,fd);
 				}
 
-				if(line.find("Content-Length: ") == 0)
+				if(line.find("Content-Length: ") == 0) {
 					c->contentlen = strtoul(line.c_str() + SSTRLEN("Content-Length: "),NULL,10);
+					c->remaining = c->contentlen;
+				}
 				// we grabbed the \r
 				else if(line.length() == 1)
 					break;
 			}
 			c->state = STATE_RESP;
-
-			// if there is something left in the buffer, reply that first
-			size_t left = resp.rdbuf()->remaining();
-			if(left > 0) {
-				if(r.shmemoff != -1)
-					memcpy(buf.data(),resp.rdbuf()->input(),left);
-				is << FileRead::Response(left) << Reply();
-				if(r.shmemoff == -1)
-					is << ReplyData(resp.rdbuf()->input(),left);
-				c->contentlen -= left;
-				return;
-			}
+			c->headerPos = 0;
 		}
-
-		if(c->state == STATE_RESP) {
-			size_t max = std::min(c->contentlen,r.count);
-			size_t count = max;
-			if(count > 0)
-				count = c->sock.receive(buf.data(),max);
-			is << FileRead::Response(count) << Reply();
-			if(r.shmemoff == -1) {
-				if(count)
-					is << ReplyData(buf.data(),count);
-			}
-			c->contentlen -= count;
-		}
-	}
-
-	void close(IPCStream &is) {
-		ClientDevice::close(is);
-		// only the started threads receive the close-message. terminate the thread in this case
-		exit(0);
+		return 1;
 	}
 };
 

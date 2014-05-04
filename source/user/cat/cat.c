@@ -43,12 +43,7 @@ int main(int argc,char *argv[]) {
 		FILE *file;
 		for(i = 1; i < argc; i++) {
 			/* check if it's a directory */
-			sFileInfo info;
-			if(stat(argv[i],&info) < 0) {
-				printe("Unable to get info about '%s'",argv[i]);
-				continue;
-			}
-			if(S_ISDIR(info.mode)) {
+			if(isdir(argv[i])) {
 				printe("'%s' is a directory!",argv[i]);
 				continue;
 			}

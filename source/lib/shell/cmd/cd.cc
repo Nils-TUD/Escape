@@ -28,8 +28,6 @@
 
 int shell_cmdCd(int argc,char **argv) {
 	char path[MAX_PATH_LEN];
-	sFileInfo info;
-
 	if(argc != 2 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: cd <dir>\n");
 		return EXIT_FAILURE;
@@ -37,14 +35,8 @@ int shell_cmdCd(int argc,char **argv) {
 
 	cleanpath(path,sizeof(path),argv[1]);
 
-	/* retrieve file-info */
-	if(stat(path,&info) < 0) {
-		printe("Unable to get file-info for '%s'",path);
-		return EXIT_FAILURE;
-	}
-
 	/* check if it is a directory */
-	if(!S_ISDIR(info.mode)) {
+	if(!isdir(path)) {
 		fprintf(stderr,"%s is no directory\n",path);
 		return EXIT_FAILURE;
 	}

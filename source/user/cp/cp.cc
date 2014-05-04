@@ -93,6 +93,7 @@ static void copyFile(const char *src,const char *dest) {
 	if(progress) {
 		size_t total = filesize(infd);
 		size_t pos = 0;
+		size_t lastPos = -1;
 		ulong lastSteps = -1;
 		ulong totalSteps = cols - (25 + SSTRLEN(": 0000 KiB of 0000 KiB []"));
 		while((res = read(infd,shm,BUFFER_SIZE)) > 0) {
@@ -103,7 +104,7 @@ static void copyFile(const char *src,const char *dest) {
 
 			pos += res;
 			ulong steps = (totalSteps * pos) / total;
-			if(steps != lastSteps) {
+			if(steps != lastSteps || pos - lastPos > 1024 * 1024) {
 				printf("\r%-25.25s: ",src);
 				printSize(pos);
 				printf(" of ");
@@ -116,6 +117,7 @@ static void copyFile(const char *src,const char *dest) {
 				putchar(']');
 				fflush(stdout);
 				lastSteps = steps;
+				lastPos = pos;
 			}
 		}
 		if(res == 0)

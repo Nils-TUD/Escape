@@ -124,10 +124,11 @@ void jobs_print(void) {
 	}
 }
 
-void jobs_remProc(pid_t pid) {
+bool jobs_remProc(pid_t pid) {
 	sJob *run = jobs_findProc(CMD_ID_ALL,pid);
 	if(run) {
 		sll_removeFirstWith(jobs,run);
 		free(run);
 	}
+	return run != NULL;
 }

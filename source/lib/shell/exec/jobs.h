@@ -89,5 +89,6 @@ void jobs_print(void);
  * Removes the process with given id from the running ones
  *
  * @param pid the pid
+ * @return true on success
  */
-void jobs_remProc(pid_t pid);
+bool jobs_remProc(pid_t pid);

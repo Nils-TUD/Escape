@@ -319,9 +319,9 @@ void ast_termProcsOfJob(tJobId cmd) {
 		/* send SIG_INTRPT */
 		if(kill(p->pid,SIG_INTRPT) < 0)
 			printe("Unable to send SIG_INTRPT to process %d",p->pid);
-		jobs_remProc(p->pid);
-		/* to next */
-		i++;
+		/* only use the next i if we couldn't remove the job */
+		if(!jobs_remProc(p->pid))
+			i++;
 		p = jobs_getXProcOf(cmd,i);
 	}
 }

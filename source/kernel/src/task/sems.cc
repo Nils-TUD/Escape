@@ -107,6 +107,7 @@ error:
 
 int Sems::op(Proc *p,int sem,int amount) {
 	Entry *e;
+	int res = 0;
 	p->lock(PLOCK_SEMS);
 	if(sem < 0 || sem >= (int)p->semsSize)
 		goto error;
@@ -116,13 +117,17 @@ int Sems::op(Proc *p,int sem,int amount) {
 	Atomic::fetch_and_add(&e->refs,+1);
 	p->unlock(PLOCK_SEMS);
 
-	if(amount < 0)
-		e->s.down();
+	if(amount < 0) {
+		Thread *t = Thread::getRunning();
+		e->s.down(true);
+		if(t->hasSignal())
+			res = -EINTR;
+	}
 	else
 		e->s.up();
 
 	unref(e);
-	return 0;
+	return res;
 
 error:
 	p->unlock(PLOCK_SEMS);

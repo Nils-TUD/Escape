@@ -29,7 +29,7 @@ static inline int usemcrt(tUserSem *sem,long val) {
 
 static inline void usemdown(tUserSem *sem) {
 	/* TODO eco32 has no atomic compare and swap instruction or similar :/ */
-	semdown(sem->sem);
+	IGNSIGS(semdown(sem->sem));
 }
 
 static inline bool usemtrydown(tUserSem *sem) {

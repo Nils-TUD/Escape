@@ -186,7 +186,7 @@ void ctrl_softReset(sATAController *ctrl) {
 void ctrl_waitIntrpt(sATAController *ctrl) {
 	if(!ctrl->useIrq)
 		return;
-	semdown(ctrl->irqsem);
+	IGNSIGS(semdown(ctrl->irqsem));
 }
 
 int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t set,uint8_t unset) {

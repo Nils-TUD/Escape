@@ -89,8 +89,12 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 
 			if(cmd == F_SEMUP)
 				sem->sem.up();
-			else
-				sem->sem.down();
+			else {
+				Thread *t = Thread::getRunning();
+				sem->sem.down(true);
+				if(t->hasSignal())
+					return -EINTR;
+			}
 			return 0;
 		}
 	}

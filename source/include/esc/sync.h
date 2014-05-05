@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/syscalls.h>
+#include <esc/io.h>
 
 #define RW_READ		0
 #define RW_WRITE	1
@@ -60,8 +61,10 @@ static inline int semcrt(uint value) {
 /**
  * Performs the down-operation on the given semaphore, i.e. decrements it.
  * If the value is <= 0, it blocks until semup() is called.
+ * Note that you might receive a signal during that operation in which case -EINTR is returned.
  *
  * @param id the sem-id
+ * @return 0 on success.
  */
 static inline int semdown(int id) {
 	return syscall2(SYSCALL_SEMOP,id,-1);

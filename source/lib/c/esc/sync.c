@@ -39,7 +39,7 @@ static void rwwait(tRWLock *l) {
 	// store that we're waiting, so that we know that we should up the sem in rwrel().
 	l->waits++;
 	usemup(&l->mutex);
-	semdown(l->sem);
+	IGNSIGS(semdown(l->sem));
 	usemdown(&l->mutex);
 	l->waits--;
 }

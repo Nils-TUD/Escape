@@ -31,7 +31,7 @@ static inline int usemcrt(tUserSem *sem,long val) {
 static inline void usemdown(tUserSem *sem) {
 	/* 1 means free, <= 0 means taken */
 	if(atomic_add(&sem->value,-1) <= 0)
-		semdown(sem->sem);
+		IGNSIGS(semdown(sem->sem));
 }
 
 static inline bool usemtrydown(tUserSem *sem) {

@@ -204,12 +204,18 @@ public:
 
 		int res = -EINVAL;
 		if((mid & 0xFFFF) == MSG_FILE_WRITE) {
-			res = (c->pendingWrite.count > 0 && c->pendingWrite.mid == mid) ? 1 : 0;
-			c->pendingWrite.count = 0;
+			/* we will not necessarily answer a pending read/write immediately. thus, don't tell the
+			 * kernel that we do that but just cancel the request in every case */
+			if(c->pendingWrite.count > 0 && c->pendingWrite.mid == mid) {
+				res = 0;
+				c->pendingWrite.count = 0;
+			}
 		}
 		else if((mid & 0xFFFF) == MSG_FILE_READ) {
-			res = (c->pendingRead.count > 0 && c->pendingRead.mid == mid) ? 1 : 0;
-			c->pendingRead.count = 0;
+			if(c->pendingRead.count > 0 && c->pendingRead.mid == mid) {
+				res = 0;
+				c->pendingRead.count = 0;
+			}
 		}
 
 		is << res << ipc::Reply();

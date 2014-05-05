@@ -94,7 +94,7 @@ public:
 		FileOpen::Request r(urlbuf,sizeof(urlbuf));
 		is >> r;
 
-		int res = startthread(handlerThread,(void*)is.fd());
+		int res = startthread(handlerThread,new int(is.fd()));
 		if(res >= 0) {
 			add(is.fd(),new HTTPClient(is.fd(),urlbuf));
 			::bindto(is.fd(),res);
@@ -239,8 +239,10 @@ private:
 static HTTPDevice *dev;
 
 static int handlerThread(void *arg) {
-	::bindto(reinterpret_cast<int>(arg),gettid());
+	int *fd = reinterpret_cast<int*>(arg);
+	::bindto(*fd,gettid());
 	dev->loop();
+	delete fd;
 	return 0;
 }
 

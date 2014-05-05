@@ -26,7 +26,7 @@
 
 extern void initHeap(void);
 
-static uint *tlsCopy = NULL;
+static ulong *tlsCopy = NULL;
 extern tUserSem __libc_sem;
 char __progname[32];
 
@@ -48,9 +48,9 @@ char __progname[32];
  */
 
 /* make gcc happy */
-uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,int argc,char *argv[]);
+uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]);
 
-uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
+uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
 	static bool initialized = false;
 	if(!initialized) {
 		char *progname;
@@ -75,7 +75,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UN
 		usemdown(&__libc_sem);
 		/* create copy if not already done */
 		if(tlsCopy == NULL) {
-			tlsCopy = (uint*)malloc(tlsSize);
+			tlsCopy = (ulong*)malloc(tlsSize);
 			assert(tlsCopy);
 			memcpy(tlsCopy,tlsStart,tlsSize);
 		}
@@ -85,7 +85,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,uint *tlsStart,size_t tlsSize,A_UN
 		for(i = 0; i < tlsSize - 1; i++)
 			tlsStart[i] = tlsCopy[i];
 		/* put pointer to TCB in TCB */
-		tlsStart[tlsSize - 1] = (uint)(tlsStart + tlsSize - 1);
+		tlsStart[tlsSize - 1] = (ulong)(tlsStart + tlsSize - 1);
 		usemup(&__libc_sem);
 	}
 	return entryPoint;

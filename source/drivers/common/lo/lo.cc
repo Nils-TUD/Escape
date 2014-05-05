@@ -32,9 +32,7 @@ class LoDevice : public ipc::ClientDevice<> {
 	};
 
 public:
-	enum {
-		MTU = 64 * 1024
-	};
+	static const ulong MTU;
 
 	explicit LoDevice(const char *path,mode_t mode)
 		: ipc::ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
@@ -135,6 +133,8 @@ private:
 	ipc::RequestQueue _requests;
 	std::list<Packet> _packets;
 };
+
+const ulong LoDevice::MTU = 64 * 1024;
 
 int main(int argc,char **argv) {
 	if(argc != 2)

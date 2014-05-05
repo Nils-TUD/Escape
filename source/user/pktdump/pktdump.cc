@@ -30,7 +30,7 @@ struct EthernetHeader {
 };
 
 int main() {
-	uint8_t buffer[4096];
+	ulong buffer[1024];
 	Socket sock("/dev/socket",Socket::SOCK_RAW_ETHER,Socket::PROTO_ANY);
 	while(1) {
 		ipc::Socket::Addr addr;

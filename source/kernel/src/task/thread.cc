@@ -109,7 +109,6 @@ void ThreadBase::initProps() {
 	event = 0;
 	evobject = 0;
 	waitstart = 0;
-	ignoreSignals = 0;
 	memset(sigHandler,0,sizeof(sigHandler));
 	sigmask = 0;
 	intrptLevel = 0;

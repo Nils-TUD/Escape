@@ -55,6 +55,7 @@
 #define KERNEL_TID				0xFFFE
 
 #define T_IDLE					1
+#define T_IGNSIGS				2
 
 #ifdef __i386__
 #include <sys/arch/i586/task/threadconf.h>
@@ -303,7 +304,7 @@ public:
 	 * @return true if the thread ignores signals currently
 	 */
 	bool isIgnoringSigs() const {
-		return ignoreSignals;
+		return flags & T_IGNSIGS;
 	}
 
 	/**
@@ -346,7 +347,7 @@ public:
 	 * @return whether there is a signal to handle
 	 */
 	bool hasSignal() const {
-		return !ignoreSignals && sigmask != 0;
+		return !isIgnoringSigs() && sigmask != 0;
 	}
 
 	/**
@@ -607,8 +608,6 @@ protected:
 	/* the next state it will receive on context-switch */
 	uint8_t newState;
 	cpuid_t cpu;
-	/* whether signals should be ignored (while being blocked) */
-	uint8_t ignoreSignals;
 	/* the stack-region(s) for this thread */
 	VMRegion *stackRegions[STACK_REG_COUNT];
 	/* the TLS-region for this thread (-1 if not present) */
@@ -659,9 +658,9 @@ inline Thread *ThreadBase::getById(tid_t tid) {
 inline void ThreadBase::switchNoSigs() {
 	ThreadBase *t = getRunning();
 	/* remember that the current thread wants to ignore signals */
-	t->ignoreSignals = 1;
+	t->flags |= T_IGNSIGS;
 	switchAway();
-	t->ignoreSignals = 0;
+	t->flags &= ~T_IGNSIGS;
 }
 
 inline IntrptStackFrame *ThreadBase::getIntrptStack() const {

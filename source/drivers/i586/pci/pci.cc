@@ -74,7 +74,7 @@ private:
 		if(d)
 			is << 0 << *d << Reply();
 		else
-			is << -ENOENT << Reply();
+			is << -ENOTFOUND << Reply();
 	}
 };
 

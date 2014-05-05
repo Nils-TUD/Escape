@@ -77,7 +77,7 @@ public:
 
 	void getKeymap(ipc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		int res = c->keymap() != NULL ? 0 : -ENOENT;
+		int res = c->keymap() != NULL ? 0 : -ENOTFOUND;
 		is << res << ipc::CString(c->keymap()->path) << ipc::Reply();
 	}
 

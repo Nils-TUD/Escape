@@ -135,13 +135,13 @@ public:
 	C *get(int fd) {
 		typename map_type::iterator it = _clients.find(fd);
 		if(it == _clients.end())
-			VTHROWE("No client with id " << fd,-ENOENT);
+			VTHROWE("No client with id " << fd,-ENOTFOUND);
 		return it->second;
 	}
 	const C *get(int fd) const {
 		typename map_type::const_iterator it = _clients.find(fd);
 		if(it == _clients.end())
-			VTHROWE("No client with id " << fd,-ENOENT);
+			VTHROWE("No client with id " << fd,-ENOTFOUND);
 		return it->second;
 	}
 

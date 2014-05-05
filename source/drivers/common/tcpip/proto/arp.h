@@ -62,7 +62,7 @@ public:
 	static ssize_t receive(Link &link,const Packet &packet);
 
 	static int remove(const ipc::Net::IPv4Addr &ip) {
-		return _cache.erase(ip) ? 0 : -ENOENT;
+		return _cache.erase(ip) ? 0 : -ENOTFOUND;
 	}
 	static ssize_t requestMAC(Link &link,const ipc::Net::IPv4Addr &ip);
 	static void print(std::ostream &os);

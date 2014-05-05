@@ -131,7 +131,7 @@ void VFSChannel::closeForDriver() {
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
-	ssize_t res = -ENOENT;
+	ssize_t res;
 	Proc *p;
 	msgid_t mid;
 

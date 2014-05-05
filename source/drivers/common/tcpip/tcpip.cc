@@ -300,7 +300,7 @@ public:
 		Link *l = LinkMng::getByName(name.str());
 		Link *other;
 		if(l == NULL)
-			res = -ENOENT;
+			res = -ENOTFOUND;
 		else if((other = LinkMng::getByIp(ip)) && other != l)
 			res = -EEXIST;
 		else if(ip.value() != 0 && !ip.isHost(netmask))
@@ -322,7 +322,7 @@ public:
 		std::lock_guard<std::mutex> guard(mutex);
 		Link *link = LinkMng::getByName(name.str());
 		if(!link)
-			is << -ENOENT << ipc::Reply();
+			is << -ENOTFOUND << ipc::Reply();
 		else
 			is << 0 << link->mac() << ipc::Reply();
 	}
@@ -336,7 +336,7 @@ public:
 		int res = 0;
 		Link *l = LinkMng::getByName(link.str());
 		if(l == NULL)
-			res = -ENOENT;
+			res = -ENOTFOUND;
 		else {
 			uint flags = ipc::Net::FL_UP;
 			if(gw.value() != 0)
@@ -389,7 +389,7 @@ public:
 		int res = 0;
 		const Route *route = Route::find(ip);
 		if(!route)
-			res = -ENOENT;
+			res = -ENOTFOUND;
 		else
 			ARP::requestMAC(*route->link,ip);
 		is << res << ipc::Reply();

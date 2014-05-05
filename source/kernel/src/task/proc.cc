@@ -579,12 +579,12 @@ int ProcBase::join(tid_t tid,bool allowSigs) {
 int ProcBase::addSignalFor(pid_t pid,int signal) {
 	Proc *p = request(pid,PLOCK_PROG);
 	if(!p)
-		return -ENOENT;
+		return -ENOTFOUND;
 
 	/* don't send a signal to processes that are dying */
 	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
 		release(p,PLOCK_PROG);
-		return -ENOENT;
+		return -ENOTFOUND;
 	}
 
 	for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt)

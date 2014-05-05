@@ -60,7 +60,7 @@ public:
 				return 0;
 			}
 		}
-		return -ENOENT;
+		return -ENOTFOUND;
 	}
 
 	static void print(std::ostream &os) {

@@ -31,5 +31,5 @@ ssize_t getenvto(char *value,size_t valSize,const char *name) {
 		}
 		var++;
 	}
-	return -ENOENT;
+	return -ENOTFOUND;
 }

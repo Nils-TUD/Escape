@@ -65,6 +65,7 @@
 #define ECONNFAILED					41	/* Connection failed */
 #define ENOTCONN					42	/* Not connected */
 #define ECONNRESET					43	/* Connection reset by peer */
+#define ENOTFOUND					44	/* Not found */
 
 #ifdef __cplusplus
 extern "C" {

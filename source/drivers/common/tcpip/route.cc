@@ -58,7 +58,7 @@ int Route::setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status) {
 			return 0;
 		}
 	}
-	return -ENOENT;
+	return -ENOTFOUND;
 }
 
 int Route::remove(const ipc::Net::IPv4Addr &ip) {
@@ -68,7 +68,7 @@ int Route::remove(const ipc::Net::IPv4Addr &ip) {
 			return 0;
 		}
 	}
-	return -ENOENT;
+	return -ENOTFOUND;
 }
 
 void Route::print(std::ostream &os) {

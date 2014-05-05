@@ -101,7 +101,7 @@ int VFSDevice::getWork() {
 	/* if there are no messages at all or the node is invalid, stop right now */
 	if(!valid || msgCount == 0) {
 		closeDir(true);
-		return -ENOENT;
+		return -ENOCLIENT;
 	}
 
 	Thread *t = Thread::getRunning();
@@ -128,7 +128,7 @@ searchBegin:
 		goto searchBegin;
 	}
 	closeDir(true);
-	return -ENOENT;
+	return -ENOCLIENT;
 }
 
 void VFSDevice::print(OStream &os) const {

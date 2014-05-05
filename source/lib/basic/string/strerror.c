@@ -66,6 +66,7 @@ static const char *msgs[] = {
 	/* 41 (ECONNFAILED) */		"Connection failed",
 	/* 42 (ENOTCONN) */			"Not connected",
 	/* 43 (ECONNRESET) */		"Connection reset by peer",
+	/* 44 (ENOTFOUND) */		"Not found",
 };
 
 char *strerror(int errnum) {

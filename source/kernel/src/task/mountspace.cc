@@ -113,7 +113,7 @@ int MountSpace::join(Proc *p,int id) {
 			return 0;
 		}
 	}
-	return -ENOENT;
+	return -ENOTFOUND;
 }
 
 void MountSpace::doLeave(Proc *p) {

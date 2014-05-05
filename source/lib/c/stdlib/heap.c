@@ -148,7 +148,7 @@ void *malloc(size_t size) {
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
 		size_t i = 0;
 		uintptr_t *trace = getStackTrace();
-		debugf("[A] %x %d ",area->address,area->size);
+		debugf("[A] %x %d ",(char*)area->address + 3,area->size);
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
 			if(trace[1])
@@ -189,7 +189,7 @@ void free(void *addr) {
 	/* check guards */
 	begin = (ulong*)addr - 3;
 	area = (sMemArea*)begin[0];
-	vassert(begin[0] != FREE_MAGIC,"Duplicate free?");
+	vassert(begin[0] != FREE_MAGIC,"Duplicate free of %p?",addr);
 	assert(begin[2] == GUARD_MAGIC);
 	assert(begin[begin[1] / sizeof(ulong) + 3] == GUARD_MAGIC);
 
@@ -225,7 +225,7 @@ void free(void *addr) {
 	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
 		size_t i = 0;
 		uintptr_t *trace = getStackTrace();
-		debugf("[F] %x %d ",area->address,area->size);
+		debugf("[F] %x %d ",addr,area->size);
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
 			if(trace[1])

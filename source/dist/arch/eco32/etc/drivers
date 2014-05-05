@@ -10,5 +10,8 @@ pipe
 	/dev/pipe 0666 root
 keyb
 	/dev/keyb 0110 input
+tcpip
+	/dev/socket 0770 network
+	/dev/tcpip 0110 network
 uimng /dev/vga
 	/dev/uimng 0110 input

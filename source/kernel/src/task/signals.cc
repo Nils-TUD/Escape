@@ -74,7 +74,6 @@ const char *Signals::getName(int signal) {
 		"SIG_TERM",
 		"SIG_ILL_INSTR",
 		"SIG_SEGFAULT",
-		"SIG_PIPE_CLOSED",
 		"SIG_CHILD_TERM",
 		"SIG_INTRPT",
 		"SIG_ALARM",

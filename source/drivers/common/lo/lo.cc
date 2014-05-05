@@ -126,7 +126,7 @@ private:
 			is << ipc::ReplyData(pkt.data,res);
 
 		delete[] pkt.data;
-		_packets.pop_back();
+		_packets.pop_front();
 		return true;
 	}
 

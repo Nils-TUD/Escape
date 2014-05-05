@@ -170,7 +170,6 @@ int main(int argc,char *argv[]) {
 }
 
 static void resetVterm(void) {
-	cout << endl;
 	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
 	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
 	vterm.restore();

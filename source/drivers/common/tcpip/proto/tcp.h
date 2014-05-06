@@ -64,10 +64,10 @@ public:
 	static ssize_t receive(Link &link,const Packet &packet);
 	static void replyReset(const Ethernet<IPv4<TCP>> *pkt);
 
+	static const char *flagsToStr(uint8_t flags);
 	static void printSockets(std::ostream &os);
 
 private:
-	static const char *flagsToStr(uint8_t flags);
 	static ssize_t sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,
 		ipc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
 		uint32_t ackNo,uint16_t winSize);
@@ -110,20 +110,7 @@ static inline std::ostream &operator<<(std::ostream &os,const TCP &p) {
 	os << "  seqNumber  = " << be32tocpu(p.seqNumber) << "\n";
 	os << "  ackNumber  = " << be32tocpu(p.ackNumber) << "\n";
 	os << "  dataOffset = " << p.dataOffset << "\n";
-	os << "  ctrlFlags  = ";
-	if(p.ctrlFlags & TCP::FL_ACK)
-		os << "ACK ";
-	if(p.ctrlFlags & TCP::FL_FIN)
-		os << "FIN ";
-	if(p.ctrlFlags & TCP::FL_PSH)
-		os << "PSH ";
-	if(p.ctrlFlags & TCP::FL_RST)
-		os << "RST ";
-	if(p.ctrlFlags & TCP::FL_SYN)
-		os << "SYN ";
-	if(p.ctrlFlags & TCP::FL_URG)
-		os << "URG ";
-	os << "\n";
+	os << "  ctrlFlags  = " << TCP::flagsToStr(p.ctrlFlags) << "\n";
 	os << "  windowSize = " << be16tocpu(p.windowSize) << "\n";
 	os << "  checksum   = " << be16tocpu(p.checksum) << "\n";
 	os << "  urgentPtr  = " << be16tocpu(p.urgentPtr) << "\n";

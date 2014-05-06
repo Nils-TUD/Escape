@@ -37,7 +37,7 @@
 #include "keymap.h"
 #include "clients.h"
 #include "keystrokes.h"
-#include "jobs.h"
+#include "jobmng.h"
 #include "screens.h"
 #include "header.h"
 #include "uimngdev.h"
@@ -55,9 +55,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	jobs_init();
-	keys_init();
-	header_init();
+	Header::init();
 	ScreenMng::init(argc - 1,argv + 1);
 	srand(time(NULL));
 
@@ -72,7 +70,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to start thread for drawing the header");
 
 	/* now wait for terminated childs */
-	jobs_wait();
+	JobMng::wait();
 	return 0;
 }
 
@@ -108,7 +106,7 @@ static bool handleKey(ipc::UIEvents::Event *data) {
 
 	if(data->d.keyb.keycode == VK_F12) {
 		std::lock_guard<std::mutex> guard(mutex);
-		keys_enterDebugger();
+		Keystrokes::enterDebugger();
 		return true;
 	}
 
@@ -131,10 +129,10 @@ static bool handleKey(ipc::UIEvents::Event *data) {
 		/* we can't lock this because if we do a fork, the child might connect to us and we might
 		 * wait until he has registered a device -> deadlock */
 		case VK_T:
-			keys_createTextConsole();
+			Keystrokes::createTextConsole();
 			return true;
 		case VK_G:
-			keys_createGUIConsole();
+			Keystrokes::createGUIConsole();
 			return true;
 		case VK_LEFT: {
 			std::lock_guard<std::mutex> guard(mutex);
@@ -165,8 +163,8 @@ static int kbClientThread(A_UNUSED void *arg) {
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			UIClient *active = UIClient::getActive();
-			const sKeymap *map = active && active->keymap() ? active->keymap() : km_getDefault();
-			uiev.d.keyb.character = km_translateKeycode(map,ev.isBreak,ev.keycode,&uiev.d.keyb.modifier);
+			const Keymap *map = active && active->keymap() ? active->keymap() : Keymap::getDefault();
+			uiev.d.keyb.character = map->translateKeycode(ev.isBreak,ev.keycode,&uiev.d.keyb.modifier);
 		}
 
 		/* mode switching etc. might fail */
@@ -188,7 +186,7 @@ static int ctrlThread(A_UNUSED void *arg) {
 	UIMngDevice dev("/dev/uimng",0110,mutex);
 
 	/* create first client */
-	keys_createTextConsole();
+	Keystrokes::createTextConsole();
 
 	dev.loop();
 	return 0;
@@ -202,7 +200,7 @@ static int headerThread(A_UNUSED void *arg) {
 			if(active && active->fb()) {
 				gsize_t width,height;
 				try {
-					if(header_rebuild(active,&width,&height))
+					if(Header::rebuild(active,&width,&height))
 						active->screen()->update(0,0,width,height);
 				}
 				catch(const std::exception &e) {

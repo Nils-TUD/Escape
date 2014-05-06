@@ -28,56 +28,24 @@
 #include "header.h"
 #include "clients.h"
 
-#define TITLE_BAR_COLOR		0x1F
-#define CPU_USAGE_COLOR		0x70
-#define ACTIVE_CLI_COLOR	0x4F
-#define INACTIVE_CLI_COLOR	0x70
+const char *Header::OS_TITLE = "Escape v" ESCAPE_VERSION;
+Header::CPUUsage *Header::_cpuUsage = NULL;
+Header::CPUUsage *Header::_lastUsage = NULL;
+size_t Header::_lastClientCount = 0;
+size_t Header::_cpuCount;
 
-#define OS_TITLE			"Escape v" ESCAPE_VERSION
-
-typedef void (*header_func)(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color);
-
-static void header_readCPUUsage(void);
-static void header_buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool force);
-
-typedef struct {
-	int usage;
-	char str[3];
-} sCPUUsage;
-
-static sCPUUsage *cpuUsage = NULL;
-static sCPUUsage *lastUsage = NULL;
-static size_t lastClientCount = 0;
-static size_t cpuCount;
-
-void header_init(void) {
-	cpuCount = sysconf(CONF_CPU_COUNT);
-	cpuUsage = (sCPUUsage*)calloc(cpuCount,sizeof(sCPUUsage));
-	lastUsage = (sCPUUsage*)calloc(cpuCount,sizeof(sCPUUsage));
-	if(!cpuUsage || !lastUsage)
-		error("Not enough memory for cpu array");
+void Header::init() {
+	_cpuCount = sysconf(CONF_CPU_COUNT);
+	_cpuUsage = new CPUUsage[_cpuCount]();
+	_lastUsage = new CPUUsage[_cpuCount]();
 	/* until the first update... */
-	for(size_t i = 0; i < cpuCount; ++i)
-		snprintf(cpuUsage[i].str,sizeof(cpuUsage[i].str),"%2d",0);
+	for(size_t i = 0; i < _cpuCount; ++i)
+		snprintf(_cpuUsage[i].str,sizeof(_cpuUsage[i].str),"%2d",0);
 }
 
-size_t header_getSize(const ipc::Screen::Mode &mode,int type,gpos_t x) {
-	if(type == ipc::Screen::MODE_TYPE_TUI)
-		return x * 2;
-	/* always update the whole width because it simplifies the copy it shouldn't be much slower
-	 * than doing a loop with 1 memcpy per line */
-	return x * (mode.bitsPerPixel / 8) * FONT_HEIGHT;
-}
-
-size_t header_getHeight(int type) {
-	if(type == ipc::Screen::MODE_TYPE_TUI)
-		return 1;
-	return FONT_HEIGHT;
-}
-
-static void header_doUpdate(UIClient *cli,gsize_t width,gsize_t height) {
+void Header::doUpdate(UIClient *cli,gsize_t width,gsize_t height) {
 	if(cli->type() == ipc::Screen::MODE_TYPE_TUI || width == cli->fb()->mode().width)
-		memcpy(cli->fb()->addr(),cli->header(),header_getSize(cli->fb()->mode(),cli->type(),width));
+		memcpy(cli->fb()->addr(),cli->header(),getSize(cli->fb()->mode(),cli->type(),width));
 	else {
 		size_t off = 0;
 		size_t len = width * (cli->fb()->mode().bitsPerPixel / 8);
@@ -89,24 +57,24 @@ static void header_doUpdate(UIClient *cli,gsize_t width,gsize_t height) {
 	}
 }
 
-bool header_update(UIClient *cli,gsize_t *width,gsize_t *height) {
+bool Header::update(UIClient *cli,gsize_t *width,gsize_t *height) {
 	*width = *height = 0;
-	header_buildTitle(cli,width,height,true);
+	buildTitle(cli,width,height,true);
 	if(*width > 0)
-		header_doUpdate(cli,*width,*height);
+		doUpdate(cli,*width,*height);
 	return *width > 0;
 }
 
-bool header_rebuild(UIClient *cli,gsize_t *width,gsize_t *height) {
-	header_readCPUUsage();
+bool Header::rebuild(UIClient *cli,gsize_t *width,gsize_t *height) {
+	readCPUUsage();
 	*width = *height = 0;
-	header_buildTitle(cli,width,height,false);
+	buildTitle(cli,width,height,false);
 	if(*width > 0)
-		header_doUpdate(cli,*width,*height);
+		doUpdate(cli,*width,*height);
 	return *width > 0;
 }
 
-static void header_readCPUUsage(void) {
+void Header::readCPUUsage(void) {
 	FILE *f = fopen("/system/cpu","r");
 	if(f) {
 		while(!feof(f)) {
@@ -116,9 +84,9 @@ static void header_readCPUUsage(void) {
 			if(fscanf(f,"%*s %d:",&no) == 1 &&
 				fscanf(f,"%*s%Lu%*s",&total) == 1 &&
 				fscanf(f,"%*s%Lu%*s",&used) == 1) {
-				cpuUsage[no].usage = 100 * (used / (double)total);
-				cpuUsage[no].usage = MAX(0,MIN(cpuUsage[no].usage,99));
-				snprintf(cpuUsage[no].str,sizeof(cpuUsage[no].str),"%2d",cpuUsage[no].usage);
+				_cpuUsage[no].usage = 100 * (used / (double)total);
+				_cpuUsage[no].usage = MAX(0,MIN(_cpuUsage[no].usage,99));
+				snprintf(_cpuUsage[no].str,sizeof(_cpuUsage[no].str),"%2d",_cpuUsage[no].usage);
 			}
 
 			/* read until the next cpu */
@@ -133,20 +101,20 @@ static void header_readCPUUsage(void) {
 	}
 }
 
-static void header_putcTUI(const ipc::Screen::Mode &,char *header,uint *col,char c,char color) {
+void Header::putcTUI(const ipc::Screen::Mode &,char *header,uint *col,char c,char color) {
 	header[*col * 2] = c;
 	header[*col * 2 + 1] = color;
 	(*col)++;
 }
 
-static void header_putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color) {
+void Header::putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color) {
 #ifdef __i386__
 	vbet_drawChar(mode,(uint8_t*)header,*col,0,c,color);
 #endif
 	(*col)++;
 }
 
-static void header_makeDirty(UIClient *cli,size_t cols,gsize_t *width,gsize_t *height) {
+void Header::makeDirty(UIClient *cli,size_t cols,gsize_t *width,gsize_t *height) {
 	if(cli->type() == ipc::Screen::MODE_TYPE_TUI) {
 		*width = cols;
 		*height = 1;
@@ -157,39 +125,39 @@ static void header_makeDirty(UIClient *cli,size_t cols,gsize_t *width,gsize_t *h
 	}
 }
 
-static void header_buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool force) {
+void Header::buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool force) {
 	if(!cli->fb())
 		return;
 
 	uint col = 0;
-	header_func func = cli->type() == ipc::Screen::MODE_TYPE_GUI ? header_putcGUI : header_putcTUI;
+	putc_func func = cli->type() == ipc::Screen::MODE_TYPE_GUI ? putcGUI : putcTUI;
 	const ipc::Screen::Mode &mode = cli->fb()->mode();
 
 	/* print CPU usage */
 	bool changed = false;
-	size_t maxCpus = MIN(cpuCount,8);
+	size_t maxCpus = MIN(_cpuCount,8);
 	for(size_t i = 0; i < maxCpus; i++) {
-		if(force || cpuUsage[i].usage != lastUsage[i].usage) {
+		if(force || _cpuUsage[i].usage != _lastUsage[i].usage) {
 			func(mode,cli->header(),&col,' ',CPU_USAGE_COLOR);
-			func(mode,cli->header(),&col,cpuUsage[i].str[0],CPU_USAGE_COLOR);
-			func(mode,cli->header(),&col,cpuUsage[i].str[1],CPU_USAGE_COLOR);
+			func(mode,cli->header(),&col,_cpuUsage[i].str[0],CPU_USAGE_COLOR);
+			func(mode,cli->header(),&col,_cpuUsage[i].str[1],CPU_USAGE_COLOR);
 			changed = true;
 		}
 		else
 			col += 3;
 	}
-	memcpy(lastUsage,cpuUsage,cpuCount * sizeof(sCPUUsage));
+	memcpy(_lastUsage,_cpuUsage,_cpuCount * sizeof(CPUUsage));
 	if(force || changed) {
-		if(cpuCount > maxCpus) {
+		if(_cpuCount > maxCpus) {
 			func(mode,cli->header(),&col,' ',CPU_USAGE_COLOR);
 			func(mode,cli->header(),&col,'.',CPU_USAGE_COLOR);
 			func(mode,cli->header(),&col,'.',CPU_USAGE_COLOR);
 		}
-		header_makeDirty(cli,col,width,height);
+		makeDirty(cli,col,width,height);
 	}
 
 	size_t clients = UIClient::count();
-	if(force || clients != lastClientCount) {
+	if(force || clients != _lastClientCount) {
 		/* print sep */
 		func(mode,cli->header(),&col,0xC7,TITLE_BAR_COLOR);
 
@@ -206,7 +174,7 @@ static void header_buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool 
 		/* print clients */
 		col = mode.cols - clients * 3 - 1;
 		func(mode,cli->header(),&col,0xB6,TITLE_BAR_COLOR);
-		for(size_t i = 0; i < MAX_CLIENTS; ++i) {
+		for(size_t i = 0; i < UIClient::MAX_CLIENTS; ++i) {
 			if(!UIClient::exists(i))
 				continue;
 
@@ -216,7 +184,7 @@ static void header_buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool 
 			func(mode,cli->header(),&col,'0' + i,color);
 		}
 
-		header_makeDirty(cli,mode.cols,width,height);
-		lastClientCount = clients;
+		makeDirty(cli,mode.cols,width,height);
+		_lastClientCount = clients;
 	}
 }

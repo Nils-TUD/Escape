@@ -26,11 +26,44 @@
 
 #include "clients.h"
 
+/**
+ * Manages the screens the uimng uses
+ */
 class ScreenMng {
 public:
+	/**
+	 * Inits the screens from given device-names
+	 *
+	 * @param cnt the number of available screens
+	 * @param names the names of the devices that provide them
+	 */
 	static void init(int cnt,char *names[]);
+
+	/**
+	 * Finds a screen with given mode-id
+	 *
+	 * @param mid the mode-id
+	 * @param mode will be set to the mode-information
+	 * @param scr will be set to the Screen instance
+	 * @return true if found
+	 */
 	static bool find(int mid,ipc::Screen::Mode *mode,ipc::Screen **scr);
+
+	/**
+	 * Adjusts the available size of the given mode, i.e. the header is removed.
+	 *
+	 * @param mode the mode
+	 */
 	static void adjustMode(ipc::Screen::Mode *mode);
+
+	/**
+	 * Stores the list of available modes in <modes>.
+	 *
+	 * @param modes the array to copy to
+	 * @param n if 0, only the number of available modes will be returned. otherwise, that many modes
+	 *  are copied at max
+	 * @return the number of found modes
+	 */
 	static ssize_t getModes(ipc::Screen::Mode *modes,size_t n);
 
 private:

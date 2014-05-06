@@ -50,12 +50,12 @@ bool ScreenMng::find(int mid,ipc::Screen::Mode *mode,ipc::Screen **scr) {
 
 void ScreenMng::adjustMode(ipc::Screen::Mode *mode) {
 	if(mode->type & ipc::Screen::MODE_TYPE_GUI) {
-		mode->height -= header_getHeight(ipc::Screen::MODE_TYPE_GUI);
-		mode->guiHeaderSize += header_getHeight(ipc::Screen::MODE_TYPE_GUI);
+		mode->height -= Header::getHeight(ipc::Screen::MODE_TYPE_GUI);
+		mode->guiHeaderSize += Header::getHeight(ipc::Screen::MODE_TYPE_GUI);
 	}
 	if(mode->type & ipc::Screen::MODE_TYPE_TUI) {
-		mode->rows -= header_getHeight(ipc::Screen::MODE_TYPE_TUI);
-		mode->tuiHeaderSize += header_getHeight(ipc::Screen::MODE_TYPE_TUI);
+		mode->rows -= Header::getHeight(ipc::Screen::MODE_TYPE_TUI);
+		mode->tuiHeaderSize += Header::getHeight(ipc::Screen::MODE_TYPE_TUI);
 	}
 }
 

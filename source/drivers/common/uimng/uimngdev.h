@@ -67,7 +67,7 @@ public:
 
 		/* update header */
 		gsize_t width,height;
-		if(header_update(c,&width,&height))
+		if(Header::update(c,&width,&height))
 			c->screen()->update(0,0,width,height);
 
 		is << ipc::FileCreatSibl::Response(0) << ipc::Reply();
@@ -75,8 +75,8 @@ public:
 
 	void getKeymap(ipc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		const sKeymap *km = c->keymap() ? c->keymap() : km_getDefault();
-		is << 0 << ipc::CString(km->path) << ipc::Reply();
+		const Keymap *km = c->keymap() ? c->keymap() : Keymap::getDefault();
+		is << 0 << ipc::CString(km->file().c_str()) << ipc::Reply();
 	}
 
 	void setKeymap(ipc::IPCStream &is) {
@@ -85,7 +85,7 @@ public:
 		is >> path;
 
 		int res = -EINVAL;
-		sKeymap *newMap = km_request(path.str());
+		Keymap *newMap = Keymap::request(path.str());
 		if(newMap) {
 			/* we don't need to lock this, because the client is only removed if this
 			 * device is closed. since this device is only handled by one thread, it
@@ -137,7 +137,7 @@ public:
 			/* update header */
 			if(c->isActive()) {
 				gsize_t width,height;
-				if(header_update(c,&width,&height))
+				if(Header::update(c,&width,&height))
 					c->screen()->update(0,0,width,height);
 			}
 		}
@@ -161,7 +161,7 @@ public:
 		is >> x >> y >> w >> h;
 
 		if(c->isActive()) {
-			y += header_getHeight(c->type());
+			y += Header::getHeight(c->type());
 			c->screen()->update(x,y,w,h);
 		}
 	}

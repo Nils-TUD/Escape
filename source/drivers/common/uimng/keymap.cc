@@ -28,150 +28,118 @@
 #include <ctype.h>
 #include "keymap.h"
 
-#define KEYMAP_SIZE		128
-#define KEYMAP_FILE		"/etc/keymap"
+const char *Keymap::KEYMAP_FILE = "/etc/keymap";
 
-static bool km_parseLine(FILE *f,sKeymapEntry *map);
-static char km_parseKey(FILE *f);
-static char km_getKey(char *str);
-static bool km_skipTrash(FILE *f);
+bool Keymap::_shiftDown = false;
+bool Keymap::_altDown = false;
+bool Keymap::_ctrlDown = false;
+std::vector<Keymap*> Keymap::_maps;
+Keymap *Keymap::_defMap = NULL;
 
-static bool shiftDown = false;
-static bool altDown = false;
-static bool ctrlDown = false;
-static sSLList *maps;
-static sKeymap *defmap = NULL;
-
-sKeymap *km_getDefault(void) {
-	static char defKeymapPath[MAX_PATH_LEN];
-	if(defmap == NULL) {
+Keymap *Keymap::getDefault() {
+	static char path[MAX_PATH_LEN];
+	if(_defMap == NULL) {
 		/* determine default keymap */
 		char *newline;
 		FILE *f = fopen(KEYMAP_FILE,"r");
 		if(f == NULL)
 			error("Unable to open %s",KEYMAP_FILE);
-		fgets(defKeymapPath,MAX_PATH_LEN,f);
-		if((newline = strchr(defKeymapPath,'\n')))
+		fgets(path,MAX_PATH_LEN,f);
+		if((newline = strchr(path,'\n')))
 			*newline = '\0';
 		fclose(f);
 
 		/* load default map */
-		defmap = km_request(defKeymapPath);
-		if(!defmap)
+		_defMap = request(path);
+		if(!_defMap)
 			error("Unable to load default keymap");
 	}
-	return defmap;
+	return _defMap;
 }
 
-sKeymap *km_request(const char *file) {
-	if(maps == NULL) {
-		maps = sll_create();
-		if(maps == NULL)
-			error("Unable to create maps-list");
-	}
-
+Keymap *Keymap::request(const std::string &kmfile) {
 	/* do we already have the keymap? */
-	sSLNode *n;
-	for(n = sll_begin(maps); n != NULL; n = n->next) {
-		sKeymap *m = (sKeymap*)n->data;
-		if(strcmp(m->path,file) == 0) {
-			m->refs++;
-			return m;
+	for(auto m = _maps.begin(); m != _maps.end(); ++m) {
+		if((*m)->_file == kmfile) {
+			(*m)->_refs++;
+			return *m;
 		}
 	}
 
 	/* create map */
-	FILE *f;
-	sKeymap *map = (sKeymap*)malloc(sizeof(sKeymap));
-	if(!map)
-		return NULL;
-	map->refs = 1;
-	strnzcpy(map->path,file,sizeof(map->path));
-	map->entries = static_cast<sKeymapEntry*>(calloc(KEYMAP_SIZE,sizeof(sKeymapEntry)));
-	if(!map->entries)
-		goto error;
-
-	f = fopen(file,"r");
+	FILE *f = fopen(kmfile.c_str(),"r");
 	if(!f)
-		goto errorEntries;
+		return NULL;
+	Keymap *map = new Keymap(kmfile);
 	while(1) {
-		if(!km_parseLine(f,map->entries))
+		if(!parseLine(f,map->_entries))
 			break;
 	}
 	fclose(f);
-
-	if(!sll_append(maps,map))
-		goto errorEntries;
+	_maps.push_back(map);
 	return map;
-
-errorEntries:
-	free(map->entries);
-error:
-	free(map);
-	return NULL;
 }
 
-void km_release(sKeymap *map) {
-	if(--map->refs == 0) {
-		sll_removeFirstWith(maps,map);
-		free(map->entries);
-		free(map);
+void Keymap::release(Keymap *map) {
+	if(--map->_refs == 0) {
+		_maps.erase_first(map);
+		delete map;
 	}
 }
 
-char km_translateKeycode(const sKeymap *map,bool isBreak,uchar keycode,uchar *modifier) {
-	sKeymapEntry *e;
+char Keymap::translateKeycode(bool isBreak,uchar keycode,uchar *modifier) const {
+	Entry *e;
 	/* handle shift, alt and ctrl */
 	switch(keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:
-			shiftDown = !isBreak;
+			_shiftDown = !isBreak;
 			break;
 		case VK_LALT:
 		case VK_RALT:
-			altDown = !isBreak;
+			_altDown = !isBreak;
 			break;
 		case VK_LCTRL:
 		case VK_RCTRL:
-			ctrlDown = !isBreak;
+			_ctrlDown = !isBreak;
 			break;
 	}
 
-	e = map->entries + keycode;
-	*modifier = (altDown ? STATE_ALT : 0) | (ctrlDown ? STATE_CTRL : 0) |
-			(shiftDown ? STATE_SHIFT : 0) | (isBreak ? STATE_BREAK : 0);
-	if(shiftDown)
+	e = _entries + keycode;
+	*modifier = (_altDown ? STATE_ALT : 0) | (_ctrlDown ? STATE_CTRL : 0) |
+			(_shiftDown ? STATE_SHIFT : 0) | (isBreak ? STATE_BREAK : 0);
+	if(_shiftDown)
 		return e->shift;
-	if(altDown)
+	if(_altDown)
 		return e->alt;
 	return e->def;
 }
 
-static bool km_parseLine(FILE *f,sKeymapEntry *map) {
+bool Keymap::parseLine(FILE *f,Entry *map) {
 	size_t i;
 	int no;
 	char *entries[3];
 	/* scan number */
-	if(fscanf(f,"%d",&no) != 1 || no >= KEYMAP_SIZE)
+	if(fscanf(f,"%d",&no) != 1 || (size_t)no >= KEYMAP_SIZE)
 		return false;
-	if(!km_skipTrash(f))
+	if(!skipTrash(f))
 		return false;
 	/* scan chars */
 	entries[0] = &(map[no].def);
 	entries[1] = &(map[no].shift);
 	entries[2] = &(map[no].alt);
 	for(i = 0; i < 3; i++) {
-		char c = km_parseKey(f);
+		char c = parseKey(f);
 		if(c == EOF)
 			return false;
 		*(entries[i]) = c;
-		if(!km_skipTrash(f))
+		if(!skipTrash(f))
 			return false;
 	}
 	return true;
 }
 
-static char km_parseKey(FILE *f) {
+char Keymap::parseKey(FILE *f) {
 	char str[3];
 	char c = fgetc(f);
 	if(c == '\'') {
@@ -184,7 +152,7 @@ static char km_parseKey(FILE *f) {
 				return EOF;
 			str[2] = '\0';
 		}
-		return km_getKey(str);
+		return getKey(str);
 	}
 	else if(c == 'x') {
 		uint code;
@@ -194,7 +162,7 @@ static char km_parseKey(FILE *f) {
 	return NPRINT;
 }
 
-static char km_getKey(char *str) {
+char Keymap::getKey(char *str) {
 	if(*str == '\\') {
 		switch(*(str + 1)) {
 			case 'b':
@@ -214,7 +182,7 @@ static char km_getKey(char *str) {
 	return *str;
 }
 
-static bool km_skipTrash(FILE *f) {
+bool Keymap::skipTrash(FILE *f) {
 	bool comment = false;
 	while(1) {
 		char c = fgetc(f);

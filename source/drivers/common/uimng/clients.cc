@@ -76,7 +76,7 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	gsize_t w = cli->_type == ipc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().cols : cli->_fb->mode().width;
 	gsize_t h = cli->_type == ipc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().rows : cli->_fb->mode().height;
 	gsize_t dw,dh;
-	header_update(cli,&dw,&dh);
+	Header::update(cli,&dw,&dh);
 	cli->_screen->update(0,0,w,h);
 }
 
@@ -119,7 +119,7 @@ void UIClient::setMode(int ntype,const ipc::Screen::Mode &mode,ipc::Screen *scr,
 
 	/* set new stuff */
 	_header = new char[
-		header_getSize(mode,ntype,ntype == ipc::Screen::MODE_TYPE_TUI ? mode.cols : mode.width)];
+		Header::getSize(mode,ntype,ntype == ipc::Screen::MODE_TYPE_TUI ? mode.cols : mode.width)];
 	_screen = scr;
 	_fb = nfb.release();
 	_type = ntype;
@@ -128,7 +128,7 @@ void UIClient::setMode(int ntype,const ipc::Screen::Mode &mode,ipc::Screen *scr,
 void UIClient::setCursor(gpos_t x,gpos_t y,int cursor) {
 	if(screen()) {
 		_cursor.x = x;
-		_cursor.y = y + header_getHeight(type());
+		_cursor.y = y + Header::getHeight(type());
 		_cursor.cursor = cursor;
 		screen()->setCursor(_cursor.x,_cursor.y,_cursor.cursor);
 	}

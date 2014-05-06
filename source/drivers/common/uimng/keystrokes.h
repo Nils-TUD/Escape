@@ -21,8 +21,59 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <esc/debug.h>
+#include <mutex>
 
-void keys_init(void);
-void keys_createTextConsole(void);
-void keys_createGUIConsole(void);
-void keys_enterDebugger(void);
+#include "clients.h"
+
+/**
+ * Handles the keystrokes the uimng provides
+ */
+class Keystrokes {
+	Keystrokes() = delete;
+
+	static const int VGA_MODE;
+
+	static const char *VTERM_PROG;
+	static const char *LOGIN_PROG;
+
+	static const char *WINMNG_PROG;
+	static const char *GLOGIN_PROG;
+
+	static const char *TUI_DEF_COLS;
+	static const char *TUI_DEF_ROWS;
+
+	static const char *GUI_DEF_RES_X;
+	static const char *GUI_DEF_RES_Y;
+
+public:
+	/**
+	 * Enters the kernel-debugger
+	 */
+	static void enterDebugger() {
+		switchToVGA();
+		debug();
+		UIClient::reactivate(UIClient::getActive(),UIClient::getActive(),VGA_MODE);
+	}
+
+	/**
+	 * Creates a new text-console
+	 */
+	static void createTextConsole() {
+		createConsole(VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG,"TERM");
+	}
+
+	/**
+	 * Creates a new GUI-console
+	 */
+	static void createGUIConsole() {
+		createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,GLOGIN_PROG,"WINMNG");
+	}
+
+private:
+	static void createConsole(const char *mng,const char *cols,const char *rows,const char *login,
+		const char *termVar);
+	static void switchToVGA(void);
+
+	static std::mutex mutex;
+};

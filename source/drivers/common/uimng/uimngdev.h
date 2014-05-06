@@ -48,8 +48,6 @@ public:
 	void open(ipc::IPCStream &is) {
 		std::lock_guard<std::mutex> guard(_mutex);
 		ipc::ClientDevice<UIClient>::open(is);
-		UIClient *c = get(is.fd());
-		c->keymap(km_getDefault());
 	}
 
 	void close(ipc::IPCStream &is) {
@@ -77,8 +75,8 @@ public:
 
 	void getKeymap(ipc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		int res = c->keymap() != NULL ? 0 : -ENOTFOUND;
-		is << res << ipc::CString(c->keymap()->path) << ipc::Reply();
+		const sKeymap *km = c->keymap() ? c->keymap() : km_getDefault();
+		is << 0 << ipc::CString(km->path) << ipc::Reply();
 	}
 
 	void setKeymap(ipc::IPCStream &is) {

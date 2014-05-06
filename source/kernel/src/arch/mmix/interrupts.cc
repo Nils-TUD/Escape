@@ -205,11 +205,11 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		sregs->rxx = 1UL << 63;
 	}
 
-#if PANIC_ON_PAGEFAULT
 	pid_t pid = Proc::getRunning();
-	KSpecRegs *sregs = Thread::getRunning()->getSpecRegs();
+	KSpecRegs *sregs = t->getSpecRegs();
 	Log::get().writef("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
+#if PANIC_ON_PAGEFAULT
 	Util::setpf(pfaddr,sregs->rww);
 	Util::panic("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
 #else

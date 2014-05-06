@@ -292,9 +292,9 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 		stack->setIP(reinterpret_cast<uint32_t>(pc) + 2);
 	}
 
-#if PANIC_ON_PAGEFAULT
 	printPFInfo(Log::get(),t,stack,addr);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
+#if PANIC_ON_PAGEFAULT
 	Util::setpf(addr,stack->getIP());
 	Util::panic("Process segfaulted");
 #else

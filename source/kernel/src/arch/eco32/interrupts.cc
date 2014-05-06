@@ -155,10 +155,10 @@ void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 		stack->r[30] += 4;
 	}
 
-#if PANIC_ON_PAGEFAULT
 	pid_t pid = Proc::getRunning();
 	Log::get().writef("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
+#if PANIC_ON_PAGEFAULT
 	Util::setpf(pfaddr,stack->r[30]);
 	Util::panic("proc %d: page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 #else

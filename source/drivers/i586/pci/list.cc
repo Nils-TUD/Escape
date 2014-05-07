@@ -18,12 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <esc/arch/i586/ports.h>
 #include <esc/sllist.h>
 #include <esc/dir.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "list.h"
+#include "pci.h"
 
 /* TODO according to http://en.wikipedia.org/wiki/PCI_configuration_space there are max. 256 buses.
  * Lost searches the first 8. why? */
@@ -50,10 +51,8 @@
 #define BAR_MEM_PREFETCHABLE(bar)	(((bar) >> 3) & 0x1)
 
 static void list_detect(void);
-static void pci_fillDev(ipc::PCI::Device *dev);
-static void pci_fillBar(ipc::PCI::Device *dev,size_t i);
-static uint32_t pci_read(uchar bus,uchar dev,uchar func,uchar offset);
-static void pci_write(uchar bus,uchar dev,uchar func,uchar offset,uint32_t value);
+static void list_fillDev(ipc::PCI::Device *dev);
+static void list_fillBar(ipc::PCI::Device *dev,size_t i);
 
 static sSLList *devices;
 
@@ -112,7 +111,7 @@ static void list_detect(void) {
 				device->bus = bus;
 				device->dev = dev;
 				device->func = func;
-				pci_fillDev(device);
+				list_fillDev(device);
 				if(device->vendorId != VENDOR_INVALID) {
 					if(!sll_append(devices,device))
 						error("Unable to append device");
@@ -124,7 +123,7 @@ static void list_detect(void) {
 	}
 }
 
-static void pci_fillDev(ipc::PCI::Device *dev) {
+static void list_fillDev(ipc::PCI::Device *dev) {
 	uint32_t val;
 	val = pci_read(dev->bus,dev->dev,dev->func,0);
 	dev->vendorId = val & 0xFFFF;
@@ -143,12 +142,12 @@ static void pci_fillDev(ipc::PCI::Device *dev) {
 	if(dev->type == ipc::PCI::GENERIC) {
 		size_t i;
 		for(i = 0; i < 6; i++)
-			pci_fillBar(dev,i);
+			list_fillBar(dev,i);
 		dev->irq = pci_read(dev->bus,dev->dev,dev->func,0x3C) & 0xFF;
 	}
 }
 
-static void pci_fillBar(ipc::PCI::Device *dev,size_t i) {
+static void list_fillBar(ipc::PCI::Device *dev,size_t i) {
 	ipc::PCI::Bar *bar = dev->bars + i;
 	uint32_t barValue = pci_read(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4);
 	bar->type = barValue & 0x1;
@@ -179,16 +178,4 @@ static void pci_fillBar(ipc::PCI::Device *dev,size_t i) {
 		bar->size &= ~(bar->size - 1);
 	}
 	pci_write(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4,barValue);
-}
-
-static uint32_t pci_read(uchar bus,uchar dev,uchar func,uchar offset) {
-	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
-	outdword(IOPORT_PCI_CFG_ADDR,addr);
-	return indword(IOPORT_PCI_CFG_DATA);
-}
-
-static void pci_write(uchar bus,uchar dev,uchar func,uchar offset,uint32_t value) {
-	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);
-	outdword(IOPORT_PCI_CFG_ADDR,addr);
-	outdword(IOPORT_PCI_CFG_DATA,value);
 }

@@ -97,6 +97,8 @@
 #define MSG_PCI_GET_BY_ID			1001	/* searches for a PCI device with given id */
 #define MSG_PCI_GET_BY_INDEX		1002	/* searches for a PCI device with given index (0..n) */
 #define MSG_PCI_GET_COUNT			1003	/* gets the number of PCI devices */
+#define MSG_PCI_READ				1004	/* reads from PCI config space */
+#define MSG_PCI_WRITE				1005	/* writes to PCI config space */
 
 #define MSG_INIT_REBOOT				1100	/* requests a reboot */
 #define MSG_INIT_SHUTDOWN			1101	/* requests a shutdown */

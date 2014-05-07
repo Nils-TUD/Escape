@@ -26,7 +26,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "list.h"
+#include "pci.h"
 
 using namespace ipc;
 
@@ -38,6 +40,8 @@ public:
 		set(MSG_PCI_GET_BY_ID,std::make_memfun(this,&PCIService::getById));
 		set(MSG_PCI_GET_BY_INDEX,std::make_memfun(this,&PCIService::getByIndex));
 		set(MSG_PCI_GET_COUNT,std::make_memfun(this,&PCIService::getCount));
+		set(MSG_PCI_READ,std::make_memfun(this,&PCIService::read));
+		set(MSG_PCI_WRITE,std::make_memfun(this,&PCIService::write));
 	}
 
 	void getByClass(IPCStream &is) {
@@ -67,6 +71,24 @@ public:
 	void getCount(IPCStream &is) {
 		ssize_t len = list_length();
 		is << len << Reply();
+	}
+
+	void read(IPCStream &is) {
+		uchar bus,dev,func;
+		uint32_t offset,value;
+		is >> bus >> dev >> func >> offset;
+
+		value = pci_read(bus,dev,func,offset);
+		is << value << Reply();
+	}
+
+	void write(IPCStream &is) {
+		uchar bus,dev,func;
+		uint32_t offset,value;
+		is >> bus >> dev >> func >> offset >> value;
+
+		pci_write(bus,dev,func,offset,value);
+		is << 0 << Reply();
 	}
 
 private:

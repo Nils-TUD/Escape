@@ -143,6 +143,34 @@ public:
 		return count;
 	}
 
+	/**
+	 * Reads from the PCI config space of the given device.
+	 *
+	 * @param bus the bus
+	 * @param dev the device
+	 * @param func the function
+	 * @param offset the offset to read at
+	 * @return the value
+	 */
+	uint32_t read(uchar bus,uchar dev,uchar func,uint32_t offset) {
+		uint32_t res;
+		_is << bus << dev << func << offset << SendReceive(MSG_PCI_READ) >> res;
+		return res;
+	}
+
+	/**
+	 * Writes to the PCI config space of the given device.
+	 *
+	 * @param bus the bus
+	 * @param dev the device
+	 * @param func the function
+	 * @param offset the offset to write to
+	 * @param value the value to write
+	 */
+	void write(uchar bus,uchar dev,uchar func,uint32_t offset,uint32_t value) {
+		_is << bus << dev << func << offset << value << Send(MSG_PCI_WRITE);
+	}
+
 private:
 	IPCStream _is;
 };

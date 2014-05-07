@@ -244,7 +244,7 @@ private:
 };
 
 static inline std::ostream &operator<<(std::ostream &os,const CircularBuf &cb) {
-	os << "CircularBuf[start=" << cb._seqStart << "; nextExp=" << (cb.nextExp() - cb._seqStart)
-	   << " nextSeq=" << (cb.nextSeq() - cb._seqStart) << "]";
+	os << "CircularBuf[start=" << cb._seqStart << "; nextExp=" << cb.nextExp()
+	   << " nextSeq=" << cb.nextSeq() << "]";
 	return os;
 }

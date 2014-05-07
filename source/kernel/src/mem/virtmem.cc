@@ -117,7 +117,7 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	}
 	else {
 		/* its our own mem; store physical address for the caller */
-		addOwn(res);
+		addOwn(res + pages);
 		*phys = frames[0] * PAGE_SIZE;
 	}
 	release();

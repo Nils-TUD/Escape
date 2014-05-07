@@ -144,10 +144,18 @@ int main(int argc,char **argv) {
 		error("Usage: %s <device>\n",argv[0]);
 
 	ipc::PCI pci("/dev/pci");
-	ipc::PCI::Device nic = pci.getByClass(ipc::NIC::PCI_CLASS,ipc::NIC::PCI_SUBCLASS);
-	if(nic.deviceId != Ne2k::DEVICE_ID || nic.vendorId != Ne2k::VENDOR_ID) {
-		error("NIC is no NE2K (found %d.%d.%d: vendor=%hx, device=%hx)",
-				nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
+
+	// find Ne2000 NIC
+	ipc::PCI::Device nic;
+	try {
+		for(int no = 0; ; ++no) {
+			nic = pci.getByClass(ipc::NIC::PCI_CLASS,ipc::NIC::PCI_SUBCLASS,no);
+			if(nic.deviceId == Ne2k::DEVICE_ID && nic.vendorId == Ne2k::VENDOR_ID)
+				break;
+		}
+	}
+	catch(...) {
+		error("Unable to find an NE2K (vendor=%hx, device=%hx)",Ne2k::DEVICE_ID,Ne2k::VENDOR_ID);
 	}
 
 	print("Found PCI-device %d.%d.%d: vendor=%hx, device=%hx",

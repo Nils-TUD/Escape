@@ -45,10 +45,11 @@ public:
 	}
 
 	void getByClass(IPCStream &is) {
+		int no;
 		uchar cls,subcls;
-		is >> cls >> subcls;
+		is >> cls >> subcls >> no;
 
-		PCI::Device *d = list_getByClass(cls,subcls);
+		PCI::Device *d = list_getByClass(cls,subcls,no);
 		reply(is,d);
 	}
 

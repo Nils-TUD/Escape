@@ -32,9 +32,10 @@ void list_init(void);
  *
  * @param baseClass the class
  * @param subClass the subclass
+ * @param no the number (if there are multiple devices of this class/subclass)
  * @return the device or NULL
  */
-ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass);
+ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no);
 
 /**
  * Finds a PCI-device by bus, dev and func

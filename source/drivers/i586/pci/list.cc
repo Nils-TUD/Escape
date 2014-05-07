@@ -70,12 +70,14 @@ void list_init(void) {
 	list_detect();
 }
 
-ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass) {
+ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no) {
 	sSLNode *n;
 	for(n = sll_begin(devices); n != NULL; n = n->next) {
 		ipc::PCI::Device *d = (ipc::PCI::Device*)n->data;
-		if(d->baseClass == baseClass && d->subClass == subClass)
-			return d;
+		if(d->baseClass == baseClass && d->subClass == subClass) {
+			if(no-- == 0)
+				return d;
+		}
 	}
 	return NULL;
 }

@@ -83,13 +83,14 @@ public:
 	 *
 	 * @param cls the class
 	 * @param subcls the subclass
+	 * @param no the number (if there are multiple devices with this class/subclass)
 	 * @return the device
 	 * @throws if the operation failed
 	 */
-	Device getByClass(uchar cls,uchar subcls) {
+	Device getByClass(uchar cls,uchar subcls,int no = 0) {
 		Device d;
 		int err;
-		_is << cls << subcls << SendReceive(MSG_PCI_GET_BY_CLASS) >> err >> d;
+		_is << cls << subcls << no << SendReceive(MSG_PCI_GET_BY_CLASS) >> err >> d;
 		if(err < 0)
 			VTHROWE("getByClass(" << cls << "," << subcls << ")",err);
 		return d;

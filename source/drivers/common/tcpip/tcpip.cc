@@ -475,8 +475,6 @@ static int receiveThread(void *arg) {
 		if((size_t)res >= sizeof(Ethernet<>)) {
 			std::lock_guard<std::mutex> guard(mutex);
 			Packet pkt(buffer,res);
-			//std::cout << "Got packet of " << res << " bytes:\n";
-			//std::cout << *reinterpret_cast<Ethernet<>*>(buffer) << std::endl;
 			ssize_t err = Ethernet<>::receive(*link,pkt);
 			if(err < 0)
 				std::cerr << "Ignored packet of size " << res << ": " << strerror(err) << "\n";

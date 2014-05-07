@@ -103,7 +103,7 @@ static void copyFile(const char *src,const char *dest) {
 			}
 
 			pos += res;
-			ulong steps = (totalSteps * pos) / total;
+			ulong steps = ((ullong)totalSteps * pos) / total;
 			if(steps != lastSteps || pos - lastPos > 1024 * 1024) {
 				printf("\r%-25.25s: ",src);
 				printSize(pos);

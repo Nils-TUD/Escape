@@ -34,10 +34,19 @@ public:
 	explicit Link(const std::string &n,const char *path)
 		: ipc::NIC(path,IO_MSGS | IO_READ | IO_WRITE), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
 		  _mtu(getMTU()), _name(n), _status(ipc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
+		sharebuf(fd(),mtu(),&_buffer,&_bufname,0);
+		if(_buffer == NULL)
+			throw std::default_error("Not enough memory for buffer",-ENOMEM);
+	}
+	virtual ~Link() {
+		destroybuf(_buffer,_bufname);
 	}
 
 	const std::string &name() const {
 		return _name;
+	}
+	void *sharedmem() {
+		return _buffer;
 	}
 
 	ulong txpackets() const {
@@ -95,4 +104,6 @@ private:
 	ipc::NIC::MAC _mac;
 	ipc::Net::IPv4Addr _ip;
 	ipc::Net::IPv4Addr _subnetmask;
+	ulong _bufname;
+	void *_buffer;
 };

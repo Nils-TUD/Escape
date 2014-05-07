@@ -464,7 +464,7 @@ public:
 
 static int receiveThread(void *arg) {
 	Link *link = reinterpret_cast<Link*>(arg);
-	uint8_t *buffer = new uint8_t[link->mtu()];
+	uint8_t *buffer = reinterpret_cast<uint8_t*>(link->sharedmem());
 	while(link->status() != ipc::Net::KILLED) {
 		ssize_t res = link->read(buffer,link->mtu());
 		if(res < 0) {
@@ -482,7 +482,6 @@ static int receiveThread(void *arg) {
 		else
 			printe("Ignoring packet of size %zd",res);
 	}
-	delete[] buffer;
 	delete link;
 	return 0;
 }

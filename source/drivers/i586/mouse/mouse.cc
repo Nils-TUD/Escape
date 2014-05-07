@@ -101,11 +101,9 @@ int main(void) {
 
 	kb_init();
 
-	/* reg intrpt-handler */
+	dev = new ipc::ClientDevice<>("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 	if(startthread(irqThread,NULL) < 0)
 		error("Unable to start irq-thread");
-
-	dev = new ipc::ClientDevice<>("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 	dev->loop();
 
 	/* cleanup */

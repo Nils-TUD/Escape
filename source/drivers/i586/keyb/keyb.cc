@@ -191,11 +191,12 @@ int main(void) {
 	printf("scancode-set=%x\n",kbdata);
 	while(1);*/
 
+	dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+
 	/* we want to get notified about keyboard interrupts */
 	if(startthread(kbIrqThread,NULL) < 0)
 		error("Unable to start IRQ-thread");
 
-	dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 	dev->loop();
 
 	/* clean up */

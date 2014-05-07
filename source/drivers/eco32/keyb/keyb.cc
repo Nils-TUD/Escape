@@ -62,13 +62,12 @@ int main(void) {
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
 
-	if(startthread(kbIrqThread,NULL) < 0)
-		error("Unable to start irq-thread");
-
 	/* enable interrupts */
 	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 
 	dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	if(startthread(kbIrqThread,NULL) < 0)
+		error("Unable to start irq-thread");
 	dev->loop();
 
 	/* clean up */

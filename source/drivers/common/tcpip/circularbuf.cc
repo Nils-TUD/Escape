@@ -185,10 +185,12 @@ size_t CircularBuf::pull(void *buf,size_t size) {
 	uint8_t *pos = reinterpret_cast<uint8_t*>(buf);
 	while(size > 0 && _packets.size() > 0) {
 		SeqPacket &pkt = _packets.front();
-		if(pkt.start == _seqAcked)
+		seq_type relAcked = _seqAcked - _seqStart;
+		seq_type relStart = pkt.start - _seqStart;
+		size_t offset = getOffset(pkt,_seqStart);
+		if(relStart + offset >= relAcked)
 			break;
 
-		size_t offset = getOffset(pkt,_seqStart);
 		size_t amount = std::min(size,pkt.size() - offset);
 		// skip control packets when we want to pull data
 		if(pos && pkt.type == TYPE_DATA) {
@@ -389,17 +391,24 @@ void CircularBuf::unittest() {
 		test_assertSSize(buf.push(-2,TYPE_DATA,data + 2,4),4);
 		test_assertLInt(buf.getAck(),-4);
 
+		test_assertSSize(buf.pull(testdata,10),0);
+
 		test_assertSSize(buf.push(-4,TYPE_DATA,data + 0,2),2);
 		test_assertLInt(buf.getAck(),2);
 
 		test_assertSSize(buf.pull(testdata,1),1);
 
-		test_assertSSize(buf.push(2,TYPE_DATA,data + 6,8),8);
-		test_assertLInt(buf.getAck(),10);
+		test_assertSSize(buf.push(4,TYPE_DATA,data + 8,8),8);
+		test_assertLInt(buf.getAck(),2);
 
-		test_assertSSize(buf.pull(testdata + 1,13),13);
+		test_assertSSize(buf.pull(testdata + 1,13),5);
 
-		for(size_t i = 0; i < 14; ++i)
+		test_assertSSize(buf.push(2,TYPE_DATA,data + 6,2),2);
+		test_assertLInt(buf.getAck(),12);
+
+		test_assertSSize(buf.pull(testdata + 6,16),10);
+
+		for(size_t i = 0; i < 16; ++i)
 			test_assertInt(testdata[i],i);
 
 		fflush(stdout);

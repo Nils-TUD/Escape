@@ -142,7 +142,7 @@ private:
 
 	int forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,SynPacket &syn,
 		CircularBuf::seq_type seqNo);
-	void replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size);
+	bool replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size);
 	template<typename T>
 	void replyPending(T result) {
 		if(_pending.count > 0) {

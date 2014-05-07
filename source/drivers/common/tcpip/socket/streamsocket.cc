@@ -194,19 +194,20 @@ ssize_t StreamSocket::recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t siz
 		return -EINVAL;
 	if(_state == STATE_CLOSED || _state == STATE_SYN_SENT)
 		return -ENOTCONN;
+	if(_pending.count > 0)
+		return -EAGAIN;
 
 	PRINT_TCP(_localPort,remotePort(),
 		"Application wants to receives %zu bytes (available=%zu)",size,_rxCircle.available());
 
 	if(shouldPush()) {
-		replyRead(mid,needsSrc,buffer,size);
-		/* inform the sender about our increased window-size */
-		sendCtrlPkt(TCP::FL_ACK,NULL,true);
-		return 0;
+		if(replyRead(mid,needsSrc,buffer,size)) {
+			/* inform the sender about our increased window-size */
+			sendCtrlPkt(TCP::FL_ACK,NULL,true);
+			return 0;
+		}
 	}
 
-	if(_pending.count > 0)
-		return -EAGAIN;
 	_pending.mid = mid;
 	_pending.count = size;
 	_pending.d.read.data = buffer;
@@ -486,8 +487,8 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	if(tcp->ctrlFlags & TCP::FL_PSH)
 		_push = true;
 	if(_pending.count > 0 && shouldPush()) {
-		replyRead(_pending.mid,_pending.d.read.needsSrc,_pending.d.read.data,_pending.count);
-		_pending.count = 0;
+		if(replyRead(_pending.mid,_pending.d.read.needsSrc,_pending.d.read.data,_pending.count))
+			_pending.count = 0;
 	}
 
 	// program timeout, if we went into TIME_WAIT state
@@ -611,13 +612,20 @@ int StreamSocket::forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,
 	return 0;
 }
 
-void StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size) {
+bool StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size) {
 	ssize_t res = _rxCircle.capacity() - _rxCircle.windowSize();
 	uint8_t *buf = reinterpret_cast<uint8_t*>(buffer);
+	bool success = true;
 	if(res > 0) {
 		if(buffer == NULL)
-			buf = new uint8_t[res];
+			buf = new uint8_t[size];
 		res = _rxCircle.pull(buf,size);
+		// don't pass EOF to application, if the available data is non-contiguous
+		if(res == 0) {
+			success = false;
+			goto done;
+		}
+
 		// if there is no additional data, we're done with pushing, if we were anyway
 		if(!_rxCircle.available())
 			_push = false;
@@ -625,8 +633,11 @@ void StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size)
 
 	PRINT_TCP(_localPort,remotePort(),"passed %zd bytes to application",res);
 	reply(mid,_remoteAddr,needsSrc,buffer ? buffer : NULL,buf,res);
+
+done:
 	if(res > 0 && buffer == NULL)
 		delete[] buf;
+	return success;
 }
 
 const char *StreamSocket::stateName(State st) const {

@@ -30,7 +30,6 @@ static struct {
 	uint16_t vendor;
 } supported[] = {
 	{0x100e,0x8086},
-	{0x155a,0x8086},
 };
 
 int main(int argc,char **argv) {

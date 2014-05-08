@@ -134,11 +134,11 @@ void E1000::reset() {
 	// disable VLANs
 	writeReg(REG_VET,0);
 
-    // get MAC and setup MAC filter
-    _mac = readMAC();
-    uint64_t macval = _mac.value();
-    writeReg(REG_RAL,macval & 0xFFFFFFFF);
-    writeReg(REG_RAH,((macval >> 32) & 0xFFFF) | RAH_VALID);
+	// get MAC and setup MAC filter
+	_mac = readMAC();
+	uint64_t macval = _mac.value();
+	writeReg(REG_RAL,macval & 0xFFFFFFFF);
+	writeReg(REG_RAH,((macval >> 32) & 0xFFFF) | RAH_VALID);
 
 	// setup rx descriptors
 	for(size_t i = 0; i < RX_BUF_COUNT; i++) {

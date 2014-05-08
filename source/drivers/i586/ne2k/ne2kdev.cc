@@ -131,8 +131,15 @@
  */
 
 Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
-		: _sid(sid), _irq(nic.irq), _basePort(), _mac(), _nextPacket(), _listmutex(), _first(),
-		  _last(), _handler(handler) {
+		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000")), _basePort(), _mac(), _listmutex(),
+		  _first(), _last(), _handler() {
+	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
+	if(_irqsem < 0)
+		error("Unable to create irq-semaphore");
+
+	if(startthread(irqThread,this) < 0)
+		error("Unable to start receive-thread");
+
 	for(size_t i = 0; i < 6; i++) {
 		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
 			print("Requesting ports %u..%u",nic.bars[i].addr,nic.bars[i].addr + nic.bars[i].size - 1);
@@ -200,9 +207,6 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
 	writeReg(REG_ISR,0xFF);
 	writeReg(REG_IMR,0x3F);
 	writeReg(REG_CMD,CMD_STA | CMD_COMPLDMA);
-
-	if(startthread(irqThread,this) < 0)
-		error("Unable to start receive-thread");
 }
 
 void Ne2k::accessPROM(uint16_t offset,size_t size,void *buffer,Mode mode) {
@@ -317,11 +321,8 @@ void Ne2k::receive() {
 
 int Ne2k::irqThread(void *ptr) {
 	Ne2k *ne2k = reinterpret_cast<Ne2k*>(ptr);
-	int irqsem = semcrtirq(ne2k->_irq,"NE2000");
-	if(irqsem < 0)
-		error("Unable to create irq-semaphore");
 	while(1) {
-		semdown(irqsem);
+		semdown(ne2k->_irqsem);
 
 		uint32_t isr;
 		while((isr = ne2k->readReg(REG_ISR)) & (ISR_PRX | ISR_PTX | ISR_OVW | ISR_CNT)) {

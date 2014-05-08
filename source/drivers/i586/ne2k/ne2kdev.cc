@@ -130,7 +130,7 @@
  * The range from 0x4000 to 0x5000 is used as a buffer for transmitting packets.
  */
 
-Ne2k::Ne2k(const ipc::PCI::Device &nic)
+Ne2k::Ne2k(ipc::PCI &pci,const ipc::PCI::Device &nic)
 		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000")), _basePort(), _mac(),
 		  _nextPacket(), _handler() {
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
@@ -202,6 +202,10 @@ Ne2k::Ne2k(const ipc::PCI::Device &nic)
 	writeReg(REG_TCR,0);
 
 	print("Enable interrupts");
+
+	// ensure that interrupts are enabled for the PCI device
+	uint32_t statusCmd = pci.read(nic.bus,nic.dev,nic.func,0x04);
+	pci.write(nic.bus,nic.dev,nic.func,0x04,statusCmd & ~0x400);
 
 	/* clear pending interrupts, enable them and begin card operation */
 	writeReg(REG_ISR,0xFF);

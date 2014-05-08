@@ -55,7 +55,7 @@ int main(int argc,char **argv) {
 	print("Found PCI-device %d.%d.%d: vendor=%hx, device=%hx",
 			nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
 
-	Ne2k *ne2k = new Ne2k(nic);
+	Ne2k *ne2k = new Ne2k(pci,nic);
 	ipc::NICDevice dev(argv[1],0770,ne2k);
 	ne2k->setHandler(std::make_memfun(&dev,&ipc::NICDevice::checkPending));
 

@@ -40,7 +40,7 @@ public:
 	static const unsigned VENDOR_ID		= 0x10ec;
 	static const unsigned DEVICE_ID		= 0x8029;
 
-	explicit Ne2k(const ipc::PCI::Device &nic);
+	explicit Ne2k(ipc::PCI &pci,const ipc::PCI::Device &nic);
 
 	void setHandler(std::Functor<void> *handler) {
 		_handler = handler;

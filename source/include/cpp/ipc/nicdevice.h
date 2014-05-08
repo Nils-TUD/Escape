@@ -79,12 +79,16 @@ class NICDevice : public ClientDevice<> {
 public:
 	explicit NICDevice(const char *path,mode_t mode,NICDriver *driver)
 		: ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
-		  _requests(std::make_memfun(this,&NICDevice::handleRead)), _mutex(), _driver(driver) {
+		  _requests(std::make_memfun(this,&NICDevice::handleRead)), _mutex(), _driver(driver),
+		  _tmpbuf(new char[_driver->mtu()]) {
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&NICDevice::cancel));
 		set(MSG_FILE_READ,std::make_memfun(this,&NICDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&NICDevice::write));
 		set(MSG_NIC_GETMAC,std::make_memfun(this,&NICDevice::getMac));
 		set(MSG_NIC_GETMTU,std::make_memfun(this,&NICDevice::getMTU));
+	}
+	virtual ~NICDevice() {
+		delete[] _tmpbuf;
 	}
 
 	NIC::MAC mac() const {
@@ -132,7 +136,7 @@ private:
 	}
 
 	void write(IPCStream &is) {
-		char *data;
+		char *data = _tmpbuf;
 		FileWrite::Request r;
 		is >> r;
 
@@ -143,17 +147,13 @@ private:
 			return;
 		}
 
-		if(r.shmemoff == -1) {
-			data = new char[r.count];
+		if(r.shmemoff == -1)
 			is >> ReceiveData(data,r.count);
-		}
 		else
 			data = (*this)[is.fd()]->shm() + r.shmemoff;
 
 		ssize_t res = _driver->send(data,r.count);
 		is << FileWrite::Response(res) << Reply();
-		if(r.shmemoff == -1)
-			delete[] data;
 	}
 
 	void getMac(IPCStream &is) {
@@ -186,6 +186,7 @@ private:
 	RequestQueue _requests;
 	std::mutex _mutex;
 	NICDriver *_driver;
+	char *_tmpbuf;
 };
 
 }

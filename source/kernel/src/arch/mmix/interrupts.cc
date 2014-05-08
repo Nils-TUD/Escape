@@ -113,6 +113,10 @@ int InterruptsBase::installHandler(int irq,const char *) {
 	return 0;
 }
 
+void InterruptsBase::uninstallHandler(int irq) {
+	/* nothing to do */
+}
+
 void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	static_assert(IRQ_COUNT == ARRAY_SIZE(intrptList),"IRQ_COUNT is wrong");
 	Thread *t = Thread::getRunning();

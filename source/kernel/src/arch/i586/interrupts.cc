@@ -154,6 +154,10 @@ int InterruptsBase::installHandler(int irq,const char *name) {
 	return 0;
 }
 
+void InterruptsBase::uninstallHandler(int irq) {
+	intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler = NULL;
+}
+
 void Interrupts::eoi(int irq) {
 	if(irq == IRQ_LAPIC || IOAPIC::enabled())
 		LAPIC::eoi();

@@ -32,7 +32,7 @@
 #include <sys/arch/mmix/intrptstackframe.h>
 #endif
 
-#define PANIC_ON_PAGEFAULT	0
+#define PANIC_ON_PAGEFAULT	1
 
 class OStream;
 class Thread;
@@ -87,9 +87,7 @@ public:
 	 *
 	 * @param irq the IRQ number
 	 */
-	static void uninstallHandler(int irq) {
-		intrptList[irq].handler = NULL;
-	}
+	static void uninstallHandler(int irq);
 
 	/**
 	 * Attaches the given semaphore to the given IRQ.

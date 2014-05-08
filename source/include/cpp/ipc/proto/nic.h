@@ -65,6 +65,14 @@ public:
 		const uint8_t *bytes() const {
 			return _bytes;
 		}
+		uint64_t value() const {
+			return (uint64_t)_bytes[5] << 40 |
+				(uint64_t)_bytes[4] << 32 |
+				(uint64_t)_bytes[3] << 24 |
+				(uint64_t)_bytes[2] << 16 |
+				(uint64_t)_bytes[1] << 8 |
+				(uint64_t)_bytes[0] << 0;
+		}
 
 	private:
 		uint8_t _bytes[LEN];

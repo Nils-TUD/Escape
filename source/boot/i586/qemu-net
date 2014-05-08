@@ -17,5 +17,5 @@ files="boot/escape sbin/romdisk sbin/rtc sbin/iso9660"
 ( cd $1 && rsync --progress -RLp cd.iso $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-52-54-00-12-34-56 $ESC_SERVER )
 
-$ESC_QEMU -net nic,model=ne2k_pci -net user -serial stdio \
+$ESC_QEMU -net nic,model=ne2k_pci -net nic -net user -serial stdio \
 	-boot n -bootp pulsar -tftp $ESC_SERVER $2 | tee log.txt

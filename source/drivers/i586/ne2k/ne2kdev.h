@@ -26,34 +26,31 @@
 #include <esc/irq.h>
 #include <ipc/proto/nic.h>
 #include <ipc/proto/pci.h>
+#include <ipc/nicdevice.h>
 #include <functor.h>
 #include <mutex>
 
-class Ne2k {
+class Ne2k : public ipc::NICDriver {
 	enum Mode {
 		PROM_READ,
 		PROM_WRITE
 	};
 
 public:
-	struct Packet {
-		Packet *next;
-		size_t length;
-		uint16_t data[];
-	};
-
 	static const unsigned VENDOR_ID		= 0x10ec;
 	static const unsigned DEVICE_ID		= 0x8029;
 
-	explicit Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler);
+	explicit Ne2k(const ipc::PCI::Device &nic);
 
-	ipc::NIC::MAC mac() const {
+	void setHandler(std::Functor<void> *handler) {
+		_handler = handler;
+	}
+
+	virtual ipc::NIC::MAC mac() const {
 		return ipc::NIC::MAC(_mac);
 	}
-	ulong mtu() const;
-
-	ssize_t send(const void *packet,size_t size);
-	Packet *fetch();
+	virtual ulong mtu() const;
+	virtual ssize_t send(const void *packet,size_t size);
 
 private:
 	static int irqThread(void*);
@@ -74,13 +71,10 @@ private:
 		return inword(_basePort + reg);
 	}
 
-	int _sid;
 	int _irq;
+	int _irqsem;
 	uint16_t _basePort;
 	uint8_t _mac[6];
 	uint8_t _nextPacket;
-	std::mutex _listmutex;
-	Packet *_first;
-	Packet *_last;
 	std::Functor<void> *_handler;
 };

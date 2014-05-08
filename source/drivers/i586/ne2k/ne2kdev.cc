@@ -130,9 +130,9 @@
  * The range from 0x4000 to 0x5000 is used as a buffer for transmitting packets.
  */
 
-Ne2k::Ne2k(const ipc::PCI::Device &nic,int sid,std::Functor<void> *handler)
-		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000")), _basePort(), _mac(), _listmutex(),
-		  _first(), _last(), _handler() {
+Ne2k::Ne2k(const ipc::PCI::Device &nic)
+		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000")), _basePort(), _mac(),
+		  _nextPacket(), _handler() {
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
 	if(_irqsem < 0)
 		error("Unable to create irq-semaphore");
@@ -260,18 +260,6 @@ ssize_t Ne2k::send(const void *packet,size_t size) {
 	return size;
 }
 
-Ne2k::Packet *Ne2k::fetch() {
-	std::lock_guard<std::mutex> guard(_listmutex);
-	Packet *pkt = NULL;
-	if(_first) {
-		pkt = _first;
-		_first = _first->next;
-		if(!_first)
-			_last = NULL;
-	}
-	return pkt;
-}
-
 void Ne2k::receive() {
 	/* fetch current counter */
 	writeReg(REG_CMD,CMD_COMPLDMA | CMD_PAGE1 | CMD_STP);
@@ -286,7 +274,7 @@ void Ne2k::receive() {
 		accessPROM(_nextPacket << 8,4,&head,PROM_READ);
 
 		if(head.length == 0) {
-			printe("Received packet with zero-length");
+			print("Received packet with zero-length");
 			break;
 		}
 
@@ -306,15 +294,7 @@ void Ne2k::receive() {
 		writeReg(REG_BNRY,_nextPacket == PAGE_RX ? (PAGE_STOP - 1) : _nextPacket - 1);
 
 		/* insert into list */
-		{
-			std::lock_guard<std::mutex> guard(_listmutex);
-			pkt->next = NULL;
-			if(_last)
-				_last->next = pkt;
-			else
-				_first = pkt;
-			_last = pkt;
-		}
+		insert(pkt);
 		(*_handler)();
 	}
 }

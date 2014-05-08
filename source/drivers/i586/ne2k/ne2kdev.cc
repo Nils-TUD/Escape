@@ -323,36 +323,37 @@ int Ne2k::irqThread(void *ptr) {
 	while(1) {
 		semdown(irqsem);
 
-		uint32_t isr = ne2k->readReg(REG_ISR);
+		uint32_t isr;
+		while((isr = ne2k->readReg(REG_ISR)) & (ISR_PRX | ISR_PTX | ISR_OVW | ISR_CNT)) {
+			/* packet received */
+			if(isr & ISR_PRX) {
+				/* ack interrupt */
+				ne2k->writeReg(REG_ISR,ISR_PRX);
 
-		/* packet received */
-		if(isr & ISR_PRX) {
-			/* ack interrupt */
-			ne2k->writeReg(REG_ISR,ISR_PRX);
-
-			if(isr & ISR_RXE)
-				printe("Packet reception failed");
-			else {
-				ne2k->receive();
-				/* unmask interrupts. TODO necessary? */
-				ne2k->writeReg(REG_ISR,0x3F);
+				if(isr & ISR_RXE)
+					print("Packet reception failed");
+				else {
+					ne2k->receive();
+					/* unmask interrupts. TODO necessary? */
+					ne2k->writeReg(REG_ISR,0x3F);
+				}
 			}
-		}
 
-		/* packet transmitted */
-		if(isr & ISR_PTX) {
-			if(isr & ISR_TXE)
-				printe("Packet transmission failed");
-			ne2k->writeReg(REG_ISR,ISR_PTX | ISR_TXE);
-		}
+			/* packet transmitted */
+			if(isr & ISR_PTX) {
+				if(isr & ISR_TXE)
+					print("Packet transmission failed");
+				ne2k->writeReg(REG_ISR,ISR_PTX | ISR_TXE);
+			}
 
-		if(isr & ISR_OVW) {
-			printe("Receive buffer overflow");
-			ne2k->writeReg(REG_ISR,ISR_OVW);
-		}
-		if(isr & ISR_CNT) {
-			printe("Counter overflow");
-			ne2k->writeReg(REG_ISR,ISR_CNT);
+			if(isr & ISR_OVW) {
+				print("Receive buffer overflow");
+				ne2k->writeReg(REG_ISR,ISR_OVW);
+			}
+			if(isr & ISR_CNT) {
+				print("Counter overflow");
+				ne2k->writeReg(REG_ISR,ISR_CNT);
+			}
 		}
 	}
 	return 0;

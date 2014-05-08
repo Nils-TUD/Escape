@@ -351,6 +351,13 @@ public:
 	}
 
 	/**
+	 * @return whether this thread has a handler for the given signal
+	 */
+	bool hasSigHandler(int signal) const {
+		return sigHandler[signal] != SIG_DFL;
+	}
+
+	/**
 	 * @return true if the thread has got a segfault signal
 	 */
 	bool isFaulted() const {

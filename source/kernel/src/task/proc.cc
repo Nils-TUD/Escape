@@ -587,8 +587,24 @@ int ProcBase::addSignalFor(pid_t pid,int signal) {
 		return -ENOTFOUND;
 	}
 
-	for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt)
-		Signals::addSignalFor(*pt,signal);
+	/* is there at least one handler for that signal? */
+	bool hasHandler = false;
+	if(Signals::isFatal(signal)) {
+		for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
+			if((*pt)->hasSigHandler(signal)) {
+				hasHandler = true;
+				break;
+			}
+		}
+	}
+
+	/* deliver the signal to either all threads if there is no handler, or just to the threads that
+	 * have one if there is a handler. otherwise we might terminate the process only because there
+	 * is one thread that has no handler for that (fatal) signal */
+	for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
+		if(!hasHandler || (*pt)->hasSigHandler(signal))
+			Signals::addSignalFor(*pt,signal);
+	}
 	release(p,PLOCK_PROG);
 	return 0;
 }

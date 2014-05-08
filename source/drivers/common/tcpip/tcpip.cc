@@ -482,6 +482,7 @@ static int receiveThread(void *arg) {
 		else
 			printe("Ignoring packet of size %zd",res);
 	}
+	LinkMng::rem(link->name());
 	delete link;
 	return 0;
 }

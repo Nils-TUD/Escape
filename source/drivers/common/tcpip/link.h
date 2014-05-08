@@ -38,9 +38,7 @@ public:
 		if(_buffer == NULL)
 			throw std::default_error("Not enough memory for buffer",-ENOMEM);
 	}
-	virtual ~Link() {
-		destroybuf(_buffer,_bufname);
-	}
+	virtual ~Link();
 
 	const std::string &name() const {
 		return _name;

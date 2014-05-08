@@ -34,6 +34,11 @@
 #	define PRINT(...)
 #endif
 
+Link::~Link() {
+	destroybuf(_buffer,_bufname);
+	Route::removeAll(this);
+}
+
 ssize_t Link::read(void *buffer,size_t size) {
 	ssize_t res = ::read(fd(),buffer,size);
 	if(res > 0) {

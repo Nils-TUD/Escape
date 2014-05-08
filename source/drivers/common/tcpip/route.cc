@@ -71,6 +71,15 @@ int Route::remove(const ipc::Net::IPv4Addr &ip) {
 	return -ENOTFOUND;
 }
 
+void Route::removeAll(Link *link) {
+	for(auto it = _table.begin(); it != _table.end(); ) {
+		if((*it)->link == link)
+			_table.erase(it);
+		else
+			++it;
+	}
+}
+
 void Route::print(std::ostream &os) {
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		os << (*it)->dest << " " << (*it)->gateway << " " << (*it)->netmask << " ";

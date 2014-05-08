@@ -37,6 +37,7 @@ public:
 	static const Route *find(const ipc::Net::IPv4Addr &ip);
 	static int setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status);
 	static int remove(const ipc::Net::IPv4Addr &ip);
+	static void removeAll(Link *link);
 	static void print(std::ostream &os);
 
 	ipc::Net::IPv4Addr dest;

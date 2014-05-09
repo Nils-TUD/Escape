@@ -110,6 +110,9 @@ ssize_t ARP::send(Link &link,Ethernet<> *packet,size_t size,const ipc::Net::IPv4
 	ipc::NIC::MAC mac;
 	if(ip == ip.getBroadcast(nm))
 		mac = ipc::NIC::MAC::broadcast();
+	// ARP requests for ourself don't work since we don't get our own broadcasts
+	else if(ip == link.ip())
+		mac = link.mac();
 	else {
 		cache_type::iterator it = _cache.find(ip);
 

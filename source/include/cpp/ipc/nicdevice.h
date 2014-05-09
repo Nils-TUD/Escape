@@ -58,7 +58,6 @@ public:
 		return pkt;
 	}
 
-protected:
 	void insert(Packet *pkt) {
 		std::lock_guard<std::mutex> guard(_mutex);
 		pkt->next = NULL;
@@ -76,6 +75,12 @@ private:
 };
 
 class NICDevice : public ClientDevice<> {
+	struct EthernetHeader {
+		ipc::NIC::MAC dst;
+		ipc::NIC::MAC src;
+		uint16_t type;
+	};
+
 public:
 	explicit NICDevice(const char *path,mode_t mode,NICDriver *driver)
 		: ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
@@ -152,7 +157,22 @@ private:
 		else
 			data = (*this)[is.fd()]->shm() + r.shmemoff;
 
-		ssize_t res = _driver->send(data,r.count);
+		// if it's for ourself, just forward it to our incoming packet list
+		ssize_t res = -ENOMEM;
+		EthernetHeader *eth = reinterpret_cast<EthernetHeader*>(data);
+		if(eth->dst == _driver->mac()) {
+			NICDriver::Packet *pkt = (NICDriver::Packet*)malloc(sizeof(NICDriver::Packet) + r.count);
+			if(pkt) {
+				pkt->length = r.count;
+				memcpy(pkt->data,data,r.count);
+				_driver->insert(pkt);
+				checkPending();
+				res = r.count;
+			}
+		}
+		else
+			res = _driver->send(data,r.count);
+
 		is << FileWrite::Response(res) << Reply();
 	}
 

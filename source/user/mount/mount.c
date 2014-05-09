@@ -63,7 +63,7 @@ int main(int argc,const char *argv[]) {
 	char *devname = strrchr(dev,'/');
 	char *fsname = strrchr(fs,'/');
 	if(!devname)
-		error("Invalid device name!");
+		devname = dev - 1;
 	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",fsname ? fsname + 1 : fs,devname + 1);
 
 	/* is it already started? */

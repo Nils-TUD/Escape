@@ -47,8 +47,16 @@ int main(int argc,char *argv[]) {
 
 	ISO9660FileSystem *fs;
 	/* if the device is provided, simply use it */
-	if(strcmp(argv[2],"cdrom") != 0)
+	if(strcmp(argv[2],"cdrom") != 0) {
+		/* the backend has to be a block device */
+		sFileInfo info;
+		if(::stat(argv[2],&info) < 0)
+			error("Unable to stat '%s'",argv[2]);
+		if(!S_ISBLK(info.mode) && !S_ISREG(info.mode))
+			error("'%s' is neither a block-device nor a regular file",argv[2]);
+
 		fs = new ISO9660FileSystem(argv[2]);
+	}
 	/* otherwise try all possible ATAPI-drives */
 	else {
 		char path[SSTRLEN("/dev/cda1") + 1];

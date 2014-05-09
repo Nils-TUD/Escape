@@ -45,10 +45,17 @@ int main(int argc,char *argv[]) {
 	if(argc != 3)
 		error("Usage: %s <wait> <devicePath>",argv[0]);
 
+	/* the backend has to be a block device */
+	sFileInfo info;
+	if(stat(argv[2],&info) < 0)
+		error("Unable to stat '%s'",argv[2]);
+	if(!S_ISBLK(info.mode) && !S_ISREG(info.mode))
+		error("'%s' is neither a block-device nor a regular file",argv[2]);
+
 	/* build fs device name */
 	char *dev = strrchr(argv[2],'/');
 	if(!dev)
-		error("Invalid device path '%s'",argv[2]);
+		dev = argv[2] - 1;
 	snprintf(fspath,sizeof(fspath),"/dev/ext2-%s",dev + 1);
 
 	FSDevice fsdev(new Ext2FileSystem(argv[2]),fspath);

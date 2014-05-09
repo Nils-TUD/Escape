@@ -67,7 +67,7 @@ public:
 
 static inline std::ostream &operator<<(std::ostream &os,const ICMP &p) {
 	os << "ICMP payload:\n";
-	os << "  typedst       = " << p.type << "\n";
+	os << "  type          = " << p.type << "\n";
 	os << "  code          = " << p.code << "\n";
 	os << "  identifier    = " << be16tocpu(p.identifier) << "\n";
 	os << "  sequence      = " << be16tocpu(p.sequence) << "\n";

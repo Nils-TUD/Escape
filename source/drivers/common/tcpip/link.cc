@@ -49,6 +49,7 @@ ssize_t Link::read(void *buffer,size_t size) {
 	}
 	return res;
 }
+
 ssize_t Link::write(const void *buffer,size_t size) {
 	ssize_t res = ::write(fd(),buffer,size);
 	if(res > 0) {

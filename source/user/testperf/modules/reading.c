@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/time.h>
+#include <esc/thread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -81,7 +82,22 @@ int mod_reading(int argc,char **argv) {
 	close(fd);
 
 	do_read("/dev/zero",useshm);
-	do_read("/dev/romdisk",useshm);
+
+	int pid;
+	if((pid = fork()) == 0) {
+		const char *args[] = {"/sbin/ramdisk","/dev/ramdisk","-m","1048576",NULL};
+		execv(args[0],args);
+	}
+	else {
+		sFileInfo info;
+		while(stat("/dev/ramdisk",&info) == -ENOENT)
+			sleep(50);
+
+		do_read("/dev/ramdisk",useshm);
+		kill(pid,SIG_TERM);
+		waitchild(NULL);
+	}
+
 	do_read("/system/test",false);
 	if(unlink("/system/test") < 0)
 		printe("Unlink of /system/test failed");

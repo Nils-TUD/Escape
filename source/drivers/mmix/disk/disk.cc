@@ -25,7 +25,6 @@
 #include <esc/io.h>
 #include <esc/irq.h>
 #include <usergroup/group.h>
-#include <ipc/proto/disk.h>
 #include <ipc/clientdevice.h>
 #include <signal.h>
 #include <stdio.h>
@@ -83,11 +82,12 @@ static uint64_t buffer[MAX_RW_SIZE / sizeof(uint64_t)];
 class DiskDevice : public ClientDevice<> {
 public:
 	explicit DiskDevice(const char *name,mode_t mode)
-		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE) {
+		: ClientDevice(name,mode,
+			DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_SIZE) {
 		set(MSG_DEV_SHFILE,std::make_memfun(this,&DiskDevice::shfile));
 		set(MSG_FILE_READ,std::make_memfun(this,&DiskDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&DiskDevice::write));
-		set(MSG_DISK_GETSIZE,std::make_memfun(this,&DiskDevice::getsize));
+		set(MSG_FILE_SIZE,std::make_memfun(this,&DiskDevice::size));
 	}
 
 	void shfile(IPCStream &is) {
@@ -147,8 +147,8 @@ public:
 		is << FileWrite::Response(res) << Reply();
 	}
 
-	void getsize(IPCStream &is) {
-		is << partCap << Reply();
+	void size(IPCStream &is) {
+		is << FileSize::Response(partCap) << Reply();
 	}
 };
 

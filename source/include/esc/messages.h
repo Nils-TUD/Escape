@@ -105,8 +105,6 @@
 #define MSG_INIT_IAMALIVE			1102	/* tells init that the shutdown-request has been received
 											 * and that you promise to terminate as soon as possible */
 
-#define MSG_DISK_GETSIZE			1200	/* get the size of a device */
-
 #define MSG_NIC_GETMAC				1300	/* get the MAC address of a NIC */
 #define MSG_NIC_GETMTU				1301	/* get the MTU of a NIC */
 

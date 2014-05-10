@@ -308,22 +308,16 @@ void PhysMem::swapper() {
 
 	/* open device */
 	OpenFile *swapFile;
-	if(VFS::openPath(pid,VFS_READ | VFS_WRITE | VFS_MSGS,0,dev,&swapFile) < 0) {
+	if(VFS::openPath(pid,VFS_READ | VFS_WRITE,0,dev,&swapFile) < 0) {
 		Log::get().writef("Unable to open swap-device '%s'\n",dev);
 		swapEnabled = false;
 	}
 	else {
-		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-		ipc::IPCBuf ib(buffer,sizeof(buffer));
-
 		/* get device-size and init swap-map */
-		msgid_t mid = swapFile->sendMsg(pid,MSG_DISK_GETSIZE,NULL,0,NULL,0);
-		assert((ssize_t)mid > 0);
-		assert(swapFile->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0) >= 0);
+		sFileInfo info;
+		assert(swapFile->fstat(pid,&info) == 0);
 
-		size_t disksize;
-		ib >> disksize;
-		if(!SwapMap::init(disksize)) {
+		if(!SwapMap::init(info.size)) {
 			swapEnabled = false;
 			swapFile->close(pid);
 		}

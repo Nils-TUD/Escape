@@ -63,13 +63,14 @@ static uint16_t buffer[MAX_RW_SIZE / sizeof(uint16_t)];
 class ATAPartitionDevice : public ClientDevice<> {
 public:
 	explicit ATAPartitionDevice(uint dev,uint part,const char *name,mode_t mode)
-		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_CLOSE),
+		: ClientDevice(name,mode,DEV_TYPE_BLOCK,
+			DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_SIZE | DEV_CLOSE),
 		  _ataDev(ctrl_getDevice(dev)),
 		  _part(_ataDev ? _ataDev->partTable + part : NULL) {
 		set(MSG_DEV_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
 		set(MSG_FILE_READ,std::make_memfun(this,&ATAPartitionDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&ATAPartitionDevice::write));
-		set(MSG_DISK_GETSIZE,std::make_memfun(this,&ATAPartitionDevice::getsize));
+		set(MSG_FILE_SIZE,std::make_memfun(this,&ATAPartitionDevice::size));
 
 		if(_ataDev == NULL || _part == NULL || _ataDev->present == 0 || _part->present == 0)
 			VTHROW("Invalid device/partition (dev=" << dev << ",part=" << part << ")");
@@ -116,8 +117,8 @@ public:
 		is << FileWrite::Response(res) << Reply();
 	}
 
-	void getsize(IPCStream &is) {
-		is << (_part->size * _ataDev->secSize) << Reply();
+	void size(IPCStream &is) {
+		is << FileSize::Response(_part->size * _ataDev->secSize) << Reply();
 	}
 
 private:

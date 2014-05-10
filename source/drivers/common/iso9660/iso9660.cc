@@ -49,10 +49,7 @@ int main(int argc,char *argv[]) {
 	/* if the device is provided, simply use it */
 	if(strcmp(argv[2],"cdrom") != 0) {
 		/* the backend has to be a block device */
-		sFileInfo info;
-		if(::stat(argv[2],&info) < 0)
-			error("Unable to stat '%s'",argv[2]);
-		if(!S_ISBLK(info.mode) && !S_ISREG(info.mode))
+		if(!isblock(argv[2]))
 			error("'%s' is neither a block-device nor a regular file",argv[2]);
 
 		fs = new ISO9660FileSystem(argv[2]);

@@ -46,10 +46,7 @@ int main(int argc,char *argv[]) {
 		error("Usage: %s <wait> <devicePath>",argv[0]);
 
 	/* the backend has to be a block device */
-	sFileInfo info;
-	if(stat(argv[2],&info) < 0)
-		error("Unable to stat '%s'",argv[2]);
-	if(!S_ISBLK(info.mode) && !S_ISREG(info.mode))
+	if(!isblock(argv[2]))
 		error("'%s' is neither a block-device nor a regular file",argv[2]);
 
 	/* build fs device name */

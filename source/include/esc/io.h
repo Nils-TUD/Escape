@@ -497,6 +497,15 @@ bool isfile(const char *path);
  */
 bool isdir(const char *path);
 
+/**
+ * Checks whether the given path points to a file that behaves like a block-device, i.e. either
+ * a regular file or a block device.
+ *
+ * @param path the (absolute!) path
+ * @return true if its a regular file or block device
+ */
+bool isblock(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

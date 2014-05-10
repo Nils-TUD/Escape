@@ -153,3 +153,10 @@ bool isdir(const char *path) {
 		return false;
 	return S_ISDIR(info.mode);
 }
+
+bool isblock(const char *path) {
+	sFileInfo info;
+	if(stat(path,&info) < 0)
+		return false;
+	return S_ISREG(info.mode) || S_ISBLK(info.mode);
+}

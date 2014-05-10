@@ -561,13 +561,15 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	}
 
 #if PRINT_MSGS
-	Thread *t = Thread::getRunning();
-	Proc *p = Proc::getByPid(pid);
-	Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
-			t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size1,this,getPath());
-	if(data2) {
+	{
+		Thread *t = Thread::getRunning();
+		Proc *p = Proc::getByPid(pid);
 		Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
-				t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size2,this,getPath());
+				t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size1,this,getPath());
+		if(data2) {
+			Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
+					t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size2,this,getPath());
+		}
 	}
 #endif
 	return id;

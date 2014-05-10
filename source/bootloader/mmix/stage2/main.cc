@@ -21,7 +21,7 @@
 #include <esc/endian.h>
 #include <esc/elf.h>
 #include <sys/boot.h>
-#include "../../../drivers/common/ext2/ext2.h"
+#include <fs/ext2/ext2.h>
 #include <string.h>
 #include <stdarg.h>
 

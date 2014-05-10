@@ -20,18 +20,11 @@
 #pragma once
 
 #include <esc/common.h>
+#include <fs/ext2/ext2.h>
 
 struct Ext2CInode;
 class Ext2FileSystem;
 struct FSUser;
-
-struct Ext2DirEntry {
-	inode_t inode;
-	uint16_t recLen;
-	uint16_t nameLen;
-	/* name follows (up to 255 bytes) */
-	char name[];
-} A_PACKED;
 
 class Ext2Dir {
 	Ext2Dir() = delete;

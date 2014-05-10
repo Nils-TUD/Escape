@@ -20,49 +20,12 @@
 #pragma once
 
 #include <esc/common.h>
+#include <fs/ext2/ext2.h>
 #include <fs/blockcache.h>
 
 class Ext2FileSystem;
 struct Ext2CInode;
 struct FSUser;
-
-struct Ext2Inode {
-	uint16_t mode;
-	uint16_t uid;
-	int32_t size;
-	uint32_t accesstime;
-	uint32_t createtime;
-	uint32_t modifytime;
-	uint32_t deletetime;
-	uint16_t gid;
-	/* number of links to this inode (when it reaches 0 the inode and all its associated blocks
-	 * are freed) */
-	uint16_t linkCount;
-	/* The total number of blocks reserved to contain the data of this inode. That means including
-	 * the blocks with block-numbers. It is not measured in ext2-blocks, but in sectors! */
-	uint32_t blocks;
-	uint32_t flags;
-	/* OS dependant value. */
-	uint32_t osd1;
-	/* A value of 0 in the block-array effectively terminates it with no further block being defined.
-	 * All the remaining entries of the array should still be set to 0. */
-	uint32_t dBlocks[12];
-	uint32_t singlyIBlock;
-	uint32_t doublyIBlock;
-	uint32_t triplyIBlock;
-	/* used to indicate the file version (used by NFS). */
-	uint32_t generation;
-	/* indicating the block number containing the extended attributes. In revision 0 this value
-	 * is always 0. */
-	uint32_t fileACL;
-	/* In revision 0 this 32bit value is always 0. In revision 1, for regular files this 32bit
-	 * value contains the high 32 bits of the 64bit file size. */
-	uint32_t dirACL;
-	/* 32bit value indicating the location of the file fragment. */
-	uint32_t fragAddr;
-	/* 96bit OS dependant structure. */
-	uint16_t osd2[6];
-} A_PACKED;
 
 class Ext2INode {
 	Ext2INode() = delete;

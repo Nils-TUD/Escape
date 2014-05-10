@@ -20,28 +20,10 @@
 #pragma once
 
 #include <esc/common.h>
+#include <fs/ext2/ext2.h>
 #include <stdlib.h>
 
 class Ext2FileSystem;
-
-struct Ext2BlockGrp {
-	/* block id of the first block of the "block bitmap" for the group represented. */
-	uint32_t blockBitmap;
-	/* block id of the first block of the "inode bitmap" for the group represented. */
-	uint32_t inodeBitmap;
-	/* block id of the first block of the "inode table" for the group represented. */
-	uint32_t inodeTable;
-	uint16_t freeBlockCount;
-	uint16_t freeInodeCount;
-	/* the number of inodes allocated to directories for the represented group. */
-	uint16_t usedDirCount;
-	/* padding */
-	uint16_t : 16;
-	/* reserved */
-	uint32_t : 32;
-	uint32_t : 32;
-	uint32_t : 32;
-} A_PACKED;
 
 class Ext2BGMng {
 public:

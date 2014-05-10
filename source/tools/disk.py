@@ -56,7 +56,7 @@ def create_disk(image, parts, flat, nogrub):
 				["sudo", "fdisk", "-u", "-C", str(hdcyl), "-S", str(hdheads), lodev], stdin=fin
 			)
 			p.wait()
-	
+
 	# create filesystems
 	i = 0
 	for p in parts:
@@ -72,7 +72,7 @@ def create_disk(image, parts, flat, nogrub):
 		if p[2] != "-" and p[0] != 'nofs':
 			copy_files(image, block_offset(parts, offset, i), p[2])
 		i += 1
-	
+
 	if not nogrub:
 		# add grub
 		with open(tmpfile, "w") as f:
@@ -140,7 +140,7 @@ def create_fs(image, offset, fs, blocks):
 		print "Unsupported filesystem"
 	free_loop(lodev)
 
-# copies the directory <directory> into the filesystem of partition @ <offset> in <image>, 
+# copies the directory <directory> into the filesystem of partition @ <offset> in <image>,
 def copy_files(image, offset, directory):
 	tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip()
 	mount_disk(image, offset, tmpdir)
@@ -165,7 +165,7 @@ def run_parted(image):
 # run fsck for the partition with offset <offset> in <image>, assuming fs <fstype>
 def run_fsck(image, fstype, offset):
 	lodev = create_loop(image, offset * 1024)
-	subprocess.call(["sudo", "fsck", "-t", fstype, lodev])
+	subprocess.call(["sudo", "fsck", "-f", "-t", fstype, lodev])
 	free_loop(lodev)
 
 # run dumpe2fs for the partition with offset <offset> in <image>

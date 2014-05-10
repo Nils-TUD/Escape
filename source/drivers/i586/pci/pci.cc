@@ -89,7 +89,6 @@ public:
 		is >> bus >> dev >> func >> offset >> value;
 
 		pci_write(bus,dev,func,offset,value);
-		is << 0 << Reply();
 	}
 
 private:

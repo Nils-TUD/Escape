@@ -168,6 +168,12 @@ def run_fsck(image, fstype, offset):
 	subprocess.call(["sudo", "fsck", "-t", fstype, lodev])
 	free_loop(lodev)
 
+# run dumpe2fs for the partition with offset <offset> in <image>
+def run_dump(image, offset):
+	lodev = create_loop(image, offset * 1024)
+	subprocess.call(["sudo", "dumpe2fs", lodev])
+	free_loop(lodev)
+
 def get_part_offset(image, part):
 	if part == 0:
 		return DEFAULT_PARTS_START / 2
@@ -191,6 +197,10 @@ def fsck(args):
 	offset = get_part_offset(args.disk, args.part)
 	print "Running fsck for partition ", args.part, " (@", offset, ") of ", args.disk, " with fs ", args.fs
 	run_fsck(args.disk, args.fs, offset)
+def dump(args):
+	offset = get_part_offset(args.disk, args.part)
+	print "Running dumpe2fs for partition ", args.part, " (@", offset, ") of ", args.disk
+	run_dump(args.disk, offset)
 def mount(args):
 	offset = get_part_offset(args.disk, args.part)
 	print "Mounting partition ", args.part, " (@", offset, ") of ", args.disk, " at ", args.dest
@@ -237,6 +247,11 @@ parser_fsck.add_argument('disk', metavar='<diskimage>')
 parser_fsck.add_argument('fs', metavar='<fs>')
 parser_fsck.add_argument('part', metavar='<number>', type=int)
 parser_fsck.set_defaults(func=fsck)
+
+parser_dump = subparsers.add_parser('dump', description='Runs dumpe2fs for <part> of <diskimage>.')
+parser_dump.add_argument('disk', metavar='<diskimage>')
+parser_dump.add_argument('part', metavar='<number>', type=int)
+parser_dump.set_defaults(func=dump)
 
 parser_mount = subparsers.add_parser('mount', description='Mounts <part> of <diskimage> in <dir>.')
 parser_mount.add_argument('disk', metavar='<diskimage>')

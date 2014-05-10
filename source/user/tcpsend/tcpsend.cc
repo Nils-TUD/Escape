@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/cmdargs.h>
 #include <ipc/proto/net.h>
 #include <ipc/proto/socket.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	if(argc != 4)
+	if(isHelpCmd(argc,argv) || argc != 4)
 		usage(argv[0]);
 
 	ipc::Socket::Addr addr;

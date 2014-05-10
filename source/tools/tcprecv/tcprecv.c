@@ -30,7 +30,7 @@
 static char buffer[512];
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <port> <file>\n",name);
+	fprintf(stderr,"Usage: %s <file> <port>\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -38,9 +38,9 @@ int main(int argc,char **argv) {
 	if(argc != 3)
 		usage(argv[0]);
 
-	FILE *file = fopen(argv[2],"w");
+	FILE *file = fopen(argv[1],"w");
 	if(!file)
-		error(EXIT_FAILURE,errno,"Unable to open '%s' for writing",argv[2]);
+		error(EXIT_FAILURE,errno,"Unable to open '%s' for writing",argv[1]);
 
 	struct sockaddr_in stSockAddr;
 	int sock = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
@@ -49,7 +49,7 @@ int main(int argc,char **argv) {
 
 	memset(&stSockAddr,0,sizeof(stSockAddr));
 	stSockAddr.sin_family = AF_INET;
-	stSockAddr.sin_port = htons(atoi(argv[1]));
+	stSockAddr.sin_port = htons(atoi(argv[2]));
 	stSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	if(bind(sock,(struct sockaddr*)&stSockAddr,sizeof(stSockAddr)) == -1)
 		error(EXIT_FAILURE,errno,"bind failed");

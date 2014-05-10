@@ -173,6 +173,8 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 	// TODO handle requests that are larger. probably we want to increase the txCircle in this case
 	if(size > _txCircle.windowSize())
 		return -EINVAL;
+	if(_pending.count > 0)
+		return -EAGAIN;
 
 	PRINT_TCP(_localPort,remotePort(),"Application wants to send %zu bytes",size);
 

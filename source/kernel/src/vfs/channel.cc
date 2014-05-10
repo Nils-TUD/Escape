@@ -536,6 +536,9 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 			id &= 0xFFFF;
 			/* prevent to set the MSB. otherwise the return-value would be negative (on 32-bit) */
 			id |= ((nextRid++) & 0x7FFF) << 16;
+			/* it can't be 0. this is a special value */
+			if(id >> 16 == 0)
+				id |= 0x00010000;
 		}
 		/* for devices, we just use whatever the driver gave us */
 		msg1->id = id;

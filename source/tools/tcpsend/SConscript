@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('hostenv')
+hostenv.Program('tcpsend', hostenv.Glob('*.c'))

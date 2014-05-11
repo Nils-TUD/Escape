@@ -121,12 +121,12 @@ static int findFreeReg() {
 
 static void usage(OStream &os) {
 	os.writef("Usage: break [l|s|d|en|dis|i]\n");
-	os.writef("  l                            - list breakpoints\n");
-	os.writef("  s <addr> [<len>] [x|w|io|rw] - set breakpoint\n");
-	os.writef("  d <no>                       - delete <no>\n");
-	os.writef("  en <no>                      - enable <no>\n");
-	os.writef("  dis <no>                     - disable <no>\n");
-	os.writef("  i                            - show information\n");
+	os.writef("  l                            : list breakpoints\n");
+	os.writef("  s <addr> [<len>] [x|w|io|rw] : set breakpoint\n");
+	os.writef("  d <no>                       : delete <no>\n");
+	os.writef("  en <no>                      : enable <no>\n");
+	os.writef("  dis <no>                     : disable <no>\n");
+	os.writef("  i                            : show information\n");
 }
 
 static void set(int reg,uint32_t addr,int len,int cond,int en) {

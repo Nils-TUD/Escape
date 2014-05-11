@@ -34,12 +34,12 @@ static void parseFields(const char *fields,int *first,int *last);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s -f <fields> [-d <delim>] [<file>]\n",name);
-	fprintf(stderr,"	-f: <fields> may be:\n");
-	fprintf(stderr,"		N		N'th field, counted from 1\n");
-	fprintf(stderr,"		N-		from N'th field, to end of line\n");
-	fprintf(stderr,"		N-M		from N'th to M'th (included) field\n");
-	fprintf(stderr,"		-M		from first to M'th (included) field\n");
-	fprintf(stderr,"	-d: use <delim> as delimiter instead of TAB\n");
+	fprintf(stderr,"    -f: <fields> may be:\n");
+	fprintf(stderr,"        N        N'th field, counted from 1\n");
+	fprintf(stderr,"        N-       from N'th field, to end of line\n");
+	fprintf(stderr,"        N-M      from N'th to M'th (included) field\n");
+	fprintf(stderr,"        -M       from first to M'th (included) field\n");
+	fprintf(stderr,"    -d: use <delim> as delimiter instead of TAB\n");
 	exit(EXIT_FAILURE);
 }
 

@@ -77,7 +77,7 @@ static size_t pageSize;
 static void usage(const char *name) {
 	size_t i;
 	cerr << "Usage: " << name <<" [-s <sort>]" << '\n';
-	cerr << "	<sort> can be ";
+	cerr << "    <sort> can be ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
 		cerr << "'" << sorts[i].name << "'";
 		if(i < ARRAY_SIZE(sorts) - 1)
@@ -86,16 +86,16 @@ static void usage(const char *name) {
 	cerr << '\n';
 	cerr << '\n';
 	cerr << "Explanation of the displayed information:\n";
-	cerr << "ID:		The thread id\n";
-	cerr << "STATE:	The thread state (RUN,RDY,BLK,ZOM,SUS)\n";
-	cerr << "PRIO:	The thread priority (high means high priority)\n";
-	cerr << "CPU:	The CPU on which the thread is currently running on\n";
-	cerr << "STACK:	The amount of physical memory used for the stack\n";
-	cerr << "SCHED:	The number of times the thread has been scheduled\n";
-	cerr << "SYSC:	The number of system-calls the thread has executed\n";
-	cerr << "TIME:	The CPU time used by the thread so far in minutes:seconds.milliseconds\n";
-	cerr << "CPU%:	The CPU usage in the last second in percent\n";
-	cerr << "PROC:	The name of the process the thread belongs to\n";
+	cerr << "ID    : the thread id\n";
+	cerr << "STATE : thread state (RUN,RDY,BLK,ZOM,SUS)\n";
+	cerr << "PRIO  : the thread priority (high means high priority)\n";
+	cerr << "CPU   : the CPU on which the thread is currently running on\n";
+	cerr << "STACK : the amount of physical memory used for the stack\n";
+	cerr << "SCHED : the number of times the thread has been scheduled\n";
+	cerr << "SYSC  : the number of system-calls the thread has executed\n";
+	cerr << "TIME  : the CPU time used by the thread so far in minutes:seconds.milliseconds\n";
+	cerr << "CPU%  : the CPU usage in the last second in percent\n";
+	cerr << "PROC  : the name of the process the thread belongs to\n";
 	exit(EXIT_FAILURE);
 }
 

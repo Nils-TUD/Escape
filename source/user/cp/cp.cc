@@ -40,9 +40,9 @@ public:
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-rfp] <source>... <dest>\n",name);
-	fprintf(stderr,"\t-r    copy directories recursively\n");
-	fprintf(stderr,"\t-f    overwrite existing files\n");
-	fprintf(stderr,"\t-p    show a progress bar while copying\n");
+	fprintf(stderr,"    -r: copy directories recursively\n");
+	fprintf(stderr,"    -f: overwrite existing files\n");
+	fprintf(stderr,"    -p: show a progress bar while copying\n");
 	exit(EXIT_FAILURE);
 }
 

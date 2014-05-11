@@ -67,9 +67,9 @@ static size_t pageSize;
 static void usage(const char *name) {
 	size_t i;
 	cerr << "Usage: " << name <<" [-u][-s <sort>]" << '\n';
-	cerr << "	-u		Print only the processes with my uid\n";
-	cerr << "	-n		Print numeric user- and group-ids\n";
-	cerr << "	-s		Sort by ";
+	cerr << "    -u: print only the processes with my uid\n";
+	cerr << "    -n: print numeric user- and group-ids\n";
+	cerr << "    -s: sort by ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
 		cerr << "'" << sorts[i].name << "'";
 		if(i < ARRAY_SIZE(sorts) - 1)
@@ -78,18 +78,18 @@ static void usage(const char *name) {
 	cerr << '\n';
 	cerr << '\n';
 	cerr << "Explanation of the displayed information:\n";
-	cerr << "ID:		The process id\n";
-	cerr << "PID:	The process id of the parent process\n";
-	cerr << "USER:	The user name\n";
-	cerr << "GROUP:	The group name\n";
-	cerr << "PMEM:	The amount of physical memory the process uses on its own (not shared)\n";
-	cerr << "SHMEM:	The amount of physical memory the process shares with other processes\n";
-	cerr << "SMEM:	The amount of physical memory that is currently swapped out\n";
-	cerr << "IN:		The amount of data read from other processes (read,receive)\n";
-	cerr << "OUT:	The amount of data written to other processes (write,send)\n";
-	cerr << "TIME:	The CPU time used by the process so far in minutes:seconds.milliseconds\n";
-	cerr << "CPU:	The CPU usage in the last second in percent\n";
-	cerr << "NAME:	The name of the process\n";
+	cerr << "ID    : the process id\n";
+	cerr << "PID   : the process id of the parent process\n";
+	cerr << "USER  : the user name\n";
+	cerr << "GROUP : the group name\n";
+	cerr << "PMEM  : the amount of physical memory the process uses on its own (not shared)\n";
+	cerr << "SHMEM : the amount of physical memory the process shares with other processes\n";
+	cerr << "SMEM  : the amount of physical memory that is currently swapped out\n";
+	cerr << "IN    : the amount of data read from other processes (read,receive)\n";
+	cerr << "OUT   : the amount of data written to other processes (write,send)\n";
+	cerr << "TIME  : the CPU time used by the process so far in minutes:seconds.milliseconds\n";
+	cerr << "CPU   : the CPU usage in the last second in percent\n";
+	cerr << "NAME  : the name of the process\n";
 	exit(EXIT_FAILURE);
 }
 

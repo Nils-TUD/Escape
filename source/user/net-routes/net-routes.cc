@@ -26,11 +26,11 @@
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s (add|rem|up|down|show) args...\n",name);
-	fprintf(stderr,"\tadd <link> <dest> <netmask> <gw> -- adds the given route\n");
-	fprintf(stderr,"\trem <dest>                       -- removes  routing table entry <dest>\n");
-	fprintf(stderr,"\tup <dest>                        -- enables routing table entry <dest>\n");
-	fprintf(stderr,"\tdown <dest>                      -- disables routing table entry <dest>\n");
-	fprintf(stderr,"\tshow                             -- shows all routes\n");
+	fprintf(stderr,"\tadd <link> <dest> <netmask> <gw> : adds the given route\n");
+	fprintf(stderr,"\trem <dest>                       : removes  routing table entry <dest>\n");
+	fprintf(stderr,"\tup <dest>                        : enables routing table entry <dest>\n");
+	fprintf(stderr,"\tdown <dest>                      : disables routing table entry <dest>\n");
+	fprintf(stderr,"\tshow                             : shows all routes\n");
 	exit(EXIT_FAILURE);
 }
 

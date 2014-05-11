@@ -98,12 +98,12 @@ static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
 	cerr << "Usage: " << name << " [-liasNn] [<path>]\n";
-	cerr << "	-l: long listing\n";
-	cerr << "	-i: print inode-numbers\n";
-	cerr << "	-a: print also '.' and '..'\n";
-	cerr << "	-s: print size of dir-content instead of directory-entries (implies -l)\n";
-	cerr << "	-N: print number of directory-entries instead of their size (implies -l)\n";
-	cerr << "	-n: print numeric user and group-ids\n";
+	cerr << "    -l: long listing\n";
+	cerr << "    -i: print inode-numbers\n";
+	cerr << "    -a: print also '.' and '..'\n";
+	cerr << "    -s: print size of dir-content instead of directory-entries (implies -l)\n";
+	cerr << "    -N: print number of directory-entries instead of their size (implies -l)\n";
+	cerr << "    -n: print numeric user and group-ids\n";
 	exit(EXIT_FAILURE);
 }
 

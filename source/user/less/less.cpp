@@ -63,12 +63,12 @@ static string emptyLine;
 
 static void usage(const char* name) {
 	cerr << "Usage: " << name << " [<file>]" << '\n';
-	cerr << "	navigation:" << '\n';
-	cerr << "		up/down	- one line up/down" << '\n';
-	cerr << "		pageup/pagedown - one page up/down" << '\n';
-	cerr << "		home/end - to the very beginning or end" << '\n';
-	cerr << "		q - quit" << '\n';
-	cerr << "		s - stop reading (e.g. when walking to EOF)" << '\n';
+	cerr << "    navigation:" << '\n';
+	cerr << "        up/down         : one line up/down" << '\n';
+	cerr << "        pageup/pagedown : one page up/down" << '\n';
+	cerr << "        home/end        : to the very beginning or end" << '\n';
+	cerr << "        q               : quit" << '\n';
+	cerr << "        s               : stop reading (e.g. when walking to EOF)" << '\n';
 	exit(EXIT_FAILURE);
 }
 

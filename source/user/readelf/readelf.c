@@ -163,6 +163,12 @@ static void printRelocTable(sElfRel *rel,size_t relCount);
 static void readat(off_t offset,void *buffer,size_t count);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-ahlSrd] <file>\n",name);
+	fprintf(stderr,"    -a: print all\n");
+	fprintf(stderr,"    -h: print header\n");
+	fprintf(stderr,"    -l: print program headers\n");
+	fprintf(stderr,"    -S: print section headers\n");
+	fprintf(stderr,"    -r: print relocations\n");
+	fprintf(stderr,"    -d: print dynamic section\n");
 	exit(EXIT_FAILURE);
 }
 

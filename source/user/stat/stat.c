@@ -34,9 +34,9 @@ static void printFileInfo(const char *path,bool useOpen);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-o] <file>...\n",name);
-	fprintf(stderr,"\t-o   Use open and fstat instead of stat. On devices this has the\n");
-	fprintf(stderr,"\t     effect that a channel is created and you get information about\n");
-	fprintf(stderr,"\t     that channel instead of the device.\n");
+	fprintf(stderr,"    -o: Use open and fstat instead of stat. On devices this has the\n");
+	fprintf(stderr,"        effect that a channel is created and you get information about\n");
+	fprintf(stderr,"        that channel instead of the device.\n");
 	exit(EXIT_FAILURE);
 }
 

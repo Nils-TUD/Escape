@@ -37,11 +37,11 @@ static char ascii[MAX_BASE];
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
-	fprintf(stderr,"	-n <bytes>	: Read the first <bytes> bytes\n");
-	fprintf(stderr,"	-f o|h|d	: The base to print the bytes in:\n");
-	fprintf(stderr,"					o = octal\n");
-	fprintf(stderr,"					h = hexadecimal\n");
-	fprintf(stderr,"					d = decimal\n");
+	fprintf(stderr,"    -n <bytes> : Read the first <bytes> bytes\n");
+	fprintf(stderr,"    -f o|h|d   : The base to print the bytes in:\n");
+	fprintf(stderr,"                 o = octal\n");
+	fprintf(stderr,"                 h = hexadecimal\n");
+	fprintf(stderr,"                 d = decimal\n");
 	exit(EXIT_FAILURE);
 }
 

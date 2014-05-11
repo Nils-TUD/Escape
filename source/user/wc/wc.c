@@ -32,9 +32,9 @@
 static void countFile(FILE *in);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-clw] [<file>...]\n",name);
-	fprintf(stderr,"	-c: Print byte-count\n");
-	fprintf(stderr,"	-l: Print line-count\n");
-	fprintf(stderr,"	-w: Print word-count\n");
+	fprintf(stderr,"    -c: Print byte-count\n");
+	fprintf(stderr,"    -l: Print line-count\n");
+	fprintf(stderr,"    -w: Print word-count\n");
 	exit(EXIT_FAILURE);
 }
 

@@ -142,11 +142,11 @@ static void sigint(int) {
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [options] <address>\n",name);
-	fprintf(stderr,"\t-c <count>:         perform <count> pings (default: 10)\n");
-	fprintf(stderr,"\t-s <n>:             use <n> bytes of payload (default: 56)\n");
-	fprintf(stderr,"\t-t <ttl>:           use <ttl> as time-to-live (default: 64)\n");
-	fprintf(stderr,"\t-i <interval>:      sleep <interval> ms between pings (default: 1000)\n");
-	fprintf(stderr,"\t-W <timeout>:       wait <timeout> ms for each reply (default: 1000)\n");
+	fprintf(stderr,"    -c <count>    : perform <count> pings (default: 10)\n");
+	fprintf(stderr,"    -s <n>        : use <n> bytes of payload (default: 56)\n");
+	fprintf(stderr,"    -t <ttl>      : use <ttl> as time-to-live (default: 64)\n");
+	fprintf(stderr,"    -i <interval> : sleep <interval> ms between pings (default: 1000)\n");
+	fprintf(stderr,"    -W <timeout>  : wait <timeout> ms for each reply (default: 1000)\n");
 	exit(EXIT_FAILURE);
 }
 

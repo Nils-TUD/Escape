@@ -33,12 +33,12 @@ static void linkRem(ipc::Net &net,int argc,char **argv);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s (add|rem|set|up|down|show) args...\n",name);
-	fprintf(stderr,"\tadd <link> <device>             -- adds link <link> offered by <device>\n");
-	fprintf(stderr,"\trem <link>                      -- removes link <link>\n");
-	fprintf(stderr,"\tset <link> (ip|subnet) <val>    -- configures <link>\n");
-	fprintf(stderr,"\tup <link>                       -- enables <link>\n");
-	fprintf(stderr,"\tdown <link>                     -- disables <link>\n");
-	fprintf(stderr,"\tshow [<link>]                   -- shows all links or <link>\n");
+	fprintf(stderr,"\tadd <link> <device>           : adds link <link> offered by <device>\n");
+	fprintf(stderr,"\trem <link>                    : removes link <link>\n");
+	fprintf(stderr,"\tset <link> (ip|subnet) <val>  : configures <link>\n");
+	fprintf(stderr,"\tup <link>                     : enables <link>\n");
+	fprintf(stderr,"\tdown <link>                   : disables <link>\n");
+	fprintf(stderr,"\tshow [<link>]                 : shows all links or <link>\n");
 	exit(EXIT_FAILURE);
 }
 

@@ -32,9 +32,9 @@ static bool run = true;
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <device> <path> <fs>\n",name);
-	fprintf(stderr,"	For example, %s /dev/hda1 /mnt ext2, where ext2 is a program\n",name);
-	fprintf(stderr,"	in PATH that takes the device as argument 2 and creates\n");
-	fprintf(stderr,"	/dev/ext2-hda1 (in this case).\n");
+	fprintf(stderr,"    For example, %s /dev/hda1 /mnt ext2, where ext2 is a program\n",name);
+	fprintf(stderr,"    in PATH that takes the device as argument 2 and creates\n");
+	fprintf(stderr,"    /dev/ext2-hda1 (in this case).\n");
 	exit(EXIT_FAILURE);
 }
 

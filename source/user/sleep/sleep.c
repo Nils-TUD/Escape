@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage:_%s <secs>\n",name);
+	fprintf(stderr,"Usage: %s <secs>\n",name);
 	exit(EXIT_FAILURE);
 }
 

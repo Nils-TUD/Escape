@@ -40,12 +40,15 @@ typedef struct {
 static sSigName signals[] = {
 	{"SIGKILL",SIG_KILL},
 	{"SIGTERM",SIG_TERM},
-	{"SIGINT",SIG_INTRPT}
+	{"SIGINT",SIG_INTRPT},
+	{"KILL",SIG_KILL},
+	{"TERM",SIG_TERM},
+	{"INT",SIG_INTRPT},
 };
 
 static int usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-L] [-s <signal>] <pid>|<jobid>...\n",name);
-	fprintf(stderr,"	<signal> may be: SIGKILL, SIGTERM, SIGINT, KILL, TERM, INT\n");
+	fprintf(stderr,"    -L: list available signals\n");
 	return EXIT_FAILURE;
 }
 

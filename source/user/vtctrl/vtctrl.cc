@@ -27,7 +27,9 @@
 #include <env.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s -l|-s <mode>\n",name);
+	fprintf(stderr,"Usage: %s <cmd>\n",name);
+	fprintf(stderr,"    -l       : list all modes\n");
+	fprintf(stderr,"    -s <mode>: set <mode>\n");
 	exit(EXIT_FAILURE);
 }
 

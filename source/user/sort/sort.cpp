@@ -30,8 +30,8 @@ using namespace std;
 static bool compareStrs(const string& a,const string& b);
 static void usage(const char *name) {
 	cerr << "Usage: " << name << " [-r] [-i] [<file>]" << '\n';
-	cerr << "	-r: reverse; i.e. descending instead of ascending" << '\n';
-	cerr << "	-i: ignore case" << '\n';
+	cerr << "    -r: reverse; i.e. descending instead of ascending" << '\n';
+	cerr << "    -i: ignore case" << '\n';
 	exit(EXIT_FAILURE);
 }
 

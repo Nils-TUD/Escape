@@ -37,12 +37,12 @@ static void deleteUser(const char *name);
 static void readPassword(sPasswd *p);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);
-	fprintf(stderr,"	-l					list all users\n");
-	fprintf(stderr,"	-a <name> <home>	add new user <name>\n");
-	fprintf(stderr,"	-n <old> <new>		change name of user <old> to <new>\n");
-	fprintf(stderr,"	-h <name> <home>	change home-dir of user <name>\n");
-	fprintf(stderr,"	-p <name>			change password of user <name>\n");
-	fprintf(stderr,"	-d <name>			delete user <name>\n");
+	fprintf(stderr,"    -l               : list all users\n");
+	fprintf(stderr,"    -a <name> <home> : add new user <name>\n");
+	fprintf(stderr,"    -n <old> <new>   : change name of user <old> to <new>\n");
+	fprintf(stderr,"    -h <name> <home> : change home-dir of user <name>\n");
+	fprintf(stderr,"    -p <name>        : change password of user <name>\n");
+	fprintf(stderr,"    -d <name>        : delete user <name>\n");
 	exit(EXIT_FAILURE);
 }
 

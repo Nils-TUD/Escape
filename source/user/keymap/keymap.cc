@@ -32,14 +32,14 @@
 #define KEYMAP_DIR		"/etc/keymaps"
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [--set <name>]\n",name);
+	fprintf(stderr,"Usage: %s [-s <name>]\n",name);
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,const char **argv) {
 	char *kmname = NULL;
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"set=s",&kmname);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"s=s",&kmname);
 	if(res < 0) {
 		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);

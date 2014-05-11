@@ -32,8 +32,8 @@ static bool matches(const char *line,const char *pattern);
 static void strtolower(char *s);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <pattern> [<file>]\n",name);
-	fprintf(stderr,"	<pattern> will be treated case-insensitive and is NOT a\n");
-	fprintf(stderr,"	regular expression because we have no regexp-library yet ;)\n");
+	fprintf(stderr,"    <pattern> will be treated case-insensitive and is NOT a\n");
+	fprintf(stderr,"    regular expression because we have no regexp-library yet ;)\n");
 	exit(EXIT_FAILURE);
 }
 

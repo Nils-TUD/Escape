@@ -35,7 +35,7 @@ typedef struct sArg {
 static void appendArg(void);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-a <file>] [<command>] [<arg>...]\n",name);
-	fprintf(stderr,"	By default, <command>=/bin/echo\n");
+	fprintf(stderr,"    By default, <command>=/bin/echo\n");
 	exit(EXIT_FAILURE);
 }
 

@@ -30,7 +30,7 @@ static bool run = true;
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);
-	fprintf(stderr,"	You can use the suffixes K, M and G to specify N\n");
+	fprintf(stderr,"    You can use the suffixes K, M and G to specify N\n");
 	exit(EXIT_FAILURE);
 }
 static void interrupted(A_UNUSED int sig) {

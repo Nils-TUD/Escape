@@ -52,7 +52,7 @@ static void removeRec(const char *path,bool rec) {
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-r] <path> ...\n",name);
-	fprintf(stderr,"    -r:    remove directories recursively\n");
+	fprintf(stderr,"    -r: remove directories recursively\n");
 	exit(EXIT_FAILURE);
 }
 

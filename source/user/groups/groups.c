@@ -35,13 +35,13 @@ static void leave(const char *user,const char *group);
 static void deleteGroup(const char *name);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);
-	fprintf(stderr,"	-l					list all groups\n");
-	fprintf(stderr,"	-g					list of groups of the current process\n");
-	fprintf(stderr,"	-a <name>			add new group <name>\n");
-	fprintf(stderr,"	-n <old> <new>		change name of group <old> to <new>\n");
-	fprintf(stderr,"	-j <user> <name>	user <user> joins group <name>\n");
-	fprintf(stderr,"	-r <user> <name>	user <user> leaves group <name>\n");
-	fprintf(stderr,"	-d <name>			delete group <name>\n");
+	fprintf(stderr,"    -l               : list all groups\n");
+	fprintf(stderr,"    -g               : list of groups of the current process\n");
+	fprintf(stderr,"    -a <name>        : add new group <name>\n");
+	fprintf(stderr,"    -n <old> <new>   : change name of group <old> to <new>\n");
+	fprintf(stderr,"    -j <user> <name> : user <user> joins group <name>\n");
+	fprintf(stderr,"    -r <user> <name> : user <user> leaves group <name>\n");
+	fprintf(stderr,"    -d <name>        : delete group <name>\n");
 	exit(EXIT_FAILURE);
 }
 

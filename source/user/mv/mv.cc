@@ -43,8 +43,8 @@ public:
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-pf] <source> <dest>\n",name);
 	fprintf(stderr,"Usage: %s [-pf] <source>... <directory>\n",name);
-	fprintf(stderr,"\t-f    overwrite existing files\n");
-	fprintf(stderr,"\t-p    show a progress bar while moving\n");
+	fprintf(stderr,"    -f: overwrite existing files\n");
+	fprintf(stderr,"    -p: show a progress bar while moving\n");
 	exit(EXIT_FAILURE);
 }
 

@@ -84,16 +84,21 @@ static void initSuperblock(void) {
 	blockCount = disksize / blockSize;
 	/* better leave some space unused than having one smaller blockgroup */
 	if(blockGroups == 0) {
-		blockGroups = blockCount / 1024;
+		blockGroups = blockCount / 8192;
 		if(blockGroups == 0)
 			blockGroups = 1;
-		blockCount -= blockCount % 1024;
+		if(blockGroups * sizeof(struct Ext2BlockGrp) > blockSize)
+			blockGroups = blockSize / sizeof(struct Ext2BlockGrp);
 	}
-	else
-		blockCount = blockGroups * (blockCount / blockGroups);
+	else if(blockGroups * sizeof(struct Ext2BlockGrp) > blockSize)
+		error("Too many block-groups. Max. is %u",blockSize / sizeof(struct Ext2BlockGrp));
+	blockCount = (blockCount / blockGroups) * blockGroups;
+
 	/* use 5% of the blocks for inodes, by default */
 	if(inodeCount == 0)
 		inodeCount = ((blockCount / 20) * blockSize) / EXT2_REV0_INODE_SIZE;
+	/* ensure that we don't have more in total than the sum of all inodes in block-groups */
+	inodeCount = (inodeCount / blockGroups) * blockGroups;
 
 	log("Having %u block-groups, %u blocks, %u inodes in total\n",blockGroups,blockCount,inodeCount);
 

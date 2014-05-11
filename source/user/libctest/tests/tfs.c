@@ -29,6 +29,7 @@ static void test_fs(void);
 static void test_basics(void);
 static void test_perms(void);
 static void test_rename(void);
+static void test_largeFile(void);
 static void test_assertCan(const char *path,uint mode);
 static void test_assertCanNot(const char *path,uint mode,int err);
 static void fs_createFile(const char *name,const char *content);
@@ -48,6 +49,7 @@ static void test_fs(void) {
 		test_basics();
 		test_perms();
 		test_rename();
+		test_largeFile();
 	}
 	else
 		printf("WARNING: Detected readonly filesystem; skipping the test\n\n");
@@ -213,6 +215,56 @@ static void test_rename(void) {
 	test_assertCanNot("/newfile",IO_READ,-ENOENT);
 	test_assertInt(unlink("/newerfile"),0);
 	test_assertCanNot("/newerfile",IO_READ,-ENOENT);
+
+	test_caseSucceeded();
+}
+
+static void test_largeFile(void) {
+	/* ensure that the blocksize is not a multiple of this array size */
+	uint8_t pattern[62];
+	uint8_t buf[62];
+	/* reach some double indirect blocks */
+	const size_t size = 12 * 1024 + 256 * 1024 + 256 * 1024;
+	test_caseStart("Creating a large file and reading it back");
+
+	for(size_t i = 0; i < ARRAY_SIZE(pattern); ++i)
+		pattern[i] = i;
+
+	/* write it */
+	{
+		FILE *f = fopen("/largefile","w");
+		test_assertTrue(f != NULL);
+
+		size_t rem = size;
+		while(rem > 0) {
+			size_t amount = MIN(rem,ARRAY_SIZE(pattern));
+			test_assertSize(fwrite(pattern,1,amount,f),amount);
+			rem -= amount;
+		}
+
+		/* flush buffer cache */
+		test_assertInt(syncfs(fileno(f)),0);
+
+		fclose(f);
+	}
+
+	/* read it back */
+	{
+		FILE *f = fopen("/largefile","r");
+		test_assertTrue(f != NULL);
+
+		size_t rem = size;
+		while(rem > 0) {
+			size_t amount = MIN(rem,ARRAY_SIZE(pattern));
+			test_assertSize(fread(buf,1,amount,f),amount);
+			for(size_t i = 0; i < amount; ++i)
+				test_assertInt(buf[i],pattern[i]);
+			rem -= amount;
+		}
+		fclose(f);
+	}
+
+	test_assertInt(unlink("/largefile"),0);
 
 	test_caseSucceeded();
 }

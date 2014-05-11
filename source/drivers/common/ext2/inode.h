@@ -118,13 +118,13 @@ public:
 
 private:
 	/**
+	 * Accesses the block-number of the indirect-block in level <level>.
+	 */
+	static block_t accessIndirBlock(Ext2FileSystem *e,Ext2CInode *cnode,block_t *indir,block_t i,
+		bool req,int level,block_t div);
+	/**
 	 * Performs the actual get-block-request. If <req> is true, it will allocate a new block, if
 	 * necessary. In this case cnode may be changed. Otherwise no changes will be made.
 	 */
 	static block_t doGetDataBlock(Ext2FileSystem *e,Ext2CInode *cnode,block_t block,bool req);
-	/**
-	 * Puts a new block in cblock->buffer if cblock->buffer[index] is 0. Marks the cblock dirty,
-	 * if necessary. Sets <added> to true or false, depending on whether a block was allocated.
-	 */
-	static int extend(Ext2FileSystem *e,Ext2CInode *cnode,CBlock *cblock,size_t index,bool *added);
 };

@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #include <functor.h>
-#include <list>
+#include <vector>
 
 namespace ipc {
 
@@ -41,7 +41,7 @@ struct Request {
 
 class RequestQueue {
 public:
-	typedef std::list<Request>::iterator iterator;
+	typedef std::vector<Request>::iterator iterator;
 	typedef std::Functor<bool,int,msgid_t,char*,size_t> handler_type;
 
 	explicit RequestQueue(handler_type *handler) : _requests(), _handler(handler) {
@@ -67,7 +67,7 @@ public:
 			const Request &req = _requests.front();
 			if(!(*_handler)(req.fd,req.mid,req.data,req.count))
 				break;
-			_requests.pop_front();
+			_requests.erase(begin());
 		}
 	}
 
@@ -84,7 +84,7 @@ public:
 	}
 
 private:
-	std::list<Request> _requests;
+	std::vector<Request> _requests;
 	handler_type *_handler;
 };
 

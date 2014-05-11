@@ -27,7 +27,7 @@
 
 using namespace ipc;
 
-static char buffer[512];
+static char buffer[8192];
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <file> <port>\n",name);

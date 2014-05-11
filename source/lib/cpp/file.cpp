@@ -86,6 +86,6 @@ namespace std {
 		_parent = apath;
 		int res = stat(path().c_str(),&_info);
 		if(res < 0)
-			throw default_error("stat failed",-res);
+			throw default_error("stat failed",res);
 	}
 }

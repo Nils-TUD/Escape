@@ -164,7 +164,7 @@ size_t CircularBuf::get(seq_type seqNo,void *buf,size_t size) {
 	for(; size > 0 && it != _packets.end(); ++it) {
 		// skip packets that are in front of what we're looking for
 		seq_type relPktNo = it->start - _seqStart;
-		if(relPktNo < relSeq)
+		if(relPktNo + it->size() <= relSeq)
 			continue;
 
 		size_t offset = getOffset(*it,seqNo);

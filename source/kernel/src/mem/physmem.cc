@@ -123,11 +123,20 @@ void PhysMem::init() {
 
 	/* determine kernel-memory-size */
 	size_t free = getFreeDef();
+	cframes = 0;
 	kframes = free / (100 / KERNEL_MEM_PERCENT);
-	if(kframes < KERNEL_MEM_MIN)
-		kframes = KERNEL_MEM_MIN;
-	cframes = (kframes * 2) / 3;
-	kframes = kframes - cframes;
+	if(kframes < KERNEL_MEM_MIN) {
+		if(KERNEL_MEM_MIN > free) {
+			kframes = free / 2;
+			cframes = free - kframes;
+		}
+		else
+			kframes = KERNEL_MEM_MIN;
+	}
+	if(cframes == 0) {
+		cframes = (kframes * 2) / 3;
+		kframes = kframes - cframes;
+	}
 	if(cframes + kframes > free / 2) {
 		Log::get().writef("Warning: Detected VERY small number of free frames\n");
 		Log::get().writef("         (%zu total, using %zu for kernel, %zu for critical)\n",

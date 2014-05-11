@@ -21,6 +21,7 @@
 #include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int vsscanf(const char *str,const char *fmt,va_list ap) {
 	int res;

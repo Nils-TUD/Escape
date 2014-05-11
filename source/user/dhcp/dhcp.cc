@@ -28,6 +28,7 @@
 #include <cmdargs.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <time.h>
 #include <dns.h>
 
 using namespace ipc;

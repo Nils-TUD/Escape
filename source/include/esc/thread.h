@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 #include <esc/syscalls.h>
-#include <esc/io.h>
 
 /* the events we can wait for */
 #define EV_NOEVENT				0			/* just wakeup on signals */

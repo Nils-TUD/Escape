@@ -26,6 +26,7 @@
 #include <info/link.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <time.h>
 #include <cmdargs.h>
 #include <dns.h>
 

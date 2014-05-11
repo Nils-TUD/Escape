@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 static size_t envcount(void) {
 	for(size_t i = 0; ; ++i) {

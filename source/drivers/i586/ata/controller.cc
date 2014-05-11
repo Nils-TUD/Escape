@@ -25,6 +25,7 @@
 #include <esc/irq.h>
 #include <esc/io.h>
 #include <esc/mem.h>
+#include <esc/sync.h>
 #include <ipc/proto/pci.h>
 #include <signal.h>
 #include <stdio.h>

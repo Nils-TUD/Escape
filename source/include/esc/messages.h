@@ -19,11 +19,6 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/fsinterface.h>
-#include <stddef.h>
-#include <time.h>
-
 /* general */
 #define IPC_DEF_SIZE				256
 

@@ -23,6 +23,7 @@
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <esc/time.h>
+#include <esc/proc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

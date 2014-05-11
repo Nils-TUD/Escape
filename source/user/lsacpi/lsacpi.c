@@ -23,6 +23,7 @@
 #include <esc/dir.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void readTable(const char *name,sRSDT *table);
 

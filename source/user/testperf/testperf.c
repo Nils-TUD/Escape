@@ -21,6 +21,7 @@
 #include <esc/cmdargs.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "modules.h"
 

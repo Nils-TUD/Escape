@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/time.h>
+#include <esc/proc.h>
 #include <stdlib.h>
 #include <stdio.h>
 

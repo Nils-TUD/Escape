@@ -23,6 +23,7 @@
 #include <esc/elf.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #if ELF_TYPE == 64
 #	define POFFW	"16"

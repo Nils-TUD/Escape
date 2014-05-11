@@ -20,9 +20,11 @@
 #include <esc/common.h>
 #include <esc/time.h>
 #include <esc/thread.h>
+#include <esc/proc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <string.h>
 
 #include "../modules.h"
 

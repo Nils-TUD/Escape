@@ -22,6 +22,7 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 static void removeRec(const char *path,bool rec) {

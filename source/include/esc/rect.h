@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "common.h"
+#include <esc/common.h>
 
 /* a rectangle */
 typedef struct {

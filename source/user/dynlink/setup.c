@@ -21,6 +21,7 @@
 #include <esc/proc.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "loader.h"
 #include "init.h"
 #include "reloc.h"

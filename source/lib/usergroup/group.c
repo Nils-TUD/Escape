@@ -22,6 +22,7 @@
 #include <usergroup/user.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 sGroup *group_parseFromFile(const char *file,size_t *count) {
 	return (sGroup*)user_parseListFromFile(file,count,(parse_func)group_parse);

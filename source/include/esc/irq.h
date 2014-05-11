@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 #include <esc/syscalls.h>
-#include <esc/sync.h>
 
 #ifdef __cplusplus
 extern "C" {

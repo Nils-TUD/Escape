@@ -20,11 +20,6 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <limits.h>
-#include <stddef.h>
-#include <string.h>
-#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {

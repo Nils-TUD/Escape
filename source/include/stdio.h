@@ -23,6 +23,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <stdarg.h>
 
 #define _IOFBF			0	/* fully buffered */
 #define _IOLBF			1	/* line buffered */

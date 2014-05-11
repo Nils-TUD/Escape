@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <time.h>
 
 namespace ipc {
 

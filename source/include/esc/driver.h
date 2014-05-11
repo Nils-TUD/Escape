@@ -20,8 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
-#include <stdio.h>
+#include <esc/syscalls.h>
 
 #define DEV_OPEN					1
 #define DEV_READ					2		/* cancelable, if DEV_CANCEL is supported */
@@ -43,8 +42,6 @@
 #define DEV_TYPE_FILE				3
 
 #define GW_NOBLOCK					1
-
-typedef void (*fGetData)(FILE *str);
 
 #ifdef __cplusplus
 extern "C" {

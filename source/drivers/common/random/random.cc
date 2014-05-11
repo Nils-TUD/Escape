@@ -22,6 +22,7 @@
 #include <ipc/proto/file.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 using namespace ipc;
 

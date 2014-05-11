@@ -24,6 +24,7 @@
 #include <fs/ext2/ext2.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 static struct Ext2SuperBlock sb;

@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 ssize_t getenvto(char *value,size_t valSize,const char *name) {
 	char **var = environ;

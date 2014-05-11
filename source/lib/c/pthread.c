@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/atomic.h>
+#include <esc/sync.h>
+#include <esc/thread.h>
 #include <pthread.h>
 
 #define MAX_LOCKS   4

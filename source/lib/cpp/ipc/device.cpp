@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/messages.h>
 #include <ipc/device.h>
 #include <vthrow.h>
 

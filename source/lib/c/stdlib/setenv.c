@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 static char *genvar(const char *name,const char *value,size_t namelen) {
 	char *nvar = malloc(namelen + strlen(value) + 2);

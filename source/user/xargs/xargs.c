@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/dir.h>
+#include <esc/proc.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>

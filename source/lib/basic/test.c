@@ -27,6 +27,7 @@
 
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
+#	define fflush(...)
 #else
 #	include <esc/proc.h>
 #	include <stdio.h>
@@ -66,6 +67,7 @@ void test_caseStartv(const char *fmt,va_list ap) {
 	testPrintf("== Testcase %d : ",testCase++);
 	testvPrintf(fmt,ap);
 	testPrintf(" ==\n");
+	fflush(stdout);
 	assertCount = 0;
 }
 

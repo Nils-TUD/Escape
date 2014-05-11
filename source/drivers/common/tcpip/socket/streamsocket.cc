@@ -188,7 +188,6 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 	_pending.mid = mid;
 	_pending.count = size;
 	_pending.d.write.seqNo = seqNo + size;
-	Timeouts::program(_timeoutId,std::make_memfun(this,&StreamSocket::timeout),1000);
 	return 0;
 }
 

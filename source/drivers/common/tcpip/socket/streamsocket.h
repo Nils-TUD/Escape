@@ -81,7 +81,7 @@ public:
 
 	explicit StreamSocket(int f,int proto)
 			: Socket(f,proto), _closed(false), _timeoutId(Timeouts::allocateId()), _localPort(),
-			  _remoteAddr(), _mss(DEF_MSS), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(),
+			  _remoteAddr(), _mtu(), _mss(DEF_MSS), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(),
 			  _rxCircle(), _push() {
 		if(proto != ipc::Socket::PROTO_TCP)
 			VTHROWE("Protocol " << proto << " is not supported by stream socket",-ENOTSUP);
@@ -162,6 +162,7 @@ private:
 	/* connection information */
 	ipc::port_t _localPort;
 	ipc::Socket::Addr _remoteAddr;
+	size_t _mtu;
 	size_t _mss;
 	size_t _remoteWinSize;
 

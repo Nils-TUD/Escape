@@ -121,6 +121,7 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 		return res;
 
 	state(STATE_SYN_SENT);
+	_mtu = route->link->mtu() - Ethernet<IPv4<TCP>>().size();
 	_pending.mid = mid;
 	_pending.count = 1;
 	return 0;
@@ -559,7 +560,7 @@ void StreamSocket::sendData() {
 		uint8_t *buf = new uint8_t[_mss];
 		size_t left = _remoteWinSize;
 		while(left > 0) {
-			size_t limit = std::min(left,_mss);
+			size_t limit = std::min(left,std::min(_mtu,_mss));
 			size_t amount = _txCircle.get(seqNo,buf,limit);
 			if(amount == 0)
 				break;

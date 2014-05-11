@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCXXProg('bin', target = 'mv', source = env.Glob('*.cc'), LIBS = ['cp'])

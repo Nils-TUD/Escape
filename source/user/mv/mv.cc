@@ -18,16 +18,18 @@
  */
 
 #include <esc/common.h>
+#include <esc/dir.h>
 #include <cp/filecopy.h>
 #include <cmdargs.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #define BUFFER_SIZE		(16 * 1024)
 
-class CpFileCopy : public FileCopy {
+class MoveFileCopy : public FileCopy {
 public:
-	explicit CpFileCopy(uint fl) : FileCopy(BUFFER_SIZE,fl) {
+	explicit MoveFileCopy(uint fl) : FileCopy(BUFFER_SIZE,fl) {
 	}
 
 	virtual void handleError(const char *fmt,...) {
@@ -39,22 +41,21 @@ public:
 };
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-rfp] <source>... <dest>\n",name);
-	fprintf(stderr,"\t-r    copy directories recursively\n");
+	fprintf(stderr,"Usage: %s [-pf] <source> <dest>\n",name);
+	fprintf(stderr,"Usage: %s [-pf] <source>... <directory>\n",name);
 	fprintf(stderr,"\t-f    overwrite existing files\n");
-	fprintf(stderr,"\t-p    show a progress bar while copying\n");
+	fprintf(stderr,"\t-p    show a progress bar while moving\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[]) {
-	int rec = false;
 	int force = false;
 	int progress = false;
 
 	// parse params
 	std::cmdargs args(argc,argv,0);
 	try {
-		args.parse("r f p",&rec,&force,&progress);
+		args.parse("f p",&force,&progress);
 		if(args.is_help() || args.get_free().size() < 2)
 			usage(argv[0]);
 	}
@@ -63,29 +64,32 @@ int main(int argc,char *argv[]) {
 		usage(argv[0]);
 	}
 
-	uint flags = 0;
-	if(rec)
-		flags |= FileCopy::FL_RECURSIVE;
+	uint flags = FileCopy::FL_RECURSIVE;
 	if(force)
 		flags |= FileCopy::FL_FORCE;
 	if(progress)
 		flags |= FileCopy::FL_PROGRESS;
-	CpFileCopy cp(flags);
+	MoveFileCopy cp(flags);
 
 	auto files = args.get_free();
-	std::string *first = files[0];
 	std::string *last = files[files.size() - 1];
-	if(!isdir(last->c_str())) {
-		if(files.size() > 2)
-			error("'%s' is not a directory, but there are multiple source-files.",last->c_str());
-		if(isdir(files[0]->c_str()))
-			error("'%s' is not a directory, but the source '%s' is.",last->c_str(),first->c_str());
-		cp.copyFile(first->c_str(),last->c_str());
+	if(isdir(last->c_str())) {
+		char src[MAX_PATH_LEN];
+		auto dest = files.end() - 1;
+		for(auto it = files.begin(); it != dest; ++it) {
+			strnzcpy(src,(*it)->c_str(),sizeof(src));
+			char *filename = basename(src);
+			cp.move((*it)->c_str(),last->c_str(),filename);
+		}
 	}
 	else {
-		auto dest = files.end() - 1;
-		for(auto it = files.begin(); it != dest; ++it)
-			cp.copy((*it)->c_str(),last->c_str());
+		if(files.size() != 2)
+			usage(argv[0]);
+		char dir[MAX_PATH_LEN];
+		char filename[MAX_PATH_LEN];
+		strnzcpy(dir,last->c_str(),sizeof(dir));
+		strnzcpy(filename,last->c_str(),sizeof(filename));
+		cp.move(files[0]->c_str(),dirname(dir),basename(filename));
 	}
 	return EXIT_SUCCESS;
 }

@@ -728,8 +728,8 @@ FILE *ascreate(void);
  * buffer afterwards and are supposed to free it.
  *
  * @param f the stream
- * @param length will be set to the total length (may be NULL)
- * @return the buffer
+ * @param length will be set to the total length
+ * @return the buffer (NOT null-terminated!)
  */
 char *asget(FILE *f,size_t *length);
 

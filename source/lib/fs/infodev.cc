@@ -35,14 +35,17 @@ public:
 	}
 
 	virtual std::string handleRead() {
+		std::string res;
 		FILE *str = ascreate();
 		if(str) {
 			_fs->print(str);
-			std::string res = asget(str,NULL);
+			size_t length;
+			char *content = asget(str,&length);
 			fclose(str);
-			return res;
+			res = std::string(content,length);
+			free(content);
 		}
-		return "";
+		return res;
 	}
 
 private:

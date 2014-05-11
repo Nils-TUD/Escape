@@ -410,9 +410,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		case STATE_SYN_SENT: {
 			if(ackNo > _ctrlpkt.seqNo) {
 				if((tcp->ctrlFlags & (TCP::FL_ACK | TCP::FL_SYN)) == (TCP::FL_ACK | TCP::FL_SYN)) {
-					size_t txbufSize = be16tocpu(tcp->windowSize);
-					txbufSize = std::max<size_t>(1024,std::min<size_t>(64 * 1024,txbufSize));
-					_txCircle.init(_txCircle.nextSeq(),txbufSize);
+					_txCircle.init(_txCircle.nextSeq(),SEND_BUF_SIZE);
 					_rxCircle.init(seqNo + 1,RECV_BUF_SIZE);
 					_mss = parseMSS(tcp);
 

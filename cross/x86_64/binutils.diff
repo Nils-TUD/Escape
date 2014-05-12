@@ -1,0 +1,180 @@
+diff -rcN src/binutils-2.23.2/bfd/config.bfd src/binutils/bfd/config.bfd
+*** src/binutils-2.23.2/bfd/config.bfd	2012-09-04 16:14:59.000000000 +0200
+--- src/binutils/bfd/config.bfd	2014-05-12 18:37:03.471382706 +0200
+***************
+*** 144,149 ****
+--- 144,154 ----
+  
+  # START OF targmatch.h
+  #ifdef BFD64
++   x86_64-*-escape)
++     targ_defvec=bfd_elf64_x86_64_vec
++     targ_selvecs="bfd_elf32_i386_vec"
++     want64=true
++     ;;
+    aarch64-*-elf)
+      targ_defvec=bfd_elf64_littleaarch64_vec
+      targ_selvecs="bfd_elf64_bigaarch64_vec bfd_elf32_littlearm_vec bfd_elf32_bigarm_vec"
+diff -rcN src/binutils-2.23.2/bfd/doc/bfd.texinfo src/binutils/bfd/doc/bfd.texinfo
+*** src/binutils-2.23.2/bfd/doc/bfd.texinfo	2010-10-28 13:40:25.000000000 +0200
+--- src/binutils/bfd/doc/bfd.texinfo	2014-05-12 18:37:03.471382706 +0200
+***************
+*** 322,328 ****
+  @printindex cp
+  
+  @tex
+! % I think something like @colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+--- 322,328 ----
+  @printindex cp
+  
+  @tex
+! % I think something like @@colophon should be in texinfo.  In the
+  % meantime:
+  \long\def\colophon{\hbox to0pt{}\vfill
+  \centerline{The body of this manual is set in}
+***************
+*** 333,339 ****
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+--- 333,339 ----
+  \centerline{{\sl\fontname\tensl\/}}
+  \centerline{are used for emphasis.}\vfill}
+  \page\colophon
+! % Blame: doc@@cygnus.com, 28mar91.
+  @end tex
+  
+  @bye
+diff -rcN src/binutils-2.23.2/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
+*** src/binutils-2.23.2/bfd/elf32-i386.c	2013-03-25 09:06:19.000000000 +0100
+--- src/binutils/bfd/elf32-i386.c	2014-05-12 18:37:03.471382706 +0200
+***************
+*** 518,524 ****
+  /* The name of the dynamic interpreter.  This is put in the .interp
+     section.  */
+  
+! #define ELF_DYNAMIC_INTERPRETER "/usr/lib/libc.so.1"
+  
+  /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
+     copying dynamic variables from a shared lib into an app's dynbss
+--- 518,524 ----
+  /* The name of the dynamic interpreter.  This is put in the .interp
+     section.  */
+  
+! #define ELF_DYNAMIC_INTERPRETER "/bin/dynlink"
+  
+  /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
+     copying dynamic variables from a shared lib into an app's dynbss
+diff -rcN src/binutils-2.23.2/bfd/elf64-x86-64.c src/binutils/bfd/elf64-x86-64.c
+*** src/binutils-2.23.2/bfd/elf64-x86-64.c	2013-03-25 09:06:20.000000000 +0100
+--- src/binutils/bfd/elf64-x86-64.c	2014-05-12 18:37:03.475382706 +0200
+***************
+*** 508,515 ****
+  /* The name of the dynamic interpreter.	 This is put in the .interp
+     section.  */
+  
+! #define ELF64_DYNAMIC_INTERPRETER "/lib/ld64.so.1"
+! #define ELF32_DYNAMIC_INTERPRETER "/lib/ldx32.so.1"
+  
+  /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
+     copying dynamic variables from a shared lib into an app's dynbss
+--- 508,515 ----
+  /* The name of the dynamic interpreter.	 This is put in the .interp
+     section.  */
+  
+! #define ELF64_DYNAMIC_INTERPRETER "/bin/dynlink"
+! #define ELF32_DYNAMIC_INTERPRETER "/bin/dynlink"
+  
+  /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
+     copying dynamic variables from a shared lib into an app's dynbss
+diff -rcN src/binutils-2.23.2/config.sub src/binutils/config.sub
+*** src/binutils-2.23.2/config.sub	2012-04-25 17:53:25.000000000 +0200
+--- src/binutils/config.sub	2014-05-12 18:37:03.475382706 +0200
+***************
+*** 1352,1358 ****
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+! 	      | -openbsd* | -solidbsd* \
+  	      | -ekkobsd* | -kfreebsd* | -freebsd* | -riscix* | -lynxos* \
+  	      | -bosx* | -nextstep* | -cxux* | -aout* | -elf* | -oabi* \
+  	      | -ptx* | -coff* | -ecoff* | -winnt* | -domain* | -vsta* \
+--- 1352,1358 ----
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+! 	      | -openbsd* | -solidbsd* | -escape* \
+  	      | -ekkobsd* | -kfreebsd* | -freebsd* | -riscix* | -lynxos* \
+  	      | -bosx* | -nextstep* | -cxux* | -aout* | -elf* | -oabi* \
+  	      | -ptx* | -coff* | -ecoff* | -winnt* | -domain* | -vsta* \
+diff -rcN src/binutils-2.23.2/gas/configure.tgt src/binutils/gas/configure.tgt
+*** src/binutils-2.23.2/gas/configure.tgt	2012-09-04 14:53:45.000000000 +0200
+--- src/binutils/gas/configure.tgt	2014-05-12 18:37:03.475382706 +0200
+***************
+*** 429,434 ****
+--- 429,436 ----
+    xstormy16-*-*)			fmt=elf ;;
+    
+    xgate-*-*)    			fmt=elf ;;
++   i*86-*-escape*)			fmt=elf ;;
++   x86_64-*-escape*)			fmt=elf ;;
+  
+    xtensa*-*-*)				fmt=elf ;;
+  
+diff -rcN src/binutils-2.23.2/ld/configure.tgt src/binutils/ld/configure.tgt
+*** src/binutils-2.23.2/ld/configure.tgt	2012-09-04 14:53:47.000000000 +0200
+--- src/binutils/ld/configure.tgt	2014-05-12 18:37:03.475382706 +0200
+***************
+*** 212,217 ****
+--- 212,218 ----
+  			targ64_extra_libpath=elf_x86_64
+  			targ_extra_libpath=elf32_x86_64
+  			tdir_i386linux=${targ_alias}aout ;;
++ x86_64-*-escape) targ_emul=escape_x86_64 ;;
+  x86_64-*-linux-gnux32)	targ_emul=elf32_x86_64
+  			targ_extra_emuls="elf_x86_64 elf_i386 i386linux elf_l1om elf_k1om"
+  			targ_extra_libpath="elf_i386 elf_x86_64 elf_l1om elf_k1om"
+diff -rcN src/binutils-2.23.2/ld/emulparams/escape_x86_64.sh src/binutils/ld/emulparams/escape_x86_64.sh
+*** src/binutils-2.23.2/ld/emulparams/escape_x86_64.sh	1970-01-01 01:00:00.000000000 +0100
+--- src/binutils/ld/emulparams/escape_x86_64.sh	2014-05-12 18:37:03.475382706 +0200
+***************
+*** 0 ****
+--- 1,17 ----
++ SCRIPT_NAME=elf
++ ELFSIZE=64
++ OUTPUT_FORMAT=elf64-x86-64
++ TEXT_START_ADDR=0x00001000
++ MAXPAGESIZE="CONSTANT (MAXPAGESIZE)"
++ COMMONPAGESIZE="CONSTANT (COMMONPAGESIZE)"
++ ARCH="i386:x86-64"
++ MACHINE=
++ NOP=0x90909090
++ TEMPLATE_NAME=elf32
++ GENERATE_SHLIB_SCRIPT=yes
++ GENERATE_PIE_SCRIPT=yes
++ NO_SMALL_DATA=yes
++ SEPARATE_GOTPLT=24
++ DATA_ADDR="ALIGN(${MAXPAGESIZE})"
++ SHLIB_DATA_ADDR="ALIGN(${MAXPAGESIZE})"
++ 
+diff -rcN src/binutils-2.23.2/ld/Makefile.in src/binutils/ld/Makefile.in
+*** src/binutils-2.23.2/ld/Makefile.in	2013-03-25 09:06:23.000000000 +0100
+--- src/binutils/ld/Makefile.in	2014-05-12 18:40:12.431387010 +0200
+***************
+*** 2134,2139 ****
+--- 2134,2141 ----
+  
+  @TDIRS@
+  
++ eescape_x86_64.c: $(srcdir)/emulparams/escape_x86_64.sh $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++ 	${GENSCRIPTS} escape_x86_64 "$(tdir_escape_x86_64)"
+  eaix5ppc.c: $(srcdir)/emulparams/aix5ppc.sh \
+    $(srcdir)/emultempl/aix.em $(srcdir)/scripttempl/aix.sc ${GEN_DEPENDS}
+  	${GENSCRIPTS} aix5ppc "$(tdir_aixppc)"

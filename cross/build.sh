@@ -13,7 +13,7 @@ fi
 MAKE_ARGS="-j$cpus"
 
 usage() {
-	echo "Usage: $1 (i586|eco32|mmix) [--rebuild]" >&2
+	echo "Usage: $1 (i586|x86_64|eco32|mmix) [--rebuild]" >&2
 	exit
 }
 
@@ -22,7 +22,8 @@ if [ $# -ne 1 ] && [ $# -ne 2 ]; then
 fi
 
 ARCH="$1"
-if [ "$ARCH" != "i586" ] && [ "$ARCH" != "eco32" ] && [ "$ARCH" != "mmix" ]; then
+if [ "$ARCH" != "i586" ] && [ "$ARCH" != "x86_64" ] &&
+	[ "$ARCH" != "eco32" ] && [ "$ARCH" != "mmix" ]; then
 	usage $0
 fi
 
@@ -46,15 +47,22 @@ wget -c ftp://sources.redhat.com/pub/newlib/newlib-1.20.0.tar.gz
 BINVER=2.23.2
 GCCVER=4.8.2
 NEWLVER=1.20.0
+REGPARMS=""
 if [ "$ARCH" = "eco32" ] || [ "$ARCH" = "mmix" ]; then
 	CUSTOM_FLAGS="-g -O2"
 	ENABLE_THREADS=""
-	REGPARMS=""
 else
 	CUSTOM_FLAGS="-g -O2 -D_POSIX_THREADS -D_GTHREAD_USE_MUTEX_INIT_FUNC -DPTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP"
 	CUSTOM_FLAGS="$CUSTOM_FLAGS -D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
 	ENABLE_THREADS=" --enable-threads=posix"
-	REGPARMS="-mregparm=3"
+	if [ "$ARCH" = "i586" ]; then
+		REGPARMS="-mregparm=3"
+		REG_SP="%esp"
+		REG_BP="%ebp"
+	else
+		REG_SP="%rsp"
+		REG_BP="%rbp"
+	fi
 fi
 
 GCC_ARCH=gcc-$GCCVER.tar.bz2
@@ -149,25 +157,25 @@ if $BUILD_GCC; then
 	ln -sf $DIST/bin/$TARGET-gcc $DIST/bin/$TARGET-cc
 
 	# libgcc (only i586 supports dynamic linking)
-	if [ "$ARCH" = "i586" ]; then
+	if [ "$ARCH" = "i586" ] || [ "$ARCH" = "x86_64" ]; then
 		# for libgcc, we need crt*S.o and a libc. crt1S.o and crtnS.o need to be working. the others
 		# don't need to do something useful, but at least they have to be present.
 		TMPCRT0=`mktemp`
 		TMPCRT1=`mktemp`
 		TMPCRTN=`mktemp`
-		
+
 		# we need the function prologs and epilogs. otherwise the INIT entry in the dynamic section
 		# won't be created (and the init- and fini-sections don't work).
 		echo ".section .init" >> $TMPCRT1
 		echo ".global _init" >> $TMPCRT1
 		echo "_init:" >> $TMPCRT1
-		echo "	push	%ebp" >> $TMPCRT1
-		echo "	mov		%esp,%ebp" >> $TMPCRT1
+		echo "	push	$REG_BP" >> $TMPCRT1
+		echo "	mov		$REG_SP,$REG_BP" >> $TMPCRT1
 		echo ".section .fini" >> $TMPCRT1
 		echo ".global _fini" >> $TMPCRT1
 		echo "_fini:" >> $TMPCRT1
-		echo "	push	%ebp" >> $TMPCRT1
-		echo "	mov		%esp,%ebp" >> $TMPCRT1
+		echo "	push	$REG_BP" >> $TMPCRT1
+		echo "	mov		$REG_SP,$REG_BP" >> $TMPCRT1
 
 		echo ".section .init" >> $TMPCRTN
 		echo "	leave" >> $TMPCRTN

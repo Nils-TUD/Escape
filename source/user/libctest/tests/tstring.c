@@ -21,6 +21,7 @@
 #include <esc/test.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void test_string(void);
 static void test_strtold(void);

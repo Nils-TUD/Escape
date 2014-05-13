@@ -76,12 +76,10 @@ protected:
 	static ulong *addArgs(Thread *t,ulong *sp,uintptr_t tentryPoint,bool newThread);
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/task/uenv.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/uenv.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/uenv.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/task/uenv.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/task/uenv.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/task/uenv.h>
 #endif

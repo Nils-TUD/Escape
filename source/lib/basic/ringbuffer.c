@@ -22,7 +22,7 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef IN_KERNEL
+#if defined(IN_KERNEL)
 #	include <sys/cwrap.h>
 #	define rbprintf		vid_printf
 #	define free(x)		cache_free(x)

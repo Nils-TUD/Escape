@@ -1,7 +1,0 @@
-#!/bin/sh
-. boot/$ESC_TARGET/images.sh
-create_cd $1/dist $1/cd.iso
-$ESC_QEMU -m 128 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
-	-kernel $1/dist/boot/escape -append 'root=/dev/iso9660-ramdisk-mbmods-4' \
-	-initrd "$1/dist/sbin/ramdisk /dev/ramdisk-mbmods-4 -f /system/mbmods/4,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/rtc /dev/rtc,$1/dist/sbin/iso9660 /dev/iso9660-ramdisk-mbmods-4 /dev/ramdisk-mbmods-4,$1/cd.iso" \
-	$2 | tee log.txt

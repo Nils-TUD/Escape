@@ -43,7 +43,7 @@ typedef struct {
 	int complStart;
 } sShellCmd;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -66,6 +66,6 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
  */
 void compl_free(sShellCmd **matches);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

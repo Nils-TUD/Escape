@@ -53,7 +53,7 @@
 /* the signature */
 typedef void (*fSignal)(int);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -92,6 +92,6 @@ static inline int kill(pid_t pid,int signal) {
  */
 int raise(int sig);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

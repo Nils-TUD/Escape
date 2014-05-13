@@ -64,10 +64,10 @@ Console::Command Console::commands[] = {
 	{"mem",		cons_cmd_mem},
 	{"m",		cons_cmd_mem},
 	{"panic",	cons_cmd_panic},
-#ifdef DEBUG_LOCKS
+#if defined(DEBUG_LOCKS)
 	{"locks",	cons_cmd_locks},
 #endif
-#ifdef __i386__
+#if defined(__x86__)
 	{"step",	cons_cmd_step},
 	{"s",		cons_cmd_step},
 	{"break",	cons_cmd_break},

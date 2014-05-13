@@ -2,7 +2,7 @@
 
 Import('env')
 
-if env['ARCH'] == 'eco32' or env['ARCH'] == 'mmix':
+if env['TGT'] == 'eco32' or env['TGT'] == 'mmix':
 	env.SConscript([f for f in env.Glob('*/SConscript')
 					if 'basic' not in str(f) and 'gui' not in str(f) and 'vbe' not in str(f)], 'env')
 else:

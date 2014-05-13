@@ -31,12 +31,12 @@
 static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,uint32_t hash);
 static uint32_t lookup_getHash(const unsigned char *name);
 
-#ifdef CALLTRACE_PID
+#if defined(CALLTRACE_PID)
 static int pid = -1;
 static int depth = 0;
 #endif
 
-#ifdef CALLTRACE_PID
+#if defined(CALLTRACE_PID)
 int getpid_wrapper(void);
 
 int getpid_wrapper(void) {
@@ -60,7 +60,7 @@ A_REGPARM(0) uintptr_t lookup_resolve(A_UNUSED uint32_t a,A_UNUSED uint32_t b,A_
 	if(foundSym == NULL)
 		error("Unable to find symbol %s",lib->dynstrtbl + sym->st_name);
 	addr = (uintptr_t*)(rel->r_offset + lib->loadAddr);
-#ifdef CALLTRACE_PID
+#if defined(CALLTRACE_PID)
 	pid = getpid();
 	if(pid == CALLTRACE_PID) {
 		if(depth < 100) {
@@ -87,7 +87,7 @@ A_REGPARM(0) uintptr_t lookup_resolve(A_UNUSED uint32_t a,A_UNUSED uint32_t b,A_
 	return value;
 }
 
-#ifdef CALLTRACE_PID
+#if defined(CALLTRACE_PID)
 void lookup_tracePop(void);
 void lookup_tracePop(void) {
 	if(pid == CALLTRACE_PID) {

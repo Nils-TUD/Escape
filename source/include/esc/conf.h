@@ -32,7 +32,7 @@
 #define CONF_CPU_COUNT			9
 #define CONF_TICKS_PER_SEC		11
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -54,6 +54,6 @@ long sysconf(int id);
  */
 int sysconfstr(int id,char *buf,size_t len);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

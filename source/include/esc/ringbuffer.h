@@ -27,7 +27,7 @@
 /* the user doesn't need to know the internal structure */
 typedef void sRingBuf;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -111,6 +111,6 @@ size_t rb_move(sRingBuf *dst,sRingBuf *src,size_t n);
  */
 void rb_print(sRingBuf *r);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -29,6 +29,6 @@ extern "C" {
 void callback(double result);
 extern const char *parse_text;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

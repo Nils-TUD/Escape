@@ -28,7 +28,7 @@ typedef struct {
 	bool hasQuotes;
 } sConstStrExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -65,6 +65,6 @@ void ast_printConstStrExpr(sConstStrExpr *s,uint layer);
  */
 void ast_destroyConstStrExpr(sConstStrExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

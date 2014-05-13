@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -397,6 +397,6 @@ div_t div(int numer,int denom);
 ldiv_t ldiv(long numer,long denom);
 lldiv_t lldiv(llong numer,llong denom);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -30,7 +30,7 @@ typedef struct {
 	sEnv *env;
 } sFunctionStmt;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -84,6 +84,6 @@ void ast_destroyFunctionStmt(sFunctionStmt *n);
  */
 void ast_killFunctionStmt(sFunctionStmt *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

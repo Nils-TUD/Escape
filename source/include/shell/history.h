@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -51,6 +51,6 @@ char *shell_histDown(void);
  */
 void shell_histPrint(void);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

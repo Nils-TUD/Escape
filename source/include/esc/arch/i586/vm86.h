@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -72,6 +72,6 @@ static inline int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *area)
 	return syscall3(SYSCALL_VM86INT,interrupt,(ulong)regs,(ulong)area);
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

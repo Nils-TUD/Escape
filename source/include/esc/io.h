@@ -74,7 +74,7 @@
 	__err; \
 })
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -506,6 +506,6 @@ bool isdir(const char *path);
  */
 bool isblock(const char *path);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

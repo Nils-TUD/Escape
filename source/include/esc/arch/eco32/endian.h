@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -35,6 +35,6 @@ uint32_t le32tocpu(uint32_t in);
 uint16_t cputole16(uint16_t in);
 uint32_t cputole32(uint32_t in);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

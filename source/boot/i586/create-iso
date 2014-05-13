@@ -1,3 +1,0 @@
-#!/bin/sh
-. boot/$ESC_TARGET/images.sh
-create_cd $1/dist $1/cd.iso

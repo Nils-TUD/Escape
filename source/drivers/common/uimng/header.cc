@@ -108,7 +108,7 @@ void Header::putcTUI(const ipc::Screen::Mode &,char *header,uint *col,char c,cha
 }
 
 void Header::putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color) {
-#ifdef __i386__
+#if defined(__i586__)
 	vbet_drawChar(mode,(uint8_t*)header,*col,0,c,color);
 #endif
 	(*col)++;

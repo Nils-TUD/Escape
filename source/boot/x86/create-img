@@ -1,0 +1,3 @@
+#!/bin/sh
+. boot/$ESC_TGTTYPE/images.sh
+create_disk $1/dist $1/hd.img

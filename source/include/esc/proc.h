@@ -46,7 +46,7 @@ typedef struct {
 	ulong migrations;
 } sExitState;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -263,6 +263,6 @@ int atexit(fExitFunc func);
  */
 void exit(int errorCode) A_NORETURN;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

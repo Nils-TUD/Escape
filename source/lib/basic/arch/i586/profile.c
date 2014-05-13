@@ -17,23 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifdef PROFILE
-#include <assert.h>
-#ifdef IN_KERNEL
-#	if 0
-#		define gettid()		({ \
+#if defined(PROFILE)
+#	include <assert.h>
+#	include <esc/arch/x86/register.h>
+#	if defined(IN_KERNEL)
+#		if 0
+#			define gettid()		({ \
 	uintptr_t __esp; \
 	tid_t __tid; \
-	GET_REG("esp",__esp); \
+	GET_REG("sp",__esp); \
 	if(proc_getByPid(1)) { \
 		Thread *__t = Thread::getRunning(); \
 		__tid = ((__esp >= KERNEL_STACK_AREA) && (uintptr_t)__t >= KERNEL_AREA) ? __t->tid : 0; \
 	} \
 	__tid; \
 })
-#	else
-#		define gettid()		0
-#	endif
+#		else
+#			define gettid()		0
+#		endif
 #	define getcycles()	rdtsc()
 #else
 #	include <esc/thread.h>

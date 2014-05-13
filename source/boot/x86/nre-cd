@@ -1,0 +1,8 @@
+#!/bin/sh
+DIR=$HOME/nova/nre/nre/dist/imgs
+. boot/$ESC_TGTTYPE/images.sh
+create_cd $1/dist $1/cd.iso
+for i in escape ramdisk rtc fs; do
+	cp $1/bin/$i $DIR/escape
+done
+cp $1/cd.iso $DIR/escape/escape.iso

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/arch/i586/ports.h>
+#include <esc/arch/x86/ports.h>
 #include <esc/driver.h>
 #include <esc/debug.h>
 #include <esc/mem.h>

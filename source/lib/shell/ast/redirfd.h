@@ -30,7 +30,7 @@ typedef struct {
 	uchar type;
 } sRedirFd;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -57,6 +57,6 @@ void ast_printRedirFd(sRedirFd *s,uint layer);
  */
 void ast_destroyRedirFd(sRedirFd *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -42,7 +42,7 @@ eh_state_2 GREG
 eh_state_1 GREG
 eh_state_0 GREG
 
-#ifdef __MMIX_ABI_GNU__
+#if defined(__MMIX_ABI_GNU__)
 
 // Allocate global registers used by the GNU ABI.
 gnu_parm_reg_16 GREG

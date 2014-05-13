@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/arch/i586/acpi.h>
+#include <esc/arch/x86/acpi.h>
 #include <esc/fsinterface.h>
 #include <esc/dir.h>
 #include <stdio.h>

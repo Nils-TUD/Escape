@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/ports.h>
+#include <sys/arch/x86/ports.h>
 #include <sys/video.h>
 #include <string.h>
 #include <assert.h>

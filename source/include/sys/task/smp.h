@@ -231,12 +231,12 @@ private:
 	static size_t cpuCount;
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/task/smp.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/task/smp.h>
 #elif defined __eco32__
-#include <sys/arch/eco32/task/smp.h>
+#	include <sys/arch/eco32/task/smp.h>
 #else
-#include <sys/arch/mmix/task/smp.h>
+#	include <sys/arch/mmix/task/smp.h>
 #endif
 
 inline void SMPBase::setReady(cpuid_t id) {

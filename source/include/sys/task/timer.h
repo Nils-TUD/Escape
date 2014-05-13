@@ -131,12 +131,10 @@ private:
 	static Listener *listener;
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/task/timer.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/timer.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/timer.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/task/timer.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/task/timer.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/task/timer.h>
 #endif

@@ -2,4 +2,4 @@
 
 Import('env')
 env.SConscript('common/SConscript', 'env')
-env.SConscript('$ARCH/SConscript', 'env')
+env.SConscript('$TGTTYPE/SConscript', 'env')

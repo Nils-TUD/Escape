@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -38,6 +38,6 @@ A_CHECKRET static inline int semcrtirq(int irq,const char *name) {
 	return syscall2(SYSCALL_SEMCRTIRQ,irq,(ulong)name);
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/arch/i586/fpu.h>
+#include <sys/arch/x86/fpu.h>
 
 #define STACK_REG_COUNT			1
 

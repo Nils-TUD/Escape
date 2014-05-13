@@ -19,18 +19,16 @@
 
 #include <esc/common.h>
 #include "machine.h"
-#include "arch/i586/i586machine.h"
+#include "arch/x86/x86machine.h"
 #include "arch/eco32/eco32machine.h"
 #include "arch/mmix/mmixmachine.h"
 
 Machine *Machine::createInstance() {
-#ifdef __i386__
-	return new i586Machine();
-#endif
-#ifdef __eco32__
+#if defined(__x86__)
+	return new x86Machine();
+#elif defined(__eco32__)
 	return new ECO32Machine();
-#endif
-#ifdef __mmix__
+#elif defined(__mmix__)
 	return new MMIXMachine();
 #endif
 }

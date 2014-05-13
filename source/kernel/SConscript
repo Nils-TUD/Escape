@@ -4,7 +4,7 @@ Import('env')
 import os
 
 kenv = env.Clone()
-ldconf = 'src/arch/$ARCH/ld.conf'
+ldconf = 'src/arch/$TGT/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 kenv.Append(
 	CFLAGS = ' -ffreestanding',
@@ -14,7 +14,7 @@ kenv.Append(
 	BUILDERS = {'GenSyms' : gensyms}
 )
 
-if kenv['ARCH'] == 'i586':
+if kenv['TGTTYPE'] == 'x86':
 	kenv.Append(
 		CFLAGS = ' -msoft-float',
 		CXXFLAGS = ' -msoft-float'
@@ -22,22 +22,26 @@ if kenv['ARCH'] == 'i586':
 
 #kenv.Append(
 #	CPPFLAGS = ' -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list='	+
-#		'ksymbols.cc,src/arch/i586/gdt.cc,src/basic/arch/$ARCH/profile.c'
+#		'ksymbols.cc,src/arch/i586/gdt.cc,src/basic/arch/$TGT/profile.c'
 #)
 
-src = [kenv.Glob('src/arch/$ARCH/kernel.S')]
+src = [kenv.Glob('src/arch/$TGT/kernel.S')]
 src += [kenv.Glob('src/*.c'), kenv.Glob('src/*/*.c')]
 src += [f for f in kenv.Glob('src/*.cc') if 'start.cc' not in str(f)]
 src += [kenv.Glob('src/*/*.cc')]
 src += [f for f in kenv.Glob('src/*/*/*.c') if 'arch/' not in str(f)]
 src += [f for f in kenv.Glob('src/*/*/*.cc') if 'arch/' not in str(f)]
-src += [kenv.Glob('src/arch/$ARCH/*.cc')]
-src += [kenv.Glob('src/arch/$ARCH/*/*.cc'), kenv.Glob('src/arch/$ARCH/*/*/*.cc')]
-src += [kenv.Glob('src/basic/arch/$ARCH/*.c')]
-src += [kenv.Glob('src/basic/arch/$ARCH/*.S')]
-src += [f for f in kenv.Glob('src/arch/$ARCH/*.S') if 'kernel.S' not in str(f)]
-src += [f for f in kenv.Glob('src/arch/$ARCH/*/*.S')]
-tsrc = [kenv.Glob('test/*.cc'), kenv.Glob('test/arch/$ARCH/*.cc')]
+src += [kenv.Glob('src/arch/$TGT/*.cc')]
+src += [kenv.Glob('src/arch/$TGT/*/*.cc'), kenv.Glob('src/arch/$TGT/*/*/*.cc')]
+src += [kenv.Glob('src/arch/$TGTTYPE/*.cc')]
+src += [kenv.Glob('src/arch/$TGTTYPE/*/*.cc'), kenv.Glob('src/arch/$TGTTYPE/*/*/*.cc')]
+src += [kenv.Glob('src/basic/arch/$TGT/*.c'), kenv.Glob('src/basic/arch/$TGTTYPE/*.c')]
+src += [kenv.Glob('src/basic/arch/$TGT/*.S')]
+src += [f for f in kenv.Glob('src/arch/$TGT/*.S') if 'kernel.S' not in str(f)]
+src += [f for f in kenv.Glob('src/arch/$TGT/*/*.S')]
+tsrc = [
+	kenv.Glob('test/*.cc'), kenv.Glob('test/arch/$TGT/*.cc'), kenv.Glob('test/arch/$TGTTYPE/*.cc')
+]
 mainsrc = 'src/start.cc'
 
 # works around the problem that we use those sources for two programs. this way, we isolate each
@@ -71,7 +75,7 @@ test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 kenv.Depends(kernel, ldconf)
 kenv.Depends(test_kernel, ldconf)
 
-if kenv['ARCH'] == 'i586':
+if kenv['TGT'] == 'i586':
 	tramp = '$BUILDDIR/kernel_tramp.dump'
 	trampobj = '$BUILDDIR/kernel_tramp.o'
 	kenv.Command(trampobj, 'src/arch/i586/trampoline.asm','nasm -f bin -o $TARGET $SOURCE')

@@ -50,7 +50,7 @@ struct RTCInfo {
 	uint microsecs;
 };
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -185,6 +185,6 @@ struct tm *localtime(const time_t *timer);
  */
 size_t strftime(char *ptr,size_t maxsize,const char *format,const struct tm *timeptr);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

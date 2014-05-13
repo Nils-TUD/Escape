@@ -31,7 +31,7 @@ typedef struct {
 	sASTNode *expr;
 } sRedirFile;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -59,6 +59,6 @@ void ast_printRedirFile(sRedirFile *s,uint layer);
  */
 void ast_destroyRedirFile(sRedirFile *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

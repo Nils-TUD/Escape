@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -121,6 +121,6 @@ int tolower(int ch);
  */
 int toupper(int ch);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

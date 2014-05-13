@@ -36,12 +36,10 @@ private:
 	uint lock;
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/spinlock.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/spinlock.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/spinlock.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/spinlock.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/spinlock.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/spinlock.h>
 #endif

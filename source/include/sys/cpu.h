@@ -50,12 +50,10 @@ public:
 	static void print(OStream &os);
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/cpu.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/cpu.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/cpu.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/cpu.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/cpu.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/cpu.h>
 #endif

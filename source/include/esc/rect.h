@@ -31,7 +31,7 @@ typedef struct {
 	ushort window;
 } sRectangle;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -103,6 +103,6 @@ void rectFree(sRectangle **rects,size_t count);
  */
 bool rectIntersect(const sRectangle *r1,const sRectangle *r2,sRectangle *intersect);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

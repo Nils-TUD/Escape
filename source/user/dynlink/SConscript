@@ -2,7 +2,7 @@
 
 Import('env')
 
-if env['ARCH'] == 'i586':
+if env['TGTTYPE'] == 'x86':
 	myenv = env.Clone()
 	myenv.Append(LINKFLAGS = ' -nostartfiles -Wl,-T,user/dynlink/ld.conf')
 	#myenv.Append(CFLAGS = ' -DCALLTRACE_PID=6', ASFLAGS = ' -DCALLTRACE_PID=6')

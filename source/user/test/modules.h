@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -45,6 +45,6 @@ extern int mod_pagefaults(int,char**);
 extern int mod_matmult(int,char**);
 extern int mod_rwlock(int,char**);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

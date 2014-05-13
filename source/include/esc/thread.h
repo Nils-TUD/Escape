@@ -33,7 +33,7 @@
 /* the thread-entry-point-function */
 typedef int (*fThreadEntry)(void *arg);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -135,6 +135,6 @@ bool setThreadVal(uint key,void *val);
  */
 void *getThreadVal(uint key);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

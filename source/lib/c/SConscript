@@ -2,18 +2,26 @@
 
 Import('env')
 
-acsrc = [env.Glob('arch/$ARCH/*.c')]
-assrc = [f for f in env.Glob('arch/$ARCH/*.S') if 'crt' not in str(f)]
+acsrc = [env.Glob('arch/$TGT/*.c'), env.Glob('arch/$TGTTYPE/*.c')]
+allasrc = env.Glob('arch/$TGT/*.S') + env.Glob('arch/$TGTTYPE/*.S')
+assrc = [f for f in allasrc if 'crt' not in str(f)]
 assrc += [env.Glob('esc/*.S')]
 csrc = [env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('basic/*/*.c'), env.Glob('esc/*/*.c')]
-baseacsrc = [env.Glob('basic/arch/$ARCH/*.c')]
-baseassrc = [env.Glob('basic/arch/$ARCH/*.S')]
+baseacsrc = [env.Glob('basic/arch/$TGT/*.c'), env.Glob('basic/arch/$TGTTYPE/*.c')]
+baseassrc = [env.Glob('basic/arch/$TGT/*.S'), env.Glob('basic/arch/$TGTTYPE/*.S')]
+
+if env['TGTTYPE'] == 'x86':
+	crt1s = 'arch/$TGTTYPE/crt1.S'
+	crtns = 'arch/$TGTTYPE/crtn.S'
+else:
+	crt1s = 'arch/$TGT/crt1.S'
+	crtns = 'arch/$TGT/crtn.S'
 
 # static library
 stenv = env.Clone()
-crt0 = stenv.Object('crt0.o', 'arch/$ARCH/crt0.S')
-crt1 = stenv.Object('crt1.o', 'arch/$ARCH/crt1.S')
-crtn = stenv.Object('crtn.o', 'arch/$ARCH/crtn.S')
+crt0 = stenv.Object('crt0.o', 'arch/$TGT/crt0.S')
+crt1 = stenv.Object('crt1.o', crt1s)
+crtn = stenv.Object('crtn.o', crtns)
 stenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])
 
 stlib = stenv.StaticLibrary(
@@ -23,16 +31,16 @@ stlib = stenv.StaticLibrary(
 env.Install('$BINDIR', stlib)
 
 # shared library
-if env['ARCH'] == 'i586':
+if env['TGTTYPE'] == 'x86':
 	shenv = env.Clone()
 	shenv.Append(
 		CPPFLAGS = ' -DSHAREDLIB=1',
 		ASFLAGS = ' -DSHAREDLIB=1',
 		LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
 	)
-	crt0 = shenv.Object('crt0S.o', 'arch/$ARCH/crt0.S')
-	crt1 = shenv.Object('crt1S.o', 'arch/$ARCH/crt1.S')
-	crtn = shenv.Object('crtnS.o', 'arch/$ARCH/crtn.S')
+	crt0 = shenv.Object('crt0S.o', 'arch/$TGT/crt0.S')
+	crt1 = shenv.Object('crt1S.o', crt1s)
+	crtn = shenv.Object('crtnS.o', crtns)
 	shenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])
 
 	shlib = shenv.SharedLibrary(

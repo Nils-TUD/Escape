@@ -21,7 +21,7 @@
 
 typedef int tIntType;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -47,6 +47,6 @@ bool lang_isInterrupted(void);
  */
 void yyerror(char const *s,...);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

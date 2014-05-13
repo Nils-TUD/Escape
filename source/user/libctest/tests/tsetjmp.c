@@ -37,7 +37,7 @@ sTestModule tModSetjmp = {
 
 static sJumpEnv env;
 
-#ifdef __i386__
+#if defined(__x86__)
 static void myfunc(int i) {
 	if(i > 0)
 		myfunc(i - 1);
@@ -50,7 +50,7 @@ static void test_setjmp(void) {
 	test_caseStart("Basic setjmp and longjmp");
 
 	/* not supported on eco32 and mmix yet */
-#ifdef __i386__
+#if defined(__x86__)
 	int res = setjmp(&env);
 	if(res == 0) {
 		myfunc(5);

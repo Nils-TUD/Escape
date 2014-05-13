@@ -21,8 +21,8 @@ fi
 if [ -z "$ESC_MAC" ]; then
 	export ESC_MAC="52-54-00-12-34-56"
 fi
-if [ -z "$ESC_GDB_I586" ]; then
-	export ESC_GDB_I586="gdb --tui"
+if [ -z "$ESC_GDB_X86" ]; then
+	export ESC_GDB_X86="gdb --tui"
 fi
 if [ -z "$ESC_GDB_MMIX" ]; then
 	export ESC_GDB_MMIX="/opt/mmix/bin/mmix-gdbtui"
@@ -32,27 +32,36 @@ if [ -z "$ESC_QEMU" ]; then
 fi
 
 # target dependend values
+cross="$ESC_TARGET-elf-escape"
+crossdir="/opt/escape-cross-$ESC_TARGET"
+
 if [ "$ESC_TARGET" = "i586" ]; then
-	gdb=$ESC_GDB_I586
+	gdb=$ESC_GDB_X86
+	export ESC_TGTTYPE=x86
+elif [ "$ESC_TARGET" = "x86_64" ]; then
+	gdb=$ESC_GDB_X86
+	qemu=qemu-system-x86_64
+	export ESC_TGTTYPE=x86
 elif [ "$ESC_TARGET" = "eco32" ]; then
 	gdb=""
+	export ESC_TGTTYPE=ecommix
 elif [ "$ESC_TARGET" = "mmix" ]; then
 	gdb=$ESC_GDB_MMIX
+	export ESC_TGTTYPE=ecommix
 else
-	echo 'Please define $ESC_TARGET to i586, eco32 or mmix!' >&2
+	echo 'Please define $ESC_TARGET to i586, x86_64, eco32 or mmix!' >&2
 	exit 1
 fi
 
 # determine linktype
-if [ "$ESC_LINKTYPE" != "static" ] && [ "$ESC_TARGET" = "i586" ]; then
-	ESC_LINKTYPE=dynamic
-else
-	ESC_LINKTYPE=static
+if [ "$ESC_LINKTYPE" != "static" ]; then
+	if [ "$ESC_TGTTYPE" = "x86" ]; then
+		ESC_LINKTYPE=dynamic
+	else
+		ESC_LINKTYPE=static
+	fi
 fi
 
-# don't change anything below!
-cross="$ESC_TARGET-elf-escape"
-crossdir="/opt/escape-cross-$ESC_TARGET"
 build="build/$ESC_TARGET-$ESC_BUILD"
 root=$(dirname $(readlink -f $0))
 
@@ -62,7 +71,7 @@ help() {
 	echo "This is a convenience script that is responsible for building everything"
 	echo "and running the specified command afterwards. The most important environment"
 	echo "variables that influence its behaviour are ESC_BUILD=(debug|release) and"
-	echo "ESC_TARGET=(i586|eco32|mmix)."
+	echo "ESC_TARGET=(i586|x86_64|eco32|mmix)."
 	echo "You can also prevent the script from building everything by specifying -n or"
 	echo "--no-build. In this case, only the specified command is executed."
 	echo ""
@@ -83,8 +92,8 @@ help() {
 	echo "    list:                    list the link-address of all programs"
 	echo ""
 	echo "Environment variables:"
-	echo "    ESC_TARGET:              the target architecture. Either i586, eco32"
-	echo "                             or mmix. The default is i586."
+	echo "    ESC_TARGET:              the target architecture. Either i586, x86_64,"
+	echo "                             eco32 or mmix. The default is i586."
 	echo "    ESC_BUILD:               the build-type. Either debug or release. In debug"
 	echo "                             mode optimizations are disabled, debug infos are"
 	echo "                             available and assertions are active. In release"
@@ -182,6 +191,17 @@ if [ "${cmd#*,}" = "$cmd" ] && [ "$binary" != "" ]; then
     fi
 fi
 
+bootscript() {
+	if [ -f ./boot/$ESC_TARGET/$script ]; then
+		echo ./boot/$ESC_TARGET/$script
+	elif [ -f ./boot/$ESC_TGTTYPE/$script ]; then
+		echo ./boot/$ESC_TGTTYPE/$script
+	else
+		echo "Script '$script' not found in any boot-directory." 1>&2
+		exit 1
+	fi
+}
+
 # run the specified command, if any
 case "$cmd" in
 	clean)
@@ -193,16 +213,16 @@ case "$cmd" in
 		;;
 
 	run)
-		./boot/$ESC_TARGET/$script $build "$ESC_SIM_FLAGS"
+		`bootscript $script` $build "$ESC_SIM_FLAGS"
 		;;
 
 	dbg=*)
-		if [ "$ESC_TARGET" = "i586" ]; then
+		if [ "$ESC_TGTTYPE" = "x86" ]; then
 			# the problem is that qemu terminates if it receives SIGINT. so, if we want to
 			# interrupt the execution and examine the state in gdb by pressing ^C, qemu
 			# terminates. to prevent that we use a small program (ignoreint) no block SIGINT,
 			# which replaces itself with the given program afterwards
-			$build/tools/ignoreint/ignoreint ./boot/$ESC_TARGET/$script $build \
+			$build/tools/ignoreint/ignoreint `bootscript $script` $build \
 				"$ESC_SIM_FLAGS -S -s" >log.txt &
 			# kill qemu when we're done
 			trap "pgrep qemu | xargs kill 2>/dev/null" INT
@@ -210,7 +230,7 @@ case "$cmd" in
 			echo "Sorry, a gdb is not available for eco32" >&2
 			exit 1
 		else
-			./boot/$ESC_TARGET/$script $build \
+			`bootscript $script` $build \
 				"$ESC_SIM_FLAGS -s $build/map/$binary.map -p 1234" >log.txt &
 		fi
 
@@ -245,7 +265,7 @@ case "$cmd" in
 		IFS=$oIFS
 
 		$gdb $first --command=$tmp
-		if [ "$ESC_TARGET" = "i586" ]; then
+		if [ "$ESC_TGTTYPE" = "x86" ]; then
 			pgrep qemu | xargs kill 2>/dev/null
 		fi
 		rm -f $tmp

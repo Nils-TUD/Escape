@@ -40,7 +40,7 @@ typedef struct {
 	sASTNode *redirErr;
 } sExecSubCmd;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -81,6 +81,6 @@ void ast_printSubCmd(sSubCmd *s,uint layer);
  */
 void ast_destroySubCmd(sSubCmd *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

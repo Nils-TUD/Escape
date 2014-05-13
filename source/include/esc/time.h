@@ -23,7 +23,7 @@
 #include <esc/syscalls.h>
 #include <esc/conf.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -56,16 +56,14 @@ static inline uint64_t timetotsc(uint64_t usecs) {
 	return usecs * ((ulong)sysconf(CONF_TICKS_PER_SEC) / 1000000ULL);
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 
-#ifdef __i386__
+#if defined(__i586__)
 #	include <esc/arch/i586/time.h>
-#endif
-#ifdef __eco32__
+#elif defined(__eco32__)
 #	include <esc/arch/eco32/time.h>
-#endif
-#ifdef __mmix__
+#elif defined(__mmix__)
 #	include <esc/arch/mmix/time.h>
 #endif

@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <errno.h>
 
-#ifdef SHAREDLIB
+#if defined(SHAREDLIB)
 #	define DO_SYSENTER				\
 	"call	1f\n"					\
 	"1:\n"							\

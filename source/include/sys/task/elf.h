@@ -86,10 +86,10 @@ private:
 	static int addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type,int mflags);
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/task/elf.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/task/elf.h>
 #elif defined __eco32__
-#include <sys/arch/eco32/task/elf.h>
+#	include <sys/arch/eco32/task/elf.h>
 #else
-#include <sys/arch/mmix/task/elf.h>
+#	include <sys/arch/mmix/task/elf.h>
 #endif

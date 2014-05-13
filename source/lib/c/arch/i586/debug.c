@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/arch/i586/register.h>
+#include <esc/arch/x86/register.h>
 #include <esc/debug.h>
 
 #define MAX_STACK_PAGES		128
@@ -34,7 +34,7 @@ uintptr_t *getStackTrace(void) {
 	size_t i;
 	uint32_t *ebp;
 	uintptr_t *frame = &frames[0];
-	GET_REG("ebp",ebp);
+	GET_REG(bp,ebp);
 	/* TODO just temporary */
 	end = ((uintptr_t)ebp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
 	start = end - PAGE_SIZE * MAX_STACK_PAGES;

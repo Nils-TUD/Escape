@@ -35,7 +35,7 @@
 #define CA_ERR_MAX1_FREE			-6
 #define CA_ERR_NO_FREE				-7
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -63,6 +63,6 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...);
  */
 bool isHelpCmd(int argc,char **argv);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

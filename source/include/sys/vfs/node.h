@@ -41,7 +41,7 @@
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 #define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
 
-#ifdef __mmix__
+#if defined(__mmix__)
 /* unfortunatly, we can't use the cheap solution that we use for the other architectures on mmix.
  * because on mmix we don't have regions in virtual memory for nodes, gft, ..., but allocate one
  * page at once and access it over the direct mapped space. thus, we search in the node-pages for

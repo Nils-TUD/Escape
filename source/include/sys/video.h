@@ -115,14 +115,12 @@ private:
 	static Video inst;
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/video.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/video.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/video.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/video.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/video.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/video.h>
 #endif
 
 inline void Video::goTo(ushort r,ushort c) {

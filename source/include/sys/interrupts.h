@@ -22,14 +22,12 @@
 #include <sys/common.h>
 #include <sys/semaphore.h>
 
-#ifdef __i386__
-#include <sys/arch/i586/intrptstackframe.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/intrptstackframe.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/intrptstackframe.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/intrptstackframe.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/intrptstackframe.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/intrptstackframe.h>
 #endif
 
 #define PANIC_ON_PAGEFAULT	1
@@ -136,12 +134,10 @@ protected:
 	static ISList<Semaphore*> userIrqs[];
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/interrupts.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/interrupts.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/interrupts.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/interrupts.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/interrupts.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/interrupts.h>
 #endif

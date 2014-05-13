@@ -48,7 +48,7 @@
 
 typedef off_t fpos_t;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -734,6 +734,6 @@ FILE *ascreate(void);
  */
 char *asget(FILE *f,size_t *length);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

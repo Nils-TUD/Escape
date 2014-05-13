@@ -28,7 +28,7 @@ typedef struct {
 	tIntType val;
 } sIntExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -64,6 +64,6 @@ void ast_printIntExpr(sIntExpr *s,uint layer);
  */
 void ast_destroyIntExpr(sIntExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

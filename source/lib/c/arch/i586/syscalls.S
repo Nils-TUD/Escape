@@ -25,7 +25,7 @@
 // this has to be done differently when using it in a shared library because we don't know the
 // absolute address
 .macro DO_SYSENTER
-#ifdef SHAREDLIB
+#if defined(SHAREDLIB)
 	call	1f
 1:
 	pop		%edx
@@ -43,7 +43,7 @@
 	test	%edi,%edi
 	jz		1f								// no-error?
 	// use GOT for shared-libraries
-	#ifdef SHAREDLIB
+	#if defined(SHAREDLIB)
 	// first get address of GOT
 	call	__i686.get_pc_thunk.bx
 	addl	$_GLOBAL_OFFSET_TABLE_,%eax
@@ -64,7 +64,7 @@
 .extern _GLOBAL_OFFSET_TABLE_
 
 // needed for shared libraries to get the address of the GOT
-#ifdef SHAREDLIB
+#if defined(SHAREDLIB)
 // put in the linkonce-section to tell the linker that he should put this function in the
 // executable / shared library just once
 .section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits

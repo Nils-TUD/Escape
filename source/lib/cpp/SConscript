@@ -10,7 +10,7 @@ myenv.EscapeLib(
 	target = 'stdc++',
 	source = [
 		myenv.Glob('*.cpp'), myenv.Glob('*/*.cpp'), myenv.Glob('*/*/*.cpp'),
-		'/opt/escape-cross-i586/lib/libsupc++.a'
+		'/opt/escape-cross-' + env['TGT'] + '/lib/libsupc++.a'
 	],
 	LIBS = ['c']
 )

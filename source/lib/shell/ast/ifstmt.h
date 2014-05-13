@@ -29,7 +29,7 @@ typedef struct {
 	sASTNode *elseList;
 } sIfStmt;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -67,6 +67,6 @@ void ast_printIfStmt(sIfStmt *s,uint layer);
  */
 void ast_destroyIfStmt(sIfStmt *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

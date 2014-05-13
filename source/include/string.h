@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -513,6 +513,6 @@ long double strtold(const char *nptr,char **endptr);
  */
 char *ecvt(double number,int ndigits,int *decpt,int *sign);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

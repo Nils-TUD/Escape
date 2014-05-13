@@ -22,7 +22,7 @@
 #include <esc/sllist.h>
 #include <assert.h>
 
-#ifdef IN_KERNEL
+#if defined(IN_KERNEL)
 #	include <sys/cwrap.h>
 #	define sllprintf	vid_printf
 #	define heapalloc	cache_alloc

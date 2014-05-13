@@ -59,7 +59,7 @@
 #define A_UNREACHED				__builtin_unreachable()
 #define A_REGPARM(x)			__attribute__((regparm(x)))
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 #	define EXTERN_C				extern "C"
 #else
 #	define EXTERN_C

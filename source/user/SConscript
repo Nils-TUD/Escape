@@ -8,7 +8,7 @@ def isIgnored(list, name):
 			return True
 	return False
 
-if env['ARCH'] == 'i586':
+if env['TGTTYPE'] == 'x86':
 	env.SConscript(env.Glob('*/SConscript'), 'env')
 else:
 	guiapps = ["desktop", "fileman", "gcalc", "glogin", "gsettings", "gtest", "guishell", "libguitest"]

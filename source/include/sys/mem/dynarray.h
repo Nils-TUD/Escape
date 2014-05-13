@@ -48,14 +48,12 @@
 
 /* for i586 and eco32, we need only 3 regions; one for gft, one for vfs-nodes and one for sll-nodes */
 /* but one additional one for the unit-tests doesn't hurt */
-#ifdef __i386__
-#define DYNA_REG_COUNT	4
-#endif
-#ifdef __eco32__
-#define DYNA_REG_COUNT	4
-#endif
-#ifdef __mmix__
-#define DYNA_REG_COUNT	128
+#if defined(__x86__)
+#	define DYNA_REG_COUNT	4
+#elif defined(__eco32__)
+#	define DYNA_REG_COUNT	4
+#elif defined(__mmix__)
+#	define DYNA_REG_COUNT	128
 #endif
 
 class DynArray : public CacheAllocatable {

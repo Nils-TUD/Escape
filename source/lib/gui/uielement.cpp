@@ -80,7 +80,7 @@ namespace gui {
 	}
 
 	void UIElement::debug() {
-#ifdef DEBUG_GUI
+#if defined(DEBUG_GUI)
 		static int pos = 0;
 		ostringstream ostr;
 		ostr << _id;

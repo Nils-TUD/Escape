@@ -38,14 +38,12 @@ struct BootTaskList {
 	}
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/boot.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/boot.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/boot.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/boot.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/boot.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/boot.h>
 #endif
 
 class Boot {

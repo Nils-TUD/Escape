@@ -18,11 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/lapic.h>
 #include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/ioapic.h>
-#include <sys/arch/i586/acpi.h>
-#include <sys/arch/i586/mpconfig.h>
+#include <sys/arch/x86/lapic.h>
+#include <sys/arch/x86/ioapic.h>
+#include <sys/arch/x86/acpi.h>
+#include <sys/arch/x86/mpconfig.h>
 #include <sys/task/smp.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>

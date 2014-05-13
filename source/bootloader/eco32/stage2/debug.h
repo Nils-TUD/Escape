@@ -21,7 +21,7 @@
 
 #include <stdarg.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -85,6 +85,6 @@ void debugInt(int n);
  */
 void debugString(char *s);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

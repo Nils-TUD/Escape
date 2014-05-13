@@ -21,12 +21,10 @@
 
 #include <esc/common.h>
 
-#ifdef __i386__
-#include <esc/arch/i586/atomic.h>
-#endif
-#ifdef __eco32__
-#include <esc/arch/eco32/atomic.h>
-#endif
-#ifdef __mmix__
-#include <esc/arch/mmix/atomic.h>
+#if defined(__x86__)
+#	include <esc/arch/x86/atomic.h>
+#elif defined(__eco32__)
+#	include <esc/arch/eco32/atomic.h>
+#elif defined(__mmix__)
+#	include <esc/arch/mmix/atomic.h>
 #endif

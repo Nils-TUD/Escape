@@ -54,7 +54,7 @@ struct sASTNode {
 	void *data;
 };
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -82,6 +82,6 @@ sValue *ast_execute(sEnv *e,sASTNode *n);
  */
 void ast_destroy(sASTNode *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -23,14 +23,12 @@
 #include <sys/spinlock.h>
 #include <sys/lockguard.h>
 
-#ifdef __i386__
-#include <sys/arch/i586/mem/physmem.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/mem/physmem.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/mem/physmem.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/mem/physmem.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/mem/physmem.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/mem/physmem.h>
 #endif
 
 /* converts bytes to pages */

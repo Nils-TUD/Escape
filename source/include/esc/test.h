@@ -32,7 +32,7 @@ typedef struct {
 	fStart start;
 } sTestModule;
 
-#ifdef TESTSQUIET
+#if defined(TESTSQUIET)
 #	define tprintf test_noPrint
 #	define tvprintf test_vnoPrint
 #else
@@ -65,7 +65,7 @@ typedef struct {
 #	define test_assertDouble(recv,exp) test_doAssertDouble((recv),(exp),__FUNCTION__,__LINE__)
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -158,6 +158,6 @@ void test_register(sTestModule *mod);
  */
 void test_start(void);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

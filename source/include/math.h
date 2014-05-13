@@ -36,7 +36,7 @@ typedef double double_t;
 
 enum { FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_NORMAL };
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -59,6 +59,6 @@ int isinff(float x);
 double round(double x);
 float roundf(float x);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -47,7 +47,7 @@
 #define STATE_ALT				(1 << 2)
 #define STATE_BREAK				(1 << 3)
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -65,6 +65,6 @@ extern "C" {
  */
 int escc_get(const char **str,int *n1,int *n2,int *n3);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

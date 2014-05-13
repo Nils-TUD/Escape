@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -30,6 +30,6 @@ extern "C" {
  */
 void logc(char c);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

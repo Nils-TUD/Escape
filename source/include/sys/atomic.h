@@ -50,12 +50,10 @@ public:
 	static bool cmpnswap(T volatile *ptr,Y oldval,Y newval);
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/atomic.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/atomic.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/atomic.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/atomic.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/atomic.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/atomic.h>
 #endif

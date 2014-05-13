@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -59,6 +59,6 @@ size_t getuwidth(uint n,uint base);
  */
 size_t getullwidth(ullong n,uint base);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

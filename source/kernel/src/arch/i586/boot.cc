@@ -20,11 +20,11 @@
 #include <sys/common.h>
 #include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/serial.h>
 #include <sys/arch/i586/idt.h>
-#include <sys/arch/i586/pic.h>
-#include <sys/arch/i586/acpi.h>
-#include <sys/arch/i586/ioapic.h>
+#include <sys/arch/x86/serial.h>
+#include <sys/arch/x86/pic.h>
+#include <sys/arch/x86/acpi.h>
+#include <sys/arch/x86/ioapic.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>

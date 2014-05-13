@@ -84,7 +84,7 @@ typedef enum {
 
 typedef uint8_t *(*fSetPixel)(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -156,6 +156,6 @@ uint8_t *vbe_setPixelAt(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t *colo
  */
 fSetPixel vbe_getPixelFunc(const ipc::Screen::Mode &mode);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

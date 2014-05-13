@@ -43,7 +43,7 @@
 
 #define GW_NOBLOCK					1
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -90,6 +90,6 @@ static inline int bindto(int fd,tid_t tid) {
 	return syscall2(SYSCALL_BINDTO,fd,tid);
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

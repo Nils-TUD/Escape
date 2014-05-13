@@ -33,7 +33,7 @@ typedef struct sUser {
 	struct sUser *next;
 } sUser;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -154,6 +154,6 @@ void user_free(sUser *u);
  */
 void user_print(const sUser *u);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

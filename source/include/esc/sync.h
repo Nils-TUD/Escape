@@ -42,7 +42,7 @@ typedef struct {
 	tUserSem mutex;
 } tRWLock;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -162,16 +162,14 @@ void rwrel(tRWLock *l,int op);
  */
 void rwdestr(tRWLock *l);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 
-#ifdef __i386__
-#	include <esc/arch/i586/sync.h>
-#endif
-#ifdef __eco32__
+#if defined(__x86__)
+#	include <esc/arch/x86/sync.h>
+#elif defined(__eco32__)
 #	include <esc/arch/eco32/sync.h>
-#endif
-#ifdef __mmix__
+#elif defined(__mmix__)
 #	include <esc/arch/mmix/sync.h>
 #endif

@@ -29,7 +29,7 @@ typedef struct {
 	char *name;
 } sProperty;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -67,6 +67,6 @@ void ast_printProperty(sProperty *s,uint layer);
  */
 void ast_destroyProperty(sProperty *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

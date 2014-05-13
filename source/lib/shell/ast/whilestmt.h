@@ -28,7 +28,7 @@ typedef struct {
 	sASTNode *stmtList;
 } sWhileStmt;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -65,6 +65,6 @@ void ast_printWhileStmt(sWhileStmt *s,uint layer);
  */
 void ast_destroyWhileStmt(sWhileStmt *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

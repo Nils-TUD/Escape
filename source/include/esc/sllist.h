@@ -44,7 +44,7 @@ typedef struct {
 	/*const*/ size_t length;
 } sSLList;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -242,6 +242,6 @@ void *sll_removeIndex(sSLList *list,size_t index);
  */
 void sll_print(const sSLList *list);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

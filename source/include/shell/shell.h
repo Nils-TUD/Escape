@@ -27,7 +27,7 @@
 #define MAX_CMDNAME_LEN		30
 #define MAX_CMD_LEN			256
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -90,6 +90,6 @@ bool shell_handleSpecialKey(char *buffer,int keycode,int modifier,size_t *cursor
  */
 void shell_complete(char *line,size_t *cursorPos,size_t *length);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

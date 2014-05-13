@@ -31,7 +31,7 @@ typedef struct sPasswd {
 	struct sPasswd *next;
 } sPasswd;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -112,6 +112,6 @@ void pw_free(sPasswd *pws);
  */
 void pw_print(const sPasswd *pws);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

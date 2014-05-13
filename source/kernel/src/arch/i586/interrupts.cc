@@ -19,11 +19,11 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/task/vm86.h>
-#include <sys/arch/i586/task/ioports.h>
-#include <sys/arch/i586/pic.h>
-#include <sys/arch/i586/lapic.h>
-#include <sys/arch/i586/ioapic.h>
-#include <sys/arch/i586/pit.h>
+#include <sys/arch/x86/task/ioports.h>
+#include <sys/arch/x86/pic.h>
+#include <sys/arch/x86/lapic.h>
+#include <sys/arch/x86/ioapic.h>
+#include <sys/arch/x86/pit.h>
 #include <sys/dbg/kb.h>
 #include <sys/dbg/console.h>
 #include <sys/mem/cache.h>

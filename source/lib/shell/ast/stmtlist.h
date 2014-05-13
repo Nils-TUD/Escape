@@ -28,7 +28,7 @@ typedef struct {
 	sSLList *list;
 } sStmtList;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -72,6 +72,6 @@ void ast_printStmtList(sStmtList *s,uint layer);
  */
 void ast_destroyStmtList(sStmtList *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

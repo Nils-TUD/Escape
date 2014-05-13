@@ -20,10 +20,12 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/view.h>
-#ifdef __i386__
-#include <sys/arch/i586/gdt.h>
-#include <sys/arch/i586/ioapic.h>
-#include <sys/arch/i586/acpi.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/gdt.h>
+#endif
+#if defined(__x86__)
+#	include <sys/arch/x86/ioapic.h>
+#	include <sys/arch/x86/acpi.h>
 #endif
 #include <sys/task/proc.h>
 #include <sys/task/sched.h>
@@ -104,8 +106,10 @@ static View views[] = {
 	{"pmemareas",	PhysMemAreas::print},
 	{"swapmap",		SwapMap::print},
 	{"cpu",			CPU::print},
-#ifdef __i386__
+#if defined(__i586__)
 	{"gdt",			GDT::print},
+#endif
+#if defined(__x86__)
 	{"ioapic",		IOAPIC::print},
 	{"acpi",		ACPI::print},
 #endif

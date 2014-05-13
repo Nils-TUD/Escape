@@ -28,7 +28,7 @@ typedef struct {
 	sASTNode *index;
 } sVarExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -65,6 +65,6 @@ void ast_printVarExpr(sVarExpr *s,uint layer);
  */
 void ast_destroyVarExpr(sVarExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

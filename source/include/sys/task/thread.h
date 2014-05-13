@@ -57,14 +57,12 @@
 #define T_IDLE					1
 #define T_IGNSIGS				2
 
-#ifdef __i386__
-#include <sys/arch/i586/task/threadconf.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/threadconf.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/threadconf.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/task/threadconf.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/task/threadconf.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/task/threadconf.h>
 #endif
 
 class Thread;
@@ -641,17 +639,15 @@ private:
 	static Mutex mutex;
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/task/thread.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/task/thread.h>
 static_assert(sizeof(Thread) <= 256,"Thread is too big");
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/task/thread.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/task/thread.h>
 // TODO actually, there is not much missing for 256 bytes
 static_assert(sizeof(Thread) <= 512,"Thread is too big");
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/task/thread.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/task/thread.h>
 // TODO actually, there is not much missing for 512 bytes
 static_assert(sizeof(Thread) <= 1024,"Thread is too big");
 #endif

@@ -25,7 +25,7 @@
 #include <sys/mem/pagedir.h>
 #include <sys/col/slist.h>
 
-#ifdef DEBUGGING
+#if defined(DEBUGGING)
 #	define DISABLE_DEMLOAD	1
 #else
 #	define DISABLE_DEMLOAD	0

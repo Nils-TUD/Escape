@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#ifdef IN_KERNEL
+#if defined(IN_KERNEL)
 #	include <sys/cwrap.h>
 
 #	define testPrintf	vid_printf

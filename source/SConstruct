@@ -4,18 +4,25 @@ import sys, os
 sys.path.insert(0, 'tools')
 import install
 
-target = os.environ.get('ESC_TARGET') or 'x86_64'
+target = os.environ.get('ESC_TARGET')
 crossver = '4.8.2'
-if target != 'eco32' and target != 'mmix':
+if target != 'eco32' and target != 'mmix' and target != 'x86_64':
 	target = 'i586'
 cross = target + '-elf-escape'
 crossdir = '/opt/escape-cross-' + target
+
+# set tgttype
+if target == 'i586' or target == 'x86_64':
+	tgttype = 'x86'
+else:
+	tgttype = 'ecommix'
 
 hostenv = Environment(
 	ENV = os.environ,
 	CXXFLAGS = '-Wall -Wextra -ansi -g'
 )
 env = Environment(
+	CPPFLAGS = ' -D__' + target + '__ -D__' + tgttype + '__',
 	CFLAGS = '-Wall -std=c99 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings'
 			+ ' -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline'
 			+ ' -Wno-long-long -Wstrict-prototypes -fms-extensions',
@@ -36,7 +43,7 @@ env = Environment(
 )
 
 linktype = 'static'
-if target == 'i586':
+if tgttype == 'x86':
 	linktype = os.environ.get('ESC_LINKTYPE')
 	if linktype != 'static':
 		linktype = 'dynamic'
@@ -87,7 +94,8 @@ if int(verbose) == 0:
 	hostenv['RANLIBCOMSTR'] = env['RANLIBCOMSTR'] = "RANLIB $TARGET"
 
 env.Append(
-	ARCH = target,
+	TGT = target,
+	TGTTYPE = tgttype,
 	LINKTYPE = linktype,
 	CROSS = cross,
 	CROSSDIR = Dir(crossdir),
@@ -128,7 +136,7 @@ def SetProgDeps(env, prog, static, libs, cpp):
 	env.Depends(prog, '$BINDIR/libm' + libsuffix)
 	if static:
 		env.Depends(prog, '$SYSGCCLIBPATH/libgcc.a')
-		if env['ARCH'] == 'i586':
+		if env['TGTTYPE'] == 'x86':
 			env.Depends(prog, '$SYSGCCLIBPATH/libgcc_eh.a')
 		if cpp:
 			env.Depends(prog, '$SYSLIBPATH/libsupc++.a')
@@ -140,7 +148,7 @@ def SetProgDeps(env, prog, static, libs, cpp):
 def SetLinkAddr(env, static):
 	global link_addr
 	# TODO this doesn't seem to work with MMIX. why?
-	if env['ARCH'] == 'i586' or env['ARCH'] == 'eco32':
+	if env['TGT'] != 'mmix':
 		if static:
 			env.Append(LINKFLAGS = ' -Wl,--section-start=.init=' + ("0x%x" % link_addr))
 		else:
@@ -148,8 +156,8 @@ def SetLinkAddr(env, static):
 		link_addr += 0x20000
 
 def EscapeMap(env, target, source):
-	map = env.Command(target, source, 'tools/createmap-$ARCH $SOURCE > $TARGET')
-	env.Depends(map, '#tools/createmap-$ARCH')
+	map = env.Command(target, source, 'tools/createmap-$TGT $SOURCE > $TARGET')
+	env.Depends(map, '#tools/createmap-$TGT')
 	env.Install('$MAPDIR', map)
 
 def EscapeDump(env, target, source):
@@ -159,7 +167,7 @@ def EscapeDump(env, target, source):
 
 def EscapeGCCLibs(env, static):
 	if static:
-		return ['gcc', 'gcc_eh'] if env['ARCH'] == 'i586' else ['gcc']
+		return ['gcc', 'gcc_eh'] if env['TGTTYPE'] == 'x86' else ['gcc']
 	return ['gcc_s']
 
 def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
@@ -185,7 +193,7 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	SetLinkAddr(myenv, static)
 	gcclibs = EscapeGCCLibs(env, static)
-	libs = gcclibs + ['stdc++'] + LIBS + ['stdc++'] + gcclibs
+	libs = gcclibs + LIBS + ['stdc++']
 	if static:
 		libs += ['supc++']
 	prog = myenv.Program(target, source, LIBS = libs)
@@ -199,7 +207,7 @@ def EscapeLib(env, target, source, LIBS = []):
 	myenv = env.Clone()
 	stlib = myenv.StaticLibrary(target, source)
 	env.Install('$BINDIR', stlib)
-	if env['ARCH'] == 'i586':
+	if env['TGTTYPE'] == 'x86':
 		shenv = myenv.Clone()
 		shenv.Append(
 			CPPFLAGS = ' -DSHAREDLIB=1',
@@ -220,11 +228,19 @@ env.AddMethod(EscapeCXXProg)
 env.AddMethod(EscapeLib)
 env.AddMethod(install.InstallFiles)
 
+# always use grouping for static libraries, because they may depend on each other so that we want
+# to cycle through them until all references are resolved.
+env['_LIBFLAGS'] = '-Wl,--start-group ' + env['_LIBFLAGS'] + ' -Wl,--end-group'
+
 hostenv.SConscript('tools/SConscript', 'hostenv',
 				   variant_dir = builddir + '/tools', duplicate = 0)
 
-for d in ['dist', 'bootloader', 'lib', 'drivers', 'user', 'kernel']:
-	env.SConscript(d + '/SConscript', 'env',
-				   variant_dir = builddir + '/' + d, duplicate = 0)
+if env['TGT'] == 'x86_64':
+	env.SConscript('kernel/SConscript', 'env',
+				   variant_dir = builddir + '/kernel', duplicate = 0)
+else:
+	for d in ['dist', 'bootloader', 'lib', 'drivers', 'user', 'kernel']:
+		env.SConscript(d + '/SConscript', 'env',
+					   variant_dir = builddir + '/' + d, duplicate = 0)
 
 # EOF

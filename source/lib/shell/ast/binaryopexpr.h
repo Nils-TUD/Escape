@@ -29,7 +29,7 @@ typedef struct {
 	sASTNode *operand2;
 } sBinaryOpExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -67,6 +67,6 @@ void ast_printBinOpExpr(sBinaryOpExpr *s,uint layer);
  */
 void ast_destroyBinOpExpr(sBinaryOpExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

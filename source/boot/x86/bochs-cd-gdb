@@ -1,0 +1,13 @@
+#!/bin/sh
+. boot/$ESC_TGTTYPE/images.sh
+
+create_cd $1/dist $1/cd.iso
+
+cat boot/$ESC_TGTTYPE/bochs.cfg > $1/bochs.cfg
+echo "ata0-master: type=cdrom, path=`readlink -f $1/cd.iso`, status=inserted" >> $1/bochs.cfg
+echo "boot: cdrom" >> $1/bochs.cfg
+echo "gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0" >> $1/bochs.cfg
+
+sed --in-place -e 's/cpu: count=2, ips=10000000/cpu: count=1, ips=20000000/g' $1/bochs.cfg
+
+/home/hrniels/Applications/bochs/bochs-2.6-gdb/install/bin/bochs -f $1/bochs.cfg -q

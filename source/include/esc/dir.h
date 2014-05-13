@@ -25,7 +25,7 @@
 
 typedef FILE DIR;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -95,6 +95,6 @@ static inline void closedir(DIR *dir) {
 	fclose(dir);
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

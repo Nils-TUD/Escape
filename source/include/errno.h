@@ -67,7 +67,7 @@
 #define ECONNRESET					43	/* Connection reset by peer */
 #define ENOTFOUND					44	/* Not found */
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -76,6 +76,6 @@ extern "C" {
  */
 extern int errno;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

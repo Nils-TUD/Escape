@@ -45,12 +45,10 @@ private:
 	static int copy(char *dst,const char *src,size_t size,size_t offset);
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/mem/useraccess.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/mem/useraccess.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/mem/useraccess.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/mem/useraccess.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/mem/useraccess.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/mem/useraccess.h>
 #endif

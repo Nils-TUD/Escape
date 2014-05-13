@@ -25,14 +25,12 @@
 #include <sys/interrupts.h>
 #include <string.h>
 
-#ifdef __i386__
-#include <sys/arch/i586/syscalls.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/syscalls.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/syscalls.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/syscalls.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/syscalls.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/syscalls.h>
 #endif
 
 class Syscalls {
@@ -165,12 +163,14 @@ private:
 	static int sysconfstr(Thread *t,IntrptStackFrame *stack);
 	static int tsctotime(Thread *t,IntrptStackFrame *stack);
 
-#ifdef __i386__
+#if defined(__x86__)
 	// x86 specific
 	static int reqports(Thread *t,IntrptStackFrame *stack);
 	static int relports(Thread *t,IntrptStackFrame *stack);
+#	ifdef __i586__
 	static int vm86start(Thread *t,IntrptStackFrame *stack);
 	static int vm86int(Thread *t,IntrptStackFrame *stack);
+#	endif
 #else
 	static int debug(Thread *t,IntrptStackFrame *stack);
 #endif

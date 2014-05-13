@@ -21,7 +21,7 @@
 #include <esc/hashmap.h>
 #include <assert.h>
 
-#ifdef IN_KERNEL
+#if defined(IN_KERNEL)
 #	include <sys/cwrap.h>
 #	define hmprintf		vid_printf
 #	define hmfree		cache_free

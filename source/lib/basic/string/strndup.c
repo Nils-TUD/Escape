@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#ifdef IN_KERNEL
+#if defined(IN_KERNEL)
 #	include <sys/cwrap.h>
 #	define malloc cache_alloc
 #else

@@ -34,7 +34,7 @@ typedef struct {
 	sASTNode *operand1;
 } sUnaryOpExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -71,6 +71,6 @@ void ast_printUnaryOpExpr(sUnaryOpExpr *s,uint layer);
  */
 void ast_destroyUnaryOpExpr(sUnaryOpExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

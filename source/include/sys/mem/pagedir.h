@@ -262,12 +262,10 @@ public:
 	void printPage(OStream &os,uintptr_t virt) const;
 };
 
-#ifdef __i386__
-#include <sys/arch/i586/mem/pagedir.h>
-#endif
-#ifdef __eco32__
-#include <sys/arch/eco32/mem/pagedir.h>
-#endif
-#ifdef __mmix__
-#include <sys/arch/mmix/mem/pagedir.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/mem/pagedir.h>
+#elif defined(__eco32__)
+#	include <sys/arch/eco32/mem/pagedir.h>
+#elif defined(__mmix__)
+#	include <sys/arch/mmix/mem/pagedir.h>
 #endif

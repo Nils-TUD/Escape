@@ -149,7 +149,7 @@ sigRetFunc:
 	int		$ASM_IRQ_ACKSIG
 	// never reached
 
-#ifdef CALLTRACE_PID
+#if defined(CALLTRACE_PID)
 .section .data
 lookupDepth:
 	.long 0

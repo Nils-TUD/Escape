@@ -114,17 +114,19 @@ enum {
 	SYSCALL_MLOCKALL,
 	SYSCALL_SEMCRTIRQ,
 	SYSCALL_BINDTO,
-#	ifdef __i386__
+#	ifdef __x86__
 	SYSCALL_REQIOPORTS,
 	SYSCALL_RELIOPORTS,
+#		ifdef __i586__
 	SYSCALL_VM86INT,
 	SYSCALL_VM86START,
+#		endif
 #	else
 	SYSCALL_DEBUG,
 #	endif
 };
 
-#	if defined(__i386__)
+#	if defined(__i586__)
 #		include <esc/arch/i586/syscalls.h>
 #	elif defined(__eco32__)
 #		include <esc/arch/eco32/syscalls.h>
@@ -133,7 +135,7 @@ enum {
 #	endif
 #endif
 
-#ifdef __i386__
+#if defined(__x86__)
 #	define ASM_IRQ_ACKSIG				49
 #endif
 #define ASM_SYSC_ACKSIG					16
@@ -145,7 +147,7 @@ enum {
 static_assert(ASM_SYSC_ACKSIG == SYSCALL_ACKSIG,"ACKSIG is not equal");
 static_assert(ASM_SYSC_EXEC == SYSCALL_EXEC,"ACKSIG is not equal");
 static_assert(ASM_SYSC_LOADMODS == SYSCALL_LOADMODS,"ACKSIG is not equal");
-#	ifdef __i386__
+#	if defined(__i586__)
 static_assert(ASM_SYSC_VM86START == SYSCALL_VM86START,"ACKSIG is not equal");
 #	endif
 #endif

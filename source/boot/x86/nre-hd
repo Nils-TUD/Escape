@@ -1,0 +1,7 @@
+#!/bin/sh
+DST=$HOME/nova/nre/nre/dist/imgs
+. boot/$ESC_TGTTYPE/images.sh
+create_disk $1/dist $1/hd.img
+cp $1/hd.img $DST/escape-hd.img
+cp $1/dist/sbin/pci $DST/escape_pci.bin
+cp $1/dist/sbin/ata $DST/escape_ata.bin

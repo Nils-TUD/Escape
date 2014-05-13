@@ -39,7 +39,7 @@
 #define MAP_NOSWAP			128UL	/* if not enough memory for the mapping, don't swap but fail */
 #define MAP_FIXED			256UL	/* put the region exactly at the given address */
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -168,6 +168,6 @@ int shm_rename(const char *old,const char *newName);
  */
 int shm_unlink(const char *name);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -36,7 +36,7 @@ typedef struct sGroup {
 	struct sGroup *next;
 } sGroup;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -161,6 +161,6 @@ void group_free(sGroup *g);
  */
 void group_print(const sGroup *g);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

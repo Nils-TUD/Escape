@@ -30,7 +30,7 @@ typedef struct {
 	sASTNode *index;
 } sAssignExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -69,6 +69,6 @@ void ast_printAssignExpr(sAssignExpr *s,uint layer);
  */
 void ast_destroyAssignExpr(sAssignExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

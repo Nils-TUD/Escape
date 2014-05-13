@@ -44,7 +44,7 @@ typedef struct {
 	size_t curElIndex;
 } sHashMap;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -126,6 +126,6 @@ void hm_destroy(sHashMap *m);
  */
 void hm_print(sHashMap *m);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

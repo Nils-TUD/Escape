@@ -21,12 +21,10 @@
 
 #include <esc/common.h>
 
-#ifdef __i386__
-#include <esc/arch/i586/endian.h>
-#endif
-#ifdef __eco32__
-#include <esc/arch/eco32/endian.h>
-#endif
-#ifdef __mmix__
-#include <esc/arch/mmix/endian.h>
+#if defined(__x86__)
+#	include <esc/arch/x86/endian.h>
+#elif defined(__eco32__)
+#	include <esc/arch/eco32/endian.h>
+#elif defined(__mmix__)
+#	include <esc/arch/mmix/endian.h>
 #endif

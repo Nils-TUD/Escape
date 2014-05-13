@@ -29,7 +29,7 @@
 #include <esc/test.h>
 
 /* TODO find a better solution */
-#ifdef __mmix__
+#if defined(__mmix__)
 extern sTestModule tModAddrSpace;
 #endif
 extern sTestModule tModVMReg;
@@ -74,7 +74,7 @@ void unittest_run() {
 	Proc *p = Proc::getByPid(Proc::getRunning());
 	p->getVM()->unmapAll(true);
 
-#ifdef __mmix__
+#if defined(__mmix__)
 	test_register(&tModAddrSpace);
 #endif
 	test_register(&tModVMReg);

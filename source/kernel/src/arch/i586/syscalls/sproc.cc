@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/vm86.h>
-#include <sys/arch/i586/task/ioports.h>
+#include <sys/arch/x86/task/ioports.h>
 #include <sys/mem/pagedir.h>
 #include <sys/task/proc.h>
 #include <sys/syscalls.h>

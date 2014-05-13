@@ -36,7 +36,7 @@ typedef struct {
 	sASTNode *operand2;
 } sCmpExpr;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -74,6 +74,6 @@ void ast_printCmpExpr(sCmpExpr *s,uint layer);
  */
 void ast_destroyCmpExpr(sCmpExpr *n);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

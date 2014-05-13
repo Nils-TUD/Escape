@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <esc/common.h>
-
 /**
  * Physical memory layout:
  * 0x0000000000000000: +-----------------------------------+
@@ -42,9 +40,7 @@
  * 0xFFFFFFFFFFFFFFFF: +-----------------------------------+
  */
 
-#define PAGE_SIZE				((size_t)(8 * K))
+#define PAGE_SIZE				(8 * 1024)
 #define PAGE_SIZE_SHIFT			13
 
-#define BITMAP_PAGE_COUNT		((6 * M) / PAGE_SIZE)
-
-typedef ulong tBitmap;
+#define BITMAP_PAGE_COUNT		((6 * 1024 * 1024) / PAGE_SIZE)

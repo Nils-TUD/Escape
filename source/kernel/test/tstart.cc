@@ -60,7 +60,7 @@ EXTERN_C void unittest_start();
 
 void unittest_start() {
 	/* swapmap (needed for swapmap tests) */
-	SwapMap::init(256 * K);
+	SwapMap::init(256 * 1024);
 
 	/* start the terminator */
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);

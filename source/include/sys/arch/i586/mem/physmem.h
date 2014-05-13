@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <esc/common.h>
-
 /**
  * Physical memory layout:
  * 0x00000000: +-----------------------------------+
@@ -39,11 +37,9 @@
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR		0x0
 /* the physical start-address of the kernel itself */
-#define KERNEL_P_ADDR			(1 * M)
+#define KERNEL_P_ADDR			(1 * 1024 * 1024)
 
-#define PAGE_SIZE				(4 * K)
+#define PAGE_SIZE				(4 * 1024)
 #define PAGE_SIZE_SHIFT			12
 
-#define BITMAP_PAGE_COUNT		((2 * M) / PAGE_SIZE)
-
-typedef ulong tBitmap;
+#define BITMAP_PAGE_COUNT		((2 * 1024 * 1024) / PAGE_SIZE)

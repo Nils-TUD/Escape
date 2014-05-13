@@ -52,7 +52,7 @@
 
 #define DEBUG_CREATIONS					0
 /* the max. size we'll allow for exec()-arguments */
-#define EXEC_MAX_ARGSIZE				(2 * K)
+#define EXEC_MAX_ARGSIZE				(2 * 1024)
 
 /* we have to put the first one here because we need a process before we can allocate
  * something on the kernel-heap. sounds strange, but the kheap-init stuff uses paging and

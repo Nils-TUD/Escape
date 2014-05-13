@@ -58,7 +58,7 @@ void Boot::start(BootInfo *info) {
 	}
 
 	Log::get().writef("%d free frames (%d KiB)\n",PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF),
-			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / K);
+			PhysMem::getFreeFrames(PhysMem::CONT | PhysMem::DEF) * PAGE_SIZE / 1024);
 
 	if(DISABLE_DEMLOAD)
 		Log::get().writef("Warning: demand loading is disabled!\n");

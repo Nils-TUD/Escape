@@ -74,12 +74,3 @@ test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 
 kenv.Depends(kernel, ldconf)
 kenv.Depends(test_kernel, ldconf)
-
-if kenv['TGT'] == 'i586':
-	tramp = '$BUILDDIR/kernel_tramp.dump'
-	trampobj = '$BUILDDIR/kernel_tramp.o'
-	kenv.Command(trampobj, 'src/arch/i586/trampoline.asm','nasm -f bin -o $TARGET $SOURCE')
-	dump = env.Command(tramp, trampobj, '$BINDIR/hostdump $SOURCE > $TARGET')
-	kenv.Depends(dump, '$BINDIR/hostdump')
-	kenv.Depends(kernel, tramp)
-	kenv.Depends(test_kernel, tramp)

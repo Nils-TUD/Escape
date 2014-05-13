@@ -114,7 +114,7 @@ void Boot::archStart(BootInfo *info) {
 		Util::panic("Too many modules (max %u)",MAX_MOD_COUNT);
 	taskList.moduleCount = mb->modsCount;
 
-	/* set up the page-dir and page-table for the kernel and so on and "correct" the GDT */
+	/* set up paging first */
 	PageDir::init();
 	GDT::init();
 	Thread::setRunning(NULL);

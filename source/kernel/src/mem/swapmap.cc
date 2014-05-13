@@ -78,8 +78,8 @@ void SwapMap::free(ulong block) {
 
 void SwapMap::print(OStream &os) {
 	size_t c = 0;
-	os.writef("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / K);
-	os.writef("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / K);
+	os.writef("Size: %zu blocks (%zu KiB)\n",totalBlocks,(totalBlocks * PAGE_SIZE) / 1024);
+	os.writef("Free: %zu blocks (%zu KiB)\n",freeBlocks,(freeBlocks * PAGE_SIZE) / 1024);
 	os.writef("Used:");
 	for(size_t i = 0; i < totalBlocks; i++) {
 		Block *block = swapBlocks + i;

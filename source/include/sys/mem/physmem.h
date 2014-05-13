@@ -37,6 +37,8 @@
 class Thread;
 class OStream;
 
+typedef ulong tBitmap;
+
 class PhysMem {
 	PhysMem() = delete;
 

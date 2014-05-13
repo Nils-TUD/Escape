@@ -105,10 +105,10 @@ void PhysMemAreas::rem(uintptr_t addr,uintptr_t end) {
 
 void PhysMemAreas::print(OStream &os) {
 	MemArea *area = list;
-	os.writef("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / K);
+	os.writef("Free physical memory areas [in total %zu KiB]:\n",getAvailable() / 1024);
 	while(area != NULL) {
 		os.writef("	%p .. %p [%zu KiB]\n",area->addr,area->addr + area->size - 1,
-				area->size / K);
+				area->size / 1024);
 		area = area->next;
 	}
 }

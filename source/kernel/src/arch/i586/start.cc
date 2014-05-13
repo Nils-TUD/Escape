@@ -41,6 +41,7 @@ EXTERN_C uintptr_t smpstart();
 EXTERN_C void apstart();
 static void idlestart();
 extern SpinLock aplock;
+extern ulong proc0PDir;
 
 static uint8_t initloader[] = {
 #if DEBUGGING
@@ -69,6 +70,10 @@ uintptr_t smpstart() {
 	SMP::start();
 	Timer::start(true);
 
+	// remove first page-directory entry. now that all CPUs are started, we don't need that anymore
+	(&proc0PDir)[0] = 0;
+	PageDir::flushTLB();
+
 	/* load initloader */
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		Util::panic("Unable to load initloader");
@@ -82,12 +87,10 @@ uintptr_t smpstart() {
 }
 
 void apstart() {
-	Proc *p = Proc::getByPid(0);
 	/* store the running thread for our temp-stack again, because we might need it in gdt_init_ap
 	 * for example */
 	Thread::setRunning(Thread::getById(0));
-	/* at first, activate paging and setup the GDT, so that we don't need the "GDT-trick" anymore */
-	PageDir::activate(p->getPageDir()->getPhysAddr());
+	/* at first, setup our GDT properly */
 	GDT::initAP();
 	/* setup IDT for this cpu and enable its local APIC */
 	IDT::init();

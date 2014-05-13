@@ -76,8 +76,10 @@ int Syscalls::vm86int(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		if(!PageDir::isInUserSpace((uintptr_t)mArea,sizeof(VM86::Memarea)))
 			SYSC_ERROR(stack,-EFAULT);
 		/* ensure that only memory from the real-mode-memory can be copied */
-		if(mArea->dst + mArea->size < mArea->dst || mArea->dst + mArea->size >= (1 * M + 64 * K))
+		if(mArea->dst + mArea->size < mArea->dst ||
+			mArea->dst + mArea->size >= (1 * 1024 * 1024 + 64 * 1024)) {
 			SYSC_ERROR(stack,-EFAULT);
+		}
 		if(!PageDir::isInUserSpace((uintptr_t)mArea->src,mArea->size))
 			SYSC_ERROR(stack,-EFAULT);
 		for(size_t j = 0; j < mArea->ptrCount; j++) {

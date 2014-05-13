@@ -76,15 +76,7 @@
  */
 #define	FLUSHADDR(addr)			asm volatile ("invlpg (%0)" : : "r" (addr));
 
-/* converts the given virtual address to a physical
- * (this assumes that the kernel lies at 0xC0000000)
- * Note that this does not work anymore as soon as the GDT is "corrected" and paging enabled! */
-#define VIRT2PHYS(addr)			((uintptr_t)(addr) + 0x40000000)
-
-/* the page-directory for process 0 */
-PageDir::pde_t PageDir::proc0PD[PAGE_SIZE / sizeof(pde_t)] A_ALIGNED(PAGE_SIZE);
-/* the page-table for process 0 */
-PageDir::pte_t PageDir::proc0PT[PAGE_SIZE / sizeof(pte_t)] A_ALIGNED(PAGE_SIZE);
+extern void *proc0PDir;
 SpinLock PageDir::tmpMapLock;
 /* TODO we could maintain different locks for userspace and kernelspace; since just the kernel is
  * shared. it would be better to have a global lock for that and a pagedir-lock for the userspace */
@@ -92,36 +84,15 @@ SpinLock PageDir::lock;
 uintptr_t PageDir::freeAreaAddr = FREE_KERNEL_AREA;
 
 void PageDirBase::init() {
-	/* note that we assume here that the kernel is not larger than 1 page-table (4MiB)! */
-
-	/* map 1 page-table at 0xC0000000 */
-	uintptr_t pd = (uintptr_t)VIRT2PHYS(PageDir::proc0PD);
-
-	/* map one page-table */
-	uintptr_t addr = KERNEL_AREA_P_ADDR;
-	for(size_t i = 0; i < PT_ENTRY_COUNT; i++, addr += PAGE_SIZE)
-		PageDir::proc0PT[i] = addr | PTE_GLOBAL | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
-	PageDir::proc0PD[ADDR_TO_PDINDEX(KERNEL_AREA)] =
-			VIRT2PHYS(PageDir::proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS | PDE_GLOBAL;
-	PageDir::proc0PD[0] =
-			VIRT2PHYS(PageDir::proc0PT) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS | PDE_GLOBAL;
-
 	/* put the page-directory in the last page-dir-slot */
-	PageDir::proc0PD[ADDR_TO_PDINDEX(MAPPED_PTS_START)] = pd | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
+	PageDir::pde_t *pdes = (PageDir::pde_t*)&proc0PDir;
+	pdes[ADDR_TO_PDINDEX(MAPPED_PTS_START)] =
+		((uintptr_t)&proc0PDir & ~KERNEL_AREA) | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 
-	/* now set page-dir and enable paging */
-	PageDir::activate((uintptr_t)PageDir::proc0PD & ~KERNEL_AREA);
-}
-
-void PageDir::activate(uintptr_t pageDir) {
-	setPDir(pageDir);
-	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
-	CPU::setCR4(CPU::getCR4() | CPU::CR4_PGE);
-	enable();
 	/* enable write-protection; this way, the kernel can't write to readonly-pages */
-	/* this helps a lot because we don't have to check in advance whether for copy-on-write and so
+	/* this helps a lot because we don't have to check in advance for copy-on-write and so
 	 * on before writing to user-space-memory in kernel */
-	setWriteProtection(true);
+	PageDir::setWriteProtection(true);
 }
 
 ssize_t PageDirBase::mapToCur(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
@@ -134,7 +105,7 @@ size_t PageDirBase::unmapFromCur(uintptr_t virt,size_t count,bool freeFrames) {
 
 void PageDirBase::makeFirst() {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	pdir->own = (uintptr_t)PageDir::proc0PD & ~KERNEL_AREA;
+	pdir->own = (uintptr_t)&proc0PDir & ~KERNEL_AREA;
 	pdir->other = NULL;
 	pdir->lastChange = CPU::rdtsc();
 	pdir->otherUpdate = 0;
@@ -142,27 +113,20 @@ void PageDirBase::makeFirst() {
 }
 
 void PageDir::mapKernelSpace() {
+	PageDir::pde_t *pdes = (PageDir::pde_t*)&proc0PDir;
 	/* map kernel heap and temp area*/
 	for(uintptr_t addr = KERNEL_HEAP_START;
 			addr < TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE;
 			addr += PAGE_SIZE * PT_ENTRY_COUNT) {
-		if(crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
+		if(crtPageTable(pdes,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
 			Util::panic("Not enough kernel-memory for page tables");
 	}
 	/* map dynamically extending regions */
 	for(uintptr_t addr = GFT_AREA; addr < SLLNODE_AREA + SLLNODE_AREA_SIZE;
 			addr += PAGE_SIZE * PT_ENTRY_COUNT) {
-		if(crtPageTable(proc0PD,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
+		if(crtPageTable(pdes,MAPPED_PTS_START,addr,PG_SUPERVISOR) < 0)
 			Util::panic("Not enough kernel-memory for page tables");
 	}
-}
-
-void PageDir::gdtFinished() {
-	/* make first page-table not-present */
-	proc0PD[0] = 0;
-	/* remove each page explicitly; they are global */
-	for(size_t i = 0; i < PT_ENTRY_COUNT; ++i)
-		FLUSHADDR(i << PAGE_SIZE_SHIFT);
 }
 
 uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
@@ -423,8 +387,7 @@ int PageDir::crtPageTable(PageDir::pde_t *pd,uintptr_t ptables,uintptr_t virt,ui
 	frameno_t frame = PhysMem::allocate(PhysMem::KERN);
 	if(frame == 0)
 		return -ENOMEM;
-	/* writable because we want to be able to change PTE's in the PTE-area */
-	/* is there another reason? :) */
+
 	pd[pdi] = frame << PAGE_SIZE_SHIFT | PDE_PRESENT | PDE_WRITABLE | PDE_EXISTS;
 	if(!(flags & PG_SUPERVISOR))
 		pd[pdi] |= PDE_NOTSUPER;

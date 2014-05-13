@@ -36,19 +36,12 @@
 
 #define TRAMPOLINE_ADDR		0x7000
 
-EXTERN_C void apProtMode();
+EXTERN_C void apEntry();
 
 cpuid_t *SMP::log2Phys;
 
 static SpinLock smpLock;
 static volatile size_t seenAPs = 0;
-static uint8_t trampoline[] = {
-#if DEBUGGING
-#	include "../../../../../build/i586-debug/kernel_tramp.dump"
-#else
-#	include "../../../../../build/i586-release/kernel_tramp.dump"
-#endif
-};
 
 extern volatile uint waiting;
 extern volatile uint waitlock;
@@ -174,10 +167,6 @@ void SMPBase::start() {
 		/* TODO thats not completely correct, according to the MP specification */
 		/* we have to check if apic is an 82489DX */
 
-		memcpy((void*)(TRAMPOLINE_ADDR | KERNEL_AREA),trampoline,ARRAY_SIZE(trampoline));
-		/* give the trampoline the start-address */
-		*(uint32_t*)((TRAMPOLINE_ADDR | KERNEL_AREA) + 2) = (uint32_t)&apProtMode;
-
 		LAPIC::sendInitIPI();
 		Timer::wait(10000);
 
@@ -198,13 +187,5 @@ void SMPBase::start() {
 		}
 	}
 
-	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that
-	 * the stuff at 0xC0000000 has been mapped to 0x00000000. Therefore, after enabling paging
-	 * (the GDT is still the same) we have to map 0x00000000 to our kernel-stuff so that we can
-	 * still access the kernel (because segmentation translates 0xC0000000 to 0x00000000 before
-	 * it passes it to the MMU).
-	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
-	 * Therefore we can unmap the 0x0 area. */
-	PageDir::gdtFinished();
 	setReady(0);
 }

@@ -54,14 +54,14 @@ void PageDirBase::init() {
 	frameno_t frame = PhysMem::allocate(PhysMem::KERN);
 	if(frame == 0)
 		Util::panic("Not enough memory for initial page-dir");
-	PageDir::curPDir = (frame * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	PageDir::curPDir = (frame * PAGE_SIZE) | DIR_MAP_AREA;
 	PageDir::PDEntry *pd = (PageDir::PDEntry*)PageDir::curPDir;
 	/* clear */
 	memclear(pd,PAGE_SIZE);
 
 	/* put the page-directory in itself */
 	PageDir::PDEntry *pde = pd + ADDR_TO_PDINDEX(MAPPED_PTS_START);
-	pde->ptFrameNo = (PageDir::curPDir & ~DIR_MAPPED_SPACE) / PAGE_SIZE;
+	pde->ptFrameNo = (PageDir::curPDir & ~DIR_MAP_AREA) / PAGE_SIZE;
 	pde->present = true;
 	pde->writable = true;
 	pde->exists = true;
@@ -80,7 +80,7 @@ void PageDirBase::init() {
 		pde->writable = true;
 		pde->exists = true;
 		/* clear */
-		memclear((void*)((frame * PAGE_SIZE) | DIR_MAPPED_SPACE),PAGE_SIZE);
+		memclear((void*)((frame * PAGE_SIZE) | DIR_MAP_AREA),PAGE_SIZE);
 		/* to next */
 		pde++;
 		addr += PAGE_SIZE * PT_ENTRY_COUNT;
@@ -108,7 +108,7 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */
 	PageDir::PDEntry *pd = (PageDir::PDEntry*)PAGE_DIR_DIRMAP;
-	PageDir::PDEntry *npd = (PageDir::PDEntry*)((pdirFrame * PAGE_SIZE) | DIR_MAPPED_SPACE);
+	PageDir::PDEntry *npd = (PageDir::PDEntry*)((pdirFrame * PAGE_SIZE) | DIR_MAP_AREA);
 
 	/* clear user-space page-tables */
 	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA) * sizeof(PageDir::PDEntry));
@@ -136,10 +136,10 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	tpd->exists = true;
 	/* clear the page-table */
 	PageDir::otherPDir = 0;
-	PageDir::PTEntry *pt = (PageDir::PTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE);
+	PageDir::PTEntry *pt = (PageDir::PTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAP_AREA);
 	memclear(pt,PAGE_SIZE);
 
-	pdir->phys = DIR_MAPPED_SPACE | (pdirFrame << PAGE_SIZE_SHIFT);
+	pdir->phys = DIR_MAP_AREA | (pdirFrame << PAGE_SIZE_SHIFT);
 	return 0;
 }
 
@@ -153,7 +153,7 @@ void PageDirBase::destroy() {
 	pde->exists = false;
 	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
 	/* free page-dir */
-	PhysMem::free((pdir->phys & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT,PhysMem::KERN);
+	PhysMem::free((pdir->phys & ~DIR_MAP_AREA) >> PAGE_SIZE_SHIFT,PhysMem::KERN);
 	/* ensure that we don't use it again */
 	PageDir::otherPDir = 0;
 }
@@ -178,7 +178,7 @@ frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 
 frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,A_UNUSED ulong regFlags) {
 	frameno_t frame = Thread::getRunning()->getFrame();
-	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),buffer,loadCount);
+	memcpy((void*)(frame * PAGE_SIZE | DIR_MAP_AREA),buffer,loadCount);
 	return frame;
 }
 
@@ -187,7 +187,7 @@ void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
 	while(count > 0) {
 		size_t amount = MIN(PAGE_SIZE - offset,count);
-		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAPPED_SPACE) + offset;
+		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAP_AREA) + offset;
 		memcpy((void*)addr,src,amount);
 		src = (const void*)((uintptr_t)src + amount);
 		count -= amount;
@@ -201,7 +201,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
 	while(count > 0) {
 		size_t amount = MIN(PAGE_SIZE - offset,count);
-		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAPPED_SPACE) + offset;
+		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAP_AREA) + offset;
 		memclear((void*)addr,amount);
 		count -= amount;
 		offset = 0;
@@ -283,7 +283,7 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 
 			PageDir::flushPageTable(virt,ptables);
 			/* clear frame */
-			memclear((void*)((pde->ptFrameNo * PAGE_SIZE) | DIR_MAPPED_SPACE),PAGE_SIZE);
+			memclear((void*)((pde->ptFrameNo * PAGE_SIZE) | DIR_MAP_AREA),PAGE_SIZE);
 		}
 
 		/* setup page */
@@ -399,7 +399,7 @@ void PageDir::flushPageTable(uintptr_t virt,uintptr_t ptables) {
 		tlbGet(i,&entryHi,&entryLo);
 		/* affected by the page-table? */
 		if((entryHi >= virt && entryHi < virt + PAGE_SIZE * PT_ENTRY_COUNT) || entryHi == mapAddr)
-			tlbSet(i,DIR_MAPPED_SPACE,0);
+			tlbSet(i,DIR_MAP_AREA,0);
 	}
 }
 
@@ -412,7 +412,7 @@ uintptr_t PageDir::getPTables() const {
 	PDEntry *pde = ((PDEntry*)PAGE_DIR_DIRMAP) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	pde->present = true;
 	pde->exists = true;
-	pde->ptFrameNo = (phys & ~DIR_MAPPED_SPACE) >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (phys & ~DIR_MAP_AREA) >> PAGE_SIZE_SHIFT;
 	pde->writable = true;
 	/* we want to access the whole page-table */
 	flushPageTable(TMPMAP_PTS_START,MAPPED_PTS_START);

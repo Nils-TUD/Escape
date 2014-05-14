@@ -71,7 +71,11 @@
 /* beginning of the kernel-code */
 #define KERNEL_START			0x8000000000000000
 #define KERNEL_AREA				KERNEL_START
-#define DIR_MAPPED_SPACE		0x8000000000000000
+
+/* all physical memory is directly mapped @ 0x8000000000000000 by the HW. so, put all of that in
+ * the lower memory pool */
+#define DIR_MAP_AREA			0x8000000000000000
+#define DIR_MAP_AREA_SIZE		0x0000FFFF00000000
 
 /* number of used segments */
 #define SEGMENT_COUNT			3

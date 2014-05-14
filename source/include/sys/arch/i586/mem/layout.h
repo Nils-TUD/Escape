@@ -91,6 +91,9 @@
 /* the virtual address of the kernel-area */
 #define KERNEL_AREA				0xC0000000
 
+#define DIR_MAP_AREA			0xF0000000
+#define DIR_MAP_AREA_SIZE		(64 * 1024 * 1024)
+
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
 

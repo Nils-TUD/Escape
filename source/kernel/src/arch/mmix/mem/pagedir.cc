@@ -39,14 +39,14 @@ void PageDirBase::init() {
 	/* set root-location of first process */
 	if((res = PhysMem::allocateContiguous(SEGMENT_COUNT * PTS_PER_SEGMENT,1)) < 0)
 		Util::panic("Not enough contiguous memory for the root-location of the first process");
-	uintptr_t rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	uintptr_t rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAP_AREA;
 	/* clear */
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* create context for the first process */
 	PageDir::firstCon.addrSpace = AddressSpace::alloc();
 	/* set value for rV: b1 = 2, b2 = 4, b3 = 6, b4 = 0, page-size = 2^13 */
-	PageDir::firstCon.rv = 0x24600DUL << 40 | (rootLoc & ~DIR_MAPPED_SPACE) |
+	PageDir::firstCon.rv = 0x24600DUL << 40 | (rootLoc & ~DIR_MAP_AREA) |
 			(PageDir::firstCon.addrSpace->getNo() << 3);
 	/* enable paging */
 	PageDir::setrV(PageDir::firstCon.rv);
@@ -59,14 +59,14 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	if(res < 0)
 		return res;
 	/* clear */
-	uintptr_t rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAPPED_SPACE;
+	uintptr_t rootLoc = (uintptr_t)(res * PAGE_SIZE) | DIR_MAP_AREA;
 	memclear((void*)rootLoc,PAGE_SIZE * SEGMENT_COUNT * PTS_PER_SEGMENT);
 
 	/* init context */
 	pdir->addrSpace = AddressSpace::alloc();
 	pdir->ptables = 0;
 	pdir->rv = cur->rv & 0xFFFFFF0000000000;
-	pdir->rv |= (rootLoc & ~DIR_MAPPED_SPACE) | (pdir->addrSpace->getNo() << 3);
+	pdir->rv |= (rootLoc & ~DIR_MAP_AREA) | (pdir->addrSpace->getNo() << 3);
 	return 0;
 }
 
@@ -88,7 +88,7 @@ void PageDirBase::destroy() {
 frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,ulong regFlags) {
 	/* copy into frame */
 	frameno_t frame = Thread::getRunning()->getFrame();
-	uintptr_t addr = frame * PAGE_SIZE | DIR_MAPPED_SPACE;
+	uintptr_t addr = frame * PAGE_SIZE | DIR_MAP_AREA;
 	memcpy((void*)addr,buffer,loadCount);
 	/* if its an executable region, we have to syncid the memory afterwards */
 	if(regFlags & RF_EXECUTABLE)
@@ -108,7 +108,7 @@ void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
 			assert(dpt != NULL);
 		}
 		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
-		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAPPED_SPACE) + offset;
+		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAP_AREA) + offset;
 
 		size_t amount = MIN(PAGE_SIZE - offset,count);
 		memcpy((void*)addr,src,amount);
@@ -131,7 +131,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 			assert(dpt != NULL);
 		}
 		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
-		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAPPED_SPACE) + offset;
+		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAP_AREA) + offset;
 
 		size_t amount = MIN(PAGE_SIZE - offset,count);
 		memclear((void*)addr,amount);
@@ -362,7 +362,7 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,size_t *createdPts) const {
 	c = ((rv & 0xFFFFFFFFFF) >> 13) + size2 + j;
 	for(; j > 0; j--) {
 		ulong ax = (pageNo >> (10 * j)) & 0x3FF;
-		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
+		uint64_t *ptpAddr = (uint64_t*)(DIR_MAP_AREA | ((c << 13) + (ax << 3)));
 		uint64_t ptp = *ptpAddr;
 		if(ptp == 0) {
 			if(!create)
@@ -371,7 +371,7 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,size_t *createdPts) const {
 			frameno_t frame = PhysMem::allocate(PhysMem::KERN);
 			if(frame == 0)
 				return NULL;
-			*ptpAddr = DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
+			*ptpAddr = DIR_MAP_AREA | (frame * PAGE_SIZE);
 			memclear((void*)*ptpAddr,PAGE_SIZE);
 			/* put rV.n in that page-table */
 			*ptpAddr |= addrSpace->getNo() << 3;
@@ -379,9 +379,9 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,size_t *createdPts) const {
 			if(createdPts)
 				(*createdPts)++;
 		}
-		c = (ptp & ~DIR_MAPPED_SPACE) >> 13;
+		c = (ptp & ~DIR_MAP_AREA) >> 13;
 	}
-	return (uint64_t*)(DIR_MAPPED_SPACE | (c << 13));
+	return (uint64_t*)(DIR_MAP_AREA | (c << 13));
 }
 
 uint64_t PageDir::getPTE(uintptr_t virt) const {
@@ -398,8 +398,8 @@ size_t PageDir::removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth) {
 	/* page-table with PTPs? */
 	if(level > 0) {
 		ulong ax = (pageNo >> (10 * level)) & 0x3FF;
-		uint64_t *ptpAddr = (uint64_t*)(DIR_MAPPED_SPACE | ((c << 13) + (ax << 3)));
-		count = removePts(pageNo,(*ptpAddr & ~DIR_MAPPED_SPACE) >> 13,level - 1,depth + 1);
+		uint64_t *ptpAddr = (uint64_t*)(DIR_MAP_AREA | ((c << 13) + (ax << 3)));
+		count = removePts(pageNo,(*ptpAddr & ~DIR_MAP_AREA) >> 13,level - 1,depth + 1);
 		/* if count is equal to level, we know that all deeper page-tables have been free'd.
 		 * therefore, we can remove the entry in our page-table */
 		if(count == level)
@@ -407,7 +407,7 @@ size_t PageDir::removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth) {
 		/* don't free frames in the root-location */
 		if(depth > 0) {
 			/* now go through our page-table and check whether there still are used entries */
-			uint64_t *ptp = (uint64_t*)(DIR_MAPPED_SPACE | (c << 13));
+			uint64_t *ptp = (uint64_t*)(DIR_MAP_AREA | (c << 13));
 			for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 				if(*ptp != 0) {
 					empty = false;
@@ -424,7 +424,7 @@ size_t PageDir::removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth) {
 	}
 	else if(depth > 0) {
 		/* go through our page-table and check whether there still are used entries */
-		uint64_t *pte = (uint64_t*)(DIR_MAPPED_SPACE | (c << 13));
+		uint64_t *pte = (uint64_t*)(DIR_MAP_AREA | (c << 13));
 		for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(*pte & PTE_EXISTS) {
 				empty = false;
@@ -466,7 +466,7 @@ void PageDir::tcRemPT(uintptr_t virt) {
 
 void PageDirBase::print(OStream &os,A_UNUSED uint parts) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
-	uintptr_t root = DIR_MAPPED_SPACE | (pdir->rv & 0xFFFFFFE000);
+	uintptr_t root = DIR_MAP_AREA | (pdir->rv & 0xFFFFFFE000);
 	/* go through all page-tables in the root-location */
 	os.writef("root-location @ %p [n=%X]:\n",root,(pdir->rv & 0x1FF8) >> 3);
 	for(size_t i = 0; i < SEGMENT_COUNT; i++) {
@@ -488,7 +488,7 @@ void PageDir::printPageTable(OStream &os,ulong seg,uintptr_t addr,uint64_t *pt,s
 		for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 			if(pt[i] != 0) {
 				os.writef("%*sPTP%zd[%zd]=%PX n=%X (VM: %p - %p)\n",indent * 2,"",level,i,
-						(pt[i] & ~DIR_MAPPED_SPACE) / PAGE_SIZE,(pt[i] & PTE_NMASK) >> 3,
+						(pt[i] & ~DIR_MAP_AREA) / PAGE_SIZE,(pt[i] & PTE_NMASK) >> 3,
 						addr,addr + PAGE_SIZE * (1UL << (10 * level)) - 1);
 				printPageTable(os,seg,addr,(uint64_t*)(pt[i] & 0xFFFFFFFFFFFFE000),level - 1,indent + 1);
 			}
@@ -554,7 +554,7 @@ size_t PageDir::getPageCountOf(uint64_t *pt,size_t level) {
 size_t PageDirBase::getPageCount() const {
 	size_t count = 0;
 	PageDir *cur = Proc::getCurPageDir();
-	uintptr_t root = DIR_MAPPED_SPACE | (cur->rv & 0xFFFFFFE000);
+	uintptr_t root = DIR_MAP_AREA | (cur->rv & 0xFFFFFFE000);
 	for(size_t i = 0; i < SEGMENT_COUNT; i++) {
 		ulong segSize = SEGSIZE(cur->rv,i + 1) - SEGSIZE(cur->rv,i);
 		for(size_t j = 0; j < segSize; j++) {

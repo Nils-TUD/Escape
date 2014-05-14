@@ -175,7 +175,7 @@ uint8_t Keyboard::getKeyCode(uint *pflags) {
 	static int isBreak = 0;
 	uint8_t scanCode,keycode;
 	ScanCodeEntry *e;
-	uint32_t *kb = (uint32_t*)(KEYBOARD_BASE | DIR_MAPPED_SPACE);
+	uint32_t *kb = (uint32_t*)(KEYBOARD_BASE | DIR_MAP_AREA);
 	if(!(kb[KEYBOARD_CTRL] & KEYBOARD_RDY))
 		return VK_NOKEY;
 

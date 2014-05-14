@@ -27,7 +27,7 @@ uintptr_t KHeap::allocAreas() {
 	if(frame == 0)
 		return 0;
 	pages++;
-	return DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
+	return DIR_MAP_AREA | (frame * PAGE_SIZE);
 }
 
 uintptr_t KHeap::allocSpace(size_t count) {
@@ -39,5 +39,5 @@ uintptr_t KHeap::allocSpace(size_t count) {
 	if(res < 0)
 		return 0;
 	pages += count;
-	return DIR_MAPPED_SPACE | (res * PAGE_SIZE);
+	return DIR_MAP_AREA | (res * PAGE_SIZE);
 }

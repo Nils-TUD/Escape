@@ -144,7 +144,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	nt->tempStack = PhysMem::allocate(PhysMem::KERN);
 	if(nt->tempStack == 0)
 		return -ENOMEM;
-	int res = Thread::initSave(&nt->saveArea,(void*)(DIR_MAPPED_SPACE | (nt->tempStack * PAGE_SIZE)));
+	int res = Thread::initSave(&nt->saveArea,(void*)(DIR_MAP_AREA | (nt->tempStack * PAGE_SIZE)));
 	if(res == 0) {
 		/* the parent needs a new kernel-stack for the next kernel-entry */
 		/* switch stacks */
@@ -157,7 +157,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 
 void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* copy stack of kernel-start */
-	uint64_t *ssp,*rsp = (uint64_t*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
+	uint64_t *ssp,*rsp = (uint64_t*)(DIR_MAP_AREA | (nt->kstackFrame * PAGE_SIZE));
 	uintptr_t start = (uintptr_t)rsp;
 	memcpy(rsp,&stackCopy,stackCopySize);
 	rsp += stackCopySize / sizeof(uint64_t) - 1;
@@ -198,8 +198,8 @@ void ThreadBase::doSwitch() {
 		/* if we still have a temp-stack, copy the contents to our real stack and free the
 		 * temp-stack */
 		if(EXPECT_FALSE(n->tempStack != (frameno_t)-1)) {
-			memcpy((void*)(DIR_MAPPED_SPACE | n->kstackFrame * PAGE_SIZE),
-					(void*)(DIR_MAPPED_SPACE | n->tempStack * PAGE_SIZE),
+			memcpy((void*)(DIR_MAP_AREA | n->kstackFrame * PAGE_SIZE),
+					(void*)(DIR_MAP_AREA | n->tempStack * PAGE_SIZE),
 					PAGE_SIZE);
 			PhysMem::free(n->tempStack,PhysMem::KERN);
 			n->tempStack = -1;

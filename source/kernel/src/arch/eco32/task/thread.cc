@@ -93,7 +93,7 @@ void ThreadBase::freeArch(Thread *t) {
 int ThreadBase::finishClone(A_UNUSED Thread *t,Thread *nt) {
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	ulong *dst = (ulong*)(DIR_MAPPED_SPACE | (nt->kstackFrame * PAGE_SIZE));
+	ulong *dst = (ulong*)(DIR_MAP_AREA | (nt->kstackFrame * PAGE_SIZE));
 
 	if(Thread::save(&nt->saveArea)) {
 		/* child */

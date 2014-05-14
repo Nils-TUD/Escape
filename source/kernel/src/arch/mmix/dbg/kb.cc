@@ -173,7 +173,7 @@ static ScanCodeEntry scanCode2KeyCode[] = {
 uint8_t Keyboard::getKeyCode(uint *pflags) {
 	static bool isExt = 0;
 	static bool isBreak = false;
-	uint64_t *kb = (uint64_t*)(KEYBOARD_BASE | DIR_MAPPED_SPACE);
+	uint64_t *kb = (uint64_t*)(KEYBOARD_BASE | DIR_MAP_AREA);
 	if(!(kb[KEYBOARD_CTRL] & KEYBOARD_RDY))
 		return VK_NOKEY;
 

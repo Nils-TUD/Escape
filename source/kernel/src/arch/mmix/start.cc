@@ -52,6 +52,6 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
 		Util::panic("Unable to load initloader");
 	*stackBegin = info.stackBegin;
-	*rss = DIR_MAPPED_SPACE | (t->getKernelStack() * PAGE_SIZE);
+	*rss = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);
 	return info.progEntry;
 }

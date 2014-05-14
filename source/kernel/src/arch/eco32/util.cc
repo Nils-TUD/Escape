@@ -39,7 +39,7 @@ void Util::panicArch() {
 }
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {
-	uintptr_t kstackAddr = DIR_MAPPED_SPACE | (t->getKernelStack() << PAGE_SIZE_SHIFT);
+	uintptr_t kstackAddr = DIR_MAP_AREA | (t->getKernelStack() << PAGE_SIZE_SHIFT);
 	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
 	if(istackAddr) {
 		IntrptStackFrame *istack = (IntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));

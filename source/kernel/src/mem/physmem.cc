@@ -41,20 +41,18 @@
 
 #define printEventTrace(...)
 
-#define BITMAP_START_FRAME			(PhysMem::bitmapStart / PAGE_SIZE)
-
 /* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
 tBitmap *PhysMem::bitmap;
 uintptr_t PhysMem::bitmapStart;
 size_t PhysMem::freeCont = 0;
+SpinLock PhysMem::contLock;
 
 /* We use a stack for the remaining memory
  * TODO Currently we don't free the frames for the stack */
-size_t PhysMem::stackPages = 0;
-uintptr_t PhysMem::stackBegin = 0;
-frameno_t *PhysMem::stack = NULL;
-SpinLock PhysMem::contLock;
+PhysMem::StackFrames PhysMem::lower;
+PhysMem::StackFrames PhysMem::upper;
 SpinLock PhysMem::defLock;
+
 bool PhysMem::initialized = false;
 
 /* for swapping */
@@ -66,6 +64,7 @@ Thread *PhysMem::swapperThread = NULL;
 size_t PhysMem::cframes = 0;	/* critical frames; for dynarea, cache and heap */
 size_t PhysMem::kframes = 0;	/* kernel frames: for pagedirs, page-tables, kstacks, ... */
 size_t PhysMem::uframes = 0;	/* user frames */
+
 /* swap-in jobs */
 PhysMem::SwapInJob PhysMem::siJobs[SWAPIN_JOB_COUNT];
 PhysMem::SwapInJob *PhysMem::siFreelist;
@@ -73,25 +72,19 @@ PhysMem::SwapInJob *PhysMem::siJobList = NULL;
 PhysMem::SwapInJob *PhysMem::siJobEnd = NULL;
 size_t PhysMem::jobWaiters = 0;
 
+uintptr_t PhysMem::bitmapStartFrame() {
+	return PhysMem::bitmapStart / PAGE_SIZE;
+}
+uintptr_t PhysMem::lowerStart() {
+	return (bitmapStartFrame() + BITMAP_PAGE_COUNT) * PAGE_SIZE;
+}
+uintptr_t PhysMem::lowerEnd() {
+	return DIR_MAP_AREA_SIZE;
+}
+
 void PhysMem::init() {
 	/* determine the available memory */
 	PhysMemAreas::initArch();
-
-	/* calculate mm-stack-size */
-	size_t memSize = PhysMemAreas::getAvailable();
-	size_t defPageCount = (memSize / PAGE_SIZE) - BITMAP_PAGE_COUNT;
-	stackPages = (defPageCount + (PAGE_SIZE - 1) / sizeof(frameno_t)) / (PAGE_SIZE / sizeof(frameno_t));
-
-	/* map it so that we can access it; this will automatically remove some frames from the
-	 * available memory. */
-	stackBegin = PageDir::makeAccessible(0,stackPages);
-	stack = (frameno_t*)stackBegin;
-
-	/* map bitmap behind it */
-	size_t bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
-	bitmap = (tBitmap*)PageDir::makeAccessible(0,bmFrmCnt);
-	/* mark all free */
-	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 
 	/* first, search memory that will be managed with the bitmap */
 	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next) {
@@ -101,6 +94,34 @@ void PhysMem::init() {
 			break;
 		}
 	}
+
+	/* determine which of the memory areas becomes lower and which upper memory */
+	size_t lowerPages = 0,upperPages = 0;
+	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next) {
+		uintptr_t aend = area->addr + area->size;
+		if(area->addr >= lowerStart() || aend < lowerStart())
+			lowerPages += (MIN(lowerEnd(),aend) - area->addr) / PAGE_SIZE;
+		if(aend > lowerEnd())
+			upperPages += (aend - MAX(lowerEnd(),area->addr)) / PAGE_SIZE;
+	}
+
+	lower.pages = BYTES_2_PAGES(lowerPages * sizeof(frameno_t));
+	upper.pages = BYTES_2_PAGES(upperPages * sizeof(frameno_t));
+
+	/* map it so that we can access it; this will automatically remove some frames from the
+	 * available memory. */
+	lower.begin = (frameno_t*)PageDir::makeAccessible(0,lower.pages);
+	lower.frames = lower.begin;
+	if(upper.pages > 0) {
+		upper.begin = (frameno_t*)PageDir::makeAccessible(0,upper.pages);
+		upper.frames = upper.begin;
+	}
+
+	/* map bitmap behind it */
+	size_t bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
+	bitmap = (tBitmap*)PageDir::makeAccessible(0,bmFrmCnt);
+	/* mark all free */
+	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 
 	/* now mark the remaining memory as free on stack */
 	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next)
@@ -158,8 +179,8 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	LockGuard<SpinLock> g(&contLock);
 	size_t c = 0;
 	/* align in physical memory */
-	size_t i = ROUND_UP(BITMAP_START_FRAME,align);
-	i -= BITMAP_START_FRAME;
+	size_t i = ROUND_UP(bitmapStartFrame(),align);
+	i -= bitmapStartFrame();
 	for(; i < BITMAP_PAGE_COUNT; ) {
 		/* walk forward until we find an occupied frame */
 		size_t j = i;
@@ -173,15 +194,15 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 		if(c == count)
 			break;
 		/* ok, to next aligned frame */
-		i = ROUND_UP(BITMAP_START_FRAME + j + 1,align);
-		i -= BITMAP_START_FRAME;
+		i = ROUND_UP(bitmapStartFrame() + j + 1,align);
+		i -= bitmapStartFrame();
 	}
 
 	if(c != count)
 		return -ENOMEM;
 
 	/* the bitmap starts managing the memory at itself */
-	i += BITMAP_START_FRAME;
+	i += bitmapStartFrame();
 	doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 	printEventTrace(Util::getKernelStackTrace(),"[AC] %x:%zu ",i,count);
 	return i;
@@ -227,37 +248,58 @@ bool PhysMem::reserve(size_t frameCount,bool swap) {
 	return true;
 }
 
+frameno_t PhysMem::allocFrame(bool forceLower) {
+	/* prefer lower pages */
+	if(!forceLower && (size_t)(lower.frames - lower.begin) <= kframes) {
+		if(upper.frames == upper.begin)
+			return 0;
+		return *(--upper.frames);
+	}
+	return *(--lower.frames);
+}
+
+void PhysMem::freeFrame(frameno_t frame) {
+	if(frame * PAGE_SIZE < lowerEnd()) {
+		if(lower.frames >= lower.begin + lower.pages * PAGE_SIZE)
+			Util::panic("MM-Stack (lower) too small for physical memory!");
+		*(lower.frames++) = frame;
+	}
+	else {
+		if(upper.frames >= upper.begin + upper.pages * PAGE_SIZE)
+			Util::panic("MM-Stack (upper) too small for physical memory!");
+		*(upper.frames++) = frame;
+	}
+}
+
 frameno_t PhysMem::allocate(FrameType type) {
 	LockGuard<SpinLock> g(&defLock);
 	printEventTrace(Util::getKernelStackTrace(),"[A] %x ",*(stack - 1));
 	/* remove the memory from the available one when we're not yet initialized */
 	if(!initialized)
 		return PhysMemAreas::alloc(1);
-	if(type == CRIT) {
-		if(cframes > 0) {
-			cframes--;
-			return *(--stack);
-		}
-	}
-	else if(type == KERN) {
-		/* if there are no kframes anymore, take away a few uframes */
-		if(kframes == 0) {
-			size_t free = getFreeDef();
-			kframes = (free - cframes) / (100 / KERNEL_MEM_PERCENT);
-		}
-		/* return 0 otherwise */
-		if(kframes > 0) {
-			kframes--;
-			return *(--stack);
-		}
-	}
-	else {
-		size_t free = getFreeDef();
-		if(free > (kframes + cframes)) {
-			assert(uframes > 0);
-			uframes--;
-			return *(--stack);
-		}
+
+	switch(type) {
+		case CRIT:
+			if(cframes > 0) {
+				cframes--;
+				return allocFrame(false);
+			}
+			break;
+
+		case KERN:
+			if(kframes > 0) {
+				kframes--;
+				return allocFrame(true);
+			}
+			break;
+
+		default:
+			if(getFreeDef() > (kframes + cframes)) {
+				assert(uframes > 0);
+				uframes--;
+				return allocFrame(false);
+			}
+			break;
 	}
 	return 0;
 }
@@ -398,13 +440,25 @@ void PhysMem::print(OStream &os) {
 }
 
 void PhysMem::printStack(OStream &os) {
-	os.writef("Stack: (frame numbers)\n");
-	frameno_t *ptr;
-	size_t i;
-	for(i = 0, ptr = stack - 1; (uintptr_t)ptr >= stackBegin; i++, ptr--) {
-		os.writef("0x%08Px, ",*ptr);
-		if(i % 6 == 5)
-			os.writef("\n");
+	struct {
+		const char *name;
+		StackFrames *obj;
+	} stacks[] = {
+		{"Lower",&lower},
+		{"Upper",&upper}
+	};
+
+	for(size_t i = 0; i < ARRAY_SIZE(stacks); ++i) {
+		os.writef("%s stack: (frame numbers)\n",stacks[i].name);
+		if(stacks[i].obj->frames != stacks[i].obj->begin) {
+			frameno_t *ptr = stacks[i].obj->frames - 1;
+			for(size_t j = 0; ptr >= stacks[i].obj->begin; j++, ptr--) {
+				os.writef("0x%08Px, ",*ptr);
+				if(j % 6 == 5)
+					os.writef("\n");
+			}
+		}
+		os.writef("\n");
 	}
 }
 
@@ -418,7 +472,7 @@ void PhysMem::printCont(OStream &os) {
 }
 
 size_t PhysMem::getFreeDef() {
-	return ((uintptr_t)stack - stackBegin) / sizeof(frameno_t);
+	return (lower.frames - lower.begin) + (upper.frames - upper.begin);
 }
 
 void PhysMem::markRangeUsed(uintptr_t from,uintptr_t to,bool used) {
@@ -434,13 +488,13 @@ void PhysMem::doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used) {
 
 void PhysMem::markUsed(frameno_t frame,bool used) {
 	/* ignore the stuff before; we don't manage it */
-	if(frame < BITMAP_START_FRAME)
+	if(frame < bitmapStartFrame())
 		return;
 	/* we use a bitmap for the lowest few MB */
-	if(frame < BITMAP_START_FRAME + BITMAP_PAGE_COUNT) {
+	if(frame < bitmapStartFrame() + BITMAP_PAGE_COUNT) {
 		tBitmap bit,*bitmapEntry;
 		/* the bitmap starts managing the memory at itself */
-		frame -= BITMAP_START_FRAME;
+		frame -= bitmapStartFrame();
 		bitmapEntry = (tBitmap*)(bitmap + (frame / BITS_PER_BMWORD));
 		bit = (BITS_PER_BMWORD - 1) - (frame % BITS_PER_BMWORD);
 		if(used) {
@@ -456,12 +510,8 @@ void PhysMem::markUsed(frameno_t frame,bool used) {
 	else {
 		/* we don't mark frames as used since this function is just used for initializing the
 		 * memory-management */
-		if(!used) {
-			if((uintptr_t)stack >= stackBegin + stackPages * PAGE_SIZE)
-				Util::panic("MM-Stack too small for physical memory!");
-			*stack = frame;
-			stack++;
-		}
+		if(!used)
+			freeFrame(frame);
 	}
 }
 

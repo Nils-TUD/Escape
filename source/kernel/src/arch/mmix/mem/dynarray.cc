@@ -56,7 +56,7 @@ bool DynArray::extend() {
 		r->next = reg;
 	}
 
-	reg->addr = DIR_MAPPED_SPACE | (frame * PAGE_SIZE);
+	reg->addr = DIR_MAP_AREA | (frame * PAGE_SIZE);
 	reg->size = PAGE_SIZE;
 	totalPages++;
 	/* clear it and increase total size and number of objects */
@@ -70,7 +70,7 @@ DynArray::~DynArray() {
 	Region *reg = regions;
 	while(reg != NULL) {
 		Region *next = reg->next;
-		PhysMem::free((reg->addr & ~DIR_MAPPED_SPACE) / PAGE_SIZE,PhysMem::CRIT);
+		PhysMem::free((reg->addr & ~DIR_MAP_AREA) / PAGE_SIZE,PhysMem::CRIT);
 		totalPages--;
 		/* put region on freelist */
 		reg->next = freeList;

@@ -131,11 +131,11 @@ inline void PageDirBase::makeFirst() {
 
 inline uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
 	assert(phys == 0);
-	return DIR_MAPPED_SPACE | (PhysMemAreas::alloc(pages) * PAGE_SIZE);
+	return DIR_MAP_AREA | (PhysMemAreas::alloc(pages) * PAGE_SIZE);
 }
 
 inline bool PageDirBase::isInUserSpace(uintptr_t virt,size_t count) {
-	return virt + count <= DIR_MAPPED_SPACE && virt + count >= virt;
+	return virt + count <= DIR_MAP_AREA && virt + count >= virt;
 }
 
 inline size_t PageDirBase::getPTableCount() const {
@@ -156,7 +156,7 @@ inline frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 }
 
 inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
-	return frame * PAGE_SIZE | DIR_MAPPED_SPACE;
+	return frame * PAGE_SIZE | DIR_MAP_AREA;
 }
 
 inline void PageDirBase::removeAccess() {
@@ -164,9 +164,9 @@ inline void PageDirBase::removeAccess() {
 }
 
 inline void PageDirBase::copyToFrame(frameno_t frame,const void *src) {
-	memcpy((void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),src,PAGE_SIZE);
+	memcpy((void*)(frame * PAGE_SIZE | DIR_MAP_AREA),src,PAGE_SIZE);
 }
 
 inline void PageDirBase::copyFromFrame(frameno_t frame,void *dst) {
-	memcpy(dst,(void*)(frame * PAGE_SIZE | DIR_MAPPED_SPACE),PAGE_SIZE);
+	memcpy(dst,(void*)(frame * PAGE_SIZE | DIR_MAP_AREA),PAGE_SIZE);
 }

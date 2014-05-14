@@ -48,6 +48,12 @@ class PhysMem {
 		SwapInJob *next;
 	};
 
+	struct StackFrames {
+		size_t pages;
+		frameno_t *begin;
+		frameno_t *frames;
+	};
+
 	static const size_t BITS_PER_BMWORD				= sizeof(tBitmap) * 8;
 	static const ulong KERNEL_MEM_PERCENT			= 20;
 	static const ulong KERNEL_MEM_MIN				= 750;
@@ -93,7 +99,7 @@ public:
 	 * @return the number of bytes used for the mm-stack
 	 */
 	static size_t getStackSize() {
-		return stackPages * PAGE_SIZE;
+		return (lower.pages + upper.pages) * PAGE_SIZE;
 	}
 
 	/**
@@ -208,6 +214,11 @@ private:
 	static void initArch(uintptr_t *stackBegin,size_t *stackSize,tBitmap **bitmap);
 
 private:
+	static uintptr_t bitmapStartFrame();
+	static uintptr_t lowerStart();
+	static uintptr_t lowerEnd();
+	static frameno_t allocFrame(bool forceLower);
+	static void freeFrame(frameno_t frame);
 	static size_t getFreeDef();
 	static void markRangeUsed(uintptr_t from,uintptr_t to,bool used);
 	static void doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used);
@@ -220,14 +231,14 @@ private:
 	static tBitmap *bitmap;
 	static uintptr_t bitmapStart;
 	static size_t freeCont;
+	static SpinLock contLock;
 
 	/* We use a stack for the remaining memory
 	 * TODO Currently we don't free the frames for the stack */
-	static size_t stackPages;
-	static uintptr_t stackBegin;
-	static frameno_t *stack;
-	static SpinLock contLock;
+	static StackFrames lower;
+	static StackFrames upper;
 	static SpinLock defLock;
+
 	static bool initialized;
 
 	/* for swapping */

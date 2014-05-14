@@ -129,7 +129,7 @@ void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 
 	/* set $255, which will be put into rSS; the stack-frame changes when cloning */
 	t = Thread::getRunning(); /* thread might have changed */
-	stack[-14] = DIR_MAPPED_SPACE | (t->getKernelStack() * PAGE_SIZE);
+	stack[-14] = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);
 
 	/* only handle signals, if we come directly from user-mode */
 	if(t->hasSignal() && ((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0))

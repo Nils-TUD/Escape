@@ -82,7 +82,11 @@
 #define KERNEL_START			0xC0000000
 /* beginning of the kernel-area */
 #define KERNEL_AREA				0x80000000
-#define DIR_MAPPED_SPACE		0xC0000000
+
+/* all physical memory is directly mapped @ 0xC0000000 by the HW. so, put all of that in the lower
+ * memory pool */
+#define DIR_MAP_AREA			0xC0000000
+#define DIR_MAP_AREA_SIZE		(1024 * 1024 * 1024)
 
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT			(PAGE_SIZE / 4)

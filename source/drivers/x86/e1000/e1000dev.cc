@@ -115,7 +115,7 @@ void E1000::reset() {
 
 	// init receive ring
 	writeReg(REG_RDBAH,0);
-	writeReg(REG_RDBAL,reinterpret_cast<uint32_t>(_bufsPhys->rxDescs + 0));
+	writeReg(REG_RDBAL,reinterpret_cast<uintptr_t>(_bufsPhys->rxDescs + 0));
 	writeReg(REG_RDLEN,RX_BUF_COUNT * sizeof(RxDesc));
 	writeReg(REG_RDH,0);
 	writeReg(REG_RDT,RX_BUF_COUNT - 1);
@@ -124,7 +124,7 @@ void E1000::reset() {
 
 	// init transmit ring
 	writeReg(REG_TDBAH,0);
-	writeReg(REG_TDBAL,reinterpret_cast<uint32_t>(_bufsPhys->txDescs + 0));
+	writeReg(REG_TDBAL,reinterpret_cast<uintptr_t>(_bufsPhys->txDescs + 0));
 	writeReg(REG_TDLEN,TX_BUF_COUNT * sizeof(TxDesc));
 	writeReg(REG_TDH,0);
 	writeReg(REG_TDT,0);

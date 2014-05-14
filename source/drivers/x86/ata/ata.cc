@@ -108,7 +108,7 @@ bool ata_transferDMA(sATADevice *device,uint op,void *buffer,size_t secSize,size
 
 	/* set PRDT */
 	ATA_PR2("Setting PRDT");
-	ctrl_outbmrl(ctrl,BMR_REG_PRDT,(uint32_t)ctrl->dma_prdt_phys);
+	ctrl_outbmrl(ctrl,BMR_REG_PRDT,reinterpret_cast<uintptr_t>(ctrl->dma_prdt_phys));
 
 	/* write data to buffer, if we should write */
 	/* TODO we should use the buffer directly when reading from the client */

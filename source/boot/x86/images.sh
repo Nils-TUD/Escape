@@ -1,21 +1,31 @@
 #!/bin/sh
 
+get_suffix() {
+	case "$ESC_SIM_FLAGS" in
+		*-enable-kvm*)
+			echo -n " forcepit"
+			;;
+	esac
+}
+
 create_cd() {
 	src="$1"
 	dst="$2"
+	suffix=`get_suffix`
+
 	cat > $src/boot/grub/menu.lst <<EOF
 default 0
 timeout 3
 
 title Escape
-kernel /boot/escape root=/dev/iso9660-cdrom
+kernel /boot/escape$suffix root=/dev/iso9660-cdrom
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
 module /sbin/rtc /dev/rtc
 module /sbin/iso9660 /dev/iso9660-cdrom cdrom
 
 title Escape - Test
-kernel /boot/escape_test
+kernel /boot/escape_test$suffix
 EOF
 
 	genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot \
@@ -25,6 +35,7 @@ EOF
 create_mini_cd() {
 	src="$1"
 	dst="$2"
+	suffix=`get_suffix`
 
 	dir=`mktemp -d`
 	cp -Rf $src/* $dir
@@ -34,13 +45,15 @@ create_mini_cd() {
 	fi
 	# strip all binaries. just ignore the error for others
 	find $dir -type f | xargs strip -s 2>/dev/null
-	create_cd $dir $dst
+	create_cd $dir $dst $suffix
 	rm -Rf $dir
 }
 
 create_disk() {
 	src="$1"
 	dst="$2"
+	suffix=`get_suffix`
+
 	dir=`mktemp -d`
 	cp -R $src/* $dir
 	cat > $dir/boot/grub/menu.lst <<EOF
@@ -48,14 +61,14 @@ default 0
 timeout 3
 
 title Escape
-kernel /boot/escape root=/dev/ext2-hda1 swapdev=/dev/hda3
+kernel /boot/escape$suffix root=/dev/ext2-hda1 swapdev=/dev/hda3
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata
 module /sbin/rtc /dev/rtc
 module /sbin/ext2 /dev/ext2-hda1 /dev/hda1
 
 title Escape - Test
-kernel /boot/escape_test
+kernel /boot/escape_test$suffix
 EOF
 
 	sudo ./boot/perms.sh $dir

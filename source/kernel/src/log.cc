@@ -76,44 +76,20 @@ void Log::vfsIsReady() {
 }
 
 void Log::writec(char c) {
-	lock.down();
+	LockGuard<SpinLock> guard(&lock);
 	if(c != '\0' && Config::get(Config::LOG) && !vfsReady)
 		toSerial(c);
 	if(c == '\0' || bufPos >= BUF_SIZE)
 		flush();
 	if(c != '\0' && bufPos < BUF_SIZE) {
 		buf[bufPos++] = c;
-		switch(c) {
-			case '\n':
-				col = 0;
-				flush();
-				break;
-			case '\r':
-				col = 0;
-				break;
-			case '\t':
-				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
-				if(col == 0) {
-					lock.up();
-					writec(' ');
-					return;
-				}
-				break;
-			default:
-				col = (col + 1) % VID_COLS;
-				if(col == 0) {
-					lock.up();
-					writec('\n');
-					return;
-				}
-				break;
-		}
+		if(c == '\n')
+			flush();
 	}
-	lock.up();
 }
 
 uchar Log::pipepad() const {
-	return VID_COLS - col;
+	return 0;
 }
 
 bool Log::escape(const char **str) {

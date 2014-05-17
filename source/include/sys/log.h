@@ -37,7 +37,7 @@ class Log : public OStream {
 		virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
 	};
 
-	explicit Log() : OStream(), buf(), bufPos(), col(), logToSer(true), logFile(), vfsReady(), lock() {
+	explicit Log() : OStream(), buf(), bufPos(), logToSer(true), logFile(), vfsReady(), lock() {
 	}
 
 public:
@@ -70,7 +70,6 @@ private:
 	/* don't use a heap here to prevent problems */
 	char buf[BUF_SIZE];
 	size_t bufPos;
-	uint col;
 	bool logToSer;
 	OpenFile *logFile;
 	bool vfsReady;

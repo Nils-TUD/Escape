@@ -35,12 +35,12 @@
 #define PG_KEEPFRM				64
 
 /* for printing the page-directory */
-#define PD_PART_ALL				0
 #define PD_PART_USER 			1
 #define PD_PART_KERNEL			2
 #define PD_PART_KHEAP			4
 #define PD_PART_PTBLS			8
 #define PD_PART_NOTSHARED		16
+#define PD_PART_ALL				(PD_PART_USER | PD_PART_KERNEL | PD_PART_PTBLS | PD_PART_NOTSHARED)
 
 class PageDir;
 class OStream;
@@ -86,9 +86,11 @@ public:
 	static uintptr_t getAccess(frameno_t frame);
 
 	/**
-	 * Removes the access that has been provided by the last getAccess() call
+	 * Removes the access that has been provided by the last getAccess() call.
+	 *
+	 * @param frame the frame-number
 	 */
-	static void removeAccess();
+	static void removeAccess(frameno_t frame);
 
 	/**
 	 * Finishes the demand-loading-process by copying <loadCount> bytes from <buffer> into a new
@@ -165,6 +167,11 @@ public:
 	static void freeFrame(uintptr_t virt,frameno_t frame);
 
 	/**
+	 * @return the physical address of the page-directory
+	 */
+	uintptr_t getPhysAddr() const;
+
+	/**
 	 * Makes this the first page-directory
 	 */
 	void makeFirst();
@@ -232,13 +239,6 @@ public:
 	size_t unmap(uintptr_t virt,size_t count,bool freeFrames);
 
 	/**
-	 * Determines the number of page-tables (in the user-area) in this page-directory
-	 *
-	 * @return the number of present page-tables
-	 */
-	size_t getPTableCount() const;
-
-	/**
 	 * Counts the number of pages that are currently present in this page-directory
 	 *
 	 * @return the number of pages
@@ -252,18 +252,12 @@ public:
 	 * @param parts the parts to print
 	 */
 	void print(OStream &os,uint parts) const;
-
-	/**
-	 * Prints the page at given virtual address
-	 *
-	 * @param os the output-stream
-	 * @param virt the virtual address
-	 */
-	void printPage(OStream &os,uintptr_t virt) const;
 };
 
 #if defined(__i586__)
 #	include <sys/arch/i586/mem/pagedir.h>
+#elif defined(__x86_64__)
+#	include <sys/arch/x86_64/mem/pagedir.h>
 #elif defined(__eco32__)
 #	include <sys/arch/eco32/mem/pagedir.h>
 #elif defined(__mmix__)

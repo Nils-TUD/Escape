@@ -102,12 +102,12 @@
 #define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * 513)
 
 /* the start of the kernel-heap */
-#define KERNEL_HEAP_START		(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
+#define KHEAP_START				(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the size of the kernel-heap (4 MiB) */
-#define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE)
+#define KHEAP_SIZE				(PT_ENTRY_COUNT * PAGE_SIZE)
 
 /* area for global-file-table */
-#define GFT_AREA				(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+#define GFT_AREA				(KHEAP_START + KHEAP_SIZE)
 #define GFT_AREA_SIZE			(4 * 1024 * 1024)
 /* area for vfs-nodes */
 #define VFSNODE_AREA			(GFT_AREA + GFT_AREA_SIZE)

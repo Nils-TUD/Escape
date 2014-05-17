@@ -24,26 +24,26 @@
 
 uintptr_t KHeap::allocAreas() {
 	/* heap full? */
-	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	if((pages + 1) * PAGE_SIZE > KHEAP_SIZE)
 		return 0;
 
 	/* allocate one page for area-structs */
-	if(PageDir::mapToCur(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,
+	if(PageDir::mapToCur(KHEAP_START + pages * PAGE_SIZE,NULL,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
 
-	return KERNEL_HEAP_START + pages++ * PAGE_SIZE;
+	return KHEAP_START + pages++ * PAGE_SIZE;
 }
 
 uintptr_t KHeap::allocSpace(size_t count) {
 	/* heap full? */
-	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
+	if((pages + count) * PAGE_SIZE > KHEAP_SIZE)
 		return 0;
 
-	if(PageDir::mapToCur(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
+	if(PageDir::mapToCur(KHEAP_START + pages * PAGE_SIZE,NULL,count,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
 
 	pages += count;
-	return KERNEL_HEAP_START + (pages - count) * PAGE_SIZE;
+	return KHEAP_START + (pages - count) * PAGE_SIZE;
 }

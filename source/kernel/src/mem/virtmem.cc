@@ -1243,7 +1243,7 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 									: Thread::getRunning()->getFrame();
 		uintptr_t frameAddr = PageDir::getAccess(frame);
 		memclear((void*)(frameAddr + loadCount),zeroCount);
-		PageDir::removeAccess();
+		PageDir::removeAccess(frame);
 		/* if the pages weren't present so far, map them into every process that has this region */
 		if(!loadCount) {
 			uint mapFlags = PG_PRESENT;

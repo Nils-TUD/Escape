@@ -30,68 +30,25 @@
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))
 
-/* converts a virtual address to the index in the corresponding page-table */
-#define ADDR_TO_PTINDEX(addr)	((size_t)(((uintptr_t)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT))
-
-/* converts pages to page-tables (how many page-tables are required for the pages?) */
-#define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
-
 /* determines whether the given address is on the heap */
-#define IS_ON_HEAP(addr)		((uintptr_t)(addr) >= KERNEL_HEAP_START && \
-		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+#define IS_ON_HEAP(addr)		((uintptr_t)(addr) >= KHEAP_START && \
+		(uintptr_t)(addr) < KHEAP_START + KHEAP_SIZE)
 
 /* determines whether the given address is in a shared kernel area */
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_AREA && \
-								(uintptr_t)(addr) < KERNEL_STACK_AREA)
+								(uintptr_t)(addr) < KSTACK_AREA)
 
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 
 public:
 	typedef uint32_t pte_t;
-	typedef uint32_t pde_t;
 
-	explicit PageDir() : PageDirBase(), lastChange(), own(), other(), otherUpdate(), freeKStack() {
+	explicit PageDir() : PageDirBase(), pagedir(), freeKStack(), lock() {
 	}
 
-	/**
-	* Assembler routine to exchange the page-directory to the given one
-	*
-	* @param physAddr the physical address of the page-directory
-	*/
-	static void exchangePDir(uintptr_t physAddr);
-
-	/**
-	* Reserves page-tables for the whole higher-half and inserts them into the page-directory.
-	* This should be done ONCE at the beginning as soon as the physical memory management is set up
-	*/
-	static void mapKernelSpace();
 	static void flushTLB() {
 		CPU::setCR3(CPU::getCR3());
-	}
-
-	/**
-	* Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
-	* can access it. Please use unmapFromTemp() as soon as you're finished!
-	*
-	* @param frames the frame-numbers
-	* @param count the number of frames
-	* @return the virtual start-address
-	*/
-	static uintptr_t mapToTemp(const frameno_t *frames,size_t count);
-
-	/**
-	* Unmaps the temporary mappings
-	*
-	* @param count the number of pages
-	*/
-	static void unmapFromTemp(size_t count);
-
-	/**
-	 * @return the physical address of the page-directory
-	 */
-	uintptr_t getPhysAddr() const {
-		return own;
 	}
 
 	/**
@@ -122,38 +79,44 @@ private:
 		flushTLB();
 	}
 
-	static int crtPageTable(pde_t *pd,uintptr_t ptables,uintptr_t virt,uint flags);
-	static size_t remEmptyPt(uintptr_t ptables,size_t pti);
-	static void printPageTable(OStream &os,uintptr_t ptables,size_t no,pde_t pde);
-	static void printPTE(OStream &os,pte_t page);
+	static uintptr_t mapToTemp(frameno_t frame);
+	static void unmapFromTemp();
 
-	uintptr_t getPTables(PageDir *cur) const;
-	ssize_t doMap(uintptr_t virt,const frameno_t *frames,size_t count,uint flags);
-	size_t doUnmap(uintptr_t virt,size_t count,bool freeFrames);
+	static int crtPageTable(pte_t *pte,uint flags);
+	static void printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int level);
 
-	uint64_t lastChange;
-	uintptr_t own;
-	PageDir *other;
-	uint64_t otherUpdate;
+	int mapPage(uintptr_t virt,frameno_t frame,uint flags,size_t *pts);
+	frameno_t unmapPage(uintptr_t virt);
+	pte_t *getPTE(uintptr_t virt,uintptr_t *base) const;
+	bool gc(uintptr_t virt,pte_t pte,int level,uint bits,size_t *pts);
+	size_t countEntries(pte_t pte,int level) const;
+
+	uintptr_t pagedir;
 	uintptr_t freeKStack;
+	SpinLock lock;
 
-	static SpinLock tmpMapLock;
-	/* TODO we could maintain different locks for userspace and kernelspace; since just the kernel is
-	 * shared. it would be better to have a global lock for that and a pagedir-lock for the userspace */
-	static SpinLock lock;
 	static uintptr_t freeAreaAddr;
+	static pte_t sharedPtbls[][PAGE_SIZE];
 };
 
-inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
-	return PageDir::mapToTemp(&frame,1);
-}
-
-inline void PageDirBase::removeAccess() {
-	PageDir::unmapFromTemp(1);
+inline uintptr_t PageDirBase::getPhysAddr() const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->pagedir;
 }
 
 inline bool PageDirBase::isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= KERNEL_AREA && virt + count >= virt;
+}
+
+inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
+	if(frame * PAGE_SIZE < DIR_MAP_AREA_SIZE)
+		return DIR_MAP_AREA + frame * PAGE_SIZE;
+	return PageDir::mapToTemp(frame);
+}
+
+inline void PageDirBase::removeAccess(frameno_t frame) {
+	if(frame * PAGE_SIZE >= DIR_MAP_AREA_SIZE)
+		PageDir::unmapFromTemp();
 }
 
 inline void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
@@ -169,12 +132,7 @@ inline void PageDirBase::zeroToUser(void *dst,size_t count) {
 	PageDir::setWriteProtection(true);
 }
 
-inline ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
-	LockGuard<SpinLock> g(&PageDir::lock);
-	return static_cast<PageDir*>(this)->doMap(virt,frames,count,flags);
-}
-
-inline size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
-	LockGuard<SpinLock> g(&PageDir::lock);
-	return static_cast<PageDir*>(this)->doUnmap(virt,count,freeFrames);
+inline size_t PageDirBase::getPageCount() const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->countEntries(pdir->pagedir,PT_LEVELS);
 }

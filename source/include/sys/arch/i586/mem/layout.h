@@ -29,18 +29,18 @@
  *             |               rodata              |     |
  *     ---     +-----------------------------------+     |
  *             |                data               |     |
- *      |      |                                   |
- *      v      |                ...                |     u
- *     ---     +-----------------------------------+     s
- *      ^      |                                   |     e
- *      |      |        user-stack thread n        |     r
- *             |                                   |     a
+ *      |      |                                   |     |
+ *      v      |                ...                |     |
+ *     ---     +-----------------------------------+
+ *      ^      |                                   |     u
+ *      |      |        user-stack thread n        |     s
+ *             |                                   |     e
  *     ---     +-----------------------------------+     r
- *             |                ...                |     e
- *     ---     +-----------------------------------+     a
- *      ^      |                                   |
- *      |      |        user-stack thread 0        |     |
- *             |                                   |     |
+ *             |                ...                |     a
+ *     ---     +-----------------------------------+     r
+ *      ^      |                                   |     e
+ *      |      |        user-stack thread 0        |     a
+ *             |                                   |
  * 0xA0000000: +-----------------------------------+     |
  *             |  dynlinker (always first, if ex)  |     |
  *             |           shared memory           |     |
@@ -53,36 +53,30 @@
  *             |                ...                |     |
  * 0xC0100000: +-----------------------------------+     |
  *             |         kernel code+data          |     |
- *             +-----------------------------------+
- *             |                ...                |     k
- * 0xC0800000: +-----------------------------------+     e
- *             |                                   |     r
- *      |      |            kernel-heap            |     n
- *      v      |                                   |     e
- * 0xC0C00000: +-----------------------------------+     l
- *             |           temp map area           |     a
- * 0xC1C00000: +-----------------------------------+     r
- *             |                ...                |     e
- * 0xD0000000: +-----------------------------------+     a      -----
- *             |       VFS global file table       |              |
- * 0xD0400000: +-----------------------------------+     |
- *             |             VFS nodes             |     |    dynamically extending regions
- * 0xD0800000: +-----------------------------------+     |
- *             |             sll nodes             |     |        |
- * 0xD2800000: +-----------------------------------+     |      -----
+ *             +-----------------------------------+     |
  *             |                ...                |     |
- * 0xE0000000: +-----------------------------------+     |      -----
- *             |                                   |     |        |
- *      |      |             free area             |     |    unmanaged
- *      v      |                                   |     |        |
- * 0xEFFFFFFF: +-----------------------------------+     |      -----
- *             |                ...                |     |
- * 0xFD800000: +-----------------------------------+     |      -----
+ * 0xC0800000: +-----------------------------------+     |
+ *             |                                   |     |
+ *      |      |            kernel-heap            |
+ *      v      |                                   |     k
+ * 0xC0C00000: +-----------------------------------+     e      -----
+ *             |       VFS global file table       |     r        |
+ * 0xC1000000: +-----------------------------------+     n
+ *             |             VFS nodes             |     e    dynamically extending regions
+ * 0xC1400000: +-----------------------------------+     l
+ *             |             sll nodes             |     a        |
+ * 0xC3400000: +-----------------------------------+     r      -----
+ *             |                                   |     e
+ *      |      |             free area             |     a
+ *      v      |                                   |
+ * 0xD0000000: +-----------------------------------+     |
+ *             |                                   |     |
+ *             |          physical memory          |     |
+ *             |                                   |     |
+ * 0xFE000000: +-----------------------------------+     |      -----
+ *             |           temp map page           |     |        |
+ * 0xFE001000: +-----------------------------------+     |    not shared page-tables
  *             |           kernel-stacks           |     |        |
- * 0xFF800000: +-----------------------------------+     |
- *             |     temp mapped page-tables       |     |    not shared page-tables (10)
- * 0xFFC00000: +-----------------------------------+     |
- *             |        mapped page-tables         |     |        |
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
  */
 
@@ -91,47 +85,51 @@
 /* the virtual address of the kernel-area */
 #define KERNEL_AREA				0xC0000000
 
-#define DIR_MAP_AREA			0xF0000000
-#define DIR_MAP_AREA_SIZE		(64 * 1024 * 1024)
+#define PT_ENTRY_COUNT			(PAGE_SIZE >> 2)
+#define PT_SIZE					(PAGE_SIZE * PT_ENTRY_COUNT)
 
-/* the number of entries in a page-directory or page-table */
-#define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
+#define PT_LEVELS				2
+#define PT_BPL					10
+#define PT_BITS					32
 
-/* the start of the mapped page-tables area */
-#define MAPPED_PTS_START		(0xFFFFFFFF - (PT_ENTRY_COUNT * PAGE_SIZE) + 1)
-/* the start of the temporary mapped page-tables area */
-#define TMPMAP_PTS_START		(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
-/* the start of the kernel-heap */
-#define KERNEL_HEAP_START		(KERNEL_AREA + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
-/* the size of the kernel-heap (4 MiB) */
-#define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE /* * 4 */)
+/* maximum size of kernel code and data */
+#define KERNEL_SIZE				(PT_SIZE * 2)
 
-/* page-directories in virtual memory */
-#define PAGE_DIR_AREA			(MAPPED_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
-/* needed for building a new page-dir */
-#define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
-/* our kernel-stack */
-#define KERNEL_STACK_AREA		(TMPMAP_PTS_START - PAGE_SIZE * PT_ENTRY_COUNT * 8)
-#define KERNEL_STACK_AREA_SIZE	(PAGE_SIZE * PT_ENTRY_COUNT * 8)
+/* the kernel-heap */
+#define KHEAP_START				(KERNEL_AREA + KERNEL_SIZE)
+#define KHEAP_SIZE				PT_SIZE
 
-/* for mapping some pages of foreign processes */
-#define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-#define TEMP_MAP_AREA_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE * 4)
+/* area for global-file-table */
+#define GFT_AREA				(KHEAP_START + KHEAP_SIZE)
+#define GFT_AREA_SIZE			PT_SIZE
+/* area for vfs-nodes */
+#define VFSNODE_AREA			(GFT_AREA + GFT_AREA_SIZE)
+#define VFSNODE_AREA_SIZE		PT_SIZE
+/* area for sll-nodes */
+#define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
+#define SLLNODE_AREA_SIZE		(PT_SIZE * 8)
 
 /* this area is not managed, but we map all stuff one after another and never unmap it */
 /* this is used for multiboot-modules, pmem, ACPI, ... */
-#define FREE_KERNEL_AREA		0xE0000000
-#define FREE_KERNEL_AREA_SIZE	(64 * PAGE_SIZE * PT_ENTRY_COUNT)
+#define KFREE_AREA				(SLLNODE_AREA + SLLNODE_AREA_SIZE)
+/* use up all space till kernel-stacks and temp area */
+#define KFREE_AREA_SIZE			(PT_SIZE * 64 - (			\
+ 									KERNEL_SIZE +			\
+ 									KHEAP_SIZE +			\
+ 									GFT_AREA_SIZE +			\
+ 									VFSNODE_AREA_SIZE +		\
+ 									SLLNODE_AREA_SIZE))
 
-/* area for global-file-table */
-#define GFT_AREA				0xD0000000
-#define GFT_AREA_SIZE			(4 * 1024 * 1024)
-/* area for vfs-nodes */
-#define VFSNODE_AREA			(GFT_AREA + GFT_AREA_SIZE)
-#define VFSNODE_AREA_SIZE		(4 * 1024 * 1024)
-/* area for sll-nodes */
-#define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
-#define SLLNODE_AREA_SIZE		(32 * 1024 * 1024)
+/* the area where we map the first part of the physical memory contiguously */
+#define DIR_MAP_AREA			(KFREE_AREA + KFREE_AREA_SIZE)
+#define DIR_MAP_AREA_SIZE		(TEMP_MAP_PAGE - DIR_MAP_AREA)
+
+/* for temporary mappings */
+#define TEMP_MAP_PAGE			(KSTACK_AREA - PAGE_SIZE)
+
+/* our kernel-stacks */
+#define KSTACK_AREA				(0xFFFFFFFF - (KSTACK_AREA_SIZE - 1))
+#define KSTACK_AREA_SIZE		(PT_SIZE * 8 - PAGE_SIZE)
 
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE			PAGE_SIZE

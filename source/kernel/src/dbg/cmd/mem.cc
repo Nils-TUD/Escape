@@ -34,11 +34,11 @@ class MemNaviBackend : public NaviBackend {
 public:
 	explicit MemNaviBackend(Proc *p,uintptr_t addr)
 		: NaviBackend(addr,ROUND_DN(ULONG_MAX,(ulong)BYTES_PER_LINE)),
-		  proc(p), lastAddr(), page() {
+		  proc(p), lastAddr(), lastFrame(), page() {
 	}
 	virtual ~MemNaviBackend() {
 		if(page)
-			PageDir::removeAccess();
+			PageDir::removeAccess(lastFrame);
 	}
 
 	virtual const char *getInfo(uintptr_t) {
@@ -51,10 +51,10 @@ public:
 	virtual uint8_t *loadLine(uintptr_t addr) {
 		if(page == NULL || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
 			if(page)
-				PageDir::removeAccess();
+				PageDir::removeAccess(lastFrame);
 			if(proc->getPageDir()->isPresent(addr)) {
-				frameno_t frame = proc->getPageDir()->getFrameNo(addr);
-				page = (uint8_t*)PageDir::getAccess(frame);
+				lastFrame = proc->getPageDir()->getFrameNo(addr);
+				page = (uint8_t*)PageDir::getAccess(lastFrame);
 			}
 			else
 				page = NULL;
@@ -79,6 +79,7 @@ public:
 private:
 	Proc *proc;
 	uintptr_t lastAddr;
+	frameno_t lastFrame;
 	uint8_t *page;
 	static uint8_t buffer[BYTES_PER_LINE + 1];
 };

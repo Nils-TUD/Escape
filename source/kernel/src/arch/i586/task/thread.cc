@@ -89,7 +89,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	frameno_t frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
-	ulong *dst = (ulong*)PageDir::mapToTemp(&frame,1);
+	ulong *dst = (ulong*)PageDir::getAccess(frame);
 
 	if(Thread::save(&nt->saveArea)) {
 		/* child */
@@ -110,7 +110,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	/* store thread at the top */
 	*dst = (ulong)nt;
 
-	PageDir::unmapFromTemp(1);
+	PageDir::removeAccess(frame);
 	/* parent */
 	return 0;
 }
@@ -118,7 +118,7 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg,uintptr_t entryPoint) {
 	/* setup kernel-stack */
 	frameno_t frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
-	ulong *dst = (ulong*)PageDir::mapToTemp(&frame,1);
+	ulong *dst = (ulong*)PageDir::getAccess(frame);
 	ulong sp = nt->kernelStack + PAGE_SIZE - sizeof(ulong) * 6;
 	dst += (PAGE_SIZE / sizeof(ulong)) - 1;
 	*dst = (ulong)nt;
@@ -127,7 +127,7 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	*--dst = (ulong)arg;
 	*--dst = (ulong)&Thread::startup;
 	*--dst = sp;
-	PageDir::unmapFromTemp(1);
+	PageDir::removeAccess(frame);
 
 	/* prepare registers for the first Thread::resume() */
 	nt->saveArea.ebp = sp;

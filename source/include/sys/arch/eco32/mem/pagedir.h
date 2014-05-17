@@ -35,13 +35,13 @@
 #define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
 /* determines whether the given address is on the heap */
-#define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KERNEL_HEAP_START && \
-		(uintptr_t)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+#define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KHEAP_START && \
+		(uintptr_t)(addr) < KHEAP_START + KHEAP_SIZE)
 
 /* determines whether the given address is in a shared kernel area; in this case it is "shared"
  * if it is accessed over the directly mapped space. */
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START || \
-		((uintptr_t)(addr) >= KERNEL_HEAP_START && (uintptr_t)(addr) < KERNEL_STACK))
+		((uintptr_t)(addr) >= KHEAP_START && (uintptr_t)(addr) < KERNEL_STACK))
 
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
@@ -86,13 +86,6 @@ public:
 	static void tlbSet(int index,uint virt,uint phys);
 
 	/**
-	 * @return the physical address of the page-directory
-	 */
-	uintptr_t getPhysAddr() const {
-		return phys;
-	}
-
-	/**
 	* Prints the contents of the TLB
 	*
 	* @param os the output-stream
@@ -129,6 +122,11 @@ private:
 	static uintptr_t otherPDir asm("otherPDir");
 };
 
+inline uintptr_t PageDirBase::getPhysAddr() const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->phys;
+}
+
 inline void PageDirBase::makeFirst() {
 	static_cast<PageDir*>(this)->phys = PageDir::curPDir;
 }
@@ -146,7 +144,7 @@ inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
 	return frame * PAGE_SIZE | DIR_MAP_AREA;
 }
 
-inline void PageDirBase::removeAccess() {
+inline void PageDirBase::removeAccess(A_UNUSED frameno_t frame) {
 	/* nothing to do */
 }
 

@@ -67,9 +67,9 @@ void PageDirBase::init() {
 	pde->exists = true;
 
 	/* insert shared page-tables */
-	uintptr_t addr = KERNEL_HEAP_START;
+	uintptr_t addr = KHEAP_START;
 	uintptr_t end = KERNEL_STACK;
-	pde = pd + ADDR_TO_PDINDEX(KERNEL_HEAP_START);
+	pde = pd + ADDR_TO_PDINDEX(KHEAP_START);
 	while(addr < end) {
 		/* get frame and insert into page-dir */
 		frame = PhysMem::allocate(PhysMem::KERN);
@@ -139,7 +139,7 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	PageDir::PTEntry *pt = (PageDir::PTEntry*)((tpd->ptFrameNo * PAGE_SIZE) | DIR_MAP_AREA);
 	memclear(pt,PAGE_SIZE);
 
-	pdir->phys = DIR_MAP_AREA | (pdirFrame << PAGE_SIZE_SHIFT);
+	pdir->phys = DIR_MAP_AREA | (pdirFrame << PAGE_BITS);
 	return 0;
 }
 
@@ -153,7 +153,7 @@ void PageDirBase::destroy() {
 	pde->exists = false;
 	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
 	/* free page-dir */
-	PhysMem::free((pdir->phys & ~DIR_MAP_AREA) >> PAGE_SIZE_SHIFT,PhysMem::KERN);
+	PhysMem::free((pdir->phys & ~DIR_MAP_AREA) >> PAGE_BITS,PhysMem::KERN);
 	/* ensure that we don't use it again */
 	PageDir::otherPDir = 0;
 }
@@ -187,7 +187,7 @@ void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
 	while(count > 0) {
 		size_t amount = MIN(PAGE_SIZE - offset,count);
-		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAP_AREA) + offset;
+		uintptr_t addr = ((pt->frameNumber << PAGE_BITS) | DIR_MAP_AREA) + offset;
 		memcpy((void*)addr,src,amount);
 		src = (const void*)((uintptr_t)src + amount);
 		count -= amount;
@@ -201,7 +201,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
 	while(count > 0) {
 		size_t amount = MIN(PAGE_SIZE - offset,count);
-		uintptr_t addr = ((pt->frameNumber << PAGE_SIZE_SHIFT) | DIR_MAP_AREA) + offset;
+		uintptr_t addr = ((pt->frameNumber << PAGE_BITS) | DIR_MAP_AREA) + offset;
 		memclear((void*)addr,amount);
 		count -= amount;
 		offset = 0;
@@ -306,7 +306,7 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)
-					pte->frameNumber = *frames++ >> PAGE_SIZE_SHIFT;
+					pte->frameNumber = *frames++ >> PAGE_BITS;
 				else
 					pte->frameNumber = *frames++;
 			}
@@ -412,23 +412,12 @@ uintptr_t PageDir::getPTables() const {
 	PDEntry *pde = ((PDEntry*)PAGE_DIR_DIRMAP) + ADDR_TO_PDINDEX(TMPMAP_PTS_START);
 	pde->present = true;
 	pde->exists = true;
-	pde->ptFrameNo = (phys & ~DIR_MAP_AREA) >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (phys & ~DIR_MAP_AREA) >> PAGE_BITS;
 	pde->writable = true;
 	/* we want to access the whole page-table */
 	flushPageTable(TMPMAP_PTS_START,MAPPED_PTS_START);
 	otherPDir = const_cast<PageDir*>(this)->phys;
 	return TMPMAP_PTS_START;
-}
-
-size_t PageDirBase::getPTableCount() const {
-	size_t count = 0;
-	const PageDir *pdir = static_cast<const PageDir*>(this);
-	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir->phys);
-	for(size_t i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA); i++) {
-		if(pdirAddr[i].present)
-			count++;
-	}
-	return count;
 }
 
 size_t PageDirBase::getPageCount() const {
@@ -456,18 +445,6 @@ void PageDir::printTLB(OStream &os) const {
 	}
 }
 
-void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
-	const PageDir *pdir = static_cast<const PageDir*>(this);
-	uintptr_t ptables = pdir->getPTables();
-	PageDir::PDEntry *pdirAddr = (PageDir::PDEntry*)PAGE_DIR_DIRMAP_OF(pdir);
-	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
-		PageDir::PTEntry *page = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
-		os.writef("Page @ %08Px: ",virt);
-		PageDir::printPage(os,page);
-		os.writef("\n");
-	}
-}
-
 void PageDirBase::print(OStream &os,uint parts) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	uintptr_t ptables = pdir->getPTables();
@@ -479,13 +456,13 @@ void PageDirBase::print(OStream &os,uint parts) const {
 		if(parts == PD_PART_ALL ||
 			(i < ADDR_TO_PDINDEX(KERNEL_AREA) && (parts & PD_PART_USER)) ||
 			(i >= ADDR_TO_PDINDEX(KERNEL_AREA) &&
-					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
+					i < ADDR_TO_PDINDEX(KHEAP_START) &&
 					(parts & PD_PART_KERNEL)) ||
 			(i >= ADDR_TO_PDINDEX(TEMP_MAP_AREA) &&
 					i <= ADDR_TO_PDINDEX(KERNEL_STACK) &&
 					(parts & TEMP_MAP_AREA)) ||
-			(i >= ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
-					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE) &&
+			(i >= ADDR_TO_PDINDEX(KHEAP_START) &&
+					i < ADDR_TO_PDINDEX(KHEAP_START + KHEAP_SIZE) &&
 					(parts & PD_PART_KHEAP)) ||
 			(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
 			PageDir::printPageTable(os,ptables,i,pdirAddr + i);

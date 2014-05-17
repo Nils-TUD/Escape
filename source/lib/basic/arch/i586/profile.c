@@ -28,7 +28,7 @@
 	GET_REG("sp",__esp); \
 	if(proc_getByPid(1)) { \
 		Thread *__t = Thread::getRunning(); \
-		__tid = ((__esp >= KERNEL_STACK_AREA) && (uintptr_t)__t >= KERNEL_AREA) ? __t->tid : 0; \
+		__tid = ((__esp >= KSTACK_AREA) && (uintptr_t)__t >= KERNEL_AREA) ? __t->tid : 0; \
 	} \
 	__tid; \
 })

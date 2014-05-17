@@ -55,7 +55,7 @@
 	.set	KEYBOARD_BASE,0xF0200000		// keyboard base address
 
 	.set	PAGE_SIZE,0x1000
-	.set	PAGE_SIZE_SHIFT,12
+	.set	PAGE_BITS,12
 	.set	PTE_MAP_ADDR,0x80000000
 	.set	DIR_MAP_START,0xC0000000
 	.set	KERNEL_HEAP,0x80800000
@@ -99,7 +99,7 @@ intrpt_userMiss:
 	// we have to store $30 because ldw may cause a tlb-miss
 	add		$26,$30,0
 	mvfs	$27,FS_TLB_EHIGH				// load tlbEntryHi
-	slr		$27,$27,PAGE_SIZE_SHIFT - 2		// determine "global" page offset
+	slr		$27,$27,PAGE_BITS - 2			// determine "global" page offset
 	// NOTE that this assumes that the lower 16 bits of PTE_MAP_ADDR are 0
 	ldhi	$28,PTE_MAP_ADDR				// build address in mapped area
 	add		$27,$27,$28
@@ -303,7 +303,7 @@ intrpt_exKMissWrite:
 	// restore tlb-Entry-High for the case that we have got a TLB-miss
 	ldhi	$9,PTE_MAP_ADDR
 	sub		$10,$27,$9						// revert to entryHi
-	sll		$10,$10,PAGE_SIZE_SHIFT - 2
+	sll		$10,$10,PAGE_BITS - 2
 	mvts	$10,FS_TLB_EHIGH				// store in TLB
 	ldw		$9,$28,36						// restore $9 and $10
 	ldw		$10,$28,40
@@ -447,7 +447,7 @@ thread_resume:
 	mvts	$0,FS_TLB_INDEX
 	ldhi	$10,KERNEL_STACK				// ASSUMES that only the high 16 bit are interesting here
 	mvts	$10,FS_TLB_EHIGH
-	sll		$8,$6,PAGE_SIZE_SHIFT			// frame-number to address
+	sll		$8,$6,PAGE_BITS					// frame-number to address
 	or		$8,$8,0x7						// make existing, present and writable
 	mvts	$8,FS_TLB_ELOW
 	tbwi

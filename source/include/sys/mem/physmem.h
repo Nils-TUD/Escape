@@ -32,7 +32,7 @@
 #endif
 
 /* converts bytes to pages */
-#define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
+#define BYTES_2_PAGES(b)		(((size_t)(b) + (PAGE_SIZE - 1)) >> PAGE_BITS)
 
 class Thread;
 class OStream;

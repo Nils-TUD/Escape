@@ -85,7 +85,7 @@ void Util::switchToVGA() {
 void Util::printUserStateOf(OStream &os,const Thread *t) {
 	if(t->getIntrptStack()) {
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
-		uintptr_t kstackAddr = PageDir::mapToTemp(&frame,1);
+		uintptr_t kstackAddr = PageDir::getAccess(frame);
 		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
 		IntrptStackFrame *kstack = (IntrptStackFrame*)(kstackAddr + kstackOff);
 		os.writef("User-Register:\n");
@@ -96,7 +96,7 @@ void Util::printUserStateOf(OStream &os,const Thread *t) {
 		os.writef("\teip=%#08x, eflags=%#08x\n",kstack->getIP(),kstack->getFlags());
 		os.writef("\tcr0=%#08x, cr2=%#08x, cr3=%#08x, cr4=%#08x\n",
 				CPU::getCR0(),CPU::getCR2(),CPU::getCR3(),CPU::getCR4());
-		PageDir::unmapFromTemp(1);
+		PageDir::removeAccess(frame);
 	}
 }
 
@@ -142,28 +142,24 @@ Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 	uintptr_t start,end;
 	if(t->getStackRange(&start,&end,0)) {
 		PageDir *pdir = t->getProc()->getPageDir();
-		size_t pcount = (end - start) / PAGE_SIZE;
-		frameno_t *frames = (frameno_t*)Cache::alloc((pcount + 2) * sizeof(frameno_t));
-		if(frames) {
-			IntrptStackFrame *istack = t->getIntrptStack();
-			uintptr_t temp,startCpy = start;
-			frames[0] = pdir->getFrameNo(t->getKernelStack());
-			for(size_t i = 0; startCpy < end; i++) {
-				if(!pdir->isPresent(startCpy)) {
-					Cache::free(frames);
-					return NULL;
-				}
-				frames[i + 1] = pdir->getFrameNo(startCpy);
-				startCpy += PAGE_SIZE;
-			}
-			temp = PageDir::mapToTemp(frames,pcount + 1);
-			istack = (IntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
-			FuncCall *calls = getStackTrace((uint32_t*)istack->ebp,start,
-					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
-			PageDir::unmapFromTemp(pcount + 1);
-			Cache::free(frames);
-			return calls;
-		}
+
+		// get base pointer
+		IntrptStackFrame *istack = t->getIntrptStack();
+		frameno_t frame = pdir->getFrameNo(t->getKernelStack());
+		uintptr_t temp = PageDir::getAccess(frame);
+		istack = (IntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));
+		uint32_t *ebp = (uint32_t*)istack->ebp;
+		PageDir::removeAccess(frame);
+
+		// get last stack page
+		frame = pdir->getFrameNo(start);
+		temp = PageDir::getAccess(frame);
+
+		// get trace
+		FuncCall *calls = getStackTrace(ebp,start,temp,temp + PAGE_SIZE);
+
+		PageDir::removeAccess(frame);
+		return calls;
 	}
 	return NULL;
 }
@@ -175,9 +171,9 @@ Util::FuncCall *Util::getKernelStackTraceOf(const Thread *t) {
 	else {
 		uint32_t ebp = t->getRegs().ebp;
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
-		uintptr_t temp = PageDir::mapToTemp(&frame,1);
+		uintptr_t temp = PageDir::getAccess(frame);
 		FuncCall *calls = getStackTrace((uint32_t*)ebp,t->getKernelStack(),temp,temp + PAGE_SIZE);
-		PageDir::unmapFromTemp(1);
+		PageDir::removeAccess(frame);
 		return calls;
 	}
 }

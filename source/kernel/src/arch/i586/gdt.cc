@@ -81,25 +81,25 @@ void GDT::init() {
 	memclear(bspgdt,GDT_ENTRY_COUNT * sizeof(Desc));
 
 	/* kernel code */
-	setDesc(bspgdt,1,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,1,0,0xFFFFFFFF >> PAGE_BITS,
 			GDT_TYPE_CODE | GDT_PRESENT | GDT_CODE_READ,GDT_DPL_KERNEL);
 	/* kernel data */
-	setDesc(bspgdt,2,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,2,0,0xFFFFFFFF >> PAGE_BITS,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_KERNEL);
 
 	/* user code */
-	setDesc(bspgdt,3,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,3,0,0xFFFFFFFF >> PAGE_BITS,
 			GDT_TYPE_CODE | GDT_PRESENT | GDT_CODE_READ,GDT_DPL_USER);
 	/* user data */
-	setDesc(bspgdt,4,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,4,0,0xFFFFFFFF >> PAGE_BITS,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 	/* tls */
-	setDesc(bspgdt,5,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+	setDesc(bspgdt,5,0,0xFFFFFFFF >> PAGE_BITS,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 
 	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes) */
-	bsptss.esp0 = KERNEL_STACK_AREA + PAGE_SIZE - 2 * sizeof(int);
+	bsptss.esp0 = KSTACK_AREA + PAGE_SIZE - 2 * sizeof(int);
 	bsptss.ss0 = 0x10;
 	/* init io-map */
 	bsptss.ioMapOffset = IO_MAP_OFFSET_INVALID;
@@ -162,7 +162,7 @@ void GDT::initAP() {
 	/* create TSS (copy from first one) */
 	alltss[i] = tss;
 	memcpy(tss,&bsptss,sizeof(TSS));
-	tss->esp0 = KERNEL_STACK_AREA + PAGE_SIZE - 2 * sizeof(int);
+	tss->esp0 = KSTACK_AREA + PAGE_SIZE - 2 * sizeof(int);
 	tss->ioMapOffset = IO_MAP_OFFSET_INVALID;
 	tss->ioMapEnd = 0xFF;
 
@@ -202,7 +202,7 @@ void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 	if(EXPECT_FALSE(n->getTLSRegion())) {
 		uintptr_t tlsEnd = n->getTLSRegion()->virt() + n->getTLSRegion()->reg->getByteCount();
 		setDesc((Desc*)allgdts[id].offset,5,tlsEnd - sizeof(void*),
-				0xFFFFFFFF >> PAGE_SIZE_SHIFT,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
+				0xFFFFFFFF >> PAGE_BITS,GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,
 				GDT_DPL_USER);
 	}
 	alltss[id]->esp0 = n->getKernelStack() + PAGE_SIZE - 2 * sizeof(int);

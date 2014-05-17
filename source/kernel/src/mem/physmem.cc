@@ -483,7 +483,7 @@ void PhysMem::doMarkRangeUsed(uintptr_t from,uintptr_t to,bool used) {
 	/* ensure that we start at a page-start */
 	from &= ~(PAGE_SIZE - 1);
 	for(; from < to; from += PAGE_SIZE)
-		markUsed(from >> PAGE_SIZE_SHIFT,used);
+		markUsed(from >> PAGE_BITS,used);
 }
 
 void PhysMem::markUsed(frameno_t frame,bool used) {

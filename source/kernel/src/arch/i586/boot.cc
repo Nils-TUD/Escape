@@ -131,7 +131,6 @@ void Boot::archStart(BootInfo *info) {
 	/* init physical memory and paging */
 	Proc::preinit();
 	PhysMem::init();
-	PageDir::mapKernelSpace();
 
 	/* clear screen here because of virtualbox-bug */
 	Video::get().clearScreen();

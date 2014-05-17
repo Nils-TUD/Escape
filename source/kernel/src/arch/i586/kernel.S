@@ -19,8 +19,8 @@
 
 #include <sys/arch/i586/mem/layout.h>
 
-#define USER_STACK			0xA0000000
-#define KSTACK_CURTHREAD	0xFD800FFC
+#define USER_STACK			FREE_AREA_BEGIN
+#define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - 4)
 
 // exports
 .global bspEntry
@@ -41,7 +41,7 @@
 // first page directory
 .align PAGE_SIZE
 proc0PDir:
-.rept TMP_STACK_SIZE
+.rept PAGE_SIZE
 	.byte 0
 .endr
 

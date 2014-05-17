@@ -67,11 +67,11 @@
 #define PTE_READABLE				(1UL << 2)
 #define PTE_WRITABLE				(1UL << 1)
 #define PTE_EXECUTABLE				(1UL << 0)
-#define PTE_FRAMENO(pte)			(((pte) >> PAGE_SIZE_SHIFT) & 0x7FFFFFFFFFF)
+#define PTE_FRAMENO(pte)			(((pte) >> PAGE_BITS) & 0x7FFFFFFFFFF)
 #define PTE_FRAMENO_MASK			0x00FFFFFFFFFFE000
 #define PTE_NMASK					0x0000000000001FF8
 
-#define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT)
+#define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_BITS)
 #define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
 
 class PageDir : public PageDirBase {
@@ -122,6 +122,11 @@ private:
 	static PageDir firstCon;
 };
 
+inline uintptr_t PageDirBase::getPhysAddr() const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->rv & 0xFFFFFFE000;
+}
+
 inline void PageDirBase::makeFirst() {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	pdir->addrSpace = PageDir::firstCon.addrSpace;
@@ -136,10 +141,6 @@ inline uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
 
 inline bool PageDirBase::isInUserSpace(uintptr_t virt,size_t count) {
 	return virt + count <= DIR_MAP_AREA && virt + count >= virt;
-}
-
-inline size_t PageDirBase::getPTableCount() const {
-	return static_cast<const PageDir*>(this)->ptables;
 }
 
 inline bool PageDirBase::isPresent(uintptr_t virt) const {
@@ -159,7 +160,7 @@ inline uintptr_t PageDirBase::getAccess(frameno_t frame) {
 	return frame * PAGE_SIZE | DIR_MAP_AREA;
 }
 
-inline void PageDirBase::removeAccess() {
+inline void PageDirBase::removeAccess(A_UNUSED frameno_t frame) {
 	/* nothing to do */
 }
 

@@ -74,7 +74,7 @@ void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	assert(pdir != Proc::getCurPageDir());
 	/* free page-dir */
-	PhysMem::freeContiguous((pdir->rv >> PAGE_SIZE_SHIFT) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
+	PhysMem::freeContiguous((pdir->rv >> PAGE_BITS) & 0x7FFFFFF,SEGMENT_COUNT * PTS_PER_SEGMENT);
 	/* free address-space */
 	AddressSpace::free(pdir->addrSpace);
 	/* we have to ensure that no tc-entries of the current process are present. otherwise we could
@@ -262,13 +262,13 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 		else if(flags & PG_PRESENT) {
 			if(frames == NULL) {
 				/* we can't map anything for the kernel on mmix */
-				pte |= Thread::getRunning()->getFrame() << PAGE_SIZE_SHIFT;
+				pte |= Thread::getRunning()->getFrame() << PAGE_BITS;
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)
 					pte |= *frames++ & PTE_FRAMENO_MASK;
 				else
-					pte |= *frames++ << PAGE_SIZE_SHIFT;
+					pte |= *frames++ << PAGE_BITS;
 			}
 		}
 		pt[pageNo % PT_ENTRY_COUNT] = pte;
@@ -451,7 +451,7 @@ size_t PageDir::remEmptyPts(uintptr_t virt) {
 		j++;
 		pageNo /= PT_ENTRY_COUNT;
 	}
-	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_SIZE_SHIFT;
+	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_BITS;
 	uint64_t c = ((rv & 0xFFFFFFFFFF) >> 13) + SEGSIZE(rv,i) + j;
 	return removePts(pageNo,c,j,0);
 }
@@ -518,16 +518,6 @@ void PageDir::printPTE(OStream &os,uint64_t pte) {
 	}
 	else {
 		os.writef("-");
-	}
-}
-
-void PageDirBase::printPage(OStream &os,uintptr_t virt) const {
-	const PageDir *pdir = static_cast<const PageDir*>(this);
-	uint64_t pte = pdir->getPTE(virt);
-	if(pte & PTE_EXISTS) {
-		os.writef("Page @ %p: ",virt);
-		PageDir::printPTE(os,pte);
-		os.writef("\n");
 	}
 }
 

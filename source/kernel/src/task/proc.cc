@@ -852,6 +852,7 @@ void ProcBase::print(OStream &os) const {
 	Groups::print(os,pid);
 	os.writef("\n");
 	getMemUsageOf(pid,&own,&shared,&swap);
+	os.writef("\tPagedir: %p\n",getPageDir()->getPhysAddr());
 	os.writef("\tFrames: own=%lu, shared=%lu, swapped=%lu\n",own,shared,swap);
 	os.writef("\tExitInfo: code=%u, signal=%u\n",stats.exitCode,stats.exitSignal);
 	os.writef("\tMemPeak: own=%lu, shared=%lu, swapped=%lu\n",

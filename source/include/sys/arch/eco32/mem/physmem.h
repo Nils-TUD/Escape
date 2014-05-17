@@ -38,7 +38,7 @@
  * 0x3FFFFFFF: +-----------------------------------+
  */
 
-#define PAGE_SIZE				(4 * 1024)
-#define PAGE_SIZE_SHIFT			12
+#define PAGE_BITS				12
+#define PAGE_SIZE				(1 << PAGE_BITS)
 
 #define BITMAP_PAGE_COUNT		((2 * 1024 * 1024) / PAGE_SIZE)

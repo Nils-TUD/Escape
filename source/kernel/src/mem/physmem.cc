@@ -39,7 +39,14 @@
 #include <string.h>
 #include <errno.h>
 
-#define printEventTrace(...)
+//#define DEBUG_ALLOCS
+
+#ifdef DEBUG_ALLOCS
+#	define printAllocFree(fmt,...)	\
+ 	Util::printEventTrace(Log::get(),Util::getKernelStackTrace(),fmt,##__VA_ARGS__);
+#else
+#	define printAllocFree(...)
+#endif
 
 /* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
 tBitmap *PhysMem::bitmap;
@@ -204,13 +211,13 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	/* the bitmap starts managing the memory at itself */
 	i += bitmapStartFrame();
 	doMarkRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
-	printEventTrace(Util::getKernelStackTrace(),"[AC] %x:%zu ",i,count);
+	printAllocFree("[AC] %x:%zu ",i,count);
 	return i;
 }
 
 void PhysMem::freeContiguous(frameno_t first,size_t count) {
 	LockGuard<SpinLock> g(&contLock);
-	printEventTrace(Util::getKernelStackTrace(),"[FC] %x:%zu ",first,count);
+	printAllocFree("[FC] %x:%zu ",first,count);
 	doMarkRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
 }
 
@@ -273,40 +280,42 @@ void PhysMem::freeFrame(frameno_t frame) {
 
 frameno_t PhysMem::allocate(FrameType type) {
 	LockGuard<SpinLock> g(&defLock);
-	printEventTrace(Util::getKernelStackTrace(),"[A] %x ",*(stack - 1));
 	/* remove the memory from the available one when we're not yet initialized */
+	frameno_t frame = 0;
 	if(!initialized)
-		return PhysMemAreas::alloc(1);
+		frame = PhysMemAreas::alloc(1);
+	else {
+		switch(type) {
+			case CRIT:
+				if(cframes > 0) {
+					cframes--;
+					frame = allocFrame(false);
+				}
+				break;
 
-	switch(type) {
-		case CRIT:
-			if(cframes > 0) {
-				cframes--;
-				return allocFrame(false);
-			}
-			break;
+			case KERN:
+				if(kframes > 0) {
+					kframes--;
+					frame = allocFrame(true);
+				}
+				break;
 
-		case KERN:
-			if(kframes > 0) {
-				kframes--;
-				return allocFrame(true);
-			}
-			break;
-
-		default:
-			if(getFreeDef() > (kframes + cframes)) {
-				assert(uframes > 0);
-				uframes--;
-				return allocFrame(false);
-			}
-			break;
+			default:
+				if(getFreeDef() > (kframes + cframes)) {
+					assert(uframes > 0);
+					uframes--;
+					frame = allocFrame(false);
+				}
+				break;
+		}
 	}
-	return 0;
+	printAllocFree("[A] %x 1 ",frame);
+	return frame;
 }
 
 void PhysMem::free(frameno_t frame,FrameType type) {
 	LockGuard<SpinLock> g(&defLock);
-	printEventTrace(Util::getKernelStackTrace(),"[F] %x ",frame);
+	printAllocFree("[F] %x 1 ",frame);
 	if(type == CRIT)
 		cframes++;
 	else if(type == KERN)

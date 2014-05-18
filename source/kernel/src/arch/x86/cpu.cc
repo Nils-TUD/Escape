@@ -150,7 +150,7 @@ void CPU::detect() {
 	}
 
 	/* get vendor-string */
-	getStrInfo(CPUID_GETVENDORSTRING,vendor);
+	cpuid(CPUID_GETVENDORSTRING,vendor);
 	vendor[VENDOR_STRLEN] = '\0';
 
 	/* check which one it is */
@@ -164,18 +164,18 @@ void CPU::detect() {
 
 	/* read brand string */
 	cpus[id].name[0] = 0;
-	getInfo(CPUID_INTELEXTENDED,&eax,&unused,&unused,&unused);
+	cpuid(CPUID_INTELEXTENDED,&eax,&unused,&unused,&unused);
 	if(eax & 0x80000000) {
 		switch((uint8_t)eax) {
 			case 0x4 ... 0x9:
-				getInfo(CPUID_INTELBRANDSTRINGEND,
-						&cpus[id].name[8],&cpus[id].name[9],&cpus[id].name[10],&cpus[id].name[11]);
+				cpuid(CPUID_INTELBRANDSTRINGEND,
+					&cpus[id].name[8],&cpus[id].name[9],&cpus[id].name[10],&cpus[id].name[11]);
 			case 0x3:
-				getInfo(CPUID_INTELBRANDSTRINGMORE,
-						&cpus[id].name[4],&cpus[id].name[5],&cpus[id].name[6],&cpus[id].name[7]);
+				cpuid(CPUID_INTELBRANDSTRINGMORE,
+					&cpus[id].name[4],&cpus[id].name[5],&cpus[id].name[6],&cpus[id].name[7]);
 			case 0x2:
-				getInfo(CPUID_INTELBRANDSTRING,
-						&cpus[id].name[0],&cpus[id].name[1],&cpus[id].name[2],&cpus[id].name[3]);
+				cpuid(CPUID_INTELBRANDSTRING,
+					&cpus[id].name[0],&cpus[id].name[1],&cpus[id].name[2],&cpus[id].name[3]);
 				break;
 		}
 	}
@@ -191,7 +191,7 @@ void CPU::detect() {
 	/* fetch some additional infos for known cpus */
 	switch(cpus[id].vendor) {
 		case VENDOR_INTEL:
-			getInfo(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
+			cpuid(CPUID_GETFEATURES,&eax,&ebx,&unused,&edx);
 			cpus[id].model = (eax >> 4) & 0xf;
 			cpus[id].family = (eax >> 8) & 0xf;
 			cpus[id].type = (eax >> 12) & 0x3;
@@ -202,7 +202,7 @@ void CPU::detect() {
 			break;
 
 		case VENDOR_AMD:
-			getInfo(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
+			cpuid(CPUID_GETFEATURES,&eax,&unused,&unused,&edx);
 			cpus[id].model = (eax >> 4) & 0xf;
 			cpus[id].family = (eax >> 8) & 0xf;
 			cpus[id].stepping = eax & 0xf;
@@ -214,7 +214,7 @@ void CPU::detect() {
 bool CPU::hasFeature(uint64_t feat) {
 	/* don't use the cpus-array here, since it is called before CPU::detect() */
 	uint32_t unused,ecx,edx;
-	getInfo(CPUID_GETFEATURES,&unused,&unused,&ecx,&edx);
+	cpuid(CPUID_GETFEATURES,&unused,&unused,&ecx,&edx);
 	if(feat >> 32)
 		return !!(ecx & (feat >> 32));
 	return !!(edx & feat);

@@ -251,7 +251,9 @@ public:
 	static void print(OStream &os);
 
 private:
-	static void flush(Table *gdt) asm("gdt_flush");
+	static void flush(Table *gdt) {
+		asm volatile ("lgdt	(%0)" : : "r"(gdt));
+	}
 	static void get(Table *gdt) {
 		asm volatile ("sgdt (%0)\n" : : "r"(gdt));
 	}

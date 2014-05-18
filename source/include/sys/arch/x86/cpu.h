@@ -123,11 +123,6 @@ public:
 	};
 
 	/**
-	 * @return true if the cpuid-instruction is supported
-	 */
-	static bool cpuidSupported() asm("cpu_cpuidSupported");
-
-	/**
 	 * "Detects" the CPU
 	 */
 	static void detect();
@@ -287,6 +282,25 @@ public:
 						"d"(static_cast<uint32_t>(value >> 32)),
 						"c"(msr)
 		);
+	}
+
+	/**
+	 * Executes the cpuid instruction and stores the result to the given pointers.
+	 */
+	static void cpuid(unsigned code,uint32_t *eax,uint32_t *ebx,uint32_t *ecx,uint32_t *edx) {
+		asm volatile("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(code));
+	}
+
+	/**
+	 * Executes the cpuid instruction and converts the result to a string
+	 */
+	static void cpuid(unsigned code,char *str) {
+		uint32_t *buf = reinterpret_cast<uint32_t*>(str);
+		uint32_t eax,ebx,ecx,edx;
+		cpuid(code,&eax,&ebx,&ecx,&edx);
+		buf[0] = ebx;
+		buf[1] = edx;
+		buf[2] = ecx;
 	}
 
 	/**

@@ -31,8 +31,8 @@
 #include <assert.h>
 
 void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
-	uint32_t *esp = (uint32_t*)stack->getSP();
-	if(!PageDir::isInUserSpace((uintptr_t)(esp - 9),9 * sizeof(uint32_t)))
+	ulong *esp = (ulong*)stack->getSP();
+	if(!PageDir::isInUserSpace((uintptr_t)(esp - 9),9 * sizeof(ulong)))
 		goto error;
 
 	/* the ret-instruction of sigRet() should go to the old eip */
@@ -47,14 +47,14 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 	UserAccess::writeVar(--esp,stack->esi);
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
-	UserAccess::writeVar(--esp,(uint32_t)t->getProc()->getSigRetAddr());
+	UserAccess::writeVar(--esp,(ulong)t->getProc()->getSigRetAddr());
 
 	/* if one of theses accesses failed, terminate */
 	if(t->isFaulted())
 		goto error;
 
 	stack->setIP((uintptr_t)handler);
-	stack->setSP((uint32_t)esp);
+	stack->setSP((ulong)esp);
 	/* signal-number as argument */
 	stack->eax = sig;
 	return;
@@ -65,8 +65,8 @@ error:
 }
 
 int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
-	uint32_t *esp = (uint32_t*)stack->getSP();
-	if(!PageDir::isInUserSpace((uintptr_t)esp,9 * sizeof(uint32_t)))
+	ulong *esp = (ulong*)stack->getSP();
+	if(!PageDir::isInUserSpace((uintptr_t)esp,9 * sizeof(ulong)))
 		goto error;
 
 	/* restore regs */
@@ -77,7 +77,7 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 	UserAccess::readVar(&stack->ebx,esp++);
 	UserAccess::readVar(&stack->eax,esp++);
 
-	uint32_t tmp;
+	ulong tmp;
 	UserAccess::readVar(&tmp,esp++);
 	stack->setFlags(tmp);
 

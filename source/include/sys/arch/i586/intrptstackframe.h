@@ -29,7 +29,7 @@ class IntrptStackFrame {
 	friend class VM86;
 
 public:
-	uint32_t getError() const {
+	ulong getError() const {
 		assert(intrptNo != 0);
 		return errorCode;
 	}
@@ -39,28 +39,28 @@ public:
 	// to save/restore it when handling a signal.
 	// note that it has to be 1 << 9 (IF set) because if we handle the signal during a syscall and
 	// restore it with int/iret we have to have a valid eflags value. So, at least IF has to be set.
-	uint32_t getFlags() const {
+	ulong getFlags() const {
 		return intrptNo ? eflags : (1 << 9);
 	}
-	void setFlags(uint32_t flags) {
+	void setFlags(ulong flags) {
 		if(intrptNo)
 			eflags = flags;
 	}
 
-	uint32_t getIP() const {
+	ulong getIP() const {
 		return intrptNo ? eip : edx;
 	}
-	void setIP(uint32_t ip) {
+	void setIP(ulong ip) {
 		if(intrptNo)
 			eip = ip;
 		else
 			edx = ip;
 	}
 
-	uint32_t getSP() const {
+	ulong getSP() const {
 		return intrptNo ? uesp : ecx;
 	}
-	void setSP(uint32_t sp) {
+	void setSP(ulong sp) {
 		if(intrptNo)
 			uesp = sp;
 		else
@@ -68,37 +68,37 @@ public:
 	}
 
 	/* general purpose registers */
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t : 32; /* esp from pusha */
-	uint32_t ebx;
-	uint32_t edx;
-	uint32_t ecx;
-	uint32_t eax;
+	ulong edi;
+	ulong esi;
+	ulong ebp;
+	ulong : 32; /* esp from pusha */
+	ulong ebx;
+	ulong edx;
+	ulong ecx;
+	ulong eax;
 	/* interrupt-number */
-	uint32_t intrptNo;
+	ulong intrptNo;
 private:
 	/* error-code (for exceptions); default = 0 */
-	uint32_t errorCode;
+	ulong errorCode;
 	/* pushed by the CPU */
-	uint32_t eip;
-	uint32_t cs;
-	uint32_t eflags;
+	ulong eip;
+	ulong cs;
+	ulong eflags;
 	/* if we come from user-mode this fields will be present and will be restored with iret */
-	uint32_t uesp;
-	uint32_t uss;
+	ulong uesp;
+	ulong uss;
 } A_PACKED;
 
 struct VM86IntrptStackFrame : public IntrptStackFrame {
-	uint16_t vm86es;
-	uint16_t : 16;
-	uint16_t vm86ds;
-	uint16_t : 16;
-	uint16_t vm86fs;
-	uint16_t : 16;
-	uint16_t vm86gs;
-	uint16_t : 16;
+	ushort vm86es;
+	ushort : 16;
+	ushort vm86ds;
+	ushort : 16;
+	ushort vm86fs;
+	ushort : 16;
+	ushort vm86gs;
+	ushort : 16;
 } A_PACKED;
 
 class Thread;

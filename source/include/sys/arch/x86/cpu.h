@@ -169,23 +169,23 @@ public:
 	/**
 	 * @return the value of a control-register
 	 */
-	static uint32_t getCR0() {
-		uint32_t res;
+	static ulong getCR0() {
+		ulong res;
 		asm volatile ("mov %%cr0, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getCR2() {
-		uint32_t res;
+	static ulong getCR2() {
+		ulong res;
 		asm volatile ("mov %%cr2, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getCR3() {
-		uint32_t res;
+	static ulong getCR3() {
+		ulong res;
 		asm volatile ("mov %%cr3, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getCR4() {
-		uint32_t res;
+	static ulong getCR4() {
+		ulong res;
 		asm volatile ("mov %%cr4, %0" : "=r"(res));
 		return res;
 	}
@@ -195,46 +195,46 @@ public:
 	 *
 	 * @param val the new value
 	 */
-	static void setCR0(uint32_t val) {
+	static void setCR0(ulong val) {
 		asm volatile ("mov %0, %%cr0" : : "r"(val));
 	}
-	static void setCR3(uint32_t val) {
+	static void setCR3(ulong val) {
 		asm volatile ("mov %0, %%cr3" : : "r"(val));
 	}
-	static void setCR4(uint32_t val) {
+	static void setCR4(ulong val) {
 		asm volatile ("mov %0, %%cr4" : : "r"(val));
 	}
 
 	/**
 	 * @return the value of a debug-register
 	 */
-	static uint32_t getDR0() {
-		uint32_t res;
+	static ulong getDR0() {
+		ulong res;
 		asm volatile ("mov %%dr0, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getDR1() {
-		uint32_t res;
+	static ulong getDR1() {
+		ulong res;
 		asm volatile ("mov %%dr1, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getDR2() {
-		uint32_t res;
+	static ulong getDR2() {
+		ulong res;
 		asm volatile ("mov %%dr2, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getDR3() {
-		uint32_t res;
+	static ulong getDR3() {
+		ulong res;
 		asm volatile ("mov %%dr3, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getDR6() {
-		uint32_t res;
+	static ulong getDR6() {
+		ulong res;
 		asm volatile ("mov %%dr6, %0" : "=r"(res));
 		return res;
 	}
-	static uint32_t getDR7() {
-		uint32_t res;
+	static ulong getDR7() {
+		ulong res;
 		asm volatile ("mov %%dr7, %0" : "=r"(res));
 		return res;
 	}
@@ -244,19 +244,19 @@ public:
 	 *
 	 * @param val the new value
 	 */
-	static void setDR0(uint32_t val) {
+	static void setDR0(ulong val) {
 		asm volatile ("mov %0, %%dr0" : : "r"(val));
 	}
-	static void setDR1(uint32_t val) {
+	static void setDR1(ulong val) {
 		asm volatile ("mov %0, %%dr1" : : "r"(val));
 	}
-	static void setDR2(uint32_t val) {
+	static void setDR2(ulong val) {
 		asm volatile ("mov %0, %%dr2" : : "r"(val));
 	}
-	static void setDR3(uint32_t val) {
+	static void setDR3(ulong val) {
 		asm volatile ("mov %0, %%dr3" : : "r"(val));
 	}
-	static void setDR7(uint32_t val) {
+	static void setDR7(ulong val) {
 		asm volatile ("mov %0, %%dr7" : : "r"(val));
 	}
 

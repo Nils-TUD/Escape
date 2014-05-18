@@ -19,27 +19,25 @@
 
 #include <sys/common.h>
 #include <sys/mem/pagedir.h>
-#include <sys/ksymbols.h>
-#include <sys/video.h>
+#include <sys/task/thread.h>
+#include <sys/util.h>
 
-extern KSymbols::Symbol kernel_symbols[];
-extern size_t kernel_symbol_count;
-
-void KSymbols::print(OStream &os) {
-	os.writef("Kernel-Symbols:\n");
-	for(size_t i = 0; i < kernel_symbol_count; i++)
-		os.writef("\t%p -> %s\n",kernel_symbols[i].address,kernel_symbols[i].funcName);
+void PageDir::RangeAllocator::freePage(frameno_t) {
+	Util::panic("Not supported");
 }
 
-KSymbols::Symbol *KSymbols::getSymbolAt(uintptr_t address) {
-	if(address < KERNEL_AREA)
-		return NULL;
+PageDir::UAllocator::UAllocator() : Allocator(), _thread(Thread::getRunning()) {
+}
 
-	Symbol *sym = &kernel_symbols[kernel_symbol_count - 1];
-	while(sym >= &kernel_symbols[0]) {
-		if(address >= sym->address)
-			return sym;
-		sym--;
-	}
-	return &kernel_symbols[0];
+frameno_t PageDir::UAllocator::allocPage() {
+	return _thread->getFrame();
+}
+
+frameno_t PageDir::KAllocator::allocPT() {
+	Util::panic("Trying to allocate a page-table in kernel-area");
+	return 0;
+}
+
+void PageDir::KAllocator::freePT(frameno_t) {
+	Util::panic("Trying to free a page-table in kernel-area");
 }

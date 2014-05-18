@@ -40,7 +40,7 @@ frameno_t PhysMemAreas::alloc(size_t frames) {
 		}
 		area = area->next;
 	}
-	return 0;
+	return INVALID_FRAME;
 }
 
 size_t PhysMemAreas::getAvailable() {

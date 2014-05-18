@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/cppsupport.h>
 #include <sys/ostream.h>
+#include <assert.h>
 
 /**
  * A node in the treap. You may create a subclass of this to add data to your nodes.

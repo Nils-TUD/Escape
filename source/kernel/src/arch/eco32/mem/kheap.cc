@@ -28,7 +28,8 @@ uintptr_t KHeap::allocAreas() {
 		return 0;
 
 	/* allocate one page for area-structs */
-	if(PageDir::mapToCur(KHEAP_START + pages * PAGE_SIZE,NULL,1,
+	PageDir::KAllocator alloc;
+	if(PageDir::mapToCur(KHEAP_START + pages * PAGE_SIZE,1,alloc,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
 
@@ -40,7 +41,8 @@ uintptr_t KHeap::allocSpace(size_t count) {
 	if((pages + count) * PAGE_SIZE > KHEAP_SIZE)
 		return 0;
 
-	if(PageDir::mapToCur(KHEAP_START + pages * PAGE_SIZE,NULL,count,
+	PageDir::KAllocator alloc;
+	if(PageDir::mapToCur(KHEAP_START + pages * PAGE_SIZE,count,alloc,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL) < 0)
 		return 0;
 

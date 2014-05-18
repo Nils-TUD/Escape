@@ -40,7 +40,7 @@ bool DynArray::extend() {
 
 	/* allocate a frame */
 	frameno_t frame = PhysMem::allocate(PhysMem::CRIT);
-	if(frame == 0)
+	if(frame == INVALID_FRAME)
 		return false;
 
 	/* remove from freelist */

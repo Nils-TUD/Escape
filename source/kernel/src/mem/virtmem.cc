@@ -63,35 +63,22 @@ void VirtMem::release() const {
 }
 
 uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {
-	Thread *t = Thread::getRunning();
 	ssize_t res;
 	size_t pages = BYTES_2_PAGES(bCount);
-	frameno_t *frames = (frameno_t*)Cache::alloc(sizeof(frameno_t) * pages);
-	if(frames == NULL)
-		return 0;
+	frameno_t firstFrame = 0;
 
 	/* if *phys is not set yet, we should allocate physical contiguous memory */
 	if(*phys == 0) {
 		if(align) {
 			ssize_t first = PhysMem::allocateContiguous(pages,align / PAGE_SIZE);
 			if(first < 0)
-				goto error;
-			for(size_t i = 0; i < pages; i++)
-				frames[i] = first + i;
-		}
-		else {
-			for(size_t i = 0; i < pages; i++)
-				frames[i] = t->getFrame();
+				return first;
+			firstFrame = first;
 		}
 	}
 	/* otherwise use the specified one */
-	else {
-		uintptr_t addr = *phys;
-		for(size_t i = 0; i < pages; i++) {
-			frames[i] = addr / PAGE_SIZE;
-			addr += PAGE_SIZE;
-		}
-	}
+	else
+		firstFrame = *phys / PAGE_SIZE;
 
 	/* create region */
 	VMRegion *vm;
@@ -100,13 +87,23 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 			*phys ? (MAP_NOMAP | MAP_NOFREE | MAP_LOCKED) : MAP_NOMAP,NULL,0,&vm);
 	if(res < 0) {
 		if(!*phys)
-			PhysMem::freeContiguous(frames[0],pages);
-		goto error;
+			PhysMem::freeContiguous(firstFrame,pages);
+		return res;
 	}
 
-	/* map memory */
 	acquire();
-	res = getPageDir()->map(vm->virt(),frames,pages,writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT);
+
+	/* map memory */
+	uint flags = writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT;
+	if(firstFrame != 0) {
+		PageDir::RangeAllocator alloc(firstFrame);
+		res = getPageDir()->map(vm->virt(),pages,alloc,flags);
+	}
+	else {
+		PageDir::UAllocator alloc;
+		res = getPageDir()->map(vm->virt(),pages,alloc,flags);
+	}
+
 	if(res < 0)
 		goto errorRel;
 	if(*phys) {
@@ -117,17 +114,14 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	else {
 		/* its our own mem; store physical address for the caller */
 		addOwn(res + pages);
-		*phys = frames[0] * PAGE_SIZE;
+		*phys = firstFrame * PAGE_SIZE;
 	}
 	release();
-	Cache::free(frames);
 	return vm->virt();
 
 errorRel:
 	release();
 	unmap(vm);
-error:
-	Cache::free(frames);
 	return 0;
 }
 
@@ -141,6 +135,7 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 	Thread *t = Thread::getRunning();
 	size_t oldSh,oldOwn;
 	size_t pageCount = BYTES_2_PAGES(length);
+	PageDir::UAllocator alloc;
 	assert(length > 0 && length >= loadCount);
 
 	/* for files: try to find another process with that file */
@@ -224,10 +219,10 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 
 	/* map into process */
 	if(~rflags & MAP_NOMAP) {
-		ssize_t pts = getPageDir()->map(virt,NULL,pageCount,0);
-		if(pts < 0)
+		res = getPageDir()->map(virt,pageCount,alloc,0);
+		if(res < 0)
 			goto errMap;
-		addOwn(pts);
+		addOwn(alloc.pageTables());
 	}
 
 	if(rflags & MAP_POPULATE) {
@@ -254,7 +249,7 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 errPf:
 	addShared(oldSh - getSharedFrames());
 	addOwn(oldOwn - getOwnFrames());
-	getPageDir()->unmap(*addr,pageCount,true);
+	getPageDir()->unmap(*addr,pageCount,alloc);
 errMap:
 	regtree.remove(vm);
 errAdd:
@@ -271,6 +266,7 @@ errProc:
 int VirtMem::protect(uintptr_t addr,ulong flags) {
 	size_t pgcount;
 	int res = -EPERM;
+	PageDir::NoAllocator alloc;
 	acquire();
 	VMRegion *vmreg = regtree.getByAddr(addr);
 	if(vmreg == NULL) {
@@ -299,15 +295,15 @@ int VirtMem::protect(uintptr_t addr,ulong flags) {
 		assert(mpreg != NULL);
 		for(size_t i = 0; i < pgcount; i++) {
 			/* determine flags; we can't always mark it present.. */
-			uint mapFlags = PG_KEEPFRM;
+			uint mapFlags = 0;
 			if(!(vmreg->reg->getPageFlags(i) & (PF_DEMANDLOAD | PF_SWAPPED)))
 				mapFlags |= PG_PRESENT;
 			if(flags & RF_EXECUTABLE)
 				mapFlags |= PG_EXECUTABLE;
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
-			/* can't fail because of PG_KEEPFRM and because the page-table is always present */
-			assert((*mp)->getPageDir()->map(mpreg->virt() + i * PAGE_SIZE,NULL,1,mapFlags) == 0);
+			/* can't fail because of NoAllocator and because the page-table is always present */
+			assert((*mp)->getPageDir()->map(mpreg->virt() + i * PAGE_SIZE,1,alloc,mapFlags) == 0);
 		}
 	}
 	res = 0;
@@ -670,6 +666,7 @@ void VirtMem::doUnmap(VMRegion *vm) {
 	vm->reg->acquire();
 	size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
 	assert(vm->reg->remFrom(this));
+	PageDir::NoAllocator alloc;
 	if(vm->reg->refCount() == 0) {
 		uintptr_t virt = vm->virt();
 		/* first, write the content of the memory back to the file, if necessary */
@@ -705,8 +702,8 @@ void VirtMem::doUnmap(VMRegion *vm) {
 		}
 
 		/* now unmap it (do it here to prevent multiple calls for it (locking, ...) */
-		ssize_t pts = getPageDir()->unmap(vm->virt(),pcount,false);
-		addOwn(-pts);
+		getPageDir()->unmap(vm->virt(),pcount,alloc);
+		addOwn(-alloc.pageTables());
 
 		/* store next free stack-address, if its a stack */
 		if(vm->virt() + vm->reg->getByteCount() > freeStackAddr && (vm->reg->getFlags() & RF_STACK))
@@ -729,12 +726,12 @@ void VirtMem::doUnmap(VMRegion *vm) {
 	else {
 		size_t sw;
 		/* no free here, just unmap */
-		ssize_t pts = getPageDir()->unmap(vm->virt(),pcount,false);
+		getPageDir()->unmap(vm->virt(),pcount,alloc);
 		/* in this case its always a shared region because otherwise there wouldn't be other users */
 		/* so we have to substract the present content-frames from the shared ones,
 		 * and the ptables from ours */
 		addShared(-vm->reg->pageCount(&sw));
-		addOwn(-pts);
+		addOwn(-alloc.pageTables());
 		addSwap(-sw);
 		/* remove from shared tree */
 		if(vm->reg->getFlags() & RF_SHAREABLE)
@@ -751,8 +748,8 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 	size_t swCount,pageCount,presentCount;
 	size_t oldSh,oldOwn;
 	uintptr_t addr;
-	int res = -ENOMEM;
-	ssize_t pts;
+	int pts,res = -ENOMEM;
+	PageDir::NoAllocator alloc;
 	Thread *t = Thread::getRunning();
 	if(dst == this)
 		return -EEXIST;
@@ -839,7 +836,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 errUnmap:
 	dst->addShared(oldSh - dst->getSharedFrames());
 	dst->addOwn(oldOwn - dst->getOwnFrames());
-	getPageDir()->unmap(vm->virt(),pageCount,false);
+	getPageDir()->unmap(vm->virt(),pageCount,alloc);
 errRem:
 	vm->reg->remFrom(dst);
 errAdd:
@@ -1071,10 +1068,10 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 	}
 
 	/* resize region */
+	PageDir::UAllocator alloc;
 	uintptr_t oldVirt = vm->virt();
 	size_t oldSize = vm->reg->getByteCount();
 	if(amount != 0) {
-		ssize_t pts;
 		/* check whether the space is free */
 		if(amount > 0) {
 			if(vm->reg->getFlags() & RF_GROWS_DOWN) {
@@ -1110,14 +1107,14 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 			}
 			else
 				virt = vm->virt() + ROUND_PAGE_UP(oldSize);
-			pts = getPageDir()->map(virt,NULL,amount,mapFlags);
-			if(pts < 0) {
+			res = getPageDir()->map(virt,amount,alloc,mapFlags);
+			if(res < 0) {
 				if(vm->reg->getFlags() & RF_GROWS_DOWN)
 					vm->virt(vm->virt() + amount * PAGE_SIZE);
 				vm->reg->release();
 				return 0;
 			}
-			addOwn(pts + amount);
+			addOwn(alloc.pageTables() + amount);
 			/* remove it from the free area (used by the dynlinker for its data-region only) */
 			/* note that we assume here that we get the location at the end of the data-region */
 			if(vm->virt() >= FREE_AREA_BEGIN)
@@ -1133,8 +1130,8 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 			/* give it back to the free area */
 			if(vm->virt() >= FREE_AREA_BEGIN)
 				freemap.free(virt,-amount * PAGE_SIZE);
-			pts = getPageDir()->unmap(virt,-amount,true);
-			addOwn(-(pts - own));
+			getPageDir()->unmap(virt,-amount,alloc);
+			addOwn(-(alloc.pageTables() - own));
 			addSwap(-res);
 		}
 	}
@@ -1253,9 +1250,10 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 				mapFlags |= PG_EXECUTABLE;
 			for(auto mp = vm->reg->vmbegin(); mp != vm->reg->vmend(); ++mp) {
 				/* the region may be mapped to a different virtual address */
+				PageDir::RangeAllocator alloc(frame);
 				VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 				/* can't fail */
-				assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),&frame,1,mapFlags) == 0);
+				assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
 				if(vm->reg->getFlags() & RF_SHAREABLE)
 					(*mp)->addShared(1);
 				else
@@ -1298,20 +1296,23 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	Cache::free(tempBuf);
 
 	/* map into all pagedirs */
-	mapFlags = PG_PRESENT;
-	if(vm->reg->getFlags() & RF_WRITABLE)
-		mapFlags |= PG_WRITABLE;
-	if(vm->reg->getFlags() & RF_EXECUTABLE)
-		mapFlags |= PG_EXECUTABLE;
-	for(auto mp = vm->reg->vmbegin(); mp != vm->reg->vmend(); ++mp) {
-		/* the region may be mapped to a different virtual address */
-		VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
-		/* can't fail */
-		assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),&frame,1,mapFlags) == 0);
-		if(vm->reg->getFlags() & RF_SHAREABLE)
-			(*mp)->addShared(1);
-		else
-			(*mp)->addOwn(1);
+	{
+		mapFlags = PG_PRESENT;
+		if(vm->reg->getFlags() & RF_WRITABLE)
+			mapFlags |= PG_WRITABLE;
+		if(vm->reg->getFlags() & RF_EXECUTABLE)
+			mapFlags |= PG_EXECUTABLE;
+		for(auto mp = vm->reg->vmbegin(); mp != vm->reg->vmend(); ++mp) {
+			PageDir::RangeAllocator alloc(frame);
+			/* the region may be mapped to a different virtual address */
+			VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
+			/* can't fail */
+			assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
+			if(vm->reg->getFlags() & RF_SHAREABLE)
+				(*mp)->addShared(1);
+			else
+				(*mp)->addOwn(1);
+		}
 	}
 	return 0;
 
@@ -1388,12 +1389,13 @@ ssize_t VirtMem::getPgIdxForSwap(const Region *reg) {
 
 void VirtMem::setSwappedOut(Region *reg,size_t index) {
 	uintptr_t offset = index * PAGE_SIZE;
+	PageDir::NoAllocator alloc;
 	reg->setPageFlags(index,reg->getPageFlags(index) | PF_SWAPPED);
 	for(auto mp = reg->vmbegin(); mp != reg->vmend(); ++mp) {
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 		/* can't fail */
-		assert((*mp)->getPageDir()->map(mpreg->virt() + offset,NULL,1,0) == 0);
+		assert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,0) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
 			(*mp)->addShared(-1);
 		else
@@ -1412,10 +1414,11 @@ void VirtMem::setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 	reg->setPageFlags(index,reg->getPageFlags(index) & ~PF_SWAPPED);
 	reg->setSwapBlock(index,0);
 	for(auto mp = reg->vmbegin(); mp != reg->vmend(); ++mp) {
+		PageDir::RangeAllocator alloc(frameNo);
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 		/* can't fail */
-		assert((*mp)->getPageDir()->map(mpreg->virt() + offset,&frameNo,1,flags) == 0);
+		assert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,flags) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
 			(*mp)->addShared(1);
 		else

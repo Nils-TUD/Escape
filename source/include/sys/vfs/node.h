@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/mem/dynarray.h>
 #include <sys/cppsupport.h>
+#include <sys/lockguard.h>
 #include <esc/fsinterface.h>
 #include <errno.h>
 

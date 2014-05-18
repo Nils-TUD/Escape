@@ -43,7 +43,8 @@ bool DynArray::extend() {
 	}
 
 	uintptr_t addr = reg->addr + reg->size;
-	if(PageDir::mapToCur(addr,NULL,1,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
+	PageDir::KAllocator alloc;
+	if(PageDir::mapToCur(addr,1,alloc,PG_SUPERVISOR | PG_WRITABLE | PG_PRESENT) < 0) {
 		reg->next = freeList;
 		freeList = reg;
 		return false;
@@ -57,7 +58,8 @@ bool DynArray::extend() {
 
 DynArray::~DynArray() {
 	if(regions) {
-		PageDir::unmapFromCur(regions->addr,regions->size / PAGE_SIZE,true);
+		PageDir::KAllocator alloc;
+		PageDir::unmapFromCur(regions->addr,regions->size / PAGE_SIZE,alloc);
 		totalPages -= regions->size / PAGE_SIZE;
 		/* put region on freelist */
 		regions->next = freeList;

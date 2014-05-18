@@ -109,10 +109,10 @@ private:
 	static void printPageTable(OStream &os,ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
 	static void printPTE(OStream &os,uint64_t pte);
 
-	uint64_t *getPT(uintptr_t virt,bool create,size_t *createdPts) const;
+	uint64_t *getPT(uintptr_t virt,bool create,Allocator &alloc) const;
 	uint64_t getPTE(uintptr_t virt) const;
-	size_t removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth);
-	size_t remEmptyPts(uintptr_t virt);
+	size_t removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth,Allocator &alloc);
+	size_t remEmptyPts(uintptr_t virt,Allocator &alloc);
 	void tcRemPT(uintptr_t virt);
 
 private:

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <sys/mem/pagedir.h>
 #include <string.h>
 
 #define VID_COLS				80

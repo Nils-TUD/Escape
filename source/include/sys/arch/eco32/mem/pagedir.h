@@ -114,7 +114,7 @@ private:
 	static void printPageTable(OStream &os,uintptr_t ptables,size_t no,PDEntry *pde);
 	static void printPage(OStream &os,PTEntry *page);
 
-	size_t remEmptyPt(uintptr_t ptables,size_t pti);
+	size_t remEmptyPt(uintptr_t ptables,size_t pti,Allocator &alloc);
 	uintptr_t getPTables() const;
 
 	uintptr_t phys;

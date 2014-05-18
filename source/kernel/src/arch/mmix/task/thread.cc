@@ -92,7 +92,7 @@ void ThreadBase::addInitialStack() {
 
 int ThreadBase::initArch(Thread *t) {
 	t->kstackFrame = PhysMem::allocate(PhysMem::KERN);
-	if(t->kstackFrame == 0)
+	if(t->kstackFrame == INVALID_FRAME)
 		return -ENOMEM;
 	t->tempStack = -1;
 	return 0;
@@ -101,7 +101,7 @@ int ThreadBase::initArch(Thread *t) {
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 	dst->tempStack = -1;
 	dst->kstackFrame = PhysMem::allocate(PhysMem::KERN);
-	if(dst->kstackFrame == 0)
+	if(dst->kstackFrame == INVALID_FRAME)
 		return -ENOMEM;
 	if(!cloneProc) {
 		/* add a new stack-region for the register-stack */
@@ -142,7 +142,7 @@ void ThreadBase::freeArch(Thread *t) {
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	nt->tempStack = PhysMem::allocate(PhysMem::KERN);
-	if(nt->tempStack == 0)
+	if(nt->tempStack == INVALID_FRAME)
 		return -ENOMEM;
 	int res = Thread::initSave(&nt->saveArea,(void*)(DIR_MAP_AREA | (nt->tempStack * PAGE_SIZE)));
 	if(res == 0) {

@@ -64,7 +64,6 @@
 
 #define DBGVM86(fmt...)		/*Log::get().writef(fmt)*/
 
-frameno_t VM86::frameNos[(1024 * 1024) / PAGE_SIZE];
 tid_t VM86::vm86Tid = INVALID_TID;
 VM86::Info VM86::info;
 int VM86::vm86Res = -1;
@@ -98,11 +97,15 @@ int VM86::create() {
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
 	 * therefore we have to emulate it. We do that by simply mapping the same to >= 1MiB. */
-	size_t frameCount = (1024 * 1024) / PAGE_SIZE;
-	for(size_t i = 0; i < frameCount; i++)
-		frameNos[i] = i;
-	PageDir::mapToCur(0x00000000,frameNos,frameCount,PG_PRESENT | PG_WRITABLE);
-	PageDir::mapToCur(0x00100000,frameNos,(64 * 1024) / PAGE_SIZE,PG_PRESENT | PG_WRITABLE);
+	{
+		size_t frameCount = (1024 * 1024) / PAGE_SIZE;
+		PageDir::RangeAllocator alloc(0);
+		PageDir::mapToCur(0x00000000,frameCount,alloc,PG_PRESENT | PG_WRITABLE);
+	}
+	{
+		PageDir::RangeAllocator alloc(0);
+		PageDir::mapToCur(0x00100000,(64 * 1024) / PAGE_SIZE,alloc,PG_PRESENT | PG_WRITABLE);
+	}
 
 	/* Give the vm86-task permission for all ports. As it seems vmware expects that if they
 	 * have used the 32-bit-data-prefix once (at least for inw) it takes effect for the
@@ -338,8 +341,9 @@ void VM86::start() {
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
 	if(info.area) {
+		PageDir::UAllocator alloc;
 		/* can't fail */
-		assert(PageDir::mapToCur(info.area->dst,NULL,BYTES_2_PAGES(info.area->size),
+		assert(PageDir::mapToCur(info.area->dst,BYTES_2_PAGES(info.area->size),alloc,
 				PG_PRESENT | PG_WRITABLE) >= 0);
 		memcpy((void*)info.area->dst,info.copies[0],info.area->size);
 	}
@@ -434,10 +438,14 @@ int VM86::storeAreaResult() {
 				return res;
 		}
 		/* undo mapping */
-		PageDir::unmapFromCur(info.area->dst,pages,true);
-		for(size_t i = 0; i < pages; i++)
-			frameNos[start + i] = start + i;
-		assert(PageDir::mapToCur(info.area->dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE) == 0);
+		{
+			PageDir::UAllocator alloc;
+			PageDir::unmapFromCur(info.area->dst,pages,alloc);
+		}
+		{
+			PageDir::RangeAllocator alloc(start);
+			assert(PageDir::mapToCur(info.area->dst,pages,alloc,PG_PRESENT | PG_WRITABLE) == 0);
+		}
 	}
 	return 0;
 }

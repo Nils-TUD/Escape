@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/dynarray.h>
+#include <sys/lockguard.h>
 
 DynArray::Region DynArray::regionstore[DYNA_REG_COUNT];
 DynArray::Region *DynArray::freeList;

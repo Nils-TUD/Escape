@@ -51,9 +51,10 @@ void ThreadBase::addInitialStack() {
 }
 
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
+	PageDir::KStackAllocator alloc;
 	if(cloneProc) {
 		/* map the kernel-stack at the same address */
-		if(dst->getProc()->getPageDir()->map(src->kernelStack,NULL,1,
+		if(dst->getProc()->getPageDir()->map(src->kernelStack,1,alloc,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
 			return -ENOMEM;
 		dst->kernelStack = src->kernelStack;
@@ -68,7 +69,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 		int res = dst->getProc()->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
 		if(res < 0) {
-			dst->getProc()->getPageDir()->unmap(dst->kernelStack,1,true);
+			dst->getProc()->getPageDir()->unmap(dst->kernelStack,1,alloc);
 			return res;
 		}
 	}

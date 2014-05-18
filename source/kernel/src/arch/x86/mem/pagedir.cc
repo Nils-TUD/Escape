@@ -46,12 +46,12 @@ uintptr_t PageDir::freeAreaAddr = KFREE_AREA;
  * too subtle. TODO should we keep it this way?
  */
 
-ssize_t PageDirBase::mapToCur(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
-	return Proc::getCurPageDir()->map(virt,frames,count,flags);
+int PageDirBase::mapToCur(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
+	return Proc::getCurPageDir()->map(virt,count,alloc,flags);
 }
 
-size_t PageDirBase::unmapFromCur(uintptr_t virt,size_t count,bool freeFrames) {
-	return Proc::getCurPageDir()->unmap(virt,count,freeFrames);
+void PageDirBase::unmapFromCur(uintptr_t virt,size_t count,Allocator &alloc) {
+	Proc::getCurPageDir()->unmap(virt,count,alloc);
 }
 
 void PageDirBase::makeFirst() {
@@ -67,16 +67,14 @@ uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
 	if(addr + pages * PAGE_SIZE > KFREE_AREA + KFREE_AREA_SIZE)
 		Util::panic("Bootstrap area too small");
 	if(phys) {
-		for(size_t i = 0; i < pages; ++i) {
-			frameno_t frame = phys / PAGE_SIZE + i;
-			cur->map(PageDir::freeAreaAddr,&frame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-			PageDir::freeAreaAddr += PAGE_SIZE;
-		}
+		RangeAllocator alloc(phys / PAGE_SIZE);
+		cur->map(addr,pages,alloc,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	}
 	else {
-		cur->map(addr,NULL,pages,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-		PageDir::freeAreaAddr += pages * PAGE_SIZE;
+		KAllocator alloc;
+		cur->map(addr,pages,alloc,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	}
+	PageDir::freeAreaAddr += pages * PAGE_SIZE;
 	return addr;
 }
 
@@ -84,9 +82,10 @@ uintptr_t PageDir::createKernelStack() {
 	uintptr_t addr = freeKStack;
 	// take care of overflow
 	uintptr_t end = KSTACK_AREA + KSTACK_AREA_SIZE - 1;
+	KStackAllocator alloc;
 	while(addr < end) {
 		if(!isPresent(addr)) {
-			if(map(addr,NULL,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
+			if(map(addr,1,alloc,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0)
 				addr = 0;
 			break;
 		}
@@ -100,9 +99,10 @@ uintptr_t PageDir::createKernelStack() {
 }
 
 void PageDir::removeKernelStack(uintptr_t addr) {
+	KStackAllocator alloc;
 	if(addr < freeKStack)
 		freeKStack = addr;
-	unmap(addr,1,true);
+	unmap(addr,1,alloc);
 }
 
 bool PageDirBase::isPresent(uintptr_t virt) const {
@@ -123,8 +123,8 @@ frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 uintptr_t PageDir::mapToTemp(frameno_t frame) {
 	PageDir *cur = Proc::getCurPageDir();
 	cur->lock.down();
-	cur->map(TEMP_MAP_PAGE,&frame,1,
-		PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	RangeAllocator alloc(frame);
+	cur->map(TEMP_MAP_PAGE,1,alloc,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_PAGE;
 }
 
@@ -153,11 +153,10 @@ void PageDirBase::copyFromFrame(frameno_t frame,void *dst) {
 	removeAccess(frame);
 }
 
-ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,
-                                bool share) {
+int PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,bool share) {
+	NoAllocator noalloc;
 	PageDir *src = static_cast<PageDir*>(this);
 	PageDir *cur = Proc::getCurPageDir();
-	size_t pts = 0;
 	uintptr_t base,orgVirtSrc = virtSrc,orgVirtDst = virtDst;
 	size_t orgCount = count;
 	assert(this != dst && (this == cur || dst == cur));
@@ -169,7 +168,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		if((pte & PTE_WRITABLE) && (!share && (pte & PTE_PRESENT)))
 			pte &= ~PTE_WRITABLE;
 
-		int res = dst->mapPage(virtDst,PTE_FRAMENO(pte),pte & ~PTE_FRAMENO_MASK,&pts);
+		int res = dst->mapPage(virtDst,PTE_FRAMENO(pte),pte & ~PTE_FRAMENO_MASK,noalloc);
 		if(res < 0)
 			goto error;
 		/* we never need a flush here because it was not present before */
@@ -177,7 +176,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
 		if(!share && (pte & PTE_PRESENT)) {
 			uint flags = pte & ~(PTE_FRAMENO_MASK | PTE_WRITABLE);
-			assert(src->mapPage(virtSrc,PTE_FRAMENO(pte),flags,NULL) >= 0);
+			assert(src->mapPage(virtSrc,PTE_FRAMENO(pte),flags,noalloc) >= 0);
 			if(this == cur)
 				FLUSHADDR(virtSrc);
 		}
@@ -187,25 +186,25 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		count--;
 	}
 	SMP::flushTLB(src);
-	return pts;
+	return noalloc.pageTables();
 
 error:
 	/* unmap from dest-pagedir; the frames are always owned by src */
-	dst->unmap(orgVirtDst,orgCount - count,false);
+	dst->unmap(orgVirtDst,orgCount - count,noalloc);
 	/* make the cow-pages writable again */
 	while(orgCount > count) {
 		PageDir::pte_t *pte = src->getPTE(orgVirtSrc,&base);
 		if(!share && (*pte & PTE_PRESENT))
-			src->mapPage(orgVirtSrc,PTE_FRAMENO(*pte),PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS,NULL);
+			src->mapPage(orgVirtSrc,PTE_FRAMENO(*pte),PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS,noalloc);
 		orgVirtSrc += PAGE_SIZE;
 		orgCount--;
 	}
 	return -ENOMEM;
 }
 
-int PageDir::crtPageTable(PageDir::pte_t *pte,uint flags) {
-	frameno_t frame = PhysMem::allocate(PhysMem::KERN);
-	if(frame == 0)
+int PageDir::crtPageTable(PageDir::pte_t *pte,uint flags,Allocator &alloc) {
+	frameno_t frame = alloc.allocPT();
+	if(frame == INVALID_FRAME)
 		return -ENOMEM;
 
 	assert((*pte & PTE_PRESENT) == 0);
@@ -217,16 +216,14 @@ int PageDir::crtPageTable(PageDir::pte_t *pte,uint flags) {
 	return 0;
 }
 
-int PageDir::mapPage(uintptr_t virt,frameno_t frame,uint flags,size_t *pts) {
+int PageDir::mapPage(uintptr_t virt,frameno_t frame,uint flags,Allocator &alloc) {
 	pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + pagedir);
 	uint bits = PT_BITS - PT_BPL;
 	for(int i = 0; i < PT_LEVELS - 1; ++i) {
 		uintptr_t idx = (virt >> bits) & (PT_ENTRY_COUNT - 1);
 		if(pt[idx] == 0) {
-			if(crtPageTable(pt + idx,flags) < 0)
+			if(crtPageTable(pt + idx,flags,alloc) < 0)
 				return -ENOMEM;
-			if(pts)
-				(*pts)++;
 		}
 		pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (pt[idx] & PTE_FRAMENO_MASK));
 		bits -= PT_BPL;
@@ -269,7 +266,7 @@ frameno_t PageDir::unmapPage(uintptr_t virt) {
 	return frame;
 }
 
-bool PageDir::gc(uintptr_t virt,pte_t pte,int level,uint bits,size_t *pts) {
+bool PageDir::gc(uintptr_t virt,pte_t pte,int level,uint bits,Allocator &alloc) {
 	if(~pte & PTE_EXISTS)
 		return true;
 	if(level == 0)
@@ -278,20 +275,19 @@ bool PageDir::gc(uintptr_t virt,pte_t pte,int level,uint bits,size_t *pts) {
 	pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (pte & PTE_FRAMENO_MASK));
 	size_t idx = (virt >> bits) & (PT_ENTRY_COUNT - 1);
 	if(pt[idx] & PTE_PRESENT) {
-		if(!gc(virt,pt[idx],level - 1,bits - PT_BPL,pts))
+		if(!gc(virt,pt[idx],level - 1,bits - PT_BPL,alloc))
 			return false;
 
 		/* free that page-table */
-		PhysMem::free(PTE_FRAMENO(pt[idx]),PhysMem::KERN);
+		alloc.freePT(PTE_FRAMENO(pt[idx]));
 		pt[idx] = 0;
-		(*pts)++;
 	}
 
 	/* for not-top-level page-tables, check if all other entries are empty now as well */
 	if(level < PT_LEVELS) {
 		virt &= ~((1 << (bits + PT_BPL)) - 1);
 		for(size_t i = 0; i < PT_ENTRY_COUNT; ++i) {
-			if((pt[i] & PTE_EXISTS) && !gc(virt,pt[i],level - 1,bits - PT_BPL,pts))
+			if((pt[i] & PTE_EXISTS) && !gc(virt,pt[i],level - 1,bits - PT_BPL,alloc))
 				return false;
 			virt += 1 << bits;
 		}
@@ -310,10 +306,9 @@ void PageDirBase::freeFrame(uintptr_t virt,frameno_t frame) {
 		PhysMem::free(frame,PhysMem::USR);
 }
 
-ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
+int PageDirBase::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	PageDir *cur = Proc::getCurPageDir();
-	size_t pts = 0;
 	uintptr_t orgVirt = virt;
 	size_t orgCount = count;
 	PageDir::pte_t pteFlags = PTE_EXISTS;
@@ -331,21 +326,13 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 	bool needShootdown = false;
 	while(count > 0) {
 		frameno_t frame = 0;
-		if((flags & (PG_KEEPFRM | PG_PRESENT)) == PG_PRESENT) {
-			if(frames == NULL) {
-				if(virt >= KERNEL_AREA) {
-					frame = PhysMem::allocate(virt < KSTACK_AREA ? PhysMem::CRIT : PhysMem::KERN);
-					if(frame == 0)
-						goto error;
-				}
-				else
-					frame = Thread::getRunning()->getFrame();
-			}
-			else
-				frame = *frames++;
+		if(flags & PG_PRESENT) {
+			frame = alloc.allocPage();
+			if(frame == INVALID_FRAME)
+				goto error;
 		}
 
-		int res = pdir->mapPage(virt,frame,pteFlags,&pts);
+		int res = pdir->mapPage(virt,frame,pteFlags,alloc);
 		if(res < 0)
 			goto error;
 		needShootdown |= res == 1;
@@ -361,35 +348,32 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 
 	if(needShootdown)
 		SMP::flushTLB(pdir);
-	return pts;
+	return 0;
 
 error:
-	bool freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
-	unmap(orgVirt,orgCount - count,freeFrames);
+	unmap(orgVirt,orgCount - count,alloc);
 	return -ENOMEM;
 }
 
-size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
+void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	PageDir *cur = Proc::getCurPageDir();
 	size_t pti = PT_ENTRY_COUNT;
 	size_t lastPti = PT_ENTRY_COUNT;
 	bool needShootdown = false;
-	size_t pts = 0;
 	while(count-- > 0) {
 		/* remove and free page-table, if necessary */
 		pti = ADDR_TO_PDINDEX(virt);
 		if(pti != lastPti) {
 			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-				pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,2,PT_BITS - PT_BPL,&pts);
+				pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,2,PT_BITS - PT_BPL,alloc);
 			lastPti = pti;
 		}
 
 		/* remove page and free if necessary */
 		frameno_t frame = pdir->unmapPage(virt);
 		if(frame) {
-			if(freeFrames)
-				freeFrame(virt,frame);
+			alloc.freePage(frame);
 			/* invalidate TLB-entry */
 			if(this == cur)
 				FLUSHADDR(virt);
@@ -401,10 +385,9 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	}
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-		pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,2,PT_BITS - PT_BPL,&pts);
+		pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,2,PT_BITS - PT_BPL,alloc);
 	if(needShootdown)
 		SMP::flushTLB(pdir);
-	return pts;
 }
 
 size_t PageDir::countEntries(pte_t pte,int level) const {

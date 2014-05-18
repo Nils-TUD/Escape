@@ -20,7 +20,9 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/mem/pagedir.h>
+#include <sys/spinlock.h>
+
+class OStream;
 
 class Cache {
 	Cache() = delete;

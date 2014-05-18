@@ -94,13 +94,13 @@ private:
 	static uintptr_t mapToTemp(frameno_t frame);
 	static void unmapFromTemp();
 
-	static int crtPageTable(pte_t *pte,uint flags);
+	static int crtPageTable(pte_t *pte,uint flags,Allocator &alloc);
 	static void printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int level);
 
-	int mapPage(uintptr_t virt,frameno_t frame,uint flags,size_t *pts);
+	int mapPage(uintptr_t virt,frameno_t frame,uint flags,Allocator &alloc);
 	frameno_t unmapPage(uintptr_t virt);
 	pte_t *getPTE(uintptr_t virt,uintptr_t *base) const;
-	bool gc(uintptr_t virt,pte_t pte,int level,uint bits,size_t *pts);
+	bool gc(uintptr_t virt,pte_t pte,int level,uint bits,Allocator &alloc);
 	size_t countEntries(pte_t pte,int level) const;
 
 	uintptr_t pagedir;

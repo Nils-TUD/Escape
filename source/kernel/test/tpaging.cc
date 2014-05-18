@@ -60,6 +60,7 @@ static void test_paging() {
 static void test_paging_foreign() {
 	size_t ownFrames, sharedFrames;
 	Proc *child;
+	PageDir::UAllocator alloc;
 	Thread *t = Thread::getRunning();
 	pid_t pid = Proc::clone(0);
 	if(pid == 0) {
@@ -76,8 +77,8 @@ static void test_paging_foreign() {
 	checkMemoryBefore(true);
 
 	test_assertTrue(t->reserveFrames(3));
-	test_assertTrue(child->getPageDir()->map(0,NULL,3,PG_PRESENT | PG_WRITABLE) >= 0);
-	child->getPageDir()->unmap(0,3,true);
+	test_assertTrue(child->getPageDir()->map(0,3,alloc,PG_PRESENT | PG_WRITABLE) >= 0);
+	child->getPageDir()->unmap(0,3,alloc);
 	t->discardFrames();
 
 	checkMemoryAfter(true);
@@ -94,10 +95,10 @@ static void test_paging_foreign() {
 	checkMemoryBefore(true);
 
 	test_assertTrue(t->reserveFrames(6));
-	test_assertTrue(child->getPageDir()->map(0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE) >= 0);
-	test_assertTrue(child->getPageDir()->map(0x40000000 + PAGE_SIZE * 3,NULL,3,PG_PRESENT | PG_WRITABLE) >= 0);
-	child->getPageDir()->unmap(0x40000000,1,true);
-	child->getPageDir()->unmap(0x40000000 + PAGE_SIZE * 1,5,true);
+	test_assertTrue(child->getPageDir()->map(0x40000000,3,alloc,PG_PRESENT | PG_WRITABLE) >= 0);
+	test_assertTrue(child->getPageDir()->map(0x40000000 + PAGE_SIZE * 3,3,alloc,PG_PRESENT | PG_WRITABLE) >= 0);
+	child->getPageDir()->unmap(0x40000000,1,alloc);
+	child->getPageDir()->unmap(0x40000000 + PAGE_SIZE * 1,5,alloc);
 	t->discardFrames();
 
 	checkMemoryAfter(true);
@@ -135,7 +136,8 @@ static bool test_paging_cycle(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_allocate(uintptr_t addr,size_t count) {
-	PageDir::mapToCur(addr,NULL,count,PG_PRESENT | PG_WRITABLE);
+	PageDir::UAllocator alloc;
+	PageDir::mapToCur(addr,count,alloc,PG_PRESENT | PG_WRITABLE);
 }
 
 static void test_paging_access(uintptr_t addr,size_t count) {
@@ -152,5 +154,6 @@ static void test_paging_access(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_free(uintptr_t addr,size_t count) {
-	PageDir::unmapFromCur(addr,count,true);
+	PageDir::UAllocator alloc;
+	PageDir::unmapFromCur(addr,count,alloc);
 }

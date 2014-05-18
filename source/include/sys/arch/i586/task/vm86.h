@@ -105,7 +105,6 @@ private:
 	static int copyInfo(uint16_t interrupt,USER const Regs *regs,USER const Memarea *area);
 	static void clearInfo();
 
-	static frameno_t frameNos[];
 	static tid_t vm86Tid;
 	static Info info;
 	static int vm86Res;

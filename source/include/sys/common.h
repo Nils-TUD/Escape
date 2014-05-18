@@ -34,3 +34,5 @@ typedef uintptr_t frameno_t;
 #define USER
 /* indicates that a function is called when handling an interrupt */
 #define INTRPT
+
+#define INVALID_FRAME	((frameno_t)-1)

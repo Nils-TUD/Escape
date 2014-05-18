@@ -259,7 +259,7 @@ frameno_t PhysMem::allocFrame(bool forceLower) {
 	/* prefer lower pages */
 	if(!forceLower && (size_t)(lower.frames - lower.begin) <= kframes) {
 		if(upper.frames == upper.begin)
-			return 0;
+			return INVALID_FRAME;
 		return *(--upper.frames);
 	}
 	return *(--lower.frames);
@@ -281,7 +281,7 @@ void PhysMem::freeFrame(frameno_t frame) {
 frameno_t PhysMem::allocate(FrameType type) {
 	LockGuard<SpinLock> g(&defLock);
 	/* remove the memory from the available one when we're not yet initialized */
-	frameno_t frame = 0;
+	frameno_t frame = INVALID_FRAME;
 	if(!initialized)
 		frame = PhysMemAreas::alloc(1);
 	else {

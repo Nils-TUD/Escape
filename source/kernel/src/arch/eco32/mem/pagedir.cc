@@ -52,7 +52,7 @@ uintptr_t PageDir::otherPDir = 0;
 void PageDirBase::init() {
 	/* set page-dir of first process */
 	frameno_t frame = PhysMem::allocate(PhysMem::KERN);
-	if(frame == 0)
+	if(frame == INVALID_FRAME)
 		Util::panic("Not enough memory for initial page-dir");
 	PageDir::curPDir = (frame * PAGE_SIZE) | DIR_MAP_AREA;
 	PageDir::PDEntry *pd = (PageDir::PDEntry*)PageDir::curPDir;
@@ -73,7 +73,7 @@ void PageDirBase::init() {
 	while(addr < end) {
 		/* get frame and insert into page-dir */
 		frame = PhysMem::allocate(PhysMem::KERN);
-		if(frame == 0)
+		if(frame == INVALID_FRAME)
 			Util::panic("Not enough memory for kernel page-tables");
 		pde->ptFrameNo = frame;
 		pde->present = true;
@@ -87,21 +87,21 @@ void PageDirBase::init() {
 	}
 }
 
-ssize_t PageDirBase::mapToCur(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
-	return Proc::getCurPageDir()->map(virt,frames,count,flags);
+int PageDirBase::mapToCur(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
+	return Proc::getCurPageDir()->map(virt,count,alloc,flags);
 }
 
-size_t PageDirBase::unmapFromCur(uintptr_t virt,size_t count,bool freeFrames) {
-	return Proc::getCurPageDir()->unmap(virt,count,freeFrames);
+void PageDirBase::unmapFromCur(uintptr_t virt,size_t count,Allocator &alloc) {
+	Proc::getCurPageDir()->unmap(virt,count,alloc);
 }
 
 int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	/* allocate frames */
 	frameno_t pdirFrame = PhysMem::allocate(PhysMem::KERN);
-	if(pdirFrame == 0)
+	if(pdirFrame == INVALID_FRAME)
 		return -ENOMEM;
 	frameno_t stackPtFrame = PhysMem::allocate(PhysMem::KERN);
-	if(stackPtFrame == 0) {
+	if(stackPtFrame == INVALID_FRAME) {
 		PhysMem::free(pdirFrame,PhysMem::KERN);
 		return -ENOMEM;
 	}
@@ -209,9 +209,10 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 	}
 }
 
-ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,
+int PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,
                                 bool share) {
-	ssize_t pts = 0;
+	NoAllocator alloc;
+	int pts = 0;
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;
 	size_t orgCount = count;
 	PageDir *src = static_cast<PageDir*>(this);
@@ -219,24 +220,27 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 	assert(src != dst && (src->phys == PageDir::curPDir || dst->phys == PageDir::curPDir));
 	while(count > 0) {
 		PageDir::PTEntry *pte = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,virtSrc);
-		frameno_t frame,*frames = NULL;
+		frameno_t frame = 0;
 		uint flags = 0;
 		if(pte->present)
 			flags |= PG_PRESENT;
 		/* when shared, simply copy the flags; otherwise: if present, we use copy-on-write */
 		if(pte->writable && (share || !pte->present))
 			flags |= PG_WRITABLE;
-		if(share || pte->present) {
+		if(share || pte->present)
 			frame = pte->frameNumber;
-			frames = &frame;
+
+		{
+			RangeAllocator rngalloc(frame);
+			ssize_t mres = dst->map(virtDst,1,rngalloc,flags);
+			if(mres < 0)
+				goto error;
+			pts += rngalloc.pageTables();
 		}
-		ssize_t mres = dst->map(virtDst,frames,1,flags);
-		if(mres < 0)
-			goto error;
-		pts += mres;
+
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
 		if(!share && pte->present)
-			src->map(virtSrc,NULL,1,flags | PG_KEEPFRM);
+			src->map(virtSrc,1,alloc,flags);
 		virtSrc += PAGE_SIZE;
 		virtDst += PAGE_SIZE;
 		count--;
@@ -245,19 +249,19 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 
 error:
 	/* unmap from dest-pagedir; the frames are always owned by src */
-	dst->unmap(orgVirtDst,orgCount - count,false);
+	dst->unmap(orgVirtDst,orgCount - count,alloc);
 	/* make the cow-pages writable again */
 	while(orgCount > count) {
 		PageDir::PTEntry *pte = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,orgVirtSrc);
 		if(!share && pte->present)
-			src->map(orgVirtSrc,NULL,1,PG_PRESENT | PG_WRITABLE | PG_KEEPFRM);
+			src->map(orgVirtSrc,1,alloc,PG_PRESENT | PG_WRITABLE);
 		orgVirtSrc += PAGE_SIZE;
 		orgCount--;
 	}
 	return -ENOMEM;
 }
 
-ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uint flags) {
+int PageDirBase::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	ssize_t pts = 0;
 	uintptr_t orgVirt = virt;
@@ -272,8 +276,8 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 		/* page table not present? */
 		if(!pde->present) {
 			/* get new frame for page-table */
-			pde->ptFrameNo = PhysMem::allocate(PhysMem::KERN);
-			if(pde->ptFrameNo == 0)
+			pde->ptFrameNo = alloc.allocPT();
+			if(pde->ptFrameNo == INVALID_FRAME)
 				goto error;
 			pde->present = true;
 			pde->exists = true;
@@ -294,18 +298,10 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 		pte->writable = (flags & PG_WRITABLE) >> PG_WRITABLE_SHIFT;
 
 		/* set frame-number */
-		if(!(flags & PG_KEEPFRM) && (flags & PG_PRESENT)) {
-			if(frames == NULL) {
-				if(virt >= KERNEL_AREA) {
-					pte->frameNumber = PhysMem::allocate(PhysMem::CRIT);
-					if(pte->frameNumber == 0)
-						goto error;
-				}
-				else
-					pte->frameNumber = Thread::getRunning()->getFrame();
-			}
-			else
-				pte->frameNumber = *frames++;
+		if(flags & PG_PRESENT) {
+			pte->frameNumber = alloc.allocPage();
+			if(pte->frameNumber == INVALID_FRAME)
+				goto error;
 		}
 
 		/* invalidate TLB-entry */
@@ -320,8 +316,7 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 	return pts;
 
 error:
-	bool freeFrames = frames == NULL && !(flags & PG_KEEPFRM) && (flags & PG_PRESENT);
-	pdir->unmap(orgVirt,orgCount - count,freeFrames);
+	pdir->unmap(orgVirt,orgCount - count,alloc);
 	return -ENOMEM;
 }
 
@@ -329,9 +324,8 @@ void PageDirBase::freeFrame(A_UNUSED uintptr_t virt,frameno_t frame) {
 	PhysMem::free(frame,PhysMem::USR);
 }
 
-size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
+void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	size_t pts = 0;
 	uintptr_t ptables = pdir->getPTables();
 	size_t pti = PT_ENTRY_COUNT;
 	size_t lastPti = PT_ENTRY_COUNT;
@@ -341,15 +335,14 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 		pti = ADDR_TO_PDINDEX(virt);
 		if(pti != lastPti) {
 			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-				pts += pdir->remEmptyPt(ptables,lastPti);
+				pdir->remEmptyPt(ptables,lastPti,alloc);
 			lastPti = pti;
 		}
 
 		/* remove page and free if necessary */
 		if(pte->present) {
 			pte->present = false;
-			if(freeFrames)
-				freeFrame(virt,pte->frameNumber);
+			alloc.freePage(pte->frameNumber);
 		}
 		pte->exists = false;
 
@@ -363,11 +356,10 @@ size_t PageDirBase::unmap(uintptr_t virt,size_t count,bool freeFrames) {
 	}
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-		pts += pdir->remEmptyPt(ptables,pti);
-	return pts;
+		pdir->remEmptyPt(ptables,pti,alloc);
 }
 
-size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
+size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti,Allocator &alloc) {
 	uintptr_t virt = pti * PAGE_SIZE * PT_ENTRY_COUNT;
 	PTEntry *pte = (PTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
 	for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
@@ -378,7 +370,7 @@ size_t PageDir::remEmptyPt(uintptr_t ptables,size_t pti) {
 	PDEntry *pde = (PDEntry*)PAGE_DIR_DIRMAP_OF(phys) + pti;
 	pde->present = false;
 	pde->exists = false;
-	PhysMem::free(pde->ptFrameNo,PhysMem::KERN);
+	alloc.freePT(pde->ptFrameNo);
 	if(ptables == MAPPED_PTS_START)
 		flushPageTable(virt,ptables);
 	else

@@ -37,7 +37,6 @@
 #include <sys/util.h>
 #include <sys/log.h>
 #include <errno.h>
-#include <limits>
 #include <string.h>
 #include <assert.h>
 
@@ -1326,7 +1325,7 @@ error:
 
 Region *VirtMem::getLRURegion() {
 	Region *lru = NULL;
-	uint64_t ts = std::numeric_limits<uint64_t>::max();
+	uint64_t ts = (uint64_t)-1;
 	VMTree *tree = VMTree::reqTree();
 	for(; tree != NULL; tree = tree->getNext()) {
 		/* same as below; we have to try to acquire the mutex, otherwise we risk a deadlock */

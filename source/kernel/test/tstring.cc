@@ -23,7 +23,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <limits>
 
 /* forward declarations */
 static void test_string();
@@ -142,7 +141,7 @@ static void test_atoll() {
 	test_assertLLInt(atoll("8278217191231"),8278217191231LL);
 	test_assertLLInt(atoll("-8278217191231"),-8278217191231LL);
 	test_assertLLInt(atoll("9223372036854775807"),9223372036854775807LL);
-	test_assertLLInt(atoll("-9223372036854775808"),std::numeric_limits<long long>::min());
+	test_assertLLInt(atoll("-9223372036854775808"),-9223372036854775808LL);
 	test_assertLLInt(atoll(""),0);
 	test_assertLLInt(atoll("-"),0);
 	test_assertLLInt(atoll("abc"),0);
@@ -848,7 +847,7 @@ static void test_strtol() {
 		{"055",			0,	055},
 		{"AbC",			16,	0xABC},
 		{"0xaBC",		0,	0xABC},
-		{sizeof(long) == 8 ? "0x8000000000000000" : "0x80000000",16,std::numeric_limits<long>::min()},
+		{sizeof(long) == 8 ? "0x8000000000000000" : "0x80000000",16,(long)(1UL << (sizeof(long) * 8 - 1))},
 		{"aiz",			36,	13643},
 		{"01101",		2,	13},
 		{"0",			7,	0},

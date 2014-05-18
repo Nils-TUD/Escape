@@ -22,7 +22,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <ipc/ipcbuf.h>
-#include <string>
+#include <utility>
 
 #ifndef IN_KERNEL
 #	include <vthrow.h>
@@ -206,6 +206,7 @@ private:
 	uint _flags;
 };
 
+#ifndef IN_KERNEL
 static inline IPCStream &operator<<(IPCStream &is,const std::string &str) {
 	is << str.length();
 	is.put(str.c_str(),str.length());
@@ -219,6 +220,7 @@ static inline IPCStream &operator>>(IPCStream &is,std::string &str) {
 	is.fetch(str.begin(),len);
 	return is;
 }
+#endif
 
 static inline IPCStream &operator<<(IPCStream &is,const CString &str) {
 	is.startWriting();

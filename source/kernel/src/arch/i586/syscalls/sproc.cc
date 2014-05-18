@@ -18,42 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/task/vm86.h>
-#include <sys/arch/x86/task/ioports.h>
 #include <sys/mem/pagedir.h>
 #include <sys/task/proc.h>
 #include <sys/syscalls.h>
-#include <assert.h>
 #include <errno.h>
-
-int Syscalls::reqports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	uint16_t start = SYSC_ARG1(stack);
-	size_t count = SYSC_ARG2(stack);
-
-	/* check range */
-	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
-		SYSC_ERROR(stack,-EINVAL);
-
-	int err = IOPorts::request(start,count);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
-	SYSC_RET1(stack,0);
-}
-
-int Syscalls::relports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	uint16_t start = SYSC_ARG1(stack);
-	size_t count = SYSC_ARG2(stack);
-
-	/* check range */
-	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
-		SYSC_ERROR(stack,-EINVAL);
-
-	int err = IOPorts::release(start,count);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
-	SYSC_RET1(stack,0);
-}
 
 int Syscalls::vm86start(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	int res;

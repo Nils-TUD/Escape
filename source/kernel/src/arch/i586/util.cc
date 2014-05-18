@@ -48,40 +48,6 @@ static Util::FuncCall *getStackTrace(uint32_t *ebp,uintptr_t rstart,uintptr_t ms
 /* the beginning of the kernel-stack */
 extern uintptr_t kernelStack;
 
-void Util::panicArch() {
-	/* at first, halt the other CPUs */
-	SMP::haltOthers();
-
-	/* enter vga-mode to be sure that the user can see the panic :) */
-	/* actually it may fail depending on what caused the panic. this may make it more difficult
-	 * to find the real reason for a failure. so it might be a good idea to turn it off during
-	 * kernel-debugging :) */
-	switchToVGA();
-}
-
-void Util::switchToVGA() {
-	pid_t pid = Proc::getRunning();
-	OpenFile *file;
-	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
-		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-		ipc::IPCBuf ib(buffer,sizeof(buffer));
-		/* use an empty shm-name here. we don't need that anyway */
-		ib << 3 << 1 << true << ipc::CString("");
-
-		ssize_t res = file->sendMsg(pid,MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
-		if(res > 0) {
-			for(int i = 0; i < 100; i++) {
-				msgid_t mid = res;
-				res = file->receiveMsg(pid,&mid,NULL,0,VFS_NOBLOCK);
-				if(res >= 0)
-					break;
-				Thread::switchAway();
-			}
-		}
-		file->close(pid);
-	}
-}
-
 void Util::printUserStateOf(OStream &os,const Thread *t) {
 	if(t->getIntrptStack()) {
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());

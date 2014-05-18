@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/task/vm86.h>
 #include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/idt.h>
 #include <sys/arch/x86/serial.h>
@@ -114,13 +113,11 @@ void Boot::archStart(BootInfo *info) {
 		Util::panic("Too many modules (max %u)",MAX_MOD_COUNT);
 	taskList.moduleCount = mb->modsCount;
 
-	/* set up paging first */
+	/* setup basic stuff */
 	PageDir::init();
 	GDT::init();
+	/* necessary during initialization until we have a thread */
 	Thread::setRunning(NULL);
-
-	/* init basic modules */
-	FPU::preinit();
 	Serial::init();
 
 	/* parse boot parameters (before PhysMem::init()) */

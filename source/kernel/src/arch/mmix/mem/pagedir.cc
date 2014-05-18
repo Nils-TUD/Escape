@@ -264,12 +264,8 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 				/* we can't map anything for the kernel on mmix */
 				pte |= Thread::getRunning()->getFrame() << PAGE_BITS;
 			}
-			else {
-				if(flags & PG_ADDR_TO_FRAME)
-					pte |= *frames++ & PTE_FRAMENO_MASK;
-				else
-					pte |= *frames++ << PAGE_BITS;
-			}
+			else
+				pte |= *frames++ << PAGE_BITS;
 		}
 		pt[pageNo % PT_ENTRY_COUNT] = pte;
 

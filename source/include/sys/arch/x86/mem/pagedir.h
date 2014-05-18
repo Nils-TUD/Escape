@@ -20,12 +20,30 @@
 #pragma once
 
 #include <esc/common.h>
-#include <sys/arch/i586/mem/layout.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/mem/layout.h>
+#else
+#	include <sys/arch/x86_64/mem/layout.h>
+#endif
 #include <sys/spinlock.h>
 #include <sys/lockguard.h>
 #include <sys/cpu.h>
 #include <string.h>
 #include <assert.h>
+
+/* pte fields */
+#define PTE_PRESENT				(1UL << 0)
+#define PTE_WRITABLE			(1UL << 1)
+#define PTE_NOTSUPER			(1UL << 2)
+#define PTE_WRITE_THROUGH		(1UL << 3)
+#define PTE_CACHE_DISABLE		(1UL << 4)
+#define PTE_ACCESSED			(1UL << 5)
+#define PTE_DIRTY				(1UL << 6)
+#define PTE_LARGE				(1UL << 7)
+#define PTE_GLOBAL				(1UL << 8)
+#define PTE_EXISTS				(1UL << 9)
+#define PTE_FRAMENO(pte)		(((pte) & ~(PAGE_SIZE - 1)) >> PAGE_BITS)
+#define PTE_FRAMENO_MASK		(~(PAGE_SIZE - 1))
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))
@@ -71,12 +89,6 @@ private:
 			CPU::setCR0(CPU::getCR0() | CPU::CR0_WRITE_PROTECT);
 		else
 			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_WRITE_PROTECT);
-	}
-
-	static void flushPageTable(A_UNUSED uintptr_t virt,A_UNUSED uintptr_t ptables) {
-		/* it seems to be much faster to flush the complete TLB instead of flushing just the
-		 * affected range (and hoping that less TLB-misses occur afterwards) */
-		flushTLB();
 	}
 
 	static uintptr_t mapToTemp(frameno_t frame);

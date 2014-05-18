@@ -219,7 +219,7 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 	assert(src != dst && (src->phys == PageDir::curPDir || dst->phys == PageDir::curPDir));
 	while(count > 0) {
 		PageDir::PTEntry *pte = (PageDir::PTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,virtSrc);
-		frameno_t *frames = NULL;
+		frameno_t frame,*frames = NULL;
 		uint flags = 0;
 		if(pte->present)
 			flags |= PG_PRESENT;
@@ -227,8 +227,8 @@ ssize_t PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst
 		if(pte->writable && (share || !pte->present))
 			flags |= PG_WRITABLE;
 		if(share || pte->present) {
-			flags |= PG_ADDR_TO_FRAME;
-			frames = (frameno_t*)pte;
+			frame = pte->frameNumber;
+			frames = &frame;
 		}
 		ssize_t mres = dst->map(virtDst,frames,1,flags);
 		if(mres < 0)
@@ -304,12 +304,8 @@ ssize_t PageDirBase::map(uintptr_t virt,const frameno_t *frames,size_t count,uin
 				else
 					pte->frameNumber = Thread::getRunning()->getFrame();
 			}
-			else {
-				if(flags & PG_ADDR_TO_FRAME)
-					pte->frameNumber = *frames++ >> PAGE_BITS;
-				else
-					pte->frameNumber = *frames++;
-			}
+			else
+				pte->frameNumber = *frames++;
 		}
 
 		/* invalidate TLB-entry */

@@ -27,12 +27,10 @@
 #define PG_WRITABLE				2
 #define PG_EXECUTABLE			4
 #define PG_SUPERVISOR			8
-/* tells map() that it gets the frame-address and should convert it to a frame-number first */
-#define PG_ADDR_TO_FRAME		16
 /* make it a global page */
-#define PG_GLOBAL				32
+#define PG_GLOBAL				16
 /* tells map() to keep the currently set frame-number */
-#define PG_KEEPFRM				64
+#define PG_KEEPFRM				32
 
 /* for printing the page-directory */
 #define PD_PART_USER 			1
@@ -254,10 +252,8 @@ public:
 	void print(OStream &os,uint parts) const;
 };
 
-#if defined(__i586__)
-#	include <sys/arch/i586/mem/pagedir.h>
-#elif defined(__x86_64__)
-#	include <sys/arch/x86_64/mem/pagedir.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/mem/pagedir.h>
 #elif defined(__eco32__)
 #	include <sys/arch/eco32/mem/pagedir.h>
 #elif defined(__mmix__)

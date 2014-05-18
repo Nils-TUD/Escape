@@ -193,11 +193,6 @@ public:
 	} A_PACKED;
 
 	/**
-	 * Performs basic initialization of the FPU (finit, ...)
-	 */
-	static void preinit();
-
-	/**
 	 * Inits the FPU for usage of processes
 	 */
 	static void init();

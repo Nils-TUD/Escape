@@ -639,7 +639,7 @@ private:
 	static Mutex mutex;
 };
 
-#if defined(__x86__)
+#if defined(__i586__)
 #	include <sys/arch/x86/task/thread.h>
 static_assert(sizeof(Thread) <= 256,"Thread is too big");
 #elif defined(__eco32__)

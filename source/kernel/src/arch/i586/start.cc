@@ -41,7 +41,7 @@ EXTERN_C uintptr_t smpstart();
 EXTERN_C void apstart();
 static void idlestart();
 extern SpinLock aplock;
-extern ulong proc0PDir;
+extern ulong proc0TLPD;
 
 static uint8_t initloader[] = {
 #if DEBUGGING
@@ -71,7 +71,7 @@ uintptr_t smpstart() {
 	Timer::start(true);
 
 	// remove first page-directory entry. now that all CPUs are started, we don't need that anymore
-	(&proc0PDir)[0] = 0;
+	(&proc0TLPD)[0] = 0;
 	PageDir::flushTLB();
 
 	/* load initloader */
@@ -97,7 +97,7 @@ void apstart() {
 	LAPIC::enable();
 	Timer::start(false);
 	/* init FPU and detect our CPU */
-	FPU::preinit();
+	FPU::init();
 	CPU::detect();
 	/* notify the BSP that we're running */
 	SMP::apIsRunning();

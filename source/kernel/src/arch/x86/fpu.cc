@@ -30,7 +30,7 @@
 /* current FPU state-memory */
 FPU::State ***FPU::curStates = NULL;
 
-void FPU::preinit() {
+void FPU::init() {
 	uint32_t cr0 = CPU::getCR0();
 	/* enable coprocessor monitoring */
 	cr0 |= CPU::CR0_MONITOR_COPROC;
@@ -43,13 +43,13 @@ void FPU::preinit() {
 	CPU::setCR4(CPU::getCR4() | 0x200);*/
 	/* init the fpu */
 	finit();
-}
 
-void FPU::init() {
-	/* allocate a state-pointer for each cpu */
-	curStates = (State***)Cache::calloc(SMP::getCPUCount(),sizeof(State**));
-	if(!curStates)
-		Util::panic("Unable to allocate memory for FPU-states");
+	/* allocate a state-pointer for each cpu (do that just once) */
+	if(!curStates) {
+		curStates = (State***)Cache::calloc(SMP::getCPUCount(),sizeof(State**));
+		if(!curStates)
+			Util::panic("Unable to allocate memory for FPU-states");
+	}
 }
 
 void FPU::handleCoProcNA(State **state) {

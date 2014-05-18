@@ -21,13 +21,13 @@
 
 #include <string.h>
 
-#if defined(__i586__)
-#	include <sys/arch/i586/video.h>
-#endif
-
 #define VID_COLS				80
 #define VID_ROWS				25
 #define BYTES_PER_COL			2
+
+inline void *Video::screen() {
+	return (void*)(KERNEL_START - KERNEL_P_ADDR + 0xB8000);
+}
 
 inline void Video::copyScrToScr(void *dst,const void *src,size_t rows) {
 	memcpy(dst,src,rows * VID_COLS * 2);

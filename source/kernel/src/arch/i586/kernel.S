@@ -26,7 +26,7 @@
 .global bspEntry
 .global apEntry
 .global thread_startup
-.global proc0PDir
+.global proc0TLPD
 .global kernelStack
 .global aplock
 
@@ -40,7 +40,7 @@
 .section .bss
 // first page directory
 .align PAGE_SIZE
-proc0PDir:
+proc0TLPD:
 .rept PAGE_SIZE
 	.byte 0
 .endr
@@ -131,7 +131,7 @@ apProtMode:
 	// note that we assume here that the kernel is not larger than 1 page-table (4MiB)!
 
 	// setup paging
-	mov		$proc0PDir,%eax
+	mov		$proc0TLPD,%eax
 	// virt -> phys
 	and		$~KERNEL_AREA,%eax
 	// put PDE in slot 0: PDE_EXISTS | PDE_GLOBAL | PDE_LARGE | PDE_WRITABLE | PDE_PRESENT

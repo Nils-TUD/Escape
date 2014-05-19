@@ -295,17 +295,6 @@ bool PageDir::gc(uintptr_t virt,pte_t pte,int level,uint bits,Allocator &alloc) 
 	return true;
 }
 
-void PageDirBase::freeFrame(uintptr_t virt,frameno_t frame) {
-	if(virt >= KERNEL_AREA) {
-		if(virt < KSTACK_AREA)
-			PhysMem::free(frame,PhysMem::CRIT);
-		else
-			PhysMem::free(frame,PhysMem::KERN);
-	}
-	else
-		PhysMem::free(frame,PhysMem::USR);
-}
-
 int PageDirBase::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	PageDir *cur = Proc::getCurPageDir();

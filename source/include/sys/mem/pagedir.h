@@ -280,15 +280,6 @@ public:
 	static void unmapFromCur(uintptr_t virt,size_t count,Allocator &alloc);
 
 	/**
-	 * Free's the given frame at given address. This function takes the different pools of physical
-	 * memory, depending on the architecture, into account.
-	 *
-	 * @param virt the virtual address
-	 * @param frame the frame to free
-	 */
-	static void freeFrame(uintptr_t virt,frameno_t frame);
-
-	/**
 	 * @return the physical address of the page-directory
 	 */
 	uintptr_t getPhysAddr() const;

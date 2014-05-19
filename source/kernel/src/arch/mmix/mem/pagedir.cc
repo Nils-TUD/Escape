@@ -287,10 +287,6 @@ error:
 	return -ENOMEM;
 }
 
-void PageDirBase::freeFrame(A_UNUSED uintptr_t virt,frameno_t frame) {
-	PhysMem::free(frame,PhysMem::USR);
-}
-
 void PageDirBase::unmapFromCur(uintptr_t virt,size_t count,Allocator &alloc) {
 	Proc::getCurPageDir()->unmap(virt,count,alloc);
 }

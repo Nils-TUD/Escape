@@ -689,7 +689,7 @@ void VirtMem::doUnmap(VMRegion *vm) {
 				if(freeFrame) {
 					if(frameNo == 0)
 						frameNo = getPageDir()->getFrameNo(virt);
-					PageDir::freeFrame(virt,frameNo);
+					PhysMem::free(frameNo,PhysMem::USR);
 				}
 
 				if(vm->reg->getFlags() & (RF_NOFREE | RF_SHAREABLE))

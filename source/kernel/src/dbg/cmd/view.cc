@@ -20,10 +20,8 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/view.h>
-#if defined(__i586__)
-#	include <sys/arch/i586/gdt.h>
-#endif
 #if defined(__x86__)
+#	include <sys/arch/x86/gdt.h>
 #	include <sys/arch/x86/ioapic.h>
 #	include <sys/arch/x86/acpi.h>
 #endif

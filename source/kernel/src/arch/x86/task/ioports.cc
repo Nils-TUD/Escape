@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/gdt.h>
+#include <sys/arch/x86/gdt.h>
 #include <sys/arch/x86/task/ioports.h>
 #include <sys/task/smp.h>
 #include <sys/task/proc.h>
@@ -38,13 +38,13 @@ int IOPorts::request(uint16_t start,size_t count) {
 
 	Proc *p = Proc::request(Proc::getRunning(),PLOCK_PORTS);
 	if(p->ioMap == NULL) {
-		p->ioMap = (uint8_t*)Cache::alloc(GDT::IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)Cache::alloc(TSS::IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL) {
 			Proc::release(p,PLOCK_PORTS);
 			return -ENOMEM;
 		}
 		/* mark all as disallowed */
-		memset(p->ioMap,0xFF,GDT::IO_MAP_SIZE / 8);
+		memset(p->ioMap,0xFF,TSS::IO_MAP_SIZE / 8);
 	}
 
 	/* 0 means allowed */
@@ -105,7 +105,7 @@ void IOPorts::free(Proc *p) {
 void IOPorts::print(OStream &os,const uint8_t *map) {
 	size_t c = 0;
 	os.writef("Reserved IO-ports:\n\t");
-	for(size_t i = 0; i < GDT::IO_MAP_SIZE / 8; i++) {
+	for(size_t i = 0; i < TSS::IO_MAP_SIZE / 8; i++) {
 		for(size_t j = 0; j < 8; j++) {
 			if(!(map[i] & (1 << j))) {
 				os.writef("%zx, ",i * 8 + j);

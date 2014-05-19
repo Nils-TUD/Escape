@@ -23,7 +23,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
-#include <sys/arch/i586/gdt.h>
+#include <sys/arch/x86/gdt.h>
 #include <sys/arch/x86/fpu.h>
 #include <sys/mem/virtmem.h>
 #include <sys/mem/pagedir.h>

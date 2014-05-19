@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/i586/task/vm86.h>
-#include <sys/arch/i586/gdt.h>
+#include <sys/arch/x86/gdt.h>
 #include <sys/arch/x86/task/ioports.h>
 #include <sys/arch/x86/ports.h>
 #include <sys/task/proc.h>
@@ -113,11 +113,11 @@ int VM86::create() {
 	 * directly we prevent this problem :) */
 	/* FIXME but there has to be a better way.. */
 	if(p->ioMap == NULL)
-		p->ioMap = (uint8_t*)Cache::alloc(GDT::IO_MAP_SIZE / 8);
+		p->ioMap = (uint8_t*)Cache::alloc(TSS::IO_MAP_SIZE / 8);
 	/* note that we HAVE TO request all ports (even the reserved ones); otherwise it doesn't work
 	 * everywhere (e.g. my notebook needs it) */
 	if(p->ioMap != NULL)
-		memset(p->ioMap,0x00,GDT::IO_MAP_SIZE / 8);
+		memset(p->ioMap,0x00,TSS::IO_MAP_SIZE / 8);
 
 	/* give it a name */
 	p->setCommand("VM86",0,"");

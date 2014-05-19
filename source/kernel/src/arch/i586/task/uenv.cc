@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/gdt.h>
 #include <sys/task/uenv.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>

@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/gdt.h>
+#include <sys/arch/x86/gdt.h>
 #include <sys/arch/x86/lapic.h>
 #include <sys/arch/x86/ioapic.h>
 #include <sys/arch/x86/acpi.h>

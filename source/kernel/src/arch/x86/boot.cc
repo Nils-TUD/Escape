@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/gdt.h>
 #include <sys/arch/i586/idt.h>
+#include <sys/arch/x86/gdt.h>
 #include <sys/arch/x86/serial.h>
 #include <sys/arch/x86/pic.h>
 #include <sys/arch/x86/acpi.h>

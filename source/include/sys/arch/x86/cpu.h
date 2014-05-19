@@ -110,6 +110,15 @@ public:
 		CR4_PGE			= 1 << 7,
 	};
 
+	enum {
+		MSR_IA32_SYSENTER_CS		= 0x174,
+		MSR_IA32_SYSENTER_ESP		= 0x175,
+		MSR_IA32_SYSENTER_EIP		= 0x176,
+        MSR_IA32_STAR              	= 0xc0000081,
+        MSR_IA32_LSTAR             	= 0xc0000082,
+        MSR_IA32_FMASK             	= 0xc0000084,
+	};
+
 	struct Info {
 		uint8_t vendor;
 		uint16_t model;

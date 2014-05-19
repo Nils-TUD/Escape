@@ -30,6 +30,7 @@
 #define PG_SUPERVISOR			8
 /* make it a global page */
 #define PG_GLOBAL				16
+#define PG_NOPAGES				32
 
 /* for printing the page-directory */
 #define PD_PART_USER 			1

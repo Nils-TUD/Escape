@@ -300,9 +300,11 @@ int PageDirBase::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 	PageDir *cur = Proc::getCurPageDir();
 	uintptr_t orgVirt = virt;
 	size_t orgCount = count;
-	PageDir::pte_t pteFlags = PTE_EXISTS;
+	PageDir::pte_t pteFlags = 0;
 
 	virt &= ~(PAGE_SIZE - 1);
+	if(~flags & PG_NOPAGES)
+		pteFlags = PTE_EXISTS;
 	if(flags & PG_PRESENT)
 		pteFlags |= PTE_PRESENT;
 	if((flags & PG_PRESENT) && (flags & PG_WRITABLE))
@@ -352,10 +354,10 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 	bool needShootdown = false;
 	while(count-- > 0) {
 		/* remove and free page-table, if necessary */
-		pti = ADDR_TO_PDINDEX(virt);
+		pti = PT_IDX(virt,PT_LEVELS - 1);
 		if(pti != lastPti) {
 			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-				pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,2,PT_BITS - PT_BPL,alloc);
+				pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,PT_LEVELS,PT_BITS - PT_BPL,alloc);
 			lastPti = pti;
 		}
 
@@ -374,7 +376,7 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 	}
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
-		pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,2,PT_BITS - PT_BPL,alloc);
+		pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,PT_LEVELS,PT_BITS - PT_BPL,alloc);
 	if(needShootdown)
 		SMP::flushTLB(pdir);
 }
@@ -382,7 +384,7 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 size_t PageDir::countEntries(pte_t pte,int level) const {
 	size_t count = 0;
 	pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (pte & PTE_FRAMENO_MASK));
-	size_t end = level == PT_LEVELS ? ADDR_TO_PDINDEX(KERNEL_AREA) : PT_ENTRY_COUNT;
+	size_t end = level == PT_LEVELS ? PT_IDX(KERNEL_AREA,level - 1) : PT_ENTRY_COUNT;
 	for(size_t i = 0; i < end; ++i) {
 		if(pt[i] & PTE_PRESENT) {
 			if(level == 1)
@@ -397,9 +399,9 @@ size_t PageDir::countEntries(pte_t pte,int level) const {
 void PageDirBase::print(OStream &os,uint parts) const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	if(parts & PD_PART_USER)
-		PageDir::printPTE(os,0x00000000,KERNEL_AREA,pdir->pagedir,PT_LEVELS);
+		PageDir::printPTE(os,0,KERNEL_AREA,pdir->pagedir,PT_LEVELS);
 	if(parts & PD_PART_KERNEL)
-		PageDir::printPTE(os,KERNEL_AREA,0xFFFFFFFF,pdir->pagedir,PT_LEVELS);
+		PageDir::printPTE(os,KERNEL_AREA,(ulong)-1,pdir->pagedir,PT_LEVELS);
 }
 
 void PageDir::printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int level) {
@@ -407,14 +409,14 @@ void PageDir::printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int le
 	size_t entrySize = (size_t)PAGE_SIZE << (PT_BPL * (level - 1));
 	uintptr_t base = from & ~(size - 1);
 	size_t idx = (from >> (PAGE_BITS + PT_BPL * level)) & (PT_ENTRY_COUNT - 1);
-	os.writef("%*s%#03x: r=%#08x [%c%c%c%c%c] (VM: %p - %p)\n",(PT_LEVELS - level) * 2,"",
-			idx,page,
+	os.writef("%*s%03zx: %0*lx [%c%c%c%c%c] (VM: %p - %p)\n",(PT_LEVELS - level) * 2,"",
+			idx,sizeof(page) * 2,page,
 			(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',
 			(page & PTE_WRITABLE) ? 'w' : 'r',(page & PTE_GLOBAL) ? 'g' : '-',
 			(page & PTE_LARGE) ? 'l' : '-',
 			base,base + size - 1);
 	if(level > 0 && (~page & PTE_LARGE)) {
-		ulong *pt = reinterpret_cast<ulong*>(DIR_MAP_AREA + (page & PTE_FRAMENO_MASK));
+		pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (page & PTE_FRAMENO_MASK));
 		size_t end,start = from >> (PAGE_BITS + PT_BPL * (level - 1)) & (PT_ENTRY_COUNT - 1);
 		uintptr_t last = to + entrySize - 1;
 		if(MAX(to,last) >= base + entrySize * PT_ENTRY_COUNT - 1)

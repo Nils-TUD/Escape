@@ -80,10 +80,11 @@
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
  */
 
-/* the virtual address of the kernel */
-#define KERNEL_START			(0xC0000000 + KERNEL_P_ADDR)
 /* the virtual address of the kernel-area */
 #define KERNEL_AREA				0xC0000000
+/* the virtual address of the kernel */
+#define KERNEL_BEGIN			0xC0000000
+#define KERNEL_START			(KERNEL_BEGIN + KERNEL_P_ADDR)
 
 #define PT_ENTRY_COUNT			(PAGE_SIZE >> 2)
 #define PT_SIZE					(PAGE_SIZE * PT_ENTRY_COUNT)

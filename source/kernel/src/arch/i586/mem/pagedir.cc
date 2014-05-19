@@ -22,30 +22,33 @@
 #include <sys/task/proc.h>
 #include <assert.h>
 
+#define SHPT_COUNT		((DIR_MAP_AREA - KHEAP_START) / PT_SIZE)
+
 extern void *proc0TLPD;
 /* we can't allocate any frames at the beginning. so put the shared-pagetables in bss */
-PageDir::pte_t PageDir::sharedPtbls[(DIR_MAP_AREA - KHEAP_START) / PT_SIZE][PAGE_SIZE] A_ALIGNED(PAGE_SIZE);
+uint8_t PageDir::sharedPtbls[SHPT_COUNT][PAGE_SIZE] A_ALIGNED(PAGE_SIZE);
 
 void PageDirBase::init() {
-	PageDir::pte_t *pt = (PageDir::pte_t*)&proc0TLPD;
-
-	/* map shared page-tables */
-	uint flags = PTE_PRESENT | PTE_WRITABLE | PTE_GLOBAL | PTE_EXISTS;
-	uintptr_t virt = KHEAP_START;
-	size_t start = ADDR_TO_PDINDEX(virt);
-	for(size_t i = start; virt < DIR_MAP_AREA; ++i) {
-		pt[i] = ((uintptr_t)PageDir::sharedPtbls[i - start] - KERNEL_AREA) | flags;
-		virt += PT_SIZE;
-	}
-
 	/* map first part of physical memory contiguously */
-	virt = DIR_MAP_AREA;
-	flags = PTE_PRESENT | PTE_WRITABLE | PTE_LARGE | PTE_EXISTS;
-	size_t end = ADDR_TO_PDINDEX(DIR_MAP_AREA + DIR_MAP_AREA_SIZE);
-	for(size_t i = ADDR_TO_PDINDEX(virt); i < end; ++i) {
+	PageDir::pte_t *pt = (PageDir::pte_t*)&proc0TLPD;
+	uintptr_t virt = DIR_MAP_AREA;
+	uint flags = PTE_PRESENT | PTE_WRITABLE | PTE_LARGE | PTE_EXISTS;
+	size_t end = PT_IDX(DIR_MAP_AREA + DIR_MAP_AREA_SIZE,1);
+	for(size_t i = PT_IDX(virt,1); i < end; ++i) {
 		pt[i] = (virt - DIR_MAP_AREA) | flags;
 		virt += PT_SIZE;
 	}
+
+	/* create temp object for the start */
+	PageDir pdir;
+	pdir.pagedir = (uintptr_t)&proc0TLPD & ~KERNEL_AREA;
+	pdir.freeKStack = KSTACK_AREA;
+	pdir.lock = SpinLock();
+
+	/* map shared page-tables */
+	flags = PG_NOPAGES | PG_SUPERVISOR;
+	PageDir::PTAllocator alloc((uintptr_t)PageDir::sharedPtbls & ~KERNEL_AREA,SHPT_COUNT);
+	pdir.map(KHEAP_START,(DIR_MAP_AREA - KHEAP_START) / PAGE_SIZE,alloc,flags);
 
 	/* enable write-protection; this way, the kernel can't write to readonly-pages */
 	/* this helps a lot because we don't have to check in advance for copy-on-write and so
@@ -71,18 +74,18 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	PageDir::pte_t *npd = (PageDir::pte_t*)(DIR_MAP_AREA + (pdirFrame << PAGE_BITS));
 
 	/* clear user-space page-tables */
-	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA) * sizeof(PageDir::pte_t));
+	memclear(npd,PT_IDX(KERNEL_AREA,1) * sizeof(PageDir::pte_t));
 	/* copy kernel-space page-tables */
-	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA),
-			pd + ADDR_TO_PDINDEX(KERNEL_AREA),
-			(ADDR_TO_PDINDEX(KSTACK_AREA) - ADDR_TO_PDINDEX(KERNEL_AREA)) * sizeof(PageDir::pte_t));
+	memcpy(npd + PT_IDX(KERNEL_AREA,1),
+			pd + PT_IDX(KERNEL_AREA,1),
+			(PT_IDX(KSTACK_AREA,1) - PT_IDX(KERNEL_AREA,1)) * sizeof(PageDir::pte_t));
 	/* clear the remaining page-tables */
-	memclear(npd + ADDR_TO_PDINDEX(KSTACK_AREA),
-			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KSTACK_AREA)) * sizeof(PageDir::pte_t));
+	memclear(npd + PT_IDX(KSTACK_AREA,1),
+			(PT_ENTRY_COUNT - PT_IDX(KSTACK_AREA,1)) * sizeof(PageDir::pte_t));
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
 	uintptr_t kstackAddr = t->getKernelStack();
-	npd[ADDR_TO_PDINDEX(kstackAddr)] =
+	npd[PT_IDX(kstackAddr,1)] =
 			stackPtFrame << PAGE_BITS | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
 	/* clear the page-table */
 	memclear((void*)(DIR_MAP_AREA + (stackPtFrame << PAGE_BITS)),PAGE_SIZE);
@@ -102,8 +105,8 @@ void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	PageDir::pte_t *pd = (PageDir::pte_t*)(DIR_MAP_AREA + pdir->pagedir);
 	/* free page-tables for kernel-stack */
-	for(size_t i = ADDR_TO_PDINDEX(KSTACK_AREA);
-		i < ADDR_TO_PDINDEX(KSTACK_AREA + KSTACK_AREA_SIZE - 1); i++) {
+	for(size_t i = PT_IDX(KSTACK_AREA,1);
+		i < PT_IDX(KSTACK_AREA + KSTACK_AREA_SIZE - 1,1); i++) {
 		if(pd[i] & PTE_EXISTS) {
 			PhysMem::free(PTE_FRAMENO(pd[i]),PhysMem::KERN);
 			pd[i] = 0;

@@ -45,8 +45,7 @@
 #define PTE_FRAMENO(pte)		(((pte) & ~(PAGE_SIZE - 1)) >> PAGE_BITS)
 #define PTE_FRAMENO_MASK		(~(PAGE_SIZE - 1))
 
-/* converts a virtual address to the page-directory-index for that address */
-#define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))
+#define PT_IDX(addr,lvl)		(((addr) >> (PAGE_BITS + PT_BPL * (lvl))) & ((1 << PT_BPL) - 1))
 
 /* determines whether the given address is on the heap */
 #define IS_ON_HEAP(addr)		((uintptr_t)(addr) >= KHEAP_START && \
@@ -60,8 +59,35 @@ class PageDir : public PageDirBase {
 	friend class PageDirBase;
 
 public:
-	typedef uint32_t pte_t;
+	typedef ulong pte_t;
 
+private:
+	class PTAllocator : public Allocator {
+	public:
+		explicit PTAllocator(uintptr_t physStart,size_t count)
+			: _phys(physStart), _end(physStart + count * PAGE_SIZE) {
+		}
+
+		virtual frameno_t allocPage() {
+			return 0;
+		}
+		virtual frameno_t allocPT() {
+			assert(_phys < _end);
+			frameno_t frame = _phys / PAGE_SIZE;
+			_phys += PAGE_SIZE;
+			return frame;
+		}
+		virtual void freePage(frameno_t) {
+		}
+		virtual void freePT(frameno_t) {
+		}
+
+	private:
+		uintptr_t _phys;
+		uintptr_t _end;
+	};
+
+public:
 	explicit PageDir() : PageDirBase(), pagedir(), freeKStack(), lock() {
 	}
 
@@ -108,7 +134,7 @@ private:
 	SpinLock lock;
 
 	static uintptr_t freeAreaAddr;
-	static pte_t sharedPtbls[][PAGE_SIZE];
+	static uint8_t sharedPtbls[][PAGE_SIZE];
 };
 
 inline uintptr_t PageDirBase::getPhysAddr() const {

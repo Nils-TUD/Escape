@@ -114,11 +114,11 @@ void Boot::archStart(BootInfo *info) {
 	taskList.moduleCount = mb->modsCount;
 
 	/* setup basic stuff */
+	Serial::init();
 	PageDir::init();
 	GDT::init();
 	/* necessary during initialization until we have a thread */
 	Thread::setRunning(NULL);
-	Serial::init();
 
 	/* parse boot parameters (before PhysMem::init()) */
 	int argc;

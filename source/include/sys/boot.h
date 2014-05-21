@@ -55,7 +55,7 @@ public:
 	 *
 	 * @param info the boot-information
 	 */
-	static void start(BootInfo *info);
+	static void start(void *info);
 
 	/**
 	 * @return the multiboot-info-structure
@@ -123,7 +123,7 @@ public:
 	static void print(OStream &os);
 
 private:
-	static void archStart(BootInfo *info);
+	static void archStart(void *info);
 	static void drawProgressBar();
 
 	/**

@@ -43,7 +43,7 @@ static size_t finished = 0;
 
 void (*Boot::unittests)() = NULL;
 
-void Boot::start(BootInfo *info) {
+void Boot::start(void *info) {
 	for(void (**func)() = &CTORS_BEGIN; func != &CTORS_END; func++)
 		(*func)();
 

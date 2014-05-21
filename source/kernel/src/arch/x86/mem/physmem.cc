@@ -28,13 +28,10 @@
 
 bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	const BootInfo *mb = Boot::getInfo();
-	if(mb->mmapAddr == NULL)
-		return false;
 	/* go through the memory-map; if it overlaps with one of the free areas, its not allowed */
-	for(BootMemMap *mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap->type == MMAP_TYPE_AVAILABLE) {
-			if(OVERLAPS(addr,addr + size,mmap->baseAddr,mmap->baseAddr + mmap->length))
+	for(size_t i = 0; i < mb->mmapCount; ++i) {
+		if(mb->mmap[i].type == MMAP_TYPE_AVAILABLE) {
+			if(OVERLAPS(addr,addr + size,mb->mmap[i].baseAddr,mb->mmap[i].baseAddr + mb->mmap[i].length))
 				return false;
 		}
 	}

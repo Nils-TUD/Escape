@@ -27,8 +27,8 @@
 struct BootModule {
 	uint32_t modStart;
 	uint32_t modEnd;
-	char *name;						/* may be 0 */
-	uint32_t reserved;				/* should be ignored */
+	uint32_t name;		/* may be 0 */
+	uint32_t : 32;		/* reserved */
 } A_PACKED;
 
 struct BootMemMap {
@@ -61,7 +61,7 @@ struct BootDrive {
 } A_PACKED;
 
 /* multi-boot-information */
-struct BootInfo {
+struct MultiBootInfo {
 	uint32_t flags;
 	uint32_t memLower;				/* present if flags[0] is set */
 	uint32_t memUpper;				/* present if flags[0] is set */
@@ -73,9 +73,9 @@ struct BootInfo {
 									   INT 0x13 low-level disk interface: e.g. 0x00 for the first
 									   floppy disk or 0x80 for the first hard disk */
 	} A_PACKED bootDevice;			/* present if flags[1] is set */
-	char *cmdLine;					/* present if flags[2] is set */
+	uint32_t cmdLine;				/* present if flags[2] is set */
 	uint32_t modsCount;				/* present if flags[3] is set */
-	BootModule *modsAddr;			/* present if flags[3] is set */
+	uint32_t modsAddr;				/* present if flags[3] is set */
 	union {
 		struct {
 			uint32_t tabSize;
@@ -91,12 +91,25 @@ struct BootInfo {
 		} A_PACKED ELF;				/* present if flags[5] is set */
 	} syms;
 	uint32_t mmapLength;			/* present if flags[6] is set */
-	BootMemMap *mmapAddr;			/* present if flags[6] is set */
+	uint32_t mmapAddr;				/* present if flags[6] is set */
 	uint32_t drivesLength;			/* present if flags[7] is set */
-	BootDrive *drivesAddr;			/* present if flags[7] is set */
-#if 0
+	uint32_t drivesAddr;			/* present if flags[7] is set */
 	uint32_t configTable;			/* present if flags[8] is set */
-	char *bootLoaderName;			/* present if flags[9] is set */
-	BootAPMTable *apmTable;			/* present if flags[10] is set */
-#endif
+	uint32_t bootLoaderName;		/* present if flags[9] is set */
+	uint32_t apmTable;				/* present if flags[10] is set */
 } A_PACKED;
+
+struct BootInfo {
+	struct Module {
+		uintptr_t phys;
+		uintptr_t virt;
+		size_t size;
+		char *name;
+	};
+
+	char *cmdLine;
+	size_t modCount;
+	Module *mods;
+	size_t mmapCount;
+	BootMemMap *mmap;
+};

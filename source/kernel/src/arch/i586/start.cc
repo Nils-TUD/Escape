@@ -36,7 +36,7 @@
 #include <assert.h>
 
 /* make gcc happy */
-EXTERN_C void bspstart(BootInfo *mbp);
+EXTERN_C void bspstart(void *mbp);
 EXTERN_C uintptr_t smpstart();
 EXTERN_C void apstart();
 static void idlestart();
@@ -51,7 +51,7 @@ static uint8_t initloader[] = {
 #endif
 };
 
-void bspstart(BootInfo *mbp) {
+void bspstart(void *mbp) {
 	/* init the kernel */
 	Boot::start(mbp);
 }

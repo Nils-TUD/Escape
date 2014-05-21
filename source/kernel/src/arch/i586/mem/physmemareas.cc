@@ -31,21 +31,20 @@ void PhysMemAreas::initArch() {
 	const BootInfo *mb = Boot::getInfo();
 
 	/* walk through the memory-map and mark all free areas as free */
-	for(BootMemMap *mmap = mb->mmapAddr; (uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
+	for(size_t i = 0; i < mb->mmapCount; ++i) {
+		if(mb->mmap[i].type == MMAP_TYPE_AVAILABLE) {
 			/* take care that we don't use memory above 4G */
-			if(mmap->baseAddr >= 0x100000000ULL) {
+			if(mb->mmap[i].baseAddr >= 0x100000000ULL) {
 				Log::get().writef("Skipping memory above 4G: %#Lx .. %#Lx\n",
-						mmap->baseAddr,mmap->baseAddr + mmap->length);
+						mb->mmap[i].baseAddr,mb->mmap[i].baseAddr + mb->mmap[i].length);
 				continue;
 			}
-			uint64_t end = mmap->baseAddr + mmap->length;
+			uint64_t end = mb->mmap[i].baseAddr + mb->mmap[i].length;
 			if(end >= 0x100000000ULL) {
 				Log::get().writef("Skipping memory above 4G: %#Lx .. %#Lx\n",0x100000000ULL,end);
 				end = 0xFFFFFFFF;
 			}
-			PhysMemAreas::add((uintptr_t)mmap->baseAddr,(uintptr_t)end);
+			PhysMemAreas::add((uintptr_t)mb->mmap[i].baseAddr,(uintptr_t)end);
 		}
 	}
 	total = PhysMemAreas::getAvailable();
@@ -54,11 +53,8 @@ void PhysMemAreas::initArch() {
 	PhysMemAreas::rem(0,(uintptr_t)&_ebss - KERNEL_AREA);
 
 	/* remove modules */
-	BootModule *mod = mb->modsAddr;
-	for(size_t i = 0; i < mb->modsCount; i++) {
-		PhysMemAreas::rem(mod->modStart,mod->modEnd);
-		mod++;
-	}
+	for(size_t i = 0; i < mb->modCount; i++)
+		PhysMemAreas::rem(mb->mods[i].phys,mb->mods[i].phys + mb->mods[i].size);
 }
 
 size_t PhysMemAreas::getTotal() {

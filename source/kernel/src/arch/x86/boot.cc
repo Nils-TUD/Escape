@@ -55,7 +55,6 @@
 
 #define MAX_MOD_COUNT			10
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
-#define PHYS2VIRT(x)			((void*)((uintptr_t)x + KERNEL_AREA))
 
 static const BootTask tasks[] = {
 	{"Initializing dynarray...",DynArray::init},
@@ -77,41 +76,59 @@ static const BootTask tasks[] = {
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 bool Boot::loadedMods = false;
 
-static uintptr_t physModAddrs[MAX_MOD_COUNT];
 static char mbbuf[PAGE_SIZE];
 static size_t mbbufpos = 0;
 
 extern void *_btext;
 extern void *_ebss;
-static BootInfo *mb;
+static BootInfo mb;
 
-static void *copyMBInfo(const void *info,size_t len) {
+static void *copyMBInfo(uintptr_t info,size_t len) {
 	void *res = mbbuf + mbbufpos;
 	if(mbbufpos + len > sizeof(mbbuf))
 		Util::panic("Multiboot-buffer too small");
-	memcpy(mbbuf + mbbufpos,PHYS2VIRT(info),len);
+	memcpy(mbbuf + mbbufpos,(const void*)info,len);
 	mbbufpos += len;
 	return res;
 }
 
-void Boot::archStart(BootInfo *info) {
-	BootModule *mod;
-	/* copy mb-stuff into buffer */
-	info = (BootInfo*)copyMBInfo(info,sizeof(BootInfo));
-	info->cmdLine = (char*)copyMBInfo(info->cmdLine,strlen((char*)PHYS2VIRT(info->cmdLine)) + 1);
-	info->modsAddr = (BootModule*)copyMBInfo(info->modsAddr,sizeof(BootModule) * info->modsCount);
-	info->mmapAddr = (BootMemMap*)copyMBInfo(info->mmapAddr,info->mmapLength);
-	info->drivesAddr = (BootDrive*)copyMBInfo(info->drivesAddr,info->drivesLength);
-	mod = info->modsAddr;
-	for(size_t i = 0; i < info->modsCount; i++) {
-		mod->name = (char*)copyMBInfo(mod->name,strlen((char*)PHYS2VIRT(mod->name)) + 1);
-		physModAddrs[i] = mod->modStart;
-		mod++;
+void Boot::archStart(void *nfo) {
+	{
+		MultiBootInfo *info = (MultiBootInfo*)nfo;
+		BootModule *mbmod;
+		/* copy mb-stuff into our own datastructure */
+		mb.cmdLine = (char*)copyMBInfo(info->cmdLine,strlen((char*)(uintptr_t)info->cmdLine) + 1);
+		mb.modCount = info->modsCount;
+		if(mb.modCount > MAX_MOD_COUNT)
+			Util::panic("Too many modules (max %u)",MAX_MOD_COUNT);
+		taskList.moduleCount = mb.modCount;
+
+		/* copy memory map */
+		mb.mmap = (BootMemMap*)(mbbuf + mbbufpos);
+		mb.mmapCount = 0;
+		for(BootMemMap *mmap = (BootMemMap*)(uintptr_t)info->mmapAddr;
+				(uintptr_t)mmap < (uintptr_t)info->mmapAddr + info->mmapLength;
+				mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
+			mb.mmap[mb.mmapCount].baseAddr = mmap->baseAddr;
+			mb.mmap[mb.mmapCount].length = mmap->length;
+			mb.mmap[mb.mmapCount].size = mmap->size;
+			mb.mmap[mb.mmapCount].type = mmap->type;
+			mbbufpos += sizeof(BootMemMap);
+			mb.mmapCount++;
+		}
+
+		/* copy modules (do that here because we can't access the multiboot-info afterwards anymore) */
+		mb.mods = (BootInfo::Module*)(mbbuf + mbbufpos);
+		mbbufpos += sizeof(BootInfo::Module) * info->modsCount;
+		mbmod = (BootModule*)(uintptr_t)info->modsAddr;
+		for(size_t i = 0; i < info->modsCount; i++) {
+			mb.mods[i].phys = mbmod->modStart;
+			mb.mods[i].virt = 0;
+			mb.mods[i].size = mbmod->modEnd - mbmod->modStart;
+			mb.mods[i].name = (char*)copyMBInfo(mbmod->name,strlen((char*)(uintptr_t)mbmod->name) + 1);
+			mbmod++;
+		}
 	}
-	mb = info;
-	if(mb->modsCount > MAX_MOD_COUNT)
-		Util::panic("Too many modules (max %u)",MAX_MOD_COUNT);
-	taskList.moduleCount = mb->modsCount;
 
 	/* setup basic stuff */
 	Serial::init();
@@ -122,7 +139,7 @@ void Boot::archStart(BootInfo *info) {
 
 	/* parse boot parameters (before PhysMem::init()) */
 	int argc;
-	const char **argv = Boot::parseArgs(mb->cmdLine,&argc);
+	const char **argv = Boot::parseArgs((char*)mb.cmdLine,&argc);
 	Config::parseBootParams(argc,argv);
 
 	/* init physical memory and paging */
@@ -132,20 +149,15 @@ void Boot::archStart(BootInfo *info) {
 	/* clear screen here because of virtualbox-bug */
 	Video::get().clearScreen();
 
-	/* now map modules */
-	mod = mb->modsAddr;
-	for(size_t i = 0; i < mb->modsCount; i++) {
-		size_t size = mod->modEnd - mod->modStart;
-		mod->modStart = PageDir::makeAccessible(mod->modStart,BYTES_2_PAGES(size));
-		mod->modEnd = mod->modStart + size;
-		mod++;
-	}
+	/* now map the modules */
+	for(size_t i = 0; i < mb.modCount; i++)
+		mb.mods[i].virt = PageDir::makeAccessible(mb.mods[i].phys,BYTES_2_PAGES(mb.mods[i].size));
 
-	Log::get().writef("Kernel parameters: %s\n",mb->cmdLine);
+	Log::get().writef("Kernel parameters: %s\n",mb.cmdLine);
 }
 
 const BootInfo *Boot::getInfo() {
-	return mb;
+	return &mb;
 }
 
 size_t Boot::getKernelSize() {
@@ -155,19 +167,19 @@ size_t Boot::getKernelSize() {
 }
 
 size_t Boot::getModuleSize() {
-	if(mb->modsCount == 0)
+	if(mb.modCount == 0)
 		return 0;
-	uintptr_t start = mb->modsAddr[0].modStart;
-	uintptr_t end = mb->modsAddr[mb->modsCount - 1].modEnd;
+	uintptr_t start = mb.mods[0].virt;
+	uintptr_t end = mb.mods[mb.modCount - 1].virt + mb.mods[mb.modCount - 1].size;
 	return end - start;
 }
 
 uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
-	BootModule *mod = mb->modsAddr;
-	for(size_t i = 0; i < mb->modsCount; i++) {
+	BootInfo::Module *mod = mb.mods;
+	for(size_t i = 0; i < mb.modCount; i++) {
 		if(strcmp(mod->name,name) == 0) {
-			*size = mod->modEnd - mod->modStart;
-			return physModAddrs[i];
+			*size = mod->size;
+			return mod->phys;
 		}
 		mod++;
 	}
@@ -188,12 +200,11 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	int res = VFSNode::request("/system/mbmods",NULL,&node,NULL,VFS_WRITE,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /system/mbmods");
-	BootModule *mod = mb->modsAddr;
-	for(size_t i = 0; i < mb->modsCount; i++) {
+	BootInfo::Module *mod = mb.mods;
+	for(size_t i = 0; i < mb.modCount; i++) {
 		char *modname = (char*)Cache::alloc(12);
 		itoa(modname,12,i);
-		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->modStart,
-				mod->modEnd - mod->modStart);
+		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size);
 		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IRGRP | S_IROTH) != 0)
 			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
 		VFSNode::release(n);
@@ -203,8 +214,8 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 	/* load modules */
 	loadedMods = true;
-	mod = mb->modsAddr;
-	for(size_t i = 0; i < mb->modsCount; i++) {
+	mod = mb.mods;
+	for(size_t i = 0; i < mb.modCount; i++) {
 		/* parse args */
 		int argc;
 		const char **argv = Boot::parseArgs(mod->name,&argc);
@@ -224,7 +235,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
-			res = Proc::exec(argv[0],argv,NULL,(void*)mod->modStart,mod->modEnd - mod->modStart);
+			res = Proc::exec(argv[0],argv,NULL,(void*)mod->virt,mod->size);
 			if(res < 0)
 				Util::panic("Unable to exec boot-program %s: %d\n",argv[0],res);
 			/* we don't want to continue ;) */
@@ -268,58 +279,20 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Boot::print(OStream &os) {
-	os.writef("flags=0x%x\n",mb->flags);
-	if(CHECK_FLAG(mb->flags,0)) {
-		os.writef("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
+	os.writef("cmdLine: %s\n",mb.cmdLine);
+
+	os.writef("modCount: %zu\n",mb.modCount);
+	for(size_t i = 0; i < mb.modCount; i++) {
+		os.writef("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,
+			mb.mods[i].virt,mb.mods[i].virt + mb.mods[i].size,
+			mb.mods[i].phys,mb.mods[i].phys + mb.mods[i].size);
+		os.writef("\t     cmdline: %s\n",mb.mods[i].name ? mb.mods[i].name : "<NULL>");
 	}
-	if(CHECK_FLAG(mb->flags,1)) {
-		os.writef("biosDriveNumber=%2X, part1=%2X, part2=%2X, part3=%2X\n",
-			(uint)mb->bootDevice.drive,(uint)mb->bootDevice.partition1,
-			(uint)mb->bootDevice.partition2,(uint)mb->bootDevice.partition3);
-	}
-	if(CHECK_FLAG(mb->flags,2)) {
-		os.writef("cmdLine=%s\n",mb->cmdLine);
-	}
-	if(CHECK_FLAG(mb->flags,3)) {
-		BootModule *mod = mb->modsAddr;
-		os.writef("modsCount=%d:\n",mb->modsCount);
-		for(size_t i = 0; i < mb->modsCount; i++) {
-			os.writef("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,mod->modStart,mod->modEnd,
-					physModAddrs[i],physModAddrs[i] + (mod->modEnd - mod->modStart));
-			os.writef("\t     cmdline: %s\n",mod->name ? mod->name : "<NULL>");
-			mod++;
-		}
-	}
-	if(CHECK_FLAG(mb->flags,4)) {
-		os.writef("a.out: tabSize=%d, strSize=%d, addr=0x%x\n",mb->syms.aDotOut.tabSize,
-				mb->syms.aDotOut.strSize,mb->syms.aDotOut.addr);
-	}
-	else if(CHECK_FLAG(mb->flags,5)) {
-		os.writef("ELF: num=%d, size=%d, addr=0x%x, shndx=0x%x\n",mb->syms.ELF.num,mb->syms.ELF.size,
-			mb->syms.ELF.addr,mb->syms.ELF.shndx);
-	}
-	if(CHECK_FLAG(mb->flags,6)) {
-		os.writef("mmapLength=%d, mmapAddr=%p\n",mb->mmapLength,mb->mmapAddr);
-		os.writef("memory-map:\n");
-		size_t x = 0;
-		for(BootMemMap *mmap = (BootMemMap*)mb->mmapAddr;
-			(uintptr_t)mmap < (uintptr_t)mb->mmapAddr + mb->mmapLength;
-			mmap = (BootMemMap*)((uintptr_t)mmap + mmap->size + sizeof(mmap->size))) {
-			if(mmap != NULL) {
-				os.writef("\t%d: addr=%#012Lx, size=%#012Lx, type=%s\n",
-						x,mmap->baseAddr,mmap->length,
-						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
-				x++;
-			}
-		}
-	}
-	if(CHECK_FLAG(mb->flags,7) && mb->drivesLength > 0) {
-		BootDrive *drive = mb->drivesAddr;
-		os.writef("Drives: (size=%u)\n",mb->drivesLength);
-		for(size_t x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
-			os.writef("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",
-					i,(uint)drive->number,(uint)drive->mode,(uint)drive->cylinders,
-					(uint)drive->heads,(uint)drive->sectors);
-		}
+
+	os.writef("mmapCount: %zu\n",mb.mmapCount);
+	for(size_t i = 0; i < mb.mmapCount; i++) {
+		os.writef("\t%zu: addr=%#012Lx, size=%#012Lx, type=%s\n",
+				i,mb.mmap[i].baseAddr,mb.mmap[i].length,
+				mb.mmap[i].type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 	}
 }

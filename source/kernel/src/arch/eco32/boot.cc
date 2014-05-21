@@ -59,7 +59,8 @@ bool Boot::loadedMods = false;
 static LoadProg progs[MAX_PROG_COUNT];
 static BootInfo info;
 
-void Boot::archStart(BootInfo *binfo) {
+void Boot::archStart(void *nfo) {
+	BootInfo *binfo = (BootInfo*)nfo;
 	/* clear screen here because of virtualbox-bug */
 	Video::get().clearScreen();
 	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten

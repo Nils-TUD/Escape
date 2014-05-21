@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/interrupts.h>
 
 typedef void (*boottask_func)();

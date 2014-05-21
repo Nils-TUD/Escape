@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/interrupts.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>

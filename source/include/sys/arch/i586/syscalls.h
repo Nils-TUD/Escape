@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/arch/x86/gdt.h>
 #include <sys/cpu.h>
 

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #if defined(__i586__)
 #	include <sys/arch/i586/mem/layout.h>
 #else

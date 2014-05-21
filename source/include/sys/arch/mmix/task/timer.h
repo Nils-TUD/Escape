@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/cpu.h>
 
 class Timer : public TimerBase {

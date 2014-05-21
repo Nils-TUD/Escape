@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 template<typename T,typename Y>
 T Atomic::fetch_and_add(T volatile *ptr,Y value) {

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 class AddressSpace {
 	/* rV.n has 10 bits */

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #define KEYBOARD_PID		12	/* just for debugging */
 

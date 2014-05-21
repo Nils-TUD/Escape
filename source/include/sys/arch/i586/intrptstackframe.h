@@ -24,7 +24,7 @@
 #	define RESTORE_REGS		popa
 #	define IRET				iret
 #else
-#	include <esc/common.h>
+#	include <sys/common.h>
 #	include <sys/ostream.h>
 #	include <assert.h>
 

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 typedef uint64_t IntrptStackFrame;
 typedef void (*irqhandler_func)(IntrptStackFrame *stack,int irqNo);

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 EXTERN_C void *cache_alloc(size_t size);
 EXTERN_C void *cache_calloc(size_t num,size_t size);

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/ostream.h>
 
 #define REG_COUNT 32

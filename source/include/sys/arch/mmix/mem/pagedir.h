@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/arch/mmix/mem/layout.h>
 #include <sys/arch/mmix/mem/addrspace.h>
 #include <sys/mem/physmemareas.h>

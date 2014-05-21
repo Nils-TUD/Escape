@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)[8] = (errorCode))

@@ -20,11 +20,20 @@
 #pragma once
 
 #include <esc/common.h>
+#include <sys/ostream.h>
 
 #define REG_COUNT 32
 
 /* the saved registers */
 struct IntrptStackFrame {
+	void print(OStream &os) const {
+		os.writef("stack-frame @ %p\n",this);
+		os.writef("\tint: %d\n",irqNo);
+		os.writef("\tpsw: %#08x\n",psw);
+		for(int i = 0; i < REG_COUNT; i++)
+			os.writef("\tr[%d]=%#08x\n",i,r[i]);
+	}
+
 	uint32_t r[REG_COUNT];
 	uint32_t psw;
 	uint32_t irqNo;

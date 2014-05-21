@@ -204,7 +204,7 @@ private:
 	static uintptr_t *pfAddrs;
 	/* stuff to count exceptions */
 	static size_t exCount;
-	static uint32_t lastEx;
+	static uintptr_t lastEx;
 };
 
 inline int InterruptsBase::getVectorFor(uint8_t irq) {

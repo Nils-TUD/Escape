@@ -77,4 +77,7 @@ class Interrupts : public InterruptsBase {
 	static void irqKB(IntrptStackFrame *stack,int irqNo);
 	static void irqTimer(IntrptStackFrame *stack,int irqNo);
 	static void irqDisk(IntrptStackFrame *stack,int irqNo);
+
+public:
+	static void printStackFrame(OStream &os,const IntrptStackFrame *stack);
 };

@@ -18,7 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/task/vm86.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/task/vm86.h>
+#endif
 #include <sys/arch/x86/task/ioports.h>
 #include <sys/arch/x86/pic.h>
 #include <sys/arch/x86/lapic.h>
@@ -111,7 +113,7 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 
 uintptr_t *Interrupts::pfAddrs;
 size_t Interrupts::exCount = 0;
-uint32_t Interrupts::lastEx = 0xFFFFFFFF;
+uintptr_t Interrupts::lastEx = 0xFFFFFFFF;
 #if DEBUG_PAGEFAULTS
 static uintptr_t lastPFAddr = ~(uintptr_t)0;
 static pid_t lastPFProc = INVALID_PID;
@@ -192,7 +194,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	if(EXPECT_TRUE(intrpt->handler))
 		intrpt->handler(t,stack);
 	else {
-		Log::get().writef("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
+		Log::get().writef("Got interrupt %#x (%s) @ %p in process %d (%s)\n",stack->intrptNo,
 				intrpt->name,stack->getIP(),t->getProc()->getPid(),t->getProc()->getProgram());
 		Interrupts::eoi(stack->intrptNo);
 	}
@@ -214,7 +216,7 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	Log::get().writef("Got exception %x @ %p, process %d:%s\n",stack->intrptNo,stack->getIP(),
+	Log::get().writef("Got exception %#x @ %p, process %d:%s\n",stack->intrptNo,stack->getIP(),
 			t->getProc()->getPid(),t->getProc()->getProgram());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
@@ -222,7 +224,7 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 		/* stop here? */
 		if(exCount >= MAX_EX_COUNT) {
-			Util::panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
+			Util::panic("Got this exception (%#x) %d times. Stopping here (@ %p)\n",
 					stack->intrptNo,exCount,stack->getIP());
 		}
 	}
@@ -232,20 +234,22 @@ void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	}
 }
 
-void Interrupts::exGPF(Thread *t,IntrptStackFrame *stack) {
+void Interrupts::exGPF(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	/* io-map not loaded yet? */
 	if(IOPorts::handleGPF()) {
 		exCount = 0;
 		return;
 	}
+#if defined(__i586__)
 	/* vm86-task? */
 	if(t->getProc()->getFlags() & P_VM86) {
 		VM86::handleGPF(static_cast<VM86IntrptStackFrame*>(stack));
 		exCount = 0;
 		return;
 	}
+#endif
 	/* TODO later the process should be killed here */
-	Util::panic("GPF @ 0x%x",stack->getIP());
+	Util::panic("GPF @ %p",stack->getIP());
 }
 
 void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
@@ -293,7 +297,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 			Util::panic("Process segfaulted in kernel with instr. (%02x %02x)",pc[0],pc[1]);
 		}
 		/* skip that instruction */
-		stack->setIP(reinterpret_cast<uint32_t>(pc) + 2);
+		stack->setIP(reinterpret_cast<uintptr_t>(pc) + 2);
 	}
 
 	printPFInfo(Log::get(),t,stack,addr);
@@ -364,22 +368,4 @@ void Interrupts::printPFInfo(OStream &os,Thread *t,IntrptStackFrame *stack,uintp
 			(stack->getError() & 0x4) ? "user-mode" : "kernel-mode",
 			(stack->getError() & 0x8) ? "reserved bits set to 1\n\t" : "",
 			(stack->getError() & 0x16) ? "instruction-fetch" : "");
-}
-
-void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
-	os.writef("stack-frame @ 0x%x\n",stack);
-	os.writef("\teax=0x%08x\n",stack->eax);
-	os.writef("\tebx=0x%08x\n",stack->ebx);
-	os.writef("\tecx=0x%08x\n",stack->ecx);
-	os.writef("\tedx=0x%08x\n",stack->edx);
-	os.writef("\tesi=0x%08x\n",stack->esi);
-	os.writef("\tedi=0x%08x\n",stack->edi);
-	os.writef("\tebp=0x%08x\n",stack->ebp);
-	os.writef("\tuesp=0x%08x\n",stack->getSP());
-	os.writef("\teip=0x%08x\n",stack->getIP());
-	os.writef("\teflags=0x%08x\n",stack->getFlags());
-	if(stack->intrptNo) {
-		os.writef("\terrorCode=%d\n",stack->getError());
-		os.writef("\tintrptNo=%d\n",stack->intrptNo);
-	}
 }

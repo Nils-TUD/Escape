@@ -265,7 +265,7 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 		Thread::switchAway();
 }
 
-void InterruptsBase::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
+void Interrupts::printStackFrame(OStream &os,const IntrptStackFrame *stack) {
 	stack--;
 	int i,j,rl,rg = *stack >> 56;
 	int changedStack = (*stack >> 32) & 0x1;

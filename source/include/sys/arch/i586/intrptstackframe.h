@@ -25,6 +25,7 @@
 #	define IRET				iret
 #else
 #	include <esc/common.h>
+#	include <sys/ostream.h>
 #	include <assert.h>
 
 class VM86;
@@ -70,6 +71,24 @@ public:
 			uesp = sp;
 		else
 			ecx = sp;
+	}
+
+	void print(OStream &os) const {
+		os.writef("stack-frame @ %p\n",this);
+		os.writef("\teax: %#08x\n",eax);
+		os.writef("\tebx: %#08x\n",ebx);
+		os.writef("\tecx: %#08x\n",ecx);
+		os.writef("\tedx: %#08x\n",edx);
+		os.writef("\tesi: %#08x\n",esi);
+		os.writef("\tedi: %#08x\n",edi);
+		os.writef("\tebp: %#08x\n",ebp);
+		os.writef("\tusp: %#08x\n",getSP());
+		os.writef("\teip: %#08x\n",getIP());
+		os.writef("\tefl: %#08x\n",getFlags());
+		if(intrptNo) {
+			os.writef("\terr: %d\n",getError());
+			os.writef("\tint: %d\n",intrptNo);
+		}
 	}
 
 	/* general purpose registers */

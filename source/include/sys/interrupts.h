@@ -107,14 +107,6 @@ public:
 	static bool fireIrq(size_t irq);
 
 	/**
-	 * Prints the given interrupt-stack
-	 *
-	 * @param os the output-stream
-	 * @param stack the interrupt-stack
-	 */
-	static void printStackFrame(OStream &os,const IntrptStackFrame *stack);
-
-	/**
 	 * Prints statistics about the occurred interrupts
 	 *
 	 * @param os the output-stream

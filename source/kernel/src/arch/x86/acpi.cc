@@ -46,11 +46,11 @@ void ACPI::init() {
 
 bool ACPI::find() {
 	/* first kb of extended bios data area (EBDA) */
-	uint16_t ebda = *(uint16_t*)(KERNEL_AREA | BDA_EBDA);
-	if((rsdp = findIn(KERNEL_AREA | ebda * 16,1024)))
+	uint16_t ebda = *(uint16_t*)(KERNEL_BEGIN | BDA_EBDA);
+	if((rsdp = findIn(KERNEL_BEGIN | ebda * 16,1024)))
 		return true;
 	/* main bios area below 1 mb */
-	if((rsdp = findIn(KERNEL_AREA | BIOS_AREA,0x20000)))
+	if((rsdp = findIn(KERNEL_BEGIN | BIOS_AREA,0x20000)))
 		return true;
 	return false;
 }
@@ -95,7 +95,7 @@ void ACPI::addTable(sRSDT *tbl,size_t i,uintptr_t &curDest,uintptr_t destEnd) {
 void ACPI::parse() {
 	Log::get().writef("Parsing ACPI tables...\n");
 
-	sRSDT *rsdt = (sRSDT*)rsdp->rsdtAddr;
+	sRSDT *rsdt = (sRSDT*)(uintptr_t)rsdp->rsdtAddr;
 	size_t size = sizeof(uint32_t);
 	/* check for extended system descriptor table */
 	if(rsdp->revision > 1 && acpi_checksumValid(rsdp,rsdp->length)) {
@@ -119,7 +119,7 @@ void ACPI::parse() {
 	for(size_t i = 0; i < count; i++) {
 		sRSDT *tbl;
 		if(size == sizeof(uint32_t))
-			tbl = (sRSDT*)*(uint32_t*)(start + i * size);
+			tbl = (sRSDT*)(uintptr_t)*(uint32_t*)(start + i * size);
 		else
 			tbl = (sRSDT*)*(uint64_t*)(start + i * size);
 		addTable(tbl,i,curDest,destEnd);
@@ -131,7 +131,7 @@ void ACPI::parse() {
 		switch((*it)->signature) {
 			case ACPI_SIG('F','A','C','P'): {
 				RSDTFACP *facp = (RSDTFACP*)(*it);
-				addTable((sRSDT*)facp->DSDT,++count,curDest,destEnd);
+				addTable((sRSDT*)(uintptr_t)facp->DSDT,++count,curDest,destEnd);
 				break;
 			}
 

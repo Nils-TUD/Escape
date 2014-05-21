@@ -21,11 +21,33 @@
 
 #include <sys/common.h>
 #include <sys/arch/x86/fpu.h>
+#include <sys/ostream.h>
 
 #define STACK_REG_COUNT			1
 
 /* the thread-state which will be saved for context-switching */
 struct ThreadRegs {
+	/**
+	 * Prepares the registers for the first start
+	 */
+	void prepareStart(uintptr_t sp) {
+		ebp = sp;
+		esp = sp;
+		ebx = 0;
+		edi = 0;
+		esi = 0;
+		eflags = 0;
+	}
+
+	void print(OStream &os) const {
+		os.writef("State @ 0x%08Px:\n",this);
+		os.writef("\tesp = %#08x\n",esp);
+		os.writef("\tedi = %#08x\n",edi);
+		os.writef("\tesi = %#08x\n",esi);
+		os.writef("\tebp = %#08x\n",ebp);
+		os.writef("\teflags = %#08x\n",eflags);
+	}
+
 	uint32_t esp;
 	uint32_t edi;
 	uint32_t esi;

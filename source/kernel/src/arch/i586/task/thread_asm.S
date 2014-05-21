@@ -17,10 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global thread_idle
 .global thread_save
 .global thread_resume
-.extern spinlock_release
 
 // process save area offsets
 .set STATE_ESP,						0
@@ -29,13 +27,6 @@
 .set STATE_EBP,						12
 .set STATE_EFLAGS,					16
 .set STATE_EBX,						20
-
-// void thread_idle();
-thread_idle:
-	sti
-1:
-	hlt
-	jmp			1b
 
 // bool thread_save(ThreadRegs *saveArea);
 thread_save:

@@ -18,22 +18,11 @@
  */
 
 #include <sys/common.h>
+#include <sys/arch/x86/gdt.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
-#include <sys/task/sched.h>
-#include <sys/task/timer.h>
 #include <sys/task/smp.h>
-#include <sys/arch/x86/gdt.h>
-#include <sys/arch/x86/fpu.h>
-#include <sys/mem/virtmem.h>
 #include <sys/mem/pagedir.h>
-#include <sys/log.h>
-#include <sys/spinlock.h>
-#include <sys/config.h>
-#include <sys/cpu.h>
-#include <sys/util.h>
-#include <assert.h>
-#include <errno.h>
 
 static SpinLock switchLock;
 
@@ -99,9 +88,9 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 
 	/* we don't need to copy the whole page. but take into account that we call Thread::save, which
 	 * internally does a push, so start 8 bytes earlier */
-	uint32_t esp = CPU::getSP() - 8;
+	ulong sp = CPU::getSP() - 8;
 	ulong *src = (ulong*)t->kernelStack;
-	size_t off = (esp & (PAGE_SIZE - 1)) / sizeof(ulong);
+	size_t off = (sp & (PAGE_SIZE - 1)) / sizeof(ulong);
 	ulong *dstend = dst + (PAGE_SIZE / sizeof(ulong)) - 1;
 	dst += off;
 	src += off;
@@ -131,12 +120,7 @@ void ThreadBase::finishThreadStart(A_UNUSED Thread *t,Thread *nt,const void *arg
 	PageDir::removeAccess(frame);
 
 	/* prepare registers for the first Thread::resume() */
-	nt->saveArea.ebp = sp;
-	nt->saveArea.esp = sp;
-	nt->saveArea.ebx = 0;
-	nt->saveArea.edi = 0;
-	nt->saveArea.esi = 0;
-	nt->saveArea.eflags = 0;
+	nt->saveArea.prepareStart(sp);
 }
 
 void Thread::initialSwitch() {
@@ -188,7 +172,7 @@ void ThreadBase::doSwitch() {
 		if(!Thread::save(&old->saveArea)) {
 			/* old thread */
 			n->stats.cycleStart = CPU::rdtsc();
-			uint32_t pdir = n->getProc()->getPageDir()->getPhysAddr();
+			uintptr_t pdir = n->getProc()->getPageDir()->getPhysAddr();
 			bool chgpdir = n->getProc() != old->getProc();
 			Thread::resume(pdir,&n->saveArea,&switchLock,chgpdir);
 		}
@@ -198,13 +182,4 @@ void ThreadBase::doSwitch() {
 		n->stats.cycleStart = CPU::rdtsc();
 		switchLock.up();
 	}
-}
-
-void ThreadBase::printState(OStream &os,const ThreadRegs *st) const {
-	os.writef("State @ 0x%08Px:\n",st);
-	os.writef("\tesp = %#08x\n",st->esp);
-	os.writef("\tedi = %#08x\n",st->edi);
-	os.writef("\tesi = %#08x\n",st->esi);
-	os.writef("\tebp = %#08x\n",st->ebp);
-	os.writef("\teflags = %#08x\n",st->eflags);
 }

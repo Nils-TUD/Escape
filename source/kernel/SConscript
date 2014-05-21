@@ -38,7 +38,7 @@ src += [kenv.Glob('src/arch/$TGTTYPE/*/*.cc'), kenv.Glob('src/arch/$TGTTYPE/*/*/
 src += [kenv.Glob('src/basic/arch/$TGT/*.c'), kenv.Glob('src/basic/arch/$TGTTYPE/*.c')]
 src += [kenv.Glob('src/basic/arch/$TGT/*.S')]
 src += [f for f in kenv.Glob('src/arch/$TGT/*.S') if 'kernel.S' not in str(f)]
-src += [f for f in kenv.Glob('src/arch/$TGT/*/*.S')]
+src += [kenv.Glob('src/arch/$TGT/*/*.S'), kenv.Glob('src/arch/$TGTTYPE/*/*.S')]
 tsrc = [
 	kenv.Glob('test/*.cc'), kenv.Glob('test/arch/$TGT/*.cc'), kenv.Glob('test/arch/$TGTTYPE/*.cc')
 ]

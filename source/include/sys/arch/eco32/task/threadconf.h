@@ -20,11 +20,27 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/ostream.h>
 
 #define STACK_REG_COUNT			1
 
 /* the thread-state which will be saved for context-switching */
 struct ThreadRegs {
+	void print(OStream &os) const {
+		os.writef("State:\n",this);
+		os.writef("\t$16 = %#08x\n",r16);
+		os.writef("\t$17 = %#08x\n",r17);
+		os.writef("\t$18 = %#08x\n",r18);
+		os.writef("\t$19 = %#08x\n",r19);
+		os.writef("\t$20 = %#08x\n",r20);
+		os.writef("\t$21 = %#08x\n",r21);
+		os.writef("\t$22 = %#08x\n",r22);
+		os.writef("\t$23 = %#08x\n",r23);
+		os.writef("\t$29 = %#08x\n",r29);
+		os.writef("\t$30 = %#08x\n",r30);
+		os.writef("\t$31 = %#08x\n",r31);
+	}
+
 	uint32_t r16;
 	uint32_t r17;
 	uint32_t r18;

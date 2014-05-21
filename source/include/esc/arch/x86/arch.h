@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/arch.h>
+#pragma once
 
-.section .init
-.global _init
-_init:
-	push	%REG(bp)
-	mov		%REG(sp),%REG(bp)
+#if defined(__i586__)
+#	include <esc/arch/i586/arch.h>
+#else
+#	include <esc/arch/x86_64/arch.h>
+#endif
 
-.section .fini
-.global _fini
-_fini:
-	push	%REG(bp)
-	mov		%REG(sp),%REG(bp)
+/* writes the value of the register with given name to c */
+#define GET_REG(name,c) \
+	__asm__ volatile ( \
+		"mov %%" EXPAND(REG(name)) ",%0" \
+		: "=a" (c) \
+	)

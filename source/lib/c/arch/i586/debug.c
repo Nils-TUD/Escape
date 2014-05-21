@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/arch/x86/register.h>
+#include <esc/arch.h>
 #include <esc/debug.h>
 
 #define MAX_STACK_PAGES		128

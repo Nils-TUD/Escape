@@ -19,7 +19,7 @@
 
 #if defined(PROFILE)
 #	include <assert.h>
-#	include <esc/arch/x86/register.h>
+#	include <esc/arch.h>
 #	if defined(IN_KERNEL)
 #		if 0
 #			define gettid()		({ \

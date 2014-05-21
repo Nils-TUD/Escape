@@ -17,16 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/arch.h>
+#pragma once
 
-.section .init
-.global _init
-_init:
-	push	%REG(bp)
-	mov		%REG(sp),%REG(bp)
+#if defined(__x86__)
+#	include <esc/arch/x86/arch.h>
+#endif
 
-.section .fini
-.global _fini
-_fini:
-	push	%REG(bp)
-	mov		%REG(sp),%REG(bp)
+#define STRING(x)		#x
+#define EXPAND(x)		STRING(x)

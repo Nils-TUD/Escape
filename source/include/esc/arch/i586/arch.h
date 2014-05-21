@@ -19,18 +19,8 @@
 
 #pragma once
 
-#define STRING(x)		#x
-#define EXPAND(x)		STRING(x)
-
-#if defined(__i586__)
-#	define REG(x)		e##x
-#else
-#	define REG(x)		r##x
-#endif
-
-/* writes the value of the register with given name to c */
-#define GET_REG(name,c) \
-	__asm__ volatile ( \
-		"mov %%" EXPAND(REG(name)) ",%0" \
-		: "=a" (c) \
-	)
+#define REG(x)		e##x
+#define ARG_1		eax
+#define ARG_2		edx
+#define ARG_3		ecx
+#define WORDSIZE	4

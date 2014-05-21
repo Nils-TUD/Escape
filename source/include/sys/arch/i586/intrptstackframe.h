@@ -19,8 +19,13 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <assert.h>
+#if !defined(__cplusplus)
+#	define SAVE_REGS		pusha
+#	define RESTORE_REGS		popa
+#	define IRET				iret
+#else
+#	include <esc/common.h>
+#	include <assert.h>
 
 class VM86;
 
@@ -103,3 +108,5 @@ struct VM86IntrptStackFrame : public IntrptStackFrame {
 
 class Thread;
 typedef void (*irqhandler_func)(Thread *t,IntrptStackFrame *stack);
+
+#endif

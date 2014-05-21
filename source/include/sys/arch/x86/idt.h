@@ -33,17 +33,25 @@ class IDT {
 		/* these bits are fix: 0.1110.0000.0000b */
 		uint16_t fix		: 13,
 		/* the privilege level, 00 = ring0, 01 = ring1, 10 = ring2, 11 = ring3 */
-		dpl			: 2,
+		dpl					: 2,
 		/* If Present is not set to 1, an exception will occur */
-		present		: 1;
+		present				: 1;
 		/* The address[16..31] of the ISR */
-		uint16_t	offsetHigh;
+		uint16_t offsetHigh;
+		/* for 64-bit, we have 32-bit more offset */
+#if defined(__x86_64__)
+		uint32_t offsetUpper;
+		uint32_t : 32;
+#endif
+	} A_PACKED;
+
+	struct Entry64 : public Entry {
 	} A_PACKED;
 
 	/* represents an IDT-pointer */
 	struct Pointer {
 		uint16_t size;
-		uint32_t address;
+		ulong address;
 	} A_PACKED;
 
 	/* isr prototype */

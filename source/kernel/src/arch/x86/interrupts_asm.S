@@ -17,12 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/intrptstackframe.h>
+#include <esc/arch.h>
+
 .global waiting
 .global waitlock
 .global halting
 .global flushed
 .extern lapic_eoi
 .extern intrpt_handler
+.extern syscall_handler
 
 waiting:
 	.long	0
@@ -38,8 +42,8 @@ flushed:
 	.global isr\no
 	isr\no:
 	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	pushl	$0						// error-code (no error here)
-	pushl	$\no					// the interrupt-number
+	push	$0						// error-code (no error here)
+	push	$\no					// the interrupt-number
 	jmp		isrCommon
 .endm
 
@@ -49,7 +53,7 @@ flushed:
 	isr\no:
 	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	// the error-code has already been pushed
-	pushl	$\no					// the interrupt-number
+	push	$\no					// the interrupt-number
 	jmp		isrCommon
 .endm
 
@@ -111,25 +115,25 @@ BUILD_DEF_ISR 56
 // IPI: flush TLB
 .global isr52
 isr52:
-	pusha
+	SAVE_REGS
 	// flush TLB
-	mov		%cr3,%eax
-	mov		%eax,%cr3
+	mov		%cr3,%REG(ax)
+	mov		%REG(ax),%cr3
 	call	lapic_eoi
-	popa
-	iret
+	RESTORE_REGS
+	IRET
 
 // IPI: wait
 .global isr53
 isr53:
-	pusha
+	SAVE_REGS
 	// tell the CPU that requested the wait that we're waiting
 	lock
 	add		$1,(waiting)
 	// now wait until its unlocked
 1:
-	mov		(waitlock),%eax
-	test	%eax,%eax
+	mov		(waitlock),%REG(ax)
+	test	%REG(ax),%REG(ax)
 	jz		2f
 	pause
 	jmp		1b
@@ -137,8 +141,8 @@ isr53:
 	// tell the CPU that we're done
 	lock
 	sub		$1,(waiting)
-	popa
-	iret
+	RESTORE_REGS
+	IRET
 
 // IPI: halt
 .global isr54
@@ -155,48 +159,46 @@ isr54:
 // IPI: flush TLB ack
 .global isr55
 isr55:
-	pusha
+	SAVE_REGS
 	// flush TLB
-	mov		%cr3,%eax
-	mov		%eax,%cr3
+	mov		%cr3,%REG(ax)
+	mov		%REG(ax),%cr3
 	// tell the CPU that requested the flush that we've flushed our TLB
 	lock
 	add		$1,(flushed)
 	// continue
 	call	lapic_eoi
-	popa
-	iret
+	RESTORE_REGS
+	IRET
 
 // our null-handler for all other interrupts
 .global isrNull
 isrNull:
 	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
-	pushl	$0						// error-code (no error here)
-	pushl	$57						// the interrupt-number
+	push	$0						// error-code (no error here)
+	push	$57						// the interrupt-number
 	jmp		isrCommon
 
 // syscall
 .global syscall_entry
 syscall_entry:
-	pushl	$0						// store intrptNo = 0 so that we can distinguish the stack-frames
-	// save registers
-	pusha
+	push	$0						// store intrptNo = 0 so that we can distinguish the stack-frames
+	SAVE_REGS
 
 	// call c-routine
-	mov		%esp,%eax				// pointer to stack-frame
+	mov		%REG(sp),%ARG_1			// pointer to stack-frame
 	call	syscall_handler
 
-	// restore registers
-	popa
-	add		$4,%esp
+	RESTORE_REGS
+	add		$WORDSIZE,%REG(sp)
 	sti
 	sysexit
 
 // the ISR for all interrupts
 isrCommon:
-	// save registers
-	pusha
+	SAVE_REGS
 
+#if defined(__i586__)
 	// set segment-registers for kernel
 	// TODO just necessary for VM86-tasks because ds,es,fs and gs is set to 0 in this case
 	mov		$0x23,%eax
@@ -204,14 +206,14 @@ isrCommon:
 	mov		%eax,%es
 	mov		%eax,%fs
 	mov		%eax,%gs
+#endif
 
 	// call c-routine
-	mov		%esp,%eax				// pointer to stack-frame
+	mov		%REG(sp),%ARG_1			// pointer to stack-frame
 	call	intrpt_handler
 
-	// restore registers
-	popa
+	RESTORE_REGS
 
 	// remove error-code and interrupt-number from stack and return
-	add		$8,%esp
-	iret
+	add		$(WORDSIZE * 2),%REG(sp)
+	IRET

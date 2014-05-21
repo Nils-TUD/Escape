@@ -208,7 +208,7 @@ private:
 };
 
 inline int InterruptsBase::getVectorFor(uint8_t irq) {
-		if(intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler == NULL)
-			return -1;
+	if(intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler == NULL)
+		return -1;
 	return irq + 0x20;
 }

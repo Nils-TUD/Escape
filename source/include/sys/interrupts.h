@@ -21,14 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/semaphore.h>
-
-#if defined(__i586__)
-#	include <sys/arch/i586/intrptstackframe.h>
-#elif defined(__eco32__)
-#	include <sys/arch/eco32/intrptstackframe.h>
-#elif defined(__mmix__)
-#	include <sys/arch/mmix/intrptstackframe.h>
-#endif
+#include <sys/intrptstackframe.h>
 
 #define PANIC_ON_PAGEFAULT	1
 
@@ -134,8 +127,8 @@ protected:
 	static ISList<Semaphore*> userIrqs[];
 };
 
-#if defined(__i586__)
-#	include <sys/arch/i586/interrupts.h>
+#if defined(__x86__)
+#	include <sys/arch/x86/interrupts.h>
 #elif defined(__eco32__)
 #	include <sys/arch/eco32/interrupts.h>
 #elif defined(__mmix__)

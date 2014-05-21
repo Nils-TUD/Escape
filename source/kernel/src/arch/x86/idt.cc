@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/idt.h>
+#include <sys/arch/x86/idt.h>
 
 /**
  * Our ISRs
@@ -89,7 +89,7 @@ IDT::Entry IDT::idt[IDT_COUNT];
 void IDT::init() {
 	/* setup the idt-pointer */
 	Pointer idtPtr;
-	idtPtr.address = (uintptr_t)idt;
+	idtPtr.address = (ulong)idt;
 	idtPtr.size = sizeof(idt) - 1;
 
 	/* setup the idt */
@@ -168,10 +168,14 @@ void IDT::init() {
 }
 
 void IDT::set(size_t number,isr_func handler,uint8_t dpl) {
-	idt[number].fix = 0xE00;
-	idt[number].dpl = dpl;
-	idt[number].present = number != INTEL_RES1 && number != INTEL_RES2;
-	idt[number].selector = CODE_SEL;
-	idt[number].offsetHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
-	idt[number].offsetLow = (uintptr_t)handler & 0xFFFF;
+	IDT::Entry *e = idt + number;
+	e->fix = 0xE00;
+	e->dpl = dpl;
+	e->present = number != INTEL_RES1 && number != INTEL_RES2;
+	e->selector = CODE_SEL;
+	e->offsetHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
+	e->offsetLow = (uintptr_t)handler & 0xFFFF;
+#if defined(__x86_64__)
+	e->offsetUpper = (uintptr_t)handler >> 32;
+#endif
 }

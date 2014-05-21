@@ -498,14 +498,6 @@ public:
 	 */
 	void print(OStream &os) const;
 
-	/**
-	 * Prints the given thread-state
-	 *
-	 * @param os the output-stream
-	 * @param st the pointer to the state-struct
-	 */
-	void printState(OStream &os,const ThreadRegs *st) const;
-
 private:
 	/**
 	 * Inits the threading-stuff. Uses <p> as first process

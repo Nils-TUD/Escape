@@ -260,9 +260,12 @@ PageDir::pte_t *PageDir::getPTE(uintptr_t virt,uintptr_t *base) const {
 frameno_t PageDir::unmapPage(uintptr_t virt) {
 	uintptr_t base = virt;
 	pte_t *pte = getPTE(virt,&base);
-	assert(pte != NULL && base == virt);
-	frameno_t frame = (*pte & PTE_PRESENT) ? PTE_FRAMENO(*pte) : 0;
-	*pte = 0;
+	frameno_t frame = 0;
+	if(pte) {
+		assert(base == virt);
+		frame = (*pte & PTE_PRESENT) ? PTE_FRAMENO(*pte) : 0;
+		*pte = 0;
+	}
 	return frame;
 }
 
@@ -354,9 +357,9 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 	bool needShootdown = false;
 	while(count-- > 0) {
 		/* remove and free page-table, if necessary */
-		pti = PT_IDX(virt,PT_LEVELS - 1);
+		pti = PT_IDX(virt,1);
 		if(pti != lastPti) {
-			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
+			if(lastPti != PT_ENTRY_COUNT && (virt < KERNEL_AREA || virt >= KSTACK_AREA))
 				pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,PT_LEVELS,PT_BITS - PT_BPL,alloc);
 			lastPti = pti;
 		}
@@ -375,7 +378,7 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 		virt += PAGE_SIZE;
 	}
 	/* check if the last changed pagetable is empty */
-	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA)
+	if(pti != PT_ENTRY_COUNT && (virt < KERNEL_AREA || virt >= KSTACK_AREA))
 		pdir->gc(virt - PAGE_SIZE,pdir->pagedir | PTE_EXISTS,PT_LEVELS,PT_BITS - PT_BPL,alloc);
 	if(needShootdown)
 		SMP::flushTLB(pdir);

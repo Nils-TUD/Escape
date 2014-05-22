@@ -39,21 +39,26 @@ struct ThreadRegs {
 		eflags = 0;
 	}
 
-	void print(OStream &os) const {
-		os.writef("State @ 0x%08Px:\n",this);
-		os.writef("\tesp = %#08x\n",esp);
-		os.writef("\tedi = %#08x\n",edi);
-		os.writef("\tesi = %#08x\n",esi);
-		os.writef("\tebp = %#08x\n",ebp);
-		os.writef("\teflags = %#08x\n",eflags);
+	ulong getBP() const {
+		return ebp;
 	}
 
-	uint32_t esp;
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t eflags;
-	uint32_t ebx;
+	void print(OStream &os) const {
+		os.writef("State @ %p:\n",this);
+		os.writef("\tebx = %#08x\n",ebx);
+		os.writef("\tesi = %#08x\n",esi);
+		os.writef("\tedi = %#08x\n",edi);
+		os.writef("\tesp = %#08x\n",esp);
+		os.writef("\tebp = %#08x\n",ebp);
+		os.writef("\tefl = %#08x\n",eflags);
+	}
+
+	ulong esp;
+	ulong edi;
+	ulong esi;
+	ulong ebp;
+	ulong eflags;
+	ulong ebx;
 	/* note that we don't need to save eip because when we're done in thread_resume() we have
 	 * our kernel-stack back which causes the ret-instruction to return to the point where
 	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */

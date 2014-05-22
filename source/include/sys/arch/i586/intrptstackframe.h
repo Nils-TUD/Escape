@@ -63,6 +63,9 @@ public:
 			edx = ip;
 	}
 
+	ulong getBP() const {
+		return ebp;
+	}
 	ulong getSP() const {
 		return intrptNo ? uesp : ecx;
 	}

@@ -412,7 +412,7 @@ void PageDir::printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int le
 	size_t entrySize = (size_t)PAGE_SIZE << (PT_BPL * (level - 1));
 	uintptr_t base = from & ~(size - 1);
 	size_t idx = (from >> (PAGE_BITS + PT_BPL * level)) & (PT_ENTRY_COUNT - 1);
-	os.writef("%*s%03zx: %0*lx [%c%c%c%c%c] (VM: %p - %p)\n",(PT_LEVELS - level) * 2,"",
+	os.writef("%*s%03zx: %0*lx [%c%c%c%c%c] (%p..%p)\n",PT_LEVELS - level,"",
 			idx,sizeof(page) * 2,page,
 			(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',
 			(page & PTE_WRITABLE) ? 'w' : 'r',(page & PTE_GLOBAL) ? 'g' : '-',

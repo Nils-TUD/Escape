@@ -216,16 +216,17 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Interrupts::exFatal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	Log::get().writef("Got exception %#x @ %p, process %d:%s\n",stack->intrptNo,stack->getIP(),
-			t->getProc()->getPid(),t->getProc()->getProgram());
+	Log::get().writef("%s (%#x) @ %p, process %d:%s\n",
+		intrptList[stack->intrptNo].name,stack->intrptNo,stack->getIP(),
+		t->getProc()->getPid(),t->getProc()->getProgram());
 	/* count consecutive occurrences */
 	if(lastEx == stack->intrptNo) {
 		exCount++;
 
 		/* stop here? */
 		if(exCount >= MAX_EX_COUNT) {
-			Util::panic("Got this exception (%#x) %d times. Stopping here (@ %p)\n",
-					stack->intrptNo,exCount,stack->getIP());
+			Util::panic("%s (%#x) %d times. Stopping here (@ %p)\n",
+				intrptList[stack->intrptNo].name,stack->intrptNo,exCount,stack->getIP());
 		}
 	}
 	else {

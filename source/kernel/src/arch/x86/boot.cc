@@ -24,6 +24,7 @@
 #include <sys/arch/x86/pic.h>
 #include <sys/arch/x86/acpi.h>
 #include <sys/arch/x86/ioapic.h>
+#include <sys/arch/x86/fpu.h>
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
@@ -283,9 +284,8 @@ void Boot::print(OStream &os) {
 
 	os.writef("modCount: %zu\n",mb.modCount);
 	for(size_t i = 0; i < mb.modCount; i++) {
-		os.writef("\t[%zu]: virt: %p..%p, phys: %p..%p\n",i,
-			mb.mods[i].virt,mb.mods[i].virt + mb.mods[i].size,
-			mb.mods[i].phys,mb.mods[i].phys + mb.mods[i].size);
+		os.writef("\t[%zu]: virt: %p..%p\n",i,mb.mods[i].virt,mb.mods[i].virt + mb.mods[i].size);
+		os.writef("\t     phys: %p..%p\n",mb.mods[i].phys,mb.mods[i].phys + mb.mods[i].size);
 		os.writef("\t     cmdline: %s\n",mb.mods[i].name ? mb.mods[i].name : "<NULL>");
 	}
 

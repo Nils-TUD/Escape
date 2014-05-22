@@ -52,14 +52,14 @@ private:
 };
 
 inline Thread *ThreadBase::getRunning() {
-	ulong esp = CPU::getSP();
-	Thread** tptr = (Thread**)((esp & ~(PAGE_SIZE - 1)) + (PAGE_SIZE - sizeof(ulong)));
+	ulong sp = CPU::getSP();
+	Thread** tptr = (Thread**)((sp & ~(PAGE_SIZE - 1)) + (PAGE_SIZE - sizeof(ulong)));
 	return *tptr;
 }
 
 inline void ThreadBase::setRunning(Thread *t) {
-	ulong esp = CPU::getSP();
-	ThreadBase** tptr = (ThreadBase**)((esp & ~(PAGE_SIZE - 1)) + (PAGE_SIZE - sizeof(ulong)));
+	ulong sp = CPU::getSP();
+	ThreadBase** tptr = (ThreadBase**)((sp & ~(PAGE_SIZE - 1)) + (PAGE_SIZE - sizeof(ulong)));
 	*tptr = t;
 }
 

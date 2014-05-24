@@ -18,16 +18,16 @@
  */
 
 #include <sys/arch/i586/mem/layout.h>
+#include <sys/arch/i586/intrptstackframe.h>
 #include <esc/arch.h>
 
 #define USER_STACK			FREE_AREA_BEGIN
-#define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - 4)
+#define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - WORDSIZE)
 
 // exports
 .global bspEntry
 .global apEntry
 .global thread_startup
-.global proc0TLPD
 .global kernelStack
 .global aplock
 
@@ -37,15 +37,9 @@
 .extern smpstart
 .extern unittest_start
 .extern uenv_setupThread
+.extern paging_setup
 
-.section .bss
-// first page directory
-.align PAGE_SIZE
-proc0TLPD:
-.rept PAGE_SIZE
-	.byte 0
-.endr
-
+.section .initdata
 // our temporary kernel stack
 .align PAGE_SIZE
 .rept TMP_STACK_SIZE
@@ -72,8 +66,9 @@ aplock:
 .long		MULTIBOOT_HEADER_FLAGS
 .long		MULTIBOOT_CHECKSUM
 
-apEntry:
 .code16
+
+apEntry:
 	// load the GDT
 	lgdtl	%cs:setupGDT - apEntry
 
@@ -102,7 +97,6 @@ setupGDTEntries:
 
 	// code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x00
-
 	// data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, type 0x92, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x00
 setupGDTEntriesEnd:
@@ -129,116 +123,95 @@ apProtMode:
 	mov		%ax,%gs
 	mov		%ax,%ss
 
-	// note that we assume here that the kernel is not larger than 1 page-table (4MiB)!
-
-	// setup paging
-	mov		$proc0TLPD,%eax
-	// virt -> phys
-	and		$~KERNEL_AREA,%eax
-	// put PDE in slot 0: PDE_EXISTS | PDE_GLOBAL | PDE_LARGE | PDE_WRITABLE | PDE_PRESENT
-	movl	$0x00000383,(%eax)
-	// put PDE in slot for kernel-area
-	add		$(KERNEL_AREA >> (10 + 12 - 2)),%eax
-	movl	$0x00000383,(%eax)
-	// just to be sure
-	and		$~(PAGE_SIZE - 1),%eax
-	// set pagedir
-	mov		%eax,%cr3
-	// enable global pages and large pages
-	mov		%cr4,%eax
-	or		$0x90,%eax
-	mov		%eax,%cr4
-	// enable paging
-	mov		%cr0,%eax
-	or		$0x80000000,%eax
-	mov		%eax,%cr0
+	mov		$1f,%edi
+	jmp		paging_setup
+1:
 
 	// jump to the higher half kernel
 	ljmp	$0x08,$higherhalf
 
-.section .text
-
 higherhalf:
 	// are we an AP?
-	test	%esi,%esi
+	test	%REG(si),%REG(si)
 	jnz		2f
 
 	// for APs: ensure that the initialization is done by one cpu at a time; this way, we can use
 	// one temporary stack which simplifies it a bit.
-	mov		$1,%ecx
+	mov		$1,%REG(cx)
 1:
-	xor		%eax,%eax
+	xor		%REG(ax),%REG(ax)
 	lock
-	cmpxchg %ecx,(aplock)
+	cmpxchg %REG(cx),(aplock)
 	jnz		1b
 
 2:
 	cli								// disable interrupts during startup
-	mov		$kernelStack,%esp		// set up a new stack for our kernel
-	mov		%esp,%ebp
-	push	%ebp					// push ebp on the stack to ensure that the stack-trace works
+	mov		$kernelStack,%REG(sp)	// set up a new stack for our kernel
+	mov		%REG(sp),%REG(bp)
+	push	%REG(bp)				// push bp on the stack to ensure that the stack-trace works
 
 	// are we an AP?
-	test	%esi,%esi
+	test	%REG(si),%REG(si)
 	jnz		1f
 	call	apstart
 	// we'll not get here
 2:
 	jmp		2b
 
+.section .text
+
 1:
-	mov		%ebx,%eax				// pass address of Multiboot-Structure to bspstart
+	mov		%REG(bx),%ARG_1			// pass address of Multiboot-Structure to bspstart
 	call	bspstart
 
 	// now use the kernel-stack of the first thread and start smp
-	mov		$KSTACK_CURTHREAD,%esp
-	sub		$4,%esp
-	mov		%esp,%ebp
-	push	%ebp
+	mov		$KSTACK_CURTHREAD,%REG(sp)
+	sub		$WORDSIZE,%REG(sp)
+	mov		%REG(sp),%REG(bp)
+	push	%REG(bp)
 	call	smpstart
 
 	// if we have started the unittest-kernel, we will register the tests here
-	mov		%eax,%ebx				// save entry-point
+	mov		%REG(ax),%REG(bx)		// save entry-point
 	call	unittest_start
-	mov		%ebx,%eax
+	mov		%REG(bx),%REG(ax)
 
 	// entrypoint is in eax
-	mov		$USER_STACK - 4,%ecx	// user stackpointer
+	// set user stackpointer
+	mov		$(USER_STACK - WORDSIZE),%REG(cx)
 	jmp		3f
 
 	// setup env for first task
 thread_startup:
-	mov		4(%esp),%edx			// load entry-point
-	cmp		$KERNEL_AREA,%edx
+	// check if entry-point is in kernel
+	mov		WORDSIZE(%REG(sp)),%ARG_2
+	cmp		$KERNEL_BEGIN,%ARG_2
 	jb		2f
 	// stay in kernel
-	call	*%edx
+	call	*%ARG_2
 1:
 	jmp		1b
 
 	// setup user-env
 2:
-	mov		(%esp),%eax
+	mov		(%REG(sp)),%ARG_1
 	call	uenv_setupThread		// call uenv_setupThread(arg,entryPoint)
-	mov		%eax,%ecx				// user-stackpointer
-	mov		8(%esp),%eax			// process entryPoint
+	mov		%REG(ax),%REG(cx)		// user-stackpointer
+	// process entryPoint
+	mov		WORDSIZE * 2(%REG(sp)),%REG(ax)
 
 	// go to user-mode
 3:
-	pushl	$((SEG_UDATA << 3) | 3)	// ss
-	pushl	%ecx					// esp
-	pushfl							// eflags
-	mov		(%esp),%ecx
-	or		$1 << 9,%ecx			// enable IF-flag
-	// set IOPL=0 (if CPL <= IOPL the user can change eflags..)
-	and		$~((1 << 12) | (1 << 13)),%ecx
-	mov		%ecx,(%esp)
-	pushl	$((SEG_UCODE2 << 3) | 3)// cs
-	push	%eax					// eip (entry-point)
-	mov		$((SEG_UDATA << 3) | 3),%eax
-	mov		%eax,%ds				// reload segments
-	mov		%eax,%es
-	mov		%eax,%fs
-	mov		$((SEG_TLS << 3) | 3),%eax
-	mov		%eax,%gs				// TLS segment
-	iret							// jump to task and switch to user-mode
+	mov		%REG(cx),%REG(bp)
+	push	$((SEG_UDATA << 3) | 3)	// ss
+	push	%REG(cx)				// sp
+	push	$0x200					// flags (enable IF-flag)
+	push	$((SEG_UCODE2 << 3) | 3)// cs
+	push	%REG(ax)				// ip (entry-point)
+	mov		$((SEG_UDATA << 3) | 3),%REG(ax)
+	mov		%REG(ax),%ds			// reload segments
+	mov		%REG(ax),%es
+	mov		%REG(ax),%fs
+	mov		$((SEG_TLS << 3) | 3),%REG(ax)
+	mov		%REG(ax),%gs			// TLS segment
+	IRET							// jump to task and switch to user-mode

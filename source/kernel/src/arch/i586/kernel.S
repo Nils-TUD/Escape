@@ -18,6 +18,7 @@
  */
 
 #include <sys/arch/i586/mem/layout.h>
+#include <esc/arch.h>
 
 #define USER_STACK			FREE_AREA_BEGIN
 #define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - 4)
@@ -224,7 +225,7 @@ thread_startup:
 
 	// go to user-mode
 3:
-	pushl	$0x23					// ss
+	pushl	$((SEG_UDATA << 3) | 3)	// ss
 	pushl	%ecx					// esp
 	pushfl							// eflags
 	mov		(%esp),%ecx
@@ -232,12 +233,12 @@ thread_startup:
 	// set IOPL=0 (if CPL <= IOPL the user can change eflags..)
 	and		$~((1 << 12) | (1 << 13)),%ecx
 	mov		%ecx,(%esp)
-	pushl	$0x1B					// cs
+	pushl	$((SEG_UCODE2 << 3) | 3)// cs
 	push	%eax					// eip (entry-point)
-	mov		$0x23,%eax				// set the value for the segment-registers
+	mov		$((SEG_UDATA << 3) | 3),%eax
 	mov		%eax,%ds				// reload segments
 	mov		%eax,%es
 	mov		%eax,%fs
-	mov		$0x2B,%eax
+	mov		$((SEG_TLS << 3) | 3),%eax
 	mov		%eax,%gs				// TLS segment
 	iret							// jump to task and switch to user-mode

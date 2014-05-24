@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 #include <sys/arch/x86/tss.h>
+#include <esc/arch.h>
 
 class GDT {
 	GDT() = delete;
@@ -102,18 +103,10 @@ class GDT {
 	};
 
 	/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data, tls
-	 * and one entry for our TSS */
-	static const size_t GDT_ENTRY_COUNT = 8;
+	 * and one entry for our TSS (2 Descs for x86_64) */
+	static const size_t GDT_ENTRY_COUNT = 10;
 
 public:
-	/* the segment-indices in the gdt */
-	enum {
-		SEL_KCODE	= 1 << 3,
-		SEL_KDATA	= 2 << 3,
-		SEL_UCODE	= 3 << 3,
-		SEL_UDATA	= 4 << 3,
-	};
-
 	/**
 	 * Inits the GDT
 	 */
@@ -176,6 +169,9 @@ public:
 	static void print(OStream &os);
 
 private:
+	static ulong selector(int seg) {
+		return (seg << 3) | 0x3;
+	}
 	static void flush(Table *gdt) {
 		asm volatile ("lgdt	(%0)" : : "r"(gdt));
 	}

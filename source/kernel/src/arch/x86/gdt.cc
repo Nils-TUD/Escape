@@ -51,21 +51,24 @@ void GDT::init() {
 	gdtTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 
 	/* kernel code+data */
-	setDesc(bspgdt + 1,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_KERNEL);
-	setDesc(bspgdt + 2,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_KERNEL);
+	setDesc(bspgdt + SEG_KCODE,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_KERNEL);
+	setDesc(bspgdt + SEG_KDATA,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_KERNEL);
 	/* user code+data */
-	setDesc(bspgdt + 3,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_USER);
-	setDesc(bspgdt + 4,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
+	setDesc(bspgdt + SEG_UCODE,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_USER);
+	setDesc(bspgdt + SEG_UDATA,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
+	/* we use a second code-segment because sysret expects code to be IA32_STAR[63:48] + 16 and
+	 * stack to be IA32_STAR[63:48] + 8. */
+	setDesc(bspgdt + SEG_UCODE2,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_USER);
 	/* tls */
-	setDesc(bspgdt + 5,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
+	setDesc(bspgdt + SEG_TLS,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
 	/* for the current thread */
-	setDesc(bspgdt + 6,0,0,GRANU_PAGES,DATA_RW,DPL_KERNEL);
+	setDesc(bspgdt + SEG_THREAD,0,0,GRANU_PAGES,DATA_RW,DPL_KERNEL);
 	/* tss */
 	setTSS(bspgdt,&bspTSS,KSTACK_AREA);
 
 	/* now load GDT and TSS */
 	flush(&gdtTable);
-	loadTSS(7 * sizeof(Desc));
+	loadTSS(SEG_TSS * sizeof(Desc));
 }
 
 void GDT::initBSP() {
@@ -106,7 +109,7 @@ void GDT::initAP() {
 
 	/* now load our GDT and TSS */
 	flush(&all[cpuCount].gdt);
-	loadTSS(7 * sizeof(Desc));
+	loadTSS(SEG_TSS * sizeof(Desc));
 
 	setupSyscalls(tss);
 	cpuCount++;
@@ -126,7 +129,7 @@ cpuid_t GDT::getCPUId() {
 void GDT::setRunning(cpuid_t id,Thread *t) {
 	/* store the thread-pointer into an unused slot of the gdt */
 	Desc *gdt = (Desc*)all[id].gdt.offset;
-	setDesc(gdt + 6,(uintptr_t)t,0,GRANU_PAGES,DATA_RO,DPL_KERNEL);
+	setDesc(gdt + SEG_THREAD,(uintptr_t)t,0,GRANU_PAGES,DATA_RO,DPL_KERNEL);
 }
 
 void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
@@ -135,7 +138,7 @@ void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 	 * %gs:0xFFFFFFF8 etc. */
 	if(EXPECT_FALSE(n->getTLSRegion())) {
 		uintptr_t tlsEnd = n->getTLSRegion()->virt() + n->getTLSRegion()->reg->getByteCount();
-		setDesc((Desc*)all[id].gdt.offset + 5,tlsEnd - sizeof(void*),
+		setDesc((Desc*)all[id].gdt.offset + SEG_TLS,tlsEnd - sizeof(void*),
 				0xFFFFFFFF >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
 	}
 
@@ -174,7 +177,7 @@ void GDT::setIOMap(const uint8_t *ioMap,bool forceCpy) {
 }
 
 void GDT::setupSyscalls(A_UNUSED TSS *tss) {
-	CPU::setMSR(CPU::MSR_IA32_SYSENTER_CS,GDT::SEL_KCODE);
+	CPU::setMSR(CPU::MSR_IA32_SYSENTER_CS,SEG_KCODE << 3);
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_EIP,(uint64_t)&syscall_entry);
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,tss->REG(sp0));
 }
@@ -183,7 +186,7 @@ void GDT::setTSS(Desc *gdt,TSS *tss,uintptr_t kstack) {
 	/* leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes */
 	tss->setSP(kstack + PAGE_SIZE - 2 * sizeof(ulong));
-	setDesc(gdt + 7,(uintptr_t)tss,sizeof(TSS) - 1,GRANU_BYTES,SYS_TSS,DPL_KERNEL);
+	setDesc(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,GRANU_BYTES,SYS_TSS,DPL_KERNEL);
 }
 
 void GDT::setDesc(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t type,uint8_t dpl) {

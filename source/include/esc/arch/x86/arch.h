@@ -25,6 +25,16 @@
 #	include <esc/arch/x86_64/arch.h>
 #endif
 
+/* segments numbers */
+#define SEG_KCODE	1
+#define SEG_KDATA	2
+#define SEG_UCODE	3
+#define SEG_UDATA	4
+#define SEG_UCODE2	5
+#define SEG_TLS		6
+#define SEG_THREAD	7
+#define SEG_TSS		8
+
 /* writes the value of the register with given name to c */
 #define GET_REG(name,c) \
 	__asm__ volatile ( \

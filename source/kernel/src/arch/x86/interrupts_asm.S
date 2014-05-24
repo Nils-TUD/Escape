@@ -182,6 +182,7 @@ isrNull:
 // syscall
 .global syscall_entry
 syscall_entry:
+	SYS_ENTER
 	push	$0						// store intrptNo = 0 so that we can distinguish the stack-frames
 	SAVE_REGS
 
@@ -190,9 +191,7 @@ syscall_entry:
 	call	syscall_handler
 
 	RESTORE_REGS
-	add		$WORDSIZE,%REG(sp)
-	sti
-	sysexit
+	SYS_LEAVE
 
 // the ISR for all interrupts
 isrCommon:

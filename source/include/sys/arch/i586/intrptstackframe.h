@@ -23,6 +23,10 @@
 #	define SAVE_REGS		pusha
 #	define RESTORE_REGS		popa
 #	define IRET				iret
+#	define SYS_ENTER
+#	define SYS_LEAVE		add $4,%esp;	\
+ 							sti;			\
+ 							sysexit
 #else
 #	include <sys/common.h>
 #	include <sys/ostream.h>

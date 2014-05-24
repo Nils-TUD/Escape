@@ -18,6 +18,7 @@
  */
 
 #include <esc/syscalls.h>
+#include <esc/arch.h>
 
 .section .text
 
@@ -52,42 +53,43 @@
 #ifndef SHAREDLIB
 _start:
 	// mark the beginning of the call-trace
-	mov		$0,%ebp
-	pop		%eax
-	pop		%edx
-	pop		%ecx
+	mov		$0,%REG(bp)
+	pop		%ARG_1
+	pop		%ARG_2
+	pop		%ARG_3
+
 	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
 	call	__libc_preinit
 
 	// it returns the entrypoint; 0 if we're the initial thread
-	test	%eax,%eax
+	test	%REG(ax),%REG(ax)
 	je		initialThread
 
 	// we're an additional thread, so call the desired function
-	mov		%eax,%edx
+	mov		%REG(ax),%REG(dx)
 	// get argument
-	pop		%eax
-	call	*%edx
+	pop		%ARG_1
+	call	*%REG(dx)
 	jmp		threadExit
 
 	// initial thread calls main
 initialThread:
 	// init env stuff
-	mov		8(%esp),%eax
-	mov		12(%esp),%edx
+	mov		WORDSIZE * 2(%REG(sp)),%ARG_1
+	mov		WORDSIZE * 3(%REG(sp)),%ARG_2
 	call	initenv
 
 	// call function in .init-section
 	call	_init
 
 	// get argc and argv
-	pop		%eax
-	pop		%edx
+	pop		%ARG_1
+	pop		%ARG_2
 	// finally, call main
 	call	main
 
 threadExit:
-	// eax is already the exit-code
+	mov		%REG(ax),%ARG_1
 	call	exit
 	// just to be sure
 	1: jmp	1b
@@ -97,7 +99,7 @@ sigRetFunc:
 	// we have to use int instead of sysenter here because sysexit does not restore ecx,edx and eflags.
 	// so, if we have started the signal during an interrupt/exception and were thus not prepared for
 	// loosing one of those, we would get into trouble.
-	mov		$ASM_SYSC_ACKSIG,%eax
+	mov		$ASM_SYSC_ACKSIG,%SYSCNO
 	int		$ASM_IRQ_ACKSIG
 	// never reached
 #endif

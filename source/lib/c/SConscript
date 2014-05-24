@@ -11,15 +11,17 @@ baseacsrc = [env.Glob('basic/arch/$TGT/*.c'), env.Glob('basic/arch/$TGTTYPE/*.c'
 baseassrc = [env.Glob('basic/arch/$TGT/*.S'), env.Glob('basic/arch/$TGTTYPE/*.S')]
 
 if env['TGTTYPE'] == 'x86':
+	crt0s = 'arch/$TGTTYPE/crt0.S'
 	crt1s = 'arch/$TGTTYPE/crt1.S'
 	crtns = 'arch/$TGTTYPE/crtn.S'
 else:
+	crt0s = 'arch/$TGT/crt0.S'
 	crt1s = 'arch/$TGT/crt1.S'
 	crtns = 'arch/$TGT/crtn.S'
 
 # static library
 stenv = env.Clone()
-crt0 = stenv.Object('crt0.o', 'arch/$TGT/crt0.S')
+crt0 = stenv.Object('crt0.o', crt0s)
 crt1 = stenv.Object('crt1.o', crt1s)
 crtn = stenv.Object('crtn.o', crtns)
 stenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])
@@ -38,7 +40,7 @@ if env['TGTTYPE'] == 'x86':
 		ASFLAGS = ' -DSHAREDLIB=1',
 		LINKFLAGS = ' -nodefaultlibs -Wl,-shared -Wl,-soname,libc.so'
 	)
-	crt0 = shenv.Object('crt0S.o', 'arch/$TGT/crt0.S')
+	crt0 = shenv.Object('crt0S.o', crt0s)
 	crt1 = shenv.Object('crt1S.o', crt1s)
 	crtn = shenv.Object('crtnS.o', crtns)
 	shenv.Install('$SYSGCCLIBPATH', [crt0, crt1, crtn])

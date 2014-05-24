@@ -60,8 +60,8 @@ static inline uint64_t timetotsc(uint64_t usecs) {
 }
 #endif
 
-#if defined(__i586__)
-#	include <esc/arch/i586/time.h>
+#if defined(__x86__)
+#	include <esc/arch/x86/time.h>
 #elif defined(__eco32__)
 #	include <esc/arch/eco32/time.h>
 #elif defined(__mmix__)

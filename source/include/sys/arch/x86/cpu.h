@@ -332,6 +332,12 @@ private:
 	static uint64_t busHz;
 };
 
+inline uint64_t CPUBase::rdtsc() {
+	uint32_t u, l;
+	asm volatile ("rdtsc" : "=a" (l), "=d" (u));
+	return (uint64_t)u << 32 | l;
+}
+
 inline void CPUBase::halt() {
 	asm volatile ("cli; hlt");
 }
@@ -339,7 +345,3 @@ inline void CPUBase::halt() {
 inline uint64_t CPUBase::getSpeed() {
 	return CPU::cpuHz;
 }
-
-#if defined(__i586__)
-#	include <sys/arch/i586/cpu.h>
-#endif

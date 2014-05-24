@@ -108,6 +108,10 @@ public:
 		CR4_PAE			= 1 << 5,
 		/* page global enable */
 		CR4_PGE			= 1 << 7,
+		/* for SSE/SSE2/SSE3/SSSE3/SSE4 */
+		CR4_OSFXSR		= 1 << 9,
+		/* for SIMD floating-point exception (#XM) */
+		CR4_OSXMMEXCPT	= 1 << 10,
 	};
 
 	enum {

@@ -25,171 +25,10 @@
 class FPU {
 	FPU() = delete;
 
+public:
 	/* the state of FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 */
 	struct XState {
-		uint16_t : 16;		/* reserved */
-		uint16_t cs;
-		uint32_t fpuIp;
-		uint16_t fop;
-		uint16_t ftw;
-		uint16_t fsw;
-		uint16_t fcw;
-		uint32_t mxcsrMask;
-		uint32_t mxcsr;
-		uint16_t : 16;		/* reserved */
-		uint16_t ds;
-		uint32_t fpuDp;
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st0mm0[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st1mm1[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st2mm2[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st3mm3[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st4mm4[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st5mm5[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st6mm6[10];
-		/* reserved */
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t : 8;
-		uint8_t st7mm7[10];
-		uint8_t xmm0[16];
-		uint8_t xmm1[16];
-		uint8_t xmm2[16];
-		uint8_t xmm3[16];
-		uint8_t xmm4[16];
-		uint8_t xmm5[16];
-		uint8_t xmm6[16];
-		uint8_t xmm7[16];
-		/* reserved */
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-		uint32_t : 32;
-	} A_PACKED;
-
-public:
-	/* the FPU-state */
-	struct State {
-		uint16_t : 16;
-		uint16_t controlWord;
-		uint16_t : 16;
-		uint16_t statusWord;
-		uint16_t : 16;
-		uint16_t tagWord;
-		uint32_t fpuIPOffset;
-		uint16_t : 16;
-		uint16_t fpuIPSel;
-		uint32_t fpuOpOffset;
-		uint16_t : 16;
-		uint16_t fpuOpSel;
-		struct {
-			uint16_t high;
-			uint32_t mid;
-			uint32_t low;
-		} A_PACKED regs[8];
+		uint8_t bytes[512];
 	} A_PACKED;
 
 	/**
@@ -204,7 +43,7 @@ public:
 	static void lockFPU() {
 		/* set the task-switched-bit in CR0. as soon as a process uses any FPU instruction
 		 * we'll get a EX_CO_PROC_NA and call handleCoProcNA() */
-		uint32_t cr0 = CPU::getCR0();
+		ulong cr0 = CPU::getCR0();
 		if(~cr0 & CPU::CR0_TASK_SWITCHED)
 			CPU::setCR0(cr0 | CPU::CR0_TASK_SWITCHED);
 	}
@@ -214,7 +53,7 @@ public:
 	 *
 	 * @param state pointer to the state-memory
 	 */
-	static void handleCoProcNA(State **state);
+	static void handleCoProcNA(XState **state);
 
 	/**
 	 * Clones the FPU-state <src> into <dst>
@@ -222,26 +61,26 @@ public:
 	 * @param dst the destination-fpu-state
 	 * @param src the source-fpu-state
 	 */
-	static void cloneState(State **dst,const State *src);
+	static void cloneState(XState **dst,const XState *src);
 
 	/**
 	 * Free's the given FPU-state
 	 *
 	 * @param state the state
 	 */
-	static void freeState(State **state);
+	static void freeState(XState **state);
 
 private:
 	static void finit() {
-		asm volatile ("finit");
+		asm volatile ("fninit");
 	}
-	static void fsave(State *state) {
-		asm volatile ("fsave %0" : : "m"(*state));
+	static void fsave(XState *state) {
+		asm volatile ("fxsave %0" : : "m"(*state));
 	}
-	static void frestore(State *state) {
-		asm volatile ("frstor %0" : : "m"(*state));
+	static void frestore(XState *state) {
+		asm volatile ("fxrstor %0" : : "m"(*state));
 	}
 
 	/* current FPU state-memory */
-	static State ***curStates;
+	static XState ***curStates;
 };

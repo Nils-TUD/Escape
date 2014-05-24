@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/arch/x86/fpu.h>
 #include <sys/cpu.h>
 
 class Thread : public ThreadBase {
@@ -36,7 +37,7 @@ public:
 	uintptr_t getKernelStack() const {
 		return kernelStack;
 	}
-	FPU::State **getFPUState() {
+	FPU::XState **getFPUState() {
 		return &fpuState;
 	}
 
@@ -48,7 +49,7 @@ private:
 
 	uintptr_t kernelStack;
 	/* FPU-state; initially NULL */
-	FPU::State *fpuState;
+	FPU::XState *fpuState;
 };
 
 inline Thread *ThreadBase::getRunning() {

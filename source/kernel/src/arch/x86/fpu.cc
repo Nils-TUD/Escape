@@ -28,39 +28,43 @@
 #include <string.h>
 
 /* current FPU state-memory */
-FPU::State ***FPU::curStates = NULL;
+FPU::XState ***FPU::curStates = NULL;
 
 void FPU::init() {
-	uint32_t cr0 = CPU::getCR0();
+	/* TODO check whether we have a FPU/SSE/... */
+
+	ulong cr4 = CPU::getCR4();
+	cr4 |= CPU::CR4_OSFXSR;
+	cr4 |= CPU::CR4_OSXMMEXCPT;
+	CPU::setCR4(cr4);
+
+	ulong cr0 = CPU::getCR0();
 	/* enable coprocessor monitoring */
 	cr0 |= CPU::CR0_MONITOR_COPROC;
 	/* disable emulate */
 	cr0 &= ~CPU::CR0_EMULATE;
 	CPU::setCR0(cr0);
 
-	/* TODO check whether we have a FPU */
-	/* set the OSFXSR bit
-	CPU::setCR4(CPU::getCR4() | 0x200);*/
 	/* init the fpu */
 	finit();
 
 	/* allocate a state-pointer for each cpu (do that just once) */
 	if(!curStates) {
-		curStates = (State***)Cache::calloc(SMP::getCPUCount(),sizeof(State**));
+		curStates = (XState***)Cache::calloc(SMP::getCPUCount(),sizeof(XState**));
 		if(!curStates)
 			Util::panic("Unable to allocate memory for FPU-states");
 	}
 }
 
-void FPU::handleCoProcNA(State **state) {
+void FPU::handleCoProcNA(XState **state) {
 	Thread *t = Thread::getRunning();
-	State **current = curStates[t->getCPU()];
+	XState **current = curStates[t->getCPU()];
 	if(current != state) {
 		/* if any process has used the FPU in the past */
 		if(current != NULL) {
 			/* do we have to allocate space for the state? */
 			if(*current == NULL) {
-				*current = (State*)Cache::alloc(sizeof(State));
+				*current = (XState*)Cache::alloc(sizeof(XState));
 				/* if we can't save the state, don't unlock the FPU for another process */
 				/* TODO ok? */
 				if(*current == NULL)
@@ -86,18 +90,18 @@ void FPU::handleCoProcNA(State **state) {
 		CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 }
 
-void FPU::cloneState(State **dst,const State *src) {
+void FPU::cloneState(XState **dst,const XState *src) {
 	if(src != NULL) {
-		*dst = (State*)Cache::alloc(sizeof(State));
+		*dst = (XState*)Cache::alloc(sizeof(XState));
 		/* simply ignore it here if alloc fails */
 		if(*dst)
-			memcpy(*dst,src,sizeof(State));
+			memcpy(*dst,src,sizeof(XState));
 	}
 	else
 		*dst = NULL;
 }
 
-void FPU::freeState(State **state) {
+void FPU::freeState(XState **state) {
 	if(*state != NULL)
 		Cache::free(*state);
 	*state = NULL;

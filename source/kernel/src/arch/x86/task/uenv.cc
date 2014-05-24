@@ -29,33 +29,35 @@
 #include <errno.h>
 #include <assert.h>
 
+#define REG_COUNT		9
+
 void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
-	ulong *esp = (ulong*)stack->getSP();
-	if(!PageDir::isInUserSpace((uintptr_t)(esp - 9),9 * sizeof(ulong)))
+	ulong *sp = (ulong*)stack->getSP();
+	if(!PageDir::isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(ulong)))
 		goto error;
 
 	/* the ret-instruction of sigRet() should go to the old eip */
-	UserAccess::writeVar(--esp,stack->getIP());
+	UserAccess::writeVar(--sp,stack->getIP());
 	/* save regs */
-	UserAccess::writeVar(--esp,stack->getFlags());
-	UserAccess::writeVar(--esp,stack->eax);
-	UserAccess::writeVar(--esp,stack->ebx);
-	UserAccess::writeVar(--esp,stack->ecx);
-	UserAccess::writeVar(--esp,stack->edx);
-	UserAccess::writeVar(--esp,stack->edi);
-	UserAccess::writeVar(--esp,stack->esi);
+	UserAccess::writeVar(--sp,stack->getFlags());
+	UserAccess::writeVar(--sp,stack->REG(ax));
+	UserAccess::writeVar(--sp,stack->REG(bx));
+	UserAccess::writeVar(--sp,stack->REG(cx));
+	UserAccess::writeVar(--sp,stack->REG(dx));
+	UserAccess::writeVar(--sp,stack->REG(di));
+	UserAccess::writeVar(--sp,stack->REG(si));
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
-	UserAccess::writeVar(--esp,(ulong)t->getProc()->getSigRetAddr());
+	UserAccess::writeVar(--sp,(ulong)t->getProc()->getSigRetAddr());
 
 	/* if one of theses accesses failed, terminate */
 	if(t->isFaulted())
 		goto error;
 
 	stack->setIP((uintptr_t)handler);
-	stack->setSP((ulong)esp);
+	stack->setSP((ulong)sp);
 	/* signal-number as argument */
-	stack->eax = sig;
+	stack->ARG_1 = sig;
 	return;
 
 error:
@@ -64,27 +66,27 @@ error:
 }
 
 int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
-	ulong *esp = (ulong*)stack->getSP();
-	if(!PageDir::isInUserSpace((uintptr_t)esp,9 * sizeof(ulong)))
+	ulong *sp = (ulong*)stack->getSP();
+	if(!PageDir::isInUserSpace((uintptr_t)sp,REG_COUNT * sizeof(ulong)))
 		goto error;
 
 	/* restore regs */
-	UserAccess::readVar(&stack->esi,esp++);
-	UserAccess::readVar(&stack->edi,esp++);
-	UserAccess::readVar(&stack->edx,esp++);
-	UserAccess::readVar(&stack->ecx,esp++);
-	UserAccess::readVar(&stack->ebx,esp++);
-	UserAccess::readVar(&stack->eax,esp++);
+	UserAccess::readVar(&stack->REG(si),sp++);
+	UserAccess::readVar(&stack->REG(di),sp++);
+	UserAccess::readVar(&stack->REG(dx),sp++);
+	UserAccess::readVar(&stack->REG(cx),sp++);
+	UserAccess::readVar(&stack->REG(bx),sp++);
+	UserAccess::readVar(&stack->REG(ax),sp++);
 
 	ulong tmp;
-	UserAccess::readVar(&tmp,esp++);
+	UserAccess::readVar(&tmp,sp++);
 	stack->setFlags(tmp);
 
 	/* return */
-	UserAccess::readVar(&tmp,esp++);
+	UserAccess::readVar(&tmp,sp++);
 	stack->setIP(tmp);
 
-	stack->setSP((uintptr_t)esp);
+	stack->setSP((uintptr_t)sp);
 	return 0;
 
 error:
@@ -97,19 +99,19 @@ bool UEnvBase::setupProc(int argc,int envc,const char *args,size_t argsSize,
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *frame = t->getIntrptStack();
 
-	ulong *esp = initProcStack(argc,envc,args,argsSize,info->progEntry);
-	if(!esp)
+	ulong *sp = initProcStack(argc,envc,args,argsSize,info->progEntry);
+	if(!sp)
 		return false;
 
 	/* if its the dynamic linker, give him the filedescriptor, so that he can load it including
 	 * all shared libraries */
 	if(info->linkerEntry != info->progEntry) {
 		assert(fd != -1);
-		UserAccess::writeVar(--esp,(ulong)fd);
+		UserAccess::writeVar(--sp,(ulong)fd);
 	}
 
-	frame->setSP((ulong)esp);
-	frame->ebp = frame->getSP();
+	frame->setSP((ulong)sp);
+	frame->REG(bp) = frame->getSP();
 	frame->setIP(entryPoint);
 	return true;
 }

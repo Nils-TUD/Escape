@@ -20,9 +20,9 @@
 #include <esc/common.h>
 #include <esc/arch.h>
 #include <esc/debug.h>
+#include <esc/conf.h>
 
 #define MAX_STACK_PAGES		128
-#define PAGE_SIZE			4096
 
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */
@@ -31,20 +31,20 @@
 uintptr_t *getStackTrace(void) {
 	static uintptr_t frames[MAX_STACK_DEPTH];
 	uintptr_t end,start;
-	size_t i;
-	uint32_t *ebp;
 	uintptr_t *frame = &frames[0];
-	GET_REG(bp,ebp);
+	size_t pageSize = sysconf(CONF_PAGE_SIZE);
+	ulong *bp;
+	GET_REG(bp,bp);
 	/* TODO just temporary */
-	end = ((uintptr_t)ebp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
-	start = end - PAGE_SIZE * MAX_STACK_PAGES;
+	end = ((uintptr_t)bp + (MAX_STACK_PAGES * pageSize - 1)) & ~(MAX_STACK_PAGES * pageSize - 1);
+	start = end - pageSize * MAX_STACK_PAGES;
 
-	for(i = 0; i < MAX_STACK_DEPTH; i++) {
+	for(size_t i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */
-		if((uintptr_t)ebp < start || (uintptr_t)ebp >= end)
+		if((uintptr_t)bp < start || (uintptr_t)bp >= end)
 			break;
-		*frame = *(ebp + 1) - CALL_INSTR_SIZE;
-		ebp = (uint32_t*)*ebp;
+		*frame = *(bp + 1) - CALL_INSTR_SIZE;
+		bp = (ulong*)*bp;
 		frame++;
 	}
 	/* terminate */

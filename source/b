@@ -40,7 +40,7 @@ if [ "$ESC_TARGET" = "i586" ]; then
 	export ESC_TGTTYPE=x86
 elif [ "$ESC_TARGET" = "x86_64" ]; then
 	gdb=$ESC_GDB_X86
-	qemu=qemu-system-x86_64
+	export ESC_QEMU=qemu-system-x86_64
 	export ESC_TGTTYPE=x86
 elif [ "$ESC_TARGET" = "eco32" ]; then
 	gdb=""
@@ -55,7 +55,7 @@ fi
 
 # determine linktype
 if [ "$ESC_LINKTYPE" != "static" ]; then
-	if [ "$ESC_TGTTYPE" = "x86" ]; then
+	if [ "$ESC_TGT" = "i586" ]; then
 		ESC_LINKTYPE=dynamic
 	else
 		ESC_LINKTYPE=static
@@ -104,12 +104,13 @@ help() {
 	echo "    ESC_MAC:                 the MAC address of the real machine for which to"
 	echo "                             write the pulsar config for. The default is"
 	echo "                             52-54-00-12-34-56."
-	echo "    ESC_GDB_I586:            the executable of gdb to use for ESC_TARGET=i586."
+	echo "    ESC_GDB_X86:             the executable of gdb to use for i586 and x86_64."
 	echo "                             The default is 'gdb --tui'."
 	echo "    ESC_GDB_MMIX:            the executable of gdb to use for ESC_TARGET=mmix."
 	echo "                             The default is /opt/mmix/bin/mmix-gdbtui."
 	echo "    ESC_QEMU:                The qemu executable to use (default is"
-	echo "                             qemu-system-i386)."
+	echo "                             qemu-system-i386 for i586 and qemu-system-x86_64"
+	echo "                             for x86_64.)."
 	echo "    ESC_SIM_FLAGS:           Pass additional arguments to qemu/gimmix/eco32."
 	exit 0
 }

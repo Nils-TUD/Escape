@@ -6,6 +6,7 @@ if env['TGTTYPE'] == 'x86':
 	env.Install('$DISTDIR/lib', '$CROSSDIR/$CROSS/lib/libgcc_s.so.1')
 	env.Install('$BINDIR', '$CROSSDIR/$CROSS/lib/libgcc_s.so.1')
 env.InstallFiles('$DISTDIR', 'arch/$TGT', scan=1)
+env.InstallFiles('$DISTDIR', 'arch/$TGTTYPE', scan=1)
 env.InstallFiles('$DISTDIR/etc', 'etc', scan=1)
 env.InstallFiles('$DISTDIR/home', 'home', scan=1)
 env.InstallFiles('$DISTDIR/root', 'root', scan=1)

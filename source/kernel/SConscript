@@ -30,6 +30,13 @@ if kenv['TGTTYPE'] == 'x86':
 		CFLAGS = ' -msoft-float',
 		CXXFLAGS = ' -msoft-float'
 	)
+if kenv['TGT'] == 'x86_64':
+	kenv.Append(
+		CFLAGS = ' -mcmodel=kernel -mno-red-zone -mno-sse',
+		CXXFLAGS = ' -mcmodel=kernel -mno-red-zone -mno-sse',
+		ASFLAGS = ' -mcmodel=kernel -mno-red-zone',
+		LINKFLAGS = ' -mcmodel=kernel -mno-red-zone',
+	)
 
 #kenv.Append(
 #	CPPFLAGS = ' -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list='	+
@@ -86,3 +93,9 @@ def LinkWithSymbols(kenv, name, objects):
 kernel = LinkWithSymbols(kenv, 'escape', objects(kenv, src + [mainsrc]))
 test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 
+if kenv['TGT'] == 'x86_64':
+	kenv.ObjCpy('escape.elf32', kernel)
+	kenv.ObjCpy('escape_test.elf32', test_kernel)
+	kenv.Install('$DISTDIR/boot', ['escape.elf32', 'escape_test.elf32'])
+	kenv.Symlink('$BINDIR/escape.elf32', 'escape.elf32')
+	kenv.Symlink('$BINDIR/escape_test.elf32', 'escape_test.elf32')

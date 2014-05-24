@@ -19,16 +19,12 @@
 
 #pragma once
 
-#include <esc/common.h>
-
-#if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
-#elif defined(__x86_64__)
-#	include <esc/arch/x86_64/setjmp.h>
-#else
-// TODO
-typedef void *sJumpEnv;
-#endif
-
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+#define REG(x)		r##x
+#define ARG_1		rdi
+#define ARG_2		rsi
+#define ARG_3		rdx
+#define ARG_4		rcx
+#define ARG_5		r8
+#define ARG_6		r9
+#define SYSCNO		rdi
+#define WORDSIZE	8

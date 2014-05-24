@@ -20,6 +20,7 @@
 #include <sys/intrptstackframe.h>
 #include <esc/arch.h>
 
+.global kstackPtr
 .global waiting
 .global waitlock
 .global halting
@@ -28,6 +29,9 @@
 .extern intrpt_handler
 .extern syscall_handler
 
+.align 8
+kstackPtr:
+	.quad	0
 waiting:
 	.long	0
 waitlock:

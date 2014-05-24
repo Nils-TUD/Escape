@@ -28,7 +28,7 @@
 
 #define CONS_EXIT			-1234
 /* has to be a power of 2 */
-#if defined(__mmix__)
+#if defined(__mmix__) || defined(__x86_64__)
 #	define BYTES_PER_LINE		8
 #else
 #	define BYTES_PER_LINE		16

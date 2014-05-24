@@ -17,18 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <sys/common.h>
+#include <sys/mem/pagedir.h>
+#include <sys/mem/virtmem.h>
+#include <sys/dbg/console.h>
+#include <sys/dbg/kb.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/interrupts.h>
+#include <sys/ksymbols.h>
+#include <sys/video.h>
+#include <sys/util.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include <esc/common.h>
+void Util::printUserStateOf(A_UNUSED OStream &os,A_UNUSED const Thread *t) {
+}
 
-#if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
-#elif defined(__x86_64__)
-#	include <esc/arch/x86_64/setjmp.h>
-#else
-// TODO
-typedef void *sJumpEnv;
-#endif
-
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+void Util::printUserState(A_UNUSED OStream &os) {
+}

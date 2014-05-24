@@ -59,6 +59,8 @@
 
 #if defined(__i586__)
 #	include <sys/arch/i586/task/threadconf.h>
+#elif defined(__x86_64__)
+#	include <sys/arch/x86_64/task/threadconf.h>
 #elif defined(__eco32__)
 #	include <sys/arch/eco32/task/threadconf.h>
 #elif defined(__mmix__)
@@ -634,6 +636,9 @@ private:
 #if defined(__i586__)
 #	include <sys/arch/x86/task/thread.h>
 static_assert(sizeof(Thread) <= 256,"Thread is too big");
+#elif defined(__x86_64__)
+#	include <sys/arch/x86/task/thread.h>
+static_assert(sizeof(Thread) <= 512,"Thread is too big");
 #elif defined(__eco32__)
 #	include <sys/arch/eco32/task/thread.h>
 // TODO actually, there is not much missing for 256 bytes

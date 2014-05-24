@@ -115,6 +115,10 @@ public:
 	};
 
 	enum {
+		EFLAG_IF					= 0x200,
+	};
+
+	enum {
 		MSR_IA32_SYSENTER_CS		= 0x174,
 		MSR_IA32_SYSENTER_ESP		= 0x175,
 		MSR_IA32_SYSENTER_EIP		= 0x176,

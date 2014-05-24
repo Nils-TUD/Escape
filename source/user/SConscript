@@ -8,7 +8,12 @@ def isIgnored(list, name):
 			return True
 	return False
 
-if env['TGTTYPE'] == 'x86':
+if env['TGT'] == 'x86_64':
+	filterApps = ["dynlink"]
+	for f in env.Glob('*/SConscript'):
+		if not isIgnored(filterApps, str(f)):
+			env.SConscript(f, 'env')
+elif env['TGTTYPE'] == 'x86':
 	env.SConscript(env.Glob('*/SConscript'), 'env')
 else:
 	guiapps = ["desktop", "fileman", "gcalc", "glogin", "gsettings", "gtest", "guishell", "libguitest"]

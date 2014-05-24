@@ -33,6 +33,10 @@ void *memset(void *addr,int value,size_t count) {
 	}
 
 	ulong dwval = (value << 24) | (value << 16) | (value << 8) | value;
+#if defined(__x86_64__)
+	dwval |= ((ulong)value << 56) | ((ulong)value << 48);
+	dwval |= ((ulong)value << 40) | ((ulong)value << 32);
+#endif
 	ulong *dwaddr = (ulong*)baddr;
 	/* set words with loop-unrolling */
 	while(count >= sizeof(ulong) * 16) {

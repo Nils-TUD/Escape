@@ -1,0 +1,23 @@
+vga
+	/dev/vga 0110 output
+zero
+	/dev/zero 0666 root
+random
+	/dev/random 0666 root
+null
+	/dev/null 0666 root
+pipe
+	/dev/pipe 0666 root
+speaker
+	/dev/speaker 0110 audio
+keyb
+	/dev/keyb 0110 input
+mouse
+	/dev/mouse 0110 input
+tcpip
+	/dev/socket 0770 network
+	/dev/tcpip 0110 network
+http
+	/dev/http 0444 network
+uimng /dev/vga
+	/dev/uimng 0110 input

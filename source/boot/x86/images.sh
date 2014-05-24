@@ -1,6 +1,9 @@
 #!/bin/sh
 
 get_suffix() {
+	if [ "$ESC_TARGET" = "x86_64" ]; then
+		echo -n ".elf32"
+	fi
 	case "$ESC_SIM_FLAGS" in
 		*-enable-kvm*)
 			echo -n " forcepit"

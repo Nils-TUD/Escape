@@ -17,8 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/arch/i586/mem/layout.h>
-#include <sys/arch/i586/intrptstackframe.h>
+#if defined(__i586__)
+#	include <sys/arch/i586/mem/layout.h>
+#	include <sys/arch/i586/intrptstackframe.h>
+#else
+#	include <sys/arch/x86_64/mem/layout.h>
+#	include <sys/arch/x86_64/intrptstackframe.h>
+#endif
 #include <esc/arch.h>
 
 #define USER_STACK			FREE_AREA_BEGIN
@@ -95,10 +100,17 @@ setupGDTEntries:
 	// null gate
 	.long 0, 0
 
+#if defined(__i586__)
 	// code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x00
 	// data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, type 0x92, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x00
+#else
+	// code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xA0
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xA0, 0x00
+	// data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, type 0x92, granularity 0xA0
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xA0, 0x00
+#endif
 setupGDTEntriesEnd:
 
 .code32
@@ -129,6 +141,10 @@ apProtMode:
 
 	// jump to the higher half kernel
 	ljmp	$0x08,$higherhalf
+
+#if defined(__x86_64__)
+.code64
+#endif
 
 higherhalf:
 	// are we an AP?

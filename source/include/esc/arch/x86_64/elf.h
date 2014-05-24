@@ -21,14 +21,18 @@
 
 #include <esc/common.h>
 
-#if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
-#elif defined(__x86_64__)
-#	include <esc/arch/x86_64/setjmp.h>
-#else
-// TODO
-typedef void *sJumpEnv;
-#endif
+typedef Elf64_Word sElfWord;
+typedef Elf64_Half sElfHalf;
+typedef Elf64_Off sElfOff;
+typedef Elf64_Addr sElfAddr;
+typedef Elf64_Section sElfSection;
 
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+typedef Elf64_Ehdr sElfEHeader;
+typedef Elf64_Phdr sElfPHeader;
+typedef Elf64_Shdr sElfSHeader;
+
+typedef Elf64_Sym sElfSym;
+typedef Elf64_Dyn sElfDyn;
+typedef Elf64_Rel sElfRel;
+
+#define ELF_TYPE		64

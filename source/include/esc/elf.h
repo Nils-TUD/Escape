@@ -2645,6 +2645,8 @@ typedef Elf32_Addr Elf32_Conflict;
 
 #if defined(__i586__)
 #	include <esc/arch/i586/elf.h>
+#elif defined(__x86_64__)
+# include <esc/arch/x86_64/elf.h>
 #elif defined(__eco32__)
 #	include <esc/arch/eco32/elf.h>
 #elif defined(__mmix__)

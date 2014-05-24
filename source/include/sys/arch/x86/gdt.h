@@ -72,6 +72,11 @@ class GDT {
 		uint8_t addrHigh;
 	} A_PACKED;
 
+	struct Desc64 : public Desc {
+		uint32_t addrUpper;
+		uint32_t : 32;
+	} A_PACKED;
+
 	enum {
 		SYS_TSS		= 0x09,
 		DATA_RO		= 0x10,
@@ -183,6 +188,7 @@ private:
 	}
 	static void setTSS(Desc *gdt,TSS *tss,uintptr_t kstack);
 	static void setDesc(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t type,uint8_t dpl);
+	static void setDesc64(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t type,uint8_t dpl);
 	static void setupSyscalls(TSS *tss);
 
 	/* for the BSP (we don't have Cache::alloc yet) */

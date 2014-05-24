@@ -58,6 +58,14 @@ _start:
 	pop		%ARG_2
 	pop		%ARG_3
 
+#if defined(__x86_64__)
+	mov		(%REG(sp)),%ARG_4
+	test	%ARG_1,%ARG_1
+	jnz		1f
+	mov		WORDSIZE(%rsp),%ARG_5
+1:
+#endif
+
 	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
 	call	__libc_preinit
 

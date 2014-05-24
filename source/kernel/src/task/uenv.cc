@@ -103,7 +103,7 @@ ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
 	}
 
 	/* put arg on stack */
-	sp--;
+	sp -= 2;
 	UserAccess::writeVar(sp--,(ulong)arg);
 	/* add TLS args and entrypoint */
 	return addArgs(t,sp,entry,true);

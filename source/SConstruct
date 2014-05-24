@@ -43,7 +43,7 @@ env = Environment(
 )
 
 linktype = 'static'
-if tgttype == 'x86':
+if target == 'i586':
 	linktype = os.environ.get('ESC_LINKTYPE')
 	if linktype != 'static':
 		linktype = 'dynamic'
@@ -78,6 +78,12 @@ elif target == 'i586':
 	env.Append(
 		CFLAGS = ' -mregparm=3',
 		CXXFLAGS = ' -mregparm=3'
+	)
+elif target == 'x86_64':
+    # without "-z max-page-size=0x1000" ld produces really large binaries for x86_64, because it
+    # aligns to 2MiB (not only in virtual memory, but also in the binary)
+	env.Append(
+		LINKFLAGS = ' -Wl,-z,max-page-size=0x1000'
 	)
 
 verbose = os.environ.get('ESC_VERBOSE',0)
@@ -235,12 +241,8 @@ env['_LIBFLAGS'] = '-Wl,--start-group ' + env['_LIBFLAGS'] + ' -Wl,--end-group'
 hostenv.SConscript('tools/SConscript', 'hostenv',
 				   variant_dir = builddir + '/tools', duplicate = 0)
 
-if env['TGT'] == 'x86_64':
-	env.SConscript('kernel/SConscript', 'env',
-				   variant_dir = builddir + '/kernel', duplicate = 0)
-else:
-	for d in ['dist', 'bootloader', 'lib', 'drivers', 'user', 'kernel']:
-		env.SConscript(d + '/SConscript', 'env',
-					   variant_dir = builddir + '/' + d, duplicate = 0)
+for d in ['dist', 'bootloader', 'lib', 'drivers', 'user', 'kernel']:
+	env.SConscript(d + '/SConscript', 'env',
+				   variant_dir = builddir + '/' + d, duplicate = 0)
 
 # EOF

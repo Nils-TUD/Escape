@@ -17,18 +17,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <esc/syscalls.h>
+#include <esc/arch.h>
 
-#include <esc/common.h>
+.section .text
 
-#if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
-#elif defined(__x86_64__)
-#	include <esc/arch/x86_64/setjmp.h>
-#else
-// TODO
-typedef void *sJumpEnv;
-#endif
+.global _start
+.global sigRetFunc
 
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+_start:
+	// load modules first
+	mov		$ASM_SYSC_LOADMODS,%rdi
+	syscall
+
+	// load vm86-task
+	mov		$ASM_SYSC_VM86START,%rdi
+	syscall
+
+	// now replace with init
+	mov		$progName,%rsi					// arg1: path
+	mov		$args,%r10						// arg2: arguments
+	mov		$0,%r8							// arg3: env
+	mov		$ASM_SYSC_EXEC,%rdi				// set syscall-number
+	syscall
+
+	// we should not reach this
+1:	jmp		1b
+
+// provide just a dummy
+sigRetFunc:
+	jmp		sigRetFunc
+
+.section .data
+
+args:
+	.quad	progName,0
+
+progName:
+	.asciz	"/bin/init"

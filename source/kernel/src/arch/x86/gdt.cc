@@ -150,10 +150,15 @@ void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 #endif
 
 	all[id].tss->setSP(n->getKernelStack() + PAGE_SIZE - 2 * sizeof(ulong));
-	if(EXPECT_FALSE(all[id].lastMSR != all[id].tss->esp0)) {
-		CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,all[id].tss->esp0);
-		all[id].lastMSR = all[id].tss->esp0;
+#if defined(__i586__)
+	if(EXPECT_FALSE(all[id].lastMSR != all[id].tss->REG(sp0))) {
+		CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,all[id].tss->REG(sp0));
+		all[id].lastMSR = all[id].tss->REG(sp0);
 	}
+#else
+	extern ulong kstackPtr;
+	kstackPtr = n->getKernelStack() + PAGE_SIZE - sizeof(ulong);
+#endif
 }
 
 bool GDT::ioMapPresent() {
@@ -177,16 +182,27 @@ void GDT::setIOMap(const uint8_t *ioMap,bool forceCpy) {
 }
 
 void GDT::setupSyscalls(A_UNUSED TSS *tss) {
+#if defined(__x86_64__)
+	CPU::setMSR(CPU::MSR_IA32_STAR,((selector(SEG_UCODE2) - 16) << 48) | (selector(SEG_KCODE) << 32));
+	CPU::setMSR(CPU::MSR_IA32_LSTAR,(uint64_t)&syscall_entry);
+	CPU::setMSR(CPU::MSR_IA32_FMASK,CPU::EFLAG_IF);
+#else
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_CS,SEG_KCODE << 3);
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_EIP,(uint64_t)&syscall_entry);
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,tss->REG(sp0));
+#endif
 }
 
 void GDT::setTSS(Desc *gdt,TSS *tss,uintptr_t kstack) {
+#if defined(__x86_64__)
+	tss->setSP(kstack + PAGE_SIZE - 1 * sizeof(ulong));
+	setDesc64(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,GRANU_BYTES,SYS_TSS,DPL_KERNEL);
+#else
 	/* leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes */
 	tss->setSP(kstack + PAGE_SIZE - 2 * sizeof(ulong));
 	setDesc(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,GRANU_BYTES,SYS_TSS,DPL_KERNEL);
+#endif
 }
 
 void GDT::setDesc(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t type,uint8_t dpl) {
@@ -196,12 +212,25 @@ void GDT::setDesc(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t t
 	d->limitLow = limit & 0xFFFF;
 	d->limitHigh = (limit >> 16) & 0xF;
 	d->present = 1;
+#if defined(__x86_64__)
+	d->size = SIZE_16;
+	d->bits = 1;
+#else
 	d->size = SIZE_32;
 	d->bits = 0;
+#endif
 	d->dpl = dpl;
 	d->granularity = granu;
 	d->type = type;
 }
+
+#if defined(__x86_64__)
+void GDT::setDesc64(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t type,uint8_t dpl) {
+	Desc64 *d64 = (Desc64*)d;
+	setDesc(d64,address,limit,granu,type,dpl);
+	d64->addrUpper = address >> 32;
+}
+#endif
 
 void GDT::print(OStream &os) {
 	os.writef("GDTs:\n");

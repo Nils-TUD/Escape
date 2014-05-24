@@ -27,6 +27,8 @@
 
 #if defined(__i586__)
 #	include <sys/arch/i586/syscalls.h>
+#elif defined(__x86_64__)
+#	include <sys/arch/x86_64/syscalls.h>
 #elif defined(__eco32__)
 #	include <sys/arch/eco32/syscalls.h>
 #elif defined(__mmix__)

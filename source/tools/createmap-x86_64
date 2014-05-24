@@ -1,0 +1,2 @@
+#!/bin/sh
+nm $1 | grep " T\|t " | awk '{ print $1" "$3 }'

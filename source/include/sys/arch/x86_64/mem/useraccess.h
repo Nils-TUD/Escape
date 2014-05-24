@@ -19,16 +19,10 @@
 
 #pragma once
 
-#include <esc/common.h>
-
-#if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
-#elif defined(__x86_64__)
-#	include <esc/arch/x86_64/setjmp.h>
-#else
-// TODO
-typedef void *sJumpEnv;
-#endif
-
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+inline void UserAccess::copyByte(char *dst,const char *src) {
+	asm volatile (
+		"mov (%1), %%cl;\n"
+		"mov %%cl, (%0);\n"
+		: : "a"(dst), "d"(src) : "rcx", "memory"
+	);
+}

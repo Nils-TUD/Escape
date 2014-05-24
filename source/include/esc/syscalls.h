@@ -128,6 +128,8 @@ enum {
 
 #	if defined(__i586__)
 #		include <esc/arch/i586/syscalls.h>
+#	elif defined(__x86_64__)
+#		include <esc/arch/x86_64/syscalls.h>
 #	elif defined(__eco32__)
 #		include <esc/arch/eco32/syscalls.h>
 #	else

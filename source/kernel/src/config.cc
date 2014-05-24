@@ -54,6 +54,11 @@ void Config::parseBootParams(int argc,const char *const *argv) {
 			value[0] = '\0';
 		set(name,value);
 	}
+
+	// TODO no SMP on x86_64 yet
+#if defined(__x86_64__)
+	smp = false;
+#endif
 }
 
 const char *Config::getStr(int id) {

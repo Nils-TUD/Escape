@@ -29,12 +29,21 @@
 #include <errno.h>
 #include <assert.h>
 
-#define REG_COUNT		9
+#if defined(__x86_64__)
+// take care of red-zone
+#	define REG_COUNT		(128 / sizeof(ulong) + 17)
+#else
+#	define REG_COUNT		9
+#endif
 
 void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	ulong *sp = (ulong*)stack->getSP();
 	if(!PageDir::isInUserSpace((uintptr_t)(sp - REG_COUNT),REG_COUNT * sizeof(ulong)))
 		goto error;
+
+#if defined(__x86_64__)
+	sp -= 128 / sizeof(ulong);
+#endif
 
 	/* the ret-instruction of sigRet() should go to the old eip */
 	UserAccess::writeVar(--sp,stack->getIP());
@@ -46,6 +55,16 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 	UserAccess::writeVar(--sp,stack->REG(dx));
 	UserAccess::writeVar(--sp,stack->REG(di));
 	UserAccess::writeVar(--sp,stack->REG(si));
+#if defined(__x86_64__)
+	UserAccess::writeVar(--sp,stack->r8);
+	UserAccess::writeVar(--sp,stack->r9);
+	UserAccess::writeVar(--sp,stack->r10);
+	UserAccess::writeVar(--sp,stack->r11);
+	UserAccess::writeVar(--sp,stack->r12);
+	UserAccess::writeVar(--sp,stack->r13);
+	UserAccess::writeVar(--sp,stack->r14);
+	UserAccess::writeVar(--sp,stack->r15);
+#endif
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
 	UserAccess::writeVar(--sp,(ulong)t->getProc()->getSigRetAddr());
@@ -71,6 +90,16 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 		goto error;
 
 	/* restore regs */
+#if defined(__x86_64__)
+	UserAccess::readVar(&stack->r15,sp++);
+	UserAccess::readVar(&stack->r14,sp++);
+	UserAccess::readVar(&stack->r13,sp++);
+	UserAccess::readVar(&stack->r12,sp++);
+	UserAccess::readVar(&stack->r11,sp++);
+	UserAccess::readVar(&stack->r10,sp++);
+	UserAccess::readVar(&stack->r9,sp++);
+	UserAccess::readVar(&stack->r8,sp++);
+#endif
 	UserAccess::readVar(&stack->REG(si),sp++);
 	UserAccess::readVar(&stack->REG(di),sp++);
 	UserAccess::readVar(&stack->REG(dx),sp++);
@@ -85,6 +114,10 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 	/* return */
 	UserAccess::readVar(&tmp,sp++);
 	stack->setIP(tmp);
+
+#if defined(__x86_64__)
+	sp += 128 / sizeof(ulong);
+#endif
 
 	stack->setSP((uintptr_t)sp);
 	return 0;

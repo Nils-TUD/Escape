@@ -21,12 +21,12 @@
 
 #include <esc/common.h>
 
-#if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
-#else
-// TODO
-typedef void *sJumpEnv;
-#endif
-
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+typedef struct {
+	uint32_t ebx;
+	uint32_t esp;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t eflags;
+	uint32_t eip;
+} sJumpEnv;

@@ -98,6 +98,7 @@ public:
 	#endif
 
 private:
+	static size_t totalObjSize(size_t sz);
 	static void printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t free);
 	static void *get(Entry *c,size_t i);
 

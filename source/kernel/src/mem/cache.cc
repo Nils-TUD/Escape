@@ -55,6 +55,11 @@ Cache::Entry Cache::caches[] = {
 bool Cache::aafEnabled = false;
 #endif
 
+size_t Cache::totalObjSize(size_t sz) {
+	/* ensure that all objects are 16 bytes aligned, thus, use 16 bytes before and behind. */
+	return sz + sizeof(uint64_t) * 4;
+}
+
 void *Cache::alloc(size_t size) {
 	void *res;
 	if(size == 0)
@@ -92,7 +97,7 @@ void *Cache::realloc(void *p,size_t size) {
 	if(p == NULL)
 		return alloc(size);
 
-	ulong *area = (ulong*)p - 2;
+	ulong *area = (ulong*)((uintptr_t)p - 16);
 	/* if the guard is not ours, perhaps it has been allocated on the fallback-heap */
 	if(area[1] != GUARD_MAGIC)
 		return KHeap::realloc(p,size);
@@ -110,7 +115,7 @@ void *Cache::realloc(void *p,size_t size) {
 }
 
 void Cache::free(void *p) {
-	ulong *area = (ulong*)p - 2;
+	ulong *area = (ulong*)((uintptr_t)p - 16);
 	if(p == NULL)
 		return;
 
@@ -133,7 +138,7 @@ void Cache::free(void *p) {
 	size_t objSize = caches[area[0]].objSize;
 	assert(objSize >= caches[0].objSize && objSize <= caches[ARRAY_SIZE(caches) - 1].objSize);
 	/* check guard */
-	assert(area[(objSize / sizeof(ulong)) + 2] == GUARD_MAGIC);
+	assert(area[(objSize / sizeof(ulong)) + (16 / sizeof(ulong))] == GUARD_MAGIC);
 
 	/* put on freelist */
 	Entry *c = caches + area[0];
@@ -146,28 +151,28 @@ void Cache::free(void *p) {
 size_t Cache::getOccMem() {
 	size_t count = 0;
 	for(size_t i = 0; i < ARRAY_SIZE(caches); i++)
-		count += BYTES_2_PAGES(caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3));
+		count += BYTES_2_PAGES(caches[i].totalObjs * totalObjSize(caches[i].objSize));
 	return count * PAGE_SIZE;
 }
 
 size_t Cache::getUsedMem() {
 	size_t count = 0;
 	for(size_t i = 0; i < ARRAY_SIZE(caches); i++)
-		count += (caches[i].totalObjs - caches[i].freeObjs) * (caches[i].objSize + sizeof(ulong) * 3);
+		count += (caches[i].totalObjs - caches[i].freeObjs) * totalObjSize(caches[i].objSize);
 	return count;
 }
 
 void Cache::print(OStream &os) {
 	size_t total = 0,maxMem = 0;
 	for(size_t i = 0; i < ARRAY_SIZE(caches); i++) {
-		size_t amount = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
+		size_t amount = caches[i].totalObjs * totalObjSize(caches[i].objSize);
 		if(amount > maxMem)
 			maxMem = amount;
 		total += amount;
 	}
 	os.writef("Total: %zu bytes\n",total);
 	for(size_t i = 0; i < ARRAY_SIZE(caches); i++) {
-		size_t mem = caches[i].totalObjs * (caches[i].objSize + sizeof(ulong) * 3);
+		size_t mem = caches[i].totalObjs * totalObjSize(caches[i].objSize);
 		os.writef("Cache %zu [size=%zu, total=%zu, free=%zu, pages=%zu]:\n",i,caches[i].objSize,
 				caches[i].totalObjs,caches[i].freeObjs,BYTES_2_PAGES(mem));
 		printBar(os,mem,maxMem,caches[i].totalObjs,caches[i].freeObjs);
@@ -191,9 +196,9 @@ void *Cache::get(Entry *c,size_t i) {
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
-		size_t totalObjSize = c->objSize + sizeof(ulong) * 3;
-		size_t objs = bytes / totalObjSize;
-		size_t rem = bytes - objs * totalObjSize;
+		size_t total = totalObjSize(c->objSize);
+		size_t objs = bytes / total;
+		size_t rem = bytes - objs * total;
 		ulong *space = (ulong*)KHeap::allocSpace(pageCount);
 		if(space == NULL)
 			return NULL;
@@ -208,7 +213,7 @@ void *Cache::get(Entry *c,size_t i) {
 		for(size_t j = 0; j < objs; j++) {
 			space[0] = (ulong)c->freeList;
 			c->freeList = space;
-			space += (c->objSize / sizeof(ulong)) + 3;
+			space += totalObjSize(c->objSize) / sizeof(ulong);
 		}
 	}
 
@@ -219,7 +224,7 @@ void *Cache::get(Entry *c,size_t i) {
 	/* store size and put guards in front and behind the area */
 	area[0] = i;
 	area[1] = GUARD_MAGIC;
-	area[(c->objSize / sizeof(ulong)) + 2] = GUARD_MAGIC;
+	area[(c->objSize / sizeof(ulong)) + (16 / sizeof(ulong))] = GUARD_MAGIC;
 	c->freeObjs--;
-	return area + 2;
+	return (void*)((uintptr_t)area + 16);
 }

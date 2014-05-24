@@ -4,14 +4,25 @@ Import('env')
 import os
 
 kenv = env.Clone()
-ldconf = 'src/arch/$TGT/ld.conf'
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
+objcpy = Builder(action = '$CROSSDIR/bin/$CROSS-objcopy -O elf32-i386 $SOURCE $TARGET')
+preproc = Builder(action = '$CROSSDIR/bin/$CROSS-cpp -P $CPPFLAGS $SOURCE $TARGET')
+kenv.Append(
+	BUILDERS = {
+		'GenSyms' : gensyms,
+		'ObjCpy' : objcpy,
+		'PreProc' : preproc
+	}
+)
+
+ldconfs = Flatten([kenv.Glob('src/arch/$TGTTYPE/ld.conf'), kenv.Glob('src/arch/$TGT/ld.conf')])
+ldconf = kenv.PreProc('ld.conf', ldconfs[0])
+
 kenv.Append(
 	CFLAGS = ' -ffreestanding',
 	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti -ffreestanding',
 	CPPFLAGS = ' -DIN_KERNEL=1',
-	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,kernel/' + ldconf,
-	BUILDERS = {'GenSyms' : gensyms}
+	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf[0].abspath,
 )
 
 if kenv['TGTTYPE'] == 'x86':
@@ -58,6 +69,7 @@ def LinkWithSymbols(kenv, name, objects):
 		prefix = '', target = 'pre' + name, source = objects + [name + 'ksyms1.o'],
 		force_static = True, var_addr = False, LIBS = ['gcc']
 	)
+	kenv.Depends(prekernel, ldconf)
 
 	# generate symbol file for built kernel
 	kenv.GenSyms(name + 'ksyms2.cc', prekernel)
@@ -67,10 +79,9 @@ def LinkWithSymbols(kenv, name, objects):
 		prefix = 'boot', target = name, source = objects + [name + 'ksyms2.o'],
 		force_static = True, var_addr = False, LIBS = ['gcc']
 	)
+	kenv.Depends(kernel, ldconf)
 	return kernel
 
 kernel = LinkWithSymbols(kenv, 'escape', objects(kenv, src + [mainsrc]))
 test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 
-kenv.Depends(kernel, ldconf)
-kenv.Depends(test_kernel, ldconf)

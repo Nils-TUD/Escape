@@ -1320,8 +1320,8 @@ errorFree:
 	Cache::free(tempBuf);
 error:
 	Log::get().writef("Demandload page @ %p for proc %s: %s (%d)\n",addr,
-		proc->getProgram(),strerror(-err),err);
-	return -err;
+		proc->getProgram(),strerror(err),err);
+	return err;
 }
 
 Region *VirtMem::getLRURegion() {

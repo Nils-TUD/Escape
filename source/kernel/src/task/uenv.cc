@@ -54,6 +54,7 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 		totalSize += ROUND_UP(argsSize,sizeof(ulong));
 		totalSize += sizeof(void*) * (argc + 1 + envc + 1);
 	}
+	totalSize = ROUND_UP(totalSize,16) + 8;
 	/* finally we need envc, envv, argc, argv, tlsSize, tlsStart and entryPoint */
 	totalSize += sizeof(ulong) * 7;
 
@@ -67,6 +68,9 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 	sp--;
 	char **argv = copyArgs(argc,args,sp);
 	char **envv = copyArgs(envc,args,sp);
+
+	/* align it by 16 byte (SSE) */
+	sp = (ulong*)(ROUND_DN((uintptr_t)sp,16) - 8);
 
 	/* store envc, envv, argc and argv */
 	UserAccess::writeVar(sp--,(ulong)envv);
@@ -94,16 +98,20 @@ ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
 	 * +------------------+
 	 */
 
+	size_t totalSize = 16 + 4 * sizeof(ulong);
+
 	/* get sp */
 	ulong *sp;
 	t->getStackRange(NULL,(uintptr_t*)&sp,0);
-	if(!PageDir::isInUserSpace((uintptr_t)(sp - 4),4 * sizeof(ulong))) {
+	if(!PageDir::isInUserSpace((uintptr_t)sp - totalSize,totalSize)) {
 		Proc::terminate(1,SIG_SEGFAULT);
 		A_UNREACHED;
 	}
 
+	/* align it by 16 byte (SSE) */
+	sp = (ulong*)((uintptr_t)sp - 16);
+
 	/* put arg on stack */
-	sp -= 2;
 	UserAccess::writeVar(sp--,(ulong)arg);
 	/* add TLS args and entrypoint */
 	return addArgs(t,sp,entry,true);

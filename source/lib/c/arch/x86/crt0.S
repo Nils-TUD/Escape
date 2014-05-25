@@ -48,7 +48,7 @@
 //  |     TLSStart     |  0 if not present
 //  +------------------+
 //  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-//  +------------------+
+//  +------------------+  <- 16 byte aligned (+8)
 
 #ifndef SHAREDLIB
 _start:
@@ -77,6 +77,8 @@ _start:
 	mov		%REG(ax),%REG(dx)
 	// get argument
 	pop		%ARG_1
+	// align it properly (SSE)
+	sub		$8,%REG(sp)
 	call	*%REG(dx)
 	jmp		threadExit
 

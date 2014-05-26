@@ -217,22 +217,22 @@ block_t Ext2INode::doGetDataBlock(Ext2FileSystem *e,Ext2CInode *cnode,block_t bl
 		return bno;
 	}
 
-    block -= EXT2_DIRBLOCK_COUNT;
-    if(block < blocksPerBlock)
-        return accessIndirBlock(e,cnode,&cnode->inode.singlyIBlock,block,req,0,1);
+	block -= EXT2_DIRBLOCK_COUNT;
+	if(block < blocksPerBlock)
+		return accessIndirBlock(e,cnode,&cnode->inode.singlyIBlock,block,req,0,1);
 
-    block -= blocksPerBlock;
-    if(block < blocksPerBlock * blocksPerBlock)
-        return accessIndirBlock(e,cnode,&cnode->inode.doublyIBlock,block,req,1,blocksPerBlock);
+	block -= blocksPerBlock;
+	if(block < blocksPerBlock * blocksPerBlock)
+		return accessIndirBlock(e,cnode,&cnode->inode.doublyIBlock,block,req,1,blocksPerBlock);
 
-    block -= blocksPerBlock * blocksPerBlock;
-    if(block < blocksPerBlock * blocksPerBlock * blocksPerBlock) {
-        return accessIndirBlock(e,cnode,&cnode->inode.triplyIBlock,block,req,2,
-        	blocksPerBlock * blocksPerBlock);
-    }
+	block -= blocksPerBlock * blocksPerBlock;
+	if(block < blocksPerBlock * blocksPerBlock * blocksPerBlock) {
+		return accessIndirBlock(e,cnode,&cnode->inode.triplyIBlock,block,req,2,
+			blocksPerBlock * blocksPerBlock);
+	}
 
-    /* too large */
-    return 0;
+	/* too large */
+	return 0;
 }
 
 #if DEBUGGING

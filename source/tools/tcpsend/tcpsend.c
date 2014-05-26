@@ -43,34 +43,34 @@ int main(int argc,char **argv) {
 	if(!file)
 		error(EXIT_FAILURE,errno,"Unable to open '%s' for reading",argv[1]);
 
-    int sock = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
-    if(sock == -1)
-        error(EXIT_FAILURE,errno,"socket failed");
+	int sock = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
+	if(sock == -1)
+		error(EXIT_FAILURE,errno,"socket failed");
 
-    struct sockaddr_in stSockAddr;
-    memset(&stSockAddr,0,sizeof(stSockAddr));
-    stSockAddr.sin_family = AF_INET;
-    stSockAddr.sin_port = htons(atoi(argv[3]));
-    if(inet_pton(AF_INET,argv[2],&stSockAddr.sin_addr) <= 0)
-    	error(EXIT_FAILURE,errno,"inet_pton failed for IP address '%s'",argv[2]);
+	struct sockaddr_in stSockAddr;
+	memset(&stSockAddr,0,sizeof(stSockAddr));
+	stSockAddr.sin_family = AF_INET;
+	stSockAddr.sin_port = htons(atoi(argv[3]));
+	if(inet_pton(AF_INET,argv[2],&stSockAddr.sin_addr) <= 0)
+		error(EXIT_FAILURE,errno,"inet_pton failed for IP address '%s'",argv[2]);
 
-    if(connect(sock,(struct sockaddr *)&stSockAddr,sizeof(stSockAddr)) == -1)
-    	error(EXIT_FAILURE,errno,"connect failed");
+	if(connect(sock,(struct sockaddr *)&stSockAddr,sizeof(stSockAddr)) == -1)
+		error(EXIT_FAILURE,errno,"connect failed");
 
-    struct stat info;
-    fstat(fileno(file),&info);
-    uint32_t total = info.st_size;
+	struct stat info;
+	fstat(fileno(file),&info);
+	uint32_t total = info.st_size;
 
-    if(write(sock,&total,sizeof(total)) != sizeof(total))
-    	error(EXIT_FAILURE,errno,"write failed");
+	if(write(sock,&total,sizeof(total)) != sizeof(total))
+		error(EXIT_FAILURE,errno,"write failed");
 
-    size_t res;
-    while((res = fread(buffer,1,sizeof(buffer),file)) > 0) {
-    	if(write(sock,buffer,res) != (ssize_t)res)
-	    	error(EXIT_FAILURE,errno,"write failed");
-    }
+	size_t res;
+	while((res = fread(buffer,1,sizeof(buffer),file)) > 0) {
+		if(write(sock,buffer,res) != (ssize_t)res)
+			error(EXIT_FAILURE,errno,"write failed");
+	}
 
-    shutdown(sock,SHUT_RDWR);
-    close(sock);
-    return EXIT_SUCCESS;
+	shutdown(sock,SHUT_RDWR);
+	close(sock);
+	return EXIT_SUCCESS;
 }

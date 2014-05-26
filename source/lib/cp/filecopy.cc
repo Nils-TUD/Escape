@@ -182,6 +182,13 @@ bool FileCopy::copy(const char *src,const char *dest,bool remove) {
 		}
 
 		DIR *dir = opendir(src);
+		if(!dir) {
+			/* ignore the error here */
+			if(rmdir(dstcpy) < 0) {}
+			handleError("open of '%s' failed",src);
+			return false;
+		}
+
 		sDirEntry e;
 		bool res = true;
 		while(readdir(dir,&e)) {
@@ -250,6 +257,7 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 		}
 
 		if(mkdir(dst) < 0) {
+			closedir(dir);
 			handleError("Creation of '%s' failed",dst);
 			return false;
 		}

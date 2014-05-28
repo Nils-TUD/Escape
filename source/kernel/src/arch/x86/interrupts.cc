@@ -369,5 +369,5 @@ void Interrupts::printPFInfo(OStream &os,Thread *t,IntrptStackFrame *stack,uintp
 			(stack->getError() & 0x2) ? "write" : "read",
 			(stack->getError() & 0x4) ? "user-mode" : "kernel-mode",
 			(stack->getError() & 0x8) ? "reserved bits set to 1\n\t" : "",
-			(stack->getError() & 0x16) ? "instruction-fetch" : "");
+			(stack->getError() & 0x10) ? "instruction-fetch" : "");
 }

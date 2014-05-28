@@ -39,7 +39,7 @@ $(BUILDL)/%.mmb:	$(BUILDL)/%.mmo
 	$(MMIX) -D$@ $<
 
 $(BUILDL)/%.mmp:	%.mms
-	$(CPP) -C -H $< $@ -MD -MT $@
+	$(CPP) -P -H $< $@ -MD -MT $@
 
 $(BUILDL)/%.mms:	%.mms
 	cp $< $@

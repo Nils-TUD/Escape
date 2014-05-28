@@ -25,6 +25,7 @@
 #include <assert.h>
 
 extern void *proc0TLPD;
+bool PageDir::hasNXE = false;
 uintptr_t PageDir::freeAreaAddr = KFREE_AREA;
 
 /* Note that we only need a lock for the temp-page here, because everything else is not shared
@@ -210,7 +211,7 @@ int PageDir::crtPageTable(PageDir::pte_t *pte,uint flags,Allocator &alloc) {
 	return 0;
 }
 
-int PageDir::mapPage(uintptr_t virt,frameno_t frame,uint flags,Allocator &alloc) {
+int PageDir::mapPage(uintptr_t virt,frameno_t frame,pte_t flags,Allocator &alloc) {
 	pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + pagedir);
 	uint bits = PT_BITS - PT_BPL;
 	for(int i = 0; i < PT_LEVELS - 1; ++i) {
@@ -310,6 +311,8 @@ int PageDirBase::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 		pteFlags |= PTE_NOTSUPER;
 	if(flags & PG_GLOBAL)
 		pteFlags |= PTE_GLOBAL;
+	if(PageDir::hasNXE && (~flags & PG_EXECUTABLE))
+		pteFlags |= PTE_NO_EXEC;
 
 	bool needShootdown = false;
 	while(count > 0) {
@@ -406,11 +409,11 @@ void PageDir::printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int le
 	size_t entrySize = (size_t)PAGE_SIZE << (PT_BPL * (level - 1));
 	uintptr_t base = from & ~(size - 1);
 	size_t idx = (from >> (PAGE_BITS + PT_BPL * level)) & (PT_ENTRY_COUNT - 1);
-	os.writef("%*s%03zx: %0*lx [%c%c%c%c%c] (%p..%p)\n",PT_LEVELS - level,"",
+	os.writef("%*s%03zx: %0*lx [%c%c%c%c%c%c] (%p..%p)\n",PT_LEVELS - level,"",
 			idx,sizeof(page) * 2,page,
 			(page & PTE_PRESENT) ? 'p' : '-',(page & PTE_NOTSUPER) ? 'u' : 'k',
-			(page & PTE_WRITABLE) ? 'w' : 'r',(page & PTE_GLOBAL) ? 'g' : '-',
-			(page & PTE_LARGE) ? 'l' : '-',
+			(page & PTE_WRITABLE) ? 'w' : 'r',(level > 0 || (page & PTE_NO_EXEC)) ? '-' : 'x',
+			(page & PTE_GLOBAL) ? 'g' : '-',(page & PTE_LARGE) ? 'l' : '-',
 			base,base + size - 1);
 	if(level > 0 && (~page & PTE_LARGE)) {
 		pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (page & PTE_FRAMENO_MASK));

@@ -211,10 +211,20 @@ void CPU::detect() {
 	}
 }
 
-bool CPU::hasFeature(uint64_t feat) {
+bool CPU::hasFeature(FeatSource src,uint64_t feat) {
 	/* don't use the cpus-array here, since it is called before CPU::detect() */
+	unsigned code;
+	switch(src) {
+		case BASIC:
+			code = CPUID_GETFEATURES;
+			break;
+		default:
+			code = CPUID_INTELFEATURES;
+			break;
+	}
+
 	uint32_t unused,ecx,edx;
-	cpuid(CPUID_GETFEATURES,&unused,&unused,&ecx,&edx);
+	cpuid(code,&unused,&unused,&ecx,&edx);
 	if(feat >> 32)
 		return !!(ecx & (feat >> 32));
 	return !!(edx & feat);

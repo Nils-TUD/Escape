@@ -43,8 +43,13 @@ class CPU : public CPUBase {
 	};
 
 public:
+	enum FeatSource {
+		BASIC,
+		INTEL
+	};
+
 	enum Feature {
-		// edx
+		// basic edx
 		FEAT_FPU		= 1 << 0,
 		FEAT_DBGEXT		= 1 << 2,
 		FEAT_PSE		= 1 << 3,
@@ -64,7 +69,7 @@ public:
 		FEAT_HTT		= 1 << 28,
 		FEAT_TM			= 1 << 29,
 
-		// ecx
+		// basic ecx
 		FEAT_SSE3		= 1 << (32 + 0),
 		FEAT_MONMWAIT	= 1 << (32 + 3),
 		FEAT_VMX		= 1 << (32 + 5),
@@ -75,7 +80,10 @@ public:
 		FEAT_SSE42		= 1 << (32 + 20),
 		FEAT_POPCNT		= 1 << (32 + 23),
 		FEAT_AES		= 1 << (32 + 25),
-		FEAT_AVX		= 1 << (32 + 28)
+		FEAT_AVX		= 1 << (32 + 28),
+
+		// intel edx
+		FEAT_NX			= 1 << 20,
 	};
 
 	enum {
@@ -119,9 +127,17 @@ public:
 	};
 
 	enum {
+		EFER_SCE					= 1 << 0,		// syscall enable
+		EFER_LME					= 1 << 8,		// IA-32e mode enable
+		EFER_LMA					= 1 << 10,		// IA-32e mode active
+		EFER_NXE					= 1 << 11,		// Execute-disable bit enable
+	};
+
+	enum {
 		MSR_IA32_SYSENTER_CS		= 0x174,
 		MSR_IA32_SYSENTER_ESP		= 0x175,
 		MSR_IA32_SYSENTER_EIP		= 0x176,
+        MSR_EFER					= 0xc0000080,
         MSR_IA32_STAR              	= 0xc0000081,
         MSR_IA32_LSTAR             	= 0xc0000082,
         MSR_IA32_FMASK             	= 0xc0000084,
@@ -145,6 +161,7 @@ public:
 	static void detect();
 
 	/**
+	 * @param src the feature-source
 	 * @param feat the feature
 	 * @return whether the feature is supported
 	 */

@@ -31,7 +31,7 @@ uintptr_t LAPIC::apicAddr;
 void LAPIC::init() {
 	enabled = false;
 
-	if(CPU::hasFeature(CPU::FEAT_APIC)) {
+	if(CPU::hasFeature(CPU::BASIC,CPU::FEAT_APIC)) {
 		/* TODO every APIC may have a different address */
 		uint64_t apicBase = CPU::getMSR(MSR_APIC_BASE);
 		if(apicBase & APIC_BASE_EN) {

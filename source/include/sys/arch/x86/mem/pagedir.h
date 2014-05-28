@@ -42,8 +42,9 @@
 #define PTE_LARGE				(1UL << 7)
 #define PTE_GLOBAL				(1UL << 8)
 #define PTE_EXISTS				(1UL << 9)
-#define PTE_FRAMENO(pte)		(((pte) & ~(PAGE_SIZE - 1)) >> PAGE_BITS)
-#define PTE_FRAMENO_MASK		(~(PAGE_SIZE - 1))
+#define PTE_NO_EXEC				(1UL << 63)
+#define PTE_FRAMENO(pte)		(((pte) >> PAGE_BITS) & ((1ULL << PT_BITS) - 1))
+#define PTE_FRAMENO_MASK		(((1ULL << PT_BITS) - 1) << PAGE_BITS)
 
 #define PT_IDX(addr,lvl)		(((addr) >> (PAGE_BITS + PT_BPL * (lvl))) & ((1 << PT_BPL) - 1))
 
@@ -127,7 +128,7 @@ private:
 	static int crtPageTable(pte_t *pte,uint flags,Allocator &alloc);
 	static void printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int level);
 
-	int mapPage(uintptr_t virt,frameno_t frame,uint flags,Allocator &alloc);
+	int mapPage(uintptr_t virt,frameno_t frame,pte_t flags,Allocator &alloc);
 	frameno_t unmapPage(uintptr_t virt);
 	pte_t *getPTE(uintptr_t virt,uintptr_t *base) const;
 	bool gc(uintptr_t virt,pte_t pte,int level,uint bits,Allocator &alloc);
@@ -137,6 +138,7 @@ private:
 	uintptr_t freeKStack;
 	SpinLock lock;
 
+	static bool hasNXE;
 	static uintptr_t freeAreaAddr;
 	static uint8_t sharedPtbls[][PAGE_SIZE];
 };

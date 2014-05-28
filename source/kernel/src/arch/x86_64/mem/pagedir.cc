@@ -35,6 +35,12 @@ uint8_t PageDir::sharedPtbls[SHPT_COUNT][PAGE_SIZE] A_ALIGNED(PAGE_SIZE);
 void PageDirBase::init() {
 	size_t shpt = 0;
 
+	// enable NXE only if supported
+	if(CPU::hasFeature(CPU::INTEL,CPU::FEAT_NX)) {
+		CPU::setMSR(CPU::MSR_EFER,CPU::getMSR(CPU::MSR_EFER) | CPU::EFER_NXE);
+		PageDir::hasNXE = true;
+	}
+
 	/* put entry for physical memory in PML4 */
 	PageDir::pte_t *pt2,*pt = (PageDir::pte_t*)&proc0TLPD;
 	uintptr_t ptAddr = (uintptr_t)PageDir::sharedPtbls[shpt++] & ~KERNEL_BEGIN;

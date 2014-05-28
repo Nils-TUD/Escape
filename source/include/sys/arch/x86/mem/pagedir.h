@@ -95,6 +95,10 @@ public:
 		CPU::setCR3(CPU::getCR3());
 	}
 
+	static void flushAddr(uintptr_t addr) {
+		asm volatile ("invlpg (%0)" : : "r" (addr));
+	}
+
 	/**
 	* Creates a kernel-stack at an unused address.
 	*

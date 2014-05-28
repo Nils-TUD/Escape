@@ -63,7 +63,8 @@ uintptr_t smpstart() {
 
 	// remove first page-directory entry. now that all CPUs are started, we don't need that anymore
 	(&proc0TLPD)[0] = 0;
-	PageDir::flushTLB();
+	for(int i = 0; i < 3; ++i)
+		PageDir::flushAddr(0x200000 * i);
 
 	/* load initloader */
 	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)

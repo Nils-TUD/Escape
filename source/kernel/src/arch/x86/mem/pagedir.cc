@@ -24,12 +24,6 @@
 #include <sys/util.h>
 #include <assert.h>
 
-/**
- * Flushes the TLB-entry for the given virtual address.
- * Note: supported for >= Intel486
- */
-#define	FLUSHADDR(addr)			asm volatile ("invlpg (%0)" : : "r" (addr));
-
 extern void *proc0TLPD;
 uintptr_t PageDir::freeAreaAddr = KFREE_AREA;
 
@@ -178,7 +172,7 @@ int PageDirBase::clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,siz
 			uint flags = pte & ~(PTE_FRAMENO_MASK | PTE_WRITABLE);
 			assert(src->mapPage(virtSrc,PTE_FRAMENO(pte),flags,noalloc) >= 0);
 			if(this == cur)
-				FLUSHADDR(virtSrc);
+				PageDir::flushAddr(virtSrc);
 		}
 
 		virtSrc += PAGE_SIZE;
@@ -333,7 +327,7 @@ int PageDirBase::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 
 		/* invalidate TLB-entry */
 		if(this == cur && res == 1)
-			FLUSHADDR(virt);
+			PageDir::flushAddr(virt);
 
 		/* to next page */
 		virt += PAGE_SIZE;
@@ -370,7 +364,7 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 			alloc.freePage(frame);
 			/* invalidate TLB-entry */
 			if(this == cur)
-				FLUSHADDR(virt);
+				PageDir::flushAddr(virt);
 			needShootdown = true;
 		}
 

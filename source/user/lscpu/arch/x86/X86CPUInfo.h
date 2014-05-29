@@ -19,43 +19,33 @@
 
 #pragma once
 
-#include <info/process.h>
-#include <istream>
-#include <vector>
+#include <esc/common.h>
+#include <info/cpu.h>
+#include <stdio.h>
 
-namespace info {
-	class cpu;
-	std::istream& operator >>(std::istream& is,cpu& ci);
-	std::ostream& operator <<(std::ostream& os,const cpu& ci);
+class X86CPUInfo : public CPUInfo {
+	static const size_t VENDOR_STRLEN				= 12;
 
-	class cpu {
-		friend std::istream& operator >>(std::istream& is,cpu& ci);
-	public:
-		typedef unsigned id_type;
-		typedef process::cycle_type cycle_type;
-
-		static std::vector<cpu*> get_list();
-
-		explicit cpu() : _id(), _total(), _used(), _speed() {
-		}
-
-		id_type id() const {
-			return _id;
-		}
-		cycle_type totalCycles() const {
-			return _total;
-		}
-		cycle_type usedCycles() const {
-			return _used;
-		}
-		cycle_type speed() const {
-			return _speed;
-		}
-
-	private:
-		id_type _id;
-		cycle_type _total;
-		cycle_type _used;
-		cycle_type _speed;
+	struct Info {
+		uint8_t vendor;
+		uint16_t model;
+		uint16_t family;
+		uint16_t type;
+		uint16_t brand;
+		uint16_t stepping;
+		uint32_t signature;
+		uint32_t features;
+		uint32_t name[12];
 	};
-}
+
+public:
+	explicit X86CPUInfo() : CPUInfo() {
+	}
+
+	virtual void print(FILE *f,info::cpu &cpu);
+
+private:
+	Info getInfo() const;
+	void cpuid(unsigned code,uint32_t *eax,uint32_t *ebx,uint32_t *ecx,uint32_t *edx) const;
+	void cpuid(unsigned code,char *str) const;
+};

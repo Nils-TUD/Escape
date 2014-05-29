@@ -27,19 +27,9 @@ class CPU : public CPUBase {
 
 	CPU() = delete;
 
-	static const size_t VENDOR_STRLEN				= 12;
-
 	enum CPUIdRequests {
-		CPUID_GETVENDORSTRING,
-		CPUID_GETFEATURES,
-		CPUID_GETTLB,
-		CPUID_GETSERIAL,
-
-		CPUID_INTELEXTENDED = (int)0x80000000,
-		CPUID_INTELFEATURES,
-		CPUID_INTELBRANDSTRING,
-		CPUID_INTELBRANDSTRINGMORE,
-		CPUID_INTELBRANDSTRINGEND
+		CPUID_GETFEATURES	= 1,
+		CPUID_INTELFEATURES	= 0x80000001,
 	};
 
 public:
@@ -141,18 +131,6 @@ public:
         MSR_IA32_STAR              	= 0xc0000081,
         MSR_IA32_LSTAR             	= 0xc0000082,
         MSR_IA32_FMASK             	= 0xc0000084,
-	};
-
-	struct Info {
-		uint8_t vendor;
-		uint16_t model;
-		uint16_t family;
-		uint16_t type;
-		uint16_t brand;
-		uint16_t stepping;
-		uint32_t signature;
-		uint32_t features;
-		uint32_t name[12];
 	};
 
 	/**
@@ -328,8 +306,6 @@ public:
 	}
 
 private:
-	/* the information about our cpu */
-	static Info *cpus;
 	static uint64_t cpuHz;
 	static uint64_t busHz;
 };

@@ -19,43 +19,36 @@
 
 #pragma once
 
-#include <info/process.h>
-#include <istream>
-#include <vector>
+#include <esc/common.h>
+#include <info/cpu.h>
+#include <stdio.h>
 
-namespace info {
-	class cpu;
-	std::istream& operator >>(std::istream& is,cpu& ci);
-	std::ostream& operator <<(std::ostream& os,const cpu& ci);
+class CPUInfo {
+public:
+	static CPUInfo *create();
 
-	class cpu {
-		friend std::istream& operator >>(std::istream& is,cpu& ci);
-	public:
-		typedef unsigned id_type;
-		typedef process::cycle_type cycle_type;
+	explicit CPUInfo() {
+	}
+	virtual ~CPUInfo() {
+	}
 
-		static std::vector<cpu*> get_list();
+	virtual void print(FILE *f,info::cpu &cpu) = 0;
+};
 
-		explicit cpu() : _id(), _total(), _used(), _speed() {
-		}
+#if defined(__x86__)
+#	include "arch/x86/X86CPUInfo.h"
+#elif defined(__eco32__)
+#	include "arch/eco32/ECO32CPUInfo.h"
+#elif defined(__mmix__)
+#	include "arch/mmix/MMIXCPUInfo.h"
+#endif
 
-		id_type id() const {
-			return _id;
-		}
-		cycle_type totalCycles() const {
-			return _total;
-		}
-		cycle_type usedCycles() const {
-			return _used;
-		}
-		cycle_type speed() const {
-			return _speed;
-		}
-
-	private:
-		id_type _id;
-		cycle_type _total;
-		cycle_type _used;
-		cycle_type _speed;
-	};
+inline CPUInfo *CPUInfo::create() {
+#if defined(__x86__)
+	return new X86CPUInfo();
+#elif defined(__eco32__)
+	return new ECO32CPUInfo();
+#elif defined(__mmix__)
+	return new MMIXCPUInfo();
+#endif
 }

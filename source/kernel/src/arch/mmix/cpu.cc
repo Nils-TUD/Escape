@@ -63,14 +63,9 @@ const char *CPU::specialRegs[] = {
 uint64_t CPU::cpuHz;
 
 void CPUBase::print(OStream &os) {
-	uint64_t rn = CPU::getSpecial(rN);
 	auto cpu = SMP::begin();
 	os.writef("CPU 0:\n");
 	os.writef("\t%-12s%lu Cycles\n","Total:",cpu->lastTotal);
 	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",cpu->lastCycles);
 	os.writef("\t%-12s%lu Hz\n","Speed:",CPU::getSpeed());
-	os.writef("\t%-12s%s\n","Vendor:","THM");
-	os.writef("\t%-12s%s\n","Model:","GIMMIX");
-	os.writef("\t%-12s%d.%d.%d\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
-	os.writef("\t%-12s%lu\n","Builddate",rn & 0xFFFFFFFFFF);
 }

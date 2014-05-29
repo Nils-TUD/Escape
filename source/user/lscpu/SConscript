@@ -1,0 +1,8 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCXXProg('bin',
+	target = 'lscpu',
+	source = [env.Glob('*.cc'), env.Glob('arch/$TGT/*.cc'), env.Glob('arch/$TGTTYPE/*.cc')],
+	LIBS = ['info']
+)

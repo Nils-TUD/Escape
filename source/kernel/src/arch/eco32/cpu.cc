@@ -33,6 +33,4 @@ void CPUBase::print(OStream &os) {
 	os.writef("\t%-12s%Lu Cycles\n","Total:",cpu->lastTotal);
 	os.writef("\t%-12s%Lu Cycles\n","Non-Idle:",cpu->lastCycles);
 	os.writef("\t%-12s%Lu Hz\n","Speed:",CPU::cpuHz);
-	os.writef("\t%-12s%s\n","Vendor:","THM");
-	os.writef("\t%-12s%s\n","Model:","ECO32");
 }

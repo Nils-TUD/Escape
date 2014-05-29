@@ -19,43 +19,14 @@
 
 #pragma once
 
-#include <info/process.h>
-#include <istream>
-#include <vector>
+#include <esc/common.h>
+#include <info/cpu.h>
+#include <stdio.h>
 
-namespace info {
-	class cpu;
-	std::istream& operator >>(std::istream& is,cpu& ci);
-	std::ostream& operator <<(std::ostream& os,const cpu& ci);
+class ECO32CPUInfo : public CPUInfo {
+public:
+	explicit ECO32CPUInfo() : CPUInfo() {
+	}
 
-	class cpu {
-		friend std::istream& operator >>(std::istream& is,cpu& ci);
-	public:
-		typedef unsigned id_type;
-		typedef process::cycle_type cycle_type;
-
-		static std::vector<cpu*> get_list();
-
-		explicit cpu() : _id(), _total(), _used(), _speed() {
-		}
-
-		id_type id() const {
-			return _id;
-		}
-		cycle_type totalCycles() const {
-			return _total;
-		}
-		cycle_type usedCycles() const {
-			return _used;
-		}
-		cycle_type speed() const {
-			return _speed;
-		}
-
-	private:
-		id_type _id;
-		cycle_type _total;
-		cycle_type _used;
-		cycle_type _speed;
-	};
-}
+	virtual void print(FILE *f,info::cpu &cpu);
+};

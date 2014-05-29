@@ -17,45 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <esc/common.h>
 
-#include <info/process.h>
-#include <istream>
-#include <vector>
+#include "../../CPUInfo.h"
 
-namespace info {
-	class cpu;
-	std::istream& operator >>(std::istream& is,cpu& ci);
-	std::ostream& operator <<(std::ostream& os,const cpu& ci);
+uint64_t MMIXCPUInfo::getRN() const {
+	uint64_t rn;
+	asm volatile ("GET %0,rN" : "=r"(rn));
+	return rn;
+}
 
-	class cpu {
-		friend std::istream& operator >>(std::istream& is,cpu& ci);
-	public:
-		typedef unsigned id_type;
-		typedef process::cycle_type cycle_type;
-
-		static std::vector<cpu*> get_list();
-
-		explicit cpu() : _id(), _total(), _used(), _speed() {
-		}
-
-		id_type id() const {
-			return _id;
-		}
-		cycle_type totalCycles() const {
-			return _total;
-		}
-		cycle_type usedCycles() const {
-			return _used;
-		}
-		cycle_type speed() const {
-			return _speed;
-		}
-
-	private:
-		id_type _id;
-		cycle_type _total;
-		cycle_type _used;
-		cycle_type _speed;
-	};
+void MMIXCPUInfo::print(FILE *f,info::cpu &cpu) {
+	uint64_t rn = getRN();
+	fprintf(f,"\t%-12s%Lu Hz\n","Speed:",cpu.speed());
+	fprintf(f,"\t%-12s%s\n","Vendor:","THM");
+	fprintf(f,"\t%-12s%s\n","Model:","GIMMIX");
+	fprintf(f,"\t%-12s%Lu.%Lu.%Lu\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
+	fprintf(f,"\t%-12s%Lu\n","Builddate",rn & 0xFFFFFFFFFF);
 }

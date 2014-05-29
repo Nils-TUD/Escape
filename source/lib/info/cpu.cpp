@@ -42,6 +42,8 @@ namespace info {
 		is.ignore(unlimited,'\n');
 		is.ignore(unlimited,' ') >> ci._used;
 		is.ignore(unlimited,'\n');
+		is.ignore(unlimited,' ') >> ci._speed;
+		is.ignore(unlimited,'\n');
 		while(is.peek() == '\t')
 			is.ignore(unlimited,'\n');
 		return is;

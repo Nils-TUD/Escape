@@ -17,45 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <esc/common.h>
+#include <info/cpu.h>
 
-#include <info/process.h>
-#include <istream>
-#include <vector>
+#include "CPUInfo.h"
 
-namespace info {
-	class cpu;
-	std::istream& operator >>(std::istream& is,cpu& ci);
-	std::ostream& operator <<(std::ostream& os,const cpu& ci);
+int main() {
+	CPUInfo *info = CPUInfo::create();
 
-	class cpu {
-		friend std::istream& operator >>(std::istream& is,cpu& ci);
-	public:
-		typedef unsigned id_type;
-		typedef process::cycle_type cycle_type;
-
-		static std::vector<cpu*> get_list();
-
-		explicit cpu() : _id(), _total(), _used(), _speed() {
-		}
-
-		id_type id() const {
-			return _id;
-		}
-		cycle_type totalCycles() const {
-			return _total;
-		}
-		cycle_type usedCycles() const {
-			return _used;
-		}
-		cycle_type speed() const {
-			return _speed;
-		}
-
-	private:
-		id_type _id;
-		cycle_type _total;
-		cycle_type _used;
-		cycle_type _speed;
-	};
+	int i = 0;
+	std::vector<info::cpu*> cpus = info::cpu::get_list();
+	for(auto it = cpus.begin(); it != cpus.end(); ++it, ++i) {
+		printf("CPU %d:\n",i);
+		info->print(stdout,**it);
+	}
+	return 0;
 }

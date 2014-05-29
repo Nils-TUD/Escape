@@ -35,8 +35,6 @@ void Timer::start(bool isBSP) {
 	if(!Config::get(Config::FORCE_PIT) && LAPIC::isAvailable()) {
 		Log::get().writef("CPU %d uses LAPIC as timer device\n",SMP::getCurId());
 		if(isBSP) {
-			/* "disable" the PIT by setting it to one-shot-mode. so it'll be dead after the first IRQ */
-			PIT::enableOneShot(PIT::CHAN0,0);
 			/* mask it as well */
 			if(IOAPIC::enabled())
 				IOAPIC::mask(IOAPIC::irqToGsi(Interrupts::IRQ_PIT - Interrupts::IRQ_MASTER_BASE));

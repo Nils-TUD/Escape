@@ -104,8 +104,13 @@ uint64_t Timer::detectCPUSpeed(uint64_t *busHz) {
 uint64_t Timer::determineSpeed(int instrCount,uint64_t *busHz) {
 	/* set PIT and LAPIC counter to -1 */
 	PIT::enablePeriodic(PIT::CHAN0,0xFFFF);
-	if(LAPIC::isAvailable())
+	uint32_t pitBegin = PIT::getCounter(PIT::CHAN0);
+	uint32_t lapicBegin = 0;
+	if(LAPIC::isAvailable()) {
 		LAPIC::setTimer(0xFFFFFFFF);
+		/* better read the value again. perhaps it has not been set */
+		lapicBegin = LAPIC::getTimer();
+	}
 
 	/* now spend some time and measure the number of cycles */
 	uint64_t before = CPU::rdtsc();
@@ -119,12 +124,12 @@ uint64_t Timer::determineSpeed(int instrCount,uint64_t *busHz) {
 	if(LAPIC::isAvailable())
 		lapicCnt = LAPIC::getTimer();
 	/* if there was no tick at all, we have to increase instrCount */
-	if(left == 0xFFFF)
+	if(left == pitBegin)
 		return 0;
 
 	/* calculate frequencies */
-	ulong picTime = PIT::BASE_FREQUENCY / (0xFFFF - left);
+	ulong picTime = PIT::BASE_FREQUENCY / (pitBegin - left);
 	if(LAPIC::isAvailable())
-		*busHz = (0xFFFFFFFF - lapicCnt) * picTime * LAPIC::TIMER_DIVIDER;
+		*busHz = (lapicBegin - lapicCnt) * picTime * LAPIC::TIMER_DIVIDER;
 	return (after - before) * picTime;
 }

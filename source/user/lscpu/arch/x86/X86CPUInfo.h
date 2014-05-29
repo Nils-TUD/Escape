@@ -48,4 +48,5 @@ private:
 	Info getInfo() const;
 	void cpuid(unsigned code,uint32_t *eax,uint32_t *ebx,uint32_t *ecx,uint32_t *edx) const;
 	void cpuid(unsigned code,char *str) const;
+	void printFlags(FILE *f) const;
 };

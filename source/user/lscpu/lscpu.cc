@@ -30,6 +30,8 @@ int main() {
 	for(auto it = cpus.begin(); it != cpus.end(); ++it, ++i) {
 		printf("CPU %d:\n",i);
 		info->print(stdout,**it);
+		if(it + 1 != cpus.end())
+			printf("\n");
 	}
 	return 0;
 }

@@ -132,6 +132,27 @@ static const char *intel6Models[] = {
 	"Pentium III/Pentium III Xeon - internal L2 cache"
 };
 
+struct Flag {
+	uint32_t bit;
+	const char *name;
+};
+
+static const Flag info01ECX[] = {
+	{27,"osxsave"},		{26,"xsave"},	{23,"popcnt"},	{22,"movbe"},	{21,"x2apic"},
+	{20,"sse4_2"},		{19,"sse4_1"},	{18,"dca"},		{15,"pdcm"},	{14,"xtpr"},
+	{13,"cx16"},		{10,"cnxtid"},	{ 9,"ssse3"},	{ 8,"tm2"},		{ 7,"est"},
+	{ 6,"smx"},			{ 5,"vmx"},		{ 4,"dscpl"},	{ 3,"monitor"},	{ 2,"dtes64"},
+	{ 0,"sse3"}
+};
+static const Flag info01EDX[] = {
+	{31,"pbe"},			{29,"tm"},		{28,"htt"},		{27,"ss"},		{26,"sse2"},
+	{25,"sse"},			{24,"fxsr"},	{23,"mmx"},		{22,"acpi"},	{21,"ds"},
+	{19,"clfsh"},		{18,"psn"},		{17,"pse36"},	{16,"pat"},		{15,"cmov"},
+	{14,"mca"},			{13,"pge"},		{12,"mtrr"},	{11,"sep"},		{ 9,"apic"},
+	{ 8,"cx8"},			{ 7,"mce"},		{ 6,"pae"},		{ 5,"msr"},		{ 4,"tsc"},
+	{ 3,"pse"},			{ 2,"de"},		{ 1,"vme"},		{ 0,"fpu"}
+};
+
 void X86CPUInfo::cpuid(unsigned code,uint32_t *eax,uint32_t *ebx,uint32_t *ecx,uint32_t *edx) const {
 	asm volatile("cpuid" : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx) : "a"(code));
 }
@@ -214,25 +235,39 @@ X86CPUInfo::Info X86CPUInfo::getInfo() const {
 	return info;
 }
 
+void X86CPUInfo::printFlags(FILE *f) const {
+	uint32_t eax,ebx,ecx,edx;
+	cpuid(CPUID_GETFEATURES,&eax,&ebx,&ecx,&edx);
+
+	for(size_t i = 0; i < ARRAY_SIZE(info01ECX); ++i) {
+		if(ecx & (1UL << info01ECX[i].bit))
+			fprintf(f,"%s ",info01ECX[i].name);
+	}
+	for(size_t i = 0; i < ARRAY_SIZE(info01EDX); ++i) {
+		if(edx & (1UL << info01EDX[i].bit))
+			fprintf(f,"%s ",info01EDX[i].name);
+	}
+}
+
 void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
 	size_t size;
 	Info info = getInfo();
 
-	fprintf(f,"\t%-12s%Lu Hz\n","Speed:",cpu.speed());
-	fprintf(f,"\t%-12s%s\n","Vendor:",vendors[info.vendor]);
-	fprintf(f,"\t%-12s%s\n","Name:",(char*)info.name);
+	fprintf(f,"%-12s%Lu Hz\n","Speed:",cpu.speed());
+	fprintf(f,"%-12s%s\n","Vendor:",vendors[info.vendor]);
+	fprintf(f,"%-12s%s\n","Name:",(char*)info.name);
 	switch(info.vendor) {
 		case VENDOR_INTEL: {
 			const char **models = NULL;
 			if(info.type < ARRAY_SIZE(intelTypes))
-				fprintf(f,"\t%-12s%s\n","Type:",intelTypes[info.type]);
+				fprintf(f,"%-12s%s\n","Type:",intelTypes[info.type]);
 			else
-				fprintf(f,"\t%-12s%d\n","Type:",info.type);
+				fprintf(f,"%-12s%d\n","Type:",info.type);
 
 			if(info.family < ARRAY_SIZE(intelFamilies))
-				fprintf(f,"\t%-12s%s\n","Family:",intelFamilies[info.family]);
+				fprintf(f,"%-12s%s\n","Family:",intelFamilies[info.family]);
 			else
-				fprintf(f,"\t%-12s%d\n","Family:",info.family);
+				fprintf(f,"%-12s%d\n","Family:",info.family);
 
 			switch(info.family) {
 				case 4:
@@ -249,18 +284,21 @@ void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
 					break;
 			}
 			if(models != NULL && info.model < size)
-				fprintf(f,"\t%-12s%s\n","Model:",models[info.model]);
+				fprintf(f,"%-12s%s\n","Model:",models[info.model]);
 			else
-				fprintf(f,"\t%-12s%d\n","Model:",info.model);
-			fprintf(f,"\t%-12s%d\n","Brand:",info.brand);
-			fprintf(f,"\t%-12s%d\n","Stepping:",info.stepping);
-			fprintf(f,"\t%-12s%08x\n","Signature:",info.signature);
+				fprintf(f,"%-12s%d\n","Model:",info.model);
+			fprintf(f,"%-12s%d\n","Brand:",info.brand);
+			fprintf(f,"%-12s%d\n","Stepping:",info.stepping);
+			fprintf(f,"%-12s%08x\n","Signature:",info.signature);
+			fprintf(f,"%-12s","Flags:");
+			printFlags(f);
+			fprintf(f,"\n");
 		}
 		break;
 
 		case VENDOR_AMD:
-			fprintf(f,"\t%-12s%d\n","Family:",info.family);
-			fprintf(f,"\t%-12s","Model:");
+			fprintf(f,"%-12s%d\n","Family:",info.family);
+			fprintf(f,"%-12s","Model:");
 			switch(info.family) {
 				case 4:
 					fprintf(f,"%s%d\n","486 Model",info.model);
@@ -308,16 +346,19 @@ void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
 				}
 				break;
 			}
-			fprintf(f,"\t%-12s%d\n","Stepping:",info.stepping);
+			fprintf(f,"%-12s%d\n","Stepping:",info.stepping);
+			fprintf(f,"%-12s","Flags:");
+			printFlags(f);
+			fprintf(f,"\n");
 			break;
 
 		default:
-			fprintf(f,"\t%-12s%d\n","Model:",info.model);
-			fprintf(f,"\t%-12s%d\n","Type:",info.type);
-			fprintf(f,"\t%-12s%d\n","Family:",info.family);
-			fprintf(f,"\t%-12s%d\n","Brand:",info.brand);
-			fprintf(f,"\t%-12s%d\n","Stepping:",info.stepping);
-			fprintf(f,"\t%-12s%08x\n","Signature:",info.signature);
+			fprintf(f,"%-12s%d\n","Model:",info.model);
+			fprintf(f,"%-12s%d\n","Type:",info.type);
+			fprintf(f,"%-12s%d\n","Family:",info.family);
+			fprintf(f,"%-12s%d\n","Brand:",info.brand);
+			fprintf(f,"%-12s%d\n","Stepping:",info.stepping);
+			fprintf(f,"%-12s%08x\n","Signature:",info.signature);
 			break;
 	}
 }

@@ -22,7 +22,7 @@
 #include "../../CPUInfo.h"
 
 void ECO32CPUInfo::print(FILE *f,info::cpu &cpu) {
-	fprintf(f,"\t%-12s%Lu Hz\n","Speed:",cpu.speed());
-	fprintf(f,"\t%-12s%s\n","Vendor:","THM");
-	fprintf(f,"\t%-12s%s\n","Model:","ECO32");
+	fprintf(f,"%-12s%Lu Hz\n","Speed:",cpu.speed());
+	fprintf(f,"%-12s%s\n","Vendor:","THM");
+	fprintf(f,"%-12s%s\n","Model:","ECO32");
 }

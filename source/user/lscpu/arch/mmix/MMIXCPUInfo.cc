@@ -29,9 +29,9 @@ uint64_t MMIXCPUInfo::getRN() const {
 
 void MMIXCPUInfo::print(FILE *f,info::cpu &cpu) {
 	uint64_t rn = getRN();
-	fprintf(f,"\t%-12s%Lu Hz\n","Speed:",cpu.speed());
-	fprintf(f,"\t%-12s%s\n","Vendor:","THM");
-	fprintf(f,"\t%-12s%s\n","Model:","GIMMIX");
-	fprintf(f,"\t%-12s%Lu.%Lu.%Lu\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
-	fprintf(f,"\t%-12s%Lu\n","Builddate",rn & 0xFFFFFFFFFF);
+	fprintf(f,"%-12s%Lu Hz\n","Speed:",cpu.speed());
+	fprintf(f,"%-12s%s\n","Vendor:","THM");
+	fprintf(f,"%-12s%s\n","Model:","GIMMIX");
+	fprintf(f,"%-12s%Lu.%Lu.%Lu\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
+	fprintf(f,"%-12s%Lu\n","Builddate",rn & 0xFFFFFFFFFF);
 }

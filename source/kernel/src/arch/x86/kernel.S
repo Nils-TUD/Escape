@@ -35,6 +35,7 @@
 .global thread_startup
 .global kernelStack
 .global aplock
+.global higherhalf
 
 // imports
 .extern bspstart
@@ -43,6 +44,7 @@
 .extern unittest_start
 .extern uenv_setupThread
 .extern paging_setup
+.extern gem5boot
 
 .section .initdata
 // our temporary kernel stack
@@ -62,6 +64,7 @@ aplock:
 .set MULTIBOOT_PAGE_ALIGN,			1 << 0
 .set MULTIBOOT_MEMORY_INFO,			1 << 1
 .set MULTIBOOT_HEADER_MAGIC,		0x1BADB002
+.set MULTIBOOT_MAGIC,				0x2BADB002
 .set MULTIBOOT_HEADER_FLAGS,		MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 .set MULTIBOOT_CHECKSUM,			-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
@@ -117,6 +120,12 @@ setupGDTEntriesEnd:
 
 // the kernel entry point
 bspEntry:
+#if defined(__x86_64__)
+	cmp		$MULTIBOOT_MAGIC,%eax
+	// TODO atm, we assume gem5 in this case, which is of course not always true
+	jne		gem5boot
+#endif
+
 	// we distinguish the BSP and APs by esi
 	mov		$1,%esi
 	// first setup a GDT

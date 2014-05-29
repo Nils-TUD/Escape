@@ -103,7 +103,6 @@ static View views[] = {
 	{"pmemstack",	PhysMem::printStack},
 	{"pmemareas",	PhysMemAreas::print},
 	{"swapmap",		SwapMap::print},
-	{"cpu",			CPU::print},
 #if defined(__i586__)
 	{"gdt",			GDT::print},
 #endif
@@ -115,7 +114,6 @@ static View views[] = {
 	{"boot",		Boot::print},
 	{"events",		Sched::printEventLists},
 	{"smp",			SMP::print},
-	{"irqs",		Interrupts::print},
 	{"mounts",		MountSpace::printAll},
 };
 

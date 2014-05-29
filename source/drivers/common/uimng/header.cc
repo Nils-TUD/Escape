@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/conf.h>
 #include <vbetext/vbetext.h>
+#include <info/cpu.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,29 +76,12 @@ bool Header::rebuild(UIClient *cli,gsize_t *width,gsize_t *height) {
 }
 
 void Header::readCPUUsage(void) {
-	FILE *f = fopen("/system/cpu","r");
-	if(f) {
-		while(!feof(f)) {
-			int no;
-			uint64_t total,used;
-			/* read CPU number */
-			if(fscanf(f,"%*s %d:",&no) == 1 &&
-				fscanf(f,"%*s%Lu%*s",&total) == 1 &&
-				fscanf(f,"%*s%Lu%*s",&used) == 1) {
-				_cpuUsage[no].usage = 100 * (used / (double)total);
-				_cpuUsage[no].usage = MAX(0,MIN(_cpuUsage[no].usage,99));
-				snprintf(_cpuUsage[no].str,sizeof(_cpuUsage[no].str),"%2d",_cpuUsage[no].usage);
-			}
-
-			/* read until the next cpu */
-			if(fgetc(f) != '\n')
-				break;
-			while(!feof(f) && fgetc(f) == '\t') {
-				while(!feof(f) && fgetc(f) != '\n')
-					;
-			}
-		}
-		fclose(f);
+	std::vector<info::cpu*> cpus = info::cpu::get_list();
+	int no = 0;
+	for(auto it = cpus.begin(); it != cpus.end(); ++it, ++no) {
+		_cpuUsage[no].usage = 100 * ((*it)->usedCycles() / (double)(*it)->totalCycles());
+		_cpuUsage[no].usage = MAX(0,MIN(_cpuUsage[no].usage,99));
+		snprintf(_cpuUsage[no].str,sizeof(_cpuUsage[no].str),"%2d",_cpuUsage[no].usage);
 	}
 }
 

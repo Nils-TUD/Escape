@@ -3,6 +3,6 @@
 Import('env')
 
 if env['TGT'] == 'i586':
-	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['vbetext'])
+	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['info', 'vbetext'])
 else:
-	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'))
+	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['info'])

@@ -5,7 +5,7 @@ Escape is a UNIX-like microkernel operating system on which I'm working since
 october 2008. It's implemented in C, C++ and a bit assembler. Except that
 I'm using the bootloader GRUB and the libraries that GCC provides (libgcc,
 libsupc++), I've developed the whole OS by myself.  
-Escape runs on x86, ECO32 and MMIX.
+Escape runs on x86, x86_64, ECO32 and MMIX.
 [ECO32](http://homepages.thm.de/~hg53/eco32/) is a 32-bit big-endian RISC
 architecture, created by Hellwig Geisse at the University of Applied Sciences
 in Gießen for research and teaching purposes.
@@ -92,8 +92,13 @@ Escape has currently the following features:
   Escape has some architecture-specific drivers and some common drivers that
   are architecture- independent. Currently, there are:
     * common
-        * fs: The filesystem. Has a nearly complete ext2-rev0 fs and a iso9660
-          fs. Additionally it manages mount-points.
+        * ext2: a nearly complete ext2-rev0 fs
+        * iso9660: a iso9660 fs (cd fs).
+        * http: presents a HTTP accessible resource as a file
+        * lo: the loopback driver
+        * pipe: realizes a pipe
+        * ramdisk: a fs backend that sits in RAM
+        * tcpip: a TCP/IP stack (v4 only atm)
         * uimng: multiplexes input- and output-devices between its clients.
 	  A client gets an UI which supplies him with keyboard- and mouse-
 	  events and provides him a screen. Both text- and graphical interfaces
@@ -108,13 +113,15 @@ Escape has currently the following features:
     * x86
         * ata: Reading and writing from/to ATA/ATAPI-devices. It supports
           PIO-mode and DMA, LBA28 and LBA48.
-        * rtc: Provides the current date and time.
+        * e1000: network driver for Intel e1000 cards.
         * keyb: Gets notified about keyboard-interrupts, converts the
           scancodes to keycodes and broadcasts them to all clients.
         * mouse: Gets notified about mouse-interrupts and broadcasts them to
 	  all clients.
+		* ne2k: network driver for NE2000 compatible cards
         * pci: Collects the available PCI-devices and gives others access to
           them. This is e.g. used by ata to find the IDE-controller.
+        * rtc: Provides the current date and time.
         * speaker: Produces beeps with the PC-speaker with a specified
           frequency and duration.
         * vesa: An output-device for uimng that supports both text-modes and
@@ -154,16 +161,20 @@ Escape has currently the following features:
       with pipes, io-redirection, path-expansion, background-jobs, arithmetic,
       loops, if-statements, functions, variables and arrays. The interpreter
       is realized with flex and bison.
-    * cat, chmod, chown, cut, date, dd, dump, grep, groups, head, kill, less,
-      ln, ls, mkdir, more, mount, ps, readelf, rm, rmdir, sort, stat, sync,
-      tail, time, top, umount, users, wc: The well-known UNIX-tools. They
-      don't do exactly the same and are, of course, much simpler, but in
+    * cat, chmod, chown, cp, cut, date, dd, dump, grep, groups, head, kill, less,
+      ln, ls, mkdir, more, mount, mv, ping, ps, pstree, readelf, rm, rmdir, sort,
+      stat, sync, tail, time, top, umount, users, wc: The well-known UNIX-tools.
+      They don't do exactly the same and are, of course, much simpler, but in
       principle they are intended for the same things.
     * ts: analogously to ps, ts lists all threads
     * power: for reboot / shutdown using init.
     * keymap: A tool to change the current keymap (us and german is available)
     * vtctrl: A tool for changing the size of the vterm, i.e. the video-mode.
     * lspci/lsacpi: list PCI-devices and ACPI tables
+    * lscpu: list CPUs and decode cpuid information
+    * net-link: a tool for managing the network links (similar to ifconfig)
+    * net-arp: a tool to manage the ARP tables
+    * net-routes: a tool to manage the routing tables
     * ...
 
 
@@ -173,7 +184,7 @@ Getting started
 1. At first you need to build the cross-compiler for the desired
    architecture:  
    `$ cd cross`  
-   `$ ./build.sh (i586|eco32|mmix)`  
+   `$ ./build.sh (i586|x86_64|eco32|mmix)`  
    This will download gcc and binutils, build the cross-compiler and put it
    into /opt/escape-cross-$arch.
 2. Now you can build escape:  

@@ -250,9 +250,8 @@ void Console::dumpLine(OStream &os,uintptr_t addr,uint8_t *bytes) {
 }
 
 void Console::navigation(OStream &os,NaviBackend *backend) {
-	/* the maximum has to be BYTES_PER_LINE because cons_display assumes it atm */
-	char search[BYTES_PER_LINE + 1] = "";
-	char searchClone[BYTES_PER_LINE + 1] = "";
+	char search[20] = "";
+	char searchClone[20] = "";
 	int searchMode = SEARCH_NONE;
 	uintptr_t addr = backend->getStartPos();
 	size_t searchPos = 0;

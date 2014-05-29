@@ -122,8 +122,8 @@ cpuid_t GDT::getCPUId() {
 		if(all[i].gdt.offset == tbl.offset)
 			return i;
 	}
-	/* never reached */
-	return -1;
+	/* should not be reached. but if we do, assume that the id is 0 (-> no SMP) */
+	return 0;
 }
 
 void GDT::setRunning(cpuid_t id,Thread *t) {

@@ -80,6 +80,9 @@ public:
 			ecx = sp;
 	}
 
+	void setSS() {
+	}
+
 	void print(OStream &os) const {
 		os.writef("stack-frame @ %p\n",this);
 		os.writef("\teax: %#08x\n",eax);

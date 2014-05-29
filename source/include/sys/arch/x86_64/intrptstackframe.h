@@ -107,6 +107,11 @@ public:
 			r11 = sp;
 	}
 
+	void setSS() {
+		if((cs & 3) == 0)
+			uss = (SEG_KDATA << 3) | 0;
+	}
+
 	void print(OStream &os) const {
 		os.writef("stack-frame @ %p\n",this);
 		os.writef("\trax: %#016lx\n",rax);

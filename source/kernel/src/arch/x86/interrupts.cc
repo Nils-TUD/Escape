@@ -207,6 +207,7 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 		if(EXPECT_FALSE(t->hasSignal()))
 			UEnv::handleSignal(t,stack);
 	}
+	stack->setSS();
 
 	t->popIntrptLevel();
 }

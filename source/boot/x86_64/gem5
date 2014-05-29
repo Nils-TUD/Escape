@@ -1,0 +1,32 @@
+#!/bin/sh
+gem5dir=/home/hrniels/Applications/gem5-stable
+#21902886000
+gem5args=" --remote-gdb-port=1234 --debug-flags=Faults $2"
+gem5args="$gem5args boot/x86_64/gem5-fs.py"
+gem5args="$gem5args --kernel=escape --kernel-cmdline=\"root=/dev/iso9660-ramdisk-mbmods-4 nosmp\""
+gem5args="$gem5args --caches --cpu-type TimingSimpleCPU --cpu-clock 1GHz"
+
+imgs=`mktemp -d`
+mkdir $imgs/binaries
+mkdir $imgs/disks
+
+cp $1/bin/escape $imgs/binaries
+# create dummy disk images
+dd if=/dev/zero of=$imgs/disks/x86root.img count=1024 bs=1024
+dd if=/dev/zero of=$imgs/disks/linux-bigswap2.img count=1024 bs=1024
+
+trap "" INT
+
+if [ "$GEM5_DBG" != "" ]; then
+	cmds=`mktemp`
+	echo "b main" > $cmds
+	echo "run $gem5args >log.txt" >> $cmds
+
+	M5_PATH=$imgs gdb --tui -command=$cmds $gem5dir/build/X86/gem5.opt
+
+	rm -f $cmds
+else
+	echo $gem5args | M5_PATH=$imgs xargs $gem5dir/build/X86/gem5.opt | tee log.txt
+fi
+
+rm -rf $imgs

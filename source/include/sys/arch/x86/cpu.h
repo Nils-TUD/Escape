@@ -165,26 +165,7 @@ public:
 	 * @param feat the feature
 	 * @return whether the feature is supported
 	 */
-	static bool hasFeature(uint64_t feat);
-
-	/**
-	 * Issue a single request to CPUID
-	 *
-	 * @param code the request to perform
-	 * @param a will contain the value of eax
-	 * @param b will contain the value of ebx
-	 * @param c will contain the value of ecx
-	 * @param d will contain the value of edx
-	 */
-	static void getInfo(uint32_t code,uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d) asm("cpu_getInfo");
-
-	/**
-	 * Issues the given request to CPUID and stores the result in <res>
-	 *
-	 * @param code the request to perform
-	 * @param res will contain the result
-	 */
-	static void getStrInfo(uint32_t code,char *res) asm("cpu_getStrInfo");
+	static bool hasFeature(FeatSource src,uint64_t feat);
 
 	/**
 	 * Executes the 'pause' instruction

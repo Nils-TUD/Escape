@@ -251,7 +251,7 @@ void Interrupts::exGPF(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	}
 #endif
 	/* TODO later the process should be killed here */
-	Util::panic("GPF @ %p",stack->getIP());
+	Util::panic("GPF @ %p (%#x)",stack->getIP(),stack->getError());
 }
 
 void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {

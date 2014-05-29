@@ -219,21 +219,21 @@ void VFSInfo::memUsageReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void 
 	size_t dataShared,dataOwn,dataReal;
 	Proc::getMemUsage(&dataShared,&dataOwn,&dataReal);
 	os.writef(
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
-		"%-11s%10zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
+		"%-11s%12zu\n"
 		,
 		"Total:",total,
 		"Used:",total - free,

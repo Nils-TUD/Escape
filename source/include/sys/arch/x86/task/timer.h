@@ -27,8 +27,8 @@ class Timer : public TimerBase {
 	Timer() = delete;
 
 	static const uint64_t TOLERANCE			= 1000000;
-	static const int MEASURE_COUNT			= 10;
-	static const int REQUIRED_MATCHES		= 5;
+	static const int MEASURE_COUNT			= 5;
+	static const int REQUIRED_MATCHES		= 3;
 
 public:
 	/**

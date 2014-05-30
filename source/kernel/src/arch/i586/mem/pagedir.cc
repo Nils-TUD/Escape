@@ -30,7 +30,7 @@ uint8_t PageDir::sharedPtbls[SHPT_COUNT][PAGE_SIZE] A_ALIGNED(PAGE_SIZE);
 
 void PageDirBase::init() {
 	/* map first part of physical memory contiguously */
-	PageDir::pte_t *pt = (PageDir::pte_t*)&proc0TLPD;
+	pte_t *pt = (pte_t*)&proc0TLPD;
 	uintptr_t virt = DIR_MAP_AREA;
 	uint flags = PTE_PRESENT | PTE_WRITABLE | PTE_LARGE | PTE_EXISTS;
 	size_t end = PT_IDX(DIR_MAP_AREA + DIR_MAP_AREA_SIZE,1);
@@ -41,7 +41,7 @@ void PageDirBase::init() {
 
 	/* create temp object for the start */
 	PageDir pdir;
-	pdir.pagedir = (uintptr_t)&proc0TLPD & ~KERNEL_AREA;
+	pdir.pts.setRoot((pte_t)&proc0TLPD & ~KERNEL_AREA);
 	pdir.freeKStack = KSTACK_AREA;
 	pdir.lock = SpinLock();
 
@@ -70,18 +70,18 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 		return -ENOMEM;
 	}
 
-	const PageDir::pte_t *pd = (const PageDir::pte_t*)(DIR_MAP_AREA + cur->pagedir);
-	PageDir::pte_t *npd = (PageDir::pte_t*)(DIR_MAP_AREA + (pdirFrame << PAGE_BITS));
+	const pte_t *pd = (const pte_t*)(DIR_MAP_AREA + cur->pts.getRoot());
+	pte_t *npd = (pte_t*)(DIR_MAP_AREA + (pdirFrame << PAGE_BITS));
 
 	/* clear user-space page-tables */
-	memclear(npd,PT_IDX(KERNEL_AREA,1) * sizeof(PageDir::pte_t));
+	memclear(npd,PT_IDX(KERNEL_AREA,1) * sizeof(pte_t));
 	/* copy kernel-space page-tables */
 	memcpy(npd + PT_IDX(KERNEL_AREA,1),
 			pd + PT_IDX(KERNEL_AREA,1),
-			(PT_IDX(KSTACK_AREA,1) - PT_IDX(KERNEL_AREA,1)) * sizeof(PageDir::pte_t));
+			(PT_IDX(KSTACK_AREA,1) - PT_IDX(KERNEL_AREA,1)) * sizeof(pte_t));
 	/* clear the remaining page-tables */
 	memclear(npd + PT_IDX(KSTACK_AREA,1),
-			(PT_ENTRY_COUNT - PT_IDX(KSTACK_AREA,1)) * sizeof(PageDir::pte_t));
+			(PT_ENTRY_COUNT - PT_IDX(KSTACK_AREA,1)) * sizeof(pte_t));
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
 	uintptr_t kstackAddr = t->getKernelStack();
@@ -92,7 +92,7 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 
 	/* one final flush to ensure everything is correct */
 	PageDir::flushTLB();
-	dst->pagedir = pdirFrame << PAGE_BITS;
+	dst->pts.setRoot(pdirFrame << PAGE_BITS);
 	if(kstackAddr == KSTACK_AREA)
 		dst->freeKStack = KSTACK_AREA + PAGE_SIZE;
 	else
@@ -103,7 +103,7 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 
 void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	PageDir::pte_t *pd = (PageDir::pte_t*)(DIR_MAP_AREA + pdir->pagedir);
+	pte_t *pd = (pte_t*)(DIR_MAP_AREA + pdir->pts.getRoot());
 	/* free page-tables for kernel-stack */
 	for(size_t i = PT_IDX(KSTACK_AREA,1);
 		i < PT_IDX(KSTACK_AREA + KSTACK_AREA_SIZE - 1,1); i++) {
@@ -113,5 +113,5 @@ void PageDirBase::destroy() {
 		}
 	}
 	/* free page-dir */
-	PhysMem::free(pdir->pagedir >> PAGE_BITS,PhysMem::KERN);
+	PhysMem::free(pdir->pts.getRoot() >> PAGE_BITS,PhysMem::KERN);
 }

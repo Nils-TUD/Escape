@@ -40,11 +40,11 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 	/* if there is another process who wants to get the frame, we make a copy for us */
 	/* otherwise we keep the frame for ourself */
 	if(cow->refCount == 0) {
-		PageDir::NoAllocator noalloc;
+		PageTables::NoAllocator noalloc;
 		PageDir::mapToCur(address,1,noalloc,PG_PRESENT | PG_WRITABLE);
 	}
 	else {
-		PageDir::UAllocator ualloc;
+		PageTables::UAllocator ualloc;
 		/* can't fail, we've already allocated the frame */
 		PageDir::mapToCur(address,1,ualloc,PG_PRESENT | PG_WRITABLE);
 	}

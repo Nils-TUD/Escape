@@ -43,42 +43,18 @@
  * if it is accessed over the directly mapped space. */
 #define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START)
 
-/*
- * PTE:
- * +-------+-+-------------------------------------------+----------+-+-+-+
- * |       |e|                 frameNumber               |     n    |r|w|x|
- * +-------+-+-------------------------------------------+----------+-+-+-+
- * 63     57 56                                          13         3     0
- *
- * PTP:
- * +-+---------------------------------------------------+----------+-+-+-+
- * |1|                   ptframeNumber                   |     n    | ign |
- * +-+---------------------------------------------------+----------+-+-+-+
- * 63                                                    13         3     0
- */
-
-/* to shift a flag down to the first bit */
-#define PG_PRESENT_SHIFT			0
-#define PG_WRITABLE_SHIFT			1
-#define PG_EXECUTABLE_SHIFT			2
-
-/* pte fields */
-#define PTE_EXISTS					(1UL << 56)
-#define PTE_READABLE				(1UL << 2)
-#define PTE_WRITABLE				(1UL << 1)
-#define PTE_EXECUTABLE				(1UL << 0)
-#define PTE_FRAMENO(pte)			(((pte) >> PAGE_BITS) & 0x7FFFFFFFFFF)
-#define PTE_FRAMENO_MASK			0x00FFFFFFFFFFE000
-#define PTE_NMASK					0x0000000000001FF8
-
-#define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_BITS)
-#define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
-
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 
 public:
+	typedef ulong pte_t;
+
 	explicit PageDir() : PageDirBase(), addrSpace(), rv(), ptables() {
+	}
+
+	/* not used */
+	PageTables *getPageTables() {
+		return NULL;
 	}
 
 	uint64_t getRV() const {
@@ -109,10 +85,10 @@ private:
 	static void printPageTable(OStream &os,ulong seg,uintptr_t addr,uint64_t *pt,size_t level,ulong indent);
 	static void printPTE(OStream &os,uint64_t pte);
 
-	uint64_t *getPT(uintptr_t virt,bool create,Allocator &alloc) const;
+	uint64_t *getPT(uintptr_t virt,bool create,PageTables::Allocator &alloc) const;
 	uint64_t getPTE(uintptr_t virt) const;
-	size_t removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth,Allocator &alloc);
-	size_t remEmptyPts(uintptr_t virt,Allocator &alloc);
+	size_t removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth,PageTables::Allocator &alloc);
+	size_t remEmptyPts(uintptr_t virt,PageTables::Allocator &alloc);
 	void tcRemPT(uintptr_t virt);
 
 private:

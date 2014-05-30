@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/arch/eco32/mem/physmem.h>
+#include <sys/arch/eco32/mem/pte.h>
 
 /**
  * Virtual memory layout:
@@ -51,23 +52,23 @@
  *             |        (in arbitrary order)       |     |
  * 0x80000000: +-----------------------------------+   -----    -----
  *             |         mapped page-tables        |     |        |
- * 0x80400000: +-----------------------------------+     |     not shared pts
- *             |      temp mapped page-tables      |     |        |
- * 0x80800000: +-----------------------------------+            -----
- *             |                                   |     k
- *      |      |            kernel-heap            |     e
- *      v      |                                   |     r
- * 0x80C00000: +-----------------------------------+     r      -----
+ *             |     not used in C++ code but      |     |   not shared pt
+ *             |     only in TLB miss handlers     |     |        |
+ * 0x80400000: +-----------------------------------+     |      -----
+ *             |                                   |     |
+ *      |      |            kernel-heap            |     |
+ *      v      |                                   |
+ * 0x80800000: +-----------------------------------+     k      -----
  *             |       VFS global file table       |     e        |
- * 0x81000000: +-----------------------------------+     a
- *             |             VFS nodes             |          dynamically extending regions
- * 0x81400000: +-----------------------------------+     |
- *             |             sll nodes             |     |        |
- * 0x83400000: +-----------------------------------+     |      -----
- *             |           temp map area           |     |
- * 0x84400000: +-----------------------------------+     |      -----
- *             |           kernel stack            |     |     not shared
- * 0x84401000: +-----------------------------------+     |      -----
+ * 0x80C00000: +-----------------------------------+     r
+ *             |             VFS nodes             |     n    dynamically extending regions
+ * 0x81000000: +-----------------------------------+     e
+ *             |             sll nodes             |     l        |
+ * 0x83000000: +-----------------------------------+     a      -----
+ *             |           temp map area           |     r
+ * 0x84000000: +-----------------------------------+     e      -----
+ *             |           kernel stack            |     a     not shared
+ * 0x84001000: +-----------------------------------+            -----
  *             |                ...                |     |
  * 0xC0000000: +-----------------------------------+   -----
  *             |                                   |     |
@@ -88,21 +89,13 @@
 #define DIR_MAP_AREA			0xC0000000
 #define DIR_MAP_AREA_SIZE		(1024 * 1024 * 1024)
 
-/* the number of entries in a page-directory or page-table */
-#define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
+#define PT_SIZE					(PAGE_SIZE * PT_ENTRY_COUNT)
 
 /* the start of the mapped page-tables area */
 #define MAPPED_PTS_START		KERNEL_AREA
-/* the start of the temporary mapped page-tables area */
-#define TMPMAP_PTS_START		(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
-
-/* page-directories in virtual memory */
-#define PAGE_DIR_AREA			(MAPPED_PTS_START + PAGE_SIZE * 512)
-/* needed for building a new page-dir */
-#define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * 513)
 
 /* the start of the kernel-heap */
-#define KHEAP_START				(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
+#define KHEAP_START				(KERNEL_AREA + PT_ENTRY_COUNT * PAGE_SIZE)
 /* the size of the kernel-heap (4 MiB) */
 #define KHEAP_SIZE				(PT_ENTRY_COUNT * PAGE_SIZE)
 
@@ -121,7 +114,8 @@
 #define TEMP_MAP_AREA_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
 /* our kernel-stack */
-#define KERNEL_STACK			(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
+#define KSTACK_AREA				(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
+#define KERNEL_STACK			KSTACK_AREA
 
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE			PAGE_SIZE

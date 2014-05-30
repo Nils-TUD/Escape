@@ -60,7 +60,7 @@ static void test_paging() {
 static void test_paging_foreign() {
 	size_t ownFrames, sharedFrames;
 	Proc *child;
-	PageDir::UAllocator alloc;
+	PageTables::UAllocator alloc;
 	Thread *t = Thread::getRunning();
 	pid_t pid = Proc::clone(0);
 	if(pid == 0) {
@@ -136,7 +136,7 @@ static bool test_paging_cycle(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_allocate(uintptr_t addr,size_t count) {
-	PageDir::UAllocator alloc;
+	PageTables::UAllocator alloc;
 	PageDir::mapToCur(addr,count,alloc,PG_PRESENT | PG_WRITABLE);
 }
 
@@ -154,6 +154,6 @@ static void test_paging_access(uintptr_t addr,size_t count) {
 }
 
 static void test_paging_free(uintptr_t addr,size_t count) {
-	PageDir::UAllocator alloc;
+	PageTables::UAllocator alloc;
 	PageDir::unmapFromCur(addr,count,alloc);
 }

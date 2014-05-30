@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/arch/mmix/mem/physmem.h>
+#include <sys/arch/mmix/mem/pte.h>
 
 /**
  * Virtual memory layout:
@@ -77,14 +78,6 @@
 #define DIR_MAP_AREA			0x8000000000000000
 #define DIR_MAP_AREA_SIZE		0x0000FFFF00000000
 
-/* number of used segments */
-#define SEGMENT_COUNT			3
-/* page-tables for each segments in root-location */
-#define PTS_PER_SEGMENT			2
-
-/* the number of entries in a page-directory or page-table */
-#define PT_ENTRY_COUNT			(PAGE_SIZE / 8)
-
 /* on mmix, the dynamically extending regions are not mapped into the virtual memory. because
  * if we did so, we would have to copy all page-tables for that on every process-clone (the
  * address-space-number has to match rV.n). thus, we provide a different strategy for these
@@ -93,6 +86,7 @@
 #define GFT_AREA				0
 #define VFSNODE_AREA			0
 #define SLLNODE_AREA			0
+#define KSTACK_AREA				0
 #define GFT_AREA_SIZE			(PAGE_SIZE * PT_ENTRY_COUNT)
 #define VFSNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT)
 #define SLLNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT * 8)

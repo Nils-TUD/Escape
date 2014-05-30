@@ -44,7 +44,7 @@ int ThreadBase::initArch(Thread *t) {
 	frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
 	if(stackFrame == INVALID_FRAME)
 		return -ENOMEM;
-	PageDir::RangeAllocator alloc(stackFrame);
+	PageTables::RangeAllocator alloc(stackFrame);
 	if(t->getProc()->getPageDir()->map(KERNEL_STACK,1,alloc,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
 		PhysMem::free(stackFrame,PhysMem::KERN);
@@ -59,7 +59,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 		frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
 		if(stackFrame == INVALID_FRAME)
 			return -ENOMEM;
-		PageDir::RangeAllocator alloc(stackFrame);
+		PageTables::RangeAllocator alloc(stackFrame);
 		if(dst->getProc()->getPageDir()->map(KERNEL_STACK,1,alloc,
 				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR) < 0) {
 			PhysMem::free(stackFrame,PhysMem::KERN);
@@ -149,7 +149,7 @@ void ThreadBase::doSwitch() {
 
 			SMP::schedule(n->getCPU(),n,cycles);
 			n->stats.cycleStart = CPU::rdtsc();
-			Thread::resume(n->getProc()->getPageDir()->getPhysAddr(),&n->saveArea,n->kstackFrame);
+			Thread::resume(n->getProc()->getPageDir()->getPhysAddr() | DIR_MAP_AREA,&n->saveArea,n->kstackFrame);
 		}
 	}
 	else {

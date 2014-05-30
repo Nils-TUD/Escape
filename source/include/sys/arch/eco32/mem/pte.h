@@ -17,27 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/thread.h>
-#include <sys/util.h>
+#pragma once
 
-void PageDir::RangeAllocator::freePage(frameno_t) {
-	Util::panic("Not supported");
-}
+#define PT_LEVELS				2
+#define PT_BPL					10
+#define PT_BITS					32
+#define PT_ENTRY_COUNT			(PAGE_SIZE >> 2)
 
-PageDir::UAllocator::UAllocator() : Allocator(), _thread(Thread::getRunning()) {
-}
+/* pte fields */
+#define PTE_PRESENT				(1UL << 0)
+#define PTE_WRITABLE			(1UL << 1)
+#define PTE_NOTSUPER			0
+#define PTE_LARGE				0
+#define PTE_GLOBAL				0
+#define PTE_EXISTS				(1UL << 2)
+#define PTE_NO_EXEC				0
+#define PTE_FRAMENO(pte)		(((pte) >> PAGE_BITS) & ((1ULL << PT_BITS) - 1))
+#define PTE_FRAMENO_MASK		(((1ULL << PT_BITS) - 1) << PAGE_BITS)
 
-frameno_t PageDir::UAllocator::allocPage() {
-	return _thread->getFrame();
-}
-
-frameno_t PageDir::KAllocator::allocPT() {
-	Util::panic("Trying to allocate a page-table in kernel-area");
-	return 0;
-}
-
-void PageDir::KAllocator::freePT(frameno_t) {
-	Util::panic("Trying to free a page-table in kernel-area");
-}
+#if defined(__cplusplus)
+typedef unsigned long pte_t;
+#endif

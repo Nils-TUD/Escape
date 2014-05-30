@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/arch/i586/mem/physmem.h>
+#include <sys/arch/x86/mem/pte.h>
 
 /**
  * Virtual memory layout:
@@ -85,13 +86,6 @@
 /* the virtual address of the kernel */
 #define KERNEL_BEGIN			0xC0000000
 #define KERNEL_START			(KERNEL_BEGIN + KERNEL_P_ADDR)
-
-#define PT_ENTRY_COUNT			(PAGE_SIZE >> 2)
-#define PT_SIZE					(PAGE_SIZE * PT_ENTRY_COUNT)
-
-#define PT_LEVELS				2
-#define PT_BPL					10
-#define PT_BITS					32
 
 /* maximum size of kernel code and data */
 #define KERNEL_SIZE				(PT_SIZE * 2)

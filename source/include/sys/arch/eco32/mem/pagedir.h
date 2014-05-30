@@ -21,18 +21,10 @@
 
 #include <sys/common.h>
 #include <sys/arch/eco32/mem/layout.h>
+#include <sys/mem/pagetables.h>
 #include <sys/mem/physmemareas.h>
 #include <string.h>
 #include <assert.h>
-
-/* converts a virtual address to the page-directory-index for that address */
-#define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))
-
-/* converts a virtual address to the index in the corresponding page-table */
-#define ADDR_TO_PTINDEX(addr)	((size_t)(((uintptr_t)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT))
-
-/* converts pages to page-tables (how many page-tables are required for the pages?) */
-#define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
 /* determines whether the given address is on the heap */
 #define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KHEAP_START && \
@@ -46,44 +38,22 @@
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 
-	/* represents a page-directory-entry */
-	struct PDEntry {
-		/* the physical address of the page-table */
-		uint32_t ptFrameNo		: 20,
-		/* unused */
-								: 9,
-		/* can be used by the OS */
-		/* Indicates that this pagetable exists (but must not necessarily be present) */
-		exists					: 1,
-		/* whether the page is writable */
-		writable				: 1,
-		/* 1 if the page is present in memory */
-		present					: 1;
-	};
-
-	/* represents a page-table-entry */
-	struct PTEntry {
-		/* the physical address of the page */
-		uint32_t frameNumber	: 20,
-		/* unused */
-								: 9,
-		/* can be used by the OS */
-		/* Indicates that this page exists (but must not necessarily be present) */
-		exists				: 1,
-		/* whether the page is writable */
-		writable			: 1,
-		/* 1 if the page is present in memory */
-		present				: 1;
-	};
-
 public:
-	explicit PageDir() : PageDirBase(), phys() {
+	explicit PageDir() : PageDirBase(), pts() {
+	}
+
+	PageTables *getPageTables() {
+		return &pts;
 	}
 
 	/**
 	* Sets the entry with index <index> to the given translation
 	*/
 	static void tlbSet(int index,uint virt,uint phys);
+	/**
+	* Removes the entry for <addr> from the TLB
+	*/
+	static void tlbRemove(uintptr_t addr) asm("tlb_remove");
 
 	/**
 	* Prints the contents of the TLB
@@ -98,37 +68,24 @@ private:
 	* the physical address including flags into *entryLo.
 	*/
 	static void tlbGet(int index,uint *entryHi,uint *entryLo);
-	/**
-	* Removes the entry for <addr> from the TLB
-	*/
-	static void tlbRemove(uintptr_t addr) asm("tlb_remove");
 
-	/**
-	* Flushes the whole page-table including the page in the mapped page-table-area
-	*
-	* @param virt a virtual address in the page-table
-	* @param ptables the page-table mapping-area
-	*/
-	static void flushPageTable(uintptr_t virt,uintptr_t ptables);
-
-	static void printPageTable(OStream &os,uintptr_t ptables,size_t no,PDEntry *pde);
-	static void printPage(OStream &os,PTEntry *page);
-
-	size_t remEmptyPt(uintptr_t ptables,size_t pti,Allocator &alloc);
-	uintptr_t getPTables() const;
-
-	uintptr_t phys;
+	PageTables pts;
 	static uintptr_t curPDir asm("curPDir");
-	static uintptr_t otherPDir asm("otherPDir");
 };
+
+inline void PageTables::flushAddr(uintptr_t addr,bool) {
+	/* on ECO32, we also need to remove the entry if it was not present */
+	PageDir::tlbRemove(addr);
+}
 
 inline uintptr_t PageDirBase::getPhysAddr() const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
-	return pdir->phys;
+	return pdir->pts.getRoot();
 }
 
 inline void PageDirBase::makeFirst() {
-	static_cast<PageDir*>(this)->phys = PageDir::curPDir;
+	PageDir *pdir = static_cast<PageDir*>(this);
+	pdir->pts.setRoot(PageDir::curPDir & ~DIR_MAP_AREA);
 }
 
 inline uintptr_t PageDirBase::makeAccessible(uintptr_t phys,size_t pages) {
@@ -148,12 +105,47 @@ inline void PageDirBase::removeAccess(A_UNUSED frameno_t frame) {
 	/* nothing to do */
 }
 
+inline bool PageDirBase::isPresent(uintptr_t virt) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->pts.isPresent(virt);
+}
+
+inline frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->pts.getFrameNo(virt);
+}
+
 inline void PageDirBase::copyToFrame(frameno_t frame,const void *src) {
 	memcpy((void*)(frame * PAGE_SIZE | DIR_MAP_AREA),src,PAGE_SIZE);
 }
 
 inline void PageDirBase::copyFromFrame(frameno_t frame,void *dst) {
 	memcpy(dst,(void*)(frame * PAGE_SIZE | DIR_MAP_AREA),PAGE_SIZE);
+}
+
+inline int PageDirBase::clone(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,bool share) {
+	PageDir *pdir = static_cast<PageDir*>(this);
+	return pdir->pts.clone(&dst->pts,virtSrc,virtDst,count,share);
+}
+
+inline int PageDirBase::map(uintptr_t virt,size_t count,PageTables::Allocator &alloc,uint flags) {
+	PageDir *pdir = static_cast<PageDir*>(this);
+	return pdir->pts.map(virt,count,alloc,flags);
+}
+
+inline void PageDirBase::unmap(uintptr_t virt,size_t count,PageTables::Allocator &alloc) {
+	PageDir *pdir = static_cast<PageDir*>(this);
+	pdir->pts.unmap(virt,count,alloc);
+}
+
+inline size_t PageDirBase::getPageCount() const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->pts.getPageCount();
+}
+
+inline void PageDirBase::print(OStream &os,uint parts) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	pdir->pts.print(os,parts);
 }
 
 inline void PageDir::tlbSet(int index,uint virt,uint phys) {

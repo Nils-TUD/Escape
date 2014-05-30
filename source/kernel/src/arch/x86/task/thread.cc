@@ -40,7 +40,7 @@ void ThreadBase::addInitialStack() {
 }
 
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
-	PageDir::KStackAllocator alloc;
+	PageTables::KStackAllocator alloc;
 	if(cloneProc) {
 		/* map the kernel-stack at the same address */
 		if(dst->getProc()->getPageDir()->map(src->kernelStack,1,alloc,

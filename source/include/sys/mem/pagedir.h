@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/physmem.h>
+#include <sys/mem/pagetables.h>
 #include <sys/cppsupport.h>
 
 /* flags for map() */
@@ -49,131 +50,6 @@ protected:
 	}
 
 public:
-	/**
-	 * Base class for all allocators. Allocators are responsible for allocating and freeing pages
-	 * and page-tables.
-	 */
-	class Allocator : public CacheAllocatable {
-	public:
-		explicit Allocator() : _pts(0) {
-		}
-		virtual ~Allocator() {
-		}
-
-		/**
-		 * @return the number of allocated and free'd page-tables
-		 */
-		int pageTables() const {
-			return _pts;
-		}
-
-		/**
-		 * Allocates a frame for a page.
-		 */
-		virtual frameno_t allocPage() = 0;
-
-		/**
-		 * Allocates a frame for a page-table
-		 */
-		virtual frameno_t allocPT() {
-			_pts++;
-			return PhysMem::allocate(PhysMem::KERN);
-		}
-
-		/**
-		 * Frees the given frame that belonged to a page.
-		 */
-		virtual void freePage(frameno_t frame) = 0;
-
-		/**
-		 * Frees the given frame that belonged to a page-table
-		 */
-		virtual void freePT(frameno_t frame) {
-			_pts++;
-			PhysMem::free(frame,PhysMem::KERN);
-		}
-
-	private:
-		int _pts;
-	};
-
-	/**
-	 * Noop-allocator. Does no allocation and free of pages (but page-tables). For allocPage(), it
-	 * returns 0, so that the currently set frame is kept.
-	 */
-	class NoAllocator : public Allocator {
-	public:
-		virtual frameno_t allocPage() {
-			return 0;
-		}
-		virtual void freePage(frameno_t) {
-		}
-	};
-
-	/**
-	 * The range allocator returns consecutive frame-numbers, starting at the given one.
-	 */
-	class RangeAllocator : public Allocator {
-	public:
-		explicit RangeAllocator(frameno_t frame) : Allocator(), _frame(frame) {
-		}
-
-		virtual frameno_t allocPage() {
-			return _frame++;
-		}
-		virtual void freePage(frameno_t);
-
-	private:
-		frameno_t _frame;
-	};
-
-	/**
-	 * The user allocator takes frames from the current thread (which have to be put there
-	 * beforehand). It frees them as PhysMem::USR.
-	 */
-	class UAllocator : public Allocator {
-	public:
-		explicit UAllocator();
-
-		virtual frameno_t allocPage();
-		virtual void freePage(frameno_t frame) {
-			PhysMem::free(frame,PhysMem::USR);
-		}
-
-	private:
-		Thread *_thread;
-	};
-
-	/**
-	 * The kernel allocator allocates and frees critical frames and expects that no page-tables are
-	 * created or freed.
-	 */
-	class KAllocator : public Allocator {
-	public:
-		virtual frameno_t allocPage() {
-			return PhysMem::allocate(PhysMem::CRIT);
-		}
-		virtual frameno_t allocPT();
-		virtual void freePage(frameno_t frame) {
-			PhysMem::free(frame,PhysMem::CRIT);
-		}
-		virtual void freePT(frameno_t);
-	};
-
-	/**
-	 * The kernel-stack allocator allocates and frees kernel frames and will also create/free page-
-	 * tables.
-	 */
-	class KStackAllocator : public Allocator {
-	public:
-		virtual frameno_t allocPage() {
-			return PhysMem::allocate(PhysMem::KERN);
-		}
-		virtual void freePage(frameno_t frame) {
-			PhysMem::free(frame,PhysMem::KERN);
-		}
-	};
-
 	/**
 	 * Inits the paging. Sets up the page-dir and page-tables for the kernel and enables paging
 	 */
@@ -273,12 +149,12 @@ public:
 	/**
 	 * Convenience method for Proc::getCurPageDir()->map(...).
 	 */
-	static int mapToCur(uintptr_t virt,size_t count,Allocator &alloc,uint flags);
+	static int mapToCur(uintptr_t virt,size_t count,PageTables::Allocator &alloc,uint flags);
 
 	/**
 	 * Convenience method for Proc::getCurPageDir()->unmap(...).
 	 */
-	static void unmapFromCur(uintptr_t virt,size_t count,Allocator &alloc);
+	static void unmapFromCur(uintptr_t virt,size_t count,PageTables::Allocator &alloc);
 
 	/**
 	 * @return the physical address of the page-directory
@@ -324,7 +200,7 @@ public:
 	 * @param share whether to share the frames
 	 * @return the number of allocated page-tables on success
 	 */
-	int clonePages(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,bool share);
+	int clone(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,bool share);
 
 	/**
 	 * Maps <count> pages starting at <virt> in this page-directory.
@@ -335,7 +211,7 @@ public:
 	 * @param flags some flags for the pages (PG_*)
 	 * @return 0 on success
 	 */
-	int map(uintptr_t virt,size_t count,Allocator &alloc,uint flags);
+	int map(uintptr_t virt,size_t count,PageTables::Allocator &alloc,uint flags);
 
 	/**
 	 * Removes <count> pages starting at <virt> from the page-tables in this page-directory.
@@ -344,7 +220,7 @@ public:
 	 * @param count the number of pages to unmap
 	 * @param alloc the allocator to use for freeing pages/page-tables
 	 */
-	void unmap(uintptr_t virt,size_t count,Allocator &alloc);
+	void unmap(uintptr_t virt,size_t count,PageTables::Allocator &alloc);
 
 	/**
 	 * Counts the number of pages that are currently present in this page-directory

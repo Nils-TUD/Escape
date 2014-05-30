@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/arch/x86_64/mem/physmem.h>
+#include <sys/arch/x86/mem/pte.h>
 
 /**
  * Virtual memory layout:
@@ -89,15 +90,6 @@
 /* the virtual address of the kernel */
 #define KERNEL_BEGIN			0xFFFFFFFF80000000
 #define KERNEL_START			(KERNEL_BEGIN + KERNEL_P_ADDR)
-
-#define PT_ENTRY_COUNT			(PAGE_SIZE >> 3)
-#define PT_SIZE					(1 << (PAGE_BITS + PT_BPL * 1))
-#define PD_SIZE					(1UL << (PAGE_BITS + PT_BPL * 2))
-#define PDPT_SIZE				(1UL << (PAGE_BITS + PT_BPL * 3))
-
-#define PT_LEVELS				4
-#define PT_BPL					9
-#define PT_BITS					48
 
 /* the kernel-heap */
 #define KHEAP_START				KERNEL_AREA

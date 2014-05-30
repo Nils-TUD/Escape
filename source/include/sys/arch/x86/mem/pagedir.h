@@ -25,28 +25,12 @@
 #else
 #	include <sys/arch/x86_64/mem/layout.h>
 #endif
+#include <sys/mem/pagetables.h>
 #include <sys/spinlock.h>
 #include <sys/lockguard.h>
 #include <sys/cpu.h>
 #include <string.h>
 #include <assert.h>
-
-/* pte fields */
-#define PTE_PRESENT				(1UL << 0)
-#define PTE_WRITABLE			(1UL << 1)
-#define PTE_NOTSUPER			(1UL << 2)
-#define PTE_WRITE_THROUGH		(1UL << 3)
-#define PTE_CACHE_DISABLE		(1UL << 4)
-#define PTE_ACCESSED			(1UL << 5)
-#define PTE_DIRTY				(1UL << 6)
-#define PTE_LARGE				(1UL << 7)
-#define PTE_GLOBAL				(1UL << 8)
-#define PTE_EXISTS				(1UL << 9)
-#define PTE_NO_EXEC				(1UL << 63)
-#define PTE_FRAMENO(pte)		(((pte) >> PAGE_BITS) & ((1ULL << PT_BITS) - 1))
-#define PTE_FRAMENO_MASK		(((1ULL << PT_BITS) - 1) << PAGE_BITS)
-
-#define PT_IDX(addr,lvl)		(((addr) >> (PAGE_BITS + PT_BPL * (lvl))) & ((1 << PT_BPL) - 1))
 
 /* determines whether the given address is on the heap */
 #define IS_ON_HEAP(addr)		((uintptr_t)(addr) >= KHEAP_START && \
@@ -59,11 +43,7 @@
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 
-public:
-	typedef ulong pte_t;
-
-private:
-	class PTAllocator : public Allocator {
+	class PTAllocator : public PageTables::Allocator {
 	public:
 		explicit PTAllocator(uintptr_t physStart,size_t count)
 			: _phys(physStart), _end(physStart + count * PAGE_SIZE) {
@@ -89,15 +69,15 @@ private:
 	};
 
 public:
-	explicit PageDir() : PageDirBase(), pagedir(), freeKStack(), lock() {
+	explicit PageDir() : PageDirBase(), freeKStack(), lock(), pts() {
+	}
+
+	PageTables *getPageTables() {
+		return &pts;
 	}
 
 	static void flushTLB() {
 		CPU::setCR3(CPU::getCR3());
-	}
-
-	static void flushAddr(uintptr_t addr) {
-		asm volatile ("invlpg (%0)" : : "r" (addr));
 	}
 
 	/**
@@ -125,27 +105,22 @@ private:
 	static uintptr_t mapToTemp(frameno_t frame);
 	static void unmapFromTemp();
 
-	static int crtPageTable(pte_t *pte,uint flags,Allocator &alloc);
-	static void printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int level);
-
-	int mapPage(uintptr_t virt,frameno_t frame,pte_t flags,Allocator &alloc);
-	frameno_t unmapPage(uintptr_t virt);
-	pte_t *getPTE(uintptr_t virt,uintptr_t *base) const;
-	bool gc(uintptr_t virt,pte_t pte,int level,uint bits,Allocator &alloc);
-	size_t countEntries(pte_t pte,int level) const;
-
-	uintptr_t pagedir;
 	uintptr_t freeKStack;
 	SpinLock lock;
+	PageTables pts;
 
-	static bool hasNXE;
 	static uintptr_t freeAreaAddr;
 	static uint8_t sharedPtbls[][PAGE_SIZE];
 };
 
+inline void PageTables::flushAddr(uintptr_t addr,bool wasPresent) {
+	if(wasPresent)
+		asm volatile ("invlpg (%0)" : : "r" (addr));
+}
+
 inline uintptr_t PageDirBase::getPhysAddr() const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
-	return pdir->pagedir;
+	return pdir->pts.getRoot();
 }
 
 inline bool PageDirBase::isInUserSpace(uintptr_t virt,size_t count) {
@@ -163,6 +138,16 @@ inline void PageDirBase::removeAccess(frameno_t frame) {
 		PageDir::unmapFromTemp();
 }
 
+inline bool PageDirBase::isPresent(uintptr_t virt) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->pts.isPresent(virt);
+}
+
+inline frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	return pdir->pts.getFrameNo(virt);
+}
+
 inline void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
 	/* in this case, we know that we can write to the frame, but it may be mapped as readonly */
 	PageDir::setWriteProtection(false);
@@ -178,5 +163,10 @@ inline void PageDirBase::zeroToUser(void *dst,size_t count) {
 
 inline size_t PageDirBase::getPageCount() const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
-	return pdir->countEntries(pdir->pagedir,PT_LEVELS);
+	return pdir->pts.getPageCount();
+}
+
+inline void PageDirBase::print(OStream &os,uint parts) const {
+	const PageDir *pdir = static_cast<const PageDir*>(this);
+	pdir->pts.print(os,parts);
 }

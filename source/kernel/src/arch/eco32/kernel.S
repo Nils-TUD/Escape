@@ -27,7 +27,6 @@
 	.extern	dbg_prints
 	.extern intrpt_handler
 	.extern curPDir
-	.extern otherPDir
 	.extern Util::panic
 
 	.global cpu_getBadAddr
@@ -58,8 +57,8 @@
 	.set	PAGE_BITS,12
 	.set	PTE_MAP_ADDR,0x80000000
 	.set	DIR_MAP_START,0xC0000000
-	.set	KERNEL_HEAP,0x80800000
-	.set	KERNEL_STACK,0x84400FFC			// our kernel-stack (the top)
+	.set	KERNEL_HEAP,0x80400000
+	.set	KERNEL_STACK,0x84000FFC			// our kernel-stack (the top)
 											// individually for each process and stored fix in the
 											// first entry of the TLB
 	.set	TLB_INDEX_INVALID,0x80000000	// represents an invalid index
@@ -441,7 +440,6 @@ thread_resume:
 
 	// set page-directory for new process
 	stw		$4,$0,curPDir
-	stw		$0,$0,otherPDir
 
 	// we have to refresh the fix entry for the process
 	mvts	$0,FS_TLB_INDEX

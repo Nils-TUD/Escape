@@ -38,21 +38,21 @@ void PageDirBase::init() {
 	// enable NXE only if supported
 	if(CPU::hasFeature(CPU::INTEL,CPU::FEAT_NX)) {
 		CPU::setMSR(CPU::MSR_EFER,CPU::getMSR(CPU::MSR_EFER) | CPU::EFER_NXE);
-		PageDir::hasNXE = true;
+		PageTables::enableNXE();
 	}
 
 	/* put entry for physical memory in PML4 */
-	PageDir::pte_t *pt2,*pt = (PageDir::pte_t*)&proc0TLPD;
+	pte_t *pt2,*pt = (pte_t*)&proc0TLPD;
 	uintptr_t ptAddr = (uintptr_t)PageDir::sharedPtbls[shpt++] & ~KERNEL_BEGIN;
 	pt[PT_IDX(DIR_MAP_AREA,3)] = ptAddr | PTE_EXISTS | PTE_PRESENT | PTE_WRITABLE;
 
 	/* map first part of physical memory contiguously */
 	uintptr_t addr = 0;
-	pt = (PageDir::pte_t*)(ptAddr | KERNEL_BEGIN);
+	pt = (pte_t*)(ptAddr | KERNEL_BEGIN);
 	for(size_t i = 0; i < DIR_MAP_AREA_SIZE / PD_SIZE; ++i) {
 		ptAddr = (uintptr_t)PageDir::sharedPtbls[shpt++] & ~KERNEL_BEGIN;
 		pt[i] = ptAddr | PTE_EXISTS | PTE_PRESENT | PTE_WRITABLE;
-		pt2 = (PageDir::pte_t*)(ptAddr | KERNEL_BEGIN);
+		pt2 = (pte_t*)(ptAddr | KERNEL_BEGIN);
 		for(size_t j = 0; j < PT_ENTRY_COUNT; ++j) {
 			pt2[j] = addr | PTE_EXISTS | PTE_LARGE | PTE_PRESENT | PTE_WRITABLE;
 			addr += PT_SIZE;
@@ -61,7 +61,7 @@ void PageDirBase::init() {
 
 	/* create temp object for the start */
 	PageDir pdir;
-	pdir.pagedir = (uintptr_t)&proc0TLPD;
+	pdir.pts.setRoot((pte_t)&proc0TLPD);
 	pdir.freeKStack = KSTACK_AREA;
 	pdir.lock = SpinLock();
 
@@ -84,27 +84,27 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	if(pml4Frame == INVALID_FRAME)
 		return -ENOMEM;
 
-	dst->pagedir = pml4Frame << PAGE_BITS;
+	dst->pts.setRoot(pml4Frame << PAGE_BITS);
 	if(t->getKernelStack() == KSTACK_AREA)
 		dst->freeKStack = KSTACK_AREA + PAGE_SIZE;
 	else
 		dst->freeKStack = KSTACK_AREA;
 	dst->lock = SpinLock();
 
-	const PageDir::pte_t *pml4 = (const PageDir::pte_t*)(DIR_MAP_AREA + cur->pagedir);
-	PageDir::pte_t *npml4 = (PageDir::pte_t*)(DIR_MAP_AREA + (pml4Frame << PAGE_BITS));
+	const pte_t *pml4 = (const pte_t*)(DIR_MAP_AREA + cur->pts.getRoot());
+	pte_t *npml4 = (pte_t*)(DIR_MAP_AREA + (pml4Frame << PAGE_BITS));
 
 	/* clear user-space PML4 entries */
-	memclear(npml4,PT_IDX(KERNEL_AREA,3) * sizeof(PageDir::pte_t));
+	memclear(npml4,PT_IDX(KERNEL_AREA,3) * sizeof(pte_t));
 	/* copy remaining PML4 entries */
 	memcpy(npml4 + PT_IDX(KERNEL_AREA,3),pml4 + PT_IDX(KERNEL_AREA,3),
-			(PT_ENTRY_COUNT - PT_IDX(KERNEL_AREA,3)) * sizeof(PageDir::pte_t));
+			(PT_ENTRY_COUNT - PT_IDX(KERNEL_AREA,3)) * sizeof(pte_t));
 
 	/* clear entry for non-shared page-tables */
 	npml4[PT_IDX(KSTACK_AREA,3)] = 0;
 
 	/* map kernel-stack */
-	KStackAllocator alloc;
+	PageTables::KStackAllocator alloc;
 	dst->map(t->getKernelStack(),1,alloc,PG_NOPAGES | PG_SUPERVISOR);
 	return 0;
 }
@@ -112,8 +112,8 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	/* unmap kernel-stacks */
-	KStackAllocator alloc;
+	PageTables::KStackAllocator alloc;
 	pdir->unmap(KSTACK_AREA,KSTACK_AREA_SIZE / PAGE_SIZE,alloc);
 	/* free page-dir */
-	PhysMem::free(pdir->pagedir >> PAGE_BITS,PhysMem::KERN);
+	PhysMem::free(pdir->pts.getRoot() >> PAGE_BITS,PhysMem::KERN);
 }

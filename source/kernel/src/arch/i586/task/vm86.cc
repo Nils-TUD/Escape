@@ -99,11 +99,11 @@ int VM86::create() {
 	 * therefore we have to emulate it. We do that by simply mapping the same to >= 1MiB. */
 	{
 		size_t frameCount = (1024 * 1024) / PAGE_SIZE;
-		PageDir::RangeAllocator alloc(0);
+		PageTables::RangeAllocator alloc(0);
 		PageDir::mapToCur(0x00000000,frameCount,alloc,PG_PRESENT | PG_WRITABLE);
 	}
 	{
-		PageDir::RangeAllocator alloc(0);
+		PageTables::RangeAllocator alloc(0);
 		PageDir::mapToCur(0x00100000,(64 * 1024) / PAGE_SIZE,alloc,PG_PRESENT | PG_WRITABLE);
 	}
 
@@ -341,7 +341,7 @@ void VM86::start() {
 	/* copy the area to vm86; important: don't let the bios overwrite itself. therefore
 	 * we map other frames to that area. */
 	if(info.area) {
-		PageDir::UAllocator alloc;
+		PageTables::UAllocator alloc;
 		/* can't fail */
 		assert(PageDir::mapToCur(info.area->dst,BYTES_2_PAGES(info.area->size),alloc,
 				PG_PRESENT | PG_WRITABLE) >= 0);
@@ -439,11 +439,11 @@ int VM86::storeAreaResult() {
 		}
 		/* undo mapping */
 		{
-			PageDir::UAllocator alloc;
+			PageTables::UAllocator alloc;
 			PageDir::unmapFromCur(info.area->dst,pages,alloc);
 		}
 		{
-			PageDir::RangeAllocator alloc(start);
+			PageTables::RangeAllocator alloc(start);
 			assert(PageDir::mapToCur(info.area->dst,pages,alloc,PG_PRESENT | PG_WRITABLE) == 0);
 		}
 	}

@@ -161,11 +161,11 @@ Escape has currently the following features:
       with pipes, io-redirection, path-expansion, background-jobs, arithmetic,
       loops, if-statements, functions, variables and arrays. The interpreter
       is realized with flex and bison.
-    * cat, chmod, chown, cp, cut, date, dd, dump, grep, groups, head, kill, less,
-      ln, ls, mkdir, more, mount, mv, ping, ps, pstree, readelf, rm, rmdir, sort,
-      stat, sync, tail, time, top, umount, users, wc: The well-known UNIX-tools.
-      They don't do exactly the same and are, of course, much simpler, but in
-      principle they are intended for the same things.
+    * cat, chmod, chown, cp, cut, date, dd, dump, find, grep, groups, head, kill,
+      less, ln, ls, mkdir, more, mount, mv, ping, ps, pstree, readelf, rm, rmdir,
+      sort, stat, sync, tail, time, top, umount, users, wc: The well-known UNIX-
+      tools. They don't do exactly the same and are, of course, much simpler, but
+      in principle they are intended for the same things.
     * ts: analogously to ps, ts lists all threads
     * power: for reboot / shutdown using init.
     * keymap: A tool to change the current keymap (us and german is available)

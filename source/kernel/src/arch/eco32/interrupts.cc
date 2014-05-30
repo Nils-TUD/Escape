@@ -132,17 +132,8 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 #if DEBUG_PAGEFAULTS
-	if(pfaddr == lastPFAddr && lastPFProc == Proc::getRunning()->getPid()) {
-		exCount++;
-		if(exCount >= MAX_EX_COUNT)
-			Util::panic("%d page-faults at the same address of the same process",exCount);
-	}
-	else
-		exCount = 0;
-	lastPFAddr = pfaddr;
-	lastPFProc = Proc::getRunning()->getPid();
-	os.writef("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-			stack->r[30],Proc::getRunning()->getPid());
+	Log::get().writef("Page fault for %p @ %p, process %d:%s\n",pfaddr,
+			stack->r[30],t->getProc()->getPid(),t->getProc()->getProgram());
 #endif
 
 	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */

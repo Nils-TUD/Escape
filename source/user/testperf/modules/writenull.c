@@ -25,25 +25,33 @@
 
 #include "../modules.h"
 
-#define PACKET_SIZE		0x4000
-#define PACKET_COUNT	100000
+#define PACKET_COUNT	10000
+
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000};
+static char buffer[0x100000];
 
 int mod_writenull(A_UNUSED int argc,A_UNUSED char **argv) {
-	static char buffer[PACKET_SIZE];
+	uint64_t times[ARRAY_SIZE(sizes)] = {0};
 	int fd = open("/dev/null",IO_WRITE);
 	if(fd < 0) {
 		printe("Unable to open /dev/null");
 		return 1;
 	}
-	uint64_t start = rdtsc();
-	for(int i = 0; i < PACKET_COUNT; ++i) {
-		if(write(fd,buffer,sizeof(buffer)) != sizeof(buffer))
-			printe("write failed");
+
+	for(size_t s = 0; s < ARRAY_SIZE(sizes); ++s) {
+		uint64_t start = rdtsc();
+		for(int i = 0; i < PACKET_COUNT; ++i) {
+			if(write(fd,buffer,sizes[s]) != (ssize_t)sizes[s])
+				printe("write failed");
+		}
+		times[s] = rdtsc() - start;
 	}
-	uint64_t end = rdtsc();
-	printf("cycles=%12Lu per-msg=%5Lu throughput=%Lu MB/s (%db packets)\n",
-	       end - start,(end - start) / PACKET_COUNT,
-	       (PACKET_SIZE * PACKET_COUNT) / tsctotime(end - start),PACKET_SIZE);
 	close(fd);
+
+	for(size_t s = 0; s < ARRAY_SIZE(sizes); ++s) {
+		printf("per-msg=%5Lu throughput=%Lu MB/s (%db packets)\n",
+		       times[s] / PACKET_COUNT,
+		       (sizes[s] * PACKET_COUNT) / tsctotime(times[s]),sizes[s]);
+	}
 	return 0;
 }

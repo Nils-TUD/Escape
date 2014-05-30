@@ -28,12 +28,14 @@
 
 #include "../modules.h"
 
-#define PACKET_SIZE		(64 * 1024)
-#define PACKET_COUNT	100000
+#define MAX_PACKET_SIZE		(1024 * 1024)
+#define PACKET_COUNT		10000
 
-static char buffer[PACKET_SIZE];
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000};
+static char buffer[MAX_PACKET_SIZE];
 
 static void do_read(const char *path,bool useshm) {
+	uint64_t times[ARRAY_SIZE(sizes)] = {0};
 	int fd = open(path,IO_READ);
 	if(fd < 0) {
 		printe("Unable to open %s",path);
@@ -42,31 +44,36 @@ static void do_read(const char *path,bool useshm) {
 
 	void *buf = buffer;
 	ulong name;
-	if(useshm && sharebuf(fd,PACKET_SIZE,&buf,&name,0) < 0)
+	if(useshm && sharebuf(fd,MAX_PACKET_SIZE,&buf,&name,0) < 0)
 		printe("Unable to share buffer");
 
-	uint64_t total = 0;
-	for(int i = 0; i < PACKET_COUNT; ++i) {
-		uint64_t start = rdtsc();
-		if(read(fd,buf,PACKET_SIZE) != PACKET_SIZE) {
-			printe("read of %s failed",path);
-			return;
-		}
-		total += rdtsc() - start;
+	for(size_t s = 0; s < ARRAY_SIZE(sizes); ++s) {
+		uint64_t total = 0;
+		for(int i = 0; i < PACKET_COUNT; ++i) {
+			uint64_t start = rdtsc();
+			if(read(fd,buf,sizes[s]) != (ssize_t)sizes[s]) {
+				printe("read of %s failed",path);
+				return;
+			}
+			total += rdtsc() - start;
 
-		if(seek(fd,SEEK_SET,0) < 0) {
-			printe("seek in %s failed",path);
-			return;
+			if(seek(fd,SEEK_SET,0) < 0) {
+				printe("seek in %s failed",path);
+				return;
+			}
 		}
+		times[s] = total;
 	}
 
 	if(useshm)
 		destroybuf(buf,name);
 	close(fd);
 
-	printf("%-16s: cycles=%12Lu per-read=%5Lu throughput=%Lu MB/s (%db packets)\n",
-	       path,total,total / PACKET_COUNT,
-	       ((uint64_t)PACKET_SIZE * PACKET_COUNT) / tsctotime(total),PACKET_SIZE);
+	for(size_t s = 0; s < ARRAY_SIZE(sizes); ++s) {
+		printf("%-16s: per-read=%5Lu throughput=%Lu MB/s (%db packets)\n",
+		       path,times[s] / PACKET_COUNT,
+		       ((uint64_t)sizes[s] * PACKET_COUNT) / tsctotime(times[s]),sizes[s]);
+	}
 	fflush(stdout);
 }
 

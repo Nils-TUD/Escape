@@ -32,8 +32,8 @@
 
 typedef ssize_t (*test_func)(int fd,void *buf,size_t count);
 
-static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000};
-static char buffer[0x20000];
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000};
+static char buffer[0x100000];
 
 static void test_openseekclose(const char *path) {
 	uint64_t openTotal = 0, closeTotal = 0, seekTotal = 0;
@@ -212,22 +212,23 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	test_fstat("/system/test");
 	fflush(stdout);
 
-	printf("\nUsing /home/hrniels/testdir/bbc.bmp...\n");
-	test_openseekclose("/home/hrniels/testdir/bbc.bmp");
+	const char *filename = "/zeros";
+	printf("\nUsing %s...\n",filename);
+	test_openseekclose(filename);
 	fflush(stdout);
-	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,false);
+	test_readwrite(filename,"read",IO_READ,read,false);
 	fflush(stdout);
-	test_readwrite("/home/hrniels/testdir/bbc.bmp","read",IO_READ,read,true);
+	test_readwrite(filename,"read",IO_READ,read,true);
 	fflush(stdout);
-	test_stat("/home/hrniels/testdir/bbc.bmp");
+	test_stat(filename);
 	fflush(stdout);
-	test_fstat("/home/hrniels/testdir/bbc.bmp");
+	test_fstat(filename);
 	fflush(stdout);
 
 	printf("\nTesting sharebuf and destroybuf...\n");
-	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE));
-	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE) * 4);
-	test_sharebuf("/home/hrniels/testdir/bbc.bmp",sysconf(CONF_PAGE_SIZE) * 16);
+	test_sharebuf(filename,sysconf(CONF_PAGE_SIZE));
+	test_sharebuf(filename,sysconf(CONF_PAGE_SIZE) * 4);
+	test_sharebuf(filename,sysconf(CONF_PAGE_SIZE) * 16);
 	fflush(stdout);
 
 	if(unlink("/system/test") < 0)

@@ -83,7 +83,7 @@ static void test_pipe(size_t size) {
 }
 
 int mod_pipe(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	size_t i, sizes[] = {0x1000,0x2000,0x4000,0x8000};
+	size_t i, sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000};
 	for(i = 0; i < ARRAY_SIZE(sizes); ++i) {
 		fflush(stdout);
 		test_pipe(sizes[i]);

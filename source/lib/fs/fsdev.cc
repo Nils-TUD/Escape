@@ -43,7 +43,7 @@ static void sigTermHndl(A_UNUSED int sig) {
 }
 
 FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
-	: ClientDevice(fsDev,0777,DEV_TYPE_SERVICE,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
+	: ClientDevice(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
 	  _fs(fs), _info(fsDev,fs), _clients(0) {
 	set(MSG_FILE_OPEN,std::make_memfun(this,&FSDevice::devopen));
 	set(MSG_FILE_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);

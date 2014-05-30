@@ -526,6 +526,13 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(file == NULL))
 		SYSC_ERROR(stack,-EBADF);
 
+	/* it has to be a filesystem */
+	if(file->getDev() != VFS_DEV_NO || !IS_CHANNEL(file->getNode()->getMode()) ||
+			!IS_FS(file->getNode()->getParent()->getMode())) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,-EINVAL);
+	}
+
 	/* mount it */
 	int res = MountSpace::mount(t->getProc(),abspath,file);
 	if(EXPECT_FALSE(res < 0))

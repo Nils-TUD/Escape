@@ -52,6 +52,8 @@ uint VFSDevice::buildMode(uint type) {
 		mode |= MODE_TYPE_CHARDEV;
 	else if(type == DEV_TYPE_FILE)
 		mode |= MODE_TYPE_FILEDEV;
+	else if(type == DEV_TYPE_FS)
+		mode |= MODE_TYPE_FSDEV;
 	else {
 		assert(type == DEV_TYPE_SERVICE);
 		mode |= MODE_TYPE_SERVDEV;

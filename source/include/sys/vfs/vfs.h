@@ -39,7 +39,8 @@
 #define DEV_TYPE_CHAR				0
 #define DEV_TYPE_BLOCK				1
 #define DEV_TYPE_SERVICE			2
-#define DEV_TYPE_FILE				3
+#define DEV_TYPE_FS					3
+#define DEV_TYPE_FILE				4
 
 /* fcntl-commands */
 #define F_GETFL						0

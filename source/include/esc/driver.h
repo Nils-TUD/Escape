@@ -38,8 +38,10 @@
 #define DEV_TYPE_BLOCK				1
 /* has an arbitrary messaging interface */
 #define DEV_TYPE_SERVICE			2
+/* has the filesystem interface */
+#define DEV_TYPE_FS					3
 /* normal file */
-#define DEV_TYPE_FILE				3
+#define DEV_TYPE_FILE				4
 
 #define GW_NOBLOCK					1
 

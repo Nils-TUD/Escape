@@ -163,14 +163,9 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
 	pid_t pid = t->getProc()->getPid();
 	if(t->getProc()->getFlags() & P_BOOT) {
-		const BootInfo *info = Boot::getInfo();
-		for(size_t i = 1; i < info->progCount; i++) {
-			if(info->progs[i].id == pid) {
-				if(ELF::finishFromMem((void*)info->progs[i].start,info->progs[i].size,&sinfo) < 0)
-					return NULL;
-				break;
-			}
-		}
+		auto mod = Boot::modsBegin() + pid - 1;
+		if(ELF::finishFromMem((void*)mod->virt,mod->size,&sinfo) < 0)
+			return NULL;
 	}
 	else {
 		/* TODO well, its not really nice that we have to read this stuff again for every started

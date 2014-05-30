@@ -26,11 +26,14 @@
 
 void Video::clear() {
 	memclear(screen(),VID_COLS * 2 * VID_ROWS);
+
+#if 0
 	// remove cursor
 	Ports::out<uint8_t>(0x3D4,14);
 	Ports::out<uint8_t>(0x3D5,0x07);
 	Ports::out<uint8_t>(0x3D4,15);
 	Ports::out<uint8_t>(0x3D5,0xd0);
+#endif
 }
 
 void Video::move() {

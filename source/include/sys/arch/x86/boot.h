@@ -22,8 +22,6 @@
 #include <sys/common.h>
 #include <sys/interrupts.h>
 
-#define MMAP_TYPE_AVAILABLE 0x1
-
 struct BootModule {
 	uint32_t modStart;
 	uint32_t modEnd;
@@ -98,18 +96,3 @@ struct MultiBootInfo {
 	uint32_t bootLoaderName;		/* present if flags[9] is set */
 	uint32_t apmTable;				/* present if flags[10] is set */
 } A_PACKED;
-
-struct BootInfo {
-	struct Module {
-		uintptr_t phys;
-		uintptr_t virt;
-		size_t size;
-		char *name;
-	};
-
-	char *cmdLine;
-	size_t modCount;
-	Module *mods;
-	size_t mmapCount;
-	BootMemMap *mmap;
-};

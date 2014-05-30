@@ -48,6 +48,8 @@
 #	define printAllocFree(...)
 #endif
 
+size_t PhysMem::totalMem = 0;
+
 /* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
 tBitmap *PhysMem::bitmap;
 uintptr_t PhysMem::bitmapStart;
@@ -79,6 +81,8 @@ PhysMem::SwapInJob *PhysMem::siJobList = NULL;
 PhysMem::SwapInJob *PhysMem::siJobEnd = NULL;
 size_t PhysMem::jobWaiters = 0;
 
+extern void *_ebss;
+
 uintptr_t PhysMem::bitmapStartFrame() {
 	return PhysMem::bitmapStart / PAGE_SIZE;
 }
@@ -90,8 +94,33 @@ uintptr_t PhysMem::lowerEnd() {
 }
 
 void PhysMem::init() {
-	/* determine the available memory */
-	PhysMemAreas::initArch();
+	/* walk through the memory-map and mark all free areas as free */
+	const Boot::Info *info = Boot::getInfo();
+	for(size_t i = 0; i < info->mmapCount; ++i) {
+		if(info->mmap[i].type == Boot::MemMap::MEM_AVAILABLE) {
+			/* take care that we don't add memory that we can't access */
+			if(info->mmap[i].baseAddr > (1ULL << PHYS_BITS) - 1) {
+				Log::get().writef("Skipping unaddressable memory: %#Lx .. %#Lx\n",
+					info->mmap[i].baseAddr,info->mmap[i].baseAddr + info->mmap[i].size);
+				continue;
+			}
+			uint64_t end = info->mmap[i].baseAddr + info->mmap[i].size;
+			if(end >= (1ULL << PHYS_BITS) - 1) {
+				Log::get().writef("Skipping unaddressable memory: %#Lx .. %#Lx\n",
+					(1ULL << PHYS_BITS) - 1,end);
+				end = (1ULL << PHYS_BITS) - 1;
+			}
+			PhysMemAreas::add((uintptr_t)info->mmap[i].baseAddr,end);
+		}
+	}
+	totalMem = PhysMemAreas::getAvailable();
+
+	/* remove kernel and the first MB */
+	PhysMemAreas::rem(0,(uintptr_t)&_ebss - KERNEL_BEGIN);
+
+	/* remove modules */
+	for(auto mod = Boot::modsBegin(); mod != Boot::modsEnd(); ++mod)
+		PhysMemAreas::rem(mod->phys,mod->phys + mod->size);
 
 	/* first, search memory that will be managed with the bitmap */
 	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next) {

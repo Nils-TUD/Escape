@@ -197,7 +197,7 @@ void ACPI::parse() {
 	}
 }
 
-void ACPI::create_files() {
+void ACPI::createFiles() {
 	/* create /system/acpi */
 	bool created;
 	VFSNode *sys = NULL;

@@ -20,7 +20,12 @@
 #include <sys/common.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
+#include <sys/task/thread.h>
+#include <sys/task/proc.h>
+#include <sys/vfs/openfile.h>
+#include <sys/vfs/vfs.h>
 #include <sys/dbg/kb.h>
+#include <sys/util.h>
 #include <sys/boot.h>
 #include <sys/log.h>
 #include <sys/video.h>
@@ -39,13 +44,19 @@
 extern void (*CTORS_BEGIN)();
 extern void (*CTORS_END)();
 
-static size_t finished = 0;
-
+Boot::Info Boot::info;
 void (*Boot::unittests)() = NULL;
+
+static size_t finished = 0;
+extern void *_btext;
+extern void *_ebss;
 
 void Boot::start(void *info) {
 	for(void (**func)() = &CTORS_BEGIN; func != &CTORS_END; func++)
 		(*func)();
+
+	/* necessary during initialization until we have a thread */
+	Thread::setRunning(NULL);
 
 	archStart(info);
 	drawProgressBar();
@@ -86,6 +97,73 @@ void Boot::taskFinished() {
 	}
 }
 
+void Boot::createModFiles() {
+	VFSNode *node = NULL;
+	int res = VFSNode::request("/system/mbmods",NULL,&node,NULL,VFS_WRITE,0);
+	if(res < 0)
+		Util::panic("Unable to resolve /system/mbmods");
+	size_t i = 0;
+	for(auto mod = modsBegin(); mod != modsEnd(); ++mod, ++i) {
+		char *modname = (char*)Cache::alloc(12);
+		itoa(modname,12,i);
+		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size);
+		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH) != 0)
+			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
+		VFSNode::release(n);
+	}
+	VFSNode::release(node);
+}
+
+void Boot::parseCmdline() {
+	int argc;
+	const char **argv = Boot::parseArgs((char*)info.cmdLine,&argc);
+	Config::parseBootParams(argc,argv);
+
+	Log::get().writef("Kernel parameters: %s\n",info.cmdLine);
+}
+
+size_t Boot::getKernelSize() {
+	uintptr_t start = (uintptr_t)&_btext;
+	uintptr_t end = (uintptr_t)&_ebss;
+	return end - start;
+}
+
+size_t Boot::getModuleSize() {
+	if(info.modCount == 0)
+		return 0;
+	uintptr_t start = info.mods[0].virt;
+	uintptr_t end = info.mods[info.modCount - 1].virt + info.mods[info.modCount - 1].size;
+	return end - start;
+}
+
+uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
+	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {
+		if(strcmp(mod->name,name) == 0) {
+			*size = mod->size;
+			return mod->phys;
+		}
+	}
+	return 0;
+}
+
+void Boot::print(OStream &os) {
+	os.writef("cmdLine: %s\n",info.cmdLine);
+
+	os.writef("modCount: %zu\n",info.modCount);
+	for(size_t i = 0; i < info.modCount; i++) {
+		os.writef("\t[%zu]: virt: %p..%p\n",i,info.mods[i].virt,info.mods[i].virt + info.mods[i].size);
+		os.writef("\t     phys: %p..%p\n",info.mods[i].phys,info.mods[i].phys + info.mods[i].size);
+		os.writef("\t     cmdline: %s\n",info.mods[i].name ? info.mods[i].name : "<NULL>");
+	}
+
+	os.writef("mmapCount: %zu\n",info.mmapCount);
+	for(size_t i = 0; i < info.mmapCount; i++) {
+		os.writef("\t%zu: addr=%#012Lx, size=%#012zx, type=%s\n",
+				i,info.mmap[i].baseAddr,info.mmap[i].size,
+				info.mmap[i].type == 1 ? "free" : "used");
+	}
+}
+
 const char **Boot::parseArgs(const char *line,int *argc) {
 	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
 	static char *args[MAX_ARG_COUNT];
@@ -115,6 +193,7 @@ const char **Boot::parseArgs(const char *line,int *argc) {
 void Boot::drawProgressBar() {
 	if(!Config::get(Config::LOG_TO_VGA)) {
 		Video &vid = Video::get();
+		vid.clearScreen();
 		/* top */
 		vid.goTo(BAR_PADY,BAR_PADX);
 		vid.writef("\xC9");

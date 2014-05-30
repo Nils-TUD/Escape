@@ -50,17 +50,44 @@ class Boot {
 	Boot() = delete;
 
 public:
+	struct Module {
+		uintptr_t phys;
+		uintptr_t virt;
+		size_t size;
+		char *name;
+	};
+
+	struct MemMap {
+		enum {
+			MEM_AVAILABLE = 1
+		};
+
+		uint32_t size;
+		uint64_t baseAddr;
+		int type;
+	};
+
+	struct Info {
+		char *cmdLine;
+		size_t modCount;
+		Module *mods;
+		size_t mmapCount;
+		MemMap *mmap;
+	};
+
 	/**
 	 * Starts the boot-process
 	 *
-	 * @param info the boot-information
+	 * @param info the boot-information (architecture specific)
 	 */
 	static void start(void *info);
 
 	/**
 	 * @return the multiboot-info-structure
 	 */
-	static const BootInfo *getInfo();
+	static const Info *getInfo() {
+		return &info;
+	}
 
 	/**
 	 * Displays the given text that should indicate that a task in the boot-process
@@ -85,6 +112,21 @@ public:
 	static const char **parseArgs(const char *line,int *argc);
 
 	/**
+	 * Parses the arch-specific boot information into the general one.
+	 */
+	static void parseBootInfo();
+
+	/**
+	 * Parses the command line into the config-module.
+	 */
+	static void parseCmdline();
+
+	/**
+	 * Creates the boot module files
+	 */
+	static void createModFiles();
+
+	/**
 	 * @return size of the kernel (in bytes)
 	 */
 	static size_t getKernelSize();
@@ -93,6 +135,16 @@ public:
 	 * @return size of the multiboot-modules (in bytes)
 	 */
 	static size_t getModuleSize();
+
+	/**
+	 * @return beginning/end of the module list
+	 */
+	static Module *modsBegin() {
+		return info.mods;
+	}
+	static Module *modsEnd() {
+		return info.mods + info.modCount;
+	}
 
 	/**
 	 * Determines the physical address range of the multiboot-module with given name
@@ -130,6 +182,7 @@ private:
 	 * The boot-tasks to load
 	 */
 	static BootTaskList taskList;
+	static Info info;
 	static bool loadedMods;
 	static void (*unittests)();
 };

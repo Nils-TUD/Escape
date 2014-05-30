@@ -82,6 +82,13 @@ public:
 	static void init();
 
 	/**
+	 * @return the total amount of memory
+	 */
+	static size_t getTotal() {
+		return totalMem;
+	}
+
+	/**
 	 * Checks whether its allowed to map the given physical address range
 	 *
 	 * @param addr the start-address
@@ -228,6 +235,8 @@ private:
 	static void appendJob(SwapInJob *job);
 	static SwapInJob *getJob();
 	static void freeJob(SwapInJob *job);
+
+	static size_t totalMem;
 
 	/* the bitmap for the frames of the lowest few MB; 0 = free, 1 = used */
 	static tBitmap *bitmap;

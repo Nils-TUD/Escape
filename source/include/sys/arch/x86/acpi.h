@@ -122,7 +122,7 @@ public:
 	/**
 	 * Creates files in the VFS for all ACPI tables
 	 */
-	static void create_files();
+	static void createFiles();
 	/**
 	 * Prints all ACPI tables.
 	 *

@@ -54,11 +54,6 @@ public:
 	}
 
 	/**
-	 * @return the total amount of memory (in bytes)
-	 */
-	static size_t getTotal();
-
-	/**
 	 * @return the currently available amount of memory (in bytes)
 	 */
 	static size_t getAvailable();
@@ -87,10 +82,6 @@ public:
 	static void rem(uintptr_t addr,uintptr_t end);
 
 private:
-	/**
-	 * Architecture-dependent: collects all available memory
-	 */
-	static void initArch();
 	static MemArea *allocArea();
 
 	static MemArea areas[];

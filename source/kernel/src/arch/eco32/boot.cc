@@ -42,6 +42,8 @@
 #include <string.h>
 
 static const BootTask tasks[] = {
+	{"Parsing bootinfo...",Boot::parseBootInfo},
+	{"Parsing cmdline...",Boot::parseCmdline},
 	{"Initializing physical memory-management...",PhysMem::init},
 	{"Initializing paging...",PageDir::init},
 	{"Preinit processes...",Proc::preinit},
@@ -50,55 +52,38 @@ static const BootTask tasks[] = {
 	{"Initializing VFS...",VFS::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
+	{"Creating MB module files...",Boot::createModFiles},
 	{"Start logging to VFS...",Log::vfsIsReady},
 	{"Initializing timer...",Timer::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 bool Boot::loadedMods = false;
 
-static LoadProg progs[MAX_PROG_COUNT];
-static BootInfo info;
+static Boot::Module mods[MAX_PROG_COUNT];
+static Boot::MemMap mmap;
+static BootInfo *binfo;
 
 void Boot::archStart(void *nfo) {
-	BootInfo *binfo = (BootInfo*)nfo;
-	/* clear screen here because of virtualbox-bug */
-	Video::get().clearScreen();
-	/* make a copy of the bootinfo, since the location it is currently stored in will be overwritten
-	 * shortly */
-	memcpy(&info,binfo,sizeof(BootInfo));
-	info.progs = progs;
-	memcpy((void*)info.progs,binfo->progs,sizeof(LoadProg) * binfo->progCount);
-
-	Log::get().writef("Kernel parameters: %s\n",binfo->progs[0].command);
-
-	/* parse the boot parameter */
-	int argc;
-	const char **argv = parseArgs(binfo->progs[0].command,&argc);
-	Config::parseBootParams(argc,argv);
+	binfo = (BootInfo*)nfo;
 }
 
-const BootInfo *Boot::getInfo() {
-	return &info;
-}
-
-size_t Boot::getKernelSize() {
-	return progs[0].size;
-}
-
-size_t Boot::getModuleSize() {
-	uintptr_t start = progs[1].start;
-	uintptr_t end = progs[info.progCount - 1].start + progs[info.progCount - 1].size;
-	return end - start;
-}
-
-uintptr_t Boot::getModuleRange(const char *name,size_t *size) {
-	for(size_t i = 1; i < info.progCount; i++) {
-		if(strcmp(progs[i].command,name) == 0) {
-			*size = progs[i].size;
-			return progs[i].start;
-		}
+void Boot::parseBootInfo() {
+	info.cmdLine = (char*)binfo->progs[0].command;
+	info.modCount = binfo->progCount - 1;
+	info.mods = mods;
+	for(size_t i = 1; i < binfo->progCount; ++i) {
+		info.mods[i - 1].name = (char*)binfo->progs[i].command;
+		info.mods[i - 1].phys = binfo->progs[i].start & ~DIR_MAP_AREA;
+		info.mods[i - 1].size = binfo->progs[i].size;
+		info.mods[i - 1].virt = binfo->progs[i].start;
 	}
-	return 0;
+	/* mark everything behind the modules as free */
+	Module *last = info.mods + info.modCount - 1;
+	mmap.baseAddr = ROUND_PAGE_UP(last->phys + last->size);
+	mmap.size = binfo->memSize - mmap.baseAddr;
+	mmap.type = 1;
+	info.mmapCount = 1;
+	info.mmap = &mmap;
 }
 
 int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
@@ -111,44 +96,29 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	/* start idle-thread */
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 
-	/* create module files */
-	VFSNode *node = NULL;
-	int res = VFSNode::request("/system/mbmods",NULL,&node,NULL,VFS_WRITE,0);
-	if(res < 0)
-		Util::panic("Unable to resolve /system/mbmods");
-	for(size_t i = 1; i < info.progCount; i++) {
-		char *modname = (char*)Cache::alloc(12);
-		itoa(modname,12,i);
-		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)progs[i].start,progs[i].size);
-		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IRGRP | S_IROTH) != 0)
-			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
-		VFSNode::release(n);
-	}
-	VFSNode::release(node);
-
 	loadedMods = true;
-	for(size_t i = 1; i < info.progCount; i++) {
+	for(auto mod = Boot::modsBegin(); mod != Boot::modsEnd(); ++mod) {
 		/* parse args */
 		int argc;
-		const char **argv = parseArgs(progs[i].command,&argc);
+		const char **argv = parseArgs(mod->name,&argc);
 		if(argc < 2)
-			Util::panic("Invalid arguments for boot-module: %s\n",progs[i].command);
+			Util::panic("Invalid arguments for boot-module: %s\n",mod->name);
 
 		/* clone proc */
 		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
-			res = Proc::exec(argv[0],argv,NULL,(void*)progs[i].start,progs[i].size);
+			int res = Proc::exec(argv[0],argv,NULL,(void*)mod->virt,mod->size);
 			if(res < 0)
-				Util::panic("Unable to exec boot-program %s: %d\n",progs[i].command,res);
+				Util::panic("Unable to exec boot-program %s: %d\n",mod->name,res);
 			/* we don't want to continue ;) */
 			return 0;
 		}
 		else if(child < 0)
-			Util::panic("Unable to clone process for boot-program %s: %d\n",progs[i].command,child);
+			Util::panic("Unable to clone process for boot-program %s: %d\n",mod->name,child);
 
 		/* wait until the device is registered */
 		/* don't create a pipe- or channel-node here */
-		node = NULL;
+		VFSNode *node = NULL;
 		while(VFSNode::request(argv[1],NULL,&node,NULL,VFS_NOACCESS,0) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
@@ -162,6 +132,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 
 	/* now all boot-modules are loaded, so mount root filesystem */
 	Proc *p = Proc::getByPid(Proc::getRunning());
+	int res;
 	OpenFile *file;
 	const char *rootDev = Config::getStr(Config::ROOT_DEVICE);
 	if((res = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,0,rootDev,&file)) < 0)
@@ -177,15 +148,4 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 #endif
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 	return 0;
-}
-
-void Boot::print(OStream &os) {
-	os.writef("Memory size: %zu bytes\n",info.memSize);
-	os.writef("Disk size: %zu bytes\n",info.diskSize);
-	os.writef("Boot modules:\n");
-	/* skip kernel */
-	for(size_t i = 1; i < info.progCount; i++) {
-		os.writef("\t%s [%p .. %p]\n",info.progs[i].command,
-				info.progs[i].start,info.progs[i].start + info.progs[i].size);
-	}
 }

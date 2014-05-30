@@ -71,6 +71,7 @@
 
 /* beginning of the kernel-code */
 #define KERNEL_START			0x8000000000000000
+#define KERNEL_BEGIN			KERNEL_START
 #define KERNEL_AREA				KERNEL_START
 
 /* all physical memory is directly mapped @ 0x8000000000000000 by the HW. so, put all of that in

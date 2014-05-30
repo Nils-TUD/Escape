@@ -81,6 +81,7 @@
 
 /* beginning of the kernel-code */
 #define KERNEL_START			0xC0000000
+#define KERNEL_BEGIN			KERNEL_START
 /* beginning of the kernel-area */
 #define KERNEL_AREA				0x80000000
 

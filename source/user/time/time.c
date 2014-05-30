@@ -72,18 +72,18 @@ int main(int argc,char **argv) {
 		end = rdtsc();
 		if(res < 0)
 			error("Wait failed");
-		printf("\n");
-		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
+		fprintf(stderr,"\n");
+		fprintf(stderr,"Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)
-			printf("It was terminated by signal %d\n",state.signal);
-		printf("Runtime:		%Lu us\n",state.runtime);
-		printf("Realtime:		%Lu us\n",tsctotime(end - start));
-		printf("Scheduled:		%lu times\n",state.schedCount);
-		printf("Syscalls:		%lu\n",state.syscalls);
-		printf("Migrations:		%lu\n",state.migrations);
-		printf("Own mem:		%lu KiB\n",state.ownFrames * 4);
-		printf("Shared mem:		%lu KiB\n",state.sharedFrames * 4);
-		printf("Swapped:		%lu KiB\n",state.swapped * 4);
+			fprintf(stderr,"It was terminated by signal %d\n",state.signal);
+		fprintf(stderr,"Runtime:		%Lu us\n",state.runtime);
+		fprintf(stderr,"Realtime:		%Lu us\n",tsctotime(end - start));
+		fprintf(stderr,"Scheduled:		%lu times\n",state.schedCount);
+		fprintf(stderr,"Syscalls:		%lu\n",state.syscalls);
+		fprintf(stderr,"Migrations:		%lu\n",state.migrations);
+		fprintf(stderr,"Own mem:		%lu KiB\n",state.ownFrames * 4);
+		fprintf(stderr,"Shared mem:		%lu KiB\n",state.sharedFrames * 4);
+		fprintf(stderr,"Swapped:		%lu KiB\n",state.swapped * 4);
 	}
 
 	return EXIT_SUCCESS;

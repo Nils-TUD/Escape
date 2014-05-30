@@ -83,7 +83,7 @@ int InterruptsBase::installHandler(int irq,const char *) {
 	return 0;
 }
 
-void InterruptsBase::uninstallHandler(int irq) {
+void InterruptsBase::uninstallHandler(int) {
 	/* nothing to do */
 }
 

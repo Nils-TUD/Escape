@@ -733,13 +733,9 @@ void VFS::printMsgs(OStream &os) {
 	bool isValid;
 	const VFSNode *drv = devNode->openDir(true,&isValid);
 	if(isValid) {
-		os.writef("Messages:\n");
 		while(drv != NULL) {
-			if(IS_DEVICE(drv->getMode())) {
-				os.pushIndent();
+			if(IS_DEVICE(drv->getMode()))
 				drv->print(os);
-				os.popIndent();
-			}
 			drv = drv->next;
 		}
 	}

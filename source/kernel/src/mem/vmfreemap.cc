@@ -169,7 +169,7 @@ size_t VMFreeMap::getSize(size_t *areas) const {
 
 void VMFreeMap::print(OStream &os) const {
 	size_t areas;
-	os.writef("Free area with %zu bytes:\n",getSize(&areas));
+	os.writef("Free area with %zu MiB:\n",getSize(&areas) / (1024 * 1024));
 	for(Area *a = list; a != NULL; a = a->next)
-		os.writef("\t@ %p, %zu bytes\n",a->addr,a->size);
+		os.writef("\t@ %p, %zu MiB\n",a->addr,a->size / (1024 * 1024));
 }

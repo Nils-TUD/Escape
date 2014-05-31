@@ -97,7 +97,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 
 	loadedMods = true;
-	for(auto mod = Boot::modsBegin(); mod != Boot::modsEnd(); ++mod) {
+	for(auto mod = Boot::modsBegin() + 1; mod != Boot::modsEnd(); ++mod) {
 		/* parse args */
 		int argc;
 		const char **argv = parseArgs(mod->name,&argc);

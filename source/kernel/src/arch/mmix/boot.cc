@@ -91,8 +91,8 @@ void Boot::parseBootInfo() {
 	info.mmapCount = 1;
 	info.mmap = &mmap;
 
-	/* start idle-thread, load programs (without kernel) and wait for programs */
-	bootFinished = info.modCount * 2 + 1;
+	/* start idle-thread, load programs (without initloader) and wait for programs */
+	bootFinished = (info.modCount - 1) * 2 + 1;
 }
 
 int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
@@ -111,15 +111,16 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 		Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 	}
 	else if((bootState % 2) == 1) {
-		size_t i = bootState / 2;
+		size_t i = bootState / 2 + 1;
+		int res,argc;
+		/* parse args */
+		const char **argv = Boot::parseArgs(mods[i].name,&argc);
+		if(argc < 2)
+			Util::panic("Invalid arguments for boot-module: %s\n",mods[i].name);
+
 		/* clone proc */
 		int child;
 		if((child = Proc::clone(P_BOOT)) == 0) {
-			int res,argc;
-			/* parse args */
-			const char **argv = Boot::parseArgs(mods[i].name,&argc);
-			if(argc < 2)
-				Util::panic("Invalid arguments for boot-module: %s\n",mods[i].name);
 			/* exec */
 			res = Proc::exec(argv[0],argv,NULL,(void*)mods[i].virt,mods[i].size);
 			if(res < 0)
@@ -131,7 +132,7 @@ int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
 			Util::panic("Unable to clone process for boot-program %s: %d\n",mods[i].name,child);
 	}
 	else {
-		size_t i = (bootState / 2) - 1;
+		size_t i = bootState / 2;
 		VFSNode *node = NULL;
 		int argc;
 		const char **argv = Boot::parseArgs(mods[i].name,&argc);

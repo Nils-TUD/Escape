@@ -22,6 +22,7 @@ timeout 3
 
 title Escape
 kernel /boot/escape$suffix root=/dev/iso9660-cdrom
+module /bin/initloader
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata nodma
 module /sbin/rtc /dev/rtc
@@ -29,6 +30,7 @@ module /sbin/iso9660 /dev/iso9660-cdrom cdrom
 
 title Escape - Test
 kernel /boot/escape_test$suffix
+module /bin/initloader
 EOF
 
 	genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot \
@@ -65,6 +67,7 @@ timeout 3
 
 title Escape
 kernel /boot/escape$suffix root=/dev/ext2-hda1 swapdev=/dev/hda3
+module /bin/initloader
 module /sbin/pci /dev/pci
 module /sbin/ata /system/devices/ata
 module /sbin/rtc /dev/rtc
@@ -72,6 +75,7 @@ module /sbin/ext2 /dev/ext2-hda1 /dev/hda1
 
 title Escape - Test
 kernel /boot/escape_test$suffix
+module /bin/initloader
 EOF
 
 	sudo ./boot/perms.sh $dir

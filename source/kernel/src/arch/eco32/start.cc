@@ -28,14 +28,6 @@
 
 EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed);
 
-static A_ALIGNED(4) uint8_t initloader[] = {
-#if DEBUGGING
-#	include "../../../../build/eco32-debug/user_initloader.dump"
-#else
-#	include "../../../../build/eco32-release/user_initloader.dump"
-#endif
-};
-
 uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed) {
 	Boot::start(bootinfo);
 
@@ -43,7 +35,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed) {
 
 	/* load initloader */
 	ELF::StartupInfo info;
-	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
+	if(ELF::loadFromFile("/system/mbmods/0",&info) < 0)
 		Util::panic("Unable to load initloader");
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))

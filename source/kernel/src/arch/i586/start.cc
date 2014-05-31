@@ -43,14 +43,6 @@ static void idlestart();
 extern SpinLock aplock;
 extern ulong proc0TLPD;
 
-static uint8_t initloader[] = {
-#if DEBUGGING
-#	include "../../../../build/i586-debug/user_initloader.dump"
-#else
-#	include "../../../../build/i586-release/user_initloader.dump"
-#endif
-};
-
 void bspstart(void *mbp) {
 	/* init the kernel */
 	Boot::start(mbp);
@@ -75,8 +67,9 @@ uintptr_t smpstart() {
 	PageTables::flushAddr(0,true);
 
 	/* load initloader */
-	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
+	if(ELF::loadFromFile("/system/mbmods/0",&info) < 0)
 		Util::panic("Unable to load initloader");
+
 	/* give the process some stack pages */
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))

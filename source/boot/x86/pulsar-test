@@ -2,8 +2,9 @@
 cat >$1/config-$ESC_MAC <<EOF
 root escape
 exec boot/escape_test
+load /bin/initloader
 EOF
 
-files="boot/escape_test"
+files="boot/escape_test bin/initloader"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

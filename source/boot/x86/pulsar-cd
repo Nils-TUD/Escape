@@ -5,12 +5,13 @@ create_mini_cd $1/dist $1/cd-mini.iso 0
 cat >$1/config-$ESC_MAC <<EOF
 root escape
 exec boot/escape root=/dev/iso9660-cdrom
+load /bin/initloader
 load sbin/pci /dev/pci
 load sbin/ata /system/devices/ata nodma
 load sbin/rtc /dev/rtc
 load sbin/iso9660 /dev/iso9660-cdrom cdrom
 EOF
 
-files="boot/escape sbin/rtc sbin/iso9660 sbin/ata sbin/pci"
+files="boot/escape bin/initloader sbin/rtc sbin/iso9660 sbin/ata sbin/pci"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

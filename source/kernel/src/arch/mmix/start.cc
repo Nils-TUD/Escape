@@ -29,14 +29,6 @@
 
 EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss);
 
-static A_ALIGNED(8) uint8_t initloader[] = {
-#if DEBUGGING
-#	include "../../../../build/mmix-debug/user_initloader.dump"
-#else
-#	include "../../../../build/mmix-release/user_initloader.dump"
-#endif
-};
-
 uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	Boot::start(bootinfo);
 
@@ -49,7 +41,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 
 	/* load initloader */
 	ELF::StartupInfo info;
-	if(ELF::loadFromMem(initloader,sizeof(initloader),&info) < 0)
+	if(ELF::loadFromMem("/system/mbmods/0",&info) < 0)
 		Util::panic("Unable to load initloader");
 	*stackBegin = info.stackBegin;
 	*rss = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);

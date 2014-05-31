@@ -27,7 +27,6 @@
 
 #include "debug.h"
 
-#define PROG_COUNT			4
 #define SEC_SIZE			512								/* disk sector size in bytes */
 #define BLOCK_SIZE			((size_t)(1024 << le32tocpu(e.superBlock.logBlockSize)))
 #define SPB					(BLOCK_SIZE / SEC_SIZE)			/* sectors per block */
@@ -51,11 +50,12 @@ EXTERN_C int sctcapctl(void);
 EXTERN_C BootInfo *bootload(size_t memSize);
 
 /* the tasks we should load */
-static LoadProg progs[MAX_PROG_COUNT] = {
-	{"/boot/escape","/boot/escape root=/dev/ext2-hda1",BL_K_ID,0,0},
-	{"/sbin/disk","/sbin/disk /system/devices/disk",BL_DISK_ID,0,0},
-	{"/sbin/rtc","/sbin/rtc /dev/rtc",BL_RTC_ID,0,0},
-	{"/sbin/ext2","/sbin/ext2 /dev/ext2-hda1 /dev/hda1",BL_FS_ID,0,0},
+static LoadProg progs[] = {
+	{"/boot/escape","/boot/escape root=/dev/ext2-hda1",0,0},
+	{"/bin/initloader","/bin/initloader",0,0},
+	{"/sbin/disk","/sbin/disk /system/devices/disk",0,0},
+	{"/sbin/rtc","/sbin/rtc /dev/rtc",0,0},
+	{"/sbin/ext2","/sbin/ext2 /dev/ext2-hda1 /dev/hda1",0,0},
 };
 static BootInfo bootinfo;
 
@@ -340,14 +340,14 @@ EXTERN_C BootInfo *bootload(size_t memSize) {
 	/* read root inode */
 	loadInode(&rootIno,EXT2_ROOT_INO);
 
-	for(i = 0; i < PROG_COUNT; i++) {
+	for(i = 0; i < ARRAY_SIZE(progs); i++) {
 		/* get inode of path */
 		if(namei(progs[i].path,&inoBuf) == EXT2_BAD_INO)
 			halt("Unable to find '%s'\n",progs[i].path);
 		else {
 			/* load program */
 			debugf("Loading %s",progs[i].path);
-			if(progs[i].id == BL_K_ID)
+			if(i == 0)
 				loadKernel(progs + i,&inoBuf);
 			else
 				readInProg(progs + i,&inoBuf);

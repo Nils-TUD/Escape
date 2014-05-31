@@ -4,15 +4,16 @@ create_mini_cd $1/dist $1/cd-mini.iso 0
 
 cat >$1/config-$ESC_MAC <<EOF
 root escape
-exec boot/escape root=/dev/iso9660-ramdisk-mbmods-4
-load sbin/ramdisk /dev/ramdisk-mbmods-4 -f /system/mbmods/4
+exec boot/escape root=/dev/iso9660-ramdisk-mbmods-5 nosmp
+load /bin/initloader
+load sbin/ramdisk /dev/ramdisk-mbmods-5 -f /system/mbmods/5
 load sbin/rtc /dev/rtc
-load sbin/iso9660 /dev/iso9660-ramdisk-mbmods-4 /dev/ramdisk-mbmods-4
+load sbin/iso9660 /dev/iso9660-ramdisk-mbmods-5 /dev/ramdisk-mbmods-5
 load sbin/pci /dev/pci
 load cd-mini.iso
 EOF
 
-files="boot/escape sbin/ramdisk sbin/rtc sbin/iso9660 sbin/pci"
+files="boot/escape bin/initloader sbin/ramdisk sbin/rtc sbin/iso9660 sbin/pci"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp cd-mini.iso $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

@@ -7,14 +7,20 @@ if [ ! -b "$ESC_USBDEV" ]; then
 	exit 1
 fi
 
+suffix=""
+if [ "$ESC_TARGET" = "x86_64" ]; then
+	suffix=".elf32"
+fi
+
 tmp=`mktemp -d`
 
 # copy files necessary to boot, including the iso image containing everything
 cp -R $1/dist/boot $tmp
-mkdir $tmp/sbin
+mkdir $tmp/sbin $tmp/bin
 for d in ramdisk rtc iso9660 pci; do
 	cp $1/dist/sbin/$d $tmp/sbin
 done
+cp $1/dist/bin/initloader $tmp/bin
 cp $1/cd.iso $tmp/boot
 
 # create menu.lst
@@ -23,15 +29,17 @@ default 0
 timeout 3
 
 title Escape
-kernel /boot/escape root=/dev/iso9660-ramdisk-mbmods-4
-module /sbin/ramdisk /dev/ramdisk-mbmods-4 -f /system/mbmods/4
+kernel /boot/escape$suffix root=/dev/iso9660-ramdisk-mbmods-5
+module /bin/initloader
+module /sbin/ramdisk /dev/ramdisk-mbmods-5 -f /system/mbmods/5
 module /sbin/rtc /dev/rtc
-module /sbin/iso9660 /dev/iso9660-ramdisk-mbmods-4 /dev/ramdisk-mbmods-4
+module /sbin/iso9660 /dev/iso9660-ramdisk-mbmods-5 /dev/ramdisk-mbmods-5
 module /sbin/pci /dev/pci
 module /boot/cd.iso
 
 title Escape - Test
-kernel /boot/escape_test
+kernel /boot/escape_test$suffix
+module /bin/initloader
 EOF
 
 # create disk. 64 MB should be enough
@@ -47,5 +55,6 @@ fi
 
 # now write image to usb-stick
 sudo dd if=$1/usb.img of=$ESC_USBDEV
+sync
 
 rm -Rf $tmp

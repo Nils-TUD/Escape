@@ -48,7 +48,7 @@ enum {
 	SYSCALL_FCNTL,
 
 	/* 20 */
-	SYSCALL_LOADMODS,
+	SYSCALL_INIT,
 	SYSCALL_SLEEP,
 	SYSCALL_SEEK,
 	SYSCALL_STAT,
@@ -119,7 +119,6 @@ enum {
 	SYSCALL_RELIOPORTS,
 #		ifdef __i586__
 	SYSCALL_VM86INT,
-	SYSCALL_VM86START,
 #		endif
 #	else
 	SYSCALL_DEBUG,
@@ -141,15 +140,7 @@ enum {
 #	define ASM_IRQ_ACKSIG				49
 #endif
 #define ASM_SYSC_ACKSIG					16
-#define ASM_SYSC_EXEC					18
-#define ASM_SYSC_LOADMODS				20
-#define ASM_SYSC_VM86START				79
 
 #if !defined(IN_ASM) && defined(__cplusplus)
 static_assert(ASM_SYSC_ACKSIG == SYSCALL_ACKSIG,"ACKSIG is not equal");
-static_assert(ASM_SYSC_EXEC == SYSCALL_EXEC,"ACKSIG is not equal");
-static_assert(ASM_SYSC_LOADMODS == SYSCALL_LOADMODS,"ACKSIG is not equal");
-#	if defined(__i586__)
-static_assert(ASM_SYSC_VM86START == SYSCALL_VM86START,"ACKSIG is not equal");
-#	endif
 #endif

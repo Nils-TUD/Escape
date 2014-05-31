@@ -171,7 +171,7 @@ int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!copyPath(pathSave,sizeof(pathSave),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = Proc::exec(pathSave,args,env,NULL,0);
+	int res = Proc::exec(pathSave,args,env);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

@@ -52,8 +52,7 @@
 /* process flags */
 #define P_ZOMBIE			1
 #define P_PREZOMBIE			2
-#define P_BOOT				4
-#define P_KILLED			8
+#define P_KILLED			4
 
 #define PLOCK_COUNT			3
 #define PMUTEX_COUNT		1
@@ -224,10 +223,9 @@ public:
 	 * @param args the arguments to copy
 	 * @param argBuffer the buffer where to write to
 	 * @param size the remaining size of the buffer (will be changed)
-	 * @param fromUser whether the arguments are from user-space
 	 * @return the number of arguments on success or < 0
 	 */
-	static int buildArgs(const char *const *args,char *argBuffer,size_t *size,bool fromUser);
+	static int buildArgs(const char *const *args,char *argBuffer,size_t *size);
 
 	/**
 	 * Clones the current process, gives the new process a clone of the current thread and saves this
@@ -254,12 +252,9 @@ public:
 	 * @param path the path to the program
 	 * @param args the arguments
 	 * @param env the environment
-	 * @param code if the program is already in memory, the location of it (used for boot-modules)
-	 * @param size if code != NULL, the size of the program in memory
 	 * @return 0 on success
 	 */
-	static int exec(const char *path,const char *const *args,USER const char *const *env,
-		const void *code,size_t size);
+	static int exec(const char *path,const char *const *args,USER const char *const *env);
 
 	/**
 	 * Waits until the thread with given thread-id or all other threads of the process are terminated.

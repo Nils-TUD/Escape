@@ -34,52 +34,7 @@
 #include <errno.h>
 #include <assert.h>
 
-int ELF::loadFromMem(const void *code,size_t length,StartupInfo *info) {
-	size_t loadSegNo = 0;
-	sElfEHeader *eheader = (sElfEHeader*)code;
-	sElfPHeader *pheader = NULL;
-
-	/* check magic */
-	if(memcmp(eheader->e_ident,ELFMAG,4) != 0) {
-		Log::get().writef("[LOADER] Invalid magic-number '%02x%02x%02x%02x'\n",
-				eheader->e_ident[0],eheader->e_ident[1],eheader->e_ident[2],eheader->e_ident[3]);
-		return -ENOEXEC;
-	}
-
-	/* load the LOAD segments. */
-	uintptr_t datPtr = (uintptr_t)code + eheader->e_phoff;
-	for(size_t j = 0; j < eheader->e_phnum; datPtr += eheader->e_phentsize, j++) {
-		pheader = (sElfPHeader*)datPtr;
-		/* check if all stuff is in the binary */
-		if((uintptr_t)pheader + sizeof(sElfPHeader) >= (uintptr_t)code + length) {
-			Log::get().writef("[LOADER] Unexpected end; pheader %d not finished\n",j);
-			return -ENOEXEC;
-		}
-
-		if(pheader->p_type == PT_LOAD) {
-			if(pheader->p_vaddr + pheader->p_filesz >= (uintptr_t)code + length) {
-				Log::get().writef("[LOADER] Unexpected end; load segment %d not finished\n",loadSegNo);
-				return -ENOEXEC;
-			}
-			if(addSegment(NULL,pheader,loadSegNo,TYPE_PROG,MAP_POPULATE) < 0)
-				return -ENOEXEC;
-			/* copy the data and zero the rest, if necessary */
-			PageDir::copyToUser((void*)pheader->p_vaddr,(void*)((uintptr_t)code + pheader->p_offset),
-			                    pheader->p_filesz);
-			PageDir::zeroToUser((void*)(pheader->p_vaddr + pheader->p_filesz),
-			                    pheader->p_memsz - pheader->p_filesz);
-			loadSegNo++;
-		}
-	}
-
-	if(finishFromMem(code,length,info) < 0)
-		return -ENOEXEC;
-
-	info->linkerEntry = info->progEntry = eheader->e_entry;
-	return 0;
-}
-
-int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
+int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	size_t loadSeg = 0;
@@ -165,7 +120,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 			}
 			file->close(p->getPid());
 			/* now load him and stop loading the 'real' program */
-			res = doLoadFromFile(interpName,TYPE_INTERP,info);
+			res = doLoad(interpName,TYPE_INTERP,info);
 			Cache::free(interpName);
 			return res;
 		}
@@ -200,7 +155,7 @@ int ELF::doLoadFromFile(const char *path,int type,StartupInfo *info) {
 	int fd;
 	if((fd = FileDesc::assoc(p,file)) < 0)
 		goto failed;
-	if(finishFromFile(file,&eheader,info) < 0) {
+	if(finish(file,&eheader,info) < 0) {
 		assert(FileDesc::unassoc(p,fd) != NULL);
 		goto failed;
 	}

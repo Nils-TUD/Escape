@@ -47,29 +47,9 @@ public:
 	 * @param info various information about the loaded program
 	 * @return 0 on success
 	 */
-	static int loadFromFile(const char *path,StartupInfo *info) {
-		return doLoadFromFile(path,TYPE_PROG,info);
+	static int load(const char *path,StartupInfo *info) {
+		return doLoad(path,TYPE_PROG,info);
 	}
-
-	/**
-	 * Loads the given code into the user-space. This is just intended for loading initloader
-	 *
-	 * @param code the address of the binary
-	 * @param length the length of the binary
-	 * @param info various information about the loaded program
-	 * @return 0 on success
-	 */
-	static int loadFromMem(const void *code,size_t length,StartupInfo *info);
-
-	/**
-	 * Architecture-specific finish-actions when loading from memory. DO NOT call it directly!
-	 *
-	 * @param code the address of the binary
-	 * @param length the length of the binary
-	 * @param info the startup-info
-	 * @return 0 on success
-	 */
-	static int finishFromMem(const void *code,size_t length,StartupInfo *info);
 
 	/**
 	 * Architecture-specific finish-actions when loading from file. DO NOT call it directly!
@@ -79,10 +59,10 @@ public:
 	 * @param info the startup-info
 	 * @return 0 on success
 	 */
-	static int finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info);
+	static int finish(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info);
 
 private:
-	static int doLoadFromFile(const char *path,int type,StartupInfo *info);
+	static int doLoad(const char *path,int type,StartupInfo *info);
 	static int addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type,int mflags);
 };
 

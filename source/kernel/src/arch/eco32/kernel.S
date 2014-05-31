@@ -143,12 +143,14 @@ start:
 	// call bspstart
 	add		$4,$16,$0						// give bspstart the load-progs-array
 	add		$5,$17,$0						// give bspstart the CPU speed
+	add		$6,$29,$0						// pointer to user stack-pointer
 	jal		bspstart
 	add		$16,$2,$0						// save entry-point
 	// if we've started the unittest-kernel, we'll register the tests here
 	jal		unittest_start
 
 	// initloader has been loaded, so jump to it
+	ldw		$29,$29,0						// load user stack-pointer
 	add		$30,$0,$16						// smpstart returns the entry-point
 	mvfs	$8,FS_PSW
 	// enable interrupts and user-mode

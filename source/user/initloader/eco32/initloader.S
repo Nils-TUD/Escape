@@ -17,35 +17,42 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
-
 .section .text
 
 .global _start
 .global sigRetFunc
+.extern __libc_init
+.extern main
 
 _start:
-	// load modules first
-	add		$4,$0,ASM_SYSC_LOADMODS
-	trap
+	// setup a small stackframe
+	sub		$29,$29,32
+	add		$4,$0,$0
+	add		$5,$0,$0
+	add		$6,$0,$0
+	add		$7,$0,$0
+	// pass argv via stack
+	stw		$8,$29,16
+	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	jal		__libc_preinit
 
-	// now replace with init
-	add		$4,$0,ASM_SYSC_EXEC				// set syscall-number
-	add		$5,$0,progName					// set path
-	add		$6,$0,args						// set arguments
-	add		$7,$0,$0						// set env (NULL)
-	trap
+	// init c library
+	jal		__libc_init
+
+	// init env stuff
+	add		$4,$0,$0
+	add		$5,$0,$0
+	jal		initenv
+
+	// get argc and argv
+	add		$4,$0,$0
+	add		$5,$0,$0
+	// finally, call main
+	jal		main
 
 	// we should not reach this
-1:
-	j		1b
+1:	j		1b
 
 // provide just a dummy
 sigRetFunc:
 	j		sigRetFunc
-
-args:
-	.long	progName,0
-
-progName:
-	.asciz	"/bin/init"

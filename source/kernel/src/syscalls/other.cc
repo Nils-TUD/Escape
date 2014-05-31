@@ -31,8 +31,8 @@
 #include <sys/video.h>
 #include <errno.h>
 
-int Syscalls::loadmods(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	int res = Boot::loadModules(stack);
+int Syscalls::init(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	int res = Boot::init(stack);
 	SYSC_RET1(stack,res);
 }
 

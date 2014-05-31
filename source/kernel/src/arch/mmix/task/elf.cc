@@ -33,30 +33,10 @@
 #include <string.h>
 #include <errno.h>
 
-static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
+static int doFinish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		OpenFile *file,ELF::StartupInfo *info);
 
-int ELF::finishFromMem(const void *code,A_UNUSED size_t length,StartupInfo *info) {
-	Thread *t = Thread::getRunning();
-	sElfEHeader *eheader = (sElfEHeader*)code;
-
-	/* at first, SYNCID the text-region */
-	VMRegion *textreg = t->getProc()->getVM()->getRegion(eheader->e_entry);
-	if(textreg) {
-		uintptr_t begin,start,end;
-		t->getProc()->getVM()->getRegRange(textreg,&start,&end,true);
-		while(start < end) {
-			frameno_t frame = t->getProc()->getPageDir()->getFrameNo(start);
-			size_t amount = MIN(PAGE_SIZE,end - start);
-			begin = DIR_MAP_AREA | frame * PAGE_SIZE;
-			CPU::syncid(begin,begin + amount);
-			start += amount;
-		}
-	}
-	return finish(t,eheader,(sElfSHeader*)((uintptr_t)code + eheader->e_shoff),NULL,info);
-}
-
-int ELF::finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info) {
+int ELF::finish(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info) {
 	int res = -ENOEXEC;
 	Thread *t = Thread::getRunning();
 	ssize_t readRes,headerSize = eheader->e_shnum * eheader->e_shentsize;
@@ -77,14 +57,14 @@ int ELF::finishFromFile(OpenFile *file,const sElfEHeader *eheader,StartupInfo *i
 	}
 
 	/* elf_finish might segfault */
-	res = finish(t,eheader,secHeaders,file,info);
+	res = doFinish(t,eheader,secHeaders,file,info);
 
 error:
 	Cache::free(secHeaders);
 	return res;
 }
 
-static int finish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
+static int doFinish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		OpenFile *file,ELF::StartupInfo *info) {
 	/* build register-stack */
 	int globalNum = 0;

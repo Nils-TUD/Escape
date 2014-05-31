@@ -96,30 +96,6 @@ frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,ulong regF
 	return frame;
 }
 
-void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
-	uint64_t pte,*dpt = NULL;
-	ulong dstPageNo = PAGE_NO(dst);
-	PageDir *cur = Proc::getCurPageDir();
-	PageTables::NoAllocator alloc;
-	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
-	uintptr_t addr = (uintptr_t)dst;
-	while(count > 0) {
-		if(!dpt || (dstPageNo % PT_ENTRY_COUNT) == 0) {
-			dpt = cur->getPT(addr,false,alloc);
-			assert(dpt != NULL);
-		}
-		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
-		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAP_AREA) + offset;
-
-		size_t amount = MIN(PAGE_SIZE - offset,count);
-		memcpy((void*)addr,src,amount);
-		src = (const void*)((uintptr_t)src + amount);
-		count -= amount;
-		offset = 0;
-		dstPageNo++;
-	}
-}
-
 void PageDirBase::zeroToUser(void *dst,size_t count) {
 	uint64_t pte,*dpt = NULL;
 	ulong dstPageNo = PAGE_NO(dst);

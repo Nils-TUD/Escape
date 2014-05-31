@@ -119,16 +119,6 @@ public:
 	static void copyFromFrame(frameno_t frame,void *dst);
 
 	/**
-	 * Copies <count> bytes from <src> to <dst> in user-space.
-	 * The destination memory might not be writable!
-	 *
-	 * @param dst the destination address
-	 * @param src the source address
-	 * @param count the number of bytes to copy
-	 */
-	static void copyToUser(void *dst,const void *src,size_t count);
-
-	/**
 	 * Copies <count> zeros to <dst>, which is in user-space.
 	 * The destination memory might not be writable!
 	 *

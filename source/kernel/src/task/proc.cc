@@ -432,8 +432,7 @@ errorReqProc:
 	return res;
 }
 
-int ProcBase::exec(const char *path,USER const char *const *args,USER const char *const *env,
-		const void *code,size_t size) {
+int ProcBase::exec(const char *path,USER const char *const *args,USER const char *const *env) {
 	char *argBuffer;
 	ELF::StartupInfo info;
 	Thread *t = Thread::getRunning();
@@ -467,7 +466,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,USER const char
 
 		/* copy arguments into buffer */
 		if(args != NULL) {
-			argc = buildArgs(args,argBuffer,&argSize,!code);
+			argc = buildArgs(args,argBuffer,&argSize);
 			if(argc < 0) {
 				res = argc;
 				goto errorFree;
@@ -477,7 +476,7 @@ int ProcBase::exec(const char *path,USER const char *const *args,USER const char
 		/* copy env into buffer */
 		if(env != NULL) {
 			size_t current = EXEC_MAX_ARGSIZE - argSize;
-			envc = buildArgs(env,argBuffer + current,&argSize,!code);
+			envc = buildArgs(env,argBuffer + current,&argSize);
 			if(envc < 0) {
 				res = envc;
 				goto errorFree;
@@ -490,14 +489,8 @@ int ProcBase::exec(const char *path,USER const char *const *args,USER const char
 	doRemoveRegions(p,false);
 
 	/* load program */
-	if(code) {
-		if(ELF::loadFromMem(code,size,&info) < 0)
-			goto errorTerm;
-	}
-	else {
-		if(ELF::loadFromFile(path,&info) < 0)
-			goto errorTerm;
-	}
+	if(ELF::load(path,&info) < 0)
+		goto errorTerm;
 
 	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
 	/* we need to do this here without lock, because VFS::openPath will perform a context-switch */
@@ -874,7 +867,7 @@ void ProcBase::print(OStream &os) const {
 	os.writef("\n");
 }
 
-int ProcBase::buildArgs(USER const char *const *args,char *argBuffer,size_t *size,bool fromUser) {
+int ProcBase::buildArgs(USER const char *const *args,char *argBuffer,size_t *size) {
 	/* count args and copy them on the kernel-heap */
 	/* note that we have to create a copy since we don't know where the args are. Maybe
 	 * they are on the user-stack at the position we want to copy them for the
@@ -884,7 +877,7 @@ int ProcBase::buildArgs(USER const char *const *args,char *argBuffer,size_t *siz
 	const char *const *arg = args;
 	while(1) {
 		/* check if it is a valid pointer */
-		if(fromUser && !PageDir::isInUserSpace((uintptr_t)arg,sizeof(char*)))
+		if(!PageDir::isInUserSpace((uintptr_t)arg,sizeof(char*)))
 			return -EFAULT;
 		/* end of list? */
 		if(*arg == NULL)

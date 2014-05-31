@@ -53,7 +53,7 @@ void VFS::init() {
 	/*
 	 *  /
 	 *   |- system
-	 *   |   |- mbmods
+	 *   |   |- boot
 	 *   |   |- shm
 	 *   |   |- devices
 	 *   |   |- fs
@@ -63,7 +63,7 @@ void VFS::init() {
 	 */
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
 	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"system",DIR_DEF_MODE);
-	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"mbmods",DIR_DEF_MODE));
+	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"boot",DIR_DEF_MODE));
 	VFSNode *node = createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
 	/* the user should be able to create shms as well */
 	node->chmod(KERNEL_PID,0777);

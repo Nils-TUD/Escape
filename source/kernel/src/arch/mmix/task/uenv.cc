@@ -162,38 +162,31 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * take care that we use ELF::finishFromMem() for boot-modules and ELF::finishFromFile() other-
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
 	pid_t pid = t->getProc()->getPid();
-	if(t->getProc()->getFlags() & P_BOOT) {
-		auto mod = Boot::modsBegin() + pid - 1;
-		if(ELF::finishFromMem((void*)mod->virt,mod->size,&sinfo) < 0)
-			return NULL;
+	/* TODO well, its not really nice that we have to read this stuff again for every started
+	 * thread :/ */
+	/* every process has a text-region from his binary */
+	VMRegion *textreg = t->getProc()->getVM()->getRegion(t->getProc()->getEntryPoint());
+	assert(textreg->reg->getFile() != NULL);
+	ssize_t res;
+	sElfEHeader ehd;
+
+	/* seek to header */
+	if(textreg->reg->getFile()->seek(pid,0,SEEK_SET) < 0) {
+		Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getProgram());
+		return NULL;
 	}
-	else {
-		/* TODO well, its not really nice that we have to read this stuff again for every started
-		 * thread :/ */
-		/* every process has a text-region from his binary */
-		VMRegion *textreg = t->getProc()->getVM()->getRegion(t->getProc()->getEntryPoint());
-		assert(textreg->reg->getFile() != NULL);
-		ssize_t res;
-		sElfEHeader ehd;
 
-		/* seek to header */
-		if(textreg->reg->getFile()->seek(pid,0,SEEK_SET) < 0) {
-			Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getProgram());
-			return NULL;
-		}
-
-		/* read the header */
-		if((res = textreg->reg->getFile()->read(pid,&ehd,sizeof(sElfEHeader))) !=
-				sizeof(sElfEHeader)) {
-			Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
-					t->getProc()->getProgram(),strerror(res));
-			return NULL;
-		}
-
-		res = ELF::finishFromFile(textreg->reg->getFile(),&ehd,&sinfo);
-		if(res < 0)
-			return NULL;
+	/* read the header */
+	if((res = textreg->reg->getFile()->read(pid,&ehd,sizeof(sElfEHeader))) !=
+			sizeof(sElfEHeader)) {
+		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
+				t->getProc()->getProgram(),strerror(res));
+		return NULL;
 	}
+
+	res = ELF::finish(textreg->reg->getFile(),&ehd,&sinfo);
+	if(res < 0)
+		return NULL;
 
 	/* get register-stack */
 	ulong *rsp,*ssp;
@@ -230,8 +223,10 @@ void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,ulong *rsp,ulong *ssp,
 	if(!thread) {
 		/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
 		uint64_t *frame = t->getIntrptStack();
-		frame[-(12 + 2 + 1)] = (uint64_t)ssp;
-		frame[-(12 + 2 + 2)] = (uint64_t)ssp;
+		if(frame) {
+			frame[-(12 + 2 + 1)] = (uint64_t)ssp;
+			frame[-(12 + 2 + 2)] = (uint64_t)ssp;
+		}
 
 		/* setup start */
 		KSpecRegs *sregs = t->getSpecRegs();

@@ -17,41 +17,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
-
 .section .text
 
 .global _start
 .global sigRetFunc
+.extern __libc_init
+.extern main
 
 _start:
-	// load modules first; wait until we're finished ($0 = 0)
-	SET		$0,ASM_SYSC_LOADMODS
-	TRAP	0,0,0
-	BNZ		$0,_start
-
-	// now replace with init
-	SET		$0,ASM_SYSC_EXEC
-	GETA	$1,progName
-	GETA	$2,args
+	// setup a small stackframe
+	SET		$1,0
+	SET		$2,0
 	SET		$3,0
-	TRAP	0,0,0
+	SET		$4,0
+	SET		$5,0
+	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	PUSHJ	$0,__libc_preinit
+
+	// init c library
+	PUSHJ	$0,__libc_init
+
+	// init env stuff
+	SET		$1,0
+	SET		$2,0
+	PUSHJ	$0,initenv
+
+	// get argc and argv
+	SET		$1,0
+	SET		$2,0
+	// finally, call main
+	PUSHJ	$0,main
 
 	// we should not reach this
-1:
-	JMP		1b
+1:	JMP		1b
 
 // provide just a dummy
 sigRetFunc:
 	JMP		sigRetFunc
-
-	LOC		@+(8-@)&7
-args:
-	OCTA	progName
-	OCTA	0
-
-progName:
-	.asciz	"/bin/init"
 
 // we need the stack-pointer and frame-pointer here for forking
 sp GREG

@@ -23,13 +23,15 @@
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
 #include <sys/task/smp.h>
+#include <sys/task/uenv.h>
+#include <sys/task/terminator.h>
 #include <sys/mem/pagedir.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 
 /* make gcc happy */
 EXTERN_C void bspstart(void *mbp);
-EXTERN_C uintptr_t smpstart();
+EXTERN_C uintptr_t smpstart(uintptr_t *usp);
 EXTERN_C void apstart();
 static void idlestart();
 extern SpinLock aplock;
@@ -39,7 +41,7 @@ void bspstart(void *mbp) {
 	Boot::start(mbp);
 }
 
-uintptr_t smpstart() {
+uintptr_t smpstart(uintptr_t *usp) {
 	ELF::StartupInfo info;
 	size_t total = SMP::getCPUCount();
 	/* the running thread has been stored on a different stack last time */
@@ -58,15 +60,21 @@ uintptr_t smpstart() {
 	for(int i = 0; i < 3; ++i)
 		PageTables::flushAddr(0x200000 * i,true);
 
+	/* start the swapper-thread. it will never return */
+	if(PhysMem::canSwap())
+		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
+	/* start the terminator */
+	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
+
 	/* load initloader */
-	if(ELF::loadFromFile("/system/mbmods/0",&info) < 0)
+	if(ELF::load("/system/boot/initloader",&info) < 0)
 		Util::panic("Unable to load initloader");
 
 	/* give the process some stack pages */
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		Util::panic("Not enough mem for initloader-stack");
-	t->addInitialStack();
+	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE;
 	t->discardFrames();
 
 	extern ulong kstackPtr;

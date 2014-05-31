@@ -17,29 +17,45 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
 #include <esc/arch.h>
 
 .section .text
 
 .global _start
 .global sigRetFunc
+.extern __libc_init
+.extern main
 
 _start:
-	// load modules first
-	mov		$ASM_SYSC_LOADMODS,%rdi
-	syscall
+	mov		$0,%ARG_1
+	mov		$0,%ARG_2
+	mov		$0,%ARG_3
+#if defined(__x86_64__)
+	mov		$0,%ARG_4
+	mov		$0,%ARG_5
+#else
+	push	$0
+	push	$0
+#endif
+	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	call	__libc_preinit
+#if defined(__i586__)
+	add		$WORDSIZE * 2,%REG(sp)
+#endif
 
-	// load vm86-task
-	mov		$ASM_SYSC_VM86START,%rdi
-	syscall
+	// init c library
+	call	__libc_init
 
-	// now replace with init
-	mov		$progName,%rsi					// arg1: path
-	mov		$args,%r10						// arg2: arguments
-	mov		$0,%r8							// arg3: env
-	mov		$ASM_SYSC_EXEC,%rdi				// set syscall-number
-	syscall
+	// init env stuff
+	mov		$0,%ARG_1
+	mov		$0,%ARG_2
+	call	initenv
+
+	// get argc and argv
+	mov		$0,%ARG_1
+	mov		$0,%ARG_2
+	// finally, call main
+	call	main
 
 	// we should not reach this
 1:	jmp		1b
@@ -47,11 +63,3 @@ _start:
 // provide just a dummy
 sigRetFunc:
 	jmp		sigRetFunc
-
-.section .data
-
-args:
-	.quad	progName,0
-
-progName:
-	.asciz	"/bin/init"

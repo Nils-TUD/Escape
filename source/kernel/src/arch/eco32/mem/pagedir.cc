@@ -123,22 +123,6 @@ frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,A_UNUSED u
 	return frame;
 }
 
-void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
-	PageDir *pdir = Proc::getCurPageDir();
-	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
-	uintptr_t virt = (uintptr_t)dst;
-	while(count > 0) {
-		frameno_t frameNo = pdir->getFrameNo(virt);
-		size_t amount = MIN(PAGE_SIZE - offset,count);
-		uintptr_t addr = ((frameNo << PAGE_BITS) | DIR_MAP_AREA) + offset;
-		memcpy((void*)addr,src,amount);
-		src = (const void*)((uintptr_t)src + amount);
-		count -= amount;
-		virt += PAGE_SIZE;
-		offset = 0;
-	}
-}
-
 void PageDirBase::zeroToUser(void *dst,size_t count) {
 	PageDir *pdir = Proc::getCurPageDir();
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);

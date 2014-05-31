@@ -33,10 +33,11 @@
 
 Thread *Thread::cur = NULL;
 
-void ThreadBase::addInitialStack() {
+uintptr_t ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
 	assert(proc->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,stackRegions + 0) == 0);
+	return stackRegions[0]->virt();
 }
 
 int ThreadBase::initArch(Thread *t) {

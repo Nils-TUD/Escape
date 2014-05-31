@@ -221,8 +221,9 @@ public:
 	 * Adds a stack to the given initial thread. This is just used for initloader.
 	 *
 	 * @param t the thread
+	 * @return the stack address
 	 */
-	void addInitialStack();
+	uintptr_t addInitialStack();
 
 	/**
 	 * @return the thread-id

@@ -4,13 +4,13 @@ create_cd $1/dist $1/cd.iso
 
 cat >$1/config-52-54-00-12-34-56 <<EOF
 root escape
-exec boot/escape root=/dev/iso9660-ramdisk-mbmods-5
+exec /boot/escape root=/dev/iso9660-ramdisk-cd
 load /bin/initloader
-load sbin/ramdisk /dev/ramdisk-mbmods-5 -f /system/mbmods/5
-load sbin/rtc /dev/rtc
-load sbin/pci /dev/pci
-load sbin/iso9660 /dev/iso9660-ramdisk-mbmods-5 /dev/ramdisk-mbmods-5
-load cd.iso
+load /sbin/ramdisk /dev/ramdisk-cd -f /system/boot/cd.iso
+load /sbin/rtc /dev/rtc
+load /sbin/pci /dev/pci
+load /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd
+load /cd.iso
 EOF
 
 files="boot/escape bin/initloader sbin/ramdisk sbin/rtc sbin/iso9660"

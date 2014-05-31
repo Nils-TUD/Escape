@@ -60,13 +60,10 @@ static const BootTask tasks[] = {
 	{"Initializing timer...",Timer::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
-bool Boot::loadedMods = false;
 
 static Boot::Module mods[MAX_PROG_COUNT];
 static Boot::MemMap mmap;
 static BootInfo *binfo;
-static int bootState = 0;
-static int bootFinished = 1;
 
 void Boot::archStart(void *nfo) {
 	binfo = (BootInfo*)nfo;
@@ -90,84 +87,18 @@ void Boot::parseBootInfo() {
 	mmap.type = 1;
 	info.mmapCount = 1;
 	info.mmap = &mmap;
-
-	/* start idle-thread, load programs (without initloader) and wait for programs */
-	bootFinished = (info.modCount - 1) * 2 + 1;
 }
 
-int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
-	/* it's not good to do this twice.. */
-	if(bootState == bootFinished)
-		return 0;
+int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 	if(unittests != NULL)
 		unittests();
 
-	/* note that we can't do more than one Proc::clone at once here, because we have to leave the
-	 * kernel immediatly to choose another stack (the created process gets our stack) */
-	if(bootState == 0) {
-		/* start idle-thread */
-		Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
-		/* start termination-thread */
-		Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-	}
-	else if((bootState % 2) == 1) {
-		size_t i = bootState / 2 + 1;
-		int res,argc;
-		/* parse args */
-		const char **argv = Boot::parseArgs(mods[i].name,&argc);
-		if(argc < 2)
-			Util::panic("Invalid arguments for boot-module: %s\n",mods[i].name);
+	/* we have to do the thread-starting here because we can only start threads when coming from
+	 * userland via trap */
 
-		/* clone proc */
-		int child;
-		if((child = Proc::clone(P_BOOT)) == 0) {
-			/* exec */
-			res = Proc::exec(argv[0],argv,NULL,(void*)mods[i].virt,mods[i].size);
-			if(res < 0)
-				Util::panic("Unable to exec boot-program %s: %d\n",mods[i].name,res);
-			/* we don't want to continue ;) */
-			return 0;
-		}
-		else if(child < 0)
-			Util::panic("Unable to clone process for boot-program %s: %d\n",mods[i].name,child);
-	}
-	else {
-		size_t i = bootState / 2;
-		VFSNode *node = NULL;
-		int argc;
-		const char **argv = Boot::parseArgs(mods[i].name,&argc);
-
-		/* wait until the device is registered */
-		/* don't create a pipe- or channel-node here */
-		while(VFSNode::request(argv[1],NULL,&node,NULL,VFS_NOACCESS,0) < 0) {
-			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
-			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
-			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
-			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-			Timer::sleepFor(Thread::getRunning()->getTid(),20,true);
-			Thread::switchAway();
-		}
-		VFSNode::release(node);
-	}
-	bootState++;
-
-	/* if we're done, mount root filesystem */
-	if(bootState == bootFinished) {
-		Proc *p = Proc::getByPid(Proc::getRunning());
-		OpenFile *file;
-		const char *rootDev = Config::getStr(Config::ROOT_DEVICE);
-		int res;
-		if((res = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,0,rootDev,&file)) < 0)
-			Util::panic("Unable to open root device '%s': %s",rootDev,strerror(res));
-		if((res = MountSpace::mount(p,"/",file)) < 0)
-			Util::panic("Unable to mount /: %s",strerror(res));
-	}
-
-	/* TODO */
-#if 0
-	/* start the swapper-thread. it will never return */
-	if(PhysMem::canSwap())
-		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
-#endif
-	return bootState == bootFinished ? 0 : 1;
+	/* start idle-thread */
+	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+	/* start termination-thread */
+	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
+	return 0;
 }

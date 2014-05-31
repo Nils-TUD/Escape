@@ -148,13 +148,6 @@ inline frameno_t PageDirBase::getFrameNo(uintptr_t virt) const {
 	return pdir->pts.getFrameNo(virt);
 }
 
-inline void PageDirBase::copyToUser(void *dst,const void *src,size_t count) {
-	/* in this case, we know that we can write to the frame, but it may be mapped as readonly */
-	PageDir::setWriteProtection(false);
-	memcpy(dst,src,count);
-	PageDir::setWriteProtection(true);
-}
-
 inline void PageDirBase::zeroToUser(void *dst,size_t count) {
 	PageDir::setWriteProtection(false);
 	memclear(dst,count);

@@ -24,15 +24,6 @@
 #include <sys/syscalls.h>
 #include <errno.h>
 
-int Syscalls::vm86start(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
-	int res;
-	if((res = VM86::create()) == 0) {
-		/* not reached */
-		return 0;
-	}
-	SYSC_ERROR(stack,res);
-}
-
 int Syscalls::vm86int(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint16_t interrupt = (uint16_t)SYSC_ARG1(stack);
 	VM86::Regs *regs = (VM86::Regs*)SYSC_ARG2(stack);

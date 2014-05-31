@@ -159,7 +159,7 @@ private:
 	static int semdestr(Thread *t,IntrptStackFrame *stack);
 
 	// other
-	static int loadmods(Thread *t,IntrptStackFrame *stack);
+	static int init(Thread *t,IntrptStackFrame *stack);
 	static int debugc(Thread *t,IntrptStackFrame *stack);
 	static int sysconf(Thread *t,IntrptStackFrame *stack);
 	static int sysconfstr(Thread *t,IntrptStackFrame *stack);
@@ -170,7 +170,6 @@ private:
 	static int reqports(Thread *t,IntrptStackFrame *stack);
 	static int relports(Thread *t,IntrptStackFrame *stack);
 #	ifdef __i586__
-	static int vm86start(Thread *t,IntrptStackFrame *stack);
 	static int vm86int(Thread *t,IntrptStackFrame *stack);
 #	endif
 #else

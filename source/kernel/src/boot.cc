@@ -31,8 +31,8 @@
 #include <sys/video.h>
 #include <sys/config.h>
 
-#define MAX_ARG_COUNT	8
-#define MAX_ARG_LEN		64
+#define MAX_ARG_COUNT	16
+#define MAX_ARG_LEN		256
 #define KERNEL_PERCENT	40
 #define BAR_HEIGHT		1
 #define BAR_WIDTH		60
@@ -73,6 +73,9 @@ void Boot::start(void *info) {
 
 	if(DISABLE_DEMLOAD)
 		Log::get().writef("Warning: demand loading is disabled!\n");
+
+	/* initloader is going to load the boot modules now */
+	taskStarted("Loading boot modules...");
 }
 
 void Boot::taskStarted(const char *text) {
@@ -86,7 +89,8 @@ void Boot::taskFinished() {
 	if(!Config::get(Config::LOG_TO_VGA)) {
 		const uint width = BAR_WIDTH - 3;
 		finished++;
-		size_t total = taskList.count + taskList.moduleCount;
+		/* our tasks + the boot modules */
+		size_t total = taskList.count + 1;
 		uint percent = (KERNEL_PERCENT * finished) / total;
 		uint filled = (width * percent) / 100;
 		Video::get().goTo(BAR_PADY + 1,BAR_PADX + 1);
@@ -97,21 +101,56 @@ void Boot::taskFinished() {
 	}
 }
 
+static char *filename(const char *path) {
+	const char *name = path;
+	const char *slash = name;
+	while(*name) {
+		if(*name == ' ')
+			break;
+		if(*name == '/')
+			slash = name + 1;
+		name++;
+	}
+
+	size_t len = name - slash;
+	char *res = (char*)Cache::alloc(len + 1);
+	if(!res)
+		Util::panic("Not enough memory");
+	memcpy(res,slash,len);
+	res[len] = '\0';
+	return res;
+}
+
 void Boot::createModFiles() {
 	VFSNode *node = NULL;
-	int res = VFSNode::request("/system/mbmods",NULL,&node,NULL,VFS_WRITE,0);
+	int res = VFSNode::request("/system/boot",NULL,&node,NULL,VFS_WRITE,0);
 	if(res < 0)
-		Util::panic("Unable to resolve /system/mbmods");
-	size_t i = 0;
-	for(auto mod = modsBegin(); mod != modsEnd(); ++mod, ++i) {
-		char *modname = (char*)Cache::alloc(12);
-		itoa(modname,12,i);
+		Util::panic("Unable to resolve /system/boot");
+
+	VFSNode *args = createObj<VFSFile>(KERNEL_PID,node,strdup("arguments"),S_IRUSR | S_IRGRP | S_IROTH);
+	if(!args)
+		Util::panic("Unable to create /system/boot/arguments");
+
+	OpenFile *file;
+	if(VFS::openFile(KERNEL_PID,VFS_WRITE,args,args->getNo(),VFS_DEV_NO,&file) < 0)
+		Util::panic("Unable to open /system/boot/arguments");
+
+	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {
+		char *modname = filename(mod->name);
 		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size);
 		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH) != 0)
 			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
 		VFSNode::release(n);
+
+		if(file->write(KERNEL_PID,mod->name,strlen(mod->name)) < 0)
+			Util::panic("Unable to write arguments to /system/boot/arguments");
+		if(file->write(KERNEL_PID,"\n",1) < 0)
+			Util::panic("Unable to write arguments to /system/boot/arguments");
 	}
+
+	VFSNode::release(args);
 	VFSNode::release(node);
+	file->close(KERNEL_PID);
 }
 
 void Boot::parseCmdline() {

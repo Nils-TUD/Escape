@@ -32,11 +32,12 @@ int ThreadBase::initArch(Thread *t) {
 	return 0;
 }
 
-void ThreadBase::addInitialStack() {
+uintptr_t ThreadBase::addInitialStack() {
 	assert(tid == INIT_TID);
 	int res = proc->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,stackRegions + 0);
 	assert(res == 0);
+	return stackRegions[0]->virt();
 }
 
 int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {

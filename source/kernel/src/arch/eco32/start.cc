@@ -20,27 +20,40 @@
 #include <sys/common.h>
 #include <sys/task/elf.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
+#include <sys/task/terminator.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/virtmem.h>
 #include <sys/boot.h>
 #include <sys/util.h>
 #include <assert.h>
 
-EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed);
+EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp);
 
-uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed) {
+uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp) {
 	Boot::start(bootinfo);
 
 	CPU::setSpeed(cpuSpeed);
 
+	/* start idle-thread */
+	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
+
+	/* TODO */
+#if 0
+	/* start the swapper-thread. it will never return */
+	if(PhysMem::canSwap())
+		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
+#endif
+	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
+
 	/* load initloader */
 	ELF::StartupInfo info;
-	if(ELF::loadFromFile("/system/mbmods/0",&info) < 0)
+	if(ELF::load("/system/boot/initloader",&info) < 0)
 		Util::panic("Unable to load initloader");
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		Util::panic("Not enough mem for initloader-stack");
-	t->addInitialStack();
+	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - 4;
 	t->discardFrames();
 	/* we have to set the kernel-stack for the first process */
 	PageDir::tlbSet(0,KERNEL_STACK,(t->getKernelStack() * PAGE_SIZE) | 0x3);

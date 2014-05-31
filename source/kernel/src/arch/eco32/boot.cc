@@ -57,7 +57,6 @@ static const BootTask tasks[] = {
 	{"Initializing timer...",Timer::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
-bool Boot::loadedMods = false;
 
 static Boot::Module mods[MAX_PROG_COUNT];
 static Boot::MemMap mmap;
@@ -86,66 +85,8 @@ void Boot::parseBootInfo() {
 	info.mmap = &mmap;
 }
 
-int Boot::loadModules(A_UNUSED IntrptStackFrame *stack) {
-	/* it's not good to do this twice.. */
-	if(loadedMods)
-		return 0;
+int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 	if(unittests != NULL)
 		unittests();
-
-	/* start idle-thread */
-	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
-
-	loadedMods = true;
-	for(auto mod = Boot::modsBegin() + 1; mod != Boot::modsEnd(); ++mod) {
-		/* parse args */
-		int argc;
-		const char **argv = parseArgs(mod->name,&argc);
-		if(argc < 2)
-			Util::panic("Invalid arguments for boot-module: %s\n",mod->name);
-
-		/* clone proc */
-		int child;
-		if((child = Proc::clone(P_BOOT)) == 0) {
-			int res = Proc::exec(argv[0],argv,NULL,(void*)mod->virt,mod->size);
-			if(res < 0)
-				Util::panic("Unable to exec boot-program %s: %d\n",mod->name,res);
-			/* we don't want to continue ;) */
-			return 0;
-		}
-		else if(child < 0)
-			Util::panic("Unable to clone process for boot-program %s: %d\n",mod->name,child);
-
-		/* wait until the device is registered */
-		/* don't create a pipe- or channel-node here */
-		VFSNode *node = NULL;
-		while(VFSNode::request(argv[1],NULL,&node,NULL,VFS_NOACCESS,0) < 0) {
-			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
-			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
-			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
-			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
-			Timer::sleepFor(Thread::getRunning()->getTid(),20,true);
-			Thread::switchAway();
-		}
-		VFSNode::release(node);
-	}
-
-	/* now all boot-modules are loaded, so mount root filesystem */
-	Proc *p = Proc::getByPid(Proc::getRunning());
-	int res;
-	OpenFile *file;
-	const char *rootDev = Config::getStr(Config::ROOT_DEVICE);
-	if((res = VFS::openPath(p->getPid(),VFS_READ | VFS_WRITE | VFS_MSGS,0,rootDev,&file)) < 0)
-		Util::panic("Unable to open root device '%s': %s",rootDev,strerror(res));
-	if((res = MountSpace::mount(p,"/",file)) < 0)
-		Util::panic("Unable to mount /: %s",strerror(res));
-
-	/* TODO */
-#if 0
-	/* start the swapper-thread. it will never return */
-	if(PhysMem::canSwap())
-		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
-#endif
-	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 	return 0;
 }

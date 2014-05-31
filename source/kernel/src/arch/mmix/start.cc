@@ -20,7 +20,10 @@
 #include <sys/common.h>
 #include <sys/dbg/console.h>
 #include <sys/task/thread.h>
+#include <sys/task/proc.h>
 #include <sys/task/elf.h>
+#include <sys/task/uenv.h>
+#include <sys/task/terminator.h>
 #include <sys/mem/virtmem.h>
 #include <sys/cpu.h>
 #include <sys/boot.h>
@@ -41,8 +44,10 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 
 	/* load initloader */
 	ELF::StartupInfo info;
-	if(ELF::loadFromMem("/system/mbmods/0",&info) < 0)
+	if(ELF::load("/system/boot/initloader",&info) < 0)
 		Util::panic("Unable to load initloader");
+	if(UEnv::setupProc(0,0,NULL,0,&info,info.progEntry,-1) < 0)
+		Util::panic("Unable to setup initloader");
 	*stackBegin = info.stackBegin;
 	*rss = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);
 	return info.progEntry;

@@ -19,10 +19,6 @@
 
 #pragma once
 
-inline int ELF::finishFromMem(const void *,size_t,StartupInfo *) {
-	return 0;
-}
-
-inline int ELF::finishFromFile(OpenFile *,const sElfEHeader *,StartupInfo *) {
+inline int ELF::finish(OpenFile *,const sElfEHeader *,StartupInfo *) {
 	return 0;
 }

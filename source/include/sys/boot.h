@@ -156,11 +156,11 @@ public:
 	static uintptr_t getModuleRange(const char *name,size_t *size);
 
 	/**
-	 * Loads all multiboot-modules
+	 * Performs initialization tasks.
 	 *
 	 * @param stack the interrupt-stack-frame
 	 */
-	static int loadModules(IntrptStackFrame *stack);
+	static int init(IntrptStackFrame *stack);
 
 	/**
 	 * Remembers that we should perform the unittests instead of booting
@@ -183,6 +183,5 @@ private:
 	 */
 	static BootTaskList taskList;
 	static Info info;
-	static bool loadedMods;
 	static void (*unittests)();
 };

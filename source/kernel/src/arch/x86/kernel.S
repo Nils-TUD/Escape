@@ -26,7 +26,6 @@
 #endif
 #include <esc/arch.h>
 
-#define USER_STACK			FREE_AREA_BEGIN
 #define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - WORDSIZE)
 
 // exports
@@ -191,9 +190,10 @@ higherhalf:
 
 	// now use the kernel-stack of the first thread and start smp
 	mov		$KSTACK_CURTHREAD,%REG(sp)
-	sub		$WORDSIZE,%REG(sp)
+	sub		$WORDSIZE * 2,%REG(sp)
 	mov		%REG(sp),%REG(bp)
 	push	%REG(bp)
+	mov		%REG(sp),%ARG_1
 	call	smpstart
 
 	// if we have started the unittest-kernel, we will register the tests here
@@ -203,7 +203,7 @@ higherhalf:
 
 	// entrypoint is in eax
 	// set user stackpointer
-	mov		$(USER_STACK - WORDSIZE),%REG(cx)
+	pop		%REG(cx)
 	jmp		3f
 
 	// setup env for first task

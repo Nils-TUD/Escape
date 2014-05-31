@@ -57,7 +57,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{fcntl,				"fcntl",    		3},
 
 	/* 20 */
-	{loadmods,			"loadmods",    		0},
+	{init,				"init",	    		0},
 	{sleep,				"sleep",    		1},
 	{seek,				"seek",    			2},
 	{stat,				"stat",    			2},
@@ -128,7 +128,6 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{relports,			"relports",    		2},
 #	ifdef __i586__
 	{vm86int,			"vm86int",    		4},
-	{vm86start,			"vm86start",    	0},
 #	endif
 #else
 	{debug,				"debug",    		0},

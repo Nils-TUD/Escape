@@ -66,10 +66,8 @@ ssize_t CircularBuf::push(seq_type seqNo,uint8_t type,const void *data,size_t si
 
 	// find the position in the list
 	size_t oldcur = _current;
-	if(_packets.size() == 0) {
-		_packets.push_back(SeqPacket(seqNo,type,begin,type == TYPE_CTRL ? size : seqadd));
-		_current += seqadd;
-	}
+	if(_packets.size() == 0)
+		add(_packets.end(),seqNo,type,begin,size,seqadd);
 	else {
 		for(auto it = _packets.begin(); seqadd > 0 && it != _packets.end(); ++it) {
 			seq_type relSeq = it->start - _seqStart;
@@ -81,8 +79,7 @@ ssize_t CircularBuf::push(seq_type seqNo,uint8_t type,const void *data,size_t si
 			// is there something missing?
 			if(relStart < relSeq) {
 				size_t amount = std::min(seqadd,static_cast<size_t>(relSeq - relStart));
-				_packets.insert(it,SeqPacket(seqNo,type,begin,type == TYPE_CTRL ? size : amount));
-				_current += amount;
+				add(it,seqNo,type,begin,size,amount);
 				relStart += amount;
 				seqNo += amount;
 				begin += amount;
@@ -105,12 +102,18 @@ ssize_t CircularBuf::push(seq_type seqNo,uint8_t type,const void *data,size_t si
 			}
 		}
 		// something left to insert?
-		if(seqadd > 0) {
-			_packets.push_back(SeqPacket(seqNo,type,begin,type == TYPE_CTRL ? size : seqadd));
-			_current += seqadd;
-		}
+		if(seqadd > 0)
+			add(_packets.end(),seqNo,type,begin,size,seqadd);
 	}
 	return _current - oldcur;
+}
+
+void CircularBuf::add(std::list<SeqPacket>::iterator it,seq_type seqNo,uint8_t type,
+		const uint8_t *data,size_t size,size_t dataSize) {
+	_packets.insert(it,SeqPacket(seqNo,type,data,type == TYPE_CTRL ? size : dataSize));
+	_current += dataSize;
+	if(type == TYPE_DATA)
+		_curData += dataSize;
 }
 
 int CircularBuf::forget(seq_type seqNo) {
@@ -191,7 +194,8 @@ size_t CircularBuf::pull(void *buf,size_t size) {
 		if(relStart + offset >= relAcked)
 			break;
 
-		size_t amount = std::min(size,pkt.size() - offset);
+		size_t pktsize = pkt.size();
+		size_t amount = std::min(size,pktsize - offset);
 		// skip control packets when we want to pull data
 		if(pos && pkt.type == TYPE_DATA) {
 			memcpy(pos,pkt.data + offset,amount);
@@ -201,10 +205,12 @@ size_t CircularBuf::pull(void *buf,size_t size) {
 		else if(!pos)
 			size -= amount;
 		_seqStart += amount;
-		if(amount != pkt.size() - offset)
+		if(amount != pktsize - offset)
 			break;
 
-		_current -= pkt.size();
+		_current -= pktsize;
+		if(pkt.type == TYPE_DATA)
+			_curData -= pktsize;
 		_packets.pop_front();
 	}
 	return oldsize - size;

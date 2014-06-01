@@ -106,7 +106,7 @@ public:
 	/**
 	 * Creates an uninitialized circular buffer, i.e. with sequence number 0.
 	 */
-	explicit CircularBuf() : _max(), _current(), _packets(), _seqStart(), _seqAcked() {
+	explicit CircularBuf() : _max(), _current(), _curData(), _packets(), _seqStart(), _seqAcked() {
 	}
 
 	/**
@@ -127,10 +127,10 @@ public:
 		return _packets;
 	}
 	/**
-	 * @return the number of bytes to pull()
+	 * @return the number of data-bytes to pull()
 	 */
 	size_t available() const {
-		return _current;
+		return _curData;
 	}
 	/**
 	 * @return the total capacity
@@ -234,10 +234,13 @@ public:
 	static void unittest();
 
 private:
+	void add(std::list<SeqPacket>::iterator,seq_type seqNo,uint8_t type,const uint8_t *data,
+		size_t size,size_t dataSize);
 	size_t getOffset(const SeqPacket &pkt,seq_type seqNo);
 
 	size_t _max;
 	size_t _current;
+	size_t _curData;
 	std::list<SeqPacket> _packets;
 	seq_type _seqStart;
 	seq_type _seqAcked;

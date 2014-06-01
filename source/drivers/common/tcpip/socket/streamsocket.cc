@@ -613,7 +613,7 @@ int StreamSocket::forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,
 }
 
 bool StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size) {
-	ssize_t res = _rxCircle.capacity() - _rxCircle.windowSize();
+	ssize_t res = _rxCircle.available();
 	uint8_t *buf = reinterpret_cast<uint8_t*>(buffer);
 	bool success = true;
 	if(res > 0) {

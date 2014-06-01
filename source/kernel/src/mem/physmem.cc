@@ -123,13 +123,16 @@ void PhysMem::init() {
 		PhysMemAreas::rem(mod->phys,mod->phys + mod->size);
 
 	/* first, search memory that will be managed with the bitmap */
+	const PhysMemAreas::MemArea *first = NULL;
 	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next) {
-		if(area->size >= BITMAP_PAGE_COUNT * PAGE_SIZE) {
-			bitmapStart = area->addr;
-			PhysMemAreas::rem(area->addr,area->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
-			break;
-		}
+		if(area->size >= BITMAP_PAGE_COUNT * PAGE_SIZE && (!first || area->addr < first->addr))
+			first = area;
 	}
+
+	if(!first)
+		Util::panic("Unable to find an area for the contiguous memory");
+	bitmapStart = first->addr;
+	PhysMemAreas::rem(first->addr,first->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
 
 	/* determine which of the memory areas becomes lower and which upper memory */
 	size_t lowerPages = 0,upperPages = 0;

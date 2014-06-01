@@ -96,7 +96,7 @@ bool ata_transferDMA(sATADevice *device,uint op,void *buffer,size_t secSize,size
 	int res;
 
 	/* setup PRDT */
-	ctrl->dma_prdt_virt->buffer = ctrl->dma_buf_phys;
+	ctrl->dma_prdt_virt->buffer = (uint32_t)(uintptr_t)ctrl->dma_buf_phys;
 	ctrl->dma_prdt_virt->byteCount = size;
 	ctrl->dma_prdt_virt->last = 1;
 

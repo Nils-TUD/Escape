@@ -298,7 +298,7 @@ struct sATADevice {
 
 /* physical region descriptor */
 typedef struct {
-	void *buffer;
+	uint32_t buffer;
 	uint16_t byteCount;
 	uint16_t : 15;
 	uint16_t last : 1;

@@ -232,14 +232,17 @@ size_t CircularBuf::pullctrl(void *buf,size_t size,seq_type *seqNo) {
 	return false;
 }
 
-void CircularBuf::print(std::ostream &os) {
+void CircularBuf::print(std::ostream &os,bool data) {
 	for(auto it = _packets.begin(); it != _packets.end(); ++it) {
-		os << "[" << it->start << " .. " << (it->start + it->size()) << ":" << it->type << "]";
-		for(size_t i = 0; i < it->_size; ++i) {
-			if(i % 8 == 0)
-				os << "\n ";
-			os << std::hex << std::setw(2) << std::setfill('0') << it->data[i];
-			os << std::dec << std::setfill(' ') << ' ';
+		os << "[" << it->start << " .. " << (it->start + it->size()) << ":" << it->size();
+		os << "b:" << it->type << "]";
+		if(data) {
+			for(size_t i = 0; i < it->_size; ++i) {
+				if(i % 8 == 0)
+					os << "\n ";
+				os << std::hex << std::setw(2) << std::setfill('0') << it->data[i];
+				os << std::dec << std::setfill(' ') << ' ';
+			}
 		}
 		os << "\n";
 	}

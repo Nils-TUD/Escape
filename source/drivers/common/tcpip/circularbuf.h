@@ -228,8 +228,9 @@ public:
 	 * Prints the state of the circular buffer to <os>.
 	 *
 	 * @param os the stream
+	 * @param data print the data, too
 	 */
-	void print(std::ostream &os);
+	void print(std::ostream &os,bool data);
 
 	static void unittest();
 

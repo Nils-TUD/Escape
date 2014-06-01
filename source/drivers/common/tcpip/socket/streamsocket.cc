@@ -631,7 +631,7 @@ bool StreamSocket::replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size)
 			_push = false;
 	}
 
-	PRINT_TCP(_localPort,remotePort(),"passed %zd bytes to application",res);
+	PRINT_TCP(_localPort,remotePort(),"passed %zd bytes to application (%zu left)",res,_rxCircle.available());
 	reply(mid,_remoteAddr,needsSrc,buffer ? buffer : NULL,buf,res);
 
 done:

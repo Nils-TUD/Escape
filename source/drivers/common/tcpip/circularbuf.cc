@@ -36,7 +36,7 @@ ssize_t CircularBuf::push(seq_type seqNo,uint8_t type,const void *data,size_t si
 	seq_type winStart = _seqAcked - _seqStart;
 	seq_type winEnd = _max;
 	seq_type relStart = seqNo - _seqStart;
-	seq_type relEnd = seqNo + seqadd - _seqStart;
+	seq_type relEnd = seqNo + (seq_type)seqadd - _seqStart;
 	// if both points are outside the window, we can't use the data
 	if((relStart < winStart || relStart >= winEnd) &&
 		(relEnd < winStart || (relEnd > winEnd || relEnd == 0)))
@@ -52,9 +52,9 @@ ssize_t CircularBuf::push(seq_type seqNo,uint8_t type,const void *data,size_t si
 		relStart = winStart;
 	}
 	else if(relStart >= winEnd) {
-		begin -= relStart;
-		seqNo -= relStart;
-		seqadd += relStart;
+		begin -= (int32_t)relStart;
+		seqNo -= (int32_t)relStart;
+		seqadd += (int32_t)relStart;
 		relStart = 0;
 	}
 
@@ -190,7 +190,7 @@ size_t CircularBuf::pull(void *buf,size_t size) {
 		SeqPacket &pkt = _packets.front();
 		seq_type relAcked = _seqAcked - _seqStart;
 		seq_type relStart = pkt.start - _seqStart;
-		size_t offset = getOffset(pkt,_seqStart);
+		seq_type offset = getOffset(pkt,_seqStart);
 		if(relStart + offset >= relAcked)
 			break;
 
@@ -368,19 +368,19 @@ void CircularBuf::unittest() {
 		memset(testdata,0,sizeof(testdata));
 
 		test_assertSSize(buf.push(-2,TYPE_DATA,data + 2,4),4);
-		test_assertLInt(buf.getAck(),-4);
+		test_assertInt(buf.getAck(),-4);
 
 		test_assertSSize(buf.push(-4,TYPE_DATA,data + 0,2),2);
-		test_assertLInt(buf.getAck(),2);
+		test_assertInt(buf.getAck(),2);
 
 		test_assertSSize(buf.push(2,TYPE_DATA,data + 6,16),10);
-		test_assertLInt(buf.getAck(),12);
+		test_assertInt(buf.getAck(),12);
 
 		test_assertSSize(buf.pull(testdata,1),1);
 		test_assertSSize(buf.pull(testdata + 1,4),4);
 		test_assertSSize(buf.pull(testdata + 5,8),8);
 
-		test_assertLInt(buf.getAck(),12);
+		test_assertInt(buf.getAck(),12);
 
 		for(size_t i = 0; i < 13; ++i)
 			test_assertInt(testdata[i],i);
@@ -395,22 +395,22 @@ void CircularBuf::unittest() {
 		memset(testdata,0,sizeof(testdata));
 
 		test_assertSSize(buf.push(-2,TYPE_DATA,data + 2,4),4);
-		test_assertLInt(buf.getAck(),-4);
+		test_assertInt(buf.getAck(),-4);
 
 		test_assertSSize(buf.pull(testdata,10),0);
 
 		test_assertSSize(buf.push(-4,TYPE_DATA,data + 0,2),2);
-		test_assertLInt(buf.getAck(),2);
+		test_assertInt(buf.getAck(),2);
 
 		test_assertSSize(buf.pull(testdata,1),1);
 
 		test_assertSSize(buf.push(4,TYPE_DATA,data + 8,8),8);
-		test_assertLInt(buf.getAck(),2);
+		test_assertInt(buf.getAck(),2);
 
 		test_assertSSize(buf.pull(testdata + 1,13),5);
 
 		test_assertSSize(buf.push(2,TYPE_DATA,data + 6,2),2);
-		test_assertLInt(buf.getAck(),12);
+		test_assertInt(buf.getAck(),12);
 
 		test_assertSSize(buf.pull(testdata + 6,16),10);
 

@@ -153,7 +153,7 @@ int main(int argc,char *argv[]) {
 					scrollDown(1);
 					break;
 				case VK_PGUP:
-					scrollDown(-mode.rows);
+					scrollDown(-(long)mode.rows);
 					break;
 				case VK_PGDOWN:
 					scrollDown(mode.rows);

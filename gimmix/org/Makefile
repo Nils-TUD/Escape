@@ -19,6 +19,7 @@ CHANGEFILES =
 TESTFILES = *.mms silly.run silly.out *.mmconfig *.mmix
 MISCFILES = Makefile makefile.dos README mmix.mp mmix.1
 ALL = $(WEBFILES) $(TESTFILES) $(MISCFILES)
+DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
 CSRC = $(patsubst %.w,$(BUILD)/%.c,$(WEBFILES))
 COBJ = $(patsubst %.w,$(BUILD)/%.o,$(WEBFILES))
@@ -65,10 +66,17 @@ $(DOC)/%.pdf: $(TEX)/%.tex
 $(TEX)/%.tex: %.w
 	if test -r $*.ch; then cweave $< $*.ch $@; else cweave $< - $@; fi
 
-%.o: %.c $(BUILD)/abstime
+# generate all source files before any object-file, because some need the mmix-pipe.h
+# which is generated during that process as well
+$(COBJ): $(CSRC)
+
+$(CSRC): $(BUILD)/abstime.h
+
+$(BUILD)/abstime.h: $(BUILD)/abstime
 	$(BUILD)/abstime > $(BUILD)/abstime.h
-	$(CC) $(CFLAGS) -c -o $@ $(patsubst %.o,%.c,$@)
-	rm $(BUILD)/abstime.h
+
+%.o: %.c $(BUILD)/abstime.h
+	$(CC) $(CFLAGS) -c -o $@ $(patsubst %.o,%.c,$@) -MD
 
 $(BUILD)/mmix-config.o: $(BUILD)/mmix-config.c $(BUILD)/mmix-pipe.c
 	$(CC) $(CFLAGS) -c $(BUILD)/mmix-config.c -o $@
@@ -89,6 +97,8 @@ $(BUILD)/mmix:	$(COBJ) postcmds.c
 tarfile: $(ALL)
 	tar cvf /tmp/mmix.tar $(ALL)
 	gzip -9 /tmp/mmix.tar
+
+-include $(DEPS)
 
 clean:
 	rm -f *~ *.h core $(TEX)/* $(DOC)/* $(BUILD)/*

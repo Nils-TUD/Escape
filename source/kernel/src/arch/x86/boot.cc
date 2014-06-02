@@ -58,7 +58,6 @@ static void mapModules();
 
 static const BootTask tasks[] = {
 	{"Parsing multiboot info...",Boot::parseBootInfo},
-	{"Initializing Serial...",Serial::init},
 	{"Initializing PageDir...",PageDir::init},
 	{"Initializing GDT...",GDT::init},
 	{"Parsing cmdline...",Boot::parseCmdline},
@@ -100,6 +99,8 @@ static void *copyMBInfo(uintptr_t info,size_t len) {
 void Boot::archStart(void *nfo) {
 	mbinfo = (MultiBootInfo*)nfo;
 	taskList.moduleCount = mbinfo->modsCount;
+	/* setup serial before printing anything to the serial line */
+	Serial::init();
 }
 
 void Boot::parseBootInfo() {

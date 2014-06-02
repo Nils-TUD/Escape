@@ -24,7 +24,6 @@
 #include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(1024 * 1024)
-#define MAX_GETWORK_DEVICES			16
 
 #define DEV_OPEN					1
 #define DEV_READ					2

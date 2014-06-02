@@ -81,32 +81,32 @@ static void test_cleanpath(void) {
 	test_assertStr(path,"/");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"/bin/bla");
-	test_assertUInt(count,SSTRLEN("/bin/bla/"));
-	test_assertStr(path,"/bin/bla/");
+	test_assertUInt(count,SSTRLEN("/bin/bla"));
+	test_assertStr(path,"/bin/bla");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"/../bin/../.././bla");
-	test_assertUInt(count,SSTRLEN("/bla/"));
-	test_assertStr(path,"/bla/");
+	test_assertUInt(count,SSTRLEN("/bla"));
+	test_assertStr(path,"/bla");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
-	test_assertUInt(count,SSTRLEN("/bla/"));
-	test_assertStr(path,"/bla/");
+	test_assertUInt(count,SSTRLEN("/bla"));
+	test_assertStr(path,"/bla");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,SSTRLEN("/bin/bla/"));
-	test_assertStr(path,"/bin/bla/");
+	test_assertUInt(count,SSTRLEN("/bin/bla"));
+	test_assertStr(path,"/bin/bla");
 
 	setenv("CWD","/home");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,SSTRLEN("/home/bin/bla/"));
-	test_assertStr(path,"/home/bin/bla/");
+	test_assertUInt(count,SSTRLEN("/home/bin/bla"));
+	test_assertStr(path,"/home/bin/bla");
 
 	setenv("CWD","/home/");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,SSTRLEN("/home/bin/bla/"));
-	test_assertStr(path,"/home/bin/bla/");
+	test_assertUInt(count,SSTRLEN("/home/bin/bla"));
+	test_assertStr(path,"/home/bin/bla");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"..");
 	test_assertUInt(count,SSTRLEN("/"));
@@ -117,8 +117,8 @@ static void test_cleanpath(void) {
 	test_assertStr(path,"/");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"./../bin");
-	test_assertUInt(count,SSTRLEN("/bin/"));
-	test_assertStr(path,"/bin/");
+	test_assertUInt(count,SSTRLEN("/bin"));
+	test_assertStr(path,"/bin");
 
 	count = cleanpath(path,3,"/");
 	if(count > 3)

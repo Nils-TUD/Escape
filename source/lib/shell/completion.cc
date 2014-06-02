@@ -112,7 +112,14 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 	paths[2] = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(paths[2] == NULL)
 		goto failed;
-	cleanpath(paths[2],MAX_PATH_LEN + 1,str);
+	{
+		size_t p2count = cleanpath(paths[2],MAX_PATH_LEN + 1,str);
+		if(p2count > 1) {
+			paths[2][p2count] = '/';
+			paths[2][p2count + 1] = '\0';
+		}
+	}
+
 	if(length > 0 && *(str + length - 1) != '/') {
 		/* and try the upper directory, too */
 		len = strlen(paths[2]);

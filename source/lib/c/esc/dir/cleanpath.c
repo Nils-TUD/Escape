@@ -29,9 +29,8 @@ size_t cleanpath(char *dst,size_t dstSize,const char *src) {
 		p++;
 
 	int layer = 0;
-	size_t count = 1;
+	size_t count = 0;
 	char *pathtemp = dst;
-	*pathtemp++ = '/';
 	while(*p) {
 		int pos = strchri(p,'/');
 
@@ -43,10 +42,9 @@ size_t cleanpath(char *dst,size_t dstSize,const char *src) {
 			if(layer > 0) {
 				char *start = pathtemp;
 				/* to last slash */
-				pathtemp -= 2;
 				while(*pathtemp != '/')
 					pathtemp--;
-				*++pathtemp = '\0';
+				*pathtemp = '\0';
 				count -= start - pathtemp;
 				layer--;
 			}
@@ -56,8 +54,8 @@ size_t cleanpath(char *dst,size_t dstSize,const char *src) {
 			if(dstSize - count < (size_t)(pos + 2))
 				return count;
 			/* append to path */
-			strncpy(pathtemp,p,pos);
-			pathtemp[pos] = '/';
+			pathtemp[0] = '/';
+			strncpy(pathtemp + 1,p,pos);
 			pathtemp[pos + 1] = '\0';
 			pathtemp += pos + 1;
 			count += pos + 1;
@@ -77,6 +75,11 @@ size_t cleanpath(char *dst,size_t dstSize,const char *src) {
 	/* terminate */
 	if(dstSize - count < 2)
 		return count;
+	/* root? */
+	if(pathtemp == dst) {
+		*pathtemp++ = '/';
+		count++;
+	}
 	*pathtemp = '\0';
 	return count;
 }

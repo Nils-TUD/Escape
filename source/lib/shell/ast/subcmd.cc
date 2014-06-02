@@ -151,7 +151,11 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 				search = last;
 			}
 			/* get all files in that directory */
-			cleanpath(apath,sizeof(apath),path);
+			size_t count = cleanpath(apath,sizeof(apath),path);
+			if(count > 1) {
+				apath[count] = '/';
+				apath[count + 1] = '\0';
+			}
 			if((dir = opendir(apath))) {
 				size_t apathlen = strlen(apath);
 				sDirEntry e;

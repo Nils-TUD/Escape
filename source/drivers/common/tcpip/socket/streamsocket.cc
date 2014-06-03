@@ -343,15 +343,13 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 		  	const uint8_t *data = seglen ? reinterpret_cast<const uint8_t*>(tcp) + dataOff : NULL;
 
 		  	// only accept data in established state
-		  	if(type == CircularBuf::TYPE_CTRL || _state == STATE_ESTABLISHED) {
-		  		if(_rxCircle.push(seqNo,type,data,seglen) < 0) {
-		  			if(synchronized()) {
-						PRINT_TCP(_localPort,remotePort(),"received unexpected seq %u, expected %u",
-							seqNo,_rxCircle.nextExp());
-		  				sendCtrlPkt(TCP::FL_ACK);
-		  			}
-					return;
-				}
+	  		if(_rxCircle.push(seqNo,type,data,seglen) < 0) {
+	  			if(synchronized()) {
+					PRINT_TCP(_localPort,remotePort(),"received unexpected seq %u, expected %u",
+						seqNo,_rxCircle.nextExp());
+	  				sendCtrlPkt(TCP::FL_ACK);
+	  			}
+				return;
 			}
 		}
 	}

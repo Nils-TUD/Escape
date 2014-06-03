@@ -242,7 +242,7 @@ void StreamSocket::disconnect() {
 			break;
 
 		default:
-			sendCtrlPkt(TCP::FL_FIN);
+			sendCtrlPkt(TCP::FL_FIN | TCP::FL_ACK);
 			state(STATE_FIN_WAIT_1);
 			break;
 	}

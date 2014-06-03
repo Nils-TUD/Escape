@@ -20,12 +20,14 @@
 #include <esc/common.h>
 #include "iobuf.h"
 #include <stdio.h>
+#include <stdlib.h>
 
-char *asget(FILE *f,size_t *length) {
-	*length = f->out.pos;
-	char *res = f->out.buffer;
-	f->out.buffer[f->out.pos] = '\0';
-	f->out.buffer = NULL;
-	f->out.pos = 0;
-	return res;
+FILE *fopendyn(void) {
+	/* create file */
+	FILE *f;
+	if(!(f = bcreate(-1,IO_WRITE,NULL,0,DYN_BUFFER_SIZE,true)) || !sll_append(&iostreams,f)) {
+		free(f);
+		return NULL;
+	}
+	return f;
 }

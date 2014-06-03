@@ -21,6 +21,10 @@
 #include "iobuf.h"
 #include <stdio.h>
 
-FILE *ascreate(void) {
-	return bcreate(-1,IO_WRITE,NULL,0,DYN_BUFFER_SIZE,true);
+char *fgetbuf(FILE *stream,size_t *length) {
+	if(length)
+		*length = stream->out.pos;
+	if(stream->out.buffer)
+		stream->out.buffer[stream->out.pos] = '\0';
+	return stream->out.buffer;
 }

@@ -24,6 +24,7 @@
 
 int vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
 	int res;
+	/* TODO we should create that on the stack */
 	FILE *sbuf = bcreate(-1,IO_WRITE,str,0,n - 1,false);
 	if(!sbuf)
 		return EOF;

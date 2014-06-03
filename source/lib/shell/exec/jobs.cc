@@ -54,17 +54,16 @@ bool jobs_addProc(tJobId jobId,pid_t pid,int argc,char **argv,bool background) {
 		run->pid = pid;
 		run->removable = false;
 		run->command = NULL;
-		FILE *cmd = ascreate();
-		if(cmd) {
+		run->cmd = fopendyn();
+		if(run->cmd) {
 			for(int i = 0; i < argc; ++i)
-				fprintf(cmd,"%s ",argv[i]);
-			size_t len;
-			run->command = asget(cmd,&len);
-			run->command[len - 1] = '\0';
+				fprintf(run->cmd,"%s ",argv[i]);
+			run->command = fgetbuf(run->cmd,NULL);
 		}
-		fclose(cmd);
 		if(sll_append(jobs,run))
 			return true;
+		if(run->cmd)
+			fclose(run->cmd);
 		free(run);
 	}
 	return false;
@@ -103,7 +102,8 @@ void jobs_gc(void) {
 		if(r->removable) {
 			sSLNode *next = n->next;
 			sll_removeNode(jobs,n,p);
-			free(r->command);
+			if(r->cmd)
+				fclose(r->cmd);
 			free(r);
 			n = next;
 		}

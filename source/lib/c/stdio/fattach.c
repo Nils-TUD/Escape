@@ -18,11 +18,26 @@
  */
 
 #include <esc/common.h>
+#include <esc/sllist.h>
+#include "iobuf.h"
 #include <stdio.h>
-#include <assert.h>
+#include <stdlib.h>
 
-int setvbuf(A_UNUSED FILE *stream,A_UNUSED char *buf,A_UNUSED int mode,A_UNUSED size_t size) {
-	/* TODO to be implemented */
-	assert(false);
-	return -1;
+FILE *fattach(int fd,const char *mode) {
+	uint flags = IO_NOCLOSE;
+	if(*mode == 'r')
+		flags = IO_READ;
+	else if(*mode == 'w')
+		flags = IO_WRITE;
+	/* invalid mode? */
+	if(flags == IO_NOCLOSE || mode[1] != '\0')
+		return NULL;
+
+	/* create file */
+	FILE *f;
+	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false)) || !sll_append(&iostreams,f)) {
+		free(f);
+		return NULL;
+	}
+	return f;
 }

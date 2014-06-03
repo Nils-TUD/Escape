@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <stdio.h>
 
 #define CMD_ID_ALL			0
 
@@ -28,6 +29,7 @@ typedef uint tJobId;
 typedef struct {
 	bool background;
 	bool removable;
+	FILE *cmd;
 	char *command;
 	tJobId jobId;
 	pid_t pid;

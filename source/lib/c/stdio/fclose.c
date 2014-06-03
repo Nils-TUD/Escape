@@ -26,18 +26,16 @@ int fclose(FILE *stream) {
 	int res = 0;
 	fflush(stream);
 	if(stream->in.fd >= 0) {
-		close(stream->in.fd);
+		if((stream->flags & IO_NOCLOSE) == 0)
+			close(stream->in.fd);
 		free(stream->in.buffer);
 	}
 	if(stream->out.fd >= 0 || stream->out.dynamic) {
-		if(stream->out.fd >= 0)
+		if(stream->out.fd >= 0 && (stream->flags & IO_NOCLOSE) == 0)
 			close(stream->out.fd);
 		free(stream->out.buffer);
 	}
-	if(stream->in.fd >= 0 || stream->out.fd >= 0) {
-		if(sll_removeFirstWith(&iostreams,stream) == -1)
-			res = -1;
-	}
+	sll_removeFirstWith(&iostreams,stream);
 	free(stream);
 	return res;
 }

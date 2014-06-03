@@ -164,40 +164,48 @@ FILE *fopen(const char *filename,const char *mode);
 FILE *freopen(const char *filename,const char *mode,FILE *stream);
 
 /**
+ * Attaches a stream to the given file-descriptor for <mode>.
+ *
+ * @param fd the file-descriptor
+ * @param mode the mode to use it with (either "r" or "w")
+ * @return the created stream
+ */
+FILE *fattach(int fd,const char *mode);
+
+/**
+ * Opens the given string for reading or writing.
+ *
+ * @param buf the string to use
+ * @param size the size of <str>
+ * @param mode the mode (either "r" or "w")
+ * @return the created stream
+ */
+FILE *fopenstr(char *str,size_t size,const char *mode);
+
+/**
+ * Creates a stream with a dynamic write-buffer. That means, you can write to that stream using
+ * the ordinary functions fprintf, fputc, ..., and the characters will be stored in a string,
+ * that is automatically extended if necessary.
+ * You can get the buffer and it's length via fgetbuf().
+ *
+ * @return the created stream
+ */
+FILE *fopendyn(void);
+
+/**
  * @param stream the stream
  * @return the number of bytes that are still available in the buffer for reading
  */
 size_t favail(FILE *stream);
 
 /**
- * Except that it returns no value, the setbuf function is equivalent to the setvbuf
- * function invoked with the values _IOFBF for mode and BUFSIZ for size, or (if buf
- * is a null pointer), with the value _IONBF for mode.
+ * Returns the internally used write-buffer and sets *length to its current length.
  *
  * @param stream the stream
- * @param buf the buffer to set
+ * @param length will be set to the current length
+ * @return the buffer (null-terminated)
  */
-void setbuf(FILE *stream,char *buf);
-
-/**
- * The setvbuf function may be used only after the stream pointed to by stream has
- * been associated with an open file and before any other operation (other than an
- * unsuccessful call to setvbuf) is performed on the stream. The argument mode
- * determines how stream will be buffered, as follows: _IOFBF causes input/output to be
- * fully buffered; _IOLBF causes input/output to be line buffered; _IONBF causes
- * input/output to be unbuffered. If buf is not a null pointer, the array it points to may be
- * used instead of a buffer allocated by the setvbuf function and the argument size
- * specifies the size of the array; otherwise, size may determine the size of a buffer
- * allocated by the setvbuf function. The contents of the array at any time are
- * indeterminate.
- *
- * @param stream the stream
- * @param buf the buffer to set
- * @param mode the type of buffering
- * @param size the size of the buffer
- * @return 0 on success
- */
-int setvbuf(FILE *stream,char *buf,int mode,size_t size);
+char *fgetbuf(FILE *stream,size_t *length);
 
 /**
  * The  function  fflush  forces a write of all buffered data for the given output
@@ -712,27 +720,6 @@ int fisatty(FILE *f);
  * @return the new position
  */
 off_t lseek(int fd,off_t offset,uint whence);
-
-/**
- * Creates a stream that is backed by a dynamically allocated string. That means, you can write
- * to that stream using the ordinary functions fprintf, fputc, ..., and the characters will be
- * stored in a string, that is automatically extended if necessary.
- * When the string is completely filled, you can call asget() to get the buffer and the total
- * length.
- *
- * @return the created stream
- */
-FILE *ascreate(void);
-
-/**
- * Returns the allocated buffer and its length and sets the buffer to NULL. That is, you own the
- * buffer afterwards and are supposed to free it.
- *
- * @param f the stream
- * @param length will be set to the total length
- * @return the buffer (NOT null-terminated!)
- */
-char *asget(FILE *f,size_t *length);
 
 #if defined(__cplusplus)
 }

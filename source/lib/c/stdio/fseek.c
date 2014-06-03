@@ -35,10 +35,25 @@ int fseek(FILE *stream,int offset,uint whence) {
 			bflush(stream);
 		res = seek(stream->in.fd,offset,whence);
 	}
-	else {
+	else if(stream->out.fd >= 0) {
 		/* first flush the buffer */
 		bflush(stream);
 		res = seek(stream->out.fd,offset,whence);
+	}
+	else {
+		if(whence == SEEK_CUR) {
+			stream->in.pos += offset;
+			stream->out.pos += offset;
+		}
+		else if(whence == SEEK_SET) {
+			stream->in.pos = offset;
+			stream->out.pos = offset;
+		}
+		else {
+			stream->in.pos = stream->in.max;
+			stream->out.pos = stream->out.max;
+		}
+		res = 0;
 	}
 	if(res < 0) {
 		stream->error = res;

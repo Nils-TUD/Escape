@@ -29,6 +29,8 @@
 #define ERR_BUFFER_SIZE		128
 #define DYN_BUFFER_SIZE		128
 
+#define IO_NOCLOSE			(1U << 31)
+
 /* format flags */
 #define FFL_PADRIGHT		1
 #define FFL_FORCESIGN		2

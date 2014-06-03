@@ -36,14 +36,12 @@ public:
 
 	virtual std::string handleRead() {
 		std::string res;
-		FILE *str = ascreate();
+		FILE *str = fopendyn();
 		if(str) {
 			_fs->print(str);
-			size_t length;
-			char *content = asget(str,&length);
+			char *content = fgetbuf(str,NULL);
+			res = std::string(content);
 			fclose(str);
-			res = std::string(content,length);
-			free(content);
 		}
 		return res;
 	}

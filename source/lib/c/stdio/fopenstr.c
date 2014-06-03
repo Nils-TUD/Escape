@@ -18,9 +18,31 @@
  */
 
 #include <esc/common.h>
+#include <esc/sllist.h>
+#include "iobuf.h"
 #include <stdio.h>
-#include <assert.h>
+#include <stdlib.h>
 
-void setbuf(FILE *stream,char *buf) {
-	setvbuf(stream,buf,BUFSIZ,_IOFBF);
+FILE *fopenstr(char *buf,size_t size,const char *mode) {
+	size_t rsize = 0,wsize = 0;
+	uint flags = 0;
+	if(*mode == 'r') {
+		flags = IO_READ;
+		rsize = size;
+	}
+	else if(*mode == 'w') {
+		flags = IO_WRITE;
+		wsize = size;
+	}
+	/* invalid mode? */
+	if(flags == 0 || mode[1] != '\0')
+		return NULL;
+
+	/* create file */
+	FILE *f;
+	if(!(f = bcreate(-1,flags,buf,rsize,wsize,false)) || !sll_append(&iostreams,f)) {
+		free(f);
+		return NULL;
+	}
+	return f;
 }

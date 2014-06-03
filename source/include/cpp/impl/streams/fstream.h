@@ -75,6 +75,16 @@ namespace std {
 				setstate(failbit);
 		}
 		/**
+		 * Uses the given file-descriptor
+		 *
+		 * @param fd the file-descriptor
+		 * @param which the open-mode (in by default)
+		 */
+		void open(int fd,ios_base::openmode which = ios_base::out | ios_base::in) {
+			if(!rdbuf()->open(fd,which))
+				setstate(failbit);
+		}
+		/**
 		 * @return if a file has been opened successfully
 		 */
 		bool is_open() const {

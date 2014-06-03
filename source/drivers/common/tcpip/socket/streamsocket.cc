@@ -269,7 +269,7 @@ void StreamSocket::timeout() {
 					_ctrlpkt.timeout *= 2;
 					ssize_t res = TCP::send(remoteIP(),_localPort,remotePort(),
 						_ctrlpkt.flags,&_ctrlpkt.option,_ctrlpkt.optSize,_ctrlpkt.optSize,
-						_txCircle.nextSeq(),_rxCircle.nextExp(),_rxCircle.windowSize());
+						_ctrlpkt.seqNo,_rxCircle.nextExp(),_rxCircle.windowSize());
 					if(res < 0) {
 						// TODO handle error
 						printe("TCP::send");

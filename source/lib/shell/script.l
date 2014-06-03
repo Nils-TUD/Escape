@@ -16,13 +16,13 @@
 	YYLTYPE yylastloc;
 	int yycolumn = 1;
 	int openGraves = 0;
-	
+
 	#define YY_INPUT(buf,result,max_size) \
 		{ \
 			int c = curIsStream ? getc(curStream) : *curLine++; \
 			result = (c == '\0' || c == EOF) ? YY_NULL : (buf[0] = c, 1); \
 		}
-		
+
 	#define YY_USER_ACTION yylloc.filename = filename; \
 		if(yylineno > 1 && yylloc.first_line != yylineno) { \
 			memcpy(&yylastloc,&yylloc,sizeof(YYLTYPE)); \
@@ -94,7 +94,7 @@
   * "echo (4 * 2^10)". it also means that we can use *,+,/,... in commands with no problems since
   * they have just special meanings inside the "(...)". this does also work for if/for/while etc.
   * since they require "(...)" for the "header" part. */
- /* Note that we always push/pop the EXPR-state because we don't know at which count we would 
+ /* Note that we always push/pop the EXPR-state because we don't know at which count we would
   * really have to do that (we can have nested stuff like: echo (`foo (1+2)` + 2);) */
 
 <INITIAL,DCONSTSTR,EXPR,ASSIGNEXPR>"(" {
@@ -163,7 +163,7 @@
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
-	
+
 
  /* comparation */
 <EXPR,ASSIGNEXPR>"<=" {
@@ -269,7 +269,7 @@
 }
 
  /* strings without quotes */
-<INITIAL>[a-zA-Z0-9\x15\x80-\xFF_\-!?:~,\.\+\-\*/%\^=]+ {
+<INITIAL>[a-zA-Z0-9\x15\x80-\xFF_\-!?:~,\.\+\-\*/%\^=@]+ {
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }

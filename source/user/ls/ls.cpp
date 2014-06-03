@@ -269,7 +269,7 @@ static void printColor(const lsfile *f) {
 
 static bool compareEntries(const lsfile* a,const lsfile* b) {
 	if(a->is_dir() == b->is_dir())
-		return a->name() < b->name();
+		return strcasecmp(a->name().c_str(),b->name().c_str()) < 0;
 	if(a->is_dir())
 		return true;
 	return false;

@@ -62,9 +62,7 @@ class FTPFSDevice : public ClientDevice<OpenFile> {
 public:
 	explicit FTPFSDevice(const char *fsDev,const char *host,port_t port,const char *user,const char *pw)
 		: ClientDevice<OpenFile>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-		  _ctrl(new CtrlCon(host,port)), _clients() {
-		_ctrl->login(user,pw);
-
+		  _ctrl(new CtrlCon(host,port,user,pw)), _clients() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&FTPFSDevice::devopen));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&FTPFSDevice::devclose),false);
 		set(MSG_FS_OPEN,std::make_memfun(this,&FTPFSDevice::open));

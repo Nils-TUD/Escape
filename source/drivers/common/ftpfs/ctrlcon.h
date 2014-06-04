@@ -63,38 +63,30 @@ public:
 		CMD_STAT,
 	};
 
-	// TODO we have to be able to cope with disconnects
-	explicit CtrlCon(const char *host,ipc::port_t port)
-		: _dest(std::DNS::getHost(host)),
-		  _sock("/dev/socket",ipc::Socket::SOCK_STREAM,ipc::Socket::PROTO_TCP), _ios() {
-		ipc::Socket::Addr addr;
-		addr.family = ipc::Socket::AF_INET;
-		addr.d.ipv4.addr = _dest.value();
-		addr.d.ipv4.port = port;
-		_sock.connect(addr);
-		_ios.open(_sock.fd());
-		readReply();
+	explicit CtrlCon(const std::string &host,ipc::port_t port,
+			const std::string &user,const std::string &pw)
+		: _dest(std::DNS::getHost(host.c_str())), _port(port), _user(user), _pw(pw), _sock(), _ios() {
+		connect();
 	}
 	~CtrlCon() {
-		execute(CMD_QUIT,"");
-	}
-
-	void login(const char *user,const char *pw) {
-		execute(CMD_USER,user);
-		execute(CMD_PASS,pw);
-		// always use binary mode
-		execute(CMD_TYPE,"I");
+		if(_sock)
+			execute(CMD_QUIT,"");
+		delete _sock;
 	}
 
 	const char *execute(Cmd cmd,const char *arg,bool noThrow = false);
 	const char *readReply();
 
 private:
+	void connect();
 	void sendCommand(const char *line,const char *arg);
 	char *readLine();
 
 	ipc::Net::IPv4Addr _dest;
-	ipc::Socket _sock;
+	ipc::port_t _port;
+	std::string _user;
+	std::string _pw;
+	ipc::Socket *_sock;
 	std::fstream _ios;
 	static Command cmds[];
 	static char linebuf[];

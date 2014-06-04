@@ -22,12 +22,12 @@
 
 #include "ctrlcon.h"
 
-#define PRINT_CMDS		0
+#define PRINTS		0
 
-#if PRINT_CMDS
-#	define PRINT_CMD(stmt)		(stmt)
+#if PRINTS
+#	define PRINT(stmt)		(stmt)
 #else
-#	define PRINT_CMD(...)
+#	define PRINT(...)
 #endif
 
 CtrlCon::Command CtrlCon::cmds[] = {
@@ -62,15 +62,35 @@ CtrlCon::Command CtrlCon::cmds[] = {
 };
 char CtrlCon::linebuf[512];
 
+void CtrlCon::connect() {
+	_sock = new ipc::Socket("/dev/socket",ipc::Socket::SOCK_STREAM,ipc::Socket::PROTO_TCP);
+	ipc::Socket::Addr addr;
+	addr.family = ipc::Socket::AF_INET;
+	addr.d.ipv4.addr = _dest.value();
+	addr.d.ipv4.port = _port;
+	_sock->connect(addr);
+
+	_ios.open(_sock->fd());
+	readReply();
+
+	execute(CMD_USER,_user.c_str());
+	execute(CMD_PASS,_pw.c_str());
+	// always use binary mode
+	execute(CMD_TYPE,"I");
+}
+
 void CtrlCon::sendCommand(const char *cmd,const char *arg) {
-	PRINT_CMD(std::cerr << "xmit: " << cmd << " " << arg << std::endl);
+	PRINT(std::cerr << "xmit: " << cmd << " " << arg << std::endl);
 	_ios << cmd << " " << arg << "\r\n";
 	_ios.flush();
 }
 
 char *CtrlCon::readLine() {
 	_ios.getline(linebuf,sizeof(linebuf),'\n');
-	PRINT_CMD(std::cerr << "recv: " << linebuf << std::endl);
+	if(_ios.bad())
+		VTHROWE("Unable to read line",-ECONNRESET);
+
+	PRINT(std::cerr << "recv: " << linebuf << std::endl);
 	return linebuf;
 }
 
@@ -85,8 +105,26 @@ const char *CtrlCon::readReply() {
 
 const char *CtrlCon::execute(Cmd cmd,const char *arg,bool noThrow) {
 	Command *c = cmds + cmd;
-	sendCommand(c->name,arg);
-	const char *reply = readReply();
+
+	const char *reply;
+	try {
+		sendCommand(c->name,arg);
+		reply = readReply();
+	}
+	catch(const std::exception &e) {
+		PRINT(std::cerr << "Command '" << c->name << " " << arg << "' failed: " << e.what() << std::endl);
+		try {
+			delete _sock;
+			connect();
+
+			sendCommand(c->name,arg);
+			reply = readReply();
+		}
+		catch(...) {
+			VTHROWE("Unable to send command " << cmd << " " << arg,-ECONNRESET);
+		}
+	}
+
 	int code = strtoul(reply,NULL,10);
 	if(code != c->success[0] && code != c->success[1]) {
 		if(noThrow)

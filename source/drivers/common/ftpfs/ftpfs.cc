@@ -37,23 +37,36 @@
 using namespace ipc;
 
 struct OpenFile : public Client {
-	explicit OpenFile(int f,CtrlCon *ctrl = NULL,const char *p = NULL,bool isDir = false)
-		: Client(f), _path(p),
+	explicit OpenFile(int f,CtrlCon *ctrl = NULL,const char *p = NULL,bool isDir = false,int flags = 0)
+		: Client(f), _flags(flags), _path(p),
 		  _file(isDir ? (BlockFile*)new DirList(_path,ctrl) : (BlockFile*)new File(_path,ctrl)) {
 	}
 	virtual ~OpenFile() {
 		delete _file;
 	}
 
+	bool isWrite() const {
+		return _flags & IO_WRITE;
+	}
 	const std::string &path() const {
 		return _path;
 	}
 
 	ssize_t read(void *buffer,size_t offset,size_t count) {
+		if(~_flags & IO_READ)
+			return -EPERM;
 		return _file->read(buffer,offset,count);
 	}
 
+	ssize_t write(const void *buffer,size_t offset,size_t count) {
+		if(~_flags & IO_WRITE)
+			return -EPERM;
+		_file->write(buffer,offset,count);
+		return count;
+	}
+
 private:
+	int _flags;
 	std::string _path;
 	BlockFile *_file;
 };
@@ -119,7 +132,7 @@ public:
 		FileOpen::Request r(path,sizeof(path));
 		is >> r;
 
-		add(is.fd(),new OpenFile(is.fd(),_ctrl,path,isDirectory(path)));
+		add(is.fd(),new OpenFile(is.fd(),_ctrl,path,isDirectory(path),r.flags));
 		is << FileOpen::Response(is.fd()) << Reply();
 	}
 
@@ -149,14 +162,30 @@ public:
 	}
 
 	void write(IPCStream &is) {
+		OpenFile *file = (*this)[is.fd()];
 		FileWrite::Request r;
 		is >> r;
+
+		char *data = file->shm() + r.shmemoff;
+		if(r.shmemoff == -1) {
+			data = new char[r.count];
+			is >> ReceiveData(data,r.count);
+		}
+
+		ssize_t res = file->write(data,r.offset,r.count);
+		is << res << Reply();
 		if(r.shmemoff == -1)
-			is >> ReceiveData(NULL,0);
-		is << -ENOTSUP << Reply();
+			delete[] data;
 	}
 
 	void close(IPCStream &is) {
+		OpenFile *file = (*this)[is.fd()];
+		/* if it was opened for writing, check if the file exists in the cache */
+		if(file->isWrite()) {
+			/* if not, remove the directory from cache so that we load it again */
+			if(DirCache::getList(_ctrl,file->path().c_str(),false) == NULL)
+				DirCache::removeDirOf(file->path().c_str());
+		}
 		ClientDevice::close(is);
 	}
 

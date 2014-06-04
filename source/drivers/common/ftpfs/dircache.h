@@ -40,8 +40,9 @@ public:
 
 	typedef std::map<std::string,List*> dirmap_type;
 
-	static List *getList(CtrlCon *ctrl,const char *path);
+	static List *getList(CtrlCon *ctrl,const char *path,bool load = true);
 	static int getInfo(CtrlCon *ctrl,const char *path,sFileInfo *info);
+	static void removeDirOf(const char *path);
 	static void print(std::ostream &os);
 
 private:
@@ -51,6 +52,7 @@ private:
 	static void insert(const char *path,sFileInfo *info);
 
 	static std::string decode(const char *line,sFileInfo *info);
+	static inode_t genINodeNo(const char *dir,const char *name);
 	static int decodeMonth(const std::string &mon);
 	static mode_t decodeMode(const std::string &mode);
 	static mode_t decodePerm(const char *perms);

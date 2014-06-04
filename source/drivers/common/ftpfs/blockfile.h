@@ -29,4 +29,5 @@ public:
 	}
 
 	virtual size_t read(void *buf,size_t offset,size_t count) = 0;
+	virtual void write(const void *buf,size_t offset,size_t count) = 0;
 };

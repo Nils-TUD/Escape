@@ -28,8 +28,7 @@
 class File : public BlockFile {
 public:
 	explicit File(const std::string &path,CtrlCon *ctrl)
-			: _offset(), _path(path), _ctrl(ctrl), _data(new DataCon(ctrl)) {
-		startTransfer(_offset);
+			: _reading(false), _offset(-1), _path(path), _ctrl(ctrl), _data() {
 	}
 	virtual ~File() {
 		delete _data;
@@ -37,28 +36,38 @@ public:
 	}
 
 	virtual size_t read(void *buf,size_t offset,size_t count) {
-		if(offset != _offset) {
-			delete _data;
-			_ctrl->readReply();
-			_data = new DataCon(_ctrl);
-			_offset = offset;
-			startTransfer(_offset);
-		}
+		if(!_reading || offset != _offset)
+			startTransfer(offset,true);
 		size_t res = _data->read(buf,count);
 		_offset += res;
 		return res;
 	}
 
+	virtual void write(const void *buf,size_t offset,size_t count) {
+		if(_reading || offset != _offset)
+			startTransfer(offset,false);
+		_data->write(buf,count);
+		_offset += count;
+	}
+
 private:
-	void startTransfer(size_t offset) {
+	void startTransfer(size_t offset,bool reading) {
+		if(_data) {
+			delete _data;
+			_ctrl->readReply();
+		}
+		_data = new DataCon(_ctrl);
+		_offset = offset;
+		_reading = reading;
 		if(offset != 0) {
 			char buf[32];
 			snprintf(buf,sizeof(buf),"%zu",offset);
 			_ctrl->execute(CtrlCon::CMD_REST,buf);
 		}
-		_ctrl->execute(CtrlCon::CMD_RETR,_path.c_str());
+		_ctrl->execute(_reading ? CtrlCon::CMD_RETR : CtrlCon::CMD_STOR,_path.c_str());
 	}
 
+	bool _reading;
 	size_t _offset;
 	const std::string &_path;
 	CtrlCon *_ctrl;

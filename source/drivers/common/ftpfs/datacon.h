@@ -38,6 +38,9 @@ public:
 	size_t read(void *buf,size_t size) {
 		return _sock.receive(buf,size);
 	}
+	void write(const void *buf,size_t size) {
+		_sock.send(buf,size);
+	}
 
 private:
 	static ipc::Socket getEndpoint(CtrlCon *ctrl) {

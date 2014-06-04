@@ -43,6 +43,10 @@ public:
 		return count;
 	}
 
+	virtual void write(const void *,size_t,size_t) {
+		VTHROWE("You can't write to a directory",-ENOTSUP);
+	}
+
 private:
 	void prepare(DirCache::List *list) {
 		char buf[256];

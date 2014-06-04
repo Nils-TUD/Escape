@@ -29,14 +29,15 @@
 DirCache::dirmap_type DirCache::dirs;
 time_t DirCache::now = time(NULL);
 
-DirCache::List *DirCache::getList(CtrlCon *ctrl,const char *path) {
+DirCache::List *DirCache::getList(CtrlCon *ctrl,const char *path,bool load) {
 	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
+	// TODO maybe the kernel should send us the path with a slash at the beginning?
 	snprintf(tmppath,sizeof(tmppath),"/%s",path);
 	cleanpath(cpath,sizeof(cpath),tmppath);
 
 	List *list = findList(cpath);
-	if(!list)
+	if(!list && load)
 		list = loadList(ctrl,cpath);
 	return list;
 }
@@ -44,7 +45,6 @@ DirCache::List *DirCache::getList(CtrlCon *ctrl,const char *path) {
 int DirCache::getInfo(CtrlCon *ctrl,const char *path,sFileInfo *info) {
 	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
-	// TODO maybe the kernel should send us the path with a slash at the beginning?
 	snprintf(tmppath,sizeof(tmppath),"/%s",path);
 	cleanpath(cpath,sizeof(cpath),tmppath);
 
@@ -58,6 +58,16 @@ int DirCache::getInfo(CtrlCon *ctrl,const char *path,sFileInfo *info) {
 	const char *filename = basename(tmppath);
 	filename = strcmp(filename,"/") == 0 ? "." : filename;
 	return find(list,filename,info);
+}
+
+void DirCache::removeDirOf(const char *path) {
+	char tmppath[MAX_PATH_LEN];
+	char cpath[MAX_PATH_LEN];
+	snprintf(tmppath,sizeof(tmppath),"/%s",path);
+	cleanpath(cpath,sizeof(cpath),tmppath);
+
+	const char *dir = dirname(cpath);
+	dirs.erase(dir);
 }
 
 DirCache::List *DirCache::loadList(CtrlCon *ctrl,const char *dir) {
@@ -81,6 +91,7 @@ DirCache::List *DirCache::loadList(CtrlCon *ctrl,const char *dir) {
 				break;
 
 			std::string name = decode(line,&finfo);
+			finfo.inodeNo = genINodeNo(dir,name.c_str());
 			list->nodes[name] = finfo;
 		}
 		dirs[dir] = list;
@@ -107,7 +118,6 @@ int DirCache::find(List *list,const char *name,sFileInfo *info) {
 // TODO support other directory listings than UNIX-style listings
 
 std::string DirCache::decode(const char *line,sFileInfo *info) {
-	static inode_t ino = 1;
 	std::string perms,user,group,mon,name;
 	int links = 0,day = 0,hour = 0;
 	time_t ts;
@@ -128,13 +138,22 @@ std::string DirCache::decode(const char *line,sFileInfo *info) {
 	info->blockSize = 1024;
 	info->gid = info->uid = 0;
 	info->linkCount = links;
-	info->inodeNo = ino++;
 	info->mode = decodeMode(perms);
 	info->size = size;
 	info->accesstime = ts;
 	info->modifytime = ts;
 	info->createtime = ts;
 	return name;
+}
+
+inode_t DirCache::genINodeNo(const char *dir,const char *name) {
+	/* generate a more or less unique id from the path */
+	inode_t no = 0;
+	while(*dir)
+		no = 31 * no + *dir++;
+	while(*name)
+		no = 31 * no + *name++;
+    return no < 0 ? -no : no;
 }
 
 int DirCache::decodeMonth(const std::string &mon) {

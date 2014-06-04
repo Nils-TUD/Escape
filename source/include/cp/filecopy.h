@@ -44,7 +44,7 @@ private:
 		return _cols - (25 + SSTRLEN(": 0000 KiB of 0000 KiB []"));
 	}
 	ulong getSteps(ulong totalSteps,size_t pos,size_t total) {
-		return ((ullong)totalSteps * pos) / total;
+		return total == 0 ? 0 : ((ullong)totalSteps * pos) / total;
 	}
 	void showProgress(const char *src,size_t pos,size_t total,ulong steps,ulong totalSteps);
 	void showSimpleProgress(const char *src,size_t size);

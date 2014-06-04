@@ -96,6 +96,8 @@ void StreamSocket::state(State st) {
 int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 	if(_state != STATE_CLOSED)
 		return -EISCONN;
+	if(_pending.count > 0)
+		return -EAGAIN;
 
 	_remoteAddr = *sa;
 	const Route *route = Route::find(remoteIP());

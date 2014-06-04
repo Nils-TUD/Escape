@@ -484,7 +484,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	// state is not ESTABLISHED anymore
 	if(tcp->ctrlFlags & TCP::FL_PSH)
 		_push = true;
-	if(_pending.count > 0 && shouldPush()) {
+	if(_pending.count > 0 && _pending.isRead() && shouldPush()) {
 		if(replyRead(_pending.mid,_pending.d.read.needsSrc,_pending.d.read.data,_pending.count))
 			_pending.count = 0;
 	}

@@ -30,8 +30,8 @@
 
 class DirList : public BlockFile {
 public:
-	explicit DirList(const std::string &path,CtrlCon *ctrl) : _os() {
-		prepare(DirCache::getList(ctrl,path.c_str()));
+	explicit DirList(const std::string &path,const CtrlConRef &ctrlRef) : _os() {
+		prepare(DirCache::getList(ctrlRef,path.c_str()));
 	}
 
 	virtual size_t read(void *buf,size_t offset,size_t count) {

@@ -37,45 +37,39 @@
 using namespace ipc;
 
 struct OpenFile : public Client {
-	explicit OpenFile(int f,CtrlCon *ctrl = NULL,const char *p = NULL,bool isDir = false,int flags = 0)
-		: Client(f), _flags(flags), _path(p),
-		  _file(isDir ? (BlockFile*)new DirList(_path,ctrl) : (BlockFile*)new File(_path,ctrl)) {
+	explicit OpenFile(int f,const CtrlConRef &_ctrlRef = CtrlConRef(),const char *_path = NULL,
+			bool isDir = false,int _flags = 0)
+		: Client(f), flags(_flags), path(_path), ctrlRef(_ctrlRef),
+		  file(isDir ? (BlockFile*)new DirList(path,_ctrlRef) : (BlockFile*)new File(path,_ctrlRef)) {
 	}
 	virtual ~OpenFile() {
-		delete _file;
-	}
-
-	bool isWrite() const {
-		return _flags & IO_WRITE;
-	}
-	const std::string &path() const {
-		return _path;
+		delete file;
 	}
 
 	ssize_t read(void *buffer,size_t offset,size_t count) {
-		if(~_flags & IO_READ)
+		if(~flags & IO_READ)
 			return -EPERM;
-		return _file->read(buffer,offset,count);
+		return file->read(buffer,offset,count);
 	}
 
 	ssize_t write(const void *buffer,size_t offset,size_t count) {
-		if(~_flags & IO_WRITE)
+		if(~flags & IO_WRITE)
 			return -EPERM;
-		_file->write(buffer,offset,count);
+		file->write(buffer,offset,count);
 		return count;
 	}
 
-private:
-	int _flags;
-	std::string _path;
-	BlockFile *_file;
+	int flags;
+	std::string path;
+	CtrlConRef ctrlRef;
+	BlockFile *file;
 };
 
 class FTPFSDevice : public ClientDevice<OpenFile> {
 public:
 	explicit FTPFSDevice(const char *fsDev,const char *host,port_t port,const char *user,const char *pw)
 		: ClientDevice<OpenFile>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-		  _ctrl(new CtrlCon(host,port,user,pw)), _clients() {
+		  _ctrlRef(new CtrlCon(host,port,user,pw)), _clients() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&FTPFSDevice::devopen));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&FTPFSDevice::devclose),false);
 		set(MSG_FS_OPEN,std::make_memfun(this,&FTPFSDevice::open));
@@ -92,9 +86,6 @@ public:
 		set(MSG_FS_CHMOD,std::make_memfun(this,&FTPFSDevice::chmod));
 		set(MSG_FS_CHOWN,std::make_memfun(this,&FTPFSDevice::chown));
   	}
-	virtual ~FTPFSDevice() {
-		delete _ctrl;
-	}
 
 	void loop() {
 		ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
@@ -132,7 +123,7 @@ public:
 		FileOpen::Request r(path,sizeof(path));
 		is >> r;
 
-		add(is.fd(),new OpenFile(is.fd(),_ctrl,path,isDirectory(path),r.flags));
+		add(is.fd(),new OpenFile(is.fd(),_ctrlRef,path,isDirectory(path),r.flags));
 		is << FileOpen::Response(is.fd()) << Reply();
 	}
 
@@ -178,13 +169,20 @@ public:
 			delete[] data;
 	}
 
+	void istat(IPCStream &is) {
+		OpenFile *file = (*this)[is.fd()];
+		sFileInfo info;
+		int res = DirCache::getInfo(file->ctrlRef,file->path.c_str(),&info);
+		is << res << info << Reply();
+	}
+
 	void close(IPCStream &is) {
 		OpenFile *file = (*this)[is.fd()];
 		/* if it was opened for writing, check if the file exists in the cache */
-		if(file->isWrite()) {
+		if(file->flags & IO_WRITE) {
 			/* if not found, remove the directory from cache so that we load it again */
-			if(DirCache::getList(_ctrl,file->path().c_str(),false) == NULL)
-				DirCache::removeDirOf(file->path().c_str());
+			if(DirCache::getList(file->ctrlRef,file->path.c_str(),false) == NULL)
+				DirCache::removeDirOf(file->path.c_str());
 		}
 		ClientDevice::close(is);
 	}
@@ -195,13 +193,8 @@ public:
 		is >> uid >> gid >> pid >> path;
 
 		sFileInfo info;
-		int res = getInfo(path.str(),&info);
+		int res = DirCache::getInfo(_ctrlRef,path.str(),&info);
 
-		is << res << info << Reply();
-	}
-	void istat(IPCStream &is) {
-		sFileInfo info;
-		int res = getInfo((*this)[is.fd()]->path().c_str(),&info);
 		is << res << info << Reply();
 	}
 
@@ -233,25 +226,24 @@ public:
 private:
 	bool isDirectory(const char *path) {
 		sFileInfo info;
-		if(getInfo(path,&info) == 0)
+		if(DirCache::getInfo(_ctrlRef,path,&info) == 0)
 			return S_ISDIR(info.mode);
 		return 0;
-	}
-	int getInfo(const char *path,sFileInfo *info) {
-		return DirCache::getInfo(_ctrl,path,info);
 	}
 	void pathCmd(IPCStream &is,CtrlCon::Cmd cmd) {
 		int uid,gid,pid;
 		CStringBuf<MAX_PATH_LEN> path;
 		is >> uid >> gid >> pid >> path;
 
-		_ctrl->execute(cmd,path.str());
+		CtrlConRef ref(_ctrlRef);
+		CtrlCon *ctrl = ref.request();
+		ctrl->execute(cmd,path.str());
 		DirCache::removeDirOf(path.str());
 
 		is << 0 << Reply();
 	}
 
-	CtrlCon *_ctrl;
+	CtrlConRef _ctrlRef;
 	size_t _clients;
 };
 

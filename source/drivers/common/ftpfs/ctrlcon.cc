@@ -30,7 +30,7 @@
 #	define PRINT(...)
 #endif
 
-CtrlCon::Command CtrlCon::cmds[] = {
+const CtrlCon::Command CtrlCon::cmds[] = {
 	{CMD_CONN,	"",		{220,  0}},
 	{CMD_USER,	"USER",	{331,  0}},
 	{CMD_PASS,	"PASS",	{230,  0}},
@@ -60,7 +60,6 @@ CtrlCon::Command CtrlCon::cmds[] = {
 	{CMD_FEAT,	"FEAT",	{211,  0}},
 	{CMD_STAT,	"STAT",	{211,  0}},
 };
-char CtrlCon::linebuf[512];
 
 void CtrlCon::connect() {
 	_sock = new ipc::Socket("/dev/socket",ipc::Socket::SOCK_STREAM,ipc::Socket::PROTO_TCP);
@@ -80,7 +79,7 @@ void CtrlCon::connect() {
 }
 
 void CtrlCon::sendCommand(const char *cmd,const char *arg) {
-	PRINT(std::cerr << "xmit: " << cmd << " " << arg << std::endl);
+	PRINT(std::cerr << "[" << (void*)this << "] xmit: " << cmd << " " << arg << std::endl);
 	_ios << cmd << " " << arg << "\r\n";
 	_ios.flush();
 }
@@ -90,7 +89,7 @@ char *CtrlCon::readLine() {
 	if(_ios.bad())
 		VTHROWE("Unable to read line",-ECONNRESET);
 
-	PRINT(std::cerr << "recv: " << linebuf << std::endl);
+	PRINT(std::cerr << "[" << (void*)this << "] recv: " << linebuf << std::endl);
 	return linebuf;
 }
 
@@ -104,7 +103,7 @@ const char *CtrlCon::readReply() {
 }
 
 const char *CtrlCon::execute(Cmd cmd,const char *arg,bool noThrow) {
-	Command *c = cmds + cmd;
+	const Command *c = cmds + cmd;
 
 	const char *reply;
 	try {

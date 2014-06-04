@@ -27,12 +27,14 @@
 
 class File : public BlockFile {
 public:
-	explicit File(const std::string &path,CtrlCon *ctrl)
-			: _reading(false), _offset(-1), _path(path), _ctrl(ctrl), _data() {
+	explicit File(const std::string &path,const CtrlConRef &ctrl)
+			: _reading(false), _offset(-1), _path(path), _ctrlRef(ctrl), _ctrl(), _data() {
 	}
 	virtual ~File() {
-		delete _data;
-		_ctrl->readReply();
+		if(_data) {
+			delete _data;
+			_ctrl->readReply();
+		}
 	}
 
 	virtual size_t read(void *buf,size_t offset,size_t count) {
@@ -52,11 +54,15 @@ public:
 
 private:
 	void startTransfer(size_t offset,bool reading) {
-		if(_data) {
+		// if not done yet, request the control-connection for ourself. we'll release it in our
+		// destructor, i.e. when the transfer is finished
+		if(!_ctrl)
+			_ctrl = _ctrlRef.request();
+		else {
 			delete _data;
 			_ctrl->readReply();
 		}
-		_data = new DataCon(_ctrl);
+		_data = new DataCon(_ctrlRef);
 		_offset = offset;
 		_reading = reading;
 		if(offset != 0) {
@@ -70,6 +76,7 @@ private:
 	bool _reading;
 	size_t _offset;
 	const std::string &_path;
+	CtrlConRef _ctrlRef;
 	CtrlCon *_ctrl;
 	DataCon *_data;
 };

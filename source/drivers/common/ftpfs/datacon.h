@@ -28,7 +28,7 @@
 
 class DataCon {
 public:
-	explicit DataCon(CtrlCon *ctrl) : _sock(getEndpoint(ctrl)) {
+	explicit DataCon(CtrlConRef &ctrlRef) : _sock(getEndpoint(ctrlRef)) {
 	}
 
 	int fd() const {
@@ -43,8 +43,8 @@ public:
 	}
 
 private:
-	static ipc::Socket getEndpoint(CtrlCon *ctrl) {
-		const char *reply = ctrl->execute(CtrlCon::CMD_PASV,"");
+	static ipc::Socket getEndpoint(CtrlConRef &ctrlRef) {
+		const char *reply = ctrlRef.get()->execute(CtrlCon::CMD_PASV,"");
 		char *brace = strchr(reply,'(');
 		assert(brace);
 		int parts[6];

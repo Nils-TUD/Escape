@@ -29,7 +29,7 @@
 DirCache::dirmap_type DirCache::dirs;
 time_t DirCache::now = time(NULL);
 
-DirCache::List *DirCache::getList(CtrlCon *ctrl,const char *path,bool load) {
+DirCache::List *DirCache::getList(const CtrlConRef &ctrlRef,const char *path,bool load) {
 	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
 	// TODO maybe the kernel should send us the path with a slash at the beginning?
@@ -38,11 +38,11 @@ DirCache::List *DirCache::getList(CtrlCon *ctrl,const char *path,bool load) {
 
 	List *list = findList(cpath);
 	if(!list && load)
-		list = loadList(ctrl,cpath);
+		list = loadList(ctrlRef,cpath);
 	return list;
 }
 
-int DirCache::getInfo(CtrlCon *ctrl,const char *path,sFileInfo *info) {
+int DirCache::getInfo(const CtrlConRef &ctrlRef,const char *path,sFileInfo *info) {
 	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
 	snprintf(tmppath,sizeof(tmppath),"/%s",path);
@@ -52,7 +52,7 @@ int DirCache::getInfo(CtrlCon *ctrl,const char *path,sFileInfo *info) {
 	dir = strcmp(dir,".") == 0 ? "/" : dir;
 	List *list = findList(dir);
 	if(!list)
-		list = loadList(ctrl,dir);
+		list = loadList(ctrlRef,dir);
 
 	strnzcpy(tmppath,path,sizeof(tmppath));
 	const char *filename = basename(tmppath);
@@ -70,11 +70,13 @@ void DirCache::removeDirOf(const char *path) {
 	dirs.erase(dir);
 }
 
-DirCache::List *DirCache::loadList(CtrlCon *ctrl,const char *dir) {
+DirCache::List *DirCache::loadList(const CtrlConRef &ctrlRef,const char *dir) {
+	CtrlConRef myRef(ctrlRef);
+	CtrlCon *ctrl = myRef.request();
 	List *list = NULL;
 	// new scope to close the data-socket before reading the reply from the ctrl socket
 	{
-		DataCon data(ctrl);
+		DataCon data(myRef);
 		char tmppath[MAX_PATH_LEN];
 		snprintf(tmppath,sizeof(tmppath),"-La %s",dir);
 		ctrl->execute(CtrlCon::CMD_LIST,tmppath);

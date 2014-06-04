@@ -24,12 +24,42 @@
 #include <fstream>
 #include <dns.h>
 
+class CtrlConRef;
+
 class CtrlCon {
+	friend class CtrlConRef;
+
 	struct Command {
 		int no;
 		const char *name;
 		int success[2];
 	};
+
+	explicit CtrlCon(const ipc::Net::IPv4Addr &ip,ipc::port_t port,
+			const std::string &user,const std::string &pw)
+		: _refs(1), _available(false), _dest(ip), _port(port), _user(user), _pw(pw), _sock(), _ios() {
+		connect();
+	}
+
+	CtrlCon *clone() {
+		_refs++;
+		return this;
+	}
+	void destroy() {
+		if(--_refs == 0)
+			delete this;
+	}
+
+	CtrlCon *request() {
+		if(_available) {
+			_available = false;
+			return this;
+		}
+		return new CtrlCon(_dest,_port,_user,_pw);
+	}
+	void release() {
+		_available = true;
+	}
 
 public:
 	enum Cmd {
@@ -65,7 +95,8 @@ public:
 
 	explicit CtrlCon(const std::string &host,ipc::port_t port,
 			const std::string &user,const std::string &pw)
-		: _dest(std::DNS::getHost(host.c_str())), _port(port), _user(user), _pw(pw), _sock(), _ios() {
+		: _refs(1), _available(true), _dest(std::DNS::getHost(host.c_str())), _port(port),
+		  _user(user), _pw(pw), _sock(), _ios() {
 		connect();
 	}
 	~CtrlCon() {
@@ -82,12 +113,65 @@ private:
 	void sendCommand(const char *line,const char *arg);
 	char *readLine();
 
+	int _refs;
+	bool _available;
 	ipc::Net::IPv4Addr _dest;
 	ipc::port_t _port;
 	std::string _user;
 	std::string _pw;
 	ipc::Socket *_sock;
 	std::fstream _ios;
-	static Command cmds[];
-	static char linebuf[];
+	char linebuf[512];
+	static const Command cmds[];
+};
+
+/**
+ * A reference to the control-connection. The idea is to use the main connection whenever possible
+ * and only create additional ones if it is in use (e.g. a file-transfer is in progress).
+ * We do that by marking the CtrlCon object as not-available during file-transfers and clone that
+ * connection if we want to do something else during that time.
+ * Having an object of this class means to have a reference to the CtrlCon object in the sense that
+ * it will be released and potentially free'd if this object is destructed.
+ * If you want to do something with it, please use request() in order to potentially clone the
+ * object. Use release() to mark it as available again. This is done automatically on object
+ * destruction, too (but not twice).
+ */
+class CtrlConRef {
+public:
+	explicit CtrlConRef(CtrlCon *ctrl = NULL) : _ctrl(ctrl), _requested() {
+		assert(!_ctrl || _ctrl->_refs == 1);
+	}
+	CtrlConRef(const CtrlConRef &r) : _ctrl(r._ctrl->clone()), _requested() {
+	}
+	CtrlConRef &operator=(const CtrlConRef &r) {
+		if(&r != this) {
+			_ctrl = r._ctrl->clone();
+			_requested = false;
+		}
+		return *this;
+	}
+	~CtrlConRef() {
+		if(_requested)
+			_ctrl->release();
+		_ctrl->destroy();
+	}
+
+	CtrlCon *get() {
+		return _ctrl;
+	}
+	CtrlCon *request() {
+		CtrlCon * nctrl = _ctrl->request();
+		if(nctrl != _ctrl)
+			_ctrl->destroy();
+		_requested = true;
+		return _ctrl = nctrl;
+	}
+	void release() {
+		_ctrl->release();
+		_requested = false;
+	}
+
+private:
+	CtrlCon *_ctrl;
+	bool _requested;
 };

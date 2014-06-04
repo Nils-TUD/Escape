@@ -182,13 +182,16 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 	PRINT_TCP(_localPort,remotePort(),"Application wants to send %zu bytes",size);
 
 	// push it into our txCircle
-	assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,size) == (ssize_t)size);
+	size_t amount = std::min(_remoteWinSize,size);
+	assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
 	// send it
 	sendData();
 
 	// register request; the response is sent as soon as the sent data has been ACKed
 	_pending.mid = mid;
 	_pending.count = size;
+	_pending.d.write.data = data;
+	_pending.d.write.remaining = size - amount;
 	_pending.d.write.seqNo = seqNo + size;
 	return 0;
 }
@@ -368,7 +371,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 				ackForced = true;
 		}
 		else if(_pending.count > 0 && _pending.isWrite()) {
-			if(ackNo == _pending.d.write.seqNo) {
+			if(ackNo >= _pending.d.write.seqNo) {
 				replyPending<ssize_t>(_pending.count);
 				Timeouts::cancel(_timeoutId);
 			}
@@ -549,8 +552,19 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 }
 
 void StreamSocket::sendData() {
+	CircularBuf::seq_type seqNo = _txCircle.nextExp();
+	/* have all bytes we've sent so far been ACKed? */
+	if(_pending.count && _pending.isWrite() &&
+			seqNo >= _pending.d.write.seqNo - (CircularBuf::seq_type)_pending.d.write.remaining) {
+		/* in this case push new data into the tx-circle in order to send them afterwards */
+		size_t amount = std::min(_remoteWinSize,_pending.d.write.remaining);
+		size_t offset = _pending.count - _pending.d.write.remaining;
+		const char *data = reinterpret_cast<const char*>(_pending.d.write.data) + offset;
+		assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
+		_pending.d.write.remaining -= amount;
+	}
+
 	if(_txCircle.available() > 0) {
-		CircularBuf::seq_type seqNo = _txCircle.nextExp();
 		CircularBuf::seq_type lastAck = _rxCircle.nextExp();
 		CircularBuf::seq_type ackNo = _rxCircle.getAck();
 		// TODO allocate that just once

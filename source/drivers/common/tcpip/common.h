@@ -57,6 +57,8 @@ struct PendingRequest {
 			bool needsSrc;
 		} read;
 		struct {
+			const void *data;
+			size_t remaining;
 			uint32_t seqNo;
 		} write;
 		struct {

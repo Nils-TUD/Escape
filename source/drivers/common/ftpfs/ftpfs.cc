@@ -182,7 +182,7 @@ public:
 		OpenFile *file = (*this)[is.fd()];
 		/* if it was opened for writing, check if the file exists in the cache */
 		if(file->isWrite()) {
-			/* if not, remove the directory from cache so that we load it again */
+			/* if not found, remove the directory from cache so that we load it again */
 			if(DirCache::getList(_ctrl,file->path().c_str(),false) == NULL)
 				DirCache::removeDirOf(file->path().c_str());
 		}
@@ -199,7 +199,6 @@ public:
 
 		is << res << info << Reply();
 	}
-
 	void istat(IPCStream &is) {
 		sFileInfo info;
 		int res = getInfo((*this)[is.fd()]->path().c_str(),&info);
@@ -209,18 +208,21 @@ public:
 	void syncfs(IPCStream &is) {
 		is << 0 << Reply();
 	}
+
 	void link(IPCStream &is) {
 		is << -ENOTSUP << Reply();
 	}
 	void unlink(IPCStream &is) {
-		is << -ENOTSUP << Reply();
+		pathCmd(is,CtrlCon::CMD_DELE);
 	}
+
 	void mkdir(IPCStream &is) {
-		is << -ENOTSUP << Reply();
+		pathCmd(is,CtrlCon::CMD_MKD);
 	}
 	void rmdir(IPCStream &is) {
-		is << -ENOTSUP << Reply();
+		pathCmd(is,CtrlCon::CMD_RMD);
 	}
+
 	void chmod(IPCStream &is) {
 		is << -ENOTSUP << Reply();
 	}
@@ -237,6 +239,16 @@ private:
 	}
 	int getInfo(const char *path,sFileInfo *info) {
 		return DirCache::getInfo(_ctrl,path,info);
+	}
+	void pathCmd(IPCStream &is,CtrlCon::Cmd cmd) {
+		int uid,gid,pid;
+		CStringBuf<MAX_PATH_LEN> path;
+		is >> uid >> gid >> pid >> path;
+
+		_ctrl->execute(cmd,path.str());
+		DirCache::removeDirOf(path.str());
+
+		is << 0 << Reply();
 	}
 
 	CtrlCon *_ctrl;

@@ -24,13 +24,12 @@
 
 uint Timeouts::_now;
 int Timeouts::_nextId;
-std::mutex Timeouts::_mutex;
 std::list<Timeouts::Entry> Timeouts::_list;
+extern std::mutex mutex;
 
 void Timeouts::program(int id,callback_type *cb,uint msecs) {
-	std::lock_guard<std::mutex> guard(_mutex);
 	// first cancel the old one
-	doCancel(id);
+	cancel(id);
 
 	// insert new timeout, sorted in ascending order
 	uint ts = _now + msecs;
@@ -42,7 +41,7 @@ void Timeouts::program(int id,callback_type *cb,uint msecs) {
 	_list.insert(it,Entry(id,cb,ts));
 }
 
-void Timeouts::doCancel(int id) {
+void Timeouts::cancel(int id) {
 	for(auto it = _list.begin(); it != _list.end(); ++it) {
 		if(it->id == id) {
 			delete it->cb;
@@ -56,22 +55,19 @@ int Timeouts::thread(void*) {
 	while(1) {
 		// TODO we shouldn't wake up all the time when there is no timeout to trigger
 		sleep(100);
-
-		_mutex.lock();
 		_now += 100;
+
 		// it's sorted
+		std::lock_guard<std::mutex> guard(mutex);
 		while(_list.size() > 0 && _list.front().timestamp <= _now) {
 			auto it = _list.begin();
 			callback_type *cb = it->cb;
 			_list.erase(it);
-			_mutex.unlock();
 
 			(*cb)();
 
-			_mutex.lock();
 			delete cb;
 		}
-		_mutex.unlock();
 	}
 	return 0;
 }

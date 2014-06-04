@@ -47,17 +47,10 @@ public:
 	}
 
 	static void program(int id,callback_type *cb,uint msecs);
-
-	static void cancel(int id) {
-		std::lock_guard<std::mutex> guard(_mutex);
-		doCancel(id);
-	}
+	static void cancel(int id);
 
 private:
-	static void doCancel(int id);
-
 	static uint _now;
 	static int _nextId;
-	static std::mutex _mutex;
 	static std::list<Entry> _list;
 };

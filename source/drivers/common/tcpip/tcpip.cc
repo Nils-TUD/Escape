@@ -45,7 +45,7 @@
 #include "packet.h"
 #include "timeouts.h"
 
-static std::mutex mutex;
+std::mutex mutex;
 
 static int receiveThread(void *arg);
 

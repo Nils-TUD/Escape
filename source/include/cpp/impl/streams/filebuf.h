@@ -30,8 +30,8 @@ namespace std {
 	 */
 	class filebuf: public streambuf {
 	private:
-		static const pos_type IN_BUF_SIZE = 512;
-		static const pos_type OUT_BUF_SIZE = 512;
+		static const pos_type IN_BUF_SIZE = 4096;
+		static const pos_type OUT_BUF_SIZE = 4096;
 
 	public:
 		typedef streambuf::char_type char_type;
@@ -85,9 +85,11 @@ namespace std {
 
 		/**
 		 * Closes the file
+		 *
+		 * @param whether to destroy the stream
 		 * @return this on success, a null-pointer on failure
 		 */
-		filebuf* close();
+		filebuf* close(bool destroy = true);
 
 		/**
 		 * @return the number of available characters

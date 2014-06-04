@@ -23,7 +23,7 @@
 
 namespace std {
 	filebuf* filebuf::open(const char* s,ios_base::openmode mode) {
-		close();
+		close(false);
 		unsigned char omode = getMode(mode);
 		_fd = ::open(s,omode);
 		if(_fd < 0)
@@ -38,7 +38,7 @@ namespace std {
 	}
 
 	filebuf* filebuf::open(int filedesc,ios_base::openmode mode) {
-		close();
+		close(false);
 		_fd = filedesc;
 		_mode = mode;
 		_totalInPos = 0;
@@ -64,13 +64,18 @@ namespace std {
 		return omode;
 	}
 
-	filebuf* filebuf::close() {
-		if(_inBuf) {
+	filebuf* filebuf::close(bool destroy) {
+		if(_inBuf && destroy) {
 			delete[] _inBuf;
 			_inBuf = nullptr;
 		}
-		if(_outBuf) {
-			flush();
+		if(_outBuf && destroy) {
+			// ignore errors here
+			try {
+				flush();
+			}
+			catch(...) {
+			}
 			delete[] _outBuf;
 			_outBuf = nullptr;
 		}

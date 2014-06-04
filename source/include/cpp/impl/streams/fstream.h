@@ -71,6 +71,7 @@ namespace std {
 		 * @param mode the mode
 		 */
 		void open(const char* s,ios_base::openmode mode = ios_base::out | ios_base::in) {
+			reset();
 			if(!rdbuf()->open(s,mode))
 				setstate(failbit);
 		}
@@ -81,6 +82,7 @@ namespace std {
 		 * @param which the open-mode (in by default)
 		 */
 		void open(int fd,ios_base::openmode which = ios_base::out | ios_base::in) {
+			reset();
 			if(!rdbuf()->open(fd,which))
 				setstate(failbit);
 		}
@@ -95,6 +97,19 @@ namespace std {
 		 */
 		void close() {
 			rdbuf()->close();
+		}
+
+	private:
+		void reset() {
+			if(good()) {
+				// ignore errors here
+				try {
+					flush();
+				}
+				catch(...) {
+				}
+			}
+			clear();
 		}
 	};
 }

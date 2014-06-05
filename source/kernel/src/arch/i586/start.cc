@@ -73,8 +73,6 @@ uintptr_t smpstart(uintptr_t *usp) {
 		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
 	/* start the terminator */
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-	if(VM86::create() < 0)
-		Util::panic("Unable to create VM86 task");
 
 	/* load initloader */
 	if(ELF::load("/system/boot/initloader",&info) < 0)

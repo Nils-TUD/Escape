@@ -168,37 +168,29 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	if(IS_DEVICE(node->getMode())) {
 		VFSNode *child;
 		/* check if we can access the device */
-		if((err = hasAccess(pid,node,flags)) < 0) {
-			VFSNode::release(node);
-			return err;
-		}
+		if((err = hasAccess(pid,node,flags)) < 0)
+			goto error;
 		child = createObj<VFSChannel>(pid,node);
 		VFSNode::release(node);
-		if(child == NULL)
-			return -ENOMEM;
+		if(child == NULL) {
+			err = -ENOMEM;
+			goto errorMnt;
+		}
 		node = child;
 	}
 
 	/* give the node a chance to react on it */
 	err = node->open(pid,begin,flags,openmsg);
-	if(err < 0) {
-		VFSNode::release(node);
-		if(!IS_NODE(fsFile))
-			MountSpace::release(fsFile);
-		return err;
-	}
+	if(err < 0)
+		goto error;
 
 	/* open file */
 	if(IS_NODE(fsFile))
 		err = openFile(pid,flags,node,nodeNo,VFS_DEV_NO,file);
 	else
 		err = openFile(pid,flags,node,err,fsFile->getNodeNo(),file);
-	if(err < 0) {
-		VFSNode::release(node);
-		if(!IS_NODE(fsFile))
-			MountSpace::release(fsFile);
-		return err;
-	}
+	if(err < 0)
+		goto error;
 
 	/* store the path for debugging purposes */
 	if(!IS_NODE(fsFile))
@@ -213,7 +205,14 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 			return err;
 		}
 	}
+	MountSpace::release(fsFile);
 	return 0;
+
+error:
+	VFSNode::release(node);
+errorMnt:
+	MountSpace::release(fsFile);
+	return err;
 }
 
 int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_t devNo,

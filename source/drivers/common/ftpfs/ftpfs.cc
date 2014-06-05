@@ -256,7 +256,8 @@ int main(int argc,char **argv) {
 	if(strncmp(path,"/dev/ftp/",9) != 0)
 		error("Invalid device: %s",argv[2]);
 
-	char *at = strchr(path + 9,'@');
+	// use the last one. the username might be an email-address
+	char *at = strrchr(path + 9,'@');
 	if(!at)
 		error("Invalid device: %s",argv[2]);
 	port_t port = 21;

@@ -271,10 +271,11 @@ public:
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = LinkMng::add(name.str(),path.str());
 		if(res == 0) {
-			Link *link = LinkMng::getByName(name.str());
-			if((res = startthread(receiveThread,link)) < 0) {
+			std::shared_ptr<Link> link = LinkMng::getByName(name.str());
+			std::shared_ptr<Link> *linkcpy = new std::shared_ptr<Link>(link);
+			if((res = startthread(receiveThread,linkcpy)) < 0) {
 				LinkMng::rem(name.str());
-				delete link;
+				delete linkcpy;
 			}
 		}
 		is << res << ipc::Reply();
@@ -297,9 +298,9 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = 0;
-		Link *l = LinkMng::getByName(name.str());
-		Link *other;
-		if(l == NULL)
+		std::shared_ptr<Link> l = LinkMng::getByName(name.str());
+		std::shared_ptr<Link> other;
+		if(!l)
 			res = -ENOTFOUND;
 		else if((other = LinkMng::getByIp(ip)) && other != l)
 			res = -EEXIST;
@@ -320,7 +321,7 @@ public:
 		is >> name;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		Link *link = LinkMng::getByName(name.str());
+		std::shared_ptr<Link> link = LinkMng::getByName(name.str());
 		if(!link)
 			is << -ENOTFOUND << ipc::Reply();
 		else
@@ -334,8 +335,8 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = 0;
-		Link *l = LinkMng::getByName(link.str());
-		if(l == NULL)
+		std::shared_ptr<Link> l = LinkMng::getByName(link.str());
+		if(!l)
 			res = -ENOTFOUND;
 		else {
 			uint flags = ipc::Net::FL_UP;
@@ -391,7 +392,7 @@ public:
 		if(!route)
 			res = -ENOTFOUND;
 		else
-			ARP::requestMAC(*route->link,ip);
+			ARP::requestMAC(route->link,ip);
 		is << res << ipc::Reply();
 	}
 
@@ -463,7 +464,8 @@ public:
 };
 
 static int receiveThread(void *arg) {
-	Link *link = reinterpret_cast<Link*>(arg);
+	std::shared_ptr<Link> *linkptr = reinterpret_cast<std::shared_ptr<Link>*>(arg);
+	const std::shared_ptr<Link> link = *linkptr;
 	uint8_t *buffer = reinterpret_cast<uint8_t*>(link->sharedmem());
 	while(link->status() != ipc::Net::KILLED) {
 		ssize_t res = link->read(buffer,link->mtu());
@@ -475,7 +477,7 @@ static int receiveThread(void *arg) {
 		if((size_t)res >= sizeof(Ethernet<>)) {
 			std::lock_guard<std::mutex> guard(mutex);
 			Packet pkt(buffer,res);
-			ssize_t err = Ethernet<>::receive(*link,pkt);
+			ssize_t err = Ethernet<>::receive(link,pkt);
 			if(err < 0)
 				std::cerr << "Ignored packet of size " << res << ": " << strerror(err) << "\n";
 		}
@@ -483,7 +485,7 @@ static int receiveThread(void *arg) {
 			printe("Ignoring packet of size %zd",res);
 	}
 	LinkMng::rem(link->name());
-	delete link;
+	delete linkptr;
 	return 0;
 }
 

@@ -73,11 +73,11 @@ public:
 
 		Ethernet<> *epkt = reinterpret_cast<Ethernet<>*>(pkt);
 		if(route->flags & ipc::Net::FL_USE_GW)
-			return ARP::send(*route->link,epkt,sz,route->gateway,route->netmask,ETHER_TYPE);
-		return ARP::send(*route->link,epkt,sz,ip,route->netmask,ETHER_TYPE);
+			return ARP::send(route->link,epkt,sz,route->gateway,route->netmask,ETHER_TYPE);
+		return ARP::send(route->link,epkt,sz,ip,route->netmask,ETHER_TYPE);
 	}
 
-	static ssize_t receive(Link &link,const Packet &packet) {
+	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet) {
 		const Ethernet<IPv4> *ippkt = packet.data<Ethernet<IPv4>*>();
 		uint8_t proto = ippkt->payload.protocol;
 

@@ -47,7 +47,7 @@ public:
 			uint16_t id,uint16_t seq) {
 		return send(ip,payload,nbytes,0,CMD_ECHO,id,seq);
 	}
-	static ssize_t receive(Link &link,const Packet &packet);
+	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
 private:
 	static ssize_t send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,

@@ -22,6 +22,7 @@
 #include <esc/common.h>
 #include <errno.h>
 #include <vector>
+#include <memory>
 
 #include "link.h"
 
@@ -32,24 +33,24 @@ public:
 	static int add(const std::string &name,const char *path) {
 		if(getByName(name))
 			return -EEXIST;
-		_links.push_back(new Link(name,path));
+		_links.push_back(std::shared_ptr<Link>(new Link(name,path)));
 		return 0;
 	}
 
-	static Link *getByName(const std::string &name) {
+	static std::shared_ptr<Link> getByName(const std::string &name) {
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(name == (*it)->name())
 				return *it;
 		}
-		return NULL;
+		return std::shared_ptr<Link>();
 	}
 
-	static Link *getByIp(const ipc::Net::IPv4Addr &ip) {
+	static std::shared_ptr<Link> getByIp(const ipc::Net::IPv4Addr &ip) {
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(ip == (*it)->ip())
 				return *it;
 		}
-		return NULL;
+		return std::shared_ptr<Link>();
 	}
 
 	static int rem(const std::string &name) {
@@ -65,7 +66,7 @@ public:
 
 	static void print(std::ostream &os) {
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
-			Link *l = *it;
+			const std::shared_ptr<Link> &l = *it;
 			os << l->name() << " " << l->status() << " ";
 			os << l->mac() << " " << l->ip() << " " << l->subnetMask() << " ";
 			os << l->mtu() << " ";
@@ -75,5 +76,5 @@ public:
 	}
 
 private:
-	static std::vector<Link*> _links;
+	static std::vector<std::shared_ptr<Link>> _links;
 };

@@ -52,7 +52,7 @@ ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 	return res;
 }
 
-ssize_t UDP::receive(Link&,const Packet &packet) {
+ssize_t UDP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 	const Ethernet<IPv4<UDP>> *pkt = packet.data<const Ethernet<IPv4<UDP>>*>();
 	const UDP *udp = &pkt->payload.payload;
 	socket_map::iterator it = _socks.find(be16tocpu(udp->dstPort));

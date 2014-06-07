@@ -44,7 +44,7 @@ public:
 
 	static ssize_t send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
 		const void *data,size_t nbytes);
-	static ssize_t receive(Link &link,const Packet &packet);
+	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
 	static void printSockets(std::ostream &os);
 
@@ -67,6 +67,8 @@ public:
     ipc::port_t dstPort;
     uint16_t dataSize;
     uint16_t checksum;
+
+private:
 	static socket_map _socks;
 } A_PACKED;
 

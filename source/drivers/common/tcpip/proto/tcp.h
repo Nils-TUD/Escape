@@ -61,7 +61,7 @@ public:
 
 	static ssize_t send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,uint8_t flags,
 		const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,uint32_t ackNo,uint16_t winSize);
-	static ssize_t receive(Link &link,const Packet &packet);
+	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 	static void replyReset(const Ethernet<IPv4<TCP>> *pkt);
 
 	static const char *flagsToStr(uint8_t flags);

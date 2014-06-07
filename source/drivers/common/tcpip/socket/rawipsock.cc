@@ -43,9 +43,9 @@ ssize_t RawIPSocket::sendto(msgid_t,const ipc::Socket::Addr *sa,const void *buff
 	Ethernet<> *epkt = reinterpret_cast<Ethernet<>*>(pkt);
 	ssize_t res;
 	if(route->flags & ipc::Net::FL_USE_GW)
-		res = ARP::send(*route->link,epkt,total,route->gateway,route->netmask,IPv4<>::ETHER_TYPE);
+		res = ARP::send(route->link,epkt,total,route->gateway,route->netmask,IPv4<>::ETHER_TYPE);
 	else
-		res = ARP::send(*route->link,epkt,total,ip,route->netmask,IPv4<>::ETHER_TYPE);
+		res = ARP::send(route->link,epkt,total,ip,route->netmask,IPv4<>::ETHER_TYPE);
 	free(pkt);
 	return res;
 }

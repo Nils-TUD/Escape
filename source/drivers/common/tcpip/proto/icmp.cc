@@ -56,7 +56,7 @@ ssize_t ICMP::handleEcho(const Ethernet<IPv4<ICMP>> *packet,size_t sz) {
 		be16tocpu(icmp->identifier),be16tocpu(icmp->sequence));
 }
 
-ssize_t ICMP::receive(Link&,const Packet &packet) {
+ssize_t ICMP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 	const Ethernet<IPv4<ICMP>> *pkt = packet.data<const Ethernet<IPv4<ICMP>>*>();
 	const ICMP *icmp = &pkt->payload.payload;
 	switch(icmp->type) {

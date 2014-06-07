@@ -21,4 +21,4 @@
 
 #include "linkmng.h"
 
-std::vector<Link*> LinkMng::_links;
+std::vector<std::shared_ptr<Link>> LinkMng::_links;

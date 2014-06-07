@@ -57,21 +57,21 @@ public:
 		return sizeof(ARP);
 	}
 
-	static ssize_t send(Link &link,Ethernet<> *packet,size_t size,
+	static ssize_t send(const std::shared_ptr<Link> &link,Ethernet<> *packet,size_t size,
 			const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type);
-	static ssize_t receive(Link &link,const Packet &packet);
+	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
 	static int remove(const ipc::Net::IPv4Addr &ip) {
 		return _cache.erase(ip) ? 0 : -ENOTFOUND;
 	}
-	static ssize_t requestMAC(Link &link,const ipc::Net::IPv4Addr &ip);
+	static ssize_t requestMAC(const std::shared_ptr<Link> &link,const ipc::Net::IPv4Addr &ip);
 	static void print(std::ostream &os);
 
 private:
 	static int createPending(const void *packet,size_t size,
 		const ipc::Net::IPv4Addr &ip,uint16_t type);
-	static void sendPending(Link &link);
-	static ssize_t handleRequest(Link &link,const ARP *packet);
+	static void sendPending(const std::shared_ptr<Link> &link);
+	static ssize_t handleRequest(const std::shared_ptr<Link> &link,const ARP *packet);
 
 public:
 	uint16_t hwAddrFmt;

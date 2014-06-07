@@ -28,23 +28,23 @@
 class Route {
 public:
 	explicit Route(const ipc::Net::IPv4Addr &dst,const ipc::Net::IPv4Addr &nm,
-			const ipc::Net::IPv4Addr &gw,uint fl,Link *l)
+			const ipc::Net::IPv4Addr &gw,uint fl,const std::shared_ptr<Link> &l)
 		: dest(dst), netmask(nm), gateway(gw), flags(fl), link(l) {
 	}
 
 	static int insert(const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,
-		const ipc::Net::IPv4Addr &gw,uint flags,Link *link);
+		const ipc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l);
 	static const Route *find(const ipc::Net::IPv4Addr &ip);
 	static int setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status);
 	static int remove(const ipc::Net::IPv4Addr &ip);
-	static void removeAll(Link *link);
+	static void removeAll(const std::shared_ptr<Link> &link);
 	static void print(std::ostream &os);
 
 	ipc::Net::IPv4Addr dest;
 	ipc::Net::IPv4Addr netmask;
 	ipc::Net::IPv4Addr gateway;
 	uint flags;
-	Link *link;
+	std::shared_ptr<Link> link;
 
 private:
 	static std::vector<Route*> _table;

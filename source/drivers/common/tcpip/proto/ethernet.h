@@ -41,14 +41,15 @@ public:
 		return sizeof(dst) + sizeof(src) + sizeof(type) + payload.size();
 	}
 
-	static ssize_t send(Link &link,const ipc::NIC::MAC &dest,Ethernet<T> *pkt,size_t sz,uint16_t _type) {
-		pkt->src = link.mac();
+	static ssize_t send(const std::shared_ptr<Link> &link,const ipc::NIC::MAC &dest,Ethernet<T> *pkt,
+			size_t sz,uint16_t _type) {
+		pkt->src = link->mac();
 		pkt->dst = dest;
 		pkt->type = cputobe16(_type);
-		return link.write(pkt,sz);
+		return link->write(pkt,sz);
 	}
 
-	static ssize_t receive(Link &link,const Packet &packet) {
+	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet) {
 		const Ethernet<> *epkt = packet.data<const Ethernet<>*>();
 
 		// give all raw ethernet socket the received packet

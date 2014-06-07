@@ -106,7 +106,7 @@ void TCP::replyReset(const Ethernet<IPv4<TCP>> *pkt) {
 	send(ip->src,be16tocpu(tcp->dstPort),be16tocpu(tcp->srcPort),FL_RST,NULL,0,0,seqNo,ackNo,0);
 }
 
-ssize_t TCP::receive(Link&,const Packet &packet) {
+ssize_t TCP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 	const Ethernet<IPv4<TCP>> *pkt = packet.data<const Ethernet<IPv4<TCP>>*>();
 	const IPv4<TCP> *ip = &pkt->payload;
 	const TCP *tcp = &ip->payload;

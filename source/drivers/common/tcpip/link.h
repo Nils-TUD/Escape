@@ -27,7 +27,7 @@
 
 #include "common.h"
 
-class Link : public ipc::NIC {
+class Link : public ipc::NIC, public std::enable_shared_from_this<Link> {
 public:
 	static const size_t NAME_LEN	= 16;
 

@@ -24,11 +24,11 @@
 std::vector<Route*> Route::_table;
 
 int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
-		const ipc::Net::IPv4Addr &gw,uint flags,Link *link) {
+		const ipc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l) {
 	// if we should use the gateway, it has to be a valid host
 	if((flags & ipc::Net::FL_USE_GW) && (gw.value() == 0 || !gw.isHost(nm)))
 		return -EINVAL;
-	if(!nm.isNetmask() || !link)
+	if(!nm.isNetmask() || !l)
 		return -EINVAL;
 
 	auto it = _table.begin();
@@ -36,7 +36,7 @@ int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
 		if(nm >= (*it)->netmask)
 			break;
 	}
-	_table.insert(it,new Route(dest,nm,gw,flags,link));
+	_table.insert(it,new Route(dest,nm,gw,flags,l));
 	return 0;
 }
 
@@ -71,9 +71,9 @@ int Route::remove(const ipc::Net::IPv4Addr &ip) {
 	return -ENOTFOUND;
 }
 
-void Route::removeAll(Link *link) {
+void Route::removeAll(const std::shared_ptr<Link> &l) {
 	for(auto it = _table.begin(); it != _table.end(); ) {
-		if((*it)->link == link)
+		if((*it)->link == l)
 			_table.erase(it);
 		else
 			++it;

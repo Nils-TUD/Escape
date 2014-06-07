@@ -41,7 +41,7 @@ int ARP::createPending(const void *packet,size_t size,const ipc::Net::IPv4Addr &
 	return 0;
 }
 
-void ARP::sendPending(Link &link) {
+void ARP::sendPending(const std::shared_ptr<Link> &link) {
 	for(auto it = _pending.begin(); it < _pending.end(); ) {
 		cache_type::iterator entry = _cache.find(it->dest);
 		if(entry != _cache.end()) {
@@ -54,7 +54,7 @@ void ARP::sendPending(Link &link) {
 	}
 }
 
-ssize_t ARP::requestMAC(Link &link,const ipc::Net::IPv4Addr &ip) {
+ssize_t ARP::requestMAC(const std::shared_ptr<Link> &link,const ipc::Net::IPv4Addr &ip) {
 	Ethernet<ARP> pkt;
 	ARP *arp = &pkt.payload;
 
@@ -66,15 +66,15 @@ ssize_t ARP::requestMAC(Link &link,const ipc::Net::IPv4Addr &ip) {
 
 	arp->hwTarget = ipc::NIC::MAC();
 	arp->ipTarget = ip;
-	arp->hwSender = link.mac();
-	arp->ipSender = link.ip();
+	arp->hwSender = link->mac();
+	arp->ipSender = link->ip();
 
 	return Ethernet<ARP>::send(link,ipc::NIC::MAC::broadcast(),&pkt,pkt.size(),ARP::ETHER_TYPE);
 }
 
-ssize_t ARP::handleRequest(Link &link,const ARP *packet) {
+ssize_t ARP::handleRequest(const std::shared_ptr<Link> &link,const ARP *packet) {
 	// not a valid host in our network?
-	if(!packet->ipSender.isHost(link.subnetMask()))
+	if(!packet->ipSender.isHost(link->subnetMask()))
 		return -EINVAL;
 	// TODO multicast is invalid too
 	if(packet->hwSender == ipc::NIC::MAC::broadcast())
@@ -84,7 +84,7 @@ ssize_t ARP::handleRequest(Link &link,const ARP *packet) {
 	_cache[packet->ipSender] = packet->hwSender;
 
 	// not for us?
-	if(packet->ipTarget != link.ip())
+	if(packet->ipTarget != link->ip())
 		return 0;
 
 	// reply our MAC address to sender
@@ -99,20 +99,20 @@ ssize_t ARP::handleRequest(Link &link,const ARP *packet) {
 
 	arp->hwTarget = packet->hwSender;
 	arp->ipTarget = packet->ipSender;
-	arp->hwSender = link.mac();
-	arp->ipSender = link.ip();
+	arp->hwSender = link->mac();
+	arp->ipSender = link->ip();
 
 	return Ethernet<ARP>::send(link,packet->hwSender,&pkt,pkt.size(),ARP::ETHER_TYPE);
 }
 
-ssize_t ARP::send(Link &link,Ethernet<> *packet,size_t size,const ipc::Net::IPv4Addr &ip,
-		const ipc::Net::IPv4Addr &nm,uint16_t type) {
+ssize_t ARP::send(const std::shared_ptr<Link> &link,Ethernet<> *packet,size_t size,
+		const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type) {
 	ipc::NIC::MAC mac;
 	if(ip == ip.getBroadcast(nm))
 		mac = ipc::NIC::MAC::broadcast();
 	// ARP requests for ourself don't work since we don't get our own broadcasts
-	else if(ip == link.ip())
-		mac = link.mac();
+	else if(ip == link->ip())
+		mac = link->mac();
 	else {
 		cache_type::iterator it = _cache.find(ip);
 
@@ -130,7 +130,7 @@ ssize_t ARP::send(Link &link,Ethernet<> *packet,size_t size,const ipc::Net::IPv4
 	return Ethernet<>::send(link,mac,packet,size,type);
 }
 
-ssize_t ARP::receive(Link &link,const Packet &packet) {
+ssize_t ARP::receive(const std::shared_ptr<Link> &link,const Packet &packet) {
 	const ARP &arp = packet.data<Ethernet<ARP>*>()->payload;
 	switch(be16tocpu(arp.cmd)) {
 		case CMD_REQUEST:

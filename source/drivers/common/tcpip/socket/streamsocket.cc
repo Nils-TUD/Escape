@@ -100,8 +100,8 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 		return -EAGAIN;
 
 	_remoteAddr = *sa;
-	const Route *route = Route::find(remoteIP());
-	if(!route)
+	Route route = Route::find(remoteIP());
+	if(!route.valid())
 		return -ENETUNREACH;
 
 	// do we still need a local port?
@@ -115,7 +115,7 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 	MSSOption option;
 	option.kind = OPTION_MSS;
 	option.length = sizeof(option);
-	option.mss = cputobe16(route->link->mtu() - IPv4<TCP>().size());
+	option.mss = cputobe16(route.link->mtu() - IPv4<TCP>().size());
 
 	// send SYN packet
 	ssize_t res = sendCtrlPkt(TCP::FL_SYN,&option);
@@ -123,7 +123,7 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 		return res;
 
 	state(STATE_SYN_SENT);
-	_mtu = route->link->mtu() - Ethernet<IPv4<TCP>>().size();
+	_mtu = route.link->mtu() - Ethernet<IPv4<TCP>>().size();
 	_pending.mid = mid;
 	_pending.count = 1;
 	return 0;

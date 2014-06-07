@@ -26,15 +26,22 @@
 #include "link.h"
 
 class Route {
+	explicit Route() : dest(), netmask(), gateway(), flags(), link() {
+	}
+
 public:
 	explicit Route(const ipc::Net::IPv4Addr &dst,const ipc::Net::IPv4Addr &nm,
 			const ipc::Net::IPv4Addr &gw,uint fl,const std::shared_ptr<Link> &l)
 		: dest(dst), netmask(nm), gateway(gw), flags(fl), link(l) {
 	}
 
+	bool valid() const {
+		return flags != 0;
+	}
+
 	static int insert(const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,
 		const ipc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l);
-	static const Route *find(const ipc::Net::IPv4Addr &ip);
+	static Route find(const ipc::Net::IPv4Addr &ip);
 	static int setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status);
 	static int remove(const ipc::Net::IPv4Addr &ip);
 	static void removeAll(const std::shared_ptr<Link> &link);
@@ -47,5 +54,6 @@ public:
 	std::shared_ptr<Link> link;
 
 private:
+	static std::mutex _mutex;
 	static std::vector<Route*> _table;
 };

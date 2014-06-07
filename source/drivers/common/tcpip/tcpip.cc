@@ -371,13 +371,13 @@ public:
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		const Route *r = Route::find(ip);
-		if(!r)
+		Route r = Route::find(ip);
+		if(!r.valid())
 			is << -ENETUNREACH << ipc::Reply();
 		else {
 			is << 0;
-			is << (r->flags & ipc::Net::FL_USE_GW ? r->gateway : r->dest);
-			is << ipc::CString(r->link->name().c_str(),r->link->name().length());
+			is << (r.flags & ipc::Net::FL_USE_GW ? r.gateway : r.dest);
+			is << ipc::CString(r.link->name().c_str(),r.link->name().length());
 			is << ipc::Reply();
 		}
 	}
@@ -388,11 +388,11 @@ public:
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = 0;
-		const Route *route = Route::find(ip);
-		if(!route)
+		Route route = Route::find(ip);
+		if(!route.valid())
 			res = -ENOTFOUND;
 		else
-			ARP::requestMAC(route->link,ip);
+			ARP::requestMAC(route.link,ip);
 		is << res << ipc::Reply();
 	}
 

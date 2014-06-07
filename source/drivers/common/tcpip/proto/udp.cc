@@ -28,8 +28,8 @@ UDP::socket_map UDP::_socks;
 
 ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
 		const void *data,size_t nbytes) {
-	const Route *route = Route::find(ip);
-	if(!route)
+	Route route = Route::find(ip);
+	if(!route.valid())
 		return -ENETUNREACH;
 
 	const size_t total = Ethernet<IPv4<UDP>>().size() + nbytes;
@@ -44,7 +44,7 @@ ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 	memcpy(udp + 1,data,nbytes);
 
 	udp->checksum = 0;
-	udp->checksum = ipc::Net::ipv4PayloadChecksum(route->link->ip(),ip,IP_PROTO,
+	udp->checksum = ipc::Net::ipv4PayloadChecksum(route.link->ip(),ip,IP_PROTO,
 		reinterpret_cast<uint16_t*>(udp),sizeof(UDP) + nbytes);
 
 	ssize_t res = IPv4<UDP>::sendOver(route,pkt,total,ip,IP_PROTO);

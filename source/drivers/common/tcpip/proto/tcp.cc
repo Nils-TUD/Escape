@@ -65,8 +65,8 @@ ssize_t TCP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,
 		ipc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
 		uint32_t ackNo,uint16_t winSize) {
-	const Route *route = Route::find(ip);
-	if(!route)
+	Route route = Route::find(ip);
+	if(!route.valid())
 		return -ENETUNREACH;
 
 	const size_t total = Ethernet<IPv4<TCP>>().size() + nbytes;
@@ -87,7 +87,7 @@ ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc:
 	memcpy(tcp + 1,data,nbytes);
 
 	tcp->checksum = 0;
-	tcp->checksum = ipc::Net::ipv4PayloadChecksum(route->link->ip(),ip,IP_PROTO,
+	tcp->checksum = ipc::Net::ipv4PayloadChecksum(route.link->ip(),ip,IP_PROTO,
 		reinterpret_cast<uint16_t*>(tcp),sizeof(TCP) + nbytes);
 
 	return IPv4<TCP>::sendOver(route,pkt,total,ip,IP_PROTO);
@@ -143,10 +143,10 @@ ssize_t TCP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 
 void TCP::printSockets(std::ostream &os) {
 	for(auto it = _socks.begin(); it != _socks.end(); ++it) {
-		const Route *r = Route::find(it->second->remoteIP());
+		Route r = Route::find(it->second->remoteIP());
 		os << it->second->fd() << " TCP " << it->second->state() << " ";
-		if(r)
-			os << r->link->ip();
+		if(r.valid())
+			os << r.link->ip();
 		else
 			os << "?";
 		os << ":" << it->second->localPort() << "->";

@@ -49,13 +49,13 @@ public:
 
 	static ssize_t send(Ethernet<IPv4<T>> *pkt,size_t sz,
 			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
-		const Route *route = Route::find(ip);
-		if(!route)
+		Route route = Route::find(ip);
+		if(!route.valid())
 			return -ENETUNREACH;
 		return sendOver(route,pkt,sz,ip,protocol);
 	}
 
-	static ssize_t sendOver(const Route *route,Ethernet<IPv4<T>> *pkt,size_t sz,
+	static ssize_t sendOver(const Route &route,Ethernet<IPv4<T>> *pkt,size_t sz,
 			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
 		IPv4<T> &h = pkt->payload;
 		h.versionSize = (4 << 4) | 5;
@@ -65,16 +65,16 @@ public:
 		h.fragOffset = cputobe16(DONT_FRAGMENT);
 		h.timeToLive = 64;
 		h.protocol = protocol;
-		h.src = route->link->ip();
+		h.src = route.link->ip();
 		h.dst = ip;
 		h.checksum = 0;
 		h.checksum = ipc::Net::ipv4Checksum(
 			reinterpret_cast<uint16_t*>(&h),sizeof(IPv4) - sizeof(h.payload));
 
 		Ethernet<> *epkt = reinterpret_cast<Ethernet<>*>(pkt);
-		if(route->flags & ipc::Net::FL_USE_GW)
-			return ARP::send(route->link,epkt,sz,route->gateway,route->netmask,ETHER_TYPE);
-		return ARP::send(route->link,epkt,sz,ip,route->netmask,ETHER_TYPE);
+		if(route.flags & ipc::Net::FL_USE_GW)
+			return ARP::send(route.link,epkt,sz,route.gateway,route.netmask,ETHER_TYPE);
+		return ARP::send(route.link,epkt,sz,ip,route.netmask,ETHER_TYPE);
 	}
 
 	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet) {

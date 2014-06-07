@@ -21,6 +21,7 @@
 
 #include "route.h"
 
+std::mutex Route::_mutex;
 std::vector<Route*> Route::_table;
 
 int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
@@ -31,6 +32,7 @@ int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
 	if(!nm.isNetmask() || !l)
 		return -EINVAL;
 
+	std::lock_guard<std::mutex> guard(_mutex);
 	auto it = _table.begin();
 	for(; it != _table.end(); ++it) {
 		if(nm >= (*it)->netmask)
@@ -40,15 +42,17 @@ int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
 	return 0;
 }
 
-const Route *Route::find(const ipc::Net::IPv4Addr &ip) {
+Route Route::find(const ipc::Net::IPv4Addr &ip) {
+	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		if(((*it)->flags & ipc::Net::FL_UP) && (*it)->dest.sameNetwork(ip,(*it)->netmask))
-			return *it;
+			return **it;
 	}
-	return NULL;
+	return Route();
 }
 
 int Route::setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status) {
+	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		if((*it)->dest == ip) {
 			if(status == ipc::Net::DOWN)
@@ -62,6 +66,7 @@ int Route::setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status) {
 }
 
 int Route::remove(const ipc::Net::IPv4Addr &ip) {
+	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		if((*it)->dest == ip) {
 			_table.erase(it);
@@ -72,6 +77,7 @@ int Route::remove(const ipc::Net::IPv4Addr &ip) {
 }
 
 void Route::removeAll(const std::shared_ptr<Link> &l) {
+	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ) {
 		if((*it)->link == l)
 			_table.erase(it);
@@ -81,6 +87,7 @@ void Route::removeAll(const std::shared_ptr<Link> &l) {
 }
 
 void Route::print(std::ostream &os) {
+	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		os << (*it)->dest << " " << (*it)->gateway << " " << (*it)->netmask << " ";
 		os << (*it)->flags << " " << (*it)->link->name() << "\n";

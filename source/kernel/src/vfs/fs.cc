@@ -111,6 +111,15 @@ int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
 	return communicate(pid,fsFile,MSG_FS_UNLINK,ib);
 }
 
+int VFSFS::rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	ipc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(oldPath) << ipc::CString(newPath);
+	return communicate(pid,fsFile,MSG_FS_RENAME,ib);
+}
+
 int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));

@@ -414,8 +414,42 @@ int VFS::unlink(pid_t pid,const char *path) {
 		err = VFSFS::unlink(pid,fsFile,begin);
 		MountSpace::release(fsFile);
 	}
-
 	return err;
+}
+
+int VFS::rename(pid_t pid,const char *oldPath,const char *newPath) {
+	OpenFile *oldFsFile,*newFsFile;
+	const char *oldBegin,*newBegin;
+	int err = request(pid,oldPath,VFS_WRITE | VFS_NOLINKRES,0,&oldBegin,&oldFsFile);
+	if(err < 0)
+		return err;
+
+	if(IS_NODE(oldFsFile)) {
+		VFSNode *n = reinterpret_cast<VFSNode*>(oldFsFile);
+		VFSNode::release(n);
+
+		err = link(pid,oldPath,newPath);
+		if(err < 0)
+			return err;
+		return unlink(pid,oldPath);
+	}
+	else {
+		err = request(pid,newPath,VFS_WRITE | VFS_NOLINKRES,0,&newBegin,&newFsFile);
+		if(err < 0)
+			goto error;
+		if(oldFsFile != newFsFile) {
+			err = -EXDEV;
+			goto errorNew;
+		}
+
+		err = VFSFS::rename(pid,oldFsFile,oldBegin,newBegin);
+
+	errorNew:
+		MountSpace::release(newFsFile);
+	error:
+		MountSpace::release(oldFsFile);
+		return err;
+	}
 }
 
 int VFS::mkdir(pid_t pid,const char *path) {

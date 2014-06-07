@@ -123,6 +123,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{mlockall,			"mlockall",			0},
 	{semcrtirq,			"semcrtirq",		2},
 	{bindto,			"bindto",			2},
+	{rename,			"rename",			2},
 #if defined(__x86__)
 	{reqports,			"reqports",   		2},
 	{relports,			"relports",    		2},

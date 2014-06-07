@@ -100,6 +100,7 @@ private:
 	static int syncfs(Thread *t,IntrptStackFrame *stack);
 	static int link(Thread *t,IntrptStackFrame *stack);
 	static int unlink(Thread *t,IntrptStackFrame *stack);
+	static int rename(Thread *t,IntrptStackFrame *stack);
 	static int mkdir(Thread *t,IntrptStackFrame *stack);
 	static int rmdir(Thread *t,IntrptStackFrame *stack);
 	static int mount(Thread *t,IntrptStackFrame *stack);

@@ -43,11 +43,12 @@
 #define MSG_FS_SYNCFS				105
 #define MSG_FS_LINK					106
 #define MSG_FS_UNLINK				107
-#define MSG_FS_MKDIR				108
-#define MSG_FS_RMDIR				109
-#define MSG_FS_ISTAT				110
-#define MSG_FS_CHMOD				111
-#define MSG_FS_CHOWN				112
+#define MSG_FS_RENAME				108
+#define MSG_FS_MKDIR				109
+#define MSG_FS_RMDIR				110
+#define MSG_FS_ISTAT				111
+#define MSG_FS_CHMOD				112
+#define MSG_FS_CHOWN				113
 
 /* Other messages */
 #define MSG_SPEAKER_BEEP			200		/* performs a beep */

@@ -77,18 +77,6 @@ extern FILE *stderr;
 int remove(const char *filename);
 
 /**
- * The rename function causes the file whose name is the string pointed to by old to be
- * henceforth known by the name given by the string pointed to by new. The file named
- * old is no longer accessible by that name. If a file named by the string pointed to by new
- * exists prior to the call to the rename function, the behavior is implementation-defined.
- *
- * @param old the old name
- * @param newn the new name
- * @return 0 on success
- */
-int rename(const char *old,const char *newn);
-
-/**
  * The tmpfile function creates a temporary binary file that is different from any other
  * existing file and that will automatically be removed when it is closed or at program
  * termination. If the program terminates abnormally, whether an open temporary file is

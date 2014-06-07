@@ -487,6 +487,23 @@ int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
+int Syscalls::rename(Thread *t,IntrptStackFrame *stack) {
+	char oldabs[MAX_PATH_LEN + 1];
+	char newabs[MAX_PATH_LEN + 1];
+	pid_t pid = t->getProc()->getPid();
+	const char *oldPath = (const char*)SYSC_ARG1(stack);
+	const char *newPath = (const char*)SYSC_ARG2(stack);
+	if(EXPECT_FALSE(!copyPath(oldabs,sizeof(oldabs),oldPath)))
+		SYSC_ERROR(stack,-EFAULT);
+	if(EXPECT_FALSE(!copyPath(newabs,sizeof(newabs),newPath)))
+		SYSC_ERROR(stack,-EFAULT);
+
+	int res = VFS::rename(pid,oldabs,newabs);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = Proc::getRunning();

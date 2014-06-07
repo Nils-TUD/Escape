@@ -81,6 +81,7 @@ public:
 		set(MSG_FS_SYNCFS,std::make_memfun(this,&FTPFSDevice::syncfs));
 		set(MSG_FS_LINK,std::make_memfun(this,&FTPFSDevice::link));
 		set(MSG_FS_UNLINK,std::make_memfun(this,&FTPFSDevice::unlink));
+		set(MSG_FS_RENAME,std::make_memfun(this,&FTPFSDevice::rename));
 		set(MSG_FS_MKDIR,std::make_memfun(this,&FTPFSDevice::mkdir));
 		set(MSG_FS_RMDIR,std::make_memfun(this,&FTPFSDevice::rmdir));
 		set(MSG_FS_CHMOD,std::make_memfun(this,&FTPFSDevice::chmod));
@@ -207,6 +208,21 @@ public:
 	}
 	void unlink(IPCStream &is) {
 		pathCmd(is,CtrlCon::CMD_DELE);
+	}
+
+	void rename(IPCStream &is) {
+		int uid,gid,pid;
+		CStringBuf<MAX_PATH_LEN> srcPath,dstPath;
+		is >> uid >> gid >> pid >> srcPath >> dstPath;
+
+		CtrlConRef ref(_ctrlRef);
+		CtrlCon *ctrl = ref.request();
+		ctrl->execute(CtrlCon::CMD_RNFR,srcPath.str());
+		ctrl->execute(CtrlCon::CMD_RNTO,dstPath.str());
+		DirCache::removeDirOf(srcPath.str());
+		DirCache::removeDirOf(dstPath.str());
+
+		is << 0 << Reply();
 	}
 
 	void mkdir(IPCStream &is) {

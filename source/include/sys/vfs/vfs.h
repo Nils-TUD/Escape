@@ -170,6 +170,16 @@ public:
 	static int unlink(pid_t pid,const char *path);
 
 	/**
+	 * Renames <oldPath> to <newPath>.
+	 *
+	 * @param pid the process-id
+	 * @param oldPath the link-target
+	 * @param newPath the link-name
+	 * @return 0 on success
+	 */
+	static int rename(pid_t pid,const char *oldPath,const char *newPath);
+
+	/**
 	 * Creates the directory <path>
 	 *
 	 * @param pid the process-id

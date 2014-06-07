@@ -56,6 +56,7 @@ FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
 	set(MSG_FS_SYNCFS,std::make_memfun(this,&FSDevice::syncfs));
 	set(MSG_FS_LINK,std::make_memfun(this,&FSDevice::link));
 	set(MSG_FS_UNLINK,std::make_memfun(this,&FSDevice::unlink));
+	set(MSG_FS_RENAME,std::make_memfun(this,&FSDevice::rename));
 	set(MSG_FS_MKDIR,std::make_memfun(this,&FSDevice::mkdir));
 	set(MSG_FS_RMDIR,std::make_memfun(this,&FSDevice::rmdir));
 	set(MSG_FS_CHMOD,std::make_memfun(this,&FSDevice::chmod));
@@ -222,21 +223,36 @@ void FSDevice::chown(IPCStream &is) {
 	is << res << Reply();
 }
 
-static char *splitPath(char *path) {
+static const char *splitPath(char *path) {
+	static char tmppath[MAX_PATH_LEN];
 	/* split path and name */
 	size_t len = strlen(path);
 	if(path[len - 1] == '/')
-		path[len - 1] = '\0';
-	char *name = strrchr(path,'/');
-	if(name) {
-		name = strdup(name + 1);
+		path[--len] = '\0';
+	char *name = path + len - 1;
+	while(len > 0 && *name != '/') {
+		name--;
+		len--;
+	}
+	if(len > 0) {
+		strnzcpy(tmppath,name + 1,sizeof(tmppath));
 		dirname(path);
 	}
 	else {
-		name = strdup(path);
+		strnzcpy(tmppath,path,sizeof(tmppath));
 		/* we know that path is MAX_PATH_LEN long */
-		strcpy(path,"/");
+		path[0] = '/';
+		path[1] = '\0';
 	}
+	return tmppath;
+}
+
+const char *FSDevice::resolveDir(FSUser *u,char *path,inode_t *ino) {
+	const char *name = splitPath(path);
+	if(name)
+		*ino = _fs->resolve(u,path,IO_READ);
+	else
+		*ino = -ENOMEM;
 	return name;
 }
 
@@ -251,15 +267,11 @@ void FSDevice::link(IPCStream &is) {
 	if(dstIno < 0)
 		res = dstIno;
 	else {
-		char *name = splitPath(newPath.str());
-		res = -ENOMEM;
-		if(name) {
-			dirIno = _fs->resolve(&u,newPath.str(),IO_READ);
-			if(dirIno < 0)
-				res = dirIno;
-			else
-				res = _fs->link(&u,dstIno,dirIno,name);
-		}
+		const char *name = resolveDir(&u,newPath.str(),&dirIno);
+		if(dirIno < 0)
+			res = dirIno;
+		else
+			res = _fs->link(&u,dstIno,dirIno,name);
 	}
 
 	is << res << Reply();
@@ -275,13 +287,37 @@ void FSDevice::unlink(IPCStream &is) {
 	if(dirIno < 0)
 		res = dirIno;
 	else {
-		char *name = splitPath(path.str());
-		res = -ENOMEM;
-		if(name) {
-			/* get directory */
-			dirIno = _fs->resolve(&u,path.str(),IO_READ);
-			vassert(dirIno >= 0,"Subdir found, but parent not!?");
-			res = _fs->unlink(&u,dirIno,name);
+		const char *name = resolveDir(&u,path.str(),&dirIno);
+		vassert(dirIno >= 0,"Subdir found, but parent not!?");
+		res = _fs->unlink(&u,dirIno,name);
+	}
+
+	is << res << Reply();
+}
+
+void FSDevice::rename(IPCStream &is) {
+	FSUser u;
+	CStringBuf<MAX_PATH_LEN> oldPath,newPath;
+	is >> u.uid >> u.gid >> u.pid >> oldPath >> newPath;
+
+	int res;
+	inode_t dirIno,dstIno;
+	dstIno = _fs->resolve(&u,oldPath.str(),IO_READ);
+	if(dstIno < 0)
+		res = dstIno;
+	else {
+		const char *name = resolveDir(&u,newPath.str(),&dirIno);
+		if(dirIno < 0)
+			res = dirIno;
+		else {
+			res = _fs->link(&u,dstIno,dirIno,name);
+			if(res == 0) {
+				name = resolveDir(&u,oldPath.str(),&dirIno);
+				if(dirIno < 0)
+					res = dirIno;
+				else
+					res = _fs->unlink(&u,dirIno,name);
+			}
 		}
 	}
 
@@ -293,16 +329,13 @@ void FSDevice::mkdir(IPCStream &is) {
 	CStringBuf<MAX_PATH_LEN> path;
 	is >> u.uid >> u.gid >> u.pid >> path;
 
-	int res = -ENOMEM;
-	char *name = splitPath(path.str());
-	if(name) {
-		inode_t dirIno = _fs->resolve(&u,path.str(),IO_READ);
-		if(dirIno < 0)
-			res = dirIno;
-		else
-			res = _fs->mkdir(&u,dirIno,name);
-		free(name);
-	}
+	int res;
+	inode_t dirIno;
+	const char *name = resolveDir(&u,path.str(),&dirIno);
+	if(dirIno < 0)
+		res = dirIno;
+	else
+		res = _fs->mkdir(&u,dirIno,name);
 
 	is << res << Reply();
 }
@@ -313,15 +346,12 @@ void FSDevice::rmdir(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res = -ENOMEM;
-	char *name = splitPath(path.str());
-	if(name) {
-		inode_t dirIno = _fs->resolve(&u,path.str(),IO_READ);
-		if(dirIno < 0)
-			res = dirIno;
-		else
-			res = _fs->rmdir(&u,dirIno,name);
-		free(name);
-	}
+	inode_t dirIno;
+	const char *name = resolveDir(&u,path.str(),&dirIno);
+	if(dirIno < 0)
+		res = dirIno;
+	else
+		res = _fs->rmdir(&u,dirIno,name);
 
 	is << res << Reply();
 }

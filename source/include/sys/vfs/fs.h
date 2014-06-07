@@ -88,6 +88,17 @@ public:
 	static int unlink(pid_t pid,OpenFile *fsFile,const char *path);
 
 	/**
+	 * Renames <oldPath> to <newPath>
+	 *
+	 * @param pid the process-id
+	 * @param fsFile the channel to the fs instance
+	 * @param oldPath the link-target
+	 * @param newPath the link-path
+	 * @return 0 on success
+	 */
+	static int rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath);
+
+	/**
 	 * Creates the given directory. Expects that all except the last path-component exist.
 	 *
 	 * @param pid the process-id

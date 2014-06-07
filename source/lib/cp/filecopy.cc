@@ -283,19 +283,14 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 		}
 	}
 	else {
-		if(link(src,dst) < 0) {
-			handleError("Linking '%s' to '%s' failed",src,dst);
+		if(rename(src,dst) < 0) {
+			handleError("Renaming '%s' to '%s' failed",src,dst);
 			return false;
 		}
 
 		/* pretend that we've shown a progress-bar during that operation ;) */
 		if(_flags & FileCopy::FL_PROGRESS)
 			showSimpleProgress(src,srcInfo.size);
-
-		if(unlink(src) < 0) {
-			handleError("Unlinking '%s' failed",src);
-			return false;
-		}
 	}
 	return true;
 }

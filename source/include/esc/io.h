@@ -383,6 +383,17 @@ A_CHECKRET int link(const char *oldPath,const char *newPath);
 A_CHECKRET int unlink(const char *path);
 
 /**
+ * Renames <oldPath> to <newPath>. Note that you shouldn't assume that link+unlink works for every
+ * filesystem, but use rename instead if you want to rename something. E.g. ftpfs does not have
+ * support for link.
+ *
+ * @param oldPath the path to rename
+ * @param newPath the new path
+ * @return 0 on success
+ */
+A_CHECKRET int rename(const char *oldPath,const char *newPath);
+
+/**
  * Creates the given directory. Expects that all except the last path-component exist.
  *
  * @param path the path

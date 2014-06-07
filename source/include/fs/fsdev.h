@@ -60,12 +60,15 @@ public:
 	void syncfs(ipc::IPCStream &is);
 	void link(ipc::IPCStream &is);
 	void unlink(ipc::IPCStream &is);
+	void rename(ipc::IPCStream &is);
 	void mkdir(ipc::IPCStream &is);
 	void rmdir(ipc::IPCStream &is);
 	void chmod(ipc::IPCStream &is);
 	void chown(ipc::IPCStream &is);
 
 private:
+	const char *resolveDir(FSUser *u,char *path,inode_t *ino);
+
 	FileSystem *_fs;
 	InfoDevice _info;
 	size_t _clients;

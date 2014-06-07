@@ -65,6 +65,14 @@ int unlink(const char *path) {
 	return syscall1(SYSCALL_UNLINK,(ulong)abspath(apath,sizeof(apath),path));
 }
 
+int rename(const char *oldPath,const char *newPath) {
+	char apath1[MAX_PATH_LEN];
+	char apath2[MAX_PATH_LEN];
+	oldPath = abspath(apath1,sizeof(apath1),oldPath);
+	newPath = abspath(apath2,sizeof(apath2),newPath);
+	return syscall2(SYSCALL_RENAME,(ulong)oldPath,(ulong)newPath);
+}
+
 int mkdir(const char *path) {
 	char apath[MAX_PATH_LEN];
 	return syscall1(SYSCALL_MKDIR,(ulong)abspath(apath,sizeof(apath),path));

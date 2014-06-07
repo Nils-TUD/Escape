@@ -22,10 +22,6 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct {
 	uint16_t ax;
 	uint16_t bx;
@@ -71,7 +67,3 @@ typedef struct {
 static inline int vm86int(uint16_t interrupt,sVM86Regs *regs,sVM86Memarea *area) {
 	return syscall3(SYSCALL_VM86INT,interrupt,(ulong)regs,(ulong)area);
 }
-
-#if defined(__cplusplus)
-}
-#endif

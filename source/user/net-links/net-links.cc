@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
+#include <esc/proc.h>
 #include <info/process.h>
 #include <info/link.h>
 #include <ipc/proto/net.h>

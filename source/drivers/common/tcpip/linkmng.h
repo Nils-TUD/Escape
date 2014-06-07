@@ -31,21 +31,20 @@ class LinkMng {
 
 public:
 	static int add(const std::string &name,const char *path) {
-		if(getByName(name))
+		std::lock_guard<std::mutex> guard(_mutex);
+		if(doGetByName(name))
 			return -EEXIST;
 		_links.push_back(std::shared_ptr<Link>(new Link(name,path)));
 		return 0;
 	}
 
 	static std::shared_ptr<Link> getByName(const std::string &name) {
-		for(auto it = _links.begin(); it != _links.end(); ++it) {
-			if(name == (*it)->name())
-				return *it;
-		}
-		return std::shared_ptr<Link>();
+		std::lock_guard<std::mutex> guard(_mutex);
+		return doGetByName(name);
 	}
 
 	static std::shared_ptr<Link> getByIp(const ipc::Net::IPv4Addr &ip) {
+		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(ip == (*it)->ip())
 				return *it;
@@ -54,6 +53,7 @@ public:
 	}
 
 	static int rem(const std::string &name) {
+		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(name == (*it)->name()) {
 				(*it)->status(ipc::Net::KILLED);
@@ -65,6 +65,7 @@ public:
 	}
 
 	static void print(std::ostream &os) {
+		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			const std::shared_ptr<Link> &l = *it;
 			os << l->name() << " " << l->status() << " ";
@@ -76,5 +77,14 @@ public:
 	}
 
 private:
+	static std::shared_ptr<Link> doGetByName(const std::string &name) {
+		for(auto it = _links.begin(); it != _links.end(); ++it) {
+			if(name == (*it)->name())
+				return *it;
+		}
+		return std::shared_ptr<Link>();
+	}
+
+	static std::mutex _mutex;
 	static std::vector<std::shared_ptr<Link>> _links;
 };

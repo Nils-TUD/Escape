@@ -21,4 +21,5 @@
 
 #include "linkmng.h"
 
+std::mutex LinkMng::_mutex;
 std::vector<std::shared_ptr<Link>> LinkMng::_links;

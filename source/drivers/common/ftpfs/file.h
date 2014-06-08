@@ -52,6 +52,14 @@ public:
 		_offset += count;
 	}
 
+	virtual int sharemem(void *mem,size_t size) {
+		if(_shm)
+			return -EEXIST;
+		_shm = mem;
+		_shmsize = size;
+		return 0;
+	}
+
 private:
 	void startTransfer(size_t offset,bool reading) {
 		// if not done yet, request the control-connection for ourself. we'll release it in our
@@ -63,6 +71,8 @@ private:
 			_ctrl->readReply();
 		}
 		_data = new DataCon(_ctrlRef);
+		if(_shm)
+			_data->sharemem(_shm,_shmsize);
 		_offset = offset;
 		_reading = reading;
 		if(offset != 0) {
@@ -75,6 +85,8 @@ private:
 
 	bool _reading;
 	size_t _offset;
+	void *_shm;
+	size_t _shmsize;
 	const std::string &_path;
 	CtrlConRef _ctrlRef;
 	CtrlCon *_ctrl;

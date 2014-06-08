@@ -75,7 +75,8 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit Socket(const char *path,Type type,Protocol proto)
-		: _close(false), _is(buildPath(path,type,proto).c_str(),IO_READ | IO_WRITE | IO_MSGS) {
+		: _close(false), _is(buildPath(path,type,proto).c_str(),IO_READ | IO_WRITE | IO_MSGS),
+		  _shm(), _shmsize() {
 	}
 
 	/**
@@ -90,6 +91,8 @@ public:
 	 * Closes the socket
 	 */
 	~Socket() {
+		if(_shmname)
+			destroybuf(_shm,_shmsize);
 		if(_close)
 			::close(_is.fd());
 	}
@@ -99,6 +102,47 @@ public:
 	 */
 	int fd() const {
 		return _is.fd();
+	}
+
+	/**
+	 * @return the shared memory, if established. see sharebuf().
+	 */
+	void *shmem() const {
+		return _shm;
+	}
+
+	/**
+	 * Establishes a shared memory of <size> bytes. see shmem().
+	 *
+	 * @param size the size
+	 * @return 0 on success
+	 */
+	int sharebuf(size_t size) {
+		if(_shmsize)
+			return -EEXIST;
+		int res = ::sharebuf(fd(),size,&_shm,&_shmname,0);
+		if(res == 0)
+			_shmsize = size;
+		return res;
+	}
+
+	/**
+	 * Shares the given memory with this socket.
+	 *
+	 * @param mem the memory
+	 * @param size the size
+	 * @return 0 on success
+	 */
+	int sharemem(void *mem,size_t size) {
+		if(_shmsize)
+			return -EEXIST;
+		int res = ::sharefile(fd(),mem);
+		if(res == 0) {
+			_shmsize = size;
+			_shm = mem;
+			_shmname = 0;
+		}
+		return res;
 	}
 
 	/**
@@ -177,9 +221,12 @@ public:
 	 * @throws if the operation failed
 	 */
 	void sendto(const Addr &addr,const void *data,size_t size) {
-		FileWrite::Request req(0,size,-1);
+		ssize_t shmoff = getShmOff(data);
+		FileWrite::Request req(0,size,shmoff);
 		FileWrite::Response resp;
-		_is << req << addr << Send(MSG_SOCK_SENDTO) << SendData(data,size,MSG_SOCK_SENDTO);
+		_is << req << addr << Send(MSG_SOCK_SENDTO);
+		if(shmoff == -1)
+			_is << SendData(data,size,MSG_SOCK_SENDTO);
 		_is >> Receive() >> resp;
 		if(resp.res < 0)
 			VTHROWE("sendto(" << addr << ", " << size << ")",resp.res);
@@ -209,7 +256,8 @@ public:
 	 * @throws if the operation failed
 	 */
 	size_t recvfrom(Addr &addr,void *data,size_t size) {
-		FileRead::Request req(0,size,-1);
+		ssize_t shmoff = getShmOff(data);
+		FileRead::Request req(0,size,shmoff);
 		FileWrite::Response resp;
 		try {
 			_is << req << SendReceive(MSG_SOCK_RECVFROM,false) >> resp >> addr;
@@ -222,12 +270,20 @@ public:
 		}
 		if(resp.res < 0)
 			VTHROWE("recvfrom(" << size << ")",resp.res);
-		if(resp.res > 0)
+		if(resp.res > 0 && shmoff == -1)
 			_is >> ReceiveData(data,size,false);
 		return resp.res;
 	}
 
 private:
+	ssize_t getShmOff(const void *data) {
+		uintptr_t daddr = reinterpret_cast<uintptr_t>(data);
+		uintptr_t shmaddr = reinterpret_cast<uintptr_t>(_shm);
+		if(daddr >= shmaddr && daddr < shmaddr + _shmsize)
+			return daddr - shmaddr;
+		return -1;
+	}
+
 	static std::string buildPath(const char *path,Type type,Protocol proto) {
 		std::ostringstream os;
 		os << path << "/" << type << " " << proto;
@@ -236,6 +292,9 @@ private:
 
 	bool _close;
 	IPCStream _is;
+	void *_shm;
+	ulong _shmname;
+	size_t _shmsize;
 };
 
 inline std::ostream &operator<<(std::ostream &os,const Socket::Addr &a) {

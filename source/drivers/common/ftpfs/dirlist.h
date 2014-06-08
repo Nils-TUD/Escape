@@ -47,6 +47,10 @@ public:
 		VTHROWE("You can't write to a directory",-ENOTSUP);
 	}
 
+	virtual int sharemem(void *,size_t) {
+		return -ENOTSUP;
+	}
+
 private:
 	void prepare(DirCache::List *list) {
 		char buf[256];

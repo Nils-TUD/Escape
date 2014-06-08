@@ -59,6 +59,10 @@ struct OpenFile : public Client {
 		return count;
 	}
 
+	int sharemem(void *mem,size_t size) {
+		return file->sharemem(mem,size);
+	}
+
 	int flags;
 	std::string path;
 	CtrlConRef ctrlRef;
@@ -72,6 +76,7 @@ public:
 		  _ctrlRef(new CtrlCon(host,port,user,pw)), _clients() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&FTPFSDevice::devopen));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&FTPFSDevice::devclose),false);
+		set(MSG_DEV_SHFILE,std::make_memfun(this,&FTPFSDevice::shfile));
 		set(MSG_FS_OPEN,std::make_memfun(this,&FTPFSDevice::open));
 		set(MSG_FILE_READ,std::make_memfun(this,&FTPFSDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&FTPFSDevice::write));
@@ -126,6 +131,18 @@ public:
 
 		add(is.fd(),new OpenFile(is.fd(),_ctrlRef,path,isDirectory(path),r.flags));
 		is << FileOpen::Response(is.fd()) << Reply();
+	}
+
+	void shfile(IPCStream &is) {
+		OpenFile *file = (*this)[is.fd()];
+		char path[MAX_PATH_LEN];
+		FileShFile::Request r(path,sizeof(path));
+		is >> r;
+
+		int res = joinshm(file,path,r.size,0);
+		if(res == 0)
+			res = file->sharemem(file->sharedmem()->addr,r.size);
+		is << FileShFile::Response(res) << Reply();
 	}
 
 	void read(IPCStream &is) {

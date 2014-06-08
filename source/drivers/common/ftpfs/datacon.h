@@ -42,6 +42,10 @@ public:
 		_sock.send(buf,size);
 	}
 
+	int sharemem(void *mem,size_t size) {
+		return _sock.sharemem(mem,size);
+	}
+
 private:
 	static ipc::Socket getEndpoint(CtrlConRef &ctrlRef) {
 		const char *reply = ctrlRef.get()->execute(CtrlCon::CMD_PASV,"");

@@ -34,3 +34,4 @@ extern int mod_memops(int,char**);
 extern int mod_locks(int,char**);
 extern int mod_chgsize(int,char**);
 extern int mod_pagefault(int,char**);
+extern int mod_heap(int,char**);

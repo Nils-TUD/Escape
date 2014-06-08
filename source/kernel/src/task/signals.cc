@@ -78,8 +78,10 @@ const char *Signals::getName(int signal) {
 		"SIG_INTRPT",
 		"SIG_ALARM",
 		"SIG_USR1",
-		"SIG_USR2"
+		"SIG_USR2",
+		"SIG_CANCEL",
 	};
+	static_assert(ARRAY_SIZE(names) == SIG_COUNT,"Signal names out of sync");
 	if(signal < SIG_COUNT)
 		return names[signal];
 	return "Unknown signal";

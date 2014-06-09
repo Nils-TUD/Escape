@@ -29,6 +29,7 @@
 #include <sys/mem/cache.h>
 #include <sys/video.h>
 #include <sys/cpu.h>
+#include <sys/config.h>
 #include <sys/spinlock.h>
 #include <sys/log.h>
 #include <sys/util.h>
@@ -49,23 +50,25 @@ extern volatile uint halting;
 extern volatile uint flushed;
 
 bool SMPBase::initArch() {
+	enabled = Config::get(Config::SMP);
 	if(LAPIC::isAvailable()) {
 		/* if ACPI is not available, try MPConf */
 		if(!ACPI::isEnabled() && MPConfig::find())
 			MPConfig::parse();
-
-		/* if we have not found CPUs by ACPI or MPConf, assume we have only the BSP */
-		if(getCPUCount() > 0) {
-			enabled = true;
-			/* from now on, we'll use the logical-id as far as possible; but remember the physical
-			 * one for IPIs, e.g. */
-			cpuid_t id = LAPIC::getId();
-			SMP::log2Phys = (cpuid_t*)Cache::alloc(getCPUCount() * sizeof(cpuid_t));
-			SMP::log2Phys[0] = id;
-			return true;
-		}
 	}
-	return false;
+
+	/* if we have not found CPUs by ACPI or MPConf, assume we have only the BSP */
+	if(getCPUCount() == 0) {
+		addCPU(true,0,true);
+		setId(0,0);
+	}
+
+	/* from now on, we'll use the logical-id as far as possible; but remember the physical
+	 * one for IPIs, e.g. */
+	cpuid_t id = LAPIC::getId();
+	SMP::log2Phys = (cpuid_t*)Cache::alloc(getCPUCount() * sizeof(cpuid_t));
+	SMP::log2Phys[0] = id;
+	return enabled;
 }
 
 void SMPBase::pauseOthers() {

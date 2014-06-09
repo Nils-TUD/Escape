@@ -117,7 +117,7 @@ static int irqThread(A_UNUSED void *arg) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::Mouse::Event ev;
 
-	int sem = semcrtirq(MOUSE_IRQ,"PS/2 Mouse");
+	int sem = semcrtirq(MOUSE_IRQ,"PS/2 Mouse",NULL,NULL);
 	if(sem < 0)
 		error("Unable to get irq-semaphore for IRQ %d",MOUSE_IRQ);
 	while(1) {

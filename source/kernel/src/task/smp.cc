@@ -35,7 +35,7 @@ SMP::CPU **SMPBase::cpus;
 size_t SMPBase::cpuCount = 0;
 
 void SMPBase::init() {
-	enabled = Config::get(Config::SMP) ? SMP::initArch() : false;
+	enabled = SMP::initArch();
 	if(cpuCount == 0) {
 		addCPU(true,0,true);
 		setId(0,0);

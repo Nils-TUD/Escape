@@ -81,14 +81,26 @@ public:
 	static void uninstallHandler(int irq);
 
 	/**
+	 * Puts the MSI attributes into the given addresses, if required.
+	 *
+	 * @param irq the IRQ number
+	 * @param msiaddr will be set to the address to program into MSI address registers, if <msiaddr> != 0
+	 * @param msival will be set to the value to program into the MSI data register, if <msiaddr> != 0
+	 * @return 0 on success
+	 */
+	static void getMSIAttr(int irq,uint64_t *msiaddr,uint32_t *msival);
+
+	/**
 	 * Attaches the given semaphore to the given IRQ.
 	 *
 	 * @param sem the semaphore
 	 * @param irq the IRQ
 	 * @param name the name for the IRQ
+	 * @param msiaddr will be set to the address to program into MSI address registers, if <msiaddr> != 0
+	 * @param msival will be set to the value to program into the MSI data register, if <msiaddr> != 0
 	 * @return 0 on success
 	 */
-	static int attachSem(Semaphore *sem,size_t irq,const char *name);
+	static int attachSem(Semaphore *sem,size_t irq,const char *name,uint64_t *msiaddr,uint32_t *msival);
 
 	/**
 	 * Detaches the given semaphore from the given IRQ.

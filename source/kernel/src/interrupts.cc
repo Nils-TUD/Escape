@@ -25,7 +25,8 @@
 SpinLock InterruptsBase::userIrqsLock;
 ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
 
-int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name) {
+int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name,
+		uint64_t *msiaddr,uint32_t *msival) {
 	LockGuard<SpinLock> g(&userIrqsLock);
 	assert(irq < IRQ_SEM_COUNT);
 	if(userIrqs[irq].length() == 0) {
@@ -33,6 +34,7 @@ int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name) {
 		if(res < 0)
 			return res;
 	}
+	Interrupts::getMSIAttr(irq,msiaddr,msival);
 	userIrqs[irq].append(sem);
 	return 0;
 }

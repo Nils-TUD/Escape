@@ -32,10 +32,12 @@ extern "C" {
  *
  * @param irq the IRQ to attach it to
  * @param name the name to display for this IRQ
+ * @param msiaddr will be set to the address to program into MSI address registers, if <msiaddr> != 0
+ * @param msival will be set to the value to program into the MSI data register, if <msiaddr> != 0
  * @return the semaphore id or a negative error-code
  */
-A_CHECKRET static inline int semcrtirq(int irq,const char *name) {
-	return syscall2(SYSCALL_SEMCRTIRQ,irq,(ulong)name);
+A_CHECKRET static inline int semcrtirq(int irq,const char *name,uint64_t *msiaddr,uint32_t *msival) {
+	return syscall4(SYSCALL_SEMCRTIRQ,irq,(ulong)name,(ulong)msiaddr,(ulong)msival);
 }
 
 #if defined(__cplusplus)

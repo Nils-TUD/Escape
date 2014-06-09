@@ -50,7 +50,7 @@ error:
 	return res;
 }
 
-int Sems::create(Proc *p,uint value,int irq,const char *name) {
+int Sems::create(Proc *p,uint value,int irq,const char *name,uint64_t *msiaddr,uint32_t *msival) {
 	int res;
 	Entry **sems;
 	Entry *e = new Entry(value,irq);
@@ -62,7 +62,7 @@ int Sems::create(Proc *p,uint value,int irq,const char *name) {
 	for(size_t i = 0; i < p->semsSize; ++i) {
 		if(p->sems[i] == NULL) {
 			if(e->irq != -1) {
-				res = Interrupts::attachSem(&e->s,e->irq,name);
+				res = Interrupts::attachSem(&e->s,e->irq,name,msiaddr,msival);
 				if(res < 0)
 					goto error;
 			}
@@ -91,7 +91,7 @@ int Sems::create(Proc *p,uint value,int irq,const char *name) {
 	p->semsSize *= 2;
 	p->sems = sems;
 	if(e->irq != -1) {
-		res = Interrupts::attachSem(&e->s,e->irq,name);
+		res = Interrupts::attachSem(&e->s,e->irq,name,msiaddr,msival);
 		if(res < 0)
 			goto error;
 	}

@@ -131,7 +131,7 @@
  */
 
 Ne2k::Ne2k(ipc::PCI &pci,const ipc::PCI::Device &nic)
-		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000")), _basePort(), _mac(),
+		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000",NULL,NULL)), _basePort(), _mac(),
 		  _nextPacket(), _handler() {
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
 	if(_irqsem < 0)

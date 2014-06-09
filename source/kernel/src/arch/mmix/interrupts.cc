@@ -117,6 +117,10 @@ void InterruptsBase::uninstallHandler(int irq) {
 	/* nothing to do */
 }
 
+void InterruptsBase::getMSIAttr(int,uint64_t *,uint32_t *) {
+	/* nothing to do */
+}
+
 void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	static_assert(IRQ_COUNT == ARRAY_SIZE(intrptList),"IRQ_COUNT is wrong");
 	Thread *t = Thread::getRunning();

@@ -87,6 +87,10 @@ void InterruptsBase::uninstallHandler(int) {
 	/* nothing to do */
 }
 
+void InterruptsBase::getMSIAttr(int,uint64_t *,uint32_t *) {
+	/* nothing to do */
+}
+
 void InterruptsBase::handler(IntrptStackFrame *stack) {
 	static_assert(IRQ_COUNT == ARRAY_SIZE(intrptList),"IRQ_COUNT is wrong");
 	Interrupts::Interrupt *intrpt;

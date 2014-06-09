@@ -121,7 +121,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{joinms,			"joinms",			1},
 	{mlock,				"mlock",			2},
 	{mlockall,			"mlockall",			0},
-	{semcrtirq,			"semcrtirq",		2},
+	{semcrtirq,			"semcrtirq",		4},
 	{bindto,			"bindto",			2},
 	{rename,			"rename",			2},
 #if defined(__x86__)

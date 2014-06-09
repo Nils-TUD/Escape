@@ -160,6 +160,14 @@ void InterruptsBase::uninstallHandler(int irq) {
 	intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler = NULL;
 }
 
+void InterruptsBase::getMSIAttr(int irq,uint64_t *msiaddr,uint32_t *msival) {
+	if(msiaddr) {
+		assert(msival != NULL);
+		*msiaddr = 0xfee00000 + (SMP::getPhysId(SMP::getCurId()) << 12);
+		*msival = irq + Interrupts::IRQ_MASTER_BASE;
+	}
+}
+
 void Interrupts::eoi(int irq) {
 	if(irq == IRQ_LAPIC || IOAPIC::enabled())
 		LAPIC::eoi();

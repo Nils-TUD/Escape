@@ -43,7 +43,8 @@ public:
 
 	static int init(Proc *p);
 	static int clone(Proc *p,const Proc *old);
-	static int create(Proc *p,uint value,int irq = -1,const char *name = NULL);
+	static int create(Proc *p,uint value,int irq = -1,const char *name = NULL,
+		uint64_t *msiaddr = NULL,uint32_t *msival = NULL);
 	static int op(Proc *p,int sem,int amount);
 	static void destroy(Proc *p,int sem);
 	static void destroyAll(Proc *p,bool complete);

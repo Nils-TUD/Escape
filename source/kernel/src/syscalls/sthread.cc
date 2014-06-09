@@ -116,11 +116,25 @@ int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
 	char kname[32];
 	int irq = (int)SYSC_ARG1(stack);
 	char *name = (char*)SYSC_ARG2(stack);
+	uint64_t *msiaddr = (uint64_t*)SYSC_ARG3(stack);
+	uint32_t *msival = (uint32_t*)SYSC_ARG4(stack);
+	uint64_t kmsiaddr;
+	uint32_t kmsival;
+
+	if(EXPECT_FALSE(msiaddr && !PageDir::isInUserSpace((uintptr_t)msiaddr,sizeof(*msiaddr))))
+		SYSC_ERROR(stack,-EINVAL);
+	if(EXPECT_FALSE(msiaddr && !PageDir::isInUserSpace((uintptr_t)msival,sizeof(*msival))))
+		SYSC_ERROR(stack,-EINVAL);
+
 	/* copy it first. it might pagefault */
 	strnzcpy(kname,name,sizeof(kname));
-	int res = Sems::create(t->getProc(),0,irq,kname);
+	int res = Sems::create(t->getProc(),0,irq,kname,msiaddr ? &kmsiaddr : NULL,msiaddr ? &kmsival : NULL);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
+	if(msiaddr) {
+		*msiaddr = kmsiaddr;
+		*msival = kmsival;
+	}
 	SYSC_RET1(stack,res);
 }
 

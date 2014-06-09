@@ -102,7 +102,7 @@ void ctrl_init(bool useDma) {
 		/* set interrupt-handler */
 		char irqname[32];
 		snprintf(irqname,sizeof(irqname),"ATA%zd",i);
-		ctrls[i].irqsem = semcrtirq(ctrls[i].irq,irqname);
+		ctrls[i].irqsem = semcrtirq(ctrls[i].irq,irqname,NULL,NULL);
 		if(ctrls[i].irqsem < 0)
 			error("Unable to create irq-semaphore for IRQ %d",ctrls[i].irq);
 

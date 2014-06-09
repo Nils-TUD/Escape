@@ -208,7 +208,7 @@ int main(void) {
 
 static int kbIrqThread(A_UNUSED void *arg) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	int sem = semcrtirq(KEYBOARD_IRQ,"PS/2 Keyboard");
+	int sem = semcrtirq(KEYBOARD_IRQ,"PS/2 Keyboard",NULL,NULL);
 	if(sem < 0)
 		error("Unable to get irq-semaphore for IRQ %d",KEYBOARD_IRQ);
 	while(1) {

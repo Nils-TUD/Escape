@@ -266,7 +266,7 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 					state = SUCCESS;
 					break;
 				case DHCPNAK:
-					std::cout << "Request of IP address" << cfg->ipAddr << " failed. Retrying..." << std::endl;
+					std::cout << "Request of IP address " << cfg->ipAddr << " failed. Retrying..." << std::endl;
 					state = REQUEST;
 					break;
 				default:

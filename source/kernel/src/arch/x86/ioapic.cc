@@ -55,6 +55,13 @@ void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
 	inst->count = getMax(ioapics + count) + 1;
 	Log::get().writef("IOAPIC: id=%#x version=%#x addr=%p gsis=%u..%u\n",
 		inst->id,inst->version,inst->addr,inst->baseGSI,inst->baseGSI + inst->count - 1);
+
+	/* initialize all entries to a reasonable value */
+	for(uint gsi = 0; gsi < inst->count; ++gsi) {
+		write(inst,IOAPIC_REG_REDTBL + gsi * 2,RED_INT_MASK_EN);
+		write(inst,IOAPIC_REG_REDTBL + gsi * 2 + 1,0);
+	}
+
 	assert((addr & (PAGE_SIZE - 1)) == 0);
 	count++;
 }

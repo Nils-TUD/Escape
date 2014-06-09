@@ -30,6 +30,14 @@
 #include "list.h"
 #include "pci.h"
 
+#define DEBUG	0
+
+#if DEBUG
+#	define DBG(fmt...)		print(fmt)
+#else
+#	define DBG(...)
+#endif
+
 using namespace ipc;
 
 class PCIService : public Device {
@@ -80,6 +88,7 @@ public:
 		is >> bus >> dev >> func >> offset;
 
 		value = pci_read(bus,dev,func,offset);
+		DBG("%02x:%02x:%x [%#04x] -> %#08x",bus,dev,func,offset,value);
 		is << value << Reply();
 	}
 
@@ -88,6 +97,7 @@ public:
 		uint32_t offset,value;
 		is >> bus >> dev >> func >> offset >> value;
 
+		DBG("%02x:%02x:%x [%#04x] <- %#08x",bus,dev,func,offset,value);
 		pci_write(bus,dev,func,offset,value);
 	}
 

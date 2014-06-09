@@ -95,6 +95,8 @@
 #define MSG_PCI_GET_COUNT			1003	/* gets the number of PCI devices */
 #define MSG_PCI_READ				1004	/* reads from PCI config space */
 #define MSG_PCI_WRITE				1005	/* writes to PCI config space */
+#define MSG_PCI_HAS_CAP				1006	/* checks if a given capability exists for a given device */
+#define MSG_PCI_ENABLE_MSIS			1007	/* enables MSIs for a given device */
 
 #define MSG_INIT_REBOOT				1100	/* requests a reboot */
 #define MSG_INIT_SHUTDOWN			1101	/* requests a shutdown */

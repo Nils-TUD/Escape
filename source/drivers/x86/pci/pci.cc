@@ -50,6 +50,8 @@ public:
 		set(MSG_PCI_GET_COUNT,std::make_memfun(this,&PCIService::getCount));
 		set(MSG_PCI_READ,std::make_memfun(this,&PCIService::read));
 		set(MSG_PCI_WRITE,std::make_memfun(this,&PCIService::write));
+		set(MSG_PCI_HAS_CAP,std::make_memfun(this,&PCIService::hasCap));
+		set(MSG_PCI_ENABLE_MSIS,std::make_memfun(this,&PCIService::enableMSIs));
 	}
 
 	void getByClass(IPCStream &is) {
@@ -101,7 +103,55 @@ public:
 		pci_write(bus,dev,func,offset,value);
 	}
 
+	void hasCap(IPCStream &is) {
+		uchar bus,dev,func,cap;
+		is >> bus >> dev >> func >> cap;
+
+		uint8_t offset = getCapOff(bus,dev,func,cap);
+		DBG("%02x:%02x:%x CAP %#02x -> %#02x",bus,dev,func,cap,offset);
+		is << (offset != 0) << Reply();
+	}
+
+	void enableMSIs(IPCStream &is) {
+		uchar bus,dev,func;
+		uint64_t msiaddr;
+		uint32_t msival;
+		is >> bus >> dev >> func >> msiaddr >> msival;
+
+		uint8_t offset = getCapOff(bus,dev,func,PCI::CAP_MSI);
+		if(offset) {
+			uint32_t ctrl = pci_read(bus,dev,func,offset);
+			size_t base = offset + 4;
+			pci_write(bus,dev,func,base + 0,msiaddr & 0xFFFFFFFF);
+			pci_write(bus,dev,func,base + 4,msiaddr >> 32);
+			if(ctrl & 0x800000)
+				base += 4;
+			pci_write(bus,dev,func,base + 4,msival);
+
+			// we use only a single message and enable MSIs here
+			pci_write(bus,dev,func,offset,(ctrl & ~0x700000) | 0x10000);
+
+			DBG("%02x:%02x:%x enabled MSIs %#08Lx : %#08x",bus,dev,func,msiaddr,msival);
+		}
+
+		is << (offset ? 0 : -EINVAL) << Reply();
+	}
+
 private:
+	static uint8_t getCapOff(uchar bus,uchar dev,uchar func,uint8_t cap) {
+		uint32_t statusCmd = pci_read(bus,dev,func,0x04);
+		if((statusCmd >> 16) & PCI::ST_CAPS) {
+			uint8_t offset = pci_read(bus,dev,func,0x34);
+			while((offset != 0) && !(offset & 0x3)) {
+				uint32_t val = pci_read(bus,dev,func,offset);
+				if((val & 0xFF) == cap)
+					return offset;
+				offset = val >> 8;
+			}
+		}
+		return 0;
+	}
+
 	void reply(IPCStream &is,PCI::Device *d) {
 		if(d)
 			is << 0 << *d << Reply();

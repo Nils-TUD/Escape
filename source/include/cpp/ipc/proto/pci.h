@@ -54,6 +54,11 @@ public:
 		CARD_BUS_BRIDGE			= 2,
 	};
 
+	enum Status {
+		ST_IRQ					= 1 << 3,
+		ST_CAPS					= 1 << 4,
+	};
+
 	struct Device {
 		uchar bus;
 		uchar dev;

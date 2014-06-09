@@ -26,7 +26,30 @@
 
 #include "names.h"
 
-static void printDevice(const ipc::PCI::Device *device,int verbose) {
+static const char *caps[] = {
+	/* 0x00 */ "??",
+	/* 0x01 */ "Power Management",
+	/* 0x02 */ "Accelerated Graphics Port",
+	/* 0x03 */ "Vital Product Data",
+	/* 0x04 */ "Slot Identification",
+	/* 0x05 */ "Message Signalled Interrupts",
+	/* 0x06 */ "CompactPCI HotSwap",
+	/* 0x07 */ "PCI-X",
+	/* 0x08 */ "HyperTransport",
+	/* 0x09 */ "Vendor specific",
+	/* 0x0A */ "Debug port",
+	/* 0x0B */ "CompactPCI Central Resource Control",
+	/* 0x0C */ "PCI Standard Hot-Plug Controller",
+	/* 0x0D */ "Bridge subsystem vendor/device ID",
+	/* 0x0E */ "AGP Target PCI-PCI bridge",
+	/* 0x0F */ "Secure Device",
+	/* 0x10 */ "PCI Express",
+	/* 0x11 */ "MSI-X",
+	/* 0x12 */ "SATA Data/Index Conf.",
+	/* 0x13 */ "PCI Advanced Features",
+};
+
+static void printDevice(ipc::PCI &pci,const ipc::PCI::Device *device,int verbose) {
 	Vendor *vendor = PCINames::vendors.find(device->vendorId);
 	Device *dev = NULL;
 	if(vendor)
@@ -68,26 +91,45 @@ static void printDevice(const ipc::PCI::Device *device,int verbose) {
 	printf("(rev %02x)\n",device->revId);
 
 	if(verbose) {
-		printf("\tID: %04x:%04x\n",device->vendorId,device->deviceId);
+		printf("        ID: %04x:%04x\n",device->vendorId,device->deviceId);
 		if(device->type == ipc::PCI::GENERIC) {
 			size_t i;
 			if(device->irq)
-				printf("\tIRQ: %u\n",device->irq);
+				printf("        IRQ: %u\n",device->irq);
 			for(i = 0; i < 6; i++) {
 				if(device->bars[i].addr) {
 					if(device->bars[i].type == ipc::PCI::Bar::BAR_MEM) {
-						printf("\tMemory at %p (%d-bit, %s) [size=%zuK]\n",
+						printf("        Memory at %p (%d-bit, %s) [size=%zuK]\n",
 								(void*)device->bars[i].addr,
 								(device->bars[i].flags & ipc::PCI::Bar::BAR_MEM_32) ? 32 : 64,
 								(device->bars[i].flags & ipc::PCI::Bar::BAR_MEM_PREFETCH)
 									? "prefetchable" : "non-prefetchable",device->bars[i].size / 1024);
 					}
 					else {
-						printf("\tI/O ports at %lx [size=%zu]\n",
+						printf("        I/O ports at %lx [size=%zu]\n",
 								device->bars[i].addr,device->bars[i].size);
 					}
 				}
 			}
+
+			uint32_t val = pci.read(device->bus,device->dev,device->func,0x4);
+			uint16_t status = val >> 16;
+			printf("        Status: ");
+			if(status & ipc::PCI::ST_IRQ)
+				printf("IRQ ");
+			if(status & ipc::PCI::ST_CAPS)
+				printf("CAPS ");
+			printf("\n");
+
+			if(status & ipc::PCI::ST_CAPS) {
+	            uint8_t offset = pci.read(device->bus,device->dev,device->func,0x34);
+            	while((offset != 0) && !(offset & 0x3)) {
+            		uint32_t val = pci.read(device->bus,device->dev,device->func,offset);
+            		printf("        Capabilities: [%03x] %s\n",offset,
+            			(val & 0xFF) < ARRAY_SIZE(caps) ? caps[val & 0xFF] : "??");
+            		offset = val >> 8;
+            	}
+	        }
 		}
 	}
 }
@@ -125,7 +167,7 @@ int main(int argc,const char *argv[]) {
 	for(size_t i = 0; i < count; ++i) {
 		try {
 			ipc::PCI::Device dev = pci.getByIndex(i);
-			printDevice(&dev,verbose);
+			printDevice(pci,&dev,verbose);
 		}
 		catch(const std::exception &e) {
 			printe("%s",e.what());

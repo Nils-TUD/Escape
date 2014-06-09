@@ -25,16 +25,13 @@
 #include <stdlib.h>
 
 #include "e1000dev.h"
+#include "eeprom.h"
 
 E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
-		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"E1000")), _curRxBuf(), _curTxBuf(), _bufs(),
+		: _irq(nic.irq), _irqsem(), _curRxBuf(), _curTxBuf(), _bufs(),
 		  _bufsPhys(), _mmio(), _handler() {
-	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
 	if(_irqsem < 0)
 		error("Unable to create irq-semaphore");
-
-	if(startthread(irqThread,this) < 0)
-		error("Unable to start receive-thread");
 
 	// map MMIO region
 	for(size_t i = 0; i < ARRAY_SIZE(ipc::PCI::Device::bars); ++i) {
@@ -44,6 +41,7 @@ E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
 			if(_mmio == NULL)
 				error("Unable to map MMIO region %p..%p",phys,phys + nic.bars[i].size - 1);
 			print("Mapped MMIO region %p..%p @ %p",phys,phys + nic.bars[i].size - 1,_mmio);
+			break;
 		}
 	}
 
@@ -63,55 +61,110 @@ E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
 	// reset card
 	reset();
 
+	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
+	if(pci.hasCap(nic.bus,nic.dev,nic.func,ipc::PCI::CAP_MSI)) {
+		DBG1("Using MSIs (%u)",nic.irq);
+		uint64_t msiaddr;
+		uint32_t msival;
+		_irqsem = semcrtirq(nic.irq,"E1000",&msiaddr,&msival);
+		if(_irqsem < 0)
+			error("Unable to create irq-semaphore");
+
+		pci.enableMSIs(nic.bus,nic.dev,nic.func,msiaddr,msival);
+	}
+	else {
+		DBG1("Using legacy IRQs (%u)",nic.irq);
+		_irqsem = semcrtirq(nic.irq,"E1000",NULL,NULL);
+		if(_irqsem < 0)
+			error("Unable to create irq-semaphore");
+	}
+
 	// ensure that interrupts are enabled for the PCI device
 	uint32_t statusCmd = pci.read(nic.bus,nic.dev,nic.func,0x04);
 	pci.write(nic.bus,nic.dev,nic.func,0x04,statusCmd & ~0x400);
 
 	// enable interrupts
-	writeReg(REG_IMC,0xFFFF);
-	writeReg(REG_IMS,0xFFFF);
+	writeReg(REG_IMC,ICR_LSC | ICR_RXO | ICR_RXT0);
+	writeReg(REG_IMS,ICR_LSC | ICR_RXO | ICR_RXT0);
+
+	if(startthread(irqThread,this) < 0)
+		error("Unable to start receive-thread");
 }
 
-uint16_t E1000::readEEPROM(size_t offset) {
-	uint32_t eerd;
-	writeReg(REG_EERD,(offset << 8) | EERD_START);
-	for(int i = 0; i < 100; i++) {
-		eerd = readReg(REG_EERD);
-		if(eerd & EERD_DONE)
-			break;
-		sleep(1);
+void E1000::readEEPROM(uint8_t *dest,size_t len) {
+	int err;
+	if((err = EEPROM::init(this)) != 0) {
+		print("Unable to init EEPROM: %s",strerror(err));
+		return;
 	}
 
-	if(eerd & EERD_DONE)
-		return (eerd >> 16) & 0xFFFF;
-	return -1;
+	if((err = EEPROM::read(this,0x0,dest,len)) != 0) {
+		print("Unable to read from EEPROM: %s",strerror(err));
+		return;
+	}
 }
 
 ipc::NIC::MAC E1000::readMAC() {
 	uint8_t bytes[ipc::NIC::MAC::LEN];
-	for(size_t i = 0; i < 3; i++) {
-		uint16_t word = readEEPROM(EEPROM_OFS_MAC + i);
-		bytes[i * 2] = word & 0xFF;
-		bytes[i * 2 + 1] = word >> 8;
-	}
+
+	// read current address from RAL/RAH
+	uint32_t macl,mach;
+	macl = readReg(REG_RAL);
+	mach = readReg(REG_RAH);
+	ipc::NIC::MAC macaddr(
+		(macl >>  0) & 0xFF,
+		(macl >>  8) & 0xFF,
+		(macl >> 16) & 0xFF,
+		(macl >> 24) & 0xFF,
+		(mach >>  0) & 0xFF,
+		(mach >>  8) & 0xFF
+	);
+	DBG1("Got MAC %02x:%02x:%02x:%02x:%02x:%02x from RAL/RAH",
+		macaddr.bytes()[0],macaddr.bytes()[1],macaddr.bytes()[2],
+		macaddr.bytes()[3],macaddr.bytes()[4],macaddr.bytes()[5]);
+
+	// if thats valid, take it
+	if(macaddr != ipc::NIC::MAC::broadcast() && macaddr.value() != 0)
+		return macaddr;
+
+	DBG1("Reading MAC from EEPROM");
+	readEEPROM(bytes,sizeof(bytes));
 	return ipc::NIC::MAC(bytes);
 }
 
 void E1000::reset() {
-	// disable sending/receiving
-	writeReg(REG_RCTL,0);
-	writeReg(REG_TCTL,0);
+	// force RX and TX packet buffer allocation, to work around an errata in ICH devices.
+	uint32_t pbs = readReg(REG_PBS);
+	if(pbs == 0x14 || pbs == 0x18) {
+		DBG1("WARNING: applying ICH PBS/PBA errata");
+		writeReg(REG_PBA,0x08);
+		writeReg(REG_PBS,0x10);
+	}
 
-	// reset
-	writeReg(REG_CTRL,CTL_PHY_RESET);
-	sleep(10);
-	writeReg(REG_CTRL,CTL_RESET);
-	sleep(10);
-	while(readReg(REG_CTRL) & CTL_RESET)
-		;
+	// always reset MAC.  Required to reset the TX and RX rings.
+	uint32_t ctrl = readReg(REG_CTRL);
+	writeReg(REG_CTRL,ctrl | CTL_RESET);
+	sleep(20);
 
-	// init control registers
-	writeReg(REG_CTRL,CTL_AUTO_SPEED | CTL_LINK_UP);
+	// set a sensible default configuration
+	ctrl |= CTL_SLU | CTL_ASDE;
+	ctrl &= ~(CTL_LRST | CTL_FRCSPD | CTL_FRCDPLX);
+	writeReg(REG_CTRL,ctrl);
+	sleep(20);
+
+	// if link is already up, do not attempt to reset the PHY.  On
+	// some models (notably ICH), performing a PHY reset seems to
+	// drop the link speed to 10Mbps.
+	uint32_t status = readReg(REG_STATUS);
+	if(~status & STATUS_LU) {
+		// Reset PHY and MAC simultaneously
+		writeReg(REG_CTRL,ctrl | CTL_RESET | CTL_PHY_RESET);
+		sleep(20);
+
+		// PHY reset is not self-clearing on all models
+		writeReg(REG_CTRL,ctrl);
+		sleep(20);
+	}
 
 	// init receive ring
 	writeReg(REG_RDBAH,0);
@@ -131,8 +184,15 @@ void E1000::reset() {
 	writeReg(REG_TIDV,0);
 	writeReg(REG_TADV,0);
 
-	// disable VLANs
-	writeReg(REG_VET,0);
+	// setup rx descriptors
+	for(size_t i = 0; i < RX_BUF_COUNT; i++) {
+		_bufs->rxDescs[i].length = RX_BUF_SIZE;
+		_bufs->rxDescs[i].buffer = reinterpret_cast<uint64_t>(_bufsPhys->rxBuf + i * RX_BUF_SIZE);
+	}
+
+	// enable rings
+	writeReg(REG_RDCTL,readReg(REG_RDCTL) | XDCTL_ENABLE);
+	writeReg(REG_TDCTL,readReg(REG_TDCTL) | XDCTL_ENABLE);
 
 	// get MAC and setup MAC filter
 	_mac = readMAC();
@@ -140,15 +200,17 @@ void E1000::reset() {
 	writeReg(REG_RAL,macval & 0xFFFFFFFF);
 	writeReg(REG_RAH,((macval >> 32) & 0xFFFF) | RAH_VALID);
 
-	// setup rx descriptors
-	for(size_t i = 0; i < RX_BUF_COUNT; i++) {
-		_bufs->rxDescs[i].length = RX_BUF_SIZE;
-		_bufs->rxDescs[i].buffer = reinterpret_cast<uint64_t>(_bufsPhys->rxBuf + i * RX_BUF_SIZE);
-	}
+	// enable transmitter
+	uint32_t tctl = readReg(REG_TCTL);
+	tctl &= ~(TCTL_COLT_MASK | TCTL_COLD_MASK);
+	tctl |= TCTL_ENABLE | TCTL_PSP | TCTL_COLL_DIST | TCTL_COLL_TSH;
+	writeReg(REG_TCTL,tctl);
 
-	// enable sending/receiving
-	writeReg(REG_RCTL,RCTL_ENABLE | RCTL_BROADCAST | RCTL_BUFSIZE_2K);
-	writeReg(REG_TCTL,TCTL_ENABLE | TCTL_COLL_TSH | TCTL_COLL_DIST);
+	// enable receiver
+	uint32_t rctl = readReg(REG_RCTL);
+	rctl &= ~(RCTL_BSIZE_MASK | RCTL_BSEX_MASK);
+	rctl |= RCTL_ENABLE | RCTL_UPE | RCTL_MPE | RCTL_BAM | RCTL_BSIZE_2K | RCTL_SECRC;
+	writeReg(REG_RCTL,rctl);
 }
 
 ssize_t E1000::send(const void *packet,size_t size) {
@@ -161,16 +223,22 @@ ssize_t E1000::send(const void *packet,size_t size) {
 	uint32_t head = readReg(REG_TDH);
 	if(_curTxBuf == head) {
 		// TODO handle that case
+		DBG1("No free buffers");
 		return -EBUSY;
 	}
 
 	// copy to buffer
 	memcpy(_bufs->txBuf + cur * TX_BUF_SIZE,packet,size);
 
+	uint8_t *phys = _bufsPhys->txBuf + cur * TX_BUF_SIZE;
+	DBG2("TX %u: %p..%p",cur,phys,phys + size);
+
 	// setup descriptor
 	_bufs->txDescs[cur].cmd = TX_CMD_EOP | TX_CMD_IFCS;
 	_bufs->txDescs[cur].length = size;
-	_bufs->txDescs[cur].buffer = reinterpret_cast<uint64_t>(_bufsPhys->txBuf + cur * TX_BUF_SIZE);
+	_bufs->txDescs[cur].buffer = reinterpret_cast<uint64_t>(phys);
+	_bufs->txDescs[cur].status = 0;
+	asm volatile ("" : : : "memory");
 
 	writeReg(REG_TDT,_curTxBuf);
 	return size;
@@ -179,16 +247,16 @@ ssize_t E1000::send(const void *packet,size_t size) {
 void E1000::receive() {
 	uint32_t head = readReg(REG_RDH);
 	while(_curRxBuf != head) {
-		size_t size = _bufs->rxDescs[_curRxBuf].length;
-		uint8_t status = _bufs->rxDescs[_curRxBuf].status;
+		RxDesc *desc = _bufs->rxDescs + _curRxBuf;
 
-		if(~status & RDS_DONE)
+		if(~desc->status & RDS_DONE)
 			break;
 
-		// 4 bytes CRC
-		size -= 4;
+		DBG2("RX %u: %#08Lx..%#08Lx st=%#02x err=%#02x",
+			_curRxBuf,desc->buffer,desc->buffer + desc->length,desc->status,desc->error);
 
 		// read data into packet
+		size_t size = desc->length;
 		Packet *pkt = (Packet*)malloc(sizeof(Packet) + size);
 		if(!pkt) {
 			printe("Not enough memory to read packet");
@@ -221,10 +289,8 @@ int E1000::irqThread(void *ptr) {
 		uint32_t icr = e1000->readReg(REG_ICR) & 0x1FFFF;
 
 		// packet received
-		if(icr & ICR_RECEIVE)
+		if(icr & (ICR_RXT0 | ICR_RXO))
 			e1000->receive();
-		else if(icr & ICR_TXQE)
-			;
 		else
 			printe("Unexpected interrupt: %#08x",icr);
 	}

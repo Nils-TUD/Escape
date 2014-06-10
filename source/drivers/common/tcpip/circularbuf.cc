@@ -236,6 +236,8 @@ size_t CircularBuf::pullctrl(void *buf,size_t size,seq_type *seqNo) {
 }
 
 void CircularBuf::print(std::ostream &os,bool data) {
+	os << "CircularBuffer[start=" << _seqStart << ", ack=" << _seqAcked
+	   << ", cur=" << _current << ", curdata=" << _curData << ", max=" << _max << "]\n";
 	for(auto it = _packets.begin(); it != _packets.end(); ++it) {
 		os << "[" << it->start << " .. " << (it->start + it->size()) << ":" << it->size();
 		os << "b:" << it->type << "]";

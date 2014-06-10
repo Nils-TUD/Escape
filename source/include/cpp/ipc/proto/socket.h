@@ -32,6 +32,7 @@ namespace ipc {
 typedef uint16_t port_t;
 
 class Socket {
+	// this is called in accept, where IPCStream will not close the file, because it hasn't opened it
 	explicit Socket(int f) : _close(true), _is(f) {
 	}
 
@@ -75,6 +76,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit Socket(const char *path,Type type,Protocol proto)
+		// no close by default because the IPCStream will do that already
 		: _close(false), _is(buildPath(path,type,proto).c_str(),IO_READ | IO_WRITE | IO_MSGS),
 		  _shm(), _shmsize() {
 	}

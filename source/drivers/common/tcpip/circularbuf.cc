@@ -31,6 +31,9 @@ ssize_t CircularBuf::push(seq_type seqNo,uint8_t type,const void *data,size_t si
 	// if we put in a control-message, it can't be out-of-order
 	if(type == TYPE_CTRL && seqNo != _seqAcked)
 		return -EINVAL;
+	// ensure that we don't use up more than our window size
+	if(_current == _max)
+		return -EINVAL;
 
 	// normalize numbers so that the window starts at 0
 	seq_type winStart = _seqAcked - _seqStart;
@@ -419,6 +422,24 @@ void CircularBuf::unittest() {
 
 		for(size_t i = 0; i < 16; ++i)
 			test_assertInt(testdata[i],i);
+
+		fflush(stdout);
+	}
+
+	// window full
+	{
+		CircularBuf buf;
+		buf.init(100,16);
+		memset(testdata,0,sizeof(testdata));
+
+		test_assertSSize(buf.push(100,TYPE_DATA,data,16),16);
+		test_assertInt(buf.getAck(),116);
+		// pull not the entire packet
+		test_assertSSize(buf.pull(testdata,4),4);
+
+		// now our window is still full, but _seqAcked - _seqStart is less than 16
+		test_assertSSize(buf.push(116,TYPE_DATA,data,1),-EINVAL);
+		test_assertSSize(buf.push(116,TYPE_DATA,data,12),-EINVAL);
 
 		fflush(stdout);
 	}

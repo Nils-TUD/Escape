@@ -173,7 +173,7 @@ namespace gui {
 	}
 
 	void BitmapImage::paint(Graphics &g,const Pos &pos) {
-		if(_data == nullptr)
+		if(_data == nullptr || g.getPixels() == NULL)
 			return;
 		switch(_infoHeader->compression) {
 			case BI_RGB:

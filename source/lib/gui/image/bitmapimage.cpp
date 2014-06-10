@@ -255,7 +255,13 @@ namespace gui {
 		_data = new uint8_t[_dataSize];
 		try {
 			f.seek(_fileHeader->dataOffset,rawfile::SET);
-			f.read(_data,sizeof(uint8_t),_dataSize);
+			size_t bufsize = 8192;
+			size_t pos = 0;
+			while(pos < _dataSize) {
+				size_t amount = std::min(_dataSize - pos,bufsize);
+				f.read(_data + pos,1,amount);
+				pos += amount;
+			}
 		}
 		catch(default_error &e) {
 			throw img_load_error(filename + ": Unable to read image-data: " + e.what());

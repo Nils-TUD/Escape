@@ -102,12 +102,11 @@ static int mouseClientThread(A_UNUSED void *arg) {
 }
 
 static bool handleKey(ipc::UIEvents::Event *data) {
-	if(data->d.keyb.modifier & STATE_BREAK)
-		return false;
-
 	if(data->d.keyb.keycode == VK_F12) {
-		std::lock_guard<std::mutex> guard(mutex);
-		Keystrokes::enterDebugger();
+		if(~data->d.keyb.modifier & STATE_BREAK) {
+			std::lock_guard<std::mutex> guard(mutex);
+			Keystrokes::enterDebugger();
+		}
 		return true;
 	}
 
@@ -123,26 +122,34 @@ static bool handleKey(ipc::UIEvents::Event *data) {
 		case VK_5:
 		case VK_6:
 		case VK_7: {
-			std::lock_guard<std::mutex> guard(mutex);
-			UIClient::switchTo(data->d.keyb.keycode - VK_0);
+			if(~data->d.keyb.modifier & STATE_BREAK) {
+				std::lock_guard<std::mutex> guard(mutex);
+				UIClient::switchTo(data->d.keyb.keycode - VK_0);
+			}
 			return true;
 		}
 		/* we can't lock this because if we do a fork, the child might connect to us and we might
 		 * wait until he has registered a device -> deadlock */
 		case VK_T:
-			Keystrokes::createTextConsole();
+			if(~data->d.keyb.modifier & STATE_BREAK)
+				Keystrokes::createTextConsole();
 			return true;
 		case VK_G:
-			Keystrokes::createGUIConsole();
+			if(~data->d.keyb.modifier & STATE_BREAK)
+				Keystrokes::createGUIConsole();
 			return true;
 		case VK_LEFT: {
-			std::lock_guard<std::mutex> guard(mutex);
-			UIClient::prev();
+			if(~data->d.keyb.modifier & STATE_BREAK) {
+				std::lock_guard<std::mutex> guard(mutex);
+				UIClient::prev();
+			}
 			return true;
 		}
 		case VK_RIGHT: {
-			std::lock_guard<std::mutex> guard(mutex);
-			UIClient::next();
+			if(~data->d.keyb.modifier & STATE_BREAK) {
+				std::lock_guard<std::mutex> guard(mutex);
+				UIClient::next();
+			}
 			return true;
 		}
 	}

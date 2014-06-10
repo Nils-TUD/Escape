@@ -105,6 +105,53 @@ namespace gui {
 		}
 	}
 
+	void BitmapImage::paintBitfields(Graphics &g,gpos_t x,gpos_t y) {
+		size_t bitCount = _infoHeader->bitCount;
+		uint8_t *oldData,*data = _data;
+		gpos_t w = _infoHeader->width, h = _infoHeader->height;
+		gpos_t pw = w, ph = h, pad;
+		gpos_t cx,cy;
+		uint32_t lastCol = 0;
+		gsize_t colBytes = bitCount / 8;
+		g.setColor(Color(0));
+		pad = w % 4;
+		pad = pad ? 4 - pad : 0;
+		data += (h - 1) * ((w * colBytes) + pad);
+
+		uint32_t redmask = _infoHeader->redmask;
+		uint32_t greenmask = _infoHeader->greenmask;
+		uint32_t bluemask = _infoHeader->bluemask;
+		uint32_t alphamask = _infoHeader->alphamask;
+		int redshift = getShift(redmask);
+		int greenshift = getShift(greenmask);
+		int blueshift = getShift(bluemask);
+		int alphashift = getShift(alphamask);
+
+		for(cy = ph - 1; cy >= 0; cy--) {
+			oldData = data;
+			for(cx = 0; cx < w; cx++) {
+				if(cx < pw) {
+					uint32_t col = *(uint32_t*)data;
+					uint32_t red = (col & redmask) >> redshift;
+					uint32_t green = (col & greenmask) >> greenshift;
+					uint32_t blue = (col & bluemask) >> blueshift;
+					uint32_t alpha = (col & alphamask) >> alphashift;
+					col = ((256 - alpha) << 24) | (red << 16) | (green << 8) | blue;
+					paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
+				}
+				data += colBytes;
+			}
+			data = oldData - ((w * colBytes) + pad);
+		}
+	}
+
+	uint BitmapImage::getShift(uint32_t val) {
+		uint c = 0;
+		for(; (val & 0x1) == 0; val >>= 1, ++c)
+			;
+		return c;
+	}
+
 	void BitmapImage::paintPixel(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol) {
 		if(col != TRANSPARENT) {
 			if(col != lastCol) {
@@ -134,8 +181,9 @@ namespace gui {
 				break;
 
 			case BI_BITFIELDS:
-				// TODO
+				paintBitfields(g,pos.x,pos.y);
 				break;
+
 			case BI_RLE4:
 				// TODO
 				break;
@@ -177,8 +225,8 @@ namespace gui {
 			_tableSize = _infoHeader->colorsUsed;
 
 		uint16_t bitCount = _infoHeader->bitCount;
-		if(bitCount != 1 && bitCount != 4 && bitCount != 8 && bitCount != 24)
-			throw img_load_error(filename + "Invalid bitdepth: 1,4,8,24 are supported");
+		if(bitCount != 1 && bitCount != 4 && bitCount != 8 && bitCount != 24 && bitCount != 32)
+			throw img_load_error(filename + ": Invalid bitdepth: 1,4,8,24 are supported");
 
 		// read color-table, if present
 		if(_tableSize > 0) {
@@ -198,8 +246,9 @@ namespace gui {
 			bytesPerLine = ROUND_UP(bytesPerLine,sizeof(uint32_t));
 			_dataSize = bytesPerLine * _infoHeader->height;
 		}
-		else {
-			throw img_load_error(filename + ": Sorry, only RGB is supported");
+		else if(_infoHeader->compression == BI_BITFIELDS) {
+			if(bitCount != 32)
+				throw img_load_error(filename + ": Bitfields are only support for bitdepth 32");
 			_dataSize = _infoHeader->sizeImage;
 		}
 

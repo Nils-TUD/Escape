@@ -76,6 +76,10 @@ namespace gui {
 			 * 							 color-table
 			 * otherwise: if color-table available, the number of them; otherwise 0 */
 			uint32_t colorsImportant;
+			uint32_t redmask;
+			uint32_t greenmask;
+			uint32_t bluemask;
+			uint32_t alphamask;
 		} A_PACKED sBMInfoHeader;
 
 	public:
@@ -116,8 +120,11 @@ namespace gui {
 		void clone(const BitmapImage &img);
 		void loadFromFile(const std::string &filename);
 		void paintRGB(Graphics &g,gpos_t x,gpos_t y);
+		void paintBitfields(Graphics &g,gpos_t x,gpos_t y);
+		void paintPixel(Graphics &g,gpos_t x,gpos_t y,const Color &col,Color &lastCol);
 		void paintPixel(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol);
 		void paintPixel8(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol);
+		static uint getShift(uint32_t val);
 
 		sBMFileHeader *_fileHeader;
 		sBMInfoHeader *_infoHeader;

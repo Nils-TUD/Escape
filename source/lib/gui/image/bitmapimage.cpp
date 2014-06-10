@@ -40,83 +40,75 @@ namespace gui {
 
 	void BitmapImage::paintRGB(Graphics &g,gpos_t x,gpos_t y) {
 		size_t bitCount = _infoHeader->bitCount;
-		uint8_t *oldData,*data = _data;
 		gpos_t w = _infoHeader->width, h = _infoHeader->height;
-		gpos_t pw = w, ph = h, pad;
-		gpos_t cx,cy;
-		uint32_t lastCol = 0;
 		gsize_t colBytes = bitCount / 8;
-		g.setColor(Color(0));
-		pad = w % 4;
+		gpos_t pad = w % 4;
 		pad = pad ? 4 - pad : 0;
-		data += (h - 1) * ((w * colBytes) + pad);
 
-		if(bitCount <= 8) {
-			for(cy = ph - 1; cy >= 0; cy--) {
-				oldData = data;
-				for(cx = 0; cx < w; cx++) {
-					if(cx < pw) {
-						uint32_t col = *data;
-						paintPixel8(g,cx + x,y + (ph - 1 - cy),col,lastCol);
-					}
-					data += colBytes;
+		Pos rpos(x,y);
+		Size rsize(w,h);
+		if(!g.validateParams(rpos,rsize))
+			return;
+		rpos -= Size(x,y);
+
+		uint32_t lastCol = 0;
+		g.setColor(Color(lastCol));
+
+		uint8_t *data = _data + (h - 1) * ((w * colBytes) + pad);
+		if(bitCount == 8) {
+			for(gpos_t cy = rpos.y + rsize.height - 1; cy >= rpos.y; cy--) {
+				gpos_t xend = rpos.x + rsize.width;
+				for(gpos_t cx = rpos.x; cx < xend; cx++) {
+					uint32_t col = data[cx];
+					paintPixel8(g,cx + x,y + (rsize.height - 1 - cy),col,lastCol);
 				}
-				data = oldData - ((w * colBytes) + pad);
+				data -= w + pad;
 			}
 		}
 		else if(bitCount == 16) {
-			for(cy = ph - 1; cy >= 0; cy--) {
-				oldData = data;
-				for(cx = 0; cx < w; cx++) {
-					if(cx < pw) {
-						uint32_t col = *(uint16_t*)data;
-						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
-					}
-					data += colBytes;
+			for(gpos_t cy = rpos.y + rsize.height - 1; cy >= rpos.y; cy--) {
+				gpos_t xend = rpos.x + rsize.width;
+				for(gpos_t cx = rpos.x; cx < xend; cx++) {
+					uint32_t col = *(uint16_t*)(data + (cx << 1));
+					paintPixel(g,cx + x,y + (rsize.height - 1 - cy),col,lastCol);
 				}
-				data = oldData - ((w * colBytes) + pad);
+				data -= (w << 1) + pad;
 			}
 		}
 		else if(bitCount == 24) {
-			for(cy = ph - 1; cy >= 0; cy--) {
-				oldData = data;
-				for(cx = 0; cx < w; cx++) {
-					if(cx < pw) {
-						uint32_t col = (data[0] | (data[1] << 8) | (data[2] << 16));
-						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
-					}
-					data += colBytes;
+			for(gpos_t cy = rpos.y + rsize.height - 1; cy >= rpos.y; cy--) {
+				gpos_t xend = rpos.x + rsize.width;
+				for(gpos_t cx = rpos.x; cx < xend; cx++) {
+					/* cx * 3 = cx << 1 + cx */
+					uint8_t *cdata = data + (cx << 1) + cx;
+					uint32_t col = (cdata[0] | (cdata[1] << 8) | (cdata[2] << 16));
+					paintPixel(g,cx + x,y + (rsize.height - 1 - cy),col,lastCol);
 				}
-				data = oldData - ((w * colBytes) + pad);
+				data -= (w << 1) + w + pad;
 			}
 		}
 		else {
-			for(cy = ph - 1; cy >= 0; cy--) {
-				oldData = data;
-				for(cx = 0; cx < w; cx++) {
-					if(cx < pw) {
-						uint32_t col = *(uint32_t*)data;
-						paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
-					}
-					data += colBytes;
+			for(gpos_t cy = rpos.y + rsize.height - 1; cy >= rpos.y; cy--) {
+				gpos_t xend = rpos.x + rsize.width;
+				for(gpos_t cx = rpos.x; cx < xend; cx++) {
+					uint32_t col = *(uint16_t*)(data + (cx << 2));
+					paintPixel(g,cx + x,y + (rsize.height - 1 - cy),col,lastCol);
 				}
-				data = oldData - ((w * colBytes) + pad);
+				data -= (w << 2) + pad;
 			}
 		}
 	}
 
 	void BitmapImage::paintBitfields(Graphics &g,gpos_t x,gpos_t y) {
-		size_t bitCount = _infoHeader->bitCount;
-		uint8_t *oldData,*data = _data;
 		gpos_t w = _infoHeader->width, h = _infoHeader->height;
-		gpos_t pw = w, ph = h, pad;
-		gpos_t cx,cy;
-		uint32_t lastCol = 0;
-		gsize_t colBytes = bitCount / 8;
-		g.setColor(Color(0));
-		pad = w % 4;
+		gpos_t pad = w % 4;
 		pad = pad ? 4 - pad : 0;
-		data += (h - 1) * ((w * colBytes) + pad);
+
+		Pos rpos(x,y);
+		Size rsize(w,h);
+		if(!g.validateParams(rpos,rsize))
+			return;
+		rpos -= Size(x,y);
 
 		uint32_t redmask = _infoHeader->redmask;
 		uint32_t greenmask = _infoHeader->greenmask;
@@ -127,22 +119,33 @@ namespace gui {
 		int blueshift = getShift(bluemask);
 		int alphashift = getShift(alphamask);
 
-		for(cy = ph - 1; cy >= 0; cy--) {
-			oldData = data;
-			for(cx = 0; cx < w; cx++) {
-				if(cx < pw) {
-					uint32_t col = *(uint32_t*)data;
-					uint32_t red = (col & redmask) >> redshift;
-					uint32_t green = (col & greenmask) >> greenshift;
-					uint32_t blue = (col & bluemask) >> blueshift;
-					uint32_t alpha = (col & alphamask) >> alphashift;
-					col = ((256 - alpha) << 24) | (red << 16) | (green << 8) | blue;
-					paintPixel(g,cx + x,y + (ph - 1 - cy),col,lastCol);
+		uint32_t lastCol = 0;
+		g.setColor(Color(lastCol));
+
+		// we know that bitdepth is 32
+		assert(_infoHeader->bitCount == 32);
+		uint8_t *data = _data + (h - 1) * ((w << 2) + pad);
+		for(gpos_t cy = rpos.y + rsize.height - 1; cy >= rpos.y; cy--) {
+			gpos_t xend = rpos.x + rsize.width;
+			for(gpos_t cx = rpos.x; cx < xend; cx++) {
+				uint32_t col = *(uint32_t*)(data + (cx << 2));
+				uint32_t red = (col & redmask) >> redshift;
+				uint32_t green = (col & greenmask) >> greenshift;
+				uint32_t blue = (col & bluemask) >> blueshift;
+				uint32_t alpha = (col & alphamask) >> alphashift;
+				col = ((256 - alpha) << 24) | (red << 16) | (green << 8) | blue;
+				if(EXPECT_TRUE(col != TRANSPARENT)) {
+					if(EXPECT_FALSE(col != lastCol)) {
+						g.setColor(Color(col));
+						lastCol = col;
+					}
+					g.doSetPixel(cx + x,y + (rsize.height - 1 - cy));
 				}
-				data += colBytes;
 			}
-			data = oldData - ((w * colBytes) + pad);
+			data -= ((w << 2) + pad);
 		}
+		g.updateMinMax(Pos(rpos.x,rpos.y));
+		g.updateMinMax(Pos(rpos.x + rsize.width - 1,rpos.y + rsize.height - 1));
 	}
 
 	uint BitmapImage::getShift(uint32_t val) {
@@ -158,7 +161,7 @@ namespace gui {
 				g.setColor(Color(col));
 				lastCol = col;
 			}
-			g.setPixel(Pos(x,y));
+			g.doSetPixel(x,y);
 		}
 	}
 
@@ -168,7 +171,7 @@ namespace gui {
 				g.setColor(Color(_colorTable[col]));
 				lastCol = col;
 			}
-			g.setPixel(Pos(x,y));
+			g.doSetPixel(x,y);
 		}
 	}
 
@@ -217,16 +220,15 @@ namespace gui {
 		// determine color-table-size
 		_tableSize = 0;
 		if(_infoHeader->colorsUsed == 0) {
-			if(_infoHeader->bitCount == 1 || _infoHeader->bitCount == 4 ||
-					_infoHeader->bitCount == 8)
+			if(_infoHeader->bitCount == 8)
 				_tableSize = 1 << _infoHeader->bitCount;
 		}
 		else
 			_tableSize = _infoHeader->colorsUsed;
 
 		uint16_t bitCount = _infoHeader->bitCount;
-		if(bitCount != 1 && bitCount != 4 && bitCount != 8 && bitCount != 24 && bitCount != 32)
-			throw img_load_error(filename + ": Invalid bitdepth: 1,4,8,24 are supported");
+		if(bitCount != 8 && bitCount != 16 && bitCount != 24 && bitCount != 32)
+			throw img_load_error(filename + ": Invalid bitdepth: 8,16,24,32 are supported");
 
 		// read color-table, if present
 		if(_tableSize > 0) {

@@ -33,9 +33,13 @@ public:
 	}
 	virtual ~File() {
 		if(_data) {
-			_data->abort();
-			delete _data;
-			_ctrl->readReply();
+			try {
+				_data->abort();
+				delete _data;
+				_ctrl->readReply();
+			}
+			catch(...) {
+			}
 		}
 	}
 
@@ -68,9 +72,10 @@ private:
 		// destructor, i.e. when the transfer is finished
 		if(!_ctrl)
 			_ctrl = _ctrlRef.request();
-		else {
+		else if(_data) {
 			_data->abort();
 			delete _data;
+			_data = NULL;
 			_ctrl->readReply();
 		}
 		_data = new DataCon(_ctrlRef);
@@ -78,12 +83,22 @@ private:
 			_data->sharemem(_shm,_shmsize);
 		_offset = offset;
 		_reading = reading;
-		if(offset != 0) {
-			char buf[32];
-			snprintf(buf,sizeof(buf),"%zu",offset);
-			_ctrl->execute(CtrlCon::CMD_REST,buf);
+
+		// if RETR or STOR fail for example, we won't get a reply on the control-channel
+		// so, better destroy the data-channel. we can't use it anyway.
+		try {
+			if(offset != 0) {
+				char buf[32];
+				snprintf(buf,sizeof(buf),"%zu",offset);
+				_ctrl->execute(CtrlCon::CMD_REST,buf);
+			}
+			_ctrl->execute(_reading ? CtrlCon::CMD_RETR : CtrlCon::CMD_STOR,_path.c_str());
 		}
-		_ctrl->execute(_reading ? CtrlCon::CMD_RETR : CtrlCon::CMD_STOR,_path.c_str());
+		catch(...) {
+			delete _data;
+			_data = NULL;
+			throw;
+		}
 	}
 
 	bool _reading;

@@ -232,25 +232,20 @@ private:
 
 	void handleWrite(ipc::IPCStream &is,ipc::FileWrite::Request &r,const ipc::Socket::Addr *sa) {
 		Socket *sock = get(is.fd());
-		char *data;
-		if(r.shmemoff == -1) {
-			data = new char[r.count];
-			is >> ipc::ReceiveData(data,r.count);
-		}
+
 		// TODO check offset!
-		else
-			data = sock->shm() + r.shmemoff;
+		ipc::DataBuf buf(r.count,sock->shm(),r.shmemoff);
+		if(r.shmemoff == -1)
+			is >> ipc::ReceiveData(buf.data(),r.count);
 
 		ssize_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			res = sock->sendto(is.msgid(),sa,data,r.count);
+			res = sock->sendto(is.msgid(),sa,buf.data(),r.count);
 		}
 
 		if(res != 0)
 			is << ipc::FileWrite::Response(res) << ipc::Reply();
-		if(r.shmemoff == -1)
-			delete[] data;
 	}
 };
 

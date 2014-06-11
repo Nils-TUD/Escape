@@ -39,21 +39,16 @@ public:
 		is >> r;
 		assert(!is.error());
 
-		ssize_t res = 0;
-		ushort *data = (r.shmemoff == -1) ? (ushort*)malloc(r.count) : (ushort*)(c->shm() + r.shmemoff);
-		if(data) {
-			ushort *d = data;
-			res = r.count;
-			r.count /= sizeof(ushort);
-			while(r.count-- > 0)
-				*d++ = rand();
-		}
+		DataBuf buf(r.count,c->shm(),r.shmemoff);
+		ushort *d = reinterpret_cast<ushort*>(buf.data());
+		ssize_t res = r.count;
+		r.count /= sizeof(ushort);
+		while(r.count-- > 0)
+			*d++ = rand();
 
 		is << FileRead::Response(res) << Reply();
-		if(r.shmemoff == -1 && res) {
-			is << ReplyData(data,res);
-			free(data);
-		}
+		if(r.shmemoff == -1)
+			is << ReplyData(buf.data(),res);
 	}
 };
 

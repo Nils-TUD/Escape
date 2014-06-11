@@ -389,6 +389,30 @@ private:
 	bool _ignoreSigs;
 };
 
+class DataBuf {
+public:
+	explicit DataBuf(char *d,bool free)
+		: _data(d), _free(free) {
+	}
+	explicit DataBuf(size_t size,char *shm,ssize_t shmoff)
+		: _data(shmoff == -1 ? new char[size] : shm + shmoff), _free(shmoff == -1) {
+	}
+	DataBuf(const DataBuf&) = delete;
+	DataBuf &operator=(const DataBuf&) = delete;
+	~DataBuf() {
+		if(_free)
+			delete[] _data;
+	}
+
+	char *data() {
+		return _data;
+	}
+
+private:
+	char *_data;
+	bool _free;
+};
+
 static inline IPCStream &operator<<(IPCStream &is,Send op) {
 	return op(is);
 }

@@ -150,23 +150,13 @@ public:
 		FileRead::Request r;
 		is >> r;
 
-		void *buffer = NULL;
-		if(r.shmemoff == -1)
-			buffer = malloc(r.count);
-		else
-			buffer = (char*)file->shm() + r.shmemoff;
-
-		ssize_t res;
-		if(buffer == NULL)
-			res = -ENOMEM;
-		else
-			res = file->read(buffer,r.offset,r.count);
+		DataBuf buf(r.count,file->shm(),r.shmemoff);
+		ssize_t res = file->read(buf.data(),r.offset,r.count);
 
 		is << res << Reply();
-		if(buffer && r.shmemoff == -1) {
+		if(r.shmemoff == -1) {
 			if(res > 0)
-				is << ReplyData(buffer,res);
-			free(buffer);
+				is << ReplyData(buf.data(),res);
 		}
 	}
 
@@ -175,16 +165,12 @@ public:
 		FileWrite::Request r;
 		is >> r;
 
-		char *data = file->shm() + r.shmemoff;
-		if(r.shmemoff == -1) {
-			data = new char[r.count];
-			is >> ReceiveData(data,r.count);
-		}
-
-		ssize_t res = file->write(data,r.offset,r.count);
-		is << res << Reply();
+		DataBuf buf(r.count,file->shm(),r.shmemoff);
 		if(r.shmemoff == -1)
-			delete[] data;
+			is >> ReceiveData(buf.data(),r.count);
+
+		ssize_t res = file->write(buf.data(),r.offset,r.count);
+		is << res << Reply();
 	}
 
 	void istat(IPCStream &is) {

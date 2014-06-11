@@ -60,24 +60,6 @@ public:
 	Socket sock;
 };
 
-class ScopedBuf {
-public:
-	explicit ScopedBuf(char *d,bool free) : _data(d), _free(free) {
-	}
-	~ScopedBuf() {
-		if(_free)
-			delete[] _data;
-	}
-
-	char *data() {
-		return _data;
-	}
-
-private:
-	char *_data;
-	bool _free;
-};
-
 class HTTPDevice : public ClientDevice<HTTPClient> {
 public:
 	explicit HTTPDevice(const char *name,mode_t mode)
@@ -118,7 +100,7 @@ public:
 		is >> r;
 
 		// take care that the buffer is deleted if an exception throws
-		ScopedBuf buf(r.shmemoff != -1 ? c->shm() + r.shmemoff : new char[r.count],r.shmemoff == -1);
+		DataBuf buf(r.count,c->shm(),r.shmemoff);
 
 		// at first, we have to send the request and read the header
 		if(c->state != STATE_RESP) {

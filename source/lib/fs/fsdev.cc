@@ -125,24 +125,12 @@ void FSDevice::read(IPCStream &is) {
 	FileRead::Request r;
 	is >> r;
 
-	void *buffer = NULL;
-	if(r.shmemoff == -1)
-		buffer = malloc(r.count);
-	else
-		buffer = (char*)file->shm() + r.shmemoff;
-
-	ssize_t res;
-	if(buffer == NULL)
-		res = -ENOMEM;
-	else
-		res = _fs->read(file->ino,buffer,r.offset,r.count);
+	DataBuf buf(r.count,file->shm(),r.shmemoff);
+	ssize_t res = _fs->read(file->ino,buf.data(),r.offset,r.count);
 
 	is << res << Reply();
-	if(buffer && r.shmemoff == -1) {
-		if(res > 0)
-			is << ReplyData(buffer,res);
-		free(buffer);
-	}
+	if(r.shmemoff == -1 && res > 0)
+		is << ReplyData(buf.data(),res);
 }
 
 void FSDevice::write(IPCStream &is) {
@@ -150,16 +138,12 @@ void FSDevice::write(IPCStream &is) {
 	FileWrite::Request r;
 	is >> r;
 
-	char *data = file->shm() + r.shmemoff;
-	if(r.shmemoff == -1) {
-		data = new char[r.count];
-		is >> ReceiveData(data,r.count);
-	}
-
-	ssize_t res = _fs->write(file->ino,data,r.offset,r.count);
-	is << res << Reply();
+	DataBuf buf(r.count,file->shm(),r.shmemoff);
 	if(r.shmemoff == -1)
-		delete[] data;
+		is >> ReceiveData(buf.data(),r.count);
+
+	ssize_t res = _fs->write(file->ino,buf.data(),r.offset,r.count);
+	is << res << Reply();
 }
 
 void FSDevice::close(IPCStream &is) {

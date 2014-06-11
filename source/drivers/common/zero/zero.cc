@@ -40,27 +40,21 @@ public:
 		Client *c = (*this)[is.fd()];
 		FileRead::Request r;
 		is >> r;
-		assert(!is.error());
 
-		void *data = NULL;
-		if(r.shmemoff != -1) {
-			assert(c->shm() != NULL);
-			memset(c->shm() + r.shmemoff,0,r.count);
-		}
-		else {
-			data = r.count <= BUF_SIZE ? zeros : calloc(r.count,1);
-			if(!data) {
-				printe("Unable to alloc mem");
-				r.count = 0;
-			}
-		}
+		char *data;
+		if(r.shmemoff != -1)
+			data = c->shm() + r.shmemoff;
+		else if(r.count <= BUF_SIZE)
+			data = zeros;
+		else
+			data = new char[r.count];
+		DataBuf buf(data,r.shmemoff == -1 && r.count > BUF_SIZE);
+
+		memset(buf.data(),0,r.count);
 
 		is << FileRead::Response(r.count) << Reply();
-		if(r.shmemoff == -1 && r.count) {
+		if(r.shmemoff == -1 && r.count)
 			is << ReplyData(data,r.count);
-			if(r.count > BUF_SIZE)
-				free(data);
-		}
 	}
 };
 

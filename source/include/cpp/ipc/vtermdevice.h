@@ -124,22 +124,18 @@ private:
 		is >> r;
 		assert(!is.error());
 
-		char *data = r.count < BUF_SIZE ? _buffer : new char[r.count + 1];
-		ssize_t res = 0;
-		if(data) {
-			is >> ReceiveData(data,r.count);
-			data[r.count] = '\0';
-			{
-				std::lock_guard<std::mutex> guard(*_vterm->mutex);
-				vtout_puts(_vterm,data,r.count,true);
-				update();
-			}
-			res = r.count;
-			if(r.count >= BUF_SIZE)
-				delete[] data;
+		DataBuf buf(r.count < BUF_SIZE ? _buffer : new char[r.count + 1],r.count >= BUF_SIZE);
+
+		is >> ReceiveData(buf.data(),r.count);
+		buf.data()[r.count] = '\0';
+
+		{
+			std::lock_guard<std::mutex> guard(*_vterm->mutex);
+			vtout_puts(_vterm,buf.data(),r.count,true);
+			update();
 		}
 
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response(r.count) << Reply();
 		checkPending();
 	}
 

@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 	root->setLayout(make_layout<BorderLayout>());
 	w->keyReleased().subscribe(func_recv(onKeyReleased));
 	showSlide();
-	w->show(true);
+	w->show();
 	app->addWindow(w);
 
 	return app->run();

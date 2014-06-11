@@ -222,6 +222,35 @@ ssize_t StreamSocket::recvfrom(msgid_t mid,bool needsSrc,void *buffer,size_t siz
 	return 0;
 }
 
+int StreamSocket::abort() {
+	switch(_state) {
+		case STATE_CLOSED:
+			return -ENOTCONN;
+
+		case STATE_SYN_SENT:
+		case STATE_LISTEN:
+			// TODO we should reply to outstanding connections
+			state(STATE_CLOSED);
+			break;
+
+		case STATE_SYN_RECEIVED:
+		case STATE_ESTABLISHED:
+		case STATE_FIN_WAIT_1:
+		case STATE_FIN_WAIT_2:
+		case STATE_CLOSE_WAIT:
+			sendCtrlPkt(TCP::FL_RST);
+			state(STATE_CLOSED);
+			break;
+
+		case STATE_CLOSING:
+		case STATE_LAST_ACK:
+		case STATE_TIME_WAIT:
+			state(STATE_CLOSED);
+			break;
+	}
+	return 0;
+}
+
 void StreamSocket::disconnect() {
 	_closed = true;
 	switch(_state) {

@@ -65,6 +65,7 @@ public:
 		set(MSG_SOCK_LISTEN,std::make_memfun(this,&SocketDevice::listen));
 		set(MSG_SOCK_RECVFROM,std::make_memfun(this,&SocketDevice::recvfrom));
 		set(MSG_SOCK_SENDTO,std::make_memfun(this,&SocketDevice::sendto));
+		set(MSG_SOCK_ABORT,std::make_memfun(this,&SocketDevice::abort));
 	}
 
 	void open(ipc::IPCStream &is) {
@@ -191,6 +192,12 @@ public:
 		ipc::Socket::Addr sa;
 		is >> r >> sa;
 		handleWrite(is,r,&sa);
+	}
+
+	void abort(ipc::IPCStream &is) {
+		Socket *sock = get(is.fd());
+		int res = sock->abort();
+		is << res << ipc::Reply();
 	}
 
 	void close(ipc::IPCStream &is) {

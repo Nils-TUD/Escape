@@ -98,6 +98,7 @@ public:
 	virtual ssize_t sendto(msgid_t mid,const ipc::Socket::Addr *sa,const void *buffer,size_t size);
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size);
 	virtual void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset);
+	virtual int abort();
 	virtual void disconnect();
 
 	ipc::port_t localPort() const {

@@ -122,6 +122,7 @@
 #define MSG_SOCK_LISTEN				1502	/* puts a socket into listening state */
 #define MSG_SOCK_RECVFROM			1503	/* receive data from a socket */
 #define MSG_SOCK_SENDTO				1504	/* send data to a socket */
+#define MSG_SOCK_ABORT				1505	/* aborts the connection, i.e. sends a RST */
 
 #define MSG_DNS_RESOLVE				1600	/* resolve a name to an address */
 #define MSG_DNS_SET_SERVER			1601	/* set the name server */

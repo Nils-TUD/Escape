@@ -78,6 +78,9 @@ public:
 	virtual ssize_t sendto(msgid_t,const ipc::Socket::Addr *,const void *,size_t) {
 		return -ENOTSUP;
 	}
+	virtual int abort() {
+		return -ENOTSUP;
+	}
 	virtual void disconnect() {
 		delete this;
 	}

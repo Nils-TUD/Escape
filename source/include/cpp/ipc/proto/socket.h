@@ -277,6 +277,18 @@ public:
 		return resp.res;
 	}
 
+	/**
+	 * Aborts the connection. Obviously, this is only possible for SOCK_STREAM. This operation
+	 * forces an abort of the connection, i.e. it sends an reset if necessary and directly puts
+	 * the socket into the closed state.
+	 */
+	void abort() {
+		int res;
+		_is << SendReceive(MSG_SOCK_ABORT) >> res;
+		if(res < 0)
+			VTHROWE("abort()",res);
+	}
+
 private:
 	ssize_t getShmOff(const void *data) {
 		uintptr_t daddr = reinterpret_cast<uintptr_t>(data);

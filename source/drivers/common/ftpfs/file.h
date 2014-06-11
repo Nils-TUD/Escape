@@ -28,7 +28,8 @@
 class File : public BlockFile {
 public:
 	explicit File(const std::string &path,const CtrlConRef &ctrl)
-			: _reading(false), _offset(-1), _path(path), _ctrlRef(ctrl), _ctrl(), _data() {
+			: _reading(false), _offset(-1), _shm(), _shmsize(), _path(path),
+			  _ctrlRef(ctrl), _ctrl(), _data() {
 	}
 	virtual ~File() {
 		if(_data) {

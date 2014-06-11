@@ -255,6 +255,7 @@ void StreamSocket::disconnect() {
 
 void StreamSocket::timeout() {
 	switch(_state) {
+		case STATE_FIN_WAIT_2:
 		case STATE_TIME_WAIT:
 			state(STATE_CLOSED);
 			break;
@@ -452,8 +453,10 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 				else
 					state(STATE_CLOSING);
 			}
-			else if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK))
+			else if(ackNo > _ctrlpkt.seqNo && (tcp->ctrlFlags & TCP::FL_ACK)) {
 				state(STATE_FIN_WAIT_2);
+				Timeouts::program(_timeoutId,std::make_memfun(this,&StreamSocket::timeout),3000);
+			}
 		}
 		break;
 

@@ -33,6 +33,7 @@ public:
 	}
 	virtual ~File() {
 		if(_data) {
+			_data->abort();
 			delete _data;
 			_ctrl->readReply();
 		}
@@ -68,6 +69,7 @@ private:
 		if(!_ctrl)
 			_ctrl = _ctrlRef.request();
 		else {
+			_data->abort();
 			delete _data;
 			_ctrl->readReply();
 		}

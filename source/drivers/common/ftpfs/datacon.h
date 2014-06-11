@@ -46,6 +46,10 @@ public:
 		return _sock.sharemem(mem,size);
 	}
 
+	void abort() {
+		_sock.abort();
+	}
+
 private:
 	static ipc::Socket getEndpoint(CtrlConRef &ctrlRef) {
 		const char *reply = ctrlRef.get()->execute(CtrlCon::CMD_PASV,"");

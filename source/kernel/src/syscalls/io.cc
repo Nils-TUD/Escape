@@ -363,15 +363,15 @@ int Syscalls::sharefile(Thread *t,IntrptStackFrame *stack) {
 	void *mem = (void*)SYSC_ARG2(stack);
 	Proc *p = t->getProc();
 
-	/* get device file */
-	OpenFile *file = FileDesc::request(p,dev);
-	if(EXPECT_FALSE(file == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
 	/* get file path */
 	ssize_t size = p->getVM()->getShareInfo(reinterpret_cast<uintptr_t>(mem),tmppath,sizeof(tmppath));
 	if(EXPECT_FALSE(size < 0))
 		SYSC_ERROR(stack,size);
+
+	/* get device file */
+	OpenFile *file = FileDesc::request(p,dev);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
 
 	/* share file */
 	int res = file->sharefile(p->getPid(),tmppath,mem,size);

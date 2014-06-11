@@ -97,6 +97,8 @@ namespace gui {
 				data -= (w << 2) + pad;
 			}
 		}
+		g.updateMinMax(Pos(x + rpos.x,y + rpos.y));
+		g.updateMinMax(Pos(x + rpos.x + rsize.width - 1,y + rpos.y + rsize.height - 1));
 	}
 
 	void BitmapImage::paintBitfields(Graphics &g,gpos_t x,gpos_t y) {
@@ -134,18 +136,12 @@ namespace gui {
 				uint32_t blue = (col & bluemask) >> blueshift;
 				uint32_t alpha = (col & alphamask) >> alphashift;
 				col = ((256 - alpha) << 24) | (red << 16) | (green << 8) | blue;
-				if(EXPECT_TRUE(col != TRANSPARENT)) {
-					if(EXPECT_FALSE(col != lastCol)) {
-						g.setColor(Color(col));
-						lastCol = col;
-					}
-					g.doSetPixel(cx + x,y + (rsize.height - 1 - cy));
-				}
+				paintPixel(g,cx + x,y + (rsize.height - 1 - cy),col,lastCol);
 			}
-			data -= ((w << 2) + pad);
+			data -= (w << 2) + pad;
 		}
-		g.updateMinMax(Pos(rpos.x,rpos.y));
-		g.updateMinMax(Pos(rpos.x + rsize.width - 1,rpos.y + rsize.height - 1));
+		g.updateMinMax(Pos(x + rpos.x,y + rpos.y));
+		g.updateMinMax(Pos(x + rpos.x + rsize.width - 1,y + rpos.y + rsize.height - 1));
 	}
 
 	uint BitmapImage::getShift(uint32_t val) {
@@ -156,8 +152,8 @@ namespace gui {
 	}
 
 	void BitmapImage::paintPixel(Graphics &g,gpos_t x,gpos_t y,uint32_t col,uint32_t &lastCol) {
-		if(col != TRANSPARENT) {
-			if(col != lastCol) {
+		if(EXPECT_TRUE(col != TRANSPARENT)) {
+			if(EXPECT_FALSE(col != lastCol)) {
 				g.setColor(Color(col));
 				lastCol = col;
 			}
@@ -261,8 +257,7 @@ namespace gui {
 			size_t pos = 0;
 			while(pos < _dataSize) {
 				size_t amount = std::min(_dataSize - pos,bufsize);
-				f.read(_data + pos,1,amount);
-				pos += amount;
+				pos += f.read(_data + pos,1,amount);
 			}
 		}
 		catch(default_error &e) {

@@ -353,7 +353,8 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	  			if(synchronized()) {
 					PRINT_TCP(_localPort,remotePort(),"received unexpected seq %u, expected %u",
 						seqNo,_rxCircle.nextExp());
-	  				sendCtrlPkt(TCP::FL_ACK);
+					// always sent an ACK here
+	  				sendCtrlPkt(TCP::FL_ACK,NULL,true);
 	  			}
 				return;
 			}

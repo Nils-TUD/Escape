@@ -243,7 +243,7 @@ void CircularBuf::print(std::ostream &os,bool data) {
 		os << "b:" << it->type << "]";
 		if(data) {
 			for(size_t i = 0; i < it->_size; ++i) {
-				if(i % 8 == 0)
+				if(i % 16 == 0)
 					os << "\n ";
 				os << std::hex << std::setw(2) << std::setfill('0') << it->data[i];
 				os << std::dec << std::setfill(' ') << ' ';

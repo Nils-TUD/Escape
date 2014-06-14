@@ -21,12 +21,27 @@
 
 #include <esc/common.h>
 
-/**
- * Converts the given scancode to a keycode
- *
- * @param isBreak whether it is a break-keycode
- * @param keycode the keycode
- * @param scanCode the received scancode
- * @return true if it was a keycode
- */
-bool kb_set1_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode);
+class ScancodeSet1 {
+	ScancodeSet1() = delete;
+
+	struct Entry {
+		uchar def;
+		uchar ext;
+	};
+
+public:
+	/**
+	 * Converts the given scancode to a keycode
+	 *
+	 * @param flags will be set to the flags
+	 * @param keycode will be set to the keycode
+	 * @param scanCode the received scancode
+	 * @param leds the LED status
+	 * @return true if it was a keycode
+	 */
+	static bool getKeycode(uchar *flags,uchar *keycode,uchar scanCode,uint8_t leds);
+
+private:
+	static uchar set;
+	static Entry sc2kc[];
+};

@@ -20,41 +20,22 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
-#include <ipc/proto/default.h>
 
-namespace ipc {
+class Mouse {
+	Mouse() = delete;
 
-/**
- * The keyboard-event sent by the keyboard-device
- */
-struct Keyb {
-	struct Event {
-		static const msgid_t MID = MSG_KB_EVENT;
-
-		enum {
-			FL_BREAK	= 1 << 0,
-			FL_CAPS		= 1 << 1,
-		};
-
-		/* the keycode (see keycodes.h) */
-		uchar keycode;
-		uchar flags;
+	enum {
+		CMD_SETSAMPLE		= 0xF3,
+		CMD_STREAMING		= 0xF4,
+		CMD_GETDEVID		= 0xF2,
 	};
+
+public:
+	static void init();
+	static int run(void*);
+
+private:
+	static int irqThread(void*);
+
+	static bool _wheel;
 };
-
-/**
- * The mouse-event sent by the mouse-device
- */
-struct Mouse {
-	struct Event {
-		static const msgid_t MID = MSG_MS_EVENT;
-
-		gpos_t x;
-		gpos_t y;
-		gpos_t z;
-		uchar buttons;
-	};
-};
-
-}

@@ -76,12 +76,12 @@ public:
 	 * with the given keymap.
 	 *
 	 * @param map the keymap to use
-	 * @param isBreak whether it is a breakcode
+	 * @param flags the flags
 	 * @param keycode the keycode
 	 * @param modifier will be set to the current modifiers
 	 * @return the character
 	 */
-	char translateKeycode(bool isBreak,uchar keycode,uchar *modifier) const;
+	char translateKeycode(uchar flags,uchar keycode,uchar *modifier) const;
 
 private:
 	static bool parseLine(FILE *f,Entry *map);

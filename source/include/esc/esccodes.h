@@ -46,6 +46,7 @@
 #define STATE_CTRL				(1 << 1)
 #define STATE_ALT				(1 << 2)
 #define STATE_BREAK				(1 << 3)
+#define STATE_CAPS				(1 << 4)
 
 #if defined(__cplusplus)
 extern "C" {

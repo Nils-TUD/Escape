@@ -172,7 +172,7 @@ static int kbClientThread(A_UNUSED void *arg) {
 			std::lock_guard<std::mutex> guard(mutex);
 			UIClient *active = UIClient::getActive();
 			const Keymap *map = active && active->keymap() ? active->keymap() : Keymap::getDefault();
-			uiev.d.keyb.character = map->translateKeycode(ev.isBreak,ev.keycode,&uiev.d.keyb.modifier);
+			uiev.d.keyb.character = map->translateKeycode(ev.flags,ev.keycode,&uiev.d.keyb.modifier);
 		}
 
 		/* mode switching etc. might fail */

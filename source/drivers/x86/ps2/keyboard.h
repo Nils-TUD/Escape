@@ -20,41 +20,28 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/messages.h>
-#include <ipc/proto/default.h>
+#include <ipc/proto/input.h>
 
-namespace ipc {
+class Keyboard {
+	Keyboard() = delete;
 
-/**
- * The keyboard-event sent by the keyboard-device
- */
-struct Keyb {
-	struct Event {
-		static const msgid_t MID = MSG_KB_EVENT;
-
-		enum {
-			FL_BREAK	= 1 << 0,
-			FL_CAPS		= 1 << 1,
-		};
-
-		/* the keycode (see keycodes.h) */
-		uchar keycode;
-		uchar flags;
+	enum {
+		CMD_LEDS		= 0xED,
 	};
-};
 
-/**
- * The mouse-event sent by the mouse-device
- */
-struct Mouse {
-	struct Event {
-		static const msgid_t MID = MSG_MS_EVENT;
-
-		gpos_t x;
-		gpos_t y;
-		gpos_t z;
-		uchar buttons;
+public:
+	enum {
+		LED_SCROLL_LOCK	= 1 << 0,
+		LED_NUM_LOCK	= 1 << 1,
+		LED_CAPS_LOCK	= 1 << 2,
 	};
-};
 
-}
+	static void init();
+	static int run(void*);
+
+private:
+	static void updateLEDs(const ipc::Keyb::Event &ev);
+	static int irqThread(void*);
+
+	static uint8_t _leds;
+};

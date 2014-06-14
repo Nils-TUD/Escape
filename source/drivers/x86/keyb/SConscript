@@ -1,4 +1,0 @@
-# -*- Mode: Python -*-
-
-Import('env')
-env.EscapeCXXProg('sbin', target = 'keyb', source = env.Glob('*.cc'))

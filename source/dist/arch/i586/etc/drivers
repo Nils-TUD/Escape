@@ -12,9 +12,8 @@ pipe
 	/dev/pipe 0666 root
 speaker
 	/dev/speaker 0110 audio
-keyb
+ps2
 	/dev/keyb 0110 input
-mouse
 	/dev/mouse 0110 input
 tcpip
 	/dev/socket 0770 network

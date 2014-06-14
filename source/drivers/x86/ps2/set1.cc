@@ -20,15 +20,11 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/keycodes.h>
+
 #include "set1.h"
+#include "keyboard.h"
 
-/* an entry in the set1-map */
-typedef struct {
-	uchar def;
-	uchar ext;
-} sScanCodeEntry;
-
-static sScanCodeEntry scanCode2KeyCode[] = {
+ScancodeSet1::Entry ScancodeSet1::sc2kc[] = {
 	/* 00 */	{0,				0},
 	/* 01 */	{VK_ESC,		0},
 	/* 02 */	{VK_1,			0},
@@ -159,25 +155,30 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 7F */	{0,				0},
 };
 
-static uchar set = 0;
+uchar ScancodeSet1::set = 0;
 
-bool kb_set1_getKeycode(uchar *isBreak,uchar *keycode,uchar scanCode) {
-	sScanCodeEntry *e;
-	/* extended code-start? */
+bool ScancodeSet1::getKeycode(uchar *flags,uchar *keycode,uchar scanCode,uint8_t leds) {
+	Entry *e;
+	// extended code-start?
 	if(scanCode == 0xE0) {
 		set = 1;
 		return false;
 	}
 
-	/* break? */
-	*isBreak = false;
+	// set break
+	*flags = 0;
 	if(scanCode & 0x80) {
-		*isBreak = true;
+		*flags |= ipc::Keyb::Event::FL_BREAK;
 		scanCode &= ~0x80;
 	}
 
-	e = scanCode2KeyCode + (scanCode & 0x7F);
-	if(set)
+	// set caps lock
+	if(leds & Keyboard::LED_CAPS_LOCK)
+		*flags |= ipc::Keyb::Event::FL_CAPS;
+
+	e = sc2kc + (scanCode & 0x7F);
+	// if num lock is not set, use the extended codes
+	if(set || ((~leds & Keyboard::LED_NUM_LOCK) && scanCode >= 0x47 && scanCode <= 0x53))
 		*keycode = e->ext;
 	else
 		*keycode = e->def;

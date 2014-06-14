@@ -82,6 +82,17 @@ static bool compareProcs(const process* a,const process* b) {
 	return b->cycles() < a->cycles();
 }
 
+static void printSize(size_t size) {
+	if(size >= 1024 * 1024 * 1024)
+		cout << (size / (1024 * 1024 * 1024)) << "G";
+	else if(size >= 1024 * 1024)
+		cout << (size / (1024 * 1024)) << "M";
+	else if(size >= 1024)
+		cout << (size / 1024) << "K";
+	else
+		cout << size << "B";
+}
+
 static void display(void) {
 	usemdown(&displaySem);
 	try {
@@ -113,12 +124,12 @@ static void display(void) {
 
 		size_t wpid = 5;
 		size_t wuser = 10;
-		size_t wvirt = 6;
-		size_t wphys = 6;
-		size_t wshm = 6;
+		size_t wvirt = 5;
+		size_t wphys = 5;
+		size_t wshm = 5;
 		size_t wcpu = 6;
 		size_t wmem = 6;
-		size_t wtime = 11;
+		size_t wtime = 13;
 		size_t cmdbegin = wpid + wuser + wvirt + wphys + wshm + wcpu + wmem + wtime;
 
 		// print header
@@ -156,9 +167,12 @@ static void display(void) {
 			else
 				cout << p.uid();
 
-			cout << right << setw(wvirt - 1) << ((p.pages() * pagesize) / 1024) << "K";
-			cout << setw(wphys - 1) << ((p.ownFrames() * pagesize) / 1024) << "K";
-			cout << setw(wshm - 1) << ((p.sharedFrames() * pagesize) / 1024) << "K";
+			cout << right << setw(wvirt - 1);
+			printSize(p.pages() * pagesize);
+			cout << setw(wphys - 1);
+			printSize(p.ownFrames() * pagesize);
+			cout << setw(wshm - 1);
+			printSize(p.sharedFrames() * pagesize);
 
 			cout << setw(wcpu) << setprecision(1) << (100.0 * (p.cycles() / (double)totalcycles));
 			cout << setw(wmem) << setprecision(1) << (100.0 * (p.ownFrames() / (double)totalframes));

@@ -80,7 +80,6 @@ public:
 	 * Checks whether there are pending read-requests to be served and does so, if there are some.
 	 */
 	void checkPending() {
-		std::lock_guard<std::mutex> guard(*_vterm->mutex);
 		_requests.handle();
 	}
 
@@ -136,13 +135,18 @@ private:
 		}
 
 		is << FileWrite::Response(r.count) << Reply();
+
+		std::lock_guard<std::mutex> guard(*_vterm->mutex);
 		checkPending();
 	}
 
 	void setMode(ipc::IPCStream &is) {
 		int mode;
 		is >> mode;
-		setVideoMode(mode);
+		{
+			std::lock_guard<std::mutex> guard(*_vterm->mutex);
+			setVideoMode(mode);
+		}
 		is << 0 << ipc::Reply();
 	}
 
@@ -174,8 +178,11 @@ private:
 
 	void handleControlMsg(IPCStream &is,msgid_t mid,int arg1,int arg2) {
 		int res = vtctrl_control(_vterm,mid,arg1,arg2);
-		checkPending();
-		update();
+		{
+			std::lock_guard<std::mutex> guard(*_vterm->mutex);
+			checkPending();
+			update();
+		}
 		is << res << Reply();
 	}
 

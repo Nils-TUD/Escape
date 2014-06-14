@@ -152,12 +152,11 @@ static int uimInputThread(void *arg) {
 	/* open uimng's input device */
 	ipc::UIEvents uiev(*vterm.ui);
 
-	/* set video mode */
-	vtSetVideoMode(modeid);
-
-	/* now we're the active client. update screen */
 	{
 		std::lock_guard<std::mutex> guard(*vterm.mutex);
+		/* set video mode */
+		vtSetVideoMode(modeid);
+		/* now we're the active client. update screen */
 		vtctrl_markScrDirty(&vterm);
 		vtUpdate();
 	}

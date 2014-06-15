@@ -79,6 +79,9 @@ public:
 		int res = startthread(handlerThread,new int(is.fd()));
 		if(res >= 0) {
 			add(is.fd(),new HTTPClient(is.fd(),urlbuf));
+			// we don't know whether the thread starts before we're finished or not. so, bind it
+			// here to prevent that we get a request for this channel and bind it in the thread-
+			// function to ensure that the thread gets already arrived messages
 			::bindto(is.fd(),res);
 		}
 		is << FileOpen::Response(res >= 0 ? 0 : res) << Reply();
@@ -222,6 +225,7 @@ static HTTPDevice *dev;
 
 static int handlerThread(void *arg) {
 	int *fd = reinterpret_cast<int*>(arg);
+	// see comment above
 	::bindto(*fd,gettid());
 	dev->loop();
 	delete fd;

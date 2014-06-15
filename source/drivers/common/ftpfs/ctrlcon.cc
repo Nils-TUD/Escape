@@ -76,6 +76,8 @@ void CtrlCon::connect() {
 	execute(CMD_PASS,_pw.c_str());
 	// always use binary mode
 	execute(CMD_TYPE,"I");
+	if(!_dir.empty())
+		execute(CMD_CWD,_dir.c_str());
 }
 
 void CtrlCon::sendCommand(const char *cmd,const char *arg) {

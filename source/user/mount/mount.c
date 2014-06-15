@@ -44,6 +44,8 @@ static void sigchild(A_UNUSED int sig) {
 }
 
 int main(int argc,const char *argv[]) {
+	char devpath[MAX_PATH_LEN];
+	char fsname[MAX_PATH_LEN];
 	char fsdev[MAX_PATH_LEN];
 	char *path = NULL;
 	char *dev = NULL;
@@ -61,11 +63,17 @@ int main(int argc,const char *argv[]) {
 		error("Unable to announce signal handler");
 
 	/* build fs-device */
-	char *devname = strrchr(dev,'/');
-	char *fsname = strrchr(fs,'/');
-	if(!devname)
-		devname = dev - 1;
-	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",fsname ? fsname + 1 : fs,devname + 1);
+	cleanpath(devpath,sizeof(devpath),dev);
+	char *devname = devpath + 1;
+	if(strncmp(devname,"dev/",4) == 0)
+		devname += 4;
+	for(size_t i = 0; devname[i]; ++i) {
+		if(devname[i] == '/')
+			devname[i] = '-';
+	}
+
+	strnzcpy(fsname,fs,sizeof(fsname));
+	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",basename(fsname),devname);
 
 	/* is it already started? */
 	int fd = open(fsdev,IO_MSGS);

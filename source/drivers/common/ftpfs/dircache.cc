@@ -78,7 +78,8 @@ DirCache::List *DirCache::loadList(const CtrlConRef &ctrlRef,const char *dir) {
 	{
 		DataCon data(myRef);
 		char tmppath[MAX_PATH_LEN];
-		snprintf(tmppath,sizeof(tmppath),"-La %s",dir);
+		// skip the slash; we always use relative paths to the root-path
+		snprintf(tmppath,sizeof(tmppath),"-La %s",dir + 1);
 		ctrl->execute(CtrlCon::CMD_LIST,tmppath);
 
 		list = new List;

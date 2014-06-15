@@ -71,9 +71,10 @@ struct OpenFile : public Client {
 
 class FTPFSDevice : public ClientDevice<OpenFile> {
 public:
-	explicit FTPFSDevice(const char *fsDev,const char *host,port_t port,const char *user,const char *pw)
+	explicit FTPFSDevice(const char *fsDev,const char *host,port_t port,
+		const char *user,const char *pw,const char *dir)
 		: ClientDevice<OpenFile>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-		  _ctrlRef(new CtrlCon(host,port,user,pw)), _clients() {
+		  _ctrlRef(new CtrlCon(host,port,user,pw,dir)), _clients() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&FTPFSDevice::devopen));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&FTPFSDevice::devclose),false);
 		set(MSG_DEV_SHFILE,std::make_memfun(this,&FTPFSDevice::shfile));
@@ -282,11 +283,17 @@ int main(int argc,char **argv) {
 	port_t port = 21;
 	char *host = at + 1;
 	char *user = path + 9;
+	const char *dir = "";
 	*at = '\0';
 	at = strchr(host,':');
 	if(at) {
 		*at = '\0';
 		port = atoi(at + 1);
+	}
+	at = strchr(host,'/');
+	if(at) {
+		*at = '\0';
+		dir = at + 1;
 	}
 
 	char pw[64] = "anonymous@example.com";
@@ -301,7 +308,7 @@ int main(int argc,char **argv) {
 		fflush(stdout);
 	}
 
-	FTPFSDevice dev(argv[1],host,port,user,pw);
+	FTPFSDevice dev(argv[1],host,port,user,pw,dir);
 	dev.loop();
 	return 0;
 }

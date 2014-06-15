@@ -23,7 +23,7 @@
 			result = (c == '\0' || c == EOF) ? YY_NULL : (buf[0] = c, 1); \
 		}
 
-	#define YY_USER_ACTION yylloc.filename = filename; \
+	#define YY_USER_ACTION yylloc.filename = (char*)filename; \
 		if(yylineno > 1 && yylloc.first_line != yylineno) { \
 			memcpy(&yylastloc,&yylloc,sizeof(YYLTYPE)); \
 			yycolumn = 1; \

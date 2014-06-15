@@ -33,7 +33,7 @@ extern "C" {
 
 extern FILE *curStream;
 extern bool curIsStream;
-extern char *curLine;
+extern const char *curLine;
 
 /**
  * Inits the shell; announces the signal-handler for SIG_INTRPT and creates the environment with
@@ -58,7 +58,7 @@ ssize_t shell_prompt(void);
  * @param isFile whether <line> is a file
  * @return the result
  */
-int shell_executeCmd(char *line,bool isFile);
+int shell_executeCmd(const char *line,bool isFile);
 
 /**
  * Reads a line

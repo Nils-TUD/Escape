@@ -10,8 +10,8 @@
 }
 
 %code requires {
-	char *filename; /* current filename here for the lexer */
-	
+	const char *filename; /* current filename here for the lexer */
+
 	#define MAX_LINE_LEN	255
 
 	typedef struct YYLTYPE {
@@ -22,9 +22,9 @@
 	  char *filename;
 	  char line[MAX_LINE_LEN + 1];
 	} YYLTYPE;
-	
+
 	#define YYLTYPE_IS_DECLARED 1 /* alert the parser that we have our own definition */
-	
+
 	#define YYLLOC_DEFAULT(Current, Rhs, N)                                \
 	    do                                                                 \
 	      if (N)                                                           \
@@ -104,7 +104,7 @@
 %token T_ERR2FILE
 %token T_OUT2FILE
 
-%type <node> stmtlist stmtlistr stmt expr assignstmt cmdexpr cmdexprlist cmd subcmd 
+%type <node> stmtlist stmtlistr stmt expr assignstmt cmdexpr cmdexprlist cmd subcmd
 %type <node> cmdredirfd cmdredirin cmdredirout cmdredirerr strlist strcomp nestedcmdexpr
 %type <node> nestedcmdexprlist nestedsubcmd neexprlist exprlist
 
@@ -221,7 +221,7 @@ assignstmt:
 		$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$3,false,NULL);
 	}
 	| T_VAR '[' ']' T_ASSIGN expr {
-		$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$5,true,NULL); 
+		$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$5,true,NULL);
 	}
 	| T_VAR '[' expr ']' T_ASSIGN expr {
 		$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$6,true,$3);

@@ -20,12 +20,23 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <shell/shell.h>
+
+#include "../exec/env.h"
 #include "../cmds.h"
 
+extern sEnv *curEnv;
+
 int shell_cmdInclude(int argc,char **argv) {
-	if(argc != 2) {
-		fprintf(stderr,"Usage: %s <file>\n",argv[0]);
+	if(argc < 2) {
+		fprintf(stderr,"Usage: %s <file> [<args>...]\n",argv[0]);
 		return EXIT_FAILURE;
 	}
-	return shell_executeCmd(argv[1],true);
+
+	sEnv *old = curEnv;
+	curEnv = env_create(old);
+	env_addArgs(curEnv,argc - 1,(const char**)argv + 1);
+	int res = shell_executeCmd(argv[1],true);
+	env_destroy(curEnv);
+	curEnv = old;
+	return res;
 }

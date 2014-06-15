@@ -45,6 +45,7 @@ static void compl_freeCache(sDirCache *dc);
 
 static sDirCache dirCache[DIR_CACHE_SIZE];
 static sShellCmd commands[] = {
+	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"."			}, SSTRLEN("."),		shell_cmdInclude,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"clear"		}, SSTRLEN("clear"),	shell_cmdClear	,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"echo"		}, SSTRLEN("echo"),		shell_cmdEcho	,-1},
 	{TYPE_BUILTIN,	(S_IFREG | S_IXOTH), "", {"env"			}, SSTRLEN("env"),		shell_cmdEnv	,-1},

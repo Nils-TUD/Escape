@@ -55,12 +55,12 @@ static char *shell_getComplToken(char *line,size_t length,size_t *start,bool *se
 extern "C" int yyparse(void);
 extern "C" int yylex_destroy(void);
 extern int yydebug;
-extern char *filename;
+extern const char *filename;
 
 static ipc::VTerm vterm(STDOUT_FILENO);
 static bool resetReadLine = false;
 static size_t tabCount = 0;
-char *curLine = NULL;
+const char *curLine = NULL;
 FILE *curStream = NULL;
 bool curIsStream = false;
 sEnv *curEnv = NULL;
@@ -97,7 +97,7 @@ static void shell_sigIntrpt(A_UNUSED int sig) {
 	signal(SIG_INTRPT,shell_sigIntrpt);
 }
 
-int shell_executeCmd(char *line,bool isFile) {
+int shell_executeCmd(const char *line,bool isFile) {
 	int res;
 	curIsStream = isFile;
 	if(isFile) {
@@ -107,7 +107,7 @@ int shell_executeCmd(char *line,bool isFile) {
 		filename = line;
 	}
 	else
-		filename = (char*)"<stdin>";
+		filename = "<stdin>";
 	curLine = line;
 	lang_reset();
 	res = yyparse();

@@ -17,16 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <esc/common.h>
+#include <ipc/proto/vterm.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "../cmds.h"
 
-int shell_cmdCd(int argc,char **argv);
-int shell_cmdEcho(int argc,char *argv[]);
-int shell_cmdEnv(int argc,char **argv);
-int shell_cmdHelp(int argc,char **argv);
-int shell_cmdInclude(int argc,char **argv);
-int shell_cmdJobs(int argc,char **argv);
-int shell_cmdKill(int argc,char **argv);
-int shell_cmdPwd(int argc,char **argv);
-int shell_cmdClear(int argc,char **argv);
+int shell_cmdClear(int,char **) {
+	ipc::VTerm vterm(getenv("TERM"));
+	ipc::VTerm::Mode mode = vterm.getMode();
+
+	for(uint i = 0; i < mode.rows - 1; ++i)
+		printf("\n");
+	fflush(stdout);
+	return EXIT_SUCCESS;
+}

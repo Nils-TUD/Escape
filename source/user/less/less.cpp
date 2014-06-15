@@ -292,16 +292,21 @@ static void append(string& s,int& len,char c) {
 		case '\r':
 			// ignore
 			break;
+
 		default:
-			s += c;
+			// TODO actually, it would be cool to support escape-codes here, but the linecontainer
+			// can't cope with "invisible" characters that lead to longer lines. so for now, just
+			// remove the escape-codes.
 			if(inEsc) {
 				if(c == ']')
 					inEsc = 0;
 			}
 			else if(c == '\033')
 				inEsc = 1;
-			else
+			else {
+				s += c;
 				len++;
+			}
 			break;
 	}
 }

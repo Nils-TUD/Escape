@@ -37,6 +37,14 @@ void Keyboard::init() {
 	// clear LEDs
 	PS2::devCmd(CMD_LEDS,PS2::PORT1);
 	PS2::devCmd(_leds,PS2::PORT1);
+
+	// set repeat rate and delay
+	Typematic typematic;
+	typematic.repeatRate = 7;
+	typematic.delay = 3;		// 1000ms
+	typematic.zero = 0;
+	PS2::devCmd(CMD_TYPEMATIC,PS2::PORT1);
+	PS2::devCmd(typematic.value,PS2::PORT1);
 }
 
 void Keyboard::updateLEDs(const ipc::Keyb::Event &ev) {

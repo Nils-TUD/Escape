@@ -27,6 +27,14 @@ class Keyboard {
 
 	enum {
 		CMD_LEDS		= 0xED,
+		CMD_TYPEMATIC	= 0xF3,
+	};
+
+	union Typematic {
+		uint8_t repeatRate : 5,	/* 00000b = 30 Hz, ..., 11111b = 2 Hz */
+				delay : 2,		/* 00b = 250 ms, 01b = 500 ms, 10b = 750 ms, 11b = 1000 ms */
+				zero : 1;		/* must be zero */
+		uint8_t value;
 	};
 
 public:

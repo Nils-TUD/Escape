@@ -34,7 +34,7 @@ static void linkRem(ipc::Net &net,int argc,char **argv);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s (add|rem|set|up|down|show) args...\n",name);
-	fprintf(stderr,"\tadd <link> <device>           : adds link <link> offered by <device>\n");
+	fprintf(stderr,"\tadd <link> <driver>           : adds link <link> offered by <driver>\n");
 	fprintf(stderr,"\trem <link>                    : removes link <link>\n");
 	fprintf(stderr,"\tset <link> (ip|subnet) <val>  : configures <link>\n");
 	fprintf(stderr,"\tup <link>                     : enables <link>\n");

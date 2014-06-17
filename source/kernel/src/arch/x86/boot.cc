@@ -89,6 +89,7 @@ BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 static char mbbuf[PAGE_SIZE];
 static size_t mbbufpos = 0;
 static MultiBootInfo *mbinfo;
+static bool initialized = false;
 
 static void *copyMBInfo(uintptr_t info,size_t len) {
 	void *res = mbbuf + mbbufpos;
@@ -145,6 +146,9 @@ static void mapModules() {
 }
 
 int Boot::init(A_UNUSED IntrptStackFrame *stack) {
+	if(initialized)
+		return -EEXIST;
+
 #if defined(__i586__)
 	if(VM86::create() < 0)
 		Util::panic("Unable to create VM86 task");
@@ -152,5 +156,6 @@ int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 
 	if(unittests != NULL)
 		unittests();
+	initialized = true;
 	return 0;
 }

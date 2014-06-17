@@ -64,6 +64,7 @@ BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 static Boot::Module mods[MAX_PROG_COUNT];
 static Boot::MemMap mmap;
 static BootInfo *binfo;
+static bool initialized = false;
 
 void Boot::archStart(void *nfo) {
 	binfo = (BootInfo*)nfo;
@@ -90,6 +91,9 @@ void Boot::parseBootInfo() {
 }
 
 int Boot::init(A_UNUSED IntrptStackFrame *stack) {
+	if(initialized)
+		return -EEXIST;
+
 	if(unittests != NULL)
 		unittests();
 
@@ -100,5 +104,6 @@ int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
 	/* start termination-thread */
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
+	initialized = true;
 	return 0;
 }

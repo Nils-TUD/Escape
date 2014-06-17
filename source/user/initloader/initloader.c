@@ -62,6 +62,9 @@ int main(void) {
 	/* give ourself a name */
 	strcpy(__progname,"initloader");
 
+	if(getpid() != 0)
+		error("It's not good to start init twice ;)");
+
 	/* perform some additional initialization in the kernel */
 	syscall0(SYSCALL_INIT);
 

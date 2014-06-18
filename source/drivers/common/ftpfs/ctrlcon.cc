@@ -54,7 +54,7 @@ const CtrlCon::Command CtrlCon::cmds[] = {
 	{CMD_DELE,	"DELE",	{250,  0}},
 	{CMD_NOOP,	"NOOP",	{200,  0}},
 	{CMD_TRAN,	"TRAN",	{226,  0}},
-	{CMD_ABOR,	"ABOR",	{226,  0}},
+	{CMD_ABOR,	"ABOR",	{226,451}},
 	{CMD_APPE,	"APPE",	{226,  0}},
 	{CMD_REST,	"REST",	{350,  0}},
 	{CMD_FEAT,	"FEAT",	{211,  0}},
@@ -133,4 +133,14 @@ const char *CtrlCon::execute(Cmd cmd,const char *arg,bool noThrow) {
 		VTHROW("Got " << code << " for command '" << c->name << "'");
 	}
 	return reply;
+}
+
+void CtrlCon::abort() {
+	const char *reply = execute(CMD_ABOR,"");
+	int code = strtoul(reply,NULL,10);
+	// if the reply is 451, the transfer was still in progress in which case we get
+	// another 226 response for the ABOR command
+	// actually, the RFC says that for 426. but as it seems, ftp servers do it different
+	if(code == 451)
+		readReply();
 }

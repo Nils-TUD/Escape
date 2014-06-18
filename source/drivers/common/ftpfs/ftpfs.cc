@@ -38,9 +38,8 @@ using namespace ipc;
 
 struct OpenFile : public Client {
 	explicit OpenFile(int f,const CtrlConRef &_ctrlRef = CtrlConRef(),const char *_path = NULL,
-			bool isDir = false,int _flags = 0)
-		: Client(f), flags(_flags), path(_path), ctrlRef(_ctrlRef),
-		  file(isDir ? (BlockFile*)new DirList(path,_ctrlRef) : (BlockFile*)new File(path,_ctrlRef)) {
+			int _flags = 0)
+		: Client(f), flags(_flags), path(_path), ctrlRef(_ctrlRef), file(getFile(_ctrlRef,path)) {
 	}
 	virtual ~OpenFile() {
 		delete file;
@@ -61,6 +60,15 @@ struct OpenFile : public Client {
 
 	int sharemem(void *mem,size_t size) {
 		return file->sharemem(mem,size);
+	}
+
+	static BlockFile *getFile(const CtrlConRef &ctrlRef,const std::string &path) {
+		sFileInfo info;
+		if(DirCache::getInfo(ctrlRef,path.c_str(),&info) < 0)
+			info.size = 0;
+		else if(S_ISDIR(info.mode))
+			return new DirList(path,ctrlRef);
+		return new File(path,info.size,ctrlRef);
 	}
 
 	int flags;
@@ -130,7 +138,7 @@ public:
 		FileOpen::Request r(path,sizeof(path));
 		is >> r;
 
-		add(is.fd(),new OpenFile(is.fd(),_ctrlRef,path,isDirectory(path),r.flags));
+		add(is.fd(),new OpenFile(is.fd(),_ctrlRef,path,r.flags));
 		is << FileOpen::Response(is.fd()) << Reply();
 	}
 

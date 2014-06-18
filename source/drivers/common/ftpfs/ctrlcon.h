@@ -108,6 +108,7 @@ public:
 
 	const char *execute(Cmd cmd,const char *arg,bool noThrow = false);
 	const char *readReply();
+	void abort();
 
 private:
 	void connect();

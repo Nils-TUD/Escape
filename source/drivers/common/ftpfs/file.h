@@ -27,16 +27,14 @@
 
 class File : public BlockFile {
 public:
-	explicit File(const std::string &path,const CtrlConRef &ctrl)
-			: _reading(false), _offset(-1), _shm(), _shmsize(), _path(path),
+	explicit File(const std::string &path,size_t size,const CtrlConRef &ctrl)
+			: _reading(false), _offset(-1), _shm(), _shmsize(), _total(size), _path(path),
 			  _ctrlRef(ctrl), _ctrl(), _data() {
 	}
 	virtual ~File() {
 		if(_data) {
 			try {
-				_data->abort();
-				delete _data;
-				_ctrl->readReply();
+				stop();
 			}
 			catch(...) {
 			}
@@ -73,10 +71,8 @@ private:
 		if(!_ctrl)
 			_ctrl = _ctrlRef.request();
 		else if(_data) {
-			_data->abort();
-			delete _data;
+			stop();
 			_data = NULL;
-			_ctrl->readReply();
 		}
 		_data = new DataCon(_ctrlRef);
 		if(_shm)
@@ -101,10 +97,22 @@ private:
 		}
 	}
 
+	void stop() {
+		bool aborting = _offset == (size_t)-1 || _offset < _total;
+		if(aborting)
+			_data->abort();
+		delete _data;
+		if(_reading && aborting)
+			_ctrl->abort();
+		else
+			_ctrl->readReply();
+	}
+
 	bool _reading;
 	size_t _offset;
 	void *_shm;
 	size_t _shmsize;
+	size_t _total;
 	const std::string &_path;
 	CtrlConRef _ctrlRef;
 	CtrlCon *_ctrl;

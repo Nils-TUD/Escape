@@ -185,7 +185,7 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 	size_t amount = std::min(_remoteWinSize,size);
 	assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
 	// send it
-	sendData();
+	sendData(true);
 
 	// register request; the response is sent as soon as the sent data has been ACKed
 	_pending.mid = mid;
@@ -292,7 +292,7 @@ void StreamSocket::timeout() {
 		case STATE_ESTABLISHED:
 			if(_pending.count > 0) {
 				PRINT_TCP(_localPort,remotePort(),"timeout. Resending data.");
-				sendData();
+				sendData(true);
 			}
 			break;
 
@@ -415,7 +415,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	}
 
 	// send outstanding data
-	sendData();
+	sendData(false);
 
 	// handle state changes
 	switch(_state) {
@@ -585,8 +585,9 @@ ssize_t StreamSocket::sendCtrlPkt(uint8_t flags,MSSOption *opt,bool forceACK) {
 	return 0;
 }
 
-void StreamSocket::sendData() {
+void StreamSocket::sendData(bool resend) {
 	CircularBuf::seq_type seqNo = _txCircle.nextExp();
+	CircularBuf::seq_type start = resend ? seqNo : _txCircle.nextSeq();
 	/* have all bytes we've sent so far been ACKed? */
 	if(_pending.count && _pending.isWrite() &&
 			seqNo >= _pending.d.write.seqNo - (CircularBuf::seq_type)_pending.d.write.remaining) {
@@ -606,19 +607,19 @@ void StreamSocket::sendData() {
 		size_t left = _remoteWinSize;
 		while(left > 0) {
 			size_t limit = std::min(left,std::min(_mtu,_mss));
-			size_t amount = _txCircle.get(seqNo,buf,limit);
+			size_t amount = _txCircle.get(start,buf,limit);
 			if(amount == 0)
 				break;
 
 			// TODO don't use FL_PSH all the time
 			ssize_t res = TCP::send(remoteIP(),_localPort,remotePort(),
-				TCP::FL_ACK | TCP::FL_PSH,buf,amount,0,seqNo,ackNo,_rxCircle.windowSize());
+				TCP::FL_ACK | TCP::FL_PSH,buf,amount,0,start,ackNo,_rxCircle.windowSize());
 			if(res < 0) {
 				print("Sending data failed: %s",strerror(res));
 				break;
 			}
 
-			seqNo += amount;
+			start += amount;
 			left -= amount;
 		}
 		delete[] buf;

@@ -138,7 +138,7 @@ private:
 
 	const char *stateName(State st) const;
 	ssize_t sendCtrlPkt(uint8_t flags,MSSOption *opt = NULL,bool forceACK = false);
-	void sendData();
+	void sendData(bool resend);
 	void timeout();
 
 	int forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,SynPacket &syn,

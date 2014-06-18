@@ -211,7 +211,7 @@ public:
 			if(res == -ENOENT) {
 				void *addr = joinbuf(path,size,flags);
 				if(!addr)
-					res = errno;
+					res = -errno;
 				else {
 					c->_shm.reset(new SharedMemory(reinterpret_cast<char*>(addr),info.inodeNo,info.device));
 					res = 0;

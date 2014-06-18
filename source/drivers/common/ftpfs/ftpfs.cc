@@ -154,7 +154,7 @@ public:
 		DataBuf buf(r.count,file->shm(),r.shmemoff);
 		ssize_t res = file->read(buf.data(),r.offset,r.count);
 
-		is << res << Reply();
+		is << FileRead::Response(res) << Reply();
 		if(r.shmemoff == -1) {
 			if(res > 0)
 				is << ReplyData(buf.data(),res);
@@ -171,7 +171,7 @@ public:
 			is >> ReceiveData(buf.data(),r.count);
 
 		ssize_t res = file->write(buf.data(),r.offset,r.count);
-		is << res << Reply();
+		is << FileWrite::Response(res) << Reply();
 	}
 
 	void istat(IPCStream &is) {

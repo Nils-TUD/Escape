@@ -446,6 +446,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 					_txCircle.init(_txCircle.nextSeq(),SEND_BUF_SIZE);
 					_rxCircle.init(seqNo + 1,RECV_BUF_SIZE);
 					_mss = parseMSS(tcp);
+					PRINT_TCP(_localPort,remotePort(),"Got MSS: %zu",_mss);
 
 					state(STATE_ESTABLISHED);
 					replyPending<int>(0);
@@ -542,7 +543,7 @@ uint16_t StreamSocket::parseMSS(const TCP *tcp) {
 			switch(optHead->kind) {
 				case OPTION_MSS:
 					const MSSOption *mssOpt = reinterpret_cast<const MSSOption*>(optHead);
-					return mssOpt->mss;
+					return be16tocpu(mssOpt->mss);
 			}
 
 			options += optHead->length;

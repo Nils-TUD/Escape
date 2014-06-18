@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/endian.h>
 #include <sstream>
 #include <fstream>
 #include <time.h>
@@ -56,9 +57,9 @@ private:
 		char buf[256];
 		for(auto it = list->nodes.begin(); it != list->nodes.end(); ++it) {
 			sDirEntry *e = (sDirEntry*)buf;
-			e->nameLen = it->first.length();
-			e->nodeNo = it->second.inodeNo;
-			e->recLen = sizeof(*e) + it->first.length();
+			e->nameLen = cputole16(it->first.length());
+			e->nodeNo = cputole32(it->second.inodeNo);
+			e->recLen = cputole16((sizeof(*e) - (MAX_NAME_LEN + 1)) + it->first.length());
 			memcpy(e->name,it->first.c_str(),it->first.length());
 			_os.write((char*)e,e->recLen);
 		}

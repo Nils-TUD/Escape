@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/arch/x86/idt.h>
+#include <esc/arch.h>
 
 /**
  * Our ISRs
@@ -88,94 +89,94 @@ IDT::Entry IDT::idt[IDT_COUNT];
 
 void IDT::init() {
 	/* setup the idt-pointer */
-	Pointer idtPtr;
-	idtPtr.address = (ulong)idt;
-	idtPtr.size = sizeof(idt) - 1;
+	DescTable tbl;
+	tbl.offset = (ulong)idt;
+	tbl.size = sizeof(idt) - 1;
 
 	/* setup the idt */
 
 	/* exceptions */
-	set(0,isr0,DPL_KERNEL);
-	set(1,isr1,DPL_KERNEL);
-	set(2,isr2,DPL_KERNEL);
-	set(3,isr3,DPL_KERNEL);
-	set(4,isr4,DPL_KERNEL);
-	set(5,isr5,DPL_KERNEL);
-	set(6,isr6,DPL_KERNEL);
-	set(7,isr7,DPL_KERNEL);
-	set(8,isr8,DPL_KERNEL);
-	set(9,isr9,DPL_KERNEL);
-	set(10,isr10,DPL_KERNEL);
-	set(11,isr11,DPL_KERNEL);
-	set(12,isr12,DPL_KERNEL);
-	set(13,isr13,DPL_KERNEL);
-	set(14,isr14,DPL_KERNEL);
-	set(15,isr15,DPL_KERNEL);
-	set(16,isr16,DPL_KERNEL);
-	set(17,isr17,DPL_KERNEL);
-	set(18,isr18,DPL_KERNEL);
-	set(19,isr19,DPL_KERNEL);
-	set(20,isr20,DPL_KERNEL);
-	set(21,isr21,DPL_KERNEL);
-	set(22,isr22,DPL_KERNEL);
-	set(23,isr23,DPL_KERNEL);
-	set(24,isr24,DPL_KERNEL);
-	set(25,isr25,DPL_KERNEL);
-	set(26,isr26,DPL_KERNEL);
-	set(27,isr27,DPL_KERNEL);
-	set(28,isr28,DPL_KERNEL);
-	set(29,isr29,DPL_KERNEL);
-	set(30,isr30,DPL_KERNEL);
-	set(31,isr31,DPL_KERNEL);
+	set(0,isr0,Desc::DPL_KERNEL);
+	set(1,isr1,Desc::DPL_KERNEL);
+	set(2,isr2,Desc::DPL_KERNEL);
+	set(3,isr3,Desc::DPL_KERNEL);
+	set(4,isr4,Desc::DPL_KERNEL);
+	set(5,isr5,Desc::DPL_KERNEL);
+	set(6,isr6,Desc::DPL_KERNEL);
+	set(7,isr7,Desc::DPL_KERNEL);
+	set(8,isr8,Desc::DPL_KERNEL);
+	set(9,isr9,Desc::DPL_KERNEL);
+	set(10,isr10,Desc::DPL_KERNEL);
+	set(11,isr11,Desc::DPL_KERNEL);
+	set(12,isr12,Desc::DPL_KERNEL);
+	set(13,isr13,Desc::DPL_KERNEL);
+	set(14,isr14,Desc::DPL_KERNEL);
+	set(15,isr15,Desc::DPL_KERNEL);
+	set(16,isr16,Desc::DPL_KERNEL);
+	set(17,isr17,Desc::DPL_KERNEL);
+	set(18,isr18,Desc::DPL_KERNEL);
+	set(19,isr19,Desc::DPL_KERNEL);
+	set(20,isr20,Desc::DPL_KERNEL);
+	set(21,isr21,Desc::DPL_KERNEL);
+	set(22,isr22,Desc::DPL_KERNEL);
+	set(23,isr23,Desc::DPL_KERNEL);
+	set(24,isr24,Desc::DPL_KERNEL);
+	set(25,isr25,Desc::DPL_KERNEL);
+	set(26,isr26,Desc::DPL_KERNEL);
+	set(27,isr27,Desc::DPL_KERNEL);
+	set(28,isr28,Desc::DPL_KERNEL);
+	set(29,isr29,Desc::DPL_KERNEL);
+	set(30,isr30,Desc::DPL_KERNEL);
+	set(31,isr31,Desc::DPL_KERNEL);
 
 	/* ISA interrupts */
-	set(32,isr32,DPL_KERNEL);
-	set(33,isr33,DPL_KERNEL);
-	set(34,isr34,DPL_KERNEL);
-	set(35,isr35,DPL_KERNEL);
-	set(36,isr36,DPL_KERNEL);
-	set(37,isr37,DPL_KERNEL);
-	set(38,isr38,DPL_KERNEL);
-	set(39,isr39,DPL_KERNEL);
-	set(40,isr40,DPL_KERNEL);
-	set(41,isr41,DPL_KERNEL);
-	set(42,isr42,DPL_KERNEL);
-	set(43,isr43,DPL_KERNEL);
-	set(44,isr44,DPL_KERNEL);
-	set(45,isr45,DPL_KERNEL);
-	set(46,isr46,DPL_KERNEL);
-	set(47,isr47,DPL_KERNEL);
+	set(32,isr32,Desc::DPL_KERNEL);
+	set(33,isr33,Desc::DPL_KERNEL);
+	set(34,isr34,Desc::DPL_KERNEL);
+	set(35,isr35,Desc::DPL_KERNEL);
+	set(36,isr36,Desc::DPL_KERNEL);
+	set(37,isr37,Desc::DPL_KERNEL);
+	set(38,isr38,Desc::DPL_KERNEL);
+	set(39,isr39,Desc::DPL_KERNEL);
+	set(40,isr40,Desc::DPL_KERNEL);
+	set(41,isr41,Desc::DPL_KERNEL);
+	set(42,isr42,Desc::DPL_KERNEL);
+	set(43,isr43,Desc::DPL_KERNEL);
+	set(44,isr44,Desc::DPL_KERNEL);
+	set(45,isr45,Desc::DPL_KERNEL);
+	set(46,isr46,Desc::DPL_KERNEL);
+	set(47,isr47,Desc::DPL_KERNEL);
 
 	/* debug interrupt + ack-signal */
-	set(48,isr48,DPL_USER);
-	set(49,isr49,DPL_USER);
+	set(48,isr48,Desc::DPL_USER);
+	set(49,isr49,Desc::DPL_USER);
 
 	/* LAPIC interrupts */
-	set(50,isr50,DPL_KERNEL);
-	set(51,isr51,DPL_KERNEL);
-	set(52,isr52,DPL_KERNEL);
-	set(53,isr53,DPL_KERNEL);
-	set(54,isr54,DPL_KERNEL);
-	set(55,isr55,DPL_KERNEL);
-	set(56,isr56,DPL_KERNEL);
+	set(50,isr50,Desc::DPL_KERNEL);
+	set(51,isr51,Desc::DPL_KERNEL);
+	set(52,isr52,Desc::DPL_KERNEL);
+	set(53,isr53,Desc::DPL_KERNEL);
+	set(54,isr54,Desc::DPL_KERNEL);
+	set(55,isr55,Desc::DPL_KERNEL);
+	set(56,isr56,Desc::DPL_KERNEL);
 
 	/* all other interrupts */
 	for(size_t i = 57; i < 256; i++)
-		set(i,isrNull,DPL_KERNEL);
+		set(i,isrNull,Desc::DPL_KERNEL);
 
 	/* now we can use our idt */
-	load(&idtPtr);
+	load(&tbl);
 }
 
 void IDT::set(size_t number,isr_func handler,uint8_t dpl) {
 	IDT::Entry *e = idt + number;
-	e->fix = 0xE00;
+	e->type = Desc::SYS_INTR_GATE;
 	e->dpl = dpl;
 	e->present = number != INTEL_RES1 && number != INTEL_RES2;
-	e->selector = CODE_SEL;
-	e->offsetHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
-	e->offsetLow = (uintptr_t)handler & 0xFFFF;
+	e->addrLow = SEG_KCODE << 3;
+	e->addrHigh = ((uintptr_t)handler >> 16) & 0xFFFF;
+	e->limitLow = (uintptr_t)handler & 0xFFFF;
 #if defined(__x86_64__)
-	e->offsetUpper = (uintptr_t)handler >> 32;
+	e->addrUpper = (uintptr_t)handler >> 32;
 #endif
 }

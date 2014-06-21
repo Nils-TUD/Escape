@@ -22,86 +22,14 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 #include <sys/arch/x86/tss.h>
+#include <sys/arch/x86/desc.h>
 #include <esc/arch.h>
 
 class GDT {
 	GDT() = delete;
 
-	/* the GDT table */
-	struct Table {
-		uint16_t size;		/* the size of the table -1 (size=0 is not allowed) */
-		ulong offset;
-	} A_PACKED;
-
-	/* a GDT descriptor */
-	struct Desc {
-		/* limit[0..15] */
-		uint16_t limitLow;
-
-		/* address[0..15] */
-		uint16_t addrLow;
-
-		/* address[16..23] */
-		uint8_t addrMiddle;
-
-		/*
-		 * present:		This must be 1 for all valid selectors.
-		 * dpl:			Contains the ring level, 0 = highest (kernel), 3 = lowest (user applications).
-		 * type:		segment type
-		 */
-		uint8_t type : 5,
-				dpl : 2,
-				present : 1;
-
-		/*
-		 * granularity:	If 0 the limit is in 1 B blocks (byte granularity), if 1 the limit is in
-		 * 				4 KiB blocks (page granularity).
-		 * size:		If 0 the selector defines 16 bit protected mode. If 1 it defines 32 bit
-		 * 				protected mode. You can have both 16 bit and 32 bit selectors at once.
-		 * bits:		1 = 64-bit
-		 * unused:		can be used by system-software
-		 * limitHigh:	limit[16..19]
-		 */
-		uint8_t limitHigh : 4,
-				/* unused */ : 1,
-				bits : 1,
-				size : 1,
-				granularity : 1;
-
-		/* address[24..31] */
-		uint8_t addrHigh;
-	} A_PACKED;
-
-	struct Desc64 : public Desc {
-		uint32_t addrUpper;
-		uint32_t : 32;
-	} A_PACKED;
-
-	enum {
-		SYS_TSS		= 0x09,
-		DATA_RO		= 0x10,
-		DATA_RW		= 0x12,
-		CODE_X		= 0x18,
-		CODE_XR		= 0x1A,
-	};
-
-	enum {
-		GRANU_BYTES	= 0x0,
-		GRANU_PAGES	= 0x1,
-	};
-
-	enum {
-		SIZE_16		= 0x0,
-		SIZE_32		= 0x1,
-	};
-
-	enum {
-		DPL_KERNEL	= 0x0,
-		DPL_USER	= 0x3,
-	};
-
 	struct PerCPU {
-		Table gdt;
+		DescTable gdt;
 		TSS *tss;
 		const uint8_t *ioMap;
 		uint32_t lastMSR;
@@ -177,10 +105,10 @@ private:
 	static ulong selector(int seg) {
 		return (seg << 3) | 0x3;
 	}
-	static void flush(Table *gdt) {
+	static void flush(DescTable *gdt) {
 		asm volatile ("lgdt	(%0)" : : "r"(gdt));
 	}
-	static void get(Table *gdt) {
+	static void get(DescTable *gdt) {
 		asm volatile ("sgdt (%0)\n" : : "r"(gdt));
 	}
 	static void loadTSS(size_t gdtOffset) {

@@ -36,7 +36,7 @@
 
 static_assert(TSS::IO_MAP_OFFSET == offsetof(TSS,ioMap),"Wrong ioMap offset");
 
-GDT::Desc GDT::bspgdt[GDT_ENTRY_COUNT];
+Desc GDT::bspgdt[GDT_ENTRY_COUNT];
 TSS GDT::bspTSS A_ALIGNED(PAGE_SIZE);
 GDT::PerCPU GDT::bsp;
 
@@ -46,23 +46,23 @@ size_t GDT::cpuCount;
 extern void *syscall_entry;
 
 void GDT::init() {
-	Table gdtTable;
+	DescTable gdtTable;
 	gdtTable.offset = (ulong)bspgdt;
 	gdtTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 
 	/* kernel code+data */
-	setDesc(bspgdt + SEG_KCODE,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_KERNEL);
-	setDesc(bspgdt + SEG_KDATA,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_KERNEL);
+	setDesc(bspgdt + SEG_KCODE,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::CODE_XR,Desc::DPL_KERNEL);
+	setDesc(bspgdt + SEG_KDATA,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_KERNEL);
 	/* user code+data */
-	setDesc(bspgdt + SEG_UCODE,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_USER);
-	setDesc(bspgdt + SEG_UDATA,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
+	setDesc(bspgdt + SEG_UCODE,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::CODE_XR,Desc::DPL_USER);
+	setDesc(bspgdt + SEG_UDATA,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_USER);
 	/* we use a second code-segment because sysret expects code to be IA32_STAR[63:48] + 16 and
 	 * stack to be IA32_STAR[63:48] + 8. */
-	setDesc(bspgdt + SEG_UCODE2,0,~0UL >> PAGE_BITS,GRANU_PAGES,CODE_XR,DPL_USER);
+	setDesc(bspgdt + SEG_UCODE2,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::CODE_XR,Desc::DPL_USER);
 	/* tls */
-	setDesc(bspgdt + SEG_TLS,0,~0UL >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
+	setDesc(bspgdt + SEG_TLS,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_USER);
 	/* for the current thread */
-	setDesc(bspgdt + SEG_THREAD,0,0,GRANU_PAGES,DATA_RW,DPL_KERNEL);
+	setDesc(bspgdt + SEG_THREAD,0,0,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_KERNEL);
 	/* tss */
 	setTSS(bspgdt,&bspTSS,KSTACK_AREA);
 
@@ -86,7 +86,7 @@ void GDT::initBSP() {
 }
 
 void GDT::initAP() {
-	Table tmpTable;
+	DescTable tmpTable;
 	/* use the GDT of the BSP temporary. this way, we can access the heap and build our own gdt */
 	tmpTable.offset = (uintptr_t)bspgdt;
 	tmpTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
@@ -116,7 +116,7 @@ void GDT::initAP() {
 }
 
 cpuid_t GDT::getCPUId() {
-	Table tbl;
+	DescTable tbl;
 	get(&tbl);
 	for(size_t i = 0; i < cpuCount; i++) {
 		if(all[i].gdt.offset == tbl.offset)
@@ -129,7 +129,7 @@ cpuid_t GDT::getCPUId() {
 void GDT::setRunning(cpuid_t id,Thread *t) {
 	/* store the thread-pointer into an unused slot of the gdt */
 	Desc *gdt = (Desc*)all[id].gdt.offset;
-	setDesc(gdt + SEG_THREAD,(uintptr_t)t,0,GRANU_PAGES,DATA_RO,DPL_KERNEL);
+	setDesc(gdt + SEG_THREAD,(uintptr_t)t,0,Desc::GRANU_PAGES,Desc::DATA_RO,Desc::DPL_KERNEL);
 }
 
 void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
@@ -139,7 +139,7 @@ void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 	if(EXPECT_FALSE(n->getTLSRegion())) {
 		uintptr_t tlsEnd = n->getTLSRegion()->virt() + n->getTLSRegion()->reg->getByteCount();
 		setDesc((Desc*)all[id].gdt.offset + SEG_TLS,tlsEnd - sizeof(void*),
-				0xFFFFFFFF >> PAGE_BITS,GRANU_PAGES,DATA_RW,DPL_USER);
+				0xFFFFFFFF >> PAGE_BITS,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_USER);
 	}
 
 	if(EXPECT_TRUE(newProc))
@@ -196,31 +196,31 @@ void GDT::setupSyscalls(A_UNUSED TSS *tss) {
 void GDT::setTSS(Desc *gdt,TSS *tss,uintptr_t kstack) {
 #if defined(__x86_64__)
 	tss->setSP(kstack + PAGE_SIZE - 1 * sizeof(ulong));
-	setDesc64(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,GRANU_BYTES,SYS_TSS,DPL_KERNEL);
+	setDesc64(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,
+		Desc::GRANU_BYTES,Desc::SYS_TSS,Desc::DPL_KERNEL);
 #else
 	/* leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes */
 	tss->setSP(kstack + PAGE_SIZE - 2 * sizeof(ulong));
-	setDesc(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,GRANU_BYTES,SYS_TSS,DPL_KERNEL);
+	setDesc(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,
+		Desc::GRANU_BYTES,Desc::SYS_TSS,Desc::DPL_KERNEL);
 #endif
 }
 
 void GDT::setDesc(Desc *d,uintptr_t address,size_t limit,uint8_t granu,uint8_t type,uint8_t dpl) {
+#if defined(__x86_64__)
+	int size = Desc::SIZE_16;
+	int bits = Desc::BITS_64;
+#else
+	int size = Desc::SIZE_32;
+	int bits = Desc::BITS_32;
+#endif
 	d->addrLow = address & 0xFFFF;
 	d->addrMiddle = (address >> 16) & 0xFF;
-	d->addrHigh = (address >> 24) & 0xFF;
 	d->limitLow = limit & 0xFFFF;
-	d->limitHigh = (limit >> 16) & 0xF;
+	d->addrHigh = ((address & 0xFF000000) >> 16) | ((limit >> 16) & 0xF) | bits | size | granu;
 	d->present = 1;
-#if defined(__x86_64__)
-	d->size = SIZE_16;
-	d->bits = 1;
-#else
-	d->size = SIZE_32;
-	d->bits = 0;
-#endif
 	d->dpl = dpl;
-	d->granularity = granu;
 	d->type = type;
 }
 
@@ -240,8 +240,8 @@ void GDT::print(OStream &os) {
 		if(gdt) {
 			for(size_t i = 0; i < GDT_ENTRY_COUNT; i++) {
 				os.writef("\t\t%d: address=%02x%02x:%04x, limit=%02x%04x, type=%02x\n",
-						i,gdt[i].addrHigh,gdt[i].addrMiddle,gdt[i].addrLow,
-						gdt[i].limitHigh,gdt[i].limitLow,gdt[i].type);
+						i,gdt[i].addrHigh >> 8,gdt[i].addrMiddle,gdt[i].addrLow,
+						gdt[i].addrHigh & 0xF,gdt[i].limitLow,gdt[i].type);
 			}
 		}
 		else

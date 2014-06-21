@@ -20,56 +20,24 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/arch/x86/desc.h>
 
 class IDT {
 	IDT() = delete;
 
-	/* represents an IDT-entry */
-	struct Entry {
-		/* The address[0..15] of the ISR */
-		uint16_t offsetLow;
-		/* Code selector that the ISR will use */
-		uint16_t selector;
-		/* these bits are fix: 0.1110.0000.0000b */
-		uint16_t fix		: 13,
-		/* the privilege level, 00 = ring0, 01 = ring1, 10 = ring2, 11 = ring3 */
-		dpl					: 2,
-		/* If Present is not set to 1, an exception will occur */
-		present				: 1;
-		/* The address[16..31] of the ISR */
-		uint16_t offsetHigh;
-		/* for 64-bit, we have 32-bit more offset */
 #if defined(__x86_64__)
-		uint32_t offsetUpper;
-		uint32_t : 32;
+	typedef Desc64 Entry;
+#else
+	typedef Desc Entry;
 #endif
-	} A_PACKED;
-
-	struct Entry64 : public Entry {
-	} A_PACKED;
-
-	/* represents an IDT-pointer */
-	struct Pointer {
-		uint16_t size;
-		ulong address;
-	} A_PACKED;
 
 	/* isr prototype */
 	typedef void (*isr_func)();
 
-	/* the privilege level */
-	enum {
-		DPL_KERNEL			= 0,
-		DPL_USER			= 3
-	};
 	/* reserved by intel */
 	enum {
 		INTEL_RES1			= 2,
 		INTEL_RES2			= 15
-	};
-	/* the code-selector */
-	enum {
-		CODE_SEL			= 0x8
 	};
 
 	static const size_t IDT_COUNT		= 256;
@@ -81,8 +49,8 @@ public:
 	static void init();
 
 private:
-	static void load(Pointer *ptr) {
-		asm volatile ("lidt %0" : : "m"(*ptr));
+	static void load(DescTable *tbl) {
+		asm volatile ("lidt %0" : : "m"(*tbl));
 	}
 	static void set(size_t number,isr_func handler,uint8_t dpl);
 

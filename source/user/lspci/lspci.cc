@@ -124,10 +124,10 @@ static void printDevice(ipc::PCI &pci,const ipc::PCI::Device *device,int verbose
 			if(status & ipc::PCI::ST_CAPS) {
 	            uint8_t offset = pci.read(device->bus,device->dev,device->func,0x34);
             	while((offset != 0) && !(offset & 0x3)) {
-            		uint32_t val = pci.read(device->bus,device->dev,device->func,offset);
+            		uint32_t capidx = pci.read(device->bus,device->dev,device->func,offset);
             		printf("        Capabilities: [%03x] %s\n",offset,
-            			(val & 0xFF) < ARRAY_SIZE(caps) ? caps[val & 0xFF] : "??");
-            		offset = val >> 8;
+            			(capidx & 0xFF) < ARRAY_SIZE(caps) ? caps[capidx & 0xFF] : "??");
+            		offset = capidx >> 8;
             	}
 	        }
 		}

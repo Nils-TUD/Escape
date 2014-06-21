@@ -96,12 +96,11 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 		if(old->getFlags() & T_IDLE)
 			old->setState(Thread::BLOCKED);
 		else {
-			vassert(old->getState() == Thread::RUNNING || old->getState() == Thread::ZOMBIE,
-				"State %d",old->getState());
+			vassert(old->getState() == Thread::RUNNING,"State %d",old->getState());
 
 			/* we have to check for a signal here, because otherwise we might miss it */
 			/* (scenario: cpu0 unblocks t1 for signal, cpu1 runs t1 and blocks itself) */
-			if(old->getState() != Thread::ZOMBIE && old->hasSignal()) {
+			if(old->getNewState() != Thread::ZOMBIE && old->hasSignal()) {
 				/* we have to reset the newstate in this case and remove us from event */
 				old->setNewState(Thread::READY);
 				old->waitstart = 0;
@@ -331,7 +330,6 @@ void Sched::removeThread(Thread *t) {
 			vassert(false,"Invalid state for removeThread (%d)",t->getState());
 			break;
 	}
-	t->setState(Thread::ZOMBIE);
 	t->setNewState(Thread::ZOMBIE);
 }
 

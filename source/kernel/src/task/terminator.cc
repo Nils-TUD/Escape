@@ -38,6 +38,8 @@ void Terminator::start() {
 
 		/* better do that unlocked; we might block on a mutex */
 		lock.up();
+		while(dt->getState() != Thread::ZOMBIE)
+			Thread::switchAway();
 		Proc::killThread(dt);
 		lock.down();
 	}

@@ -37,7 +37,7 @@ E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
 	for(size_t i = 0; i < ARRAY_SIZE(ipc::PCI::Device::bars); ++i) {
 		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_MEM) {
 			uintptr_t phys = nic.bars[i].addr;
-			_mmio = reinterpret_cast<volatile uint32_t*>(mmapphys(&phys,nic.bars[i].size,0));
+			_mmio = reinterpret_cast<volatile uint32_t*>(mmapphys(&phys,nic.bars[i].size,0,MAP_PHYS_MAP));
 			if(_mmio == NULL)
 				error("Unable to map MMIO region %p..%p",phys,phys + nic.bars[i].size - 1);
 			print("Mapped MMIO region %p..%p @ %p",phys,phys + nic.bars[i].size - 1,_mmio);
@@ -48,7 +48,7 @@ E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
 	// create buffers in contiguous physical memory
 	uintptr_t phys = 0;
 	size_t pageSize = sysconf(CONF_PAGE_SIZE);
-	_bufs = reinterpret_cast<Buffers*>(mmapphys(&phys,sizeof(Buffers),pageSize));
+	_bufs = reinterpret_cast<Buffers*>(mmapphys(&phys,sizeof(Buffers),pageSize,MAP_PHYS_ALLOC));
 	if(_bufs == NULL)
 		error("Unable to map buffer space of %zu bytes",sizeof(Buffers));
 	print("Mapped buffer space @ virt=%p phys=%p",_bufs,phys);

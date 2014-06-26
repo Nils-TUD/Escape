@@ -112,11 +112,11 @@ void ctrl_init(bool useDma) {
 			ctrls[i].bmrBase += i * BMR_SEC_OFFSET;
 			/* allocate memory for PRDT and buffer */
 			ctrls[i].dma_prdt_virt = static_cast<sPRD*>(
-				mmapphys((uintptr_t*)&ctrls[i].dma_prdt_phys,8,4096));
+				mmapphys((uintptr_t*)&ctrls[i].dma_prdt_phys,8,4096,MAP_PHYS_ALLOC));
 			if(!ctrls[i].dma_prdt_virt)
 				error("Unable to allocate PRDT for controller %d",ctrls[i].id);
 			ctrls[i].dma_buf_virt = mmapphys((uintptr_t*)&ctrls[i].dma_buf_phys,
-					DMA_BUF_SIZE,DMA_BUF_SIZE);
+					DMA_BUF_SIZE,DMA_BUF_SIZE,MAP_PHYS_ALLOC);
 			if(!ctrls[i].dma_buf_virt)
 				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
 			ctrls[i].useDma = true;

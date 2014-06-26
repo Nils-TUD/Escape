@@ -39,8 +39,8 @@ void *chgsize(ssize_t count) {
 	return (void*)addr;
 }
 
-void *mmapphys(uintptr_t *phys,size_t count,size_t align) {
-	intptr_t addr = syscall3(SYSCALL_MAPPHYS,(ulong)phys,count,align);
+void *mmapphys(uintptr_t *phys,size_t count,size_t align,int flags) {
+	intptr_t addr = syscall4(SYSCALL_MAPPHYS,(ulong)phys,count,align,flags);
 	/* FIXME workaround until we have TLS */
 	if(addr >= -200 && addr < 0)
 		return NULL;

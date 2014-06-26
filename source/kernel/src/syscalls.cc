@@ -45,7 +45,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{chgsize,			"chgsize",    		1},
 
 	/* 10 */
-	{mmapphys,			"mmapphys",    		2},
+	{mmapphys,			"mmapphys",    		4},
 	{write,				"write",    		3},
 	{yield,				"yield",    		0},
 	{dup,				"dup",    			1},

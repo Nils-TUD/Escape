@@ -62,13 +62,13 @@ void VirtMem::release() const {
 	proc->unlock(PLOCK_PROG);
 }
 
-uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writable) {
+uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,int flags) {
 	ssize_t res;
 	size_t pages = BYTES_2_PAGES(bCount);
-	frameno_t firstFrame = 0;
+	frameno_t firstFrame = -1;
 
-	/* if *phys is not set yet, we should allocate physical contiguous memory */
-	if(*phys == 0) {
+	/* allocate physical contiguous memory */
+	if(!(flags & MAP_PHYS_MAP)) {
 		if(align) {
 			ssize_t first = PhysMem::allocateContiguous(pages,align / PAGE_SIZE);
 			if(first < 0)
@@ -83,10 +83,10 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	/* create region */
 	VMRegion *vm;
 	/* for specifically requested physical memory, don't free it and don't swap it out */
-	res = map(0,bCount,0,PROT_READ | (writable ? PROT_WRITE : 0),
-			*phys ? (MAP_NOMAP | MAP_NOFREE | MAP_LOCKED) : MAP_NOMAP,NULL,0,&vm);
+	res = map(0,bCount,0,PROT_READ | PROT_WRITE,
+			(flags & MAP_PHYS_MAP) ? (MAP_NOMAP | MAP_NOFREE | MAP_LOCKED) : MAP_NOMAP,NULL,0,&vm);
 	if(res < 0) {
-		if(!*phys)
+		if(!(flags & MAP_PHYS_MAP))
 			PhysMem::freeContiguous(firstFrame,pages);
 		return res;
 	}
@@ -94,19 +94,19 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writa
 	acquire();
 
 	/* map memory */
-	uint flags = writable ? PG_PRESENT | PG_WRITABLE : PG_PRESENT;
-	if(firstFrame != 0) {
+	uint mflags = PG_PRESENT | PG_WRITABLE;
+	if(firstFrame != (frameno_t)-1) {
 		PageTables::RangeAllocator alloc(firstFrame);
-		res = getPageDir()->map(vm->virt(),pages,alloc,flags);
+		res = getPageDir()->map(vm->virt(),pages,alloc,mflags);
 	}
 	else {
 		PageTables::UAllocator alloc;
-		res = getPageDir()->map(vm->virt(),pages,alloc,flags);
+		res = getPageDir()->map(vm->virt(),pages,alloc,mflags);
 	}
 
 	if(res < 0)
 		goto errorRel;
-	if(*phys) {
+	if(flags & MAP_PHYS_MAP) {
 		/* the page-tables are ours, the pages may be used by others, too */
 		addOwn(res);
 		addShared(pages);

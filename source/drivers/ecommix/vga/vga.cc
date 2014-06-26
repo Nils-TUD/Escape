@@ -112,7 +112,7 @@ private:
 int main(void) {
 	/* map VGA memory */
 	uintptr_t phys = VIDEO_MEM;
-	vgaData = (ulong*)mmapphys(&phys,MAX_COLS * ROWS * sizeof(ulong),0);
+	vgaData = (ulong*)mmapphys(&phys,MAX_COLS * ROWS * sizeof(ulong),0,MAP_PHYS_MAP);
 	if(vgaData == NULL)
 		error("Unable to acquire vga-memory (%p)",VIDEO_MEM);
 

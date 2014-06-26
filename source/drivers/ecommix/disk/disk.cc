@@ -173,11 +173,11 @@ int main(int argc,char **argv) {
 		error("Unable to create irq-semaphore");
 
 	phys = DISK_BASE;
-	diskRegs = (ulong*)mmapphys(&phys,16,0);
+	diskRegs = (ulong*)mmapphys(&phys,16,0,MAP_PHYS_MAP);
 	if(diskRegs == NULL)
 		error("Unable to map disk registers");
 	phys = DISK_BUF;
-	diskBuf = (ulong*)mmapphys(&phys,MAX_RW_SIZE,0);
+	diskBuf = (ulong*)mmapphys(&phys,MAX_RW_SIZE,0,MAP_PHYS_MAP);
 	if(diskBuf == NULL)
 		error("Unable to map disk buffer");
 

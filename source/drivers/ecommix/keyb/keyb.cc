@@ -64,7 +64,7 @@ static ulong *kbRegs;
 
 int main(void) {
 	uintptr_t phys = KEYBOARD_BASE;
-	kbRegs = (ulong*)mmapphys(&phys,2 * sizeof(ulong),0);
+	kbRegs = (ulong*)mmapphys(&phys,2 * sizeof(ulong),0,MAP_PHYS_MAP);
 	if(kbRegs == NULL)
 		error("Unable to map keyboard registers");
 

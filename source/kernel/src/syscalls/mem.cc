@@ -170,22 +170,23 @@ int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
+	int flags = SYSC_ARG4(stack);
 	uintptr_t physCpy = *phys;
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)phys,sizeof(uintptr_t))))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* ensure that its allowed to map this area (if the address is specified) */
-	if(EXPECT_FALSE(physCpy && !PhysMem::canMap(physCpy,bytes)))
+	if(EXPECT_FALSE((flags & MAP_PHYS_MAP) && !PhysMem::canMap(physCpy,bytes)))
 		SYSC_ERROR(stack,-EFAULT);
 	/* reserve frames if we don't want to use contiguous physical memory */
-	if(!physCpy && !align) {
+	if(!(flags & MAP_PHYS_MAP) && !align) {
 		if(EXPECT_FALSE(!t->reserveFrames(BYTES_2_PAGES(bytes))))
 			SYSC_ERROR(stack,-ENOMEM);
 	}
 
-	uintptr_t addr = t->getProc()->getVM()->mapphys(&physCpy,bytes,align,true);
-	if(EXPECT_TRUE(!physCpy && !align))
+	uintptr_t addr = t->getProc()->getVM()->mapphys(&physCpy,bytes,align,flags);
+	if(EXPECT_TRUE(!(flags & MAP_PHYS_MAP) && !align))
 		t->discardFrames();
 	if(EXPECT_FALSE(addr == 0))
 		SYSC_ERROR(stack,-ENOMEM);

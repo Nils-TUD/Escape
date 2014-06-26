@@ -39,6 +39,9 @@
 #define MAP_NOSWAP			128UL	/* if not enough memory for the mapping, don't swap but fail */
 #define MAP_FIXED			256UL	/* put the region exactly at the given address */
 
+#define MAP_PHYS_ALLOC		0		/* allocate physical memory */
+#define MAP_PHYS_MAP		1		/* map the specified physical memory */
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -78,7 +81,7 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
  *   will be used.
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
-void *mmapphys(uintptr_t *phys,size_t count,size_t align) A_CHECKRET;
+void *mmapphys(uintptr_t *phys,size_t count,size_t align,int flags) A_CHECKRET;
 
 /**
  * Changes the protection of the region denoted by the given address.

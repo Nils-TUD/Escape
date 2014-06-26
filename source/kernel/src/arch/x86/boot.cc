@@ -122,6 +122,11 @@ void Boot::parseBootInfo() {
 		info.mmap[info.mmapCount].baseAddr = mmap->baseAddr;
 		info.mmap[info.mmapCount].size = mmap->length;
 		info.mmap[info.mmapCount].type = mmap->type;
+
+		/* make the first megabyte reserved. this way, the userland can map it */
+		if(mmap->baseAddr < 1024 * 1024)
+			info.mmap[info.mmapCount].type = 2;
+
 		mbbufpos += sizeof(MemMap);
 		info.mmapCount++;
 	}

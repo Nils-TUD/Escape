@@ -29,7 +29,7 @@ static uint32_t *outRegs = NULL;
 void logc(char c) {
 	if(outRegs == NULL) {
 		uintptr_t phys = OUTPUT_START_ADDR;
-		outRegs = mmapphys(&phys,8,0);
+		outRegs = mmapphys(&phys,8,0,MAP_PHYS_MAP);
 		assert(outRegs != NULL);
 	}
 	*outRegs = c;

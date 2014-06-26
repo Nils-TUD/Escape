@@ -55,6 +55,9 @@
 #define MAP_USER_FLAGS		(MAP_SHARED | MAP_GROWABLE | MAP_GROWSDOWN | MAP_STACK | MAP_TLS | \
  							 MAP_LOCKED | MAP_POPULATE | MAP_NOSWAP | MAP_FIXED)
 
+#define MAP_PHYS_ALLOC		0
+#define MAP_PHYS_MAP		1
+
 class Proc;
 class Thread;
 class OStream;
@@ -152,16 +155,14 @@ public:
 
 	/**
 	 * Adds a region for physical memory mapped into the virtual memory (e.g. for vga text-mode or DMA).
-	 * Please use this function instead of add() because this one maps the pages!
 	 *
-	 * @param phys a pointer to the physical memory to map; if *phys is 0, the function allocates
-	 * 	contiguous physical memory itself and stores the address in *phys
+	 * @param phys a pointer to the physical memory to map (only if MAP_PHYS_MAP is set)
 	 * @param bCount the number of bytes to map
-	 * @param align the alignment for the allocated physical-memory (just if *phys = 0)
-	 * @param writable whether it should be mapped writable
+	 * @param align the alignment for the allocated physical-memory (only if MAP_PHYS_ALLOC is set)
+	 * @param flags MAP_PHYS_*
 	 * @return the virtual address or 0 if failed
 	 */
-	uintptr_t mapphys(uintptr_t *phys,size_t bCount,size_t align,bool writable);
+	uintptr_t mapphys(uintptr_t *phys,size_t bCount,size_t align,int flags);
 
 	/**
 	 * Maps a region to this VM.

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <vbetext/vbetext.h>
+#include <vbe/vbe.h>
 
 #include "clients.h"
 

@@ -19,7 +19,6 @@
 
 #include <esc/common.h>
 #include <vbe/vbe.h>
-#include <vbetext/vbetext.h>
 #include <string.h>
 
 #include "vesatui.h"

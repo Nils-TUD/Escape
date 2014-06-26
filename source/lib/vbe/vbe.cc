@@ -18,232 +18,170 @@
  */
 
 #include <esc/common.h>
-#include <esc/arch/i586/vm86.h>
-#include <esc/debug.h>
-#include <esc/sllist.h>
-#include <esc/messages.h>
-#include <esc/mem.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <limits.h>
-
 #include <vbe/vbe.h>
+#include <string.h>
 
-/* This is mostly borrowed from doc/vbecore.pdf */
+#include "font.inc"
 
-#define VM86_DATA_ADDR						0x80000
-#define MAX_MODE_COUNT						256
-/* for setting a mode: (VBE v2.0+) use linear (flat) frame buffer */
-#define VBE_MODE_SET_LFB					0x4000
+static void vbet_drawCharLoop16(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
+static void vbet_drawCharLoop24(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
+static void vbet_drawCharLoop32(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
 
-/* SuperVGA information block */
-typedef struct {
-	char signature[4];			/* 'VESA' 4 byte signature      */
-	uint16_t version;			/* VBE version number           */
-	char *oemString;			/* Pointer to OEM string        */
-	uint32_t capabilities;		/* Capabilities of video card   */
-	uint16_t *videoModesPtr;	/* Pointer to supported modes   */
-	uint16_t totalMemory;		/* Number of 64kb memory blocks */
-	uint8_t reserved[236];		/* Pad to 256 byte block size   */
-} A_PACKED sVbeInfo;
+static uint8_t colors[][3] = {
+	/* BLACK   */ {0x00,0x00,0x00},
+	/* BLUE    */ {0x00,0x00,0xA8},
+	/* GREEN   */ {0x00,0xA8,0x00},
+	/* CYAN    */ {0x00,0xA8,0xA8},
+	/* RED     */ {0xA8,0x00,0x00},
+	/* MARGENT */ {0xA8,0x00,0xA8},
+	/* ORANGE  */ {0xA8,0x57,0x00},
+	/* WHITE   */ {0xA8,0xA8,0xA8},
+	/* GRAY    */ {0x57,0x57,0x57},
+	/* LIBLUE  */ {0x57,0x57,0xFF},
+	/* LIGREEN */ {0x57,0xFF,0x57},
+	/* LICYAN  */ {0x57,0xFF,0xFF},
+	/* LIRED   */ {0xFF,0x57,0x57},
+	/* LIMARGE */ {0xFF,0x57,0xFF},
+	/* LIORANG */ {0xFF,0xFF,0x57},
+	/* LIWHITE */ {0xFF,0xFF,0xFF},
+};
 
-static bool vbe_isSupported(sVbeModeInfo *info);
-static int vbe_loadInfo(void);
-static bool vbe_loadModeInfo(sVbeModeInfo *info,uint mode);
-static void vbe_detectModes(void);
+uint8_t *vbet_getColor(tColor col) {
+	return colors[col];
+}
 
-static sSLList *modes = NULL;
-static sVbeInfo vbeInfo;
-
-void vbe_init(void) {
-	modes = sll_create();
-	if(modes == NULL) {
-		printe("Not enough mem for mode-list");
-		return;
+void vbet_drawChar(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
+	uint8_t *fg = vbet_getColor(color & 0xf);
+	uint8_t *bg = vbet_getColor(color >> 4);
+	gsize_t rx = mode.width;
+	size_t pxSize = mode.bitsPerPixel / 8;
+	uint8_t *pos = frmbuf + row * (FONT_HEIGHT + PAD * 2) * rx * pxSize +
+		col * (FONT_WIDTH + PAD * 2) * pxSize;
+	switch(mode.bitsPerPixel) {
+		case 16:
+			vbet_drawCharLoop16(mode,pos,c,fg,bg);
+			break;
+		case 24:
+			vbet_drawCharLoop24(mode,pos,c,fg,bg);
+			break;
+		case 32:
+			vbet_drawCharLoop32(mode,pos,c,fg,bg);
+			break;
 	}
-	if(vbe_loadInfo() < 0) {
-		printe("No VESA VBE detected");
-		return;
-	}
-
-	vbe_detectModes();
 }
 
-ipc::Screen::Mode *vbe_getModeInfo(int modeno) {
-	for(sSLNode *n = sll_begin(modes); n != NULL; n = n->next) {
-		ipc::Screen::Mode *mode = (ipc::Screen::Mode*)n->data;
-		if(mode->id == modeno)
-			return mode;
-	}
-	return NULL;
-}
+static void vbet_drawCharLoop16(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
+	int x,y;
+	uint8_t *vidwork;
+	gsize_t rx = mode.width;
+	uint8_t rms = mode.redMaskSize;
+	uint8_t gms = mode.greenMaskSize;
+	uint8_t bms = mode.blueMaskSize;
+	uint8_t rfp = mode.redFieldPosition;
+	uint8_t gfp = mode.greenFieldPosition;
+	uint8_t bfp = mode.blueFieldPosition;
 
-ipc::Screen::Mode *vbe_collectModes(size_t n,size_t *count) {
-	sSLNode *node;
-	ipc::Screen::Mode *res = NULL;
-	ssize_t max = n ? (ssize_t)MIN(n,sll_length(modes)) : -1;
-	if(n)
-		res = (ipc::Screen::Mode*)malloc(sizeof(ipc::Screen::Mode) * max);
-	*count = 0;
-	for(node = sll_begin(modes); (max == -1 || max > 0) && node != NULL ; node = node->next) {
-		ipc::Screen::Mode *info = (ipc::Screen::Mode*)node->data;
-		if(n) {
-			memcpy(res + *count,info,sizeof(ipc::Screen::Mode));
-			max--;
-		}
-		(*count)++;
-	}
-	return res;
-}
+#define DRAWPIXEL16(col) \
+		uint8_t ___red = (col[0]) >> (8 - rms); \
+		uint8_t ___green = (col[1]) >> (8 - gms); \
+		uint8_t ___blue = (col[2]) >> (8 - bms); \
+		*((uint16_t*)(vidwork)) = (___red << rfp) | \
+				(___green << gfp) | \
+				(___blue << bfp); \
+		(vidwork) += 2;
 
-void vbe_freeModes(ipc::Screen::Mode *m) {
-	free(m);
-}
-
-uint vbe_getMode(void) {
-	sVM86Regs regs;
-	regs.ax = 0x4F03;
-	if(vm86int(0x10,&regs,NULL) < 0)
-		return 0;
-	return regs.bx;
-}
-
-int vbe_setMode(uint mode) {
-	sVM86Regs regs;
-	regs.ax = 0x4F02;
-	regs.bx = mode | VBE_MODE_SET_LFB;
-	return vm86int(0x10,&regs,NULL);
-}
-
-static bool vbe_isSupported(sVbeModeInfo *info) {
-	/* skip unsupported modes */
-	if(!(info->modeAttributes & MODE_COLOR_MODE))
-		return false;
-	if(!(info->modeAttributes & MODE_GRAPHICS_MODE))
-		return false;
-	if(!(info->modeAttributes & MODE_LIN_FRAME_BUFFER))
-		return false;
-	if(info->memoryModel != memRGB/* && info->memoryModel != memPK*/)
-		return false;
-	if(info->bitsPerPixel != 16 && info->bitsPerPixel != 24 && info->bitsPerPixel != 32)
-		return false;
-	return true;
-}
-
-static int vbe_loadInfo(void) {
-	int res;
-	sVM86Regs regs;
-	sVM86Memarea area;
-	sVM86AreaPtr ptr;
-	regs.ax = 0x4F00;
-	regs.es = VM86_SEG(VM86_DATA_ADDR);
-	regs.di = VM86_OFF(VM86_DATA_ADDR);
-	area.dst = VM86_DATA_ADDR;
-	area.src = &vbeInfo;
-	area.size = sizeof(sVbeInfo);
-	area.ptr = &ptr;
-	area.ptrCount = 1;
-	ptr.offset = offsetof(sVbeInfo,videoModesPtr);
-	ptr.result = (uintptr_t)malloc(MAX_MODE_COUNT * sizeof(uint));
-	if(ptr.result == 0)
-		return VBEERR_GETINFO_FAILED;
-	ptr.size = MAX_MODE_COUNT * sizeof(uint);
-	memcpy(vbeInfo.signature,"VBE2",4);
-	if((res = vm86int(0x10,&regs,&area)) < 0)
-		return res;
-	if((regs.ax & 0x00FF) != 0x4F)
-		return VBEERR_UNSUPPORTED;
-	if((regs.ax & 0xFF00) != 0)
-		return VBEERR_GETINFO_FAILED;
-	vbeInfo.videoModesPtr = (uint16_t*)ptr.result;
-	/* TODO */
-	vbeInfo.oemString = 0;
-	return 0;
-}
-
-static bool vbe_loadModeInfo(sVbeModeInfo *info,uint mode) {
-	sVM86Regs regs;
-	sVM86Memarea area;
-	/* Ignore non-VBE modes */
-	if(mode < 0x100)
-		return false;
-	regs.ax = 0x4F01;
-	regs.cx = mode;
-	regs.es = VM86_SEG(VM86_DATA_ADDR);
-	regs.di = VM86_OFF(VM86_DATA_ADDR);
-	area.dst = VM86_DATA_ADDR;
-	area.src = info;
-	area.size = sizeof(sVbeModeInfo);
-	area.ptrCount = 0;
-	if(vm86int(0x10,&regs,&area) < 0)
-		return false;
-	if(regs.ax != 0x4F)
-		return false;
-	info->modeNo = mode;
-	/* physBasePtr is only present (!= 0) with VBE 2.0 */
-	return (info->modeAttributes & MODE_SUPPORTED) && info->physBasePtr != 0;
-}
-
-static void vbe_detectModes(void) {
-	uint16_t *p;
-	size_t i;
-	sVbeModeInfo mode;
-	FILE *f = fopen("/system/devices/vbe","w");
-	if(!f)
-		printe("Unable to open /system/devices/vbe for writing");
-	else {
-		fprintf(f,"VESA VBE Version %d.%d detected (%p)\n",vbeInfo.version >> 8,
-				vbeInfo.version & 0xF,(void*)vbeInfo.oemString);
-		fprintf(f,"Capabilities: %#x\n",vbeInfo.capabilities);
-		fprintf(f,"Signature: %c%c%c%c\n",vbeInfo.signature[0],
-				vbeInfo.signature[1],vbeInfo.signature[2],vbeInfo.signature[3]);
-		fprintf(f,"VideoMemory: %d KiB\n",vbeInfo.totalMemory * 64);
-		fprintf(f,"VideoModes: %p\n",(void*)vbeInfo.videoModesPtr);
-		fprintf(f,"\n");
-		fprintf(f,"Available video modes:\n");
-	}
-	p = (uint16_t*)vbeInfo.videoModesPtr;
-	for(i = 0; i < MAX_MODE_COUNT && *p != (uint16_t)-1; i++, p++) {
-		if(vbe_loadModeInfo(&mode,*p)) {
-			if(f) {
-				fprintf(f,"  %5d: %4d x %4d %2d bpp, %d planes, %s, %s %s (%x), @%p\n",mode.modeNo,
-						mode.xResolution,mode.yResolution,
-						mode.bitsPerPixel,mode.numberOfPlanes,
-						(mode.modeAttributes & MODE_GRAPHICS_MODE) ? "graphics" : "    text",
-						(mode.modeAttributes & MODE_COLOR_MODE) ? "color" : " mono",
-						mode.memoryModel == memPL ? " plane" :
-						mode.memoryModel == memPK ? "packed" :
-						mode.memoryModel == memRGB ? "   RGB" :
-						mode.memoryModel == memYUV ? "   YUV" : "??????",
-						mode.modeAttributes,
-						(void*)mode.physBasePtr);
-			}
-
-			if(vbe_isSupported(&mode)) {
-				ipc::Screen::Mode *scrMode = (ipc::Screen::Mode*)malloc(sizeof(ipc::Screen::Mode));
-				if(scrMode != NULL) {
-					scrMode->id = mode.modeNo;
-					scrMode->width = mode.xResolution;
-					scrMode->height = mode.yResolution;
-					scrMode->bitsPerPixel = mode.bitsPerPixel;
-					scrMode->redMaskSize = mode.redMaskSize;
-					scrMode->redFieldPosition = mode.redFieldPosition;
-					scrMode->greenMaskSize = mode.greenMaskSize;
-					scrMode->greenFieldPosition = mode.greenFieldPosition;
-					scrMode->blueMaskSize = mode.blueMaskSize;
-					scrMode->blueFieldPosition = mode.blueFieldPosition;
-					scrMode->physaddr = mode.physBasePtr;
-					scrMode->tuiHeaderSize = 0;
-					scrMode->guiHeaderSize = 0;
-					scrMode->mode = ipc::Screen::MODE_GRAPHICAL;
-					scrMode->type = ipc::Screen::MODE_TYPE_GUI | ipc::Screen::MODE_TYPE_TUI;
-					sll_append(modes,scrMode);
+	for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
+		vidwork = pos + y * rx * 2;
+		for(x = 0; x < FONT_WIDTH + PAD * 2; x++) {
+			if(y >= PAD && x < FONT_WIDTH + PAD && x >= PAD) {
+				if(y < FONT_HEIGHT + PAD && PIXEL_SET(c,x - PAD,y - PAD)) {
+					DRAWPIXEL16(fg);
+				}
+				else {
+					DRAWPIXEL16(bg);
 				}
 			}
+			else {
+				DRAWPIXEL16(bg);
+			}
 		}
 	}
-	if(f)
-		fclose(f);
+}
+
+static void vbet_drawCharLoop24(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
+	int x,y;
+	uint8_t *vidwork;
+	gsize_t rx = mode.width;
+	uint8_t rms = mode.redMaskSize;
+	uint8_t gms = mode.greenMaskSize;
+	uint8_t bms = mode.blueMaskSize;
+	uint8_t rfp = mode.redFieldPosition;
+	uint8_t gfp = mode.greenFieldPosition;
+	uint8_t bfp = mode.blueFieldPosition;
+
+#define DRAWPIXEL24(col) \
+		uint8_t ___red = (col[0]) >> (8 - rms); \
+		uint8_t ___green = (col[1]) >> (8 - gms); \
+		uint8_t ___blue = (col[2]) >> (8 - bms); \
+		uint32_t ___val = (___red << rfp) | \
+			(___green << gfp) | \
+			(___blue << bfp); \
+		*vidwork++ = ___val & 0xFF; \
+		*vidwork++ = ___val >> 8; \
+		*vidwork++ = ___val >> 16;
+
+	for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
+		vidwork = pos + y * rx * 3;
+		for(x = 0; x < FONT_WIDTH + PAD * 2; x++) {
+			if(y >= PAD && x < FONT_WIDTH + PAD && x >= PAD) {
+				if(y < FONT_HEIGHT + PAD && PIXEL_SET(c,x - PAD,y - PAD)) {
+					DRAWPIXEL24(fg)
+				}
+				else {
+					DRAWPIXEL24(bg);
+				}
+			}
+			else {
+				DRAWPIXEL24(bg);
+			}
+		}
+	}
+}
+
+static void vbet_drawCharLoop32(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
+	int x,y;
+	uint8_t *vidwork;
+	gsize_t rx = mode.width;
+	uint8_t rms = mode.redMaskSize;
+	uint8_t gms = mode.greenMaskSize;
+	uint8_t bms = mode.blueMaskSize;
+	uint8_t rfp = mode.redFieldPosition;
+	uint8_t gfp = mode.greenFieldPosition;
+	uint8_t bfp = mode.blueFieldPosition;
+
+#define DRAWPIXEL32(col) \
+		uint8_t ___red = (col[0]) >> (8 - rms); \
+		uint8_t ___green = (col[1]) >> (8 - gms); \
+		uint8_t ___blue = (col[2]) >> (8 - bms); \
+		*((uint32_t*)vidwork) = (___red << rfp) | \
+			(___green << gfp) | \
+			(___blue << bfp); \
+		vidwork += 4;
+
+	for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
+		vidwork = pos + y * rx * 4;
+		for(x = 0; x < FONT_WIDTH + PAD * 2; x++) {
+			if(y >= PAD && x < FONT_WIDTH + PAD && x >= PAD) {
+				if(y < FONT_HEIGHT + PAD && PIXEL_SET(c,x - PAD,y - PAD)) {
+					DRAWPIXEL32(fg);
+				}
+				else {
+					DRAWPIXEL32(bg);
+				}
+			}
+			else {
+				DRAWPIXEL32(bg);
+			}
+		}
+	}
 }

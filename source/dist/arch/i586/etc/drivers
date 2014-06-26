@@ -1,6 +1,5 @@
-vga
+video
 	/dev/vga 0110 output
-vesa
 	/dev/vesa 0110 output
 zero
 	/dev/zero 0666 root

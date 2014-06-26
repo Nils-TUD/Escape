@@ -21,6 +21,7 @@
 
 #include <esc/common.h>
 #include <vbe/vbe.h>
+
 #include "vesagui.h"
 
 /* compression-modes */

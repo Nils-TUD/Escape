@@ -1,5 +1,6 @@
-vga
+video
 	/dev/vga 0110 output
+	/dev/vesa 0110 output
 zero
 	/dev/zero 0666 root
 random
@@ -18,5 +19,5 @@ tcpip
 	/dev/tcpip 0110 network
 http
 	/dev/http 0444 network
-uimng /dev/vga
+uimng /dev/vga /dev/vesa
 	/dev/uimng 0110 input

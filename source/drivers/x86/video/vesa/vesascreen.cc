@@ -21,7 +21,6 @@
 #include <esc/mem.h>
 #include <esc/sllist.h>
 #include <vbe/vbe.h>
-#include <vbetext/vbetext.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -85,7 +84,7 @@ sVESAScreen *vesascr_request(ipc::Screen::Mode *minfo) {
 	/* map framebuffer */
 	size_t size = minfo->width * minfo->height * (minfo->bitsPerPixel / 8);
 	uintptr_t phys = minfo->physaddr;
-	scr->frmbuf = static_cast<uint8_t*>(mmapphys(&phys,size,0));
+	scr->frmbuf = static_cast<uint8_t*>(mmapphys(&phys,size,0,MAP_PHYS_MAP));
 	if(scr->frmbuf == NULL) {
 		sll_removeFirstWith(screens,scr);
 		free(scr);

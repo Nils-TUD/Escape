@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/conf.h>
-#include <vbetext/vbetext.h>
+#include <vbe/vbe.h>
 #include <info/cpu.h>
 #include <string.h>
 #include <stdio.h>
@@ -92,7 +92,7 @@ void Header::putcTUI(const ipc::Screen::Mode &,char *header,uint *col,char c,cha
 }
 
 void Header::putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color) {
-#if defined(__i586__)
+#if defined(__x86__)
 	vbet_drawChar(mode,(uint8_t*)header,*col,0,c,color);
 #endif
 	(*col)++;

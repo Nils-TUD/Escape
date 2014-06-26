@@ -11,10 +11,5 @@ def isIgnored(list, name):
 if env['TGT'] == 'eco32' or env['TGT'] == 'mmix':
 	env.SConscript([f for f in env.Glob('*/SConscript')
 					if 'basic' not in str(f) and 'gui' not in str(f) and 'vbe' not in str(f)], 'env')
-elif env['TGT'] == 'x86_64':
-	exclude = ['vbe','vbetext']
-	for d in env.Glob('*/SConscript'):
-		if not isIgnored(exclude, str(d)):
-			env.SConscript(d, 'env')
 else:
 	env.SConscript([f for f in env.Glob('*/SConscript') if 'basic' not in str(f)], 'env')

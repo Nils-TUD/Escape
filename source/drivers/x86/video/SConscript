@@ -1,0 +1,16 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+myenv = env.Clone()
+myenv.Append(
+	CPPPATH = 'x86emu',
+	CPPFLAGS = ' -DDEBUG=1',
+	CFLAGS = ' -Wno-unused-parameter -Wno-shadow'
+)
+
+myenv.EscapeCXXProg('sbin',
+	target = 'video',
+	source = [Glob('*.cc'), Glob('vesa/*.cc'), Glob('vga/*.cc'), Glob('x86emu/*.c')],
+	LIBS = ['vbe']
+)

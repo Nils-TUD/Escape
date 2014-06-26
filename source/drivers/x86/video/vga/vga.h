@@ -21,39 +21,39 @@
 
 #include <esc/common.h>
 #include <ipc/proto/screen.h>
+#include <ipc/screendevice.h>
+#include <vector>
 
-#define FONT_WIDTH	8
-#define FONT_HEIGHT	16
-#define PAD			0
-#define FONT_COUNT	256
+#include "../vbe.h"
 
-#define PIXEL_SET(c,x,y)				\
-	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) - 1)))
+class VGA {
+	VGA() = delete;
 
-typedef uint32_t tColor;
+	class ScreenDevice : public ipc::ScreenDevice<> {
+	public:
+		explicit ScreenDevice(const std::vector<ipc::Screen::Mode> &modes,const char *path,mode_t mode)
+			: ipc::ScreenDevice<>(modes,path,mode) {
+		}
 
-/* the colors */
-typedef enum {
-	/* 0 */ BLACK,
-	/* 1 */ BLUE,
-	/* 2 */ GREEN,
-	/* 3 */ CYAN,
-	/* 4 */ RED,
-	/* 5 */ MARGENTA,
-	/* 6 */ ORANGE,
-	/* 7 */ WHITE,
-	/* 8 */ GRAY,
-	/* 9 */ LIGHTBLUE,
-	/* 10 */ LIGHTGREEN,
-	/* 11 */ LIGHTCYAN,
-	/* 12 */ LIGHTRED,
-	/* 13 */ LIGHTMARGENTA,
-	/* 14 */ LIGHTORANGE,
-	/* 15 */ LIGHTWHITE
-} eColor;
+		virtual void setScreenMode(ipc::ScreenClient *c,const char *shm,ipc::Screen::Mode *mode,int type,bool sw);
+		virtual void setScreenCursor(ipc::ScreenClient *c,gpos_t x,gpos_t y,int);
+		virtual void updateScreen(ipc::ScreenClient *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	};
 
-uint8_t *vbet_getColor(tColor col);
-void vbet_drawChar(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,
-	uint8_t c,uint8_t color);
+	enum {
+		PORT_INDEX		= 0x3D4,
+		PORT_DATA		= 0x3D5,
+	};
+	enum {
+		DATA_LOCLOW		= 0x0F,
+		DATA_LOCHIGH	= 0x0E,
+	};
 
-extern const uchar font8x16[];
+public:
+	static void init();
+	static int run(void *arg);
+
+private:
+	static uint8_t *screen;
+	static std::vector<ipc::Screen::Mode> modes;
+};

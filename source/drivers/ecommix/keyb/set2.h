@@ -24,9 +24,9 @@
 /**
  * Converts the given scancode to a keycode
  *
- * @param isBreak whether it is a break-keycode
+ * @param flags the flags
  * @param keycode the keycode
  * @param scanCode the received scancode
  * @return true if it was a keycode
  */
-bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,ulong scanCode);
+bool kb_set2_getKeycode(uchar *flags,uchar *keycode,ulong scanCode);

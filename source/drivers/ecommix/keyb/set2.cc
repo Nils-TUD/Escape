@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/keycodes.h>
+#include <ipc/proto/input.h>
 #include "set2.h"
 
 typedef struct {
@@ -165,7 +166,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 static bool isExt = 0;
 static bool isBreakFlag = false;
 
-bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,ulong scanCode) {
+bool kb_set2_getKeycode(uchar *flags,uchar *keycode,ulong scanCode) {
 	sScanCodeEntry *e;
 	/* extended code-start? */
 	if(scanCode == 0xE0) {
@@ -181,7 +182,7 @@ bool kb_set2_getKeycode(uchar *isBreak,uchar *keycode,ulong scanCode) {
 	/* get keycode */
 	e = scanCode2KeyCode + (scanCode % 0x84);
 	*keycode = isExt ? e->ext : e->def;
-	*isBreak = isBreakFlag;
+	*flags = isBreakFlag ? ipc::Keyb::Event::FL_BREAK : 0;
 	isExt = false;
 	isBreakFlag = false;
 	return true;

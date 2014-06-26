@@ -92,7 +92,7 @@ static int kbIrqThread(A_UNUSED void *arg) {
 		ulong sc = kbRegs[KEYBOARD_DATA];
 
 		ipc::Keyb::Event ev;
-		if(kb_set2_getKeycode(&ev.isBreak,&ev.keycode,sc)) {
+		if(kb_set2_getKeycode(&ev.flags,&ev.keycode,sc)) {
 			ipc::IPCBuf ib(buffer,sizeof(buffer));
 			ib << ev;
 			try {

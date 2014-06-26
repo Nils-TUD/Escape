@@ -270,7 +270,7 @@ int atexit(void (*func)(void *));
  *
  * @param status the status-code
  */
-void exit(int status);
+void exit(int status) A_NORETURN;
 
 /**
  * The _Exit function causes normal program termination to occur and control to be
@@ -282,7 +282,7 @@ void exit(int status);
  *
  * @param status the status-code
  */
-void _Exit(int status);
+void _Exit(int status) A_NORETURN;
 
 /**
  * Fetches the value of the given environment-variable

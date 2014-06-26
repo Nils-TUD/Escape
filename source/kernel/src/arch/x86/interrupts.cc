@@ -18,9 +18,6 @@
  */
 
 #include <sys/common.h>
-#if defined(__i586__)
-#	include <sys/arch/i586/task/vm86.h>
-#endif
 #include <sys/arch/x86/task/ioports.h>
 #include <sys/arch/x86/pic.h>
 #include <sys/arch/x86/lapic.h>
@@ -250,14 +247,6 @@ void Interrupts::exGPF(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		exCount = 0;
 		return;
 	}
-#if defined(__i586__)
-	/* vm86-task? */
-	if(t->getProc()->getFlags() & P_VM86) {
-		VM86::handleGPF(static_cast<VM86IntrptStackFrame*>(stack));
-		exCount = 0;
-		return;
-	}
-#endif
 	/* TODO later the process should be killed here */
 	Util::panic("GPF @ %p (%#x)",stack->getIP(),stack->getError());
 }

@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/arch/i586/task/vm86.h>
 #include <sys/task/proc.h>
 #include <sys/task/smp.h>
 #include <sys/mem/physmem.h>

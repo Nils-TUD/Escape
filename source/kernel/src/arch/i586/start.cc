@@ -22,7 +22,6 @@
 #include <sys/arch/x86/gdt.h>
 #include <sys/arch/x86/fpu.h>
 #include <sys/arch/x86/lapic.h>
-#include <sys/arch/i586/task/vm86.h>
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/elf.h>

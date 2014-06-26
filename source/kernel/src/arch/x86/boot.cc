@@ -25,9 +25,6 @@
 #include <sys/arch/x86/acpi.h>
 #include <sys/arch/x86/ioapic.h>
 #include <sys/arch/x86/fpu.h>
-#if defined(__i586__)
-#	include <sys/arch/i586/task/vm86.h>
-#endif
 #include <sys/task/timer.h>
 #include <sys/mem/pagedir.h>
 #include <sys/mem/cache.h>
@@ -153,11 +150,6 @@ static void mapModules() {
 int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 	if(initialized)
 		return -EEXIST;
-
-#if defined(__i586__)
-	if(VM86::create() < 0)
-		Util::panic("Unable to create VM86 task");
-#endif
 
 	if(unittests != NULL)
 		unittests();

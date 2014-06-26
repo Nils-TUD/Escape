@@ -170,9 +170,6 @@ private:
 	// x86 specific
 	static int reqports(Thread *t,IntrptStackFrame *stack);
 	static int relports(Thread *t,IntrptStackFrame *stack);
-#	ifdef __i586__
-	static int vm86int(Thread *t,IntrptStackFrame *stack);
-#	endif
 #else
 	static int debug(Thread *t,IntrptStackFrame *stack);
 #endif

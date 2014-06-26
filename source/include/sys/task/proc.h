@@ -566,7 +566,7 @@ private:
 	static void add(Proc *p);
 	static void remove(Proc *p);
 
-	/* flags for vm86 and zombie */
+	/* flags for prezombie, zombie, ... */
 	uint8_t flags;
 	/* process id (2^16 processes should be enough :)) */
 	/*const*/ pid_t pid;

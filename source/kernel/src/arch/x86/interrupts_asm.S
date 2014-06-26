@@ -201,16 +201,6 @@ syscall_entry:
 isrCommon:
 	SAVE_REGS
 
-#if defined(__i586__)
-	// set segment-registers for kernel
-	// TODO just necessary for VM86-tasks because ds,es,fs and gs is set to 0 in this case
-	mov		$((SEG_UDATA << 3) | 3),%eax
-	mov		%eax,%ds
-	mov		%eax,%es
-	mov		%eax,%fs
-	mov		%eax,%gs
-#endif
-
 	// call c-routine
 	mov		%REG(sp),%ARG_1			// pointer to stack-frame
 	call	intrpt_handler

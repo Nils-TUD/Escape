@@ -118,9 +118,6 @@ enum {
 #	ifdef __x86__
 	SYSCALL_REQIOPORTS,
 	SYSCALL_RELIOPORTS,
-#		ifdef __i586__
-	SYSCALL_VM86INT,
-#		endif
 #	else
 	SYSCALL_DEBUG,
 #	endif

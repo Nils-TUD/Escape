@@ -127,9 +127,6 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 #if defined(__x86__)
 	{reqports,			"reqports",   		2},
 	{relports,			"relports",    		2},
-#	ifdef __i586__
-	{vm86int,			"vm86int",    		4},
-#	endif
 #else
 	{debug,				"debug",    		0},
 #endif

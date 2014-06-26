@@ -149,7 +149,7 @@ void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 	setRunning(id,n);
 #endif
 
-	all[id].tss->setSP(n->getKernelStack() + PAGE_SIZE - 2 * sizeof(ulong));
+	all[id].tss->setSP(n->getKernelStack() + PAGE_SIZE - 1 * sizeof(ulong));
 #if defined(__i586__)
 	if(EXPECT_FALSE(all[id].lastMSR != all[id].tss->REG(sp0))) {
 		CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,all[id].tss->REG(sp0));
@@ -194,14 +194,11 @@ void GDT::setupSyscalls(A_UNUSED TSS *tss) {
 }
 
 void GDT::setTSS(Desc *gdt,TSS *tss,uintptr_t kstack) {
-#if defined(__x86_64__)
 	tss->setSP(kstack + PAGE_SIZE - 1 * sizeof(ulong));
+#if defined(__x86_64__)
 	setDesc64(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,
 		Desc::GRANU_BYTES,Desc::SYS_TSS,Desc::DPL_KERNEL);
 #else
-	/* leave a bit space for the vm86-segment-registers that will be present at the stack-top
-	 * in vm86-mode. This way we can have the same interrupt-stack for all processes */
-	tss->setSP(kstack + PAGE_SIZE - 2 * sizeof(ulong));
 	setDesc(gdt + SEG_TSS,(uintptr_t)tss,sizeof(TSS) - 1,
 		Desc::GRANU_BYTES,Desc::SYS_TSS,Desc::DPL_KERNEL);
 #endif

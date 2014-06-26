@@ -124,17 +124,6 @@ private:
 	ulong uss;
 } A_PACKED;
 
-struct VM86IntrptStackFrame : public IntrptStackFrame {
-	ushort vm86es;
-	ushort : 16;
-	ushort vm86ds;
-	ushort : 16;
-	ushort vm86fs;
-	ushort : 16;
-	ushort vm86gs;
-	ushort : 16;
-} A_PACKED;
-
 class Thread;
 typedef void (*irqhandler_func)(Thread *t,IntrptStackFrame *stack);
 

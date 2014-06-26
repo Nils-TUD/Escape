@@ -39,7 +39,7 @@ if kenv['TGT'] == 'x86_64':
 	)
 
 #kenv.Append(
-#	CPPFLAGS = ' -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list='	+
+#	CPPFLAGS = ' -D ESC_PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list='	+
 #		'ksymbols.cc,src/arch/i586/gdt.cc,src/basic/arch/$TGT/profile.c'
 #)
 

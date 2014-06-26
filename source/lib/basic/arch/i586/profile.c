@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#if defined(PROFILE)
-#	include <assert.h>
-#	include <esc/arch.h>
-#	if defined(IN_KERNEL)
-#		if 0
-#			define gettid()		({ \
+#if defined(ESC_PROFILE)
+#include <assert.h>
+#include <esc/arch.h>
+#if defined(IN_KERNEL)
+#	if 0
+#		define gettid()		({ \
 	uintptr_t __esp; \
 	tid_t __tid; \
 	GET_REG("sp",__esp); \
@@ -32,14 +32,18 @@
 	} \
 	__tid; \
 })
-#		else
-#			define gettid()		0
-#		endif
+#	else
+#		define gettid()		0
+#	endif
 #	define getcycles()	rdtsc()
 #else
+#	include <esc/arch/x86/ports.h>
 #	include <esc/thread.h>
+#	include <esc/time.h>
 #	include <esc/debug.h>
 #	include <stdio.h>
+#	define gettid()			0
+#	define getcycles()		rdtsc()
 #endif
 
 #define STACK_SIZE	1024
@@ -47,11 +51,13 @@
 static void logUnsigned(ullong n,uint base);
 static void logChar(char c);
 
+#if defined(IN_KERNEL)
 static uint64_t rdtsc(void) {
 	uint32_t u, l;
 	__asm__ volatile ("rdtsc" : "=a" (l), "=d" (u));
 	return (uint64_t)u << 32 | l;
 }
+#endif
 
 static uint8_t prof_inbyte(uint16_t port) {
 	uint8_t res;
@@ -65,9 +71,8 @@ static void prof_outbyte(uint16_t port,uint8_t val) {
 
 #if !IN_KERNEL
 static bool initialized = false;
-#else
-int profEnabled = false;
 #endif
+int profEnabled = false;
 static size_t stackPos = 0;
 static bool inProf = false;
 static uint64_t callStack[STACK_SIZE];

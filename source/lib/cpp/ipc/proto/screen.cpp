@@ -31,6 +31,8 @@ std::vector<Screen::Mode> Screen::getModes() {
 	ssize_t res = getModeCount();
 	if(res < 0)
 		VTHROWE("getModeCount()",res);
+	if(res == 0)
+		return modes;
 
 	_is << res << SendReceive(MSG_SCR_GETMODES) >> res;
 	if(res < 0)

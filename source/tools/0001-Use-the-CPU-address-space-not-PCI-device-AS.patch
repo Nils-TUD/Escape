@@ -1,0 +1,25 @@
+From fe77204f31a15def2fafac97a033ba8f5c0df4f7 Mon Sep 17 00:00:00 2001
+From: Nils Asmussen <nils@script-solution.de>
+Date: Fri, 27 Jun 2014 17:26:25 +0200
+Subject: [PATCH] Use the CPU address space, not PCI device AS.
+
+---
+ include/hw/pci/pci.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/hw/pci/pci.h b/include/hw/pci/pci.h
+index 693dd6b..8bb91ca 100644
+--- a/include/hw/pci/pci.h
++++ b/include/hw/pci/pci.h
+@@ -665,7 +665,7 @@ static inline uint32_t pci_config_size(const PCIDevice *d)
+ /* DMA access functions */
+ static inline AddressSpace *pci_get_address_space(PCIDevice *dev)
+ {
+-    return &dev->bus_master_as;
++    return qemu_get_cpu(0)->as;
+ }
+ 
+ static inline int pci_dma_rw(PCIDevice *dev, dma_addr_t addr,
+-- 
+1.8.3.2
+

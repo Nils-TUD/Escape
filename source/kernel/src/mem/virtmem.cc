@@ -95,25 +95,28 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,int flags)
 
 	/* map memory */
 	uint mflags = PG_PRESENT | PG_WRITABLE;
+	ulong pts;
 	if(firstFrame != (frameno_t)-1) {
 		PageTables::RangeAllocator alloc(firstFrame);
 		res = getPageDir()->map(vm->virt(),pages,alloc,mflags);
+		pts = alloc.pageTables();
 	}
 	else {
 		PageTables::UAllocator alloc;
 		res = getPageDir()->map(vm->virt(),pages,alloc,mflags);
+		pts = alloc.pageTables();
 	}
 
 	if(res < 0)
 		goto errorRel;
 	if(flags & MAP_PHYS_MAP) {
 		/* the page-tables are ours, the pages may be used by others, too */
-		addOwn(res);
+		addOwn(pts);
 		addShared(pages);
 	}
 	else {
 		/* its our own mem; store physical address for the caller */
-		addOwn(res + pages);
+		addOwn(pts + pages);
 		*phys = firstFrame * PAGE_SIZE;
 	}
 	release();

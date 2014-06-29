@@ -3,4 +3,3 @@
 Import('env')
 env.SConscript('common/SConscript', 'env')
 env.SConscript('$TGTTYPE/SConscript', 'env')
-env.SConscript('$TGT/SConscript', 'env')

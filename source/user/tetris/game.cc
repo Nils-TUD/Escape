@@ -102,7 +102,14 @@ Stone *Game::createStone() {
 }
 
 void Game::handleKey(const ipc::UIEvents::Event &ev) {
-	if(ev.d.keyb.modifier & STATE_BREAK)
+	// automatically pause the game if our UI gets inactive
+	if(ev.type == ipc::UIEvents::Event::TYPE_UI_INACTIVE && _state != GAMEOVER) {
+		_state = PAUSED;
+		update(true);
+		return;
+	}
+
+	if(ev.type != ipc::UIEvents::Event::TYPE_KEYBOARD || (ev.d.keyb.modifier & STATE_BREAK))
 		return;
 
 	std::lock_guard<std::mutex> guard(_mutex);

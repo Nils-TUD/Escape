@@ -66,6 +66,9 @@ int input_thread(void *arg) {
 			case ipc::UIEvents::Event::TYPE_MOUSE:
 				handleMouseMessage(winmng,&ev);
 				break;
+
+			default:
+				break;
 		}
 	}
 	return 0;

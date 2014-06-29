@@ -91,7 +91,9 @@ public:
 	struct Event {
 		enum {
 			TYPE_KEYBOARD,
-			TYPE_MOUSE
+			TYPE_MOUSE,
+			TYPE_UI_ACTIVE,
+			TYPE_UI_INACTIVE
 		} type;
 		union {
 			struct {

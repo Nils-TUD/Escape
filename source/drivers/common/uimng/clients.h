@@ -202,6 +202,7 @@ private:
 		return active ? active->_fb->mode().id : -1;
 	}
 
+	void sendActive(bool active);
 	int modeid() const {
 		return _fb ? _fb->mode().id : -1;
 	}

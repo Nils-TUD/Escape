@@ -24,7 +24,7 @@ namespace ipc {
 
 std::ostream &operator<<(std::ostream &os,const UIEvents::Event &ev) {
 	static const char *types[] = {
-		"KEYBOARD","MOUSE"
+		"KEYBOARD","MOUSE","ACTIVE","INACTIVE"
 	};
 	os << types[ev.type];
 	switch(ev.type) {
@@ -34,6 +34,8 @@ std::ostream &operator<<(std::ostream &os,const UIEvents::Event &ev) {
 		case UIEvents::Event::TYPE_MOUSE:
 			os << " [" << ev.d.mouse.x << "," << ev.d.mouse.y;
 			os << " btns=" << std::hex << ev.d.mouse.buttons << std::dec << "]";
+			break;
+		default:
 			break;
 	}
 	return os;

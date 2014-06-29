@@ -181,8 +181,16 @@ void UI::start() {
 	while(_run) {
 		ipc::UIEvents::Event ev;
 		_uievents >> ev;
-		if(ev.type == ipc::UIEvents::Event::TYPE_KEYBOARD)
-			Game::handleKey(ev);
+		switch(ev.type) {
+			case ipc::UIEvents::Event::TYPE_KEYBOARD:
+			case ipc::UIEvents::Event::TYPE_UI_ACTIVE:
+			case ipc::UIEvents::Event::TYPE_UI_INACTIVE:
+				Game::handleKey(ev);
+				break;
+
+			default:
+				break;
+		}
 	}
 
 	// first wait until the thread is done (we can't remove the resources before that)

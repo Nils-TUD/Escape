@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/sllist.h>
 #include <esc/mem.h>
+#include <ipc/proto/ui.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
@@ -55,9 +56,18 @@ UIClient::~UIClient() {
 	delete[] _header;
 }
 
+void UIClient::sendActive(bool active) {
+	ipc::UIEvents::Event ev;
+	ev.type = active ? ipc::UIEvents::Event::TYPE_UI_ACTIVE : ipc::UIEvents::Event::TYPE_UI_INACTIVE;
+	::send(_evfd,MSG_UIM_EVENT,&ev,sizeof(ev));
+}
+
 void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	if(cli == NULL || !cli->_fb)
 		return;
+
+	if(old && old != cli)
+		old->sendActive(false);
 
 	/* before switching, discard all messages that are in flight from the old client. because we
 	 * might have send e.g. some update-messages which haven't been handled yet and of course we
@@ -78,6 +88,9 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	gsize_t dw,dh;
 	Header::update(cli,&dw,&dh);
 	cli->_screen->update(0,0,w,h);
+
+	if(old != cli)
+		cli->sendActive(true);
 }
 
 void UIClient::switchClient(int incr) {
@@ -149,11 +162,15 @@ int UIClient::attach(int evfd) {
 
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
 		if(_clients[i] == NULL) {
+			if(_active != MAX_CLIENTS)
+				_clients[_active]->sendActive(false);
+
 			_clients[i] = this;
 			_evfd = evfd;
 			_idx = i;
 			_active = i;
 			_clientCount++;
+			sendActive(true);
 			return i;
 		}
 	}

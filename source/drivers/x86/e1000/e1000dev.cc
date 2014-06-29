@@ -28,7 +28,7 @@
 #include "eeprom.h"
 
 E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
-		: _irq(nic.irq), _irqsem(), _curRxBuf(), _curTxBuf(), _bufs(),
+		: NICDriver(), _irq(nic.irq), _irqsem(), _curRxBuf(), _curTxBuf(), _bufs(),
 		  _bufsPhys(), _mmio(), _handler() {
 	if(_irqsem < 0)
 		error("Unable to create irq-semaphore");

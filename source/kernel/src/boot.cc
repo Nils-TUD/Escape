@@ -123,17 +123,17 @@ static char *filename(const char *path) {
 
 void Boot::createModFiles() {
 	VFSNode *node = NULL;
-	int res = VFSNode::request("/system/boot",NULL,&node,NULL,VFS_WRITE,0);
+	int res = VFSNode::request("/sys/boot",NULL,&node,NULL,VFS_WRITE,0);
 	if(res < 0)
-		Util::panic("Unable to resolve /system/boot");
+		Util::panic("Unable to resolve /sys/boot");
 
 	VFSNode *args = createObj<VFSFile>(KERNEL_PID,node,strdup("arguments"),S_IRUSR | S_IRGRP | S_IROTH);
 	if(!args)
-		Util::panic("Unable to create /system/boot/arguments");
+		Util::panic("Unable to create /sys/boot/arguments");
 
 	OpenFile *file;
 	if(VFS::openFile(KERNEL_PID,VFS_WRITE,args,args->getNo(),VFS_DEV_NO,&file) < 0)
-		Util::panic("Unable to open /system/boot/arguments");
+		Util::panic("Unable to open /sys/boot/arguments");
 
 	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {
 		char *modname = filename(mod->name);
@@ -143,9 +143,9 @@ void Boot::createModFiles() {
 		VFSNode::release(n);
 
 		if(file->write(KERNEL_PID,mod->name,strlen(mod->name)) < 0)
-			Util::panic("Unable to write arguments to /system/boot/arguments");
+			Util::panic("Unable to write arguments to /sys/boot/arguments");
 		if(file->write(KERNEL_PID,"\n",1) < 0)
-			Util::panic("Unable to write arguments to /system/boot/arguments");
+			Util::panic("Unable to write arguments to /sys/boot/arguments");
 	}
 
 	VFSNode::release(args);

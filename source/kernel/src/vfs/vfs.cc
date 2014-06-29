@@ -52,23 +52,23 @@ void VFS::init() {
 
 	/*
 	 *  /
-	 *   |- system
+	 *   |- sys
 	 *   |   |- boot
 	 *   |   |- shm
 	 *   |   |- devices
 	 *   |   |- fs
-	 *   |   \- processes
+	 *   |   \- proc
 	 *   |       \- self
 	 *   \- dev
 	 */
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
-	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"system",DIR_DEF_MODE);
+	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"sys",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"boot",DIR_DEF_MODE));
 	VFSNode *node = createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
 	/* the user should be able to create shms as well */
 	node->chmod(KERNEL_PID,0777);
 	VFSNode::release(node);
-	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"processes",DIR_DEF_MODE);
+	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"proc",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"fs",DIR_DEF_MODE));
@@ -84,7 +84,7 @@ void VFS::init() {
 void VFS::mountAll(Proc *p) {
 	if(MountSpace::mount(p,"/dev",reinterpret_cast<OpenFile*>(devNode)) < 0)
 		Util::panic("Unable to mount /dev");
-	if(MountSpace::mount(p,"/system",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
+	if(MountSpace::mount(p,"/sys",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
 		Util::panic("Unable to mount /dev");
 }
 
@@ -707,7 +707,7 @@ errorName:
 }
 
 void VFS::removeProcess(pid_t pid) {
-	/* remove from /system/processes */
+	/* remove from /sys/proc */
 	const Proc *p = Proc::getByPid(pid);
 	VFSNode *node = VFSNode::get(p->getThreadsDir());
 	node->getParent()->destroy();

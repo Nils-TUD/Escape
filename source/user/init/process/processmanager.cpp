@@ -171,7 +171,7 @@ void ProcessManager::finalize(int task) {
 
 void ProcessManager::addRunning() {
 	size_t bootMods = getBootModCount();
-	file procDir("/system/processes");
+	file procDir("/sys/proc");
 	vector<sDirEntry> procs = procDir.list_files(false);
 	for(auto  it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->name);
@@ -198,11 +198,11 @@ size_t ProcessManager::getBootModCount() const {
 	sElfEHeader header;
 	/* count the boot modules that are ELF files; these are the modules that we're loaded at boot */
 	/* (we might have other things like romdisks) */
-	file modDir("/system/boot");
+	file modDir("/sys/boot");
 	vector<sDirEntry> mods = modDir.list_files(false);
 	for(auto  it = mods.begin(); it != mods.end(); ++it) {
 		char path[MAX_PATH_LEN];
-		snprintf(path,sizeof(path),"/system/boot/%s",it->name);
+		snprintf(path,sizeof(path),"/sys/boot/%s",it->name);
 		int fd = open(path,IO_READ);
 		if(fd < 0) {
 			printe("Unable to open '%s'",path);

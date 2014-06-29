@@ -35,7 +35,7 @@ public:
 	 * @return the file in which the nameserver is stored
 	 */
 	static const char *getResolveFile() {
-		return "/system/net/nameserver";
+		return "/sys/net/nameserver";
 	}
 
 	/**

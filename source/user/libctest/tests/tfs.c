@@ -93,7 +93,7 @@ static void test_perms(void) {
 		const char *file;
 	} paths[] = {
 		{"/newfile","/newfile/test"},
-		{"/system/newfile","/system/newfile/test"}
+		{"/sys/newfile","/sys/newfile/test"}
 	};
 	test_caseStart("Testing permissions");
 

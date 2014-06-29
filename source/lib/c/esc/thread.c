@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #define HASHMAP_SIZE	64
-#define SEM_LOCAL_PATH	"/system/processes/self/sems/"
+#define SEM_LOCAL_PATH	"/sys/proc/self/sems/"
 
 typedef struct {
 	tid_t tid;

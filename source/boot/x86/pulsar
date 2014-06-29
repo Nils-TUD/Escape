@@ -6,7 +6,7 @@ cat >$1/config-$ESC_MAC <<EOF
 root escape
 exec /boot/escape root=/dev/iso9660-ramdisk-cd nosmp
 load /bin/initloader
-load /sbin/ramdisk /dev/ramdisk-cd -f /system/boot/cd-mini.iso
+load /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd-mini.iso
 load /sbin/rtc /dev/rtc
 load /sbin/pci /dev/pci
 load /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd

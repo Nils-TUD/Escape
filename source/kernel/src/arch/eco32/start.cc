@@ -48,7 +48,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp) {
 
 	/* load initloader */
 	ELF::StartupInfo info;
-	if(ELF::load("/system/boot/initloader",&info) < 0)
+	if(ELF::load("/sys/boot/initloader",&info) < 0)
 		Util::panic("Unable to load initloader");
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))

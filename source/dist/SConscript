@@ -11,7 +11,7 @@ env.InstallFiles('$DISTDIR/etc', 'etc', scan=1)
 env.InstallFiles('$DISTDIR/home', 'home', scan=1)
 env.InstallFiles('$DISTDIR/root', 'root', scan=1)
 env.Execute("mkdir -p $DISTDIR/dev")
-env.Execute("mkdir -p $DISTDIR/system")
+env.Execute("mkdir -p $DISTDIR/sys")
 env.Execute("mkdir -p $DISTDIR/mnt")
 
 env.Command('zeros', '/bin/dd', '$SOURCE if=/dev/zero of=$TARGET bs=1024 count=2048')

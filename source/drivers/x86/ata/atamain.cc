@@ -155,7 +155,7 @@ int main(int argc,char **argv) {
 	fflush(stdout);
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that all ata-devices are registered */
-	f = fopen("/system/devices/ata","w");
+	f = fopen("/sys/devices/ata","w");
 	fclose(f);
 
 	/* start drive threads */
@@ -281,8 +281,8 @@ static void initDrives(void) {
 
 static void createVFSEntry(sATADevice *ataDev,sPartition *part,const char *name) {
 	FILE *f;
-	char path[SSTRLEN("/system/devices/hda1") + 1];
-	snprintf(path,sizeof(path),"/system/devices/%s",name);
+	char path[SSTRLEN("/sys/devices/hda1") + 1];
+	snprintf(path,sizeof(path),"/sys/devices/%s",name);
 
 	/* open and create file */
 	f = fopen(path,"w");

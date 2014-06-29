@@ -26,7 +26,7 @@ using namespace std;
 namespace info {
 	memusage memusage::get() {
 		memusage mem;
-		ifstream f("/system/memusage");
+		ifstream f("/sys/memusage");
 		f >> mem;
 		return mem;
 	}

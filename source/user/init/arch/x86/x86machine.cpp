@@ -154,7 +154,7 @@ void x86Machine::reboot(Progress &pg) {
 
 void *x86Machine::mapTable(const char *name,size_t *len) {
 	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/acpi/%s",name);
+	snprintf(path,sizeof(path),"/sys/acpi/%s",name);
 	int fd = open(path,IO_READ);
 	if(fd < 0) {
 		printe("open of %s failed",path);

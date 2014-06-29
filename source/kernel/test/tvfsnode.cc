@@ -54,19 +54,19 @@ static void test_vfsn() {
 static void test_vfs_node_resolvePath() {
 	test_caseStart("Testing vfs_node_resolvePath()");
 
-	if(!test_vfs_node_resolvePathCpy("/system/..","")) return;
-	if(!test_vfs_node_resolvePathCpy("/system//../..","")) return;
-	if(!test_vfs_node_resolvePathCpy("/system//./.","system")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/","system")) return;
-	if(!test_vfs_node_resolvePathCpy("/system//","system")) return;
-	if(!test_vfs_node_resolvePathCpy("/system///","system")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/processes/..","system")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/processes/.","processes")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/processes/./","processes")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/./.","system")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/////processes/./././.","processes")) return;
-	if(!test_vfs_node_resolvePathCpy("/system/./processes/../processes/./","processes")) return;
-	if(!test_vfs_node_resolvePathCpy("/system//..//..//..","")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/..","")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys//../..","")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys//./.","sys")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/","sys")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys//","sys")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys///","sys")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/proc/..","sys")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/proc/.","proc")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/proc/./","proc")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/./.","sys")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/////proc/./././.","proc")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys/./proc/../proc/./","proc")) return;
+	if(!test_vfs_node_resolvePathCpy("/sys//..//..//..","")) return;
 
 	test_caseSucceeded();
 }
@@ -90,18 +90,18 @@ static void test_vfs_node_getPath() {
 	test_caseStart("Testing vfs_node_getPath()");
 
 	node = NULL;
-	VFSNode::request("/system",NULL,&node,NULL,VFS_READ,0);
-	test_assertStr(node->getPath(),(char*)"/system");
+	VFSNode::request("/sys",NULL,&node,NULL,VFS_READ,0);
+	test_assertStr(node->getPath(),(char*)"/sys");
 	VFSNode::release(node);
 
 	node = NULL;
-	VFSNode::request("/system/processes",NULL,&node,NULL,VFS_READ,0);
-	test_assertStr(node->getPath(),(char*)"/system/processes");
+	VFSNode::request("/sys/proc",NULL,&node,NULL,VFS_READ,0);
+	test_assertStr(node->getPath(),(char*)"/sys/proc");
 	VFSNode::release(node);
 
 	node = NULL;
-	VFSNode::request("/system/processes/0",NULL,&node,NULL,VFS_READ,0);
-	test_assertStr(node->getPath(),(char*)"/system/processes/0");
+	VFSNode::request("/sys/proc/0",NULL,&node,NULL,VFS_READ,0);
+	test_assertStr(node->getPath(),(char*)"/sys/proc/0");
 	VFSNode::release(node);
 
 	test_caseSucceeded();
@@ -118,18 +118,18 @@ static void test_vfs_node_file_refs() {
 	checkMemoryBefore(false);
 	size_t nodesBefore = VFSNode::getNodeCount();
 
-	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/sys/foobar",&f1),0);
 	n = f1->getNode();
 	test_assertSSize(f1->write(pid,buffer,strlen(buffer)),strlen(buffer));
 	test_assertSize(n->getRefCount(),2);
 	f1->close(pid);
 	test_assertSize(n->getRefCount(),1);
 
-	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/system/foobar",&f2),0);
+	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",&f2),0);
 	test_assertSize(n->getRefCount(),2);
-	test_assertInt(VFS::unlink(pid,"/system/foobar"),0);
+	test_assertInt(VFS::unlink(pid,"/sys/foobar"),0);
 	test_assertSize(n->getRefCount(),1);
-	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/system/foobar",&f3),-ENOENT);
+	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",&f3),-ENOENT);
 	memclear(buffer,sizeof(buffer));
 	test_assertTrue(f2->read(pid,buffer,sizeof(buffer)) > 0);
 	test_assertStr(buffer,"This is a test!");
@@ -151,20 +151,20 @@ static void test_vfs_node_dir_refs() {
 	checkMemoryBefore(false);
 	size_t nodesBefore = VFSNode::getNodeCount();
 
-	test_assertInt(VFS::mkdir(pid,"/system/foobar"),0);
-	test_assertInt(VFS::mkdir(pid,"/system/foobar/test"),0);
-	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar/myfile1",&f1),0);
+	test_assertInt(VFS::mkdir(pid,"/sys/foobar"),0);
+	test_assertInt(VFS::mkdir(pid,"/sys/foobar/test"),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/sys/foobar/myfile1",&f1),0);
 	f1->close(pid);
-	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/system/foobar/myfile2",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/sys/foobar/myfile2",&f1),0);
 	f1->close(pid);
 
 	n = NULL;
-	test_assertInt(VFSNode::request("/system/foobar",NULL,&n,NULL,0,0),0);
+	test_assertInt(VFSNode::request("/sys/foobar",NULL,&n,NULL,0,0),0);
 	/* foobar itself, "." and "..", "test", "myfile1", "myfile2" and the request of "foobar" = 7 */
 	test_assertSize(n->getRefCount(),7);
 	VFSNode::release(n);
 	test_assertSize(n->getRefCount(),6);
-	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/system/foobar",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",&f1),0);
 	test_assertSize(n->getRefCount(),7);
 
 	const VFSNode *f = n->openDir(false,&valid);
@@ -178,13 +178,13 @@ static void test_vfs_node_dir_refs() {
 	f = f->next;
 	test_assertStr(f->getName(),"..");
 
-	test_assertInt(VFS::rmdir(pid,"/system/foobar/test"),0);
+	test_assertInt(VFS::rmdir(pid,"/sys/foobar/test"),0);
 	test_assertSize(n->getRefCount(),6);
-	test_assertInt(VFS::unlink(pid,"/system/foobar/myfile1"),0);
+	test_assertInt(VFS::unlink(pid,"/sys/foobar/myfile1"),0);
 	test_assertSize(n->getRefCount(),5);
-	test_assertInt(VFS::unlink(pid,"/system/foobar/myfile2"),0);
+	test_assertInt(VFS::unlink(pid,"/sys/foobar/myfile2"),0);
 	test_assertSize(n->getRefCount(),4);
-	test_assertInt(VFS::rmdir(pid,"/system/foobar"),0);
+	test_assertInt(VFS::rmdir(pid,"/sys/foobar"),0);
 	test_assertSize(n->getRefCount(),1);
 
 	n->closeDir(false);

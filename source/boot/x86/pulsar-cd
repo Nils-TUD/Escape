@@ -7,7 +7,7 @@ root escape
 exec boot/escape root=/dev/iso9660-cdrom
 load /bin/initloader
 load sbin/pci /dev/pci
-load sbin/ata /system/devices/ata nodma
+load sbin/ata /sys/devices/ata nodma
 load sbin/rtc /dev/rtc
 load sbin/iso9660 /dev/iso9660-cdrom cdrom
 EOF

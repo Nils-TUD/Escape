@@ -9,5 +9,5 @@ fi
 
 $ESC_QEMU -m 128 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
 	-kernel $1/dist/boot/escape$suffix -append 'root=/dev/iso9660-ramdisk-cd.iso' \
-	-initrd "$1/dist/bin/initloader,$1/dist/sbin/ramdisk /dev/ramdisk-cd.iso -f /system/boot/cd.iso,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/rtc /dev/rtc,$1/dist/sbin/iso9660 /dev/iso9660-ramdisk-cd.iso /dev/ramdisk-cd.iso,$1/cd.iso" \
+	-initrd "$1/dist/bin/initloader,$1/dist/sbin/ramdisk /dev/ramdisk-cd.iso -f /sys/boot/cd.iso,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/rtc /dev/rtc,$1/dist/sbin/iso9660 /dev/iso9660-ramdisk-cd.iso /dev/ramdisk-cd.iso,$1/cd.iso" \
 	$2 | tee log.txt

@@ -26,7 +26,7 @@
 class VFSSelfLink : public VFSLink {
 public:
 	/**
-	 * Creates a link to /system/processes/<current> with name <name> in <parent>.
+	 * Creates a link to /sys/proc/<current> with name <name> in <parent>.
 	 *
 	 * @param pid the process-id
 	 * @param parent the parent-node

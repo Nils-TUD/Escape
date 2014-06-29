@@ -36,8 +36,8 @@
 #include <string.h>
 
 #define TAB_WIDTH		4
-#define LOG_DIR			"/system"
-#define DUMMY_STDIN		"/system/stdin"
+#define LOG_DIR			"/sys"
+#define DUMMY_STDIN		"/sys/stdin"
 
 Log Log::inst;
 

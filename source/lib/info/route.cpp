@@ -26,7 +26,7 @@ using namespace std;
 namespace info {
 	std::vector<route*> route::get_list() {
 		std::vector<route*> list;
-		ifstream f("/system/net/routes");
+		ifstream f("/sys/net/routes");
 		while(f.good()) {
 			route *r = new route;
 			f >> *r;

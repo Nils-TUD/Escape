@@ -67,7 +67,7 @@ uintptr_t smpstart(uintptr_t *usp) {
 	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
 
 	/* load initloader */
-	if(ELF::load("/system/boot/initloader",&info) < 0)
+	if(ELF::load("/sys/boot/initloader",&info) < 0)
 		Util::panic("Unable to load initloader");
 
 	/* give the process some stack pages */

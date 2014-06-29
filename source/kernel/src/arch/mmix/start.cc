@@ -44,7 +44,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 
 	/* load initloader */
 	ELF::StartupInfo info;
-	if(ELF::load("/system/boot/initloader",&info) < 0)
+	if(ELF::load("/sys/boot/initloader",&info) < 0)
 		Util::panic("Unable to load initloader");
 	if(UEnv::setupProc(0,0,NULL,0,&info,info.progEntry,-1) < 0)
 		Util::panic("Unable to setup initloader");

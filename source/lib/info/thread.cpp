@@ -28,7 +28,7 @@ using namespace std;
 namespace info {
 	vector<thread*> thread::get_list() {
 		vector<thread*> threads;
-		file dir("/system/processes");
+		file dir("/sys/proc");
 		vector<sDirEntry> files = dir.list_files(false);
 		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
@@ -36,7 +36,7 @@ namespace info {
 				continue;
 
 			try {
-				string threadDir(string("/system/processes/") + it->name + "/threads");
+				string threadDir(string("/sys/proc/") + it->name + "/threads");
 				file tdir(threadDir);
 				vector<sDirEntry> tfiles = tdir.list_files(false);
 				for(vector<sDirEntry>::const_iterator tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
@@ -57,7 +57,7 @@ namespace info {
 		char tname[12], pname[12];
 		itoa(tname,sizeof(tname),tid);
 		itoa(pname,sizeof(pname),pid);
-		string tpath = string("/system/processes/") + pname + "/threads/" + tname + "/info";
+		string tpath = string("/sys/proc/") + pname + "/threads/" + tname + "/info";
 		ifstream tis(tpath.c_str());
 		thread* t = new thread();
 		tis >> *t;

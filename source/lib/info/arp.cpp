@@ -26,7 +26,7 @@ using namespace std;
 namespace info {
 	std::vector<arp*> arp::get_list() {
 		std::vector<arp*> list;
-		ifstream f("/system/net/arp");
+		ifstream f("/sys/net/arp");
 		while(f.good()) {
 			arp *a = new arp;
 			f >> *a;

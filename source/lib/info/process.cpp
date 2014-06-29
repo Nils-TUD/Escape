@@ -28,7 +28,7 @@ using namespace std;
 namespace info {
 	vector<process*> process::get_list(bool own,uid_t uid,bool fullcmd) {
 		vector<process*> procs;
-		file dir("/system/processes");
+		file dir("/sys/proc");
 		vector<sDirEntry> files = dir.list_files(false);
 		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
@@ -48,7 +48,7 @@ namespace info {
 	process* process::get_proc(pid_t pid,bool own,uid_t uid,bool fullcmd) {
 		char name[12];
 		itoa(name,sizeof(name),pid);
-		string ppath = string("/system/processes/") + name + "/info";
+		string ppath = string("/sys/proc/") + name + "/info";
 		ifstream is(ppath.c_str());
 		process* p = new process(fullcmd);
 		is >> *p;

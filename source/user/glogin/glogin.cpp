@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <memory>
 
-#define LOG_PATH		"/system/log"
+#define LOG_PATH		"/sys/log"
 #define DESKTOP_PROG	"desktop"
 
 using namespace gui;

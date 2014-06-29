@@ -38,7 +38,7 @@ sTestModule tModMem = {
 
 static void test_mem(void) {
 	test_mmap_file();
-	test_mmap_shared_file("/system/foobar");
+	test_mmap_shared_file("/sys/foobar");
 	sFileInfo info;
 	if(stat(".",&info) < 0)
 		error("Unable to stat .");

@@ -28,9 +28,9 @@
 static void readTable(const char *name,sRSDT *table);
 
 int main(void) {
-	DIR *dir = opendir("/system/acpi");
+	DIR *dir = opendir("/sys/acpi");
 	if(!dir)
-		error("Unable to open /system/acpi");
+		error("Unable to open /sys/acpi");
 
 	size_t i = 0;
 	sDirEntry e;
@@ -54,7 +54,7 @@ int main(void) {
 
 static void readTable(const char *name,sRSDT *table) {
 	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/acpi/%s",name);
+	snprintf(path,sizeof(path),"/sys/acpi/%s",name);
 	int fd = open(path,IO_READ);
 	if(fd < 0)
 		printe("open of %s failed",path);

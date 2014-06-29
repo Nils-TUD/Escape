@@ -31,7 +31,7 @@ timeout 3
 title Escape
 kernel /boot/escape$suffix root=/dev/iso9660-ramdisk-cd
 module /bin/initloader
-module /sbin/ramdisk /dev/ramdisk-cd -f /system/boot/cd.iso
+module /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd.iso
 module /sbin/rtc /dev/rtc
 module /sbin/pci /dev/pci
 module /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd

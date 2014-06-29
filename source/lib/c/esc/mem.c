@@ -27,7 +27,7 @@
 #include <errno.h>
 
 /* prefill the space for getpid() with '/'. they will simply be ignored by the kernel */
-#define PSHM_PATH	"/system/processes/////////////shm/"
+#define PSHM_PATH	"/sys/proc/////////////shm/"
 
 static long shmcnt = 0;
 
@@ -56,7 +56,7 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
 }
 
 static const char *pshm_buildpath(char *path,ulong name) {
-	char *pidpos = path + SSTRLEN("/system/processes/");
+	char *pidpos = path + SSTRLEN("/sys/proc/");
 	size_t len = itoa(pidpos,12,getpid());
 	pidpos[len] = '/';
 	itoa(path + SSTRLEN(PSHM_PATH),12,name);
@@ -77,7 +77,7 @@ int pshm_unlink(ulong name) {
 int shm_open(const char *name,int oflag,mode_t mode) {
 	int fd;
 	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/shm/%s",name);
+	snprintf(path,sizeof(path),"/sys/shm/%s",name);
 	if(oflag & IO_CREATE)
 		fd = create(path,oflag | IO_FORCECREATE,mode);
 	else
@@ -88,13 +88,13 @@ int shm_open(const char *name,int oflag,mode_t mode) {
 int shm_rename(const char *old,const char *newName) {
 	char pathOld[MAX_PATH_LEN];
 	char pathNew[MAX_PATH_LEN];
-	snprintf(pathOld,sizeof(pathOld),"/system/shm/%s",old);
-	snprintf(pathNew,sizeof(pathNew),"/system/shm/%s",newName);
+	snprintf(pathOld,sizeof(pathOld),"/sys/shm/%s",old);
+	snprintf(pathNew,sizeof(pathNew),"/sys/shm/%s",newName);
 	return rename(pathOld,pathNew);
 }
 
 int shm_unlink(const char *name) {
 	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/shm/%s",name);
+	snprintf(path,sizeof(path),"/sys/shm/%s",name);
 	return unlink(path);
 }

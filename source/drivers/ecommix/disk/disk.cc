@@ -204,7 +204,7 @@ int main(int argc,char **argv) {
 		error("Unable to mlock regions");
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that the disk is registered */
-	FILE *f = fopen("/system/devices/disk","w");
+	FILE *f = fopen("/sys/devices/disk","w");
 	fclose(f);
 
 	dev.loop();
@@ -298,8 +298,8 @@ static bool diskWait(void) {
 
 static void createVFSEntry(const char *name,bool isPart) {
 	FILE *f;
-	char path[SSTRLEN("/system/devices/hda1") + 1];
-	snprintf(path,sizeof(path),"/system/devices/%s",name);
+	char path[SSTRLEN("/sys/devices/hda1") + 1];
+	snprintf(path,sizeof(path),"/sys/devices/%s",name);
 
 	/* open and create file */
 	f = fopen(path,"w");

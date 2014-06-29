@@ -492,25 +492,25 @@ static int receiveThread(void *arg) {
 }
 
 static int linksFileThread(void*) {
-	LinksFileDevice dev("/system/net/links",0444);
+	LinksFileDevice dev("/sys/net/links",0444);
 	dev.loop();
 	return 0;
 }
 
 static int routesFileThread(void*) {
-	RoutesFileDevice dev("/system/net/routes",0444);
+	RoutesFileDevice dev("/sys/net/routes",0444);
 	dev.loop();
 	return 0;
 }
 
 static int arpFileThread(void*) {
-	ARPFileDevice dev("/system/net/arp",0444);
+	ARPFileDevice dev("/sys/net/arp",0444);
 	dev.loop();
 	return 0;
 }
 
 static int socketsFileThread(void*) {
-	SocketsFileDevice dev("/system/net/sockets",0444);
+	SocketsFileDevice dev("/sys/net/sockets",0444);
 	dev.loop();
 	return 0;
 }
@@ -544,9 +544,9 @@ static void createResolvConf() {
 int main() {
 	srand(rdtsc());
 
-	print("Creating /system/net");
-	if(mkdir("/system/net") < 0)
-		printe("Unable to create /system/net");
+	print("Creating /sys/net");
+	if(mkdir("/sys/net") < 0)
+		printe("Unable to create /sys/net");
 	createResolvConf();
 
 	if(startthread(socketThread,NULL) < 0)

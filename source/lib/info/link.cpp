@@ -26,7 +26,7 @@ using namespace std;
 namespace info {
 	std::vector<link*> link::get_list() {
 		std::vector<link*> list;
-		ifstream f("/system/net/links");
+		ifstream f("/sys/net/links");
 		while(f.good()) {
 			link *l = new link;
 			f >> *l;

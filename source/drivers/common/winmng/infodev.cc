@@ -54,7 +54,7 @@ public:
 
 int infodev_thread(void *arg) {
 	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/system/%s-windows",(const char*)arg);
+	snprintf(path,sizeof(path),"/sys/%s-windows",(const char*)arg);
 	WinInfoDevice dev(path,0444);
 	dev.loop();
 	return 0;

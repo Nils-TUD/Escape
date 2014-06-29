@@ -53,7 +53,7 @@ EXTERN_C BootInfo *bootload(size_t memSize);
 static LoadProg progs[] = {
 	{"/boot/escape","/boot/escape root=/dev/ext2-hda1",0,0},
 	{"/bin/initloader","/bin/initloader",0,0},
-	{"/sbin/disk","/sbin/disk /system/devices/disk",0,0},
+	{"/sbin/disk","/sbin/disk /sys/devices/disk",0,0},
 	{"/sbin/rtc","/sbin/rtc /dev/rtc",0,0},
 	{"/sbin/ext2","/sbin/ext2 /dev/ext2-hda1 /dev/hda1",0,0},
 };

@@ -60,9 +60,9 @@ static int createfile(void) {
 	char *buffer = calloc(1,pageSize);
 	if(!buffer)
 		error("malloc failed");
-	int fd = create("/system/test",IO_READ | IO_WRITE,0600);
+	int fd = create("/sys/test",IO_READ | IO_WRITE,0600);
 	if(fd < 0)
-		error("Unable to create /system/test");
+		error("Unable to create /sys/test");
 	size_t i;
 	for(i = 0; i < REG_SIZE / pageSize; ++i) {
 		if(write(fd,buffer,pageSize) != (ssize_t)pageSize)
@@ -78,7 +78,7 @@ int mod_pagefaults(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	for(i = 0; i < TEST_COUNT; ++i)
 		dotest(fd);
 	close(fd);
-	if(unlink("/system/test") != 0)
+	if(unlink("/sys/test") != 0)
 		error("unlink failed");
 	return EXIT_SUCCESS;
 }

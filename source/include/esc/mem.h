@@ -127,7 +127,7 @@ static inline int mlockall(void) {
 }
 
 /**
- * Creates a file in /system/processes/<pid>/shm/ with a unique name and <oflag> as flags for create.
+ * Creates a file in /sys/proc/<pid>/shm/ with a unique name and <oflag> as flags for create.
  * The file is intended to be mapped with mmap().
  *
  * @param oflag the open flags
@@ -145,7 +145,7 @@ int pshm_create(int oflag,mode_t mode,ulong *name);
 int pshm_unlink(ulong name);
 
 /**
- * Creates/opens a file in /system/shm/ with given name and opens it with <oflag>. If <oflag> contains
+ * Creates/opens a file in /sys/shm/ with given name and opens it with <oflag>. If <oflag> contains
  * IO_CREATE, <mode> is used for the permissions. This file is intended to be mapped with mmap().
  *
  * @param name the filename

@@ -71,9 +71,9 @@ int main(void) {
 	/* open arguments file */
 	char line[256];
 	char filepath[MAX_PATH_LEN];
-	FILE *args = fopen("/system/boot/arguments","r");
+	FILE *args = fopen("/sys/boot/arguments","r");
 	if(!args)
-		error("Unable to open /system/boot/arguments for reading");
+		error("Unable to open /sys/boot/arguments for reading");
 
 	/* load boot modules */
 	for(int i = 0; !feof(args); ++i) {
@@ -88,8 +88,8 @@ int main(void) {
 		if(argc < 2)
 			continue;
 
-		/* all boot-modules are in /system/boot */
-		snprintf(filepath,sizeof(filepath),"/system/boot/%s",basename(argv[0]));
+		/* all boot-modules are in /sys/boot */
+		snprintf(filepath,sizeof(filepath),"/sys/boot/%s",basename(argv[0]));
 		argv[0] = filepath;
 
 		int pid;

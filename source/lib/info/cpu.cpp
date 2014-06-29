@@ -26,7 +26,7 @@ using namespace std;
 namespace info {
 	std::vector<cpu*> cpu::get_list() {
 		std::vector<cpu*> list;
-		ifstream f("/system/cpu");
+		ifstream f("/sys/cpu");
 		while(f.good()) {
 			cpu *c = new cpu;
 			f >> *c;

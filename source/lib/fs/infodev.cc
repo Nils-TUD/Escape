@@ -66,7 +66,7 @@ int InfoDevice::thread(void *arg) {
 	char *devname = strrchr(idev->path(),'/');
 	if(!devname)
 		error("Invalid device name '%s'",idev->path());
-	snprintf(devpath,sizeof(devpath),"/system/fs/%s",devname);
+	snprintf(devpath,sizeof(devpath),"/sys/fs/%s",devname);
 
 	dev = new FSFileDevice(idev->fs(),devpath,0444);
 	dev->loop();

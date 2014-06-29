@@ -290,6 +290,11 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 			err = -ENOENT;
 	}
 	else {
+		if(flags & VFS_FORCECREATE) {
+			err = -EEXIST;
+			goto done;
+		}
+
 		/* resolve link */
 		if(!(flags & VFS_NOLINKRES) && S_ISLNK(n->mode))
 			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());

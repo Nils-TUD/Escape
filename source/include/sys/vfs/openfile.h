@@ -42,11 +42,12 @@ enum {
 	VFS_EXEC = 64,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
 							 * on purpose */
 	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
-	VFS_NOLINKRES = 256,	/* kernel-intern: don't resolve last link in path */
-	VFS_DEVICE = 512,		/* kernel-intern: whether the file was created for a device */
-	VFS_NONODERES = 1024,	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
-	VFS_SIGNALS = 2048,		/* kernel-intern: allow signals during blocking */
-	VFS_BLOCK = 4096		/* kernel-intern: force blocking */
+	VFS_FORCECREATE = 256,	/* fail if the file already exists */
+	VFS_NOLINKRES = 512,	/* kernel-intern: don't resolve last link in path */
+	VFS_DEVICE = 1024,		/* kernel-intern: whether the file was created for a device */
+	VFS_NONODERES = 2048,	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
+	VFS_SIGNALS = 4096,		/* kernel-intern: allow signals during blocking */
+	VFS_BLOCK = 8192		/* kernel-intern: force blocking */
 };
 
 class VFS;

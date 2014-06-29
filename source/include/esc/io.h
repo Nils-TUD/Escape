@@ -36,6 +36,7 @@
 #define IO_MSGS					64	/* exchange messages with a device */
 #define IO_SEM					64	/* use semaphore operations (down is interruptable!) */
 #define IO_EXCLUSIVE			128	/* disallow other accesses */
+#define IO_FORCECREATE			256	/* fail if the file already exists */
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0

@@ -105,7 +105,10 @@ inode_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flag
 
 	res = cnode->inodeNo;
 	e->inodeCache.release(cnode);
-	if(res != EXT2_BAD_INO)
+	if(res != EXT2_BAD_INO) {
+		if(flags & IO_FORCECREATE)
+			return -EEXIST;
 		return res;
+	}
 	return -ENOENT;
 }

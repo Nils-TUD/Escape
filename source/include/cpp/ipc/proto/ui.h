@@ -127,6 +127,13 @@ public:
 	UIEvents &operator=(const UIEvents&) = delete;
 
 	/**
+	 * @return the IPC stream
+	 */
+	IPCStream &is() {
+		return _is;
+	}
+
+	/**
 	 * Reads the next event from this channel.
 	 */
 	UIEvents &operator>>(Event &ev) {

@@ -44,6 +44,8 @@
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
 
+class TUIVTermDevice;
+
 static int vtermThread(void *arg);
 static int uimInputThread(void *arg);
 static int vtInit(int id,const char *name,uint cols,uint rows);
@@ -54,6 +56,8 @@ static void vtSetCursor(sVTerm *vt);
 static std::vector<ipc::Screen::Mode> modes;
 static ipc::FrameBuffer *fb = NULL;
 static sVTerm vterm;
+static bool run = true;
+static TUIVTermDevice *vtdev;
 
 class TUIVTermDevice : public ipc::VTermDevice {
 public:
@@ -99,13 +103,19 @@ public:
 	}
 };
 
-static TUIVTermDevice *vtdev;
+static void sigterm(int) {
+	run = false;
+	vtdev->stop();
+}
 
 int main(int argc,char **argv) {
 	if(argc < 4) {
 		fprintf(stderr,"Usage: %s <cols> <rows> <name>\n",argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	if(signal(SIGTERM,sigterm) == SIG_ERR)
+		error("Unable to set SIGTERM handler");
 
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
@@ -135,13 +145,18 @@ int main(int argc,char **argv) {
 		error("Unable to init vterms");
 
 	/* start thread to read input-events from uimanager */
-	if(startthread(uimInputThread,&modeid) < 0)
+	int tid;
+	if((tid = startthread(uimInputThread,&modeid)) < 0)
 		error("Unable to start thread for vterm %s",path);
 
 	/* handle device here */
 	vtermThread(vtdev);
 
 	/* clean up */
+	join(tid);
+	delete fb;
+	delete vterm.ui;
+	delete vterm.speaker;
 	delete vtdev;
 	vtctrl_destroy(&vterm);
 	return EXIT_SUCCESS;
@@ -151,6 +166,9 @@ static int uimInputThread(void *arg) {
 	int modeid = *(int*)arg;
 	/* open uimng's input device */
 	ipc::UIEvents uiev(*vterm.ui);
+
+	if(signal(SIGTERM,sigterm) == SIG_ERR)
+		error("Unable to set SIGTERM handler");
 
 	{
 		std::lock_guard<std::mutex> guard(*vterm.mutex);
@@ -162,9 +180,12 @@ static int uimInputThread(void *arg) {
 	}
 
 	/* read from uimanager and handle the keys */
-	while(1) {
+	while(run) {
 		ipc::UIEvents::Event ev;
-		uiev >> ev;
+		uiev.is() >> ipc::ReceiveData(&ev,sizeof(ev),false);
+		if(!run)
+			break;
+
 		if(ev.type == ipc::UIEvents::Event::TYPE_KEYBOARD) {
 			std::lock_guard<std::mutex> guard(*vterm.mutex);
 			vtin_handleKey(&vterm,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);

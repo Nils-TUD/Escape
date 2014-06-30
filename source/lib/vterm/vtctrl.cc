@@ -110,6 +110,7 @@ bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode) {
 }
 
 void vtctrl_destroy(sVTerm *vt) {
+	delete vt->mutex;
 	rb_destroy(vt->inbuf);
 	vtctrl_freeLines(vt->lines,vt->rows);
 	free(vt->emptyLine);

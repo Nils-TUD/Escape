@@ -53,7 +53,7 @@ static int usage(const char *name) {
 }
 
 int shell_cmdKill(int argc,char **argv) {
-	int sig = SIG_KILL;
+	int sig = SIG_TERM;
 	char *ssig = NULL;
 	bool list = false;
 	size_t i;

@@ -33,6 +33,7 @@
 size_t UIClient::_active = MAX_CLIENTS;
 UIClient *UIClient::_clients[MAX_CLIENTS];
 UIClient *UIClient::_allclients[MAX_CLIENTS];
+std::vector<UIClient*> UIClient::_clientStack;
 size_t UIClient::_clientCount = 0;
 
 UIClient::UIClient(int f)
@@ -56,10 +57,15 @@ UIClient::~UIClient() {
 	delete[] _header;
 }
 
-void UIClient::sendActive(bool active) {
+void UIClient::setActive(bool active) {
 	ipc::UIEvents::Event ev;
 	ev.type = active ? ipc::UIEvents::Event::TYPE_UI_ACTIVE : ipc::UIEvents::Event::TYPE_UI_INACTIVE;
 	::send(_evfd,MSG_UIM_EVENT,&ev,sizeof(ev));
+
+	if(!active) {
+		_clientStack.erase_first(this);
+		_clientStack.insert(_clientStack.begin(),this);
+	}
 }
 
 void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
@@ -67,7 +73,7 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 		return;
 
 	if(old && old != cli)
-		old->sendActive(false);
+		old->setActive(false);
 
 	/* before switching, discard all messages that are in flight from the old client. because we
 	 * might have send e.g. some update-messages which haven't been handled yet and of course we
@@ -90,7 +96,7 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	cli->_screen->update(0,0,w,h);
 
 	if(old != cli)
-		cli->sendActive(true);
+		cli->setActive(true);
 }
 
 void UIClient::switchClient(int incr) {
@@ -163,14 +169,14 @@ int UIClient::attach(int evfd) {
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
 		if(_clients[i] == NULL) {
 			if(_active != MAX_CLIENTS)
-				_clients[_active]->sendActive(false);
+				_clients[_active]->setActive(false);
 
 			_clients[i] = this;
 			_evfd = evfd;
 			_idx = i;
 			_active = i;
 			_clientCount++;
-			sendActive(true);
+			setActive(true);
 			return i;
 		}
 	}
@@ -193,7 +199,17 @@ void UIClient::remove() {
 	_evfd = -1;
 	_idx = -1;
 	_clientCount--;
+	_clientStack.erase_first(this);
 	/* do that here because we need to remove us from the list first */
-	if(shouldSwitch)
-		next();
+	if(shouldSwitch && _clientStack.size() > 0) {
+		do {
+			UIClient *last = _clientStack.front();
+			if(last->_idx != MAX_CLIENTS) {
+				switchTo(last->_idx);
+				break;
+			}
+			_clientStack.erase(_clientStack.begin());
+		}
+		while(_clientStack.size() > 0);
+	}
 }

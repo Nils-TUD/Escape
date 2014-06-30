@@ -202,7 +202,7 @@ private:
 		return active ? active->_fb->mode().id : -1;
 	}
 
-	void sendActive(bool active);
+	void setActive(bool active);
 	int modeid() const {
 		return _fb ? _fb->mode().id : -1;
 	}
@@ -225,4 +225,5 @@ private:
 	static UIClient *_clients[MAX_CLIENTS];
 	static UIClient *_allclients[MAX_CLIENTS];
 	static size_t _clientCount;
+	static std::vector<UIClient*> _clientStack;
 };

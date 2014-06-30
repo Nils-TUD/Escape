@@ -17,7 +17,7 @@ tmp=`mktemp -d`
 # copy files necessary to boot, including the iso image containing everything
 cp -R $1/dist/boot $tmp
 mkdir $tmp/sbin $tmp/bin
-for d in ramdisk rtc iso9660 pci; do
+for d in ramdisk iso9660 pci; do
 	cp $1/dist/sbin/$d $tmp/sbin
 done
 cp $1/dist/bin/initloader $tmp/bin
@@ -32,7 +32,6 @@ title Escape
 kernel /boot/escape$suffix root=/dev/iso9660-ramdisk-cd
 module /bin/initloader
 module /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd.iso
-module /sbin/rtc /dev/rtc
 module /sbin/pci /dev/pci
 module /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd
 module /boot/cd.iso

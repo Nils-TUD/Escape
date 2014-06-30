@@ -102,6 +102,7 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 				return res;
 		}
 	}
+	acctime = Timer::getTime();
 	return byteCount;
 }
 
@@ -123,5 +124,6 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 
 	/* we have checked size for overflow. so it is ok here */
 	pos = MAX(pos,(off_t)(offset + count));
+	acctime = modtime = Timer::getTime();
 	return count;
 }

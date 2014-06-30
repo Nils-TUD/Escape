@@ -21,7 +21,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
-#include "timeintern.h"
 
 static const char *weekDays[] = {
 	"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
@@ -35,11 +34,6 @@ static const char *monthNames[] = {
 };
 static const char *abrMonthNames[] = {
 	"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
-};
-
-const uchar daysPerMonth[2][12] = {
-	/* DEF_YEAR */	{31,28,31,30,31,30,31,31,30,31,30,31},
-	/* LEAP_YEAR */	{31,29,31,30,31,30,31,31,30,31,30,31}
 };
 
 size_t strftime(char *str,size_t max,const char *fmt,const struct tm *t) {

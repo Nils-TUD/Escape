@@ -19,16 +19,12 @@
 
 #include <esc/common.h>
 #include <time.h>
-#include "timeintern.h"
 
 time_t time(time_t *timer) {
-	time_t ts;
-	struct RTCInfo info;
-	int res = readdate(&info);
-	if(res < 0)
+	struct timeval tv;
+	if(gettimeofday(&tv) < 0)
 		return 0;
-	ts = mktime(&info.time);
 	if(timer)
-		*timer = ts;
-	return ts;
+		*timer = tv.tv_sec;
+	return tv.tv_sec;
 }

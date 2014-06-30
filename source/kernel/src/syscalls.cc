@@ -124,6 +124,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{semcrtirq,			"semcrtirq",		4},
 	{bindto,			"bindto",			2},
 	{rename,			"rename",			2},
+	{gettimeofday,		"gettimeofday",		1},
 #if defined(__x86__)
 	{reqports,			"reqports",   		2},
 	{relports,			"relports",    		2},

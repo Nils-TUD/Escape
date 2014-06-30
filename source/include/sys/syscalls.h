@@ -164,6 +164,7 @@ private:
 	static int debugc(Thread *t,IntrptStackFrame *stack);
 	static int sysconf(Thread *t,IntrptStackFrame *stack);
 	static int sysconfstr(Thread *t,IntrptStackFrame *stack);
+	static int gettimeofday(Thread *t,IntrptStackFrame *stack);
 	static int tsctotime(Thread *t,IntrptStackFrame *stack);
 
 #if defined(__x86__)

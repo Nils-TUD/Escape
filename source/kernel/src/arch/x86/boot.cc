@@ -71,6 +71,7 @@ static const BootTask tasks[] = {
 	{"Initializing GDT for BSP...",GDT::initBSP},
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing FPU...",FPU::init},
+	{"Initializing timer...",Timer::init},
 	{"Initializing VFS...",VFS::init},
 	{"Initializing processes...",Proc::init},
 	{"Creating ACPI files...",ACPI::createFiles},
@@ -79,7 +80,6 @@ static const BootTask tasks[] = {
 	{"Start logging to VFS...",Log::vfsIsReady},
 	{"Initializing interrupts...",Interrupts::init},
 	{"Initializing IDT...",IDT::init},
-	{"Initializing timer...",Timer::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 

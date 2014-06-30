@@ -17,16 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <time.h>
-#include "timeintern.h"
+#pragma once
 
-int gettimeofday(struct timeval *tv) {
-	struct RTCInfo info;
-	int res = readdate(&info);
-	if(res < 0)
-		return 0;
-	tv->tv_sec = mktime(&info.time);
-	tv->tv_usec = info.microsecs;
-	return 0;
-}
+#include <esc/common.h>
+
+/* timestamp stuff */
+#define SECS_PER_MIN			60
+#define SECS_PER_HOUR			(60 * SECS_PER_MIN)
+#define SECS_PER_DAY			(24 * SECS_PER_HOUR)
+#define SECS_PER_YEAR			(365 * SECS_PER_DAY)
+#define SECS_PER_LEAPYEAR		(366 * SECS_PER_DAY)
+
+#define IS_LEAP_YEAR(y)			(((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
+#define DEF_YEAR				0
+#define LEAP_YEAR				1
+
+extern const uchar daysPerMonth[2][12];

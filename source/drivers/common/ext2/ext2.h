@@ -181,11 +181,6 @@ public:
 	 */
 	bool bgHasBackups(block_t i);
 
-	/**
-	 * @return the current timestamp
-	 */
-	time_t timestamp() const;
-
 #if DEBUGGING
 	/**
 	 * Prints all block-groups
@@ -197,8 +192,6 @@ public:
 
 	/* the fd for the device */
 	int fd;
-	/* for rtc */
-	mutable int timeFd;
 
 	/* superblock and blockgroups of that ext2-fs */
 	Ext2SBMng sb;

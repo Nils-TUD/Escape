@@ -70,7 +70,7 @@ bool Ext2FileSystem::Ext2BlockCache::writeBlocks(const void *buffer,size_t start
 }
 
 Ext2FileSystem::Ext2FileSystem(const char *device)
-		: fd(::open(device,IO_WRITE | IO_READ)), timeFd(-1), sb(this), bgs(this),
+		: fd(::open(device,IO_WRITE | IO_READ)), sb(this), bgs(this),
 		  inodeCache(this), blockCache(this) {
 	if(fd < 0)
 		VTHROWE("Unable to open device '" << device << "'",fd);
@@ -79,7 +79,6 @@ Ext2FileSystem::Ext2FileSystem(const char *device)
 Ext2FileSystem::~Ext2FileSystem() {
 	/* write pending changes */
 	sync();
-	close(timeFd);
 	close(fd);
 }
 
@@ -274,25 +273,6 @@ bool Ext2FileSystem::bgHasBackups(block_t i) {
 	if(i == 1)
 		return true;
 	return isPowerOf(i,3) || isPowerOf(i,5) || isPowerOf(i,7);
-}
-
-time_t Ext2FileSystem::timestamp() const {
-	struct RTCInfo info;
-	/* open CMOS and read date */
-	if(timeFd < 0) {
-		/* not already open, so do it */
-		timeFd = ::open("/dev/rtc",IO_READ);
-		if(timeFd < 0)
-			return 0;
-	}
-	else {
-		/* seek back to beginning */
-		if(seek(timeFd,0,SEEK_SET) < 0)
-			return 0;
-	}
-	if(IGNSIGS(::read(timeFd,&info,sizeof(info))) < 0)
-		return 0;
-	return mktime(&info.time);
 }
 
 #if DEBUGGING

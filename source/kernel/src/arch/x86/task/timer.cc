@@ -23,13 +23,21 @@
 #include <sys/arch/x86/pic.h>
 #include <sys/arch/x86/pit.h>
 #include <sys/arch/x86/ioapic.h>
+#include <sys/arch/x86/rtc.h>
 #include <sys/task/timer.h>
 #include <sys/task/smp.h>
 #include <sys/cpu.h>
 #include <sys/config.h>
 #include <sys/log.h>
 
+uint64_t Timer::bootTSC = 0;
+time_t Timer::bootTime = 0;
 uint64_t Timer::cpuMhz;
+
+void TimerBase::archInit() {
+	Timer::bootTSC = CPU::rdtsc();
+	Timer::bootTime = RTC::getTime();
+}
 
 void Timer::start(bool isBSP) {
 	if(!Config::get(Config::FORCE_PIT) && LAPIC::isAvailable()) {

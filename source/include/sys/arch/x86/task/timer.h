@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <time.h>
 
 class Timer : public TimerBase {
 	friend class TimerBase;
@@ -54,10 +55,16 @@ public:
 private:
 	static uint64_t determineSpeed(int instrCount,uint64_t *busHz);
 
+	static uint64_t bootTSC;
+	static time_t bootTime;
 	static uint64_t cpuMhz;
 };
 
-inline void TimerBase::archInit() {
+inline void TimerBase::getTimeval(struct timeval *tv) {
+	uint64_t tsc = CPU::rdtsc();
+	uint64_t usecs = cyclesToTime(tsc - Timer::bootTSC);
+	tv->tv_sec = Timer::bootTime + usecs / 1000000;
+	tv->tv_usec = usecs % 1000000;
 }
 
 inline uint64_t TimerBase::cyclesToTime(uint64_t cycles) {

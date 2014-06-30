@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/cpu.h>
+#include <time.h>
 
 class Timer : public TimerBase {
 	friend class TimerBase;
@@ -41,6 +42,12 @@ public:
 	 */
 	static void ackIntrpt();
 };
+
+inline void TimerBase::getTimeval(struct timeval *tv) {
+	time_t time = Timer::getTimestamp();
+	tv->tv_sec = time / 1000;
+	tv->tv_usec = time % 1000;
+}
 
 inline void TimerBase::archInit() {
 	ulong *regs = (ulong*)Timer::TIMER_BASE;

@@ -7,13 +7,12 @@ root escape
 exec /boot/escape root=/dev/iso9660-ramdisk-cd
 load /bin/initloader
 load /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd.iso
-load /sbin/rtc /dev/rtc
 load /sbin/pci /dev/pci
 load /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd
 load /cd.iso
 EOF
 
-files="boot/escape bin/initloader sbin/ramdisk sbin/rtc sbin/iso9660"
+files="boot/escape bin/initloader sbin/ramdisk sbin/iso9660"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp cd.iso $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-52-54-00-12-34-56 $ESC_SERVER )

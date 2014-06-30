@@ -65,6 +65,17 @@ int Syscalls::sysconfstr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+int Syscalls::gettimeofday(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	struct timeval *tv = (struct timeval*)SYSC_ARG1(stack);
+	struct timeval ktv;
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)tv,sizeof(*tv))))
+		SYSC_ERROR(stack,-EINVAL);
+
+	Timer::getTimeval(&ktv);
+	UserAccess::write(tv,&ktv,sizeof(ktv));
+	SYSC_RET1(stack,0);
+}
+
 int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint64_t *tsc = (uint64_t*)SYSC_ARG1(stack);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t))))

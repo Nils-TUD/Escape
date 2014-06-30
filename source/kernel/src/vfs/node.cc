@@ -81,6 +81,8 @@ VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 		uid = ROOT_UID;
 		gid = ROOT_GID;
 	}
+
+	modtime = acctime = crttime = Timer::getTime();
 }
 
 const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
@@ -110,20 +112,19 @@ int VFSNode::isEmptyDir() const {
 }
 
 void VFSNode::getInfo(pid_t pid,sFileInfo *info) {
-	/* some infos are not available here */
-	/* TODO needs to be completed */
 	info->device = VFS_DEV_NO;
-	info->accesstime = 0;
-	info->modifytime = 0;
-	info->createtime = 0;
-	info->blockCount = 0;
-	info->blockSize = 512;
+	info->accesstime = acctime;
+	info->modifytime = modtime;
+	info->createtime = crttime;
 	info->inodeNo = getNo();
+	// TODO set that properly
 	info->linkCount = 1;
 	info->uid = uid;
 	info->gid = gid;
 	info->mode = mode;
 	info->size = getSize(pid);
+	info->blockSize = 512;
+	info->blockCount = info->size / 512;
 }
 
 void VFSNode::getPathTo(char *dst,size_t size) const {

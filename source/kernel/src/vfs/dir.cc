@@ -143,6 +143,7 @@ ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffe
 			return res;
 		}
 	}
+	acctime = Timer::getTime();
 	Cache::free(fsBytes);
 	return byteCount;
 }

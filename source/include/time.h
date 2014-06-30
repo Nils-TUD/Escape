@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <esc/syscalls.h>
 
 /* TODO */
 #define CLOCKS_PER_SEC		(clock_t)0
@@ -70,7 +71,9 @@ clock_t clock(void);
  * @param tv the destination
  * @return 0 on success
  */
-int gettimeofday(struct timeval *tv);
+static inline int gettimeofday(struct timeval *tv) {
+	return syscall1(SYSCALL_GETTOD,(ulong)tv);
+}
 
 /**
  * Calculates the difference in seconds between time1 and time2.

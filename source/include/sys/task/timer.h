@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/spinlock.h>
+#include <time.h>
 
 class OStream;
 
@@ -68,9 +69,23 @@ public:
 	/**
 	 * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
 	 */
-	static time_t getTimestamp() {
+	static time_t getRuntime() {
 		return perCPU[0].elapsedMsecs;
 	}
+
+	/**
+	 * @return the UNIX timestamp
+	 */
+	static time_t getTime() {
+		struct timeval tv;
+		getTimeval(&tv);
+		return tv.tv_sec;
+	}
+
+	/**
+	 * @return the current time in microseconds
+	 */
+	static void getTimeval(struct timeval *tv);
 
 	/**
 	 * @param cycles the number of cycles

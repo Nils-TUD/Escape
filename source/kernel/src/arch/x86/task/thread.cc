@@ -130,7 +130,7 @@ void Thread::initialSwitch() {
 	Thread *cur = Sched::perform(NULL,cpu);
 	cur->stats.schedCount++;
 	if(PhysMem::shouldSetRegTimestamp())
-		VirtMem::setTimestamp(cur,Timer::getTimestamp());
+		VirtMem::setTimestamp(cur,Timer::getRuntime());
 	GDT::prepareRun(cpu,true,cur);
 	cur->setCPU(cpu);
 	FPU::lockFPU();

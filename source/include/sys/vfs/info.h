@@ -34,12 +34,14 @@ class VFSInfo {
 			: VFSFile(pid,parent,(char*)(fileName),FILE_DEF_MODE,success) {						\
 		}																						\
 		virtual ssize_t read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) {		\
-			return VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));				\
+			ssize_t res = VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));		\
+			acctime = Timer::getTime();															\
+			return res;																			\
 		}																						\
 		virtual ssize_t write(pid_t,OpenFile *,const void *,off_t,size_t) {						\
 			return -ENOTSUP;																	\
 		}																						\
-	}
+	};
 
 	static void traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void procReadCallback(VFSNode *node,size_t *dataSize,void **buffer);

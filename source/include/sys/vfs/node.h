@@ -497,6 +497,10 @@ protected:
 	size_t nameLen;
 	/* number of open files for this node */
 	mutable ushort refCount;
+	/* timestamps */
+	time_t crttime;
+	time_t modtime;
+	time_t acctime;
 	/* the owner of this node */
 	pid_t owner;
 	uid_t uid;

@@ -7,13 +7,12 @@ root escape
 exec /boot/escape root=/dev/iso9660-ramdisk-cd nosmp
 load /bin/initloader
 load /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd-mini.iso
-load /sbin/rtc /dev/rtc
 load /sbin/pci /dev/pci
 load /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd
 load /cd-mini.iso
 EOF
 
-files="boot/escape bin/initloader sbin/ramdisk sbin/rtc sbin/iso9660 sbin/pci"
+files="boot/escape bin/initloader sbin/ramdisk sbin/iso9660 sbin/pci"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp cd-mini.iso $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

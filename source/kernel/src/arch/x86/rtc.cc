@@ -17,29 +17,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
+#include <sys/arch/x86/rtc.h>
+#include <sys/arch/x86/ports.h>
 #include <time.h>
-#include "timeintern.h"
 
-time_t mktime(struct tm *t) {
-	int m,y,yearType;
-	time_t ts = 0;
-	/* add full years */
-	for(y = 70; y < t->tm_year; y++) {
-		if(IS_LEAP_YEAR(y + 1900))
-			ts += SECS_PER_LEAPYEAR;
-		else
-			ts += SECS_PER_YEAR;
-	}
-	/* add full months */
-	yearType = IS_LEAP_YEAR(t->tm_year + 1900) ? LEAP_YEAR : DEF_YEAR;
-	for(m = t->tm_mon - 1; m >= 0; m--)
-		ts += daysPerMonth[yearType][m] * SECS_PER_DAY;
-	/* add full days */
-	ts += t->tm_mday * SECS_PER_DAY;
-	/* add hours, mins and secs */
-	ts += t->tm_hour * SECS_PER_HOUR;
-	ts += t->tm_min * SECS_PER_MIN;
-	ts += t->tm_sec;
-	return ts;
+time_t RTC::getTime() {
+	struct tm time;
+	time.tm_mday = decodeBCD(read(REG_MONTHDAY)) - 1;
+	time.tm_mon = decodeBCD(read(REG_MONTH)) - 1;
+	time.tm_year = decodeBCD(read(REG_YEAR));
+	if(time.tm_year < 70)
+		time.tm_year += 100;
+	time.tm_hour = decodeBCD(read(REG_HOUR));
+	time.tm_min = decodeBCD(read(REG_MIN));
+	time.tm_sec = decodeBCD(read(REG_SEC));
+	time.tm_wday = decodeBCD(read(REG_WEEKDAY)) - 1;
+	return mktime(&time);
+}
+
+uint RTC::decodeBCD(uint8_t val) {
+	return (val >> 4) * 10 + (val & 0xF);
+}
+
+uint8_t RTC::read(uint8_t reg) {
+	Ports::out<uint8_t>(PORT_IDX,reg);
+	asm volatile ("nop");
+	asm volatile ("nop");
+	asm volatile ("nop");
+	return Ports::in<uint8_t>(PORT_DATA);
 }

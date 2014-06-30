@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "ext2.h"
 #include "rw.h"
@@ -146,7 +147,7 @@ ssize_t Ext2File::read(Ext2FileSystem *e,inode_t inodeNo,void *buffer,off_t offs
 	}
 
 	/* mark accessed */
-	cnode->inode.accesstime = cputole32(e->timestamp());
+	cnode->inode.accesstime = cputole32(time(NULL));
 	e->inodeCache.markDirty(cnode);
 	e->inodeCache.release(cnode);
 
@@ -260,7 +261,7 @@ ssize_t Ext2File::writeIno(Ext2FileSystem *e,Ext2CInode *cnode,const void *buffe
 	}
 
 	/* finally, update the inode */
-	now = cputole32(e->timestamp());
+	now = cputole32(time(NULL));
 	cnode->inode.accesstime = now;
 	cnode->inode.modifytime = now;
 	cnode->inode.size = (int32_t)cputole32(MAX((int32_t)(orgOff + count),inoSize));

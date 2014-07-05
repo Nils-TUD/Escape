@@ -46,7 +46,7 @@ public:
 		: _name(strdup(i._name)), _namelen(i._namelen), _data(i._data), _next(), _parent(), _child() {
 	}
 	~PathTreeItem() {
-		cache_free(_name);
+		Cache::free(_name);
 	}
 
 	/**
@@ -338,13 +338,13 @@ private:
 	}
 
 	static PathTreeItem<T> *createItem(const char *src,size_t len) {
-		char *name = (char*)cache_alloc(len + 1);
+		char *name = (char*)Cache::alloc(len + 1);
 		if(!name)
 			return NULL;
 		strnzcpy(name,src,len + 1);
 		PathTreeItem<T> *i = new PathTreeItem<T>(name);
 		if(!i) {
-			cache_free(name);
+			Cache::free(name);
 			return NULL;
 		}
 		return i;

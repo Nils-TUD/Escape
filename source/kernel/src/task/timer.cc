@@ -39,7 +39,7 @@ TimerBase::Listener *TimerBase::listener = NULL;
 void TimerBase::init() {
 	archInit();
 
-	perCPU = (PerCPU*)cache_calloc(SMP::getCPUCount(),sizeof(PerCPU));
+	perCPU = (PerCPU*)Cache::calloc(SMP::getCPUCount(),sizeof(PerCPU));
 	if(!perCPU)
 		Util::panic("Unable to create per-cpu-array");
 

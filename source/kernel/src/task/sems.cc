@@ -24,7 +24,7 @@
 #include <errno.h>
 
 int Sems::init(Proc *p) {
-	p->sems = (Entry**)cache_calloc(INIT_SEMS_COUNT,sizeof(Entry*));
+	p->sems = (Entry**)Cache::calloc(INIT_SEMS_COUNT,sizeof(Entry*));
 	if(p->sems == NULL)
 		return -ENOMEM;
 	p->semsSize = INIT_SEMS_COUNT;
@@ -34,7 +34,7 @@ int Sems::init(Proc *p) {
 int Sems::clone(Proc *p,const Proc *old) {
 	int res = 0;
 	old->lock(PLOCK_SEMS);
-	p->sems = (Entry**)cache_alloc(old->semsSize * sizeof(Entry*));
+	p->sems = (Entry**)Cache::alloc(old->semsSize * sizeof(Entry*));
 	if(!p->sems) {
 		res = -ENOMEM;
 		goto error;
@@ -79,7 +79,7 @@ int Sems::create(Proc *p,uint value,int irq,const char *name,uint64_t *msiaddr,u
 	}
 
 	/* realloc the array */
-	sems = (Entry**)cache_realloc(p->sems,p->semsSize * sizeof(Entry*) * 2);
+	sems = (Entry**)Cache::realloc(p->sems,p->semsSize * sizeof(Entry*) * 2);
 	if(!sems) {
 		res = -ENOMEM;
 		goto error;
@@ -152,7 +152,7 @@ void Sems::destroyAll(Proc *p,bool complete) {
 		p->sems[i] = NULL;
 	}
 	if(complete) {
-		cache_free(p->sems);
+		Cache::free(p->sems);
 		p->sems = NULL;
 		p->semsSize = 0;
 	}

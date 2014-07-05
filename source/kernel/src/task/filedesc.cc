@@ -33,7 +33,7 @@ bool FileDesc::isValid(Proc *p,int fd) {
 }
 
 int FileDesc::init(Proc *p) {
-	p->fileDescs = (OpenFile**)cache_calloc(INIT_FD_COUNT,sizeof(OpenFile*));
+	p->fileDescs = (OpenFile**)Cache::calloc(INIT_FD_COUNT,sizeof(OpenFile*));
 	if(p->fileDescs == NULL)
 		return -ENOMEM;
 	p->fileDescsSize = INIT_FD_COUNT;
@@ -60,7 +60,7 @@ int FileDesc::clone(Proc *p) {
 	Proc *cur = Thread::getRunning()->getProc();
 	/* don't lock p, because its currently created; thus it can't access its file-descriptors */
 	cur->lock(PLOCK_FDS);
-	p->fileDescs = (OpenFile**)cache_alloc(sizeof(OpenFile*) * cur->fileDescsSize);
+	p->fileDescs = (OpenFile**)Cache::alloc(sizeof(OpenFile*) * cur->fileDescsSize);
 	if(!p->fileDescs) {
 		cur->unlock(PLOCK_FDS);
 		return -ENOMEM;
@@ -85,7 +85,7 @@ void FileDesc::destroy(Proc *p) {
 			p->fileDescs[i] = NULL;
 		}
 	}
-	cache_free(p->fileDescs);
+	Cache::free(p->fileDescs);
 	p->fileDescsSize = 0;
 	p->unlock(PLOCK_FDS);
 }
@@ -108,7 +108,7 @@ int FileDesc::doAssoc(Proc *p,OpenFile *file) {
 
 	if(p->fileDescsSize == MAX_FD_COUNT)
 		return -EMFILE;
-	fds = (OpenFile**)cache_realloc(p->fileDescs,p->fileDescsSize * sizeof(OpenFile*) * 2);
+	fds = (OpenFile**)Cache::realloc(p->fileDescs,p->fileDescsSize * sizeof(OpenFile*) * 2);
 	if(!fds)
 		return -ENOMEM;
 	memclear(fds + p->fileDescsSize,p->fileDescsSize * sizeof(OpenFile*));

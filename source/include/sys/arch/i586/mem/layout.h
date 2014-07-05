@@ -60,13 +60,13 @@
  *             |                                   |     |
  *      |      |            kernel-heap            |
  *      v      |                                   |     k
- * 0xC0C00000: +-----------------------------------+     e      -----
+ * 0xC1800000: +-----------------------------------+     e      -----
  *             |       VFS global file table       |     r        |
- * 0xC1000000: +-----------------------------------+     n
+ * 0xC1C00000: +-----------------------------------+     n
  *             |             VFS nodes             |     e    dynamically extending regions
- * 0xC1400000: +-----------------------------------+     l
+ * 0xC2000000: +-----------------------------------+     l
  *             |             sll nodes             |     a        |
- * 0xC3400000: +-----------------------------------+     r      -----
+ * 0xC4000000: +-----------------------------------+     r      -----
  *             |                                   |     e
  *      |      |             free area             |     a
  *      v      |                                   |
@@ -92,7 +92,7 @@
 
 /* the kernel-heap */
 #define KHEAP_START				(KERNEL_AREA + KERNEL_SIZE)
-#define KHEAP_SIZE				PT_SIZE
+#define KHEAP_SIZE				(PT_SIZE * 4)
 
 /* area for global-file-table */
 #define GFT_AREA				(KHEAP_START + KHEAP_SIZE)

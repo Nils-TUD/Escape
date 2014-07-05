@@ -326,6 +326,11 @@ frameno_t PhysMem::allocate(FrameType type) {
 				break;
 
 			case KERN:
+				/* if there are no kframes anymore, take away a few uframes */
+				if(kframes == 0) {
+					size_t free = lower.frames - lower.begin;
+					kframes = (free - cframes) / (100 / KERNEL_MEM_PERCENT);
+				}
 				if(kframes > 0) {
 					kframes--;
 					frame = allocFrame(true);

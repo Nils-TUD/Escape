@@ -59,10 +59,10 @@ _start:
 	pop		%ARG_3
 
 #if defined(__x86_64__)
-	mov		(%REG(sp)),%ARG_4
+	mov		WORDSIZE * 0(%REG(sp)),%ARG_4
 	test	%ARG_1,%ARG_1
 	jnz		1f
-	mov		WORDSIZE(%rsp),%ARG_5
+	mov		WORDSIZE * 1(%REG(sp)),%ARG_5
 1:
 #endif
 

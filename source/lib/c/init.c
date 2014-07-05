@@ -21,6 +21,7 @@
 #include <esc/thread.h>
 #include <esc/sync.h>
 #include <esc/debug.h>
+#include <string.h>
 #include <signal.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -41,9 +42,14 @@ typedef struct {
 extern int _startthread(fThreadEntry entryPoint,void *arg);
 extern __attribute__((weak)) void sigRetFunc(void);
 
+extern void initTLS(ulong *tlsStart,size_t tlsSize);
 extern void initStdio(void);
 extern void initHeap(void);
 
+/**
+ * Is called at the very beginning to setup some initial stuff
+ */
+uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]);
 /**
  * Inits the c-library
  */
@@ -61,6 +67,8 @@ void __cxa_finalize(void *d);
 fConstr libcConstr[1] A_INIT = {
 	__libc_init
 };
+
+char __progname[32];
 
 /* this lock is shared with tls.c */
 tUserSem __libc_sem;
@@ -114,6 +122,32 @@ void __cxa_finalize(A_UNUSED void *d) {
 			exitFuncs[i].f(exitFuncs[i].p);
 	}
 	usemup(&__libc_sem);
+}
+
+uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]) {
+	static bool initialized = false;
+	if(!initialized) {
+		if(argc > 0) {
+			char *progname;
+			char *name = progname = argv[0];
+			while((name = strchr(name,'/')) != NULL) {
+				name++;
+				progname = name;
+			}
+			/* the arguments are on the stack, but we don't want to keep the program name there, because
+			 * we might fork from a different thread, in which case we'll only keep the stack of the
+			 * thread that forked. And only the main-thread has the arguments, of course. */
+			strnzcpy(__progname,progname,sizeof(__progname));
+		}
+
+		if(usemcrt(&__libc_sem,1) < 0)
+			error("Unable to create libc lock");
+		initHeap();
+		initialized = true;
+	}
+
+	initTLS(tlsStart,tlsSize);
+	return entryPoint;
 }
 
 void __libc_init(void) {

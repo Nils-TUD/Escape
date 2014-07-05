@@ -24,11 +24,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-extern void initHeap(void);
-
 static ulong *tlsCopy = NULL;
 extern tUserSem __libc_sem;
-char __progname[32];
 
 /**
  * TODO: Actually this is not exactly the model described in doc/thread-local-storage.pdf.
@@ -48,30 +45,9 @@ char __progname[32];
  */
 
 /* make gcc happy */
-uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]);
+void initTLS(ulong *tlsStart,size_t tlsSize);
 
-uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]) {
-	static bool initialized = false;
-	if(!initialized) {
-		if(argc > 0) {
-			char *progname;
-			char *name = progname = argv[0];
-			while((name = strchr(name,'/')) != NULL) {
-				name++;
-				progname = name;
-			}
-			/* the arguments are on the stack, but we don't want to keep the program name there, because
-			 * we might fork from a different thread, in which case we'll only keep the stack of the
-			 * thread that forked. And only the main-thread has the arguments, of course. */
-			strnzcpy(__progname,progname,sizeof(__progname));
-		}
-
-		if(usemcrt(&__libc_sem,1) < 0)
-			error("Unable to create libc lock");
-		initHeap();
-		initialized = true;
-	}
-
+void initTLS(ulong *tlsStart,size_t tlsSize) {
 	if(tlsSize) {
 		size_t i;
 		usemdown(&__libc_sem);
@@ -90,5 +66,4 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int
 		tlsStart[tlsSize - 1] = (ulong)(tlsStart + tlsSize - 1);
 		usemup(&__libc_sem);
 	}
-	return entryPoint;
 }

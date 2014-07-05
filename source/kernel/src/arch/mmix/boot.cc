@@ -52,12 +52,12 @@ static const BootTask tasks[] = {
 	{"Preinit processes...",Proc::preinit},
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing SMP...",SMP::init},
+	{"Initializing timer...",Timer::init},
 	{"Initializing VFS...",VFS::init},
 	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
 	{"Creating MB module files...",Boot::createModFiles},
 	{"Start logging to VFS...",Log::vfsIsReady},
-	{"Initializing timer...",Timer::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 

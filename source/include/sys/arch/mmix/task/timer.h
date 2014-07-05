@@ -44,7 +44,7 @@ public:
 };
 
 inline void TimerBase::getTimeval(struct timeval *tv) {
-	time_t time = Timer::getTimestamp();
+	time_t time = Timer::getRuntime();
 	tv->tv_sec = time / 1000;
 	tv->tv_usec = time % 1000;
 }

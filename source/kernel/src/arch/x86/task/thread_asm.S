@@ -17,10 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/arch.h>
+
 .global thread_idle
 
 // void thread_idle();
 thread_idle:
+	// when starting to idle for the first time, ensure that the segment-registers are set correctly
+	// for userland. this is important for APs, which start here (instead of going to userland like
+	// the BSP) and wake up later by an interrupt and might leave into userland from there.
+	mov		$((SEG_UDATA << 3) | 3),%eax
+	mov		%eax,%ds
+	mov		%eax,%es
+	mov		%eax,%fs
+	mov		%eax,%gs
+
 	sti
 1:
 	hlt

@@ -50,7 +50,7 @@ char __progname[32];
 /* make gcc happy */
 uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]);
 
-uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,A_UNUSED int argc,char *argv[]) {
+uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]) {
 	static bool initialized = false;
 	if(!initialized) {
 		if(argc > 0) {

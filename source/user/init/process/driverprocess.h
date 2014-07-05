@@ -56,7 +56,7 @@ class DriverProcess : public Process {
 	friend std::istream& operator >>(std::istream& is,DriverProcess& drv);
 
 public:
-	static const int MAX_WAIT_RETRIES	= 100;
+	static const int MAX_WAIT_RETRIES	= 1000;
 	static const int RETRY_INTERVAL		= 40;
 
 private:

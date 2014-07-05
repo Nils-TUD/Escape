@@ -34,11 +34,11 @@
 
 using namespace ipc;
 
-static ulong *vgaData;
+static ulong *screenData;
 
-class VGAScreenDevice : public ScreenDevice<> {
+class VideoScreenDevice : public ScreenDevice<> {
 public:
-	explicit VGAScreenDevice(const std::vector<Screen::Mode> &modes,const char *path,mode_t mode)
+	explicit VideoScreenDevice(const std::vector<Screen::Mode> &modes,const char *path,mode_t mode)
 		: ScreenDevice(modes,path,mode), _lastCol(COLS), _lastRow(ROWS), _color() {
 	}
 
@@ -64,7 +64,7 @@ public:
 		if(_lastRow < ROWS && _lastCol < COLS)
 			drawCursor(_lastRow,_lastCol,_color);
 		if(y < ROWS && x < COLS) {
-			_color = *(vgaData + y * MAX_COLS + x) >> 8;
+			_color = *(screenData + y * MAX_COLS + x) >> 8;
 			drawCursor(y,x,0x78);
 		}
 		_lastCol = x;
@@ -79,7 +79,7 @@ public:
 			VTHROW("Invalid VGA update: " << x << "," << y << ":" << width << "x" << height);
 		}
 
-		ulong *screen = vgaData + y * MAX_COLS + x;
+		ulong *screen = screenData + y * MAX_COLS + x;
 		for(size_t h = 0; h < height; h++) {
 			uint16_t *buf = (uint16_t*)(c->fb->addr() + (y + h) * c->mode->cols * 2 + x * 2);
 			for(size_t w = 0; w < width; w++) {
@@ -92,7 +92,7 @@ public:
 			/* update color and draw the cursor again if it has been overwritten */
 			if(_lastCol >= x && _lastCol < (gpos_t)(x + width) &&
 				_lastRow >= y && _lastRow < (gpos_t)(y + height)) {
-				_color = *(vgaData + _lastRow * MAX_COLS + _lastCol) >> 8;
+				_color = *(screenData + _lastRow * MAX_COLS + _lastCol) >> 8;
 				drawCursor(_lastRow,_lastCol,0x78);
 			}
 		}
@@ -100,7 +100,7 @@ public:
 
 private:
 	void drawCursor(uint row,uint col,uchar curColor) {
-		ulong *pos = vgaData + row * MAX_COLS + col;
+		ulong *pos = screenData + row * MAX_COLS + col;
 		*pos = (curColor << 8) | (*pos & 0xFF);
 	}
 
@@ -112,8 +112,8 @@ private:
 int main(void) {
 	/* map VGA memory */
 	uintptr_t phys = VIDEO_MEM;
-	vgaData = (ulong*)mmapphys(&phys,MAX_COLS * ROWS * sizeof(ulong),0,MAP_PHYS_MAP);
-	if(vgaData == NULL)
+	screenData = (ulong*)mmapphys(&phys,MAX_COLS * ROWS * sizeof(ulong),0,MAP_PHYS_MAP);
+	if(screenData == NULL)
 		error("Unable to acquire vga-memory (%p)",VIDEO_MEM);
 
 	std::vector<Screen::Mode> modes;
@@ -121,10 +121,10 @@ int main(void) {
 		0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VIDEO_MEM,0,0,ipc::Screen::MODE_TEXT,ipc::Screen::MODE_TYPE_TUI
 	}));
 
-	VGAScreenDevice dev(modes,"/dev/vga",0111);
+	VideoScreenDevice dev(modes,"/dev/vga",0111);
 	dev.loop();
 
 	/* clean up */
-	munmap(vgaData);
+	munmap(screenData);
 	return EXIT_SUCCESS;
 }

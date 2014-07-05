@@ -21,6 +21,12 @@
 
 #include <esc/common.h>
 
+#if defined(__x86_64__)
+#	include "arch/x86_64/reloc.h"
+#else
+#	include "arch/i586/reloc.h"
+#endif
+
 /**
  * Relocates all shared libraries
  */

@@ -42,7 +42,7 @@
  *          ^          |                                   |     e
  *          |          |        user-stack thread 0        |     a
  *                     |                                   |
- * 0x0000001000000000: +-----------------------------------+     |
+ * 0x0000000070000000: +-----------------------------------+     |
  *                     |  dynlinker (always first, if ex)  |     |
  *                     |           shared memory           |     |
  *                     |         shared libraries          |     |
@@ -126,11 +126,11 @@
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE			PAGE_SIZE
 
-/* start-address of the text in dynamic linker */
-#define INTERP_TEXT_BEGIN		0x0000001000000000
+/* start-address of the text in dynamic linker (put it below 2G to be able to use -mcmodel=small) */
+#define INTERP_TEXT_BEGIN		0x0000000070000000
 
 /* free area for shared memory, tls, shared libraries, ... */
-#define FREE_AREA_BEGIN			0x0000001000000000
+#define FREE_AREA_BEGIN			0x0000000070000000
 #define FREE_AREA_END			KERNEL_AREA
 
 /* the stack-area grows downwards from the free area to data, text and so on */

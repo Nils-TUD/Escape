@@ -21,11 +21,15 @@
 
 #include <esc/common.h>
 
-typedef Elf64_Word sElfWord;
-typedef Elf64_Half sElfHalf;
-typedef Elf64_Off sElfOff;
-typedef Elf64_Addr sElfAddr;
-typedef Elf64_Section sElfSection;
+typedef Elf64_Word ElfWord;
+typedef Elf64_Half ElfHalf;
+typedef Elf64_Off ElfOff;
+typedef Elf64_Addr ElfAddr;
+typedef Elf64_Section ElfSection;
+typedef Elf64_Sword ElfSword;
+
+typedef Elf64_Sxword ElfDynTag;
+typedef Elf64_Xword ElfDynVal;
 
 typedef Elf64_Ehdr sElfEHeader;
 typedef Elf64_Phdr sElfPHeader;
@@ -34,5 +38,18 @@ typedef Elf64_Shdr sElfSHeader;
 typedef Elf64_Sym sElfSym;
 typedef Elf64_Dyn sElfDyn;
 typedef Elf64_Rel sElfRel;
+typedef Elf64_Rela sElfRela;
 
 #define ELF_TYPE		64
+
+#define ELF_R_SYM(val)	ELF64_R_SYM(val)
+#define ELF_R_TYPE(val)	ELF64_R_TYPE(val)
+
+#define R_NONE			R_X86_64_NONE
+#define R_GLOB_DAT		R_X86_64_GLOB_DAT
+#define R_COPY			R_X86_64_COPY
+#define R_RELATIVE		R_X86_64_RELATIVE
+#define R_32			R_X86_64_32
+#define R_64			R_X86_64_64
+#define R_PC32			R_X86_64_PC32
+#define R_JUMP_SLOT		R_X86_64_JUMP_SLOT

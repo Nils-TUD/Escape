@@ -21,11 +21,15 @@
 
 #include <esc/common.h>
 
-typedef Elf32_Word sElfWord;
-typedef Elf32_Half sElfHalf;
-typedef Elf32_Off sElfOff;
-typedef Elf32_Addr sElfAddr;
-typedef Elf32_Section sElfSection;
+typedef Elf32_Word ElfWord;
+typedef Elf32_Half ElfHalf;
+typedef Elf32_Off ElfOff;
+typedef Elf32_Addr ElfAddr;
+typedef Elf32_Section ElfSection;
+typedef Elf32_Sword ElfSword;
+
+typedef Elf32_Sword ElfDynTag;
+typedef Elf32_Word ElfDynVal;
 
 typedef Elf32_Ehdr sElfEHeader;
 typedef Elf32_Phdr sElfPHeader;
@@ -34,5 +38,18 @@ typedef Elf32_Shdr sElfSHeader;
 typedef Elf32_Sym sElfSym;
 typedef Elf32_Dyn sElfDyn;
 typedef Elf32_Rel sElfRel;
+typedef Elf32_Rela sElfRela;
 
 #define ELF_TYPE		32
+
+#define ELF_R_SYM(val)	ELF32_R_SYM(val)
+#define ELF_R_TYPE(val)	ELF32_R_TYPE(val)
+
+#define R_NONE			R_386_NONE
+#define R_GLOB_DAT		R_386_GLOB_DAT
+#define R_COPY			R_386_COPY
+#define R_RELATIVE		R_386_RELATIVE
+#define R_32			R_386_32
+#define R_64			0
+#define R_PC32			R_386_PC32
+#define R_JUMP_SLOT		R_386_JMP_SLOT

@@ -155,9 +155,9 @@ static void loadShSyms(void);
 static void loadDynSection(void);
 static void printHeader(void);
 static void printSectionHeader(void);
-static const char *getSectionFlags(sElfWord flags);
+static const char *getSectionFlags(ElfWord flags);
 static void printProgHeaders(void);
-static const char *getProgFlags(sElfWord flags);
+static const char *getProgFlags(ElfWord flags);
 static void printDynSection(void);
 static void printRelocations(void);
 static void printRelocTable(sElfRel *rel,size_t relCount);
@@ -175,7 +175,7 @@ static void usage(const char *name) {
 
 static int fd;
 static sElfEHeader eheader;
-static sElfAddr dynOff = 0;
+static ElfAddr dynOff = 0;
 static sElfDyn *dyn = NULL;
 static sElfSym *dynsyms = NULL;
 static char *shsymbols = NULL;
@@ -341,7 +341,7 @@ static void printSectionHeader(void) {
 	printf("\n");
 }
 
-static const char *getSectionFlags(sElfWord flags) {
+static const char *getSectionFlags(ElfWord flags) {
 	static char str[9];
 	char *s = str;
 	if(flags & SHF_WRITE)
@@ -386,7 +386,7 @@ static void printProgHeaders(void) {
 	printf("\n");
 }
 
-static const char *getProgFlags(sElfWord flags) {
+static const char *getProgFlags(ElfWord flags) {
 	static char str[4];
 	str[0] = (flags & PF_R) ? 'R' : ' ';
 	str[1] = (flags & PF_W) ? 'W' : ' ';
@@ -487,8 +487,8 @@ static void printRelocTable(sElfRel *rel,size_t relCount) {
 	char symcopy[MAX_SYM_LEN];
 	size_t i;
 	for(i = 0; i < relCount; i++) {
-		uint relType = ELF32_R_TYPE(rel[i].r_info);
-		uint symIndex = ELF32_R_SYM(rel[i].r_info);
+		uint relType = ELF_R_TYPE(rel[i].r_info);
+		uint symIndex = ELF_R_SYM(rel[i].r_info);
 		printf("%08x  %08x %-16s",rel[i].r_offset,rel[i].r_info,
 			relType < ARRAY_SIZE(i386Relocs) ? i386Relocs[relType] : "-Unknown-");
 		if(symIndex != 0) {

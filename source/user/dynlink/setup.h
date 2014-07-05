@@ -44,10 +44,11 @@ struct sSharedLib {
 	uintptr_t textAddr;
 	uintptr_t loadAddr;
 	size_t textSize;
-	Elf32_Dyn *dyn;
-	Elf32_Word *hashTbl;
-	Elf32_Rel *jmprel;
-	Elf32_Sym *dynsyms;
+	sElfDyn *dyn;
+	ElfWord *hashTbl;
+	uint jmprelType;
+	sElfRel *jmprel;
+	sElfSym *dynsyms;
 	char *dynstrtbl;
 	sSLList *deps;
 	bool relocated;
@@ -78,8 +79,12 @@ void load_initHeap(void);
  * @param argv argv for the program
  * @return the entryPoint to jump at
  */
+#if defined(__i586__)
 uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
 	uintptr_t,uintptr_t,size_t,int argc,char **argv);
+#else
+uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,int argc,char **argv);
+#endif
 
 /**
  * Searches for the given tag in the dynamic-section
@@ -88,7 +93,7 @@ uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
  * @param tag the tag to find
  * @return true if found
  */
-bool load_hasDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
+bool load_hasDyn(sElfDyn *dyn,ElfDynTag tag);
 
 /**
  * Determines the value of the given tag in the dynamic-section
@@ -97,4 +102,4 @@ bool load_hasDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
  * @param tag the tag to find
  * @return the value
  */
-uint load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
+ElfDynVal load_getDyn(sElfDyn *dyn,ElfDynTag tag);

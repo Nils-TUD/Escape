@@ -43,7 +43,7 @@ env = Environment(
 )
 
 linktype = 'static'
-if target == 'i586':
+if tgttype == 'x86':
 	linktype = os.environ.get('ESC_LINKTYPE')
 	if linktype != 'static':
 		linktype = 'dynamic'

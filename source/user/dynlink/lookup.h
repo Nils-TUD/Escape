@@ -21,7 +21,13 @@
 
 #include <esc/common.h>
 #include <esc/elf.h>
+#include <esc/arch.h>
 #include "loader.h"
+
+/* only for i586. we have pushed eax, edx and ecx on the stack */
+typedef struct {
+	ulong regs[3];
+} SavedRegs;
 
 /**
  * The assembler-routine that is called when a symbol hasn't been resolved yet. It calls
@@ -39,11 +45,12 @@ extern void lookup_resolveStart(void);
  * @param offset the offset (in bytes) in the DT_JMPREL-table.
  * @return the address of the symbol
  */
-#if defined(CALLTRACE_PID)
-A_REGPARM(0) uintptr_t lookup_resolve(uint32_t a,uint32_t b,uint32_t c,uintptr_t retAddr,
-                                      sSharedLib *lib,size_t offset);
+#if defined(__x86_64__)
+uintptr_t lookup_resolve(sSharedLib *lib,size_t offset);
+#elif defined(CALLTRACE_PID)
+A_REGPARM(0) uintptr_t lookup_resolve(SavedRegs regs,uintptr_t retAddr,sSharedLib *lib,size_t offset);
 #else
-A_REGPARM(0) uintptr_t lookup_resolve(uint32_t a,uint32_t b,uint32_t c,sSharedLib *lib,size_t offset);
+A_REGPARM(0) uintptr_t lookup_resolve(SavedRegs regs,sSharedLib *lib,size_t offset);
 #endif
 
 /**
@@ -54,7 +61,7 @@ A_REGPARM(0) uintptr_t lookup_resolve(uint32_t a,uint32_t b,uint32_t c,sSharedLi
  * @param value will be set to the address (absolute = already adjusted by the loadAddr)
  * @return the symbol if successfull or NULL
  */
-Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value);
+sElfSym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value);
 
 /**
  * Resolves a symbol by name in the given library
@@ -64,4 +71,4 @@ Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value);
  * @param value will be set to the address (absolute = already adjusted by the loadAddr)
  * @return the symbol if successfull or NULL
  */
-Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,uintptr_t *value);
+sElfSym *lookup_byNameIn(sSharedLib *lib,const char *name,uintptr_t *value);

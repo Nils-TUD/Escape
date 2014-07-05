@@ -43,7 +43,7 @@ void load_error(const char *fmt,...) {
 	exit(1);
 }
 
-bool load_hasDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
+bool load_hasDyn(sElfDyn *dyn,ElfDynTag tag) {
 	if(dyn == NULL)
 		load_error("No dynamic entries");
 	while(dyn->d_tag != DT_NULL) {
@@ -54,7 +54,7 @@ bool load_hasDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	return false;
 }
 
-uint32_t load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
+ElfDynVal load_getDyn(sElfDyn *dyn,ElfDynTag tag) {
 	if(dyn == NULL)
 		load_error("No dynamic entries");
 	while(dyn->d_tag != DT_NULL) {
@@ -74,8 +74,12 @@ void load_initHeap(void) {
 #endif
 }
 
+#if defined(__i586__)
 uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
 		A_UNUSED uintptr_t a,A_UNUSED uintptr_t b,A_UNUSED size_t c,int argc,char **argv) {
+#else
+uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,int argc,char **argv) {
+#endif
 	sSharedLib *prog;
 	uintptr_t entryPoint;
 

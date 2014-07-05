@@ -20,17 +20,15 @@
 .section .text
 
 #include <esc/syscalls.h>
+#include <esc/arch.h>
 
 .global sigRetFunc
 .global _start
-.global lookup_resolveStart
 .extern __libc_preinit
 .extern __libc_init
 .extern initenv
-.extern lookup_resolve
 .extern load_initHeap
 .extern load_setupProg
-.extern getpid_wrapper
 
 //  Initial stack:
 //  +------------------+  <- top
@@ -59,102 +57,46 @@ _start:
 	call	load_initHeap
 
 	// call __libc_preinit
-	mov		(%esp),%ebx
-	mov		4(%esp),%eax
-	mov		8(%esp),%edx
-	mov		12(%esp),%ecx
-	add		$16,%esp
+	pop		%REG(bx)
+	pop		%ARG_1
+	pop		%ARG_2
+	pop		%ARG_3
+#if defined(__x86_64__)
+	mov		WORDSIZE * 0(%REG(sp)),%ARG_4
+	mov		WORDSIZE * 1(%REG(sp)),%ARG_5
+#endif
 	call	__libc_preinit
 
 	// since we do not support TLS with dynamic linking yet, just pass arbitrary values as TLS-stuff
-	push	%ecx
-	push	%edx
+	push	$0
+	push	$0
 	// push entrypoint again
-	push	%eax
+	push	%REG(ax)
 
 	// init env stuff
-	mov		20(%esp),%eax
-	mov		24(%esp),%edx
+	mov		WORDSIZE * 5(%REG(sp)),%ARG_1
+	mov		WORDSIZE * 6(%REG(sp)),%ARG_2
 	call	initenv
 
 	// now call __libc_init
 	call	__libc_init
 
+	// pass file-descriptor to load_setupProg
+	mov		%REG(bx),%ARG_1
 	// pass pointers to TLSSize and TLSStart to load_setupProg
-	lea		4(%esp),%edx
-	lea		8(%esp),%ecx
-	mov		%ebx,%eax
+	lea		WORDSIZE * 1(%REG(sp)),%ARG_2
+	lea		WORDSIZE * 2(%REG(sp)),%ARG_3
+#if defined(__x86_64__)
+	mov		WORDSIZE * 3(%REG(sp)),%ARG_4
+	mov		WORDSIZE * 4(%REG(sp)),%ARG_5
+#endif
 	call	load_setupProg
 
 	// load_setupProg returns the entrypoint
-	jmp		*%eax
-
-lookup_resolveStart:
-#ifndef CALLTRACE_PID
-	push	%eax
-	push	%edx
-	push	%ecx
-	call	lookup_resolve
-	push	%eax
-	mov		4(%esp),%ecx
-	mov		8(%esp),%edx
-	mov		12(%esp),%eax
-	add		$24,%esp								// remove args of lookup_resolve from stack
-	jmp		*-24(%esp)								// jump to function
-#else
-	push	8(%esp)									// push ret-addr for the call
-	push	%eax
-	push	%edx
-	push	%ecx
-	call	lookup_resolve
-	push	%eax
-	call	getpid_wrapper							// get pid
-	cmp		$CALLTRACE_PID,%eax						// if not the requested pid skip the whole stuff
-	jne		1f
-	mov		(lookupDepth),%ecx
-	cmp		$100,%ecx								// we have only 100 places...
-	jae		1f
-	mov		$lookupStack,%edx
-	lea		(%edx,%ecx,4),%edx						// load addr to store ret-addr at
-	add		$1,%ecx									// inc depth
-	mov		%ecx,(lookupDepth)						// store
-	mov		28(%esp),%ecx							// get real return-addr
-	mov		%ecx,(%edx)								// save
-	mov		$lookup_resolveFinish,%ecx				// replace with our own
-	mov		%ecx,28(%esp)
-1:
-	mov		4(%esp),%ecx
-	mov		8(%esp),%edx
-	mov		12(%esp),%eax
-	add		$28,%esp								// remove args of lookup_resolve from stack
-	jmp		*-28(%esp)								// jump to function
-
-lookup_resolveFinish:
-	.extern lookup_tracePop
-	push	%eax
-	call	lookup_tracePop
-	pop		%eax
-	mov		(lookupDepth),%ecx						// load depth
-	sub		$1,%ecx									// decrement
-	mov		%ecx,(lookupDepth)						// store
-	mov		$lookupStack,%edx						// get stack
-	lea		(%edx,%ecx,4),%edx						// build addr to our ret-addr
-	mov		(%edx),%ecx								// get ret-addr
-	jmp		*%ecx									// jump to that addr
-#endif
+	jmp		*%REG(ax)
 
 // all signal-handler return to this "function"
 sigRetFunc:
-	mov		$ASM_SYSC_ACKSIG,%eax
+	mov		$ASM_SYSC_ACKSIG,%SYSCNO
 	int		$ASM_IRQ_ACKSIG
 	// never reached
-
-#if defined(CALLTRACE_PID)
-.section .data
-lookupDepth:
-	.long 0
-lookupStack:
-	.rept 100
-		.long 0
-	.endr
-#endif

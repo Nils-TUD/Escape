@@ -17,30 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <esc/arch.h>
 
-#include <esc/common.h>
+.section .text
 
-typedef Elf32_Word ElfWord;
-typedef Elf32_Half ElfHalf;
-typedef Elf32_Off ElfOff;
-typedef Elf32_Addr ElfAddr;
-typedef Elf32_Section ElfSection;
-typedef Elf32_Sword ElfSword;
+.global lookup_resolveStart
+.extern lookup_resolve
 
-typedef Elf32_Sword ElfDynTag;
-typedef Elf32_Word ElfDynVal;
-
-typedef Elf32_Ehdr sElfEHeader;
-typedef Elf32_Phdr sElfPHeader;
-typedef Elf32_Shdr sElfSHeader;
-
-typedef Elf32_Sym sElfSym;
-typedef Elf32_Dyn sElfDyn;
-typedef Elf32_Rel sElfRel;
-typedef Elf32_Rela sElfRela;
-
-#define ELF_TYPE		32
-
-#define ELF_R_SYM(val)	ELF64_R_SYM(val)
-#define ELF_R_TYPE(val)	ELF64_R_TYPE(val)
+lookup_resolveStart:
+	push	%ARG_1
+	push	%ARG_2
+	push	%ARG_3
+	push	%ARG_4
+	push	%ARG_5
+	push	%ARG_6
+	mov		6 * WORDSIZE(%rsp),%ARG_1
+	mov		7 * WORDSIZE(%rsp),%ARG_2
+	call	lookup_resolve
+	pop		%ARG_6
+	pop		%ARG_5
+	pop		%ARG_4
+	pop		%ARG_3
+	pop		%ARG_2
+	pop		%ARG_1
+	add		$(2 * WORDSIZE),%rsp
+	jmp		*%rax

@@ -21,26 +21,28 @@
 
 #include <esc/common.h>
 
-typedef Elf32_Word ElfWord;
-typedef Elf32_Half ElfHalf;
-typedef Elf32_Off ElfOff;
-typedef Elf32_Addr ElfAddr;
-typedef Elf32_Section ElfSection;
-typedef Elf32_Sword ElfSword;
+#include "../../setup.h"
 
-typedef Elf32_Sword ElfDynTag;
-typedef Elf32_Word ElfDynVal;
+static inline bool perform_reloc(sSharedLib *l,int type,size_t offset,uintptr_t *ptr,
+		uintptr_t symval,size_t addend) {
+	switch(type) {
+		case R_X86_64_JUMP_SLOT:
+		case R_X86_64_GLOB_DAT:
+		case R_X86_64_64:
+			*ptr = symval + l->loadAddr + addend;
+			return true;
 
-typedef Elf32_Ehdr sElfEHeader;
-typedef Elf32_Phdr sElfPHeader;
-typedef Elf32_Shdr sElfSHeader;
+		case R_X86_64_RELATIVE:
+			*ptr = l->loadAddr + addend;
+			return true;
 
-typedef Elf32_Sym sElfSym;
-typedef Elf32_Dyn sElfDyn;
-typedef Elf32_Rel sElfRel;
-typedef Elf32_Rela sElfRela;
+		case R_X86_64_32:
+			*(uint32_t*)ptr = symval + l->loadAddr + addend;
+			return true;
 
-#define ELF_TYPE		32
-
-#define ELF_R_SYM(val)	ELF64_R_SYM(val)
-#define ELF_R_TYPE(val)	ELF64_R_TYPE(val)
+		case R_X86_64_PC32:
+			*ptr = symval - offset - 4 + addend;
+			return true;
+	}
+	return false;
+}

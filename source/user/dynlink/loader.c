@@ -33,12 +33,12 @@
 
 static void load_library(sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
-static uintptr_t load_addSeg(int binFd,Elf32_Phdr *pheader,size_t loadSegNo,bool isLib);
-static void load_read(int binFd,uint offset,void *buffer,size_t count);
+static uintptr_t load_addSeg(int binFd,sElfPHeader *pheader,size_t loadSegNo,bool isLib);
+static void load_read(int binFd,off_t offset,void *buffer,size_t count);
 
 void load_doLoad(int binFd,sSharedLib *dst) {
-	Elf32_Ehdr eheader;
-	Elf32_Phdr pheader;
+	sElfEHeader eheader;
+	sElfPHeader pheader;
 	sFileInfo info;
 	uint8_t const *datPtr;
 	ssize_t textOffset = -1;
@@ -51,7 +51,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	dst->loadAddr = 0;
 
 	/* read header */
-	load_read(binFd,0,&eheader,sizeof(Elf32_Ehdr));
+	load_read(binFd,0,&eheader,sizeof(sElfEHeader));
 
 	/* check magic-number */
 	if(memcmp(eheader.e_ident,ELFMAG,4) != 0)
@@ -61,7 +61,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	datPtr = (uint8_t const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
-		load_read(binFd,(uint)datPtr,&pheader,sizeof(Elf32_Phdr));
+		load_read(binFd,(off_t)datPtr,&pheader,sizeof(sElfPHeader));
 
 		/* in shared libraries the text is @ 0x0 (will be relocated anyway), but the entry
 		 * DT_STRTAB in the dynamic table is the virtual address, not the file offset. Therefore
@@ -76,7 +76,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 			/* TODO we don't have to read them from file; if we load data and text first, we
 			 * already have them */
 			/* read dynamic-entries */
-			dst->dyn = (Elf32_Dyn*)malloc(pheader.p_filesz);
+			dst->dyn = (sElfDyn*)malloc(pheader.p_filesz);
 			if(!dst->dyn)
 				load_error("Not enough mem!");
 			load_read(binFd,pheader.p_offset,dst->dyn,pheader.p_filesz);
@@ -88,7 +88,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 				load_error("Not enough mem!");
 			load_read(binFd,load_getDyn(dst->dyn,DT_STRTAB) + textOffset,dst->dynstrtbl,strtblSize);
 
-			for(i = 0; i < (pheader.p_filesz / sizeof(Elf32_Dyn)); i++) {
+			for(i = 0; i < (pheader.p_filesz / sizeof(sElfDyn)); i++) {
 				if(dst->dyn[i].d_tag == DT_NEEDED) {
 					sSharedLib *nlib,*lib = (sSharedLib*)malloc(sizeof(sSharedLib));
 					if(!lib)
@@ -124,13 +124,13 @@ uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 	*tlsSize = 0;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		Elf32_Ehdr eheader;
-		Elf32_Phdr pheader;
+		sElfEHeader eheader;
+		sElfPHeader pheader;
 		uint8_t const *datPtr;
 		size_t j,loadSeg;
 
 		/* read header */
-		load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
+		load_read(l->fd,0,&eheader,sizeof(sElfEHeader));
 
 		if(!l->isDSO)
 			entryPoint = eheader.e_entry;
@@ -139,7 +139,7 @@ uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 		datPtr = (uint8_t const*)(eheader.e_phoff);
 		for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 			/* read pheader */
-			load_read(l->fd,(uint)datPtr,&pheader,sizeof(Elf32_Phdr));
+			load_read(l->fd,(off_t)datPtr,&pheader,sizeof(sElfPHeader));
 			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
 				uintptr_t addr = load_addSeg(l->fd,&pheader,loadSeg,l->isDSO);
 				if(addr == 0)
@@ -163,18 +163,19 @@ uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 		/* store some shortcuts */
 		/* TODO just temporary; later we should access the dynstrtbl always in .text */
 		free(l->dynstrtbl);
+		l->jmprelType = load_getDyn(l->dyn,DT_PLTREL);
 		l->dynstrtbl = (char*)load_getDyn(l->dyn,DT_STRTAB);
-		l->hashTbl = (Elf32_Word*)load_getDyn(l->dyn,DT_HASH);
-		l->dynsyms = (Elf32_Sym*)load_getDyn(l->dyn,DT_SYMTAB);
-		l->jmprel = (Elf32_Rel*)load_getDyn(l->dyn,DT_JMPREL);
+		l->hashTbl = (ElfWord*)load_getDyn(l->dyn,DT_HASH);
+		l->dynsyms = (sElfSym*)load_getDyn(l->dyn,DT_SYMTAB);
+		l->jmprel = (sElfRel*)load_getDyn(l->dyn,DT_JMPREL);
 		if(l->dynstrtbl)
 			l->dynstrtbl = (char*)((uintptr_t)l->dynstrtbl + l->loadAddr);
 		if(l->hashTbl)
-			l->hashTbl = (Elf32_Word*)((uintptr_t)l->hashTbl + l->loadAddr);
+			l->hashTbl = (ElfWord*)((uintptr_t)l->hashTbl + l->loadAddr);
 		if(l->dynsyms)
-			l->dynsyms = (Elf32_Sym*)((uintptr_t)l->dynsyms + l->loadAddr);
+			l->dynsyms = (sElfSym*)((uintptr_t)l->dynsyms + l->loadAddr);
 		if(l->jmprel)
-			l->jmprel = (Elf32_Rel*)((uintptr_t)l->jmprel + l->loadAddr);
+			l->jmprel = (sElfRel*)((uintptr_t)l->jmprel + l->loadAddr);
 	}
 	return entryPoint;
 }
@@ -201,7 +202,7 @@ static sSharedLib *load_addLib(sSharedLib *lib) {
 	return NULL;
 }
 
-static uintptr_t load_addSeg(int binFd,Elf32_Phdr *pheader,size_t loadSegNo,bool isLib) {
+static uintptr_t load_addSeg(int binFd,sElfPHeader *pheader,size_t loadSegNo,bool isLib) {
 	int prot = 0,flags = isLib ? 0 : MAP_FIXED;
 	int fd = binFd;
 	void *addr;
@@ -251,13 +252,13 @@ static uintptr_t load_addSeg(int binFd,Elf32_Phdr *pheader,size_t loadSegNo,bool
 		return 0;
 	if(flags & MAP_TLS) {
 		/* read tdata and clear tbss */
-		load_read(binFd,(uint)pheader->p_offset,addr,pheader->p_filesz);
+		load_read(binFd,(off_t)pheader->p_offset,addr,pheader->p_filesz);
 		memclear((void*)((uintptr_t)addr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
 	}
 	return (uintptr_t)addr;
 }
 
-static void load_read(int binFd,uint offset,void *buffer,size_t count) {
+static void load_read(int binFd,off_t offset,void *buffer,size_t count) {
 	if(seek(binFd,offset,SEEK_SET) < 0)
 		load_error("Unable to seek to %x",offset);
 	if(IGNSIGS(read(binFd,buffer,count)) != (ssize_t)count)

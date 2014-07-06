@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/esccodes.h>
 #include <esc/keycodes.h>
 #include <esc/thread.h>
@@ -42,7 +43,6 @@ using namespace std;
 using namespace info;
 
 static volatile bool run = true;
-static size_t pagesize;
 static ssize_t yoffset;
 static sUser *users;
 static tUserSem displaySem;
@@ -168,11 +168,11 @@ static void display(void) {
 				cout << p.uid();
 
 			cout << right << setw(wvirt - 1);
-			printSize(p.pages() * pagesize);
+			printSize(p.pages() * PAGESIZE);
 			cout << setw(wphys - 1);
-			printSize(p.ownFrames() * pagesize);
+			printSize(p.ownFrames() * PAGESIZE);
 			cout << setw(wshm - 1);
-			printSize(p.sharedFrames() * pagesize);
+			printSize(p.sharedFrames() * PAGESIZE);
 
 			cout << setw(wcpu) << setprecision(1) << (100.0 * (p.cycles() / (double)totalcycles));
 			cout << setw(wmem) << setprecision(1) << (100.0 * (p.ownFrames() / (double)totalframes));
@@ -214,7 +214,6 @@ int main(void) {
 	vterm.backup();
 
 	size_t usercount;
-	pagesize = sysconf(CONF_PAGE_SIZE);
 	users = user_parseFromFile(USERS_PATH,&usercount);
 
 	if(usemcrt(&displaySem,1) < 0)

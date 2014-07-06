@@ -37,9 +37,6 @@ class LineContainer {
 public:
 	typedef size_t size_type;
 
-public:
-	static size_type pageSize;
-
 private:
 	/**
 	 * A region, i.e. a dynamically expanding array
@@ -71,7 +68,6 @@ public:
 	LineContainer(size_type lineLen)
 		// plus null-termination
 		: _regions(std::vector<Region>()), _lines(0), _lineLen(lineLen + 1) {
-		pageSize = sysconf(CONF_PAGE_SIZE);
 		_regions.push_back(Region());
 	}
 	~LineContainer() {

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/mem.h>
 #include <esc/conf.h>
 #include <esc/thread.h>
@@ -30,13 +31,12 @@
 #define THREAD_COUNT	4
 #define TEST_COUNT		1000
 
-static size_t pageSize;
 static void *regAddr;
 
 static int thread_entry(A_UNUSED void *arg) {
 	size_t i;
-	for(i = 0; i < REG_SIZE / pageSize; ++i)
-		*(((volatile char*)regAddr) + i * pageSize) = i;
+	for(i = 0; i < REG_SIZE / PAGESIZE; ++i)
+		*(((volatile char*)regAddr) + i * PAGESIZE) = i;
 	return 0;
 }
 
@@ -57,15 +57,15 @@ static void dotest(int fd) {
 }
 
 static int createfile(void) {
-	char *buffer = calloc(1,pageSize);
+	char *buffer = calloc(1,PAGESIZE);
 	if(!buffer)
 		error("malloc failed");
 	int fd = create("/sys/test",IO_READ | IO_WRITE,0600);
 	if(fd < 0)
 		error("Unable to create /sys/test");
 	size_t i;
-	for(i = 0; i < REG_SIZE / pageSize; ++i) {
-		if(write(fd,buffer,pageSize) != (ssize_t)pageSize)
+	for(i = 0; i < REG_SIZE / PAGESIZE; ++i) {
+		if(write(fd,buffer,PAGESIZE) != (ssize_t)PAGESIZE)
 			error("write failed");
 	}
 	free(buffer);
@@ -73,7 +73,6 @@ static int createfile(void) {
 }
 
 int mod_pagefaults(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	pageSize = sysconf(CONF_PAGE_SIZE);
 	int i,fd = createfile();
 	for(i = 0; i < TEST_COUNT; ++i)
 		dotest(fd);

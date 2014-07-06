@@ -19,10 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/arch.h>
+#include <esc/thread.h>
 #include <esc/debug.h>
-#include <esc/conf.h>
-
-#define MAX_STACK_PAGES		128
 
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */
@@ -32,12 +30,11 @@ uintptr_t *getStackTrace(void) {
 	static uintptr_t frames[MAX_STACK_DEPTH];
 	uintptr_t end,start;
 	uintptr_t *frame = &frames[0];
-	size_t pageSize = sysconf(CONF_PAGE_SIZE);
 	ulong *bp;
 	GET_REG(bp,bp);
 	/* TODO just temporary */
-	end = ((uintptr_t)bp + (MAX_STACK_PAGES * pageSize - 1)) & ~(MAX_STACK_PAGES * pageSize - 1);
-	start = end - pageSize * MAX_STACK_PAGES;
+	end = ((uintptr_t)bp + (MAX_STACK_PAGES * PAGESIZE - 1)) & ~(MAX_STACK_PAGES * PAGESIZE - 1);
+	start = end - PAGESIZE * MAX_STACK_PAGES;
 
 	for(size_t i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */

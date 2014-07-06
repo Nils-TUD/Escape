@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/sync.h>
@@ -67,7 +68,6 @@ static sMemArea *freeList = NULL;
 /* total number of pages we're using */
 static uintptr_t heapstart = 0;
 static size_t pageCount = 0;
-static size_t pageSize = 0;
 
 /* the lock for the heap */
 static tUserSem heapSem;
@@ -375,10 +375,6 @@ static bool loadNewSpace(size_t size) {
 	size_t count;
 	sMemArea *area;
 
-	/* determine page-size, if not already done */
-	if(pageSize == 0)
-		pageSize = sysconf(CONF_PAGE_SIZE);
-
 	/* no free areas? */
 	if(freeList == NULL) {
 		if(!loadNewAreas())
@@ -386,11 +382,11 @@ static bool loadNewSpace(size_t size) {
 	}
 
 	/* check for overflow */
-	if(size + pageSize < pageSize)
+	if(size + PAGESIZE < PAGESIZE)
 		return false;
 
 	/* allocate the required pages */
-	count = (size + pageSize - 1) / pageSize;
+	count = (size + PAGESIZE - 1) / PAGESIZE;
 	oldEnd = chgsize(count);
 	if(oldEnd == NULL)
 		return false;
@@ -403,7 +399,7 @@ static bool loadNewSpace(size_t size) {
 	area = freeList;
 	freeList = freeList->next;
 	area->address = oldEnd;
-	area->size = pageSize * count;
+	area->size = PAGESIZE * count;
 	/* put area in the usable-list */
 	area->next = usableList;
 	usableList = area;
@@ -413,10 +409,6 @@ static bool loadNewSpace(size_t size) {
 static bool loadNewAreas(void) {
 	sMemArea *area,*end;
 	void *oldEnd;
-
-	/* determine page-size, if not already done */
-	if(pageSize == 0)
-		pageSize = sysconf(CONF_PAGE_SIZE);
 
 	/* allocate one page for area-structs */
 	oldEnd = chgsize(1);
@@ -429,7 +421,7 @@ static bool loadNewAreas(void) {
 	/* determine start- and end-address */
 	pageCount++;
 	area = (sMemArea*)oldEnd;
-	end = area + (pageSize / sizeof(sMemArea));
+	end = area + (PAGESIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
 	freeList = area;
@@ -445,7 +437,7 @@ static bool loadNewAreas(void) {
 }
 
 bool isOnHeap(const void *ptr) {
-	return (uintptr_t)ptr >= heapstart && (uintptr_t)ptr < heapstart + pageCount * pageSize;
+	return (uintptr_t)ptr >= heapstart && (uintptr_t)ptr < heapstart + pageCount * PAGESIZE;
 }
 
 size_t heapspace(void) {

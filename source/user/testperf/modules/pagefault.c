@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/mem.h>
 #include <esc/time.h>
 #include <limits.h>
@@ -34,7 +35,6 @@ static void causePagefaults(const char *path) {
 	uint64_t start,end;
 	uint64_t total = 0;
 	uint64_t min = ULLONG_MAX, max = 0;
-	size_t pageSize = sysconf(CONF_PAGE_SIZE);
 	int fd = -1;
 	if(path) {
 		fd = open(path,IO_READ);
@@ -45,7 +45,7 @@ static void causePagefaults(const char *path) {
 	}
 
 	for(int j = 0; j < TEST_COUNT; ++j) {
-		volatile char *addr = mmap(NULL,MAP_SIZE * pageSize,path ? MAP_SIZE * pageSize : 0,
+		volatile char *addr = mmap(NULL,MAP_SIZE * PAGESIZE,path ? MAP_SIZE * PAGESIZE : 0,
 			PROT_READ | PROT_WRITE,MAP_PRIVATE,fd,0);
 		if(!addr) {
 			printe("mmap failed");
@@ -54,7 +54,7 @@ static void causePagefaults(const char *path) {
 
 		for(size_t i = 0; i < MAP_SIZE; ++i) {
 			start = rdtsc();
-			*(addr + i * pageSize) = 0;
+			*(addr + i * PAGESIZE) = 0;
 			end = rdtsc();
 			uint64_t duration = end - start;
 			if(duration < min)
@@ -77,8 +77,7 @@ static void causePagefaults(const char *path) {
 
 int mod_pagefault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	size_t pageSize = sysconf(CONF_PAGE_SIZE);
-	size_t total = MAP_SIZE * pageSize;
+	size_t total = MAP_SIZE * PAGESIZE;
 	char *buffer = malloc(total);
 	if(!buffer) {
 		printe("Unable to create buffer");

@@ -89,9 +89,6 @@ long Config::get(int id) {
 		case LOG:
 			res = doLog;
 			break;
-		case PAGESIZE:
-			res = PAGE_SIZE;
-			break;
 		case LOG_TO_VGA:
 			res = logToVGA;
 			break;

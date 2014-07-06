@@ -19,10 +19,5 @@
 
 #pragma once
 
-#define REG(x)		e##x
-#define ARG_1		eax
-#define ARG_2		edx
-#define ARG_3		ecx
-#define SYSCNO		eax
 #define WORDSIZE	4
 #define PAGESIZE	4096

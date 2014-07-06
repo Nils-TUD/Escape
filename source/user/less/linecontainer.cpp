@@ -18,19 +18,18 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/mem.h>
 #include <stdlib.h>
 #include "linecontainer.h"
 
 using namespace std;
 
-LineContainer::size_type LineContainer::pageSize = 0;
-
 bool LineContainer::Region::append(size_type size,const char *line) {
 	// extend region?
-	if((_lines + 1) * size >= _pages * pageSize) {
+	if((_lines + 1) * size >= _pages * PAGESIZE) {
 		uintptr_t oldEnd = (uintptr_t)chgsize(0);
-		if(oldEnd != _begin + _pages * pageSize)
+		if(oldEnd != _begin + _pages * PAGESIZE)
 			return false;
 		if(!chgsize(1))
 			throw bad_alloc();

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/messages.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
@@ -72,7 +73,6 @@ static const char *states[] = {
 	"SUS",
 };
 static int sortcol = sort::TID;
-static size_t pageSize;
 
 static void usage(const char *name) {
 	size_t i;
@@ -101,7 +101,6 @@ static void usage(const char *name) {
 
 int main(int argc,char **argv) {
 	string ssort("tid");
-	pageSize = sysconf(CONF_PAGE_SIZE);
 
 	// parse args
 	cmdargs args(argc,argv,cmdargs::NO_FREE);
@@ -148,7 +147,7 @@ int main(int argc,char **argv) {
 	}
 	maxTid = count_digits(maxTid,10);
 	// display in KiB, its in pages
-	maxStack = count_digits((maxStack * pageSize) / 1024,10);
+	maxStack = count_digits((maxStack * PAGESIZE) / 1024,10);
 	maxScheds = count_digits(maxScheds,10);
 	maxSyscalls = count_digits(maxSyscalls,10);
 	maxRuntime = count_digits(maxRuntime / (1000000 * 60),10);
@@ -196,7 +195,7 @@ int main(int argc,char **argv) {
 		else
 			cout << '-';
 		cout << " ";
-		cout << setw(maxStack - 1) << (t->stackPages() * pageSize) / 1024 << "K ";
+		cout << setw(maxStack - 1) << (t->stackPages() * PAGESIZE) / 1024 << "K ";
 		cout << setw(maxScheds) << t->schedCount() << " ";
 		cout << setw(maxSyscalls) << t->syscalls() << " ";
 		thread::time_type time = t->runtime() / 1000;

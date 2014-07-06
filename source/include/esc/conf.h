@@ -27,10 +27,9 @@
 #define CONF_ROOT_DEVICE		3	/* string */
 #define CONF_SWAP_DEVICE		4	/* string */
 #define CONF_LOG				5
-#define CONF_PAGE_SIZE			6
-#define CONF_LOG_TO_VGA			7
-#define CONF_CPU_COUNT			9
-#define CONF_TICKS_PER_SEC		11
+#define CONF_LOG_TO_VGA			6
+#define CONF_CPU_COUNT			8
+#define CONF_TICKS_PER_SEC		10
 
 #if defined(__cplusplus)
 extern "C" {

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/arch.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
 #include <esc/proc.h>
@@ -63,7 +64,6 @@ static struct sort sorts[] = {
 	{sort::NAME,"name"},
 };
 static int sortcol = sort::PID;
-static size_t pageSize;
 
 static void usage(const char *name) {
 	size_t i;
@@ -96,7 +96,6 @@ static void usage(const char *name) {
 
 int main(int argc,char **argv) {
 	string ssort("pid");
-	pageSize = sysconf(CONF_PAGE_SIZE);
 	int own = 0,numeric = 0;
 	sUser *userList = nullptr;
 	sGroup *groupList = nullptr;
@@ -141,9 +140,9 @@ int main(int argc,char **argv) {
 	process::pid_type maxPpid = 100;
 	process::uid_type maxUid = 4;
 	process::gid_type maxGid = 5;
-	process::size_type maxPmem = (10 * pageSize) / 1024;
-	process::size_type maxShmem = (100 * pageSize) / 1024;
-	process::size_type maxSmem = (10 * pageSize) / 1024;
+	process::size_type maxPmem = (10 * PAGESIZE) / 1024;
+	process::size_type maxShmem = (100 * PAGESIZE) / 1024;
+	process::size_type maxSmem = (10 * PAGESIZE) / 1024;
 	process::size_type maxInput = 10 * 1024;
 	process::size_type maxOutput = 10 * 1024;
 	process::size_type maxRuntime = 100;
@@ -191,9 +190,9 @@ int main(int argc,char **argv) {
 	maxPid = count_digits(maxPid,10);
 	maxPpid = count_digits(maxPpid,10);
 	// display in KiB, its in pages
-	maxPmem = count_digits((maxPmem * pageSize) / 1024,10);
-	maxSmem = count_digits((maxSmem * pageSize) / 1024,10);
-	maxShmem = count_digits((maxShmem * pageSize) / 1024,10);
+	maxPmem = count_digits((maxPmem * PAGESIZE) / 1024,10);
+	maxSmem = count_digits((maxSmem * PAGESIZE) / 1024,10);
+	maxShmem = count_digits((maxShmem * PAGESIZE) / 1024,10);
 	// display in KiB, its in bytes
 	maxInput = count_digits(maxInput / 1024,10);
 	maxOutput = count_digits(maxOutput / 1024,10);
@@ -251,9 +250,9 @@ int main(int argc,char **argv) {
 				cout << setw(maxGid) << g->name << " ";
 
 			cout << right;
-			cout << setw((streamsize)maxPmem) << (p->ownFrames() * pageSize) / 1024 << "K ";
-			cout << setw((streamsize)maxShmem) << (p->sharedFrames() * pageSize) / 1024 << "K ";
-			cout << setw((streamsize)maxSmem) << (p->swapped() * pageSize) / 1024 << "K ";
+			cout << setw((streamsize)maxPmem) << (p->ownFrames() * PAGESIZE) / 1024 << "K ";
+			cout << setw((streamsize)maxShmem) << (p->sharedFrames() * PAGESIZE) / 1024 << "K ";
+			cout << setw((streamsize)maxSmem) << (p->swapped() * PAGESIZE) / 1024 << "K ";
 			cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
 			cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
 			process::time_type time = p->runtime() / 1000;

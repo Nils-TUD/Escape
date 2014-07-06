@@ -21,6 +21,10 @@
 
 #if defined(__x86__)
 #	include <esc/arch/x86/arch.h>
+#elif defined(__eco32__)
+#	include <esc/arch/eco32/arch.h>
+#elif defined(__mmix__)
+#	include <esc/arch/mmix/arch.h>
 #endif
 
 #define STRING(x)		#x

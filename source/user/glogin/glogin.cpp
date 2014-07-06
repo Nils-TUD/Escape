@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/proc.h>
 #include <gui/application.h>
 #include <gui/graphics/color.h>
 #include <gui/layout/flowlayout.h>

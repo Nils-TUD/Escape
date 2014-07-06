@@ -24,6 +24,7 @@
 #include <esc/mem.h>
 #include <esc/thread.h>
 #include <esc/esccodes.h>
+#include <esc/proc.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

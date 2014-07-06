@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/cmdargs.h>
 #include <esc/messages.h>
+#include <esc/proc.h>
 #include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>

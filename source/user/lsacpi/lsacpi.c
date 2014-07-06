@@ -40,7 +40,7 @@ int main(void) {
 			continue;
 		readTable(e.name,&table);
 		printf("ACPI Table %zu:\n",i);
-		printf("\tSignature: %.4s\n",&table.signature);
+		printf("\tSignature: %.4s\n",(char*)&table.signature);
 		printf("\tLength: %u\n",table.length);
 		printf("\tRevision: %u\n",table.revision);
 		printf("\tOEMID: %.6s\n",table.oemId);

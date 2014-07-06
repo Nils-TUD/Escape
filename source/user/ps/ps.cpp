@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/conf.h>
+#include <esc/proc.h>
 #include <info/process.h>
 #include <info/thread.h>
 #include <usergroup/user.h>

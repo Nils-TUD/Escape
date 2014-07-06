@@ -23,6 +23,7 @@
 #include <usergroup/passwd.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
+#include <esc/proc.h>
 #include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <string.h>

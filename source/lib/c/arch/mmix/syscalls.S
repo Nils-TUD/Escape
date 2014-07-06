@@ -19,6 +19,8 @@
 
 #include <esc/syscalls.h>
 
+.extern errno_location
+
 .global syscall0
 .type syscall0, @function
 syscall0:
@@ -40,9 +42,11 @@ syscall7:
 	SET		$8,0						// clear error-code
 	TRAP	0,0,0
 	BZ		$8,1f						// no-error?
-	GETA	$3,errno
+	GET		$9,rJ
+	PUSHJ	$10,errno_location
 	NEG		$1,0,$8
-	STTU	$1,$3,0
+	STTU	$1,$10,0
 	SET		$0,$8
+	PUT		rJ,$9
 1:
 	POP		1,0							// return value is in $0

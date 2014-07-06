@@ -33,8 +33,6 @@ void load_doLoad(int binFd,sSharedLib *dst);
 /**
  * Loads all segments from all libraries into memory
  *
- * @param tlsStart pointer to the tlsStart argument for the program to load
- * @param tlsSize pointer to the tlsSize argument for the program to load
  * @return the entry-point of the executable
  */
-uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize);
+uintptr_t load_addSegments(void);

@@ -85,6 +85,10 @@ bool UEnvBase::setupProc(int argc,int envc,const char *args,A_UNUSED size_t args
 	/*
 	 * Initial software stack:
 	 * +------------------+  <- top
+	 * |       errno      |
+	 * +------------------+
+	 * |        TLS       | (pointer to the actual TLS)
+	 * +------------------+
 	 * |     arguments    |
 	 * |        ...       |
 	 * +------------------+
@@ -97,8 +101,6 @@ bool UEnvBase::setupProc(int argc,int envc,const char *args,A_UNUSED size_t args
 	 * $4 = envc
 	 * $5 = envv
 	 * $7 = entryPoint (0 for initial thread, thread-entrypoint for others)
-	 * $8 = TLSStart (0 if not present)
-	 * $9 = TLSSize (0 if not present)
 	 */
 
 	/* we need to know the total number of bytes we'll store on the stack */
@@ -117,8 +119,10 @@ bool UEnvBase::setupProc(int argc,int envc,const char *args,A_UNUSED size_t args
 	/* get software-stack */
 	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
-	/* copy arguments on the user-stack (8byte space) */
-	ssp--;
+	/* space for errno and TLS */
+	ssp -= 3;
+
+	/* copy arguments on the user-stack */
 	char **argv = copyArgs(argc,args,ssp);
 	char **envv = copyArgs(envc,args,ssp);
 	UserAccess::writeVar(ssp,info->stackBegin);
@@ -147,14 +151,16 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	/*
 	 * Initial software stack:
 	 * +------------------+  <- top
+	 * |       errno      |
+	 * +------------------+
+	 * |        TLS       | (pointer to the actual TLS)
+	 * +------------------+
 	 * |     stack-end    |  used for UNSAVE
 	 * +------------------+
 	 *
 	 * Registers:
 	 * $1 = arg
 	 * $7 = entryPoint (0 for initial thread, thread-entrypoint for others)
-	 * $8 = TLSStart (0 if not present)
-	 * $9 = TLSSize (0 if not present)
 	 */
 
 	/* the thread has to perform an UNSAVE at the beginning to establish the initial state.
@@ -194,8 +200,11 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	/* get software-stack */
 	t->getStackRange(NULL,(uintptr_t*)&ssp,1);
 
+	/* space for errno and TLS */
+	ssp -= 3;
+
 	/* store location to UNSAVE from and the thread-argument */
-	UserAccess::writeVar(--ssp,sinfo.stackBegin);
+	UserAccess::writeVar(ssp,sinfo.stackBegin);
 	UserAccess::writeVar(rsp + 1,(ulong)arg);
 
 	/* add TLS args and entrypoint */
@@ -207,17 +216,6 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 
 void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,ulong *rsp,ulong *ssp,
                    uintptr_t entry,uintptr_t tentry,bool thread) {
-	/* put address and size of the tls-region on the stack */
-	ulong tlsStart,tlsEnd;
-	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
-		UserAccess::writeVar(rsp + 8,tlsStart);
-		UserAccess::writeVar(rsp + 9,tlsEnd - tlsStart);
-	}
-	else {
-		/* no tls */
-		UserAccess::writeVar(rsp + 8,(ulong)0);
-		UserAccess::writeVar(rsp + 9,(ulong)0);
-	}
 	UserAccess::writeVar(rsp + 7,(ulong)(thread ? tentry : 0));
 
 	if(!thread) {

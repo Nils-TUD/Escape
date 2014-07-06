@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
+#include <esc/tls.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -27,32 +28,26 @@
 
 static int otherThread(void *arg);
 
-__thread int t1;
-__thread int t2;
-__thread int t3 = 12345;
+static size_t a,b;
 
 int mod_tls(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	size_t i;
+	a = tlsadd();
+	b = tlsadd();
 	if(startthread(otherThread,NULL) < 0)
 		error("Unable to start thread");
-	for(i = 0; i < 4; i++) {
-		t1++;
-		t2++;
-		printf("[%d] t1=%d, t2=%d, t3=%d\n",gettid(),t1,t2,t3);
-		sleep(100);
+	for(size_t i = 0; i < 4; i++) {
+		tlsset(a,tlsget(a) + 1);
+		tlsset(b,tlsget(b) + 1);
+		printf("[%d] t1=%lu, t2=%lu\n",gettid(),tlsget(a),tlsget(b));
 	}
 	return 0;
 }
 
 static int otherThread(A_UNUSED void *arg) {
-	size_t i;
-	t1 = 4;
-	t2 = 5;
-	for(i = 0; i < 4; i++) {
-		t1++;
-		t2++;
-		printf("[%d] t1=%d, t2=%d, t3=%d\n",gettid(),t1,t2,t3);
-		sleep(100);
+	for(size_t i = 0; i < 4; i++) {
+		tlsset(a,tlsget(a) + 1);
+		tlsset(b,tlsget(b) + 1);
+		printf("[%d] t1=%lu, t2=%lu\n",gettid(),tlsget(a),tlsget(b));
 	}
 	return 0;
 }

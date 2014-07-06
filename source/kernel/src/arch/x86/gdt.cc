@@ -133,15 +133,6 @@ void GDT::setRunning(cpuid_t id,Thread *t) {
 }
 
 void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
-	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
-	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
-	 * %gs:0xFFFFFFF8 etc. */
-	if(EXPECT_FALSE(n->getTLSRegion())) {
-		uintptr_t tlsEnd = n->getTLSRegion()->virt() + n->getTLSRegion()->reg->getByteCount();
-		setDesc((Desc*)all[id].gdt.offset + SEG_TLS,tlsEnd - sizeof(void*),
-				0xFFFFFFFF >> PAGE_BITS,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_USER);
-	}
-
 	if(EXPECT_TRUE(newProc))
 		all[id].tss->ioMapOffset = TSS::IO_MAP_OFFSET_INVALID;
 

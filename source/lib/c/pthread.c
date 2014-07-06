@@ -21,16 +21,16 @@
 #include <esc/atomic.h>
 #include <esc/sync.h>
 #include <esc/thread.h>
+#include <esc/tls.h>
 #include <pthread.h>
 
 #define MAX_LOCKS   4
 
-static pthread_key_t next_key = 0x12345678;
 static long lockCount = 0;
 static tUserSem usems[MAX_LOCKS];
 
 int pthread_key_create(pthread_key_t* key,A_UNUSED void (*func)(void*)) {
-    *key = next_key++;
+    *key = tlsadd();
     return 0;
 }
 
@@ -49,11 +49,12 @@ int pthread_once(pthread_once_t *control,void (*init)(void)) {
 }
 
 void* pthread_getspecific(pthread_key_t key) {
-    return getThreadVal(key);
+    return (void*)tlsget(key);
 }
 
 int pthread_setspecific(pthread_key_t key,void* data) {
-    return setThreadVal(key,data) ? 0 : -1;
+    tlsset(key,(ulong)data);
+    return 0;
 }
 
 int pthread_mutex_init(pthread_mutex_t *mutex,A_UNUSED const pthread_mutexattr_t *attr) {

@@ -22,6 +22,8 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
+#define MAX_STACK_PAGES			128
+
 /* the events we can wait for */
 #define EV_NOEVENT				0			/* just wakeup on signals */
 #define EV_CLIENT				1	/* if there's a client to be served */
@@ -117,23 +119,6 @@ static inline int sleep(time_t msecs) {
 static inline int join(tid_t tid) {
 	return syscall1(SYSCALL_JOIN,tid);
 }
-
-/**
- * Sets the thread-value with given key to given value (for the current thread)
- *
- * @param key the key
- * @param val the value
- * @return true if successfull
- */
-bool setThreadVal(uint key,void *val);
-
-/**
- * Retrieves the value of the thread-value with given key (for the current thread)
- *
- * @param key the key
- * @return the value or NULL if not found
- */
-void *getThreadVal(uint key);
 
 #if defined(__cplusplus)
 }

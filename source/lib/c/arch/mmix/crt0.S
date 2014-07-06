@@ -31,6 +31,10 @@
 
 // Initial software stack:
 // +------------------+  <- top
+// |       errno      |
+// +------------------+
+// |        TLS       | (pointer to the actual TLS)
+// +------------------+
 // |     arguments    |
 // |        ...       |
 // +------------------+
@@ -43,17 +47,15 @@
 // $4 = envc
 // $5 = envv
 // $7 = entryPoint (0 for initial thread, thread-entrypoint for others)
-// $8 = TLSStart (0 if not present)
-// $9 = TLSSize (0 if not present)
 
 #ifndef SHAREDLIB
 _start:
 	LDOU	$0,$254,0
 	UNSAVE	0,$0
 
-	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
-	SET		$10,$1
-	SET		$11,$2
+	// call __libc_preinit(entryPoint,argc,argv)
+	SET		$8,$1
+	SET		$9,$2
 	PUSHJ	$6,__libc_preinit
 
 	// it returns the entrypoint; 0 if we're the initial thread

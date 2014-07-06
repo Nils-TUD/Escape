@@ -35,11 +35,10 @@
 #define RF_GROWABLE			2UL
 #define RF_GROWS_DOWN		4UL
 #define RF_STACK			8UL
-#define RF_TLS				16UL	/* needed to distinguish TLS-regions from others */
-#define RF_LOCKED			32UL
-#define RF_NOFREE			1024UL	/* means that the memory should not be free'd on release */
-#define RF_WRITABLE			2048UL
-#define RF_EXECUTABLE		4096UL
+#define RF_LOCKED			16UL
+#define RF_NOFREE			512UL	/* means that the memory should not be free'd on release */
+#define RF_WRITABLE			1024UL
+#define RF_EXECUTABLE		2048UL
 
 class OStream;
 class VirtMem;

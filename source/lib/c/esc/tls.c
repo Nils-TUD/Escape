@@ -18,18 +18,30 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
+#include <esc/arch.h>
+#include <esc/atomic.h>
+#include <esc/tls.h>
+#include <esc/conf.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-void abort(void) {
-	exit(EXIT_FAILURE);
+long __tls_num = 0;
+
+void initTLS(void);
+
+void initTLS(void) {
+	ulong *tls = calloc(MAX_TLS_ENTRIES,sizeof(ulong));
+	if(!tls)
+		error("Not enough memory for TLS struct");
+
+	ulong **ptr = (ulong**)stack_top(2);
+	*ptr = tls;
 }
 
-void error(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vprinte(fmt,ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
+size_t tlsadd(void) {
+	long idx = atomic_add(&__tls_num,+1);
+	if(idx >= MAX_TLS_ENTRIES)
+		error("All TLS slots in use");
+	return idx;
 }

@@ -132,7 +132,7 @@ bool UEnvBase::setupProc(int argc,int envc,const char *args,size_t argsSize,
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *frame = t->getIntrptStack();
 
-	ulong *sp = initProcStack(argc,envc,args,argsSize,info->progEntry);
+	ulong *sp = initProcStack(argc,envc,args,argsSize);
 	if(!sp)
 		return false;
 

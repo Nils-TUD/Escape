@@ -75,10 +75,10 @@ void load_initHeap(void) {
 }
 
 #if defined(__i586__)
-uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
-		A_UNUSED uintptr_t a,A_UNUSED uintptr_t b,A_UNUSED size_t c,int argc,char **argv) {
+uintptr_t load_setupProg(int binFd,A_UNUSED uintptr_t a,A_UNUSED uintptr_t b,A_UNUSED size_t c,
+	int argc,char **argv) {
 #else
-uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,int argc,char **argv) {
+uintptr_t load_setupProg(int binFd,int argc,char **argv) {
 #endif
 	sSharedLib *prog;
 	uintptr_t entryPoint;
@@ -105,7 +105,7 @@ uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,int argc,char 
 	load_doLoad(binFd,prog);
 
 	/* load segments into memory */
-	entryPoint = load_addSegments(tlsStart,tlsSize);
+	entryPoint = load_addSegments();
 
 #if PRINT_LOADADDR
 	sSLNode *n,*m;

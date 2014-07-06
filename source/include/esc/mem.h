@@ -24,8 +24,8 @@
 
 /* protection-flags */
 #define PROT_READ			0
-#define PROT_WRITE			2048UL
-#define PROT_EXEC			4096UL
+#define PROT_WRITE			1024UL
+#define PROT_EXEC			2048UL
 
 /* mapping flags */
 #define MAP_PRIVATE			0		/* make the region non-sharable */
@@ -33,11 +33,10 @@
 #define MAP_GROWABLE		2UL		/* make the region growable (e.g. heap, stack) */
 #define MAP_GROWSDOWN		4UL		/* for growable regions: let them grow downwards */
 #define MAP_STACK			8UL		/* for stack regions */
-#define MAP_TLS				16UL	/* for TLS regions */
-#define MAP_LOCKED			32UL	/* lock the region in memory, i.e. don't swap it out */
-#define MAP_POPULATE		64UL	/* fault-in all pages at the beginning */
-#define MAP_NOSWAP			128UL	/* if not enough memory for the mapping, don't swap but fail */
-#define MAP_FIXED			256UL	/* put the region exactly at the given address */
+#define MAP_LOCKED			16UL	/* lock the region in memory, i.e. don't swap it out */
+#define MAP_POPULATE		32UL	/* fault-in all pages at the beginning */
+#define MAP_NOSWAP			64UL	/* if not enough memory for the mapping, don't swap but fail */
+#define MAP_FIXED			128UL	/* put the region exactly at the given address */
 
 #define MAP_PHYS_ALLOC		0		/* allocate physical memory */
 #define MAP_PHYS_MAP		1		/* map the specified physical memory */

@@ -26,6 +26,7 @@
 #include <sys/mem/virtmem.h>
 #include <sys/boot.h>
 #include <sys/util.h>
+#include <esc/arch.h>
 #include <assert.h>
 
 EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp);
@@ -53,7 +54,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp) {
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		Util::panic("Not enough mem for initloader-stack");
-	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - 4;
+	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;
 	t->discardFrames();
 	/* we have to set the kernel-stack for the first process */
 	PageDir::tlbSet(0,KERNEL_STACK,(t->getKernelStack() * PAGE_SIZE) | 0x3);

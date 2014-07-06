@@ -21,6 +21,7 @@
 #include <esc/thread.h>
 #include <esc/sync.h>
 #include <esc/debug.h>
+#include <esc/tls.h>
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
@@ -42,14 +43,14 @@ typedef struct {
 extern int _startthread(fThreadEntry entryPoint,void *arg);
 extern __attribute__((weak)) void sigRetFunc(void);
 
-extern void initTLS(ulong *tlsStart,size_t tlsSize);
+extern void initTLS(void);
 extern void initStdio(void);
 extern void initHeap(void);
 
 /**
  * Is called at the very beginning to setup some initial stuff
  */
-uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]);
+uintptr_t __libc_preinit(uintptr_t entryPoint,int argc,char *argv[]);
 /**
  * Inits the c-library
  */
@@ -124,7 +125,7 @@ void __cxa_finalize(A_UNUSED void *d) {
 	usemup(&__libc_sem);
 }
 
-uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int argc,char *argv[]) {
+uintptr_t __libc_preinit(uintptr_t entryPoint,int argc,char *argv[]) {
 	static bool initialized = false;
 	if(!initialized) {
 		if(argc > 0) {
@@ -145,8 +146,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,ulong *tlsStart,size_t tlsSize,int
 		initHeap();
 		initialized = true;
 	}
-
-	initTLS(tlsStart,tlsSize);
+	initTLS();
 	return entryPoint;
 }
 

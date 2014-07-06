@@ -74,7 +74,7 @@ uintptr_t smpstart(uintptr_t *usp) {
 	Thread *t = Thread::getRunning();
 	if(!t->reserveFrames(INITIAL_STACK_PAGES))
 		Util::panic("Not enough mem for initloader-stack");
-	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE;
+	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;
 	t->discardFrames();
 
 	extern ulong kstackPtr;

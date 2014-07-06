@@ -42,26 +42,16 @@
 .macro STORE_ERRNO
 	test	%edi,%edi
 	jz		1f								// no-error?
-	// use GOT for shared-libraries
-	#if defined(SHAREDLIB)
-	// first get address of GOT
-	call	__i686.get_pc_thunk.bx
-	addl	$_GLOBAL_OFFSET_TABLE_,%eax
-	// now access symbol and store errno
-	mov		errno@GOT(%eax),%eax
+#if defined(SHAREDLIB)
+	call	errno_location@plt
+#else
+	call	errno_location
+#endif
 	mov		%edi,(%eax)
 	negl	(%eax)
-	#else
-	// otherwise access errno directly
-	mov		%edi,(errno)					// store error-code
-	negl	(errno)
-	#endif
 	mov		%edi,%eax						// return error-code
 1:
 .endm
-
-.extern errno
-.extern _GLOBAL_OFFSET_TABLE_
 
 // needed for shared libraries to get the address of the GOT
 #if defined(SHAREDLIB)

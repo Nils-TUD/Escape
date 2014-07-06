@@ -117,11 +117,9 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 	}
 }
 
-uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
+uintptr_t load_addSegments(void) {
 	sSLNode *n;
 	uintptr_t entryPoint = 0;
-	*tlsStart = 0;
-	*tlsSize = 0;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		sElfEHeader eheader;
@@ -151,10 +149,6 @@ uintptr_t load_addSegments(uint *tlsStart,size_t *tlsSize) {
 					else
 						l->textAddr = addr;
 					l->textSize = pheader.p_memsz;
-				}
-				else if(!l->isDSO && pheader.p_type == PT_TLS) {
-					*tlsStart = addr;
-					*tlsSize = pheader.p_memsz;
 				}
 				loadSeg++;
 			}
@@ -206,7 +200,6 @@ static uintptr_t load_addSeg(int binFd,sElfPHeader *pheader,size_t loadSegNo,boo
 	int prot = 0,flags = isLib ? 0 : MAP_FIXED;
 	int fd = binFd;
 	void *addr;
-	size_t memsz = pheader->p_memsz;
 
 	/* check if the sizes are valid */
 	if(pheader->p_filesz > pheader->p_memsz)
@@ -227,19 +220,6 @@ static uintptr_t load_addSeg(int binFd,sElfPHeader *pheader,size_t loadSegNo,boo
 		/* text regions are shared */
 		flags |= MAP_SHARED;
 	}
-	else if(pheader->p_type == PT_TLS) {
-		/* TODO not supported atm */
-		if(isLib)
-			return 0;
-		/* we need the thread-control-block at the end */
-		memsz += sizeof(void*);
-		/* tls needs no file */
-		fd = -1;
-		flags &= ~MAP_FIXED;
-		flags |= MAP_TLS;
-		/* the linker seems to think that readible is enough for TLS. so set the protection explicitly */
-		prot = PROT_READ | PROT_WRITE;
-	}
 	else if(pheader->p_flags == (PF_R | PF_W))
 		flags |= MAP_GROWABLE;
 	else
@@ -250,11 +230,6 @@ static uintptr_t load_addSeg(int binFd,sElfPHeader *pheader,size_t loadSegNo,boo
 			prot,flags,fd,pheader->p_offset);
 	if(addr == NULL)
 		return 0;
-	if(flags & MAP_TLS) {
-		/* read tdata and clear tbss */
-		load_read(binFd,(off_t)pheader->p_offset,addr,pheader->p_filesz);
-		memclear((void*)((uintptr_t)addr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
-	}
 	return (uintptr_t)addr;
 }
 

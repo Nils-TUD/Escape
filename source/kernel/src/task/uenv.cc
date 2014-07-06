@@ -22,12 +22,16 @@
 #include <sys/task/proc.h>
 #include <sys/mem/useraccess.h>
 
-ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSize,uintptr_t entry) {
+ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSize) {
 	Thread *t = Thread::getRunning();
 
 	/*
 	 * Initial stack:
 	 * +------------------+  <- top
+	 * |       errno      |
+	 * +------------------+
+	 * |        TLS       | (pointer to the actual TLS)
+	 * +------------------+
 	 * |     arguments    |
 	 * |        ...       |
 	 * +------------------+
@@ -38,10 +42,6 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 	 * |       argv       |
 	 * +------------------+
 	 * |       argc       |
-	 * +------------------+
-	 * |     TLSSize      |  0 if not present
-	 * +------------------+
-	 * |     TLSStart     |  0 if not present
 	 * +------------------+
 	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 	 * +------------------+
@@ -55,7 +55,7 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 		totalSize += sizeof(void*) * (argc + 1 + envc + 1);
 	}
 	totalSize = ROUND_UP(totalSize,16) + 8;
-	/* finally we need envc, envv, argc, argv, tlsSize, tlsStart and entryPoint */
+	/* finally we need errno, TLS, envc, envv, argc, argv and entryPoint */
 	totalSize += sizeof(ulong) * 7;
 
 	/* get sp */
@@ -64,8 +64,10 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 	if(!PageDir::isInUserSpace((uintptr_t)sp - totalSize,totalSize))
 		return NULL;
 
+	/* space for errno and TLS */
+	sp -= 3;
+
 	/* copy arguments on the user-stack (4byte space) */
-	sp--;
 	char **argv = copyArgs(argc,args,sp);
 	char **envv = copyArgs(envc,args,sp);
 
@@ -77,9 +79,9 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 	UserAccess::writeVar(sp--,(ulong)envc);
 	UserAccess::writeVar(sp--,(ulong)argv);
 	UserAccess::writeVar(sp--,(ulong)argc);
-	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
-	 * program, not the dynamic-linker */
-	return addArgs(t,sp,entry,false);
+	/* add entrypoint */
+	UserAccess::writeVar(sp,0UL);
+	return sp;
 }
 
 ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
@@ -88,11 +90,11 @@ ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
 	/*
 	 * Initial stack:
 	 * +------------------+  <- top
-	 * |       arg        |
+	 * |       errno      |
 	 * +------------------+
-	 * |     TLSSize      |  0 if not present
+	 * |        TLS       | (pointer to the actual TLS)
 	 * +------------------+
-	 * |     TLSStart     |  0 if not present
+	 * |        arg       |
 	 * +------------------+
 	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 	 * +------------------+
@@ -108,13 +110,17 @@ ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
 		A_UNREACHED;
 	}
 
+	/* space for errno and TLS */
+	sp -= 3;
+
 	/* align it by 16 byte (SSE) */
-	sp = (ulong*)((uintptr_t)sp - 16);
+	sp = (ulong*)ROUND_DN((uintptr_t)sp,16);
 
 	/* put arg on stack */
 	UserAccess::writeVar(sp--,(ulong)arg);
-	/* add TLS args and entrypoint */
-	return addArgs(t,sp,entry,true);
+	/* add entrypoint */
+	UserAccess::writeVar(sp,entry);
+	return sp;
 }
 
 char **UEnvBase::copyArgs(int argc,const char *&args,ulong *&sp) {
@@ -139,21 +145,4 @@ char **UEnvBase::copyArgs(int argc,const char *&args,ulong *&sp) {
 		sp = (ulong*)(((uintptr_t)str & ~(sizeof(ulong) - 1)) - sizeof(ulong));
 	}
 	return argv;
-}
-
-ulong *UEnvBase::addArgs(Thread *t,ulong *sp,uintptr_t tentryPoint,bool newThread) {
-	/* put address and size of the tls-region on the stack */
-	uintptr_t tlsStart,tlsEnd;
-	if(t->getTLSRange(&tlsStart,&tlsEnd)) {
-		UserAccess::writeVar(sp--,(ulong)(tlsEnd - tlsStart));
-		UserAccess::writeVar(sp--,(ulong)tlsStart);
-	}
-	else {
-		/* no tls */
-		UserAccess::writeVar(sp--,(ulong)0);
-		UserAccess::writeVar(sp--,(ulong)0);
-	}
-
-	UserAccess::writeVar(sp,(ulong)(newThread ? tentryPoint : 0));
-	return sp;
 }

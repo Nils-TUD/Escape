@@ -17,19 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <esc/arch.h>
+#include <esc/thread.h>
 
-void abort(void) {
-	exit(EXIT_FAILURE);
-}
-
-void error(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vprinte(fmt,ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
+static inline void **stack_top(size_t idx) {
+	uintptr_t sp;
+	__asm__ volatile ("add %0,$29,$0" : "=r"(sp));
+	sp = (sp & ~(MAX_STACK_PAGES * PAGESIZE - 1)) + MAX_STACK_PAGES * PAGESIZE - sizeof(void*) * idx;
+	return (void**)sp;
 }

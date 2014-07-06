@@ -31,6 +31,10 @@
 
 //  Initial stack:
 //  +------------------+  <- top
+//  |       errno      |
+//  +------------------+
+//  |        TLS       | (pointer to the actual TLS)
+//  +------------------+
 //  |     arguments    |
 //  |        ...       |  not present for threads
 //  +------------------+
@@ -42,49 +46,38 @@
 //  +------------------+
 //  |       argc       |  or the argument for threads
 //  +------------------+
-//  |     TLSStart     |  (0 if not present)
-//  +------------------+
-//  |     TLSSize      |  (0 if not present)
-//  +------------------+
-//  |    EntryPoint    |  (0 for initial thread, thread-entrypoint for others)
+//  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 //  +------------------+
 
 #ifndef SHAREDLIB
 _start:
 	ldw		$4,$29,0			// entrypoint
-	ldw		$5,$29,4			// TLS start
-	ldw		$6,$29,8			// TLS size
-	ldw		$7,$29,12			// argc
-	bne		$4,$0,1f			// skip that for threads
-	ldw		$8,$29,16			// argv
-1:
+	ldw		$5,$29,4			// argc
+	ldw		$6,$29,8			// argv
 	// setup a small stackframe
 	sub		$29,$29,32
-	// pass argv via stack
-	stw		$8,$29,16
-	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	// call __libc_preinit(entryPoint,argc,argv)
 	jal		__libc_preinit
-	add		$29,$29,12
 	// it returns the entrypoint; 0 if we're the initial thread
 	beq		$2,$0,initialThread
 	// we're an additional thread, so call the desired function
-	ldw		$4,$29,32
+	ldw		$4,$29,36
 	jalr	$2
 	j		threadExit
 
 	// initial thread calls main
 initialThread:
 	// init env stuff
-	ldw		$4,$29,40		// envc
-	ldw		$5,$29,44		// envv
+	ldw		$4,$29,44		// envc
+	ldw		$5,$29,48		// envv
 	jal		initenv
 
 	// call function in .init-section
 	jal		_init
 
 	// finally, call main
-	ldw		$4,$29,32		// argc
-	ldw		$5,$29,36		// argv
+	ldw		$4,$29,36		// argc
+	ldw		$5,$29,40		// argv
 	jal		main
 
 threadExit:

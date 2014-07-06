@@ -32,6 +32,10 @@
 
 //  Initial stack:
 //  +------------------+  <- top
+//  |       errno      |
+//  +------------------+
+//  |        TLS       | (pointer to the actual TLS)
+//  +------------------+
 //  |     arguments    |
 //  |        ...       |  not present for threads
 //  +------------------+
@@ -43,10 +47,6 @@
 //  +------------------+
 //  |       argc       |  or the argument for threads
 //  +------------------+
-//  |     TLSSize      |  0 if not present
-//  +------------------+
-//  |     TLSStart     |  0 if not present
-//  +------------------+
 //  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 //  +------------------+  <- 16 byte aligned (+8)
 
@@ -55,18 +55,10 @@ _start:
 	// mark the beginning of the call-trace
 	mov		$0,%REG(bp)
 	pop		%ARG_1
-	pop		%ARG_2
-	pop		%ARG_3
+	mov		WORDSIZE * 0(%REG(sp)),%ARG_2
+	mov		WORDSIZE * 1(%REG(sp)),%ARG_3
 
-#if defined(__x86_64__)
-	mov		WORDSIZE * 0(%REG(sp)),%ARG_4
-	test	%ARG_1,%ARG_1
-	jnz		1f
-	mov		WORDSIZE * 1(%REG(sp)),%ARG_5
-1:
-#endif
-
-	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	// call __libc_preinit(entryPoint,argc,argv)
 	call	__libc_preinit
 
 	// it returns the entrypoint; 0 if we're the initial thread

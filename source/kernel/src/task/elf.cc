@@ -125,28 +125,9 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 			return res;
 		}
 
-		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
+		if(pheader.p_type == PT_LOAD) {
 			if(addSegment(file,&pheader,loadSeg,type,0) < 0)
 				goto failed;
-			if(pheader.p_type == PT_TLS) {
-				uintptr_t tlsStart;
-				if(t->getTLSRange(&tlsStart,NULL)) {
-					/* read tdata */
-					if(file->seek(p->getPid(),(off_t)pheader.p_offset,SEEK_SET) < 0) {
-						Log::get().writef("[LOADER] Seeking to load segment %d (%Ox) failed\n",
-								loadSeg,pheader.p_offset);
-						goto failed;
-					}
-					if((readRes = file->read(p->getPid(),(void*)tlsStart,pheader.p_filesz)) < 0) {
-						Log::get().writef("[LOADER] Reading load segment %d failed: %s\n",
-								loadSeg,strerror(readRes));
-						goto failed;
-					}
-					/* clear tbss */
-					PageDir::zeroToUser((void*)(tlsStart + pheader.p_filesz),
-					                    pheader.p_memsz - pheader.p_filesz);
-				}
-			}
 			loadSeg++;
 		}
 	}
@@ -193,21 +174,6 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 		/* text regions are shared */
 		flags |= MAP_SHARED;
 	}
-	else if(pheader->p_type == PT_TLS) {
-		/* not allowed for the dynamic linker */
-		if(type == TYPE_INTERP) {
-			Log::get().writef("[LOADER] TLS segment not allowed for dynamic linker\n");
-			return -ENOEXEC;
-		}
-		/* we need the thread-control-block at the end */
-		memsz += sizeof(void*);
-		/* tls needs no binary */
-		file = NULL;
-		flags &= ~MAP_FIXED;
-		flags |= MAP_TLS;
-		/* the linker seems to think that readible is enough for TLS. so set the protection explicitly */
-		prot = PROT_READ | PROT_WRITE;
-	}
 	else if(pheader->p_flags == (PF_R | PF_W))
 		flags |= MAP_GROWABLE;
 	else {
@@ -240,8 +206,6 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 		t->discardFrames();
 		return res;
 	}
-	if(pheader->p_type == PT_TLS)
-		t->setTLSRegion(vm);
 	t->discardFrames();
 	return 0;
 }

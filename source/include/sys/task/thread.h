@@ -285,16 +285,6 @@ public:
 	}
 
 	/**
-	 * @return the region of this thread (NULL if not existing)
-	 */
-	VMRegion *getTLSRegion() const {
-		return tlsRegion;
-	}
-	void setTLSRegion(VMRegion *vm) {
-		tlsRegion = vm;
-	}
-
-	/**
 	 * @return the stack region with given number
 	 */
 	VMRegion *getStackRegion(size_t no) const {
@@ -406,15 +396,6 @@ public:
 	 * @return true if the stack-region exists
 	 */
 	bool getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) const;
-
-	/**
-	 * Retrieves the range of the TLS region
-	 *
-	 * @param start will be set to the start-address (may be NULL)
-	 * @param end will be set to the end-address (may be NULL)
-	 * @return true if the TLS-region exists
-	 */
-	bool getTLSRange(uintptr_t *start,uintptr_t *end) const;
 
 	/**
 	 * Lets this thread wait for the given event and object
@@ -610,8 +591,6 @@ protected:
 	cpuid_t cpu;
 	/* the stack-region(s) for this thread */
 	VMRegion *stackRegions[STACK_REG_COUNT];
-	/* the TLS-region for this thread (-1 if not present) */
-	VMRegion *tlsRegion;
 	/* thread-directory in VFS */
 	inode_t threadDir;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
@@ -714,7 +693,6 @@ inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {
 }
 
 inline void ThreadBase::removeRegions(bool remStack) {
-	tlsRegion = NULL;
 	if(remStack) {
 		for(size_t i = 0; i < STACK_REG_COUNT; i++)
 			stackRegions[i] = NULL;

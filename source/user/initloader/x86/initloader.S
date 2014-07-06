@@ -30,18 +30,8 @@ _start:
 	mov		$0,%ARG_1
 	mov		$0,%ARG_2
 	mov		$0,%ARG_3
-#if defined(__x86_64__)
-	mov		$0,%ARG_4
-	mov		$0,%ARG_5
-#else
-	push	$0
-	push	$0
-#endif
-	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	// call __libc_preinit(entryPoint,argc,argv)
 	call	__libc_preinit
-#if defined(__i586__)
-	add		$WORDSIZE * 2,%REG(sp)
-#endif
 
 	// init c library
 	call	__libc_init

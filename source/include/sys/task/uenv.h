@@ -70,10 +70,10 @@ public:
 	static void *setupThread(const void *arg,uintptr_t tentryPoint) asm("uenv_setupThread");
 
 protected:
-	static ulong *initProcStack(int argc,int envc,const char *args,size_t argsSize,uintptr_t entry);
+	static ulong *initProcStack(int argc,int envc,const char *args,size_t argsSize);
 	static ulong *initThreadStack(const void *arg,uintptr_t entry);
 	static char **copyArgs(int argc,const char *&args,ulong *&sp);
-	static ulong *addArgs(Thread *t,ulong *sp,uintptr_t tentryPoint,bool newThread);
+	static ulong *addArgs(ulong *sp,uintptr_t tentryPoint,bool newThread);
 };
 
 #if defined(__x86__)

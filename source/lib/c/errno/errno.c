@@ -18,18 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <esc/tls.h>
+#include <errno.h>
 
-void abort(void) {
-	exit(EXIT_FAILURE);
-}
-
-void error(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	vprinte(fmt,ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
+int *errno_location(void) {
+	return (int*)stack_top(1);
 }

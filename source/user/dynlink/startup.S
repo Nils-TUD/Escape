@@ -32,6 +32,10 @@
 
 //  Initial stack:
 //  +------------------+  <- top
+//  |       errno      |
+//  +------------------+
+//  |        TLS       | (pointer to the actual TLS)
+//  +------------------+
 //  |     arguments    |
 //  |        ...       |
 //  +------------------+
@@ -42,10 +46,6 @@
 //  |       argv       |  not present for threads
 //  +------------------+
 //  |       argc       |  not present for threads
-//  +------------------+
-//  |     TLSSize      |  0 if not present
-//  +------------------+
-//  |     TLSStart     |  0 if not present
 //  +------------------+
 //  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 //  +------------------+
@@ -59,23 +59,16 @@ _start:
 	// call __libc_preinit
 	pop		%REG(bx)
 	pop		%ARG_1
-	pop		%ARG_2
-	pop		%ARG_3
-#if defined(__x86_64__)
-	mov		WORDSIZE * 0(%REG(sp)),%ARG_4
-	mov		WORDSIZE * 1(%REG(sp)),%ARG_5
-#endif
+	mov		WORDSIZE * 0(%REG(sp)),%ARG_2
+	mov		WORDSIZE * 1(%REG(sp)),%ARG_3
 	call	__libc_preinit
 
-	// since we do not support TLS with dynamic linking yet, just pass arbitrary values as TLS-stuff
-	push	$0
-	push	$0
 	// push entrypoint again
 	push	%REG(ax)
 
 	// init env stuff
-	mov		WORDSIZE * 5(%REG(sp)),%ARG_1
-	mov		WORDSIZE * 6(%REG(sp)),%ARG_2
+	mov		WORDSIZE * 3(%REG(sp)),%ARG_1
+	mov		WORDSIZE * 4(%REG(sp)),%ARG_2
 	call	initenv
 
 	// now call __libc_init
@@ -83,13 +76,8 @@ _start:
 
 	// pass file-descriptor to load_setupProg
 	mov		%REG(bx),%ARG_1
-	// pass pointers to TLSSize and TLSStart to load_setupProg
-	lea		WORDSIZE * 1(%REG(sp)),%ARG_2
-	lea		WORDSIZE * 2(%REG(sp)),%ARG_3
-#if defined(__x86_64__)
-	mov		WORDSIZE * 3(%REG(sp)),%ARG_4
-	mov		WORDSIZE * 4(%REG(sp)),%ARG_5
-#endif
+	mov		WORDSIZE * 1(%REG(sp)),%ARG_2
+	mov		WORDSIZE * 2(%REG(sp)),%ARG_3
 	call	load_setupProg
 
 	// load_setupProg returns the entrypoint

@@ -30,10 +30,7 @@ _start:
 	add		$4,$0,$0
 	add		$5,$0,$0
 	add		$6,$0,$0
-	add		$7,$0,$0
-	// pass argv via stack
-	stw		$8,$29,16
-	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	// call __libc_preinit(entryPoint,argc,argv)
 	jal		__libc_preinit
 
 	// init c library

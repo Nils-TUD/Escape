@@ -89,7 +89,6 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	t->priority = MAX_PRIO;
 	for(size_t i = 0; i < STACK_REG_COUNT; i++)
 		t->stackRegions[i] = NULL;
-	t->tlsRegion = NULL;
 	if(initArch(t) < 0)
 		Util::panic("Unable to init the arch-specific attributes of initial thread");
 
@@ -147,15 +146,6 @@ bool ThreadBase::getStackRange(uintptr_t *start,uintptr_t *end,size_t stackNo) c
 	bool res = false;
 	if(stackRegions[stackNo] != NULL) {
 		proc->getVM()->getRegRange(stackRegions[stackNo],start,end,false);
-		res = true;
-	}
-	return res;
-}
-
-bool ThreadBase::getTLSRange(uintptr_t *start,uintptr_t *end) const {
-	bool res = false;
-	if(tlsRegion != NULL) {
-		proc->getVM()->getRegRange(tlsRegion,start,end,false);
 		res = true;
 	}
 	return res;
@@ -249,24 +239,8 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 			else
 				t->stackRegions[i] = NULL;
 		}
-		if(src->tlsRegion)
-			t->tlsRegion = p->getVM()->getRegion(src->tlsRegion->virt());
-		else
-			t->tlsRegion = NULL;
 		t->intrptLevel = src->intrptLevel;
 		memcpy(t->intrptLevels,src->intrptLevels,sizeof(IntrptStackFrame*) * MAX_INTRPT_LEVELS);
-	}
-	else {
-		/* add a new tls-region, if its present in the src-thread */
-		t->tlsRegion = NULL;
-		if(src->tlsRegion != NULL) {
-			uintptr_t tlsStart,tlsEnd;
-			src->getProc()->getVM()->getRegRange(src->tlsRegion,&tlsStart,&tlsEnd,false);
-			err = p->getVM()->map(NULL,tlsEnd - tlsStart,0,PROT_READ | PROT_WRITE,
-					MAP_TLS,NULL,0,&t->tlsRegion);
-			if(err < 0)
-				goto errAdd;
-		}
 	}
 
 	/* clone architecture-specific stuff */
@@ -295,20 +269,12 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 errAppendIdle:
 	freeArch(t);
 errClone:
-	if(t->tlsRegion != NULL)
-		p->getVM()->unmap(t->tlsRegion);
-errAdd:
 	relRef(t);
 	return err;
 }
 
 void ThreadBase::terminate() {
 	assert(this == Thread::getRunning());
-	/* remove tls */
-	if(tlsRegion != NULL) {
-		proc->getVM()->unmap(tlsRegion);
-		tlsRegion = NULL;
-	}
 
 	/* process stats */
 	proc->stats.totalRuntime += stats.curCycleCount;
@@ -330,11 +296,6 @@ void ThreadBase::kill() {
 	assert(this != Thread::getRunning());
 	freeArch(static_cast<Thread*>(this));
 
-	/* remove tls (will only be done here if the thread-creation failed and we can't call terminate) */
-	if(tlsRegion != NULL) {
-		proc->getVM()->unmap(tlsRegion);
-		tlsRegion = NULL;
-	}
 	VFS::removeThread(tid);
 
 	/* notify the process about it */
@@ -381,7 +342,6 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("\n");
 	Signals::print(static_cast<const Thread*>(this),os);
 	os.writef("LastCPU = %d\n",cpu);
-	os.writef("TlsRegion = %p, ",tlsRegion ? tlsRegion->virt() : 0);
 	for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 		os.writef("stackRegion%zu = %p",i,stackRegions[i] ? stackRegions[i]->virt() : 0);
 		if(i + 1 < STACK_REG_COUNT)

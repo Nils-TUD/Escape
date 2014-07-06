@@ -278,7 +278,7 @@ int VirtMem::protect(uintptr_t addr,ulong flags) {
 	}
 
 	vmreg->reg->acquire();
-	if(!vmreg || (vmreg->reg->getFlags() & (RF_NOFREE | RF_STACK | RF_TLS)))
+	if(!vmreg || (vmreg->reg->getFlags() & (RF_NOFREE | RF_STACK)))
 		goto error;
 
 	/* check if COW is enabled for a page */
@@ -484,14 +484,12 @@ void VirtMem::setTimestamp(Thread *t,uint64_t timestamp) {
 	 * for the mutex would call that as well */
 	VirtMem *vm = t->getProc()->getVM();
 	if(vm->tryAquire()) {
-		if(t->getTLSRegion())
-			t->getTLSRegion()->reg->setTimestamp(timestamp);
 		for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 			if(t->getStackRegion(i))
 				t->getStackRegion(i)->reg->setTimestamp(timestamp);
 		}
 		for(auto reg = vm->regtree.begin(); reg != vm->regtree.end(); ++reg) {
-			if(!(reg->reg->getFlags() & (RF_TLS | RF_STACK)))
+			if(!(reg->reg->getFlags() & RF_STACK))
 				reg->reg->setTimestamp(timestamp);
 		}
 		vm->release();
@@ -879,8 +877,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 	VMTree::addTree(dst,&dst->regtree);
 	for(vm = regtree.begin(); vm != regtree.end(); ++vm) {
 		/* just clone the tls- and stack-region of the current thread */
-		if((!(vm->reg->getFlags() & RF_STACK) || t->hasStackRegion(&*vm)) &&
-				(!(vm->reg->getFlags() & RF_TLS) || t->getTLSRegion() == &*vm)) {
+		if(!(vm->reg->getFlags() & RF_STACK) || t->hasStackRegion(&*vm)) {
 			vm->reg->acquire();
 			/* TODO ?? better don't share the file; they may have to read in parallel */
 			if(vm->reg->getFlags() & RF_SHAREABLE) {
@@ -1150,8 +1147,6 @@ const char *VirtMem::getRegName(const VMRegion *vm) const {
 		name = "data";
 	else if(vm->reg->getFlags() & RF_STACK)
 		name = "stack";
-	else if(vm->reg->getFlags() & RF_TLS)
-		name = "tls";
 	else if(vm->reg->getFlags() & RF_NOFREE)
 		name = "phys";
 	else if(vm->reg->getFile())
@@ -1459,12 +1454,13 @@ uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 		}
 	}
 #else
+	size_t size = ROUND_PAGE_UP(byteCount);
 	uintptr_t addr = freeStackAddr != 0 ? freeStackAddr : STACK_AREA_BEGIN;
 	for(; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
 		if(isOccupied(addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL) {
-			freeStackAddr = addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE;
+			freeStackAddr = addr + MAX_STACK_PAGES * PAGE_SIZE;
 			if(rflags & RF_GROWS_DOWN)
-				return addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE - ROUND_PAGE_UP(byteCount);
+				return addr + MAX_STACK_PAGES * PAGE_SIZE - size;
 			return addr;
 		}
 	}

@@ -29,9 +29,7 @@ _start:
 	SET		$1,0
 	SET		$2,0
 	SET		$3,0
-	SET		$4,0
-	SET		$5,0
-	// call __libc_preinit(entryPoint,TLSStart,TLSSize,argc,argv)
+	// call __libc_preinit(entryPoint,argc,argv)
 	PUSHJ	$0,__libc_preinit
 
 	// init c library

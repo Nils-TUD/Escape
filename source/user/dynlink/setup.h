@@ -73,17 +73,14 @@ void load_initHeap(void);
  * The start-function. Gets the file-descriptor for the program to load from the kernel
  *
  * @param binFd the file-descriptor
- * @param tlsStart pointer to the tlsStart argument for the program to load
- * @param tlsSize pointer to the tlsSize argument for the program to load
  * @param argc argc for the program
  * @param argv argv for the program
  * @return the entryPoint to jump at
  */
 #if defined(__i586__)
-uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,
-	uintptr_t,uintptr_t,size_t,int argc,char **argv);
+uintptr_t load_setupProg(int binFd,uintptr_t,uintptr_t,size_t,int argc,char **argv);
 #else
-uintptr_t load_setupProg(int binFd,uint *tlsStart,size_t *tlsSize,int argc,char **argv);
+uintptr_t load_setupProg(int binFd,int argc,char **argv);
 #endif
 
 /**

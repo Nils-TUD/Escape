@@ -44,15 +44,14 @@
 #define MAP_GROWABLE		RF_GROWABLE
 #define MAP_GROWSDOWN		RF_GROWS_DOWN
 #define MAP_STACK			RF_STACK
-#define MAP_TLS				RF_TLS
 #define MAP_LOCKED			RF_LOCKED
-#define MAP_POPULATE		64UL
-#define MAP_NOSWAP			128UL
-#define MAP_FIXED			256UL
-#define MAP_NOMAP			512UL		/* kernel-intern */
+#define MAP_POPULATE		32UL
+#define MAP_NOSWAP			64UL
+#define MAP_FIXED			128UL
+#define MAP_NOMAP			256UL		/* kernel-intern */
 #define MAP_NOFREE			RF_NOFREE	/* kernel-intern */
 
-#define MAP_USER_FLAGS		(MAP_SHARED | MAP_GROWABLE | MAP_GROWSDOWN | MAP_STACK | MAP_TLS | \
+#define MAP_USER_FLAGS		(MAP_SHARED | MAP_GROWABLE | MAP_GROWSDOWN | MAP_STACK | \
  							 MAP_LOCKED | MAP_POPULATE | MAP_NOSWAP | MAP_FIXED)
 
 #define MAP_PHYS_ALLOC		0

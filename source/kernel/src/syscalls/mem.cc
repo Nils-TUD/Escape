@@ -68,9 +68,6 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 			SYSC_ERROR(stack,-EINVAL);
 	}
 
-	if(EXPECT_FALSE((flags & MAP_TLS) && t->getTLSRegion() != NULL))
-		SYSC_ERROR(stack,-EINVAL);
-
 	if((flags & (MAP_POPULATE | MAP_NOSWAP)) == MAP_POPULATE) {
 		if(EXPECT_FALSE(!t->reserveFrames(BYTES_2_PAGES(byteCount))))
 			SYSC_ERROR(stack,-ENOMEM);
@@ -99,12 +96,6 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	/* release file */
 	if(EXPECT_TRUE(f))
 		FileDesc::release(f);
-
-	/* save tls-region-number */
-	if(EXPECT_FALSE(flags & MAP_TLS)) {
-		if(EXPECT_TRUE(res == 0))
-			t->setTLSRegion(vm);
-	}
 
 	t->discardFrames();
 	if(EXPECT_FALSE(res < 0))

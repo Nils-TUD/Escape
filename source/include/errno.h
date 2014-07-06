@@ -72,9 +72,14 @@ extern "C" {
 #endif
 
 /**
+ * @return the pointer to errno
+ */
+int *errno_location(void);
+
+/**
  * The last error-code
  */
-extern int errno;
+#define errno *(errno_location())
 
 #if defined(__cplusplus)
 }

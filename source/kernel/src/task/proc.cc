@@ -386,9 +386,6 @@ int ProcBase::startThread(uintptr_t entryPoint,uint8_t flags,const void *arg) {
 
 	/* reserve frames for new stack- and tls-region */
 	size_t pageCount = Thread::getThreadFrmCnt();
-	uintptr_t tlsStart,tlsEnd;
-	if(t->getTLSRange(&tlsStart,&tlsEnd))
-		pageCount += BYTES_2_PAGES(tlsEnd - tlsStart);
 	if(!t->reserveFrames(pageCount))
 		return -ENOMEM;
 

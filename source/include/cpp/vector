@@ -83,13 +83,18 @@ namespace std {
 		}
 		/**
 		 * Copy-constructor
-		 *
-		 * @param x the vector to clone
 		 */
 		vector(const vector<T>& x)
 			: _count(x._count), _size(x._count), _elements(new T[x._count]) {
 			for(size_type i = 0; i < _count; i++)
 				_elements[i] = x._elements[i];
+		}
+  		/**
+  		 * Move constructor
+  		 */
+		vector(vector<T>&& x)
+			: _count(x._count), _size(x._size), _elements(x._elements) {
+			x._elements = nullptr;
 		}
 		/**
 		 * Destructor
@@ -111,6 +116,16 @@ namespace std {
 			_size = x._count;
 			for(size_type i = 0; i < _count; i++)
 				_elements[i] = x._elements[i];
+			return *this;
+		}
+		/**
+		 * Move assignment operator
+		 */
+		vector<T>& operator =(vector<T>&& x) {
+			_count = x._count;
+			_size = x._size;
+			_elements = x._elements;
+			x._elements = nullptr;
 			return *this;
 		}
 		/**

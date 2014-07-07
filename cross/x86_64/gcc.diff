@@ -92,7 +92,9 @@ diff -rcN src/gcc-4.8.2/libgcc/config/t-escape src/gcc/libgcc/config/t-escape
 --- src/gcc/libgcc/config/t-escape	2014-05-12 18:50:40.239401310 +0200
 ***************
 *** 0 ****
---- 1,3 ----
+--- 1,5 ----
++ LIBGCC2_CFLAGS += -Wl,-z,max-page-size=0x1000
++ 
 + # for some reason we need -Wl,-shared as well, i.e. -shared is not enough
 + SHLIB_LDFLAGS = -Wl,-shared -Wl,-soname,$(SHLIB_SONAME)
 + 

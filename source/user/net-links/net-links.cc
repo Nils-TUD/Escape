@@ -68,7 +68,7 @@ static void linkAdd(ipc::Net &net,int argc,char **argv) {
 	else {
 		int res;
 		uint duration = 0;
-		while(duration < TIMEOUT && (res = open(path,IO_READ)) == -ENOENT) {
+		while(duration < TIMEOUT && (res = open(path,O_RDONLY)) == -ENOENT) {
 			sleep(20);
 			duration += 20;
 			// we want to show the error from open, not sleep

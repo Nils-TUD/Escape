@@ -252,7 +252,7 @@ public:
 	 */
 	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type)
 		: _mode(m), _filename(file),
-		  _addr(init(_mode,file,type,IO_READ | IO_WRITE,0)), _created(false) {
+		  _addr(init(_mode,file,type,O_RDWR,0)), _created(false) {
 	}
 	/**
 	 * Creates the framebuffer represented as the file <name>.
@@ -265,7 +265,7 @@ public:
 	 */
 	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type,uint perms)
 		: _mode(m), _filename(file),
-		  _addr(init(_mode,file,type,IO_READ | IO_WRITE | IO_CREATE,perms)), _created(true) {
+		  _addr(init(_mode,file,type,O_RDWR | O_CREAT,perms)), _created(true) {
 	}
 
 	/**

@@ -42,7 +42,7 @@ static void test_openseekclose(const char *path) {
 	int j;
 	for(j = 0; j < TEST_COUNT; ++j) {
 		start = rdtsc();
-		int fd = open(path,IO_READ);
+		int fd = open(path,O_RDONLY);
 		end = rdtsc();
 		openTotal += end - start;
 		if(fd < 0) {
@@ -136,7 +136,7 @@ static void test_fstat(const char *path) {
 	sFileInfo info;
 	for(int i = 0; i < TEST_COUNT; ++i) {
 		start = rdtsc();
-		int fd = open(path,IO_READ);
+		int fd = open(path,O_RDONLY);
 		if(fd >= 0) {
 			if(fstat(fd,&info) < 0)
 				printe("fstat of '%s' failed",path);
@@ -157,7 +157,7 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 	sharetime = 0;
 	destrtime = 0;
 	for(int i = 0; i < TEST_COUNT; ++i) {
-		int fd = open(path,IO_READ);
+		int fd = open(path,O_RDONLY);
 		if(fd < 0) {
 			printe("open failed");
 			return;
@@ -187,7 +187,7 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 
 int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	int fd = create("/sys/test",IO_WRITE,0600);
+	int fd = create("/sys/test",O_WRONLY,0600);
 	if(fd < 0) {
 		printe("open of /sys/test failed");
 		return 1;
@@ -204,9 +204,9 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	printf("Using /sys/test...\n");
 	test_openseekclose("/sys/test");
 	fflush(stdout);
-	test_readwrite("/sys/test","read",IO_READ,read,false);
+	test_readwrite("/sys/test","read",O_READ,read,false);
 	fflush(stdout);
-	test_readwrite("/sys/test","write",IO_WRITE,(test_func)write,false);
+	test_readwrite("/sys/test","write",O_WRONLY,(test_func)write,false);
 	fflush(stdout);
 	test_stat("/sys/test");
 	fflush(stdout);
@@ -217,9 +217,9 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	printf("\nUsing %s...\n",filename);
 	test_openseekclose(filename);
 	fflush(stdout);
-	test_readwrite(filename,"read",IO_READ,read,false);
+	test_readwrite(filename,"read",O_READ,read,false);
 	fflush(stdout);
-	test_readwrite(filename,"read",IO_READ,read,true);
+	test_readwrite(filename,"read",O_READ,read,true);
 	fflush(stdout);
 	test_stat(filename);
 	fflush(stdout);

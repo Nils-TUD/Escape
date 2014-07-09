@@ -73,7 +73,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	if(bmp == NULL)
 		goto errorHeader;
 
-	fd = open(filename,IO_READ);
+	fd = open(filename,O_RDONLY);
 	if(fd < 0)
 		goto errorBmp;
 	if(IGNSIGS(read(fd,header,headerSize)) != (ssize_t)headerSize) {

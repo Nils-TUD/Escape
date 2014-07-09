@@ -24,8 +24,8 @@
 #include <assert.h>
 
 bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic) {
-	assert(buffer == NULL || (flags & (IO_READ | IO_WRITE)) != (IO_READ | IO_WRITE));
-	assert(!(flags & IO_WRITE) || outsize > 0);
+	assert(buffer == NULL || (flags & (O_RDWR)) != (O_RDWR));
+	assert(!(flags & O_WRITE) || outsize > 0);
 	f->flags = flags;
 	f->eof = false;
 	f->error = 0;
@@ -33,7 +33,7 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,b
 	f->in.buffer = NULL;
 	f->out.buffer = NULL;
 
-	if(flags & IO_READ) {
+	if(flags & O_READ) {
 		f->in.fd = fd;
 		if(buffer)
 			f->in.buffer = buffer;
@@ -48,7 +48,7 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,b
 	}
 	else
 		f->in.fd = -1;
-	if(flags & IO_WRITE) {
+	if(flags & O_WRITE) {
 		f->out.fd = fd;
 		if(buffer) {
 			assert(dynamic == false);

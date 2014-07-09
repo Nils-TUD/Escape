@@ -63,7 +63,7 @@ static void printFileInfo(const char *path,bool useOpen) {
 	cleanpath(apath,MAX_PATH_LEN,path);
 
 	if(useOpen) {
-		int fd = open(apath,IO_READ);
+		int fd = open(apath,O_RDONLY);
 		if(fd < 0) {
 			printe("open of '%s' for reading failed",apath);
 			return;

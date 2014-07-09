@@ -97,10 +97,10 @@ public:
 	 * Opens the given device and attaches this IPCStream to it.
 	 *
 	 * @param dev the device
-	 * @param mode the flags for open (IO_MSGS by default)
+	 * @param mode the flags for open (O_MSGS by default)
 	 * @throws if the operation failed
 	 */
-	explicit IPCStream(const char *dev,uint mode = IO_MSGS)
+	explicit IPCStream(const char *dev,uint mode = O_MSGS)
 		: _fd(open(dev,mode)), _mid(), _buf(new ulong[DEF_SIZE / sizeof(ulong)],DEF_SIZE),
 		  _flags(FL_OPEN | FL_ALLOC) {
 #ifndef IN_KERNEL

@@ -70,7 +70,7 @@ bool Ext2FileSystem::Ext2BlockCache::writeBlocks(const void *buffer,size_t start
 }
 
 Ext2FileSystem::Ext2FileSystem(const char *device)
-		: fd(::open(device,IO_WRITE | IO_READ)), sb(this), bgs(this),
+		: fd(::open(device,O_RDWR)), sb(this), bgs(this),
 		  inodeCache(this), blockCache(this) {
 	if(fd < 0)
 		VTHROWE("Unable to open device '" << device << "'",fd);
@@ -91,9 +91,9 @@ inode_t Ext2FileSystem::open(FSUser *u,inode_t ino,uint flags) {
 	/* check permissions */
 	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
 	uint mode = 0;
-	if(flags & IO_READ)
+	if(flags & O_READ)
 		mode |= MODE_READ;
-	if(flags & IO_WRITE)
+	if(flags & O_WRITE)
 		mode |= MODE_WRITE;
 	/* TODO exec? */
 	if((err = hasPermission(cnode,u,mode)) < 0) {
@@ -108,7 +108,7 @@ inode_t Ext2FileSystem::open(FSUser *u,inode_t ino,uint flags) {
 	inodeCache.release(cnode);
 
 	/* truncate? */
-	if(flags & IO_TRUNCATE) {
+	if(flags & O_TRUNC) {
 		cnode = inodeCache.request(ino,IMODE_WRITE);
 		if(cnode != NULL) {
 			Ext2File::truncate(this,cnode,false);

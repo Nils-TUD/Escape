@@ -38,7 +38,7 @@ int main(int argc,const char **argv) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	int fd = open(path,IO_READ);
+	int fd = open(path,O_RDONLY);
 	if(fd < 0)
 		error("open of '%s' failed",path);
 	if(syncfs(fd) < 0)

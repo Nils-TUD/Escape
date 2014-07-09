@@ -26,9 +26,9 @@
 FILE *fattach(int fd,const char *mode) {
 	uint flags = IO_NOCLOSE;
 	if(*mode == 'r')
-		flags = IO_READ;
+		flags = O_RDONLY;
 	else if(*mode == 'w')
-		flags = IO_WRITE;
+		flags = O_WRONLY;
 	/* invalid mode? */
 	if(flags == IO_NOCLOSE || mode[1] != '\0')
 		return NULL;

@@ -103,7 +103,7 @@ int main(int argc,char **argv) {
 		if(!isblock(image))
 			error("'%s' is neither a block-device nor a regular file",image);
 
-		fd = open(image,IO_READ);
+		fd = open(image,O_RDONLY);
 		if(fd < 0)
 			error("Unable to open module '%s'",image);
 		size = filesize(fd);

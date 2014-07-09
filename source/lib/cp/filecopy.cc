@@ -29,7 +29,7 @@
 FileCopy::FileCopy(size_t bufsize,uint fl)
 		: _bufsize(bufsize), _shmname(), _shm(), _flags(fl), _cols() {
 	/* create shm file */
-	int fd = pshm_create(IO_READ | IO_WRITE,0666,&_shmname);
+	int fd = pshm_create(O_RDWR,0666,&_shmname);
 	if(fd < 0)
 		throw std::default_error("pshm_create");
 	/* mmap it */
@@ -92,13 +92,13 @@ bool FileCopy::copyFile(const char *src,const char *dest,bool remove) {
 		return false;
 	}
 
-	int infd = open(src,IO_READ);
+	int infd = open(src,O_RDONLY);
 	if(infd < 0) {
 		handleError("open of '%s' for reading failed",src);
 		return false;
 	}
 
-	int outfd = open(dest,IO_WRITE | IO_CREATE | IO_TRUNCATE);
+	int outfd = open(dest,O_WRONLY | O_CREAT | O_TRUNC);
 	if(outfd < 0) {
 		close(infd);
 		handleError("open of '%s' for writing failed",dest);

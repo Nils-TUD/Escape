@@ -114,7 +114,7 @@ int main(void) {
 	/* mount root device */
 	if(sysconfstr(CONF_ROOT_DEVICE,line,sizeof(line)) < 0)
 		error("Unable to get root device");
-	int fd = open(line,IO_READ | IO_WRITE | IO_MSGS);
+	int fd = open(line,O_RDWRMSG);
 	if(fd < 0)
 		error("Unable to open '%s'",line);
 	if(mount(fd,"/") < 0)

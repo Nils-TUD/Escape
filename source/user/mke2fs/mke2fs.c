@@ -262,7 +262,7 @@ int main(int argc,const char **argv) {
 	if(!isblock(disk))
 		error("'%s' is neither a block-device nor a regular file",disk);
 
-	fd = open(disk,IO_WRITE);
+	fd = open(disk,O_WRONLY);
 	if(fd < 0)
 		error("Unable to open '%s' for writing",disk);
 	disksize = filesize(fd);

@@ -36,7 +36,7 @@ static char buffer[MAX_PACKET_SIZE];
 
 static void do_read(const char *path,bool useshm) {
 	uint64_t times[ARRAY_SIZE(sizes)] = {0};
-	int fd = open(path,IO_READ);
+	int fd = open(path,O_RDONLY);
 	if(fd < 0) {
 		printe("Unable to open %s",path);
 		return;
@@ -79,7 +79,7 @@ static void do_read(const char *path,bool useshm) {
 
 int mod_reading(int argc,char **argv) {
 	bool useshm = argc < 3 ? true : strcmp(argv[2],"noshm") != 0;
-	int fd = create("/sys/test",IO_WRITE,0600);
+	int fd = create("/sys/test",O_WRONLY,0600);
 	if(fd < 0) {
 		printe("open of /sys/test failed");
 		return 1;

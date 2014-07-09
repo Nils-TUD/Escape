@@ -77,7 +77,7 @@ public:
 	 */
 	explicit Socket(const char *path,Type type,Protocol proto)
 		// no close by default because the IPCStream will do that already
-		: _close(false), _is(buildPath(path,type,proto).c_str(),IO_READ | IO_WRITE | IO_MSGS),
+		: _close(false), _is(buildPath(path,type,proto).c_str(),O_RDWRMSG),
 		  _shm(), _shmsize() {
 	}
 

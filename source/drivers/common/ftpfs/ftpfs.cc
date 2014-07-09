@@ -46,13 +46,13 @@ struct OpenFile : public Client {
 	}
 
 	ssize_t read(void *buffer,size_t offset,size_t count) {
-		if(~flags & IO_READ)
+		if(~flags & O_READ)
 			return -EPERM;
 		return file->read(buffer,offset,count);
 	}
 
 	ssize_t write(const void *buffer,size_t offset,size_t count) {
-		if(~flags & IO_WRITE)
+		if(~flags & O_WRITE)
 			return -EPERM;
 		file->write(buffer,offset,count);
 		return count;
@@ -192,7 +192,7 @@ public:
 	void close(IPCStream &is) {
 		OpenFile *file = (*this)[is.fd()];
 		/* if it was opened for writing, check if the file exists in the cache */
-		if(file->flags & IO_WRITE) {
+		if(file->flags & O_WRITE) {
 			/* if not found, remove the directory from cache so that we load it again */
 			if(DirCache::getList(file->ctrlRef,file->path.c_str(),false) == NULL)
 				DirCache::removeDirOf(file->path.c_str());

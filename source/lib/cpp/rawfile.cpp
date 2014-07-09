@@ -26,13 +26,13 @@ namespace std {
 		close();
 		uint flags = 0;
 		if(mode & READ)
-			flags |= IO_READ;
+			flags |= O_READ;
 		if(mode & WRITE)
-			flags |= IO_WRITE | IO_CREATE;
+			flags |= O_WRITE | O_CREAT;
 		if(mode & APPEND)
-			flags |= IO_APPEND;
+			flags |= O_APPEND;
 		if(mode & TRUNCATE)
-			flags |= IO_TRUNCATE;
+			flags |= O_TRUNC;
 		_fd = ::open(filename.c_str(),flags);
 		if(_fd < 0)
 			throw default_error("Unable to open",-_fd);

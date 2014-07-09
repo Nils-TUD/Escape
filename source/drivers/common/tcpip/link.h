@@ -32,7 +32,7 @@ public:
 	static const size_t NAME_LEN	= 16;
 
 	explicit Link(const std::string &n,const char *path)
-		: ipc::NIC(path,IO_MSGS | IO_READ | IO_WRITE), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
+		: ipc::NIC(path,O_RDWRMSG), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
 		  _mtu(getMTU()), _name(n), _status(ipc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
 		sharebuf(fd(),mtu(),&_buffer,&_bufname,0);
 		if(_buffer == NULL)

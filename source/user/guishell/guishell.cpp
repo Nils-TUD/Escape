@@ -134,7 +134,7 @@ static int shellMain(const char *devName) {
 	// wait until the device is announced
 	int fin;
 	do {
-		fin = open(devName,IO_READ | IO_MSGS);
+		fin = open(devName,O_RDONLY | O_MSGS);
 		if(fin < 0)
 			yield();
 	}
@@ -143,7 +143,7 @@ static int shellMain(const char *devName) {
 	// redirect fds so that stdin, stdout and stderr refer to our device
 	if(redirect(STDIN_FILENO,fin) < 0)
 		error("Unable to redirect STDIN to %d",fin);
-	int fout = open(devName,IO_WRITE | IO_MSGS);
+	int fout = open(devName,O_WRONLY | O_MSGS);
 	if(fout < 0)
 		error("Unable to open '%s' for writing",devName);
 	if(redirect(STDOUT_FILENO,fout) < 0)

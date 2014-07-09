@@ -329,10 +329,9 @@ void ast_termProcsOfJob(tJobId cmd) {
 static int ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 	int fd;
 	/* redirection to file */
-	uint flags = IO_READ;
 	sValue *fileExpr = ast_execute(e,redir->expr);
 	char *filename = val_getStr(fileExpr);
-	fd = open(filename,flags);
+	fd = open(filename,O_RDONLY);
 	efree(filename);
 	val_destroy(fileExpr);
 	if(fd < 0) {
@@ -345,13 +344,13 @@ static int ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 static int ast_redirToFile(sEnv *e,sRedirFile *redir) {
 	int fd;
 	/* redirection to file */
-	uint flags = IO_WRITE;
+	uint flags = O_WRITE;
 	sValue *fileExpr = ast_execute(e,redir->expr);
 	char *filename = val_getStr(fileExpr);
 	if(redir->type == REDIR_OUTCREATE)
-		flags |= IO_CREATE | IO_TRUNCATE;
+		flags |= O_CREAT | O_TRUNC;
 	else if(redir->type == REDIR_OUTAPPEND)
-		flags |= IO_APPEND;
+		flags |= O_APPEND;
 	fd = open(filename,flags);
 	efree(filename);
 	val_destroy(fileExpr);

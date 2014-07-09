@@ -145,7 +145,7 @@ int pshm_unlink(ulong name);
 
 /**
  * Creates/opens a file in /sys/shm/ with given name and opens it with <oflag>. If <oflag> contains
- * IO_CREATE, <mode> is used for the permissions. This file is intended to be mapped with mmap().
+ * O_CREAT, <mode> is used for the permissions. This file is intended to be mapped with mmap().
  *
  * @param name the filename
  * @param oflag the open flags

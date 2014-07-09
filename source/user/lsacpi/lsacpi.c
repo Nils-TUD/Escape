@@ -55,7 +55,7 @@ int main(void) {
 static void readTable(const char *name,sRSDT *table) {
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/sys/acpi/%s",name);
-	int fd = open(path,IO_READ);
+	int fd = open(path,O_RDONLY);
 	if(fd < 0)
 		printe("open of %s failed",path);
 	if(read(fd,table,sizeof(sRSDT)) != sizeof(sRSDT))

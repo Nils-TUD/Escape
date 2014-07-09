@@ -33,16 +33,15 @@ enum {
 	VFS_NOACCESS = 0,		/* no read and write */
 	VFS_READ = 1,
 	VFS_WRITE = 2,
-	VFS_CREATE = 4,
-	VFS_TRUNCATE = 8,
-	VFS_APPEND = 16,
-	VFS_NOBLOCK = 32,
-	VFS_MSGS = 64,			/* exchange msgs with a device */
-	VFS_SEM = 64,			/* use semaphore operations */
-	VFS_EXEC = 64,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
+	VFS_MSGS = 4,			/* exchange msgs with a device */
+	VFS_EXEC = 4,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
 							 * on purpose */
-	VFS_EXCLUSIVE = 128,	/* disallow other accesses */
-	VFS_FORCECREATE = 256,	/* fail if the file already exists */
+	VFS_CREATE = 8,
+	VFS_TRUNCATE = 16,
+	VFS_APPEND = 32,
+	VFS_NOBLOCK = 64,
+	VFS_LONELY = 128,		/* disallow other accesses */
+	VFS_EXCL = 256,			/* fail if the file already exists */
 	VFS_NOLINKRES = 512,	/* kernel-intern: don't resolve last link in path */
 	VFS_DEVICE = 1024,		/* kernel-intern: whether the file was created for a device */
 	VFS_NONODERES = 2048,	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */

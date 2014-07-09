@@ -34,7 +34,7 @@ int open(const char *path,uint flags) {
 
 int create(const char *path,uint flags,mode_t mode) {
 	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags | IO_CREATE,mode);
+	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags | O_CREAT,mode);
 }
 
 int stat(const char *path,sFileInfo *info) {
@@ -96,7 +96,7 @@ int unmount(const char *path) {
 int pipe(int *readFd,int *writeFd) {
 	/* the permissions are read-write for both. we ensure that the first is for reading only and
 	 * the second for writing only in the pipe-driver. */
-	int fd = open("/dev/pipe",IO_READ | IO_WRITE);
+	int fd = open("/dev/pipe",O_RDWR);
 	if(fd < 0)
 		return fd;
 	*writeFd = fd;
@@ -111,7 +111,7 @@ int pipe(int *readFd,int *writeFd) {
 int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	/* create shm file */
 	*mem = NULL;
-	int fd = pshm_create(IO_READ | IO_WRITE,0666,name);
+	int fd = pshm_create(O_RDWR,0666,name);
 	if(fd < 0)
 		return fd;
 
@@ -132,7 +132,7 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 }
 
 void *joinbuf(const char *path,size_t size,int flags) {
-	int fd = open(path,IO_READ | IO_WRITE);
+	int fd = open(path,O_RDWR);
 	if(fd < 0)
 		return NULL;
 	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);

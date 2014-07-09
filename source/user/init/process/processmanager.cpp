@@ -151,7 +151,7 @@ void ProcessManager::finalize(int task) {
 	/* we only need to flush the root fs here. all others are flushed by the fs-instances that we
 	 * terminate (they should react on that) */
 	cout << "Flushing filesystem buffers of /..." << endl;
-	int fd = open("/",IO_READ);
+	int fd = open("/",O_RDONLY);
 	if(fd < 0)
 		printe("Unable to open /");
 	else {
@@ -203,7 +203,7 @@ size_t ProcessManager::getBootModCount() const {
 	for(auto  it = mods.begin(); it != mods.end(); ++it) {
 		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),"/sys/boot/%s",it->name);
-		int fd = open(path,IO_READ);
+		int fd = open(path,O_RDONLY);
 		if(fd < 0) {
 			printe("Unable to open '%s'",path);
 			continue;
@@ -229,7 +229,7 @@ void ProcessManager::waitForFS() {
 	int fd;
 	int retries = 0;
 	do {
-		fd = open(rootDev,IO_READ | IO_WRITE);
+		fd = open(rootDev,O_RDWR);
 		if(fd < 0)
 			yield();
 		retries++;

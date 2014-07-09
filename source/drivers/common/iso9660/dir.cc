@@ -92,7 +92,7 @@ inode_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED FSUser *u,const char *
 		/* no match? */
 		if((uintptr_t)e >= (uintptr_t)blk->buffer + blockSize || e->length == 0) {
 			h->blockCache.release(blk);
-			if(flags & IO_CREATE)
+			if(flags & O_CREAT)
 				return -EROFS;
 			return -ENOENT;
 		}

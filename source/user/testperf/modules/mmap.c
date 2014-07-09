@@ -101,7 +101,7 @@ int mod_mmap(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	{
 		const char *path = "/home/hrniels/testdir/bbc.bmp";
 		printf("mmap of %s...\n",path);
-		int fd = open(path,IO_READ);
+		int fd = open(path,O_RDONLY);
 		if(fd < 0)
 			error("Unable to open '%s'",path);
 		mmapunmap(MAP_SHARED,fd);
@@ -112,7 +112,7 @@ int mod_mmap(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	{
 		const char *path = "/bin/init";
 		printf("mmap of %s...\n",path);
-		int fd = open(path,IO_READ);
+		int fd = open(path,O_RDONLY);
 		if(fd < 0)
 			error("Unable to open '%s'",path);
 		mmapunmap(MAP_SHARED,fd);

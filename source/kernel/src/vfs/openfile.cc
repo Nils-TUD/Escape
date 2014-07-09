@@ -427,7 +427,7 @@ size_t OpenFile::getCount() {
 }
 
 int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
-	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
+	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_LONELY;
 	size_t i;
 	bool isDevice = false;
 	OpenFile *e;
@@ -438,7 +438,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 	if(devNo == VFS_DEV_NO)
 		isDevice = IS_CHANNEL(n->getMode());
 	/* doesn't work for channels and pipes */
-	if(EXPECT_FALSE(isDevice && (flags & VFS_EXCLUSIVE)))
+	if(EXPECT_FALSE(isDevice && (flags & VFS_LONELY)))
 		return -EINVAL;
 
 	{
@@ -451,18 +451,18 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 				assert(e->flags != 0);
 				/* same file? */
 				if(e->devNo == devNo && e->nodeNo == nodeNo) {
-					assert(e->flags & VFS_EXCLUSIVE);
+					assert(e->flags & VFS_LONELY);
 					return -EBUSY;
 				}
 				e = e->next;
 			}
 
 			/* if we want to have it exclusively, check if it is already open */
-			if(flags & VFS_EXCLUSIVE) {
+			if(flags & VFS_LONELY) {
 				e = usedList;
 				while(e) {
 					assert(e->flags != 0);
-					assert(~e->flags & VFS_EXCLUSIVE);
+					assert(~e->flags & VFS_LONELY);
 					/* same file? */
 					if(e->devNo == devNo && e->nodeNo == nodeNo)
 						return -EBUSY;
@@ -493,7 +493,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VF
 		}
 
 		/* insert in corresponding list */
-		if(flags & VFS_EXCLUSIVE) {
+		if(flags & VFS_LONELY) {
 			e->next = exclList;
 			exclList = e;
 		}
@@ -530,7 +530,7 @@ void OpenFile::releaseFile(OpenFile *file) {
 
 	LockGuard<SpinLock> g(&gftLock);
 	assert(file->flags != 0);
-	OpenFile *e = (file->flags & VFS_EXCLUSIVE) ? exclList : usedList;
+	OpenFile *e = (file->flags & VFS_LONELY) ? exclList : usedList;
 	OpenFile *p = NULL;
 	while(e) {
 		if(e == file)
@@ -541,7 +541,7 @@ void OpenFile::releaseFile(OpenFile *file) {
 	assert(e);
 	if(p)
 		p->next = e->next;
-	else if(file->flags & VFS_EXCLUSIVE)
+	else if(file->flags & VFS_LONELY)
 		exclList = e->next;
 	else
 		usedList = e->next;

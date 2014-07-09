@@ -49,7 +49,7 @@ int main(int argc,char **argv) {
 	addr.d.ipv4.port = atoi(argv[3]);
 	sock.connect(addr);
 
-	int fd = open(argv[1],IO_READ);
+	int fd = open(argv[1],O_RDONLY);
 	if(fd < 0)
 		error("Unable to open '%s' for reading",argv[1]);
 

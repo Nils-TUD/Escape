@@ -525,7 +525,7 @@ static void createResolvConf() {
 	// create file
 	const char *resolvconf = std::DNS::getResolveFile();
 	print("Creating empty %s",resolvconf);
-	int fd = create(resolvconf,IO_WRITE | IO_CREATE,0660);
+	int fd = create(resolvconf,O_WRONLY | O_CREAT,0660);
 	if(fd < 0) {
 		printe("Unable to create %s",resolvconf);
 		return;

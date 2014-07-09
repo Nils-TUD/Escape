@@ -80,7 +80,7 @@ inode_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flag
 		else {
 			char *slash = strchr(p,'/');
 			/* should we create a new file? */
-			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
+			if((slash == NULL || *(slash + 1) == '\0') && (flags & O_CREAT)) {
 				/* rerequest inode for writing */
 				res = cnode->inodeNo;
 				e->inodeCache.release(cnode);
@@ -106,7 +106,7 @@ inode_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flag
 	res = cnode->inodeNo;
 	e->inodeCache.release(cnode);
 	if(res != EXT2_BAD_INO) {
-		if(flags & IO_FORCECREATE)
+		if(flags & O_EXCL)
 			return -EEXIST;
 		return res;
 	}

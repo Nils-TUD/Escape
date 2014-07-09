@@ -53,7 +53,7 @@ static void test_mmap_file(void) {
 
 	test_caseStart("Testing mmap() with a file");
 
-	int fd = open("/bin/libctest",IO_READ);
+	int fd = open("/bin/libctest",O_RDONLY);
 	if(fd < 0) {
 		test_assertFalse(true);
 		return;
@@ -92,7 +92,7 @@ static void test_mmap_shared_file(const char *path) {
 	fclose(f);
 
 	/* open file and mmap it */
-	fd = open(path,IO_READ | IO_WRITE);
+	fd = open(path,O_RDWR);
 	if(fd < 0) {
 		test_assertFalse(true);
 		return;

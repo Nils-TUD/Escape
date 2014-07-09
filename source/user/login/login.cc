@@ -51,13 +51,13 @@ int main(void) {
 	char *termPath = getenv("TERM");
 	char *termName = termPath + SSTRLEN("/dev/");
 
-	/* note: we do always pass IO_MSGS to open because the user might want to request the console
+	/* note: we do always pass O_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
-	if((fd = open(termPath,IO_READ | IO_MSGS)) != STDIN_FILENO)
+	if((fd = open(termPath,O_RDONLY | O_MSGS)) != STDIN_FILENO)
 		error("Unable to open '%s' for STDIN: Got fd %d",termPath,fd);
 
 	/* open stdout */
-	if((fd = open(termPath,IO_WRITE | IO_MSGS)) != STDOUT_FILENO)
+	if((fd = open(termPath,O_WRONLY | O_MSGS)) != STDOUT_FILENO)
 		error("Unable to open '%s' for STDOUT: Got fd %d",termPath,fd);
 
 	/* dup stdout to stderr */

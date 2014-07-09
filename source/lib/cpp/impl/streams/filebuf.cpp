@@ -51,16 +51,16 @@ namespace std {
 	unsigned char filebuf::getMode(ios_base::openmode mode) {
 		unsigned char omode = 0;
 		if(mode & ios_base::in)
-			omode |= IO_READ;
+			omode |= O_READ;
 		if(mode & ios_base::out)
-			omode |= IO_WRITE | IO_CREATE;
+			omode |= O_WRITE | O_CREAT;
 		if(mode & ios_base::trunc)
-			omode |= IO_TRUNCATE;
+			omode |= O_TRUNC;
 		if(mode & ios_base::noblock)
-			omode |= IO_NOBLOCK;
+			omode |= O_NONBLOCK;
 		// TODO ?
 		if(mode & (ios_base::app | ios_base::ate))
-			omode |= IO_APPEND;
+			omode |= O_APPEND;
 		return omode;
 	}
 

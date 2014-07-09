@@ -82,7 +82,7 @@ int mod_locks(A_UNUSED int argc,A_UNUSED char *argv[]) {
 
 	printf("Global Semaphores...\n");
 	fflush(stdout);
-	int gsem = open("/sys",IO_READ);
+	int gsem = open("/sys",O_RDONLY);
 	if(gsem < 0) {
 		printe("Unable to get sem");
 		return 1;

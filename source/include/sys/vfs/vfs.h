@@ -59,7 +59,7 @@
 
 /* all flags that the user can use */
 #define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | \
-									 VFS_APPEND | VFS_NOBLOCK | VFS_EXCLUSIVE | VFS_FORCECREATE)
+									 VFS_APPEND | VFS_NOBLOCK | VFS_LONELY | VFS_EXCL)
 
 class Proc;
 

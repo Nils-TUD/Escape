@@ -33,26 +33,26 @@ FILE *fopen(const char *filename,const char *mode) {
 	while((c = *mode++)) {
 		switch(c) {
 			case 'r':
-				flags |= IO_READ;
+				flags |= O_READ;
 				break;
 			case 'w':
-				flags |= IO_WRITE | IO_CREATE | IO_TRUNCATE;
+				flags |= O_WRITE | O_CREAT | O_TRUNC;
 				break;
 			case '+':
-				if(flags & IO_READ)
-					flags |= IO_WRITE;
-				else if(flags & IO_WRITE)
-					flags |= IO_READ;
+				if(flags & O_READ)
+					flags |= O_WRITE;
+				else if(flags & O_WRITE)
+					flags |= O_READ;
 				break;
 			case 'a':
-				flags |= IO_APPEND | IO_WRITE;
+				flags |= O_APPEND | O_WRITE;
 				break;
 			case 'm':
-				flags |= IO_MSGS;
+				flags |= O_MSGS;
 				break;
 		}
 	}
-	if((flags & (IO_READ | IO_WRITE | IO_MSGS)) == 0)
+	if((flags & O_ACCMODE) == 0)
 		return NULL;
 
 	/* open */

@@ -70,7 +70,7 @@ int main(int argc,char *argv[]) {
 				/* try to find our kernel. if we've found it, it's likely that the user wants to
 				 * boot from this device. unfortunatly there doesn't seem to be an easy way
 				 * to find out the real boot-device from GRUB */
-				inode_t ino = fs->resolve(&u,"/boot/escape",IO_READ);
+				inode_t ino = fs->resolve(&u,"/boot/escape",O_RDONLY);
 				if(ino >= 0)
 					break;
 			}
@@ -98,7 +98,7 @@ bool ISO9660FileSystem::ISO9660BlockCache::writeBlocks(const void *,size_t,size_
 }
 
 ISO9660FileSystem::ISO9660FileSystem(const char *device)
-		: FileSystem(), fd(::open(device,IO_READ)), primary(), dummy(initPrimaryVol(this,device)),
+		: FileSystem(), fd(::open(device,O_RDONLY)), primary(), dummy(initPrimaryVol(this,device)),
 		  dirCache(this), blockCache(this) {
 }
 

@@ -37,7 +37,7 @@ static void causePagefaults(const char *path) {
 	uint64_t min = ULLONG_MAX, max = 0;
 	int fd = -1;
 	if(path) {
-		fd = open(path,IO_READ);
+		fd = open(path,O_RDONLY);
 		if(fd < 0) {
 			printe("Unable to open '%s'",path);
 			return;
@@ -83,7 +83,7 @@ int mod_pagefault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		printe("Unable to create buffer");
 		return 1;
 	}
-	int fd = create("/sys/test",IO_WRITE,0600);
+	int fd = create("/sys/test",O_WRONLY,0600);
 	if(fd < 0) {
 		printe("open of /sys/test failed");
 		return 1;

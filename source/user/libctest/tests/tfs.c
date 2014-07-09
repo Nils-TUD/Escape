@@ -77,7 +77,7 @@ static void test_basics(void) {
 	test_assertInt(unlink("/newdir/file2"),0);
 
 	test_assertInt(rmdir("/newdir"),0);
-	int fd = open("/",IO_READ);
+	int fd = open("/",O_RDONLY);
 	test_assertTrue(fd >= 0);
 	test_assertInt(syncfs(fd),0);
 	close(fd);
@@ -107,23 +107,23 @@ static void test_perms(void) {
 		test_assertInt(setegid(1),0);
 		test_assertInt(seteuid(1),0);
 
-		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCan(paths[i].dir,IO_WRITE);
+		test_assertCan(paths[i].dir,O_READ);
+		test_assertCan(paths[i].dir,O_WRITE);
 
 		/* I'm NOT the owner */
 		test_assertInt(seteuid(0),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
 
 		/* give group read-perm */
 		test_assertInt(seteuid(0),0);
 		test_assertInt(chmod(paths[i].dir,0640),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertCan(paths[i].dir,O_READ);
+		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
 
 		/* neither owner nor group */
 		test_assertInt(seteuid(0),0);
@@ -131,16 +131,16 @@ static void test_perms(void) {
 		test_assertInt(setegid(2),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
 
 		/* give others read+write perm */
 		test_assertInt(seteuid(0),0);
 		test_assertInt(chmod(paths[i].dir,0646),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCan(paths[i].dir,IO_WRITE);
+		test_assertCan(paths[i].dir,O_READ);
+		test_assertCan(paths[i].dir,O_WRITE);
 
 		/* delete it */
 		test_assertInt(seteuid(0),0);
@@ -156,8 +156,8 @@ static void test_perms(void) {
 		test_assertInt(setegid(1),0);
 		test_assertInt(seteuid(1),0);
 
-		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCan(paths[i].dir,IO_WRITE);
+		test_assertCan(paths[i].dir,O_READ);
+		test_assertCan(paths[i].dir,O_WRITE);
 		fs_createFile(paths[i].file,"foo");
 		test_assertInt(stat(paths[i].file,&info),0);
 
@@ -165,8 +165,8 @@ static void test_perms(void) {
 		test_assertInt(seteuid(0),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
 		test_assertInt(stat(paths[i].file,&info),-EACCES);
 
 		/* give group read-perm */
@@ -174,8 +174,8 @@ static void test_perms(void) {
 		test_assertInt(chmod(paths[i].dir,0740),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertCan(paths[i].dir,O_READ);
+		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
 		test_assertInt(stat(paths[i].file,&info),-EACCES);
 
 		/* neither owner nor group */
@@ -184,8 +184,8 @@ static void test_perms(void) {
 		test_assertInt(setegid(2),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCanNot(paths[i].dir,IO_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,IO_WRITE,-EACCES);
+		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
 		test_assertInt(stat(paths[i].file,&info),-EACCES);
 
 		/* give others read+write perm */
@@ -193,8 +193,8 @@ static void test_perms(void) {
 		test_assertInt(chmod(paths[i].dir,0747),0);
 		test_assertInt(seteuid(2),0);
 
-		test_assertCan(paths[i].dir,IO_READ);
-		test_assertCan(paths[i].dir,IO_WRITE);
+		test_assertCan(paths[i].dir,O_READ);
+		test_assertCan(paths[i].dir,O_WRITE);
 		test_assertInt(stat(paths[i].file,&info),0);
 
 		/* delete it */
@@ -210,11 +210,11 @@ static void test_rename(void) {
 	test_caseStart("Testing rename()");
 
 	fs_createFile("/newfile","test!");
-	test_assertCan("/newfile",IO_READ);
+	test_assertCan("/newfile",O_READ);
 	test_assertInt(rename("/newfile","/newerfile"),0);
-	test_assertCanNot("/newfile",IO_READ,-ENOENT);
+	test_assertCanNot("/newfile",O_READ,-ENOENT);
 	test_assertInt(unlink("/newerfile"),0);
-	test_assertCanNot("/newerfile",IO_READ,-ENOENT);
+	test_assertCanNot("/newerfile",O_READ,-ENOENT);
 
 	test_caseSucceeded();
 }

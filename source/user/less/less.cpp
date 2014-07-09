@@ -253,7 +253,7 @@ static void readLines(size_t end) {
 		// check whether the user has pressed a key
 		if(lineCount++ % 100 == 0) {
 			char vtc;
-			fcntl(vt.filedesc(),F_SETFL,IO_NOBLOCK);
+			fcntl(vt.filedesc(),F_SETFL,O_NONBLOCK);
 			while((vtc = vt.get()) != EOF) {
 				if(vtc == '\033') {
 					istream::esc_type n1,n2,n3;

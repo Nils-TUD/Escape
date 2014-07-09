@@ -76,7 +76,7 @@ int main(int argc,const char *argv[]) {
 	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",basename(fsname),devname);
 
 	/* is it already started? */
-	int fd = open(fsdev,IO_MSGS);
+	int fd = open(fsdev,O_MSGS);
 	if(fd == -ENOENT) {
 		/* ok, do so now */
 		int pid = fork();
@@ -89,7 +89,7 @@ int main(int argc,const char *argv[]) {
 		}
 		else {
 			/* wait until fs-device is present */
-			while(run && (fd = open(fsdev,IO_MSGS)) == -ENOENT)
+			while(run && (fd = open(fsdev,O_MSGS)) == -ENOENT)
 				sleep(5);
 			if(!run)
 				errno = -ENOENT;

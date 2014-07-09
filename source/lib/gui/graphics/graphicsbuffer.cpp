@@ -41,7 +41,7 @@ namespace gui {
 		// attach to shared memory region, created by winmanager
 		char name[32];
 		snprintf(name, sizeof(name),"%s-win%d",winmng,_win->getId());
-		int fd = shm_open(name,IO_READ | IO_WRITE,0644);
+		int fd = shm_open(name,O_RDWR,0644);
 		if(fd < 0)
 			throw std::default_error(string("Unable to open shm file ") + name,fd);
 

@@ -220,7 +220,7 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_
 	int err;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_EXCLUSIVE;
+	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_LONELY;
 
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO && (err = hasAccess(pid,node,flags)) < 0))
 		return err;

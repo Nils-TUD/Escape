@@ -85,7 +85,7 @@ public:
 	 * @param flags the open-flags
 	 * @throws if the operation failed
 	 */
-	explicit NIC(const char *path,uint flags = IO_MSGS) : _is(path,flags) {
+	explicit NIC(const char *path,uint flags = O_MSGS) : _is(path,flags) {
 	}
 
 	/**

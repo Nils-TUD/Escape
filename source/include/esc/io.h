@@ -25,18 +25,23 @@
 #include <stdarg.h>
 #include <errno.h>
 
-/* IO flags */
-#define IO_ACCESSMODE	   		3
-#define IO_READ					1
-#define IO_WRITE				2
-#define IO_CREATE				4
-#define IO_TRUNCATE				8
-#define IO_APPEND				16
-#define IO_NOBLOCK				32	/* don't block when reading or receiving a msg from devices */
-#define IO_MSGS					64	/* exchange messages with a device */
-#define IO_SEM					64	/* use semaphore operations (down is interruptable!) */
-#define IO_EXCLUSIVE			128	/* disallow other accesses */
-#define IO_FORCECREATE			256	/* fail if the file already exists */
+/* access mode */
+#define O_READ					1
+#define O_WRITE					2
+#define O_MSGS					4					/* exchange messages with a device */
+#define O_RDONLY				O_READ
+#define O_WRONLY				O_WRITE
+#define O_RDWR					(O_READ | O_WRITE)
+#define O_RDWRMSG				(O_READ | O_WRITE | O_MSGS)
+#define O_ACCMODE	   			O_RDWRMSG
+
+/* open flags */
+#define O_CREAT					8
+#define O_TRUNC					16
+#define O_APPEND				32
+#define O_NONBLOCK				64	/* don't block when reading or receiving a msg from devices */
+#define O_LONELY				128	/* disallow other accesses */
+#define O_EXCL					256	/* fail if the file already exists */
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0

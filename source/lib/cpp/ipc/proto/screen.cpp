@@ -106,7 +106,7 @@ char *FrameBuffer::init(Screen::Mode &mode,const char *file,int type,int flags,u
 	res = static_cast<char*>(mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0));
 	close(fd);
 	if(res == NULL) {
-		if(flags & IO_CREATE)
+		if(flags & O_CREAT)
 			shm_unlink(file);
 		VTHROWE("mmap(" << size << ")",errno);
 	}

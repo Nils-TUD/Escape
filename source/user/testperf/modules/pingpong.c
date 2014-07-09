@@ -80,7 +80,7 @@ static void client(void) {
 	sIPCMsg msg;
 	int fd;
 	do {
-		fd = open("/dev/pingpong",IO_MSGS);
+		fd = open("/dev/pingpong",O_MSGS);
 		if(fd < 0)
 			yield();
 	}
@@ -141,7 +141,7 @@ static void send_recv_alone(void) {
 		return;
 	}
 
-	int fd = open("/dev/pingpong",IO_MSGS);
+	int fd = open("/dev/pingpong",O_MSGS);
 	if(fd < 0) {
 		printe("Unable to open device");
 		return;

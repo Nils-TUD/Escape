@@ -246,7 +246,7 @@ int main(int argc,char **argv) {
 
 	if(file == NULL || !(elfh || ph || sh || rel || dyns))
 		usage(argv[0]);
-	fd = open(file,IO_READ);
+	fd = open(file,O_RDONLY);
 	if(fd < 0)
 		error("Unable to open %s",file);
 

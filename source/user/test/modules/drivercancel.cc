@@ -98,7 +98,7 @@ static int clientThread(void*) {
 		error("Unable to announce SIG_INTRPT handler");
 
 	char buffer[64] = "";
-	int fd = open("/dev/cancel",IO_READ);
+	int fd = open("/dev/cancel",O_RDONLY);
 	if(fd < 0)
 		error("Unable to open /dev/cancel");
 	ssize_t res = read(fd,buffer,sizeof(buffer));

@@ -85,7 +85,7 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	print("Waiting for %s",path);
 	/* TODO not good */
 	int fd;
-	while((fd = open(path,IO_MSGS)) < 0) {
+	while((fd = open(path,O_MSGS)) < 0) {
 		if(fd != -ENOENT)
 			printe("Unable to open '%s'",path);
 		if(!JobMng::exists(id))

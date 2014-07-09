@@ -188,11 +188,11 @@ int main(void) {
 	int fd;
 
 	/* open stdin */
-	if((fd = open(LOG_PATH,IO_READ)) != STDIN_FILENO)
+	if((fd = open(LOG_PATH,O_RDONLY)) != STDIN_FILENO)
 		error("Unable to open '%s' for STDIN: Got fd %d",LOG_PATH,fd);
 
 	/* open stdout */
-	if((fd = open(LOG_PATH,IO_WRITE)) != STDOUT_FILENO)
+	if((fd = open(LOG_PATH,O_WRONLY)) != STDOUT_FILENO)
 		error("Unable to open '%s' for STDOUT: Got fd %d",LOG_PATH,fd);
 
 	/* dup stdout to stderr */

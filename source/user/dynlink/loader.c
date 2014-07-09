@@ -178,7 +178,7 @@ static void load_library(sSharedLib *dst) {
 	char path[MAX_PATH_LEN];
 	int fd;
 	snprintf(path,sizeof(path),"%s%s",LIB_PATH,dst->name);
-	fd = open(path,IO_READ);
+	fd = open(path,O_RDONLY);
 	if(fd < 0)
 		load_error("Unable to open '%s'",path);
 	load_doLoad(fd,dst);

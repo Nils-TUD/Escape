@@ -32,7 +32,7 @@ static char buffer[0x100000];
 
 int mod_writenull(A_UNUSED int argc,A_UNUSED char **argv) {
 	uint64_t times[ARRAY_SIZE(sizes)] = {0};
-	int fd = open("/dev/null",IO_WRITE);
+	int fd = open("/dev/null",O_WRONLY);
 	if(fd < 0) {
 		printe("Unable to open /dev/null");
 		return 1;

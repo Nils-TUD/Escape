@@ -27,11 +27,11 @@ FILE *fopenstr(char *buf,size_t size,const char *mode) {
 	size_t rsize = 0,wsize = 0;
 	uint flags = 0;
 	if(*mode == 'r') {
-		flags = IO_READ;
+		flags = O_RDONLY;
 		rsize = size;
 	}
 	else if(*mode == 'w') {
-		flags = IO_WRITE;
+		flags = O_WRONLY;
 		wsize = size;
 	}
 	/* invalid mode? */

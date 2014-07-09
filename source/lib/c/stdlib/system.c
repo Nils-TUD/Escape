@@ -28,7 +28,7 @@ int system(const char *cmd) {
 	sExitState state;
 	/* check whether we have a shell */
 	if(cmd == NULL) {
-		int fd = open("/bin/shell",IO_READ);
+		int fd = open("/bin/shell",O_RDONLY);
 		if(fd >= 0) {
 			close(fd);
 			return EXIT_SUCCESS;

@@ -291,7 +291,7 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 			err = -ENOENT;
 	}
 	else {
-		if(flags & VFS_FORCECREATE) {
+		if(flags & VFS_EXCL) {
 			err = -EEXIST;
 			goto done;
 		}

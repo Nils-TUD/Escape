@@ -52,7 +52,7 @@ public:
 	 * @param mode the new mode
 	 * @return 0 on success
 	 */
-	static int chmod(Ext2FileSystem *e,FSUser *u,inode_t inodeNo,mode_t mode);
+	static int chmod(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,mode_t mode);
 
 	/**
 	 * Sets the user and group of the given inode to <uid> and <gid>
@@ -64,7 +64,7 @@ public:
 	 * @param gid the new group-id (-1 = don't change)
 	 * @return 0 on success
 	 */
-	static int chown(Ext2FileSystem *e,FSUser *u,inode_t inodeNo,uid_t uid,gid_t gid);
+	static int chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid);
 
 	/**
 	 * Destroys the given inode. That means the inode will be marked as free in the bitmap,

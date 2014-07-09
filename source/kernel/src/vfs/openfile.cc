@@ -101,7 +101,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 	return -EINVAL;
 }
 
-int OpenFile::fstat(pid_t pid,sFileInfo *info) const {
+int OpenFile::fstat(pid_t pid,struct stat *info) const {
 	ssize_t res = 0;
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);
@@ -125,7 +125,7 @@ int OpenFile::fstat(pid_t pid,sFileInfo *info) const {
 		if(ib.error())
 			res = -EINVAL;
 		/* set device id */
-		info->device = chan->getParent()->getNo();
+		info->st_dev = chan->getParent()->getNo();
 	}
 	return res;
 }
@@ -149,12 +149,12 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	}
 	else {
 		if(whence == SEEK_END) {
-			sFileInfo info;
+			struct stat info;
 			res = fstat(pid,&info);
 			if(EXPECT_FALSE(res < 0))
 				return res;
 			/* can't be < 0, therefore it will always be kept */
-			position = info.size;
+			position = info.st_size;
 		}
 		/* since the fs-device validates the position anyway we can simply set it */
 		else if(whence == SEEK_SET)
@@ -426,7 +426,7 @@ size_t OpenFile::getCount() {
 	return count;
 }
 
-int OpenFile::getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
+int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
 	const uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_LONELY;
 	size_t i;
 	bool isDevice = false;

@@ -500,7 +500,7 @@ public:
 	/**
 	 * @return the threads-directory in the VFS
 	 */
-	inode_t getThreadsDir() const {
+	ino_t getThreadsDir() const {
 		return threadsDir;
 	}
 
@@ -598,7 +598,7 @@ private:
 	/* the mount space */
 	MountSpace *mounts;
 	/* the directory-node-number in the VFS of this process */
-	inode_t threadsDir;
+	ino_t threadsDir;
 	Stats stats;
 	/* the address of the sigRet "function" */
 	uintptr_t sigRetAddr;

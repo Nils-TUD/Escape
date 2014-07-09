@@ -28,11 +28,11 @@
 #include "rw.h"
 #include "dir.h"
 
-inode_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED FSUser *u,const char *path,uint flags) {
+ino_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED FSUser *u,const char *path,uint flags) {
 	size_t extLoc,extSize;
 	const char *p = path;
 	ssize_t pos;
-	inode_t res;
+	ino_t res;
 	CBlock *blk;
 	size_t i,off,blockSize = h->blockSize();
 

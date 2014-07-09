@@ -29,7 +29,7 @@
 #define MAX_DATE_LEN	64
 
 static void printDate(const char *title,time_t timestamp);
-static const char *getType(sFileInfo *info);
+static const char *getType(struct stat *info);
 static void printFileInfo(const char *path,bool useOpen);
 
 static void usage(const char *name) {
@@ -58,7 +58,7 @@ int main(int argc,const char *argv[]) {
 }
 
 static void printFileInfo(const char *path,bool useOpen) {
-	sFileInfo info;
+	struct stat info;
 	char apath[MAX_PATH_LEN];
 	cleanpath(apath,MAX_PATH_LEN,path);
 
@@ -80,19 +80,19 @@ static void printFileInfo(const char *path,bool useOpen) {
 	}
 
 	printf("'%s' points to:\n",apath);
-	printf("%-15s%d\n","Inode:",info.inodeNo);
-	printf("%-15s%d\n","Device:",info.device);
+	printf("%-15s%d\n","Inode:",info.st_ino);
+	printf("%-15s%d\n","Device:",info.st_dev);
 	printf("%-15s%s\n","Type:",getType(&info));
-	printf("%-15s%d Bytes\n","Size:",info.size);
-	printf("%-15s%hd\n","Blocks:",info.blockCount);
-	printDate("Accessed:",info.accesstime);
-	printDate("Modified:",info.modifytime);
-	printDate("Created:",info.createtime);
-	printf("%-15s%#ho\n","Mode:",info.mode);
-	printf("%-15s%hd\n","GroupID:",info.gid);
-	printf("%-15s%hd\n","UserID:",info.uid);
-	printf("%-15s%hd\n","Hardlinks:",info.linkCount);
-	printf("%-15s%hd\n","BlockSize:",info.blockSize);
+	printf("%-15s%ld Bytes\n","Size:",info.st_size);
+	printf("%-15s%d\n","Blocks:",info.st_blocks);
+	printDate("Accessed:",info.st_atime);
+	printDate("Modified:",info.st_mtime);
+	printDate("Created:",info.st_ctime);
+	printf("%-15s%#ho\n","Mode:",info.st_mode);
+	printf("%-15s%hd\n","GroupID:",info.st_gid);
+	printf("%-15s%hd\n","UserID:",info.st_uid);
+	printf("%-15s%hd\n","Hardlinks:",info.st_nlink);
+	printf("%-15s%hd\n","BlockSize:",info.st_blksize);
 }
 
 static void printDate(const char *title,time_t timestamp) {
@@ -102,16 +102,16 @@ static void printDate(const char *title,time_t timestamp) {
 	printf("%-15s%s\n",title,dateStr);
 }
 
-static const char *getType(sFileInfo *info) {
-	if(S_ISDIR(info->mode))
+static const char *getType(struct stat *info) {
+	if(S_ISDIR(info->st_mode))
 		return "Directory";
-	if(S_ISBLK(info->mode))
+	if(S_ISBLK(info->st_mode))
 		return "Block-Device";
-	if(S_ISCHR(info->mode))
+	if(S_ISCHR(info->st_mode))
 		return "Character-Device";
-	if(S_ISFS(info->mode))
+	if(S_ISFS(info->st_mode))
 		return "Filesystem-Device";
-	if(S_ISSERV(info->mode))
+	if(S_ISSERV(info->st_mode))
 		return "Service-Device";
 	return "Regular File";
 }

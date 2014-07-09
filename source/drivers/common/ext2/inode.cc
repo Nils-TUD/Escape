@@ -40,7 +40,7 @@ int Ext2INode::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode
 	Ext2CInode *cnode;
 
 	/* request inode */
-	inode_t inodeNo = Ext2Bitmap::allocInode(e,dirNode,isDir);
+	ino_t inodeNo = Ext2Bitmap::allocInode(e,dirNode,isDir);
 	if(inodeNo == 0)
 		return -ENOSPC;
 	cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
@@ -82,7 +82,7 @@ int Ext2INode::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode
 	return 0;
 }
 
-int Ext2INode::chmod(Ext2FileSystem *e,FSUser *u,inode_t inodeNo,mode_t mode) {
+int Ext2INode::chmod(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,mode_t mode) {
 	mode_t oldMode;
 	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
@@ -99,7 +99,7 @@ int Ext2INode::chmod(Ext2FileSystem *e,FSUser *u,inode_t inodeNo,mode_t mode) {
 	return 0;
 }
 
-int Ext2INode::chown(Ext2FileSystem *e,FSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
+int Ext2INode::chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid) {
 	uid_t oldUid;
 	gid_t oldGid;
 	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);

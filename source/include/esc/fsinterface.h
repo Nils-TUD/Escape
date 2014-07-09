@@ -74,32 +74,25 @@
 								S_IRGRP | S_IXGRP | \
 								S_IROTH | S_IXOTH)
 
-typedef struct {
-	/* ID of device containing file */
-	dev_t device;
-	inode_t inodeNo;
-	/* protection */
-	mode_t mode;
-	/* number of hard links */
-	ushort linkCount;
-	/* owner user- and group-id */
-	uid_t uid;
-	gid_t gid;
-	/* total size, in bytes */
-	int size;
-	/* blocksize for efficent filesystem I/O */
-	ushort blockSize;
-	/* number of blocks allocated */
-	ushort blockCount;
-	/* times */
-	time_t accesstime;
-	time_t modifytime;
-	time_t createtime;
-} sFileInfo;
+struct stat {
+	dev_t st_dev;     		/* ID of device containing file */
+	ino_t st_ino;     		/* inode number */
+	mode_t st_mode;    		/* protection */
+	nlink_t st_nlink;   	/* number of hard links */
+	uid_t st_uid;     		/* user ID of owner */
+	gid_t st_gid;     		/* group ID of owner */
+	dev_t st_rdev;    		/* device ID (if special file) */
+	off_t st_size;    		/* total size, in bytes */
+	blksize_t st_blksize; 	/* blocksize for filesystem I/O */
+	blkcnt_t st_blocks;  	/* number of 512B blocks allocated */
+	time_t st_atime;   		/* time of last access */
+	time_t st_mtime;   		/* time of last modification */
+	time_t st_ctime;   		/* time of last status change */
+};
 
 /* a directory-entry */
 typedef struct {
-	inode_t nodeNo;
+	ino_t nodeNo;
 	uint16_t recLen;
 	uint16_t nameLen;
 	char name[MAX_NAME_LEN + 1];

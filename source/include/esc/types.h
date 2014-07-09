@@ -62,9 +62,12 @@ typedef uint16_t tid_t;
 typedef uint16_t uid_t;
 typedef uint16_t gid_t;
 
-typedef int32_t inode_t;
+typedef int32_t ino_t;
 typedef uint32_t block_t;
 typedef int32_t dev_t;
+typedef ushort nlink_t;
+typedef ushort blksize_t;
+typedef uint blkcnt_t;
 
 typedef uint8_t cpuid_t;
 

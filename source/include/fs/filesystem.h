@@ -34,36 +34,36 @@ public:
 	virtual ~FileSystem() {
 	}
 
-	virtual inode_t open(FSUser *u,inode_t ino,uint flags) = 0;
+	virtual ino_t open(FSUser *u,ino_t ino,uint flags) = 0;
 
-	virtual void close(inode_t ino) = 0;
+	virtual void close(ino_t ino) = 0;
 
-	virtual inode_t resolve(FSUser *u,const char *path,uint flags) = 0;
+	virtual ino_t resolve(FSUser *u,const char *path,uint flags) = 0;
 
-	virtual int stat(inode_t ino,sFileInfo *info) = 0;
+	virtual int stat(ino_t ino,struct stat *info) = 0;
 
-	virtual ssize_t read(inode_t,void *,off_t,size_t) {
+	virtual ssize_t read(ino_t,void *,off_t,size_t) {
 		return -ENOTSUP;
 	}
-	virtual ssize_t write(inode_t,const void *,off_t,size_t) {
+	virtual ssize_t write(ino_t,const void *,off_t,size_t) {
 		return -ENOTSUP;
 	}
-	virtual int link(FSUser *,inode_t,inode_t,const char *) {
+	virtual int link(FSUser *,ino_t,ino_t,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int unlink(FSUser *,inode_t,const char *) {
+	virtual int unlink(FSUser *,ino_t,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int mkdir(FSUser *,inode_t,const char *) {
+	virtual int mkdir(FSUser *,ino_t,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int rmdir(FSUser *,inode_t,const char *) {
+	virtual int rmdir(FSUser *,ino_t,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int chmod(FSUser *,inode_t,mode_t) {
+	virtual int chmod(FSUser *,ino_t,mode_t) {
 		return -ENOTSUP;
 	}
-	virtual int chown(FSUser *,inode_t,uid_t,gid_t) {
+	virtual int chown(FSUser *,ino_t,uid_t,gid_t) {
 		return -ENOTSUP;
 	}
 	virtual void sync() {

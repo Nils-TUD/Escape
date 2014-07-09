@@ -37,7 +37,7 @@ public:
 	 * @param count the number of bytes to read
 	 * @return the number of read bytes
 	 */
-	static ssize_t read(ISO9660FileSystem *fs,inode_t id,void *buffer,off_t offset,size_t count);
+	static ssize_t read(ISO9660FileSystem *fs,ino_t id,void *buffer,off_t offset,size_t count);
 
 private:
 	static void buildDirEntries(ISO9660FileSystem *h,block_t lba,uint8_t *dst,const uint8_t *src,

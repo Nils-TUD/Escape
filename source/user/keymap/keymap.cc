@@ -57,7 +57,7 @@ int main(int argc,const char **argv) {
 	}
 	/* list all keymaps */
 	else {
-		sFileInfo curInfo;
+		struct stat curInfo;
 		std::string keymap = vterm.getKeymap();
 		if(stat(keymap.c_str(),&curInfo) < 0)
 			printe("Unable to stat current keymap (%s)",keymap.c_str());
@@ -70,11 +70,11 @@ int main(int argc,const char **argv) {
 			if(strcmp(e.name,".") != 0 && strcmp(e.name,"..") != 0) {
 				char fpath[MAX_PATH_LEN];
 				snprintf(fpath,sizeof(fpath),"%s/%s",KEYMAP_DIR,e.name);
-				sFileInfo finfo;
+				struct stat finfo;
 				if(stat(fpath,&finfo) < 0)
 					printe("Unable to stat '%s'",fpath);
 
-				if(finfo.inodeNo == curInfo.inodeNo && finfo.device == curInfo.device)
+				if(finfo.st_ino == curInfo.st_ino && finfo.st_dev == curInfo.st_dev)
 					printf("* %s\n",e.name);
 				else
 					printf("  %s\n",e.name);

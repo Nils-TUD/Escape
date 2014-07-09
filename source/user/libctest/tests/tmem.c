@@ -39,11 +39,11 @@ sTestModule tModMem = {
 static void test_mem(void) {
 	test_mmap_file();
 	test_mmap_shared_file("/sys/foobar");
-	sFileInfo info;
+	struct stat info;
 	if(stat(".",&info) < 0)
 		error("Unable to stat .");
 	/* don't try that on readonly-filesystems */
-	if((info.mode & S_IWUSR))
+	if((info.st_mode & S_IWUSR))
 		test_mmap_shared_file("foobar");
 }
 

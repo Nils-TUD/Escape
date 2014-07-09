@@ -40,7 +40,7 @@ public:
 	 * @param info should be filled
 	 * @return 0 on success
 	 */
-	static int stat(pid_t pid,OpenFile *fsFile,const char *path,sFileInfo *info);
+	static int stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info);
 
 	/**
 	 * Changes the permissions of the file denoted by <path>

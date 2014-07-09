@@ -55,7 +55,7 @@ struct ISODirEntry {
 
 /* entries in the directory-entry-cache */
 struct ISOCDirEntry {
-	inode_t id;
+	ino_t id;
 	ISODirEntry entry;
 };
 
@@ -78,7 +78,7 @@ public:
 	 * @param id the id
 	 * @return the cached directory-entry or NULL if failed
 	 */
-	const ISOCDirEntry *get(inode_t id);
+	const ISOCDirEntry *get(ino_t id);
 
 	/**
 	 * Prints information and statistics of the directory-entry-cache to the given file

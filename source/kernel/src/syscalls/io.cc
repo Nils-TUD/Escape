@@ -82,12 +82,12 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
-	sFileInfo kinfo;
+	struct stat kinfo;
 	const char *path = (const char*)SYSC_ARG1(stack);
-	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
+	struct stat *info = (struct stat*)SYSC_ARG2(stack);
 	pid_t pid = t->getProc()->getPid();
 
-	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo))))
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)info,sizeof(struct stat))))
 		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -100,12 +100,12 @@ int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
-	sFileInfo kinfo;
+	struct stat kinfo;
 	int fd = (int)SYSC_ARG1(stack);
-	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
+	struct stat *info = (struct stat*)SYSC_ARG2(stack);
 	Proc *p = t->getProc();
 
-	if(!PageDir::isInUserSpace((uintptr_t)info,sizeof(sFileInfo)))
+	if(!PageDir::isInUserSpace((uintptr_t)info,sizeof(struct stat)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get file */

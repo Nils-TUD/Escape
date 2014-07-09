@@ -164,7 +164,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	}
 
 	/* if its a device, create the channel-node */
-	inode_t nodeNo = node->getNo();
+	ino_t nodeNo = node->getNo();
 	if(IS_DEVICE(node->getMode())) {
 		VFSNode *child;
 		/* check if we can access the device */
@@ -215,7 +215,7 @@ errorMnt:
 	return err;
 }
 
-int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_t devNo,
+int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
                   OpenFile **file) {
 	int err;
 
@@ -229,7 +229,7 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
 }
 
-int VFS::stat(pid_t pid,const char *path,sFileInfo *info) {
+int VFS::stat(pid_t pid,const char *path,struct stat *info) {
 	OpenFile *fsFile;
 	const char *begin;
 	int err = request(pid,path,VFS_READ,0,&begin,&fsFile);
@@ -243,7 +243,7 @@ int VFS::stat(pid_t pid,const char *path,sFileInfo *info) {
 	}
 	else {
 		err = VFSFS::stat(pid,fsFile,begin,info);
-		info->device = fsFile->getNodeNo();
+		info->st_dev = fsFile->getNodeNo();
 		MountSpace::release(fsFile);
 	}
 	return err;
@@ -634,7 +634,7 @@ int VFS::creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl) {
 	return res;
 }
 
-inode_t VFS::createProcess(pid_t pid) {
+ino_t VFS::createProcess(pid_t pid) {
 	VFSNode *proc = procsNode,*dir,*nn;
 	int res = -ENOMEM;
 
@@ -713,7 +713,7 @@ void VFS::removeProcess(pid_t pid) {
 	node->getParent()->destroy();
 }
 
-inode_t VFS::createThread(tid_t tid) {
+ino_t VFS::createThread(tid_t tid) {
 	VFSNode *n,*dir;
 	const Thread *t = Thread::getById(tid);
 
@@ -755,7 +755,7 @@ errorDir:
 
 void VFS::removeThread(tid_t tid) {
 	Thread *t = Thread::getById(tid);
-	inode_t nodeNo = t->getThreadDir();
+	ino_t nodeNo = t->getThreadDir();
 	if(nodeNo != -1) {
 		VFSNode *n = VFSNode::get(nodeNo);
 		n->destroy();

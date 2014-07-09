@@ -32,7 +32,7 @@ namespace std {
 		typedef time_t time_type;
 		typedef ushort user_type;
 		typedef ushort group_type;
-		typedef inode_t inode_type;
+		typedef ino_t ino_type;
 		typedef dev_t dev_type;
 		typedef ushort mode_type;
 
@@ -78,77 +78,77 @@ namespace std {
 		 * @return the mode of the file
 		 */
 		mode_type mode() const {
-			return _info.mode;
+			return _info.st_mode;
 		}
 
 		/**
 		 * @return whether its a file
 		 */
 		bool is_file() const {
-			return S_ISREG(_info.mode);
+			return S_ISREG(_info.st_mode);
 		}
 		/**
 		 * @return whether its a directory
 		 */
 		bool is_dir() const {
-			return S_ISDIR(_info.mode);
+			return S_ISDIR(_info.st_mode);
 		}
 		/**
 		 * @return the size of the file in bytes
 		 */
 		size_type size() const {
-			return _info.size;
+			return _info.st_size;
 		}
 
 		/**
 		 * @return the inode-number
 		 */
-		inode_type inode() const {
-			return _info.inodeNo;
+		ino_type inode() const {
+			return _info.st_ino;
 		}
 		/**
 		 * @return the device-number
 		 */
 		dev_type device() const {
-			return _info.device;
+			return _info.st_dev;
 		}
 
 		/**
 		 * @return the user-id
 		 */
 		user_type uid() const {
-			return _info.uid;
+			return _info.st_uid;
 		}
 		/**
 		 * @return the group-id
 		 */
 		group_type gid() const {
-			return _info.gid;
+			return _info.st_gid;
 		}
 		/**
 		 * @return the number of hardlinks to it
 		 */
 		size_type links() const {
-			return _info.linkCount;
+			return _info.st_nlink;
 		}
 
 		/**
 		 * @return timestamp of last modification
 		 */
 		time_type modified() const {
-			return _info.modifytime;
+			return _info.st_mtime;
 		}
 		/**
 		 * @return timestamp of last access
 		 */
 		time_type accessed() const {
-			return _info.accesstime;
+			return _info.st_atime;
 		}
 		/**
 		 * @return timestamp of creation
 		 */
 		time_type created() const {
-			return _info.createtime;
+			return _info.st_ctime;
 		}
 
 		/**
@@ -181,7 +181,7 @@ namespace std {
 		void init(const string& parent,const string& name);
 
 	private:
-		sFileInfo _info;
+		struct stat _info;
 		string _parent;
 		string _name;
 	};

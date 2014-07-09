@@ -76,7 +76,7 @@ int main(int argc,char *argv[]) {
 }
 
 static int mouseClientThread(A_UNUSED void *arg) {
-	sFileInfo info;
+	struct stat info;
 	if(stat("/dev/mouse",&info) < 0)
 		return EXIT_FAILURE;
 

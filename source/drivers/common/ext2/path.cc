@@ -32,9 +32,9 @@
 #include "file.h"
 #include "dir.h"
 
-inode_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags) {
+ino_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags) {
 	Ext2CInode *cnode = NULL;
-	inode_t res;
+	ino_t res;
 	const char *p = path;
 	int err;
 	ssize_t pos;

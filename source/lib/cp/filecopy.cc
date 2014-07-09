@@ -86,7 +86,7 @@ void FileCopy::showSimpleProgress(const char *src,size_t size) {
 }
 
 bool FileCopy::copyFile(const char *src,const char *dest,bool remove) {
-	sFileInfo info;
+	struct stat info;
 	if(stat(dest,&info) == 0 && (~_flags & FL_FORCE)) {
 		handleError("skipping '%s', '%s' exists",src,dest);
 		return false;
@@ -218,7 +218,7 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 	snprintf(dst,sizeof(dst),"%s/%s",dstdir,filename);
 
 	/* source and destination-folder have to exist */
-	sFileInfo srcInfo,dstDirInfo,dstInfo;
+	struct stat srcInfo,dstDirInfo,dstInfo;
 	if(stat(src,&srcInfo) < 0) {
 		handleError("stat for '%s' failed",src);
 		return false;
@@ -242,13 +242,13 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 	}
 
 	/* use copy if it's on a different device */
-	dev_t dstDevice = res == 0 ? dstInfo.device : dstDirInfo.device;
-	if(srcInfo.device != dstDevice) {
+	dev_t dstDevice = res == 0 ? dstInfo.st_dev : dstDirInfo.st_dev;
+	if(srcInfo.st_dev != dstDevice) {
 		if(!copy(src,dstdir,true))
 			return false;
 	}
 	/* we can't link directories */
-	else if(S_ISDIR(srcInfo.mode)) {
+	else if(S_ISDIR(srcInfo.st_mode)) {
 		char subsrc[MAX_PATH_LEN];
 		DIR *dir = opendir(src);
 		if(!dir) {
@@ -290,7 +290,7 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 
 		/* pretend that we've shown a progress-bar during that operation ;) */
 		if(_flags & FileCopy::FL_PROGRESS)
-			showSimpleProgress(src,srcInfo.size);
+			showSimpleProgress(src,srcInfo.st_size);
 	}
 	return true;
 }

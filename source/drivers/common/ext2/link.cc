@@ -105,7 +105,7 @@ int Ext2Link::remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *pdir,Ext2CInode *di
 		bool delDir) {
 	uint8_t *buf;
 	size_t nameLen;
-	inode_t ino = -1;
+	ino_t ino = -1;
 	Ext2DirEntry *dire,*prev;
 	int res;
 	int32_t dirSize = le32tocpu(dir->inode.size);

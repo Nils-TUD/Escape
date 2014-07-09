@@ -35,13 +35,13 @@ public:
 	 * @param flags the flags with which to open the file
 	 * @return the id or < 0
 	 */
-	static inode_t resolve(ISO9660FileSystem *h,FSUser *u,const char *path,uint flags);
+	static ino_t resolve(ISO9660FileSystem *h,FSUser *u,const char *path,uint flags);
 
 private:
 	/**
 	 * calcuates an imaginary inode-number from block-number and offset in the directory-entries
 	 */
-	static inode_t getIno(ulong blockNo,size_t blockSize,size_t offset) {
+	static ino_t getIno(ulong blockNo,size_t blockSize,size_t offset) {
 		return blockNo * blockSize + offset;
 	}
 

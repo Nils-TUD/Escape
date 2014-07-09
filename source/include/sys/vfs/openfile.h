@@ -139,7 +139,7 @@ public:
 	/***
 	 * @return the node-number
 	 */
-	inode_t getNodeNo() const {
+	ino_t getNodeNo() const {
 		return nodeNo;
 	}
 	/**
@@ -194,7 +194,7 @@ public:
 	 * @param info the info to fill
 	 * @return 0 on success
 	 */
-	int fstat(pid_t pid,sFileInfo *info) const;
+	int fstat(pid_t pid,struct stat *info) const;
 
 	/**
 	 * Sets the position for this file
@@ -363,7 +363,7 @@ private:
 	 * @param f will point to the used file afterwards
 	 * @return 0 on success
 	 */
-	static int getFree(pid_t pid,ushort flags,inode_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f);
+	static int getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f);
 
 	static void releaseFile(OpenFile *file);
 	bool doClose(pid_t pid);
@@ -380,7 +380,7 @@ private:
 	/* current position in file */
 	off_t position;
 	/* node-number */
-	inode_t nodeNo;
+	ino_t nodeNo;
 	/* the node, if devNo == VFS_DEV_NO, the channel-node to fs for otherwise */
 	VFSNode *node;
 	/* the device-number */

@@ -28,11 +28,11 @@
 #include "bitmap.h"
 #include "sbmng.h"
 
-inode_t Ext2Bitmap::allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir) {
+ino_t Ext2Bitmap::allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir) {
 	size_t gcount = e->getBlockGroupCount();
 	block_t block = e->getBlockOfInode(dirInode->inodeNo);
 	block_t i,group = e->getGroupOfBlock(block);
-	inode_t ino = 0;
+	ino_t ino = 0;
 	uint32_t inodesPerGroup = le32tocpu(e->sb.get()->inodesPerGroup);
 
 	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
@@ -56,7 +56,7 @@ done:
 	return ino;
 }
 
-int Ext2Bitmap::freeInode(Ext2FileSystem *e,inode_t ino,bool isDir) {
+int Ext2Bitmap::freeInode(Ext2FileSystem *e,ino_t ino,bool isDir) {
 	block_t group = e->getGroupOfInode(ino);
 	uint8_t *bitmapbuf;
 	CBlock *bitmap;
@@ -94,9 +94,9 @@ int Ext2Bitmap::freeInode(Ext2FileSystem *e,inode_t ino,bool isDir) {
 	return 0;
 }
 
-inode_t Ext2Bitmap::allocInodeIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group,bool isDir) {
+ino_t Ext2Bitmap::allocInodeIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group,bool isDir) {
 	size_t i,j;
-	inode_t ino;
+	ino_t ino;
 	CBlock *bitmap;
 	uint8_t *bitmapbuf;
 	uint32_t sFreeInodeCount;
@@ -112,7 +112,7 @@ inode_t Ext2Bitmap::allocInodeIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockG
 	bitmapbuf = (uint8_t*)bitmap->buffer;
 	for(i = 0; i < e->blockSize(); i++) {
 		for(j = 1; j < 256; ino++, j <<= 1) {
-			if(ino >= (inode_t)le32tocpu(e->sb.get()->inodeCount)) {
+			if(ino >= (ino_t)le32tocpu(e->sb.get()->inodeCount)) {
 				e->blockCache.release(bitmap);
 				return 0;
 			}

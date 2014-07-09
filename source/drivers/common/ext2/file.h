@@ -36,7 +36,7 @@ public:
 	 * @param isDir whether it should be an directory
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,inode_t *ino,bool isDir);
+	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,bool isDir);
 
 	/**
 	 * Deletes the given inode. That means all associated blocks will be free'd
@@ -69,7 +69,7 @@ public:
 	 * @param count the number of bytes to read
 	 * @return the number of read bytes
 	 */
-	static ssize_t read(Ext2FileSystem *e,inode_t inodeNo,void *buffer,off_t offset,size_t count);
+	static ssize_t read(Ext2FileSystem *e,ino_t inodeNo,void *buffer,off_t offset,size_t count);
 
 	/**
 	 * Reads <count> bytes at <offset> into <buffer> from the given cached inode. It will not
@@ -96,7 +96,7 @@ public:
 	 * @param count the number of bytes to write
 	 * @return the number of written bytes
 	 */
-	static ssize_t write(Ext2FileSystem *e,inode_t inodeNo,const void *buffer,off_t offset,size_t count);
+	static ssize_t write(Ext2FileSystem *e,ino_t inodeNo,const void *buffer,off_t offset,size_t count);
 
 	/**
 	 * Writes <count> bytes at <offset> from <buffer> to given cached inode. Will

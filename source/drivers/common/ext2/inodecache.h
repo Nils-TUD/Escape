@@ -27,7 +27,7 @@
 class Ext2FileSystem;
 
 struct Ext2CInode {
-	inode_t inodeNo;
+	ino_t inodeNo;
 	ushort dirty;
 	ushort refs;
 	Ext2Inode inode;
@@ -71,7 +71,7 @@ public:
 	 * @param mode the mode: IMODE_*
 	 * @return the cached node or NULL
 	 */
-	Ext2CInode *request(inode_t no,uint mode);
+	Ext2CInode *request(ino_t no,uint mode);
 
 	/**
 	 * Releases the given inode. That means the references will be decreased and the inode will be

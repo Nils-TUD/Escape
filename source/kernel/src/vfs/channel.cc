@@ -232,7 +232,7 @@ ssize_t VFSChannel::getSize(pid_t pid) {
 	return res;
 }
 
-int VFSChannel::stat(pid_t pid,sFileInfo *info) {
+int VFSChannel::stat(pid_t pid,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 

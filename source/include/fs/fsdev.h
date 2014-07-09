@@ -32,10 +32,10 @@ struct OpenFile : public ipc::Client {
 public:
 	explicit OpenFile(int fd) : Client(fd), ino() {
 	}
-	explicit OpenFile(int fd,inode_t _ino) : Client(fd), ino(_ino) {
+	explicit OpenFile(int fd,ino_t _ino) : Client(fd), ino(_ino) {
 	}
 
-	inode_t ino;
+	ino_t ino;
 };
 
 class FSDevice : public ipc::ClientDevice<OpenFile> {
@@ -67,7 +67,7 @@ public:
 	void chown(ipc::IPCStream &is);
 
 private:
-	const char *resolveDir(FSUser *u,char *path,inode_t *ino);
+	const char *resolveDir(FSUser *u,char *path,ino_t *ino);
 
 	FileSystem *_fs;
 	InfoDevice _info;

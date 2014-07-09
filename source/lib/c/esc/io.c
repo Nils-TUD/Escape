@@ -37,7 +37,7 @@ int create(const char *path,uint flags,mode_t mode) {
 	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags | O_CREAT,mode);
 }
 
-int stat(const char *path,sFileInfo *info) {
+int stat(const char *path,struct stat *info) {
 	char apath[MAX_PATH_LEN];
 	return syscall2(SYSCALL_STAT,(ulong)abspath(apath,sizeof(apath),path),(ulong)info);
 }
@@ -149,22 +149,22 @@ void destroybuf(void *mem,ulong name) {
 }
 
 bool isfile(const char *path) {
-	sFileInfo info;
+	struct stat info;
 	if(stat(path,&info) < 0)
 		return false;
-	return S_ISREG(info.mode);
+	return S_ISREG(info.st_mode);
 }
 
 bool isdir(const char *path) {
-	sFileInfo info;
+	struct stat info;
 	if(stat(path,&info) < 0)
 		return false;
-	return S_ISDIR(info.mode);
+	return S_ISDIR(info.st_mode);
 }
 
 bool isblock(const char *path) {
-	sFileInfo info;
+	struct stat info;
 	if(stat(path,&info) < 0)
 		return false;
-	return S_ISREG(info.mode) || S_ISBLK(info.mode);
+	return S_ISREG(info.st_mode) || S_ISBLK(info.st_mode);
 }

@@ -25,7 +25,7 @@
 class VFSDir : public VFSNode {
 	/* VFS-directory-entry (equal to the direntry of ext2) */
 	struct VFSDirEntry {
-		inode_t nodeNo;
+		ino_t nodeNo;
 		uint16_t recLen;
 		uint16_t nameLen;
 		/* name follows (up to 255 bytes) */

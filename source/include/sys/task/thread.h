@@ -330,7 +330,7 @@ public:
 	/**
 	 * @return the inode for the thread-directory in the VFS
 	 */
-	inode_t getThreadDir() const {
+	ino_t getThreadDir() const {
 		return threadDir;
 	}
 
@@ -592,7 +592,7 @@ protected:
 	/* the stack-region(s) for this thread */
 	VMRegion *stackRegions[STACK_REG_COUNT];
 	/* thread-directory in VFS */
-	inode_t threadDir;
+	ino_t threadDir;
 	/* stack of pointers to the end of the kernel-stack when entering kernel */
 	IntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
 	size_t intrptLevel;

@@ -36,7 +36,7 @@
 #include "link.h"
 #include "bitmap.h"
 
-int Ext2File::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,inode_t *ino,bool isDir) {
+int Ext2File::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,bool isDir) {
 	Ext2CInode *cnode;
 	int res;
 	/* we need write-permission for the directory */
@@ -130,7 +130,7 @@ int Ext2File::truncate(Ext2FileSystem *e,Ext2CInode *cnode,bool del) {
 	return 0;
 }
 
-ssize_t Ext2File::read(Ext2FileSystem *e,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+ssize_t Ext2File::read(Ext2FileSystem *e,ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	Ext2CInode *cnode;
 	ssize_t res;
 
@@ -200,7 +200,7 @@ ssize_t Ext2File::readIno(Ext2FileSystem *e,const Ext2CInode *cnode,void *buffer
 	return count;
 }
 
-ssize_t Ext2File::write(Ext2FileSystem *e,inode_t inodeNo,const void *buffer,off_t offset,size_t count) {
+ssize_t Ext2File::write(Ext2FileSystem *e,ino_t inodeNo,const void *buffer,off_t offset,size_t count) {
 	/* at first we need the inode */
 	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
 	if(cnode == NULL)

@@ -82,11 +82,11 @@ Ext2FileSystem::~Ext2FileSystem() {
 	close(fd);
 }
 
-inode_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags) {
+ino_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags) {
 	return Ext2Path::resolve(this,u,path,flags);
 }
 
-inode_t Ext2FileSystem::open(FSUser *u,inode_t ino,uint flags) {
+ino_t Ext2FileSystem::open(FSUser *u,ino_t ino,uint flags) {
 	int err;
 	/* check permissions */
 	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
@@ -118,51 +118,51 @@ inode_t Ext2FileSystem::open(FSUser *u,inode_t ino,uint flags) {
 	return ino;
 }
 
-void Ext2FileSystem::close(inode_t ino) {
+void Ext2FileSystem::close(ino_t ino) {
 	/* decrease references so that we can remove the cached inode and maybe even delete the file */
 	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
 	cnode->refs--;
 	inodeCache.release(cnode);
 }
 
-int Ext2FileSystem::stat(inode_t ino,sFileInfo *info) {
+int Ext2FileSystem::stat(ino_t ino,struct stat *info) {
 	const Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
 	if(cnode == NULL)
 		return -ENOBUFS;
 
-	info->accesstime = le32tocpu(cnode->inode.accesstime);
-	info->modifytime = le32tocpu(cnode->inode.modifytime);
-	info->createtime = le32tocpu(cnode->inode.createtime);
-	info->blockCount = le32tocpu(cnode->inode.blocks);
-	info->blockSize = blockSize();
-	info->device = 0;
-	info->uid = le16tocpu(cnode->inode.uid);
-	info->gid = le16tocpu(cnode->inode.gid);
-	info->inodeNo = cnode->inodeNo;
-	info->linkCount = le16tocpu(cnode->inode.linkCount);
-	info->mode = le16tocpu(cnode->inode.mode);
-	info->size = le32tocpu(cnode->inode.size);
+	info->st_atime = le32tocpu(cnode->inode.accesstime);
+	info->st_mtime = le32tocpu(cnode->inode.modifytime);
+	info->st_ctime = le32tocpu(cnode->inode.createtime);
+	info->st_blocks = le32tocpu(cnode->inode.blocks);
+	info->st_blksize = blockSize();
+	info->st_dev = 0;
+	info->st_uid = le16tocpu(cnode->inode.uid);
+	info->st_gid = le16tocpu(cnode->inode.gid);
+	info->st_ino = cnode->inodeNo;
+	info->st_nlink = le16tocpu(cnode->inode.linkCount);
+	info->st_mode = le16tocpu(cnode->inode.mode);
+	info->st_size = le32tocpu(cnode->inode.size);
 	inodeCache.release(cnode);
 	return 0;
 }
 
-int Ext2FileSystem::chmod(FSUser *u,inode_t inodeNo,mode_t mode) {
+int Ext2FileSystem::chmod(FSUser *u,ino_t inodeNo,mode_t mode) {
 	return Ext2INode::chmod(this,u,inodeNo,mode);
 }
 
-int Ext2FileSystem::chown(FSUser *u,inode_t inodeNo,uid_t uid,gid_t gid) {
+int Ext2FileSystem::chown(FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid) {
 	return Ext2INode::chown(this,u,inodeNo,uid,gid);
 }
 
-ssize_t Ext2FileSystem::read(inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+ssize_t Ext2FileSystem::read(ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	return Ext2File::read(this,inodeNo,buffer,offset,count);
 }
 
-ssize_t Ext2FileSystem::write(inode_t inodeNo,const void *buffer,off_t offset,size_t count) {
+ssize_t Ext2FileSystem::write(ino_t inodeNo,const void *buffer,off_t offset,size_t count) {
 	return Ext2File::write(this,inodeNo,buffer,offset,count);
 }
 
-int Ext2FileSystem::link(FSUser *u,inode_t dstIno,inode_t dirIno,const char *name) {
+int Ext2FileSystem::link(FSUser *u,ino_t dstIno,ino_t dirIno,const char *name) {
 	int res;
 	Ext2CInode *dir,*ino;
 	dir = inodeCache.request(dirIno,IMODE_WRITE);
@@ -178,7 +178,7 @@ int Ext2FileSystem::link(FSUser *u,inode_t dstIno,inode_t dirIno,const char *nam
 	return res;
 }
 
-int Ext2FileSystem::unlink(FSUser *u,inode_t dirIno,const char *name) {
+int Ext2FileSystem::unlink(FSUser *u,ino_t dirIno,const char *name) {
 	int res;
 	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)
@@ -189,7 +189,7 @@ int Ext2FileSystem::unlink(FSUser *u,inode_t dirIno,const char *name) {
 	return res;
 }
 
-int Ext2FileSystem::mkdir(FSUser *u,inode_t dirIno,const char *name) {
+int Ext2FileSystem::mkdir(FSUser *u,ino_t dirIno,const char *name) {
 	int res;
 	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)
@@ -199,7 +199,7 @@ int Ext2FileSystem::mkdir(FSUser *u,inode_t dirIno,const char *name) {
 	return res;
 }
 
-int Ext2FileSystem::rmdir(FSUser *u,inode_t dirIno,const char *name) {
+int Ext2FileSystem::rmdir(FSUser *u,ino_t dirIno,const char *name) {
 	int res;
 	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)

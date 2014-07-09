@@ -118,7 +118,7 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 
 static void test_stat(const char *path) {
 	uint64_t start,end,total = 0;
-	sFileInfo info;
+	struct stat info;
 	for(int i = 0; i < TEST_COUNT; ++i) {
 		start = rdtsc();
 		int res = stat(path,&info);
@@ -133,7 +133,7 @@ static void test_stat(const char *path) {
 
 static void test_fstat(const char *path) {
 	uint64_t start,end,total = 0;
-	sFileInfo info;
+	struct stat info;
 	for(int i = 0; i < TEST_COUNT; ++i) {
 		start = rdtsc();
 		int fd = open(path,O_RDONLY);

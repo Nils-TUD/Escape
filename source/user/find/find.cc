@@ -27,7 +27,7 @@ static std::string filterName;
 static std::string filterPath;
 static char filterType = '\0';
 
-static bool matches(const char *path,const char *file,size_t flen,sFileInfo *info) {
+static bool matches(const char *path,const char *file,size_t flen,struct stat *info) {
 	bool match = true;
 	if(!filterName.empty()) {
 		char filename[MAX_PATH_LEN];
@@ -41,22 +41,22 @@ static bool matches(const char *path,const char *file,size_t flen,sFileInfo *inf
 	if(match && filterType != '\0') {
 		switch(filterType) {
 			case 'b':
-				match = S_ISBLK(info->mode);
+				match = S_ISBLK(info->st_mode);
 				break;
 			case 'c':
-				match = S_ISCHR(info->mode);
+				match = S_ISCHR(info->st_mode);
 				break;
 			case 'd':
-				match = S_ISDIR(info->mode);
+				match = S_ISDIR(info->st_mode);
 				break;
 			case 'r':
-				match = S_ISREG(info->mode);
+				match = S_ISREG(info->st_mode);
 				break;
 			case 'f':
-				match = S_ISFS(info->mode);
+				match = S_ISFS(info->st_mode);
 				break;
 			case 's':
-				match = S_ISSERV(info->mode);
+				match = S_ISSERV(info->st_mode);
 				break;
 			default:
 				match = false;
@@ -85,13 +85,13 @@ static void listDir(const char *path) {
 			snprintf(filepath,sizeof(filepath),"%s%s",path,e.name);
 		else
 			snprintf(filepath,sizeof(filepath),"%s/%s",path,e.name);
-		sFileInfo info;
+		struct stat info;
 		if(stat(filepath,&info) < 0) {
 			printe("Stat for '%s' failed");
 			continue;
 		}
 
-		if(S_ISDIR(info.mode))
+		if(S_ISDIR(info.st_mode))
 			listDir(filepath);
 		if(matches(filepath,e.name,e.nameLen,&info))
 			puts(filepath);

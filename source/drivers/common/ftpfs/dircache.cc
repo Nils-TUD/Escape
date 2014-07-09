@@ -42,7 +42,7 @@ DirCache::List *DirCache::getList(const CtrlConRef &ctrlRef,const char *path,boo
 	return list;
 }
 
-int DirCache::getInfo(const CtrlConRef &ctrlRef,const char *path,sFileInfo *info) {
+int DirCache::getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *info) {
 	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
 	snprintf(tmppath,sizeof(tmppath),"/%s",path);
@@ -88,13 +88,13 @@ DirCache::List *DirCache::loadList(const CtrlConRef &ctrlRef,const char *dir) {
 		std::ifstream in;
 		in.open(data.fd());
 		while(!in.eof()) {
-			sFileInfo finfo;
+			struct stat finfo;
 			in.getline(line,sizeof(line),'\n');
 			if(line[0] == '\0')
 				break;
 
 			std::string name = decode(line,&finfo);
-			finfo.inodeNo = genINodeNo(dir,name.c_str());
+			finfo.st_ino = genINodeNo(dir,name.c_str());
 			list->nodes[name] = finfo;
 		}
 		dirs[dir] = list;
@@ -110,7 +110,7 @@ DirCache::List *DirCache::findList(const char *path) {
 	return it->second;
 }
 
-int DirCache::find(List *list,const char *name,sFileInfo *info) {
+int DirCache::find(List *list,const char *name,struct stat *info) {
 	nodemap_type::iterator it = list->nodes.find(name);
 	if(it == list->nodes.end())
 		return -ENOENT;
@@ -120,7 +120,7 @@ int DirCache::find(List *list,const char *name,sFileInfo *info) {
 
 // TODO support other directory listings than UNIX-style listings
 
-std::string DirCache::decode(const char *line,sFileInfo *info) {
+std::string DirCache::decode(const char *line,struct stat *info) {
 	std::string perms,user,group,mon,name;
 	int links = 0,day = 0,hour = 0;
 	time_t ts;
@@ -137,21 +137,21 @@ std::string DirCache::decode(const char *line,sFileInfo *info) {
 	else
 		ts = timeof(month,day - 1,hour - 1900,0,0,0);
 	is >> name;
-	info->blockCount = size / 1024;
-	info->blockSize = 1024;
-	info->gid = info->uid = 0;
-	info->linkCount = links;
-	info->mode = decodeMode(perms);
-	info->size = size;
-	info->accesstime = ts;
-	info->modifytime = ts;
-	info->createtime = ts;
+	info->st_blocks = size / 1024;
+	info->st_blksize = 1024;
+	info->st_gid = info->st_uid = 0;
+	info->st_nlink = links;
+	info->st_mode = decodeMode(perms);
+	info->st_size = size;
+	info->st_atime = ts;
+	info->st_mtime = ts;
+	info->st_ctime = ts;
 	return name;
 }
 
-inode_t DirCache::genINodeNo(const char *dir,const char *name) {
+ino_t DirCache::genINodeNo(const char *dir,const char *name) {
 	/* generate a more or less unique id from the path */
-	inode_t no = 0;
+	ino_t no = 0;
 	while(*dir)
 		no = 31 * no + *dir++;
 	while(*name)
@@ -199,6 +199,6 @@ void DirCache::print(std::ostream &os) {
 	for(auto it = dirs.begin(); it != dirs.end(); ++it) {
 		os << "  " << it->first << ":\n";
 		for(auto n = it->second->nodes.begin(); n != it->second->nodes.end(); ++n)
-			os << "    " << n->first << " (" << n->second.inodeNo << "," << n->second.size << ")\n";
+			os << "    " << n->first << " (" << n->second.st_ino << "," << n->second.st_size << ")\n";
 	}
 }

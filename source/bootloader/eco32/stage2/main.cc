@@ -138,7 +138,7 @@ static void readFromDisk(block_t blkno,void *buf,size_t offset,size_t nbytes) {
 		memcpy(buf,(char*)buffer + offset,nbytes);
 }
 
-static void loadInode(Ext2Inode *ip,inode_t inodeno) {
+static void loadInode(Ext2Inode *ip,ino_t inodeno) {
 	Ext2BlockGrp *group = e.groups + ((inodeno - 1) / le32tocpu(e.superBlock.inodesPerGroup));
 	if(group >= e.groups + GROUP_COUNT)
 		halt("Invalid blockgroup of inode %u: %u\n",inodeno,group - e.groups);
@@ -150,7 +150,7 @@ static void loadInode(Ext2Inode *ip,inode_t inodeno) {
 	memcpy(ip,(uint8_t*)buffer + inodeInBlock * sizeof(Ext2Inode),sizeof(Ext2Inode));
 }
 
-static inode_t searchDir(inode_t dirIno,Ext2Inode *dir,const char *name,size_t nameLen) {
+static ino_t searchDir(ino_t dirIno,Ext2Inode *dir,const char *name,size_t nameLen) {
 	size_t size = le32tocpu(dir->size);
 	if(size > sizeof(buffer))
 		halt("Directory %u larger than %u bytes\n",dirIno,sizeof(buffer));
@@ -200,8 +200,8 @@ static block_t getBlock(Ext2Inode *ino,size_t offset) {
 	return le32tocpu(*((block_t*)buffer + block % blocksPerBlock));
 }
 
-static inode_t namei(char *path,Ext2Inode *ino) {
-	inode_t inodeno;
+static ino_t namei(char *path,Ext2Inode *ino) {
+	ino_t inodeno;
 	char *p = path;
 	char *q;
 	char name[14];

@@ -101,7 +101,7 @@ int main(void) {
 			error("fork failed");
 		else {
 			/* wait for the device to be available */
-			sFileInfo info;
+			struct stat info;
 			int res;
 			while((res = stat(argv[1],&info)) == -ENOENT)
 				sleep(20);

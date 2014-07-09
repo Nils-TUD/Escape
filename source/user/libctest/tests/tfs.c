@@ -41,11 +41,11 @@ sTestModule tModFs = {
 };
 
 static void test_fs(void) {
-	sFileInfo info;
+	struct stat info;
 	if(stat("/bin",&info) < 0)
 		error("Unable to stat /bin");
 	/* don't try that on readonly-filesystems */
-	if((info.mode & S_IWUSR)) {
+	if((info.st_mode & S_IWUSR)) {
 		test_basics();
 		test_perms();
 		test_rename();
@@ -56,8 +56,8 @@ static void test_fs(void) {
 }
 
 static void test_basics(void) {
-	sFileInfo info1;
-	sFileInfo info2;
+	struct stat info1;
+	struct stat info2;
 	test_caseStart("Testing fs");
 
 	test_assertInt(mkdir("/newdir"),0);
@@ -67,13 +67,13 @@ static void test_basics(void) {
 	test_assertInt(link("/newdir/file1","/newdir/file2"),0);
 	test_assertInt(stat("/newdir/file1",&info1),0);
 	test_assertInt(stat("/newdir/file2",&info2),0);
-	test_assertInt(memcmp(&info1,&info2,sizeof(sFileInfo)),0);
-	test_assertUInt(info1.linkCount,2);
+	test_assertInt(memcmp(&info1,&info2,sizeof(struct stat)),0);
+	test_assertUInt(info1.st_nlink,2);
 	test_assertInt(unlink("/newdir/file1"),0);
 	test_assertInt(rmdir("/newdir"),-ENOTEMPTY);
 	test_assertInt(stat("/newdir/file1",&info1),-ENOENT);
 	test_assertInt(stat("/newdir/file2",&info2),0);
-	test_assertUInt(info2.linkCount,1);
+	test_assertUInt(info2.st_nlink,1);
 	test_assertInt(unlink("/newdir/file2"),0);
 
 	test_assertInt(rmdir("/newdir"),0);
@@ -87,7 +87,7 @@ static void test_basics(void) {
 
 static void test_perms(void) {
 	size_t i;
-	sFileInfo info;
+	struct stat info;
 	struct {
 		const char *dir;
 		const char *file;

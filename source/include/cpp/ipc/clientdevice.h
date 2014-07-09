@@ -34,7 +34,7 @@ class SharedMemory {
 public:
 	explicit SharedMemory() : addr(), ino(), dev() {
 	}
-	explicit SharedMemory(char *_addr,inode_t _ino,dev_t _dev)
+	explicit SharedMemory(char *_addr,ino_t _ino,dev_t _dev)
 		: addr(_addr), ino(_ino), dev(_dev) {
 	}
 	~SharedMemory() {
@@ -43,7 +43,7 @@ public:
 	}
 
 	char *addr;
-	inode_t ino;
+	ino_t ino;
 	dev_t dev;
 };
 
@@ -191,7 +191,7 @@ public:
 	 * @return 0 on success
 	 */
 	int joinshm(C *c,const char *path,size_t size,uint flags = 0) {
-		sFileInfo info;
+		struct stat info;
 		int res = stat(path,&info);
 
 		if(res == 0) {
@@ -200,7 +200,7 @@ public:
 			res = -ENOENT;
 			for(auto it = _clients.begin(); it != _clients.end(); ++it) {
 				C *oc = it->second;
-				if(c != oc && oc->_shm && oc->_shm->ino == info.inodeNo && oc->_shm->dev == info.device) {
+				if(c != oc && oc->_shm && oc->_shm->ino == info.st_ino && oc->_shm->dev == info.st_dev) {
 					c->_shm = oc->_shm;
 					res = 0;
 					break;
@@ -213,7 +213,7 @@ public:
 				if(!addr)
 					res = -errno;
 				else {
-					c->_shm.reset(new SharedMemory(reinterpret_cast<char*>(addr),info.inodeNo,info.device));
+					c->_shm.reset(new SharedMemory(reinterpret_cast<char*>(addr),info.st_ino,info.st_dev));
 					res = 0;
 				}
 			}

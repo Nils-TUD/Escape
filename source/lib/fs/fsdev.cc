@@ -111,7 +111,7 @@ void FSDevice::open(IPCStream &is) {
 	u.gid = r.gid;
 	u.uid = r.uid;
 	u.pid = r.pid;
-	inode_t no = _fs->resolve(&u,path,r.flags);
+	ino_t no = _fs->resolve(&u,path,r.flags);
 	if(no >= 0) {
 		no = _fs->open(&u,no,r.flags);
 		if(no >= 0)
@@ -158,8 +158,8 @@ void FSDevice::stat(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res;
-	sFileInfo info;
-	inode_t no = _fs->resolve(&u,path.str(),O_RDONLY);
+	struct stat info;
+	ino_t no = _fs->resolve(&u,path.str(),O_RDONLY);
 	if(no < 0)
 		res = no;
 	else
@@ -169,7 +169,7 @@ void FSDevice::stat(IPCStream &is) {
 }
 
 void FSDevice::istat(IPCStream &is) {
-	sFileInfo info;
+	struct stat info;
 	int res = _fs->stat((*this)[is.fd()]->ino,&info);
 	is << res << info << Reply();
 }
@@ -181,7 +181,7 @@ void FSDevice::chmod(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path >> mode;
 
 	int res;
-	inode_t ino = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY);
 	if(ino < 0)
 		res = ino;
 	else
@@ -198,7 +198,7 @@ void FSDevice::chown(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path >> uid >> gid;
 
 	int res;
-	inode_t ino = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY);
 	if(ino < 0)
 		res = ino;
 	else
@@ -231,7 +231,7 @@ static const char *splitPath(char *path) {
 	return tmppath;
 }
 
-const char *FSDevice::resolveDir(FSUser *u,char *path,inode_t *ino) {
+const char *FSDevice::resolveDir(FSUser *u,char *path,ino_t *ino) {
 	const char *name = splitPath(path);
 	if(name)
 		*ino = _fs->resolve(u,path,O_RDONLY);
@@ -246,7 +246,7 @@ void FSDevice::link(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> oldPath >> newPath;
 
 	int res;
-	inode_t dirIno,dstIno;
+	ino_t dirIno,dstIno;
 	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY);
 	if(dstIno < 0)
 		res = dstIno;
@@ -267,7 +267,7 @@ void FSDevice::unlink(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res;
-	inode_t dirIno = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t dirIno = _fs->resolve(&u,path.str(),O_RDONLY);
 	if(dirIno < 0)
 		res = dirIno;
 	else {
@@ -285,7 +285,7 @@ void FSDevice::rename(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> oldPath >> newPath;
 
 	int res;
-	inode_t dirIno,dstIno;
+	ino_t dirIno,dstIno;
 	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY);
 	if(dstIno < 0)
 		res = dstIno;
@@ -314,7 +314,7 @@ void FSDevice::mkdir(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res;
-	inode_t dirIno;
+	ino_t dirIno;
 	const char *name = resolveDir(&u,path.str(),&dirIno);
 	if(dirIno < 0)
 		res = dirIno;
@@ -330,7 +330,7 @@ void FSDevice::rmdir(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res = -ENOMEM;
-	inode_t dirIno;
+	ino_t dirIno;
 	const char *name = resolveDir(&u,path.str(),&dirIno);
 	if(dirIno < 0)
 		res = dirIno;

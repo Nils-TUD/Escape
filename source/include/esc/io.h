@@ -119,7 +119,7 @@ A_CHECKRET int pipe(int *readFd,int *writeFd);
  * @param info will be filled
  * @return 0 on success
  */
-A_CHECKRET int stat(const char *path,sFileInfo *info);
+A_CHECKRET int stat(const char *path,struct stat *info);
 
 /**
  * Retrieves information about the file behind the given file-descriptor
@@ -128,7 +128,7 @@ A_CHECKRET int stat(const char *path,sFileInfo *info);
  * @param info will be filled
  * @return 0 on success
  */
-A_CHECKRET static inline int fstat(int fd,sFileInfo *info) {
+A_CHECKRET static inline int fstat(int fd,struct stat *info) {
 	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
 }
 
@@ -140,11 +140,11 @@ A_CHECKRET static inline int fstat(int fd,sFileInfo *info) {
  * @return the size on success
  */
 static inline ssize_t filesize(int fd) {
-	sFileInfo info;
+	struct stat info;
 	int res = fstat(fd,&info);
 	if(res < 0)
 		return res;
-	return info.size;
+	return info.st_size;
 }
 
 /**

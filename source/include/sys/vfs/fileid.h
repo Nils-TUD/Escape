@@ -22,11 +22,11 @@
 #include <sys/common.h>
 
 struct FileId {
-	explicit FileId(dev_t d,inode_t i) : dev(d), ino(i) {
+	explicit FileId(dev_t d,ino_t i) : dev(d), ino(i) {
 	}
 
 	dev_t dev;
-	inode_t ino;
+	ino_t ino;
 };
 
 static inline bool operator<(const FileId &a,const FileId &b) {

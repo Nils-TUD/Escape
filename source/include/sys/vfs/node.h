@@ -78,8 +78,8 @@ public:
 	 * @param nodeNo the number
 	 * @return true if so
 	 */
-	static bool isValid(inode_t nodeNo) {
-		return nodeNo >= 0 && nodeNo < (inode_t)nodeArray.getObjCount();
+	static bool isValid(ino_t nodeNo) {
+		return nodeNo >= 0 && nodeNo < (ino_t)nodeArray.getObjCount();
 	}
 	/**
 	 * Checks wether the given pointer is a pointer to a node or better: if its in the node-area
@@ -115,7 +115,7 @@ public:
 	 * @param nodeNo the node number
 	 * @return the node
 	 */
-	static VFSNode *request(inode_t nodeNo) {
+	static VFSNode *request(ino_t nodeNo) {
 		VFSNode *n = get(nodeNo);
 		if(n)
 			n->increaseRefs();
@@ -154,7 +154,7 @@ public:
 	 * @param nodeNo the node-number
 	 * @return the node for given index
 	 */
-	static VFSNode *get(inode_t nodeNo) {
+	static VFSNode *get(ino_t nodeNo) {
 		return (VFSNode*)nodeArray.getObj(nodeNo);
 	}
 
@@ -217,8 +217,8 @@ public:
 	 * @param node the node
 	 * @return the node-number of the given node
 	 */
-	inode_t getNo() const {
-		return (inode_t)nodeArray.getIndex(this);
+	ino_t getNo() const {
+		return (ino_t)nodeArray.getIndex(this);
 	}
 
 	/**
@@ -300,7 +300,7 @@ public:
 	 * @param pid the process-id
 	 * @param info will be filled
 	 */
-	void getInfo(pid_t pid,sFileInfo *info);
+	void getInfo(pid_t pid,struct stat *info);
 
 	/**
 	 * Determines the path for this node. Note that static memory will be used for that!

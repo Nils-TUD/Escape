@@ -39,7 +39,7 @@ static void load_read(int binFd,off_t offset,void *buffer,size_t count);
 void load_doLoad(int binFd,sSharedLib *dst) {
 	sElfEHeader eheader;
 	sElfPHeader pheader;
-	sFileInfo info;
+	struct stat info;
 	uint8_t const *datPtr;
 	ssize_t textOffset = -1;
 	size_t j;

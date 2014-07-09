@@ -163,13 +163,13 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 					if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
 						continue;
 					if(strmatch(search,e.name)) {
-						sFileInfo info;
+						struct stat info;
 						size_t pathlen = strlen(path);
 						ast_appendToPath(apath,apathlen,e.name);
 						if(stat(apath,&info) < 0)
 							continue;
 						if(!wasNull) {
-							if(S_ISDIR(info.mode)) {
+							if(S_ISDIR(info.st_mode)) {
 								/* we need the full pattern for recursion */
 								*tok = '/';
 								if(pos)
@@ -198,7 +198,7 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 							else
 								strcpy(duppath,e.name);
 							/* append '/' for dirs */
-							if(S_ISDIR(info.mode)) {
+							if(S_ISDIR(info.st_mode)) {
 								duppath[totallen - 1] = '/';
 								duppath[totallen] = '\0';
 							}

@@ -57,7 +57,7 @@ void Ext2INodeCache::flush() {
 	}
 }
 
-Ext2CInode *Ext2INodeCache::request(inode_t no,uint mode) {
+Ext2CInode *Ext2INodeCache::request(ino_t no,uint mode) {
 	/* search for the inode. perhaps it's already in cache */
 	Ext2CInode *startNode = _cache + (no & (EXT2_ICACHE_SIZE - 1));
 	Ext2CInode *iend = _cache + EXT2_ICACHE_SIZE;

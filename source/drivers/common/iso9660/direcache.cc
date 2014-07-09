@@ -30,7 +30,7 @@ ISO9660DirCache::ISO9660DirCache(ISO9660FileSystem *h)
 	: _nextFree(0), _cache(new ISOCDirEntry[ISO_DIRE_CACHE_SIZE]()), _fs(h) {
 }
 
-const ISOCDirEntry *ISO9660DirCache::get(inode_t id) {
+const ISOCDirEntry *ISO9660DirCache::get(ino_t id) {
 	const ISODirEntry *e;
 	CBlock *blk;
 	block_t blockLBA;

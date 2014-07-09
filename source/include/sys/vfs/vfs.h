@@ -116,7 +116,7 @@ public:
 	 * @param file will be set to the opened file
 	 * @return 0 if successfull or < 0
 	 */
-	static int openFile(pid_t pid,ushort flags,const VFSNode *node,inode_t nodeNo,dev_t devNo,
+	static int openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
 	                    OpenFile **file);
 
 	/**
@@ -127,7 +127,7 @@ public:
 	 * @param info the info to fill
 	 * @return 0 on success
 	 */
-	static int stat(pid_t pid,const char *path,sFileInfo *info);
+	static int stat(pid_t pid,const char *path,struct stat *info);
 
 	/**
 	 * Sets the permissions of the file denoted by <path> to <mode>.
@@ -227,7 +227,7 @@ public:
 	 * @param pid the process-id
 	 * @return 0 on success
 	 */
-	static inode_t createProcess(pid_t pid);
+	static ino_t createProcess(pid_t pid);
 
 	/**
 	 * Removes all occurrences of the given process from VFS
@@ -242,7 +242,7 @@ public:
 	 * @param tid the thread-id
 	 * @return the inode-number for the directory-node on success
 	 */
-	static inode_t createThread(tid_t tid);
+	static ino_t createThread(tid_t tid);
 
 	/**
 	 * Removes all occurrences of the given thread from VFS

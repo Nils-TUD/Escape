@@ -264,7 +264,7 @@ struct Ext2BlockGrp {
 } A_PACKED;
 
 struct Ext2DirEntry {
-	inode_t inode;
+	ino_t inode;
 	uint16_t recLen;
 	uint16_t nameLen;
 	/* name follows (up to 255 bytes) */

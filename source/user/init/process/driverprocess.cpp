@@ -68,7 +68,7 @@ void DriverProcess::load() {
 
 	// wait for all specified devices
 	for(auto it = _devices.begin(); it != _devices.end(); ++it) {
-		sFileInfo info;
+		struct stat info;
 		sGroup *g;
 		int res;
 		int j = 0;

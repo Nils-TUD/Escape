@@ -111,20 +111,20 @@ int VFSNode::isEmptyDir() const {
 	return -EDESTROYED;
 }
 
-void VFSNode::getInfo(pid_t pid,sFileInfo *info) {
-	info->device = VFS_DEV_NO;
-	info->accesstime = acctime;
-	info->modifytime = modtime;
-	info->createtime = crttime;
-	info->inodeNo = getNo();
+void VFSNode::getInfo(pid_t pid,struct stat *info) {
+	info->st_dev = VFS_DEV_NO;
+	info->st_atime = acctime;
+	info->st_mtime = modtime;
+	info->st_ctime = crttime;
+	info->st_ino = getNo();
 	// TODO set that properly
-	info->linkCount = 1;
-	info->uid = uid;
-	info->gid = gid;
-	info->mode = mode;
-	info->size = getSize(pid);
-	info->blockSize = 512;
-	info->blockCount = info->size / 512;
+	info->st_nlink = 1;
+	info->st_uid = uid;
+	info->st_gid = gid;
+	info->st_mode = mode;
+	info->st_size = getSize(pid);
+	info->st_blksize = 512;
+	info->st_blocks = info->st_size / 512;
 }
 
 void VFSNode::getPathTo(char *dst,size_t size) const {

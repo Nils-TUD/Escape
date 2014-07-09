@@ -60,7 +60,7 @@ static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,ipc::IPCBuf &ib) {
 	return ib.error() ? -EINVAL : err;
 }
 
-int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,sFileInfo *info) {
+int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	ipc::IPCBuf ib(buffer,sizeof(buffer));
 

@@ -35,7 +35,7 @@ public:
 	 * @param isDir whether the inode should be an directory
 	 * @return the inode-number or 0 if failed
 	 */
-	static inode_t allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir);
+	static ino_t allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir);
 
 	/**
 	 * Free's the given inode-number
@@ -45,7 +45,7 @@ public:
 	 * @param isDir whether the inode is an directory
 	 * @return 0 on success
 	 */
-	static int freeInode(Ext2FileSystem *e,inode_t ino,bool isDir);
+	static int freeInode(Ext2FileSystem *e,ino_t ino,bool isDir);
 
 	/**
 	 * Allocates a new block for the given inode. It will be tried to allocate a block in the same
@@ -67,6 +67,6 @@ public:
 	static int freeBlock(Ext2FileSystem *e,block_t blockNo);
 
 private:
-	static inode_t allocInodeIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group,bool isDir);
+	static ino_t allocInodeIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group,bool isDir);
 	static block_t allocBlockIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group);
 };

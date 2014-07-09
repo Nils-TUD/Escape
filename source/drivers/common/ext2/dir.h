@@ -50,7 +50,7 @@ public:
 	 * @param nameLen the length of the name
 	 * @return the inode-number or < 0
 	 */
-	static inode_t find(Ext2FileSystem *e,Ext2CInode *dir,const char *name,size_t nameLen);
+	static ino_t find(Ext2FileSystem *e,Ext2CInode *dir,const char *name,size_t nameLen);
 
 	/**
 	 * Finds the inode-number to the entry <name> in the given buffer
@@ -61,7 +61,7 @@ public:
 	 * @param nameLen the length of the name
 	 * @return the inode-number or < 0
 	 */
-	static inode_t findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
+	static ino_t findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
 
 	/**
 	 * Removes the directory with given name from the given directory. It is required that

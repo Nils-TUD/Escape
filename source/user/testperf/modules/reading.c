@@ -98,7 +98,7 @@ int mod_reading(int argc,char **argv) {
 		execv(args[0],args);
 	}
 	else {
-		sFileInfo info;
+		struct stat info;
 		while(stat("/dev/ramdisk",&info) == -ENOENT)
 			sleep(50);
 

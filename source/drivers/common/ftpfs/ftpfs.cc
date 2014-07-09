@@ -63,12 +63,12 @@ struct OpenFile : public Client {
 	}
 
 	static BlockFile *getFile(const CtrlConRef &ctrlRef,const std::string &path) {
-		sFileInfo info;
+		struct stat info;
 		if(DirCache::getInfo(ctrlRef,path.c_str(),&info) < 0)
-			info.size = 0;
-		else if(S_ISDIR(info.mode))
+			info.st_size = 0;
+		else if(S_ISDIR(info.st_mode))
 			return new DirList(path,ctrlRef);
-		return new File(path,info.size,ctrlRef);
+		return new File(path,info.st_size,ctrlRef);
 	}
 
 	int flags;
@@ -184,7 +184,7 @@ public:
 
 	void istat(IPCStream &is) {
 		OpenFile *file = (*this)[is.fd()];
-		sFileInfo info;
+		struct stat info;
 		int res = DirCache::getInfo(file->ctrlRef,file->path.c_str(),&info);
 		is << res << info << Reply();
 	}
@@ -205,7 +205,7 @@ public:
 		CStringBuf<MAX_PATH_LEN> path;
 		is >> uid >> gid >> pid >> path;
 
-		sFileInfo info;
+		struct stat info;
 		int res = DirCache::getInfo(_ctrlRef,path.str(),&info);
 
 		is << res << info << Reply();
@@ -253,9 +253,9 @@ public:
 
 private:
 	bool isDirectory(const char *path) {
-		sFileInfo info;
+		struct stat info;
 		if(DirCache::getInfo(_ctrlRef,path,&info) == 0)
-			return S_ISDIR(info.mode);
+			return S_ISDIR(info.st_mode);
 		return 0;
 	}
 	void pathCmd(IPCStream &is,CtrlCon::Cmd cmd) {

@@ -32,7 +32,7 @@
 
 int Ext2Dir::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name) {
 	Ext2CInode *cnode;
-	inode_t ino;
+	ino_t ino;
 
 	/* first create an inode and an entry in the directory */
 	int res = Ext2File::create(e,u,dir,name,&ino,true);
@@ -62,8 +62,8 @@ int Ext2Dir::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name
 	return 0;
 }
 
-inode_t Ext2Dir::find(Ext2FileSystem *e,Ext2CInode *dir,const char *name,size_t nameLen) {
-	inode_t ino;
+ino_t Ext2Dir::find(Ext2FileSystem *e,Ext2CInode *dir,const char *name,size_t nameLen) {
+	ino_t ino;
 	size_t size = le32tocpu(dir->inode.size);
 	int res;
 	Ext2DirEntry *buffer = (Ext2DirEntry*)malloc(size);
@@ -81,7 +81,7 @@ inode_t Ext2Dir::find(Ext2FileSystem *e,Ext2CInode *dir,const char *name,size_t 
 	return ino;
 }
 
-inode_t Ext2Dir::findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen) {
+ino_t Ext2Dir::findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen) {
 	ssize_t rem = bufSize;
 	Ext2DirEntry *entry = buffer;
 
@@ -89,7 +89,7 @@ inode_t Ext2Dir::findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,siz
 	while(rem > 0 && le32tocpu(entry->inode) != 0) {
 		/* found a match? */
 		if(nameLen == le16tocpu(entry->nameLen) && strncmp(entry->name,name,nameLen) == 0) {
-			inode_t ino = le32tocpu(entry->inode);
+			ino_t ino = le32tocpu(entry->inode);
 			return ino;
 		}
 
@@ -101,7 +101,7 @@ inode_t Ext2Dir::findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,siz
 }
 
 int Ext2Dir::remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name) {
-	inode_t ino;
+	ino_t ino;
 	size_t size = le32tocpu(dir->inode.size);
 	int res;
 	Ext2CInode *delIno;

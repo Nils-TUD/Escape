@@ -33,7 +33,7 @@
 typedef struct {
 	bool cached;
 	dev_t devNo;
-	inode_t inodeNo;
+	ino_t inodeNo;
 	time_t modified;
 	size_t cmdCount;
 	sShellCmd *cmds;
@@ -62,7 +62,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 	size_t i,j,len,start,matchLen,pathLen;
 	sShellCmd *ncmd,*cmd;
 	sShellCmd **matches;
-	sFileInfo info;
+	struct stat info;
 	char *slash;
 	char *filePath = NULL;
 	char *paths[] = {(char*)APPS_DIR,NULL,NULL};
@@ -208,7 +208,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 					ncmd->type = TYPE_EXTERN;
 				else
 					ncmd->type = TYPE_PATH;
-				ncmd->mode = info.mode;
+				ncmd->mode = info.st_mode;
 				if(i == 0)
 					ncmd->complStart = -1;
 				else
@@ -272,7 +272,7 @@ static sDirCache *compl_getCache(const char *path) {
 	DIR *d;
 	sDirEntry e;
 	size_t i,cmdsSize,freeIndex = DIR_CACHE_SIZE;
-	sFileInfo info;
+	struct stat info;
 	int res = stat(path,&info);
 	if(res < 0)
 		return NULL;
@@ -281,9 +281,9 @@ static sDirCache *compl_getCache(const char *path) {
 	for(i = 0; i < DIR_CACHE_SIZE; i++) {
 		if(dirCache[i].inodeNo == 0)
 			freeIndex = i;
-		else if(dirCache[i].inodeNo == info.inodeNo && dirCache[i].devNo == info.device) {
+		else if(dirCache[i].inodeNo == info.st_ino && dirCache[i].devNo == info.st_dev) {
 			/* has it been modified? */
-			if(dirCache[i].modified < info.modifytime) {
+			if(dirCache[i].modified < info.st_mtime) {
 				freeIndex = i;
 				break;
 			}
@@ -311,9 +311,9 @@ static sDirCache *compl_getCache(const char *path) {
 	if(!d)
 		return NULL;
 	/* setup cache-entry */
-	dc->inodeNo = info.inodeNo;
-	dc->devNo = info.device;
-	dc->modified = info.modifytime;
+	dc->inodeNo = info.st_ino;
+	dc->devNo = info.st_dev;
+	dc->modified = info.st_mtime;
 	cmdsSize = 8;
 	dc->cmdCount = 0;
 	dc->cmds = (sShellCmd*)malloc(cmdsSize * sizeof(sShellCmd));

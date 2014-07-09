@@ -51,16 +51,16 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 	}
 
 	/* fill bindesc */
-	sFileInfo finfo;
+	struct stat finfo;
 	if((res = file->fstat(p->getPid(),&finfo)) < 0) {
 		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(res));
 		goto failed;
 	}
 	/* set suid and sgid */
-	if(finfo.mode & S_ISUID)
-		p->setSUid(finfo.uid);
-	if(finfo.mode & S_ISGID)
-		p->setSGid(finfo.gid);
+	if(finfo.st_mode & S_ISUID)
+		p->setSUid(finfo.st_uid);
+	if(finfo.st_mode & S_ISGID)
+		p->setSGid(finfo.st_gid);
 
 	/* first read the header */
 	sElfEHeader eheader;

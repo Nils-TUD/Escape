@@ -43,7 +43,7 @@ std::mutex Game::_mutex;
 void Game::start(int cols,int rows,int size,bool sound) {
 	_ui = new UI(cols,rows,size);
 	_grid = new Grid(_ui->gridCols(),_ui->gridRows());
-	sFileInfo info;
+	struct stat info;
 	if(sound && stat("/dev/speaker",&info) == 0) {
 		try {
 			_spk = new ipc::Speaker("/dev/speaker");

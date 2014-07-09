@@ -210,7 +210,7 @@ static int vtInit(int id,const char *name,uint cols,uint rows) {
 	ipc::Screen::Mode mode = vterm.ui->findTextModeIn(modes,cols,rows);
 
 	/* open speaker */
-	sFileInfo info;
+	struct stat info;
 	if(stat("/dev/speaker",&info) >= 0) {
 		try {
 			vterm.speaker = new ipc::Speaker("/dev/speaker");

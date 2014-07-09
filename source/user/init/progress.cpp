@@ -137,7 +137,7 @@ bool Progress::connect() {
 	if(_scr)
 		return true;
 
-	sFileInfo info;
+	struct stat info;
 	if(stat("/dev/vga",&info) < 0)
 		return false;
 

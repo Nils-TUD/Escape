@@ -31,7 +31,7 @@ class DirCache {
 	DirCache() = delete;
 
 public:
-	typedef std::map<std::string,sFileInfo> nodemap_type;
+	typedef std::map<std::string,struct stat> nodemap_type;
 
 	struct List {
 		std::string path;
@@ -41,18 +41,18 @@ public:
 	typedef std::map<std::string,List*> dirmap_type;
 
 	static List *getList(const CtrlConRef &ctrlRef,const char *path,bool load = true);
-	static int getInfo(const CtrlConRef &ctrlRef,const char *path,sFileInfo *info);
+	static int getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *info);
 	static void removeDirOf(const char *path);
 	static void print(std::ostream &os);
 
 private:
 	static List *loadList(const CtrlConRef &ctrlRef,const char *dir);
 	static List *findList(const char *path);
-	static int find(List *list,const char *name,sFileInfo *info);
-	static void insert(const char *path,sFileInfo *info);
+	static int find(List *list,const char *name,struct stat *info);
+	static void insert(const char *path,struct stat *info);
 
-	static std::string decode(const char *line,sFileInfo *info);
-	static inode_t genINodeNo(const char *dir,const char *name);
+	static std::string decode(const char *line,struct stat *info);
+	static ino_t genINodeNo(const char *dir,const char *name);
 	static int decodeMonth(const std::string &mon);
 	static mode_t decodeMode(const std::string &mode);
 	static mode_t decodePerm(const char *perms);

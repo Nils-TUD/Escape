@@ -70,7 +70,7 @@ int main(int argc,char *argv[]) {
 				/* try to find our kernel. if we've found it, it's likely that the user wants to
 				 * boot from this device. unfortunatly there doesn't seem to be an easy way
 				 * to find out the real boot-device from GRUB */
-				inode_t ino = fs->resolve(&u,"/boot/escape",O_RDONLY);
+				ino_t ino = fs->resolve(&u,"/boot/escape",O_RDONLY);
 				if(ino >= 0)
 					break;
 			}
@@ -125,74 +125,74 @@ int ISO9660FileSystem::initPrimaryVol(ISO9660FileSystem *fs,const char *device) 
 	return 0;
 }
 
-inode_t ISO9660FileSystem::resolve(FSUser *u,const char *path,uint flags) {
+ino_t ISO9660FileSystem::resolve(FSUser *u,const char *path,uint flags) {
 	return ISO9660Dir::resolve(this,u,path,flags);
 }
 
-inode_t ISO9660FileSystem::open(FSUser *,inode_t ino,uint) {
+ino_t ISO9660FileSystem::open(FSUser *,ino_t ino,uint) {
 	/* nothing to do */
 	return ino;
 }
 
-void ISO9660FileSystem::close(inode_t) {
+void ISO9660FileSystem::close(ino_t) {
 	/* nothing to do */
 }
 
-int ISO9660FileSystem::stat(inode_t ino,sFileInfo *info) {
+int ISO9660FileSystem::stat(ino_t ino,struct stat *info) {
 	time_t ts;
 	const ISOCDirEntry *e = dirCache.get(ino);
 	if(e == NULL)
 		return -ENOBUFS;
 
 	ts = dirDate2Timestamp(&e->entry.created);
-	info->accesstime = ts;
-	info->modifytime = ts;
-	info->createtime = ts;
-	info->blockCount = e->entry.extentSize.littleEndian / blockSize();
-	info->blockSize = blockSize();
-	info->device = 0;
-	info->uid = 0;
-	info->gid = 0;
-	info->inodeNo = e->id;
-	info->linkCount = 1;
+	info->st_atime = ts;
+	info->st_mtime = ts;
+	info->st_ctime = ts;
+	info->st_blocks = e->entry.extentSize.littleEndian / blockSize();
+	info->st_blksize = blockSize();
+	info->st_dev = 0;
+	info->st_uid = 0;
+	info->st_gid = 0;
+	info->st_ino = e->id;
+	info->st_nlink = 1;
 	/* readonly here */
 	if(e->entry.flags & ISO_FILEFL_DIR)
-		info->mode = S_IFDIR | 0555;
+		info->st_mode = S_IFDIR | 0555;
 	else
-		info->mode = S_IFREG | 0555;
-	info->size = e->entry.extentSize.littleEndian;
+		info->st_mode = S_IFREG | 0555;
+	info->st_size = e->entry.extentSize.littleEndian;
 	return 0;
 }
 
-ssize_t ISO9660FileSystem::read(inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+ssize_t ISO9660FileSystem::read(ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	return ISO9660File::read(this,inodeNo,buffer,offset,count);
 }
 
-ssize_t ISO9660FileSystem::write(inode_t,const void *,off_t,size_t) {
+ssize_t ISO9660FileSystem::write(ino_t,const void *,off_t,size_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::link(FSUser *,inode_t,inode_t,const char *) {
+int ISO9660FileSystem::link(FSUser *,ino_t,ino_t,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::unlink(FSUser *,inode_t,const char *) {
+int ISO9660FileSystem::unlink(FSUser *,ino_t,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::mkdir(FSUser *,inode_t,const char *) {
+int ISO9660FileSystem::mkdir(FSUser *,ino_t,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::rmdir(FSUser *,inode_t,const char *) {
+int ISO9660FileSystem::rmdir(FSUser *,ino_t,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::chmod(FSUser *,inode_t,mode_t) {
+int ISO9660FileSystem::chmod(FSUser *,ino_t,mode_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::chown(FSUser *,inode_t,uid_t,gid_t) {
+int ISO9660FileSystem::chown(FSUser *,ino_t,uid_t,gid_t) {
 	return -EROFS;
 }
 

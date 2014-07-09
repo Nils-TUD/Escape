@@ -144,7 +144,7 @@ public:
 	 * @param info the file info
 	 * @return 0 on success
 	 */
-	int stat(pid_t pid,USER sFileInfo *info);
+	int stat(pid_t pid,USER struct stat *info);
 
 	virtual ssize_t open(pid_t pid,const char *path,uint flags,int msgid);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;

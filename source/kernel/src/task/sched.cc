@@ -366,7 +366,7 @@ void Sched::printEventLists(OStream &os) {
 		for(auto t = list->cbegin(); t != list->cend(); ++t) {
 			os.writef("\t\tthread=%d (%d:%s), object=%x",
 					t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram(),t->evobject);
-			inode_t nodeNo = ((VFSNode*)t->evobject)->getNo();
+			ino_t nodeNo = ((VFSNode*)t->evobject)->getNo();
 			if(VFSNode::isValid(nodeNo))
 				os.writef("(%s)",((VFSNode*)t->evobject)->getPath());
 			os.writef("\n");

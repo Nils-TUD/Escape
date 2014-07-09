@@ -56,18 +56,18 @@ public:
 	explicit Ext2FileSystem(const char *device);
 	virtual ~Ext2FileSystem();
 
-	virtual inode_t open(FSUser *u,inode_t ino,uint flags);
-	virtual void close(inode_t ino);
-	virtual inode_t resolve(FSUser *u,const char *path,uint flags);
-	virtual int stat(inode_t ino,sFileInfo *info);
-	virtual ssize_t read(inode_t ino,void *buffer,off_t offset,size_t size);
-	virtual ssize_t write(inode_t ino,const void *buffer,off_t offset,size_t size);
-	virtual int link(FSUser *u,inode_t dstIno,inode_t dirIno,const char *name);
-	virtual int unlink(FSUser *u,inode_t dirIno,const char *name);
-	virtual int mkdir(FSUser *u,inode_t dirIno,const char *name);
-	virtual int rmdir(FSUser *u,inode_t dirIno,const char *name);
-	virtual int chmod(FSUser *u,inode_t dirIno,mode_t mode);
-	virtual int chown(FSUser *u,inode_t dirIno,uid_t uid,gid_t gid);
+	virtual ino_t open(FSUser *u,ino_t ino,uint flags);
+	virtual void close(ino_t ino);
+	virtual ino_t resolve(FSUser *u,const char *path,uint flags);
+	virtual int stat(ino_t ino,struct stat *info);
+	virtual ssize_t read(ino_t ino,void *buffer,off_t offset,size_t size);
+	virtual ssize_t write(ino_t ino,const void *buffer,off_t offset,size_t size);
+	virtual int link(FSUser *u,ino_t dstIno,ino_t dirIno,const char *name);
+	virtual int unlink(FSUser *u,ino_t dirIno,const char *name);
+	virtual int mkdir(FSUser *u,ino_t dirIno,const char *name);
+	virtual int rmdir(FSUser *u,ino_t dirIno,const char *name);
+	virtual int chmod(FSUser *u,ino_t dirIno,mode_t mode);
+	virtual int chown(FSUser *u,ino_t dirIno,uid_t uid,gid_t gid);
 	virtual void sync();
 	virtual void print(FILE *f);
 
@@ -124,7 +124,7 @@ public:
 	 * @param inodeNo the inode-number
 	 * @return the block-number
 	 */
-	block_t getBlockOfInode(inode_t inodeNo) {
+	block_t getBlockOfInode(ino_t inodeNo) {
 		return (inodeNo - 1) / le32tocpu(sb.get()->inodesPerGroup);
 	}
 
@@ -146,7 +146,7 @@ public:
 	 * @param inodeNo the inode-number
 	 * @return the block-group-number
 	 */
-	block_t getGroupOfInode(inode_t inodeNo) {
+	block_t getGroupOfInode(ino_t inodeNo) {
 		return inodeNo / le32tocpu(sb.get()->inodesPerGroup);
 	}
 

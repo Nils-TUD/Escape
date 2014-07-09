@@ -29,7 +29,7 @@
 #include "direcache.h"
 #include "rw.h"
 
-ssize_t ISO9660File::read(ISO9660FileSystem *h,inode_t inodeNo,void *buffer,off_t offset,size_t count) {
+ssize_t ISO9660File::read(ISO9660FileSystem *h,ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	const ISOCDirEntry *e;
 	CBlock *blk;
 	uint8_t *bufWork;

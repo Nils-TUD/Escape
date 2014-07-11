@@ -22,10 +22,9 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-/* TODO */
-#define CLOCKS_PER_SEC		(clock_t)0
+#define CLOCKS_PER_SEC		(clock_t)1000000
 
-typedef uint32_t clock_t;
+typedef uint64_t clock_t;
 typedef uint suseconds_t;
 
 /* time-struct */

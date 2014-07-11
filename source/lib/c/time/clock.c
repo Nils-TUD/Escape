@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <esc/time.h>
 #include <time.h>
 
 clock_t clock(void) {
-	/* TODO */
-	return 0;
+	return tsctotime(rdtsc());
 }

@@ -46,11 +46,6 @@ struct timeval {
 	suseconds_t tv_usec;
 };
 
-struct RTCInfo {
-	struct tm time;
-	uint microsecs;
-};
-
 #if defined(__cplusplus)
 extern "C" {
 #endif

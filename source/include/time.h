@@ -29,15 +29,15 @@ typedef uint suseconds_t;
 
 /* time-struct */
 struct tm {
-	int tm_sec;
-	int tm_min;
-	int tm_hour;
-	int tm_mday;
-	int tm_mon;
-	int tm_year;
-	int tm_wday;
-	int tm_yday;
-	int tm_isdst;
+	int tm_sec;		/* seconds [0,60] */
+	int tm_min;		/* minutes [0,59] */
+	int tm_hour;	/* hours [0,23] */
+	int tm_mday;	/* day of month [1,31] */
+	int tm_mon;		/* month [0,11] */
+	int tm_year;	/* years since 1900 */
+	int tm_wday;	/* days since sunday [0,6] */
+	int tm_yday;	/* days since january 1 [0,365] */
+	int tm_isdst;	/* daylight saving time flag */
 };
 
 struct timeval {

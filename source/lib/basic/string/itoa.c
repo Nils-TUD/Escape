@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <string.h>
 
-size_t itoa(char *target,size_t targetSize,int n) {
+size_t itoa(char *target,A_UNUSED size_t targetSize,int n) {
 	char *s = target,*a = target,*b;
 
 	assert(target != NULL);

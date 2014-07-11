@@ -47,7 +47,7 @@ Ext2BGMng::Ext2BGMng(Ext2FileSystem *fs) : _dirty(false), _groups(), _fs(fs) {
 void Ext2BGMng::update() {
 	block_t bno;
 	size_t i,count,bcount;
-	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	if(!_dirty)
 		goto done;
@@ -75,7 +75,7 @@ void Ext2BGMng::update() {
 	/* now we're in sync */
 	_dirty = false;
 done:
-	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }
 
 #if DEBUGGING

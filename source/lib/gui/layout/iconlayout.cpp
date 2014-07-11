@@ -32,7 +32,7 @@ namespace gui {
 		_ctrls.push_back(c);
 	}
 	void IconLayout::remove(Panel *p,shared_ptr<Control> c,A_UNUSED pos_type pos) {
-		assert(_p == p && _ctrls.erase_first(c));
+		sassert(_p == p && _ctrls.erase_first(c));
 	}
 	void IconLayout::removeAll() {
 		_ctrls.clear();

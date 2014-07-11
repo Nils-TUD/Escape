@@ -31,7 +31,7 @@ namespace gui {
 		_p = p;
 		_ctrls[pos] = c;
 	}
-	void GridLayout::remove(Panel *p,shared_ptr<Control> c,pos_type pos) {
+	void GridLayout::remove(A_UNUSED Panel *p,A_UNUSED shared_ptr<Control> c,pos_type pos) {
 		assert(_p == p && _ctrls[pos] == c);
 		assert(GridPos(pos).col() < _cols && GridPos(pos).row() < _rows);
 		_ctrls[pos].reset();

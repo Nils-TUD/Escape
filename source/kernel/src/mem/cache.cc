@@ -135,7 +135,7 @@ void Cache::free(void *p) {
 
 	/* check whether objSize is within the existing sizes */
 	assert(area[0] < ARRAY_SIZE(caches));
-	size_t objSize = caches[area[0]].objSize;
+	A_UNUSED size_t objSize = caches[area[0]].objSize;
 	assert(objSize >= caches[0].objSize && objSize <= caches[ARRAY_SIZE(caches) - 1].objSize);
 	/* check guard */
 	assert(area[(objSize / sizeof(ulong)) + (16 / sizeof(ulong))] == GUARD_MAGIC);

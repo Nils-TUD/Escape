@@ -183,7 +183,7 @@ ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *d
 
 	// push it into our txCircle
 	size_t amount = std::min(_remoteWinSize,size);
-	assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
+	sassert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
 	// send it
 	sendData(true);
 
@@ -595,7 +595,7 @@ void StreamSocket::sendData(bool resend) {
 		size_t amount = std::min(_remoteWinSize,_pending.d.write.remaining);
 		size_t offset = _pending.count - _pending.d.write.remaining;
 		const char *data = reinterpret_cast<const char*>(_pending.d.write.data) + offset;
-		assert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
+		sassert(_txCircle.push(seqNo,CircularBuf::TYPE_DATA,data,amount) == (ssize_t)amount);
 		_pending.d.write.remaining -= amount;
 	}
 

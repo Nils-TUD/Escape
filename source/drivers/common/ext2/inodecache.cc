@@ -49,7 +49,7 @@ void Ext2INodeCache::flush() {
 	Ext2CInode *inode,*end = _cache + EXT2_ICACHE_SIZE;
 	for(inode = _cache; inode < end; inode++) {
 		if(inode->dirty) {
-			assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+			sassert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 			acquire(inode,IMODE_READ);
 			write(inode);
 			release(inode);
@@ -66,7 +66,7 @@ Ext2CInode *Ext2INodeCache::request(ino_t no,uint mode) {
 		return NULL;
 
 	/* tpool_lock the request of an inode */
-	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
@@ -155,8 +155,8 @@ void Ext2INodeCache::print(FILE *f) {
 
 void Ext2INodeCache::acquire(Ext2CInode *inode,A_UNUSED uint mode) {
 	inode->refs++;
-	assert(tpool_unlock(ALLOC_LOCK) == 0);
-	assert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	sassert(tpool_unlock(ALLOC_LOCK) == 0);
+	sassert(tpool_lock((uint)inode,(mode & IMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
 void Ext2INodeCache::doRelease(Ext2CInode *ino,bool unlockAlloc) {
@@ -165,7 +165,7 @@ void Ext2INodeCache::doRelease(Ext2CInode *ino,bool unlockAlloc) {
 
 	/* don't write dirty blocks back here, because this would lead to too many writes. */
 	/* skipping it until the inode-cache-entry should be reused, is better */
-	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	/* if there are no references and no links anymore, we have to delete the file */
 	if(--ino->refs == 0) {
 		if(ino->inode.linkCount == 0) {
@@ -176,8 +176,8 @@ void Ext2INodeCache::doRelease(Ext2CInode *ino,bool unlockAlloc) {
 		}
 	}
 	if(unlockAlloc)
-		assert(tpool_unlock(ALLOC_LOCK) == 0);
-	assert(tpool_unlock((uint)ino) == 0);
+		sassert(tpool_unlock(ALLOC_LOCK) == 0);
+	sassert(tpool_unlock((uint)ino) == 0);
 }
 
 void Ext2INodeCache::read(Ext2CInode *inode) {

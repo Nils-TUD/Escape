@@ -31,7 +31,7 @@ namespace gui {
 		_ctrls.push_back(c);
 	}
 	void FlowLayout::remove(Panel *p,shared_ptr<Control> c,A_UNUSED pos_type pos) {
-		assert(_p == p && _ctrls.erase_first(c));
+		sassert(_p == p && _ctrls.erase_first(c));
 	}
 	void FlowLayout::removeAll() {
 		_ctrls.clear();

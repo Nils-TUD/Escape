@@ -32,7 +32,7 @@ void objlist_create(void) {
 }
 
 void objlist_add(sObject *o) {
-	assert(sll_append(objects,o));
+	sassert(sll_append(objects,o));
 }
 
 sSLList *objlist_get(void) {

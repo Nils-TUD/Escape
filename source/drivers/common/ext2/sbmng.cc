@@ -53,7 +53,7 @@ Ext2SBMng::Ext2SBMng(Ext2FileSystem *fs) : _sbDirty(false), _fs(fs) {
 void Ext2SBMng::update() {
 	size_t i,count;
 	block_t bno;
-	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	if(!_sbDirty)
 		goto done;
@@ -82,5 +82,5 @@ void Ext2SBMng::update() {
 	/* now we're in sync */
 	_sbDirty = false;
 done:
-	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }

@@ -70,7 +70,7 @@ int PageTables::clone(PageTables *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
 		if(!share && (pte & PTE_PRESENT)) {
 			uint flags = pte & ~(PTE_FRAMENO_MASK | PTE_WRITABLE);
-			assert(mapPage(virtSrc,PTE_FRAMENO(pte),flags,noalloc) >= 0);
+			sassert(mapPage(virtSrc,PTE_FRAMENO(pte),flags,noalloc) >= 0);
 			if(this == cur)
 				flushAddr(virtSrc,true);
 		}

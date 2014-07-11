@@ -35,7 +35,7 @@ ino_t Ext2Bitmap::allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir) 
 	ino_t ino = 0;
 	uint32_t inodesPerGroup = le32tocpu(e->sb.get()->inodesPerGroup);
 
-	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	if(le32tocpu(e->sb.get()->freeInodeCount) == 0)
 		goto done;
 
@@ -52,7 +52,7 @@ ino_t Ext2Bitmap::allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir) 
 	}
 
 done:
-	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return ino;
 }
 
@@ -63,10 +63,10 @@ int Ext2Bitmap::freeInode(Ext2FileSystem *e,ino_t ino,bool isDir) {
 	uint16_t freeInodeCount;
 	uint32_t sFreeInodeCount;
 
-	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	bitmap = e->blockCache.request(le32tocpu(e->bgs.get(group)->inodeBitmap),BlockCache::WRITE);
 	if(bitmap == NULL) {
-		assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+		sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 		return -1;
 	}
 
@@ -90,7 +90,7 @@ int Ext2Bitmap::freeInode(Ext2FileSystem *e,ino_t ino,bool isDir) {
 
 	e->blockCache.markDirty(bitmap);
 	e->blockCache.release(bitmap);
-	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return 0;
 }
 
@@ -145,7 +145,7 @@ block_t Ext2Bitmap::allocBlock(Ext2FileSystem *e,Ext2CInode *inode) {
 	block_t bno = 0;
 	uint32_t blocksPerGroup = le32tocpu(e->sb.get()->blocksPerGroup);
 
-	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	if(le32tocpu(e->sb.get()->freeBlockCount) == 0)
 		goto done;
 
@@ -162,7 +162,7 @@ block_t Ext2Bitmap::allocBlock(Ext2FileSystem *e,Ext2CInode *inode) {
 	}
 
 done:
-	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return bno;
 }
 
@@ -173,10 +173,10 @@ int Ext2Bitmap::freeBlock(Ext2FileSystem *e,block_t blockNo) {
 	uint16_t freeBlockCount;
 	uint32_t sFreeBlockCount;
 
-	assert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	bitmap = e->blockCache.request(le32tocpu(e->bgs.get(group)->blockBitmap),BlockCache::WRITE);
 	if(bitmap == NULL) {
-		assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+		sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 		return -1;
 	}
 
@@ -193,7 +193,7 @@ int Ext2Bitmap::freeBlock(Ext2FileSystem *e,block_t blockNo) {
 	e->sb.markDirty();
 	e->blockCache.markDirty(bitmap);
 	e->blockCache.release(bitmap);
-	assert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
+	sassert(tpool_unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 	return 0;
 }
 

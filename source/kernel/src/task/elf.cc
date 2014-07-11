@@ -137,10 +137,10 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 	if((fd = FileDesc::assoc(p,file)) < 0)
 		goto failed;
 	if(finish(file,&eheader,info) < 0) {
-		assert(FileDesc::unassoc(p,fd) != NULL);
+		sassert(FileDesc::unassoc(p,fd) != NULL);
 		goto failed;
 	}
-	assert(FileDesc::unassoc(p,fd) != NULL);
+	sassert(FileDesc::unassoc(p,fd) != NULL);
 	file->close(p->getPid());
 	return 0;
 

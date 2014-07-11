@@ -306,7 +306,7 @@ int VirtMem::protect(uintptr_t addr,ulong flags) {
 			if(flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
 			/* can't fail because of NoAllocator and because the page-table is always present */
-			assert((*mp)->getPageDir()->map(mpreg->virt() + i * PAGE_SIZE,1,alloc,mapFlags) == 0);
+			sassert((*mp)->getPageDir()->map(mpreg->virt() + i * PAGE_SIZE,1,alloc,mapFlags) == 0);
 		}
 	}
 	res = 0;
@@ -429,8 +429,8 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 			PhysMem::free(frameNo,PhysMem::USR);
 
 			/* write out on disk */
-			assert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
-			assert(file->write(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
+			sassert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
+			sassert(file->write(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 			count--;
 		}
@@ -464,8 +464,8 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
 	 * done by the swapper-thread) */
-	assert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(file->read(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
+	sassert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
+	sassert(file->read(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
 	frameno_t frame = t->getFrame();
@@ -666,7 +666,7 @@ void VirtMem::sync(VMRegion *vm) const {
 void VirtMem::doUnmap(VMRegion *vm) {
 	vm->reg->acquire();
 	size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
-	assert(vm->reg->remFrom(this));
+	sassert(vm->reg->remFrom(this));
 	PageTables::NoAllocator alloc;
 	if(vm->reg->refCount() == 0) {
 		uintptr_t virt = vm->virt();
@@ -1251,7 +1251,7 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 				PageTables::RangeAllocator alloc(frame);
 				VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 				/* can't fail */
-				assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
+				sassert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
 				if(vm->reg->getFlags() & RF_SHAREABLE)
 					(*mp)->addShared(1);
 				else
@@ -1305,7 +1305,7 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 			/* the region may be mapped to a different virtual address */
 			VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 			/* can't fail */
-			assert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
+			sassert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
 			if(vm->reg->getFlags() & RF_SHAREABLE)
 				(*mp)->addShared(1);
 			else
@@ -1393,7 +1393,7 @@ void VirtMem::setSwappedOut(Region *reg,size_t index) {
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 		/* can't fail */
-		assert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,0) == 0);
+		sassert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,0) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
 			(*mp)->addShared(-1);
 		else
@@ -1416,7 +1416,7 @@ void VirtMem::setSwappedIn(Region *reg,size_t index,frameno_t frameNo) {
 		/* the region may be mapped to a different virtual address */
 		VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 		/* can't fail */
-		assert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,flags) == 0);
+		sassert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,flags) == 0);
 		if(reg->getFlags() & RF_SHAREABLE)
 			(*mp)->addShared(1);
 		else

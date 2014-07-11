@@ -53,7 +53,7 @@ int mod_thread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 
 	size_t i;
 	for(i = 0; i < THREAD_COUNT; i++)
-		assert((threads[i] = startthread(myThread,NULL)) >= 0);
+		sassert((threads[i] = startthread(myThread,NULL)) >= 0);
 	for(i = 0; i < THREAD_COUNT; i++)
 		join(threads[i]);
 	assert(getthreadcnt() == 1);

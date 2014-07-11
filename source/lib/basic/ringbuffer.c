@@ -140,8 +140,8 @@ size_t rb_readn(sRingBuf *r,void *e,size_t n) {
 
 size_t rb_move(sRingBuf *dst,sRingBuf *src,size_t n) {
 	size_t count,c = 0;
-	sIRingBuf *rdst = (sIRingBuf*)dst;
-	sIRingBuf *rsrc= (sIRingBuf*)src;
+	A_UNUSED sIRingBuf *rdst = (sIRingBuf*)dst;
+	sIRingBuf *rsrc = (sIRingBuf*)src;
 	vassert(dst != NULL,"dst == NULL");
 	vassert(src != NULL,"src == NULL");
 	vassert(rsrc->eSize == rdst->eSize,"Element-size not equal");

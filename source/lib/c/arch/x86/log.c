@@ -27,9 +27,9 @@ static bool reqPorts = false;
 void logc(char c) {
 	if(!reqPorts) {
 		/* request io-ports for qemu and bochs */
-		assert(reqport(0xe9) >= 0);
-		assert(reqport(0x3f8) >= 0);
-		assert(reqport(0x3fd) >= 0);
+		sassert(reqport(0xe9) >= 0);
+		sassert(reqport(0x3f8) >= 0);
+		sassert(reqport(0x3fd) >= 0);
 		reqPorts = true;
 	}
 	while((inbyte(0x3f8 + 5) & 0x20) == 0)

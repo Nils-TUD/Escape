@@ -62,39 +62,39 @@ BlockCache::~BlockCache() {
 void BlockCache::flush() {
 	CBlock *bentry = _newestBlock;
 	while(bentry != NULL) {
-		assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+		sassert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 		if(bentry->dirty) {
 			acquire(bentry,READ);
 			writeBlocks(bentry->buffer,bentry->blockNo,1);
 			bentry->dirty = false;
 			doRelease(bentry,false);
 		}
-		assert(tpool_unlock(ALLOC_LOCK) == 0);
+		sassert(tpool_unlock(ALLOC_LOCK) == 0);
 		bentry = bentry->next;
 	}
 }
 
-void BlockCache::acquire(CBlock *b,uint mode) {
+void BlockCache::acquire(CBlock *b,A_UNUSED uint mode) {
 	assert(!(mode & WRITE) || b->refs == 0);
 	b->refs++;
-	assert(tpool_unlock(ALLOC_LOCK) == 0);
-	assert(tpool_lock((uint)b,(mode & WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+	sassert(tpool_unlock(ALLOC_LOCK) == 0);
+	sassert(tpool_lock((uint)b,(mode & WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
 }
 
 void BlockCache::doRelease(CBlock *b,bool unlockAlloc) {
-	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 	assert(b->refs > 0);
 	b->refs--;
 	if(unlockAlloc)
-		assert(tpool_unlock(ALLOC_LOCK) == 0);
-	assert(tpool_unlock((uint)b) == 0);
+		sassert(tpool_unlock(ALLOC_LOCK) == 0);
+	sassert(tpool_unlock((uint)b) == 0);
 }
 
 CBlock *BlockCache::doRequest(block_t blockNo,bool doRead,uint mode) {
 	CBlock *block,*bentry;
 
 	/* acquire tpool_lock for getting a block */
-	assert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	sassert(tpool_lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	/* search for the block. perhaps it's already in cache */
 	bentry = _hashmap[blockNo % HASH_SIZE];

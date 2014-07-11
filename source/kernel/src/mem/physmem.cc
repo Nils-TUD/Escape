@@ -412,7 +412,7 @@ void PhysMem::swapper() {
 	else {
 		/* get device-size and init swap-map */
 		struct stat info;
-		assert(swapFile->fstat(pid,&info) == 0);
+		sassert(swapFile->fstat(pid,&info) == 0);
 
 		if(!SwapMap::init(info.st_size)) {
 			swapEnabled = false;

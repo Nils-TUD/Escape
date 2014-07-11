@@ -176,7 +176,7 @@ static void parseMMIX(FILE *f) {
 			funcName[i] = '\0';
 			while((c = getc(f)) != '>')
 				;
-			assert(fscanf(f," #%Lx], t=%d, ic=#%Lx",&addr,&tid,&time) == 3);
+			fscanf(f," #%Lx], t=%d, ic=#%Lx",&addr,&tid,&time);
 			funcEnter(tid,funcName,addr);
 			con = getCurrent(tid);
 			con->current->begin = time;
@@ -187,7 +187,7 @@ static void parseMMIX(FILE *f) {
 			while(getc(f) == '-')
 				;
 			con = getCurrent(tid);
-			assert(fscanf(f," t=%d, ic=#%Lx",&tid,&time) == 2);
+			fscanf(f," t=%d, ic=#%Lx",&tid,&time);
 			funcLeave(tid,con->current->begin < time ?
 					time - con->current->begin : con->current->begin);
 		}

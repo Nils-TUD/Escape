@@ -30,7 +30,7 @@ namespace gui {
 		_p = p;
 		_ctrls[pos] = c;
 	}
-	void BorderLayout::remove(Panel *p,shared_ptr<Control> c,pos_type pos) {
+	void BorderLayout::remove(A_UNUSED Panel *p,A_UNUSED shared_ptr<Control> c,pos_type pos) {
 		assert(pos < (pos_type)ARRAY_SIZE(_ctrls) && _p == p && _ctrls[pos] == c);
 		_ctrls[pos].reset();
 	}

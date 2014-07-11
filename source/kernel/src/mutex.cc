@@ -56,7 +56,7 @@ bool Mutex::tryDown() {
 }
 
 void Mutex::up() {
-	Thread *t = Thread::getRunning();
+	A_UNUSED Thread *t = Thread::getRunning();
 	assert(holder == t->getTid());
 	assert(depth > 0);
 	if(--depth == 0) {

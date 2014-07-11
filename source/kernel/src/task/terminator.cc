@@ -47,6 +47,6 @@ void Terminator::start() {
 
 void Terminator::addDead(Thread *t) {
 	LockGuard<SpinLock> g(&lock);
-	assert(deadThreads.append(t));
+	sassert(deadThreads.append(t));
 	sem.up();
 }

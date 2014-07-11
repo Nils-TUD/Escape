@@ -45,9 +45,16 @@
 		} } while(0);
 #	endif
 
+/* side-effect assert. is executed even if NDEBUG is defined */
+#	define sassert(cond)				assert(cond)
+#	define svassert(cond,errorMsg,...)	vassert(cond,errorMsg,## __VA_ARGS__)
+
 #else
 
-#	define assert(cond) (void)(cond)
-#	define vassert(cond,errorMsg,...) (void)(cond)
+#	define assert(cond)					(void)(0)
+#	define vassert(cond,errorMsg,...)	(void)(0)
+
+#	define sassert(cond)				(void)(cond)
+#	define svassert(cond,errorMsg,...)	(void)(cond)
 
 #endif

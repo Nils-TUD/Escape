@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <esc/test.h>
-#include <esc/setjmp.h>
+#include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -35,14 +35,14 @@ sTestModule tModSetjmp = {
 	&test_setjmp
 };
 
-static sJumpEnv env;
+static jmp_buf env;
 
 #if defined(__x86__)
 static void myfunc(int i) {
 	if(i > 0)
 		myfunc(i - 1);
 	else
-		longjmp(&env,1);
+		longjmp(env,1);
 }
 #endif
 
@@ -51,7 +51,7 @@ static void test_setjmp(void) {
 
 	/* not supported on eco32 and mmix yet */
 #if defined(__x86__)
-	int res = setjmp(&env);
+	int res = setjmp(env);
 	if(res == 0) {
 		myfunc(5);
 		test_assertFalse(true);

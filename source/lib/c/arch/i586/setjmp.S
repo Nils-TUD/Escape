@@ -22,7 +22,7 @@
 .global setjmp
 .global longjmp
 
-// int setjmp(sJumpEnv *env);
+// int setjmp(jmp_buf env);
 .type setjmp, @function
 setjmp:
 	push	%ebp
@@ -44,7 +44,7 @@ setjmp:
 	leave
 	ret
 
-// int longjmp(sJumpEnv *env,int val);
+// int longjmp(jmp_buf env,int val);
 .type longjmp, @function
 longjmp:
 	push	%ebp

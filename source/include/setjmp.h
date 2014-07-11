@@ -27,8 +27,8 @@
 #	include <esc/arch/x86_64/setjmp.h>
 #else
 // TODO
-typedef void *sJumpEnv;
+typedef void *jmp_buf;
 #endif
 
-extern int setjmp(sJumpEnv *env);
-extern int longjmp(sJumpEnv *env,int val);
+extern int setjmp(jmp_buf env);
+extern int longjmp(jmp_buf env,int val);

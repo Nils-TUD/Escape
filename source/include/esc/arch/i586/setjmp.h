@@ -21,12 +21,5 @@
 
 #include <esc/common.h>
 
-typedef struct {
-	uint32_t ebx;
-	uint32_t esp;
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t eflags;
-	uint32_t eip;
-} sJumpEnv;
+/* ebx, esp, edi, esi, ebp, eflags and eip */
+typedef uint32_t jmp_buf[7];

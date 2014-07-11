@@ -21,6 +21,11 @@
 
 #include <stddef.h>
 
+/* for mmix: ensure that the stdint.h provided by gcc includes our stdint.h */
+#define __STDC_HOSTED__ 1
+#include <stdint.h>
+#undef __STDC_HOSTED__
+
 #ifndef __cplusplus
 typedef enum {false = 0, true = 1} bool;
 #endif
@@ -32,18 +37,6 @@ typedef unsigned long ulong;
 typedef signed long long llong;
 typedef unsigned long long ullong;
 typedef signed long ssize_t;
-
-typedef unsigned char uint8_t;
-typedef signed char int8_t;
-typedef unsigned short uint16_t;
-typedef signed short int16_t;
-typedef unsigned int uint32_t;
-typedef signed int int32_t;
-typedef unsigned long long uint64_t;
-typedef signed long long int64_t;
-
-typedef signed long intptr_t;
-typedef unsigned long uintptr_t;
 
 typedef signed long off_t;
 typedef uint16_t mode_t;

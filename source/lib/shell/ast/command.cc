@@ -105,7 +105,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 	if(!setSigHdl) {
 		setSigHdl = true;
-		if(signal(SIG_CHILD_TERM,ast_sigChildHndl) == SIG_ERR)
+		if(signal(SIGCHLD,ast_sigChildHndl) == SIG_ERR)
 			error("Unable to set child-termination sig-handler");
 	}
 
@@ -316,9 +316,9 @@ void ast_termProcsOfJob(tJobId cmd) {
 	int i = 0;
 	p = jobs_getXProcOf(cmd,i);
 	while(p != NULL) {
-		/* send SIG_INTRPT */
-		if(kill(p->pid,SIG_INTRPT) < 0)
-			printe("Unable to send SIG_INTRPT to process %d",p->pid);
+		/* send SIGINT */
+		if(kill(p->pid,SIGINT) < 0)
+			printe("Unable to send SIGINT to process %d",p->pid);
 		/* only use the next i if we couldn't remove the job */
 		if(!jobs_remProc(p->pid))
 			i++;
@@ -442,7 +442,7 @@ static bool ast_catchZombie(void) {
 
 static void ast_sigChildHndl(A_UNUSED int sig) {
 	zombies++;
-	signal(SIG_CHILD_TERM,ast_sigChildHndl);
+	signal(SIGCHLD,ast_sigChildHndl);
 }
 
 static void ast_removeProc(sJob *p,int res) {

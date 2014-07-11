@@ -106,7 +106,7 @@ ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
 	ulong *sp;
 	t->getStackRange(NULL,(uintptr_t*)&sp,0);
 	if(!PageDir::isInUserSpace((uintptr_t)sp - totalSize,totalSize)) {
-		Proc::terminate(1,SIG_SEGFAULT);
+		Proc::terminate(1,SIGSEGV);
 		A_UNREACHED;
 	}
 

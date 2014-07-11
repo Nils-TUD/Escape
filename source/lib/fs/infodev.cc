@@ -60,7 +60,7 @@ int InfoDevice::thread(void *arg) {
 	char devpath[MAX_PATH_LEN];
 	InfoDevice *idev = static_cast<InfoDevice*>(arg);
 
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+	if(signal(SIGUSR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce USR1-signal-handler");
 
 	char *devname = strrchr(idev->path(),'/');

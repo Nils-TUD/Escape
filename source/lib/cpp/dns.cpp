@@ -149,9 +149,9 @@ ipc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	addr.d.ipv4.port = DNS_PORT;
 	sock.sendto(addr,buffer,total);
 
-	fSignal oldhandler;
-	if((oldhandler = signal(SIG_ALARM,sigalarm)) == SIG_ERR)
-		VTHROW("Unable to set SIG_ALARM handler");
+	sighandler_t oldhandler;
+	if((oldhandler = signal(SIGALRM,sigalarm)) == SIG_ERR)
+		VTHROW("Unable to set SIGALRM handler");
 	int res;
 	if((res = alarm(timeout)) < 0)
 		VTHROWE("alarm(" << timeout << ")",res);
@@ -165,12 +165,12 @@ ipc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 			VTHROWE("Received no response from DNS server " << _nameserver,-ETIMEOUT);
 
 		// ignore errors here
-		if(signal(SIG_ALARM,oldhandler) == SIG_ERR) {}
+		if(signal(SIGALRM,oldhandler) == SIG_ERR) {}
 		throw;
 	}
 
 	// ignore errors here
-	if(signal(SIG_ALARM,oldhandler) == SIG_ERR) {}
+	if(signal(SIGALRM,oldhandler) == SIG_ERR) {}
 
 	if(be16tocpu(h->id) != txid)
 		VTHROWE("Received DNS response with wrong transaction id",-EHOSTNOTFOUND);

@@ -314,8 +314,8 @@ int main(int argc,char **argv) {
 	}
 
 	srand(time(NULL));
-	if(signal(SIG_ALARM,sigalarm) == SIG_ERR)
-		error("Unable to set SIG_ALARM handler");
+	if(signal(SIGALRM,sigalarm) == SIG_ERR)
+		error("Unable to set SIGALRM handler");
 
 	// connect to network and get mac
 	Net net("/dev/tcpip");

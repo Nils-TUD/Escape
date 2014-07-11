@@ -103,7 +103,7 @@ int mod_reading(int argc,char **argv) {
 			sleep(50);
 
 		do_read("/dev/ramdisk",useshm);
-		kill(pid,SIG_TERM);
+		kill(pid,SIGTERM);
 		waitchild(NULL);
 	}
 

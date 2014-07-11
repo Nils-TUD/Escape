@@ -135,7 +135,7 @@ static int handleReply(IPv4Header *reply) {
 }
 
 static void sigalarm(int) {
-	signal(SIG_ALARM,sigalarm);
+	signal(SIGALRM,sigalarm);
 }
 static void sigint(int) {
 	stop = true;
@@ -159,10 +159,10 @@ int main(int argc,char **argv) {
 	uint timeout = 1000;
 	const char *address;
 
-	if(signal(SIG_ALARM,sigalarm) == SIG_ERR)
-		error("Unable to set SIG_ALARM");
-	if(signal(SIG_INTRPT,sigint) == SIG_ERR)
-		error("Unable to set SIG_INTRPT");
+	if(signal(SIGALRM,sigalarm) == SIG_ERR)
+		error("Unable to set SIGALRM");
+	if(signal(SIGINT,sigint) == SIG_ERR)
+		error("Unable to set SIGINT");
 	srand(time(NULL));
 
 	// parse params

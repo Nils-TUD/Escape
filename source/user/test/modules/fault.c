@@ -35,7 +35,7 @@ static void sig_segf(A_UNUSED int sig) {
 int mod_fault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	uint *ptr;
 	int fd;
-	if(signal(SIG_SEGFAULT,sig_segf) == SIG_ERR)
+	if(signal(SIGSEGV,sig_segf) == SIG_ERR)
 		error("Unable to set signal-handler");
 	printf("I am evil ^^\n");
 	fd = open((char*)0x12345678,O_RDONLY);

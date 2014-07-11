@@ -22,36 +22,29 @@
 #include <esc/common.h>
 #include <esc/syscalls.h>
 
-#define SIG_COUNT			10
+typedef int	sig_atomic_t;
+typedef void (*sighandler_t)(int);
 
-#define SIG_IGN				((fSignal)-2)			/* ignore signal */
-#define SIG_ERR				((fSignal)-1)			/* error-return */
-#define SIG_DFL				((fSignal)0)			/* reset to default behaviour */
+#define SIG_COUNT			11
+
+#define SIG_IGN				((sighandler_t)-2)		/* ignore signal */
+#define SIG_ERR				((sighandler_t)-1)		/* error-return */
+#define SIG_DFL				((sighandler_t)0)		/* reset to default behaviour */
 
 /* the signals */
-#define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
-#define SIG_KILL			0						/* kills a proc; not catchable */
-#define SIG_TERM			1						/* terminates a proc; catchable */
-#define SIG_ILL_INSTR		2						/* TODO atm unused */
-#define SIG_SEGFAULT		3						/* segmentation fault */
-#define SIG_CHILD_TERM		4						/* sent to parent-proc */
-#define SIG_INTRPT			5						/* used to interrupt a process; used by shell */
-#define SIG_ALARM			6						/* for alarm() */
-#define SIG_USR1			7						/* can be used for everything */
-#define SIG_USR2			8						/* can be used for everything */
-#define SIG_CANCEL			9						/* is sent by cancel() */
-
-/* standarg signal-names */
-#define SIGABRT				SIG_KILL
-/* TODO */
-#define SIGFPE				-1
-#define SIGILL				SIG_ILL_INSTR
-#define SIGINT				SIG_INTRPT
-#define SIGSEGV				SIG_SEGFAULT
-#define SIGTERM				SIG_TERM
-
-/* the signature */
-typedef void (*fSignal)(int);
+#define SIGRET				-1						/* used to tell the kernel the addr of sigRet */
+#define SIGKILL				0
+#define SIGABRT				SIGKILL					/* kill process in every case */
+#define SIGTERM				1						/* kindly ask process to terminate */
+#define SIGFPE				2						/* arithmetic operation (div by zero, ...) */
+#define SIGILL				3						/* illegal instruction */
+#define SIGINT				4						/* interactive attention signal */
+#define SIGSEGV				5						/* segmentation fault */
+#define SIGCHLD				6						/* sent to parent-proc */
+#define SIGALRM				7						/* for alarm() */
+#define SIGUSR1				8						/* can be used for everything */
+#define SIGUSR2				9						/* can be used for everything */
+#define SIGCANCEL			10						/* is sent by cancel() */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -68,8 +61,8 @@ extern "C" {
  * @param handler the new handler-function
  * @return the previous handler-function or SIG_ERR
  */
-static inline fSignal signal(int sig,fSignal handler) {
-	return (fSignal)syscall2(SYSCALL_SETSIGH,sig,(ulong)handler);
+static inline sighandler_t signal(int sig,sighandler_t handler) {
+	return (sighandler_t)syscall2(SYSCALL_SETSIGH,sig,(ulong)handler);
 }
 
 /**

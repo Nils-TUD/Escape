@@ -36,7 +36,7 @@ extern bool curIsStream;
 extern const char *curLine;
 
 /**
- * Inits the shell; announces the signal-handler for SIG_INTRPT and creates the environment with
+ * Inits the shell; announces the signal-handler for SIGINT and creates the environment with
  * given arguments
  *
  * @param argc the number of args

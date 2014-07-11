@@ -28,7 +28,7 @@
 #define DEV_CLOSE					8
 #define DEV_SHFILE					16
 #define DEV_CANCEL					32		/* cancel-message */
-#define DEV_CANCELSIG				64		/* cancel-signal (SIG_CANCEL) */
+#define DEV_CANCELSIG				64		/* cancel-signal (SIGCANCEL) */
 #define DEV_CREATSIBL				128		/* cancelable, if DEV_CANCEL is supported */
 #define DEV_SIZE					256
 

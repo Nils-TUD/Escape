@@ -59,7 +59,7 @@ void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	return;
 
 error:
-	Proc::terminate(1,SIG_SEGFAULT);
+	Proc::terminate(1,SIGSEGV);
 	A_UNREACHED;
 }
 

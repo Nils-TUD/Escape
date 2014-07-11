@@ -56,9 +56,9 @@ namespace gui {
 			  _screenMode(_winMng.getMode()), _windows(), _created(), _activated(), _destroyed(),
 			  _timequeue(), _queueMutex(), _listening(false), _defTheme(nullptr) {
 		// announce signal handlers
-		if(signal(SIG_USR1,sighandler) == SIG_ERR)
+		if(signal(SIGUSR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
-		if(signal(SIG_ALARM,sighandler) == SIG_ERR)
+		if(signal(SIGALRM,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce ALARM signal handler");
 
 		// init default theme
@@ -103,7 +103,7 @@ namespace gui {
 				break;
 		}
 		if(msecs == 0)
-			kill(getpid(),SIG_USR1);
+			kill(getpid(),SIGUSR1);
 		else if(it == _timequeue.begin())
 			alarm(msecs);
 		_timequeue.insert(it,TimeoutFunctor(tsc,functor));

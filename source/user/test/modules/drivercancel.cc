@@ -39,7 +39,7 @@ public:
 };
 
 static void sigcancel(int) {
-	signal(SIG_CANCEL,sigcancel);
+	signal(SIGCANCEL,sigcancel);
 }
 
 class MyCancelDevice : public ClientDevice<MyClient> {
@@ -90,12 +90,12 @@ static void sigusr1(int) {
 	dev->stop();
 }
 static void sigusr2(int) {
-	signal(SIG_USR2,sigusr2);
+	signal(SIGUSR2,sigusr2);
 }
 
 static int clientThread(void*) {
-	if(signal(SIG_USR2,sigusr2) == SIG_ERR)
-		error("Unable to announce SIG_INTRPT handler");
+	if(signal(SIGUSR2,sigusr2) == SIG_ERR)
+		error("Unable to announce SIGINTRPT handler");
 
 	char buffer[64] = "";
 	int fd = open("/dev/cancel",O_RDONLY);
@@ -118,21 +118,21 @@ static int cancelThread(void*) {
 		fprintf(stderr,"Sleeping a second...\n");
 		sleep(1000);
 		fprintf(stderr,"Sending signal...\n");
-		kill(getpid(),SIG_USR2);
+		kill(getpid(),SIGUSR2);
 		fprintf(stderr,"Waiting for client thread...\n");
 		IGNSIGS(join(tid));
 	}
-	kill(getpid(),SIG_USR1);
+	kill(getpid(),SIGUSR1);
 	return 0;
 }
 
 int mod_drivercancel(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	dev = new MyCancelDevice("/dev/cancel",0777);
 
-	if(signal(SIG_USR1,sigusr1) == SIG_ERR)
-		error("Unable to announce SIG_USR1 handler");
-	if(signal(SIG_CANCEL,sigcancel) == SIG_ERR)
-		error("Unable to announce SIG_CANCEL handler");
+	if(signal(SIGUSR1,sigusr1) == SIG_ERR)
+		error("Unable to announce SIGUSR1 handler");
+	if(signal(SIGCANCEL,sigcancel) == SIG_ERR)
+		error("Unable to announce SIGCANCEL handler");
 	if(startthread(cancelThread,NULL) < 0)
 		error("Unable to cancel thread");
 

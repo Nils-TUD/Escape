@@ -130,8 +130,8 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 static int ui_inputThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
-		error("Unable to set SIG_USR1-handler");
+	if(signal(SIGUSR1,sigUsr1) == SIG_ERR)
+		error("Unable to set SIGUSR1-handler");
 	/* read from uimanager and handle the keys */
 	while(1) {
 		ipc::UIEvents::Event ev;
@@ -143,8 +143,8 @@ static int ui_inputThread(A_UNUSED void *arg) {
 }
 
 void ui_destroy(void) {
-	if(kill(getpid(),SIG_USR1) < 0)
-		printe("Unable to send SIG_USR1");
+	if(kill(getpid(),SIGUSR1) < 0)
+		printe("Unable to send SIGUSR1");
 	delete fb;
 	delete uiev;
 	delete ui;

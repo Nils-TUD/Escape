@@ -101,7 +101,7 @@ static void linkRem(ipc::Net &net,int argc,char **argv) {
 		// TODO actually, we should validate if it's really a network-driver and not some random
 		// process that happens to have that string in its command line ;)
 		if((*it)->pid() != getpid() && (*it)->command().find(argv[2])) {
-			kill((*it)->pid(),SIG_TERM);
+			kill((*it)->pid(),SIGTERM);
 			return;
 		}
 	}

@@ -69,8 +69,8 @@ void shell_init(int argc,const char **argv) {
 	jobs_init();
 	curEnv = env_create(NULL);
 	env_addArgs(curEnv,argc,argv);
-	if(signal(SIG_INTRPT,shell_sigIntrpt) == SIG_ERR)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT);
+	if(signal(SIGINT,shell_sigIntrpt) == SIG_ERR)
+		error("Unable to announce sig-handler for %d",SIGINT);
 }
 
 ssize_t shell_prompt(void) {
@@ -94,7 +94,7 @@ static void shell_sigIntrpt(A_UNUSED int sig) {
 	lang_setInterrupted();
 	/* ensure that we start a new readline */
 	resetReadLine = true;
-	signal(SIG_INTRPT,shell_sigIntrpt);
+	signal(SIGINT,shell_sigIntrpt);
 }
 
 int shell_executeCmd(const char *line,bool isFile) {

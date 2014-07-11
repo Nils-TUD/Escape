@@ -70,16 +70,17 @@ bool Signals::addSignalFor(Thread *t,int signal) {
 
 const char *Signals::getName(int signal) {
 	static const char *names[] = {
-		"SIG_KILL",
-		"SIG_TERM",
-		"SIG_ILL_INSTR",
-		"SIG_SEGFAULT",
-		"SIG_CHILD_TERM",
-		"SIG_INTRPT",
-		"SIG_ALARM",
-		"SIG_USR1",
-		"SIG_USR2",
-		"SIG_CANCEL",
+		"SIGKILL",
+		"SIGTERM",
+		"SIGFPE",
+		"SIGILL",
+		"SIGINT",
+		"SIGSEGV",
+		"SIGCHLD",
+		"SIGALRM",
+		"SIGUSR1",
+		"SIGUSR2",
+		"SIGCANCEL",
 	};
 	static_assert(ARRAY_SIZE(names) == SIG_COUNT,"Signal names out of sync");
 	if(signal < SIG_COUNT)

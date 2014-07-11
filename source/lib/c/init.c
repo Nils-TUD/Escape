@@ -151,7 +151,7 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,int argc,char *argv[]) {
 }
 
 void __libc_init(void) {
-	if(signal(SIG_RET,(fSignal)&sigRetFunc) == SIG_ERR)
+	if(signal(SIGRET,(sighandler_t)&sigRetFunc) == SIG_ERR)
 		error("Unable to set signal return address");
 	initHeap();
 	initStdio();

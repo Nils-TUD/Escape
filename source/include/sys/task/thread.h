@@ -353,7 +353,7 @@ public:
 	 */
 	bool isFaulted() const {
 		volatile uint32_t *mask = const_cast<volatile uint32_t*>(&sigmask);
-		return (*mask & (1 << SIG_SEGFAULT)) != 0;
+		return (*mask & (1 << SIGSEGV)) != 0;
 	}
 
 	/**

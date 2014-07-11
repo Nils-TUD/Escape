@@ -46,7 +46,7 @@ static void sigint(A_UNUSED int sig) {
 int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	int res;
 	parent = getpid();
-	if(signal(SIG_INTRPT,sigint) == SIG_ERR)
+	if(signal(SIGINT,sigint) == SIG_ERR)
 		error("Unable to set sighandler");
 
 	if((child = fork()) == 0) {

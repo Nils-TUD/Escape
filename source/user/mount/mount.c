@@ -59,7 +59,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	if(signal(SIG_CHILD_TERM,sigchild) == SIG_ERR)
+	if(signal(SIGCHLD,sigchild) == SIG_ERR)
 		error("Unable to announce signal handler");
 
 	/* build fs-device */

@@ -22,24 +22,26 @@
 #include <sys/common.h>
 #include <sys/spinlock.h>
 
-#define SIG_COUNT			10
+#define SIG_COUNT			11
 
 #define SIG_IGN				((Signals::handler_func)-2)			/* ignore signal */
 #define SIG_ERR				((Signals::handler_func)-1)			/* error-return */
 #define SIG_DFL				((Signals::handler_func)0)			/* reset to default behaviour */
 
 /* the signals */
-#define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
-#define SIG_KILL			0						/* kills a proc; not catchable */
-#define SIG_TERM			1						/* terminates a proc; catchable */
-#define SIG_ILL_INSTR		2						/* TODO atm unused */
-#define SIG_SEGFAULT		3						/* segmentation fault */
-#define SIG_CHILD_TERM		4						/* sent to parent-proc */
-#define SIG_INTRPT			5						/* used to interrupt a process; used by shell */
-#define SIG_ALARM			6						/* for alarm() */
-#define SIG_USR1			7						/* can be used for everything */
-#define SIG_USR2			8						/* can be used for everything */
-#define SIG_CANCEL			9						/* is sent by cancel() */
+#define SIGRET				-1						/* used to tell the kernel the addr of sigRet */
+#define SIGKILL				0
+#define SIGABRT				SIGKILL					/* kill process in every case */
+#define SIGTERM				1						/* kindly ask process to terminate */
+#define SIGFPE				2						/* arithmetic operation (div by zero, ...) */
+#define SIGILL				3						/* illegal instruction */
+#define SIGINT				4						/* interactive attention signal */
+#define SIGSEGV				5						/* segmentation fault */
+#define SIGCHLD				6						/* sent to parent-proc */
+#define SIGALRM				7						/* for alarm() */
+#define SIGUSR1				8						/* can be used for everything */
+#define SIGUSR2				9						/* can be used for everything */
+#define SIGCANCEL			10						/* is sent by cancel() */
 
 class Thread;
 class ThreadBase;
@@ -123,15 +125,16 @@ public:
 };
 
 inline bool Signals::canHandle(int signal) {
-	/* we can't add a handler for SIG_KILL */
+	/* we can't add a handler for SIGKILL */
 	return signal >= 1 && signal < SIG_COUNT;
 }
 
 inline bool Signals::canSend(int signal) {
-	return signal == SIG_KILL || signal == SIG_TERM || signal == SIG_INTRPT ||
-			signal == SIG_USR1 || signal == SIG_USR2;
+	return signal == SIGKILL || signal == SIGTERM || signal == SIGINT ||
+			signal == SIGUSR1 || signal == SIGUSR2;
 }
 
 inline bool Signals::isFatal(int sig) {
-	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT;
+	return sig == SIGINT || sig == SIGTERM || sig == SIGFPE || sig == SIGILL ||
+		sig == SIGKILL || sig == SIGSEGV;
 }

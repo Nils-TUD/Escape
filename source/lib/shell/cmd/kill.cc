@@ -38,12 +38,12 @@ typedef struct {
 
 /* the signal the user can send */
 static sSigName signals[] = {
-	{"SIGKILL",SIG_KILL},
-	{"SIGTERM",SIG_TERM},
-	{"SIGINT",SIG_INTRPT},
-	{"KILL",SIG_KILL},
-	{"TERM",SIG_TERM},
-	{"INT",SIG_INTRPT},
+	{"SIGKILL",SIGKILL},
+	{"SIGTERM",SIGTERM},
+	{"SIGINT",SIGINT},
+	{"KILL",SIGKILL},
+	{"TERM",SIGTERM},
+	{"INT",SIGINT},
 };
 
 static int usage(const char *name) {
@@ -53,7 +53,7 @@ static int usage(const char *name) {
 }
 
 int shell_cmdKill(int argc,char **argv) {
-	int sig = SIG_TERM;
+	int sig = SIGTERM;
 	char *ssig = NULL;
 	bool list = false;
 	size_t i;

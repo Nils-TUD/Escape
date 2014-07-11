@@ -44,8 +44,8 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 
 	strcat(path,argv[1]);
-	if(signal(SIG_INTRPT,sigHdlr) == SIG_ERR)
-		error("Unable to set sig-handler for signal %d",SIG_INTRPT);
+	if(signal(SIGINT,sigHdlr) == SIG_ERR)
+		error("Unable to set sig-handler for signal %d",SIGINT);
 
 	start = rdtsc();
 	if((waitingPid = fork()) == 0) {
@@ -91,8 +91,8 @@ int main(int argc,char **argv) {
 
 static void sigHdlr(A_UNUSED int sig) {
 	if(waitingPid > 0) {
-		/* send SIG_INTRPT to the child */
-		if(kill(waitingPid,SIG_INTRPT) < 0)
+		/* send SIGINT to the child */
+		if(kill(waitingPid,SIGINT) < 0)
 			printe("Unable to send signal to %d",waitingPid);
 	}
 }

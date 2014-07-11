@@ -88,12 +88,12 @@ void JobMng::terminate(int pid) {
 		if(it->loginPid == pid || it->termPid == pid) {
 			if(it->loginPid == pid) {
 				if(it->termPid != -1)
-					kill(it->termPid,SIG_TERM);
+					kill(it->termPid,SIGTERM);
 				it->loginPid = -1;
 			}
 			else {
 				if(it->loginPid != -1)
-					kill(it->loginPid,SIG_TERM);
+					kill(it->loginPid,SIGTERM);
 				it->termPid = -1;
 			}
 

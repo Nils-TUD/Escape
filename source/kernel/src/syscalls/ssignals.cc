@@ -36,7 +36,7 @@ int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 			!PageDir::isInUserSpace((uintptr_t)handler,1)))
 		SYSC_ERROR(stack,(long)SIG_ERR);
 
-	if(EXPECT_FALSE(signal == (int)SIG_RET)) {
+	if(EXPECT_FALSE(signal == (int)SIGRET)) {
 		old = SIG_IGN;
 		t->getProc()->setSigRetAddr((uintptr_t)handler);
 	}

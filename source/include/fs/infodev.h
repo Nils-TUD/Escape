@@ -35,7 +35,7 @@ public:
 		_tid = res;
 	}
 	~InfoDevice() {
-		if(kill(getpid(),SIG_USR1) < 0)
+		if(kill(getpid(),SIGUSR1) < 0)
 			printe("Unable to send signal to me");
 		IGNSIGS(join(_tid));
 	}

@@ -113,8 +113,8 @@ void ProcessManager::shutdown() {
 	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
 		if(!p->isDead() && p->isKillable()) {
-			cout << "Sending SIG_TERM to " << p->pid() << endl;
-			if(kill(p->pid(),SIG_TERM) < 0)
+			cout << "Sending SIGTERM to " << p->pid() << endl;
+			if(kill(p->pid(),SIGTERM) < 0)
 				printe("Unable to send the term-signal to %d",p->pid());
 		}
 	}
@@ -141,8 +141,8 @@ void ProcessManager::finalize(int task) {
 	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
 		if(!p->isAlive() && !p->isDead() && p->isKillable()) {
-			cout << "Sending SIG_KILL to " << p->pid() << endl;
-			if(kill(p->pid(),SIG_KILL) < 0)
+			cout << "Sending SIGKILL to " << p->pid() << endl;
+			if(kill(p->pid(),SIGKILL) < 0)
 				printe("Unable to send the kill-signal to %d",p->pid());
 		}
 	}

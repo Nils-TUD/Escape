@@ -57,7 +57,7 @@ static void termSigUsr2(A_UNUSED int sig) {
 }
 
 static int termThread(A_UNUSED void *arg) {
-	if(signal(SIG_USR2,termSigUsr2) == SIG_ERR)
+	if(signal(SIGUSR2,termSigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
 
 	/* we haven't created it, so rebind it to ourself */
@@ -102,7 +102,7 @@ int main(int argc,char **argv) {
 }
 
 static int guiProc(const char *devName) {
-	if(signal(SIG_USR2,sigUsr2) == SIG_ERR)
+	if(signal(SIGUSR2,sigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
 
 	// now start GUI
@@ -123,8 +123,8 @@ static int guiProc(const char *devName) {
 	int res = app->run();
 	sh->sendEOF();
 	// notify the other thread and wait for him
-	if(kill(getpid(),SIG_USR2) < 0)
-		printe("Unable to send SIG_USR2 to ourself");
+	if(kill(getpid(),SIGUSR2) < 0)
+		printe("Unable to send SIGUSR2 to ourself");
 	IGNSIGS(join(tid));
 	delete gt;
 	return res;
@@ -187,7 +187,7 @@ static int shellMain(const char *devName) {
 	}
 
 	// notify the parent that we're done
-	if(kill(getppid(),SIG_USR2) < 0)
-		printe("Unable to send SIG_USR2 to parent");
+	if(kill(getppid(),SIGUSR2) < 0)
+		printe("Unable to send SIGUSR2 to parent");
 	return res;
 }

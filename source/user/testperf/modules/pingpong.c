@@ -52,7 +52,7 @@ int mod_sendrecv(int argc,char *argv[]) {
 		server_fast();
 	else {
 		client();
-		if(kill(pid,SIG_TERM) < 0)
+		if(kill(pid,SIGTERM) < 0)
 			perror("kill");
 		waitchild(NULL);
 	}
@@ -67,7 +67,7 @@ int mod_pingpong(int argc,char *argv[]) {
 		server();
 	else {
 		client();
-		if(kill(pid,SIG_TERM) < 0)
+		if(kill(pid,SIGTERM) < 0)
 			perror("kill");
 		waitchild(NULL);
 	}

@@ -61,7 +61,7 @@ static void printffl(const char *fmt,...) {
 }
 
 static void sigUsr1(A_UNUSED int sig) {
-	signal(SIG_USR1,sigUsr1);
+	signal(SIGUSR1,sigUsr1);
 }
 
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
@@ -107,7 +107,7 @@ static int clientThread(A_UNUSED void *arg) {
 static int getRequests(A_UNUSED void *arg) {
 	ulong buffer[64];
 	int tid;
-	if(signal(SIG_USR1,sigUsr1) == SIG_ERR)
+	if(signal(SIGUSR1,sigUsr1) == SIG_ERR)
 		error("Unable to announce signal-handler");
 
 	bindto(id,gettid());
@@ -186,7 +186,7 @@ static int handleRequest(void *arg) {
 			closeCount++;
 			close(req->fd);
 			req->fd = -1;
-			if(kill(getpid(),SIG_USR1) < 0)
+			if(kill(getpid(),SIGUSR1) < 0)
 				error("Unable to send signal to driver-thread");
 		}
 		break;

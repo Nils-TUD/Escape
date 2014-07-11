@@ -34,7 +34,7 @@ class TimerBase {
 		/* difference to the previous listener */
 		time_t time;
 		/* if true, the thread is blocked during that time. otherwise it can run and will not be waked
-		 * up, but gets a signal (SIG_ALARM) */
+		 * up, but gets a signal (SIGALRM) */
 		bool block;
 		Listener *next;
 	};
@@ -105,7 +105,7 @@ public:
 	 * @param tid the thread-id
 	 * @param msecs the number of milliseconds to wait
 	 * @param block whether to block the thread or not (if so, it will be waked up, otherwise it gets
-	 *  SIG_ALARM)
+	 *  SIGALRM)
 	 * @return 0 on success
 	 */
 	static int sleepFor(tid_t tid,time_t msecs,bool block);

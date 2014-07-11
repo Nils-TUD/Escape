@@ -116,7 +116,7 @@ static void sigAlarm(A_UNUSED int sig) {
 }
 
 static int driverThread(A_UNUSED void *arg) {
-	if(signal(SIG_ALARM,sigAlarm) == SIG_ERR)
+	if(signal(SIGALRM,sigAlarm) == SIG_ERR)
 		error("Unable to set alarm-handler");
 
 	try {

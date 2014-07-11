@@ -62,8 +62,8 @@ FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
 	set(MSG_FS_CHMOD,std::make_memfun(this,&FSDevice::chmod));
 	set(MSG_FS_CHOWN,std::make_memfun(this,&FSDevice::chown));
 
-	if(signal(SIG_TERM,sigTermHndl) == SIG_ERR)
-		throw std::default_error("Unable to set signal-handler for SIG_TERM");
+	if(signal(SIGTERM,sigTermHndl) == SIG_ERR)
+		throw std::default_error("Unable to set signal-handler for SIGTERM");
 	_inst = this;
 }
 

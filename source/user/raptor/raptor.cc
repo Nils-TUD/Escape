@@ -52,7 +52,7 @@ int main(int argc,char *argv[]) {
 		rows = atoi(argv[2]);
 	}
 
-	if(signal(SIG_INTRPT,sigInt) == SIG_ERR)
+	if(signal(SIGINT,sigInt) == SIG_ERR)
 		qerror("Unable to set sig-handler");
 
 	ulong ticks = 0;

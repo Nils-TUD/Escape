@@ -305,7 +305,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	Util::setpf(addr,stack->getIP());
 	Util::panic("Process segfaulted");
 #else
-	Signals::addSignalFor(t,SIG_SEGFAULT);
+	Signals::addSignalFor(t,SIGSEGV);
 #endif
 }
 

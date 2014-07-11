@@ -89,7 +89,7 @@ static inline void yield(void) {
 }
 
 /**
- * Notifies the thread in <msecs> milliseconds via signal (SIG_ALARM).
+ * Notifies the thread in <msecs> milliseconds via signal (SIGALRM).
  *
  * @param msecs the number of milliseconds
  * @return 0 on success

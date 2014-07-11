@@ -666,7 +666,7 @@ void ProcBase::terminate(int exitCode,int signal) {
 		/* send all other threads the kill signal */
 		for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
 			if(*pt != t)
-				Signals::addSignalFor(*pt,SIG_KILL);
+				Signals::addSignalFor(*pt,SIGKILL);
 		}
 		p->flags |= P_PREZOMBIE;
 
@@ -730,7 +730,7 @@ void ProcBase::kill(pid_t pid) {
 }
 
 void ProcBase::notifyProcDied(pid_t parent) {
-	addSignalFor(parent,SIG_CHILD_TERM);
+	addSignalFor(parent,SIGCHLD);
 	Sched::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 

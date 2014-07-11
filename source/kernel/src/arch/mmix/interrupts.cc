@@ -221,7 +221,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	Util::setpf(pfaddr,sregs->rww);
 	Util::panic("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
 #else
-	Signals::addSignalFor(Thread::getRunning(),SIG_SEGFAULT);
+	Signals::addSignalFor(Thread::getRunning(),SIGSEGV);
 #endif
 }
 

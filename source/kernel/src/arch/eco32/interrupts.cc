@@ -161,7 +161,7 @@ void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 	Util::setpf(pfaddr,stack->r[30]);
 	Util::panic("proc %d: page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 #else
-	Signals::addSignalFor(t,SIG_SEGFAULT);
+	Signals::addSignalFor(t,SIGSEGV);
 #endif
 }
 

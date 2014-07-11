@@ -233,12 +233,12 @@ static int handlerThread(void *arg) {
 }
 
 static void sigcancel(int) {
-	signal(SIG_CANCEL,sigcancel);
+	signal(SIGCANCEL,sigcancel);
 }
 
 int main() {
-	if(signal(SIG_CANCEL,sigcancel) == SIG_ERR)
-		error("Unable to register signal-handler for SIG_CANCEL");
+	if(signal(SIGCANCEL,sigcancel) == SIG_ERR)
+		error("Unable to register signal-handler for SIGCANCEL");
 
 	dev = new HTTPDevice("/dev/http",0444);
 	dev->loop();

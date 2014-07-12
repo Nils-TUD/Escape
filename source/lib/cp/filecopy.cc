@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <dirent.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <ipc/proto/vterm.h>
 #include <cp/filecopy.h>
 #include <stdio.h>

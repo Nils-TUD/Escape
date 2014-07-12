@@ -22,7 +22,7 @@
 #include <ipc/device.h>
 #include <ipc/ipcstream.h>
 #include <ipc/proto/file.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/sync.h>
 #include <vthrow.h>
 #include <mutex>

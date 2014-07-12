@@ -26,7 +26,7 @@
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/irq.h>
 #include <ipc/proto/input.h>
 #include <ipc/clientdevice.h>

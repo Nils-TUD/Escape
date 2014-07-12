@@ -24,7 +24,7 @@
 #include <esc/messages.h>
 #include <esc/irq.h>
 #include <esc/io.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/sync.h>
 #include <ipc/proto/pci.h>
 #include <signal.h>

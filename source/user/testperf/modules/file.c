@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/arch.h>
 #include <esc/time.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>

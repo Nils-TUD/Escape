@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/fsinterface.h>
 #include <esc/atomic.h>
 #include <esc/proc.h>

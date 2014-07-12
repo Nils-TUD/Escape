@@ -21,7 +21,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <ipc/proto/default.h>
 #include <vthrow.h>
 #include <vector>

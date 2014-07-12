@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/driver.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/rect.h>
 #include <esc/messages.h>
 #include <vbe/vbe.h>

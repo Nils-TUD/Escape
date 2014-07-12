@@ -21,7 +21,7 @@
 #include <esc/arch/x86/ports.h>
 #include <esc/driver.h>
 #include <esc/debug.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/rect.h>
 #include <esc/messages.h>
 #include <ipc/screendevice.h>

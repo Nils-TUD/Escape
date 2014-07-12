@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <usergroup/group.h>
 #include <ipc/clientdevice.h>
 #include <stdlib.h>

@@ -31,10 +31,6 @@
 #	define DISABLE_DEMLOAD	0
 #endif
 
-#define RNO_TEXT			0
-#define RNO_RODATA			1
-#define RNO_DATA			2
-
 #define PROT_READ			0
 #define PROT_WRITE			RF_WRITABLE
 #define PROT_EXEC			RF_EXECUTABLE

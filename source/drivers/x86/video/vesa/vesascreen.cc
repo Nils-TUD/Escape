@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/sllist.h>
 #include <vbe/vbe.h>
 #include <stdio.h>

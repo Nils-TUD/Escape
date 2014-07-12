@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/sllist.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <ipc/proto/ui.h>
 #include <stdlib.h>
 #include <errno.h>

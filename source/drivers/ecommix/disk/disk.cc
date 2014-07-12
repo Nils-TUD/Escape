@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/messages.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/irq.h>

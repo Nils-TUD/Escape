@@ -26,7 +26,7 @@
 #include <esc/debug.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <ipc/clientdevice.h>
 #include <ipc/ipcstream.h>
 #include <signal.h>

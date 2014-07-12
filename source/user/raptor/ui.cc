@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/conf.h>
 #include <esc/messages.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/thread.h>
 #include <esc/esccodes.h>
 #include <esc/proc.h>

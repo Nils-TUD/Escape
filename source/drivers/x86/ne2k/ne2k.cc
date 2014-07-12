@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/driver.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/io.h>
 #include <ipc/proto/nic.h>
 #include <ipc/proto/pci.h>

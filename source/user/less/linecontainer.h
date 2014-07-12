@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/conf.h>
 #include <iterator>
 #include <vector>

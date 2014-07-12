@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <signal.h>

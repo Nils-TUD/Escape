@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/arch.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/time.h>
 #include <limits.h>
 #include <stdlib.h>

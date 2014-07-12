@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <ipc/clientdevice.h>

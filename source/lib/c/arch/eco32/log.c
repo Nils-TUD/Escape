@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/log.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <assert.h>
 
 #define OUTPUT_START_ADDR		0x3F000000

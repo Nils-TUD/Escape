@@ -26,7 +26,7 @@
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
 #include <esc/conf.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <ipc/proto/vterm.h>
 #include <string.h>
 #include <errno.h>

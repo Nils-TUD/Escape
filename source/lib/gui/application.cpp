@@ -25,7 +25,7 @@
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/time.h>
 #include <algorithm>
 #include <iostream>

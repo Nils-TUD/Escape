@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/arch.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/debug.h>
 #include <esc/sync.h>
 #include <esc/conf.h>

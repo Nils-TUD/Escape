@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/conf.h>
 #include <stdlib.h>
 #include <string.h>

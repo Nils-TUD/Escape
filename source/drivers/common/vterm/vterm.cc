@@ -22,7 +22,7 @@
 #include <esc/io.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>

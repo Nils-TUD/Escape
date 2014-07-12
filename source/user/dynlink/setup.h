@@ -23,7 +23,7 @@
 #include <esc/elf.h>
 #include <esc/debug.h>
 #include <esc/sllist.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 
 #define LD_BIND_NOW		0
 #define DEBUG_LOADER	0

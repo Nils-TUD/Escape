@@ -23,7 +23,7 @@
 #include <gui/window.h>
 #include <esc/messages.h>
 #include <esc/io.h>
-#include <esc/mem.h>
+#include <sys/mman.h>
 #include <stdlib.h>
 #include <iostream>
 

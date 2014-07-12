@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <esc/arch.h>
+
 /**
  * Physical memory layout:
  * 0x0000000000000000: +-----------------------------------+
@@ -40,8 +42,6 @@
  * 0xFFFFFFFFFFFFFFFF: +-----------------------------------+
  */
 
-#define PAGE_BITS				13
-#define PAGE_SIZE				(1 << PAGE_BITS)
 #define PHYS_BITS				64
 
 #define BITMAP_PAGE_COUNT		((6 * 1024 * 1024) / PAGE_SIZE)

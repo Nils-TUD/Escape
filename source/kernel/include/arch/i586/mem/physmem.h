@@ -39,8 +39,6 @@
 /* the physical start-address of the kernel itself */
 #define KERNEL_P_ADDR			(1 * 1024 * 1024)
 
-#define PAGE_BITS				12
-#define PAGE_SIZE				(1 << PAGE_BITS)
 #define PHYS_BITS				32
 
 #define BITMAP_PAGE_COUNT		((2 * 1024 * 1024) / PAGE_SIZE)

@@ -20,4 +20,5 @@
 #pragma once
 
 #define WORDSIZE	8
-#define PAGE_SIZE	8192
+#define PAGE_BITS	13
+#define PAGE_SIZE	(1 << PAGE_BITS)

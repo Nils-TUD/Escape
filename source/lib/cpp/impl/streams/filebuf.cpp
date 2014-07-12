@@ -18,7 +18,7 @@
  */
 
 #include <impl/streams/filebuf.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdio.h>
 
 namespace std {

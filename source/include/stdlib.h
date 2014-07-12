@@ -26,7 +26,8 @@ extern "C" {
 #endif
 
 /* max rand-number */
-#define RAND_MAX 32767
+#define RAND_MAX 		32767
+#define ENV_NAME_MAX	64
 
 /* results of div, ldiv and lldiv */
 typedef struct {

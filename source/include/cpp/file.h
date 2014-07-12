@@ -21,6 +21,7 @@
 
 #include <esc/io.h>
 #include <vthrow.h>
+#include <dirent.h>
 #include <string>
 #include <vector>
 #include <time.h>
@@ -72,7 +73,7 @@ namespace std {
 		 * @param pattern a pattern the files have to match
 		 * @return the vector
 		 */
-		vector<sDirEntry> list_files(bool showHidden,const string& pattern = string()) const;
+		vector<struct dirent> list_files(bool showHidden,const string& pattern = string()) const;
 
 		/**
 		 * @return the mode of the file

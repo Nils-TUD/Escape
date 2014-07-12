@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/test.h>
 #include <setjmp.h>
 #include <stdlib.h>

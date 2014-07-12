@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/dir.h>
+#include <dirent.h>
 #include <file.h>
 #include <string.h>
 #include <env.h>
@@ -44,9 +44,9 @@ namespace std {
 	file::~file() {
 	}
 
-	vector<sDirEntry> file::list_files(bool showHidden,const string& pattern) const {
-		vector<sDirEntry> v;
-		sDirEntry e;
+	vector<struct dirent> file::list_files(bool showHidden,const string& pattern) const {
+		vector<struct dirent> v;
+		struct dirent e;
 		if(!is_dir())
 			throw default_error("list_files failed: No directory",0);
 		DIR *dir = opendir(path().c_str());
@@ -54,8 +54,8 @@ namespace std {
 			throw default_error("opendir failed",errno);
 		bool res;
 		while((res = readdir(dir,&e))) {
-			if((pattern.empty() || strmatch(pattern.c_str(),e.name)) &&
-					(showHidden || e.name[0] != '.'))
+			if((pattern.empty() || strmatch(pattern.c_str(),e.d_name)) &&
+					(showHidden || e.d_name[0] != '.'))
 				v.push_back(e);
 		}
 		closedir(dir);

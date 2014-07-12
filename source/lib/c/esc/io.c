@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/messages.h>
 #include <esc/mem.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>

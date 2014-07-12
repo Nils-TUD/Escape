@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <ipc/proto/socket.h>
 #include <ipc/proto/net.h>
 #include <ipc/proto/vterm.h>

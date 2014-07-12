@@ -21,7 +21,7 @@
 #include <esc/proc.h>
 #include <esc/cmdargs.h>
 #include <esc/time.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

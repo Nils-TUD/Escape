@@ -280,13 +280,13 @@ static vector<lsfile*> getEntries(const string& path) {
 	try {
 		file dir(path);
 		if(dir.is_dir()) {
-			vector<sDirEntry> files = dir.list_files(flags & F_ALL);
+			vector<struct dirent> files = dir.list_files(flags & F_ALL);
 			for(auto it = files.begin(); it != files.end(); ++it) {
 				try {
-					res.push_back(buildFile(file(path,it->name)));
+					res.push_back(buildFile(file(path,it->d_name)));
 				}
 				catch(const exception &e) {
-					printe("Skipping '%s/%s': %s",path.c_str(),it->name,e.what());
+					printe("Skipping '%s/%s': %s",path.c_str(),it->d_name,e.what());
 				}
 			}
 		}
@@ -303,7 +303,7 @@ static lsfile* buildFile(const file& f) {
 	lsfile *lsf = new lsfile(f);
 	if(f.is_dir() && (flags & (F_DIRSIZE | F_DIRNUM))) {
 		if(flags & F_DIRNUM) {
-			vector<sDirEntry> files = lsf->list_files(flags & F_ALL);
+			vector<struct dirent> files = lsf->list_files(flags & F_ALL);
 			lsf->rsize(files.size());
 		}
 		else
@@ -317,9 +317,9 @@ static lsfile* buildFile(const file& f) {
 static file::size_type getDirSize(const file& d) {
 	file::size_type res = 0;
 	string path = d.path();
-	vector<sDirEntry> files = d.list_files((flags & F_ALL) != 0);
+	vector<struct dirent> files = d.list_files((flags & F_ALL) != 0);
 	for(auto it = files.begin(); it != files.end(); ++it) {
-		file f(path,it->name);
+		file f(path,it->d_name);
 		if(f.is_dir()) {
 			string name = f.name();
 			if(name != "." && name != "..")

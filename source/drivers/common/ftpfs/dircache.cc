@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>

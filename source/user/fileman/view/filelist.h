@@ -25,6 +25,7 @@
 #include <gui/imagebutton.h>
 #include <gui/scrollpane.h>
 #include <gui/label.h>
+#include <dirent.h>
 #include <file.h>
 #include <list>
 
@@ -71,9 +72,9 @@ public:
 		list<file> files;
 		try {
 			_pathbar->setPath(this,path);
-			vector<sDirEntry> entries = file(path).list_files(false);
+			vector<struct dirent> entries = file(path).list_files(false);
 			for(auto it = entries.begin(); it != entries.end(); ++it)
-				files.push_back(file(path,it->name));
+				files.push_back(file(path,it->d_name));
 			files.sort([] (const file &a,const file &b) {
 				if(a.is_dir() == b.is_dir())
 					return a.name() < b.name();

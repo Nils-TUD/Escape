@@ -21,7 +21,7 @@
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
 #include <esc/keycodes.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/esccodes.h>
 #include <stdio.h>
 #include <ctype.h>

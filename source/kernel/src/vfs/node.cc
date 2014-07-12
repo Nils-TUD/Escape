@@ -39,6 +39,7 @@
 #include <cppsupport.h>
 #include <string.h>
 #include <assert.h>
+#include <dirent.h>
 #include <errno.h>
 #include <ctype.h>
 
@@ -65,7 +66,7 @@ size_t VFSNode::allocated;
 VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 		: lock(), name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
 		  parent(), prev(), firstChild(), next() {
-	if(this == nullptr || name == NULL || nameLen > MAX_NAME_LEN) {
+	if(this == nullptr || name == NULL || nameLen > NAME_MAX) {
 		success = false;
 		return;
 	}

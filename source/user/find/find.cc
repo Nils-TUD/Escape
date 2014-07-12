@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmdargs.h>
@@ -75,16 +75,16 @@ static void listDir(const char *path) {
 	}
 
 	bool endsWithSlash = path[strlen(path) - 1] == '/';
-	sDirEntry e;
+	struct dirent e;
 	while(readdir(d,&e)) {
-		if((e.nameLen == 1 && e.name[0] == '.') ||
-			(e.nameLen == 2 && e.name[0] == '.' && e.name[1] == '.'))
+		if((e.d_namelen == 1 && e.d_name[0] == '.') ||
+			(e.d_namelen == 2 && e.d_name[0] == '.' && e.d_name[1] == '.'))
 			continue;
 
 		if(endsWithSlash)
-			snprintf(filepath,sizeof(filepath),"%s%s",path,e.name);
+			snprintf(filepath,sizeof(filepath),"%s%s",path,e.d_name);
 		else
-			snprintf(filepath,sizeof(filepath),"%s/%s",path,e.name);
+			snprintf(filepath,sizeof(filepath),"%s/%s",path,e.d_name);
 		struct stat info;
 		if(stat(filepath,&info) < 0) {
 			printe("Stat for '%s' failed");
@@ -93,7 +93,7 @@ static void listDir(const char *path) {
 
 		if(S_ISDIR(info.st_mode))
 			listDir(filepath);
-		if(matches(filepath,e.name,e.nameLen,&info))
+		if(matches(filepath,e.d_name,e.d_namelen,&info))
 			puts(filepath);
 	}
 

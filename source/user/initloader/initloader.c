@@ -21,7 +21,7 @@
 #include <esc/syscalls.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/conf.h>
 #include <stdio.h>
 #include <stdlib.h>

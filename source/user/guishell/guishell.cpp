@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/driver.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
 #include <gui/application.h>

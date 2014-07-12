@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 #include <esc/sync.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

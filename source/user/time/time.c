@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/conf.h>
 #include <esc/time.h>
 #include <stdio.h>

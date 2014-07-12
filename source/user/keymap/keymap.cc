@@ -21,7 +21,7 @@
 #include <esc/proc.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,22 +62,22 @@ int main(int argc,const char **argv) {
 		if(stat(keymap.c_str(),&curInfo) < 0)
 			printe("Unable to stat current keymap (%s)",keymap.c_str());
 
-		sDirEntry e;
+		struct dirent e;
 		DIR *dir = opendir(KEYMAP_DIR);
 		if(!dir)
 			error("Unable to open '%s'",KEYMAP_DIR);
 		while(readdir(dir,&e)) {
-			if(strcmp(e.name,".") != 0 && strcmp(e.name,"..") != 0) {
+			if(strcmp(e.d_name,".") != 0 && strcmp(e.d_name,"..") != 0) {
 				char fpath[MAX_PATH_LEN];
-				snprintf(fpath,sizeof(fpath),"%s/%s",KEYMAP_DIR,e.name);
+				snprintf(fpath,sizeof(fpath),"%s/%s",KEYMAP_DIR,e.d_name);
 				struct stat finfo;
 				if(stat(fpath,&finfo) < 0)
 					printe("Unable to stat '%s'",fpath);
 
 				if(finfo.st_ino == curInfo.st_ino && finfo.st_dev == curInfo.st_dev)
-					printf("* %s\n",e.name);
+					printf("* %s\n",e.d_name);
 				else
-					printf("  %s\n",e.name);
+					printf("  %s\n",e.d_name);
 			}
 		}
 		closedir(dir);

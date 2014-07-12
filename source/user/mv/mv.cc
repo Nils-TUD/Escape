@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <cp/filecopy.h>
 #include <cmdargs.h>
 #include <stdio.h>

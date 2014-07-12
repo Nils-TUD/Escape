@@ -21,12 +21,7 @@
 
 #include <esc/common.h>
 
-#define MAX_NAME_LEN		52
 #define MAX_PATH_LEN		255
-
-/* file-system-types */
-#define FS_TYPE_EXT2		0
-#define FS_TYPE_ISO9660		1
 
 /* mode masks */
 #define S_IFMT				0170000
@@ -89,11 +84,3 @@ struct stat {
 	time_t st_mtime;   		/* time of last modification */
 	time_t st_ctime;   		/* time of last status change */
 };
-
-/* a directory-entry */
-typedef struct {
-	ino_t nodeNo;
-	uint16_t recLen;
-	uint16_t nameLen;
-	char name[MAX_NAME_LEN + 1];
-} A_PACKED sDirEntry;

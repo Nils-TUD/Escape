@@ -21,7 +21,7 @@
 #include <esc/fsinterface.h>
 #include <esc/driver.h>
 #include <esc/time.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <ipc/clientdevice.h>
 #include <ipc/proto/init.h>
 #include <fs/fsdev.h>

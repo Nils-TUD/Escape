@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 char *getenvi(size_t index) {
-	static char name[MAX_NAME_LEN];
+	static char name[ENV_NAME_MAX];
 	if(getenvito(name,sizeof(name),index) >= 0)
 		return name;
 	return NULL;

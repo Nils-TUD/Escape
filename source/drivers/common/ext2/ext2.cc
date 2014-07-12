@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/endian.h>
 #include <fs/fsdev.h>
 #include <errno.h>

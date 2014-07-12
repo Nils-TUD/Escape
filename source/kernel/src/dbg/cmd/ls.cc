@@ -28,11 +28,12 @@
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <string.h>
+#include <dirent.h>
 #include <errno.h>
 
-#define DIRE_SIZE		(sizeof(sDirEntry) - (MAX_NAME_LEN + 1))
+#define DIRE_SIZE		(sizeof(struct dirent) - (NAME_MAX + 1))
 
-static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e);
+static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e);
 
 int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	pid_t pid = Proc::getRunning();
@@ -49,10 +50,10 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	int res = VFS::openPath(pid,VFS_READ,0,argv[1],&file);
 	if(res < 0)
 		return res;
-	sDirEntry e;
+	struct dirent e;
 	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
 		OStringStream ss;
-		ss.writef("%d %s",e.nodeNo,e.name);
+		ss.writef("%d %s",e.d_ino,e.d_name);
 		if(ss.getString())
 			lines.appendStr(ss.getString());
 		lines.newLine();
@@ -67,7 +68,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	return 0;
 }
 
-static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
+static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e) {
 	ssize_t res;
 	/* default way; read the entry without name first */
 	if((res = file->read(pid,e,DIRE_SIZE)) < 0)
@@ -76,26 +77,26 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,sDirEntry *e) {
 	if(res == 0)
 		return 0;
 
-	e->nameLen = le16tocpu(e->nameLen);
-	e->recLen = le16tocpu(e->recLen);
-	e->nodeNo = le32tocpu(e->nodeNo);
-	size_t len = e->nameLen;
+	e->d_namelen = le16tocpu(e->d_namelen);
+	e->d_reclen = le16tocpu(e->d_reclen);
+	e->d_ino = le32tocpu(e->d_ino);
+	size_t len = e->d_namelen;
 	/* ensure that the name is short enough */
-	if(len >= MAX_NAME_LEN)
+	if(len >= NAME_MAX)
 		return -ENAMETOOLONG;
 
 	/* now read the name */
-	if((res = file->read(pid,e->name,len)) < 0)
+	if((res = file->read(pid,e->d_name,len)) < 0)
 		return res;
 
 	/* if the record is longer, we have to skip the stuff until the next record */
-	if(e->recLen - DIRE_SIZE > len) {
-		len = (e->recLen - DIRE_SIZE - len);
+	if(e->d_reclen - DIRE_SIZE > len) {
+		len = (e->d_reclen - DIRE_SIZE - len);
 		if((res = file->seek(pid,len,SEEK_CUR)) < 0)
 			return res;
 	}
 
 	/* ensure that it is null-terminated */
-	e->name[e->nameLen] = '\0';
+	e->d_name[e->d_namelen] = '\0';
 	return 1;
 }

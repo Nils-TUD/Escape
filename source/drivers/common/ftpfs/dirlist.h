@@ -23,6 +23,7 @@
 #include <esc/endian.h>
 #include <sstream>
 #include <fstream>
+#include <dirent.h>
 #include <time.h>
 
 #include "datacon.h"
@@ -56,12 +57,12 @@ private:
 	void prepare(DirCache::List *list) {
 		char buf[256];
 		for(auto it = list->nodes.begin(); it != list->nodes.end(); ++it) {
-			sDirEntry *e = (sDirEntry*)buf;
-			e->nameLen = cputole16(it->first.length());
-			e->nodeNo = cputole32(it->second.st_ino);
-			e->recLen = cputole16((sizeof(*e) - (MAX_NAME_LEN + 1)) + it->first.length());
-			memcpy(e->name,it->first.c_str(),it->first.length());
-			_os.write((char*)e,e->recLen);
+			struct dirent *e = (struct dirent*)buf;
+			e->d_namelen = cputole16(it->first.length());
+			e->d_ino = cputole32(it->second.st_ino);
+			e->d_reclen = cputole16((sizeof(*e) - (NAME_MAX + 1)) + it->first.length());
+			memcpy(e->d_name,it->first.c_str(),it->first.length());
+			_os.write((char*)e,e->d_reclen);
 		}
 	}
 

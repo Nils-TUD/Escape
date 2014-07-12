@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/dir.h>
+#include <dirent.h>
 #include <string.h>
 
 char *basename(char *path) {

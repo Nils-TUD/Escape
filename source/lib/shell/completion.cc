@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -270,7 +270,7 @@ static sShellCmd **compl_incrArray(sShellCmd **array,size_t pos,size_t *size) {
 static sDirCache *compl_getCache(const char *path) {
 	sDirCache *dc;
 	DIR *d;
-	sDirEntry e;
+	struct dirent e;
 	size_t i,cmdsSize,freeIndex = DIR_CACHE_SIZE;
 	struct stat info;
 	int res = stat(path,&info);
@@ -322,7 +322,7 @@ static sDirCache *compl_getCache(const char *path) {
 	while(readdir(d,&e)) {
 		sShellCmd *cmd;
 		/* skip . and .. */
-		if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 			continue;
 
 		/* increase array-size? */
@@ -344,7 +344,7 @@ static sDirCache *compl_getCache(const char *path) {
 		cmd->complStart = 0;
 		cmd->func = NULL;
 		strnzcpy(cmd->path,path,sizeof(cmd->path));
-		strnzcpy(cmd->name,e.name,sizeof(cmd->name));
+		strnzcpy(cmd->name,e.d_name,sizeof(cmd->name));
 		cmd->nameLen = strlen(cmd->name);
 	}
 	closedir(d);

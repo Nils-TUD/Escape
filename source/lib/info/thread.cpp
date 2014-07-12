@@ -29,18 +29,18 @@ namespace info {
 	vector<thread*> thread::get_list() {
 		vector<thread*> threads;
 		file dir("/sys/proc");
-		vector<sDirEntry> files = dir.list_files(false);
-		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+		vector<struct dirent> files = dir.list_files(false);
+		for(vector<struct dirent>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
-			if(!isdigit(it->name[0]))
+			if(!isdigit(it->d_name[0]))
 				continue;
 
 			try {
-				string threadDir(string("/sys/proc/") + it->name + "/threads");
+				string threadDir(string("/sys/proc/") + it->d_name + "/threads");
 				file tdir(threadDir);
-				vector<sDirEntry> tfiles = tdir.list_files(false);
-				for(vector<sDirEntry>::const_iterator tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
-					string tpath = threadDir + "/" + tit->name + "/info";
+				vector<struct dirent> tfiles = tdir.list_files(false);
+				for(vector<struct dirent>::const_iterator tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
+					string tpath = threadDir + "/" + tit->d_name + "/info";
 					ifstream tis(tpath.c_str());
 					thread* t = new thread();
 					tis >> *t;

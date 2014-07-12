@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/test.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,7 +47,7 @@ static void test_dir(void) {
 
 static void test_opendir(void) {
 	DIR *dir;
-	sDirEntry e;
+	struct dirent e;
 	test_caseStart("Testing opendir, readdir and closedir");
 
 	dir = opendir("/bin");

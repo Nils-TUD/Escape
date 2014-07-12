@@ -20,8 +20,17 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <stdio.h>
+
+#define NAME_MAX		52
+
+/* a directory-entry */
+struct dirent {
+	ino_t d_ino;
+	uint16_t d_reclen;
+	uint16_t d_namelen;
+	char d_name[NAME_MAX + 1];
+} A_PACKED;
 
 typedef FILE DIR;
 
@@ -33,6 +42,8 @@ extern "C" {
  * Builds an absolute path from the given one. If it is not absolute (starts not with "/") CWD will
  * be taken to build the absolute path. The path will not end with a slash, except for "/".
  * If <dst> is not large enough the function stops and returns the number of yet written chars.
+ * In contrast to abspath(), cleanpath() will walk through the path and remove duplicate slashes,
+ * and occurences of "." and ".." in the corresponding way.
  *
  * @param dst where to write to
  * @param dstSize the size of the space <dst> points to
@@ -84,15 +95,17 @@ static inline DIR *opendir(const char *path) {
  * @param dir the dir-pointer
  * @return false if the end has been reached
  */
-bool readdir(DIR *dir,sDirEntry *e);
+bool readdir(DIR *dir,struct dirent *e);
 
 /**
  * Closes the given directory
  *
  * @param dir the dir-pointer
+ * @return 0 on success
  */
-static inline void closedir(DIR *dir) {
+static inline int closedir(DIR *dir) {
 	fclose(dir);
+	return 0;
 }
 
 #if defined(__cplusplus)

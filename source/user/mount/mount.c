@@ -22,7 +22,7 @@
 #include <esc/cmdargs.h>
 #include <esc/thread.h>
 #include <esc/io.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/proc.h>
 #include <stdio.h>
 #include <string.h>

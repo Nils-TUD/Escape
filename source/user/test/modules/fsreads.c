@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +32,7 @@
 static int threadFunc(void *arg);
 
 int mod_fsreads(int argc,char *argv[]) {
-	sDirEntry e;
+	struct dirent e;
 	DIR *dir;
 	size_t count = argc >= 3 ? atoi(argv[2]) : 10;
 	size_t i,j;
@@ -49,13 +49,13 @@ int mod_fsreads(int argc,char *argv[]) {
 			char *path;
 			if(!readdir(dir,&e))
 				break;
-			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;
 			path = (char*)malloc(MAX_PATH_LEN);
 			if(!path)
 				error("Not enough memory");
 			strcpy(path,"/bin/");
-			strcat(path,e.name);
+			strcat(path,e.d_name);
 			if(startthread(threadFunc,(void*)path) < 0)
 				error("Unable to start thread");
 		}

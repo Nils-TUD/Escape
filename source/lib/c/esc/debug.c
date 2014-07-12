@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/width.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
@@ -65,7 +65,7 @@ void printStackTrace(void) {
 }
 
 const char *getProcName(void) {
-	static char name[MAX_NAME_LEN];
+	static char name[64];
 	char buffer[PROCINFO_BUF_SIZE];
 	int fd = open("/sys/proc/self/info",O_RDONLY);
 	if(fd >= 0) {

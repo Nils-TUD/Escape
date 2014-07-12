@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <esc/fsinterface.h>
 #include "../mem.h"
@@ -158,14 +158,14 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 			}
 			if((dir = opendir(apath))) {
 				size_t apathlen = strlen(apath);
-				sDirEntry e;
+				struct dirent e;
 				while(readdir(dir,&e)) {
-					if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+					if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 						continue;
-					if(strmatch(search,e.name)) {
+					if(strmatch(search,e.d_name)) {
 						struct stat info;
 						size_t pathlen = strlen(path);
-						ast_appendToPath(apath,apathlen,e.name);
+						ast_appendToPath(apath,apathlen,e.d_name);
 						if(stat(apath,&info) < 0)
 							continue;
 						if(!wasNull) {
@@ -176,7 +176,7 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 									*pos = '/';
 								/* append dirname */
 								path[pathlen] = '/';
-								ast_appendToPath(path,pathlen + 1,e.name);
+								ast_appendToPath(path,pathlen + 1,e.d_name);
 								buf = ast_expandPathname(buf,bufSize,i,path,tok + 1);
 								/* path may have been extended */
 								path[pathlen] = '\0';
@@ -188,15 +188,15 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 						}
 						else {
 							/* copy path and filename into a new string */
-							size_t totallen = (pathlen ? pathlen + 1 : 0) + e.nameLen + 1;
+							size_t totallen = (pathlen ? pathlen + 1 : 0) + e.d_namelen + 1;
 							char *duppath = (char*)emalloc(totallen + 1);
 							if(pathlen) {
 								strcpy(duppath,path);
 								duppath[pathlen] = '/';
-								strcpy(duppath + pathlen + 1,e.name);
+								strcpy(duppath + pathlen + 1,e.d_name);
 							}
 							else
-								strcpy(duppath,e.name);
+								strcpy(duppath,e.d_name);
 							/* append '/' for dirs */
 							if(S_ISDIR(info.st_mode)) {
 								duppath[totallen - 1] = '/';

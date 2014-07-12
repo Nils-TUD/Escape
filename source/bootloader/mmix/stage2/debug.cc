@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/width.h>
 #include <esc/thread.h>
 #include <stdio.h>

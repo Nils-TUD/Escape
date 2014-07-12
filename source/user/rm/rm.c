@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/io.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,12 +34,12 @@ static void removeRec(const char *path,bool rec) {
 
 		char tmp[MAX_PATH_LEN];
 		DIR *dir = opendir(path);
-		sDirEntry e;
+		struct dirent e;
 		while(readdir(dir,&e)) {
-			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;
 
-			snprintf(tmp,sizeof(tmp),"%s/%s",path,e.name);
+			snprintf(tmp,sizeof(tmp),"%s/%s",path,e.d_name);
 			removeRec(tmp,rec);
 		}
 		closedir(dir);

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/arch/x86/acpi.h>
 #include <esc/fsinterface.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,12 +33,12 @@ int main(void) {
 		error("Unable to open /sys/acpi");
 
 	size_t i = 0;
-	sDirEntry e;
+	struct dirent e;
 	while(readdir(dir,&e)) {
 		sRSDT table;
-		if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 			continue;
-		readTable(e.name,&table);
+		readTable(e.d_name,&table);
 		printf("ACPI Table %zu:\n",i);
 		printf("\tSignature: %.4s\n",(char*)&table.signature);
 		printf("\tLength: %u\n",table.length);

@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
+#include <dirent.h>
 
 #include "file.h"
 #include "iso9660.h"
@@ -89,7 +90,7 @@ ssize_t ISO9660File::read(ISO9660FileSystem *h,ino_t inodeNo,void *buffer,off_t 
 void ISO9660File::buildDirEntries(ISO9660FileSystem *h,block_t lba,uint8_t *dst,const uint8_t *src,
 		off_t offset,size_t count) {
 	const ISODirEntry *e;
-	sDirEntry *de,*lastDe;
+	struct dirent *de,*lastDe;
 	size_t i,blockSize = h->blockSize();
 	uint8_t *cdst;
 
@@ -103,32 +104,32 @@ void ISO9660File::buildDirEntries(ISO9660FileSystem *h,block_t lba,uint8_t *dst,
 
 	e = (const ISODirEntry*)src;
 	lastDe = NULL;
-	de = (sDirEntry*)cdst;
+	de = (struct dirent*)cdst;
 	while((uintptr_t)e < (uintptr_t)src + blockSize) {
 		if(e->length == 0) {
 			/* stretch last entry till the block-boundary and clear the rest */
 			if(lastDe)
-				lastDe->recLen += ((uintptr_t)cdst + blockSize) - (uintptr_t)de;
+				lastDe->d_reclen += ((uintptr_t)cdst + blockSize) - (uintptr_t)de;
 			memclear(de,((uintptr_t)cdst + blockSize) - (uintptr_t)de);
 			break;
 		}
-		de->nodeNo = (lba * blockSize) + ((uintptr_t)e - (uintptr_t)src);
+		de->d_ino = (lba * blockSize) + ((uintptr_t)e - (uintptr_t)src);
 		if(e->name[0] == ISO_FILENAME_THIS) {
-			de->nameLen = 1;
-			de->name[0] = '.';
+			de->d_namelen = 1;
+			de->d_name[0] = '.';
 		}
 		else if(e->name[0] == ISO_FILENAME_PARENT) {
-			de->nameLen = 2;
-			memcpy(de->name,"..",2);
+			de->d_namelen = 2;
+			memcpy(de->d_name,"..",2);
 		}
 		else {
-			de->nameLen = MIN(e->nameLen,strchri(e->name,';'));
-			for(i = 0; i < de->nameLen; i++)
-				de->name[i] = tolower(e->name[i]);
+			de->d_namelen = MIN(e->nameLen,strchri(e->name,';'));
+			for(i = 0; i < de->d_namelen; i++)
+				de->d_name[i] = tolower(e->name[i]);
 		}
-		de->recLen = (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) + de->nameLen;
+		de->d_reclen = (sizeof(struct dirent) - (NAME_MAX + 1)) + de->d_namelen;
 		lastDe = de;
-		de = (sDirEntry*)((uintptr_t)de + de->recLen);
+		de = (struct dirent*)((uintptr_t)de + de->d_reclen);
 		e = (const ISODirEntry*)((uintptr_t)e + e->length);
 	}
 

@@ -21,7 +21,7 @@
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/esccodes.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <ipc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>

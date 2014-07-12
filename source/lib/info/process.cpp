@@ -29,13 +29,13 @@ namespace info {
 	vector<process*> process::get_list(bool own,uid_t uid,bool fullcmd) {
 		vector<process*> procs;
 		file dir("/sys/proc");
-		vector<sDirEntry> files = dir.list_files(false);
-		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it) {
+		vector<struct dirent> files = dir.list_files(false);
+		for(vector<struct dirent>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
-			if(!isdigit(it->name[0]))
+			if(!isdigit(it->d_name[0]))
 				continue;
 			try {
-				process *p = get_proc(strtoul(it->name,NULL,10),own,uid,fullcmd);
+				process *p = get_proc(strtoul(it->d_name,NULL,10),own,uid,fullcmd);
 				if(p)
 					procs.push_back(p);
 			}

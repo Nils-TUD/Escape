@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
+#include <dirent.h>
 #include <esc/mem.h>
 #include <ipc/proto/vterm.h>
 #include <cp/filecopy.h>
@@ -189,13 +189,13 @@ bool FileCopy::copy(const char *src,const char *dest,bool remove) {
 			return false;
 		}
 
-		sDirEntry e;
+		struct dirent e;
 		bool res = true;
 		while(readdir(dir,&e)) {
-			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;
 
-			snprintf(srccpy,sizeof(srccpy),"%s/%s",src,e.name);
+			snprintf(srccpy,sizeof(srccpy),"%s/%s",src,e.d_name);
 			if(!copy(srccpy,dstcpy,remove))
 				res = false;
 		}
@@ -263,14 +263,14 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 		}
 
 		/* move all files in that directory to the destination */
-		sDirEntry e;
+		struct dirent e;
 		bool success = true;
 		while(readdir(dir,&e)) {
-			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;
 
-			snprintf(subsrc,sizeof(subsrc),"%s/%s",src,e.name);
-			if(!move(subsrc,dst,e.name))
+			snprintf(subsrc,sizeof(subsrc),"%s/%s",src,e.d_name);
+			if(!move(subsrc,dst,e.d_name))
 				success = false;
 		}
 		closedir(dir);

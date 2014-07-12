@@ -24,14 +24,6 @@
 
 #define MAX_STACK_PAGES			128
 
-/* the events we can wait for */
-#define EV_NOEVENT				0			/* just wakeup on signals */
-#define EV_CLIENT				1	/* if there's a client to be served */
-#define EV_RECEIVED_MSG			2	/* if a device has a msg for us */
-#define EV_DATA_READABLE		3	/* if we can read from a device (data available) */
-#define EV_USER1				7	/* an event we can send */
-#define EV_USER2				8	/* an event we can send */
-
 /* the thread-entry-point-function */
 typedef int (*fThreadEntry)(void *arg);
 

@@ -20,4 +20,4 @@
 #pragma once
 
 #define WORDSIZE	8
-#define PAGESIZE	8192
+#define PAGE_SIZE	8192

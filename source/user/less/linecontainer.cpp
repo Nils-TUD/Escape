@@ -27,9 +27,9 @@ using namespace std;
 
 bool LineContainer::Region::append(size_type size,const char *line) {
 	// extend region?
-	if((_lines + 1) * size >= _pages * PAGESIZE) {
+	if((_lines + 1) * size >= _pages * PAGE_SIZE) {
 		uintptr_t oldEnd = (uintptr_t)chgsize(0);
-		if(oldEnd != _begin + _pages * PAGESIZE)
+		if(oldEnd != _begin + _pages * PAGE_SIZE)
 			return false;
 		if(!chgsize(1))
 			throw bad_alloc();

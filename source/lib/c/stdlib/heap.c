@@ -382,11 +382,11 @@ static bool loadNewSpace(size_t size) {
 	}
 
 	/* check for overflow */
-	if(size + PAGESIZE < PAGESIZE)
+	if(size + PAGE_SIZE < PAGE_SIZE)
 		return false;
 
 	/* allocate the required pages */
-	count = (size + PAGESIZE - 1) / PAGESIZE;
+	count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
 	oldEnd = chgsize(count);
 	if(oldEnd == NULL)
 		return false;
@@ -399,7 +399,7 @@ static bool loadNewSpace(size_t size) {
 	area = freeList;
 	freeList = freeList->next;
 	area->address = oldEnd;
-	area->size = PAGESIZE * count;
+	area->size = PAGE_SIZE * count;
 	/* put area in the usable-list */
 	area->next = usableList;
 	usableList = area;
@@ -421,7 +421,7 @@ static bool loadNewAreas(void) {
 	/* determine start- and end-address */
 	pageCount++;
 	area = (sMemArea*)oldEnd;
-	end = area + (PAGESIZE / sizeof(sMemArea));
+	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
 	freeList = area;
@@ -437,7 +437,7 @@ static bool loadNewAreas(void) {
 }
 
 bool isOnHeap(const void *ptr) {
-	return (uintptr_t)ptr >= heapstart && (uintptr_t)ptr < heapstart + pageCount * PAGESIZE;
+	return (uintptr_t)ptr >= heapstart && (uintptr_t)ptr < heapstart + pageCount * PAGE_SIZE;
 }
 
 size_t heapspace(void) {

@@ -26,6 +26,6 @@
 static inline void **stack_top(size_t idx) {
 	uintptr_t sp;
 	__asm__ volatile ("SET %0,$254" : "=r"(sp));
-	sp = (sp & ~(MAX_STACK_PAGES * PAGESIZE - 1)) + MAX_STACK_PAGES * PAGESIZE - sizeof(void*) * idx;
+	sp = (sp & ~(MAX_STACK_PAGES * PAGE_SIZE - 1)) + MAX_STACK_PAGES * PAGE_SIZE - sizeof(void*) * idx;
 	return (void**)sp;
 }

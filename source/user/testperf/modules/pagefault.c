@@ -45,7 +45,7 @@ static void causePagefaults(const char *path) {
 	}
 
 	for(int j = 0; j < TEST_COUNT; ++j) {
-		volatile char *addr = mmap(NULL,MAP_SIZE * PAGESIZE,path ? MAP_SIZE * PAGESIZE : 0,
+		volatile char *addr = mmap(NULL,MAP_SIZE * PAGE_SIZE,path ? MAP_SIZE * PAGE_SIZE : 0,
 			PROT_READ | PROT_WRITE,MAP_PRIVATE,fd,0);
 		if(!addr) {
 			printe("mmap failed");
@@ -54,7 +54,7 @@ static void causePagefaults(const char *path) {
 
 		for(size_t i = 0; i < MAP_SIZE; ++i) {
 			start = rdtsc();
-			*(addr + i * PAGESIZE) = 0;
+			*(addr + i * PAGE_SIZE) = 0;
 			end = rdtsc();
 			uint64_t duration = end - start;
 			if(duration < min)
@@ -77,7 +77,7 @@ static void causePagefaults(const char *path) {
 
 int mod_pagefault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	size_t total = MAP_SIZE * PAGESIZE;
+	size_t total = MAP_SIZE * PAGE_SIZE;
 	char *buffer = malloc(total);
 	if(!buffer) {
 		printe("Unable to create buffer");

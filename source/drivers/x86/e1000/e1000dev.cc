@@ -48,7 +48,7 @@ E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
 
 	// create buffers in contiguous physical memory
 	uintptr_t phys = 0;
-	_bufs = reinterpret_cast<Buffers*>(mmapphys(&phys,sizeof(Buffers),PAGESIZE,MAP_PHYS_ALLOC));
+	_bufs = reinterpret_cast<Buffers*>(mmapphys(&phys,sizeof(Buffers),PAGE_SIZE,MAP_PHYS_ALLOC));
 	if(_bufs == NULL)
 		error("Unable to map buffer space of %zu bytes",sizeof(Buffers));
 	print("Mapped buffer space @ virt=%p phys=%p",_bufs,phys);

@@ -20,4 +20,4 @@
 #pragma once
 
 #define WORDSIZE	4
-#define PAGESIZE	4096
+#define PAGE_SIZE	4096

@@ -227,9 +227,9 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	fflush(stdout);
 
 	printf("\nTesting sharebuf and destroybuf...\n");
-	test_sharebuf(filename,PAGESIZE);
-	test_sharebuf(filename,PAGESIZE * 4);
-	test_sharebuf(filename,PAGESIZE * 16);
+	test_sharebuf(filename,PAGE_SIZE);
+	test_sharebuf(filename,PAGE_SIZE * 4);
+	test_sharebuf(filename,PAGE_SIZE * 16);
 	fflush(stdout);
 
 	if(unlink("/sys/test") < 0)

@@ -168,11 +168,11 @@ static void display(void) {
 				cout << p.uid();
 
 			cout << right << setw(wvirt - 1);
-			printSize(p.pages() * PAGESIZE);
+			printSize(p.pages() * PAGE_SIZE);
 			cout << setw(wphys - 1);
-			printSize(p.ownFrames() * PAGESIZE);
+			printSize(p.ownFrames() * PAGE_SIZE);
 			cout << setw(wshm - 1);
-			printSize(p.sharedFrames() * PAGESIZE);
+			printSize(p.sharedFrames() * PAGE_SIZE);
 
 			cout << setw(wcpu) << setprecision(1) << (100.0 * (p.cycles() / (double)totalcycles));
 			cout << setw(wmem) << setprecision(1) << (100.0 * (p.ownFrames() / (double)totalframes));

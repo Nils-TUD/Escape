@@ -25,4 +25,4 @@
 #define ARG_3		ecx
 #define SYSCNO		eax
 #define WORDSIZE	4
-#define PAGESIZE	4096
+#define PAGE_SIZE	4096

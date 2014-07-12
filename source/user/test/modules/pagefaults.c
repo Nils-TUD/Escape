@@ -35,8 +35,8 @@ static void *regAddr;
 
 static int thread_entry(A_UNUSED void *arg) {
 	size_t i;
-	for(i = 0; i < REG_SIZE / PAGESIZE; ++i)
-		*(((volatile char*)regAddr) + i * PAGESIZE) = i;
+	for(i = 0; i < REG_SIZE / PAGE_SIZE; ++i)
+		*(((volatile char*)regAddr) + i * PAGE_SIZE) = i;
 	return 0;
 }
 
@@ -57,15 +57,15 @@ static void dotest(int fd) {
 }
 
 static int createfile(void) {
-	char *buffer = calloc(1,PAGESIZE);
+	char *buffer = calloc(1,PAGE_SIZE);
 	if(!buffer)
 		error("malloc failed");
 	int fd = create("/sys/test",O_RDWR,0600);
 	if(fd < 0)
 		error("Unable to create /sys/test");
 	size_t i;
-	for(i = 0; i < REG_SIZE / PAGESIZE; ++i) {
-		if(write(fd,buffer,PAGESIZE) != (ssize_t)PAGESIZE)
+	for(i = 0; i < REG_SIZE / PAGE_SIZE; ++i) {
+		if(write(fd,buffer,PAGE_SIZE) != (ssize_t)PAGE_SIZE)
 			error("write failed");
 	}
 	free(buffer);

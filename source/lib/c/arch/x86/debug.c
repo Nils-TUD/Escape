@@ -33,8 +33,8 @@ uintptr_t *getStackTrace(void) {
 	ulong *bp;
 	GET_REG(bp,bp);
 	/* TODO just temporary */
-	end = ((uintptr_t)bp + (MAX_STACK_PAGES * PAGESIZE - 1)) & ~(MAX_STACK_PAGES * PAGESIZE - 1);
-	start = end - PAGESIZE * MAX_STACK_PAGES;
+	end = ((uintptr_t)bp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
+	start = end - PAGE_SIZE * MAX_STACK_PAGES;
 
 	for(size_t i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */

@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/driver.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 int createdev(const char *path,mode_t mode,uint type,uint ops) {

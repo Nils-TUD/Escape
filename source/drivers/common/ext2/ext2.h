@@ -21,7 +21,6 @@
 
 #include <esc/common.h>
 #include <esc/sllist.h>
-#include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <fs/common.h>
 #include <fs/blockcache.h>

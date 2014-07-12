@@ -20,8 +20,9 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/io.h>
-#include <dirent.h>
 #include <esc/cmdargs.h>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>

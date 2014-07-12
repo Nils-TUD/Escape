@@ -25,7 +25,6 @@
 #include <mem/virtmem.h>
 #include <syscalls.h>
 #include <boot.h>
-#include <esc/fsinterface.h>
 #include <string.h>
 #include <errno.h>
 

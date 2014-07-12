@@ -18,12 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <usergroup/group.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/conf.h>
+#include <sys/stat.h>
+#include <usergroup/group.h>
 #include <iostream>
 
 #include "driverprocess.h"

@@ -22,6 +22,7 @@
 #include <esc/io.h>
 #include <esc/esccodes.h>
 #include <esc/sllist.h>
+#include <sys/stat.h>
 #include <ipc/proto/input.h>
 #include <stdlib.h>
 #include <stdio.h>

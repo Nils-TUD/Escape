@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/endian.h>
 #include <esc/proc.h>
+#include <sys/stat.h>
 #include <fs/blockcache.h>
 #include <stdio.h>
 #include <string.h>

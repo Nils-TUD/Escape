@@ -31,7 +31,7 @@
 #include <vfs/info.h>
 #include <vfs/fs.h>
 #include <vfs/openfile.h>
-#include <esc/fsinterface.h>
+#include <sys/stat.h>
 #include <esc/endian.h>
 #include <assert.h>
 #include <string.h>

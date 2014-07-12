@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/messages.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>

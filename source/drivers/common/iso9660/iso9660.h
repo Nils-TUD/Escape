@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
+#include <sys/stat.h>
 #include <fs/fsdev.h>
 #include <fs/blockcache.h>
 

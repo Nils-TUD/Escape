@@ -18,15 +18,16 @@
  */
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <esc/driver.h>
 #include <esc/time.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <ipc/clientdevice.h>
 #include <ipc/proto/init.h>
 #include <fs/fsdev.h>
 #include <fs/infodev.h>
 #include <signal.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

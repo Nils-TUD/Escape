@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/common.h>
+#include <sys/stat.h>
 #include <stdio.h>
 
 #define USERS_PATH			"/etc/users"

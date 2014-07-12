@@ -21,9 +21,9 @@
 
 #include <common.h>
 #include <mem/dynarray.h>
+#include <sys/stat.h>
 #include <cppsupport.h>
 #include <lockguard.h>
-#include <esc/fsinterface.h>
 #include <errno.h>
 
 /* some additional types for the kernel */

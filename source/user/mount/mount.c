@@ -18,16 +18,17 @@
  */
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <esc/cmdargs.h>
 #include <esc/thread.h>
 #include <esc/io.h>
-#include <dirent.h>
 #include <esc/proc.h>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <limits.h>
 
 static bool run = true;
 

@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 

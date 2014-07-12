@@ -18,9 +18,10 @@
  */
 
 #include <esc/common.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <esc/fsinterface.h>
+#include <limits.h>
 #include "../mem.h"
 #include "../completion.h"
 #include "subcmd.h"

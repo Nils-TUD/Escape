@@ -18,20 +18,20 @@
  */
 
 #include <esc/common.h>
-#include <usergroup/user.h>
-#include <dirent.h>
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
-#include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <esc/esccodes.h>
 #include <esc/thread.h>
+#include <sys/stat.h>
 #include <ipc/proto/vterm.h>
+#include <usergroup/user.h>
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
 #include <ctype.h>
 #include <errno.h>
 

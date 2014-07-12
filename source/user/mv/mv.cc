@@ -18,8 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <dirent.h>
+#include <sys/stat.h>
 #include <cp/filecopy.h>
+#include <dirent.h>
 #include <cmdargs.h>
 #include <stdio.h>
 #include <string.h>

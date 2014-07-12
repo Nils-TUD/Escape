@@ -18,10 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <dirent.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <ipc/proto/vterm.h>
 #include <cp/filecopy.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <env.h>

@@ -23,8 +23,10 @@
 #include <ipc/ipcstream.h>
 #include <ipc/proto/file.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <esc/sync.h>
 #include <vthrow.h>
+#include <limits.h>
 #include <mutex>
 #include <memory>
 

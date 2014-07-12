@@ -18,11 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <esc/io.h>
-#include <dirent.h>
 #include <esc/cmdargs.h>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <time.h>
 

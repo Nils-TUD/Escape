@@ -19,8 +19,9 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <sys/mman.h>
 #include <esc/conf.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>

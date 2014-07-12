@@ -20,7 +20,6 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <ipc/clientdevice.h>
 #include <fs/common.h>
 #include <fs/infodev.h>

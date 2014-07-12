@@ -18,11 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <usergroup/user.h>
-#include <usergroup/group.h>
+#include <sys/stat.h>
 #include <esc/messages.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
+#include <usergroup/user.h>
+#include <usergroup/group.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

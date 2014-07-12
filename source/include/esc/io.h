@@ -20,7 +20,6 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <esc/syscalls.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -111,64 +110,6 @@ A_CHECKRET int create(const char *path,uint flags,mode_t mode);
  * @return 0 on success
  */
 A_CHECKRET int pipe(int *readFd,int *writeFd);
-
-/**
- * Retrieves information about the given file
- *
- * @param path the path of the file
- * @param info will be filled
- * @return 0 on success
- */
-A_CHECKRET int stat(const char *path,struct stat *info);
-
-/**
- * Retrieves information about the file behind the given file-descriptor
- *
- * @param fd the file-descriptor
- * @param info will be filled
- * @return 0 on success
- */
-A_CHECKRET static inline int fstat(int fd,struct stat *info) {
-	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
-}
-
-/**
- * Retrieves only the size of the file referenced by the given file-descriptor. This is only a
- * convenience function since internally, fstat() is used.
- *
- * @param fd the file-descriptor
- * @return the size on success
- */
-static inline ssize_t filesize(int fd) {
-	struct stat info;
-	int res = fstat(fd,&info);
-	if(res < 0)
-		return res;
-	return info.st_size;
-}
-
-/**
- * Changes the permissions of the file denoted by <path> to <mode>. This is always possible if
- * the current process is owned by ROOT_UID. Otherwise only if the current process owns the file.
- *
- * @param path the path
- * @param mode the new mode
- * @return 0 on success
- */
-A_CHECKRET int chmod(const char *path,mode_t mode);
-
-/**
- * Changes the owner and group of the file denoted by <path> to <uid> and <gid>, respectively. If
- * the current process is owned by ROOT_UID, it can be changed arbitrarily. If the current process
- * owns the file, the group can only be changed to a group this user is a member of. Otherwise
- * the owner can't be changed.
- *
- * @param path the path
- * @param uid the new user-id (-1 = do not change)
- * @param gid the new group-id (-1 = do not change)
- * @return 0 on success
- */
-A_CHECKRET int chown(const char *path,uid_t uid,gid_t gid);
 
 /**
  * Asks for the current file-position
@@ -497,31 +438,6 @@ static inline int fsemup(int fd) {
 static inline int fsemdown(int fd) {
 	return fcntl(fd,F_SEMDOWN,0);
 }
-
-/**
- * Checks whether the given path points to a regular file
- *
- * @param path the (absolute!) path
- * @return true if its a file; false if not or an error occurred
- */
-bool isfile(const char *path);
-
-/**
- * Checks whether the given path points to a directory
- *
- * @param path the (absolute!) path
- * @return true if its a directory; false if not or an error occurred
- */
-bool isdir(const char *path);
-
-/**
- * Checks whether the given path points to a file that behaves like a block-device, i.e. either
- * a regular file or a block device.
- *
- * @param path the (absolute!) path
- * @return true if its a regular file or block device
- */
-bool isblock(const char *path);
 
 #if defined(__cplusplus)
 }

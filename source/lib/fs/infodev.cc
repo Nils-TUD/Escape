@@ -21,6 +21,7 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
+#include <sys/stat.h>
 #include <fs/infodev.h>
 #include <ipc/filedev.h>
 #include <stdio.h>

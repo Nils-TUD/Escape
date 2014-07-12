@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/endian.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>

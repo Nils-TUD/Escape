@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <signal.h>

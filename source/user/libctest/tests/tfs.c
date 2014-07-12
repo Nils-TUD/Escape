@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/test.h>
 #include <esc/proc.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

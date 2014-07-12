@@ -21,6 +21,7 @@
 #include <esc/arch/x86/ports.h>
 #include <esc/conf.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <assert.h>
 

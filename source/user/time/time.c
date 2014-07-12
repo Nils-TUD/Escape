@@ -20,9 +20,10 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
-#include <dirent.h>
+#include <sys/stat.h>
 #include <esc/conf.h>
 #include <esc/time.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>

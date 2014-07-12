@@ -21,6 +21,7 @@
 #include <esc/cmdargs.h>
 #include <esc/endian.h>
 #include <esc/time.h>
+#include <sys/stat.h>
 #include <fs/ext2/ext2.h>
 #include <stdio.h>
 #include <stdlib.h>

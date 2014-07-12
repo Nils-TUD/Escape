@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <sys/stat.h>
 #include <usergroup/group.h>
 #include <usergroup/user.h>
 #include <stdlib.h>

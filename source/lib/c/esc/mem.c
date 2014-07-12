@@ -18,12 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <sys/mman.h>
-#include <esc/fsinterface.h>
 #include <esc/atomic.h>
 #include <esc/proc.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
 
 /* prefill the space for getpid() with '/'. they will simply be ignored by the kernel */

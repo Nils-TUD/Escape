@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
+#include <sys/stat.h>
 #include <ipc/proto/net.h>
 #include <ipc/proto/socket.h>
 #include <stdlib.h>

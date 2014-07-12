@@ -21,6 +21,7 @@
 #include <esc/arch.h>
 #include <esc/time.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>

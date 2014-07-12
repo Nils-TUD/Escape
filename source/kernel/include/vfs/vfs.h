@@ -21,7 +21,6 @@
 
 #include <common.h>
 #include <vfs/node.h>
-#include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(1024 * 1024)
 

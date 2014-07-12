@@ -27,6 +27,7 @@
 #include <esc/messages.h>
 #include <esc/thread.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <ipc/clientdevice.h>
 #include <ipc/ipcstream.h>
 #include <signal.h>

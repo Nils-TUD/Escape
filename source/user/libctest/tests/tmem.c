@@ -19,8 +19,9 @@
 
 #include <esc/common.h>
 #include <esc/test.h>
-#include <sys/mman.h>
 #include <esc/elf.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>

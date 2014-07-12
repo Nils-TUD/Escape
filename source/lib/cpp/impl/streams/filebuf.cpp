@@ -18,6 +18,7 @@
  */
 
 #include <impl/streams/filebuf.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 

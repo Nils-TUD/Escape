@@ -23,7 +23,6 @@
 #include <vfs/openfile.h>
 #include <vfs/node.h>
 #include <col/slist.h>
-#include <esc/fsinterface.h>
 
 class Proc;
 

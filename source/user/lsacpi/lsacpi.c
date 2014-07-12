@@ -19,11 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/arch/x86/acpi.h>
-#include <esc/fsinterface.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 static void readTable(const char *name,sRSDT *table);
 

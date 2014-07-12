@@ -21,8 +21,9 @@
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
 #include <esc/keycodes.h>
-#include <dirent.h>
 #include <esc/esccodes.h>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <limits.h>

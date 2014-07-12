@@ -25,10 +25,10 @@
 #include <dbg/cmd/ls.h>
 #include <mem/cache.h>
 #include <ostringstream.h>
-#include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <string.h>
 #include <dirent.h>
+#include <limits.h>
 #include <errno.h>
 
 #define DIRE_SIZE		(sizeof(struct dirent) - (NAME_MAX + 1))

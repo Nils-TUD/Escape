@@ -20,7 +20,6 @@
 #pragma once
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <stdio.h>
 #include <vector>
 

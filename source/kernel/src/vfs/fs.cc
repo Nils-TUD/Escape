@@ -33,7 +33,6 @@
 #include <cppsupport.h>
 #include <config.h>
 #include <ipc/ipcbuf.h>
-#include <esc/fsinterface.h>
 #include <esc/messages.h>
 #include <string.h>
 #include <errno.h>

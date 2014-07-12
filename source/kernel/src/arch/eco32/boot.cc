@@ -58,7 +58,7 @@ static const BootTask tasks[] = {
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 
-static Boot::Module mods[MAX_PROG_COUNT];
+static Boot::Module mods[BOOT_PROG_MAX];
 static Boot::MemMap mmap;
 static BootInfo *binfo;
 static bool initialized = false;

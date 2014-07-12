@@ -21,14 +21,13 @@
 
 #include <esc/common.h>
 
-#define MAX_PATH_LEN	64
-#define MAX_CMD_LEN		128
-#define MAX_PROG_COUNT	8
+#define BOOT_PATH_MAX	64
+#define BOOT_PROG_MAX	8
 
 /* a program we should load */
 struct LoadProg {
-	char path[MAX_PATH_LEN];
-	char command[MAX_PATH_LEN];
+	char path[BOOT_PATH_MAX];
+	char command[BOOT_PATH_MAX];
 	uintptr_t start;
 	size_t size;
 };

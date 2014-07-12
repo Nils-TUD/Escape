@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <sys/common.h>
+#include <common.h>
 
 void checkMemoryBefore(bool checkMappedPages);
 void checkMemoryAfter(bool checkMappedPages);

@@ -1,7 +1,7 @@
 #!/bin/sh
 
-echo "#include <sys/ksymbols.h>"
-echo "#include <sys/video.h>"
+echo "#include <ksymbols.h>"
+echo "#include <video.h>"
 echo ""
 echo "KSymbols::Symbol kernel_symbols[] = {"
 

@@ -17,27 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/task/ioports.h>
-#include <sys/arch/x86/pic.h>
-#include <sys/arch/x86/lapic.h>
-#include <sys/arch/x86/ioapic.h>
-#include <sys/arch/x86/pit.h>
-#include <sys/dbg/kb.h>
-#include <sys/dbg/console.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/virtmem.h>
-#include <sys/task/signals.h>
-#include <sys/task/smp.h>
-#include <sys/task/thread.h>
-#include <sys/task/uenv.h>
-#include <sys/task/timer.h>
-#include <sys/syscalls.h>
-#include <sys/cpu.h>
-#include <sys/interrupts.h>
-#include <sys/util.h>
-#include <sys/video.h>
-#include <sys/config.h>
+#include <common.h>
+#include <arch/x86/task/ioports.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/ioapic.h>
+#include <arch/x86/pit.h>
+#include <dbg/kb.h>
+#include <dbg/console.h>
+#include <mem/cache.h>
+#include <mem/virtmem.h>
+#include <task/signals.h>
+#include <task/smp.h>
+#include <task/thread.h>
+#include <task/uenv.h>
+#include <task/timer.h>
+#include <syscalls.h>
+#include <cpu.h>
+#include <interrupts.h>
+#include <util.h>
+#include <video.h>
+#include <config.h>
 #include <esc/keycodes.h>
 #include <esc/syscalls.h>
 

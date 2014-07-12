@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
-#include <sys/mem/vmfreemap.h>
-#include <sys/util.h>
+#include <common.h>
+#include <task/thread.h>
+#include <mem/vmfreemap.h>
+#include <util.h>
 #include <esc/test.h>
 #include "testutils.h"
 

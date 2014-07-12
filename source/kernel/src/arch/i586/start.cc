@@ -17,23 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/idt.h>
-#include <sys/arch/x86/gdt.h>
-#include <sys/arch/x86/fpu.h>
-#include <sys/arch/x86/lapic.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/task/elf.h>
-#include <sys/task/smp.h>
-#include <sys/task/terminator.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/pagedir.h>
-#include <sys/cpu.h>
-#include <sys/spinlock.h>
-#include <sys/video.h>
-#include <sys/boot.h>
-#include <sys/util.h>
+#include <common.h>
+#include <arch/x86/idt.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/fpu.h>
+#include <arch/x86/lapic.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <task/elf.h>
+#include <task/smp.h>
+#include <task/terminator.h>
+#include <mem/virtmem.h>
+#include <mem/pagedir.h>
+#include <cpu.h>
+#include <spinlock.h>
+#include <video.h>
+#include <boot.h>
+#include <util.h>
 #include <assert.h>
 
 /* make gcc happy */

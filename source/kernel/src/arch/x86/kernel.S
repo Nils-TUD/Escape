@@ -18,11 +18,11 @@
  */
 
 #if defined(__i586__)
-#	include <sys/arch/i586/mem/layout.h>
-#	include <sys/arch/i586/intrptstackframe.h>
+#	include <arch/i586/mem/layout.h>
+#	include <arch/i586/intrptstackframe.h>
 #else
-#	include <sys/arch/x86_64/mem/layout.h>
-#	include <sys/arch/x86_64/intrptstackframe.h>
+#	include <arch/x86_64/mem/layout.h>
+#	include <arch/x86_64/intrptstackframe.h>
 #endif
 #include <esc/arch.h>
 

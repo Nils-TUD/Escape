@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/vmtree.h>
-#include <sys/mem/region.h>
-#include <sys/mem/cache.h>
-#include <sys/task/proc.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/openfile.h>
-#include <sys/video.h>
-#include <sys/mutex.h>
+#include <common.h>
+#include <mem/vmtree.h>
+#include <mem/region.h>
+#include <mem/cache.h>
+#include <task/proc.h>
+#include <vfs/vfs.h>
+#include <vfs/openfile.h>
+#include <video.h>
+#include <mutex.h>
 #include <assert.h>
 
 /**

@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/gdt.h>
-#include <sys/arch/x86/lapic.h>
-#include <sys/arch/x86/ioapic.h>
-#include <sys/arch/x86/acpi.h>
-#include <sys/arch/x86/mpconfig.h>
-#include <sys/task/smp.h>
-#include <sys/task/timer.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/video.h>
-#include <sys/cpu.h>
-#include <sys/config.h>
-#include <sys/spinlock.h>
-#include <sys/log.h>
-#include <sys/util.h>
+#include <common.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/ioapic.h>
+#include <arch/x86/acpi.h>
+#include <arch/x86/mpconfig.h>
+#include <task/smp.h>
+#include <task/timer.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <video.h>
+#include <cpu.h>
+#include <config.h>
+#include <spinlock.h>
+#include <log.h>
+#include <util.h>
 #include <string.h>
 
 #define TRAMPOLINE_ADDR		0x7000

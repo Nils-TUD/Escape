@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/mountspace.h>
-#include <sys/task/proc.h>
-#include <sys/util.h>
+#include <common.h>
+#include <task/mountspace.h>
+#include <task/proc.h>
+#include <util.h>
 
 SpinLock MountSpace::lock;
 int MountSpace::next_id = 0;

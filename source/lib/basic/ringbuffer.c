@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #if defined(IN_KERNEL)
-#	include <sys/cwrap.h>
+#	include <cwrap.h>
 #	define rbprintf		vid_printf
 #	define free(x)		cache_free(x)
 #	define malloc(x)	cache_alloc(x)

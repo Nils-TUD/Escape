@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/ioapic.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/smp.h>
-#include <sys/util.h>
-#include <sys/log.h>
-#include <sys/config.h>
+#include <common.h>
+#include <arch/x86/ioapic.h>
+#include <mem/pagedir.h>
+#include <task/smp.h>
+#include <util.h>
+#include <log.h>
+#include <config.h>
 #include <assert.h>
 
 SpinLock IOAPIC::lck;

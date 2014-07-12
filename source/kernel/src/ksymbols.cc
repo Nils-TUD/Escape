@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/ksymbols.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <ksymbols.h>
+#include <video.h>
 
 extern KSymbols::Symbol kernel_symbols[];
 extern size_t kernel_symbol_count;

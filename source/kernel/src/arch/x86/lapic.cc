@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/lapic.h>
-#include <sys/task/timer.h>
-#include <sys/mem/pagedir.h>
-#include <sys/cpu.h>
-#include <sys/config.h>
+#include <common.h>
+#include <arch/x86/lapic.h>
+#include <task/timer.h>
+#include <mem/pagedir.h>
+#include <cpu.h>
+#include <config.h>
 #include <assert.h>
 
 bool LAPIC::enabled;

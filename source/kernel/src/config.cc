@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/timer.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/task/smp.h>
-#include <sys/config.h>
+#include <common.h>
+#include <task/timer.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/smp.h>
+#include <config.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>

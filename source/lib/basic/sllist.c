@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #if defined(IN_KERNEL)
-#	include <sys/cwrap.h>
+#	include <cwrap.h>
 #	define sllprintf	vid_printf
 #	define heapalloc	cache_alloc
 #	define heapfree		cache_free

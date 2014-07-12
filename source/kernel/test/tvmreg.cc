@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
-#include <sys/mem/vmtree.h>
-#include <sys/mem/region.h>
-#include <sys/cppsupport.h>
-#include <sys/util.h>
+#include <common.h>
+#include <task/thread.h>
+#include <mem/vmtree.h>
+#include <mem/region.h>
+#include <cppsupport.h>
+#include <util.h>
 #include <esc/test.h>
 #include "testutils.h"
 

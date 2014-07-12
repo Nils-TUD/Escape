@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/acpi.h>
-#include <sys/arch/x86/lapic.h>
-#include <sys/arch/x86/ioapic.h>
-#include <sys/task/smp.h>
-#include <sys/task/proc.h>
-#include <sys/vfs/dir.h>
-#include <sys/mem/pagedir.h>
-#include <sys/log.h>
-#include <sys/config.h>
-#include <sys/util.h>
-#include <sys/video.h>
+#include <common.h>
+#include <arch/x86/acpi.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/ioapic.h>
+#include <task/smp.h>
+#include <task/proc.h>
+#include <vfs/dir.h>
+#include <mem/pagedir.h>
+#include <log.h>
+#include <config.h>
+#include <util.h>
+#include <video.h>
 #include <string.h>
 
 #define MAX_ACPI_PAGES		32

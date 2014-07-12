@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
-#include <sys/task/smp.h>
-#include <sys/cpu.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/kheap.h>
+#include <task/smp.h>
+#include <cpu.h>
+#include <video.h>
 #include <string.h>
 
 const char *CPU::specialRegs[] = {

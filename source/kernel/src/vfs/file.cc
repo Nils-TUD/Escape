@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/useraccess.h>
-#include <sys/task/proc.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/file.h>
-#include <sys/vfs/node.h>
-#include <sys/spinlock.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <mem/virtmem.h>
+#include <mem/useraccess.h>
+#include <task/proc.h>
+#include <vfs/vfs.h>
+#include <vfs/file.h>
+#include <vfs/node.h>
+#include <spinlock.h>
 #include <string.h>
 #include <errno.h>
 

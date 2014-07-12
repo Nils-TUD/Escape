@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/serial.h>
-#include <sys/log.h>
+#include <common.h>
+#include <arch/x86/serial.h>
+#include <log.h>
 
 void Log::toSerial(char c) {
 	/* write to COM1 (some chars make no sense here) */

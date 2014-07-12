@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/ports.h>
-#include <sys/dbg/kb.h>
+#include <common.h>
+#include <arch/x86/ports.h>
+#include <dbg/kb.h>
 #include <esc/keycodes.h>
 
 #define IOPORT_KB_DATA				0x60

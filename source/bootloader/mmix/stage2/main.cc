@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/endian.h>
 #include <esc/elf.h>
+#include <esc/arch.h>
 #include <sys/boot.h>
 #include <fs/ext2/ext2.h>
 #include <string.h>

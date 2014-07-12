@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/arch/i586/mem/layout.h>
+#include <arch/i586/mem/layout.h>
 #include <esc/arch.h>
 
 .global proc0TLPD

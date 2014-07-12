@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/mmix/mem/addrspace.h>
+#include <common.h>
+#include <arch/mmix/mem/addrspace.h>
 #include <assert.h>
 
 /*

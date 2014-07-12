@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/shfiles.h>
-#include <sys/mem/region.h>
-#include <sys/vfs/openfile.h>
+#include <common.h>
+#include <mem/shfiles.h>
+#include <mem/region.h>
+#include <vfs/openfile.h>
 
 Treap<ShFiles::FileNode> ShFiles::tree;
 SpinLock ShFiles::lock;

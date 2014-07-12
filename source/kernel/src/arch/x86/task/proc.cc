@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/task/ioports.h>
-#include <sys/task/proc.h>
+#include <common.h>
+#include <arch/x86/task/ioports.h>
+#include <task/proc.h>
 
 int ProcBase::cloneArch(Proc *dst,A_UNUSED const Proc *src) {
 	IOPorts::init(dst);

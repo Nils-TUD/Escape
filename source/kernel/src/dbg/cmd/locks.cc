@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/cmd/locks.h>
-#include <sys/util.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/cmd/locks.h>
+#include <util.h>
 #include <string.h>
 
 int cons_cmd_locks(OStream &os,size_t argc,char **argv) {

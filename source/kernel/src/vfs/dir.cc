@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/useraccess.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/dir.h>
-#include <sys/vfs/link.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/info.h>
-#include <sys/vfs/fs.h>
-#include <sys/vfs/openfile.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <mem/virtmem.h>
+#include <mem/useraccess.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <vfs/vfs.h>
+#include <vfs/dir.h>
+#include <vfs/link.h>
+#include <vfs/node.h>
+#include <vfs/info.h>
+#include <vfs/fs.h>
+#include <vfs/openfile.h>
 #include <esc/fsinterface.h>
 #include <esc/endian.h>
 #include <assert.h>

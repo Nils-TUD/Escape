@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/mem/physmem.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <mem/physmem.h>
+#include <video.h>
 #include <esc/test.h>
 #include <assert.h>
 #include <string.h>

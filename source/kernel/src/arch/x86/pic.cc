@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/pic.h>
-#include <sys/arch/x86/ports.h>
-#include <sys/interrupts.h>
+#include <common.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/ports.h>
+#include <interrupts.h>
 
 void PIC::init() {
 	/* starts the initialization. we want to send a ICW4 */

@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/physmem.h>
-#include <sys/mem/dynarray.h>
-#include <sys/task/proc.h>
+#include <common.h>
+#include <mem/kheap.h>
+#include <mem/cache.h>
+#include <mem/physmem.h>
+#include <mem/dynarray.h>
+#include <task/proc.h>
 #include <esc/test.h>
 #include "testutils.h"
 

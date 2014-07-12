@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/cmd/panic.h>
-#include <sys/util.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/cmd/panic.h>
+#include <util.h>
 
 int cons_cmd_panic(OStream &os,A_UNUSED size_t argc,A_UNUSED char **argv) {
 	if(Console::isHelp(argc,argv)) {

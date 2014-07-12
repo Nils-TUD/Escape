@@ -17,23 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/cmd/file.h>
-#include <sys/dbg/cmd/view.h>
-#include <sys/dbg/cmd/log.h>
-#include <sys/dbg/cmd/ls.h>
-#include <sys/dbg/cmd/mem.h>
-#include <sys/dbg/cmd/panic.h>
-#include <sys/dbg/cmd/dump.h>
-#include <sys/dbg/cmd/step.h>
-#include <sys/dbg/cmd/break.h>
-#include <sys/dbg/cmd/locks.h>
-#include <sys/dbg/kb.h>
-#include <sys/mem/cache.h>
-#include <sys/task/smp.h>
-#include <sys/ostringstream.h>
-#include <sys/video.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/cmd/file.h>
+#include <dbg/cmd/view.h>
+#include <dbg/cmd/log.h>
+#include <dbg/cmd/ls.h>
+#include <dbg/cmd/mem.h>
+#include <dbg/cmd/panic.h>
+#include <dbg/cmd/dump.h>
+#include <dbg/cmd/step.h>
+#include <dbg/cmd/break.h>
+#include <dbg/cmd/locks.h>
+#include <dbg/kb.h>
+#include <mem/cache.h>
+#include <task/smp.h>
+#include <ostringstream.h>
+#include <video.h>
 #include <esc/keycodes.h>
 #include <string.h>
 #include <ctype.h>

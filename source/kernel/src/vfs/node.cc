@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/info.h>
-#include <sys/vfs/file.h>
-#include <sys/vfs/dir.h>
-#include <sys/vfs/link.h>
-#include <sys/vfs/channel.h>
-#include <sys/vfs/device.h>
-#include <sys/vfs/openfile.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/physmem.h>
-#include <sys/mem/dynarray.h>
-#include <sys/task/groups.h>
-#include <sys/task/proc.h>
-#include <sys/util.h>
-#include <sys/video.h>
-#include <sys/boot.h>
-#include <sys/cppsupport.h>
+#include <common.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
+#include <vfs/info.h>
+#include <vfs/file.h>
+#include <vfs/dir.h>
+#include <vfs/link.h>
+#include <vfs/channel.h>
+#include <vfs/device.h>
+#include <vfs/openfile.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <mem/physmem.h>
+#include <mem/dynarray.h>
+#include <task/groups.h>
+#include <task/proc.h>
+#include <util.h>
+#include <video.h>
+#include <boot.h>
+#include <cppsupport.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

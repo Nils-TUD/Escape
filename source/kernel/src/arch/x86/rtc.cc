@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/rtc.h>
-#include <sys/arch/x86/ports.h>
+#include <common.h>
+#include <arch/x86/rtc.h>
+#include <arch/x86/ports.h>
 #include <time.h>
 
 time_t RTC::getTime() {

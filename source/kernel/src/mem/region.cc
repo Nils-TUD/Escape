@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/physmem.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/region.h>
-#include <sys/mem/swapmap.h>
-#include <sys/task/proc.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/openfile.h>
-#include <sys/spinlock.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/physmem.h>
+#include <mem/cache.h>
+#include <mem/region.h>
+#include <mem/swapmap.h>
+#include <task/proc.h>
+#include <vfs/vfs.h>
+#include <vfs/openfile.h>
+#include <spinlock.h>
+#include <video.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>

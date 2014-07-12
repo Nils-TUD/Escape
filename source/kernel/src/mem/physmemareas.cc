@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/physmemareas.h>
-#include <sys/mem/pagedir.h>
-#include <sys/util.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/physmemareas.h>
+#include <mem/pagedir.h>
+#include <util.h>
+#include <video.h>
 #include <assert.h>
 
 /* areas of (initially) free physical memory */

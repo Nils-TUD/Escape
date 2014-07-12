@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/mmix/mem/addrspace.h>
-#include <sys/task/proc.h>
-#include <sys/mem/pagedir.h>
+#include <common.h>
+#include <arch/mmix/mem/addrspace.h>
+#include <task/proc.h>
+#include <mem/pagedir.h>
 #include <esc/test.h>
 
 #define ADDR_SPACE_COUNT		1024

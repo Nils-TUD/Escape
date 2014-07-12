@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/kb.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/cache.h>
-#include <sys/interrupts.h>
-#include <sys/util.h>
-#include <sys/cpu.h>
-#include <sys/video.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/kb.h>
+#include <mem/virtmem.h>
+#include <mem/cache.h>
+#include <interrupts.h>
+#include <util.h>
+#include <cpu.h>
+#include <video.h>
 #include <stdarg.h>
 #include <string.h>
 

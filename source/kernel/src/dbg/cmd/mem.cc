@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/cmd/mem.h>
-#include <sys/dbg/kb.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/proc.h>
-#include <sys/ostringstream.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/cmd/mem.h>
+#include <dbg/kb.h>
+#include <mem/pagedir.h>
+#include <task/proc.h>
+#include <ostringstream.h>
 #include <esc/keycodes.h>
 #include <ctype.h>
 #include <errno.h>

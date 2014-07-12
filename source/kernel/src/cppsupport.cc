@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/cache.h>
-#include <sys/util.h>
+#include <common.h>
+#include <mem/cache.h>
+#include <util.h>
 
 EXTERN_C int __cxa_atexit(void (*f)(void *), void *p, void *d);
 EXTERN_C void __cxa_pure_virtual();

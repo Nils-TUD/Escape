@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/kheap.h>
+#include <common.h>
+#include <mem/kheap.h>
 #include <esc/test.h>
 #include <esc/hashmap.h>
-#include <sys/video.h>
+#include <video.h>
 #include "testutils.h"
 
 #define TEST_MAP_SIZE	16

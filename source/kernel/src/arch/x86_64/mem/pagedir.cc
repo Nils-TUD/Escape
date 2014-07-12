@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/proc.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <task/proc.h>
 #include <assert.h>
 
 #define SHARED_AREA_SIZE	(KFREE_AREA + KFREE_AREA_SIZE - KHEAP_START)

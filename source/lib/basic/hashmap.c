@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #if defined(IN_KERNEL)
-#	include <sys/cwrap.h>
+#	include <cwrap.h>
 #	define hmprintf		vid_printf
 #	define hmfree		cache_free
 #	define hmmalloc		cache_alloc

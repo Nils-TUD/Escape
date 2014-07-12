@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/interrupts.h>
-#include <sys/ostream.h>
-#include <sys/log.h>
+#include <common.h>
+#include <interrupts.h>
+#include <ostream.h>
+#include <log.h>
 
 SpinLock InterruptsBase::userIrqsLock;
 ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];

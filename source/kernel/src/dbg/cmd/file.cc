@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/kb.h>
-#include <sys/dbg/lines.h>
-#include <sys/dbg/cmd/file.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/mem/kheap.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/openfile.h>
-#include <sys/video.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/kb.h>
+#include <dbg/lines.h>
+#include <dbg/cmd/file.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <mem/kheap.h>
+#include <vfs/vfs.h>
+#include <vfs/openfile.h>
+#include <video.h>
 #include <esc/keycodes.h>
 #include <errno.h>
 

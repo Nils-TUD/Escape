@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/openfile.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/video.h>
+#include <common.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <video.h>
 #include <esc/test.h>
 #include <string.h>
 #include <errno.h>

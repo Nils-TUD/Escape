@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/cmd/break.h>
-#include <sys/task/proc.h>
-#include <sys/task/smp.h>
-#include <sys/util.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/cmd/break.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <util.h>
 #include <string.h>
 
 enum {

@@ -19,8 +19,7 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/interrupts.h>
+#include <esc/common.h>
 
 struct BootModule {
 	uint32_t modStart;

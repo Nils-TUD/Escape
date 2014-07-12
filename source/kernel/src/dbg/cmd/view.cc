@@ -17,34 +17,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/console.h>
-#include <sys/dbg/cmd/view.h>
+#include <common.h>
+#include <dbg/console.h>
+#include <dbg/cmd/view.h>
 #if defined(__x86__)
-#	include <sys/arch/x86/gdt.h>
-#	include <sys/arch/x86/ioapic.h>
-#	include <sys/arch/x86/acpi.h>
+#	include <arch/x86/gdt.h>
+#	include <arch/x86/ioapic.h>
+#	include <arch/x86/acpi.h>
 #endif
-#include <sys/task/proc.h>
-#include <sys/task/sched.h>
-#include <sys/task/signals.h>
-#include <sys/task/thread.h>
-#include <sys/task/timer.h>
-#include <sys/task/smp.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/openfile.h>
-#include <sys/mem/copyonwrite.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/physmem.h>
-#include <sys/mem/physmemareas.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/swapmap.h>
-#include <sys/interrupts.h>
-#include <sys/boot.h>
-#include <sys/cpu.h>
+#include <task/proc.h>
+#include <task/sched.h>
+#include <task/signals.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <task/smp.h>
+#include <vfs/node.h>
+#include <vfs/vfs.h>
+#include <vfs/openfile.h>
+#include <mem/copyonwrite.h>
+#include <mem/cache.h>
+#include <mem/kheap.h>
+#include <mem/pagedir.h>
+#include <mem/physmem.h>
+#include <mem/physmemareas.h>
+#include <mem/virtmem.h>
+#include <mem/swapmap.h>
+#include <interrupts.h>
+#include <boot.h>
+#include <cpu.h>
 #include <string.h>
 #include <errno.h>
 

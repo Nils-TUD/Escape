@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/gdt.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/task/smp.h>
-#include <sys/mem/pagedir.h>
+#include <common.h>
+#include <arch/x86/gdt.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <mem/pagedir.h>
 
 static SpinLock switchLock;
 

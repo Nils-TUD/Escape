@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/task/smp.h>
-#include <sys/task/proc.h>
-#include <sys/log.h>
-#include <sys/config.h>
-#include <sys/util.h>
-#include <sys/cpu.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <task/smp.h>
+#include <task/proc.h>
+#include <log.h>
+#include <config.h>
+#include <util.h>
+#include <cpu.h>
 #include <assert.h>
 #include <string.h>
 

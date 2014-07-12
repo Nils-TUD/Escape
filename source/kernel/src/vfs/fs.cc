@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/proc.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/virtmem.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/fs.h>
-#include <sys/vfs/channel.h>
-#include <sys/vfs/openfile.h>
-#include <sys/util.h>
-#include <sys/video.h>
-#include <sys/spinlock.h>
-#include <sys/cppsupport.h>
-#include <sys/config.h>
+#include <common.h>
+#include <task/proc.h>
+#include <mem/cache.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
+#include <vfs/fs.h>
+#include <vfs/channel.h>
+#include <vfs/openfile.h>
+#include <util.h>
+#include <video.h>
+#include <spinlock.h>
+#include <cppsupport.h>
+#include <config.h>
 #include <ipc/ipcbuf.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>

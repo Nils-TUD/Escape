@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/task/sched.h>
-#include <sys/task/smp.h>
-#include <sys/task/timer.h>
-#include <sys/mem/kheap.h>
-#include <sys/util.h>
-#include <sys/cpu.h>
-#include <sys/spinlock.h>
-#include <sys/video.h>
-#include <sys/log.h>
+#include <common.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <task/sched.h>
+#include <task/smp.h>
+#include <task/timer.h>
+#include <mem/kheap.h>
+#include <util.h>
+#include <cpu.h>
+#include <spinlock.h>
+#include <video.h>
+#include <log.h>
 #include <assert.h>
 #include <string.h>
 

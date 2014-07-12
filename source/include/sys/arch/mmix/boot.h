@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <sys/common.h>
+#include <esc/common.h>
 
 #define MAX_PATH_LEN	64
 #define MAX_CMD_LEN		128

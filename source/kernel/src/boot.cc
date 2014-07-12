@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/virtmem.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/vfs/openfile.h>
-#include <sys/vfs/vfs.h>
-#include <sys/dbg/kb.h>
-#include <sys/util.h>
-#include <sys/boot.h>
-#include <sys/log.h>
-#include <sys/video.h>
-#include <sys/config.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <dbg/kb.h>
+#include <util.h>
+#include <boot.h>
+#include <log.h>
+#include <video.h>
+#include <config.h>
 
 #define MAX_ARG_COUNT	16
 #define MAX_ARG_LEN		256

@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/task/signals.h>
-#include <sys/util.h>
-#include <sys/atomic.h>
+#include <common.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/signals.h>
+#include <util.h>
+#include <atomic.h>
 #include <assert.h>
 
 Signals::handler_func Signals::setHandler(Thread *t,int signal,handler_func func) {

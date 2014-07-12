@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/useraccess.h>
-#include <sys/task/thread.h>
+#include <common.h>
+#include <mem/useraccess.h>
+#include <task/thread.h>
 #include <errno.h>
 
 int UserAccess::copy(char *dst,const char *src,size_t size,size_t offset) {

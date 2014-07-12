@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/dbg/kb.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <dbg/kb.h>
 #include <esc/keycodes.h>
 
 #define KEYBOARD_BASE		0x8006000000000000	/* physical keyboard base address */

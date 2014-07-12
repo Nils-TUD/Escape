@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/ports.h>
-#include <sys/arch/x86/lapic.h>
-#include <sys/arch/x86/pic.h>
-#include <sys/arch/x86/pit.h>
-#include <sys/arch/x86/ioapic.h>
-#include <sys/arch/x86/rtc.h>
-#include <sys/task/timer.h>
-#include <sys/task/smp.h>
-#include <sys/cpu.h>
-#include <sys/config.h>
-#include <sys/log.h>
+#include <common.h>
+#include <arch/x86/ports.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/pit.h>
+#include <arch/x86/ioapic.h>
+#include <arch/x86/rtc.h>
+#include <task/timer.h>
+#include <task/smp.h>
+#include <cpu.h>
+#include <config.h>
+#include <log.h>
 
 uint64_t Timer::bootTSC = 0;
 time_t Timer::bootTime = 0;

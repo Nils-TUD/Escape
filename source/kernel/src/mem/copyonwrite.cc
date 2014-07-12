@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/copyonwrite.h>
-#include <sys/task/proc.h>
-#include <sys/util.h>
-#include <sys/spinlock.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/cache.h>
+#include <mem/pagedir.h>
+#include <mem/copyonwrite.h>
+#include <task/proc.h>
+#include <util.h>
+#include <spinlock.h>
+#include <video.h>
 #include <assert.h>
 #include <string.h>
 

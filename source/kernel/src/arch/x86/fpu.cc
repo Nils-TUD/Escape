@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/fpu.h>
-#include <sys/task/smp.h>
-#include <sys/task/thread.h>
-#include <sys/mem/cache.h>
-#include <sys/video.h>
-#include <sys/cpu.h>
-#include <sys/util.h>
+#include <common.h>
+#include <arch/x86/fpu.h>
+#include <task/smp.h>
+#include <task/thread.h>
+#include <mem/cache.h>
+#include <video.h>
+#include <cpu.h>
+#include <util.h>
 #include <string.h>
 
 /* current FPU state-memory */

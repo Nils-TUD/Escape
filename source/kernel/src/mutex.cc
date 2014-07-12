@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
-#include <sys/spinlock.h>
-#include <sys/mutex.h>
-#include <sys/util.h>
+#include <common.h>
+#include <task/thread.h>
+#include <spinlock.h>
+#include <mutex.h>
+#include <util.h>
 
 void Mutex::down() {
 	Thread *t = Thread::getRunning();

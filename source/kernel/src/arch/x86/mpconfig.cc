@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/ioapic.h>
-#include <sys/arch/x86/mpconfig.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/smp.h>
-#include <sys/log.h>
-#include <sys/util.h>
+#include <common.h>
+#include <arch/x86/ioapic.h>
+#include <arch/x86/mpconfig.h>
+#include <mem/pagedir.h>
+#include <task/smp.h>
+#include <log.h>
+#include <util.h>
 
 /* bios data area contains address of EBDA and the base memory size */
 #define BDA_EBDA			0x40E	/* TODO not always available? */

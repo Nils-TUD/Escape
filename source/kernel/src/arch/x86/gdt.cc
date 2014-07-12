@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/gdt.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/physmem.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/smp.h>
-#include <sys/task/proc.h>
-#include <sys/syscalls.h>
-#include <sys/video.h>
-#include <sys/util.h>
+#include <common.h>
+#include <arch/x86/gdt.h>
+#include <mem/cache.h>
+#include <mem/physmem.h>
+#include <mem/pagedir.h>
+#include <task/smp.h>
+#include <task/proc.h>
+#include <syscalls.h>
+#include <video.h>
+#include <util.h>
 #include <string.h>
 /* for offsetof() */
 #include <stddef.h>

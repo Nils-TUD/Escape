@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch/x86/serial.h>
-#include <sys/arch/x86/gdt.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/task/smp.h>
-#include <sys/task/uenv.h>
-#include <sys/task/terminator.h>
-#include <sys/mem/pagedir.h>
-#include <sys/boot.h>
-#include <sys/util.h>
+#include <common.h>
+#include <arch/x86/serial.h>
+#include <arch/x86/gdt.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/smp.h>
+#include <task/uenv.h>
+#include <task/terminator.h>
+#include <mem/pagedir.h>
+#include <boot.h>
+#include <util.h>
 
 /* make gcc happy */
 EXTERN_C void bspstart(void *mbp);

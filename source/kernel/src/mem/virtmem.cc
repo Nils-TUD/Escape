@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/region.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/copyonwrite.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/swapmap.h>
-#include <sys/mem/shfiles.h>
-#include <sys/task/smp.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/openfile.h>
-#include <sys/cppsupport.h>
-#include <sys/spinlock.h>
-#include <sys/ostream.h>
-#include <sys/mutex.h>
-#include <sys/util.h>
-#include <sys/log.h>
+#include <common.h>
+#include <mem/region.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
+#include <mem/copyonwrite.h>
+#include <mem/cache.h>
+#include <mem/swapmap.h>
+#include <mem/shfiles.h>
+#include <task/smp.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <vfs/vfs.h>
+#include <vfs/openfile.h>
+#include <cppsupport.h>
+#include <spinlock.h>
+#include <ostream.h>
+#include <mutex.h>
+#include <util.h>
+#include <log.h>
 #include <errno.h>
 #include <string.h>
 #include <assert.h>

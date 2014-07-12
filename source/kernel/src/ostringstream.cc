@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/ostringstream.h>
+#include <ostringstream.h>
 
 void OStringStream::writec(char c) {
 	if(size != (size_t)-1) {

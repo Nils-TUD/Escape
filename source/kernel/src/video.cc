@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/dbg/kb.h>
-#include <sys/config.h>
-#include <sys/video.h>
-#include <sys/log.h>
+#include <common.h>
+#include <dbg/kb.h>
+#include <config.h>
+#include <video.h>
+#include <log.h>
 #include <esc/esccodes.h>
 #include <assert.h>
 

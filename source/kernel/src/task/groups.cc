@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/groups.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/useraccess.h>
-#include <sys/spinlock.h>
-#include <sys/video.h>
+#include <common.h>
+#include <task/groups.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <mem/cache.h>
+#include <mem/virtmem.h>
+#include <mem/useraccess.h>
+#include <spinlock.h>
+#include <video.h>
 #include <string.h>
 
 SpinLock Groups::lock;

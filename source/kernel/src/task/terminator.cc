@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/terminator.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/task/timer.h>
-#include <sys/spinlock.h>
+#include <common.h>
+#include <task/terminator.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <spinlock.h>
 #include <assert.h>
 
 ISList<Thread*> Terminator::deadThreads;

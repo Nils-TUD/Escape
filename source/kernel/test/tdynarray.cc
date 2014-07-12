@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/dynarray.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <mem/dynarray.h>
 #include <esc/test.h>
 #include "testutils.h"
 

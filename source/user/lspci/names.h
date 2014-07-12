@@ -18,7 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <sys/col/treap.h>
+// TODO temporary
+#include "../../kernel/include/col/treap.h"
 #include <string>
 
 #define PCI_IDS_FILE	"/etc/pci.ids"

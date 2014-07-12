@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/proc.h>
-#include <sys/mem/physmem.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/kheap.h>
-#include <sys/mem/virtmem.h>
-#include <sys/dbg/kb.h>
-#include <sys/dbg/console.h>
-#include <sys/interrupts.h>
-#include <sys/ksymbols.h>
-#include <sys/video.h>
-#include <sys/videolog.h>
-#include <sys/spinlock.h>
-#include <sys/util.h>
-#include <sys/cpu.h>
-#include <sys/log.h>
+#include <common.h>
+#include <task/proc.h>
+#include <mem/physmem.h>
+#include <mem/pagedir.h>
+#include <mem/kheap.h>
+#include <mem/virtmem.h>
+#include <dbg/kb.h>
+#include <dbg/console.h>
+#include <interrupts.h>
+#include <ksymbols.h>
+#include <video.h>
+#include <videolog.h>
+#include <spinlock.h>
+#include <util.h>
+#include <cpu.h>
+#include <log.h>
 #include <stdarg.h>
 #include <string.h>
 

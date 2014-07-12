@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/swapmap.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/spinlock.h>
-#include <sys/video.h>
+#include <common.h>
+#include <mem/swapmap.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <spinlock.h>
+#include <video.h>
 #include <assert.h>
 
 /* we need to maintain a reference-count here, because if we clone a process and a not-shareable

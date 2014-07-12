@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/proc.h>
-#include <sys/task/smp.h>
-#include <sys/vfs/vfs.h>
-#include <sys/util.h>
+#include <common.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <vfs/vfs.h>
+#include <util.h>
 #include <esc/messages.h>
 #include <ipc/ipcbuf.h>
 

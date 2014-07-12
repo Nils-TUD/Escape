@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/col/pathtree.h>
-#include <sys/log.h>
+#include <common.h>
+#include <col/pathtree.h>
+#include <log.h>
 #include <esc/test.h>
 #include <assert.h>
 #include "testutils.h"

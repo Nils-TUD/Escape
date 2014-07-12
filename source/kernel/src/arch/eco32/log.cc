@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/log.h>
+#include <common.h>
+#include <log.h>
 
 #define OUTPUT_BASE	0xFF000000	/* physical output device address */
 

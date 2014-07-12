@@ -6,7 +6,7 @@ import os
 kenv = env.Clone()
 gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
 objcpy = Builder(action = '$CROSSDIR/bin/$CROSS-objcopy -O elf32-i386 $SOURCE $TARGET')
-preproc = Builder(action = '$CROSSDIR/bin/$CROSS-cpp -P $CPPFLAGS $SOURCE $TARGET')
+preproc = Builder(action = '$CROSSDIR/bin/$CROSS-cpp -P $CPPFLAGS -Ikernel/include $SOURCE $TARGET')
 kenv.Append(
 	BUILDERS = {
 		'GenSyms' : gensyms,
@@ -23,6 +23,7 @@ kenv.Append(
 	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti -ffreestanding',
 	CPPFLAGS = ' -DIN_KERNEL=1',
 	LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldconf[0].abspath,
+	CPPPATH = ['include']
 )
 
 if kenv['TGTTYPE'] == 'x86':

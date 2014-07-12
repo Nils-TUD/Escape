@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/dynarray.h>
-#include <sys/lockguard.h>
+#include <common.h>
+#include <mem/dynarray.h>
+#include <lockguard.h>
 
 DynArray::Region DynArray::regionstore[DYNA_REG_COUNT];
 DynArray::Region *DynArray::freeList;

@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/swapmap.h>
-#include <sys/mem/pagedir.h>
-#include <sys/task/thread.h>
-#include <sys/task/proc.h>
-#include <sys/task/terminator.h>
-#include <sys/boot.h>
-#include <sys/util.h>
-#include <sys/log.h>
+#include <common.h>
+#include <mem/swapmap.h>
+#include <mem/pagedir.h>
+#include <task/thread.h>
+#include <task/proc.h>
+#include <task/terminator.h>
+#include <boot.h>
+#include <util.h>
+#include <log.h>
 #include <esc/test.h>
 
 /* TODO find a better solution */

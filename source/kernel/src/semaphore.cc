@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/thread.h>
-#include <sys/semaphore.h>
+#include <common.h>
+#include <task/thread.h>
+#include <semaphore.h>
 #include <assert.h>
 
 bool BaseSem::down(SpinLock *lck,bool allowSigs) {

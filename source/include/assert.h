@@ -20,7 +20,7 @@
 #pragma once
 
 #if IN_KERNEL
-#	include <sys/cwrap.h>
+#	include <cwrap.h>
 #else
 #	include <esc/proc.h>
 #	include <esc/debug.h>

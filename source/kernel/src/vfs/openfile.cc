@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/proc.h>
-#include <sys/mem/cache.h>
-#include <sys/vfs/openfile.h>
-#include <sys/vfs/fs.h>
-#include <sys/vfs/channel.h>
-#include <sys/vfs/device.h>
-#include <sys/vfs/vfs.h>
-#include <sys/ostream.h>
+#include <common.h>
+#include <task/proc.h>
+#include <mem/cache.h>
+#include <vfs/openfile.h>
+#include <vfs/fs.h>
+#include <vfs/channel.h>
+#include <vfs/device.h>
+#include <vfs/vfs.h>
+#include <ostream.h>
 #include <ipc/ipcbuf.h>
 #include <esc/messages.h>
 #include <errno.h>

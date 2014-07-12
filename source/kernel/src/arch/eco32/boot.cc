@@ -17,28 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/copyonwrite.h>
-#include <sys/mem/dynarray.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/task/sched.h>
-#include <sys/task/elf.h>
-#include <sys/task/uenv.h>
-#include <sys/task/timer.h>
-#include <sys/task/smp.h>
-#include <sys/task/terminator.h>
-#include <sys/vfs/node.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/openfile.h>
-#include <sys/log.h>
-#include <sys/config.h>
-#include <sys/boot.h>
-#include <sys/video.h>
-#include <sys/util.h>
+#include <common.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <mem/virtmem.h>
+#include <mem/copyonwrite.h>
+#include <mem/dynarray.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/sched.h>
+#include <task/elf.h>
+#include <task/uenv.h>
+#include <task/timer.h>
+#include <task/smp.h>
+#include <task/terminator.h>
+#include <vfs/node.h>
+#include <vfs/vfs.h>
+#include <vfs/openfile.h>
+#include <log.h>
+#include <config.h>
+#include <boot.h>
+#include <video.h>
+#include <util.h>
 #include <string.h>
 
 static const BootTask tasks[] = {

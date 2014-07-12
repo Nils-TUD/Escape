@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/proc.h>
-#include <sys/task/thread.h>
-#include <sys/task/elf.h>
-#include <sys/task/signals.h>
-#include <sys/task/uenv.h>
-#include <sys/task/timer.h>
-#include <sys/task/groups.h>
-#include <sys/mem/pagedir.h>
-#include <sys/mem/cache.h>
-#include <sys/mem/virtmem.h>
-#include <sys/mem/useraccess.h>
-#include <sys/syscalls.h>
-#include <sys/vfs/vfs.h>
-#include <sys/vfs/node.h>
-#include <sys/util.h>
+#include <common.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/elf.h>
+#include <task/signals.h>
+#include <task/uenv.h>
+#include <task/timer.h>
+#include <task/groups.h>
+#include <mem/pagedir.h>
+#include <mem/cache.h>
+#include <mem/virtmem.h>
+#include <mem/useraccess.h>
+#include <syscalls.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
+#include <util.h>
 #include <errno.h>
 #include <string.h>
 

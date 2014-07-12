@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #if defined(IN_KERNEL)
-#	include <sys/cwrap.h>
+#	include <cwrap.h>
 
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf

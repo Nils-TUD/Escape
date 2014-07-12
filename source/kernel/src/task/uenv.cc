@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/task/uenv.h>
-#include <sys/task/proc.h>
-#include <sys/mem/useraccess.h>
+#include <common.h>
+#include <task/uenv.h>
+#include <task/proc.h>
+#include <mem/useraccess.h>
 
 ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSize) {
 	Thread *t = Thread::getRunning();

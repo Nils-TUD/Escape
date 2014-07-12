@@ -56,6 +56,5 @@ int mod_thread(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		sassert((threads[i] = startthread(myThread,NULL)) >= 0);
 	for(i = 0; i < THREAD_COUNT; i++)
 		join(threads[i]);
-	assert(getthreadcnt() == 1);
 	return EXIT_SUCCESS;
 }

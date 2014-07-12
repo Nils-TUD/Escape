@@ -146,7 +146,6 @@ private:
 
 	// thread
 	static int gettid(Thread *t,IntrptStackFrame *stack);
-	static int getthreadcnt(Thread *t,IntrptStackFrame *stack);
 	static int startthread(Thread *t,IntrptStackFrame *stack);
 	static int exit(Thread *t,IntrptStackFrame *stack);
 	static int getcycles(Thread *t,IntrptStackFrame *stack);

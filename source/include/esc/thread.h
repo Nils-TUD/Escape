@@ -47,13 +47,6 @@ static inline tid_t gettid(void) {
 }
 
 /**
- * @return the number of threads in the current process
- */
-static inline size_t getthreadcnt(void) {
-	return syscall0(SYSCALL_GETTHREADCNT);
-}
-
-/**
  * Starts a new thread
  *
  * @param entryPoint the entry-point of the thread

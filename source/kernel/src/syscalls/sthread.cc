@@ -37,10 +37,6 @@ int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());
 }
 
-int Syscalls::getthreadcnt(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getThreadCount());
-}
-
 int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);

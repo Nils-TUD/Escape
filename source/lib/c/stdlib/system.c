@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/io.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <stdlib.h>
 
@@ -49,7 +50,7 @@ int system(const char *cmd) {
 		error("Fork failed");
 
 	/* wait and return exit-code */
-	if((child = waitchild(&state)) < 0)
+	if((child = waitchild(&state,-1)) < 0)
 		return child;
 	return state.exitCode;
 }

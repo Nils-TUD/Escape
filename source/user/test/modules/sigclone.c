@@ -18,9 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <sys/mman.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
@@ -59,7 +60,7 @@ int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 
 	/* parent waits */
 	do {
-		res = waitchild(NULL);
+		res = waitchild(NULL,-1);
 	}
 	while(res == -EINTR);
 	printf("Parent got %d signals\n",parentCount);

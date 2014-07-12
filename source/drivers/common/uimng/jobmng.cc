@@ -22,6 +22,7 @@
 #include <esc/thread.h>
 #include <esc/sync.h>
 #include <esc/sllist.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,7 +42,7 @@ void JobMng::wait() {
 
 	while(true) {
 		sExitState state;
-		int res = waitchild(&state);
+		int res = waitchild(&state,-1);
 		if(res == 0) {
 			if(state.signal != SIG_COUNT)
 				print("Child %d terminated because of signal %d",state.pid,state.signal);

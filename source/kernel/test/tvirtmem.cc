@@ -112,7 +112,7 @@ static void test_1() {
 	t->discardFrames();
 	checkMemoryAfter(true);
 
-	Proc::waitChild(NULL);
+	Proc::waitChild(NULL,-1);
 	test_assertTrue(Proc::getByPid(cpid) == NULL);
 #endif
 

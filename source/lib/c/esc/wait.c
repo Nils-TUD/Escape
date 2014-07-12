@@ -18,46 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/thread.h>
 #include <sys/wait.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
 
-#include "../modules.h"
-
-#define MAX_PIDS	8192
-
-static int pids[MAX_PIDS];
-
-int mod_forkbomb(int argc,char *argv[]) {
-	ssize_t n = argc > 2 ? atoi(argv[2]) : 100;
-	ssize_t i = 0;
-	while(1) {
-		pids[i] = fork();
-		/* the childs break here */
-		if(pids[i] == 0)
-			break;
-		/* failed? so send all created child-procs the kill-signal */
-		if(i >= n || pids[i] < 0) {
-			if(pids[i] < 0)
-				printe("fork() failed");
-			printf("Kill all childs\n");
-			fflush(stdout);
-			while(i >= 0) {
-				if(pids[i] > 0) {
-					if(kill(pids[i],SIGKILL) < 0)
-						perror("kill");
-					waitchild(NULL,-1);
-				}
-				i--;
-			}
-			return 0;
-		}
-		i++;
-	}
-
-	sleep(1000 * 10000);
-	return 0;
+pid_t waitpid(pid_t pid,int *stat_loc,A_UNUSED int options) {
+	sExitState state;
+	int res = waitchild(&state,pid);
+	if(res < 0)
+		return res;
+	*stat_loc = (state.exitCode & 0xFF) | (state.signal << 8);
+	return state.pid;
 }

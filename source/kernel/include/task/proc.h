@@ -266,12 +266,13 @@ public:
 	static int join(tid_t tid,bool allowSigs = true);
 
 	/**
-	 * Waits until a child-process terminated and copies its exit-state to <state>.
+	 * Waits until a child-process or a specific one terminated and copies its exit-state to <state>.
 	 *
 	 * @param state the state to write to (if not NULL)
+	 * @param pid the pid of the child to wait for (-1 = any child)
 	 * @return 0 on success
 	 */
-	static int waitChild(ExitState *state);
+	static int waitChild(ExitState *state,pid_t pid);
 
 	/**
 	 * Removes all regions from the given process
@@ -560,7 +561,7 @@ private:
 
 	void initProps();
 	static void notifyProcDied(pid_t parent);
-	static int getExitState(pid_t ppid,ExitState *state);
+	static int getExitState(pid_t ppid,pid_t pid,ExitState *state);
 	static void doRemoveRegions(Proc *p,bool remStack);
 	static pid_t getFreePid();
 	static void add(Proc *p);

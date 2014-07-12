@@ -22,6 +22,7 @@
 #include <esc/proc.h>
 #include <esc/thread.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <signal.h>
@@ -411,7 +412,7 @@ static bool ast_catchZombie(void) {
 	sExitState state;
 	int res = -1;
 	while(res != 0) {
-		res = waitchild(&state);
+		res = waitchild(&state,-1);
 		if(res == -EINTR) {
 			if(lang_isInterrupted()) {
 				ast_termProcsOfJob(curJob);

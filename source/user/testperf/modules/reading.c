@@ -21,6 +21,7 @@
 #include <esc/time.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,7 +106,7 @@ int mod_reading(int argc,char **argv) {
 
 		do_read("/dev/ramdisk",useshm);
 		kill(pid,SIGTERM);
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	}
 
 	do_read("/sys/test",false);

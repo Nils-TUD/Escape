@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/time.h>
 #include <esc/proc.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -73,6 +74,6 @@ int mod_matmult(int argc,char *argv[]) {
 		}
 	}
 	for(int i = 0; i < parallel; ++i)
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	return EXIT_SUCCESS;
 }

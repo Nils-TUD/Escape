@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/time.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -45,7 +46,7 @@ static void firenforget(void) {
 
 	/* better catch the zombies now */
 	for(i = 0; i < TEST_COUNT; ++i)
-		waitchild(NULL);
+		waitchild(NULL,-1);
 }
 
 static void waitdead(void) {
@@ -60,7 +61,7 @@ static void waitdead(void) {
 			printe("fork failed");
 			return;
 		}
-		waitchild(NULL);
+		waitchild(NULL,-1);
 		total += rdtsc() - start;
 	}
 	printf("fork      : %Lu cycles/call\n",total / TEST_COUNT);

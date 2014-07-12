@@ -734,12 +734,12 @@ void ProcBase::notifyProcDied(pid_t parent) {
 	Sched::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
-int ProcBase::waitChild(ExitState *state) {
+int ProcBase::waitChild(ExitState *state,pid_t pid) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	/* check if there is already a dead child-proc */
 	childLock.down();
-	int res = getExitState(p->pid,state);
+	int res = getExitState(p->pid,pid,state);
 	if(res < 0) {
 		/* no childs at all */
 		childLock.up();
@@ -755,7 +755,7 @@ int ProcBase::waitChild(ExitState *state) {
 		if(t->hasSignal())
 			return -EINTR;
 		childLock.down();
-		res = getExitState(p->pid,state);
+		res = getExitState(p->pid,pid,state);
 		if(res < 0)
 			return res;
 	}
@@ -766,11 +766,11 @@ int ProcBase::waitChild(ExitState *state) {
 	return 0;
 }
 
-int ProcBase::getExitState(pid_t ppid,ExitState *state) {
+int ProcBase::getExitState(pid_t ppid,pid_t pid,ExitState *state) {
 	LockGuard<Mutex> g(&procLock);
 	size_t childs = 0;
 	for(auto p = procs.begin(); p != procs.end(); ++p) {
-		if(p->parentPid == ppid) {
+		if((pid == (pid_t)-1 || p->pid == pid) && p->parentPid == ppid) {
 			childs++;
 			if((p->flags & (P_ZOMBIE | P_KILLED)) == P_ZOMBIE) {
 				if(state) {

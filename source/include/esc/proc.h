@@ -29,23 +29,6 @@
 
 typedef void (*fExitFunc)(void *arg);
 
-typedef struct {
-	pid_t pid;
-	/* the signal that killed the process (SIG_COUNT if none) */
-	int signal;
-	/* exit-code the process gave us via exit() */
-	int exitCode;
-	/* memory it has used */
-	ulong ownFrames;
-	ulong sharedFrames;
-	ulong swapped;
-	/* other stats */
-	uint64_t runtime;
-	ulong schedCount;
-	ulong syscalls;
-	ulong migrations;
-} sExitState;
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -220,19 +203,6 @@ int execvp(const char *file,const char **args);
  * @return a negative error-code if failed
  */
 int execvpe(const char *path,const char **args,const char **env);
-
-/**
- * Waits until a child terminates and stores information about it into <state>.
- * Note that a child-process is required and only one thread can wait for a child-process!
- * You may get interrupted by a signal (and may want to call waitchild() again in this case). If so
- * you get -EINTR as return-value (and errno will be set).
- *
- * @param state the exit-state (may be NULL)
- * @return 0 on success
- */
-static inline int waitchild(sExitState *state) {
-	return syscall1(SYSCALL_WAITCHILD,(ulong)state);
-}
 
 /**
  * The system function is used to issue a command. Execution of your program will not

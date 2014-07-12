@@ -152,10 +152,11 @@ int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	/* better work on a copy in kernel memory. it's not worth the trouble here... */
 	Proc::ExitState kstate;
 	Proc::ExitState *state = (Proc::ExitState*)SYSC_ARG1(stack);
+	pid_t pid = (pid_t)SYSC_ARG2(stack);
 	if(EXPECT_FALSE(state != NULL && !PageDir::isInUserSpace((uintptr_t)state,sizeof(Proc::ExitState))))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = Proc::waitChild(&kstate);
+	int res = Proc::waitChild(&kstate,pid);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	if(state)

@@ -24,6 +24,7 @@
 #include <esc/debug.h>
 #include <esc/time.h>
 #include <esc/proc.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -54,7 +55,7 @@ int mod_sendrecv(int argc,char *argv[]) {
 		client();
 		if(kill(pid,SIGTERM) < 0)
 			perror("kill");
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	}
 	return 0;
 }
@@ -69,7 +70,7 @@ int mod_pingpong(int argc,char *argv[]) {
 		client();
 		if(kill(pid,SIGTERM) < 0)
 			perror("kill");
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	}
 	return 0;
 }

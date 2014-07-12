@@ -20,9 +20,10 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
-#include <sys/stat.h>
 #include <esc/conf.h>
 #include <esc/time.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <signal.h>
@@ -66,7 +67,7 @@ int main(int argc,char **argv) {
 		sExitState state;
 		int res;
 		while(1) {
-			res = waitchild(&state);
+			res = waitchild(&state,-1);
 			if(res != -EINTR)
 				break;
 		}

@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/time.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,7 +72,7 @@ static void test_pipe(size_t size) {
 		end = rdtsc();
 		destroybuf(buf,bufname);
 		close(wfd);
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	}
 
 	printf("[%4d] %s(%3zuK): %6Lu cycles/call, %Lu MB/s\n",

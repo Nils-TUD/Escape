@@ -23,6 +23,7 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <ipc/device.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <iostream>
@@ -96,7 +97,7 @@ int main(void) {
 	// loop and wait forever
 	while(1) {
 		sExitState st;
-		if(waitchild(&st) == 0) {
+		if(waitchild(&st,-1) == 0) {
 			try {
 				if(state != STATE_RUN)
 					pm.died(st.pid);

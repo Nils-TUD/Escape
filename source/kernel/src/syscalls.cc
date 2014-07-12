@@ -75,7 +75,7 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{rmdir,				"rmdir",    		1},
 	{mount,				"mount",    		2},
 	{unmount,			"unmount",    		1},
-	{waitchild,			"waitchild",    	1},
+	{waitchild,			"waitchild",    	2},
 	{tell,				"tell",    			2},
 	{sysconf,			"sysconf",   		1},
 	{getwork,			"getwork",    		6},

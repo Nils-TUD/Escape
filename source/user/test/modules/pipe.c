@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -81,7 +82,7 @@ static void pipeReadChild(void) {
 			printf("Read '%s'\n",buf);
 		}
 		close(fd[0]);
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	}
 	else
 		error("fork() failed");
@@ -116,7 +117,7 @@ static void pipeReadParent(void) {
 			sleep(10);
 		}
 		close(fd[1]);
-		waitchild(NULL);
+		waitchild(NULL,-1);
 	}
 	else
 		error("fork() failed");
@@ -153,8 +154,8 @@ static void pipeChild2Child(void) {
 			/* parent */
 			close(fd[0]);
 			close(fd[1]);
-			waitchild(NULL);
-			waitchild(NULL);
+			waitchild(NULL,-1);
+			waitchild(NULL,-1);
 		}
 		else
 			error("inner fork() failed");
@@ -206,8 +207,8 @@ static void pipeThrough(void) {
 				printf("Read '%s'\n",buf);
 			}
 			close(fd[2]);
-			waitchild(NULL);
-			waitchild(NULL);
+			waitchild(NULL,-1);
+			waitchild(NULL,-1);
 		}
 		else
 			error("inner fork() failed");

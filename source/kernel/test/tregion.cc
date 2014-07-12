@@ -23,7 +23,7 @@
 #include <mem/pagedir.h>
 #include <video.h>
 #include <cppsupport.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 /* forward declarations */

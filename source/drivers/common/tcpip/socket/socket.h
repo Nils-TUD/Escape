@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/mman.h>
-#include <esc/messages.h>
-#include <esc/io.h>
+#include <sys/messages.h>
+#include <sys/io.h>
 #include <ipc/clientdevice.h>
 #include <assert.h>
 #include <string.h>

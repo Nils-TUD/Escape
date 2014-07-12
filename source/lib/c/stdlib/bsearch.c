@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <stdlib.h>
 
 void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp) {

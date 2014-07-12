@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <arch/x86/idt.h>
-#include <esc/arch.h>
+#include <sys/arch.h>
 
 /**
  * Our ISRs

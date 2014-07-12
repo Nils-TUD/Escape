@@ -27,7 +27,7 @@
 .extern initenv
 .extern _init
 
-#include "esc/syscalls.h"
+#include <sys/syscalls.h>
 
 // Initial software stack:
 // +------------------+  <- top

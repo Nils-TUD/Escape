@@ -24,7 +24,7 @@
 #	include <arch/x86_64/mem/layout.h>
 #	include <arch/x86_64/intrptstackframe.h>
 #endif
-#include <esc/arch.h>
+#include <sys/arch.h>
 
 #define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - WORDSIZE)
 

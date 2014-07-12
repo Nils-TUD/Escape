@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <time.h>
 
 time_t timeof(int month,int day,int year,int hour,int min,int sec) {

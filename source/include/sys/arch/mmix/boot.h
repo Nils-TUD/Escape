@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #define BOOT_PATH_MAX	64
 #define BOOT_PROG_MAX	8

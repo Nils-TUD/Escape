@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <fs/blockcache.h>
 #include <stdlib.h>
 #include <string.h>

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/messages.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 #include <ipc/proto/screen.h>
 #include <vbe/vbe.h>
 #include <assert.h>

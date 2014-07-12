@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <stdio.h>
 
 #define CMD_ID_ALL			0

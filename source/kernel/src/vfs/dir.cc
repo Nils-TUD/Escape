@@ -32,7 +32,7 @@
 #include <vfs/fs.h>
 #include <vfs/openfile.h>
 #include <sys/stat.h>
-#include <esc/endian.h>
+#include <sys/endian.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>

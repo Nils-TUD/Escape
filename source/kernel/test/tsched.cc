@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <task/sched.h>
-#include <esc/test.h>
+#include <sys/test.h>
 
 /* forward declarations */
 static void test_sched();

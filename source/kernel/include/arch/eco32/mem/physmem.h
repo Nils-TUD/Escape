@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/arch.h>
+#include <sys/arch.h>
 
 /**
  * Physical memory layout:

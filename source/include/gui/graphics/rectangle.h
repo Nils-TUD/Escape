@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/size.h>
 #include <iostream>

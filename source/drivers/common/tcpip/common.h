@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <ipc/proto/nic.h>
 #include <ipc/proto/net.h>
 #include <ipc/proto/socket.h>

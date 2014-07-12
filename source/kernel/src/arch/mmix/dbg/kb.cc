@@ -20,7 +20,7 @@
 #include <common.h>
 #include <mem/pagedir.h>
 #include <dbg/kb.h>
-#include <esc/keycodes.h>
+#include <sys/keycodes.h>
 
 #define KEYBOARD_BASE		0x8006000000000000	/* physical keyboard base address */
 

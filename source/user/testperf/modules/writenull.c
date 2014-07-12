@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/time.h>
+#include <sys/common.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

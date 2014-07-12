@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 /* error-codes */
 #define EACCES						1	/* Permission denied */

@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <esc/width.h>
+#include <sys/width.h>
 
 size_t getullwidth(ullong n,uint base) {
 	size_t width = 1;

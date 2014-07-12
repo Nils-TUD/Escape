@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 extern int mod_getpid(int,char**);
 extern int mod_yield(int,char**);

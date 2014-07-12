@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/imagebutton.h>
 #include <gui/application.h>
 #include <gui/layout/iconlayout.h>
-#include <esc/proc.h>
+#include <sys/proc.h>
 #include <stdio.h>
 #include <iostream>
 #include "desktopwin.h"

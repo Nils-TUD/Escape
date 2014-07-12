@@ -25,7 +25,7 @@
 #include <dbg/cmd/ls.h>
 #include <mem/cache.h>
 #include <ostringstream.h>
-#include <esc/endian.h>
+#include <sys/endian.h>
 #include <string.h>
 #include <dirent.h>
 #include <limits.h>

@@ -33,7 +33,7 @@
 #include <cppsupport.h>
 #include <config.h>
 #include <ipc/ipcbuf.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <string.h>
 #include <errno.h>
 

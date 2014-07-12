@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 /* timestamp stuff */
 #define SECS_PER_MIN			60

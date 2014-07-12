@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/keycodes.h>
+#include <sys/common.h>
+#include <sys/keycodes.h>
 #include <gui/graphics/pos.h>
 #include <ctype.h>
 #include <ostream>

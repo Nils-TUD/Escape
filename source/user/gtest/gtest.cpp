@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/image/bitmapimage.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
@@ -32,11 +32,11 @@
 #include <gui/border.h>
 #include <gui/splitter.h>
 #include <gui/scrollpane.h>
-#include <esc/proc.h>
-#include <esc/debug.h>
-#include <esc/messages.h>
-#include <esc/io.h>
-#include <esc/thread.h>
+#include <sys/proc.h>
+#include <sys/debug.h>
+#include <sys/messages.h>
+#include <sys/io.h>
+#include <sys/thread.h>
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>

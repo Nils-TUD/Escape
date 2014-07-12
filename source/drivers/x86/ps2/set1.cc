@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/messages.h>
-#include <esc/keycodes.h>
+#include <sys/common.h>
+#include <sys/messages.h>
+#include <sys/keycodes.h>
 
 #include "set1.h"
 #include "keyboard.h"

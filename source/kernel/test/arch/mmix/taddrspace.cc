@@ -21,7 +21,7 @@
 #include <arch/mmix/mem/addrspace.h>
 #include <task/proc.h>
 #include <mem/pagedir.h>
-#include <esc/test.h>
+#include <sys/test.h>
 
 #define ADDR_SPACE_COUNT		1024
 

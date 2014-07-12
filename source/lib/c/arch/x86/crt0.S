@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/syscalls.h>
-#include <esc/arch.h>
+#include <sys/syscalls.h>
+#include <sys/arch.h>
 
 .section .text
 

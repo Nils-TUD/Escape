@@ -18,7 +18,7 @@
  */
 
 #include <intrptstackframe.h>
-#include <esc/arch.h>
+#include <sys/arch.h>
 
 .global kstackPtr
 .global waiting

@@ -20,7 +20,7 @@
 #include <common.h>
 #include <col/treap.h>
 #include <util.h>
-#include <esc/test.h>
+#include <sys/test.h>
 
 #define TEST_NODE_COUNT     10
 

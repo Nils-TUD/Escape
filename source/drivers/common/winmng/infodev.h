@@ -19,6 +19,6 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 int infodev_thread(A_UNUSED void *arg);

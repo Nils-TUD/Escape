@@ -28,7 +28,6 @@
 #include <mem/virtmem.h>
 #include <col/dlist.h>
 #include <interrupts.h>
-#include <esc/hashmap.h>
 #include <assert.h>
 
 #define MAX_INTRPT_LEVELS		3

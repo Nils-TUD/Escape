@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/sync.h>
+#include <sys/common.h>
+#include <sys/sync.h>
 #include <ipc/clientdevice.h>
 #include <mutex>
 

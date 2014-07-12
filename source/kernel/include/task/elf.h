@@ -20,7 +20,7 @@
 #pragma once
 
 #include <common.h>
-#include <esc/elf.h>
+#include <sys/elf.h>
 
 class OpenFile;
 

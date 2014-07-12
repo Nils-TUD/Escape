@@ -23,7 +23,7 @@
 #include <task/thread.h>
 #include <arch/x86/tss.h>
 #include <arch/x86/desc.h>
-#include <esc/arch.h>
+#include <sys/arch.h>
 
 class GDT {
 	GDT() = delete;

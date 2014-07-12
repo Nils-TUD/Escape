@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/debug.h>
-#include <esc/thread.h>
-#include <esc/endian.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/thread.h>
+#include <sys/endian.h>
 #include <fs/blockcache.h>
 #include <fs/fsdev.h>
 #include <assert.h>

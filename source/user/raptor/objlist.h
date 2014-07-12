@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/sllist.h>
+#include <sys/common.h>
+#include <sys/sllist.h>
 #include "object.h"
 
 void objlist_create(void);

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/syscalls.h>
+#include <sys/common.h>
+#include <sys/syscalls.h>
 
 #define MAX_PATH_LEN		255
 

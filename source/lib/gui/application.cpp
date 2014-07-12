@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/window.h>
 #include <gui/popupwindow.h>
-#include <esc/messages.h>
-#include <esc/esccodes.h>
-#include <esc/thread.h>
-#include <esc/debug.h>
-#include <esc/io.h>
+#include <sys/messages.h>
+#include <sys/esccodes.h>
+#include <sys/thread.h>
+#include <sys/debug.h>
+#include <sys/io.h>
 #include <sys/mman.h>
-#include <esc/time.h>
+#include <sys/time.h>
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>

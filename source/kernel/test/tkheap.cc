@@ -21,7 +21,7 @@
 #include <mem/kheap.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include <video.h>
 #include <stdarg.h>
 #include "testutils.h"

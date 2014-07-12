@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #define tpool_lock(...)		0
 #define tpool_unlock(...)	0

@@ -38,7 +38,7 @@
 #include <util.h>
 #include <video.h>
 #include <cppsupport.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

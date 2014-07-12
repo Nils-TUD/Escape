@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/keycodes.h>
-#include <esc/io.h>
-#include <esc/log.h>
-#include <esc/messages.h>
-#include <esc/esccodes.h>
+#include <sys/common.h>
+#include <sys/keycodes.h>
+#include <sys/io.h>
+#include <sys/log.h>
+#include <sys/messages.h>
+#include <sys/esccodes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

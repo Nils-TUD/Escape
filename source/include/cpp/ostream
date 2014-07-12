@@ -21,7 +21,7 @@
 #pragma once
 
 #include <stddef.h>
-#include <esc/width.h>
+#include <sys/width.h>
 #include <impl/streams/ios.h>
 #include <impl/streams/ios_base.h>
 

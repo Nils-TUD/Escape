@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <esc/width.h>
+#include <sys/width.h>
 
 size_t getnwidth(int n) {
 	/* we have at least one char */

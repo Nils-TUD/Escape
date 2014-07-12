@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include "node.h"
 #include "../exec/env.h"
 #include "../lang.h"

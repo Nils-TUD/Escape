@@ -18,7 +18,7 @@
  */
 
 #include <ostream>
-#include <esc/width.h>
+#include <sys/width.h>
 #include <string.h>
 
 #define FFL_SHORT			1

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/tls.h>
+#include <sys/common.h>
+#include <sys/tls.h>
 #include <errno.h>
 
 int *errno_location(void) {

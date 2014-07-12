@@ -19,7 +19,7 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <esc/width.h>
+#include <sys/width.h>
 #include <assert.h>
 
 #define MAX_DBL_LEN		64

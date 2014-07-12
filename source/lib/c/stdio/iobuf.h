@@ -20,9 +20,9 @@
 #pragma once
 
 #define IOBUF_H_
-#include <esc/common.h>
-#include <esc/sync.h>
-#include <esc/sllist.h>
+#include <sys/common.h>
+#include <sys/sync.h>
+#include <sys/sllist.h>
 
 #define IN_BUFFER_SIZE		1024
 #define OUT_BUFFER_SIZE		1024

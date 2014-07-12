@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 typedef uint32_t pthread_key_t;
 typedef int pthread_mutex_t;

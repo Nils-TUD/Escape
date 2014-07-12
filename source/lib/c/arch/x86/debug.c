@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/arch.h>
-#include <esc/thread.h>
-#include <esc/debug.h>
+#include <sys/common.h>
+#include <sys/arch.h>
+#include <sys/thread.h>
+#include <sys/debug.h>
 
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */

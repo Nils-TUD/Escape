@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/messages.h>
-#include <esc/rect.h>
+#include <sys/common.h>
+#include <sys/messages.h>
+#include <sys/rect.h>
 #include <ipc/proto/ui.h>
 
 #define WINDOW_COUNT					32

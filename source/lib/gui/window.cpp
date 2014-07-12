@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/graphics/color.h>
 #include <gui/window.h>
 #include <gui/uielement.h>
 #include <gui/imagebutton.h>
-#include <esc/messages.h>
-#include <esc/debug.h>
-#include <esc/proc.h>
-#include <esc/io.h>
+#include <sys/messages.h>
+#include <sys/debug.h>
+#include <sys/proc.h>
+#include <sys/io.h>
 #include <string>
 #include <ostream>
 #include <iomanip>

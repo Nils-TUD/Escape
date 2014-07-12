@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <usergroup/group.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/driver.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <esc/debug.h>
-#include <esc/messages.h>
-#include <esc/thread.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/proc.h>
+#include <sys/debug.h>
+#include <sys/messages.h>
+#include <sys/thread.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <ipc/clientdevice.h>

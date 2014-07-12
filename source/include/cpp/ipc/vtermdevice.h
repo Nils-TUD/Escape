@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <ipc/proto/file.h>
 #include <ipc/proto/vterm.h>
 #include <ipc/ipcstream.h>

@@ -21,7 +21,7 @@
 #include <task/thread.h>
 #include <mem/vmfreemap.h>
 #include <util.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 #define TOTAL_SIZE	(0x40 * PAGE_SIZE)

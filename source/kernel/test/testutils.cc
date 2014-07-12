@@ -23,7 +23,7 @@
 #include <mem/physmem.h>
 #include <mem/dynarray.h>
 #include <task/proc.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 static size_t mappedPages;

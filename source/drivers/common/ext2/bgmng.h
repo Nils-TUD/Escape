@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <fs/ext2/ext2.h>
 #include <stdlib.h>
 

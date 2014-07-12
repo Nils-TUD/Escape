@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/elf.h>
-#include <esc/debug.h>
-#include <esc/sllist.h>
+#include <sys/common.h>
+#include <sys/elf.h>
+#include <sys/debug.h>
+#include <sys/sllist.h>
 #include <sys/mman.h>
 
 #define LD_BIND_NOW		0

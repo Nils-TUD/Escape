@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
-#include <esc/proc.h>
+#include <sys/common.h>
+#include <sys/thread.h>
+#include <sys/proc.h>
 #include <stdlib.h>
 
 int __cxa_atexit(void (*f)(void *),void *p,void *d);

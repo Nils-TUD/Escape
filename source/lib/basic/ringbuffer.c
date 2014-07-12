@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/ringbuffer.h>
+#include <sys/common.h>
+#include <sys/ringbuffer.h>
 #include <string.h>
 #include <assert.h>
 
@@ -29,7 +29,7 @@
 #	define malloc(x)	cache_alloc(x)
 #else
 /* for exit (vassert) */
-#	include <esc/proc.h>
+#	include <sys/proc.h>
 #	include <stdio.h>
 #	include <stdlib.h>
 #	define rbprintf 	printf

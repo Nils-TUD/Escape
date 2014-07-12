@@ -23,7 +23,7 @@
 #include <task/thread.h>
 #include <mem/physmem.h>
 #include <video.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include <assert.h>
 #include <string.h>
 #include "testutils.h"

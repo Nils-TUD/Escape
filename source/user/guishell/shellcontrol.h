@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/control.h>
 #include <gui/scrollpane.h>
-#include <esc/esccodes.h>
-#include <esc/thread.h>
+#include <sys/esccodes.h>
+#include <sys/thread.h>
 #include <stdlib.h>
 
 #include <vterm/vtctrl.h>

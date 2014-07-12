@@ -34,7 +34,7 @@
 #include <task/smp.h>
 #include <ostringstream.h>
 #include <video.h>
-#include <esc/keycodes.h>
+#include <sys/keycodes.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>

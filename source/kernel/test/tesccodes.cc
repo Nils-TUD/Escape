@@ -18,8 +18,8 @@
  */
 
 #include <common.h>
-#include <esc/esccodes.h>
-#include <esc/test.h>
+#include <sys/esccodes.h>
+#include <sys/test.h>
 
 /* forward declarations */
 static void test_esccodes();

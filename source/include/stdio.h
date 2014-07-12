@@ -21,8 +21,8 @@
 
 /* Note that most of the comments here are from doc/iso_c99.pdf */
 
-#include <esc/common.h>
-#include <esc/io.h>
+#include <sys/common.h>
+#include <sys/io.h>
 #include <stdarg.h>
 
 #define _IOFBF			0	/* fully buffered */

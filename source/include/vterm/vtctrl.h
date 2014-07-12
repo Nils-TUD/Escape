@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/ringbuffer.h>
-#include <esc/esccodes.h>
-#include <esc/messages.h>
-#include <esc/sync.h>
+#include <sys/common.h>
+#include <sys/ringbuffer.h>
+#include <sys/esccodes.h>
+#include <sys/messages.h>
+#include <sys/sync.h>
 #include <ipc/proto/ui.h>
 #include <ipc/proto/speaker.h>
 #include <mutex>

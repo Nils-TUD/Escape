@@ -19,7 +19,7 @@
 
 #if defined(ESC_PROFILE)
 #include <assert.h>
-#include <esc/arch.h>
+#include <sys/arch.h>
 #if defined(IN_KERNEL)
 #	if 0
 #		define gettid()		({ \
@@ -37,10 +37,10 @@
 #	endif
 #	define getcycles()	rdtsc()
 #else
-#	include <esc/arch/x86/ports.h>
-#	include <esc/thread.h>
-#	include <esc/time.h>
-#	include <esc/debug.h>
+#	include <sys/arch/x86/ports.h>
+#	include <sys/thread.h>
+#	include <sys/time.h>
+#	include <sys/debug.h>
 #	include <stdio.h>
 #	define gettid()			0
 #	define getcycles()		rdtsc()

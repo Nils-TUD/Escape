@@ -22,7 +22,7 @@
 #include <common.h>
 #include <vfs/node.h>
 #include <semaphore.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <errno.h>
 
 class VFSDevice : public VFSNode {

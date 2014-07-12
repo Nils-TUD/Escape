@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 int shell_cmdCd(int argc,char **argv);
 int shell_cmdEcho(int argc,char *argv[]);

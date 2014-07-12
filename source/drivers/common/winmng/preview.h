@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/rect.h>
+#include <sys/common.h>
+#include <sys/rect.h>
 
 /**
  * Paints the given rect s a preview-rectangle with the given thickness in <shmem>. If <thickness>

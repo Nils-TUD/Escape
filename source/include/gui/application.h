@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/messages.h>
-#include <esc/thread.h>
-#include <esc/sync.h>
+#include <sys/common.h>
+#include <sys/messages.h>
+#include <sys/thread.h>
+#include <sys/sync.h>
 #include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
 #include <gui/event/subscriber.h>

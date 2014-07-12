@@ -20,7 +20,7 @@
 #include <common.h>
 #include <col/pathtree.h>
 #include <log.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include <assert.h>
 #include "testutils.h"
 

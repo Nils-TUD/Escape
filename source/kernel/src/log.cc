@@ -30,7 +30,7 @@
 #include <spinlock.h>
 #include <config.h>
 #include <cppsupport.h>
-#include <esc/esccodes.h>
+#include <sys/esccodes.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <string.h>

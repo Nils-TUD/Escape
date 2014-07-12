@@ -27,7 +27,7 @@
 #include <vfs/vfs.h>
 #include <ostream.h>
 #include <ipc/ipcbuf.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <errno.h>
 
 #define FILE_COUNT					(gftArray.getObjCount())

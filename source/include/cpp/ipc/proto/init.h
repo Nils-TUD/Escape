@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/messages.h>
-#include <esc/proc.h>
+#include <sys/common.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
 #include <ipc/ipcstream.h>
 
 namespace ipc {

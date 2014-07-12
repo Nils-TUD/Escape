@@ -20,7 +20,7 @@
 #include <common.h>
 #include <col/slist.h>
 #include <col/islist.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 /* a bit of c++ magic to use the same test both for SList and ISList */

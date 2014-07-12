@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 /* 32-bit integer that is stored in little- and bigendian */
 struct ISOInt32 {

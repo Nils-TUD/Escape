@@ -22,7 +22,7 @@
 #include <mem/pagedir.h>
 #include <task/proc.h>
 #include <syscalls.h>
-#include <esc/syscalls.h>
+#include <sys/syscalls.h>
 #include <string.h>
 #include <limits.h>
 #include <assert.h>

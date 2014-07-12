@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <esc/width.h>
+#include <sys/width.h>
 
 size_t getllwidth(llong l) {
 	size_t c = 0;

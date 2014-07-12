@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #if defined(__x86_64__)
 #	include "arch/x86_64/reloc.h"

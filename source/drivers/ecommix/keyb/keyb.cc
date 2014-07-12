@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/driver.h>
-#include <esc/io.h>
-#include <esc/debug.h>
-#include <esc/proc.h>
-#include <esc/thread.h>
-#include <esc/keycodes.h>
-#include <esc/messages.h>
-#include <esc/ringbuffer.h>
+#include <sys/common.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/debug.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
+#include <sys/keycodes.h>
+#include <sys/messages.h>
+#include <sys/ringbuffer.h>
 #include <sys/mman.h>
-#include <esc/irq.h>
+#include <sys/irq.h>
 #include <ipc/proto/input.h>
 #include <ipc/clientdevice.h>
 #include <string.h>

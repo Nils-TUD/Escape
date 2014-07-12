@@ -24,7 +24,7 @@
 #include <task/thread.h>
 #include <task/proc.h>
 #include <video.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 /* forward declarations */

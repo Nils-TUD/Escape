@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/sllist.h>
-#include <esc/driver.h>
-#include <esc/thread.h>
-#include <esc/sync.h>
-#include <esc/io.h>
+#include <sys/common.h>
+#include <sys/sllist.h>
+#include <sys/driver.h>
+#include <sys/thread.h>
+#include <sys/sync.h>
+#include <sys/io.h>
 #include <stdlib.h>
 #include "listener.h"
 

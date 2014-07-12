@@ -19,8 +19,8 @@
 
 .section .text
 
-#include <esc/syscalls.h>
-#include <esc/arch.h>
+#include <sys/syscalls.h>
+#include <sys/arch.h>
 
 .global sigRetFunc
 .global _start

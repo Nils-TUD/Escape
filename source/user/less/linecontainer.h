@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <sys/mman.h>
-#include <esc/conf.h>
+#include <sys/conf.h>
 #include <iterator>
 #include <vector>
 #include <new>

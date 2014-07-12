@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/driver.h>
-#include <esc/messages.h>
+#include <sys/common.h>
+#include <sys/driver.h>
+#include <sys/messages.h>
 #include <ipc/filedev.h>
 #include <stdio.h>
 #include <stdlib.h>

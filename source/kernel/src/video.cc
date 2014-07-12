@@ -22,7 +22,7 @@
 #include <config.h>
 #include <video.h>
 #include <log.h>
-#include <esc/esccodes.h>
+#include <sys/esccodes.h>
 #include <assert.h>
 
 Video Video::inst;

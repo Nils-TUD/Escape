@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/test.h>
-#include <esc/elf.h>
+#include <sys/common.h>
+#include <sys/test.h>
+#include <sys/elf.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <stdlib.h>

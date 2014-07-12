@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #define SCORE_HIT		2
 #define SCORE_MISS		(-2)

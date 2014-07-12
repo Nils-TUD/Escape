@@ -32,7 +32,7 @@
 #include <video.h>
 #include <spinlock.h>
 #include <log.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <ipc/ipcbuf.h>
 #include <ipc/proto/file.h>
 #include <string.h>

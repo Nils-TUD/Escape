@@ -20,7 +20,7 @@
 #include <common.h>
 #include <mem/pagedir.h>
 #include <mem/dynarray.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 /* use the sllnode-area here and start a bit above to be sure that its not used yet */

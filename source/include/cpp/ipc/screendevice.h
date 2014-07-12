@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/rect.h>
+#include <sys/common.h>
+#include <sys/rect.h>
 #include <ipc/ipcstream.h>
 #include <ipc/clientdevice.h>
 #include <ipc/proto/screen.h>

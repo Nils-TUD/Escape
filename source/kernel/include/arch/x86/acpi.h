@@ -21,7 +21,7 @@
 
 #include <common.h>
 #include <col/islist.h>
-#include <esc/arch/x86/acpi.h>
+#include <sys/arch/x86/acpi.h>
 
 class OStream;
 

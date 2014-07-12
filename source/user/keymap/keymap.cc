@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/messages.h>
-#include <esc/cmdargs.h>
+#include <sys/common.h>
+#include <sys/proc.h>
+#include <sys/messages.h>
+#include <sys/cmdargs.h>
 #include <sys/stat.h>
 #include <ipc/proto/vterm.h>
 #include <dirent.h>

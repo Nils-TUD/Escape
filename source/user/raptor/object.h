@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #define TYPE_AIRPLANE	0
 #define TYPE_BULLET		1

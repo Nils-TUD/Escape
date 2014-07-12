@@ -26,7 +26,7 @@
 #include <boot.h>
 #include <util.h>
 #include <log.h>
-#include <esc/test.h>
+#include <sys/test.h>
 
 /* TODO find a better solution */
 #if defined(__mmix__)
@@ -39,7 +39,6 @@ extern sTestModule tModMM;
 extern sTestModule tModDynArray;
 extern sTestModule tModPaging;
 extern sTestModule tModProc;
-extern sTestModule tModHashMap;
 extern sTestModule tModKHeap;
 extern sTestModule tModRegion;
 extern sTestModule tModRBuffer;
@@ -84,7 +83,6 @@ void unittest_run() {
 	test_register(&tModDynArray);
 	test_register(&tModPaging);
 	test_register(&tModProc);
-	test_register(&tModHashMap);
 	test_register(&tModKHeap);
 	test_register(&tModRegion);
 	test_register(&tModRBuffer);

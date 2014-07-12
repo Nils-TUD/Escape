@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/enums.h>
 #include <gui/splitter.h>
 #include <gui/panel.h>

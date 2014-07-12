@@ -18,7 +18,7 @@
  */
 
 #include <arch/i586/mem/layout.h>
-#include <esc/arch.h>
+#include <sys/arch.h>
 
 .global proc0TLPD
 .global paging_setup

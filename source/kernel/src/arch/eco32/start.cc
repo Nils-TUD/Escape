@@ -26,7 +26,7 @@
 #include <mem/virtmem.h>
 #include <boot.h>
 #include <util.h>
-#include <esc/arch.h>
+#include <sys/arch.h>
 #include <assert.h>
 
 EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp);

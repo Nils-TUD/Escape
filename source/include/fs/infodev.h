@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/thread.h>
-#include <esc/proc.h>
+#include <sys/common.h>
+#include <sys/thread.h>
+#include <sys/proc.h>
 #include <fs/filesystem.h>
 #include <vthrow.h>
 #include <signal.h>

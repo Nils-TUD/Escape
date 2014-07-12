@@ -23,7 +23,7 @@
 #include <mem/region.h>
 #include <cppsupport.h>
 #include <util.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 #define TEST_REG_COUNT	10

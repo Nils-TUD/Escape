@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/messages.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 #include <sys/stat.h>
 #include <ipc/proto/screen.h>
 #include <ipc/proto/input.h>

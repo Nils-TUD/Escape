@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/syscalls.h>
+#include <sys/common.h>
+#include <sys/syscalls.h>
 
 #define CLOCKS_PER_SEC		(clock_t)1000000
 

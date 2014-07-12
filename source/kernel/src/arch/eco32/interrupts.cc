@@ -26,7 +26,7 @@
 #include <mem/virtmem.h>
 #include <dbg/kb.h>
 #include <dbg/console.h>
-#include <esc/keycodes.h>
+#include <sys/keycodes.h>
 #include <cpu.h>
 #include <syscalls.h>
 #include <interrupts.h>

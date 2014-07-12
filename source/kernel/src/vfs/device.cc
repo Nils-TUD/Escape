@@ -26,7 +26,7 @@
 #include <vfs/device.h>
 #include <video.h>
 #include <spinlock.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <assert.h>
 #include <errno.h>
 

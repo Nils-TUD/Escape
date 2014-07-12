@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/messages.h>
-#include <esc/sync.h>
-#include <esc/irq.h>
+#include <sys/common.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/messages.h>
+#include <sys/sync.h>
+#include <sys/irq.h>
 #include <ipc/proto/nic.h>
 #include <ipc/proto/pci.h>
 #include <ipc/nicdevice.h>

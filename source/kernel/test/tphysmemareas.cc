@@ -20,7 +20,7 @@
 #include <common.h>
 #include <mem/physmemareas.h>
 #include <util.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include "testutils.h"
 
 /* forward declarations */

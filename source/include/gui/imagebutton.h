@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/image/image.h>
 #include <gui/button.h>
 

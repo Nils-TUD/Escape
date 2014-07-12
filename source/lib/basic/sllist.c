@@ -17,9 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
-#include <esc/common.h>
-#include <esc/sllist.h>
+#include <sys/common.h>
+#include <sys/sllist.h>
 #include <assert.h>
 
 #if defined(IN_KERNEL)
@@ -31,7 +30,7 @@
 #	define nodefree		cache_free
 #else
 /* for exit (vassert) */
-#	include <esc/proc.h>
+#	include <sys/proc.h>
 #	include <stdio.h>
 #	include <stdlib.h>
 #	define sllprintf	printf

@@ -21,7 +21,7 @@
 #include <mem/cache.h>
 #include <ostream.h>
 #include <spinlock.h>
-#include <esc/width.h>
+#include <sys/width.h>
 #include <stdarg.h>
 #include <string.h>
 

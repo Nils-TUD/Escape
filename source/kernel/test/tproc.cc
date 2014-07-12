@@ -23,7 +23,7 @@
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
 #include <video.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include <assert.h>
 #include "testutils.h"
 

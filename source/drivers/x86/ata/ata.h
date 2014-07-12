@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/debug.h>
+#include <sys/common.h>
+#include <sys/debug.h>
 #include <stdio.h>
 #include "device.h"
 

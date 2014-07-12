@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/test.h>
+#include <sys/common.h>
+#include <sys/test.h>
 #include <stdarg.h>
 #include <assert.h>
 
@@ -29,7 +29,7 @@
 #	define testvPrintf	vid_vprintf
 #	define fflush(...)
 #else
-#	include <esc/proc.h>
+#	include <sys/proc.h>
 #	include <stdio.h>
 
 #	define testPrintf	printf

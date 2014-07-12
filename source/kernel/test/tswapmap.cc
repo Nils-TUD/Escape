@@ -21,7 +21,7 @@
 #include <mem/swapmap.h>
 #include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <esc/test.h>
+#include <sys/test.h>
 
 static void test_swapmap();
 static void test_swapmap1();

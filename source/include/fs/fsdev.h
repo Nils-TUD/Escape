@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <ipc/clientdevice.h>
 #include <fs/common.h>
 #include <fs/infodev.h>

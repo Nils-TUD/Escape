@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 /* first sector of the super-block in the first block-group */
 #define EXT2_SUPERBLOCK_SECNO				2

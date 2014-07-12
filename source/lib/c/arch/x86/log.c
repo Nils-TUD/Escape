@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/log.h>
+#include <sys/common.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/log.h>
 #include <assert.h>
 
 static bool reqPorts = false;

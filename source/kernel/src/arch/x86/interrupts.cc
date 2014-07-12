@@ -38,8 +38,8 @@
 #include <util.h>
 #include <video.h>
 #include <config.h>
-#include <esc/keycodes.h>
-#include <esc/syscalls.h>
+#include <sys/keycodes.h>
+#include <sys/syscalls.h>
 
 #define DEBUG_PAGEFAULTS		0
 

@@ -28,7 +28,7 @@
 #include <vfs/vfs.h>
 #include <vfs/openfile.h>
 #include <video.h>
-#include <esc/keycodes.h>
+#include <sys/keycodes.h>
 #include <errno.h>
 
 static char buffer[512];

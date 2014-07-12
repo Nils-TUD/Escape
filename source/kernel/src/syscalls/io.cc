@@ -28,7 +28,7 @@
 #include <task/proc.h>
 #include <task/filedesc.h>
 #include <syscalls.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <errno.h>
 #include <string.h>
 #include <assert.h>

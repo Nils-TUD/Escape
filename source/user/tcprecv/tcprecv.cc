@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/thread.h>
-#include <esc/cmdargs.h>
+#include <sys/common.h>
+#include <sys/thread.h>
+#include <sys/cmdargs.h>
 #include <ipc/proto/net.h>
 #include <ipc/proto/socket.h>
 #include <stdlib.h>

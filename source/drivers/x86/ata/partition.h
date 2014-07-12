@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 /* the number of partitions per disk */
 #define PARTITION_COUNT		4

@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 
 #if defined(__i586__)
-#	include <esc/arch/i586/setjmp.h>
+#	include <sys/arch/i586/setjmp.h>
 #elif defined(__x86_64__)
-#	include <esc/arch/x86_64/setjmp.h>
+#	include <sys/arch/x86_64/setjmp.h>
 #else
 // TODO
 typedef void *jmp_buf;

@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/proc.h>
+#include <sys/common.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/proc.h>
 #include "device.h"
 #include "controller.h"
 #include "ata.h"

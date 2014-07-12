@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/sllist.h>
-#include <esc/endian.h>
+#include <sys/common.h>
+#include <sys/sllist.h>
+#include <sys/endian.h>
 #include <fs/common.h>
 #include <fs/blockcache.h>
 #include <fs/filesystem.h>

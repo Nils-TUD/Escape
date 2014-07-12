@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/io.h>
+#include <sys/common.h>
+#include <sys/io.h>
 #include <ipc/ipcbuf.h>
 #include <utility>
 

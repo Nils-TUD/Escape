@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/io.h>
-#include <esc/messages.h>
+#include <sys/common.h>
+#include <sys/io.h>
+#include <sys/messages.h>
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/graphics/color.h>
 #include <gui/layout/borderlayout.h>

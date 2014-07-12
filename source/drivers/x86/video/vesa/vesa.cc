@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/driver.h>
-#include <esc/debug.h>
+#include <sys/common.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/driver.h>
+#include <sys/debug.h>
 #include <sys/mman.h>
-#include <esc/rect.h>
-#include <esc/messages.h>
+#include <sys/rect.h>
+#include <sys/messages.h>
 #include <ipc/screendevice.h>
 #include <vbe/vbe.h>
 #include <errno.h>

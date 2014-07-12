@@ -22,7 +22,7 @@
 #include <task/smp.h>
 #include <vfs/vfs.h>
 #include <util.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <ipc/ipcbuf.h>
 
 /* the x86-call instruction is 5 bytes long */

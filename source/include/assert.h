@@ -22,8 +22,8 @@
 #if IN_KERNEL
 #	include <cwrap.h>
 #else
-#	include <esc/proc.h>
-#	include <esc/debug.h>
+#	include <sys/proc.h>
+#	include <sys/debug.h>
 #	include <stdio.h>
 #endif
 

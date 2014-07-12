@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/defines.h>
+#include <sys/common.h>
+#include <sys/defines.h>
 #include <stddef.h>
 
 typedef int vmreg_t;

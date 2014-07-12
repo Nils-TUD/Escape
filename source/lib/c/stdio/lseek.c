@@ -18,8 +18,8 @@
  */
 
 
-#include <esc/common.h>
-#include <esc/io.h>
+#include <sys/common.h>
+#include <sys/io.h>
 #include <stdio.h>
 
 off_t lseek(int fd,off_t offset,uint whence) {

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/irq.h>
+#include <sys/common.h>
+#include <sys/irq.h>
 #include "partition.h"
 
 #define OP_READ						0

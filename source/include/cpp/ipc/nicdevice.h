@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <ipc/proto/pci.h>
 #include <ipc/proto/nic.h>
 #include <ipc/requestqueue.h>

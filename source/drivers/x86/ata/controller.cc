@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/proc.h>
-#include <esc/thread.h>
-#include <esc/messages.h>
-#include <esc/irq.h>
-#include <esc/io.h>
+#include <sys/common.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
+#include <sys/messages.h>
+#include <sys/irq.h>
+#include <sys/io.h>
 #include <sys/mman.h>
-#include <esc/sync.h>
+#include <sys/sync.h>
 #include <ipc/proto/pci.h>
 #include <signal.h>
 #include <stdio.h>

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/sync.h>
+#include <sys/common.h>
+#include <sys/sync.h>
 #include <vector>
 #include "process.h"
 #include "../progress.h"

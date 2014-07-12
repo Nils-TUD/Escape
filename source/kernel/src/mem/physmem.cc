@@ -34,7 +34,7 @@
 #include <video.h>
 #include <spinlock.h>
 #include <ipc/ipcbuf.h>
-#include <esc/messages.h>
+#include <sys/messages.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>

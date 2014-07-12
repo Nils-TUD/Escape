@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/messages.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 #include <ipc/proto/nic.h>
 #include <ipc/ipcstream.h>
 #include <istream>

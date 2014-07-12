@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <col/dlist.h>
-#include <esc/test.h>
+#include <sys/test.h>
 
 static void test_dlist();
 

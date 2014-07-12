@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <dbg/kb.h>
-#include <esc/keycodes.h>
+#include <sys/keycodes.h>
 
 uint Keyboard::flags = 0;
 Keyboard::KeymapEntry Keyboard::keymap[] = {

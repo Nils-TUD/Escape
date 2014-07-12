@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <gui/event/event.h>
 #include <gui/layout/layout.h>
 #include <gui/control.h>
-#include <esc/rect.h>
+#include <sys/rect.h>
 #include <vector>
 
 namespace gui {

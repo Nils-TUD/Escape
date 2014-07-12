@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/arch/x86/acpi.h>
+#include <sys/common.h>
+#include <sys/arch/x86/acpi.h>
 #include "../../machine.h"
 
 class x86Machine : public Machine {

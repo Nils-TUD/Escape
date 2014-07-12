@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <esc/common.h>
+#include <sys/common.h>
 #include <ipc/proto/screen.h>
 #include <ipc/screendevice.h>
 #include <vector>

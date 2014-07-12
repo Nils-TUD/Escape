@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/messages.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 #include <gui/graphics/graphics.h>
 #include <gui/event/event.h>
 #include <gui/event/subscriber.h>

@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <video.h>
-#include <esc/test.h>
+#include <sys/test.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>

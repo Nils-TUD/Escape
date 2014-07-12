@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <esc/common.h>
-#include <esc/endian.h>
+#include <sys/common.h>
+#include <sys/endian.h>
 #include <sstream>
 #include <fstream>
 #include <dirent.h>

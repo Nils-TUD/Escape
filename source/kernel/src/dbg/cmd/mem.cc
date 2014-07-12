@@ -24,7 +24,7 @@
 #include <mem/pagedir.h>
 #include <task/proc.h>
 #include <ostringstream.h>
-#include <esc/keycodes.h>
+#include <sys/keycodes.h>
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/arch/x86/ports.h>
-#include <esc/thread.h>
-#include <esc/irq.h>
+#include <sys/common.h>
+#include <sys/arch/x86/ports.h>
+#include <sys/thread.h>
+#include <sys/irq.h>
 #include <ipc/proto/input.h>
 #include <ipc/clientdevice.h>
 #include <stdlib.h>

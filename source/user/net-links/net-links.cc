@@ -24,7 +24,7 @@
 #include <info/process.h>
 #include <info/link.h>
 #include <esc/proto/net.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

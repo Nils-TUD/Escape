@@ -25,13 +25,14 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <file.h>
-#include <cmdargs.h>
-#include <env.h>
+#include <esc/file.h>
+#include <esc/cmdargs.h>
+#include <esc/env.h>
 #include <stdlib.h>
 #include <time.h>
 
 using namespace std;
+using namespace esc;
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 
@@ -142,7 +143,7 @@ int main(int argc,char *argv[]) {
 		path = env::get("CWD");
 
 	// get console-size
-	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(esc::env::get("TERM").c_str());
 	esc::Screen::Mode mode = vterm.getMode();
 
 	// read users and groups

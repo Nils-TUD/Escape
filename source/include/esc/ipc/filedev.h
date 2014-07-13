@@ -23,7 +23,7 @@
 #include <esc/proto/file.h>
 #include <esc/ipc/device.h>
 #include <memory>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 

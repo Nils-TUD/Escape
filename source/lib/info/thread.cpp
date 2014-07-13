@@ -20,7 +20,7 @@
 #include <info/thread.h>
 #include <fstream>
 #include <vector>
-#include <file.h>
+#include <esc/file.h>
 #include <ctype.h>
 
 using namespace std;
@@ -28,7 +28,7 @@ using namespace std;
 namespace info {
 	vector<thread*> thread::get_list() {
 		vector<thread*> threads;
-		file dir("/sys/proc");
+		esc::file dir("/sys/proc");
 		vector<struct dirent> files = dir.list_files(false);
 		for(vector<struct dirent>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
@@ -37,7 +37,7 @@ namespace info {
 
 			try {
 				string threadDir(string("/sys/proc/") + it->d_name + "/threads");
-				file tdir(threadDir);
+				esc::file tdir(threadDir);
 				vector<struct dirent> tfiles = tdir.list_files(false);
 				for(vector<struct dirent>::const_iterator tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
 					string tpath = threadDir + "/" + tit->d_name + "/info";
@@ -47,7 +47,7 @@ namespace info {
 					threads.push_back(t);
 				}
 			}
-			catch(const default_error&) {
+			catch(const esc::default_error&) {
 			}
 		}
 		return threads;

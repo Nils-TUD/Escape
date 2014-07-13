@@ -86,7 +86,7 @@ void VESA::ScreenDevice::setScreenCursor(Client *c,gpos_t x,gpos_t y,int cursor)
 
 void VESA::ScreenDevice::updateScreen(Client *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	if(!c->mode || !c->fb)
-		throw std::default_error("No mode set");
+		throw esc::default_error("No mode set");
 
 	if(c->type() == esc::Screen::MODE_TYPE_TUI) {
 		if((gpos_t)(x + width) < x || x + width > c->mode->cols ||

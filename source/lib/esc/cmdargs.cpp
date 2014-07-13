@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <ctype.h>
 
-namespace std {
-	cmdargs_error::cmdargs_error(const string& arg)
+namespace esc {
+	cmdargs_error::cmdargs_error(const std::string& arg)
 		: _msg(arg) {
 	}
 	cmdargs_error::~cmdargs_error() throw () {
@@ -49,7 +49,7 @@ namespace std {
 					}
 				}
 			}
-			_args.push_back(new string(_argv[i]));
+			_args.push_back(new std::string(_argv[i]));
 		}
 		_free = _args;
 		// we don't want to have the prog-name in the free args
@@ -61,7 +61,7 @@ namespace std {
 		va_list ap;
 		va_start(ap,fmt);
 		while(*fmt) {
-			string name;
+			std::string name;
 			bool required = false;
 			bool hasVal = false;
 			char c,type = '\0';
@@ -97,10 +97,10 @@ namespace std {
 			}
 
 			/* find the argument and set it */
-			vector<string*>::iterator pos;
-			string arg = find(name,hasVal,pos);
+			std::vector<std::string*>::iterator pos;
+			std::string arg = find(name,hasVal,pos);
 			if(required && pos == _args.end())
-				throw cmdargs_error(string("Required argument '") + name + "' is missing");
+				throw cmdargs_error(std::string("Required argument '") + name + "' is missing");
 			setval(arg,pos,hasVal,type,va_arg(ap,void*));
 
 			/* to next */
@@ -115,17 +115,17 @@ namespace std {
 			throw cmdargs_error("Max. 1 free argument is allowed");
 	}
 
-	string cmdargs::find(const string& name,bool hasVal,vector<string*>::iterator& pos) {
+	std::string cmdargs::find(const std::string& name,bool hasVal,std::vector<std::string*>::iterator& pos) {
 		/* empty? */
 		if(name.empty()) {
 			// use the first free arg
 			if(_free.size() == 0)
 				throw cmdargs_error("Required argument is missing");
 			pos = _args.begin();
-			return string(*(_free[0]));
+			return std::string(*(_free[0]));
 		}
 		for(auto it = _args.begin(); it != _args.end(); ++it) {
-			string *arg = *it;
+			std::string *arg = *it;
 			unsigned int index;
 			if(name.size() == 1) {
 				index = (_flags & NO_DASHES) ? 1 : 2;
@@ -133,10 +133,10 @@ namespace std {
 					continue;
 				// multiple flags may be passed with one argument; don't search in args with
 				// because this can't be flag-arguments.
-				if(!hasVal && arg->find('=') == string::npos &&
-						arg->find(name[0],index - 1) != string::npos) {
+				if(!hasVal && arg->find('=') == std::string::npos &&
+						arg->find(name[0],index - 1) != std::string::npos) {
 					pos = it;
-					return string(1,name[0]);
+					return std::string(1,name[0]);
 				}
 				// otherwise the first char has to match and has to be the last, too
 				if(arg->compare(index - 1,1,name) != 0)
@@ -161,36 +161,36 @@ namespace std {
 			pos = it;
 			unsigned int offset = index - name.size();
 			if(hasVal) {
-				string::size_type i = arg->find('=');
-				if(i == string::npos) {
+				std::string::size_type i = arg->find('=');
+				if(i == std::string::npos) {
 					if((_flags & REQ_EQ) || pos == _args.end() - 1)
 						throw cmdargs_error("Please use '=' to specify values");
-					return string(**(it + 1));
+					return std::string(**(it + 1));
 				}
 				else
-					return string(arg->begin() + i + 1,arg->end());
+					return std::string(arg->begin() + i + 1,arg->end());
 			}
-			return string(arg->begin() + offset,arg->begin() + offset + name.size());
+			return std::string(arg->begin() + offset,arg->begin() + offset + name.size());
 		}
 		pos = _args.end();
-		return string();
+		return std::string();
 	}
 
-	void cmdargs::setval(const string& arg,vector<string*>::iterator pos,bool hasVal,
+	void cmdargs::setval(const std::string& arg,std::vector<std::string*>::iterator pos,bool hasVal,
 			char type,void *ptr) {
 		if(hasVal) {
 			if(pos == _args.end())
 				return;
 
 			_free.erase_first(*pos);
-			if((*pos)->find('=') == string::npos)
+			if((*pos)->find('=') == std::string::npos)
 				_free.erase_first(*(pos + 1));
 			else if(_flags & NO_EQ)
 				throw cmdargs_error("Please use no '=' to specify values");
 
 			switch(type) {
 				case 's': {
-					string *str = (string*)ptr;
+					std::string *str = (std::string*)ptr;
 					*str = arg;
 				}
 				break;
@@ -236,7 +236,7 @@ namespace std {
 		}
 	}
 
-	unsigned int cmdargs::readk(const string& arg) {
+	unsigned int cmdargs::readk(const std::string& arg) {
 		auto it = arg.begin();
 		unsigned int val = 0;
 		for(; isdigit(*it) && it != arg.end(); ++it)

@@ -21,7 +21,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -41,13 +41,13 @@ static int freverse = 0;
 int main(int argc,char *argv[]) {
 	istream *in = &cin;
 
-	cmdargs args(argc,argv,cmdargs::MAX1_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
 	try {
 		args.parse("r i",&freverse,&figncase);
 		if(args.is_help())
 			usage(argv[0]);
 	}
-	catch(const cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}

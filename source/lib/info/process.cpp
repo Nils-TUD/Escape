@@ -20,7 +20,7 @@
 #include <info/process.h>
 #include <info/thread.h>
 #include <fstream>
-#include <file.h>
+#include <esc/file.h>
 #include <ctype.h>
 
 using namespace std;
@@ -28,7 +28,7 @@ using namespace std;
 namespace info {
 	vector<process*> process::get_list(bool own,uid_t uid,bool fullcmd) {
 		vector<process*> procs;
-		file dir("/sys/proc");
+		esc::file dir("/sys/proc");
 		vector<struct dirent> files = dir.list_files(false);
 		for(vector<struct dirent>::const_iterator it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
@@ -39,7 +39,7 @@ namespace info {
 				if(p)
 					procs.push_back(p);
 			}
-			catch(const default_error&) {
+			catch(const esc::default_error&) {
 			}
 		}
 		return procs;

@@ -199,7 +199,7 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
 	SetLinkAddr(myenv, static)
 	gcclibs = EscapeGCCLibs(env, static)
-	libs = gcclibs + LIBS + ['stdc++']
+	libs = gcclibs + LIBS + ['stdc++', 'esc']
 	if static:
 		libs += ['supc++']
 	prog = myenv.Program(target, source, LIBS = libs)

@@ -25,11 +25,11 @@
 #include <esc/proto/net.h>
 #include <iostream>
 #include <fstream>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
-#include <dns.h>
+#include <esc/dns.h>
 
 using namespace esc;
 
@@ -275,7 +275,7 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 					break;
 			}
 		}
-		catch(const std::default_error &e) {
+		catch(const esc::default_error &e) {
 			if(e.error() == -EINTR)
 				std::cerr << "Message timed out\n";
 			else
@@ -301,14 +301,14 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 
 	// parse params
-	std::cmdargs args(argc,argv,std::cmdargs::MAX1_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
 	try {
 		args.parse("t=d",&timeout);
 		if(args.is_help())
 			usage(argv[0]);
 		link = args.get_free().at(0)->c_str();
 	}
-	catch(const std::cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		std::cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
@@ -361,7 +361,7 @@ int main(int argc,char **argv) {
 		net.routeAdd(link,cfg.ipAddr.getNetwork(cfg.netmask),Net::IPv4Addr(),cfg.netmask);
 		net.routeAdd(link,Net::IPv4Addr(),cfg.router,Net::IPv4Addr());
 
-		std::ofstream os(std::DNS::getResolveFile());
+		std::ofstream os(esc::DNS::getResolveFile());
 		os << (cfg.dnsServer.value() == 0 ? cfg.router : cfg.dnsServer) << "\n";
 	}
 	return 0;

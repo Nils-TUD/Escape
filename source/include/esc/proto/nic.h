@@ -24,7 +24,7 @@
 #include <esc/proto/default.h>
 #include <ostream>
 #include <iomanip>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 

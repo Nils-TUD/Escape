@@ -18,13 +18,14 @@
  */
 
 #include <sys/common.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <sys/test.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <iostream>
 
 using namespace std;
+using namespace esc;
 
 /* forward declarations */
 static void test_cmdargs(void);

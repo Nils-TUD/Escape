@@ -26,7 +26,7 @@
 #include <gui/scrollpane.h>
 #include <gui/label.h>
 #include <dirent.h>
-#include <file.h>
+#include <esc/file.h>
 #include <list>
 
 #include "pathbar.h"
@@ -34,7 +34,7 @@
 class FileList : public gui::Panel {
 	class FileObject : public gui::Panel {
 	public:
-		explicit FileObject(FileList &list,const std::file &file)
+		explicit FileObject(FileList &list,const esc::file &file)
 			: Panel(gui::make_layout<gui::FlowLayout>(
 					gui::CENTER,true,gui::VERTICAL,4)), _list(list) {
 			using namespace std;
@@ -48,13 +48,13 @@ class FileList : public gui::Panel {
 			add(lbl);
 		}
 
-		void onClick(const std::file &file,UIElement&) {
+		void onClick(const esc::file &file,UIElement&) {
 			gui::Application::getInstance()->executeLater(
 					std::make_bind1_memfun(file,this,&FileObject::loadDir));
 		}
 
 	private:
-		void loadDir(const std::file &file) {
+		void loadDir(const esc::file &file) {
 			_list.loadDir(file.path());
 		}
 
@@ -69,25 +69,25 @@ public:
 
 	void loadDir(const std::string &path) {
 		using namespace std;
-		list<file> files;
+		list<esc::file> files;
 		try {
 			_pathbar->setPath(this,path);
-			vector<struct dirent> entries = file(path).list_files(false);
+			vector<struct dirent> entries = esc::file(path).list_files(false);
 			for(auto it = entries.begin(); it != entries.end(); ++it)
-				files.push_back(file(path,it->d_name));
-			files.sort([] (const file &a,const file &b) {
+				files.push_back(esc::file(path,it->d_name));
+			files.sort([] (const esc::file &a,const esc::file &b) {
 				if(a.is_dir() == b.is_dir())
 					return a.name() < b.name();
 				return a.is_dir();
 			});
 			setList(files);
 		}
-		catch(const default_error& e) {
+		catch(const esc::default_error& e) {
 			cerr << e.what() << endl;
 		}
 	}
 
-	void setList(const std::list<std::file> &files) {
+	void setList(const std::list<esc::file> &files) {
 		removeAll();
 		_files = files;
 		for(auto it = _files.begin(); it != _files.end(); ++it)
@@ -99,5 +99,5 @@ public:
 
 private:
 	std::shared_ptr<PathBar> _pathbar;
-	std::list<std::file> _files;
+	std::list<esc::file> _files;
 };

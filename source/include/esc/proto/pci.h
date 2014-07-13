@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <esc/proto/default.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 

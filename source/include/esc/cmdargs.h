@@ -24,7 +24,7 @@
 #include <exception>
 #include <vector>
 
-namespace std {
+namespace esc {
 	/**
 	 * A usage-example:
 	 *
@@ -46,13 +46,13 @@ namespace std {
 	/**
 	 * The exception that is thrown if an error occurred (= invalid arguments)
 	 */
-	class cmdargs_error : public exception {
+	class cmdargs_error : public std::exception {
 	public:
-		explicit cmdargs_error(const string& arg);
+		explicit cmdargs_error(const std::string& arg);
 		virtual ~cmdargs_error() throw ();
 		virtual const char* what() const throw ();
 	private:
-		string _msg;
+		std::string _msg;
 	};
 
 	/**
@@ -94,7 +94,7 @@ namespace std {
 		 */
 		cmdargs(int argc,char * const *argv,flag_type flags = 0)
 			: _argc(argc), _argv(argv), _flags(flags), _ishelp(false),
-			  _args(vector<string*>()), _free(vector<string*>()) {
+			  _args(std::vector<std::string*>()), _free(std::vector<std::string*>()) {
 		}
 		/**
 		 * Destructor
@@ -147,14 +147,14 @@ namespace std {
 		/**
 		 * @return a vector with all arguments (including the progname)
 		 */
-		const vector<string*> &get_args() const {
+		const std::vector<std::string*> &get_args() const {
 			return _args;
 		}
 
 		/**
 		 * @return a vector with all free arguments
 		 */
-		const vector<string*> &get_free() const {
+		const std::vector<std::string*> &get_free() const {
 			return _free;
 		}
 
@@ -172,7 +172,7 @@ namespace std {
 		 * @param pos will be set to the position in _args
 		 * @return the value
 		 */
-		string find(const string& name,bool hasVal,vector<string*>::iterator& pos);
+		std::string find(const std::string& name,bool hasVal,std::vector<std::string*>::iterator& pos);
 		/**
 		 * Sets the value to the location pointed to by <ptr> in the format specified by <type>.
 		 *
@@ -182,7 +182,7 @@ namespace std {
 		 * @param type the arg-type
 		 * @param ptr the location where to write to
 		 */
-		void setval(const string& arg,vector<string*>::iterator pos,bool hasVal,char type,void *ptr);
+		void setval(const std::string& arg,std::vector<std::string*>::iterator pos,bool hasVal,char type,void *ptr);
 		/**
 		 * Converts the given argument to an integer and treats 'K','M' and 'G' as binary-prefixes.
 		 * I.e. K = 1024, M = 1024 * 1024, G = 1024 * 1024 * 1024
@@ -190,14 +190,14 @@ namespace std {
 		 * @param arg the arg-value
 		 * @return the integer
 		 */
-		unsigned int readk(const string& arg);
+		unsigned int readk(const std::string& arg);
 
 	private:
 		int _argc;
 		char * const *_argv;
 		flag_type _flags;
 		bool _ishelp;
-		vector<string*> _args;
-		vector<string*> _free;
+		std::vector<std::string*> _args;
+		std::vector<std::string*> _free;
 	};
 }

@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <env.h>
+#include <esc/env.h>
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);
@@ -43,7 +43,7 @@ int main(int argc,const char *argv[]) {
 		usage(argv[0]);
 	}
 
-	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(esc::env::get("TERM").c_str());
 	if(list) {
 		std::vector<esc::Screen::Mode> modes = vterm.getModes();
 		esc::Screen::Mode curMode = vterm.getMode();

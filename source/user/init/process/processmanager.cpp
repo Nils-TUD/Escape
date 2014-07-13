@@ -33,7 +33,7 @@
 #include <sstream>
 #include <fstream>
 #include <dirent.h>
-#include <file.h>
+#include <esc/file.h>
 
 #include "processmanager.h"
 #include "driverprocess.h"
@@ -172,7 +172,7 @@ void ProcessManager::finalize(int task) {
 
 void ProcessManager::addRunning() {
 	size_t bootMods = getBootModCount();
-	file procDir("/sys/proc");
+	esc::file procDir("/sys/proc");
 	vector<struct dirent> procs = procDir.list_files(false);
 	for(auto  it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->d_name);
@@ -199,7 +199,7 @@ size_t ProcessManager::getBootModCount() const {
 	sElfEHeader header;
 	/* count the boot modules that are ELF files; these are the modules that we're loaded at boot */
 	/* (we might have other things like romdisks) */
-	file modDir("/sys/boot");
+	esc::file modDir("/sys/boot");
 	vector<struct dirent> mods = modDir.list_files(false);
 	for(auto  it = mods.begin(); it != mods.end(); ++it) {
 		char path[MAX_PATH_LEN];

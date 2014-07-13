@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <env.h>
+#include <esc/env.h>
 #include <stdlib.h>
 
-namespace std {
-	map<string,string> env::list() {
-		map<string,string> res;
+namespace esc {
+	std::map<std::string,std::string> env::list() {
+		std::map<std::string,std::string> res;
 		for(int i = 0; ; ++i) {
 			char *name = getenvi(i);
 			if(name == nullptr)
@@ -31,22 +31,22 @@ namespace std {
 		}
 		return res;
 	}
-	string& env::absolutify(string& path) {
+	std::string& env::absolutify(std::string& path) {
 		if(path.size() == 0 || path[0] != '/') {
-			string cwd = env::get("CWD");
+			std::string cwd = env::get("CWD");
 			if(cwd.compare(cwd.length() - 1,1,"/") != 0)
 				cwd += '/';
 			path.insert(0,cwd);
 		}
 		return path;
 	}
-	string env::get(const string& name) {
+	std::string env::get(const std::string& name) {
 		char *val = getenv(name.c_str());
 		if(!val)
-			throw default_error(string("Unable to get value of ") + name,errno);
-		return string(val);
+			throw default_error(std::string("Unable to get value of ") + name,errno);
+		return std::string(val);
 	}
-	void env::set(const string& name,const string& value) {
+	void env::set(const std::string& name,const std::string& value) {
 		if(setenv(name.c_str(),value.c_str()) < 0)
 			throw default_error("Unable to set env-variable",errno);
 	}

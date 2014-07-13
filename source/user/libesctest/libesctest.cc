@@ -22,9 +22,11 @@
 #include <stdlib.h>
 
 extern sTestModule tModRBuffer;
+extern sTestModule tModCmdArgs;
 
 int main() {
 	test_register(&tModRBuffer);
+	test_register(&tModCmdArgs);
 	test_start();
 	return EXIT_SUCCESS;
 }

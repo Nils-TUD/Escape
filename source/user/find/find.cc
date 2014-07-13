@@ -22,7 +22,7 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 
 static std::string filterName;
 static std::string filterPath;
@@ -128,7 +128,7 @@ int main(int argc,char **argv) {
 	}
 
 	// parse params
-	std::cmdargs args(argc,argv,std::cmdargs::NO_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
 	try {
 		args.parse("path=s name=s type=c",&filterPath,&filterName,&filterType);
 		if(args.is_help())
@@ -139,7 +139,7 @@ int main(int argc,char **argv) {
 			usage(prog);
 		}
 	}
-	catch(const std::cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		fprintf(stderr,"Invalid arguments: %s\n",e.what());
 		usage(prog);
 	}

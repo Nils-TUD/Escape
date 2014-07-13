@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <esc/proto/socket.h>
 #include <fstream>
-#include <dns.h>
+#include <esc/dns.h>
 
 class CtrlConRef;
 
@@ -96,7 +96,7 @@ public:
 
 	explicit CtrlCon(const std::string &host,esc::port_t port,
 			const std::string &user,const std::string &pw,const std::string &dir)
-		: _refs(1), _available(true), _dest(std::DNS::getHost(host.c_str())), _port(port),
+		: _refs(1), _available(true), _dest(esc::DNS::getHost(host.c_str())), _port(port),
 		  _user(user), _pw(pw), _dir(dir), _sock(), _ios() {
 		connect();
 	}

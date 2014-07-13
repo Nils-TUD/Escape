@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <esc/ipc/device.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 
@@ -88,7 +88,7 @@ void Device::handleMsg(msgid_t mid,IPCStream &is) {
 		else
 			(*h.func)(is);
 	}
-	catch(const std::default_error &e) {
+	catch(const esc::default_error &e) {
 		// TODO printe is annoying here since it prints errno, which is typically nonsense.
 		printe("Client %d, message %d: %s",is.fd(),mid,e.what());
 		if(h.reply)

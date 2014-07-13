@@ -30,7 +30,7 @@
 #include <info/memusage.h>
 #include <usergroup/user.h>
 #include <esc/proto/vterm.h>
-#include <env.h>
+#include <esc/env.h>
 #include <fstream>
 #include <iomanip>
 #include <string>
@@ -46,7 +46,7 @@ static volatile bool run = true;
 static ssize_t yoffset;
 static sUser *users;
 static tUserSem displaySem;
-static esc::VTerm vterm(std::env::get("TERM").c_str());
+static esc::VTerm vterm(esc::env::get("TERM").c_str());
 
 template<typename T>
 static void printBar(size_t barwidth,double ratio,const T& name) {
@@ -224,7 +224,7 @@ int main(void) {
 		error("startthread");
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	ifstream vt(env::get("TERM").c_str());
+	ifstream vt(esc::env::get("TERM").c_str());
 
 	// read from vterm
 	char c;

@@ -18,17 +18,17 @@
  */
 
 #include <dirent.h>
-#include <file.h>
+#include <esc/file.h>
 #include <string.h>
-#include <env.h>
+#include <esc/env.h>
 #include <errno.h>
 
-namespace std {
-	file::file(const string& p)
+namespace esc {
+	file::file(const std::string& p)
 		: _info(), _parent(), _name() {
 		init(p,"");
 	}
-	file::file(const string& p,const string& n)
+	file::file(const std::string& p,const std::string& n)
 		: _info(), _parent(), _name() {
 		init(p,n);
 	}
@@ -44,8 +44,8 @@ namespace std {
 	file::~file() {
 	}
 
-	vector<struct dirent> file::list_files(bool showHidden,const string& pattern) const {
-		vector<struct dirent> v;
+	std::vector<struct dirent> file::list_files(bool showHidden,const std::string& pattern) const {
+		std::vector<struct dirent> v;
 		struct dirent e;
 		if(!is_dir())
 			throw default_error("list_files failed: No directory",0);
@@ -62,7 +62,7 @@ namespace std {
 		return v;
 	}
 
-	void file::init(const string& p,const string& n) {
+	void file::init(const std::string& p,const std::string& n) {
 		char apath[MAX_PATH_LEN];
 		size_t len = cleanpath(apath,sizeof(apath),p.c_str());
 		if(n.empty()) {
@@ -70,7 +70,7 @@ namespace std {
 			if(len == 1)
 				_name = "";
 			else {
-				_name = string(pos + 1,apath + len);
+				_name = std::string(pos + 1,apath + len);
 				if(pos == apath)
 					pos[1] = '\0';
 				else

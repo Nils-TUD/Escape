@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <gui/image/bitmapimage.h>
-#include <rawfile.h>
+#include <esc/rawfile.h>
 
 using namespace std;
 
@@ -196,13 +196,13 @@ namespace gui {
 		// read header
 		size_t headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
 		uint8_t *header = new uint8_t[headerSize];
-		rawfile f;
+		esc::rawfile f;
 
 		try {
-			f.open(filename,rawfile::READ);
+			f.open(filename,esc::rawfile::READ);
 			f.read(header,sizeof(uint8_t),headerSize);
 		}
-		catch(default_error &e) {
+		catch(esc::default_error &e) {
 			throw img_load_error(filename + ": Unable to open or read header: " + e.what());
 		}
 
@@ -232,7 +232,7 @@ namespace gui {
 			try {
 				f.read(_colorTable,sizeof(uint32_t),_tableSize);
 			}
-			catch(default_error &e) {
+			catch(esc::default_error &e) {
 				throw img_load_error(filename + ": Unable to read color-table: " + e.what());
 			}
 		}
@@ -252,7 +252,7 @@ namespace gui {
 
 		_data = new uint8_t[_dataSize];
 		try {
-			f.seek(_fileHeader->dataOffset,rawfile::SET);
+			f.seek(_fileHeader->dataOffset,esc::rawfile::SET);
 			size_t bufsize = 8192;
 			size_t pos = 0;
 			while(pos < _dataSize) {
@@ -260,7 +260,7 @@ namespace gui {
 				pos += f.read(_data + pos,1,amount);
 			}
 		}
-		catch(default_error &e) {
+		catch(esc::default_error &e) {
 			throw img_load_error(filename + ": Unable to read image-data: " + e.what());
 		}
 	}

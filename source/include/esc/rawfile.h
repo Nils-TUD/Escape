@@ -22,9 +22,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
-namespace std {
+namespace esc {
 	/**
 	 * A class to use the "raw"-IO-functions open,seek,read,write and close in a exception-safe way.
 	 * I.e. you can allocate the instance of it on the stack, so that, if an exception is thrown,
@@ -69,7 +69,7 @@ namespace std {
 		 * @param mode the mode (READ | WRITE | APPEND)
 		 * @throws default_error if it goes wrong
 		 */
-		rawfile(const string& filename,open_type mode)
+		rawfile(const std::string& filename,open_type mode)
 			: _mode(0), _fd(-1) {
 			open(filename,mode);
 		}
@@ -87,7 +87,7 @@ namespace std {
 		 * @param mode the mode (READ | WRITE | APPEND)
 		 * @throws default_error if it goes wrong
 		 */
-		void open(const string& filename,open_type mode);
+		void open(const std::string& filename,open_type mode);
 		/**
 		 * Uses the given file-descriptor. Assumes it to be valid
 		 *

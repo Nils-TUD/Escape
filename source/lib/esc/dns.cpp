@@ -24,9 +24,9 @@
 #include <esc/proto/socket.h>
 #include <fstream>
 #include <signal.h>
-#include <dns.h>
+#include <esc/dns.h>
 
-namespace std {
+namespace esc {
 
 /* based on http://tools.ietf.org/html/rfc1035 */
 
@@ -110,7 +110,7 @@ bool DNS::isIPAddress(const char *name) {
 esc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	uint8_t buffer[BUF_SIZE];
 	if(_nameserver.value() == 0) {
-		ifstream in(getResolveFile());
+		std::ifstream in(getResolveFile());
 		in >> _nameserver;
 		if(_nameserver.value() == 0)
 			VTHROWE("No nameserver",-EHOSTNOTFOUND);
@@ -160,7 +160,7 @@ esc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 		// receive response
 		sock.recvfrom(addr,buffer,sizeof(buffer));
 	}
-	catch(const std::default_error &e) {
+	catch(const esc::default_error &e) {
 		if(e.error() == -EINTR)
 			VTHROWE("Received no response from DNS server " << _nameserver,-ETIMEOUT);
 

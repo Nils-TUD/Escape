@@ -23,7 +23,7 @@
 #include <esc/proto/net.h>
 #include <esc/proto/vterm.h>
 #include <esc/ipc/clientdevice.h>
-#include <dns.h>
+#include <esc/dns.h>
 #include <stdlib.h>
 #include <fstream>
 

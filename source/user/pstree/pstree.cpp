@@ -25,7 +25,7 @@
 #include <iomanip>
 #include <map>
 #include <stdlib.h>
-#include <env.h>
+#include <esc/env.h>
 
 using namespace std;
 using namespace info;
@@ -97,7 +97,7 @@ int main(int argc,char **argv) {
 	int pid = argc > 1 ? atoi(argv[1]) : 0;
 
 	// get console-size
-	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(esc::env::get("TERM").c_str());
 	mode = vterm.getMode();
 	prefix = new char[mode.cols];
 	memset(prefix,' ',mode.cols);

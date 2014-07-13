@@ -25,25 +25,25 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <env.h>
+#include <esc/env.h>
 
 FileCopy::FileCopy(size_t bufsize,uint fl)
 		: _bufsize(bufsize), _shmname(), _shm(), _flags(fl), _cols() {
 	/* create shm file */
 	int fd = pshm_create(O_RDWR,0666,&_shmname);
 	if(fd < 0)
-		throw std::default_error("pshm_create");
+		throw esc::default_error("pshm_create");
 	/* mmap it */
 	_shm = mmap(NULL,_bufsize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
 	close(fd);
 	if(!_shm) {
 		pshm_unlink(_shmname);
-		throw std::default_error("mmap");
+		throw esc::default_error("mmap");
 	}
 
 	/* get vterm-size, if we should show a progress bar */
 	if(_flags & FL_PROGRESS) {
-		esc::VTerm vterm(std::env::get("TERM").c_str());
+		esc::VTerm vterm(esc::env::get("TERM").c_str());
 		_cols = vterm.getMode().cols;
 	}
 }

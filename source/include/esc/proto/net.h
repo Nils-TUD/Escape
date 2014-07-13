@@ -25,7 +25,7 @@
 #include <esc/ipc/ipcstream.h>
 #include <istream>
 #include <ostream>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 

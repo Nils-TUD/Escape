@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <esc/proto/net.h>
 
-namespace std {
+namespace esc {
 
 /**
  * The DNS class allows you to resolve names to IP addresses.

@@ -23,7 +23,7 @@
 #include <esc/ipc/clientdevice.h>
 #include <sstream>
 #include <fstream>
-#include <dns.h>
+#include <esc/dns.h>
 #include <signal.h>
 #include <stdlib.h>
 
@@ -154,7 +154,7 @@ private:
 		if(c->state == STATE_OPEN) {
 			Socket::Addr addr;
 			addr.family = Socket::AF_INET;
-			addr.d.ipv4.addr = std::DNS::getHost(c->domain.c_str()).value();
+			addr.d.ipv4.addr = esc::DNS::getHost(c->domain.c_str()).value();
 			addr.d.ipv4.port = 80;
 			c->sock.connect(addr);
 			c->state = STATE_CONNECTED;

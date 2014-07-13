@@ -21,7 +21,7 @@
 #include <gui/scrollpane.h>
 #include <gui/splitpanel.h>
 #include <gui/border.h>
-#include <env.h>
+#include <esc/env.h>
 
 #include "model/link.h"
 #include "view/favorites.h"
@@ -35,9 +35,9 @@ int main() {
 	vector<Link> favlist;
 	favlist.push_back(Link("Root","/"));
 	try {
-		favlist.push_back(Link("Home",env::get("HOME")));
+		favlist.push_back(Link("Home",esc::env::get("HOME")));
 	}
-	catch(const default_error& e) {
+	catch(const esc::default_error& e) {
 		// TODO temporary
 		favlist.push_back(Link("Home","/home/hrniels"));
 		cerr << e.what() << endl;

@@ -5,4 +5,4 @@ Import('env')
 src = [
 	env.Glob('*.cpp'), env.Glob('*/*.cpp'), env.Glob('arch/$TGT/*.cpp'), env.Glob('arch/$TGTTYPE/*.cpp')
 ]
-env.EscapeCXXProg('bin', target = 'init', source = src, LIBS = ['esc', 'usergroup'])
+env.EscapeCXXProg('bin', target = 'init', source = src, LIBS = ['usergroup'])

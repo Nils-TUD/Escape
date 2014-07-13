@@ -25,14 +25,14 @@
 #include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <env.h>
+#include <esc/env.h>
 #include "linecontainer.h"
 
 #define TAB_WIDTH			4
@@ -57,7 +57,7 @@ static string filename;
 static bool seenEOF;
 static LineContainer *lines;
 static size_t startLine = 0;
-static esc::VTerm vterm(std::env::get("TERM").c_str());
+static esc::VTerm vterm(esc::env::get("TERM").c_str());
 static esc::Screen::Mode mode;
 static string emptyLine;
 
@@ -77,13 +77,13 @@ int main(int argc,char *argv[]) {
 	bool run = true;
 
 	// parse args
-	cmdargs args(argc,argv,cmdargs::MAX1_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
 	try {
 		args.parse("");
 		if(args.is_help())
 			usage(argv[0]);
 	}
-	catch(const cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
@@ -115,7 +115,7 @@ int main(int argc,char *argv[]) {
 	emptyLine.assign(mode.cols,' ');
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	vt.open(env::get("TERM").c_str());
+	vt.open(esc::env::get("TERM").c_str());
 
 	// read the first lines into it
 	seenEOF = false;

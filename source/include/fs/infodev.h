@@ -23,7 +23,7 @@
 #include <sys/thread.h>
 #include <sys/proc.h>
 #include <fs/filesystem.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 #include <signal.h>
 
 class InfoDevice {

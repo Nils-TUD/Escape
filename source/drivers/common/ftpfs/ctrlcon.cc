@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 #include "ctrlcon.h"
 

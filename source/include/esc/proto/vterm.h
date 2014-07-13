@@ -25,7 +25,7 @@
 #include <esc/proto/ui.h>
 #include <vector>
 #include <string>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 

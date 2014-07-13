@@ -31,22 +31,22 @@
 #define VTHROW(expr) {										\
 		std::ostringstream __os;							\
 		__os << expr;										\
-		throw std::default_error(__os.str());				\
+		throw esc::default_error(__os.str());				\
 	}
 #define VTHROWE(expr,errorcode) {							\
 		std::ostringstream __os;							\
 		__os << expr;										\
-		throw std::default_error(__os.str(),errorcode);		\
+		throw esc::default_error(__os.str(),errorcode);		\
 	}
 
-namespace std {
+namespace esc {
 
 /**
  * The default error class with a string and an error-code
  */
-class default_error : public exception {
+class default_error : public std::exception {
 public:
-	explicit default_error(const string& s,int err = 0)
+	explicit default_error(const std::string& s,int err = 0)
 		: _error(err), _msg(s) {
 		if(err != 0)
 			_msg = _msg + ": " + strerror(err);
@@ -62,7 +62,7 @@ public:
 	}
 private:
 	int _error;
-	string _msg;
+	std::string _msg;
 };
 
 }

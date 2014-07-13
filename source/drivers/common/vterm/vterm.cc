@@ -288,7 +288,7 @@ static void vtSetVideoMode(int mode) {
 				vterm.ui->setMode(esc::Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
 				fb = nfb.release();
 			}
-			catch(const std::default_error &e) {
+			catch(const esc::default_error &e) {
 				fb = fbtmp;
 				if(fb)
 					fb->rename(vterm.name);

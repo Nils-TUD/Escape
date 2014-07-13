@@ -64,7 +64,7 @@ FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
 	set(MSG_FS_CHOWN,std::make_memfun(this,&FSDevice::chown));
 
 	if(signal(SIGTERM,sigTermHndl) == SIG_ERR)
-		throw std::default_error("Unable to set signal-handler for SIGTERM");
+		throw esc::default_error("Unable to set signal-handler for SIGTERM");
 	_inst = this;
 }
 

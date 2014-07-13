@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <env.h>
+#include <esc/env.h>
 #include <string>
 
 #define KEYMAP_DIR		"/etc/keymaps"
@@ -48,7 +48,7 @@ int main(int argc,const char **argv) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(esc::env::get("TERM").c_str());
 
 	/* set keymap? */
 	if(kmname != NULL) {

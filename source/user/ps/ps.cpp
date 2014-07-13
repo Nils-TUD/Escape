@@ -34,9 +34,9 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
-#include <cmdargs.h>
-#include <file.h>
-#include <env.h>
+#include <esc/cmdargs.h>
+#include <esc/file.h>
+#include <esc/env.h>
 
 using namespace std;
 using namespace info;
@@ -101,13 +101,13 @@ int main(int argc,char **argv) {
 	sGroup *groupList = nullptr;
 
 	// parse args
-	cmdargs args(argc,argv,cmdargs::NO_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
 	try {
 		args.parse("s=s u n",&ssort,&own,&numeric);
 		if(args.is_help())
 			usage(argv[0]);
 	}
-	catch(const cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
@@ -202,7 +202,7 @@ int main(int argc,char **argv) {
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// get console-size
-	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(esc::env::get("TERM").c_str());
 	esc::Screen::Mode mode = vterm.getMode();
 
 	// print header

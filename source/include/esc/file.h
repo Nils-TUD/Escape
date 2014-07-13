@@ -21,13 +21,13 @@
 
 #include <sys/io.h>
 #include <sys/stat.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 #include <dirent.h>
 #include <string>
 #include <vector>
 #include <time.h>
 
-namespace std {
+namespace esc {
 	class file {
 	public:
 		typedef size_t size_type;
@@ -45,7 +45,7 @@ namespace std {
 		 * @param path the path (has not to be absolute)
 		 * @throws default_error if stat fails
 		 */
-		file(const string& path);
+		file(const std::string& path);
 		/**
 		 * Builds a file-object for <name> in <parent>
 		 *
@@ -53,7 +53,7 @@ namespace std {
 		 * @param name the filename
 		 * @throws default_error if stat fails
 		 */
-		file(const string& parent,const string& name);
+		file(const std::string& parent,const std::string& name);
 		/**
 		 * Copy-constructor
 		 */
@@ -74,7 +74,7 @@ namespace std {
 		 * @param pattern a pattern the files have to match
 		 * @return the vector
 		 */
-		vector<struct dirent> list_files(bool showHidden,const string& pattern = string()) const;
+		std::vector<struct dirent> list_files(bool showHidden,const std::string& pattern = std::string()) const;
 
 		/**
 		 * @return the mode of the file
@@ -156,19 +156,19 @@ namespace std {
 		/**
 		 * @return the filename
 		 */
-		const string &name() const {
+		const std::string &name() const {
 			return _name;
 		}
 		/**
 		 * @return the parent-path
 		 */
-		const string &parent() const {
+		const std::string &parent() const {
 			return _parent;
 		}
 		/**
 		 * @return the absolute path
 		 */
-		string path() const {
+		std::string path() const {
 			return _parent + "/" + _name;
 		}
 
@@ -180,11 +180,11 @@ namespace std {
 		 * @param name the filename
 		 * @throws default_error if stat fails
 		 */
-		void init(const string& parent,const string& name);
+		void init(const std::string& parent,const std::string& name);
 
 	private:
 		struct stat _info;
-		string _parent;
-		string _name;
+		std::string _parent;
+		std::string _name;
 	};
 }

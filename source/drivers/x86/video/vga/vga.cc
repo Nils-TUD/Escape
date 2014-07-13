@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 #include "vga.h"
 
@@ -46,7 +46,7 @@ std::vector<esc::Screen::Mode> VGA::modes;
 
 void VGA::ScreenDevice::setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
 	if(type != esc::Screen::MODE_TYPE_TUI)
-		throw std::default_error("Invalid mode type");
+		throw esc::default_error("Invalid mode type");
 
 	if(sw && mode)
 		VBE::setMode(mode->id);
@@ -82,7 +82,7 @@ void VGA::ScreenDevice::setScreenCursor(ScreenClient *c,gpos_t x,gpos_t y,int) {
 
 void VGA::ScreenDevice::updateScreen(ScreenClient *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	if(!c->mode || !c->fb)
-		throw std::default_error("No mode set");
+		throw esc::default_error("No mode set");
 	if((gpos_t)(x + width) < x || x + width > c->mode->cols ||
 		(gpos_t)(y + height) < y || y + height > c->mode->rows) {
 		VTHROW("Invalid VGA update: " << x << "," << y << ":" << width << "x" << height);

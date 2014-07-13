@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'sbin', target = 'pci', source = env.Glob('*.cc'), force_static = True, LIBS = ['esc']
+	'sbin', target = 'pci', source = env.Glob('*.cc'), force_static = True
 )

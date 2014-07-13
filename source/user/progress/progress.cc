@@ -24,7 +24,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <env.h>
+#include <esc/env.h>
 
 static void sigTerm(A_UNUSED int sig) {
 	printf("Got SIGTERM, but I won't terminate :P\n");
@@ -37,7 +37,7 @@ int main(void) {
 	if(signal(SIGTERM,sigTerm) == SIG_ERR)
 		error("Unable to set term-handler");
 
-	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(esc::env::get("TERM").c_str());
 	esc::Screen::Mode mode = vterm.getMode();
 	maxWidth = mode.cols - 3;
 

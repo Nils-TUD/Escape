@@ -29,7 +29,7 @@
 #include <sstream>
 #include <mutex>
 #include <vector>
-#include <dns.h>
+#include <esc/dns.h>
 
 #include "proto/ethernet.h"
 #include "proto/arp.h"
@@ -523,7 +523,7 @@ static int socketThread(void*) {
 
 static void createResolvConf() {
 	// create file
-	const char *resolvconf = std::DNS::getResolveFile();
+	const char *resolvconf = esc::DNS::getResolveFile();
 	print("Creating empty %s",resolvconf);
 	int fd = create(resolvconf,O_WRONLY | O_CREAT,0660);
 	if(fd < 0) {

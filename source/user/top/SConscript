@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'bin', target = 'top', source = env.Glob('*.cpp'), LIBS = ['info', 'usergroup', 'esc']
+	'bin', target = 'top', source = env.Glob('*.cpp'), LIBS = ['info', 'usergroup']
 )

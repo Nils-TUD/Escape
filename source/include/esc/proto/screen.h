@@ -23,7 +23,7 @@
 #include <sys/messages.h>
 #include <sys/mman.h>
 #include <esc/proto/default.h>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 #include <vector>
 
 namespace esc {
@@ -190,7 +190,7 @@ public:
 	Mode findTextMode(uint cols,uint rows) {
 		std::vector<Mode> modes = getModes();
 		if(modes.size() == 0)
-			throw std::default_error("No modes found");
+			throw esc::default_error("No modes found");
 		return findTextModeIn(modes,cols,rows);
 	}
 	/**
@@ -217,7 +217,7 @@ public:
 	Mode findGraphicsMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
 		std::vector<Mode> modes = getModes();
 		if(modes.size() == 0)
-			throw std::default_error("No modes found");
+			throw esc::default_error("No modes found");
 		return findGraphicsModeIn(modes,width,height,bpp);
 	}
 	/**

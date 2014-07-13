@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('sbin', target = 'http', source = env.Glob('*.cc'), LIBS = ['esc'])
+env.EscapeCXXProg('sbin', target = 'http', source = env.Glob('*.cc'))

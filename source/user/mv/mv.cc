@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 #include <cp/filecopy.h>
 #include <dirent.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -54,13 +54,13 @@ int main(int argc,char *argv[]) {
 	int progress = false;
 
 	// parse params
-	std::cmdargs args(argc,argv,0);
+	esc::cmdargs args(argc,argv,0);
 	try {
 		args.parse("f p",&force,&progress);
 		if(args.is_help() || args.get_free().size() < 2)
 			usage(argv[0]);
 	}
-	catch(const std::cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		fprintf(stderr,"Invalid arguments: %s\n",e.what());
 		usage(argv[0]);
 	}

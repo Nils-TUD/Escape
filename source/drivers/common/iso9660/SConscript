@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'sbin', target = 'iso9660', source = env.Glob('*.cc'), force_static = True, LIBS = ['fs', 'esc']
+	'sbin', target = 'iso9660', source = env.Glob('*.cc'), force_static = True, LIBS = ['fs']
 )

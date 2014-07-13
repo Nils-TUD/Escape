@@ -25,7 +25,7 @@
 #include <esc/ipc/ipcstream.h>
 #include <istream>
 #include <ostream>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
 namespace esc {
 
@@ -264,7 +264,7 @@ public:
 		try {
 			_is << req << SendReceive(MSG_SOCK_RECVFROM,false) >> resp >> addr;
 		}
-		catch(const std::default_error &e) {
+		catch(const esc::default_error &e) {
 			if(e.error() == -EINTR && cancel(_is.fd(),_is.msgid()) == 1)
 				_is >> Receive() >> resp >> addr;
 			else

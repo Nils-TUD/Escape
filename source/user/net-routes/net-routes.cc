@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <info/route.h>
 #include <esc/proto/net.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>
 

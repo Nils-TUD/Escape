@@ -29,7 +29,6 @@ extern sTestModule tModStreams;
 extern sTestModule tModFunctional;
 extern sTestModule tModBintree;
 extern sTestModule tModMap;
-extern sTestModule tModCmdArgs;
 extern sTestModule tModSmartPtr;
 extern sTestModule tModTuple;
 
@@ -42,7 +41,6 @@ int main(void) {
 	test_register(&tModFunctional);
 	test_register(&tModBintree);
 	test_register(&tModMap);
-	test_register(&tModCmdArgs);
 	test_register(&tModSmartPtr);
 	test_register(&tModTuple);
 	test_start();

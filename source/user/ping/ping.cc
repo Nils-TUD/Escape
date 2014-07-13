@@ -27,8 +27,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <time.h>
-#include <cmdargs.h>
-#include <dns.h>
+#include <esc/cmdargs.h>
+#include <esc/dns.h>
 
 using namespace esc;
 
@@ -166,7 +166,7 @@ int main(int argc,char **argv) {
 	srand(time(NULL));
 
 	// parse params
-	std::cmdargs args(argc,argv,std::cmdargs::MAX1_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
 	try {
 		args.parse("c=u s=k t=u i=u W=u",&times,&nbytes,&ttl,&interval,&timeout);
 		if(args.is_help())
@@ -175,7 +175,7 @@ int main(int argc,char **argv) {
 			error("The maximum payload size is 4K");
 		address = args.get_free().at(0)->c_str();
 	}
-	catch(const std::cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		std::cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
@@ -188,7 +188,7 @@ int main(int argc,char **argv) {
 	// get destination
 	Net::IPv4Addr dest;
 	try {
-		dest = std::DNS::getHost(address);
+		dest = esc::DNS::getHost(address);
 	}
 	catch(const std::exception &e) {
 		std::cerr << "Unable to resolve '" << address << "': " << e.what() << "\n";
@@ -249,7 +249,7 @@ int main(int argc,char **argv) {
 			if(sent < times)
 				sleep(interval);
 		}
-		catch(const std::default_error &e) {
+		catch(const esc::default_error &e) {
 			if(e.error() != -EINTR)
 				throw;
 

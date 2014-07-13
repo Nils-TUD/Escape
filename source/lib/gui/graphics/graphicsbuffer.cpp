@@ -43,13 +43,13 @@ namespace gui {
 		snprintf(name, sizeof(name),"%s-win%d",winmng,_win->getId());
 		int fd = shm_open(name,O_RDWR,0644);
 		if(fd < 0)
-			throw std::default_error(string("Unable to open shm file ") + name,fd);
+			throw esc::default_error(string("Unable to open shm file ") + name,fd);
 
 		size_t bufsize = _size.width * _size.height * (app->getColorDepth() / 8);
 		_pixels = static_cast<uint8_t*>(mmap(NULL,bufsize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0));
 		close(fd);
 		if(_pixels == NULL)
-			throw std::default_error(string("Unable to mmap shm file ") + name,errno);
+			throw esc::default_error(string("Unable to mmap shm file ") + name,errno);
 	}
 
 	void GraphicsBuffer::freeBuffer() {

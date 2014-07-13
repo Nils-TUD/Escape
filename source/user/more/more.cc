@@ -27,7 +27,7 @@
 #include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <env.h>
+#include <esc/env.h>
 
 static void waitForKeyPress(FILE *vt);
 static void usage(const char *name) {
@@ -63,7 +63,7 @@ int main(int argc,const char *argv[]) {
 		error("If stdin is a terminal, you have to provide a file");
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	std::string vtermPath = std::env::get("TERM");
+	std::string vtermPath = esc::env::get("TERM");
 	vt = fopen(vtermPath.c_str(),"rm");
 	if(!vt)
 		error("Unable to open '%s'",vtermPath.c_str());

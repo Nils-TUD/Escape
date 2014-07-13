@@ -18,11 +18,11 @@
  */
 
 #include <dirent.h>
-#include <rawfile.h>
+#include <esc/rawfile.h>
 #include <stdexcept>
 
-namespace std {
-	void rawfile::open(const string& filename,open_type mode) {
+namespace esc {
+	void rawfile::open(const std::string& filename,open_type mode) {
 		close();
 		uint flags = 0;
 		if(mode & READ)

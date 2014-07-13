@@ -21,9 +21,9 @@
 
 #include <string>
 #include <map>
-#include <vthrow.h>
+#include <esc/vthrow.h>
 
-namespace std {
+namespace esc {
 	/**
 	 * Access to environment-variables
 	 */
@@ -33,7 +33,7 @@ namespace std {
 		 * @return a map of with all environment-variables and their value
 		 * @throws default_error if the fetch of a value fails
 		 */
-		static map<string,string> list();
+		static std::map<std::string,std::string> list();
 
 		/**
 		 * Changes the given path to an absolute path one. That means it prepends CWD if path
@@ -42,7 +42,7 @@ namespace std {
 		 * @param path your possibly relative path (will be changed)
 		 * @return the absolute path
 		 */
-		static string& absolutify(string& path);
+		static std::string& absolutify(std::string& path);
 
 		/**
 		 * Fetches the value of the env-variable with given name
@@ -51,7 +51,7 @@ namespace std {
 		 * @return the value
 		 * @throws default_error if the fetch fails
 		 */
-		static string get(const string& name);
+		static std::string get(const std::string& name);
 
 		/**
 		 * Sets <name> to <value>
@@ -60,7 +60,7 @@ namespace std {
 		 * @param value the new value
 		 * @throws default_error if the fetch fails
 		 */
-		static void set(const string& name,const string& value);
+		static void set(const std::string& name,const std::string& value);
 
 	private:
 		// no construction and copying

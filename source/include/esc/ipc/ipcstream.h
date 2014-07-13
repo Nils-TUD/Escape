@@ -25,7 +25,7 @@
 #include <utility>
 
 #ifndef IN_KERNEL
-#	include <vthrow.h>
+#	include <esc/vthrow.h>
 #endif
 
 namespace esc {

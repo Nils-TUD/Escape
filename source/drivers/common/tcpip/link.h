@@ -36,7 +36,7 @@ public:
 		  _mtu(getMTU()), _name(n), _status(esc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
 		sharebuf(fd(),mtu(),&_buffer,&_bufname,0);
 		if(_buffer == NULL)
-			throw std::default_error("Not enough memory for buffer",-ENOMEM);
+			throw esc::default_error("Not enough memory for buffer",-ENOMEM);
 	}
 	virtual ~Link();
 

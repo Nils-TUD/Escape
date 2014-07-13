@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <cmdargs.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 
 #include "game.h"
@@ -44,13 +44,13 @@ int main(int argc,char **argv) {
 	int stonesize = 2;
 	int nosound = false;
 
-	std::cmdargs args(argc,argv,std::cmdargs::NO_FREE);
+	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
 	try {
 		args.parse("f=s s=d nosound",&fieldsize,&stonesize,&nosound);
 		if(args.is_help())
 			usage(argv[0]);
 	}
-	catch(const std::cmdargs_error& e) {
+	catch(const esc::cmdargs_error& e) {
 		std::cerr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}

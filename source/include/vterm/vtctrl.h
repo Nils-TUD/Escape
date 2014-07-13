@@ -20,10 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/ringbuffer.h>
 #include <sys/esccodes.h>
 #include <sys/messages.h>
 #include <sys/sync.h>
+#include <esc/ringbuffer.h>
 #include <ipc/proto/ui.h>
 #include <ipc/proto/speaker.h>
 #include <mutex>
@@ -97,7 +97,7 @@ struct sVTerm {
 	size_t backupRow;
 	/* the buffer for the input-stream */
 	uchar inbufEOF;
-	sRingBuf *inbuf;
+	esc::RingBuffer<char> *inbuf;
 	/* the pid of the shell for ctrl+c notifications */
 	pid_t shellPid;
 	/* the escape-state */

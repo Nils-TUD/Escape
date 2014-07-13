@@ -22,7 +22,6 @@
 #include <sys/thread.h>
 #include <sys/sync.h>
 #include <sys/io.h>
-#include <sys/ringbuffer.h>
 #include <sys/messages.h>
 #include <sys/keycodes.h>
 #include <sys/esccodes.h>

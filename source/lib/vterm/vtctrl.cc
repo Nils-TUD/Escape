@@ -24,7 +24,6 @@
 #include <sys/driver.h>
 #include <sys/thread.h>
 #include <sys/messages.h>
-#include <sys/ringbuffer.h>
 #include <sys/conf.h>
 #include <sys/mman.h>
 #include <ipc/proto/vterm.h>
@@ -90,11 +89,7 @@ bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode) {
 	}
 
 	vt->inbufEOF = false;
-	vt->inbuf = rb_create(sizeof(char),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(vt->inbuf == NULL) {
-		printe("Unable to allocate memory for ring-buffer");
-		return false;
-	}
+	vt->inbuf = new esc::RingBuffer<char>(INPUT_BUF_SIZE,esc::RB_OVERWRITE);
 
 	/* create and init empty line */
 	vt->emptyLine = vtctrl_createEmptyLine(vt,vt->cols);
@@ -111,7 +106,7 @@ bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode) {
 
 void vtctrl_destroy(sVTerm *vt) {
 	delete vt->mutex;
-	rb_destroy(vt->inbuf);
+	delete vt->inbuf;
 	vtctrl_freeLines(vt->lines,vt->rows);
 	free(vt->emptyLine);
 	free(vt->rlBuffer);

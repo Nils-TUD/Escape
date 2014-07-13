@@ -25,7 +25,6 @@
 #include <sys/thread.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
-#include <sys/ringbuffer.h>
 #include <sys/mman.h>
 #include <sys/irq.h>
 #include <ipc/proto/input.h>

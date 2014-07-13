@@ -26,7 +26,6 @@
 #include <sys/thread.h>
 #include <sys/messages.h>
 #include <sys/sllist.h>
-#include <sys/ringbuffer.h>
 #include <usergroup/group.h>
 #include <ipc/proto/ui.h>
 #include <ipc/proto/file.h>

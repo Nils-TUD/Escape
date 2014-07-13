@@ -96,7 +96,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 		/* we want to treat the character as unsigned here and extend it to 32bit */
 		uint code = *(uchar*)&c;
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);
-		rb_writen(vt->inbuf,escape,strlen(escape));
+		vt->inbuf->writen(escape,strlen(escape));
 	}
 	if(!(modifier & STATE_BREAK)) {
 		if(vt->echo && vt->setCursor)
@@ -105,14 +105,14 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 }
 
 bool vtin_hasData(sVTerm *vt) {
-	return vt->inbufEOF || rb_length(vt->inbuf) > 0;
+	return vt->inbufEOF || vt->inbuf->length() > 0;
 }
 
 size_t vtin_gets(sVTerm *vt,char *buffer,size_t count) {
 	size_t res = 0;
 	if(buffer)
-		res = rb_readn(vt->inbuf,buffer,count);
-	if(rb_length(vt->inbuf) == 0)
+		res = vt->inbuf->readn(buffer,count);
+	if(vt->inbuf->length() == 0)
 		vt->inbufEOF = false;
 	return res;
 }
@@ -201,7 +201,7 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 
 static void vtin_rlFlushBuf(sVTerm *vt) {
 	for(size_t i = 0; vt->rlBufPos > 0; ++i) {
-		rb_write(vt->inbuf,vt->rlBuffer + i);
+		vt->inbuf->write(vt->rlBuffer[i]);
 		vt->rlBufPos--;
 	}
 }

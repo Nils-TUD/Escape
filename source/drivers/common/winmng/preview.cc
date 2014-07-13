@@ -18,54 +18,55 @@
  */
 
 #include <sys/common.h>
-#include <sys/rect.h>
+#include <gui/graphics/rectangle.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "window.h"
 #include "preview.h"
 
-static void preview_handleIntersec(char *shmem,sRectangle *curRec,sRectangle *intersec,size_t i,
-		gsize_t xres,gsize_t yres);
+static void preview_handleIntersec(char *shmem,const gui::Rectangle &curRec,
+		const gui::Rectangle &intersec,size_t i,gsize_t xres,gsize_t yres);
 static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h);
 static void preview_copyRegion(char *src,char *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
 		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
 
-static sRectangle previewRect;
+static gui::Rectangle previewRect;
 static gsize_t previewThickness;
 static char *previewRectCopies[4];
 
 void preview_updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	gsize_t xres = win_getMode()->width;
 	gsize_t yres = win_getMode()->height;
-	sRectangle upRec,curRec,intersec;
-	upRec.x = x;
-	upRec.y = y;
-	upRec.width = width;
-	upRec.height = height;
+	gui::Rectangle upRec(x,y,width,height);
 	/* look if we have to update the preview-rectangle */
 	if(previewRectCopies[0]) {
-		curRec.x = previewRect.x;
-		curRec.y = previewRect.y;
-		curRec.width = previewRect.width;
-		curRec.height = previewThickness;
+		gui::Rectangle curRec(previewRect.x(),previewRect.y(),previewRect.width(),previewThickness);
+		gui::Rectangle intersec;
+
 		/* top */
-		if(rectIntersect(&curRec,&upRec,&intersec))
-			preview_handleIntersec(shmem,&curRec,&intersec,0,xres,yres);
+		intersec = gui::intersection(curRec,upRec);
+		if(!intersec.empty())
+			preview_handleIntersec(shmem,curRec,intersec,0,xres,yres);
+
 		/* bottom */
-		curRec.y = previewRect.y + previewRect.height - previewThickness;
-		if(rectIntersect(&curRec,&upRec,&intersec))
-			preview_handleIntersec(shmem,&curRec,&intersec,2,xres,yres);
+		curRec.setPos(curRec.x(),previewRect.y() + previewRect.height() - previewThickness);
+		intersec = gui::intersection(curRec,upRec);
+		if(!intersec.empty())
+			preview_handleIntersec(shmem,curRec,intersec,2,xres,yres);
+
 		/* left */
-		curRec.y = previewRect.y;
-		curRec.width = previewThickness;
-		curRec.height = previewRect.height;
-		if(rectIntersect(&curRec,&upRec,&intersec))
-			preview_handleIntersec(shmem,&curRec,&intersec,3,xres,yres);
+		curRec.setPos(curRec.x(),previewRect.y());
+		curRec.setSize(previewThickness,previewRect.height());
+		intersec = gui::intersection(curRec,upRec);
+		if(!intersec.empty())
+			preview_handleIntersec(shmem,curRec,intersec,3,xres,yres);
+
 		/* right */
-		curRec.x = previewRect.x + previewRect.width - previewThickness;
-		if(rectIntersect(&curRec,&upRec,&intersec))
-			preview_handleIntersec(shmem,&curRec,&intersec,1,xres,yres);
+		curRec.setPos(previewRect.x() + previewRect.width() - previewThickness,curRec.y());
+		intersec = gui::intersection(curRec,upRec);
+		if(!intersec.empty())
+			preview_handleIntersec(shmem,curRec,intersec,1,xres,yres);
 	}
 }
 
@@ -78,31 +79,31 @@ void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsiz
 		/* copy old content back */
 		/* top */
 		preview_copyRegion(previewRectCopies[0],shmem,
-				previewRect.width,previewThickness,0,0,previewRect.x,previewRect.y,
-				previewRect.width,xres,previewThickness);
-		win_notifyUimng(previewRect.x,previewRect.y,previewRect.width,previewThickness);
+				previewRect.width(),previewThickness,0,0,previewRect.x(),previewRect.y(),
+				previewRect.width(),xres,previewThickness);
+		win_notifyUimng(previewRect.x(),previewRect.y(),previewRect.width(),previewThickness);
 		/* right */
 		preview_copyRegion(previewRectCopies[1],shmem,
-				previewThickness,previewRect.height,0,0,
-				previewRect.x + previewRect.width - previewThickness,previewRect.y,
-				previewThickness,xres,previewRect.height);
-		win_notifyUimng(previewRect.x + previewRect.width - previewThickness,previewRect.y,
-			previewThickness,previewRect.height);
+				previewThickness,previewRect.height(),0,0,
+				previewRect.x() + previewRect.width() - previewThickness,previewRect.y(),
+				previewThickness,xres,previewRect.height());
+		win_notifyUimng(previewRect.x() + previewRect.width() - previewThickness,previewRect.y(),
+			previewThickness,previewRect.height());
 		/* bottom */
 		preview_copyRegion(previewRectCopies[2],shmem,
-				previewRect.width,previewThickness,0,0,previewRect.x,
-				previewRect.y + previewRect.height - previewThickness,
-				previewRect.width,xres,previewThickness);
-		win_notifyUimng(previewRect.x,previewRect.y + previewRect.height - previewThickness,
-			previewRect.width,previewThickness);
+				previewRect.width(),previewThickness,0,0,previewRect.x(),
+				previewRect.y() + previewRect.height() - previewThickness,
+				previewRect.width(),xres,previewThickness);
+		win_notifyUimng(previewRect.x(),previewRect.y() + previewRect.height() - previewThickness,
+			previewRect.width(),previewThickness);
 		/* left */
 		preview_copyRegion(previewRectCopies[3],shmem,
-				previewThickness,previewRect.height,0,0,previewRect.x,previewRect.y,
-				previewThickness,xres,previewRect.height);
-		win_notifyUimng(previewRect.x,previewRect.y,previewThickness,previewRect.height);
+				previewThickness,previewRect.height(),0,0,previewRect.x(),previewRect.y(),
+				previewThickness,xres,previewRect.height());
+		win_notifyUimng(previewRect.x(),previewRect.y(),previewThickness,previewRect.height());
 
-		if(thickness != previewThickness || width != previewRect.width ||
-				height != previewRect.height) {
+		if(thickness != previewThickness || width != previewRect.width() ||
+				height != previewRect.height()) {
 			free(previewRectCopies[0]);
 			previewRectCopies[0] = NULL;
 			free(previewRectCopies[1]);
@@ -115,8 +116,8 @@ void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsiz
 	}
 
 	if(thickness > 0) {
-		if(thickness != previewThickness || width != previewRect.width ||
-				height != previewRect.height) {
+		if(thickness != previewThickness || width != previewRect.width() ||
+				height != previewRect.height()) {
 			previewRectCopies[0] = (char*)malloc(width * thickness * pxSize);
 			previewRectCopies[1] = (char*)malloc(height * thickness * pxSize);
 			previewRectCopies[2] = (char*)malloc(width * thickness * pxSize);
@@ -136,10 +137,8 @@ void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsiz
 			y = yres;
 		if(y + height >= yres)
 			height = yres - y;
-		previewRect.x = x;
-		previewRect.y = y;
-		previewRect.width = width;
-		previewRect.height = height;
+		previewRect.setPos(x,y);
+		previewRect.setSize(width,height);
 
 		/* save content */
 		/* top */
@@ -177,12 +176,12 @@ void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsiz
 	previewThickness = thickness;
 }
 
-static void preview_handleIntersec(char *shmem,sRectangle *curRec,sRectangle *intersec,size_t i,
-		gsize_t xres,gsize_t yres) {
-	preview_copyRegion(shmem,previewRectCopies[i],intersec->width,intersec->height,
-		intersec->x,intersec->y,intersec->x - curRec->x,intersec->y - curRec->y,
-		xres,curRec->width,yres);
-	preview_clearRegion(shmem,curRec->x,curRec->y,curRec->width,curRec->height);
+static void preview_handleIntersec(char *shmem,const gui::Rectangle &curRec,
+		const gui::Rectangle &intersec,size_t i,gsize_t xres,gsize_t yres) {
+	preview_copyRegion(shmem,previewRectCopies[i],intersec.width(),intersec.height(),
+		intersec.x(),intersec.y(),intersec.x() - curRec.x(),intersec.y() - curRec.y(),
+		xres,curRec.width(),yres);
+	preview_clearRegion(shmem,curRec.x(),curRec.y(),curRec.width(),curRec.height());
 }
 
 static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h) {

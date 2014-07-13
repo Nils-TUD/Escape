@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/rect.h>
 
 /**
  * Paints the given rect s a preview-rectangle with the given thickness in <shmem>. If <thickness>

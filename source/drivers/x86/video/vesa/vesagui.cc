@@ -21,8 +21,8 @@
 #include <sys/io.h>
 #include <sys/driver.h>
 #include <sys/mman.h>
-#include <sys/rect.h>
 #include <sys/messages.h>
+#include <gui/graphics/rectangle.h>
 #include <vbe/vbe.h>
 #include <string.h>
 #include <stdlib.h>
@@ -84,7 +84,6 @@ void vesagui_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int 
 
 void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	ipc::Screen::Mode *minfo = scr->mode;
-	sRectangle upRec,curRec,intersec;
 	gpos_t y1,y2;
 	gsize_t xres = minfo->width;
 	gsize_t yres = minfo->height;
@@ -108,19 +107,14 @@ void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width
 		y1++;
 	}
 
-	upRec.x = x;
-	upRec.y = y;
-	upRec.width = width;
-	upRec.height = height;
+	gui::Rectangle upRec(x,y,width,height);
+	gui::Rectangle curRec(lastX,lastY,curWidth,curHeight);
 
 	/* look if we have to update the cursor-copy */
-	curRec.x = lastX;
-	curRec.y = lastY;
-	curRec.width = curWidth;
-	curRec.height = curHeight;
-	if(rectIntersect(&curRec,&upRec,&intersec)) {
-		vesagui_copyRegion(scr,(uint8_t*)shmem,cursorCopy,intersec.width,intersec.height,
-			intersec.x,intersec.y,intersec.x - lastX,intersec.y - lastY,xres,curWidth,yres);
+	gui::Rectangle intersec = gui::intersection(curRec,upRec);
+	if(!intersec.empty()) {
+		vesagui_copyRegion(scr,(uint8_t*)shmem,cursorCopy,intersec.width(),intersec.height(),
+			intersec.x(),intersec.y(),intersec.x() - lastX,intersec.y() - lastY,xres,curWidth,yres);
 		bmp_draw(scr,cursor[curCursor],lastX,lastY,vbe_getPixelFunc(*scr->mode));
 	}
 }

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/rect.h>
+#include <gui/graphics/rectangle.h>
 #include <ipc/ipcstream.h>
 #include <ipc/clientdevice.h>
 #include <ipc/proto/screen.h>
@@ -59,7 +59,7 @@ class ScreenDevice : public ClientDevice<C> {
 		ScreenClient *client;
 	};
 	struct Rectangle {
-		sRectangle r;
+		gui::Rectangle r;
 		ScreenClient *client;
 	};
 
@@ -224,10 +224,10 @@ private:
 		size_t tolerance = mergeTolerance[cli->type()];
 		for(auto r = _rects.begin(); r != _rects.end(); ++r) {
 			if(r->client == cli &&
-				(size_t)DIFF(r->r.x,x) < tolerance && (size_t)DIFF(r->r.y,y) < tolerance &&
-				DIFF(r->r.width,width) < tolerance && DIFF(r->r.height,height) < tolerance) {
+				(size_t)DIFF(r->r.x(),x) < tolerance && (size_t)DIFF(r->r.y(),y) < tolerance &&
+				DIFF(r->r.width(),width) < tolerance && DIFF(r->r.height(),height) < tolerance) {
 				/* mergable, so do it */
-				rectAddTo(&r->r,x,y,width,height);
+				r->r = gui::unify(r->r,gui::Rectangle(x,y,width,height));
 				present = true;
 				break;
 			}
@@ -235,10 +235,7 @@ private:
 		/* if not present yet, add it */
 		if(!present) {
 			Rectangle r;
-			r.r.x = x;
-			r.r.y = y;
-			r.r.width = width;
-			r.r.height = height;
+			r.r = gui::Rectangle(x,y,width,height);
 			r.client = cli;
 			_rects.push_back(r);
 		}
@@ -257,7 +254,7 @@ private:
 	void performUpdate() {
 		for(auto r = _rects.begin(); r != _rects.end(); ++r) {
 			try {
-				updateScreen(static_cast<C*>(r->client),r->r.x,r->r.y,r->r.width,r->r.height);
+				updateScreen(static_cast<C*>(r->client),r->r.x(),r->r.y(),r->r.width(),r->r.height());
 			}
 			catch(const std::exception &e) {
 				printe("%s",e.what());

@@ -37,7 +37,7 @@ static uchar buttons = 0;
 static gpos_t curX = 0;
 static gpos_t curY = 0;
 static uchar cursor = ipc::Screen::CURSOR_DEFAULT;
-static sWindow *mouseWin = NULL;
+static Window *mouseWin = NULL;
 
 gpos_t input_getMouseX(void) {
 	return curX;
@@ -75,7 +75,7 @@ int input_thread(void *arg) {
 }
 
 static void handleKbMessage(ipc::UIEvents::Event *data) {
-	sWindow *active = win_getActive();
+	Window *active = win_getActive();
 	if(!active || active->evfd == -1)
 		return;
 
@@ -91,7 +91,7 @@ static void handleKbMessage(ipc::UIEvents::Event *data) {
 static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data) {
 	gpos_t oldx = curX,oldy = curY;
 	bool btnChanged = false;
-	sWindow *w,*wheelWin = NULL;
+	Window *w,*wheelWin = NULL;
 	curX = MAX(0,MIN((gpos_t)win_getMode()->width - 1,curX + data->d.mouse.x));
 	curY = MAX(0,MIN((gpos_t)win_getMode()->height - 1,curY - data->d.mouse.y));
 
@@ -118,11 +118,11 @@ static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data) {
 		cursor = ipc::Screen::CURSOR_DEFAULT;
 		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
 			gsize_t tbh = w->titleBarHeight;
-			bool left = curY >= (gpos_t)(w->y + tbh) &&
-					curX < (gpos_t)(w->x + ipc::Screen::CURSOR_RESIZE_WIDTH);
-			bool right = curY >= (gpos_t)(w->y + tbh) &&
-					curX >= (gpos_t)(w->x + w->width - ipc::Screen::CURSOR_RESIZE_WIDTH);
-			bool bottom = curY >= (gpos_t)(w->y + w->height - ipc::Screen::CURSOR_RESIZE_WIDTH);
+			bool left = curY >= (gpos_t)(w->y() + tbh) &&
+					curX < (gpos_t)(w->x() + ipc::Screen::CURSOR_RESIZE_WIDTH);
+			bool right = curY >= (gpos_t)(w->y() + tbh) &&
+					curX >= (gpos_t)(w->x() + w->width() - ipc::Screen::CURSOR_RESIZE_WIDTH);
+			bool bottom = curY >= (gpos_t)(w->y() + w->height() - ipc::Screen::CURSOR_RESIZE_WIDTH);
 			if(left && bottom)
 				cursor = ipc::Screen::CURSOR_RESIZE_BL;
 			else if(left)

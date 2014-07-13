@@ -12,8 +12,7 @@ if env['TGTTYPE'] == 'x86':
 	env.SConscript(env.Glob('*/SConscript'), 'env')
 else:
 	guiapps = [
-		"desktop", "fileman", "gcalc", "glogin", "gsettings", "gtest", "guishell",
-		"libguitest", "slideshow"
+		"desktop", "fileman", "gcalc", "glogin", "gsettings", "gtest", "guishell","slideshow"
 	]
 	for f in env.Glob('*/SConscript'):
 		if not isIgnored(guiapps, str(f)):

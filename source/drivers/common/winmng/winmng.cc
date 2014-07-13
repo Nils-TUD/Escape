@@ -73,7 +73,7 @@ public:
 		gwinid_t wid;
 		is >> wid;
 
-		sWindow *win = win_get(wid);
+		Window *win = win_get(wid);
 		if(win)
 			win_setActive(wid,true,input_getMouseX(),input_getMouseY());
 	}
@@ -92,10 +92,10 @@ public:
 		bool finished;
 		is >> wid >> x >> y >> finished;
 
-		sWindow *win = win_get(wid);
+		Window *win = win_get(wid);
 		if(win && x < (gpos_t)win_getMode()->width && y < (gpos_t)win_getMode()->height) {
 			if(finished)
-				win_moveTo(wid,x,y,win->width,win->height);
+				win_moveTo(wid,x,y,win->width(),win->height());
 			else
 				win_previewMove(wid,x,y);
 		}
@@ -129,11 +129,11 @@ public:
 		gsize_t width,height;
 		is >> wid >> x >> y >> width >> height;
 
-		sWindow *win = win_get(wid);
+		Window *win = win_get(wid);
 		if(win != NULL) {
 			if((gpos_t)(x + width) > x &&
-					(gpos_t)(y + height) > y && x + width <= win->width &&
-					y + height <= win->height) {
+					(gpos_t)(y + height) > y && x + width <= win->width() &&
+					y + height <= win->height()) {
 				win_update(wid,x,y,width,height);
 			}
 			else

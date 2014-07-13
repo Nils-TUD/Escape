@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <sys/rect.h>
+#include <gui/graphics/rectangle.h>
 #include <ipc/proto/ui.h>
 
 #define WINDOW_COUNT					32
@@ -33,21 +33,26 @@
 
 typedef uint32_t tColor;
 
-/* a window */
-typedef struct {
-	gpos_t x;
-	gpos_t y;
-	gpos_t z;
-	gsize_t width;
-	gsize_t height;
+class WinRect : public gui::Rectangle {
+public:
+	explicit WinRect() : gui::Rectangle(), id(WINID_UNUSED) {
+	}
+	explicit WinRect(const gui::Rectangle &r) : gui::Rectangle(r), id(WINID_UNUSED) {
+	}
+
 	gwinid_t id;
+};
+
+/* a window */
+struct Window : public WinRect {
+	gpos_t z;
 	int owner;
 	int evfd;
 	uint style;
 	gsize_t titleBarHeight;
 	ipc::FrameBuffer *fb;
 	bool ready;
-} sWindow;
+};
 
 /**
  * Inits all window-stuff
@@ -141,7 +146,7 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY);
  * @param id the window-id
  * @return the window with given id or NULL
  */
-sWindow *win_get(gwinid_t id);
+Window *win_get(gwinid_t id);
 
 /**
  * @param id the window-id
@@ -156,12 +161,12 @@ bool win_exists(gwinid_t id);
  * @param y the y-coordinate
  * @return the window or NULL
  */
-sWindow *win_getAt(gpos_t x,gpos_t y);
+Window *win_getAt(gpos_t x,gpos_t y);
 
 /**
  * @return the currently active window; NULL if no one is active
  */
-sWindow *win_getActive(void);
+Window *win_getActive(void);
 
 /**
  * Sets the active window to the given one. This will put <id> to the front and windows that

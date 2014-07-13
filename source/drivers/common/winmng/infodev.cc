@@ -39,12 +39,12 @@ public:
 		std::ostringstream os;
 		size_t i;
 		for(i = 0; i < WINDOW_COUNT; i++) {
-			sWindow *w = win_get(i);
+			Window *w = win_get(i);
 			if(w) {
 				os << "Window " << w->id << "\n";
 				os << "\tOwner: " << w->owner << "\n";
-				os << "\tPosition: " << w->x << "," << w->y << "," << w->z << "\n";
-				os << "\tSize: " << w->width << " x " << w->height << "\n";
+				os << "\tPosition: " << w->x() << "," << w->y() << "," << w->z << "\n";
+				os << "\tSize: " << w->width() << " x " << w->height() << "\n";
 				os << "\tStyle: 0x" << std::hex << w->style << std::dec << "\n";
 			}
 		}

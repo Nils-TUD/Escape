@@ -22,7 +22,6 @@
 #include <sys/driver.h>
 #include <sys/debug.h>
 #include <sys/mman.h>
-#include <sys/rect.h>
 #include <sys/messages.h>
 #include <ipc/screendevice.h>
 #include <vbe/vbe.h>

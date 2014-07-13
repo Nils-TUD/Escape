@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/rect.h>
+#include <gui/graphics/rectangle.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
 #include <sys/driver.h>
@@ -41,15 +41,16 @@
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
 #define ABS(a)		((a) < 0 ? -(a) : (a))
 
-static void win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
-static void win_destroyBuf(sWindow *win);
+static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
+static void win_destroyBuf(Window *win);
 static gwinid_t win_getTop(void);
-static bool win_validateRect(sRectangle *r);
-static void win_repaint(sRectangle *r,sWindow *win,gpos_t z);
+static bool win_validateRect(gui::Rectangle &r);
+static void win_repaint(const gui::Rectangle &r,Window *win,gpos_t z);
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
-static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r);
-static void win_clearRegion(char *mem,const sRectangle *r);
-static void win_copyRegion(char *mem,const sRectangle *r,gwinid_t id);
+static void win_getRepaintRegions(std::vector<WinRect> &list,gwinid_t id,Window *win,gpos_t z,
+	const gui::Rectangle &r);
+static void win_clearRegion(char *mem,const gui::Rectangle &r);
+static void win_copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id);
 static void win_notifyWinCreate(gwinid_t id,const char *title);
 static void win_notifyWinActive(gwinid_t id);
 static void win_notifyWinDestroy(gwinid_t id);
@@ -62,16 +63,12 @@ static ipc::FrameBuffer *fb;
 
 static size_t activeWindow = WINDOW_COUNT;
 static size_t topWindow = WINDOW_COUNT;
-static sWindow windows[WINDOW_COUNT];
+static Window windows[WINDOW_COUNT];
 
 int win_init(int sid,ipc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
 	drvId = sid;
 	ui = uiobj;
 	srand(time(NULL));
-
-	/* mark windows unused */
-	for(gwinid_t i = 0; i < WINDOW_COUNT; i++)
-		windows[i].id = WINID_UNUSED;
 
 	return win_setMode(width,height,bpp,shmname);
 }
@@ -84,7 +81,7 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	ui->setCursor(x,y,cursor);
 }
 
-static void win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng) {
+static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng) {
 	char name[32];
 	snprintf(name,sizeof(name),"%s-win%d",winmng,id);
 	ipc::Screen::Mode winMode = mode;
@@ -95,7 +92,7 @@ static void win_createBuf(sWindow *win,gwinid_t id,gsize_t width,gsize_t height,
 	memclear(win->fb->addr(),width * height * (mode.bitsPerPixel / 8));
 }
 
-static void win_destroyBuf(sWindow *win) {
+static void win_destroyBuf(Window *win) {
 	delete win->fb;
 	win->fb = NULL;
 }
@@ -122,7 +119,7 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i].id != WINID_UNUSED) {
 				win_destroyBuf(windows + i);
-				win_createBuf(windows + i,i,windows[i].width,windows[i].height,shmname);
+				win_createBuf(windows + i,i,windows[i].width(),windows[i].height(),shmname);
 
 				/* let the window reset everything, i.e. connect to new buffer, repaint, ... */
 				ipc::WinMngEvents::Event ev;
@@ -140,7 +137,7 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 		/* we have to repaint everything */
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i].id != WINID_UNUSED)
-				win_update(i,0,0,windows[i].width,windows[i].height);
+				win_update(i,0,0,windows[i].width(),windows[i].height());
 		}
 		throw;
 	}
@@ -155,8 +152,8 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 			win_createBuf(windows + i,i,width,height,winmng);
 
 			windows[i].id = i;
-			windows[i].x = x;
-			windows[i].y = y;
+			windows[i].setPos(x,y);
+			windows[i].setSize(width,height);
 			if(style == WIN_STYLE_DESKTOP)
 				windows[i].z = 0;
 			else {
@@ -166,8 +163,6 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 				else
 					windows[i].z = 1;
 			}
-			windows[i].width = width;
-			windows[i].height = height;
 			windows[i].owner = owner;
 			windows[i].evfd = -1;
 			windows[i].style = style;
@@ -206,7 +201,6 @@ void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY) {
 }
 
 void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
-	sRectangle *old;
 	/* destroy shm area */
 	win_destroyBuf(windows + id);
 
@@ -215,16 +209,10 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	win_notifyWinDestroy(id);
 
 	print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",
-		id,windows[id].x,windows[id].y,windows[id].z,windows[id].width,windows[id].height);
+		id,windows[id].x(),windows[id].y(),windows[id].z,windows[id].width(),windows[id].height());
 
 	/* repaint window-area */
-	old = (sRectangle*)malloc(sizeof(sRectangle));
-	old->x = windows[id].x;
-	old->y = windows[id].y;
-	old->width = windows[id].width;
-	old->height = windows[id].height;
-	old->window = WINDOW_COUNT;
-	win_repaint(old,NULL,-1);
+	win_repaint(windows[id],NULL,-1);
 
 	/* set highest window active */
 	if(activeWindow == id || topWindow == id) {
@@ -234,7 +222,7 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	}
 }
 
-sWindow *win_get(gwinid_t id) {
+Window *win_get(gwinid_t id) {
 	if(id >= WINDOW_COUNT || windows[id].id == WINID_UNUSED)
 		return NULL;
 	return windows + id;
@@ -244,15 +232,13 @@ bool win_exists(gwinid_t id) {
 	return id < WINDOW_COUNT && windows[id].id != WINID_UNUSED;
 }
 
-sWindow *win_getAt(gpos_t x,gpos_t y) {
+Window *win_getAt(gpos_t x,gpos_t y) {
 	gwinid_t i;
 	gpos_t maxz = -1;
 	gwinid_t winId = WINDOW_COUNT;
-	sWindow *w = windows;
+	Window *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNUSED && w->z > maxz &&
-				x >= w->x && x < (gpos_t)(w->x + w->width) &&
-				y >= w->y && y < (gpos_t)(w->y + w->height)) {
+		if(w->id != WINID_UNUSED && w->z > maxz && w->contains(x,y)) {
 			winId = i;
 			maxz = w->z;
 		}
@@ -263,7 +249,7 @@ sWindow *win_getAt(gpos_t x,gpos_t y) {
 	return NULL;
 }
 
-sWindow *win_getActive(void) {
+Window *win_getActive(void) {
 	if(activeWindow != WINDOW_COUNT)
 		return windows + activeWindow;
 	return NULL;
@@ -273,7 +259,7 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 	gwinid_t i;
 	gpos_t curz = windows[id].z;
 	gpos_t maxz = 0;
-	sWindow *w = windows;
+	Window *w = windows;
 	if(id != WINDOW_COUNT && windows[id].style != WIN_STYLE_DESKTOP) {
 		for(i = 0; i < WINDOW_COUNT; i++) {
 			if(w->id != WINID_UNUSED && w->z > curz && w->style != WIN_STYLE_POPUP) {
@@ -295,19 +281,11 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 		if(windows[activeWindow].style != WIN_STYLE_DESKTOP)
 			topWindow = id;
 		if(activeWindow != WINDOW_COUNT) {
-			sRectangle *nrect;
 			win_sendActive(activeWindow,true,mouseX,mouseY);
 			win_notifyWinActive(activeWindow);
 
-			if(repaint && windows[activeWindow].style != WIN_STYLE_DESKTOP) {
-				nrect = (sRectangle*)malloc(sizeof(sRectangle));
-				nrect->x = windows[activeWindow].x;
-				nrect->y = windows[activeWindow].y;
-				nrect->width = windows[activeWindow].width;
-				nrect->height = windows[activeWindow].height;
-				nrect->window = WINDOW_COUNT;
-				win_repaint(nrect,windows + activeWindow,windows[activeWindow].z);
-			}
+			if(repaint && windows[activeWindow].style != WIN_STYLE_DESKTOP)
+				win_repaint(windows[activeWindow],windows + activeWindow,windows[activeWindow].z);
 		}
 	}
 }
@@ -317,112 +295,84 @@ void win_previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 }
 
 void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
-	sWindow *w = windows + window;
-	preview_set(fb->addr(),x,y,w->width,w->height,2);
+	Window *w = windows + window;
+	preview_set(fb->addr(),x,y,w->width(),w->height(),2);
 }
 
 void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height,const char *winmng) {
-	/* exchange buffer */
-	win_destroyBuf(windows + window);
-	win_createBuf(windows + window,window,width,height,winmng);
+	Window *w = windows + window;
 
-	if(x != windows[window].x || y != windows[window].y)
+	/* exchange buffer */
+	win_destroyBuf(w);
+	win_createBuf(w,window,width,height,winmng);
+
+	if(x != w->x() || y != w->y())
 		win_moveTo(window,x,y,width,height);
 	else {
-		gsize_t oldWidth = windows[window].width;
-		gsize_t oldHeight = windows[window].height;
-		windows[window].width = width;
-		windows[window].height = height;
+		gsize_t oldWidth = w->width();
+		gsize_t oldHeight = w->height();
+		w->setSize(width,height);
 
 		/* remove preview */
 		preview_set(fb->addr(),0,0,0,0,0);
 
 		if(width < oldWidth) {
-			sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
-			r->x = windows[window].x + width;
-			r->y = windows[window].y;
-			r->width = oldWidth - width;
-			r->height = oldHeight;
-			r->window = WINDOW_COUNT;
-			win_repaint(r,NULL,-1);
+			gui::Rectangle nrect(w->x() + width,w->y(),oldWidth - width,oldHeight);
+			win_repaint(nrect,NULL,-1);
 		}
 		if(height < oldHeight) {
-			sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
-			r->x = windows[window].x;
-			r->y = windows[window].y + height;
-			r->width = oldWidth;
-			r->height = oldHeight - height;
-			r->window = WINDOW_COUNT;
-			win_repaint(r,NULL,-1);
+			gui::Rectangle nrect(w->x(),w->y() + height,oldWidth,oldHeight - height);
+			win_repaint(nrect,NULL,-1);
 		}
 	}
 }
 
 void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	size_t i,count;
-	sRectangle **rects;
-	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
-	sRectangle *nrect = (sRectangle*)malloc(sizeof(sRectangle));
+	Window *w = windows + window;
 
 	/* remove preview */
 	preview_set(fb->addr(),0,0,0,0,0);
 
 	/* save old position */
-	old->x = windows[window].x;
-	old->y = windows[window].y;
-	old->width = windows[window].width;
-	old->height = windows[window].height;
+	gui::Rectangle orect(*w);
+	gui::Rectangle nrect(x,y,width,height);
+	std::vector<gui::Rectangle> rects = gui::substraction(orect,nrect);
 
-	/* create rectangle for new position */
-	nrect->x = windows[window].x = x;
-	nrect->y = windows[window].y = y;
-	nrect->width = windows[window].width = width;
-	nrect->height = windows[window].height = height;
+	w->setPos(nrect.getPos());
+	w->setSize(nrect.getSize());
 
 	/* clear old position */
-	rects = rectSubstract(old,nrect,&count);
-	if(count > 0) {
+	if(!rects.empty()) {
 		/* if there is an intersection, use the splitted parts */
-		for(i = 0; i < count; i++) {
-			rects[i]->window = WINDOW_COUNT;
-			win_repaint(rects[i],NULL,-1);
-		}
-		free(rects);
-		free(old);
+		for(auto rect = rects.begin(); rect != rects.end(); ++rect)
+			win_repaint(*rect,NULL,-1);
 	}
 	else {
 		/* no intersection, so use the whole old rectangle */
-		old->window = WINDOW_COUNT;
-		win_repaint(old,NULL,-1);
+		win_repaint(orect,NULL,-1);
 	}
 
 	/* repaint new position */
-	win_repaint(nrect,windows + window,windows[window].z);
+	win_repaint(nrect,w,w->z);
 }
 
 void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	sWindow *win = windows + window;
-	win->ready = true;
+	Window *w = windows + window;
+	w->ready = true;
 
-	sRectangle rect;
-	sRectangle *r = topWindow == window ? &rect : (sRectangle*)malloc(sizeof(sRectangle));
-	r->x = win->x + x;
-	r->y = win->y + y;
-	r->width = width;
-	r->height = height;
-	r->window = win->id;
-	if(win_validateRect(r)) {
+	gui::Rectangle rect(w->x() + x,w->y() + y,width,height);
+	if(win_validateRect(rect)) {
 		if(topWindow == window)
-			win_copyRegion(fb->addr(),r,window);
+			win_copyRegion(fb->addr(),rect,window);
 		else
-			win_repaint(r,win,win->z);
+			win_repaint(rect,w,w->z);
 	}
 }
 
 static gwinid_t win_getTop(void) {
 	gwinid_t i,winId = WINID_UNUSED;
 	int maxz = -1;
-	sWindow *w = windows;
+	Window *w = windows;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(w->id != WINID_UNUSED && w->z > maxz) {
 			winId = i;
@@ -433,44 +383,37 @@ static gwinid_t win_getTop(void) {
 	return winId;
 }
 
-static bool win_validateRect(sRectangle *r) {
-	if(r->x < 0) {
-		if(-r->x > (gpos_t)r->width)
+static bool win_validateRect(gui::Rectangle &r) {
+	if(r.x() < 0) {
+		if(-r.x() > (gpos_t)r.width())
 			return false;
-		r->width += r->x;
-		r->x = 0;
+
+		r.setSize(r.width() + r.x(),r.height());
+		r.setPos(0,r.y());
 	}
-	if(r->x >= (gpos_t)mode.width || r->y >= (gpos_t)mode.height)
+
+	if(r.x() >= (gpos_t)mode.width || r.y() >= (gpos_t)mode.height)
 		return false;
-	r->width = MIN(mode.width - r->x,r->width);
-	r->height = MIN(mode.height - r->y,r->height);
+
+	r.setSize(MIN(mode.width - r.x(),r.width()),MIN(mode.height - r.y(),r.height()));
 	return true;
 }
 
-static void win_repaint(sRectangle *r,sWindow *win,gpos_t z) {
-	sRectangle *rect;
-	sSLNode *n;
-	sSLList list;
-	sll_init(&list,malloc,free);
-
-	win_getRepaintRegions(&list,0,win,z,r);
-	for(n = sll_begin(&list); n != NULL; n = n->next) {
-		rect = (sRectangle*)n->data;
-
+static void win_repaint(const gui::Rectangle &r,Window *win,gpos_t z) {
+	std::vector<WinRect> rects;
+	win_getRepaintRegions(rects,0,win,z,r);
+	for(auto rect = rects.begin(); rect != rects.end(); ++rect) {
 		/* validate rect */
-		if(!win_validateRect(rect))
+		if(!win_validateRect(*rect))
 			continue;
 
 		/* if it doesn't belong to a window, we have to clear it */
-		if(rect->window == WINDOW_COUNT)
-			win_clearRegion(fb->addr(),rect);
+		if(rect->id == WINDOW_COUNT)
+			win_clearRegion(fb->addr(),*rect);
 		/* otherwise copy from the window buffer */
 		else
-			win_copyRegion(fb->addr(),rect,rect->window);
+			win_copyRegion(fb->addr(),*rect,rect->id);
 	}
-
-	/* free list elements */
-	sll_clear(&list,true);
 }
 
 static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
@@ -486,88 +429,68 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 	send(windows[id].evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
-static void win_getRepaintRegions(sSLList *list,gwinid_t id,sWindow *win,gpos_t z,sRectangle *r) {
-	sRectangle **rects;
-	sRectangle wr;
-	sRectangle *inter;
-	sWindow *w;
-	size_t count;
-	bool intersect;
+static void win_getRepaintRegions(std::vector<WinRect> &list,gwinid_t id,Window *win,gpos_t z,
+		const gui::Rectangle &r) {
 	for(; id < WINDOW_COUNT; id++) {
-		w = windows + id;
+		Window *w = windows + id;
 		/* skip unused, ourself and rects behind ourself */
 		if((win && w->id == win->id) || w->id == WINID_UNUSED || w->z < z || !w->ready)
 			continue;
 
-		/* build window-rect */
-		wr.x = w->x;
-		wr.y = w->y;
-		wr.width = w->width;
-		wr.height = w->height;
-		/* split r by the rectangle */
-		rects = rectSubstract(r,&wr,&count);
+		/* substract the window-rectangle from r */
+		std::vector<gui::Rectangle> rects = gui::substraction(r,*w);
 
-		/* the window has to repaint the intersection, if there is any */
-		inter = (sRectangle*)malloc(sizeof(sRectangle));
-		if(inter == NULL) {
-			printe("Unable to allocate mem");
-			exit(EXIT_FAILURE);
-		}
-		intersect = rectIntersect(&wr,r,inter);
-		if(intersect)
+		gui::Rectangle inter = gui::intersection(*w,r);
+		if(!inter.empty())
 			win_getRepaintRegions(list,id + 1,w,w->z,inter);
-		else
-			free(inter);
 
-		if(rects) {
+		if(!rects.empty()) {
 			/* split all by all other windows */
-			while(count-- > 0)
-				win_getRepaintRegions(list,id + 1,win,z,rects[count]);
-			free(rects);
+			for(auto rect = rects.begin(); rect != rects.end(); ++rect)
+				win_getRepaintRegions(list,id + 1,win,z,*rect);
 		}
 
 		/* if we made a recursive call we can leave here */
-		if(rects || intersect) {
-			/* forget old rect and stop here */
-			free(r);
+		if(!rects.empty() || !inter.empty())
 			return;
-		}
 	}
 
 	/* no split, so its on top */
+	WinRect final(r);
 	if(win)
-		r->window = win->id;
+		final.id = win->id;
 	else
-		r->window = WINDOW_COUNT;
-	sll_append(list,r);
+		final.id = WINDOW_COUNT;
+	list.push_back(final);
 }
 
-static void win_clearRegion(char *mem,const sRectangle *r) {
-	gpos_t y = r->y;
-	size_t count = r->width * PIXEL_SIZE;
-	gpos_t maxy = y + r->height;
-	mem += (y * mode.width + r->x) * PIXEL_SIZE;
+static void win_clearRegion(char *mem,const gui::Rectangle &r) {
+	gpos_t y = r.y();
+	size_t count = r.width() * PIXEL_SIZE;
+	gpos_t maxy = y + r.height();
+	mem += (y * mode.width + r.x()) * PIXEL_SIZE;
 	while(y < maxy) {
 		memclear(mem,count);
 		mem += mode.width * PIXEL_SIZE;
 		y++;
 	}
 
-	preview_updateRect(mem,r->x,r->y,r->width,r->height);
-	win_notifyUimng(r->x,r->y,r->width,r->height);
+	preview_updateRect(mem,r.x(),r.y(),r.width(),r.height());
+	win_notifyUimng(r.x(),r.y(),r.width(),r.height());
 }
 
-static void win_copyRegion(char *mem,const sRectangle *r,gwinid_t id) {
-	gpos_t x = r->x - windows[id].x;
-	gpos_t y = r->y - windows[id].y;
+static void win_copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id) {
+	Window *w = windows + id;
+	gpos_t x = r.x() - w->x();
+	gpos_t y = r.y() - w->y();
 
 	char *src,*dst;
-	gpos_t endy = y + r->height;
-	size_t count = r->width * PIXEL_SIZE;
-	size_t srcAdd = windows[id].width * PIXEL_SIZE;
+	gpos_t endy = y + r.height();
+	size_t count = r.width() * PIXEL_SIZE;
+	size_t srcAdd = w->width() * PIXEL_SIZE;
 	size_t dstAdd = mode.width * PIXEL_SIZE;
-	src = windows[id].fb->addr() + (y * windows[id].width + x) * PIXEL_SIZE;
-	dst = mem + ((windows[id].y + y) * mode.width + (windows[id].x + x)) * PIXEL_SIZE;
+	src = w->fb->addr() + (y * w->width() + x) * PIXEL_SIZE;
+	dst = mem + ((w->y() + y) * mode.width + (w->x() + x)) * PIXEL_SIZE;
 
 	while(y < endy) {
 		memcpy(dst,src,count);
@@ -576,8 +499,8 @@ static void win_copyRegion(char *mem,const sRectangle *r,gwinid_t id) {
 		y++;
 	}
 
-	preview_updateRect(mem,windows[id].x + x,windows[id].y + (endy - r->height),r->width,r->height);
-	win_notifyUimng(windows[id].x + x,windows[id].y + (endy - r->height),r->width,r->height);
+	preview_updateRect(mem,w->x() + x,w->y() + (endy - r.height()),r.width(),r.height());
+	win_notifyUimng(w->x() + x,w->y() + (endy - r.height()),r.width(),r.height());
 }
 
 void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {

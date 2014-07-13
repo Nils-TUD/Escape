@@ -30,7 +30,6 @@ extern sTestModule tModFs;
 extern sTestModule tModGroup;
 extern sTestModule tModUser;
 extern sTestModule tModPasswd;
-extern sTestModule tModRect;
 extern sTestModule tModMem;
 extern sTestModule tModSLList;
 extern sTestModule tModSetjmp;
@@ -49,7 +48,6 @@ int main(void) {
 	test_register(&tModGroup);
 	test_register(&tModUser);
 	test_register(&tModPasswd);
-	test_register(&tModRect);
 	test_register(&tModMem);
 	test_register(&tModSLList);
 	test_register(&tModSetjmp);

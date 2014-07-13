@@ -25,7 +25,7 @@
 #include <sys/esccodes.h>
 #include <sys/thread.h>
 #include <sys/stat.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <usergroup/user.h>
 #include <signal.h>
 #include <string.h>

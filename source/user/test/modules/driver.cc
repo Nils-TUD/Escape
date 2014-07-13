@@ -25,7 +25,7 @@
 #include <sys/thread.h>
 #include <sys/sync.h>
 #include <sys/conf.h>
-#include <ipc/proto/file.h>
+#include <esc/proto/file.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>

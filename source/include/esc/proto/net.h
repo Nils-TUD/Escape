@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/nic.h>
-#include <ipc/ipcstream.h>
+#include <esc/proto/nic.h>
+#include <esc/ipc/ipcstream.h>
 #include <istream>
 #include <ostream>
 #include <vthrow.h>

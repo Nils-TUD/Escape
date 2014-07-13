@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "../cmds.h"

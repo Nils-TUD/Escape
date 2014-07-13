@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/sync.h>
-#include <ipc/clientdevice.h>
+#include <esc/ipc/clientdevice.h>
 #include <mutex>
 
 #include "clients.h"

@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <ipc/screendevice.h>
+#include <esc/ipc/screendevice.h>
 #include <stdlib.h>
 #include <assert.h>
 

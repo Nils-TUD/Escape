@@ -26,7 +26,7 @@
 #include <sys/io.h>
 #include <sys/mman.h>
 #include <sys/sync.h>
-#include <ipc/proto/pci.h>
+#include <esc/proto/pci.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

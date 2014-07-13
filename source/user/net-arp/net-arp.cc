@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <info/arp.h>
-#include <ipc/proto/net.h>
+#include <esc/proto/net.h>
 #include <cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>

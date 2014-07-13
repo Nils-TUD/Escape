@@ -23,7 +23,7 @@
 #include <sys/stat.h>
 #include <info/process.h>
 #include <info/link.h>
-#include <ipc/proto/net.h>
+#include <esc/proto/net.h>
 #include <cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -21,9 +21,9 @@
 
 #include <sys/common.h>
 #include <gui/graphics/rectangle.h>
-#include <ipc/ipcstream.h>
-#include <ipc/clientdevice.h>
-#include <ipc/proto/screen.h>
+#include <esc/ipc/ipcstream.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/screen.h>
 
 #define DIFF(a,b)				((a) > (b) ? ((a) - (b)) : ((b) - (a)))
 

@@ -24,9 +24,9 @@
 #include <sys/messages.h>
 #include <sys/sync.h>
 #include <sys/irq.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/pci.h>
-#include <ipc/nicdevice.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/pci.h>
+#include <esc/ipc/nicdevice.h>
 #include <functor.h>
 #include <mutex>
 

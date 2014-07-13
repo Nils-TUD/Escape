@@ -26,7 +26,7 @@
 #include <vfs/device.h>
 #include <vfs/vfs.h>
 #include <ostream.h>
-#include <ipc/ipcbuf.h>
+#include <esc/ipc/ipcbuf.h>
 #include <sys/messages.h>
 #include <errno.h>
 

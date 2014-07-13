@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/device.h>
+#include <esc/ipc/device.h>
 #include <vthrow.h>
 
 namespace ipc {

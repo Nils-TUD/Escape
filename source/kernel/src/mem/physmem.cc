@@ -33,7 +33,7 @@
 #include <log.h>
 #include <video.h>
 #include <spinlock.h>
-#include <ipc/ipcbuf.h>
+#include <esc/ipc/ipcbuf.h>
 #include <sys/messages.h>
 #include <assert.h>
 #include <string.h>

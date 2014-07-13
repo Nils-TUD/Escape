@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/io.h>
-#include <ipc/ipcbuf.h>
+#include <esc/ipc/ipcbuf.h>
 #include <utility>
 
 #ifndef IN_KERNEL

@@ -21,7 +21,7 @@
 #include <sys/keycodes.h>
 #include <sys/io.h>
 #include <sys/driver.h>
-#include <ipc/vtermdevice.h>
+#include <esc/ipc/vtermdevice.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

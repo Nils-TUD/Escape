@@ -22,7 +22,7 @@
 #include <sys/messages.h>
 #include <sys/esccodes.h>
 #include <dirent.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmdargs.h>

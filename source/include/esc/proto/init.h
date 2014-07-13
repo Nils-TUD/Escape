@@ -22,7 +22,7 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
-#include <ipc/ipcstream.h>
+#include <esc/ipc/ipcstream.h>
 
 namespace ipc {
 

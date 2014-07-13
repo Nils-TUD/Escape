@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/screen.h>
+#include <esc/proto/screen.h>
 #include <vbe/vbe.h>
 #include <assert.h>
 #include <string.h>

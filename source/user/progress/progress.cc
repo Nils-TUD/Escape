@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>

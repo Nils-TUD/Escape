@@ -21,8 +21,8 @@
 #include <sys/driver.h>
 #include <sys/debug.h>
 #include <sys/messages.h>
-#include <ipc/device.h>
-#include <ipc/proto/pci.h>
+#include <esc/ipc/device.h>
+#include <esc/proto/pci.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>

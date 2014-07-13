@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'bin', target = 'guishell', source = env.Glob('*.cpp'), LIBS = ['gui', 'vterm', 'shell']
+	'bin', target = 'guishell', source = env.Glob('*.cpp'), LIBS = ['gui', 'esc', 'vterm', 'shell']
 )

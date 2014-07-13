@@ -22,7 +22,7 @@
 #include <sys/thread.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
-#include <ipc/device.h>
+#include <esc/ipc/device.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>

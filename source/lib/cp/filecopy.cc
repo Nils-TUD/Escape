@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <cp/filecopy.h>
 #include <dirent.h>
 #include <stdio.h>

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/input.h>
+#include <esc/proto/input.h>
 
 class Keyboard {
 	Keyboard() = delete;

@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/screen.h>
+#include <esc/proto/screen.h>
 #include <vector>
 
 #include "clients.h"

@@ -27,8 +27,8 @@
 #include <sys/messages.h>
 #include <sys/mman.h>
 #include <sys/irq.h>
-#include <ipc/proto/input.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/input.h>
+#include <esc/ipc/clientdevice.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

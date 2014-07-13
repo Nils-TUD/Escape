@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/ui.h>
-#include <ipc/proto/speaker.h>
+#include <esc/proto/ui.h>
+#include <esc/proto/speaker.h>
 #include <mutex>
 
 #include "stone.h"

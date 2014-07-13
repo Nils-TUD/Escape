@@ -2,5 +2,6 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'bin', target = 'test', source = [env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('*/*.cc')]
+	'bin', target = 'test', source = [env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('*/*.cc')],
+	LIBS = ['esc']
 )

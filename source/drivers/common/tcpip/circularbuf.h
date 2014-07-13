@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/socket.h>
+#include <esc/proto/socket.h>
 #include <algorithm>
 #include <ostream>
 #include <limits>

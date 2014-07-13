@@ -28,8 +28,8 @@
 #include <sys/thread.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <ipc/clientdevice.h>
-#include <ipc/ipcstream.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/ipc/ipcstream.h>
 #include <signal.h>
 #include <errno.h>
 #include <stdio.h>

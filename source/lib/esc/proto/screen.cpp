@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mman.h>
-#include <ipc/proto/screen.h>
+#include <esc/proto/screen.h>
 #include <algorithm>
 
 namespace ipc {

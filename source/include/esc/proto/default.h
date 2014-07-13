@@ -21,43 +21,39 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/ipcstream.h>
+#include <esc/ipc/ipcstream.h>
 
 namespace ipc {
 
-/**
- * The IPC-interface for the speaker device.
- */
-class Speaker {
-public:
-	/**
-	 * Opens the given device
-	 *
-	 * @param path the path to the device
-	 * @throws if the operation failed
-	 */
-	explicit Speaker(const char *path) : _is(path) {
+template<msgid_t MSGID>
+struct EmptyRequest {
+	static const msgid_t MID = MSGID;
+};
+
+template<typename T>
+struct DefaultResponse {
+	explicit DefaultResponse() : res() {
+	}
+	explicit DefaultResponse(T _res) : res(_res) {
 	}
 
-	/**
-	 * No copying
-	 */
-	Speaker(const Speaker&) = delete;
-	Speaker &operator=(const Speaker&) = delete;
-
-	/**
-	 * Beeps with frequency <freq> for <duration> ms.
-	 *
-	 * @param freq the frequency
-	 * @param duration the duration in ms
-	 * @throws if the operation failed
-	 */
-	void beep(uint freq,uint duration) {
-		_is << freq << duration << Send(MSG_SPEAKER_BEEP);
+	friend IPCBuf &operator>>(IPCBuf &is,DefaultResponse &r) {
+		is >> r.res;
+		if(is.error())
+			r.res = -EINVAL;
+		return is;
+	}
+	friend IPCStream &operator>>(IPCStream &is,DefaultResponse &r) {
+		is >> r.res;
+		if(is.error())
+			r.res = -EINVAL;
+		return is;
+	}
+	friend IPCStream &operator<<(IPCStream &is,const DefaultResponse &r) {
+		return is << r.res;
 	}
 
-private:
-	IPCStream _is;
+	T res;
 };
 
 }

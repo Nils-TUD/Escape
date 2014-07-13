@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/screen.h>
+#include <esc/proto/screen.h>
 
 #define FONT_WIDTH	8
 #define FONT_HEIGHT	16

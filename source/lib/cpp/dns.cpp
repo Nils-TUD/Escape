@@ -21,7 +21,7 @@
 #include <sys/proc.h>
 #include <sys/endian.h>
 #include <sys/thread.h>
-#include <ipc/proto/socket.h>
+#include <esc/proto/socket.h>
 #include <fstream>
 #include <signal.h>
 #include <dns.h>

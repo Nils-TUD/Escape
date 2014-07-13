@@ -25,7 +25,7 @@
 #include <sys/debug.h>
 #include <sys/io.h>
 #include <sys/sllist.h>
-#include <ipc/proto/winmng.h>
+#include <esc/proto/winmng.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

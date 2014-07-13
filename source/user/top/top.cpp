@@ -29,7 +29,7 @@
 #include <info/cpu.h>
 #include <info/memusage.h>
 #include <usergroup/user.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <env.h>
 #include <fstream>
 #include <iomanip>

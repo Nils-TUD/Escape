@@ -27,7 +27,7 @@
 #include <gui/application.h>
 #include <gui/window.h>
 #include <gui/scrollpane.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <shell/shell.h>
 #include <shell/history.h>
 #include <stdio.h>

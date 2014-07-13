@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <ipc/proto/net.h>
+#include <esc/proto/net.h>
 
 namespace ipc {
 

@@ -33,8 +33,8 @@
 #include <spinlock.h>
 #include <log.h>
 #include <sys/messages.h>
-#include <ipc/ipcbuf.h>
-#include <ipc/proto/file.h>
+#include <esc/ipc/ipcbuf.h>
+#include <esc/proto/file.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

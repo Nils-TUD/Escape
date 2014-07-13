@@ -24,7 +24,7 @@
 #include <sys/messages.h>
 #include <dirent.h>
 #include <sys/io.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <env.h>

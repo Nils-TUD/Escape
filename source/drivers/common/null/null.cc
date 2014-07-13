@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <ipc/device.h>
-#include <ipc/proto/file.h>
+#include <esc/ipc/device.h>
+#include <esc/proto/file.h>
 #include <stdio.h>
 
 using namespace ipc;

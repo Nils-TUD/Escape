@@ -21,7 +21,7 @@
 #include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/sllist.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

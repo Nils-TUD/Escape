@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/cmdargs.h>
 #include <info/process.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <iostream>
 #include <iomanip>
 #include <map>

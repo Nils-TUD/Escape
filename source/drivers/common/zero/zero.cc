@@ -18,9 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <ipc/clientdevice.h>
-#include <ipc/ipcstream.h>
-#include <ipc/proto/file.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/ipc/ipcstream.h>
+#include <esc/proto/file.h>
 #include <stdlib.h>
 
 using namespace ipc;

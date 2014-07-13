@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/sllist.h>
 #include <sys/mman.h>
-#include <ipc/proto/ui.h>
+#include <esc/proto/ui.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>

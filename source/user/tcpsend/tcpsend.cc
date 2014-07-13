@@ -20,8 +20,8 @@
 #include <sys/common.h>
 #include <sys/cmdargs.h>
 #include <sys/stat.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
+#include <esc/proto/net.h>
+#include <esc/proto/socket.h>
 #include <stdlib.h>
 #include <stdio.h>
 

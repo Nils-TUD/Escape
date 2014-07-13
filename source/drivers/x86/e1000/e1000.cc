@@ -18,9 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <ipc/proto/pci.h>
-#include <ipc/proto/nic.h>
-#include <ipc/nicdevice.h>
+#include <esc/proto/pci.h>
+#include <esc/proto/nic.h>
+#include <esc/ipc/nicdevice.h>
 #include <stdlib.h>
 
 #include "e1000dev.h"

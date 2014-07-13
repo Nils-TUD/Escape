@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/ui.h>
+#include <esc/proto/ui.h>
 
 #include "stone.h"
 #include "grid.h"

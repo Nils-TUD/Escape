@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/thread.h>
-#include <ipc/proto/socket.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/socket.h>
+#include <esc/ipc/clientdevice.h>
 #include <sstream>
 #include <fstream>
 #include <dns.h>

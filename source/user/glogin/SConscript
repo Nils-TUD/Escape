@@ -1,4 +1,6 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('bin', target = 'glogin', source = env.Glob('*.cpp'), LIBS = ['gui','usergroup'])
+env.EscapeCXXProg(
+	'bin', target = 'glogin', source = env.Glob('*.cpp'), LIBS = ['gui', 'esc', 'usergroup']
+)

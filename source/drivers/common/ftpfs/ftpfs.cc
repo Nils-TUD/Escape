@@ -19,10 +19,10 @@
 
 #include <sys/common.h>
 #include <dirent.h>
-#include <ipc/proto/socket.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/vterm.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/socket.h>
+#include <esc/proto/net.h>
+#include <esc/proto/vterm.h>
+#include <esc/ipc/clientdevice.h>
 #include <dns.h>
 #include <stdlib.h>
 #include <fstream>

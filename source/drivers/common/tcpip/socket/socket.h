@@ -23,7 +23,7 @@
 #include <sys/mman.h>
 #include <sys/messages.h>
 #include <sys/io.h>
-#include <ipc/clientdevice.h>
+#include <esc/ipc/clientdevice.h>
 #include <assert.h>
 #include <string.h>
 #include <list>

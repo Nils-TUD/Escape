@@ -21,39 +21,40 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/ipcstream.h>
+#include <esc/proto/default.h>
 
 namespace ipc {
 
-template<msgid_t MSGID>
-struct EmptyRequest {
-	static const msgid_t MID = MSGID;
+/**
+ * The keyboard-event sent by the keyboard-device
+ */
+struct Keyb {
+	struct Event {
+		static const msgid_t MID = MSG_KB_EVENT;
+
+		enum {
+			FL_BREAK	= 1 << 0,
+			FL_CAPS		= 1 << 1,
+		};
+
+		/* the keycode (see keycodes.h) */
+		uchar keycode;
+		uchar flags;
+	};
 };
 
-template<typename T>
-struct DefaultResponse {
-	explicit DefaultResponse() : res() {
-	}
-	explicit DefaultResponse(T _res) : res(_res) {
-	}
+/**
+ * The mouse-event sent by the mouse-device
+ */
+struct Mouse {
+	struct Event {
+		static const msgid_t MID = MSG_MS_EVENT;
 
-	friend IPCBuf &operator>>(IPCBuf &is,DefaultResponse &r) {
-		is >> r.res;
-		if(is.error())
-			r.res = -EINVAL;
-		return is;
-	}
-	friend IPCStream &operator>>(IPCStream &is,DefaultResponse &r) {
-		is >> r.res;
-		if(is.error())
-			r.res = -EINVAL;
-		return is;
-	}
-	friend IPCStream &operator<<(IPCStream &is,const DefaultResponse &r) {
-		return is << r.res;
-	}
-
-	T res;
+		gpos_t x;
+		gpos_t y;
+		gpos_t z;
+		uchar buttons;
+	};
 };
 
 }

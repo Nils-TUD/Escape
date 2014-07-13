@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/default.h>
+#include <esc/proto/default.h>
 #include <ostream>
 #include <iomanip>
 #include <vthrow.h>

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/pci.h>
+#include <esc/proto/pci.h>
 
 /**
  * Detects PCI-devices

@@ -3,4 +3,4 @@
 Import('env')
 myenv = env.Clone()
 myenv.Append(CPPPATH = '#kernel/include')
-myenv.EscapeCXXProg('bin', target = 'lspci', source = myenv.Glob('*.cc'))
+myenv.EscapeCXXProg('bin', target = 'lspci', source = myenv.Glob('*.cc'), LIBS = ['esc'])

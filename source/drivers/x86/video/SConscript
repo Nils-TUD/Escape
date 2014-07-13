@@ -12,5 +12,5 @@ myenv.Append(
 myenv.EscapeCXXProg('sbin',
 	target = 'video',
 	source = [Glob('*.cc'), Glob('vesa/*.cc'), Glob('vga/*.cc'), Glob('x86emu/*.c')],
-	LIBS = ['vbe', 'gui']
+	LIBS = ['vbe', 'gui', 'esc']
 )

@@ -25,7 +25,7 @@
 #include <sys/proc.h>
 #include <sys/messages.h>
 #include <vbe/vbe.h>
-#include <ipc/screendevice.h>
+#include <esc/ipc/screendevice.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>

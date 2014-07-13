@@ -22,8 +22,8 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/stat.h>
-#include <ipc/proto/screen.h>
-#include <ipc/proto/input.h>
+#include <esc/proto/screen.h>
+#include <esc/proto/input.h>
 #include <vector>
 #include <string>
 

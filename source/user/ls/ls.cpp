@@ -21,7 +21,7 @@
 #include <sys/messages.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <iostream>
 #include <iomanip>
 #include <vector>

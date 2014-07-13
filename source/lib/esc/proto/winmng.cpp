@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <ipc/proto/winmng.h>
+#include <esc/proto/winmng.h>
 
 namespace ipc {
 

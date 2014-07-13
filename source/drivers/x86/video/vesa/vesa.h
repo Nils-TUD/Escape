@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/screen.h>
-#include <ipc/screendevice.h>
+#include <esc/proto/screen.h>
+#include <esc/ipc/screendevice.h>
 
 #include "vesascreen.h"
 #include "../vbe.h"

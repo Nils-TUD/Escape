@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/vtermdevice.h>
+#include <esc/ipc/vtermdevice.h>
 
 #include "shellcontrol.h"
 

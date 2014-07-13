@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'sbin', target = 'tcpip', source = [env.Glob('*.cc'), env.Glob('*/*.cc')], LIBS = ['usergroup']
+	'sbin', target = 'tcpip', source = [env.Glob('*.cc'), env.Glob('*/*.cc')], LIBS = ['usergroup', 'esc']
 )

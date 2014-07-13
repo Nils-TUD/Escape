@@ -20,10 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/pci.h>
-#include <ipc/proto/nic.h>
-#include <ipc/requestqueue.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/pci.h>
+#include <esc/proto/nic.h>
+#include <esc/ipc/requestqueue.h>
+#include <esc/ipc/clientdevice.h>
 #include <stdlib.h>
 #include <mutex>
 

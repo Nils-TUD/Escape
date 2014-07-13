@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <ipc/clientdevice.h>
-#include <ipc/proto/file.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/file.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>

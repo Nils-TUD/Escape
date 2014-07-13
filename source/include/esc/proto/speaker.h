@@ -21,40 +21,43 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/default.h>
+#include <esc/ipc/ipcstream.h>
 
 namespace ipc {
 
 /**
- * The keyboard-event sent by the keyboard-device
+ * The IPC-interface for the speaker device.
  */
-struct Keyb {
-	struct Event {
-		static const msgid_t MID = MSG_KB_EVENT;
+class Speaker {
+public:
+	/**
+	 * Opens the given device
+	 *
+	 * @param path the path to the device
+	 * @throws if the operation failed
+	 */
+	explicit Speaker(const char *path) : _is(path) {
+	}
 
-		enum {
-			FL_BREAK	= 1 << 0,
-			FL_CAPS		= 1 << 1,
-		};
+	/**
+	 * No copying
+	 */
+	Speaker(const Speaker&) = delete;
+	Speaker &operator=(const Speaker&) = delete;
 
-		/* the keycode (see keycodes.h) */
-		uchar keycode;
-		uchar flags;
-	};
-};
+	/**
+	 * Beeps with frequency <freq> for <duration> ms.
+	 *
+	 * @param freq the frequency
+	 * @param duration the duration in ms
+	 * @throws if the operation failed
+	 */
+	void beep(uint freq,uint duration) {
+		_is << freq << duration << Send(MSG_SPEAKER_BEEP);
+	}
 
-/**
- * The mouse-event sent by the mouse-device
- */
-struct Mouse {
-	struct Event {
-		static const msgid_t MID = MSG_MS_EVENT;
-
-		gpos_t x;
-		gpos_t y;
-		gpos_t z;
-		uchar buttons;
-	};
+private:
+	IPCStream _is;
 };
 
 }

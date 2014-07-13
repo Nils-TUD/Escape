@@ -27,10 +27,10 @@
 #include <sys/messages.h>
 #include <sys/sllist.h>
 #include <usergroup/group.h>
-#include <ipc/proto/ui.h>
-#include <ipc/proto/file.h>
-#include <ipc/proto/vterm.h>
-#include <ipc/vtermdevice.h>
+#include <esc/proto/ui.h>
+#include <esc/proto/file.h>
+#include <esc/proto/vterm.h>
+#include <esc/ipc/vtermdevice.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>

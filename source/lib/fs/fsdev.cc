@@ -22,8 +22,8 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <ipc/clientdevice.h>
-#include <ipc/proto/init.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/init.h>
 #include <fs/fsdev.h>
 #include <fs/infodev.h>
 #include <signal.h>

@@ -20,11 +20,11 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/file.h>
-#include <ipc/proto/vterm.h>
-#include <ipc/ipcstream.h>
-#include <ipc/requestqueue.h>
-#include <ipc/device.h>
+#include <esc/proto/file.h>
+#include <esc/proto/vterm.h>
+#include <esc/ipc/ipcstream.h>
+#include <esc/ipc/requestqueue.h>
+#include <esc/ipc/device.h>
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>

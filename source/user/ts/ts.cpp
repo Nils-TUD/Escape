@@ -22,7 +22,7 @@
 #include <sys/messages.h>
 #include <sys/debug.h>
 #include <sys/conf.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <info/thread.h>
 #include <info/process.h>
 #include <string.h>

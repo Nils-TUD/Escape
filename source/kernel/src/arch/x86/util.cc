@@ -23,7 +23,7 @@
 #include <vfs/vfs.h>
 #include <util.h>
 #include <sys/messages.h>
-#include <ipc/ipcbuf.h>
+#include <esc/ipc/ipcbuf.h>
 
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5

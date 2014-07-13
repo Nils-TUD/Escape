@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/ipcstream.h>
-#include <ipc/proto/ui.h>
+#include <esc/ipc/ipcstream.h>
+#include <esc/proto/ui.h>
 #include <vector>
 #include <string>
 #include <vthrow.h>

@@ -26,7 +26,7 @@
 #include <sys/messages.h>
 #include <sys/conf.h>
 #include <sys/mman.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>

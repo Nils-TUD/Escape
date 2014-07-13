@@ -32,7 +32,7 @@
 #include <spinlock.h>
 #include <cppsupport.h>
 #include <config.h>
-#include <ipc/ipcbuf.h>
+#include <esc/ipc/ipcbuf.h>
 #include <sys/messages.h>
 #include <string.h>
 #include <errno.h>

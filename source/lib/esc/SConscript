@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeLib(target = 'esc', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')])

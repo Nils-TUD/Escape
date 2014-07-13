@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <ipc/proto/net.h>
-#include <ipc/proto/nic.h>
+#include <esc/proto/net.h>
+#include <esc/proto/nic.h>
 #include <stddef.h>
 #include <vector>
 #include <string>

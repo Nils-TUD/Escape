@@ -21,8 +21,8 @@
 #include <sys/io.h>
 #include <sys/driver.h>
 #include <sys/thread.h>
-#include <ipc/proto/file.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/file.h>
+#include <esc/ipc/clientdevice.h>
 #include <signal.h>
 #include <stdlib.h>
 

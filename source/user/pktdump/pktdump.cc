@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/socket.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/socket.h>
 
 using namespace ipc;
 

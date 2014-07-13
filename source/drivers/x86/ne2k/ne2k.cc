@@ -22,10 +22,10 @@
 #include <sys/driver.h>
 #include <sys/mman.h>
 #include <sys/io.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/pci.h>
-#include <ipc/clientdevice.h>
-#include <ipc/nicdevice.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/pci.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/ipc/nicdevice.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>

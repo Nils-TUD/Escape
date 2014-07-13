@@ -25,7 +25,7 @@
 #include <sys/io.h>
 #include <sys/irq.h>
 #include <usergroup/group.h>
-#include <ipc/clientdevice.h>
+#include <esc/ipc/clientdevice.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>

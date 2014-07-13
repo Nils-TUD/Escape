@@ -27,7 +27,7 @@
 #include <gui/graphics/pos.h>
 #include <gui/event/subscriber.h>
 #include <gui/theme.h>
-#include <ipc/proto/winmng.h>
+#include <esc/proto/winmng.h>
 #include <exception>
 #include <functor.h>
 #include <memory>

@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <ipc/proto/init.h>
+#include <esc/proto/init.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

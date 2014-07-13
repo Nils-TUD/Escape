@@ -23,7 +23,7 @@
 #include <sys/debug.h>
 #include <sys/mman.h>
 #include <sys/messages.h>
-#include <ipc/screendevice.h>
+#include <esc/ipc/screendevice.h>
 #include <vbe/vbe.h>
 #include <errno.h>
 #include <string.h>

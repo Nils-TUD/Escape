@@ -25,8 +25,8 @@
 #include <sys/messages.h>
 #include <sys/keycodes.h>
 #include <sys/esccodes.h>
-#include <ipc/proto/input.h>
-#include <ipc/proto/ui.h>
+#include <esc/proto/input.h>
+#include <esc/proto/ui.h>
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>

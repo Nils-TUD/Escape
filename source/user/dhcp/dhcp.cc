@@ -21,8 +21,8 @@
 #include <sys/thread.h>
 #include <sys/sync.h>
 #include <sys/endian.h>
-#include <ipc/proto/socket.h>
-#include <ipc/proto/net.h>
+#include <esc/proto/socket.h>
+#include <esc/proto/net.h>
 #include <iostream>
 #include <fstream>
 #include <cmdargs.h>

@@ -25,9 +25,9 @@
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <sys/messages.h>
-#include <ipc/proto/ui.h>
-#include <ipc/clientdevice.h>
-#include <ipc/proto/winmng.h>
+#include <esc/proto/ui.h>
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/winmng.h>
 #include <stdio.h>
 #include <stdlib.h>
 

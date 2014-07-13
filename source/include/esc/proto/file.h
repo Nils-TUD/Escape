@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/ipcstream.h>
-#include <ipc/proto/default.h>
+#include <esc/ipc/ipcstream.h>
+#include <esc/proto/default.h>
 
 namespace ipc {
 

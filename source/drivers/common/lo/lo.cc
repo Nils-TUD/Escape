@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/nicdevice.h>
+#include <esc/proto/nic.h>
+#include <esc/ipc/nicdevice.h>
 #include <stdlib.h>
 #include <stdio.h>
 

@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <ipc/requestqueue.h>
-#include <ipc/clientdevice.h>
+#include <esc/ipc/requestqueue.h>
+#include <esc/ipc/clientdevice.h>
 // TODO temporary
 #include "../../../kernel/include/col/slist.h"
 #include <stdlib.h>

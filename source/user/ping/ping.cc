@@ -21,8 +21,8 @@
 #include <sys/endian.h>
 #include <sys/time.h>
 #include <sys/thread.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
+#include <esc/proto/net.h>
+#include <esc/proto/socket.h>
 #include <info/link.h>
 #include <stdlib.h>
 #include <signal.h>

@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <ipc/device.h>
-#include <ipc/ipcstream.h>
-#include <ipc/proto/file.h>
+#include <esc/ipc/device.h>
+#include <esc/ipc/ipcstream.h>
+#include <esc/proto/file.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/sync.h>

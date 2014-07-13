@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/screen.h>
+#include <esc/proto/screen.h>
 #include <string>
 
 class Progress {

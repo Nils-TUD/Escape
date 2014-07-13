@@ -21,7 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/winmng.h>
+#include <esc/proto/winmng.h>
 
 typedef ipc::WinMngEvents::Event::Type ev_type;
 

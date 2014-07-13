@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/mman.h>
 #include <usergroup/group.h>
-#include <ipc/clientdevice.h>
+#include <esc/ipc/clientdevice.h>
 #include <stdlib.h>
 #include <assert.h>
 

@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/file.h>
-#include <ipc/device.h>
+#include <esc/proto/file.h>
+#include <esc/ipc/device.h>
 #include <memory>
 #include <vthrow.h>
 

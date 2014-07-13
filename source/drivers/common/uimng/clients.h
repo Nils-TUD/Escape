@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <ipc/proto/screen.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/screen.h>
+#include <esc/ipc/clientdevice.h>
 #include <stdlib.h>
 #include <assert.h>
 

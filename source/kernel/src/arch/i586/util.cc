@@ -32,7 +32,7 @@
 #include <video.h>
 #include <util.h>
 #include <log.h>
-#include <ipc/ipcbuf.h>
+#include <esc/ipc/ipcbuf.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <errno.h>

@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/cmdargs.h>
-#include <ipc/proto/pci.h>
+#include <esc/proto/pci.h>
 #include <stdio.h>
 #include <stdlib.h>
 

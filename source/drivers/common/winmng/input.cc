@@ -23,7 +23,7 @@
 #include <sys/messages.h>
 #include <sys/thread.h>
 #include <sys/esccodes.h>
-#include <ipc/proto/winmng.h>
+#include <esc/proto/winmng.h>
 #include <stdlib.h>
 #include <signal.h>
 

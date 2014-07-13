@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/socket.h>
-#include <ipc/proto/net.h>
+#include <esc/proto/socket.h>
+#include <esc/proto/net.h>
 #include <sstream>
 
 #include "ctrlcon.h"

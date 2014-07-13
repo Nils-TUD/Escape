@@ -22,7 +22,7 @@
 #include <sys/cmdargs.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

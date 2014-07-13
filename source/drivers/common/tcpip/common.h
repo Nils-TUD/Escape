@@ -20,10 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/nic.h>
-#include <ipc/proto/net.h>
-#include <ipc/proto/socket.h>
-#include <ipc/clientdevice.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/net.h>
+#include <esc/proto/socket.h>
+#include <esc/ipc/clientdevice.h>
 
 struct Empty {
 	size_t size() const {

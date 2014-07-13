@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <ipc/proto/net.h>
+#include <esc/proto/net.h>
 
 namespace std {
 

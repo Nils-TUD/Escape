@@ -25,8 +25,8 @@
 #include <sys/conf.h>
 #include <sys/thread.h>
 #include <sys/messages.h>
-#include <ipc/proto/speaker.h>
-#include <ipc/device.h>
+#include <esc/proto/speaker.h>
+#include <esc/ipc/device.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>

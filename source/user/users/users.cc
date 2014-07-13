@@ -24,7 +24,7 @@
 #include <sys/messages.h>
 #include <sys/cmdargs.h>
 #include <sys/proc.h>
-#include <ipc/proto/vterm.h>
+#include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

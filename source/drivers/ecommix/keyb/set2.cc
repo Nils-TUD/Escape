@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/keycodes.h>
-#include <ipc/proto/input.h>
+#include <esc/proto/input.h>
 #include "set2.h"
 
 typedef struct {

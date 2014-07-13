@@ -21,7 +21,7 @@
 #include <sys/keycodes.h>
 #include <sys/esccodes.h>
 #include <sys/time.h>
-#include <ipc/proto/speaker.h>
+#include <esc/proto/speaker.h>
 #include <stdlib.h>
 #include <time.h>
 

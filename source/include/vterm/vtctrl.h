@@ -24,8 +24,8 @@
 #include <sys/messages.h>
 #include <sys/sync.h>
 #include <esc/ringbuffer.h>
-#include <ipc/proto/ui.h>
-#include <ipc/proto/speaker.h>
+#include <esc/proto/ui.h>
+#include <esc/proto/speaker.h>
 #include <mutex>
 
 #define TAB_WIDTH			4

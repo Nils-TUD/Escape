@@ -25,7 +25,7 @@ using namespace std;
 
 namespace gui {
 	Color::color_type Color::toCurMode() const {
-		const ipc::Screen::Mode *mode = Application::getInstance()->getScreenMode();
+		const esc::Screen::Mode *mode = Application::getInstance()->getScreenMode();
 		comp_type red = getRed() >> (8 - mode->redMaskSize);
 		comp_type green = getGreen() >> (8 - mode->greenMaskSize);
 		comp_type blue = getBlue() >> (8 - mode->blueMaskSize);

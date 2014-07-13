@@ -28,7 +28,7 @@
 
 #include "../modules.h"
 
-using namespace ipc;
+using namespace esc;
 
 class MyClient : public Client {
 public:

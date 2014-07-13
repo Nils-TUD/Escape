@@ -26,7 +26,7 @@
 #include <sstream>
 #include <map>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The base class for all devices

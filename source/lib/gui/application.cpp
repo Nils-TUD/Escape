@@ -84,9 +84,9 @@ namespace gui {
 		_defTheme.setTextPadding(4);
 
 		// subscribe to window-events
-		_winEv.subscribe(ipc::WinMngEvents::Event::TYPE_CREATED);
-		_winEv.subscribe(ipc::WinMngEvents::Event::TYPE_ACTIVE);
-		_winEv.subscribe(ipc::WinMngEvents::Event::TYPE_DESTROYED);
+		_winEv.subscribe(esc::WinMngEvents::Event::TYPE_CREATED);
+		_winEv.subscribe(esc::WinMngEvents::Event::TYPE_ACTIVE);
+		_winEv.subscribe(esc::WinMngEvents::Event::TYPE_DESTROYED);
 	}
 
 	Application::~Application() {
@@ -115,7 +115,7 @@ namespace gui {
 
 	int Application::run() {
 		while(_run) {
-			ipc::WinMngEvents::Event ev;
+			esc::WinMngEvents::Event ev;
 			ssize_t res = receive(_winEv.fd(),NULL,&ev,sizeof(ev));
 			if(res < 0 && res != -EINTR)
 				VTHROWE("receive from event-channel",res);
@@ -157,21 +157,21 @@ namespace gui {
 		_queueMutex.unlock();
 	}
 
-	void Application::handleEvent(const ipc::WinMngEvents::Event &ev) {
+	void Application::handleEvent(const esc::WinMngEvents::Event &ev) {
 		switch(ev.type) {
-			case ipc::WinMngEvents::Event::TYPE_RESIZE: {
+			case esc::WinMngEvents::Event::TYPE_RESIZE: {
 				Window *w = getWindowById(ev.wid);
 				if(w)
 					w->onResized();
 			}
 			break;
 
-			case ipc::WinMngEvents::Event::TYPE_MOUSE:
+			case esc::WinMngEvents::Event::TYPE_MOUSE:
 				passToWindow(ev.wid,Pos(ev.d.mouse.x,ev.d.mouse.y),
 					ev.d.mouse.movedX,ev.d.mouse.movedY,ev.d.mouse.movedZ,ev.d.mouse.buttons);
 				break;
 
-			case ipc::WinMngEvents::Event::TYPE_KEYBOARD: {
+			case esc::WinMngEvents::Event::TYPE_KEYBOARD: {
 				Window *w = getWindowById(ev.wid);
 				if(w) {
 					if(ev.d.keyb.modifier & STATE_BREAK) {
@@ -188,7 +188,7 @@ namespace gui {
 			}
 			break;
 
-			case ipc::WinMngEvents::Event::TYPE_SET_ACTIVE: {
+			case esc::WinMngEvents::Event::TYPE_SET_ACTIVE: {
 				Window *w = getWindowById(ev.wid);
 				if(w) {
 					w->updateActive(ev.d.setactive.active);
@@ -198,19 +198,19 @@ namespace gui {
 			}
 			break;
 
-			case ipc::WinMngEvents::Event::TYPE_CREATED:
+			case esc::WinMngEvents::Event::TYPE_CREATED:
 				_created.send(ev.wid,ev.d.created.title);
 				break;
 
-			case ipc::WinMngEvents::Event::TYPE_ACTIVE:
+			case esc::WinMngEvents::Event::TYPE_ACTIVE:
 				_activated.send(ev.wid);
 				break;
 
-			case ipc::WinMngEvents::Event::TYPE_DESTROYED:
+			case esc::WinMngEvents::Event::TYPE_DESTROYED:
 				_destroyed.send(ev.wid);
 				break;
 
-			case ipc::WinMngEvents::Event::TYPE_RESET: {
+			case esc::WinMngEvents::Event::TYPE_RESET: {
 				Window *w = getWindowById(ev.wid);
 				// re-request screen infos from vesa
 				_screenMode = _winMng.getMode();

@@ -46,7 +46,7 @@ static void vesagui_copyRegion(sVESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_
 static uint8_t *cursorCopy;
 static gpos_t lastX = 0;
 static gpos_t lastY = 0;
-static uint8_t curCursor = ipc::Screen::CURSOR_DEFAULT;
+static uint8_t curCursor = esc::Screen::CURSOR_DEFAULT;
 static sBitmap *cursor[6];
 
 void vesagui_init(void) {
@@ -77,13 +77,13 @@ void vesagui_init(void) {
 }
 
 void vesagui_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor) {
-	if(newCursor == ipc::Screen::CURSOR_RESIZE_L || newCursor == ipc::Screen::CURSOR_RESIZE_BL)
+	if(newCursor == esc::Screen::CURSOR_RESIZE_L || newCursor == esc::Screen::CURSOR_RESIZE_BL)
 		newCurX -= CURSOR_LEFT_OFF;
 	vesagui_doSetCursor(scr,shmem,newCurX,newCurY,newCursor);
 }
 
 void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	ipc::Screen::Mode *minfo = scr->mode;
+	esc::Screen::Mode *minfo = scr->mode;
 	gpos_t y1,y2;
 	gsize_t xres = minfo->width;
 	gsize_t yres = minfo->height;

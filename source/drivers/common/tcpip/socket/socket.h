@@ -31,21 +31,21 @@
 #include "../common.h"
 #include "../packet.h"
 
-class Socket : public ipc::Client {
+class Socket : public esc::Client {
 public:
 	struct QueuedPacket {
 		std::shared_ptr<PacketData> data;
 		size_t offset;
-		ipc::Socket::Addr sa;
+		esc::Socket::Addr sa;
 
 		explicit QueuedPacket(std::shared_ptr<PacketData> _data,size_t _offset,
-				const ipc::Socket::Addr &_sa)
+				const esc::Socket::Addr &_sa)
 			: data(_data), offset(_offset), sa(_sa) {
 		}
 	};
 
-	explicit Socket(int f,int proto = ipc::Socket::PROTO_ANY)
-		: ipc::Client(f), _proto(proto), _pending() {
+	explicit Socket(int f,int proto = esc::Socket::PROTO_ANY)
+		: esc::Client(f), _proto(proto), _pending() {
 	}
 	virtual ~Socket() {
 	}
@@ -63,19 +63,19 @@ public:
 		return 0;
 	}
 
-	virtual int connect(const ipc::Socket::Addr *,msgid_t) {
+	virtual int connect(const esc::Socket::Addr *,msgid_t) {
 		return -ENOTSUP;
 	}
-	virtual int bind(const ipc::Socket::Addr *) {
+	virtual int bind(const esc::Socket::Addr *) {
 		return -ENOTSUP;
 	}
 	virtual int listen() {
 		return -ENOTSUP;
 	}
-	virtual int accept(msgid_t,int,ipc::ClientDevice<Socket> *) {
+	virtual int accept(msgid_t,int,esc::ClientDevice<Socket> *) {
 		return -ENOTSUP;
 	}
-	virtual ssize_t sendto(msgid_t,const ipc::Socket::Addr *,const void *,size_t) {
+	virtual ssize_t sendto(msgid_t,const esc::Socket::Addr *,const void *,size_t) {
 		return -ENOTSUP;
 	}
 	virtual int abort() {
@@ -110,7 +110,7 @@ public:
 		return 0;
 	}
 
-	virtual void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset = 0) {
+	virtual void push(const esc::Socket::Addr &sa,const Packet &pkt,size_t offset = 0) {
 		if(_pending.count > 0) {
 			if(_pending.count >= pkt.size() - offset) {
 				if(_pending.d.read.data != NULL)
@@ -125,15 +125,15 @@ public:
 	}
 
 protected:
-	void reply(msgid_t mid,const ipc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,ssize_t size) {
+	void reply(msgid_t mid,const esc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,ssize_t size) {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-		ipc::IPCStream is(fd(),buffer,sizeof(buffer),mid);
-		is << ipc::FileRead::Response(size);
+		esc::IPCStream is(fd(),buffer,sizeof(buffer),mid);
+		is << esc::FileRead::Response(size);
 		if(needsSrc)
 			is << sa;
-		is << ipc::Reply();
+		is << esc::Reply();
 		if(size > 0 && dst == NULL)
-			is << ipc::ReplyData(src,size);
+			is << esc::ReplyData(src,size);
 	}
 
 	int _proto;

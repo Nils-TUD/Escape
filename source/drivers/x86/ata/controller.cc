@@ -45,7 +45,7 @@
 
 #define DMA_BUF_SIZE				(64 * 1024)
 
-using namespace ipc;
+using namespace esc;
 
 static bool ctrl_isBusResponding(sATAController* ctrl);
 

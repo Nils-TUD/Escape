@@ -48,7 +48,7 @@ public:
 	}
 
 	static ssize_t send(Ethernet<IPv4<T>> *pkt,size_t sz,
-			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
+			const esc::Net::IPv4Addr &ip,uint8_t protocol) {
 		Route route = Route::find(ip);
 		if(!route.valid())
 			return -ENETUNREACH;
@@ -56,7 +56,7 @@ public:
 	}
 
 	static ssize_t sendOver(const Route &route,Ethernet<IPv4<T>> *pkt,size_t sz,
-			const ipc::Net::IPv4Addr &ip,uint8_t protocol) {
+			const esc::Net::IPv4Addr &ip,uint8_t protocol) {
 		IPv4<T> &h = pkt->payload;
 		h.versionSize = (4 << 4) | 5;
 		h.typeOfServ = 0;
@@ -68,11 +68,11 @@ public:
 		h.src = route.link->ip();
 		h.dst = ip;
 		h.checksum = 0;
-		h.checksum = ipc::Net::ipv4Checksum(
+		h.checksum = esc::Net::ipv4Checksum(
 			reinterpret_cast<uint16_t*>(&h),sizeof(IPv4) - sizeof(h.payload));
 
 		Ethernet<> *epkt = reinterpret_cast<Ethernet<>*>(pkt);
-		if(route.flags & ipc::Net::FL_USE_GW)
+		if(route.flags & esc::Net::FL_USE_GW)
 			return ARP::send(route.link,epkt,sz,route.gateway,route.netmask,ETHER_TYPE);
 		return ARP::send(route.link,epkt,sz,ip,route.netmask,ETHER_TYPE);
 	}
@@ -83,8 +83,8 @@ public:
 
 		// give all raw IP socket the received packet
 		for(auto it = RawIPSocket::sockets.begin(); it != RawIPSocket::sockets.end(); ++it) {
-			if((*it)->protocol() == ipc::Socket::PROTO_ANY || (*it)->protocol() == proto)
-				(*it)->push(ipc::Socket::Addr(),packet,ETHER_HEAD_SIZE);
+			if((*it)->protocol() == esc::Socket::PROTO_ANY || (*it)->protocol() == proto)
+				(*it)->push(esc::Socket::Addr(),packet,ETHER_HEAD_SIZE);
 		}
 
 		switch(proto) {
@@ -108,8 +108,8 @@ public:
 	uint8_t timeToLive;
 	uint8_t protocol;
 	uint16_t checksum;
-	ipc::Net::IPv4Addr src;
-	ipc::Net::IPv4Addr dst;
+	esc::Net::IPv4Addr src;
+	esc::Net::IPv4Addr dst;
 	T payload;
 } A_PACKED;
 

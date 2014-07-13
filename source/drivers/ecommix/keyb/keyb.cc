@@ -58,7 +58,7 @@
 
 static int kbIrqThread(A_UNUSED void *arg);
 
-static ipc::ClientDevice<> *dev = NULL;
+static esc::ClientDevice<> *dev = NULL;
 static ulong *kbRegs;
 
 int main(void) {
@@ -70,7 +70,7 @@ int main(void) {
 	/* enable interrupts */
 	kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 
-	dev = new ipc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	dev = new esc::ClientDevice<>("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 	if(startthread(kbIrqThread,NULL) < 0)
 		error("Unable to start irq-thread");
 	dev->loop();
@@ -90,12 +90,12 @@ static int kbIrqThread(A_UNUSED void *arg) {
 
 		ulong sc = kbRegs[KEYBOARD_DATA];
 
-		ipc::Keyb::Event ev;
+		esc::Keyb::Event ev;
 		if(kb_set2_getKeycode(&ev.flags,&ev.keycode,sc)) {
-			ipc::IPCBuf ib(buffer,sizeof(buffer));
+			esc::IPCBuf ib(buffer,sizeof(buffer));
 			ib << ev;
 			try {
-				dev->broadcast(ipc::Keyb::Event::MID,ib);
+				dev->broadcast(esc::Keyb::Event::MID,ib);
 			}
 			catch(const std::exception &e) {
 				printe("%s",e.what());

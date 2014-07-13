@@ -57,7 +57,7 @@ extern "C" int yylex_destroy(void);
 extern int yydebug;
 extern const char *filename;
 
-static ipc::VTerm vterm(STDOUT_FILENO);
+static esc::VTerm vterm(STDOUT_FILENO);
 static bool resetReadLine = false;
 static size_t tabCount = 0;
 const char *curLine = NULL;
@@ -131,9 +131,9 @@ int shell_readLine(char *buffer,size_t max) {
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
-	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
-	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
-	vterm.setFlag(ipc::VTerm::FL_ECHO,true);
+	vterm.setFlag(esc::VTerm::FL_NAVI,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,false);
+	vterm.setFlag(esc::VTerm::FL_ECHO,true);
 
 	/* ensure that the line is empty */
 	*buffer = '\0';
@@ -161,7 +161,7 @@ int shell_readLine(char *buffer,size_t max) {
 			}
 			/* EOF? */
 			if(iblen <= 0) {
-				vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+				vterm.setFlag(esc::VTerm::FL_READLINE,true);
 				return iblen;
 			}
 		}
@@ -238,7 +238,7 @@ int shell_readLine(char *buffer,size_t max) {
 		o++;
 	}
 
-	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,true);
 
 	buffer[o] = '\0';
 	return o;

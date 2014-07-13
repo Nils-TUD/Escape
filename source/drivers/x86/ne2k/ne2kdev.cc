@@ -130,7 +130,7 @@
  * The range from 0x4000 to 0x5000 is used as a buffer for transmitting packets.
  */
 
-Ne2k::Ne2k(ipc::PCI &pci,const ipc::PCI::Device &nic)
+Ne2k::Ne2k(esc::PCI &pci,const esc::PCI::Device &nic)
 		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000",NULL,NULL)), _basePort(), _mac(),
 		  _nextPacket(), _handler() {
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
@@ -141,7 +141,7 @@ Ne2k::Ne2k(ipc::PCI &pci,const ipc::PCI::Device &nic)
 		error("Unable to start receive-thread");
 
 	for(size_t i = 0; i < 6; i++) {
-		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_IO) {
+		if(nic.bars[i].addr && nic.bars[i].type == esc::PCI::Bar::BAR_IO) {
 			print("Requesting ports %u..%u",nic.bars[i].addr,nic.bars[i].addr + nic.bars[i].size - 1);
 			if(reqports(nic.bars[i].addr,nic.bars[i].size) < 0) {
 				error("Unable to request io-ports %d..%d",

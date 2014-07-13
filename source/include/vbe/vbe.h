@@ -30,7 +30,7 @@
 #define PIXEL_SET(c,x,y)				\
 	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) - 1)))
 
-typedef uint8_t *(*fSetPixel)(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
+typedef uint8_t *(*fSetPixel)(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
 
 typedef uint32_t tColor;
 
@@ -63,7 +63,7 @@ typedef enum {
  * @param y the y-position
  * @param color the color (in the corresponding format)
  */
-void vbe_setPixel(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color);
+void vbe_setPixel(const esc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color);
 
 /**
  * Sets a pixel with color <color> at <pos> and returns the position of the next pixel.
@@ -73,16 +73,16 @@ void vbe_setPixel(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t x,gpos_t 
  * @param color the color (in the corresponding format)
  * @return the position of the next pixel
  */
-uint8_t *vbe_setPixelAt(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t *color);
+uint8_t *vbe_setPixelAt(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t *color);
 
 /**
  * @param mode the screen mode
  * @return the function to put a pixel in the given mode
  */
-fSetPixel vbe_getPixelFunc(const ipc::Screen::Mode &mode);
+fSetPixel vbe_getPixelFunc(const esc::Screen::Mode &mode);
 
 uint8_t *vbet_getColor(tColor col);
-void vbet_drawChar(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,
+void vbet_drawChar(const esc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,
 	uint8_t c,uint8_t color);
 
 extern const uchar font8x16[];

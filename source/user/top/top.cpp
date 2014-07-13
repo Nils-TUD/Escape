@@ -46,7 +46,7 @@ static volatile bool run = true;
 static ssize_t yoffset;
 static sUser *users;
 static tUserSem displaySem;
-static ipc::VTerm vterm(std::env::get("TERM").c_str());
+static esc::VTerm vterm(std::env::get("TERM").c_str());
 
 template<typename T>
 static void printBar(size_t barwidth,double ratio,const T& name) {
@@ -97,7 +97,7 @@ static void display(void) {
 	usemdown(&displaySem);
 	try {
 		size_t cpubarwidth;
-		ipc::Screen::Mode mode = vterm.getMode();
+		esc::Screen::Mode mode = vterm.getMode();
 		cpubarwidth = mode.cols - SSTRLEN("  99 [10000/10000MB]  ");
 
 		vector<cpu*> cpus = cpu::get_list();
@@ -209,8 +209,8 @@ static int refreshThread(void*) {
 }
 
 int main(void) {
-	vterm.setFlag(ipc::VTerm::FL_NAVI,false);
-	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
+	vterm.setFlag(esc::VTerm::FL_NAVI,false);
+	vterm.setFlag(esc::VTerm::FL_READLINE,false);
 	vterm.backup();
 
 	size_t usercount;
@@ -261,8 +261,8 @@ int main(void) {
 	}
 	join(tid);
 
-	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
-	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+	vterm.setFlag(esc::VTerm::FL_NAVI,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,true);
 	vterm.restore();
 	return EXIT_SUCCESS;
 }

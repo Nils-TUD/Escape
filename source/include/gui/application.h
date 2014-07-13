@@ -127,7 +127,7 @@ namespace gui {
 		/**
 		 * @return the current screen mode
 		 */
-		const ipc::Screen::Mode *getMode() const {
+		const esc::Screen::Mode *getMode() const {
 			return &_screenMode;
 		}
 
@@ -136,7 +136,7 @@ namespace gui {
 		 *
 		 * @return the modes
 		 */
-		std::vector<ipc::Screen::Mode> getModes() {
+		std::vector<esc::Screen::Mode> getModes() {
 			return _winMng.getModes();
 		}
 
@@ -145,7 +145,7 @@ namespace gui {
 		 *
 		 * @param mode the mode
 		 */
-		void setMode(const ipc::Screen::Mode &mode) {
+		void setMode(const esc::Screen::Mode &mode) {
 			_winMng.setMode(mode.width,mode.height,mode.bitsPerPixel);
 		}
 
@@ -248,7 +248,7 @@ namespace gui {
 		 *
 		 * @param ev the event
 		 */
-		virtual void handleEvent(const ipc::WinMngEvents::Event &ev);
+		virtual void handleEvent(const esc::WinMngEvents::Event &ev);
 		/**
 		 * Calls all functors in the queue
 		 */
@@ -266,7 +266,7 @@ namespace gui {
 		/**
 		 * @return the information received from vesa
 		 */
-		const ipc::Screen::Mode *getScreenMode() const {
+		const esc::Screen::Mode *getScreenMode() const {
 			return &_screenMode;
 		}
 		/**
@@ -307,11 +307,11 @@ namespace gui {
 		static const char *getWinMng(const char *winmng);
 
 		const char *_winMngName;
-		ipc::WinMng _winMng;
-		ipc::WinMngEvents _winEv;
+		esc::WinMng _winMng;
+		esc::WinMngEvents _winEv;
 		bool _run;
 		uchar _mouseBtns;
-		ipc::Screen::Mode _screenMode;
+		esc::Screen::Mode _screenMode;
 		std::vector<std::shared_ptr<Window>> _windows;
 		createdev_type _created;
 		activatedev_type _activated;

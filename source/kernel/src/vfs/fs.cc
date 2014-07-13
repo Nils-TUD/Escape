@@ -37,7 +37,7 @@
 #include <string.h>
 #include <errno.h>
 
-static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,ipc::IPCBuf &ib) {
+static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,esc::IPCBuf &ib) {
 	ssize_t res;
 	if(ib.error())
 		return -EINVAL;
@@ -61,10 +61,10 @@ static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,ipc::IPCBuf &ib) {
 
 int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
 
 	ssize_t res = communicate(pid,fsFile,MSG_FS_STAT,ib);
 	if(res < 0)
@@ -76,63 +76,63 @@ int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info) {
 
 int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path) << mode;
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path) << mode;
 	return communicate(pid,fsFile,MSG_FS_CHMOD,ib);
 }
 
 int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path) << uid << gid;
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path) << uid << gid;
 	return communicate(pid,fsFile,MSG_FS_CHOWN,ib);
 }
 
 int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(oldPath) << ipc::CString(newPath);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(oldPath) << esc::CString(newPath);
 	return communicate(pid,fsFile,MSG_FS_LINK,ib);
 }
 
 int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
 	return communicate(pid,fsFile,MSG_FS_UNLINK,ib);
 }
 
 int VFSFS::rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(oldPath) << ipc::CString(newPath);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(oldPath) << esc::CString(newPath);
 	return communicate(pid,fsFile,MSG_FS_RENAME,ib);
 }
 
 int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
 	return communicate(pid,fsFile,MSG_FS_MKDIR,ib);
 }
 
 int VFSFS::rmdir(pid_t pid,OpenFile *fsFile,const char *path) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << ipc::CString(path);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
 	return communicate(pid,fsFile,MSG_FS_RMDIR,ib);
 }

@@ -49,10 +49,10 @@ std::mutex mutex;
 
 static int receiveThread(void *arg);
 
-class SocketDevice : public ipc::ClientDevice<Socket> {
+class SocketDevice : public esc::ClientDevice<Socket> {
 public:
 	explicit SocketDevice(const char *path,mode_t mode)
-		: ipc::ClientDevice<Socket>(path,mode,DEV_TYPE_BLOCK,
+		: esc::ClientDevice<Socket>(path,mode,DEV_TYPE_BLOCK,
 			DEV_OPEN | DEV_CANCEL | DEV_SHFILE | DEV_CREATSIBL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&SocketDevice::open));
 		set(MSG_FILE_READ,std::make_memfun(this,&SocketDevice::read));
@@ -68,9 +68,9 @@ public:
 		set(MSG_SOCK_ABORT,std::make_memfun(this,&SocketDevice::abort));
 	}
 
-	void open(ipc::IPCStream &is) {
+	void open(esc::IPCStream &is) {
 		char buffer[MAX_PATH_LEN];
-		ipc::FileOpen::Request r(buffer,sizeof(buffer));
+		esc::FileOpen::Request r(buffer,sizeof(buffer));
 		is >> r;
 
 		int type = 0, proto = 0;
@@ -81,16 +81,16 @@ public:
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			switch(type) {
-				case ipc::Socket::SOCK_DGRAM:
+				case esc::Socket::SOCK_DGRAM:
 					add(is.fd(),new DGramSocket(is.fd(),proto));
 					break;
-				case ipc::Socket::SOCK_STREAM:
+				case esc::Socket::SOCK_STREAM:
 					add(is.fd(),new StreamSocket(is.fd(),proto));
 					break;
-				case ipc::Socket::SOCK_RAW_ETHER:
+				case esc::Socket::SOCK_RAW_ETHER:
 					add(is.fd(),new RawEtherSocket(is.fd(),proto));
 					break;
-				case ipc::Socket::SOCK_RAW_IP:
+				case esc::Socket::SOCK_RAW_IP:
 					add(is.fd(),new RawIPSocket(is.fd(),proto));
 					break;
 				default:
@@ -99,12 +99,12 @@ public:
 			}
 		}
 
-		is << ipc::FileOpen::Response(res) << ipc::Reply();
+		is << esc::FileOpen::Response(res) << esc::Reply();
 	}
 
-	void connect(ipc::IPCStream &is) {
+	void connect(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		ipc::Socket::Addr sa;
+		esc::Socket::Addr sa;
 		is >> sa;
 
 		int res;
@@ -113,12 +113,12 @@ public:
 			res = sock->connect(&sa,is.msgid());
 		}
 		if(res < 0)
-			is << res << ipc::Reply();
+			is << res << esc::Reply();
 	}
 
-	void bind(ipc::IPCStream &is) {
+	void bind(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		ipc::Socket::Addr sa;
+		esc::Socket::Addr sa;
 		is >> sa;
 
 		int res;
@@ -126,10 +126,10 @@ public:
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->bind(&sa);
 		}
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void listen(ipc::IPCStream &is) {
+	void listen(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
 
 		int res;
@@ -137,10 +137,10 @@ public:
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->listen();
 		}
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void cancel(ipc::IPCStream &is) {
+	void cancel(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
 		msgid_t mid;
 		is >> mid;
@@ -156,12 +156,12 @@ public:
 			res = sock->cancel(mid);
 		}
 
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void creatsibl(ipc::IPCStream &is) {
+	void creatsibl(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		ipc::FileCreatSibl::Request r;
+		esc::FileCreatSibl::Request r;
 		is >> r;
 
 		int res;
@@ -170,37 +170,37 @@ public:
 			res = sock->accept(is.msgid(),r.nfd,this);
 		}
 		if(res < 0)
-			is << ipc::FileCreatSibl::Response(res) << ipc::Reply();
+			is << esc::FileCreatSibl::Response(res) << esc::Reply();
 	}
 
-	void read(ipc::IPCStream &is) {
+	void read(esc::IPCStream &is) {
 		handleRead(is,false);
 	}
 
-	void recvfrom(ipc::IPCStream &is) {
+	void recvfrom(esc::IPCStream &is) {
 		handleRead(is,true);
 	}
 
-	void write(ipc::IPCStream &is) {
-		ipc::FileWrite::Request r;
+	void write(esc::IPCStream &is) {
+		esc::FileWrite::Request r;
 		is >> r;
 		handleWrite(is,r,NULL);
 	}
 
-	void sendto(ipc::IPCStream &is) {
-		ipc::FileWrite::Request r;
-		ipc::Socket::Addr sa;
+	void sendto(esc::IPCStream &is) {
+		esc::FileWrite::Request r;
+		esc::Socket::Addr sa;
 		is >> r >> sa;
 		handleWrite(is,r,&sa);
 	}
 
-	void abort(ipc::IPCStream &is) {
+	void abort(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
 		int res = sock->abort();
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void close(ipc::IPCStream &is) {
+	void close(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
 		std::lock_guard<std::mutex> guard(mutex);
 		// don't delete it; let the object itself decide when it is destroyed (for TCP)
@@ -210,9 +210,9 @@ public:
 	}
 
 private:
-	void handleRead(ipc::IPCStream &is,bool needsSockAddr) {
+	void handleRead(esc::IPCStream &is,bool needsSockAddr) {
 		Socket *sock = get(is.fd());
-		ipc::FileRead::Request r;
+		esc::FileRead::Request r;
 		is >> r;
 
 		ssize_t res;
@@ -227,16 +227,16 @@ private:
 		}
 
 		if(res < 0)
-			is << ipc::FileRead::Response(res) << ipc::Reply();
+			is << esc::FileRead::Response(res) << esc::Reply();
 	}
 
-	void handleWrite(ipc::IPCStream &is,ipc::FileWrite::Request &r,const ipc::Socket::Addr *sa) {
+	void handleWrite(esc::IPCStream &is,esc::FileWrite::Request &r,const esc::Socket::Addr *sa) {
 		Socket *sock = get(is.fd());
 
 		// TODO check offset!
-		ipc::DataBuf buf(r.count,sock->shm(),r.shmemoff);
+		esc::DataBuf buf(r.count,sock->shm(),r.shmemoff);
 		if(r.shmemoff == -1)
-			is >> ipc::ReceiveData(buf.data(),r.count);
+			is >> esc::ReceiveData(buf.data(),r.count);
 
 		ssize_t res;
 		{
@@ -245,14 +245,14 @@ private:
 		}
 
 		if(res != 0)
-			is << ipc::FileWrite::Response(res) << ipc::Reply();
+			is << esc::FileWrite::Response(res) << esc::Reply();
 	}
 };
 
-class NetDevice : public ipc::Device {
+class NetDevice : public esc::Device {
 public:
 	explicit NetDevice(const char *path,mode_t mode)
-		: ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		: esc::Device(path,mode,DEV_TYPE_SERVICE,0) {
 		set(MSG_NET_LINK_ADD,std::make_memfun(this,&NetDevice::linkAdd));
 		set(MSG_NET_LINK_REM,std::make_memfun(this,&NetDevice::linkRem));
 		set(MSG_NET_LINK_CONFIG,std::make_memfun(this,&NetDevice::linkConfig));
@@ -265,9 +265,9 @@ public:
 		set(MSG_NET_ARP_REM,std::make_memfun(this,&NetDevice::arpRem));
 	}
 
-	void linkAdd(ipc::IPCStream &is) {
-		ipc::CStringBuf<Link::NAME_LEN> name;
-		ipc::CStringBuf<MAX_PATH_LEN> path;
+	void linkAdd(esc::IPCStream &is) {
+		esc::CStringBuf<Link::NAME_LEN> name;
+		esc::CStringBuf<MAX_PATH_LEN> path;
 		is >> name >> path;
 
 		std::lock_guard<std::mutex> guard(mutex);
@@ -280,22 +280,22 @@ public:
 				delete linkcpy;
 			}
 		}
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void linkRem(ipc::IPCStream &is) {
-		ipc::CStringBuf<Link::NAME_LEN> name;
+	void linkRem(esc::IPCStream &is) {
+		esc::CStringBuf<Link::NAME_LEN> name;
 		is >> name;
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = LinkMng::rem(name.str());
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void linkConfig(ipc::IPCStream &is) {
-		ipc::CStringBuf<Link::NAME_LEN> name;
-		ipc::Net::IPv4Addr ip,netmask;
-		ipc::Net::Status status;
+	void linkConfig(esc::IPCStream &is) {
+		esc::CStringBuf<Link::NAME_LEN> name;
+		esc::Net::IPv4Addr ip,netmask;
+		esc::Net::Status status;
 		is >> name >> ip >> netmask >> status;
 
 		std::lock_guard<std::mutex> guard(mutex);
@@ -308,31 +308,31 @@ public:
 			res = -EEXIST;
 		else if(ip.value() != 0 && !ip.isHost(netmask))
 			res = -EINVAL;
-		else if(!netmask.isNetmask() || status == ipc::Net::KILLED)
+		else if(!netmask.isNetmask() || status == esc::Net::KILLED)
 			res = -EINVAL;
 		else {
 			l->ip(ip);
 			l->subnetMask(netmask);
 			l->status(status);
 		}
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void linkMAC(ipc::IPCStream &is) {
-		ipc::CStringBuf<Link::NAME_LEN> name;
+	void linkMAC(esc::IPCStream &is) {
+		esc::CStringBuf<Link::NAME_LEN> name;
 		is >> name;
 
 		std::lock_guard<std::mutex> guard(mutex);
 		std::shared_ptr<Link> link = LinkMng::getByName(name.str());
 		if(!link)
-			is << -ENOTFOUND << ipc::Reply();
+			is << -ENOTFOUND << esc::Reply();
 		else
-			is << 0 << link->mac() << ipc::Reply();
+			is << 0 << link->mac() << esc::Reply();
 	}
 
-	void routeAdd(ipc::IPCStream &is) {
-		ipc::CStringBuf<Link::NAME_LEN> link;
-		ipc::Net::IPv4Addr ip,gw,netmask;
+	void routeAdd(esc::IPCStream &is) {
+		esc::CStringBuf<Link::NAME_LEN> link;
+		esc::Net::IPv4Addr ip,gw,netmask;
 		is >> link >> ip >> gw >> netmask;
 
 		std::lock_guard<std::mutex> guard(mutex);
@@ -341,51 +341,51 @@ public:
 		if(!l)
 			res = -ENOTFOUND;
 		else {
-			uint flags = ipc::Net::FL_UP;
+			uint flags = esc::Net::FL_UP;
 			if(gw.value() != 0)
-				flags |= ipc::Net::FL_USE_GW;
+				flags |= esc::Net::FL_USE_GW;
 			Route::insert(ip,netmask,gw,flags,l);
 		}
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void routeRem(ipc::IPCStream &is) {
-		ipc::Net::IPv4Addr ip;
+	void routeRem(esc::IPCStream &is) {
+		esc::Net::IPv4Addr ip;
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = Route::remove(ip);
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void routeConfig(ipc::IPCStream &is) {
-		ipc::Net::IPv4Addr ip;
-		ipc::Net::Status status;
+	void routeConfig(esc::IPCStream &is) {
+		esc::Net::IPv4Addr ip;
+		esc::Net::Status status;
 		is >> ip >> status;
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = Route::setStatus(ip,status);
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void routeGet(ipc::IPCStream &is) {
-		ipc::Net::IPv4Addr ip;
+	void routeGet(esc::IPCStream &is) {
+		esc::Net::IPv4Addr ip;
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
 		Route r = Route::find(ip);
 		if(!r.valid())
-			is << -ENETUNREACH << ipc::Reply();
+			is << -ENETUNREACH << esc::Reply();
 		else {
 			is << 0;
-			is << (r.flags & ipc::Net::FL_USE_GW ? r.gateway : r.dest);
-			is << ipc::CString(r.link->name().c_str(),r.link->name().length());
-			is << ipc::Reply();
+			is << (r.flags & esc::Net::FL_USE_GW ? r.gateway : r.dest);
+			is << esc::CString(r.link->name().c_str(),r.link->name().length());
+			is << esc::Reply();
 		}
 	}
 
-	void arpAdd(ipc::IPCStream &is) {
-		ipc::Net::IPv4Addr ip;
+	void arpAdd(esc::IPCStream &is) {
+		esc::Net::IPv4Addr ip;
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
@@ -395,23 +395,23 @@ public:
 			res = -ENOTFOUND;
 		else
 			ARP::requestMAC(route.link,ip);
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void arpRem(ipc::IPCStream &is) {
-		ipc::Net::IPv4Addr ip;
+	void arpRem(esc::IPCStream &is) {
+		esc::Net::IPv4Addr ip;
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
 		int res = ARP::remove(ip);
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 };
 
-class LinksFileDevice : public ipc::FileDevice {
+class LinksFileDevice : public esc::FileDevice {
 public:
 	explicit LinksFileDevice(const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode) {
+		: esc::FileDevice(path,mode) {
 	}
 
 	virtual std::string handleRead() {
@@ -422,10 +422,10 @@ public:
 	}
 };
 
-class RoutesFileDevice : public ipc::FileDevice {
+class RoutesFileDevice : public esc::FileDevice {
 public:
 	explicit RoutesFileDevice(const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode) {
+		: esc::FileDevice(path,mode) {
 	}
 
 	virtual std::string handleRead() {
@@ -436,10 +436,10 @@ public:
 	}
 };
 
-class ARPFileDevice : public ipc::FileDevice {
+class ARPFileDevice : public esc::FileDevice {
 public:
 	explicit ARPFileDevice(const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode) {
+		: esc::FileDevice(path,mode) {
 	}
 
 	virtual std::string handleRead() {
@@ -450,10 +450,10 @@ public:
 	}
 };
 
-class SocketsFileDevice : public ipc::FileDevice {
+class SocketsFileDevice : public esc::FileDevice {
 public:
 	explicit SocketsFileDevice(const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode) {
+		: esc::FileDevice(path,mode) {
 	}
 
 	virtual std::string handleRead() {
@@ -469,7 +469,7 @@ static int receiveThread(void *arg) {
 	std::shared_ptr<Link> *linkptr = reinterpret_cast<std::shared_ptr<Link>*>(arg);
 	const std::shared_ptr<Link> link = *linkptr;
 	uint8_t *buffer = reinterpret_cast<uint8_t*>(link->sharedmem());
-	while(link->status() != ipc::Net::KILLED) {
+	while(link->status() != esc::Net::KILLED) {
 		ssize_t res = link->read(buffer,link->mtu());
 		if(res < 0) {
 			printe("Reading packet failed");

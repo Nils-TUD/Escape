@@ -80,7 +80,7 @@ private:
 	size_t _last;
 };
 
-class PipeClient : public ipc::Client {
+class PipeClient : public esc::Client {
 public:
 	enum {
 		RINGBUF_SIZE	= 128 * 1024
@@ -91,7 +91,7 @@ public:
 	};
 
 	explicit PipeClient(int f,uint _flags = FL_WRITE)
-		: ipc::Client(f), partner(), pendingRead(), pendingWrite(), ringbuf(), flags(_flags) {
+		: esc::Client(f), partner(), pendingRead(), pendingWrite(), ringbuf(), flags(_flags) {
 		if(flags & FL_READ)
 			ringbuf = new VarRingBuf(RINGBUF_SIZE);
 	}
@@ -109,20 +109,20 @@ public:
 		if(!data) {
 			/* EOF */
 			if(partner == NULL) {
-				ipc::IPCStream is(pendingRead.fd,buffer,sizeof(buffer),pendingRead.mid);
-				is << ipc::FileRead::Response(0) << ipc::Reply();
+				esc::IPCStream is(pendingRead.fd,buffer,sizeof(buffer),pendingRead.mid);
+				is << esc::FileRead::Response(0) << esc::Reply();
 				pendingRead.count = 0;
 			}
 			return;
 		}
 
 		/* reply that data */
-		ipc::IPCStream is(pendingRead.fd,buffer,sizeof(buffer),pendingRead.mid);
+		esc::IPCStream is(pendingRead.fd,buffer,sizeof(buffer),pendingRead.mid);
 		if(pendingRead.offset != (size_t)-1)
 			memcpy(shm() + pendingRead.offset,data,size);
-		is << ipc::FileRead::Response(size) << ipc::Reply();
+		is << esc::FileRead::Response(size) << esc::Reply();
 		if(pendingRead.offset == (size_t)-1)
-			is << ipc::ReplyData(data,size);
+			is << esc::ReplyData(data,size);
 
 		/* invalidate pending read */
 		pendingRead.count = 0;
@@ -137,11 +137,11 @@ public:
 
 		/* EOF */
 		if(!partner) {
-			ipc::IPCStream is(pendingWrite.fd,buffer,sizeof(buffer),pendingWrite.mid);
+			esc::IPCStream is(pendingWrite.fd,buffer,sizeof(buffer),pendingWrite.mid);
 			/* skip data message, if not already done */
 			if(!pendingWrite.data && pendingWrite.offset == (size_t)-1)
-				is >> ipc::ReceiveData(NULL,0);
-			is << ipc::FileWrite::Response(-EDESTROYED) << ipc::Reply();
+				is >> esc::ReceiveData(NULL,0);
+			is << esc::FileWrite::Response(-EDESTROYED) << esc::Reply();
 			delete[] pendingWrite.data;
 			pendingWrite.count = 0;
 		}
@@ -149,7 +149,7 @@ public:
 			/* try to get a push-position */
 			void *pos = partner->ringbuf->push(pendingWrite.count);
 			if(pos) {
-				ipc::IPCStream is(pendingWrite.fd,buffer,sizeof(buffer),pendingWrite.mid);
+				esc::IPCStream is(pendingWrite.fd,buffer,sizeof(buffer),pendingWrite.mid);
 				if(pendingWrite.offset == (size_t)-1) {
 					/* if we had to allocate the data, write it from there */
 					if(pendingWrite.data) {
@@ -158,38 +158,38 @@ public:
 					}
 					/* otherwise read it directly to that position */
 					else
-						is >> ipc::ReceiveData(pos,pendingWrite.count);
+						is >> esc::ReceiveData(pos,pendingWrite.count);
 				}
 				/* copy from shared memory */
 				else
 					memcpy(pos,shm() + pendingWrite.offset,pendingWrite.count);
 
 				/* reply and invalidate */
-				is << ipc::FileWrite::Response(pendingWrite.count) << ipc::Reply();
+				is << esc::FileWrite::Response(pendingWrite.count) << esc::Reply();
 				pendingWrite.count = 0;
 				/* check if somebody wanted to read */
 				partner->replyRead();
 			}
 			/* if we don't have space atm, we still have to read the data-message */
 			else if(!pendingWrite.data && pendingWrite.offset == (size_t)-1) {
-				ipc::IPCStream is(pendingWrite.fd,buffer,sizeof(buffer),pendingWrite.mid);
+				esc::IPCStream is(pendingWrite.fd,buffer,sizeof(buffer),pendingWrite.mid);
 				pendingWrite.data = new char[pendingWrite.count];
-				is >> ipc::ReceiveData(pendingWrite.data,pendingWrite.count);
+				is >> esc::ReceiveData(pendingWrite.data,pendingWrite.count);
 			}
 		}
 	}
 
 	PipeClient *partner;
-	ipc::Request pendingRead;
-	ipc::Request pendingWrite;
+	esc::Request pendingRead;
+	esc::Request pendingWrite;
 	VarRingBuf *ringbuf;
 	uint flags;
 };
 
-class PipeDevice : public ipc::ClientDevice<PipeClient> {
+class PipeDevice : public esc::ClientDevice<PipeClient> {
 public:
 	explicit PipeDevice(const char *path,mode_t mode)
-		: ipc::ClientDevice<PipeClient>(path,mode,DEV_TYPE_CHAR,
+		: esc::ClientDevice<PipeClient>(path,mode,DEV_TYPE_CHAR,
 			DEV_CREATSIBL | DEV_SHFILE | DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&PipeDevice::cancel));
 		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&PipeDevice::creatsibl));
@@ -198,7 +198,7 @@ public:
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&PipeDevice::close));
 	}
 
-	void cancel(ipc::IPCStream &is) {
+	void cancel(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
 		msgid_t mid;
 		is >> mid;
@@ -219,12 +219,12 @@ public:
 			}
 		}
 
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void creatsibl(ipc::IPCStream &is) {
+	void creatsibl(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
-		ipc::FileCreatSibl::Request r;
+		esc::FileCreatSibl::Request r;
 		is >> r;
 
 		int res = 0;
@@ -236,20 +236,20 @@ public:
 			c->partner = nc;
 			add(r.nfd,nc);
 		}
-		is << ipc::FileCreatSibl::Response(res) << ipc::Reply();
+		is << esc::FileCreatSibl::Response(res) << esc::Reply();
 	}
 
-	void read(ipc::IPCStream &is) {
+	void read(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
-		ipc::FileRead::Request r;
+		esc::FileRead::Request r;
 		is >> r;
 
 		if(c->pendingRead.count != 0) {
-			is << ipc::FileRead::Response(-EINVAL) << ipc::Reply();
+			is << esc::FileRead::Response(-EINVAL) << esc::Reply();
 			return;
 		}
 		if(~c->flags & PipeClient::FL_READ) {
-			is << ipc::FileRead::Response(-EACCES) << ipc::Reply();
+			is << esc::FileRead::Response(-EACCES) << esc::Reply();
 			return;
 		}
 
@@ -260,9 +260,9 @@ public:
 		c->replyRead();
 	}
 
-	void write(ipc::IPCStream &is) {
+	void write(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
-		ipc::FileWrite::Request r;
+		esc::FileWrite::Request r;
 		is >> r;
 
 		int res = 0;
@@ -286,11 +286,11 @@ public:
 	error:
 		/* skip data message */
 		if(r.shmemoff == -1)
-			is >> ipc::ReceiveData(NULL,0);
-		is << ipc::FileWrite::Response(res) << ipc::Reply();
+			is >> esc::ReceiveData(NULL,0);
+		is << esc::FileWrite::Response(res) << esc::Reply();
 	}
 
-	void close(ipc::IPCStream &is) {
+	void close(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
 		if(c->partner) {
 			c->partner->partner = NULL;
@@ -299,7 +299,7 @@ public:
 			else
 				c->partner->replyWrite();
 		}
-		ipc::ClientDevice<PipeClient>::close(is);
+		esc::ClientDevice<PipeClient>::close(is);
 	}
 };
 

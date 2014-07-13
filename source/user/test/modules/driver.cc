@@ -125,12 +125,12 @@ static int getRequests(A_UNUSED void *arg) {
 			memcpy(req->buffer,buffer,sizeof(buffer));
 			req->data = NULL;
 			if((mid & 0xFFFF) == MSG_FILE_WRITE) {
-				ipc::IPCStream is(cfd,buffer,sizeof(buffer));
-				ipc::FileWrite::Request r;
+				esc::IPCStream is(cfd,buffer,sizeof(buffer));
+				esc::FileWrite::Request r;
 				is >> r;
 
 				req->data = malloc(r.count);
-				is >> ipc::ReceiveData(req->data,r.count);
+				is >> esc::ReceiveData(req->data,r.count);
 			}
 			if((tid = startthread(handleRequest,req)) < 0)
 				error("Unable to start thread");
@@ -145,39 +145,39 @@ static int handleRequest(void *arg) {
 	char resp[12];
 	sTestRequest *req = (sTestRequest*)arg;
 
-	ipc::IPCStream is(req->fd,req->buffer,sizeof(req->buffer),req->mid);
+	esc::IPCStream is(req->fd,req->buffer,sizeof(req->buffer),req->mid);
 	switch(req->mid & 0xFFFF) {
 		case MSG_FILE_OPEN: {
 			char param[32];
-			ipc::FileOpen::Request r(param,sizeof(param));
+			esc::FileOpen::Request r(param,sizeof(param));
 			is >> r;
 
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,r.flags);
 
-			is << ipc::FileOpen::Response(0) << ipc::Reply();
+			is << esc::FileOpen::Response(0) << esc::Reply();
 		}
 		break;
 
 		case MSG_FILE_READ: {
-			ipc::FileRead::Request r;
+			esc::FileRead::Request r;
 			is >> r;
 
 			printffl("--[%d,%d] Read: offset=%zu, count=%zu\n",gettid(),req->fd,r.offset,r.count);
 
-			is << ipc::FileRead::Response(r.count) << ipc::Reply();
+			is << esc::FileRead::Response(r.count) << esc::Reply();
 			itoa(resp,sizeof(resp),respId++);
-			is << ipc::ReplyData(resp,sizeof(resp));
+			is << esc::ReplyData(resp,sizeof(resp));
 		}
 		break;
 
 		case MSG_FILE_WRITE: {
-			ipc::FileWrite::Request r;
+			esc::FileWrite::Request r;
 			is >> r;
 
 			printffl("--[%d,%d] Write: offset=%zu, count=%zu, data='%s'\n",gettid(),req->fd,
 					r.count,r.offset,req->data);
 
-			is << ipc::FileWrite::Response(r.count) << ipc::Reply();
+			is << esc::FileWrite::Response(r.count) << esc::Reply();
 		}
 		break;
 

@@ -156,8 +156,8 @@ int main(int argc,char **argv) {
 	std::sort(threads.begin(),threads.end(),compareThreads);
 
 	// get console-size
-	ipc::VTerm vterm(std::env::get("TERM").c_str());
-	ipc::Screen::Mode mode = vterm.getMode();
+	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::Screen::Mode mode = vterm.getMode();
 
 	// print header
 	cout << right;

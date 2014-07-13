@@ -24,7 +24,7 @@
 #include <sys/proc.h>
 #include <esc/ipc/ipcstream.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for the init device. Allows you to reboot, shutdown etc..

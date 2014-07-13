@@ -32,27 +32,27 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static ipc::Net::IPv4Addr strToIp(const char *str) {
-	ipc::Net::IPv4Addr ip;
+static esc::Net::IPv4Addr strToIp(const char *str) {
+	esc::Net::IPv4Addr ip;
 	std::istringstream is(str);
 	is >> ip;
 	return ip;
 }
 
-static void writeIp(std::ostream &os,const ipc::Net::IPv4Addr &ip) {
+static void writeIp(std::ostream &os,const esc::Net::IPv4Addr &ip) {
 	std::ostringstream s;
 	s << ip;
 	os << std::setw(15) << s.str();
 }
 
-static void arpAdd(ipc::Net &net,int argc,char **argv) {
+static void arpAdd(esc::Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
 	net.arpAdd(strToIp(argv[2]));
 }
 
-static void arpRem(ipc::Net &net,int argc,char **argv) {
+static void arpRem(esc::Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
@@ -60,7 +60,7 @@ static void arpRem(ipc::Net &net,int argc,char **argv) {
 }
 
 int main(int argc,char **argv) {
-	ipc::Net net("/dev/tcpip");
+	esc::Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::arp*> arplist = info::arp::get_list();

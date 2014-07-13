@@ -42,7 +42,7 @@
 #include "device.h"
 #include "partition.h"
 
-using namespace ipc;
+using namespace esc;
 
 #define MAX_RW_SIZE		4096
 #define RETRY_COUNT		3

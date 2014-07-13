@@ -43,7 +43,7 @@ class Game {
 public:
 	static void start(int cols,int rows,int size,bool sound);
 	static void stop();
-	static void handleKey(const ipc::UIEvents::Event &ev);
+	static void handleKey(const esc::UIEvents::Event &ev);
 	static void tick();
 
 private:
@@ -60,7 +60,7 @@ private:
 	static int _removed;
 	static UI *_ui;
 	static Grid *_grid;
-	static ipc::Speaker *_spk;
+	static esc::Speaker *_spk;
 	static Stone *_cur;
 	static Stone *_next;
 	static std::mutex _mutex;

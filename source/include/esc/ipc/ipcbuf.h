@@ -23,7 +23,7 @@
 #include <string.h>
 #include <assert.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * Low-level primitive for writing into and reading from a buffer. This is used by the kernel, too,

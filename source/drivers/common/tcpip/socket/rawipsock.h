@@ -28,8 +28,8 @@
 class RawIPSocket : public Socket {
 public:
 	explicit RawIPSocket(int f,int proto) : Socket(f,proto) {
-		if(proto != ipc::Socket::PROTO_ICMP && proto != ipc::Socket::PROTO_TCP &&
-				proto != ipc::Socket::PROTO_UDP && proto != ipc::Socket::PROTO_ANY) {
+		if(proto != esc::Socket::PROTO_ICMP && proto != esc::Socket::PROTO_TCP &&
+				proto != esc::Socket::PROTO_UDP && proto != esc::Socket::PROTO_ANY) {
 			VTHROWE("A raw IP socket doesn't support protocol " << proto,-ENOTSUP);
 		}
 	}
@@ -37,10 +37,10 @@ public:
 		sockets.remove(this);
 	}
 
-	virtual int bind(const ipc::Socket::Addr *) {
+	virtual int bind(const esc::Socket::Addr *) {
 		return sockets.add(this);
 	}
-	virtual ssize_t sendto(msgid_t mid,const ipc::Socket::Addr *sa,const void *buffer,size_t size);
+	virtual ssize_t sendto(msgid_t mid,const esc::Socket::Addr *sa,const void *buffer,size_t size);
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size) {
 		sockets.add(this);
 		return Socket::recvfrom(mid,needsSockAddr,buffer,size);

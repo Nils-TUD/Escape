@@ -73,7 +73,7 @@
 #	define DISK_DBG(...)
 #endif
 
-using namespace ipc;
+using namespace esc;
 
 static ulong getDiskCapacity(void);
 static bool diskRead(void *buf,ulong secNo,ulong secCount);

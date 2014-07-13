@@ -28,15 +28,15 @@
 #include "e1000dev.h"
 #include "eeprom.h"
 
-E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
+E1000::E1000(esc::PCI &pci,const esc::PCI::Device &nic)
 		: NICDriver(), _irq(nic.irq), _irqsem(), _curRxBuf(), _curTxBuf(), _bufs(),
 		  _bufsPhys(), _mmio(), _handler() {
 	if(_irqsem < 0)
 		error("Unable to create irq-semaphore");
 
 	// map MMIO region
-	for(size_t i = 0; i < ARRAY_SIZE(ipc::PCI::Device::bars); ++i) {
-		if(nic.bars[i].addr && nic.bars[i].type == ipc::PCI::Bar::BAR_MEM) {
+	for(size_t i = 0; i < ARRAY_SIZE(esc::PCI::Device::bars); ++i) {
+		if(nic.bars[i].addr && nic.bars[i].type == esc::PCI::Bar::BAR_MEM) {
 			uintptr_t phys = nic.bars[i].addr;
 			_mmio = reinterpret_cast<volatile uint32_t*>(mmapphys(&phys,nic.bars[i].size,0,MAP_PHYS_MAP));
 			if(_mmio == NULL)
@@ -62,7 +62,7 @@ E1000::E1000(ipc::PCI &pci,const ipc::PCI::Device &nic)
 	reset();
 
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
-	if(pci.hasCap(nic.bus,nic.dev,nic.func,ipc::PCI::CAP_MSI)) {
+	if(pci.hasCap(nic.bus,nic.dev,nic.func,esc::PCI::CAP_MSI)) {
 		DBG1("Using MSIs (%u)",nic.irq);
 		uint64_t msiaddr;
 		uint32_t msival;
@@ -104,14 +104,14 @@ void E1000::readEEPROM(uint8_t *dest,size_t len) {
 	}
 }
 
-ipc::NIC::MAC E1000::readMAC() {
-	uint8_t bytes[ipc::NIC::MAC::LEN];
+esc::NIC::MAC E1000::readMAC() {
+	uint8_t bytes[esc::NIC::MAC::LEN];
 
 	// read current address from RAL/RAH
 	uint32_t macl,mach;
 	macl = readReg(REG_RAL);
 	mach = readReg(REG_RAH);
-	ipc::NIC::MAC macaddr(
+	esc::NIC::MAC macaddr(
 		(macl >>  0) & 0xFF,
 		(macl >>  8) & 0xFF,
 		(macl >> 16) & 0xFF,
@@ -124,12 +124,12 @@ ipc::NIC::MAC E1000::readMAC() {
 		macaddr.bytes()[3],macaddr.bytes()[4],macaddr.bytes()[5]);
 
 	// if thats valid, take it
-	if(macaddr != ipc::NIC::MAC::broadcast() && macaddr.value() != 0)
+	if(macaddr != esc::NIC::MAC::broadcast() && macaddr.value() != 0)
 		return macaddr;
 
 	DBG1("Reading MAC from EEPROM");
 	readEEPROM(bytes,sizeof(bytes));
-	return ipc::NIC::MAC(bytes);
+	return esc::NIC::MAC(bytes);
 }
 
 void E1000::reset() {

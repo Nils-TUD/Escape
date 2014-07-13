@@ -92,7 +92,7 @@ void Keymap::release(Keymap *map) {
 char Keymap::translateKeycode(uchar flags,uchar keycode,uchar *modifier) const {
 	Entry *e;
 	/* handle shift, alt and ctrl */
-	bool isBreak = !!(flags & ipc::Keyb::Event::FL_BREAK);
+	bool isBreak = !!(flags & esc::Keyb::Event::FL_BREAK);
 	switch(keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:
@@ -111,8 +111,8 @@ char Keymap::translateKeycode(uchar flags,uchar keycode,uchar *modifier) const {
 	e = _entries + keycode;
 	*modifier = (_altDown ? STATE_ALT : 0) | (_ctrlDown ? STATE_CTRL : 0) |
 			(_shiftDown ? STATE_SHIFT : 0) | (isBreak ? STATE_BREAK : 0) |
-			((flags & ipc::Keyb::Event::FL_CAPS) ? STATE_CAPS : 0);
-	if(_shiftDown || (flags & ipc::Keyb::Event::FL_CAPS))
+			((flags & esc::Keyb::Event::FL_CAPS) ? STATE_CAPS : 0);
+	if(_shiftDown || (flags & esc::Keyb::Event::FL_CAPS))
 		return e->shift;
 	if(_altDown)
 		return e->alt;

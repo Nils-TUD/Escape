@@ -64,7 +64,7 @@ void Mouse::init() {
 }
 
 int Mouse::run(void*) {
-	ipc::ClientDevice<> dev("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	esc::ClientDevice<> dev("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 
 	if(startthread(irqThread,&dev) < 0)
 		error("Unable to start irq-thread");
@@ -75,9 +75,9 @@ int Mouse::run(void*) {
 
 int Mouse::irqThread(void *arg) {
 	static int byteNo = 0;
-	ipc::ClientDevice<> *dev = (ipc::ClientDevice<>*)arg;
+	esc::ClientDevice<> *dev = (esc::ClientDevice<>*)arg;
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::Mouse::Event ev;
+	esc::Mouse::Event ev;
 
 	int sem = semcrtirq(PS2::IRQ_MOUSE,"PS/2 Mouse",NULL,NULL);
 	if(sem < 0)
@@ -119,10 +119,10 @@ int Mouse::irqThread(void *arg) {
 		}
 
 		if(byteNo == 0) {
-			ipc::IPCBuf ib(buffer,sizeof(buffer));
+			esc::IPCBuf ib(buffer,sizeof(buffer));
 			ib << ev;
 			try {
-				dev->broadcast(ipc::Mouse::Event::MID,ib);
+				dev->broadcast(esc::Mouse::Event::MID,ib);
 			}
 			catch(const std::exception &e) {
 				printe("%s",e.what());

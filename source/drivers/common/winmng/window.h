@@ -50,7 +50,7 @@ struct Window : public WinRect {
 	int evfd;
 	uint style;
 	gsize_t titleBarHeight;
-	ipc::FrameBuffer *fb;
+	esc::FrameBuffer *fb;
 	bool ready;
 };
 
@@ -65,12 +65,12 @@ struct Window : public WinRect {
  * @param shmname the shared memory name
  * @return the mode id on success
  */
-int win_init(int sid,ipc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname);
+int win_init(int sid,esc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname);
 
 /**
  * @return the current mode
  */
-const ipc::Screen::Mode *win_getMode(void);
+const esc::Screen::Mode *win_getMode(void);
 
 /**
  * Changes the mode to the given one.

@@ -37,13 +37,13 @@ int main(int argc,char **argv) {
 	if(argc != 2)
 		error("Usage: %s <device>\n",argv[0]);
 
-	ipc::PCI pci("/dev/pci");
+	esc::PCI pci("/dev/pci");
 
 	// find Ne2000 NIC
-	ipc::PCI::Device nic;
+	esc::PCI::Device nic;
 	try {
 		for(int no = 0; ; ++no) {
-			nic = pci.getByClass(ipc::NIC::PCI_CLASS,ipc::NIC::PCI_SUBCLASS,no);
+			nic = pci.getByClass(esc::NIC::PCI_CLASS,esc::NIC::PCI_SUBCLASS,no);
 			if(nic.deviceId == Ne2k::DEVICE_ID && nic.vendorId == Ne2k::VENDOR_ID)
 				break;
 		}
@@ -56,10 +56,10 @@ int main(int argc,char **argv) {
 			nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId);
 
 	Ne2k *ne2k = new Ne2k(pci,nic);
-	ipc::NICDevice dev(argv[1],0770,ne2k);
-	ne2k->setHandler(std::make_memfun(&dev,&ipc::NICDevice::checkPending));
+	esc::NICDevice dev(argv[1],0770,ne2k);
+	ne2k->setHandler(std::make_memfun(&dev,&esc::NICDevice::checkPending));
 
-	ipc::NIC::MAC mac = dev.mac();
+	esc::NIC::MAC mac = dev.mac();
 	print("NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x",
 		mac.bytes()[0],mac.bytes()[1],mac.bytes()[2],mac.bytes()[3],mac.bytes()[4],mac.bytes()[5]);
 	fflush(stdout);

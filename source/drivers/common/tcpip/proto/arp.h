@@ -39,14 +39,14 @@ class ARP {
 	};
 
 	struct PendingPacket {
-		ipc::Net::IPv4Addr dest;
+		esc::Net::IPv4Addr dest;
 		Ethernet<> *pkt;
 		uint16_t type;
 		size_t size;
 	};
 
 	typedef std::vector<PendingPacket> pending_type;
-	typedef std::map<ipc::Net::IPv4Addr,ipc::NIC::MAC> cache_type;
+	typedef std::map<esc::Net::IPv4Addr,esc::NIC::MAC> cache_type;
 
 public:
 	enum {
@@ -58,18 +58,18 @@ public:
 	}
 
 	static ssize_t send(const std::shared_ptr<Link> &link,Ethernet<> *packet,size_t size,
-			const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type);
+			const esc::Net::IPv4Addr &ip,const esc::Net::IPv4Addr &nm,uint16_t type);
 	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
-	static int remove(const ipc::Net::IPv4Addr &ip) {
+	static int remove(const esc::Net::IPv4Addr &ip) {
 		return _cache.erase(ip) ? 0 : -ENOTFOUND;
 	}
-	static ssize_t requestMAC(const std::shared_ptr<Link> &link,const ipc::Net::IPv4Addr &ip);
+	static ssize_t requestMAC(const std::shared_ptr<Link> &link,const esc::Net::IPv4Addr &ip);
 	static void print(std::ostream &os);
 
 private:
 	static int createPending(const void *packet,size_t size,
-		const ipc::Net::IPv4Addr &ip,uint16_t type);
+		const esc::Net::IPv4Addr &ip,uint16_t type);
 	static void sendPending(const std::shared_ptr<Link> &link);
 	static ssize_t handleRequest(const std::shared_ptr<Link> &link,const ARP *packet);
 
@@ -80,10 +80,10 @@ public:
 	uint8_t protoAddrSize;
 	uint16_t cmd;
 
-	ipc::NIC::MAC hwSender;
-	ipc::Net::IPv4Addr ipSender;
-	ipc::NIC::MAC hwTarget;
-	ipc::Net::IPv4Addr ipTarget;
+	esc::NIC::MAC hwSender;
+	esc::Net::IPv4Addr ipSender;
+	esc::NIC::MAC hwTarget;
+	esc::Net::IPv4Addr ipTarget;
 
 private:
 	static pending_type _pending;

@@ -27,7 +27,7 @@
 #include <vector>
 #include <string>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for the uimng-device. It inherits from Screen since it supports all operations
@@ -138,7 +138,7 @@ public:
 	 * Reads the next event from this channel.
 	 */
 	UIEvents &operator>>(Event &ev) {
-		_is >> ipc::ReceiveData(&ev,sizeof(ev));
+		_is >> esc::ReceiveData(&ev,sizeof(ev));
 		return *this;
 	}
 

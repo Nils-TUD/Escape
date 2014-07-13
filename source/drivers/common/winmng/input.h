@@ -23,8 +23,8 @@
 #include <esc/proto/ui.h>
 
 typedef struct {
-	ipc::UI *ui;
-	ipc::UIEvents *uiev;
+	esc::UI *ui;
+	esc::UIEvents *uiev;
 	int mode;
 	const char *winmng;
 	const char *shmname;

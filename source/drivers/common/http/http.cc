@@ -27,7 +27,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-using namespace ipc;
+using namespace esc;
 
 static int handlerThread(void *);
 

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-using namespace ipc;
+using namespace esc;
 
 static char buffer[8192];
 
@@ -38,11 +38,11 @@ int main(int argc,char **argv) {
 	if(isHelpCmd(argc,argv) || argc != 4)
 		usage(argv[0]);
 
-	ipc::Socket::Addr addr;
-	addr.family = ipc::Socket::AF_INET;
+	esc::Socket::Addr addr;
+	addr.family = esc::Socket::AF_INET;
 	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
-	ipc::Net::IPv4Addr ip;
+	esc::Net::IPv4Addr ip;
 	std::istringstream is(argv[2]);
 	is >> ip;
 

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-using namespace ipc;
+using namespace esc;
 
 class RamDiskDevice : public ClientDevice<> {
 public:

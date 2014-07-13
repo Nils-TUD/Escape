@@ -32,7 +32,7 @@
 #define ROWS					30
 #define MAX_COLS				128
 
-using namespace ipc;
+using namespace esc;
 
 static ulong *screenData;
 
@@ -44,7 +44,7 @@ public:
 
 	virtual void setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool) {
 		assert(mode->id == 3);
-		if(type != ipc::Screen::MODE_TYPE_TUI)
+		if(type != esc::Screen::MODE_TYPE_TUI)
 			throw std::default_error("Invalid mode type");
 
 		/* undo previous mapping */
@@ -118,7 +118,7 @@ int main(void) {
 
 	std::vector<Screen::Mode> modes;
 	modes.push_back(((Screen::Mode){
-		0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VIDEO_MEM,0,0,ipc::Screen::MODE_TEXT,ipc::Screen::MODE_TYPE_TUI
+		0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VIDEO_MEM,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 
 	VideoScreenDevice dev(modes,"/dev/vga",0111);

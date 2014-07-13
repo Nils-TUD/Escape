@@ -23,7 +23,7 @@
 #include <esc/proto/file.h>
 #include <stdlib.h>
 
-using namespace ipc;
+using namespace esc;
 
 #define BUF_SIZE		(16 * 1024)
 

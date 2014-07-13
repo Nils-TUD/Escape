@@ -35,8 +35,8 @@
 static void displ_updateLines(size_t start,size_t count);
 static void displ_printStatus(void);
 
-static ipc::VTerm vterm(STDOUT_FILENO);
-static ipc::Screen::Mode mode;
+static esc::VTerm vterm(STDOUT_FILENO);
+static esc::Screen::Mode mode;
 static size_t firstLine = 0;
 static size_t dirtyStart = 0;
 static size_t dirtyCount;
@@ -58,16 +58,16 @@ void displ_init(sFileBuffer *buf) {
 	/* backup screen */
 	vterm.backup();
 	/* stop readline and navigation */
-	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
-	vterm.setFlag(ipc::VTerm::FL_NAVI,false);
+	vterm.setFlag(esc::VTerm::FL_READLINE,false);
+	vterm.setFlag(esc::VTerm::FL_NAVI,false);
 }
 
 void displ_finish(void) {
 	printf("\n");
 	/* ensure that the output is flushed before the vterm restores the old screen */
 	fflush(stdout);
-	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
-	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,true);
+	vterm.setFlag(esc::VTerm::FL_NAVI,true);
 	vterm.restore();
 }
 
@@ -185,12 +185,12 @@ int displ_getSaveFile(char *file,size_t bufSize) {
 	for(i = 0; i < mode.cols; i++)
 		putchar(' ');
 	putchar('\r');
-	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,true);
 	printf("\033[co;0;7]Save to file:\033[co] ");
 	if(buffer->filename)
 		printf("\033[si;1]%s\033[si;0]",buffer->filename);
 	res = fgetl(file,bufSize,stdin);
-	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
+	vterm.setFlag(esc::VTerm::FL_READLINE,false);
 	displ_markDirty(firstLine + mode.rows - 1,1);
 	displ_update();
 	return res ? 0 : EOF;

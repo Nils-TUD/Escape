@@ -62,7 +62,7 @@ bool listener_add(int client,ev_type type) {
 	return true;
 }
 
-void listener_notify(const ipc::WinMngEvents::Event *ev) {
+void listener_notify(const esc::WinMngEvents::Event *ev) {
 	usemdown(&usem);
 	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
 		sWinListener *l = (sWinListener*)n->data;

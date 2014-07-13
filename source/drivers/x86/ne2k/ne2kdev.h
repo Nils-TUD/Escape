@@ -30,7 +30,7 @@
 #include <functor.h>
 #include <mutex>
 
-class Ne2k : public ipc::NICDriver {
+class Ne2k : public esc::NICDriver {
 	enum Mode {
 		PROM_READ,
 		PROM_WRITE
@@ -40,14 +40,14 @@ public:
 	static const unsigned VENDOR_ID		= 0x10ec;
 	static const unsigned DEVICE_ID		= 0x8029;
 
-	explicit Ne2k(ipc::PCI &pci,const ipc::PCI::Device &nic);
+	explicit Ne2k(esc::PCI &pci,const esc::PCI::Device &nic);
 
 	void setHandler(std::Functor<void> *handler) {
 		_handler = handler;
 	}
 
-	virtual ipc::NIC::MAC mac() const {
-		return ipc::NIC::MAC(_mac);
+	virtual esc::NIC::MAC mac() const {
+		return esc::NIC::MAC(_mac);
 	}
 	virtual ulong mtu() const;
 	virtual ssize_t send(const void *packet,size_t size);

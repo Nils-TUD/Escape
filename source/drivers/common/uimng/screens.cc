@@ -25,18 +25,18 @@
 #include "clients.h"
 #include "header.h"
 
-std::vector<ipc::Screen*> ScreenMng::_screens;
+std::vector<esc::Screen*> ScreenMng::_screens;
 
 void ScreenMng::init(int cnt,char *names[]) {
 	/* open screen-devices */
 	for(int i = 0; i < cnt; i++)
-		_screens.push_back(new ipc::Screen(names[i]));
+		_screens.push_back(new esc::Screen(names[i]));
 }
 
-bool ScreenMng::find(int mid,ipc::Screen::Mode *mode,ipc::Screen **scr) {
+bool ScreenMng::find(int mid,esc::Screen::Mode *mode,esc::Screen **scr) {
 	// TODO we could cache that
 	for(auto it = _screens.begin(); it != _screens.end(); ++it) {
-		std::vector<ipc::Screen::Mode> modes = (*it)->getModes();
+		std::vector<esc::Screen::Mode> modes = (*it)->getModes();
 		for(auto m = modes.begin(); m != modes.end(); ++m) {
 			if(m->id == mid) {
 				*mode = *m;
@@ -48,18 +48,18 @@ bool ScreenMng::find(int mid,ipc::Screen::Mode *mode,ipc::Screen **scr) {
 	return false;
 }
 
-void ScreenMng::adjustMode(ipc::Screen::Mode *mode) {
-	if(mode->type & ipc::Screen::MODE_TYPE_GUI) {
-		mode->height -= Header::getHeight(ipc::Screen::MODE_TYPE_GUI);
-		mode->guiHeaderSize += Header::getHeight(ipc::Screen::MODE_TYPE_GUI);
+void ScreenMng::adjustMode(esc::Screen::Mode *mode) {
+	if(mode->type & esc::Screen::MODE_TYPE_GUI) {
+		mode->height -= Header::getHeight(esc::Screen::MODE_TYPE_GUI);
+		mode->guiHeaderSize += Header::getHeight(esc::Screen::MODE_TYPE_GUI);
 	}
-	if(mode->type & ipc::Screen::MODE_TYPE_TUI) {
-		mode->rows -= Header::getHeight(ipc::Screen::MODE_TYPE_TUI);
-		mode->tuiHeaderSize += Header::getHeight(ipc::Screen::MODE_TYPE_TUI);
+	if(mode->type & esc::Screen::MODE_TYPE_TUI) {
+		mode->rows -= Header::getHeight(esc::Screen::MODE_TYPE_TUI);
+		mode->tuiHeaderSize += Header::getHeight(esc::Screen::MODE_TYPE_TUI);
 	}
 }
 
-ssize_t ScreenMng::getModes(ipc::Screen::Mode *modes,size_t n) {
+ssize_t ScreenMng::getModes(esc::Screen::Mode *modes,size_t n) {
 	size_t count = 0;
 	for(auto it = _screens.begin(); it != _screens.end(); ++it)
 		count += (*it)->getModeCount();
@@ -73,7 +73,7 @@ ssize_t ScreenMng::getModes(ipc::Screen::Mode *modes,size_t n) {
 
 	size_t pos = 0;
 	for(auto it = _screens.begin(); it != _screens.end(); ++it) {
-		std::vector<ipc::Screen::Mode> mlist = (*it)->getModes();
+		std::vector<esc::Screen::Mode> mlist = (*it)->getModes();
 		for(auto m = mlist.begin(); m != mlist.end(); ++m) {
 			adjustMode(m);
 			modes[pos++] = *m;

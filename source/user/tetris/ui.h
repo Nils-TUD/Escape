@@ -97,10 +97,10 @@ private:
 
 	static int run(void*);
 
-	ipc::UI _ui;
-	ipc::UI::Mode _mode;
-	ipc::UIEvents _uievents;
-	ipc::FrameBuffer *_fb;
+	esc::UI _ui;
+	esc::UI::Mode _mode;
+	esc::UIEvents _uievents;
+	esc::FrameBuffer *_fb;
 	int _cpp;
 	int _rpp;
 	bool _run;

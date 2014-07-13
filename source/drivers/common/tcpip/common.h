@@ -64,7 +64,7 @@ struct PendingRequest {
 		struct {
 			int fd;
 			int nfd;
-			ipc::ClientDevice<Socket> *dev;
+			esc::ClientDevice<Socket> *dev;
 		} accept;
 	} d;
 };

@@ -45,7 +45,7 @@ struct ProcNode {
 
 typedef map<pid_t,ProcNode*> map_type;
 
-static ipc::Screen::Mode mode;
+static esc::Screen::Mode mode;
 static char *prefix;
 
 static void usage(const char *name) {
@@ -97,7 +97,7 @@ int main(int argc,char **argv) {
 	int pid = argc > 1 ? atoi(argv[1]) : 0;
 
 	// get console-size
-	ipc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(std::env::get("TERM").c_str());
 	mode = vterm.getMode();
 	prefix = new char[mode.cols];
 	memset(prefix,' ',mode.cols);

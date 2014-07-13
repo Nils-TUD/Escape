@@ -32,7 +32,7 @@
 
 GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<ShellControl> sh,
 		uint cols,uint rows)
-	: ipc::VTermDevice(path,mode,&_vt), _vt(), _mode(), _sh(sh),
+	: esc::VTermDevice(path,mode,&_vt), _vt(), _mode(), _sh(sh),
 	  _rbuffer(new char[READ_BUF_SIZE + 1]), _rbufPos(0) {
 
 	set(MSG_SCR_GETMODE,std::make_memfun(this,&GUIVTermDevice::getMode));
@@ -43,7 +43,7 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 
 	// open speaker
 	try {
-		_vt.speaker = new ipc::Speaker("/dev/speaker");
+		_vt.speaker = new esc::Speaker("/dev/speaker");
 	}
 	catch(const std::exception &e) {
 		/* ignore errors here. in this case we simply don't use it */
@@ -61,8 +61,8 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 
 	_mode.cols = cols;
 	_mode.rows = rows;
-	_mode.type = ipc::Screen::MODE_TYPE_TUI;
-	_mode.mode = ipc::Screen::MODE_GRAPHICAL;
+	_mode.type = esc::Screen::MODE_TYPE_TUI;
+	_mode.mode = esc::Screen::MODE_GRAPHICAL;
 	if(!vtctrl_init(&_vt,&_mode))
 		error("Unable to init vterm");
 
@@ -100,37 +100,37 @@ void GUIVTermDevice::loop() {
 			continue;
 		}
 
-		ipc::IPCStream is(fd,buf,sizeof(buf),mid);
+		esc::IPCStream is(fd,buf,sizeof(buf),mid);
 		handleMsg(mid,is);
 		_sh->update();
 	}
 }
 
-void GUIVTermDevice::getMode(ipc::IPCStream &is) {
+void GUIVTermDevice::getMode(esc::IPCStream &is) {
 	prepareMode();
-	is << 0 << _mode << ipc::Reply();
+	is << 0 << _mode << esc::Reply();
 }
 
-void GUIVTermDevice::getModes(ipc::IPCStream &is) {
+void GUIVTermDevice::getModes(esc::IPCStream &is) {
 	size_t n;
 	is >> n;
 
-	is << static_cast<ssize_t>(1) << ipc::Reply();
+	is << static_cast<ssize_t>(1) << esc::Reply();
 	if(n) {
 		prepareMode();
-		is << ipc::ReplyData(&_mode,sizeof(ipc::Screen::Mode));
+		is << esc::ReplyData(&_mode,sizeof(esc::Screen::Mode));
 	}
 }
 
-void GUIVTermDevice::write(ipc::IPCStream &is) {
-	ipc::FileWrite::Request r;
+void GUIVTermDevice::write(esc::IPCStream &is) {
+	esc::FileWrite::Request r;
 	is >> r;
 	assert(!is.error());
 
 	char *data = r.count <= BUF_SIZE ? _buffer : (char*)malloc(r.count + 1);
 	ssize_t res = 0;
 	if(data) {
-		is >> ipc::ReceiveData(data,r.count);
+		is >> esc::ReceiveData(data,r.count);
 		data[r.count] = '\0';
 		res = r.count;
 
@@ -154,7 +154,7 @@ void GUIVTermDevice::write(ipc::IPCStream &is) {
 			free(data);
 	}
 
-	is << ipc::FileWrite::Response(res) << ipc::Reply();
+	is << esc::FileWrite::Response(res) << esc::Reply();
 	checkPending();
 }
 

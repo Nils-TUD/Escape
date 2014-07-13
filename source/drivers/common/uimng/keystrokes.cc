@@ -118,11 +118,11 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 }
 
 void Keystrokes::switchToVGA() {
-	ipc::Screen *scr;
-	ipc::Screen::Mode mode;
+	esc::Screen *scr;
+	esc::Screen::Mode mode;
 	if(ScreenMng::find(VGA_MODE,&mode,&scr)) {
 		try {
-			scr->setMode(ipc::Screen::MODE_TYPE_TUI,VGA_MODE,"",true);
+			scr->setMode(esc::Screen::MODE_TYPE_TUI,VGA_MODE,"",true);
 		}
 		catch(const std::exception &e) {
 			printe("Unable to switch to VGA: %s",e.what());

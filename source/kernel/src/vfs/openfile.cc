@@ -107,7 +107,7 @@ int OpenFile::fstat(pid_t pid,struct stat *info) const {
 		node->getInfo(pid,info);
 	else {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-		ipc::IPCBuf ib(buffer,sizeof(buffer));
+		esc::IPCBuf ib(buffer,sizeof(buffer));
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 
 		/* send msg to fs */
@@ -288,7 +288,7 @@ int OpenFile::bindto(tid_t tid) {
 
 int OpenFile::syncfs(pid_t pid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf buf(buffer,sizeof(buffer));
+	esc::IPCBuf buf(buffer,sizeof(buffer));
 
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))
 		return -EPERM;

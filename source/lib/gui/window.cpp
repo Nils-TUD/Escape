@@ -165,12 +165,12 @@ namespace gui {
 		if(_style == DEFAULT) {
 			if(_header && e.getPos().y < (gpos_t)_header->getSize().height)
 				_inTitle = true;
-			else if(e.getPos().y >= (gpos_t)(getSize().height - ipc::Screen::CURSOR_RESIZE_WIDTH))
+			else if(e.getPos().y >= (gpos_t)(getSize().height - esc::Screen::CURSOR_RESIZE_WIDTH))
 				_inResizeBottom = true;
 			if(!_header || e.getPos().y >= (gpos_t)_header->getSize().height) {
-				if(e.getPos().x < (gpos_t)ipc::Screen::CURSOR_RESIZE_WIDTH)
+				if(e.getPos().x < (gpos_t)esc::Screen::CURSOR_RESIZE_WIDTH)
 					_inResizeLeft = true;
-				else if(e.getPos().x >= (gpos_t)(getSize().width - ipc::Screen::CURSOR_RESIZE_WIDTH))
+				else if(e.getPos().x >= (gpos_t)(getSize().width - esc::Screen::CURSOR_RESIZE_WIDTH))
 					_inResizeRight = true;
 			}
 			// don't pass the event to a control

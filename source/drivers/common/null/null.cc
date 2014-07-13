@@ -22,7 +22,7 @@
 #include <esc/proto/file.h>
 #include <stdio.h>
 
-using namespace ipc;
+using namespace esc;
 
 class NullDevice : public Device {
 public:

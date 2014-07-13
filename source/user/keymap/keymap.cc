@@ -48,7 +48,7 @@ int main(int argc,const char **argv) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	ipc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(std::env::get("TERM").c_str());
 
 	/* set keymap? */
 	if(kmname != NULL) {

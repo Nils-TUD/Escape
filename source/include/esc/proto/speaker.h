@@ -23,7 +23,7 @@
 #include <sys/messages.h>
 #include <esc/ipc/ipcstream.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for the speaker device.

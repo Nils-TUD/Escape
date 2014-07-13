@@ -28,13 +28,13 @@
 class DGramSocket : public Socket {
 public:
 	explicit DGramSocket(int f,int proto) : Socket(f,proto), _localIp(), _localPort() {
-		if(proto != ipc::Socket::PROTO_UDP)
+		if(proto != esc::Socket::PROTO_UDP)
 			VTHROWE("Protocol " << proto << " is not supported by datagram socket",-ENOTSUP);
 	}
 	virtual ~DGramSocket();
 
-	virtual int bind(const ipc::Socket::Addr *sa);
-	virtual ssize_t sendto(msgid_t mid,const ipc::Socket::Addr *sa,const void *buffer,size_t size);
+	virtual int bind(const esc::Socket::Addr *sa);
+	virtual ssize_t sendto(msgid_t mid,const esc::Socket::Addr *sa,const void *buffer,size_t size);
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size) {
 		if(_localPort == 0)
 			return -ENOTBOUND;
@@ -42,7 +42,7 @@ public:
 	}
 
 private:
-	ipc::Net::IPv4Addr _localIp;
-	ipc::port_t _localPort;
+	esc::Net::IPv4Addr _localIp;
+	esc::port_t _localPort;
 	static PortMng<PRIVATE_PORTS_CNT> _ports;
 };

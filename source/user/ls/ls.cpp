@@ -142,8 +142,8 @@ int main(int argc,char *argv[]) {
 		path = env::get("CWD");
 
 	// get console-size
-	ipc::VTerm vterm(std::env::get("TERM").c_str());
-	ipc::Screen::Mode mode = vterm.getMode();
+	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::Screen::Mode mode = vterm.getMode();
 
 	// read users and groups
 	if(flags & F_LONG) {

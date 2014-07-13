@@ -59,7 +59,7 @@ public:
 		return sizeof(TCP);
 	}
 
-	static ssize_t send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,uint8_t flags,
+	static ssize_t send(const esc::Net::IPv4Addr &ip,esc::port_t srcp,esc::port_t dstp,uint8_t flags,
 		const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,uint32_t ackNo,uint16_t winSize);
 	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 	static void replyReset(const Ethernet<IPv4<TCP>> *pkt);
@@ -68,14 +68,14 @@ public:
 	static void printSockets(std::ostream &os);
 
 private:
-	static ssize_t sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,
-		ipc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
+	static ssize_t sendWith(Ethernet<IPv4<TCP>> *pkt,const esc::Net::IPv4Addr &ip,esc::port_t srcp,
+		esc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
 		uint32_t ackNo,uint16_t winSize);
 
-	static uint32_t getKey(ipc::port_t localPort,ipc::port_t remotePort) {
+	static uint32_t getKey(esc::port_t localPort,esc::port_t remotePort) {
 		return ((uint32_t)localPort << 16) | remotePort;
 	}
-	static ssize_t addSocket(StreamSocket *sock,ipc::port_t localPort,ipc::port_t remotePort) {
+	static ssize_t addSocket(StreamSocket *sock,esc::port_t localPort,esc::port_t remotePort) {
 		uint32_t key = getKey(localPort,remotePort);
 		socket_map::iterator it = _socks.find(key);
 		if(it != _socks.end())
@@ -83,7 +83,7 @@ private:
 		_socks[key] = sock;
 		return 0;
 	}
-	static void remSocket(StreamSocket *sock,ipc::port_t localPort,ipc::port_t remotePort) {
+	static void remSocket(StreamSocket *sock,esc::port_t localPort,esc::port_t remotePort) {
 		uint32_t key = getKey(localPort,remotePort);
 		socket_map::iterator it = _socks.find(key);
 		if(it != _socks.end() && it->second == sock)
@@ -91,8 +91,8 @@ private:
 	}
 
 public:
-    ipc::port_t srcPort;
-    ipc::port_t dstPort;
+    esc::port_t srcPort;
+    esc::port_t dstPort;
     uint32_t seqNumber;
     uint32_t ackNumber;
     uint8_t dataOffset;

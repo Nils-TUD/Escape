@@ -168,13 +168,13 @@ bool ScancodeSet1::getKeycode(uchar *flags,uchar *keycode,uchar scanCode,uint8_t
 	// set break
 	*flags = 0;
 	if(scanCode & 0x80) {
-		*flags |= ipc::Keyb::Event::FL_BREAK;
+		*flags |= esc::Keyb::Event::FL_BREAK;
 		scanCode &= ~0x80;
 	}
 
 	// set caps lock
 	if(leds & Keyboard::LED_CAPS_LOCK)
-		*flags |= ipc::Keyb::Event::FL_CAPS;
+		*flags |= esc::Keyb::Event::FL_CAPS;
 
 	e = sc2kc + (scanCode & 0x7F);
 	// if num lock is not set, use the extended codes

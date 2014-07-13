@@ -47,14 +47,14 @@ public:
 	 * @param scr will be set to the Screen instance
 	 * @return true if found
 	 */
-	static bool find(int mid,ipc::Screen::Mode *mode,ipc::Screen **scr);
+	static bool find(int mid,esc::Screen::Mode *mode,esc::Screen **scr);
 
 	/**
 	 * Adjusts the available size of the given mode, i.e. the header is removed.
 	 *
 	 * @param mode the mode
 	 */
-	static void adjustMode(ipc::Screen::Mode *mode);
+	static void adjustMode(esc::Screen::Mode *mode);
 
 	/**
 	 * Stores the list of available modes in <modes>.
@@ -64,8 +64,8 @@ public:
 	 *  are copied at max
 	 * @return the number of found modes
 	 */
-	static ssize_t getModes(ipc::Screen::Mode *modes,size_t n);
+	static ssize_t getModes(esc::Screen::Mode *modes,size_t n);
 
 private:
-	static std::vector<ipc::Screen*> _screens;
+	static std::vector<esc::Screen*> _screens;
 };

@@ -22,7 +22,7 @@
 #include <esc/proto/screen.h>
 #include <algorithm>
 
-namespace ipc {
+namespace esc {
 
 #define ABS(x)			((x) > 0 ? (x) : -(x))
 
@@ -50,7 +50,7 @@ Screen::Mode Screen::findTextModeIn(const std::vector<Mode> &modes,uint cols,uin
 	uint bestdiff = UINT_MAX;
 	std::vector<Mode>::const_iterator bestmode = modes.end();
 	for(auto it = modes.begin(); it != modes.end(); ++it) {
-		if(it->type & ipc::Screen::MODE_TYPE_TUI) {
+		if(it->type & esc::Screen::MODE_TYPE_TUI) {
 			uint pixdiff = ABS((int)(it->rows * it->cols) - (int)(cols * rows));
 			if(pixdiff < bestdiff) {
 				bestmode = it;
@@ -68,7 +68,7 @@ Screen::Mode Screen::findGraphicsModeIn(const std::vector<Mode> &modes,gsize_t w
 	size_t pixdiff, bestpixdiff = ABS(320 * 200 - width * height);
 	size_t depthdiff, bestdepthdiff = 8 >= bpp ? 8 - bpp : (bpp - 8) * 2;
 	for(auto it = modes.begin(); it != modes.end(); ++it) {
-		if(it->type & ipc::Screen::MODE_TYPE_GUI) {
+		if(it->type & esc::Screen::MODE_TYPE_GUI) {
 			/* exact match? */
 			if(it->width == width && it->height == height && it->bitsPerPixel == bpp) {
 				best = it;
@@ -99,7 +99,7 @@ char *FrameBuffer::init(Screen::Mode &mode,const char *file,int type,int flags,u
 		VTHROWE("shm_open(" << file << ")",fd);
 
 	size_t size;
-	if(type == ipc::Screen::MODE_TYPE_TUI)
+	if(type == esc::Screen::MODE_TYPE_TUI)
 		size = mode.cols * (mode.rows + mode.tuiHeaderSize) * 2;
 	else
 		size = mode.width * (mode.height + mode.guiHeaderSize) * (mode.bitsPerPixel / 8);
@@ -111,7 +111,7 @@ char *FrameBuffer::init(Screen::Mode &mode,const char *file,int type,int flags,u
 		VTHROWE("mmap(" << size << ")",errno);
 	}
 
-	if(type == ipc::Screen::MODE_TYPE_TUI)
+	if(type == esc::Screen::MODE_TYPE_TUI)
 		res += mode.tuiHeaderSize * mode.cols * 2;
 	else
 		res += mode.guiHeaderSize * mode.width * (mode.bitsPerPixel / 8);
@@ -120,7 +120,7 @@ char *FrameBuffer::init(Screen::Mode &mode,const char *file,int type,int flags,u
 }
 
 FrameBuffer::~FrameBuffer() {
-	if(_mode.type == ipc::Screen::MODE_TYPE_TUI)
+	if(_mode.type == esc::Screen::MODE_TYPE_TUI)
 		_addr -= _mode.tuiHeaderSize * _mode.cols * 2;
 	else
 		_addr -= _mode.guiHeaderSize * _mode.width * (_mode.bitsPerPixel / 8);

@@ -33,7 +33,7 @@
  * have an attached event-channel. Additionally, some clients might not have a screen/framebuffer
  * set yet and are thus not considered when using next()/prev() etc.
  */
-class UIClient : public ipc::Client {
+class UIClient : public esc::Client {
 public:
 	/* we have 8 ui groups atm */
 	static const size_t MAX_CLIENTS	= 8;
@@ -140,17 +140,17 @@ public:
 	/**
 	 * @return the screen instance for this client (might be NULL)
 	 */
-	ipc::Screen *screen() {
+	esc::Screen *screen() {
 		return _screen;
 	}
 
 	/**
 	 * @return the framebuffer for this client (might be NULL)
 	 */
-	ipc::FrameBuffer *fb() {
+	esc::FrameBuffer *fb() {
 		return _fb;
 	}
-	const ipc::FrameBuffer *fb() const {
+	const esc::FrameBuffer *fb() const {
 		return _fb;
 	}
 	/**
@@ -183,7 +183,7 @@ public:
 	 * @param file the file for the framebuffer
 	 * @param set whether to set the mode via the screen
 	 */
-	void setMode(int type,const ipc::Screen::Mode &mode,ipc::Screen *scr,const char *file,bool set);
+	void setMode(int type,const esc::Screen::Mode &mode,esc::Screen *scr,const char *file,bool set);
 
 	/**
 	 * Sets the cursor to given position
@@ -210,8 +210,8 @@ private:
 	size_t _idx;
 	int _evfd;
 	Keymap *_map;
-	ipc::Screen *_screen;
-	ipc::FrameBuffer *_fb;
+	esc::Screen *_screen;
+	esc::FrameBuffer *_fb;
 	char *_header;
 	struct {
 		gpos_t x;

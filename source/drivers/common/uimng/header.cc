@@ -45,7 +45,7 @@ void Header::init() {
 }
 
 void Header::doUpdate(UIClient *cli,gsize_t width,gsize_t height) {
-	if(cli->type() == ipc::Screen::MODE_TYPE_TUI || width == cli->fb()->mode().width)
+	if(cli->type() == esc::Screen::MODE_TYPE_TUI || width == cli->fb()->mode().width)
 		memcpy(cli->fb()->addr(),cli->header(),getSize(cli->fb()->mode(),cli->type(),width));
 	else {
 		size_t off = 0;
@@ -85,13 +85,13 @@ void Header::readCPUUsage(void) {
 	}
 }
 
-void Header::putcTUI(const ipc::Screen::Mode &,char *header,uint *col,char c,char color) {
+void Header::putcTUI(const esc::Screen::Mode &,char *header,uint *col,char c,char color) {
 	header[*col * 2] = c;
 	header[*col * 2 + 1] = color;
 	(*col)++;
 }
 
-void Header::putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color) {
+void Header::putcGUI(const esc::Screen::Mode &mode,char *header,uint *col,char c,char color) {
 #if defined(__x86__)
 	vbet_drawChar(mode,(uint8_t*)header,*col,0,c,color);
 #endif
@@ -99,7 +99,7 @@ void Header::putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c
 }
 
 void Header::makeDirty(UIClient *cli,size_t cols,gsize_t *width,gsize_t *height) {
-	if(cli->type() == ipc::Screen::MODE_TYPE_TUI) {
+	if(cli->type() == esc::Screen::MODE_TYPE_TUI) {
 		*width = cols;
 		*height = 1;
 	}
@@ -114,8 +114,8 @@ void Header::buildTitle(UIClient *cli,gsize_t *width,gsize_t *height,bool force)
 		return;
 
 	uint col = 0;
-	putc_func func = cli->type() == ipc::Screen::MODE_TYPE_GUI ? putcGUI : putcTUI;
-	const ipc::Screen::Mode &mode = cli->fb()->mode();
+	putc_func func = cli->type() == esc::Screen::MODE_TYPE_GUI ? putcGUI : putcTUI;
+	const esc::Screen::Mode &mode = cli->fb()->mode();
 
 	/* print CPU usage */
 	bool changed = false;

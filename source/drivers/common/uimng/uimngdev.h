@@ -29,7 +29,7 @@
 #include "keymap.h"
 #include "screens.h"
 
-class UIMngDevice : public ipc::ClientDevice<UIClient> {
+class UIMngDevice : public esc::ClientDevice<UIClient> {
 public:
 	explicit UIMngDevice(const char *name,mode_t mode,std::mutex &mutex)
 		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CREATSIBL | DEV_CLOSE), _mutex(mutex) {
@@ -45,21 +45,21 @@ public:
 		set(MSG_SCR_UPDATE,std::make_memfun(this,&UIMngDevice::update),false);
 	}
 
-	void open(ipc::IPCStream &is) {
+	void open(esc::IPCStream &is) {
 		std::lock_guard<std::mutex> guard(_mutex);
-		ipc::ClientDevice<UIClient>::open(is);
+		esc::ClientDevice<UIClient>::open(is);
 	}
 
-	void close(ipc::IPCStream &is) {
+	void close(esc::IPCStream &is) {
 		std::lock_guard<std::mutex> guard(_mutex);
 		UIClient *c = get(is.fd());
 		c->remove();
-		ipc::ClientDevice<UIClient>::close(is);
+		esc::ClientDevice<UIClient>::close(is);
 	}
 
-	void creatsibl(ipc::IPCStream &is) {
+	void creatsibl(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		ipc::FileCreatSibl::Request r;
+		esc::FileCreatSibl::Request r;
 		is >> r;
 
 		std::lock_guard<std::mutex> guard(_mutex);
@@ -70,18 +70,18 @@ public:
 		if(Header::update(c,&width,&height))
 			c->screen()->update(0,0,width,height);
 
-		is << ipc::FileCreatSibl::Response(0) << ipc::Reply();
+		is << esc::FileCreatSibl::Response(0) << esc::Reply();
 	}
 
-	void getKeymap(ipc::IPCStream &is) {
+	void getKeymap(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		const Keymap *km = c->keymap() ? c->keymap() : Keymap::getDefault();
-		is << 0 << ipc::CString(km->file().c_str()) << ipc::Reply();
+		is << 0 << esc::CString(km->file().c_str()) << esc::Reply();
 	}
 
-	void setKeymap(ipc::IPCStream &is) {
+	void setKeymap(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		ipc::CStringBuf<MAX_PATH_LEN> path;
+		esc::CStringBuf<MAX_PATH_LEN> path;
 		is >> path;
 
 		int res = -EINVAL;
@@ -93,44 +93,44 @@ public:
 			c->keymap(newMap);
 			res = 0;
 		}
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 	}
 
-	void getModes(ipc::IPCStream &is) {
+	void getModes(esc::IPCStream &is) {
 		size_t n;
 		is >> n;
 
-		ipc::Screen::Mode *modes = n == 0 ? NULL : new ipc::Screen::Mode[n];
+		esc::Screen::Mode *modes = n == 0 ? NULL : new esc::Screen::Mode[n];
 		ssize_t res = ScreenMng::getModes(modes,n);
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 		if(n != 0) {
-			is << ipc::ReplyData(modes,res > 0 ? res * sizeof(*modes) : 0);
+			is << esc::ReplyData(modes,res > 0 ? res * sizeof(*modes) : 0);
 			delete[] modes;
 		}
 	}
 
-	void getMode(ipc::IPCStream &is) {
+	void getMode(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		if(c->fb()) {
-			ipc::Screen::Mode mode = c->fb()->mode();
+			esc::Screen::Mode mode = c->fb()->mode();
 			ScreenMng::adjustMode(&mode);
-			is << 0 << mode << ipc::Reply();
+			is << 0 << mode << esc::Reply();
 		}
 		else
-			is << -EINVAL << ipc::Reply();
+			is << -EINVAL << esc::Reply();
 	}
 
-	void setMode(ipc::IPCStream &is) {
+	void setMode(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		bool swmode;
 		int modeid,type;
-		ipc::CStringBuf<MAX_PATH_LEN> path;
+		esc::CStringBuf<MAX_PATH_LEN> path;
 		is >> modeid >> type >> swmode >> path;
 
 		/* lock that to prevent that we interfere with e.g. the debugger keystroke */
 		std::lock_guard<std::mutex> guard(_mutex);
-		ipc::Screen::Mode mode;
-		ipc::Screen *scr;
+		esc::Screen::Mode mode;
+		esc::Screen *scr;
 		if(ScreenMng::find(modeid,&mode,&scr)) {
 			/* only set this mode if it's the active client */
 			c->setMode(type,mode,scr,path.str(),c->isActive());
@@ -141,10 +141,10 @@ public:
 					c->screen()->update(0,0,width,height);
 			}
 		}
-		is << 0 << ipc::Reply();
+		is << 0 << esc::Reply();
 	}
 
-	void setCursor(ipc::IPCStream &is) {
+	void setCursor(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		gpos_t x,y;
 		int cursor;
@@ -154,7 +154,7 @@ public:
 			c->setCursor(x,y,cursor);
 	}
 
-	void update(ipc::IPCStream &is) {
+	void update(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		gpos_t x,y;
 		gsize_t w,h;

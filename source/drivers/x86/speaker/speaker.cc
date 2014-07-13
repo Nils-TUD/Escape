@@ -41,14 +41,14 @@ static void playSound(uint freq,uint dur);
 static void startSound(uint frequency);
 static void stopSound(void);
 
-class SpeakerDevice : public ipc::Device {
+class SpeakerDevice : public esc::Device {
 public:
 	explicit SpeakerDevice(const char *path,mode_t mode)
-		: ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		: esc::Device(path,mode,DEV_TYPE_SERVICE,0) {
 		set(MSG_SPEAKER_BEEP,std::make_memfun(this,&SpeakerDevice::beep));
 	}
 
-	void beep(ipc::IPCStream &is) {
+	void beep(esc::IPCStream &is) {
 		uint freq,dur;
 		is >> freq >> dur;
 

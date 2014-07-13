@@ -31,7 +31,7 @@
 class UDP {
 	friend class DGramSocket;
 
-	typedef std::map<ipc::port_t,DGramSocket*> socket_map;
+	typedef std::map<esc::port_t,DGramSocket*> socket_map;
 
 public:
 	enum {
@@ -42,29 +42,29 @@ public:
 		return sizeof(UDP);
 	}
 
-	static ssize_t send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
+	static ssize_t send(const esc::Net::IPv4Addr &ip,esc::port_t srcp,esc::port_t dstp,
 		const void *data,size_t nbytes);
 	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
 	static void printSockets(std::ostream &os);
 
 private:
-	static ssize_t addSocket(DGramSocket *sock,ipc::port_t port) {
+	static ssize_t addSocket(DGramSocket *sock,esc::port_t port) {
 		socket_map::iterator it = _socks.find(port);
 		if(it != _socks.end())
 			return it->second != sock ? -EADDRINUSE : 0;
 		_socks[port] = sock;
 		return 0;
 	}
-	static void remSocket(DGramSocket *sock,ipc::port_t port) {
+	static void remSocket(DGramSocket *sock,esc::port_t port) {
 		socket_map::iterator it = _socks.find(port);
 		if(it != _socks.end() && it->second == sock)
 			_socks.erase(it);
 	}
 
 public:
-    ipc::port_t srcPort;
-    ipc::port_t dstPort;
+    esc::port_t srcPort;
+    esc::port_t dstPort;
     uint16_t dataSize;
     uint16_t checksum;
 

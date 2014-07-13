@@ -24,7 +24,7 @@
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/default.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The MSG_FILE_OPEN command that is sent by the kernel to devices if open() was called on them.

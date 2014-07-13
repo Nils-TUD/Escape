@@ -34,7 +34,7 @@
 #include "dirlist.h"
 #include "file.h"
 
-using namespace ipc;
+using namespace esc;
 
 struct OpenFile : public Client {
 	explicit OpenFile(int f,const CtrlConRef &_ctrlRef = CtrlConRef(),const char *_path = NULL,

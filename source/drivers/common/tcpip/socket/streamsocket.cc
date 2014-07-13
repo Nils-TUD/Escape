@@ -93,7 +93,7 @@ void StreamSocket::state(State st) {
 		delete this;
 }
 
-int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
+int StreamSocket::connect(const esc::Socket::Addr *sa,msgid_t mid) {
 	if(_state != STATE_CLOSED)
 		return -EISCONN;
 	if(_pending.count > 0)
@@ -129,7 +129,7 @@ int StreamSocket::connect(const ipc::Socket::Addr *sa,msgid_t mid) {
 	return 0;
 }
 
-int StreamSocket::bind(const ipc::Socket::Addr *sa) {
+int StreamSocket::bind(const esc::Socket::Addr *sa) {
 	if(_localPort != 0)
 		return -EINVAL;
 	if(sa->d.ipv4.port == 0 || sa->d.ipv4.port >= PRIVATE_PORTS)
@@ -149,7 +149,7 @@ int StreamSocket::listen() {
 	return 0;
 }
 
-int StreamSocket::accept(msgid_t mid,int nfd,ipc::ClientDevice<Socket> *dev) {
+int StreamSocket::accept(msgid_t mid,int nfd,esc::ClientDevice<Socket> *dev) {
 	if(_state != STATE_LISTEN)
 		return -EINVAL;
 
@@ -168,7 +168,7 @@ int StreamSocket::accept(msgid_t mid,int nfd,ipc::ClientDevice<Socket> *dev) {
 	return 0;
 }
 
-ssize_t StreamSocket::sendto(msgid_t mid,const ipc::Socket::Addr *,const void *data,size_t size) {
+ssize_t StreamSocket::sendto(msgid_t mid,const esc::Socket::Addr *,const void *data,size_t size) {
 	if(_state != STATE_ESTABLISHED)
 		return -ENOTCONN;
 
@@ -324,7 +324,7 @@ void StreamSocket::timeout() {
 	}
 }
 
-void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
+void StreamSocket::push(const esc::Socket::Addr &,const Packet &pkt,size_t) {
 	const Ethernet<IPv4<TCP>> *epkt = pkt.data<const Ethernet<IPv4<TCP>>*>();
 	const IPv4<TCP> *ip = &epkt->payload;
 	const TCP *tcp = &epkt->payload.payload;
@@ -339,7 +339,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 	_remoteWinSize = be16tocpu(tcp->windowSize);
 
 	// validate checksum
-	uint16_t checksum = ipc::Net::ipv4PayloadChecksum(ip->src,ip->dst,TCP::IP_PROTO,
+	uint16_t checksum = esc::Net::ipv4PayloadChecksum(ip->src,ip->dst,TCP::IP_PROTO,
 		reinterpret_cast<const uint16_t*>(tcp),tcplen);
 	if(checksum != 0) {
 		PRINT_TCP(_localPort,remotePort(),"packet has invalid checksum (%#04x). Dropping",checksum);
@@ -424,7 +424,7 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 				SynPacket syn;
 				syn.mss = parseMSS(tcp);
 				syn.winSize = be16tocpu(tcp->windowSize);
-				syn.src.family = ipc::Socket::AF_INET;
+				syn.src.family = esc::Socket::AF_INET;
 				syn.src.d.ipv4.addr = ip->src.value();
 				syn.src.d.ipv4.port = be16tocpu(tcp->srcPort);
 				// is there already a pending accept?
@@ -469,8 +469,8 @@ void StreamSocket::push(const ipc::Socket::Addr &,const Packet &pkt,size_t) {
 				// answer the accept call
 				assert(_pending.count > 0);
 				ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-				ipc::IPCStream is(_pending.d.accept.fd,buffer,sizeof(buffer),_pending.mid);
-				is << ipc::FileCreatSibl::Response(0) << ipc::Reply();
+				esc::IPCStream is(_pending.d.accept.fd,buffer,sizeof(buffer),_pending.mid);
+				is << esc::FileCreatSibl::Response(0) << esc::Reply();
 				_pending.count = 0;
 				state(STATE_ESTABLISHED);
 			}
@@ -635,9 +635,9 @@ void StreamSocket::sendData(bool resend) {
 	}
 }
 
-int StreamSocket::forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,SynPacket &syn,
+int StreamSocket::forkSocket(int nfd,msgid_t mid,esc::ClientDevice<Socket> *dev,SynPacket &syn,
 		CircularBuf::seq_type seqNo) {
-	StreamSocket *s = new StreamSocket(nfd,ipc::Socket::PROTO_TCP);
+	StreamSocket *s = new StreamSocket(nfd,esc::Socket::PROTO_TCP);
 	s->_mss = syn.mss;
 	s->_remoteAddr = syn.src;
 	s->_localPort = _localPort;

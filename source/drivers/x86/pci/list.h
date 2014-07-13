@@ -35,7 +35,7 @@ void list_init(void);
  * @param no the number (if there are multiple devices of this class/subclass)
  * @return the device or NULL
  */
-ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no);
+esc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no);
 
 /**
  * Finds a PCI-device by bus, dev and func
@@ -45,13 +45,13 @@ ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no);
  * @param func the function
  * @return the device or NULL
  */
-ipc::PCI::Device *list_getById(uchar bus,uchar dev,uchar func);
+esc::PCI::Device *list_getById(uchar bus,uchar dev,uchar func);
 
 /**
  * @param i the number
  * @return the PCI-device number <i>
  */
-ipc::PCI::Device *list_get(size_t i);
+esc::PCI::Device *list_get(size_t i);
 
 /**
  * @return the number of devices

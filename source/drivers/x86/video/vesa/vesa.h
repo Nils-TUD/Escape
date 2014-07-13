@@ -29,7 +29,7 @@
 class VESA {
 	VESA() = delete;
 
-	class Client : public ipc::ScreenClient {
+	class Client : public esc::ScreenClient {
 	public:
 		explicit Client(int f) : ScreenClient(f), screen() {
 		}
@@ -37,13 +37,13 @@ class VESA {
 		sVESAScreen *screen;
 	};
 
-	class ScreenDevice : public ipc::ScreenDevice<Client> {
+	class ScreenDevice : public esc::ScreenDevice<Client> {
 	public:
-		explicit ScreenDevice(const std::vector<ipc::Screen::Mode> &modes,const char *path,mode_t mode)
-			: ipc::ScreenDevice<Client>(modes,path,mode) {
+		explicit ScreenDevice(const std::vector<esc::Screen::Mode> &modes,const char *path,mode_t mode)
+			: esc::ScreenDevice<Client>(modes,path,mode) {
 		}
 
-		virtual void setScreenMode(Client *c,const char *shm,ipc::Screen::Mode *mode,int type,bool sw);
+		virtual void setScreenMode(Client *c,const char *shm,esc::Screen::Mode *mode,int type,bool sw);
 		virtual void setScreenCursor(Client *c,gpos_t x,gpos_t y,int cursor);
 		virtual void updateScreen(Client *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 	};
@@ -53,5 +53,5 @@ public:
 	static int run(void *arg);
 
 private:
-	static std::vector<ipc::Screen::Mode> modes;
+	static std::vector<esc::Screen::Mode> modes;
 };

@@ -40,14 +40,14 @@ public:
 
 	/**
 	 * Gets the host for given name. It might also be an IP address, in which case it is not
-	 * resolved, but only translated in an ipc::Net::IPv4Addr object.
+	 * resolved, but only translated in an esc::Net::IPv4Addr object.
 	 *
 	 * @param name the hostname
 	 * @param timeout the timeout to use in ms
 	 * @return the IP address
 	 * @throws if the operation failed
 	 */
-	static ipc::Net::IPv4Addr getHost(const char *name,uint timeout = 1000);
+	static esc::Net::IPv4Addr getHost(const char *name,uint timeout = 1000);
 
 	/**
 	 * Checks whether the given hostname is an IP address.
@@ -65,7 +65,7 @@ public:
 	 * @return the ip address
 	 * @throws if the operation failed
 	 */
-	static ipc::Net::IPv4Addr resolve(const char *name,uint timeout = 1000);
+	static esc::Net::IPv4Addr resolve(const char *name,uint timeout = 1000);
 
 private:
 	static void sigalarm(int) {
@@ -74,7 +74,7 @@ private:
 	static size_t questionLength(const uint8_t *data);
 
 	static uint16_t _nextId;
-	static ipc::Net::IPv4Addr _nameserver;
+	static esc::Net::IPv4Addr _nameserver;
 };
 
 }

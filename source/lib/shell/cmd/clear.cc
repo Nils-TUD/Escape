@@ -24,8 +24,8 @@
 #include "../cmds.h"
 
 int shell_cmdClear(int,char **) {
-	ipc::VTerm vterm(getenv("TERM"));
-	ipc::VTerm::Mode mode = vterm.getMode();
+	esc::VTerm vterm(getenv("TERM"));
+	esc::VTerm::Mode mode = vterm.getMode();
 
 	for(uint i = 0; i < mode.rows - 1; ++i)
 		printf("\n");

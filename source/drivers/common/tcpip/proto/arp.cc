@@ -28,7 +28,7 @@
 ARP::pending_type ARP::_pending;
 ARP::cache_type ARP::_cache;
 
-int ARP::createPending(const void *packet,size_t size,const ipc::Net::IPv4Addr &ip,uint16_t type) {
+int ARP::createPending(const void *packet,size_t size,const esc::Net::IPv4Addr &ip,uint16_t type) {
 	PendingPacket pkt;
 	pkt.dest = ip;
 	pkt.size = size;
@@ -54,22 +54,22 @@ void ARP::sendPending(const std::shared_ptr<Link> &link) {
 	}
 }
 
-ssize_t ARP::requestMAC(const std::shared_ptr<Link> &link,const ipc::Net::IPv4Addr &ip) {
+ssize_t ARP::requestMAC(const std::shared_ptr<Link> &link,const esc::Net::IPv4Addr &ip) {
 	Ethernet<ARP> pkt;
 	ARP *arp = &pkt.payload;
 
 	arp->hwAddrFmt = cputobe16(HW_ADDR_ETHER);
-	arp->hwAddrSize = sizeof(ipc::NIC::MAC);
+	arp->hwAddrSize = sizeof(esc::NIC::MAC);
 	arp->protoAddrFmt = cputobe16(IPv4<>::ETHER_TYPE);
-	arp->protoAddrSize = ipc::Net::IPv4Addr::LEN;
+	arp->protoAddrSize = esc::Net::IPv4Addr::LEN;
 	arp->cmd = cputobe16(CMD_REQUEST);
 
-	arp->hwTarget = ipc::NIC::MAC();
+	arp->hwTarget = esc::NIC::MAC();
 	arp->ipTarget = ip;
 	arp->hwSender = link->mac();
 	arp->ipSender = link->ip();
 
-	return Ethernet<ARP>::send(link,ipc::NIC::MAC::broadcast(),&pkt,pkt.size(),ARP::ETHER_TYPE);
+	return Ethernet<ARP>::send(link,esc::NIC::MAC::broadcast(),&pkt,pkt.size(),ARP::ETHER_TYPE);
 }
 
 ssize_t ARP::handleRequest(const std::shared_ptr<Link> &link,const ARP *packet) {
@@ -77,7 +77,7 @@ ssize_t ARP::handleRequest(const std::shared_ptr<Link> &link,const ARP *packet) 
 	if(!packet->ipSender.isHost(link->subnetMask()))
 		return -EINVAL;
 	// TODO multicast is invalid too
-	if(packet->hwSender == ipc::NIC::MAC::broadcast())
+	if(packet->hwSender == esc::NIC::MAC::broadcast())
 		return -EINVAL;
 
 	// store the mapping in every case. perhaps we need it in future
@@ -92,9 +92,9 @@ ssize_t ARP::handleRequest(const std::shared_ptr<Link> &link,const ARP *packet) 
 	ARP *arp = &pkt.payload;
 
 	arp->hwAddrFmt = cputobe16(HW_ADDR_ETHER);
-	arp->hwAddrSize = sizeof(ipc::NIC::MAC);
+	arp->hwAddrSize = sizeof(esc::NIC::MAC);
 	arp->protoAddrFmt = cputobe16(IPv4<>::ETHER_TYPE);
-	arp->protoAddrSize = ipc::Net::IPv4Addr::LEN;
+	arp->protoAddrSize = esc::Net::IPv4Addr::LEN;
 	arp->cmd = cputobe16(CMD_REPLY);
 
 	arp->hwTarget = packet->hwSender;
@@ -106,10 +106,10 @@ ssize_t ARP::handleRequest(const std::shared_ptr<Link> &link,const ARP *packet) 
 }
 
 ssize_t ARP::send(const std::shared_ptr<Link> &link,Ethernet<> *packet,size_t size,
-		const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,uint16_t type) {
-	ipc::NIC::MAC mac;
+		const esc::Net::IPv4Addr &ip,const esc::Net::IPv4Addr &nm,uint16_t type) {
+	esc::NIC::MAC mac;
 	if(ip == ip.getBroadcast(nm))
-		mac = ipc::NIC::MAC::broadcast();
+		mac = esc::NIC::MAC::broadcast();
 	// ARP requests for ourself don't work since we don't get our own broadcasts
 	else if(ip == link->ip())
 		mac = link->mac();

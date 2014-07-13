@@ -42,7 +42,7 @@
 
 class EEPROM;
 
-class E1000 : public ipc::NICDriver {
+class E1000 : public esc::NICDriver {
 	friend class EEPROM;
 
 	enum {
@@ -191,13 +191,13 @@ class E1000 : public ipc::NICDriver {
 	};
 
 public:
-	explicit E1000(ipc::PCI &pci,const ipc::PCI::Device &nic);
+	explicit E1000(esc::PCI &pci,const esc::PCI::Device &nic);
 
 	void setHandler(std::Functor<void> *handler) {
 		_handler = handler;
 	}
 
-	virtual ipc::NIC::MAC mac() const {
+	virtual esc::NIC::MAC mac() const {
 		return _mac;
 	}
 	virtual ulong mtu() const {
@@ -209,7 +209,7 @@ private:
 	static int irqThread(void *ptr);
 
 	void readEEPROM(uint8_t *dest,size_t len);
-	ipc::NIC::MAC readMAC();
+	esc::NIC::MAC readMAC();
 	void receive();
 
 	void writeReg(uint16_t reg,uint32_t value) {
@@ -231,6 +231,6 @@ private:
 	Buffers *_bufs;
 	Buffers *_bufsPhys;
 	volatile uint32_t *_mmio;
-	ipc::NIC::MAC _mac;
+	esc::NIC::MAC _mac;
 	std::Functor<void> *_handler;
 };

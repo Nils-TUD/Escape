@@ -30,7 +30,7 @@
 #define GWIDTH				(WIDTH - PADDING * 2)
 #define GHEIGHT				(HEIGHT - PADDING * 2)
 
-extern ipc::Screen::Mode mode;
+extern esc::Screen::Mode mode;
 
 void ui_init(uint cols,uint rows);
 void ui_destroy(void);

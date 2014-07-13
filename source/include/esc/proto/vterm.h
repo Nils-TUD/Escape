@@ -27,7 +27,7 @@
 #include <string>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for the vterm-device. You can also use (most) of the UI/Screen interface (the

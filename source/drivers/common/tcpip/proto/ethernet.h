@@ -41,7 +41,7 @@ public:
 		return sizeof(dst) + sizeof(src) + sizeof(type) + payload.size();
 	}
 
-	static ssize_t send(const std::shared_ptr<Link> &link,const ipc::NIC::MAC &dest,Ethernet<T> *pkt,
+	static ssize_t send(const std::shared_ptr<Link> &link,const esc::NIC::MAC &dest,Ethernet<T> *pkt,
 			size_t sz,uint16_t _type) {
 		pkt->src = link->mac();
 		pkt->dst = dest;
@@ -54,8 +54,8 @@ public:
 
 		// give all raw ethernet socket the received packet
 		for(auto it = RawEtherSocket::sockets.begin(); it != RawEtherSocket::sockets.end(); ++it) {
-			if((*it)->protocol() == ipc::Socket::PROTO_ANY || (*it)->protocol() == epkt->type)
-				(*it)->push(ipc::Socket::Addr(),packet);
+			if((*it)->protocol() == esc::Socket::PROTO_ANY || (*it)->protocol() == epkt->type)
+				(*it)->push(esc::Socket::Addr(),packet);
 		}
 
 		switch(be16tocpu(epkt->type)) {
@@ -72,8 +72,8 @@ public:
 		return -ENOTSUP;
 	}
 
-	ipc::NIC::MAC dst;
-	ipc::NIC::MAC src;
+	esc::NIC::MAC dst;
+	esc::NIC::MAC src;
 	uint16_t type;
 	T payload;
 } A_PACKED;

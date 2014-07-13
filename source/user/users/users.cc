@@ -246,17 +246,17 @@ static void deleteUser(const char *name) {
 }
 
 static void readPassword(sPasswd *p) {
-	ipc::VTerm vterm(STDOUT_FILENO);
+	esc::VTerm vterm(STDOUT_FILENO);
 	char secondPw[MAX_PW_LEN + 1];
 	/* read in password */
-	vterm.setFlag(ipc::VTerm::FL_ECHO,false);
+	vterm.setFlag(esc::VTerm::FL_ECHO,false);
 	printf("Password: ");
 	fgetl(p->pw,sizeof(p->pw),stdin);
 	putchar('\n');
 	printf("Repeat: ");
 	fgetl(secondPw,sizeof(secondPw),stdin);
 	putchar('\n');
-	vterm.setFlag(ipc::VTerm::FL_ECHO,true);
+	vterm.setFlag(esc::VTerm::FL_ECHO,true);
 	if(strcmp(p->pw,secondPw) != 0)
 		error("Passwords do not match");
 }

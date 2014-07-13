@@ -24,7 +24,7 @@
 #include <esc/proto/default.h>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for the PCI device. Allows you to find PCI devices by BDF, class etc..

@@ -23,13 +23,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-class LoDriver : public ipc::NICDriver {
+class LoDriver : public esc::NICDriver {
 public:
-	explicit LoDriver() : ipc::NICDriver(), handler() {
+	explicit LoDriver() : esc::NICDriver(), handler() {
 	}
 
-	virtual ipc::NIC::MAC mac() const {
-		return ipc::NIC::MAC();
+	virtual esc::NIC::MAC mac() const {
+		return esc::NIC::MAC();
 	}
 	virtual ulong mtu() const {
 		return 64 * 1024;
@@ -51,8 +51,8 @@ int main(int argc,char **argv) {
 		error("Usage: %s <device>\n",argv[0]);
 
 	LoDriver *lo = new LoDriver();
-	ipc::NICDevice dev(argv[1],0777,lo);
-	lo->handler = std::make_memfun(&dev,&ipc::NICDevice::checkPending);
+	esc::NICDevice dev(argv[1],0777,lo);
+	lo->handler = std::make_memfun(&dev,&esc::NICDevice::checkPending);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

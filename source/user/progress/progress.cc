@@ -37,8 +37,8 @@ int main(void) {
 	if(signal(SIGTERM,sigTerm) == SIG_ERR)
 		error("Unable to set term-handler");
 
-	ipc::VTerm vterm(std::env::get("TERM").c_str());
-	ipc::Screen::Mode mode = vterm.getMode();
+	esc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::Screen::Mode mode = vterm.getMode();
 	maxWidth = mode.cols - 3;
 
 	printf("Waiting for fun...\n");

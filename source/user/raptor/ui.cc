@@ -82,21 +82,21 @@ static const uchar bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
 	0x04, 0x04
 };
 
-ipc::Screen::Mode mode;
-static ipc::UI *ui;
-static ipc::UIEvents *uiev;
-static ipc::FrameBuffer *fb;
+esc::Screen::Mode mode;
+static esc::UI *ui;
+static esc::UIEvents *uiev;
+static esc::FrameBuffer *fb;
 static uchar *backup = NULL;
 
 void ui_init(uint cols,uint rows) {
 	/* open uimanager */
-	ui = new ipc::UI("/dev/uimng");
+	ui = new esc::UI("/dev/uimng");
 
 	/* find desired mode */
 	mode = ui->findTextMode(cols,rows);
 
 	/* attach to input-channel */
-	uiev = new ipc::UIEvents(*ui);
+	uiev = new esc::UIEvents(*ui);
 
 	/* create shm */
 	int id = 0;
@@ -104,7 +104,7 @@ void ui_init(uint cols,uint rows) {
 	do {
 		snprintf(shmname,sizeof(shmname),"raptor%d",++id);
 		try {
-			fb = new ipc::FrameBuffer(mode,shmname,ipc::Screen::MODE_TYPE_TUI,0644);
+			fb = new esc::FrameBuffer(mode,shmname,esc::Screen::MODE_TYPE_TUI,0644);
 		}
 		catch(...) {
 		}
@@ -112,7 +112,7 @@ void ui_init(uint cols,uint rows) {
 	while(fb == NULL);
 
 	/* set mode */
-	ui->setMode(ipc::Screen::MODE_TYPE_TUI,mode.id,shmname,true);
+	ui->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,shmname,true);
 
 	/* start input thread */
 	if(startthread(ui_inputThread,NULL) < 0)
@@ -134,9 +134,9 @@ static int ui_inputThread(A_UNUSED void *arg) {
 		error("Unable to set SIGUSR1-handler");
 	/* read from uimanager and handle the keys */
 	while(1) {
-		ipc::UIEvents::Event ev;
+		esc::UIEvents::Event ev;
 		*uiev >> ev;
-		if(ev.type == ipc::UIEvents::Event::TYPE_KEYBOARD)
+		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD)
 			game_handleKey(ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
 	}
 	return 0;

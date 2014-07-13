@@ -26,7 +26,7 @@
 #include <vthrow.h>
 #include <vector>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for all screen-devices (vga, vesa, uimng, ...). It provides mode-getting and
@@ -144,7 +144,7 @@ public:
 	/**
 	 * Sets the given mode and shares the shared-memory <shm> with the device.
 	 *
-	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
+	 * @param type the screen type (esc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @param mode the mode-id to set
 	 * @param shm the shared-memory file used as the framebuffer
 	 * @param switchMode whether to actually set the given mode
@@ -247,7 +247,7 @@ public:
 	 *
 	 * @param m the mode to use
 	 * @param name the shared-memory file
-	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
+	 * @param type the screen type (esc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @throws if the operation failed
 	 */
 	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type)
@@ -259,7 +259,7 @@ public:
 	 *
 	 * @param m the mode to use
 	 * @param file the shared-memory file
-	 * @param type the screen type (ipc::Screen::MODE_TYPE_{TUI,GUI})
+	 * @param type the screen type (esc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @param perms the permissions to give to the file
 	 * @throws if the operation failed
 	 */

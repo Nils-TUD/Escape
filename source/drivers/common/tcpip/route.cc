@@ -24,10 +24,10 @@
 std::mutex Route::_mutex;
 std::vector<Route*> Route::_table;
 
-int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
-		const ipc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l) {
+int Route::insert(const esc::Net::IPv4Addr &dest,const esc::Net::IPv4Addr &nm,
+		const esc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l) {
 	// if we should use the gateway, it has to be a valid host
-	if((flags & ipc::Net::FL_USE_GW) && (gw.value() == 0 || !gw.isHost(nm)))
+	if((flags & esc::Net::FL_USE_GW) && (gw.value() == 0 || !gw.isHost(nm)))
 		return -EINVAL;
 	if(!nm.isNetmask() || !l)
 		return -EINVAL;
@@ -42,30 +42,30 @@ int Route::insert(const ipc::Net::IPv4Addr &dest,const ipc::Net::IPv4Addr &nm,
 	return 0;
 }
 
-Route Route::find(const ipc::Net::IPv4Addr &ip) {
+Route Route::find(const esc::Net::IPv4Addr &ip) {
 	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
-		if(((*it)->flags & ipc::Net::FL_UP) && (*it)->dest.sameNetwork(ip,(*it)->netmask))
+		if(((*it)->flags & esc::Net::FL_UP) && (*it)->dest.sameNetwork(ip,(*it)->netmask))
 			return **it;
 	}
 	return Route();
 }
 
-int Route::setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status) {
+int Route::setStatus(const esc::Net::IPv4Addr &ip,esc::Net::Status status) {
 	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		if((*it)->dest == ip) {
-			if(status == ipc::Net::DOWN)
-				(*it)->flags &= ~ipc::Net::FL_UP;
+			if(status == esc::Net::DOWN)
+				(*it)->flags &= ~esc::Net::FL_UP;
 			else
-				(*it)->flags |= ipc::Net::FL_UP;
+				(*it)->flags |= esc::Net::FL_UP;
 			return 0;
 		}
 	}
 	return -ENOTFOUND;
 }
 
-int Route::remove(const ipc::Net::IPv4Addr &ip) {
+int Route::remove(const esc::Net::IPv4Addr &ip) {
 	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		if((*it)->dest == ip) {

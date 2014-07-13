@@ -28,7 +28,7 @@
 #	include <vthrow.h>
 #endif
 
-namespace ipc {
+namespace esc {
 
 struct Send;
 struct Reply;

@@ -30,8 +30,8 @@ class Route {
 	}
 
 public:
-	explicit Route(const ipc::Net::IPv4Addr &dst,const ipc::Net::IPv4Addr &nm,
-			const ipc::Net::IPv4Addr &gw,uint fl,const std::shared_ptr<Link> &l)
+	explicit Route(const esc::Net::IPv4Addr &dst,const esc::Net::IPv4Addr &nm,
+			const esc::Net::IPv4Addr &gw,uint fl,const std::shared_ptr<Link> &l)
 		: dest(dst), netmask(nm), gateway(gw), flags(fl), link(l) {
 	}
 
@@ -39,17 +39,17 @@ public:
 		return flags != 0;
 	}
 
-	static int insert(const ipc::Net::IPv4Addr &ip,const ipc::Net::IPv4Addr &nm,
-		const ipc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l);
-	static Route find(const ipc::Net::IPv4Addr &ip);
-	static int setStatus(const ipc::Net::IPv4Addr &ip,ipc::Net::Status status);
-	static int remove(const ipc::Net::IPv4Addr &ip);
+	static int insert(const esc::Net::IPv4Addr &ip,const esc::Net::IPv4Addr &nm,
+		const esc::Net::IPv4Addr &gw,uint flags,const std::shared_ptr<Link> &l);
+	static Route find(const esc::Net::IPv4Addr &ip);
+	static int setStatus(const esc::Net::IPv4Addr &ip,esc::Net::Status status);
+	static int remove(const esc::Net::IPv4Addr &ip);
 	static void removeAll(const std::shared_ptr<Link> &link);
 	static void print(std::ostream &os);
 
-	ipc::Net::IPv4Addr dest;
-	ipc::Net::IPv4Addr netmask;
-	ipc::Net::IPv4Addr gateway;
+	esc::Net::IPv4Addr dest;
+	esc::Net::IPv4Addr netmask;
+	esc::Net::IPv4Addr gateway;
 	uint flags;
 	std::shared_ptr<Link> link;
 

@@ -27,7 +27,7 @@
 
 #define DIFF(a,b)				((a) > (b) ? ((a) - (b)) : ((b) - (a)))
 
-namespace ipc {
+namespace esc {
 
 /**
  * The Client for the ScreenDevice
@@ -203,7 +203,7 @@ private:
 		C *c = (*this)[is.fd()];
 		/* better perform outstanding updates to not access a deleted client */
 		performUpdate();
-		setScreenMode(c,"",NULL,ipc::Screen::MODE_TYPE_TUI,false);
+		setScreenMode(c,"",NULL,esc::Screen::MODE_TYPE_TUI,false);
 		ClientDevice<C>::close(is);
 	}
 

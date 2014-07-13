@@ -38,7 +38,7 @@ size_t UIClient::_clientCount = 0;
 
 UIClient::UIClient(int f)
 	: Client(f), _idx(-1), _evfd(-1), _map(), _screen(),
-	  _fb(), _header(), _cursor(), _type(ipc::Screen::MODE_TYPE_TUI) {
+	  _fb(), _header(), _cursor(), _type(esc::Screen::MODE_TYPE_TUI) {
 	bool succ = false;
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
 		if(_allclients[i] == NULL) {
@@ -58,8 +58,8 @@ UIClient::~UIClient() {
 }
 
 void UIClient::setActive(bool active) {
-	ipc::UIEvents::Event ev;
-	ev.type = active ? ipc::UIEvents::Event::TYPE_UI_ACTIVE : ipc::UIEvents::Event::TYPE_UI_INACTIVE;
+	esc::UIEvents::Event ev;
+	ev.type = active ? esc::UIEvents::Event::TYPE_UI_ACTIVE : esc::UIEvents::Event::TYPE_UI_INACTIVE;
 	::send(_evfd,MSG_UIM_EVENT,&ev,sizeof(ev));
 
 	if(!active) {
@@ -89,8 +89,8 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	/* now everything is complete, so set the new active client */
 	_active = cli->_idx;
 
-	gsize_t w = cli->_type == ipc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().cols : cli->_fb->mode().width;
-	gsize_t h = cli->_type == ipc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().rows : cli->_fb->mode().height;
+	gsize_t w = cli->_type == esc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().cols : cli->_fb->mode().width;
+	gsize_t h = cli->_type == esc::Screen::MODE_TYPE_TUI ? cli->_fb->mode().rows : cli->_fb->mode().height;
 	gsize_t dw,dh;
 	Header::update(cli,&dw,&dh);
 	cli->_screen->update(0,0,w,h);
@@ -124,9 +124,9 @@ void UIClient::switchClient(int incr) {
 		_active = newActive;
 }
 
-void UIClient::setMode(int ntype,const ipc::Screen::Mode &mode,ipc::Screen *scr,const char *file,bool set) {
+void UIClient::setMode(int ntype,const esc::Screen::Mode &mode,esc::Screen *scr,const char *file,bool set) {
 	/* join framebuffer; this might throw */
-	std::unique_ptr<ipc::FrameBuffer> nfb(new ipc::FrameBuffer(mode,file,ntype));
+	std::unique_ptr<esc::FrameBuffer> nfb(new esc::FrameBuffer(mode,file,ntype));
 
 	/* set mode; might throw, too */
 	if(set)
@@ -138,7 +138,7 @@ void UIClient::setMode(int ntype,const ipc::Screen::Mode &mode,ipc::Screen *scr,
 
 	/* set new stuff */
 	_header = new char[
-		Header::getSize(mode,ntype,ntype == ipc::Screen::MODE_TYPE_TUI ? mode.cols : mode.width)];
+		Header::getSize(mode,ntype,ntype == esc::Screen::MODE_TYPE_TUI ? mode.cols : mode.width)];
 	_screen = scr;
 	_fb = nfb.release();
 	_type = ntype;

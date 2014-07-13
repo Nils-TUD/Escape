@@ -49,7 +49,7 @@ static const char *caps[] = {
 	/* 0x13 */ "PCI Advanced Features",
 };
 
-static void printDevice(ipc::PCI &pci,const ipc::PCI::Device *device,int verbose) {
+static void printDevice(esc::PCI &pci,const esc::PCI::Device *device,int verbose) {
 	Vendor *vendor = PCINames::vendors.find(device->vendorId);
 	Device *dev = NULL;
 	if(vendor)
@@ -92,17 +92,17 @@ static void printDevice(ipc::PCI &pci,const ipc::PCI::Device *device,int verbose
 
 	if(verbose) {
 		printf("        ID: %04x:%04x\n",device->vendorId,device->deviceId);
-		if(device->type == ipc::PCI::GENERIC) {
+		if(device->type == esc::PCI::GENERIC) {
 			size_t i;
 			if(device->irq)
 				printf("        IRQ: %u\n",device->irq);
 			for(i = 0; i < 6; i++) {
 				if(device->bars[i].addr) {
-					if(device->bars[i].type == ipc::PCI::Bar::BAR_MEM) {
+					if(device->bars[i].type == esc::PCI::Bar::BAR_MEM) {
 						printf("        Memory at %p (%d-bit, %s) [size=%zuK]\n",
 								(void*)device->bars[i].addr,
-								(device->bars[i].flags & ipc::PCI::Bar::BAR_MEM_32) ? 32 : 64,
-								(device->bars[i].flags & ipc::PCI::Bar::BAR_MEM_PREFETCH)
+								(device->bars[i].flags & esc::PCI::Bar::BAR_MEM_32) ? 32 : 64,
+								(device->bars[i].flags & esc::PCI::Bar::BAR_MEM_PREFETCH)
 									? "prefetchable" : "non-prefetchable",device->bars[i].size / 1024);
 					}
 					else {
@@ -115,13 +115,13 @@ static void printDevice(ipc::PCI &pci,const ipc::PCI::Device *device,int verbose
 			uint32_t val = pci.read(device->bus,device->dev,device->func,0x4);
 			uint16_t status = val >> 16;
 			printf("        Status: ");
-			if(status & ipc::PCI::ST_IRQ)
+			if(status & esc::PCI::ST_IRQ)
 				printf("IRQ ");
-			if(status & ipc::PCI::ST_CAPS)
+			if(status & esc::PCI::ST_CAPS)
 				printf("CAPS ");
 			printf("\n");
 
-			if(status & ipc::PCI::ST_CAPS) {
+			if(status & esc::PCI::ST_CAPS) {
 	            uint8_t offset = pci.read(device->bus,device->dev,device->func,0x34);
             	while((offset != 0) && !(offset & 0x3)) {
             		uint32_t capidx = pci.read(device->bus,device->dev,device->func,offset);
@@ -162,11 +162,11 @@ int main(int argc,const char *argv[]) {
 
 	PCINames::load(PCI_IDS_FILE);
 
-	ipc::PCI pci("/dev/pci");
+	esc::PCI pci("/dev/pci");
 	size_t count = pci.getCount();
 	for(size_t i = 0; i < count; ++i) {
 		try {
-			ipc::PCI::Device dev = pci.getByIndex(i);
+			esc::PCI::Device dev = pci.getByIndex(i);
 			printDevice(pci,&dev,verbose);
 		}
 		catch(const std::exception &e) {

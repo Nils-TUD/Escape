@@ -33,7 +33,7 @@ class Header {
 		char str[3];
 	};
 
-	typedef void (*putc_func)(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color);
+	typedef void (*putc_func)(const esc::Screen::Mode &mode,char *header,uint *col,char c,char color);
 
 	static const uint8_t TITLE_BAR_COLOR			= 0x1F;
 	static const uint8_t CPU_USAGE_COLOR			= 0x70;
@@ -51,7 +51,7 @@ public:
 	 * @return the height of the header of given type
 	 */
 	static size_t getHeight(int type) {
-		if(type == ipc::Screen::MODE_TYPE_TUI)
+		if(type == esc::Screen::MODE_TYPE_TUI)
 			return 1;
 		return FONT_HEIGHT;
 	}
@@ -59,8 +59,8 @@ public:
 	/**
 	 * @return the size in bytes of a x-columns wide header of given type
 	 */
-	static size_t getSize(const ipc::Screen::Mode &mode,int type,gpos_t x) {
-		if(type == ipc::Screen::MODE_TYPE_TUI)
+	static size_t getSize(const esc::Screen::Mode &mode,int type,gpos_t x) {
+		if(type == esc::Screen::MODE_TYPE_TUI)
 			return x * 2;
 		/* always update the whole width because it simplifies the copy it shouldn't be much slower
 		 * than doing a loop with 1 memcpy per line */
@@ -88,8 +88,8 @@ public:
 	static bool rebuild(UIClient *cli,gsize_t *width,gsize_t *height);
 
 private:
-	static void putcTUI(const ipc::Screen::Mode &,char *header,uint *col,char c,char color);
-	static void putcGUI(const ipc::Screen::Mode &mode,char *header,uint *col,char c,char color);
+	static void putcTUI(const esc::Screen::Mode &,char *header,uint *col,char c,char color);
+	static void putcGUI(const esc::Screen::Mode &mode,char *header,uint *col,char c,char color);
 	static void makeDirty(UIClient *cli,size_t cols,gsize_t *width,gsize_t *height);
 	static void doUpdate(UIClient *cli,gsize_t width,gsize_t height);
 	static void readCPUUsage();

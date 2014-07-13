@@ -72,7 +72,7 @@ int main(void) {
 	printf("Please login to get a shell.\n");
 	printf("Hint: use hrniels/test, jon/doe or root/root ;)\n\n");
 
-	ipc::VTerm vterm(STDOUT_FILENO);
+	esc::VTerm vterm(STDOUT_FILENO);
 	while(1) {
 #if SKIP_LOGIN
 		strcpy(un,"root");
@@ -82,12 +82,12 @@ int main(void) {
 		fgetl(un,sizeof(un),stdin);
 		/* if an error occurred, e.g. the user pressed ^D, ensure that we unset the error */
 		clearerr(stdin);
-		vterm.setFlag(ipc::VTerm::FL_ECHO,false);
+		vterm.setFlag(esc::VTerm::FL_ECHO,false);
 
 		printf("Password: ");
 		fgetl(pw,sizeof(pw),stdin);
 		clearerr(stdin);
-		vterm.setFlag(ipc::VTerm::FL_ECHO,true);
+		vterm.setFlag(esc::VTerm::FL_ECHO,true);
 		putchar('\n');
 #endif
 

@@ -27,7 +27,7 @@
 #include <string>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for the window-manager-device. You can also use (most) of the UI/Screen
@@ -60,7 +60,7 @@ public:
 	gwinid_t create(gpos_t x,gpos_t y,gsize_t w,gsize_t h,uint style,gsize_t titleHeight,const char *title) {
 		int res;
 		_is << x << y << w << h << style << titleHeight << CString(title);
-		_is << ipc::SendReceive(MSG_WIN_CREATE) >> res;
+		_is << esc::SendReceive(MSG_WIN_CREATE) >> res;
 		if(res < 0)
 			VTHROWE("create(" << x << "," << y << "," << w << "," << h << ")",res);
 		return res;
@@ -73,7 +73,7 @@ public:
 	 * @throws if the send failed
 	 */
 	void setActive(gwinid_t wid) {
-		_is << wid << ipc::Send(MSG_WIN_SET_ACTIVE);
+		_is << wid << esc::Send(MSG_WIN_SET_ACTIVE);
 	}
 
 	/**
@@ -83,7 +83,7 @@ public:
 	 * @throws if the send failed
 	 */
 	void destroy(gwinid_t wid) {
-		_is << wid << ipc::Send(MSG_WIN_DESTROY);
+		_is << wid << esc::Send(MSG_WIN_DESTROY);
 	}
 
 	/**
@@ -96,7 +96,7 @@ public:
 	 * @throws if the send failed
 	 */
 	void move(gwinid_t wid,gpos_t x,gpos_t y,bool finished) {
-		_is << wid << x << y << finished << ipc::Send(MSG_WIN_MOVE);
+		_is << wid << x << y << finished << esc::Send(MSG_WIN_MOVE);
 	}
 
 	/**
@@ -111,7 +111,7 @@ public:
 	 * @throws if the send failed
 	 */
 	void resize(gwinid_t wid,gpos_t x,gpos_t y,gsize_t width,gsize_t height,bool finished) {
-		_is << wid << x << y << width << height << finished << ipc::Send(MSG_WIN_RESIZE);
+		_is << wid << x << y << width << height << finished << esc::Send(MSG_WIN_RESIZE);
 	}
 
 	/**
@@ -126,7 +126,7 @@ public:
 	 */
 	void update(gwinid_t wid,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		int res;
-		_is << wid << x << y << width << height << ipc::SendReceive(MSG_WIN_UPDATE) >> res;
+		_is << wid << x << y << width << height << esc::SendReceive(MSG_WIN_UPDATE) >> res;
 		if(res < 0)
 			VTHROWE("update(" << x << "," << y << "," << width << "," << height << ")",res);
 	}
@@ -141,7 +141,7 @@ public:
 	 */
 	void setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
 		int res;
-		_is << width << height << bpp << ipc::SendReceive(MSG_WIN_SETMODE) >> res;
+		_is << width << height << bpp << esc::SendReceive(MSG_WIN_SETMODE) >> res;
 		if(res < 0)
 			VTHROWE("setMode(" << width << "," << height << "," << bpp << ")",res);
 	}
@@ -239,7 +239,7 @@ public:
 	 * @throws if the send failed
 	 */
 	void subscribe(Event::Type type) {
-		_is << type << ipc::Send(MSG_WIN_ADDLISTENER);
+		_is << type << esc::Send(MSG_WIN_ADDLISTENER);
 	}
 
 	/**
@@ -249,7 +249,7 @@ public:
 	 * @throws if the send failed
 	 */
 	void unsubscribe(Event::Type type) {
-		_is << type << ipc::Send(MSG_WIN_REMLISTENER);
+		_is << type << esc::Send(MSG_WIN_REMLISTENER);
 	}
 
 	/**
@@ -258,7 +258,7 @@ public:
 	 * @throws if the receive failed
 	 */
 	WinMngEvents &operator>>(Event &ev) {
-		_is >> ipc::ReceiveData(&ev,sizeof(ev));
+		_is >> esc::ReceiveData(&ev,sizeof(ev));
 		return *this;
 	}
 

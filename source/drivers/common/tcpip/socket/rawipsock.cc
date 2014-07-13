@@ -26,11 +26,11 @@
 
 RawSocketList RawIPSocket::sockets;
 
-ssize_t RawIPSocket::sendto(msgid_t,const ipc::Socket::Addr *sa,const void *buffer,size_t size) {
+ssize_t RawIPSocket::sendto(msgid_t,const esc::Socket::Addr *sa,const void *buffer,size_t size) {
 	if(sa == NULL)
 		return -EINVAL;
 
-	const ipc::Net::IPv4Addr ip(sa->d.ipv4.addr);
+	const esc::Net::IPv4Addr ip(sa->d.ipv4.addr);
 	Route route = Route::find(ip);
 	if(!route.valid())
 		return -ENETUNREACH;
@@ -42,7 +42,7 @@ ssize_t RawIPSocket::sendto(msgid_t,const ipc::Socket::Addr *sa,const void *buff
 	memcpy(&pkt->payload,buffer,size);
 	Ethernet<> *epkt = reinterpret_cast<Ethernet<>*>(pkt);
 	ssize_t res;
-	if(route.flags & ipc::Net::FL_USE_GW)
+	if(route.flags & esc::Net::FL_USE_GW)
 		res = ARP::send(route.link,epkt,total,route.gateway,route.netmask,IPv4<>::ETHER_TYPE);
 	else
 		res = ARP::send(route.link,epkt,total,ip,route.netmask,IPv4<>::ETHER_TYPE);

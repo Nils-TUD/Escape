@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <mutex>
 
-namespace ipc {
+namespace esc {
 
 class NICDriver {
 public:
@@ -42,7 +42,7 @@ public:
 	virtual ~NICDriver() {
 	}
 
-	virtual ipc::NIC::MAC mac() const = 0;
+	virtual esc::NIC::MAC mac() const = 0;
 	virtual ulong mtu() const = 0;
 	virtual ssize_t send(const void *packet,size_t size) = 0;
 
@@ -76,8 +76,8 @@ private:
 
 class NICDevice : public ClientDevice<> {
 	struct EthernetHeader {
-		ipc::NIC::MAC dst;
-		ipc::NIC::MAC src;
+		esc::NIC::MAC dst;
+		esc::NIC::MAC src;
 		uint16_t type;
 	};
 

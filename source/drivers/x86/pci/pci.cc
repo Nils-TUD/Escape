@@ -38,7 +38,7 @@
 #	define DBG(...)
 #endif
 
-using namespace ipc;
+using namespace esc;
 
 class PCIService : public Device {
 public:

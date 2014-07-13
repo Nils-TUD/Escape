@@ -57,8 +57,8 @@ static string filename;
 static bool seenEOF;
 static LineContainer *lines;
 static size_t startLine = 0;
-static ipc::VTerm vterm(std::env::get("TERM").c_str());
-static ipc::Screen::Mode mode;
+static esc::VTerm vterm(std::env::get("TERM").c_str());
+static esc::Screen::Mode mode;
 static string emptyLine;
 
 static void usage(const char* name) {
@@ -122,8 +122,8 @@ int main(int argc,char *argv[]) {
 	readLines(mode.rows);
 
 	// stop readline and navigation
-	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
-	vterm.setFlag(ipc::VTerm::FL_NAVI,false);
+	vterm.setFlag(esc::VTerm::FL_READLINE,false);
+	vterm.setFlag(esc::VTerm::FL_NAVI,false);
 
 	refreshScreen();
 
@@ -170,8 +170,8 @@ int main(int argc,char *argv[]) {
 }
 
 static void resetVterm(void) {
-	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
-	vterm.setFlag(ipc::VTerm::FL_NAVI,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,true);
+	vterm.setFlag(esc::VTerm::FL_NAVI,true);
 	vterm.restore();
 }
 

@@ -23,7 +23,7 @@
 #include <sys/messages.h>
 #include <esc/proto/default.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The keyboard-event sent by the keyboard-device

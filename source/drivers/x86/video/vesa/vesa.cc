@@ -38,12 +38,12 @@
 #include "vesascreen.h"
 #include "vesa.h"
 
-using namespace ipc;
+using namespace esc;
 
-std::vector<ipc::Screen::Mode> VESA::modes;
+std::vector<esc::Screen::Mode> VESA::modes;
 
 void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
-	assert(type == ipc::Screen::MODE_TYPE_TUI || type == ipc::Screen::MODE_TYPE_GUI);
+	assert(type == esc::Screen::MODE_TYPE_TUI || type == esc::Screen::MODE_TYPE_GUI);
 
 	/* undo previous mapping */
 	if(c->fb)
@@ -77,7 +77,7 @@ void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *m
 
 void VESA::ScreenDevice::setScreenCursor(Client *c,gpos_t x,gpos_t y,int cursor) {
 	if(c->screen) {
-		if(c->type() == ipc::Screen::MODE_TYPE_TUI)
+		if(c->type() == esc::Screen::MODE_TYPE_TUI)
 			vesatui_setCursor(c->screen,x,y);
 		else
 			vesagui_setCursor(c->screen,c->fb->addr(),x,y,cursor);
@@ -88,7 +88,7 @@ void VESA::ScreenDevice::updateScreen(Client *c,gpos_t x,gpos_t y,gsize_t width,
 	if(!c->mode || !c->fb)
 		throw std::default_error("No mode set");
 
-	if(c->type() == ipc::Screen::MODE_TYPE_TUI) {
+	if(c->type() == esc::Screen::MODE_TYPE_TUI) {
 		if((gpos_t)(x + width) < x || x + width > c->mode->cols ||
 			(gpos_t)(y + height) < y || y + height > c->mode->rows) {
 			VTHROW("Invalid TUI update: " << x << "," << y << ":" << width << "x" << height);
@@ -137,8 +137,8 @@ void VESA::init() {
 			mode.physaddr = m->second->physBasePtr;
 			mode.tuiHeaderSize = 0;
 			mode.guiHeaderSize = 0;
-			mode.mode = ipc::Screen::MODE_GRAPHICAL;
-			mode.type = ipc::Screen::MODE_TYPE_TUI | ipc::Screen::MODE_TYPE_GUI;
+			mode.mode = esc::Screen::MODE_GRAPHICAL;
+			mode.type = esc::Screen::MODE_TYPE_TUI | esc::Screen::MODE_TYPE_GUI;
 			modes.push_back(mode);
 		}
 	}

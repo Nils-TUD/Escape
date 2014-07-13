@@ -45,7 +45,7 @@ const char *TCP::flagsToStr(uint8_t flags) {
 	return buf;
 }
 
-ssize_t TCP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,uint8_t flags,
+ssize_t TCP::send(const esc::Net::IPv4Addr &ip,esc::port_t srcp,esc::port_t dstp,uint8_t flags,
 		const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,uint32_t ackNo,uint16_t winSize) {
 	if(nbytes > 0) {
 		const size_t total = Ethernet<IPv4<TCP>>().size() + nbytes;
@@ -62,8 +62,8 @@ ssize_t TCP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 	}
 }
 
-ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,
-		ipc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
+ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const esc::Net::IPv4Addr &ip,esc::port_t srcp,
+		esc::port_t dstp,uint8_t flags,const void *data,size_t nbytes,size_t optSize,uint32_t seqNo,
 		uint32_t ackNo,uint16_t winSize) {
 	Route route = Route::find(ip);
 	if(!route.valid())
@@ -87,7 +87,7 @@ ssize_t TCP::sendWith(Ethernet<IPv4<TCP>> *pkt,const ipc::Net::IPv4Addr &ip,ipc:
 	memcpy(tcp + 1,data,nbytes);
 
 	tcp->checksum = 0;
-	tcp->checksum = ipc::Net::ipv4PayloadChecksum(route.link->ip(),ip,IP_PROTO,
+	tcp->checksum = esc::Net::ipv4PayloadChecksum(route.link->ip(),ip,IP_PROTO,
 		reinterpret_cast<uint16_t*>(tcp),sizeof(TCP) + nbytes);
 
 	return IPv4<TCP>::sendOver(route,pkt,total,ip,IP_PROTO);
@@ -128,8 +128,8 @@ ssize_t TCP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 		be16tocpu(tcp->windowSize));
 
 	if(it != _socks.end()) {
-		ipc::Socket::Addr sa;
-		sa.family = ipc::Socket::AF_INET;
+		esc::Socket::Addr sa;
+		sa.family = esc::Socket::AF_INET;
 		sa.d.ipv4.addr = pkt->payload.src.value();
 		sa.d.ipv4.port = srcp;
 		size_t offset = reinterpret_cast<const uint8_t*>(tcp + 1) - packet.data<uint8_t*>();

@@ -31,7 +31,7 @@
 
 #define TIMEOUT		2000	/* wait 2 ms for the NIC driver to register the device */
 
-static void linkRem(ipc::Net &net,int argc,char **argv);
+static void linkRem(esc::Net &net,int argc,char **argv);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s (add|rem|set|up|down|show) args...\n",name);
@@ -53,7 +53,7 @@ static info::link *getByName(const char *name) {
 	return NULL;
 }
 
-static void linkAdd(ipc::Net &net,int argc,char **argv) {
+static void linkAdd(esc::Net &net,int argc,char **argv) {
 	char path[MAX_PATH_LEN];
 	if(argc < 4)
 		usage(argv[0]);
@@ -92,7 +92,7 @@ static void linkAdd(ipc::Net &net,int argc,char **argv) {
 	}
 }
 
-static void linkRem(ipc::Net &net,int argc,char **argv) {
+static void linkRem(esc::Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
@@ -110,7 +110,7 @@ static void linkRem(ipc::Net &net,int argc,char **argv) {
 	printe("Unable to find driver-process for '%s'",argv[2]);
 }
 
-static void linkSet(ipc::Net &net,int argc,char **argv) {
+static void linkSet(esc::Net &net,int argc,char **argv) {
 	if(argc != 5)
 		usage(argv[0]);
 
@@ -118,7 +118,7 @@ static void linkSet(ipc::Net &net,int argc,char **argv) {
 	if(!link)
 		error("Link '%s' not found",argv[2]);
 
-	ipc::Net::IPv4Addr ip;
+	esc::Net::IPv4Addr ip;
 	std::istringstream is(argv[4]);
 	is >> ip;
 
@@ -130,7 +130,7 @@ static void linkSet(ipc::Net &net,int argc,char **argv) {
 		usage(argv[0]);
 }
 
-static void linkUpDown(ipc::Net &net,int argc,char **argv) {
+static void linkUpDown(esc::Net &net,int argc,char **argv) {
 	if(argc != 3)
 		usage(argv[0]);
 
@@ -139,9 +139,9 @@ static void linkUpDown(ipc::Net &net,int argc,char **argv) {
 		error("Link '%s' not found",argv[2]);
 
 	if(strcmp(argv[1],"up") == 0)
-		net.linkConfig(argv[2],link->ip(),link->subnetMask(),ipc::Net::UP);
+		net.linkConfig(argv[2],link->ip(),link->subnetMask(),esc::Net::UP);
 	else if(strcmp(argv[1],"down") == 0)
-		net.linkConfig(argv[2],link->ip(),link->subnetMask(),ipc::Net::DOWN);
+		net.linkConfig(argv[2],link->ip(),link->subnetMask(),esc::Net::DOWN);
 	else
 		usage(argv[0]);
 }
@@ -153,7 +153,7 @@ static const char *statusNames[] = {
 };
 
 int main(int argc,char **argv) {
-	ipc::Net net("/dev/tcpip");
+	esc::Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::link*> links = info::link::get_list();

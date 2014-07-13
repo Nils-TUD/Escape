@@ -115,8 +115,8 @@ public:
 	}
 
 private:
-	ipc::PCI _pci;
-	ipc::PCI::Device _dev;
+	esc::PCI _pci;
+	esc::PCI::Device _dev;
 	uintptr_t _addr;
 	bool _addrValid;
 };

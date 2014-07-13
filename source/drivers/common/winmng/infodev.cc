@@ -29,10 +29,10 @@
 #include "window.h"
 #include "infodev.h"
 
-class WinInfoDevice : public ipc::FileDevice {
+class WinInfoDevice : public esc::FileDevice {
 public:
 	explicit WinInfoDevice(const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode) {
+		: esc::FileDevice(path,mode) {
 	}
 
 	virtual std::string handleRead() {

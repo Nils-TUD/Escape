@@ -27,13 +27,13 @@
 template<size_t N>
 class PortMng {
 public:
-	explicit PortMng(ipc::port_t base) : _base(base), _free(N), _ports() {
+	explicit PortMng(esc::port_t base) : _base(base), _free(N), _ports() {
 	}
 
-	ipc::port_t allocate() {
+	esc::port_t allocate() {
 		// TODO handle that case
 		assert(_free > 0);
-		ipc::port_t p;
+		esc::port_t p;
 		do {
 			p = rand() % N;
 		}
@@ -42,14 +42,14 @@ public:
 		_free--;
 		return _base + p;
 	}
-	void release(ipc::port_t port) {
+	void release(esc::port_t port) {
 		assert(port >= _base && port < _base + N);
 		_ports[port - _base] = false;
 		_free++;
 	}
 
 private:
-	ipc::port_t _base;
+	esc::port_t _base;
 	size_t _free;
 	std::bitset<N> _ports;
 };

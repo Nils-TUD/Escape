@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The IPC-interface for NIC devices.

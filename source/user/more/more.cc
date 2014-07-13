@@ -68,9 +68,9 @@ int main(int argc,const char *argv[]) {
 	if(!vt)
 		error("Unable to open '%s'",vtermPath.c_str());
 
-	ipc::VTerm vterm(fileno(vt));
-	vterm.setFlag(ipc::VTerm::FL_READLINE,false);
-	ipc::Screen::Mode mode = vterm.getMode();
+	esc::VTerm vterm(fileno(vt));
+	vterm.setFlag(esc::VTerm::FL_READLINE,false);
+	esc::Screen::Mode mode = vterm.getMode();
 
 	/* read until vterm is full, ask for continue, and so on */
 	line = 0;
@@ -100,7 +100,7 @@ int main(int argc,const char *argv[]) {
 		error("Write failed");
 
 	/* clean up */
-	vterm.setFlag(ipc::VTerm::FL_READLINE,true);
+	vterm.setFlag(esc::VTerm::FL_READLINE,true);
 	if(args[0])
 		fclose(in);
 	fclose(vt);

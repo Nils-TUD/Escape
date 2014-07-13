@@ -43,7 +43,7 @@ FileCopy::FileCopy(size_t bufsize,uint fl)
 
 	/* get vterm-size, if we should show a progress bar */
 	if(_flags & FL_PROGRESS) {
-		ipc::VTerm vterm(std::env::get("TERM").c_str());
+		esc::VTerm vterm(std::env::get("TERM").c_str());
 		_cols = vterm.getMode().cols;
 	}
 }

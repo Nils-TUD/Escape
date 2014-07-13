@@ -29,10 +29,10 @@
 #include <stdarg.h>
 #include <signal.h>
 
-class FSFileDevice : public ipc::FileDevice {
+class FSFileDevice : public esc::FileDevice {
 public:
 	explicit FSFileDevice(FileSystem *fs,const char *path,mode_t mode)
-		: ipc::FileDevice(path,mode), _fs(fs) {
+		: esc::FileDevice(path,mode), _fs(fs) {
 	}
 
 	virtual std::string handleRead() {

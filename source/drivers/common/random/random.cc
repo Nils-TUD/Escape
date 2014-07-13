@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <time.h>
 
-using namespace ipc;
+using namespace esc;
 
 class RandomDevice : public ClientDevice<> {
 public:

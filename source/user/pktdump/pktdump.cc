@@ -21,7 +21,7 @@
 #include <esc/proto/nic.h>
 #include <esc/proto/socket.h>
 
-using namespace ipc;
+using namespace esc;
 
 struct EthernetHeader {
 	NIC::MAC dst;
@@ -33,7 +33,7 @@ int main() {
 	ulong buffer[1024];
 	Socket sock("/dev/socket",Socket::SOCK_RAW_ETHER,Socket::PROTO_ANY);
 	while(1) {
-		ipc::Socket::Addr addr;
+		esc::Socket::Addr addr;
 		size_t res = sock.recvfrom(addr,buffer,sizeof(buffer));
 
 		EthernetHeader *ether = reinterpret_cast<EthernetHeader*>(buffer);

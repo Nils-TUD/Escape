@@ -152,7 +152,7 @@ static int shellMain(const char *devName) {
 		error("Unable to redirect STDERR to %d",fout);
 
 	// give vterm our pid
-	ipc::VTerm vterm(fin);
+	esc::VTerm vterm(fin);
 	vterm.setShellPid(getpid());
 
 	printf("\033[co;9]Welcome to Escape v%s!\033[co]\n",ESCAPE_VERSION);

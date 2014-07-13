@@ -51,8 +51,8 @@
 #define BAR_MEM_PREFETCHABLE(bar)	(((bar) >> 3) & 0x1)
 
 static void list_detect(void);
-static void list_fillDev(ipc::PCI::Device *dev);
-static void list_fillBar(ipc::PCI::Device *dev,size_t i);
+static void list_fillDev(esc::PCI::Device *dev);
+static void list_fillBar(esc::PCI::Device *dev,size_t i);
 
 static sSLList *devices;
 
@@ -70,10 +70,10 @@ void list_init(void) {
 	list_detect();
 }
 
-ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no) {
+esc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no) {
 	sSLNode *n;
 	for(n = sll_begin(devices); n != NULL; n = n->next) {
-		ipc::PCI::Device *d = (ipc::PCI::Device*)n->data;
+		esc::PCI::Device *d = (esc::PCI::Device*)n->data;
 		if(d->baseClass == baseClass && d->subClass == subClass) {
 			if(no-- == 0)
 				return d;
@@ -82,20 +82,20 @@ ipc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no) {
 	return NULL;
 }
 
-ipc::PCI::Device *list_getById(uchar bus,uchar dev,uchar func) {
+esc::PCI::Device *list_getById(uchar bus,uchar dev,uchar func) {
 	sSLNode *n;
 	for(n = sll_begin(devices); n != NULL; n = n->next) {
-		ipc::PCI::Device *d = (ipc::PCI::Device*)n->data;
+		esc::PCI::Device *d = (esc::PCI::Device*)n->data;
 		if(d->bus == bus && d->dev == dev && d->func == func)
 			return d;
 	}
 	return NULL;
 }
 
-ipc::PCI::Device *list_get(size_t i) {
+esc::PCI::Device *list_get(size_t i) {
 	if(i >= sll_length(devices))
 		return NULL;
-	return (ipc::PCI::Device*)sll_get(devices,i);
+	return (esc::PCI::Device*)sll_get(devices,i);
 }
 
 size_t list_length(void) {
@@ -107,7 +107,7 @@ static void list_detect(void) {
 	for(bus = 0; bus < BUS_COUNT; bus++) {
 		for(dev = 0; dev < DEV_COUNT; dev++) {
 			for(func = 0; func < FUNC_COUNT; func++) {
-				ipc::PCI::Device *device = (ipc::PCI::Device*)malloc(sizeof(ipc::PCI::Device));
+				esc::PCI::Device *device = (esc::PCI::Device*)malloc(sizeof(esc::PCI::Device));
 				if(!device)
 					error("Unable to create device");
 				device->bus = bus;
@@ -125,7 +125,7 @@ static void list_detect(void) {
 	}
 }
 
-static void list_fillDev(ipc::PCI::Device *dev) {
+static void list_fillDev(esc::PCI::Device *dev) {
 	uint32_t val;
 	val = pci_read(dev->bus,dev->dev,dev->func,0);
 	dev->vendorId = val & 0xFFFF;
@@ -141,7 +141,7 @@ static void list_fillDev(ipc::PCI::Device *dev) {
 	val = pci_read(dev->bus,dev->dev,dev->func,0xC);
 	dev->type = (val >> 16) & 0xFF;
 	dev->irq = 0;
-	if(dev->type == ipc::PCI::GENERIC) {
+	if(dev->type == esc::PCI::GENERIC) {
 		size_t i;
 		for(i = 0; i < 6; i++)
 			list_fillBar(dev,i);
@@ -149,8 +149,8 @@ static void list_fillDev(ipc::PCI::Device *dev) {
 	}
 }
 
-static void list_fillBar(ipc::PCI::Device *dev,size_t i) {
-	ipc::PCI::Bar *bar = dev->bars + i;
+static void list_fillBar(esc::PCI::Device *dev,size_t i) {
+	esc::PCI::Bar *bar = dev->bars + i;
 	uint32_t barValue = pci_read(dev->bus,dev->dev,dev->func,BAR_OFFSET + i * 4);
 	bar->type = barValue & 0x1;
 	bar->addr = barValue & ~0xF;
@@ -165,14 +165,14 @@ static void list_fillBar(ipc::PCI::Device *dev,size_t i) {
 		if((bar->size & BAR_ADDR_SPACE) == BAR_ADDR_SPACE_MEM) {
 			switch(BAR_MEM_TYPE(barValue)) {
 				case 0x00:
-					bar->flags |= ipc::PCI::Bar::BAR_MEM_32;
+					bar->flags |= esc::PCI::Bar::BAR_MEM_32;
 					break;
 				case 0x02:
-					bar->flags |= ipc::PCI::Bar::BAR_MEM_64;
+					bar->flags |= esc::PCI::Bar::BAR_MEM_64;
 					break;
 			}
 			if(BAR_MEM_PREFETCHABLE(barValue))
-				bar->flags |= ipc::PCI::Bar::BAR_MEM_PREFETCH;
+				bar->flags |= esc::PCI::Bar::BAR_MEM_PREFETCH;
 			bar->size &= BAR_ADDR_MEM_MASK;
 		}
 		else

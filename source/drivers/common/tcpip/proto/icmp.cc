@@ -23,7 +23,7 @@
 #include "icmp.h"
 #include "ipv4.h"
 
-ssize_t ICMP::send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
+ssize_t ICMP::send(const esc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 		uint8_t code,uint8_t type,uint16_t id,uint16_t seq) {
 	if(nbytes > MAX_ECHO_PAYLOAD_SIZE)
 		return -EINVAL;
@@ -41,7 +41,7 @@ ssize_t ICMP::send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbyte
 	memcpy(icmp + 1,payload,nbytes);
 
 	icmp->checksum = 0;
-	icmp->checksum = ipc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),icmp->size() + nbytes);
+	icmp->checksum = esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),icmp->size() + nbytes);
 
 	ssize_t res = IPv4<ICMP>::send(pkt,total,ip,IP_PROTO);
 	free(pkt);

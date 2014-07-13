@@ -43,14 +43,14 @@ public:
 		return sizeof(ICMP);
 	}
 
-	static ssize_t sendEcho(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
+	static ssize_t sendEcho(const esc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 			uint16_t id,uint16_t seq) {
 		return send(ip,payload,nbytes,0,CMD_ECHO,id,seq);
 	}
 	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
 private:
-	static ssize_t send(const ipc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
+	static ssize_t send(const esc::Net::IPv4Addr &ip,const void *payload,size_t nbytes,
 		uint8_t code,uint8_t type,uint16_t id,uint16_t seq);
 	static ssize_t handleEcho(const Ethernet<IPv4<ICMP>> *packet,size_t sz);
 

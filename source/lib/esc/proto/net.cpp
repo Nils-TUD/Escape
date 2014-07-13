@@ -21,7 +21,7 @@
 #include <sys/endian.h>
 #include <esc/proto/net.h>
 
-namespace ipc {
+namespace esc {
 
 uint16_t Net::ipv4Checksum(const uint16_t *data,uint16_t length) {
 	uint32_t sum = 0;
@@ -41,8 +41,8 @@ uint16_t Net::ipv4Checksum(const uint16_t *data,uint16_t length) {
 uint16_t Net::ipv4PayloadChecksum(const Net::IPv4Addr &src,const Net::IPv4Addr &dst,uint16_t protocol,
 		const uint16_t *header,size_t sz) {
 	struct {
-		ipc::Net::IPv4Addr src;
-		ipc::Net::IPv4Addr dst;
+		esc::Net::IPv4Addr src;
+		esc::Net::IPv4Addr dst;
 		uint16_t proto;
 		uint16_t dataSize;
 	} A_PACKED pseudoHeader = {

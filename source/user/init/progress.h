@@ -65,7 +65,7 @@ private:
 	size_t _startSkip;
 	size_t _itemCount;
 	size_t _finished;
-	ipc::Screen *_scr;
-	ipc::FrameBuffer *_fb;
+	esc::Screen *_scr;
+	esc::FrameBuffer *_fb;
 	char _emptyBar[BAR_WIDTH * 2];
 };

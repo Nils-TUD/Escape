@@ -39,15 +39,15 @@ namespace info {
 		explicit arp() : _ip(), _mac() {
 		}
 
-		const ipc::Net::IPv4Addr &ip() const {
+		const esc::Net::IPv4Addr &ip() const {
 			return _ip;
 		}
-		const ipc::NIC::MAC &mac() const {
+		const esc::NIC::MAC &mac() const {
 			return _mac;
 		}
 
 	private:
-		ipc::Net::IPv4Addr _ip;
-		ipc::NIC::MAC _mac;
+		esc::Net::IPv4Addr _ip;
+		esc::NIC::MAC _mac;
 	};
 }

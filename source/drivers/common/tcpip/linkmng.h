@@ -43,7 +43,7 @@ public:
 		return doGetByName(name);
 	}
 
-	static std::shared_ptr<Link> getByIp(const ipc::Net::IPv4Addr &ip) {
+	static std::shared_ptr<Link> getByIp(const esc::Net::IPv4Addr &ip) {
 		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(ip == (*it)->ip())
@@ -56,7 +56,7 @@ public:
 		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(name == (*it)->name()) {
-				(*it)->status(ipc::Net::KILLED);
+				(*it)->status(esc::Net::KILLED);
 				_links.erase(it);
 				return 0;
 			}

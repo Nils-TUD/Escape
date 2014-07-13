@@ -29,15 +29,15 @@
 class VGA {
 	VGA() = delete;
 
-	class ScreenDevice : public ipc::ScreenDevice<> {
+	class ScreenDevice : public esc::ScreenDevice<> {
 	public:
-		explicit ScreenDevice(const std::vector<ipc::Screen::Mode> &modes,const char *path,mode_t mode)
-			: ipc::ScreenDevice<>(modes,path,mode) {
+		explicit ScreenDevice(const std::vector<esc::Screen::Mode> &modes,const char *path,mode_t mode)
+			: esc::ScreenDevice<>(modes,path,mode) {
 		}
 
-		virtual void setScreenMode(ipc::ScreenClient *c,const char *shm,ipc::Screen::Mode *mode,int type,bool sw);
-		virtual void setScreenCursor(ipc::ScreenClient *c,gpos_t x,gpos_t y,int);
-		virtual void updateScreen(ipc::ScreenClient *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+		virtual void setScreenMode(esc::ScreenClient *c,const char *shm,esc::Screen::Mode *mode,int type,bool sw);
+		virtual void setScreenCursor(esc::ScreenClient *c,gpos_t x,gpos_t y,int);
+		virtual void updateScreen(esc::ScreenClient *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 	};
 
 	enum {
@@ -55,5 +55,5 @@ public:
 
 private:
 	static uint8_t *screen;
-	static std::vector<ipc::Screen::Mode> modes;
+	static std::vector<esc::Screen::Mode> modes;
 };

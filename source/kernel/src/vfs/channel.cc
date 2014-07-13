@@ -130,7 +130,7 @@ void VFSChannel::closeForDriver() {
 
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res;
 	Proc *p;
 	msgid_t mid;
@@ -152,7 +152,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	assert(p != NULL);
 
 	/* send msg to driver */
-	ib << ipc::FileOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),ipc::CString(path));
+	ib << esc::FileOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),esc::CString(path));
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;
@@ -169,7 +169,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 		goto error;
 
 	{
-		ipc::FileOpen::Response r;
+		esc::FileOpen::Response r;
 		ib >> r;
 		if(r.res < 0) {
 			res = r.res;
@@ -212,7 +212,7 @@ off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whenc
 
 ssize_t VFSChannel::getSize(pid_t pid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	if(isSupported(DEV_SIZE) < 0)
 		return 0;
@@ -234,7 +234,7 @@ ssize_t VFSChannel::getSize(pid_t pid) {
 
 int VFSChannel::stat(pid_t pid,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(buffer,sizeof(buffer));
+	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	/* send msg to fs */
 	ssize_t res = send(pid,0,MSG_FS_ISTAT,NULL,0,NULL,0);
@@ -276,7 +276,7 @@ uint VFSChannel::getReceiveFlags() const {
 
 ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
 
 	if((res = isSupported(DEV_READ)) < 0)
@@ -284,7 +284,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 
 	/* send msg to driver */
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
-	ib << ipc::FileRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
+	ib << esc::FileRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
 	res = file->sendMsg(pid,MSG_FILE_READ,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
@@ -310,7 +310,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		}
 
 		/* handle response */
-		ipc::FileRead::Response r;
+		esc::FileRead::Response r;
 		ib >> r;
 		if(r.res < 0)
 			return r.res;
@@ -325,7 +325,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 
 ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 
@@ -333,7 +333,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 		return res;
 
 	/* send msg and data to driver */
-	ib << ipc::FileWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
+	ib << esc::FileWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
 	res = file->sendMsg(pid,MSG_FILE_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
@@ -357,7 +357,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 			return res;
 		}
 
-		ipc::FileWrite::Response r;
+		esc::FileWrite::Response r;
 		ib >> r;
 		return r.res;
 	}
@@ -366,7 +366,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 
 int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 
 	/* send SIGCANCEL to the handling thread of this channel (this might be dead; so use getRef) */
 	bool sent = false;
@@ -400,7 +400,7 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 
 int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
 
 	if(shmem != NULL)
@@ -409,7 +409,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* send msg to driver */
-	ib << ipc::FileShFile::Request(size,ipc::CString(path));
+	ib << esc::FileShFile::Request(size,esc::CString(path));
 	if(ib.error())
 		return -EINVAL;
 	res = file->sendMsg(pid,MSG_DEV_SHFILE,ib.buffer(),ib.pos(),NULL,0);
@@ -424,7 +424,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* handle response */
-	ipc::FileShFile::Response r;
+	esc::FileShFile::Response r;
 	ib >> r;
 	if(r.res < 0)
 		return r.res;
@@ -435,7 +435,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 
 int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	ipc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	msgid_t mid;
 	uint flags;
 
@@ -449,7 +449,7 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 		return res;
 
 	/* send msg to driver */
-	ib << ipc::FileCreatSibl::Request(sibl->fd,arg);
+	ib << esc::FileCreatSibl::Request(sibl->fd,arg);
 	res = file->sendMsg(pid,MSG_DEV_CREATSIBL,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		goto error;
@@ -473,7 +473,7 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 			goto error;
 		}
 
-		ipc::FileCreatSibl::Response r;
+		esc::FileCreatSibl::Response r;
 		ib >> r;
 		if(r.res < 0) {
 			res = r.res;

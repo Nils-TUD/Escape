@@ -26,7 +26,7 @@
 
 UDP::socket_map UDP::_socks;
 
-ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp,
+ssize_t UDP::send(const esc::Net::IPv4Addr &ip,esc::port_t srcp,esc::port_t dstp,
 		const void *data,size_t nbytes) {
 	Route route = Route::find(ip);
 	if(!route.valid())
@@ -44,7 +44,7 @@ ssize_t UDP::send(const ipc::Net::IPv4Addr &ip,ipc::port_t srcp,ipc::port_t dstp
 	memcpy(udp + 1,data,nbytes);
 
 	udp->checksum = 0;
-	udp->checksum = ipc::Net::ipv4PayloadChecksum(route.link->ip(),ip,IP_PROTO,
+	udp->checksum = esc::Net::ipv4PayloadChecksum(route.link->ip(),ip,IP_PROTO,
 		reinterpret_cast<uint16_t*>(udp),sizeof(UDP) + nbytes);
 
 	ssize_t res = IPv4<UDP>::sendOver(route,pkt,total,ip,IP_PROTO);
@@ -57,8 +57,8 @@ ssize_t UDP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 	const UDP *udp = &pkt->payload.payload;
 	socket_map::iterator it = _socks.find(be16tocpu(udp->dstPort));
 	if(it != _socks.end()) {
-		ipc::Socket::Addr sa;
-		sa.family = ipc::Socket::AF_INET;
+		esc::Socket::Addr sa;
+		sa.family = esc::Socket::AF_INET;
 		sa.d.ipv4.addr = pkt->payload.src.value();
 		sa.d.ipv4.port = be16tocpu(udp->srcPort);
 		size_t offset = reinterpret_cast<const uint8_t*>(udp + 1) - packet.data<uint8_t*>();

@@ -51,7 +51,7 @@ public:
 	}
 
 private:
-	static ipc::Socket getEndpoint(CtrlConRef &ctrlRef) {
+	static esc::Socket getEndpoint(CtrlConRef &ctrlRef) {
 		const char *reply = ctrlRef.get()->execute(CtrlCon::CMD_PASV,"");
 		char *brace = strchr(reply,'(');
 		assert(brace);
@@ -62,14 +62,14 @@ private:
 			is.get();
 		}
 
-		ipc::Socket sock("/dev/socket",ipc::Socket::SOCK_STREAM,ipc::Socket::PROTO_TCP);
-		ipc::Socket::Addr addr;
-		addr.family = ipc::Socket::AF_INET;
-		addr.d.ipv4.addr = ipc::Net::IPv4Addr(parts[0],parts[1],parts[2],parts[3]).value();
+		esc::Socket sock("/dev/socket",esc::Socket::SOCK_STREAM,esc::Socket::PROTO_TCP);
+		esc::Socket::Addr addr;
+		addr.family = esc::Socket::AF_INET;
+		addr.d.ipv4.addr = esc::Net::IPv4Addr(parts[0],parts[1],parts[2],parts[3]).value();
 		addr.d.ipv4.port = (parts[4] << 8) | parts[5];
 		sock.connect(addr);
 		return sock;
 	}
 
-	ipc::Socket _sock;
+	esc::Socket _sock;
 };

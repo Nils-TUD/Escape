@@ -29,7 +29,7 @@ using namespace std;
 using namespace gui;
 
 static shared_ptr<ComboBox> combo;
-static vector<ipc::Screen::Mode> modes;
+static vector<esc::Screen::Mode> modes;
 
 static void onCancel(UIElement &) {
 	Application::getInstance()->exit();
@@ -57,7 +57,7 @@ int main() {
 	grid->add(make_control<Label>("Screenmode:"),GridPos(0,0));
 
 	combo = make_control<ComboBox>();
-	const ipc::Screen::Mode *curmode = app->getMode();
+	const esc::Screen::Mode *curmode = app->getMode();
 	modes = app->getModes();
 	for(auto it = modes.begin(); it != modes.end(); ++it) {
 		ostringstream os;

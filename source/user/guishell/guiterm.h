@@ -24,7 +24,7 @@
 
 #include "shellcontrol.h"
 
-class GUIVTermDevice : public ipc::VTermDevice {
+class GUIVTermDevice : public esc::VTermDevice {
 	/**
 	 * The total size of the buffer
 	 */
@@ -45,15 +45,15 @@ private:
 		/* we do the update after every request anyway */
 	}
 
-	void write(ipc::IPCStream &is);
-	void getMode(ipc::IPCStream &is);
-	void getModes(ipc::IPCStream &is);
+	void write(esc::IPCStream &is);
+	void getMode(esc::IPCStream &is);
+	void getModes(esc::IPCStream &is);
 
 	void prepareMode();
 	static void setCursor(sVTerm *vt);
 
 	sVTerm _vt;
-	ipc::Screen::Mode _mode;
+	esc::Screen::Mode _mode;
 	std::shared_ptr<ShellControl> _sh;
 	char *_rbuffer;
 	size_t _rbufPos;

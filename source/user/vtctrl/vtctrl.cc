@@ -43,19 +43,19 @@ int main(int argc,const char *argv[]) {
 		usage(argv[0]);
 	}
 
-	ipc::VTerm vterm(std::env::get("TERM").c_str());
+	esc::VTerm vterm(std::env::get("TERM").c_str());
 	if(list) {
-		std::vector<ipc::Screen::Mode> modes = vterm.getModes();
-		ipc::Screen::Mode curMode = vterm.getMode();
+		std::vector<esc::Screen::Mode> modes = vterm.getModes();
+		esc::Screen::Mode curMode = vterm.getMode();
 
 		printf("Available modes:\n");
 		for(auto it = modes.begin(); it != modes.end(); ++it) {
 			printf("%c %5d: %3u x %3u cells, %4u x %4u pixels, %2ubpp, %s (%s,%s)\n",
 					curMode.id == it->id ? '*' : ' ',it->id,
 					it->cols,it->rows,it->width,it->height,it->bitsPerPixel,
-					it->mode == ipc::Screen::MODE_TEXT ? "text     " : "graphical",
-					(it->type & ipc::Screen::MODE_TYPE_TUI) ? "tui" : "-",
-					(it->type & ipc::Screen::MODE_TYPE_GUI) ? "gui" : "-");
+					it->mode == esc::Screen::MODE_TEXT ? "text     " : "graphical",
+					(it->type & esc::Screen::MODE_TYPE_TUI) ? "tui" : "-",
+					(it->type & esc::Screen::MODE_TYPE_GUI) ? "gui" : "-");
 		}
 	}
 	else

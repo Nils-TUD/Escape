@@ -27,7 +27,7 @@
 #include <ostream>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 class Net {
 public:

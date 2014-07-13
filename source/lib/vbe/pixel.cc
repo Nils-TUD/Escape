@@ -24,9 +24,9 @@
 #include <assert.h>
 #include <string.h>
 
-static uint8_t *vbe_setPixel16(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
-static uint8_t *vbe_setPixel24(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
-static uint8_t *vbe_setPixel32(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
+static uint8_t *vbe_setPixel16(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
+static uint8_t *vbe_setPixel24(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
+static uint8_t *vbe_setPixel32(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color);
 
 static fSetPixel setPixel[] = {
 	/*  0 bpp */	NULL,
@@ -36,22 +36,22 @@ static fSetPixel setPixel[] = {
 	/* 32 bpp */	vbe_setPixel32
 };
 
-void vbe_setPixel(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color) {
+void vbe_setPixel(const esc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t x,gpos_t y,uint8_t *color) {
 	size_t bpp = mode.bitsPerPixel / 8;
 	uint8_t *pos = frmbuf + (y * mode.width + x) * bpp;
 	vbe_setPixelAt(mode,pos,color);
 }
 
-uint8_t *vbe_setPixelAt(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t *color) {
+uint8_t *vbe_setPixelAt(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t *color) {
 	assert(mode.bitsPerPixel / 8 >= 2 && mode.bitsPerPixel / 8 <= 4);
 	return setPixel[mode.bitsPerPixel / 8](mode,pos,color);
 }
 
-fSetPixel vbe_getPixelFunc(const ipc::Screen::Mode &mode) {
+fSetPixel vbe_getPixelFunc(const esc::Screen::Mode &mode) {
 	return setPixel[mode.bitsPerPixel / 8];
 }
 
-static uint8_t *vbe_setPixel16(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color) {
+static uint8_t *vbe_setPixel16(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color) {
 	uint8_t red = color[0] >> (8 - mode.redMaskSize);
 	uint8_t green = color[1] >> (8 - mode.greenMaskSize);
 	uint8_t blue = color[2] >> (8 - mode.blueMaskSize);
@@ -62,7 +62,7 @@ static uint8_t *vbe_setPixel16(const ipc::Screen::Mode &mode,uint8_t *vidwork,ui
 	return vidwork + 2;
 }
 
-static uint8_t *vbe_setPixel24(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color) {
+static uint8_t *vbe_setPixel24(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color) {
 	uint8_t red = color[0] >> (8 - mode.redMaskSize);
 	uint8_t green = color[1] >> (8 - mode.greenMaskSize);
 	uint8_t blue = color[2] >> (8 - mode.blueMaskSize);
@@ -75,7 +75,7 @@ static uint8_t *vbe_setPixel24(const ipc::Screen::Mode &mode,uint8_t *vidwork,ui
 	return vidwork + 3;
 }
 
-static uint8_t *vbe_setPixel32(const ipc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color) {
+static uint8_t *vbe_setPixel32(const esc::Screen::Mode &mode,uint8_t *vidwork,uint8_t *color) {
 	uint8_t red = color[0] >> (8 - mode.redMaskSize);
 	uint8_t green = color[1] >> (8 - mode.greenMaskSize);
 	uint8_t blue = color[2] >> (8 - mode.blueMaskSize);

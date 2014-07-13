@@ -32,13 +32,13 @@
 #include <stdlib.h>
 #include <assert.h>
 
-using namespace ipc;
+using namespace esc;
 
 FSDevice *FSDevice::_inst;
 
 static void sigTermHndl(A_UNUSED int sig) {
 	/* notify init that we're alive and promise to terminate as soon as possible */
-	ipc::Init init("/dev/init");
+	esc::Init init("/dev/init");
 	init.iamalive();
 	FSDevice::getInstance()->stop();
 }

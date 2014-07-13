@@ -31,7 +31,7 @@
 #include <time.h>
 #include <dns.h>
 
-using namespace ipc;
+using namespace esc;
 
 /* based on:
  * - http://tools.ietf.org/html/rfc2131
@@ -216,7 +216,7 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 	Socket sock("/dev/socket",Socket::SOCK_DGRAM,Socket::PROTO_UDP);
 
 	// bind the socket to the client-port, because this is fixed in the DHCP protocol
-	ipc::Socket::Addr addr;
+	esc::Socket::Addr addr;
 	addr.family = Socket::AF_INET;
 	addr.d.ipv4.addr = Net::IPv4Addr(0,0,0,0).value();
 	addr.d.ipv4.port = CLIENT_PORT;
@@ -253,7 +253,7 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 		alarm(timeout);
 
 		try {
-			ipc::Socket::Addr src;
+			esc::Socket::Addr src;
 			sock.recvfrom(src,&msg,sizeof(msg));
 			uint8_t msgtype = handleReply(&msg,cfg);
 			switch(msgtype) {
@@ -357,7 +357,7 @@ int main(int argc,char **argv) {
 		std::cout << "Router     : " << cfg.router << "\n";
 		std::cout << "DNS server : " << cfg.dnsServer << "\n";
 
-		net.linkConfig(link,cfg.ipAddr,cfg.netmask,ipc::Net::UP);
+		net.linkConfig(link,cfg.ipAddr,cfg.netmask,esc::Net::UP);
 		net.routeAdd(link,cfg.ipAddr.getNetwork(cfg.netmask),Net::IPv4Addr(),cfg.netmask);
 		net.routeAdd(link,Net::IPv4Addr(),cfg.router,Net::IPv4Addr());
 

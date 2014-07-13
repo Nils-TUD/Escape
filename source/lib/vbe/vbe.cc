@@ -23,9 +23,9 @@
 
 #include "font.inc"
 
-static void vbet_drawCharLoop16(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
-static void vbet_drawCharLoop24(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
-static void vbet_drawCharLoop32(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
+static void vbet_drawCharLoop16(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
+static void vbet_drawCharLoop24(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
+static void vbet_drawCharLoop32(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg);
 
 static uint8_t colors[][3] = {
 	/* BLACK   */ {0x00,0x00,0x00},
@@ -50,7 +50,7 @@ uint8_t *vbet_getColor(tColor col) {
 	return colors[col];
 }
 
-void vbet_drawChar(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
+void vbet_drawChar(const esc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
 	uint8_t *fg = vbet_getColor(color & 0xf);
 	uint8_t *bg = vbet_getColor(color >> 4);
 	gsize_t rx = mode.width;
@@ -70,7 +70,7 @@ void vbet_drawChar(const ipc::Screen::Mode &mode,uint8_t *frmbuf,gpos_t col,gpos
 	}
 }
 
-static void vbet_drawCharLoop16(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
+static void vbet_drawCharLoop16(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
 	int x,y;
 	uint8_t *vidwork;
 	gsize_t rx = mode.width;
@@ -108,7 +108,7 @@ static void vbet_drawCharLoop16(const ipc::Screen::Mode &mode,uint8_t *pos,uint8
 	}
 }
 
-static void vbet_drawCharLoop24(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
+static void vbet_drawCharLoop24(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
 	int x,y;
 	uint8_t *vidwork;
 	gsize_t rx = mode.width;
@@ -148,7 +148,7 @@ static void vbet_drawCharLoop24(const ipc::Screen::Mode &mode,uint8_t *pos,uint8
 	}
 }
 
-static void vbet_drawCharLoop32(const ipc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
+static void vbet_drawCharLoop32(const esc::Screen::Mode &mode,uint8_t *pos,uint8_t c,uint8_t *fg,uint8_t *bg) {
 	int x,y;
 	uint8_t *vidwork;
 	gsize_t rx = mode.width;

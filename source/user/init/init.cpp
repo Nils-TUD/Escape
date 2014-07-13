@@ -45,15 +45,15 @@ static ProcessManager pm;
 static int state = STATE_RUN;
 static InitDevice *dev;
 
-class InitDevice : public ipc::Device {
+class InitDevice : public esc::Device {
 public:
-	explicit InitDevice(const char *path,mode_t mode) : ipc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+	explicit InitDevice(const char *path,mode_t mode) : esc::Device(path,mode,DEV_TYPE_SERVICE,0) {
 		set(MSG_INIT_REBOOT,std::make_memfun(this,&InitDevice::reboot),false);
 		set(MSG_INIT_SHUTDOWN,std::make_memfun(this,&InitDevice::shutdown),false);
 		set(MSG_INIT_IAMALIVE,std::make_memfun(this,&InitDevice::iamalive),false);
 	}
 
-	void reboot(ipc::IPCStream &) {
+	void reboot(esc::IPCStream &) {
 		if(state == STATE_RUN) {
 			state = STATE_REBOOT;
 			if(alarm(SHUTDOWN_TIMEOUT) < 0)
@@ -62,7 +62,7 @@ public:
 		}
 	}
 
-	void shutdown(ipc::IPCStream &) {
+	void shutdown(esc::IPCStream &) {
 		if(state == STATE_RUN) {
 			state = STATE_SHUTDOWN;
 			if(alarm(SHUTDOWN_TIMEOUT) < 0)
@@ -71,7 +71,7 @@ public:
 		}
 	}
 
-	void iamalive(ipc::IPCStream &is) {
+	void iamalive(esc::IPCStream &is) {
 		pid_t pid;
 		is >> pid;
 

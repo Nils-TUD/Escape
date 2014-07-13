@@ -48,7 +48,7 @@ public:
 	static int run(void*);
 
 private:
-	static void updateLEDs(const ipc::Keyb::Event &ev);
+	static void updateLEDs(const esc::Keyb::Event &ev);
 	static int irqThread(void*);
 
 	static uint8_t _leds;

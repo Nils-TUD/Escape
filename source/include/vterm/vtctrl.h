@@ -66,9 +66,9 @@ struct sVTerm {
 	uchar foreground;
 	uchar background;
 	/* ui-manager for input and output */
-	ipc::UI *ui;
+	esc::UI *ui;
 	/* speaker */
-	ipc::Speaker *speaker;
+	esc::Speaker *speaker;
 	/* the first line with content */
 	size_t firstLine;
 	/* the line where row+col starts */
@@ -139,7 +139,7 @@ typedef enum {
  * @param mode the video mode
  * @return true if successfull
  */
-bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode);
+bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode);
 
 /**
  * Handles the control-commands

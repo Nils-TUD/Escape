@@ -62,9 +62,9 @@ const CtrlCon::Command CtrlCon::cmds[] = {
 };
 
 void CtrlCon::connect() {
-	_sock = new ipc::Socket("/dev/socket",ipc::Socket::SOCK_STREAM,ipc::Socket::PROTO_TCP);
-	ipc::Socket::Addr addr;
-	addr.family = ipc::Socket::AF_INET;
+	_sock = new esc::Socket("/dev/socket",esc::Socket::SOCK_STREAM,esc::Socket::PROTO_TCP);
+	esc::Socket::Addr addr;
+	addr.family = esc::Socket::AF_INET;
 	addr.d.ipv4.addr = _dest.value();
 	addr.d.ipv4.port = _port;
 	_sock->connect(addr);

@@ -33,7 +33,7 @@ DGramSocket::~DGramSocket() {
 	}
 }
 
-int DGramSocket::bind(const ipc::Socket::Addr *sa) {
+int DGramSocket::bind(const esc::Socket::Addr *sa) {
 	if(sa->d.ipv4.port >= PRIVATE_PORTS)
 		return -EINVAL;
 	if(_localPort != 0)
@@ -45,7 +45,7 @@ int DGramSocket::bind(const ipc::Socket::Addr *sa) {
 	return res;
 }
 
-ssize_t DGramSocket::sendto(msgid_t,const ipc::Socket::Addr *sa,const void *buffer,size_t size) {
+ssize_t DGramSocket::sendto(msgid_t,const esc::Socket::Addr *sa,const void *buffer,size_t size) {
 	if(sa == NULL)
 		return -EINVAL;
 
@@ -57,5 +57,5 @@ ssize_t DGramSocket::sendto(msgid_t,const ipc::Socket::Addr *sa,const void *buff
 		UDP::addSocket(this,_localPort);
 	}
 
-	return UDP::send(ipc::Net::IPv4Addr(sa->d.ipv4.addr),_localPort,sa->d.ipv4.port,buffer,size);
+	return UDP::send(esc::Net::IPv4Addr(sa->d.ipv4.addr),_localPort,sa->d.ipv4.port,buffer,size);
 }

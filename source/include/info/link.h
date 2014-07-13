@@ -61,16 +61,16 @@ namespace info {
 		const std::string &name() const {
 			return _name;
 		}
-		ipc::Net::Status status() const {
+		esc::Net::Status status() const {
 			return _status;
 		}
-		const ipc::NIC::MAC &mac() const {
+		const esc::NIC::MAC &mac() const {
 			return _mac;
 		}
-		const ipc::Net::IPv4Addr &ip() const {
+		const esc::Net::IPv4Addr &ip() const {
 			return _ip;
 		}
-		const ipc::Net::IPv4Addr &subnetMask() const {
+		const esc::Net::IPv4Addr &subnetMask() const {
 			return _subnetmask;
 		}
 
@@ -81,9 +81,9 @@ namespace info {
 		ulong _txbytes;
 		ulong _mtu;
 		std::string _name;
-		ipc::Net::Status _status;
-		ipc::NIC::MAC _mac;
-		ipc::Net::IPv4Addr _ip;
-		ipc::Net::IPv4Addr _subnetmask;
+		esc::Net::Status _status;
+		esc::NIC::MAC _mac;
+		esc::Net::IPv4Addr _ip;
+		esc::Net::IPv4Addr _subnetmask;
 	};
 }

@@ -34,27 +34,27 @@ static int startFib = 20;
 static int cpuCount = sysconf(CONF_CPU_COUNT);
 static int *tids = new int[cpuCount];
 
-class FibDevice : public ipc::Device {
+class FibDevice : public esc::Device {
 public:
 	explicit FibDevice(const char *path,mode_t mode)
-			: ipc::Device(path,mode,DEV_TYPE_SERVICE,DEV_OPEN), _next(0) {
+			: esc::Device(path,mode,DEV_TYPE_SERVICE,DEV_OPEN), _next(0) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&FibDevice::open));
 		set(0x1234,std::make_memfun(this,&FibDevice::fib));
 	}
 
-	void open(ipc::IPCStream &is) {
+	void open(esc::IPCStream &is) {
 		::bindto(is.fd(),tids[_next]);
 		_next = (_next + 1) % cpuCount;
 
-		is << ipc::FileOpen::Response(0) << ipc::Reply();
+		is << esc::FileOpen::Response(0) << esc::Reply();
 	}
 
-	void fib(ipc::IPCStream &is) {
+	void fib(esc::IPCStream &is) {
 		int res,n;
 		is >> n;
 
 		res = calcFib(n);
-		is << res << ipc::Reply();
+		is << res << esc::Reply();
 		printf("[%d] Done...\n",gettid());
 		fflush(stdout);
 	}
@@ -77,10 +77,10 @@ static int driverthread(void *arg) {
 
 static int clientthread(A_UNUSED void *arg) {
 	int n = startFib;
-	ipc::IPCStream is("/dev/parallel");
+	esc::IPCStream is("/dev/parallel");
 	while(1) {
 		int res;
-		is << n << ipc::SendReceive(0x1234) >> res;
+		is << n << esc::SendReceive(0x1234) >> res;
 		printf("[%d] fib(%d) = %d\n",gettid(),n,res);
 		fflush(stdout);
 		n++;

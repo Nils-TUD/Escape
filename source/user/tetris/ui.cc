@@ -37,13 +37,13 @@ UI::UI(int c,int r,int size)
 	for(int id = 1; _fb == NULL; ++id) {
 		snprintf(shmname,sizeof(shmname),"tetris%d",id);
 		try {
-			_fb = new ipc::FrameBuffer(_mode,shmname,ipc::Screen::MODE_TYPE_TUI,0644);
+			_fb = new esc::FrameBuffer(_mode,shmname,esc::Screen::MODE_TYPE_TUI,0644);
 		}
 		catch(...) {
 		}
 	}
 
-	_ui.setMode(ipc::Screen::MODE_TYPE_TUI,_mode.id,shmname,true);
+	_ui.setMode(esc::Screen::MODE_TYPE_TUI,_mode.id,shmname,true);
 }
 
 UI::~UI() {
@@ -179,12 +179,12 @@ void UI::start() {
 		error("Unable to start input-thread");
 
 	while(_run) {
-		ipc::UIEvents::Event ev;
+		esc::UIEvents::Event ev;
 		_uievents >> ev;
 		switch(ev.type) {
-			case ipc::UIEvents::Event::TYPE_KEYBOARD:
-			case ipc::UIEvents::Event::TYPE_UI_ACTIVE:
-			case ipc::UIEvents::Event::TYPE_UI_INACTIVE:
+			case esc::UIEvents::Event::TYPE_KEYBOARD:
+			case esc::UIEvents::Event::TYPE_UI_ACTIVE:
+			case esc::UIEvents::Event::TYPE_UI_INACTIVE:
 				Game::handleKey(ev);
 				break;
 

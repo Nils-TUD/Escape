@@ -43,7 +43,7 @@ static char *vtctrl_createEmptyLine(sVTerm *vt,size_t cols);
 static char **vtctrl_createLines(size_t cols,size_t rows);
 static void vtctrl_freeLines(char **lines,size_t rows);
 
-bool vtctrl_init(sVTerm *vt,ipc::Screen::Mode *mode) {
+bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode) {
 	/* init state */
 	vt->mutex = new std::mutex();
 	/* by default we have no handlers for that */
@@ -198,13 +198,13 @@ int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2) {
 			break;
 		case MSG_VT_GETFLAG: {
 			switch(arg1) {
-				case ipc::VTerm::FL_ECHO:
+				case esc::VTerm::FL_ECHO:
 					res = vt->echo;
 					break;
-				case ipc::VTerm::FL_NAVI:
+				case esc::VTerm::FL_NAVI:
 					res = vt->navigation;
 					break;
-				case ipc::VTerm::FL_READLINE:
+				case esc::VTerm::FL_READLINE:
 					res = vt->readLine;
 					break;
 				default:
@@ -215,13 +215,13 @@ int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2) {
 		break;
 		case MSG_VT_SETFLAG: {
 			switch(arg1) {
-				case ipc::VTerm::FL_ECHO:
+				case esc::VTerm::FL_ECHO:
 					vt->echo = arg2;
 					break;
-				case ipc::VTerm::FL_NAVI:
+				case esc::VTerm::FL_NAVI:
 					vt->navigation = arg2;
 					break;
-				case ipc::VTerm::FL_READLINE:
+				case esc::VTerm::FL_READLINE:
 					vt->readLine = arg2;
 					if(arg2) {
 						/* reset reading */

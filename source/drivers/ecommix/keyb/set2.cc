@@ -182,7 +182,7 @@ bool kb_set2_getKeycode(uchar *flags,uchar *keycode,ulong scanCode) {
 	/* get keycode */
 	e = scanCode2KeyCode + (scanCode % 0x84);
 	*keycode = isExt ? e->ext : e->def;
-	*flags = isBreakFlag ? ipc::Keyb::Event::FL_BREAK : 0;
+	*flags = isBreakFlag ? esc::Keyb::Event::FL_BREAK : 0;
 	isExt = false;
 	isBreakFlag = false;
 	return true;

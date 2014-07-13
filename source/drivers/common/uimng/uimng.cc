@@ -80,13 +80,13 @@ static int mouseClientThread(A_UNUSED void *arg) {
 		return EXIT_FAILURE;
 
 	/* open mouse */
-	ipc::IPCStream ms("/dev/mouse");
-	ipc::Mouse::Event ev;
+	esc::IPCStream ms("/dev/mouse");
+	esc::Mouse::Event ev;
 	while(1) {
-		ms >> ipc::ReceiveData(&ev,sizeof(ev));
+		ms >> esc::ReceiveData(&ev,sizeof(ev));
 
-		ipc::UIEvents::Event uiev;
-		uiev.type = ipc::UIEvents::Event::TYPE_MOUSE;
+		esc::UIEvents::Event uiev;
+		uiev.type = esc::UIEvents::Event::TYPE_MOUSE;
 		uiev.d.mouse = ev;
 
 		try {
@@ -100,7 +100,7 @@ static int mouseClientThread(A_UNUSED void *arg) {
 	return EXIT_SUCCESS;
 }
 
-static bool handleKey(ipc::UIEvents::Event *data) {
+static bool handleKey(esc::UIEvents::Event *data) {
 	if(data->d.keyb.keycode == VK_F12) {
 		if(~data->d.keyb.modifier & STATE_BREAK) {
 			std::lock_guard<std::mutex> guard(mutex);
@@ -157,14 +157,14 @@ static bool handleKey(ipc::UIEvents::Event *data) {
 
 static int kbClientThread(A_UNUSED void *arg) {
 	/* open keyboard */
-	ipc::IPCStream kb("/dev/keyb");
-	ipc::Keyb::Event ev;
+	esc::IPCStream kb("/dev/keyb");
+	esc::Keyb::Event ev;
 	while(1) {
-		kb >> ipc::ReceiveData(&ev,sizeof(ev));
+		kb >> esc::ReceiveData(&ev,sizeof(ev));
 
 		/* translate keycode */
-		ipc::UIEvents::Event uiev;
-		uiev.type = ipc::UIEvents::Event::TYPE_KEYBOARD;
+		esc::UIEvents::Event uiev;
+		uiev.type = esc::UIEvents::Event::TYPE_KEYBOARD;
 		uiev.d.keyb.keycode = ev.keycode;
 
 		{

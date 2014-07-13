@@ -47,8 +47,8 @@ void Keyboard::init() {
 	PS2::devCmd(typematic.value,PS2::PORT1);
 }
 
-void Keyboard::updateLEDs(const ipc::Keyb::Event &ev) {
-	if(ev.flags & ipc::Keyb::Event::FL_BREAK) {
+void Keyboard::updateLEDs(const esc::Keyb::Event &ev) {
+	if(ev.flags & esc::Keyb::Event::FL_BREAK) {
 		uint8_t oldLeds = _leds;
 		if(ev.keycode == VK_CAPS)
 			_leds ^= LED_CAPS_LOCK;
@@ -65,7 +65,7 @@ void Keyboard::updateLEDs(const ipc::Keyb::Event &ev) {
 }
 
 int Keyboard::run(void*) {
-	ipc::ClientDevice<> dev("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	esc::ClientDevice<> dev("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 
 	if(startthread(irqThread,&dev) < 0)
 		error("Unable to start IRQ-thread");
@@ -75,7 +75,7 @@ int Keyboard::run(void*) {
 }
 
 int Keyboard::irqThread(void *arg) {
-	ipc::ClientDevice<> *dev = (ipc::ClientDevice<>*)arg;
+	esc::ClientDevice<> *dev = (esc::ClientDevice<>*)arg;
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	int sem = semcrtirq(PS2::IRQ_KB,"PS/2 Keyboard",NULL,NULL);
 	if(sem < 0)
@@ -88,12 +88,12 @@ int Keyboard::irqThread(void *arg) {
 			continue;
 
 		uint8_t sc = inbyte(PS2::PORT_DATA);
-		ipc::Keyb::Event ev;
+		esc::Keyb::Event ev;
 		if(ScancodeSet1::getKeycode(&ev.flags,&ev.keycode,sc,_leds)) {
-			ipc::IPCBuf ib(buffer,sizeof(buffer));
+			esc::IPCBuf ib(buffer,sizeof(buffer));
 			ib << ev;
 			try {
-				dev->broadcast(ipc::Keyb::Event::MID,ib);
+				dev->broadcast(esc::Keyb::Event::MID,ib);
 			}
 			catch(const std::exception &e) {
 				printe("%s",e.what());

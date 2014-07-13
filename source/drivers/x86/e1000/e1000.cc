@@ -158,14 +158,14 @@ int main(int argc,char **argv) {
 	if(argc != 2)
 		error("Usage: %s <device>\n",argv[0]);
 
-	ipc::PCI pci("/dev/pci");
+	esc::PCI pci("/dev/pci");
 
 	// find e1000 NIC
-	ipc::PCI::Device nic;
+	esc::PCI::Device nic;
 	try {
 		bool found = false;
 		for(int no = 0; !found; ++no) {
-			nic = pci.getByClass(ipc::NIC::PCI_CLASS,ipc::NIC::PCI_SUBCLASS,no);
+			nic = pci.getByClass(esc::NIC::PCI_CLASS,esc::NIC::PCI_SUBCLASS,no);
 			for(size_t i = 0; i < ARRAY_SIZE(nics); ++i) {
 				if(nic.deviceId == nics[i].dev && nic.vendorId == nics[i].vendor) {
 					found = true;
@@ -181,10 +181,10 @@ int main(int argc,char **argv) {
 	}
 
 	E1000 *e1000 = new E1000(pci,nic);
-	ipc::NICDevice dev(argv[1],0770,e1000);
-	e1000->setHandler(std::make_memfun(&dev,&ipc::NICDevice::checkPending));
+	esc::NICDevice dev(argv[1],0770,e1000);
+	e1000->setHandler(std::make_memfun(&dev,&esc::NICDevice::checkPending));
 
-	ipc::NIC::MAC mac = dev.mac();
+	esc::NIC::MAC mac = dev.mac();
 	print("NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x",
 		mac.bytes()[0],mac.bytes()[1],mac.bytes()[2],mac.bytes()[3],mac.bytes()[4],mac.bytes()[5]);
 	fflush(stdout);

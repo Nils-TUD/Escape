@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-using namespace ipc;
+using namespace esc;
 
 static char buffer[8192];
 
@@ -44,8 +44,8 @@ int main(int argc,char **argv) {
 
 	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
-	ipc::Socket::Addr addr;
-	addr.family = ipc::Socket::AF_INET;
+	esc::Socket::Addr addr;
+	addr.family = esc::Socket::AF_INET;
 	addr.d.ipv4.addr = 0;
 	addr.d.ipv4.port = atoi(argv[2]);
 	sock.bind(addr);

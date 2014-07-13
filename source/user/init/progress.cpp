@@ -144,16 +144,16 @@ bool Progress::connect() {
 
 	// if this fails, try again later
 	try {
-		_scr = new ipc::Screen("/dev/vga");
+		_scr = new esc::Screen("/dev/vga");
 	}
 	catch(...) {
 		return false;
 	}
 
 	// this should succeed. if it does not, it's ok to die
-	ipc::Screen::Mode mode = _scr->findTextMode(VGA_COLS,VGA_ROWS);
-	_fb = new ipc::FrameBuffer(mode,"init-vga",ipc::Screen::MODE_TYPE_TUI,0644);
-	_scr->setMode(ipc::Screen::MODE_TYPE_TUI,mode.id,"init-vga",true);
+	esc::Screen::Mode mode = _scr->findTextMode(VGA_COLS,VGA_ROWS);
+	_fb = new esc::FrameBuffer(mode,"init-vga",esc::Screen::MODE_TYPE_TUI,0644);
+	_scr->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,"init-vga",true);
 	paintBar();
 	return true;
 }

@@ -35,7 +35,7 @@ Game::State Game::_state = Game::RUNNING;
 int Game::_removed = 0;
 UI *Game::_ui;
 Grid *Game::_grid;
-ipc::Speaker *Game::_spk;
+esc::Speaker *Game::_spk;
 Stone *Game::_cur = NULL;
 Stone *Game::_next = NULL;
 std::mutex Game::_mutex;
@@ -46,7 +46,7 @@ void Game::start(int cols,int rows,int size,bool sound) {
 	struct stat info;
 	if(sound && stat("/dev/speaker",&info) == 0) {
 		try {
-			_spk = new ipc::Speaker("/dev/speaker");
+			_spk = new esc::Speaker("/dev/speaker");
 		}
 		catch(const std::exception &e) {
 			printe("%s",e.what());
@@ -101,15 +101,15 @@ Stone *Game::createStone() {
 	}
 }
 
-void Game::handleKey(const ipc::UIEvents::Event &ev) {
+void Game::handleKey(const esc::UIEvents::Event &ev) {
 	// automatically pause the game if our UI gets inactive
-	if(ev.type == ipc::UIEvents::Event::TYPE_UI_INACTIVE && _state != GAMEOVER) {
+	if(ev.type == esc::UIEvents::Event::TYPE_UI_INACTIVE && _state != GAMEOVER) {
 		_state = PAUSED;
 		update(true);
 		return;
 	}
 
-	if(ev.type != ipc::UIEvents::Event::TYPE_KEYBOARD || (ev.d.keyb.modifier & STATE_BREAK))
+	if(ev.type != esc::UIEvents::Event::TYPE_KEYBOARD || (ev.d.keyb.modifier & STATE_BREAK))
 		return;
 
 	std::lock_guard<std::mutex> guard(_mutex);

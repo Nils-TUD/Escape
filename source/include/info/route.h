@@ -39,13 +39,13 @@ namespace info {
 		explicit route() : _dest(), _subnetmask(), _gw(), _flags(), _link() {
 		}
 
-		const ipc::Net::IPv4Addr &dest() const {
+		const esc::Net::IPv4Addr &dest() const {
 			return _dest;
 		}
-		const ipc::Net::IPv4Addr &subnetMask() const {
+		const esc::Net::IPv4Addr &subnetMask() const {
 			return _subnetmask;
 		}
-		const ipc::Net::IPv4Addr &gateway() const {
+		const esc::Net::IPv4Addr &gateway() const {
 			return _gw;
 		}
 		uint flags() const {
@@ -56,9 +56,9 @@ namespace info {
 		}
 
 	private:
-		ipc::Net::IPv4Addr _dest;
-		ipc::Net::IPv4Addr _subnetmask;
-		ipc::Net::IPv4Addr _gw;
+		esc::Net::IPv4Addr _dest;
+		esc::Net::IPv4Addr _subnetmask;
+		esc::Net::IPv4Addr _gw;
 		uint _flags;
 		std::string _link;
 	};

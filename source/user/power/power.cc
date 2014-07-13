@@ -42,7 +42,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	ipc::Init init("/dev/init");
+	esc::Init init("/dev/init");
 	if(reboot)
 		init.reboot();
 	else if(shutdown)

@@ -22,7 +22,7 @@
 #include <esc/ipc/device.h>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 Device::Device(const char *path,mode_t mode,uint type,uint ops)
 	: _ops(), _id(createdev(path,mode,type,ops | DEV_CLOSE)), _run(true) {

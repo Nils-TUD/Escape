@@ -27,13 +27,13 @@
 
 #include "common.h"
 
-class Link : public ipc::NIC, public std::enable_shared_from_this<Link> {
+class Link : public esc::NIC, public std::enable_shared_from_this<Link> {
 public:
 	static const size_t NAME_LEN	= 16;
 
 	explicit Link(const std::string &n,const char *path)
-		: ipc::NIC(path,O_RDWRMSG), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
-		  _mtu(getMTU()), _name(n), _status(ipc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
+		: esc::NIC(path,O_RDWRMSG), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
+		  _mtu(getMTU()), _name(n), _status(esc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
 		sharebuf(fd(),mtu(),&_buffer,&_bufname,0);
 		if(_buffer == NULL)
 			throw std::default_error("Not enough memory for buffer",-ENOMEM);
@@ -60,31 +60,31 @@ public:
 		return _rxbytes;
 	}
 
-	ipc::Net::Status status() const {
+	esc::Net::Status status() const {
 		return _status;
 	}
-	void status(ipc::Net::Status nstatus) {
+	void status(esc::Net::Status nstatus) {
 		_status = nstatus;
 	}
 
 	ulong mtu() const {
 		return _mtu;
 	}
-	const ipc::NIC::MAC &mac() const {
+	const esc::NIC::MAC &mac() const {
 		return _mac;
 	}
 
-	const ipc::Net::IPv4Addr &ip() const {
+	const esc::Net::IPv4Addr &ip() const {
 		return _ip;
 	}
-	void ip(const ipc::Net::IPv4Addr &nip) {
+	void ip(const esc::Net::IPv4Addr &nip) {
 		_ip = nip;
 	}
 
-	const ipc::Net::IPv4Addr &subnetMask() const {
+	const esc::Net::IPv4Addr &subnetMask() const {
 		return _subnetmask;
 	}
-	void subnetMask(const ipc::Net::IPv4Addr &nm) {
+	void subnetMask(const esc::Net::IPv4Addr &nm) {
 		_subnetmask = nm;
 	}
 
@@ -98,10 +98,10 @@ private:
 	ulong _txbytes;
 	ulong _mtu;
 	std::string _name;
-	volatile ipc::Net::Status _status;
-	ipc::NIC::MAC _mac;
-	ipc::Net::IPv4Addr _ip;
-	ipc::Net::IPv4Addr _subnetmask;
+	volatile esc::Net::Status _status;
+	esc::NIC::MAC _mac;
+	esc::Net::IPv4Addr _ip;
+	esc::Net::IPv4Addr _subnetmask;
 	ulong _bufname;
 	void *_buffer;
 };

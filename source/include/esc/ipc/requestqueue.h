@@ -23,7 +23,7 @@
 #include <functor.h>
 #include <vector>
 
-namespace ipc {
+namespace esc {
 
 struct Request {
 	explicit Request() : fd(), mid(), data(), count(), offset() {

@@ -61,7 +61,7 @@ int main(int argc,char **argv) {
 	/* interactive mode */
 
 	/* give vterm our pid */
-	ipc::VTerm vterm(STDOUT_FILENO);
+	esc::VTerm vterm(STDOUT_FILENO);
 	vterm.setShellPid(getpid());
 
 	while(1) {

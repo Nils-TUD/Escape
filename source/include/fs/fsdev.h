@@ -27,7 +27,7 @@
 
 class FileSystem;
 
-struct OpenFile : public ipc::Client {
+struct OpenFile : public esc::Client {
 public:
 	explicit OpenFile(int fd) : Client(fd), ino() {
 	}
@@ -37,7 +37,7 @@ public:
 	ino_t ino;
 };
 
-class FSDevice : public ipc::ClientDevice<OpenFile> {
+class FSDevice : public esc::ClientDevice<OpenFile> {
 public:
 	static FSDevice *getInstance() {
 		return _inst;
@@ -48,22 +48,22 @@ public:
 
 	void loop();
 
-	void devopen(ipc::IPCStream &is);
-	void devclose(ipc::IPCStream &is);
-	void open(ipc::IPCStream &is);
-	void read(ipc::IPCStream &is);
-	void write(ipc::IPCStream &is);
-	void close(ipc::IPCStream &is);
-	void stat(ipc::IPCStream &is);
-	void istat(ipc::IPCStream &is);
-	void syncfs(ipc::IPCStream &is);
-	void link(ipc::IPCStream &is);
-	void unlink(ipc::IPCStream &is);
-	void rename(ipc::IPCStream &is);
-	void mkdir(ipc::IPCStream &is);
-	void rmdir(ipc::IPCStream &is);
-	void chmod(ipc::IPCStream &is);
-	void chown(ipc::IPCStream &is);
+	void devopen(esc::IPCStream &is);
+	void devclose(esc::IPCStream &is);
+	void open(esc::IPCStream &is);
+	void read(esc::IPCStream &is);
+	void write(esc::IPCStream &is);
+	void close(esc::IPCStream &is);
+	void stat(esc::IPCStream &is);
+	void istat(esc::IPCStream &is);
+	void syncfs(esc::IPCStream &is);
+	void link(esc::IPCStream &is);
+	void unlink(esc::IPCStream &is);
+	void rename(esc::IPCStream &is);
+	void mkdir(esc::IPCStream &is);
+	void rmdir(esc::IPCStream &is);
+	void chmod(esc::IPCStream &is);
+	void chown(esc::IPCStream &is);
 
 private:
 	const char *resolveDir(FSUser *u,char *path,ino_t *ino);

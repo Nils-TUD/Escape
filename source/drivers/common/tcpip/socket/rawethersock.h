@@ -28,17 +28,17 @@
 class RawEtherSocket : public Socket {
 public:
 	explicit RawEtherSocket(int f,int proto) : Socket(f,proto) {
-		if(proto != ipc::Socket::PROTO_IP && proto != ipc::Socket::PROTO_ANY)
+		if(proto != esc::Socket::PROTO_IP && proto != esc::Socket::PROTO_ANY)
 			VTHROWE("A raw ethernet socket doesn't support protocol " << proto,-ENOTSUP);
 	}
 	virtual ~RawEtherSocket() {
 		sockets.remove(this);
 	}
 
-	virtual int bind(const ipc::Socket::Addr *) {
+	virtual int bind(const esc::Socket::Addr *) {
 		return sockets.add(this);
 	}
-	virtual ssize_t sendto(msgid_t,const ipc::Socket::Addr *,const void *,size_t ) {
+	virtual ssize_t sendto(msgid_t,const esc::Socket::Addr *,const void *,size_t ) {
 		// TODO implement me
 		return -ENOTSUP;
 	}

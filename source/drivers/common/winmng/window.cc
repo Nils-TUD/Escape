@@ -55,17 +55,17 @@ static void win_notifyWinCreate(gwinid_t id,const char *title);
 static void win_notifyWinActive(gwinid_t id);
 static void win_notifyWinDestroy(gwinid_t id);
 
-static ipc::UI *ui;
+static esc::UI *ui;
 static int drvId;
 
-static ipc::Screen::Mode mode;
-static ipc::FrameBuffer *fb;
+static esc::Screen::Mode mode;
+static esc::FrameBuffer *fb;
 
 static size_t activeWindow = WINDOW_COUNT;
 static size_t topWindow = WINDOW_COUNT;
 static Window windows[WINDOW_COUNT];
 
-int win_init(int sid,ipc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
+int win_init(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
 	drvId = sid;
 	ui = uiobj;
 	srand(time(NULL));
@@ -73,7 +73,7 @@ int win_init(int sid,ipc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp
 	return win_setMode(width,height,bpp,shmname);
 }
 
-const ipc::Screen::Mode *win_getMode(void) {
+const esc::Screen::Mode *win_getMode(void) {
 	return &mode;
 }
 
@@ -84,11 +84,11 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng) {
 	char name[32];
 	snprintf(name,sizeof(name),"%s-win%d",winmng,id);
-	ipc::Screen::Mode winMode = mode;
+	esc::Screen::Mode winMode = mode;
 	winMode.guiHeaderSize = winMode.tuiHeaderSize = 0;
 	winMode.width = width;
 	winMode.height = height;
-	win->fb = new ipc::FrameBuffer(winMode,name,ipc::Screen::MODE_TYPE_GUI,0666);
+	win->fb = new esc::FrameBuffer(winMode,name,esc::Screen::MODE_TYPE_GUI,0666);
 	memclear(win->fb->addr(),width * height * (mode.bitsPerPixel / 8));
 }
 
@@ -100,17 +100,17 @@ static void win_destroyBuf(Window *win) {
 int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
 	print("Getting video mode for %zux%zux%u",width,height,bpp);
 
-	ipc::Screen::Mode newmode = ui->findGraphicsMode(width,height,bpp);
+	esc::Screen::Mode newmode = ui->findGraphicsMode(width,height,bpp);
 
 	/* first destroy the old one because we use the same shm-name again */
 	delete fb;
 
 	try {
 		print("Creating new framebuffer named %s",shmname);
-		std::unique_ptr<ipc::FrameBuffer> newfb(
-			new ipc::FrameBuffer(newmode,shmname,ipc::Screen::MODE_TYPE_GUI,0644));
+		std::unique_ptr<esc::FrameBuffer> newfb(
+			new esc::FrameBuffer(newmode,shmname,esc::Screen::MODE_TYPE_GUI,0644));
 		print("Setting mode %d: %zux%zux%u",newmode.id,newmode.width,newmode.height,newmode.bitsPerPixel);
-		ui->setMode(ipc::Screen::MODE_TYPE_GUI,newmode.id,shmname,true);
+		ui->setMode(esc::Screen::MODE_TYPE_GUI,newmode.id,shmname,true);
 
 		mode = newmode;
 		fb = newfb.release();
@@ -122,8 +122,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 				win_createBuf(windows + i,i,windows[i].width(),windows[i].height(),shmname);
 
 				/* let the window reset everything, i.e. connect to new buffer, repaint, ... */
-				ipc::WinMngEvents::Event ev;
-				ev.type = ipc::WinMngEvents::Event::TYPE_RESET;
+				esc::WinMngEvents::Event ev;
+				ev.type = esc::WinMngEvents::Event::TYPE_RESET;
 				ev.wid = windows[i].id;
 				send(windows[i].evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 			}
@@ -132,8 +132,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 	catch(const std::exception &e) {
 		printe("%s",e.what());
 		print("Restoring old framebuffer and mode");
-		fb = new ipc::FrameBuffer(mode,shmname,ipc::Screen::MODE_TYPE_GUI,0644);
-		ui->setMode(ipc::Screen::MODE_TYPE_GUI,mode.id,shmname,true);
+		fb = new esc::FrameBuffer(mode,shmname,esc::Screen::MODE_TYPE_GUI,0644);
+		ui->setMode(esc::Screen::MODE_TYPE_GUI,mode.id,shmname,true);
 		/* we have to repaint everything */
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i].id != WINID_UNUSED)
@@ -420,8 +420,8 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 	if(windows[id].evfd == -1)
 		return;
 
-	ipc::WinMngEvents::Event ev;
-	ev.type = ipc::WinMngEvents::Event::TYPE_SET_ACTIVE;
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_SET_ACTIVE;
 	ev.wid = id;
 	ev.d.setactive.active = isActive;
 	ev.d.setactive.mouseX = mouseX;
@@ -515,8 +515,8 @@ static void win_notifyWinCreate(gwinid_t id,const char *title) {
 	if(windows[id].style == WIN_STYLE_POPUP || windows[id].style == WIN_STYLE_DESKTOP)
 		return;
 
-	ipc::WinMngEvents::Event ev;
-	ev.type = ipc::WinMngEvents::Event::TYPE_CREATED;
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_CREATED;
 	ev.wid = id;
 	strnzcpy(ev.d.created.title,title,sizeof(ev.d.created.title));
 	listener_notify(&ev);
@@ -526,8 +526,8 @@ static void win_notifyWinActive(gwinid_t id) {
 	if(windows[id].style == WIN_STYLE_POPUP)
 		return;
 
-	ipc::WinMngEvents::Event ev;
-	ev.type = ipc::WinMngEvents::Event::TYPE_ACTIVE;
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_ACTIVE;
 	ev.wid = id;
 	listener_notify(&ev);
 }
@@ -536,8 +536,8 @@ static void win_notifyWinDestroy(gwinid_t id) {
 	if(windows[id].style == WIN_STYLE_POPUP || windows[id].style == WIN_STYLE_DESKTOP)
 		return;
 
-	ipc::WinMngEvents::Event ev;
-	ev.type = ipc::WinMngEvents::Event::TYPE_DESTROYED;
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_DESTROYED;
 	ev.wid = id;
 	listener_notify(&ev);
 }

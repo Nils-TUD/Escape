@@ -38,14 +38,14 @@
 #define VGA_ADDR				0xB8000
 #define VGA_SIZE				80 * 25 * 2
 
-using namespace ipc;
+using namespace esc;
 
 /* our state */
 uint8_t *VGA::screen;
-std::vector<ipc::Screen::Mode> VGA::modes;
+std::vector<esc::Screen::Mode> VGA::modes;
 
 void VGA::ScreenDevice::setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
-	if(type != ipc::Screen::MODE_TYPE_TUI)
+	if(type != esc::Screen::MODE_TYPE_TUI)
 		throw std::default_error("Invalid mode type");
 
 	if(sw && mode)
@@ -114,10 +114,10 @@ void VGA::init() {
 		error("Unable to acquire vga-memory (%p)",phys);
 
 	modes.push_back(((Screen::Mode){
-		0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,ipc::Screen::MODE_TEXT,ipc::Screen::MODE_TYPE_TUI
+		0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 	modes.push_back(((Screen::Mode){
-		0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,ipc::Screen::MODE_TEXT,ipc::Screen::MODE_TYPE_TUI
+		0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 }
 

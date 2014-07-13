@@ -30,7 +30,7 @@
 #include <cmdargs.h>
 #include <dns.h>
 
-using namespace ipc;
+using namespace esc;
 
 struct IPv4Header {
 	uint8_t versionSize;
@@ -90,7 +90,7 @@ static void sendEcho(Socket &sock,const Net::IPv4Addr &src,const Net::IPv4Addr &
 		payload[i] = i;
 
 	icmp->checksum = 0;
-	icmp->checksum = ipc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),sizeof(*icmp) + nbytes);
+	icmp->checksum = esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),sizeof(*icmp) + nbytes);
 
 	ip->versionSize = (4 << 4) | 5;
 	ip->typeOfService = 0;
@@ -102,7 +102,7 @@ static void sendEcho(Socket &sock,const Net::IPv4Addr &src,const Net::IPv4Addr &
 	ip->src = src;
 	ip->dst = dest;
 	ip->checksum = 0;
-	ip->checksum = ipc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(ip),sizeof(IPv4Header));
+	ip->checksum = esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(ip),sizeof(IPv4Header));
 
 	Socket::Addr addr;
 	addr.family = Socket::AF_INET;
@@ -121,12 +121,12 @@ static int handleReply(IPv4Header *reply) {
 		return 0;
 
 	recvTime = rdtsc();
-	if(ipc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(reply),sizeof(IPv4Header)) != 0) {
+	if(esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(reply),sizeof(IPv4Header)) != 0) {
 		std::cerr << "IP header has invalid checksum" << std::endl;
 		return -1;
 	}
 
-	if(ipc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),sizeof(*icmp) + nbytes) != 0) {
+	if(esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),sizeof(*icmp) + nbytes) != 0) {
 		std::cerr << "ICMP has invalid checksum" << std::endl;
 		return -1;
 	}

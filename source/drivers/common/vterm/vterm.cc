@@ -52,13 +52,13 @@ static void vtSetVideoMode(int mode);
 static void vtUpdate(void);
 static void vtSetCursor(sVTerm *vt);
 
-static std::vector<ipc::Screen::Mode> modes;
-static ipc::FrameBuffer *fb = NULL;
+static std::vector<esc::Screen::Mode> modes;
+static esc::FrameBuffer *fb = NULL;
 static sVTerm vterm;
 static bool run = true;
 static TUIVTermDevice *vtdev;
 
-class TUIVTermDevice : public ipc::VTermDevice {
+class TUIVTermDevice : public esc::VTermDevice {
 public:
 	explicit TUIVTermDevice(const char *name,mode_t mode,sVTerm *vt) : VTermDevice(name,mode,vt) {
 		set(MSG_SCR_GETMODE,std::make_memfun(this,&TUIVTermDevice::getMode));
@@ -75,30 +75,30 @@ public:
 		vtUpdate();
 	}
 
-	void getMode(ipc::IPCStream &is) {
-		ipc::Screen::Mode mode = vterm.ui->getMode();
-		is << 0 << mode << ipc::Reply();
+	void getMode(esc::IPCStream &is) {
+		esc::Screen::Mode mode = vterm.ui->getMode();
+		is << 0 << mode << esc::Reply();
 	}
 
-	void getModes(ipc::IPCStream &is) {
+	void getModes(esc::IPCStream &is) {
 		size_t n;
 		is >> n;
 
-		is << modes.size() << ipc::Reply();
+		is << modes.size() << esc::Reply();
 		if(n)
-			is << ipc::ReplyData(modes.begin(),sizeof(ipc::Screen::Mode) * modes.size());
+			is << esc::ReplyData(modes.begin(),sizeof(esc::Screen::Mode) * modes.size());
 	}
 
-	void getKeymap(ipc::IPCStream &is) {
+	void getKeymap(esc::IPCStream &is) {
 		std::string keymap = vterm.ui->getKeymap();
-		is << 0 << ipc::CString(keymap.c_str(),keymap.length()) << ipc::Reply();
+		is << 0 << esc::CString(keymap.c_str(),keymap.length()) << esc::Reply();
 	}
 
-	void setKeymap(ipc::IPCStream &is) {
-		ipc::CStringBuf<MAX_PATH_LEN> path;
+	void setKeymap(esc::IPCStream &is) {
+		esc::CStringBuf<MAX_PATH_LEN> path;
 		is >> path;
 		vterm.ui->setKeymap(std::string(path.str()));
-		is << 0 << ipc::Reply();
+		is << 0 << esc::Reply();
 	}
 };
 
@@ -164,7 +164,7 @@ int main(int argc,char **argv) {
 static int uimInputThread(void *arg) {
 	int modeid = *(int*)arg;
 	/* open uimng's input device */
-	ipc::UIEvents uiev(*vterm.ui);
+	esc::UIEvents uiev(*vterm.ui);
 
 	if(signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set SIGTERM handler");
@@ -180,12 +180,12 @@ static int uimInputThread(void *arg) {
 
 	/* read from uimanager and handle the keys */
 	while(run) {
-		ipc::UIEvents::Event ev;
-		uiev.is() >> ipc::ReceiveData(&ev,sizeof(ev),false);
+		esc::UIEvents::Event ev;
+		uiev.is() >> esc::ReceiveData(&ev,sizeof(ev),false);
 		if(!run)
 			break;
 
-		if(ev.type == ipc::UIEvents::Event::TYPE_KEYBOARD) {
+		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD) {
 			std::lock_guard<std::mutex> guard(*vterm.mutex);
 			vtin_handleKey(&vterm,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
 			vtUpdate();
@@ -202,17 +202,17 @@ static int vtermThread(void *arg) {
 }
 
 static int vtInit(int id,const char *name,uint cols,uint rows) {
-	vterm.ui = new ipc::UI("/dev/uimng");
+	vterm.ui = new esc::UI("/dev/uimng");
 	modes = vterm.ui->getModes();
 
 	/* find a suitable mode */
-	ipc::Screen::Mode mode = vterm.ui->findTextModeIn(modes,cols,rows);
+	esc::Screen::Mode mode = vterm.ui->findTextModeIn(modes,cols,rows);
 
 	/* open speaker */
 	struct stat info;
 	if(stat("/dev/speaker",&info) >= 0) {
 		try {
-			vterm.speaker = new ipc::Speaker("/dev/speaker");
+			vterm.speaker = new esc::Speaker("/dev/speaker");
 		}
 		catch(const std::exception &e) {
 			/* ignore errors here. in this case we simply don't use it */
@@ -272,7 +272,7 @@ static void vtSetVideoMode(int mode) {
 			print("Setting video mode %d: %dx%dx%d",mode,it->width,it->height,it->bitsPerPixel);
 
 			/* rename old shm as a backup */
-			ipc::FrameBuffer *fbtmp = fb;
+			esc::FrameBuffer *fbtmp = fb;
 			std::string tmpname;
 			if(fbtmp) {
 				tmpname = fbtmp->filename() + "-tmp";
@@ -283,9 +283,9 @@ static void vtSetVideoMode(int mode) {
 			/* try to set new mode */
 			print("Creating new framebuffer named %s",vterm.name);
 			try {
-				std::unique_ptr<ipc::FrameBuffer> nfb(
-					new ipc::FrameBuffer(*it,vterm.name,ipc::Screen::MODE_TYPE_TUI,0644));
-				vterm.ui->setMode(ipc::Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
+				std::unique_ptr<esc::FrameBuffer> nfb(
+					new esc::FrameBuffer(*it,vterm.name,esc::Screen::MODE_TYPE_TUI,0644));
+				vterm.ui->setMode(esc::Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
 				fb = nfb.release();
 			}
 			catch(const std::default_error &e) {
@@ -302,7 +302,7 @@ static void vtSetVideoMode(int mode) {
 					fb = fbtmp;
 					if(fb) {
 						fb->rename(vterm.name);
-						vterm.ui->setMode(ipc::Screen::MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
+						vterm.ui->setMode(esc::Screen::MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
 					}
 					VTHROWE("vtctrl_resize(" << it->cols << "," << it->rows << ")",-ENOMEM);
 				}

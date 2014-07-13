@@ -25,7 +25,7 @@
 #include <memory>
 #include <vthrow.h>
 
-namespace ipc {
+namespace esc {
 
 /**
  * This class is intended to make it easy to provide on-demand-generated files. It supports reading

@@ -30,7 +30,7 @@
 #include <mutex>
 #include <memory>
 
-namespace ipc {
+namespace esc {
 
 class SharedMemory {
 public:

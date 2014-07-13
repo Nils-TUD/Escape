@@ -30,13 +30,13 @@
 #include "input.h"
 #include "window.h"
 
-static void handleKbMessage(ipc::UIEvents::Event *data);
-static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data);
+static void handleKbMessage(esc::UIEvents::Event *data);
+static void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data);
 
 static uchar buttons = 0;
 static gpos_t curX = 0;
 static gpos_t curY = 0;
-static uchar cursor = ipc::Screen::CURSOR_DEFAULT;
+static uchar cursor = esc::Screen::CURSOR_DEFAULT;
 static Window *mouseWin = NULL;
 
 gpos_t input_getMouseX(void) {
@@ -51,19 +51,19 @@ int input_thread(void *arg) {
 	sInputThread *in = (sInputThread*)arg;
 
 	/* open ourself to send set-active-requests to us */
-	ipc::WinMng winmng(in->winmng);
+	esc::WinMng winmng(in->winmng);
 
 	/* read from uimanager and handle the keys */
 	while(1) {
-		ipc::UIEvents::Event ev;
+		esc::UIEvents::Event ev;
 		*in->uiev >> ev;
 
 		switch(ev.type) {
-			case ipc::UIEvents::Event::TYPE_KEYBOARD:
+			case esc::UIEvents::Event::TYPE_KEYBOARD:
 				handleKbMessage(&ev);
 				break;
 
-			case ipc::UIEvents::Event::TYPE_MOUSE:
+			case esc::UIEvents::Event::TYPE_MOUSE:
 				handleMouseMessage(winmng,&ev);
 				break;
 
@@ -74,13 +74,13 @@ int input_thread(void *arg) {
 	return 0;
 }
 
-static void handleKbMessage(ipc::UIEvents::Event *data) {
+static void handleKbMessage(esc::UIEvents::Event *data) {
 	Window *active = win_getActive();
 	if(!active || active->evfd == -1)
 		return;
 
-	ipc::WinMngEvents::Event ev;
-	ev.type = ipc::WinMngEvents::Event::TYPE_KEYBOARD;
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_KEYBOARD;
 	ev.wid = active->id;
 	ev.d.keyb.keycode = data->d.keyb.keycode;
 	ev.d.keyb.modifier = data->d.keyb.modifier;
@@ -88,7 +88,7 @@ static void handleKbMessage(ipc::UIEvents::Event *data) {
 	send(active->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
-static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data) {
+static void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 	gpos_t oldx = curX,oldy = curY;
 	bool btnChanged = false;
 	Window *w,*wheelWin = NULL;
@@ -115,24 +115,24 @@ static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data) {
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
 	if(!buttons) {
 		w = mouseWin ? mouseWin : win_getAt(curX,curY);
-		cursor = ipc::Screen::CURSOR_DEFAULT;
+		cursor = esc::Screen::CURSOR_DEFAULT;
 		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
 			gsize_t tbh = w->titleBarHeight;
 			bool left = curY >= (gpos_t)(w->y() + tbh) &&
-					curX < (gpos_t)(w->x() + ipc::Screen::CURSOR_RESIZE_WIDTH);
+					curX < (gpos_t)(w->x() + esc::Screen::CURSOR_RESIZE_WIDTH);
 			bool right = curY >= (gpos_t)(w->y() + tbh) &&
-					curX >= (gpos_t)(w->x() + w->width() - ipc::Screen::CURSOR_RESIZE_WIDTH);
-			bool bottom = curY >= (gpos_t)(w->y() + w->height() - ipc::Screen::CURSOR_RESIZE_WIDTH);
+					curX >= (gpos_t)(w->x() + w->width() - esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool bottom = curY >= (gpos_t)(w->y() + w->height() - esc::Screen::CURSOR_RESIZE_WIDTH);
 			if(left && bottom)
-				cursor = ipc::Screen::CURSOR_RESIZE_BL;
+				cursor = esc::Screen::CURSOR_RESIZE_BL;
 			else if(left)
-				cursor = ipc::Screen::CURSOR_RESIZE_L;
+				cursor = esc::Screen::CURSOR_RESIZE_L;
 			if(right && bottom)
-				cursor = ipc::Screen::CURSOR_RESIZE_BR;
+				cursor = esc::Screen::CURSOR_RESIZE_BR;
 			else if(right)
-				cursor = ipc::Screen::CURSOR_RESIZE_R;
+				cursor = esc::Screen::CURSOR_RESIZE_R;
 			else if(bottom && !left)
-				cursor = ipc::Screen::CURSOR_RESIZE_VERT;
+				cursor = esc::Screen::CURSOR_RESIZE_VERT;
 		}
 	}
 
@@ -143,8 +143,8 @@ static void handleMouseMessage(ipc::WinMng &winmng,ipc::UIEvents::Event *data) {
 	/* send to window */
 	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
 	if(w && w->evfd != -1) {
-		ipc::WinMngEvents::Event ev;
-		ev.type = ipc::WinMngEvents::Event::TYPE_MOUSE;
+		esc::WinMngEvents::Event ev;
+		ev.type = esc::WinMngEvents::Event::TYPE_MOUSE;
 		ev.wid = w->id;
 		ev.d.mouse.x = curX;
 		ev.d.mouse.y = curY;

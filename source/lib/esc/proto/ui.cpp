@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <esc/proto/ui.h>
 
-namespace ipc {
+namespace esc {
 
 std::ostream &operator<<(std::ostream &os,const UIEvents::Event &ev) {
 	static const char *types[] = {

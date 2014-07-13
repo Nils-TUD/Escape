@@ -71,7 +71,7 @@ public:
 	};
 	struct SynPacket {
 		uint16_t mss;
-		ipc::Socket::Addr src;
+		esc::Socket::Addr src;
 		uint16_t winSize;
 	};
 
@@ -83,7 +83,7 @@ public:
 			: Socket(f,proto), _closed(false), _timeoutId(Timeouts::allocateId()), _localPort(),
 			  _remoteAddr(), _mtu(), _mss(DEF_MSS), _state(STATE_CLOSED), _ctrlpkt(), _txCircle(),
 			  _rxCircle(), _push() {
-		if(proto != ipc::Socket::PROTO_TCP)
+		if(proto != esc::Socket::PROTO_TCP)
 			VTHROWE("Protocol " << proto << " is not supported by stream socket",-ENOTSUP);
 
 		_rxCircle.init(0,SEND_BUF_SIZE);
@@ -91,23 +91,23 @@ public:
 	}
 	virtual ~StreamSocket();
 
-	virtual int connect(const ipc::Socket::Addr *sa,msgid_t mid);
-	virtual int bind(const ipc::Socket::Addr *sa);
+	virtual int connect(const esc::Socket::Addr *sa,msgid_t mid);
+	virtual int bind(const esc::Socket::Addr *sa);
 	virtual int listen();
-	virtual int accept(msgid_t mid,int nfd,ipc::ClientDevice<Socket> *dev);
-	virtual ssize_t sendto(msgid_t mid,const ipc::Socket::Addr *sa,const void *buffer,size_t size);
+	virtual int accept(msgid_t mid,int nfd,esc::ClientDevice<Socket> *dev);
+	virtual ssize_t sendto(msgid_t mid,const esc::Socket::Addr *sa,const void *buffer,size_t size);
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size);
-	virtual void push(const ipc::Socket::Addr &sa,const Packet &pkt,size_t offset);
+	virtual void push(const esc::Socket::Addr &sa,const Packet &pkt,size_t offset);
 	virtual int abort();
 	virtual void disconnect();
 
-	ipc::port_t localPort() const {
+	esc::port_t localPort() const {
 		return _localPort;
 	}
-	ipc::Net::IPv4Addr remoteIP() const {
-		return ipc::Net::IPv4Addr(_remoteAddr.d.ipv4.addr);
+	esc::Net::IPv4Addr remoteIP() const {
+		return esc::Net::IPv4Addr(_remoteAddr.d.ipv4.addr);
 	}
-	ipc::port_t remotePort() const {
+	esc::port_t remotePort() const {
 		return _remoteAddr.d.ipv4.port;
 	}
 	const char *state() const {
@@ -141,15 +141,15 @@ private:
 	void sendData(bool resend);
 	void timeout();
 
-	int forkSocket(int nfd,msgid_t mid,ipc::ClientDevice<Socket> *dev,SynPacket &syn,
+	int forkSocket(int nfd,msgid_t mid,esc::ClientDevice<Socket> *dev,SynPacket &syn,
 		CircularBuf::seq_type seqNo);
 	bool replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size);
 	template<typename T>
 	void replyPending(T result) {
 		if(_pending.count > 0) {
 			ulong buffer[1];
-			ipc::IPCStream is(fd(),buffer,sizeof(buffer),_pending.mid);
-			is << ipc::ReplyData(&result,sizeof(T));
+			esc::IPCStream is(fd(),buffer,sizeof(buffer),_pending.mid);
+			is << esc::ReplyData(&result,sizeof(T));
 			_pending.count = 0;
 		}
 	}
@@ -161,8 +161,8 @@ private:
 	int _timeoutId;
 
 	/* connection information */
-	ipc::port_t _localPort;
-	ipc::Socket::Addr _remoteAddr;
+	esc::port_t _localPort;
+	esc::Socket::Addr _remoteAddr;
 	size_t _mtu;
 	size_t _mss;
 	size_t _remoteWinSize;

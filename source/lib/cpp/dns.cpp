@@ -35,7 +35,7 @@ namespace std {
 #define BUF_SIZE				512
 
 uint16_t DNS::_nextId = 0;
-ipc::Net::IPv4Addr DNS::_nameserver;
+esc::Net::IPv4Addr DNS::_nameserver;
 
 enum Type {
 	TYPE_A		= 1,	/* a host address */
@@ -71,9 +71,9 @@ struct DNSAnswer {
 	uint16_t length;
 } A_PACKED;
 
-ipc::Net::IPv4Addr DNS::getHost(const char *name,uint timeout) {
+esc::Net::IPv4Addr DNS::getHost(const char *name,uint timeout) {
 	if(isIPAddress(name)) {
-		ipc::Net::IPv4Addr addr;
+		esc::Net::IPv4Addr addr;
 		std::istringstream is(name);
 		is >> addr;
 		return addr;
@@ -107,7 +107,7 @@ bool DNS::isIPAddress(const char *name) {
 	return dots == 3 && len > 0 && len < 4;
 }
 
-ipc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
+esc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	uint8_t buffer[BUF_SIZE];
 	if(_nameserver.value() == 0) {
 		ifstream in(getResolveFile());
@@ -140,11 +140,11 @@ ipc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	qend->cls = cputobe16(CLASS_IN);
 
 	// create socket
-	ipc::Socket sock("/dev/socket",ipc::Socket::SOCK_DGRAM,ipc::Socket::PROTO_UDP);
+	esc::Socket sock("/dev/socket",esc::Socket::SOCK_DGRAM,esc::Socket::PROTO_UDP);
 
 	// send over socket
-	ipc::Socket::Addr addr;
-	addr.family = ipc::Socket::AF_INET;
+	esc::Socket::Addr addr;
+	addr.family = esc::Socket::AF_INET;
 	addr.d.ipv4.addr = _nameserver.value();
 	addr.d.ipv4.port = DNS_PORT;
 	sock.sendto(addr,buffer,total);
@@ -188,8 +188,8 @@ ipc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	// parse answers
 	for(int i = 0; i < answers; ++i) {
 		DNSAnswer *ans = reinterpret_cast<DNSAnswer*>(data);
-		if(be16tocpu(ans->type) == TYPE_A && be16tocpu(ans->length) == ipc::Net::IPv4Addr::LEN)
-			return ipc::Net::IPv4Addr(data + sizeof(DNSAnswer));
+		if(be16tocpu(ans->type) == TYPE_A && be16tocpu(ans->length) == esc::Net::IPv4Addr::LEN)
+			return esc::Net::IPv4Addr(data + sizeof(DNSAnswer));
 	}
 
 	VTHROWE("Unable to find IP address in DNS response",-EHOSTNOTFOUND);

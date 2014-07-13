@@ -34,8 +34,8 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static ipc::Net::IPv4Addr strToIp(const char *str,bool allowDef = false) {
-	ipc::Net::IPv4Addr ip;
+static esc::Net::IPv4Addr strToIp(const char *str,bool allowDef = false) {
+	esc::Net::IPv4Addr ip;
 	if(!allowDef || strcmp(str,"default") != 0) {
 		std::istringstream is(str);
 		is >> ip;
@@ -43,38 +43,38 @@ static ipc::Net::IPv4Addr strToIp(const char *str,bool allowDef = false) {
 	return ip;
 }
 
-static void writeIp(std::ostream &os,const ipc::Net::IPv4Addr &ip) {
+static void writeIp(std::ostream &os,const esc::Net::IPv4Addr &ip) {
 	std::ostringstream s;
 	s << ip;
 	os << std::setw(15) << s.str();
 }
 
-static void routeAdd(ipc::Net &net,int argc,char **argv) {
+static void routeAdd(esc::Net &net,int argc,char **argv) {
 	if(argc < 6)
 		usage(argv[0]);
 
 	net.routeAdd(argv[2],strToIp(argv[3],true),strToIp(argv[5]),strToIp(argv[4]));
 }
 
-static void routeRem(ipc::Net &net,int argc,char **argv) {
+static void routeRem(esc::Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
 	net.routeRem(strToIp(argv[2]));
 }
 
-static void routeUpDown(ipc::Net &net,int argc,char **argv) {
+static void routeUpDown(esc::Net &net,int argc,char **argv) {
 	if(argc != 3)
 		usage(argv[0]);
 
 	if(strcmp(argv[1],"up") == 0)
-		net.routeConfig(strToIp(argv[2]),ipc::Net::UP);
+		net.routeConfig(strToIp(argv[2]),esc::Net::UP);
 	else
-		net.routeConfig(strToIp(argv[2]),ipc::Net::DOWN);
+		net.routeConfig(strToIp(argv[2]),esc::Net::DOWN);
 }
 
 int main(int argc,char **argv) {
-	ipc::Net net("/dev/tcpip");
+	esc::Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::route*> routes = info::route::get_list();
@@ -83,20 +83,20 @@ int main(int argc,char **argv) {
 		std::cout << std::setw(15) << "Mask" << std::setw(6) << "Flags";
 		std::cout << "Link\n";
 		for(auto it = routes.begin(); it != routes.end(); ++it) {
-			if((*it)->dest() == ipc::Net::IPv4Addr())
+			if((*it)->dest() == esc::Net::IPv4Addr())
 				std::cout << std::setw(15) << "default";
 			else
 				writeIp(std::cout,(*it)->dest());
-			if((*it)->gateway() == ipc::Net::IPv4Addr())
+			if((*it)->gateway() == esc::Net::IPv4Addr())
 				std::cout << std::setw(15) << "*";
 			else
 				writeIp(std::cout,(*it)->gateway());
 			writeIp(std::cout,(*it)->subnetMask());
-			if((*it)->flags() & ipc::Net::FL_UP)
+			if((*it)->flags() & esc::Net::FL_UP)
 				std::cout << 'U';
 			else
 				std::cout << ' ';
-			if((*it)->flags() & ipc::Net::FL_USE_GW)
+			if((*it)->flags() & esc::Net::FL_USE_GW)
 				std::cout << 'G';
 			else
 				std::cout << ' ';

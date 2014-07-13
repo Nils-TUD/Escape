@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <list>
 
-namespace ipc {
+namespace esc {
 
 /**
  * The base-class for all virtual-terminal devices. Supports all vterm-operations, but not the UI-
@@ -140,14 +140,14 @@ private:
 		checkPending();
 	}
 
-	void setMode(ipc::IPCStream &is) {
+	void setMode(esc::IPCStream &is) {
 		int mode;
 		is >> mode;
 		{
 			std::lock_guard<std::mutex> guard(*_vterm->mutex);
 			setVideoMode(mode);
 		}
-		is << 0 << ipc::Reply();
+		is << 0 << esc::Reply();
 	}
 
 	void getFlag(IPCStream &is) {

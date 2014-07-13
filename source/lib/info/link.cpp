@@ -45,7 +45,7 @@ namespace info {
 		is >> l._name >> status >> l._mac >> l._ip >> l._subnetmask >> l._mtu;
 		is >> l._rxpkts >> l._txpkts >> l._rxbytes >> l._txbytes;
 		is.ignore(unlimited,'\n');
-		l._status = static_cast<ipc::Net::Status>(status);
+		l._status = static_cast<esc::Net::Status>(status);
 		return is;
 	}
 

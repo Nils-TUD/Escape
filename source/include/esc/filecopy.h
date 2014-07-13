@@ -21,6 +21,8 @@
 
 #include <sys/common.h>
 
+namespace esc {
+
 class FileCopy {
 public:
 	enum {
@@ -56,3 +58,5 @@ private:
 	uint _flags;
 	uint _cols;
 };
+
+}

@@ -21,11 +21,13 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <esc/proto/vterm.h>
-#include <cp/filecopy.h>
+#include <esc/filecopy.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <esc/env.h>
+
+namespace esc {
 
 FileCopy::FileCopy(size_t bufsize,uint fl)
 		: _bufsize(bufsize), _shmname(), _shm(), _flags(fl), _cols() {
@@ -294,4 +296,6 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 			showSimpleProgress(src,srcInfo.st_size);
 	}
 	return true;
+}
+
 }

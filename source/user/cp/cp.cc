@@ -19,14 +19,14 @@
 
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <cp/filecopy.h>
+#include <esc/filecopy.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define BUFFER_SIZE		(16 * 1024)
 
-class CpFileCopy : public FileCopy {
+class CpFileCopy : public esc::FileCopy {
 public:
 	explicit CpFileCopy(uint fl) : FileCopy(BUFFER_SIZE,fl) {
 	}
@@ -66,11 +66,11 @@ int main(int argc,char *argv[]) {
 
 	uint flags = 0;
 	if(rec)
-		flags |= FileCopy::FL_RECURSIVE;
+		flags |= esc::FileCopy::FL_RECURSIVE;
 	if(force)
-		flags |= FileCopy::FL_FORCE;
+		flags |= esc::FileCopy::FL_FORCE;
 	if(progress)
-		flags |= FileCopy::FL_PROGRESS;
+		flags |= esc::FileCopy::FL_PROGRESS;
 	CpFileCopy cp(flags);
 
 	auto files = args.get_free();

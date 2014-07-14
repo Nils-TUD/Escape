@@ -18,28 +18,33 @@
  */
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include <sys/driver.h>
 #include <sys/thread.h>
-#include <sys/sync.h>
 #include <sys/io.h>
 #include <stdlib.h>
+#include <mutex>
+#include <vector>
+
 #include "listener.h"
 
-typedef struct {
+struct WinListener {
+	explicit WinListener() : client(), type() {
+	}
+	explicit WinListener(int client,ev_type type) : client(client), type(type) {
+	}
+
 	int client;
 	ev_type type;
-} sWinListener;
+};
 
-static tUserSem usem;
+typedef std::vector<WinListener>::iterator win_iter;
+
 static int drvId;
-static sSLList list;
+static std::mutex mutex;
+static std::vector<WinListener> list;
 
 void listener_init(int id) {
 	drvId = id;
-	sll_init(&list,malloc,free);
-	if(usemcrt(&usem,1) < 0)
-		error("Unable to create listener-lock");
 }
 
 bool listener_add(int client,ev_type type) {
@@ -47,59 +52,37 @@ bool listener_add(int client,ev_type type) {
 		type != ev_type::TYPE_ACTIVE)
 		return false;
 
-	sWinListener *l = (sWinListener*)malloc(sizeof(sWinListener));
-	if(!l)
-		return false;
-	l->client = client;
-	l->type = type;
-	usemdown(&usem);
-	bool res = sll_append(&list,l);
-	usemup(&usem);
-	if(!res) {
-		free(l);
-		return false;
-	}
+	std::lock_guard<std::mutex> guard(mutex);
+	list.push_back(WinListener(client,type));
 	return true;
 }
 
 void listener_notify(const esc::WinMngEvents::Event *ev) {
-	usemdown(&usem);
-	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
-		sWinListener *l = (sWinListener*)n->data;
+	std::lock_guard<std::mutex> guard(mutex);
+	for(auto l = list.begin(); l != list.end(); ++l) {
 		if(l->type == ev->type)
 			send(l->client,MSG_WIN_EVENT,ev,sizeof(*ev));
 	}
-	usemup(&usem);
 }
 
 void listener_remove(int client,ev_type type) {
-	usemdown(&usem);
-	for(sSLNode *n = sll_begin(&list); n != NULL; n = n->next) {
-		sWinListener *l = (sWinListener*)n->data;
+	std::lock_guard<std::mutex> guard(mutex);
+	for(auto l = list.begin(); l != list.end(); ++l) {
 		if(l->client == client && l->type == type) {
-			sll_removeFirstWith(&list,l);
-			free(l);
+			list.erase(l);
 			break;
 		}
 	}
-	usemup(&usem);
 }
 
 void listener_removeAll(int client) {
-	usemdown(&usem);
-	sSLNode *p = NULL;
-	for(sSLNode *n = sll_begin(&list); n != NULL; ) {
-		sWinListener *l = (sWinListener*)n->data;
-		if(l->client == client) {
-			sSLNode *next = n->next;
-			sll_removeNode(&list,n,p);
-			free(l);
-			n = next;
-		}
-		else {
-			p = n;
-			n = n->next;
-		}
+	std::lock_guard<std::mutex> guard(mutex);
+	while(!list.empty()) {
+		win_iter it = std::find_if(list.begin(),list.end(),[client] (const WinListener &l) {
+			return l.client == client;
+		});
+		if(it == list.end())
+			break;
+		list.erase(it);
 	}
-	usemup(&usem);
 }

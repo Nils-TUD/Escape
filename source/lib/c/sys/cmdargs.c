@@ -19,7 +19,6 @@
 
 #include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <sys/sllist.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -48,7 +47,9 @@ static uint flags;
 static int argc;
 static const char **argv;
 static bool hasHelp = false;
-static sSLList *freeArgs = NULL;
+static bool *freeArgs;
+static size_t freeArgLen = 0;
+static size_t freeArgSize = 0;
 static const char **freeArgsArray = NULL;
 static size_t freeArgCount = 0;
 
@@ -94,7 +95,6 @@ const char **ca_getFree(void) {
 int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	const char *helps[] = {"-h","--help","-?"};
 	va_list ap;
-	sSLNode *n;
 	bool required;
 	bool hasVal;
 	char type;
@@ -106,11 +106,14 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	argv = args;
 
 	/* create free args list */
-	freeArgs = sll_create();
-	if(freeArgs == NULL)
+	freeArgLen = argc - 1;
+	freeArgSize = argc;
+	freeArgs = malloc(sizeof(bool) * freeArgSize);
+	if(!freeArgs)
 		return -ENOMEM;
+	freeArgs[0] = false;
 	for(i = 1; i < argc; i++)
-		sll_append(freeArgs,(void*)i);
+		freeArgs[i] = true;
 
 	/* check for help-requests */
 	for(i = 1; i < argc; i++) {
@@ -182,20 +185,22 @@ int ca_parse(int argcnt,const char **args,uint aflags,const char *fmt,...) {
 	va_end(ap);
 
 	/* check free args */
-	if((flags & CA_NO_FREE) && sll_length(freeArgs) > 0)
+	if((flags & CA_NO_FREE) && freeArgLen > 0)
 		return CA_ERR_FREE_DISALLOWED;
-	if((flags & CA_MAX1_FREE) && sll_length(freeArgs) > 1)
+	if((flags & CA_MAX1_FREE) && freeArgLen > 1)
 		return CA_ERR_MAX1_FREE;
 
 	/* create free-args-array */
-	freeArgsArray = (const char**)malloc((sll_length(freeArgs) + 1) * sizeof(char*));
+	freeArgsArray = (const char**)malloc((freeArgLen + 1) * sizeof(char*));
 	if(freeArgsArray == NULL)
 		return -ENOMEM;
-	for(i = 0, n = sll_begin(freeArgs); n != NULL; n = n->next,i++)
-		freeArgsArray[i] = argv[(size_t)n->data];
+	i = 0;
+	for(size_t idx = 0; idx < freeArgSize; ++idx) {
+		if(freeArgs[idx])
+			freeArgsArray[i++] = argv[idx];
+	}
 	freeArgsArray[i] = NULL;
 	freeArgCount = i;
-	sll_destroy(freeArgs,false);
 	return 0;
 }
 
@@ -205,9 +210,13 @@ static ssize_t ca_find(const char *begin,const char *end,bool hasVal) {
 	/* empty? */
 	if(begin == end) {
 		/* use the first free arg */
-		if(sll_length(freeArgs) == 0)
+		if(freeArgLen == 0)
 			return CA_ERR_NO_FREE;
-		return (ssize_t)sll_get(freeArgs,0);
+		for(size_t idx = 0; idx < freeArgSize; ++idx) {
+			if(freeArgs[idx])
+				return idx;
+		}
+		return CA_ERR_NO_FREE;
 	}
 	for(i = 1; i < argc; i++) {
 		const char *next;
@@ -289,8 +298,10 @@ static ssize_t ca_setVal(bool hasVal,bool isEmpty,const char *begin,ssize_t argi
 	else {
 		int *b = (int*)ptr;
 		*b = argi >= 0;
-		if(argi >= 0)
-			sll_removeFirstWith(freeArgs,(void*)argi);
+		if(argi >= 0) {
+			freeArgs[argi] = false;
+			freeArgLen--;
+		}
 	}
 	return res;
 }
@@ -319,7 +330,8 @@ static size_t ca_readk(const char *str) {
 static ssize_t ca_getArgVal(ssize_t i,bool isEmpty,bool hasVal,const char *begin,const char **val) {
 	const char *arg = argv[i];
 	char *eqPos = strchr(arg,'=');
-	sll_removeFirstWith(freeArgs,(void*)i);
+	freeArgs[i] = false;
+	freeArgLen--;
 	if(eqPos == NULL) {
 		/* if its a flag, simply return the pointer to the character; we'll just use the first one
 		 * anyway */
@@ -330,7 +342,8 @@ static ssize_t ca_getArgVal(ssize_t i,bool isEmpty,bool hasVal,const char *begin
 		if(!isEmpty) {
 			if((flags & CA_REQ_EQ) || i >= argc - 1)
 				return CA_ERR_EQ_REQUIRED;
-			sll_removeFirstWith(freeArgs,(void*)(i + 1));
+			freeArgs[i + 1] = false;
+			freeArgLen--;
 			*val = argv[i + 1];
 			return 0;
 		}

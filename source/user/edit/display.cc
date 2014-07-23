@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/messages.h>
-#include <sys/sllist.h>
 #include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,26 +83,26 @@ void displ_mvCurHor(uint type) {
 			curX = 0;
 			break;
 		case HOR_MOVE_END:
-			line = (sLine*)sll_get(buffer->lines,firstLine + curY);
+			line = buf_getLine(firstLine + curY);
 			curXDispl = line->displLen;
 			curX = line->length;
 			break;
 		case HOR_MOVE_LEFT:
 			if(curX == 0 && firstLine + curY > 0) {
-				line = (sLine*)sll_get(buffer->lines,firstLine + curY - 1);
+				line = buf_getLine(firstLine + curY - 1);
 				displ_mvCurVert(-1);
 				curXDispl = line->displLen;
 				curX = line->length;
 			}
 			else if(curX > 0) {
-				line = (sLine*)sll_get(buffer->lines,firstLine + curY);
+				line = buf_getLine(firstLine + curY);
 				curXDispl -= displ_getCharLen(line->str[curX - 1]);
 				curX--;
 			}
 			break;
 		case HOR_MOVE_RIGHT:
-			line = (sLine*)sll_get(buffer->lines,firstLine + curY);
-			if(curX == (int)line->length && firstLine + curY < sll_length(buffer->lines)) {
+			line = buf_getLine(firstLine + curY);
+			if(curX == (int)line->length && firstLine + curY < buf_getLineCount()) {
 				displ_mvCurVert(1);
 				curXDispl = 0;
 				curX = 0;
@@ -123,7 +122,7 @@ void displ_mvCurVertPage(bool up) {
 }
 
 void displ_mvCurVert(int lineCount) {
-	size_t total = sll_length(buffer->lines);
+	size_t total = buf_getLineCount();
 	sLine *line;
 	size_t oldFirst = firstLine;
 	/* determine new y-position */
@@ -146,7 +145,7 @@ void displ_mvCurVert(int lineCount) {
 		curY = 0;
 	}
 	/* determine x-position */
-	line = (sLine*)sll_get(buffer->lines,firstLine + curY);
+	line = buf_getLine(firstLine + curY);
 	curX = MIN((int)line->length,MAX(curXVirt,curX));
 	curXDispl = MIN((int)line->displLen,MAX(curXVirtDispl,curXDispl));
 	/* anything to update? */
@@ -197,15 +196,12 @@ int displ_getSaveFile(char *file,size_t bufSize) {
 }
 
 static void displ_updateLines(size_t start,size_t count) {
-	sSLNode *n;
-	sLine *line;
 	size_t i,j;
 	assert(start >= firstLine);
 	if(dirtyCount > 0) {
 		printf("\033[go;0;%zd]",start - firstLine);
-		if(start < sll_length(buffer->lines)) {
-			for(n = sll_nodeAt(buffer->lines,start); n != NULL && count > 0; n = n->next, count--) {
-				line = (sLine*)n->data;
+		if(start < buf_getLineCount()) {
+			for(sLine *line = buf_getLine(start); line != NULL && count > 0; line = line->next, count--) {
 				for(j = 0, i = 0; i < line->length && j < mode.cols; i++) {
 					char c = line->str[i];
 					switch(c) {

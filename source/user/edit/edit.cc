@@ -97,7 +97,7 @@ int main(int argc,char *argv[]) {
 						int col,row;
 						displ_getCurPos(&col,&row);
 						if(n2 == VK_DELETE) {
-							sLine *cur = (sLine*)sll_get(buf_get()->lines,row);
+							sLine *cur = buf_getLine(row);
 							if(col == (int)cur->length) {
 								buf_moveToPrevLine(row + 1);
 								displ_markDirty(row,buf_getLineCount() + 1);

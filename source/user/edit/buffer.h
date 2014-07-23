@@ -20,21 +20,23 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/sllist.h>
-
-typedef struct {
-	sSLList *lines;
-	char *filename;
-	bool modified;
-} sFileBuffer;
 
 /* one line in our linked lists of lines */
-typedef struct {
+typedef struct sLine {
 	char *str;
 	size_t size;		/* size of <str> */
 	size_t length;		/* length of the line */
 	size_t displLen;	/* length for displaying the line (tabs expanded,...) */
+	struct sLine *next;
 } sLine;
+
+typedef struct {
+	sLine *first;
+	sLine *last;
+	size_t lines;
+	char *filename;
+	bool modified;
+} sFileBuffer;
 
 /**
  * Initializes the buffer with the given file
@@ -52,6 +54,12 @@ size_t buf_getLineCount(void);
  * @return the buffer
  */
 sFileBuffer *buf_get(void);
+
+/**
+ * @param i the line index
+ * @return line <i>
+ */
+sLine *buf_getLine(size_t i);
 
 /**
  * Inserts the given character at the given position

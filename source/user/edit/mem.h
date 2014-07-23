@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 
 /**
  * Calls malloc() and exits if no more memory is available
@@ -55,30 +54,6 @@ char *estrdup(const char *s);
  * @return the copy
  */
 char *estrndup(const char *s,size_t n);
-
-/**
- * Calls sll_create() and exits if no more mem is available
- *
- * @return the list
- */
-sSLList *esll_create(void);
-
-/**
- * Calls sll_insert() and exits if no more mem is available
- *
- * @param list the list
- * @param data the data to append
- * @param index the position
- */
-void esll_insert(sSLList *list,const void *data,size_t index);
-
-/**
- * Calls sll_append() and exits if no more mem is available
- *
- * @param list the list
- * @param data the data to append
- */
-void esll_append(sSLList *list,const void *data);
 
 /**
  * Calls free()

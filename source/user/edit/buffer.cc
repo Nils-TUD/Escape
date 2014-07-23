@@ -19,7 +19,6 @@
 
 #include <sys/common.h>
 #include <dirent.h>
-#include <sys/sllist.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -37,7 +36,9 @@ static sLine *buf_readLine(FILE *f,bool *reachedEOF);
 static sFileBuffer buf;
 
 void buf_open(const char *file) {
-	buf.lines = esll_create();
+	buf.first = NULL;
+	buf.last = NULL;
+	buf.lines = 0;
 	buf.modified = false;
 	if(file) {
 		buf.filename = (char*)emalloc(strlen(file) + 1);
@@ -49,7 +50,9 @@ void buf_open(const char *file) {
 	if(!file) {
 		/* create at least one line */
 		sLine *line = buf_createLine();
-		esll_append(buf.lines,line);
+		line->next = NULL;
+		buf.first = buf.last = line;
+		buf.lines++;
 	}
 	else {
 		FILE *f;
@@ -60,24 +63,38 @@ void buf_open(const char *file) {
 			error("Unable to open '%s'",file);
 		while(!reachedEOF) {
 			line = buf_readLine(f,&reachedEOF);
-			esll_append(buf.lines,line);
+			line->next = NULL;
+			if(!buf.first)
+				buf.first = line;
+			else
+				buf.last->next = line;
+			buf.last = line;
+			buf.lines++;
 		}
 		fclose(f);
 	}
 }
 
 size_t buf_getLineCount(void) {
-	return sll_length(buf.lines);
+	return buf.lines;
 }
 
 sFileBuffer *buf_get(void) {
 	return &buf;
 }
 
+sLine *buf_getLine(size_t i) {
+	assert(i < buf.lines);
+	sLine *l;
+	for(l = buf.first; i > 0; --i, l = l->next)
+		;
+	return l;
+}
+
 void buf_insertAt(int col,int row,char c) {
 	sLine *line;
-	assert(row >= 0 && row < (int)sll_length(buf.lines));
-	line = (sLine*)sll_get(buf.lines,row);
+	assert(row >= 0 && row < (int)buf.lines);
+	line = buf_getLine(row);
 	assert(col >= 0 && col <= (int)line->length);
 	if(line->length >= line->size - 1) {
 		line->size *= 2;
@@ -93,8 +110,8 @@ void buf_insertAt(int col,int row,char c) {
 
 void buf_newLine(int col,int row) {
 	sLine *cur,*line;
-	assert(row < (int)sll_length(buf.lines));
-	cur = (sLine*)sll_get(buf.lines,row);
+	assert(row < (int)buf.lines);
+	cur = buf_getLine(row);
 	line = buf_createLine();
 	if(col < (int)cur->length) {
 		size_t i,moveLen = cur->length - col;
@@ -114,15 +131,19 @@ void buf_newLine(int col,int row) {
 		line->str[line->length] = '\0';
 		cur->str[cur->length] = '\0';
 	}
-	esll_insert(buf.lines,line,row + 1);
+	line->next = cur->next;
+	cur->next = line;
+	if(!cur->next)
+		buf.last = line;
+	buf.lines++;
 	buf.modified = true;
 }
 
 void buf_moveToPrevLine(int row) {
 	sLine *cur,*prev;
-	assert(row > 0 && row < (int)sll_length(buf.lines));
-	cur = (sLine*)sll_get(buf.lines,row);
-	prev = (sLine*)sll_get(buf.lines,row - 1);
+	assert(row > 0 && row < (int)buf.lines);
+	prev = buf_getLine(row - 1);
+	cur = prev->next;
 	/* append to prev */
 	if(prev->size - prev->length <= cur->length) {
 		prev->size += cur->length;
@@ -132,7 +153,10 @@ void buf_moveToPrevLine(int row) {
 	prev->displLen += cur->displLen;
 	prev->length += cur->length;
 	/* remove current row */
-	sll_removeIndex(buf.lines,row);
+	if(cur == buf.last)
+		buf.last = prev;
+	prev->next = cur->next;
+	buf.lines--;
 	efree(cur->str);
 	efree(cur);
 	buf.modified = true;
@@ -140,8 +164,8 @@ void buf_moveToPrevLine(int row) {
 
 void buf_removeCur(int col,int row) {
 	sLine *line;
-	assert(row >= 0 && row < (int)sll_length(buf.lines));
-	line = (sLine*)sll_get(buf.lines,row);
+	assert(row >= 0 && row < (int)buf.lines);
+	line = buf_getLine(row);
 	assert(col >= 0 && col <= (int)line->length);
 	col++;
 	if(col > (int)line->length)
@@ -185,16 +209,13 @@ static sLine *buf_readLine(FILE *f,bool *reachedEOF) {
 
 void buf_store(const char *file) {
 	FILE *f;
-	sLine *line;
-	sSLNode *n;
 	f = fopen(file,"w");
 	if(!f)
 		printe("Unable to store to '%s'",file);
 	else {
-		for(n = sll_begin(buf.lines); n != NULL; n = n->next) {
-			line = (sLine*)n->data;
+		for(sLine *line = buf.first; line != NULL; line = line->next) {
 			fwrite(line->str,sizeof(char),line->length,f);
-			if(n->next != NULL)
+			if(line->next != NULL)
 				fwrite("\n",sizeof(char),1,f);
 		}
 		fclose(f);

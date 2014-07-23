@@ -20,13 +20,14 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 
 /* the movement-types for mvCurHor */
 #define HOR_MOVE_HOME	0
 #define HOR_MOVE_END	1
 #define HOR_MOVE_LEFT	2
 #define HOR_MOVE_RIGHT	3
+
+#include "buffer.h"
 
 /**
  * Inits the display with the given line-list

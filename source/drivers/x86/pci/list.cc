@@ -18,10 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
 
 #include "list.h"
 #include "pci.h"
@@ -54,13 +54,9 @@ static void list_detect(void);
 static void list_fillDev(esc::PCI::Device *dev);
 static void list_fillBar(esc::PCI::Device *dev,size_t i);
 
-static sSLList *devices;
+static std::vector<esc::PCI::Device*> devices;
 
 void list_init(void) {
-	devices = sll_create();
-	if(!devices)
-		error("Unable to create device-list");
-
 	/* we want to access dwords... */
 	if(reqports(IOPORT_PCI_CFG_DATA,4) < 0)
 		error("Unable to request io-port %x",IOPORT_PCI_CFG_DATA);
@@ -71,35 +67,31 @@ void list_init(void) {
 }
 
 esc::PCI::Device *list_getByClass(uchar baseClass,uchar subClass,int no) {
-	sSLNode *n;
-	for(n = sll_begin(devices); n != NULL; n = n->next) {
-		esc::PCI::Device *d = (esc::PCI::Device*)n->data;
-		if(d->baseClass == baseClass && d->subClass == subClass) {
+	for(auto d = devices.begin(); d != devices.end(); ++d) {
+		if((*d)->baseClass == baseClass && (*d)->subClass == subClass) {
 			if(no-- == 0)
-				return d;
+				return *d;
 		}
 	}
 	return NULL;
 }
 
 esc::PCI::Device *list_getById(uchar bus,uchar dev,uchar func) {
-	sSLNode *n;
-	for(n = sll_begin(devices); n != NULL; n = n->next) {
-		esc::PCI::Device *d = (esc::PCI::Device*)n->data;
-		if(d->bus == bus && d->dev == dev && d->func == func)
-			return d;
+	for(auto d = devices.begin(); d != devices.end(); ++d) {
+		if((*d)->bus == bus && (*d)->dev == dev && (*d)->func == func)
+			return *d;
 	}
 	return NULL;
 }
 
 esc::PCI::Device *list_get(size_t i) {
-	if(i >= sll_length(devices))
+	if(i >= devices.size())
 		return NULL;
-	return (esc::PCI::Device*)sll_get(devices,i);
+	return devices[i];
 }
 
 size_t list_length(void) {
-	return sll_length(devices);
+	return devices.size();
 }
 
 static void list_detect(void) {
@@ -114,10 +106,8 @@ static void list_detect(void) {
 				device->dev = dev;
 				device->func = func;
 				list_fillDev(device);
-				if(device->vendorId != VENDOR_INVALID) {
-					if(!sll_append(devices,device))
-						error("Unable to append device");
-				}
+				if(device->vendorId != VENDOR_INVALID)
+					devices.push_back(device);
 				else
 					free(device);
 			}

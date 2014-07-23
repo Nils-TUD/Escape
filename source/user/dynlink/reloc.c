@@ -47,27 +47,21 @@ static const char *load_getRelName(int type) {
 #endif
 
 void load_reloc(void) {
-	sSLNode *n;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next)
 		load_relocLib(l);
-	}
 }
 
 static void load_relocLib(sSharedLib *l) {
 	ElfAddr *got;
 	sElfRel *rel;
-	sSLNode *n;
 
 	/* already relocated? */
 	if(l->relocated)
 		return;
 
 	/* first go through the dependencies; this may be required for the R_386_COPY-relocation */
-	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
-		sSharedLib *dl = (sSharedLib*)n->data;
-		load_relocLib(dl);
-	}
+	for(sDep *dl = l->deps; dl != NULL; dl = dl->next)
+		load_relocLib(dl->lib);
 
 	if(load_hasDyn(l->dyn,DT_TEXTREL))
 		load_error("Unable to reloc library %s: requires a writable text segment\n",l->name);
@@ -169,12 +163,10 @@ static void load_relocDyn(sSharedLib *l,void *entries,size_t size,uint type) {
 }
 
 static void load_adjustCopyGotEntry(const char *name,uintptr_t copyAddr) {
-	sSLNode *n;
 	uintptr_t address;
 	/* go through all libraries and copy the address of the object (copy-relocated) to
 	 * the corresponding GOT-entry. this ensures that all DSO's use the same object */
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next) {
 		/* don't do that in the executable */
 		if(!l->isDSO)
 			continue;

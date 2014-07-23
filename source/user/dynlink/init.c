@@ -19,7 +19,6 @@
 
 #include <sys/common.h>
 #include <sys/elf.h>
-#include <sys/sllist.h>
 #include <sys/proc.h>
 #include "init.h"
 #include "setup.h"
@@ -30,32 +29,24 @@ typedef uintptr_t (*fPreinit)(uintptr_t,int,char *[]);
 static void load_initLib(sSharedLib *l);
 
 void load_init(int argc,char **argv) {
-	sSLNode *n;
-
 	uintptr_t addr;
 	if(lookup_byName(NULL,"__libc_preinit",&addr)) {
 		fPreinit preinit = (fPreinit)addr;
 		preinit(0,argc,argv);
 	}
 
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next)
 		load_initLib(l);
-	}
 }
 
 static void load_initLib(sSharedLib *l) {
-	sSLNode *n;
-
 	/* already initialized? */
 	if(l->initialized)
 		return;
 
 	/* first go through the dependencies */
-	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
-		sSharedLib *dl = (sSharedLib*)n->data;
-		load_initLib(dl);
-	}
+	for(sDep *dl = l->deps; dl != NULL; dl = dl->next)
+		load_initLib(dl->lib);
 
 	/* if its not the executable, call the init-function */
 	if(l->isDSO) {

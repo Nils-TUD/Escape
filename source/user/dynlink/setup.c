@@ -26,8 +26,9 @@
 #include "init.h"
 #include "reloc.h"
 #include "setup.h"
+#include "lookup.h"
 
-sSLList *libs = NULL;
+sSharedLib *libs = NULL;
 
 extern void initHeap(void);
 
@@ -83,10 +84,6 @@ uintptr_t load_setupProg(int binFd,int argc,char **argv) {
 	sSharedLib *prog;
 	uintptr_t entryPoint;
 
-	libs = sll_create();
-	if(!libs)
-		load_error("Not enough mem!");
-
 	/* create entry for program */
 	prog = (sSharedLib*)malloc(sizeof(sSharedLib));
 	if(!prog)
@@ -97,9 +94,8 @@ uintptr_t load_setupProg(int binFd,int argc,char **argv) {
 	prog->dynstrtbl = NULL;
 	prog->dyn = NULL;
 	prog->name = "-Main-";
-	prog->deps = sll_create();
-	if(!prog->deps || !sll_append(libs,prog))
-		load_error("Not enough mem!");
+	prog->deps = NULL;
+	appendto(&libs,prog);
 
 	/* load program including shared libraries into linked list */
 	load_doLoad(binFd,prog);
@@ -108,17 +104,13 @@ uintptr_t load_setupProg(int binFd,int argc,char **argv) {
 	entryPoint = load_addSegments();
 
 #if PRINT_LOADADDR
-	sSLNode *n,*m;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next) {
 		uintptr_t addr;
 		lookup_byName(NULL,"_start",&addr);
 		debugf("[%d] Loaded %s @ %p .. %p (text @ %p) with deps: ",
 				getpid(),l->name,l->loadAddr,l->loadAddr + l->textSize,addr);
-		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
-			sSharedLib *dl = (sSharedLib*)m->data;
-			debugf("%s ",dl->name);
-		}
+		for(sDep *dl = l->deps; dl != NULL; dl = dl->next)
+			debugf("%s ",dl->lib->name);
 		debugf("\n");
 	}
 #endif

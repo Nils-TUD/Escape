@@ -22,7 +22,6 @@
 #include <sys/common.h>
 #include <sys/elf.h>
 #include <sys/debug.h>
-#include <sys/sllist.h>
 #include <sys/mman.h>
 
 #define LD_BIND_NOW		0
@@ -37,6 +36,12 @@
 #define MAX_MEM			(1024 * 64)
 
 typedef struct sSharedLib sSharedLib;
+
+typedef struct sDep {
+	sSharedLib *lib;
+	struct sDep *next;
+} sDep;
+
 struct sSharedLib {
 	uchar isDSO;
 	const char *name;
@@ -50,12 +55,26 @@ struct sSharedLib {
 	sElfRel *jmprel;
 	sElfSym *dynsyms;
 	char *dynstrtbl;
-	sSLList *deps;
+	sDep *deps;
 	bool relocated;
 	bool initialized;
+	sSharedLib *next;
 };
 
-extern sSLList *libs;
+static inline void appendto(sSharedLib **list,sSharedLib *lib) {
+	sSharedLib *p = NULL,*l = *list;
+	while(l) {
+		p = l;
+		l = l->next;
+	}
+	if(p)
+		p->next = lib;
+	else
+		*list = lib;
+	lib->next = NULL;
+}
+
+extern sSharedLib *libs;
 
 /**
  * Prints the given error-message, including errno, and exits

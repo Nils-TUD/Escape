@@ -21,7 +21,6 @@
 #include <sys/debug.h>
 #include <sys/io.h>
 #include <sys/proc.h>
-#include <sys/sllist.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <stdio.h>
@@ -101,9 +100,7 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 					lib->isDSO = true;
 					lib->name = dst->dynstrtbl + dst->dyn[i].d_un.d_val;
 					lib->loadAddr = 0;
-					lib->deps = sll_create();
-					if(!lib->deps)
-						load_error("Not enough mem!");
+					lib->deps = NULL;
 					nlib = load_addLib(lib);
 					if(nlib == NULL) {
 						load_library(lib);
@@ -111,7 +108,13 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 					}
 					else
 						free(lib);
-					sll_append(dst->deps,nlib);
+
+					sDep *dep = malloc(sizeof(sDep));
+					if(!dep)
+						load_error("Not enough mem!");
+					dep->lib = nlib;
+					dep->next = dst->deps;
+					dst->deps = dep;
 				}
 			}
 		}
@@ -119,10 +122,8 @@ void load_doLoad(int binFd,sSharedLib *dst) {
 }
 
 uintptr_t load_addSegments(void) {
-	sSLNode *n;
 	uintptr_t entryPoint = 0;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next) {
 		sElfEHeader eheader;
 		sElfPHeader pheader;
 		uint8_t const *datPtr;
@@ -186,14 +187,11 @@ static void load_library(sSharedLib *dst) {
 }
 
 static sSharedLib *load_addLib(sSharedLib *lib) {
-	sSLNode *n;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next) {
 		if(strcmp(l->name,lib->name) == 0)
 			return l;
 	}
-	if(!sll_append(libs,lib))
-		load_error("Not enough mem!");
+	appendto(&libs,lib);
 	return NULL;
 }
 

@@ -20,7 +20,6 @@
 #include <sys/common.h>
 #include <sys/elf.h>
 #include <sys/debug.h>
-#include <sys/sllist.h>
 #include <sys/proc.h>
 #include <string.h>
 #include <stdlib.h>
@@ -68,10 +67,8 @@ A_REGPARM(0) uintptr_t lookup_resolve(A_UNUSED SavedRegs regs,sSharedLib *lib,si
 	pid = getpid();
 	if(pid == CALLTRACE_PID) {
 		if(depth < 100) {
-			sSLNode *n;
-			sSharedLib *calling = (sSharedLib*)sll_get(libs,0);
-			for(n = sll_begin(libs); n != NULL; n = n->next) {
-				sSharedLib *l = (sSharedLib*)n->data;
+			sSharedLib *calling = libs;
+			for(sSharedLib *l = libs; l != NULL; l = l->next) {
 				if(retAddr >= l->loadAddr && retAddr < l->loadAddr + l->textSize) {
 					calling = l;
 					break;
@@ -110,11 +107,9 @@ void lookup_tracePop(void) {
 #endif
 
 sElfSym *lookup_byName(sSharedLib *skip,const char *name,uintptr_t *value) {
-	sSLNode *n;
 	sElfSym *s;
 	uint32_t hash = lookup_getHash((const uint8_t*)name);
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
+	for(sSharedLib *l = libs; l != NULL; l = l->next) {
 		if(l == skip)
 			continue;
 		s = lookup_byNameIntern(l,name,hash);

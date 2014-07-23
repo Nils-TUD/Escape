@@ -25,9 +25,10 @@
 FILE *fopendyn(void) {
 	/* create file */
 	FILE *f;
-	if(!(f = bcreate(-1,O_WRONLY,NULL,0,DYN_BUFFER_SIZE,true)) || !sll_append(&iostreams,f)) {
+	if(!(f = bcreate(-1,O_WRONLY,NULL,0,DYN_BUFFER_SIZE,true))) {
 		free(f);
 		return NULL;
 	}
+	benqueue(f);
 	return f;
 }

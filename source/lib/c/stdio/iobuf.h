@@ -22,7 +22,6 @@
 #define IOBUF_H_
 #include <sys/common.h>
 #include <sys/sync.h>
-#include <sys/sllist.h>
 
 #define IN_BUFFER_SIZE		1024
 #define OUT_BUFFER_SIZE		1024
@@ -85,13 +84,15 @@ typedef struct {
 	char *buffer;
 } sIOBuf;
 
-typedef struct {
+typedef struct FILE {
 	uint flags;
 	uchar eof;
 	char istty;	/* only for stdin */
 	int error;
 	sIOBuf in;
 	sIOBuf out;
+	struct FILE *prev;
+	struct FILE *next;
 } FILE;
 
 int bputc(FILE *f,int c);
@@ -122,4 +123,12 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,b
 
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;
-extern sSLList iostreams;
+extern FILE *iostreams;
+
+static inline void benqueue(FILE *f) {
+	if(iostreams)
+		iostreams->prev = f;
+	f->prev = NULL;
+	f->next = iostreams;
+	iostreams = f;
+}

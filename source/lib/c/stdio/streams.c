@@ -34,10 +34,9 @@ static FILE stdBufs[3];
 FILE *stdin = stdBufs + STDIN_FILENO;
 FILE *stdout = stdBufs + STDOUT_FILENO;
 FILE *stderr = stdBufs + STDERR_FILENO;
-sSLList iostreams;
+FILE *iostreams;
 
 void initStdio(void) {
-	sll_init(&iostreams,malloc,free);
 	atexit(deinitStdio);
 
 	if(!binit(stdin,STDIN_FILENO,O_RDONLY,NULL,IN_BUFFER_SIZE,0,false))
@@ -51,9 +50,11 @@ void initStdio(void) {
 }
 
 static void deinitStdio(A_UNUSED void *dummy) {
-	sSLNode *n;
-	for(n = sll_begin(&iostreams); n != NULL; n = n->next)
-		fclose((FILE*)n->data);
+	for(FILE *f = iostreams; f != NULL; ) {
+		FILE *next = f->next;
+		fclose(f);
+		f = next;
+	}
 	fflush(stderr);
 	fflush(stdout);
 }

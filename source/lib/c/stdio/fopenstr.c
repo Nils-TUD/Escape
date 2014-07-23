@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,9 +39,10 @@ FILE *fopenstr(char *buf,size_t size,const char *mode) {
 
 	/* create file */
 	FILE *f;
-	if(!(f = bcreate(-1,flags,buf,rsize,wsize,false)) || !sll_append(&iostreams,f)) {
+	if(!(f = bcreate(-1,flags,buf,rsize,wsize,false))) {
 		free(f);
 		return NULL;
 	}
+	benqueue(f);
 	return f;
 }

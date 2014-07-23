@@ -32,6 +32,8 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,b
 	f->istty = 0;
 	f->in.buffer = NULL;
 	f->out.buffer = NULL;
+	f->prev = NULL;
+	f->next = NULL;
 
 	if(flags & O_READ) {
 		f->in.fd = fd;

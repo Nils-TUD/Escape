@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,9 +34,10 @@ FILE *fattach(int fd,const char *mode) {
 
 	/* create file */
 	FILE *f;
-	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false)) || !sll_append(&iostreams,f)) {
+	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false))) {
 		free(f);
 		return NULL;
 	}
+	benqueue(f);
 	return f;
 }

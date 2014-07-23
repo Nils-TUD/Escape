@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,10 +60,11 @@ FILE *fopen(const char *filename,const char *mode) {
 		return NULL;
 
 	/* create file */
-	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false)) || !sll_append(&iostreams,f)) {
+	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false))) {
 		close(fd);
 		free(f);
 		return NULL;
 	}
+	benqueue(f);
 	return f;
 }

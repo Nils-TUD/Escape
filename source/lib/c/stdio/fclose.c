@@ -35,7 +35,15 @@ int fclose(FILE *stream) {
 			close(stream->out.fd);
 		free(stream->out.buffer);
 	}
-	sll_removeFirstWith(&iostreams,stream);
+	/* in the list? (std-streams are not) */
+	if(iostreams == stream || stream->prev || stream->next) {
+		if(stream->prev)
+			stream->prev->next = stream->next;
+		else
+			iostreams = stream->next;
+		if(stream->next)
+			stream->next->prev = stream->prev;
+	}
 	free(stream);
 	return res;
 }

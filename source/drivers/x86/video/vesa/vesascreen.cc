@@ -19,17 +19,17 @@
 
 #include <sys/common.h>
 #include <sys/mman.h>
-#include <sys/sllist.h>
 #include <vbe/vbe.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
 
 #include "vesascreen.h"
 #include "vesatui.h"
 
 static int vesascr_initWhOnBl(sVESAScreen *scr);
 
-static sSLList *screens;
+static std::vector<sVESAScreen*> screens;
 
 static int vesascr_initWhOnBl(sVESAScreen *scr) {
 	scr->whOnBlCache = (uint8_t*)malloc((FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *
@@ -56,37 +56,29 @@ static int vesascr_initWhOnBl(sVESAScreen *scr) {
 }
 
 sVESAScreen *vesascr_request(esc::Screen::Mode *minfo) {
-	if(screens == NULL && (screens = sll_create()) == NULL)
-		return NULL;
-
 	/* is there already a screen for that mode? */
-	sVESAScreen *scr = NULL;
-	for(sSLNode *n = sll_begin(screens); n != NULL; n = n->next) {
-		scr = (sVESAScreen*)n->data;
-		if(scr->mode->id == minfo->id) {
-			scr->refs++;
-			return scr;
+	for(auto it = screens.begin(); it != screens.end(); ++it) {
+		if((*it)->mode->id == minfo->id) {
+			(*it)->refs++;
+			return *it;
 		}
 	}
 
 	/* ok, create a new one */
-	scr = (sVESAScreen*)malloc(sizeof(sVESAScreen));
+	sVESAScreen *scr = (sVESAScreen*)malloc(sizeof(sVESAScreen));
 	scr->refs = 1;
 	scr->cols = minfo->width / (FONT_WIDTH + PAD * 2);
 	/* leave at least one pixel free for the cursor */
 	scr->rows = (minfo->height - 1) / (FONT_HEIGHT + PAD * 2);
 	scr->mode = minfo;
-	if(!sll_append(screens,scr)) {
-		free(scr);
-		return NULL;
-	}
+	screens.push_back(scr);
 
 	/* map framebuffer */
 	size_t size = minfo->width * minfo->height * (minfo->bitsPerPixel / 8);
 	uintptr_t phys = minfo->physaddr;
 	scr->frmbuf = static_cast<uint8_t*>(mmapphys(&phys,size,0,MAP_PHYS_MAP));
 	if(scr->frmbuf == NULL) {
-		sll_removeFirstWith(screens,scr);
+		screens.erase_first(scr);
 		free(scr);
 		return NULL;
 	}
@@ -98,7 +90,7 @@ sVESAScreen *vesascr_request(esc::Screen::Mode *minfo) {
 	scr->content = (uint8_t*)malloc(scr->cols * scr->rows * 2);
 	if(scr->content == NULL) {
 		munmap(scr->frmbuf);
-		sll_removeFirstWith(screens,scr);
+		screens.erase_first(scr);
 		free(scr);
 		return NULL;
 	}
@@ -125,7 +117,7 @@ void vesascr_release(sVESAScreen *scr) {
 		free(scr->whOnBlCache);
 		free(scr->content);
 		munmap(scr->frmbuf);
-		sll_removeFirstWith(screens,scr);
+		screens.erase_first(scr);
 		free(scr);
 	}
 }

@@ -169,12 +169,8 @@ static void ui_drawScore(void) {
 
 static void ui_drawObjects(void) {
 	int y;
-	sSLNode *n;
-	sObject *o;
 	const uchar *src;
-	sSLList *objects = objlist_get();
-	for(n = sll_begin(objects); n != NULL; n = n->next) {
-		o = (sObject*)n->data;
+	for(sObject *o = objlist_get(); o != NULL; o = o->next) {
 		if((size_t)(o->x + PADDING + o->width) >= (size_t)(WIDTH - SCORE_WIDTH) &&
 				(o->y + PADDING) <= SCORE_HEIGHT) {
 			/* don't draw objects over the score-area */

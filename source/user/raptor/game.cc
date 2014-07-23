@@ -56,7 +56,6 @@ bool game_init(uint cols,uint rows) {
 	ui_init(cols,rows);
 	srand(time(NULL));
 	bar_init();
-	objlist_create();
 	return true;
 }
 

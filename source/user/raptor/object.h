@@ -41,7 +41,7 @@
 #define DIR_RIGHT		4
 #define DIR_DOWN		8
 
-typedef struct {
+typedef struct sObject {
 	int type;
 	int x;
 	int y;
@@ -50,6 +50,7 @@ typedef struct {
 	int direction;
 	int speed;
 	int moveCnt;
+	struct sObject *next;
 } sObject;
 
 sObject *obj_createAirplain(int x,int y,int direction,int speed);

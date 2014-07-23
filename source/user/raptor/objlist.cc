@@ -19,56 +19,55 @@
 
 #include <sys/common.h>
 #include <assert.h>
-#include <sys/sllist.h>
 #include "object.h"
 #include "objlist.h"
 #include "game.h"
 
-static sSLList *objects;
-
-void objlist_create(void) {
-	objects = sll_create();
-	assert(objects != NULL);
-}
+static sObject *first;
 
 void objlist_add(sObject *o) {
-	sassert(sll_append(objects,o));
+	sObject *p = NULL;
+	sObject *obj = first;
+	while(obj) {
+		p = obj;
+		obj = obj->next;
+	}
+	if(p)
+		p->next = o;
+	else
+		first = o;
+	o->next = NULL;
 }
 
-sSLList *objlist_get(void) {
-	return objects;
+sObject *objlist_get(void) {
+	return first;
 }
 
 int objlist_tick(void) {
-	sSLNode *n,*pn,*nnext,*m,*pm;
-	sObject *o1,*o2;
 	bool removeO1;
 	int scoreChg = 0;
-	pn = NULL;
-	for(n = sll_begin(objects); n != NULL; ) {
-		o1 = (sObject*)n->data;
+	for(sObject *pn = NULL, *o1 = first; o1 != NULL; ) {
 		if(!obj_tick(o1)) {
 			if(o1->type == TYPE_AIRPLANE)
 				scoreChg += SCORE_MISS;
-			nnext = n->next;
+			sObject *nnext = o1->next;
 			obj_destroy(o1);
-			sll_removeNode(objects,n,pn);
-			n = nnext;
+			if(pn)
+				pn->next = nnext;
+			else
+				first = nnext;
+			o1 = nnext;
 		}
 		else {
-			pn = n;
-			n = n->next;
+			pn = o1;
+			o1 = o1->next;
 		}
 	}
 
-	pn = NULL;
-	for(n = sll_begin(objects); n != NULL; ) {
-		pm = NULL;
+	for(sObject *pn = NULL, *o1 = first; o1 != NULL; ) {
 		removeO1 = false;
-		for(m = sll_begin(objects); m != NULL; pm = m, m = m->next) {
-			if(n != m) {
-				o1 = (sObject*)n->data;
-				o2 = (sObject*)m->data;
+		for(sObject *pm = NULL, *o2 = first; o2 != NULL; pm = o2, o2 = o2->next) {
+			if(o1 != o2) {
 				if(obj_collide(o1,o2)) {
 					scoreChg += SCORE_HIT;
 					if(!obj_explode(o1)) {
@@ -76,8 +75,11 @@ int objlist_tick(void) {
 						obj_destroy(o1);
 					}
 					if(!obj_explode(o2)) {
+						if(pm)
+							pm->next = o2->next;
+						else
+							first = o2->next;
 						obj_destroy(o2);
-						sll_removeNode(objects,m,pm);
 					}
 					break;
 				}
@@ -86,13 +88,16 @@ int objlist_tick(void) {
 
 		/* collition? */
 		if(removeO1) {
-			nnext = n->next;
-			sll_removeNode(objects,n,pn);
-			n = nnext;
+			sObject *nnext = o1->next;
+			if(pn)
+				pn->next = o1->next;
+			else
+				first = o1->next;
+			o1 = nnext;
 		}
 		else {
-			pn = n;
-			n = n->next;
+			pn = o1;
+			o1 = o1->next;
 		}
 	}
 	return scoreChg;

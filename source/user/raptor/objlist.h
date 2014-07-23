@@ -20,13 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include "object.h"
-
-void objlist_create(void);
 
 void objlist_add(sObject *o);
 
-sSLList *objlist_get(void);
+sObject *objlist_get(void);
 
 int objlist_tick(void);

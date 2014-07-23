@@ -24,7 +24,6 @@
 #include <sys/driver.h>
 #include <sys/debug.h>
 #include <sys/io.h>
-#include <sys/sllist.h>
 #include <esc/proto/winmng.h>
 #include <stdio.h>
 #include <stdlib.h>

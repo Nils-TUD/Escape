@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include <sys/mman.h>
 #include <esc/proto/ui.h>
 #include <stdlib.h>

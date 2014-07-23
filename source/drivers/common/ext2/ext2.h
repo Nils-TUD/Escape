@@ -20,7 +20,6 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/sllist.h>
 #include <sys/endian.h>
 #include <fs/common.h>
 #include <fs/blockcache.h>

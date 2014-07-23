@@ -25,7 +25,6 @@
 #include <sys/mman.h>
 #include <sys/thread.h>
 #include <sys/messages.h>
-#include <sys/sllist.h>
 #include <usergroup/group.h>
 #include <esc/proto/ui.h>
 #include <esc/proto/file.h>

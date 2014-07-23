@@ -21,7 +21,6 @@
 #include <sys/keycodes.h>
 #include <sys/io.h>
 #include <sys/esccodes.h>
-#include <sys/sllist.h>
 #include <sys/stat.h>
 #include <esc/proto/input.h>
 #include <stdlib.h>

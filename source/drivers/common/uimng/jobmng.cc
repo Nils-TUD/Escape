@@ -21,7 +21,6 @@
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <sys/sync.h>
-#include <sys/sllist.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>

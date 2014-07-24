@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <gui/control.h>
+#include <limits>
 #include <string>
 #include <assert.h>
 
@@ -51,13 +52,9 @@ namespace gui {
 		void setCursorPos(size_t pos) {
 			size_t oldcursor = _cursor;
 			size_t oldbegin = _begin;
-			size_t max = getMaxCharNum(*getGraphics());
 			assert(pos <= _str.length());
 			_cursor = pos;
-			if(_cursor > max)
-				_begin = _cursor - max;
-			else
-				_begin = 0;
+			setBegin();
 			makeDirty(oldcursor != _cursor || oldbegin != _begin);
 		}
 
@@ -97,6 +94,16 @@ namespace gui {
 			if(getSize().width < getTheme().getTextPadding() * 2)
 				return 0;
 			return (getSize().width - getTheme().getTextPadding() * 2) / g.getFont().getSize().width;
+		}
+		void setBegin() {
+			size_t max = getMaxCharNum(*getGraphics());
+			/* if we don't know our size yet, repeat the setting of begin later */
+			if(max == 0)
+				_begin = std::numeric_limits<size_t>::max();
+			else if(_cursor > max)
+				_begin = _cursor - max;
+			else
+				_begin = 0;
 		}
 		void setFocused(bool focused) {
 			_focused = focused;

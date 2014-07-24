@@ -228,6 +228,13 @@ namespace gui {
 		gpos_t ystart = (size.height - fsize.height) / 2;
 		int start = _begin;
 
+		/* if begin could not be determined previously, try that again */
+		if(_begin == std::numeric_limits<size_t>::max()) {
+			setBegin();
+			assert(_begin != std::numeric_limits<size_t>::max());
+			start = _begin;
+		}
+
 		string text = _secret ? string(_str.length(),'*') : _str;
 		count = MIN((int)text.length(),count);
 

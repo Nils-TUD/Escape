@@ -38,10 +38,10 @@ public:
 	 * @param u the user
 	 * @param dirNode the directory-inode
 	 * @param ino will be set to the inode on success
-	 * @param isDir whether it should be an directory
+	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode **ino,bool isDir);
+	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode **ino,mode_t mode);
 
 	/**
 	 * Sets the mode of the given inode to <mode>

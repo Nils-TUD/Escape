@@ -33,10 +33,10 @@ public:
 	 * @param dirNode the directory
 	 * @param name the name
 	 * @param ino will be set to the inode-number on success
-	 * @param isDir whether it should be an directory
+	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,bool isDir);
+	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,mode_t mode);
 
 	/**
 	 * Deletes the given inode. That means all associated blocks will be free'd

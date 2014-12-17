@@ -311,8 +311,9 @@ void FSDevice::rename(IPCStream &is) {
 
 void FSDevice::mkdir(IPCStream &is) {
 	FSUser u;
+	mode_t mode;
 	CStringBuf<MAX_PATH_LEN> path;
-	is >> u.uid >> u.gid >> u.pid >> path;
+	is >> u.uid >> u.gid >> u.pid >> path >> mode;
 
 	int res;
 	ino_t dirIno;
@@ -320,7 +321,7 @@ void FSDevice::mkdir(IPCStream &is) {
 	if(dirIno < 0)
 		res = dirIno;
 	else
-		res = _fs->mkdir(&u,dirIno,name);
+		res = _fs->mkdir(&u,dirIno,name,mode);
 
 	is << res << Reply();
 }

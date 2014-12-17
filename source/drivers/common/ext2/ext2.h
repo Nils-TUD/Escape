@@ -62,7 +62,7 @@ public:
 	virtual ssize_t write(ino_t ino,const void *buffer,off_t offset,size_t size);
 	virtual int link(FSUser *u,ino_t dstIno,ino_t dirIno,const char *name);
 	virtual int unlink(FSUser *u,ino_t dirIno,const char *name);
-	virtual int mkdir(FSUser *u,ino_t dirIno,const char *name);
+	virtual int mkdir(FSUser *u,ino_t dirIno,const char *name,mode_t mode);
 	virtual int rmdir(FSUser *u,ino_t dirIno,const char *name);
 	virtual int chmod(FSUser *u,ino_t dirIno,mode_t mode);
 	virtual int chown(FSUser *u,ino_t dirIno,uid_t uid,gid_t gid);

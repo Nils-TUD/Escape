@@ -183,9 +183,10 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param path the path
+	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int mkdir(pid_t pid,const char *path);
+	static int mkdir(pid_t pid,const char *path,mode_t mode);
 
 	/**
 	 * Removes the given directory

@@ -179,7 +179,7 @@ bool FileCopy::copy(const char *src,const char *dest,bool remove) {
 			return false;
 		}
 
-		if(mkdir(dstcpy) < 0) {
+		if(mkdir(dstcpy,DIR_DEF_MODE) < 0) {
 			handleError("mkdir '%s' failed",dstcpy);
 			return false;
 		}
@@ -259,7 +259,7 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 			return false;
 		}
 
-		if(mkdir(dst) < 0) {
+		if(mkdir(dst,DIR_DEF_MODE) < 0) {
 			closedir(dir);
 			handleError("Creation of '%s' failed",dst);
 			return false;

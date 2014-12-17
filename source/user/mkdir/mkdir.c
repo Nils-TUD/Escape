@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/cmdargs.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <sys/io.h>
 #include <stdio.h>
@@ -42,7 +43,7 @@ int main(int argc,const char *argv[]) {
 
 	args = ca_getFree();
 	while(*args) {
-		if(mkdir(*args) < 0)
+		if(mkdir(*args,DIR_DEF_MODE) < 0)
 			printe("Unable to create directory '%s'",*args);
 		args++;
 	}

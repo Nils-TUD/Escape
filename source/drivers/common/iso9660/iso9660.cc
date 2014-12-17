@@ -180,7 +180,7 @@ int ISO9660FileSystem::unlink(FSUser *,ino_t,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::mkdir(FSUser *,ino_t,const char *) {
+int ISO9660FileSystem::mkdir(FSUser *,ino_t,const char *,mode_t) {
 	return -EROFS;
 }
 

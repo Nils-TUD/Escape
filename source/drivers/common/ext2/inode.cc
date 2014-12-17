@@ -35,36 +35,25 @@
 #include "inodecache.h"
 #include "bitmap.h"
 
-int Ext2INode::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode **ino,bool isDir) {
+int Ext2INode::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode **ino,mode_t mode) {
 	size_t i;
 	time_t now;
 	Ext2CInode *cnode;
 
 	/* request inode */
-	ino_t inodeNo = Ext2Bitmap::allocInode(e,dirNode,isDir);
+	ino_t inodeNo = Ext2Bitmap::allocInode(e,dirNode,S_ISDIR(mode));
 	if(inodeNo == 0)
 		return -ENOSPC;
 	cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
 	if(cnode == NULL) {
-		Ext2Bitmap::freeInode(e,inodeNo,isDir);
+		Ext2Bitmap::freeInode(e,inodeNo,S_ISDIR(mode));
 		return -ENOBUFS;
 	}
 
 	/* init inode */
 	cnode->inode.uid = cputole16(u->uid);
 	cnode->inode.gid = cputole16(u->gid);
-	if(isDir) {
-		/* drwxr-xr-x */
-		cnode->inode.mode = cputole16(EXT2_S_IFDIR |
-			EXT2_S_IRUSR | EXT2_S_IRGRP | EXT2_S_IROTH |
-			EXT2_S_IXUSR | EXT2_S_IXGRP | EXT2_S_IXOTH |
-			EXT2_S_IWUSR);
-	}
-	else {
-		/* -rw-r--r-- */
-		cnode->inode.mode = cputole16(EXT2_S_IFREG |
-			EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH);
-	}
+	cnode->inode.mode = cputole16(mode);
 	cnode->inode.linkCount = cputole16(0);
 	cnode->inode.size = cputole32(0);
 	cnode->inode.singlyIBlock = cputole32(0);

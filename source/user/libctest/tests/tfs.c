@@ -61,7 +61,7 @@ static void test_basics(void) {
 	struct stat info2;
 	test_caseStart("Testing fs");
 
-	test_assertInt(mkdir("/newdir"),0);
+	test_assertInt(mkdir("/newdir",DIR_DEF_MODE),0);
 
 	fs_createFile("/newdir/file1","foobar");
 	fs_readFile("/newdir/file1","foobar");
@@ -149,7 +149,7 @@ static void test_perms(void) {
 
 
 		/* create new folder */
-		test_assertInt(mkdir(paths[i].dir),0);
+		test_assertInt(mkdir(paths[i].dir,DIR_DEF_MODE),0);
 		test_assertInt(chmod(paths[i].dir,0700),0);
 		test_assertInt(chown(paths[i].dir,1,1),0);
 

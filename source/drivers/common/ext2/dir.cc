@@ -31,12 +31,12 @@
 #include "link.h"
 #include "inodecache.h"
 
-int Ext2Dir::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name) {
+int Ext2Dir::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name,mode_t mode) {
 	Ext2CInode *cnode;
 	ino_t ino;
 
 	/* first create an inode and an entry in the directory */
-	int res = Ext2File::create(e,u,dir,name,&ino,true);
+	int res = Ext2File::create(e,u,dir,name,&ino,mode);
 	if(res < 0)
 		return res;
 

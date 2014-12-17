@@ -37,9 +37,10 @@ public:
 	 * @param u the user
 	 * @param dir the directory
 	 * @param name the name of the new directory
+	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name);
+	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name,mode_t mode);
 
 	/**
 	 * Finds the inode-number to the entry <name> in <dir>

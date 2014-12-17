@@ -508,10 +508,11 @@ int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	pid_t pid = Proc::getRunning();
 	const char *path = (const char*)SYSC_ARG1(stack);
+	mode_t mode = (mode_t)SYSC_ARG2(stack);
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::mkdir(pid,abspath);
+	int res = VFS::mkdir(pid,abspath,mode);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

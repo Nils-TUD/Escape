@@ -189,12 +189,12 @@ int Ext2FileSystem::unlink(FSUser *u,ino_t dirIno,const char *name) {
 	return res;
 }
 
-int Ext2FileSystem::mkdir(FSUser *u,ino_t dirIno,const char *name) {
+int Ext2FileSystem::mkdir(FSUser *u,ino_t dirIno,const char *name,mode_t mode) {
 	int res;
 	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return -ENOBUFS;
-	res = Ext2Dir::create(this,u,dir,name);
+	res = Ext2Dir::create(this,u,dir,name,mode);
 	inodeCache.release(dir);
 	return res;
 }

@@ -74,9 +74,9 @@ int rename(const char *oldPath,const char *newPath) {
 	return syscall2(SYSCALL_RENAME,(ulong)oldPath,(ulong)newPath);
 }
 
-int mkdir(const char *path) {
+int mkdir(const char *path,mode_t mode) {
 	char apath[MAX_PATH_LEN];
-	return syscall1(SYSCALL_MKDIR,(ulong)abspath(apath,sizeof(apath),path));
+	return syscall2(SYSCALL_MKDIR,(ulong)abspath(apath,sizeof(apath),path),mode);
 }
 
 int rmdir(const char *path) {

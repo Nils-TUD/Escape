@@ -37,14 +37,14 @@
 #include "link.h"
 #include "bitmap.h"
 
-int Ext2File::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,bool isDir) {
+int Ext2File::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,mode_t mode) {
 	Ext2CInode *cnode;
 	int res;
 	/* we need write-permission for the directory */
 	if((res = e->hasPermission(dirNode,u,MODE_WRITE)) < 0)
 		return res;
 
-	res = Ext2INode::create(e,u,dirNode,&cnode,isDir);
+	res = Ext2INode::create(e,u,dirNode,&cnode,mode);
 	if(res < 0)
 		return res;
 

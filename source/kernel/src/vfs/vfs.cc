@@ -452,7 +452,7 @@ int VFS::rename(pid_t pid,const char *oldPath,const char *newPath) {
 	}
 }
 
-int VFS::mkdir(pid_t pid,const char *path) {
+int VFS::mkdir(pid_t pid,const char *path,mode_t mode) {
 	char pathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy,backup;
 	VFSNode *child;
@@ -465,7 +465,7 @@ int VFS::mkdir(pid_t pid,const char *path) {
 		return res;
 
 	if(!IS_NODE(fsFile)) {
-		res = VFSFS::mkdir(pid,fsFile,begin);
+		res = VFSFS::mkdir(pid,fsFile,begin,S_IFDIR | (mode & MODE_PERM));
 		MountSpace::release(fsFile);
 		return res;
 	}
@@ -507,7 +507,7 @@ int VFS::mkdir(pid_t pid,const char *path) {
 	/* check permissions */
 	if((res = hasAccess(pid,node,VFS_WRITE)) < 0)
 		goto errorFree;
-	child = createObj<VFSDir>(pid,node,namecpy,DIR_DEF_MODE);
+	child = createObj<VFSDir>(pid,node,namecpy,S_IFDIR | (mode & MODE_PERM));
 	if(child == NULL) {
 		res = -ENOMEM;
 		goto errorFree;

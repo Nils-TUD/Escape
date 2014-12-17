@@ -545,7 +545,7 @@ int main() {
 	srand(rdtsc());
 
 	print("Creating /sys/net");
-	if(mkdir("/sys/net") < 0)
+	if(mkdir("/sys/net",DIR_DEF_MODE) < 0)
 		printe("Unable to create /sys/net");
 	createResolvConf();
 

@@ -54,7 +54,7 @@ public:
 	virtual int unlink(FSUser *,ino_t,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int mkdir(FSUser *,ino_t,const char *) {
+	virtual int mkdir(FSUser *,ino_t,const char *,mode_t) {
 		return -ENOTSUP;
 	}
 	virtual int rmdir(FSUser *,ino_t,const char *) {

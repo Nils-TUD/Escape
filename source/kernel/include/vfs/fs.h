@@ -103,9 +103,10 @@ public:
 	 * @param pid the process-id
 	 * @param fsFile the channel to the fs instance
 	 * @param path the path
+	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int mkdir(pid_t pid,OpenFile *fsFile,const char *path);
+	static int mkdir(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode);
 
 	/**
 	 * Removes the given directory. Expects that the directory is empty (except '.' and '..')

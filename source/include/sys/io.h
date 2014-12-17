@@ -344,9 +344,10 @@ A_CHECKRET int rename(const char *oldPath,const char *newPath);
  * Creates the given directory. Expects that all except the last path-component exist.
  *
  * @param path the path
+ * @param mode the mode for the created file
  * @return 0 on success
  */
-A_CHECKRET int mkdir(const char *path);
+A_CHECKRET int mkdir(const char *path,mode_t mode);
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')

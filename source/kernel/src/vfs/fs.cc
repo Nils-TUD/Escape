@@ -119,12 +119,12 @@ int VFSFS::rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *new
 	return communicate(pid,fsFile,MSG_FS_RENAME,ib);
 }
 
-int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path) {
+int VFSFS::mkdir(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path) << mode;
 	return communicate(pid,fsFile,MSG_FS_MKDIR,ib);
 }
 

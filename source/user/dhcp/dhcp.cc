@@ -23,13 +23,13 @@
 #include <sys/endian.h>
 #include <esc/proto/socket.h>
 #include <esc/proto/net.h>
+#include <esc/cmdargs.h>
+#include <esc/dns.h>
 #include <iostream>
 #include <fstream>
-#include <esc/cmdargs.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
-#include <esc/dns.h>
 
 using namespace esc;
 

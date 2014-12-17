@@ -17,6 +17,7 @@
         [
             "-I/home/hrniels/escape/source/include",
             "-I/home/hrniels/escape/source/include/cpp",
+            "-I/home/hrniels/escape/source/kernel/include",
             "-I/home/hrniels/escape/source/drivers/x86/video/x86emu",
             "-I/opt/escape-cross-i586/include/c++/4.8.2",
             "-I/opt/escape-cross-i586/include/c++/4.8.2/i586-elf-escape",

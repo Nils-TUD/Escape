@@ -82,8 +82,8 @@ Ext2FileSystem::~Ext2FileSystem() {
 	close(fd);
 }
 
-ino_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags) {
-	return Ext2Path::resolve(this,u,path,flags);
+ino_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags,mode_t mode) {
+	return Ext2Path::resolve(this,u,path,flags,mode);
 }
 
 ino_t Ext2FileSystem::open(FSUser *u,ino_t ino,uint flags) {

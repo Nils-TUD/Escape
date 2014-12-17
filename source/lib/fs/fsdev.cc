@@ -112,7 +112,7 @@ void FSDevice::open(IPCStream &is) {
 	u.gid = r.gid;
 	u.uid = r.uid;
 	u.pid = r.pid;
-	ino_t no = _fs->resolve(&u,path,r.flags);
+	ino_t no = _fs->resolve(&u,path,r.flags,S_IFREG | (r.mode & MODE_PERM));
 	if(no >= 0) {
 		no = _fs->open(&u,no,r.flags);
 		if(no >= 0)
@@ -160,7 +160,7 @@ void FSDevice::stat(IPCStream &is) {
 
 	int res;
 	struct stat info;
-	ino_t no = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t no = _fs->resolve(&u,path.str(),O_RDONLY,0);
 	if(no < 0)
 		res = no;
 	else
@@ -182,7 +182,7 @@ void FSDevice::chmod(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path >> mode;
 
 	int res;
-	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY,0);
 	if(ino < 0)
 		res = ino;
 	else
@@ -199,7 +199,7 @@ void FSDevice::chown(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path >> uid >> gid;
 
 	int res;
-	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY,0);
 	if(ino < 0)
 		res = ino;
 	else
@@ -235,7 +235,7 @@ static const char *splitPath(char *path) {
 const char *FSDevice::resolveDir(FSUser *u,char *path,ino_t *ino) {
 	const char *name = splitPath(path);
 	if(name)
-		*ino = _fs->resolve(u,path,O_RDONLY);
+		*ino = _fs->resolve(u,path,O_RDONLY,0);
 	else
 		*ino = -ENOMEM;
 	return name;
@@ -248,7 +248,7 @@ void FSDevice::link(IPCStream &is) {
 
 	int res;
 	ino_t dirIno,dstIno;
-	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY);
+	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY,0);
 	if(dstIno < 0)
 		res = dstIno;
 	else {
@@ -268,7 +268,7 @@ void FSDevice::unlink(IPCStream &is) {
 	is >> u.uid >> u.gid >> u.pid >> path;
 
 	int res;
-	ino_t dirIno = _fs->resolve(&u,path.str(),O_RDONLY);
+	ino_t dirIno = _fs->resolve(&u,path.str(),O_RDONLY,0);
 	if(dirIno < 0)
 		res = dirIno;
 	else {
@@ -287,7 +287,7 @@ void FSDevice::rename(IPCStream &is) {
 
 	int res;
 	ino_t dirIno,dstIno;
-	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY);
+	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY,0);
 	if(dstIno < 0)
 		res = dstIno;
 	else {

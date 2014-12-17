@@ -146,7 +146,7 @@ public:
 	 */
 	int stat(pid_t pid,USER struct stat *info);
 
-	virtual ssize_t open(pid_t pid,const char *path,uint flags,int msgid);
+	virtual ssize_t open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t getSize(pid_t pid);
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);

@@ -375,9 +375,10 @@ public:
 	 * @param path the path (behind the mountpoint)
 	 * @param flags the open-flags
 	 * @param msgid the message-id to use (only important for channel)
+	 * @param mode the mode to set
 	 */
 	virtual ssize_t open(A_UNUSED pid_t pid,A_UNUSED const char *path,A_UNUSED uint flags,
-			A_UNUSED int msgid) {
+			A_UNUSED int msgid,A_UNUSED mode_t mode) {
 		return 0;
 	}
 

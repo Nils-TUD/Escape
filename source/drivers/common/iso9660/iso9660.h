@@ -187,7 +187,7 @@ public:
 
 	virtual ino_t open(FSUser *u,ino_t ino,uint flags);
 	virtual void close(ino_t ino);
-	virtual ino_t resolve(FSUser *u,const char *path,uint flags);
+	virtual ino_t resolve(FSUser *u,const char *path,uint flags,mode_t mode);
 	virtual int stat(ino_t ino,struct stat *info);
 	virtual ssize_t read(ino_t ino,void *buffer,off_t offset,size_t size);
 	virtual ssize_t write(ino_t ino,const void *buffer,off_t offset,size_t size);

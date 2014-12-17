@@ -38,7 +38,7 @@ public:
 
 	virtual void close(ino_t ino) = 0;
 
-	virtual ino_t resolve(FSUser *u,const char *path,uint flags) = 0;
+	virtual ino_t resolve(FSUser *u,const char *path,uint flags,mode_t mode) = 0;
 
 	virtual int stat(ino_t ino,struct stat *info) = 0;
 

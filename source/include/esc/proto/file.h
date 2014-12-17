@@ -35,15 +35,15 @@ struct FileOpen {
 
 		explicit Request(char *buffer,size_t size) : path(buffer,size) {
 		}
-		explicit Request(uint _flags,uid_t _uid,gid_t _gid,pid_t _pid,const CString &_path)
-			: flags(_flags), uid(_uid), gid(_gid), pid(_pid), path(_path) {
+		explicit Request(uint _flags,uid_t _uid,gid_t _gid,pid_t _pid,const CString &_path,mode_t _mode)
+			: flags(_flags), uid(_uid), gid(_gid), pid(_pid), path(_path), mode(_mode) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &ib,const Request &r) {
-			return ib << r.flags << r.uid << r.gid << r.pid << r.path;
+			return ib << r.flags << r.uid << r.gid << r.pid << r.path << r.mode;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.flags >> r.uid >> r.gid >> r.pid >> r.path;
+			return is >> r.flags >> r.uid >> r.gid >> r.pid >> r.path >> r.mode;
 		}
 
 		uint flags;
@@ -51,6 +51,7 @@ struct FileOpen {
 		gid_t gid;
 		pid_t pid;
 		CString path;
+		mode_t mode;
 	};
 
 	typedef DefaultResponse<int> Response;

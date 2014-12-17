@@ -128,7 +128,7 @@ void VFSChannel::closeForDriver() {
 	}
 }
 
-ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
+ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res;
@@ -152,7 +152,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid) {
 	assert(p != NULL);
 
 	/* send msg to driver */
-	ib << esc::FileOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),esc::CString(path));
+	ib << esc::FileOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),esc::CString(path),mode);
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;

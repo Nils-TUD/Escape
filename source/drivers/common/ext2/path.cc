@@ -33,7 +33,7 @@
 #include "file.h"
 #include "dir.h"
 
-ino_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags) {
+ino_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags,mode_t mode) {
 	Ext2CInode *cnode = NULL;
 	ino_t res;
 	const char *p = path;
@@ -91,7 +91,7 @@ ino_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags)
 				/* ensure that there is no '/' in the name */
 				if(slash)
 					*slash = '\0';
-				err = Ext2File::create(e,u,cnode,p,&res,FILE_DEF_MODE);
+				err = Ext2File::create(e,u,cnode,p,&res,mode);
 				e->inodeCache.release(cnode);
 				if(err < 0)
 					return err;

@@ -180,7 +180,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	}
 
 	/* give the node a chance to react on it */
-	err = node->open(pid,begin,flags,openmsg);
+	err = node->open(pid,begin,flags,openmsg,mode);
 	if(err < 0)
 		goto error;
 

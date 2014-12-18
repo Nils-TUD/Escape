@@ -303,8 +303,13 @@ protected:
 		while(n) {
 			last = n;
 			size_t len = toNext(path,n);
-			if(!len)
+			if(!len) {
+				// in this case, the path is either empty or contains only "." and "..". we don't want
+				// to have that in the remaining path, so directory return the match
+				if(last == match)
+					return match;
 				break;
+			}
 
 			last = n;
 			n = findAt(n,path,len);
@@ -403,8 +408,6 @@ protected:
 				n = static_cast<ITEM*>(n->_parent);
 				continue;
 			}
-			while(*path == '/')
-				path++;
 			return pos;
 		}
 		return 0;

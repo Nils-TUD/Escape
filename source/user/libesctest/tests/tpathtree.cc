@@ -68,7 +68,13 @@ static void test_insert() {
 
 		i = mytree.find("/../..",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr(end,"../..");
+		test_assertStr(end,"");
+		test_assertStr(i->getName(),"/");
+		test_assertPtr(i->getData(),(void*)0x11);
+
+		i = mytree.find("/./.",&end);
+		test_assertTrue(i != NULL);
+		test_assertStr(end,"");
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}

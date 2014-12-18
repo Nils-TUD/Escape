@@ -20,7 +20,7 @@
 #pragma once
 
 #include <common.h>
-#include <col/pathtree.h>
+#include <col/kpathtree.h>
 #include <col/slist.h>
 
 class Proc;
@@ -150,7 +150,7 @@ private:
 
 	int id;
 	ulong refs;
-	PathTree<OpenFile> tree;
+	KPathTree<OpenFile> tree;
 
 	static SpinLock lock;
 	static int next_id;

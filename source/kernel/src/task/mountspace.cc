@@ -34,7 +34,7 @@ int MountSpace::getId(Proc *p) {
 int MountSpace::request(Proc *p,const char *path,const char **end,OpenFile **file) {
 	{
 		LockGuard<SpinLock> guard(&lock);
-		PathTreeItem<OpenFile> *match = p->mounts->tree.find(path,end);
+		KPathTreeItem<OpenFile> *match = p->mounts->tree.find(path,end);
 		if(!match)
 			return -ENOENT;
 		*file = match->getData();

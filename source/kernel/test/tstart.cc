@@ -51,7 +51,6 @@ extern sTestModule tModPmemAreas;
 extern sTestModule tModSList;
 extern sTestModule tModDList;
 extern sTestModule tModTreap;
-extern sTestModule tModPathTree;
 
 EXTERN_C void unittest_run();
 EXTERN_C void unittest_start();
@@ -94,7 +93,6 @@ void unittest_run() {
 	test_register(&tModSList);
 	test_register(&tModDList);
 	test_register(&tModTreap);
-	test_register(&tModPathTree);
 	test_start();
 
 	/* stay here */

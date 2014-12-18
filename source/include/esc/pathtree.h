@@ -19,24 +19,35 @@
 
 #pragma once
 
-#include <common.h>
-#include <cppsupport.h>
-#include <ostream.h>
-#include <log.h>
+#include <sys/common.h>
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+#if defined(IN_KERNEL)
+#	include <cwrap.h>
+#	define malloc(s)	cache_alloc(s)
+#	define free(p)		cache_free(p)
+#else
+#	include <stdlib.h>
+#endif
 
 template<class T>
+class KPathTree;
+
+namespace esc {
+
+template<class T,class ITEM>
 class PathTree;
 
 /**
  * An item in a path-tree with an arbitrary pointer as data.
  */
 template<class T>
-class PathTreeItem : public CacheAllocatable {
-	template<class T2>
+class PathTreeItem {
+	template<class T2,class ITEM2>
 	friend class PathTree;
+	template<class T2>
+	friend class ::KPathTree;
 
 public:
 	explicit PathTreeItem(char *name,T *data = NULL)
@@ -46,7 +57,14 @@ public:
 		: _name(strdup(i._name)), _namelen(i._namelen), _data(i._data), _next(), _parent(), _child() {
 	}
 	~PathTreeItem() {
-		Cache::free(_name);
+		free(_name);
+	}
+
+	/**
+	 * @return the parent item
+	 */
+	PathTreeItem<T> *getParent() {
+		return _parent;
 	}
 
 	/**
@@ -77,10 +95,46 @@ private:
  * data. You can insert paths into the tree, find them and remove them again.
  * All paths can contain multiple slashes in a row, ".." and ".".
  */
-template<class T>
+template<class T,class ITEM = PathTreeItem<T>>
 class PathTree {
+	template<
+		class T2,
+		class ITEM2 = PathTreeItem<T2>
+	>
+	class PathTreeIterator {
+	public:
+		explicit PathTreeIterator(ITEM2 *n = nullptr) : _n(n) {
+		}
+
+		ITEM2 & operator*() const {
+			return *this->_n;
+		}
+		ITEM2 *operator->() const {
+			return &operator*();
+		}
+
+		PathTreeIterator<T2,ITEM2>& operator++() {
+			_n = static_cast<ITEM2*>(_n->_next);
+			return *this;
+		}
+		PathTreeIterator<T2,ITEM2> operator++(int) {
+			PathTreeIterator<T2,ITEM2> tmp(*this);
+			operator++();
+			return tmp;
+		}
+		bool operator==(const PathTreeIterator<T2,ITEM2>& rhs) const {
+			return _n == rhs._n;
+		}
+		bool operator!=(const PathTreeIterator<T2,ITEM2>& rhs) const {
+			return _n != rhs._n;
+		}
+
+	protected:
+		ITEM2 *_n;
+	};
+
 public:
-	typedef void (*fPrintItem)(OStream &os,T *data);
+	typedef PathTreeIterator<T,ITEM> iterator;
 
 	/**
 	 * Constructor creates an empty tree
@@ -99,13 +153,23 @@ public:
 	PathTree<T> &operator=(const PathTree<T>&) = delete;
 
 	/**
+	 * @return an iterator to walk over the childs of given node
+	 */
+	iterator begin(ITEM *item) {
+		return iterator(item->_child);
+	}
+	iterator end() {
+		return iterator();
+	}
+
+	/**
 	 * Replaces the whole tree with <src>, i.e. clones all nodes
 	 *
 	 * @param src the tree to clone
 	 * @return 0 on success
 	 */
-	int replaceWith(const PathTree<T> &src) {
-		PathTreeItem<T> *old = _root;
+	int replaceWith(const PathTree<T,ITEM> &src) {
+		ITEM *old = _root;
 		_root = cloneRec(src._root);
 		if(src._root && !_root)
 			return -ENOMEM;
@@ -123,11 +187,11 @@ public:
 	 */
 	int insert(const char *path,T *data) {
 		const char *pathend = path;
-		PathTreeItem<T> *last;
+		ITEM *last;
 		find(pathend,last,false);
 		/* is root missing? */
 		if(!last) {
-			PathTreeItem<T> *i = createItem("/",1);
+			ITEM *i = createItem("/",1);
 			if(!i)
 				return -ENOMEM;
 			_root = i;
@@ -143,7 +207,7 @@ public:
 				break;
 
 			/* make sure that it doesn't exist already (think of "test/../test") */
-			PathTreeItem<T> *i = findAt(last,pathend,len);
+			ITEM *i = findAt(last,pathend,len);
 			if(!i) {
 				i = createItem(pathend,len);
 				if(!i) {
@@ -175,9 +239,9 @@ public:
 	 * @param end optionally, a pointer to the remaining path from the returned match
 	 * @return the last "matching" item, i.e. the last item with data.
 	 */
-	PathTreeItem<T> *find(const char *path,const char **end = NULL) {
-		PathTreeItem<T> *last;
-		PathTreeItem<T> *match = find(path,last,true);
+	ITEM *find(const char *path,const char **end = NULL) {
+		ITEM *last;
+		ITEM *match = find(path,last,true);
 		if(end)
 			*end = path;
 		return match;
@@ -191,8 +255,8 @@ public:
 	 */
 	T *remove(const char *path) {
 		T *res = NULL;
-		PathTreeItem<T> *last;
-		PathTreeItem<T> *match = find(path,last,false);
+		ITEM *last;
+		ITEM *match = find(path,last,false);
 		if(last && match == last && !*path) {
 			res = match->getData();
 			last->_data = NULL;
@@ -200,26 +264,26 @@ public:
 			while(last->_data == NULL && last->_child == NULL) {
 				/* remove from parent */
 				if(last->_parent != last) {
-					PathTreeItem<T> *n = last->_parent->_child;
+					ITEM *n = static_cast<ITEM*>(last->_parent->_child);
 					/* find prev */
-					PathTreeItem<T> *p = NULL;
+					ITEM *p = NULL;
 					while(n) {
 						if(n == last)
 							break;
 						p = n;
-						n = n->_next;
+						n = static_cast<ITEM*>(n->_next);
 					}
 					assert(n == last);
 					/* remove from list */
 					if(p)
-						p->_next = n->_next;
+						p->_next = static_cast<ITEM*>(n->_next);
 					else
-						last->_parent->_child = n->_next;
+						last->_parent->_child = static_cast<ITEM*>(n->_next);
 				}
 				else
 					_root = NULL;
 				/* delete and go to next */
-				PathTreeItem<T> *next = last->_parent;
+				ITEM *next = static_cast<ITEM*>(last->_parent);
 				delete last;
 				/* stop at root */
 				if(next == last)
@@ -230,20 +294,10 @@ public:
 		return res;
 	}
 
-	/**
-	 * Prints the tree to the given stream.
-	 *
-	 * @param os the stream
-	 * @param printItem a function that is called for every item for printing it data-specific
-	 */
-	void print(OStream &os,fPrintItem printItem = NULL) const {
-		printRec(os,_root,0,printItem);
-	}
-
-private:
-	PathTreeItem<T> *find(const char *&path,PathTreeItem<T> *&last,bool pathToMatch) {
-		PathTreeItem<T> *n = _root;
-		PathTreeItem<T> *match = n && n->_data ? n : NULL;
+protected:
+	ITEM *find(const char *&path,ITEM *&last,bool pathToMatch) {
+		ITEM *n = _root;
+		ITEM *match = n && n->_data ? n : NULL;
 		const char *mpath = path;
 		last = NULL;
 		while(n) {
@@ -270,37 +324,37 @@ private:
 		return match;
 	}
 
-	PathTreeItem<T> *cloneRec(PathTreeItem<T> *src) {
-		PathTreeItem<T> *clone = NULL;
+	ITEM *cloneRec(ITEM *src) {
+		ITEM *clone = NULL;
 		if(src) {
-			clone = new PathTreeItem<T>(*src);
+			clone = new ITEM(*src);
 			/* strdup might have failed */
 			if(!clone->_name) {
 				delete clone;
 				return NULL;
 			}
 			/* now clone childs */
-			PathTreeItem<T> *n = src->_child;
+			ITEM *n = static_cast<ITEM*>(src->_child);
 			while(n) {
-				PathTreeItem<T> *nn = cloneRec(n);
+				ITEM *nn = cloneRec(n);
 				if(!nn) {
 					destroyRec(clone);
 					return NULL;
 				}
-				nn->_next = clone->_child;
+				nn->_next = static_cast<ITEM*>(clone->_child);
 				clone->_child = nn;
 				nn->_parent = clone;
-				n = n->_next;
+				n = static_cast<ITEM*>(n->_next);
 			}
 		}
 		return clone;
 	}
 
-	void destroyRec(PathTreeItem<T> *item) {
+	void destroyRec(ITEM *item) {
 		if(item) {
-			PathTreeItem<T> *n = item->_child;
+			ITEM *n = static_cast<ITEM*>(item->_child);
 			while(n) {
-				PathTreeItem<T> *next = n->_next;
+				ITEM *next = static_cast<ITEM*>(n->_next);
 				destroyRec(n);
 				n = next;
 			}
@@ -308,49 +362,30 @@ private:
 		}
 	}
 
-	void printRec(OStream &os,PathTreeItem<T> *item,int layer,fPrintItem printItem) const {
-		if(item) {
-			os.writef("%*s%-*s",layer,"",12 - layer,item->_name);
-			if(item->_data) {
-				os.writef(" -> ");
-				if(printItem)
-					printItem(os,item->_data);
-				else
-					os.writef("%p",item->_data);
-			}
-			os.writef("\n");
-			PathTreeItem<T> *n = item->_child;
-			while(n) {
-				printRec(os,n,layer + 1,printItem);
-				n = n->_next;
-			}
-		}
-	}
-
-	static PathTreeItem<T> *findAt(PathTreeItem<T> *n,const char *path,size_t len) {
-		n = n->_child;
+	static ITEM *findAt(ITEM *n,const char *path,size_t len) {
+		n = static_cast<ITEM*>(n->_child);
 		while(n) {
 			if(n->_namelen == len && strncmp(n->_name,path,len) == 0)
 				return n;
-			n = n->_next;
+			n = static_cast<ITEM*>(n->_next);
 		}
 		return NULL;
 	}
 
-	static PathTreeItem<T> *createItem(const char *src,size_t len) {
-		char *name = (char*)Cache::alloc(len + 1);
+	static ITEM *createItem(const char *src,size_t len) {
+		char *name = (char*)malloc(len + 1);
 		if(!name)
 			return NULL;
 		strnzcpy(name,src,len + 1);
-		PathTreeItem<T> *i = new PathTreeItem<T>(name);
+		ITEM *i = new ITEM(name);
 		if(!i) {
-			Cache::free(name);
+			free(name);
 			return NULL;
 		}
 		return i;
 	}
 
-	static size_t toNext(const char *&path,PathTreeItem<T> *&n) {
+	static size_t toNext(const char *&path,ITEM *&n) {
 		while(1) {
 			while(*path == '/')
 				path++;
@@ -365,7 +400,7 @@ private:
 			}
 			if(pos == 2 && path[0] == '.' && path[1] == '.') {
 				path += 2;
-				n = n->_parent;
+				n = static_cast<ITEM*>(n->_parent);
 				continue;
 			}
 			while(*path == '/')
@@ -375,5 +410,12 @@ private:
 		return 0;
 	}
 
-	PathTreeItem<T> *_root;
+	ITEM *_root;
 };
+
+}
+
+#if defined(IN_KERNEL)
+#	undef malloc
+#	undef free
+#endif

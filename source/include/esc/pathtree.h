@@ -61,7 +61,7 @@ public:
 	}
 
 	/**
-	 * @return the parent item
+	 * @return the parent item (this for the root item)
 	 */
 	PathTreeItem<T> *getParent() {
 		return _parent;

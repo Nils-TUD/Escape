@@ -23,6 +23,7 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <fs/blockcache.h>
+#include <fs/permissions.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -78,8 +79,7 @@ int Ext2INode::chmod(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,mode_t mode) {
 	if(cnode == NULL)
 		return -ENOBUFS;
 
-	/* root can chmod everything; others can only chmod their own files */
-	if(u->uid != le16tocpu(cnode->inode.uid) && u->uid != ROOT_UID)
+	if(!Permissions::canChmod(u,le16tocpu(cnode->inode.uid)))
 		return -EPERM;
 
 	oldMode = le16tocpu(cnode->inode.mode);
@@ -96,19 +96,10 @@ int Ext2INode::chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t g
 	if(cnode == NULL)
 		return -ENOBUFS;
 
-	/* root can chown everything; others can only chown their own files */
 	oldUid = le16tocpu(cnode->inode.uid);
 	oldGid = le16tocpu(cnode->inode.gid);
-	if(u->uid != oldUid && u->uid != ROOT_UID)
+	if(!Permissions::canChown(u,oldUid,oldGid,uid,gid))
 		return -EPERM;
-	if(u->uid != ROOT_UID) {
-		/* users can't change the owner */
-		if(uid != (uid_t)-1 && uid != oldUid && uid != u->uid)
-			return -EPERM;
-		/* users can change the group only to a group they're a member of */
-		if(gid != (gid_t)-1 && gid != oldGid && gid != u->gid && !isingroup(u->pid,gid))
-			return -EPERM;
-	}
 
 	if(uid != (uid_t)-1)
 		cnode->inode.uid = cputole16(uid);
@@ -124,8 +115,7 @@ int Ext2INode::utime(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,const struct utim
 	if(cnode == NULL)
 		return -ENOBUFS;
 
-	/* root can change it for all files; otherwise it has to be the owner */
-	if(u->uid != le16tocpu(cnode->inode.uid) && u->uid != ROOT_UID)
+	if(!Permissions::canUtime(u,le16tocpu(cnode->inode.uid)))
 		return -EPERM;
 
 	cnode->inode.accesstime = cputole32(utimes->actime);

@@ -24,6 +24,7 @@
 #include <dirent.h>
 #include <sys/endian.h>
 #include <fs/fsdev.h>
+#include <fs/permissions.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -242,30 +243,10 @@ void Ext2FileSystem::print(FILE *f) {
 }
 
 int Ext2FileSystem::hasPermission(Ext2CInode *cnode,FSUser *u,uint perms) {
-	int mask;
-	uint16_t mode = le16tocpu(cnode->inode.mode);
-	if(u->uid == ROOT_UID) {
-		/* root has exec-permission if at least one has exec-permission */
-		if(perms & MODE_EXEC)
-			return (mode & MODE_EXEC) ? 0 : -EACCES;
-		/* root can read and write in all cases */
-		return 0;
-	}
-
-	if(le16tocpu(cnode->inode.uid) == u->uid)
-		mask = (mode >> 6) & 0x7;
-	else if(le16tocpu(cnode->inode.gid) == u->gid || isingroup(u->pid,le16tocpu(cnode->inode.gid)) == 1)
-		mask = (mode >> 3) & 0x7;
-	else
-		mask = mode & 0x7;
-
-	if((perms & MODE_READ) && !(mask & MODE_READ))
-		return -EACCES;
-	if((perms & MODE_WRITE) && !(mask & MODE_WRITE))
-		return -EACCES;
-	if((perms & MODE_EXEC) && !(mask & MODE_EXEC))
-		return -EACCES;
-	return 0;
+	mode_t mode = le16tocpu(cnode->inode.mode);
+	uid_t uid = le16tocpu(cnode->inode.uid);
+	gid_t gid = le16tocpu(cnode->inode.gid);
+	return Permissions::canAccess(u,mode,uid,gid,perms);
 }
 
 bool Ext2FileSystem::bgHasBackups(block_t i) {

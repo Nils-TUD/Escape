@@ -27,7 +27,7 @@
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s (add|rem|show) args...\n",name);
 	fprintf(stderr,"\tadd <ip>  : resolves the given IP and adds it to the ARP table\n");
-	fprintf(stderr,"\tdown <ip> : removes the given IP from the ARP table\n");
+	fprintf(stderr,"\trem <ip>  : removes the given IP from the ARP table\n");
 	fprintf(stderr,"\tshow      : shows all ARP table entries\n");
 	exit(EXIT_FAILURE);
 }

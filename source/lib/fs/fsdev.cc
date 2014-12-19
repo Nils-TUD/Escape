@@ -106,16 +106,12 @@ void FSDevice::devclose(IPCStream &is) {
 
 void FSDevice::open(IPCStream &is) {
 	char path[MAX_PATH_LEN];
-	FSUser u;
 	FileOpen::Request r(path,sizeof(path));
 	is >> r;
 
-	u.gid = r.gid;
-	u.uid = r.uid;
-	u.pid = r.pid;
-	ino_t no = _fs->resolve(&u,path,r.flags,S_IFREG | (r.mode & MODE_PERM));
+	ino_t no = _fs->resolve(&r.u,path,r.flags,S_IFREG | (r.mode & MODE_PERM));
 	if(no >= 0) {
-		no = _fs->open(&u,no,r.flags);
+		no = _fs->open(&r.u,no,r.flags);
 		if(no >= 0)
 			add(is.fd(),new OpenFile(is.fd(),no));
 	}

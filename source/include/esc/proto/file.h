@@ -23,6 +23,7 @@
 #include <sys/messages.h>
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/default.h>
+#include <fs/filesystem.h>
 
 namespace esc {
 
@@ -35,21 +36,19 @@ struct FileOpen {
 
 		explicit Request(char *buffer,size_t size) : path(buffer,size) {
 		}
-		explicit Request(uint _flags,uid_t _uid,gid_t _gid,pid_t _pid,const CString &_path,mode_t _mode)
-			: flags(_flags), uid(_uid), gid(_gid), pid(_pid), path(_path), mode(_mode) {
+		explicit Request(uint _flags,const FSUser &_u,const CString &_path,mode_t _mode)
+			: flags(_flags), u(_u), path(_path), mode(_mode) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &ib,const Request &r) {
-			return ib << r.flags << r.uid << r.gid << r.pid << r.path << r.mode;
+			return ib << r.flags << r.u.uid << r.u.gid << r.u.pid << r.path << r.mode;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.flags >> r.uid >> r.gid >> r.pid >> r.path >> r.mode;
+			return is >> r.flags >> r.u.uid >> r.u.gid >> r.u.pid >> r.path >> r.mode;
 		}
 
 		uint flags;
-		uid_t uid;
-		gid_t gid;
-		pid_t pid;
+		FSUser u;
 		CString path;
 		mode_t mode;
 	};

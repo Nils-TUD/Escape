@@ -152,7 +152,8 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t 
 	assert(p != NULL);
 
 	/* send msg to driver */
-	ib << esc::FileOpen::Request(flags,p->getEUid(),p->getEGid(),p->getPid(),esc::CString(path),mode);
+	ib << esc::FileOpen::Request(flags,FSUser(p->getEUid(),p->getEGid(),p->getPid()),
+		esc::CString(path),mode);
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;

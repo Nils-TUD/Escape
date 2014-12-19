@@ -196,6 +196,10 @@ int ISO9660FileSystem::chown(FSUser *,ino_t,uid_t,gid_t) {
 	return -EROFS;
 }
 
+int ISO9660FileSystem::utime(FSUser *,ino_t,const struct utimbuf *) {
+	return -EROFS;
+}
+
 void ISO9660FileSystem::sync() {
 	/* nothing to do */
 }

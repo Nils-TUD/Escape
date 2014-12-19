@@ -154,6 +154,10 @@ int Ext2FileSystem::chown(FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid) {
 	return Ext2INode::chown(this,u,inodeNo,uid,gid);
 }
 
+int Ext2FileSystem::utime(FSUser *u,ino_t inodeNo,const struct utimbuf *utimes) {
+	return Ext2INode::utime(this,u,inodeNo,utimes);
+}
+
 ssize_t Ext2FileSystem::read(ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	return Ext2File::read(this,inodeNo,buffer,offset,count);
 }

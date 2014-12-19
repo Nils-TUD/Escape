@@ -25,6 +25,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <dirent.h>
+#include <utime.h>
+#include <time.h>
 
 enum {
 	BLOCK_SIZE	= 512
@@ -240,6 +242,15 @@ static void create(FILE *f,off_t cur,const FileHeader *header) {
 		break;
 	}
 
+	/* set file modification time */
+	struct utimbuf utimes;
+	utimes.modtime = strtoul(header->mtime,NULL,8);
+	if(utimes.modtime) {
+		utimes.actime = time(NULL);
+		if(utime(header->filename,&utimes) < 0)
+			printe("utime(%s) failed",header->filename);
+	}
+
 	if(*header->uname) {
 		sUser *u = user_getByName(userList,header->uname);
 		if(u && chown(header->filename,u->uid,-1) < 0)
@@ -250,8 +261,6 @@ static void create(FILE *f,off_t cur,const FileHeader *header) {
 		if(g && chown(header->filename,-1,g->gid) < 0)
 			printe("chown(%s,-1,%d) failed",header->filename,g->gid);
 	}
-
-	/* TODO set file modification time */
 }
 
 static void listArchive(FILE *f) {

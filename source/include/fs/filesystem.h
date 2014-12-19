@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <fs/common.h>
 #include <errno.h>
+#include <utime.h>
 #include <stdio.h>
 
 /**
@@ -64,6 +65,9 @@ public:
 		return -ENOTSUP;
 	}
 	virtual int chown(FSUser *,ino_t,uid_t,gid_t) {
+		return -ENOTSUP;
+	}
+	virtual int utime(FSUser *,ino_t,const struct utimbuf *) {
 		return -ENOTSUP;
 	}
 	virtual void sync() {

@@ -203,6 +203,22 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 	return res;
 }
 
+int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
+	int res = 0;
+	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
+	if(p) {
+		if(p->getEUid() != uid && p->getEUid() != ROOT_UID)
+			res = -EPERM;
+		Proc::relRef(p);
+	}
+
+	if(res == 0) {
+		modtime = utimes->modtime;
+		acctime = utimes->actime;
+	}
+	return res;
+}
+
 int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *created,
 		uint flags,mode_t mode) {
 	const VFSNode *dir,*n = *node;

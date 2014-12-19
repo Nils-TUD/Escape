@@ -67,6 +67,17 @@ public:
 	static int chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid);
 
 	/**
+	 * Sets the access and modification times of the given inode
+	 *
+	 * @param e the ext2-handle
+	 * @param u the user
+	 * @param inodeNo the inode-number
+	 * @param utimes the new access and modification times
+	 * @return 0 on success
+	 */
+	static int utime(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,const struct utimbuf *utimes);
+
+	/**
 	 * Destroys the given inode. That means the inode will be marked as free in the bitmap,
 	 * cleared and marked dirty.
 	 *

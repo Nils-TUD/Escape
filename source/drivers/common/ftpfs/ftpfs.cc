@@ -100,6 +100,7 @@ public:
 		set(MSG_FS_RMDIR,std::make_memfun(this,&FTPFSDevice::rmdir));
 		set(MSG_FS_CHMOD,std::make_memfun(this,&FTPFSDevice::chmod));
 		set(MSG_FS_CHOWN,std::make_memfun(this,&FTPFSDevice::chown));
+		set(MSG_FS_UTIME,std::make_memfun(this,&FTPFSDevice::utime));
   	}
 
 	void loop() {
@@ -248,6 +249,9 @@ public:
 		is << -ENOTSUP << Reply();
 	}
 	void chown(IPCStream &is) {
+		is << -ENOTSUP << Reply();
+	}
+	void utime(IPCStream &is) {
 		is << -ENOTSUP << Reply();
 	}
 

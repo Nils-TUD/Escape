@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <utime.h>
 
 int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
@@ -147,6 +148,29 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	int res = VFS::chown(pid,abspath,uid,gid);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
+int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
+	char abspath[MAX_PATH_LEN + 1];
+	const char *path = (const char*)SYSC_ARG1(stack);
+	struct utimbuf *utimes = (struct utimbuf*)SYSC_ARG2(stack);
+	pid_t pid = t->getProc()->getPid();
+	struct utimbuf kutimes;
+
+	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
+		SYSC_ERROR(stack,-EFAULT);
+	if(EXPECT_FALSE(utimes != NULL && !PageDir::isInUserSpace((uintptr_t)utimes,sizeof(*utimes))))
+		SYSC_ERROR(stack,-EFAULT);
+
+	if(utimes)
+		memcpy(&kutimes,utimes,sizeof(*utimes));
+	else
+		kutimes.actime = kutimes.modtime = Timer::getTime();
+
+	int res = VFS::utime(pid,abspath,&kutimes);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);

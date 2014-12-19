@@ -287,6 +287,25 @@ int VFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	return err;
 }
 
+int VFS::utime(pid_t pid,const char *path,const struct utimbuf *utimes) {
+	OpenFile *fsFile;
+	const char *begin;
+	int err = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
+	if(err < 0)
+		return err;
+
+	if(IS_NODE(fsFile)) {
+		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
+		err = node->utime(pid,utimes);
+		VFSNode::release(node);
+	}
+	else {
+		err = VFSFS::utime(pid,fsFile,begin,utimes);
+		MountSpace::release(fsFile);
+	}
+	return err;
+}
+
 int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	char newPathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy,backup;

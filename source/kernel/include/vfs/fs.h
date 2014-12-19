@@ -23,6 +23,7 @@
 #include <vfs/openfile.h>
 #include <vfs/node.h>
 #include <col/slist.h>
+#include <utime.h>
 
 class Proc;
 
@@ -63,6 +64,17 @@ public:
 	 * @return 0 on success
 	 */
 	static int chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid);
+
+	/**
+	 * Sets the access and modification times of the file denoted by <path>
+	 *
+	 * @param pid the process-id
+	 * @param fsFile the channel to the fs instance
+	 * @param path the path
+	 * @param utimes the new access and modification times (NULL = set to current time)
+	 * @return 0 on success
+	 */
+	static int utime(pid_t pid,OpenFile *fsFile,const char *path,const struct utimbuf *utimes);
 
 	/**
 	 * Creates a hardlink at <newPath> which points to <oldPath>

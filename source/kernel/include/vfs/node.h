@@ -341,6 +341,15 @@ public:
 	int chown(pid_t pid,uid_t uid,gid_t gid);
 
 	/**
+	 * Sets the access and modification times of this node
+	 *
+	 * @param pid the process-id
+	 * @param utimes the new access and modification times
+	 * @return 0 on success
+	 */
+	int utime(pid_t pid,const struct utimbuf *utimes);
+
+	/**
 	 * Finds the child-node with name <name>
 	 *
 	 * @param dir the directory (locked)

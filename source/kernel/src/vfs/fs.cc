@@ -92,6 +92,15 @@ int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid
 	return communicate(pid,fsFile,MSG_FS_CHOWN,ib);
 }
 
+int VFSFS::utime(pid_t pid,OpenFile *fsFile,const char *path,const struct utimbuf *utimes) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path) << *utimes;
+	return communicate(pid,fsFile,MSG_FS_UTIME,ib);
+}
+
 int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));

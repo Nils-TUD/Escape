@@ -119,6 +119,22 @@ int Ext2INode::chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t g
 	return 0;
 }
 
+int Ext2INode::utime(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,const struct utimbuf *utimes) {
+	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
+	if(cnode == NULL)
+		return -ENOBUFS;
+
+	/* root can change it for all files; otherwise it has to be the owner */
+	if(u->uid != le16tocpu(cnode->inode.uid) && u->uid != ROOT_UID)
+		return -EPERM;
+
+	cnode->inode.accesstime = cputole32(utimes->actime);
+	cnode->inode.modifytime = cputole32(utimes->modtime);
+	e->inodeCache.markDirty(cnode);
+	e->inodeCache.release(cnode);
+	return 0;
+}
+
 int Ext2INode::destroy(Ext2FileSystem *e,Ext2CInode *cnode) {
 	int res;
 	/* free inode, clear it and ensure that it get's written back to disk */

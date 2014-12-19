@@ -97,6 +97,7 @@ private:
 	static int fstat(Thread *t,IntrptStackFrame *stack);
 	static int chmod(Thread *t,IntrptStackFrame *stack);
 	static int chown(Thread *t,IntrptStackFrame *stack);
+	static int utime(Thread *t,IntrptStackFrame *stack);
 	static int syncfs(Thread *t,IntrptStackFrame *stack);
 	static int link(Thread *t,IntrptStackFrame *stack);
 	static int unlink(Thread *t,IntrptStackFrame *stack);

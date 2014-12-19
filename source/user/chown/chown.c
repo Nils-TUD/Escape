@@ -21,31 +21,87 @@
 #include <sys/cmdargs.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
+#include <usergroup/user.h>
+#include <usergroup/group.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+static sUser *userList;
+static sGroup *groupList;
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [<user>][:[<group>]] <file>...\n",name);
 	exit(EXIT_FAILURE);
 }
 
+static const char *parseName(const char *s,bool *numeric) {
+	static char tmp[64];
+	*numeric = true;
+	size_t i;
+	for(i = 0; i < sizeof(tmp) - 1; ++i) {
+		if(*s == ':' || *s == '\0')
+			break;
+		if(!isdigit(*s))
+			*numeric = false;
+		tmp[i] = *s++;
+	}
+	tmp[i] = '\0';
+	return tmp;
+}
+
 static bool parseUserGroup(const char *spec,uid_t *uid,gid_t *gid) {
 	char *s = (char*)spec;
 	if(*s != ':') {
-		*uid = strtoul(s,&s,0);
-		if(*s == '\0')
-			return true;
-		if(*s != ':')
+		bool numeric = false;
+		const char *uname = parseName(s,&numeric);
+
+		sUser *u;
+		if(numeric) {
+			uid_t uid = strtoul(uname,NULL,10);
+			u = user_getById(userList,uid);
+		}
+		else
+			u = user_getByName(userList,uname);
+		if(!u) {
+			fprintf(stderr,"Unable to find user '%s'\n",uname);
 			return false;
-		s++;
+		}
+
+		*uid = u->uid;
+		s += strlen(uname);
+		if(*s == ':')
+			s++;
 	}
 	else
 		s++;
+
 	if(*s == '\0')
 		return true;
-	*gid = strtoul(s,&s,0);
-	if(*s != '\0')
+
+	bool numeric = false;
+	const char *gname = parseName(s,&numeric);
+
+	sGroup *g;
+	if(numeric) {
+		gid_t gid = strtoul(gname,NULL,10);
+		g = group_getById(groupList,gid);
+	}
+	else
+		g = group_getByName(groupList,gname);
+	if(!g) {
+		fprintf(stderr,"Unable to find group '%s'\n",gname);
 		return false;
+	}
+
+	*gid = g->gid;
+
+	s += strlen(gname);
+	if(*s != '\0') {
+		fprintf(stderr,"Invalid user/group spec '%s'\n",spec);
+		return false;
+	}
 	return true;
 }
 
@@ -63,8 +119,16 @@ int main(int argc,const char **argv) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
+	userList = user_parseFromFile(USERS_PATH,NULL);
+	if(!userList)
+		printe("Warning: unable to parse users from file");
+	groupList = group_parseFromFile(GROUPS_PATH,NULL);
+	if(!groupList)
+		printe("Unable to parse groups from file");
+
 	if(!parseUserGroup(spec,&uid,&gid))
-		error("Invalid specification: '%s'",spec);
+		exit(EXIT_FAILURE);
+
 	args = ca_getFree();
 	while(*args) {
 		if(chown(*args,uid,gid) < 0)

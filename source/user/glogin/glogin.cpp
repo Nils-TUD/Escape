@@ -223,6 +223,8 @@ int main(void) {
 	int ms = open(mspath,O_RDONLY);
 	if(ms < 0) {
 		ms = open("/sys/proc/self/ms",O_RDONLY);
+		if(ms < 0)
+			error("Unable to open /sys/proc/self/ms for reading");
 		if(clonems(ms,u->name) < 0)
 			error("Unable to clone mountspace");
 	}

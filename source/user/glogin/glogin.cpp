@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/proc.h>
+#include <sys/mount.h>
 #include <gui/application.h>
 #include <gui/graphics/color.h>
 #include <gui/layout/flowlayout.h>
@@ -216,9 +217,20 @@ int main(void) {
 	if(setuid(u->uid) < 0)
 		error("Unable to set uid");
 
-	/* give this process hierarchy its own mountspace */
-	if(clonems() < 0)
-		error("Unable to clone mountspace");
+	// use a per-user mountspace
+	char mspath[MAX_PATH_LEN];
+	snprintf(mspath,sizeof(mspath),"/sys/ms/%s",u->name);
+	int ms = open(mspath,O_RDONLY);
+	if(ms < 0) {
+		ms = open("/sys/proc/self/ms",O_RDONLY);
+		if(clonems(ms,u->name) < 0)
+			error("Unable to clone mountspace");
+	}
+	else {
+		if(joinms(ms) < 0)
+			error("Unable to join mountspace '%s'",mspath);
+	}
+	close(ms);
 
 	// cd to home-dir
 	if(isdir(u->home))

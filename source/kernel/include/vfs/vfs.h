@@ -61,6 +61,7 @@
 									 VFS_APPEND | VFS_NOBLOCK | VFS_LONELY | VFS_EXCL)
 
 class Proc;
+class VFSMS;
 
 class VFS {
 	VFS() = delete;
@@ -72,11 +73,28 @@ public:
 	static void init();
 
 	/**
+	 * @return the directory of mountspaces
+	 */
+	static VFSNode *getMSDir() {
+		return msNode;
+	}
+
+	/**
 	 * Mounts the virtual filesystems into the given process. Should only be used by init.
 	 *
 	 * @param p the process
 	 */
 	static void mountAll(Proc *p);
+
+	/**
+	 * Clones the given mountspace into a new VFS node and assigns it to <p>.
+	 *
+	 * @param p the process
+	 * @param src the mountspace to clone
+	 * @param name the node name
+	 * @return 0 on success
+	 */
+	static int cloneMS(Proc *p,const VFSMS *src,const char *name);
 
 	/**
 	 * Checks whether the process with given id has permission to use <n> with the given flags
@@ -235,9 +253,10 @@ public:
 	 * Creates a process-node with given pid
 	 *
 	 * @param pid the process-id
+	 * @param ms the mountspace of the process
 	 * @return 0 on success
 	 */
-	static ino_t createProcess(pid_t pid);
+	static ino_t createProcess(pid_t pid,VFSNode *ms);
 
 	/**
 	 * Removes all occurrences of the given process from VFS
@@ -277,4 +296,5 @@ private:
 
 	static VFSNode *procsNode;
 	static VFSNode *devNode;
+	static VFSNode *msNode;
 };

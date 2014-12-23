@@ -106,7 +106,6 @@ private:
 	static int rmdir(Thread *t,IntrptStackFrame *stack);
 	static int mount(Thread *t,IntrptStackFrame *stack);
 	static int unmount(Thread *t,IntrptStackFrame *stack);
-	static int getmsid(Thread *t,IntrptStackFrame *stack);
 	static int clonems(Thread *t,IntrptStackFrame *stack);
 	static int joinms(Thread *t,IntrptStackFrame *stack);
 

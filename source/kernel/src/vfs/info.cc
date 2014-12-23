@@ -291,18 +291,6 @@ void VFSInfo::virtMemReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 	*dataSize = os.getLength();
 }
 
-void VFSInfo::mountSpaceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	Proc *p = getProc(node,dataSize,buffer);
-	if(!p)
-		return;
-
-	OStringStream os;
-	MountSpace::print(os,p);
-	Proc::relRef(p);
-	*buffer = os.keepString();
-	*dataSize = os.getLength();
-}
-
 void VFSInfo::irqsReadCallback(A_UNUSED VFSNode *node,size_t *dataSize,void **buffer) {
 	OStringStream os;
 	Interrupts::print(os);

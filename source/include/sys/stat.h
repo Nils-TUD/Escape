@@ -28,6 +28,7 @@
 #define S_IFMT				0170000
 #define S_IFSERV			0140000
 #define S_IFLNK				0120000
+#define S_IFMS				0110000
 #define S_IFREG				0100000
 #define S_IFBLK				0060000
 #define S_IFDIR				0040000
@@ -56,6 +57,7 @@
 #define S_ISBLK(mode)		(((mode) & S_IFMT) == S_IFBLK)
 #define S_ISFS(mode)		(((mode) & S_IFMT) == S_IFFS)
 #define S_ISSERV(mode)		(((mode) & S_IFMT) == S_IFSERV)
+#define S_ISMS(mode)		(((mode) & S_IFMT) == S_IFMS)
 
 #define MODE_READ			(S_IRUSR | S_IRGRP | S_IROTH)
 #define MODE_WRITE			(S_IWUSR | S_IWGRP | S_IWOTH)

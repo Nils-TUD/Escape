@@ -84,16 +84,6 @@ int rmdir(const char *path) {
 	return syscall1(SYSCALL_RMDIR,(ulong)abspath(apath,sizeof(apath),path));
 }
 
-int mount(int fd,const char *path) {
-	char apath[MAX_PATH_LEN];
-	return syscall2(SYSCALL_MOUNT,fd,(ulong)abspath(apath,sizeof(apath),path));
-}
-
-int unmount(const char *path) {
-	char apath[MAX_PATH_LEN];
-	return syscall1(SYSCALL_UNMOUNT,(ulong)abspath(apath,sizeof(apath),path));
-}
-
 int pipe(int *readFd,int *writeFd) {
 	/* the permissions are read-write for both. we ensure that the first is for reading only and
 	 * the second for writing only in the pipe-driver. */

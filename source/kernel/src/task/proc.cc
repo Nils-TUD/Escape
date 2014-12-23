@@ -110,7 +110,12 @@ void ProcBase::init() {
 	p->entryPoint = 0;
 	p->priority = MAX_PRIO;
 	p->initProps();
-	MountSpace::create(p);
+
+	/* create root mountspace */
+	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"root",0644);
+	if(p->msnode == NULL)
+		Util::panic("Unable to create initial mountspace");
+
 	VFS::mountAll(p);
 	if(Sems::init(p) < 0)
 		Util::panic("Unable to init semaphores");
@@ -119,7 +124,7 @@ void ProcBase::init() {
 		p->mutexes[i] = Mutex();
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
-	p->threadsDir = VFS::createProcess(p->pid);
+	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
 	if(p->threadsDir < 0)
 		Util::panic("Not enough mem for init process");
 
@@ -264,7 +269,8 @@ int ProcBase::clone(uint8_t flags) {
 	p->entryPoint = cur->entryPoint;
 	p->flags = flags;
 	p->initProps();
-	MountSpace::inherit(p,cur);
+	p->msnode = NULL;
+	cur->msnode->join(p);
 
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
@@ -288,7 +294,7 @@ int ProcBase::clone(uint8_t flags) {
 	procLock.up();
 
 	/* create the VFS node */
-	p->threadsDir = VFS::createProcess(p->pid);
+	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
 	if(p->threadsDir < 0) {
 		res = p->threadsDir;
 		goto errorAdd;
@@ -368,7 +374,7 @@ errorAdd:
 errorCmd:
 	Cache::free((void*)p->command);
 errorProc:
-	MountSpace::leave(p);
+	p->msnode->leave(p);
 	Cache::free(p);
 errorCur:
 	release(cur,PLOCK_PROG);
@@ -681,7 +687,7 @@ void ProcBase::terminate(int exitCode,int signal) {
 		FileDesc::destroy(p);
 		Groups::leave(p->pid);
 		doRemoveRegions(p,true);
-		MountSpace::leave(p);
+		p->msnode->leave(p);
 		terminateArch(p);
 
 		/* destroy our own thread, if there still is any (do that last, because this makes us

@@ -18,35 +18,17 @@
  */
 
 #include <sys/common.h>
-#include <sys/cmdargs.h>
-#include <sys/io.h>
 #include <sys/mount.h>
+#include <sys/syscalls.h>
+#include <sys/stat.h>
 #include <dirent.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
-static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <path>\n",name);
-	exit(EXIT_FAILURE);
+int mount(int ms,int fs,const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall3(SYSCALL_MOUNT,ms,fs,(ulong)abspath(apath,sizeof(apath),path));
 }
 
-int main(int argc,const char *argv[]) {
-	char *path = NULL;
-
-	int res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp())
-		usage(argv[0]);
-
-	int ms = open("/sys/proc/self/ms",O_RDONLY);
-	if(ms < 0)
-		error("Unable to open '/sys/proc/self/ms'");
-	if(unmount(ms,path) < 0)
-		error("Unable to unmount '%s'",path);
-	close(ms);
-	return EXIT_SUCCESS;
+int unmount(int ms,const char *path) {
+	char apath[MAX_PATH_LEN];
+	return syscall2(SYSCALL_UNMOUNT,ms,(ulong)abspath(apath,sizeof(apath),path));
 }

@@ -358,50 +358,6 @@ A_CHECKRET int mkdir(const char *path,mode_t mode);
 A_CHECKRET int rmdir(const char *path);
 
 /**
- * Mounts the device denoted by <fd> at <path>
- *
- * @param fd the file-descriptor to the filesystem that should be mounted
- * @param path the path to mount at
- * @return 0 on success
- */
-A_CHECKRET int mount(int fd,const char *path);
-
-/**
- * Unmounts the device mounted at <path>
- *
- * @param path the path
- * @return 0 on success
- */
-A_CHECKRET int unmount(const char *path);
-
-/**
- * @return the id of the mountspace of the current process
- */
-static inline int getmsid(void) {
-	return syscall0(SYSCALL_GETMSID);
-}
-
-/**
- * Clones the mountspace of the current process. That is, it creates a new mountspace for which
- * mount and unmount operations don't affect others.
- *
- * @return the new mountspace id on success
- */
-static inline int clonems(void) {
-	return syscall0(SYSCALL_CLONEMS);
-}
-
-/**
- * Joins the mountspace denoted by <id>.
- *
- * @param id the mountspace to join
- * @return 0 on success
- */
-static inline int joinms(int id) {
-	return syscall1(SYSCALL_JOINMS,id);
-}
-
-/**
  * Writes all dirty objects of the affected filesystem to disk
  *
  * @param fd the file-descriptor to some file on that fs

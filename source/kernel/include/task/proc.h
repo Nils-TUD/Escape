@@ -28,8 +28,8 @@
 #include <task/thread.h>
 #include <task/groups.h>
 #include <task/sems.h>
-#include <task/mountspace.h>
 #include <vfs/fs.h>
+#include <vfs/ms.h>
 #include <col/slist.h>
 #include <col/islist.h>
 #include <spinlock.h>
@@ -63,18 +63,21 @@
 
 class Groups;
 class FileDesc;
+class VFS;
 class VFSFS;
+class VFSMS;
 class Env;
 
 /* represents a process */
 class ProcBase : public SListItem {
 	friend class Groups;
 	friend class FileDesc;
+	friend class VFS;
 	friend class VFSFS;
+	friend class VFSMS;
 	friend class Env;
 	friend class Sems;
 	friend class ThreadBase;
-	friend class MountSpace;
 
 protected:
 	ProcBase() {
@@ -445,6 +448,12 @@ public:
 	 */
 	const char *getProgram() const;
 	/**
+	 * @return the mountspace (as VFSNode)
+	 */
+	VFSMS *getMS() {
+		return msnode;
+	}
+	/**
 	 * @return the virtual memory object for this process
 	 */
 	VirtMem *getVM() {
@@ -597,7 +606,7 @@ private:
 	Sems::Entry **sems;
 	size_t semsSize;
 	/* the mount space */
-	MountSpace *mounts;
+	VFSMS *msnode;
 	/* the directory-node-number in the VFS of this process */
 	ino_t threadsDir;
 	Stats stats;

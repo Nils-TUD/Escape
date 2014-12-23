@@ -49,7 +49,8 @@ static size_t getMaxSize() {
 	return MAX(sizeof(VFSChannel),
 			MAX(sizeof(VFSDevice),
 			MAX(sizeof(VFSDir),
-			MAX(sizeof(VFSFile),sizeof(VFSLink)))));
+			MAX(sizeof(VFSFile),
+			MAX(sizeof(VFSMS),sizeof(VFSLink))))));
 }
 
 /* all nodes (expand dynamically) */

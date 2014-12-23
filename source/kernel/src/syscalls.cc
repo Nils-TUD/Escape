@@ -113,11 +113,10 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{cancel,			"cancel",			2},
 	{creatsibl,			"creatsibl",		2},
 	{sysconfstr,		"sysconfstr",		3},
-	{getmsid,			"getmsid",			0},
 	{clonems,			"clonems",			0},
+	{joinms,			"joinms",			1},
 
 	/* 70 */
-	{joinms,			"joinms",			1},
 	{mlock,				"mlock",			2},
 	{mlockall,			"mlockall",			0},
 	{semcrtirq,			"semcrtirq",		4},

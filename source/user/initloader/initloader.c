@@ -23,6 +23,7 @@
 #include <sys/thread.h>
 #include <sys/conf.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,8 +119,14 @@ int main(void) {
 	int fd = open(line,O_RDWRMSG);
 	if(fd < 0)
 		error("Unable to open '%s'",line);
-	if(mount(fd,"/") < 0)
+
+	int ms = open("/sys/proc/self/ms",O_RDONLY);
+	if(ms < 0)
+		error("Unable to open '/sys/proc/self/ms'");
+	if(mount(ms,fd,"/") < 0)
 		error("Unable to mount '%s' at '/'",line);
+	close(ms);
+	close(fd);
 
 	/* exec init */
 	const char *argv[] = {"/bin/init",NULL};

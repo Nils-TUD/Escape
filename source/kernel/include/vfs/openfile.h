@@ -53,7 +53,7 @@ class VFS;
 class VMTree;
 class FileDesc;
 class ThreadBase;
-class MountSpace;
+class VFSMS;
 
 /* an entry in the global file table */
 class OpenFile {
@@ -61,7 +61,7 @@ class OpenFile {
 	friend class VMTree;
 	friend class FileDesc;
 	friend class ThreadBase;
-	friend class MountSpace;
+	friend class VFSMS;
 
 	struct SemTreapNode : public TreapNode<FileId> {
 		explicit SemTreapNode(const FileId &id) : TreapNode<FileId>(id), sem() {

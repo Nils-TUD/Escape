@@ -23,6 +23,7 @@
 #include <sys/io.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
@@ -100,9 +101,13 @@ int main(int argc,const char *argv[]) {
 		error("Unable to open '%s'",fsdev);
 
 	/* now mount it */
-	if(mount(fd,path) < 0)
+	int ms = open("/sys/proc/self/ms",O_RDONLY);
+	if(ms < 0)
+		error("Unable to open '/sys/proc/self/ms'");
+	if(mount(ms,fd,path) < 0)
 		error("Unable to mount '%s' @ '%s' with fs %s",dev,path,fs);
 
+	close(ms);
 	close(fd);
 	return EXIT_SUCCESS;
 }

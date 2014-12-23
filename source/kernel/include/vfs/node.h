@@ -365,6 +365,13 @@ public:
 	const VFSNode *findInDir(const char *name,size_t nameLen) const;
 
 	/**
+	 * Increments the reference count of this node
+	 */
+	void ref() {
+		LockGuard<SpinLock> g(&lock);
+		refCount++;
+	}
+	/**
 	 * Decrements the references of this node including all child-nodes. Nodes that have no refs
 	 * anymore, are destroyed and released.
 	 *

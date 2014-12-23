@@ -45,6 +45,7 @@
 
 VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;
+VFSNode *VFS::msNode;
 SpinLock waitLock;
 
 void VFS::init() {
@@ -57,6 +58,7 @@ void VFS::init() {
 	 *   |   |- shm
 	 *   |   |- devices
 	 *   |   |- fs
+	 *   |   |- ms
 	 *   |   \- proc
 	 *   |       \- self
 	 *   \- dev
@@ -72,6 +74,8 @@ void VFS::init() {
 	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"fs",DIR_DEF_MODE));
+	msNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"ms",DIR_DEF_MODE);
+	VFSNode::release(msNode);
 	devNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);
 	VFSNode::release(devNode);
 	VFSNode::release(procsNode);
@@ -82,10 +86,25 @@ void VFS::init() {
 }
 
 void VFS::mountAll(Proc *p) {
-	if(MountSpace::mount(p,"/dev",reinterpret_cast<OpenFile*>(devNode)) < 0)
+	if(p->getMS()->mount(p,"/dev",reinterpret_cast<OpenFile*>(devNode)) < 0)
 		Util::panic("Unable to mount /dev");
-	if(MountSpace::mount(p,"/sys",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
+	if(p->getMS()->mount(p,"/sys",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
 		Util::panic("Unable to mount /dev");
+}
+
+int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
+	size_t len = strlen(name);
+	char *copy = (char*)Cache::alloc(len + 1);
+	if(!copy)
+		return -ENOMEM;
+	strcpy(copy,name);
+
+	p->msnode = createObj<VFSMS>(p->getPid(),*src,msNode,copy,0644);
+	if(p->msnode == NULL) {
+		Cache::free(copy);
+		return -ENOMEM;
+	}
+	return 0;
 }
 
 int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
@@ -128,7 +147,7 @@ int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 
 int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,OpenFile **res) {
 	Proc *p = Proc::getByPid(pid);
-	int err = MountSpace::request(p,path,begin,res);
+	int err = p->getMS()->request(path,begin,res);
 	if(err < 0)
 		return err;
 
@@ -205,13 +224,13 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 			return err;
 		}
 	}
-	MountSpace::release(fsFile);
+	VFSMS::release(fsFile);
 	return 0;
 
 error:
 	VFSNode::release(node);
 errorMnt:
-	MountSpace::release(fsFile);
+	VFSMS::release(fsFile);
 	return err;
 }
 
@@ -244,7 +263,7 @@ int VFS::stat(pid_t pid,const char *path,struct stat *info) {
 	else {
 		err = VFSFS::stat(pid,fsFile,begin,info);
 		info->st_dev = fsFile->getNodeNo();
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 	}
 	return err;
 }
@@ -263,7 +282,7 @@ int VFS::chmod(pid_t pid,const char *path,mode_t mode) {
 	}
 	else {
 		err = VFSFS::chmod(pid,fsFile,begin,mode);
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 	}
 	return err;
 }
@@ -282,7 +301,7 @@ int VFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
 	}
 	else {
 		err = VFSFS::chown(pid,fsFile,begin,uid,gid);
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 	}
 	return err;
 }
@@ -301,7 +320,7 @@ int VFS::utime(pid_t pid,const char *path,const struct utimbuf *utimes) {
 	}
 	else {
 		err = VFSFS::utime(pid,fsFile,begin,utimes);
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 	}
 	return err;
 }
@@ -333,8 +352,8 @@ int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 			goto errorRelease;
 		}
 		res = VFSFS::link(pid,oldFsFile,oldBegin,newBegin);
-		MountSpace::release(oldFsFile);
-		MountSpace::release(newFsFile);
+		VFSMS::release(oldFsFile);
+		VFSMS::release(newFsFile);
 		return res;
 	}
 
@@ -397,11 +416,11 @@ errorRelease:
 	if(IS_NODE(oldNode))
 		VFSNode::release(oldNode);
 	else
-		MountSpace::release(oldFsFile);
+		VFSMS::release(oldFsFile);
 	if(IS_NODE(newNode))
 		VFSNode::release(newNode);
 	else
-		MountSpace::release(newFsFile);
+		VFSMS::release(newFsFile);
 	return res;
 }
 
@@ -430,7 +449,7 @@ int VFS::unlink(pid_t pid,const char *path) {
 	}
 	else {
 		err = VFSFS::unlink(pid,fsFile,begin);
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 	}
 	return err;
 }
@@ -463,9 +482,9 @@ int VFS::rename(pid_t pid,const char *oldPath,const char *newPath) {
 		err = VFSFS::rename(pid,oldFsFile,oldBegin,newBegin);
 
 	errorNew:
-		MountSpace::release(newFsFile);
+		VFSMS::release(newFsFile);
 	error:
-		MountSpace::release(oldFsFile);
+		VFSMS::release(oldFsFile);
 		return err;
 	}
 }
@@ -484,7 +503,7 @@ int VFS::mkdir(pid_t pid,const char *path,mode_t mode) {
 
 	if(!IS_NODE(fsFile)) {
 		res = VFSFS::mkdir(pid,fsFile,begin,S_IFDIR | (mode & MODE_PERM));
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 		return res;
 	}
 
@@ -551,7 +570,7 @@ int VFS::rmdir(pid_t pid,const char *path) {
 
 	if(!IS_NODE(fsFile)) {
 		res = VFSFS::rmdir(pid,fsFile,begin);
-		MountSpace::release(fsFile);
+		VFSMS::release(fsFile);
 		return res;
 	}
 
@@ -652,7 +671,7 @@ int VFS::creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl) {
 	return res;
 }
 
-ino_t VFS::createProcess(pid_t pid) {
+ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 	VFSNode *proc = procsNode,*dir,*nn;
 	int res = -ENOMEM;
 
@@ -691,8 +710,8 @@ ino_t VFS::createProcess(pid_t pid) {
 		goto errorDir;
 	VFSNode::release(nn);
 
-	/* create mountspace-info-node */
-	nn = createObj<VFSInfo::MountSpaceFile>(KERNEL_PID,dir);
+	/* create mountspace-link-node */
+	nn = createObj<VFSLink>(KERNEL_PID,dir,(char*)"ms",ms);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);

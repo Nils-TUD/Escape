@@ -25,28 +25,11 @@
 #include <ostream.h>
 #include <log.h>
 
-template<class T>
-class KPathTree;
-
-template<class T>
-class KPathTreeItem : public esc::PathTreeItem<T>, public CacheAllocatable {
-	template<class T2>
-	friend class KPathTree;
-
-public:
-	explicit KPathTreeItem(char *name,T *data = NULL)
-		: esc::PathTreeItem<T>(name,data), CacheAllocatable() {
-	}
-};
-
 /**
- * A path tree is like a prefix-tree for path-items. It creates a hierarchy of path-items and
- * stores data for items that have been inserted explicitly. Intermediate-items have NULL as
- * data. You can insert paths into the tree, find them and remove them again.
- * All paths can contain multiple slashes in a row, ".." and ".".
+ * The in-kernel variant of the PathTree, which adds printing capabilities.
  */
-template<class T>
-class KPathTree : public esc::PathTree<T,KPathTreeItem<T>> {
+template<class T,class ITEM>
+class KPathTree : public esc::PathTree<T,ITEM> {
 public:
 	typedef void (*fPrintItem)(OStream &os,T *data);
 
@@ -61,7 +44,7 @@ public:
 	}
 
 private:
-	void printRec(OStream &os,KPathTreeItem<T> *item,int layer,fPrintItem printItem) const {
+	void printRec(OStream &os,ITEM *item,int layer,fPrintItem printItem) const {
 		if(item) {
 			os.writef("%*s%-*s",layer,"",12 - layer,item->_name);
 			if(item->_data) {
@@ -72,10 +55,10 @@ private:
 					os.writef("%p",item->_data);
 			}
 			os.writef("\n");
-			KPathTreeItem<T> *n = static_cast<KPathTreeItem<T>*>(item->_child);
+			ITEM *n = static_cast<ITEM*>(item->_child);
 			while(n) {
 				printRec(os,n,layer + 1,printItem);
-				n = static_cast<KPathTreeItem<T>*>(n->_next);
+				n = static_cast<ITEM*>(n->_next);
 			}
 		}
 	}

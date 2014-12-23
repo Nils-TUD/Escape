@@ -18,12 +18,13 @@
  */
 
 #include <sys/common.h>
+#include <sys/messages.h>
+#include <sys/mount.h>
+#include <sys/thread.h>
+#include <sys/proc.h>
 #include <usergroup/user.h>
 #include <usergroup/group.h>
 #include <usergroup/passwd.h>
-#include <sys/messages.h>
-#include <sys/thread.h>
-#include <sys/proc.h>
 #include <esc/proto/vterm.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -133,9 +134,20 @@ int main(void) {
 	if(setgroups(groupCount,groups) < 0)
 		error("Unable to set groups");
 
-	/* give this process hierarchy its own mountspace */
-	if(clonems() < 0)
-		error("Unable to clone mountspace");
+	/* use a per-user mountspace */
+	char mspath[MAX_PATH_LEN];
+	snprintf(mspath,sizeof(mspath),"/sys/ms/%s",u->name);
+	int ms = open(mspath,O_RDONLY);
+	if(ms < 0) {
+		ms = open("/sys/proc/self/ms",O_RDONLY);
+		if(clonems(ms,u->name) < 0)
+			error("Unable to clone mountspace");
+	}
+	else {
+		if(joinms(ms) < 0)
+			error("Unable to join mountspace '%s'",mspath);
+	}
+	close(ms);
 
 	/* cd to home-dir */
 	if(isdir(u->home))

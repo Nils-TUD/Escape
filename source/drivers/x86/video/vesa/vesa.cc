@@ -40,6 +40,8 @@
 
 using namespace esc;
 
+VESAGUI *VESA::gui;
+VESATUI *VESA::tui;
 std::vector<esc::Screen::Mode> VESA::modes;
 
 void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
@@ -49,7 +51,7 @@ void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *m
 	if(c->fb)
 		delete c->fb;
 	if(c->screen)
-		vesascr_release(c->screen);
+		c->screen->release();
 	c->mode = NULL;
 	c->fb = NULL;
 	c->screen = NULL;
@@ -58,9 +60,7 @@ void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *m
 		std::unique_ptr<FrameBuffer> fb(new FrameBuffer(*mode,shm,type));
 
 		/* request screen */
-		sVESAScreen *scr = vesascr_request(mode);
-		if(!scr)
-			VTHROW("Unable to request screen");
+		VESAScreen *scr = VESAScreen::request(mode);
 
 		/* set this mode */
 		if(sw)
@@ -71,16 +71,16 @@ void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *m
 		c->screen = scr;
 		c->mode = mode;
 		/* it worked; reset screen and store new stuff */
-		vesascr_reset(scr,type);
+		scr->reset(type);
 	}
 }
 
 void VESA::ScreenDevice::setScreenCursor(Client *c,gpos_t x,gpos_t y,int cursor) {
 	if(c->screen) {
 		if(c->type() == esc::Screen::MODE_TYPE_TUI)
-			vesatui_setCursor(c->screen,x,y);
+			tui->setCursor(c->screen,x,y);
 		else
-			vesagui_setCursor(c->screen,c->fb->addr(),x,y,cursor);
+			gui->setCursor(c->screen,c->fb->addr(),x,y,cursor);
 	}
 }
 
@@ -96,10 +96,10 @@ void VESA::ScreenDevice::updateScreen(Client *c,gpos_t x,gpos_t y,gsize_t width,
 
 		size_t offset = y * c->mode->cols * 2 + x * 2;
 		if(width == c->mode->cols)
-			vesatui_drawChars(c->screen,x,y,(uint8_t*)c->fb->addr() + offset,width * height);
+			tui->drawChars(c->screen,x,y,(uint8_t*)c->fb->addr() + offset,width * height);
 		else {
 			for(gsize_t i = 0; i < height; ++i) {
-				vesatui_drawChars(c->screen,x,y + i,
+				tui->drawChars(c->screen,x,y + i,
 					(uint8_t*)c->fb->addr() + offset + i * c->mode->cols * 2,width);
 			}
 		}
@@ -110,12 +110,13 @@ void VESA::ScreenDevice::updateScreen(Client *c,gpos_t x,gpos_t y,gsize_t width,
 			VTHROW("Invalid GUI update: " << x << "," << y << ":" << width << "x" << height);
 		}
 
-		vesagui_update(c->screen,c->fb->addr(),x,y,width,height);
+		gui->update(c->screen,c->fb->addr(),x,y,width,height);
 	}
 }
 
 void VESA::init() {
-	vesagui_init();
+	gui = new VESAGUI();
+	tui = new VESATUI();
 
 	uint mask = VBE::MODE_SUPPORTED | VBE::MODE_GRAPHICS_MODE | VBE::MODE_LIN_FRAME_BUFFER;
 	for(auto m = VBE::begin(); m != VBE::end(); ++m) {

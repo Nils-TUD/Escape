@@ -23,6 +23,23 @@
 
 #include "vesascreen.h"
 
-void vesagui_init(void);
-void vesagui_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
-void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+struct sBitmap;
+
+class VESAGUI {
+public:
+	explicit VESAGUI();
+
+	void setCursor(VESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
+	void update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
+private:
+	void doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor);
+	void copyRegion(VESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
+		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
+
+	uint8_t *_cursorCopy;
+	gpos_t _lastX;
+	gpos_t _lastY;
+	uint8_t _curCursor;
+	sBitmap *_cursor[6];
+};

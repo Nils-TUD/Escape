@@ -24,6 +24,12 @@
 
 #include "vesascreen.h"
 
-uint8_t *vesatui_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color);
-void vesatui_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len);
-void vesatui_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row);
+class VESATUI {
+public:
+	void drawChars(VESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len);
+	void setCursor(VESAScreen *scr,gpos_t col,gpos_t row);
+
+private:
+	void drawChar(VESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
+	void drawCursor(VESAScreen *scr,gpos_t col,gpos_t row,uint8_t color);
+};

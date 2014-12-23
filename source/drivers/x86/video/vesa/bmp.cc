@@ -26,7 +26,7 @@
 
 // TODO use the C++ bitmap library
 
-void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
+void bmp_draw(VESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func) {
 	uint8_t *data = (uint8_t*)bmp->data;
 	gpos_t w = bmp->infoHeader->width, h = bmp->infoHeader->height;
 	gpos_t rw = w;

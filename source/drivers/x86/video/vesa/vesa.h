@@ -26,6 +26,9 @@
 #include "vesascreen.h"
 #include "../vbe.h"
 
+class VESAGUI;
+class VESATUI;
+
 class VESA {
 	VESA() = delete;
 
@@ -34,7 +37,7 @@ class VESA {
 		explicit Client(int f) : ScreenClient(f), screen() {
 		}
 
-		sVESAScreen *screen;
+		VESAScreen *screen;
 	};
 
 	class ScreenDevice : public esc::ScreenDevice<Client> {
@@ -53,5 +56,7 @@ public:
 	static int run(void *arg);
 
 private:
+	static VESAGUI *gui;
+	static VESATUI *tui;
 	static std::vector<esc::Screen::Mode> modes;
 };

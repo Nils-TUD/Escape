@@ -39,57 +39,48 @@
 #define CURSOR_RESIZE_BL_FILE			"/etc/cursor_resbl.bmp"
 #define CURSOR_RESIZE_R_FILE			"/etc/cursor_resr.bmp"
 
-static void vesagui_doSetCursor(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor);
-static void vesagui_copyRegion(sVESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
-		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
-
-static uint8_t *cursorCopy;
-static gpos_t lastX = 0;
-static gpos_t lastY = 0;
-static uint8_t curCursor = esc::Screen::CURSOR_DEFAULT;
-static sBitmap *cursor[6];
-
-void vesagui_init(void) {
-	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
-	if(cursor[0] == NULL)
+VESAGUI::VESAGUI()
+		: _cursorCopy(), _lastX(), _lastY(),_curCursor(esc::Screen::CURSOR_DEFAULT), _cursor() {
+	_cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
+	if(_cursor[0] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_DEFAULT_FILE);
-	cursor[1] = bmp_loadFromFile(CURSOR_RESIZE_L_FILE);
-	if(cursor[1] == NULL)
+	_cursor[1] = bmp_loadFromFile(CURSOR_RESIZE_L_FILE);
+	if(_cursor[1] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_L_FILE);
-	cursor[2] = bmp_loadFromFile(CURSOR_RESIZE_BR_FILE);
-	if(cursor[2] == NULL)
+	_cursor[2] = bmp_loadFromFile(CURSOR_RESIZE_BR_FILE);
+	if(_cursor[2] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_BR_FILE);
-	cursor[3] = bmp_loadFromFile(CURSOR_RESIZE_VERT_FILE);
-	if(cursor[3] == NULL)
+	_cursor[3] = bmp_loadFromFile(CURSOR_RESIZE_VERT_FILE);
+	if(_cursor[3] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_VERT_FILE);
-	cursor[4] = bmp_loadFromFile(CURSOR_RESIZE_BL_FILE);
-	if(cursor[4] == NULL)
+	_cursor[4] = bmp_loadFromFile(CURSOR_RESIZE_BL_FILE);
+	if(_cursor[4] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_BL_FILE);
-	cursor[5] = bmp_loadFromFile(CURSOR_RESIZE_R_FILE);
-	if(cursor[5] == NULL)
+	_cursor[5] = bmp_loadFromFile(CURSOR_RESIZE_R_FILE);
+	if(_cursor[5] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_R_FILE);
 
-	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
-	cursorCopy = (uint8_t*)malloc(curWidth * curHeight * 4);
-	if(cursorCopy == NULL)
+	gsize_t curWidth = _cursor[_curCursor]->infoHeader->width;
+	gsize_t curHeight = _cursor[_curCursor]->infoHeader->height;
+	_cursorCopy = (uint8_t*)malloc(curWidth * curHeight * 4);
+	if(_cursorCopy == NULL)
 		error("Unable to create cursor copy");
 }
 
-void vesagui_setCursor(sVESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor) {
+void VESAGUI::setCursor(VESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor) {
 	if(newCursor == esc::Screen::CURSOR_RESIZE_L || newCursor == esc::Screen::CURSOR_RESIZE_BL)
 		newCurX -= CURSOR_LEFT_OFF;
-	vesagui_doSetCursor(scr,shmem,newCurX,newCurY,newCursor);
+	doSetCursor(scr,shmem,newCurX,newCurY,newCursor);
 }
 
-void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void VESAGUI::update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	esc::Screen::Mode *minfo = scr->mode;
 	gpos_t y1,y2;
 	gsize_t xres = minfo->width;
 	gsize_t yres = minfo->height;
 	gsize_t pxSize = minfo->bitsPerPixel / 8;
-	gsize_t curWidth = cursor[curCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[curCursor]->infoHeader->height;
+	gsize_t curWidth = _cursor[_curCursor]->infoHeader->width;
+	gsize_t curHeight = _cursor[_curCursor]->infoHeader->height;
 	size_t count;
 	uint8_t *src,*dst;
 	y1 = y;
@@ -108,44 +99,44 @@ void vesagui_update(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width
 	}
 
 	gui::Rectangle upRec(x,y,width,height);
-	gui::Rectangle curRec(lastX,lastY,curWidth,curHeight);
+	gui::Rectangle curRec(_lastX,_lastY,curWidth,curHeight);
 
 	/* look if we have to update the cursor-copy */
 	gui::Rectangle intersec = gui::intersection(curRec,upRec);
 	if(!intersec.empty()) {
-		vesagui_copyRegion(scr,(uint8_t*)shmem,cursorCopy,intersec.width(),intersec.height(),
-			intersec.x(),intersec.y(),intersec.x() - lastX,intersec.y() - lastY,xres,curWidth,yres);
-		bmp_draw(scr,cursor[curCursor],lastX,lastY,vbe_getPixelFunc(*scr->mode));
+		copyRegion(scr,(uint8_t*)shmem,_cursorCopy,intersec.width(),intersec.height(),
+			intersec.x(),intersec.y(),intersec.x() - _lastX,intersec.y() - _lastY,xres,curWidth,yres);
+		bmp_draw(scr,_cursor[_curCursor],_lastX,_lastY,vbe_getPixelFunc(*scr->mode));
 	}
 }
 
-static void vesagui_doSetCursor(sVESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor) {
-	if(newCursor < 0 || (size_t)newCursor >= ARRAY_SIZE(cursor))
+void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor) {
+	if(newCursor < 0 || (size_t)newCursor >= ARRAY_SIZE(_cursor))
 		return;
 
-	gsize_t curWidth = cursor[newCursor]->infoHeader->width;
-	gsize_t curHeight = cursor[newCursor]->infoHeader->height;
+	gsize_t curWidth = _cursor[newCursor]->infoHeader->width;
+	gsize_t curHeight = _cursor[newCursor]->infoHeader->height;
 	gsize_t xres = scr->mode->width;
 	gsize_t yres = scr->mode->height;
 	/* validate position */
 	x = MIN(x,(int)(xres - 1));
 	y = MIN(y,(int)(yres - 1));
 
-	if(lastX != x || lastY != y) {
-		gsize_t upHeight = MIN(curHeight,yres - lastY);
+	if(_lastX != x || _lastY != y) {
+		gsize_t upHeight = MIN(curHeight,yres - _lastY);
 		/* copy old content back */
-		vesagui_copyRegion(scr,cursorCopy,scr->frmbuf,curWidth,upHeight,0,0,lastX,lastY,curWidth,xres,curHeight);
+		copyRegion(scr,_cursorCopy,scr->frmbuf,curWidth,upHeight,0,0,_lastX,_lastY,curWidth,xres,curHeight);
 		/* save content */
-		vesagui_copyRegion(scr,(uint8_t*)shmem,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
+		copyRegion(scr,(uint8_t*)shmem,_cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
 	}
 
-	bmp_draw(scr,cursor[newCursor],x,y,vbe_getPixelFunc(*scr->mode));
-	lastX = x;
-	lastY = y;
-	curCursor = newCursor;
+	bmp_draw(scr,_cursor[newCursor],x,y,vbe_getPixelFunc(*scr->mode));
+	_lastX = x;
+	_lastY = y;
+	_curCursor = newCursor;
 }
 
-static void vesagui_copyRegion(sVESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
+void VESAGUI::copyRegion(VESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
 		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1) {
 	gpos_t maxy = MIN(h1,y1 + height);
 	gsize_t pxSize = scr->mode->bitsPerPixel / 8;

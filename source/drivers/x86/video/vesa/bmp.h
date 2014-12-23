@@ -74,7 +74,7 @@ typedef struct {
 	uint32_t colorsImportant;
 } A_PACKED sBMInfoHeader;
 
-typedef struct {
+typedef struct sBitmap {
 	sBMFileHeader *fileHeader;
 	sBMInfoHeader *infoHeader;
 	uint32_t *colorTable;
@@ -92,7 +92,7 @@ typedef struct {
  * @param y the y-coordinate
  * @param func the function to set a pixel
  */
-void bmp_draw(sVESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func);
+void bmp_draw(VESAScreen *scr,sBitmap *bmp,gpos_t x,gpos_t y,fSetPixel func);
 
 /**
  * Loads a bitmap from given file

@@ -22,18 +22,29 @@
 #include <sys/common.h>
 #include <vbe/vbe.h>
 
-typedef struct {
+class VESAScreen {
+	explicit VESAScreen(esc::Screen::Mode *minfo);
+    ~VESAScreen();
+
+public:
+	static VESAScreen *request(esc::Screen::Mode *minfo);
+
+	void reset(int type);
+	void release();
+
+private:
+	void initWhOnBl();
+
+public:
 	uint refs;
 	uint8_t *frmbuf;
 	uint8_t *whOnBlCache;
-	uint8_t *content;
 	esc::Screen::Mode *mode;
 	uint8_t cols;
 	uint8_t rows;
 	uint8_t lastCol;
 	uint8_t lastRow;
-} sVESAScreen;
-
-sVESAScreen *vesascr_request(esc::Screen::Mode *minfo);
-void vesascr_reset(sVESAScreen *scr,int type);
-void vesascr_release(sVESAScreen *scr);
+	uint8_t *content;
+private:
+	static std::vector<VESAScreen*> _screens;
+};

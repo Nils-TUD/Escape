@@ -19,25 +19,47 @@
 
 #include <sys/common.h>
 #include <sys/mman.h>
+#include <esc/vthrow.h>
 #include <vbe/vbe.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
 
 #include "vesascreen.h"
-#include "vesatui.h"
 
-static int vesascr_initWhOnBl(sVESAScreen *scr);
+std::vector<VESAScreen*> VESAScreen::_screens;
 
-static std::vector<sVESAScreen*> screens;
+VESAScreen::VESAScreen(esc::Screen::Mode *minfo)
+	: refs(1), frmbuf(), whOnBlCache(), mode(minfo),
+	  cols(minfo->width / (FONT_WIDTH + PAD * 2)),
+	  /* leave at least one pixel free for the cursor */
+	  rows((minfo->height - 1) / (FONT_HEIGHT + PAD * 2)), lastCol(), lastRow(),
+	  content(new uint8_t[cols * rows * 2]) {
 
-static int vesascr_initWhOnBl(sVESAScreen *scr) {
-	scr->whOnBlCache = (uint8_t*)malloc((FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *
-			(scr->mode->bitsPerPixel / 8) * FONT_COUNT);
-	if(scr->whOnBlCache == NULL)
-		return -ENOMEM;
+	/* map framebuffer */
+	size_t size = minfo->width * minfo->height * (minfo->bitsPerPixel / 8);
+	uintptr_t phys = minfo->physaddr;
+	frmbuf = static_cast<uint8_t*>(mmapphys(&phys,size,0,MAP_PHYS_MAP));
+	if(frmbuf == NULL)
+		throw esc::default_error("Unable to map framebuffer",-ENOMEM);
 
-	uint8_t *cc = scr->whOnBlCache;
+	/* init white-on-black cache */
+	initWhOnBl();
+}
+
+VESAScreen::~VESAScreen() {
+	if(frmbuf != NULL)
+		munmap(frmbuf);
+	delete[] content;
+	delete[] whOnBlCache;
+	_screens.erase_first(this);
+}
+
+void VESAScreen::initWhOnBl() {
+	whOnBlCache = new uint8_t[(FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *
+			(mode->bitsPerPixel / 8) * FONT_COUNT];
+
+	uint8_t *cc = whOnBlCache;
 	uint8_t *white = vbet_getColor(WHITE);
 	uint8_t *black = vbet_getColor(BLACK);
 	for(size_t i = 0; i < FONT_COUNT; i++) {
@@ -45,19 +67,18 @@ static int vesascr_initWhOnBl(sVESAScreen *scr) {
 			for(int x = 0; x < FONT_WIDTH + PAD * 2; x++) {
 				if(y >= PAD && y < FONT_HEIGHT + PAD && x >= PAD && x < FONT_WIDTH + PAD &&
 						PIXEL_SET(i,x - PAD,y - PAD)) {
-					cc = vesatui_setPixel(scr,cc,white);
+					cc = vbe_setPixelAt(*mode,cc,white);
 				}
 				else
-					cc = vesatui_setPixel(scr,cc,black);
+					cc = vbe_setPixelAt(*mode,cc,black);
 			}
 		}
 	}
-	return 0;
 }
 
-sVESAScreen *vesascr_request(esc::Screen::Mode *minfo) {
+VESAScreen *VESAScreen::request(esc::Screen::Mode *minfo) {
 	/* is there already a screen for that mode? */
-	for(auto it = screens.begin(); it != screens.end(); ++it) {
+	for(auto it = _screens.begin(); it != _screens.end(); ++it) {
 		if((*it)->mode->id == minfo->id) {
 			(*it)->refs++;
 			return *it;
@@ -65,59 +86,26 @@ sVESAScreen *vesascr_request(esc::Screen::Mode *minfo) {
 	}
 
 	/* ok, create a new one */
-	sVESAScreen *scr = (sVESAScreen*)malloc(sizeof(sVESAScreen));
-	scr->refs = 1;
-	scr->cols = minfo->width / (FONT_WIDTH + PAD * 2);
-	/* leave at least one pixel free for the cursor */
-	scr->rows = (minfo->height - 1) / (FONT_HEIGHT + PAD * 2);
-	scr->mode = minfo;
-	screens.push_back(scr);
-
-	/* map framebuffer */
-	size_t size = minfo->width * minfo->height * (minfo->bitsPerPixel / 8);
-	uintptr_t phys = minfo->physaddr;
-	scr->frmbuf = static_cast<uint8_t*>(mmapphys(&phys,size,0,MAP_PHYS_MAP));
-	if(scr->frmbuf == NULL) {
-		screens.erase_first(scr);
-		free(scr);
-		return NULL;
-	}
-
-	/* init white-on-black cache */
-	vesascr_initWhOnBl(scr);
-
-	/* alloc content */
-	scr->content = (uint8_t*)malloc(scr->cols * scr->rows * 2);
-	if(scr->content == NULL) {
-		munmap(scr->frmbuf);
-		screens.erase_first(scr);
-		free(scr);
-		return NULL;
-	}
+	VESAScreen *scr = new VESAScreen(minfo);
+	_screens.push_back(scr);
 	return scr;
 }
 
-void vesascr_reset(sVESAScreen *scr,int type) {
-	scr->lastCol = scr->cols;
-	scr->lastRow = scr->rows;
-	memclear(scr->frmbuf,
-		scr->mode->width * scr->mode->height * (scr->mode->bitsPerPixel / 8));
+void VESAScreen::reset(int type) {
+	lastCol = cols;
+	lastRow = rows;
+	memclear(frmbuf,mode->width * mode->height * (mode->bitsPerPixel / 8));
 	if(type == esc::Screen::MODE_TYPE_TUI) {
-		for(int y = 0; y < scr->rows; y++) {
-			for(int x = 0; x < scr->cols; x++) {
-				scr->content[y * scr->cols * 2 + x * 2] = ' ';
-				scr->content[y * scr->cols * 2 + x * 2 + 1] = 0x07;
+		for(int y = 0; y < rows; y++) {
+			for(int x = 0; x < cols; x++) {
+				content[y * cols * 2 + x * 2] = ' ';
+				content[y * cols * 2 + x * 2 + 1] = 0x07;
 			}
 		}
 	}
 }
 
-void vesascr_release(sVESAScreen *scr) {
-	if(--scr->refs == 0) {
-		free(scr->whOnBlCache);
-		free(scr->content);
-		munmap(scr->frmbuf);
-		screens.erase_first(scr);
-		free(scr);
-	}
+void VESAScreen::release() {
+	if(--refs == 0)
+		delete this;
 }

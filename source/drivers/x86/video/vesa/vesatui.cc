@@ -27,18 +27,11 @@
 #define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
-static void vesatui_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color);
-static void vesatui_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color);
-
-uint8_t *vesatui_setPixel(sVESAScreen *scr,uint8_t *vid,uint8_t *color) {
-	return vbe_setPixelAt(*scr->mode,vid,color);
-}
-
-void vesatui_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len) {
+void VESATUI::drawChars(VESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len) {
 	while(len-- > 0) {
 		uint8_t c = *str++;
 		uint8_t color = *str++;
-		vesatui_drawChar(scr,col,row,c,color);
+		drawChar(scr,col,row,c,color);
 		if(col >= scr->cols - 1) {
 			row++;
 			col = 0;
@@ -48,16 +41,16 @@ void vesatui_drawChars(sVESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str
 	}
 }
 
-void vesatui_setCursor(sVESAScreen *scr,gpos_t col,gpos_t row) {
+void VESATUI::setCursor(VESAScreen *scr,gpos_t col,gpos_t row) {
 	if(scr->lastCol < scr->cols && scr->lastRow < scr->rows)
-		vesatui_drawCursor(scr,scr->lastCol,scr->lastRow,BLACK);
+		drawCursor(scr,scr->lastCol,scr->lastRow,BLACK);
 	if(col < scr->cols && row < scr->rows)
-		vesatui_drawCursor(scr,col,row,WHITE);
+		drawCursor(scr,col,row,WHITE);
 	scr->lastCol = col;
 	scr->lastRow = row;
 }
 
-static void vesatui_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
+void VESATUI::drawChar(VESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,uint8_t color) {
 	gpos_t y;
 	gsize_t rx = scr->mode->width;
 	size_t pxSize = scr->mode->bitsPerPixel / 8;
@@ -84,7 +77,7 @@ static void vesatui_drawChar(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t c,ui
 		vbet_drawChar(*scr->mode,scr->frmbuf,col,row,c,color);
 }
 
-static void vesatui_drawCursor(sVESAScreen *scr,gpos_t col,gpos_t row,uint8_t color) {
+void VESATUI::drawCursor(VESAScreen *scr,gpos_t col,gpos_t row,uint8_t color) {
 	gsize_t xres = scr->mode->width;
 	gsize_t pxSize = scr->mode->bitsPerPixel / 8;
 	fSetPixel pxFunc = vbe_getPixelFunc(*scr->mode);

@@ -27,14 +27,17 @@
 #include <stdlib.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <path>\n",name);
+	fprintf(stderr,"Usage: %s [--ms <ms>] <path>\n",name);
+	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
+	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,const char *argv[]) {
 	char *path = NULL;
+	char *mspath = (char*)"/sys/proc/self/ms";
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"ms=s =s*",&mspath,&path);
 	if(res < 0) {
 		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);
@@ -42,11 +45,11 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	int ms = open("/sys/proc/self/ms",O_RDONLY);
+	int ms = open(mspath,O_WRITE);
 	if(ms < 0)
-		error("Unable to open '/sys/proc/self/ms'");
+		error("Unable to open '%s' for writing",mspath);
 	if(unmount(ms,path) < 0)
-		error("Unable to unmount '%s'",path);
+		error("Unable to unmount '%s' from mountspace '%s'",path,mspath);
 	close(ms);
 	return EXIT_SUCCESS;
 }

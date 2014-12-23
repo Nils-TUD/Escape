@@ -34,10 +34,13 @@
 static bool run = true;
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <device> <path> <fs>\n",name);
+	fprintf(stderr,"Usage: %s [--ms <ms>] <device> <path> <fs>\n",name);
 	fprintf(stderr,"    For example, %s /dev/hda1 /mnt ext2, where ext2 is a program\n",name);
 	fprintf(stderr,"    in PATH that takes the device as argument 2 and creates\n");
 	fprintf(stderr,"    /dev/ext2-hda1 (in this case).\n");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
+	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -49,11 +52,12 @@ int main(int argc,const char *argv[]) {
 	char devpath[MAX_PATH_LEN];
 	char fsname[MAX_PATH_LEN];
 	char fsdev[MAX_PATH_LEN];
+	char *mspath = (char*)"/sys/proc/self/ms";
 	char *path = NULL;
 	char *dev = NULL;
 	char *fs = NULL;
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"=s* =s* =s*",&dev,&path,&fs);
+	int res = ca_parse(argc,argv,CA_NO_FREE,"ms=s =s* =s* =s*",&mspath,&dev,&path,&fs);
 	if(res < 0) {
 		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);
@@ -101,11 +105,11 @@ int main(int argc,const char *argv[]) {
 		error("Unable to open '%s'",fsdev);
 
 	/* now mount it */
-	int ms = open("/sys/proc/self/ms",O_RDONLY);
+	int ms = open(mspath,O_WRITE);
 	if(ms < 0)
-		error("Unable to open '/sys/proc/self/ms'");
+		error("Unable to open '%s' for writing",mspath);
 	if(mount(ms,fd,path) < 0)
-		error("Unable to mount '%s' @ '%s' with fs %s",dev,path,fs);
+		error("Unable to mount '%s' @ '%s' with fs %s in mountspace '%s'",dev,path,fs,mspath);
 
 	close(ms);
 	close(fd);

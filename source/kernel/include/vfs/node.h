@@ -207,6 +207,11 @@ public:
 	}
 
 	/**
+	 * @return whether this node can be deleted with unlink.
+	 */
+	virtual bool isDeletable() const;
+
+	/**
 	 * @return whether this node is still alive, i.e. hasn't been detached yet
 	 */
 	bool isAlive() const {

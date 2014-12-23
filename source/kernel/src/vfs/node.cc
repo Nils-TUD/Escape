@@ -86,6 +86,10 @@ VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 	modtime = acctime = crttime = Timer::getTime();
 }
 
+bool VFSNode::isDeletable() const {
+	return getOwner() != KERNEL_PID;
+}
+
 const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
 	const VFSNode *p;
 	if(!S_ISLNK(mode))

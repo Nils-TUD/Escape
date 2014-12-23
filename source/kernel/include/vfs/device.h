@@ -40,6 +40,10 @@ public:
 	 */
 	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,mode_t mode,uint type,uint ops,bool &success);
 
+	virtual bool isDeletable() const {
+		return false;
+	}
+
 	/**
 	 * @param funcs the functions to check
 	 * @return true if the server supports the given functions

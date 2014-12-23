@@ -421,8 +421,7 @@ int VFS::unlink(pid_t pid,const char *path) {
 
 		/* check permissions */
 		err = -EPERM;
-		if(n->getOwner() == KERNEL_PID || (err = hasAccess(pid,n,VFS_WRITE)) < 0 ||
-				IS_DEVICE(n->getMode())) {
+		if(!n->isDeletable() || (err = hasAccess(pid,n,VFS_WRITE)) < 0) {
 			VFSNode::release(n);
 			return err;
 		}

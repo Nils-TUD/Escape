@@ -17,40 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <sys/common.h>
-#include <gui/graphics/graphics.h>
-#include <exception>
-#include <memory>
+#include <img/image.h>
+#include <img/bitmapimage.h>
+#include <stdio.h>
 
-namespace gui {
-	class img_load_error : public std::exception {
-	public:
-		img_load_error(const std::string& str) throw ()
-			: exception(), _str(str) {
-		}
-		~img_load_error() throw () {
-		}
-		virtual const char *what() const throw () {
-			return _str.c_str();
-		}
-	private:
-		std::string _str;
-	};
+namespace img {
 
-	class Image {
-	public:
-		static std::shared_ptr<Image> loadImage(const std::string& path);
+Image *Image::loadImage(const std::shared_ptr<Painter> &painter,const std::string& path) {
+	char header[3];
+	FILE *f = fopen(path.c_str(),"r");
+	if(!f)
+		throw img_load_error(path + ": Unable to open");
+	header[0] = fgetc(f);
+	header[1] = fgetc(f);
+	header[2] = '\0';
+	fclose(f);
+	// check header-type
+	if(header[0] == 'B' && header[1] == 'M')
+		return new BitmapImage(painter,path);
+	// unknown image-type
+	throw img_load_error(path + ": Unknown image-type (header " + header + ")");
+}
 
-	public:
-		Image() {
-		}
-		virtual ~Image() {
-		}
-
-		virtual Size getSize() const = 0;
-
-		virtual void paint(Graphics &g,const Pos &pos) = 0;
-	};
 }

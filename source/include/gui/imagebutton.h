@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <gui/image/image.h>
+#include <gui/image.h>
 #include <gui/button.h>
 
 namespace gui {

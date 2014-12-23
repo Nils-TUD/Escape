@@ -17,28 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
-
 #include <sys/common.h>
+#include <gui/image.h>
+#include <esc/rawfile.h>
 
-#include "vesascreen.h"
-#include "image.h"
+using namespace std;
 
-class VESAGUI {
-public:
-	explicit VESAGUI();
+namespace gui {
 
-	void setCursor(VESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
-	void update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+void Image::paint(Graphics &g,const Pos &pos) {
+	if(g.getPixels() == NULL)
+		return;
 
-private:
-	void doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor);
-	void copyRegion(VESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
-		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
+	Pos rpos(pos.x,pos.y);
+	Size rsize = getSize();
+	if(!g.validateParams(rpos,rsize))
+		return;
+	rpos -= Size(pos.x,pos.y);
 
-	uint8_t *_cursorCopy;
-	gpos_t _lastX;
-	gpos_t _lastY;
-	uint8_t _curCursor;
-	VESAImage *_cursor[6];
-};
+	_painter->reset(&g,pos);
+
+	_img->paint(rpos.x,rpos.y,rsize.width,rsize.height);
+
+	g.updateMinMax(Pos(pos.x + rpos.x,pos.y + rpos.y));
+	g.updateMinMax(Pos(pos.x + rpos.x + rsize.width - 1,pos.y + rpos.y + rsize.height - 1));
+}
+
+}

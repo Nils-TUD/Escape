@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg(
-	'bin', target = 'libguitest', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')], LIBS = ['gui']
+	'bin', target = 'libguitest', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')], LIBS = ['gui', 'img']
 )

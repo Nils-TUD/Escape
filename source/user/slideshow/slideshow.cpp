@@ -18,11 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <gui/image/bitmapimage.h>
-#include <gui/image/image.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/application.h>
 #include <gui/window.h>
+#include <gui/image.h>
 #include <gui/imagebutton.h>
 #include <vector>
 

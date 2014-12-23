@@ -17,28 +17,45 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <sys/common.h>
-#include <gui/image/image.h>
-#include <gui/image/bitmapimage.h>
-#include <string.h>
-#include <stdio.h>
+#include <vbe/vbe.h>
+#include <img/bitmapimage.h>
 
-using namespace std;
+#include "vesascreen.h"
 
-namespace gui {
-	shared_ptr<Image> Image::loadImage(const string& path) {
-		char header[3];
-		FILE *f = fopen(path.c_str(),"r");
-		if(!f)
-			throw img_load_error(path + ": Unable to open");
-		header[0] = fgetc(f);
-		header[1] = fgetc(f);
-		header[2] = '\0';
-		fclose(f);
-		// check header-type
-		if(header[0] == 'B' && header[1] == 'M')
-			return std::shared_ptr<Image>(new BitmapImage(path));
-		// unknown image-type
-		throw img_load_error(path + ": Unknown image-type (header " + header + ")");
+class VESABMPainter : public img::Painter {
+public:
+	void reset(VESAScreen *scr,gpos_t x,gpos_t y) {
+		_scr = scr;
+		_setPixel = vbe_getPixelFunc(*_scr->mode);
+		_x = x;
+		_y = y;
 	}
-}
+
+	virtual void paintPixel(gpos_t x,gpos_t y,uint32_t col);
+
+private:
+	gpos_t _x;
+	gpos_t _y;
+	VESAScreen *_scr;
+	fSetPixel _setPixel;
+};
+
+class VESAImage {
+public:
+	explicit VESAImage(const std::string &filename)
+		: _painter(new VESABMPainter()), _img(img::Image::loadImage(_painter,filename)) {
+	}
+
+	void getSize(gsize_t *width,gsize_t *height) {
+		_img->getSize(width,height);
+	}
+
+	void paint(VESAScreen *scr,gpos_t x,gpos_t y);
+
+private:
+	std::shared_ptr<VESABMPainter> _painter;
+	std::shared_ptr<img::Image> _img;
+};

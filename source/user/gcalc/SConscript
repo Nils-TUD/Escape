@@ -16,5 +16,5 @@ cppfiles = myenv.Glob('*.cpp')
 myenv.Depends(cppfiles, [lexer, parser])
 
 myenv.EscapeCXXProg(
-	'bin', target = 'gcalc', source = cppfiles + [lexer, parser[0]], LIBS = ['gui']
+	'bin', target = 'gcalc', source = cppfiles + [lexer, parser[0]], LIBS = ['gui', 'img']
 )

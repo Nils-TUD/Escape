@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(target = 'gui', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')])
+env.EscapeLib(target = 'gui', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')], LIBS = ['img'])

@@ -21,9 +21,9 @@
 
 #include <sys/common.h>
 #include <gui/graphics/color.h>
-#include <gui/image/image.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
+#include <gui/image.h>
 #include <gui/window.h>
 #include <gui/imagebutton.h>
 #include <map>

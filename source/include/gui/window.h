@@ -25,7 +25,7 @@
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/graphics/color.h>
 #include <gui/layout/borderlayout.h>
-#include <gui/image/image.h>
+#include <gui/image.h>
 #include <gui/uielement.h>
 #include <gui/application.h>
 #include <gui/button.h>

@@ -41,7 +41,8 @@ namespace gui {
 		friend class Window;
 		friend class Control;
 		friend class UIElement;
-		friend class BitmapImage;
+		friend class Image;
+		friend class GUIPainter;
 
 	private:
 		static const int OUT_TOP		= 1;

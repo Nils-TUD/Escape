@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <gui/image/bitmapimage.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/layout/iconlayout.h>
@@ -31,6 +30,7 @@
 #include <gui/progressbar.h>
 #include <gui/border.h>
 #include <gui/splitter.h>
+#include <gui/image.h>
 #include <gui/scrollpane.h>
 #include <sys/proc.h>
 #include <sys/debug.h>

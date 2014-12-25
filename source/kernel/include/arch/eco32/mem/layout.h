@@ -116,6 +116,7 @@
 
 /* our kernel-stack */
 #define KSTACK_AREA				(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
+/* NOTE: we currently assume in kernel.S that the lower 16 bits are 0! */
 #define KERNEL_STACK			KSTACK_AREA
 
 /* the size of the temporary stack we use at the beginning */

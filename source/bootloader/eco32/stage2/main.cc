@@ -66,7 +66,7 @@ static Elf32_Ehdr eheader;
 static Elf32_Phdr pheader;
 
 /* temporary buffer to read a block from disk */
-static uint buffer[1024 / sizeof(uint)];
+static uint buffer[2048 / sizeof(uint)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
 static uintptr_t loadAddr = 0xC0000000;
 

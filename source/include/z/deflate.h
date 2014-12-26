@@ -131,25 +131,25 @@ private:
  * Implements the deflate compression algorithm. At the moment, only uncompress is implemented.
  */
 class Deflate {
-	struct TINF_TREE {
+	struct Tree {
 		unsigned short table[16];  /* table of code length counts */
 		unsigned short trans[288]; /* code -> symbol translation table */
 	};
 
-	struct TINF_DATA {
+	struct Data {
 		Source *source;
 		unsigned int tag;
 		unsigned int bitcount;
 
 		Drain *drain;
 
-		TINF_TREE ltree; /* dynamic length/symbol tree */
-		TINF_TREE dtree; /* dynamic distance tree */
+		Tree ltree; /* dynamic length/symbol tree */
+		Tree dtree; /* dynamic distance tree */
 	};
 
 	enum {
-		TINF_OK			= 0,
-		TINF_DATA_ERROR	= -1
+		OK		= 0,
+		FAILED	= -1
 	};
 
 public:
@@ -168,20 +168,24 @@ public:
 	int uncompress(Drain *drain,Source *source);
 
 private:
-	void tinf_build_bits_base(unsigned char *bits,unsigned short *base,int delta,int first);
-	void tinf_build_fixed_trees(TINF_TREE *lt,TINF_TREE *dt);
-	void tinf_build_tree(TINF_TREE *t,const unsigned char *lengths,unsigned int num);
-	int tinf_getbit(TINF_DATA *d);
-	unsigned int tinf_read_bits(TINF_DATA *d,int num,int base);
-	int tinf_decode_symbol(TINF_DATA *d,TINF_TREE *t);
-	void tinf_decode_trees(TINF_DATA *d,TINF_TREE *lt,TINF_TREE *dt);
-	int tinf_inflate_block_data(TINF_DATA *d,TINF_TREE *lt,TINF_TREE *dt);
-	int tinf_inflate_uncompressed_block(TINF_DATA *d);
-	int tinf_inflate_fixed_block(TINF_DATA *d);
-	int tinf_inflate_dynamic_block(TINF_DATA *d);
+	void build_bits_base(unsigned char *bits,unsigned short *base,int delta,int first);
+	void build_fixed_trees(Tree *lt,Tree *dt);
+	void build_tree(Tree *t,const unsigned char *lengths,unsigned int num);
 
-	TINF_TREE sltree; /* fixed length/symbol tree */
-	TINF_TREE sdtree; /* fixed distance tree */
+	int getbit(Data *d);
+	unsigned int read_bits(Data *d,int num,int base);
+	int decode_symbol(Data *d,Tree *t);
+	void decode_trees(Data *d,Tree *lt,Tree *dt);
+
+	int deflate_uncompressed_block(Data *d);
+
+	int inflate_block_data(Data *d,Tree *lt,Tree *dt);
+	int inflate_uncompressed_block(Data *d);
+	int inflate_fixed_block(Data *d);
+	int inflate_dynamic_block(Data *d);
+
+	Tree sltree; /* fixed length/symbol tree */
+	Tree sdtree; /* fixed distance tree */
 
 	/* extra bits and base tables for length codes */
 	unsigned char length_bits[30];

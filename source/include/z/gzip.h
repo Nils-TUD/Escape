@@ -43,14 +43,7 @@ struct GZipHeader {
 		MDEFLATE	= 8
 	};
 
-	/**
-	 * Reads the header from given file
-	 *
-	 * @param f the file
-	 * @return the GZip header
-	 */
-	static GZipHeader read(FILE *f);
-
+	explicit GZipHeader(const char *filename,const char *comment);
 	explicit GZipHeader()
 		: id1(), id2(), method(), flags(), mtime(), xflags(), os(), filename(), comment() {
 	}
@@ -72,6 +65,21 @@ struct GZipHeader {
 	bool isGZip() const {
 		return id1 == 0x1f && id2 == 0x8b;
 	}
+
+	/**
+	 * Reads the header from given file
+	 *
+	 * @param f the file
+	 * @return the GZip header
+	 */
+	static GZipHeader read(FILE *f);
+
+	/**
+	 * Writes this header to given file.
+	 *
+	 * @param f the file
+	 */
+	void write(FILE *f);
 
 	/**
 	 * Writes the information in <h> in a human readable form to <os>.

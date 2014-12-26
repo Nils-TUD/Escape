@@ -46,6 +46,21 @@ static void readStr(FILE *f,char *dst,size_t max) {
 	dst[i] = '\0';
 }
 
+GZipHeader::GZipHeader(const char *_filename,const char *_comment)
+	: id1(0x1f), id2(0x8b), method(MDEFLATE), flags(), mtime(time(NULL)), xflags(), os(3),
+	  filename(), comment() {
+	if(_filename) {
+		filename = new char[strlen(_filename) + 1];
+		strcpy(filename,_filename);
+		flags |= FNAME;
+	}
+	if(_comment) {
+		comment = new char[strlen(_comment) + 1];
+		strcpy(comment,_comment);
+		flags |= FCOMMENT;
+	}
+}
+
 GZipHeader GZipHeader::read(FILE *f) {
 	GZipHeader h;
 	fread(&h,1,10,f);
@@ -65,7 +80,7 @@ GZipHeader GZipHeader::read(FILE *f) {
 	}
 	if(h.flags & FCOMMENT) {
 		h.comment = new char[MAX_COMMENT_LEN];
-		readStr(f,h.filename,MAX_NAME_LEN);
+		readStr(f,h.comment,MAX_NAME_LEN);
 	}
 	if(h.flags & FHCRC) {
 		long old = ftell(f);
@@ -87,6 +102,26 @@ GZipHeader GZipHeader::read(FILE *f) {
 		delete[] buf;
 	}
 	return h;
+}
+
+void GZipHeader::write(FILE *f) {
+	assert(isGZip() && method == MDEFLATE && (flags & ~(FNAME | FCOMMENT)) == 0 && xflags == 0);
+	mtime = cputole32(mtime);
+	if(fwrite(this,1,10,f) != 10)
+		throw esc::default_error("Unable to write header");
+	mtime = le32tocpu(mtime);
+	if(flags & FNAME) {
+		assert(filename != NULL);
+		size_t len = strlen(filename) + 1;
+		if(fwrite(filename,1,len,f) != len)
+			throw esc::default_error("Unable to write filename");
+	}
+	if(flags & FCOMMENT) {
+		assert(comment != NULL);
+		size_t len = strlen(comment) + 1;
+		if(fwrite(comment,1,len,f) != len)
+			throw esc::default_error("Unable to write comment");
+	}
 }
 
 std::ostream &operator<<(std::ostream &os,const GZipHeader &h) {

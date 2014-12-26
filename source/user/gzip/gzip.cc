@@ -20,70 +20,58 @@
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <esc/cmdargs.h>
+#include <esc/vthrow.h>
 #include <z/gzip.h>
-#include <z/inflate.h>
+#include <z/deflate.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <iostream>
-#include <fstream>
 
-static void uncompress(FILE *f,const std::string &filename,const z::GZipHeader &header,bool tostdout) {
+static void compress(FILE *f,const std::string &filename,bool tostdout,int compr) {
 	FILE *out = stdout;
 	if(!tostdout) {
-		std::string name;
-		if(header.filename != NULL) {
-			name = header.filename;
-			if(name.find('/') != std::string::npos) {
-				printe("%s: GZip contains invalid filename (%s)",filename.c_str(),name.c_str());
-				return;
-			}
-		}
-		else {
-			if(filename.rfind(".gz") != filename.length() - 3) {
-				printe("%s: invalid file name",filename.c_str());
-				return;
-			}
-
-			name = filename.substr(0,filename.length() - 3);
-		}
-
+		std::string name = filename + ".gz";
 		out = fopen(name.c_str(),"w");
 		if(!out) {
-			printe("Unable to open '%s' for writing",name.c_str());
+			throw esc::default_error("unable to open for writing");
 			return;
 		}
 	}
 
-	z::FileInflateSource src(f);
-	z::FileInflateDrain drain(out);
-	z::Inflate inflate;
-	if(inflate.uncompress(&drain,&src) != 0)
-		printe("%s: uncompressing failed",filename.c_str());
+	z::GZipHeader header(filename.c_str(),NULL);
+	header.write(out);
+
+	z::FileDeflateSource src(f);
+	z::FileDeflateDrain drain(out);
+	z::Deflate deflate;
+	if(deflate.compress(&drain,&src,compr) != 0)
+		throw esc::default_error("compressing failed");
 	else {
-		uint32_t crc32 = (uint8_t)src.get() << 0;
-		crc32 |= (uint8_t)src.get() << 8;
-		crc32 |= (uint8_t)src.get() << 16;
-		crc32 |= (uint8_t)src.get() << 24;
-		if(le32tocpu(crc32) != drain.crc32())
-			printe("%s: CRC32 is invalid",filename.c_str());
+		uint32_t crc32 = src.crc32();
+		if(fwrite(&crc32,4,1,out) != 1)
+			throw esc::default_error("unable to write CRC32");
+		uint32_t orgsize = src.count();
+		if(fwrite(&orgsize,4,1,out) != 1)
+			throw esc::default_error("unable to write size of original file");
 	}
 
+	// TODO not reached if exception throws
 	if(!tostdout)
 		fclose(out);
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-c] [-i] <file>...\n",name);
+	fprintf(stderr,"Usage: %s [-c] <file>...\n",name);
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	int showinfo = false;
 	int tostdout = false;
+	int compr = z::Deflate::FIXED;
 	esc::cmdargs args(argc,argv,0);
 	try {
-		args.parse("c i",&tostdout,&showinfo);
-		if(args.is_help())
+		args.parse("c l=d",&tostdout,&compr);
+		if(args.is_help() ||
+			(compr != z::Deflate::NONE && compr != z::Deflate::FIXED && compr != z::Deflate::DYN))
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
@@ -99,11 +87,7 @@ int main(int argc,char **argv) {
 		}
 
 		try {
-			z::GZipHeader header = z::GZipHeader::read(f);
-			if(showinfo)
-				std::cout << (*file)->c_str() << ":\n" << header << "\n";
-			else
-				uncompress(f,**file,header,tostdout);
+			compress(f,**file,tostdout,compr);
 		}
 		catch(const std::exception &e) {
 			std::cerr << **file << ": " << e.what() << "\n";

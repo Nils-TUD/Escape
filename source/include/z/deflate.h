@@ -23,75 +23,16 @@
 #include <z/crc32.h>
 #include <stdio.h>
 #include <assert.h>
+#include <algorithm>
 
 namespace z {
 
 /**
  * Base-class for all sources, used in Deflate
  */
-class Source {
+class DeflateSource {
 public:
-	virtual ~Source() {
-	}
-
-	/**
-	 * @return the next byte
-	 */
-	virtual char get() = 0;
-};
-
-/**
- * Base-class for all drains, used in Deflate
- */
-class Drain {
-public:
-	virtual ~Drain() {
-	}
-
-	/**
-	 * Should return the previously written character, written <off> bytes ago.
-	 *
-	 * @param off the offset (at most 32*1024)
-	 * @return the character written <off> bytes ago
-	 */
-	virtual char get(size_t off) = 0;
-
-	/**
-	 * Writes <c> to drain
-	 *
-	 * @param c the character to write
-	 */
-	virtual void put(char c) = 0;
-};
-
-/**
- * A source implementation that reads from a FILE.
- */
-class FileSource : public Source {
-public:
-	explicit FileSource(FILE *file) : Source(), _file(file) {
-	}
-
-	virtual char get() {
-		return fgetc(_file);
-	}
-
-private:
-	FILE *_file;
-};
-
-/**
- * A drain implementation that writes to a FILE
- */
-class FileDrain : public Drain {
-public:
-	static const size_t BUF_SIZE	= 32 * 1024;	// has to be at least 32K
-
-	explicit FileDrain(FILE *file)
-		: Drain(), _crc(), _checksum(0), _file(file), _buf(new char[BUF_SIZE]), _wpos() {
-	}
-	~FileDrain() {
-		delete[] _buf;
+	virtual ~DeflateSource() {
 	}
 
 	/**
@@ -99,52 +40,147 @@ public:
 	 *
 	 * @return the CRC32 of the uncompressed data
 	 */
-	ulong crc32() {
-		if(_wpos > 0) {
-			_checksum = _crc.update(_checksum,_buf,_wpos);
-			_wpos = 0;
-		}
-		return _checksum;
-	}
+	virtual ulong crc32() = 0;
 
-	virtual char get(size_t off) {
-		assert(off < BUF_SIZE);
-		return _buf[(_wpos - off) % BUF_SIZE];
-	}
-	virtual void put(char c) {
-		fputc(c,_file);
-		_buf[_wpos] = c;
-		_wpos = (_wpos + 1) % BUF_SIZE;
-		if(_wpos == 0)
-			_checksum = _crc.update(_checksum,_buf,BUF_SIZE);
-	}
+	/**
+	 * @return the total number of read bytes
+	 */
+	virtual size_t count() const = 0;
 
-private:
-	CRC32 _crc;
-	ulong _checksum;
-	FILE *_file;
-	char *_buf;
-	size_t _wpos;
+	/**
+	 * @return true if there is more data than the current block
+	 */
+	virtual bool more() = 0;
+
+	/**
+	 * @return the remaining data from the currently cached block
+	 */
+	virtual size_t cached() = 0;
+
+	/**
+	 * @return the next byte
+	 */
+	virtual uint8_t get() = 0;
 };
 
 /**
- * Implements the deflate compression algorithm. At the moment, only uncompress is implemented.
+ * Base-class for all drains, used in Deflate
+ */
+class DeflateDrain {
+public:
+	virtual ~DeflateDrain() {
+	}
+
+	/**
+	 * Writes <c> to drain
+	 *
+	 * @param c the character to write
+	 */
+	virtual void put(uint8_t c) = 0;
+};
+
+/**
+ * A source implementation that reads from a FILE.
+ */
+class FileDeflateSource : public DeflateSource {
+	static const size_t CACHE_SIZE	= 4096;
+
+public:
+	explicit FileDeflateSource(FILE *file)
+		: DeflateSource(), _cache(new uint8_t[CACHE_SIZE / 2]), _next(new uint8_t[CACHE_SIZE / 2]),
+		  _pos(0), _cached(0), _nextcount(0), _total(0), _checksum(0), _crc(), _file(file) {
+	}
+	virtual ~FileDeflateSource() {
+		delete[] _cache;
+		delete[] _next;
+	}
+
+	virtual ulong crc32() {
+		if(_pos != _cached) {
+			_checksum = _crc.update(_checksum,_cache,_pos);
+			_pos = _cached;
+		}
+		return _checksum;
+	}
+	virtual size_t count() const {
+		return _total;
+	}
+	virtual bool more() {
+		load();
+		return _nextcount > 0;
+	}
+	virtual size_t cached() {
+		load();
+		return _cached - _pos;
+	}
+	virtual uint8_t get() {
+		load();
+		if(cached() == 0)
+			return '\0';
+		_total++;
+		return _cache[_pos++];
+	}
+
+private:
+	void load() {
+		if(_cached - _pos == 0) {
+			bool first = _cached == 0 && _pos == 0;
+			if(!first)
+				_checksum = _crc.update(_checksum,_cache,_pos);
+			_cached = fread(_cache,1,CACHE_SIZE / 2,_file);
+			_pos = 0;
+			if(first)
+				_nextcount = fread(_next,1,CACHE_SIZE / 2,_file);
+			else {
+				std::swap(_cache,_next);
+				std::swap(_cached,_nextcount);
+			}
+		}
+	}
+
+	uint8_t *_cache;
+	uint8_t *_next;
+	size_t _pos;
+	size_t _cached;
+	size_t _nextcount;
+	size_t _total;
+	ulong _checksum;
+	CRC32 _crc;
+	FILE *_file;
+};
+
+/**
+ * A drain implementation that writes to a FILE
+ */
+class FileDeflateDrain : public DeflateDrain {
+public:
+	explicit FileDeflateDrain(FILE *file)
+		: DeflateDrain(), _file(file) {
+	}
+
+	virtual void put(uint8_t c) {
+		fputc(c,_file);
+	}
+
+private:
+	FILE *_file;
+};
+
+/**
+ * The encoder part of the deflate compression algorithm.
  */
 class Deflate {
 	struct Tree {
-		unsigned short table[16];  /* table of code length counts */
-		unsigned short trans[288]; /* code -> symbol translation table */
+		unsigned int length[288];
+		unsigned int code[288];
 	};
 
 	struct Data {
-		Source *source;
+		DeflateSource *source;
 		unsigned int tag;
 		unsigned int bitcount;
 
-		Drain *drain;
-
-		Tree ltree; /* dynamic length/symbol tree */
-		Tree dtree; /* dynamic distance tree */
+		DeflateDrain *drain;
 	};
 
 	enum {
@@ -153,50 +189,37 @@ class Deflate {
 	};
 
 public:
+	enum Level {
+		NONE	= 0,
+		FIXED	= 1,
+		DYN		= 2
+	};
+
 	/**
 	 * Constructor
 	 */
 	explicit Deflate();
 
 	/**
-	 * Uncompresses the data in <source> into <drain>.
+	 * Compresses the data in <source> into <drain>.
 	 *
 	 * @param drain the destination
 	 * @param source the source
+	 * @param compr the compression level
 	 * @return 0 on success or -1 on error
 	 */
-	int uncompress(Drain *drain,Source *source);
+	int compress(DeflateDrain *drain,DeflateSource *source,int compr);
 
 private:
-	void build_bits_base(unsigned char *bits,unsigned short *base,int delta,int first);
-	void build_fixed_trees(Tree *lt,Tree *dt);
-	void build_tree(Tree *t,const unsigned char *lengths,unsigned int num);
+	void flush(Data *d);
+	void writebit(Data *d,int bit);
+	void write_bits(Data *d,unsigned int bits,int num);
+	void encode_symbol(Data *d,Tree *t,unsigned int sym);
 
-	int getbit(Data *d);
-	unsigned int read_bits(Data *d,int num,int base);
-	int decode_symbol(Data *d,Tree *t);
-	void decode_trees(Data *d,Tree *lt,Tree *dt);
+	void deflate_fixed_block(Data *d);
+	void deflate_uncompressed_block(Data *d);
 
-	int deflate_uncompressed_block(Data *d);
-
-	int inflate_block_data(Data *d,Tree *lt,Tree *dt);
-	int inflate_uncompressed_block(Data *d);
-	int inflate_fixed_block(Data *d);
-	int inflate_dynamic_block(Data *d);
-
-	Tree sltree; /* fixed length/symbol tree */
-	Tree sdtree; /* fixed distance tree */
-
-	/* extra bits and base tables for length codes */
-	unsigned char length_bits[30];
-	unsigned short length_base[30];
-
-	/* extra bits and base tables for distance codes */
-	unsigned char dist_bits[30];
-	unsigned short dist_base[30];
-
-	/* special ordering of code length codes */
-	static const unsigned char clcidx[];
+	Tree sltree;
 };
 
 }

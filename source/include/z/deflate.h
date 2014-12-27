@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <z/crc32.h>
+#include <z/deflatebase.h>
 #include <stdio.h>
 #include <assert.h>
 #include <algorithm>
@@ -56,6 +57,12 @@ public:
 	 * @return the remaining data from the currently cached block
 	 */
 	virtual size_t cached() = 0;
+
+	/**
+	 * @param off the offset (might be negative). has to be within the current block
+	 * @return the byte at current position plus <off>
+	 */
+	virtual uint8_t peek(ssize_t off) = 0;
 
 	/**
 	 * @return the next byte
@@ -113,10 +120,14 @@ public:
 		load();
 		return _cached - _pos;
 	}
+	virtual uint8_t peek(ssize_t off) {
+		load();
+		assert(_pos + off >= 0 && _pos + off < _cached);
+		return _cache[_pos + off];
+	}
 	virtual uint8_t get() {
 		load();
-		if(cached() == 0)
-			return '\0';
+		assert(_pos < _cached);
 		_total++;
 		return _cache[_pos++];
 	}
@@ -169,10 +180,11 @@ private:
 /**
  * The encoder part of the deflate compression algorithm.
  */
-class Deflate {
+class Deflate : public DeflateBase {
 	struct Tree {
-		unsigned int length[288];
-		unsigned int code[288];
+		unsigned int litbase[4];
+		unsigned int length[4];
+		unsigned int codebase[4];
 	};
 
 	struct Data {
@@ -214,12 +226,16 @@ private:
 	void flush(Data *d);
 	void writebit(Data *d,int bit);
 	void write_bits(Data *d,unsigned int bits,int num);
-	void encode_symbol(Data *d,Tree *t,unsigned int sym);
+	void write_bits_reverse(Data *d,unsigned int bits,unsigned int num);
+	void write_symbol(Data *d,Tree *t,unsigned int sym);
+	void write_int(Data *d,Tree *t,unsigned short *base,unsigned char *bits,unsigned int value,int add);
+	void write_symbol_chain(Data *d,Tree *lt,Tree *dt,unsigned int len,unsigned int dist);
 
 	void deflate_fixed_block(Data *d);
 	void deflate_uncompressed_block(Data *d);
 
 	Tree sltree;
+	Tree sdtree;
 };
 
 }

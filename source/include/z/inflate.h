@@ -21,6 +21,7 @@
 
 #include <sys/common.h>
 #include <z/crc32.h>
+#include <z/deflatebase.h>
 #include <stdio.h>
 #include <assert.h>
 #include <algorithm>
@@ -131,7 +132,7 @@ private:
 	size_t _wpos;
 };
 
-class Inflate {
+class Inflate : public DeflateBase {
 	struct Tree {
 		unsigned short table[16];  /* table of code length counts */
 		unsigned short trans[288]; /* code -> symbol translation table */
@@ -169,7 +170,6 @@ public:
 	int uncompress(InflateDrain *drain,InflateSource *source);
 
 private:
-	void build_bits_base(unsigned char *bits,unsigned short *base,int delta,int first);
 	void build_fixed_trees(Tree *lt,Tree *dt);
 	void build_tree(Tree *t,const unsigned char *lengths,unsigned int num);
 
@@ -191,14 +191,6 @@ private:
 
 	Tree sltree; /* fixed length/symbol tree */
 	Tree sdtree; /* fixed distance tree */
-
-	/* extra bits and base tables for length codes */
-	unsigned char length_bits[30];
-	unsigned short length_base[30];
-
-	/* extra bits and base tables for distance codes */
-	unsigned char dist_bits[30];
-	unsigned short dist_base[30];
 
 	/* special ordering of code length codes */
 	static const unsigned char clcidx[];

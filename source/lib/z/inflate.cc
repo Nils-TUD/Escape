@@ -68,23 +68,6 @@ const unsigned char Inflate::clcidx[] = {
  * -- utility functions -- *
  * ----------------------- */
 
-/* build extra bits and base tables */
-void Inflate::build_bits_base(unsigned char *bits,unsigned short *base,int delta,int first) {
-	int i,sum;
-
-	/* build bits table */
-	for(i = 0; i < delta; ++i)
-		bits[i] = 0;
-	for(i = 0; i < 30 - delta; ++i)
-		bits[i + delta] = i / delta;
-
-	/* build base table */
-	for(sum = first,i = 0; i < 30; ++i) {
-		base[i] = sum;
-		sum += 1 << bits[i];
-	}
-}
-
 /* build the fixed huffman trees */
 void Inflate::build_fixed_trees(Tree *lt,Tree *dt) {
 	int i;
@@ -348,17 +331,9 @@ int Inflate::inflate_dynamic_block(Data *d) {
  * ---------------------- */
 
 /* initialize global (static) data */
-Inflate::Inflate() {
+Inflate::Inflate() : DeflateBase() {
 	/* build fixed huffman trees */
 	build_fixed_trees(&sltree,&sdtree);
-
-	/* build extra bits and base tables */
-	build_bits_base(length_bits,length_base,4,3);
-	build_bits_base(dist_bits,dist_base,2,1);
-
-	/* fix a special case */
-	length_bits[28] = 0;
-	length_base[28] = 258;
 }
 
 /* inflate stream from source to dest */

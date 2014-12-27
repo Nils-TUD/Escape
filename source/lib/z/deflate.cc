@@ -49,11 +49,43 @@ void Deflate::write_bits(Data *d,unsigned int bits,int num) {
 	}
 }
 
-void Deflate::encode_symbol(Data *d,Tree *t,unsigned int sym) {
-	unsigned int num = t->length[sym];
-	unsigned int bits = t->code[sym];
+void Deflate::write_bits_reverse(Data *d,unsigned int bits,unsigned int num) {
 	while(num-- > 0)
 		writebit(d,(bits >> num) & 0x1);
+}
+
+void Deflate::write_symbol(Data *d,Tree *t,unsigned int sym) {
+	size_t i;
+	for(i = 0; i < 4; ++i) {
+		if(t->litbase[i] > sym)
+			break;
+	}
+	assert(i > 0);
+	i--;
+
+	unsigned int num = t->length[i];
+	unsigned int bits = t->codebase[i] + (sym - t->litbase[i]);
+	write_bits_reverse(d,bits,num);
+}
+
+void Deflate::write_int(Data *d,Tree *t,unsigned short *base,unsigned char *bits,unsigned int value,int add) {
+	/* determine code */
+	size_t i;
+	for(i = 0; i < 30; ++i) {
+		if(base[i] > value)
+			break;
+	}
+	assert(i > 0);
+	i--;
+
+	/* write code */
+	write_symbol(d,t,add + i);
+	write_bits(d,value - base[i],bits[i]);
+}
+
+void Deflate::write_symbol_chain(Data *d,Tree *lt,Tree *dt,unsigned int len,unsigned int dist) {
+	write_int(d,lt,length_base,length_bits,len,257);
+	write_int(d,dt,dist_base,dist_bits,dist,0);
 }
 
 /* ----------------------------- *
@@ -62,13 +94,69 @@ void Deflate::encode_symbol(Data *d,Tree *t,unsigned int sym) {
 
 void Deflate::deflate_fixed_block(Data *d) {
 	size_t len = d->source->cached();
-	while(len-- > 0) {
-		unsigned char sym = d->source->get();
-		encode_symbol(d,&sltree,sym);
+	size_t orglen = len;
+	while(len > 0) {
+		unsigned char sym = d->source->peek(0);
+
+		// first, check if we already had the now following byte-sequence
+		int x,maxlen = 0,max = 0;
+		// ensure that we don't look more than 29 bytes back and not past the block-start and our
+		// current position
+		int end = MIN(29,len);
+		int begin = -MIN(29,orglen - len);
+		for(x = begin; x < 0; ++x) {
+			// check how many bytes match
+			int y;
+			for(y = 0; x + y < 0 && y < end; ++y) {
+				if(d->source->peek(x + y) != d->source->peek(y))
+					break;
+			}
+			// if we reached the end, the last one didn't match
+			if(x + y >= 0 || y >= end)
+				y--;
+
+			// the longest so far?
+			if(y > maxlen) {
+				maxlen = y;
+				max = x;
+			}
+		}
+
+		// the smallest length we can encode is 3
+		if(maxlen >= 3) {
+			write_symbol_chain(d,&sltree,&sdtree,maxlen,-max);
+			x = maxlen;
+		}
+		else {
+			// first write the symbol
+			write_symbol(d,&sltree,sym);
+
+			// now check if the symbol is following again at least 3 times
+			for(x = 1; x < end; ++x) {
+				if(d->source->peek(x) != sym)
+					break;
+			}
+			x--;
+			if(x == end)
+				x--;
+
+			if(x >= 3) {
+				write_symbol_chain(d,&sltree,&sdtree,x,1);
+				x++;
+			}
+			// adjust x to fetch one byte from source
+			else
+				x = 1;
+		}
+
+		// fetch the bytes from source
+		len -= x;
+		while(x-- > 0)
+			d->source->get();
 	}
 
 	/* end of block */
-	encode_symbol(d,&sltree,256);
+	write_symbol(d,&sltree,256);
 }
 
 void Deflate::deflate_uncompressed_block(Data *d) {
@@ -99,24 +187,30 @@ void Deflate::deflate_uncompressed_block(Data *d) {
  * -- public functions -- *
  * ---------------------- */
 
-/* initialize global (static) data */
-Deflate::Deflate() {
-	for(size_t i = 0; i <= 143; ++i) {
-		sltree.code[i] = 48 + i;
-		sltree.length[i] = 8;
-	}
-	for(size_t i = 144; i <= 255; ++i) {
-		sltree.code[i] = 400 + i;
-		sltree.length[i] = 9;
-	}
-	for(size_t i = 256; i <= 279; ++i) {
-		sltree.code[i] = 0 + i;
-		sltree.length[i] = 7;
-	}
-	for(size_t i = 280; i <= 287; ++i) {
-		sltree.code[i] = 192 + i;
-		sltree.length[i] = 8;
-	}
+Deflate::Deflate() : DeflateBase() {
+	/* init static length tree */
+	sltree.litbase[0] = 0;
+	sltree.length[0] = 8;
+	sltree.codebase[0] = 0x30;
+
+	sltree.litbase[1] = 144;
+	sltree.length[1] = 9;
+	sltree.codebase[1] = 0x190;
+
+	sltree.litbase[2] = 256;
+	sltree.length[2] = 7;
+	sltree.codebase[2] = 0;
+
+	sltree.litbase[3] = 280;
+	sltree.length[3] = 8;
+	sltree.codebase[3] = 0xC0;
+
+	/* init static distance tree */
+	sdtree.litbase[0] = 0;
+	sdtree.length[0] = 5;
+	sdtree.codebase[0] = 0;
+	// termination
+	sdtree.litbase[1] = 32;
 }
 
 int Deflate::compress(DeflateDrain *drain,DeflateSource *source,int compr) {

@@ -43,7 +43,14 @@ struct GZipHeader {
 		MDEFLATE	= 8
 	};
 
-	explicit GZipHeader(const char *filename,const char *comment);
+	/**
+	 * Constructor. Creates a new GZip header, that can be written to a file, for example.
+	 *
+	 * @param filename the fileame to set (or NULL if none)
+	 * @param comment the comment to set (or NULL if none)
+	 * @param hchecksum whether to add a header checksum
+	 */
+	explicit GZipHeader(const char *filename,const char *comment,bool hchksum);
 	explicit GZipHeader()
 		: id1(), id2(), method(), flags(), mtime(), xflags(), os(), filename(), comment() {
 	}

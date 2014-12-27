@@ -37,7 +37,7 @@ static void compress(FILE *f,const std::string &filename,bool tostdout,int compr
 		}
 	}
 
-	z::GZipHeader header(filename.c_str(),NULL);
+	z::GZipHeader header(filename.c_str(),NULL,true);
 	header.write(out);
 
 	z::FileDeflateSource src(f);

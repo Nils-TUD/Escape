@@ -46,14 +46,18 @@ static void readStr(FILE *f,char *dst,size_t max) {
 	dst[i] = '\0';
 }
 
-GZipHeader::GZipHeader(const char *_filename,const char *_comment)
+GZipHeader::GZipHeader(const char *_filename,const char *_comment,bool hchksum)
 	: id1(0x1f), id2(0x8b), method(MDEFLATE), flags(), mtime(time(NULL)), xflags(), os(3),
 	  filename(), comment() {
+	if(hchksum)
+		flags |= FHCRC;
+
 	if(_filename) {
 		filename = new char[strlen(_filename) + 1];
 		strcpy(filename,_filename);
 		flags |= FNAME;
 	}
+
 	if(_comment) {
 		comment = new char[strlen(_comment) + 1];
 		strcpy(comment,_comment);
@@ -62,71 +66,94 @@ GZipHeader::GZipHeader(const char *_filename,const char *_comment)
 }
 
 GZipHeader GZipHeader::read(FILE *f) {
+	CRC32 c;
 	GZipHeader h;
+	ulong checksum = 0;
+
 	fread(&h,1,10,f);
+	checksum = c.get(&h,10);
 	h.mtime = le32tocpu(h.mtime);
+
 	if(!h.isGZip())
 		throw esc::default_error("No GZip file");
 	if(h.method != MDEFLATE)
 		throw esc::default_error("Unknown compression method");
+
 	if(h.flags & FEXTRA) {
 		uint16_t len;
 		fread(&len,sizeof(len),1,f);
-		fseek(f,le16tocpu(len),SEEK_CUR);
+		char *buf = new char[len];
+		fread(buf,1,len,f);
+		checksum = c.update(checksum,buf,len);
+		delete[] buf;
 	}
+
 	if(h.flags & FNAME) {
 		h.filename = new char[MAX_NAME_LEN];
 		readStr(f,h.filename,MAX_NAME_LEN);
+		checksum = c.update(checksum,h.filename,strlen(h.filename) + 1);
 	}
+
 	if(h.flags & FCOMMENT) {
 		h.comment = new char[MAX_COMMENT_LEN];
 		readStr(f,h.comment,MAX_NAME_LEN);
+		checksum = c.update(checksum,h.comment,strlen(h.comment) + 1);
 	}
-	if(h.flags & FHCRC) {
-		long old = ftell(f);
 
+	if(h.flags & FHCRC) {
 		uint16_t crc16 = 0;
 		fread(&crc16,sizeof(crc16),1,f);
 		crc16 = le16tocpu(crc16);
 
-		/* read entire header again */
-		char *buf = new char[old];
-		fseek(f,0,SEEK_SET);
-		fread(buf,1,old,f);
-
-		CRC32 c;
-		if(crc16 != (c.get(buf,old) & 0x0000ffff))
+		if(crc16 != (checksum & 0x0000ffff))
 			throw esc::default_error("GZip has invalid checksum");
-
-		fseek(f,old + 2,SEEK_SET);
-		delete[] buf;
 	}
 	return h;
 }
 
 void GZipHeader::write(FILE *f) {
-	assert(isGZip() && method == MDEFLATE && (flags & ~(FNAME | FCOMMENT)) == 0 && xflags == 0);
+	assert(isGZip() && method == MDEFLATE && (flags & ~(FNAME | FCOMMENT | FHCRC)) == 0 && xflags == 0);
 	mtime = cputole32(mtime);
-	if(fwrite(this,1,10,f) != 10)
-		throw esc::default_error("Unable to write header");
-	mtime = le32tocpu(mtime);
-	if(flags & FNAME) {
-		assert(filename != NULL);
-		size_t len = strlen(filename) + 1;
-		if(fwrite(filename,1,len,f) != len)
-			throw esc::default_error("Unable to write filename");
+	try {
+		if(fwrite(this,1,10,f) != 10)
+			throw esc::default_error("Unable to write header");
+
+		if(flags & FNAME) {
+			assert(filename != NULL);
+			size_t len = strlen(filename) + 1;
+			if(fwrite(filename,1,len,f) != len)
+				throw esc::default_error("Unable to write filename");
+		}
+
+		if(flags & FCOMMENT) {
+			assert(comment != NULL);
+			size_t len = strlen(comment) + 1;
+			if(fwrite(comment,1,len,f) != len)
+				throw esc::default_error("Unable to write comment");
+		}
+
+		if(flags & FHCRC) {
+			CRC32 crc;
+			ulong chksum = crc.get(this,10);
+			if(flags & FNAME)
+				chksum = crc.update(chksum,filename,strlen(filename) + 1);
+			if(flags & FCOMMENT)
+				chksum = crc.update(chksum,comment,strlen(comment) + 1);
+			uint16_t hcrc = cputole16(chksum & 0xFFFF);
+			if(fwrite(&hcrc,1,2,f) != 2)
+				throw esc::default_error("Unable to write header CRC");
+		}
+		mtime = le32tocpu(mtime);
 	}
-	if(flags & FCOMMENT) {
-		assert(comment != NULL);
-		size_t len = strlen(comment) + 1;
-		if(fwrite(comment,1,len,f) != len)
-			throw esc::default_error("Unable to write comment");
+	catch(...) {
+		mtime = le32tocpu(mtime);
+		throw;
 	}
 }
 
 std::ostream &operator<<(std::ostream &os,const GZipHeader &h) {
 	static const char *fnames[] = {
-		"text","crc","extra","name","comment"
+		"text","hcrc","extra","name","comment"
 	};
 	static const char *xfnames[] = {
 		"??","slow","fast"

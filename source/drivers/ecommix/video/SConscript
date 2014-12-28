@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('sbin', target = 'video', source = env.Glob('*.cc'), LIBS = ['gui', 'img'])
+env.EscapeCXXProg('sbin', target = 'video', source = env.Glob('*.cc'), LIBS = ['gui'])

@@ -2,3 +2,4 @@
 
 Import('env')
 env.EscapeLib(target = 'gui', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')], LIBS = ['img'])
+env.Append(LIBDEPS = {'gui': ['img']})

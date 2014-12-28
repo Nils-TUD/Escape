@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('bin', target = 'slideshow', source = env.Glob('*.cpp'), LIBS = ['gui', 'img'])
+env.EscapeCXXProg('bin', target = 'slideshow', source = env.Glob('*.cpp'), LIBS = ['gui'])

@@ -180,6 +180,14 @@ def EscapeGCCLibs(env, static):
 		return ['gcc', 'gcc_eh'] if env['TGTTYPE'] == 'x86' else ['gcc']
 	return ['gcc_s']
 
+def GetLibDeps(env, libs):
+	all = []
+	for l in libs:
+		all.append(l)
+		if l in env['LIBDEPS']:
+			all += GetLibDeps(env, env['LIBDEPS'][l])
+	return all
+
 def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
 	myenv = env.Clone()
 	static = force_static or env['LINKTYPE'] == 'static'
@@ -188,7 +196,8 @@ def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = Tr
 	if var_addr:
 		SetLinkAddr(myenv, static)
 	gcclibs = EscapeGCCLibs(env, static)
-	prog = myenv.Program(target, source, LIBS = gcclibs + LIBS)
+	libs = list(set(GetLibDeps(myenv, gcclibs + LIBS)))
+	prog = myenv.Program(target, source, LIBS = libs)
 	SetProgDeps(myenv, prog, static, LIBS, False)
 	myenv.EscapeMap(target + '.map', prog)
 	if prefix != '':
@@ -206,6 +215,7 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 	libs = gcclibs + LIBS + ['stdc++', 'esc']
 	if static:
 		libs += ['supc++']
+	libs = list(set(GetLibDeps(myenv, libs)))
 	prog = myenv.Program(target, source, LIBS = libs)
 	SetProgDeps(myenv, prog, static, LIBS, True)
 	myenv.EscapeMap(target + '.map', prog)

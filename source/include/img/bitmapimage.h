@@ -26,6 +26,7 @@
 namespace img {
 
 class BitmapImage : public Image {
+public:
 	/* compression-modes */
 	static const uint BI_RGB			= 0;	/* uncompressed */
 	static const uint BI_RLE8			= 1;	/* valid if bitCount == 8 and height > 0 */
@@ -79,7 +80,6 @@ class BitmapImage : public Image {
 		uint32_t alphamask;
 	} A_PACKED;
 
-public:
 	static const size_t SIG_LEN;
 	static const uint8_t SIG[];
 	static const uint32_t TRANSPARENT	= 0x00FF00FF;

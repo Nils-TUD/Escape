@@ -237,14 +237,14 @@ std::ostream &operator<<(std::ostream &os,const PNGImage::IHDR &h) {
 	static const char *intertypes[] = {
 		"none","adam7"
 	};
-	os << "  Size           : " << h.width << " x " << h.height << "\n";
-	os << "  Bit depth      : " << h.bitDepth << "\n";
-	os << "  Color type     : ";
+	os << "    Size           : " << h.width << " x " << h.height << "\n";
+	os << "    Bit depth      : " << h.bitDepth << "\n";
+	os << "    Color type     : ";
 	os << (h.colorType < ARRAY_SIZE(coltypes) ? coltypes[h.colorType] : "??");
 	os << "\n";
-	os << "  Compr. Method  : " << (h.comprMethod == 0 ? "deflate" : "??") << "\n";
-	os << "  Filter Method  : " << (h.filterMethod == 0 ? "adaptive" : "??") << "\n";
-	os << "  Interl. Method : ";
+	os << "    Compr. Method  : " << (h.comprMethod == 0 ? "deflate" : "??") << "\n";
+	os << "    Filter Method  : " << (h.filterMethod == 0 ? "adaptive" : "??") << "\n";
+	os << "    Interl. Method : ";
 	os << (h.interlaceMethod < ARRAY_SIZE(intertypes) ? intertypes[h.interlaceMethod] : "??");
 	os << "\n";
 	return os;

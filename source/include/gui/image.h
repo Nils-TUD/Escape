@@ -40,7 +40,8 @@ namespace gui {
 				_g->setColor(Color(col));
 				_last = col;
 			}
-			_g->doSetPixel(x + _pos.x,y + _pos.y);
+			if(!_g->getColor().isTransparent())
+				_g->doSetPixel(x + _pos.x,y + _pos.y);
 		}
 
 	private:

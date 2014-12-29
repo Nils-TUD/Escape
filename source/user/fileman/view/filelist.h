@@ -39,7 +39,7 @@ class FileList : public gui::Panel {
 					gui::CENTER,true,gui::VERTICAL,4)), _list(list) {
 			using namespace std;
 			using namespace gui;
-			string path = file.is_dir() ? "/etc/folder.bmp" : "/etc/file.bmp";
+			string path = file.is_dir() ? "/etc/folder.png" : "/etc/file.png";
 			shared_ptr<ImageButton> img = make_control<ImageButton>(Image::loadImage(path),false);
 			shared_ptr<Label> lbl = make_control<Label>(file.name());
 			if(file.is_dir())

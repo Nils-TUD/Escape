@@ -35,11 +35,11 @@ int main() {
 	if((childsm = semcrt(0)) < 0)
 		error("Unable to create semaphore");
 
-	Shortcut sc1("/etc/guishell.bmp","/bin/guishell");
-	Shortcut sc2("/etc/calc.bmp","/bin/gcalc");
-	Shortcut sc3("/etc/fileman.bmp","/bin/fileman");
-	Shortcut sc4("/etc/gtest.bmp","/bin/gtest");
-	Shortcut sc5("/etc/settings.bmp","/bin/gsettings");
+	Shortcut sc1("/etc/guishell.png","/bin/guishell");
+	Shortcut sc2("/etc/calc.png","/bin/gcalc");
+	Shortcut sc3("/etc/fileman.png","/bin/fileman");
+	Shortcut sc4("/etc/gtest.png","/bin/gtest");
+	Shortcut sc5("/etc/settings.png","/bin/gsettings");
 	Application *app = Application::create();
 	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize(),childsm);
 	win->addShortcut(&sc1);

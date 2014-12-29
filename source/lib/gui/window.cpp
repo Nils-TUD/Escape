@@ -33,7 +33,7 @@
 using namespace std;
 
 namespace gui {
-	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.bmp";
+	const char *WindowTitleBar::CLOSE_IMG = "/etc/close.png";
 
 	WindowTitleBar::WindowTitleBar(const string& title,const Pos &pos,const Size &size)
 		: Panel(pos,size), _title(make_control<Label>(title)) {

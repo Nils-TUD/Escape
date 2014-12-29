@@ -32,44 +32,61 @@ const uint8_t PNGImage::SIG[] = {
 };
 
 void PNGImage::paint(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	size_t p = y * ((_header.width << _logbpp) + 1);
+	size_t p = y * ((_header.width * _bpp) + 1);
 	gpos_t yend = y + height;
 	for(gpos_t cy = y; cy < yend; cy++) {
 		// skip over filter type byte
 		p++;
 		// skip over line-start
-		p += x * (1 << _logbpp);
+		p += x * _bpp;
 
 		gpos_t xend = x + width;
 		for(gpos_t cx = x; cx < xend; cx++) {
-			uint32_t col = _pixels[p++] << 16;
-			col |= _pixels[p++] << 8;
-			col |= _pixels[p++] << 0;
-			col |= (0xFF - _pixels[p++]) << 24;
+			uint32_t col;
+			switch(_bpp) {
+				// RGBA
+				case 4:
+					col = _pixels[p++] << 16;
+					col |= _pixels[p++] << 8;
+					col |= _pixels[p++] << 0;
+					col |= (0xFF - _pixels[p++]) << 24;
+					break;
+				// RGB
+				case 3:
+					col = _pixels[p++] << 16;
+					col |= _pixels[p++] << 8;
+					col |= _pixels[p++] << 0;
+					break;
+				// grayscale
+				case 1:
+					col = _pixels[p++];
+					col |= (col << 8) | (col << 16);
+					break;
+			}
 			_painter->paintPixel(cx,cy,col);
 		}
 
 		// skip over end of line
-		p += (_header.width - width) << _logbpp;
+		p += (_header.width - width) * _bpp;
 	}
 }
 
 uint8_t PNGImage::left(size_t off,size_t x) {
 	if(x == 0)
 		return 0;
-	return _pixels[off - (1 << _logbpp)];
+	return _pixels[off - _bpp];
 }
 
 uint8_t PNGImage::above(size_t off,size_t y) {
 	if(y == 0)
 		return 0;
-	return _pixels[off - ((_header.width << _logbpp) + 1)];
+	return _pixels[off - ((_header.width * _bpp) + 1)];
 }
 
 uint8_t PNGImage::leftabove(size_t off,size_t x,size_t y) {
 	if(y == 0 || x == 0)
 		return 0;
-	return _pixels[off - ((_header.width << _logbpp) + 1 + (1 << _logbpp))];
+	return _pixels[off - ((_header.width * _bpp) + 1 + _bpp)];
 }
 
 uint8_t PNGImage::paethPredictor(uint8_t a,uint8_t b,uint8_t c) {
@@ -92,32 +109,31 @@ void PNGImage::applyFilters() {
 		uint8_t ft = _pixels[p++];
 		if(ft != FT_NONE) {
 			for(size_t x = 0; x < _header.width; ++x) {
-				const int bpp = 1 << _logbpp;
 				switch(ft) {
 					case FT_SUB:
-						for(int i = 0; i < bpp; ++i)
+						for(int i = 0; i < _bpp; ++i)
 							_pixels[p + i] += left(p + i,x);
 						break;
 					case FT_UP:
-						for(int i = 0; i < bpp; ++i)
+						for(int i = 0; i < _bpp; ++i)
 							_pixels[p + i] += above(p + i,y);
 						break;
 					case FT_AVERAGE:
-						for(int i = 0; i < bpp; ++i)
+						for(int i = 0; i < _bpp; ++i)
 							_pixels[p + i] += (left(p + i,x) + above(p + i,y)) / 2;
 						break;
 					case FT_PAETH:
-						for(int i = 0; i < bpp; ++i) {
+						for(int i = 0; i < _bpp; ++i) {
 							_pixels[p + i] += paethPredictor(
 								left(p + i,x),above(p + i,y),leftabove(p + i,x,y));
 						}
 						break;
 				}
-				p += bpp;
+				p += _bpp;
 			}
 		}
 		else
-			p += _header.width << _logbpp;
+			p += _header.width * _bpp;
 	}
 	fflush(stdout);
 }
@@ -157,8 +173,6 @@ void PNGImage::load(const std::string &filename) {
 			// check our current limitations
 			if(_header.bitDepth != 8)
 				throw img_load_error(filename + ": only bit-depth 8 is supported");
-			if(_header.colorType != CT_RGB_ALPHA)
-				throw img_load_error(filename + ": only color-type 'RGB-ALPHA' is supported");
 			if(_header.comprMethod != CM_DEFLATE)
 				throw img_load_error(filename + ": only compression method 'deflate' is supported");
 			if(_header.filterMethod != FM_ADAPTIVE)
@@ -166,9 +180,18 @@ void PNGImage::load(const std::string &filename) {
 			if(_header.interlaceMethod != IM_NONE)
 				throw img_load_error(filename + ": only interlace method 'none' is supported");
 
-			_logbpp = 2;
-			_pixels = new uint8_t[(_header.width + 1) * (_header.height << _logbpp)];
-			drain.reset(new z::MemInflateDrain(_pixels,(_header.width + 1) * (_header.height << _logbpp)));
+			// determine bytes per pixel
+			if(_header.colorType == CT_RGB_ALPHA)
+				_bpp = 4;
+			else if(_header.colorType == CT_RGB)
+				_bpp = 3;
+			else if(_header.colorType == CT_GRAYSCALE)
+				_bpp = 1;
+			else
+				throw img_load_error(filename + ": color-type is not supported");
+
+			_pixels = new uint8_t[(_header.width + 1) * (_header.height * _bpp)];
+			drain.reset(new z::MemInflateDrain(_pixels,(_header.width + 1) * (_header.height * _bpp)));
 
 			// skip CRC32
 			f.seek(4,SEEK_CUR);

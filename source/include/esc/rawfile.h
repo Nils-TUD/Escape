@@ -45,12 +45,13 @@ namespace esc {
 		static const seek_type SET		= SEEK_SET;
 		static const seek_type CUR		= SEEK_CUR;
 		static const seek_type END		= SEEK_END;
+		static const open_type NO_CLOSE	= 1 << 31;
 
 	public:
 		/**
 		 * Does nothing
 		 */
-		rawfile()
+		explicit rawfile()
 			: _mode(0), _fd(-1) {
 		}
 		/**
@@ -58,9 +59,8 @@ namespace esc {
 		 *
 		 * @param fd the file-descriptor
 		 */
-		rawfile(int fd)
-			: _mode(READ | WRITE), _fd(fd) {
-			/* TODO in this case we shouldn't close the file in the destructor */
+		explicit rawfile(int fd)
+			: _mode(READ | WRITE | NO_CLOSE), _fd(fd) {
 		}
 		/**
 		 * Opens the given file with given mode
@@ -69,7 +69,7 @@ namespace esc {
 		 * @param mode the mode (READ | WRITE | APPEND)
 		 * @throws default_error if it goes wrong
 		 */
-		rawfile(const std::string& filename,open_type mode)
+		explicit rawfile(const std::string& filename,open_type mode)
 			: _mode(0), _fd(-1) {
 			open(filename,mode);
 		}
@@ -77,7 +77,8 @@ namespace esc {
 		 * Closes the file, if still open
 		 */
 		~rawfile() {
-			close();
+			if(~_mode & NO_CLOSE)
+				close();
 		}
 
 		/**

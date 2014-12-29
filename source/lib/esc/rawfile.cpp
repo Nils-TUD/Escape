@@ -36,12 +36,12 @@ namespace esc {
 		_fd = ::open(filename.c_str(),flags);
 		if(_fd < 0)
 			throw default_error("Unable to open",-_fd);
-		_mode = mode;
+		_mode = mode & ~NO_CLOSE;
 	}
 	void rawfile::use(int fd) {
 		close();
 		_fd = fd;
-		_mode = READ | WRITE;
+		_mode = READ | WRITE | NO_CLOSE;
 	}
 	void rawfile::seek(off_type offset,int whence) {
 		if(_fd < 0)

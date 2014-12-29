@@ -26,7 +26,7 @@ using namespace std;
 namespace gui {
 
 void Image::paint(Graphics &g,const Pos &pos) {
-	if(g.getPixels() == NULL)
+	if(!g.getBuffer()->isReady())
 		return;
 
 	Pos rpos(pos.x,pos.y);

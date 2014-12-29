@@ -84,11 +84,12 @@ public:
 	static const uint8_t SIG[];
 
 	explicit PNGImage(const std::shared_ptr<Painter> &painter,const std::string &filename)
-		: Image(painter), _header(), _pixels(), _bpp() {
+		: Image(painter), _header(), _palette(), _paletteSize(), _pixels(), _bpp() {
 		load(filename);
 		applyFilters();
 	}
 	~PNGImage() {
+		delete[] _palette;
 		delete[] _pixels;
 	}
 
@@ -107,6 +108,8 @@ private:
 	void applyFilters();
 
 	IHDR _header;
+	uint8_t *_palette;
+	size_t _paletteSize;
 	uint8_t *_pixels;
 	int _bpp;
 };

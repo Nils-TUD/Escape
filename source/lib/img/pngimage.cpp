@@ -42,7 +42,7 @@ void PNGImage::paint(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 
 		gpos_t xend = x + width;
 		for(gpos_t cx = x; cx < xend; cx++) {
-			uint32_t col;
+			uint32_t col = 0;
 			switch(_bpp) {
 				// RGBA
 				case 4:
@@ -51,16 +51,29 @@ void PNGImage::paint(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 					col |= _pixels[p++] << 0;
 					col |= (0xFF - _pixels[p++]) << 24;
 					break;
+
 				// RGB
 				case 3:
 					col = _pixels[p++] << 16;
 					col |= _pixels[p++] << 8;
 					col |= _pixels[p++] << 0;
 					break;
-				// grayscale
+
+				// grayscale or palette
 				case 1:
-					col = _pixels[p++];
-					col |= (col << 8) | (col << 16);
+					if(_header.colorType == CT_PALETTE) {
+						size_t idx = _pixels[p++];
+						col = 0;
+						if(idx * 3 + 2 < _paletteSize) {
+							col = _palette[idx * 3] << 16;
+							col |= _palette[idx * 3 + 1] << 8;
+							col |= _palette[idx * 3 + 2] << 0;
+						}
+					}
+					else {
+						col = _pixels[p++];
+						col |= (col << 8) | (col << 16);
+					}
 					break;
 			}
 			_painter->paintPixel(cx,cy,col);
@@ -187,11 +200,24 @@ void PNGImage::load(const std::string &filename) {
 				_bpp = 3;
 			else if(_header.colorType == CT_GRAYSCALE)
 				_bpp = 1;
+			else if(_header.colorType == CT_PALETTE)
+				_bpp = 1;
 			else
 				throw img_load_error(filename + ": color-type is not supported");
 
 			_pixels = new uint8_t[(_header.width + 1) * (_header.height * _bpp)];
 			drain.reset(new z::MemInflateDrain(_pixels,(_header.width + 1) * (_header.height * _bpp)));
+
+			// skip CRC32
+			f.seek(4,SEEK_CUR);
+		}
+		else if(memcmp(head.type,"PLTE",4) == 0) {
+			if(_palette != NULL)
+				throw img_load_error(filename + ": duplicate PLTE chunk");
+
+			_palette = new uint8_t[head.length];
+			_paletteSize = head.length;
+			f.read(_palette,1,head.length);
 
 			// skip CRC32
 			f.seek(4,SEEK_CUR);
@@ -210,6 +236,9 @@ void PNGImage::load(const std::string &filename) {
 		else
 			f.seek(head.length + 4,SEEK_CUR);
 	}
+
+	if(_header.colorType == CT_PALETTE && _palette == NULL)
+		throw img_load_error(filename + ": color type is 'palette', but image has no PLTE chunk");
 
 	// start over
 	f.seek(SIG_LEN,SEEK_SET);

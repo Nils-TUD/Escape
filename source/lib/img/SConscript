@@ -1,4 +1,5 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(target = 'img', source = env.Glob('*.cpp'))
+env.EscapeLib(target = 'img', source = env.Glob('*.cpp'), LIBS = ['z'])
+env.Append(LIBDEPS = {'img': ['z']})

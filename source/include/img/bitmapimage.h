@@ -80,6 +80,8 @@ class BitmapImage : public Image {
 	} A_PACKED;
 
 public:
+	static const size_t SIG_LEN;
+	static const uint8_t SIG[];
 	static const uint32_t TRANSPARENT	= 0x00FF00FF;
 
 	explicit BitmapImage(const std::shared_ptr<Painter> &painter,const std::string &filename)

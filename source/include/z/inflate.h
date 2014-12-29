@@ -132,6 +132,51 @@ private:
 	size_t _wpos;
 };
 
+class MemInflateSource : public InflateSource {
+public:
+	explicit MemInflateSource(void *buffer,size_t size)
+		: _buffer(reinterpret_cast<uint8_t*>(buffer)), _size(size), _pos() {
+	}
+
+	virtual uint8_t get() {
+		if(_pos >= _size)
+			return 0;
+		return _buffer[_pos++];
+	}
+
+private:
+	uint8_t *_buffer;
+	size_t _size;
+	size_t _pos;
+};
+
+class MemInflateDrain : public InflateDrain {
+public:
+	explicit MemInflateDrain(void *buffer,size_t size)
+		: _buffer(reinterpret_cast<uint8_t*>(buffer)), _size(size), _pos() {
+	}
+
+	virtual ulong crc32() {
+		CRC32 crc;
+		return crc.get(_buffer,_pos);
+	}
+
+	virtual uint8_t get(size_t off) {
+		assert(off <= _pos);
+		return _buffer[_pos - off];
+	}
+
+	virtual void put(uint8_t c) {
+		if(_pos < _size)
+			_buffer[_pos++] = c;
+	}
+
+private:
+	uint8_t *_buffer;
+	size_t _size;
+	size_t _pos;
+};
+
 class Inflate : public DeflateBase {
 	struct Tree {
 		unsigned short table[16];  /* table of code length counts */

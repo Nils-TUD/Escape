@@ -22,6 +22,8 @@
 
 namespace img {
 
+const size_t BitmapImage::SIG_LEN = 2;
+const uint8_t BitmapImage::SIG[] = {'B','M'};
 
 void BitmapImage::paintRGB(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	size_t bitCount = _infoHeader->bitCount;

@@ -20,22 +20,23 @@
 #include <sys/common.h>
 #include <img/image.h>
 #include <img/bitmapimage.h>
+#include <img/pngimage.h>
 #include <stdio.h>
 
 namespace img {
 
 Image *Image::loadImage(const std::shared_ptr<Painter> &painter,const std::string& path) {
-	char header[3];
+	char header[MAX(PNGImage::SIG_LEN,BitmapImage::SIG_LEN)];
 	FILE *f = fopen(path.c_str(),"r");
 	if(!f)
 		throw img_load_error(path + ": Unable to open");
-	header[0] = fgetc(f);
-	header[1] = fgetc(f);
-	header[2] = '\0';
+	fread(header,1,sizeof(header),f);
 	fclose(f);
 	// check header-type
-	if(header[0] == 'B' && header[1] == 'M')
+	if(memcmp(header,BitmapImage::SIG,BitmapImage::SIG_LEN) == 0)
 		return new BitmapImage(painter,path);
+	if(memcmp(header,PNGImage::SIG,PNGImage::SIG_LEN) == 0)
+		return new PNGImage(painter,path);
 	// unknown image-type
 	throw img_load_error(path + ": Unknown image-type (header " + header + ")");
 }

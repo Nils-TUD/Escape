@@ -22,19 +22,6 @@
 
 namespace img {
 
-void BitmapImage::clone(const BitmapImage &img) {
-	size_t headerSize = sizeof(FileHeader) + sizeof(InfoHeader);
-	uint8_t *header = new uint8_t[headerSize];
-	_fileHeader = (FileHeader*)header;
-	_infoHeader = (InfoHeader*)(_fileHeader + 1);
-	_tableSize = img._tableSize;
-	_dataSize = img._dataSize;
-	memcpy(_fileHeader,img._fileHeader,headerSize);
-	_colorTable = new uint32_t[img._tableSize];
-	memcpy(_colorTable,img._colorTable,img._tableSize * sizeof(uint32_t));
-	_data = new uint8_t[img._dataSize];
-	memcpy(_data,img._data,img._dataSize);
-}
 
 void BitmapImage::paintRGB(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	size_t bitCount = _infoHeader->bitCount;

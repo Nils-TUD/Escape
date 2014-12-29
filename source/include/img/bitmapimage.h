@@ -94,21 +94,8 @@ public:
 		delete[] _data;
 	}
 
-	BitmapImage(const BitmapImage &img)
-		: Image(img), _fileHeader(nullptr), _infoHeader(nullptr), _colorTable(nullptr),
-		  _tableSize(0), _data(nullptr), _dataSize(0) {
-		clone(img);
-	}
-	BitmapImage &operator=(const BitmapImage &img) {
-		if(&img == this)
-			return *this;
-		Image::operator=(img);
-		delete[] _fileHeader;
-		delete[] _colorTable;
-		delete[] _data;
-		clone(img);
-		return *this;
-	}
+	BitmapImage(const BitmapImage&) = delete;
+	BitmapImage &operator=(const BitmapImage&) = delete;
 
 	virtual void getSize(gsize_t *width,gsize_t *height) const {
 		*width = _infoHeader->width;
@@ -117,7 +104,6 @@ public:
 	virtual void paint(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 private:
-	void clone(const BitmapImage &img);
 	void loadFromFile(const std::string &filename);
 	void paintBitfields(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 	void paintRGB(gpos_t x,gpos_t y,gsize_t width,gsize_t height);

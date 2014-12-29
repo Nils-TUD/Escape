@@ -83,7 +83,7 @@ namespace gui {
 		 * @return true if we're ready to paint
 		 */
 		bool isReady() const {
-			return _pixels;
+			return _pixels != NULL;
 		}
 
 		/**

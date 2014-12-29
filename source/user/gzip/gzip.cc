@@ -32,7 +32,7 @@ static void compress(FILE *f,const std::string &filename,bool tostdout,int compr
 		std::string name = filename + ".gz";
 		out = fopen(name.c_str(),"w");
 		if(!out) {
-			throw esc::default_error("unable to open for writing");
+			printe("%s: unable to open for writing",name.c_str());
 			return;
 		}
 	}
@@ -44,17 +44,18 @@ static void compress(FILE *f,const std::string &filename,bool tostdout,int compr
 	z::FileDeflateDrain drain(out);
 	z::Deflate deflate;
 	if(deflate.compress(&drain,&src,compr) != 0)
-		throw esc::default_error("compressing failed");
+		printe("%s: compressing failed",filename.c_str());
 	else {
 		uint32_t crc32 = src.crc32();
 		if(fwrite(&crc32,4,1,out) != 1)
-			throw esc::default_error("unable to write CRC32");
-		uint32_t orgsize = src.count();
-		if(fwrite(&orgsize,4,1,out) != 1)
-			throw esc::default_error("unable to write size of original file");
+			printe("%s: unable to write CRC32",filename.c_str());
+		else {
+			uint32_t orgsize = src.count();
+			if(fwrite(&orgsize,4,1,out) != 1)
+				printe("%s: unable to write size of original file",filename.c_str());
+		}
 	}
 
-	// TODO not reached if exception throws
 	if(!tostdout)
 		fclose(out);
 }
@@ -86,13 +87,7 @@ int main(int argc,char **argv) {
 			continue;
 		}
 
-		try {
-			compress(f,**file,tostdout,compr);
-		}
-		catch(const std::exception &e) {
-			std::cerr << **file << ": " << e.what() << "\n";
-		}
-
+		compress(f,**file,tostdout,compr);
 		fclose(f);
 	}
 	return 0;

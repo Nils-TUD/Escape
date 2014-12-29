@@ -24,6 +24,7 @@
 #include <gui/image.h>
 #include <gui/imagebutton.h>
 #include <vector>
+#include <algorithm>
 
 using namespace gui;
 using namespace std;
@@ -74,6 +75,7 @@ int main(int argc,char **argv) {
 
 	for(int i = 1; i < argc; ++i)
 		imgs.push_back(argv[i]);
+	sort(imgs.begin(),imgs.end());
 	slide = 0;
 
 	Application *app = Application::create();

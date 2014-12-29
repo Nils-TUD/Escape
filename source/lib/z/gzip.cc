@@ -27,6 +27,8 @@
 
 namespace z {
 
+/* based on http://tools.ietf.org/html/rfc1952 */
+
 static void printFlags(std::ostream &os,uint8_t flags,const char **names,size_t count) {
 	if(flags == 0)
 		os << "-";

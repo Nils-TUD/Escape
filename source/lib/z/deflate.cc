@@ -22,6 +22,8 @@
 
 namespace z {
 
+/* based on http://tools.ietf.org/html/rfc1951 */
+
 /* ---------------------- *
  * -- encode functions -- *
  * ---------------------- */

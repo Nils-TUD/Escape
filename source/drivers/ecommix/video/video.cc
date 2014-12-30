@@ -43,7 +43,6 @@ public:
 	}
 
 	virtual void setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool) {
-		assert(mode->id == 3);
 		if(type != esc::Screen::MODE_TYPE_TUI)
 			throw esc::default_error("Invalid mode type");
 

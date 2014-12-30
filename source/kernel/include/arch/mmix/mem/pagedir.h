@@ -98,6 +98,10 @@ private:
 	static PageDir firstCon;
 };
 
+inline void PageTables::flushAddr(uintptr_t,bool) {
+	// not used on mmix
+}
+
 inline uintptr_t PageDirBase::getPhysAddr() const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	return pdir->rv & 0xFFFFFFE000;

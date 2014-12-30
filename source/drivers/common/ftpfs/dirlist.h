@@ -32,16 +32,19 @@
 
 class DirList : public BlockFile {
 public:
-	explicit DirList(const std::string &path,const CtrlConRef &ctrlRef) : _os() {
+	explicit DirList(const std::string &path,const CtrlConRef &ctrlRef) : _buf(), _bufsize(), _buflen() {
 		prepare(DirCache::getList(ctrlRef,path.c_str()));
+	}
+	virtual ~DirList() {
+		delete[] _buf;
 	}
 
 	virtual size_t read(void *buf,size_t offset,size_t count) {
-		if(offset > _os.str().length() || offset + count < offset)
+		if(offset > _buflen || offset + count < offset)
 			return 0;
-		if(offset + count > _os.str().length())
-			count = _os.str().length() - offset;
-		memcpy(buf,_os.str().c_str() + offset,count);
+		if(offset + count > _buflen)
+			count = _buflen - offset;
+		memcpy(buf,_buf + offset,count);
 		return count;
 	}
 
@@ -55,16 +58,33 @@ public:
 
 private:
 	void prepare(DirCache::List *list) {
+		size_t total = 0;
+		for(auto it = list->nodes.begin(); it != list->nodes.end(); ++it)
+			total += (sizeof(struct dirent) - (NAME_MAX + 1)) + it->first.length();
+
+		_bufsize = total;
+		_buf = new uint8_t[_bufsize];
+
+		for(auto it = list->nodes.begin(); it != list->nodes.end(); ++it)
+			append(it->first.c_str(),it->second.st_ino);
+	}
+
+	void append(const char *name,ino_t ino) {
 		char buf[256];
-		for(auto it = list->nodes.begin(); it != list->nodes.end(); ++it) {
-			struct dirent *e = (struct dirent*)buf;
-			e->d_namelen = cputole16(it->first.length());
-			e->d_ino = cputole32(it->second.st_ino);
-			e->d_reclen = cputole16((sizeof(*e) - (NAME_MAX + 1)) + it->first.length());
-			memcpy(e->d_name,it->first.c_str(),it->first.length());
-			_os.write((char*)e,e->d_reclen);
+		struct dirent *e = (struct dirent*)buf;
+		size_t namelen = strlen(name);
+		e->d_namelen = cputole16(namelen);
+		e->d_ino = cputole32(ino);
+		size_t reclen = (sizeof(*e) - (NAME_MAX + 1)) + namelen;
+		e->d_reclen = cputole16(reclen);
+		if(reclen <= sizeof(buf)) {
+			memcpy(e->d_name,name,namelen);
+			memcpy(_buf + _buflen,(char*)e,reclen);
+			_buflen += reclen;
 		}
 	}
 
-	std::ostringstream _os;
+	uint8_t *_buf;
+	size_t _bufsize;
+	size_t _buflen;
 };

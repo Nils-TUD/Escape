@@ -39,7 +39,7 @@ protected:
 	};
 
 public:
-	static const size_t IRQ_SEM_COUNT	= 32;
+	static const size_t IRQ_SEM_COUNT;
 
 	/**
 	 * Initializes the interrupts

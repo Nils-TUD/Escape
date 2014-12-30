@@ -22,6 +22,7 @@
 #include <ostream.h>
 #include <log.h>
 
+const size_t InterruptsBase::IRQ_SEM_COUNT = IRQ_COUNT;
 SpinLock InterruptsBase::userIrqsLock;
 ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
 

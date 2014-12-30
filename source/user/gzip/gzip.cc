@@ -26,7 +26,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static void compress(FILE *f,const std::string &filename,bool tostdout,int compr) {
+static int compr = z::Deflate::FIXED;
+static int tostdout = false;
+static int keep = false;
+
+static void compress(FILE *f,const std::string &filename) {
 	FILE *out = stdout;
 	if(!tostdout) {
 		std::string name = filename + ".gz";
@@ -56,21 +60,24 @@ static void compress(FILE *f,const std::string &filename,bool tostdout,int compr
 		}
 	}
 
-	if(!tostdout)
+	if(!tostdout) {
 		fclose(out);
+		if(!keep && unlink(filename.c_str()) < 0)
+			printe("Unable to unlink '%s'",filename.c_str());
+	}
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-c] <file>...\n",name);
+	fprintf(stderr,"Usage: %s [-c] [-k] <file>...\n",name);
+	fprintf(stderr,"  -c: write to stdout\n");
+	fprintf(stderr,"  -k: keep the original files, don't delete them\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	int tostdout = false;
-	int compr = z::Deflate::FIXED;
 	esc::cmdargs args(argc,argv,0);
 	try {
-		args.parse("c l=d",&tostdout,&compr);
+		args.parse("c l=d k",&tostdout,&compr,&keep);
 		if(args.is_help() ||
 			(compr != z::Deflate::NONE && compr != z::Deflate::FIXED && compr != z::Deflate::DYN))
 			usage(argv[0]);
@@ -87,7 +94,7 @@ int main(int argc,char **argv) {
 			continue;
 		}
 
-		compress(f,**file,tostdout,compr);
+		compress(f,**file);
 		fclose(f);
 	}
 	return 0;

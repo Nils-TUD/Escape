@@ -27,7 +27,11 @@
 #include <iostream>
 #include <fstream>
 
-static void uncompress(FILE *f,const std::string &filename,const z::GZipHeader &header,bool tostdout) {
+static int showinfo = false;
+static int tostdout = false;
+static int keep = false;
+
+static void uncompress(FILE *f,const std::string &filename,const z::GZipHeader &header) {
 	FILE *out = stdout;
 	if(!tostdout) {
 		std::string name;
@@ -68,21 +72,25 @@ static void uncompress(FILE *f,const std::string &filename,const z::GZipHeader &
 			printe("%s: CRC32 is invalid",filename.c_str());
 	}
 
-	if(!tostdout)
+	if(!tostdout) {
 		fclose(out);
+		if(!keep && unlink(filename.c_str()) < 0)
+			printe("Unable to unlink '%s'",filename.c_str());
+	}
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-c] [-i] <file>...\n",name);
+	fprintf(stderr,"Usage: %s [-c] [-i] [-k] <file>...\n",name);
+	fprintf(stderr,"  -c: write to stdout\n");
+	fprintf(stderr,"  -i: don't uncompress given files, but show information about them\n");
+	fprintf(stderr,"  -k: keep the original files, don't delete them\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	int showinfo = false;
-	int tostdout = false;
 	esc::cmdargs args(argc,argv,0);
 	try {
-		args.parse("c i",&tostdout,&showinfo);
+		args.parse("c i k",&tostdout,&showinfo,&keep);
 		if(args.is_help())
 			usage(argv[0]);
 	}
@@ -103,7 +111,7 @@ int main(int argc,char **argv) {
 			if(showinfo)
 				std::cout << (*file)->c_str() << ":\n" << header << "\n";
 			else
-				uncompress(f,**file,header,tostdout);
+				uncompress(f,**file,header);
 		}
 		catch(const std::exception &e) {
 			std::cerr << **file << ": " << e.what() << "\n";

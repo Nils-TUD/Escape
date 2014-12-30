@@ -28,6 +28,8 @@ namespace z {
  */
 class CRC32 {
 public:
+	typedef uint32_t type;
+
 	explicit CRC32();
 
 	/**
@@ -37,14 +39,14 @@ public:
 	 * @param len the length
 	 * @return the CRC32
 	 */
-	ulong get(const void *buf,size_t len) {
+	type get(const void *buf,size_t len) {
 		return update(0,buf,len);
 	}
 
 	/**
 	 * Updates a running CRC with the bytes <buf>[0] .. <buf>[<len>-1]. Example:
 	 * CRC32 c;
-	 * ulong crc = 0;
+	 * type crc = 0;
 	 * while(read_buffer(buffer,length) != EOF) {
 	 *   crc = c.update(crc,buffer,length);
 	 * }
@@ -53,10 +55,10 @@ public:
 	 * @param len the length
 	 * @return the updated CRC32
 	 */
-	ulong update(ulong crc,const void *buf,size_t len);
+	type update(type crc,const void *buf,size_t len);
 
 private:
-	ulong _table[256];
+	type _table[256];
 };
 
 }

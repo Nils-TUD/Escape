@@ -55,7 +55,7 @@ public:
 	 *
 	 * @return the CRC32 of the uncompressed data
 	 */
-	virtual ulong crc32() = 0;
+	virtual CRC32::type crc32() = 0;
 
 	/**
 	 * Should return the previously written character, written <off> bytes ago.
@@ -104,7 +104,7 @@ public:
 		delete[] _buf;
 	}
 
-	virtual ulong crc32() {
+	virtual CRC32::type crc32() {
 		if(_wpos > 0) {
 			_checksum = _crc.update(_checksum,_buf,_wpos);
 			_wpos = 0;
@@ -126,7 +126,7 @@ public:
 
 private:
 	CRC32 _crc;
-	ulong _checksum;
+	CRC32::type _checksum;
 	FILE *_file;
 	uint8_t *_buf;
 	size_t _wpos;
@@ -156,7 +156,7 @@ public:
 		: _buffer(reinterpret_cast<uint8_t*>(buffer)), _size(size), _pos() {
 	}
 
-	virtual ulong crc32() {
+	virtual CRC32::type crc32() {
 		CRC32 crc;
 		return crc.get(_buffer,_pos);
 	}

@@ -41,7 +41,7 @@ public:
 	 *
 	 * @return the CRC32 of the uncompressed data
 	 */
-	virtual ulong crc32() = 0;
+	virtual CRC32::type crc32() = 0;
 
 	/**
 	 * @return the total number of read bytes
@@ -102,7 +102,7 @@ public:
 		delete[] _next;
 	}
 
-	virtual ulong crc32() {
+	virtual CRC32::type crc32() {
 		if(_pos != _cached) {
 			_checksum = _crc.update(_checksum,_cache,_pos);
 			_pos = _cached;
@@ -155,7 +155,7 @@ private:
 	size_t _cached;
 	size_t _nextcount;
 	size_t _total;
-	ulong _checksum;
+	CRC32::type _checksum;
 	CRC32 _crc;
 	FILE *_file;
 };

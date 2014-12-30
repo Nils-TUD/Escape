@@ -37,8 +37,8 @@ CRC32::CRC32() {
 	}
 }
 
-ulong CRC32::update(ulong crc,const void *buf,size_t len) {
-	ulong c = crc ^ 0xffffffffL;
+CRC32::type CRC32::update(type crc,const void *buf,size_t len) {
+	type c = crc ^ 0xffffffffL;
 	const char *b = reinterpret_cast<const char*>(buf);
 
 	for(size_t n = 0; n < len; n++)

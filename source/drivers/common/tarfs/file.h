@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sstream>
 
 struct TarINode {
 	explicit TarINode(time_t mtime,off_t size,mode_t mode)
@@ -132,44 +131,40 @@ private:
 
 class DirFile : public BlockFile {
 public:
-	explicit DirFile(esc::PathTreeItem<TarINode> *item,esc::PathTree<TarINode> &tree) : _os() {
-		char buf[256];
+	explicit DirFile(esc::PathTreeItem<TarINode> *item,esc::PathTree<TarINode> &tree)
+			: _buf(), _bufsize(), _buflen() {
+		// first, determine the total size
+		size_t total = 0;
+		for(auto it = tree.begin(item); it != tree.end(); ++it)
+			total += (sizeof(struct dirent) - (NAME_MAX + 1)) + strlen(it->getName());
+		// "." and ".."
+		total += (sizeof(struct dirent) - (NAME_MAX + 1)) + 1;
+		total += (sizeof(struct dirent) - (NAME_MAX + 1)) + 2;
 
-		// add "."
-		struct dirent *e = (struct dirent*)buf;
-		e->d_namelen = 1;
-		e->d_ino = item->getData()->info.st_ino;
-		e->d_reclen = cputole16((sizeof(*e) - (NAME_MAX + 1)) + 1);
-		e->d_name[0] = '.';
-		_os.write((char*)e,e->d_reclen);
+		// create buffer
+		_bufsize = total;
+		_buf = new uint8_t[_bufsize];
 
-		// add ".."
-		e->d_namelen = 2;
-		e->d_ino = item->getParent() != item ? item->getParent()->getData()->info.st_ino
-									  		   : item->getData()->info.st_ino;
-		e->d_reclen = cputole16((sizeof(*e) - (NAME_MAX + 1)) + 2);
-		e->d_name[0] = '.';
-		e->d_name[1] = '.';
-		_os.write((char*)e,e->d_reclen);
+		// add "." and ".."
+		append(".",item->getData()->info.st_ino);
+		ino_t ino = item->getParent() != item ? item->getParent()->getData()->info.st_ino
+									  		  : item->getData()->info.st_ino;
+		append("..",ino);
 
-		for(auto it = tree.begin(item); it != tree.end(); ++it) {
-			struct dirent *e = (struct dirent*)buf;
-			const char *name = it->getName();
-			size_t namelen = strlen(name);
-			e->d_namelen = cputole16(namelen);
-			e->d_ino = cputole32(it->getData()->info.st_ino);
-			e->d_reclen = cputole16((sizeof(*e) - (NAME_MAX + 1)) + namelen);
-			memcpy(e->d_name,name,namelen);
-			_os.write((char*)e,e->d_reclen);
-		}
+		// add dir entries
+		for(auto it = tree.begin(item); it != tree.end(); ++it)
+			append(it->getName(),it->getData()->info.st_ino);
+	}
+	virtual ~DirFile() {
+		delete[] _buf;
 	}
 
 	virtual ssize_t read(void *buf,size_t offset,size_t count) {
-		if(offset > _os.str().length() || offset + count < offset)
+		if(offset > _buflen || offset + count < offset)
 			return 0;
-		if(offset + count > _os.str().length())
-			count = _os.str().length() - offset;
-		memcpy(buf,_os.str().c_str() + offset,count);
+		if(offset + count > _buflen)
+			count = _buflen - offset;
+		memcpy(buf,_buf + offset,count);
 		return count;
 	}
 
@@ -178,5 +173,22 @@ public:
 	}
 
 private:
-	std::ostringstream _os;
+	void append(const char *name,ino_t ino) {
+		char buf[256];
+		struct dirent *e = (struct dirent*)buf;
+		size_t namelen = strlen(name);
+		e->d_namelen = cputole16(namelen);
+		e->d_ino = cputole32(ino);
+		size_t reclen = (sizeof(*e) - (NAME_MAX + 1)) + namelen;
+		e->d_reclen = cputole16(reclen);
+		if(reclen <= sizeof(buf)) {
+			memcpy(e->d_name,name,namelen);
+			memcpy(_buf + _buflen,(char*)e,reclen);
+			_buflen += reclen;
+		}
+	}
+
+	uint8_t *_buf;
+	size_t _bufsize;
+	size_t _buflen;
 };

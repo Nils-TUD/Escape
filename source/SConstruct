@@ -181,12 +181,14 @@ def EscapeGCCLibs(env, static):
 	return ['gcc_s']
 
 def GetLibDeps(env, libs):
-	all = []
-	for l in libs:
-		all.append(l)
-		if l in env['LIBDEPS']:
-			all += GetLibDeps(env, env['LIBDEPS'][l])
-	return all
+	if 'LIBDEPS' in env:
+		all = []
+		for l in libs:
+			all.append(l)
+			if l in env['LIBDEPS']:
+				all += GetLibDeps(env, env['LIBDEPS'][l])
+		return all
+	return libs;
 
 def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
 	myenv = env.Clone()

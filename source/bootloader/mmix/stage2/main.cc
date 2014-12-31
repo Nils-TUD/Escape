@@ -72,19 +72,6 @@ static ulong buffer[2048 / sizeof(ulong)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
 static uintptr_t loadAddr = 0x8000000000000000;
 
-static int mystrncmp(const char *str1,const char *str2,size_t count) {
-	ssize_t rem = count;
-	while(*str1 && *str2 && rem-- > 0) {
-		if(*str1++ != *str2++)
-			return str1[-1] < str2[-1] ? -1 : 1;
-	}
-	if(rem <= 0)
-		return 0;
-	if(*str1 && !*str2)
-		return 1;
-	return -1;
-}
-
 static void halt(const char *s,...) {
 	va_list ap;
 	va_start(ap,s);
@@ -167,7 +154,7 @@ static ino_t searchDir(ino_t dirIno,Ext2Inode *dir,const char *name,size_t nameL
 	/* search the directory-entries */
 	while(rem > 0 && le32tocpu(entry->inode) != 0) {
 		/* found a match? */
-		if(nameLen == le16tocpu(entry->nameLen) && mystrncmp(entry->name,name,nameLen) == 0)
+		if(nameLen == le16tocpu(entry->nameLen) && strncmp(entry->name,name,nameLen) == 0)
 			return le32tocpu(entry->inode);
 
 		/* to next dir-entry */
@@ -275,10 +262,7 @@ static int loadKernel(LoadProg *prog,Ext2Inode *ino) {
 	readFromDisk(le32tocpu(ino->dBlocks[0]),&eheader,0,sizeof(Elf64_Ehdr));
 
 	/* check magic */
-	if(eheader.e_ident[0] != ELFMAG[0] ||
-		eheader.e_ident[1] != ELFMAG[1] ||
-		eheader.e_ident[2] != ELFMAG[2] ||
-		eheader.e_ident[3] != ELFMAG[3])
+	if(memcmp(eheader.e_ident,ELFMAG,4) != 0)
 		return 0;
 
 	/* load the LOAD segments. */

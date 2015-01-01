@@ -117,7 +117,7 @@ int main(void) {
 
 	std::vector<Screen::Mode> modes;
 	modes.push_back(((Screen::Mode){
-		0x0003,COLS,ROWS,0,0,4,0,0,0,0,0,0,VIDEO_MEM,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
+		0x0000,COLS,ROWS,0,0,4,0,0,0,0,0,0,VIDEO_MEM,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 
 	VideoScreenDevice dev(modes,"/dev/vga",0111);

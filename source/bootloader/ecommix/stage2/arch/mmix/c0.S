@@ -21,7 +21,6 @@
 	.extern stack
 
 	.extern	debugString
-	.extern _ebss
 
 	.global start
 	.global debugChar
@@ -30,7 +29,6 @@
 	.set	NONEX_MEM_EX,				#4
 	.set	PAGE_SIZE,					#2000
 	.set	STACK_SIZE,					PAGE_SIZE
-	.set	END_BSS,					#1234567812345678
 
 .section .text
 

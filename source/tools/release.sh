@@ -32,6 +32,11 @@ create_cd_archive $dest i586 $version
 ESC_TARGET=i586 ./b run create-img -n
 create_hd_archive $dest i586 $version
 
+ESC_TARGET=x86_64 ./b run create-mini-iso
+create_cd_archive $dest x86_64 $version
+ESC_TARGET=x86_64 ./b run create-img -n
+create_hd_archive $dest x86_64 $version
+
 ESC_TARGET=eco32 ./b run create-img
 create_hd_archive $dest eco32 $version
 

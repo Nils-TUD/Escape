@@ -27,13 +27,13 @@
 
 void VESABMPainter::paintPixel(gpos_t x,gpos_t y,uint32_t col) {
 	gui::Color color(col);
-	size_t bpp = _scr->mode->bitsPerPixel / 8;
-	if(bpp == 4 || !color.isTransparent()) {
+	if(!color.isTransparent()) {
 		uint8_t bytes[4];
 		bytes[0] = color.getRed();
 		bytes[1] = color.getGreen();
 		bytes[2] = color.getBlue();
 		bytes[3] = color.getAlpha();
+		size_t bpp = _scr->mode->bitsPerPixel / 8;
 		uint8_t *pos = _scr->frmbuf + ((_y + y) * _scr->mode->width + x + _x) * bpp;
 		_setPixel(*_scr->mode,pos,bytes);
 	}

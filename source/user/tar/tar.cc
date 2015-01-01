@@ -132,12 +132,13 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 		}
 		break;
 
-		case Tar::T_DIR:
+		case Tar::T_DIR: {
 			// createDir has created it already
 			// but repeat the chmod because we might have set the default mode last time
 			if(chmod(header->filename,mode) < 0)
 				errmsg("chmod(" << header->filename << "," << fmt(mode,"0o",4) << ") failed");
-			break;
+		}
+		break;
 
 		default: {
 			errmsg("Warning: type " << header->type << " not supported");
@@ -242,7 +243,7 @@ int main(int argc, char **argv) {
 		errmsg("Warning: unable to parse users from file");
 	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
 	if(!groupList)
-		errmsg("Unable to parse groups from file");
+		errmsg("Warning: unable to parse groups from file");
 
 	FILE *ar = cmd == "-c" ? stdout : stdin;
 	if(!archive.empty()) {

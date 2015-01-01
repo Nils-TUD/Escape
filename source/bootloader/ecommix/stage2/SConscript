@@ -1,0 +1,24 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+myenv = env.Clone()
+ldscript = 'arch/' + env['TGT'] + '/ld.conf'
+myenv.Append(LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs')
+myenv.Append(LINKFLAGS = ' -Wl,-T,bootloader/ecommix/stage2/' + ldscript)
+myenv.Append(CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-function-sections')
+elf = myenv.EscapeCXXProg(
+	'',
+	'stage2.elf',
+	[
+		myenv.Glob('arch/$TGT/c0.S'),
+		myenv.Glob('*.cc'),
+		myenv.Glob('arch/$TGT/c1.S')
+	],
+	LIBS = ['c', 'ecmxdisk'],
+	force_static = True,
+	var_addr = False
+)
+myenv.Depends(elf, ldscript)
+myenv.Symlink('$BINDIR/stage2.elf', elf)
+myenv.Command('stage2.bin', elf, '$CROSS-objcopy -O binary $SOURCE $TARGET')

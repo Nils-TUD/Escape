@@ -1,4 +1,5 @@
 # -*- Mode: Python -*-
 
 Import('env')
+env.SConscript(env.Glob('$TGTTYPE/SConscript'), 'env')
 env.SConscript(env.Glob('$TGT/SConscript'), 'env')

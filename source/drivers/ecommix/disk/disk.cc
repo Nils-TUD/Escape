@@ -26,6 +26,7 @@
 #include <sys/irq.h>
 #include <usergroup/group.h>
 #include <esc/ipc/clientdevice.h>
+#include <ecmxdisk/disk.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,60 +35,38 @@
 #include <assert.h>
 
 #if defined(__eco32__)
-#	define DISK_BASE		0x30400000
-#	define DISK_BUF			0x30480000
-#	define DISK_IRQ			0x8
 #	define DISK_MODEL		"ECO32 Disk"
 #else
-#	define DISK_BASE		0x0003000000000000
-#	define DISK_BUF			0x0003000000080000
-#	define DISK_IRQ			0x33
 #	define DISK_MODEL		"GIMMIX Disk"
 #endif
-
-#define SECTOR_SIZE			512
-#define START_SECTOR		128		/* part 0 */
-#define MAX_RW_SIZE			(SECTOR_SIZE * 8)
-
-#define DISK_CTRL			0		/* control register */
-#define DISK_CNT			1		/* sector count register */
-#define DISK_SCT			2		/* disk sector register */
-#define DISK_CAP			3		/* disk capacity register */
-
-#define DISK_STRT			0x01	/* a 1 written here starts the disk command */
-#define DISK_IEN			0x02	/* enable disk interrupt */
-#define DISK_WRT			0x04	/* command type: 0 = read, 1 = write */
-#define DISK_ERR			0x08	/* 0 = ok, 1 = error; valid when DONE = 1 */
-#define DISK_DONE			0x10	/* 1 = disk has finished the command */
-#define DISK_READY			0x20	/* 1 = capacity valid, disk accepts command */
-
-#define DISK_RDY_RETRIES	10000000
-
+#define MAX_RW_SIZE			(Disk::SECTOR_SIZE * 8)
 #define IRQ_TIMEOUT			1000
-
-#define DEBUG				0
-
-#if DEBUG
-#	define DISK_DBG(fmt,...)	print(fmt,## __VA_ARGS__);
-#else
-#	define DISK_DBG(...)
-#endif
 
 using namespace esc;
 
-static ulong getDiskCapacity(void);
-static bool diskRead(void *buf,ulong secNo,ulong secCount);
-static bool diskWrite(const void *buf,ulong secNo,ulong secCount);
-static bool diskWait(void);
 static void createVFSEntry(const char *name,bool isPart);
 
 static int irqSm;
-static ulong *diskRegs;
-static ulong *diskBuf;
 static int drvId;
-static ulong diskCap = 0;
-static ulong partCap = 0;
 static ulong buffer[MAX_RW_SIZE / sizeof(ulong)];
+
+class IRQDisk : public Disk {
+public:
+	explicit IRQDisk(ulong *regs,ulong *buf) : Disk(regs,buf,true) {
+	}
+
+	virtual bool wait() {
+		volatile ulong *diskCtrlReg = _regs + REG_CTRL;
+		while(!(*diskCtrlReg & (CTRL_DONE | CTRL_ERR))) {
+			semdown(irqSm);
+			if(!(*diskCtrlReg & (CTRL_DONE | CTRL_ERR)))
+				printe("Waiting for interrupt: waked up with invalid status (%#x). Retrying.",*diskCtrlReg);
+		}
+		return (*diskCtrlReg & CTRL_ERR) == 0;
+	}
+};
+
+static IRQDisk *disk;
 
 class DiskDevice : public ClientDevice<> {
 public:
@@ -120,13 +99,13 @@ public:
 		is >> r;
 		assert(!is.error());
 
-		size_t roffset = ROUND_DN(r.offset,SECTOR_SIZE);
-		size_t rcount = ROUND_UP(r.count,SECTOR_SIZE);
+		size_t roffset = ROUND_DN(r.offset,Disk::SECTOR_SIZE);
+		size_t rcount = ROUND_UP(r.count,Disk::SECTOR_SIZE);
 		void *buf = r.shmemoff == -1 ? (void*)buffer : (*this)[is.fd()]->shm() + r.shmemoff;
 		ssize_t res = 0;
-		if(roffset + rcount <= partCap && roffset + rcount > roffset) {
+		if(roffset + rcount <= disk->partCapacity() && roffset + rcount > roffset) {
 			if(r.shmemoff != -1 || rcount <= MAX_RW_SIZE) {
-				if(diskRead(buf,START_SECTOR + roffset / SECTOR_SIZE,rcount / SECTOR_SIZE))
+				if(disk->read(buf,Disk::START_SECTOR + roffset / Disk::SECTOR_SIZE,rcount / Disk::SECTOR_SIZE))
 					res = rcount;
 			}
 		}
@@ -143,13 +122,13 @@ public:
 			is >> ReceiveData(buffer,sizeof(buffer));
 		assert(!is.error());
 
-		size_t roffset = ROUND_DN(r.offset,SECTOR_SIZE);
-		size_t rcount = ROUND_UP(r.count,SECTOR_SIZE);
+		size_t roffset = ROUND_DN(r.offset,Disk::SECTOR_SIZE);
+		size_t rcount = ROUND_UP(r.count,Disk::SECTOR_SIZE);
 		void *buf = r.shmemoff == -1 ? (void*)buffer : (*this)[is.fd()]->shm() + r.shmemoff;
 		ssize_t res = 0;
-		if(roffset + rcount <= partCap && roffset + rcount > roffset) {
+		if(roffset + rcount <= disk->partCapacity() && roffset + rcount > roffset) {
 			if(r.shmemoff != -1 || rcount <= MAX_RW_SIZE) {
-				if(diskWrite(buf,START_SECTOR + roffset / SECTOR_SIZE,rcount / SECTOR_SIZE))
+				if(disk->write(buf,Disk::START_SECTOR + roffset / Disk::SECTOR_SIZE,rcount / Disk::SECTOR_SIZE))
 					res = rcount;
 			}
 		}
@@ -158,7 +137,7 @@ public:
 	}
 
 	void size(IPCStream &is) {
-		is << FileSize::Response(partCap) << Reply();
+		is << FileSize::Response(disk->partCapacity()) << Reply();
 	}
 };
 
@@ -168,26 +147,26 @@ int main(int argc,char **argv) {
 	if(argc < 2)
 		error("Usage: %s <wait>",argv[0]);
 
-	irqSm = semcrtirq(DISK_IRQ,"Disk",NULL,NULL);
+	irqSm = semcrtirq(Disk::IRQ_NO,"Disk",NULL,NULL);
 	if(irqSm < 0)
 		error("Unable to create irq-semaphore");
 
-	phys = DISK_BASE;
-	diskRegs = (ulong*)mmapphys(&phys,16,0,MAP_PHYS_MAP);
+	phys = Disk::BASE_ADDR;
+	ulong *diskRegs = (ulong*)mmapphys(&phys,16,0,MAP_PHYS_MAP);
 	if(diskRegs == NULL)
 		error("Unable to map disk registers");
-	phys = DISK_BUF;
-	diskBuf = (ulong*)mmapphys(&phys,MAX_RW_SIZE,0,MAP_PHYS_MAP);
+	phys = Disk::BUF_ADDR;
+	ulong *diskBuf = (ulong*)mmapphys(&phys,MAX_RW_SIZE,0,MAP_PHYS_MAP);
 	if(diskBuf == NULL)
 		error("Unable to map disk buffer");
 
 	/* check if disk is available and read the capacity */
-	diskCap = getDiskCapacity();
-	partCap = diskCap - START_SECTOR * SECTOR_SIZE;
-	if(diskCap == 0)
+	disk = new IRQDisk(diskRegs,diskBuf);
+	if(!disk->present())
 		error("Disk not found");
 
-	print("Found disk with %lu sectors (%lu bytes)",diskCap / SECTOR_SIZE,diskCap);
+	print("Found disk with %lu sectors (%lu bytes)",
+		disk->diskCapacity() / Disk::SECTOR_SIZE,disk->diskCapacity());
 
 	/* detect and init all devices */
 	createVFSEntry("hda",false);
@@ -210,90 +189,11 @@ int main(int argc,char **argv) {
 	dev.loop();
 
 	/* clean up */
+	delete disk;
 	munmap(diskBuf);
 	munmap(diskRegs);
 	close(drvId);
 	return EXIT_SUCCESS;
-}
-
-static ulong getDiskCapacity(void) {
-	int i;
-	volatile ulong *diskCtrlReg = diskRegs + DISK_CTRL;
-	ulong *diskCapReg = diskRegs + DISK_CAP;
-	/* wait for disk */
-	for(i = 0; i < DISK_RDY_RETRIES; i++) {
-		if(*diskCtrlReg & DISK_READY)
-			break;
-	}
-	if(i == DISK_RDY_RETRIES)
-		return 0;
-	*diskCtrlReg = DISK_DONE;
-	return *diskCapReg * SECTOR_SIZE;
-}
-
-static bool diskRead(void *buf,ulong secNo,ulong secCount) {
-	ulong *diskSecReg = diskRegs + DISK_SCT;
-	ulong *diskCntReg = diskRegs + DISK_CNT;
-	ulong *diskCtrlReg = diskRegs + DISK_CTRL;
-
-	DISK_DBG("Reading sectors %d..%d ...",secNo,secNo + secCount - 1);
-
-	/* maybe another request is active.. */
-	if(!diskWait()) {
-		DISK_DBG("FAILED");
-		return false;
-	}
-
-	/* set sector and sector-count, start the disk-operation and wait */
-	*diskSecReg = secNo;
-	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_IEN;
-
-	if(!diskWait()) {
-		DISK_DBG("FAILED");
-		return false;
-	}
-
-	/* disk is ready, so copy from disk-buffer to memory */
-	memcpy(buf,diskBuf,secCount * SECTOR_SIZE);
-	DISK_DBG("done");
-	return true;
-}
-
-static bool diskWrite(const void *buf,ulong secNo,ulong secCount) {
-	ulong *diskSecReg = diskRegs + DISK_SCT;
-	ulong *diskCntReg = diskRegs + DISK_CNT;
-	ulong *diskCtrlReg = diskRegs + DISK_CTRL;
-
-	DISK_DBG("Writing sectors %d..%d ...",secNo,secNo + secCount - 1);
-
-	/* maybe another request is active.. */
-	if(!diskWait()) {
-		DISK_DBG("FAILED");
-		return false;
-	}
-
-	/* disk is ready, so copy from memory to disk-buffer */
-	memcpy(diskBuf,buf,secCount * SECTOR_SIZE);
-
-	/* set sector and sector-count and start the disk-operation */
-	*diskSecReg = secNo;
-	*diskCntReg = secCount;
-	*diskCtrlReg = DISK_STRT | DISK_WRT | DISK_IEN;
-	/* we don't need to wait here because maybe there is no other request and we could therefore
-	 * save time */
-	DISK_DBG("done");
-	return true;
-}
-
-static bool diskWait(void) {
-	volatile ulong *diskCtrlReg = diskRegs + DISK_CTRL;
-	while(!(*diskCtrlReg & (DISK_DONE | DISK_ERR))) {
-		semdown(irqSm);
-		if(!(*diskCtrlReg & (DISK_DONE | DISK_ERR)))
-			printe("Waiting for interrupt: waked up with invalid status (%#x). Retrying.",*diskCtrlReg);
-	}
-	return (*diskCtrlReg & DISK_ERR) == 0;
 }
 
 static void createVFSEntry(const char *name,bool isPart) {
@@ -309,13 +209,13 @@ static void createVFSEntry(const char *name,bool isPart) {
 	}
 
 	if(isPart) {
-		fprintf(f,"%-15s%d\n","Start:",START_SECTOR);
-		fprintf(f,"%-15s%ld\n","Sectors:",(diskCap / SECTOR_SIZE) - START_SECTOR);
+		fprintf(f,"%-15s%zu\n","Start:",Disk::START_SECTOR);
+		fprintf(f,"%-15s%ld\n","Sectors:",(disk->diskCapacity() / Disk::SECTOR_SIZE) - Disk::START_SECTOR);
 	}
 	else {
 		fprintf(f,"%-15s%s\n","Vendor:","THM");
 		fprintf(f,"%-15s%s\n","Model:",DISK_MODEL);
-		fprintf(f,"%-15s%ld\n","Sectors:",diskCap / SECTOR_SIZE);
+		fprintf(f,"%-15s%ld\n","Sectors:",disk->diskCapacity() / Disk::SECTOR_SIZE);
 	}
 	fclose(f);
 }

@@ -33,11 +33,11 @@ struct LoadProg {
 };
 
 struct BootInfo {
-	uint64_t cpuHz;
+	uintptr_t kstackEnd;	/* used in asm-code (expects offset 0) */
+	uintptr_t kstackBegin;	/* expects offset 8 */
+	uint64_t cpuHz;			/* expects offset 16 */
 	size_t progCount;
 	const LoadProg *progs;
 	size_t memSize;
 	size_t diskSize;
-	uintptr_t kstackBegin;
-	uintptr_t kstackEnd;
 };

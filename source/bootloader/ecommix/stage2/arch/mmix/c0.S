@@ -1,21 +1,36 @@
-//
-// c0.s -- startup code and begin-of-segment labels
-//
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2014 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
 	.extern	bootload
 	.extern stack
 
 	.extern	debugString
+	.extern _ebss
 
 	.global start
-	.global sctcapctl
-	.global dskio
 	.global debugChar
 	.global flushRegion
 
 	.set	NONEX_MEM_EX,				#4
 	.set	PAGE_SIZE,					#2000
 	.set	STACK_SIZE,					PAGE_SIZE
+	.set	END_BSS,					#1234567812345678
 
 .section .text
 
@@ -24,7 +39,7 @@ start:
 	UNSAVE	0,$0
 
 	// setup software-stack
-	GETA	$0,_ebss
+	GET		$0,rR						// end of BSS is in rR
 	SET		$1,STACK_SIZE
 	2ADDU	$0,$1,$0
 	NEGU	$2,0,$1
@@ -47,8 +62,9 @@ start:
 	SUBU	$1,$0,$1
 	PUSHJ	$0,bootload					// call bootload function
 
+	LDOU	$0,$0,0						// get bootinfo struct
 	SETH	$1,#8000
-	GO		$1,$1,0						// go to kernel; kernel-stack-begin is in $0
+	GO		$1,$1,0						// go to kernel
 
 // void debugChar(octa character)
 debugChar:
@@ -77,41 +93,4 @@ flushRegion:
 	ADDU	$0,$0,$2
 	JMP		2b
 1:
-	POP		0,0
-
-// int sctcapctl(void)
-sctcapctl:
-	// wait until ready-bit is set
-	SETH	$0,#8003
-1:
-	LDOU	$1,$0,0
-	AND		$1,$1,#20
-	PBZ		$1,1B
-	LDOU	$0,$0,24					// read capacity
-	POP		1,0
-
-// void dskio(int sct,void *addr,int nscts)
-dskio:
-	GET		$3,rJ
-	SETH	$4,#8003					// disk-address
-	STOU	$2,$4,#8					// sector-count = nscts
-	STOU	$0,$4,#16					// sector-number = sct
-	STCO	#1,$4,#0					// start read-command
-	// wait until the DONE-bit is set
-1:
-	LDOU	$5,$4,#0
-	AND		$5,$5,#10
-	PBZ		$5,1b
-	// now read the sectors from the disk-buffer into buf
-	SET		$5,0
-	SETL	$6,512						// sector size
-	MULU	$6,$6,$2					// *= number of sectors
-	INCML	$4,#0008					// address of disk-buffer
-2:
-	LDOU	$7,$4,$5
-	STOU	$7,$1,$5
-	ADDU	$5,$5,8						// next octa
-	CMPU	$7,$5,$6					// ready?
-	PBNZ	$7,2b
-	PUT		rJ,$3
 	POP		0,0

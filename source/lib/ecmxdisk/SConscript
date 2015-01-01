@@ -1,0 +1,5 @@
+# -*- Mode: Python -*-
+
+Import('env')
+if env['TGTTYPE'] == 'ecommix':
+	env.EscapeLib(target = 'ecmxdisk', source = env.Glob('*.cc'))

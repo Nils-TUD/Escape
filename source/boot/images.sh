@@ -15,8 +15,8 @@ create_ecommix_disk() {
 
 	dd if=$build/bootloader/$ESC_TARGET/stage1/stage1.bin of=$hd bs=512 count=1 conv=notrunc 1>&2
 	if [ "$ESC_TARGET" = "eco32" ]; then
-		dd if=$build/bootloader/eco32/stage2/stage2.bin of=$hd bs=512 seek=1 conv=notrunc 1>&2
+		dd if=$build/bootloader/ecommix/stage2/stage2.bin of=$hd bs=512 seek=1 conv=notrunc 1>&2
 	else
-		dd if=$build/bootloader/mmix/stage2/stage2.elf of=$hd bs=512 seek=1 conv=notrunc 1>&2
+		dd if=$build/bootloader/ecommix/stage2/stage2.elf of=$hd bs=512 seek=1 conv=notrunc 1>&2
 	fi
 }

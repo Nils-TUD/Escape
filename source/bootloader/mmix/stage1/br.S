@@ -58,7 +58,7 @@ start:
 	SUBU	$3,$5,$4					// start a bit before the load-addr, so that the offset in
 										// file gets loaded to the load-addr
 	LDOU	$6,$1,ELF_SH_SIZE
-	ADDU	$0,$5,$6					// store end-addr for later usage
+	ADDU	$230,$5,$6					// store end-addr for later usage
 	ADDU	$4,$6,$4					// add offset, because we start at -offset
 	ADDU	$4,$4,$224
 	SUBU	$4,$4,1
@@ -66,7 +66,7 @@ start:
 	PUSHJ	$1,readSecs
 
 	OR		$2,$228,$228
-	OR		$3,$0,$0
+	OR		$3,$230,$230
 	SUBU	$3,$3,$2
 	PUSHJ	$1,flushRegion				// flush the text-region
 
@@ -76,7 +76,7 @@ start:
 	LDOU	$2,$1,ELF_SH_OFF
 	DIVU	$2,$2,$224					// start-sector
 	ADDU	$2,$2,1						// first sector is mbr
-	2ADDU	$0,$224,$0
+	2ADDU	$0,$224,$230
 	SUBU	$0,$0,1						// end-addr + 512*2 - 1
 	NEGU	$3,0,$224
 	AND		$0,$0,$3					// end-addr & -512
@@ -106,7 +106,7 @@ start:
 	STCO	0,$0,40
 	STCO	0,$0,48
 	STCO	0,$0,56
-	STCO	0,$0,64
+	STOU	$230,$0,64					// store end of BSS in rR
 	STCO	0,$0,72
 	STCO	0,$0,80
 	STCO	0,$0,88

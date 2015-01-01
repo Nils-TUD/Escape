@@ -52,7 +52,7 @@ start:
 	add		$4,$0,1										// start loading with sector 1
 	add		$5,$0,loadaddr								// where to load the boot loader
 	and		$5,$5,0x3FFFFFFF							// convert to physical address
-	add		$6,$0,31									// 31 sectors to load
+	add		$6,$0,127									// 127 sectors to load
 	jal		rdsct
 
 	// determine amount of memory

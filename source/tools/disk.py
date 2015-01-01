@@ -5,7 +5,7 @@ import argparse
 import subprocess
 import sys
 
-DEFAULT_PARTS_START = 128
+DEFAULT_PARTS_START = 256
 
 # stores a new disk to <image> with the partitions <parts>. each item in <parts> is a list of
 # the filesystem, the size in MB and the directory from which to copy the content into the fs

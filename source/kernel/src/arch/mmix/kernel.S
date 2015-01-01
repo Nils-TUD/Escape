@@ -94,7 +94,7 @@ start:
 	STOU	$2,$1,0
 
 	// bootinfo is in $0
-	LDOU	$254,$0,40						// load kstackbegin from bootinfo
+	LDOU	$254,$0,8						// load kstackbegin from bootinfo
 	INCL	$254,STACK_SIZE
 	SUBU	$254,$254,8						// stack-pointer = kstackbegin + STACK_SIZE - 8
 	OR		$253,$254,$254					// frame-pointer = stack-pointer
@@ -105,7 +105,7 @@ start:
 
 	// detect the CPU speed for runtime-measurements
 	PUSHJ	$1,detectCPUSpeed
-	STOU	$1,$0,0							// store cpu-speed into bootinfo
+	STOU	$1,$0,16						// store cpu-speed into bootinfo
 
 	// call main
 	OR		$1,$0,$0						// pass bootinfo to main

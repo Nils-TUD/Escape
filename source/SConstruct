@@ -207,12 +207,13 @@ def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = Tr
 		myenv.Symlink('$BINDIR/' + target, prog)
 	return prog
 
-def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
+def EscapeCXXProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
 	myenv = env.Clone()
 	static = force_static or env['LINKTYPE'] == 'static'
 	if static:
 		myenv.Append(LINKFLAGS = ' -static -Wl,-static')
-	SetLinkAddr(myenv, static)
+	if var_addr:
+		SetLinkAddr(myenv, static)
 	gcclibs = EscapeGCCLibs(env, static)
 	libs = gcclibs + LIBS + ['stdc++', 'esc']
 	if static:
@@ -221,8 +222,9 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, LIBS = []):
 	prog = myenv.Program(target, source, LIBS = libs)
 	SetProgDeps(myenv, prog, static, LIBS, True)
 	myenv.EscapeMap(target + '.map', prog)
-	myenv.Install('$DISTDIR/' + prefix, prog)
-	myenv.Symlink('$BINDIR/' + target, prog)
+	if prefix != '':
+		myenv.Install('$DISTDIR/' + prefix, prog)
+		myenv.Symlink('$BINDIR/' + target, prog)
 	return prog
 
 def EscapeLib(env, target, source, LIBS = []):

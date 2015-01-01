@@ -38,11 +38,8 @@
 	.extern	bootload
 
 	.extern	debugString
-	.extern	sctcapctl
-	.extern	sctioctl
 
 	.global reset
-	.global dskio
 	.global debugChar
 
 
@@ -151,14 +148,6 @@ printCharLoop:
 	ldw		$16,$29,4						// restore register variable
 	add		$29,$29,8						// release stack frame
 	jr		$31								// return
-
-// int dskio(int dskno, char cmd, int sct, Word addr, int nscts)
-dskio:
-	add		$4,$5,$0
-	add		$5,$6,$0
-	add		$6,$7,$0
-	ldw		$7,$29,16
-	j		sctioctl
 
 .section .data
 

@@ -20,13 +20,14 @@
 #pragma once
 
 #include <common.h>
-#include <col/treap.h>
+#include <esc/col/treap.h>
 #include <mem/dynarray.h>
 #include <vfs/node.h>
 #include <vfs/fileid.h>
 #include <semaphore.h>
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 
 /* GFT flags */
 enum {
@@ -63,8 +64,8 @@ class OpenFile {
 	friend class ThreadBase;
 	friend class VFSMS;
 
-	struct SemTreapNode : public TreapNode<FileId> {
-		explicit SemTreapNode(const FileId &id) : TreapNode<FileId>(id), sem() {
+	struct SemTreapNode : public esc::TreapNode<FileId> {
+		explicit SemTreapNode(const FileId &id) : esc::TreapNode<FileId>(id), sem() {
 		}
 
 	    virtual void print(OStream &os) {
@@ -398,5 +399,5 @@ private:
 	static OpenFile *exclList;
 	static OpenFile *gftFreeList;
 	static SpinLock semLock;
-	static Treap<SemTreapNode> sems;
+	static esc::Treap<SemTreapNode> sems;
 };

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <common.h>
-#include <col/islist.h>
+#include <esc/col/islist.h>
 #include <semaphore.h>
 
 class Thread;
@@ -43,7 +43,7 @@ private:
 	 */
 	static void addDead(Thread *t);
 
-	static ISList<Thread*> deadThreads;
+	static esc::ISList<Thread*> deadThreads;
 	static SpinLock lock;
 	static BaseSem sem;
 };

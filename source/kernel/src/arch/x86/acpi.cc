@@ -37,7 +37,7 @@
 
 bool ACPI::enabled = false;
 ACPI::RSDP *ACPI::rsdp;
-ISList<sRSDT*> ACPI::acpiTables;
+esc::ISList<sRSDT*> ACPI::acpiTables;
 
 void ACPI::init() {
 	if((enabled = ACPI::find()))

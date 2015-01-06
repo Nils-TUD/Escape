@@ -21,7 +21,7 @@
 
 #include <common.h>
 #include <mem/virtmem.h>
-#include <col/islist.h>
+#include <esc/col/islist.h>
 #include <mutex.h>
 #include <cppsupport.h>
 #include <assert.h>
@@ -45,7 +45,7 @@ class VirtMem;
 
 class Region : public CacheAllocatable {
 public:
-	typedef ISList<VirtMem*>::iterator iterator;
+	typedef esc::ISList<VirtMem*>::iterator iterator;
 
 	/**
 	 * Creates a new region with given attributes. Initially the process-collection that use the
@@ -252,7 +252,7 @@ private:
 	uint64_t timestamp;
 	size_t pfSize;			/* size of pageFlags */
 	ulong *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
-	ISList<VirtMem*> vms;
+	esc::ISList<VirtMem*> vms;
 	Mutex lock;				/* lock for the procs-field (all others can't change or belong to
 	 	 	 	 	 	 	   exactly 1 process, which is locked anyway) */
 };

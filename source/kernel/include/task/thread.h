@@ -26,7 +26,7 @@
 #include <mem/pagedir.h>
 #include <mem/vmtree.h>
 #include <mem/virtmem.h>
-#include <col/dlist.h>
+#include <esc/col/dlist.h>
 #include <interrupts.h>
 #include <assert.h>
 
@@ -70,7 +70,7 @@ class Thread;
 class Proc;
 class Event;
 
-class ThreadBase : public DListItem {
+class ThreadBase : public esc::DListItem {
 	friend class ProcBase;
 	friend class Sched;
 	friend class Signals;
@@ -94,8 +94,8 @@ class ThreadBase : public DListItem {
 	};
 
 public:
-	struct ListItem : public DListItem {
-		explicit ListItem(Thread *t) : DListItem(), thread(t) {
+	struct ListItem : public esc::DListItem {
+		explicit ListItem(Thread *t) : esc::DListItem(), thread(t) {
 		}
 		Thread *thread;
 	};
@@ -601,11 +601,11 @@ protected:
 	ListItem signalListItem;
 	/* a list of currently requested frames, i.e. frames that are not free anymore, but were
 	 * reserved for this thread and have not yet been used */
-	ISList<frameno_t> reqFrames;
+	esc::ISList<frameno_t> reqFrames;
 	Stats stats;
 
 private:
-	static DList<ListItem> threads;
+	static esc::DList<ListItem> threads;
 	static Thread *tidToThread[MAX_THREAD_COUNT];
 	static tid_t nextTid;
 	static SpinLock refLock;

@@ -128,7 +128,7 @@ public:
 protected:
 	static Interrupt intrptList[];
 	static SpinLock userIrqsLock;
-	static ISList<Semaphore*> userIrqs[];
+	static esc::ISList<Semaphore*> userIrqs[];
 };
 
 #if defined(__x86__)

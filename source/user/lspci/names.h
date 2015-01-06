@@ -18,24 +18,20 @@
  */
 
 #include <sys/common.h>
-// TODO temporary
-#include "../../kernel/include/col/treap.h"
+#include <esc/col/treap.h>
 #include <string>
 
 #define PCI_IDS_FILE	"/etc/pci.ids"
 
-class PCINode : public TreapNode<unsigned> {
+class PCINode : public esc::TreapNode<unsigned> {
 public:
-	explicit PCINode(const char *n,unsigned id) : TreapNode<unsigned>(id), _name(n) {
+	explicit PCINode(const char *n,unsigned id) : esc::TreapNode<unsigned>(id), _name(n) {
 	}
 
 	std::string getName() const {
 		char *end = strchr(_name,'\n');
 		return std::string(_name,end - _name);
 	}
-
-    virtual void print(OStream &) {
-    }
 
 protected:
 	const char *_name;
@@ -49,7 +45,7 @@ public:
 
 class Vendor : public PCINode {
 public:
-	static Treap<Vendor> *getVendors();
+	static esc::Treap<Vendor> *getVendors();
 
 	explicit Vendor(const char *n,unsigned id) : PCINode(n,id), _devs() {
 	}
@@ -57,7 +53,7 @@ public:
 	Device *getDevice(unsigned id) const;
 
 private:
-	mutable Treap<Device> *_devs;
+	mutable esc::Treap<Device> *_devs;
 };
 
 class ProgIF : public PCINode {
@@ -71,17 +67,17 @@ public:
 	explicit SubClass(const char *n,unsigned id) : PCINode(n,id), progifs() {
 	}
 
-	Treap<ProgIF> progifs;
+	esc::Treap<ProgIF> progifs;
 };
 
 class BaseClass : public PCINode {
 public:
-	static Treap<BaseClass> *getClasses();
+	static esc::Treap<BaseClass> *getClasses();
 
 	explicit BaseClass(const char *n,unsigned id) : PCINode(n,id), subclasses() {
 	}
 
-	Treap<SubClass> subclasses;
+	esc::Treap<SubClass> subclasses;
 };
 
 class PCINames {
@@ -90,8 +86,8 @@ class PCINames {
 public:
 	static void load(const char *file);
 
-	static Treap<BaseClass> classes;
-	static Treap<Vendor> vendors;
+	static esc::Treap<BaseClass> classes;
+	static esc::Treap<Vendor> vendors;
 
 private:
 	static const char *readFromLine(const char *line,unsigned *id);

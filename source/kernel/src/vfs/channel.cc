@@ -491,7 +491,7 @@ error:
 
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
                          size_t size1,USER const void *data2,size_t size2) {
-	SList<Message> *list;
+	esc::SList<Message> *list;
 	Message *msg1,*msg2 = NULL;
 	int res;
 
@@ -586,7 +586,7 @@ errorMsg1:
 }
 
 ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER void *data,size_t size) {
-	SList<Message> *list;
+	esc::SList<Message> *list;
 	Thread *t = Thread::getRunning();
 	VFSNode *waitNode;
 	Message *msg;
@@ -664,7 +664,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 	return res;
 }
 
-VFSChannel::Message *VFSChannel::getMsg(SList<Message> *list,msgid_t mid,ushort flags) {
+VFSChannel::Message *VFSChannel::getMsg(esc::SList<Message> *list,msgid_t mid,ushort flags) {
 	/* drivers get always the first message */
 	if(flags & VFS_DEVICE)
 		return list->removeFirst();
@@ -682,7 +682,7 @@ VFSChannel::Message *VFSChannel::getMsg(SList<Message> *list,msgid_t mid,ushort 
 }
 
 void VFSChannel::print(OStream &os) const {
-	const SList<Message> *lists[] = {&sendList,&recvList};
+	const esc::SList<Message> *lists[] = {&sendList,&recvList};
 	os.writef("%-8s: snd=%zu rcv=%zu closed=%d handler=%d fd=%02d shm=%zuK\n",
 		name,sendList.length(),recvList.length(),closed,handler,fd,shmem ? shmemSize / 1024 : 0);
 	for(size_t i = 0; i < ARRAY_SIZE(lists); i++) {

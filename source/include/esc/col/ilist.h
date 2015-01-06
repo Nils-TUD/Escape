@@ -19,12 +19,10 @@
 
 #pragma once
 
-#include <common.h>
-#include <col/nodeallocator.h>
-#include <col/node.h>
-#include <spinlock.h>
-#include <mem/dynarray.h>
-#include <mem/pagedir.h>
+#include <sys/common.h>
+#include <esc/col/node.h>
+
+namespace esc {
 
 /**
  * An indirect, double linked list. That is, the elements are not inherited from a class that gives
@@ -159,3 +157,5 @@ public:
 private:
 	LIST<IListNode<T>> list;
 };
+
+}

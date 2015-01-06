@@ -21,10 +21,10 @@
 
 #include <common.h>
 #include <vfs/node.h>
-#include <col/slist.h>
+#include <esc/col/slist.h>
 
 class VFSChannel : public VFSNode {
-	struct Message : public SListItem {
+	struct Message : public esc::SListItem {
 		msgid_t id;
 		size_t length;
 	};
@@ -158,7 +158,7 @@ protected:
 	virtual void invalidate();
 
 private:
-	static Message *getMsg(SList<Message> *list,msgid_t mid,ushort flags);
+	static Message *getMsg(esc::SList<Message> *list,msgid_t mid,ushort flags);
 	uint getReceiveFlags() const;
 	int isSupported(int op) const;
 	int openForDriver();
@@ -170,8 +170,8 @@ private:
 	void *shmem;
 	size_t shmemSize;
 	/* a list for sending messages to the device */
-	SList<Message> sendList;
+	esc::SList<Message> sendList;
 	/* a list for reading messages from the device */
-	SList<Message> recvList;
+	esc::SList<Message> recvList;
 	static uint16_t nextRid;
 };

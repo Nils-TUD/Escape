@@ -27,8 +27,8 @@
 
 #include "names.h"
 
-Treap<BaseClass> PCINames::classes;
-Treap<Vendor> PCINames::vendors;
+esc::Treap<BaseClass> PCINames::classes;
+esc::Treap<Vendor> PCINames::vendors;
 const char *PCINames::_file;
 size_t PCINames::_fileSize;
 
@@ -36,7 +36,7 @@ Device *Vendor::getDevice(unsigned id) const {
 	// load the devices lazy so that we don't need to store all devices in our data-structure but
 	// only the devices of vendors that we actually have
 	if(_devs == NULL) {
-		_devs = new Treap<Device>();
+		_devs = new esc::Treap<Device>();
 		const char *line = strchr(_name,'\n') + 1;
 		// strchr might return NULL
 		if(line != (const char*)1) {

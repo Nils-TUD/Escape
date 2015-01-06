@@ -19,12 +19,20 @@
 
 #pragma once
 
-#include <common.h>
-#include <mem/dynarray.h>
+#include <sys/common.h>
 
+namespace esc {
 class SListItem;
 template<class T>
 struct IListNode;
+}
+
+#if defined(IN_KERNEL)
+#	include <mem/dynarray.h>
+#	include <cppsupport.h>
+#	include <ostream.h>
+
+namespace esc {
 
 /* The idea is to provide a very fast node-allocation and -deallocation for the indirect
  * single-linked-list that is used in kernel. It is used at very many places, so that its really
@@ -48,3 +56,34 @@ class NodeAllocator {
 	static SpinLock lock;
 	static SpinLock extendLock;
 };
+
+}
+
+#else
+#	include <stdlib.h>
+
+namespace esc {
+
+class CacheAllocatable {
+public:
+	static void *operator new(size_t size) throw() {
+		return malloc(size);
+	}
+	static void operator delete(void *ptr) throw() {
+		free(ptr);
+	}
+};
+
+class NodeAllocator {
+	template<class T>
+	friend struct IListNode;
+
+	NodeAllocator() = delete;
+
+	static void *allocate();
+	static void free(void *ptr);
+};
+
+}
+
+#endif

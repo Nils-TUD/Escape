@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <string.h>
 
-SList<CopyOnWrite::Entry> CopyOnWrite::frames[HEAP_SIZE];
+esc::SList<CopyOnWrite::Entry> CopyOnWrite::frames[HEAP_SIZE];
 SpinLock CopyOnWrite::lock;
 
 size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
@@ -100,7 +100,7 @@ void CopyOnWrite::print(OStream &os) {
 }
 
 CopyOnWrite::Entry *CopyOnWrite::getByFrame(frameno_t frameNo,bool dec) {
-	SList<Entry> *list = frames + (frameNo % HEAP_SIZE);
+	esc::SList<Entry> *list = frames + (frameNo % HEAP_SIZE);
 	Entry *p = NULL;
 	for(auto it = list->begin(); it != list->end(); p = &*it, ++it) {
 		if(it->frameNumber == frameNo) {

@@ -60,7 +60,7 @@
  * the first process in the data-area (we can't free the first one anyway) */
 Proc ProcBase::first;
 /* our processes */
-SList<Proc> ProcBase::procs;
+esc::SList<Proc> ProcBase::procs;
 Proc *ProcBase::pidToProc[MAX_PROC_COUNT];
 pid_t ProcBase::nextPid = 1;
 Mutex ProcBase::procLock;
@@ -153,7 +153,7 @@ void ProcBase::initProps() {
 	stats.totalMigrations = 0;
 	stats.exitCode = 0;
 	stats.exitSignal = SIG_COUNT;
-	threads = ISList<Thread*>();
+	threads = esc::ISList<Thread*>();
 	refs = 1;
 }
 

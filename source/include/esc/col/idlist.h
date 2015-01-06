@@ -19,21 +19,25 @@
 
 #pragma once
 
-#include <common.h>
-#include <col/slist.h>
-#include <col/ilist.h>
+#include <sys/common.h>
+#include <esc/col/dlist.h>
+#include <esc/col/ilist.h>
+
+namespace esc {
 
 /**
- * An indirect, singly linked list. That is, the elements are not inherited from a class that gives
+ * An indirect, double linked list. That is, the elements are not inherited from a class that gives
  * us a next-pointer, but we have nodes that form the list and the nodes contain a pointer to the
  * element. This allows us a add an element to multiple lists.
  */
 template<class T>
-class ISList : public IList<SList,T> {
+class IDList : public IList<DList,T> {
 public:
 	/**
 	 * Constructor. Creates an empty list
 	 */
-	explicit ISList() : IList<SList,T>() {
+	explicit IDList() : IList<DList,T>() {
 	}
 };
+
+}

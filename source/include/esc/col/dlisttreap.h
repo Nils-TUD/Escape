@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <col/treap.h>
-#include <col/dlist.h>
+#include <sys/common.h>
+#include <esc/col/treap.h>
+#include <esc/col/dlist.h>
+
+namespace esc {
 
 /**
  * A node in the slist-treap. You may create a subclass of this to add data to your nodes.
@@ -160,3 +162,5 @@ private:
     DList<T> _list;
     Treap<T> _tree;
 };
+
+}

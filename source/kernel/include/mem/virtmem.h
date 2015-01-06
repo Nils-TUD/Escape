@@ -23,7 +23,7 @@
 #include <mem/vmtree.h>
 #include <mem/vmfreemap.h>
 #include <mem/pagedir.h>
-#include <col/slist.h>
+#include <esc/col/slist.h>
 
 #if defined(DEBUGGING)
 #	define DISABLE_DEMLOAD	1
@@ -59,7 +59,7 @@ class OStream;
 class Region;
 class OpenFile;
 
-class VirtMem : public SListItem {
+class VirtMem : public esc::SListItem {
 	friend class ProcBase;
 
 public:

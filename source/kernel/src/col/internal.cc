@@ -18,11 +18,13 @@
  */
 
 #include <common.h>
-#include <col/islist.h>
+#include <esc/col/islist.h>
 #include <mem/pagedir.h>
 
+namespace esc {
+
 DynArray NodeAllocator::nodeArray(sizeof(IListNode<void*>),SLLNODE_AREA,SLLNODE_AREA_SIZE);
-SListItem *NodeAllocator::freelist = NULL;
+esc::SListItem *NodeAllocator::freelist = NULL;
 SpinLock NodeAllocator::lock;
 SpinLock NodeAllocator::extendLock;
 
@@ -47,21 +49,23 @@ void *NodeAllocator::allocate() {
 		/* now grab the other lock again for the shared access to the freelist */
 		lock.down();
 		for(size_t i = oldCount; i < newCount; i++) {
-			SListItem *n = (SListItem*)nodeArray.getObj(i);
+			esc::SListItem *n = (esc::SListItem*)nodeArray.getObj(i);
 			n->next(freelist);
 			freelist = n;
 		}
 	}
 
-	SListItem *n = freelist;
+	esc::SListItem *n = freelist;
 	freelist = freelist->next();
 	lock.up();
 	return n;
 }
 
 void NodeAllocator::free(void *ptr) {
-	SListItem *n = (SListItem*)ptr;
+	esc::SListItem *n = (esc::SListItem*)ptr;
 	LockGuard<SpinLock> g(&lock);
 	n->next(freelist);
 	freelist = n;
+}
+
 }

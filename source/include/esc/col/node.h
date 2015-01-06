@@ -19,9 +19,10 @@
 
 #pragma once
 
-#include <common.h>
-#include <col/nodeallocator.h>
-#include <cppsupport.h>
+#include <sys/common.h>
+#include <esc/col/internal.h>
+
+namespace esc {
 
 template<class T>
 class SList;
@@ -236,3 +237,5 @@ public:
 		return &operator*();
 	}
 };
+
+}

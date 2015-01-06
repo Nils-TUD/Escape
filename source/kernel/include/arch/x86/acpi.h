@@ -20,7 +20,7 @@
 #pragma once
 
 #include <common.h>
-#include <col/islist.h>
+#include <esc/col/islist.h>
 #include <sys/arch/x86/acpi.h>
 
 class OStream;
@@ -148,5 +148,5 @@ private:
 
 	static bool enabled;
 	static RSDP *rsdp;
-	static ISList<sRSDT*> acpiTables;
+	static esc::ISList<sRSDT*> acpiTables;
 };

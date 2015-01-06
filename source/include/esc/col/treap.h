@@ -19,10 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <cppsupport.h>
-#include <ostream.h>
+#include <sys/common.h>
+#include <esc/col/internal.h>
 #include <assert.h>
+
+namespace esc {
 
 /**
  * A node in the treap. You may create a subclass of this to add data to your nodes.
@@ -67,12 +68,14 @@ public:
         _key = key;
     }
 
+#if defined(IN_KERNEL)
     /**
      * Prints this node into <os>
      *
      * @param os the ostream
      */
     virtual void print(OStream &os) = 0;
+#endif
 
 private:
     key_t _key;
@@ -186,6 +189,7 @@ public:
         remove_from(p, node);
     }
 
+#if defined(IN_KERNEL)
     /**
      * Prints this treap into the given ostream
      *
@@ -195,6 +199,7 @@ public:
         printRec(os,_root,0);
         os.writef("\n");
     }
+#endif
 
 private:
     Treap(const Treap&);
@@ -230,6 +235,7 @@ private:
             *p = nullptr;
     }
 
+#if defined(IN_KERNEL)
     void printRec(OStream &os,node_t *n,int layer) {
         if(n) {
             n->print(os);
@@ -240,7 +246,10 @@ private:
             printRec(os,n->_right,layer + 1);
         }
     }
+#endif
 
     int _prio;
     node_t *_root;
 };
+
+}

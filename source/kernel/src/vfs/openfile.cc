@@ -38,7 +38,7 @@ OpenFile *OpenFile::usedList = NULL;
 OpenFile *OpenFile::exclList = NULL;
 OpenFile *OpenFile::gftFreeList = NULL;
 SpinLock OpenFile::semLock;
-Treap<OpenFile::SemTreapNode> OpenFile::sems;
+esc::Treap<OpenFile::SemTreapNode> OpenFile::sems;
 extern SpinLock waitLock;
 
 void OpenFile::decUsages() {

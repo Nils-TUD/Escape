@@ -25,7 +25,7 @@
 #include <spinlock.h>
 #include <assert.h>
 
-ISList<Thread*> Terminator::deadThreads;
+esc::ISList<Thread*> Terminator::deadThreads;
 SpinLock Terminator::lock;
 BaseSem Terminator::sem(0);
 

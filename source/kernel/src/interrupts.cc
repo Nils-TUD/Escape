@@ -20,11 +20,12 @@
 #include <common.h>
 #include <interrupts.h>
 #include <ostream.h>
+#include <string.h>
 #include <log.h>
 
 const size_t InterruptsBase::IRQ_SEM_COUNT = IRQ_COUNT;
 SpinLock InterruptsBase::userIrqsLock;
-ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
+esc::ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
 
 int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name,
 		uint64_t *msiaddr,uint32_t *msival) {
@@ -51,7 +52,7 @@ void InterruptsBase::detachSem(Semaphore *sem,size_t irq) {
 bool InterruptsBase::fireIrq(size_t irq) {
 	LockGuard<SpinLock> g(&userIrqsLock);
 	assert(irq < IRQ_SEM_COUNT);
-	ISList<Semaphore*> *list = userIrqs + irq;
+	esc::ISList<Semaphore*> *list = userIrqs + irq;
 	for(auto it = list->begin(); it != list->end(); ++it)
 		(*it)->up();
 	return list->length() > 0;

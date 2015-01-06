@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <col/treap.h>
-#include <util.h>
+#include <sys/common.h>
+#include <esc/col/treap.h>
 #include <sys/test.h>
+#include <stdlib.h>
 
 #define TEST_NODE_COUNT     10
 
@@ -34,10 +34,8 @@ sTestModule tModTreap = {
     "Treap",test_treap,
 };
 
-struct MyNode : public TreapNode<int> {
-    MyNode(int k,int _data) : TreapNode<int>(k),data(_data) {
-    }
-    virtual void print(OStream &) {
+struct MyNode : public esc::TreapNode<int> {
+    MyNode(int k,int _data) : esc::TreapNode<int>(k),data(_data) {
     }
     int data;
 };
@@ -76,10 +74,10 @@ static void test_rand_order() {
     static int vals[TEST_NODE_COUNT];
     for(size_t i = 0; i < TEST_NODE_COUNT; i++)
         vals[i] = i;
-    Util::srand(0x12345);
+    srand(0x12345);
     for(size_t i = 0; i < 10000; i++) {
-        size_t j = Util::rand() % TEST_NODE_COUNT;
-        size_t k = Util::rand() % TEST_NODE_COUNT;
+        size_t j = rand() % TEST_NODE_COUNT;
+        size_t k = rand() % TEST_NODE_COUNT;
         uintptr_t t = vals[j];
         vals[j] = vals[k];
         vals[k] = t;
@@ -91,7 +89,7 @@ static void test_rand_order() {
 
 static void test_add_and_rem(int *vals) {
     static MyNode *nodes[TEST_NODE_COUNT];
-    Treap<MyNode> tree;
+    esc::Treap<MyNode> tree;
     MyNode *node;
 
     // create

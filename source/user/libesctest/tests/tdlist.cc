@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <col/dlist.h>
+#include <sys/common.h>
+#include <esc/col/dlist.h>
 #include <sys/test.h>
 
 static void test_dlist();
@@ -28,9 +28,9 @@ sTestModule tModDList = {
 };
 
 static void test_dlist() {
-    DListItem e1,e2,e3;
-    DList<DListItem>::iterator it;
-    DList<DListItem> l;
+    esc::DListItem e1,e2,e3;
+    esc::DList<esc::DListItem>::iterator it;
+    esc::DList<esc::DListItem> l;
     test_assertSize(l.length(),static_cast<size_t>(0));
     test_assertTrue(l.begin() == l.end());
 

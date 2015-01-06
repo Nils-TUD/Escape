@@ -20,8 +20,8 @@
 #pragma once
 
 #include <common.h>
-#include <col/treap.h>
-#include <col/slist.h>
+#include <esc/col/treap.h>
+#include <esc/col/slist.h>
 #include <vfs/fileid.h>
 
 struct VMRegion;
@@ -32,23 +32,23 @@ class ShFiles {
 
 	ShFiles() = delete;
 
-	struct FileUsage : public SListItem {
-		explicit FileUsage(pid_t pid,uintptr_t addr) : SListItem(), pid(pid), addr(addr) {
+	struct FileUsage : public esc::SListItem {
+		explicit FileUsage(pid_t pid,uintptr_t addr) : esc::SListItem(), pid(pid), addr(addr) {
 		}
 
 		pid_t pid;
 		uintptr_t addr;
 	};
 
-	struct FileNode : public TreapNode<FileId> {
-		explicit FileNode(const FileId &id) : TreapNode<FileId>(id), usages() {
+	struct FileNode : public esc::TreapNode<FileId> {
+		explicit FileNode(const FileId &id) : esc::TreapNode<FileId>(id), usages() {
 		}
 
 		virtual void print(OStream &os) {
 			os.writef("file=(%u,%u) with %zu usages\n",key().dev,key().ino,usages.length());
 		}
 
-		SList<FileUsage> usages;
+		esc::SList<FileUsage> usages;
 	};
 
 public:
@@ -56,6 +56,6 @@ public:
 	static bool get(OpenFile *f,uintptr_t *addr,pid_t *pid);
 	static void remove(VMRegion *vmreg);
 
-	static Treap<FileNode> tree;
+	static esc::Treap<FileNode> tree;
 	static SpinLock lock;
 };

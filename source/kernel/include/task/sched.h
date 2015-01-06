@@ -20,8 +20,9 @@
 #pragma once
 
 #include <common.h>
-#include <col/islist.h>
-#include <col/dlist.h>
+#include <esc/col/islist.h>
+#include <esc/col/dlist.h>
+#include <lockguard.h>
 #include <spinlock.h>
 
 /* the events we can wait for */
@@ -178,12 +179,12 @@ private:
 	static void dequeue(Thread *t);
 	static void removeFromEventlist(Thread *t);
 	static bool setReadyState(Thread *t);
-	static void print(OStream &os,DList<Thread> *q);
+	static void print(OStream &os,esc::DList<Thread> *q);
 
 	static SpinLock lock;
 	static ulong readyMask;
-	static DList<Thread> rdyQueues[];
-	static DList<Thread> evlists[EV_COUNT];
+	static esc::DList<Thread> rdyQueues[];
+	static esc::DList<Thread> evlists[EV_COUNT];
 	static size_t rdyCount;
 	static Thread **idleThreads;
 };

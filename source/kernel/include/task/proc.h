@@ -30,8 +30,8 @@
 #include <task/sems.h>
 #include <vfs/fs.h>
 #include <vfs/ms.h>
-#include <col/slist.h>
-#include <col/islist.h>
+#include <esc/col/slist.h>
+#include <esc/col/islist.h>
 #include <spinlock.h>
 #include <mutex.h>
 #include <interrupts.h>
@@ -69,7 +69,7 @@ class VFSMS;
 class Env;
 
 /* represents a process */
-class ProcBase : public SListItem {
+class ProcBase : public esc::SListItem {
 	friend class Groups;
 	friend class FileDesc;
 	friend class VFS;
@@ -615,13 +615,13 @@ private:
 	/* start-command */
 	const char *command;
 	/* threads of this process */
-	ISList<Thread*> threads;
+	esc::ISList<Thread*> threads;
 	/* locks for this process */
 	mutable SpinLock locks[PLOCK_COUNT];
 	mutable Mutex mutexes[PMUTEX_COUNT];
 
 	static Proc first;
-	static SList<Proc> procs;
+	static esc::SList<Proc> procs;
 	static Proc *pidToProc[MAX_PROC_COUNT];
 	static pid_t nextPid;
 	static Mutex procLock;

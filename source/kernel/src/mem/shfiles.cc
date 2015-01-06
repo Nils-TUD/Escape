@@ -22,7 +22,7 @@
 #include <mem/region.h>
 #include <vfs/openfile.h>
 
-Treap<ShFiles::FileNode> ShFiles::tree;
+esc::Treap<ShFiles::FileNode> ShFiles::tree;
 SpinLock ShFiles::lock;
 
 int ShFiles::add(VMRegion *vmreg,pid_t pid) {

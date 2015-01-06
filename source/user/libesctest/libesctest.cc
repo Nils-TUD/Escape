@@ -24,11 +24,17 @@
 extern sTestModule tModRBuffer;
 extern sTestModule tModCmdArgs;
 extern sTestModule tModPathTree;
+extern sTestModule tModSList;
+extern sTestModule tModDList;
+extern sTestModule tModTreap;
 
 int main() {
 	test_register(&tModRBuffer);
 	test_register(&tModCmdArgs);
 	test_register(&tModPathTree);
+	test_register(&tModSList);
+	test_register(&tModDList);
+	test_register(&tModTreap);
 	test_start();
 	return EXIT_SUCCESS;
 }

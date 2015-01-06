@@ -21,13 +21,13 @@
 
 #include <common.h>
 #include <task/proc.h>
-#include <col/slist.h>
+#include <esc/col/slist.h>
 
 class CopyOnWrite {
 	CopyOnWrite() = delete;
 
-	struct Entry : public SListItem {
-		explicit Entry(frameno_t frameNo) : SListItem(), frameNumber(frameNo), refCount(0) {
+	struct Entry : public esc::SListItem {
+		explicit Entry(frameno_t frameNo) : esc::SListItem(), frameNumber(frameNo), refCount(0) {
 		}
 		frameno_t frameNumber;
 		size_t refCount;
@@ -80,6 +80,6 @@ public:
 private:
 	static Entry *getByFrame(frameno_t frameNo,bool dec);
 
-	static SList<Entry> frames[];
+	static esc::SList<Entry> frames[];
 	static SpinLock lock;
 };

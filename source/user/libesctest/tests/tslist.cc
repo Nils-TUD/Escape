@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <col/slist.h>
-#include <col/islist.h>
+#include <sys/common.h>
+#include <esc/col/slist.h>
+#include <esc/col/islist.h>
 #include <sys/test.h>
-#include "testutils.h"
+#include <stdlib.h>
 
 /* a bit of c++ magic to use the same test both for SList and ISList */
 template<
@@ -31,7 +31,7 @@ template<
 >
 static void test_slist_tpl(const char *name);
 
-struct MyItem : public SListItem {
+struct MyItem : public esc::SListItem {
 	explicit MyItem(int _a) : a(_a) {
 	}
 	int a;
@@ -58,8 +58,8 @@ sTestModule tModSList = {
 };
 
 static void test_slist() {
-	test_slist_tpl<SList,MyItem,MyItem>("SList");
-	test_slist_tpl<ISList,IMyItem,IMyItem*>("ISList");
+	test_slist_tpl<esc::SList,MyItem,MyItem>("SList");
+	test_slist_tpl<esc::ISList,IMyItem,IMyItem*>("ISList");
 }
 
 template<
@@ -68,9 +68,10 @@ template<
 	class PARAM
 >
 static void test_slist_tpl(const char *name) {
+	size_t before;
 	test_caseStart("Testing %s",name);
-	checkMemoryBefore(false);
 
+	before = heapspace();
 	{
 		ITEM e1(1), e2(2), e3(3);
 		typename LIST<PARAM>::iterator it;
@@ -129,7 +130,7 @@ static void test_slist_tpl(const char *name) {
 		++it;
 		test_assertTrue(it == l.end());
 	}
+	test_assertSize(heapspace(),before);
 
-	checkMemoryAfter(false);
 	test_caseSucceeded();
 }

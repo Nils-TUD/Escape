@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <col/node.h>
+#include <sys/common.h>
+#include <esc/col/node.h>
 #include <assert.h>
+
+namespace esc {
 
 /**
  * The singly linked list. Takes an arbitrary class as list-item and expects it to have a prev(),
@@ -196,3 +198,5 @@ private:
 	T *_tail;
 	size_t _len;
 };
+
+}

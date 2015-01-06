@@ -21,7 +21,7 @@
 
 #include <common.h>
 #include <task/thread.h>
-#include <col/slist.h>
+#include <esc/col/slist.h>
 
 /* the IPIs we can send */
 #define IPI_WORK			51
@@ -43,9 +43,9 @@ class SMPBase {
 public:
 	typedef void (*callback_func)();
 
-	struct CPU : public SListItem {
+	struct CPU : public esc::SListItem {
 		explicit CPU(uint8_t id,bool bootstrap,uint8_t ready)
-			: SListItem(), id(id), bootstrap(bootstrap), ready(ready), curCycles(), lastCycles(),
+			: esc::SListItem(), id(id), bootstrap(bootstrap), ready(ready), curCycles(), lastCycles(),
 			  lastTotal(), lastUpdate(), callback(), thread() {
 		}
 
@@ -60,7 +60,7 @@ public:
 		Thread *thread;
 	};
 
-	typedef SList<CPU>::iterator iterator;
+	typedef esc::SList<CPU>::iterator iterator;
 
 	/**
 	 * Inits the SMP-module
@@ -226,7 +226,7 @@ private:
 	static CPU *getCPUById(cpuid_t id);
 
 	static bool enabled;
-	static SList<CPU> cpuList;
+	static esc::SList<CPU> cpuList;
 	static CPU **cpus;
 	static size_t cpuCount;
 };

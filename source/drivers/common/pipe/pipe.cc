@@ -20,8 +20,6 @@
 #include <sys/common.h>
 #include <esc/ipc/requestqueue.h>
 #include <esc/ipc/clientdevice.h>
-// TODO temporary
-#include "../../../kernel/include/col/slist.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>

@@ -45,8 +45,8 @@
 
 SpinLock Sched::lock;
 ulong Sched::readyMask = 0;
-DList<Thread> Sched::rdyQueues[MAX_PRIO + 1];
-DList<Thread> Sched::evlists[EV_COUNT];
+esc::DList<Thread> Sched::rdyQueues[MAX_PRIO + 1];
+esc::DList<Thread> Sched::evlists[EV_COUNT];
 size_t Sched::rdyCount;
 Thread **Sched::idleThreads;
 
@@ -230,7 +230,7 @@ void Sched::wait(Thread *t,uint event,evobj_t object) {
 
 void Sched::wakeup(uint event,evobj_t object,bool all) {
 	assert(event >= 1 && event <= EV_COUNT);
-	DList<Thread> *list = evlists + event - 1;
+	esc::DList<Thread> *list = evlists + event - 1;
 	LockGuard<SpinLock> g(&lock);
 	for(auto it = list->begin(); it != list->end(); ) {
 		auto old = it++;
@@ -361,7 +361,7 @@ void Sched::print(OStream &os) {
 void Sched::printEventLists(OStream &os) {
 	os.writef("Eventlists:\n");
 	for(size_t e = 0; e < EV_COUNT; e++) {
-		DList<Thread> *list = evlists + e;
+		esc::DList<Thread> *list = evlists + e;
 		os.writef("\t%s:\n",getEventName(e + 1));
 		for(auto t = list->cbegin(); t != list->cend(); ++t) {
 			os.writef("\t\tthread=%d (%d:%s), object=%x",
@@ -388,7 +388,7 @@ const char *Sched::getEventName(uint event) {
 	return names[event - 1];
 }
 
-void Sched::print(OStream &os,DList<Thread> *q) {
+void Sched::print(OStream &os,esc::DList<Thread> *q) {
 	for(auto t = q->cbegin(); t != q->cend(); ++t)
 		os.writef("\t\t%d:%d:%s\n",t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram());
 }

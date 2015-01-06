@@ -17,23 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#pragma once
+#include <sys/common.h>
+#include <esc/col/internal.h>
+#include <esc/col/node.h>
+#include <stdlib.h>
 
-#include <common.h>
-#include <col/dlist.h>
-#include <col/ilist.h>
+namespace esc {
 
-/**
- * An indirect, double linked list. That is, the elements are not inherited from a class that gives
- * us a next-pointer, but we have nodes that form the list and the nodes contain a pointer to the
- * element. This allows us a add an element to multiple lists.
- */
-template<class T>
-class IDList : public IList<DList,T> {
-public:
-	/**
-	 * Constructor. Creates an empty list
-	 */
-	explicit IDList() : IList<DList,T>() {
-	}
-};
+void *NodeAllocator::allocate() {
+	return malloc(sizeof(IListNode<void*>));
+}
+
+void NodeAllocator::free(void *ptr) {
+	::free(ptr);
+}
+
+}

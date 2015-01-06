@@ -19,49 +19,25 @@
 
 #pragma once
 
-#include <common.h>
+#include <sys/common.h>
 #include <esc/col/slist.h>
-#include <task/sched.h>
+#include <esc/col/ilist.h>
 
-class Thread;
+namespace esc {
 
 /**
- * A list of waiting threads.
+ * An indirect, singly linked list. That is, the elements are not inherited from a class that gives
+ * us a next-pointer, but we have nodes that form the list and the nodes contain a pointer to the
+ * element. This allows us a add an element to multiple lists.
  */
-class BlockedList {
+template<class T>
+class ISList : public IList<SList,T> {
 public:
-	explicit BlockedList() : list() {
+	/**
+	 * Constructor. Creates an empty list
+	 */
+	explicit ISList() : IList<SList,T>() {
 	}
-
-	size_t length() const {
-		return list.length();
-	}
-
-	/**
-	 * Blocks the given thread, which HAS TO be the current one. That is, it enqueues it to the
-	 * waiting-threads-list and sets the thread-status to BLOCKED.
-	 *
-	 * @param t the thread
-	 */
-	void block(Thread *t);
-
-	/**
-	 * Removes the given thread from the list.
-	 *
-	 * @param t the thread
-	 */
-	void remove(Thread *t);
-
-	/**
-	 * Wakes up the next thread
-	 */
-	void wakeup();
-
-	/**
-	 * Wakes up all waiting threads
-	 */
-	void wakeupAll();
-
-private:
-	esc::SList<Thread> list;
 };
+
+}

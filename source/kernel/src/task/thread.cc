@@ -43,7 +43,7 @@
 #include <errno.h>
 
 /* our threads */
-DList<Thread::ListItem> ThreadBase::threads;
+esc::DList<Thread::ListItem> ThreadBase::threads;
 Thread *ThreadBase::tidToThread[MAX_THREAD_COUNT];
 tid_t ThreadBase::nextTid = 0;
 SpinLock ThreadBase::refLock;
@@ -121,7 +121,7 @@ void ThreadBase::initProps() {
 	stats.schedCount = 0;
 	stats.syscalls = 0;
 	stats.migrations = 0;
-	reqFrames = ISList<frameno_t>();
+	reqFrames = esc::ISList<frameno_t>();
 	threadListItem = ListItem(static_cast<Thread*>(this));
 	signalListItem = ListItem(static_cast<Thread*>(this));
 	refs = 1;

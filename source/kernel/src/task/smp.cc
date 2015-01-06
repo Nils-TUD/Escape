@@ -30,7 +30,7 @@
 #include <string.h>
 
 bool SMPBase::enabled;
-SList<SMP::CPU> SMPBase::cpuList;
+esc::SList<SMP::CPU> SMPBase::cpuList;
 SMP::CPU **SMPBase::cpus;
 size_t SMPBase::cpuCount = 0;
 

@@ -22,7 +22,7 @@
 #include <common.h>
 #include <vfs/openfile.h>
 #include <vfs/node.h>
-#include <col/slist.h>
+#include <esc/col/slist.h>
 #include <utime.h>
 
 class Proc;

@@ -20,8 +20,8 @@
 #pragma once
 
 #include <common.h>
-#include <col/dlisttreap.h>
-#include <col/slist.h>
+#include <esc/col/dlisttreap.h>
+#include <esc/col/slist.h>
 #include <mem/shfiles.h>
 #include <vfs/fileid.h>
 #include <mutex.h>
@@ -30,9 +30,9 @@ class Region;
 class VirtMem;
 class OStream;
 
-struct VMRegion : public DListTreapNode<uintptr_t> {
+struct VMRegion : public esc::DListTreapNode<uintptr_t> {
     explicit VMRegion(Region *_reg,uintptr_t _virt)
-    	: DListTreapNode<uintptr_t>(_virt), fileuse(), reg(_reg) {
+    	: esc::DListTreapNode<uintptr_t>(_virt), fileuse(), reg(_reg) {
     }
 
     virtual bool matches(uintptr_t key);
@@ -61,8 +61,8 @@ struct VMRegion : public DListTreapNode<uintptr_t> {
 
 class VMTree {
 public:
-	typedef DListTreap<VMRegion>::iterator iterator;
-	typedef DListTreap<VMRegion>::const_iterator const_iterator;
+	typedef esc::DListTreap<VMRegion>::iterator iterator;
+	typedef esc::DListTreap<VMRegion>::const_iterator const_iterator;
 
 	/**
 	 * Does NOT initialize the object
@@ -181,7 +181,7 @@ public:
 
 private:
 	VirtMem *virtmem;
-	DListTreap<VMRegion> regs;
+	esc::DListTreap<VMRegion> regs;
 	VMTree *next;
 
 	/* mutex for accessing/changing the list of all vm-regions */

@@ -48,9 +48,6 @@ extern sTestModule tModEscCodes;
 extern sTestModule tModSwapMap;
 extern sTestModule tModVmm;
 extern sTestModule tModPmemAreas;
-extern sTestModule tModSList;
-extern sTestModule tModDList;
-extern sTestModule tModTreap;
 
 EXTERN_C void unittest_run();
 EXTERN_C void unittest_start();
@@ -90,9 +87,6 @@ void unittest_run() {
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);
 	test_register(&tModPmemAreas);
-	test_register(&tModSList);
-	test_register(&tModDList);
-	test_register(&tModTreap);
 	test_start();
 
 	/* stay here */

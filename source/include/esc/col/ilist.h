@@ -25,9 +25,9 @@
 namespace esc {
 
 /**
- * An indirect, double linked list. That is, the elements are not inherited from a class that gives
- * us a next-pointer, but we have nodes that form the list and the nodes contain a pointer to the
- * element. This allows us a add an element to multiple lists.
+ * The template for indirect linked lists. Its elements are not inherited from a class with a
+ * next-pointer, but it has nodes that form the list and the nodes contain a pointer to the
+ * element. This allows to add an element to multiple lists.
  */
 template<
 	template<class T1>

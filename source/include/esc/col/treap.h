@@ -86,7 +86,7 @@ private:
 
 /**
  * A treap is a combination of a binary tree and a heap. So the child-node on the left has a
- * smaller key (addr) than the parent and the child on the right has a bigger key.
+ * smaller key than the parent and the child on the right has a bigger key.
  * Additionally the root-node has the smallest priority and it increases when walking towards the
  * leafs. The priority is "randomized" by fibonacci-hashing. This way, the tree is well balanced
  * in most cases.

@@ -215,7 +215,7 @@ public:
 	}
 
 	/**
-	 * Determines the offset of given capability.
+	 * Enables MSIs for the given PCI device.
 	 *
 	 * @param bus the bus
 	 * @param dev the device

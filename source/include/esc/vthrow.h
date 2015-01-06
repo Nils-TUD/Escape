@@ -26,7 +26,7 @@
  * This macro throws an exception and passes a formatted string as its message. That is, you can
  * use the stream operators to build the message. For example:
  * VTHROW("My exception " << 1 << "," << 2 << " message");
- * VTHROWE(My exception " << 1 << "," << 2 << " message",-EINVAL);
+ * VTHROWE("My exception " << 1 << "," << 2 << " message",-EINVAL);
  */
 #define VTHROW(expr) {										\
 		std::ostringstream __os;							\

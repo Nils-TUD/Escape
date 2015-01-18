@@ -9,7 +9,7 @@ myenv['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 myenv.EscapeLib(
 	target = 'stdc++',
 	source = [
-		myenv.Glob('*.cpp'), myenv.Glob('*/*.cpp'), myenv.Glob('*/*/*.cpp'),
+		myenv.Glob('*.cc'), myenv.Glob('*/*.cc'), myenv.Glob('*/*/*.cc'),
 		'/opt/escape-cross-' + env['TGT'] + '/lib/libsupc++.a'
 	],
 	LIBS = ['c']

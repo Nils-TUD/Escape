@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(target = 'info', source = env.Glob('*.cpp'))
+env.EscapeLib(target = 'info', source = env.Glob('*.cc'))

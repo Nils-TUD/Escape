@@ -12,7 +12,7 @@ myenv.Append(
 lexer = myenv.CFile(target = 'lex.c', source = 'calc.l')
 parser = myenv.CFile(target = 'parser', source = 'calc.y')
 
-cppfiles = myenv.Glob('*.cpp')
+cppfiles = myenv.Glob('*.cc')
 myenv.Depends(cppfiles, [lexer, parser])
 
 myenv.EscapeCXXProg(

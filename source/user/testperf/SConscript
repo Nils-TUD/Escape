@@ -2,5 +2,5 @@
 
 Import('env')
 env.EscapeCXXProg('bin', target = 'testperf', source = [
-	env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('*/*.cpp')
+	env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('*/*.cc')
 ])

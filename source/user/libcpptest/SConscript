@@ -1,4 +1,4 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeCXXProg('bin', target = 'libcpptest', source = [env.Glob('*.cpp'), env.Glob('*/*.cpp')])
+env.EscapeCXXProg('bin', target = 'libcpptest', source = [env.Glob('*.cc'), env.Glob('*/*.cc')])

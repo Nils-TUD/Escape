@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
-#include "varexpr.h"
-#include "node.h"
+
 #include "../mem.h"
+#include "node.h"
+#include "varexpr.h"
 
 sASTNode *ast_createVarExpr(char *s,sASTNode *index) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

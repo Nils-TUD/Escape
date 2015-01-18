@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
-#include <sys/io.h>
-#include <sys/mman.h>
-#include <sys/debug.h>
-#include <sys/proc.h>
-#include <sys/messages.h>
-#include <vbe/vbe.h>
 #include <esc/ipc/screendevice.h>
-#include <string.h>
+#include <esc/vthrow.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
+#include <sys/proc.h>
+#include <vbe/vbe.h>
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <esc/vthrow.h>
+#include <string.h>
 
 #include "vga.h"
 

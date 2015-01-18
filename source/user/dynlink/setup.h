@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/elf.h>
 #include <sys/debug.h>
+#include <sys/elf.h>
 #include <sys/mman.h>
 
 #define LD_BIND_NOW		0

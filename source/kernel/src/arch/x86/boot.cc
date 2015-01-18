@@ -17,42 +17,42 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <arch/x86/idt.h>
-#include <arch/x86/gdt.h>
-#include <arch/x86/serial.h>
-#include <arch/x86/pic.h>
 #include <arch/x86/acpi.h>
-#include <arch/x86/ioapic.h>
 #include <arch/x86/fpu.h>
-#include <task/timer.h>
-#include <mem/pagedir.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/idt.h>
+#include <arch/x86/ioapic.h>
+#include <arch/x86/pic.h>
+#include <arch/x86/serial.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
 #include <mem/copyonwrite.h>
 #include <mem/dynarray.h>
+#include <mem/pagedir.h>
 #include <mem/physmemareas.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/sched.h>
+#include <mem/virtmem.h>
 #include <task/elf.h>
-#include <task/uenv.h>
+#include <task/proc.h>
+#include <task/sched.h>
 #include <task/smp.h>
 #include <task/terminator.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <task/uenv.h>
 #include <vfs/file.h>
 #include <vfs/node.h>
-#include <vfs/vfs.h>
 #include <vfs/openfile.h>
-#include <log.h>
+#include <vfs/vfs.h>
+#include <assert.h>
 #include <boot.h>
-#include <video.h>
-#include <util.h>
-#include <cpu.h>
+#include <common.h>
 #include <config.h>
 #include <cppsupport.h>
+#include <cpu.h>
 #include <errno.h>
+#include <log.h>
 #include <string.h>
-#include <assert.h>
+#include <util.h>
+#include <video.h>
 
 static void mapModules();
 

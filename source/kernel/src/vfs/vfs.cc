@@ -17,31 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/fs.h>
-#include <vfs/info.h>
-#include <vfs/file.h>
-#include <vfs/dir.h>
-#include <vfs/link.h>
-#include <vfs/selflink.h>
-#include <vfs/channel.h>
-#include <vfs/device.h>
-#include <vfs/openfile.h>
-#include <task/proc.h>
-#include <task/groups.h>
-#include <task/timer.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
 #include <mem/dynarray.h>
+#include <mem/pagedir.h>
+#include <sys/messages.h>
+#include <task/groups.h>
+#include <task/proc.h>
+#include <task/timer.h>
+#include <vfs/channel.h>
+#include <vfs/device.h>
+#include <vfs/dir.h>
+#include <vfs/file.h>
+#include <vfs/fs.h>
+#include <vfs/info.h>
+#include <vfs/link.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <vfs/selflink.h>
+#include <vfs/vfs.h>
+#include <assert.h>
+#include <common.h>
+#include <cppsupport.h>
+#include <errno.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <cppsupport.h>
-#include <sys/messages.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
 
 VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;

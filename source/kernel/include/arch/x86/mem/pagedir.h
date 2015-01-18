@@ -20,6 +20,7 @@
 #pragma once
 
 #include <common.h>
+
 #if defined(__i586__)
 #	include <arch/i586/mem/layout.h>
 #else

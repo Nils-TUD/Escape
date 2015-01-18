@@ -20,9 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include <errno.h>
 #include <assert.h>
+#include <errno.h>
 #include <string.h>
+
 #if defined(IN_KERNEL)
 #	include <cwrap.h>
 #	define malloc(s)	cache_alloc(s)

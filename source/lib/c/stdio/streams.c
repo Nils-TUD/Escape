@@ -18,10 +18,11 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+
+#include "iobuf.h"
 
 void initStdio(void);
 static void deinitStdio(void*);

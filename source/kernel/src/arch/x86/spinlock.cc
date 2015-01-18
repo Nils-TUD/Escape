@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <spinlock.h>
 #include <task/thread.h>
 #include <cpu.h>
-#include <util.h>
+#include <spinlock.h>
 #include <stdarg.h>
+#include <util.h>
 
 #if DEBUG_LOCKS
 #define MAX_WAIT_SECS		2

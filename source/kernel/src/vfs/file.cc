@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
+#include <mem/pagedir.h>
 #include <mem/useraccess.h>
+#include <mem/virtmem.h>
 #include <task/proc.h>
-#include <vfs/vfs.h>
 #include <vfs/file.h>
 #include <vfs/node.h>
+#include <vfs/vfs.h>
+#include <common.h>
+#include <errno.h>
 #include <spinlock.h>
 #include <string.h>
-#include <errno.h>
 
 VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
 		: VFSNode(pid,n,S_IFREG | (m & 0777),success), dynamic(true), size(), pos(), data() {

@@ -17,23 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/input.h>
 #include <sys/common.h>
+#include <sys/debug.h>
 #include <sys/driver.h>
 #include <sys/io.h>
-#include <sys/debug.h>
-#include <sys/proc.h>
-#include <sys/thread.h>
+#include <sys/irq.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <sys/mman.h>
-#include <sys/irq.h>
-#include <esc/proto/input.h>
-#include <esc/ipc/clientdevice.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "set2.h"
 

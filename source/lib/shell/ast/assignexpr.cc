@@ -19,10 +19,11 @@
 
 #include <sys/common.h>
 #include <stdio.h>
-#include "assignexpr.h"
-#include "varexpr.h"
-#include "node.h"
+
 #include "../mem.h"
+#include "assignexpr.h"
+#include "node.h"
+#include "varexpr.h"
 
 sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr,bool hasIndex,sASTNode *index) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

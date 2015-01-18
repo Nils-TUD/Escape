@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <task/thread.h>
-#include <arch/x86/tss.h>
 #include <arch/x86/desc.h>
+#include <arch/x86/tss.h>
 #include <sys/arch.h>
+#include <task/thread.h>
+#include <common.h>
 
 class GDT {
 	GDT() = delete;

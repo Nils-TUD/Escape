@@ -18,10 +18,11 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+
+#include "iobuf.h"
 
 bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic) {
 	assert(buffer == NULL || (flags & (O_RDWR)) != (O_RDWR));

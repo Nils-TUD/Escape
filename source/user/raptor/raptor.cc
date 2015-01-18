@@ -17,19 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/cmdargs.h>
 #include <sys/common.h>
-#include <sys/proc.h>
-#include <sys/thread.h>
-#include <sys/messages.h>
 #include <sys/esccodes.h>
 #include <sys/io.h>
-#include <sys/cmdargs.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <sys/time.h>
-#include <stdio.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+
 #include "game.h"
 
 #define INTERVAL		5000 /* us */

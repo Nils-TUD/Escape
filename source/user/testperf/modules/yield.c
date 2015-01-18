@@ -18,9 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <sys/thread.h>
-#include <sys/sync.h>
 #include <sys/proc.h>
+#include <sys/sync.h>
+#include <sys/thread.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <stdio.h>

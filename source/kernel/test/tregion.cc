@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/kheap.h>
-#include <mem/region.h>
 #include <mem/pagedir.h>
-#include <video.h>
-#include <cppsupport.h>
+#include <mem/region.h>
 #include <sys/test.h>
+#include <common.h>
+#include <cppsupport.h>
+#include <video.h>
+
 #include "testutils.h"
 
 /* forward declarations */

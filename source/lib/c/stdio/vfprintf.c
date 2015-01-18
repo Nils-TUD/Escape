@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+
+#include "iobuf.h"
 
 int vfprintf(FILE *file,const char *fmt,va_list ap) {
 	return vbprintf(file,fmt,ap);

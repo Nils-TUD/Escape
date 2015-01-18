@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <vfs/ms.h>
-#include <vfs/info.h>
 #include <task/proc.h>
+#include <vfs/info.h>
+#include <vfs/ms.h>
+#include <common.h>
 #include <ostringstream.h>
 #include <util.h>
 

@@ -18,14 +18,14 @@
  */
 
 #include <sys/common.h>
-#include <sys/elf.h>
 #include <sys/debug.h>
+#include <sys/elf.h>
 #include <sys/proc.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "lookup.h"
 #include "loader.h"
+#include "lookup.h"
 
 static sElfSym *lookup_byNameIntern(sSharedLib *lib,const char *name,uint32_t hash);
 static uint32_t lookup_getHash(const uint8_t *name);

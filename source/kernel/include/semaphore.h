@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <blockedlist.h>
 #include <common.h>
 #include <spinlock.h>
-#include <blockedlist.h>
 
 /**
  * Base-class for the semaphore which is more flexible than the subclass since it doesn't use a

@@ -17,27 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/physmem.h>
+#include <esc/ipc/ipcbuf.h>
 #include <mem/pagedir.h>
+#include <mem/physmem.h>
+#include <mem/physmemareas.h>
 #include <mem/swapmap.h>
 #include <mem/virtmem.h>
-#include <mem/physmemareas.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <vfs/vfs.h>
-#include <vfs/openfile.h>
-#include <config.h>
-#include <boot.h>
-#include <util.h>
-#include <log.h>
-#include <video.h>
-#include <spinlock.h>
-#include <esc/ipc/ipcbuf.h>
 #include <sys/messages.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
 #include <assert.h>
-#include <string.h>
+#include <boot.h>
+#include <common.h>
+#include <config.h>
 #include <errno.h>
+#include <log.h>
+#include <spinlock.h>
+#include <string.h>
+#include <util.h>
+#include <video.h>
 
 //#define DEBUG_ALLOCS
 

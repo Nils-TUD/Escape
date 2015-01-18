@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <ecmxdisk/disk.h>
+#include <sys/common.h>
 #include <string.h>
+
 #if DEBUG
 #	define DISK_DBG(fmt,...)	print(fmt,## __VA_ARGS__);
 #else

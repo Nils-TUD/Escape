@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <esc/env.h>
+#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <sys/cmdargs.h>
-#include <esc/proto/vterm.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <esc/env.h>
+#include <string.h>
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);

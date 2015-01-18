@@ -19,12 +19,12 @@
 
 #include <sys/common.h>
 #include <dirent.h>
-#include <time.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-#include "dircache.h"
 #include "datacon.h"
+#include "dircache.h"
 
 DirCache::dirmap_type DirCache::dirs;
 time_t DirCache::now = time(NULL);

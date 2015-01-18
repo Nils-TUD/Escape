@@ -17,30 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/io.h>
-#include <sys/proc.h>
-#include <sys/debug.h>
-#include <dirent.h>
-#include <sys/endian.h>
 #include <fs/fsdev.h>
 #include <fs/permissions.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/endian.h>
+#include <sys/io.h>
+#include <sys/proc.h>
+#include <dirent.h>
 #include <errno.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-#include "ext2.h"
-#include "inodecache.h"
 #include "bgmng.h"
-#include "sbmng.h"
-#include "path.h"
-#include "file.h"
-#include "link.h"
-#include "inode.h"
 #include "dir.h"
+#include "ext2.h"
+#include "file.h"
+#include "inode.h"
+#include "inodecache.h"
+#include "link.h"
+#include "path.h"
 #include "rw.h"
+#include "sbmng.h"
 
 int main(int argc,char *argv[]) {
 	char fspath[MAX_PATH_LEN];

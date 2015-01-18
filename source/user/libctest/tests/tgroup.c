@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <usergroup/group.h>
 #include <sys/test.h>
+#include <usergroup/group.h>
 #include <stdlib.h>
 
 static void test_group(void);

@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 
-#include "vesascreen.h"
 #include "image.h"
+#include "vesascreen.h"
 
 class VESAGUI {
 public:

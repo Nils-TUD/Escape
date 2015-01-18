@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <mem/vmtree.h>
-#include <mem/vmfreemap.h>
-#include <mem/pagedir.h>
 #include <esc/col/slist.h>
+#include <mem/pagedir.h>
+#include <mem/vmfreemap.h>
+#include <mem/vmtree.h>
+#include <common.h>
 
 #if defined(DEBUGGING)
 #	define DISABLE_DEMLOAD	1

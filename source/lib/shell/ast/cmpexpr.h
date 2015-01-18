@@ -20,8 +20,9 @@
 #pragma once
 
 #include <sys/common.h>
-#include "node.h"
+
 #include "../exec/env.h"
+#include "node.h"
 
 #define CMP_OP_EQ	0
 #define CMP_OP_NEQ	1

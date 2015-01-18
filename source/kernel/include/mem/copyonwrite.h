@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <task/proc.h>
 #include <esc/col/slist.h>
+#include <task/proc.h>
+#include <common.h>
 
 class CopyOnWrite {
 	CopyOnWrite() = delete;

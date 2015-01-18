@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+
 #include "../../initerror.h"
 #include "eco32machine.h"
 

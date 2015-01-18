@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <gui/panel.h>
-#include <gui/button.h>
 #include <gui/layout/flowlayout.h>
+#include <gui/button.h>
+#include <gui/panel.h>
 #include <iostream>
 #include <vector>
 

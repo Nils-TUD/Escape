@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
+#include <mem/pagedir.h>
 #include <mem/useraccess.h>
+#include <mem/virtmem.h>
+#include <sys/endian.h>
+#include <sys/stat.h>
 #include <task/proc.h>
 #include <task/thread.h>
-#include <vfs/vfs.h>
 #include <vfs/dir.h>
+#include <vfs/fs.h>
+#include <vfs/info.h>
 #include <vfs/link.h>
 #include <vfs/node.h>
-#include <vfs/info.h>
-#include <vfs/fs.h>
 #include <vfs/openfile.h>
-#include <sys/stat.h>
-#include <sys/endian.h>
+#include <vfs/vfs.h>
 #include <assert.h>
-#include <string.h>
+#include <common.h>
 #include <errno.h>
+#include <string.h>
 
 VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
 		: VFSNode(pid,n,DIR_DEF_MODE | (m & 0777),success) {

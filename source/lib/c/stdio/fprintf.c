@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 int fprintf(FILE *file,const char *fmt,...) {
 	int res;

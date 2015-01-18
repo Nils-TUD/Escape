@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/socket.h>
+#include <esc/dns.h>
 #include <sys/common.h>
 #include <sys/thread.h>
-#include <esc/proto/socket.h>
-#include <esc/ipc/clientdevice.h>
-#include <sstream>
 #include <fstream>
-#include <esc/dns.h>
 #include <signal.h>
+#include <sstream>
 #include <stdlib.h>
 
 using namespace esc;

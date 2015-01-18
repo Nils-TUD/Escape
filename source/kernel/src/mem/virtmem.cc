@@ -17,28 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/region.h>
-#include <mem/pagedir.h>
-#include <mem/virtmem.h>
-#include <mem/copyonwrite.h>
 #include <mem/cache.h>
-#include <mem/swapmap.h>
+#include <mem/copyonwrite.h>
+#include <mem/pagedir.h>
+#include <mem/region.h>
 #include <mem/shfiles.h>
+#include <mem/swapmap.h>
+#include <mem/virtmem.h>
+#include <task/proc.h>
 #include <task/smp.h>
 #include <task/thread.h>
-#include <task/proc.h>
-#include <vfs/vfs.h>
 #include <vfs/openfile.h>
-#include <cppsupport.h>
-#include <spinlock.h>
-#include <ostream.h>
-#include <mutex.h>
-#include <util.h>
-#include <log.h>
-#include <errno.h>
-#include <string.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <common.h>
+#include <cppsupport.h>
+#include <errno.h>
+#include <log.h>
+#include <mutex.h>
+#include <ostream.h>
+#include <spinlock.h>
+#include <string.h>
+#include <util.h>
 
 /**
  * The vmm-module manages the user-part of a process's virtual addressspace. That means it

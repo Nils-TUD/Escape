@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <common.h>
 #include <dbg/lines.h>
-#include <video.h>
-#include <videolog.h>
+#include <common.h>
 #include <cppsupport.h>
 #include <string.h>
+#include <video.h>
+#include <videolog.h>
 
 #define CONS_EXIT			-1234
 /* has to be a power of 2 */

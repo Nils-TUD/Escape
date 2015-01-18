@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int fflush(FILE *stream) {
 	return bflush(stream);

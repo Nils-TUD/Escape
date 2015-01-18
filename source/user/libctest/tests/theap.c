@@ -19,9 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define SINGLE_BYTE_COUNT 10000
 

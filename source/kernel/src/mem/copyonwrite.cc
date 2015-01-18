@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/cache.h>
-#include <mem/pagedir.h>
 #include <mem/copyonwrite.h>
+#include <mem/pagedir.h>
 #include <task/proc.h>
-#include <util.h>
-#include <spinlock.h>
-#include <video.h>
 #include <assert.h>
+#include <common.h>
+#include <spinlock.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 esc::SList<CopyOnWrite::Entry> CopyOnWrite::frames[HEAP_SIZE];
 SpinLock CopyOnWrite::lock;

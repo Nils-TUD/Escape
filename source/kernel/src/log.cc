@@ -17,23 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
-#include <task/proc.h>
+#include <sys/esccodes.h>
 #include <task/filedesc.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
+#include <task/proc.h>
+#include <task/thread.h>
 #include <vfs/file.h>
+#include <vfs/node.h>
 #include <vfs/openfile.h>
-#include <video.h>
-#include <log.h>
-#include <spinlock.h>
+#include <vfs/vfs.h>
+#include <assert.h>
+#include <common.h>
 #include <config.h>
 #include <cppsupport.h>
-#include <sys/esccodes.h>
+#include <log.h>
+#include <spinlock.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <string.h>
+#include <video.h>
 
 #define TAB_WIDTH		4
 #define LOG_DIR			"/sys"

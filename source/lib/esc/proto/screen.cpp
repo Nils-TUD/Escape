@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/screen.h>
 #include <sys/common.h>
 #include <sys/mman.h>
-#include <esc/proto/screen.h>
 #include <algorithm>
 
 namespace esc {

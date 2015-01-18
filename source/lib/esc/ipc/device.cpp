@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/messages.h>
 #include <esc/ipc/device.h>
 #include <esc/vthrow.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 
 namespace esc {
 

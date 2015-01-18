@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <time.h>
+
 #include "timeintern.h"
 
 struct tm *gmtime(const time_t *timer) {

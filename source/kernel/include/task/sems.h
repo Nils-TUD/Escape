@@ -21,8 +21,8 @@
 
 #include <common.h>
 #include <cppsupport.h>
-#include <semaphore.h>
 #include <ostream.h>
+#include <semaphore.h>
 
 class Proc;
 

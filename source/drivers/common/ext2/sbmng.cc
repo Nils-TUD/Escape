@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/io.h>
-#include <sys/thread.h>
-#include <sys/endian.h>
 #include <fs/blockcache.h>
 #include <fs/fsdev.h>
+#include <sys/common.h>
+#include <sys/endian.h>
+#include <sys/io.h>
+#include <sys/thread.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "ext2.h"
-#include "rw.h"
 #include "inodecache.h"
+#include "rw.h"
 #include "sbmng.h"
 
 Ext2SBMng::Ext2SBMng(Ext2FileSystem *fs) : _sbDirty(false), _fs(fs) {

@@ -18,11 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <sys/messages.h>
 #include <sys/keycodes.h>
+#include <sys/messages.h>
 
-#include "set1.h"
 #include "keyboard.h"
+#include "set1.h"
 
 ScancodeSet1::Entry ScancodeSet1::sc2kc[] = {
 	/* 00 */	{0,				0},

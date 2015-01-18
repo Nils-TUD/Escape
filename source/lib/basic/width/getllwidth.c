@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <sys/width.h>
+#include <stddef.h>
 
 size_t getllwidth(llong l) {
 	size_t c = 0;

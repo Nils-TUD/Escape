@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/layout/layout.h>
 #include <gui/control.h>
-#include <utility>
+#include <sys/common.h>
 #include <map>
+#include <utility>
 
 namespace gui {
 	/**

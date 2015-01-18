@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/messages.h>
-#include <sys/driver.h>
-#include <sys/mman.h>
-#include <sys/io.h>
-#include <esc/proto/nic.h>
-#include <esc/proto/pci.h>
 #include <esc/ipc/clientdevice.h>
 #include <esc/ipc/nicdevice.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/pci.h>
+#include <sys/common.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
 #include <assert.h>
 #include <mutex>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "ne2kdev.h"
 

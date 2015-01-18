@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/kheap.h>
 #include <mem/cache.h>
-#include <mem/physmem.h>
 #include <mem/dynarray.h>
-#include <task/proc.h>
+#include <mem/kheap.h>
+#include <mem/physmem.h>
 #include <sys/test.h>
+#include <task/proc.h>
+#include <common.h>
+
 #include "testutils.h"
 
 static size_t mappedPages;

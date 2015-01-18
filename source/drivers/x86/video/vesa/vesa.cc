@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
-#include <sys/driver.h>
-#include <sys/debug.h>
-#include <sys/mman.h>
-#include <sys/messages.h>
 #include <esc/ipc/screendevice.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/driver.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
 #include <vbe/vbe.h>
-#include <errno.h>
-#include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <vector>
-#include <memory>
 
-#include "vesatui.h"
+#include "vesa.h"
 #include "vesagui.h"
 #include "vesascreen.h"
-#include "vesa.h"
+#include "vesatui.h"
 
 using namespace esc;
 

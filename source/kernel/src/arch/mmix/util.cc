@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <dbg/console.h>
 #include <dbg/kb.h>
-#include <mem/virtmem.h>
 #include <mem/cache.h>
-#include <interrupts.h>
-#include <util.h>
+#include <mem/virtmem.h>
+#include <common.h>
 #include <cpu.h>
-#include <video.h>
+#include <interrupts.h>
 #include <stdarg.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 static Util::FuncCall frames[1] = {
 	{0,0,""}

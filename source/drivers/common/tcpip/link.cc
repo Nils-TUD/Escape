@@ -19,12 +19,12 @@
 
 #include <sys/common.h>
 #include <sys/messages.h>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 
-#include "common.h"
 #include "proto/ethernet.h"
+#include "common.h"
 
 #define PRINT_PACKETS	0
 

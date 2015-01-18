@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <stdio.h>
 #include <map>
+#include <stdio.h>
 
 #include "ctrlcon.h"
 

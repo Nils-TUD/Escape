@@ -19,11 +19,11 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdlib.h>
-#include <functional>
 #include <algorithm>
-#include <vector>
+#include <functional>
+#include <stdlib.h>
 #include <utility>
+#include <vector>
 
 using namespace std;
 

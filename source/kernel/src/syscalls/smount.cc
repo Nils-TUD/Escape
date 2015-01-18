@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <sys/stat.h>
-#include <vfs/vfs.h>
-#include <vfs/ms.h>
-#include <vfs/openfile.h>
 #include <task/filedesc.h>
 #include <task/proc.h>
-#include <syscalls.h>
+#include <vfs/ms.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <stdlib.h>
+#include <syscalls.h>
 
 static int getMS(Proc *p,int ms,OpenFile **msfile,VFSMS **msobj,uint perm) {
 	*msfile = FileDesc::request(p,ms);

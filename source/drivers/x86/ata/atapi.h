@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+
 #include "device.h"
 
 void atapi_softReset(sATADevice *device);

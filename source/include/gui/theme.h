@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/graphics/color.h>
+#include <sys/common.h>
 #include <vector>
 
 namespace gui {

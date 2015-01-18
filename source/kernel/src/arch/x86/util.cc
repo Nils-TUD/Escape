@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <esc/ipc/ipcbuf.h>
+#include <sys/messages.h>
 #include <task/proc.h>
 #include <task/smp.h>
 #include <vfs/vfs.h>
+#include <common.h>
 #include <util.h>
-#include <sys/messages.h>
-#include <esc/ipc/ipcbuf.h>
 
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5

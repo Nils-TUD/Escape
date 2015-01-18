@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <sys/atomic.h>
+#include <sys/common.h>
 
 static inline int usemcrt(tUserSem *sem,long val) {
 	sem->value = val;

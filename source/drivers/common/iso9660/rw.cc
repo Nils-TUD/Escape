@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <fs/fsdev.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/thread.h>
-#include <fs/fsdev.h>
 #include <stdio.h>
 
 #include "iso9660.h"

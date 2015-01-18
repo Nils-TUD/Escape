@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <sys/cmdargs.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #define WC_BYTES	1
 #define WC_WORDS	2

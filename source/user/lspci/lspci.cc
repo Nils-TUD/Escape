@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/pci.h>
+#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <sys/cmdargs.h>
-#include <esc/proto/pci.h>
 #include <stdio.h>
 #include <stdlib.h>
 

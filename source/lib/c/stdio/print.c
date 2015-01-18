@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 int print(const char *msg,...) {
 	va_list ap;

@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/proto/ui.h>
+#include <sys/common.h>
 
-#include "stone.h"
 #include "grid.h"
+#include "stone.h"
 
 class UI {
 	enum {

@@ -17,27 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/cache.h>
-#include <mem/virtmem.h>
-#include <mem/useraccess.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <task/filedesc.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/channel.h>
-#include <vfs/device.h>
-#include <vfs/openfile.h>
-#include <video.h>
-#include <spinlock.h>
-#include <log.h>
-#include <sys/messages.h>
 #include <esc/ipc/ipcbuf.h>
 #include <esc/proto/file.h>
-#include <string.h>
+#include <mem/cache.h>
+#include <mem/useraccess.h>
+#include <mem/virtmem.h>
+#include <sys/messages.h>
+#include <task/filedesc.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <vfs/channel.h>
+#include <vfs/device.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <common.h>
 #include <errno.h>
+#include <log.h>
+#include <spinlock.h>
+#include <string.h>
+#include <video.h>
 
 #define PRINT_MSGS			0
 

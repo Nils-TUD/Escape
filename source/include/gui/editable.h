@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/control.h>
+#include <sys/common.h>
+#include <assert.h>
 #include <limits>
 #include <string>
-#include <assert.h>
 
 namespace gui {
 	class Editable : public Control {

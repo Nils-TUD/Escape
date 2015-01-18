@@ -20,8 +20,8 @@
 #pragma once
 
 #include <common.h>
-#include <spinlock.h>
 #include <lockguard.h>
+#include <spinlock.h>
 
 #if defined(__i586__)
 #	include <arch/i586/mem/physmem.h>

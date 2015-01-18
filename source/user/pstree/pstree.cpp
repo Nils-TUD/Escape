@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/cmdargs.h>
-#include <info/process.h>
 #include <esc/proto/vterm.h>
-#include <iostream>
+#include <esc/env.h>
+#include <info/process.h>
+#include <sys/cmdargs.h>
+#include <sys/common.h>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <stdlib.h>
-#include <esc/env.h>
 
 using namespace std;
 using namespace info;

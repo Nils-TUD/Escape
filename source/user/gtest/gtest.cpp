@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/layout/iconlayout.h>
 #include <gui/application.h>
-#include <gui/window.h>
-#include <gui/button.h>
-#include <gui/editable.h>
-#include <gui/combobox.h>
-#include <gui/checkbox.h>
-#include <gui/progressbar.h>
 #include <gui/border.h>
-#include <gui/splitter.h>
+#include <gui/button.h>
+#include <gui/checkbox.h>
+#include <gui/combobox.h>
+#include <gui/editable.h>
 #include <gui/image.h>
+#include <gui/progressbar.h>
 #include <gui/scrollpane.h>
-#include <sys/proc.h>
+#include <gui/splitter.h>
+#include <gui/window.h>
+#include <sys/common.h>
 #include <sys/debug.h>
-#include <sys/messages.h>
 #include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
 #include <sys/thread.h>
 #include <iostream>
 #include <stdlib.h>

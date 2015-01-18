@@ -18,16 +18,16 @@
  */
 
 #include <sys/common.h>
+#include <sys/conf.h>
 #include <sys/esccodes.h>
 #include <sys/proc.h>
-#include <sys/thread.h>
 #include <sys/sync.h>
-#include <sys/conf.h>
+#include <sys/thread.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "keystrokes.h"
 #include "jobmng.h"
+#include "keystrokes.h"
 #include "screens.h"
 
 std::mutex Keystrokes::mutex;

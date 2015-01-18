@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/pagedir.h>
-#include <mem/virtmem.h>
 #include <mem/useraccess.h>
-#include <vfs/vfs.h>
-#include <vfs/openfile.h>
-#include <vfs/node.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <task/filedesc.h>
-#include <syscalls.h>
+#include <mem/virtmem.h>
 #include <sys/messages.h>
+#include <task/filedesc.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <assert.h>
+#include <common.h>
 #include <errno.h>
 #include <string.h>
-#include <assert.h>
+#include <syscalls.h>
 #include <utime.h>
 
 int Syscalls::open(Thread *t,IntrptStackFrame *stack) {

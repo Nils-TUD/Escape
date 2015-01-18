@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <esc/col/islist.h>
+#include <common.h>
 #include <semaphore.h>
 
 class Thread;

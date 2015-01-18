@@ -19,9 +19,9 @@
 
 #include <common.h>
 #include <interrupts.h>
+#include <log.h>
 #include <ostream.h>
 #include <string.h>
-#include <log.h>
 
 const size_t InterruptsBase::IRQ_SEM_COUNT = IRQ_COUNT;
 SpinLock InterruptsBase::userIrqsLock;

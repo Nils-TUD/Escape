@@ -17,19 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/keycodes.h>
-#include <sys/io.h>
-#include <sys/driver.h>
 #include <esc/ipc/vtermdevice.h>
+#include <sys/common.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/keycodes.h>
+#include <vterm/vtctrl.h>
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <vterm/vtctrl.h>
-#include <vterm/vtin.h>
-#include <vterm/vtout.h>
 
 #define RLBUF_INCR			20
 

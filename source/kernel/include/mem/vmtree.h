@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <common.h>
 #include <esc/col/dlisttreap.h>
 #include <esc/col/slist.h>
 #include <mem/shfiles.h>
 #include <vfs/fileid.h>
+#include <common.h>
 #include <mutex.h>
 
 class Region;

@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <gui/application.h>
+#include <gui/scrollpane.h>
+#include <gui/window.h>
+#include <shell/history.h>
+#include <shell/shell.h>
 #include <sys/common.h>
 #include <sys/debug.h>
-#include <sys/io.h>
 #include <sys/driver.h>
-#include <dirent.h>
-#include <sys/thread.h>
+#include <sys/io.h>
 #include <sys/proc.h>
-#include <gui/application.h>
-#include <gui/window.h>
-#include <gui/scrollpane.h>
-#include <esc/proto/vterm.h>
-#include <shell/shell.h>
-#include <shell/history.h>
+#include <sys/thread.h>
+#include <dirent.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 
-#include "shellcontrol.h"
 #include "guiterm.h"
+#include "shellcontrol.h"
 
 #define DEF_COLS			80
 #define DEF_ROWS			25

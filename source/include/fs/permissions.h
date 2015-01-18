@@ -19,13 +19,13 @@
 
 #pragma once
 
+#include <fs/common.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <fs/common.h>
 #include <errno.h>
-#include <utime.h>
 #include <stdio.h>
+#include <utime.h>
 
 /**
  * Utility functions for filesystem related permission checking

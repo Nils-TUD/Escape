@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/fpu.h>
+#include <mem/cache.h>
 #include <task/smp.h>
 #include <task/thread.h>
-#include <mem/cache.h>
-#include <video.h>
+#include <common.h>
 #include <cpu.h>
-#include <util.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 /* current FPU state-memory */
 FPU::XState ***FPU::curStates = NULL;

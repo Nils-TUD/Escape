@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <dirent.h>
-#include <sys/proc.h>
 #include <sys/cmdargs.h>
+#include <sys/common.h>
+#include <sys/proc.h>
+#include <ctype.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #define MAX_ARG_LEN		1024
 

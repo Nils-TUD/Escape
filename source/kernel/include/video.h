@@ -19,11 +19,11 @@
 
 #pragma once
 
+#include <assert.h>
 #include <common.h>
+#include <lockguard.h>
 #include <ostream.h>
 #include <spinlock.h>
-#include <lockguard.h>
-#include <assert.h>
 #include <stdarg.h>
 
 class VideoLog;

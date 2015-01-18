@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <task/signals.h>
-#include <task/sched.h>
-#include <task/timer.h>
-#include <task/filedesc.h>
-#include <task/sems.h>
 #include <mem/cache.h>
 #include <mem/pagedir.h>
+#include <task/filedesc.h>
+#include <task/proc.h>
+#include <task/sched.h>
+#include <task/sems.h>
+#include <task/signals.h>
+#include <task/thread.h>
+#include <task/timer.h>
 #include <vfs/vfs.h>
+#include <common.h>
+#include <errno.h>
+#include <string.h>
 #include <syscalls.h>
 #include <util.h>
-#include <string.h>
-#include <errno.h>
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getTid());

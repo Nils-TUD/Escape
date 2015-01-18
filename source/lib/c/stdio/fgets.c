@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 char *fgets(char *str,size_t max,FILE *file) {
 	return bgets(file,str,max);

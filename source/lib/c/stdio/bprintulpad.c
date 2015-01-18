@@ -19,8 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/width.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int bprintulpad(FILE *f,ullong u,uint base,uint pad,uint flags) {
 	int count = 0;

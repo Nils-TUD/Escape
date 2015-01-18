@@ -20,8 +20,9 @@
 #include <sys/common.h>
 #include <sys/sllist.h>
 #include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "jobs.h"
 
 static sSLList *jobs = NULL;

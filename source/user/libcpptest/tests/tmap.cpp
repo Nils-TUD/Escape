@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdlib.h>
 #include <map>
+#include <stdlib.h>
 #include <string>
 
 using namespace std;

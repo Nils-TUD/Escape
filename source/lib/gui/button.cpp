@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/button.h>
 #include <gui/control.h>
+#include <sys/common.h>
 
 namespace gui {
 	Size Button::getPrefSize() const {

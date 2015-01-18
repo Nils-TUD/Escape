@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <vfs/node.h>
+#include <common.h>
 
 class VFSFile : public VFSNode {
 	/* the initial size of the write-cache for file-nodes */

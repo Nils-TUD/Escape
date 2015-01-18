@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int bputs(FILE *f,const char *str,int precision) {
 	char c;

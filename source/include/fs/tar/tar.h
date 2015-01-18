@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <usergroup/user.h>
 #include <usergroup/group.h>
+#include <usergroup/user.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -20,15 +20,15 @@
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/io.h>
-#include <dirent.h>
-#include <sys/width.h>
-#include <sys/thread.h>
 #include <sys/proc.h>
-#include <sys/time.h>
 #include <sys/syscalls.h>
+#include <sys/thread.h>
+#include <sys/time.h>
+#include <sys/width.h>
+#include <dirent.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 
 #define PROCINFO_BUF_SIZE	256
 #define DBG_FFL_PADZEROS	1

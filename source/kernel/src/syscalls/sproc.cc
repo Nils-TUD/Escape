@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/elf.h>
-#include <task/signals.h>
-#include <task/uenv.h>
-#include <task/timer.h>
-#include <task/groups.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
+#include <mem/pagedir.h>
 #include <mem/useraccess.h>
-#include <syscalls.h>
-#include <vfs/vfs.h>
+#include <mem/virtmem.h>
+#include <task/elf.h>
+#include <task/groups.h>
+#include <task/proc.h>
+#include <task/signals.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <task/uenv.h>
 #include <vfs/node.h>
-#include <util.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <errno.h>
 #include <string.h>
+#include <syscalls.h>
+#include <util.h>
 
 int Syscalls::getpid(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,t->getProc()->getPid());

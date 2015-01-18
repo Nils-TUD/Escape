@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/endian.h>
 #include <esc/cmdargs.h>
 #include <esc/vthrow.h>
-#include <z/gzip.h>
+#include <sys/common.h>
+#include <sys/endian.h>
 #include <z/deflate.h>
-#include <stdlib.h>
+#include <z/gzip.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static int compr = z::Deflate::FIXED;
 static int tostdout = false;

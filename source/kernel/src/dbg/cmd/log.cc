@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <dbg/console.h>
 #include <dbg/cmd/log.h>
+#include <dbg/console.h>
+#include <common.h>
 #include <string.h>
 
 int cons_cmd_log(OStream &os,size_t argc,char **argv) {

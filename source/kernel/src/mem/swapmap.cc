@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/swapmap.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
+#include <mem/pagedir.h>
+#include <mem/swapmap.h>
+#include <assert.h>
+#include <common.h>
 #include <spinlock.h>
 #include <video.h>
-#include <assert.h>
 
 /* we need to maintain a reference-count here, because if we clone a process and a not-shareable
  * region contains swapped out pages, multiple regions will a share block. because we have to give

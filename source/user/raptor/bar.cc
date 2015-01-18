@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "ui.h"
+
 #include "bar.h"
+#include "ui.h"
 
 #define BAR_WIDTH		6
 

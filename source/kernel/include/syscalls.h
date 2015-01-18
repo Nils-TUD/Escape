@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <task/thread.h>
 #include <mem/useraccess.h>
+#include <task/thread.h>
+#include <common.h>
 #include <interrupts.h>
 #include <string.h>
 

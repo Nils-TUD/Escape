@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/pagedir.h>
 #include <task/proc.h>
 #include <task/smp.h>
-#include <util.h>
 #include <assert.h>
+#include <common.h>
+#include <util.h>
 
 extern void *proc0TLPD;
 uintptr_t PageDir::freeAreaAddr = KFREE_AREA;

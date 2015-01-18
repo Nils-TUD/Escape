@@ -20,11 +20,12 @@
 #include <sys/common.h>
 #include <sys/width.h>
 #include <stdlib.h>
-#include "value.h"
-#include "vector.h"
-#include "../mem.h"
+
 #include "../ast/cmpexpr.h"
 #include "../ast/functionstmt.h"
+#include "../mem.h"
+#include "value.h"
+#include "vector.h"
 
 static sVector *val_cloneArray(const sValue *v);
 static void val_destroyValue(sValue *v);

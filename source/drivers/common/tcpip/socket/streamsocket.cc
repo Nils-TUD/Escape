@@ -19,10 +19,10 @@
 
 #include <sys/common.h>
 
-#include "../common.h"
 #include "../proto/ethernet.h"
 #include "../proto/ipv4.h"
 #include "../proto/tcp.h"
+#include "../common.h"
 #include "streamsocket.h"
 
 /**

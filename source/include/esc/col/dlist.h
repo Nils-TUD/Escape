@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/col/node.h>
+#include <sys/common.h>
 
 namespace esc {
 

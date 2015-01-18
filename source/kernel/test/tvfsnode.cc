@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <vfs/vfs.h>
+#include <sys/test.h>
+#include <task/proc.h>
+#include <task/thread.h>
 #include <vfs/node.h>
 #include <vfs/openfile.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <video.h>
-#include <sys/test.h>
-#include <string.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <errno.h>
+#include <string.h>
+#include <video.h>
+
 #include "testutils.h"
 
 static void test_vfsn();

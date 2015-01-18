@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/pagedir.h>
 #include <task/proc.h>
 #include <assert.h>
+#include <common.h>
 
 #define SHPT_COUNT		((DIR_MAP_AREA - KHEAP_START) / PT_SIZE)
 

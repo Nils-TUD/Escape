@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/elf.h>
-#include <task/proc.h>
-#include <task/filedesc.h>
+#include <mem/cache.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
 #include <mem/virtmem.h>
-#include <mem/cache.h>
-#include <vfs/vfs.h>
+#include <task/elf.h>
+#include <task/filedesc.h>
+#include <task/proc.h>
 #include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <assert.h>
+#include <common.h>
+#include <errno.h>
 #include <log.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <string.h>
-#include <errno.h>
-#include <assert.h>
 
 int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 	Thread *t = Thread::getRunning();

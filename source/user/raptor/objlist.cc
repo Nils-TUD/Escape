@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <assert.h>
+
+#include "game.h"
 #include "object.h"
 #include "objlist.h"
-#include "game.h"
 
 static sObject *first;
 

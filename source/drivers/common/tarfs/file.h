@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/stat.h>
-#include <sys/endian.h>
 #include <esc/pathtree.h>
+#include <sys/common.h>
+#include <sys/endian.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <z/gzip.h>
 #include <z/crc32.h>
-#include <esc/vthrow.h>
-#include <time.h>
+#include <z/gzip.h>
 #include <iomanip>
+#include <time.h>
 
 namespace z {
 

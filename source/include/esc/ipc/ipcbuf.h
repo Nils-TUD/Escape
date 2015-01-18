@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <string.h>
 #include <assert.h>
+#include <string.h>
 
 namespace esc {
 

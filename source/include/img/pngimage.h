@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <img/image.h>
+#include <sys/common.h>
 #include <string>
 
 namespace img {

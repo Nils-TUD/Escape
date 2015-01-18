@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <math.h>
 #include <assert.h>
+#include <math.h>
 
 static void test_math(void);
 static void test_round(void);

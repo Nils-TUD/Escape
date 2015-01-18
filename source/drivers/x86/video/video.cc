@@ -21,8 +21,8 @@
 #include <sys/thread.h>
 #include <stdlib.h>
 
-#include "vga/vga.h"
 #include "vesa/vesa.h"
+#include "vga/vga.h"
 #include "x86emu/x86emu.h"
 #include "vbe.h"
 

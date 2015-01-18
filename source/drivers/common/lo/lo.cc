@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <esc/proto/nic.h>
 #include <esc/ipc/nicdevice.h>
-#include <stdlib.h>
+#include <esc/proto/nic.h>
+#include <sys/common.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 class LoDriver : public esc::NICDriver {
 public:

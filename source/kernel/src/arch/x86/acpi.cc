@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/acpi.h>
-#include <arch/x86/lapic.h>
 #include <arch/x86/ioapic.h>
-#include <task/smp.h>
-#include <task/proc.h>
-#include <vfs/dir.h>
+#include <arch/x86/lapic.h>
 #include <mem/pagedir.h>
-#include <log.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <vfs/dir.h>
+#include <common.h>
 #include <config.h>
+#include <log.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <string.h>
 
 #define MAX_ACPI_PAGES		32
 #define BDA_EBDA			0x40E	/* TODO not always available? */

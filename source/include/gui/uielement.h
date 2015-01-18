@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/messages.h>
-#include <gui/graphics/graphics.h>
 #include <gui/event/event.h>
 #include <gui/event/subscriber.h>
+#include <gui/graphics/graphics.h>
 #include <gui/application.h>
 #include <gui/theme.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 #include <memory>
 #include <vector>
 

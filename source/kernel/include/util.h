@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <task/thread.h>
+#include <common.h>
 #include <ksymbols.h>
 #include <stdarg.h>
 

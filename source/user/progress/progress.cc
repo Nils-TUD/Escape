@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <esc/env.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <esc/proto/vterm.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <esc/env.h>
+#include <stdlib.h>
 
 static void sigTerm(A_UNUSED int sig) {
 	printf("Got SIGTERM, but I won't terminate :P\n");

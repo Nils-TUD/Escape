@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <errno.h>
+#include <stddef.h>
 #include <string.h>
 
 static const char *msgs[] = {

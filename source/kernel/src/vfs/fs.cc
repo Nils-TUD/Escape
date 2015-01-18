@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
+#include <esc/ipc/ipcbuf.h>
 #include <mem/cache.h>
 #include <mem/pagedir.h>
 #include <mem/virtmem.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/fs.h>
+#include <sys/messages.h>
+#include <task/proc.h>
 #include <vfs/channel.h>
+#include <vfs/fs.h>
+#include <vfs/node.h>
 #include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
+#include <config.h>
+#include <cppsupport.h>
+#include <errno.h>
+#include <spinlock.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <spinlock.h>
-#include <cppsupport.h>
-#include <config.h>
-#include <esc/ipc/ipcbuf.h>
-#include <sys/messages.h>
-#include <string.h>
-#include <errno.h>
 
 static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,esc::IPCBuf &ib) {
 	ssize_t res;

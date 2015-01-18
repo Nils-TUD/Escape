@@ -19,17 +19,17 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <gui/graphics/graphicsbuffer.h>
-#include <gui/graphics/font.h>
 #include <gui/graphics/color.h>
-#include <gui/graphics/size.h>
+#include <gui/graphics/font.h>
+#include <gui/graphics/graphicsbuffer.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/rectangle.h>
+#include <gui/graphics/size.h>
 #include <gui/application.h>
 #include <gui/enums.h>
-#include <math.h>
+#include <sys/common.h>
 #include <assert.h>
+#include <math.h>
 
 namespace gui {
 	/**

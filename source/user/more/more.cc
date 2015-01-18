@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
+#include <esc/proto/vterm.h>
+#include <esc/env.h>
 #include <sys/cmdargs.h>
+#include <sys/common.h>
 #include <sys/esccodes.h>
+#include <sys/io.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <dirent.h>
-#include <sys/io.h>
-#include <esc/proto/vterm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <esc/env.h>
 
 static void waitForKeyPress(FILE *vt);
 static void usage(const char *name) {

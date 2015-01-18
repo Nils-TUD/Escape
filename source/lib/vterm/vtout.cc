@@ -18,18 +18,17 @@
  */
 
 #include <sys/common.h>
-#include <sys/keycodes.h>
+#include <sys/esccodes.h>
 #include <sys/io.h>
+#include <sys/keycodes.h>
 #include <sys/log.h>
 #include <sys/messages.h>
-#include <sys/esccodes.h>
+#include <vterm/vtctrl.h>
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-
-#include <vterm/vtout.h>
-#include <vterm/vtin.h>
-#include <vterm/vtctrl.h>
 
 static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty);
 static void vtout_newLine(sVTerm *vt);

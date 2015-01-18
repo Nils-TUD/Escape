@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/io.h>
-#include <sys/proc.h>
-#include <sys/driver.h>
-#include <sys/messages.h>
-#include <sys/thread.h>
-#include <sys/sync.h>
-#include <sys/conf.h>
 #include <esc/proto/file.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <time.h>
+#include <sys/common.h>
+#include <sys/conf.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
+#include <sys/sync.h>
+#include <sys/thread.h>
 #include <mutex>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "../modules.h"
 

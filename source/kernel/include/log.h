@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <spinlock.h>
-#include <ostream.h>
 #include <vfs/file.h>
 #include <vfs/vfs.h>
+#include <common.h>
+#include <ostream.h>
+#include <spinlock.h>
 #include <stdarg.h>
 
 class Log : public OStream {

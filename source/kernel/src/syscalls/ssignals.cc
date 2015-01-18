@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <mem/pagedir.h>
+#include <task/proc.h>
 #include <task/signals.h>
 #include <task/thread.h>
-#include <task/proc.h>
 #include <task/uenv.h>
-#include <mem/pagedir.h>
-#include <syscalls.h>
+#include <common.h>
 #include <errno.h>
+#include <syscalls.h>
 
 int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 	int signal = (int)SYSC_ARG1(stack);

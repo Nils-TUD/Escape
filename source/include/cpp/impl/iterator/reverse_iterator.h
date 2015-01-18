@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <stddef.h>
 #include <iterator>
+#include <stddef.h>
 
 namespace std {
 	template<class Iterator>

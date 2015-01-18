@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <gui/event/subscriber.h>
 #include <sys/common.h>
 #include <sys/test.h>
-#include <gui/event/subscriber.h>
 #include <tuple>
 
 using namespace std;

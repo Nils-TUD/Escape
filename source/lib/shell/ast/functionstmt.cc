@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
-#include "node.h"
-#include "functionstmt.h"
+
 #include "../mem.h"
+#include "functionstmt.h"
+#include "node.h"
 
 sASTNode *ast_createFunctionStmt(char *name,sASTNode *stmts) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

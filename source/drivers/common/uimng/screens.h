@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <esc/proto/screen.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <esc/proto/screen.h>
 #include <vector>
 
 #include "clients.h"

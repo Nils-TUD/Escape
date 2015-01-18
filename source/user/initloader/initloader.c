@@ -18,12 +18,12 @@
  */
 
 #include <sys/common.h>
-#include <sys/syscalls.h>
-#include <sys/proc.h>
-#include <sys/thread.h>
 #include <sys/conf.h>
-#include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/proc.h>
+#include <sys/stat.h>
+#include <sys/syscalls.h>
+#include <sys/thread.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>

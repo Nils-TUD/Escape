@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/graphics/size.h>
+#include <sys/common.h>
 #include <iostream>
 
 namespace gui {

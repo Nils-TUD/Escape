@@ -19,9 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <list>
+#include <stdlib.h>
 #include <vector>
 
 using namespace std;

@@ -19,12 +19,12 @@
 
 #include <sys/common.h>
 #include <sys/debug.h>
-#include <string>
-#include <exception>
-#include <string.h>
-#include <stdlib.h>
-#include <sstream>
 #include <ctype.h>
+#include <exception>
+#include <sstream>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
 
 namespace std {
 	// === constructors ===

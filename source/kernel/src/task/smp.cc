@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <task/smp.h>
+#include <mem/pagedir.h>
 #include <task/proc.h>
-#include <log.h>
-#include <config.h>
-#include <util.h>
-#include <cpu.h>
+#include <task/smp.h>
 #include <assert.h>
+#include <common.h>
+#include <config.h>
+#include <cpu.h>
+#include <log.h>
 #include <string.h>
+#include <util.h>
 
 bool SMPBase::enabled;
 esc::SList<SMP::CPU> SMPBase::cpuList;

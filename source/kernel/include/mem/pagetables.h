@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <common.h>
 #include <mem/physmem.h>
-#include <cppsupport.h>
 #include <assert.h>
+#include <common.h>
+#include <cppsupport.h>
 
 #if defined(__i586__)
 #	include <arch/i586/mem/layout.h>

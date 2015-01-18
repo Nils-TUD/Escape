@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/device.h>
 #include <sys/common.h>
-#include <sys/proc.h>
-#include <sys/thread.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
-#include <esc/ipc/device.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <sys/wait.h>
+#include <iostream>
 #include <signal.h>
 #include <stdlib.h>
-#include <iostream>
 
 #include "process/processmanager.h"
 #include "initerror.h"

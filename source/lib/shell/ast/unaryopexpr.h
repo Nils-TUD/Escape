@@ -20,8 +20,9 @@
 #pragma once
 
 #include <sys/common.h>
-#include "node.h"
+
 #include "../exec/env.h"
+#include "node.h"
 
 #define UN_OP_NEG		0
 #define UN_OP_PREINC	1

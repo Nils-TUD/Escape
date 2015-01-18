@@ -20,8 +20,8 @@
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <usergroup/user.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void *user_parseListFromFile(const char *file,size_t *count,parse_func parse) {

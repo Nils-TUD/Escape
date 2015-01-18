@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/application.h>
-#include <gui/window.h>
 #include <gui/image.h>
 #include <gui/imagebutton.h>
-#include <vector>
+#include <gui/window.h>
+#include <sys/common.h>
 #include <algorithm>
+#include <vector>
 
 using namespace gui;
 using namespace std;

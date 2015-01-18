@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
 #include <mem/dynarray.h>
+#include <mem/pagedir.h>
 #include <sys/test.h>
+#include <common.h>
+
 #include "testutils.h"
 
 /* use the sllnode-area here and start a bit above to be sure that its not used yet */

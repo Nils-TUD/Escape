@@ -21,9 +21,10 @@
 
 #include <sys/common.h>
 #include <sys/sllist.h>
-#include "node.h"
+
 #include "../exec/env.h"
 #include "../exec/jobs.h"
+#include "node.h"
 
 typedef struct {
 	bool runInBG;

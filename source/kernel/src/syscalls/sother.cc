@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <boot.h>
-#include <interrupts.h>
-#include <task/timer.h>
-#include <mem/pagedir.h>
-#include <mem/cache.h>
-#include <task/thread.h>
 #include <dbg/console.h>
-#include <syscalls.h>
-#include <log.h>
+#include <mem/cache.h>
+#include <mem/pagedir.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <boot.h>
+#include <common.h>
 #include <config.h>
-#include <video.h>
 #include <errno.h>
+#include <interrupts.h>
+#include <log.h>
+#include <syscalls.h>
+#include <video.h>
 
 int Syscalls::init(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = Boot::init(stack);

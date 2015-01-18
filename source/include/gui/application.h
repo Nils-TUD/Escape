@@ -19,22 +19,22 @@
 
 #pragma once
 
+#include <esc/proto/winmng.h>
+#include <gui/event/subscriber.h>
+#include <gui/graphics/pos.h>
+#include <gui/graphics/size.h>
+#include <gui/theme.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <sys/thread.h>
 #include <sys/sync.h>
-#include <gui/graphics/size.h>
-#include <gui/graphics/pos.h>
-#include <gui/event/subscriber.h>
-#include <gui/theme.h>
-#include <esc/proto/winmng.h>
+#include <sys/thread.h>
 #include <exception>
 #include <functor.h>
-#include <memory>
-#include <vector>
 #include <list>
-#include <signal.h>
+#include <memory>
 #include <mutex>
+#include <signal.h>
+#include <vector>
 
 namespace gui {
 	class Window;

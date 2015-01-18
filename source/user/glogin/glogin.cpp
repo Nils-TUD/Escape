@@ -17,23 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/proc.h>
-#include <sys/mount.h>
-#include <gui/application.h>
 #include <gui/graphics/color.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/layout/gridlayout.h>
-#include <gui/window.h>
+#include <gui/application.h>
+#include <gui/border.h>
 #include <gui/combobox.h>
 #include <gui/editable.h>
-#include <gui/border.h>
-#include <usergroup/user.h>
-#include <usergroup/passwd.h>
+#include <gui/window.h>
+#include <sys/common.h>
+#include <sys/mount.h>
+#include <sys/proc.h>
 #include <usergroup/group.h>
+#include <usergroup/passwd.h>
+#include <usergroup/user.h>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory>
 
 #define LOG_PATH		"/sys/log"
 #define DESKTOP_PROG	"desktop"

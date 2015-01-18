@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int fisatty(FILE *file) {
 	return file->istty = isatty(file->in.fd);

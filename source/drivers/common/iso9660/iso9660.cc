@@ -21,17 +21,17 @@
 #include <sys/debug.h>
 #include <sys/io.h>
 #include <sys/proc.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include <time.h>
 
+#include "dir.h"
+#include "direcache.h"
+#include "file.h"
 #include "iso9660.h"
 #include "rw.h"
-#include "dir.h"
-#include "file.h"
-#include "direcache.h"
 
 int main(int argc,char *argv[]) {
 	char fspath[MAX_PATH_LEN];

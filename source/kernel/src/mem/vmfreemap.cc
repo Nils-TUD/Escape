@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/vmfreemap.h>
 #include <mem/cache.h>
-#include <video.h>
+#include <mem/vmfreemap.h>
 #include <assert.h>
+#include <common.h>
+#include <video.h>
 
 /**
  * The idea here is to allow a quick allocation and release of areas in the free-area of the

@@ -17,29 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/task/ioports.h>
-#include <arch/x86/pic.h>
-#include <arch/x86/lapic.h>
 #include <arch/x86/ioapic.h>
+#include <arch/x86/lapic.h>
+#include <arch/x86/pic.h>
 #include <arch/x86/pit.h>
-#include <dbg/kb.h>
 #include <dbg/console.h>
+#include <dbg/kb.h>
 #include <mem/cache.h>
 #include <mem/virtmem.h>
+#include <sys/keycodes.h>
+#include <sys/syscalls.h>
 #include <task/signals.h>
 #include <task/smp.h>
 #include <task/thread.h>
-#include <task/uenv.h>
 #include <task/timer.h>
-#include <syscalls.h>
+#include <task/uenv.h>
+#include <common.h>
+#include <config.h>
 #include <cpu.h>
 #include <interrupts.h>
+#include <syscalls.h>
 #include <util.h>
 #include <video.h>
-#include <config.h>
-#include <sys/keycodes.h>
-#include <sys/syscalls.h>
 
 #define DEBUG_PAGEFAULTS		0
 

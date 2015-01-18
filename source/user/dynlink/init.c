@@ -20,9 +20,10 @@
 #include <sys/common.h>
 #include <sys/elf.h>
 #include <sys/proc.h>
+
 #include "init.h"
-#include "setup.h"
 #include "lookup.h"
+#include "setup.h"
 
 typedef uintptr_t (*fPreinit)(uintptr_t,int,char *[]);
 

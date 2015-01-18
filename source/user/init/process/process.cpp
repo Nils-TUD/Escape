@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+
 #include "process.h"
 
 bool operator<(Process &p1,Process &p2) {

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/proto/screen.h>
+#include <sys/common.h>
 
 #define FONT_WIDTH	8
 #define FONT_HEIGHT	16

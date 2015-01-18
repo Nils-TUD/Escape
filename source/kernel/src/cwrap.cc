@@ -18,8 +18,8 @@
  */
 
 #include <common.h>
-#include <videolog.h>
 #include <cwrap.h>
+#include <videolog.h>
 
 static VideoLog vl;
 

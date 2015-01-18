@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <gui/layout/gridlayout.h>
 #include <gui/layout/flowlayout.h>
+#include <gui/layout/gridlayout.h>
 #include <gui/application.h>
-#include <gui/window.h>
 #include <gui/combobox.h>
+#include <gui/window.h>
+#include <sys/common.h>
 #include <sstream>
 
 using namespace std;

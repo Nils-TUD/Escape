@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/timer.h>
 #include <task/proc.h>
-#include <task/thread.h>
 #include <task/smp.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <common.h>
 #include <config.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
-#include <ctype.h>
 
 bool Config::logToVGA = false;
 bool Config::lineByLine = false;

@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
 #include <mem/pagedir.h>
+#include <task/proc.h>
+#include <common.h>
 
 int ProcBase::cloneArch(A_UNUSED Proc *dst,A_UNUSED const Proc *src) {
 	/* nothing to do */

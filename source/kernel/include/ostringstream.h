@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <mem/cache.h>
+#include <common.h>
 #include <ostream.h>
 
 class OStringStream : public OStream {

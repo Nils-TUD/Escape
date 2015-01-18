@@ -20,9 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
+
+#include "../exec/env.h"
 #include "node.h"
 #include "stmtlist.h"
-#include "../exec/env.h"
 
 typedef struct {
 	char *name;

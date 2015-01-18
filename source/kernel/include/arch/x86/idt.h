@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <arch/x86/desc.h>
+#include <common.h>
 
 class IDT {
 	IDT() = delete;

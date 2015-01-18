@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/clientdevice.h>
+#include <ecmxdisk/disk.h>
 #include <sys/common.h>
 #include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/irq.h>
 #include <sys/messages.h>
 #include <sys/mman.h>
 #include <sys/thread.h>
-#include <sys/io.h>
-#include <sys/irq.h>
 #include <usergroup/group.h>
-#include <esc/ipc/clientdevice.h>
-#include <ecmxdisk/disk.h>
+#include <assert.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <assert.h>
+#include <string.h>
 
 #if defined(__eco32__)
 #	define DISK_MODEL		"ECO32 Disk"

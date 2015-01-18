@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <sys/common.h>
 #include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "imgs/png.h"
 #include "imgs/bmp.h"
+#include "imgs/png.h"
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <file>...\n",name);

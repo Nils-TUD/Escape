@@ -20,9 +20,10 @@
 #pragma once
 
 #include <sys/common.h>
-#include "node.h"
+
 #include "../exec/env.h"
 #include "../lang.h"
+#include "node.h"
 
 typedef struct {
 	tIntType val;

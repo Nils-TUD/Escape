@@ -48,13 +48,11 @@
 
 typedef off_t fpos_t;
 
+struct FILE;
+typedef struct FILE FILE;
+
 #if defined(__cplusplus)
 extern "C" {
-#endif
-
-/* hack to provide FILE without including ../lib/c/stdio/iobuf.h */
-#ifndef IOBUF_H_
-typedef void FILE;
 #endif
 
 /* std-streams */

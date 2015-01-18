@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/enums.h>
-#include <gui/splitter.h>
 #include <gui/panel.h>
+#include <gui/splitter.h>
+#include <sys/common.h>
 
 namespace gui {
 	class SplitPanel : public Panel {

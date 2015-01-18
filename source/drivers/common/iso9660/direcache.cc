@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <fs/blockcache.h>
+#include <sys/common.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "iso9660.h"
 #include "direcache.h"
+#include "iso9660.h"
 #include "rw.h"
 
 ISO9660DirCache::ISO9660DirCache(ISO9660FileSystem *h)

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <task/thread.h>
-#include <semaphore.h>
 #include <assert.h>
+#include <common.h>
+#include <semaphore.h>
 
 bool BaseSem::down(SpinLock *lck,bool allowSigs) {
 	value--;

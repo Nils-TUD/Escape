@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/cache.h>
 #include <task/smp.h>
 #include <task/timer.h>
+#include <common.h>
 #include <cpu.h>
-#include <ostream.h>
 #include <log.h>
+#include <ostream.h>
 #include <string.h>
 
 uint64_t CPU::cpuHz;

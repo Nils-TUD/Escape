@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/net.h>
+#include <esc/proto/socket.h>
+#include <esc/proto/vterm.h>
+#include <esc/dns.h>
 #include <sys/common.h>
 #include <dirent.h>
-#include <esc/proto/socket.h>
-#include <esc/proto/net.h>
-#include <esc/proto/vterm.h>
-#include <esc/ipc/clientdevice.h>
-#include <esc/dns.h>
-#include <stdlib.h>
 #include <fstream>
+#include <stdlib.h>
 
+#include "blockfile.h"
 #include "ctrlcon.h"
 #include "datacon.h"
 #include "dircache.h"
-#include "blockfile.h"
 #include "dirlist.h"
 #include "file.h"
 

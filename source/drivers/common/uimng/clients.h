@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/screen.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <esc/proto/screen.h>
-#include <esc/ipc/clientdevice.h>
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "keymap.h"
 

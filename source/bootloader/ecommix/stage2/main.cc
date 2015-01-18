@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/endian.h>
-#include <sys/elf.h>
-#include <sys/arch.h>
-#include <sys/boot.h>
 #include <fs/ext2/ext2.h>
 #include <ecmxdisk/disk.h>
-#include <string.h>
-#include <stdlib.h>
+#include <sys/arch.h>
+#include <sys/boot.h>
+#include <sys/common.h>
+#include <sys/elf.h>
+#include <sys/endian.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "debug.h"
 

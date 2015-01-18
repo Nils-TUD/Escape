@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "ifstmt.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createIfStmt(sASTNode *cond,sASTNode *thenList,sASTNode *elseList) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

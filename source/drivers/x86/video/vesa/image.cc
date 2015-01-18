@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <gui/graphics/color.h>
 #include <sys/common.h>
 #include <sys/io.h>
-#include <gui/graphics/color.h>
-#include <dirent.h>
 #include <assert.h>
+#include <dirent.h>
 #include <stdlib.h>
+
 #include "image.h"
 
 void VESABMPainter::paintPixel(gpos_t x,gpos_t y,uint32_t col) {

@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "iobuf.h"
 
 int bputc(FILE *f,int c) {
 	sIOBuf *buf = &f->out;

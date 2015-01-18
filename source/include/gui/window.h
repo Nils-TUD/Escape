@@ -19,22 +19,22 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/io.h>
-#include <sys/messages.h>
-#include <gui/graphics/graphicsbuffer.h>
 #include <gui/graphics/color.h>
+#include <gui/graphics/graphicsbuffer.h>
 #include <gui/layout/borderlayout.h>
-#include <gui/image.h>
-#include <gui/uielement.h>
 #include <gui/application.h>
 #include <gui/button.h>
 #include <gui/control.h>
-#include <gui/panel.h>
+#include <gui/image.h>
 #include <gui/label.h>
-#include <string>
-#include <ostream>
+#include <gui/panel.h>
+#include <gui/uielement.h>
+#include <sys/common.h>
+#include <sys/io.h>
+#include <sys/messages.h>
 #include <list>
+#include <ostream>
+#include <string>
 
 namespace gui {
 	class WindowTitleBar : public Panel {

@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <fs/tar/tar.h>
+#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <esc/cmdargs.h>
-#include <usergroup/user.h>
 #include <usergroup/group.h>
-#include <fs/tar/tar.h>
+#include <usergroup/user.h>
+#include <dirent.h>
 #include <iostream>
 #include <stdlib.h>
-#include <dirent.h>
-#include <utime.h>
 #include <time.h>
+#include <utime.h>
 
 static char buffer[Tar::BLOCK_SIZE];
 static sUser *userList = nullptr;

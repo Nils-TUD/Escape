@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/filedesc.h>
-#include <mem/pagedir.h>
 #include <mem/kheap.h>
+#include <mem/pagedir.h>
 #include <mem/virtmem.h>
-#include <syscalls.h>
+#include <task/filedesc.h>
+#include <task/proc.h>
 #include <boot.h>
-#include <string.h>
+#include <common.h>
 #include <errno.h>
+#include <string.h>
+#include <syscalls.h>
 
 int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);

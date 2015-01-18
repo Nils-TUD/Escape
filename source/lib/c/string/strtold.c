@@ -18,9 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <string.h>
 
 static int getDigitVal(char c,uint base);
 

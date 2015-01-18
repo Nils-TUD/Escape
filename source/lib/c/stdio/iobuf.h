@@ -19,7 +19,6 @@
 
 #pragma once
 
-#define IOBUF_H_
 #include <sys/common.h>
 #include <sys/sync.h>
 

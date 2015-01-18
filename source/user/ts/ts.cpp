@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch.h>
-#include <sys/messages.h>
-#include <sys/debug.h>
-#include <sys/conf.h>
 #include <esc/proto/vterm.h>
-#include <info/thread.h>
+#include <esc/cmdargs.h>
+#include <esc/env.h>
+#include <esc/file.h>
 #include <info/process.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
+#include <info/thread.h>
+#include <sys/arch.h>
+#include <sys/common.h>
+#include <sys/conf.h>
+#include <sys/debug.h>
+#include <sys/messages.h>
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
-#include <algorithm>
-#include <esc/cmdargs.h>
-#include <esc/file.h>
-#include <esc/env.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 using namespace std;
 using namespace info;

@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <log.h>
 #include <ostream.h>
 #include <video.h>
-#include <log.h>
 
 class VideoLog : public OStream {
 public:

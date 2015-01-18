@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdarg.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #if defined(IN_KERNEL)
 #	include <cwrap.h>

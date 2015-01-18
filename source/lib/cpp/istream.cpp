@@ -18,10 +18,10 @@
  */
 
 #include <sys/esccodes.h>
-#include <istream>
-#include <ostream>
-#include <limits>
 #include <ctype.h>
+#include <istream>
+#include <limits>
+#include <ostream>
 
 namespace std {
 	// === istream::sentry ===

@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/cache.h>
+#include <sys/width.h>
+#include <common.h>
 #include <ostream.h>
 #include <spinlock.h>
-#include <sys/width.h>
 #include <stdarg.h>
 #include <string.h>
 

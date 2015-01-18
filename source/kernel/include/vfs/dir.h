@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <vfs/node.h>
+#include <common.h>
 
 class VFSDir : public VFSNode {
 	/* VFS-directory-entry (equal to the direntry of ext2) */

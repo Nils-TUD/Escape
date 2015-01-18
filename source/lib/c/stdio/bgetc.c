@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <errno.h>
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int bgetc(FILE *f) {
 	sIOBuf *buf = &f->in;

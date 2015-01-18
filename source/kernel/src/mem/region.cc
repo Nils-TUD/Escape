@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/physmem.h>
 #include <mem/cache.h>
+#include <mem/physmem.h>
 #include <mem/region.h>
 #include <mem/swapmap.h>
 #include <task/proc.h>
-#include <vfs/vfs.h>
 #include <vfs/openfile.h>
-#include <spinlock.h>
-#include <video.h>
-#include <string.h>
-#include <errno.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <common.h>
+#include <errno.h>
+#include <spinlock.h>
+#include <string.h>
+#include <video.h>
 
 /**
  * The region-module implements the abstraction 'region' which is simply a group of pages that

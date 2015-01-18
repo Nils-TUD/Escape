@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/pagedir.h>
 #include <task/proc.h>
 #include <assert.h>
+#include <common.h>
 
 #define SHARED_AREA_SIZE	(KFREE_AREA + KFREE_AREA_SIZE - KHEAP_START)
 #define SHPT_COUNT			(1 + (DIR_MAP_AREA_SIZE / PD_SIZE) + \

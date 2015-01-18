@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
-#include <mem/virtmem.h>
 #include <dbg/console.h>
 #include <dbg/kb.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
 #include <task/proc.h>
 #include <task/thread.h>
+#include <common.h>
 #include <interrupts.h>
 #include <ksymbols.h>
-#include <video.h>
-#include <util.h>
 #include <stdarg.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 void Util::printUserStateOf(A_UNUSED OStream &os,A_UNUSED const Thread *t) {
 }

@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/vmtree.h>
-#include <mem/region.h>
 #include <mem/cache.h>
+#include <mem/region.h>
+#include <mem/vmtree.h>
 #include <task/proc.h>
-#include <vfs/vfs.h>
 #include <vfs/openfile.h>
-#include <video.h>
-#include <mutex.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <common.h>
+#include <mutex.h>
+#include <video.h>
 
 /**
  * We use a treap (combination of binary tree and heap) to be able to find vm-regions by an address

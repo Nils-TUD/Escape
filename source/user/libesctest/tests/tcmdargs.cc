@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <esc/cmdargs.h>
+#include <sys/common.h>
 #include <sys/test.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 using namespace esc;

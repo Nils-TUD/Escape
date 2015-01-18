@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/atomic.h>
+#include <sys/common.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
 #include <sys/tls.h>

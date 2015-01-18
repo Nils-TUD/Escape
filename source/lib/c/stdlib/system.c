@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/proc.h>
 #include <sys/io.h>
+#include <sys/proc.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include <stdlib.h>

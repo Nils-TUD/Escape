@@ -18,22 +18,23 @@
  */
 
 #include <sys/common.h>
-#include <sys/io.h>
 #include <sys/conf.h>
+#include <sys/esccodes.h>
+#include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/mman.h>
-#include <sys/thread.h>
-#include <sys/esccodes.h>
 #include <sys/proc.h>
-#include <string.h>
+#include <sys/thread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include "ui.h"
+#include <string.h>
+
 #include "bar.h"
+#include "game.h"
 #include "object.h"
 #include "objlist.h"
-#include "game.h"
+#include "ui.h"
 
 #define SCORE_WIDTH			10
 #define SCORE_HEIGHT		4

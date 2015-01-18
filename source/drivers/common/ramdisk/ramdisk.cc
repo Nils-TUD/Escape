@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/clientdevice.h>
 #include <sys/common.h>
 #include <sys/mman.h>
 #include <usergroup/group.h>
-#include <esc/ipc/clientdevice.h>
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
 using namespace esc;
 

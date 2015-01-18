@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <sys/esccodes.h>
 #include <sys/test.h>
+#include <common.h>
 
 /* forward declarations */
 static void test_esccodes();

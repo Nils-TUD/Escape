@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/graphics/graphics.h>
 #include <img/image.h>
+#include <sys/common.h>
 #include <exception>
 #include <memory>
 

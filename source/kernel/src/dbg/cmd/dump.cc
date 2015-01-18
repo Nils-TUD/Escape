@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <dbg/cmd/dump.h>
 #include <dbg/console.h>
 #include <dbg/kb.h>
 #include <dbg/lines.h>
-#include <dbg/cmd/dump.h>
-#include <task/thread.h>
-#include <task/proc.h>
 #include <mem/kheap.h>
-#include <vfs/vfs.h>
-#include <vfs/openfile.h>
-#include <ostringstream.h>
 #include <sys/keycodes.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <errno.h>
+#include <ostringstream.h>
 #include <string.h>
 
 static OpenFile *file;

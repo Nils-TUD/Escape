@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/graphics/color.h>
 #include <gui/window.h>
+#include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/driver.h>
-#include <vterm/vtin.h>
 #include <vterm/vtctrl.h>
-#include <signal.h>
+#include <vterm/vtin.h>
 #include <errno.h>
+#include <signal.h>
 
-#include "shellcontrol.h"
 #include "guiterm.h"
+#include "shellcontrol.h"
 
 using namespace gui;
 

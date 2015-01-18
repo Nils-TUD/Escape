@@ -21,8 +21,8 @@
 #include <sys/stat.h>
 #include <usergroup/group.h>
 #include <usergroup/user.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 sGroup *group_parseFromFile(const char *file,size_t *count) {

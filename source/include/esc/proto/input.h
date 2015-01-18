@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <esc/proto/default.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <esc/proto/default.h>
 
 namespace esc {
 

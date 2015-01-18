@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/uenv.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <mem/virtmem.h>
 #include <mem/pagedir.h>
 #include <mem/useraccess.h>
+#include <mem/virtmem.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/uenv.h>
+#include <assert.h>
+#include <common.h>
+#include <errno.h>
 #include <spinlock.h>
 #include <string.h>
-#include <errno.h>
-#include <assert.h>
 
 #if defined(__x86_64__)
 // take care of red-zone

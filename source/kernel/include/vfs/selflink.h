@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <vfs/link.h>
+#include <common.h>
 #include <errno.h>
 
 class VFSSelfLink : public VFSLink {

@@ -17,22 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <esc/cmdargs.h>
+#include <esc/env.h>
 #include <sys/common.h>
+#include <sys/esccodes.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
-#include <sys/esccodes.h>
 #include <dirent.h>
-#include <esc/proto/vterm.h>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <esc/cmdargs.h>
-#include <iostream>
-#include <iomanip>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
-#include <esc/env.h>
+
 #include "linecontainer.h"
 
 #define TAB_WIDTH			4

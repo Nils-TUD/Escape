@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <gui/progressbar.h>
 #include <gui/control.h>
+#include <gui/progressbar.h>
+#include <sys/common.h>
 
 namespace gui {
 	Size ProgressBar::getPrefSize() const {

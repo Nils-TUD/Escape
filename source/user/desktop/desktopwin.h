@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/graphics/color.h>
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/image.h>
-#include <gui/window.h>
 #include <gui/imagebutton.h>
+#include <gui/window.h>
+#include <sys/common.h>
 #include <map>
 
 class Shortcut {

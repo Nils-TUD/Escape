@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/ipc/ipcstream.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
-#include <esc/ipc/ipcstream.h>
 
 namespace esc {
 

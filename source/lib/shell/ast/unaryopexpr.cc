@@ -19,10 +19,11 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
+#include "node.h"
 #include "unaryopexpr.h"
 #include "varexpr.h"
-#include "node.h"
-#include "../mem.h"
 
 static sValue *ast_execUnaryPreOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc);
 static sValue *ast_execUnaryPostOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc);

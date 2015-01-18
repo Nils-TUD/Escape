@@ -18,15 +18,15 @@
  */
 
 #include <sys/common.h>
+#include <sys/mman.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <sys/mman.h>
 #include <sys/wait.h>
+#include <errno.h>
 #include <signal.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
 
 #include "../modules.h"
 

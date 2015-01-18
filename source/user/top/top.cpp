@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/arch.h>
-#include <sys/esccodes.h>
-#include <sys/keycodes.h>
-#include <sys/thread.h>
-#include <sys/sync.h>
-#include <sys/conf.h>
-#include <info/process.h>
-#include <info/thread.h>
-#include <info/cpu.h>
-#include <info/memusage.h>
-#include <usergroup/user.h>
 #include <esc/proto/vterm.h>
 #include <esc/env.h>
+#include <info/cpu.h>
+#include <info/memusage.h>
+#include <info/process.h>
+#include <info/thread.h>
+#include <sys/arch.h>
+#include <sys/common.h>
+#include <sys/conf.h>
+#include <sys/esccodes.h>
+#include <sys/keycodes.h>
+#include <sys/sync.h>
+#include <sys/thread.h>
+#include <usergroup/user.h>
+#include <assert.h>
 #include <fstream>
 #include <iomanip>
-#include <string>
 #include <stdlib.h>
-#include <assert.h>
+#include <string>
 
 #define PAGE_SCROLL		10
 

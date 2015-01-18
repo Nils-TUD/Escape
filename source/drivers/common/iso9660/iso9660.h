@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <fs/blockcache.h>
+#include <fs/fsdev.h>
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <fs/fsdev.h>
-#include <fs/blockcache.h>
 
 #include "common.h"
 #include "direcache.h"

@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <gui/popupwindow.h>
 #include <gui/control.h>
+#include <gui/popupwindow.h>
+#include <sys/common.h>
 #include <string>
 #include <vector>
 

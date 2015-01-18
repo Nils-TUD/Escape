@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
 #include <esc/cmdargs.h>
-#include <string.h>
+#include <fstream>
+#include <iostream>
 #include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <vector>
 
 using namespace std;
 

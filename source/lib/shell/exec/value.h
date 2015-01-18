@@ -20,10 +20,11 @@
 #pragma once
 
 #include <sys/common.h>
-#include <string.h>
 #include <assert.h>
-#include "vector.h"
+#include <string.h>
+
 #include "../lang.h"
+#include "vector.h"
 
 #define VAL_TYPE_INT	0
 #define VAL_TYPE_STR	1

@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/syscalls.h>
-#include <stdarg.h>
 #include <errno.h>
+#include <stdarg.h>
 
 /* access mode */
 #define O_READ					1

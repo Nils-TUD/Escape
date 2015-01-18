@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
+
+#include "iobuf.h"
 
 int breadn(FILE *f,llong *num,size_t length,int c) {
 	bool neg = false;

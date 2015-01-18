@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <esc/cmdargs.h>
 #include <z/gzip.h>
 #include <z/inflate.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 
 static int showinfo = false;
 static int tostdout = false;

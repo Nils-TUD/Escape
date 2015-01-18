@@ -17,32 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/physmem.h>
-#include <mem/pagedir.h>
-#include <mem/kheap.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
-#include <mem/swapmap.h>
+#include <mem/kheap.h>
+#include <mem/pagedir.h>
+#include <mem/physmem.h>
 #include <mem/physmemareas.h>
+#include <mem/swapmap.h>
 #include <mem/useraccess.h>
-#include <task/timer.h>
+#include <mem/virtmem.h>
 #include <task/proc.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/info.h>
+#include <task/timer.h>
 #include <vfs/file.h>
 #include <vfs/fs.h>
+#include <vfs/info.h>
+#include <vfs/node.h>
 #include <vfs/openfile.h>
-#include <cpu.h>
-#include <spinlock.h>
-#include <ostringstream.h>
-#include <boot.h>
-#include <util.h>
-#include <cppsupport.h>
+#include <vfs/vfs.h>
 #include <assert.h>
-#include <string.h>
+#include <boot.h>
+#include <common.h>
+#include <cppsupport.h>
+#include <cpu.h>
 #include <errno.h>
+#include <ostringstream.h>
+#include <spinlock.h>
+#include <string.h>
+#include <util.h>
 
 void VFSInfo::init(VFSNode *sysNode) {
 	VFSNode::release(createObj<MemUsageFile>(KERNEL_PID,sysNode));

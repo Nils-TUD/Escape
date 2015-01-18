@@ -18,10 +18,10 @@
  */
 
 #include <sys/common.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
-#include <errno.h>
 
 extern char __progname[];
 

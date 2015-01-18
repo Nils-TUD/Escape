@@ -21,8 +21,8 @@
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <sys/wait.h>
-#include <stdio.h>
 #include <signal.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "../modules.h"

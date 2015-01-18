@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/ports.h>
-#include <video.h>
-#include <string.h>
 #include <assert.h>
+#include <common.h>
 #include <stdarg.h>
+#include <string.h>
+#include <video.h>
 
 void Video::clear() {
 	memclear(screen(),VID_COLS * 2 * VID_ROWS);

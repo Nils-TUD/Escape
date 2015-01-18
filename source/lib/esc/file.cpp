@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <dirent.h>
-#include <esc/file.h>
-#include <string.h>
 #include <esc/env.h>
+#include <esc/file.h>
+#include <dirent.h>
 #include <errno.h>
+#include <string.h>
 
 namespace esc {
 	file::file(const std::string& p)

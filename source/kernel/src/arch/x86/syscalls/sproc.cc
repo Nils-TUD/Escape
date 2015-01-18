@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/task/ioports.h>
 #include <task/proc.h>
-#include <syscalls.h>
+#include <common.h>
 #include <errno.h>
+#include <syscalls.h>
 
 int Syscalls::reqports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uint16_t start = SYSC_ARG1(stack);

@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <esc/proto/pci.h>
-#include <esc/proto/nic.h>
-#include <esc/ipc/requestqueue.h>
 #include <esc/ipc/clientdevice.h>
-#include <stdlib.h>
+#include <esc/ipc/requestqueue.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/pci.h>
+#include <sys/common.h>
 #include <mutex>
+#include <stdlib.h>
 
 namespace esc {
 

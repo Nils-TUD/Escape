@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/control.h>
 #include <gui/window.h>
-#include <typeinfo>
+#include <sys/common.h>
 #include <iostream>
+#include <typeinfo>
 
 namespace gui {
 	void Control::setParent(UIElement *e) {

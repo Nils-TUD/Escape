@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/sched.h>
-#include <task/timer.h>
-#include <task/smp.h>
 #include <task/proc.h>
-#include <video.h>
-#include <util.h>
-#include <spinlock.h>
+#include <task/sched.h>
+#include <task/smp.h>
+#include <task/timer.h>
+#include <common.h>
 #include <errno.h>
+#include <spinlock.h>
+#include <util.h>
+#include <video.h>
 
 /* total elapsed milliseconds */
 TimerBase::PerCPU *TimerBase::perCPU = NULL;

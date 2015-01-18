@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <vector>
-#include <string>
 #include <limits>
+#include <stddef.h>
+#include <string>
+#include <vector>
 
 namespace info {
 	class thread;

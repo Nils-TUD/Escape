@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/thread.h>
 #include <sys/stat.h>
+#include <sys/thread.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>

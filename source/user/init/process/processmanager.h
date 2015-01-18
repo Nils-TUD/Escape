@@ -22,9 +22,10 @@
 #include <sys/common.h>
 #include <sys/sync.h>
 #include <vector>
-#include "process.h"
-#include "../progress.h"
+
 #include "../initerror.h"
+#include "../progress.h"
+#include "process.h"
 
 class ProcessManager {
 public:

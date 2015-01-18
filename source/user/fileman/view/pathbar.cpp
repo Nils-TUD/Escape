@@ -20,8 +20,8 @@
 #include <sys/common.h>
 
 #include "../model/path.h"
-#include "pathbar.h"
 #include "filelist.h"
+#include "pathbar.h"
 
 using namespace std;
 using namespace gui;

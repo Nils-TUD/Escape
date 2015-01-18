@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "screens.h"
 #include "clients.h"
 #include "header.h"
+#include "screens.h"
 
 std::vector<esc::Screen*> ScreenMng::_screens;
 

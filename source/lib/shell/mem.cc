@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "mem.h"
 
 void *emalloc(size_t size) {

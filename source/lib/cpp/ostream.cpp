@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <ostream>
 #include <sys/width.h>
+#include <ostream>
 #include <string.h>
 
 #define FFL_SHORT			1

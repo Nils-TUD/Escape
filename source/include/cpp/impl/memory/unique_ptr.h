@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <bits/c++config.h>
+#include <sys/common.h>
 #include <algorithm>
 #include <assert.h>
 

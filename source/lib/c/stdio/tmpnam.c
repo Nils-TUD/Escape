@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 char *tmpnam(A_UNUSED char *s) {
 	/* TODO to be implemented */

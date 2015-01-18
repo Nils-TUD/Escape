@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <arch/x86/gdt.h>
+#include <common.h>
 #include <cpu.h>
 
 /* some convenience-macros */

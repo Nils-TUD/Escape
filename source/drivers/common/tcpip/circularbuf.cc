@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <stdio.h>
 
 #include "circularbuf.h"

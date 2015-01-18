@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 char *getenvi(size_t index) {
 	static char name[ENV_NAME_MAX];

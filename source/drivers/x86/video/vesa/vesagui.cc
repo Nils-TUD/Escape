@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/io.h>
-#include <sys/driver.h>
-#include <sys/mman.h>
-#include <sys/messages.h>
 #include <gui/graphics/rectangle.h>
+#include <sys/common.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
 #include <vbe/vbe.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "vesagui.h"
 #include "image.h"
+#include "vesagui.h"
 #include "vesascreen.h"
 
 #define CURSOR_LEFT_OFF					10

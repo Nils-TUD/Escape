@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+
 #include "../../machine.h"
 
 class ECO32Machine : public Machine {

@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int ungetc(int c,FILE *file) {
 	if(file->in.buffer == NULL || file->in.pos == 0)

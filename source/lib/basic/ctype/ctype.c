@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <ctype.h>
+#include <stddef.h>
 
 uchar ctypetbl[] = {
 	/* 00 .. 03: NUL, SOH, STX, ETX */

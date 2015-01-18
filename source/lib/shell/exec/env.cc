@@ -21,8 +21,9 @@
 #include <sys/sllist.h>
 #include <stdio.h>
 #include <string.h>
-#include "env.h"
+
 #include "../mem.h"
+#include "env.h"
 
 static void env_doGetMatching(sEnv *env,sSLList *list,const char *name,size_t length,bool searchCmd);
 static sVar *env_createVar(const char *name,sValue *val);

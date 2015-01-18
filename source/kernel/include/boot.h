@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <sys/boot.h>
 #include <common.h>
 #include <interrupts.h>
-#include <sys/boot.h>
 
 class Boot {
 	Boot() = delete;

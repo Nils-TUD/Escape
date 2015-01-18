@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
+
 #include "object.h"
 #include "ui.h"
 

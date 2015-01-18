@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/keycodes.h>
-#include <sys/io.h>
-#include <sys/esccodes.h>
-#include <sys/stat.h>
 #include <esc/proto/input.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <sys/common.h>
+#include <sys/esccodes.h>
+#include <sys/io.h>
+#include <sys/keycodes.h>
+#include <sys/stat.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "keymap.h"
 
 const char *Keymap::KEYMAP_FILE = "/etc/keymap";

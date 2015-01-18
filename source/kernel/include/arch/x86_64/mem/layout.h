@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <arch/x86_64/mem/physmem.h>
 #include <arch/x86/mem/pte.h>
+#include <arch/x86_64/mem/physmem.h>
 
 /**
  * Virtual memory layout:

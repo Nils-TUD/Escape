@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/ports.h>
 #include <dbg/kb.h>
 #include <sys/keycodes.h>
+#include <common.h>
 
 #define IOPORT_KB_DATA				0x60
 #define IOPORT_KB_CTRL				0x64

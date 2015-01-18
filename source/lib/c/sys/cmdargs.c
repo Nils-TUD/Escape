@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sys/common.h>
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_ERR_LEN			64
 #define MAX_ARGNAME_LEN		16

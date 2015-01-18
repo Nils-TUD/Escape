@@ -21,10 +21,10 @@
 
 #include <esc/proto/net.h>
 #include <esc/proto/nic.h>
-#include <stddef.h>
-#include <vector>
-#include <string>
 #include <limits>
+#include <stddef.h>
+#include <string>
+#include <vector>
 
 namespace info {
 	class link;

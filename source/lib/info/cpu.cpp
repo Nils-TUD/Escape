@@ -18,8 +18,8 @@
  */
 
 #include <info/cpu.h>
-#include <fstream>
 #include <assert.h>
+#include <fstream>
 
 using namespace std;
 

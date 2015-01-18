@@ -17,31 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
+#include <arch/mmix/mem/addrspace.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
 #include <mem/copyonwrite.h>
 #include <mem/dynarray.h>
-#include <arch/mmix/mem/addrspace.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/sched.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
 #include <task/elf.h>
-#include <task/uenv.h>
-#include <task/timer.h>
+#include <task/proc.h>
+#include <task/sched.h>
 #include <task/smp.h>
 #include <task/terminator.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <task/uenv.h>
 #include <vfs/node.h>
-#include <vfs/vfs.h>
 #include <vfs/openfile.h>
-#include <log.h>
-#include <cpu.h>
-#include <config.h>
+#include <vfs/vfs.h>
 #include <boot.h>
+#include <common.h>
+#include <config.h>
+#include <cpu.h>
+#include <log.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <string.h>
 
 static const BootTask tasks[] = {
 	{"Parsing bootinfo...",Boot::parseBootInfo},

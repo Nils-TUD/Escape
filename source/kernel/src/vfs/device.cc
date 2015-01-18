@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
 #include <mem/cache.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
+#include <sys/messages.h>
+#include <task/proc.h>
 #include <vfs/channel.h>
 #include <vfs/device.h>
-#include <video.h>
-#include <spinlock.h>
-#include <sys/messages.h>
+#include <vfs/node.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <common.h>
 #include <errno.h>
+#include <spinlock.h>
+#include <video.h>
 
 #define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
 

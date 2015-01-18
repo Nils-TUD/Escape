@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <sys/width.h>
+#include <stddef.h>
 
 size_t getullwidth(ullong n,uint base) {
 	size_t width = 1;

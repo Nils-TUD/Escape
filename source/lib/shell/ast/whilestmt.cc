@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
-#include "whilestmt.h"
-#include "node.h"
+
 #include "../mem.h"
+#include "node.h"
+#include "whilestmt.h"
 
 sASTNode *ast_createWhileStmt(sASTNode *condExpr,sASTNode *stmtList) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

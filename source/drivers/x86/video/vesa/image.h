@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <img/bitmapimage.h>
 #include <sys/common.h>
 #include <vbe/vbe.h>
-#include <img/bitmapimage.h>
 
 #include "vesascreen.h"
 

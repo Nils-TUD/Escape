@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <ctype.h>
+#include <stddef.h>
 
 int toupper(int ch) {
 	if(ch >= 'a' && ch <= 'z')

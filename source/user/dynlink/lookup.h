@@ -19,9 +19,10 @@
 
 #pragma once
 
+#include <sys/arch.h>
 #include <sys/common.h>
 #include <sys/elf.h>
-#include <sys/arch.h>
+
 #include "loader.h"
 
 /* only for i586. we have pushed eax, edx and ecx on the stack */

@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <dirent.h>
+#include <sys/common.h>
 #include <sys/io.h>
+#include <dirent.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <signal.h>
 
-#include "../cmds.h"
 #include "../ast/command.h"
+#include "../cmds.h"
 
 #define SIG_NAME_LEN		7
 

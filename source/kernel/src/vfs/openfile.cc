@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
+#include <esc/ipc/ipcbuf.h>
 #include <mem/cache.h>
-#include <vfs/openfile.h>
-#include <vfs/fs.h>
+#include <sys/messages.h>
+#include <task/proc.h>
 #include <vfs/channel.h>
 #include <vfs/device.h>
+#include <vfs/fs.h>
+#include <vfs/openfile.h>
 #include <vfs/vfs.h>
-#include <ostream.h>
-#include <esc/ipc/ipcbuf.h>
-#include <sys/messages.h>
+#include <common.h>
 #include <errno.h>
+#include <ostream.h>
 
 #define FILE_COUNT					(gftArray.getObjCount())
 

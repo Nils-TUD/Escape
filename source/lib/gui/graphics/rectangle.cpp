@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/graphics/rectangle.h>
+#include <sys/common.h>
 #include <algorithm>
 
 static void addRect(std::vector<gui::Rectangle> &rects,const gui::Rectangle &r) {

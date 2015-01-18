@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <task/thread.h>
-#include <spinlock.h>
+#include <common.h>
 #include <mutex.h>
+#include <spinlock.h>
 #include <util.h>
 
 void Mutex::down() {

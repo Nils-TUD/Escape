@@ -17,27 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <dbg/console.h>
+#include <dbg/cmd/break.h>
+#include <dbg/cmd/dump.h>
 #include <dbg/cmd/file.h>
-#include <dbg/cmd/view.h>
+#include <dbg/cmd/locks.h>
 #include <dbg/cmd/log.h>
 #include <dbg/cmd/ls.h>
 #include <dbg/cmd/mem.h>
 #include <dbg/cmd/panic.h>
-#include <dbg/cmd/dump.h>
 #include <dbg/cmd/step.h>
-#include <dbg/cmd/break.h>
-#include <dbg/cmd/locks.h>
+#include <dbg/cmd/view.h>
+#include <dbg/console.h>
 #include <dbg/kb.h>
 #include <mem/cache.h>
-#include <task/smp.h>
-#include <ostringstream.h>
-#include <video.h>
 #include <sys/keycodes.h>
-#include <string.h>
-#include <ctype.h>
+#include <task/smp.h>
 #include <assert.h>
+#include <common.h>
+#include <ctype.h>
+#include <ostringstream.h>
+#include <string.h>
+#include <video.h>
 
 size_t Console::histWritePos = 0;
 size_t Console::histReadPos = 0;

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <dbg/console.h>
+#include <common.h>
 #include <syscalls.h>
 
 int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {

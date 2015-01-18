@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "cmdexprlist.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createCmdExprList(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

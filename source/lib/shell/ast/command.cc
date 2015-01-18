@@ -20,26 +20,26 @@
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/proc.h>
-#include <sys/thread.h>
 #include <sys/stat.h>
+#include <sys/thread.h>
 #include <sys/wait.h>
 #include <dirent.h>
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
 #include <errno.h>
-#include "../mem.h"
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "../ast/functionstmt.h"
+#include "../ast/redirfd.h"
+#include "../ast/redirfile.h"
+#include "../exec/env.h"
 #include "../exec/jobs.h"
 #include "../exec/value.h"
-#include "../exec/env.h"
-#include "../ast/redirfile.h"
-#include "../ast/redirfd.h"
-#include "../ast/functionstmt.h"
+#include "../completion.h"
+#include "../mem.h"
+#include "command.h"
 #include "node.h"
 #include "subcmd.h"
-#include "command.h"
-
-#include "../completion.h"
 
 #define OUTBUF_SIZE		128
 

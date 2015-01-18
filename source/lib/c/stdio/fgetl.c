@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 char *fgetl(char *str,size_t max,FILE *f) {
 	char *res = str;

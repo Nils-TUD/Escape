@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <mem/physmem.h>
-#include <mem/pagedir.h>
-#include <mem/kheap.h>
-#include <mem/virtmem.h>
-#include <dbg/kb.h>
 #include <dbg/console.h>
+#include <dbg/kb.h>
+#include <mem/kheap.h>
+#include <mem/pagedir.h>
+#include <mem/physmem.h>
+#include <mem/virtmem.h>
+#include <task/proc.h>
+#include <common.h>
+#include <cpu.h>
 #include <interrupts.h>
 #include <ksymbols.h>
-#include <video.h>
-#include <videolog.h>
-#include <spinlock.h>
-#include <util.h>
-#include <cpu.h>
 #include <log.h>
+#include <spinlock.h>
 #include <stdarg.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
+#include <videolog.h>
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
 uint Util::randa = 1103515245;

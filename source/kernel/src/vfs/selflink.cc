@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <vfs/selflink.h>
-#include <vfs/node.h>
 #include <task/proc.h>
+#include <vfs/node.h>
+#include <vfs/selflink.h>
+#include <common.h>
 
 const VFSNode *VFSSelfLink::resolve() const {
 	/* this is safe because the directory is locked anyway by VFSNode::request */

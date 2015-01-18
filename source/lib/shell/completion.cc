@@ -23,10 +23,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "completion.h"
-#include "cmds.h"
 #include "exec/env.h"
 #include "exec/value.h"
+#include "cmds.h"
+#include "completion.h"
 
 #define MATCHES_ARRAY_INC	8
 #define DIR_CACHE_SIZE		16

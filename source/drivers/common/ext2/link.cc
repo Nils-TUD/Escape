@@ -21,14 +21,14 @@
 #include <sys/endian.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "dir.h"
 #include "ext2.h"
 #include "file.h"
-#include "link.h"
-#include "dir.h"
 #include "inodecache.h"
+#include "link.h"
 
 int Ext2Link::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,Ext2CInode *cnode,const char *name) {
 	uint8_t *buf;

@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/driver.h>
-#include <sys/debug.h>
-#include <sys/messages.h>
 #include <esc/ipc/device.h>
 #include <esc/proto/pci.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/driver.h>
+#include <sys/messages.h>
 #include <assert.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "list.h"
 #include "pci.h"

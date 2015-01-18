@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <sys/arch.h>
+#include <sys/common.h>
 #include <sys/thread.h>
 
 static inline void **stack_top(size_t idx) {

@@ -19,10 +19,10 @@
 
 #include <sys/common.h>
 #include <sys/driver.h>
-#include <sys/thread.h>
 #include <sys/io.h>
-#include <stdlib.h>
+#include <sys/thread.h>
 #include <mutex>
+#include <stdlib.h>
 #include <vector>
 
 #include "listener.h"

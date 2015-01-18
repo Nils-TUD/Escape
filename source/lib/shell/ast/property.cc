@@ -19,10 +19,11 @@
 
 #include <sys/common.h>
 #include <stdio.h>
-#include "property.h"
-#include "node.h"
-#include "../mem.h"
+
 #include "../exec/value.h"
+#include "../mem.h"
+#include "node.h"
+#include "property.h"
 
 sASTNode *ast_createProperty(sASTNode *expr,char *name,sASTNode *args) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

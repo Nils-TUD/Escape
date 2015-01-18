@@ -18,17 +18,17 @@
  */
 
 #include <sys/common.h>
-#include <sys/proc.h>
-#include <sys/thread.h>
+#include <sys/conf.h>
 #include <sys/debug.h>
 #include <sys/io.h>
-#include <sys/conf.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/thread.h>
 #include <usergroup/group.h>
 #include <iostream>
 
-#include "driverprocess.h"
 #include "../initerror.h"
+#include "driverprocess.h"
 
 using namespace std;
 

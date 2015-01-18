@@ -22,8 +22,8 @@
 #include <sys/common.h>
 
 #include "../common.h"
-#include "socket.h"
 #include "rawsocketlist.h"
+#include "socket.h"
 
 class RawIPSocket : public Socket {
 public:

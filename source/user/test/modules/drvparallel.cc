@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/device.h>
+#include <esc/proto/file.h>
 #include <sys/common.h>
+#include <sys/conf.h>
 #include <sys/driver.h>
 #include <sys/thread.h>
-#include <sys/conf.h>
-#include <esc/proto/file.h>
-#include <esc/ipc/device.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../modules.h"
 

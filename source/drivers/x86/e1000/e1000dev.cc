@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/mman.h>
 #include <sys/arch.h>
+#include <sys/common.h>
 #include <sys/conf.h>
-#include <sys/thread.h>
 #include <sys/irq.h>
+#include <sys/mman.h>
+#include <sys/thread.h>
 #include <stdlib.h>
 
 #include "e1000dev.h"

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <info/cpu.h>
+#include <sys/common.h>
 #include <stdio.h>
 
 class X86CPUInfo : public CPUInfo {

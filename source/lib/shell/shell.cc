@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <shell/history.h>
+#include <shell/shell.h>
 #include <sys/common.h>
-#include <sys/proc.h>
+#include <sys/esccodes.h>
 #include <sys/io.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
-#include <sys/esccodes.h>
-#include <sys/thread.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
-#include <esc/proto/vterm.h>
+#include <sys/thread.h>
 #include <usergroup/user.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <errno.h>
 #include <signal.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
-#include <ctype.h>
-#include <errno.h>
+#include <string.h>
 
-#include <shell/shell.h>
-#include <shell/history.h>
 #include "ast/command.h"
 #include "exec/jobs.h"
 #include "completion.h"

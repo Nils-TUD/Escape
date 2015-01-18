@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/cache.h>
 #include <dbg/lines.h>
-#include <video.h>
+#include <mem/cache.h>
+#include <common.h>
 #include <errno.h>
+#include <video.h>
 
 bool Lines::init() {
 	if(lineSize == (size_t)-1)

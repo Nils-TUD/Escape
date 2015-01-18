@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch.h>
-#include <sys/mman.h>
+#include <sys/common.h>
 #include <sys/conf.h>
+#include <sys/mman.h>
 #include <sys/thread.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../modules.h"
 

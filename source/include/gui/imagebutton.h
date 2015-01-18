@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <gui/image.h>
 #include <gui/button.h>
+#include <gui/image.h>
+#include <sys/common.h>
 
 namespace gui {
 	class ImageButton : public Button {

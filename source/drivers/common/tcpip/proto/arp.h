@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <ostream>
 #include <map>
+#include <ostream>
 
 #include "../common.h"
 #include "../link.h"

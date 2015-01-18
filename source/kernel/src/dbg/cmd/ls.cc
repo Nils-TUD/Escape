@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <vfs/vfs.h>
-#include <vfs/openfile.h>
-#include <dbg/console.h>
 #include <dbg/cmd/ls.h>
+#include <dbg/console.h>
 #include <mem/cache.h>
-#include <ostringstream.h>
 #include <sys/endian.h>
-#include <string.h>
+#include <task/proc.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <dirent.h>
-#include <limits.h>
 #include <errno.h>
+#include <limits.h>
+#include <ostringstream.h>
+#include <string.h>
 
 #define DIRE_SIZE		(sizeof(struct dirent) - (NAME_MAX + 1))
 

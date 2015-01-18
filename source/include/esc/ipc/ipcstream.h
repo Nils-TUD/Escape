@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <esc/ipc/ipcbuf.h>
 #include <sys/common.h>
 #include <sys/io.h>
-#include <esc/ipc/ipcbuf.h>
 #include <utility>
 
 #ifndef IN_KERNEL

@@ -18,11 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <sys/messages.h>
 #include <sys/io.h>
-#include <stdio.h>
-#include <errno.h>
+#include <sys/messages.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdio.h>
 
 int isatty(int fd) {
 	/* TODO actually, we are supposed to use the C++ IPC API, but this doesn't work here without

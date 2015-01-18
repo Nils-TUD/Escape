@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/physmem.h>
 #include <sys/test.h>
+#include <common.h>
+
 #include "testutils.h"
 
 #define FRAME_COUNT 50

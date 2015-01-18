@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/file.h>
 #include <info/thread.h>
+#include <ctype.h>
 #include <fstream>
 #include <vector>
-#include <esc/file.h>
-#include <ctype.h>
 
 using namespace std;
 

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/proto/ui.h>
+#include <sys/common.h>
 
 typedef struct {
 	esc::UI *ui;

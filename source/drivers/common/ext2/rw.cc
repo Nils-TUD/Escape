@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/messages.h>
-#include <sys/io.h>
-#include <sys/thread.h>
 #include <fs/fsdev.h>
+#include <sys/common.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/thread.h>
 #include <stdio.h>
 
-#include "rw.h"
 #include "ext2.h"
+#include "rw.h"
 
 int Ext2RW::readSectors(Ext2FileSystem *e,void *buffer,uint64_t lba,size_t secCount) {
 	ssize_t res;

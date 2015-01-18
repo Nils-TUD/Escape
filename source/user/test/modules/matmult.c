@@ -18,11 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/time.h>
 #include <sys/wait.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../modules.h"
 

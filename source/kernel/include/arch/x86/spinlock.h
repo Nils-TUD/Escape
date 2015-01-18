@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <atomic.h>
+#include <common.h>
 #include <cpu.h>
 
 #if !DEBUG_LOCKS

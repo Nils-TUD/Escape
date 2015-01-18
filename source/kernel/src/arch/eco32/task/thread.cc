@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
 #include <task/proc.h>
 #include <task/sched.h>
-#include <task/timer.h>
 #include <task/smp.h>
-#include <mem/virtmem.h>
-#include <mem/pagedir.h>
-#include <cpu.h>
-#include <config.h>
-#include <video.h>
+#include <task/thread.h>
+#include <task/timer.h>
 #include <assert.h>
+#include <common.h>
+#include <config.h>
+#include <cpu.h>
 #include <errno.h>
+#include <video.h>
 
 Thread *Thread::cur = NULL;
 

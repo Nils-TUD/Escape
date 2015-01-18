@@ -18,12 +18,12 @@
  */
 
 #include <sys/common.h>
-#include <sys/thread.h>
 #include <sys/keycodes.h>
+#include <sys/thread.h>
 #include <stdlib.h>
 
-#include "grid.h"
 #include "game.h"
+#include "grid.h"
 #include "ui.h"
 
 UI::UI(int c,int r,int size)

@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
+#include <sys/common.h>
 #include <sys/conf.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "../../initerror.h"
 #include "x86machine.h"

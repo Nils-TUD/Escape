@@ -20,8 +20,8 @@
 #pragma once
 
 #include <common.h>
-#include <semaphore.h>
 #include <intrptstackframe.h>
+#include <semaphore.h>
 
 #define PANIC_ON_PAGEFAULT	1
 

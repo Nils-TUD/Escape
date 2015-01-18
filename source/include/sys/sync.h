@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/syscalls.h>
 #include <sys/io.h>
+#include <sys/syscalls.h>
 
 #define RW_READ		0
 #define RW_WRITE	1

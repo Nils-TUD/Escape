@@ -20,8 +20,8 @@
 #pragma once
 
 #include <common.h>
-#include <spinlock.h>
 #include <lockguard.h>
+#include <spinlock.h>
 
 class OStream;
 

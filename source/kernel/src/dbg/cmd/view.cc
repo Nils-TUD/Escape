@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <dbg/console.h>
 #include <dbg/cmd/view.h>
+#include <dbg/console.h>
+#include <common.h>
+
 #if defined(__x86__)
 #	include <arch/x86/gdt.h>
 #	include <arch/x86/ioapic.h>

@@ -18,11 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <dirent.h>
-#include <sys/io.h>
 #include <sys/elf.h>
-#include <stdlib.h>
+#include <sys/io.h>
+#include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #if ELF_TYPE == 64

@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <stddef.h>
 #include <exception>
-#include <vector>
-#include <utility>
-#include <string>
 #include <new>
+#include <stddef.h>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace std {
 	typedef off_t streamoff;

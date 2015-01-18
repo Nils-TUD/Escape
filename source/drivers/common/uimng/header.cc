@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <info/cpu.h>
 #include <sys/common.h>
 #include <sys/conf.h>
 #include <vbe/vbe.h>
-#include <info/cpu.h>
-#include <string.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <string.h>
 
-#include "header.h"
 #include "clients.h"
+#include "header.h"
 
 const char *Header::OS_TITLE = "Escape v" ESCAPE_VERSION;
 Header::CPUUsage *Header::_cpuUsage = NULL;

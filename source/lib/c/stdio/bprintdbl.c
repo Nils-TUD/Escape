@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+
+#include "iobuf.h"
 
 int bprintdbl(FILE *f,double d,uint precision) {
 	int c = 0;

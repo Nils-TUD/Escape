@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int bprintu(FILE *f,uint u,uint base,const char *hexchars) {
 	int c = 0;

@@ -20,8 +20,8 @@
 #pragma once
 
 #include <impl/streams/filebuf.h>
-#include <istream>
 #include <sys/io.h>
+#include <istream>
 
 namespace std {
 	/**

@@ -18,13 +18,14 @@
  */
 
 #include <sys/common.h>
-#include <sys/io.h>
 #include <sys/conf.h>
+#include <sys/io.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <iostream>
 #include <stdlib.h>
 #include <string.h>
-#include <iostream>
+
 #include "progress.h"
 
 using namespace std;

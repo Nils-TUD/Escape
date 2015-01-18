@@ -18,20 +18,20 @@
  */
 
 #include <sys/common.h>
-#include <sys/io.h>
 #include <sys/endian.h>
+#include <sys/io.h>
 #include <sys/stat.h>
-#include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "dir.h"
 #include "ext2.h"
-#include "path.h"
+#include "file.h"
 #include "inode.h"
 #include "inodecache.h"
+#include "path.h"
 #include "rw.h"
-#include "file.h"
-#include "dir.h"
 
 ino_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags,mode_t mode) {
 	Ext2CInode *cnode = NULL;

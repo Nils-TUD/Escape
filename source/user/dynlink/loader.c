@@ -22,11 +22,12 @@
 #include <sys/io.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "lookup.h"
+#include <string.h>
+
 #include "loader.h"
+#include "lookup.h"
 #include "setup.h"
 
 #define LIB_PATH	"/lib/"

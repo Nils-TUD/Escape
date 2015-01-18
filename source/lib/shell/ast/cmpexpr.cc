@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "cmpexpr.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createCmpExpr(sASTNode *operand1,uint operation,sASTNode *operand2) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <esc/ipc/ipcstream.h>
 #include <sys/common.h>
 #include <sys/driver.h>
-#include <esc/ipc/ipcstream.h>
 #include <functor.h>
-#include <sstream>
 #include <map>
+#include <sstream>
 
 namespace esc {
 

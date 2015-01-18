@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/clientdevice.h>
+#include <esc/proto/ui.h>
+#include <esc/proto/winmng.h>
 #include <sys/common.h>
-#include <sys/io.h>
 #include <sys/debug.h>
 #include <sys/driver.h>
+#include <sys/io.h>
 #include <sys/keycodes.h>
+#include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <sys/messages.h>
-#include <esc/proto/ui.h>
-#include <esc/ipc/clientdevice.h>
-#include <esc/proto/winmng.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "window.h"
+#include "infodev.h"
 #include "input.h"
 #include "listener.h"
-#include "infodev.h"
+#include "window.h"
 
 #define DEF_BPP		24
 

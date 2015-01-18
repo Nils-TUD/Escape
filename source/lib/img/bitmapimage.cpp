@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <img/bitmapimage.h>
 #include <esc/rawfile.h>
+#include <img/bitmapimage.h>
 
 namespace img {
 

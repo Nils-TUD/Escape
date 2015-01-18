@@ -20,8 +20,9 @@
 #pragma once
 
 #include <sys/common.h>
-#include "node.h"
+
 #include "../exec/env.h"
+#include "node.h"
 
 typedef struct {
 	sASTNode *initExpr;

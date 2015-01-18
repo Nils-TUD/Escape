@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <sys/width.h>
-#include "iobuf.h"
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+
+#include "iobuf.h"
 
 int bprintdblpad(FILE *f,double d,uint pad,uint flags,uint precision) {
 	int count = 0;

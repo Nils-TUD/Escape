@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <esc/ipc/screendevice.h>
-#include <stdlib.h>
+#include <sys/common.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #if defined(__eco32__)
 #	define VIDEO_MEM			0x30100000

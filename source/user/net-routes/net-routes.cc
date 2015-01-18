@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <info/route.h>
 #include <esc/proto/net.h>
 #include <esc/cmdargs.h>
+#include <info/route.h>
+#include <sys/common.h>
 #include <stdio.h>
 #include <stdlib.h>
 

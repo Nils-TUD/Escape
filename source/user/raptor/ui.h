@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/proto/vterm.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/messages.h>
-#include <esc/proto/vterm.h>
 
 #define WIDTH				(mode.cols)
 #define HEIGHT				(mode.rows)

@@ -19,13 +19,13 @@
 
 #pragma once
 
+#include <esc/proto/input.h>
+#include <esc/proto/screen.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/stat.h>
-#include <esc/proto/screen.h>
-#include <esc/proto/input.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace esc {
 

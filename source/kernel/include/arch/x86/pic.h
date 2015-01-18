@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <arch/x86/ports.h>
+#include <common.h>
 #include <interrupts.h>
 
 class PIC {

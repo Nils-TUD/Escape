@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 size_t favail(FILE *stream) {
 	if(stream->eof || stream->in.buffer == NULL)

@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/endian.h>
-#include <img/bitmapimage.h>
 #include <esc/rawfile.h>
-#include <iostream>
+#include <img/bitmapimage.h>
+#include <sys/endian.h>
 #include <iomanip>
+#include <iostream>
 
 #include "bmp.h"
 

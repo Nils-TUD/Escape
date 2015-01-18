@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 /* forward declarations */

@@ -22,14 +22,14 @@
 #include <sys/common.h>
 #include <sys/endian.h>
 
+#include "../socket/rawipsock.h"
 #include "../common.h"
 #include "../link.h"
 #include "../route.h"
-#include "../socket/rawipsock.h"
 #include "arp.h"
 #include "icmp.h"
-#include "udp.h"
 #include "tcp.h"
+#include "udp.h"
 
 template<class T>
 class IPv4 {

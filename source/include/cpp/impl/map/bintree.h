@@ -19,16 +19,15 @@
 
 #pragma once
 
+#include <impl/map/bintreeiterator.h>
+#include <impl/map/bintreenode.h>
 #include <bits/c++config.h>
-#include <stddef.h>
-#include <iterator>
 #include <algorithm>
 #include <functional>
-#include <utility>
+#include <iterator>
 #include <limits>
-
-#include <impl/map/bintreenode.h>
-#include <impl/map/bintreeiterator.h>
+#include <stddef.h>
+#include <utility>
 
 // Note: algorithms are based on http://en.wikipedia.org/wiki/Binary_search_tree
 

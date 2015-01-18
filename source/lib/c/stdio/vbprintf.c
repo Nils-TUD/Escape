@@ -18,10 +18,11 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
+
+#include "iobuf.h"
 
 int vbprintf(FILE *f,const char *fmt,va_list ap) {
 	static char nullbuf[] = "(null)";

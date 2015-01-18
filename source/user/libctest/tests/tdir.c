@@ -18,12 +18,12 @@
  */
 
 #include <sys/common.h>
-#include <sys/test.h>
 #include <sys/stat.h>
-#include <stdlib.h>
+#include <sys/test.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* forward declarations */

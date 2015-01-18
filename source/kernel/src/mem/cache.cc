@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/cache.h>
-#include <mem/pagedir.h>
 #include <mem/kheap.h>
-#include <spinlock.h>
-#include <log.h>
-#include <video.h>
-#include <util.h>
-#include <string.h>
+#include <mem/pagedir.h>
 #include <assert.h>
+#include <common.h>
+#include <log.h>
+#include <spinlock.h>
+#include <string.h>
+#include <util.h>
+#include <video.h>
 
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE	1

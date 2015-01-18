@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <gui/window.h>
 #include <sys/common.h>
-#include <vterm/vtout.h>
-#include <vterm/vtin.h>
 #include <sys/driver.h>
 #include <sys/thread.h>
-#include <gui/window.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
 #include <algorithm>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "guiterm.h"
 

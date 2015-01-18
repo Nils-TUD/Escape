@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
+
+#include "iobuf.h"
 
 /* execute <expr> and return count if its < 0; otherwise you get the value of <expr> */
 #define READERR(count,expr)		({ \

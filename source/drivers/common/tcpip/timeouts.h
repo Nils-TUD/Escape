@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <functor.h>
-#include <mutex>
 #include <list>
+#include <mutex>
 
 class Timeouts {
 	Timeouts() = delete;

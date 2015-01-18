@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <usergroup/group.h>
 #include <sys/arch/x86/ports.h>
-#include <sys/driver.h>
-#include <sys/io.h>
-#include <sys/proc.h>
-#include <sys/debug.h>
-#include <sys/messages.h>
-#include <sys/thread.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <esc/ipc/clientdevice.h>
 #include <esc/ipc/ipcstream.h>
-#include <signal.h>
+#include <esc/vthrow.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
+#include <sys/proc.h>
+#include <sys/stat.h>
+#include <sys/thread.h>
+#include <usergroup/group.h>
+#include <assert.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <esc/vthrow.h>
 
 #include "ata.h"
 #include "controller.h"

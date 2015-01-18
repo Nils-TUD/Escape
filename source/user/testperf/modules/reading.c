@@ -18,14 +18,14 @@
  */
 
 #include <sys/common.h>
-#include <sys/time.h>
-#include <sys/thread.h>
 #include <sys/proc.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/thread.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <string.h>
 
 #include "../modules.h"

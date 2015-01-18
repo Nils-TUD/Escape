@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "dstrexpr.h"
 #include "node.h"
-#include "../mem.h"
 
 #define STR_BUF_SIZE	16
 

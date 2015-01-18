@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "forstmt.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createForStmt(sASTNode *initExpr,sASTNode *condExpr,sASTNode *incExpr,sASTNode *stmtList) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <gui/graphics/pos.h>
 #include <sys/common.h>
 #include <sys/keycodes.h>
-#include <gui/graphics/pos.h>
 #include <ctype.h>
 #include <ostream>
 

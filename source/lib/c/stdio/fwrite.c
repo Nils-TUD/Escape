@@ -19,8 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/io.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {
 	/* first flush the output */

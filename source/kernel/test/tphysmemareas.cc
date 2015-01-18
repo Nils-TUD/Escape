@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/physmemareas.h>
-#include <util.h>
 #include <sys/test.h>
+#include <common.h>
+#include <util.h>
+
 #include "testutils.h"
 
 /* forward declarations */

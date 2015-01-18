@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/proto/input.h>
+#include <sys/common.h>
 
 class Keyboard {
 	Keyboard() = delete;

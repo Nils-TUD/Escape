@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+
 #include "node.h"
 
 #define REDIR_NO		0

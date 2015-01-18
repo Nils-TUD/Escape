@@ -17,29 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/file.h>
 #include <sys/common.h>
-#include <sys/messages.h>
-#include <sys/io.h>
-#include <sys/thread.h>
+#include <sys/conf.h>
 #include <sys/debug.h>
 #include <sys/elf.h>
-#include <sys/conf.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/thread.h>
 #include <vterm/vtctrl.h>
+#include <algorithm>
+#include <dirent.h>
+#include <fstream>
+#include <functional>
+#include <signal.h>
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
-#include <algorithm>
-#include <functional>
-#include <sstream>
-#include <fstream>
-#include <dirent.h>
-#include <esc/file.h>
 
-#include "processmanager.h"
-#include "driverprocess.h"
-#include "../machine.h"
 #include "../initerror.h"
+#include "../machine.h"
 #include "../progress.h"
+#include "driverprocess.h"
+#include "processmanager.h"
 
 using namespace std;
 

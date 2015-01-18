@@ -18,16 +18,16 @@
  */
 
 #include <sys/common.h>
+#include <sys/debug.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
-#include <sys/thread.h>
-#include <sys/debug.h>
-#include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/thread.h>
+#include <sys/time.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #include "../modules.h"
 

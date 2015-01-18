@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <esc/env.h>
+#include <esc/filecopy.h>
 #include <sys/common.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <esc/proto/vterm.h>
-#include <esc/filecopy.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <esc/env.h>
 
 namespace esc {
 

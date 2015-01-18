@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "iobuf.h"
 
 FILE *fopenstr(char *buf,size_t size,const char *mode) {
 	size_t rsize = 0,wsize = 0;

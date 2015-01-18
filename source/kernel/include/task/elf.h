@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <sys/elf.h>
+#include <common.h>
 
 class OpenFile;
 

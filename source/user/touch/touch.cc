@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <esc/cmdargs.h>
-#include <time.h>
-#include <utime.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <utime.h>
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-a] [-m] [-c] <file>...\n",name);

@@ -18,10 +18,10 @@
  */
 
 #include <sys/common.h>
-#include <sys/thread.h>
 #include <sys/sync.h>
-#include <stdlib.h>
+#include <sys/thread.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../modules.h"
 

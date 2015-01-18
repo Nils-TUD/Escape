@@ -20,13 +20,14 @@
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <limits.h>
-#include "../mem.h"
+#include <stdio.h>
+
 #include "../completion.h"
-#include "subcmd.h"
+#include "../mem.h"
 #include "cmdexprlist.h"
 #include "conststrexpr.h"
+#include "subcmd.h"
 
 /**
  * Wether the given node is expandable

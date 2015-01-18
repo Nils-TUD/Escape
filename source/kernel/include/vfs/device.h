@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <common.h>
-#include <vfs/node.h>
-#include <semaphore.h>
 #include <sys/messages.h>
+#include <vfs/node.h>
+#include <common.h>
 #include <errno.h>
+#include <semaphore.h>
 
 class VFSDevice : public VFSNode {
 public:

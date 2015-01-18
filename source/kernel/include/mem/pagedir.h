@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <mem/physmem.h>
 #include <mem/pagetables.h>
+#include <mem/physmem.h>
+#include <common.h>
 #include <cppsupport.h>
 
 /* flags for map() */

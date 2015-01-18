@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/thread.h>
-#include <sys/endian.h>
 #include <fs/blockcache.h>
 #include <fs/fsdev.h>
+#include <sys/common.h>
+#include <sys/endian.h>
+#include <sys/thread.h>
 #include <assert.h>
 
-#include "ext2.h"
 #include "bitmap.h"
+#include "ext2.h"
 #include "sbmng.h"
 
 ino_t Ext2Bitmap::allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir) {

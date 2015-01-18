@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 int fscanf(FILE *file,const char *fmt,...) {
 	int res;

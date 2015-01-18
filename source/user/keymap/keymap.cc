@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/proc.h>
-#include <sys/messages.h>
-#include <sys/cmdargs.h>
-#include <sys/stat.h>
 #include <esc/proto/vterm.h>
+#include <esc/env.h>
+#include <sys/cmdargs.h>
+#include <sys/common.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <esc/env.h>
 #include <string>
 
 #define KEYMAP_DIR		"/etc/keymaps"

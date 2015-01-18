@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <task/filedesc.h>
 #include <task/proc.h>
 #include <task/thread.h>
-#include <task/filedesc.h>
-#include <vfs/vfs.h>
 #include <vfs/openfile.h>
-#include <spinlock.h>
-#include <video.h>
-#include <string.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <errno.h>
+#include <spinlock.h>
+#include <string.h>
+#include <video.h>
 
 bool FileDesc::isValid(Proc *p,int fd) {
 	return fd >= 0 && (size_t)fd < p->fileDescsSize;

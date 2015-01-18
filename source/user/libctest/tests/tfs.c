@@ -19,12 +19,12 @@
 
 #include <sys/common.h>
 #include <sys/io.h>
-#include <sys/test.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/test.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void test_fs(void);
 static void test_basics(void);

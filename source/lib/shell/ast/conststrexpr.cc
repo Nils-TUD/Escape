@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "conststrexpr.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createConstStrExpr(char *s,bool hasQuotes) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

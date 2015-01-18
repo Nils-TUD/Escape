@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
-#include <sys/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>
 

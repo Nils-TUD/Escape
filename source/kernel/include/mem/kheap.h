@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <common.h>
-#include <spinlock.h>
-#include <lockguard.h>
 #include <assert.h>
+#include <common.h>
+#include <lockguard.h>
+#include <spinlock.h>
 
 class Cache;
 class OStream;

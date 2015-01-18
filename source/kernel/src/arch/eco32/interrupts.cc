@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <dbg/console.h>
+#include <dbg/kb.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
+#include <sys/keycodes.h>
+#include <task/proc.h>
 #include <task/signals.h>
 #include <task/timer.h>
 #include <task/uenv.h>
-#include <task/proc.h>
-#include <mem/pagedir.h>
-#include <mem/virtmem.h>
-#include <dbg/kb.h>
-#include <dbg/console.h>
-#include <sys/keycodes.h>
+#include <common.h>
 #include <cpu.h>
-#include <syscalls.h>
 #include <interrupts.h>
-#include <video.h>
+#include <syscalls.h>
 #include <util.h>
+#include <video.h>
 
 #define DEBUG_PAGEFAULTS	0
 

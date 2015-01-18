@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <common.h>
-#include <mem/virtmem.h>
 #include <esc/col/islist.h>
-#include <mutex.h>
-#include <cppsupport.h>
+#include <mem/virtmem.h>
 #include <assert.h>
+#include <common.h>
+#include <cppsupport.h>
+#include <mutex.h>
 
 #define PF_BITCOUNT			3		/* number of bits occupied by real flags */
 #define PF_COPYONWRITE		1UL

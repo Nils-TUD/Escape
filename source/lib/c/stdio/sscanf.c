@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 int sscanf(const char *str,const char *fmt,...) {
 	int res;

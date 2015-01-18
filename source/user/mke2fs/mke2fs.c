@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/cmdargs.h>
-#include <sys/endian.h>
-#include <sys/time.h>
-#include <sys/stat.h>
 #include <fs/ext2/ext2.h>
+#include <sys/cmdargs.h>
+#include <sys/common.h>
+#include <sys/endian.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

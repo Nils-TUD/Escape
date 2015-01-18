@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 int snprintf(char *str,size_t n,const char *fmt,...) {
 	int res;

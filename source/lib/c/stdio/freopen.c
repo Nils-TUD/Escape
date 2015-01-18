@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 FILE *freopen(A_UNUSED const char *filename,A_UNUSED const char *mode,A_UNUSED FILE *stream) {
 	/* TODO not supported atm */

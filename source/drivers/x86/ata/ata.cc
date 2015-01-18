@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
+#include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/proc.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include "device.h"
-#include "controller.h"
+
 #include "ata.h"
+#include "controller.h"
+#include "device.h"
 
 static bool ata_setupCommand(sATADevice *device,uint64_t lba,size_t secCount,uint cmd);
 static uint ata_getCommand(sATADevice *device,uint op);

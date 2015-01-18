@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <video.h>
-#include <string.h>
 #include <assert.h>
+#include <common.h>
 #include <stdarg.h>
+#include <string.h>
+#include <video.h>
 
 void Video::move() {
 	/* last line? */

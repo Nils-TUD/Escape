@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "stmtlist.h"
-#include "node.h"
+
 #include "../mem.h"
+#include "node.h"
+#include "stmtlist.h"
 
 sASTNode *ast_createStmtList(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

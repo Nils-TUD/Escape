@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <stddef.h>
 #include <impl/streams/ios_base.h>
+#include <stddef.h>
 
 namespace std {
 	// 27.4.5, manipulators:

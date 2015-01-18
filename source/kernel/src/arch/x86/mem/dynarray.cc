@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <mem/dynarray.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
-#include <mem/dynarray.h>
-#include <util.h>
+#include <common.h>
 #include <string.h>
+#include <util.h>
 
 bool DynArray::extend() {
 	LockGuard<SpinLock> g(&lock);

@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
+#include <sys/cmdargs.h>
 #include <sys/common.h>
-#include <usergroup/user.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
 #include <usergroup/group.h>
 #include <usergroup/passwd.h>
-#include <sys/messages.h>
-#include <sys/cmdargs.h>
-#include <sys/proc.h>
-#include <esc/proto/vterm.h>
+#include <usergroup/user.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void listUsers(void);
 static void addUser(const char *name,const char *home);

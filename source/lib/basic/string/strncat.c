@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <assert.h>
+#include <stddef.h>
 #include <string.h>
 
 char *strncat(char *str1,const char *str2,size_t count) {

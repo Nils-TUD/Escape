@@ -19,16 +19,16 @@
 
 #pragma once
 
-#include <common.h>
-#include <task/signals.h>
-#include <task/sched.h>
-#include <task/timer.h>
-#include <mem/pagedir.h>
-#include <mem/vmtree.h>
-#include <mem/virtmem.h>
 #include <esc/col/dlist.h>
-#include <interrupts.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
+#include <mem/vmtree.h>
+#include <task/sched.h>
+#include <task/signals.h>
+#include <task/timer.h>
 #include <assert.h>
+#include <common.h>
+#include <interrupts.h>
 
 #define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128

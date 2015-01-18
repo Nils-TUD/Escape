@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <impl/map/bintree.h>
 #include <sys/common.h>
 #include <sys/test.h>
 #include <stdlib.h>
-#include <impl/map/bintree.h>
 #include <utility>
 
 using namespace std;

@@ -17,10 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <esc/proto/vterm.h>
-#include <stdlib.h>
+#include <sys/common.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "../cmds.h"
 
 int shell_cmdClear(int,char **) {

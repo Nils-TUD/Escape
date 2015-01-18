@@ -19,8 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/esccodes.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 int freadesc(FILE *f,int *n1,int *n2,int *n3) {
 	size_t i;

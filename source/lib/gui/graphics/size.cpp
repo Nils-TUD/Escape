@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
+#include <gui/graphics/size.h>
 
 namespace gui {
 	Size::Size(const Pos &pos) : width(pos.x), height(pos.y) {

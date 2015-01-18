@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/uenv.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <mem/virtmem.h>
 #include <mem/pagedir.h>
 #include <mem/useraccess.h>
-#include <string.h>
-#include <errno.h>
+#include <mem/virtmem.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/uenv.h>
 #include <assert.h>
+#include <common.h>
+#include <errno.h>
+#include <string.h>
 
 void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals::handler_func handler) {
 	uint32_t *sp = (uint32_t*)stack->r[29];

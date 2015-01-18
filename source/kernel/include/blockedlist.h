@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
 #include <esc/col/slist.h>
 #include <task/sched.h>
+#include <common.h>
 
 class Thread;
 

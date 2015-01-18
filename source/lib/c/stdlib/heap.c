@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch.h>
-#include <sys/mman.h>
-#include <sys/debug.h>
-#include <sys/sync.h>
+#include <sys/common.h>
 #include <sys/conf.h>
+#include <sys/debug.h>
+#include <sys/mman.h>
+#include <sys/sync.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0

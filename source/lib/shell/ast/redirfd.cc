@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
 #include "../mem.h"
-#include "redirfd.h"
 #include "node.h"
+#include "redirfd.h"
 
 sASTNode *ast_createRedirFd(uchar type) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

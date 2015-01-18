@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/messages.h>
-#include <esc/proto/vterm.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "buffer.h"
-#include "mem.h"
 #include "display.h"
+#include "mem.h"
 
 static void displ_updateLines(size_t start,size_t count);
 static void displ_printStatus(void);

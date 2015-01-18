@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <arch/x86/idt.h>
-#include <arch/x86/gdt.h>
 #include <arch/x86/fpu.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/idt.h>
 #include <arch/x86/lapic.h>
-#include <task/thread.h>
-#include <task/proc.h>
+#include <mem/pagedir.h>
+#include <mem/virtmem.h>
 #include <task/elf.h>
+#include <task/proc.h>
 #include <task/smp.h>
 #include <task/terminator.h>
-#include <mem/virtmem.h>
-#include <mem/pagedir.h>
+#include <task/thread.h>
+#include <assert.h>
+#include <boot.h>
+#include <common.h>
 #include <cpu.h>
 #include <spinlock.h>
-#include <video.h>
-#include <boot.h>
 #include <util.h>
-#include <assert.h>
+#include <video.h>
 
 /* make gcc happy */
 EXTERN_C void bspstart(void *mbp);

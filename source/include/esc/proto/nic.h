@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <esc/proto/default.h>
+#include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <esc/proto/default.h>
-#include <ostream>
 #include <iomanip>
-#include <esc/vthrow.h>
+#include <ostream>
 
 namespace esc {
 

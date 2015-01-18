@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/endian.h>
-#include <sys/time.h>
-#include <sys/thread.h>
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
-#include <info/link.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <time.h>
 #include <esc/cmdargs.h>
 #include <esc/dns.h>
+#include <info/link.h>
+#include <sys/common.h>
+#include <sys/endian.h>
+#include <sys/thread.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <time.h>
 
 using namespace esc;
 

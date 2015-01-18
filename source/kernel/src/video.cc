@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <dbg/kb.h>
-#include <config.h>
-#include <video.h>
-#include <log.h>
 #include <sys/esccodes.h>
 #include <assert.h>
+#include <common.h>
+#include <config.h>
+#include <log.h>
+#include <video.h>
 
 Video Video::inst;
 

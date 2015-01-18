@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <esc/proto/pci.h>
-#include <esc/proto/nic.h>
 #include <esc/ipc/nicdevice.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/pci.h>
+#include <sys/common.h>
 #include <functor.h>
 #include <mutex>
 

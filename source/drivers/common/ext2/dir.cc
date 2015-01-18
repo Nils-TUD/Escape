@@ -20,16 +20,16 @@
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/stat.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "ext2.h"
 #include "dir.h"
+#include "ext2.h"
 #include "file.h"
-#include "link.h"
 #include "inodecache.h"
+#include "link.h"
 
 int Ext2Dir::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name,mode_t mode) {
 	Ext2CInode *cnode;

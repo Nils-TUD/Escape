@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <vfs/node.h>
+#include <common.h>
 #include <errno.h>
 
 class VFSLink : public VFSNode {

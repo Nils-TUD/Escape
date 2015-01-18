@@ -17,38 +17,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/signals.h>
-#include <task/sched.h>
-#include <task/elf.h>
-#include <task/uenv.h>
-#include <task/groups.h>
-#include <task/filedesc.h>
-#include <task/timer.h>
-#include <task/sems.h>
+#include <mem/cache.h>
+#include <mem/copyonwrite.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
-#include <mem/cache.h>
-#include <mem/virtmem.h>
-#include <mem/copyonwrite.h>
 #include <mem/useraccess.h>
-#include <interrupts.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
+#include <mem/virtmem.h>
+#include <task/elf.h>
+#include <task/filedesc.h>
+#include <task/groups.h>
+#include <task/proc.h>
+#include <task/sched.h>
+#include <task/sems.h>
+#include <task/signals.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <task/uenv.h>
 #include <vfs/fs.h>
+#include <vfs/node.h>
 #include <vfs/openfile.h>
-#include <spinlock.h>
-#include <mutex.h>
-#include <util.h>
-#include <syscalls.h>
-#include <log.h>
-#include <term.h>
-#include <string.h>
+#include <vfs/vfs.h>
 #include <assert.h>
-#include <limits.h>
+#include <common.h>
 #include <errno.h>
+#include <interrupts.h>
+#include <limits.h>
+#include <log.h>
+#include <mutex.h>
+#include <spinlock.h>
+#include <string.h>
+#include <syscalls.h>
+#include <term.h>
+#include <util.h>
 
 #define DEBUG_CREATIONS					0
 /* the max. size we'll allow for exec()-arguments */

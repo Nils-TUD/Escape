@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <esc/proto/winmng.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <esc/proto/winmng.h>
 
 typedef esc::WinMngEvents::Event::Type ev_type;
 

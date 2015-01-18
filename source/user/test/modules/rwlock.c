@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/thread.h>
 #include <sys/sync.h>
+#include <sys/thread.h>
 #include <stdio.h>
 #include <stdlib.h>
 

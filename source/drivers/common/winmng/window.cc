@@ -17,25 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
+#include <esc/proto/winmng.h>
 #include <gui/graphics/rectangle.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/driver.h>
+#include <sys/io.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
-#include <sys/driver.h>
-#include <sys/debug.h>
-#include <sys/io.h>
-#include <esc/proto/winmng.h>
+#include <assert.h>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <assert.h>
-#include <memory>
 
-#include "window.h"
+#include "input.h"
 #include "listener.h"
 #include "preview.h"
-#include "input.h"
+#include "window.h"
 
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
 #define ABS(a)		((a) < 0 ? -(a) : (a))

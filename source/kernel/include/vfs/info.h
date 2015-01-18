@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <vfs/file.h>
 #include <task/proc.h>
+#include <vfs/file.h>
+#include <common.h>
 
 class VFSInfo {
 	/* callback function for the default read-handler */

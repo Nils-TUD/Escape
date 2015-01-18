@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/atomic.h>
-#include <sys/proc.h>
+#include <sys/common.h>
 #include <sys/mman.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <errno.h>
 
 /* prefill the space for getpid() with '/'. they will simply be ignored by the kernel */
 #define PSHM_PATH	"/sys/proc/////////////shm/"

@@ -17,17 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/x86/gdt.h>
 #include <mem/cache.h>
-#include <mem/physmem.h>
 #include <mem/pagedir.h>
-#include <task/smp.h>
+#include <mem/physmem.h>
 #include <task/proc.h>
-#include <syscalls.h>
-#include <video.h>
-#include <util.h>
+#include <task/smp.h>
+#include <common.h>
 #include <string.h>
+#include <syscalls.h>
+#include <util.h>
+#include <video.h>
+
 /* for offsetof() */
 #include <stddef.h>
 

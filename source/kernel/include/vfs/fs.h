@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <common.h>
-#include <vfs/openfile.h>
-#include <vfs/node.h>
 #include <esc/col/slist.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <common.h>
 #include <utime.h>
 
 class Proc;

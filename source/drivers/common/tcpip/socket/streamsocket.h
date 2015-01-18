@@ -22,10 +22,10 @@
 #include <sys/common.h>
 #include <stdlib.h>
 
+#include "../circularbuf.h"
 #include "../common.h"
 #include "../portmng.h"
 #include "../timeouts.h"
-#include "../circularbuf.h"
 #include "socket.h"
 
 class TCP;

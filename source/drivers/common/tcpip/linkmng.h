@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <errno.h>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "link.h"
 

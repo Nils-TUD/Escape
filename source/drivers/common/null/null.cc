@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <esc/ipc/device.h>
 #include <esc/proto/file.h>
+#include <sys/common.h>
 #include <stdio.h>
 
 using namespace esc;

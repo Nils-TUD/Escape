@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
-#include <mem/vmtree.h>
 #include <mem/region.h>
+#include <mem/vmtree.h>
+#include <sys/test.h>
+#include <task/thread.h>
+#include <common.h>
 #include <cppsupport.h>
 #include <util.h>
-#include <sys/test.h>
+
 #include "testutils.h"
 
 #define TEST_REG_COUNT	10

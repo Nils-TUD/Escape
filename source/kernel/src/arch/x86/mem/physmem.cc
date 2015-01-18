@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/physmem.h>
 #include <mem/pagedir.h>
+#include <mem/physmem.h>
 #include <boot.h>
-#include <util.h>
-#include <video.h>
+#include <common.h>
 #include <log.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	const Boot::Info *info = Boot::getInfo();

@@ -19,13 +19,13 @@
 
 #pragma once
 
+#include <esc/vthrow.h>
 #include <sys/io.h>
 #include <sys/stat.h>
-#include <esc/vthrow.h>
 #include <dirent.h>
 #include <string>
-#include <vector>
 #include <time.h>
+#include <vector>
 
 namespace esc {
 	class file {

@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
+
+#include "iobuf.h"
 
 int breads(FILE *f,size_t length,char *str) {
 	int rc;

@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 FILE *tmpfile(void) {
 	/* TODO to be implemented */

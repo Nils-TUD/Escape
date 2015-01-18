@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <sys/debug.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+
 #include "../mem.h"
 #include "vector.h"
 

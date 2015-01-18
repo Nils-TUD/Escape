@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/editable.h>
+#include <sys/common.h>
 #include <sys/keycodes.h>
 
 using namespace std;

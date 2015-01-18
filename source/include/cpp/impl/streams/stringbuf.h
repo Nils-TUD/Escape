@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <stddef.h>
 #include <impl/streams/ios_base.h>
+#include <stddef.h>
 #include <streambuf>
 #include <string>
 

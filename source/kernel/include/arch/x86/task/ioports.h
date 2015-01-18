@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <task/proc.h>
+#include <common.h>
 
 class IOPorts {
 public:

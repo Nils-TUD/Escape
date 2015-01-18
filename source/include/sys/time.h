@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/syscalls.h>
 #include <sys/conf.h>
+#include <sys/syscalls.h>
 
 #if defined(__cplusplus)
 extern "C" {

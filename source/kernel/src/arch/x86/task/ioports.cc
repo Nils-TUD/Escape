@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <arch/x86/gdt.h>
 #include <arch/x86/task/ioports.h>
-#include <task/smp.h>
-#include <task/proc.h>
+#include <arch/x86/gdt.h>
 #include <mem/cache.h>
-#include <video.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <common.h>
 #include <errno.h>
 #include <string.h>
+#include <video.h>
 
 void IOPorts::init(Proc *p) {
 	p->ioMap = NULL;

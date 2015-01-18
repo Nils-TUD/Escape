@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <blockedlist.h>
 #include <task/thread.h>
 #include <assert.h>
+#include <blockedlist.h>
+#include <common.h>
 
 void BlockedList::block(Thread *t) {
 	assert(t == Thread::getRunning());

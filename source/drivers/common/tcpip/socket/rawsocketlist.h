@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 #include <algorithm>
-#include <vector>
 #include <errno.h>
+#include <vector>
 
 class Socket;
 

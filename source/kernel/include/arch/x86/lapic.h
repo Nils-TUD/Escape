@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <common.h>
 #include <mem/physmem.h>
-#include <interrupts.h>
 #include <assert.h>
+#include <common.h>
+#include <interrupts.h>
 
 class LAPIC {
 	LAPIC() = delete;

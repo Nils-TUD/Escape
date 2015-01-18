@@ -17,30 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/vtermdevice.h>
+#include <esc/proto/file.h>
+#include <esc/proto/ui.h>
+#include <esc/proto/vterm.h>
 #include <sys/common.h>
+#include <sys/debug.h>
 #include <sys/driver.h>
 #include <sys/io.h>
-#include <sys/debug.h>
-#include <sys/proc.h>
-#include <sys/mman.h>
-#include <sys/thread.h>
 #include <sys/messages.h>
+#include <sys/mman.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <usergroup/group.h>
-#include <esc/proto/ui.h>
-#include <esc/proto/file.h>
-#include <esc/proto/vterm.h>
-#include <esc/ipc/vtermdevice.h>
-#include <signal.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <memory>
-
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
+#include <assert.h>
+#include <errno.h>
+#include <memory>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 class TUIVTermDevice;
 

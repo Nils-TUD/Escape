@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
-#include <sys/thread.h>
-#include <sys/irq.h>
-#include <esc/proto/input.h>
 #include <esc/ipc/clientdevice.h>
-#include <stdlib.h>
+#include <esc/proto/input.h>
+#include <sys/common.h>
+#include <sys/irq.h>
+#include <sys/thread.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "ps2.h"
 #include "mouse.h"
+#include "ps2.h"
 
 typedef union {
 	uint8_t	yOverflow : 1,

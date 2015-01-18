@@ -19,6 +19,7 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
 #include "partition.h"
 
 /* offset of partition-table in MBR */

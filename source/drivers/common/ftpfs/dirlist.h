@@ -21,14 +21,14 @@
 
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <sstream>
-#include <fstream>
 #include <dirent.h>
+#include <fstream>
+#include <sstream>
 #include <time.h>
 
+#include "blockfile.h"
 #include "datacon.h"
 #include "dircache.h"
-#include "blockfile.h"
 
 class DirList : public BlockFile {
 public:

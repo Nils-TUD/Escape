@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/kheap.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
+#include <common.h>
 
 uintptr_t KHeap::allocAreas() {
 	frameno_t frame = PhysMem::allocate(PhysMem::CRIT);

@@ -21,9 +21,10 @@
 
 #include <sys/common.h>
 #include <usergroup/group.h>
+#include <ostream>
 #include <string>
 #include <vector>
-#include <ostream>
+
 #include "process.h"
 
 class Device {

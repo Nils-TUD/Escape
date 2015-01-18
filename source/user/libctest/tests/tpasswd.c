@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <usergroup/passwd.h>
 #include <sys/test.h>
+#include <usergroup/passwd.h>
 #include <stdlib.h>
 
 static void test_passwd(void);

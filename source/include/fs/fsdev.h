@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/ipc/clientdevice.h>
 #include <fs/common.h>
 #include <fs/infodev.h>
+#include <sys/common.h>
 #include <stdio.h>
 
 class FileSystem;

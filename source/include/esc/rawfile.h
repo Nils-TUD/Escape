@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/vthrow.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string>
-#include <esc/vthrow.h>
 
 namespace esc {
 	/**

@@ -17,30 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <task/signals.h>
-#include <task/timer.h>
-#include <task/terminator.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/channel.h>
-#include <vfs/openfile.h>
 #include <mem/cache.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
 #include <mem/virtmem.h>
+#include <task/proc.h>
 #include <task/sched.h>
+#include <task/signals.h>
 #include <task/smp.h>
+#include <task/terminator.h>
+#include <task/thread.h>
+#include <task/timer.h>
+#include <vfs/channel.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <assert.h>
+#include <common.h>
 #include <cpu.h>
+#include <errno.h>
 #include <log.h>
 #include <spinlock.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
 
 /* our threads */
 esc::DList<Thread::ListItem> ThreadBase::threads;

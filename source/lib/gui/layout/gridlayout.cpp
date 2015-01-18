@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/layout/gridlayout.h>
 #include <gui/panel.h>
+#include <sys/common.h>
 #include <assert.h>
 
 using namespace std;

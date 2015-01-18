@@ -21,8 +21,8 @@
 #include <sys/stat.h>
 #include <usergroup/passwd.h>
 #include <usergroup/user.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 sPasswd *pw_parseFromFile(const char *file,size_t *count) {
 	return (sPasswd*)user_parseListFromFile(file,count,(parse_func)pw_parse);

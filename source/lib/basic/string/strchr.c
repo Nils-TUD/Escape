@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <assert.h>
+#include <stddef.h>
 #include <string.h>
 
 char *strchr(const char *str,int ch) {

@@ -18,13 +18,13 @@
  */
 
 #include <sys/common.h>
-#include <sys/test.h>
 #include <sys/elf.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <sys/test.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* forward declarations */
 static void test_mem(void);

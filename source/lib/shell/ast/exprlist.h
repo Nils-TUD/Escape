@@ -21,8 +21,9 @@
 
 #include <sys/common.h>
 #include <sys/sllist.h>
-#include "node.h"
+
 #include "../exec/env.h"
+#include "node.h"
 
 typedef struct {
 	sSLList *list;

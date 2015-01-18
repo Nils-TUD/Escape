@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/application.h>
-#include <sys/thread.h>
+#include <sys/common.h>
 #include <sys/proc.h>
+#include <sys/thread.h>
 #include <sys/wait.h>
+
 #include "desktopwin.h"
 
 using namespace gui;

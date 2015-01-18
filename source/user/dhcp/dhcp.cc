@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/thread.h>
-#include <sys/sync.h>
-#include <sys/endian.h>
-#include <esc/proto/socket.h>
 #include <esc/proto/net.h>
+#include <esc/proto/socket.h>
 #include <esc/cmdargs.h>
 #include <esc/dns.h>
-#include <iostream>
+#include <sys/common.h>
+#include <sys/endian.h>
+#include <sys/sync.h>
+#include <sys/thread.h>
 #include <fstream>
+#include <iostream>
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>

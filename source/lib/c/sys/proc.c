@@ -18,8 +18,8 @@
  */
 
 #include <sys/common.h>
-#include <sys/proc.h>
 #include <sys/io.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdlib.h>

@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <common.h>
 #include <mem/dynarray.h>
 #include <sys/stat.h>
+#include <common.h>
 #include <cppsupport.h>
-#include <lockguard.h>
 #include <errno.h>
+#include <lockguard.h>
 
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000

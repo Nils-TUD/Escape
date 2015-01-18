@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <esc/col/islist.h>
 #include <esc/col/dlist.h>
+#include <esc/col/islist.h>
+#include <common.h>
 #include <lockguard.h>
 #include <spinlock.h>
 

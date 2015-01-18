@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/vterm.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/mount.h>
-#include <sys/thread.h>
 #include <sys/proc.h>
-#include <usergroup/user.h>
+#include <sys/thread.h>
 #include <usergroup/group.h>
 #include <usergroup/passwd.h>
-#include <esc/proto/vterm.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <usergroup/user.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SKIP_LOGIN			0
 #define SHELL_PATH			"/bin/shell"

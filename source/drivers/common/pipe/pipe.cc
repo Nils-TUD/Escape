@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <esc/ipc/requestqueue.h>
 #include <esc/ipc/clientdevice.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <esc/ipc/requestqueue.h>
+#include <sys/common.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 

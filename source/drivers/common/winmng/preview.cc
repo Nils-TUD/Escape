@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/graphics/rectangle.h>
-#include <string.h>
+#include <sys/common.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "window.h"
 #include "preview.h"
+#include "window.h"
 
 static void preview_handleIntersec(char *shmem,const gui::Rectangle &curRec,
 		const gui::Rectangle &intersec,size_t i,gsize_t xres,gsize_t yres);

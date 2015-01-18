@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 /* forward declarations */
 static void test_env(void);

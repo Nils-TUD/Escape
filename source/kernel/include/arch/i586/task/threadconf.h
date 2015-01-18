@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <arch/x86/fpu.h>
+#include <common.h>
 #include <ostream.h>
 
 #define STACK_REG_COUNT			1

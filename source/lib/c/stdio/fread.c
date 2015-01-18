@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <sys/io.h>
-#include "iobuf.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "iobuf.h"
 
 size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 	sIOBuf *buf = &file->in;

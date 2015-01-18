@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <common.h>
 #include <sys/arch.h>
+#include <common.h>
 
 class CPU : public CPUBase {
 	friend class CPUBase;

@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <common.h>
 #include <esc/pathtree.h>
+#include <common.h>
 #include <cppsupport.h>
-#include <ostream.h>
 #include <log.h>
+#include <ostream.h>
 
 /**
  * The in-kernel variant of the PathTree, which adds printing capabilities.

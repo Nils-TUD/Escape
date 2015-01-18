@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <dbg/kb.h>
 #include <sys/keycodes.h>
+#include <common.h>
 
 uint Keyboard::flags = 0;
 Keyboard::KeymapEntry Keyboard::keymap[] = {

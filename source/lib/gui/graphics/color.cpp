@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/graphics/color.h>
 #include <gui/application.h>
+#include <sys/common.h>
 
 using namespace std;
 

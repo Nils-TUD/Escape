@@ -19,13 +19,13 @@
 
 #pragma once
 
+#include <esc/proto/speaker.h>
+#include <esc/proto/ui.h>
+#include <esc/ringbuffer.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/messages.h>
 #include <sys/sync.h>
-#include <esc/ringbuffer.h>
-#include <esc/proto/ui.h>
-#include <esc/proto/speaker.h>
 #include <mutex>
 
 #define TAB_WIDTH			4

@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/thread.h>
-#include <sys/proc.h>
-#include <sys/stat.h>
-#include <info/process.h>
-#include <info/link.h>
 #include <esc/proto/net.h>
 #include <esc/cmdargs.h>
+#include <info/link.h>
+#include <info/process.h>
+#include <sys/common.h>
+#include <sys/proc.h>
+#include <sys/stat.h>
+#include <sys/thread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #define TIMEOUT		2000	/* wait 2 ms for the NIC driver to register the device */
 

@@ -18,9 +18,9 @@
  */
 
 #include <sys/common.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 void perror(const char *prefix) {
 	fprintf(stderr,prefix);

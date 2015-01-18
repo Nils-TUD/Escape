@@ -18,8 +18,9 @@
  */
 
 #if defined(ESC_PROFILE)
-#include <assert.h>
 #include <sys/arch.h>
+#include <assert.h>
+
 #if defined(IN_KERNEL)
 #	if 0
 #		define gettid()		({ \

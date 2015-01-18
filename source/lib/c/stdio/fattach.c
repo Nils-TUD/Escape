@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "iobuf.h"
 
 FILE *fattach(int fd,const char *mode) {
 	uint flags = IO_NOCLOSE;

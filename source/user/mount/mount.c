@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <sys/thread.h>
+#include <sys/common.h>
 #include <sys/io.h>
+#include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <sys/mount.h>
+#include <sys/thread.h>
 #include <dirent.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <signal.h>
 #include <limits.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static bool run = true;
 

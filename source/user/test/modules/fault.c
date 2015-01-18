@@ -21,8 +21,8 @@
 #include <sys/debug.h>
 #include <sys/io.h>
 #include <sys/proc.h>
-#include <stdio.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "../modules.h"

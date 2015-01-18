@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <mem/virtmem.h>
+#include <mem/pagedir.h>
 #include <mem/useraccess.h>
+#include <mem/virtmem.h>
 #include <task/elf.h>
-#include <task/thread.h>
 #include <task/proc.h>
-#include <vfs/vfs.h>
+#include <task/thread.h>
 #include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <cpu.h>
-#include <video.h>
+#include <errno.h>
 #include <log.h>
 #include <string.h>
-#include <errno.h>
+#include <video.h>
 
 static int doFinish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *headers,
 		OpenFile *file,ELF::StartupInfo *info);

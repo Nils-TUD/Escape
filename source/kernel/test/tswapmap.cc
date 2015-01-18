@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/swapmap.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
+#include <mem/pagedir.h>
+#include <mem/swapmap.h>
 #include <sys/test.h>
+#include <common.h>
 
 static void test_swapmap();
 static void test_swapmap1();

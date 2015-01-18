@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
 #include <arch/x86/gdt.h>
 #include <arch/x86/lapic.h>
+#include <common.h>
 
 class SMP : public SMPBase {
 	friend class SMPBase;

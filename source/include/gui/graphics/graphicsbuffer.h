@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <gui/graphics/size.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/rectangle.h>
+#include <gui/graphics/size.h>
+#include <sys/common.h>
 #include <stdlib.h>
 
 namespace gui {

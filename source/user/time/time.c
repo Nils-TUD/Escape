@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <sys/proc.h>
+#include <sys/common.h>
 #include <sys/conf.h>
-#include <sys/time.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <dirent.h>
-#include <stdio.h>
+#include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 static void sigHdlr(int sig);
 static void usage(const char *name) {

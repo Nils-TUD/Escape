@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
 #include <sys/width.h>
+#include <stddef.h>
 
 size_t getnwidth(int n) {
 	/* we have at least one char */

@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <arch/x86/serial.h>
 #include <arch/x86/gdt.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/smp.h>
-#include <task/uenv.h>
-#include <task/terminator.h>
+#include <arch/x86/serial.h>
 #include <mem/pagedir.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <task/terminator.h>
+#include <task/thread.h>
+#include <task/uenv.h>
 #include <boot.h>
+#include <common.h>
 #include <util.h>
 
 /* make gcc happy */

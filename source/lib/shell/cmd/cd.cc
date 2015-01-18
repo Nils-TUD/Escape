@@ -17,14 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
+#include <sys/common.h>
+#include <sys/io.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <sys/io.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
 #include "../cmds.h"
 
 int shell_cmdCd(int argc,char **argv) {

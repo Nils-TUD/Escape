@@ -22,8 +22,8 @@
 #include <sys/common.h>
 
 #include "blockfile.h"
-#include "datacon.h"
 #include "ctrlcon.h"
+#include "datacon.h"
 
 class File : public BlockFile {
 public:

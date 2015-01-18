@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/window.h>
+#include <sys/common.h>
 
 namespace gui {
 	class PopupWindow : public Window {

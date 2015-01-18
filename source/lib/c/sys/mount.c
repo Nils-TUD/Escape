@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/mount.h>
-#include <sys/syscalls.h>
 #include <sys/stat.h>
+#include <sys/syscalls.h>
 #include <dirent.h>
 
 int mount(int ms,int fs,const char *path) {

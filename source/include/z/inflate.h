@@ -22,9 +22,9 @@
 #include <sys/common.h>
 #include <z/crc32.h>
 #include <z/deflatebase.h>
-#include <stdio.h>
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
+#include <stdio.h>
 
 namespace z {
 

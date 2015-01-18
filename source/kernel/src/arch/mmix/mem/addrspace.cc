@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <arch/mmix/mem/addrspace.h>
 #include <assert.h>
+#include <common.h>
 
 /*
  * the basic idea here is to give each process a different address-space (means: the number in rV

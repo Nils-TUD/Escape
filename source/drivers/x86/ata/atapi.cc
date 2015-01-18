@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
+#include <sys/common.h>
 #include <sys/proc.h>
-#include "device.h"
-#include "controller.h"
+
 #include "ata.h"
 #include "atapi.h"
+#include "controller.h"
+#include "device.h"
 
 static bool atapi_request(sATADevice *device,uint8_t *cmd,void *buffer,size_t bufSize);
 

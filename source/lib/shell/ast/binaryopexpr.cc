@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "binaryopexpr.h"
 #include "node.h"
-#include "../mem.h"
 
 static tIntType pow(tIntType a,tIntType b);
 

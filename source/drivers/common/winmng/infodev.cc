@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/filedev.h>
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
-#include <esc/ipc/filedev.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <signal.h>
 
-#include "window.h"
 #include "infodev.h"
+#include "window.h"
 
 class WinInfoDevice : public esc::FileDevice {
 public:

@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "exprstmt.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createExprStmt(sASTNode *expr) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

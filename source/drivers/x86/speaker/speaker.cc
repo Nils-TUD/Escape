@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
-#include <sys/io.h>
-#include <sys/driver.h>
-#include <sys/proc.h>
-#include <sys/conf.h>
-#include <sys/thread.h>
-#include <sys/messages.h>
-#include <esc/proto/speaker.h>
 #include <esc/ipc/device.h>
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
+#include <esc/proto/speaker.h>
+#include <sys/common.h>
+#include <sys/conf.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42

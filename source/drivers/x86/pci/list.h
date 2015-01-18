@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/proto/pci.h>
+#include <sys/common.h>
 
 /**
  * Detects PCI-devices

@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <gui/enums.h>
 #include <gui/control.h>
+#include <gui/enums.h>
+#include <sys/common.h>
 
 namespace gui {
 	class Splitter : public Control {

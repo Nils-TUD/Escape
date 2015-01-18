@@ -17,31 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/info.h>
-#include <vfs/file.h>
-#include <vfs/dir.h>
-#include <vfs/link.h>
-#include <vfs/channel.h>
-#include <vfs/device.h>
-#include <vfs/openfile.h>
-#include <mem/pagedir.h>
 #include <mem/cache.h>
-#include <mem/physmem.h>
 #include <mem/dynarray.h>
+#include <mem/pagedir.h>
+#include <mem/physmem.h>
 #include <task/groups.h>
 #include <task/proc.h>
-#include <util.h>
-#include <video.h>
-#include <boot.h>
-#include <cppsupport.h>
-#include <string.h>
+#include <vfs/channel.h>
+#include <vfs/device.h>
+#include <vfs/dir.h>
+#include <vfs/file.h>
+#include <vfs/info.h>
+#include <vfs/link.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <boot.h>
+#include <common.h>
+#include <cppsupport.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
-#include <ctype.h>
+#include <string.h>
+#include <util.h>
+#include <video.h>
 
 /* we have to use the max-size of all VFSNode sub-classes. that's unfortunate, but I don't see a
  * better way */

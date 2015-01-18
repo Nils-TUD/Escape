@@ -19,14 +19,15 @@
 
 #include <sys/common.h>
 #include <sys/proc.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "loader.h"
+
 #include "init.h"
+#include "loader.h"
+#include "lookup.h"
 #include "reloc.h"
 #include "setup.h"
-#include "lookup.h"
 
 sSharedLib *libs = NULL;
 

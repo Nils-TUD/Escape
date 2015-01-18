@@ -21,14 +21,14 @@
 
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
+#include "../socket/rawethersock.h"
 #include "../common.h"
 #include "../link.h"
 #include "../packet.h"
-#include "../socket/rawethersock.h"
 #include "arp.h"
 #include "ipv4.h"
 

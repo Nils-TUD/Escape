@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/filedev.h>
+#include <fs/infodev.h>
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
-#include <sys/thread.h>
 #include <sys/stat.h>
-#include <fs/infodev.h>
-#include <esc/ipc/filedev.h>
+#include <sys/thread.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <signal.h>
 
 class FSFileDevice : public esc::FileDevice {
 public:

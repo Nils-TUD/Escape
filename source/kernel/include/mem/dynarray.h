@@ -20,8 +20,8 @@
 #pragma once
 
 #include <common.h>
-#include <spinlock.h>
 #include <cppsupport.h>
+#include <spinlock.h>
 
 /* This module is intended to provide a dynamically extending region. That means you have a limited
  * area in virtual-memory, but allocate the pages in it when needed. This way we still have a

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <img/image.h>
 #include <img/bitmapimage.h>
+#include <img/image.h>
 #include <img/pngimage.h>
+#include <sys/common.h>
 #include <stdio.h>
 
 namespace img {

@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <fs/blockcache.h>
+#include <fs/fsdev.h>
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/thread.h>
-#include <fs/blockcache.h>
-#include <fs/fsdev.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define ALLOC_LOCK	0xF7180000
 

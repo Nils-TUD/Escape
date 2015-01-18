@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <esc/col/islist.h>
 #include <sys/arch/x86/acpi.h>
+#include <esc/col/islist.h>
+#include <common.h>
 
 class OStream;
 

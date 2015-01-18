@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <gui/layout/iconlayout.h>
 #include <gui/layout/flowlayout.h>
-#include <gui/panel.h>
-#include <gui/imagebutton.h>
-#include <gui/scrollpane.h>
-#include <gui/label.h>
-#include <dirent.h>
+#include <gui/layout/iconlayout.h>
 #include <esc/file.h>
+#include <gui/imagebutton.h>
+#include <gui/label.h>
+#include <gui/panel.h>
+#include <gui/scrollpane.h>
+#include <dirent.h>
 #include <list>
 
 #include "pathbar.h"

@@ -20,8 +20,8 @@
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 size_t cleanpath(char *dst,size_t dstSize,const char *src) {
 	char tmp[MAX_PATH_LEN];

@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pagetables.h>
 #include <mem/pagedir.h>
+#include <mem/pagetables.h>
 #include <task/proc.h>
+#include <assert.h>
+#include <common.h>
+#include <errno.h>
 #include <ostream.h>
 #include <util.h>
-#include <assert.h>
-#include <errno.h>
 
 bool PageTables::hasNXE = false;
 

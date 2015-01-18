@@ -18,9 +18,9 @@
  */
 
 #include <sys/common.h>
-#include <stdio.h>
 #include <sys/proc.h>
 #include <signal.h>
+#include <stdio.h>
 
 #include "../modules.h"
 

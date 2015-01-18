@@ -18,15 +18,15 @@
  */
 
 #include <sys/common.h>
+#include <assert.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <assert.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "mem.h"
 #include "buffer.h"
 #include "display.h"
+#include "mem.h"
 
 #define INITIAL_LINE_SIZE	16
 

@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/stat.h>
-#include <sys/messages.h>
 #include <sys/cmdargs.h>
+#include <sys/common.h>
+#include <sys/messages.h>
 #include <sys/proc.h>
-#include <usergroup/user.h>
+#include <sys/stat.h>
 #include <usergroup/group.h>
+#include <usergroup/user.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void listGroups(void);
 static void listCurGroups(void);

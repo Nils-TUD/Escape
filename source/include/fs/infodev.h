@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/thread.h>
-#include <sys/proc.h>
-#include <fs/filesystem.h>
 #include <esc/vthrow.h>
+#include <fs/filesystem.h>
+#include <sys/common.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <signal.h>
 
 class InfoDevice {

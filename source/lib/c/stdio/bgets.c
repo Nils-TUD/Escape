@@ -18,8 +18,9 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
+
+#include "iobuf.h"
 
 char *bgets(FILE *f,char *str,size_t size) {
 	char *res = str;

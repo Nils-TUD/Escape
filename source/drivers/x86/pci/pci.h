@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/arch/x86/ports.h>
+#include <sys/common.h>
 
 #define IOPORT_PCI_CFG_DATA			0xCFC
 #define IOPORT_PCI_CFG_ADDR			0xCF8

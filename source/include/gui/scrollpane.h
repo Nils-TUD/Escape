@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <gui/wrapper.h>
+#include <sys/common.h>
 
 namespace gui {
 	class ScrollPane : public Wrapper {

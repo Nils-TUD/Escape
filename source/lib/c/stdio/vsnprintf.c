@@ -18,9 +18,10 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "iobuf.h"
 
 int vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
 	int res;

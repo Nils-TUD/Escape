@@ -20,12 +20,12 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/mman.h>
 #include <sys/conf.h>
-#include <iterator>
-#include <vector>
-#include <new>
+#include <sys/mman.h>
 #include <assert.h>
+#include <iterator>
+#include <new>
+#include <vector>
 
 /**
  * A container for the lines in less. The basic idea is not to use the heap, but use chgsize()

@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/layout/gridlayout.h>
 #include <gui/application.h>
-#include <gui/window.h>
 #include <gui/button.h>
-#include <gui/editable.h>
 #include <gui/combobox.h>
+#include <gui/editable.h>
 #include <gui/scrollpane.h>
-#include <stdlib.h>
+#include <gui/window.h>
+#include <sys/common.h>
 #include <sstream>
+#include <stdlib.h>
+
 #include "gcalc.h"
 
 using namespace gui;

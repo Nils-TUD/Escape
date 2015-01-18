@@ -19,14 +19,14 @@
 
 #include <sys/common.h>
 #include <sys/conf.h>
-#include <sys/keycodes.h>
 #include <sys/esccodes.h>
+#include <sys/keycodes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include "game.h"
 #include "bar.h"
+#include "game.h"
 #include "objlist.h"
 #include "ui.h"
 

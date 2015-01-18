@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/proc.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void abort(void) {
 	exit(EXIT_FAILURE);

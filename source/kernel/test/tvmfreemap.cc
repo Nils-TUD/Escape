@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
 #include <mem/vmfreemap.h>
-#include <util.h>
 #include <sys/test.h>
+#include <task/thread.h>
+#include <common.h>
+#include <util.h>
+
 #include "testutils.h"
 
 #define TOTAL_SIZE	(0x40 * PAGE_SIZE)

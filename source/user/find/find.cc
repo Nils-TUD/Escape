@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <esc/cmdargs.h>
+#include <stdlib.h>
 
 static std::string filterName;
 static std::string filterPath;

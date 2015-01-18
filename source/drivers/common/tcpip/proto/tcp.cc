@@ -21,8 +21,8 @@
 #include <iostream>
 
 #include "ethernet.h"
-#include "tcp.h"
 #include "ipv4.h"
+#include "tcp.h"
 
 TCP::socket_map TCP::_socks;
 

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/graphics/font.h>
+#include <sys/common.h>
 
 namespace gui {
 	uint8_t Font::_font[] = {

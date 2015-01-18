@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
+#include <mem/cache.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
-#include <mem/virtmem.h>
-#include <mem/cache.h>
 #include <mem/physmemareas.h>
+#include <mem/virtmem.h>
 #include <task/proc.h>
 #include <task/thread.h>
+#include <assert.h>
+#include <common.h>
 #include <cpu.h>
+#include <errno.h>
+#include <string.h>
 #include <util.h>
 #include <video.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
 
 PageDir PageDir::firstCon;
 

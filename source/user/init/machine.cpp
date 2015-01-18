@@ -18,10 +18,11 @@
  */
 
 #include <sys/common.h>
-#include "machine.h"
-#include "arch/x86/x86machine.h"
+
 #include "arch/eco32/eco32machine.h"
 #include "arch/mmix/mmixmachine.h"
+#include "arch/x86/x86machine.h"
+#include "machine.h"
 
 Machine *Machine::createInstance() {
 #if defined(__x86__)

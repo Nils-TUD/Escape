@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <string>
-#include <map>
 #include <esc/vthrow.h>
+#include <map>
+#include <string>
 
 namespace esc {
 	/**

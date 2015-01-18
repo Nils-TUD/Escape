@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <stdio.h>
+
 #include "device.h"
 
 /* for printing debug-infos */

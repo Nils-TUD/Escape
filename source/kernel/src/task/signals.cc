@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <task/proc.h>
-#include <task/thread.h>
 #include <task/signals.h>
-#include <util.h>
-#include <atomic.h>
+#include <task/thread.h>
 #include <assert.h>
+#include <atomic.h>
+#include <common.h>
+#include <util.h>
 
 Signals::handler_func Signals::setHandler(Thread *t,int signal,handler_func func) {
 	assert(signal < SIG_COUNT);

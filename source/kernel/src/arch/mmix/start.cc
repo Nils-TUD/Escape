@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <dbg/console.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <task/elf.h>
-#include <task/uenv.h>
-#include <task/terminator.h>
 #include <mem/virtmem.h>
-#include <cpu.h>
-#include <boot.h>
-#include <util.h>
+#include <task/elf.h>
+#include <task/proc.h>
+#include <task/terminator.h>
+#include <task/thread.h>
+#include <task/uenv.h>
 #include <assert.h>
+#include <boot.h>
+#include <common.h>
+#include <cpu.h>
+#include <util.h>
 
 EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss);
 

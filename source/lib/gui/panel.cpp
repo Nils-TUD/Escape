@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <gui/panel.h>
 #include <gui/window.h>
+#include <sys/common.h>
 #include <functor.h>
-#include <typeinfo>
-#include <ostream>
 #include <iomanip>
+#include <ostream>
+#include <typeinfo>
 
 using namespace std;
 

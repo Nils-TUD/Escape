@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <dbg/console.h>
 #include <dbg/cmd/break.h>
+#include <dbg/console.h>
 #include <task/proc.h>
 #include <task/smp.h>
-#include <util.h>
+#include <common.h>
 #include <string.h>
+#include <util.h>
 
 enum {
 	BRK_LEN_1		= 0,

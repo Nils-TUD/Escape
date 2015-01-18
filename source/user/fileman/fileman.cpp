@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <gui/window.h>
+#include <esc/env.h>
+#include <gui/border.h>
 #include <gui/scrollpane.h>
 #include <gui/splitpanel.h>
-#include <gui/border.h>
-#include <esc/env.h>
+#include <gui/window.h>
 
 #include "model/link.h"
 #include "view/favorites.h"

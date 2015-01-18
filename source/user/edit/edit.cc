@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
-#include <sys/proc.h>
-#include <sys/keycodes.h>
+#include <sys/common.h>
 #include <sys/esccodes.h>
+#include <sys/keycodes.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <stdio.h>
 #include <ctype.h>
-#include <limits.h>
+#include <dirent.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdio.h>
 
 #include "buffer.h"
 #include "display.h"

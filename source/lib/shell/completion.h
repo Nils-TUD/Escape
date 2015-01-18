@@ -19,8 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <shell/shell.h>
+#include <sys/common.h>
+
 #include "exec/env.h"
 
 #define TYPE_BUILTIN		0

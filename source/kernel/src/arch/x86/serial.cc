@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <arch/x86/serial.h>
 #include <arch/x86/ports.h>
-#include <spinlock.h>
-#include <lockguard.h>
+#include <arch/x86/serial.h>
 #include <assert.h>
+#include <common.h>
+#include <lockguard.h>
+#include <spinlock.h>
 
 const uint16_t Serial::ports[] = {
 	/* COM1 */	0x3F8,

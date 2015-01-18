@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <common.h>
-#include <arch/mmix/mem/layout.h>
 #include <arch/mmix/mem/addrspace.h>
+#include <arch/mmix/mem/layout.h>
 #include <mem/physmemareas.h>
-#include <string.h>
 #include <assert.h>
+#include <common.h>
+#include <string.h>
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))

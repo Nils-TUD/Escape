@@ -19,13 +19,14 @@
 
 #include <sys/common.h>
 #include <sys/io.h>
-#include <sys/thread.h>
 #include <sys/proc.h>
+#include <sys/thread.h>
 #include <string.h>
-#include "reloc.h"
+
 #include "loader.h"
-#include "setup.h"
 #include "lookup.h"
+#include "reloc.h"
+#include "setup.h"
 
 static void load_relocLib(sSharedLib *l);
 static void load_relocDyn(sSharedLib *l,void *rel,size_t size,uint type);

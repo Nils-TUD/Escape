@@ -19,12 +19,12 @@
 
 #include <sys/common.h>
 #include <sys/io.h>
-#include <dirent.h>
-#include <sys/width.h>
 #include <sys/thread.h>
+#include <sys/width.h>
+#include <dirent.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "debug.h"
 

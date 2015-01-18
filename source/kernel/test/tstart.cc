@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/swapmap.h>
 #include <mem/pagedir.h>
-#include <task/thread.h>
+#include <mem/swapmap.h>
+#include <sys/test.h>
 #include <task/proc.h>
 #include <task/terminator.h>
+#include <task/thread.h>
 #include <boot.h>
-#include <util.h>
+#include <common.h>
 #include <log.h>
-#include <sys/test.h>
+#include <util.h>
 
 /* TODO find a better solution */
 #if defined(__mmix__)

@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/proto/winmng.h>
 #include <sys/common.h>
-#include <sys/io.h>
 #include <sys/driver.h>
+#include <sys/esccodes.h>
+#include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/thread.h>
-#include <sys/esccodes.h>
-#include <esc/proto/winmng.h>
-#include <stdlib.h>
 #include <signal.h>
+#include <stdlib.h>
 
 #include "input.h"
 #include "window.h"

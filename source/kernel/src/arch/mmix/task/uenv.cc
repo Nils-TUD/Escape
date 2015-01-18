@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/uenv.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <mem/virtmem.h>
 #include <mem/pagedir.h>
 #include <mem/useraccess.h>
-#include <vfs/vfs.h>
+#include <mem/virtmem.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/uenv.h>
 #include <vfs/openfile.h>
-#include <boot.h>
-#include <log.h>
-#include <cpu.h>
-#include <video.h>
-#include <string.h>
-#include <errno.h>
+#include <vfs/vfs.h>
 #include <assert.h>
+#include <boot.h>
+#include <common.h>
+#include <cpu.h>
+#include <errno.h>
+#include <log.h>
+#include <string.h>
+#include <video.h>
 
 void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
 	IntrptStackFrame *curStack = t->getIntrptStack();

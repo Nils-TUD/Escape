@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <sys/mman.h>
-#include <sys/messages.h>
-#include <sys/io.h>
 #include <esc/ipc/clientdevice.h>
+#include <sys/common.h>
+#include <sys/io.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
 #include <assert.h>
-#include <string.h>
 #include <list>
+#include <string.h>
 
 #include "../common.h"
 #include "../packet.h"

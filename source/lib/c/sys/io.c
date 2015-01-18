@@ -24,9 +24,9 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
-#include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 int open(const char *path,uint flags) {
 	char apath[MAX_PATH_LEN];

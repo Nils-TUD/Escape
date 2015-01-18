@@ -17,29 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/driver.h>
-#include <sys/thread.h>
-#include <sys/sync.h>
-#include <sys/io.h>
-#include <sys/messages.h>
-#include <sys/keycodes.h>
-#include <sys/esccodes.h>
 #include <esc/proto/input.h>
 #include <esc/proto/ui.h>
+#include <sys/common.h>
+#include <sys/driver.h>
+#include <sys/esccodes.h>
+#include <sys/io.h>
+#include <sys/keycodes.h>
+#include <sys/messages.h>
+#include <sys/sync.h>
+#include <sys/thread.h>
+#include <errno.h>
+#include <mutex>
 #include <signal.h>
 #include <stdio.h>
-#include <errno.h>
-#include <time.h>
 #include <stdlib.h>
-#include <mutex>
+#include <time.h>
 
-#include "keymap.h"
 #include "clients.h"
-#include "keystrokes.h"
-#include "jobmng.h"
-#include "screens.h"
 #include "header.h"
+#include "jobmng.h"
+#include "keymap.h"
+#include "keystrokes.h"
+#include "screens.h"
 #include "uimngdev.h"
 
 static int mouseClientThread(void *arg);

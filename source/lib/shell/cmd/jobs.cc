@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 
-#include "../cmds.h"
 #include "../exec/jobs.h"
+#include "../cmds.h"
 
 int shell_cmdJobs(A_UNUSED int argc,A_UNUSED char **argv) {
 	jobs_print();

@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/elf.h>
-#include <task/thread.h>
-#include <task/proc.h>
-#include <task/terminator.h>
 #include <mem/pagedir.h>
 #include <mem/virtmem.h>
-#include <boot.h>
-#include <util.h>
 #include <sys/arch.h>
+#include <task/elf.h>
+#include <task/proc.h>
+#include <task/terminator.h>
+#include <task/thread.h>
 #include <assert.h>
+#include <boot.h>
+#include <common.h>
+#include <util.h>
 
 EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp);
 

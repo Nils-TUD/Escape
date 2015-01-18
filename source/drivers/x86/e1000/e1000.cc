@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <esc/proto/pci.h>
-#include <esc/proto/nic.h>
 #include <esc/ipc/nicdevice.h>
+#include <esc/proto/nic.h>
+#include <esc/proto/pci.h>
+#include <sys/common.h>
 #include <stdlib.h>
 
 #include "e1000dev.h"

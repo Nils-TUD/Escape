@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
-#include <sys/cmdargs.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BUF_SIZE 512
 

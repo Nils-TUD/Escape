@@ -19,23 +19,23 @@
 
 #pragma once
 
-#include <common.h>
-#include <mem/region.h>
+#include <esc/col/islist.h>
+#include <esc/col/slist.h>
 #include <mem/pagedir.h>
-#include <mem/vmtree.h>
+#include <mem/region.h>
 #include <mem/vmfreemap.h>
+#include <mem/vmtree.h>
 #include <task/elf.h>
-#include <task/thread.h>
 #include <task/groups.h>
 #include <task/sems.h>
+#include <task/thread.h>
 #include <vfs/fs.h>
 #include <vfs/ms.h>
-#include <esc/col/slist.h>
-#include <esc/col/islist.h>
-#include <spinlock.h>
-#include <mutex.h>
-#include <interrupts.h>
 #include <assert.h>
+#include <common.h>
+#include <interrupts.h>
+#include <mutex.h>
+#include <spinlock.h>
 
 /* max number of coexistent processes */
 #define MAX_PROC_COUNT		8192

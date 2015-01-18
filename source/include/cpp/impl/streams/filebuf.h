@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <sys/io.h>
 #include <impl/streams/ios_base.h>
+#include <sys/io.h>
+#include <stddef.h>
 #include <streambuf>
 
 namespace std {

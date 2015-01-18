@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <vfs/node.h>
 #include <esc/col/slist.h>
+#include <vfs/node.h>
+#include <common.h>
 
 class VFSChannel : public VFSNode {
 	struct Message : public esc::SListItem {

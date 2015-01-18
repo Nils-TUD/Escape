@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <common.h>
 #include <arch/eco32/mem/layout.h>
 #include <mem/pagetables.h>
 #include <mem/physmemareas.h>
-#include <string.h>
 #include <assert.h>
+#include <common.h>
+#include <string.h>
 
 /* determines whether the given address is on the heap */
 #define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KHEAP_START && \

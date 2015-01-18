@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/physmem.h>
+#include <common.h>
 
 bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	/* only the IO-space can be mapped */

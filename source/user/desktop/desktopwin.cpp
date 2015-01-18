@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <gui/imagebutton.h>
-#include <gui/application.h>
 #include <gui/layout/iconlayout.h>
+#include <gui/application.h>
+#include <gui/imagebutton.h>
+#include <sys/common.h>
 #include <sys/proc.h>
-#include <stdio.h>
 #include <iostream>
+#include <stdio.h>
+
 #include "desktopwin.h"
 
 using namespace gui;

@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/pagedir.h>
 #include <mem/virtmem.h>
-#include <task/thread.h>
+#include <task/filedesc.h>
 #include <task/proc.h>
 #include <task/signals.h>
-#include <task/filedesc.h>
-#include <vfs/vfs.h>
-#include <vfs/openfile.h>
-#include <vfs/node.h>
+#include <task/thread.h>
 #include <vfs/channel.h>
-#include <syscalls.h>
+#include <vfs/node.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
 #include <errno.h>
 #include <string.h>
+#include <syscalls.h>
 
 int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];

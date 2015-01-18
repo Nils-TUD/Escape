@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <esc/col/treap.h>
 #include <esc/col/dlist.h>
+#include <esc/col/treap.h>
+#include <sys/common.h>
 
 namespace esc {
 

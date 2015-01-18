@@ -19,9 +19,10 @@
 
 #include <sys/common.h>
 #include <stdio.h>
+
+#include "../mem.h"
 #include "intexpr.h"
 #include "node.h"
-#include "../mem.h"
 
 sASTNode *ast_createIntExpr(tIntType val) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));

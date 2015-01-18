@@ -17,27 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/smp.h>
-#include <mem/physmem.h>
-#include <mem/pagedir.h>
-#include <mem/cache.h>
-#include <mem/virtmem.h>
-#include <vfs/vfs.h>
-#include <vfs/openfile.h>
-#include <cpu.h>
-#include <interrupts.h>
-#include <ksymbols.h>
-#include <video.h>
-#include <util.h>
-#include <log.h>
 #include <esc/ipc/ipcbuf.h>
+#include <mem/cache.h>
+#include <mem/pagedir.h>
+#include <mem/physmem.h>
+#include <mem/virtmem.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
+#include <task/proc.h>
+#include <task/smp.h>
+#include <vfs/openfile.h>
+#include <vfs/vfs.h>
+#include <common.h>
+#include <cpu.h>
 #include <errno.h>
+#include <interrupts.h>
+#include <ksymbols.h>
+#include <log.h>
 #include <stdarg.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {
 	if(t->getIntrptStack()) {

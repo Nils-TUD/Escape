@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <gui/graphics/rectangle.h>
-#include <esc/ipc/ipcstream.h>
 #include <esc/ipc/clientdevice.h>
+#include <esc/ipc/ipcstream.h>
 #include <esc/proto/screen.h>
+#include <gui/graphics/rectangle.h>
+#include <sys/common.h>
 
 #define DIFF(a,b)				((a) > (b) ? ((a) - (b)) : ((b) - (a)))
 

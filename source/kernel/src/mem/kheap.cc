@@ -17,15 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <mem/kheap.h>
-#include <mem/physmem.h>
 #include <mem/pagedir.h>
-#include <spinlock.h>
-#include <video.h>
-#include <util.h>
+#include <mem/physmem.h>
 #include <assert.h>
+#include <common.h>
+#include <spinlock.h>
 #include <string.h>
+#include <util.h>
+#include <video.h>
 
 KHeap::MemArea *KHeap::usableList = NULL;
 KHeap::MemArea *KHeap::freeList = NULL;

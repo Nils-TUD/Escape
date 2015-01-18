@@ -19,13 +19,13 @@
 
 #pragma once
 
+#include <esc/ipc/ipcstream.h>
+#include <esc/proto/nic.h>
+#include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <esc/proto/nic.h>
-#include <esc/ipc/ipcstream.h>
 #include <istream>
 #include <ostream>
-#include <esc/vthrow.h>
 
 namespace esc {
 

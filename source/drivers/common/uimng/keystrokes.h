@@ -20,8 +20,8 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/messages.h>
 #include <sys/debug.h>
+#include <sys/messages.h>
 #include <mutex>
 
 #include "clients.h"

@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
-#include <esc/proto/screen.h>
 #include <esc/ipc/screendevice.h>
+#include <esc/proto/screen.h>
+#include <sys/common.h>
 #include <vector>
 
 #include "../vbe.h"

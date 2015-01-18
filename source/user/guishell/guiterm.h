@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <esc/ipc/vtermdevice.h>
+#include <sys/common.h>
 
 #include "shellcontrol.h"
 

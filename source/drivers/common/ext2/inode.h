@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <sys/common.h>
 #include <fs/ext2/ext2.h>
 #include <fs/blockcache.h>
+#include <sys/common.h>
 
 class Ext2FileSystem;
 struct Ext2CInode;

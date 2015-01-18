@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <common.h>
-#include <task/thread.h>
 #include <esc/col/slist.h>
+#include <task/thread.h>
+#include <common.h>
 
 /* the IPIs we can send */
 #define IPI_WORK			51

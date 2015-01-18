@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <sys/cmdargs.h>
+#include <sys/common.h>
 #include <sys/io.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-n <lines>] [<file>]\n",name);

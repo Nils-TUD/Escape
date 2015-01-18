@@ -17,21 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/proc.h>
-#include <sys/debug.h>
-#include <sys/thread.h>
-#include <sys/endian.h>
 #include <fs/blockcache.h>
 #include <fs/fsdev.h>
-#include <string.h>
+#include <sys/common.h>
+#include <sys/debug.h>
+#include <sys/endian.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ext2.h"
 #include "file.h"
-#include "rw.h"
 #include "inodecache.h"
+#include "rw.h"
 
 Ext2INodeCache::Ext2INodeCache(Ext2FileSystem *fs)
 		: _hits(), _misses(), _cache(new Ext2CInode[EXT2_ICACHE_SIZE]), _fs(fs) {

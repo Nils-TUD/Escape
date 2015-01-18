@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/proto/ui.h>
+#include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <gui/graphics/rectangle.h>
-#include <esc/proto/ui.h>
 
 #define WINDOW_COUNT					32
 #define WINID_UNUSED					WINDOW_COUNT

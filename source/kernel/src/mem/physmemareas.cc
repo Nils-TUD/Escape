@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/physmemareas.h>
 #include <mem/pagedir.h>
+#include <mem/physmemareas.h>
+#include <assert.h>
+#include <common.h>
 #include <util.h>
 #include <video.h>
-#include <assert.h>
 
 /* areas of (initially) free physical memory */
 PhysMemAreas::MemArea PhysMemAreas::areas[MAX_PHYSMEM_AREAS];

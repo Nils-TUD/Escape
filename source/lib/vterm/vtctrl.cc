@@ -17,24 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
-#include <sys/io.h>
-#include <sys/proc.h>
-#include <sys/keycodes.h>
-#include <sys/driver.h>
-#include <sys/thread.h>
-#include <sys/messages.h>
-#include <sys/conf.h>
-#include <sys/mman.h>
 #include <esc/proto/vterm.h>
-#include <string.h>
-#include <errno.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-
+#include <sys/common.h>
+#include <sys/conf.h>
+#include <sys/driver.h>
+#include <sys/io.h>
+#include <sys/keycodes.h>
+#include <sys/messages.h>
+#include <sys/mman.h>
+#include <sys/proc.h>
+#include <sys/thread.h>
 #include <vterm/vtctrl.h>
+#include <assert.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* the number of chars to keep in history */
 #define INITIAL_RLBUF_SIZE	50

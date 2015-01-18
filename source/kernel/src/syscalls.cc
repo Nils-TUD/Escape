@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
 #include <dbg/console.h>
 #include <mem/pagedir.h>
-#include <task/proc.h>
-#include <syscalls.h>
 #include <sys/syscalls.h>
-#include <string.h>
-#include <limits.h>
+#include <task/proc.h>
 #include <assert.h>
+#include <common.h>
 #include <errno.h>
+#include <limits.h>
+#include <string.h>
+#include <syscalls.h>
 
 #define PRINT_SYSCALLS	0
 

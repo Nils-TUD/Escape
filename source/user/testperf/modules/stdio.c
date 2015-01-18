@@ -18,18 +18,21 @@
  */
 
 #include <sys/common.h>
-#include "iobuf.h"
+#include <sys/time.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-int vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
-	int res;
-	FILE sbuf;
-	if(!binit(&sbuf,-1,O_WRONLY,str,0,n - 1,false))
-		return EOF;
+#include "../modules.h"
 
-	res = vbprintf(&sbuf,fmt,ap);
-	/* null-termination */
-	str[sbuf.out.pos] = '\0';
-	return res;
+#define TEST_COUNT	100000
+
+static char buf[64];
+
+int mod_stdio(A_UNUSED int argc,A_UNUSED char **argv) {
+	uint64_t start = rdtsc();
+	for(int i = 0; i < TEST_COUNT; ++i)
+		snprintf(buf,sizeof(buf),"%d %d\n",i,i + 1);
+	uint64_t end = rdtsc();
+
+	printf("snprintf(): %Lu cycles/call\n",(end - start) / TEST_COUNT);
+	return 0;
 }

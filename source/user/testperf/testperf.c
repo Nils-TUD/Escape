@@ -50,6 +50,7 @@ static sTestModule modules[] = {
 	{"chgsize",		mod_chgsize},
 	{"pagefault",	mod_pagefault},
 	{"heap",		mod_heap},
+	{"stdio",		mod_stdio},
 };
 
 int main(int argc,char *argv[]) {

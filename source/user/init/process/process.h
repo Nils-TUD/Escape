@@ -64,7 +64,9 @@ public:
 		// do nothing by default
 	}
 
-	friend bool operator<(Process &p1,Process &p2);
+	friend bool operator<(Process &p1,Process &p2) {
+		return p1.pid() < p2.pid();
+	}
 
 protected:
 	int _pid;

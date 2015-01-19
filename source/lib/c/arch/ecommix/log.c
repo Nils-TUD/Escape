@@ -22,14 +22,18 @@
 #include <sys/mman.h>
 #include <assert.h>
 
-#define OUTPUT_START_ADDR		0x0004000000000000
+#if defined(__eco32__)
+#	define OUTPUT_START_ADDR		0x3F000000
+#else
+#	define OUTPUT_START_ADDR		0x0004000000000000
+#endif
 
-static uint64_t *outRegs = NULL;
+static ulong *outRegs = NULL;
 
 void logc(char c) {
 	if(outRegs == NULL) {
 		uintptr_t phys = OUTPUT_START_ADDR;
-		outRegs = mmapphys(&phys,8,0,MAP_PHYS_MAP);
+		outRegs = mmapphys(&phys,sizeof(ulong),0,MAP_PHYS_MAP);
 		assert(outRegs != NULL);
 	}
 	*outRegs = c;

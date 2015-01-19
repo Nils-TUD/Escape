@@ -28,12 +28,12 @@
 #include <sys/conf.h>
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
-#include <sys/sync.h>
 #include <sys/thread.h>
 #include <usergroup/user.h>
 #include <assert.h>
 #include <fstream>
 #include <iomanip>
+#include <mutex>
 #include <stdlib.h>
 #include <string>
 
@@ -45,7 +45,7 @@ using namespace info;
 static volatile bool run = true;
 static ssize_t yoffset;
 static sUser *users;
-static tUserSem displaySem;
+static std::mutex displayMutex;
 static esc::VTerm vterm(esc::env::get("TERM").c_str());
 
 template<typename T>
@@ -94,7 +94,7 @@ static void printSize(size_t size) {
 }
 
 static void display(void) {
-	usemdown(&displaySem);
+	std::lock_guard<std::mutex> guard(displayMutex);
 	try {
 		size_t cpubarwidth;
 		esc::Screen::Mode mode = vterm.getMode();
@@ -197,7 +197,6 @@ static void display(void) {
 	catch(const exception &e) {
 		cerr << "Update failed: " << e.what() << endl;
 	}
-	usemup(&displaySem);
 }
 
 static int refreshThread(void*) {
@@ -215,9 +214,6 @@ int main(void) {
 
 	size_t usercount;
 	users = user_parseFromFile(USERS_PATH,&usercount);
-
-	if(usemcrt(&displaySem,1) < 0)
-		error("Unable to create display lock");
 
 	int tid = startthread(refreshThread,nullptr);
 	if(tid < 0)

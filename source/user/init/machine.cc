@@ -19,17 +19,16 @@
 
 #include <sys/common.h>
 
-#include "arch/eco32/eco32machine.h"
-#include "arch/mmix/mmixmachine.h"
+#include "arch/ecommix/ecmxmachine.h"
 #include "arch/x86/x86machine.h"
 #include "machine.h"
 
 Machine *Machine::createInstance() {
 #if defined(__x86__)
 	return new x86Machine();
-#elif defined(__eco32__)
-	return new ECO32Machine();
-#elif defined(__mmix__)
-	return new MMIXMachine();
+#elif defined(__eco32__) or defined(__mmix__)
+	return new ECMXMachine();
+#else
+#	error "Unknown machine"
 #endif
 }

@@ -20,12 +20,12 @@
 #include <sys/common.h>
 
 #include "../../initerror.h"
-#include "mmixmachine.h"
+#include "ecmxmachine.h"
 
-void MMIXMachine::reboot(Progress &pg) {
+void ECMXMachine::reboot(Progress &pg) {
 	pg.itemStarting("You can reset the machine now.");
 }
 
-void MMIXMachine::shutdown(Progress &pg) {
+void ECMXMachine::shutdown(Progress &pg) {
 	pg.itemStarting("You can turn off now.");
 }

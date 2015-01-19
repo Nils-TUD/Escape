@@ -23,12 +23,12 @@
 
 #include "../../machine.h"
 
-class MMIXMachine : public Machine {
+class ECMXMachine : public Machine {
 public:
-	MMIXMachine()
+	ECMXMachine()
 		: Machine() {
 	}
-	virtual ~MMIXMachine() {
+	virtual ~ECMXMachine() {
 	}
 
 	virtual void reboot(Progress &pg);

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
-#include <sys/sync.h>
+#include <mutex>
 #include <vector>
 
 #include "../initerror.h"
@@ -36,9 +36,7 @@ private:
 	static const size_t KERNEL_PERCENT	= 40;
 
 public:
-	ProcessManager() : _sem(), _downProg(nullptr), _procs() {
-		if(usemcrt(&_sem,1) < 0)
-			throw init_error("Unable to create process-manager lock");
+	ProcessManager() : _mutex(), _downProg(nullptr), _procs() {
 	}
 	~ProcessManager() {
 	}
@@ -61,7 +59,7 @@ private:
 	size_t getBootModCount() const;
 
 private:
-	tUserSem _sem;
+	std::mutex _mutex;
 	Progress *_downProg;
 	std::vector<Process*> _procs;
 };

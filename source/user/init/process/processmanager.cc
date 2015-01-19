@@ -44,8 +44,7 @@
 using namespace std;
 
 void ProcessManager::start() {
-	// TODO this is not exception-safe
-	usemdown(&_sem);
+	std::lock_guard<std::mutex> guard(_mutex);
 	waitForFS();
 
 	// set basic env-vars
@@ -71,42 +70,35 @@ void ProcessManager::start() {
 		(*it)->load();
 		pg.itemLoaded();
 	}
-	usemup(&_sem);
 }
 
 void ProcessManager::restart(pid_t pid) {
-	Process *p;
-	usemdown(&_sem);
-	p = getByPid(pid);
+	std::lock_guard<std::mutex> guard(_mutex);
+	Process *p = getByPid(pid);
 	if(p)
 		p->load();
-	usemup(&_sem);
 }
 
 void ProcessManager::setAlive(pid_t pid) {
-	Process *p;
-	usemdown(&_sem);
-	p = getByPid(pid);
+	std::lock_guard<std::mutex> guard(_mutex);
+	Process *p = getByPid(pid);
 	if(p) {
 		p->setAlive();
 		cout << "Process " << pid << " is alive and promised to terminate ASAP" << endl;
 	}
-	usemup(&_sem);
 }
 
 void ProcessManager::died(pid_t pid) {
-	Process *p;
-	usemdown(&_sem);
-	p = getByPid(pid);
+	std::lock_guard<std::mutex> guard(_mutex);
+	Process *p = getByPid(pid);
 	if(p) {
 		p->setDead();
 		_downProg->itemTerminated();
 	}
-	usemup(&_sem);
 }
 
 void ProcessManager::shutdown() {
-	usemdown(&_sem);
+	std::lock_guard<std::mutex> guard(_mutex);
 	addRunning();
 	_downProg = new Progress(0,_procs.size(),_procs.size());
 	_downProg->paintBar();
@@ -119,11 +111,10 @@ void ProcessManager::shutdown() {
 				printe("Unable to send the term-signal to %d",p->pid());
 		}
 	}
-	usemup(&_sem);
 }
 
 void ProcessManager::finalize(int task) {
-	usemdown(&_sem);
+	std::lock_guard<std::mutex> guard(_mutex);
 	_downProg->itemStarting("Timout reached, killing remaining processes...");
 
 	// remove all except video (we don't get notified about all terminated processes; just about
@@ -167,7 +158,6 @@ void ProcessManager::finalize(int task) {
 		m->reboot(*_downProg);
 	else
 		m->shutdown(*_downProg);
-	usemup(&_sem);
 }
 
 void ProcessManager::addRunning() {

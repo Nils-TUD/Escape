@@ -48,10 +48,6 @@ ulong Disk::getCapacity() {
 }
 
 bool Disk::read(void *buf,ulong secNo,ulong secCount) {
-	ulong *diskSecReg = _regs + REG_SCT;
-	ulong *diskCntReg = _regs + REG_CNT;
-	ulong *diskCtrlReg = _regs + REG_CTRL;
-
 	DISK_DBG("Reading sectors %d..%d ...",secNo,secNo + secCount - 1);
 
 	/* maybe another request is active.. */
@@ -61,9 +57,9 @@ bool Disk::read(void *buf,ulong secNo,ulong secCount) {
 	}
 
 	/* set sector and sector-count, start the disk-operation and wait */
-	*diskSecReg = secNo;
-	*diskCntReg = secCount;
-	*diskCtrlReg = CTRL_STRT | _ien;
+	_regs[REG_SCT] = secNo;
+	_regs[REG_CNT] = secCount;
+	_regs[REG_CTRL] = CTRL_STRT | _ien;
 
 	if(!wait()) {
 		DISK_DBG("FAILED");
@@ -77,10 +73,6 @@ bool Disk::read(void *buf,ulong secNo,ulong secCount) {
 }
 
 bool Disk::write(const void *buf,ulong secNo,ulong secCount) {
-	ulong *diskSecReg = _regs + REG_SCT;
-	ulong *diskCntReg = _regs + REG_CNT;
-	ulong *diskCtrlReg = _regs + REG_CTRL;
-
 	DISK_DBG("Writing sectors %d..%d ...",secNo,secNo + secCount - 1);
 
 	/* maybe another request is active.. */
@@ -93,9 +85,9 @@ bool Disk::write(const void *buf,ulong secNo,ulong secCount) {
 	memcpy(_buf,buf,secCount * SECTOR_SIZE);
 
 	/* set sector and sector-count and start the disk-operation */
-	*diskSecReg = secNo;
-	*diskCntReg = secCount;
-	*diskCtrlReg = CTRL_STRT | CTRL_WRT | _ien;
+	_regs[REG_SCT] = secNo;
+	_regs[REG_CNT] = secCount;
+	_regs[REG_CTRL] = CTRL_STRT | CTRL_WRT | _ien;
 	/* we don't need to wait here because maybe there is no other request and we could therefore
 	 * save time */
 	DISK_DBG("done");

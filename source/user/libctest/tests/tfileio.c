@@ -19,6 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
+#include <math.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -191,6 +193,14 @@ static void test_fileio_print(void) {
 
 	res = snprintf(str,sizeof(str),"%8.4lf, %8.1lf, %8.10lf",1.,-1.,0.);
 	if(!test_fileio_checkPrint(res,-1,str,"  1.0000,     -1.0, 0.0000000000"))
+		return;
+
+	res = snprintf(str,sizeof(str),"%f, %f, %f",INFINITY,-INFINITY,NAN);
+	if(!test_fileio_checkPrint(res,-1,str,"inf, -inf, nan"))
+		return;
+
+	res = snprintf(str,sizeof(str),"%10f, %5f, %-8f",INFINITY,-INFINITY,NAN);
+	if(!test_fileio_checkPrint(res,-1,str,"       inf,  -inf, nan     "))
 		return;
 
 	res = snprintf(str,sizeof(str),"%3.0lf, %-06.1lf, %2.4lf, %10.10lf",-1.231,999.999,1234.5678,

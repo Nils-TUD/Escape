@@ -31,13 +31,17 @@ int bprintdbl(FILE *f,double d,uint precision) {
 	 * to string. But its simple and should be enough for my purposes :) */
 
 	if(isnan(d)) {
-		if(d < 0)
-			c += RETERR(bputc(f,'-'));
+		if(d < 0) {
+			RETERR(bputc(f,'-'));
+			c++;
+		}
 		c += RETERR(bputs(f,"nan",-1));
 	}
 	else if(isinf(d)) {
-		if(d < 0)
-			c += RETERR(bputc(f,'-'));
+		if(d < 0) {
+			RETERR(bputc(f,'-'));
+			c++;
+		}
 		c += RETERR(bputs(f,"inf",-1));
 	}
 	else {

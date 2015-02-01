@@ -43,30 +43,47 @@ static void test_strtold(void) {
 		const char *str;
 		long double res;
 	};
-	struct StrtoldTest tests[] = {
-		{"1234",		1234L},
-		{" 12.34",		12.34L},
-		{".5",			.5L},
-		{" INF",		INFINITY},
-		{"-infINITY",	-INFINITY},
-		{"NAN",			NAN},
-		{"  \tnan",		NAN},
-		{"+6.0e2",		6.0e2L},
-		{"-12.34E10",	-12.34E10L},
-		{"0xABC.DEp2",	0xABC.DEp2L},
-		{"0xA.",		0xAL},
-	};
 	size_t i;
 	long double res;
 	char *end;
 	test_caseStart("Testing strtold()");
 
-	for(i = 0; i < ARRAY_SIZE(tests); i++) {
-		res = strtold(tests[i].str,NULL);
-		test_assertTrue(res == tests[i].res);
-		res = strtold(tests[i].str,&end);
-		test_assertTrue(res == tests[i].res);
-		test_assertTrue(*end == '\0');
+	{
+		struct StrtoldTest tests[] = {
+			{"1234",		1234L},
+			{" 12.34",		12.34L},
+			{".5",			.5L},
+			{" INF",		INFINITY},
+			{"-infINITY",	-INFINITY},
+			{"+6.0e2",		6.0e2L},
+			{"-12.34E10",	-12.34E10L},
+			{"0xABC.DEp2",	0xABC.DEp2L},
+			{"0xA.",		0xAL},
+		};
+
+		for(i = 0; i < ARRAY_SIZE(tests); i++) {
+			res = strtold(tests[i].str,NULL);
+			test_assertTrue(res == tests[i].res);
+			res = strtold(tests[i].str,&end);
+			test_assertTrue(res == tests[i].res);
+			test_assertTrue(*end == '\0');
+		}
+	}
+
+	// don't compare nans with directly with ==
+	{
+		struct StrtoldTest tests[] = {
+			{"NAN",			NAN},
+			{"  \tnan",		NAN},
+		};
+
+		for(i = 0; i < ARRAY_SIZE(tests); i++) {
+			res = strtold(tests[i].str,NULL);
+			test_assertTrue(isnan(res) == isnan(tests[i].res));
+			res = strtold(tests[i].str,&end);
+			test_assertTrue(isnan(res) == isnan(tests[i].res));
+			test_assertTrue(*end == '\0');
+		}
 	}
 
 	test_caseSucceeded();

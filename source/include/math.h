@@ -24,12 +24,37 @@
 typedef float float_t;
 typedef double double_t;
 
-#define HUGE_VAL	((double)0x7ff0000000000000ULL)
-#define HUGE_VALF	((float)0x7f800000)
+union FloatInt {
+	uint32_t i;
+	float f;
+};
+union DoubleInt {
+	uint64_t i;
+	double f;
+};
+
+static inline float _inff() {
+	union FloatInt di;
+	di.i = 0x7f800000;
+	return di.f;
+}
+static inline double _inf() {
+	union DoubleInt di;
+	di.i = 0x7ff0000000000000ULL;
+	return di.f;
+}
+static inline float _nanf() {
+	union FloatInt di;
+	di.i = 0x7FC00000;
+	return di.f;
+}
+
+#define HUGE_VAL	_inf()
+#define HUGE_VALF	_inff()
 #define HUGE_VALL	HUGE_VAL
 
 #define INFINITY	HUGE_VALF
-#define NAN			((float)0x7FFFFFFF)
+#define NAN			_nanf()
 
 #define FP_ILOGB0	(-2147483647 - 1)
 #define FP_ILOGBNAN	(-2147483647 - 1)

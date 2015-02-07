@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
 #include <info/link.h>
 #include <assert.h>
-#include <fstream>
 
-using namespace std;
+using namespace esc;
 
 namespace info {
 	std::vector<link*> link::get_list() {
 		std::vector<link*> list;
-		ifstream f("/sys/net/links");
+		FStream f("/sys/net/links","r");
 		while(f.good()) {
 			link *l = new link;
 			f >> *l;
@@ -39,8 +39,8 @@ namespace info {
 		return list;
 	}
 
-	istream& operator >>(istream& is,link& l) {
-		istream::size_type unlimited = numeric_limits<streamsize>::max();
+	IStream& operator >>(IStream& is,link& l) {
+		size_t unlimited = std::numeric_limits<size_t>::max();
 		uint status = 0;
 		is >> l._name >> status >> l._mac >> l._ip >> l._subnetmask >> l._mtu;
 		is >> l._rxpkts >> l._txpkts >> l._rxbytes >> l._txbytes;
@@ -49,7 +49,7 @@ namespace info {
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,const link& l) {
+	OStream& operator <<(OStream& os,const link& l) {
 		os << "Link[name=" << l.name() << ", MAC=" << l.mac()
 		   << ", ip=" << l.ip() << ", netmask=" << l.subnetMask() << "]";
 		return os;

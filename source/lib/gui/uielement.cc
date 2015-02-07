@@ -173,8 +173,8 @@ namespace gui {
 		}
 	}
 
-	void UIElement::print(std::ostream &os, bool, size_t indent) const {
-		os << std::setw(indent) << "" << "[" << typeid(*this).name() << "]";
+	void UIElement::print(esc::OStream &os, bool, size_t indent) const {
+		os << esc::fmt("",indent) << "[" << typeid(*this).name() << "]";
 		os << " id=" << getId() << " winpos=" << getWindowPos() << " pos=" << getPos()
 				<< " size=" << getSize();
 	}

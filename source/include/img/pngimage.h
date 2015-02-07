@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <img/image.h>
 #include <sys/common.h>
 #include <string>
@@ -33,7 +34,7 @@ public:
 	} A_PACKED;
 
 	struct IHDR {
-		friend std::ostream &operator<<(std::ostream &os,const IHDR &h);
+		friend esc::OStream &operator<<(esc::OStream &os,const IHDR &h);
 
 		uint32_t width;
 		uint32_t height;
@@ -45,7 +46,7 @@ public:
 	} A_PACKED;
 
 	struct tIME {
-		friend std::ostream &operator<<(std::ostream &os,const tIME &tm);
+		friend esc::OStream &operator<<(esc::OStream &os,const tIME &tm);
 
 		uint16_t year;
 		uint8_t month;

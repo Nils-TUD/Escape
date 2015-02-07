@@ -18,16 +18,19 @@
  */
 
 #include <fs/tar/tar.h>
+#include <esc/stream/obufstream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <usergroup/group.h>
 #include <usergroup/user.h>
 #include <dirent.h>
-#include <iostream>
 #include <stdlib.h>
 #include <time.h>
 #include <utime.h>
+
+using namespace esc;
 
 static char buffer[Tar::BLOCK_SIZE];
 static sUser *userList = nullptr;
@@ -37,7 +40,7 @@ static off_t curoff = 0;
 static void addFolder(FILE *f,const std::string &fpath,const std::string &tpath) {
 	struct stat st;
 	if(stat(fpath.c_str(),&st) < 0)
-		error("Unable to stat '%s'",fpath.c_str());
+		exitmsg("Unable to stat '" << fpath << "'");
 
 	Tar::writeHeader(f,curoff,buffer,tpath.c_str(),st,userList,groupList);
 	curoff += Tar::BLOCK_SIZE;
@@ -53,8 +56,10 @@ static void addFolder(FILE *f,const std::string &fpath,const std::string &tpath)
 			if(e.d_namelen == 2 && e.d_name[0] == '.' && e.d_name[1] == '.')
 				continue;
 
-			snprintf(nfpath,sizeof(nfpath),"%s/%.*s",fpath.c_str(),e.d_namelen,e.d_name);
-			snprintf(ntpath,sizeof(ntpath),"%s/%.*s",tpath.c_str(),e.d_namelen,e.d_name);
+			OBufStream obnf(nfpath,sizeof(nfpath));
+			OBufStream obnt(ntpath,sizeof(ntpath));
+			obnf << fpath << "/" << fmt(e.d_name,1,e.d_namelen);
+			obnt << tpath << "/" << fmt(e.d_name,1,e.d_namelen);
 			addFolder(f,nfpath,ntpath);
 		}
 		closedir(d);
@@ -63,12 +68,12 @@ static void addFolder(FILE *f,const std::string &fpath,const std::string &tpath)
 		/* write file-content */
 		int fd = open(fpath.c_str(),O_RDONLY);
 		if(fd < 0)
-			error("Unable to open '%s' for reading",fpath.c_str());
+			exitmsg("Unable to open '" << fpath << "' for reading");
 
 		for(off_t off = 0; off < st.st_size; off += Tar::BLOCK_SIZE) {
 			ssize_t count = read(fd,buffer,sizeof(buffer));
 			if(count < 0)
-				error("Reading from '%s' failed",fpath.c_str());
+				exitmsg("Reading from '" << fpath << "' failed");
 			memset(buffer + count,0,Tar::BLOCK_SIZE - count);
 			Tar::writeBlock(f,curoff,buffer);
 			curoff += Tar::BLOCK_SIZE;
@@ -90,7 +95,7 @@ static void createDir(const char *path,mode_t mode,bool isdir) {
 		int res;
 		// use the default mode for all but the last
 		if((res = mkdir(tmp,old ? DIR_DEF_MODE : mode)) < 0 && res != -EEXIST)
-			printe("Unable to create directory '%s'",path);
+			errmsg("Unable to create directory '" << path << "'");
 		if(old) {
 			*p = old;
 			p++;
@@ -108,7 +113,7 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 		case Tar::T_REGULAR: {
 			int fd = create(header->filename,O_WRONLY | O_TRUNC | O_CREAT | O_EXCL,S_IFREG | mode);
 			if(fd < 0) {
-				printe("Unable to create file '%s'",header->filename);
+				errmsg("Unable to create file '" << header->filename << "'");
 				break;
 			}
 
@@ -118,7 +123,7 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 
 				ssize_t count = total > Tar::BLOCK_SIZE ? (size_t)Tar::BLOCK_SIZE : total;
 				if(write(fd,buffer,count) != count) {
-					printe("Writing to '%s' failed",header->filename);
+					errmsg("Writing to '" << header->filename << "' failed");
 					break;
 				}
 				total -= count;
@@ -131,11 +136,11 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 			// createDir has created it already
 			// but repeat the chmod because we might have set the default mode last time
 			if(chmod(header->filename,mode) < 0)
-				printe("chmod(%s,%o) failed",header->filename,mode);
+				errmsg("chmod(" << header->filename << "," << fmt(mode,"0o",4) << ") failed");
 			break;
 
 		default: {
-			fprintf(stderr,"Warning: type %c not supported\n",header->type);
+			errmsg("Warning: type " << header->type << " not supported");
 		}
 		break;
 	}
@@ -146,18 +151,18 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 	if(utimes.modtime) {
 		utimes.actime = time(NULL);
 		if(utime(header->filename,&utimes) < 0)
-			printe("utime(%s) failed",header->filename);
+			errmsg("utime(" << header->filename << ") failed");
 	}
 
 	if(*header->uname) {
 		sUser *u = user_getByName(userList,header->uname);
 		if(u && chown(header->filename,u->uid,-1) < 0)
-			printe("chown(%s,%d,-1) failed",header->filename,u->uid);
+			errmsg("chown(" << header->filename << "," << u->uid << ",-1) failed");
 	}
 	if(*header->gname) {
 		sGroup *g = group_getByName(groupList,header->gname);
 		if(g && chown(header->filename,-1,g->gid) < 0)
-			printe("chown(%s,-1,%d) failed",header->filename,g->gid);
+			errmsg("chown(" << header->filename << ",-1," << g->gid << ") failed");
 	}
 }
 
@@ -170,7 +175,7 @@ static void listArchive(FILE *f) {
 		if(header.filename[0] == '\0')
 			break;
 
-		std::cout << header.filename << "\n";
+		sout << header.filename << "\n";
 
 		// to next header
 		size_t fsize = strtoul(header.size,NULL,8);
@@ -180,7 +185,7 @@ static void listArchive(FILE *f) {
 
 static void createArchive(FILE *f,esc::cmdargs &args) {
 	if(args.get_free().empty())
-		error("Please provide at least one file to store");
+		exitmsg("Please provide at least one file to store");
 
 	for(auto it = args.get_free().begin(); it != args.get_free().end(); ++it) {
 		char tmp[MAX_PATH_LEN];
@@ -207,12 +212,12 @@ static void extractArchive(FILE *f) {
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <cmd> [-f <archive>] [files...]\n",name);
-	fprintf(stderr,"\n");
-	fprintf(stderr,"The commands are:\n");
-	fprintf(stderr,"-c: create an archive\n");
-	fprintf(stderr,"-t: list files in archive\n");
-	fprintf(stderr,"-x: extract archive\n");
+	serr << "Usage: " << name << " <cmd> [-f <archive>] [files...]\n";
+	serr << "\n";
+	serr << "The commands are:\n";
+	serr << "-c: create an archive\n";
+	serr << "-t: list files in archive\n";
+	serr << "-x: extract archive\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -228,22 +233,22 @@ int main(int argc, char **argv) {
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
-		std::cerr << "Invalid arguments: " << e.what() << '\n';
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
 	userList = user_parseFromFile(USERS_PATH,nullptr);
 	if(!userList)
-		printe("Warning: unable to parse users from file");
+		errmsg("Warning: unable to parse users from file");
 	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
 	if(!groupList)
-		printe("Unable to parse groups from file");
+		errmsg("Unable to parse groups from file");
 
 	FILE *ar = cmd == "-c" ? stdout : stdin;
 	if(!archive.empty()) {
 		ar = fopen(archive.c_str(),cmd == "-c" ? "w" : "r");
 		if(ar == NULL)
-			error("Opening '%s' failed",archive.c_str());
+			exitmsg("Opening '" << archive << "' failed");
 	}
 
 	if(cmd == "-t")
@@ -253,7 +258,7 @@ int main(int argc, char **argv) {
 	else if(cmd == "-x")
 		extractArchive(ar);
 	else
-		error("Invalid command: %s",cmd.c_str());
+		exitmsg("Invalid command: " << cmd);
 
 	if(!archive.empty())
 		fclose(ar);

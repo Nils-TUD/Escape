@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <iostream>
 
 #include "../proto/udp.h"
 #include "dgramsocket.h"

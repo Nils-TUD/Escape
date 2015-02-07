@@ -21,17 +21,20 @@
 
 #include "../../CPUInfo.h"
 
+using namespace esc;
+
 uint64_t MMIXCPUInfo::getRN() const {
 	uint64_t rn;
 	asm volatile ("GET %0,rN" : "=r"(rn));
 	return rn;
 }
 
-void MMIXCPUInfo::print(FILE *f,info::cpu &cpu) {
+void MMIXCPUInfo::print(esc::OStream &os,info::cpu &cpu) {
 	uint64_t rn = getRN();
-	fprintf(f,"%-12s%Lu Hz\n","Speed:",cpu.speed());
-	fprintf(f,"%-12s%s\n","Vendor:","THM");
-	fprintf(f,"%-12s%s\n","Model:","GIMMIX");
-	fprintf(f,"%-12s%Lu.%Lu.%Lu\n","Version:",rn >> 56,(rn >> 48) & 0xFF,(rn >> 40) & 0xFF);
-	fprintf(f,"%-12s%Lu\n","Builddate",rn & 0xFFFFFFFFFF);
+	os << fmt("Speed:","-",12) << cpu.speed() << " Hz\n";
+	os << fmt("Vendor:","-",12) << "THM\n";
+	os << fmt("Model:","-",12) << "GIMMIX\n";
+	os << fmt("Version:","-",12)
+	   << (rn >> 56) << "." << ((rn >> 48) & 0xFF) << "." << ((rn >> 40) & 0xFF) << "\n";
+	os << fmt("Builddate:","-",12) << (rn & 0xFFFFFFFFFF) << "\n";
 }

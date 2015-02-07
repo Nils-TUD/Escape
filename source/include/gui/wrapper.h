@@ -49,7 +49,7 @@ namespace gui {
 		}
 
 		virtual bool layout();
-		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
+		virtual void print(esc::OStream &os, bool rec = true, size_t indent = 0) const;
 
 		virtual bool resizeTo(const Size &size) {
 			bool res = Control::resizeTo(size);

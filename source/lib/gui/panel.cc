@@ -21,8 +21,6 @@
 #include <gui/window.h>
 #include <sys/common.h>
 #include <functor.h>
-#include <iomanip>
-#include <ostream>
 #include <typeinfo>
 
 using namespace std;
@@ -170,7 +168,7 @@ namespace gui {
 			repaint();
 	}
 
-	void Panel::print(std::ostream &os, bool rec, size_t indent) const {
+	void Panel::print(esc::OStream &os, bool rec, size_t indent) const {
 		UIElement::print(os, rec, indent);
 		os << " layout=" << (_layout ? typeid(*_layout).name() : "(null)");
 		if(rec) {
@@ -179,7 +177,7 @@ namespace gui {
 				(*it)->print(os,rec,indent + 2);
 				os << '\n';
 			}
-			os << std::setw(indent) << "" << "}";
+			os << esc::fmt("",indent) << "}";
 		}
 	}
 }

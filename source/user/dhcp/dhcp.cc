@@ -19,14 +19,14 @@
 
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
+#include <esc/stream/fstream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
-#include <fstream>
-#include <iostream>
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
@@ -234,12 +234,12 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 
 		switch(state) {
 			case DISCOVER:
-				std::cout << "Sending DHCPDISCOVER..." << std::endl;
+				sout << "Sending DHCPDISCOVER..." << endl;
 				buildDiscover(&msg,cfg);
 				break;
 
 			case REQUEST:
-				std::cout << "Requesting IP address " << cfg->ipAddr << "..." << std::endl;
+				sout << "Requesting IP address " << cfg->ipAddr << "..." << endl;
 				buildRequest(&msg,cfg);
 				break;
 
@@ -258,28 +258,28 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 			uint8_t msgtype = handleReply(&msg,cfg);
 			switch(msgtype) {
 				case DHCPOFFER:
-					std::cout << "Received a DHCPOFFER for IP address " << cfg->ipAddr << std::endl;
+					sout << "Received a DHCPOFFER for IP address " << cfg->ipAddr << endl;
 					state = REQUEST;
 					break;
 				case DHCPACK:
-					std::cout << "Received a DHCPACK for IP address " << cfg->ipAddr << std::endl;
+					sout << "Received a DHCPACK for IP address " << cfg->ipAddr << endl;
 					state = SUCCESS;
 					break;
 				case DHCPNAK:
-					std::cout << "Request of IP address " << cfg->ipAddr << " failed. Retrying..." << std::endl;
+					sout << "Request of IP address " << cfg->ipAddr << " failed. Retrying..." << endl;
 					state = REQUEST;
 					break;
 				default:
-					std::cerr << "Received unknown response " << msgtype << ". Stopping." << std::endl;
+					errmsg("Received unknown response " << msgtype << ". Stopping.");
 					state = FAILED;
 					break;
 			}
 		}
 		catch(const esc::default_error &e) {
 			if(e.error() == -EINTR)
-				std::cerr << "Message timed out\n";
+				errmsg("Message timed out");
 			else
-				std::cerr << e.what() << "\n";
+				errmsg(e.what());
 			state = FAILED;
 		}
 	}
@@ -309,7 +309,7 @@ int main(int argc,char **argv) {
 		link = args.get_free().at(0)->c_str();
 	}
 	catch(const esc::cmdargs_error& e) {
-		std::cerr << "Invalid arguments: " << e.what() << '\n';
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
@@ -331,9 +331,9 @@ int main(int argc,char **argv) {
 	memset(&cfg,0,sizeof(cfg));
 	cfg.xid = (rand() << 16) | rand();
 
-	std::cout << "Trying to find a configuration for " << link;
-	std::cout << " with transaction id 0x" << std::hex << cfg.xid << std::dec << "...\n";
-	std::cout << std::endl;
+	sout << "Trying to find a configuration for " << link;
+	sout << " with transaction id 0x" << fmt(cfg.xid,"x") << "...\n";
+	sout << endl;
 
 	// execute the DHCP protocol
 	State state = FAILED;
@@ -341,27 +341,27 @@ int main(int argc,char **argv) {
 		state = findConfig(&cfg,mac,timeout);
 	}
 	catch(const std::exception &e) {
-		std::cerr << e.what() << "\n";
+		errmsg(e.what());
 	}
 
 	// remove temporary route
 	net.routeRem(Net::IPv4Addr());
 
 	if(state == SUCCESS) {
-		std::cout << "\n";
-		std::cout << "Configuration for " << link << ":\n";
-		std::cout << "Server     : " << cfg.serverAddr << "\n";
-		std::cout << "IP         : " << cfg.ipAddr << "\n";
-		std::cout << "Subnet mask: " << cfg.netmask << "\n";
-		std::cout << "Broadcast  : " << cfg.broadcast << "\n";
-		std::cout << "Router     : " << cfg.router << "\n";
-		std::cout << "DNS server : " << cfg.dnsServer << "\n";
+		sout << "\n";
+		sout << "Configuration for " << link << ":\n";
+		sout << "Server     : " << cfg.serverAddr << "\n";
+		sout << "IP         : " << cfg.ipAddr << "\n";
+		sout << "Subnet mask: " << cfg.netmask << "\n";
+		sout << "Broadcast  : " << cfg.broadcast << "\n";
+		sout << "Router     : " << cfg.router << "\n";
+		sout << "DNS server : " << cfg.dnsServer << "\n";
 
 		net.linkConfig(link,cfg.ipAddr,cfg.netmask,esc::Net::UP);
 		net.routeAdd(link,cfg.ipAddr.getNetwork(cfg.netmask),Net::IPv4Addr(),cfg.netmask);
 		net.routeAdd(link,Net::IPv4Addr(),cfg.router,Net::IPv4Addr());
 
-		std::ofstream os(esc::DNS::getResolveFile());
+		FStream os(esc::DNS::getResolveFile(),"w");
 		os << (cfg.dnsServer.value() == 0 ? cfg.router : cfg.dnsServer) << "\n";
 	}
 	return 0;

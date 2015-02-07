@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/stream/fstream.h>
 #include <esc/proto/socket.h>
 #include <esc/dns.h>
 #include <sys/common.h>
-#include <fstream>
 
 class CtrlConRef;
 
@@ -104,6 +104,7 @@ public:
 		if(_sock)
 			execute(CMD_QUIT,"");
 		delete _sock;
+		delete _ios;
 	}
 
 	const char *execute(Cmd cmd,const char *arg,bool noThrow = false);
@@ -123,7 +124,7 @@ private:
 	std::string _pw;
 	std::string _dir;
 	esc::Socket *_sock;
-	std::fstream _ios;
+	esc::FStream *_ios;
 	char linebuf[512];
 	static const Command cmds[];
 };

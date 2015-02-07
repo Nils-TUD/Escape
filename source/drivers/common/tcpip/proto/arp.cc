@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/endian.h>
-#include <iostream>
 
 #include "arp.h"
 #include "ethernet.h"
@@ -137,7 +137,7 @@ ssize_t ARP::receive(const std::shared_ptr<Link> &link,const Packet &packet) {
 			return handleRequest(link,&arp);
 
 		case CMD_REPLY:
-			std::cout << "Got MAC " << arp.hwSender << " for IP " << arp.ipSender << std::endl;
+			esc::sout << "Got MAC " << arp.hwSender << " for IP " << arp.ipSender << esc::endl;
 			_cache[arp.ipSender] = arp.hwSender;
 			sendPending(link);
 			return 0;
@@ -145,7 +145,7 @@ ssize_t ARP::receive(const std::shared_ptr<Link> &link,const Packet &packet) {
 	return 0;
 }
 
-void ARP::print(std::ostream &os) {
+void ARP::print(esc::OStream &os) {
 	for(auto it = _cache.begin(); it != _cache.end(); ++it)
 		os << it->first << " " << it->second << "\n";
 }

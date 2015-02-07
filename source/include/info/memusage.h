@@ -19,16 +19,17 @@
 
 #pragma once
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
-#include <istream>
 
 namespace info {
 	class memusage;
-	std::istream& operator >>(std::istream& is,memusage& mem);
-	std::ostream& operator <<(std::ostream& os,const memusage& mem);
+	esc::IStream& operator >>(esc::IStream& is,memusage& mem);
+	esc::OStream& operator <<(esc::OStream& os,const memusage& mem);
 
 	class memusage {
-		friend std::istream& operator >>(std::istream& is,memusage& mem);
+		friend esc::IStream& operator >>(esc::IStream& is,memusage& mem);
 	public:
 		typedef size_t size_type;
 

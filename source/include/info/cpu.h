@@ -19,17 +19,18 @@
 
 #pragma once
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <info/process.h>
-#include <istream>
 #include <vector>
 
 namespace info {
 	class cpu;
-	std::istream& operator >>(std::istream& is,cpu& ci);
-	std::ostream& operator <<(std::ostream& os,const cpu& ci);
+	esc::IStream& operator >>(esc::IStream& is,cpu& ci);
+	esc::OStream& operator <<(esc::OStream& os,const cpu& ci);
 
 	class cpu {
-		friend std::istream& operator >>(std::istream& is,cpu& ci);
+		friend esc::IStream& operator >>(esc::IStream& is,cpu& ci);
 	public:
 		typedef unsigned id_type;
 		typedef process::cycle_type cycle_type;

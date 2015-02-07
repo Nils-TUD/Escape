@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 
@@ -65,7 +66,7 @@ public:
 	uint16_t sequence;
 } A_PACKED;
 
-static inline std::ostream &operator<<(std::ostream &os,const ICMP &p) {
+static inline esc::OStream &operator<<(esc::OStream &os,const ICMP &p) {
 	os << "ICMP payload:\n";
 	os << "  type          = " << p.type << "\n";
 	os << "  code          = " << p.code << "\n";

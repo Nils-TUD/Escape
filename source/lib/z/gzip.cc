@@ -17,19 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <z/crc32.h>
 #include <z/gzip.h>
-#include <iomanip>
 #include <time.h>
 
 namespace z {
 
 /* based on http://tools.ietf.org/html/rfc1952 */
 
-static void printFlags(std::ostream &os,uint8_t flags,const char **names,size_t count) {
+static void printFlags(esc::OStream &os,uint8_t flags,const char **names,size_t count) {
 	if(flags == 0)
 		os << "-";
 	else {
@@ -38,14 +39,6 @@ static void printFlags(std::ostream &os,uint8_t flags,const char **names,size_t 
 				os << names[i] << " ";
 		}
 	}
-}
-
-static void readStr(FILE *f,char *dst,size_t max) {
-	char c;
-	size_t i;
-	for(i = 0; i < max - 1 && (c = fgetc(f)) != '\0'; ++i)
-		dst[i] = c;
-	dst[i] = '\0';
 }
 
 GZipHeader::GZipHeader(const char *_filename,const char *_comment,bool hchksum)
@@ -67,12 +60,12 @@ GZipHeader::GZipHeader(const char *_filename,const char *_comment,bool hchksum)
 	}
 }
 
-GZipHeader GZipHeader::read(FILE *f) {
+GZipHeader GZipHeader::read(esc::IStream &is) {
 	CRC32 c;
 	GZipHeader h;
 	ulong checksum = 0;
 
-	fread(&h,1,10,f);
+	is.read(&h,10);
 	checksum = c.get(&h,10);
 	h.mtime = le32tocpu(h.mtime);
 
@@ -83,28 +76,28 @@ GZipHeader GZipHeader::read(FILE *f) {
 
 	if(h.flags & FEXTRA) {
 		uint16_t len;
-		fread(&len,sizeof(len),1,f);
+		is.read(&len,sizeof(len));
 		char *buf = new char[len];
-		fread(buf,1,len,f);
+		is.read(buf,len);
 		checksum = c.update(checksum,buf,len);
 		delete[] buf;
 	}
 
 	if(h.flags & FNAME) {
 		h.filename = new char[MAX_NAME_LEN];
-		readStr(f,h.filename,MAX_NAME_LEN);
+		is.getline(h.filename,MAX_NAME_LEN,'\0');
 		checksum = c.update(checksum,h.filename,strlen(h.filename) + 1);
 	}
 
 	if(h.flags & FCOMMENT) {
 		h.comment = new char[MAX_COMMENT_LEN];
-		readStr(f,h.comment,MAX_NAME_LEN);
+		is.getline(h.comment,MAX_COMMENT_LEN,'\0');
 		checksum = c.update(checksum,h.comment,strlen(h.comment) + 1);
 	}
 
 	if(h.flags & FHCRC) {
 		uint16_t crc16 = 0;
-		fread(&crc16,sizeof(crc16),1,f);
+		is.read(&crc16,sizeof(crc16));
 		crc16 = le16tocpu(crc16);
 
 		if(crc16 != (checksum & 0x0000ffff))
@@ -113,24 +106,24 @@ GZipHeader GZipHeader::read(FILE *f) {
 	return h;
 }
 
-void GZipHeader::write(FILE *f) {
+void GZipHeader::write(esc::OStream &os) {
 	assert(isGZip() && method == MDEFLATE && (flags & ~(FNAME | FCOMMENT | FHCRC)) == 0 && xflags == 0);
 	mtime = cputole32(mtime);
 	try {
-		if(fwrite(this,1,10,f) != 10)
+		if(os.write(this,10) != 10)
 			throw esc::default_error("Unable to write header");
 
 		if(flags & FNAME) {
 			assert(filename != NULL);
 			size_t len = strlen(filename) + 1;
-			if(fwrite(filename,1,len,f) != len)
+			if(os.write(filename,len) != len)
 				throw esc::default_error("Unable to write filename");
 		}
 
 		if(flags & FCOMMENT) {
 			assert(comment != NULL);
 			size_t len = strlen(comment) + 1;
-			if(fwrite(comment,1,len,f) != len)
+			if(os.write(comment,len) != len)
 				throw esc::default_error("Unable to write comment");
 		}
 
@@ -142,7 +135,7 @@ void GZipHeader::write(FILE *f) {
 			if(flags & FCOMMENT)
 				chksum = crc.update(chksum,comment,strlen(comment) + 1);
 			uint16_t hcrc = cputole16(chksum & 0xFFFF);
-			if(fwrite(&hcrc,1,2,f) != 2)
+			if(os.write(&hcrc,2) != 2)
 				throw esc::default_error("Unable to write header CRC");
 		}
 		mtime = le32tocpu(mtime);
@@ -153,7 +146,7 @@ void GZipHeader::write(FILE *f) {
 	}
 }
 
-std::ostream &operator<<(std::ostream &os,const GZipHeader &h) {
+esc::OStream &operator<<(esc::OStream &os,const GZipHeader &h) {
 	static const char *fnames[] = {
 		"text","hcrc","extra","name","comment"
 	};
@@ -166,11 +159,8 @@ std::ostream &operator<<(std::ostream &os,const GZipHeader &h) {
 		"TOPS-20","NTFS filesystem (NT)","QDOS","Acorn RISCOS"
 	};
 
-	os << "id:       " << std::hex << std::setw(2) << h.id1 << ".";
-	os << std::setw(2) << h.id2 << std::dec << "\n";
-
+	os << "id:       " << esc::fmt(h.id1,"x",2) << "." << esc::fmt(h.id2,"x",2) << "\n";
 	os << "method:   " << (h.method == GZipHeader::MDEFLATE ? "deflate" : "unknown") << "\n";
-
 	os << "flags:    ";
 	printFlags(os,h.flags,fnames,ARRAY_SIZE(fnames));
 	os << "\n";

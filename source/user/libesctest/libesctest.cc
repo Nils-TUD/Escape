@@ -27,6 +27,7 @@ extern sTestModule tModPathTree;
 extern sTestModule tModSList;
 extern sTestModule tModDList;
 extern sTestModule tModTreap;
+extern sTestModule tModStream;
 
 int main() {
 	test_register(&tModRBuffer);
@@ -35,6 +36,7 @@ int main() {
 	test_register(&tModSList);
 	test_register(&tModDList);
 	test_register(&tModTreap);
+	test_register(&tModStream);
 	test_start();
 	return EXIT_SUCCESS;
 }

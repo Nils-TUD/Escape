@@ -24,15 +24,15 @@
 using namespace std;
 
 namespace gui {
-	ostream &operator<<(ostream &s,const MouseEvent &e) {
+	esc::OStream &operator<<(esc::OStream &s,const MouseEvent &e) {
 		s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
-		s << ",pos=" << e._pos << ",buttons=" << hex << showbase << e._buttons << "]";
+		s << ",pos=" << e._pos << ",buttons=" << esc::fmt(e._buttons,"#x") << "]";
 		return s;
 	}
 
-	ostream &operator<<(ostream &s,const KeyEvent &e) {
+	esc::OStream &operator<<(esc::OStream &s,const KeyEvent &e) {
 		s << "KeyEvent[keycode=" << e._keycode << ",char=" << e._character;
-		s << ",modifier=" << hex << showbase << e._modifier << "]";
+		s << ",modifier=" << esc::fmt(e._modifier,"#x") << "]";
 		return s;
 	}
 }

@@ -21,7 +21,6 @@
 #include <gui/window.h>
 #include <sys/common.h>
 #include <algorithm>
-#include <iostream>
 #include <string.h>
 #include <string>
 

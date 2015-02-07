@@ -24,14 +24,10 @@
 #include "iobuf.h"
 
 FILE *fattach(int fd,const char *mode) {
-	uint flags = IO_NOCLOSE;
-	if(*mode == 'r')
-		flags = O_RDONLY;
-	else if(*mode == 'w')
-		flags = O_WRONLY;
-	/* invalid mode? */
-	if(flags == IO_NOCLOSE || mode[1] != '\0')
+	uint flags = parsemode(mode);
+	if((flags & O_ACCMODE) == 0 || (flags & (O_APPEND | O_CREAT | O_EXCL | O_LONELY | O_TRUNC)))
 		return NULL;
+	flags |= O_NOCLOSE;
 
 	/* create file */
 	FILE *f;

@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <limits>
 #include <stddef.h>
 #include <string>
@@ -28,7 +30,7 @@ namespace info {
 	class thread;
 
 	class process {
-		friend std::istream& operator >>(std::istream& is,process& p);
+		friend esc::IStream& operator >>(esc::IStream& is,process& p);
 
 	public:
 		typedef int pid_type;
@@ -107,6 +109,6 @@ namespace info {
 		std::string _cmd;
 	};
 
-	std::istream& operator >>(std::istream& is,process& p);
-	std::ostream& operator <<(std::ostream& os,const process& p);
+	esc::IStream& operator >>(esc::IStream& is,process& p);
+	esc::OStream& operator <<(esc::OStream& os,const process& p);
 }

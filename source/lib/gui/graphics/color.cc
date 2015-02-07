@@ -37,7 +37,7 @@ namespace gui {
 		return val;
 	}
 
-	ostream &operator<<(ostream &s,const Color &c) {
+	esc::OStream &operator<<(esc::OStream &s,const Color &c) {
 		s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
 		s << "," << c.getAlpha() << "]";
 		return s;

@@ -21,6 +21,8 @@
 
 #include <esc/proto/net.h>
 #include <esc/proto/nic.h>
+#include <esc/stream/ostream.h>
+#include <esc/stream/istream.h>
 #include <limits>
 #include <stddef.h>
 #include <string>
@@ -28,11 +30,11 @@
 
 namespace info {
 	class arp;
-	std::istream& operator >>(std::istream& is,arp& a);
-	std::ostream& operator <<(std::ostream& os,const arp& a);
+	esc::IStream& operator >>(esc::IStream& is,arp& a);
+	esc::OStream& operator <<(esc::OStream& os,const arp& a);
 
 	class arp {
-		friend std::istream& operator >>(std::istream& is,arp& a);
+		friend esc::IStream& operator >>(esc::IStream& is,arp& a);
 	public:
 		static std::vector<arp*> get_list();
 

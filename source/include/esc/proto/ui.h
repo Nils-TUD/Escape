@@ -21,6 +21,7 @@
 
 #include <esc/proto/input.h>
 #include <esc/proto/screen.h>
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/stat.h>
@@ -146,6 +147,6 @@ private:
 	IPCStream _is;
 };
 
-std::ostream &operator<<(std::ostream &os,const UIEvents::Event &ev);
+OStream &operator<<(OStream &os,const UIEvents::Event &ev);
 
 }

@@ -19,6 +19,7 @@
 
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/dns.h>
 #include <info/link.h>
@@ -78,7 +79,7 @@ static void sendEcho(Socket &sock,const Net::IPv4Addr &src,const Net::IPv4Addr &
 	const size_t total = sizeof(IPv4Header) + sizeof(ICMPHeader) + nbytes;
 	IPv4Header *ip = static_cast<IPv4Header*>(malloc(total));
 	if(!ip)
-		error("Not enough memory");
+		exitmsg("Not enough memory");
 
 	ICMPHeader *icmp = reinterpret_cast<ICMPHeader*>(ip + 1);
 	icmp->code = 0;
@@ -122,12 +123,12 @@ static int handleReply(IPv4Header *reply) {
 
 	recvTime = rdtsc();
 	if(esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(reply),sizeof(IPv4Header)) != 0) {
-		std::cerr << "IP header has invalid checksum" << std::endl;
+		errmsg("IP header has invalid checksum");
 		return -1;
 	}
 
 	if(esc::Net::ipv4Checksum(reinterpret_cast<uint16_t*>(icmp),sizeof(*icmp) + nbytes) != 0) {
-		std::cerr << "ICMP has invalid checksum" << std::endl;
+		errmsg("ICMP has invalid checksum");
 		return -1;
 	}
 
@@ -142,12 +143,12 @@ static void sigint(int) {
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [options] <address>\n",name);
-	fprintf(stderr,"    -c <count>    : perform <count> pings (default: 10)\n");
-	fprintf(stderr,"    -s <n>        : use <n> bytes of payload (default: 56)\n");
-	fprintf(stderr,"    -t <ttl>      : use <ttl> as time-to-live (default: 64)\n");
-	fprintf(stderr,"    -i <interval> : sleep <interval> ms between pings (default: 1000)\n");
-	fprintf(stderr,"    -W <timeout>  : wait <timeout> ms for each reply (default: 1000)\n");
+	serr << "Usage: " << name << " [options] <address>\n";
+	serr << "    -c <count>    : perform <count> pings (default: 10)\n";
+	serr << "    -s <n>        : use <n> bytes of payload (default: 56)\n";
+	serr << "    -t <ttl>      : use <ttl> as time-to-live (default: 64)\n";
+	serr << "    -i <interval> : sleep <interval> ms between pings (default: 1000)\n";
+	serr << "    -W <timeout>  : wait <timeout> ms for each reply (default: 1000)\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -160,9 +161,9 @@ int main(int argc,char **argv) {
 	const char *address;
 
 	if(signal(SIGALRM,sigalarm) == SIG_ERR)
-		error("Unable to set SIGALRM");
+		exitmsg("Unable to set SIGALRM");
 	if(signal(SIGINT,sigint) == SIG_ERR)
-		error("Unable to set SIGINT");
+		exitmsg("Unable to set SIGINT");
 	srand(time(NULL));
 
 	// parse params
@@ -172,18 +173,18 @@ int main(int argc,char **argv) {
 		if(args.is_help())
 			usage(argv[0]);
 		if(nbytes > 4 * 1024)
-			error("The maximum payload size is 4K");
+			exitmsg("The maximum payload size is 4K");
 		address = args.get_free().at(0)->c_str();
 	}
 	catch(const esc::cmdargs_error& e) {
-		std::cerr << "Invalid arguments: " << e.what() << '\n';
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
 	const size_t total = sizeof(IPv4Header) + sizeof(ICMPHeader) + nbytes;
 	IPv4Header *reply = static_cast<IPv4Header*>(malloc(total));
 	if(!reply)
-		error("Not enough memory");
+		exitmsg("Not enough memory");
 
 	// get destination
 	Net::IPv4Addr dest;
@@ -191,7 +192,7 @@ int main(int argc,char **argv) {
 		dest = esc::DNS::getHost(address);
 	}
 	catch(const std::exception &e) {
-		std::cerr << "Unable to resolve '" << address << "': " << e.what() << "\n";
+		errmsg("Unable to resolve '" << address << "': " << e.what());
 		return EXIT_FAILURE;
 	}
 
@@ -211,7 +212,7 @@ int main(int argc,char **argv) {
 		}
 	}
 	if(src == Net::IPv4Addr()) {
-		std::cerr << "Unable to find source IP for destination " << dest << "\n";
+		errmsg("Unable to find source IP for destination " << dest);
 		return EXIT_FAILURE;
 	}
 
@@ -219,8 +220,8 @@ int main(int argc,char **argv) {
 	uint sent = 0;
 	uint received = 0;
 
-	std::cout << "PING " << address << " (" << dest << ") " << nbytes;
-	std::cout << "(" << total << ") bytes of data." << std::endl;
+	sout << "PING " << address << " (" << dest << ") " << nbytes;
+	sout << "(" << total << ") bytes of data." << endl;
 
 	uint64_t start = rdtsc();
 	for(uint i = 1; !stop && sent < times; ++i) {
@@ -228,7 +229,7 @@ int main(int argc,char **argv) {
 		sent++;
 
 		if(alarm(timeout) < 0)
-			printe("alarm(%u)",timeout);
+			errmsg("alarm(" << timeout << ")");
 
 		try {
 			Socket::Addr addr;
@@ -238,10 +239,10 @@ int main(int argc,char **argv) {
 				res = handleReply(reply);
 				if(res == 1) {
 					ICMPHeader *icmp = reinterpret_cast<ICMPHeader*>(reply + 1);
-					std::cout << be16tocpu(reply->packetSize) << " bytes from " << reply->src << ":";
-					std::cout << " icmp_seq=" << be16tocpu(icmp->sequence);
-					std::cout << " ttl=" << reply->timeToLive;
-					std::cout << " time=" << (tsctotime(recvTime - sendTime) / 1000.0) << " ms" << std::endl;
+					sout << be16tocpu(reply->packetSize) << " bytes from " << reply->src << ":";
+					sout << " icmp_seq=" << be16tocpu(icmp->sequence);
+					sout << " ttl=" << reply->timeToLive;
+					sout << " time=" << (tsctotime(recvTime - sendTime) / 1000.0) << " ms" << endl;
 					received++;
 				}
 			}
@@ -254,14 +255,14 @@ int main(int argc,char **argv) {
 				throw;
 
 			if(!stop) {
-				std::cerr << "From " << src << " icmp_seq=" << i;
-				std::cerr << " Destination Host Unreachable" << std::endl;
+				serr << "From " << src << " icmp_seq=" << i;
+				serr << " Destination Host Unreachable" << endl;
 			}
 		}
 	}
 	uint64_t end = rdtsc();
 
-	std::cout << sent << " packets transmitted, " << received << " received, time ";
-	std::cout << (tsctotime(end - start) / 1000.0) << "ms\n";
+	sout << sent << " packets transmitted, " << received << " received, time ";
+	sout << (tsctotime(end - start) / 1000.0) << "ms\n";
 	return 0;
 }

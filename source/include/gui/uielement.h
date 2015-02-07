@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <gui/event/event.h>
 #include <gui/event/subscriber.h>
 #include <gui/graphics/graphics.h>
@@ -273,7 +274,7 @@ namespace gui {
 		 * @param rec whether to print recursively
 		 * @param indent the indent
 		 */
-		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
+		virtual void print(esc::OStream &os, bool rec = true, size_t indent = 0) const;
 
 	protected:
 		/**
@@ -378,7 +379,7 @@ namespace gui {
 		static id_type _nextid;
 	};
 
-	static inline std::ostream &operator<<(std::ostream &os,const UIElement &ui) {
+	static inline esc::OStream &operator<<(esc::OStream &os,const UIElement &ui) {
 		ui.print(os);
 		return os;
 	}

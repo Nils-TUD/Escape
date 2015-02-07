@@ -19,7 +19,7 @@
 
 #include <esc/proto/nic.h>
 #include <esc/proto/socket.h>
-#include <sys/common.h>
+#include <esc/stream/std.h>
 
 using namespace esc;
 
@@ -37,12 +37,12 @@ int main() {
 		size_t res = sock.recvfrom(addr,buffer,sizeof(buffer));
 
 		EthernetHeader *ether = reinterpret_cast<EthernetHeader*>(buffer);
-		std::cout << "Got packet:\n";
-		std::cout << " src  = " << ether->src << "\n";
-		std::cout << " dst  = " << ether->dst << "\n";
-		std::cout << " type = " << ether->type << "\n";
-		std::cout << " len  = " << res << "\n";
-		std::cout << std::endl;
+		esc::sout << "Got packet:\n";
+		esc::sout << " src  = " << ether->src << "\n";
+		esc::sout << " dst  = " << ether->dst << "\n";
+		esc::sout << " type = " << ether->type << "\n";
+		esc::sout << " len  = " << res << "\n\n";
+		esc::sout.flush();
 	}
 	return 0;
 }

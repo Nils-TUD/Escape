@@ -21,6 +21,8 @@
 
 #include <esc/proto/net.h>
 #include <esc/proto/nic.h>
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <limits>
 #include <stddef.h>
 #include <string>
@@ -28,11 +30,11 @@
 
 namespace info {
 	class link;
-	std::istream& operator >>(std::istream& is,link& l);
-	std::ostream& operator <<(std::ostream& os,const link& l);
+	esc::IStream& operator >>(esc::IStream& is,link& l);
+	esc::OStream& operator <<(esc::OStream& os,const link& l);
 
 	class link {
-		friend std::istream& operator >>(std::istream& is,link& l);
+		friend esc::IStream& operator >>(esc::IStream& is,link& l);
 	public:
 		static std::vector<link*> get_list();
 

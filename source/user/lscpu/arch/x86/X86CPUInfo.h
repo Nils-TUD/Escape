@@ -21,7 +21,6 @@
 
 #include <info/cpu.h>
 #include <sys/common.h>
-#include <stdio.h>
 
 class X86CPUInfo : public CPUInfo {
 	static const size_t VENDOR_STRLEN				= 12;
@@ -42,11 +41,11 @@ public:
 	explicit X86CPUInfo() : CPUInfo() {
 	}
 
-	virtual void print(FILE *f,info::cpu &cpu);
+	virtual void print(esc::OStream &os,info::cpu &cpu);
 
 private:
 	Info getInfo() const;
 	void cpuid(unsigned code,uint32_t *eax,uint32_t *ebx,uint32_t *ecx,uint32_t *edx) const;
 	void cpuid(unsigned code,char *str) const;
-	void printFlags(FILE *f) const;
+	void printFlags(esc::OStream &os) const;
 };

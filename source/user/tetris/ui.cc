@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/keycodes.h>
 #include <sys/thread.h>
@@ -176,7 +177,7 @@ void UI::start() {
 	// start input thread
 	int tid;
 	if((tid = startthread(run,this)) < 0)
-		error("Unable to start input-thread");
+		exitmsg("Unable to start input-thread");
 
 	while(_run) {
 		esc::UIEvents::Event ev;

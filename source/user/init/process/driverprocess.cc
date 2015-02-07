@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/conf.h>
 #include <sys/debug.h>
@@ -25,7 +26,6 @@
 #include <sys/stat.h>
 #include <sys/thread.h>
 #include <usergroup/group.h>
-#include <iostream>
 
 #include "../initerror.h"
 #include "driverprocess.h"
@@ -61,7 +61,7 @@ void DriverProcess::load() {
 		execv(argv[0],argv);
 
 		// if we're here, there's something wrong
-		cerr << "Exec of '" << path << "' failed" << endl;
+		esc::serr << "Exec of '" << path << "' failed" << esc::endl;
 		exit(EXIT_FAILURE);
 	}
 	else if(_pid < 0)
@@ -94,35 +94,42 @@ void DriverProcess::load() {
 	}
 }
 
-istream& operator >>(istream& is,Device& dev) {
+esc::IStream& operator >>(esc::IStream& is,Device& dev) {
 	is >> dev._name;
-	is >> oct >> dev._perms;
+	is >> esc::fmt(dev._perms,"o");
 	is >> dev._group;
 	return is;
 }
 
-istream& operator >>(istream& is,DriverProcess& drv) {
+esc::IStream& operator >>(esc::IStream& is,DriverProcess& drv) {
+	char c;
 	is >> drv._name;
-	while(is.good() && is.peek() != '\t') {
+	while(is.good() && (c = is.get()) != '\t') {
+		is.putback(c);
 		string arg;
 		is >> arg;
 		drv._args.push_back(arg);
 	}
-	while(is.peek() == '\t') {
-		Device dev;
-		is >> dev;
-		drv._devices.push_back(dev);
+	if(is.good()) {
+		is.putback(c);
+		while((c = is.get()) == '\t') {
+			is.putback(c);
+			Device dev;
+			is >> dev;
+			drv._devices.push_back(dev);
+		}
+		is.putback(c);
 	}
 	return is;
 }
 
-ostream& operator <<(ostream& os,const DriverProcess& drv) {
+esc::OStream& operator <<(esc::OStream& os,const DriverProcess& drv) {
 	os << drv.name() << '\n';
 	const vector<Device>& devs = drv.devices();
 	for(auto it = devs.begin(); it != devs.end(); ++it) {
 		os << '\t' << it->name() << ' ';
-		os << oct << it->permissions() << ' ' << it->group() << '\n';
+		os << esc::fmt(it->permissions(),"0o",4) << ' ' << it->group() << '\n';
 	}
-	os << endl;
+	os << esc::endl;
 	return os;
 }

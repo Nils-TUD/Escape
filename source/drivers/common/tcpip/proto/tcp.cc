@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <iostream>
 
 #include "ethernet.h"
 #include "ipv4.h"
@@ -141,7 +140,7 @@ ssize_t TCP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 	return 0;
 }
 
-void TCP::printSockets(std::ostream &os) {
+void TCP::printSockets(esc::OStream &os) {
 	for(auto it = _socks.begin(); it != _socks.end(); ++it) {
 		Route r = Route::find(it->second->remoteIP());
 		os << it->second->fd() << " TCP " << it->second->state() << " ";

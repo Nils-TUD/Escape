@@ -18,67 +18,72 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
+#include <esc/cmdargs.h>
 #include <esc/env.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 
 #define KEYMAP_DIR		"/etc/keymaps"
 
+using namespace esc;
+
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-s <name>]\n",name);
+	serr << "Usage: " << name << " [-s <name>]\n";
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char **argv) {
-	char *kmname = NULL;
+int main(int argc,char **argv) {
+	std::string kmname;
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"s=s",&kmname);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
+	cmdargs args(argc,argv,cmdargs::NO_FREE);
+	try {
+		args.parse("s=s",&kmname);
+		if(args.is_help())
+			usage(argv[0]);
+	}
+	catch(const cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	esc::VTerm vterm(esc::env::get("TERM").c_str());
 
 	/* set keymap? */
-	if(kmname != NULL) {
+	if(!kmname.empty()) {
 		std::string keymap = std::string(KEYMAP_DIR) + "/" + kmname;
 		vterm.setKeymap(keymap);
-		printf("Successfully changed keymap to '%s'\n",keymap.c_str());
+		sout << "Successfully changed keymap to '" << keymap << "'\n";
 	}
 	/* list all keymaps */
 	else {
 		struct stat curInfo;
 		std::string keymap = vterm.getKeymap();
 		if(stat(keymap.c_str(),&curInfo) < 0)
-			printe("Unable to stat current keymap (%s)",keymap.c_str());
+			errmsg("Unable to stat current keymap (" << keymap << ")");
 
 		struct dirent e;
 		DIR *dir = opendir(KEYMAP_DIR);
 		if(!dir)
-			error("Unable to open '%s'",KEYMAP_DIR);
+			exitmsg("Unable to open '" << KEYMAP_DIR << "'");
 		while(readdir(dir,&e)) {
 			if(strcmp(e.d_name,".") != 0 && strcmp(e.d_name,"..") != 0) {
 				char fpath[MAX_PATH_LEN];
 				snprintf(fpath,sizeof(fpath),"%s/%s",KEYMAP_DIR,e.d_name);
 				struct stat finfo;
 				if(stat(fpath,&finfo) < 0)
-					printe("Unable to stat '%s'",fpath);
+					errmsg("Unable to stat '" << fpath << "'");
 
 				if(finfo.st_ino == curInfo.st_ino && finfo.st_dev == curInfo.st_dev)
-					printf("* %s\n",e.d_name);
+					sout << "* " << e.d_name << "\n";
 				else
-					printf("  %s\n",e.d_name);
+					sout << "  " << e.d_name << "\n";
 			}
 		}
 		closedir(dir);

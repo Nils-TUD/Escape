@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <map>
-#include <ostream>
 
 #include "../common.h"
 #include "../link.h"
@@ -65,7 +65,7 @@ public:
 		return _cache.erase(ip) ? 0 : -ENOTFOUND;
 	}
 	static ssize_t requestMAC(const std::shared_ptr<Link> &link,const esc::Net::IPv4Addr &ip);
-	static void print(std::ostream &os);
+	static void print(esc::OStream &os);
 
 private:
 	static int createPending(const void *packet,size_t size,
@@ -90,7 +90,7 @@ private:
 	static cache_type _cache;
 } A_PACKED;
 
-static inline std::ostream &operator<<(std::ostream &os,const ARP &p) {
+static inline esc::OStream &operator<<(esc::OStream &os,const ARP &p) {
 	os << "ARP payload:\n";
 	os << "  cmddst     = " << be16tocpu(p.cmd) << "\n";
 	os << "  hwSender   = " << p.hwSender << "\n";

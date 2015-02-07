@@ -37,8 +37,8 @@
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 
 using namespace gui;
@@ -73,7 +73,6 @@ int main() {
 	addWindow(app,win7());
 	addWindow(app,win8());
 	addWindow(app,win9());
-	cout.flush();
 	int res = app->run();
 	run = false;
 	join(0);

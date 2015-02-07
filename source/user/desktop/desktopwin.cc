@@ -22,7 +22,6 @@
 #include <gui/imagebutton.h>
 #include <sys/common.h>
 #include <sys/proc.h>
-#include <iostream>
 #include <stdio.h>
 
 #include "desktopwin.h"

@@ -19,6 +19,7 @@
 
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
+#include <esc/stream/std.h>
 #include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/thread.h>
@@ -30,7 +31,7 @@ using namespace esc;
 static char buffer[8192];
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <file> <port>\n",name);
+	serr << "Usage: " << name << " <file> <port>\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -38,9 +39,9 @@ int main(int argc,char **argv) {
 	if(isHelpCmd(argc,argv) || argc != 3)
 		usage(argv[0]);
 
-	FILE *file = fopen(argv[1],"w");
+	FStream file(argv[1],"w");
 	if(!file)
-		error("Unable to open '%s' for writing",argv[1]);
+		exitmsg("Unable to open '" << argv[1] << "' for writing");
 
 	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
@@ -56,16 +57,14 @@ int main(int argc,char **argv) {
 	uint32_t total;
 	client.receive(&total,sizeof(total));
 
-	printf("Reading %u bytes from client...\n",total);
-	fflush(stdout);
+	sout << "Reading " << total << " bytes from client...\n";
+	sout.flush();
 
 	ssize_t res;
 	while(total > 0 && (res = client.receive(buffer,sizeof(buffer))) > 0) {
-		if(fwrite(buffer,1,res,file) != (size_t)res)
-			error("fwrite failed");
+		if(file.write(buffer,res) != (size_t)res)
+			exitmsg("fwrite failed");
 		total -= res;
 	}
-
-	fclose(file);
 	return 0;
 }

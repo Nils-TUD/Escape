@@ -18,6 +18,7 @@
  */
 
 #include <esc/ipc/filedev.h>
+#include <esc/stream/istringstream.h>
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <sys/driver.h>
@@ -25,9 +26,7 @@
 #include <sys/thread.h>
 #include <sys/time.h>
 #include <usergroup/group.h>
-#include <iostream>
 #include <mutex>
-#include <sstream>
 #include <stdio.h>
 #include <vector>
 
@@ -74,7 +73,7 @@ public:
 		is >> r;
 
 		int type = 0, proto = 0;
-		std::istringstream sip(r.path.str());
+		esc::IStringStream sip(r.path.str());
 		sip >> type >> proto;
 
 		int res = 0;
@@ -415,7 +414,7 @@ public:
 	}
 
 	virtual std::string handleRead() {
-		std::ostringstream os;
+		esc::OStringStream os;
 		std::lock_guard<std::mutex> guard(mutex);
 		LinkMng::print(os);
 		return os.str();
@@ -429,7 +428,7 @@ public:
 	}
 
 	virtual std::string handleRead() {
-		std::ostringstream os;
+		esc::OStringStream os;
 		std::lock_guard<std::mutex> guard(mutex);
 		Route::print(os);
 		return os.str();
@@ -443,7 +442,7 @@ public:
 	}
 
 	virtual std::string handleRead() {
-		std::ostringstream os;
+		esc::OStringStream os;
 		std::lock_guard<std::mutex> guard(mutex);
 		ARP::print(os);
 		return os.str();
@@ -457,7 +456,7 @@ public:
 	}
 
 	virtual std::string handleRead() {
-		std::ostringstream os;
+		esc::OStringStream os;
 		std::lock_guard<std::mutex> guard(mutex);
 		TCP::printSockets(os);
 		UDP::printSockets(os);

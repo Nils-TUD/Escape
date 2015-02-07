@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <info/cpu.h>
 #include <sys/common.h>
-#include <stdio.h>
 
 class CPUInfo {
 public:
@@ -32,7 +32,7 @@ public:
 	virtual ~CPUInfo() {
 	}
 
-	virtual void print(FILE *f,info::cpu &cpu) = 0;
+	virtual void print(esc::OStream &os,info::cpu &cpu) = 0;
 };
 
 #if defined(__x86__)

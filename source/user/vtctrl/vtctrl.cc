@@ -18,28 +18,35 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
+#include <esc/cmdargs.h>
 #include <esc/env.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+using namespace esc;
+
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <cmd>\n",name);
-	fprintf(stderr,"    -l       : list all modes\n");
-	fprintf(stderr,"    -s <mode>: set <mode>\n");
+	serr << "Usage: " << name << " <cmd>\n";
+	serr << "    -l       : list all modes\n";
+	serr << "    -s <mode>: set <mode>\n";
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	int list = 0;
 	int mode = -1;
-	int res = ca_parse(argc,argv,CA_NO_FREE,"l s=d",&list,&mode);
-	if(argc == 1 || res < 0 || ca_hasHelp()) {
-		if(argc == 0 || res < 0)
-			printe("Invalid arguments: %s",ca_error(res));
+
+	cmdargs args(argc,argv,cmdargs::NO_FREE);
+	try {
+		args.parse("l s=d",&list,&mode);
+		if(args.is_help())
+			usage(argv[0]);
+	}
+	catch(const esc::cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
@@ -48,14 +55,17 @@ int main(int argc,const char *argv[]) {
 		std::vector<esc::Screen::Mode> modes = vterm.getModes();
 		esc::Screen::Mode curMode = vterm.getMode();
 
-		printf("Available modes:\n");
+		sout << "Available modes:\n";
 		for(auto it = modes.begin(); it != modes.end(); ++it) {
-			printf("%c %5d: %3u x %3u cells, %4u x %4u pixels, %2ubpp, %s (%s,%s)\n",
-					curMode.id == it->id ? '*' : ' ',it->id,
-					it->cols,it->rows,it->width,it->height,it->bitsPerPixel,
-					it->mode == esc::Screen::MODE_TEXT ? "text     " : "graphical",
-					(it->type & esc::Screen::MODE_TYPE_TUI) ? "tui" : "-",
-					(it->type & esc::Screen::MODE_TYPE_GUI) ? "gui" : "-");
+			sout << (curMode.id == it->id ? '*' : ' ') << " ";
+			sout << fmt(it->id,5) << ": ";
+			sout << fmt(it->cols,3) << " x " << fmt(it->rows,3) << " cells, ";
+			sout << fmt(it->width,4) << " x " << fmt(it->height,4) << " pixels, ";
+			sout << fmt(it->bitsPerPixel,2) << "bpp, ";
+			sout << (it->mode == esc::Screen::MODE_TEXT ? "text     " : "graphical") << " ";
+			sout << "(" << ((it->type & esc::Screen::MODE_TYPE_TUI) ? "tui" : "-") << ",";
+			sout << ((it->type & esc::Screen::MODE_TYPE_GUI) ? "gui" : "-") << ")";
+			sout << "\n";
 		}
 	}
 	else

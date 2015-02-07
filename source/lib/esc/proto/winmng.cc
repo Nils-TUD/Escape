@@ -22,7 +22,7 @@
 
 namespace esc {
 
-std::ostream &operator<<(std::ostream &os,const WinMngEvents::Event &ev) {
+OStream &operator<<(OStream &os,const WinMngEvents::Event &ev) {
 	static const char *types[] = {
 		"KEYBOARD","MOUSE","RESIZE","SET_ACTIVE","RESET","CREATED","ACTIVE","DESTROYED"
 	};
@@ -34,7 +34,7 @@ std::ostream &operator<<(std::ostream &os,const WinMngEvents::Event &ev) {
 		case WinMngEvents::Event::TYPE_MOUSE:
 			os << " [" << ev.d.mouse.x << "," << ev.d.mouse.y << " +";
 			os << ev.d.mouse.movedX << "," << ev.d.mouse.movedY << "," << ev.d.mouse.movedZ;
-			os << " btns=" << std::hex << ev.d.mouse.buttons << std::dec << "]";
+			os << " btns=" << fmt(ev.d.mouse.buttons,"x") << "]";
 			break;
 		case WinMngEvents::Event::TYPE_SET_ACTIVE:
 			os << " [" << ev.d.setactive.active << " @ ";

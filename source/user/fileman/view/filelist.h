@@ -19,9 +19,10 @@
 
 #pragma once
 
+#include <esc/stream/std.h>
+#include <esc/file.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/layout/iconlayout.h>
-#include <esc/file.h>
 #include <gui/imagebutton.h>
 #include <gui/label.h>
 #include <gui/panel.h>
@@ -83,7 +84,7 @@ public:
 			setList(files);
 		}
 		catch(const esc::default_error& e) {
-			cerr << e.what() << endl;
+			errmsg(e.what());
 		}
 	}
 

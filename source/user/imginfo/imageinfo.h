@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <string>
 
 class ImageInfo {
@@ -26,5 +27,5 @@ public:
 	virtual ~ImageInfo() {
 	}
 
-	virtual bool print(const std::string &file) = 0;
+	virtual bool print(esc::OStream &os,const std::string &file) = 0;
 };

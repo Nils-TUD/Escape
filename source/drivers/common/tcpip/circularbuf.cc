@@ -19,8 +19,6 @@
 
 #include <sys/common.h>
 #include <sys/test.h>
-#include <iomanip>
-#include <iostream>
 #include <stdio.h>
 
 #include "circularbuf.h"
@@ -235,7 +233,7 @@ size_t CircularBuf::pullctrl(void *buf,size_t size,seq_type *seqNo) {
 	return false;
 }
 
-void CircularBuf::print(std::ostream &os,bool data) {
+void CircularBuf::print(esc::OStream &os,bool data) {
 	os << "CircularBuffer[start=" << _seqStart << ", ack=" << _seqAcked
 	   << ", cur=" << _current << ", curdata=" << _curData << ", max=" << _max << "]\n";
 	for(auto it = _packets.begin(); it != _packets.end(); ++it) {
@@ -245,8 +243,7 @@ void CircularBuf::print(std::ostream &os,bool data) {
 			for(size_t i = 0; i < it->_size; ++i) {
 				if(i % 16 == 0)
 					os << "\n ";
-				os << std::hex << std::setw(2) << std::setfill('0') << it->data[i];
-				os << std::dec << std::setfill(' ') << ' ';
+				os << esc::fmt(it->data[i],"0x",2) << ' ';
 			}
 		}
 		os << "\n";

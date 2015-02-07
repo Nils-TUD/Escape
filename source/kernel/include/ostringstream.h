@@ -50,7 +50,7 @@ public:
 		return str;
 	}
 
-	virtual void writec(char c);
+	virtual void writec(char c) override;
 
 private:
 

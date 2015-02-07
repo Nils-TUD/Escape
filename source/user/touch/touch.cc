@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
@@ -25,11 +26,13 @@
 #include <time.h>
 #include <utime.h>
 
+using namespace esc;
+
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-a] [-m] [-c] <file>...\n",name);
-	fprintf(stderr,"  -a: only change the access time\n");
-	fprintf(stderr,"  -m: only change the modification time\n");
-	fprintf(stderr,"  -c: do not create a file\n");
+	serr << "Usage: " << name << " [-a] [-m] [-c] <file>...\n";
+	serr << "  -a: only change the access time\n";
+	serr << "  -m: only change the modification time\n";
+	serr << "  -c: do not create a file\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -46,15 +49,15 @@ int main(int argc,char **argv) {
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e.what());
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
 	for(auto f = args.get_free().begin(); f != args.get_free().end(); ++f) {
 		if(!noCreate) {
 			int fd = open((*f)->c_str(),O_CREAT | O_WRONLY);
-			if(!fd)
-				printe("Unable to open file '%s'",(*f)->c_str());
+			if(fd < 0)
+				errmsg("Unable to open file '" << **f << "'");
 			close(fd);
 		}
 
@@ -64,7 +67,7 @@ int main(int argc,char **argv) {
 		if(onlyAccess || onlyModify) {
 			struct stat info;
 			if(stat((*f)->c_str(),&info) < 0) {
-				printe("Unable to stat '%s'",(*f)->c_str());
+				errmsg("Unable to stat '" << **f << "'");
 				continue;
 			}
 
@@ -75,7 +78,7 @@ int main(int argc,char **argv) {
 		}
 
 		if(utime((*f)->c_str(),&utimes) < 0)
-			printe("Unable to set access/modification time for '%s'",(*f)->c_str());
+			errmsg("Unable to set access/modification time for '" << **f << "'");
 	}
 	return 0;
 }

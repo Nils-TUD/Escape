@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include <esc/stream/ostringstream.h>
 #include <exception>
-#include <sstream>
 
 /**
  * This macro throws an exception and passes a formatted string as its message. That is, you can
@@ -29,12 +29,12 @@
  * VTHROWE("My exception " << 1 << "," << 2 << " message",-EINVAL);
  */
 #define VTHROW(expr) {										\
-		std::ostringstream __os;							\
+		esc::OStringStream __os;							\
 		__os << expr;										\
 		throw esc::default_error(__os.str());				\
 	}
 #define VTHROWE(expr,errorcode) {							\
-		std::ostringstream __os;							\
+		esc::OStringStream __os;							\
 		__os << expr;										\
 		throw esc::default_error(__os.str(),errorcode);		\
 	}

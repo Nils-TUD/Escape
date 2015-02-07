@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/speaker.h>
+#include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
@@ -49,7 +50,7 @@ void Game::start(int cols,int rows,int size,bool sound) {
 			_spk = new esc::Speaker("/dev/speaker");
 		}
 		catch(const std::exception &e) {
-			printe("%s",e.what());
+			errmsg(e.what());
 		}
 	}
 	srand(time(NULL) * rdtsc());

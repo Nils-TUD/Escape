@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <sys/cmdargs.h>
 #include <sys/common.h>
-#include <iostream>
-#include <stdio.h>
+#include <exception>
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,7 +28,7 @@
 #include "imgs/png.h"
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <file>...\n",name);
+	esc::serr << "Usage: " << name << " <file>...\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -42,21 +42,21 @@ int main(int argc,char **argv) {
 	};
 
 	for(int i = 1; i < argc; ++i) {
-		std::cout << argv[i] << ": ";
+		esc::sout << argv[i] << ": ";
 		bool found = false;
 		for(size_t x = 0; x < ARRAY_SIZE(imgs); ++x) {
 			try {
-				if(imgs[x]->print(argv[i])) {
+				if(imgs[x]->print(esc::sout,argv[i])) {
 					found = true;
 					break;
 				}
 			}
 			catch(const std::exception &e) {
-				std::cout << argv[i] << ": " << e.what() << "\n";
+				esc::sout << argv[i] << ": " << e.what() << "\n";
 			}
 		}
 		if(!found)
-			std::cout << "no known image format\n";
+			esc::sout << "no known image format\n";
 	}
 	return 0;
 }

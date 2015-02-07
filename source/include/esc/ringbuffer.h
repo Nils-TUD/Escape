@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
-#include <ostream>
 
 namespace esc {
 
@@ -28,7 +28,7 @@ template<class T>
 class RingBuffer;
 
 template<class T>
-static std::ostream &operator<<(std::ostream &os,const RingBuffer<T> &rb);
+static OStream &operator<<(OStream &os,const RingBuffer<T> &rb);
 
 enum {
 	RB_DEFAULT		= 0x0,		/* error if ring-buffer full */
@@ -38,7 +38,7 @@ enum {
 template<class T>
 class RingBuffer {
 	template<class T2>
-	friend std::ostream &operator<<(std::ostream &os,const RingBuffer<T2> &rb);
+	friend OStream &operator<<(OStream &os,const RingBuffer<T2> &rb);
 
 public:
 	/**
@@ -170,7 +170,7 @@ private:
 };
 
 template<class T>
-static inline std::ostream &operator<<(std::ostream &os,const RingBuffer<T> &rb) {
+static inline OStream &operator<<(OStream &os,const RingBuffer<T> &rb) {
 	os << "RingBuffer [cnt=%zu, rpos=%zu, wpos=%zu, emax=%zu]:",rb._count,rb._readPos,
 			rb._writePos,rb._eMax,rb._eSize << "\n";
 	size_t c,i = rb._readPos;

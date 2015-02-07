@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <info/cpu.h>
 #include <sys/common.h>
 
@@ -28,10 +29,10 @@ int main() {
 	int i = 0;
 	std::vector<info::cpu*> cpus = info::cpu::get_list();
 	for(auto it = cpus.begin(); it != cpus.end(); ++it, ++i) {
-		printf("CPU %d:\n",i);
-		info->print(stdout,**it);
+		esc::sout << "CPU " << i << ":\n";
+		info->print(esc::sout,**it);
 		if(it + 1 != cpus.end())
-			printf("\n");
+			esc::sout << "\n";
 	}
 	return 0;
 }

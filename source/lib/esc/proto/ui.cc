@@ -22,18 +22,19 @@
 
 namespace esc {
 
-std::ostream &operator<<(std::ostream &os,const UIEvents::Event &ev) {
+OStream &operator<<(OStream &os,const UIEvents::Event &ev) {
 	static const char *types[] = {
 		"KEYBOARD","MOUSE","ACTIVE","INACTIVE"
 	};
 	os << types[ev.type];
 	switch(ev.type) {
 		case UIEvents::Event::TYPE_KEYBOARD:
-			os << " [" << ev.d.keyb.keycode << "," << ev.d.keyb.modifier << "," << ev.d.keyb.character << "]";
+			os << " [" << ev.d.keyb.keycode << "," << ev.d.keyb.modifier;
+			os << "," << ev.d.keyb.character << "]";
 			break;
 		case UIEvents::Event::TYPE_MOUSE:
 			os << " [" << ev.d.mouse.x << "," << ev.d.mouse.y;
-			os << " btns=" << std::hex << ev.d.mouse.buttons << std::dec << "]";
+			os << "  btns=" << fmt(ev.d.mouse.buttons,"x") << "]";
 			break;
 		default:
 			break;

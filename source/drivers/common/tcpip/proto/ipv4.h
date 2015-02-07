@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 
@@ -113,14 +114,14 @@ public:
 	T payload;
 } A_PACKED;
 
-static inline std::ostream &operator<<(std::ostream &os,const IPv4<> &p) {
+static inline esc::OStream &operator<<(esc::OStream &os,const IPv4<> &p) {
 	os << "IPv4 payload:\n";
 	os << "  typeOfServ = " << p.typeOfServ << "\n";
 	os << "  packetSize = " << be16tocpu(p.packetSize) << "\n";
 	os << "  packetId   = " << be16tocpu(p.packetId) << "\n";
 	os << "  fragOffset = " << be16tocpu(p.fragOffset) << "\n";
 	os << "  timeToLive = " << p.timeToLive << "\n";
-	os << "  protocol   = " << std::hex << std::showbase << p.protocol << std::noshowbase << std::dec << "\n";
+	os << "  protocol   = " << esc::fmt(p.protocol,"#x") << "\n";
 	os << "  src        = " << p.src << "\n";
 	os << "  dst        = " << p.dst << "\n";
 	switch(p.protocol) {

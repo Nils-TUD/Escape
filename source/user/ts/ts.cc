@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/file.h>
@@ -29,13 +30,11 @@
 #include <sys/debug.h>
 #include <sys/messages.h>
 #include <algorithm>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+using namespace esc;
 using namespace std;
 using namespace info;
 
@@ -76,26 +75,26 @@ static int sortcol = sort::TID;
 
 static void usage(const char *name) {
 	size_t i;
-	cerr << "Usage: " << name <<" [-s <sort>]" << '\n';
-	cerr << "    <sort> can be ";
+	serr << "Usage: " << name <<" [-s <sort>]" << '\n';
+	serr << "    <sort> can be ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
-		cerr << "'" << sorts[i].name << "'";
+		serr << "'" << sorts[i].name << "'";
 		if(i < ARRAY_SIZE(sorts) - 1)
-			cerr << ", ";
+			serr << ", ";
 	}
-	cerr << '\n';
-	cerr << '\n';
-	cerr << "Explanation of the displayed information:\n";
-	cerr << "ID    : the thread id\n";
-	cerr << "STATE : thread state (RUN,RDY,BLK,ZOM,SUS)\n";
-	cerr << "PRIO  : the thread priority (high means high priority)\n";
-	cerr << "CPU   : the CPU on which the thread is currently running on\n";
-	cerr << "STACK : the amount of physical memory used for the stack\n";
-	cerr << "SCHED : the number of times the thread has been scheduled\n";
-	cerr << "SYSC  : the number of system-calls the thread has executed\n";
-	cerr << "TIME  : the CPU time used by the thread so far in minutes:seconds.milliseconds\n";
-	cerr << "CPU%  : the CPU usage in the last second in percent\n";
-	cerr << "PROC  : the name of the process the thread belongs to\n";
+	serr << '\n';
+	serr << '\n';
+	serr << "Explanation of the displayed information:\n";
+	serr << "ID    : the thread id\n";
+	serr << "STATE : thread state (RUN,RDY,BLK,ZOM,SUS)\n";
+	serr << "PRIO  : the thread priority (high means high priority)\n";
+	serr << "CPU   : the CPU on which the thread is currently running on\n";
+	serr << "STACK : the amount of physical memory used for the stack\n";
+	serr << "SCHED : the number of times the thread has been scheduled\n";
+	serr << "SYSC  : the number of system-calls the thread has executed\n";
+	serr << "TIME  : the CPU time used by the thread so far in minutes:seconds.milliseconds\n";
+	serr << "CPU%  : the CPU usage in the last second in percent\n";
+	serr << "PROC  : the name of the process the thread belongs to\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -103,14 +102,14 @@ int main(int argc,char **argv) {
 	string ssort("tid");
 
 	// parse args
-	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
+	cmdargs args(argc,argv,cmdargs::NO_FREE);
 	try {
 		args.parse("s=s",&ssort);
 		if(args.is_help())
 			usage(argv[0]);
 	}
-	catch(const esc::cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << '\n';
+	catch(const cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
@@ -156,20 +155,19 @@ int main(int argc,char **argv) {
 	std::sort(threads.begin(),threads.end(),compareThreads);
 
 	// get console-size
-	esc::VTerm vterm(esc::env::get("TERM").c_str());
-	esc::Screen::Mode mode = vterm.getMode();
+	VTerm vterm(env::get("TERM").c_str());
+	Screen::Mode mode = vterm.getMode();
 
 	// print header
-	cout << right;
-	cout << setw(maxTid) << "ID";
-	cout << " " << "STATE";
-	cout << " " << "PRIO";
-	cout << " " << " CPU";
-	cout << " " << setw(maxStack) << "STACK";
-	cout << " " << setw(maxScheds) << "SCHED";
-	cout << " " << setw(maxSyscalls) << "SYSC";
-	cout << " " << setw(maxRuntime + 7) << "TIME";
-	cout << "   CPU% PROC" << '\n';
+	sout << fmt("ID",maxTid);
+	sout << " " << "STATE";
+	sout << " " << "PRIO";
+	sout << " " << " CPU";
+	sout << " " << fmt("STACK",maxStack);
+	sout << " " << fmt("SCHED",maxScheds);
+	sout << " " << fmt("SYSC",maxSyscalls);
+	sout << " " << fmt("TIME",maxRuntime + 7);
+	sout << "   CPU% PROC" << '\n';
 
 	// calc with to the proc-command
 	size_t width2cmd = maxTid + SSTRLEN("STATE") + SSTRLEN("PRIO") + SSTRLEN(" CPU") + maxStack +
@@ -186,31 +184,28 @@ int main(int argc,char **argv) {
 				t->procName().length());
 		string procName = t->procName().substr(0,cmdwidth);
 
-		cout << setw(maxTid) << t->tid() << " ";
-		cout << setw(5) << states[t->state()] << " ";
-		cout << setw(4) << t->prio() << " ";
-		cout << setw(4);
+		sout << fmt(t->tid(),maxTid) << " ";
+		sout << fmt(states[t->state()],5) << " ";
+		sout << fmt(t->prio(),4) << " ";
 		if(t->state() == 0)
-			cout << t->cpu();
+			sout << fmt('-',4);
 		else
-			cout << '-';
-		cout << " ";
-		cout << setw(maxStack - 1) << (t->stackPages() * PAGE_SIZE) / 1024 << "K ";
-		cout << setw(maxScheds) << t->schedCount() << " ";
-		cout << setw(maxSyscalls) << t->syscalls() << " ";
+			sout << fmt(t->cpu(),4);
+		sout << " ";
+		sout << fmt((t->stackPages() * PAGE_SIZE) / 1024,maxStack - 1) << "K ";
+		sout << fmt(t->schedCount(),maxScheds) << " ";
+		sout << fmt(t->syscalls(),maxSyscalls) << " ";
 		thread::time_type time = t->runtime() / 1000;
-		cout << setw(maxRuntime) << time / (1000 * 60) << ":";
+		sout << fmt(time / (1000 * 60),maxRuntime) << ":";
 		time %= 1000 * 60;
-		cout << setfillobj('0');
-		cout << setw(2) << time / 1000 << ".";
+		sout << fmt(time / 1000,"-0",2) << ".";
 		time %= 1000;
-		cout << setw(3) << time << " ";
-		cout << setfillobj(' ');
-		cout << setw(5) << setprecision(1) << cyclePercent << "% ";
-		cout << t->pid() << ':' << procName << '\n';
+		sout << fmt(time,"0",3) << " ";
+		sout << fmt(cyclePercent,5, 1) << "% ";
+		sout << t->pid() << ':' << procName << '\n';
 
-		if(cout.bad())
-			error("Write failed");
+		if(sout.bad())
+			exitmsg("Write failed");
 	}
 
 	return EXIT_SUCCESS;

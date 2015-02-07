@@ -69,7 +69,9 @@ void CtrlCon::connect() {
 	addr.d.ipv4.port = _port;
 	_sock->connect(addr);
 
-	_ios.open(_sock->fd());
+	_ios = new esc::FStream(_sock->fd(),"r+");
+	if(!*_ios)
+		VTHROW("Unable to attach fstream to socket-fd");
 	readReply();
 
 	execute(CMD_USER,_user.c_str());
@@ -82,13 +84,13 @@ void CtrlCon::connect() {
 
 void CtrlCon::sendCommand(const char *cmd,const char *arg) {
 	PRINT(std::cerr << "[" << (void*)this << "] xmit: " << cmd << " " << arg << std::endl);
-	_ios << cmd << " " << arg << "\r\n";
-	_ios.flush();
+	*_ios << cmd << " " << arg << "\r\n";
+	_ios->flush();
 }
 
 char *CtrlCon::readLine() {
-	_ios.getline(linebuf,sizeof(linebuf),'\n');
-	if(_ios.bad())
+	_ios->getline(linebuf,sizeof(linebuf),'\n');
+	if(_ios->bad())
 		VTHROWE("Unable to read line",-ECONNRESET);
 
 	PRINT(std::cerr << "[" << (void*)this << "] recv: " << linebuf << std::endl);

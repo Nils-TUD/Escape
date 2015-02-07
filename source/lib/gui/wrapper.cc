@@ -41,12 +41,12 @@ namespace gui {
 			repaint();
 	}
 
-	void Wrapper::print(std::ostream &os, bool rec, size_t indent) const {
+	void Wrapper::print(esc::OStream &os, bool rec, size_t indent) const {
 		UIElement::print(os,rec,indent);
 		if(rec) {
 			os << " {\n";
 			_ctrl->print(os,rec,indent + 2);
-			os << '\n' << std::setw(indent) << "" << "}";
+			os << '\n' << esc::fmt("",indent) << "}";
 		}
 	}
 }

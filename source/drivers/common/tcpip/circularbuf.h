@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <limits>
 #include <list>
-#include <ostream>
 #include <string.h>
 
 /**
@@ -51,7 +50,7 @@
  */
 
 class CircularBuf;
-static std::ostream &operator<<(std::ostream &os,const CircularBuf &cb);
+static esc::OStream &operator<<(esc::OStream &os,const CircularBuf &cb);
 
 /**
  * This class implements a circular buffer required for TCP. It is used for both the sending and
@@ -66,7 +65,7 @@ static std::ostream &operator<<(std::ostream &os,const CircularBuf &cb);
  * keep the start of the window (_seqStart) and the ACK position (_seqAcked).
  */
 class CircularBuf {
-	friend std::ostream &operator<<(std::ostream &os,const CircularBuf &cb);
+	friend esc::OStream &operator<<(esc::OStream &os,const CircularBuf &cb);
 
 public:
 	typedef uint32_t seq_type;
@@ -230,7 +229,7 @@ public:
 	 * @param os the stream
 	 * @param data print the data, too
 	 */
-	void print(std::ostream &os,bool data);
+	void print(esc::OStream &os,bool data);
 
 	static void unittest();
 
@@ -247,7 +246,7 @@ private:
 	seq_type _seqAcked;
 };
 
-static inline std::ostream &operator<<(std::ostream &os,const CircularBuf &cb) {
+static inline esc::OStream &operator<<(esc::OStream &os,const CircularBuf &cb) {
 	os << "CircularBuf[start=" << cb._seqStart << "; nextExp=" << cb.nextExp()
 	   << " nextSeq=" << cb.nextSeq() << "]";
 	return os;

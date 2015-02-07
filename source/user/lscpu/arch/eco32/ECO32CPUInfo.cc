@@ -21,8 +21,10 @@
 
 #include "../../CPUInfo.h"
 
-void ECO32CPUInfo::print(FILE *f,info::cpu &cpu) {
-	fprintf(f,"%-12s%Lu Hz\n","Speed:",cpu.speed());
-	fprintf(f,"%-12s%s\n","Vendor:","THM");
-	fprintf(f,"%-12s%s\n","Model:","ECO32");
+using namespace esc;
+
+void ECO32CPUInfo::print(esc::OStream &os,info::cpu &cpu) {
+	os << fmt("Speed:","-",12) << cpu.speed() << " Hz\n";
+	os << fmt("Vendor:","-",12) << "THM\n";
+	os << fmt("Model:","-",12) << "ECO32\n";
 }

@@ -19,12 +19,13 @@
 
 #pragma once
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <z/crc32.h>
 #include <z/deflatebase.h>
 #include <algorithm>
 #include <assert.h>
-#include <stdio.h>
 
 namespace z {
 
@@ -74,33 +75,33 @@ public:
 };
 
 /**
- * A source implementation that reads from a FILE.
+ * A source implementation that reads from a stream.
  */
-class FileInflateSource : public InflateSource {
+class StreamInflateSource : public InflateSource {
 public:
-	explicit FileInflateSource(FILE *file)
-		: InflateSource(), _file(file) {
+	explicit StreamInflateSource(esc::IStream &is)
+		: InflateSource(), _is(is) {
 	}
 
 	virtual uint8_t get() {
-		return fgetc(_file);
+		return _is.get();
 	}
 
 private:
-	FILE *_file;
+	esc::IStream &_is;
 };
 
 /**
- * A drain implementation that writes to a FILE
+ * A drain implementation that writes to a stream.
  */
-class FileInflateDrain : public InflateDrain {
+class StreamInflateDrain : public InflateDrain {
 public:
 	static const size_t BUF_SIZE	= 32 * 1024;	// has to be at least 32K
 
-	explicit FileInflateDrain(FILE *file)
-		: InflateDrain(), _crc(), _checksum(0), _file(file), _buf(new uint8_t[BUF_SIZE]), _wpos() {
+	explicit StreamInflateDrain(esc::OStream &os)
+		: InflateDrain(), _crc(), _checksum(0), _os(os), _buf(new uint8_t[BUF_SIZE]), _wpos() {
 	}
-	virtual ~FileInflateDrain() {
+	virtual ~StreamInflateDrain() {
 		delete[] _buf;
 	}
 
@@ -117,7 +118,7 @@ public:
 		return _buf[(_wpos - off) % BUF_SIZE];
 	}
 	virtual void put(uint8_t c) {
-		fputc(c,_file);
+		_os.write(c);
 		_buf[_wpos] = c;
 		_wpos = (_wpos + 1) % BUF_SIZE;
 		if(_wpos == 0)
@@ -127,7 +128,7 @@ public:
 private:
 	CRC32 _crc;
 	CRC32::type _checksum;
-	FILE *_file;
+	esc::OStream &_os;
 	uint8_t *_buf;
 	size_t _wpos;
 };

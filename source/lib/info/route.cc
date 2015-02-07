@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
 #include <info/route.h>
 #include <assert.h>
-#include <fstream>
 
-using namespace std;
+using namespace esc;
 
 namespace info {
 	std::vector<route*> route::get_list() {
 		std::vector<route*> list;
-		ifstream f("/sys/net/routes");
+		FStream f("/sys/net/routes","r");
 		while(f.good()) {
 			route *r = new route;
 			f >> *r;
@@ -39,13 +39,13 @@ namespace info {
 		return list;
 	}
 
-	istream& operator >>(istream& is,route& r) {
+	IStream& operator >>(IStream& is,route& r) {
 		is >> r._dest >> r._gw >> r._subnetmask >> r._flags;
 		is.getline(r._link,'\n');
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,const route& r) {
+	OStream& operator <<(OStream& os,const route& r) {
 		os << "Route[dest=" << r.dest() << ", netmask=" << r.subnetMask()
 		   << ", gateway=" << r.gateway() << ", flags=" << r.flags() << ", link=" << r.link() << "]";
 		return os;

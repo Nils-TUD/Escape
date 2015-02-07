@@ -18,29 +18,29 @@
  */
 
 #include <esc/proto/init.h>
-#include <sys/cmdargs.h>
-#include <sys/common.h>
-#include <stdio.h>
+#include <esc/stream/std.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
-#include <string.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s -r|-s\n",name);
+	esc::serr << "Usage: " << name << " -r|-s\n";
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	int reboot = 0;
 	int shutdown = 0;
-	int res;
 
-	res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
-	if(res < 0 || (!reboot && !shutdown) || (reboot && shutdown)) {
-		printe("Invalid arguments: %s",ca_error(res));
+	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
+	try {
+		args.parse("r s",&reboot,&shutdown);
+		if(args.is_help() || (!reboot && !shutdown) || (reboot && shutdown))
+			usage(argv[0]);
+	}
+	catch(const esc::cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	esc::Init init("/dev/init");
 	if(reboot)

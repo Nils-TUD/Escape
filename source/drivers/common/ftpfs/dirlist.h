@@ -22,8 +22,6 @@
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <dirent.h>
-#include <fstream>
-#include <sstream>
 #include <time.h>
 
 #include "blockfile.h"

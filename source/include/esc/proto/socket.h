@@ -21,11 +21,11 @@
 
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/file.h>
+#include <esc/stream/ostream.h>
+#include <esc/stream/istream.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <istream>
-#include <ostream>
 
 namespace esc {
 
@@ -55,7 +55,7 @@ public:
 	};
 
 	struct Addr {
-	 	friend std::ostream &operator<<(std::ostream &os,const Addr &a);
+	 	friend OStream &operator<<(OStream &os,const Addr &a);
 
 		Domain family;
 		union {
@@ -299,7 +299,7 @@ private:
 	}
 
 	static std::string buildPath(const char *path,Type type,Protocol proto) {
-		std::ostringstream os;
+		OStringStream os;
 		os << path << "/" << type << " " << proto;
 		return os.str();
 	}
@@ -311,8 +311,8 @@ private:
 	size_t _shmsize;
 };
 
-inline std::ostream &operator<<(std::ostream &os,const Socket::Addr &a) {
-	return os << "Addr[family=" << a.family << ", addr=0x" << std::hex << a.d.ipv4.addr << std::dec
+inline OStream &operator<<(OStream &os,const Socket::Addr &a) {
+	return os << "Addr[family=" << a.family << ", addr=0x" << fmt(a.d.ipv4.addr,"x")
 			  << ", port=" << a.d.ipv4.port << "]";
 }
 

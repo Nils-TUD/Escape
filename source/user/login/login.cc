@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/mount.h>
@@ -27,13 +28,14 @@
 #include <usergroup/passwd.h>
 #include <usergroup/user.h>
 #include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define SKIP_LOGIN			0
 #define SHELL_PATH			"/bin/shell"
 #define MAX_VTERM_NAME_LEN	10
+
+using namespace esc;
 
 static sUser *getUser(const char *user,const char *pw);
 
@@ -55,23 +57,23 @@ int main(void) {
 	/* note: we do always pass O_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
 	if((fd = open(termPath,O_RDONLY | O_MSGS)) != STDIN_FILENO)
-		error("Unable to open '%s' for STDIN: Got fd %d",termPath,fd);
+		exitmsg("Unable to open '" << termPath << "' for STDIN: Got fd " << fd);
 
 	/* open stdout */
 	if((fd = open(termPath,O_WRONLY | O_MSGS)) != STDOUT_FILENO)
-		error("Unable to open '%s' for STDOUT: Got fd %d",termPath,fd);
+		exitmsg("Unable to open '" << termPath << "' for STDOUT: Got fd " << fd);
 
 	/* dup stdout to stderr */
 	if((fd = dup(fd)) != STDERR_FILENO)
-		error("Unable to duplicate STDOUT to STDERR: Got fd %d",fd);
+		exitmsg("Unable to duplicate STDOUT to STDERR: Got fd " << fd);
 
 	/* refresh the istty property for stdin since the attempt during constructor calls failed */
 	fisatty(stdin);
 
-	printf("\n\n");
-	printf("\033[co;9]Welcome to Escape v%s, %s!\033[co]\n\n",ESCAPE_VERSION,termName);
-	printf("Please login to get a shell.\n");
-	printf("Hint: use hrniels/test, jon/doe or root/root ;)\n\n");
+	sout << "\n\n";
+	sout << "\033[co;9]Welcome to Escape v" << ESCAPE_VERSION << ", " << termName << "!\033[co]\n\n";
+	sout << "Please login to get a shell.\n";
+	sout << "Hint: use hrniels/test, jon/doe or root/root ;)\n\n";
 
 	esc::VTerm vterm(STDOUT_FILENO);
 	while(1) {
@@ -79,36 +81,35 @@ int main(void) {
 		strcpy(un,"root");
 		strcpy(pw,"root");
 #else
-		printf("Username: ");
-		fgetl(un,sizeof(un),stdin);
+		sout << "Username: ";
+		sin.getline(un,sizeof(un));
 		/* if an error occurred, e.g. the user pressed ^D, ensure that we unset the error */
-		clearerr(stdin);
+		sin.clear();
 		vterm.setFlag(esc::VTerm::FL_ECHO,false);
 
-		printf("Password: ");
-		fgetl(pw,sizeof(pw),stdin);
-		clearerr(stdin);
+		sout << "Password: ";
+		sin.getline(pw,sizeof(pw));
+		sin.clear();
 		vterm.setFlag(esc::VTerm::FL_ECHO,true);
-		putchar('\n');
+		sout << '\n';
 #endif
 
 		/* re-read users */
 		user_free(userList);
 		userList = user_parseFromFile(USERS_PATH,&usercount);
 		if(!userList)
-			error("Unable to parse users from '%s'",USERS_PATH);
+			exitmsg("Unable to parse users from '" << USERS_PATH << "'");
 
 		pw_free(pwList);
 		pwList = pw_parseFromFile(PASSWD_PATH,&pwcount);
 		if(!pwList)
-			error("Unable to parse passwords from '%s'",PASSWD_PATH);
+			exitmsg("Unable to parse passwords from '" << PASSWD_PATH << "'");
 
 		u = getUser(un,pw);
 		if(u != NULL)
 			break;
 
-		printf("Sorry, invalid username or password. Try again!\n");
-		fflush(stdout);
+		sout << "Sorry, invalid username or password. Try again!" << endl;
 		sleep(1000);
 	}
 	fflush(stdout);
@@ -116,23 +117,23 @@ int main(void) {
 	/* read in groups */
 	groupList = group_parseFromFile(GROUPS_PATH,&usercount);
 	if(!groupList)
-		error("Unable to parse groups from '%s'",GROUPS_PATH);
+		exitmsg("Unable to parse groups from '" << GROUPS_PATH << "'");
 
 	/* set user- and group-id */
 	if(setgid(u->gid) < 0)
-		error("Unable to set gid");
+		exitmsg("Unable to set gid");
 	if(setuid(u->uid) < 0)
-		error("Unable to set uid");
+		exitmsg("Unable to set uid");
 	/* determine groups and set them */
 	groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
 	if(!groups)
-		error("Unable to collect group-ids");
+		exitmsg("Unable to collect group-ids");
 	gvt = group_getByName(groupList,termName);
 	/* add the process to the corresponding ui-group */
 	if(gvt)
 		groups[groupCount++] = gvt->gid;
 	if(setgroups(groupCount,groups) < 0)
-		error("Unable to set groups");
+		exitmsg("Unable to set groups");
 
 	/* use a per-user mountspace */
 	char mspath[MAX_PATH_LEN];
@@ -141,13 +142,13 @@ int main(void) {
 	if(ms < 0) {
 		ms = open("/sys/proc/self/ms",O_RDONLY);
 		if(ms < 0)
-			error("Unable to open /sys/proc/self/ms for reading");
+			exitmsg("Unable to open /sys/proc/self/ms for reading");
 		if(clonems(ms,u->name) < 0)
-			error("Unable to clone mountspace");
+			exitmsg("Unable to clone mountspace");
 	}
 	else {
 		if(joinms(ms) < 0)
-			error("Unable to join mountspace '%s'",mspath);
+			exitmsg("Unable to join mountspace '" << mspath << "'");
 	}
 	close(ms);
 

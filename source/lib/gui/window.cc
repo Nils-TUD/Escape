@@ -26,8 +26,6 @@
 #include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
-#include <iomanip>
-#include <ostream>
 #include <string>
 
 using namespace std;
@@ -486,14 +484,14 @@ namespace gui {
 		}
 	}
 
-	void Window::print(std::ostream &os, bool rec, size_t indent) const {
+	void Window::print(esc::OStream &os, bool rec, size_t indent) const {
 		UIElement::print(os,rec,indent);
 		if(rec) {
 			os << " {\n";
 			_header->print(os,rec,indent + 2);
 			os << "\n";
 			_body->print(os,rec,indent + 2);
-			os << "\n" << std::setw(indent) << "" << "}";
+			os << "\n" << esc::fmt("",indent) << "}";
 		}
 	}
 }

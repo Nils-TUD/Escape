@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/file.h>
@@ -25,8 +26,6 @@
 #include <sys/messages.h>
 #include <usergroup/group.h>
 #include <usergroup/user.h>
-#include <iomanip>
-#include <iostream>
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
@@ -98,13 +97,13 @@ static void printMode(file::mode_type mode);
 static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
-	cerr << "Usage: " << name << " [-liasNn] [<path>]\n";
-	cerr << "    -l: long listing\n";
-	cerr << "    -i: print inode-numbers\n";
-	cerr << "    -a: print also '.' and '..'\n";
-	cerr << "    -s: print size of dir-content instead of directory-entries (implies -l)\n";
-	cerr << "    -N: print number of directory-entries instead of their size (implies -l)\n";
-	cerr << "    -n: print numeric user and group-ids\n";
+	serr << "Usage: " << name << " [-liasNn] [<path>]\n";
+	serr << "    -l: long listing\n";
+	serr << "    -i: print inode-numbers\n";
+	serr << "    -a: print also '.' and '..'\n";
+	serr << "    -s: print size of dir-content instead of directory-entries (implies -l)\n";
+	serr << "    -N: print number of directory-entries instead of their size (implies -l)\n";
+	serr << "    -n: print numeric user and group-ids\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -129,7 +128,7 @@ int main(int argc,char *argv[]) {
 			flags |= F_LONG;
 	}
 	catch(const cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << '\n';
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
@@ -150,12 +149,12 @@ int main(int argc,char *argv[]) {
 	if(flags & F_LONG) {
 		userList = user_parseFromFile(USERS_PATH,nullptr);
 		if(!userList) {
-			printe("Warning: unable to parse users from file");
+			errmsg("Warning: unable to parse users from file");
 			flags |= F_NUMERIC;
 		}
 		groupList = group_parseFromFile(GROUPS_PATH,nullptr);
 		if(!groupList) {
-			printe("Unable to parse groups from file");
+			errmsg("Unable to parse groups from file");
 			flags |= F_NUMERIC;
 		}
 	}
@@ -167,7 +166,7 @@ int main(int argc,char *argv[]) {
 		sort(entries.begin(),entries.end(),compareEntries);
 	}
 	catch(const default_error& e) {
-		cerr << "Unable to read dir-entries: " << e.what() << '\n';
+		errmsg("Unable to read dir-entries: " << e.what());
 		exit(EXIT_FAILURE);
 	}
 
@@ -211,61 +210,61 @@ int main(int argc,char *argv[]) {
 		lsfile *f = *it;
 		if(flags & F_LONG) {
 			if(flags & F_INODE)
-				cout << setw(widths[W_INODE]) << f->inode() << ' ';
+				sout << fmt(f->inode(),widths[W_INODE]) << ' ';
 			printMode(f->mode());
-			cout << setw(widths[W_LINKCOUNT]) << f->links() << ' ';
+			sout << fmt(f->links(),widths[W_LINKCOUNT]) << ' ';
 
 			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : nullptr;
 			if(!u || (flags & F_NUMERIC))
-				cout << setw(widths[W_UID]) << f->uid() << ' ';
+				sout << fmt(f->uid(),widths[W_UID]) << ' ';
 			else
-				cout << setw(widths[W_UID]) << (u ? u->name : "?") << ' ';
+				sout << fmt((u ? u->name : "?"),widths[W_UID]) << ' ';
 			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : nullptr;
 			if(!g || (flags & F_NUMERIC))
-				cout << setw(widths[W_GID]) << f->gid() << ' ';
+				sout << fmt(f->gid(),widths[W_GID]) << ' ';
 			else
-				cout << setw(widths[W_GID]) << (g ? g->name : "?") << ' ';
+				sout << fmt((g ? g->name : "?"),widths[W_GID]) << ' ';
 
-			cout << setw(widths[W_SIZE]) << f->rsize() << ' ';
+			sout << fmt(f->rsize(),widths[W_SIZE]) << ' ';
 			{
 				char dateStr[DATE_LEN];
 				file::time_type ts = f->modified();
 				struct tm *date = gmtime(&ts);
 				strftime(dateStr,sizeof(dateStr),"%Y-%m-%d %H:%M",date);
-				cout << dateStr << ' ';
+				sout << dateStr << ' ';
 			}
 			printColor(f);
-			cout << f->name() << "\033[co]" << '\n';
+			sout << f->name() << "\033[co]" << '\n';
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
 			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= mode.cols) {
-				cout << '\n';
+				sout << '\n';
 				pos = 0;
 			}
 			if(flags & F_INODE)
-				cout << setw(widths[W_INODE]) << f->inode() << ' ';
+				sout << fmt(f->inode(),widths[W_INODE]) << ' ';
 			printColor(f);
-			cout << setw(widths[W_NAME] + 1) << left << f->name() << "\033[co]";
+			sout << fmt(f->name(),"-",widths[W_NAME] + 1) << "\033[co]";
 			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
 
-		if(cout.bad())
+		if(sout.bad())
 			error("Write failed");
 	}
 
 	if(!(flags & F_LONG))
-		cout << '\n';
+		sout << '\n';
 	return EXIT_SUCCESS;
 }
 
 static void printColor(const lsfile *f) {
 	if(f->is_dir())
-		cout << "\033[co;9]";
+		sout << "\033[co;9]";
 	else if(S_ISCHR(f->mode()) || S_ISBLK(f->mode()) || S_ISFS(f->mode()) || S_ISSERV(f->mode()))
-		cout << "\033[co;14]";
+		sout << "\033[co;14]";
 	else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
-		cout << "\033[co;2]";
+		sout << "\033[co;2]";
 }
 
 static bool compareEntries(const lsfile* a,const lsfile* b) {
@@ -337,17 +336,17 @@ static void printMode(file::mode_type mode) {
 	if(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFS(mode) || S_ISSERV(mode))
 		exec = 'm';
 	if(S_ISDIR(mode))
-		cout << 'd';
+		sout << 'd';
 	else if(S_ISCHR(mode))
-		cout << 'c';
+		sout << 'c';
 	else if(S_ISBLK(mode))
-		cout << 'b';
+		sout << 'b';
 	else if(S_ISFS(mode))
-		cout << 'f';
+		sout << 'f';
 	else if(S_ISSERV(mode))
-		cout << 's';
+		sout << 's';
 	else
-		cout << '-';
+		sout << '-';
 	printPerm(mode,S_IRUSR,'r');
 	printPerm(mode,S_IWUSR,'w');
 	printPerm(mode,S_IXUSR,exec);
@@ -357,12 +356,12 @@ static void printMode(file::mode_type mode) {
 	printPerm(mode,S_IROTH,'r');
 	printPerm(mode,S_IWOTH,'w');
 	printPerm(mode,S_IXOTH,exec);
-	cout << ' ';
+	sout << ' ';
 }
 
 static void printPerm(file::mode_type mode,file::mode_type fl,char c) {
 	if((mode & fl) != 0)
-		cout << c;
+		sout << c;
 	else
-		cout << '-';
+		sout << '-';
 }

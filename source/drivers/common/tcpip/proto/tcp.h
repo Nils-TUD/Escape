@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <map>
@@ -65,7 +66,7 @@ public:
 	static void replyReset(const Ethernet<IPv4<TCP>> *pkt);
 
 	static const char *flagsToStr(uint8_t flags);
-	static void printSockets(std::ostream &os);
+	static void printSockets(esc::OStream &os);
 
 private:
 	static ssize_t sendWith(Ethernet<IPv4<TCP>> *pkt,const esc::Net::IPv4Addr &ip,esc::port_t srcp,
@@ -103,7 +104,7 @@ public:
 	static socket_map _socks;
 } A_PACKED;
 
-static inline std::ostream &operator<<(std::ostream &os,const TCP &p) {
+static inline esc::OStream &operator<<(esc::OStream &os,const TCP &p) {
 	os << "TCP payload:\n";
 	os << "  srcPort    = " << be16tocpu(p.srcPort) << "\n";
 	os << "  dstPort    = " << be16tocpu(p.dstPort) << "\n";

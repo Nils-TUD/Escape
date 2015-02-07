@@ -32,7 +32,11 @@ int bgetc(FILE *f) {
 		if(f == stdin && f->istty == 1)
 			fflush(stdout);
 		if(buf->pos >= buf->max) {
-			ssize_t count = IGNSIGS(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
+			ssize_t count;
+			if(f->flags & O_SIGNALS)
+				count = read(buf->fd,buf->buffer,IN_BUFFER_SIZE);
+			else
+				count = IGNSIGS(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
 			if(count < 0) {
 				f->error = (int)count;
 				return EOF;

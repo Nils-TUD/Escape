@@ -17,31 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
 #include <info/memusage.h>
 #include <assert.h>
-#include <fstream>
 
-using namespace std;
+using namespace esc;
 
 namespace info {
 	memusage memusage::get() {
 		memusage mem;
-		ifstream f("/sys/memusage");
+		FStream f("/sys/memusage","r");
 		f >> mem;
 		return mem;
 	}
 
-	std::istream& operator >>(std::istream& is,memusage& mem) {
-		istream::size_type unlimited = numeric_limits<streamsize>::max();
+	IStream& operator >>(IStream& is,memusage& mem) {
+		size_t unlimited = std::numeric_limits<size_t>::max();
 		is.ignore(unlimited,' ') >> mem._total;
-		is.ignore(unlimited,' ') >> mem._used >> std::ws;
+		is.ignore(unlimited,' ') >> mem._used;
 		is.ignore(unlimited,'\n');
 		is.ignore(unlimited,' ') >> mem._swapTotal;
 		is.ignore(unlimited,' ') >> mem._swapUsed;
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,const memusage& mem) {
+	OStream& operator <<(OStream& os,const memusage& mem) {
 		os << "memusage[total=" << mem.total() << ", used=" << mem.used() << ",";
 		os << " swapTotal=" << mem.swapTotal() << ", swapUsed=" << mem.swapUsed() << "]";
 		return os;

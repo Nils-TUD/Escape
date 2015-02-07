@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <algorithm>
-#include <iostream>
 #include <vector>
 
 #include "../socket/rawethersock.h"
@@ -32,7 +32,7 @@
 #include "arp.h"
 #include "ipv4.h"
 
-static std::ostream &operator<<(std::ostream &os,const Ethernet<> &p);
+static esc::OStream &operator<<(esc::OStream &os,const Ethernet<> &p);
 
 template<class T>
 class Ethernet {
@@ -78,12 +78,11 @@ public:
 	T payload;
 } A_PACKED;
 
-static inline std::ostream &operator<<(std::ostream &os,const Ethernet<> &p) {
+static inline esc::OStream &operator<<(esc::OStream &os,const Ethernet<> &p) {
 	os << "Ethernet packet:\n";
 	os << "  dst        = " << p.dst << "\n";
 	os << "  src        = " << p.src << "\n";
-	os << "  type       = 0x" << std::hex << std::setw(4) << std::setfill('0')
-					  		<< be16tocpu(p.type) << std::setfill(' ') << std::dec << "\n";
+	os << "  type       = " << esc::fmt(be16tocpu(p.type),"0#x",4) << "\n";
 	switch(be16tocpu(p.type)) {
 		case ARP::ETHER_TYPE: {
 			const ARP *arp = reinterpret_cast<const ARP*>(&p.payload);

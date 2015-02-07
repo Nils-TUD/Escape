@@ -137,7 +137,7 @@ namespace gui {
 			return UIElement::isDirty();
 		}
 
-		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
+		virtual void print(esc::OStream &os, bool rec = true, size_t indent = 0) const;
 
 	protected:
 		virtual void paintBackground(Graphics &g);

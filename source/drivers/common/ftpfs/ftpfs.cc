@@ -24,7 +24,6 @@
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <dirent.h>
-#include <fstream>
 #include <stdlib.h>
 
 #include "blockfile.h"

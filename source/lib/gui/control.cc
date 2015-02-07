@@ -20,7 +20,6 @@
 #include <gui/control.h>
 #include <gui/window.h>
 #include <sys/common.h>
-#include <iostream>
 #include <typeinfo>
 
 namespace gui {

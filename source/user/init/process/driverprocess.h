@@ -19,16 +19,17 @@
 
 #pragma once
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <usergroup/group.h>
-#include <ostream>
 #include <string>
 #include <vector>
 
 #include "process.h"
 
 class Device {
-	friend std::istream& operator >>(std::istream& is,Device& dev);
+	friend esc::IStream& operator >>(esc::IStream& is,Device& dev);
 	typedef unsigned int perm_type;
 
 public:
@@ -54,7 +55,7 @@ private:
 };
 
 class DriverProcess : public Process {
-	friend std::istream& operator >>(std::istream& is,DriverProcess& drv);
+	friend esc::IStream& operator >>(esc::IStream& is,DriverProcess& drv);
 
 public:
 	static const int MAX_WAIT_RETRIES	= 1000;
@@ -81,6 +82,6 @@ private:
 	std::vector<Device> _devices;
 };
 
-std::istream& operator >>(std::istream& is,Device& dev);
-std::istream& operator >>(std::istream& is,DriverProcess& drv);
-std::ostream& operator <<(std::ostream& os,const DriverProcess& drv);
+esc::IStream& operator >>(esc::IStream& is,Device& dev);
+esc::IStream& operator >>(esc::IStream& is,DriverProcess& drv);
+esc::OStream& operator <<(esc::OStream& os,const DriverProcess& drv);

@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
-#include <ostream>
 
 namespace gui {
 	/**
@@ -128,7 +128,7 @@ namespace gui {
 	/**
 	 * Writes the given color into the given stream
 	 */
-	std::ostream &operator<<(std::ostream &s,const Color &c);
+	esc::OStream &operator<<(esc::OStream &s,const Color &c);
 
 	static inline Color operator-(const Color &col1,const Color &col2) {
 		return Color(std::max(0,col1.getRed() - col2.getRed()),

@@ -19,18 +19,18 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <gui/graphics/pos.h>
 #include <sys/common.h>
 #include <sys/keycodes.h>
 #include <ctype.h>
-#include <ostream>
 
 namespace gui {
 	/**
 	 * Represents a mouse-event, i.e. a mouse-move or click or similar.
 	 */
 	class MouseEvent {
-		friend std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
+		friend esc::OStream &operator<<(esc::OStream &s,const MouseEvent &e);
 
 	public:
 		typedef uchar event_type;
@@ -133,7 +133,7 @@ namespace gui {
 	 * Represents a key-event, i.e. a key-press or release
 	 */
 	class KeyEvent {
-		friend std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
+		friend esc::OStream &operator<<(esc::OStream &s,const KeyEvent &e);
 
 	public:
 		typedef uchar event_type;
@@ -208,6 +208,6 @@ namespace gui {
 		modifier_type _modifier;
 	};
 
-	std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
-	std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
+	esc::OStream &operator<<(esc::OStream &s,const MouseEvent &e);
+	esc::OStream &operator<<(esc::OStream &s,const KeyEvent &e);
 }

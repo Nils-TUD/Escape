@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/stream/istringstream.h>
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
 #include <sys/common.h>
-#include <sstream>
 
 #include "ctrlcon.h"
 
@@ -56,7 +56,7 @@ private:
 		char *brace = strchr(reply,'(');
 		assert(brace);
 		int parts[6];
-		std::istringstream is(brace + 1);
+		esc::IStringStream is(brace + 1);
 		for(int i = 0; i < 6; ++i) {
 			is >> parts[i];
 			is.get();

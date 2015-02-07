@@ -20,7 +20,6 @@
 #include <sys/test.h>
 #include <common.h>
 #include <ctype.h>
-#include <math.h>
 #include <string.h>
 #include <video.h>
 

@@ -18,6 +18,8 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/fstream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <sys/common.h>
@@ -25,10 +27,6 @@
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <dirent.h>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -47,12 +45,7 @@ static void scrollDown(long lines);
 static void refreshScreen(void);
 static void printStatus(const char *totalStr);
 
-/* TODO when building for eco32, there seems to be an alignment problem. if we use a
- * non-word-sized entity, _cin will be put to a non-word-aligned address. but the generated code
- * will access a word there. thus, this can't work. it seems to be a bug in the eco32-specific part
- * of ld? */
-
-static ifstream vt;
+static esc::FStream *vt;
 static FILE *in;
 static string filename;
 static bool seenEOF;
@@ -63,13 +56,13 @@ static esc::Screen::Mode mode;
 static string emptyLine;
 
 static void usage(const char* name) {
-	cerr << "Usage: " << name << " [<file>]" << '\n';
-	cerr << "    navigation:" << '\n';
-	cerr << "        up/down         : one line up/down" << '\n';
-	cerr << "        pageup/pagedown : one page up/down" << '\n';
-	cerr << "        home/end        : to the very beginning or end" << '\n';
-	cerr << "        q               : quit" << '\n';
-	cerr << "        s               : stop reading (e.g. when walking to EOF)" << '\n';
+	esc::serr << "Usage: " << name << " [<file>]" << '\n';
+	esc::serr << "    navigation:" << '\n';
+	esc::serr << "        up/down         : one line up/down" << '\n';
+	esc::serr << "        pageup/pagedown : one page up/down" << '\n';
+	esc::serr << "        home/end        : to the very beginning or end" << '\n';
+	esc::serr << "        q               : quit" << '\n';
+	esc::serr << "        s               : stop reading (e.g. when walking to EOF)" << '\n';
 	exit(EXIT_FAILURE);
 }
 
@@ -85,7 +78,7 @@ int main(int argc,char *argv[]) {
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << '\n';
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
@@ -116,7 +109,7 @@ int main(int argc,char *argv[]) {
 	emptyLine.assign(mode.cols,' ');
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	vt.open(esc::env::get("TERM").c_str());
+	vt = new esc::FStream(esc::env::get("TERM").c_str(),"r");
 
 	// read the first lines into it
 	seenEOF = false;
@@ -129,10 +122,10 @@ int main(int argc,char *argv[]) {
 	refreshScreen();
 
 	// read from vterm
-	while(run && (c = vt.get()) != EOF) {
+	while(run && (c = vt->get()) != EOF) {
 		if(c == '\033') {
-			istream::esc_type n1,n2,n3;
-			istream::esc_type cmd = vt.getesc(n1,n2,n3);
+			int n1,n2,n3;
+			int cmd = vt->getesc(n1,n2,n3);
 			if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 				continue;
 			switch(n2) {
@@ -203,32 +196,32 @@ static void refreshScreen(void) {
 	size_t j = 0;
 	LineContainer::size_type end = startLine + min(lines->size(),(size_t)mode.rows);
 	// walk to the top of the screen
-	cout << "\033[mh]";
+	esc::sout << "\033[mh]";
 	for(LineContainer::size_type i = startLine; i < end; ++i, ++j) {
-		cout << lines->get(i);
+		esc::sout << lines->get(i);
 		if(j < mode.rows - 1)
-			cout << '\n';
+			esc::sout << '\n';
 	}
 	for(; j < mode.rows; ++j) {
-		cout << emptyLine;
+		esc::sout << emptyLine;
 		if(j < mode.rows - 1)
-			cout << '\n';
+			esc::sout << '\n';
 	}
 	printStatus(seenEOF ? nullptr : "?");
-	cout.flush();
+	esc::sout.flush();
 }
 
 static void printStatus(const char *totalStr) {
-	ostringstream lineStr;
+	esc::OStringStream lineStr;
 	size_t end = min(lines->size(),(size_t)mode.rows);
 	lineStr << "Lines " << (startLine + 1) << "-" << (startLine + end) << " / ";
 	if(!totalStr)
 		lineStr << lines->size();
 	else
 		lineStr << totalStr;
-	cout << "\033[co;0;7]";
-	cout << lineStr.str() << setw(mode.cols - lineStr.str().length()) << right << filename;
-	cout << left << "\033[co]";
+	esc::sout << "\033[co;0;7]";
+	esc::sout << lineStr.str() << esc::fmt(filename,mode.cols - lineStr.str().length());
+	esc::sout << "\033[co]";
 }
 
 static void readLines(size_t end) {
@@ -254,24 +247,24 @@ static void readLines(size_t end) {
 		// check whether the user has pressed a key
 		if(lineCount++ % 100 == 0) {
 			char vtc;
-			fcntl(vt.filedesc(),F_SETFL,O_NONBLOCK);
-			while((vtc = vt.get()) != EOF) {
+			fcntl(vt->fd(),F_SETFL,O_NONBLOCK);
+			while((vtc = vt->get()) != EOF) {
 				if(vtc == '\033') {
-					istream::esc_type n1,n2,n3;
-					istream::esc_type cmd = vt.getesc(n1,n2,n3);
+					int n1,n2,n3;
+					int cmd = vt->getesc(n1,n2,n3);
 					if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 						continue;
 					if(n2 == VK_S) {
-						vt.clear();
-						fcntl(vt.filedesc(),F_SETFL,0);
+						vt->clear();
+						fcntl(vt->fd(),F_SETFL,0);
 						return;
 					}
 				}
 			}
-			vt.clear();
-			fcntl(vt.filedesc(),F_SETFL,0);
+			vt->clear();
+			fcntl(vt->fd(),F_SETFL,0);
 
-			cout << '\r';
+			esc::sout << '\r';
 			printStatus(states[state]);
 			state = (state + 1) % ARRAY_SIZE(states);
 		}

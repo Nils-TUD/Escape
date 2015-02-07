@@ -17,107 +17,107 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <z/gzip.h>
 #include <z/inflate.h>
-#include <fstream>
-#include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
+
+using namespace esc;
 
 static int showinfo = false;
 static int tostdout = false;
 static int keep = false;
 
-static void uncompress(FILE *f,const std::string &filename,const z::GZipHeader &header) {
-	FILE *out = stdout;
+static void uncompress(IStream &is,const std::string &filename,const z::GZipHeader &header) {
+	OStream *out = &sout;
 	if(!tostdout) {
 		std::string name;
 		if(header.filename != NULL) {
 			name = header.filename;
 			if(name.find('/') != std::string::npos) {
-				printe("%s: GZip contains invalid filename (%s)",filename.c_str(),name.c_str());
+				errmsg(filename << ": GZip contains invalid filename (" << name << ")");
 				return;
 			}
 		}
 		else {
 			if(filename.rfind(".gz") != filename.length() - 3) {
-				printe("%s: invalid file name",filename.c_str());
+				errmsg(filename << ": invalid file name");
 				return;
 			}
 
 			name = filename.substr(0,filename.length() - 3);
 		}
 
-		out = fopen(name.c_str(),"w");
-		if(!out) {
-			printe("Unable to open '%s' for writing",name.c_str());
+		out = new FStream(name.c_str(),"w");
+		if(!*out) {
+			errmsg("Unable to open '" << name << "' for writing");
+			delete out;
 			return;
 		}
 	}
 
-	z::FileInflateSource src(f);
-	z::FileInflateDrain drain(out);
+	z::StreamInflateSource src(is);
+	z::StreamInflateDrain drain(*out);
 	z::Inflate inflate;
 	if(inflate.uncompress(&drain,&src) != 0)
-		printe("%s: uncompressing failed",filename.c_str());
+		errmsg(filename << ": uncompressing failed");
 	else {
 		uint32_t crc32 = (uint8_t)src.get() << 0;
 		crc32 |= (uint8_t)src.get() << 8;
 		crc32 |= (uint8_t)src.get() << 16;
 		crc32 |= (uint8_t)src.get() << 24;
 		if(le32tocpu(crc32) != drain.crc32())
-			printe("%s: CRC32 is invalid",filename.c_str());
+			errmsg(filename << ": CRC32 is invalid");
 	}
 
 	if(!tostdout) {
-		fclose(out);
+		delete out;
 		if(!keep && unlink(filename.c_str()) < 0)
-			printe("Unable to unlink '%s'",filename.c_str());
+			errmsg("Unable to unlink '" << filename << "'");
 	}
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-c] [-i] [-k] <file>...\n",name);
-	fprintf(stderr,"  -c: write to stdout\n");
-	fprintf(stderr,"  -i: don't uncompress given files, but show information about them\n");
-	fprintf(stderr,"  -k: keep the original files, don't delete them\n");
+	serr << "Usage: " << name << " [-c] [-i] [-k] <file>...\n";
+	serr << "  -c: write to stdout\n";
+	serr << "  -i: don't uncompress given files, but show information about them\n";
+	serr << "  -k: keep the original files, don't delete them\n";
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	esc::cmdargs args(argc,argv,0);
+	cmdargs args(argc,argv,0);
 	try {
 		args.parse("c i k",&tostdout,&showinfo,&keep);
 		if(args.is_help())
 			usage(argv[0]);
 	}
-	catch(const esc::cmdargs_error& e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e.what());
+	catch(const cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
 	for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
-		FILE *f = fopen((*file)->c_str(),"r");
-		if(f == NULL) {
-			printe("Unable to open '%s' for reading",(*file)->c_str());
+		FStream f((*file)->c_str(),"r");
+		if(!f) {
+			errmsg("Unable to open '" << **file << "' for reading");
 			continue;
 		}
 
 		try {
 			z::GZipHeader header = z::GZipHeader::read(f);
 			if(showinfo)
-				std::cout << (*file)->c_str() << ":\n" << header << "\n";
+				sout << **file << ":\n" << header << "\n";
 			else
 				uncompress(f,**file,header);
 		}
 		catch(const std::exception &e) {
-			std::cerr << **file << ": " << e.what() << "\n";
+			errmsg(**file << ": " << e.what());
 		}
-
-		fclose(f);
 	}
 	return 0;
 }

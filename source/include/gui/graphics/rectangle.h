@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/size.h>
 #include <sys/common.h>
-#include <iostream>
 #include <vector>
 
 namespace gui {
@@ -99,7 +99,7 @@ namespace gui {
 			_size -= size;
 		}
 
-		friend std::ostream &operator <<(std::ostream &os, const Rectangle &r) {
+		friend esc::OStream &operator <<(esc::OStream &os, const Rectangle &r) {
 			os << "Rect[@" << r._pos << ", " << r._size << "]";
 			return os;
 		}

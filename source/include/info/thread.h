@@ -19,11 +19,13 @@
 
 #pragma once
 
-#include <istream>
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
+#include <vector>
 
 namespace info {
 	class thread {
-		friend std::istream& operator >>(std::istream& is,thread& t);
+		friend esc::IStream& operator >>(esc::IStream& is,thread& t);
 
 	public:
 		enum Flags {
@@ -101,6 +103,6 @@ namespace info {
 		cpu_type _cpu;
 	};
 
-	std::istream& operator >>(std::istream& is,thread& t);
-	std::ostream& operator <<(std::ostream& os,const thread& t);
+	esc::IStream& operator >>(esc::IStream& is,thread& t);
+	esc::OStream& operator <<(esc::OStream& os,const thread& t);
 }

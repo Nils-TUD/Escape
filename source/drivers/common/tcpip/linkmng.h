@@ -64,7 +64,7 @@ public:
 		return -ENOTFOUND;
 	}
 
-	static void print(std::ostream &os) {
+	static void print(esc::OStream &os) {
 		std::lock_guard<std::mutex> guard(_mutex);
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			const std::shared_ptr<Link> &l = *it;

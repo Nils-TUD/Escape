@@ -36,7 +36,7 @@ public:
 	}
 
 	virtual std::string handleRead() {
-		std::ostringstream os;
+		esc::OStringStream os;
 		size_t i;
 		for(i = 0; i < WINDOW_COUNT; i++) {
 			Window *w = win_get(i);
@@ -45,7 +45,7 @@ public:
 				os << "\tOwner: " << w->owner << "\n";
 				os << "\tPosition: " << w->x() << "," << w->y() << "," << w->z << "\n";
 				os << "\tSize: " << w->width() << " x " << w->height() << "\n";
-				os << "\tStyle: 0x" << std::hex << w->style << std::dec << "\n";
+				os << "\tStyle: 0x" << esc::fmt(w->style,"x") << "\n";
 			}
 		}
 		return os.str();

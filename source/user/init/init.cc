@@ -18,13 +18,13 @@
  */
 
 #include <esc/ipc/device.h>
+#include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <sys/wait.h>
-#include <iostream>
 #include <signal.h>
 #include <stdlib.h>
 
@@ -82,16 +82,16 @@ public:
 
 int main(void) {
 	if(getpid() != 0)
-		error("It's not good to start init twice ;)");
+		exitmsg("It's not good to start init twice ;)");
 
 	if(startthread(driverThread,nullptr) < 0)
-		error("Unable to start driver-thread");
+		exitmsg("Unable to start driver-thread");
 
 	try {
 		pm.start();
 	}
 	catch(const init_error& e) {
-		error("Unable to init system: %s",e.what());
+		exitmsg("Unable to init system: " << e.what());
 	}
 
 	// loop and wait forever
@@ -105,7 +105,7 @@ int main(void) {
 					pm.restart(st.pid);
 			}
 			catch(const init_error& e) {
-				printe("Unable to react on child-death: %s",e.what());
+				errmsg("Unable to react on child-death: " << e.what());
 			}
 		}
 	}
@@ -118,14 +118,14 @@ static void sigAlarm(A_UNUSED int sig) {
 
 static int driverThread(A_UNUSED void *arg) {
 	if(signal(SIGALRM,sigAlarm) == SIG_ERR)
-		error("Unable to set alarm-handler");
+		exitmsg("Unable to set alarm-handler");
 
 	try {
 		dev = new InitDevice("/dev/init",0111);
 		dev->loop();
 	}
 	catch(const std::exception &e) {
-		printe("%s",e.what());
+		errmsg("Handling init device failed: " << e.what());
 	}
 
 	if(state == STATE_REBOOT)

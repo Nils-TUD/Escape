@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <map>
@@ -44,7 +45,7 @@ public:
 	static List *getList(const CtrlConRef &ctrlRef,const char *path,bool load = true);
 	static int getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *info);
 	static void removeDirOf(const char *path);
-	static void print(std::ostream &os);
+	static void print(esc::OStream &os);
 
 private:
 	static List *loadList(const CtrlConRef &ctrlRef,const char *dir);

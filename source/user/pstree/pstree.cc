@@ -18,16 +18,16 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
 #include <esc/env.h>
 #include <info/process.h>
 #include <sys/cmdargs.h>
 #include <sys/common.h>
-#include <iomanip>
-#include <iostream>
 #include <map>
 #include <stdlib.h>
 
 using namespace std;
+using namespace esc;
 using namespace info;
 
 #define PIPE			0xB3	// |
@@ -49,7 +49,7 @@ static esc::Screen::Mode mode;
 static char *prefix;
 
 static void usage(const char *name) {
-	cerr << "Usage: " << name <<" [<pid>]" << '\n';
+	serr << "Usage: " << name <<" [<pid>]" << '\n';
 	exit(EXIT_FAILURE);
 }
 
@@ -58,19 +58,19 @@ static void printRec(ProcNode *n,uint depth) {
 		// print prefix
 		if(depth > 0)
 			prefix[depth - 1] = n->next ? PIPE_CHILD : PIPE_LASTCHILD;
-		cout.write(prefix,depth);
+		sout.write(prefix,depth);
 		if(depth > 0)
 			prefix[depth - 1] = n->next ? PIPE : ' ';
 
 		// print name
 		size_t max = MIN(n->proc->command().length(),mode.cols - depth - 3);
 		if(max < n->proc->command().length()) {
-			cout.write(n->proc->command().c_str(),max);
-			cout << "...";
+			sout.write(n->proc->command().c_str(),max);
+			sout << "...";
 		}
 		else
-			cout << n->proc->command();
-		cout << '\n';
+			sout << n->proc->command();
+		sout << '\n';
 
 		// leave room for '...'
 		if(depth + 5 < mode.cols) {
@@ -152,7 +152,7 @@ int main(int argc,char **argv) {
 
 	map_type::iterator start = pmap.find(pid);
 	if(start == pmap.end())
-		printe("No process with pid %d",pid);
+		errmsg("No process with pid " << pid);
 	else
 		printRec(start->second,0);
 	return EXIT_SUCCESS;

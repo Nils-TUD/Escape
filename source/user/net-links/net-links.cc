@@ -18,6 +18,8 @@
  */
 
 #include <esc/proto/net.h>
+#include <esc/stream/istringstream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <info/link.h>
 #include <info/process.h>
@@ -31,16 +33,18 @@
 
 #define TIMEOUT		2000	/* wait 2 ms for the NIC driver to register the device */
 
-static void linkRem(esc::Net &net,int argc,char **argv);
+using namespace esc;
+
+static void linkRem(Net &net,int argc,char **argv);
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s (add|rem|set|up|down|show) args...\n",name);
-	fprintf(stderr,"\tadd <link> <driver>           : adds link <link> offered by <driver>\n");
-	fprintf(stderr,"\trem <link>                    : removes link <link>\n");
-	fprintf(stderr,"\tset <link> (ip|subnet) <val>  : configures <link>\n");
-	fprintf(stderr,"\tup <link>                     : enables <link>\n");
-	fprintf(stderr,"\tdown <link>                   : disables <link>\n");
-	fprintf(stderr,"\tshow [<link>]                 : shows all links or <link>\n");
+	serr << "Usage: " << name << " (add|rem|set|up|down|show) args...\n";
+	serr << "\tadd <link> <driver>           : adds link <link> offered by <driver>\n";
+	serr << "\trem <link>                    : removes link <link>\n";
+	serr << "\tset <link> (ip|subnet) <val>  : configures <link>\n";
+	serr << "\tup <link>                     : enables <link>\n";
+	serr << "\tdown <link>                   : disables <link>\n";
+	serr << "\tshow [<link>]                 : shows all links or <link>\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -53,7 +57,7 @@ static info::link *getByName(const char *name) {
 	return NULL;
 }
 
-static void linkAdd(esc::Net &net,int argc,char **argv) {
+static void linkAdd(Net &net,int argc,char **argv) {
 	char path[MAX_PATH_LEN];
 	if(argc < 4)
 		usage(argv[0]);
@@ -92,7 +96,7 @@ static void linkAdd(esc::Net &net,int argc,char **argv) {
 	}
 }
 
-static void linkRem(esc::Net &net,int argc,char **argv) {
+static void linkRem(Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
@@ -110,16 +114,16 @@ static void linkRem(esc::Net &net,int argc,char **argv) {
 	printe("Unable to find driver-process for '%s'",argv[2]);
 }
 
-static void linkSet(esc::Net &net,int argc,char **argv) {
+static void linkSet(Net &net,int argc,char **argv) {
 	if(argc != 5)
 		usage(argv[0]);
 
 	info::link *link = getByName(argv[2]);
 	if(!link)
-		error("Link '%s' not found",argv[2]);
+		exitmsg("Link '" << argv[2] << "' not found");
 
-	esc::Net::IPv4Addr ip;
-	std::istringstream is(argv[4]);
+	Net::IPv4Addr ip;
+	IStringStream is(argv[4]);
 	is >> ip;
 
 	if(strcmp(argv[3],"ip") == 0)
@@ -130,18 +134,18 @@ static void linkSet(esc::Net &net,int argc,char **argv) {
 		usage(argv[0]);
 }
 
-static void linkUpDown(esc::Net &net,int argc,char **argv) {
+static void linkUpDown(Net &net,int argc,char **argv) {
 	if(argc != 3)
 		usage(argv[0]);
 
 	info::link *link = getByName(argv[2]);
 	if(!link)
-		error("Link '%s' not found",argv[2]);
+		exitmsg("Link '" << argv[2] << "' not found");
 
 	if(strcmp(argv[1],"up") == 0)
-		net.linkConfig(argv[2],link->ip(),link->subnetMask(),esc::Net::UP);
+		net.linkConfig(argv[2],link->ip(),link->subnetMask(),Net::UP);
 	else if(strcmp(argv[1],"down") == 0)
-		net.linkConfig(argv[2],link->ip(),link->subnetMask(),esc::Net::DOWN);
+		net.linkConfig(argv[2],link->ip(),link->subnetMask(),Net::DOWN);
 	else
 		usage(argv[0]);
 }
@@ -153,21 +157,21 @@ static const char *statusNames[] = {
 };
 
 int main(int argc,char **argv) {
-	esc::Net net("/dev/tcpip");
+	Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::link*> links = info::link::get_list();
 		for(auto it = links.begin(); it != links.end(); ++it) {
 			if(argc <= 2 || strcmp(argv[2],(*it)->name().c_str()) == 0) {
-				std::cout << (*it)->name() << ":\n";
-				std::cout << "\tMAC address : " << (*it)->mac() << "\n";
-				std::cout << "\tIPv4 address: " << (*it)->ip() << "\n";
-				std::cout << "\tSubnet mask : " << (*it)->subnetMask() << "\n";
-				std::cout << "\tMTU         : " << (*it)->mtu() << " Bytes\n";
-				std::cout << "\tStatus      : " << statusNames[(*it)->status()] << "\n";
-				std::cout << "\tReceived    : "
+				sout << (*it)->name() << ":\n";
+				sout << "\tMAC address : " << (*it)->mac() << "\n";
+				sout << "\tIPv4 address: " << (*it)->ip() << "\n";
+				sout << "\tSubnet mask : " << (*it)->subnetMask() << "\n";
+				sout << "\tMTU         : " << (*it)->mtu() << " Bytes\n";
+				sout << "\tStatus      : " << statusNames[(*it)->status()] << "\n";
+				sout << "\tReceived    : "
 						  << (*it)->rxpackets() << " Packets, " << (*it)->rxbytes() << " Bytes\n";
-				std::cout << "\tTransmitted : "
+				sout << "\tTransmitted : "
 						  << (*it)->txpackets() << " Packets, " << (*it)->txbytes() << " Bytes\n";
 			}
 		}

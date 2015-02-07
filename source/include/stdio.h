@@ -126,6 +126,8 @@ char *tmpnam(char *s);
  * 			reposition (fseek, rewind) the internal pointer to anywhere in the file for
  * 			reading, but writing operations will move it back to the end of file.
  * 			The file is created if it does not exist.
+ *  "m"		Allow messaging
+ *  "s"		Allow signals, i.e. report an error if a syscall got interrupted by a signal
  * @return a FILE object if successfull or NULL if failed
  */
 FILE *fopen(const char *filename,const char *mode);
@@ -153,7 +155,7 @@ FILE *freopen(const char *filename,const char *mode,FILE *stream);
  * Attaches a stream to the given file-descriptor for <mode>.
  *
  * @param fd the file-descriptor
- * @param mode the mode to use it with (either "r" or "w")
+ * @param mode the mode to use it with
  * @return the created stream
  */
 FILE *fattach(int fd,const char *mode);

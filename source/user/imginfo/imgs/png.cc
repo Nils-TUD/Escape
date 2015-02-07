@@ -17,15 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <esc/rawfile.h>
 #include <img/pngimage.h>
 #include <sys/endian.h>
-#include <iomanip>
-#include <iostream>
 
 #include "png.h"
 
-bool PNGImageInfo::print(const std::string &file) {
+bool PNGImageInfo::print(esc::OStream &os,const std::string &file) {
 	esc::rawfile f(file,esc::rawfile::READ);
 
 	// check header
@@ -34,14 +33,14 @@ bool PNGImageInfo::print(const std::string &file) {
 	if(memcmp(header,img::PNGImage::SIG,img::PNGImage::SIG_LEN) != 0)
 		return false;
 
-	std::cout << "Portable Network Graphics image (PNG)\n";
+	os << "Portable Network Graphics image (PNG)\n";
 	while(1) {
 		img::PNGImage::Chunk head;
 		f.read(&head,sizeof(head),1);
 
 		head.length = be32tocpu(head.length);
-		std::cout << "  " << head.type[0] << head.type[1] << head.type[2] << head.type[3] << ": ";
-		std::cout << head.length << " bytes\n";
+		os << "  " << head.type[0] << head.type[1] << head.type[2] << head.type[3] << ": ";
+		os << head.length << " bytes\n";
 
 		if(memcmp(head.type,"IEND",4) == 0)
 			break;
@@ -50,7 +49,7 @@ bool PNGImageInfo::print(const std::string &file) {
 			f.read(&ihdr,sizeof(ihdr),1);
 			ihdr.width = be32tocpu(ihdr.width);
 			ihdr.height = be32tocpu(ihdr.height);
-			std::cout << ihdr;
+			os << ihdr;
 			f.seek(4,SEEK_CUR);
 		}
 		else if(memcmp(head.type,"tEXt",4) == 0) {
@@ -58,26 +57,26 @@ bool PNGImageInfo::print(const std::string &file) {
 			f.read(buf.get(),1,head.length);
 			buf[head.length] = '\0';
 			size_t keywordLen = strlen(buf.get());
-			std::cout << "    " << buf.get() << ": " << (buf.get() + keywordLen + 1) << "\n";
+			os << "    " << buf.get() << ": " << (buf.get() + keywordLen + 1) << "\n";
 			f.seek(4,SEEK_CUR);
 		}
 		else if(memcmp(head.type,"tIME",4) == 0) {
 			img::PNGImage::tIME tm;
 			f.read(&tm,sizeof(tm),1);
 			tm.year = be16tocpu(tm.year);
-			std::cout << "    " << tm << "\n";
+			os << "    " << tm << "\n";
 			f.seek(4 + sizeof(tm) - head.length,SEEK_CUR);
 		}
 		else if(memcmp(head.type,"bKGD",4) == 0) {
 			std::unique_ptr<uint8_t[]> buf(new uint8_t[head.length]);
 			f.read(buf.get(),1,head.length);
-			std::cout << "    " << std::setfill('0') << std::hex;
+			os << "    ";
 			for(size_t i = 0; i < head.length; ++i) {
 				if(i > 0 && i % 16 == 0)
-					std::cout << "\n";
-				std::cout << std::setw(2) << buf[i] << ' ';
+					os << "\n";
+				os << esc::fmt(buf[i],"0x",2) << ' ';
 			}
-			std::cout << std::setfill(' ') << std::dec << "\n";
+			os << "\n";
 			f.seek(4,SEEK_CUR);
 		}
 		else

@@ -27,12 +27,12 @@ int fclose(FILE *stream) {
 	int res = 0;
 	fflush(stream);
 	if(stream->in.fd >= 0) {
-		if((stream->flags & IO_NOCLOSE) == 0)
+		if((stream->flags & O_NOCLOSE) == 0)
 			close(stream->in.fd);
 		free(stream->in.buffer);
 	}
 	if(stream->out.fd >= 0 || stream->out.dynamic) {
-		if(stream->out.fd >= 0 && (stream->flags & IO_NOCLOSE) == 0)
+		if(stream->out.fd >= 0 && (stream->flags & O_NOCLOSE) == 0)
 			close(stream->out.fd);
 		free(stream->out.buffer);
 	}

@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <iostream>
 
 #include "ethernet.h"
 #include "ipv4.h"
@@ -67,7 +66,7 @@ ssize_t UDP::receive(const std::shared_ptr<Link>&,const Packet &packet) {
 	return 0;
 }
 
-void UDP::printSockets(std::ostream &os) {
+void UDP::printSockets(esc::OStream &os) {
 	for(auto it = _socks.begin(); it != _socks.end(); ++it)
 		os << it->second->fd() << " UDP *:" << it->first << "\n";
 }

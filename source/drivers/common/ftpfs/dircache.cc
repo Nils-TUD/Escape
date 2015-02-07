@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/istringstream.h>
+#include <esc/stream/fstream.h>
 #include <sys/common.h>
 #include <dirent.h>
 #include <stdlib.h>
@@ -85,8 +87,7 @@ DirCache::List *DirCache::loadList(const CtrlConRef &ctrlRef,const char *dir) {
 		list = new List;
 		list->path = dir;
 		char line[256];
-		std::ifstream in;
-		in.open(data.fd());
+		esc::FStream in(data.fd(),"r");
 		while(!in.eof()) {
 			struct stat finfo;
 			in.getline(line,sizeof(line),'\n');
@@ -125,7 +126,7 @@ std::string DirCache::decode(const char *line,struct stat *info) {
 	int links = 0,day = 0,hour = 0;
 	time_t ts;
 	ulong size = 0;
-	std::istringstream is(line);
+	esc::IStringStream is(line);
 	is >> perms >> links >> user >> group >> size >> mon >> day >> hour;
 	int month = decodeMonth(mon);
 	if(is.get() == ':') {
@@ -194,7 +195,7 @@ mode_t DirCache::decodePerm(const char *perms) {
 	return res;
 }
 
-void DirCache::print(std::ostream &os) {
+void DirCache::print(esc::OStream &os) {
 	os << "Directory lists:\n";
 	for(auto it = dirs.begin(); it != dirs.end(); ++it) {
 		os << "  " << it->first << ":\n";

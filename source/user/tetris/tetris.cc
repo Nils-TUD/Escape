@@ -17,25 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <stdlib.h>
 
 #include "game.h"
 
+using namespace esc;
+
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-f <cols>x<rows>] [-s <size>] [--nosound]\n",name);
-	fprintf(stderr,"    <cols>x<rows> selects the screen mode, which defines the rows in the game\n");
-	fprintf(stderr,"    <size> may be 1 for small or 2 for large stones\n");
-	fprintf(stderr,"    --nosound disables the use of the PC speaker\n");
-	fprintf(stderr,"\n");
-	fprintf(stderr,"In-game key-combinations:\n");
-	fprintf(stderr,"    left/right/down: move stone\n");
-	fprintf(stderr,"    up: rotate stone\n");
-	fprintf(stderr,"    space: drop stone\n");
-	fprintf(stderr,"    p: toggle pause\n");
-	fprintf(stderr,"    r: restart\n");
-	fprintf(stderr,"    q: quit\n");
+	serr << "Usage: " << name << " [-f <cols>x<rows>] [-s <size>] [--nosound]\n";
+	serr << "    <cols>x<rows> selects the screen mode, which defines the rows in the game\n";
+	serr << "    <size> may be 1 for small or 2 for large stones\n";
+	serr << "    --nosound disables the use of the PC speaker\n";
+	serr << "\n";
+	serr << "In-game key-combinations:\n";
+	serr << "    left/right/down: move stone\n";
+	serr << "    up: rotate stone\n";
+	serr << "    space: drop stone\n";
+	serr << "    p: toggle pause\n";
+	serr << "    r: restart\n";
+	serr << "    q: quit\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -51,7 +54,7 @@ int main(int argc,char **argv) {
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
-		std::cerr << "Invalid arguments: " << e.what() << '\n';
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 

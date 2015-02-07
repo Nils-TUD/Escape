@@ -18,41 +18,46 @@
  */
 
 #include <esc/proto/net.h>
+#include <esc/stream/istringstream.h>
+#include <esc/stream/ostringstream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <info/arp.h>
 #include <sys/common.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+using namespace esc;
+
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s (add|rem|show) args...\n",name);
-	fprintf(stderr,"\tadd <ip>  : resolves the given IP and adds it to the ARP table\n");
-	fprintf(stderr,"\trem <ip>  : removes the given IP from the ARP table\n");
-	fprintf(stderr,"\tshow      : shows all ARP table entries\n");
+	serr << "Usage: " << name << " (add|rem|show) args...\n";
+	serr << "\tadd <ip>  : resolves the given IP and adds it to the ARP table\n";
+	serr << "\trem <ip>  : removes the given IP from the ARP table\n";
+	serr << "\tshow      : shows all ARP table entries\n";
 	exit(EXIT_FAILURE);
 }
 
-static esc::Net::IPv4Addr strToIp(const char *str) {
-	esc::Net::IPv4Addr ip;
-	std::istringstream is(str);
+static Net::IPv4Addr strToIp(const char *str) {
+	Net::IPv4Addr ip;
+	IStringStream is(str);
 	is >> ip;
 	return ip;
 }
 
-static void writeIp(std::ostream &os,const esc::Net::IPv4Addr &ip) {
-	std::ostringstream s;
+static void writeIp(OStream &os,const Net::IPv4Addr &ip) {
+	OStringStream s;
 	s << ip;
-	os << std::setw(15) << s.str();
+	os << fmt(s.str(),"-",15);
 }
 
-static void arpAdd(esc::Net &net,int argc,char **argv) {
+static void arpAdd(Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
 	net.arpAdd(strToIp(argv[2]));
 }
 
-static void arpRem(esc::Net &net,int argc,char **argv) {
+static void arpRem(Net &net,int argc,char **argv) {
 	if(argc < 3)
 		usage(argv[0]);
 
@@ -60,15 +65,14 @@ static void arpRem(esc::Net &net,int argc,char **argv) {
 }
 
 int main(int argc,char **argv) {
-	esc::Net net("/dev/tcpip");
+	Net net("/dev/tcpip");
 
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::arp*> arplist = info::arp::get_list();
-		std::cout << std::left;
-		std::cout << std::setw(15) << "IP address" << "MAC address\n";
+		sout << fmt("IP address","-",15) << "MAC address\n";
 		for(auto it = arplist.begin(); it != arplist.end(); ++it) {
-			writeIp(std::cout,(*it)->ip());
-			std::cout << (*it)->mac() << "\n";
+			writeIp(sout,(*it)->ip());
+			sout << (*it)->mac() << "\n";
 		}
 	}
 	else if(strcmp(argv[1],"add") == 0)

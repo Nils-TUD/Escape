@@ -21,12 +21,11 @@
 
 #include <info/cpu.h>
 #include <sys/common.h>
-#include <stdio.h>
 
 class ECO32CPUInfo : public CPUInfo {
 public:
 	explicit ECO32CPUInfo() : CPUInfo() {
 	}
 
-	virtual void print(FILE *f,info::cpu &cpu);
+	virtual void print(esc::OStream &os,info::cpu &cpu);
 };

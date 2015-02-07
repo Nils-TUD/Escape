@@ -18,101 +18,104 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/fstream.h>
+#include <esc/stream/std.h>
+#include <esc/cmdargs.h>
 #include <esc/env.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/io.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <stdlib.h>
 
-static void waitForKeyPress(FILE *vt);
+using namespace esc;
+
+static void waitForKeyPress(IStream &is);
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [<file>]\n",name);
+	serr << "Usage: " << name << " [<file>]\n";
 	exit(EXIT_FAILURE);
 }
 
 static bool run = true;
 
-int main(int argc,const char *argv[]) {
-	const char **args;
-	FILE *vt,*in = stdin;
-	size_t line,col;
-	int c;
+int main(int argc,char *argv[]) {
+	FStream *in = &sin;
 
 	/* parse args */
-	int res = ca_parse(argc,argv,CA_MAX1_FREE,"");
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
+	cmdargs ca(argc,argv,cmdargs::MAX1_FREE);
+	try {
+		ca.parse("");
+		if(ca.is_help())
+			usage(argv[0]);
+	}
+	catch(const cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	/* open file, if any */
-	args = ca_getFree();
-	if(args[0]) {
-		in = fopen(args[0],"r");
+	auto args = ca.get_free();
+	if(args.size() > 0) {
+		in = new FStream(args[0]->c_str(),"r");
 		if(!in)
-			error("Unable to open '%s'",args[0]);
+			exitmsg("Unable to open '" << *args[0] << "'");
 	}
 	else if(isatty(STDIN_FILENO))
-		error("If stdin is a terminal, you have to provide a file");
+		exitmsg("If stdin is a terminal, you have to provide a file");
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	std::string vtermPath = esc::env::get("TERM");
-	vt = fopen(vtermPath.c_str(),"rm");
+	std::string vtermPath = env::get("TERM");
+	FStream vt(vtermPath.c_str(),"rm");
 	if(!vt)
-		error("Unable to open '%s'",vtermPath.c_str());
+		exitmsg("Unable to open '" << vtermPath << "'");
 
-	esc::VTerm vterm(fileno(vt));
-	vterm.setFlag(esc::VTerm::FL_READLINE,false);
-	esc::Screen::Mode mode = vterm.getMode();
+	VTerm vterm(vt.fd());
+	vterm.setFlag(VTerm::FL_READLINE,false);
+	Screen::Mode mode = vterm.getMode();
 
 	/* read until vterm is full, ask for continue, and so on */
-	line = 0;
-	col = 0;
-	while(run && (c = fgetc(in)) != EOF) {
-		putchar(c);
+	size_t line = 0;
+	size_t col = 0;
+	char c;
+	while(run && (c = in->get()) != EOF) {
+		sout << c;
 		col++;
 
 		if(col == mode.cols - 1 || c == '\n') {
-			if(ferror(stdout))
+			if(sout.bad())
 				break;
 			line++;
 			col = 0;
 		}
 		if(line == mode.rows - 1) {
-			fflush(stdout);
-			if(ferror(stdout))
+			sout.flush();
+			if(sout.bad())
 				break;
 			waitForKeyPress(vt);
 			line = 0;
 			col = 0;
 		}
 	}
-	if(ferror(in))
-		error("Read failed");
-	if(ferror(stdout))
-		error("Write failed");
+	if(in->bad())
+		exitmsg("Read failed");
+	if(sout.bad())
+		exitmsg("Write failed");
 
 	/* clean up */
-	vterm.setFlag(esc::VTerm::FL_READLINE,true);
-	if(args[0])
-		fclose(in);
-	fclose(vt);
+	vterm.setFlag(VTerm::FL_READLINE,true);
+	if(args.size() > 0)
+		delete in;
 	return EXIT_SUCCESS;
 }
 
-static void waitForKeyPress(FILE *vt) {
-	int c;
-	while((c = fgetc(vt)) != EOF) {
+static void waitForKeyPress(IStream &is) {
+	char c;
+	while((c = is.get()) != EOF) {
 		if(c == '\033') {
 			int n1,n2,n3;
-			int cmd = freadesc(vt,&n1,&n2,&n3);
+			int cmd = is.getesc(n1,n2,n3);
 			if(cmd == ESCC_KEYCODE && !(n3 & STATE_BREAK)) {
 				if(n2 == VK_SPACE)
 					break;

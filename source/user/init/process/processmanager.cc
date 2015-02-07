@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
+#include <esc/stream/std.h>
 #include <esc/file.h>
 #include <sys/common.h>
 #include <sys/conf.h>
@@ -28,10 +30,8 @@
 #include <vterm/vtctrl.h>
 #include <algorithm>
 #include <dirent.h>
-#include <fstream>
 #include <functional>
 #include <signal.h>
-#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,7 +54,7 @@ void ProcessManager::start() {
 		throw init_error("Unable to set PATH");
 
 	// read drivers from file
-	ifstream ifs("/etc/drivers");
+	esc::FStream ifs("/etc/drivers","r");
 	if(!ifs)
 		throw init_error("Unable to open /etc/drivers");
 	while(ifs.good()) {
@@ -84,7 +84,7 @@ void ProcessManager::setAlive(pid_t pid) {
 	Process *p = getByPid(pid);
 	if(p) {
 		p->setAlive();
-		cout << "Process " << pid << " is alive and promised to terminate ASAP" << endl;
+		esc::sout << "Process " << pid << " is alive and promised to terminate ASAP" << esc::endl;
 	}
 }
 
@@ -106,7 +106,7 @@ void ProcessManager::shutdown() {
 	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
 		if(!p->isDead() && p->isKillable()) {
-			cout << "Sending SIGTERM to " << p->pid() << endl;
+			esc::sout << "Sending SIGTERM to " << p->pid() << esc::endl;
 			if(kill(p->pid(),SIGTERM) < 0)
 				printe("Unable to send the term-signal to %d",p->pid());
 		}
@@ -133,7 +133,7 @@ void ProcessManager::finalize(int task) {
 	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
 		if(!p->isAlive() && !p->isDead() && p->isKillable()) {
-			cout << "Sending SIGKILL to " << p->pid() << endl;
+			esc::sout << "Sending SIGKILL to " << p->pid() << esc::endl;
 			if(kill(p->pid(),SIGKILL) < 0)
 				printe("Unable to send the kill-signal to %d",p->pid());
 		}
@@ -142,7 +142,7 @@ void ProcessManager::finalize(int task) {
 
 	/* we only need to flush the root fs here. all others are flushed by the fs-instances that we
 	 * terminate (they should react on that) */
-	cout << "Flushing filesystem buffers of /..." << endl;
+	esc::sout << "Flushing filesystem buffers of /..." << esc::endl;
 	int fd = open("/",O_RDONLY);
 	if(fd < 0)
 		printe("Unable to open /");

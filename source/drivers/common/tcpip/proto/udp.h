@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <map>
@@ -46,7 +47,7 @@ public:
 		const void *data,size_t nbytes);
 	static ssize_t receive(const std::shared_ptr<Link> &link,const Packet &packet);
 
-	static void printSockets(std::ostream &os);
+	static void printSockets(esc::OStream &os);
 
 private:
 	static ssize_t addSocket(DGramSocket *sock,esc::port_t port) {
@@ -72,7 +73,7 @@ private:
 	static socket_map _socks;
 } A_PACKED;
 
-static inline std::ostream &operator<<(std::ostream &os,const UDP &p) {
+static inline esc::OStream &operator<<(esc::OStream &os,const UDP &p) {
 	os << "UDP payload:\n";
 	os << "  srcPort    = " << be16tocpu(p.srcPort) << "\n";
 	os << "  dstPort    = " << be16tocpu(p.dstPort) << "\n";

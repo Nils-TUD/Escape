@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
-#include <iostream>
 
 namespace z {
 
@@ -74,19 +74,19 @@ struct GZipHeader {
 	}
 
 	/**
-	 * Reads the header from given file
+	 * Reads the header from given stream
 	 *
-	 * @param f the file
+	 * @param is the input-stream
 	 * @return the GZip header
 	 */
-	static GZipHeader read(FILE *f);
+	static GZipHeader read(esc::IStream &is);
 
 	/**
-	 * Writes this header to given file.
+	 * Writes this header to given stream.
 	 *
-	 * @param f the file
+	 * @param os the output-stream
 	 */
-	void write(FILE *f);
+	void write(esc::OStream &os);
 
 	/**
 	 * Writes the information in <h> in a human readable form to <os>.
@@ -95,7 +95,7 @@ struct GZipHeader {
 	 * @param h the header
 	 * @return os
 	 */
-	friend std::ostream &operator<<(std::ostream &os,const GZipHeader &h);
+	friend esc::OStream &operator<<(esc::OStream &os,const GZipHeader &h);
 
 	uint8_t id1;
 	uint8_t id2;

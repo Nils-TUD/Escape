@@ -21,6 +21,8 @@
 
 #include "../../CPUInfo.h"
 
+using namespace esc;
+
 /* based on http://forum.osdev.org/viewtopic.php?t=11998 */
 
 enum CPUIdRequests {
@@ -235,39 +237,39 @@ X86CPUInfo::Info X86CPUInfo::getInfo() const {
 	return info;
 }
 
-void X86CPUInfo::printFlags(FILE *f) const {
+void X86CPUInfo::printFlags(esc::OStream &os) const {
 	uint32_t eax,ebx,ecx,edx;
 	cpuid(CPUID_GETFEATURES,&eax,&ebx,&ecx,&edx);
 
 	for(size_t i = 0; i < ARRAY_SIZE(info01ECX); ++i) {
 		if(ecx & (1UL << info01ECX[i].bit))
-			fprintf(f,"%s ",info01ECX[i].name);
+			os << info01ECX[i].name << " ";
 	}
 	for(size_t i = 0; i < ARRAY_SIZE(info01EDX); ++i) {
 		if(edx & (1UL << info01EDX[i].bit))
-			fprintf(f,"%s ",info01EDX[i].name);
+			os << info01EDX[i].name << " ";
 	}
 }
 
-void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
+void X86CPUInfo::print(esc::OStream &os,info::cpu &cpu) {
 	size_t size;
 	Info info = getInfo();
 
-	fprintf(f,"%-12s%Lu Hz\n","Speed:",cpu.speed());
-	fprintf(f,"%-12s%s\n","Vendor:",vendors[info.vendor]);
-	fprintf(f,"%-12s%s\n","Name:",(char*)info.name);
+	os << fmt("Speed:","-",12) << cpu.speed() << " Hz\n";
+	os << fmt("Vendor:","-",12) << vendors[info.vendor] << "\n";
+	os << fmt("Model:","-",12) << (char*)info.name << "\n";
 	switch(info.vendor) {
 		case VENDOR_INTEL: {
 			const char **models = NULL;
 			if(info.type < ARRAY_SIZE(intelTypes))
-				fprintf(f,"%-12s%s\n","Type:",intelTypes[info.type]);
+				os << fmt("Type:","-",12) << intelTypes[info.type] << "\n";
 			else
-				fprintf(f,"%-12s%d\n","Type:",info.type);
+				os << fmt("Type:","-",12) << info.type << "\n";
 
 			if(info.family < ARRAY_SIZE(intelFamilies))
-				fprintf(f,"%-12s%s\n","Family:",intelFamilies[info.family]);
+				os << fmt("Family:","-",12) << intelFamilies[info.family] << "\n";
 			else
-				fprintf(f,"%-12s%d\n","Family:",info.family);
+				os << fmt("Family:","-",12) << info.family << "\n";
 
 			switch(info.family) {
 				case 4:
@@ -284,24 +286,24 @@ void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
 					break;
 			}
 			if(models != NULL && info.model < size)
-				fprintf(f,"%-12s%s\n","Model:",models[info.model]);
+				os << fmt("Model:","-",12) << models[info.model] << "\n";
 			else
-				fprintf(f,"%-12s%d\n","Model:",info.model);
-			fprintf(f,"%-12s%d\n","Brand:",info.brand);
-			fprintf(f,"%-12s%d\n","Stepping:",info.stepping);
-			fprintf(f,"%-12s%08x\n","Signature:",info.signature);
-			fprintf(f,"%-12s","Flags:");
-			printFlags(f);
-			fprintf(f,"\n");
+				os << fmt("Model:","-",12) << info.model << "\n";
+			os << fmt("Brand:","-",12) << info.brand << "\n";
+			os << fmt("Stepping:","-",12) << info.stepping << "\n";
+			os << fmt("Signature:","-",12) << fmt(info.signature,"0x",8) << "\n";
+			os << fmt("Flags:","-",12);
+			printFlags(os);
+			os << "\n";
 		}
 		break;
 
 		case VENDOR_AMD:
-			fprintf(f,"%-12s%d\n","Family:",info.family);
-			fprintf(f,"%-12s","Model:");
+			os << fmt("Family:","-",12) << info.family << "\n";
+			os << fmt("Model:","-",12);
 			switch(info.family) {
 				case 4:
-					fprintf(f,"%s%d\n","486 Model",info.model);
+					os << "486 Model " << info.model;
 					break;
 				case 5:
 				switch(info.model) {
@@ -311,16 +313,16 @@ void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
 					case 3:
 					case 6:
 					case 7:
-						fprintf(f,"%s%d\n","K6 Model",info.model);
+						os << "K6 Model " << info.model;
 						break;
 					case 8:
-						fprintf(f,"%s\n","K6-2 Model 8");
+						os << "K6-2 Model 8";
 						break;
 					case 9:
-						fprintf(f,"%s\n","K6-III Model 9");
+						os << "K6-III Model 9";
 						break;
 					default:
-						fprintf(f,"%s%d\n","K5/K6 Model",info.model);
+						os << "K5/K6 Model " << info.model;
 						break;
 				}
 				break;
@@ -329,36 +331,36 @@ void X86CPUInfo::print(FILE *f,info::cpu &cpu) {
 					case 1:
 					case 2:
 					case 4:
-						fprintf(f,"%s%d\n","Athlon Model ",info.model);
+						os << "Athlon Model " << info.model;
 						break;
 					case 3:
-						fprintf(f,"%s\n","Duron Model 3");
+						os << "Duron Model 3";
 						break;
 					case 6:
-						fprintf(f,"%s\n","Athlon MP/Mobile Athlon Model 6");
+						os << "Athlon MP/Mobile Athlon Model 6";
 						break;
 					case 7:
-						fprintf(f,"%s\n","Mobile Duron Model 7");
+						os << "Mobile Duron Model 7";
 						break;
 					default:
-						fprintf(f,"%s%d\n","Duron/Athlon Model ",info.model);
+						os << "Duron/Athlon Model " << info.model;
 						break;
 				}
 				break;
 			}
-			fprintf(f,"%-12s%d\n","Stepping:",info.stepping);
-			fprintf(f,"%-12s","Flags:");
-			printFlags(f);
-			fprintf(f,"\n");
+			os << fmt("Stepping:","-",12) << info.stepping << "\n";
+			os << fmt("Flags:","-",12);
+			printFlags(os);
+			os << "\n";
 			break;
 
 		default:
-			fprintf(f,"%-12s%d\n","Model:",info.model);
-			fprintf(f,"%-12s%d\n","Type:",info.type);
-			fprintf(f,"%-12s%d\n","Family:",info.family);
-			fprintf(f,"%-12s%d\n","Brand:",info.brand);
-			fprintf(f,"%-12s%d\n","Stepping:",info.stepping);
-			fprintf(f,"%-12s%08x\n","Signature:",info.signature);
+			os << fmt("Model:","-",12) << info.model << "\n";
+			os << fmt("Type:","-",12) << info.type << "\n";
+			os << fmt("Family:","-",12) << info.family << "\n";
+			os << fmt("Brand:","-",12) << info.brand << "\n";
+			os << fmt("Stepping:","-",12) << info.stepping << "\n";
+			os << fmt("Signature:","-",12) << fmt(info.signature,"0x",8) << "\n";
 			break;
 	}
 }

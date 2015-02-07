@@ -45,7 +45,7 @@ public:
 	static int setStatus(const esc::Net::IPv4Addr &ip,esc::Net::Status status);
 	static int remove(const esc::Net::IPv4Addr &ip);
 	static void removeAll(const std::shared_ptr<Link> &link);
-	static void print(std::ostream &os);
+	static void print(esc::OStream &os);
 
 	esc::Net::IPv4Addr dest;
 	esc::Net::IPv4Addr netmask;

@@ -18,13 +18,15 @@
  */
 
 #include <esc/proto/pci.h>
-#include <sys/cmdargs.h>
+#include <esc/stream/std.h>
+#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "names.h"
+
+using namespace esc;
 
 static const char *caps[] = {
 	/* 0x00 */ "??",
@@ -49,84 +51,83 @@ static const char *caps[] = {
 	/* 0x13 */ "PCI Advanced Features",
 };
 
-static void printDevice(esc::PCI &pci,const esc::PCI::Device *device,int verbose) {
-	Vendor *vendor = PCINames::vendors.find(device->vendorId);
+static void printDevice(PCI &pci,const PCI::Device *d,int verbose) {
+	Vendor *vendor = PCINames::vendors.find(d->vendorId);
 	Device *dev = NULL;
 	if(vendor)
-		dev = vendor->getDevice(device->deviceId);
+		dev = vendor->getDevice(d->deviceId);
 
-	BaseClass *base = PCINames::classes.find(device->baseClass);
+	BaseClass *base = PCINames::classes.find(d->baseClass);
 	SubClass *sub = NULL;
 	ProgIF *pif = NULL;
 	if(base) {
-		sub = base->subclasses.find(device->subClass);
+		sub = base->subclasses.find(d->subClass);
 		if(sub)
-			pif = sub->progifs.find(device->progInterface);
+			pif = sub->progifs.find(d->progInterface);
 	}
 
-	printf("%02x:%02x:%x ",device->bus,device->dev,device->func);
+	sout << fmt(d->bus,"0x",2) << ":" << fmt(d->dev,"0x",2) << ":" << fmt(d->func,"x") << " ";
 
 	if(base)
-		printf("%s: ",base->getName().c_str());
+		sout << base->getName() << ": ";
 	else
-		printf("%02x: ",device->baseClass);
+		sout << fmt(d->baseClass,"0x",2) << ": ";
 	if(sub)
-		printf("%s (",sub->getName().c_str());
+		sout << sub->getName() << " (";
 	else
-		printf("%02x (",device->subClass);
+		sout << fmt(d->subClass,"0x",2) << " (";
 	if(pif)
-		printf("%s) ",pif->getName().c_str());
+		sout << pif->getName() << ") ";
 	else
-		printf("%02x) ",device->progInterface);
-
+		sout << fmt(d->progInterface,"0x",2) << ") ";
 	if(vendor)
-		printf("%s ",vendor->getName().c_str());
+		sout << vendor->getName() << " ";
 	else
-		printf("%04x ",device->vendorId);
+		sout << fmt(d->vendorId,"0x",4) << " ";
 	if(dev)
-		printf("%s ",dev->getName().c_str());
+		sout << dev->getName() << " ";
 	else
-		printf("%04x ",device->vendorId);
+		sout << fmt(d->deviceId,"0x",4) << " ";
 
-	printf("(rev %02x)\n",device->revId);
+	sout << "(rev " << fmt(d->revId,"0x",2) << ")\n";
 
 	if(verbose) {
-		printf("        ID: %04x:%04x\n",device->vendorId,device->deviceId);
-		if(device->type == esc::PCI::GENERIC) {
+		sout << "        ID: " << fmt(d->vendorId,"0x",4) << ":" << fmt(d->deviceId,"0x",4) << "\n";
+		if(d->type == PCI::GENERIC) {
 			size_t i;
-			if(device->irq)
-				printf("        IRQ: %u\n",device->irq);
+			if(d->irq)
+				sout << "        IRQ: " << d->irq << "\n";
 			for(i = 0; i < 6; i++) {
-				if(device->bars[i].addr) {
-					if(device->bars[i].type == esc::PCI::Bar::BAR_MEM) {
-						printf("        Memory at %p (%d-bit, %s) [size=%zuK]\n",
-								(void*)device->bars[i].addr,
-								(device->bars[i].flags & esc::PCI::Bar::BAR_MEM_32) ? 32 : 64,
-								(device->bars[i].flags & esc::PCI::Bar::BAR_MEM_PREFETCH)
-									? "prefetchable" : "non-prefetchable",device->bars[i].size / 1024);
+				if(d->bars[i].addr) {
+					if(d->bars[i].type == PCI::Bar::BAR_MEM) {
+						const char *pref = (d->bars[i].flags & PCI::Bar::BAR_MEM_PREFETCH)
+											? "prefetchable" : "non-prefetchable";
+						sout << "        Memory at " << ((void*)d->bars[i].addr) << " ";
+						sout << "(" << ((d->bars[i].flags & PCI::Bar::BAR_MEM_32) ? 32 : 64) << "-bit";
+						sout << ", " << pref << ") [size=" << (d->bars[i].size / 1024) << "K]\n";
 					}
 					else {
-						printf("        I/O ports at %lx [size=%zu]\n",
-								device->bars[i].addr,device->bars[i].size);
+						sout << "        I/O ports at " << fmt(d->bars[i].addr,"x");
+						sout << " [size=" << d->bars[i].size << "]\n";
 					}
 				}
 			}
 
-			uint32_t val = pci.read(device->bus,device->dev,device->func,0x4);
+			uint32_t val = pci.read(d->bus,d->dev,d->func,0x4);
 			uint16_t status = val >> 16;
-			printf("        Status: ");
-			if(status & esc::PCI::ST_IRQ)
-				printf("IRQ ");
-			if(status & esc::PCI::ST_CAPS)
-				printf("CAPS ");
-			printf("\n");
+			sout << "        Status: ";
+			if(status & PCI::ST_IRQ)
+				sout << "IRQ ";
+			if(status & PCI::ST_CAPS)
+				sout << "CAPS ";
+			sout << "\n";
 
-			if(status & esc::PCI::ST_CAPS) {
-	            uint8_t offset = pci.read(device->bus,device->dev,device->func,0x34);
+			if(status & PCI::ST_CAPS) {
+	            uint8_t offset = pci.read(d->bus,d->dev,d->func,0x34);
             	while((offset != 0) && !(offset & 0x3)) {
-            		uint32_t capidx = pci.read(device->bus,device->dev,device->func,offset);
-            		printf("        Capabilities: [%03x] %s\n",offset,
-            			(capidx & 0xFF) < ARRAY_SIZE(caps) ? caps[capidx & 0xFF] : "??");
+            		uint32_t capidx = pci.read(d->bus,d->dev,d->func,offset);
+            		const char *name = (capidx & 0xFF) < ARRAY_SIZE(caps) ? caps[capidx & 0xFF] : "??";
+            		sout << "        Capabilities: [" << fmt(offset,"x",3) << "] " << name << "\n";
             		offset = capidx >> 8;
             	}
 	        }
@@ -135,42 +136,34 @@ static void printDevice(esc::PCI &pci,const esc::PCI::Device *device,int verbose
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-v]\n",name);
+	serr << "Usage: " << name << " [-v]\n";
 	exit(EXIT_FAILURE);
 }
 
-// TODO temporary until we moved the collections into a general usable library
-extern "C" void *cache_alloc(size_t size);
-extern "C" void cache_free(void *ptr);
-
-extern "C" void *cache_alloc(size_t size) {
-	return malloc(size);
-}
-extern "C" void cache_free(void *ptr) {
-	free(ptr);
-}
-
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	int verbose = 0;
-	int res = ca_parse(argc,argv,CA_NO_FREE,"v",&verbose);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
+	cmdargs args(argc,argv,cmdargs::NO_FREE);
+	try {
+		args.parse("v",&verbose);
+		if(args.is_help())
+			usage(argv[0]);
+	}
+	catch(const cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	PCINames::load(PCI_IDS_FILE);
 
-	esc::PCI pci("/dev/pci");
+	PCI pci("/dev/pci");
 	size_t count = pci.getCount();
 	for(size_t i = 0; i < count; ++i) {
 		try {
-			esc::PCI::Device dev = pci.getByIndex(i);
+			PCI::Device dev = pci.getByIndex(i);
 			printDevice(pci,&dev,verbose);
 		}
 		catch(const std::exception &e) {
-			printe("%s",e.what());
+			errmsg(e.what());
 		}
 	}
 	return EXIT_SUCCESS;

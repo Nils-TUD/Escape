@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/vterm.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/file.h>
@@ -31,14 +32,12 @@
 #include <usergroup/group.h>
 #include <usergroup/user.h>
 #include <algorithm>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 using namespace std;
+using namespace esc;
 using namespace info;
 
 struct sort {
@@ -67,30 +66,30 @@ static int sortcol = sort::PID;
 
 static void usage(const char *name) {
 	size_t i;
-	cerr << "Usage: " << name <<" [-u][-s <sort>]" << '\n';
-	cerr << "    -u: print only the processes with my uid\n";
-	cerr << "    -n: print numeric user- and group-ids\n";
-	cerr << "    -s: sort by ";
+	serr << "Usage: " << name <<" [-u][-s <sort>]" << '\n';
+	serr << "    -u: print only the processes with my uid\n";
+	serr << "    -n: print numeric user- and group-ids\n";
+	serr << "    -s: sort by ";
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
-		cerr << "'" << sorts[i].name << "'";
+		serr << "'" << sorts[i].name << "'";
 		if(i < ARRAY_SIZE(sorts) - 1)
-			cerr << ", ";
+			serr << ", ";
 	}
-	cerr << '\n';
-	cerr << '\n';
-	cerr << "Explanation of the displayed information:\n";
-	cerr << "ID    : the process id\n";
-	cerr << "PID   : the process id of the parent process\n";
-	cerr << "USER  : the user name\n";
-	cerr << "GROUP : the group name\n";
-	cerr << "PMEM  : the amount of physical memory the process uses on its own (not shared)\n";
-	cerr << "SHMEM : the amount of physical memory the process shares with other processes\n";
-	cerr << "SMEM  : the amount of physical memory that is currently swapped out\n";
-	cerr << "IN    : the amount of data read from other processes (read,receive)\n";
-	cerr << "OUT   : the amount of data written to other processes (write,send)\n";
-	cerr << "TIME  : the CPU time used by the process so far in minutes:seconds.milliseconds\n";
-	cerr << "CPU   : the CPU usage in the last second in percent\n";
-	cerr << "NAME  : the name of the process\n";
+	serr << '\n';
+	serr << '\n';
+	serr << "Explanation of the displayed information:\n";
+	serr << "ID    : the process id\n";
+	serr << "PID   : the process id of the parent process\n";
+	serr << "USER  : the user name\n";
+	serr << "GROUP : the group name\n";
+	serr << "PMEM  : the amount of physical memory the process uses on its own (not shared)\n";
+	serr << "SHMEM : the amount of physical memory the process shares with other processes\n";
+	serr << "SMEM  : the amount of physical memory that is currently swapped out\n";
+	serr << "IN    : the amount of data read from other processes (read,receive)\n";
+	serr << "OUT   : the amount of data written to other processes (write,send)\n";
+	serr << "TIME  : the CPU time used by the process so far in minutes:seconds.milliseconds\n";
+	serr << "CPU   : the CPU usage in the last second in percent\n";
+	serr << "NAME  : the name of the process\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -108,7 +107,7 @@ int main(int argc,char **argv) {
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << '\n';
+		serr << "Invalid arguments: " << e.what() << '\n';
 		usage(argv[0]);
 	}
 
@@ -206,17 +205,17 @@ int main(int argc,char **argv) {
 	esc::Screen::Mode mode = vterm.getMode();
 
 	// print header
-	cout << setw(maxPid) << "ID";
-	cout << " " << setw(maxPpid) << right << "PID";
-	cout << " " << setw(maxUid) << left << "USER";
-	cout << " " << setw(maxGid) << left << "GROUP";
-	cout << " " << setw((streamsize)maxPmem + 1) << right << "PMEM";
-	cout << " " << setw((streamsize)maxShmem + 1) << right << "SHMEM";
-	cout << " " << setw((streamsize)maxSmem + 1) << right << "SMEM";
-	cout << " " << setw((streamsize)maxInput + 1) << right << "IN";
-	cout << " " << setw((streamsize)maxOutput + 1) << right << "OUT";
-	cout << " " << setw((streamsize)maxRuntime + 7) << right << "TIME";
-	cout << "   CPU NAME" << '\n';
+	sout << fmt("ID", maxPid);
+	sout << " " << fmt("PID",maxPpid);
+	sout << " " << fmt("USER","-",maxUid);
+	sout << " " << fmt("GROUP","-",maxGid);
+	sout << " " << fmt("PMEM",maxPmem + 1);
+	sout << " " << fmt("SHMEM",maxShmem + 1);
+	sout << " " << fmt("SMEM",maxSmem + 1);
+	sout << " " << fmt("IN",maxInput + 1);
+	sout << " " << fmt("OUT",maxOutput + 1);
+	sout << " " << fmt("TIME",maxRuntime + 7);
+	sout << "   CPU NAME" << '\n';
 
 	// calc with to the process-command
 	size_t width2cmd = maxPid + maxPpid + maxGid + maxUid + maxPmem + maxShmem + maxSmem +
@@ -233,40 +232,36 @@ int main(int argc,char **argv) {
 			size_t cmdwidth = min(mode.cols - width2cmd,p->command().length());
 			string cmd = p->command().substr(0,cmdwidth);
 
-			cout << setw(maxPid) << p->pid() << " ";
-			cout << setw(maxPpid) << p->ppid() << " ";
+			sout << fmt(p->pid(),maxPid) << " ";
+			sout << fmt(p->ppid(),maxPpid) << " ";
 
-			cout << left;
 			sUser *u = !numeric ? user_getById(userList,p->uid()) : nullptr;
 			if(!u || numeric)
-				cout << setw(maxUid) << p->uid() << " ";
+				sout << fmt(p->uid(),"-",maxUid) << " ";
 			else
-				cout << setw(maxUid) << u->name << " ";
+				sout << fmt(u->name,"-",maxUid) << " ";
 
 			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : nullptr;
 			if(!g || numeric)
-				cout << setw(maxGid) << p->gid() << " ";
+				sout << fmt(p->gid(),"-",maxGid) << " ";
 			else
-				cout << setw(maxGid) << g->name << " ";
+				sout << fmt(g->name,"-",maxGid) << " ";
 
-			cout << right;
-			cout << setw((streamsize)maxPmem) << (p->ownFrames() * PAGE_SIZE) / 1024 << "K ";
-			cout << setw((streamsize)maxShmem) << (p->sharedFrames() * PAGE_SIZE) / 1024 << "K ";
-			cout << setw((streamsize)maxSmem) << (p->swapped() * PAGE_SIZE) / 1024 << "K ";
-			cout << setw((streamsize)maxInput) << p->input() / 1024 << "K ";
-			cout << setw((streamsize)maxOutput) << p->output() / 1024 << "K ";
+			sout << fmt((p->ownFrames() * PAGE_SIZE) / 1024,maxPmem) << "K ";
+			sout << fmt((p->sharedFrames() * PAGE_SIZE) / 1024,maxShmem) << "K ";
+			sout << fmt((p->swapped() * PAGE_SIZE) / 1024,maxSmem) << "K ";
+			sout << fmt(p->input() / 1024,maxInput) << "K ";
+			sout << fmt(p->output() / 1024,maxOutput) << "K ";
 			process::time_type time = p->runtime() / 1000;
-			cout << setw(maxRuntime) << time / (1000 * 60) << ":";
+			sout << fmt(time / (1000 * 60),maxRuntime) << ":";
 			time %= 1000 * 60;
-			cout << setfillobj('0');
-			cout << setw(2) << time / 1000 << ".";
+			sout << fmt(time / 1000,"0",2) << ".";
 			time %= 1000;
-			cout << setw(3) << time << " ";
-			cout << setfillobj(' ');
-			cout << setw(4) << setprecision(1) << cyclePercent << "% ";
-			cout << cmd << '\n';
+			sout << fmt(time,"0",3) << " ";
+			sout << fmt(cyclePercent,4,1) << "% ";
+			sout << cmd << '\n';
 
-			if(cout.bad())
+			if(sout.bad())
 				error("Write failed");
 		}
 	}

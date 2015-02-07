@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
-#include <iostream>
 
 namespace gui {
 	struct Pos;
@@ -48,7 +48,7 @@ namespace gui {
 			height -= size.height;
 		}
 
-		friend std::ostream &operator <<(std::ostream &os, const Size &s) {
+		friend esc::OStream &operator <<(esc::OStream &os, const Size &s) {
 			os << s.width << "x" << s.height;
 			return os;
 		}

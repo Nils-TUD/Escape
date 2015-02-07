@@ -17,18 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/filecopy.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BUFFER_SIZE		(16 * 1024)
 
-class MoveFileCopy : public esc::FileCopy {
+using namespace esc;
+
+class MoveFileCopy : public FileCopy {
 public:
 	explicit MoveFileCopy(uint fl) : FileCopy(BUFFER_SIZE,fl) {
 	}
@@ -42,10 +44,10 @@ public:
 };
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-pf] <source> <dest>\n",name);
-	fprintf(stderr,"Usage: %s [-pf] <source>... <directory>\n",name);
-	fprintf(stderr,"    -f: overwrite existing files\n");
-	fprintf(stderr,"    -p: show a progress bar while moving\n");
+	serr << "Usage: " << name << " [-pf] <source> <dest>\n";
+	serr << "Usage: " << name << " [-pf] <source>... <directory>\n";
+	serr << "    -f: overwrite existing files\n";
+	serr << "    -p: show a progress bar while moving\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -54,22 +56,22 @@ int main(int argc,char *argv[]) {
 	int progress = false;
 
 	// parse params
-	esc::cmdargs args(argc,argv,0);
+	cmdargs args(argc,argv,0);
 	try {
 		args.parse("f p",&force,&progress);
 		if(args.is_help() || args.get_free().size() < 2)
 			usage(argv[0]);
 	}
-	catch(const esc::cmdargs_error& e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e.what());
+	catch(const cmdargs_error& e) {
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
-	uint flags = esc::FileCopy::FL_RECURSIVE;
+	uint flags = FileCopy::FL_RECURSIVE;
 	if(force)
-		flags |= esc::FileCopy::FL_FORCE;
+		flags |= FileCopy::FL_FORCE;
 	if(progress)
-		flags |= esc::FileCopy::FL_PROGRESS;
+		flags |= FileCopy::FL_PROGRESS;
 	MoveFileCopy cp(flags);
 
 	auto files = args.get_free();

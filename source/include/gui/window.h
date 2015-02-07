@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/stream/ostream.h>
 #include <gui/graphics/color.h>
 #include <gui/graphics/graphicsbuffer.h>
 #include <gui/layout/borderlayout.h>
@@ -33,7 +34,6 @@
 #include <sys/io.h>
 #include <sys/messages.h>
 #include <list>
-#include <ostream>
 #include <string>
 
 namespace gui {
@@ -263,7 +263,7 @@ namespace gui {
 			return (_header && _header->isDirty()) || _body->isDirty() || UIElement::isDirty();
 		}
 
-		virtual void print(std::ostream &os, bool rec = true, size_t indent = 0) const;
+		virtual void print(esc::OStream &os, bool rec = true, size_t indent = 0) const;
 
 	protected:
 		/**

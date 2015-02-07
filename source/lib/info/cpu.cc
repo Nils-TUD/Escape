@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
 #include <info/cpu.h>
 #include <assert.h>
-#include <fstream>
 
-using namespace std;
+using namespace esc;
 
 namespace info {
 	std::vector<cpu*> cpu::get_list() {
 		std::vector<cpu*> list;
-		ifstream f("/sys/cpu");
+		FStream f("/sys/cpu","r");
 		while(f.good()) {
 			cpu *c = new cpu;
 			f >> *c;
@@ -35,8 +35,8 @@ namespace info {
 		return list;
 	}
 
-	istream& operator >>(istream& is,cpu& ci) {
-		istream::size_type unlimited = numeric_limits<streamsize>::max();
+	IStream& operator >>(IStream& is,cpu& ci) {
+		size_t unlimited = std::numeric_limits<size_t>::max();
 		is.ignore(unlimited,' ') >> ci._id;
 		is.ignore(unlimited,' ') >> ci._total;
 		is.ignore(unlimited,'\n');
@@ -44,12 +44,14 @@ namespace info {
 		is.ignore(unlimited,'\n');
 		is.ignore(unlimited,' ') >> ci._speed;
 		is.ignore(unlimited,'\n');
-		while(is.peek() == '\t')
+		char c;
+		while((c = is.get()) == '\t')
 			is.ignore(unlimited,'\n');
+		is.putback(c);
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,const cpu& ci) {
+	OStream& operator <<(OStream& os,const cpu& ci) {
 		os << "CPU[id=" << ci.id() << ", total=" << ci.totalCycles() << ", used=" << ci.usedCycles() << "]";
 		return os;
 	}

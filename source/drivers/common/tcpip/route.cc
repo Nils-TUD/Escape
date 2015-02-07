@@ -86,7 +86,7 @@ void Route::removeAll(const std::shared_ptr<Link> &l) {
 	}
 }
 
-void Route::print(std::ostream &os) {
+void Route::print(esc::OStream &os) {
 	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ++it) {
 		os << (*it)->dest << " " << (*it)->gateway << " " << (*it)->netmask << " ";

@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
 #include <info/arp.h>
 #include <assert.h>
-#include <fstream>
 
-using namespace std;
+using namespace esc;
 
 namespace info {
 	std::vector<arp*> arp::get_list() {
 		std::vector<arp*> list;
-		ifstream f("/sys/net/arp");
+		FStream f("/sys/net/arp","r");
 		while(f.good()) {
 			arp *a = new arp;
 			f >> *a;
@@ -39,14 +39,14 @@ namespace info {
 		return list;
 	}
 
-	istream& operator >>(istream& is,arp& a) {
-		istream::size_type unlimited = numeric_limits<streamsize>::max();
+	IStream& operator >>(IStream& is,arp& a) {
+		size_t unlimited = std::numeric_limits<size_t>::max();
 		is >> a._ip >> a._mac;
 		is.ignore(unlimited,'\n');
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,const arp& a) {
+	OStream& operator <<(OStream& os,const arp& a) {
 		os << "ARP[ip=" << a.ip() << ", mac=" << a.mac() << "]";
 		return os;
 	}

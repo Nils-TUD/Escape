@@ -18,12 +18,14 @@
  */
 
 #include <esc/proto/socket.h>
+#include <esc/stream/fstream.h>
+#include <esc/stream/istringstream.h>
+#include <esc/stream/ostream.h>
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <fstream>
 #include <signal.h>
 
 namespace esc {
@@ -74,7 +76,7 @@ struct DNSAnswer {
 esc::Net::IPv4Addr DNS::getHost(const char *name,uint timeout) {
 	if(isIPAddress(name)) {
 		esc::Net::IPv4Addr addr;
-		std::istringstream is(name);
+		IStringStream is(name);
 		is >> addr;
 		return addr;
 	}
@@ -110,7 +112,7 @@ bool DNS::isIPAddress(const char *name) {
 esc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	uint8_t buffer[BUF_SIZE];
 	if(_nameserver.value() == 0) {
-		std::ifstream in(getResolveFile());
+		FStream in(getResolveFile(),"r");
 		in >> _nameserver;
 		if(_nameserver.value() == 0)
 			VTHROWE("No nameserver",-EHOSTNOTFOUND);

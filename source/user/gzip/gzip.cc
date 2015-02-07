@@ -17,60 +17,65 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <z/deflate.h>
 #include <z/gzip.h>
-#include <stdio.h>
 #include <stdlib.h>
+
+using namespace esc;
 
 static int compr = z::Deflate::FIXED;
 static int tostdout = false;
 static int keep = false;
 
-static void compress(FILE *f,const std::string &filename) {
-	FILE *out = stdout;
+static void compress(IStream &is,const std::string &filename) {
+	OStream *out = &sout;
 	if(!tostdout) {
 		std::string name = filename + ".gz";
-		out = fopen(name.c_str(),"w");
-		if(!out) {
-			printe("%s: unable to open for writing",name.c_str());
+		out = new FStream(name.c_str(),"w");
+		if(!*out) {
+			errmsg(name << ": unable to open for writing");
+			delete out;
 			return;
 		}
 	}
 
 	z::GZipHeader header(filename.c_str(),NULL,true);
-	header.write(out);
+	header.write(*out);
 
-	z::FileDeflateSource src(f);
-	z::FileDeflateDrain drain(out);
+	z::StreamDeflateSource src(is);
+	z::StreamDeflateDrain drain(*out);
 	z::Deflate deflate;
 	if(deflate.compress(&drain,&src,compr) != 0)
-		printe("%s: compressing failed",filename.c_str());
+		errmsg(filename << ": compressing failed");
 	else {
 		uint32_t crc32 = src.crc32();
-		if(fwrite(&crc32,4,1,out) != 1)
-			printe("%s: unable to write CRC32",filename.c_str());
+		if(out->write(&crc32,4) != 4)
+			errmsg(filename << ": unable to write CRC32");
 		else {
 			uint32_t orgsize = src.count();
-			if(fwrite(&orgsize,4,1,out) != 1)
-				printe("%s: unable to write size of original file",filename.c_str());
+			if(out->write(&orgsize,4) != 4)
+				errmsg(filename << ": unable to write size of original file");
 		}
 	}
 
 	if(!tostdout) {
-		fclose(out);
+		delete out;
 		if(!keep && unlink(filename.c_str()) < 0)
-			printe("Unable to unlink '%s'",filename.c_str());
+			errmsg("Unable to unlink '" << filename << "'");
 	}
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-c] [-k] <file>...\n",name);
-	fprintf(stderr,"  -c: write to stdout\n");
-	fprintf(stderr,"  -k: keep the original files, don't delete them\n");
+	serr << "Usage: " << name << " [-c] [-k] <file>...\n";
+	serr << "  -c: write to stdout\n";
+	serr << "  -k: keep the original files, don't delete them\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -83,19 +88,18 @@ int main(int argc,char **argv) {
 			usage(argv[0]);
 	}
 	catch(const esc::cmdargs_error& e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e.what());
+		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
 
 	for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
-		FILE *f = fopen((*file)->c_str(),"r");
-		if(f == NULL) {
-			printe("Unable to open '%s' for reading",(*file)->c_str());
+		FStream f((*file)->c_str(),"r");
+		if(!f) {
+			errmsg("Unable to open '" << **file << "' for reading");
 			continue;
 		}
 
 		compress(f,**file);
-		fclose(f);
 	}
 	return 0;
 }

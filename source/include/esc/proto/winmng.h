@@ -21,6 +21,7 @@
 
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/ui.h>
+#include <esc/stream/ostream.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
@@ -266,6 +267,6 @@ private:
 	IPCStream _is;
 };
 
-std::ostream &operator<<(std::ostream &os,const WinMngEvents::Event &ev);
+OStream &operator<<(OStream &os,const WinMngEvents::Event &ev);
 
 }

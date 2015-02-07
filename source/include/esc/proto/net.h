@@ -21,18 +21,18 @@
 
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/nic.h>
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <istream>
-#include <ostream>
 
 namespace esc {
 
 class Net {
 public:
 	class IPv4Addr {
-		friend std::istream &operator>>(std::istream &is,IPv4Addr &a);
+		friend esc::IStream &operator>>(esc::IStream &is,IPv4Addr &a);
 
 	public:
 		static const size_t LEN	= 4;
@@ -207,19 +207,19 @@ static inline bool operator<=(const Net::IPv4Addr &a,const Net::IPv4Addr &b) {
 	return !operator>(a,b);
 }
 
-inline std::istream &operator>>(std::istream &is,Net::IPv4Addr &a) {
+inline esc::IStream &operator>>(esc::IStream &is,Net::IPv4Addr &a) {
 	for(size_t i = 0; i < Net::IPv4Addr::LEN; ++i) {
 		unsigned val = 0;
 		is >> val;
 		if(i < Net::IPv4Addr::LEN - 1) {
 			// skip '.'
-			is.get();
+			is.read();
 		}
 		a._bytes[i] = val;
 	}
 	return is;
 }
-static inline std::ostream &operator<<(std::ostream &os,const Net::IPv4Addr &a) {
+static inline esc::OStream &operator<<(esc::OStream &os,const Net::IPv4Addr &a) {
 	return os << a.bytes()[0] << "." << a.bytes()[1] << "."
 			<< a.bytes()[2] << "." << a.bytes()[3];
 }

@@ -20,11 +20,10 @@
 #pragma once
 
 #include <esc/proto/default.h>
+#include <esc/stream/istream.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <iomanip>
-#include <ostream>
 
 namespace esc {
 
@@ -40,7 +39,7 @@ public:
 	 * Represents a MAC address
 	 */
 	class MAC {
-		friend std::istream &operator>>(std::istream &is,NIC::MAC &a);
+		friend IStream &operator>>(IStream &is,NIC::MAC &a);
 
 	public:
 		static const size_t LEN	= 6;
@@ -151,28 +150,25 @@ static inline bool operator<(const NIC::MAC &a,const NIC::MAC &b) {
 	return vala < valb;
 }
 
-static inline std::ostream &operator<<(std::ostream &os,const NIC::MAC &a) {
-	return os << std::hex << std::setfill('0')
-		<< std::setw(2) << a.bytes()[0] << ":"
-		<< std::setw(2) << a.bytes()[1] << ":"
-		<< std::setw(2) << a.bytes()[2] << ":"
-		<< std::setw(2) << a.bytes()[3] << ":"
-		<< std::setw(2) << a.bytes()[4] << ":"
-		<< std::setw(2) << a.bytes()[5]
-		<< std::setfill(' ') << std::dec;
+static inline OStream &operator<<(OStream &os,const NIC::MAC &a) {
+	return os << fmt(a.bytes()[0],"0x",2) << ':'
+			  << fmt(a.bytes()[1],"0x",2) << ':'
+			  << fmt(a.bytes()[2],"0x",2) << ':'
+			  << fmt(a.bytes()[3],"0x",2) << ':'
+			  << fmt(a.bytes()[4],"0x",2) << ':'
+			  << fmt(a.bytes()[5],"0x",2);
 }
-inline std::istream &operator>>(std::istream &is,NIC::MAC &a) {
-	is >> std::hex;
+inline IStream &operator>>(IStream &is,NIC::MAC &a) {
 	for(size_t i = 0; i < NIC::MAC::LEN; ++i) {
 		unsigned val;
-		is >> val;
+		is >> fmt(val,"x");
 		if(i < NIC::MAC::LEN - 1) {
 			// skip ':'
 			is.get();
 		}
 		a._bytes[i] = val;
 	}
-	return is >> std::dec;
+	return is;
 }
 
 }

@@ -19,12 +19,13 @@
 
 #include <esc/ipc/clientdevice.h>
 #include <esc/proto/socket.h>
+#include <esc/stream/istringstream.h>
+#include <esc/stream/fstream.h>
+#include <esc/stream/std.h>
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <sys/thread.h>
-#include <fstream>
 #include <signal.h>
-#include <sstream>
 #include <stdlib.h>
 
 using namespace esc;
@@ -43,10 +44,15 @@ public:
 	// default-value because the ClientDevice-template calls HTTPClient(f); but that code isn't used
 	explicit HTTPClient(int f,const char *url = "",bool _redirected = false)
 		: Client(f), redirected(_redirected), domain(), path("/"), state(STATE_OPEN), contentlen(),
-		  remaining(), headerPos(), header(), sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP) {
-		std::istringstream isurl(url);
+		  remaining(), header(), sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP) {
+		esc::IStringStream isurl(url);
 		isurl.getline(domain,'/');
 		isurl.getline(path,'#');
+		if(path.empty())
+			path = "/";
+	}
+	~HTTPClient() {
+		delete header;
 	}
 
 	bool redirected;
@@ -55,8 +61,7 @@ public:
 	State state;
 	size_t contentlen;
 	size_t remaining;
-	size_t headerPos;
-	std::ifstream header;
+	esc::FStream *header;
 	Socket sock;
 };
 
@@ -117,15 +122,18 @@ public:
 		}
 
 		// if there is something left in the buffer, reply that first
-		if(c->headerPos < c->header.rdbuf()->remaining()) {
-			size_t amount = std::min(r.count,(size_t)(c->header.rdbuf()->remaining() - c->headerPos));
+		if(c->header && c->header->inbuflen() > 0) {
+			size_t amount = std::min(r.count,c->header->inbuflen());
 			if(r.shmemoff != -1)
-				memcpy(buf.data(),c->header.rdbuf()->input() + c->headerPos,amount);
+				c->header->read(buf.data(),amount);
 			is << FileRead::Response(amount) << Reply();
-			if(r.shmemoff == -1)
-				is << ReplyData(c->header.rdbuf()->input() + c->headerPos,amount);
+			if(r.shmemoff == -1) {
+				// not nice, but the easiest way
+				char tmp[amount];
+				c->header->read(tmp,amount);
+				is << ReplyData(tmp,amount);
+			}
 			c->remaining -= amount;
-			c->headerPos += amount;
 			return;
 		}
 
@@ -161,7 +169,7 @@ private:
 		}
 
 		if(c->state == STATE_CONNECTED) {
-			std::ostringstream req;
+			esc::OStringStream req;
 			req << "GET " << c->path << " HTTP/1.0\n";
 			req << "Host: " << c->domain << "\n\n";
 
@@ -172,13 +180,13 @@ private:
 		if(c->state == STATE_REQSENT) {
 			// TODO we should make sure, that the stream uses the same buffer-size as the client
 			// to ensure that we can always return all of the remaining data in the buffer
-			c->header.open(c->sock.fd(),std::ios_base::in | std::ios_base::signals);
-			while(c->header.good()) {
+			c->header = new FStream(c->sock.fd(),"rs");
+			while(c->header->good()) {
 				std::string line;
-				c->header.getline(line,'\n');
+				c->header->getline(line,'\n');
 
 				// maybe we received a signal?
-				if(c->header.eof())
+				if(c->header->bad())
 					return 0;
 
 				// redirection?
@@ -215,7 +223,6 @@ private:
 					break;
 			}
 			c->state = STATE_RESP;
-			c->headerPos = 0;
 		}
 		return 1;
 	}

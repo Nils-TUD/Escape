@@ -168,7 +168,7 @@ bool test_doAssertPtr(const void *received,const void *expected,const char *func
 bool test_doAssertUIntPtr(uintptr_t received,uintptr_t expected,const char *func,int line) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%Px, got 0x%Px",
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected %p, got %p",
 				assertCount,func,line,expected,received);
 		return false;
 	}

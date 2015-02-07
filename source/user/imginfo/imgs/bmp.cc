@@ -20,12 +20,10 @@
 #include <esc/rawfile.h>
 #include <img/bitmapimage.h>
 #include <sys/endian.h>
-#include <iomanip>
-#include <iostream>
 
 #include "bmp.h"
 
-bool BMPImageInfo::print(const std::string &file) {
+bool BMPImageInfo::print(esc::OStream &os,const std::string &file) {
 	esc::rawfile f(file,esc::rawfile::READ);
 
 	// check header
@@ -41,17 +39,15 @@ bool BMPImageInfo::print(const std::string &file) {
 		"RGB","RLE8","RLE4","Bitfields"
 	};
 
-	std::cout << "Bitmap image (BMP)\n";
-	std::cout << "  Size           : " << ihead.width << " x " << ihead.height << "\n";
-	std::cout << "  Bit depth      : " << ihead.bitCount << "\n";
-	std::cout << "  Compression    : ";
-	std::cout << (ihead.compression < ARRAY_SIZE(compr) ? compr[ihead.compression] : "??") << "\n";
-	std::cout << std::hex << std::setfill('0');
-	std::cout << "  Red mask       : #" << std::setw(8) << ihead.redmask << "\n";
-	std::cout << "  Green mask     : #" << std::setw(8) << ihead.greenmask << "\n";
-	std::cout << "  Blue mask      : #" << std::setw(8) << ihead.bluemask << "\n";
-	std::cout << "  Alpha mask     : #" << std::setw(8) << ihead.alphamask << "\n";
-	std::cout << "  Red mask       : #" << std::setw(8) << ihead.redmask << "\n";
-	std::cout << std::dec << std::setfill(' ');
+	os << "Bitmap image (BMP)\n";
+	os << "  Size           : " << ihead.width << " x " << ihead.height << "\n";
+	os << "  Bit depth      : " << ihead.bitCount << "\n";
+	os << "  Compression    : ";
+	os << (ihead.compression < ARRAY_SIZE(compr) ? compr[ihead.compression] : "??") << "\n";
+	os << "  Red mask       : #" << esc::fmt(ihead.redmask,"0x",8) << "\n";
+	os << "  Green mask     : #" << esc::fmt(ihead.greenmask,"0x",8) << "\n";
+	os << "  Blue mask      : #" << esc::fmt(ihead.bluemask,"0x",8) << "\n";
+	os << "  Alpha mask     : #" << esc::fmt(ihead.alphamask,"0x",8) << "\n";
+	os << "  Red mask       : #" << esc::fmt(ihead.redmask,"0x",8) << "\n";
 	return true;
 }

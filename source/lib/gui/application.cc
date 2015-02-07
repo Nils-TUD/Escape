@@ -25,10 +25,10 @@
 #include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/mman.h>
+#include <sys/proc.h>
 #include <sys/thread.h>
 #include <sys/time.h>
 #include <algorithm>
-#include <iostream>
 #include <stdio.h>
 #include <string.h>
 

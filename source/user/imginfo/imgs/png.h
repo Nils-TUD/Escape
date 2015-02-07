@@ -25,5 +25,5 @@
 
 class PNGImageInfo : public ImageInfo {
 public:
-	virtual bool print(const std::string &file);
+	virtual bool print(esc::OStream &os,const std::string &file);
 };

@@ -27,7 +27,8 @@
 #define ERR_BUFFER_SIZE		128
 #define DYN_BUFFER_SIZE		128
 
-#define IO_NOCLOSE			(1U << 31)
+#define O_SIGNALS			(1U << 30)
+#define O_NOCLOSE			(1U << 31)
 
 /* format flags */
 #define FFL_PADRIGHT		1
@@ -123,6 +124,37 @@ bool binit(FILE *f,int fd,uint flags,char *buffer,size_t insize,size_t outsize,b
 extern const char *hexCharsBig;
 extern const char *hexCharsSmall;
 extern FILE *iostreams;
+
+static inline uint parsemode(const char *mode) {
+	uint flags = 0;
+	char c;
+	while((c = *mode++)) {
+		switch(c) {
+			case 'r':
+				flags |= O_READ;
+				break;
+			case 'w':
+				flags |= O_WRITE | O_CREAT | O_TRUNC;
+				break;
+			case '+':
+				if(flags & O_READ)
+					flags |= O_WRITE;
+				else if(flags & O_WRITE)
+					flags |= O_READ;
+				break;
+			case 'a':
+				flags |= O_APPEND | O_WRITE;
+				break;
+			case 'm':
+				flags |= O_MSGS;
+				break;
+			case 's':
+				flags |= O_SIGNALS;
+				break;
+		}
+	}
+	return flags;
+}
 
 static inline void benqueue(FILE *f) {
 	if(iostreams)

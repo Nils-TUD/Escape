@@ -19,12 +19,13 @@
 
 #pragma once
 
+#include <esc/stream/istream.h>
+#include <esc/stream/ostream.h>
 #include <sys/common.h>
 #include <z/crc32.h>
 #include <z/deflatebase.h>
 #include <algorithm>
 #include <assert.h>
-#include <stdio.h>
 
 namespace z {
 
@@ -87,17 +88,17 @@ public:
 };
 
 /**
- * A source implementation that reads from a FILE.
+ * A source implementation that reads from a stream.
  */
-class FileDeflateSource : public DeflateSource {
+class StreamDeflateSource : public DeflateSource {
 	static const size_t CACHE_SIZE	= 4096;
 
 public:
-	explicit FileDeflateSource(FILE *file)
+	explicit StreamDeflateSource(esc::IStream &is)
 		: DeflateSource(), _cache(new uint8_t[CACHE_SIZE / 2]), _next(new uint8_t[CACHE_SIZE / 2]),
-		  _pos(0), _cached(0), _nextcount(0), _total(0), _checksum(0), _crc(), _file(file) {
+		  _pos(0), _cached(0), _nextcount(0), _total(0), _checksum(0), _crc(), _is(is) {
 	}
-	virtual ~FileDeflateSource() {
+	virtual ~StreamDeflateSource() {
 		delete[] _cache;
 		delete[] _next;
 	}
@@ -138,10 +139,10 @@ private:
 			bool first = _cached == 0 && _pos == 0;
 			if(!first)
 				_checksum = _crc.update(_checksum,_cache,_pos);
-			_cached = fread(_cache,1,CACHE_SIZE / 2,_file);
+			_cached = _is.read(_cache,CACHE_SIZE / 2);
 			_pos = 0;
 			if(first)
-				_nextcount = fread(_next,1,CACHE_SIZE / 2,_file);
+				_nextcount = _is.read(_next,CACHE_SIZE / 2);
 			else {
 				std::swap(_cache,_next);
 				std::swap(_cached,_nextcount);
@@ -157,24 +158,24 @@ private:
 	size_t _total;
 	CRC32::type _checksum;
 	CRC32 _crc;
-	FILE *_file;
+	esc::IStream &_is;
 };
 
 /**
- * A drain implementation that writes to a FILE
+ * A drain implementation that writes to a stream
  */
-class FileDeflateDrain : public DeflateDrain {
+class StreamDeflateDrain : public DeflateDrain {
 public:
-	explicit FileDeflateDrain(FILE *file)
-		: DeflateDrain(), _file(file) {
+	explicit StreamDeflateDrain(esc::OStream &os)
+		: DeflateDrain(), _os(os) {
 	}
 
 	virtual void put(uint8_t c) {
-		fputc(c,_file);
+		_os.write(c);
 	}
 
 private:
-	FILE *_file;
+	esc::OStream &_os;
 };
 
 /**

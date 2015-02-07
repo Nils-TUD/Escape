@@ -40,7 +40,7 @@ int main() {
 	catch(const esc::default_error& e) {
 		// TODO temporary
 		favlist.push_back(Link("Home","/home/hrniels"));
-		cerr << e.what() << endl;
+		errmsg(e.what());
 	}
 
 	Application *app = Application::create();

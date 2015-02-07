@@ -17,37 +17,39 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/fstream.h>
 #include <esc/file.h>
 #include <info/thread.h>
 #include <ctype.h>
-#include <fstream>
 #include <vector>
 
-using namespace std;
+using namespace esc;
 
 namespace info {
-	vector<thread*> thread::get_list() {
-		vector<thread*> threads;
-		esc::file dir("/sys/proc");
-		vector<struct dirent> files = dir.list_files(false);
-		for(vector<struct dirent>::const_iterator it = files.begin(); it != files.end(); ++it) {
+	std::vector<thread*> thread::get_list() {
+		std::vector<thread*> threads;
+		file dir("/sys/proc");
+		std::vector<struct dirent> files = dir.list_files(false);
+		for(auto it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
 			if(!isdigit(it->d_name[0]))
 				continue;
 
 			try {
-				string threadDir(string("/sys/proc/") + it->d_name + "/threads");
-				esc::file tdir(threadDir);
-				vector<struct dirent> tfiles = tdir.list_files(false);
-				for(vector<struct dirent>::const_iterator tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
-					string tpath = threadDir + "/" + tit->d_name + "/info";
-					ifstream tis(tpath.c_str());
-					thread* t = new thread();
-					tis >> *t;
-					threads.push_back(t);
+				std::string threadDir(std::string("/sys/proc/") + it->d_name + "/threads");
+				file tdir(threadDir);
+				std::vector<struct dirent> tfiles = tdir.list_files(false);
+				for(auto tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
+					std::string tpath = threadDir + "/" + tit->d_name + "/info";
+					FStream tis(tpath.c_str(),"r");
+					if(tis) {
+						thread* t = new thread();
+						tis >> *t;
+						threads.push_back(t);
+					}
 				}
 			}
-			catch(const esc::default_error&) {
+			catch(const default_error&) {
 			}
 		}
 		return threads;
@@ -57,18 +59,21 @@ namespace info {
 		char tname[12], pname[12];
 		itoa(tname,sizeof(tname),tid);
 		itoa(pname,sizeof(pname),pid);
-		string tpath = string("/sys/proc/") + pname + "/threads/" + tname + "/info";
-		ifstream tis(tpath.c_str());
+		std::string tpath = std::string("/sys/proc/") + pname + "/threads/" + tname + "/info";
+		FStream tis(tpath.c_str(),"r");
+		if(!tis)
+			return NULL;
 		thread* t = new thread();
 		tis >> *t;
 		return t;
 	}
 
-	std::istream& operator >>(std::istream& is,thread& t) {
-		std::istream::size_type unlimited = std::numeric_limits<streamsize>::max();
+	IStream& operator >>(IStream& is,thread& t) {
+		size_t unlimited = std::numeric_limits<size_t>::max();
 		is.ignore(unlimited,' ') >> t._tid;
 		is.ignore(unlimited,' ') >> t._pid;
-		is.ignore(unlimited,' ') >> std::ws;
+		is.ignore(unlimited,' ');
+		is.ignore_ws();
 		is.getline(t._procName,'\n');
 		is.ignore(unlimited,' ') >> t._state;
 		is.ignore(unlimited,' ') >> t._flags;
@@ -77,14 +82,12 @@ namespace info {
 		is.ignore(unlimited,' ') >> t._schedCount;
 		is.ignore(unlimited,' ') >> t._syscalls;
 		is.ignore(unlimited,' ') >> t._runtime;
-		is.setf(istream::hex);
-		is.ignore(unlimited,' ') >> t._cycles;
-		is.setf(istream::dec);
+		is.ignore(unlimited,' ') >> fmt(t._cycles,"x");
 		is.ignore(unlimited,' ') >> t._cpu;
 		return is;
 	}
 
-	std::ostream& operator <<(std::ostream& os,const thread& t) {
+	OStream& operator <<(OStream& os,const thread& t) {
 		os << "thread[" << t.tid() << " in " << t.pid() << ":" << t.procName() << "]:\n";
 		os << "\tflags     : " << t.flags() << "\n";
 		os << "\tstate     : " << t.state() << "\n";

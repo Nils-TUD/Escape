@@ -24,43 +24,17 @@
 #include "iobuf.h"
 
 FILE *fopen(const char *filename,const char *mode) {
-	char c;
-	int fd;
-	uint flags = 0;
-	FILE *f = NULL;
-
-	/* parse mode */
-	while((c = *mode++)) {
-		switch(c) {
-			case 'r':
-				flags |= O_READ;
-				break;
-			case 'w':
-				flags |= O_WRITE | O_CREAT | O_TRUNC;
-				break;
-			case '+':
-				if(flags & O_READ)
-					flags |= O_WRITE;
-				else if(flags & O_WRITE)
-					flags |= O_READ;
-				break;
-			case 'a':
-				flags |= O_APPEND | O_WRITE;
-				break;
-			case 'm':
-				flags |= O_MSGS;
-				break;
-		}
-	}
+	uint flags = parsemode(mode);
 	if((flags & O_ACCMODE) == 0)
 		return NULL;
 
 	/* open */
-	fd = open(filename,flags);
+	int fd = open(filename,flags);
 	if(fd < 0)
 		return NULL;
 
 	/* create file */
+	FILE *f = NULL;
 	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false))) {
 		close(fd);
 		free(f);

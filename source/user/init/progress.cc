@@ -22,7 +22,6 @@
 #include <sys/io.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <iostream>
 #include <stdlib.h>
 #include <string.h>
 

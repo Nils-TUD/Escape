@@ -17,12 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <stdlib.h>
+
+using namespace esc;
 
 static std::string filterName;
 static std::string filterPath;
@@ -71,7 +73,7 @@ static void listDir(const char *path) {
 	char filepath[MAX_PATH_LEN];
 	DIR *d = opendir(path);
 	if(!d) {
-		printe("Unable to open dir '%s'",path);
+		errmsg("Unable to open dir '" << path << "'");
 		return;
 	}
 
@@ -88,7 +90,7 @@ static void listDir(const char *path) {
 			snprintf(filepath,sizeof(filepath),"%s/%s",path,e.d_name);
 		struct stat info;
 		if(stat(filepath,&info) < 0) {
-			printe("Stat for '%s' failed");
+			errmsg("Stat for '" << filepath << "' failed");
 			continue;
 		}
 
@@ -102,18 +104,18 @@ static void listDir(const char *path) {
 }
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <path> [<expr>...]\n",name);
-	fprintf(stderr,"Available expressions are:\n");
-	fprintf(stderr,"    --path <pattern> : the pathname matches <pattern> (* = wildcard)\n");
-	fprintf(stderr,"    --name <pattern> : the filename matches <pattern> (* = wildcard)\n");
-	fprintf(stderr,"    --type <type>    : the file type is:\n");
-	fprintf(stderr,"        b for block device\n");
-	fprintf(stderr,"        c for character device\n");
-	fprintf(stderr,"        d for directory\n");
-	fprintf(stderr,"        r for regular file\n");
-	fprintf(stderr,"        f for filesystem\n");
-	fprintf(stderr,"        s for service\n");
-	fprintf(stderr,"Note that currently, all expressions ANDed.\n");
+	serr << "Usage: " << name << " <path> [<expr>...]\n";
+	serr << "Available expressions are:\n";
+	serr << "    --path <pattern> : the pathname matches <pattern> (* = wildcard)\n";
+	serr << "    --name <pattern> : the filename matches <pattern> (* = wildcard)\n";
+	serr << "    --type <type>    : the file type is:\n";
+	serr << "        b for block device\n";
+	serr << "        c for character device\n";
+	serr << "        d for directory\n";
+	serr << "        r for regular file\n";
+	serr << "        f for filesystem\n";
+	serr << "        s for service\n";
+	serr << "Note that currently, all expressions ANDed.\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -140,7 +142,7 @@ int main(int argc,char **argv) {
 		}
 	}
 	catch(const esc::cmdargs_error& e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e.what());
+		errmsg("Invalid arguments: " << e.what());
 		usage(prog);
 	}
 

@@ -21,8 +21,6 @@
 #include <img/pngimage.h>
 #include <sys/endian.h>
 #include <z/inflate.h>
-#include <iomanip>
-#include <iostream>
 
 namespace img {
 
@@ -282,7 +280,7 @@ void PNGImage::load(const std::string &filename) {
 		throw img_load_error(filename + ": uncompress failed");
 }
 
-std::ostream &operator<<(std::ostream &os,const PNGImage::IHDR &h) {
+esc::OStream &operator<<(esc::OStream &os,const PNGImage::IHDR &h) {
 	static const char *coltypes[] = {
 		"grayscale","??","rgb","palette","grayscale-alpha","??","rgb-alpha"
 	};
@@ -302,12 +300,10 @@ std::ostream &operator<<(std::ostream &os,const PNGImage::IHDR &h) {
 	return os;
 }
 
-std::ostream &operator<<(std::ostream &os,const PNGImage::tIME &tm) {
-	os << std::setfill('0');
-	os << std::setw(2) << tm.month << "/" << std::setw(2) << tm.day << "/" << tm.year << " ";
-	os << std::setw(2) << tm.hour << ":" << std::setw(2) << tm.minute;
-	os << ":" << std::setw(2) << tm.second;
-	os << std::setfill(' ');
+esc::OStream &operator<<(esc::OStream &os,const PNGImage::tIME &tm) {
+	os << esc::fmt(tm.month,"0",2) << "/" << esc::fmt(tm.day,"0",2) << "/" << tm.year << " ";
+	os << esc::fmt(tm.hour,"0",2) << ":" << esc::fmt(tm.minute,"0",2);
+	os << ":" << esc::fmt(tm.second,"0",2);
 	return os;
 }
 

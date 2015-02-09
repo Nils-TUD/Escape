@@ -23,6 +23,7 @@
 #include <esc/proto/nic.h>
 #include <esc/proto/pci.h>
 #include <sys/common.h>
+#include <sys/thread.h>
 #include <functor.h>
 #include <mutex>
 
@@ -193,8 +194,10 @@ class E1000 : public esc::NICDriver {
 public:
 	explicit E1000(esc::PCI &pci,const esc::PCI::Device &nic);
 
-	void setHandler(std::Functor<void> *handler) {
+	void start(std::Functor<void> *handler) {
 		_handler = handler;
+		if(startthread(irqThread,this) < 0)
+			error("Unable to start receive-thread");
 	}
 
 	virtual esc::NIC::MAC mac() const {

@@ -182,7 +182,7 @@ int main(int argc,char **argv) {
 
 	E1000 *e1000 = new E1000(pci,nic);
 	esc::NICDevice dev(argv[1],0770,e1000);
-	e1000->setHandler(std::make_memfun(&dev,&esc::NICDevice::checkPending));
+	e1000->start(std::make_memfun(&dev,&esc::NICDevice::checkPending));
 
 	esc::NIC::MAC mac = dev.mac();
 	print("NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x",

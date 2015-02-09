@@ -27,6 +27,7 @@
 #include <sys/irq.h>
 #include <sys/messages.h>
 #include <sys/sync.h>
+#include <sys/thread.h>
 #include <functor.h>
 #include <mutex>
 
@@ -42,8 +43,10 @@ public:
 
 	explicit Ne2k(esc::PCI &pci,const esc::PCI::Device &nic);
 
-	void setHandler(std::Functor<void> *handler) {
+	void start(std::Functor<void> *handler) {
 		_handler = handler;
+		if(startthread(irqThread,this) < 0)
+			error("Unable to start receive-thread");
 	}
 
 	virtual esc::NIC::MAC mac() const {

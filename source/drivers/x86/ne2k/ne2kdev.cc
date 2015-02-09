@@ -18,7 +18,6 @@
  */
 
 #include <sys/common.h>
-#include <sys/thread.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -136,9 +135,6 @@ Ne2k::Ne2k(esc::PCI &pci,const esc::PCI::Device &nic)
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
 	if(_irqsem < 0)
 		error("Unable to create irq-semaphore");
-
-	if(startthread(irqThread,this) < 0)
-		error("Unable to start receive-thread");
 
 	for(size_t i = 0; i < 6; i++) {
 		if(nic.bars[i].addr && nic.bars[i].type == esc::PCI::Bar::BAR_IO) {

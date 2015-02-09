@@ -57,7 +57,7 @@ int main(int argc,char **argv) {
 
 	Ne2k *ne2k = new Ne2k(pci,nic);
 	esc::NICDevice dev(argv[1],0770,ne2k);
-	ne2k->setHandler(std::make_memfun(&dev,&esc::NICDevice::checkPending));
+	ne2k->start(std::make_memfun(&dev,&esc::NICDevice::checkPending));
 
 	esc::NIC::MAC mac = dev.mac();
 	print("NIC has MAC address %02x:%02x:%02x:%02x:%02x:%02x",

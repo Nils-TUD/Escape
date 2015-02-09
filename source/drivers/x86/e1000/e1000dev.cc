@@ -86,9 +86,6 @@ E1000::E1000(esc::PCI &pci,const esc::PCI::Device &nic)
 	// enable interrupts
 	writeReg(REG_IMC,ICR_LSC | ICR_RXO | ICR_RXT0);
 	writeReg(REG_IMS,ICR_LSC | ICR_RXO | ICR_RXT0);
-
-	if(startthread(irqThread,this) < 0)
-		error("Unable to start receive-thread");
 }
 
 void E1000::readEEPROM(uint8_t *dest,size_t len) {

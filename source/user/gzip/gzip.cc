@@ -46,7 +46,7 @@ static void compress(IStream &is,const std::string &filename) {
 		}
 	}
 
-	z::GZipHeader header(filename.c_str(),NULL,true);
+	z::GZipHeader header(&is == &sin ? NULL : filename.c_str(),NULL,true);
 	header.write(*out);
 
 	z::StreamDeflateSource src(is);
@@ -73,9 +73,10 @@ static void compress(IStream &is,const std::string &filename) {
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-c] [-k] <file>...\n";
+	serr << "Usage: " << name << " [-c] [-k] [<file>...]\n";
 	serr << "  -c: write to stdout\n";
 	serr << "  -k: keep the original files, don't delete them\n";
+	serr << "  If no file is given or <file> is '-', stdin is compressed to stdout.\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -92,14 +93,20 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 	}
 
-	for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
-		FStream f((*file)->c_str(),"r");
-		if(!f) {
-			errmsg("Unable to open '" << **file << "' for reading");
-			continue;
-		}
+	if(args.get_free().size() == 0 || (args.get_free().size() == 1 && *(args.get_free()[0]) == "-")) {
+		tostdout = true;
+		compress(sin,"stdin");
+	}
+	else {
+		for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
+			FStream f((*file)->c_str(),"r");
+			if(!f) {
+				errmsg("Unable to open '" << **file << "' for reading");
+				continue;
+			}
 
-		compress(f,**file);
+			compress(f,**file);
+		}
 	}
 	return 0;
 }

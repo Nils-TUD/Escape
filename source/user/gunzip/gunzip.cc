@@ -32,60 +32,66 @@ static int showinfo = false;
 static int tostdout = false;
 static int keep = false;
 
-static void uncompress(IStream &is,const std::string &filename,const z::GZipHeader &header) {
-	OStream *out = &sout;
-	if(!tostdout) {
-		std::string name;
-		if(header.filename != NULL) {
-			name = header.filename;
-			if(name.find('/') != std::string::npos) {
-				errmsg(filename << ": GZip contains invalid filename (" << name << ")");
-				return;
-			}
-		}
-		else {
-			if(filename.rfind(".gz") != filename.length() - 3) {
-				errmsg(filename << ": invalid file name");
-				return;
-			}
-
-			name = filename.substr(0,filename.length() - 3);
-		}
-
-		out = new FStream(name.c_str(),"w");
-		if(!*out) {
-			errmsg("Unable to open '" << name << "' for writing");
-			delete out;
-			return;
-		}
-	}
-
-	z::StreamInflateSource src(is);
-	z::StreamInflateDrain drain(*out);
-	z::Inflate inflate;
-	if(inflate.uncompress(&drain,&src) != 0)
-		errmsg(filename << ": uncompressing failed");
+static void uncompress(IStream &is,const std::string &filename) {
+	z::GZipHeader header = z::GZipHeader::read(is);
+	if(showinfo)
+		sout << filename.c_str() << ":\n" << header << "\n";
 	else {
-		uint32_t crc32 = (uint8_t)src.get() << 0;
-		crc32 |= (uint8_t)src.get() << 8;
-		crc32 |= (uint8_t)src.get() << 16;
-		crc32 |= (uint8_t)src.get() << 24;
-		if(le32tocpu(crc32) != drain.crc32())
-			errmsg(filename << ": CRC32 is invalid");
-	}
+		OStream *out = &sout;
+		if(!tostdout) {
+			std::string name;
+			if(header.filename != NULL) {
+				name = header.filename;
+				if(name.find('/') != std::string::npos) {
+					errmsg(filename << ": GZip contains invalid filename (" << name << ")");
+					return;
+				}
+			}
+			else {
+				if(filename.rfind(".gz") != filename.length() - 3) {
+					errmsg(filename << ": invalid file name");
+					return;
+				}
 
-	if(!tostdout) {
-		delete out;
-		if(!keep && unlink(filename.c_str()) < 0)
-			errmsg("Unable to unlink '" << filename << "'");
+				name = filename.substr(0,filename.length() - 3);
+			}
+
+			out = new FStream(name.c_str(),"w");
+			if(!*out) {
+				errmsg("Unable to open '" << name << "' for writing");
+				delete out;
+				return;
+			}
+		}
+
+		z::StreamInflateSource src(is);
+		z::StreamInflateDrain drain(*out);
+		z::Inflate inflate;
+		if(inflate.uncompress(&drain,&src) != 0)
+			errmsg(filename << ": uncompressing failed");
+		else {
+			uint32_t crc32 = (uint8_t)src.get() << 0;
+			crc32 |= (uint8_t)src.get() << 8;
+			crc32 |= (uint8_t)src.get() << 16;
+			crc32 |= (uint8_t)src.get() << 24;
+			if(le32tocpu(crc32) != drain.crc32())
+				errmsg(filename << ": CRC32 is invalid");
+		}
+
+		if(!tostdout) {
+			delete out;
+			if(!keep && unlink(filename.c_str()) < 0)
+				errmsg("Unable to unlink '" << filename << "'");
+		}
 	}
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-c] [-i] [-k] <file>...\n";
+	serr << "Usage: " << name << " [-c] [-i] [-k] [<file>...]\n";
 	serr << "  -c: write to stdout\n";
 	serr << "  -i: don't uncompress given files, but show information about them\n";
 	serr << "  -k: keep the original files, don't delete them\n";
+	serr << "  If no file is given or <file> is '-', stdin is uncompressed to stdout.\n";
 	exit(EXIT_FAILURE);
 }
 
@@ -101,22 +107,29 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 	}
 
-	for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
-		FStream f((*file)->c_str(),"r");
-		if(!f) {
-			errmsg("Unable to open '" << **file << "' for reading");
-			continue;
-		}
-
+	if(args.get_free().size() == 0 || (args.get_free().size() == 1 && *(args.get_free()[0]) == "-")) {
+		tostdout = true;
 		try {
-			z::GZipHeader header = z::GZipHeader::read(f);
-			if(showinfo)
-				sout << **file << ":\n" << header << "\n";
-			else
-				uncompress(f,**file,header);
+			uncompress(sin,"stdin");
 		}
 		catch(const std::exception &e) {
-			errmsg(**file << ": " << e.what());
+			errmsg("stdin: " << e.what());
+		}
+	}
+	else {
+		for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
+			FStream f((*file)->c_str(),"r");
+			if(!f) {
+				errmsg("Unable to open '" << **file << "' for reading");
+				continue;
+			}
+
+			try {
+				uncompress(f,**file);
+			}
+			catch(const std::exception &e) {
+				errmsg(**file << ": " << e.what());
+			}
 		}
 	}
 	return 0;

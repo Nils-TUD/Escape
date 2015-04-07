@@ -103,6 +103,28 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	}
 }
 
+void vtin_handleMouse(sVTerm *vt,size_t x,size_t y) {
+	if(vt->mcol != x || vt->mrow != y) {
+		if(vt->mcol != static_cast<size_t>(-1)) {
+			vtin_changeColor(vt,vt->mcol,vt->mrow + vt->mrowRel);
+			vtctrl_markDirty(vt,vt->mcol,vt->mrow,1,1);
+		}
+
+		vtin_changeColor(vt,x,vt->firstVisLine + y);
+		vtctrl_markDirty(vt,x,y,1,1);
+
+		vt->mcol = x;
+		vt->mrow = y;
+		vt->mrowRel = vt->firstVisLine;
+	}
+}
+
+void vtin_changeColor(sVTerm *vt,int x,int y) {
+	char *line  = vt->lines[y];
+	unsigned char old = line[x * 2 + 1];
+	line[x * 2 + 1] = old >> 4 | ((old & 0xF) << 4);
+}
+
 bool vtin_hasData(sVTerm *vt) {
 	return vt->inbufEOF || vt->inbuf->length() > 0;
 }

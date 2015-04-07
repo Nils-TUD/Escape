@@ -114,10 +114,12 @@ void VGA::init() {
 		error("Unable to acquire vga-memory (%p)",phys);
 
 	modes.push_back(((Screen::Mode){
-		0x0001,40,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
+		0x0001,40,25,40 * 8,25 * 16,4,0,0,0,0,0,0,VGA_ADDR,0,0,
+			esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 	modes.push_back(((Screen::Mode){
-		0x0003,80,25,0,0,4,0,0,0,0,0,0,VGA_ADDR,0,0,esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
+		0x0003,80,25,80 * 8,25 * 16,4,0,0,0,0,0,0,VGA_ADDR,0,0,
+			esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 }
 

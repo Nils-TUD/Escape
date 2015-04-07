@@ -53,6 +53,9 @@ bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode) {
 	vt->row = vt->rows - 1;
 	vt->lastCol = 0;
 	vt->lastRow = 0;
+	vt->mcol = -1;
+	vt->mrow = 0;
+	vt->mrowRel = 0;
 	vt->upCol = vt->cols;
 	vt->upRow = vt->rows;
 	vt->upWidth = 0;

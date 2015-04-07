@@ -34,6 +34,24 @@
 void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
 
 /**
+ * Sets the mouse cursor to give position.
+ *
+ * @param vt the vterm
+ * @param x the x-position (on the screen in columns)
+ * @param y the y-position (on the screen in rows)
+ */
+void vtin_handleMouse(sVTerm *vt,size_t x,size_t y);
+
+/**
+ * Flips the fore- and background color at given position.
+ *
+ * @param vt the vterm
+ * @param x the x-position in the buffer
+ * @param y the y-position in the buffer
+ */
+void vtin_changeColor(sVTerm *vt,int x,int y);
+
+/**
  * @param vt the vterm
  * @return true if there is data to read
  */

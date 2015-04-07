@@ -60,6 +60,10 @@ struct sVTerm {
 	size_t row;
 	size_t lastCol;
 	size_t lastRow;
+	/* mouse cursor */
+	size_t mcol;
+	size_t mrow;
+	size_t mrowRel;
 	/* colors */
 	uchar defForeground;
 	uchar defBackground;

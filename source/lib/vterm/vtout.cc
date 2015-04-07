@@ -180,6 +180,14 @@ static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty) {
 static void vtout_newLine(sVTerm *vt) {
 	char **dst;
 	size_t count = (HISTORY_SIZE * vt->rows - vt->firstLine) * sizeof(char*);
+
+	/* hide cursor */
+	if(vt->mcol != static_cast<size_t>(-1)) {
+		vtin_changeColor(vt,vt->mcol,vt->mrow + vt->mrowRel);
+		vtctrl_markDirty(vt,vt->mcol,vt->mrow,1,1);
+		vt->mcol = -1;
+	}
+
 	/* move one line back */
 	if(vt->firstLine > 0)
 		vt->firstLine--;

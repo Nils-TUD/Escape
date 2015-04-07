@@ -176,6 +176,10 @@ static int uimInputThread(void *arg) {
 		vtUpdate();
 	}
 
+	int mx = 0, my = 0;
+	const int px_per_col = fb->mode().width / vterm.cols;
+	const int px_per_row = fb->mode().height / vterm.rows;
+
 	/* read from uimanager and handle the keys */
 	while(run) {
 		esc::UIEvents::Event ev;
@@ -186,6 +190,19 @@ static int uimInputThread(void *arg) {
 		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD) {
 			std::lock_guard<std::mutex> guard(*vterm.mutex);
 			vtin_handleKey(&vterm,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
+			vtUpdate();
+		}
+		else if(ev.type == esc::UIEvents::Event::TYPE_MOUSE) {
+			mx += ev.d.mouse.x;
+			my -= ev.d.mouse.y;
+
+			// make sure it's within the bounds
+			mx = MAX(0,MIN(mx,(int)fb->mode().width - px_per_col - 1));
+			my = MAX(0,MIN(my,(int)fb->mode().height - px_per_row - 1));
+
+			// set cursor
+			std::lock_guard<std::mutex> guard(*vterm.mutex);
+			vtin_handleMouse(&vterm,mx / px_per_col,my / px_per_row);
 			vtUpdate();
 		}
 		vtdev->checkPending();

@@ -92,7 +92,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 
 			/* if that changed the position, mark the so far updated part dirty */
 			if(oldEscRow != vt->row) {
-				vtctrl_markDirty(vt,0,oldRow,vt->cols,oldEscRow - oldRow + 1);
+				vtctrl_markDirty(vt,0,vt->firstVisLine + oldRow,vt->cols,oldEscRow - oldRow + 1);
 				oldRow = vt->row;
 			}
 			continue;
@@ -110,7 +110,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	}
 
 	/* mark dirty */
-	vtctrl_markDirty(vt,0,oldRow,vt->cols,vt->row - oldRow + 1);
+	vtctrl_markDirty(vt,0,vt->firstVisLine + oldRow,vt->cols,vt->row - oldRow + 1);
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
 		vtctrl_scroll(vt,vt->firstVisLine - vt->currLine);
@@ -170,7 +170,7 @@ static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty) {
 			line[vt->col * 2 + 1] = (vt->background << 4) | vt->foreground;
 
 			if(markDirty)
-				vtctrl_markDirty(vt,vt->col,vt->row,1,1);
+				vtctrl_markDirty(vt,vt->col,vt->firstVisLine + vt->row,1,1);
 			vt->col++;
 		}
 		break;
@@ -181,12 +181,9 @@ static void vtout_newLine(sVTerm *vt) {
 	char **dst;
 	size_t count = (HISTORY_SIZE * vt->rows - vt->firstLine) * sizeof(char*);
 
-	/* hide cursor */
-	if(vt->mcol != static_cast<size_t>(-1)) {
-		vtin_changeColor(vt,vt->mcol,vt->mrow + vt->mrowRel);
-		vtctrl_markDirty(vt,vt->mcol,vt->mrow,1,1);
-		vt->mcol = -1;
-	}
+	/* hide cursor and selection */
+	vtin_removeCursor(vt);
+	vtin_removeSelection(vt);
 
 	/* move one line back */
 	if(vt->firstLine > 0)
@@ -220,7 +217,7 @@ static void vtout_delete(sVTerm *vt,size_t count) {
 
 		/* overwrite line */
 		/* TODO just refresh the required part */
-		vtctrl_markDirty(vt,0,vt->row,vt->cols,1);
+		vtctrl_markDirty(vt,0,vt->firstVisLine + vt->row,vt->cols,1);
 	}
 	else
 		vtout_beep(vt);

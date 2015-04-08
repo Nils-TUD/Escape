@@ -28,6 +28,7 @@
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <vterm/vtctrl.h>
+#include <vterm/vtin.h>
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -56,6 +57,11 @@ bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode) {
 	vt->mcol = -1;
 	vt->mrow = 0;
 	vt->mrowRel = 0;
+	vt->mclicks = 0;
+	vt->mlastClick = 0;
+	vt->selStart = 0;
+	vt->selEnd = 0;
+	vt->selDir = NONE;
 	vt->upCol = vt->cols;
 	vt->upRow = vt->rows;
 	vt->upWidth = 0;
@@ -186,6 +192,8 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		vt->upRow = vt->rows;
 		vt->upWidth = 0;
 		vt->upHeight = 0;
+		vtin_removeCursor(vt);
+		vtin_removeSelection(vt);
 		vtctrl_markScrDirty(vt);
 		res = true;
 	}
@@ -288,10 +296,22 @@ void vtctrl_scroll(sVTerm *vt,int lines) {
 }
 
 void vtctrl_markScrDirty(sVTerm *vt) {
-	vtctrl_markDirty(vt,0,0,vt->cols,vt->rows);
+	vtctrl_markDirty(vt,0,vt->firstVisLine,vt->cols,vt->rows);
 }
 
 void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
+	if(row >= vt->firstVisLine + vt->rows)
+		return;
+	if(row + height > vt->firstVisLine + vt->rows)
+		height = vt->firstVisLine + vt->rows - row;
+	else if(row < vt->firstVisLine) {
+		if(height <= vt->firstVisLine - row)
+			return;
+		height -= vt->firstVisLine - row;
+		row = vt->firstVisLine;
+	}
+	row -= vt->firstVisLine;
+
 	int x = vt->upCol, y = vt->upRow;
 	vt->upCol = MIN(vt->upCol,col);
 	vt->upRow = MIN(vt->upRow,row);

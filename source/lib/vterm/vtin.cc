@@ -22,6 +22,7 @@
 #include <sys/driver.h>
 #include <sys/io.h>
 #include <sys/keycodes.h>
+#include <sys/time.h>
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
@@ -103,16 +104,115 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	}
 }
 
-void vtin_handleMouse(sVTerm *vt,size_t x,size_t y) {
-	if(vt->mcol != x || vt->mrow != y) {
-		if(vt->mcol != static_cast<size_t>(-1)) {
-			vtin_changeColor(vt,vt->mcol,vt->mrow + vt->mrowRel);
-			vtctrl_markDirty(vt,vt->mcol,vt->mrow,1,1);
+static void vtin_selectWord(sVTerm *vt,int x,int y) {
+	static const char *sepchars = " \t";
+	vtin_removeSelection(vt);
+
+	// stop if we're not in a word
+	char *line = vt->lines[vt->firstVisLine + y];
+	if(strchr(sepchars,line[x * 2]) != NULL)
+		return;
+
+	// find start and end of word
+	int start = x;
+	while(start >= 0 && strchr(sepchars,line[start * 2]) == NULL)
+		start--;
+	int end = x + 1;
+	while((size_t)end < vt->cols && strchr(sepchars,line[end * 2]) == NULL)
+		end++;
+
+	// select the word
+	vt->selStart = (vt->firstVisLine + y) * vt->cols + start + 1;
+	vt->selEnd = (vt->firstVisLine + y) * vt->cols + end;
+	vt->selDir = FORWARD;
+	vtin_changeColorRange(vt,vt->selStart,vt->selEnd);
+}
+
+void vtin_handleMouse(sVTerm *vt,size_t x,size_t y,int z,bool select) {
+	if(z != 0) {
+		if(vt->navigation)
+			vtctrl_scroll(vt,z);
+		return;
+	}
+
+	// handle double clicks
+	if(vt->mclicks == 0)
+		vt->mlastClick = rdtsc();
+	if(select) {
+		if(~vt->mclicks & 1)
+			vt->mclicks++;
+		else
+			vt->mclicks = 0;
+	}
+	else {
+		if(vt->mclicks & 1) {
+			vt->mclicks++;
+			if(vt->mclicks == 4) {
+				uint64_t timediff = tsctotime(rdtsc() - vt->mlastClick);
+				if(timediff < DOUBLE_CLICK_TIME)
+					vtin_selectWord(vt,x,y);
+				vt->mclicks = 0;
+			}
+		}
+		else if(vt->mclicks > 4 || vt->mcol != x || vt->mrow != y)
+			vt->mclicks = 0;
+	}
+
+	if(select) {
+		vtin_removeCursor(vt);
+
+		// determine new start and end position
+		size_t nstart = vt->selStart, nend = vt->selEnd;
+		size_t pos = (vt->firstVisLine + y) * vt->cols + x;
+		switch(vt->selDir) {
+			case NONE:
+				// if there is no direction, start a new selection
+				nstart = pos;
+				nend = pos;
+				vt->selDir = FORWARD;
+				break;
+
+			case FORWARD:
+				// switch direction?
+				if(pos < vt->selStart) {
+					nstart = pos;
+					nend = vt->selStart;
+					vt->selDir = BACKWARDS;
+				}
+				else
+					nend = pos;
+				break;
+
+			case BACKWARDS:
+				if(pos > vt->selEnd) {
+					nstart = vt->selEnd;
+					nend = pos;
+					vt->selDir = FORWARD;
+				}
+				else
+					nstart = pos;
+				break;
 		}
 
-		vtin_changeColor(vt,x,vt->firstVisLine + y);
-		vtctrl_markDirty(vt,x,y,1,1);
+		// change selection if necessary
+		if(nstart != vt->selStart || nend != vt->selEnd) {
+			if(vt->selStart != vt->selEnd)
+				vtin_changeColorRange(vt,vt->selStart,vt->selEnd);
 
+			vt->selStart = nstart;
+			vt->selEnd = nend;
+
+			if(vt->selStart != vt->selEnd)
+				vtin_changeColorRange(vt,vt->selStart,vt->selEnd);
+		}
+	}
+	else if(vt->mcol != x || vt->mrow != y) {
+		vtin_removeCursor(vt);
+
+		vtin_changeColor(vt,x,vt->firstVisLine + y);
+		vtctrl_markDirty(vt,x,vt->firstVisLine + y,1,1);
+
+		vt->selDir = NONE;
 		vt->mcol = x;
 		vt->mrow = y;
 		vt->mrowRel = vt->firstVisLine;
@@ -123,6 +223,34 @@ void vtin_changeColor(sVTerm *vt,int x,int y) {
 	char *line  = vt->lines[y];
 	unsigned char old = line[x * 2 + 1];
 	line[x * 2 + 1] = old >> 4 | ((old & 0xF) << 4);
+}
+
+void vtin_changeColorRange(sVTerm *vt,size_t start,size_t end) {
+	// for simplicity, redraw entire lines
+	int row = start / vt->cols;
+	int rows = (end - start + vt->cols - 1) / vt->cols;
+	vtctrl_markDirty(vt,0,row,vt->cols,rows);
+
+	while(start != end) {
+		vtin_changeColor(vt,start % vt->cols,start / vt->cols);
+		start++;
+	}
+}
+
+void vtin_removeCursor(sVTerm *vt) {
+	if(vt->mcol != static_cast<size_t>(-1)) {
+		vtin_changeColor(vt,vt->mcol,vt->mrow + vt->mrowRel);
+		vtctrl_markDirty(vt,vt->mcol,vt->mrow + vt->mrowRel,1,1);
+		vt->mcol = -1;
+	}
+}
+
+void vtin_removeSelection(sVTerm *vt) {
+	if(vt->selStart != vt->selEnd) {
+		vtin_changeColorRange(vt,vt->selStart,vt->selEnd);
+		vt->selStart = vt->selEnd = 0;
+		vt->selDir = NONE;
+	}
 }
 
 bool vtin_hasData(sVTerm *vt) {
@@ -158,7 +286,7 @@ void vtin_rlPutchar(sVTerm *vt,char c) {
 
 				/* overwrite line */
 				/* TODO just refresh the required part */
-				vtctrl_markDirty(vt,0,vt->row,vt->cols,1);
+				vtctrl_markDirty(vt,0,vt->firstVisLine + vt->row,vt->cols,1);
 			}
 		}
 		break;

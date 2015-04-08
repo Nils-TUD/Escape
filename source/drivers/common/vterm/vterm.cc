@@ -202,7 +202,8 @@ static int uimInputThread(void *arg) {
 
 			// set cursor
 			std::lock_guard<std::mutex> guard(*vterm.mutex);
-			vtin_handleMouse(&vterm,mx / px_per_col,my / px_per_row);
+			vtin_handleMouse(&vterm,mx / px_per_col,my / px_per_row,
+				WHEEL_SCROLL_FACTOR * ev.d.mouse.z,ev.d.mouse.buttons & 1);
 			vtUpdate();
 		}
 		vtdev->checkPending();

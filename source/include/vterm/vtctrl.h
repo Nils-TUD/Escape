@@ -32,6 +32,8 @@
 #define HISTORY_SIZE		12
 #define INPUT_BUF_SIZE		512
 #define MAX_VT_NAME_LEN		15
+#define WHEEL_SCROLL_FACTOR	-3
+#define DOUBLE_CLICK_TIME	300000 /* us */
 
 /**
  * The handler for shortcuts
@@ -39,6 +41,12 @@
 typedef struct sVTerm sVTerm;
 typedef bool (*fHandleShortcut)(sVTerm *vt,uchar keycode,uchar modifier,char c);
 typedef void (*fSetCursor)(sVTerm *vt);
+
+typedef enum {
+	NONE,
+	FORWARD,
+	BACKWARDS
+} SelDirection;
 
 /* our vterm-state */
 struct sVTerm {
@@ -64,6 +72,12 @@ struct sVTerm {
 	size_t mcol;
 	size_t mrow;
 	size_t mrowRel;
+	int mclicks;
+	uint64_t mlastClick;
+	/* selection */
+	size_t selStart;
+	size_t selEnd;
+	SelDirection selDir;
 	/* colors */
 	uchar defForeground;
 	uchar defBackground;

@@ -39,8 +39,10 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
  * @param vt the vterm
  * @param x the x-position (on the screen in columns)
  * @param y the y-position (on the screen in rows)
+ * @param z the movement in z-direction (in rows)
+ * @param select whether the selection should be changed
  */
-void vtin_handleMouse(sVTerm *vt,size_t x,size_t y);
+void vtin_handleMouse(sVTerm *vt,size_t x,size_t y,int z,bool select);
 
 /**
  * Flips the fore- and background color at given position.
@@ -50,6 +52,29 @@ void vtin_handleMouse(sVTerm *vt,size_t x,size_t y);
  * @param y the y-position in the buffer
  */
 void vtin_changeColor(sVTerm *vt,int x,int y);
+
+/**
+ * Flips the fore- and background color of given range.
+ *
+ * @param vt the vterm
+ * @param start the start-position
+ * @param end the end-position
+ */
+void vtin_changeColorRange(sVTerm *vt,size_t start,size_t end);
+
+/**
+ * Removes the cursor, if necessary
+ *
+ * @param vt the vterm
+ */
+void vtin_removeCursor(sVTerm *vt);
+
+/**
+ * Removes the selection, if necessary
+ *
+ * @param vt the vterm
+ */
+void vtin_removeSelection(sVTerm *vt);
 
 /**
  * @param vt the vterm

@@ -71,6 +71,9 @@ public:
 
 	virtual ssize_t read(void *buf,size_t offset,size_t count) = 0;
 	virtual ssize_t write(const void *buf,size_t offset,size_t count) = 0;
+	virtual int truncate(off_t) {
+		return -ENOTSUP;
+	}
 };
 
 class RegularFile : public BlockFile {
@@ -82,8 +85,7 @@ public:
 				free(_file->data);
 				_file->data = NULL;
 			}
-			item->getData()->info.st_size = 0;
-			item->getData()->info.st_blocks = 0;
+			setSize(0);
 		}
 
 		if(_file->data == NULL) {
@@ -114,16 +116,34 @@ public:
 			_file->datasize = offset + count;
 			_file->data = ndata;
 		}
-		if((off_t)(offset + count) > _file->info.st_size) {
-			_file->info.st_size = offset + count;
-			_file->info.st_blocks = (_file->info.st_size + 512 -1) / 512;
-		}
+		if((off_t)(offset + count) > _file->info.st_size)
+			setSize(offset + count);
 		memcpy(_file->data + offset,buf,count);
 		_file->info.st_mtime = time(NULL);
 		return count;
 	}
 
+	virtual int truncate(off_t length) {
+		if(_file->info.st_size < length) {
+			if(_file->datasize < (size_t)length) {
+				char *ndata = (char*)realloc(_file->data,length);
+				if(!ndata)
+					return -ENOMEM;
+				_file->data = ndata;
+				_file->datasize = length;
+			}
+			memset(_file->data + _file->info.st_size,0,length - _file->info.st_size);
+		}
+		setSize(length);
+		return 0;
+	}
+
 private:
+	void setSize(off_t size) {
+		_file->info.st_size = size;
+		_file->info.st_blocks = (_file->info.st_size + 512 - 1) / 512;
+	}
+
 	// don't need to add a reference here; OpenFile has one already
 	TarINode *_file;
 	FILE *_archive;

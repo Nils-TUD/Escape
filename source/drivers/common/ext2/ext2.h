@@ -67,6 +67,7 @@ public:
 	virtual int chmod(FSUser *u,ino_t ino,mode_t mode);
 	virtual int chown(FSUser *u,ino_t ino,uid_t uid,gid_t gid);
 	virtual int utime(FSUser *u,ino_t ino,const struct utimbuf *utimes);
+	virtual int truncate(FSUser *u,ino_t ino,off_t length);
 	virtual void sync();
 	virtual void print(FILE *f);
 

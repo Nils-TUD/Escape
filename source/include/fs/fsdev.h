@@ -65,6 +65,7 @@ public:
 	void chmod(esc::IPCStream &is);
 	void chown(esc::IPCStream &is);
 	void utime(esc::IPCStream &is);
+	void truncate(esc::IPCStream &is);
 
 private:
 	const char *resolveDir(FSUser *u,char *path,ino_t *ino);

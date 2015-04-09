@@ -63,6 +63,7 @@ FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
 	set(MSG_FS_CHMOD,std::make_memfun(this,&FSDevice::chmod));
 	set(MSG_FS_CHOWN,std::make_memfun(this,&FSDevice::chown));
 	set(MSG_FS_UTIME,std::make_memfun(this,&FSDevice::utime));
+	set(MSG_FS_TRUNCATE,std::make_memfun(this,&FSDevice::truncate));
 
 	if(signal(SIGTERM,sigTermHndl) == SIG_ERR)
 		throw esc::default_error("Unable to set signal-handler for SIGTERM");
@@ -218,6 +219,15 @@ void FSDevice::utime(IPCStream &is) {
 	else
 		res = _fs->utime(&u,ino,&utimes);
 
+	is << res << Reply();
+}
+
+void FSDevice::truncate(IPCStream &is) {
+	FSUser u;
+	off_t length;
+	is >> u.uid >> u.gid >> u.pid >> length;
+
+	int res = _fs->truncate(&u,(*this)[is.fd()]->ino,length);
 	is << res << Reply();
 }
 

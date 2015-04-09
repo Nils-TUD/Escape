@@ -127,3 +127,18 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	acctime = modtime = Timer::getTime();
 	return count;
 }
+
+int VFSFile::truncate(A_UNUSED pid_t pid,off_t length) {
+	if(pos < length) {
+		if(size < (size_t)length) {
+			void *ndata = Cache::realloc(data,length);
+			if(!ndata)
+				return -ENOMEM;
+			data = ndata;
+			size = length;
+		}
+		memset((char*)data + pos,0,length - pos);
+	}
+	pos = length;
+	return 0;
+}

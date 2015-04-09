@@ -457,6 +457,18 @@ public:
 	}
 
 	/**
+	 * Truncates the file to <length> bytes by either extending it with 0-bytes or cutting it to
+	 * that length.
+	 *
+	 * @param pid the process-id
+	 * @param length the desired length
+	 * @return 0 on success
+	 */
+	virtual int truncate(A_UNUSED pid_t pid,A_UNUSED off_t length) {
+		return -ENOTSUP;
+	}
+
+	/**
 	 * Closes this file
 	 *
 	 * @param pid the process-id

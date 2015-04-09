@@ -159,6 +159,19 @@ int Ext2FileSystem::utime(FSUser *u,ino_t inodeNo,const struct utimbuf *utimes) 
 	return Ext2INode::utime(this,u,inodeNo,utimes);
 }
 
+int Ext2FileSystem::truncate(A_UNUSED FSUser *u,ino_t inodeNo,off_t length) {
+	// TODO implement me!
+	if(length > 0)
+		return -ENOTSUP;
+
+	Ext2CInode *ino = inodeCache.request(inodeNo,IMODE_WRITE);
+	if(ino == NULL)
+		return -ENOBUFS;
+	int res = Ext2File::truncate(this,ino,false);
+	inodeCache.release(ino);
+	return res;
+}
+
 ssize_t Ext2FileSystem::read(ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	return Ext2File::read(this,inodeNo,buffer,offset,count);
 }

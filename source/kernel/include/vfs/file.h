@@ -68,6 +68,7 @@ public:
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
 	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+	virtual int truncate(pid_t pid,off_t length);
 
 private:
 	int doReserve(size_t newSize);

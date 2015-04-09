@@ -70,6 +70,9 @@ public:
 	virtual int utime(FSUser *,ino_t,const struct utimbuf *) {
 		return -ENOTSUP;
 	}
+	virtual int truncate(FSUser *,ino_t,off_t) {
+		return -ENOTSUP;
+	}
 	virtual void sync() {
 	}
 

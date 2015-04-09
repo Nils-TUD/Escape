@@ -255,6 +255,16 @@ public:
 	ssize_t receiveMsg(pid_t pid,msgid_t *id,void *data,size_t size,uint flags);
 
 	/**
+	 * Truncates the file to <length> bytes by either extending it with 0-bytes or cutting it to
+	 * that length.
+	 *
+	 * @param pid the receiver-process-id
+	 * @param length the length of the file
+	 * @return 0 on success
+	 */
+	int truncate(pid_t pid,off_t length);
+
+	/**
 	 * Cancels the message <mid> that is currently in flight. If the device supports it, it waits
 	 * until it has received the response. This tells us whether the message has been canceled or if
 	 * the response has already been sent.

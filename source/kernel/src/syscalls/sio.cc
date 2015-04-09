@@ -176,6 +176,22 @@ int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+int Syscalls::truncate(Thread *t,IntrptStackFrame *stack) {
+	int fd = (int)SYSC_ARG1(stack);
+	off_t length = (off_t)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	int res = file->truncate(p->getPid(),length);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
 int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 	off_t *pos = (off_t*)SYSC_ARG2(stack);

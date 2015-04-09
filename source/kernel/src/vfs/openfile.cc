@@ -249,6 +249,37 @@ ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,u
 	return err;
 }
 
+int OpenFile::truncate(pid_t pid,off_t length) {
+	if(EXPECT_FALSE(!(flags & VFS_WRITE)))
+		return -EACCES;
+
+	if(devNo == VFS_DEV_NO)
+		return node->truncate(pid,length);
+
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(buffer,sizeof(buffer));
+	VFSChannel *chan = static_cast<VFSChannel*>(node);
+
+	/* send msg to fs */
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << length;
+	ssize_t res = chan->send(pid,0,MSG_FS_TRUNCATE,ib.buffer(),ib.pos(),NULL,0);
+	if(res < 0)
+		return res;
+
+	/* receive response */
+	msgid_t mid = res;
+	ib.reset();
+	res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
+	if(res < 0)
+		return res;
+
+	ib >> res;
+	if(ib.error())
+		res = -EINVAL;
+	return res;
+}
+
 int OpenFile::cancel(pid_t pid,msgid_t mid) {
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;

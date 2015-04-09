@@ -70,6 +70,11 @@ struct OpenFile : public Client {
 
 		return bfile->write(buffer,offset,count);
 	}
+	int truncate(off_t length) {
+		if(~flags & O_WRITE)
+			return -EPERM;
+		return bfile->truncate(length);
+	}
 
 	int flags;
 	TarINode *file;
@@ -99,6 +104,7 @@ public:
 		set(MSG_FS_CHMOD,std::make_memfun(this,&TarFSDevice::chmod));
 		set(MSG_FS_CHOWN,std::make_memfun(this,&TarFSDevice::chown));
 		set(MSG_FS_UTIME,std::make_memfun(this,&TarFSDevice::utime));
+		set(MSG_FS_TRUNCATE,std::make_memfun(this,&TarFSDevice::truncate));
   	}
 
 	void loop() {
@@ -214,6 +220,16 @@ public:
 			is << -EPERM << Reply();
 		else
 			is << 0 << file->getData()->info << Reply();
+	}
+
+	void truncate(IPCStream &is) {
+		OpenFile *file = (*this)[is.fd()];
+		FSUser u;
+		off_t length;
+		is >> u.uid >> u.gid >> u.pid >> length;
+
+		int res = file->truncate(length);
+		is << res << Reply();
 	}
 
 	void syncfs(IPCStream &is) {

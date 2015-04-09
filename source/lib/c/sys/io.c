@@ -43,6 +43,15 @@ int stat(const char *path,struct stat *info) {
 	return syscall2(SYSCALL_STAT,(ulong)abspath(apath,sizeof(apath),path),(ulong)info);
 }
 
+int truncate(const char *path,off_t length) {
+	int fd = open(path,O_WRONLY);
+	if(fd < 0)
+		return fd;
+	int res = ftruncate(fd,length);
+	close(fd);
+	return res;
+}
+
 int chmod(const char *path,mode_t mode) {
 	char apath[MAX_PATH_LEN];
 	return syscall2(SYSCALL_CHMOD,(ulong)abspath(apath,sizeof(apath),path),mode);

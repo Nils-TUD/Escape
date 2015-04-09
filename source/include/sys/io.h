@@ -173,6 +173,28 @@ A_CHECKRET static inline ssize_t write(int fd,const void *buffer,size_t count) {
 }
 
 /**
+ * Truncates the file to <length> bytes by either extending it with 0-bytes or cutting it to
+ * that length.
+ *
+ * @param fd the file-descriptor
+ * @param length the desired length
+ * @return 0 on success
+ */
+static inline int ftruncate(int fd,off_t length) {
+	return syscall2(SYSCALL_TRUNCATE,fd,length);
+}
+
+/**
+ * Truncates the file to <length> bytes by either extending it with 0-bytes or cutting it to
+ * that length.
+ *
+ * @param path the path to the file
+ * @param length the desired length
+ * @return 0 on success
+ */
+int truncate(const char *path,off_t length);
+
+/**
  * Sends a message to the device identified by <fd>.
  *
  * @param fd the file-descriptor

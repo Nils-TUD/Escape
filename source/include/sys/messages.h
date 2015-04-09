@@ -50,6 +50,7 @@
 #define MSG_FS_CHMOD				112
 #define MSG_FS_CHOWN				113
 #define MSG_FS_UTIME				114
+#define MSG_FS_TRUNCATE				115
 
 /* Other messages */
 #define MSG_SPEAKER_BEEP			200		/* performs a beep */

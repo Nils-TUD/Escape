@@ -3,6 +3,6 @@
 Import('env')
 
 if env['TGTTYPE'] == 'x86':
-	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['info', 'vbe'])
+	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['info', 'usergroup', 'vbe'])
 else:
-	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['info'])
+	env.EscapeCXXProg('sbin', target = 'uimng', source = env.Glob('*.cc'), LIBS = ['info', 'usergroup'])

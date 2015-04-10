@@ -45,6 +45,16 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c);
 void vtin_handleMouse(sVTerm *vt,size_t x,size_t y,int z,bool select);
 
 /**
+ * Writes the given string as input to the vterm. That is, it is treated as if the string had been
+ * entered by the user.
+ *
+ * @param vt the vterm
+ * @param str the string
+ * @param len the length of the string
+ */
+void vtin_input(sVTerm *vt,const char *str,size_t len);
+
+/**
  * Flips the fore- and background color at given position.
  *
  * @param vt the vterm

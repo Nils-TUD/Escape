@@ -104,6 +104,17 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 	}
 }
 
+void vtin_input(sVTerm *vt,const char *str,size_t len) {
+	if(vt->readLine) {
+		while(len-- > 0)
+			vtin_rlPutchar(vt,*str++);
+	}
+	else {
+		vtctrl_resizeInBuf(vt,vt->inbuf->length() + len);
+		vt->inbuf->writen(str,len);
+	}
+}
+
 static void vtin_selectWord(sVTerm *vt,int x,int y) {
 	static const char *sepchars = " \t";
 	vtin_removeSelection(vt);

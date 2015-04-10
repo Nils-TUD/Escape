@@ -22,6 +22,8 @@
 
 namespace esc {
 
+const char *Clipboard::PATH = "/sys/clipboard";
+
 OStream &operator<<(OStream &os,const UIEvents::Event &ev) {
 	static const char *types[] = {
 		"KEYBOARD","MOUSE","ACTIVE","INACTIVE"

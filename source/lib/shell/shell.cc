@@ -166,33 +166,41 @@ int shell_readLine(char *buffer,size_t max) {
 			}
 		}
 
-		/* read from inbuf to escbuf */
-		if(inbuf[ibpos] == '\033')
-			ibpos++;
-		while(i < MAX_ESCC_LENGTH && ibpos < iblen) {
-			escbuf[i++] = inbuf[ibpos];
-			if(inbuf[ibpos++] == ']')
-				break;
+		// support pastes
+		if(i == 0 && inbuf[ibpos] != '\033') {
+			n1 = inbuf[ibpos++];
+			n2 = 0;
+			n3 = 0;
 		}
-		escbuf[i] = '\0';
-
-		/* parse escape code */
-		const char *escbufptr = escbuf;
-		int cmd = escc_get(&escbufptr,&n1,&n2,&n3);
-		if(cmd == ESCC_INCOMPLETE) {
-			/* invalid escape code? */
-			if(ibpos < iblen) {
-				ibpos = iblen;
-				i = 0;
+		else {
+			/* read from inbuf to escbuf */
+			if(inbuf[ibpos] == '\033')
+				ibpos++;
+			while(i < MAX_ESCC_LENGTH && ibpos < iblen) {
+				escbuf[i++] = inbuf[ibpos];
+				if(inbuf[ibpos++] == ']')
+					break;
 			}
-			continue;
-		}
+			escbuf[i] = '\0';
 
-		/* esc code is complete, so start at the beginning next time */
-		i = 0;
-		/* skip other escape-codes or incomplete ones */
-		if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
-			continue;
+			/* parse escape code */
+			const char *escbufptr = escbuf;
+			int cmd = escc_get(&escbufptr,&n1,&n2,&n3);
+			if(cmd == ESCC_INCOMPLETE) {
+				/* invalid escape code? */
+				if(ibpos < iblen) {
+					ibpos = iblen;
+					i = 0;
+				}
+				continue;
+			}
+
+			/* esc code is complete, so start at the beginning next time */
+			i = 0;
+			/* skip other escape-codes or incomplete ones */
+			if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
+				continue;
+		}
 
 		/* handle special keycodes */
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {

@@ -115,6 +115,7 @@ struct sVTerm {
 	size_t backupRow;
 	/* the buffer for the input-stream */
 	uchar inbufEOF;
+	size_t inbufSize;
 	esc::RingBuffer<char> *inbuf;
 	/* the pid of the shell for ctrl+c notifications */
 	pid_t shellPid;
@@ -180,6 +181,14 @@ int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2);
 void vtctrl_scroll(sVTerm *vt,int lines);
 
 /**
+ * Writes the current selection to given ostream
+ *
+ * @param vt the vterm
+ * @param os the output stream to write to
+ */
+void vtctrl_getSelection(sVTerm *vt,esc::OStream &os);
+
+/**
  * Marks the whole screen including title-bar dirty (unlocked)
  *
  * @param vt the vterm
@@ -213,3 +222,11 @@ void vtctrl_destroy(sVTerm *vt);
  * @return true if it has changed something
  */
 bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows);
+
+/**
+ * Resizes the input-buffer to at least <length> bytes,
+ *
+ * @param vt the vterm
+ * @param length the length
+ */
+void vtctrl_resizeInBuf(sVTerm *vt,size_t length);

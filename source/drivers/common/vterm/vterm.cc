@@ -25,6 +25,7 @@
 #include <sys/debug.h>
 #include <sys/driver.h>
 #include <sys/io.h>
+#include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
@@ -159,6 +160,51 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
+static void processKeyEvent(const esc::UIEvents::Event &ev) {
+	if((ev.d.keyb.modifier & (STATE_BREAK | STATE_CTRL | STATE_SHIFT)) == (STATE_CTRL | STATE_SHIFT)) {
+		if(ev.d.keyb.keycode == VK_C) {
+			esc::Clipboard::Stream s = esc::Clipboard::writer();
+			std::lock_guard<std::mutex> guard(*vterm.mutex);
+			vtctrl_getSelection(&vterm,s);
+			return;
+		}
+		else if(ev.d.keyb.keycode == VK_V) {
+			esc::Clipboard::Stream s = esc::Clipboard::reader();
+			std::lock_guard<std::mutex> guard(*vterm.mutex);
+			while(!s.eof()) {
+				char buf[256];
+				size_t len = s.read(buf,sizeof(buf) - 1);
+				buf[len] = '\0';
+				vtin_input(&vterm,buf,len);
+			}
+			return;
+		}
+	}
+
+	std::lock_guard<std::mutex> guard(*vterm.mutex);
+	vtin_handleKey(&vterm,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
+	vtUpdate();
+}
+
+static void processMouseEvent(const esc::UIEvents::Event &ev) {
+	static int mx = 0, my = 0;
+	mx += ev.d.mouse.x;
+	my -= ev.d.mouse.y;
+
+	int px_per_col = fb->mode().width / vterm.cols;
+	int px_per_row = fb->mode().height / vterm.rows;
+
+	// make sure it's within the bounds
+	mx = MAX(0,MIN(mx,(int)fb->mode().width - px_per_col - 1));
+	my = MAX(0,MIN(my,(int)fb->mode().height - px_per_row - 1));
+
+	// set cursor
+	std::lock_guard<std::mutex> guard(*vterm.mutex);
+	vtin_handleMouse(&vterm,mx / px_per_col,my / px_per_row,
+		WHEEL_SCROLL_FACTOR * ev.d.mouse.z,ev.d.mouse.buttons & 1);
+	vtUpdate();
+}
+
 static int uimInputThread(void *arg) {
 	int modeid = *(int*)arg;
 	/* open uimng's input device */
@@ -176,10 +222,6 @@ static int uimInputThread(void *arg) {
 		vtUpdate();
 	}
 
-	int mx = 0, my = 0;
-	const int px_per_col = fb->mode().width / vterm.cols;
-	const int px_per_row = fb->mode().height / vterm.rows;
-
 	/* read from uimanager and handle the keys */
 	while(run) {
 		esc::UIEvents::Event ev;
@@ -187,25 +229,10 @@ static int uimInputThread(void *arg) {
 		if(!run)
 			break;
 
-		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD) {
-			std::lock_guard<std::mutex> guard(*vterm.mutex);
-			vtin_handleKey(&vterm,ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
-			vtUpdate();
-		}
-		else if(ev.type == esc::UIEvents::Event::TYPE_MOUSE) {
-			mx += ev.d.mouse.x;
-			my -= ev.d.mouse.y;
-
-			// make sure it's within the bounds
-			mx = MAX(0,MIN(mx,(int)fb->mode().width - px_per_col - 1));
-			my = MAX(0,MIN(my,(int)fb->mode().height - px_per_row - 1));
-
-			// set cursor
-			std::lock_guard<std::mutex> guard(*vterm.mutex);
-			vtin_handleMouse(&vterm,mx / px_per_col,my / px_per_row,
-				WHEEL_SCROLL_FACTOR * ev.d.mouse.z,ev.d.mouse.buttons & 1);
-			vtUpdate();
-		}
+		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD)
+			processKeyEvent(ev);
+		else if(ev.type == esc::UIEvents::Event::TYPE_MOUSE)
+			processMouseEvent(ev);
 		vtdev->checkPending();
 	}
 	return 0;

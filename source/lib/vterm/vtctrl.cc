@@ -97,6 +97,7 @@ bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode) {
 	}
 
 	vt->inbufEOF = false;
+	vt->inbufSize = INPUT_BUF_SIZE;
 	vt->inbuf = new esc::RingBuffer<char>(INPUT_BUF_SIZE,esc::RB_OVERWRITE);
 
 	/* create and init empty line */
@@ -293,6 +294,32 @@ void vtctrl_scroll(sVTerm *vt,int lines) {
 
 	if(old != vt->firstVisLine)
 		vt->upScroll -= lines;
+}
+
+void vtctrl_resizeInBuf(sVTerm *vt,size_t length) {
+	if(vt->inbufSize < length) {
+		esc::RingBuffer<char> *nbuf = new esc::RingBuffer<char>(length);
+		if(!nbuf)
+			return;
+		nbuf->move(*vt->inbuf,vt->inbuf->length());
+		vt->inbuf = nbuf;
+		vt->inbufSize = length;
+	}
+}
+
+void vtctrl_getSelection(sVTerm *vt,esc::OStream &os) {
+	if(vt->selStart != vt->selEnd) {
+		size_t y = vt->selStart / vt->cols;
+		size_t x = vt->selStart % vt->cols;
+		for(size_t i = vt->selStart; i < vt->selEnd; ++i) {
+			os.write(vt->lines[y][x * 2]);
+			if(++x == vt->cols) {
+				os.write('\n');
+				y++;
+				x = 0;
+			}
+		}
+	}
 }
 
 void vtctrl_markScrDirty(sVTerm *vt) {

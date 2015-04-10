@@ -22,6 +22,7 @@
 #include <esc/proto/input.h>
 #include <esc/proto/screen.h>
 #include <esc/stream/ostream.h>
+#include <esc/stream/fstream.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/stat.h>
@@ -82,6 +83,52 @@ public:
 		_is << CString(map.c_str(),map.length()) << SendReceive(MSG_UIM_SETKEYMAP) >> res;
 		if(res < 0)
 			VTHROWE("setKeymap(" << map << ")",res);
+	}
+};
+
+/**
+ * Provides access to the system-wide clipboard
+ */
+class Clipboard {
+	Clipboard() = delete;
+
+public:
+	class Stream : public FStream {
+		friend class Clipboard;
+
+		explicit Stream(const char *path,const char *mode) : FStream(path,mode) {
+			fsemdown(fd());
+			if(*mode == 'w')
+				ftruncate(fd(),0);
+		}
+
+	public:
+		virtual ~Stream() {
+			fsemup(fd());
+		}
+
+		Stream(Stream &&s) : FStream(std::move(s)) {
+		}
+		Stream &operator=(Stream &&s) {
+			if(&s != this)
+				FStream::operator=(std::move(s));
+			return *this;
+		}
+	};
+
+	static const char *PATH;
+
+	/**
+	 * @return a stream to read from the clipboard
+	 */
+	static Stream reader() {
+		return Stream(PATH,"r");
+	}
+	/**
+	 * @return a stream to write to the clipboard
+	 */
+	static Stream writer() {
+		return Stream(PATH,"w");
 	}
 };
 

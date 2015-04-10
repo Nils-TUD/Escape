@@ -51,110 +51,115 @@ int main(int argc,char *argv[]) {
 
 	while(run && (c = fgetc(stdin)) != EOF) {
 		if(c == '\033') {
-			/* just accept keycode-escapecodes */
 			cmd = freadesc(stdin,&n1,&n2,&n3);
 			if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 				continue;
+		}
+		else {
+			/* support pastes */
+			n1 = c;
+			n2 = 0;
+			n3 = 0;
+		}
 
-			/* insert a char? */
-			if(n1 == '\t' || (isprint(n1) && !(n3 & (STATE_CTRL | STATE_ALT)))) {
-				int col,row;
-				displ_getCurPos(&col,&row);
+		/* insert a char? */
+		if(n1 == '\t' || n1 == '\n' || (isprint(n1) && !(n3 & (STATE_CTRL | STATE_ALT)))) {
+			int col,row;
+			displ_getCurPos(&col,&row);
+			if(n1 == '\n') {
+				buf_newLine(col,row);
+				/* to beginning of next line */
+				displ_mvCurVert(1);
+				displ_mvCurHor(HOR_MOVE_HOME);
+				displ_markDirty(row,buf_getLineCount());
+			}
+			else {
 				buf_insertAt(col,row,n1);
 				displ_markDirty(row,1);
 				displ_mvCurHor(HOR_MOVE_RIGHT);
 			}
-			else {
-				switch(n2) {
-					case VK_X:
-						if(n3 & STATE_CTRL) {
-							if(buf_get()->modified) {
-								char dstFile[MAX_PATH_LEN];
-								int res = displ_getSaveFile(dstFile,MAX_PATH_LEN);
-								if(res != EOF) {
-									buf_store(dstFile);
-									run = false;
-								}
-							}
-							else
-								run = false;
-						}
-						break;
-
-					case VK_ENTER: {
-						int col,row;
-						displ_getCurPos(&col,&row);
-						buf_newLine(col,row);
-						/* to beginning of next line */
-						displ_mvCurVert(1);
-						displ_mvCurHor(HOR_MOVE_HOME);
-						displ_markDirty(row,buf_getLineCount());
-					}
-					break;
-
-					case VK_DELETE:
-					case VK_BACKSP: {
-						int col,row;
-						displ_getCurPos(&col,&row);
-						if(n2 == VK_DELETE) {
-							sLine *cur = buf_getLine(row);
-							if(col == (int)cur->length) {
-								buf_moveToPrevLine(row + 1);
-								displ_markDirty(row,buf_getLineCount() + 1);
-							}
-							else
-								buf_removeCur(col,row);
-						}
-						else {
-							if(col > 0) {
-								displ_mvCurHor(HOR_MOVE_LEFT);
-								buf_removeCur(col - 1,row);
-							}
-							else if(row > 0) {
-								displ_mvCurHor(HOR_MOVE_LEFT);
-								buf_moveToPrevLine(row);
-								displ_markDirty(row - 1,buf_getLineCount() + 1);
-							}
-						}
-						displ_markDirty(row,1);
-					}
-					break;
-
-					case VK_LEFT:
-						displ_mvCurHor(HOR_MOVE_LEFT);
-						break;
-					case VK_RIGHT:
-						displ_mvCurHor(HOR_MOVE_RIGHT);
-						break;
-
-					case VK_HOME:
-						if(n3 & STATE_CTRL)
-							displ_mvCurVert(INT_MIN);
-						displ_mvCurHor(HOR_MOVE_HOME);
-						break;
-					case VK_END:
-						if(n3 & STATE_CTRL)
-							displ_mvCurVert(INT_MAX);
-						displ_mvCurHor(HOR_MOVE_END);
-						break;
-
-					case VK_UP:
-						displ_mvCurVert(-1);
-						break;
-					case VK_DOWN:
-						displ_mvCurVert(1);
-						break;
-
-					case VK_PGUP:
-						displ_mvCurVertPage(true);
-						break;
-					case VK_PGDOWN:
-						displ_mvCurVertPage(false);
-						break;
-				}
-			}
-			displ_update();
 		}
+		else {
+			switch(n2) {
+				case VK_X:
+					if(n3 & STATE_CTRL) {
+						if(buf_get()->modified) {
+							char dstFile[MAX_PATH_LEN];
+							int res = displ_getSaveFile(dstFile,MAX_PATH_LEN);
+							if(res != EOF) {
+								buf_store(dstFile);
+								run = false;
+							}
+						}
+						else
+							run = false;
+					}
+					break;
+
+				case VK_DELETE:
+				case VK_BACKSP: {
+					int col,row;
+					displ_getCurPos(&col,&row);
+					if(n2 == VK_DELETE) {
+						sLine *cur = buf_getLine(row);
+						if(col == (int)cur->length) {
+							buf_moveToPrevLine(row + 1);
+							displ_markDirty(row,buf_getLineCount() + 1);
+						}
+						else
+							buf_removeCur(col,row);
+					}
+					else {
+						if(col > 0) {
+							displ_mvCurHor(HOR_MOVE_LEFT);
+							buf_removeCur(col - 1,row);
+						}
+						else if(row > 0) {
+							displ_mvCurHor(HOR_MOVE_LEFT);
+							buf_moveToPrevLine(row);
+							displ_markDirty(row - 1,buf_getLineCount() + 1);
+						}
+					}
+					displ_markDirty(row,1);
+				}
+				break;
+
+				case VK_LEFT:
+					displ_mvCurHor(HOR_MOVE_LEFT);
+					break;
+				case VK_RIGHT:
+					displ_mvCurHor(HOR_MOVE_RIGHT);
+					break;
+
+				case VK_HOME:
+					if(n3 & STATE_CTRL)
+						displ_mvCurVert(INT_MIN);
+					displ_mvCurHor(HOR_MOVE_HOME);
+					break;
+				case VK_END:
+					if(n3 & STATE_CTRL)
+						displ_mvCurVert(INT_MAX);
+					displ_mvCurHor(HOR_MOVE_END);
+					break;
+
+				case VK_UP:
+					displ_mvCurVert(-1);
+					break;
+				case VK_DOWN:
+					displ_mvCurVert(1);
+					break;
+
+				case VK_PGUP:
+					displ_mvCurVertPage(true);
+					break;
+				case VK_PGDOWN:
+					displ_mvCurVertPage(false);
+					break;
+			}
+		}
+
+		if(favail(stdin) == 0)
+			displ_update();
 	}
 	displ_finish();
 	return EXIT_SUCCESS;

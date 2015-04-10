@@ -32,6 +32,16 @@ public:
 	explicit OStringStream() : OStream(), _str() {
 	}
 
+	OStringStream(OStringStream &&os) : OStream(std::move(os)), _str(std::move(os._str)) {
+	}
+	OStringStream &operator=(OStringStream &&os) {
+		if(&os != this) {
+			OStream::operator=(std::move(os));
+			_str = std::move(os._str);
+		}
+		return *this;
+	}
+
 	/**
 	 * @return the string
 	 */

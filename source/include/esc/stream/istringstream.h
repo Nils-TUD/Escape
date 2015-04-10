@@ -63,6 +63,19 @@ public:
 		: IStream(), _str(str), _len(len != (size_t)-1 ? len : strlen(str)), _pos() {
 	}
 
+	IStringStream(IStringStream &&is)
+		: IStream(std::move(is)), _str(is._str), _len(is._len), _pos(is._pos) {
+	}
+	IStringStream &operator=(IStringStream &&is) {
+		if(&is != this) {
+			IStream::operator=(std::move(is));
+			_str = is._str;
+			_len = is._len;
+			_pos = is._pos;
+		}
+		return *this;
+	}
+
 	virtual char read() override {
 		if(_pos < _len)
 			return _str[_pos++];

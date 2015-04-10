@@ -62,6 +62,19 @@ public:
 			fclose(_file);
 	}
 
+	FStream(FStream &&f) : IStream(std::move(f)), OStream(std::move(f)), _file(f._file) {
+		f._state |= FL_NOCLOSE;
+	}
+	FStream &operator=(FStream &&f) {
+		if(&f != this) {
+			IStream::operator=(std::move(f));
+			OStream::operator=(std::move(f));
+			_file = f._file;
+			f._state |= FL_NOCLOSE;
+		}
+		return *this;
+	}
+
 	/**
 	 * @return the file-descriptor
 	 */

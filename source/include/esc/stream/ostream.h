@@ -107,8 +107,22 @@ public:
 	virtual ~OStream() {
 	}
 
+	/**
+	 * No copying
+	 */
 	OStream(const OStream&) = delete;
 	OStream &operator=(const OStream&) = delete;
+
+	/**
+	 * But moving is supported
+	 */
+	OStream(OStream &&o) : IOSBase(std::move(o)) {
+	}
+	OStream &operator=(OStream &&o) {
+		if(&o != this)
+			IOSBase::operator=(std::move(o));
+		return *this;
+	}
 
 	/**
 	 * Writes a value into the stream with formatting applied. This operator should be used in

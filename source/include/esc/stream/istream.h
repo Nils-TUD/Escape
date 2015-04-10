@@ -62,6 +62,17 @@ public:
 	IStream &operator=(const IStream&) = delete;
 
 	/**
+	 * But moving is supported
+	 */
+	IStream(IStream &&i) : IOSBase(std::move(i)) {
+	}
+	IStream &operator=(IStream &&i) {
+		if(&i != this)
+			IOSBase::operator=(std::move(i));
+		return *this;
+	}
+
+	/**
 	 * Reads a value out of the stream and stores it in <val>.
 	 *
 	 * @param val the value

@@ -39,6 +39,19 @@ public:
 	explicit OBufStream(char *buf,size_t size) : OStream(), _buf(buf), _pos(), _size(size) {
 	}
 
+	OBufStream(OBufStream &&os)
+		: OStream(std::move(os)), _buf(os._buf), _pos(os._pos), _size(os._size) {
+	}
+	OBufStream &operator=(OBufStream &&os) {
+		if(&os != this) {
+			OStream::operator=(std::move(os));
+			_buf = os._buf;
+			_pos = os._pos;
+			_size = os._size;
+		}
+		return *this;
+	}
+
 	/**
 	 * @return the number of written characters
 	 */

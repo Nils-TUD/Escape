@@ -88,6 +88,15 @@ private:
 	size_type _rsize;
 };
 
+struct DirList {
+	bool dir;
+	std::string path;
+	std::vector<lsfile*> entries;
+};
+
+static DirList collectEntries(const char *path,size_t *widths,bool showPath);
+static void printDir(const std::string &path,const std::vector<lsfile*> &entries,size_t *widths,
+		uint cols,bool showPath);
 static void printColor(const lsfile *f);
 static bool compareEntries(const lsfile* a,const lsfile* b);
 static vector<lsfile*> getEntries(const string& path);
@@ -97,7 +106,7 @@ static void printMode(file::mode_type mode);
 static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-liasNn] [<path>]\n";
+	serr << "Usage: " << name << " [-liasNn] [<path>...]\n";
 	serr << "    -l: long listing\n";
 	serr << "    -i: print inode-numbers\n";
 	serr << "    -a: print also '.' and '..'\n";
@@ -108,14 +117,12 @@ static void usage(const char *name) {
 }
 
 static uint flags;
+static sUser *userList;
+static sGroup *groupList;
 
 int main(int argc,char *argv[]) {
-	size_t widths[WIDTHS_COUNT] = {0};
-	sUser *userList = nullptr;
-	sGroup *groupList = nullptr;
-
 	// parse params
-	cmdargs args(argc,argv,cmdargs::MAX1_FREE);
+	cmdargs args(argc,argv,0);
 	try {
 		int flong = 0,finode = 0,fall = 0,fdirsize = 0,fnumeric = 0,fdirnum = 0;
 		args.parse("l i a s n N",&flong,&finode,&fall,&fdirsize,&fnumeric,&fdirnum);
@@ -131,15 +138,6 @@ int main(int argc,char *argv[]) {
 		errmsg("Invalid arguments: " << e.what());
 		usage(argv[0]);
 	}
-
-	// use CWD or given path
-	string path;
-	if(!args.get_free().empty()) {
-		path = *(args.get_free()[0]);
-		env::absolutify(path);
-	}
-	else
-		path = env::get("CWD");
 
 	// get console-size
 	esc::VTerm vterm(esc::env::get("TERM").c_str());
@@ -159,19 +157,61 @@ int main(int argc,char *argv[]) {
 		}
 	}
 
+	// first, collect all files and count widths
+	size_t widths[WIDTHS_COUNT] = {0};
+	std::vector<DirList> lists;
+	if(!args.get_free().empty()) {
+		size_t count = args.get_free().size();
+		for(auto &p : args.get_free())
+			lists.push_back(collectEntries(p->c_str(),widths,count > 1));
+	}
+	else {
+		std::string path = env::get("CWD");
+		lists.push_back(collectEntries(path.c_str(),widths,false));
+	}
+
+	// now print them
+	size_t i = 0,count = lists.size();
+	bool lastDir = false;
+	for(auto &l : lists) {
+		if(i > 0 && (l.dir || lastDir))
+			sout << '\n';
+		if(count > 1 && l.dir)
+			sout << l.path << ":\n";
+
+		printDir(l.path,l.entries,widths,mode.cols,count > 1);
+		lastDir = l.dir;
+		i++;
+	}
+	return EXIT_SUCCESS;
+}
+
+static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
+	DirList list;
+	list.dir = isdir(path);
+	if(showPath) {
+		if(!list.dir) {
+			char tmp[MAX_PATH_LEN];
+			strnzcpy(tmp,path,sizeof(tmp));
+			list.path = dirname(tmp);
+		}
+		else
+			list.path = path;
+		if(list.path[list.path.length() - 1] != '/')
+			list.path += '/';
+	}
+
 	// get entries and sort them
-	vector<lsfile*> entries;
 	try {
-		entries = getEntries(path);
-		sort(entries.begin(),entries.end(),compareEntries);
+		list.entries = getEntries(path);
+		sort(list.entries.begin(),list.entries.end(),compareEntries);
 	}
 	catch(const default_error& e) {
 		errmsg("Unable to read dir-entries: " << e.what());
-		exit(EXIT_FAILURE);
 	}
 
 	// calc widths
-	for(auto it = entries.begin(); it != entries.end(); ++it) {
+	for(auto it = list.entries.begin(); it != list.entries.end(); ++it) {
 		size_t x;
 		lsfile *f = *it;
 		if(flags & F_INODE) {
@@ -199,11 +239,15 @@ int main(int argc,char *argv[]) {
 				widths[W_SIZE] = x;
 		}
 		else {
-			if((x = f->name().size()) > widths[W_NAME])
+			if((x = f->name().size() + list.path.length()) > widths[W_NAME])
 				widths[W_NAME] = x;
 		}
 	}
+	return list;
+}
 
+static void printDir(const std::string &path,const std::vector<lsfile*> &entries,size_t *widths,
+		uint cols,bool showPath) {
 	// display
 	size_t pos = 0;
 	for(auto it = entries.begin(); it != entries.end(); ++it) {
@@ -234,18 +278,20 @@ int main(int argc,char *argv[]) {
 				sout << dateStr << ' ';
 			}
 			printColor(f);
+			if(showPath)
+				sout << path;
 			sout << f->name() << "\033[co]" << '\n';
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
-			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= mode.cols) {
+			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= cols) {
 				sout << '\n';
 				pos = 0;
 			}
 			if(flags & F_INODE)
 				sout << fmt(f->inode(),widths[W_INODE]) << ' ';
 			printColor(f);
-			sout << fmt(f->name(),"-",widths[W_NAME] + 1) << "\033[co]";
+			sout << fmt(showPath? (path + f->name()) : f->name(),"-",widths[W_NAME] + 1) << "\033[co]";
 			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
 
@@ -255,7 +301,6 @@ int main(int argc,char *argv[]) {
 
 	if(!(flags & F_LONG))
 		sout << '\n';
-	return EXIT_SUCCESS;
 }
 
 static void printColor(const lsfile *f) {

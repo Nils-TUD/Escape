@@ -98,9 +98,9 @@ int main(int argc,char *argv[]) {
 			col = 0;
 		}
 	}
-	if(in->bad())
+	if(in->error())
 		exitmsg("Read failed");
-	if(sout.bad())
+	if(sout.error())
 		exitmsg("Write failed");
 
 	/* clean up */

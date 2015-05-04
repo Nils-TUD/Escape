@@ -1,7 +1,7 @@
 #!/bin/sh
 uuid="52e19036-661c-4fbc-b4ce-56648c257230"
 
-. boot/$ESC_TGTTYPE/images.sh
+source boot/$ESC_TGTTYPE/images.sh
 create_disk $1/dist $1/hd.img
 qemu-img convert -f raw $1/hd.img -O vmdk $1/hd.vmdk
 

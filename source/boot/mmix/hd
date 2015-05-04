@@ -1,5 +1,5 @@
 #!/bin/sh
-. boot/images.sh
+source boot/images.sh
 
 gimmix=../gimmix
 gimsim=$gimmix/build/gimmix

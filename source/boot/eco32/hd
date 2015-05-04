@@ -1,5 +1,5 @@
 #!/bin/sh
-. boot/images.sh
+source boot/images.sh
 
 eco32=../eco32
 ecosim=$eco32/build/bin/sim

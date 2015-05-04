@@ -1,5 +1,5 @@
 #!/bin/sh
-. boot/$ESC_TGTTYPE/images.sh
+source boot/$ESC_TGTTYPE/images.sh
 create_cd $1/dist $1/cd.iso
 
 cat >$1/config-52-54-00-12-34-56 <<EOF

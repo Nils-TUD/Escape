@@ -1,4 +1,18 @@
 # -*- Mode: Python -*-
 
 Import('env')
-env.EscapeLib(target = 'esc', source = [env.Glob('*.cc'), env.Glob('*/*.cc')])
+
+myenv = env.Clone()
+builddir = Dir('regex')
+myenv.Append(
+	CFLAGS = ' -DYYERROR_VERBOSE -I lib/esc/regex -I ' + builddir.abspath,
+	LEXFLAGS = '--nounistd',
+	YACCFLAGS = '-t -d'
+)
+
+lexer = myenv.CFile(target = 'regex/pattern-lex.c', source = 'regex/pattern.l')
+parser = myenv.CFile(target = 'regex/pattern-parse.c', source = 'regex/pattern.y')
+
+myenv.EscapeLib(
+	target = 'esc',
+	source = [myenv.Glob('*.cc'), myenv.Glob('*/*.cc')] + [lexer, parser[0]])

@@ -17,28 +17,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#pragma once
+
 #include <sys/common.h>
-#include <sys/test.h>
-#include <stdlib.h>
 
-extern sTestModule tModRBuffer;
-extern sTestModule tModCmdArgs;
-extern sTestModule tModPathTree;
-extern sTestModule tModSList;
-extern sTestModule tModDList;
-extern sTestModule tModTreap;
-extern sTestModule tModStream;
-extern sTestModule tModRegex;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int main() {
-	test_register(&tModRBuffer);
-	test_register(&tModCmdArgs);
-	test_register(&tModPathTree);
-	test_register(&tModSList);
-	test_register(&tModDList);
-	test_register(&tModTreap);
-	test_register(&tModStream);
-	test_register(&tModRegex);
-	test_start();
-	return EXIT_SUCCESS;
+void yyerror(char const *s);
+int yyparse(void);
+int yylex_destroy(void);
+
+void pattern_destroy(void *e);
+
+void *pattern_createGroup(void *list);
+void *pattern_createList(void);
+void pattern_addToList(void *list,void *elem);
+
+void *pattern_createChar(char c);
+void *pattern_createDot(void);
+void *pattern_createRepeat(void *elem,int min,int max);
+
+void *pattern_createCharClass(void *list,bool negate);
+void pattern_addToCharClassList(void *list,void *elem);
+void *pattern_createCharClassList(void);
+void *pattern_createCharClassElem(char begin,char end);
+
+#ifdef __cplusplus
 }
+#endif

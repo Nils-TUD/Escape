@@ -61,6 +61,10 @@ elem:
 	| elem T_REPSPEC_BEGIN
 			T_NUMBER T_COMMA T_NUMBER
 			T_REPSPEC_END								{ $$ = pattern_createRepeat($1,$3,$5); }
+	| elem T_REPSPEC_BEGIN
+			T_NUMBER T_COMMA
+			T_REPSPEC_END								{ $$ = pattern_createRepeat($1,$3,1 << 30); }
+	| elem T_REPSPEC_BEGIN T_NUMBER T_REPSPEC_END		{ $$ = pattern_createRepeat($1,$3,$3); }
 ;
 
 charclass_list:

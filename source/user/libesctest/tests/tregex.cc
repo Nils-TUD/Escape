@@ -143,6 +143,18 @@ static void test_repeat() {
 	}
 	test_assertSize(heapspace(),before);
 
+	{
+		Regex::Pattern pat = Regex::compile("a{2,}");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"aa"));
+		test_assertTrue(Regex::matches(pat,"aaa"));
+		test_assertTrue(Regex::matches(pat,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+		test_assertFalse(Regex::matches(pat,""));
+		test_assertFalse(Regex::matches(pat,"a"));
+		test_assertFalse(Regex::matches(pat,"b"));
+	}
+	test_assertSize(heapspace(),before);
+
 	test_caseSucceeded();
 }
 
@@ -253,7 +265,7 @@ static void test_groups() {
 	}
 
 	{
-		Regex::Pattern pat = Regex::compile("a([^c]{2,2})+c");
+		Regex::Pattern pat = Regex::compile("a([^c]{2})+c");
 		// sout << pat << "\n";
 		test_assertTrue(Regex::matches(pat,"abdefc"));
 		test_assertTrue(Regex::matches(pat,"abbc"));
@@ -354,9 +366,8 @@ static void test_errors() {
 	assert_compileFail("[abc");
 	assert_compileFail("[abc-");
 	assert_compileFail("{1,2}");
-	assert_compileFail("a{1}");
 	assert_compileFail("a{,}");
-	assert_compileFail("a{2,}");
+	assert_compileFail("a{,3}");
 	assert_compileFail("a{2,3");
 	assert_compileFail("a{a,4}");
 	assert_compileFail("a{4,2}");

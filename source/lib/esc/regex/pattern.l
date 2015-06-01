@@ -23,6 +23,7 @@
 
 %%
 
+ /* groups */
 <INITIAL>"(" {
 	return T_GROUP_BEGIN;
 }
@@ -30,26 +31,33 @@
 	return T_GROUP_END;
 }
 
+ /* character classes */
 <INITIAL>"[" {
 	yy_push_state(CHARCLASS);
 	return T_CHARCLASS_BEGIN;
 }
+ /* we want to accept it in INITIAL, too, to detect errors */
+ /* but then we need to make sure to only pop the state if we are in CHARCLASS */
+ /* fortunately, it is not nested, so that it suffices to check whether we are not in INITIAL */
 <INITIAL,CHARCLASS>"]" {
 	if(yy_start_stack_ptr > 0)
 		yy_pop_state();
 	return T_CHARCLASS_END;
 }
 
+ /* repeat specification */
 <INITIAL>"{" {
 	yy_push_state(REPSPEC);
 	return T_REPSPEC_BEGIN;
 }
+ /* same as above */
 <INITIAL,REPSPEC>"}" {
 	if(yy_start_stack_ptr > 0)
 		yy_pop_state();
 	return T_REPSPEC_END;
 }
 
+ /* these have only special meaning in the repeat specification */
 <REPSPEC>[0-9]+ {
 	yylval.number = atoi(yytext);
 	return T_NUMBER;
@@ -58,6 +66,7 @@
 	return T_COMMA;
 }
 
+ /* other special characters */
 <INITIAL,CHARCLASS>"^" {
 	return T_NEGATE;
 }
@@ -68,6 +77,7 @@
 	return T_DOT;
 }
 
+ /* repeat operators */
 <INITIAL>"*" {
 	return T_REP_ANY;
 }
@@ -78,6 +88,7 @@
 	return T_REP_OPTIONAL;
 }
 
+ /* escaping */
 <INITIAL,CHARCLASS>\\[\(\)\[\]\{\}\*\+\?\.] {
 	yylval.character = yytext[1];
 	return T_CHAR;
@@ -87,6 +98,7 @@
 	return T_CHAR;
 }
 
+ /* all other stuff are simply characters */
 <INITIAL,CHARCLASS>[^\(\)\[\]\{\}\*\+\?\.] {
 	yylval.character = *yytext;
 	return T_CHAR;

@@ -99,7 +99,7 @@
 }
 
  /* all other stuff are simply characters */
-<INITIAL,CHARCLASS>[^\(\)\[\]\{\}\*\+\?\.] {
+<INITIAL,CHARCLASS,REPSPEC>. {
 	yylval.character = *yytext;
 	return T_CHAR;
 }

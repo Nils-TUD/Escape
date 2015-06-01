@@ -27,13 +27,16 @@ public:
 	typedef typename std::vector<T*>::iterator iterator;
 	typedef typename std::vector<T*>::const_iterator const_iterator;
 
-	explicit ElementList() : Regex::PatternNode(), _elems() {
+	explicit ElementList(size_t id) : Regex::PatternNode(), _id(id), _elems() {
 	}
 	virtual ~ElementList() {
 		for(size_t i = 0; i < _elems.size(); ++i)
 			delete _elems[i];
 	}
 
+	size_t id() const {
+		return _id;
+	}
 	bool empty() const {
 		return _elems.empty();
 	}
@@ -59,6 +62,8 @@ public:
 		os << fmt("",indent) << "]";
 	}
 
+private:
+	size_t _id;
 	std::vector<T*> _elems;
 };
 
@@ -67,7 +72,7 @@ public:
 	explicit CharElement(char c) : Regex::Element(CHAR),_c(c) {
 	}
 
-	virtual bool match(Regex::Input &in) const override {
+	virtual bool match(Regex::Result *,Regex::Input &in) const override {
 		if(in.peek() == _c) {
 			in.get();
 			return true;
@@ -102,7 +107,7 @@ public:
 		delete _ranges;
 	}
 
-	virtual bool match(Regex::Input &in) const override {
+	virtual bool match(Regex::Result *,Regex::Input &in) const override {
 		if(in.peek() != '\0' && inRanges(in.peek()) == !_negate) {
 			in.get();
 			return true;
@@ -141,7 +146,7 @@ public:
 	explicit DotElement() : Regex::Element(DOT) {
 	}
 
-	virtual bool match(Regex::Input &in) const override {
+	virtual bool match(Regex::Result *,Regex::Input &in) const override {
 		if(in.peek() != '\0') {
 			in.get();
 			return true;
@@ -163,9 +168,9 @@ public:
 		delete _e;
 	}
 
-	virtual bool match(Regex::Input &in) const override {
+	virtual bool match(Regex::Result *res,Regex::Input &in) const override {
 		int num = 0;
-		while(_e->match(in)) {
+		while(_e->match(res,in)) {
 			num++;
 			if(num >= _max)
 				return true;
@@ -193,9 +198,9 @@ public:
 		delete _list;
 	}
 
-	virtual bool match(Regex::Input &in) const override {
+	virtual bool match(Regex::Result *res,Regex::Input &in) const override {
 		for(auto &e : *_list) {
-			if(e->match(in))
+			if(e->match(res,in))
 				return true;
 		}
 		return false;
@@ -211,19 +216,31 @@ private:
 
 class GroupElement : public Regex::Element {
 public:
-	explicit GroupElement(const ElementList<Regex::Element> *list) : Regex::Element(GROUP), _list(list) {
+	explicit GroupElement(const ElementList<Regex::Element> *list)
+		: Regex::Element(GROUP), _list(list) {
 	}
 	virtual ~GroupElement() {
 		delete _list;
 	}
 
-	virtual bool match(Regex::Input &in) const override {
+	virtual bool match(Regex::Result *res,Regex::Input &in) const override {
 		if(_list->empty())
 			return in.peek() == '\0';
 
-		for(auto &e : *_list) {
-			if(!e->match(in))
-				return false;
+		if(res) {
+			size_t begin = in.pos();
+			for(auto &e : *_list) {
+				if(!e->match(res,in))
+					return false;
+			}
+			size_t end = in.pos();
+			res->set(_list->id(),in.substr(begin,end - begin));
+		}
+		else {
+			for(auto &e : *_list) {
+				if(!e->match(NULL,in))
+					return false;
+			}
 		}
 		return true;
 	}

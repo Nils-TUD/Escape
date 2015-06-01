@@ -25,6 +25,8 @@
 
 namespace esc {
 
+class GroupElement;
+
 class Regex {
 public:
 	static const size_t MAX_GROUP_NESTING		= 16;
@@ -34,6 +36,12 @@ public:
 		explicit Input(const std::string &str) : _pos(),_str(str) {
 		}
 
+		std::string substr(size_t begin,size_t length) const {
+			return _str.substr(begin,length);
+		}
+		size_t pos() const {
+			return _pos;
+		}
 		char peek() const {
 			if(_pos < _str.length())
 				return _str[_pos];
@@ -60,6 +68,36 @@ public:
 		}
 	};
 
+	class Result {
+		friend class GroupElement;
+		friend class Regex;
+
+	public:
+		explicit Result(size_t groups) : _matches(groups) {
+		}
+
+		bool matched() const {
+			return _success;
+		}
+		size_t groups() const {
+			return _matches.size();
+		}
+		const std::string &get(size_t i) const {
+			return _matches[i];
+		}
+
+	private:
+		void set(size_t id,const std::string &str) {
+			_matches[id] = str;
+		}
+		void setSuccess(bool succ) {
+			_success = succ;
+		}
+
+		bool _success;
+		std::vector<std::string> _matches;
+	};
+
 	class Element : public PatternNode {
 	public:
 		enum Type {
@@ -78,7 +116,7 @@ public:
 			return _type;
 		}
 
-		virtual bool match(Input &in) const = 0;
+		virtual bool match(Result *res,Input &in) const = 0;
 		virtual void print(esc::OStream &os,int indent) const = 0;
 
 		friend esc::OStream &operator<<(esc::OStream &os,const Element &e) {
@@ -110,7 +148,7 @@ public:
 			delete _root;
 		}
 
-		Element *root() {
+		const Element *root() const {
 			return _root;
 		}
 
@@ -121,17 +159,18 @@ public:
 	};
 
 	static Pattern compile(const std::string &pattern);
+	static Result execute(const Pattern &p,const std::string &str);
 
 	static bool matches(const std::string &pattern,const std::string &str) {
 		Pattern p = compile(pattern);
 		return matches(p,str);
 	}
-	static bool matches(Pattern &p,const std::string &str);
+	static bool matches(const Pattern &p,const std::string &str);
 	static std::string replace(const std::string &pattern,const std::string &str,const std::string &repl) {
 		Pattern p = compile(pattern);
 		return replace(p,str,repl);
 	}
-	static std::string replace(Pattern &p,const std::string &str,const std::string &repl);
+	static std::string replace(const Pattern &p,const std::string &str,const std::string &repl);
 };
 
 }

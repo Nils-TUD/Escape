@@ -186,6 +186,12 @@ static void test_groups() {
 		test_assertTrue(Regex::matches(pat,"b"));
 		test_assertFalse(Regex::matches(pat,""));
 		test_assertFalse(Regex::matches(pat,"aa"));
+
+		Regex::Result res = Regex::execute(pat,"a");
+		test_assertTrue(res.matched());
+		test_assertSize(res.groups(),2);
+		test_assertStr(res.get(0).c_str(), "a");
+		test_assertStr(res.get(1).c_str(), "a");
 	}
 
 	{
@@ -196,6 +202,13 @@ static void test_groups() {
 		test_assertTrue(Regex::matches(pat,"b"));
 		test_assertFalse(Regex::matches(pat,""));
 		test_assertFalse(Regex::matches(pat,"aa"));
+
+		Regex::Result res = Regex::execute(pat,"b");
+		test_assertTrue(res.matched());
+		test_assertSize(res.groups(),3);
+		test_assertStr(res.get(0).c_str(), "b");
+		test_assertStr(res.get(1).c_str(), "b");
+		test_assertStr(res.get(2).c_str(), "b");
 	}
 
 	{
@@ -208,6 +221,13 @@ static void test_groups() {
 		test_assertFalse(Regex::matches(pat,"aa"));
 		test_assertFalse(Regex::matches(pat,"aba"));
 		test_assertFalse(Regex::matches(pat,"abdd"));
+
+		Regex::Result res = Regex::execute(pat,"ababcddd");
+		test_assertTrue(res.matched());
+		test_assertSize(res.groups(),3);
+		test_assertStr(res.get(0).c_str(), "ababcddd");
+		test_assertStr(res.get(1).c_str(), "ab");
+		test_assertStr(res.get(2).c_str(), "ddd");
 	}
 
 	{
@@ -222,6 +242,31 @@ static void test_groups() {
 		test_assertFalse(Regex::matches(pat,"1abcd"));
 		test_assertFalse(Regex::matches(pat,"12"));
 		test_assertFalse(Regex::matches(pat,"abcd"));
+
+		Regex::Result res = Regex::execute(pat,"1abcd21abcd2");
+		test_assertTrue(res.matched());
+		test_assertSize(res.groups(),4);
+		test_assertStr(res.get(0).c_str(), "1abcd21abcd2");
+		test_assertStr(res.get(1).c_str(), "1abcd2");
+		test_assertStr(res.get(2).c_str(), "ab");
+		test_assertStr(res.get(3).c_str(), "cd");
+	}
+
+	{
+		Regex::Pattern pat = Regex::compile("a([^c]{2,2})+c");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"abdefc"));
+		test_assertTrue(Regex::matches(pat,"abbc"));
+		test_assertTrue(Regex::matches(pat,"abdde__c"));
+		test_assertFalse(Regex::matches(pat,""));
+		test_assertFalse(Regex::matches(pat,"ac"));
+		test_assertFalse(Regex::matches(pat,"abc"));
+
+		Regex::Result res = Regex::execute(pat,"abbeeddc");
+		test_assertTrue(res.matched());
+		test_assertSize(res.groups(),2);
+		test_assertStr(res.get(0).c_str(), "abbeeddc");
+		test_assertStr(res.get(1).c_str(), "dd");
 	}
 	test_assertSize(heapspace(),before);
 

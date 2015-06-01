@@ -23,10 +23,11 @@
 
 #include "pattern.h"
 
+// TODO it would be nice to be reentrant
 static const char *regex_err = NULL;
-// TODO improve that
 const char *regex_patstr = NULL;
 void *regex_result = NULL;
+size_t regex_groups = 0;
 
 /* Called by yyparse on error.  */
 extern "C" void yyerror(char const *s) {
@@ -44,6 +45,7 @@ Regex::Pattern Regex::compile(const std::string &pattern) {
 	regex_err = NULL;
 	regex_result = NULL;
 	regex_patstr = pattern.c_str();
+	regex_groups = 0;
 
 	int res = yyparse();
 	yylex_destroy();
@@ -56,9 +58,16 @@ Regex::Pattern Regex::compile(const std::string &pattern) {
 	return Regex::Pattern(root);
 }
 
-bool Regex::matches(Pattern &p,const std::string &str) {
+Regex::Result Regex::execute(const Pattern &p,const std::string &str) {
+	Regex::Result res(regex_groups);
 	Input in(str);
-	return p.root()->match(in) && in.peek() == '\0';
+	res.setSuccess(p.root()->match(&res,in));
+	return res;
+}
+
+bool Regex::matches(const Pattern &p,const std::string &str) {
+	Input in(str);
+	return p.root()->match(NULL,in) && in.peek() == '\0';
 }
 
 }

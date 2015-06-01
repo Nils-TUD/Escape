@@ -24,6 +24,8 @@
 
 using namespace esc;
 
+extern size_t regex_groups;
+
 void pattern_destroy(void *e) {
 	delete reinterpret_cast<Regex::PatternNode*>(e);
 }
@@ -34,7 +36,7 @@ void *pattern_createGroup(void *l) {
 }
 
 void *pattern_createList(void) {
-	return new ElementList<Regex::Element>();
+	return new ElementList<Regex::Element>(regex_groups++);
 }
 
 void pattern_addToList(void *l,void *e) {
@@ -72,7 +74,7 @@ void pattern_addToCharClassList(void *l,void *elem) {
 }
 
 void *pattern_createCharClassList() {
-	return new ElementList<CharClassElement::Range>();
+	return new ElementList<CharClassElement::Range>(0);
 }
 
 void *pattern_createCharClassElem(char begin,char end) {

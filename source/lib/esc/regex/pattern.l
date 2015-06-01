@@ -73,6 +73,9 @@
 <CHARCLASS>"-" {
 	return T_RANGE;
 }
+<INITIAL>"|" {
+	return T_CHOICE;
+}
 <INITIAL>"." {
 	return T_DOT;
 }
@@ -89,7 +92,7 @@
 }
 
  /* escaping */
-<INITIAL,CHARCLASS>\\[\(\)\[\]\{\}\*\+\?\.] {
+<INITIAL,CHARCLASS>\\[\(\)\[\]\{\}\*\+\?\.\|] {
 	yylval.character = yytext[1];
 	return T_CHAR;
 }

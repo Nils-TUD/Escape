@@ -32,12 +32,14 @@ int yylex_destroy(void);
 void pattern_destroy(void *e);
 
 void *pattern_createGroup(void *list);
-void *pattern_createList(void);
+void *pattern_createList(bool group);
 void pattern_addToList(void *list,void *elem);
 
 void *pattern_createChar(char c);
 void *pattern_createDot(void);
 void *pattern_createRepeat(void *elem,int min,int max);
+
+void *pattern_createChoice(void *list);
 
 void *pattern_createCharClass(void *list,bool negate);
 void pattern_addToCharClassList(void *list,void *elem);

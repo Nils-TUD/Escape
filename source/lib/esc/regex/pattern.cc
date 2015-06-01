@@ -35,8 +35,8 @@ void *pattern_createGroup(void *l) {
 	return new GroupElement(list);
 }
 
-void *pattern_createList(void) {
-	return new ElementList<Regex::Element>(regex_groups++);
+void *pattern_createList(bool group) {
+	return new ElementList<Regex::Element>(group ? regex_groups++ : 0);
 }
 
 void pattern_addToList(void *l,void *e) {
@@ -60,6 +60,11 @@ void *pattern_createRepeat(void *e,int min,int max) {
 	if(min < 0 || max <= 0 || max < min)
 		yyerror("Invalid repeat specification");
 	return new RepeatElement(el,min,max);
+}
+
+void *pattern_createChoice(void *l) {
+	ElementList<Regex::Element> *list = reinterpret_cast<ElementList<Regex::Element>*>(l);
+	return new ChoiceElement(list);
 }
 
 void *pattern_createCharClass(void *l,bool negate) {

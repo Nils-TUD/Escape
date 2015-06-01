@@ -30,6 +30,7 @@ static void test_repeat();
 static void test_dot();
 static void test_groups();
 static void test_charclass();
+static void test_choice();
 static void test_errors();
 static void test_regex();
 
@@ -45,6 +46,7 @@ static void test_regex() {
     test_dot();
     test_groups();
     test_charclass();
+    test_choice();
     test_errors();
 }
 
@@ -335,6 +337,49 @@ static void test_charclass() {
 	test_caseSucceeded();
 }
 
+static void test_choice() {
+	test_caseStart("Testing choice operator");
+
+	size_t before = heapspace();
+	{
+		Regex::Pattern pat = Regex::compile("a|b");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"a"));
+		test_assertTrue(Regex::matches(pat,"b"));
+		test_assertFalse(Regex::matches(pat,"c"));
+		test_assertFalse(Regex::matches(pat,"aa"));
+		test_assertFalse(Regex::matches(pat,"bb"));
+	}
+
+	{
+		Regex::Pattern pat = Regex::compile("ab|c|de");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"abe"));
+		test_assertTrue(Regex::matches(pat,"ace"));
+		test_assertTrue(Regex::matches(pat,"ade"));
+		test_assertFalse(Regex::matches(pat,"abcde"));
+		test_assertFalse(Regex::matches(pat,"ab"));
+		test_assertFalse(Regex::matches(pat,"aee"));
+	}
+
+	{
+		Regex::Pattern pat = Regex::compile("([abc]{3}|(dd)|4+)");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"abc"));
+		test_assertTrue(Regex::matches(pat,"aaa"));
+		test_assertTrue(Regex::matches(pat,"cab"));
+		test_assertTrue(Regex::matches(pat,"dd"));
+		test_assertTrue(Regex::matches(pat,"4"));
+		test_assertTrue(Regex::matches(pat,"4444"));
+		test_assertFalse(Regex::matches(pat,"abcd"));
+		test_assertFalse(Regex::matches(pat,"d"));
+		test_assertFalse(Regex::matches(pat,"45"));
+	}
+	test_assertSize(heapspace(),before);
+
+	test_caseSucceeded();
+}
+
 static void assert_compileFail(const std::string &pattern) {
 	try {
 		Regex::Pattern pat = Regex::compile(pattern);
@@ -373,6 +418,8 @@ static void test_errors() {
 	assert_compileFail("a{4,2}");
 	assert_compileFail("a{0,0}");
 	assert_compileFail("a}");
+	assert_compileFail("|");
+	assert_compileFail("|b");
 	test_assertSize(heapspace(),before);
 
 	test_caseSucceeded();

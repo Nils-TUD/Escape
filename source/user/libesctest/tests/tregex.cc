@@ -64,6 +64,28 @@ static void test_basic() {
 		test_assertFalse(Regex::matches(pat,"b"));
 		test_assertFalse(Regex::matches(pat,""));
 	}
+
+	{
+		Regex::Pattern pat = Regex::compile("\\[a-z\\]");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"[a-z]"));
+		test_assertFalse(Regex::matches(pat,"a"));
+	}
+
+	{
+		Regex::Pattern pat = Regex::compile("a\\*b\\{2\\}");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"a*b{2}"));
+		test_assertFalse(Regex::matches(pat,"abb"));
+	}
+
+	{
+		Regex::Pattern pat = Regex::compile("[\\^\\.\\*]");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"^"));
+		test_assertTrue(Regex::matches(pat,"."));
+		test_assertTrue(Regex::matches(pat,"*"));
+	}
 	// we extend the heap here, so don't require it to be equal
 	test_assertTrue(heapspace() >= before);
 

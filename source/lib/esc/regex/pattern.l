@@ -78,6 +78,15 @@
 	return T_REP_OPTIONAL;
 }
 
+<INITIAL,CHARCLASS>\\[\(\)\[\]\{\}\*\+\?\.] {
+	yylval.character = yytext[1];
+	return T_CHAR;
+}
+<CHARCLASS>\\[-\^] {
+	yylval.character = yytext[1];
+	return T_CHAR;
+}
+
 <INITIAL,CHARCLASS>[^\(\)\[\]\{\}\*\+\?\.] {
 	yylval.character = *yytext;
 	return T_CHAR;

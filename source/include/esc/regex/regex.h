@@ -33,7 +33,7 @@ public:
 
 	class Input {
 	public:
-		explicit Input(const std::string &str) : _pos(),_str(str) {
+		explicit Input(const std::string &str,size_t pos = 0) : _pos(pos),_str(str) {
 		}
 
 		std::string substr(size_t begin,size_t length) const {
@@ -73,7 +73,9 @@ public:
 		friend class Regex;
 
 	public:
-		explicit Result(size_t groups) : _matches(groups) {
+		explicit Result() : _success(false), _matches() {
+		}
+		explicit Result(size_t groups) : _success(false), _matches(groups) {
 		}
 
 		bool matched() const {
@@ -130,7 +132,7 @@ public:
 
 	class Pattern {
 	public:
-		explicit Pattern(Element *root) : _root(root) {
+		explicit Pattern(Element *root,int flags) : _flags(flags),_root(root) {
 		}
 		Pattern(const Pattern&) = delete;
 		Pattern &operator=(const Pattern&) = delete;
@@ -148,6 +150,9 @@ public:
 			delete _root;
 		}
 
+		int flags() const {
+			return _flags;
+		}
 		const Element *root() const {
 			return _root;
 		}
@@ -155,22 +160,25 @@ public:
 		friend esc::OStream &operator<<(esc::OStream &os,const Pattern &p);
 
 	private:
+		int _flags;
 		Element *_root;
 	};
 
 	static Pattern compile(const std::string &pattern);
-	static Result execute(const Pattern &p,const std::string &str);
+	static Result search(const Pattern &p,const std::string &str);
 
 	static bool matches(const std::string &pattern,const std::string &str) {
-		Pattern p = compile(pattern);
-		return matches(p,str);
+		return matches(compile(pattern),str);
 	}
 	static bool matches(const Pattern &p,const std::string &str);
+
 	static std::string replace(const std::string &pattern,const std::string &str,const std::string &repl) {
-		Pattern p = compile(pattern);
-		return replace(p,str,repl);
+		return replace(compile(pattern),str,repl);
 	}
 	static std::string replace(const Pattern &p,const std::string &str,const std::string &repl);
+
+private:
+	static Regex::Result test(const Pattern &p,const std::string &str,size_t pos);
 };
 
 }

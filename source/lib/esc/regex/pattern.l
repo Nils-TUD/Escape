@@ -70,6 +70,9 @@
 <INITIAL,CHARCLASS>"^" {
 	return T_NEGATE;
 }
+<INITIAL>"$" {
+	return T_END;
+}
 <CHARCLASS>"-" {
 	return T_RANGE;
 }

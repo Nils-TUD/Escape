@@ -28,6 +28,7 @@ static const char *regex_err = NULL;
 const char *regex_patstr = NULL;
 void *regex_result = NULL;
 size_t regex_groups = 0;
+int regex_flags = 0;
 
 /* Called by yyparse on error.  */
 extern "C" void yyerror(char const *s) {
@@ -46,6 +47,7 @@ Regex::Pattern Regex::compile(const std::string &pattern) {
 	regex_result = NULL;
 	regex_patstr = pattern.c_str();
 	regex_groups = 0;
+	regex_flags = 0;
 
 	int res = yyparse();
 	yylex_destroy();
@@ -55,14 +57,28 @@ Regex::Pattern Regex::compile(const std::string &pattern) {
 	}
 
 	Regex::Element *root = reinterpret_cast<Regex::Element*>(regex_result);
-	return Regex::Pattern(root);
+	return Regex::Pattern(root,regex_flags);
 }
 
-Regex::Result Regex::execute(const Pattern &p,const std::string &str) {
+Regex::Result Regex::test(const Pattern &p,const std::string &str,size_t pos) {
+	Input in(str,pos);
 	Regex::Result res(regex_groups);
-	Input in(str);
-	res.setSuccess(p.root()->match(&res,in));
+	if(p.root()->match(&res,in))
+		res.setSuccess(true);
 	return res;
+}
+
+Regex::Result Regex::search(const Pattern &p,const std::string &str) {
+	if(p.flags() & REGEX_FLAG_BEGIN)
+		return test(p,str,0);
+	for(size_t i = 0; i < str.length(); ++i) {
+		Regex::Result res = test(p,str,i);
+		if(res.matched()) {
+			if((~p.flags() & REGEX_FLAG_END) || (i + res.get(0).length() == str.length()))
+				return res;
+		}
+	}
+	return Regex::Result();
 }
 
 bool Regex::matches(const Pattern &p,const std::string &str) {

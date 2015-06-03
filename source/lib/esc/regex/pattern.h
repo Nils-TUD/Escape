@@ -21,6 +21,9 @@
 
 #include <sys/common.h>
 
+#define REGEX_FLAG_BEGIN		(1 << 0)
+#define REGEX_FLAG_END			(1 << 1)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

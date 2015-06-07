@@ -86,4 +86,26 @@ bool Regex::matches(const Pattern &p,const std::string &str) {
 	return p.root()->match(NULL,in) && in.peek() == '\0';
 }
 
+std::string Regex::replace(const Pattern &p,const std::string &str,const std::string &repl) {
+	Result res = search(p,str);
+	if(res.matched()) {
+		OStringStream os;
+		for(size_t i = 0; i < repl.length(); ++i) {
+			if(repl[i] == '$') {
+				char *end = NULL;
+				int group = strtoul(repl.c_str() + i + 1,&end,10);
+				if(end != repl.c_str() + i + 1) {
+					os << res.get(group);
+					i += end - (repl.c_str() + i + 1);
+					continue;
+				}
+			}
+			os << repl[i];
+		}
+		return os.str();
+	}
+	return str;
+}
+
+
 }

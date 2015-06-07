@@ -32,6 +32,7 @@ static void test_groups();
 static void test_charclass();
 static void test_choice();
 static void test_errors();
+static void test_replace();
 static void test_regex();
 
 /* our test-module */
@@ -48,6 +49,7 @@ static void test_regex() {
     test_charclass();
     test_choice();
     test_errors();
+    test_replace();
 }
 
 static void test_basic() {
@@ -451,6 +453,24 @@ static void test_errors() {
 	assert_compileFail("a}");
 	assert_compileFail("|");
 	assert_compileFail("|b");
+	test_assertSize(heapspace(),before);
+
+	test_caseSucceeded();
+}
+
+static void test_replace() {
+	test_caseStart("Testing replace");
+
+	size_t before = heapspace();
+
+	test_assertStr(Regex::replace("a","test","c").c_str(),"test");
+	test_assertStr(Regex::replace("a","a","c").c_str(),"c");
+	test_assertStr(Regex::replace("^(a*)b$","aaab","foo:$1:bar").c_str(),"foo:aaa:bar");
+	test_assertStr(
+		Regex::replace("^([^t]+)test(.*)","abcdeftestFOOBAR","foo:$1:$2:bar").c_str(),
+		"foo:abcdef:FOOBAR:bar"
+	);
+
 	test_assertSize(heapspace(),before);
 
 	test_caseSucceeded();

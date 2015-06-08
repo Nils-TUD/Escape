@@ -42,10 +42,10 @@ esc::OStream &operator<<(esc::OStream &os,const Regex::Pattern &p) {
 	return os;
 }
 
-Regex::Pattern Regex::compile(const std::string &pattern) {
+Regex::Pattern Regex::compile(const std::string &regex) {
 	regex_err = NULL;
 	regex_result = NULL;
-	regex_patstr = pattern.c_str();
+	regex_patstr = regex.c_str();
 	regex_groups = 0;
 	regex_flags = 0;
 

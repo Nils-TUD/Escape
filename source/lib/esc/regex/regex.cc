@@ -60,19 +60,19 @@ Regex::Pattern Regex::compile(const std::string &regex) {
 	return Regex::Pattern(root,regex_flags);
 }
 
-Regex::Result Regex::test(const Pattern &p,const std::string &str,size_t pos) {
-	Input in(str,pos);
+Regex::Result Regex::test(const Pattern &p,const std::string &str,size_t pos,uint flags) {
+	Input in(str,pos,flags);
 	Regex::Result res(regex_groups);
 	if(p.root()->match(&res,in))
 		res.setSuccess(true);
 	return res;
 }
 
-Regex::Result Regex::search(const Pattern &p,const std::string &str) {
+Regex::Result Regex::search(const Pattern &p,const std::string &str,uint flags) {
 	if(p.flags() & REGEX_FLAG_BEGIN)
-		return test(p,str,0);
+		return test(p,str,0,flags);
 	for(size_t i = 0; i < str.length(); ++i) {
-		Regex::Result res = test(p,str,i);
+		Regex::Result res = test(p,str,i,flags);
 		if(res.matched()) {
 			if((~p.flags() & REGEX_FLAG_END) || (i + res.get(0).length() == str.length()))
 				return res;
@@ -81,13 +81,13 @@ Regex::Result Regex::search(const Pattern &p,const std::string &str) {
 	return Regex::Result();
 }
 
-bool Regex::matches(const Pattern &p,const std::string &str) {
-	Input in(str);
+bool Regex::matches(const Pattern &p,const std::string &str,uint flags) {
+	Input in(str,0,flags);
 	return p.root()->match(NULL,in) && in.peek() == '\0';
 }
 
-std::string Regex::replace(const Pattern &p,const std::string &str,const std::string &repl) {
-	Result res = search(p,str);
+std::string Regex::replace(const Pattern &p,const std::string &str,const std::string &repl,uint flags) {
+	Result res = search(p,str,flags);
 	if(res.matched()) {
 		OStringStream os;
 		for(size_t i = 0; i < repl.length(); ++i) {

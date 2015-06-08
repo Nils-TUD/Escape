@@ -121,6 +121,15 @@ static void test_basic() {
 		test_assertFalse(Regex::search(pat,"").matched());
 		test_assertFalse(Regex::search(pat,"ddd").matched());
 	}
+
+	{
+		Regex::Pattern pat = Regex::compile("[a-e0F]+$");
+		test_assertTrue(Regex::search(pat,"a",Regex::NONE).matched());
+		test_assertTrue(Regex::search(pat,"A",Regex::CASE_INSENSITIVE).matched());
+		test_assertTrue(Regex::search(pat,"f",Regex::CASE_INSENSITIVE).matched());
+		test_assertFalse(Regex::search(pat,"").matched());
+		test_assertFalse(Regex::search(pat,"f").matched());
+	}
 	// we extend the heap here, so don't require it to be equal
 	test_assertTrue(heapspace() >= before);
 

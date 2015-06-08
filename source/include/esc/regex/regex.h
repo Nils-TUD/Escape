@@ -22,6 +22,7 @@
 #include <esc/stream/ostream.h>
 #include <vector>
 #include <string>
+#include <ctype.h>
 
 namespace esc {
 
@@ -44,6 +45,11 @@ public:
 	static const size_t MAX_GROUP_NESTING		= 16;
 
 	Regex() = delete;
+
+	enum Flags {
+		NONE				= 0,
+		CASE_INSENSITIVE	= 1 << 0
+	};
 
 	/**
 	 * The base-class of all AST classes
@@ -97,24 +103,30 @@ public:
 	 */
 	class Input {
 	public:
-		explicit Input(const std::string &str,size_t pos = 0) : _pos(pos),_str(str) {
+		explicit Input(const std::string &str,size_t pos = 0,uint flags = NONE)
+			: _pos(pos),_str(str),_flags(flags) {
 		}
 
+		uint flags() const {
+			return _flags;
+		}
 		std::string substr(size_t begin,size_t length) const {
 			return _str.substr(begin,length);
 		}
 		size_t pos() const {
 			return _pos;
 		}
+		bool done() const {
+			return _pos == _str.length();
+		}
 		char peek() const {
 			if(_pos < _str.length())
 				return _str[_pos];
 			return '\0';
 		}
-		char get() {
-			if(_pos < _str.length())
-				return _str[_pos++];
-			return '\0';
+		void take() {
+			assert(_pos < _str.length())
+			_pos++;
 		}
 		void put() {
 			assert(_pos > 0);
@@ -124,6 +136,7 @@ public:
 	private:
 		size_t _pos;
 		const std::string &_str;
+		uint _flags;
 	};
 
 	/**
@@ -223,11 +236,12 @@ public:
 	 *
 	 * @param regex the regular expression
 	 * @param str the string to search in
+	 * @param flags the flags to use for the matching
 	 * @return the result
 	 * @throws runtime_error if <regex> is ill-formed
 	 */
-	static Result search(const std::string &regex,const std::string &str) {
-		return search(compile(regex),str);
+	static Result search(const std::string &regex,const std::string &str,uint flags = NONE) {
+		return search(compile(regex),str,flags);
 	}
 
 	/**
@@ -235,20 +249,22 @@ public:
 	 *
 	 * @param pattern the pattern
 	 * @param str the string to search in
+	 * @param flags the flags to use for the matching
 	 * @return the result
 	 */
-	static Result search(const Pattern &pattern,const std::string &str);
+	static Result search(const Pattern &pattern,const std::string &str,uint flags = NONE);
 
 	/**
 	 * Compiles <regex> into a pattern and tests whether <regex> matches <str>.
 	 *
 	 * @param regex the regular expression
 	 * @param str the string to test
+	 * @param flags the flags to use for the matching
 	 * @return true if so
 	 * @throws runtime_error if <regex> is ill-formed
 	 */
-	static bool matches(const std::string &regex,const std::string &str) {
-		return matches(compile(regex),str);
+	static bool matches(const std::string &regex,const std::string &str,uint flags = NONE) {
+		return matches(compile(regex),str,flags);
 	}
 
 	/**
@@ -256,9 +272,10 @@ public:
 	 *
 	 * @param pattern the pattern
 	 * @param str the string to match
+	 * @param flags the flags to use for the matching
 	 * @return true if so
 	 */
-	static bool matches(const Pattern &pattern,const std::string &str);
+	static bool matches(const Pattern &pattern,const std::string &str,uint flags = NONE);
 
 	/**
 	 * Compiles <regex> into a pattern, searches for it in <str> and replaces <str> with <repl>.
@@ -267,11 +284,13 @@ public:
 	 * @param regex the regular expression
 	 * @param str the string to search in
 	 * @param repl the string to replace it with
+	 * @param flags the flags to use for the matching
 	 * @return the replaced string
 	 * @throws runtime_error if <regex> is ill-formed
 	 */
-	static std::string replace(const std::string &regex,const std::string &str,const std::string &repl) {
-		return replace(compile(regex),str,repl);
+	static std::string replace(const std::string &regex,const std::string &str,
+			const std::string &repl,uint flags = NONE) {
+		return replace(compile(regex),str,repl,flags);
 	}
 
 	/**
@@ -281,12 +300,14 @@ public:
 	 * @param pattern the pattern
 	 * @param str the string to search in
 	 * @param repl the string to replace it with
+	 * @param flags the flags to use for the matching
 	 * @return the replaced string
 	 */
-	static std::string replace(const Pattern &pattern,const std::string &str,const std::string &repl);
+	static std::string replace(const Pattern &pattern,const std::string &str,
+		const std::string &repl,uint flags = NONE);
 
 private:
-	static Regex::Result test(const Pattern &p,const std::string &str,size_t pos);
+	static Regex::Result test(const Pattern &p,const std::string &str,size_t pos,uint flags);
 };
 
 }

@@ -72,8 +72,14 @@ public:
 	}
 
 	virtual bool match(Regex::Result *,Regex::Input &in) const override {
-		if(in.peek() == _c) {
-			in.get();
+		char cur = in.peek();
+		char c = _c;
+		if(in.flags() & Regex::CASE_INSENSITIVE) {
+			cur = tolower(cur);
+			c = tolower(c);
+		}
+		if(c == cur) {
+			in.take();
 			return true;
 		}
 		return false;
@@ -94,8 +100,16 @@ public:
 		}
 
 		virtual bool match(Regex::Result *,Regex::Input &in) const override {
-			if(in.peek() >= begin && in.peek() <= end) {
-				in.get();
+			char c = in.peek();
+			char b = begin;
+			char e = end;
+			if(in.flags() & Regex::CASE_INSENSITIVE) {
+				c = tolower(c);
+				b = tolower(b);
+				e = tolower(e);
+			}
+			if(c >= b && c <= e) {
+				in.take();
 				return true;
 			}
 			return false;
@@ -120,14 +134,14 @@ public:
 	}
 
 	virtual bool match(Regex::Result *res,Regex::Input &in) const override {
-		if(in.peek() != '\0') {
+		if(!in.done()) {
 			bool matched = inRanges(res,in);
 			if(matched && _negate) {
 				in.put();
 				return false;
 			}
 			if(!matched && _negate) {
-				in.get();
+				in.take();
 				return true;
 			}
 			return matched;
@@ -163,8 +177,8 @@ public:
 	}
 
 	virtual bool match(Regex::Result *,Regex::Input &in) const override {
-		if(in.peek() != '\0') {
-			in.get();
+		if(!in.done()) {
+			in.take();
 			return true;
 		}
 		return false;
@@ -241,7 +255,7 @@ public:
 
 	virtual bool match(Regex::Result *res,Regex::Input &in) const override {
 		if(_list->empty())
-			return in.peek() == '\0';
+			return in.done();
 
 		if(res) {
 			size_t begin = in.pos();

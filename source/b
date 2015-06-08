@@ -6,7 +6,6 @@ if [ -f /proc/cpuinfo ]; then
 else
 	cpus=1
 fi
-opts="-j$cpus"
 
 # fall back to some reasonable defaults for the Escape environment variables
 if [ -z "$ESC_TARGET" ]; then
@@ -73,7 +72,8 @@ help() {
 	echo "variables that influence its behaviour are ESC_BUILD=(debug|release) and"
 	echo "ESC_TARGET=(i586|x86_64|eco32|mmix)."
 	echo "You can also prevent the script from building everything by specifying -n or"
-	echo "--no-build. In this case, only the specified command is executed."
+	echo "--no-build. In this case, only the specified command is executed. Use -s to"
+	echo "do a single-threaded build."
 	echo ""
 	echo "The following commands are available:"
 	echo "    clean:                   do a clean in Escape"
@@ -129,6 +129,10 @@ while [ $# -gt 0 ]; do
 			dobuild=false
 			;;
 
+		-s)
+			cpus=1
+			;;
+
 		*)
 			if [ "$cmd" = "" ]; then
 				cmd="$1"
@@ -181,7 +185,7 @@ echo "Working with $ESC_TARGET in $ESC_BUILD mode, using $ESC_LINKTYPE linking"
 
 if $dobuild; then
 	echo "Building Escape with $cpus jobs..."
-	scons $opts || exit 1
+	scons -j$cpus || exit 1
 fi
 
 # after building, check whether the requested binary really exists

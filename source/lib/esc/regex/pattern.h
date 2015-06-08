@@ -46,6 +46,9 @@ void *pattern_createChoice(void *list);
 
 void *pattern_createCharClass(void *list,bool negate);
 void *pattern_createCharClassElem(char begin,char end);
+void *pattern_createSimpleCharClass(char begin,char end,bool negate);
+void *pattern_createWS(bool negate);
+void *pattern_createWord(bool negate);
 
 #ifdef __cplusplus
 }

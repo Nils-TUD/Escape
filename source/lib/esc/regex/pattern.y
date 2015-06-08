@@ -35,8 +35,14 @@
 %token T_REP_ANY
 %token T_REP_ONEPLUS
 %token T_REP_OPTIONAL
+%token T_DIGIT
+%token T_NON_DIGIT
+%token T_WS
+%token T_NON_WS
+%token T_WORD
+%token T_NON_WORD
 
-%type <node> regex elemlist elem std_elem charclass_list charclass_elem choice_list
+%type <node> regex elemlist elem std_elem charclass_list charclass_elem choice_list charclass_abrv
 
 %destructor { pattern_destroy($$); } <node>
 
@@ -91,6 +97,7 @@ std_elem:
 	| std_elem T_REPSPEC_BEGIN
 			T_NUMBER
 			T_REPSPEC_END								{ $$ = pattern_createRepeat($1,$3,$3); }
+	| charclass_abrv									{ $$ = $1; }
 ;
 
 choice_list:
@@ -106,10 +113,20 @@ charclass_list:
 charclass_elem:
 	T_CHAR												{ $$ = pattern_createCharClassElem($1,$1); }
 	| T_CHAR T_RANGE T_CHAR								{ $$ = pattern_createCharClassElem($1,$3); }
+	| charclass_abrv									{ $$ = $1; }
 	| T_CHARCLASS_BEGIN
 			charclass_list T_CHARCLASS_END				{ $$ = pattern_createCharClass($2,false); }
 	| T_CHARCLASS_BEGIN
 			T_NEGATE charclass_list T_CHARCLASS_END		{ $$ = pattern_createCharClass($3,true); }
+;
+
+charclass_abrv:
+	T_DIGIT												{ $$ = pattern_createSimpleCharClass('0','9',false); }
+	| T_NON_DIGIT										{ $$ = pattern_createSimpleCharClass('0','9',true); }
+	| T_WS												{ $$ = pattern_createWS(false); }
+	| T_NON_WS											{ $$ = pattern_createWS(true); }
+	| T_WORD											{ $$ = pattern_createWord(false); }
+	| T_NON_WORD										{ $$ = pattern_createWord(true); }
 ;
 
 %%

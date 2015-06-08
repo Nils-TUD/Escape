@@ -45,6 +45,25 @@
 	return T_CHARCLASS_END;
 }
 
+<INITIAL,CHARCLASS>\\d {
+	return T_DIGIT;
+}
+<INITIAL,CHARCLASS>\\D {
+	return T_NON_DIGIT;
+}
+<INITIAL,CHARCLASS>\\s {
+	return T_WS;
+}
+<INITIAL,CHARCLASS>\\S {
+	return T_NON_WS;
+}
+<INITIAL,CHARCLASS>\\w {
+	return T_WORD;
+}
+<INITIAL,CHARCLASS>\\W {
+	return T_NON_WORD;
+}
+
  /* repeat specification */
 <INITIAL>"{" {
 	yy_push_state(REPSPEC);

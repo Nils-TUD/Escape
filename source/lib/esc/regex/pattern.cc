@@ -75,3 +75,25 @@ void *pattern_createCharClass(void *l,bool negate) {
 void *pattern_createCharClassElem(char begin,char end) {
 	return new CharClassElement::Range(begin,end);
 }
+
+void *pattern_createSimpleCharClass(char begin,char end,bool negate) {
+	ElementList *list = new ElementList(0);
+	list->add(new CharClassElement::Range(begin,end));
+	return new CharClassElement(list,negate);
+}
+
+void *pattern_createWS(bool negate) {
+	ElementList *list = new ElementList(0);
+	list->add(new CharClassElement::Range('\t','\r'));
+	list->add(new CharClassElement::Range(' ',' '));
+	return new CharClassElement(list,negate);
+}
+
+void *pattern_createWord(bool negate) {
+	ElementList *list = new ElementList(0);
+	list->add(new CharClassElement::Range('a','z'));
+	list->add(new CharClassElement::Range('A','Z'));
+	list->add(new CharClassElement::Range('0','9'));
+	list->add(new CharClassElement::Range('_','_'));
+	return new CharClassElement(list,negate);
+}

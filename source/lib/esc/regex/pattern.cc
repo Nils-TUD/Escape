@@ -31,16 +31,16 @@ void pattern_destroy(void *e) {
 }
 
 void *pattern_createGroup(void *l) {
-	ElementList<Regex::Element> *list = reinterpret_cast<ElementList<Regex::Element>*>(l);
+	ElementList *list = reinterpret_cast<ElementList*>(l);
 	return new GroupElement(list);
 }
 
 void *pattern_createList(bool group) {
-	return new ElementList<Regex::Element>(group ? regex_groups++ : 0);
+	return new ElementList(group ? regex_groups++ : 0);
 }
 
 void pattern_addToList(void *l,void *e) {
-	ElementList<Regex::Element> *list = reinterpret_cast<ElementList<Regex::Element>*>(l);
+	ElementList *list = reinterpret_cast<ElementList*>(l);
 	Regex::Element *el = reinterpret_cast<Regex::Element*>(e);
 	list->add(el);
 }
@@ -63,23 +63,13 @@ void *pattern_createRepeat(void *e,int min,int max) {
 }
 
 void *pattern_createChoice(void *l) {
-	ElementList<Regex::Element> *list = reinterpret_cast<ElementList<Regex::Element>*>(l);
+	ElementList *list = reinterpret_cast<ElementList*>(l);
 	return new ChoiceElement(list);
 }
 
 void *pattern_createCharClass(void *l,bool negate) {
-	ElementList<CharClassElement::Range> *list = reinterpret_cast<ElementList<CharClassElement::Range>*>(l);
+	ElementList *list = reinterpret_cast<ElementList*>(l);
 	return new CharClassElement(list,negate);
-}
-
-void pattern_addToCharClassList(void *l,void *elem) {
-	ElementList<CharClassElement::Range> *list = reinterpret_cast<ElementList<CharClassElement::Range>*>(l);
-	CharClassElement::Range *range = reinterpret_cast<CharClassElement::Range*>(elem);
-	list->add(range);
-}
-
-void *pattern_createCharClassList() {
-	return new ElementList<CharClassElement::Range>(0);
 }
 
 void *pattern_createCharClassElem(char begin,char end) {

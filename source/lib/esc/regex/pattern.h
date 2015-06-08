@@ -45,8 +45,6 @@ void *pattern_createRepeat(void *elem,int min,int max);
 void *pattern_createChoice(void *list);
 
 void *pattern_createCharClass(void *list,bool negate);
-void pattern_addToCharClassList(void *list,void *elem);
-void *pattern_createCharClassList(void);
 void *pattern_createCharClassElem(char begin,char end);
 
 #ifdef __cplusplus

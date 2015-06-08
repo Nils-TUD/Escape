@@ -365,6 +365,27 @@ static void test_charclass() {
 		test_assertFalse(Regex::matches(pat,"abc"));
 		test_assertFalse(Regex::matches(pat,"zzz"));
 	}
+
+	{
+		Regex::Pattern pat = Regex::compile("[[a-z][0-9]]+");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"0123"));
+		test_assertTrue(Regex::matches(pat,"ab44"));
+		test_assertTrue(Regex::matches(pat,"z"));
+		test_assertFalse(Regex::matches(pat,"A"));
+		test_assertFalse(Regex::matches(pat,"."));
+		test_assertFalse(Regex::matches(pat,"aFF9"));
+	}
+
+	{
+		Regex::Pattern pat = Regex::compile("[^[[^a-z]]]+");
+		// sout << pat << "\n";
+		test_assertTrue(Regex::matches(pat,"abc"));
+		test_assertTrue(Regex::matches(pat,"a"));
+		test_assertFalse(Regex::matches(pat,"A"));
+		test_assertFalse(Regex::matches(pat,"."));
+		test_assertFalse(Regex::matches(pat,"aFF9"));
+	}
 	test_assertSize(heapspace(),before);
 
 	test_caseSucceeded();

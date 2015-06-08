@@ -99,13 +99,17 @@ choice_list:
 ;
 
 charclass_list:
-	charclass_list charclass_elem						{ $$ = $1; pattern_addToCharClassList($1,$2); }
-	| /* empty */										{ $$ = pattern_createCharClassList(); }
+	charclass_list charclass_elem						{ $$ = $1; pattern_addToList($1,$2); }
+	| /* empty */										{ $$ = pattern_createList(false); }
 ;
 
 charclass_elem:
 	T_CHAR												{ $$ = pattern_createCharClassElem($1,$1); }
 	| T_CHAR T_RANGE T_CHAR								{ $$ = pattern_createCharClassElem($1,$3); }
+	| T_CHARCLASS_BEGIN
+			charclass_list T_CHARCLASS_END				{ $$ = pattern_createCharClass($2,false); }
+	| T_CHARCLASS_BEGIN
+			T_NEGATE charclass_list T_CHARCLASS_END		{ $$ = pattern_createCharClass($3,true); }
 ;
 
 %%

@@ -66,6 +66,7 @@ public:
 		enum Type {
 			CHAR,
 			CHARCLASS,
+			CHARCLASS_RANGE,
 			DOT,
 			REPEAT,
 			GROUP,
@@ -114,6 +115,10 @@ public:
 			if(_pos < _str.length())
 				return _str[_pos++];
 			return '\0';
+		}
+		void put() {
+			assert(_pos > 0);
+			_pos--;
 		}
 
 	private:

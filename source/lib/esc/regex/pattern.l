@@ -32,7 +32,7 @@
 }
 
  /* character classes */
-<INITIAL>"[" {
+<INITIAL,CHARCLASS>"[" {
 	yy_push_state(CHARCLASS);
 	return T_CHARCLASS_BEGIN;
 }

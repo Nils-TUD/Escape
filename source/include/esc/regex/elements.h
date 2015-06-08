@@ -21,11 +21,10 @@
 
 namespace esc {
 
-template<typename T>
 class ElementList : public Regex::PatternNode {
 public:
-	typedef typename std::vector<T*>::iterator iterator;
-	typedef typename std::vector<T*>::const_iterator const_iterator;
+	typedef typename std::vector<Regex::Element*>::iterator iterator;
+	typedef typename std::vector<Regex::Element*>::const_iterator const_iterator;
 
 	explicit ElementList(size_t id) : Regex::PatternNode(), _id(id), _elems() {
 	}
@@ -47,7 +46,7 @@ public:
 		return _elems.end();
 	}
 
-	T *add(T *e) {
+	Regex::Element *add(Regex::Element *e) {
 		_elems.push_back(e);
 		return e;
 	}
@@ -64,7 +63,7 @@ public:
 
 private:
 	size_t _id;
-	std::vector<T*> _elems;
+	std::vector<Regex::Element*> _elems;
 };
 
 class CharElement : public Regex::Element {
@@ -90,27 +89,48 @@ private:
 
 class CharClassElement : public Regex::Element {
 public:
-	struct Range : public Regex::PatternNode {
-		Range() : PatternNode(), begin(),end() {
+	struct Range : public Regex::Element {
+		explicit Range(char _begin,char _end) : Element(CHARCLASS_RANGE), begin(_begin),end(_end) {
 		}
-		Range(char _begin,char _end) : PatternNode(), begin(_begin),end(_end) {
+
+		virtual bool match(Regex::Result *,Regex::Input &in) const override {
+			if(in.peek() >= begin && in.peek() <= end) {
+				in.get();
+				return true;
+			}
+			return false;
+		}
+
+		virtual void print(esc::OStream &os,int) const override {
+			if(begin == end)
+				os << begin;
+			else
+				os << begin << '-' << end;
 		}
 
 		char begin;
 		char end;
 	};
 
-	explicit CharClassElement(const ElementList<Range> *ranges,bool negate)
-		: Regex::Element(CHARCLASS),_negate(negate),_ranges(ranges) {
+	explicit CharClassElement(const ElementList *elems,bool negate)
+		: Regex::Element(CHARCLASS),_negate(negate),_elems(elems) {
 	}
 	virtual ~CharClassElement() {
-		delete _ranges;
+		delete _elems;
 	}
 
-	virtual bool match(Regex::Result *,Regex::Input &in) const override {
-		if(in.peek() != '\0' && inRanges(in.peek()) == !_negate) {
-			in.get();
-			return true;
+	virtual bool match(Regex::Result *res,Regex::Input &in) const override {
+		if(in.peek() != '\0') {
+			bool matched = inRanges(res,in);
+			if(matched && _negate) {
+				in.put();
+				return false;
+			}
+			if(!matched && _negate) {
+				in.get();
+				return true;
+			}
+			return matched;
 		}
 		return false;
 	}
@@ -119,26 +139,22 @@ public:
 		os << "CharClassElement[";
 		if(_negate)
 			os << '^';
-		for(auto &r : *_ranges) {
-			if(r->begin == r->end)
-				os << r->begin;
-			else
-				os << r->begin << '-' << r->end;
-		}
+		for(auto &e : *_elems)
+			e->print(os,0);
 		os << "]";
 	}
 
 private:
-	bool inRanges(char c) const {
-		for(auto &r : *_ranges) {
-			if(c >= r->begin && c <= r->end)
+	bool inRanges(Regex::Result *res,Regex::Input &in) const {
+		for(auto &e : *_elems) {
+			if(e->match(res,in))
 				return true;
 		}
 		return false;
 	}
 
 	bool _negate;
-	const ElementList<Range> *_ranges;
+	const ElementList *_elems;
 };
 
 class DotElement : public Regex::Element {
@@ -192,7 +208,7 @@ private:
 
 class ChoiceElement : public Regex::Element {
 public:
-	explicit ChoiceElement(const ElementList<Regex::Element> *list) : Regex::Element(CHOICE), _list(list) {
+	explicit ChoiceElement(const ElementList *list) : Regex::Element(CHOICE), _list(list) {
 	}
 	virtual ~ChoiceElement() {
 		delete _list;
@@ -211,12 +227,12 @@ public:
 	}
 
 private:
-	const ElementList<Regex::Element> *_list;
+	const ElementList *_list;
 };
 
 class GroupElement : public Regex::Element {
 public:
-	explicit GroupElement(const ElementList<Regex::Element> *list)
+	explicit GroupElement(const ElementList *list)
 		: Regex::Element(GROUP), _list(list) {
 	}
 	virtual ~GroupElement() {
@@ -250,7 +266,7 @@ public:
 	}
 
 private:
-	const ElementList<Regex::Element> *_list;
+	const ElementList *_list;
 };
 
 }

@@ -125,7 +125,7 @@ public:
 			return '\0';
 		}
 		void take() {
-			assert(_pos < _str.length())
+			assert(_pos < _str.length());
 			_pos++;
 		}
 		void put() {

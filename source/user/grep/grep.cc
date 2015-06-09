@@ -59,7 +59,8 @@ int main(int argc,char **argv) {
 	Regex::Pattern pattern = Regex::compile(regex);
 
 	std::string line;
-	while(sout.good() && in->getline(line)) {
+	while(sout.good() && !in->eof()) {
+		in->getline(line);
 		if(Regex::search(pattern,line,flags).matched())
 			sout << line << '\n';
 	}

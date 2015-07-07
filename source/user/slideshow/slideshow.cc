@@ -34,6 +34,10 @@ static vector<const char*> imgs;
 static shared_ptr<Panel> root;
 static shared_ptr<ImageButton> curimg;
 
+static bool isLess(const char *a, const char *b) {
+	return strcmp(a, b) < 0;
+}
+
 static void showSlide() {
 	const char *img = imgs[slide];
 	if(curimg)
@@ -75,7 +79,7 @@ int main(int argc,char **argv) {
 
 	for(int i = 1; i < argc; ++i)
 		imgs.push_back(argv[i]);
-	sort(imgs.begin(),imgs.end());
+	sort(imgs.begin(),imgs.end(),isLess);
 	slide = 0;
 
 	Application *app = Application::create();

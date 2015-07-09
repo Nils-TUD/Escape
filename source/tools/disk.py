@@ -5,20 +5,15 @@ import argparse
 import subprocess
 import sys
 
-DEFAULT_PARTS_START = 256
-
 # stores a new disk to <image> with the partitions <parts>. each item in <parts> is a list of
 # the filesystem, the size in MB and the directory from which to copy the content into the fs
-def create_disk(image, parts, flat, nogrub):
+def create_disk(image, parts, offset, flat, nogrub):
 	if len(parts) == 0:
 		exit("Please provide at least one partition")
 	if len(parts) > 4:
 		exit("Sorry, the maximum number of partitions is currently 4")
 	if flat and len(parts) != 1:
 		exit("If using flat mode you have to specify exactly 1 partition")
-
-	# default offset when using partitions
-	offset = 2048 if not flat else DEFAULT_PARTS_START
 
 	# determine size of disk
 	totalmb = 0
@@ -188,7 +183,7 @@ def get_part_offset(image, part):
 
 # subcommand functions
 def create(args):
-	create_disk(args.disk, args.part, args.flat, args.nogrub)
+	create_disk(args.disk, args.part, args.offset, args.flat, args.nogrub)
 def fdisk(args):
 	run_fdisk(args.disk)
 def parted(args):
@@ -229,8 +224,8 @@ parser_create.add_argument('--part', nargs=3, metavar=('<fs>', '<mb>', '<dir>'),
 		+ ' <mb> is the partition size in megabytes.'
 		+ ' <dir> is the directory which content should be copied to the partition. if <dir> is "-"'
 		+ ' nothing will be copied')
-parser_create.add_argument('--flat', action='store_true',
-	help='Do not create partitions. Use the disk for one fs @ offset ' + str(DEFAULT_PARTS_START))
+parser_create.add_argument('--flat', action='store_true', help='Do not create partitions.')
+parser_create.add_argument('--offset', type=int, help='The offset where to start')
 parser_create.add_argument('--nogrub', action='store_true', help='Don\'t put grub on the disk')
 parser_create.set_defaults(func=create)
 

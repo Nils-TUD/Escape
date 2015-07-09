@@ -1,6 +1,6 @@
 #!/bin/sh
 source boot/$ESC_TGTTYPE/images.sh
-create_cd $1/dist $1/cd.iso
+create_fsimg $1/dist $1/fs.img
 
 suffix=""
 if [ "$ESC_TARGET" = "x86_64" ]; then
@@ -8,6 +8,6 @@ if [ "$ESC_TARGET" = "x86_64" ]; then
 fi
 
 $ESC_QEMU -m 128 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
-	-kernel $1/dist/boot/escape$suffix -append 'root=/dev/iso9660-ramdisk-cd.iso' \
-	-initrd "$1/dist/bin/initloader,$1/dist/sbin/ramdisk /dev/ramdisk-cd.iso -f /sys/boot/cd.iso,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/iso9660 /dev/iso9660-ramdisk-cd.iso /dev/ramdisk-cd.iso,$1/cd.iso" \
+	-kernel $1/dist/boot/escape$suffix -append 'root=/dev/ext2-ramdisk-fs.img' \
+	-initrd "$1/dist/bin/initloader,$1/dist/sbin/ramdisk /dev/ramdisk-fs.img -f /sys/boot/fs.img,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/ext2 /dev/ext2-ramdisk-fs.img /dev/ramdisk-fs.img,$1/fs.img" \
 	$2 | tee log.txt

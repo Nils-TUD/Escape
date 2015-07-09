@@ -1,0 +1,16 @@
+#!/bin/sh
+source boot/$ESC_TGTTYPE/images.sh
+create_usbimg $1
+
+lodev=`sudo losetup -f`
+sudo losetup -o 0 $lodev $1/usb.img
+
+cleanup() {
+	sudo losetup -d $lodev
+}
+trap cleanup 2
+
+sudo $ESC_QEMU -m 256 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
+	-hdb $lodev $2 | tee log.txt
+
+cleanup

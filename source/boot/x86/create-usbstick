@@ -1,50 +1,14 @@
 #!/bin/sh
 source boot/$ESC_TGTTYPE/images.sh
-create_cd $1/dist $1/cd.iso 1
 
 if [ ! -b "$ESC_USBDEV" ]; then
 	echo "'$ESC_USBDEV' is no block device. Have you defined ESC_USBDEV properly?" 1>&2
 	exit 1
 fi
 
-suffix=""
-if [ "$ESC_TARGET" = "x86_64" ]; then
-	suffix=".elf32"
-fi
+create_usbimg $1
 
-tmp=`mktemp -d`
-
-# copy files necessary to boot, including the iso image containing everything
-cp -R $1/dist/boot $tmp
-mkdir $tmp/sbin $tmp/bin
-for d in ramdisk iso9660 pci; do
-	cp $1/dist/sbin/$d $tmp/sbin
-done
-cp $1/dist/bin/initloader $tmp/bin
-cp $1/cd.iso $tmp/boot
-
-# create menu.lst
-cat > $tmp/boot/grub/menu.lst <<EOF
-default 0
-timeout 3
-
-title Escape
-kernel /boot/escape$suffix root=/dev/iso9660-ramdisk-cd
-module /bin/initloader
-module /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd.iso
-module /sbin/pci /dev/pci
-module /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd
-module /boot/cd.iso
-
-title Escape - Test
-kernel /boot/escape_test$suffix
-module /bin/initloader
-EOF
-
-# create disk. 64 MB should be enough
-./tools/disk.py create --part ext3 64 $tmp $1/usb.img
-
-echo "\033[1mThe following operation will write $1/usb.img on $ESC_USBDEV\033[0m"
+echo -e "\033[1mThe following operation will write $1/usb.img on $ESC_USBDEV\033[0m"
 echo -n "Continue? [y/n]: "
 read answer
 if [ "$answer" != "y" ]; then

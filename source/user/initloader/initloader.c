@@ -120,7 +120,7 @@ int main(void) {
 	if(fd < 0)
 		error("Unable to open '%s'",line);
 
-	int ms = open("/sys/proc/self/ms",O_RDONLY);
+	int ms = open("/sys/proc/self/ms",O_WRITE);
 	if(ms < 0)
 		error("Unable to open '/sys/proc/self/ms'");
 	if(mount(ms,fd,"/") < 0)

@@ -56,11 +56,8 @@ static int divide(void *base,size_t size,fCompare cmp,int left,int right) {
 			j -= size;
 
 		/* swap */
-		if(i < j) {
+		if(i < j)
 			memswp(i,j,size);
-			i += size;
-			j -= size;
-		}
 	}
 	while(i < j);
 

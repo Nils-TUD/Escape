@@ -41,6 +41,7 @@ static void test_merge(void);
 static void test_includes(void);
 static void test_minmax(void);
 static void test_lexcompare(void);
+static void test_sort(void);
 
 static void check_content(const list<int> &l,size_t count,...) {
 	va_list ap;
@@ -71,6 +72,7 @@ static void test_algo(void) {
 	test_includes();
 	test_minmax();
 	test_lexcompare();
+	test_sort();
 }
 
 static void test_find(void) {
@@ -344,6 +346,89 @@ static void test_lexcompare(void) {
 
 	test_assertTrue(lexicographical_compare(first,first + 5,second,second + 9));
 	test_assertFalse(lexicographical_compare(second,second + 9,first,first + 5));
+
+	test_caseSucceeded();
+}
+
+static bool strCompare(const char *a,const char *b) {
+	return strcmp(a,b) < 0;
+}
+
+static void test_sort(void) {
+	test_caseStart("Testing sort");
+
+	{
+		int ints[] = {};
+		std::sort(ints,ints + ARRAY_SIZE(ints));
+	}
+
+	{
+		int ints[] = {1,1,1};
+		std::sort(ints,ints + ARRAY_SIZE(ints));
+		test_assertInt(ints[0],1);
+		test_assertInt(ints[1],1);
+		test_assertInt(ints[2],1);
+	}
+
+	{
+		int ints[] = {1,2,3};
+		std::sort(ints,ints + ARRAY_SIZE(ints));
+		test_assertInt(ints[0],1);
+		test_assertInt(ints[1],2);
+		test_assertInt(ints[2],3);
+	}
+
+	{
+		int ints[] = {6,7,3,4,2,1,5};
+		std::sort(ints,ints + ARRAY_SIZE(ints));
+		test_assertInt(ints[0],1);
+		test_assertInt(ints[1],2);
+		test_assertInt(ints[2],3);
+		test_assertInt(ints[3],4);
+		test_assertInt(ints[4],5);
+		test_assertInt(ints[5],6);
+		test_assertInt(ints[6],7);
+	}
+
+	{
+		const char *strs[] = {
+			"m3/m3-11.png",
+			"m3/m3-03.png",
+			"m3/m3-09.png",
+			"m3/m3-20.png",
+			"m3/m3-22.png",
+			"m3/m3-17.png",
+			"m3/m3-24.png",
+			"m3/m3-12.png",
+			"m3/m3-04.png",
+			"m3/m3-23.png",
+			"m3/m3-18.png",
+			"m3/m3-01.png",
+			"m3/m3-28.png",
+			"m3/m3-14.png",
+			"m3/m3-07.png",
+			"m3/m3-26.png",
+			"m3/m3-00.png",
+			"m3/m3-05.png",
+			"m3/m3-21.png",
+			"m3/m3-16.png",
+			"m3/m3-25.png",
+			"m3/m3-08.png",
+			"m3/m3-10.png",
+			"m3/m3-02.png",
+			"m3/m3-19.png",
+			"m3/m3-06.png",
+			"m3/m3-13.png",
+			"m3/m3-15.png",
+			"m3/m3-27.png",
+		};
+		std::sort(strs,strs + ARRAY_SIZE(strs),strCompare);
+		for(size_t i = 0; i < ARRAY_SIZE(strs); ++i) {
+			const char *sno = strs[i] + SSTRLEN("m3/m3-");
+			int no = atoi(sno);
+			test_assertInt(no,i);
+		}
+	}
 
 	test_caseSucceeded();
 }

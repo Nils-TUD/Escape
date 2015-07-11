@@ -503,6 +503,7 @@ namespace std {
 	RandAccIt divide(RandAccIt ileft,RandAccIt ipiv,Compare comp) {
 		RandAccIt i = ileft;
 		RandAccIt j = ipiv - 1;
+
 		do {
 			// right until the element is > piv
 			while(!comp(*ipiv,*i) && i < ipiv)
@@ -512,11 +513,8 @@ namespace std {
 				--j;
 
 			// swap
-			if(i < j) {
+			if(i < j)
 				swap(*i,*j);
-				++i;
-				--j;
-			}
 		}
 		while(i < j);
 

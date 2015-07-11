@@ -80,7 +80,7 @@ void MPConfig::parse() {
 	Proc *proc;
 	MPIOAPIC *ioapic;
 	IOIntrptEntry *ioint;
-	TableHeader *tbl = (TableHeader*)(KERNEL_AREA | mpf->mpConfigTable);
+	TableHeader *tbl = (TableHeader*)(KERNEL_BEGIN | mpf->mpConfigTable);
 
 	if(tbl->signature != MPC_SIGNATURE)
 		Util::panic("MP Config Table has invalid signature\n");
@@ -127,15 +127,15 @@ void MPConfig::parse() {
 MPConfig::FloatPtr *MPConfig::search() {
 	FloatPtr *res = NULL;
 	/* first kb of extended bios data area (EBDA) */
-	uint16_t ebda = *(uint16_t*)(KERNEL_AREA | BDA_EBDA);
-	if((res = searchIn(KERNEL_AREA | ebda * 16,1024)))
+	uint16_t ebda = *(uint16_t*)(KERNEL_BEGIN | BDA_EBDA);
+	if((res = searchIn(KERNEL_BEGIN | ebda * 16,1024)))
 		return res;
 	/* last kb of base memory */
-	uint16_t memSize = *(uint16_t*)(KERNEL_AREA | BDA_MEMSIZE);
-	if((res = searchIn(KERNEL_AREA | (memSize - 1) * 1024,1024)))
+	uint16_t memSize = *(uint16_t*)(KERNEL_BEGIN | BDA_MEMSIZE);
+	if((res = searchIn(KERNEL_BEGIN | (memSize - 1) * 1024,1024)))
 		return res;
 	/* bios rom address space */
-	if((res = searchIn(KERNEL_AREA | BIOS_ROM_AREA,0x10000)))
+	if((res = searchIn(KERNEL_BEGIN | BIOS_ROM_AREA,0x10000)))
 		return res;
 	return NULL;
 }

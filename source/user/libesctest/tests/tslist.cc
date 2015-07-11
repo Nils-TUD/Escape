@@ -130,7 +130,7 @@ static void test_slist_tpl(const char *name) {
 		++it;
 		test_assertTrue(it == l.end());
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	test_caseSucceeded();
 }

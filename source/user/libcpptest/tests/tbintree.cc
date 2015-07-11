@@ -71,7 +71,7 @@ static void test_insert(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -85,7 +85,7 @@ static void test_insert(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -103,7 +103,7 @@ static void test_insert(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -113,7 +113,7 @@ static void test_insert(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -144,7 +144,7 @@ static void test_insert(void) {
 		test_assertTrue(*it == make_pair(5,5));
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -194,7 +194,7 @@ static void test_copy(void) {
 		test_assertTrue(it == cpy.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -217,7 +217,7 @@ static void test_copy(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -260,7 +260,7 @@ static void test_erase(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -276,7 +276,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),0);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -289,7 +289,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),0);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -302,7 +302,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),0);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -312,7 +312,7 @@ static void test_erase(void) {
 		test_assertTrue(it == t.end());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -332,7 +332,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),1);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -345,7 +345,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),0);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -363,7 +363,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),1);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -385,7 +385,7 @@ static void test_erase(void) {
 		test_assertSize(t.size(),3);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }

@@ -87,7 +87,7 @@ static void test_flags(void) {
 		test_assertTrue(flag2);
 		delete a;
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	test_caseSucceeded();
 }
@@ -244,7 +244,7 @@ static void test_reqNFree(void) {
 		test_assertUInt(nreq,0xf);
 		delete a;
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	test_caseSucceeded();
 }

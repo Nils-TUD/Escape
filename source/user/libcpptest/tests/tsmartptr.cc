@@ -66,7 +66,7 @@ static void test_shared_ptr_basic(void) {
 		test_assertPtr(a.get(),nullptr);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -76,7 +76,7 @@ static void test_shared_ptr_basic(void) {
 		test_assertInt(*a.get(),3);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -95,7 +95,7 @@ static void test_shared_ptr_basic(void) {
 		test_assertInt(*d.get(),4);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -114,7 +114,7 @@ static void test_shared_ptr_basic(void) {
 		test_assertLInt(a3.use_count(),1);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -137,7 +137,7 @@ static void test_shared_ptr_basic(void) {
 		}
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -157,7 +157,7 @@ static void test_shared_ptr_basic(void) {
 		test_assertInt(*d.get(),4);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -174,7 +174,7 @@ static void test_shared_ptr_basic(void) {
 		test_assertPtr(c.get(),obj);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -194,7 +194,7 @@ static void test_shared_ptr_modifiers(void) {
 		test_assertInt(*b.get(),3);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -209,7 +209,7 @@ static void test_shared_ptr_modifiers(void) {
 		test_assertLInt(c.use_count(),0);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -238,7 +238,7 @@ static void test_shared_ptr_casts(void) {
 		test_assertLInt(b4.use_count(),3);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -258,7 +258,7 @@ static void test_unique_ptr(void) {
 		test_assertPtr(b.get(),nullptr);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -271,7 +271,7 @@ static void test_unique_ptr(void) {
 		test_assertInt(*b.get(),4);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -282,7 +282,7 @@ static void test_unique_ptr(void) {
 		test_assertTrue((bool)b);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -306,7 +306,7 @@ static void test_unique_ptr(void) {
 		b.release();
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -343,7 +343,7 @@ static void test_weak_ptr(void) {
 		test_assertLInt(c.use_count(),1);
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	before = heapspace();
 	{
@@ -362,7 +362,7 @@ static void test_weak_ptr(void) {
 		test_assertFalse((bool)a.lock());
 	}
 	after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }

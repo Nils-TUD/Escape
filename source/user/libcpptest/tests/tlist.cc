@@ -175,7 +175,7 @@ static void test_insert(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -209,7 +209,7 @@ static void test_erase(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -250,7 +250,7 @@ static void test_splice(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -276,7 +276,7 @@ static void test_resize(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -316,7 +316,7 @@ static void test_remove(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -350,7 +350,7 @@ static void test_unique(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -387,7 +387,7 @@ static void test_sort(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -417,7 +417,7 @@ static void test_merge(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -460,7 +460,7 @@ static void test_reverse(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }

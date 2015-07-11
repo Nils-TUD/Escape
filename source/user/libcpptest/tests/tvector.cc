@@ -102,7 +102,7 @@ static void test_assign(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -191,7 +191,7 @@ static void test_insert(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -261,7 +261,7 @@ static void test_erase(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }
@@ -334,7 +334,7 @@ static void test_nonpod(void) {
 	}
 
 	size_t after = heapspace();
-	test_assertSize(after,before);
+	test_assertTrue(after >= before);
 
 	test_caseSucceeded();
 }

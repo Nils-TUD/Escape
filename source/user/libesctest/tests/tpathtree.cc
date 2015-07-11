@@ -53,7 +53,7 @@ static void test_insert() {
 		esc::PathTree<void> mytree;
 		test_assertPtr(mytree.find("/"),NULL);
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	before = heapspace();
 	{
@@ -78,7 +78,7 @@ static void test_insert() {
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	before = heapspace();
 	{
@@ -98,7 +98,7 @@ static void test_insert() {
 		test_assertStr(end,"bar/test");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	before = heapspace();
 	{
@@ -115,7 +115,7 @@ static void test_insert() {
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	before = heapspace();
 	{
@@ -176,7 +176,7 @@ static void test_insert() {
 		test_assertStr(i->getName(),"foo");
 		test_assertPtr(i->getData(),(void*)0x66);
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	test_caseSucceeded();
 }
@@ -251,7 +251,7 @@ static void test_clone() {
 		i = mytree.find("/123");
 		test_assertPtr(i->getData(),(void*)0x77);
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 
 	{
 		before = heapspace();
@@ -260,7 +260,7 @@ static void test_clone() {
 
 		esc::PathTree<void> mytree2;
 		test_assertInt(mytree.replaceWith(mytree2),0);
-		test_assertSize(heapspace(),before);
+		test_assertTrue(heapspace() >= before);
 	}
 
 	test_caseSucceeded();
@@ -277,7 +277,7 @@ static void test_remove() {
 
 		test_assertPtr(mytree.remove("/"),(void*)0x11);
 		test_assertPtr(mytree.find("/"),NULL);
-		test_assertSize(heapspace(),before);
+		test_assertTrue(heapspace() >= before);
 	}
 
 	{
@@ -294,7 +294,7 @@ static void test_remove() {
 		test_assertPtr(mytree.remove("/foo"),(void*)0x11);
 		test_assertTrue(mytree.find("/foo") == NULL);
 		test_assertTrue(mytree.find("/") == NULL);
-		test_assertSize(heapspace(),before);
+		test_assertTrue(heapspace() >= before);
 	}
 
 	{
@@ -330,7 +330,7 @@ static void test_remove() {
 
 		test_assertPtr(mytree.remove("/bar/foo/hier/test"),(void*)0x55);
 		test_assertTrue(mytree.find("/bar/foo/hier/test") == NULL);
-		test_assertSize(heapspace(),before);
+		test_assertTrue(heapspace() >= before);
 	}
 
 	test_caseSucceeded();
@@ -377,5 +377,5 @@ static void test_iterator() {
 		++it;
 		test_assertTrue(it == mytree.end());
 	}
-	test_assertSize(heapspace(),before);
+	test_assertTrue(heapspace() >= before);
 }

@@ -23,6 +23,8 @@
 
 void Log::toSerial(char c) {
 	/* write to COM1 (some chars make no sense here) */
-	if(c != '\r' && c != '\b')
+	if(c != '\b')
 		Serial::out(Serial::COM1,c);
+	if(c == '\n')
+		Serial::out(Serial::COM1,'\r');
 }

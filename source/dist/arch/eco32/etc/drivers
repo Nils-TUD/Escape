@@ -1,17 +1,17 @@
-video
+/sbin/video
 	/dev/vga 0770 output
-zero
+/sbin/zero
 	/dev/zero 0666 root
-random
+/sbin/random
 	/dev/random 0666 root
-null
+/sbin/null
 	/dev/null 0666 root
-pipe
+/sbin/pipe
 	/dev/pipe 0666 root
-keyb
+/sbin/keyb
 	/dev/keyb 0110 input
-tcpip
+/sbin/tcpip
 	/dev/socket 0770 network
 	/dev/tcpip 0110 network
-uimng /dev/vga
+/sbin/uimng /dev/vga
 	/dev/uimng 0110 input

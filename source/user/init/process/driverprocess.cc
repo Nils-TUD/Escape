@@ -44,7 +44,6 @@ void DriverProcess::load() {
 	}
 
 	// now load the driver
-	string path = string("/sbin/") + name();
 	_pid = fork();
 	if(_pid == 0) {
 		// keep only stdin, stdout and stderr
@@ -54,14 +53,23 @@ void DriverProcess::load() {
 
 		// build args and exec
 		const char **argv = new const char*[_args.size() + 2];
-		argv[0] = path.c_str();
-		for(size_t i = 0; i < _args.size(); i++)
-			argv[i + 1] = _args[i].c_str();
-		argv[_args.size() + 1] = nullptr;
-		execv(argv[0],argv);
+		size_t idx = 0;
+		argv[idx++] = name().c_str();
+		for(size_t i = 0; i < _args.size(); i++) {
+			// if there is a '=' we should set an environment variable
+			int pos = strchri(_args[i].c_str(),'=');
+			if((size_t)pos == strlen(_args[i].c_str()))
+				argv[idx++] = _args[i].c_str();
+			else {
+				string tmp(_args[i].c_str(),pos);
+				setenv(tmp.c_str(),_args[i].c_str() + pos + 1);
+			}
+		}
+		argv[idx++] = nullptr;
+		execvpe(argv[0],argv,(const char**)environ);
 
 		// if we're here, there's something wrong
-		esc::serr << "Exec of '" << path << "' failed" << esc::endl;
+		esc::serr << "Exec of '" << name() << "' failed" << esc::endl;
 		exit(EXIT_FAILURE);
 	}
 	else if(_pid < 0)

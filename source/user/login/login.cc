@@ -54,6 +54,11 @@ int main(void) {
 	char *termPath = getenv("TERM");
 	char *termName = termPath + SSTRLEN("/dev/");
 
+	/* we want to overwrite them */
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+
 	/* note: we do always pass O_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
 	if((fd = open(termPath,O_RDONLY | O_MSGS)) != STDIN_FILENO)

@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/input.h>
+#include <keymap/keymap.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/io.h>
@@ -27,8 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "keymap.h"
 
 const char *Keymap::KEYMAP_FILE = "/etc/keymap";
 
@@ -74,7 +73,7 @@ Keymap *Keymap::request(const std::string &kmfile) {
 		return NULL;
 	Keymap *map = new Keymap(kmfile);
 	while(1) {
-		if(!parseLine(f,map->_entries))
+		if(!parseLine(f,map->_entries,map->_reventries))
 			break;
 	}
 	fclose(f);
@@ -87,6 +86,15 @@ void Keymap::release(Keymap *map) {
 		_maps.erase_first(map);
 		delete map;
 	}
+}
+
+uchar Keymap::translateChar(char c,uchar *modifier) const {
+	size_t idx = c;
+	if(idx < KEYMAP_SIZE) {
+		*modifier = _reventries[idx].modifier;
+		return _reventries[idx].keycode;
+	}
+	return VK_NOKEY;
 }
 
 char Keymap::translateKeycode(uchar flags,uchar keycode,uchar *modifier) const {
@@ -119,15 +127,17 @@ char Keymap::translateKeycode(uchar flags,uchar keycode,uchar *modifier) const {
 	return e->def;
 }
 
-bool Keymap::parseLine(FILE *f,Entry *map) {
+bool Keymap::parseLine(FILE *f,Entry *map,ReverseEntry *rmap) {
 	size_t i;
 	int no;
 	char *entries[3];
+
 	/* scan number */
 	if(fscanf(f,"%d",&no) != 1 || (size_t)no >= KEYMAP_SIZE)
 		return false;
 	if(!skipTrash(f))
 		return false;
+
 	/* scan chars */
 	entries[0] = &(map[no].def);
 	entries[1] = &(map[no].shift);
@@ -139,6 +149,20 @@ bool Keymap::parseLine(FILE *f,Entry *map) {
 		*(entries[i]) = c;
 		if(!skipTrash(f))
 			return false;
+	}
+
+	/* fill reverse map; first come first serve */
+	if((size_t)map[no].def < KEYMAP_SIZE && rmap[(size_t)map[no].def].keycode == 0) {
+		rmap[(size_t)map[no].def].keycode = no;
+		rmap[(size_t)map[no].def].modifier = 0;
+	}
+	if((size_t)map[no].shift < KEYMAP_SIZE && rmap[(size_t)map[no].shift].keycode == 0) {
+		rmap[(size_t)map[no].shift].keycode = no;
+		rmap[(size_t)map[no].shift].modifier = SHIFT_MASK;
+	}
+	if((size_t)map[no].alt < KEYMAP_SIZE && rmap[(size_t)map[no].alt].keycode == 0) {
+		rmap[(size_t)map[no].alt].keycode = no;
+		rmap[(size_t)map[no].alt].modifier = ALT_MASK;
 	}
 	return true;
 }

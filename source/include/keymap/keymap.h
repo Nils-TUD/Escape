@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/keycodes.h>
 #include <stdio.h>
 #include <vector>
 
@@ -29,15 +30,28 @@ class Keymap {
 		char shift;
 		char alt;
 	};
+	struct ReverseEntry {
+		uchar keycode;
+		uchar modifier;
+	};
+	struct EscapeCode {
+		const char *seq;
+		uchar keycode;
+		uchar modifier;
+		uchar hasChar;
+	};
 
 	/* represents a not-printable character */
 	static const char NPRINT			= '\0';
 	static const size_t KEYMAP_SIZE		= 128;
 	static const char *KEYMAP_FILE;
 
-	explicit Keymap(const std::string &f) : _file(f), _refs(1), _entries(new Entry[KEYMAP_SIZE]()) {
+	explicit Keymap(const std::string &f)
+		: _file(f), _refs(1), _entries(new Entry[KEYMAP_SIZE]()),
+		  _reventries(new ReverseEntry[KEYMAP_SIZE]()) {
 	}
 	~Keymap() {
+		delete[] _reventries;
 		delete[] _entries;
 	}
 
@@ -71,6 +85,15 @@ public:
 	}
 
 	/**
+	 * Translate the given character to the corresponding keycode and modifiers.
+	 *
+	 * @param c the character
+	 * @param modifier the modifier to set
+	 * @return the keycode
+	 */
+	uchar translateChar(char c,uchar *modifier) const;
+
+	/**
 	 * Translates the given keycode + isBreak to the corresponding modifiers and character
 	 * with the given keymap.
 	 *
@@ -83,7 +106,7 @@ public:
 	char translateKeycode(uchar flags,uchar keycode,uchar *modifier) const;
 
 private:
-	static bool parseLine(FILE *f,Entry *map);
+	static bool parseLine(FILE *f,Entry *map,ReverseEntry *rmap);
 	static char parseKey(FILE *f);
 	static char getKey(char *str);
 	static bool skipTrash(FILE *f);
@@ -91,10 +114,12 @@ private:
 	std::string _file;
 	ulong _refs;
 	Entry *_entries;
+	ReverseEntry *_reventries;
 
 	static bool _shiftDown;
 	static bool _altDown;
 	static bool _ctrlDown;
 	static std::vector<Keymap*> _maps;
 	static Keymap *_defMap;
+	static EscapeCode _escCodes[];
 };

@@ -20,13 +20,13 @@
 #pragma once
 
 #include <esc/ipc/clientdevice.h>
+#include <keymap/keymap.h>
 #include <sys/common.h>
 #include <sys/sync.h>
 #include <mutex>
 
 #include "clients.h"
 #include "header.h"
-#include "keymap.h"
 #include "screens.h"
 
 class UIMngDevice : public esc::ClientDevice<UIClient> {

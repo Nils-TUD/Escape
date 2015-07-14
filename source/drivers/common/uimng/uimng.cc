@@ -19,6 +19,7 @@
 
 #include <esc/proto/input.h>
 #include <esc/proto/ui.h>
+#include <keymap/keymap.h>
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/esccodes.h>
@@ -38,7 +39,6 @@
 #include "clients.h"
 #include "header.h"
 #include "jobmng.h"
-#include "keymap.h"
 #include "keystrokes.h"
 #include "screens.h"
 #include "uimngdev.h"

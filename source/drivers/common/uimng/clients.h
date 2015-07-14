@@ -21,12 +21,11 @@
 
 #include <esc/ipc/clientdevice.h>
 #include <esc/proto/screen.h>
+#include <keymap/keymap.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <assert.h>
 #include <stdlib.h>
-
-#include "keymap.h"
 
 /**
  * Represents a client of the uimng. Note that not all clients are active, but only the ones that

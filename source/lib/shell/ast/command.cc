@@ -122,13 +122,18 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			goto error;
 		}
 
+		/* find the real command; we support env vars in front of it */
+		size_t cmdidx = 0;
+		for(; strchr(cmd->exprs[cmdidx],'=') != NULL; cmdidx++)
+			;
+
 		/* get the command */
-		shcmd = compl_get(e,cmd->exprs[0],strlen(cmd->exprs[0]),2,true,true);
+		shcmd = compl_get(e,cmd->exprs[cmdidx],strlen(cmd->exprs[cmdidx]),2,true,true);
 
 		/* we need at least one match and it has to be executable */
 		if(shcmd == NULL || shcmd[0] == NULL ||
 				(shcmd[0]->mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0) {
-			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->exprs[0]);
+			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->exprs[cmdidx]);
 			res = -1;
 			goto error;
 		}
@@ -256,9 +261,19 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				if(pipeFds[0] >= 0)
 					close(pipeFds[0]);
 
+				/* set env vars */
+				for(size_t i = 0; i < cmdidx; ++i) {
+					char tmp[32];
+					const char *eq = strchr(cmd->exprs[i],'=');
+					assert(eq != NULL);
+					strnzcpy(tmp,cmd->exprs[i],sizeof(tmp));
+					tmp[eq - cmd->exprs[i]] = '\0';
+					setenv(tmp,eq + 1);
+				}
+
 				/* exec */
 				snprintf(path,sizeof(path),"%s/%s",shcmd[0]->path,shcmd[0]->name);
-				execv(path,(const char**)cmd->exprs);
+				execv(path,(const char**)cmd->exprs + cmdidx);
 
 				/* if we're here, there is something wrong */
 				printe("Exec of '%s' failed",path);

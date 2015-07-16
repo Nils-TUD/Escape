@@ -128,11 +128,11 @@ static void term_reset(void) {
 	for(int i = 0; i < numTerminals; i++) {
 		terminals[i].rcvrCtrl = 0;
 		terminals[i].rcvrData = 0;
-		terminals[i].rcvrIRQ = TERM_START_IRQ + i * 2;
+		terminals[i].rcvrIRQ = TERM_START_IRQ + i * 2 + 1;
 		timer_start(TERM_RCVR_MSEC,termDevs + i,term_rcvrCallback,i);
 		terminals[i].xmtrCtrl = TERM_XMTR_RDY;
 		terminals[i].xmtrData = 0;
-		terminals[i].xmtrIRQ = TERM_START_IRQ + i * 2 + 1;
+		terminals[i].xmtrIRQ = TERM_START_IRQ + i * 2;
 	}
 }
 

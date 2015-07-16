@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/istringstream.h>
 #include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/conf.h>
@@ -26,7 +27,6 @@
 #include <sys/stat.h>
 #include <sys/thread.h>
 #include <usergroup/group.h>
-
 #include "../initerror.h"
 #include "driverprocess.h"
 
@@ -110,18 +110,21 @@ esc::IStream& operator >>(esc::IStream& is,Device& dev) {
 }
 
 esc::IStream& operator >>(esc::IStream& is,DriverProcess& drv) {
-	char c;
-	is >> drv._name;
-	while(is.good() && (c = is.get()) != '\t') {
-		is.putback(c);
+	/* read name and args */
+	std::string line;
+	is.getline(line);
+	esc::IStringStream tmp(line);
+	tmp >> drv._name;
+	while(!tmp.eof()) {
 		string arg;
-		is >> arg;
+		tmp >> arg;
 		drv._args.push_back(arg);
 	}
+
+	/* read devices, if any */
 	if(is.good()) {
-		is.putback(c);
+		char c;
 		while((c = is.get()) == '\t') {
-			is.putback(c);
 			Device dev;
 			is >> dev;
 			drv._devices.push_back(dev);

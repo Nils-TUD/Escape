@@ -150,22 +150,25 @@ static void loadInode(Ext2Inode *ip,ino_t inodeno) {
 
 static ino_t searchDir(ino_t dirIno,Ext2Inode *dir,const char *name,size_t nameLen) {
 	size_t size = le32tocpu(dir->size);
-	if(size > sizeof(buffer))
-		halt("Directory %u larger than %u bytes\n",dirIno,sizeof(buffer));
+	size_t blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+	if(blocks > EXT2_DIRBLOCK_COUNT)
+		halt("Directory %u larger than %u blocks\n",dirIno,EXT2_DIRBLOCK_COUNT);
 
-	readBlocks(buffer,le32tocpu(dir->dBlocks[0]),1);
-	ssize_t rem = size;
-	Ext2DirEntry *entry = (Ext2DirEntry*)buffer;
+	for(size_t i = 0; i < blocks; ++i) {
+		readBlocks(buffer,le32tocpu(dir->dBlocks[i]),1);
+		ssize_t rem = BLOCK_SIZE;
+		Ext2DirEntry *entry = (Ext2DirEntry*)buffer;
 
-	/* search the directory-entries */
-	while(rem > 0 && le32tocpu(entry->inode) != 0) {
-		/* found a match? */
-		if(nameLen == le16tocpu(entry->nameLen) && strncmp(entry->name,name,nameLen) == 0)
-			return le32tocpu(entry->inode);
+		/* search the directory-entries */
+		while(rem > 0 && le32tocpu(entry->inode) != 0) {
+			/* found a match? */
+			if(nameLen == le16tocpu(entry->nameLen) && strncmp(entry->name,name,nameLen) == 0)
+				return le32tocpu(entry->inode);
 
-		/* to next dir-entry */
-		rem -= le16tocpu(entry->recLen);
-		entry = (Ext2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
+			/* to next dir-entry */
+			rem -= le16tocpu(entry->recLen);
+			entry = (Ext2DirEntry*)((uintptr_t)entry + le16tocpu(entry->recLen));
+		}
 	}
 	return EXT2_BAD_INO;
 }

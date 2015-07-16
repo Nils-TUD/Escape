@@ -291,7 +291,7 @@ struct Ext2Inode {
 	uint32_t osd1;
 	/* A value of 0 in the block-array effectively terminates it with no further block being defined.
 	 * All the remaining entries of the array should still be set to 0. */
-	uint32_t dBlocks[12];
+	uint32_t dBlocks[EXT2_DIRBLOCK_COUNT];
 	uint32_t singlyIBlock;
 	uint32_t doublyIBlock;
 	uint32_t triplyIBlock;

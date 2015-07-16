@@ -123,8 +123,8 @@ static int readBlocks(void *dst,block_t start,size_t blockCount) {
 static void readFromDisk(block_t blkno,void *buf,size_t offset,size_t nbytes) {
 	void *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
 	size_t secCount = (offset + nbytes + Disk::SECTOR_SIZE - 1) / Disk::SECTOR_SIZE;
-	if(offset >= BLOCK_SIZE || offset + nbytes > BLOCK_SIZE)
-		halt("offset or nbytes invalid");
+	if(offset >= sizeof(buffer) || secCount * Disk::SECTOR_SIZE > sizeof(buffer))
+		halt("offset or nbytes invalid (offset=%u nbytes=%u)",offset,nbytes);
 
 	/*debugf("Reading sectors %d .. %d\n",START_SECTOR + blkno * SPB,
 			START_SECTOR + blkno * SPB + secCount - 1);*/

@@ -10,7 +10,7 @@ create_ecommix_disk() {
 		sudo mv $dir/boot/escape $dir/boot/escape_def
 		sudo mv $dir/boot/escape_test $dir/boot/escape
 	fi
-	./tools/disk.py create --offset 256 --part ext2r0 128 $dir $hd --flat --nogrub 1>&2
+	./tools/disk.py create --offset 2048 --part ext2r0 128 $dir $hd --flat --nogrub 1>&2
 	sudo rm -Rf $dir
 
 	dd if=$build/bootloader/$ESC_TARGET/stage1/stage1.bin of=$hd bs=512 count=1 conv=notrunc 1>&2

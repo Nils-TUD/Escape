@@ -55,7 +55,7 @@ public:
 #endif
 
 	static const size_t SECTOR_SIZE		= 512;
-	static const size_t START_SECTOR	= 256;		/* part 0 */
+	static const size_t START_SECTOR	= 2048;		/* part 0 */
 
 	explicit Disk(ulong *regs,ulong *buffer,bool irqs);
 	virtual ~Disk() {

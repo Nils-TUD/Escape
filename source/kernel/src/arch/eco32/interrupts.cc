@@ -36,10 +36,10 @@
 #define DEBUG_PAGEFAULTS	0
 
 InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
-	/* 0x00 */	{Interrupts::defHandler,	"Terminal 0 Xmtr",			0},
-	/* 0x01 */	{Interrupts::defHandler,	"Terminal 0 Rcvr",			0},
-	/* 0x02 */	{Interrupts::defHandler,	"Terminal 1 Xmtr",			0},
-	/* 0x03 */	{Interrupts::defHandler,	"Terminal 1 Rcvr",			0},
+	/* 0x00 */	{Interrupts::termXmtr,		"Terminal 0 Xmtr",			0},
+	/* 0x01 */	{Interrupts::termRcvr,		"Terminal 0 Rcvr",			0},
+	/* 0x02 */	{Interrupts::termXmtr,		"Terminal 1 Xmtr",			0},
+	/* 0x03 */	{Interrupts::termRcvr,		"Terminal 1 Rcvr",			0},
 	/* 0x04 */	{Interrupts::irqKB,			"Keyboard",					0},
 	/* 0x05 */	{Interrupts::defHandler,	"??",						0},
 	/* 0x06 */	{Interrupts::defHandler,	"??",						0},
@@ -197,6 +197,28 @@ void Interrupts::irqKB(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 		/* if there is no device that handles the signal, reenable interrupts */
 		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
 	}
+	else
+		Thread::switchAway();
+}
+
+void Interrupts::termRcvr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	size_t dev = stack->irqNo / 2;
+	/* see Interrupts::irqKb() */
+	uint32_t *termRegs = (uint32_t*)(TERM_BASE + dev * 16);
+	termRegs[TERM_RCVR_CTRL] &= ~TERM_RCVR_IEN;
+	if(!fireIrq(stack->irqNo))
+		termRegs[TERM_RCVR_CTRL] |= TERM_RCVR_IEN;
+	else
+		Thread::switchAway();
+}
+
+void Interrupts::termXmtr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	size_t dev = stack->irqNo / 2;
+	/* see Interrupts::irqKb() */
+	uint32_t *termRegs = (uint32_t*)(TERM_BASE + dev * 16);
+	termRegs[TERM_XMTR_CTRL] &= ~TERM_XMTR_IEN;
+	if(!fireIrq(stack->irqNo))
+		termRegs[TERM_XMTR_CTRL] |= TERM_XMTR_IEN;
 	else
 		Thread::switchAway();
 }

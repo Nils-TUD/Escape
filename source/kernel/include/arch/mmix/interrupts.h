@@ -67,6 +67,12 @@ class Interrupts : public InterruptsBase {
 	static const ulong DISK_CTRL			= 0;
 	static const ulong DISK_IEN				= 0x02;
 
+	static const uintptr_t TERM_BASE		= 0x8002000000000000;
+	static const ulong TERM_RCVR_CTRL		= 0;
+	static const ulong TERM_XMTR_CTRL		= 2;
+	static const ulong TERM_RCVR_IEN		= 0x02;
+	static const ulong TERM_XMTR_IEN		= 0x02;
+
 	static void forcedTrap(IntrptStackFrame *stack) asm("intrpt_forcedTrap");
 	static bool dynTrap(IntrptStackFrame *stack,int irqNo) asm("intrpt_dynTrap");
 
@@ -77,6 +83,8 @@ class Interrupts : public InterruptsBase {
 	static void irqKB(IntrptStackFrame *stack,int irqNo);
 	static void irqTimer(IntrptStackFrame *stack,int irqNo);
 	static void irqDisk(IntrptStackFrame *stack,int irqNo);
+	static void irqTermRcvr(IntrptStackFrame *stack,int irqNo);
+	static void irqTermXmtr(IntrptStackFrame *stack,int irqNo);
 
 public:
 	static void printStackFrame(OStream &os,const IntrptStackFrame *stack);

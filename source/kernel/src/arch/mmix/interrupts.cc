@@ -89,14 +89,14 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x32 */	{Interrupts::defHandler,	"??",					0},
 	/* 0x33 */	{Interrupts::irqDisk,		"Disk",					0},
 	/* 0x34 */	{Interrupts::irqTimer,		"Timer",				0},
-	/* 0x35 */	{Interrupts::defHandler,	"Terminal 0 trans.",	0},
-	/* 0x36 */	{Interrupts::defHandler,	"Terminal 0 recv.",		0},
-	/* 0x37 */	{Interrupts::defHandler,	"Terminal 1 trans.",	0},
-	/* 0x38 */	{Interrupts::defHandler,	"Terminal 1 recv.",		0},
-	/* 0x39 */	{Interrupts::defHandler,	"Terminal 2 trans.",	0},
-	/* 0x3A */	{Interrupts::defHandler,	"Terminal 2 recv.",		0},
-	/* 0x3B */	{Interrupts::defHandler,	"Terminal 3 trans.",	0},
-	/* 0x3C */	{Interrupts::defHandler,	"Terminal 3 recv.",		0},
+	/* 0x35 */	{Interrupts::irqTermXmtr,	"Terminal 0 trans.",	0},
+	/* 0x36 */	{Interrupts::irqTermRcvr,	"Terminal 0 recv.",		0},
+	/* 0x37 */	{Interrupts::irqTermXmtr,	"Terminal 1 trans.",	0},
+	/* 0x38 */	{Interrupts::irqTermRcvr,	"Terminal 1 recv.",		0},
+	/* 0x39 */	{Interrupts::irqTermXmtr,	"Terminal 2 trans.",	0},
+	/* 0x3A */	{Interrupts::irqTermRcvr,	"Terminal 2 recv.",		0},
+	/* 0x3B */	{Interrupts::irqTermXmtr,	"Terminal 3 trans.",	0},
+	/* 0x3C */	{Interrupts::irqTermRcvr,	"Terminal 3 recv.",		0},
 	/* 0x3D */	{Interrupts::irqKB,			"Keyboard",				0},
 	/* 0x3E */	{Interrupts::defHandler,	"??",					0},
 	/* 0x3F */	{Interrupts::defHandler,	"??",					0},
@@ -113,7 +113,7 @@ int InterruptsBase::installHandler(int irq,const char *) {
 	return 0;
 }
 
-void InterruptsBase::uninstallHandler(int irq) {
+void InterruptsBase::uninstallHandler(A_UNUSED int irq) {
 	/* nothing to do */
 }
 
@@ -265,6 +265,28 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
 	if(!fireIrq(irqNo))
 		diskRegs[DISK_CTRL] |= DISK_IEN;
+	else
+		Thread::switchAway();
+}
+
+void Interrupts::irqTermRcvr(A_UNUSED IntrptStackFrame *stack,int irqNo) {
+	size_t dev = (irqNo - 0x35) / 2;
+	/* see Interrupts::irqKb() */
+	uint64_t *termRegs = (uint64_t*)(TERM_BASE + dev * 32);
+	termRegs[TERM_RCVR_CTRL] &= ~TERM_RCVR_IEN;
+	if(!fireIrq(irqNo))
+		termRegs[TERM_RCVR_CTRL] |= TERM_RCVR_IEN;
+	else
+		Thread::switchAway();
+}
+
+void Interrupts::irqTermXmtr(A_UNUSED IntrptStackFrame *stack,int irqNo) {
+	size_t dev = (irqNo - 0x35) / 2;
+	/* see Interrupts::irqKb() */
+	uint64_t *termRegs = (uint64_t*)(TERM_BASE + dev * 32);
+	termRegs[TERM_XMTR_CTRL] &= ~TERM_XMTR_IEN;
+	if(!fireIrq(irqNo))
+		termRegs[TERM_XMTR_CTRL] |= TERM_XMTR_IEN;
 	else
 		Thread::switchAway();
 }

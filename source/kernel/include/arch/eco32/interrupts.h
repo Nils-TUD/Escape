@@ -61,12 +61,20 @@ class Interrupts : public InterruptsBase {
 	static const ulong DISK_CTRL			= 0;
 	static const ulong DISK_IEN				= 0x02;
 
+	static const uintptr_t TERM_BASE		= 0xF0300000;
+	static const ulong TERM_RCVR_CTRL		= 0;
+	static const ulong TERM_XMTR_CTRL		= 2;
+	static const ulong TERM_RCVR_IEN		= 0x02;
+	static const ulong TERM_XMTR_IEN		= 0x02;
+
 	static void defHandler(Thread *t,IntrptStackFrame *stack);
 	static void debug(Thread *t,IntrptStackFrame *stack);
 	static void exTrap(Thread *t,IntrptStackFrame *stack);
 	static void exPageFault(Thread *t,IntrptStackFrame *stack);
 	static void irqTimer(Thread *t,IntrptStackFrame *stack);
 	static void irqKB(Thread *t,IntrptStackFrame *stack);
+	static void termRcvr(Thread *t,IntrptStackFrame *stack);
+	static void termXmtr(Thread *t,IntrptStackFrame *stack);
 	static void irqDisk(Thread *t,IntrptStackFrame *stack);
 
 	static uintptr_t pfaddr;

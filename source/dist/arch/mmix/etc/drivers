@@ -13,5 +13,8 @@
 /sbin/tcpip
 	/dev/socket 0770 network
 	/dev/tcpip 0110 network
+/sbin/term 0
+	/dev/term0 0770 output
+/bin/login TERM=/dev/term0
 /sbin/uimng /dev/vga
 	/dev/uimng 0110 input

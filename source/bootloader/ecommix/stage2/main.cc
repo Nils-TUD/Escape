@@ -22,13 +22,12 @@
 #include <sys/arch.h>
 #include <sys/boot.h>
 #include <sys/common.h>
+#include <sys/debug.h>
 #include <sys/elf.h>
 #include <sys/endian.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "debug.h"
 
 #if defined(__mmix__)
 #	define DIR_MAP_START	0x8000000000000000

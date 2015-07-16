@@ -166,7 +166,7 @@ void debugDwords(const void *addr,size_t dwordCount) {
 	}
 }
 
-static void debugChar(char c) {
+A_WEAK void debugChar(char c) {
 	syscall1(SYSCALL_DEBUGCHAR,c);
 }
 

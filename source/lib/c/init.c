@@ -41,7 +41,7 @@ typedef struct {
  * Assembler routines
  */
 extern int _startthread(fThreadEntry entryPoint,void *arg);
-extern __attribute__((weak)) void sigRetFunc(void);
+extern A_WEAK void sigRetFunc(void);
 
 extern void initTLS(void);
 extern void initStdio(void);

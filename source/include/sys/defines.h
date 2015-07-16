@@ -58,6 +58,7 @@
 #define A_ALWAYS_INLINE			__attribute__((always_inline))
 #define A_UNREACHED				__builtin_unreachable()
 #define A_REGPARM(x)			__attribute__((regparm(x)))
+#define A_WEAK					__attribute__((weak))
 
 #if defined(__cplusplus)
 #	define EXTERN_C				extern "C"

@@ -41,6 +41,8 @@
 #define MAP_PHYS_ALLOC		0		/* allocate physical memory */
 #define MAP_PHYS_MAP		1		/* map the specified physical memory */
 
+#define MATTR_WC			1		/* write combining */
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -81,6 +83,19 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
  * @return the virtual address where it has been mapped or NULL if an error occurred
  */
 void *mmapphys(uintptr_t *phys,size_t count,size_t align,int flags) A_CHECKRET;
+
+/**
+ * Sets the given attributes to the physical memory range <phys> .. <phys>+<bytes>.
+ * <bytes> needs to be page-aligned and <phys> needs to be <bytes>-aligned.
+ *
+ * @param phys the physical address
+ * @param bytes the number of bytes
+ * @param attr the attributes (MATTR_*)
+ * @return 0 on success
+ */
+static inline int mattr(uintptr_t phys,size_t bytes,int attr) {
+	return syscall3(SYSCALL_MATTR,phys,bytes,attr);
+}
 
 /**
  * Changes the protection of the region denoted by the given address.

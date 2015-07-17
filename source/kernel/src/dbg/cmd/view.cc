@@ -25,6 +25,7 @@
 #	include <arch/x86/gdt.h>
 #	include <arch/x86/ioapic.h>
 #	include <arch/x86/acpi.h>
+#	include <arch/x86/mtrr.h>
 #endif
 #include <task/proc.h>
 #include <task/sched.h>
@@ -110,6 +111,7 @@ static View views[] = {
 #if defined(__x86__)
 	{"ioapic",		IOAPIC::print},
 	{"acpi",		ACPI::print},
+	{"mtrr",		MTRR::print},
 #endif
 	{"timer",		Timer::print},
 	{"boot",		Boot::print},

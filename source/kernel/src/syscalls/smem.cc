@@ -156,6 +156,17 @@ int Syscalls::mlockall(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
+int Syscalls::mattr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	uintptr_t phys = (uintptr_t)SYSC_ARG1(stack);
+	size_t bytes = SYSC_ARG2(stack);
+	int attr = SYSC_ARG3(stack);
+
+	int res = PhysMem::setAttributes(phys,bytes,attr);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	uintptr_t *phys = (uintptr_t*)SYSC_ARG1(stack);
 	size_t bytes = SYSC_ARG2(stack);

@@ -76,6 +76,10 @@ public:
 		USR
 	};
 
+	enum Attributes {
+		MATTR_WC	= 1 << 0,
+	};
+
 	/**
 	 * Initializes the memory-management
 	 */
@@ -96,6 +100,16 @@ public:
 	 * @return true if so
 	 */
 	static bool canMap(uintptr_t addr,size_t size);
+
+	/**
+	 * Sets the given attributes to the physical memory range <addr> .. <addr> + <size>.
+	 *
+	 * @param addr the physical address
+	 * @param size the number of bytes
+	 * @param attr the attributes (MATTR_*)
+	 * @return 0 on success
+	 */
+	static int setAttributes(uintptr_t addr,size_t size,uint attr);
 
 	/**
 	 * @return whether we can swap

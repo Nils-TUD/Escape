@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <arch/x86/mtrr.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
 #include <boot.h>
@@ -37,4 +38,10 @@ bool PhysMem::canMap(uintptr_t addr,size_t size) {
 		}
 	}
 	return true;
+}
+
+int PhysMem::setAttributes(uintptr_t addr,size_t size,uint attr) {
+	if(attr & MATTR_WC)
+		return MTRR::setRange(addr,size,MTRR::WRITE_COMBINING);
+	return -EINVAL;
 }

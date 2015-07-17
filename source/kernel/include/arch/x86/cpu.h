@@ -27,12 +27,13 @@ class CPU : public CPUBase {
 
 	CPU() = delete;
 
+public:
 	enum CPUIdRequests {
 		CPUID_GETFEATURES	= 1,
 		CPUID_INTELFEATURES	= 0x80000001,
+		CPUID_MAXPHYSADDR	= 0x80000008,
 	};
 
-public:
 	enum FeatSource {
 		BASIC,
 		INTEL
@@ -50,7 +51,7 @@ public:
 		FEAT_CX8		= 1ULL << 8,
 		FEAT_APIC		= 1ULL << 9,
 		FEAT_SEP		= 1ULL << 11,
-		FEAT_MTTR		= 1ULL << 12,
+		FEAT_MTRR		= 1ULL << 12,
 		FEAT_PGE		= 1ULL << 13,
 		FEAT_MMX		= 1ULL << 23,
 		FEAT_FXSR		= 1ULL << 24,
@@ -124,9 +125,13 @@ public:
 	};
 
 	enum {
+		MSR_MTRRCAP					= 0xFE,
 		MSR_IA32_SYSENTER_CS		= 0x174,
 		MSR_IA32_SYSENTER_ESP		= 0x175,
 		MSR_IA32_SYSENTER_EIP		= 0x176,
+		MSR_IA32_MTRR_PHYSBASE0		= 0x200,
+		MSR_IA32_MTRR_PHYSMASK0		= 0x201,
+		MSR_IA32_MTRR_DEF_TYPE		= 0x2FF,
         MSR_EFER					= 0xc0000080,
         MSR_IA32_STAR              	= 0xc0000081,
         MSR_IA32_LSTAR             	= 0xc0000082,

@@ -86,13 +86,14 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{mmap,				"mmap",    			7},
 	{mprotect,			"mprotect",    		2},
 	{munmap,			"munmap",    		1},
+	{mattr,				"mattr",			3},
 	{getuid,			"getuid",    		0},
 	{setuid,			"setuid",    		1},
 	{geteuid,			"geteuid",    		0},
 	{seteuid,			"seteuid",    		1},
-	{getgid,			"getgid",    		0},
 
 	/* 50 */
+	{getgid,			"getgid",    		0},
 	{setgid,			"setgid",    		1},
 	{getegid,			"getegid",    		0},
 	{setegid,			"setegid",   		1},
@@ -102,9 +103,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{setgroups,			"setgroups",    	2},
 	{isingroup,			"isingroup",    	2},
 	{alarm,				"alarm",    		1},
-	{tsctotime,			"tsctotime",    	1},
 
 	/* 60 */
+	{tsctotime,			"tsctotime",    	1},
 	{semcrt,			"semcrt",			1},
 	{semop,				"semop",			2},
 	{semdestr,			"semdestr",			1},
@@ -114,9 +115,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{creatsibl,			"creatsibl",		2},
 	{sysconfstr,		"sysconfstr",		3},
 	{clonems,			"clonems",			0},
-	{joinms,			"joinms",			1},
 
 	/* 70 */
+	{joinms,			"joinms",			1},
 	{mlock,				"mlock",			2},
 	{mlockall,			"mlockall",			0},
 	{semcrtirq,			"semcrtirq",		4},

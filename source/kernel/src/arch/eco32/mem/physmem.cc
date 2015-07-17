@@ -19,8 +19,13 @@
 
 #include <mem/physmem.h>
 #include <common.h>
+#include <errno.h>
 
 bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	/* only the IO-space can be mapped */
 	return addr >= 0x30000000 && addr + size < 0x40000000;
+}
+
+int PhysMem::setAttributes(uintptr_t,size_t,uint) {
+	return -ENOTSUP;
 }

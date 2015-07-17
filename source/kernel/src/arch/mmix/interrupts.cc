@@ -243,12 +243,13 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 
 	/* we can't add the signal before the kb-interrupts are disabled; otherwise a kernel-miss might
 	 * call UEnv::handleSignal(), which might cause a thread-switch */
-	if(!fireIrq(irqNo)) {
-		/* if there is no device that handles the signal, reenable interrupts */
-		kbRegs[KEYBOARD_CTRL] |= KEYBOARD_IEN;
-	}
-	else
+	if(fireIrq(irqNo))
 		Thread::switchAway();
+	else {
+		/* read the character and reenable interrupts */
+		A_UNUSED volatile uint64_t sc = kbRegs[KEYBOARD_DATA];
+		kbRegs[KEYBOARD_CTRL] = KEYBOARD_IEN;
+	}
 }
 
 void Interrupts::irqTimer(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
@@ -263,9 +264,7 @@ void Interrupts::irqDisk(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 	/* see Interrupts::irqKb() */
 	uint64_t *diskRegs = (uint64_t*)DISK_BASE;
 	diskRegs[DISK_CTRL] &= ~DISK_IEN;
-	if(!fireIrq(irqNo))
-		diskRegs[DISK_CTRL] |= DISK_IEN;
-	else
+	if(fireIrq(irqNo))
 		Thread::switchAway();
 }
 
@@ -274,9 +273,7 @@ void Interrupts::irqTermRcvr(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	/* see Interrupts::irqKb() */
 	uint64_t *termRegs = (uint64_t*)(TERM_BASE + dev * 32);
 	termRegs[TERM_RCVR_CTRL] &= ~TERM_RCVR_IEN;
-	if(!fireIrq(irqNo))
-		termRegs[TERM_RCVR_CTRL] |= TERM_RCVR_IEN;
-	else
+	if(fireIrq(irqNo))
 		Thread::switchAway();
 }
 
@@ -285,9 +282,7 @@ void Interrupts::irqTermXmtr(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	/* see Interrupts::irqKb() */
 	uint64_t *termRegs = (uint64_t*)(TERM_BASE + dev * 32);
 	termRegs[TERM_XMTR_CTRL] &= ~TERM_XMTR_IEN;
-	if(!fireIrq(irqNo))
-		termRegs[TERM_XMTR_CTRL] |= TERM_XMTR_IEN;
-	else
+	if(fireIrq(irqNo))
 		Thread::switchAway();
 }
 

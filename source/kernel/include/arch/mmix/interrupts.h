@@ -61,6 +61,7 @@ class Interrupts : public InterruptsBase {
 
 	static const uintptr_t KEYBOARD_BASE	= 0x8006000000000000;
 	static const ulong KEYBOARD_CTRL		= 0;
+	static const ulong KEYBOARD_DATA		= 1;
 	static const ulong KEYBOARD_IEN			= 0x02;
 
 	static const uintptr_t DISK_BASE		= 0x8003000000000000;

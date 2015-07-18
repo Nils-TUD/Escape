@@ -137,9 +137,6 @@ private:
 	static int fork(Thread *t,IntrptStackFrame *stack);
 	static int waitchild(Thread *t,IntrptStackFrame *stack);
 	static int exec(Thread *t,IntrptStackFrame *stack);
-	static int getenvito(Thread *t,IntrptStackFrame *stack);
-	static int getenvto(Thread *t,IntrptStackFrame *stack);
-	static int setenv(Thread *t,IntrptStackFrame *stack);
 
 	// signals
 	static int signal(Thread *t,IntrptStackFrame *stack);

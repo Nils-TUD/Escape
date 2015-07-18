@@ -12,9 +12,9 @@ load /sbin/ext2 /dev/ext2-ramdisk-fs.img /dev/ramdisk-fs.img
 load /fs.img
 EOF
 
-files="boot/escape bin/initloader sbin/ramdisk sbin/ext2"
+files="boot/escape bin/initloader sbin/ramdisk sbin/pci sbin/ext2"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
-( cd $1 && rsync --progress -RLp cd.iso $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp fs.img $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-52-54-00-12-34-56 $ESC_SERVER )
 
 $ESC_QEMU -m 256 -net nic,model=ne2k_pci -net nic -net user -serial stdio \

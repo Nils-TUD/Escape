@@ -1,18 +1,18 @@
 #!/bin/sh
 source boot/$ESC_TGTTYPE/images.sh
-create_mini_cd $1/dist $1/cd-mini.iso 0
+create_fsimg $1/dist $1/fs.img
 
 cat >$1/config-$ESC_MAC <<EOF
 root escape
-exec /boot/escape root=/dev/iso9660-ramdisk-cd nosmp
+exec /boot/escape root=/dev/ext2-ramdisk-fs nosmp
 load /bin/initloader
-load /sbin/ramdisk /dev/ramdisk-cd -f /sys/boot/cd-mini.iso
+load /sbin/ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img
 load /sbin/pci /dev/pci
-load /sbin/iso9660 /dev/iso9660-ramdisk-cd /dev/ramdisk-cd
-load /cd-mini.iso
+load /sbin/ext2 /dev/ext2-ramdisk-fs /dev/ramdisk-fs
+load /fs.img
 EOF
 
-files="boot/escape bin/initloader sbin/ramdisk sbin/iso9660 sbin/pci"
+files="boot/escape bin/initloader sbin/ramdisk sbin/ext2 sbin/pci"
 ( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
-( cd $1 && rsync --progress -RLp cd-mini.iso $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp fs.img $ESC_SERVER/escape )
 ( cd $1 && rsync --progress -RLp config-$ESC_MAC $ESC_SERVER )

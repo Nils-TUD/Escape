@@ -68,6 +68,7 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,int flags)
 	frameno_t firstFrame = -1;
 
 	/* allocate physical contiguous memory */
+	uint mapflags = MAP_NOMAP;
 	if(!(flags & MAP_PHYS_MAP)) {
 		if(align) {
 			ssize_t first = PhysMem::allocateContiguous(pages,align / PAGE_SIZE);
@@ -77,14 +78,15 @@ uintptr_t VirtMem::mapphys(uintptr_t *phys,size_t bCount,size_t align,int flags)
 		}
 	}
 	/* otherwise use the specified one */
-	else
+	else {
+		/* for specifically requested physical memory, don't free it and don't swap it out */
+		mapflags |= MAP_NOFREE | MAP_LOCKED;
 		firstFrame = *phys / PAGE_SIZE;
+	}
 
 	/* create region */
 	VMRegion *vm;
-	/* for specifically requested physical memory, don't free it and don't swap it out */
-	res = map(0,bCount,0,PROT_READ | PROT_WRITE,
-			(flags & MAP_PHYS_MAP) ? (MAP_NOMAP | MAP_NOFREE | MAP_LOCKED) : MAP_NOMAP,NULL,0,&vm);
+	res = map(0,bCount,0,PROT_READ | PROT_WRITE,mapflags,NULL,0,&vm);
 	if(res < 0) {
 		if(!(flags & MAP_PHYS_MAP))
 			PhysMem::freeContiguous(firstFrame,pages);

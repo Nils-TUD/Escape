@@ -19,6 +19,7 @@
 
 #include <sys/arch/x86/ports.h>
 #include <esc/ipc/screendevice.h>
+#include <esc/proto/pci.h>
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/driver.h>
@@ -118,6 +119,7 @@ void VESA::init() {
 	gui = new VESAGUI();
 	tui = new VESATUI();
 
+	uintptr_t fbAddr = 0;
 	uint mask = VBE::MODE_SUPPORTED | VBE::MODE_GRAPHICS_MODE | VBE::MODE_LIN_FRAME_BUFFER;
 	for(auto m = VBE::begin(); m != VBE::end(); ++m) {
 		if((m->second->modeAttributes & mask) == mask && m->second->bitsPerPixel >= 16 &&
@@ -135,13 +137,34 @@ void VESA::init() {
 			mode.greenFieldPosition = m->second->greenFieldPosition;
 			mode.blueMaskSize = m->second->blueMaskSize;
 			mode.blueFieldPosition = m->second->blueFieldPosition;
-			mode.physaddr = m->second->physBasePtr;
+			fbAddr = mode.physaddr = m->second->physBasePtr;
 			mode.tuiHeaderSize = 0;
 			mode.guiHeaderSize = 0;
-			mode.mode = esc::Screen::MODE_GRAPHICAL;
-			mode.type = esc::Screen::MODE_TYPE_TUI | esc::Screen::MODE_TYPE_GUI;
+			mode.mode = Screen::MODE_GRAPHICAL;
+			mode.type = Screen::MODE_TYPE_TUI | Screen::MODE_TYPE_GUI;
 			modes.push_back(mode);
 		}
+	}
+
+	// set the framebuffer to write-combining
+	try {
+		PCI pci("/dev/pci");
+		PCI::Device dev = pci.getByClass(PCI_CLASS,PCI_SUBCLASS);
+		for(size_t i = 0; i < ARRAY_SIZE(PCI::Device::bars); ++i) {
+			uintptr_t phys = dev.bars[i].addr;
+			size_t size = dev.bars[i].size;
+			if(dev.bars[i].type == PCI::Bar::BAR_MEM && phys) {
+				if(fbAddr >= phys && fbAddr < phys + size) {
+					print("Setting physical memory %p..%p to write-combining",phys,phys + size - 1);
+					if(mattr(phys,size,MATTR_WC) < 0)
+						printe("Unable to set write-combining");
+					break;
+				}
+			}
+		}
+	}
+	catch(const std::exception &e) {
+		print("Unable to find graphics card: %s",e.what());
 	}
 }
 

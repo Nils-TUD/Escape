@@ -32,6 +32,9 @@ class VESATUI;
 class VESA {
 	VESA() = delete;
 
+	static const int PCI_CLASS		= 0x03;
+	static const int PCI_SUBCLASS	= 0x00;
+
 	class Client : public esc::ScreenClient {
 	public:
 		explicit Client(int f) : ScreenClient(f), screen() {

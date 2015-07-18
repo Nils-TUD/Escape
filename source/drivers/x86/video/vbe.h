@@ -136,6 +136,10 @@ public:
 		info = *it->second;
 		return true;
 	}
+	static int getMode() {
+		x86emuExec(VBE_GMODE_FUNC,0,0,0,ADDR_SEG(ES_SEG0));
+		return M.x86.R_EBX;
+	}
 	static void setMode(int mode) {
 		x86emuExec(VBE_MODE_FUNC,mode | MODE_SET_PRESERVE | MODE_SET_LFB,0,0,ADDR_SEG(ES_SEG0));
 	}

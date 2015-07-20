@@ -27,19 +27,19 @@ class Config {
 
 public:
 	enum {
-		TIMER_FREQ,
-		MAX_PROCS,
-		MAX_FDS,
-		ROOT_DEVICE,
-		SWAP_DEVICE,
-		LOG,
-		LOG_TO_VGA,
-		LINE_BY_LINE,
-		CPU_COUNT,
-		SMP,
-		TICKS_PER_SEC,
-		FORCE_PIT,
-		FORCE_PIC,
+		TIMER_FREQ		= 0,
+		MAX_PROCS		= 1,
+		MAX_FDS			= 2,
+		LOG				= 3,
+		LOG_TO_VGA		= 4,
+		LINE_BY_LINE	= 5,
+		CPU_COUNT		= 6,
+		SMP				= 7,
+		TICKS_PER_SEC	= 8,
+		FORCE_PIT		= 9,
+		FORCE_PIC		= 10,
+		ROOT_DEVICE		= 32,
+		SWAP_DEVICE		= 33,
 	};
 
 	/**
@@ -69,12 +69,7 @@ public:
 private:
 	static void set(const char *name,const char *value);
 
-	static bool logToVGA;
-	static bool lineByLine;
-	static bool doLog;
-	static bool smp;
-	static bool forcePIT;
-	static bool forcePIC;
+	static uint32_t flags;
 	static char rootDev[];
 	static char swapDev[];
 };

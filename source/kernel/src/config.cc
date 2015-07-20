@@ -27,12 +27,7 @@
 #include <errno.h>
 #include <string.h>
 
-bool Config::logToVGA = false;
-bool Config::lineByLine = false;
-bool Config::doLog = true;
-bool Config::smp = true;
-bool Config::forcePIT = false;
-bool Config::forcePIC = false;
+uint Config::flags = (1 << Config::SMP) | (1 << Config::LOG);
 char Config::rootDev[MAX_BPVAL_LEN + 1] = "";
 char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
@@ -57,7 +52,7 @@ void Config::parseBootParams(int argc,const char *const *argv) {
 
 	// TODO no SMP on x86_64 yet
 #if defined(__x86_64__)
-	smp = false;
+	flags &= ~(1 << SMP);
 #endif
 }
 
@@ -86,29 +81,19 @@ long Config::get(int id) {
 		case MAX_FDS:
 			res = MAX_FD_COUNT;
 			break;
-		case LOG:
-			res = doLog;
-			break;
-		case LOG_TO_VGA:
-			res = logToVGA;
-			break;
-		case LINE_BY_LINE:
-			res = lineByLine;
-			break;
 		case CPU_COUNT:
 			res = SMP::getCPUCount();
-			break;
-		case SMP:
-			res = smp;
 			break;
 		case TICKS_PER_SEC:
 			res = CPU::getSpeed();
 			break;
+		case LOG:
+		case LOG_TO_VGA:
+		case LINE_BY_LINE:
+		case SMP:
 		case FORCE_PIT:
-			res = forcePIT;
-			break;
 		case FORCE_PIC:
-			res = forcePIC;
+			res = !!(flags & (1 << id));
 			break;
 		default:
 			res = -EINVAL;
@@ -123,15 +108,15 @@ void Config::set(const char *name,const char *value) {
 	else if(strcmp(name,"swapdev") == 0)
 		strcpy(swapDev,value);
 	else if(strcmp(name,"nolog") == 0)
-		doLog = false;
+		flags &= ~(1 << LOG);
 	else if(strcmp(name,"linebyline") == 0)
-		lineByLine = true;
+		flags |= 1 << LINE_BY_LINE;
 	else if(strcmp(name,"logtovga") == 0)
-		logToVGA = true;
+		flags |= 1 << LOG_TO_VGA;
 	else if(strcmp(name,"nosmp") == 0)
-		smp = false;
+		flags &= ~(1 << SMP);
 	else if(strcmp(name,"forcepit") == 0)
-		forcePIT = true;
+		flags |= 1 << FORCE_PIT;
 	else if(strcmp(name,"forcepic") == 0)
-		forcePIC = true;
+		flags |= 1 << FORCE_PIC;
 }

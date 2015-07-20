@@ -138,7 +138,6 @@ int main(int argc,char **argv) {
 	size_t i;
 	bool useDma = true;
 	bool useIRQ = true;
-	FILE *f;
 
 	if(argc < 2) {
 		printe("Usage: %s <wait> [nodma]",argv[0]);
@@ -159,8 +158,11 @@ int main(int argc,char **argv) {
 	fflush(stdout);
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that all ata-devices are registered */
-	f = fopen("/sys/devices/ata","w");
-	fclose(f);
+	{
+		FILE *f = fopen(argv[1],"w");
+		if(f)
+			fclose(f);
+	}
 
 	/* start drive threads */
 	for(i = 1; i < drvCount; i++) {

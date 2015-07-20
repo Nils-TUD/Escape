@@ -57,12 +57,14 @@ void ctrl_init(bool useDma,bool useIRQ) {
 	ssize_t i,j;
 
 	/* get ide-controller from pci */
-	{
-		PCI pci("/dev/pci");
-		ideCtrl = pci.getByClass(IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS);
-		ATA_LOG("Found IDE-controller (%d.%d.%d): vendorId %x, deviceId %x, rev %x",
-				ideCtrl.bus,ideCtrl.dev,ideCtrl.func,ideCtrl.vendorId,ideCtrl.deviceId,ideCtrl.revId);
-	}
+	PCI pci("/dev/pci");
+	ideCtrl = pci.getByClass(IDE_CTRL_CLASS,IDE_CTRL_SUBCLASS);
+	ATA_LOG("Found IDE-controller (%d.%d.%d): vendorId %x, deviceId %x, rev %x",
+			ideCtrl.bus,ideCtrl.dev,ideCtrl.func,ideCtrl.vendorId,ideCtrl.deviceId,ideCtrl.revId);
+
+	/* ensure that the I/O space is enabled */
+	uint32_t statusCmd = pci.read(ideCtrl.bus,ideCtrl.dev,ideCtrl.func,0x04);
+	pci.write(ideCtrl.bus,ideCtrl.dev,ideCtrl.func,0x04,(statusCmd & ~0x400) | 0x01);
 
 	ctrls[0].id = DEVICE_PRIMARY;
 	ctrls[0].irq = CTRL_IRQ_BASE;

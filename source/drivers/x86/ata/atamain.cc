@@ -137,6 +137,7 @@ static int drive_thread(void *arg) {
 int main(int argc,char **argv) {
 	size_t i;
 	bool useDma = true;
+	bool useIRQ = true;
 	FILE *f;
 
 	if(argc < 2) {
@@ -147,10 +148,12 @@ int main(int argc,char **argv) {
 	for(i = 2; (int)i < argc; i++) {
 		if(strcmp(argv[i],"nodma") == 0)
 			useDma = false;
+		else if(strcmp(argv[i],"noirq") == 0)
+			useIRQ = false;
 	}
 
 	/* detect and init all devices */
-	ctrl_init(useDma);
+	ctrl_init(useDma,useIRQ);
 	initDrives();
 	/* flush prints */
 	fflush(stdout);

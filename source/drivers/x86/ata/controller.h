@@ -51,8 +51,9 @@
  * Inits the controllers
  *
  * @param useDma whether to use DMA, if possible
+ * @param useIRQ whether to use IRQs
  */
-void ctrl_init(bool useDma);
+void ctrl_init(bool useDma,bool useIRQ);
 
 /**
  * @param id the id

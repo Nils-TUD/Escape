@@ -53,7 +53,7 @@ static bool ctrl_isBusResponding(sATAController* ctrl);
 static PCI::Device ideCtrl;
 static sATAController ctrls[2];
 
-void ctrl_init(bool useDma) {
+void ctrl_init(bool useDma,bool useIRQ) {
 	ssize_t i,j;
 
 	/* get ide-controller from pci */
@@ -82,7 +82,7 @@ void ctrl_init(bool useDma) {
 
 	for(i = 0; i < 2; i++) {
 		ATA_PR2("Initializing controller %d",ctrls[i].id);
-		ctrls[i].useIrq = true;
+		ctrls[i].useIrq = useIRQ;
 		ctrls[i].useDma = false;
 
 		/* request ports */
@@ -100,12 +100,14 @@ void ctrl_init(bool useDma) {
 			continue;
 		}
 
-		/* set interrupt-handler */
-		char irqname[32];
-		snprintf(irqname,sizeof(irqname),"ATA%zd",i);
-		ctrls[i].irqsem = semcrtirq(ctrls[i].irq,irqname,NULL,NULL);
-		if(ctrls[i].irqsem < 0)
-			error("Unable to create irq-semaphore for IRQ %d",ctrls[i].irq);
+		if(useIRQ) {
+			/* set interrupt-handler */
+			char irqname[32];
+			snprintf(irqname,sizeof(irqname),"ATA%zd",i);
+			ctrls[i].irqsem = semcrtirq(ctrls[i].irq,irqname,NULL,NULL);
+			if(ctrls[i].irqsem < 0)
+				error("Unable to create irq-semaphore for IRQ %d",ctrls[i].irq);
+		}
 
 		/* init DMA */
 		ctrls[i].bmrBase = ideCtrl.bars[IDE_CTRL_BAR].addr;

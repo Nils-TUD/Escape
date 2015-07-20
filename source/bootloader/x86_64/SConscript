@@ -1,0 +1,21 @@
+# -*- Mode: Python -*-
+
+Import('env')
+
+myenv = env.Clone()
+ldscript = 'bootloader/x86_64/ld.conf'
+myenv.Append(LINKFLAGS = '-ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldscript)
+
+loader = myenv.Object('loader.o', 'loader.cc')
+for bin in ['escape','initloader','ata','pci','ext2']:
+	myenv.EscapeDump(target = bin + '.dump', source = '$BINDIR/' + bin)
+	myenv.Install('$DUMPDIR', bin + '.dump')
+	myenv.Depends(loader, '$DUMPDIR/' + bin + '.dump')
+
+prog = myenv.EscapeCXXProg(
+	'boot', 'bootloader.tmp', ['start.S', loader, 'serial.cc'],
+	force_static = True, var_addr = False,
+	LIBS = ['c']
+)
+myenv.EscapeStrip(target = 'bootloader', source = prog)
+myenv.Install('$BINDIR', 'bootloader')

@@ -43,7 +43,6 @@
 .extern unittest_start
 .extern uenv_setupThread
 .extern paging_setup
-.extern gem5boot
 
 .section .initdata
 // our temporary kernel stack
@@ -119,12 +118,6 @@ setupGDTEntriesEnd:
 
 // the kernel entry point
 bspEntry:
-#if defined(__x86_64__)
-	cmp		$MULTIBOOT_MAGIC,%eax
-	// TODO atm, we assume gem5 in this case, which is of course not always true
-	jne		gem5boot
-#endif
-
 	// we distinguish the BSP and APs by esi
 	mov		$1,%esi
 	// first setup a GDT

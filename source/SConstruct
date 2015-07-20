@@ -113,6 +113,7 @@ env.Append(
 	DISTDIR = Dir(builddir + '/dist'),
 	BINDIR = Dir(builddir + '/bin'),
 	MAPDIR = Dir(builddir + '/map'),
+	DUMPDIR = Dir(builddir + '/dump'),
 	SYSLIBPATH = Dir(crossdir + '/lib'),
 	SYSGCCLIBPATH = Dir(crossdir + '/lib/gcc/' + cross + '/' + crossver),
 	SYSSHGCCPATH = Dir(crossdir + '/' + cross + '/lib')
@@ -174,6 +175,11 @@ def EscapeDump(env, target, source):
 	dump = env.Command(target, source, '$BINDIR/hostdump $SOURCE > $TARGET')
 	env.Depends(dump, '$BINDIR/hostdump')
 	env.Install('$BUILDDIR', dump)
+
+def EscapeStrip(env, target, source):
+    return env.Command(
+        target, source, cross + '-strip -s -o $TARGET $SOURCE'
+    )
 
 def EscapeGCCLibs(env, static):
 	if static:
@@ -247,6 +253,7 @@ symlink = Builder(action = 'ln -sf ${SOURCE.abspath} $TARGET')
 env.Append(BUILDERS = {'Symlink' : symlink})
 env.AddMethod(EscapeMap)
 env.AddMethod(EscapeDump)
+env.AddMethod(EscapeStrip)
 env.AddMethod(EscapeCProg)
 env.AddMethod(EscapeCXXProg)
 env.AddMethod(EscapeLib)

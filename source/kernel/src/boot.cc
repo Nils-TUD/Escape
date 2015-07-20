@@ -156,9 +156,11 @@ void Boot::createModFiles() {
 void Boot::parseCmdline() {
 	int argc;
 	const char **argv = Boot::parseArgs((char*)info.cmdLine,&argc);
+	Log::get().writef("Kernel parameters: ");
+	for(int i = 0; i < argc; ++i)
+		Log::get().writef("%s ",argv[i]);
+	Log::get().writef("\n");
 	Config::parseBootParams(argc,argv);
-
-	Log::get().writef("Kernel parameters: %s\n",info.cmdLine);
 }
 
 size_t Boot::getKernelSize() {

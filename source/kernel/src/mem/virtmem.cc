@@ -355,9 +355,9 @@ int VirtMem::lockRegion(VMRegion *vm,int flags) {
 
 	/* should we populate it but fail if there is not enough mem? */
 	if(flags & MAP_NOSWAP) {
-		size_t swCount;
-		size_t presentCount = vm->reg->pageCount(&swCount);
-		if(!t->reserveFrames(pageCount - presentCount,false)) {
+		size_t swCount,cowCount;
+		size_t presentCount = vm->reg->pageCount(&swCount,&cowCount);
+		if(!t->reserveFrames(pageCount - (presentCount - cowCount),false)) {
 			res = -ENOMEM;
 			goto error;
 		}
@@ -727,13 +727,13 @@ void VirtMem::doUnmap(VMRegion *vm) {
 		delete r;
 	}
 	else {
-		size_t sw;
+		size_t sw,cow;
 		/* no free here, just unmap */
 		getPageDir()->unmap(vm->virt(),pcount,alloc);
 		/* in this case its always a shared region because otherwise there wouldn't be other users */
 		/* so we have to substract the present content-frames from the shared ones,
 		 * and the ptables from ours */
-		addShared(-vm->reg->pageCount(&sw));
+		addShared(-vm->reg->pageCount(&sw,&cow));
 		addOwn(-alloc.pageTables());
 		addSwap(-sw);
 		/* remove from shared tree */
@@ -748,7 +748,7 @@ void VirtMem::doUnmap(VMRegion *vm) {
 }
 
 int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAddr,ulong flags) {
-	size_t swCount,pageCount,presentCount;
+	size_t swCount,cowCount,pageCount,presentCount;
 	size_t oldSh,oldOwn;
 	uintptr_t addr;
 	int pts,res = -ENOMEM;
@@ -775,11 +775,11 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 	assert(vm->reg->getFlags() & RF_SHAREABLE);
 
 	pageCount = BYTES_2_PAGES(vm->reg->getByteCount());
-	presentCount = vm->reg->pageCount(&swCount);
+	presentCount = vm->reg->pageCount(&swCount,&cowCount);
 
 	/* should we populate it but fail if there is not enough mem? */
 	if((flags & (MAP_POPULATE | MAP_NOSWAP)) == (MAP_POPULATE | MAP_NOSWAP)) {
-		if(!t->reserveFrames(pageCount - presentCount,false))
+		if(!t->reserveFrames(pageCount - (presentCount - cowCount),false))
 			goto errRel;
 	}
 
@@ -912,8 +912,8 @@ int VirtMem::cloneAll(VirtMem *dst) {
 
 			/* update stats */
 			if(vm->reg->getFlags() & RF_SHAREABLE) {
-				size_t sw;
-				dst->addShared(nvm->reg->pageCount(&sw));
+				size_t sw,cow;
+				dst->addShared(nvm->reg->pageCount(&sw,&cow));
 				dst->addSwap(sw);
 				/* ignore it here if it fails */
 				ShFiles::add(nvm,dst->getProc()->getPid());

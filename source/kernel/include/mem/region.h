@@ -173,9 +173,10 @@ public:
 	 * Counts the number of present and swapped out pages in the region
 	 *
 	 * @param swapped will be set to the number of swapped out pages
+	 * @param cow will be set to the number of cow pages
 	 * @return the number of present pages
 	 */
-	size_t pageCount(size_t *swapped) const;
+	size_t pageCount(size_t *swapped,size_t *cow) const;
 
 	/**
 	 * @return the number of references of the region

@@ -117,13 +117,16 @@ Region::~Region() {
 	Cache::free(pageFlags);
 }
 
-size_t Region::pageCount(size_t *swapped) const {
+size_t Region::pageCount(size_t *swapped,size_t *cow) const {
 	size_t c = 0,pcount = BYTES_2_PAGES(byteCount);
 	assert(this != NULL);
 	*swapped = 0;
+	*cow = 0;
 	for(size_t i = 0; i < pcount; i++) {
 		if((pageFlags[i] & (PF_DEMANDLOAD | PF_SWAPPED)) == 0)
 			c++;
+		if(pageFlags[i] & PF_COPYONWRITE)
+			(*cow)++;
 		if(pageFlags[i] & PF_SWAPPED)
 			(*swapped)++;
 	}

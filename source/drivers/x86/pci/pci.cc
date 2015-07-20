@@ -101,6 +101,7 @@ public:
 
 		DBG("%02x:%02x:%x [%#04x] <- %#08x",bus,dev,func,offset,value);
 		pci_write(bus,dev,func,offset,value);
+		is << 0 << Reply();
 	}
 
 	void hasCap(IPCStream &is) {

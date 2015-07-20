@@ -196,7 +196,8 @@ public:
 	 * @param value the value to write
 	 */
 	void write(uchar bus,uchar dev,uchar func,uint32_t offset,uint32_t value) {
-		_is << bus << dev << func << offset << value << Send(MSG_PCI_WRITE);
+		int res;
+		_is << bus << dev << func << offset << value << SendReceive(MSG_PCI_WRITE) >> res;
 	}
 
 	/**

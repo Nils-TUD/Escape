@@ -69,19 +69,28 @@ void Timer::wait(uint us) {
 }
 
 uint64_t Timer::detectCPUSpeed(uint64_t *busHz) {
+	int measureCount		= 5;
+	int reqMatches		= 3;
+	int instrCountFactor	= 0x1000;
+	if(Config::get(Config::ACCURATE_CPU)) {
+		measureCount = 2;
+		reqMatches = 1;
+		instrCountFactor = 0x100;
+	}
+
 	int bestMatches = -1;
 	uint64_t bestHz = 0;
 	uint64_t bestBusHz = 0;
-	for(int i = 1; i <= MEASURE_COUNT; i++) {
+	for(int i = 1; i <= measureCount; i++) {
 		bool found = true;
-		uint64_t ref = determineSpeed(0x1000 * i * 10,busHz);
+		uint64_t ref = determineSpeed(instrCountFactor * i * 10,busHz);
 		/* no tick at all? */
 		if(ref == 0)
 			continue;
 
 		int j;
-		for(j = 0; j < REQUIRED_MATCHES; j++) {
-			uint64_t hz = determineSpeed(0x1000 * i * 10,busHz);
+		for(j = 0; j < reqMatches; j++) {
+			uint64_t hz = determineSpeed(instrCountFactor * i * 10,busHz);
 			/* not in tolerance? */
 			if(((ref - hz) > 0 && (ref - hz) > TOLERANCE) ||
 				((hz - ref) > 0 && (hz - ref) > TOLERANCE)) {

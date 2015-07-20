@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <string.h>
 
-uint Config::flags = (1 << Config::SMP) | (1 << Config::LOG);
+uint32_t Config::flags = (1 << Config::SMP) | (1 << Config::LOG);
 char Config::rootDev[MAX_BPVAL_LEN + 1] = "";
 char Config::swapDev[MAX_BPVAL_LEN + 1] = "";
 
@@ -93,6 +93,7 @@ long Config::get(int id) {
 		case SMP:
 		case FORCE_PIT:
 		case FORCE_PIC:
+		case ACCURATE_CPU:
 			res = !!(flags & (1 << id));
 			break;
 		default:
@@ -119,4 +120,6 @@ void Config::set(const char *name,const char *value) {
 		flags |= 1 << FORCE_PIT;
 	else if(strcmp(name,"forcepic") == 0)
 		flags |= 1 << FORCE_PIC;
+	else if(strcmp(name,"accuratecpu") == 0)
+		flags |= 1 << ACCURATE_CPU;
 }

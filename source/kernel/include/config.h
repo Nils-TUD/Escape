@@ -38,6 +38,7 @@ public:
 		TICKS_PER_SEC	= 8,
 		FORCE_PIT		= 9,
 		FORCE_PIC		= 10,
+		ACCURATE_CPU	= 11,
 		ROOT_DEVICE		= 32,
 		SWAP_DEVICE		= 33,
 	};

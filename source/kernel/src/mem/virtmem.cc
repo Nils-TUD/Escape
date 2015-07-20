@@ -371,6 +371,8 @@ int VirtMem::lockRegion(VMRegion *vm,int flags) {
 	vm->reg->setFlags(vm->reg->getFlags() | RF_LOCKED);
 error:
 	vm->reg->release();
+	if(flags & MAP_NOSWAP)
+		t->discardFrames();
 	return res;
 }
 

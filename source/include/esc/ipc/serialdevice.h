@@ -154,7 +154,9 @@ public:
 
 	void handleChar(char c) {
 		if(c == '\r')
-			c = '\n';
+		 	c = '\n';
+		else if(c == '\n')
+			return;
 
 		/* ^C */
 		if(c == 0x3) {

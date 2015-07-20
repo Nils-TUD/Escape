@@ -135,7 +135,6 @@ static int drive_thread(void *arg) {
 }
 
 int main(int argc,char **argv) {
-	size_t i;
 	bool useDma = true;
 	bool useIRQ = true;
 
@@ -144,7 +143,7 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	for(i = 2; (int)i < argc; i++) {
+	for(size_t i = 2; (int)i < argc; i++) {
 		if(strcmp(argv[i],"nodma") == 0)
 			useDma = false;
 		else if(strcmp(argv[i],"noirq") == 0)
@@ -165,7 +164,7 @@ int main(int argc,char **argv) {
 	}
 
 	/* start drive threads */
-	for(i = 1; i < drvCount; i++) {
+	for(size_t i = 1; i < drvCount; i++) {
 		if(startthread(drive_thread, devs[i]) < 0)
 			error("Unable to start thread");
 	}
@@ -184,7 +183,7 @@ int main(int argc,char **argv) {
 	relports(ATA_REG_BASE_SECONDARY,8);
 	relport(ATA_REG_BASE_PRIMARY + ATA_REG_CONTROL);
 	relport(ATA_REG_BASE_SECONDARY + ATA_REG_CONTROL);
-	for(i = 0; i < drvCount; i++)
+	for(size_t i = 0; i < drvCount; i++)
 		delete devs[i];
 	return EXIT_SUCCESS;
 }

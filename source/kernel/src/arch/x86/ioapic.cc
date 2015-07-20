@@ -68,10 +68,10 @@ void IOAPIC::add(uint8_t id,uintptr_t addr,uint baseGSI) {
 
 void IOAPIC::configureIrq(uint8_t irq,uint8_t gsi,DeliveryMode delivery,Polarity polarity,
 		TriggerMode triggerMode) {
-	assert(irq < ISA_IRQ_COUNT);
 	if(::Config::get(::Config::FORCE_PIC))
 		return;
 
+	assert(irq < ISA_IRQ_COUNT);
 	int vector = Interrupts::getVectorFor(irq);
 	if(vector == -1)
 		return;
@@ -88,10 +88,10 @@ void IOAPIC::configureIrq(uint8_t irq,uint8_t gsi,DeliveryMode delivery,Polarity
 }
 
 void IOAPIC::enableIrq(uint8_t irq) {
-	assert(irq < ISA_IRQ_COUNT);
 	if(::Config::get(::Config::FORCE_PIC))
 		return;
 
+	assert(irq < ISA_IRQ_COUNT);
 	int vector = Interrupts::getVectorFor(irq);
 	if(vector == -1 || exists(vector))
 		return;

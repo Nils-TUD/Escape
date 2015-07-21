@@ -34,7 +34,7 @@
 #define EXT2_SUPERBLOCK_LOCK				0xF7180002
 
 #define EXT2_ICACHE_SIZE					64
-#define EXT2_BCACHE_SIZE					512
+#define EXT2_BCACHE_SIZE					2048
 
 class Ext2FileSystem : public FileSystem {
 public:

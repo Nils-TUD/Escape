@@ -34,16 +34,8 @@
 #include "rw.h"
 
 int main(int argc,char *argv[]) {
-	char fspath[MAX_PATH_LEN];
 	if(argc != 3)
-		error("Usage: %s <wait> <devicePath>",argv[0]);
-
-	/* build fs device name */
-	char *dev = strrchr(argv[2],'/');
-	/* it might also be 'cdrom' */
-	if(!dev)
-		dev = argv[2] - 1;
-	snprintf(fspath,sizeof(fspath),"/dev/iso9660-%s",dev + 1);
+		error("Usage: %s <fsPath> <devicePath>",argv[0]);
 
 	ISO9660FileSystem *fs;
 	/* if the device is provided, simply use it */
@@ -85,7 +77,7 @@ int main(int argc,char *argv[]) {
 			error("Unable to find cd-device with /boot/escape on it");
 	}
 
-	FSDevice fsdev(fs,fspath);
+	FSDevice fsdev(fs,argv[1]);
 	fsdev.loop();
 	return 0;
 }

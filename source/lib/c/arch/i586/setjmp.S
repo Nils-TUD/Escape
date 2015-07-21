@@ -17,14 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/asm.h>
+
 .section .text
 
-.global setjmp
-.global longjmp
-
 // int setjmp(jmp_buf env);
-.type setjmp, @function
-setjmp:
+BEGIN_FUNC(setjmp)
 	push	%ebp
 	mov		%esp,%ebp
 
@@ -43,10 +41,10 @@ setjmp:
 	mov		$0,%eax								// return 0
 	leave
 	ret
+END_FUNC(setjmp)
 
 // int longjmp(jmp_buf env,int val);
-.type longjmp, @function
-longjmp:
+BEGIN_FUNC(longjmp)
 	push	%ebp
 	mov		%esp,%ebp
 
@@ -65,3 +63,4 @@ longjmp:
 	mov		%edx,%eax							// return val
 	ret											// no leave here because we've already restored the
 												// ebp of the caller stack-frame
+END_FUNC(setjmp)

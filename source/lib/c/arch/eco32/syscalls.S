@@ -17,20 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/asm.h>
+
 .extern errno_location
 
-.global syscall0
-.type syscall0, @function
-syscall0:
-.global syscall1
-.type syscall1, @function
-syscall1:
-.global syscall2
-.type syscall2, @function
-syscall2:
-.global syscall3
-.type syscall3, @function
-syscall3:
+BEGIN_FUNC(syscall0)
+BEGIN_FUNC(syscall1)
+BEGIN_FUNC(syscall2)
+BEGIN_FUNC(syscall3)
 	sub		$29,$29,4						// create stack frame
 	stw		$31,$29,0						// save return register
 	add		$12,$0,$0						// clear error-code
@@ -44,10 +38,12 @@ syscall3:
 	ldw		$31,$29,0						// restore return register
 	add		$29,$29,4						// release stack frame
 	jr		$31
+END_FUNC(syscall3)
+END_FUNC(syscall2)
+END_FUNC(syscall1)
+END_FUNC(syscall0)
 
-.global syscall4
-.type syscall4, @function
-syscall4:
+BEGIN_FUNC(syscall4)
 	sub		$29,$29,4						// create stack frame
 	stw		$31,$29,0						// save return register
 	add		$12,$0,$0						// clear error-code
@@ -62,10 +58,9 @@ syscall4:
 	ldw		$31,$29,0						// restore return register
 	add		$29,$29,4						// release stack frame
 	jr		$31
+END_FUNC(syscall4)
 
-.global syscall7
-.type syscall7, @function
-syscall7:
+BEGIN_FUNC(syscall7)
 	sub		$29,$29,4						// create stack frame
 	stw		$31,$29,0						// save return register
 	add		$12,$0,$0						// clear error-code
@@ -83,3 +78,4 @@ syscall7:
 	ldw		$31,$29,0						// restore return register
 	add		$29,$29,4						// release stack frame
 	jr		$31
+END_FUNC(syscall7)

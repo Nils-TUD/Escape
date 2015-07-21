@@ -18,11 +18,10 @@
  */
 
 #include <sys/arch.h>
-
-.global thread_idle
+#include <sys/asm.h>
 
 // void thread_idle();
-thread_idle:
+BEGIN_FUNC(thread_idle)
 	// when starting to idle for the first time, ensure that the segment-registers are set correctly
 	// for userland. this is important for APs, which start here (instead of going to userland like
 	// the BSP) and wake up later by an interrupt and might leave into userland from there.
@@ -36,3 +35,4 @@ thread_idle:
 1:
 	hlt
 	jmp			1b
+END_FUNC(thread_idle)

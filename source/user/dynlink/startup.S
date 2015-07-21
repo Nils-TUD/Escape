@@ -19,11 +19,10 @@
 
 .section .text
 
-#include <sys/syscalls.h>
 #include <sys/arch.h>
+#include <sys/asm.h>
+#include <sys/syscalls.h>
 
-.global sigRetFunc
-.global _start
 .extern __libc_preinit
 .extern __libc_init
 .extern initenv
@@ -52,7 +51,7 @@
 //  |    fd for prog   |
 //  +------------------+
 
-_start:
+BEGIN_FUNC(_start)
 	// init heap here first
 	call	load_initHeap
 
@@ -82,9 +81,11 @@ _start:
 
 	// load_setupProg returns the entrypoint
 	jmp		*%REG(ax)
+END_FUNC(_start)
 
 // all signal-handler return to this "function"
-sigRetFunc:
+BEGIN_FUNC(sigRetFunc)
 	mov		$ASM_SYSC_ACKSIG,%SYSCNO
 	int		$ASM_IRQ_ACKSIG
 	// never reached
+END_FUNC(sigRetFunc)

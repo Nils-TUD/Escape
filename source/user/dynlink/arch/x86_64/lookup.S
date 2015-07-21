@@ -18,13 +18,13 @@
  */
 
 #include <sys/arch.h>
+#include <sys/asm.h>
 
 .section .text
 
-.global lookup_resolveStart
 .extern lookup_resolve
 
-lookup_resolveStart:
+BEGIN_FUNC(lookup_resolveStart)
 	push	%ARG_1
 	push	%ARG_2
 	push	%ARG_3
@@ -42,3 +42,4 @@ lookup_resolveStart:
 	pop		%ARG_1
 	add		$(2 * WORDSIZE),%rsp
 	jmp		*%rax
+END_FUNC(lookup_resolveStart)

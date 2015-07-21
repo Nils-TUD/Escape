@@ -18,15 +18,14 @@
  */
 
 #include <sys/arch.h>
+#include <sys/asm.h>
 
 .section .text
 
-.global _start
-.global sigRetFunc
 .extern __libc_init
 .extern main
 
-_start:
+BEGIN_FUNC(_start)
 	mov		$0,%ARG_1
 	mov		$0,%ARG_2
 	mov		$0,%ARG_3
@@ -49,7 +48,9 @@ _start:
 
 	// we should not reach this
 1:	jmp		1b
+END_FUNC(_start)
 
 // provide just a dummy
-sigRetFunc:
+BEGIN_FUNC(sigRetFunc)
 	jmp		sigRetFunc
+END_FUNC(sigRetFunc)

@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/asm.h>
 #include <sys/syscalls.h>
 
 .section .text
 
-.global _start
-.global sigRetFunc
 .extern main
 .extern exit
 .extern __libc_preinit
@@ -50,7 +49,7 @@
 //  +------------------+
 
 #ifndef SHAREDLIB
-_start:
+BEGIN_FUNC(_start)
 	ldw		$4,$29,0			// entrypoint
 	ldw		$5,$29,4			// argc
 	ldw		$6,$29,8			// argv
@@ -59,14 +58,14 @@ _start:
 	// call __libc_preinit(entryPoint,argc,argv)
 	jal		__libc_preinit
 	// it returns the entrypoint; 0 if we're the initial thread
-	beq		$2,$0,initialThread
+	beq		$2,$0,1f
 	// we're an additional thread, so call the desired function
 	ldw		$4,$29,36
 	jalr	$2
-	j		threadExit
+	j		2f
 
 	// initial thread calls main
-initialThread:
+1:
 	// init env stuff
 	ldw		$4,$29,44		// envc
 	ldw		$5,$29,48		// envv
@@ -80,15 +79,17 @@ initialThread:
 	ldw		$5,$29,40		// argv
 	jal		main
 
-threadExit:
+2:
 	add		$4,$2,$0
 	jal		exit
 	// just to be sure
 	1: j	1b
+END_FUNC(_start)
 
 // all signal-handler return to this "function"
-sigRetFunc:
+BEGIN_FUNC(sigRetFunc)
 	add		$4,$0,ASM_SYSC_ACKSIG
 	trap
 	// never reached
+END_FUNC(sigRetFunc)
 #endif

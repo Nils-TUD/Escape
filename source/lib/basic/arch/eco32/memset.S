@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global memset
+#include <sys/asm.h>
 
 // void memset(void *addr,int value,size_t count)
-memset:
+BEGIN_FUNC(memset)
 	.nosyn
 	add		$10,$4,$6						// dest-end
 	and		$8,$4,3
@@ -88,3 +88,4 @@ memset:
 3:
 	jr		$31
 	.syn
+END_FUNC(memset)

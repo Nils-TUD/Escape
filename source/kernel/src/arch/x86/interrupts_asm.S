@@ -19,6 +19,7 @@
 
 #include <intrptstackframe.h>
 #include <sys/arch.h>
+#include <sys/asm.h>
 
 .global kstackPtr
 .global waiting
@@ -43,22 +44,22 @@ flushed:
 
 // macro to build a default-isr-handler
 .macro BUILD_DEF_ISR no
-	.global isr\no
-	isr\no:
+	BEGIN_FUNC(isr\no)
 	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	push	$0						// error-code (no error here)
 	push	$\no					// the interrupt-number
 	jmp		isrCommon
+	END_FUNC(isr\no)
 .endm
 
 // macro to build an error-isr-handler
 .macro BUILD_ERR_ISR no
-	.global isr\no
-	isr\no:
+	BEGIN_FUNC(isr\no)
 	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	// the error-code has already been pushed
 	push	$\no					// the interrupt-number
 	jmp		isrCommon
+	END_FUNC(isr\no)
 .endm
 
 // our ISRs
@@ -117,8 +118,7 @@ BUILD_DEF_ISR 51
 BUILD_DEF_ISR 56
 
 // IPI: flush TLB
-.global isr52
-isr52:
+BEGIN_FUNC(isr52)
 	SAVE_REGS
 	// flush TLB
 	mov		%cr3,%REG(ax)
@@ -126,10 +126,10 @@ isr52:
 	call	lapic_eoi
 	RESTORE_REGS
 	IRET
+END_FUNC(isr52)
 
 // IPI: wait
-.global isr53
-isr53:
+BEGIN_FUNC(isr53)
 	SAVE_REGS
 	// tell the CPU that requested the wait that we're waiting
 	lock
@@ -147,10 +147,10 @@ isr53:
 	sub		$1,(waiting)
 	RESTORE_REGS
 	IRET
+END_FUNC(isr53)
 
 // IPI: halt
-.global isr54
-isr54:
+BEGIN_FUNC(isr54)
 	// tell the CPU that requested the halt that we're halting
 	lock
 	add		$1,(halting)
@@ -159,10 +159,10 @@ isr54:
 	hlt
 	// not reached
 	jmp		1b
+END_FUNC(isr54)
 
 // IPI: flush TLB ack
-.global isr55
-isr55:
+BEGIN_FUNC(isr55)
 	SAVE_REGS
 	// flush TLB
 	mov		%cr3,%REG(ax)
@@ -174,18 +174,18 @@ isr55:
 	call	lapic_eoi
 	RESTORE_REGS
 	IRET
+END_FUNC(isr55)
 
 // our null-handler for all other interrupts
-.global isrNull
-isrNull:
+BEGIN_FUNC(isrNull)
 	// interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	push	$0						// error-code (no error here)
 	push	$57						// the interrupt-number
 	jmp		isrCommon
+END_FUNC(isrNull)
 
 // syscall
-.global syscall_entry
-syscall_entry:
+BEGIN_FUNC(syscall_entry)
 	SYS_ENTER
 	push	$0						// store intrptNo = 0 so that we can distinguish the stack-frames
 	SAVE_REGS
@@ -196,9 +196,10 @@ syscall_entry:
 
 	RESTORE_REGS
 	SYS_LEAVE
+END_FUNC(syscall_entry)
 
 // the ISR for all interrupts
-isrCommon:
+BEGIN_FUNC(isrCommon)
 	SAVE_REGS
 
 	// call c-routine
@@ -210,3 +211,4 @@ isrCommon:
 	// remove error-code and interrupt-number from stack and return
 	add		$(WORDSIZE * 2),%REG(sp)
 	IRET
+END_FUNC(isrCommon)

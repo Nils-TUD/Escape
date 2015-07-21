@@ -17,13 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/syscalls.h>
 #include <sys/arch.h>
+#include <sys/asm.h>
+#include <sys/syscalls.h>
 
 .section .text
 
-.global _start
-.global sigRetFunc
 .extern main
 .extern exit
 .extern __libc_preinit
@@ -51,7 +50,7 @@
 //  +------------------+  <- 16 byte aligned (+8)
 
 #ifndef SHAREDLIB
-_start:
+BEGIN_FUNC(_start)
 	// mark the beginning of the call-trace
 	mov		$0,%REG(bp)
 	pop		%ARG_1
@@ -63,7 +62,7 @@ _start:
 
 	// it returns the entrypoint; 0 if we're the initial thread
 	test	%REG(ax),%REG(ax)
-	je		initialThread
+	je		1f
 
 	// we're an additional thread, so call the desired function
 	mov		%REG(ax),%REG(dx)
@@ -72,10 +71,10 @@ _start:
 	// align it properly (SSE)
 	sub		$8,%REG(sp)
 	call	*%REG(dx)
-	jmp		threadExit
+	jmp		2f
 
 	// initial thread calls main
-initialThread:
+1:
 	// init env stuff
 	mov		WORDSIZE * 2(%REG(sp)),%ARG_1
 	mov		WORDSIZE * 3(%REG(sp)),%ARG_2
@@ -90,18 +89,20 @@ initialThread:
 	// finally, call main
 	call	main
 
-threadExit:
+2:
 	mov		%REG(ax),%ARG_1
 	call	exit
 	// just to be sure
 	1: jmp	1b
+END_FUNC(_start)
 
 // all signal-handler return to this "function"
-sigRetFunc:
+BEGIN_FUNC(sigRetFunc)
 	// we have to use int instead of sysenter here because sysexit does not restore ecx,edx and eflags.
 	// so, if we have started the signal during an interrupt/exception and were thus not prepared for
 	// loosing one of those, we would get into trouble.
 	mov		$ASM_SYSC_ACKSIG,%SYSCNO
 	int		$ASM_IRQ_ACKSIG
 	// never reached
+END_FUNC(sigRetFunc)
 #endif

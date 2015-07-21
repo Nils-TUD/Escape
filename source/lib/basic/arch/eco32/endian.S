@@ -17,15 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global le16tocpu
-.global le32tocpu
-.global cputole16
-.global cputole32
+#include <sys/asm.h>
 
 // uint16_t cputole16(uint16_t in);
 // uint16_t le16tocpu(uint16_t in);
-cputole16:
-le16tocpu:
+BEGIN_FUNC(cputole16)
+BEGIN_FUNC(le16tocpu)
 	.nosyn
 	and		$2,$4,0xFF00
 	slr		$2,$2,8
@@ -34,11 +31,13 @@ le16tocpu:
 	or		$2,$2,$8
 	jr		$31
 	.syn
+END_FUNC(le16tocpu)
+END_FUNC(cputole16)
 
 // uint32_t cputole32(uint32_t in);
 // uint32_t le32tocpu(uint32_t in);
-cputole32:
-le32tocpu:
+BEGIN_FUNC(cputole32)
+BEGIN_FUNC(le32tocpu)
 	.nosyn
 	and		$2,$4,0xFF00
 	sll		$2,$2,8
@@ -52,3 +51,5 @@ le32tocpu:
 	or		$2,$2,$8
 	jr		$31
 	.syn
+END_FUNC(le32tocpu)
+END_FUNC(cputole32)

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.global memcpy
+#include <sys/asm.h>
 
 // void *memcpy(void *dest,const void *src,size_t len)
-memcpy:
+BEGIN_FUNC(memcpy)
 	.nosyn
 	add		$10,$4,$6						// dest-end
 	and		$8,$4,3
@@ -99,3 +99,4 @@ memcpy:
 	sub		$2,$10,$6						// return dest
 	jr		$31
 	.syn
+END_FUNC(memcpy)

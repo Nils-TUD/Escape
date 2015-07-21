@@ -17,13 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/asm.h>
+
 .section .text
 
-.global lookup_resolveStart
 .extern lookup_resolve
 .extern getpid_wrapper
 
-lookup_resolveStart:
+BEGIN_FUNC(lookup_resolveStart)
 #ifndef CALLTRACE_PID
 	push	%eax
 	push	%edx
@@ -62,8 +63,9 @@ lookup_resolveStart:
 	mov		12(%esp),%eax
 	add		$28,%esp								// remove args of lookup_resolve from stack
 	jmp		*-28(%esp)								// jump to function
+END_FUNC(lookup_resolveStart)
 
-lookup_resolveFinish:
+BEGIN_FUNC(lookup_resolveFinish)
 	.extern lookup_tracePop
 	push	%eax
 	call	lookup_tracePop
@@ -75,6 +77,7 @@ lookup_resolveFinish:
 	lea		(%edx,%ecx,4),%edx						// build addr to our ret-addr
 	mov		(%edx),%ecx								// get ret-addr
 	jmp		*%ecx									// jump to that addr
+END_FUNC(lookup_resolveFinish)
 #endif
 
 #if defined(CALLTRACE_PID)

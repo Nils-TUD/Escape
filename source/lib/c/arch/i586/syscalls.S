@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/asm.h>
 #include <sys/syscalls.h>
 
 .section .text
@@ -58,18 +59,15 @@
 // put in the linkonce-section to tell the linker that he should put this function in the
 // executable / shared library just once
 .section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits
-.global __i686.get_pc_thunk.bx
 .hidden  __i686.get_pc_thunk.bx
-.type    __i686.get_pc_thunk.bx,@function
-__i686.get_pc_thunk.bx:
+BEGIN_FUNC(__i686.get_pc_thunk.bx)
 	movl (%esp),%eax
 	ret
+END_FUNC(__i686.get_pc_thunk.bx)
 .previous
 #endif
 
-.global syscall7
-.type syscall7, @function
-syscall7:
+BEGIN_FUNC(syscall7)
 	push	%ebp
 	mov		%esp,%ebp
 	push	%edi
@@ -88,3 +86,4 @@ syscall7:
 	pop		%edi
 	leave
 	ret
+END_FUNC(syscall7)

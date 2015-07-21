@@ -17,41 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/asm.h>
+#pragma once
 
-.section .text
+#define BEGIN_FUNC(name)		\
+ 	.global name;				\
+ 	.type	name, @function;	\
+ 	name:
 
-.extern __libc_init
-.extern main
-
-BEGIN_FUNC(_start)
-	// setup a small stackframe
-	sub		$29,$29,32
-	add		$4,$0,$0
-	add		$5,$0,$0
-	add		$6,$0,$0
-	// call __libc_preinit(entryPoint,argc,argv)
-	jal		__libc_preinit
-
-	// init c library
-	jal		__libc_init
-
-	// init env stuff
-	add		$4,$0,$0
-	add		$5,$0,$0
-	jal		initenv
-
-	// get argc and argv
-	add		$4,$0,$0
-	add		$5,$0,$0
-	// finally, call main
-	jal		main
-
-	// we should not reach this
-1:	j		1b
-END_FUNC(_start)
-
-// provide just a dummy
-BEGIN_FUNC(sigRetFunc)
-	j		sigRetFunc
-END_FUNC(sigRetFunc)
+#define END_FUNC(name)			\
+ 	.size	name, .-name

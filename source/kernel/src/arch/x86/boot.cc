@@ -24,6 +24,7 @@
 #include <arch/x86/ioapic.h>
 #include <arch/x86/mtrr.h>
 #include <arch/x86/pic.h>
+#include <arch/x86/rtc.h>
 #include <arch/x86/serial.h>
 #include <mem/cache.h>
 #include <mem/copyonwrite.h>
@@ -73,6 +74,7 @@ static const BootTask tasks[] = {
 	{"Initializing CPU...",CPU::detect},
 	{"Initializing MTRRs...",MTRR::init},
 	{"Initializing FPU...",FPU::init},
+	{"Initializing RTC...",RTC::init},
 	{"Initializing timer...",Timer::init},
 	{"Initializing VFS...",VFS::init},
 	{"Initializing processes...",Proc::init},

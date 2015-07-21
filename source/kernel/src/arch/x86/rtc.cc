@@ -19,8 +19,17 @@
 
 #include <arch/x86/ports.h>
 #include <arch/x86/rtc.h>
+#include <log.h>
 #include <common.h>
 #include <time.h>
+
+void RTC::init() {
+	// ensure that RTC interrupts are disabled
+	Ports::out<uint8_t>(PORT_IDX,REG_STATUSB);		// select status register
+	uint8_t prev = Ports::in<uint8_t>(PORT_DATA);	// read the current value of register B
+	Ports::out<uint8_t>(PORT_IDX,REG_STATUSB);		// set the index again
+	Ports::out<uint8_t>(PORT_DATA,prev & ~0x40);	// disable interrupts
+}
 
 time_t RTC::getTime() {
 	struct tm time;

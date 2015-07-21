@@ -38,9 +38,12 @@ class RTC {
 		REG_MONTHDAY	= 0x7,	/* 01-31 */
 		REG_MONTH		= 0x8,	/* 01-12 */
 		REG_YEAR		= 0x9,	/* 00-99 */
+		REG_STATUSA		= 0xA,
+		REG_STATUSB		= 0xB,
 	};
 
 public:
+	static void init();
 	static time_t getTime();
 
 private:

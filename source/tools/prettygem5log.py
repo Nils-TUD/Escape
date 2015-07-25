@@ -36,7 +36,7 @@ count = 0
 laststart = 0
 lasttime = 0
 lastfunc = (0, '')
-regex = re.compile('(\d+): (\S+) (\S+) : 0x([a-f0-9]+)\.?\s*\d*\s*:\s*(.*)$')
+regex = re.compile('\s*(\d+): (\S+) (\S+) : 0x([a-f0-9]+)\.?\s*\d*\s*:\s*(.*)$')
 with open(sys.argv[2], "r") as f:
 	for line in f:
 		m = re.match(regex, line.rstrip())

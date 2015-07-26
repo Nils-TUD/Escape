@@ -5,7 +5,7 @@ seen = 0
 begin
 	file = File.new(ARGV[0], "r")
 	while (line = file.gets)
-		line.scan(/^\W*(\d+|\-|\#+):\W*(\d+):(.*)$/) { |cov,no,line|
+		line.scan(/^\W*(\d+|\-|\#+):\W*(\d+):(.*)$/) { |cov,no,rem|
 			if no.to_i > 0
 				total += 1
 				if cov == "#"

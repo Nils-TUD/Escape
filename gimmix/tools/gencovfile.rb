@@ -88,16 +88,16 @@ EOF
 begin
 	file = File.new(absFile, "r")
 	while (line = file.gets)
-		line.scan(/^\W*(\d+|\-|\#+):\W*(\d+):(.*)$/) { |cov,no,line|
+		line.scan(/^\W*(\d+|\-|\#+):\W*(\d+):(.*)$/) { |cov,no,rem|
 			if no.to_i > 0
-				line.gsub!(/&/,"&amp;")
-				line.gsub!(/\t/,"&nbsp;" * 3)
-				line.gsub!(/ /,"&nbsp;")
-				line.gsub!(/</,"&lt;")
-				line.gsub!(/>/,"&gt;")
+				rem.gsub!(/&/,"&amp;")
+				rem.gsub!(/\t/,"&nbsp;" * 3)
+				rem.gsub!(/ /,"&nbsp;")
+				rem.gsub!(/</,"&lt;")
+				rem.gsub!(/>/,"&gt;")
 				print "<span class=\""
 				print cov == "#" ? "notseen" : cov == "-" ? "default" : "seen"
-				puts "\">" + line + "</span><br />"
+				puts "\">" + rem + "</span><br />"
 			end
 		}
 	end

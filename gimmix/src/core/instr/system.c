@@ -101,7 +101,6 @@ void cpu_instr_sync(const sInstrArgs *iargs) {
 
 		default:
 			ex_throw(EX_DYNAMIC_TRAP,TRAP_BREAKS_RULES);
-			break;
 	}
 }
 

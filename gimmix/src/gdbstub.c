@@ -328,7 +328,7 @@ static void write_signal(char *buffer,int sig) {
 }
 
 static int access_mem(octa address,unsigned len,unsigned int rw,unsigned char *data) {
-	int res = 1;
+	int res;
 	jmp_buf env;
 	int ex = setjmp(env);
 	if(ex != EX_NONE)
@@ -344,6 +344,7 @@ static int access_mem(octa address,unsigned len,unsigned int rw,unsigned char *d
 				data[i++] = mmu_readByte(addr,0);
 			addr++;
 		}
+		res = 1;
 	}
 	ex_pop();
 	return res;

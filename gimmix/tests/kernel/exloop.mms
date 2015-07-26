@@ -8,12 +8,12 @@
 RV		OCTA	#1000140000090000
 		LOC		#90000
 PTE		OCTA	#0000000000000007
-		
+
 		% dynamic trap address
 		LOC		#600000
-		
-		% don't store the location here because it differs. mmmix will execute one instruction
-		% after each RESUME, gimmix won't
+
+		% dont store the location here because it differs. mmmix will execute one instruction
+		% after each RESUME, gimmix wont
 ATRAP	GET		$253,rQ
 		STOU	$253,$254,0
 		GET		$251,rXX
@@ -35,10 +35,10 @@ QUIT	SETH	$0,#8000
 		ORL		$0,#4000
 		SYNCD	#FF,$0,0
 		TRAP	0
-		
-		
+
+
 		LOC		#1000
-		
+
 		% first setup basic paging: 0 mapped to 0
 Main	SETL	$0,RV
 		ORH		$0,#8000
@@ -64,7 +64,7 @@ Main	SETL	$0,RV
 		% set rK
 		SETMH	$0,#00FE
 		PUT		rK,$0
-		
+
 		% now go to user-mode (we are at #8000000000001000 atm)
 		SETL	$0,#000F
 		ORMH	$0,#00FF		% have to be set in usermode
@@ -74,19 +74,19 @@ Main	SETL	$0,RV
 		SETH	$0,#8000
 		PUT		rXX,$0
 		RESUME	1
-		
-		
+
+
 		LOC		#2000
-		
+
 		SET		$250,3			% stop after 3 exceptions
-		
+
 		% use a special-register >= 32 with put
 		PUT		33,#0
-		
+
 		% some dummy instructions which will cause an exception because rQ & rK is still != 0
 		SET		$0,0
 		SET		$0,0
 		SET		$0,0
-		
+
 		% now quit
 		TRAP	1

@@ -44,12 +44,12 @@ static const char *usage = "Usage: %s\n"
 static int gdbport = -1;
 static char *script = NULL;
 static char *postCmds = NULL;
+static bool interactive = false;
 
 int main(int argc,char **argv) {
 	if(sizeof(byte) != 1 || sizeof(wyde) != 2 || sizeof(tetra) != 4 || sizeof(octa) != 8)
 		error("Type-sizes are wrong. Please change the typedefs in common.h for your platform!");
 
-	bool interactive = false;
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i],"-i") == 0)
 			interactive = true;

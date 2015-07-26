@@ -21,7 +21,7 @@ RV		OCTA	#33340D0000090800
 		% -- PTEs to be able to access the stack --
 		LOC		#00096000
 		OCTA	#0000000000600807	% PTE  0    (#6000000000000000 .. #6000000000001FFF)
-		
+
 		% -- PTPs and PTEs for testing exceptions --
 		% n does not match in PTP1
 		LOC		#00092008
@@ -45,8 +45,8 @@ RV		OCTA	#33340D0000090800
 		% PTE writable, not readable
 		LOC		#00090030
 		OCTA	#000000000020C802	% PTE  6    (#000000000000C000 .. #000000000000DFFF)
-		
-		
+
+
 		% data for writing to M[#8000], M[#A000], M[#C000]
 		LOC		#208000
 		OCTA	#123456789ABCDEF
@@ -54,8 +54,8 @@ RV		OCTA	#33340D0000090800
 		OCTA	#123456789ABCDEF
 		LOC		#20C000
 		OCTA	#123456789ABCDEF
-		
-		
+
+
 		% stack for unsave
 		LOC		#600000
 		OCTA	#0							% rL
@@ -78,11 +78,11 @@ RV		OCTA	#33340D0000090800
 		OCTA	#0							% rY
 		OCTA	#0							% rZ
 ADDR	OCTA	#FA00000000000000			% rG | rA
-		
-		
+
+
 		% dynamic trap address
 		LOC		#700000
-		
+
 ATRAP	PUT		rG,128				% a trick to get it working in mmmix; PUT rG,X will really
 									% set it to X, even if that value is illegal. therefore we
 									% reset it here
@@ -129,21 +129,21 @@ QUIT	SETH	$0,#8000
 		ADDU	$0,$0,#FF
 		SYNCD	#FF,$0,0
 		TRAP	0
-		
-		
+
+
 		LOC		#1000
-		
+
 		% first setup basic paging: 0 mapped to 0
 Main	SETL	$0,RV
 		ORH		$0,#8000
 		LDOU	$0,$0
 		PUT		rV,$0
-		
+
 		% setup our environment
 		SETH	$0,#6000
 		ORL		$0,ADDR
 		UNSAVE	$0
-		
+
 		% global registers are better here because of PUSH/POP
 		PUT		rG,128
 		% setup rTT
@@ -164,7 +164,7 @@ Main	SETL	$0,RV
 		% set rK
 		SETMH	$0,#00FE
 		PUT		rK,$0
-		
+
 		% now go to user-mode (we are at #8000000000001000 atm)
 		SETL	$0,#000F
 		ORMH	$0,#00FF		% have to be set in usermode
@@ -174,47 +174,47 @@ Main	SETL	$0,RV
 		SETH	$0,#8000
 		PUT		rXX,$0
 		RESUME	1
-		
+
 		LOC		#2000
-		
+
 		% go from non-negative to negative address
 		SETH	$0,#8000
 		% special case: the pc is set BEFORE the exception occurs. and $X is set as well.
 		% therefore we set $8 to use that as rWW
 		GO		$8,$0,0
-		
+
 		% reset $8
 		SET		$8,0
-		
+
 		% unsave with invalid values for rA/rG
-		
+
 		SET		$250,1		% set sign-bit in rXX to skip instruction
-		
+
 		SAVE	$128,0
 		LDOU	$2,$128,0
 		ANDNH	$2,#FF00
 		STOU	$2,$128,0	% rG = 0
 		UNSAVE	$128
 		OR		$0,$0,$0	% nop for skipping of gimmix
-		
+
 		SETH	$2,#8000
 		ORML	$2,#FFFF
 		STOU	$2,$128,0
 		UNSAVE	$128
 		OR		$0,$0,$0	% nop for skipping of gimmix
-		
+
 		% use a special-register > 32 with get
 		GET		$0,33
-		
+
 		% jump to privileged location
 		JMP		@-#2200
-		
+
 		% use a privileged sync-command
 		SYNC	4
-		
+
 		% use a privileged resume-command
 		RESUME	1
-		
+
 		% use an invalid rounding-mode (value in rZZ is different in mmmix)
 		FINT	$0,6,$0
 		FSQRT	$0,8,$0
@@ -228,49 +228,49 @@ Main	SETL	$0,RV
 		SFLOT	$0,8,$0
 		SFLOTU	$0,7,0
 		SFLOTU	$0,8,$0
-		
+
 		% write to readonly page; mmmix does not provide the value to store in rZZ
 		SETL	$0,#8000
 		SETL	$1,#BEAF
 		STOU	$1,$0,0		% #8000
-		
+
 		% write to readonly page (wyde); mmmix does not provide the value to store in rZZ
 		SETL	$0,#8001
 		STWU	$1,$0,0
-		
+
 		% write to not-readable, not-writable page (wyde); the same as above
 		SETL	$0,#A001
 		STWU	$1,$0,0
-		
+
 		% load from writeonly page; mmmix puts the physical address into rZZ
 		SETL	$0,#6000
 		LDOU	$0,$0,0		% #6000
-		
-		% unsave from invalid stack-location; mmmix puts #80000000 into rZZ, we don't
+
+		% unsave from invalid stack-location; mmmix puts #80000000 into rZZ, we dont
 		SETML	$0,#8000
 		UNSAVE	$0
-		
+
 		% put illegal value in rA; mmmix puts the current value in rZZ, because our is invalid
 		SETML	$0,#0004
 		PUT		rA,$0
 		SETH	$0,#FFFF
 		PUT		rA,$0
-		
+
 		% put illegal value in rG; mmmix puts the current value in rZZ, because our is invalid
 		PUT		rG,0
 		PUT		rG,31
-		
+
 		% change rSS
 		SETH	$0,#8000
 		PUT		rSS,$0
-		
+
 		% POP to privileged instruction (difficult to test in mmix, because it sets the pc first)
 		SETH	$0,#8000
 		PUT		rJ,$0
 		POP		0,0
-		
+
 		% PUSHGO to privileged instruction (difficult to test in mmix for the same reason)
 		SETH	$0,#8000
 		PUSHGO	$255,$0,0
-		
+
 		TRAP	1

@@ -76,11 +76,11 @@ Main	SETH	$0,#8000
 		ORL		$0,RV
 		LDOU	$0,$0,0
 		PUT		rV,$0
-		
+
 		% setup stack
 		SET		$0,STACK
 		UNSAVE	0,$0
-		
+
 		% setup rTT
 		SETH	$0,#8000
 		ORL		$0,DTRAP
@@ -93,19 +93,19 @@ Main	SETH	$0,#8000
 		% setup rP and memory-address
 		PUT		rP,#88
 		SET		$0,DATA
-		
+
 		% --- store causes exception ---
 		% first try, not successfull
 		SET		$2,#2233
 		CSWAP	$2,$0,0
 		GET		$3,rP
-		
+
 		% second try, successfull
 		SET		$4,#4455
 		CSWAP	$4,$0,0
 		GET		$5,rP
-		
-		
+
+
 		% --- reg-set causes exception ---
 		% make stack not-writable
 		SET		$1,#C004
@@ -114,7 +114,7 @@ Main	SETH	$0,#8000
 		PUT		rP,$1
 		SET		$247,1
 		PUSHJ	$248,F1
-		
+
 
 		% --- reg-set AND store causes exception ---
 		% make stack not-writable
@@ -130,10 +130,10 @@ Main	SETH	$0,#8000
 
 		SYNCD	#20,$0
 		TRAP	0
-		
+
 		% should succeed
 F1		SET		$0,DATA
-		CSWAP	$6,$0,0					% won't trigger an exception on MMMIX because of the bug
+		CSWAP	$6,$0,0					% wont trigger an exception on MMMIX because of the bug
 		GET		$1,rP					% that rL is not increased and so on
 		STOU	$1,$0,8
 		STOU	$6,$0,16
@@ -146,4 +146,3 @@ F2		SET		$0,DATA
 		STOU	$1,$0,24
 		STOU	$6,$0,32
 		POP		0,0
-		

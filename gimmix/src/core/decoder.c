@@ -409,6 +409,7 @@ static void dec_toA(sInstrArgs *iargs,tetra t,int fmt) {
 
 static void dec_toIII(sInstrArgs *iargs,tetra t,int fmt) {
 	assert(fmt == I_I8I8I8);
+	UNUSED(fmt);
 	iargs->x = DST(t);
 	iargs->y = SRC1(t);
 	iargs->z = SRC2(t);
@@ -447,6 +448,7 @@ static void dec_toMA(sInstrArgs *iargs,tetra t,int fmt) {
 
 static void dec_toSave(sInstrArgs *iargs,tetra t,int fmt) {
 	assert(fmt == I_R0I8);
+	UNUSED(fmt);
 	if(SRC1(t) != 0)
 		ex_throw(EX_DYNAMIC_TRAP,TRAP_BREAKS_RULES);
 	iargs->x = DST(t);
@@ -455,6 +457,7 @@ static void dec_toSave(sInstrArgs *iargs,tetra t,int fmt) {
 
 static void dec_toUnsave(sInstrArgs *iargs,tetra t,int fmt) {
 	assert(fmt == I_I80R);
+	UNUSED(fmt);
 	if(SRC1(t) != 0)
 		ex_throw(EX_DYNAMIC_TRAP,TRAP_BREAKS_RULES);
 	iargs->x = ZEXT(DST(t),8);

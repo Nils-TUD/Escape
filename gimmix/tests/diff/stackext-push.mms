@@ -1,7 +1,7 @@
 %
 % stackext-push.mms -- test new special register rSS and related changes
 %
-		
+
 		LOC		#00000000
 		% segmentsizes: 1,0,0,0; pageSize=2^13; r=0x20000; n=0
 RV		OCTA	#10000D0000020000
@@ -12,8 +12,8 @@ RV		OCTA	#10000D0000020000
 		OCTA	#0000000000202007	% PTE  1    (#0000000000002000 .. #0000000000003FFF)
 		LOC		#00020010
 		OCTA	#0000000000204000	% PTE  2    (#0000000000004000 .. #0000000000005FFF)
-		
-		
+
+
 		% stack for unsave
 		LOC		#202008
 		OCTA	#0							% rL
@@ -37,8 +37,8 @@ STACK	OCTA	#FE00000000000000			% rG | rA
 		% dynamic trap handler
 		LOC		#400000
 DTRAP	SAVE	$255,1						% save user-state
-		
-		% to next kernel-stack if we're on the first one
+
+		% to next kernel-stack if we are on the first one
 		GET		$0,rS
 		SET		$2,#FFFF
 		AND		$2,$0,$2
@@ -53,7 +53,7 @@ DTRAP	SAVE	$255,1						% save user-state
 		SETMH	$0,#00FE					% set rK and raise exception
 		PUT		rK,$0
 		SET		$4,1
-		
+
 NONEST	SETML	$0,#0002
 		ORL		$0,#0010
 		ORH		$0,#8000
@@ -64,7 +64,7 @@ NONEST	SETML	$0,#0002
 		LDVTS	$1,$1,0						% update DTC
 		GET		$1,rQ
 		PUT		rQ,0						% clear rQ
-		
+
 		% to prev kernel-stack if we were on the first one
 		BZ		$4,NOREST
 		PUT		rBB,$9						% restore special-registers
@@ -72,7 +72,7 @@ NONEST	SETML	$0,#0002
 		PUT		rYY,$7
 		PUT		rXX,$6
 		PUT		rWW,$5
-		
+
 NOREST	UNSAVE	1,$255						% restore user-state
 		RESUME	1
 
@@ -87,27 +87,27 @@ Main	SETH	$0,#8000
 		% setup rS and rO
 		SETL	$0,STACK
 		UNSAVE	0,$0
-		
+
 		% setup rSS
 		SETH	$0,#8000
 		ORML	$0,#0020
 		PUT		rSS,$0
-		
+
 		% setup dynamic-trap address
 		SETH	$0,#8000
 		ORMH	$0,DTRAP>>32
 		ORML	$0,DTRAP>>16
 		ORL		$0,DTRAP>>0
 		PUT		rTT,$0
-		
+
 		SYNC	0
 		GET		$0,rQ
 		PUT		rQ,0
-		
+
 		% enable exceptions
 		SETMH	$0,#00FE
 		PUT		rK,$0
-		
+
 		SET		$252,#FFFF
 		PUSHJ	$253,F1
 		SETH	$2,#8000
@@ -115,7 +115,7 @@ Main	SETH	$0,#8000
 		STOU	$252,$2,64
 		SYNCD	#FF,$2,0
 		TRAP	0
-		
+
 F1		SET		$0,#1110
 		SET		$1,#1111
 		GET		$252,rJ

@@ -580,7 +580,7 @@ octa fl_compareWithEps(octa y,octa z,octa e,int similarity) {
 octa fl_compare(octa y,octa z) {
 	sFloat fy = fl_unpack(y);
 	sFloat fz = fl_unpack(z);
-	octa x;
+	octa x = 0;
 	switch(4 * fy.type + fz.type) {
 		// if NaN is involved, its always unordered
 		case 4 * NAN + NAN:

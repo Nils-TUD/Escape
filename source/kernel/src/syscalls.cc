@@ -28,8 +28,6 @@
 #include <string.h>
 #include <syscalls.h>
 
-#define PRINT_SYSCALLS	0
-
 /* our syscalls */
 const Syscalls::Syscall Syscalls::syscalls[] = {
 	/* 0 */
@@ -135,7 +133,6 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 };
 
 void Syscalls::printEntry(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
-#if PRINT_SYSCALLS
 	uint sysCallNo = SYSC_NUMBER(stack);
 	Log::get().writef("[%d:%d:%s] %s(",t->getTid(),t->getProc()->getPid(),t->getProc()->getProgram(),
 					  syscalls[sysCallNo].name);
@@ -171,25 +168,10 @@ void Syscalls::printEntry(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 			Log::get().writef("%p",val);
 	}
 	Log::get().writef(")...");
-#endif
 }
 
 void Syscalls::printExit(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
-#if PRINT_SYSCALLS
 	Log::get().writef(" = %p (%d)\n",SYSC_GETRET(stack),SYSC_GETERR(stack));
-#endif
-}
-
-void Syscalls::handle(Thread *t,IntrptStackFrame *stack) {
-	uint sysCallNo = SYSC_NUMBER(stack);
-	if(sysCallNo >= ARRAY_SIZE(syscalls)) {
-		SYSC_SETERROR(stack,-EINVAL);
-		return;
-	}
-
-	printEntry(t,stack);
-	syscalls[sysCallNo].handler(t,stack);
-	printExit(t,stack);
 }
 
 uint Syscalls::getArgCount(uint sysCallNo) {

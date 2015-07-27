@@ -123,6 +123,7 @@ enum {
 #	else
 	SYSCALL_DEBUG,
 #	endif
+	SYSCALL_COUNT,
 };
 
 #	if defined(__i586__)

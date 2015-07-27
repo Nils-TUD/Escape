@@ -20,6 +20,7 @@
 #pragma once
 
 #include <mem/useraccess.h>
+#include <sys/syscalls.h>
 #include <task/thread.h>
 #include <common.h>
 #include <interrupts.h>
@@ -34,6 +35,8 @@
 #elif defined(__mmix__)
 #	include <arch/mmix/syscalls.h>
 #endif
+
+#define PRINT_SYSCALLS	0
 
 class Syscalls {
 	typedef int (*handler_func)(Thread *t,IntrptStackFrame *stack);
@@ -52,9 +55,25 @@ public:
 	 * Handles the syscall for the given stack
 	 *
 	 * @param t the running thread
-	 * @param intrptStack the pointer to the interrupt-stack
+	 * @param stack the pointer to the interrupt-stack
 	 */
-	static void handle(Thread *t,IntrptStackFrame *intrptStack);
+	static void handle(Thread *t,IntrptStackFrame *stack) {
+		uint sysCallNo = SYSC_NUMBER(stack);
+		if(EXPECT_FALSE(sysCallNo >= SYSCALL_COUNT)) {
+			SYSC_SETERROR(stack,-EINVAL);
+			return;
+		}
+
+#if PRINT_SYSCALLS
+		printEntry(t,stack);
+#endif
+
+		syscalls[sysCallNo].handler(t,stack);
+
+#if PRINT_SYSCALLS
+		printExit(t,stack);
+#endif
+	}
 
 	/**
 	 * @param str the string

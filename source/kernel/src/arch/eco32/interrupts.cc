@@ -97,7 +97,6 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	/* note: we have to do that before there is a chance for a kernel-miss */
 	Interrupts::pfaddr = CPU::getBadAddr();
 	Thread *t = Thread::getRunning();
-	t->pushIntrptLevel(stack);
 
 	/* call handler */
 	intrpt = Interrupts::intrptList + (stack->irqNo & 0x1F);
@@ -108,13 +107,11 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 	/* note: we might get a kernel-miss at arbitrary places in the kernel; if we checked for
 	 * signals in that case, we might cause a thread-switch. this is not always possible! */
 	t = Thread::getRunning();
-	if((t->getFlags() & T_IDLE) || (stack->psw & Interrupts::PSW_PUM)) {
+	if((t->getFlags() & T_IDLE) || stack->fromUserSpace()) {
 		if(t->haveHigherPrio())
 			Thread::switchAway();
-			UEnv::handleSignal(t,stack);
+		UEnv::handleSignal(t,stack);
 	}
-
-	t->popIntrptLevel();
 }
 
 void Interrupts::defHandler(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -134,7 +131,7 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	Console::start(NULL);
 }
 
-void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
+void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 #if DEBUG_PAGEFAULTS
 	Log::get().writef("Page fault for %p @ %p, process %d:%s\n",pfaddr,
 			stack->r[30],t->getProc()->getPid(),t->getProc()->getProgram());
@@ -148,8 +145,7 @@ void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_TRUE(res == -EFAULT && (res = Thread::extendStack(pfaddr)) == 0))
 		return;
 
-	/* pagefault in kernel? */
-	if(t->getIntrptLevel() == 1) {
+	if(!stack->fromUserSpace()) {
 		/* skip that instruction */
 		stack->r[30] += 4;
 	}
@@ -165,12 +161,12 @@ void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 #endif
 }
 
-void Interrupts::irqTimer(Thread *t,A_UNUSED IntrptStackFrame *stack) {
+void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {
 	bool res = fireIrq(stack->irqNo);
 	res |= Timer::intrpt();
 	Timer::ackIntrpt();
 	if(res) {
-		if(t->getIntrptLevel() == 0)
+		if((t->getFlags() & T_IDLE) || stack->fromUserSpace())
 			Thread::switchAway();
 	}
 }

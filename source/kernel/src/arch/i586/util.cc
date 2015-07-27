@@ -40,10 +40,10 @@
 #include <video.h>
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {
-	if(t->getIntrptStack()) {
+	if(t->getUserState()) {
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
 		uintptr_t kstackAddr = PageDir::getAccess(frame);
-		size_t kstackOff = (uintptr_t)t->getIntrptStack() & (PAGE_SIZE - 1);
+		size_t kstackOff = (uintptr_t)t->getUserState() & (PAGE_SIZE - 1);
 		IntrptStackFrame *kstack = (IntrptStackFrame*)(kstackAddr + kstackOff);
 		os.writef("User-Register:\n");
 		os.writef("\teax=%#08x, ebx=%#08x, ecx=%#08x, edx=%#08x\n",

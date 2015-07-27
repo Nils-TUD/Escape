@@ -31,7 +31,7 @@ int cons_cmd_step(OStream &os,size_t argc,char **argv) {
 	}
 
 	Thread *t = Thread::getRunning();
-	IntrptStackFrame *kstack = t->getIntrptStack();
+	IntrptStackFrame *kstack = t->getUserState();
 	if(argc == 2 && strcmp(argv[1],"show") == 0) {
 		kstack->setFlags(kstack->getFlags() & ~(1 << 8));
 		os.writef("Executing thread %d:%d:%s\n",t->getTid(),t->getProc()->getPid(),

@@ -96,6 +96,7 @@ int ThreadBase::initArch(Thread *t) {
 	if(t->kstackFrame == INVALID_FRAME)
 		return -ENOMEM;
 	t->tempStack = -1;
+	t->intrptLevel = 0;
 	return 0;
 }
 
@@ -123,7 +124,9 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			return res;
 		}
 	}
-	memcpy(dst->specRegLevels,src->specRegLevels,sizeof(KSpecRegs) * MAX_INTRPT_LEVELS);
+	dst->intrptLevel = src->intrptLevel;
+	memcpy(dst->specRegLevels,src->specRegLevels,sizeof(src->specRegLevels));
+	memcpy(dst->userState,src->userState,sizeof(src->userState));
 	return 0;
 }
 

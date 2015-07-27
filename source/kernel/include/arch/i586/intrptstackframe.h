@@ -39,6 +39,11 @@ class IntrptStackFrame {
 	friend class VM86;
 
 public:
+	bool fromUserSpace() const {
+		// syscall or IF flag set
+		return intrptNo == 0 || (eflags & (1 << 9));
+	}
+
 	ulong getError() const {
 		assert(intrptNo != 0);
 		return errorCode;

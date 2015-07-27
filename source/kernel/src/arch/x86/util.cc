@@ -69,7 +69,7 @@ void Util::switchToVGA() {
 
 Util::FuncCall *Util::getUserStackTrace() {
 	Thread *t = Thread::getRunning();
-	IntrptStackFrame *kstack = t->getIntrptStack();
+	IntrptStackFrame *kstack = t->getUserState();
 	if(kstack) {
 		uintptr_t start,end;
 		if(t->getStackRange(&start,&end,0))
@@ -106,7 +106,7 @@ Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 		PageDir *pdir = t->getProc()->getPageDir();
 
 		// get base pointer
-		IntrptStackFrame *istack = t->getIntrptStack();
+		IntrptStackFrame *istack = t->getUserState();
 		frameno_t frame = pdir->getFrameNo(t->getKernelStack());
 		uintptr_t temp = PageDir::getAccess(frame);
 		istack = (IntrptStackFrame*)(temp + ((uintptr_t)istack & (PAGE_SIZE - 1)));

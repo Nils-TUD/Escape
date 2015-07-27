@@ -30,7 +30,6 @@
 #include <common.h>
 #include <interrupts.h>
 
-#define MAX_INTRPT_LEVELS		3
 #define MAX_STACK_PAGES			128
 #define INITIAL_STACK_PAGES		1
 
@@ -365,26 +364,7 @@ public:
 	/**
 	 * @return the current interrupt-stack, i.e. the innermost-level
 	 */
-	IntrptStackFrame *getIntrptStack() const;
-
-	/**
-	 * Pushes the given kernel-stack onto the interrupt-level-stack
-	 *
-	 * @param stack the kernel-stack
-	 * @return the current level
-	 */
-	size_t pushIntrptLevel(IntrptStackFrame *stack);
-
-	/**
-	 * Removes the topmost interrupt-level-stack
-	 */
-	void popIntrptLevel();
-
-	/**
-	 * @param t the thread
-	 * @return the interrupt-level (0 .. MAX_INTRPT_LEVEL - 1)
-	 */
-	size_t getIntrptLevel() const;
+	IntrptStackFrame *getUserState() const;
 
 	/**
 	 * Retrieves the range of the stack with given number.
@@ -592,9 +572,6 @@ protected:
 	VMRegion *stackRegions[STACK_REG_COUNT];
 	/* thread-directory in VFS */
 	ino_t threadDir;
-	/* stack of pointers to the end of the kernel-stack when entering kernel */
-	IntrptStackFrame *intrptLevels[MAX_INTRPT_LEVELS];
-	size_t intrptLevel;
 	/* the save-area for registers */
 	ThreadRegs saveArea;
 	ListItem threadListItem;
@@ -640,28 +617,6 @@ inline void ThreadBase::switchNoSigs() {
 	t->flags |= T_IGNSIGS;
 	switchAway();
 	t->flags &= ~T_IGNSIGS;
-}
-
-inline IntrptStackFrame *ThreadBase::getIntrptStack() const {
-	if(intrptLevel > 0)
-		return intrptLevels[intrptLevel - 1];
-	return NULL;
-}
-
-inline size_t ThreadBase::pushIntrptLevel(IntrptStackFrame *stack) {
-	assert(intrptLevel < MAX_INTRPT_LEVELS);
-	intrptLevels[intrptLevel++] = stack;
-	return intrptLevel;
-}
-
-inline void ThreadBase::popIntrptLevel() {
-	assert(intrptLevel > 0);
-	intrptLevel--;
-}
-
-inline size_t ThreadBase::getIntrptLevel() const {
-	assert(intrptLevel > 0);
-	return intrptLevel - 1;
 }
 
 inline void ThreadBase::wait(uint event,evobj_t object) {

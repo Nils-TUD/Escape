@@ -40,7 +40,7 @@ void Util::panicArch() {
 
 void Util::printUserStateOf(OStream &os,const Thread *t) {
 	uintptr_t kstackAddr = DIR_MAP_AREA | (t->getKernelStack() << PAGE_BITS);
-	uintptr_t istackAddr = (uintptr_t)t->getIntrptStack();
+	uintptr_t istackAddr = (uintptr_t)t->getUserState();
 	if(istackAddr) {
 		IntrptStackFrame *istack = (IntrptStackFrame*)(kstackAddr + (istackAddr & (PAGE_SIZE - 1)));
 		os.writef("User state:\n");

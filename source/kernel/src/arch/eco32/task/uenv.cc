@@ -65,7 +65,7 @@ int UEnvBase::finishSignalHandler(IntrptStackFrame *stack) {
 bool UEnvBase::setupProc(int argc,int envc,const char *args,size_t argsSize,
          A_UNUSED const ELF::StartupInfo *info,uintptr_t entryPoint,A_UNUSED int fd) {
 	Thread *t = Thread::getRunning();
-	IntrptStackFrame *frame = t->getIntrptStack();
+	IntrptStackFrame *frame = t->getUserState();
 
 	ulong *sp = initProcStack(argc,envc,args,argsSize);
 	if(!sp)

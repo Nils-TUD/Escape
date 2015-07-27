@@ -187,6 +187,8 @@ END_FUNC(isrNull)
 // syscall
 BEGIN_FUNC(syscall_entry)
 	SYS_ENTER
+	// ensure that the address of IntrptStackFrame is equal to interrupts
+	sub		$(WORDSIZE * 6),%REG(sp)
 	push	$0						// store intrptNo = 0 so that we can distinguish the stack-frames
 	SAVE_REGS
 

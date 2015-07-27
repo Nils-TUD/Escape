@@ -35,7 +35,7 @@
 #include <video.h>
 
 void UEnv::startSignalHandler(Thread *t,int sig,Signals::handler_func handler) {
-	IntrptStackFrame *curStack = t->getIntrptStack();
+	IntrptStackFrame *curStack = t->getUserState();
 	KSpecRegs *sregs = t->getSpecRegs();
 
 	ulong *sp = (ulong*)curStack[-15];				/* $254 */
@@ -65,7 +65,7 @@ error:
 
 int UEnvBase::finishSignalHandler(A_UNUSED IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
-	IntrptStackFrame *curStack = t->getIntrptStack();
+	IntrptStackFrame *curStack = t->getUserState();
 	ulong *sp = (ulong*)(curStack[-15]);			/* $254 */
 
 	/* restore rBB, rWW, rXX, rYY and rZZ */
@@ -220,7 +220,7 @@ void UEnv::addArgs(Thread *t,const ELF::StartupInfo *info,ulong *rsp,ulong *ssp,
 
 	if(!thread) {
 		/* setup sp and fp in kernel-stack; we pass the location to unsave from with it */
-		uint64_t *frame = t->getIntrptStack();
+		uint64_t *frame = t->getUserState();
 		if(frame) {
 			frame[-(12 + 2 + 1)] = (uint64_t)ssp;
 			frame[-(12 + 2 + 2)] = (uint64_t)ssp;

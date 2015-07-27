@@ -26,6 +26,12 @@
 
 /* the saved registers */
 struct IntrptStackFrame {
+	static const uint32_t PSW_PUM			= 0x02000000;	/* previous value of PSW_UM */
+
+	bool fromUserSpace() const {
+		return psw & PSW_PUM;
+	}
+
 	void print(OStream &os) const {
 		os.writef("stack-frame @ %p\n",this);
 		os.writef("\tint: %d\n",irqNo);

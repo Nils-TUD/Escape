@@ -110,7 +110,6 @@ void ThreadBase::initProps() {
 	waitstart = 0;
 	memset(sigHandler,0,sizeof(sigHandler));
 	sigmask = 0;
-	intrptLevel = 0;
 	threadDir = 0;
 	cpu = 0;
 	stats.runtime = 0;
@@ -239,8 +238,6 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 			else
 				t->stackRegions[i] = NULL;
 		}
-		t->intrptLevel = src->intrptLevel;
-		memcpy(t->intrptLevels,src->intrptLevels,sizeof(IntrptStackFrame*) * MAX_INTRPT_LEVELS);
 	}
 
 	/* clone architecture-specific stuff */

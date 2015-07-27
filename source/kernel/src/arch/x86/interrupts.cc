@@ -174,7 +174,6 @@ void Interrupts::eoi(int irq) {
 
 void Interrupts::syscall(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
-	t->pushIntrptLevel(stack);
 	t->getStats().syscalls++;
 	Syscalls::handle(t,stack);
 
@@ -182,13 +181,11 @@ void Interrupts::syscall(IntrptStackFrame *stack) {
 	t = Thread::getRunning();
 	if(EXPECT_FALSE(t->hasSignal()))
 		UEnv::handleSignal(t,stack);
-	t->popIntrptLevel();
 }
 
 void InterruptsBase::handler(IntrptStackFrame *stack) {
 	Thread *t = Thread::getRunning();
 	Interrupts::Interrupt *intrpt;
-	size_t level = t->pushIntrptLevel(stack);
 
 	/* we need to save the page-fault address here because swapping may cause other ones */
 	if(stack->intrptNo == Interrupts::EX_PAGE_FAULT)
@@ -206,15 +203,13 @@ void InterruptsBase::handler(IntrptStackFrame *stack) {
 
 	/* handle signal */
 	t = Thread::getRunning();
-	if(EXPECT_TRUE(level == 1)) {
+	if(EXPECT_TRUE(stack->fromUserSpace())) {
 		if(EXPECT_FALSE(t->haveHigherPrio()))
 			Thread::switchAway();
 		if(EXPECT_FALSE(t->hasSignal()))
 			UEnv::handleSignal(t,stack);
 	}
 	stack->setSS();
-
-	t->popIntrptLevel();
 }
 
 void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
@@ -285,7 +280,7 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 		return;
 
 	/* pagefault in kernel? */
-	if(t->getIntrptLevel() == 1) {
+	if(!stack->fromUserSpace()) {
 		uint8_t *pc = reinterpret_cast<uint8_t*>(stack->getIP());
 		/* UserAccess::copyByte uses the following instructions: */
 		/* 8a 0a mov (%edx),%cl */
@@ -310,7 +305,6 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqTimer(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	assert(t->getIntrptLevel() == 0);
 	bool res = Timer::intrpt();
 	eoi(stack->intrptNo);
 	if(res)
@@ -318,7 +312,6 @@ void Interrupts::irqTimer(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqKeyboard(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	assert(t->getIntrptLevel() == 0);
 	/* react on F12 presses during boot-phase until the keyboard driver has installed the default
 	 * irq routine for keyboard interrupts. */
 	Keyboard::Event ev;
@@ -329,7 +322,6 @@ void Interrupts::irqKeyboard(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 void Interrupts::irqDefault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	assert(t->getIntrptLevel() == 0);
 	bool res = false;
 	/* the idle-task HAS TO switch to another thread if he given somebody a signal. otherwise
 	 * we would wait for the next thread-switch (e.g. caused by a timer-irq). */

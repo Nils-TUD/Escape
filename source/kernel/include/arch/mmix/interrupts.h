@@ -77,8 +77,6 @@ class Interrupts : public InterruptsBase {
 	static void forcedTrap(IntrptStackFrame *stack) asm("intrpt_forcedTrap");
 	static bool dynTrap(IntrptStackFrame *stack,int irqNo) asm("intrpt_dynTrap");
 
-	static void enterKernel(Thread *t,IntrptStackFrame *stack);
-	static void leaveKernel(Thread *t);
 	static void defHandler(IntrptStackFrame *stack,int irqNo);
 	static void exProtFault(IntrptStackFrame *stack,int irqNo);
 	static void irqKB(IntrptStackFrame *stack,int irqNo);

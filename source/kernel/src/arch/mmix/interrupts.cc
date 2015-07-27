@@ -124,7 +124,7 @@ void InterruptsBase::getMSIAttr(int,uint64_t *,uint32_t *) {
 void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	static_assert(IRQ_COUNT == ARRAY_SIZE(intrptList),"IRQ_COUNT is wrong");
 	Thread *t = Thread::getRunning();
-	enterKernel(t,stack);
+	t->pushSpecRegs(stack);
 	/* calculate offset of registers on the stack */
 	uint64_t *begin = stack - (16 + (256 - (stack[-1] >> 56)));
 	begin -= *begin;
@@ -135,16 +135,15 @@ void Interrupts::forcedTrap(IntrptStackFrame *stack) {
 	t = Thread::getRunning(); /* thread might have changed */
 	stack[-14] = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);
 
-	/* only handle signals, if we come directly from user-mode */
-	if(t->hasSignal() && ((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0))
+	if(t->hasSignal())
 		UEnv::handleSignal(t,stack);
-	leaveKernel(t);
+	t->popSpecRegs();
 }
 
 bool Interrupts::dynTrap(IntrptStackFrame *stack,int irqNo) {
 	Interrupt *intrpt;
 	Thread *t = Thread::getRunning();
-	enterKernel(t,stack);
+	t->pushSpecRegs(stack);
 
 	/* call handler */
 	intrpt = intrptList + (irqNo & 0x3F);
@@ -159,18 +158,8 @@ bool Interrupts::dynTrap(IntrptStackFrame *stack,int irqNo) {
 		if(t->hasSignal())
 			UEnv::handleSignal(t,stack);
 	}
-	leaveKernel(t);
+	t->popSpecRegs();
 	return t->getFlags() & T_IDLE;
-}
-
-void Interrupts::enterKernel(Thread *t,IntrptStackFrame *stack) {
-	t->pushIntrptLevel(stack);
-	Thread::pushSpecRegs();
-}
-
-void Interrupts::leaveKernel(Thread *t) {
-	Thread::popSpecRegs();
-	t->popIntrptLevel();
 }
 
 void Interrupts::defHandler(A_UNUSED IntrptStackFrame *stack,int irqNo) {
@@ -207,7 +196,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 
 	/* pagefault in kernel? */
 	Thread *t = Thread::getRunning();
-	if(t->getIntrptLevel() == 1) {
+	if(t->getIntrptLevel() > 0) {
 		/* skip that instruction */
 		KSpecRegs *sregs = t->getSpecRegs();
 		sregs->rxx = 1UL << 63;

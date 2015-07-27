@@ -51,8 +51,6 @@ class Interrupts : public InterruptsBase {
 		EXC_PRV_ADDRESS		 = 25,
 	};
 
-	static const uint32_t PSW_PUM			= 0x02000000;	/* previous value of PSW_UM */
-
 	static const uintptr_t KEYBOARD_BASE	= 0xF0200000;
 	static const ulong KEYBOARD_CTRL		= 0;
 	static const ulong KEYBOARD_DATA		= 1;

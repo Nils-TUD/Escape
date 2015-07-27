@@ -64,6 +64,11 @@ inline void ThreadBase::setRunning(Thread *t) {
 	*tptr = t;
 }
 
+inline IntrptStackFrame *ThreadBase::getUserState() const {
+	uintptr_t bottom = static_cast<const Thread*>(this)->getKernelStack();
+	return (IntrptStackFrame*)(bottom + PAGE_SIZE - sizeof(ulong) - sizeof(IntrptStackFrame));
+}
+
 inline size_t ThreadBase::getThreadFrmCnt() {
 	return INITIAL_STACK_PAGES;
 }

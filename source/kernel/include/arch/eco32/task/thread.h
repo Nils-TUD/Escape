@@ -42,14 +42,18 @@ private:
 	static Thread *cur;
 };
 
-inline size_t ThreadBase::getThreadFrmCnt() {
-	return INITIAL_STACK_PAGES;
-}
-
 inline Thread *ThreadBase::getRunning() {
 	return Thread::cur;
 }
 
 inline void ThreadBase::setRunning(Thread *t) {
 	Thread::cur = t;
+}
+
+inline IntrptStackFrame *ThreadBase::getUserState() const {
+	return (IntrptStackFrame*)(KERNEL_STACK + PAGE_SIZE - sizeof(ulong) - sizeof(IntrptStackFrame));
+}
+
+inline size_t ThreadBase::getThreadFrmCnt() {
+	return INITIAL_STACK_PAGES;
 }

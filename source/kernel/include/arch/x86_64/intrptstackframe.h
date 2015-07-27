@@ -66,6 +66,11 @@
 /* the stack frame for the interrupt-handler */
 class IntrptStackFrame {
 public:
+	bool fromUserSpace() const {
+		// syscall or IF flag set
+		return intrptNo == 0 || (rflags & (1 << 9));
+	}
+
 	ulong getError() const {
 		assert(intrptNo != 0);
 		return errorCode;

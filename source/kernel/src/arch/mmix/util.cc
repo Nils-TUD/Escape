@@ -40,7 +40,7 @@ void Util::printUserStateOf(OStream &os,const Thread *t) {
 	KSpecRegs *sregs = t->getSpecRegs();
 	os.writef("User state:\n");
 	os.pushIndent();
-	Interrupts::printStackFrame(os,t->getIntrptStack());
+	Interrupts::printStackFrame(os,t->getUserState());
 	os.writef("rBB : #%016lx rWW : #%016lx rXX : #%016lx\n",sregs->rbb,sregs->rww,sregs->rxx);
 	os.writef("rYY : #%016lx rZZ : #%016lx\n",sregs->ryy,sregs->rzz);
 	os.popIndent();

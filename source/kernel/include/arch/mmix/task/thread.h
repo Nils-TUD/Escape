@@ -22,12 +22,18 @@
 #include <common.h>
 #include <cpu.h>
 
+#define MAX_INTRPT_LEVELS		3
+
 class Thread : public ThreadBase {
 	friend class ThreadBase;
 public:
-	static void pushSpecRegs();
-	static void popSpecRegs();
+	void pushSpecRegs(IntrptStackFrame *state);
+	void popSpecRegs();
 	KSpecRegs *getSpecRegs() const;
+
+	size_t getIntrptLevel() const {
+		return intrptLevel - 1;
+	}
 
 	/**
 	 * @return the frame mapped at KERNEL_STACK
@@ -42,12 +48,14 @@ private:
 	static int doSwitchTo(ThreadRegs *oldArea,ThreadRegs *newArea,uint64_t rv,tid_t tid)
 		asm("thread_doSwitchTo");
 
+	size_t intrptLevel;
 	/* the frame mapped at KERNEL_STACK */
 	frameno_t kstackFrame;
 	/* use as a temporary kernel-stack for cloning */
 	frameno_t tempStack;
 	/* when handling a signal, we have to backup these registers */
 	KSpecRegs specRegLevels[MAX_INTRPT_LEVELS];
+	IntrptStackFrame *userState[MAX_INTRPT_LEVELS];
 	static Thread *cur;
 };
 
@@ -63,18 +71,27 @@ inline void ThreadBase::setRunning(Thread *t) {
 	Thread::cur = t;
 }
 
+inline IntrptStackFrame *ThreadBase::getUserState() const {
+	const Thread *t = static_cast<const Thread*>(this);
+	return t->userState[t->intrptLevel - 1];
+}
+
 inline KSpecRegs *Thread::getSpecRegs() const {
+	// this occurs during startup in UEnv::setupProc() :(
+	if(intrptLevel == 0)
+		return const_cast<KSpecRegs*>(specRegLevels);
 	return const_cast<KSpecRegs*>(specRegLevels) + intrptLevel - 1;
 }
 
-inline void Thread::pushSpecRegs() {
-	Thread *t = Thread::getRunning();
-	KSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
+inline void Thread::pushSpecRegs(IntrptStackFrame *state) {
+	userState[intrptLevel] = state;
+	KSpecRegs *sregs = specRegLevels + intrptLevel;
 	CPU::getKSpecials(&sregs->rbb,&sregs->rww,&sregs->rxx,&sregs->ryy,&sregs->rzz);
+	intrptLevel++;
 }
 
 inline void Thread::popSpecRegs() {
-	Thread *t = Thread::getRunning();
-	KSpecRegs *sregs = t->specRegLevels + t->intrptLevel - 1;
+	intrptLevel--;
+	KSpecRegs *sregs = specRegLevels + intrptLevel;
 	CPU::setKSpecials(sregs->rbb,sregs->rww,sregs->rxx,sregs->ryy,sregs->rzz);
 }

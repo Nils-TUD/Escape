@@ -124,21 +124,6 @@ int VFSFS::syncfs(pid_t pid,VFSChannel *chan) {
 	return buf.error() ? -EINVAL : res;
 }
 
-int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info) {
-	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	esc::IPCBuf ib(buffer,sizeof(buffer));
-
-	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
-
-	ssize_t res = communicate(pid,fsFile,MSG_FS_STAT,ib);
-	if(res < 0)
-		return res;
-
-	ib >> *info;
-	return 0;
-}
-
 int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));

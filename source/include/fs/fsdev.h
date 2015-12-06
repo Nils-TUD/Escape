@@ -54,7 +54,6 @@ public:
 	void read(esc::IPCStream &is);
 	void write(esc::IPCStream &is);
 	void close(esc::IPCStream &is);
-	void stat(esc::IPCStream &is);
 	void istat(esc::IPCStream &is);
 	void syncfs(esc::IPCStream &is);
 	void link(esc::IPCStream &is);

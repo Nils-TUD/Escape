@@ -52,7 +52,6 @@ FSDevice::FSDevice(FileSystem *fs,const char *fsDev)
 	set(MSG_FILE_READ,std::make_memfun(this,&FSDevice::read));
 	set(MSG_FILE_WRITE,std::make_memfun(this,&FSDevice::write));
 	set(MSG_FS_CLOSE,std::make_memfun(this,&FSDevice::close),false);
-	set(MSG_FS_STAT,std::make_memfun(this,&FSDevice::stat));
 	set(MSG_FS_ISTAT,std::make_memfun(this,&FSDevice::istat));
 	set(MSG_FS_SYNCFS,std::make_memfun(this,&FSDevice::syncfs));
 	set(MSG_FS_LINK,std::make_memfun(this,&FSDevice::link));
@@ -149,22 +148,6 @@ void FSDevice::close(IPCStream &is) {
 	OpenFile *file = (*this)[is.fd()];
 	_fs->close(file->ino);
 	ClientDevice::close(is);
-}
-
-void FSDevice::stat(IPCStream &is) {
-	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
-	is >> u.uid >> u.gid >> u.pid >> path;
-
-	int res;
-	struct stat info;
-	ino_t no = _fs->resolve(&u,path.str(),O_RDONLY,0);
-	if(no < 0)
-		res = no;
-	else
-		res = _fs->stat(no,&info);
-
-	is << res << info << Reply();
 }
 
 void FSDevice::istat(IPCStream &is) {

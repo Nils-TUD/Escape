@@ -93,7 +93,6 @@ public:
 		set(MSG_FILE_READ,std::make_memfun(this,&TarFSDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&TarFSDevice::write));
 		set(MSG_FS_CLOSE,std::make_memfun(this,&TarFSDevice::close),false);
-		set(MSG_FS_STAT,std::make_memfun(this,&TarFSDevice::stat));
 		set(MSG_FS_ISTAT,std::make_memfun(this,&TarFSDevice::istat));
 		set(MSG_FS_SYNCFS,std::make_memfun(this,&TarFSDevice::syncfs));
 		set(MSG_FS_LINK,std::make_memfun(this,&TarFSDevice::link));
@@ -205,21 +204,6 @@ public:
 	void istat(IPCStream &is) {
 		OpenFile *of = (*this)[is.fd()];
 		is << 0 << of->file->info << Reply();
-	}
-
-	void stat(IPCStream &is) {
-		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> u.uid >> u.gid >> u.pid >> path;
-
-		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
-		if(file == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(!canReach(&u,file))
-			is << -EPERM << Reply();
-		else
-			is << 0 << file->getData()->info << Reply();
 	}
 
 	void truncate(IPCStream &is) {

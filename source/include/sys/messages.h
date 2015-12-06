@@ -39,18 +39,17 @@
 #define MSG_FS_READ					101
 #define MSG_FS_WRITE				102
 #define MSG_FS_CLOSE				103
-#define MSG_FS_STAT					104
-#define MSG_FS_SYNCFS				105
-#define MSG_FS_LINK					106
-#define MSG_FS_UNLINK				107
-#define MSG_FS_RENAME				108
-#define MSG_FS_MKDIR				109
-#define MSG_FS_RMDIR				110
-#define MSG_FS_ISTAT				111
-#define MSG_FS_CHMOD				112
-#define MSG_FS_CHOWN				113
-#define MSG_FS_UTIME				114
-#define MSG_FS_TRUNCATE				115
+#define MSG_FS_SYNCFS				104
+#define MSG_FS_LINK					105
+#define MSG_FS_UNLINK				106
+#define MSG_FS_RENAME				107
+#define MSG_FS_MKDIR				108
+#define MSG_FS_RMDIR				109
+#define MSG_FS_ISTAT				110
+#define MSG_FS_CHMOD				111
+#define MSG_FS_CHOWN				112
+#define MSG_FS_UTIME				113
+#define MSG_FS_TRUNCATE				114
 
 /* Other messages */
 #define MSG_SPEAKER_BEEP			200		/* performs a beep */

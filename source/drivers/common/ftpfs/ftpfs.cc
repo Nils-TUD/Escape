@@ -89,7 +89,6 @@ public:
 		set(MSG_FILE_READ,std::make_memfun(this,&FTPFSDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&FTPFSDevice::write));
 		set(MSG_FS_CLOSE,std::make_memfun(this,&FTPFSDevice::close),false);
-		set(MSG_FS_STAT,std::make_memfun(this,&FTPFSDevice::stat));
 		set(MSG_FS_ISTAT,std::make_memfun(this,&FTPFSDevice::istat));
 		set(MSG_FS_SYNCFS,std::make_memfun(this,&FTPFSDevice::syncfs));
 		set(MSG_FS_LINK,std::make_memfun(this,&FTPFSDevice::link));
@@ -198,17 +197,6 @@ public:
 				DirCache::removeDirOf(file->path.c_str());
 		}
 		ClientDevice::close(is);
-	}
-
-	void stat(IPCStream &is) {
-		int uid,gid,pid;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> uid >> gid >> pid >> path;
-
-		struct stat info;
-		int res = DirCache::getInfo(_ctrlRef,path.str(),&info);
-
-		is << res << info << Reply();
 	}
 
 	void syncfs(IPCStream &is) {

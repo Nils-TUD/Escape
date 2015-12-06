@@ -62,17 +62,6 @@ public:
 	static int syncfs(pid_t pid,VFSChannel *chan);
 
 	/**
-	 * Retrieves information about the given (real!) path
-	 *
-	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path in the real filesystem
-	 * @param info should be filled
-	 * @return 0 on success
-	 */
-	static int stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info);
-
-	/**
 	 * Changes the permissions of the file denoted by <path>
 	 *
 	 * @param pid the process-id

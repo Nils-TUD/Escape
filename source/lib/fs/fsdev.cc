@@ -157,35 +157,23 @@ void FSDevice::istat(IPCStream &is) {
 }
 
 void FSDevice::chmod(IPCStream &is) {
+	OpenFile *file = (*this)[is.fd()];
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
 	uint mode;
-	is >> u.uid >> u.gid >> u.pid >> path >> mode;
+	is >> u.uid >> u.gid >> u.pid >> mode;
 
-	int res;
-	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY,0);
-	if(ino < 0)
-		res = ino;
-	else
-		res = _fs->chmod(&u,ino,mode);
-
+	int res = _fs->chmod(&u,file->ino,mode);
 	is << res << Reply();
 }
 
 void FSDevice::chown(IPCStream &is) {
+	OpenFile *file = (*this)[is.fd()];
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
 	uid_t uid;
 	gid_t gid;
-	is >> u.uid >> u.gid >> u.pid >> path >> uid >> gid;
+	is >> u.uid >> u.gid >> u.pid >> uid >> gid;
 
-	int res;
-	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY,0);
-	if(ino < 0)
-		res = ino;
-	else
-		res = _fs->chown(&u,ino,uid,gid);
-
+	int res = _fs->chown(&u,file->ino,uid,gid);
 	is << res << Reply();
 }
 

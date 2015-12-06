@@ -383,56 +383,40 @@ public:
 	}
 
 	void chmod(IPCStream &is) {
+		OpenFile *of = (*this)[is.fd()];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
 		uint mode;
-		is >> u.uid >> u.gid >> u.pid >> path >> mode;
+		is >> u.uid >> u.gid >> u.pid >> mode;
 
-		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
-		if(file == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(!canReach(&u,file))
+		struct stat *info = &of->file->info;
+		if(!Permissions::canChmod(&u,info->st_uid))
 			is << -EPERM << Reply();
 		else {
-			struct stat *info = &file->getData()->info;
-			if(!Permissions::canChmod(&u,info->st_uid))
-				is << -EPERM << Reply();
-			else {
-				info->st_mode = (info->st_mode & ~MODE_PERM) | (mode & MODE_PERM);
-				changed = true;
+			info->st_mode = (info->st_mode & ~MODE_PERM) | (mode & MODE_PERM);
+			changed = true;
 
-				is << 0 << Reply();
-			}
+			is << 0 << Reply();
 		}
 	}
 
 	void chown(IPCStream &is) {
+		OpenFile *of = (*this)[is.fd()];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
 		uid_t uid;
 		gid_t gid;
-		is >> u.uid >> u.gid >> u.pid >> path >> uid >> gid;
+		is >> u.uid >> u.gid >> u.pid >> uid >> gid;
 
-		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
-		if(file == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(!canReach(&u,file))
+		struct stat *info = &of->file->info;
+		if(!Permissions::canChown(&u,info->st_uid,info->st_gid,uid,gid))
 			is << -EPERM << Reply();
 		else {
-			struct stat *info = &file->getData()->info;
-			if(!Permissions::canChown(&u,info->st_uid,info->st_gid,uid,gid))
-				is << -EPERM << Reply();
-			else {
-				if(uid != (uid_t)-1)
-					info->st_uid = uid;
-				if(gid != (gid_t)-1)
-					info->st_gid = gid;
-				changed = true;
+			if(uid != (uid_t)-1)
+				info->st_uid = uid;
+			if(gid != (gid_t)-1)
+				info->st_gid = gid;
+			changed = true;
 
-				is << 0 << Reply();
-			}
+			is << 0 << Reply();
 		}
 	}
 

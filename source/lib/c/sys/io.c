@@ -57,13 +57,21 @@ int truncate(const char *path,off_t length) {
 }
 
 int chmod(const char *path,mode_t mode) {
-	char apath[MAX_PATH_LEN];
-	return syscall2(SYSCALL_CHMOD,(ulong)abspath(apath,sizeof(apath),path),mode);
+	int fd = open(path,O_STAT);
+	if(fd < 0)
+		return fd;
+	int res = fchmod(fd,mode);
+	close(fd);
+	return res;
 }
 
 int chown(const char *path,uid_t uid,gid_t gid) {
-	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_CHOWN,(ulong)abspath(apath,sizeof(apath),path),uid,gid);
+	int fd = open(path,O_STAT);
+	if(fd < 0)
+		return fd;
+	int res = fchown(fd,uid,gid);
+	close(fd);
+	return res;
 }
 
 int link(const char *oldPath,const char *newPath) {

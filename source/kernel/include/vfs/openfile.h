@@ -199,6 +199,25 @@ public:
 	int fstat(pid_t pid,struct stat *info) const;
 
 	/**
+	 * Sets the permissions of this file to <mode>.
+	 *
+	 * @param pid the process-id
+	 * @param mode the new mode
+	 * @return 0 on success
+	 */
+	int chmod(pid_t pid,mode_t mode);
+
+	/**
+	 * Sets the owner and group of this file.
+	 *
+	 * @param pid the process-id
+	 * @param uid the new user-id
+	 * @param gid the new group-id
+	 * @return 0 on success
+	 */
+	int chown(pid_t pid,uid_t uid,gid_t gid);
+
+	/**
 	 * Sets the position for this file
 	 *
 	 * @param pid the process-id

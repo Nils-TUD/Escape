@@ -249,44 +249,6 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
 }
 
-int VFS::chmod(pid_t pid,const char *path,mode_t mode) {
-	OpenFile *fsFile;
-	const char *begin;
-	int err = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
-	if(err < 0)
-		return err;
-
-	if(IS_NODE(fsFile)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-		err = node->chmod(pid,mode);
-		VFSNode::release(node);
-	}
-	else {
-		err = VFSFS::chmod(pid,fsFile,begin,mode);
-		VFSMS::release(fsFile);
-	}
-	return err;
-}
-
-int VFS::chown(pid_t pid,const char *path,uid_t uid,gid_t gid) {
-	OpenFile *fsFile;
-	const char *begin;
-	int err = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
-	if(err < 0)
-		return err;
-
-	if(IS_NODE(fsFile)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-		err = node->chown(pid,uid,gid);
-		VFSNode::release(node);
-	}
-	else {
-		err = VFSFS::chown(pid,fsFile,begin,uid,gid);
-		VFSMS::release(fsFile);
-	}
-	return err;
-}
-
 int VFS::utime(pid_t pid,const char *path,const struct utimbuf *utimes) {
 	OpenFile *fsFile;
 	const char *begin;

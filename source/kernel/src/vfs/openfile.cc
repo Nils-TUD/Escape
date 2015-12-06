@@ -112,6 +112,28 @@ int OpenFile::fstat(pid_t pid,struct stat *info) const {
 	return res;
 }
 
+int OpenFile::chmod(pid_t pid,mode_t mode) {
+	int err;
+	if(devNo == VFS_DEV_NO)
+		err = node->chmod(pid,mode);
+	else {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::chmod(pid,chan,mode);
+	}
+	return err;
+}
+
+int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
+	int err;
+	if(devNo == VFS_DEV_NO)
+		err = node->chown(pid,uid,gid);
+	else {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::chown(pid,chan,uid,gid);
+	}
+	return err;
+}
+
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t res;
 

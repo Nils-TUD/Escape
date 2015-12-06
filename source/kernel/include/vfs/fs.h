@@ -62,27 +62,25 @@ public:
 	static int syncfs(pid_t pid,VFSChannel *chan);
 
 	/**
-	 * Changes the permissions of the file denoted by <path>
+	 * Changes the permissions of the file denoted by <chan>
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path
+	 * @param chan the channel for the file to the fs instance
 	 * @param mode the new mode
 	 * @return 0 on success
 	 */
-	static int chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode);
+	static int chmod(pid_t pid,VFSChannel *chan,mode_t mode);
 
 	/**
-	 * Changes the owner and group of the file denoted by <path>.
+	 * Changes the owner and group of the file denoted by <chan>.
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path
+	 * @param chan the channel for the file to the fs instance
 	 * @param uid the user-id
 	 * @param gid the group-id
 	 * @return 0 on success
 	 */
-	static int chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid);
+	static int chown(pid_t pid,VFSChannel *chan,uid_t uid,gid_t gid);
 
 	/**
 	 * Sets the access and modification times of the file denoted by <path>

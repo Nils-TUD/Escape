@@ -108,22 +108,22 @@ int VFSFS::syncfs(pid_t pid,VFSChannel *chan) {
 	return communicateOverChan(pid,chan,MSG_FS_SYNCFS,ib);
 }
 
-int VFSFS::chmod(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode) {
+int VFSFS::chmod(pid_t pid,VFSChannel *chan,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path) << mode;
-	return communicate(pid,fsFile,MSG_FS_CHMOD,ib);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << mode;
+	return communicateOverChan(pid,chan,MSG_FS_CHMOD,ib);
 }
 
-int VFSFS::chown(pid_t pid,OpenFile *fsFile,const char *path,uid_t uid,gid_t gid) {
+int VFSFS::chown(pid_t pid,VFSChannel *chan,uid_t uid,gid_t gid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path) << uid << gid;
-	return communicate(pid,fsFile,MSG_FS_CHOWN,ib);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << uid << gid;
+	return communicateOverChan(pid,chan,MSG_FS_CHOWN,ib);
 }
 
 int VFSFS::utime(pid_t pid,OpenFile *fsFile,const char *path,const struct utimbuf *utimes) {

@@ -138,27 +138,6 @@ public:
 	                    OpenFile **file);
 
 	/**
-	 * Sets the permissions of the file denoted by <path> to <mode>.
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @param mode the new mode
-	 * @return 0 on success
-	 */
-	static int chmod(pid_t pid,const char *path,mode_t mode);
-
-	/**
-	 * Sets the owner and group of the file denoted by <path>
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @param uid the new user-id
-	 * @param gid the new group-id
-	 * @return 0 on success
-	 */
-	static int chown(pid_t pid,const char *path,uid_t uid,gid_t gid);
-
-	/**
 	 * Sets the access and modification times of the file denoted by <path>
 	 *
 	 * @param pid the process-id

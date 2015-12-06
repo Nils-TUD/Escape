@@ -138,6 +138,18 @@ static inline ssize_t filesize(int fd) {
 A_CHECKRET int chmod(const char *path,mode_t mode);
 
 /**
+ * Changes the permission of the given file to <mode>. This is always possible if
+ * the current process is owned by ROOT_UID. Otherwise only if the current process owns the file.
+ *
+ * @param fd the file descriptor
+ * @param mode the new mode
+ * @return 0 on success
+ */
+A_CHECKRET static inline int fchmod(int fd,mode_t mode) {
+	return syscall2(SYSCALL_CHMOD,fd,mode);
+}
+
+/**
  * Changes the owner and group of the file denoted by <path> to <uid> and <gid>, respectively. If
  * the current process is owned by ROOT_UID, it can be changed arbitrarily. If the current process
  * owns the file, the group can only be changed to a group this user is a member of. Otherwise
@@ -149,6 +161,21 @@ A_CHECKRET int chmod(const char *path,mode_t mode);
  * @return 0 on success
  */
 A_CHECKRET int chown(const char *path,uid_t uid,gid_t gid);
+
+/**
+ * Changes the owner and group of the given file to <uid> and <gid>, respectively. If
+ * the current process is owned by ROOT_UID, it can be changed arbitrarily. If the current process
+ * owns the file, the group can only be changed to a group this user is a member of. Otherwise
+ * the owner can't be changed.
+ *
+ * @param fd the file descriptor
+ * @param uid the new user-id (-1 = do not change)
+ * @param gid the new group-id (-1 = do not change)
+ * @return 0 on success
+ */
+A_CHECKRET static inline int fchown(int fd,uid_t uid,gid_t gid) {
+	return syscall3(SYSCALL_CHOWN,fd,uid,gid);
+}
 
 /**
  * Checks whether the given path points to a regular file

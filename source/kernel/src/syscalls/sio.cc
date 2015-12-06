@@ -104,31 +104,35 @@ int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	const char *path = (const char*)SYSC_ARG1(stack);
+	int fd = (int)SYSC_ARG1(stack);
 	mode_t mode = (mode_t)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
-		SYSC_ERROR(stack,-EFAULT);
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
 
-	int res = VFS::chmod(pid,abspath,mode);
+	int res = file->chmod(p->getPid(),mode);
+	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 
 int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	const char *path = (const char*)SYSC_ARG1(stack);
+	int fd = (int)SYSC_ARG1(stack);
 	uid_t uid = (uid_t)SYSC_ARG2(stack);
 	gid_t gid = (gid_t)SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
-		SYSC_ERROR(stack,-EFAULT);
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
 
-	int res = VFS::chown(pid,abspath,uid,gid);
+	int res = file->chown(p->getPid(),uid,gid);
+	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);

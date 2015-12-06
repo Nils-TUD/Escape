@@ -226,7 +226,7 @@ public:
 	}
 
 	void mkdir(IPCStream &is) {
-		pathCmd(is,CtrlCon::CMD_MKD);
+		dirCmd(is,CtrlCon::CMD_MKD);
 	}
 	void rmdir(IPCStream &is) {
 		pathCmd(is,CtrlCon::CMD_RMD);
@@ -258,6 +258,24 @@ private:
 		CtrlCon *ctrl = ref.request();
 		ctrl->execute(cmd,path.str());
 		DirCache::removeDirOf(path.str());
+
+		is << 0 << Reply();
+	}
+
+	void dirCmd(IPCStream &is,CtrlCon::Cmd cmd) {
+		OpenFile *dir = (*this)[is.fd()];
+
+		char path[MAX_PATH_LEN];
+		int uid,gid,pid;
+		CStringBuf<MAX_PATH_LEN> name;
+		is >> uid >> gid >> pid >> name;
+
+		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name.str());
+
+		CtrlConRef ref(_ctrlRef);
+		CtrlCon *ctrl = ref.request();
+		ctrl->execute(cmd,path);
+		DirCache::removeDirOf(path);
 
 		is << 0 << Reply();
 	}

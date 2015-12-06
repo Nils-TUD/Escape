@@ -126,15 +126,15 @@ public:
 	static int rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath);
 
 	/**
-	 * Creates the given directory. Expects that all except the last path-component exist.
+	 * Creates a directory named <name> in the directory denoted by <chan>.
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path
+	 * @param chan the channel for the file to the fs instance
+	 * @param name the directory name
 	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int mkdir(pid_t pid,OpenFile *fsFile,const char *path,mode_t mode);
+	static int mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode);
 
 	/**
 	 * Removes the given directory. Expects that the directory is empty (except '.' and '..')

@@ -298,19 +298,13 @@ void FSDevice::rename(IPCStream &is) {
 }
 
 void FSDevice::mkdir(IPCStream &is) {
+	OpenFile *file = (*this)[is.fd()];
 	FSUser u;
 	mode_t mode;
-	CStringBuf<MAX_PATH_LEN> path;
-	is >> u.uid >> u.gid >> u.pid >> path >> mode;
+	CStringBuf<MAX_PATH_LEN> name;
+	is >> u.uid >> u.gid >> u.pid >> name >> mode;
 
-	int res;
-	ino_t dirIno;
-	const char *name = resolveDir(&u,path.str(),&dirIno);
-	if(dirIno < 0)
-		res = dirIno;
-	else
-		res = _fs->mkdir(&u,dirIno,name,mode);
-
+	int res = _fs->mkdir(&u,file->ino,name.str(),mode);
 	is << res << Reply();
 }
 

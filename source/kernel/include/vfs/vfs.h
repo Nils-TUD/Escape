@@ -167,16 +167,6 @@ public:
 	static int rename(pid_t pid,const char *oldPath,const char *newPath);
 
 	/**
-	 * Creates the directory <path>
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @param mode the mode to set
-	 * @return 0 on success
-	 */
-	static int mkdir(pid_t pid,const char *path,mode_t mode);
-
-	/**
 	 * Removes the given directory
 	 *
 	 * @param pid the process-id

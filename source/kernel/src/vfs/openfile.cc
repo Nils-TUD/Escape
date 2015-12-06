@@ -24,6 +24,7 @@
 #include <vfs/channel.h>
 #include <vfs/device.h>
 #include <vfs/fs.h>
+#include <vfs/dir.h>
 #include <vfs/openfile.h>
 #include <vfs/vfs.h>
 #include <common.h>
@@ -142,6 +143,17 @@ int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::utime(pid,chan,utimes);
 	}
+	return err;
+}
+
+int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
+	int err;
+	if(devNo != VFS_DEV_NO) {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::mkdir(pid,chan,name,S_IFDIR | (mode & MODE_PERM));
+	}
+	else
+		err = node->mkdir(pid,name,mode);
 	return err;
 }
 

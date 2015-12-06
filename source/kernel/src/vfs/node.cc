@@ -224,6 +224,42 @@ int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
 	return res;
 }
 
+int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {
+	char *namecpy;
+	VFSNode *child;
+	int res;
+
+	if(!S_ISDIR(this->mode))
+		return -ENOTDIR;
+
+	/* create a copy for the node */
+	namecpy = strdup(name);
+	if(namecpy == NULL)
+		return -ENOMEM;
+
+	/* does it exist? */
+	if(findInDir(namecpy,strlen(namecpy)) != NULL) {
+		res = -EEXIST;
+		goto errorFree;
+	}
+
+	/* create dir */
+	/* check permissions */
+	if((res = VFS::hasAccess(pid,this,VFS_WRITE)) < 0)
+		goto errorFree;
+	child = createObj<VFSDir>(pid,this,namecpy,S_IFDIR | (mode & MODE_PERM));
+	if(child == NULL) {
+		res = -ENOMEM;
+		goto errorFree;
+	}
+	release(child);
+	return 0;
+
+errorFree:
+	Cache::free(namecpy);
+	return res;
+}
+
 int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *created,
 		uint flags,mode_t mode) {
 	const VFSNode *dir,*n = *node;

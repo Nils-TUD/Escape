@@ -355,6 +355,16 @@ public:
 	int utime(pid_t pid,const struct utimbuf *utimes);
 
 	/**
+	 * Creates a directory named <name> in <this> with <mode> mode.
+	 *
+	 * @param pid the process-id
+	 * @param name the name
+	 * @param mode the mode
+	 * @return 0 on success
+	 */
+	int mkdir(pid_t pid,const char *name,mode_t mode);
+
+	/**
 	 * Finds the child-node with name <name>
 	 *
 	 * @param dir the directory (locked)

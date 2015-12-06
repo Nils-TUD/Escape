@@ -227,6 +227,16 @@ public:
 	int utime(pid_t pid,const struct utimbuf *utimes);
 
 	/**
+	 * Creates the directory named <name> in this directory.
+	 *
+	 * @param pid the process-id
+	 * @param name the directory path
+	 * @param mode the mode to set
+	 * @return 0 on success
+	 */
+	int mkdir(pid_t pid,const char *name,mode_t mode);
+
+	/**
 	 * Sets the position for this file
 	 *
 	 * @param pid the process-id

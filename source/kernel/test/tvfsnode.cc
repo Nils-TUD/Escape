@@ -152,8 +152,14 @@ static void test_vfs_node_dir_refs() {
 	checkMemoryBefore(false);
 	size_t nodesBefore = VFSNode::getNodeCount();
 
-	test_assertInt(VFS::mkdir(pid,"/sys/foobar",DIR_DEF_MODE),0);
-	test_assertInt(VFS::mkdir(pid,"/sys/foobar/test",DIR_DEF_MODE),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/sys",&f1),0);
+	test_assertInt(f1->mkdir(pid,"foobar",DIR_DEF_MODE),0);
+	f1->close(pid);
+
+	test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/sys/foobar",&f1),0);
+	test_assertInt(f1->mkdir(pid,"test",DIR_DEF_MODE),0);
+	f1->close(pid);
+
 	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/sys/foobar/myfile1",&f1),0);
 	f1->close(pid);
 	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/sys/foobar/myfile2",&f1),0);

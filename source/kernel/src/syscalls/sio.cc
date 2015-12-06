@@ -534,14 +534,21 @@ int Syscalls::rename(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	pid_t pid = Proc::getRunning();
-	const char *path = (const char*)SYSC_ARG1(stack);
-	mode_t mode = (mode_t)SYSC_ARG2(stack);
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
+	char filename[MAX_PATH_LEN + 1];
+	int fd = (int)SYSC_ARG1(stack);
+	const char *name = (const char *)SYSC_ARG2(stack);
+	mode_t mode = (mode_t)SYSC_ARG3(stack);
+	Proc *p = t->getProc();
+
+	if(EXPECT_FALSE(!copyPath(filename,sizeof(filename),name)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::mkdir(pid,abspath,mode);
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	int res = file->mkdir(p->getPid(),filename,mode);
+	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

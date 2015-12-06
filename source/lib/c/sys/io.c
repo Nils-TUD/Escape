@@ -70,7 +70,23 @@ int rename(const char *oldPath,const char *newPath) {
 
 int mkdir(const char *path,mode_t mode) {
 	char apath[MAX_PATH_LEN];
-	return syscall2(SYSCALL_MKDIR,(ulong)abspath(apath,sizeof(apath),path),mode);
+	char tmp[MAX_PATH_LEN];
+	/* copy it to the stack first, because abspath might return the third argument, which has to
+	 * be writable, because dirfile needs to change it */
+	strnzcpy(tmp,path,sizeof(tmp));
+	char *fullpath = abspath(apath,sizeof(apath),tmp);
+	char *name;
+	const char *dir = dirfile(fullpath,&name);
+	int fd = open(dir,O_READ);
+	if(fd < 0)
+		return fd;
+	int res = fmkdir(fd,name,mode);
+	close(fd);
+	return res;
+}
+
+int fmkdir(int fd,const char *name,mode_t mode) {
+	return syscall3(SYSCALL_MKDIR,fd,(ulong)name,mode);
 }
 
 int rmdir(const char *path) {

@@ -42,8 +42,9 @@ static PathTree<TarINode> tree;
 static bool changed = false;
 
 struct OpenFile : public Client {
-	explicit OpenFile(int f,PathTreeItem<TarINode> *_item = NULL,FILE *_archive = NULL,int _flags = 0)
-		: Client(f), flags(_flags), file(_item->getData()), bfile() {
+	explicit OpenFile(int f,const char *_path = NULL,PathTreeItem<TarINode> *_item = NULL,
+			FILE *_archive = NULL,int _flags = 0)
+		: Client(f), flags(_flags), path(_path), file(_item->getData()), bfile() {
 		if(S_ISDIR(_item->getData()->info.st_mode))
 			bfile = new DirFile(_item,tree);
 		else
@@ -77,6 +78,7 @@ struct OpenFile : public Client {
 	}
 
 	int flags;
+	std::string path;
 	TarINode *file;
 	BlockFile *bfile;
 };
@@ -163,7 +165,7 @@ public:
 			return;
 		}
 
-		add(is.fd(),new OpenFile(is.fd(),file,_archive,r.flags));
+		add(is.fd(),new OpenFile(is.fd(),r.path.str(),file,_archive,r.flags));
 		is << FileOpen::Response(is.fd()) << Reply();
 	}
 
@@ -310,40 +312,29 @@ public:
 	}
 
 	void mkdir(IPCStream &is) {
-		char tmp[MAX_PATH_LEN];
+		char path[MAX_PATH_LEN];
+		OpenFile *of = (*this)[is.fd()];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> u.uid >> u.gid >> u.pid >> path;
+		CStringBuf<MAX_PATH_LEN> name;
+		is >> u.uid >> u.gid >> u.pid >> name;
 
-		strncpy(tmp,path.str(),sizeof(tmp));
-		char *parent = dirname(tmp);
+		snprintf(path,sizeof(path),"%s/%s",of->path.c_str(),name.str());
 
+		int res;
 		const char *end = NULL;
-		PathTreeItem<TarINode> *parentFile = tree.find(parent,&end);
-		if(parentFile == NULL || *end != '\0') {
-			is << -ENOENT << Reply();
-			return;
-		}
-		else if(!canReach(&u,parentFile)) {
-			is << -EPERM << Reply();
-			return;
-		}
-
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
-		if(file != NULL && *end == '\0') {
+		struct stat *pinfo = &of->file->info;
+		PathTreeItem<TarINode> *file = tree.find(path,&end);
+		if(file != NULL && *end == '\0')
 			is << -EEXIST << Reply();
-			return;
-		}
-
-		struct stat *pinfo = &parentFile->getData()->info;
-		int res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
-		if(res < 0)
+		else if(!S_ISDIR(of->file->info.st_mode))
+			is << -ENOTDIR << Reply();
+		else if((res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE)) < 0)
 			is << res << Reply();
 		else {
 			TarINode *inode = new TarINode(time(NULL),0,DIR_DEF_MODE);
 			inode->info.st_uid = u.uid;
 			inode->info.st_gid = u.gid;
-			tree.insert(path.str(),inode);
+			tree.insert(path,inode);
 			changed = true;
 
 			is << 0 << Reply();

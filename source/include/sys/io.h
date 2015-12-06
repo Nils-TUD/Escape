@@ -373,6 +373,16 @@ A_CHECKRET int rename(const char *oldPath,const char *newPath);
 A_CHECKRET int mkdir(const char *path,mode_t mode);
 
 /**
+ * Creates a directory called <name> in the directory denoted by <fd>.
+ *
+ * @param fd the file descriptor for the directory to create the new directory in
+ * @param name the directory name
+ * @param mode the mode for the created directory
+ * @return 0 on success
+ */
+A_CHECKRET int fmkdir(int fd,const char *name,mode_t mode);
+
+/**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
  *
  * @param path the path

@@ -79,6 +79,15 @@ char *basename(char *path);
 char *dirname(char *path);
 
 /**
+ * Splits <path> to retrieve the directory name and the filename.
+ *
+ * @param path the path
+ * @param filename will point to the filename
+ * @return the directory name
+ */
+const char *dirfile(char *path,char **filename);
+
+/**
  * Opens the given directory
  *
  * @param path the path to the directory

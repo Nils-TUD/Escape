@@ -24,6 +24,10 @@
 #include <utime.h>
 
 int utime(const char *path,const struct utimbuf *times) {
-	char apath[MAX_PATH_LEN];
-	return syscall2(SYSCALL_UTIME,(ulong)abspath(apath,sizeof(apath),path),(ulong)times);
+	int fd = open(path,O_NOCHAN);
+	if(fd < 0)
+		return fd;
+	int res = futime(fd,times);
+	close(fd);
+	return res;
 }

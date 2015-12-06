@@ -138,16 +138,6 @@ public:
 	                    OpenFile **file);
 
 	/**
-	 * Sets the access and modification times of the file denoted by <path>
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @param utimes the new access and modification times
-	 * @return 0 on success
-	 */
-	static int utime(pid_t pid,const char *path,const struct utimbuf *utimes);
-
-	/**
 	 * Creates a link @ <newPath> to <oldPath>
 	 *
 	 * @param pid the process-id

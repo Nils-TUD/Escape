@@ -178,18 +178,12 @@ void FSDevice::chown(IPCStream &is) {
 }
 
 void FSDevice::utime(IPCStream &is) {
+	OpenFile *file = (*this)[is.fd()];
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
 	struct utimbuf utimes;
-	is >> u.uid >> u.gid >> u.pid >> path >> utimes;
+	is >> u.uid >> u.gid >> u.pid >> utimes;
 
-	int res;
-	ino_t ino = _fs->resolve(&u,path.str(),O_RDONLY,0);
-	if(ino < 0)
-		res = ino;
-	else
-		res = _fs->utime(&u,ino,&utimes);
-
+	int res = _fs->utime(&u,file->ino,&utimes);
 	is << res << Reply();
 }
 

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/syscalls.h>
 
 struct utimbuf {
 	time_t actime;		/* access time */
@@ -38,6 +39,17 @@ extern "C" {
  * @return 0 on success
  */
 int utime(const char *path,const struct utimbuf *times);
+
+/**
+ * Changes the last access and modification time of the given file.
+ *
+ * @param fd the file descriptor.
+ * @param times the new access and modification times (NULL sets it to the current time)
+ * @return 0 on success
+ */
+static inline int futime(int fd,const struct utimbuf *times) {
+	return syscall2(SYSCALL_UTIME,fd,(ulong)times);
+}
 
 #if defined(__cplusplus)
 }

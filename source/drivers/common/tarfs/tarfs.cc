@@ -421,28 +421,20 @@ public:
 	}
 
 	void utime(IPCStream &is) {
+		OpenFile *of = (*this)[is.fd()];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
 		struct utimbuf utimes;
-		is >> u.uid >> u.gid >> u.pid >> path >> utimes;
+		is >> u.uid >> u.gid >> u.pid >> utimes;
 
-		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
-		if(file == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(!canReach(&u,file))
+		struct stat *info = &of->file->info;
+		if(!Permissions::canUtime(&u,info->st_uid))
 			is << -EPERM << Reply();
 		else {
-			struct stat *info = &file->getData()->info;
-			if(!Permissions::canUtime(&u,info->st_uid))
-				is << -EPERM << Reply();
-			else {
-				info->st_mtime = utimes.modtime;
-				info->st_atime = utimes.actime;
-				changed = true;
+			info->st_mtime = utimes.modtime;
+			info->st_atime = utimes.actime;
+			changed = true;
 
-				is << 0 << Reply();
-			}
+			is << 0 << Reply();
 		}
 	}
 

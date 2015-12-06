@@ -83,15 +83,14 @@ public:
 	static int chown(pid_t pid,VFSChannel *chan,uid_t uid,gid_t gid);
 
 	/**
-	 * Sets the access and modification times of the file denoted by <path>
+	 * Sets the access and modification times of the file denoted by <chan>
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path
+	 * @param chan the channel for the file to the fs instance
 	 * @param utimes the new access and modification times (NULL = set to current time)
 	 * @return 0 on success
 	 */
-	static int utime(pid_t pid,OpenFile *fsFile,const char *path,const struct utimbuf *utimes);
+	static int utime(pid_t pid,VFSChannel *chan,const struct utimbuf *utimes);
 
 	/**
 	 * Creates a hardlink at <newPath> which points to <oldPath>

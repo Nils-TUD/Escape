@@ -249,25 +249,6 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
 }
 
-int VFS::utime(pid_t pid,const char *path,const struct utimbuf *utimes) {
-	OpenFile *fsFile;
-	const char *begin;
-	int err = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
-	if(err < 0)
-		return err;
-
-	if(IS_NODE(fsFile)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-		err = node->utime(pid,utimes);
-		VFSNode::release(node);
-	}
-	else {
-		err = VFSFS::utime(pid,fsFile,begin,utimes);
-		VFSMS::release(fsFile);
-	}
-	return err;
-}
-
 int VFS::link(pid_t pid,const char *oldPath,const char *newPath) {
 	char newPathCpy[MAX_PATH_LEN + 1];
 	char *name,*namecpy,backup;

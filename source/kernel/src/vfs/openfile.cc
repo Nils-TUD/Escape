@@ -134,6 +134,17 @@ int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
 	return err;
 }
 
+int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
+	int err;
+	if(devNo == VFS_DEV_NO)
+		err = node->utime(pid,utimes);
+	else {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::utime(pid,chan,utimes);
+	}
+	return err;
+}
+
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t res;
 

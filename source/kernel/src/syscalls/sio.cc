@@ -139,23 +139,27 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	const char *path = (const char*)SYSC_ARG1(stack);
+	int fd = (int)SYSC_ARG1(stack);
 	struct utimbuf *utimes = (struct utimbuf*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
+	pid_t pid = p->getPid();
 	struct utimbuf kutimes;
 
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
-		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(utimes != NULL && !PageDir::isInUserSpace((uintptr_t)utimes,sizeof(*utimes))))
 		SYSC_ERROR(stack,-EFAULT);
+
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
 
 	if(utimes)
 		memcpy(&kutimes,utimes,sizeof(*utimes));
 	else
 		kutimes.actime = kutimes.modtime = Timer::getTime();
 
-	int res = VFS::utime(pid,abspath,&kutimes);
+	int res = file->utime(pid,&kutimes);
+	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);

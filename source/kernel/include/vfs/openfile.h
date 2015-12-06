@@ -218,6 +218,15 @@ public:
 	int chown(pid_t pid,uid_t uid,gid_t gid);
 
 	/**
+	 * Sets the access and modification times of this file.
+	 *
+	 * @param pid the process-id
+	 * @param utimes the new access and modification times
+	 * @return 0 on success
+	 */
+	int utime(pid_t pid,const struct utimbuf *utimes);
+
+	/**
 	 * Sets the position for this file
 	 *
 	 * @param pid the process-id

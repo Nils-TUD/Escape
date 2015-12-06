@@ -38,38 +38,11 @@ int create(const char *path,uint flags,mode_t mode) {
 	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags | O_CREAT,mode);
 }
 
-int stat(const char *path,struct stat *info) {
-	int fd = open(path,O_STAT);
-	if(fd < 0)
-		return fd;
-	int res = fstat(fd,info);
-	close(fd);
-	return res;
-}
-
 int truncate(const char *path,off_t length) {
 	int fd = open(path,O_WRONLY);
 	if(fd < 0)
 		return fd;
 	int res = ftruncate(fd,length);
-	close(fd);
-	return res;
-}
-
-int chmod(const char *path,mode_t mode) {
-	int fd = open(path,O_STAT);
-	if(fd < 0)
-		return fd;
-	int res = fchmod(fd,mode);
-	close(fd);
-	return res;
-}
-
-int chown(const char *path,uid_t uid,gid_t gid) {
-	int fd = open(path,O_STAT);
-	if(fd < 0)
-		return fd;
-	int res = fchown(fd,uid,gid);
 	close(fd);
 	return res;
 }
@@ -158,25 +131,4 @@ void *joinbuf(const char *path,size_t size,int flags) {
 void destroybuf(void *mem,ulong name) {
 	pshm_unlink(name);
 	munmap(mem);
-}
-
-bool isfile(const char *path) {
-	struct stat info;
-	if(stat(path,&info) < 0)
-		return false;
-	return S_ISREG(info.st_mode);
-}
-
-bool isdir(const char *path) {
-	struct stat info;
-	if(stat(path,&info) < 0)
-		return false;
-	return S_ISDIR(info.st_mode);
-}
-
-bool isblock(const char *path) {
-	struct stat info;
-	if(stat(path,&info) < 0)
-		return false;
-	return S_ISREG(info.st_mode) || S_ISBLK(info.st_mode);
 }

@@ -45,7 +45,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 
 	/* check flags */
 	flags &= VFS_USER_FLAGS;
-	if(EXPECT_FALSE((flags & (VFS_READ | VFS_WRITE | VFS_MSGS)) == 0))
+	if(EXPECT_FALSE((flags & (VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN)) == 0))
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* open the path */
@@ -79,25 +79,6 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
-}
-
-int Syscalls::stat(Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	struct stat kinfo;
-	const char *path = (const char*)SYSC_ARG1(stack);
-	struct stat *info = (struct stat*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
-
-	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)info,sizeof(struct stat))))
-		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
-		SYSC_ERROR(stack,-EFAULT);
-
-	int res = VFS::stat(pid,abspath,&kinfo);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-	UserAccess::write(info,&kinfo,sizeof(kinfo));
-	SYSC_RET1(stack,0);
 }
 
 int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {

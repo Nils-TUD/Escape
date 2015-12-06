@@ -39,8 +39,12 @@ int create(const char *path,uint flags,mode_t mode) {
 }
 
 int stat(const char *path,struct stat *info) {
-	char apath[MAX_PATH_LEN];
-	return syscall2(SYSCALL_STAT,(ulong)abspath(apath,sizeof(apath),path),(ulong)info);
+	int fd = open(path,O_STAT);
+	if(fd < 0)
+		return fd;
+	int res = fstat(fd,info);
+	close(fd);
+	return res;
 }
 
 int truncate(const char *path,off_t length) {

@@ -182,9 +182,10 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 		openmsg = MSG_FS_OPEN;
 	}
 
-	/* if its a device, create the channel-node */
 	ino_t nodeNo = node->getNo();
-	if(IS_DEVICE(node->getMode())) {
+	/* if its a device, create the channel-node, by default. If VFS_NOCHAN is given, don't do that
+	 * unless it's a file in a userspace FS (openmsg == MSG_FS_OPEN). */
+	if(IS_DEVICE(node->getMode()) && (openmsg == MSG_FS_OPEN || !(flags & VFS_NOCHAN))) {
 		VFSNode *child;
 		/* check if we can access the device */
 		if((err = hasAccess(pid,node,flags)) < 0)
@@ -239,33 +240,13 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 	int err;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_LONELY;
+	flags &= VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN | VFS_NOBLOCK | VFS_DEVICE | VFS_LONELY;
 
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO && (err = hasAccess(pid,node,flags)) < 0))
 		return err;
 
 	/* determine free file */
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
-}
-
-int VFS::stat(pid_t pid,const char *path,struct stat *info) {
-	OpenFile *fsFile;
-	const char *begin;
-	int err = request(pid,path,VFS_READ,0,&begin,&fsFile);
-	if(err < 0)
-		return err;
-
-	if(IS_NODE(fsFile)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-		node->getInfo(pid,info);
-		VFSNode::release(node);
-	}
-	else {
-		err = VFSFS::stat(pid,fsFile,begin,info);
-		info->st_dev = fsFile->getNodeNo();
-		VFSMS::release(fsFile);
-	}
-	return err;
 }
 
 int VFS::chmod(pid_t pid,const char *path,mode_t mode) {

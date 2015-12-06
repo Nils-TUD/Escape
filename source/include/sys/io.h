@@ -41,6 +41,7 @@
 #define O_NONBLOCK				64	/* don't block when reading or receiving a msg from devices */
 #define O_LONELY				128	/* disallow other accesses */
 #define O_EXCL					256	/* fail if the file already exists */
+#define O_NOCHAN				512 /* don't create a channel, but open the device itself */
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0

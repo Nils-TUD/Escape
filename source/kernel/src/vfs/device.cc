@@ -65,13 +65,17 @@ ssize_t VFSDevice::getSize(A_UNUSED pid_t pid) {
 	return msgCount;
 }
 
-void VFSDevice::close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int msgid) {
-	/* wakeup all threads that may be waiting for this node so they can check
-	 * whether they are affected by the remove of this device and perform the corresponding
-	 * action */
-	/* do that first because otherwise the client-nodes are already gone :) */
-	wakeupClients(true);
-	destroy();
+void VFSDevice::close(A_UNUSED pid_t pid,OpenFile *file,A_UNUSED int msgid) {
+	if(file->getFlags() & VFS_DEVICE) {
+		/* wakeup all threads that may be waiting for this node so they can check
+		 * whether they are affected by the remove of this device and perform the corresponding
+		 * action */
+		/* do that first because otherwise the client-nodes are already gone :) */
+		wakeupClients(true);
+		destroy();
+	}
+	else
+		unref();
 }
 
 void VFSDevice::bindto(tid_t tid) {

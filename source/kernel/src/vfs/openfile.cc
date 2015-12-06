@@ -463,12 +463,13 @@ size_t OpenFile::getCount() {
 }
 
 int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
-	A_UNUSED uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOBLOCK | VFS_DEVICE | VFS_LONELY;
+	A_UNUSED uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN | VFS_NOBLOCK |
+							  VFS_DEVICE | VFS_LONELY;
 	size_t i;
 	bool isDevice = false;
 	OpenFile *e;
 	/* ensure that we don't increment usages of an unused slot */
-	assert(flags & (VFS_DEVICE | VFS_READ | VFS_WRITE | VFS_MSGS));
+	assert(flags & (VFS_DEVICE | VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN));
 	assert(!(flags & ~userFlags));
 
 	if(devNo == VFS_DEV_NO)

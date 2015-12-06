@@ -58,16 +58,15 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{init,				"init",	    		0},
 	{sleep,				"sleep",    		1},
 	{seek,				"seek",    			2},
-	{stat,				"stat",    			2},
 	{startthread,		"startthread",		2},
 	{gettid,			"gettid",    		0},
 	{send,				"send",    			4},
 	{receive,			"receive",    		3},
 	{getcycles,			"getcycles",    	0},
 	{syncfs,			"syncfs",    		1},
+	{link,				"link",    			2},
 
 	/* 30 */
-	{link,				"link",    			2},
 	{unlink,			"unlink",    		1},
 	{mkdir,				"mkdir",    		1},
 	{rmdir,				"rmdir",    		1},
@@ -77,9 +76,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{tell,				"tell",    			2},
 	{sysconf,			"sysconf",   		1},
 	{getwork,			"getwork",    		6},
+	{join,				"join",    			1},
 
 	/* 40 */
-	{join,				"join",    			1},
 	{fstat,				"fstat",    		2},
 	{mmap,				"mmap",    			7},
 	{mprotect,			"mprotect",    		2},
@@ -89,9 +88,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{setuid,			"setuid",    		1},
 	{geteuid,			"geteuid",    		0},
 	{seteuid,			"seteuid",    		1},
+	{getgid,			"getgid",    		0},
 
 	/* 50 */
-	{getgid,			"getgid",    		0},
 	{setgid,			"setgid",    		1},
 	{getegid,			"getegid",    		0},
 	{setegid,			"setegid",   		1},
@@ -101,9 +100,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{setgroups,			"setgroups",    	2},
 	{isingroup,			"isingroup",    	2},
 	{alarm,				"alarm",    		1},
+	{tsctotime,			"tsctotime",    	1},
 
 	/* 60 */
-	{tsctotime,			"tsctotime",    	1},
 	{semcrt,			"semcrt",			1},
 	{semop,				"semop",			2},
 	{semdestr,			"semdestr",			1},
@@ -113,9 +112,9 @@ const Syscalls::Syscall Syscalls::syscalls[] = {
 	{creatsibl,			"creatsibl",		2},
 	{sysconfstr,		"sysconfstr",		3},
 	{clonems,			"clonems",			0},
+	{joinms,			"joinms",			1},
 
 	/* 70 */
-	{joinms,			"joinms",			1},
 	{mlock,				"mlock",			2},
 	{mlockall,			"mlockall",			0},
 	{semcrtirq,			"semcrtirq",		4},

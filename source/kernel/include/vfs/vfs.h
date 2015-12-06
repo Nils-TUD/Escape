@@ -57,8 +57,9 @@
 #define GW_NOBLOCK					1
 
 /* all flags that the user can use */
-#define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_CREATE | VFS_TRUNCATE | \
-									 VFS_APPEND | VFS_NOBLOCK | VFS_LONELY | VFS_EXCL)
+#define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_NOCHAN | \
+ 									 VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK | \
+ 									 VFS_LONELY | VFS_EXCL)
 
 class Proc;
 class VFSMS;
@@ -135,16 +136,6 @@ public:
 	 */
 	static int openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
 	                    OpenFile **file);
-
-	/**
-	 * Retrieves information about the given path
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @param info the info to fill
-	 * @return 0 on success
-	 */
-	static int stat(pid_t pid,const char *path,struct stat *info);
 
 	/**
 	 * Sets the permissions of the file denoted by <path> to <mode>.

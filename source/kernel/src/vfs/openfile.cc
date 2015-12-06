@@ -303,6 +303,9 @@ int OpenFile::creatsibl(pid_t pid,OpenFile *sibl,int arg) {
 }
 
 int OpenFile::bindto(tid_t tid) {
+	if(EXPECT_FALSE(~flags & VFS_DEVICE))
+		return -EACCES;
+
 	if(EXPECT_TRUE(IS_CHANNEL(node->getMode()))) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		chan->bindto(tid);
@@ -369,6 +372,8 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 	Thread *t = Thread::getRunning();
 	if(EXPECT_FALSE(file->devNo != VFS_DEV_NO))
 		return -EPERM;
+	if(EXPECT_FALSE(~file->flags & VFS_DEVICE))
+		return -EACCES;
 	if(EXPECT_FALSE(!IS_DEVICE(file->node->getMode())))
 		return -EPERM;
 

@@ -137,15 +137,6 @@ public:
 	 */
 	int creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg);
 
-	/**
-	 * Sends the stat-message to this channel. This is only used for fs instances.
-	 *
-	 * @param pid the process-id
-	 * @param info the file info
-	 * @return 0 on success
-	 */
-	int stat(pid_t pid,USER struct stat *info);
-
 	virtual ssize_t open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t getSize(pid_t pid);

@@ -102,30 +102,12 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 }
 
 int OpenFile::fstat(pid_t pid,struct stat *info) const {
-	ssize_t res = 0;
+	int res = 0;
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);
 	else {
-		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-		esc::IPCBuf ib(buffer,sizeof(buffer));
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-
-		/* send msg to fs */
-		res = chan->send(pid,0,MSG_FS_ISTAT,NULL,0,NULL,0);
-		if(res < 0)
-			return res;
-
-		/* receive response */
-		msgid_t mid = res;
-		res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
-		if(res < 0)
-			return res;
-
-		ib >> res >> *info;
-		if(ib.error())
-			res = -EINVAL;
-		/* set device id */
-		info->st_dev = chan->getParent()->getNo();
+		res = VFSFS::fstat(pid,chan,info);
 	}
 	return res;
 }
@@ -253,30 +235,13 @@ int OpenFile::truncate(pid_t pid,off_t length) {
 	if(EXPECT_FALSE(!(flags & VFS_WRITE)))
 		return -EACCES;
 
+	int res;
 	if(devNo == VFS_DEV_NO)
-		return node->truncate(pid,length);
-
-	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	esc::IPCBuf ib(buffer,sizeof(buffer));
-	VFSChannel *chan = static_cast<VFSChannel*>(node);
-
-	/* send msg to fs */
-	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << length;
-	ssize_t res = chan->send(pid,0,MSG_FS_TRUNCATE,ib.buffer(),ib.pos(),NULL,0);
-	if(res < 0)
-		return res;
-
-	/* receive response */
-	msgid_t mid = res;
-	ib.reset();
-	res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
-	if(res < 0)
-		return res;
-
-	ib >> res;
-	if(ib.error())
-		res = -EINVAL;
+		res = node->truncate(pid,length);
+	else {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		res = VFSFS::truncate(pid,chan,length);
+	}
 	return res;
 }
 
@@ -321,25 +286,11 @@ int OpenFile::bindto(tid_t tid) {
 }
 
 int OpenFile::syncfs(pid_t pid) {
-	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	esc::IPCBuf buf(buffer,sizeof(buffer));
-
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))
 		return -EPERM;
 
 	VFSChannel *chan = static_cast<VFSChannel*>(node);
-	ssize_t res = chan->send(pid,0,MSG_FS_SYNCFS,NULL,0,NULL,0);
-	if(res < 0)
-		return res;
-
-	/* read response */
-	msgid_t mid = res;
-	res = chan->receive(pid,0,&mid,buf.buffer(),buf.max());
-	if(res < 0)
-		return res;
-
-	buf >> res;
-	return buf.error() ? -EINVAL : res;
+	return VFSFS::syncfs(pid,chan);
 }
 
 bool OpenFile::close(pid_t pid) {

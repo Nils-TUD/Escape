@@ -26,11 +26,41 @@
 #include <utime.h>
 
 class Proc;
+class VFSChannel;
 
 class VFSFS {
 	VFSFS() = delete;
 
 public:
+	/**
+	 * Retrieves information about the file, denoted by <chan>.
+	 *
+	 * @param pid the process-id
+	 * @param chan the channel for the file to the fs instance
+	 * @param info should be filled
+	 * @return 0 on success
+	 */
+	static int fstat(pid_t pid,VFSChannel *chan,struct stat *info);
+
+	/**
+	 * Truncates the file, denoted by <chan>, to <length> bytes.
+	 *
+	 * @param pid the process-id
+	 * @param chan the channel for the file to the fs instance
+	 * @param length the desired length
+	 * @return 0 on success
+	 */
+	static int truncate(pid_t pid,VFSChannel *chan,off_t length);
+
+	/**
+	 * Writes all cached blocks of the affected filesystem to disk.
+	 *
+	 * @param pid the process-id
+	 * @param chan the channel for the file to the fs instance
+	 * @return 0 on success
+	 */
+	static int syncfs(pid_t pid,VFSChannel *chan);
+
 	/**
 	 * Retrieves information about the given (real!) path
 	 *

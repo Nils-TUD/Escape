@@ -59,6 +59,71 @@ static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,esc::IPCBuf &ib) {
 	return ib.error() ? -EINVAL : err;
 }
 
+int VFSFS::fstat(pid_t pid,VFSChannel *chan,struct stat *info) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(buffer,sizeof(buffer));
+
+	/* send msg to fs */
+	int res = chan->send(pid,0,MSG_FS_ISTAT,NULL,0,NULL,0);
+	if(res < 0)
+		return res;
+
+	/* receive response */
+	msgid_t mid = res;
+	res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
+	if(res < 0)
+		return res;
+
+	ib >> res >> *info;
+	if(ib.error())
+		res = -EINVAL;
+	/* set device id */
+	info->st_dev = chan->getParent()->getNo();
+	return res;
+}
+
+int VFSFS::truncate(pid_t pid,VFSChannel *chan,off_t length) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(buffer,sizeof(buffer));
+
+	/* send msg to fs */
+	const Proc *p = Proc::getByPid(pid);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << length;
+	ssize_t res = chan->send(pid,0,MSG_FS_TRUNCATE,ib.buffer(),ib.pos(),NULL,0);
+	if(res < 0)
+		return res;
+
+	/* receive response */
+	msgid_t mid = res;
+	ib.reset();
+	res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
+	if(res < 0)
+		return res;
+
+	ib >> res;
+	if(ib.error())
+		res = -EINVAL;
+	return res;
+}
+
+int VFSFS::syncfs(pid_t pid,VFSChannel *chan) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf buf(buffer,sizeof(buffer));
+
+	ssize_t res = chan->send(pid,0,MSG_FS_SYNCFS,NULL,0,NULL,0);
+	if(res < 0)
+		return res;
+
+	/* read response */
+	msgid_t mid = res;
+	res = chan->receive(pid,0,&mid,buf.buffer(),buf.max());
+	if(res < 0)
+		return res;
+
+	buf >> res;
+	return buf.error() ? -EINVAL : res;
+}
+
 int VFSFS::stat(pid_t pid,OpenFile *fsFile,const char *path,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));

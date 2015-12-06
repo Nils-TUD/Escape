@@ -233,30 +233,6 @@ ssize_t VFSChannel::getSize(pid_t pid) {
 	return res;
 }
 
-int VFSChannel::stat(pid_t pid,struct stat *info) {
-	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
-	esc::IPCBuf ib(buffer,sizeof(buffer));
-
-	/* send msg to fs */
-	ssize_t res = send(pid,0,MSG_FS_ISTAT,NULL,0,NULL,0);
-	if(res < 0)
-		return res;
-
-	/* receive response */
-	msgid_t mid = res;
-	res = receive(pid,0,&mid,ib.buffer(),ib.max());
-	if(res < 0)
-		return res;
-
-	int err;
-	ib >> err >> *info;
-	if(err < 0)
-		return err;
-	if(ib.error())
-		return -EINVAL;
-	return 0;
-}
-
 static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,size_t bufsize) {
 	return shmem && (uintptr_t)buffer >= (uintptr_t)shmem &&
 		(uintptr_t)buffer + bufsize > (uintptr_t)buffer &&

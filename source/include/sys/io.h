@@ -424,6 +424,15 @@ A_CHECKRET int fmkdir(int fd,const char *name,mode_t mode);
 A_CHECKRET int rmdir(const char *path);
 
 /**
+ * Removes the directory <fd>/<name>.
+ *
+ * @param fd the file descriptor for the directory to remove the new directory from
+ * @param name the directory name
+ * @return 0 on success
+ */
+A_CHECKRET int frmdir(int fd,const char *name);
+
+/**
  * Writes all dirty objects of the affected filesystem to disk
  *
  * @param fd the file-descriptor to some file on that fs

@@ -323,6 +323,40 @@ errorFree:
 	return res;
 }
 
+int VFSNode::rmdir(pid_t pid,const char *name) {
+	if(!S_ISDIR(this->mode))
+		return -ENOTDIR;
+
+	/* does it exist? */
+	treeLock.down();
+	VFSNode *dir = const_cast<VFSNode*>(findInDir(name,strlen(name),false));
+	if(dir == NULL) {
+		treeLock.up();
+		return -ENOENT;
+	}
+	dir->increaseRefs();
+	treeLock.up();
+
+	int res;
+	if(!S_ISDIR(dir->mode)) {
+		res = -ENOTDIR;
+		goto error;
+	}
+
+	/* check permissions */
+	res = -EPERM;
+	if(dir->getOwner() == KERNEL_PID || (res = VFS::hasAccess(pid,this,VFS_EXEC | VFS_WRITE)) < 0)
+		goto error;
+	res = dir->isEmptyDir();
+	if(res < 0)
+		goto error;
+
+	dir->destroy();
+error:
+	release(dir);
+	return res;
+}
+
 int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *created,
 		uint flags,mode_t mode) {
 	const VFSNode *dir,*n = *node;

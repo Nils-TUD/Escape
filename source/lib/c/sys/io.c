@@ -142,8 +142,20 @@ int fmkdir(int fd,const char *name,mode_t mode) {
 }
 
 int rmdir(const char *path) {
-	char apath[MAX_PATH_LEN];
-	return syscall1(SYSCALL_RMDIR,(ulong)abspath(apath,sizeof(apath),path));
+	char *name, apath[MAX_PATH_LEN];
+	char tmp[MAX_PATH_LEN];
+	const char *dirPath = splitPath(tmp,apath,path,&name);
+
+	int fd = open(dirPath,O_WRITE);
+	if(fd < 0)
+		return fd;
+	int res = frmdir(fd,name);
+	close(fd);
+	return res;
+}
+
+int frmdir(int fd,const char *name) {
+	return syscall2(SYSCALL_RMDIR,fd,(ulong)name);
 }
 
 int pipe(int *readFd,int *writeFd) {

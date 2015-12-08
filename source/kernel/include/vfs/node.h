@@ -395,6 +395,15 @@ public:
 	int mkdir(pid_t pid,const char *name,mode_t mode);
 
 	/**
+	 * Removes the directory <this>/<name>
+	 *
+	 * @param pid the process-id
+	 * @param name the name of the directory to remove
+	 * @return 0 on success
+	 */
+	int rmdir(pid_t pid,const char *name);
+
+	/**
 	 * Finds the child-node with name <name>
 	 *
 	 * @param dir the directory (locked)

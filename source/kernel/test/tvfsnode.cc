@@ -189,10 +189,10 @@ static void test_vfs_node_dir_refs() {
 	f = f->next;
 	test_assertStr(f->getName(),"..");
 
-	test_assertInt(VFS::rmdir(pid,"/sys/foobar/test"),0);
-	test_assertSize(n->getRefCount(),6);
-
 	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys/foobar",&f2),0);
+	test_assertSize(n->getRefCount(),8);
+
+	test_assertInt(f2->rmdir(pid,"test"),0);
 	test_assertSize(n->getRefCount(),7);
 
 	test_assertInt(f2->unlink(pid,"myfile1"),0);
@@ -203,8 +203,12 @@ static void test_vfs_node_dir_refs() {
 	f2->close(pid);
 	test_assertSize(n->getRefCount(),4);
 
-	test_assertInt(VFS::rmdir(pid,"/sys/foobar"),0);
+	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys",&f2),0);
+	test_assertSize(n->getRefCount(),4);
+
+	test_assertInt(f2->rmdir(pid,"foobar"),0);
 	test_assertSize(n->getRefCount(),1);
+	f2->close(pid);
 
 	n->closeDir(false);
 	f1->close(pid);

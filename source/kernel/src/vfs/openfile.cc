@@ -198,6 +198,17 @@ int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
 	return err;
 }
 
+int OpenFile::rmdir(pid_t pid,const char *name) {
+	int err;
+	if(devNo != VFS_DEV_NO) {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::rmdir(pid,chan,name);
+	}
+	else
+		err = node->rmdir(pid,name);
+	return err;
+}
+
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t res;
 

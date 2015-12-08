@@ -67,8 +67,6 @@ public:
 	void truncate(esc::IPCStream &is);
 
 private:
-	const char *resolveDir(FSUser *u,char *path,ino_t *ino);
-
 	FileSystem *_fs;
 	InfoDevice _info;
 	size_t _clients;

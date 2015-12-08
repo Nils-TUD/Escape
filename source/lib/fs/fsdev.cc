@@ -196,39 +196,6 @@ void FSDevice::truncate(IPCStream &is) {
 	is << res << Reply();
 }
 
-static const char *splitPath(char *path) {
-	static char tmppath[MAX_PATH_LEN];
-	/* split path and name */
-	size_t len = strlen(path);
-	if(path[len - 1] == '/')
-		path[--len] = '\0';
-	char *name = path + len - 1;
-	while(len > 0 && *name != '/') {
-		name--;
-		len--;
-	}
-	if(len > 0) {
-		strnzcpy(tmppath,name + 1,sizeof(tmppath));
-		dirname(path);
-	}
-	else {
-		strnzcpy(tmppath,path,sizeof(tmppath));
-		/* we know that path is MAX_PATH_LEN long */
-		path[0] = '/';
-		path[1] = '\0';
-	}
-	return tmppath;
-}
-
-const char *FSDevice::resolveDir(FSUser *u,char *path,ino_t *ino) {
-	const char *name = splitPath(path);
-	if(name)
-		*ino = _fs->resolve(u,path,O_RDONLY,0);
-	else
-		*ino = -ENOMEM;
-	return name;
-}
-
 void FSDevice::link(IPCStream &is) {
 	FSUser u;
 	int dirFd;
@@ -284,18 +251,12 @@ void FSDevice::mkdir(IPCStream &is) {
 }
 
 void FSDevice::rmdir(IPCStream &is) {
+	OpenFile *file = (*this)[is.fd()];
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
-	is >> u.uid >> u.gid >> u.pid >> path;
+	CStringBuf<MAX_PATH_LEN> name;
+	is >> u.uid >> u.gid >> u.pid >> name;
 
-	int res = -ENOMEM;
-	ino_t dirIno;
-	const char *name = resolveDir(&u,path.str(),&dirIno);
-	if(dirIno < 0)
-		res = dirIno;
-	else
-		res = _fs->rmdir(&u,dirIno,name);
-
+	int res = _fs->rmdir(&u,file->ino,name.str());
 	is << res << Reply();
 }
 

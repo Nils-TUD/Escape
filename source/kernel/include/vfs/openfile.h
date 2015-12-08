@@ -267,6 +267,15 @@ public:
 	int mkdir(pid_t pid,const char *name,mode_t mode);
 
 	/**
+	 * Removes the directory named <name> in this directory.
+	 *
+	 * @param pid the process-id
+	 * @param name the filename
+	 * @return 0 on success
+	 */
+	int rmdir(pid_t pid,const char *name);
+
+	/**
 	 * Sets the position for this file
 	 *
 	 * @param pid the process-id

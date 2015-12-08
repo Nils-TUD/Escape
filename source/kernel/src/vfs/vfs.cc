@@ -249,36 +249,6 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
 }
 
-int VFS::rmdir(pid_t pid,const char *path) {
-	OpenFile *fsFile;
-	const char *begin;
-	int res = request(pid,path,VFS_WRITE,0,&begin,&fsFile);
-	if(res < 0)
-		return res;
-
-	if(!IS_NODE(fsFile)) {
-		res = VFSFS::rmdir(pid,fsFile,begin);
-		VFSMS::release(fsFile);
-		return res;
-	}
-
-	/* check permissions */
-	VFSNode *node = reinterpret_cast<VFSNode*>(fsFile);
-	res = -EPERM;
-	if(node->getOwner() == KERNEL_PID || (res = hasAccess(pid,node,VFS_WRITE)) < 0) {
-		VFSNode::release(node);
-		return res;
-	}
-	res = node->isEmptyDir();
-	if(res < 0) {
-		VFSNode::release(node);
-		return res;
-	}
-	VFSNode::release(node);
-	node->destroy();
-	return 0;
-}
-
 int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file) {
 	VFSNode *dir = NULL,*srv;
 

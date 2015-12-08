@@ -334,34 +334,34 @@ public:
 	}
 
 	void rmdir(IPCStream &is) {
+		char path[MAX_PATH_LEN];
+		OpenFile *of = (*this)[is.fd()];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> u.uid >> u.gid >> u.pid >> path;
+		CStringBuf<MAX_PATH_LEN> name;
+		is >> u.uid >> u.gid >> u.pid >> name;
 
+		snprintf(path,sizeof(path),"%s/%s",of->path.c_str(),name.str());
+
+		int res;
 		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
+		struct stat *pi = &of->file->info;
+		PathTreeItem<TarINode> *file = tree.find(path,&end);
 		if(file == NULL || *end != '\0')
 			is << -ENOENT << Reply();
-		else if(!canReach(&u,file))
-			is << -EPERM << Reply();
-		else if(!S_ISDIR(file->getData()->info.st_mode))
+		else if(!S_ISDIR(of->file->info.st_mode))
 			is << -ENOTDIR << Reply();
 		else if(tree.begin(file) != tree.end())
 			is << -ENOTEMPTY << Reply();
 		else if(file->getParent() == file)
 			is << -EINVAL << Reply();
+		else if((res = Permissions::canAccess(&u,pi->st_mode,pi->st_uid,pi->st_gid,MODE_WRITE)) < 0)
+			is << res << Reply();
 		else {
-			struct stat *pinfo = &file->getParent()->getData()->info;
-			int res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
-			if(res < 0)
-				is << res << Reply();
-			else {
-				TarINode *data = tree.remove(path.str());
-				data->deference();
-				changed = true;
+			TarINode *data = tree.remove(path);
+			data->deference();
+			changed = true;
 
-				is << 0 << Reply();
-			}
+			is << 0 << Reply();
 		}
 	}
 

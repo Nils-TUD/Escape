@@ -138,15 +138,6 @@ public:
 	                    OpenFile **file);
 
 	/**
-	 * Removes the given directory
-	 *
-	 * @param pid the process-id
-	 * @param path the path
-	 * @return 0 on success
-	 */
-	static int rmdir(pid_t pid,const char *path);
-
-	/**
 	 * Creates a device-node for the given process at given path and opens a file for it
 	 *
 	 * @param pid the process-id

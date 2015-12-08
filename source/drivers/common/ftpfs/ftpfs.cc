@@ -229,7 +229,7 @@ public:
 		dirCmd(is,CtrlCon::CMD_MKD);
 	}
 	void rmdir(IPCStream &is) {
-		pathCmd(is,CtrlCon::CMD_RMD);
+		dirCmd(is,CtrlCon::CMD_RMD);
 	}
 
 	void chmod(IPCStream &is) {

@@ -37,28 +37,6 @@
 #include <util.h>
 #include <video.h>
 
-static int communicate(pid_t pid,OpenFile *fsFile,msgid_t cmd,esc::IPCBuf &ib) {
-	ssize_t res;
-	if(ib.error())
-		return -EINVAL;
-
-	/* send msg */
-	res = fsFile->sendMsg(pid,cmd,ib.buffer(),ib.pos(),NULL,0);
-	if(res < 0)
-		return res;
-
-	/* read response */
-	ib.reset();
-	msgid_t mid = res;
-	res = fsFile->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
-	if(res < 0)
-		return res;
-
-	int err;
-	ib >> err;
-	return ib.error() ? -EINVAL : err;
-}
-
 static int communicateOverChan(pid_t pid,VFSChannel *chan,msgid_t cmd,esc::IPCBuf &ib) {
 	ssize_t res;
 	if(ib.error())
@@ -173,11 +151,11 @@ int VFSFS::mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode) {
 	return communicateOverChan(pid,chan,MSG_FS_MKDIR,ib);
 }
 
-int VFSFS::rmdir(pid_t pid,OpenFile *fsFile,const char *path) {
+int VFSFS::rmdir(pid_t pid,VFSChannel *chan,const char *name) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
-	return communicate(pid,fsFile,MSG_FS_RMDIR,ib);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(name);
+	return communicateOverChan(pid,chan,MSG_FS_RMDIR,ib);
 }

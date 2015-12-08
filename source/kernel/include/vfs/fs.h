@@ -138,12 +138,12 @@ public:
 	static int mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode);
 
 	/**
-	 * Removes the given directory. Expects that the directory is empty (except '.' and '..')
+	 * Removes the directory named <name> in the directory denoted by <chan>.
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path
+	 * @param chan the channel for the file to the fs instance
+	 * @param name the directory name
 	 * @return 0 on success
 	 */
-	static int rmdir(pid_t pid,OpenFile *fsFile,const char *path);
+	static int rmdir(pid_t pid,VFSChannel *chan,const char *name);
 };

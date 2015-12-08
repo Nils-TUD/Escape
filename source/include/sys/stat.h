@@ -108,9 +108,7 @@ A_CHECKRET int stat(const char *path,struct stat *info);
  * @param info will be filled
  * @return 0 on success
  */
-A_CHECKRET static inline int fstat(int fd,struct stat *info) {
-	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
-}
+A_CHECKRET int fstat(int fd,struct stat *info);
 
 /**
  * Retrieves only the size of the file referenced by the given file-descriptor. This is only a
@@ -119,13 +117,7 @@ A_CHECKRET static inline int fstat(int fd,struct stat *info) {
  * @param fd the file-descriptor
  * @return the size on success
  */
-static inline ssize_t filesize(int fd) {
-	struct stat info;
-	int res = fstat(fd,&info);
-	if(res < 0)
-		return res;
-	return info.st_size;
-}
+ssize_t filesize(int fd);
 
 /**
  * Changes the permissions of the file denoted by <path> to <mode>. This is always possible if
@@ -145,9 +137,7 @@ A_CHECKRET int chmod(const char *path,mode_t mode);
  * @param mode the new mode
  * @return 0 on success
  */
-A_CHECKRET static inline int fchmod(int fd,mode_t mode) {
-	return syscall2(SYSCALL_CHMOD,fd,mode);
-}
+A_CHECKRET int fchmod(int fd,mode_t mode);
 
 /**
  * Changes the owner and group of the file denoted by <path> to <uid> and <gid>, respectively. If
@@ -173,9 +163,7 @@ A_CHECKRET int chown(const char *path,uid_t uid,gid_t gid);
  * @param gid the new group-id (-1 = do not change)
  * @return 0 on success
  */
-A_CHECKRET static inline int fchown(int fd,uid_t uid,gid_t gid) {
-	return syscall3(SYSCALL_CHOWN,fd,uid,gid);
-}
+A_CHECKRET int fchown(int fd,uid_t uid,gid_t gid);
 
 /**
  * Checks whether the given path points to a regular file

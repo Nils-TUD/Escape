@@ -30,6 +30,18 @@ int stat(const char *path,struct stat *info) {
 	return res;
 }
 
+int fstat(int fd,struct stat *info) {
+	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
+}
+
+ssize_t filesize(int fd) {
+	struct stat info;
+	int res = fstat(fd,&info);
+	if(res < 0)
+		return res;
+	return info.st_size;
+}
+
 int chmod(const char *path,mode_t mode) {
 	int fd = open(path,O_NOCHAN);
 	if(fd < 0)
@@ -39,6 +51,10 @@ int chmod(const char *path,mode_t mode) {
 	return res;
 }
 
+int fchmod(int fd,mode_t mode) {
+	return syscall2(SYSCALL_CHMOD,fd,mode);
+}
+
 int chown(const char *path,uid_t uid,gid_t gid) {
 	int fd = open(path,O_NOCHAN);
 	if(fd < 0)
@@ -46,6 +62,10 @@ int chown(const char *path,uid_t uid,gid_t gid) {
 	int res = fchown(fd,uid,gid);
 	close(fd);
 	return res;
+}
+
+int fchown(int fd,uid_t uid,gid_t gid) {
+	return syscall3(SYSCALL_CHOWN,fd,uid,gid);
 }
 
 bool isfile(const char *path) {

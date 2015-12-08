@@ -75,6 +75,10 @@ int link(const char *oldPath,const char *newPath) {
 	return res;
 }
 
+int flink(int target,int dir,const char *name) {
+	return syscall3(SYSCALL_LINK,target,dir,(ulong)name);
+}
+
 int unlink(const char *path) {
 	char *name, apath[MAX_PATH_LEN];
 	char tmp[MAX_PATH_LEN];
@@ -86,6 +90,10 @@ int unlink(const char *path) {
 	int res = funlink(fd,name);
 	close(fd);
 	return res;
+}
+
+int funlink(int dir,const char *name) {
+	return syscall2(SYSCALL_UNLINK,dir,(ulong)name);
 }
 
 int rename(const char *oldPath,const char *newPath) {
@@ -110,6 +118,10 @@ int rename(const char *oldPath,const char *newPath) {
 	close(newDir);
 	close(oldDir);
 	return res;
+}
+
+int frename(int olddir,const char *oldname,int newdir,const char *newname) {
+	return syscall4(SYSCALL_RENAME,olddir,(ulong)oldname,newdir,(ulong)newname);
 }
 
 int mkdir(const char *path,mode_t mode) {

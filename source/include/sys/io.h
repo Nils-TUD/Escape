@@ -351,9 +351,7 @@ A_CHECKRET int link(const char *oldPath,const char *newPath);
  * @param name the name of the link
  * @return 0 on success
  */
-A_CHECKRET static inline int flink(int target,int dir,const char *name) {
-	return syscall3(SYSCALL_LINK,target,dir,(ulong)name);
-}
+A_CHECKRET int flink(int target,int dir,const char *name);
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
@@ -372,9 +370,7 @@ A_CHECKRET int unlink(const char *path);
  * @param name the file name to remove
  * @return 0 on success
  */
-A_CHECKRET static inline int funlink(int dir,const char *name) {
-	return syscall2(SYSCALL_UNLINK,dir,(ulong)name);
-}
+A_CHECKRET int funlink(int dir,const char *name);
 
 /**
  * Renames <oldPath> to <newPath>. Note that you shouldn't assume that link+unlink works for every
@@ -398,9 +394,7 @@ A_CHECKRET int rename(const char *oldPath,const char *newPath);
  * @param newname the new file name
  * @return 0 on success
  */
-A_CHECKRET static inline int frename(int olddir,const char *oldname,int newdir,const char *newname) {
-	return syscall4(SYSCALL_RENAME,olddir,(ulong)oldname,newdir,(ulong)newname);
-}
+A_CHECKRET int frename(int olddir,const char *oldname,int newdir,const char *newname);
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.

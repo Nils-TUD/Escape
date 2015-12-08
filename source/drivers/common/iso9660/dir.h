@@ -38,6 +38,20 @@ public:
 	 */
 	static ino_t resolve(ISO9660FileSystem *h,FSUser *u,const char *path,uint flags);
 
+	/**
+	 * Finds the entry to the name <name> in <dir>
+	 *
+	 * @param h the iso9660-handle
+	 * @param extLoc the location of the extent
+	 * @param extSize the size of the extent
+	 * @param name the name of the entry to find
+	 * @param nameLen the length of the name
+	 * @param entry will be set to the entry
+	 * @return the inode number
+	 */
+	static ino_t find(ISO9660FileSystem *h,size_t extLoc,size_t extSize,const char *name,
+		size_t nameLen,const ISODirEntry **entry);
+
 private:
 	/**
 	 * calcuates an imaginary inode-number from block-number and offset in the directory-entries

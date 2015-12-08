@@ -117,6 +117,18 @@ int ISO9660FileSystem::initPrimaryVol(ISO9660FileSystem *fs,const char *device) 
 	return 0;
 }
 
+ino_t ISO9660FileSystem::find(FSUser *,ino_t dir,const char *name) {
+	const ISOCDirEntry *e = dirCache.get(dir);
+	if(e == NULL)
+		return -ENOBUFS;
+	if((e->entry.flags & ISO_FILEFL_DIR) == 0)
+		return -ENOTDIR;
+
+	const ISODirEntry *entry;
+	return ISO9660Dir::find(this,e->entry.extentLoc.littleEndian,e->entry.extentSize.littleEndian,
+		name,strlen(name),&entry);
+}
+
 ino_t ISO9660FileSystem::resolve(FSUser *u,const char *path,uint flags,mode_t) {
 	return ISO9660Dir::resolve(this,u,path,flags);
 }

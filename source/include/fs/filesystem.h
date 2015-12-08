@@ -39,6 +39,8 @@ public:
 
 	virtual void close(ino_t ino) = 0;
 
+	virtual ino_t find(FSUser *u,ino_t dir,const char *name) = 0;
+
 	virtual ino_t resolve(FSUser *u,const char *path,uint flags,mode_t mode) = 0;
 
 	virtual int stat(ino_t ino,struct stat *info) = 0;

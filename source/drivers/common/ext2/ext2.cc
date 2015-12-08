@@ -76,6 +76,26 @@ Ext2FileSystem::~Ext2FileSystem() {
 	close(fd);
 }
 
+ino_t Ext2FileSystem::find(FSUser *u,ino_t dir,const char *name) {
+	Ext2CInode *dirIno = inodeCache.request(dir,IMODE_READ);
+	if(dirIno == NULL)
+		return -ENOBUFS;
+
+	ino_t ino;
+	if(!S_ISDIR(dirIno->inode.mode)) {
+		ino = -ENOTDIR;
+		goto error;
+	}
+	if((ino = hasPermission(dirIno,u,MODE_EXEC)) < 0)
+		goto error;
+
+	ino = Ext2Dir::find(this,dirIno,name,strlen(name));
+
+error:
+	inodeCache.release(dirIno);
+	return ino;
+}
+
 ino_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags,mode_t mode) {
 	return Ext2Path::resolve(this,u,path,flags,mode);
 }

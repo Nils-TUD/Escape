@@ -207,7 +207,7 @@ public:
 		is << -ENOTSUP << Reply();
 	}
 	void unlink(IPCStream &is) {
-		pathCmd(is,CtrlCon::CMD_DELE);
+		dirCmd(is,CtrlCon::CMD_DELE);
 	}
 
 	void rename(IPCStream &is) {

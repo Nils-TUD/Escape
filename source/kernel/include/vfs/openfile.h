@@ -227,6 +227,36 @@ public:
 	int utime(pid_t pid,const struct utimbuf *utimes);
 
 	/**
+	 * Creates a link @ <dir>/<name> to <this>
+	 *
+	 * @param pid the process-id
+	 * @param dir the directory
+	 * @param name the name of the link to create
+	 * @return 0 on success
+	 */
+	int link(pid_t pid,OpenFile *dir,const char *name);
+
+	/**
+	 * Unlinks <this>/<name>
+	 *
+	 * @param pid the process-id
+	 * @param name the name of the file to remove
+	 * @return 0 on success
+	 */
+	int unlink(pid_t pid,const char *name);
+
+	/**
+	 * Renames <this>/<oldName> to <newDir>/<newName>.
+	 *
+	 * @param pid the process-id
+	 * @param oldName the name of the old file
+	 * @param newDir the new directory
+	 * @param newName the name of the file to create
+	 * @return 0 on success
+	 */
+	int rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *newName);
+
+	/**
 	 * Creates the directory named <name> in this directory.
 	 *
 	 * @param pid the process-id

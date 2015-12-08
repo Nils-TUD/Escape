@@ -231,70 +231,45 @@ const char *FSDevice::resolveDir(FSUser *u,char *path,ino_t *ino) {
 
 void FSDevice::link(IPCStream &is) {
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> oldPath,newPath;
-	is >> u.uid >> u.gid >> u.pid >> oldPath >> newPath;
+	int dirFd;
+	CStringBuf<MAX_PATH_LEN> name;
+	is >> u.uid >> u.gid >> u.pid >> dirFd >> name;
 
-	int res;
-	ino_t dirIno,dstIno;
-	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY,0);
-	if(dstIno < 0)
-		res = dstIno;
-	else {
-		const char *name = resolveDir(&u,newPath.str(),&dirIno);
-		if(dirIno < 0)
-			res = dirIno;
-		else
-			res = _fs->link(&u,dstIno,dirIno,name);
-	}
+	OpenFile *targetFile = (*this)[is.fd()];
+	OpenFile *dirFile = (*this)[dirFd];
 
+	int res = _fs->link(&u,targetFile->ino,dirFile->ino,name.str());
 	is << res << Reply();
 }
 
 void FSDevice::unlink(IPCStream &is) {
+	OpenFile *dir = (*this)[is.fd()];
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> path;
-	is >> u.uid >> u.gid >> u.pid >> path;
+	CStringBuf<MAX_PATH_LEN> name;
+	is >> u.uid >> u.gid >> u.pid >> name;
 
-	int res;
-	ino_t dirIno = _fs->resolve(&u,path.str(),O_RDONLY,0);
-	if(dirIno < 0)
-		res = dirIno;
-	else {
-		const char *name = resolveDir(&u,path.str(),&dirIno);
-		vassert(dirIno >= 0,"Subdir found, but parent not!?");
-		res = _fs->unlink(&u,dirIno,name);
-	}
-
+	int res = _fs->unlink(&u,dir->ino,name.str());
 	is << res << Reply();
 }
 
 void FSDevice::rename(IPCStream &is) {
 	FSUser u;
-	CStringBuf<MAX_PATH_LEN> oldPath,newPath;
-	is >> u.uid >> u.gid >> u.pid >> oldPath >> newPath;
+	int newDirFd;
+	CStringBuf<MAX_PATH_LEN> oldName,newName;
+	is >> u.uid >> u.gid >> u.pid >> oldName >> newDirFd >> newName;
 
-	int res;
-	ino_t dirIno,dstIno;
-	dstIno = _fs->resolve(&u,oldPath.str(),O_RDONLY,0);
-	if(dstIno < 0)
-		res = dstIno;
+	OpenFile *oldDir = (*this)[is.fd()];
+	OpenFile *newDir = (*this)[newDirFd];
+
+	ino_t oldFile = _fs->find(&u,oldDir->ino,oldName.str());
+	if(oldFile < 0)
+		is << oldFile << Reply();
 	else {
-		const char *name = resolveDir(&u,newPath.str(),&dirIno);
-		if(dirIno < 0)
-			res = dirIno;
-		else {
-			res = _fs->link(&u,dstIno,dirIno,name);
-			if(res == 0) {
-				name = resolveDir(&u,oldPath.str(),&dirIno);
-				if(dirIno < 0)
-					res = dirIno;
-				else
-					res = _fs->unlink(&u,dirIno,name);
-			}
-		}
+		int res = _fs->link(&u,oldFile,newDir->ino,newName.str());
+		if(res == 0)
+			res = _fs->unlink(&u,oldDir->ino,oldName.str());
+		is << res << Reply();
 	}
-
-	is << res << Reply();
 }
 
 void FSDevice::mkdir(IPCStream &is) {

@@ -487,47 +487,83 @@ int Syscalls::syncfs(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
-	char oldabs[MAX_PATH_LEN + 1];
-	char newabs[MAX_PATH_LEN + 1];
-	pid_t pid = t->getProc()->getPid();
-	const char *oldPath = (const char*)SYSC_ARG1(stack);
-	const char *newPath = (const char*)SYSC_ARG2(stack);
-	if(EXPECT_FALSE(!copyPath(oldabs,sizeof(oldabs),oldPath)))
-		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(!copyPath(newabs,sizeof(newabs),newPath)))
+	char filename[MAX_PATH_LEN + 1];
+	int target = (int)SYSC_ARG1(stack);
+	int dir = (int)SYSC_ARG2(stack);
+	const char *name = (const char *)SYSC_ARG3(stack);
+	Proc *p = t->getProc();
+
+	if(EXPECT_FALSE(!copyPath(filename,sizeof(filename),name)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::link(pid,oldabs,newabs);
+	OpenFile *targetFile = FileDesc::request(p,target);
+	if(EXPECT_FALSE(targetFile == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	OpenFile *dirFile = FileDesc::request(p,dir);
+	if(EXPECT_FALSE(dirFile == NULL)) {
+		FileDesc::release(targetFile);
+		SYSC_ERROR(stack,-EBADF);
+	}
+
+	int res = targetFile->link(p->getPid(),dirFile,filename);
+	FileDesc::release(dirFile);
+	FileDesc::release(targetFile);
+
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	pid_t pid = t->getProc()->getPid();
-	const char *path = (const char*)SYSC_ARG1(stack);
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
+	char filename[MAX_PATH_LEN + 1];
+	int fd = (int)SYSC_ARG1(stack);
+	const char *name = (const char *)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+
+	if(EXPECT_FALSE(!copyPath(filename,sizeof(filename),name)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::unlink(pid,abspath);
+	OpenFile *dir = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(dir == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	int res = dir->unlink(p->getPid(),filename);
+	FileDesc::release(dir);
+
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
 int Syscalls::rename(Thread *t,IntrptStackFrame *stack) {
-	char oldabs[MAX_PATH_LEN + 1];
-	char newabs[MAX_PATH_LEN + 1];
-	pid_t pid = t->getProc()->getPid();
-	const char *oldPath = (const char*)SYSC_ARG1(stack);
-	const char *newPath = (const char*)SYSC_ARG2(stack);
-	if(EXPECT_FALSE(!copyPath(oldabs,sizeof(oldabs),oldPath)))
+	char oldFilename[MAX_PATH_LEN + 1];
+	char newFilename[MAX_PATH_LEN + 1];
+	int oldDir = (int)SYSC_ARG1(stack);
+	const char *oldName = (const char *)SYSC_ARG2(stack);
+	int newDir = (int)SYSC_ARG3(stack);
+	const char *newName = (const char *)SYSC_ARG4(stack);
+	Proc *p = t->getProc();
+
+	if(EXPECT_FALSE(!copyPath(oldFilename,sizeof(oldFilename),oldName)))
 		SYSC_ERROR(stack,-EFAULT);
-	if(EXPECT_FALSE(!copyPath(newabs,sizeof(newabs),newPath)))
+	if(EXPECT_FALSE(!copyPath(newFilename,sizeof(newFilename),newName)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	int res = VFS::rename(pid,oldabs,newabs);
+	OpenFile *oldf = FileDesc::request(p,oldDir);
+	if(EXPECT_FALSE(oldf == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	OpenFile *newf = FileDesc::request(p,newDir);
+	if(EXPECT_FALSE(newf == NULL)) {
+		FileDesc::release(oldf);
+		SYSC_ERROR(stack,-EBADF);
+	}
+
+	int res = oldf->rename(p->getPid(),oldFilename,newf,newFilename);
+	FileDesc::release(newf);
+	FileDesc::release(oldf);
+
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

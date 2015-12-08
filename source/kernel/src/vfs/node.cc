@@ -224,6 +224,70 @@ int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
 	return res;
 }
 
+int VFSNode::link(pid_t pid,VFSNode *dir,const char *name) {
+	if(S_ISDIR(mode))
+		return -EISDIR;
+
+	/* make copy of name */
+	int res;
+	VFSNode *link;
+	char *namecpy = strdup(name);
+	if(!namecpy)
+		return -ENOMEM;
+
+	/* file exists? */
+	if(dir->findInDir(namecpy,strlen(name)) != NULL) {
+		res = -EEXIST;
+		goto errorName;
+	}
+
+	/* check permissions */
+	if((res = VFS::hasAccess(pid,dir,VFS_WRITE)) < 0)
+		goto errorName;
+	/* now create link */
+	if((link = createObj<VFSLink>(pid,dir,namecpy,this)) == NULL) {
+		res = -ENOMEM;
+		goto errorName;
+	}
+	release(link);
+	return 0;
+
+errorName:
+	Cache::free(namecpy);
+	return res;
+}
+
+int VFSNode::unlink(pid_t pid,const char *name) {
+	if(!S_ISDIR(mode))
+		return -EISDIR;
+
+	treeLock.down();
+	VFSNode *n = const_cast<VFSNode*>(findInDir(name, strlen(name), false));
+	if(!n) {
+		treeLock.up();
+		return -ENOENT;
+	}
+	n->increaseRefs();
+	treeLock.up();
+
+	/* check permissions */
+	int err = -EPERM;
+	if(!n->isDeletable() || (err = VFS::hasAccess(pid,n,VFS_WRITE)) < 0)
+		return err;
+
+	n->destroy();
+	release(n);
+	return 0;
+}
+
+int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *newName) {
+	int res = link(pid,newDir,newName);
+	if(res < 0)
+		return res;
+
+	return unlink(pid,oldName);
+}
+
 int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {
 	char *namecpy;
 	VFSNode *child;
@@ -243,7 +307,6 @@ int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {
 		goto errorFree;
 	}
 
-	/* create dir */
 	/* check permissions */
 	if((res = VFS::hasAccess(pid,this,VFS_WRITE)) < 0)
 		goto errorFree;
@@ -407,10 +470,10 @@ void VFSNode::dirname(char *path,size_t len) {
 	*(p + 1) = '\0';
 }
 
-const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen) const {
+const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen,bool locked) const {
 	bool valid = false;
 	const VFSNode *res = NULL;
-	const VFSNode *n = openDir(true,&valid);
+	const VFSNode *n = openDir(locked,&valid);
 	if(valid) {
 		while(n != NULL) {
 			if(n->nameLen == enameLen && strncmp(n->name,ename,enameLen) == 0) {
@@ -420,7 +483,7 @@ const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen) const {
 			n = n->next;
 		}
 	}
-	closeDir(true);
+	closeDir(locked);
 	return res;
 }
 

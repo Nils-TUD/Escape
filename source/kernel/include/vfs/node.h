@@ -355,6 +355,36 @@ public:
 	int utime(pid_t pid,const struct utimbuf *utimes);
 
 	/**
+	 * Creates a link @ <dir>/<name> to <this>
+	 *
+	 * @param pid the process-id
+	 * @param dir the directory
+	 * @param name the name of the link to create
+	 * @return 0 on success
+	 */
+	int link(pid_t pid,VFSNode *dir,const char *name);
+
+	/**
+	 * Unlinks <this>/<name>
+	 *
+	 * @param pid the process-id
+	 * @param name the name of the file to remove
+	 * @return 0 on success
+	 */
+	int unlink(pid_t pid,const char *name);
+
+	/**
+	 * Renames <this> to <dir>/<name>.
+	 *
+	 * @param pid the process-id
+	 * @param oldName the name of the old file
+	 * @param newDir the new directory
+	 * @param newName the name of the file to create
+	 * @return 0 on success
+	 */
+	int rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *newName);
+
+	/**
 	 * Creates a directory named <name> in <this> with <mode> mode.
 	 *
 	 * @param pid the process-id
@@ -370,9 +400,10 @@ public:
 	 * @param dir the directory (locked)
 	 * @param name the name
 	 * @param nameLen the length of the name
+	 * @param locked whether to lock the directory while searching
 	 * @return the node or NULL
 	 */
-	const VFSNode *findInDir(const char *name,size_t nameLen) const;
+	const VFSNode *findInDir(const char *name,size_t nameLen,bool locked = true) const;
 
 	/**
 	 * Increments the reference count of this node

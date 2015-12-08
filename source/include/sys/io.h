@@ -344,6 +344,18 @@ static inline int redirect(int src,int dst) {
 A_CHECKRET int link(const char *oldPath,const char *newPath);
 
 /**
+ * Creates a hardlink at <dir>/<name> which points to <target>
+ *
+ * @param target the file descriptor for the target
+ * @param dir the file descriptor for the directory of the link
+ * @param name the name of the link
+ * @return 0 on success
+ */
+A_CHECKRET static inline int flink(int target,int dir,const char *name) {
+	return syscall3(SYSCALL_LINK,target,dir,(ulong)name);
+}
+
+/**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
  * more references to the inode, it will be removed.
  *
@@ -351,6 +363,18 @@ A_CHECKRET int link(const char *oldPath,const char *newPath);
  * @return 0 on success
  */
 A_CHECKRET int unlink(const char *path);
+
+/**
+ * Unlinks <dir>/<name>. That means, the directory-entry will be removed and if there are no
+ * more references to the inode, it will be removed.
+ *
+ * @param dir the file descriptor to the directory of the file to unlink
+ * @param name the file name to remove
+ * @return 0 on success
+ */
+A_CHECKRET static inline int funlink(int dir,const char *name) {
+	return syscall2(SYSCALL_UNLINK,dir,(ulong)name);
+}
 
 /**
  * Renames <oldPath> to <newPath>. Note that you shouldn't assume that link+unlink works for every
@@ -362,6 +386,21 @@ A_CHECKRET int unlink(const char *path);
  * @return 0 on success
  */
 A_CHECKRET int rename(const char *oldPath,const char *newPath);
+
+/**
+ * Renames <olddir>/<oldfile> to <newdir>/<newname>. Note that you shouldn't assume that link+unlink
+ * works for every filesystem, but use rename instead if you want to rename something. E.g. ftpfs
+ * does not have support for link.
+ *
+ * @param olddir the file descriptor for the directory of the old file
+ * @param oldname the old file name
+ * @param newdir the file descriptor for the directory of the new file
+ * @param newname the new file name
+ * @return 0 on success
+ */
+A_CHECKRET static inline int frename(int olddir,const char *oldname,int newdir,const char *newname) {
+	return syscall4(SYSCALL_RENAME,olddir,(ulong)oldname,newdir,(ulong)newname);
+}
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.

@@ -228,27 +228,29 @@ public:
 	}
 
 	void unlink(IPCStream &is) {
+		char path[MAX_PATH_LEN];
+		OpenFile *dir = (*this)[is.fd()];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> u.uid >> u.gid >> u.pid >> path;
+		CStringBuf<MAX_PATH_LEN> name;
+		is >> u.uid >> u.gid >> u.pid >> name;
+
+		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name.str());
 
 		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(path.str(),&end);
+		PathTreeItem<TarINode> *file = tree.find(path,&end);
 		if(file == NULL || *end != '\0')
 			is << -ENOENT << Reply();
-		else if(!canReach(&u,file))
-			is << -EPERM << Reply();
 		else if(S_ISDIR(file->getData()->info.st_mode))
 			is << -EISDIR << Reply();
-		else if(file->getParent() == file)
-			is << -EINVAL << Reply();
+		else if(!S_ISDIR(dir->file->info.st_mode))
+			is << -ENOTDIR << Reply();
 		else {
-			struct stat *pinfo = &file->getParent()->getData()->info;
+			struct stat *pinfo = &dir->file->info;
 			int res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
 			if(res < 0)
 				is << res << Reply();
 			else {
-				TarINode *data = tree.remove(path.str());
+				TarINode *data = tree.remove(path);
 				data->deference();
 				changed = true;
 
@@ -258,56 +260,46 @@ public:
 	}
 
 	void rename(IPCStream &is) {
-		char tmp[MAX_PATH_LEN];
+		char oldPath[MAX_PATH_LEN];
+		char newPath[MAX_PATH_LEN];
 		FSUser u;
-		CStringBuf<MAX_PATH_LEN> srcPath,dstPath;
-		is >> u.uid >> u.gid >> u.pid >> srcPath >> dstPath;
+		int newDirFd;
+		CStringBuf<MAX_PATH_LEN> oldName,newName;
+		is >> u.uid >> u.gid >> u.pid >> oldName >> newDirFd >> newName;
 
+		OpenFile *oldDir = (*this)[is.fd()];
+		OpenFile *newDir = (*this)[newDirFd];
+
+		snprintf(oldPath,sizeof(oldPath),"%s/%s",oldDir->path.c_str(),oldName.str());
+		snprintf(newPath,sizeof(newPath),"%s/%s",newDir->path.c_str(),newName.str());
+
+		int res;
 		const char *end = NULL;
-		PathTreeItem<TarINode> *srcFile = tree.find(srcPath.str(),&end);
+		struct stat *opi = &oldDir->file->info;
+		struct stat *npi = &newDir->file->info;
+		PathTreeItem<TarINode> *srcFile = tree.find(oldPath,&end);
 		if(srcFile == NULL || *end != '\0')
 			is << -ENOENT << Reply();
-		else if(!canReach(&u,srcFile))
-			is << -EPERM << Reply();
+		else if(!S_ISDIR(oldDir->file->info.st_mode))
+			is << -ENOTDIR << Reply();
+		else if((res = Permissions::canAccess(&u,opi->st_mode,opi->st_uid,opi->st_gid,MODE_EXEC)) < 0)
+			is << res << Reply();
 		else if(srcFile->getParent() == srcFile)
 			is << -EINVAL << Reply();
+		else if(!S_ISDIR(newDir->file->info.st_mode))
+			is << -ENOTDIR << Reply();
+		else if((res = Permissions::canAccess(&u,npi->st_mode,npi->st_uid,npi->st_gid,MODE_EXEC | MODE_WRITE)) < 0)
+			is << res << Reply();
 		else {
-			struct stat *pinfo = &srcFile->getParent()->getData()->info;
-			int res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
-			if(res < 0) {
-				is << res << Reply();
-				return;
-			}
-
-			// check whether the parent exists and whether we can write there
-			strncpy(tmp,dstPath.str(),sizeof(tmp));
-			char *dstParent = dirname(tmp);
-
-			const char *end = NULL;
-			PathTreeItem<TarINode> *parentFile = tree.find(dstParent,&end);
-			if(parentFile == NULL || *end != '\0') {
-				is << -ENOENT << Reply();
-				return;
-			}
-			else {
-				struct stat *pinfo = &parentFile->getData()->info;
-				int res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
-				if(!canReach(&u,parentFile) || res < 0) {
-					is << -EPERM << Reply();
-					return;
-				}
-			}
-
-			PathTreeItem<TarINode> *dstFile = tree.find(dstPath.str(),&end);
+			PathTreeItem<TarINode> *dstFile = tree.find(newPath,&end);
 			if(dstFile != NULL && *end == '\0')
-				is << -EEXIST << Reply();
-			else {
-				tree.insert(dstPath.str(),srcFile->getData());
-				tree.remove(srcPath.str());
-				changed = true;
+				is << -ENOENT << Reply();
 
-				is << 0 << Reply();
-			}
+			tree.insert(newPath,srcFile->getData());
+			tree.remove(oldPath);
+			changed = true;
+
+			is << 0 << Reply();
 		}
 	}
 

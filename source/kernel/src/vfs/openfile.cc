@@ -146,6 +146,47 @@ int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
 	return err;
 }
 
+int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
+	if(devNo != dir->devNo)
+		return -EXDEV;
+
+	int err;
+	if(devNo == VFS_DEV_NO)
+		err = node->link(pid,dir->node,name);
+	else {
+		VFSChannel *targetChan = static_cast<VFSChannel*>(node);
+		VFSChannel *dirChan = static_cast<VFSChannel*>(dir->node);
+		err = VFSFS::link(pid,targetChan,dirChan,name);
+	}
+	return err;
+}
+
+int OpenFile::unlink(pid_t pid,const char *name) {
+	int err;
+	if(devNo == VFS_DEV_NO)
+		err = node->unlink(pid,name);
+	else {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::unlink(pid,chan,name);
+	}
+	return err;
+}
+
+int OpenFile::rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *newName) {
+	if(devNo != newDir->devNo)
+		return -EXDEV;
+
+	int err;
+	if(devNo == VFS_DEV_NO)
+		err = node->rename(pid,oldName,newDir->node,newName);
+	else {
+		VFSChannel *oldChan = static_cast<VFSChannel*>(node);
+		VFSChannel *newChan = static_cast<VFSChannel*>(newDir->node);
+		err = VFSFS::rename(pid,oldChan,oldName,newChan,newName);
+	}
+	return err;
+}
+
 int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
 	int err;
 	if(devNo != VFS_DEV_NO) {

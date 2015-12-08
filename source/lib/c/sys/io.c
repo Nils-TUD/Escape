@@ -28,6 +28,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const char *splitPath(char *tmp,char *apath,const char *path,char **name) {
+	/* copy it to the stack first, because abspath might return the third argument, which has to
+	 * be writable, because dirfile needs to change it */
+	strnzcpy(tmp,path,MAX_PATH_LEN);
+	char *fullpath = abspath(apath,MAX_PATH_LEN,tmp);
+	return dirfile(fullpath,name);
+}
+
 int open(const char *path,uint flags) {
 	char apath[MAX_PATH_LEN];
 	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags,FILE_DEF_MODE);
@@ -48,36 +56,68 @@ int truncate(const char *path,off_t length) {
 }
 
 int link(const char *oldPath,const char *newPath) {
-	char apath1[MAX_PATH_LEN];
-	char apath2[MAX_PATH_LEN];
-	oldPath = abspath(apath1,sizeof(apath1),oldPath);
-	newPath = abspath(apath2,sizeof(apath2),newPath);
-	return syscall2(SYSCALL_LINK,(ulong)oldPath,(ulong)newPath);
+	int target = open(oldPath,O_NOCHAN);
+	if(target < 0)
+		return target;
+
+	char *name, apath[MAX_PATH_LEN];
+	char tmp[MAX_PATH_LEN];
+	const char *dirPath = splitPath(tmp,apath,newPath,&name);
+
+	int dir = open(dirPath,O_WRITE);
+	if(dir < 0) {
+		close(target);
+		return dir;
+	}
+	int res = flink(target,dir,name);
+	close(dir);
+	close(target);
+	return res;
 }
 
 int unlink(const char *path) {
-	char apath[MAX_PATH_LEN];
-	return syscall1(SYSCALL_UNLINK,(ulong)abspath(apath,sizeof(apath),path));
+	char *name, apath[MAX_PATH_LEN];
+	char tmp[MAX_PATH_LEN];
+	const char *dirPath = splitPath(tmp,apath,path,&name);
+
+	int fd = open(dirPath,O_WRITE);
+	if(fd < 0)
+		return fd;
+	int res = funlink(fd,name);
+	close(fd);
+	return res;
 }
 
 int rename(const char *oldPath,const char *newPath) {
-	char apath1[MAX_PATH_LEN];
-	char apath2[MAX_PATH_LEN];
-	oldPath = abspath(apath1,sizeof(apath1),oldPath);
-	newPath = abspath(apath2,sizeof(apath2),newPath);
-	return syscall2(SYSCALL_RENAME,(ulong)oldPath,(ulong)newPath);
+	char *oldName, oldAPath[MAX_PATH_LEN];
+	char oldTmp[MAX_PATH_LEN];
+	const char *oldDirPath = splitPath(oldTmp,oldAPath,oldPath,&oldName);
+
+	int oldDir = open(oldDirPath,O_NOCHAN);
+	if(oldDir < 0)
+		return oldDir;
+
+	char *newName, newAPath[MAX_PATH_LEN];
+	char newTmp[MAX_PATH_LEN];
+	const char *newDirPath = splitPath(newTmp,newAPath,newPath,&newName);
+
+	int newDir = open(newDirPath,O_WRITE);
+	if(newDir < 0) {
+		close(oldDir);
+		return newDir;
+	}
+	int res = frename(oldDir,oldName,newDir,newName);
+	close(newDir);
+	close(oldDir);
+	return res;
 }
 
 int mkdir(const char *path,mode_t mode) {
-	char apath[MAX_PATH_LEN];
+	char *name, apath[MAX_PATH_LEN];
 	char tmp[MAX_PATH_LEN];
-	/* copy it to the stack first, because abspath might return the third argument, which has to
-	 * be writable, because dirfile needs to change it */
-	strnzcpy(tmp,path,sizeof(tmp));
-	char *fullpath = abspath(apath,sizeof(apath),tmp);
-	char *name;
-	const char *dir = dirfile(fullpath,&name);
-	int fd = open(dir,O_READ);
+	const char *dirPath = splitPath(tmp,apath,path,&name);
+
+	int fd = open(dirPath,O_WRITE);
 	if(fd < 0)
 		return fd;
 	int res = fmkdir(fd,name,mode);

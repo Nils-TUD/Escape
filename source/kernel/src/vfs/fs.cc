@@ -135,31 +135,33 @@ int VFSFS::utime(pid_t pid,VFSChannel *chan,const struct utimbuf *utimes) {
 	return communicateOverChan(pid,chan,MSG_FS_UTIME,ib);
 }
 
-int VFSFS::link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
+int VFSFS::link(pid_t pid,VFSChannel *target,VFSChannel *dir,const char *name) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(oldPath) << esc::CString(newPath);
-	return communicate(pid,fsFile,MSG_FS_LINK,ib);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << dir->getFd() << esc::CString(name);
+	return communicateOverChan(pid,target,MSG_FS_LINK,ib);
 }
 
-int VFSFS::unlink(pid_t pid,OpenFile *fsFile,const char *path) {
+int VFSFS::unlink(pid_t pid,VFSChannel *chan,const char *name) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(path);
-	return communicate(pid,fsFile,MSG_FS_UNLINK,ib);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(name);
+	return communicateOverChan(pid,chan,MSG_FS_UNLINK,ib);
 }
 
-int VFSFS::rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath) {
+int VFSFS::rename(pid_t pid,VFSChannel *oldDir,const char *oldName,VFSChannel *newDir,
+		const char *newName) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(oldPath) << esc::CString(newPath);
-	return communicate(pid,fsFile,MSG_FS_RENAME,ib);
+	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(oldName)
+	   << newDir->getFd() << esc::CString(newName);
+	return communicateOverChan(pid,oldDir,MSG_FS_RENAME,ib);
 }
 
 int VFSFS::mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode) {

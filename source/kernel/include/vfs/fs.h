@@ -93,37 +93,38 @@ public:
 	static int utime(pid_t pid,VFSChannel *chan,const struct utimbuf *utimes);
 
 	/**
-	 * Creates a hardlink at <newPath> which points to <oldPath>
+	 * Creates a hardlink at <dir>/<name> which points to <target>
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param oldPath the link-target
-	 * @param newPath the link-path
+	 * @param target the channel for the target file
+	 * @param dir the channel for the directory
+	 * @param name the name of the link
 	 * @return 0 on success
 	 */
-	static int link(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath);
+	static int link(pid_t pid,VFSChannel *target,VFSChannel *dir,const char *name);
 
 	/**
-	 * Unlinks the given path. That means, the directory-entry will be removed and if there are no
-	 * more references to the inode, it will be removed.
+	 * Unlinks the file, denoted by <chan>/<name>. That means, the directory-entry will be removed
+	 * and if there are no more references to the inode, it will be removed.
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param path the path
+	 * @param chan the channel for the directory
+	 * @param name the filename to remove
 	 * @return 0 on success
 	 */
-	static int unlink(pid_t pid,OpenFile *fsFile,const char *path);
+	static int unlink(pid_t pid,VFSChannel *chan,const char *name);
 
 	/**
-	 * Renames <oldPath> to <newPath>
+	 * Renames <old> to <dir>/<name>
 	 *
 	 * @param pid the process-id
-	 * @param fsFile the channel to the fs instance
-	 * @param oldPath the link-target
-	 * @param newPath the link-path
+	 * @param old the channel for the old file
+	 * @param dir the channel for the directory of the new file
+	 * @param name the name of the new file
 	 * @return 0 on success
 	 */
-	static int rename(pid_t pid,OpenFile *fsFile,const char *oldPath,const char *newPath);
+	static int rename(pid_t pid,VFSChannel *oldDir,const char *oldName,VFSChannel *newDir,
+		const char *newName);
 
 	/**
 	 * Creates a directory named <name> in the directory denoted by <chan>.

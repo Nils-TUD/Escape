@@ -128,7 +128,11 @@ static void test_vfs_node_file_refs() {
 
 	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",&f2),0);
 	test_assertSize(n->getRefCount(),2);
-	test_assertInt(VFS::unlink(pid,"/sys/foobar"),0);
+
+	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys",&f1),0);
+	test_assertInt(f1->unlink(pid,"foobar"),0);
+	f1->close(pid);
+
 	test_assertSize(n->getRefCount(),1);
 	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",&f3),-ENOENT);
 	memclear(buffer,sizeof(buffer));
@@ -144,7 +148,7 @@ static void test_vfs_node_file_refs() {
 static void test_vfs_node_dir_refs() {
 	Thread *t = Thread::getRunning();
 	pid_t pid = t->getProc()->getPid();
-	OpenFile *f1;
+	OpenFile *f1,*f2;
 	VFSNode *n;
 	bool valid;
 
@@ -187,10 +191,18 @@ static void test_vfs_node_dir_refs() {
 
 	test_assertInt(VFS::rmdir(pid,"/sys/foobar/test"),0);
 	test_assertSize(n->getRefCount(),6);
-	test_assertInt(VFS::unlink(pid,"/sys/foobar/myfile1"),0);
+
+	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys/foobar",&f2),0);
+	test_assertSize(n->getRefCount(),7);
+
+	test_assertInt(f2->unlink(pid,"myfile1"),0);
+	test_assertSize(n->getRefCount(),6);
+
+	test_assertInt(f2->unlink(pid,"myfile2"),0);
 	test_assertSize(n->getRefCount(),5);
-	test_assertInt(VFS::unlink(pid,"/sys/foobar/myfile2"),0);
+	f2->close(pid);
 	test_assertSize(n->getRefCount(),4);
+
 	test_assertInt(VFS::rmdir(pid,"/sys/foobar"),0);
 	test_assertSize(n->getRefCount(),1);
 

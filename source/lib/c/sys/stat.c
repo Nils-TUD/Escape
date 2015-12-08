@@ -27,6 +27,7 @@ int stat(const char *path,struct stat *info) {
 		return fd;
 	int res = fstat(fd,info);
 	close(fd);
+	errno = res;
 	return res;
 }
 
@@ -48,6 +49,7 @@ int chmod(const char *path,mode_t mode) {
 		return fd;
 	int res = fchmod(fd,mode);
 	close(fd);
+	errno = res;
 	return res;
 }
 
@@ -61,6 +63,7 @@ int chown(const char *path,uid_t uid,gid_t gid) {
 		return fd;
 	int res = fchown(fd,uid,gid);
 	close(fd);
+	errno = res;
 	return res;
 }
 

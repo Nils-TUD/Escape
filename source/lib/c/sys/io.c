@@ -52,6 +52,7 @@ int truncate(const char *path,off_t length) {
 		return fd;
 	int res = ftruncate(fd,length);
 	close(fd);
+	errno = res;
 	return res;
 }
 
@@ -72,6 +73,7 @@ int link(const char *oldPath,const char *newPath) {
 	int res = flink(target,dir,name);
 	close(dir);
 	close(target);
+	errno = res;
 	return res;
 }
 
@@ -89,6 +91,7 @@ int unlink(const char *path) {
 		return fd;
 	int res = funlink(fd,name);
 	close(fd);
+	errno = res;
 	return res;
 }
 
@@ -117,6 +120,7 @@ int rename(const char *oldPath,const char *newPath) {
 	int res = frename(oldDir,oldName,newDir,newName);
 	close(newDir);
 	close(oldDir);
+	errno = res;
 	return res;
 }
 
@@ -134,6 +138,7 @@ int mkdir(const char *path,mode_t mode) {
 		return fd;
 	int res = fmkdir(fd,name,mode);
 	close(fd);
+	errno = res;
 	return res;
 }
 
@@ -151,6 +156,7 @@ int rmdir(const char *path) {
 		return fd;
 	int res = frmdir(fd,name);
 	close(fd);
+	errno = res;
 	return res;
 }
 
@@ -168,6 +174,7 @@ int pipe(int *readFd,int *writeFd) {
 	*readFd = creatsibl(fd,0);
 	if(*readFd < 0) {
 		close(fd);
+		errno = *readFd;
 		return *readFd;
 	}
 	return 0;
@@ -186,6 +193,7 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 		int res = errno;
 		pshm_unlink(*name);
 		close(fd);
+		errno = res;
 		return res;
 	}
 
@@ -193,6 +201,7 @@ int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
 	int res = sharefile(dev,addr);
 	*mem = addr;
 	close(fd);
+	errno = res;
 	return res;
 }
 

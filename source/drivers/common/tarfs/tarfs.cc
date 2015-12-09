@@ -155,7 +155,7 @@ public:
 				file = tree.find(r.path.str(),&end);
 			}
 
-			if(file == NULL) {
+			if((~r.flags & O_CREAT) || file == NULL) {
 				is << FileOpen::Response(-ENOENT) << Reply();
 				return;
 			}

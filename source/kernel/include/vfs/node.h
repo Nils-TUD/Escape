@@ -404,6 +404,19 @@ public:
 	int rmdir(pid_t pid,const char *name);
 
 	/**
+	 * Creates a device-node for the given process at <this>/<name>
+	 *
+	 * @param pid the process-id
+	 * @param name the name of the device
+	 * @param mode the mode to set
+	 * @param type the device-type (DEV_TYPE_*)
+	 * @param ops the supported operations
+	 * @param node will be set to the created node (with a reference; so you have to call release!)
+	 * @return 0 if ok, negative if an error occurred
+	 */
+	int createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,VFSNode **node);
+
+	/**
 	 * Finds the child-node with name <name>
 	 *
 	 * @param dir the directory (locked)

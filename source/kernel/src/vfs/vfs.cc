@@ -77,6 +77,9 @@ void VFS::init() {
 	msNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"ms",DIR_DEF_MODE);
 	VFSNode::release(msNode);
 	devNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);
+	/* the user should be able to create devices as well */
+	/* TODO: maybe we should organize that differently */
+	devNode->chmod(KERNEL_PID,0777);
 	VFSNode::release(devNode);
 	VFSNode::release(procsNode);
 	VFSNode::release(sys);
@@ -247,56 +250,6 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 
 	/* determine free file */
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
-}
-
-int VFS::createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file) {
-	VFSNode *dir = NULL,*srv;
-
-	/* get name */
-	size_t len = strlen(path);
-	char *name = VFSNode::basename(path,&len);
-	name = strdup(name);
-	if(!name)
-		return -ENOMEM;
-
-	/* check whether the directory exists */
-	VFSNode::dirname(path,len);
-	int err = VFSNode::request(path,NULL,&dir,NULL,VFS_READ,0);
-	if(err < 0) {
-		Cache::free(name);
-		return err;
-	}
-
-	/* ensure its a directory */
-	if(!S_ISDIR(dir->getMode()))
-		goto errorDir;
-
-	/* check whether the device does already exist */
-	if(dir->findInDir(name,strlen(name)) != NULL) {
-		err = -EEXIST;
-		goto errorDir;
-	}
-
-	/* create node */
-	srv = createObj<VFSDevice>(pid,dir,name,mode,type,ops);
-	if(!srv) {
-		err = -ENOMEM;
-		goto errorDir;
-	}
-	err = openFile(pid,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
-	if(err < 0)
-		goto errDevice;
-	VFSNode::release(srv);
-	VFSNode::release(dir);
-	return err;
-
-errDevice:
-	VFSNode::release(srv);
-	VFSNode::release(srv);
-errorDir:
-	VFSNode::release(dir);
-	/* the release has already free'd the name */
-	return err;
 }
 
 int VFS::creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl) {

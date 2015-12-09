@@ -138,19 +138,6 @@ public:
 	                    OpenFile **file);
 
 	/**
-	 * Creates a device-node for the given process at given path and opens a file for it
-	 *
-	 * @param pid the process-id
-	 * @param path the path to the device
-	 * @param mode the mode to set
-	 * @param type the device-type (DEV_TYPE_*)
-	 * @param ops the supported operations
-	 * @param file will be set to the opened file
-	 * @return 0 if ok, negative if an error occurred
-	 */
-	static int createdev(pid_t pid,char *path,mode_t mode,uint type,uint ops,OpenFile **file);
-
-	/**
 	 * Creates a new sibling-channel for <file>.
 	 *
 	 * @param pid the process-id

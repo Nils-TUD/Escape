@@ -43,6 +43,8 @@
 /* normal file */
 #define DEV_TYPE_FILE				4
 
+#define BITS_DEV_TYPE				3
+
 #define GW_NOBLOCK					1
 
 #if defined(__cplusplus)
@@ -50,7 +52,7 @@ extern "C" {
 #endif
 
 /**
- * Creates a device at given path.
+ * Creates a device at <path>.
  *
  * @param path the path
  * @param mode the mode to set
@@ -59,6 +61,18 @@ extern "C" {
  * @return the file-desc if successfull, < 0 if an error occurred
  */
 A_CHECKRET int createdev(const char *path,mode_t mode,uint type,uint ops);
+
+/**
+ * Creates a device at <dir>/<name>.
+ *
+ * @param dir the file descriptor for the directory
+ * @param name the device filename
+ * @param mode the mode to set
+ * @param type the device-type (DEV_TYPE_*)
+ * @param ops the supported operations (DEV_*)
+ * @return the file-desc if successfull, < 0 if an error occurred
+ */
+A_CHECKRET int fcreatedev(int dir,const char *name,mode_t mode,uint type,uint ops);
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided

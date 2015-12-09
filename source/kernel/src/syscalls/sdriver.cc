@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/driver.h>
 #include <mem/pagedir.h>
 #include <mem/virtmem.h>
 #include <task/filedesc.h>
@@ -33,13 +34,14 @@
 #include <syscalls.h>
 
 int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
-	char abspath[MAX_PATH_LEN + 1];
-	const char *path = (const char*)SYSC_ARG1(stack);
-	mode_t mode = SYSC_ARG2(stack);
-	uint type = SYSC_ARG3(stack);
-	uint ops = SYSC_ARG4(stack);
-	pid_t pid = t->getProc()->getPid();
-	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
+	char filename[MAX_PATH_LEN + 1];
+	int fd = (int)SYSC_ARG1(stack);
+	const char *name = (const char*)SYSC_ARG2(stack);
+	mode_t mode = SYSC_ARG3(stack);
+	uint type = SYSC_ARG4(stack) & ((1 << BITS_DEV_TYPE) - 1);
+	uint ops = SYSC_ARG4(stack) >> BITS_DEV_TYPE;
+	Proc *p = t->getProc();
+	if(EXPECT_FALSE(!copyPath(filename,sizeof(filename),name)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check type and ops */
@@ -53,17 +55,23 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(~ops & DEV_CLOSE))
 		SYSC_ERROR(stack,-EINVAL);
 
+	/* get file */
+	OpenFile *dir = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(dir == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
 	/* create device and open it */
 	OpenFile *file;
-	int res = VFS::createdev(pid,abspath,mode,type,ops,&file);
+	int res = dir->createdev(p->getPid(),name,mode,type,ops,&file);
+	FileDesc::release(dir);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* assoc fd with it */
-	int fd = FileDesc::assoc(t->getProc(),file);
-	if(EXPECT_FALSE(fd < 0))
-		SYSC_ERROR(stack,fd);
-	SYSC_RET1(stack,fd);
+	int nfd = FileDesc::assoc(p,file);
+	if(EXPECT_FALSE(nfd < 0))
+		SYSC_ERROR(stack,nfd);
+	SYSC_RET1(stack,nfd);
 }
 
 int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {

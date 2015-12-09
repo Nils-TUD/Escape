@@ -229,7 +229,9 @@ static void test_vfs_node_dev_refs() {
 	size_t nodesBefore = VFSNode::getNodeCount();
 
 	strnzcpy(path,"/dev/foo",sizeof(path));
-	test_assertInt(VFS::createdev(pid,path,0777,DEV_TYPE_BLOCK,DEV_CLOSE,&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev",&f2),0);
+	test_assertInt(f2->createdev(pid,"foo",0777,DEV_TYPE_BLOCK,DEV_CLOSE,&f1),0);
+	f2->close(pid);
 	test_assertSize(f1->getNode()->getRefCount(),1);
 
 	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",&f2),0);

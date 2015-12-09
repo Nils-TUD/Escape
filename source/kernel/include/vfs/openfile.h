@@ -276,6 +276,19 @@ public:
 	int rmdir(pid_t pid,const char *name);
 
 	/**
+	 * Creates a device-node for the given process at <this>/<name> and opens a file for it.
+	 *
+	 * @param pid the process-id
+	 * @param name the name of the device
+	 * @param mode the mode to set
+	 * @param type the device-type (DEV_TYPE_*)
+	 * @param ops the supported operations
+	 * @param file will be set to opened file
+	 * @return 0 if ok, negative if an error occurred
+	 */
+	int createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file);
+
+	/**
 	 * Sets the position for this file
 	 *
 	 * @param pid the process-id

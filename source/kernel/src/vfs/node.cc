@@ -357,6 +357,34 @@ error:
 	return res;
 }
 
+int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,VFSNode **node) {
+	/* ensure its a directory */
+	if(!S_ISDIR(this->mode))
+		return -ENOTDIR;
+
+	/* check whether we are allowed to create something in the directory */
+	int res;
+	if((res = VFS::hasAccess(pid,this,VFS_WRITE)) < 0)
+		return res;
+
+	/* check whether the device does already exist */
+	if(findInDir(name,strlen(name)) != NULL)
+		return -EEXIST;
+
+	/* create a copy for the node */
+	char *namecpy = strdup(name);
+	if(namecpy == NULL)
+		return -ENOMEM;
+
+	/* create node */
+	*node = createObj<VFSDevice>(pid,this,namecpy,mode,type,ops);
+	if(!*node) {
+		Cache::free(namecpy);
+		return -ENOMEM;
+	}
+	return 0;
+}
+
 int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *created,
 		uint flags,mode_t mode) {
 	const VFSNode *dir,*n = *node;

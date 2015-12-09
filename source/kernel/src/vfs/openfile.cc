@@ -209,6 +209,23 @@ int OpenFile::rmdir(pid_t pid,const char *name) {
 	return err;
 }
 
+int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file) {
+	if(devNo != VFS_DEV_NO)
+		return -ENOTSUP;
+
+	VFSNode *srv;
+	int res = node->createdev(pid,name,mode,type,ops,&srv);
+	if(res < 0)
+		return res;
+
+	res = VFS::openFile(pid,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
+	/* if an error occurred, release it twice to destroy the node */
+	if(res < 0)
+		VFSNode::release(srv);
+	VFSNode::release(srv);
+	return res;
+}
+
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t res;
 

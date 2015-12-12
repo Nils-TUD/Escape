@@ -103,8 +103,8 @@ bool FileCopy::copyFile(const char *src,const char *dest,bool remove) {
 
 	int outfd = open(dest,O_WRONLY | O_CREAT | O_TRUNC);
 	if(outfd < 0) {
-		close(infd);
 		handleError("open of '%s' for writing failed",dest);
+		close(infd);
 		return false;
 	}
 
@@ -186,9 +186,9 @@ bool FileCopy::copy(const char *src,const char *dest,bool remove) {
 
 		DIR *dir = opendir(src);
 		if(!dir) {
+			handleError("open of '%s' failed",src);
 			/* ignore the error here */
 			if(rmdir(dstcpy) < 0) {}
-			handleError("open of '%s' failed",src);
 			return false;
 		}
 
@@ -260,8 +260,8 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 		}
 
 		if(mkdir(dst,DIR_DEF_MODE) < 0) {
-			closedir(dir);
 			handleError("Creation of '%s' failed",dst);
+			closedir(dir);
 			return false;
 		}
 

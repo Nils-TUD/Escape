@@ -127,8 +127,11 @@ static void vtout_doPutchar(sVTerm *vt,char c,bool markDirty) {
 		vt->row--;
 	}
 
-	if(vt->printToCom1 && c != '\a' && c != '\t')
+	if(vt->printToCom1 && c != '\r' && c != '\a' && c != '\t') {
+		if(c == '\n')
+			logc('\r');
 		logc(c);
+	}
 
 	switch(c) {
 		case '\n':

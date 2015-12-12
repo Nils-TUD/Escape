@@ -22,9 +22,9 @@
 #include <log.h>
 
 void Log::toSerial(char c) {
+	if(c == '\n')
+		Serial::out(Serial::COM1,'\r');
 	/* write to COM1 (some chars make no sense here) */
 	if(c != '\b')
 		Serial::out(Serial::COM1,c);
-	if(c == '\n')
-		Serial::out(Serial::COM1,'\r');
 }

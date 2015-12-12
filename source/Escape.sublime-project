@@ -8,12 +8,7 @@
     "settings":
     {
         "translate_tabs_to_spaces": false,
-        "sublimeclang_additional_language_options":
-        {
-            "c++" : ["-std=c++11"],
-            "c": ["-std=c99"]
-        },
-        "sublimeclang_options":
+        "cc_include_options":
         [
             "-I/home/hrniels/escape/source/include",
             "-I/home/hrniels/escape/source/include/cpp",
@@ -30,7 +25,6 @@
             "-march=i686",
             "-Wall",
             "-Wextra",
-            "-ansi",
             "-Wpointer-arith",
             "-Wmissing-prototypes",
             "-ferror-limit=0"

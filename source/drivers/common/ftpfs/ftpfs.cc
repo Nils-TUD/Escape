@@ -294,25 +294,37 @@ int main(int argc,char **argv) {
 		error("Invalid device: %s",argv[2]);
 
 	// use the last one. the username might be an email-address
-	char *at = strrchr(path + 9,'@');
-	if(!at)
-		error("Invalid device: %s",argv[2]);
-	port_t port = 21;
-	char *host = at + 1;
-	char *user = path + 9;
-	const char *dir = "";
-	*at = '\0';
-	at = strchr(host,':');
-	if(at) {
-		*at = '\0';
-		port = atoi(at + 1);
+	char *host, *user;
+	char *pos = strrchr(path + 9,'@');
+	if(!pos) {
+		host = path + 9;
+		user = const_cast<char*>("anonymous");
 	}
-	at = strchr(host,'/');
-	if(at) {
-		*at = '\0';
-		dir = at + 1;
+	else {
+		host = pos + 1;
+		user = path + 9;
+		*pos = '\0';
 	}
 
+	// get the port
+	port_t port = 21;
+	pos = strchr(host,':');
+	if(pos) {
+		*pos++ = '\0';
+		port = atoi(pos);
+	}
+	else
+		pos = host;
+
+	// get the directory
+	const char *dir = "";
+	pos = strchr(pos,'/');
+	if(pos) {
+		*pos = '\0';
+		dir = pos + 1;
+	}
+
+	// let the user type in the password, if necessary
 	char pw[64] = "anonymous@example.com";
 	if(strcmp(user,"anonymous") != 0) {
 		VTerm vterm(STDOUT_FILENO);

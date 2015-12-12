@@ -66,9 +66,9 @@ signal.signal(signal.SIGINT, sigint_handler)
 # wait for start of backtrace
 while True:
 	line = sys.stdin.readline()
-	if line == '============= snip =============\n':
 	if not line:
 		break
+	if line == '============= snip =============\r\n':
 		print line[:-1]
 		break
 
@@ -78,9 +78,9 @@ syms = get_symbols('/boot/escape')
 coderegs.append(('/boot/escape', 0xc0100000, 0xffffffff, syms))
 while True:
 	line = sys.stdin.readline()
-	if line[0:9] == 'Pagefault' or line == 'User-Stacktrace:\n' or line == 'Kernel-Stacktrace:\n':
 	if not line:
 		break
+	if line[0:9] == 'Pagefault' or line == 'User-Stacktrace:\r\n' or line == 'Kernel-Stacktrace:\r\n':
 		break
 
 	print line[:-1]
@@ -116,7 +116,7 @@ while True:
 		funcoff = liboff - sym[0]
 		sys.stdout.write("\t=>: %#010x (%s+%#x)\n" % (addr, lib[0], liboff))
 		sys.stdout.write("\t    %s+%#x (%s)\n" % (sym[1], funcoff, sym[2]))
-	elif line == '============= snip =============\n':
+	elif line == '============= snip =============\r\n':
 		print line[:-1]
 		break
 	else:
@@ -124,4 +124,3 @@ while True:
 
 if sys.stdin.isatty():
 	enable_echo(sys.stdin.fileno(), True)
-

@@ -78,10 +78,9 @@ struct OpenFile : public Client {
 
 class FTPFSDevice : public ClientDevice<OpenFile> {
 public:
-	explicit FTPFSDevice(const char *fsDev,const char *host,port_t port,
-		const char *user,const char *pw,const char *dir)
+	explicit FTPFSDevice(const char *fsDev,CtrlConRef &ctrlcon)
 		: ClientDevice<OpenFile>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-		  _ctrlRef(new CtrlCon(host,port,user,pw,dir)), _clients() {
+		  _ctrlRef(ctrlcon), _clients() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&FTPFSDevice::devopen));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&FTPFSDevice::devclose),false);
 		set(MSG_DEV_SHFILE,std::make_memfun(this,&FTPFSDevice::shfile));
@@ -280,7 +279,7 @@ private:
 		is << 0 << Reply();
 	}
 
-	CtrlConRef _ctrlRef;
+	CtrlConRef &_ctrlRef;
 	size_t _clients;
 };
 
@@ -337,7 +336,8 @@ int main(int argc,char **argv) {
 		fflush(stdout);
 	}
 
-	FTPFSDevice dev(argv[1],host,port,user,pw,dir);
+	CtrlConRef con(new CtrlCon(host,port,user,pw,dir));
+	FTPFSDevice dev(argv[1],con);
 	dev.loop();
 	return 0;
 }

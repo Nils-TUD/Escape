@@ -67,6 +67,8 @@ signal.signal(signal.SIGINT, sigint_handler)
 while True:
 	line = sys.stdin.readline()
 	if line == '============= snip =============\n':
+	if not line:
+		break
 		print line[:-1]
 		break
 
@@ -77,6 +79,8 @@ coderegs.append(('/boot/escape', 0xc0100000, 0xffffffff, syms))
 while True:
 	line = sys.stdin.readline()
 	if line[0:9] == 'Pagefault' or line == 'User-Stacktrace:\n' or line == 'Kernel-Stacktrace:\n':
+	if not line:
+		break
 		break
 
 	print line[:-1]
@@ -102,6 +106,8 @@ else:
 # decode backtrace
 while True:
 	line = sys.stdin.readline()
+	if not line:
+		break
 	match = re.match('\\s*([0-9a-f:]+) -> ([0-9a-f:]+)', line)
 	if match:
 		addr = str_to_addr(match.group(2))

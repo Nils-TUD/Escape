@@ -74,7 +74,8 @@ void FileCopy::showProgress(const char *src,size_t pos,size_t total,ulong steps,
 	printf(" [");
 	for(ulong i = 0; i < steps; ++i)
 		putchar('#');
-	for(ulong i = 0; i < totalSteps - steps; ++i)
+	ulong max = totalSteps >= steps ? totalSteps - steps : totalSteps;
+	for(ulong i = 0; i < max; ++i)
 		putchar(' ');
 	putchar(']');
 	fflush(stdout);

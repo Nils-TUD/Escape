@@ -79,9 +79,9 @@ E1000::E1000(esc::PCI &pci,const esc::PCI::Device &nic)
 			error("Unable to create irq-semaphore");
 	}
 
-	// ensure that interrupts are enabled for the PCI device
+	// ensure that interrupts are enabled for the PCI device and that its the bus master
 	uint32_t statusCmd = pci.read(nic.bus,nic.dev,nic.func,0x04);
-	pci.write(nic.bus,nic.dev,nic.func,0x04,statusCmd & ~0x400);
+	pci.write(nic.bus,nic.dev,nic.func,0x04,(statusCmd & ~0x400) | 0x4);
 
 	// enable interrupts
 	writeReg(REG_IMC,ICR_LSC | ICR_RXO | ICR_RXT0);

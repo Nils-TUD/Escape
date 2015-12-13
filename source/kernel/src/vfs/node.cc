@@ -256,7 +256,7 @@ errorName:
 
 int VFSNode::unlink(pid_t,const char *name) {
 	if(!S_ISDIR(mode))
-		return -EISDIR;
+		return -ENOTDIR;
 
 	treeLock.down();
 	VFSNode *n = const_cast<VFSNode*>(findInDir(name,strlen(name),false));

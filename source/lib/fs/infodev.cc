@@ -69,7 +69,12 @@ int InfoDevice::thread(void *arg) {
 		error("Invalid device name '%s'",idev->path());
 	snprintf(devpath,sizeof(devpath),"/sys/fs/%s",devname);
 
-	dev = new FSFileDevice(idev->fs(),devpath,0444);
-	dev->loop();
+	try {
+		dev = new FSFileDevice(idev->fs(),devpath,0444);
+		dev->loop();
+	}
+	catch(const std::exception &e) {
+		printe("Warning: starting info device failed: %s",e.what());
+	}
 	return 0;
 }

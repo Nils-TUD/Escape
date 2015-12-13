@@ -272,12 +272,34 @@ int VFSNode::unlink(pid_t,const char *name) {
 	return 0;
 }
 
-int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *newName) {
-	int res = link(pid,newDir,newName);
-	if(res < 0)
-		return res;
+int VFSNode::rename(pid_t,const char *oldName,VFSNode *newDir,const char *newName) {
+	/* make copy of name */
+	char *namecpy = strdup(newName);
+	if(!namecpy)
+		return -ENOMEM;
 
-	return unlink(pid,oldName);
+	/* get target */
+	treeLock.down();
+	VFSNode *target = const_cast<VFSNode*>(findInDir(oldName,strlen(oldName),false));
+	if(!target || !target->isDeletable()) {
+		Cache::free(namecpy);
+		treeLock.up();
+		return target ? -EPERM : -ENOENT;
+	}
+	target->increaseRefs();
+	treeLock.up();
+
+	/* remove from old directory (we have a reference; so it won't be free'd) */
+	target->destroy();
+
+	/* append to new directory */
+	newDir->append(target);
+
+	/* set new name; the old one has already been free'd */
+	target->name = namecpy;
+
+	release(target);
+	return 0;
 }
 
 int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {

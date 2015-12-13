@@ -104,7 +104,7 @@ int rename(const char *oldPath,const char *newPath) {
 	char oldTmp[MAX_PATH_LEN];
 	const char *oldDirPath = splitPath(oldTmp,oldAPath,oldPath,&oldName);
 
-	int oldDir = open(oldDirPath,O_NOCHAN);
+	int oldDir = open(oldDirPath,O_WRITE);
 	if(oldDir < 0)
 		return oldDir;
 

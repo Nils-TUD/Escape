@@ -129,7 +129,7 @@ static void test_vfs_node_file_refs() {
 	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",&f2),0);
 	test_assertSize(n->getRefCount(),2);
 
-	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys",&f1),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/sys",&f1),0);
 	test_assertInt(f1->unlink(pid,"foobar"),0);
 	f1->close(pid);
 
@@ -189,7 +189,7 @@ static void test_vfs_node_dir_refs() {
 	f = f->next;
 	test_assertStr(f->getName(),"..");
 
-	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys/foobar",&f2),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/sys/foobar",&f2),0);
 	test_assertSize(n->getRefCount(),8);
 
 	test_assertInt(f2->rmdir(pid,"test"),0);
@@ -203,7 +203,7 @@ static void test_vfs_node_dir_refs() {
 	f2->close(pid);
 	test_assertSize(n->getRefCount(),4);
 
-	test_assertInt(VFS::openPath(pid,VFS_NOCHAN,0,"/sys",&f2),0);
+	test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/sys",&f2),0);
 	test_assertSize(n->getRefCount(),4);
 
 	test_assertInt(f2->rmdir(pid,"foobar"),0);
@@ -229,7 +229,7 @@ static void test_vfs_node_dev_refs() {
 	size_t nodesBefore = VFSNode::getNodeCount();
 
 	strnzcpy(path,"/dev/foo",sizeof(path));
-	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev",&f2),0);
+	test_assertInt(VFS::openPath(pid,VFS_MSGS | VFS_WRITE,0,"/dev",&f2),0);
 	test_assertInt(f2->createdev(pid,"foo",0777,DEV_TYPE_BLOCK,DEV_CLOSE,&f1),0);
 	f2->close(pid);
 	test_assertSize(f1->getNode()->getRefCount(),1);

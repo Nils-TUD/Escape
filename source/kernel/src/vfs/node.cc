@@ -241,9 +241,6 @@ int VFSNode::link(pid_t pid,VFSNode *dir,const char *name) {
 		goto errorName;
 	}
 
-	/* check permissions */
-	if((res = VFS::hasAccess(pid,dir,VFS_WRITE)) < 0)
-		goto errorName;
 	/* now create link */
 	if((link = createObj<VFSLink>(pid,dir,namecpy,this)) == NULL) {
 		res = -ENOMEM;
@@ -257,23 +254,18 @@ errorName:
 	return res;
 }
 
-int VFSNode::unlink(pid_t pid,const char *name) {
+int VFSNode::unlink(pid_t,const char *name) {
 	if(!S_ISDIR(mode))
 		return -EISDIR;
 
 	treeLock.down();
-	VFSNode *n = const_cast<VFSNode*>(findInDir(name, strlen(name), false));
-	if(!n) {
+	VFSNode *n = const_cast<VFSNode*>(findInDir(name,strlen(name),false));
+	if(!n || !n->isDeletable()) {
 		treeLock.up();
-		return -ENOENT;
+		return n ? -EPERM : -ENOENT;
 	}
 	n->increaseRefs();
 	treeLock.up();
-
-	/* check permissions */
-	int err = -EPERM;
-	if(!n->isDeletable() || (err = VFS::hasAccess(pid,n,VFS_WRITE)) < 0)
-		return err;
 
 	n->destroy();
 	release(n);
@@ -307,9 +299,6 @@ int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {
 		goto errorFree;
 	}
 
-	/* check permissions */
-	if((res = VFS::hasAccess(pid,this,VFS_WRITE)) < 0)
-		goto errorFree;
 	child = createObj<VFSDir>(pid,this,namecpy,S_IFDIR | (mode & MODE_PERM));
 	if(child == NULL) {
 		res = -ENOMEM;
@@ -323,7 +312,7 @@ errorFree:
 	return res;
 }
 
-int VFSNode::rmdir(pid_t pid,const char *name) {
+int VFSNode::rmdir(pid_t,const char *name) {
 	if(!S_ISDIR(this->mode))
 		return -ENOTDIR;
 
@@ -344,9 +333,10 @@ int VFSNode::rmdir(pid_t pid,const char *name) {
 	}
 
 	/* check permissions */
-	res = -EPERM;
-	if(dir->getOwner() == KERNEL_PID || (res = VFS::hasAccess(pid,this,VFS_EXEC | VFS_WRITE)) < 0)
+	if(dir->getOwner() == KERNEL_PID) {
+		res = -EPERM;
 		goto error;
+	}
 	res = dir->isEmptyDir();
 	if(res < 0)
 		goto error;
@@ -361,11 +351,6 @@ int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops
 	/* ensure its a directory */
 	if(!S_ISDIR(this->mode))
 		return -ENOTDIR;
-
-	/* check whether we are allowed to create something in the directory */
-	int res;
-	if((res = VFS::hasAccess(pid,this,VFS_WRITE)) < 0)
-		return res;
 
 	/* check whether the device does already exist */
 	if(findInDir(name,strlen(name)) != NULL)

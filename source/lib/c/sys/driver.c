@@ -32,7 +32,7 @@ int createdev(const char *path,mode_t mode,uint type,uint ops) {
 	strnzcpy(tmp,path,MAX_PATH_LEN);
 	const char *dirPath = dirfile(abspath(apath,MAX_PATH_LEN,tmp),&name);
 
-	int fd = open(dirPath,O_NOCHAN);
+	int fd = open(dirPath,O_WRITE);
 	if(fd < 0)
 		return fd;
 	int res = fcreatedev(fd,name,mode,type,ops);

@@ -149,6 +149,8 @@ int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
 int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
 	if(devNo != dir->devNo)
 		return -EXDEV;
+	if(!(dir->flags & VFS_WRITE))
+		return -EACCES;
 
 	int err;
 	if(devNo == VFS_DEV_NO)
@@ -162,6 +164,9 @@ int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
 }
 
 int OpenFile::unlink(pid_t pid,const char *name) {
+	if(!(flags & VFS_WRITE))
+		return -EACCES;
+
 	int err;
 	if(devNo == VFS_DEV_NO)
 		err = node->unlink(pid,name);
@@ -175,6 +180,8 @@ int OpenFile::unlink(pid_t pid,const char *name) {
 int OpenFile::rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *newName) {
 	if(devNo != newDir->devNo)
 		return -EXDEV;
+	if(!(flags & VFS_WRITE) || !(newDir->flags & VFS_WRITE))
+		return -EACCES;
 
 	int err;
 	if(devNo == VFS_DEV_NO)
@@ -188,6 +195,9 @@ int OpenFile::rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *
 }
 
 int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
+	if(!(flags & VFS_WRITE))
+		return -EACCES;
+
 	int err;
 	if(devNo != VFS_DEV_NO) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
@@ -199,6 +209,9 @@ int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
 }
 
 int OpenFile::rmdir(pid_t pid,const char *name) {
+	if(!(flags & VFS_WRITE))
+		return -EACCES;
+
 	int err;
 	if(devNo != VFS_DEV_NO) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
@@ -212,6 +225,8 @@ int OpenFile::rmdir(pid_t pid,const char *name) {
 int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file) {
 	if(devNo != VFS_DEV_NO)
 		return -ENOTSUP;
+	if(!(flags & VFS_WRITE))
+		return -EACCES;
 
 	VFSNode *srv;
 	int res = node->createdev(pid,name,mode,type,ops,&srv);

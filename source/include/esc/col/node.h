@@ -58,6 +58,10 @@ public:
 	explicit SListItem() : _next() {
 	}
 
+	void init() {
+		_next = nullptr;
+	}
+
 private:
 	SListItem *next() {
 		return _next;
@@ -87,6 +91,11 @@ public:
 	 * Constructor
 	 */
 	explicit DListItem() : SListItem(), _prev() {
+	}
+
+	void init() {
+		SListItem::init();
+		_prev = nullptr;
 	}
 
 private:

@@ -485,6 +485,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	if(EXPECT_FALSE(msg1 == NULL))
 		return -ENOMEM;
 
+	msg1->init();
 	msg1->length = size1;
 	if(EXPECT_TRUE(data1)) {
 		if(EXPECT_FALSE((res = UserAccess::read(msg1 + 1,data1,size1)) < 0))
@@ -498,6 +499,7 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 			goto errorMsg1;
 		}
 
+		msg2->init();
 		msg2->length = size2;
 		if(EXPECT_FALSE((res = UserAccess::read(msg2 + 1,data2,size2)) < 0))
 			goto errorMsg2;

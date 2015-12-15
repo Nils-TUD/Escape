@@ -95,6 +95,7 @@ public:
 	 * @return the position where it has been inserted
 	 */
 	iterator append(T *e) {
+		assert(e->next() == nullptr);
 		if(_head == nullptr)
 			_head = e;
 		else
@@ -113,6 +114,7 @@ public:
 	 * @return the position where it has been inserted
 	 */
 	iterator insert(T *p,T *e) {
+		assert(e->next() == nullptr);
 		e->next(p ? p->next() : _head);
 		if(p)
 			p->next(e);
@@ -157,6 +159,7 @@ public:
 			_head = static_cast<T*>(e->next());
 		if(!e->next())
 			_tail = p;
+		e->next(nullptr);
 		_len--;
 	}
 

@@ -21,6 +21,7 @@
 
 #include <esc/col/node.h>
 #include <sys/common.h>
+#include <assert.h>
 
 namespace esc {
 
@@ -100,6 +101,8 @@ public:
 	 * @param e the list item
 	 */
 	void prepend(T *e) {
+		assert(e->next() == nullptr);
+		assert(e->prev() == nullptr);
 		e->prev(nullptr);
 		e->next(_head);
 		if(_head)
@@ -117,6 +120,8 @@ public:
 	 * @return the position where it has been inserted
 	 */
 	iterator append(T *e) {
+		assert(e->next() == nullptr);
+		assert(e->prev() == nullptr);
 		if(_head == nullptr)
 			_head = e;
 		else
@@ -142,6 +147,8 @@ public:
 			if(first == _tail)
 				_tail = nullptr;
 			_len--;
+			first->next(nullptr);
+			first->prev(nullptr);
 		}
 		return first;
 	}
@@ -161,6 +168,8 @@ public:
 			_head = static_cast<T*>(e->next());
 		if(e == _tail)
 			_tail = static_cast<T*>(e->prev());
+		e->next(nullptr);
+		e->prev(nullptr);
 		_len--;
 	}
 

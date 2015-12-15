@@ -102,6 +102,7 @@ Thread *ThreadBase::createInitial(Proc *p) {
 }
 
 void ThreadBase::initProps() {
+	DListItem::init();
 	state = Thread::BLOCKED;
 	newState = Thread::READY;
 	prioGoodCnt = 0;

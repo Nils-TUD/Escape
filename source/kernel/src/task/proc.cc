@@ -121,7 +121,7 @@ void ProcBase::init() {
 		Util::panic("Unable to init semaphores");
 	memclear(p->locks,sizeof(p->locks));
 	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
-		p->mutexes[i] = Mutex();
+		p->mutexes[i].init(false);
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
 	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
@@ -144,6 +144,7 @@ void ProcBase::init() {
 }
 
 void ProcBase::initProps() {
+	SListItem::init();
 	stats.input = 0;
 	stats.output = 0;
 	stats.totalRuntime = 0;
@@ -257,7 +258,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->parentPid = cur->pid;
 	memclear(p->locks,sizeof(p->locks));
 	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
-		p->mutexes[i] = Mutex();
+		p->mutexes[i].init(true);
 	p->ruid = cur->ruid;
 	p->euid = cur->euid;
 	p->suid = cur->suid;

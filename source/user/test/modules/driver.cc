@@ -26,6 +26,7 @@
 #include <sys/proc.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
+#include <sys/time.h>
 #include <mutex>
 #include <signal.h>
 #include <stdio.h>
@@ -65,12 +66,16 @@ static void sigUsr1(A_UNUSED int sig) {
 }
 
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
-	id = createdev("/dev/bla",0666,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
+	char path[32];
+	srand(rdtsc());
+	snprintf(path,sizeof(path),"/dev/bla-%d",rand());
+
+	id = createdev(path,0666,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("createdev");
 
 	for(int i = 0; i < CLIENT_COUNT; i++) {
-		if(startthread(clientThread,NULL) < 0)
+		if(startthread(clientThread,path) < 0)
 			error("Unable to start thread");
 	}
 
@@ -82,10 +87,10 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static int clientThread(A_UNUSED void *arg) {
+static int clientThread(void *arg) {
 	size_t i;
 	char buf[12] = {0};
-	int fd = open("/dev/bla",O_RDWR);
+	int fd = open((char*)arg,O_RDWR);
 	if(fd < 0)
 		error("open");
 	srand(time(NULL) * gettid());

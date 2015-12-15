@@ -29,6 +29,12 @@ public:
 	explicit Mutex() : Semaphore(1), holder(INVALID), depth(0) {
 	}
 
+	void init() {
+		holder = INVALID;
+		depth = 0;
+		Semaphore::init(1);
+	}
+
 	void down();
 	bool tryDown();
 	void up();

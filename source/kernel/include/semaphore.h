@@ -30,6 +30,14 @@
 class BaseSem {
 public:
 	explicit BaseSem(int value = 1) : value(value), waiters() {
+
+	/**
+	 * Inits this semaphore with value <val>.
+	 *
+	 * @param val the value
+	 */
+	void init(int val) {
+		value = val;
 	}
 
 	/**
@@ -83,6 +91,11 @@ private:
 class Semaphore : public BaseSem {
 public:
 	explicit Semaphore(int value = 1) : BaseSem(value), lck() {
+	}
+
+	void init(int val) {
+		lck = SpinLock();
+		BaseSem::init(val);
 	}
 
 	bool down(bool allowSigs = false) {

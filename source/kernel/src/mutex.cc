@@ -30,6 +30,8 @@ void Mutex::down() {
 #endif
 
 	Thread *t = Thread::getRunning();
+	assert(value <= 1);
+
 	if(holder != t->getTid()) {
 		Semaphore::down();
 		assert(holder == INVALID && depth == 0);
@@ -45,6 +47,8 @@ bool Mutex::tryDown() {
 #endif
 
 	Thread *t = Thread::getRunning();
+	assert(value <= 1);
+
 	if(holder == t->getTid()) {
 		depth++;
 		return true;
@@ -67,6 +71,7 @@ void Mutex::up() {
 	A_UNUSED Thread *t = Thread::getRunning();
 	assert(holder == t->getTid());
 	assert(depth > 0);
+	assert(value <= 0);
 	if(--depth == 0) {
 		holder = INVALID;
 		asm volatile ("" : : : "memory");

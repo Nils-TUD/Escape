@@ -55,6 +55,7 @@ static sTestModule modules[] = {
 	{"pagefaults",mod_pagefaults},
 	{"matmult",mod_matmult},
 	{"rwlock",mod_rwlock},
+	{"mutex",mod_mutex},
 };
 
 int main(int argc,char *argv[]) {

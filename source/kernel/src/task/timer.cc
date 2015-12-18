@@ -121,7 +121,6 @@ bool TimerBase::intrpt() {
 	perCPU[cpu].elapsedMsecs += timeInc;
 
 	if(cpu == 0) {
-		LockGuard<SpinLock> g(&lock);
 		if((perCPU[cpu].elapsedMsecs - lastRuntimeUpdate) >= RUNTIME_UPDATE_INTVAL) {
 			Thread::updateRuntimes();
 			SMP::updateRuntimes();
@@ -129,6 +128,7 @@ bool TimerBase::intrpt() {
 		}
 
 		/* look if there are threads to wakeup */
+		LockGuard<SpinLock> g(&lock);
 		for(Listener *l = listener; l != NULL; ) {
 			/* stop if we have to continue waiting for this one */
 			/* note that multiple listeners may have l->time = 0 */

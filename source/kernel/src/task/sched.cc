@@ -378,7 +378,7 @@ const char *Sched::getEventName(uint event) {
 	static const char *names[] = {
 		"CLIENT",
 		"RECEIVED_MSG",
-		"MUTEX",
+		"SEMAPHORE",
 		"SWAP_JOB",
 		"SWAP_WORK",
 		"SWAP_FREE",

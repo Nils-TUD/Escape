@@ -24,20 +24,19 @@
 
 bool BaseSem::down(SpinLock *lck,bool allowSigs) {
 	value--;
-	if(value < 0 || waiters.length() > 0) {
+	if(value < 0) {
 		Thread *t = Thread::getRunning();
-		waiters.block(t);
+		Sched::wait(t,EV_SEM,reinterpret_cast<evobj_t>(this));
 		lck->up();
 		if(allowSigs)
 			Thread::switchAway();
 		else
 			Thread::switchNoSigs();
+		lck->down();
 		if(allowSigs && t->hasSignal()) {
-			waiters.remove(t);
 			up();
 			return false;
 		}
-		lck->down();
 	}
 	return true;
 }

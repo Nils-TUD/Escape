@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <blockedlist.h>
 #include <common.h>
+#include <task/sched.h>
 #include <spinlock.h>
 
 /**
@@ -29,7 +29,8 @@
  */
 class BaseSem {
 public:
-	explicit BaseSem(int value = 1) : value(value), waiters() {
+	explicit BaseSem(int value = 1) : value(value) {
+	}
 
 	/**
 	 * Inits this semaphore with value <val>.
@@ -65,7 +66,7 @@ public:
 	 */
 	bool tryDown() {
 		bool res = false;
-		if(value > 0 && waiters.length() == 0) {
+		if(value > 0) {
 			value--;
 			res = true;
 		}
@@ -77,12 +78,11 @@ public:
 	 */
 	void up() {
 		value++;
-		waiters.wakeup();
+		Sched::wakeup(EV_SEM,reinterpret_cast<evobj_t>(this),false);
 	}
 
-private:
+protected:
 	int value;
-	BlockedList waiters;
 };
 
 /**

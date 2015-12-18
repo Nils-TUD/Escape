@@ -24,11 +24,13 @@
 #include <util.h>
 
 void Mutex::down() {
+#if DEBUG_LOCKS
+	if(Util::IsPanicStarted())
+		return;
+#endif
+
 	Thread *t = Thread::getRunning();
 	if(holder != t->getTid()) {
-#if DEBUG_LOCKS
-		if(!Util::IsPanicStarted())
-#endif
 		Semaphore::down();
 		assert(holder == INVALID && depth == 0);
 		holder = t->getTid();
@@ -37,17 +39,18 @@ void Mutex::down() {
 }
 
 bool Mutex::tryDown() {
+#if DEBUG_LOCKS
+	if(Util::IsPanicStarted())
+		return true;
+#endif
+
 	Thread *t = Thread::getRunning();
 	if(holder == t->getTid()) {
 		depth++;
 		return true;
 	}
 
-#if DEBUG_LOCKS
-	bool res = Util::IsPanicStarted() || Semaphore::tryDown();
-#else
 	bool res = Semaphore::tryDown();
-#endif
 	if(res) {
 		holder = t->getTid();
 		depth++;
@@ -56,6 +59,11 @@ bool Mutex::tryDown() {
 }
 
 void Mutex::up() {
+#if DEBUG_LOCKS
+	if(Util::IsPanicStarted())
+		return;
+#endif
+
 	A_UNUSED Thread *t = Thread::getRunning();
 	assert(holder == t->getTid());
 	assert(depth > 0);

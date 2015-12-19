@@ -47,10 +47,8 @@ static void test_vmm() {
 static void test_1() {
 	VMRegion *rno,*rno2,*rno3;
 	uintptr_t addr;
-	pid_t cpid;
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
-	Proc *clone;
 	test_caseStart("Testing VirtMem::add() and VirtMem::unmap()");
 
 	checkMemoryBefore(true);
@@ -96,13 +94,13 @@ static void test_1() {
 	/* doesn't work on mmix since we would have to leave the kernel and enter it again in order to
 	 * get a new kernel-stack */
 #ifndef __mmix__
-	cpid = Proc::clone(0);
+	pid_t cpid = Proc::clone(0);
 	if(cpid == 0) {
 		Proc::terminate(0);
 		A_UNREACHED;
 	}
 	test_assertTrue(cpid > 0);
-	clone = Proc::getByPid(cpid);
+	Proc *clone = Proc::getByPid(cpid);
 
 	checkMemoryBefore(true);
 	t->reserveFrames(4);

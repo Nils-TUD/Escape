@@ -137,7 +137,7 @@ void Syscalls::printEntry(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 					  syscalls[sysCallNo].name);
 	int i;
 	for(i = 1; i <= syscalls[sysCallNo].argCount; ++i) {
-		ulong val;
+		ulong val = 0;
 		switch(i) {
 			case 1:
 				val = SYSC_ARG1(stack);

@@ -1461,7 +1461,7 @@ uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 	size_t size = ROUND_PAGE_UP(byteCount);
 	uintptr_t addr = freeStackAddr != 0 ? freeStackAddr : STACK_AREA_BEGIN;
 	for(; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
-		if(isOccupied(addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE) == NULL) {
+		if(!isOccupied(addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE)) {
 			freeStackAddr = addr + MAX_STACK_PAGES * PAGE_SIZE;
 			if(rflags & RF_GROWS_DOWN)
 				return addr + MAX_STACK_PAGES * PAGE_SIZE - size;

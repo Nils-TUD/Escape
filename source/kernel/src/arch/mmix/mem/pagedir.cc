@@ -120,7 +120,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 }
 
 int PageDirBase::clone(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t count,bool share) {
-	PageDir *cur = Proc::getCurPageDir();
+	A_UNUSED PageDir *cur = Proc::getCurPageDir();
 	PageDir *src = static_cast<PageDir*>(this);
 	PageTables::NoAllocator alloc;
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;

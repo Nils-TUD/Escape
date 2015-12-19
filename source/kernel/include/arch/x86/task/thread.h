@@ -25,6 +25,10 @@
 
 class Thread : public ThreadBase {
 	friend class ThreadBase;
+
+	Thread(Proc *p,uint8_t flags) : ThreadBase(p,flags), kernelStack(), fpuState() {
+	}
+
 public:
 	/**
 	 * Performs the initial switch for APs, because these don't run a thread yet.

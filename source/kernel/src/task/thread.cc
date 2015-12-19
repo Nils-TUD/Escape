@@ -65,8 +65,16 @@ void ThreadBase::relRef(const Thread *t) {
 	if(--t->refs == 0) {
 		Proc::relRef(t->proc);
 		const_cast<Thread*>(t)->remove();
-		Cache::free(const_cast<Thread*>(t));
+		delete t;
 	}
+}
+
+ThreadBase::ThreadBase(Proc *p,uint8_t flags)
+	: esc::DListItem(), tid(), refs(1), proc(p), sigHandler(), sigmask(), event(), evobject(),
+	  waitstart(), prioGoodCnt(), flags(flags), priority(MAX_PRIO), state(BLOCKED), newState(READY),
+	  cpu(), stackRegions(), threadDir(), threadListItem(static_cast<Thread*>(this)),
+	  signalListItem(static_cast<Thread*>(this)), reqFrames(), stats() {
+	stats.cycleStart = CPU::rdtsc();
 }
 
 Thread *ThreadBase::init(Proc *p) {
@@ -77,18 +85,12 @@ Thread *ThreadBase::init(Proc *p) {
 }
 
 Thread *ThreadBase::createInitial(Proc *p) {
-	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
+	Thread *t = new Thread(p,0);
 	if(t == NULL)
 		Util::panic("Unable to allocate mem for initial thread");
 
 	t->tid = nextTid++;
-	t->proc = p;
-	t->flags = 0;
-	t->initProps();
 	t->state = Thread::RUNNING;
-	t->priority = MAX_PRIO;
-	for(size_t i = 0; i < STACK_REG_COUNT; i++)
-		t->stackRegions[i] = NULL;
 	if(initArch(t) < 0)
 		Util::panic("Unable to init the arch-specific attributes of initial thread");
 
@@ -99,32 +101,6 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	if(t->threadDir < 0)
 		Util::panic("Unable to put first thread in vfs");
 	return t;
-}
-
-void ThreadBase::initProps() {
-	DListItem::init();
-	state = Thread::BLOCKED;
-	newState = Thread::READY;
-	prioGoodCnt = 0;
-	event = 0;
-	evobject = 0;
-	waitstart = 0;
-	memset(sigHandler,0,sizeof(sigHandler));
-	sigmask = 0;
-	threadDir = 0;
-	cpu = 0;
-	stats.runtime = 0;
-	stats.curCycleCount = 0;
-	stats.lastCycleCount = 0;
-	stats.cycleStart = CPU::rdtsc();
-	stats.blocked = 0;
-	stats.schedCount = 0;
-	stats.syscalls = 0;
-	stats.migrations = 0;
-	reqFrames = esc::ISList<frameno_t>();
-	threadListItem = ListItem(static_cast<Thread*>(this));
-	signalListItem = ListItem(static_cast<Thread*>(this));
-	refs = 1;
 }
 
 int ThreadBase::extendStack(uintptr_t address) {
@@ -208,20 +184,16 @@ bool ThreadBase::reserveFrames(size_t count,bool swap) {
 
 int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool cloneProc) {
 	int err = -ENOMEM;
-	Thread *t = (Thread*)Cache::alloc(sizeof(Thread));
+	Thread *t = new Thread(p,tflags);
 	if(t == NULL)
 		return -ENOMEM;
-
-	t->proc = p;
-	t->flags = tflags;
-	t->initProps();
 
 	/* determine tid (ensure that nobody else gets the same) and insert into thread-list */
 	{
 		LockGuard<Mutex> g(&mutex);
 		t->tid = getFreeTid();
 		if(t->tid == INVALID_TID) {
-			Cache::free(t);
+			delete t;
 			return -ENOTHREADS;
 		}
 		t->add();
@@ -236,15 +208,12 @@ int ThreadBase::create(Thread *src,Thread **dst,Proc *p,uint8_t tflags,bool clon
 		for(size_t i = 0; i < STACK_REG_COUNT; i++) {
 			if(src->stackRegions[i])
 				t->stackRegions[i] = p->getVM()->getRegion(src->stackRegions[i]->virt());
-			else
-				t->stackRegions[i] = NULL;
 		}
 	}
 
 	/* clone architecture-specific stuff */
 	if((err = createArch(src,t,cloneProc)) < 0)
 		goto errClone;
-
 
 	/* append to idle-list if its an idle-thread */
 	if(tflags & T_IDLE)

@@ -24,6 +24,10 @@
 
 class Thread : public ThreadBase {
 	friend class ThreadBase;
+
+	Thread(Proc *p,uint8_t flags) : ThreadBase(p,flags), kstackFrame() {
+	}
+
 public:
 	/**
 	 * @return the frame mapped at KERNEL_STACK

@@ -26,6 +26,12 @@
 
 class Thread : public ThreadBase {
 	friend class ThreadBase;
+
+	Thread(Proc *p,uint8_t flags)
+		: ThreadBase(p,flags), intrptLevel(), kstackFrame(), tempStack(-1), specRegLevels(),
+		  userState() {
+	}
+
 public:
 	void pushSpecRegs(IntrptStackFrame *state);
 	void popSpecRegs();

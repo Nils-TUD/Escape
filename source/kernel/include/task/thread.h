@@ -92,6 +92,9 @@ class ThreadBase : public esc::DListItem {
 		ulong migrations;
 	};
 
+protected:
+	explicit ThreadBase(Proc *p,uint8_t flags);
+
 public:
 	struct ListItem : public esc::DListItem {
 		explicit ListItem(Thread *t) : esc::DListItem(), thread(t) {
@@ -106,8 +109,6 @@ public:
 		BLOCKED,
 		ZOMBIE
 	};
-
-	ThreadBase() = delete;
 
 	/**
 	 * Determines the number of necessary frames to start a new thread
@@ -538,7 +539,6 @@ private:
 	}
 
 	void printEvMask(OStream &os) const;
-	void initProps();
 	static void doSwitch() asm("thread_switch");
 	static Thread *createInitial(Proc *p);
 	static tid_t getFreeTid();

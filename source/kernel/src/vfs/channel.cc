@@ -481,26 +481,22 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		list = &sendList;
 
 	/* create message and copy data to it */
-	msg1 = (Message*)Cache::alloc(sizeof(Message) + size1);
+	msg1 = new (size1) Message(size1);
 	if(EXPECT_FALSE(msg1 == NULL))
 		return -ENOMEM;
 
-	msg1->init();
-	msg1->length = size1;
 	if(EXPECT_TRUE(data1)) {
 		if(EXPECT_FALSE((res = UserAccess::read(msg1 + 1,data1,size1)) < 0))
 			goto errorMsg1;
 	}
 
 	if(EXPECT_FALSE(data2)) {
-		msg2 = (Message*)Cache::alloc(sizeof(Message) + size2);
+		msg2 = new (size2) Message(size2);
 		if(EXPECT_FALSE(msg2 == NULL)) {
 			res = -ENOMEM;
 			goto errorMsg1;
 		}
 
-		msg2->init();
-		msg2->length = size2;
 		if(EXPECT_FALSE((res = UserAccess::read(msg2 + 1,data2,size2)) < 0))
 			goto errorMsg2;
 	}
@@ -557,9 +553,9 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 	return id;
 
 errorMsg2:
-	Cache::free(msg2);
+	delete msg2;
 errorMsg1:
-	Cache::free(msg1);
+	delete msg1;
 	return res;
 }
 
@@ -625,7 +621,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 
 	if(EXPECT_FALSE(data && msg->length > size)) {
 		Log::get().writef("INVALID: len=%zu, size=%zu\n",msg->length,size);
-		Cache::free(msg);
+		delete msg;
 		return -EINVAL;
 	}
 
@@ -638,7 +634,7 @@ ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER voi
 		*id = msg->id;
 
 	res = msg->length;
-	Cache::free(msg);
+	delete msg;
 	return res;
 }
 

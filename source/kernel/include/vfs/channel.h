@@ -25,6 +25,16 @@
 
 class VFSChannel : public VFSNode {
 	struct Message : public esc::SListItem {
+		static void *operator new(size_t size, size_t msgSize) {
+			return Cache::alloc(size + msgSize);
+		}
+		static void operator delete(void *ptr) {
+			Cache::free(ptr);
+		}
+
+		explicit Message(size_t _length) : esc::SListItem(), id(), length(_length) {
+		}
+
 		msgid_t id;
 		size_t length;
 	};

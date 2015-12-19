@@ -873,12 +873,8 @@ int VirtMem::cloneAll(VirtMem *dst) {
 		return -ESRCH;
 	}
 
-	dst->swapped = 0;
-	dst->sharedFrames = 0;
-	dst->ownFrames = 0;
 	dst->dataAddr = dataAddr;
 
-	VMTree::addTree(dst,&dst->regtree);
 	for(vm = regtree.begin(); vm != regtree.end(); ++vm) {
 		/* just clone the tls- and stack-region of the current thread */
 		if(!(vm->reg->getFlags() & RF_STACK) || t->hasStackRegion(&*vm)) {

@@ -42,16 +42,13 @@ bool VMRegion::matches(uintptr_t k) {
     return k >= virt() && k < virt() + ROUND_PAGE_UP(reg->getByteCount());
 }
 
-void VMTree::addTree(VirtMem *vm,VMTree *tree) {
+void VMTree::addTree(VMTree *tree) {
 	LockGuard<Mutex> g(&regMutex);
 	if(regListEnd)
 		regListEnd->next = tree;
 	else
 		regList = tree;
 	regListEnd = tree;
-	tree->virtmem = vm;
-	tree->next = NULL;
-	tree->regs.clear();
 }
 
 void VMTree::remTree(VMTree *tree) {

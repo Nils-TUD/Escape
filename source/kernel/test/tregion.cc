@@ -20,6 +20,7 @@
 #include <mem/kheap.h>
 #include <mem/pagedir.h>
 #include <mem/region.h>
+#include <task/proc.h>
 #include <sys/test.h>
 #include <common.h>
 #include <cppsupport.h>
@@ -153,7 +154,7 @@ static void test_2() {
 
 static void test_3() {
 	Region *reg,*reg2;
-	VirtMem vm;
+	VirtMem vm(Thread::getRunning()->getProc());
 	test_caseStart("Testing Region::clone()");
 
 	checkMemoryBefore(false);

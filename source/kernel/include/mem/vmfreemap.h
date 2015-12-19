@@ -20,11 +20,15 @@
 #pragma once
 
 #include <common.h>
+#include <esc/col/internal.h>
 
 class OStream;
 
 class VMFreeMap {
-	struct Area {
+	struct Area : public CacheAllocatable {
+		explicit Area(uintptr_t addr, size_t size) : addr(addr), size(size), next() {
+		}
+
 		uintptr_t addr;
 		size_t size;
 		Area *next;
@@ -32,25 +36,19 @@ class VMFreeMap {
 
 public:
 	/**
-	 * Does NOT initialize the object!
+	 * Constructs the free map with given address and size.
 	 */
-	VMFreeMap() {
-	}
-
-	/**
-	 * Inits the vmfree-map
-	 *
-	 * @param map the map
-	 * @param addr the address of the map
-	 * @param size the size of the map
-	 * @return true if successfull
-	 */
-	static bool init(VMFreeMap *map,uintptr_t addr,size_t size);
+	explicit VMFreeMap(uintptr_t addr,size_t size);
 
 	/**
 	 * Destroys this map
 	 */
-	void destroy();
+	~VMFreeMap();
+
+	/**
+	 * Removes all areas
+	 */
+	void clear();
 
 	/**
 	 * Allocates an area in the given map, that is <size> bytes large.
@@ -97,5 +95,11 @@ public:
 	void print(OStream &os) const;
 
 private:
+	void deleteArea(Area *a) {
+		if(a != &first)
+			delete a;
+	}
+
+	Area first;
 	Area *list;
 };

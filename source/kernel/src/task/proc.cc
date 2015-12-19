@@ -67,6 +67,10 @@ Mutex ProcBase::procLock;
 Mutex ProcBase::childLock;
 SpinLock ProcBase::refLock;
 
+void *ProcBase::operator new(size_t,void *ptr) {
+	return ptr;
+}
+
 Proc *ProcBase::getRef(pid_t pid) {
 	if(pid >= ARRAY_SIZE(pidToProc))
 		return NULL;
@@ -88,28 +92,30 @@ void ProcBase::relRef(const Proc *p) {
 	if(lastRef) {
 		/* now, nobody can get the process anymore, so we can destroy everything without worrying */
 		Cache::free((char*)p->command);
-		Cache::free(const_cast<Proc*>(p));
+		delete p;
 	}
+}
+
+ProcBase::ProcBase()
+	: flags(), pid(), parentPid(), ruid(), euid(), suid(), rgid(), egid(), sgid(),
+	  priority(MAX_PRIO), refs(1), entryPoint(), virtmem(static_cast<Proc*>(this)), groups(),
+	  fileDescs(), fileDescsSize(), sems(), semsSize(), msnode(), threadsDir(), stats(),
+	  sigRetAddr(), command(), threads(), locks(), mutexes() {
+	stats.exitSignal = SIG_COUNT;
 }
 
 void ProcBase::init() {
 	/* init the first process */
-	Proc *p = &first;
+	Proc *p = new (&first) Proc();
+	/* init the pagetable for the first process again (the constructor overwrites it) */
+	p->virtmem.pagedir.makeFirst();
 
-	p->pid = 0;
-	p->parentPid = 0;
 	p->ruid = ROOT_UID;
 	p->euid = ROOT_UID;
 	p->suid = ROOT_UID;
 	p->rgid = ROOT_GID;
 	p->egid = ROOT_GID;
 	p->sgid = ROOT_GID;
-	p->groups = NULL;
-	p->sigRetAddr = 0;
-	p->flags = 0;
-	p->entryPoint = 0;
-	p->priority = MAX_PRIO;
-	p->initProps();
 
 	/* create root mountspace */
 	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"root",0644);
@@ -119,9 +125,6 @@ void ProcBase::init() {
 	VFS::mountAll(p);
 	if(Sems::init(p) < 0)
 		Util::panic("Unable to init semaphores");
-	memclear(p->locks,sizeof(p->locks));
-	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
-		p->mutexes[i].init();
 	p->command = strdup("initloader");
 	/* create nodes in vfs */
 	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
@@ -136,26 +139,12 @@ void ProcBase::init() {
 	if(!p->threads.append(Thread::init(p)))
 		Util::panic("Unable to append the initial thread");
 
-	/* init virt mem */
-	p->virtmem.init(p);
+	/* init virt mem (this has to be done separately, because we cannot do that when the global
+	 * object is constructed) */
+	p->virtmem.init();
 
 	/* add to procs */
 	add(p);
-}
-
-void ProcBase::initProps() {
-	SListItem::init();
-	stats.input = 0;
-	stats.output = 0;
-	stats.totalRuntime = 0;
-	stats.lastCycles = 0;
-	stats.totalSyscalls = 0;
-	stats.totalScheds = 0;
-	stats.totalMigrations = 0;
-	stats.exitCode = 0;
-	stats.exitSignal = SIG_COUNT;
-	threads = esc::ISList<Thread*>();
-	refs = 1;
 }
 
 const char *ProcBase::getProgram() const {
@@ -248,7 +237,7 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorCur;
 	}
 
-	p = (Proc*)Cache::alloc(sizeof(Proc));
+	p = new Proc();
 	if(!p) {
 		res = -ENOMEM;
 		goto errorCur;
@@ -256,9 +245,6 @@ int ProcBase::clone(uint8_t flags) {
 
 	/* set basic attributes */
 	p->parentPid = cur->pid;
-	memclear(p->locks,sizeof(p->locks));
-	for(size_t i = 0; i < PMUTEX_COUNT; ++i)
-		p->mutexes[i].init();
 	p->ruid = cur->ruid;
 	p->euid = cur->euid;
 	p->suid = cur->suid;
@@ -269,8 +255,6 @@ int ProcBase::clone(uint8_t flags) {
 	p->priority = cur->priority;
 	p->entryPoint = cur->entryPoint;
 	p->flags = flags;
-	p->initProps();
-	p->msnode = NULL;
 	cur->msnode->join(p);
 
 	/* give the process the same name (may be changed by exec) */
@@ -310,11 +294,10 @@ int ProcBase::clone(uint8_t flags) {
 		goto errorPdir;
 
 	/* join group of parent */
-	p->groups = NULL;
 	Groups::join(p,cur);
 
 	/* clone regions */
-	p->virtmem.init(p);
+	p->virtmem.init();
 	if((res = cur->virtmem.cloneAll(&p->virtmem)) < 0)
 		goto errorGroups;
 
@@ -376,7 +359,7 @@ errorCmd:
 	Cache::free((void*)p->command);
 errorProc:
 	p->msnode->leave(p);
-	Cache::free(p);
+	delete p;
 errorCur:
 	release(cur,PLOCK_PROG);
 errorReqProc:

@@ -77,12 +77,12 @@ static void test_vmreg_randOrder() {
 }
 
 static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
-	VMTree tree;
+	VMTree tree(NULL);
 	VMRegion *reg,*regs[TEST_REG_COUNT];
 
 	test_caseStart(msg);
 	checkMemoryBefore(false);
-	VMTree::addTree(0,&tree);
+	VMTree::addTree(&tree);
 
 	/* create */
 	for(size_t i = 0; i < TEST_REG_COUNT; i++) {

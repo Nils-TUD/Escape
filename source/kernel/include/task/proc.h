@@ -80,8 +80,7 @@ class ProcBase : public esc::SListItem {
 	friend class ThreadBase;
 
 protected:
-	ProcBase() {
-	}
+	explicit ProcBase();
 
 public:
 	struct ExitState {
@@ -115,6 +114,10 @@ public:
 		ushort exitCode;
 		ushort exitSignal;
 	};
+
+	using CacheAllocatable::operator new;
+	using CacheAllocatable::operator delete;
+	static void *operator new(size_t size,void *ptr);
 
 	/**
 	 * Inits the page-directory

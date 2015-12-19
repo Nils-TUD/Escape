@@ -29,21 +29,17 @@
  * malloc-like management that keeps track of the free areas (not the used ones).
  */
 
-bool VMFreeMap::init(VMFreeMap *map,uintptr_t addr,size_t size) {
-	Area *a = (Area*)Cache::alloc(sizeof(Area));
-	if(!a)
-		return false;
-	a->addr = addr;
-	a->size = size;
-	a->next = NULL;
-	map->list = a;
-	return true;
+VMFreeMap::VMFreeMap(uintptr_t addr,size_t size) : first(addr, size), list(&first) {
 }
 
-void VMFreeMap::destroy() {
+VMFreeMap::~VMFreeMap() {
+	clear();
+}
+
+void VMFreeMap::clear() {
 	for(Area *a = list; a != NULL; ) {
 		Area *n = a->next;
-		Cache::free(a);
+		deleteArea(a);
 		a = n;
 	}
 	list = NULL;
@@ -71,7 +67,7 @@ uintptr_t VMFreeMap::allocate(size_t size) {
 			p->next = a->next;
 		else
 			list = a->next;
-		Cache::free(a);
+		deleteArea(a);
 	}
 	return res;
 }
@@ -90,7 +86,7 @@ bool VMFreeMap::allocateAt(uintptr_t addr,size_t size) {
 			p->next = a->next;
 		else
 			list = a->next;
-		Cache::free(a);
+		deleteArea(a);
 	}
 	/* at the beginning? */
 	else if(addr == a->addr) {
@@ -103,11 +99,9 @@ bool VMFreeMap::allocateAt(uintptr_t addr,size_t size) {
 	}
 	/* in the middle */
 	else {
-		Area *na = (Area*)Cache::alloc(sizeof(Area));
+		Area *na = new Area(a->addr,addr - a->addr);
 		if(!na)
 			return false;
-		na->addr = a->addr;
-		na->size = addr - a->addr;
 		na->next = a;
 		if(p)
 			p->next = na;
@@ -130,7 +124,7 @@ void VMFreeMap::free(uintptr_t addr,size_t size) {
 	if(p && p->addr + p->size == addr && n && addr + size == n->addr) {
 		p->size += size + n->size;
 		p->next = n->next;
-		Cache::free(n);
+		deleteArea(n);
 	}
 	/* merge with prev */
 	else if(p && p->addr + p->size == addr) {
@@ -143,12 +137,10 @@ void VMFreeMap::free(uintptr_t addr,size_t size) {
 	}
 	/* create new area between them */
 	else {
-		Area *a = (Area*)Cache::alloc(sizeof(Area));
+		Area *a = new Area(addr,size);
 		/* if this fails, ignore it; we can't really do something about it */
 		if(!a)
 			return;
-		a->addr = addr;
-		a->size = size;
 		if(p)
 			p->next = a;
 		else

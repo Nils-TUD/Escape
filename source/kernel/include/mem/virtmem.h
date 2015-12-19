@@ -101,6 +101,12 @@ public:
 	 */
 	static void setTimestamp(Thread *t,uint64_t timestamp);
 
+	explicit VirtMem(Proc *p)
+		: proc(p), pagedir(), ownFrames(), sharedFrames(), swapped(), freeStackAddr(),
+		  dataAddr(), freemap(FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN), regtree(this),
+		  peakOwnFrames(), peakSharedFrames(), swapCount() {
+	}
+
 	/**
 	 * @return the id of the process that owns this virtual memory
 	 */
@@ -362,23 +368,16 @@ public:
 private:
 	/**
 	 * Inits this object
-	 *
-	 * @param p the process to which this object belongs
 	 */
-	void init(Proc *p) {
-		proc = p;
-		ownFrames = sharedFrames = swapped = 0;
-		freeStackAddr = dataAddr = 0;
-		peakOwnFrames = peakSharedFrames = swapCount = 0;
-		VMFreeMap::init(&freemap,FREE_AREA_BEGIN,FREE_AREA_END - FREE_AREA_BEGIN);
-		VMTree::addTree(this,&regtree);
+	void init() {
+		VMTree::addTree(&regtree);
 	}
 
 	/**
 	 * Destroys this object
 	 */
 	void destroy() {
-		freemap.destroy();
+		freemap.clear();
 		VMTree::remTree(&regtree);
 		pagedir.destroy();
 	}

@@ -65,18 +65,19 @@ public:
 	typedef esc::DListTreap<VMRegion>::const_iterator const_iterator;
 
 	/**
-	 * Does NOT initialize the object
+	 * Constructor
+	 *
+	 * @param vm the VirtMem object to which it belongs
 	 */
-	VMTree() {
+	explicit VMTree(VirtMem *vm) : virtmem(vm), regs(), next() {
 	}
 
 	/**
-	 * Initializes and adds the given tree into the linked list of all vmreg-trees
+	 * Adds the given tree into the linked list of all vmreg-trees
 	 *
-	 * @param vm the virtual memory it belongs to
 	 * @param tree the tree to add
 	 */
-	static void addTree(VirtMem *vm,VMTree *tree);
+	static void addTree(VMTree *tree);
 
 	/**
 	 * Removes the given tree from the linked list of all vmreg-trees. Assumes that its empty.

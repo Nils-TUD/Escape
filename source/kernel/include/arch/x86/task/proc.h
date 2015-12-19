@@ -36,7 +36,7 @@ class Proc : public ProcBase {
 	friend class GDT;
 	friend class IOPorts;
 
-	Proc() : ProcBase() {
+	Proc() : ProcBase(), ioMap() {
 	}
 
 	/* the io-map (NULL by default) */

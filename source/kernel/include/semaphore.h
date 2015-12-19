@@ -33,15 +33,6 @@ public:
 	}
 
 	/**
-	 * Inits this semaphore with value <val>.
-	 *
-	 * @param val the value
-	 */
-	void init(int val) {
-		value = val;
-	}
-
-	/**
 	 * @return the current value
 	 */
 	int getValue() const {
@@ -91,11 +82,6 @@ protected:
 class Semaphore : public BaseSem {
 public:
 	explicit Semaphore(int value = 1) : BaseSem(value), lck() {
-	}
-
-	void init(int val) {
-		lck = SpinLock();
-		BaseSem::init(val);
 	}
 
 	bool down(bool allowSigs = false) {

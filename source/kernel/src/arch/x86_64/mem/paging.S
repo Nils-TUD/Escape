@@ -45,8 +45,29 @@ proc0PD:
 
 .section .init
 
+// our GDT for the setup-process
+longModeGDT:
+	// GDT size
+	.word		longModeGDTEntriesEnd - longModeGDTEntries - 1
+	// Pointer to entries
+	.long		longModeGDTEntries
+
+// the GDT-entries
+longModeGDTEntries:
+	// null gate
+	.long 0, 0
+
+	// code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xA0
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xA0, 0x00
+	// data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, type 0x92, granularity 0xA0
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xA0, 0x00
+longModeGDTEntriesEnd:
+
 // expects return-address in %edi
 paging_setup:
+	// first setup a GDT
+	lgdt	(longModeGDT)
+
 	// note that we assume here that the kernel is not larger than 3 page-tables (6 MiB)!
 
 	// setup paging structures

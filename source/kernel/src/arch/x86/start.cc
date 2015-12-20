@@ -63,9 +63,10 @@ uintptr_t smpstart(uintptr_t *usp) {
 	SMP::start();
 	Timer::start(true);
 
-	// remove first page-directory entry. now that all CPUs are started, we don't need that anymore
+	// remove initial page-directory entries. since all CPUs are started, we don't need that anymore
 	(&proc0TLPD)[0] = 0;
-	PageTables::flushAddr(0,true);
+	for(int i = 0; i < PT_LEVELS - 1; ++i)
+		PageTables::flushAddr(PT_SIZE * i,true);
 
 	/* start the swapper-thread. it will never return */
 	if(PhysMem::canSwap())
@@ -87,6 +88,8 @@ uintptr_t smpstart(uintptr_t *usp) {
 }
 
 void apstart() {
+	/* before we do anything, enable NXE if necessary. otherwise we can't use the pagetables */
+	PageDir::enableNXE();
 	/* store the running thread for our temp-stack again, because we might need it in gdt_init_ap
 	 * for example */
 	Thread::setRunning(Thread::getById(0));

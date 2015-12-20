@@ -82,6 +82,11 @@ public:
 	}
 
 	/**
+	 * Enables NXE if possible.
+	 */
+	static void enableNXE();
+
+	/**
 	* Creates a kernel-stack at an unused address.
 	*
 	* @return the used address

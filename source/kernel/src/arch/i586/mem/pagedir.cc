@@ -56,6 +56,9 @@ void PageDirBase::init() {
 	PageDir::setWriteProtection(true);
 }
 
+void PageDir::enableNXE() {
+}
+
 int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	Thread *t = Thread::getById(tid);
 	PageDir *cur = Proc::getCurPageDir();

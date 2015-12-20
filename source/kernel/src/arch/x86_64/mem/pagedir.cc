@@ -35,11 +35,7 @@ uint8_t PageDir::sharedPtbls[SHPT_COUNT][PAGE_SIZE] A_ALIGNED(PAGE_SIZE);
 void PageDirBase::init() {
 	size_t shpt = 0;
 
-	// enable NXE only if supported
-	if(CPU::hasFeature(CPU::INTEL,CPU::FEAT_NX)) {
-		CPU::setMSR(CPU::MSR_EFER,CPU::getMSR(CPU::MSR_EFER) | CPU::EFER_NXE);
-		PageTables::enableNXE();
-	}
+	PageDir::enableNXE();
 
 	/* put entry for physical memory in PML4 */
 	pte_t *pt2,*pt = (pte_t*)&proc0TLPD;
@@ -74,6 +70,14 @@ void PageDirBase::init() {
 	/* this helps a lot because we don't have to check in advance for copy-on-write and so
 	 * on before writing to user-space-memory in kernel */
 	PageDir::setWriteProtection(true);
+}
+
+void PageDir::enableNXE() {
+	// enable NXE only if supported
+	if(CPU::hasFeature(CPU::INTEL,CPU::FEAT_NX)) {
+		CPU::setMSR(CPU::MSR_EFER,CPU::getMSR(CPU::MSR_EFER) | CPU::EFER_NXE);
+		PageTables::enableNXE();
+	}
 }
 
 int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {

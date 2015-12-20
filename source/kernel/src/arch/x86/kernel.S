@@ -76,7 +76,7 @@ aplock:
 
 apEntry:
 	// load the GDT
-	lgdtl	%cs:setupGDT - apEntry
+	lgdtl	%cs:protModeGDT - apEntry
 
 	// enable protected mode
 	mov		%cr0,%eax
@@ -89,30 +89,23 @@ apEntry:
 	// far-jump to protected mode
 	ljmpl	$0x08,$apProtMode
 
-// our GDT for the setup-process
-setupGDT:
+// our GDT for protected mode
+protModeGDT:
 	// GDT size
-	.word		setupGDTEntriesEnd - setupGDTEntries - 1
+	.word		protModeGDTEntriesEnd - protModeGDTEntries - 1
 	// Pointer to entries
-	.long		setupGDTEntries
+	.long		protModeGDTEntries
 
 // the GDT-entries
-setupGDTEntries:
+protModeGDTEntries:
 	// null gate
 	.long 0, 0
 
-#if defined(__i586__)
 	// code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x00
 	// data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, type 0x92, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x00
-#else
-	// code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xA0
-	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xA0, 0x00
-	// data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, type 0x92, granularity 0xA0
-	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xA0, 0x00
-#endif
-setupGDTEntriesEnd:
+protModeGDTEntriesEnd:
 
 .code32
 
@@ -121,7 +114,7 @@ bspEntry:
 	// we distinguish the BSP and APs by esi
 	mov		$1,%esi
 	// first setup a GDT
-	lgdt	(setupGDT)
+	lgdt	(protModeGDT)
 	// copy AP-bootstrap code to 0x7000
 	mov		$(bspEntry - apEntry),%ecx
 	mov		$apEntry,%esi
@@ -154,11 +147,11 @@ higherhalf:
 
 	// for APs: ensure that the initialization is done by one cpu at a time; this way, we can use
 	// one temporary stack which simplifies it a bit.
-	mov		$1,%REG(cx)
+	mov		$1,%ecx
 1:
-	xor		%REG(ax),%REG(ax)
+	xor		%eax,%eax
 	lock
-	cmpxchg %REG(cx),(aplock)
+	cmpxchg %ecx,(aplock)
 	jnz		1b
 
 2:

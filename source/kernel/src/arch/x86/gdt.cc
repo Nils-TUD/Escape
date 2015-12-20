@@ -142,15 +142,10 @@ void GDT::prepareRun(cpuid_t id,bool newProc,Thread *n) {
 #endif
 
 	all[id].tss->setSP(n->getKernelStack() + PAGE_SIZE - 1 * sizeof(ulong));
-#if defined(__i586__)
 	if(EXPECT_FALSE(all[id].lastMSR != all[id].tss->REG(sp0))) {
 		CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,all[id].tss->REG(sp0));
 		all[id].lastMSR = all[id].tss->REG(sp0);
 	}
-#else
-	extern ulong kstackPtr;
-	kstackPtr = n->getKernelStack() + PAGE_SIZE - sizeof(ulong);
-#endif
 }
 
 bool GDT::ioMapPresent() {
@@ -181,8 +176,8 @@ void GDT::setupSyscalls(A_UNUSED TSS *tss) {
 #else
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_CS,SEG_KCODE << 3);
 	CPU::setMSR(CPU::MSR_IA32_SYSENTER_EIP,(uint64_t)&syscall_entry);
-	CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,tss->REG(sp0));
 #endif
+	CPU::setMSR(CPU::MSR_IA32_SYSENTER_ESP,tss->REG(sp0));
 }
 
 void GDT::setTSS(Desc *gdt,TSS *tss,uintptr_t kstack) {

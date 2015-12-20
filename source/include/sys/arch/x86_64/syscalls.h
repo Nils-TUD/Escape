@@ -39,7 +39,7 @@ static inline long syscall0(long syscno) {
 		"syscall"
 		: "=a"(res), "=d"(err)
 		: "D"(syscno)
-		: "rcx", "r11", "memory"
+		: "rcx", "r11", "r9", "memory"
 	);
 	return finish(res,err);
 }
@@ -50,7 +50,7 @@ static inline long syscall1(long syscno,ulong arg1) {
 		"syscall"
 		: "=a"(res), "=d"(err)
 		: "D"(syscno), "S"(arg1)
-		: "rcx", "r11", "memory"
+		: "rcx", "r11", "r9", "memory"
 	);
 	return finish(res,err);
 }
@@ -62,7 +62,7 @@ static inline long syscall2(long syscno,ulong arg1,ulong arg2) {
 		"syscall"
 		: "=a"(res), "=d"(err)
 		: "D"(syscno), "S"(arg1), "r"(r10)
-		: "rcx", "r11", "memory"
+		: "rcx", "r11", "r9", "memory"
 	);
 	return finish(res,err);
 }
@@ -75,7 +75,7 @@ static inline long syscall3(long syscno,ulong arg1,ulong arg2,ulong arg3) {
 		"syscall"
 		: "=a"(res), "=d"(err)
 		: "D"(syscno), "S"(arg1), "r"(r10), "r"(r8)
-		: "rcx", "r11", "memory"
+		: "rcx", "r11", "r9", "memory"
 	);
 	return finish(res,err);
 }
@@ -85,10 +85,12 @@ static inline long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong a
 	register ulong r10 __asm__ ("r10") = arg2;
 	register ulong r8 __asm__ ("r8") = arg3;
 	__asm__ volatile (
-		"syscall"
+		"push 	%6\n"
+		"syscall\n"
+		"add	$8,%%rsp\n"
 		: "=a"(res), "=d"(err)
-		: "D"(syscno), "S"(arg1), "r"(r10), "r"(r8), "a"(arg4)
-		: "rcx", "r11", "memory"
+		: "D"(syscno), "S"(arg1), "r"(r10), "r"(r8), "r"(arg4)
+		: "rcx", "r11", "r9", "memory"
 	);
 	return finish(res,err);
 }
@@ -102,11 +104,12 @@ static inline long syscall7(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong a
 		"push	%9\n"
 		"push	%8\n"
 		"push	%7\n"
+		"push   %6\n"
 		"syscall\n"
-		"add	$24,%%rsp\n"
+		"add	$32,%%rsp\n"
 		: "=a"(res), "=d"(err)
-		: "D"(syscno), "S"(arg1), "r"(r10), "r"(r8), "a"(arg4), "r"(arg5), "r"(arg6), "r"(arg7)
-		: "rcx", "r11", "memory"
+		: "D"(syscno), "S"(arg1), "r"(r10), "r"(r8), "r"(arg4), "r"(arg5), "r"(arg6), "r"(arg7)
+		: "rcx", "r11", "r9", "memory"
 	);
 	return finish(res,err);
 }

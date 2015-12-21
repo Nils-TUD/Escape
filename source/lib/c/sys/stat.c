@@ -35,7 +35,7 @@ int fstat(int fd,struct stat *info) {
 	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
 }
 
-ssize_t filesize(int fd) {
+off_t filesize(int fd) {
 	struct stat info;
 	int res = fstat(fd,&info);
 	if(res < 0)

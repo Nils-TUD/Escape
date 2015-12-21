@@ -117,7 +117,7 @@ A_CHECKRET int fstat(int fd,struct stat *info);
  * @param fd the file-descriptor
  * @return the size on success
  */
-ssize_t filesize(int fd);
+off_t filesize(int fd);
 
 /**
  * Changes the permissions of the file denoted by <path> to <mode>. This is always possible if

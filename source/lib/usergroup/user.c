@@ -25,16 +25,14 @@
 #include <string.h>
 
 void *user_parseListFromFile(const char *file,size_t *count,parse_func parse) {
-	long size;
+	off_t size;
 	void *res = NULL;
 	char *buf = NULL;
 	FILE *f = fopen(file,"r");
 	if(!f)
 		return NULL;
-	if(fseek(f,0,SEEK_END) < 0)
-		goto error;
-	size = ftell(f);
-	if(fseek(f,0,SEEK_SET) < 0)
+	size = filesize(fileno(f));
+	if(size < 0)
 		goto error;
 	buf = (char*)malloc(size + 1);
 	if(!buf)

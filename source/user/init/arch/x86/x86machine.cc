@@ -161,16 +161,12 @@ void *x86Machine::mapTable(const char *name,size_t *len) {
 		printe("open of %s failed",path);
 		return NULL;
 	}
-	off_t off = seek(fd,0,SEEK_END);
+	off_t off = filesize(fd);
 	if(off < 0) {
 		printe("seek in %s failed",path);
 		return NULL;
 	}
 	*len = off;
-	if(seek(fd,0,SEEK_SET) < 0) {
-		printe("seek in %s failed",path);
-		return NULL;
-	}
 	void *res = mmap(NULL,*len,*len,PROT_READ,MAP_PRIVATE,fd,0);
 	if(res == NULL) {
 		printe("mmap of %s failed",path);

@@ -427,7 +427,7 @@ private:
 		tree.insert("/",new TarINode(time(NULL),0,S_IFDIR | 0777));
 
 		Tar::FileHeader header;
-		off_t total = lseek(fileno(f),0,SEEK_END);
+		off_t total = filesize(fileno(f));
 		off_t offset = 0;
 		while(offset < total) {
 			Tar::readHeader(f,offset,&header);

@@ -169,7 +169,7 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 
 static void listArchive(FILE *f) {
 	Tar::FileHeader header;
-	off_t total = lseek(fileno(f),0,SEEK_END);
+	off_t total = filesize(fileno(f));
 	off_t offset = 0;
 	while(offset < total) {
 		Tar::readHeader(f,offset,&header);
@@ -197,7 +197,7 @@ static void createArchive(FILE *f,esc::cmdargs &args) {
 
 static void extractArchive(FILE *f) {
 	Tar::FileHeader header;
-	off_t total = lseek(fileno(f),0,SEEK_END);
+	off_t total = filesize(fileno(f));
 	off_t offset = 0;
 	while(offset < total) {
 		Tar::readHeader(f,offset,&header);

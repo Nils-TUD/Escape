@@ -96,6 +96,9 @@ create_fsimg() {
 
 	./tools/disk.py create --offset 0 --part ext2r0 $size "$dir" "$dst" --flat --nogrub 1>&2
 
+	# gzip compress the image
+	gzip -fk $dst
+
 	sudo rm -Rf $dir
 }
 
@@ -116,7 +119,7 @@ create_usbimg() {
 		cp $1/dist/sbin/$d $tmp/sbin
 	done
 	cp $1/dist/bin/initloader $tmp/bin
-	cp $1/fs.img $tmp/boot
+	cp $1/fs.img.gz $tmp/boot
 
 	# create menu.lst
 	cat > $tmp/boot/grub/menu.lst <<EOF
@@ -124,12 +127,12 @@ default 0
 timeout 3
 
 title Escape
-kernel /boot/escape$suffix root=/dev/ext2-ramdisk-fs nosmp nolog
+kernel /boot/escape$suffix root=/dev/ext2-ramdisk-fs nolog
 module /bin/initloader
-module /sbin/ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img
+module /sbin/ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img.gz
 module /sbin/pci /dev/pci
 module /sbin/ext2 /dev/ext2-ramdisk-fs /dev/ramdisk-fs
-module /boot/fs.img
+module /boot/fs.img.gz
 
 title Escape - Test
 kernel /boot/escape_test$suffix

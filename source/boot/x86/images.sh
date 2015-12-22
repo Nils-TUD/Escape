@@ -89,7 +89,13 @@ create_fsimg() {
 	cp -R $src/* $dir
 
 	sudo ./boot/perms.sh $dir
-	./tools/disk.py create --offset 0 --part ext2r0 20 "$dir" "$dst" --flat --nogrub 1>&2
+
+	# determine size and add a bit of space
+	size=`sudo du -sm $dir | cut -f 1`
+	size=$((size + $size / 5))
+
+	./tools/disk.py create --offset 0 --part ext2r0 $size "$dir" "$dst" --flat --nogrub 1>&2
+
 	sudo rm -Rf $dir
 }
 
@@ -130,6 +136,10 @@ kernel /boot/escape_test$suffix
 module /bin/initloader
 EOF
 
-	# create disk. 64 MB should be enough
-	./tools/disk.py create --offset 2048 --part ext3 64 $tmp $1/usb.img
+	# determine size and add a bit of space
+	size=`du -sm $tmp | cut -f 1`
+	size=$((size + $size / 5))
+
+	# create disk
+	./tools/disk.py create --offset 2048 --part ext3 $size $tmp $1/usb.img
 }

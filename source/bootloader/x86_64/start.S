@@ -21,6 +21,12 @@
 .extern loader
 .extern mbi
 
+// TODO these adresse from the escape binary are hardcoded at the moment
+// because gem5 already starts in longmode, so that we have to tweak
+// the path through the boot code of escape a bit
+#define HIGHERHALF  0x100082
+#define PG_SETUP   	0x1000d3
+
 .section .data
 
 .rept 4096
@@ -46,10 +52,11 @@ _start:
 	mov		%rax,%rcx
 	mov		$0x2BADB002,%eax
 	mov		$mbi,%ebx
-	// TODO we are the BSP
+
+	// we are the BSP
 	mov		$1,%esi
-	// TODO jump to higherhalf after paging_setup
-	mov		$0x100082,%edi
-	// TODO jump to paging_setup
-	mov		$0x1000b9,%rcx
+	// jump to higherhalf after paging_setup
+	mov		$HIGHERHALF,%edi
+	// jump to paging_setup
+	mov		$PG_SETUP,%rcx
 	jmp		*%rcx

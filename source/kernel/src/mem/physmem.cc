@@ -268,6 +268,7 @@ bool PhysMem::reserve(size_t frameCount,bool swap) {
 	if(!swap || !swapEnabled || !swapperThread ||
 			t->getTid() == ATA_TID || t->getTid() == swapperThread->getTid()) {
 		defLock.up();
+		uframes -= frameCount;
 		return false;
 	}
 

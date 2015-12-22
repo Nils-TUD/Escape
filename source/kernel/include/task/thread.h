@@ -45,7 +45,6 @@
 #define RUNTIME_UPDATE_INTVAL	1000
 
 #define INIT_TID				0
-#define ATA_TID					3
 
 #define MAX_THREAD_COUNT		8192
 #define INVALID_TID				0xFFFF

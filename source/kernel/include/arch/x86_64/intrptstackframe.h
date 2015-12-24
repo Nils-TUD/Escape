@@ -68,7 +68,8 @@
  							mov		%rax,%rsp;		\
  							or 		%rcx,%rsp;		\
  							mov     %r11,%rax;		\
- 							mov		%r9,%rcx
+ 							mov		%r9,%rcx;		\
+							sub		$(7 * 8),%rsp;	// stack layout as for interrupts/exceptions
 #	define SYS_LEAVE		mov		%r11,%rsp;		\
  							mov		$0x200,%r11;	\
  							sysretq
@@ -173,6 +174,8 @@ private:
 	/* if we come from user-mode this fields will be present and will be restored with iret */
 	ulong ursp;
 	ulong uss;
+	/* on x86_64, interrupt stacks are 64-bit aligned */
+	ulong : 64;
 } A_PACKED;
 
 class Thread;

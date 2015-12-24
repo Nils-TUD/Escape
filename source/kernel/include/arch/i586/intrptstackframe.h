@@ -23,7 +23,8 @@
 #	define SAVE_REGS		pusha
 #	define RESTORE_REGS		popa
 #	define IRET				iret
-#	define SYS_ENTER
+// create the same stack layout as for interrupts/exceptions
+#	define SYS_ENTER		sub	$(6 * 4),%esp;
 #	define SYS_LEAVE		add $4,%esp;	\
  							sti;			\
  							sysexit

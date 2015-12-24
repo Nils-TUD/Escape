@@ -132,29 +132,17 @@ public:
 	}
 
 	void print(OStream &os) const {
-		os.writef("stack-frame @ %p\n",this);
-		os.writef("\trax: %#016lx\n",rax);
-		os.writef("\trbx: %#016lx\n",rbx);
-		os.writef("\trcx: %#016lx\n",rcx);
-		os.writef("\trdx: %#016lx\n",rdx);
-		os.writef("\trsi: %#016lx\n",rsi);
-		os.writef("\trdi: %#016lx\n",rdi);
-		os.writef("\trsp: %#016lx\n",getSP());
-		os.writef("\trbp: %#016lx\n",rbp);
-		os.writef("\tr8 : %#016lx\n",r8);
-		os.writef("\tr9 : %#016lx\n",r9);
-		os.writef("\tr10: %#016lx\n",r10);
-		os.writef("\tr11: %#016lx\n",r11);
-		os.writef("\tr12: %#016lx\n",r12);
-		os.writef("\tr13: %#016lx\n",r13);
-		os.writef("\tr14: %#016lx\n",r14);
-		os.writef("\tr15: %#016lx\n",r15);
-		os.writef("\trip: %#016lx\n",getIP());
-		os.writef("\trfl: %#016lx\n",getFlags());
-		if(intrptNo) {
-			os.writef("\terr: %d\n",getError());
-			os.writef("\tint: %d\n",intrptNo);
-		}
+		os.writef("\trax: %#016lx rbx: %#016lx\n",rax,rbx);
+		os.writef("\trcx: %#016lx rdx: %#016lx\n",rcx,rdx);
+		os.writef("\trsi: %#016lx rdi: %#016lx\n",rsi,rdi);
+		os.writef("\trsp: %#016lx rbp: %#016lx\n",getSP(),getBP());
+		os.writef("\tr8 : %#016lx r9 : %#016lx\n",r8,r9);
+		os.writef("\tr10: %#016lx r11: %#016lx\n",r10,r11);
+		os.writef("\tr12: %#016lx r13: %#016lx\n",r12,r13);
+		os.writef("\tr14: %#016lx r15: %#016lx\n",r14,r15);
+		os.writef("\trip: %#016lx rfl: %#016lx\n",getIP(),getFlags());
+		if(intrptNo)
+			os.writef("\terr: %10ld int: %10ld\n",errorCode,intrptNo);
 	}
 
 	/* general purpose registers */

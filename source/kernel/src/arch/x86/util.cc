@@ -67,6 +67,25 @@ void Util::switchToVGA() {
 	}
 }
 
+void Util::printUserStateOf(OStream &os,const Thread *t) {
+	if(t->getUserState()) {
+		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
+		uintptr_t kstackAddr = PageDir::getAccess(frame);
+		size_t kstackOff = (uintptr_t)t->getUserState() & (PAGE_SIZE - 1);
+		IntrptStackFrame *kstack = (IntrptStackFrame*)(kstackAddr + kstackOff);
+		os.writef("User-Register:\n");
+		kstack->print(os);
+		os.writef("\tcr0: %#08x cr2: %#08x\n",CPU::getCR0(),CPU::getCR2());
+		os.writef("\tcr3: %#08x cr4: %#08x\n",CPU::getCR3(),CPU::getCR4());
+		PageDir::removeAccess(frame);
+	}
+}
+
+void Util::printUserState(OStream &os) {
+	const Thread *t = Thread::getRunning();
+	printUserStateOf(os,t);
+}
+
 Util::FuncCall *Util::getUserStackTrace() {
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *kstack = t->getUserState();

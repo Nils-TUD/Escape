@@ -108,7 +108,7 @@
 /* this area is not managed, but we map all stuff one after another and never unmap it */
 /* this is used for multiboot-modules, pmem, ACPI, ... */
 #define KFREE_AREA				(SLLNODE_AREA + SLLNODE_AREA_SIZE)
-#define KFREE_AREA_SIZE			(PT_SIZE * 64)
+#define KFREE_AREA_SIZE			(PT_SIZE * 128)
 
 /* for temporary mappings */
 #define TEMP_MAP_PAGE			0x00007F0000000000

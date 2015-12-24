@@ -57,17 +57,17 @@
 // put $0x175 into %rcx. rdmsr will put the result in %rax:%rdx. thus, we save %rsp,%rcx and %rdx
 // first (%rax is not needed). afterwards, we build the stackpointer from %rax:%rdx and restore the
 // registers
-#	define SYS_ENTER		mov     %rsp,%r11;		\
+#	define SYS_ENTER		mov		%rsp,%r11;		\
  							mov		%rcx,%r9;		\
  							mov		%rdx,%rsp;		\
  							mov		$0x175,%rcx;	\
  							rdmsr;					\
- 							shl     $32,%rdx;		\
+ 							shl		$32,%rdx;		\
  							mov		%rdx,%rcx;		\
  							mov		%rsp,%rdx;		\
  							mov		%rax,%rsp;		\
- 							or 		%rcx,%rsp;		\
- 							mov     %r11,%rax;		\
+ 							or		%rcx,%rsp;		\
+ 							mov		%r11,%rax;		\
  							mov		%r9,%rcx;		\
 							sub		$(7 * 8),%rsp;	// stack layout as for interrupts/exceptions
 #	define SYS_LEAVE		mov		%r11,%rsp;		\

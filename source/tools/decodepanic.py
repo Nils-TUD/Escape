@@ -75,7 +75,10 @@ while True:
 # read the regions and build a code-region- and symbol-list
 coderegs = []
 syms = get_symbols('/boot/escape')
-coderegs.append(('/boot/escape', 0xc0100000, 0xffffffff, syms))
+if target == 'x86_64':
+	coderegs.append(('/boot/escape', 0xffffffff80000000, 0xffffffffffffffff, syms))
+else:
+	coderegs.append(('/boot/escape', 0xc0100000, 0xffffffff, syms))
 while True:
 	line = sys.stdin.readline()
 	if not line:

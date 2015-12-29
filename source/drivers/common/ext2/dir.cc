@@ -31,7 +31,9 @@
 #include "inodecache.h"
 #include "link.h"
 
-int Ext2Dir::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name,mode_t mode) {
+using namespace fs;
+
+int Ext2Dir::create(Ext2FileSystem *e,User *u,Ext2CInode *dir,const char *name,mode_t mode) {
 	Ext2CInode *cnode;
 	ino_t ino;
 
@@ -104,7 +106,7 @@ ino_t Ext2Dir::findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_
 	return -ENOENT;
 }
 
-int Ext2Dir::remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name) {
+int Ext2Dir::remove(Ext2FileSystem *e,User *u,Ext2CInode *dir,const char *name) {
 	ino_t ino;
 	size_t size = le32tocpu(dir->inode.size);
 	int res;

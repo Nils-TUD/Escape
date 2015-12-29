@@ -28,12 +28,14 @@
 #include <string.h>
 #include <time.h>
 
-static struct Ext2SuperBlock sb;
+using namespace fs;
+
+static Ext2SuperBlock sb;
 static uint32_t blockSize = 1024;
 static uint32_t blockCount = 0;
 static uint32_t inodeCount = 0;
 static uint32_t blockGroups = 0;
-static struct Ext2BlockGrp *bgs = NULL;
+static Ext2BlockGrp *bgs = NULL;
 static const char *volumeLabel = "";
 static int fd = -1;
 static const char *disk = NULL;
@@ -61,7 +63,7 @@ static uint32_t firstBlockOf(size_t bg) {
 }
 
 static size_t getDirESize(size_t namelen) {
-	size_t tlen = namelen + sizeof(struct Ext2DirEntry);
+	size_t tlen = namelen + sizeof(Ext2DirEntry);
 	if((tlen % EXT2_DIRENTRY_PAD) != 0)
 		tlen += EXT2_DIRENTRY_PAD - (tlen % EXT2_DIRENTRY_PAD);
 	return tlen;
@@ -89,11 +91,11 @@ static void initSuperblock(void) {
 		blockGroups = blockCount / 8192;
 		if(blockGroups == 0)
 			blockGroups = 1;
-		if(blockGroups * sizeof(struct Ext2BlockGrp) > blockSize)
-			blockGroups = blockSize / sizeof(struct Ext2BlockGrp);
+		if(blockGroups * sizeof(Ext2BlockGrp) > blockSize)
+			blockGroups = blockSize / sizeof(Ext2BlockGrp);
 	}
-	else if(blockGroups * sizeof(struct Ext2BlockGrp) > blockSize)
-		error("Too many block-groups. Max. is %u",blockSize / sizeof(struct Ext2BlockGrp));
+	else if(blockGroups * sizeof(Ext2BlockGrp) > blockSize)
+		error("Too many block-groups. Max. is %u",blockSize / sizeof(Ext2BlockGrp));
 	blockCount = (blockCount / blockGroups) * blockGroups;
 
 	/* use 5% of the blocks for inodes, by default */
@@ -135,7 +137,7 @@ static void writeBGDescs(void) {
 	uint32_t ibmBlocks = ((iperGroup / 8) + blockSize - 1) / blockSize;
 	uint32_t inoBlocks = (iperGroup * EXT2_REV0_INODE_SIZE + blockSize - 1) / blockSize;
 	uint32_t bno = le32tocpu(sb.firstDataBlock) + 2;
-	bgs = calloc(sizeof(struct Ext2BlockGrp),blockGroups);
+	bgs = static_cast<Ext2BlockGrp*>(calloc(sizeof(Ext2BlockGrp),blockGroups));
 	if(!bgs)
 		error("Unable to allocate memory for block group descriptors");
 	for(uint32_t i = 0; i < blockGroups; ++i) {
@@ -166,7 +168,7 @@ static void writeBGDescs(void) {
 
 static void writeINodeBitmap(size_t bg) {
 	uint32_t iperGroup = le32tocpu(sb.inodesPerGroup);
-	uint8_t *bitmap = calloc(iperGroup / 8,1);
+	uint8_t *bitmap = static_cast<uint8_t*>(calloc(iperGroup / 8,1));
 	if(bg == 0) {
 		for(uint32_t ino = 0; ino < EXT2_REV0_FIRST_INO - 1; ++ino)
 			bitmap[ino / 8] |= 1 << (ino % 8);
@@ -184,7 +186,7 @@ static void writeBlockBitmap(size_t bg) {
 	sb.freeBlockCount = cputole32(le32tocpu(sb.freeBlockCount) + le16tocpu(bgs[bg].freeBlockCount));
 
 	uint32_t blocks = (bperGroup / 8 + blockSize - 1) / blockSize;
-	uint8_t *bitmap = calloc(blocks * blockSize,1);
+	uint8_t *bitmap = static_cast<uint8_t*>(calloc(blocks * blockSize,1));
 	for(uint32_t bno = 0; bno < firstUnused - 1; ++bno)
 		bitmap[bno / 8] |= 1 << (bno % 8);
 
@@ -202,9 +204,9 @@ static void writeBlockBitmap(size_t bg) {
 
 static void writeINodeTable(size_t bg) {
 	uint32_t iperGroup = le32tocpu(sb.inodesPerGroup);
-	char *inodes = calloc(iperGroup,EXT2_REV0_INODE_SIZE);
+	char *inodes = static_cast<char*>(calloc(iperGroup,EXT2_REV0_INODE_SIZE));
 	if(bg == 0) {
-		struct Ext2Inode *root = (struct Ext2Inode*)(
+		Ext2Inode *root = (Ext2Inode*)(
 			inodes + EXT2_REV0_INODE_SIZE * (EXT2_ROOT_INO - 1));
 		root->mode = cputole16(EXT2_S_IFDIR | 0755);
 		root->uid = 0;
@@ -225,15 +227,15 @@ static void writeINodeTable(size_t bg) {
 }
 
 static void createRootDir(uint32_t bno) {
-	char *entries = calloc(blockSize,1);
+	char *entries = static_cast<char*>(calloc(blockSize,1));
 
-	struct Ext2DirEntry *e = (struct Ext2DirEntry*)entries;
+	Ext2DirEntry *e = (Ext2DirEntry*)entries;
 	e->inode = cputole32(EXT2_ROOT_INO);
 	e->nameLen = cputole16(1);
 	memcpy(e->name,".",1);
 	e->recLen = cputole16(getDirESize(1));
 
-	e = (struct Ext2DirEntry*)(entries + le16tocpu(e->recLen));
+	e = (Ext2DirEntry*)(entries + le16tocpu(e->recLen));
 	e->inode = cputole32(EXT2_ROOT_INO);
 	e->nameLen = cputole16(2);
 	memcpy(e->name,"..",2);

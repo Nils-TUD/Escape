@@ -31,6 +31,8 @@
 #include "ext2.h"
 #include "rw.h"
 
+using namespace fs;
+
 Ext2BGMng::Ext2BGMng(Ext2FileSystem *fs) : _dirty(false), _groups(), _fs(fs) {
 	/* read block-group-descriptors */
 	int res;

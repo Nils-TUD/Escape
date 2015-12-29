@@ -20,6 +20,8 @@
 #include <esc/ipc/clientdevice.h>
 #include <fs/tar/tar.h>
 #include <esc/pathtree.h>
+#include <fs/filesystem.h>
+#include <fs/fsdev.h>
 #include <fs/permissions.h>
 #include <sys/common.h>
 #include <sys/endian.h>
@@ -34,24 +36,27 @@
 #include "file.h"
 
 using namespace esc;
+using namespace fs;
 
 ino_t TarINode::_inode = 1;
+
+static char archiveFile[MAX_PATH_LEN];
 static sUser *userList = nullptr;
 static sGroup *groupList = nullptr;
 static PathTree<TarINode> tree;
 static bool changed = false;
 
-struct OpenFile : public Client {
-	explicit OpenFile(int f,const char *_path = NULL,PathTreeItem<TarINode> *_item = NULL,
+struct OpenTarFile : public OpenFile {
+	explicit OpenTarFile(int f,const char *_path = NULL,PathTreeItem<TarINode> *_item = NULL,
 			FILE *_archive = NULL,int _flags = 0)
-		: Client(f), flags(_flags), path(_path), file(_item->getData()), bfile() {
+		: OpenFile(f), flags(_flags), path(_path), file(_item->getData()), bfile() {
 		if(S_ISDIR(_item->getData()->info.st_mode))
 			bfile = new DirFile(_item,tree);
 		else
 			bfile = new RegularFile(_item,_archive,_flags);
 		file->reference();
 	}
-	~OpenFile() {
+	~OpenTarFile() {
 		delete bfile;
 		file->deference();
 	}
@@ -83,195 +88,140 @@ struct OpenFile : public Client {
 	BlockFile *bfile;
 };
 
-class TarFSDevice : public ClientDevice<OpenFile> {
+class TarFileSystem : public FileSystem<OpenTarFile> {
 public:
-	explicit TarFSDevice(const char *fsDev,FILE *f)
-		: ClientDevice<OpenFile>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-	 	  _clients(0), _archive(f) {
-		init(f);
-		set(MSG_FILE_OPEN,std::make_memfun(this,&TarFSDevice::devopen));
-		set(MSG_FILE_CLOSE,std::make_memfun(this,&TarFSDevice::devclose),false);
-		set(MSG_FS_OPEN,std::make_memfun(this,&TarFSDevice::open));
-		set(MSG_FILE_READ,std::make_memfun(this,&TarFSDevice::read));
-		set(MSG_FILE_WRITE,std::make_memfun(this,&TarFSDevice::write));
-		set(MSG_FS_CLOSE,std::make_memfun(this,&TarFSDevice::close),false);
-		set(MSG_FS_ISTAT,std::make_memfun(this,&TarFSDevice::istat));
-		set(MSG_FS_SYNCFS,std::make_memfun(this,&TarFSDevice::syncfs));
-		set(MSG_FS_LINK,std::make_memfun(this,&TarFSDevice::link));
-		set(MSG_FS_UNLINK,std::make_memfun(this,&TarFSDevice::unlink));
-		set(MSG_FS_RENAME,std::make_memfun(this,&TarFSDevice::rename));
-		set(MSG_FS_MKDIR,std::make_memfun(this,&TarFSDevice::mkdir));
-		set(MSG_FS_RMDIR,std::make_memfun(this,&TarFSDevice::rmdir));
-		set(MSG_FS_CHMOD,std::make_memfun(this,&TarFSDevice::chmod));
-		set(MSG_FS_CHOWN,std::make_memfun(this,&TarFSDevice::chown));
-		set(MSG_FS_UTIME,std::make_memfun(this,&TarFSDevice::utime));
-		set(MSG_FS_TRUNCATE,std::make_memfun(this,&TarFSDevice::truncate));
-  	}
-
-	void loop() {
-		ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
-		while(1) {
-			msgid_t mid;
-			int fd = getwork(id(),&mid,buf,sizeof(buf),isStopped() ? GW_NOBLOCK : 0);
-			if(EXPECT_FALSE(fd < 0)) {
-				if(fd != -EINTR) {
-					// no requests anymore and we should shutdown?
-					if(isStopped())
-						break;
-					printe("getwork failed");
-				}
-				continue;
-			}
-
-			IPCStream is(fd,buf,sizeof(buf),mid);
-			handleMsg(mid,is);
-		}
+	explicit TarFileSystem(FILE *archive) : FileSystem<OpenTarFile>(), _archive(archive) {
+		init(_archive);
 	}
 
-	void devopen(IPCStream &is) {
-		_clients++;
-		is << 0 << Reply();
-	}
-
-	void devclose(IPCStream &is) {
-		::close(is.fd());
-		if(--_clients == 0)
-			stop();
-	}
-
-	void open(IPCStream &is) {
-		char path[MAX_PATH_LEN];
-		FileOpen::Request r(path,sizeof(path));
-		is >> r;
-
+	ino_t open(User *u,const char *path,uint flags,mode_t mode,int fd,OpenTarFile **file) override  {
 		const char *end = NULL;
-		PathTreeItem<TarINode> *file = tree.find(r.path.str(),&end);
+		PathTreeItem<TarINode> *tfile = tree.find(path,&end);
 		if(file == NULL || *end != '\0') {
-			if(r.flags & O_CREAT) {
-				TarINode *inode = new TarINode(time(NULL),0,r.mode);
-				inode->info.st_uid = r.u.uid;
-				inode->info.st_gid = r.u.gid;
-				tree.insert(r.path.str(),inode);
-				file = tree.find(r.path.str(),&end);
+			if(flags & O_CREAT) {
+				TarINode *inode = new TarINode(time(NULL),0,mode);
+				inode->info.st_uid = u->uid;
+				inode->info.st_gid = u->gid;
+				tree.insert(path,inode);
+				tfile = tree.find(path,&end);
 			}
 
-			if((~r.flags & O_CREAT) || file == NULL) {
-				is << FileOpen::Response::error(-ENOENT) << Reply();
-				return;
-			}
+			if((~flags & O_CREAT) || file == NULL)
+				return -ENOENT;
 		}
-		if(!canReach(&r.u,file)) {
-			is << FileOpen::Response::error(-EPERM) << Reply();
-			return;
-		}
+		if(!canReach(u,tfile))
+			return -EPERM;
 
-		add(is.fd(),new OpenFile(is.fd(),r.path.str(),file,_archive,r.flags));
-		is << FileOpen::Response::success(is.fd()) << Reply();
+		*file = new OpenTarFile(fd,path,tfile,_archive,flags);
+		return fd;
 	}
 
-	void close(IPCStream &is) {
-		ClientDevice::close(is);
+	void close(OpenTarFile *) override {
 	}
 
-	void read(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		FileRead::Request r;
-		is >> r;
-
-		DataBuf buf(r.count,file->shm(),r.shmemoff);
-		ssize_t res = file->read(buf.data(),r.offset,r.count);
-
-		is << FileRead::Response::result(res) << Reply();
-		if(r.shmemoff == -1) {
-			if(res > 0)
-				is << ReplyData(buf.data(),res);
-		}
+	int stat(OpenTarFile *file,struct stat *info) override {
+		*info = file->file->info;
+		return 0;
 	}
 
-	void write(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		FileWrite::Request r;
-		is >> r;
+	ssize_t read(OpenTarFile *file,void *data,off_t pos,size_t count) override {
+		return file->read(data,pos,count);
+	}
 
-		DataBuf buf(r.count,file->shm(),r.shmemoff);
-		if(r.shmemoff == -1)
-			is >> ReceiveData(buf.data(),r.count);
-
-		ssize_t res = file->write(buf.data(),r.offset,r.count);
+	ssize_t write(OpenTarFile *file,const void *data,off_t pos,size_t count) override {
+		ssize_t res = file->write(data,pos,count);
 		if(res > 0)
 			changed = true;
-		is << FileWrite::Response::result(res) << Reply();
+		return res;
 	}
 
-	void istat(IPCStream &is) {
-		OpenFile *of = (*this)[is.fd()];
-		is << 0 << of->file->info << Reply();
+	int truncate(User *,OpenTarFile *file,off_t length) override {
+		return file->truncate(length);
 	}
 
-	void truncate(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		FSUser u;
-		off_t length;
-		is >> u.uid >> u.gid >> u.pid >> length;
-
-		int res = file->truncate(length);
-		is << res << Reply();
-	}
-
-	void syncfs(IPCStream &is) {
-		is << 0 << Reply();
-	}
-
-	void link(IPCStream &is) {
+	int link(User *,OpenTarFile *,OpenTarFile *,const char *) override {
 		// TODO
-		is << -ENOTSUP << Reply();
+		return -ENOTSUP;
 	}
 
-	void unlink(IPCStream &is) {
+	int unlink(User *u,OpenTarFile *dir,const char *name) override {
 		char path[MAX_PATH_LEN];
-		OpenFile *dir = (*this)[is.fd()];
-		FSUser u;
-		CStringBuf<MAX_PATH_LEN> name;
-		is >> u.uid >> u.gid >> u.pid >> name;
-
-		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name.str());
+		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
 
 		const char *end = NULL;
 		PathTreeItem<TarINode> *file = tree.find(path,&end);
 		if(file == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(S_ISDIR(file->getData()->info.st_mode))
-			is << -EISDIR << Reply();
-		else if(!S_ISDIR(dir->file->info.st_mode))
-			is << -ENOTDIR << Reply();
-		else {
-			struct stat *pinfo = &dir->file->info;
-			int res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
-			if(res < 0)
-				is << res << Reply();
-			else {
-				TarINode *data = tree.remove(path);
-				data->deference();
-				changed = true;
+			return -ENOENT;
+		if(S_ISDIR(file->getData()->info.st_mode))
+			return -EISDIR;
+		if(!S_ISDIR(dir->file->info.st_mode))
+			return -ENOTDIR;
 
-				is << 0 << Reply();
-			}
-		}
+		struct stat *pinfo = &dir->file->info;
+		int res = Permissions::canAccess(u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
+		if(res < 0)
+			return res;
+
+		TarINode *data = tree.remove(path);
+		data->deference();
+		changed = true;
+		return 0;
 	}
 
-	void rename(IPCStream &is) {
+	int mkdir(User *u,OpenTarFile *dir,const char *name,mode_t mode) override {
+		char path[MAX_PATH_LEN];
+		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
+
+		int res;
+		const char *end = NULL;
+		struct stat *pinfo = &dir->file->info;
+		PathTreeItem<TarINode> *file = tree.find(path,&end);
+		if(file != NULL && *end == '\0')
+			return -EEXIST;
+		if(!S_ISDIR(dir->file->info.st_mode))
+			return -ENOTDIR;
+		if((res = Permissions::canAccess(u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE)) < 0)
+			return res;
+
+		TarINode *inode = new TarINode(time(NULL),0,S_IFDIR | (mode & MODE_PERM));
+		inode->info.st_uid = u->uid;
+		inode->info.st_gid = u->gid;
+		tree.insert(path,inode);
+		changed = true;
+		return 0;
+	}
+
+	int rmdir(User *u,OpenTarFile *dir,const char *name) override {
+		char path[MAX_PATH_LEN];
+		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
+
+		int res;
+		const char *end = NULL;
+		struct stat *pi = &dir->file->info;
+		PathTreeItem<TarINode> *file = tree.find(path,&end);
+		if(file == NULL || *end != '\0')
+			return -ENOENT;
+		if(!S_ISDIR(dir->file->info.st_mode))
+			return -ENOTDIR;
+		if(tree.begin(file) != tree.end())
+			return -ENOTEMPTY;
+		if(file->getParent() == file)
+			return -EINVAL;
+		if((res = Permissions::canAccess(u,pi->st_mode,pi->st_uid,pi->st_gid,MODE_WRITE)) < 0)
+			return res;
+
+		TarINode *data = tree.remove(path);
+		data->deference();
+		changed = true;
+		return 0;
+	}
+
+	int rename(User *u,OpenTarFile *oldDir,const char *oldName,OpenTarFile *newDir,
+			const char *newName) override {
 		char oldPath[MAX_PATH_LEN];
 		char newPath[MAX_PATH_LEN];
-		FSUser u;
-		int newDirFd;
-		CStringBuf<MAX_PATH_LEN> oldName,newName;
-		is >> u.uid >> u.gid >> u.pid >> oldName >> newDirFd >> newName;
-
-		OpenFile *oldDir = (*this)[is.fd()];
-		OpenFile *newDir = (*this)[newDirFd];
-
-		snprintf(oldPath,sizeof(oldPath),"%s/%s",oldDir->path.c_str(),oldName.str());
-		snprintf(newPath,sizeof(newPath),"%s/%s",newDir->path.c_str(),newName.str());
+		snprintf(oldPath,sizeof(oldPath),"%s/%s",oldDir->path.c_str(),oldName);
+		snprintf(newPath,sizeof(newPath),"%s/%s",newDir->path.c_str(),newName);
 
 		int res;
 		const char *end = NULL;
@@ -279,146 +229,65 @@ public:
 		struct stat *npi = &newDir->file->info;
 		PathTreeItem<TarINode> *srcFile = tree.find(oldPath,&end);
 		if(srcFile == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(!S_ISDIR(oldDir->file->info.st_mode))
-			is << -ENOTDIR << Reply();
-		else if((res = Permissions::canAccess(&u,opi->st_mode,opi->st_uid,opi->st_gid,MODE_EXEC)) < 0)
-			is << res << Reply();
-		else if(srcFile->getParent() == srcFile)
-			is << -EINVAL << Reply();
-		else if(!S_ISDIR(newDir->file->info.st_mode))
-			is << -ENOTDIR << Reply();
-		else if((res = Permissions::canAccess(&u,npi->st_mode,npi->st_uid,npi->st_gid,MODE_EXEC | MODE_WRITE)) < 0)
-			is << res << Reply();
-		else {
-			PathTreeItem<TarINode> *dstFile = tree.find(newPath,&end);
-			if(dstFile != NULL && *end == '\0')
-				is << -ENOENT << Reply();
+			return -ENOENT;
+		if(!S_ISDIR(oldDir->file->info.st_mode))
+			return -ENOTDIR;
+		if((res = Permissions::canAccess(u,opi->st_mode,opi->st_uid,opi->st_gid,MODE_EXEC)) < 0)
+			return res;
+		if(srcFile->getParent() == srcFile)
+			return -EINVAL;
+		if(!S_ISDIR(newDir->file->info.st_mode))
+			return -ENOTDIR;
+		if((res = Permissions::canAccess(u,npi->st_mode,npi->st_uid,npi->st_gid,MODE_EXEC | MODE_WRITE)) < 0)
+			return res;
 
-			tree.insert(newPath,srcFile->getData());
-			tree.remove(oldPath);
-			changed = true;
+		PathTreeItem<TarINode> *dstFile = tree.find(newPath,&end);
+		if(dstFile != NULL && *end == '\0')
+			return -ENOENT;
 
-			is << 0 << Reply();
-		}
+		tree.insert(newPath,srcFile->getData());
+		tree.remove(oldPath);
+		changed = true;
+		return 0;
 	}
 
-	void mkdir(IPCStream &is) {
-		char path[MAX_PATH_LEN];
-		OpenFile *of = (*this)[is.fd()];
-		FSUser u;
-		CStringBuf<MAX_PATH_LEN> name;
-		is >> u.uid >> u.gid >> u.pid >> name;
+	int chmod(User *u,OpenTarFile *file,mode_t mode) override {
+		struct stat *info = &file->file->info;
+		if(!Permissions::canChmod(u,info->st_uid))
+			return -EPERM;
 
-		snprintf(path,sizeof(path),"%s/%s",of->path.c_str(),name.str());
-
-		int res;
-		const char *end = NULL;
-		struct stat *pinfo = &of->file->info;
-		PathTreeItem<TarINode> *file = tree.find(path,&end);
-		if(file != NULL && *end == '\0')
-			is << -EEXIST << Reply();
-		else if(!S_ISDIR(of->file->info.st_mode))
-			is << -ENOTDIR << Reply();
-		else if((res = Permissions::canAccess(&u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE)) < 0)
-			is << res << Reply();
-		else {
-			TarINode *inode = new TarINode(time(NULL),0,DIR_DEF_MODE);
-			inode->info.st_uid = u.uid;
-			inode->info.st_gid = u.gid;
-			tree.insert(path,inode);
-			changed = true;
-
-			is << 0 << Reply();
-		}
+		info->st_mode = (info->st_mode & ~MODE_PERM) | (mode & MODE_PERM);
+		changed = true;
+		return 0;
 	}
 
-	void rmdir(IPCStream &is) {
-		char path[MAX_PATH_LEN];
-		OpenFile *of = (*this)[is.fd()];
-		FSUser u;
-		CStringBuf<MAX_PATH_LEN> name;
-		is >> u.uid >> u.gid >> u.pid >> name;
+	int chown(User *u,OpenTarFile *file,uid_t uid,gid_t gid) override {
+		struct stat *info = &file->file->info;
+		if(!Permissions::canChown(u,info->st_uid,info->st_gid,uid,gid))
+			return -EPERM;
 
-		snprintf(path,sizeof(path),"%s/%s",of->path.c_str(),name.str());
-
-		int res;
-		const char *end = NULL;
-		struct stat *pi = &of->file->info;
-		PathTreeItem<TarINode> *file = tree.find(path,&end);
-		if(file == NULL || *end != '\0')
-			is << -ENOENT << Reply();
-		else if(!S_ISDIR(of->file->info.st_mode))
-			is << -ENOTDIR << Reply();
-		else if(tree.begin(file) != tree.end())
-			is << -ENOTEMPTY << Reply();
-		else if(file->getParent() == file)
-			is << -EINVAL << Reply();
-		else if((res = Permissions::canAccess(&u,pi->st_mode,pi->st_uid,pi->st_gid,MODE_WRITE)) < 0)
-			is << res << Reply();
-		else {
-			TarINode *data = tree.remove(path);
-			data->deference();
-			changed = true;
-
-			is << 0 << Reply();
-		}
+		if(uid != (uid_t)-1)
+			info->st_uid = uid;
+		if(gid != (gid_t)-1)
+			info->st_gid = gid;
+		changed = true;
+		return 0;
 	}
 
-	void chmod(IPCStream &is) {
-		OpenFile *of = (*this)[is.fd()];
-		FSUser u;
-		uint mode;
-		is >> u.uid >> u.gid >> u.pid >> mode;
+	int utime(User *u,OpenTarFile *file,const struct utimbuf *utimes) override {
+		struct stat *info = &file->file->info;
+		if(!Permissions::canUtime(u,info->st_uid))
+			return -EPERM;
 
-		struct stat *info = &of->file->info;
-		if(!Permissions::canChmod(&u,info->st_uid))
-			is << -EPERM << Reply();
-		else {
-			info->st_mode = (info->st_mode & ~MODE_PERM) | (mode & MODE_PERM);
-			changed = true;
-
-			is << 0 << Reply();
-		}
+		info->st_mtime = utimes->modtime;
+		info->st_atime = utimes->actime;
+		changed = true;
+		return 0;
 	}
 
-	void chown(IPCStream &is) {
-		OpenFile *of = (*this)[is.fd()];
-		FSUser u;
-		uid_t uid;
-		gid_t gid;
-		is >> u.uid >> u.gid >> u.pid >> uid >> gid;
-
-		struct stat *info = &of->file->info;
-		if(!Permissions::canChown(&u,info->st_uid,info->st_gid,uid,gid))
-			is << -EPERM << Reply();
-		else {
-			if(uid != (uid_t)-1)
-				info->st_uid = uid;
-			if(gid != (gid_t)-1)
-				info->st_gid = gid;
-			changed = true;
-
-			is << 0 << Reply();
-		}
-	}
-
-	void utime(IPCStream &is) {
-		OpenFile *of = (*this)[is.fd()];
-		FSUser u;
-		struct utimbuf utimes;
-		is >> u.uid >> u.gid >> u.pid >> utimes;
-
-		struct stat *info = &of->file->info;
-		if(!Permissions::canUtime(&u,info->st_uid))
-			is << -EPERM << Reply();
-		else {
-			info->st_mtime = utimes.modtime;
-			info->st_atime = utimes.actime;
-			changed = true;
-
-			is << 0 << Reply();
-		}
+	void print(FILE *f) override {
+		fprintf(f,"file : %s\n",archiveFile);
+		fprintf(f,"dirty: %s\n",changed ? "yes" : "no");
 	}
 
 private:
@@ -479,7 +348,7 @@ private:
 		}
 	}
 
-	bool canReach(FSUser *u,PathTreeItem<TarINode> *file) {
+	bool canReach(User *u,PathTreeItem<TarINode> *file) {
 		while(file->getParent() != file) {
 			struct stat *pinfo = &file->getParent()->getData()->info;
 			int res = Permissions::canAccess(u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_EXEC);
@@ -490,7 +359,6 @@ private:
 		return true;
 	}
 
-	uint _clients;
 	FILE *_archive;
 };
 
@@ -555,11 +423,17 @@ int main(int argc,char **argv) {
 	if(!groupList)
 		printe("Unable to parse groups from file");
 
-	FILE *ar = fopen(argv[2],"r");
+	abspath(archiveFile,sizeof(archiveFile),argv[2]);
+
+	FILE *ar = fopen(archiveFile,"r");
 	if(ar == NULL)
-		error("Unable to open '%s' for reading",argv[2]);
-	TarFSDevice dev(argv[1],ar);
-	dev.loop();
+		error("Unable to open '%s' for reading",archiveFile);
+
+	{
+		TarFileSystem fs(ar);
+		FSDevice<OpenTarFile> dev(&fs,argv[1]);
+		dev.loop();
+	}
 
 	// if there was a change, first load all files into memory
 	if(changed)
@@ -567,9 +441,13 @@ int main(int argc,char **argv) {
 	fclose(ar);
 	// now write the entire file again
 	if(changed) {
-		FILE *f = fopen(argv[2],"w");
-		writeBackRec(f,"");
-		fclose(f);
+		FILE *f = fopen(archiveFile,"w");
+		if(f) {
+			writeBackRec(f,"");
+			fclose(f);
+		}
+		else
+			printe("Unable to open '%s' for writing",archiveFile);
 	}
 	return 0;
 }

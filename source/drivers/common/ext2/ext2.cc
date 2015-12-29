@@ -42,6 +42,15 @@
 #include "rw.h"
 #include "sbmng.h"
 
+static fs::FSDevice<fs::OpenFile> *fsdev;
+
+static void sigTermHndl(int) {
+	/* notify init that we're alive and promise to terminate as soon as possible */
+	esc::Init init("/dev/init");
+	init.iamalive();
+	fsdev->stop();
+}
+
 int main(int argc,char *argv[]) {
 	if(argc != 3)
 		error("Usage: %s <fsPath> <devicePath>",argv[0]);
@@ -50,8 +59,11 @@ int main(int argc,char *argv[]) {
 	if(!isblock(argv[2]))
 		error("'%s' is neither a block-device nor a regular file",argv[2]);
 
-	FSDevice fsdev(new Ext2FileSystem(argv[2]),argv[1]);
-	fsdev.loop();
+	if(signal(SIGTERM,sigTermHndl) == SIG_ERR)
+		error("Unable to set signal-handler for SIGTERM");
+
+	fsdev = new fs::FSDevice<fs::OpenFile>(new Ext2FileSystem(argv[2]),argv[1]);
+	fsdev->loop();
 	return 0;
 }
 
@@ -73,44 +85,44 @@ Ext2FileSystem::Ext2FileSystem(const char *device)
 Ext2FileSystem::~Ext2FileSystem() {
 	/* write pending changes */
 	sync();
-	close(fd);
+	::close(fd);
 }
 
-ino_t Ext2FileSystem::find(FSUser *u,ino_t dir,const char *name) {
-	Ext2CInode *dirIno = inodeCache.request(dir,IMODE_READ);
-	if(dirIno == NULL)
+ino_t Ext2FileSystem::find(fs::User *u,fs::OpenFile *dir,const char *name) {
+	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_READ);
+	if(cdir == NULL)
 		return -ENOBUFS;
 
 	ino_t ino;
-	if(!S_ISDIR(dirIno->inode.mode)) {
+	if(!S_ISDIR(cdir->inode.mode)) {
 		ino = -ENOTDIR;
 		goto error;
 	}
-	if((ino = hasPermission(dirIno,u,MODE_EXEC)) < 0)
+	if((ino = hasPermission(cdir,u,MODE_EXEC)) < 0)
 		goto error;
 
-	ino = Ext2Dir::find(this,dirIno,name,strlen(name));
+	ino = Ext2Dir::find(this,cdir,name,strlen(name));
 
 error:
-	inodeCache.release(dirIno);
+	inodeCache.release(cdir);
 	return ino;
 }
 
-ino_t Ext2FileSystem::resolve(FSUser *u,const char *path,uint flags,mode_t mode) {
-	return Ext2Path::resolve(this,u,path,flags,mode);
-}
+ino_t Ext2FileSystem::open(fs::User *u,const char *path,uint flags,mode_t mode,int fd,fs::OpenFile **file) {
+	ino_t ino = Ext2Path::resolve(this,u,path,flags,mode);
+	if(ino < 0)
+		return ino;
 
-ino_t Ext2FileSystem::open(FSUser *u,ino_t ino,uint flags) {
 	int err;
 	/* check permissions */
 	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
-	uint mode = 0;
+	uint imode = 0;
 	if(flags & O_READ)
-		mode |= MODE_READ;
+		imode |= MODE_READ;
 	if(flags & O_WRITE)
-		mode |= MODE_WRITE;
+		imode |= MODE_WRITE;
 	/* TODO exec? */
-	if((err = hasPermission(cnode,u,mode)) < 0) {
+	if((err = hasPermission(cnode,u,imode)) < 0) {
 		inodeCache.release(cnode);
 		return err;
 	}
@@ -129,18 +141,19 @@ ino_t Ext2FileSystem::open(FSUser *u,ino_t ino,uint flags) {
 			inodeCache.release(cnode);
 		}
 	}
+	*file = new fs::OpenFile(fd,ino);
 	return ino;
 }
 
-void Ext2FileSystem::close(ino_t ino) {
+void Ext2FileSystem::close(fs::OpenFile *file) {
 	/* decrease references so that we can remove the cached inode and maybe even delete the file */
-	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
+	Ext2CInode *cnode = inodeCache.request(file->ino,IMODE_READ);
 	cnode->refs--;
 	inodeCache.release(cnode);
 }
 
-int Ext2FileSystem::stat(ino_t ino,struct stat *info) {
-	const Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
+int Ext2FileSystem::stat(fs::OpenFile *file,struct stat *info) {
+	const Ext2CInode *cnode = inodeCache.request(file->ino,IMODE_READ);
 	if(cnode == NULL)
 		return -ENOBUFS;
 
@@ -160,24 +173,24 @@ int Ext2FileSystem::stat(ino_t ino,struct stat *info) {
 	return 0;
 }
 
-int Ext2FileSystem::chmod(FSUser *u,ino_t inodeNo,mode_t mode) {
-	return Ext2INode::chmod(this,u,inodeNo,mode);
+int Ext2FileSystem::chmod(fs::User *u,fs::OpenFile *file,mode_t mode) {
+	return Ext2INode::chmod(this,u,file->ino,mode);
 }
 
-int Ext2FileSystem::chown(FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid) {
-	return Ext2INode::chown(this,u,inodeNo,uid,gid);
+int Ext2FileSystem::chown(fs::User *u,fs::OpenFile *file,uid_t uid,gid_t gid) {
+	return Ext2INode::chown(this,u,file->ino,uid,gid);
 }
 
-int Ext2FileSystem::utime(FSUser *u,ino_t inodeNo,const struct utimbuf *utimes) {
-	return Ext2INode::utime(this,u,inodeNo,utimes);
+int Ext2FileSystem::utime(fs::User *u,fs::OpenFile *file,const struct utimbuf *utimes) {
+	return Ext2INode::utime(this,u,file->ino,utimes);
 }
 
-int Ext2FileSystem::truncate(A_UNUSED FSUser *u,ino_t inodeNo,off_t length) {
+int Ext2FileSystem::truncate(A_UNUSED fs::User *u,fs::OpenFile *file,off_t length) {
 	// TODO implement me!
 	if(length > 0)
 		return -ENOTSUP;
 
-	Ext2CInode *ino = inodeCache.request(inodeNo,IMODE_WRITE);
+	Ext2CInode *ino = inodeCache.request(file->ino,IMODE_WRITE);
 	if(ino == NULL)
 		return -ENOBUFS;
 	int res = Ext2File::truncate(this,ino,false);
@@ -185,61 +198,78 @@ int Ext2FileSystem::truncate(A_UNUSED FSUser *u,ino_t inodeNo,off_t length) {
 	return res;
 }
 
-ssize_t Ext2FileSystem::read(ino_t inodeNo,void *buffer,off_t offset,size_t count) {
-	return Ext2File::read(this,inodeNo,buffer,offset,count);
+ssize_t Ext2FileSystem::read(fs::OpenFile *file,void *buffer,off_t offset,size_t count) {
+	return Ext2File::read(this,file->ino,buffer,offset,count);
 }
 
-ssize_t Ext2FileSystem::write(ino_t inodeNo,const void *buffer,off_t offset,size_t count) {
-	return Ext2File::write(this,inodeNo,buffer,offset,count);
+ssize_t Ext2FileSystem::write(fs::OpenFile *file,const void *buffer,off_t offset,size_t count) {
+	return Ext2File::write(this,file->ino,buffer,offset,count);
 }
 
-int Ext2FileSystem::link(FSUser *u,ino_t dstIno,ino_t dirIno,const char *name) {
+int Ext2FileSystem::link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) {
+	return linkIno(u,dst->ino,dir,name);
+}
+
+int Ext2FileSystem::linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name) {
 	int res;
-	Ext2CInode *dir,*ino;
-	dir = inodeCache.request(dirIno,IMODE_WRITE);
-	ino = inodeCache.request(dstIno,IMODE_WRITE);
-	if(dir == NULL || ino == NULL)
+	Ext2CInode *cdir,*cdst;
+	cdir = inodeCache.request(dir->ino,IMODE_WRITE);
+	cdst = inodeCache.request(dst,IMODE_WRITE);
+	if(cdir == NULL || cdst == NULL)
 		res = -ENOBUFS;
-	else if(S_ISDIR(le16tocpu(ino->inode.mode)))
+	else if(S_ISDIR(le16tocpu(cdst->inode.mode)))
 		res = -EISDIR;
 	else
-		res = Ext2Link::create(this,u,dir,ino,name);
-	inodeCache.release(dir);
-	inodeCache.release(ino);
+		res = Ext2Link::create(this,u,cdir,cdst,name);
+	inodeCache.release(cdir);
+	inodeCache.release(cdst);
 	return res;
 }
 
-int Ext2FileSystem::unlink(FSUser *u,ino_t dirIno,const char *name) {
+int Ext2FileSystem::unlink(fs::User *u,fs::OpenFile *dir,const char *name) {
 	int res;
-	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
-	if(dir == NULL)
+	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
+	if(cdir == NULL)
 		return -ENOBUFS;
 
-	res = Ext2Link::remove(this,u,NULL,dir,name,false);
-	inodeCache.release(dir);
+	res = Ext2Link::remove(this,u,NULL,cdir,name,false);
+	inodeCache.release(cdir);
 	return res;
 }
 
-int Ext2FileSystem::mkdir(FSUser *u,ino_t dirIno,const char *name,mode_t mode) {
+int Ext2FileSystem::mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) {
 	int res;
-	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
-	if(dir == NULL)
+	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
+	if(cdir == NULL)
 		return -ENOBUFS;
-	res = Ext2Dir::create(this,u,dir,name,mode);
-	inodeCache.release(dir);
+	res = Ext2Dir::create(this,u,cdir,name,mode);
+	inodeCache.release(cdir);
 	return res;
 }
 
-int Ext2FileSystem::rmdir(FSUser *u,ino_t dirIno,const char *name) {
+int Ext2FileSystem::rmdir(fs::User *u,fs::OpenFile *dir,const char *name) {
 	int res;
-	Ext2CInode *dir = inodeCache.request(dirIno,IMODE_WRITE);
-	if(dir == NULL)
+	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
+	if(cdir == NULL)
 		return -ENOBUFS;
-	if(!S_ISDIR(le16tocpu(dir->inode.mode)))
+	if(!S_ISDIR(le16tocpu(cdir->inode.mode)))
 		return -ENOTDIR;
-	res = Ext2Dir::remove(this,u,dir,name);
-	inodeCache.release(dir);
+	res = Ext2Dir::remove(this,u,cdir,name);
+	inodeCache.release(cdir);
 	return res;
+}
+
+int Ext2FileSystem::rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,
+		const char *newName) {
+	ino_t oldFile = find(u,oldDir,oldName);
+	if(oldFile < 0)
+		return oldFile;
+	else {
+		int res = linkIno(u,oldFile,newDir,newName);
+		if(res == 0)
+			res = unlink(u,oldDir,oldName);
+		return res;
+	}
 }
 
 void Ext2FileSystem::sync() {
@@ -268,11 +298,11 @@ void Ext2FileSystem::print(FILE *f) {
 	inodeCache.print(f);
 }
 
-int Ext2FileSystem::hasPermission(Ext2CInode *cnode,FSUser *u,uint perms) {
+int Ext2FileSystem::hasPermission(Ext2CInode *cnode,fs::User *u,uint perms) {
 	mode_t mode = le16tocpu(cnode->inode.mode);
 	uid_t uid = le16tocpu(cnode->inode.uid);
 	gid_t gid = le16tocpu(cnode->inode.gid);
-	return Permissions::canAccess(u,mode,uid,gid,perms);
+	return fs::Permissions::canAccess(u,mode,uid,gid,perms);
 }
 
 bool Ext2FileSystem::bgHasBackups(block_t i) {

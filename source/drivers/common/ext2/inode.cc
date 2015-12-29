@@ -36,7 +36,9 @@
 #include "inodecache.h"
 #include "sbmng.h"
 
-int Ext2INode::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode **ino,mode_t mode) {
+using namespace fs;
+
+int Ext2INode::create(Ext2FileSystem *e,User *u,Ext2CInode *dirNode,Ext2CInode **ino,mode_t mode) {
 	size_t i;
 	time_t now;
 	Ext2CInode *cnode;
@@ -73,7 +75,7 @@ int Ext2INode::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode
 	return 0;
 }
 
-int Ext2INode::chmod(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,mode_t mode) {
+int Ext2INode::chmod(Ext2FileSystem *e,User *u,ino_t inodeNo,mode_t mode) {
 	mode_t oldMode;
 	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
@@ -89,7 +91,7 @@ int Ext2INode::chmod(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,mode_t mode) {
 	return 0;
 }
 
-int Ext2INode::chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid) {
+int Ext2INode::chown(Ext2FileSystem *e,User *u,ino_t inodeNo,uid_t uid,gid_t gid) {
 	uid_t oldUid;
 	gid_t oldGid;
 	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
@@ -110,7 +112,7 @@ int Ext2INode::chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t g
 	return 0;
 }
 
-int Ext2INode::utime(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,const struct utimbuf *utimes) {
+int Ext2INode::utime(Ext2FileSystem *e,User *u,ino_t inodeNo,const struct utimbuf *utimes) {
 	Ext2CInode *cnode = e->inodeCache.request(inodeNo,IMODE_WRITE);
 	if(cnode == NULL)
 		return -ENOBUFS;

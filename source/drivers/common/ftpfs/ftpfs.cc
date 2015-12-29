@@ -18,9 +18,12 @@
  */
 
 #include <esc/ipc/clientdevice.h>
+#include <esc/proto/fs.h>
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
 #include <esc/proto/vterm.h>
+#include <fs/filesystem.h>
+#include <fs/fsdev.h>
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <dirent.h>
@@ -34,13 +37,19 @@
 #include "file.h"
 
 using namespace esc;
+using namespace fs;
 
-struct OpenFile : public Client {
-	explicit OpenFile(int f,const CtrlConRef &_ctrlRef = CtrlConRef(),const char *_path = NULL,
+static const char *host = NULL;
+static const char *user = NULL;
+static const char *dir = "/";
+static port_t port = 21;
+
+struct OpenFTPFile : public OpenFile {
+	explicit OpenFTPFile(int f,const CtrlConRef &_ctrlRef = CtrlConRef(),const char *_path = NULL,
 			int _flags = 0)
-		: Client(f), flags(_flags), path(_path), ctrlRef(_ctrlRef), file(getFile(_ctrlRef,path)) {
+		: OpenFile(f), flags(_flags), path(_path), ctrlRef(_ctrlRef), file(getFile(_ctrlRef,path)) {
 	}
-	virtual ~OpenFile() {
+	virtual ~OpenFTPFile() {
 		delete file;
 	}
 
@@ -76,211 +85,110 @@ struct OpenFile : public Client {
 	BlockFile *file;
 };
 
-class FTPFSDevice : public ClientDevice<OpenFile> {
+class FTPFileSystem : public FileSystem<OpenFTPFile> {
 public:
-	explicit FTPFSDevice(const char *fsDev,CtrlConRef &ctrlcon)
-		: ClientDevice<OpenFile>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-		  _ctrlRef(ctrlcon), _clients() {
-		set(MSG_FILE_OPEN,std::make_memfun(this,&FTPFSDevice::devopen));
-		set(MSG_FILE_CLOSE,std::make_memfun(this,&FTPFSDevice::devclose),false);
-		set(MSG_DEV_SHFILE,std::make_memfun(this,&FTPFSDevice::shfile));
-		set(MSG_FS_OPEN,std::make_memfun(this,&FTPFSDevice::open));
-		set(MSG_FILE_READ,std::make_memfun(this,&FTPFSDevice::read));
-		set(MSG_FILE_WRITE,std::make_memfun(this,&FTPFSDevice::write));
-		set(MSG_FS_CLOSE,std::make_memfun(this,&FTPFSDevice::close),false);
-		set(MSG_FS_ISTAT,std::make_memfun(this,&FTPFSDevice::istat));
-		set(MSG_FS_SYNCFS,std::make_memfun(this,&FTPFSDevice::syncfs));
-		set(MSG_FS_LINK,std::make_memfun(this,&FTPFSDevice::link));
-		set(MSG_FS_UNLINK,std::make_memfun(this,&FTPFSDevice::unlink));
-		set(MSG_FS_RENAME,std::make_memfun(this,&FTPFSDevice::rename));
-		set(MSG_FS_MKDIR,std::make_memfun(this,&FTPFSDevice::mkdir));
-		set(MSG_FS_RMDIR,std::make_memfun(this,&FTPFSDevice::rmdir));
-		set(MSG_FS_CHMOD,std::make_memfun(this,&FTPFSDevice::chmod));
-		set(MSG_FS_CHOWN,std::make_memfun(this,&FTPFSDevice::chown));
-		set(MSG_FS_UTIME,std::make_memfun(this,&FTPFSDevice::utime));
-  	}
-
-	void loop() {
-		ulong buf[IPC_DEF_SIZE / sizeof(ulong)];
-		while(1) {
-			msgid_t mid;
-			int fd = getwork(id(),&mid,buf,sizeof(buf),isStopped() ? GW_NOBLOCK : 0);
-			if(EXPECT_FALSE(fd < 0)) {
-				if(fd != -EINTR) {
-					// no requests anymore and we should shutdown?
-					if(isStopped())
-						break;
-					printe("getwork failed");
-				}
-				continue;
-			}
-
-			IPCStream is(fd,buf,sizeof(buf),mid);
-			handleMsg(mid,is);
-		}
+	explicit FTPFileSystem(CtrlConRef &ctrl) : FileSystem<OpenFTPFile>(), _ctrlRef(ctrl) {
 	}
 
-	void devopen(IPCStream &is) {
-		_clients++;
-		is << 0 << Reply();
+	ino_t open(User *,const char *path,uint flags,mode_t,int fd,OpenFTPFile **file) override {
+		*file = new OpenFTPFile(fd,_ctrlRef,path,flags);
+		return fd;
 	}
 
-	void devclose(IPCStream &is) {
-		::close(is.fd());
-		if(--_clients == 0)
-			stop();
-	}
-
-	void open(IPCStream &is) {
-		char path[MAX_PATH_LEN];
-		FileOpen::Request r(path,sizeof(path));
-		is >> r;
-
-		add(is.fd(),new OpenFile(is.fd(),_ctrlRef,path,r.flags));
-		is << FileOpen::Response::success(is.fd()) << Reply();
-	}
-
-	void shfile(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		char path[MAX_PATH_LEN];
-		FileShFile::Request r(path,sizeof(path));
-		is >> r;
-
-		int res = joinshm(file,path,r.size,0);
-		if(res == 0)
-			res = file->sharemem(file->sharedmem()->addr,r.size);
-		is << FileShFile::Response(res) << Reply();
-	}
-
-	void read(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		FileRead::Request r;
-		is >> r;
-
-		DataBuf buf(r.count,file->shm(),r.shmemoff);
-		ssize_t res = file->read(buf.data(),r.offset,r.count);
-
-		is << FileRead::Response::result(res) << Reply();
-		if(r.shmemoff == -1) {
-			if(res > 0)
-				is << ReplyData(buf.data(),res);
-		}
-	}
-
-	void write(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		FileWrite::Request r;
-		is >> r;
-
-		DataBuf buf(r.count,file->shm(),r.shmemoff);
-		if(r.shmemoff == -1)
-			is >> ReceiveData(buf.data(),r.count);
-
-		ssize_t res = file->write(buf.data(),r.offset,r.count);
-		is << FileWrite::Response::result(res) << Reply();
-	}
-
-	void istat(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
-		struct stat info;
-		int res = DirCache::getInfo(file->ctrlRef,file->path.c_str(),&info);
-		is << res << info << Reply();
-	}
-
-	void close(IPCStream &is) {
-		OpenFile *file = (*this)[is.fd()];
+	void close(OpenFTPFile *file) override {
 		/* if it was opened for writing, check if the file exists in the cache */
 		if(file->flags & O_WRITE) {
 			/* if not found, remove the directory from cache so that we load it again */
 			if(DirCache::getList(file->ctrlRef,file->path.c_str(),false) == NULL)
 				DirCache::removeDirOf(file->path.c_str());
 		}
-		ClientDevice::close(is);
 	}
 
-	void syncfs(IPCStream &is) {
-		is << 0 << Reply();
+	int stat(OpenFTPFile *file,struct stat *info) override {
+		return DirCache::getInfo(file->ctrlRef,file->path.c_str(),info);
 	}
 
-	void link(IPCStream &is) {
-		is << -ENOTSUP << Reply();
-	}
-	void unlink(IPCStream &is) {
-		dirCmd(is,CtrlCon::CMD_DELE);
+	ssize_t read(OpenFTPFile *file,void *data,off_t pos,size_t count) override {
+		return file->read(data,pos,count);
 	}
 
-	void rename(IPCStream &is) {
-		int uid,gid,pid;
-		CStringBuf<MAX_PATH_LEN> srcPath,dstPath;
-		is >> uid >> gid >> pid >> srcPath >> dstPath;
+	ssize_t write(OpenFTPFile *file,const void *data,off_t pos,size_t count) override {
+		return file->write(data,pos,count);
+	}
+
+	int unlink(User *,OpenFTPFile *dir,const char *name) override {
+		dirCmd(dir,name,CtrlCon::CMD_DELE);
+		return 0;
+	}
+
+	int mkdir(User *,OpenFTPFile *dir,const char *name,mode_t) override {
+		dirCmd(dir,name,CtrlCon::CMD_MKD);
+		return 0;
+	}
+
+	int rmdir(User *,OpenFTPFile *dir,const char *name) override {
+		dirCmd(dir,name,CtrlCon::CMD_RMD);
+		return 0;
+	}
+
+	int rename(User *,OpenFTPFile *oldDir,const char *oldName,OpenFTPFile *newDir,
+			const char *newName) override {
+		char oldPath[MAX_PATH_LEN];
+		char newPath[MAX_PATH_LEN];
+
+		snprintf(oldPath,sizeof(oldPath),"%s/%s",oldDir->path.c_str(),oldName);
+		snprintf(oldPath,sizeof(newPath),"%s/%s",newDir->path.c_str(),newName);
 
 		CtrlConRef ref(_ctrlRef);
 		CtrlCon *ctrl = ref.request();
-		ctrl->execute(CtrlCon::CMD_RNFR,srcPath.str());
-		ctrl->execute(CtrlCon::CMD_RNTO,dstPath.str());
-		DirCache::removeDirOf(srcPath.str());
-		DirCache::removeDirOf(dstPath.str());
-
-		is << 0 << Reply();
+		ctrl->execute(CtrlCon::CMD_RNFR,oldPath);
+		ctrl->execute(CtrlCon::CMD_RNTO,newPath);
+		DirCache::removeDir(oldDir->path.c_str());
+		DirCache::removeDir(newDir->path.c_str());
+		return 0;
 	}
 
-	void mkdir(IPCStream &is) {
-		dirCmd(is,CtrlCon::CMD_MKD);
-	}
-	void rmdir(IPCStream &is) {
-		dirCmd(is,CtrlCon::CMD_RMD);
-	}
-
-	void chmod(IPCStream &is) {
-		is << -ENOTSUP << Reply();
-	}
-	void chown(IPCStream &is) {
-		is << -ENOTSUP << Reply();
-	}
-	void utime(IPCStream &is) {
-		is << -ENOTSUP << Reply();
+	void print(FILE *f) override {
+		fprintf(f,"host: %s\n",host);
+		fprintf(f,"port: %d\n",port);
+		fprintf(f,"user: %s\n",user);
+		fprintf(f,"dir : %s\n",dir);
 	}
 
 private:
-	bool isDirectory(const char *path) {
-		struct stat info;
-		if(DirCache::getInfo(_ctrlRef,path,&info) == 0)
-			return S_ISDIR(info.st_mode);
-		return 0;
-	}
-	void pathCmd(IPCStream &is,CtrlCon::Cmd cmd) {
-		int uid,gid,pid;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> uid >> gid >> pid >> path;
-
-		CtrlConRef ref(_ctrlRef);
-		CtrlCon *ctrl = ref.request();
-		ctrl->execute(cmd,path.str());
-		DirCache::removeDirOf(path.str());
-
-		is << 0 << Reply();
-	}
-
-	void dirCmd(IPCStream &is,CtrlCon::Cmd cmd) {
-		OpenFile *dir = (*this)[is.fd()];
-
+	void dirCmd(OpenFTPFile *dir,const char *name,CtrlCon::Cmd cmd) {
 		char path[MAX_PATH_LEN];
-		int uid,gid,pid;
-		CStringBuf<MAX_PATH_LEN> name;
-		is >> uid >> gid >> pid >> name;
 
-		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name.str());
+		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
 
 		CtrlConRef ref(_ctrlRef);
 		CtrlCon *ctrl = ref.request();
 		ctrl->execute(cmd,path);
-		DirCache::removeDirOf(path);
-
-		is << 0 << Reply();
+		DirCache::removeDir(dir->path.c_str());
 	}
 
 	CtrlConRef &_ctrlRef;
-	size_t _clients;
+};
+
+class FTPFSDevice : public FSDevice<OpenFTPFile> {
+public:
+	explicit FTPFSDevice(FTPFileSystem *fs,const char *fsDev)
+		: FSDevice<OpenFTPFile>(fs,fsDev) {
+		set(MSG_DEV_SHFILE,std::make_memfun(this,&FTPFSDevice::shfile));
+	}
+
+	void shfile(IPCStream &is) {
+		char path[MAX_PATH_LEN];
+		FileShFile::Request r(path,sizeof(path));
+		is >> r;
+
+		OpenFTPFile *file = (*this)[is.fd()];
+
+		int res = joinshm(file,path,r.size,0);
+		if(res == 0)
+			res = file->sharemem(file->sharedmem()->addr,r.size);
+		is << FileShFile::Response(res) << Reply();
+	}
 };
 
 int main(int argc,char **argv) {
@@ -293,7 +201,6 @@ int main(int argc,char **argv) {
 		error("Invalid device: %s",argv[2]);
 
 	// use the last one. the username might be an email-address
-	char *host, *user;
 	char *pos = strrchr(path + 9,'@');
 	if(!pos) {
 		host = path + 9;
@@ -313,10 +220,9 @@ int main(int argc,char **argv) {
 		port = atoi(pos);
 	}
 	else
-		pos = host;
+		pos = const_cast<char*>(host);
 
 	// get the directory
-	const char *dir = "";
 	pos = strchr(pos,'/');
 	if(pos) {
 		*pos = '\0';
@@ -337,7 +243,8 @@ int main(int argc,char **argv) {
 	}
 
 	CtrlConRef con(new CtrlCon(host,port,user,pw,dir));
-	FTPFSDevice dev(argv[1],con);
+	FTPFileSystem fs(con);
+	FTPFSDevice dev(&fs,argv[1]);
 	dev.loop();
 	return 0;
 }

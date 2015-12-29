@@ -36,5 +36,5 @@ public:
 	 * @param flags the flags with which to open the file
 	 * @return the inode-Number or EXT2_BAD_INO
 	 */
-	static ino_t resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags,mode_t mode);
+	static ino_t resolve(Ext2FileSystem *e,fs::User *u,const char *path,uint flags,mode_t mode);
 };

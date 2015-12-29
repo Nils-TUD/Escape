@@ -62,6 +62,10 @@ int DirCache::getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *in
 	return find(list,filename,info);
 }
 
+void DirCache::removeDir(const char *path) {
+	dirs.erase(path);
+}
+
 void DirCache::removeDirOf(const char *path) {
 	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];

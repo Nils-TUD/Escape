@@ -28,6 +28,8 @@
 #include "ext2.h"
 #include "sbmng.h"
 
+using namespace fs;
+
 ino_t Ext2Bitmap::allocInode(Ext2FileSystem *e,Ext2CInode *dirInode,bool isDir) {
 	size_t gcount = e->getBlockGroupCount();
 	block_t block = e->getBlockOfInode(dirInode->inodeNo);

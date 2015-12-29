@@ -22,6 +22,7 @@
 #include <fs/blockcache.h>
 #include <fs/common.h>
 #include <fs/filesystem.h>
+#include <fs/fsdev.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 
@@ -36,16 +37,16 @@
 #define EXT2_ICACHE_SIZE					64
 #define EXT2_BCACHE_SIZE					2048
 
-class Ext2FileSystem : public FileSystem {
+class Ext2FileSystem : public fs::FileSystem<fs::OpenFile> {
 public:
-	class Ext2BlockCache : public BlockCache {
+	class Ext2BlockCache : public fs::BlockCache {
 	public:
 		explicit Ext2BlockCache(Ext2FileSystem *fs)
 			: BlockCache(fs->fd,EXT2_BCACHE_SIZE,fs->blockSize()), _fs(fs) {
 		}
 
-		virtual bool readBlocks(void *buffer,block_t start,size_t blockCount);
-		virtual bool writeBlocks(const void *buffer,size_t start,size_t blockCount);
+		bool readBlocks(void *buffer,block_t start,size_t blockCount) override;
+		bool writeBlocks(const void *buffer,size_t start,size_t blockCount) override;
 
 	private:
 		Ext2FileSystem *_fs;
@@ -54,23 +55,26 @@ public:
 	explicit Ext2FileSystem(const char *device);
 	virtual ~Ext2FileSystem();
 
-	virtual ino_t open(FSUser *u,ino_t ino,uint flags);
-	virtual void close(ino_t ino);
-	virtual ino_t find(FSUser *u,ino_t dir,const char *name);
-	virtual ino_t resolve(FSUser *u,const char *path,uint flags,mode_t mode);
-	virtual int stat(ino_t ino,struct stat *info);
-	virtual ssize_t read(ino_t ino,void *buffer,off_t offset,size_t size);
-	virtual ssize_t write(ino_t ino,const void *buffer,off_t offset,size_t size);
-	virtual int link(FSUser *u,ino_t dstIno,ino_t dirIno,const char *name);
-	virtual int unlink(FSUser *u,ino_t ino,const char *name);
-	virtual int mkdir(FSUser *u,ino_t ino,const char *name,mode_t mode);
-	virtual int rmdir(FSUser *u,ino_t ino,const char *name);
-	virtual int chmod(FSUser *u,ino_t ino,mode_t mode);
-	virtual int chown(FSUser *u,ino_t ino,uid_t uid,gid_t gid);
-	virtual int utime(FSUser *u,ino_t ino,const struct utimbuf *utimes);
-	virtual int truncate(FSUser *u,ino_t ino,off_t length);
-	virtual void sync();
-	virtual void print(FILE *f);
+	ino_t open(fs::User *u,const char *path,uint flags,mode_t mode,int fd,
+		fs::OpenFile **file) override;
+	void close(fs::OpenFile *file) override;
+	ino_t find(fs::User *u,fs::OpenFile *dir,const char *name);
+	int stat(fs::OpenFile *file,struct ::stat *info) override;
+	ssize_t read(fs::OpenFile *file,void *buffer,off_t offset,size_t size) override;
+	ssize_t write(fs::OpenFile *file,const void *buffer,off_t offset,size_t size) override;
+	int link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
+	int linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name);
+	int unlink(fs::User *u,fs::OpenFile *dir,const char *name) override;
+	int mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) override;
+	int rmdir(fs::User *u,fs::OpenFile *dir,const char *name) override;
+	int rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,
+		const char *newName) override;
+	int chmod(fs::User *u,fs::OpenFile *file,mode_t mode) override;
+	int chown(fs::User *u,fs::OpenFile *file,uid_t uid,gid_t gid) override;
+	int utime(fs::User *u,fs::OpenFile *file,const struct utimbuf *utimes) override;
+	int truncate(fs::User *u,fs::OpenFile *file,off_t length) override;
+	void sync() override;
+	void print(FILE *f) override;
 
 	/**
 	 * Checks whether the given user has the permission <perms> for <cnode>. <perms> should
@@ -82,7 +86,7 @@ public:
 	 * @param perms the required permissions
 	 * @return 0 if the user has permission, the error-code otherwise
 	 */
-	int hasPermission(Ext2CInode *cnode,FSUser *u,uint perms);
+	int hasPermission(Ext2CInode *cnode,fs::User *u,uint perms);
 
 	/**
 	 * @return the block size of the filesystem

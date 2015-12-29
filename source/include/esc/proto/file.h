@@ -38,7 +38,7 @@ struct FileOpen {
 		}
 		explicit Request(char *buffer,size_t size) : path(buffer,size) {
 		}
-		explicit Request(uint _flags,const FSUser &_u,const CString &_path,mode_t _mode)
+		explicit Request(uint _flags,const fs::User &_u,const CString &_path,mode_t _mode)
 			: flags(_flags), u(_u), path(_path), mode(_mode) {
 		}
 
@@ -50,7 +50,7 @@ struct FileOpen {
 		}
 
 		uint flags;
-		FSUser u;
+		fs::User u;
 		CString path;
 		mode_t mode;
 	};

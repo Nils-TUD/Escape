@@ -22,6 +22,8 @@
 #include <sys/common.h>
 #include <stdio.h>
 
+namespace fs {
+
 /* a cached block */
 struct CBlock {
 	CBlock *prev;
@@ -170,3 +172,5 @@ private:
 	ulong _hits;
 	ulong _misses;
 };
+
+}

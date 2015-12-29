@@ -33,6 +33,8 @@
 #include "inodecache.h"
 #include "rw.h"
 
+using namespace fs;
+
 Ext2INodeCache::Ext2INodeCache(Ext2FileSystem *fs)
 		: _hits(), _misses(), _cache(new Ext2CInode[EXT2_ICACHE_SIZE]), _fs(fs) {
 	size_t i;

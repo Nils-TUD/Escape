@@ -37,7 +37,8 @@ public:
 	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,mode_t mode);
+	static int create(Ext2FileSystem *e,fs::User *u,Ext2CInode *dirNode,const char *name,ino_t *ino,
+		mode_t mode);
 
 	/**
 	 * Deletes the given inode. That means all associated blocks will be free'd

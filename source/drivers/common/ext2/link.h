@@ -38,7 +38,7 @@ public:
 	 * @param name the name
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,Ext2CInode *cnode,const char *name);
+	static int create(Ext2FileSystem *e,fs::User *u,Ext2CInode *dir,Ext2CInode *cnode,const char *name);
 
 	/**
 	 * Removes the given name from the given directory
@@ -51,7 +51,7 @@ public:
 	 * @param delDir whether the entry may be an directory
 	 * @return 0 on success
 	 */
-	static int remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *pdir,Ext2CInode *dir,const char *name,
+	static int remove(Ext2FileSystem *e,fs::User *u,Ext2CInode *pdir,Ext2CInode *dir,const char *name,
 		bool delDir);
 
 private:

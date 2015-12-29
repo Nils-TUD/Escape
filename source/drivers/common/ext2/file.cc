@@ -37,7 +37,10 @@
 #include "rw.h"
 #include "sbmng.h"
 
-int Ext2File::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,const char *name,ino_t *ino,mode_t mode) {
+using namespace fs;
+
+int Ext2File::create(Ext2FileSystem *e,fs::User *u,Ext2CInode *dirNode,const char *name,ino_t *ino,
+		mode_t mode) {
 	Ext2CInode *cnode;
 	int res;
 	/* we need write-permission for the directory */

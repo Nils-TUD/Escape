@@ -18,6 +18,7 @@
  */
 
 #include <esc/ipc/ipcbuf.h>
+#include <esc/proto/fs.h>
 #include <mem/cache.h>
 #include <mem/pagedir.h>
 #include <mem/virtmem.h>
@@ -54,7 +55,7 @@ static int communicateOverChan(pid_t pid,VFSChannel *chan,msgid_t cmd,esc::IPCBu
 	if(res < 0)
 		return res;
 
-	int err;
+	errcode_t err;
 	ib >> err;
 	return ib.error() ? -EINVAL : err;
 }
@@ -63,7 +64,7 @@ int VFSFS::fstat(pid_t pid,VFSChannel *chan,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	int res = communicateOverChan(pid,chan,MSG_FS_ISTAT,ib);
+	int res = communicateOverChan(pid,chan,esc::FSStat::MSG,ib);
 	ib >> *info;
 	/* set device id */
 	info->st_dev = chan->getParent()->getNo();
@@ -75,15 +76,16 @@ int VFSFS::truncate(pid_t pid,VFSChannel *chan,off_t length) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << length;
-	return communicateOverChan(pid,chan,MSG_FS_TRUNCATE,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSTruncate::Request(user,length);
+	return communicateOverChan(pid,chan,esc::FSTruncate::MSG,ib);
 }
 
 int VFSFS::syncfs(pid_t pid,VFSChannel *chan) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	return communicateOverChan(pid,chan,MSG_FS_SYNCFS,ib);
+	return communicateOverChan(pid,chan,esc::FSSync::MSG,ib);
 }
 
 int VFSFS::chmod(pid_t pid,VFSChannel *chan,mode_t mode) {
@@ -91,8 +93,9 @@ int VFSFS::chmod(pid_t pid,VFSChannel *chan,mode_t mode) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << mode;
-	return communicateOverChan(pid,chan,MSG_FS_CHMOD,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSChmod::Request(user,mode);
+	return communicateOverChan(pid,chan,esc::FSChmod::MSG,ib);
 }
 
 int VFSFS::chown(pid_t pid,VFSChannel *chan,uid_t uid,gid_t gid) {
@@ -100,8 +103,9 @@ int VFSFS::chown(pid_t pid,VFSChannel *chan,uid_t uid,gid_t gid) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << uid << gid;
-	return communicateOverChan(pid,chan,MSG_FS_CHOWN,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSChown::Request(user,uid,gid);
+	return communicateOverChan(pid,chan,esc::FSChown::MSG,ib);
 }
 
 int VFSFS::utime(pid_t pid,VFSChannel *chan,const struct utimbuf *utimes) {
@@ -109,8 +113,9 @@ int VFSFS::utime(pid_t pid,VFSChannel *chan,const struct utimbuf *utimes) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << *utimes;
-	return communicateOverChan(pid,chan,MSG_FS_UTIME,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSUtime::Request(user,*utimes);
+	return communicateOverChan(pid,chan,esc::FSUtime::MSG,ib);
 }
 
 int VFSFS::link(pid_t pid,VFSChannel *target,VFSChannel *dir,const char *name) {
@@ -118,8 +123,9 @@ int VFSFS::link(pid_t pid,VFSChannel *target,VFSChannel *dir,const char *name) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << dir->getFd() << esc::CString(name);
-	return communicateOverChan(pid,target,MSG_FS_LINK,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSLink::Request(user,dir->getFd(),esc::CString(name));
+	return communicateOverChan(pid,target,esc::FSLink::MSG,ib);
 }
 
 int VFSFS::unlink(pid_t pid,VFSChannel *chan,const char *name) {
@@ -127,8 +133,9 @@ int VFSFS::unlink(pid_t pid,VFSChannel *chan,const char *name) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(name);
-	return communicateOverChan(pid,chan,MSG_FS_UNLINK,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSUnlink::Request(user,esc::CString(name));
+	return communicateOverChan(pid,chan,esc::FSUnlink::MSG,ib);
 }
 
 int VFSFS::rename(pid_t pid,VFSChannel *oldDir,const char *oldName,VFSChannel *newDir,
@@ -137,9 +144,9 @@ int VFSFS::rename(pid_t pid,VFSChannel *oldDir,const char *oldName,VFSChannel *n
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(oldName)
-	   << newDir->getFd() << esc::CString(newName);
-	return communicateOverChan(pid,oldDir,MSG_FS_RENAME,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSRename::Request(user,esc::CString(oldName),newDir->getFd(),esc::CString(newName));
+	return communicateOverChan(pid,oldDir,esc::FSRename::MSG,ib);
 }
 
 int VFSFS::mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode) {
@@ -147,8 +154,9 @@ int VFSFS::mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(name) << mode;
-	return communicateOverChan(pid,chan,MSG_FS_MKDIR,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSMkdir::Request(user,esc::CString(name),mode);
+	return communicateOverChan(pid,chan,esc::FSMkdir::MSG,ib);
 }
 
 int VFSFS::rmdir(pid_t pid,VFSChannel *chan,const char *name) {
@@ -156,6 +164,7 @@ int VFSFS::rmdir(pid_t pid,VFSChannel *chan,const char *name) {
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
 	const Proc *p = Proc::getByPid(pid);
-	ib << p->getEUid() << p->getEGid() << p->getPid() << esc::CString(name);
-	return communicateOverChan(pid,chan,MSG_FS_RMDIR,ib);
+	fs::User user(p->getEUid(),p->getEGid(),p->getPid());
+	ib << esc::FSRmdir::Request(user,esc::CString(name));
+	return communicateOverChan(pid,chan,esc::FSRmdir::MSG,ib);
 }

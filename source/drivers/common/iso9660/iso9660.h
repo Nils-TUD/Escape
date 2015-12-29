@@ -20,6 +20,7 @@
 #pragma once
 
 #include <fs/blockcache.h>
+#include <fs/filesystem.h>
 #include <fs/fsdev.h>
 #include <sys/common.h>
 #include <sys/stat.h>
@@ -155,9 +156,9 @@ struct ISOVolDesc {
 	} data;
 } A_PACKED;
 
-class ISO9660FileSystem : public FileSystem {
+class ISO9660FileSystem : public fs::FileSystem<fs::OpenFile> {
 public:
-	class ISO9660BlockCache : public BlockCache {
+	class ISO9660BlockCache : public fs::BlockCache {
 	public:
 		explicit ISO9660BlockCache(ISO9660FileSystem *fs)
 			: BlockCache(fs->fd,ISO_BCACHE_SIZE,fs->blockSize()), _fs(fs) {
@@ -172,7 +173,7 @@ public:
 
 	explicit ISO9660FileSystem(const char *device);
 	virtual ~ISO9660FileSystem() {
-		close(fd);
+		::close(fd);
 	}
 
 	size_t blockSize() const {
@@ -185,22 +186,20 @@ public:
 		return blockSize();
 	}
 
-	virtual ino_t open(FSUser *u,ino_t ino,uint flags);
-	virtual void close(ino_t ino);
-	virtual ino_t find(FSUser *u,ino_t dir,const char *name);
-	virtual ino_t resolve(FSUser *u,const char *path,uint flags,mode_t mode);
-	virtual int stat(ino_t ino,struct stat *info);
-	virtual ssize_t read(ino_t ino,void *buffer,off_t offset,size_t size);
-	virtual ssize_t write(ino_t ino,const void *buffer,off_t offset,size_t size);
-	virtual int link(FSUser *u,ino_t dstIno,ino_t dirIno,const char *name);
-	virtual int unlink(FSUser *u,ino_t ino,const char *name);
-	virtual int mkdir(FSUser *u,ino_t ino,const char *name,mode_t mode);
-	virtual int rmdir(FSUser *u,ino_t ino,const char *name);
-	virtual int chmod(FSUser *u,ino_t ino,mode_t mode);
-	virtual int chown(FSUser *u,ino_t ino,uid_t uid,gid_t gid);
-	virtual int utime(FSUser *u,ino_t ino,const struct utimbuf *utimes);
-	virtual void sync();
-	virtual void print(FILE *f);
+	ino_t open(fs::User *u,const char *path,uint flags,mode_t mode,int fd,fs::OpenFile **file) override;
+	void close(fs::OpenFile *file) override;
+	int stat(fs::OpenFile *file,struct stat *info) override;
+	ssize_t read(fs::OpenFile *file,void *buffer,off_t offset,size_t size) override;
+	ssize_t write(fs::OpenFile *file,const void *buffer,off_t offset,size_t size) override;
+	int link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
+	int unlink(fs::User *u,fs::OpenFile *dir,const char *name) override;
+	int mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) override;
+	int rmdir(fs::User *u,fs::OpenFile *dir,const char *name) override;
+	int chmod(fs::User *u,fs::OpenFile *file,mode_t mode) override;
+	int chown(fs::User *u,fs::OpenFile *file,uid_t uid,gid_t gid) override;
+	int utime(fs::User *u,fs::OpenFile *file,const struct utimbuf *utimes) override;
+	void sync() override;
+	void print(FILE *f) override;
 
 private:
 	static int initPrimaryVol(ISO9660FileSystem *fs,const char *device);

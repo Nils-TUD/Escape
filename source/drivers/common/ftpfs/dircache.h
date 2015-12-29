@@ -44,6 +44,7 @@ public:
 
 	static List *getList(const CtrlConRef &ctrlRef,const char *path,bool load = true);
 	static int getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *info);
+	static void removeDir(const char *path);
 	static void removeDirOf(const char *path);
 	static void print(esc::OStream &os);
 

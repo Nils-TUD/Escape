@@ -33,7 +33,7 @@
 #include "path.h"
 #include "rw.h"
 
-ino_t Ext2Path::resolve(Ext2FileSystem *e,FSUser *u,const char *path,uint flags,mode_t mode) {
+ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,uint flags,mode_t mode) {
 	Ext2CInode *cnode = NULL;
 	ino_t res;
 	const char *p = path;

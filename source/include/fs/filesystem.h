@@ -21,13 +21,17 @@
 
 #include <fs/common.h>
 #include <sys/common.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
 #include <utime.h>
 
+namespace fs {
+
 /**
  * The base-class for all filesystems
  */
+template<class F>
 class FileSystem {
 public:
 	explicit FileSystem() {
@@ -35,44 +39,43 @@ public:
 	virtual ~FileSystem() {
 	}
 
-	virtual ino_t open(FSUser *u,ino_t ino,uint flags) = 0;
+	virtual ino_t open(User *u,const char *path,uint flags,mode_t mode,int fd,F **) = 0;
 
-	virtual void close(ino_t ino) = 0;
+	virtual void close(F *file) = 0;
 
-	virtual ino_t find(FSUser *u,ino_t dir,const char *name) = 0;
+	virtual int stat(F *file,struct ::stat *info) = 0;
 
-	virtual ino_t resolve(FSUser *u,const char *path,uint flags,mode_t mode) = 0;
-
-	virtual int stat(ino_t ino,struct stat *info) = 0;
-
-	virtual ssize_t read(ino_t,void *,off_t,size_t) {
+	virtual ssize_t read(F *,void *,off_t,size_t) {
 		return -ENOTSUP;
 	}
-	virtual ssize_t write(ino_t,const void *,off_t,size_t) {
+	virtual ssize_t write(F *,const void *,off_t,size_t) {
 		return -ENOTSUP;
 	}
-	virtual int link(FSUser *,ino_t,ino_t,const char *) {
+	virtual int link(User *,F *,F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int unlink(FSUser *,ino_t,const char *) {
+	virtual int unlink(User *,F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int mkdir(FSUser *,ino_t,const char *,mode_t) {
+	virtual int mkdir(User *,F *,const char *,mode_t) {
 		return -ENOTSUP;
 	}
-	virtual int rmdir(FSUser *,ino_t,const char *) {
+	virtual int rmdir(User *,F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int chmod(FSUser *,ino_t,mode_t) {
+	virtual int rename(User *,F *,const char *,F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int chown(FSUser *,ino_t,uid_t,gid_t) {
+	virtual int chmod(User *,F *,mode_t) {
 		return -ENOTSUP;
 	}
-	virtual int utime(FSUser *,ino_t,const struct utimbuf *) {
+	virtual int chown(User *,F *,uid_t,gid_t) {
 		return -ENOTSUP;
 	}
-	virtual int truncate(FSUser *,ino_t,off_t) {
+	virtual int utime(User *,F *,const struct utimbuf *) {
+		return -ENOTSUP;
+	}
+	virtual int truncate(User *,F *,off_t) {
 		return -ENOTSUP;
 	}
 	virtual void sync() {
@@ -80,3 +83,5 @@ public:
 
 	virtual void print(FILE *f) = 0;
 };
+
+}

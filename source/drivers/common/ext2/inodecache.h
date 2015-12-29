@@ -30,7 +30,7 @@ struct Ext2CInode {
 	ino_t inodeNo;
 	ushort dirty;
 	ushort refs;
-	Ext2Inode inode;
+	fs::Ext2Inode inode;
 };
 
 enum {

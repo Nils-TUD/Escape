@@ -28,6 +28,8 @@
 
 #define ALLOC_LOCK	0xF7180000
 
+namespace fs {
+
 BlockCache::BlockCache(int fd,size_t blocks,size_t bsize)
 		: _blockCacheSize(blocks), _blockSize(bsize), _hashmap(new CBlock*[HASH_SIZE]()),
 		  _oldestBlock(NULL), _newestBlock(NULL), _freeBlocks(NULL),
@@ -250,3 +252,5 @@ void BlockCache::print() {
 }
 
 #endif
+
+}

@@ -21,11 +21,11 @@
 
 #include <fs/ext2/ext2.h>
 #include <fs/blockcache.h>
+#include <fs/common.h>
 #include <sys/common.h>
 
 class Ext2FileSystem;
 struct Ext2CInode;
-struct FSUser;
 
 class Ext2INode {
 	Ext2INode() = delete;
@@ -41,7 +41,7 @@ public:
 	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dirNode,Ext2CInode **ino,mode_t mode);
+	static int create(Ext2FileSystem *e,fs::User *u,Ext2CInode *dirNode,Ext2CInode **ino,mode_t mode);
 
 	/**
 	 * Sets the mode of the given inode to <mode>
@@ -52,7 +52,7 @@ public:
 	 * @param mode the new mode
 	 * @return 0 on success
 	 */
-	static int chmod(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,mode_t mode);
+	static int chmod(Ext2FileSystem *e,fs::User *u,ino_t inodeNo,mode_t mode);
 
 	/**
 	 * Sets the user and group of the given inode to <uid> and <gid>
@@ -64,7 +64,7 @@ public:
 	 * @param gid the new group-id (-1 = don't change)
 	 * @return 0 on success
 	 */
-	static int chown(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,uid_t uid,gid_t gid);
+	static int chown(Ext2FileSystem *e,fs::User *u,ino_t inodeNo,uid_t uid,gid_t gid);
 
 	/**
 	 * Sets the access and modification times of the given inode
@@ -75,7 +75,7 @@ public:
 	 * @param utimes the new access and modification times
 	 * @return 0 on success
 	 */
-	static int utime(Ext2FileSystem *e,FSUser *u,ino_t inodeNo,const struct utimbuf *utimes);
+	static int utime(Ext2FileSystem *e,fs::User *u,ino_t inodeNo,const struct utimbuf *utimes);
 
 	/**
 	 * Destroys the given inode. That means the inode will be marked as free in the bitmap,
@@ -123,7 +123,7 @@ public:
 	 *
 	 * @param inode the inode
 	 */
-	static void print(Ext2Inode *inode);
+	static void print(fs::Ext2Inode *inode);
 
 #endif
 

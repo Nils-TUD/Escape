@@ -32,7 +32,7 @@
 
 ssize_t ISO9660File::read(ISO9660FileSystem *h,ino_t inodeNo,void *buffer,off_t offset,size_t count) {
 	const ISOCDirEntry *e;
-	CBlock *blk;
+	fs::CBlock *blk;
 	uint8_t *bufWork;
 	block_t startBlock;
 	size_t c,i,blockSize,blockCount,leftBytes;
@@ -61,7 +61,7 @@ ssize_t ISO9660File::read(ISO9660FileSystem *h,ino_t inodeNo,void *buffer,off_t 
 	bufWork = (uint8_t*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		/* read block */
-		blk = h->blockCache.request(startBlock + i,BlockCache::READ);
+		blk = h->blockCache.request(startBlock + i,fs::BlockCache::READ);
 		if(blk == NULL)
 			return -ENOBUFS;
 

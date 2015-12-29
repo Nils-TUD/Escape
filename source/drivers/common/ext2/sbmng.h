@@ -37,10 +37,10 @@ public:
 	/**
 	 * @return the superblock
 	 */
-	Ext2SuperBlock *get() {
+	fs::Ext2SuperBlock *get() {
 		return &_superBlock;
 	}
-	const Ext2SuperBlock *get() const {
+	const fs::Ext2SuperBlock *get() const {
 		return &_superBlock;
 	}
 
@@ -60,6 +60,6 @@ public:
 
 private:
 	bool _sbDirty;
-	Ext2SuperBlock _superBlock;
+	fs::Ext2SuperBlock _superBlock;
 	Ext2FileSystem *_fs;
 };

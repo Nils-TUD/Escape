@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+namespace fs {
+
 class Tar {
 public:
 	enum {
@@ -124,3 +126,5 @@ public:
 		writeBlock(f,offset,buffer);
 	}
 };
+
+}

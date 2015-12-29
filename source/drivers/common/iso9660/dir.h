@@ -36,7 +36,7 @@ public:
 	 * @param flags the flags with which to open the file
 	 * @return the id or < 0
 	 */
-	static ino_t resolve(ISO9660FileSystem *h,FSUser *u,const char *path,uint flags);
+	static ino_t resolve(ISO9660FileSystem *h,fs::User *u,const char *path,uint flags);
 
 	/**
 	 * Finds the entry to the name <name> in <dir>

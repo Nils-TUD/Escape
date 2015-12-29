@@ -31,6 +31,7 @@
 #include <utime.h>
 
 using namespace esc;
+using namespace fs;
 
 static char buffer[Tar::BLOCK_SIZE];
 static sUser *userList = nullptr;

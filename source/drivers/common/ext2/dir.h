@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <fs/common.h>
 #include <fs/ext2/ext2.h>
 #include <sys/common.h>
 
 struct Ext2CInode;
 class Ext2FileSystem;
-struct FSUser;
 
 class Ext2Dir {
 	Ext2Dir() = delete;
@@ -40,7 +40,7 @@ public:
 	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	static int create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name,mode_t mode);
+	static int create(Ext2FileSystem *e,fs::User *u,Ext2CInode *dir,const char *name,mode_t mode);
 
 	/**
 	 * Finds the inode-number to the entry <name> in <dir>
@@ -62,7 +62,7 @@ public:
 	 * @param nameLen the length of the name
 	 * @return the inode-number or < 0
 	 */
-	static ino_t findIn(Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
+	static ino_t findIn(fs::Ext2DirEntry *buffer,size_t bufSize,const char *name,size_t nameLen);
 
 	/**
 	 * Removes the directory with given name from the given directory. It is required that
@@ -74,5 +74,5 @@ public:
 	 * @param name the name of the directory to remove
 	 * @return 0 on success
 	 */
-	static int remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,const char *name);
+	static int remove(Ext2FileSystem *e,fs::User *u,Ext2CInode *dir,const char *name);
 };

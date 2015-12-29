@@ -28,7 +28,9 @@
 #include "iso9660.h"
 #include "rw.h"
 
-ino_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED FSUser *u,const char *path,uint flags) {
+using namespace fs;
+
+ino_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED User *u,const char *path,uint flags) {
 	const char *p = path;
 	while(*p == '/')
 		p++;

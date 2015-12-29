@@ -46,7 +46,7 @@ public:
 	 * @param i the block group number
 	 * @return the block group with number <i>
 	 */
-	Ext2BlockGrp *get(size_t i) {
+	fs::Ext2BlockGrp *get(size_t i) {
 		return _groups + i;
 	}
 
@@ -76,6 +76,6 @@ private:
 
 private:
 	bool _dirty;
-	Ext2BlockGrp *_groups;
+	fs::Ext2BlockGrp *_groups;
 	Ext2FileSystem *_fs;
 };

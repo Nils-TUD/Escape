@@ -30,7 +30,9 @@
 #include "inodecache.h"
 #include "link.h"
 
-int Ext2Link::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,Ext2CInode *cnode,const char *name) {
+using namespace fs;
+
+int Ext2Link::create(Ext2FileSystem *e,User *u,Ext2CInode *dir,Ext2CInode *cnode,const char *name) {
 	uint8_t *buf;
 	Ext2DirEntry *dire;
 	size_t len = strlen(name);
@@ -101,7 +103,7 @@ int Ext2Link::create(Ext2FileSystem *e,FSUser *u,Ext2CInode *dir,Ext2CInode *cno
 	return 0;
 }
 
-int Ext2Link::remove(Ext2FileSystem *e,FSUser *u,Ext2CInode *pdir,Ext2CInode *dir,const char *name,
+int Ext2Link::remove(Ext2FileSystem *e,User *u,Ext2CInode *pdir,Ext2CInode *dir,const char *name,
 		bool delDir) {
 	uint8_t *buf;
 	size_t nameLen;

@@ -24,13 +24,17 @@
 #define tpool_lock(...)		0
 #define tpool_unlock(...)	0
 
-struct FSUser {
-	explicit FSUser() : uid(), gid(), pid() {
+namespace fs {
+
+struct User {
+	explicit User() : uid(), gid(), pid() {
 	}
-	explicit FSUser(uid_t _uid,gid_t _gid,pid_t _pid) : uid(_uid), gid(_gid), pid(_pid) {
+	explicit User(uid_t _uid,gid_t _gid,pid_t _pid) : uid(_uid), gid(_gid), pid(_pid) {
 	}
 
 	uid_t uid;
 	gid_t gid;
 	pid_t pid;
 };
+
+}

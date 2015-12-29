@@ -32,7 +32,7 @@ ISO9660DirCache::ISO9660DirCache(ISO9660FileSystem *h)
 
 const ISOCDirEntry *ISO9660DirCache::get(ino_t id) {
 	const ISODirEntry *e;
-	CBlock *blk;
+	fs::CBlock *blk;
 	block_t blockLBA;
 	size_t i,blockSize,offset;
 	int unused = -1;
@@ -61,7 +61,7 @@ const ISOCDirEntry *ISO9660DirCache::get(ino_t id) {
 		blockSize = _fs->blockSize();
 		offset = id & (blockSize - 1);
 		blockLBA = id / blockSize + offset / blockSize;
-		blk = _fs->blockCache.request(blockLBA,BlockCache::READ);
+		blk = _fs->blockCache.request(blockLBA,fs::BlockCache::READ);
 		if(blk == NULL)
 			return NULL;
 		e = (const ISODirEntry*)((uintptr_t)blk->buffer + (offset % blockSize));

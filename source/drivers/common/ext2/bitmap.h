@@ -68,6 +68,6 @@ public:
 	static int freeBlock(Ext2FileSystem *e,block_t blockNo);
 
 private:
-	static ino_t allocInodeIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group,bool isDir);
-	static block_t allocBlockIn(Ext2FileSystem *e,block_t groupStart,Ext2BlockGrp *group);
+	static ino_t allocInodeIn(Ext2FileSystem *e,block_t groupStart,fs::Ext2BlockGrp *group,bool isDir);
+	static block_t allocBlockIn(Ext2FileSystem *e,block_t groupStart,fs::Ext2BlockGrp *group);
 };

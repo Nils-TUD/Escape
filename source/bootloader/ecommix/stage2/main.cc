@@ -40,6 +40,8 @@
 #define BLOCKS_TO_SECS(x)	((x) << (le32tocpu(e.superBlock.logBlockSize) + 1))
 #define GROUP_COUNT			16									/* no. of block groups to load */
 
+using namespace fs;
+
 typedef struct {
 	Ext2SuperBlock superBlock;
 	Ext2BlockGrp groups[GROUP_COUNT];

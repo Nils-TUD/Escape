@@ -49,7 +49,7 @@ int main(int argc,char *argv[]) {
 	/* otherwise try all possible ATAPI-drives */
 	else {
 		char path[SSTRLEN("/dev/cda1") + 1];
-		FSUser u;
+		fs::User u;
 		u.uid = ROOT_UID;
 		u.gid = ROOT_GID;
 		u.pid = getpid();
@@ -62,7 +62,7 @@ int main(int argc,char *argv[]) {
 				/* try to find our kernel. if we've found it, it's likely that the user wants to
 				 * boot from this device. unfortunatly there doesn't seem to be an easy way
 				 * to find out the real boot-device from GRUB */
-				ino_t ino = fs->resolve(&u,"/boot/escape",O_RDONLY,0);
+				ino_t ino = ISO9660Dir::resolve(fs,&u,"/boot/escape",O_RDONLY);
 				if(ino >= 0)
 					break;
 			}
@@ -77,7 +77,7 @@ int main(int argc,char *argv[]) {
 			error("Unable to find cd-device with /boot/escape on it");
 	}
 
-	FSDevice fsdev(fs,argv[1]);
+	fs::FSDevice<fs::OpenFile> fsdev(fs,argv[1]);
 	fsdev.loop();
 	return 0;
 }
@@ -117,34 +117,21 @@ int ISO9660FileSystem::initPrimaryVol(ISO9660FileSystem *fs,const char *device) 
 	return 0;
 }
 
-ino_t ISO9660FileSystem::find(FSUser *,ino_t dir,const char *name) {
-	const ISOCDirEntry *e = dirCache.get(dir);
-	if(e == NULL)
-		return -ENOBUFS;
-	if((e->entry.flags & ISO_FILEFL_DIR) == 0)
-		return -ENOTDIR;
-
-	const ISODirEntry *entry;
-	return ISO9660Dir::find(this,e->entry.extentLoc.littleEndian,e->entry.extentSize.littleEndian,
-		name,strlen(name),&entry);
-}
-
-ino_t ISO9660FileSystem::resolve(FSUser *u,const char *path,uint flags,mode_t) {
-	return ISO9660Dir::resolve(this,u,path,flags);
-}
-
-ino_t ISO9660FileSystem::open(FSUser *,ino_t ino,uint) {
-	/* nothing to do */
+ino_t ISO9660FileSystem::open(fs::User *u,const char *path,uint flags,mode_t,int fd,fs::OpenFile **file) {
+	ino_t ino = ISO9660Dir::resolve(this,u,path,flags);
+	if(ino < 0)
+		return ino;
+	*file = new fs::OpenFile(fd,ino);
 	return ino;
 }
 
-void ISO9660FileSystem::close(ino_t) {
+void ISO9660FileSystem::close(fs::OpenFile *) {
 	/* nothing to do */
 }
 
-int ISO9660FileSystem::stat(ino_t ino,struct stat *info) {
+int ISO9660FileSystem::stat(fs::OpenFile *file,struct stat *info) {
 	time_t ts;
-	const ISOCDirEntry *e = dirCache.get(ino);
+	const ISOCDirEntry *e = dirCache.get(file->ino);
 	if(e == NULL)
 		return -ENOBUFS;
 
@@ -168,39 +155,39 @@ int ISO9660FileSystem::stat(ino_t ino,struct stat *info) {
 	return 0;
 }
 
-ssize_t ISO9660FileSystem::read(ino_t inodeNo,void *buffer,off_t offset,size_t count) {
-	return ISO9660File::read(this,inodeNo,buffer,offset,count);
+ssize_t ISO9660FileSystem::read(fs::OpenFile *file,void *buffer,off_t offset,size_t count) {
+	return ISO9660File::read(this,file->ino,buffer,offset,count);
 }
 
-ssize_t ISO9660FileSystem::write(ino_t,const void *,off_t,size_t) {
+ssize_t ISO9660FileSystem::write(fs::OpenFile *,const void *,off_t,size_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::link(FSUser *,ino_t,ino_t,const char *) {
+int ISO9660FileSystem::link(fs::User *,fs::OpenFile *,fs::OpenFile *,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::unlink(FSUser *,ino_t,const char *) {
+int ISO9660FileSystem::unlink(fs::User *,fs::OpenFile *,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::mkdir(FSUser *,ino_t,const char *,mode_t) {
+int ISO9660FileSystem::mkdir(fs::User *,fs::OpenFile *,const char *,mode_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::rmdir(FSUser *,ino_t,const char *) {
+int ISO9660FileSystem::rmdir(fs::User *,fs::OpenFile *,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::chmod(FSUser *,ino_t,mode_t) {
+int ISO9660FileSystem::chmod(fs::User *,fs::OpenFile *,mode_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::chown(FSUser *,ino_t,uid_t,gid_t) {
+int ISO9660FileSystem::chown(fs::User *,fs::OpenFile *,uid_t,gid_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::utime(FSUser *,ino_t,const struct utimbuf *) {
+int ISO9660FileSystem::utime(fs::User *,fs::OpenFile *,const struct utimbuf *) {
 	return -EROFS;
 }
 

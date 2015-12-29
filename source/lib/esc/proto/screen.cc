@@ -34,13 +34,14 @@ std::vector<Screen::Mode> Screen::getModes() {
 	if(res == 0)
 		return modes;
 
-	_is << res << SendReceive(MSG_SCR_GETMODES) >> res;
-	if(res < 0)
-		VTHROWE("getModes()",res);
+	ValueResponse<size_t> r;
+	_is << res << SendReceive(MSG_SCR_GETMODES) >> r;
+	if(r.err < 0)
+		VTHROWE("getModes()",r.err);
 
-	Mode tmp[res];
+	Mode tmp[r.res];
 	_is >> ReceiveData(tmp,sizeof(tmp));
-	for(ssize_t i = 0; i < res; ++i)
+	for(size_t i = 0; i < r.res; ++i)
 		modes.push_back(tmp[i]);
 	return modes;
 }

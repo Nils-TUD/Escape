@@ -59,12 +59,12 @@ public:
 	 * @throws if the operation failed
 	 */
 	gwinid_t create(gpos_t x,gpos_t y,gsize_t w,gsize_t h,uint style,gsize_t titleHeight,const char *title) {
-		int res;
+		ValueResponse<gwinid_t> r;
 		_is << x << y << w << h << style << titleHeight << CString(title);
-		_is << esc::SendReceive(MSG_WIN_CREATE) >> res;
-		if(res < 0)
-			VTHROWE("create(" << x << "," << y << "," << w << "," << h << ")",res);
-		return res;
+		_is << esc::SendReceive(MSG_WIN_CREATE) >> r;
+		if(r.err < 0)
+			VTHROWE("create(" << x << "," << y << "," << w << "," << h << ")",r.err);
+		return r.res;
 	}
 
 	/**
@@ -126,7 +126,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void update(gwinid_t wid,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		int res;
+		errcode_t res;
 		_is << wid << x << y << width << height << esc::SendReceive(MSG_WIN_UPDATE) >> res;
 		if(res < 0)
 			VTHROWE("update(" << x << "," << y << "," << width << "," << height << ")",res);
@@ -141,7 +141,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
-		int res;
+		errcode_t res;
 		_is << width << height << bpp << esc::SendReceive(MSG_WIN_SETMODE) >> res;
 		if(res < 0)
 			VTHROWE("setMode(" << width << "," << height << "," << bpp << ")",res);
@@ -227,7 +227,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void attach(gwinid_t wid = -1) {
-		int res;
+		errcode_t res;
 		_is << wid << SendReceive(MSG_WIN_ATTACH) >> res;
 		if(res < 0)
 			VTHROWE("attach(" << wid << ")",res);

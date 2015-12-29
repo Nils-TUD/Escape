@@ -147,43 +147,49 @@ private:
 			std::lock_guard<std::mutex> guard(*_vterm->mutex);
 			setVideoMode(mode);
 		}
-		is << 0 << esc::Reply();
+		is << errcode_t(0) << esc::Reply();
 	}
 
 	void getFlag(IPCStream &is) {
 		VTerm::Flag flag;
 		is >> flag;
-		handleControlMsg(is,MSG_VT_GETFLAG,flag,0);
+		errcode_t res = handleControlMsg(MSG_VT_GETFLAG,flag,0);
+		is << ValueResponse<bool>::result(res) << Reply();
 	}
 	void setFlag(IPCStream &is) {
 		bool val;
 		VTerm::Flag flag;
 		is >> flag >> val;
-		handleControlMsg(is,MSG_VT_SETFLAG,flag,val);
+		errcode_t res = handleControlMsg(MSG_VT_SETFLAG,flag,val);
+		is << res << Reply();
 	}
 	void backup(IPCStream &is) {
-		handleControlMsg(is,MSG_VT_BACKUP,0,0);
+		errcode_t res = handleControlMsg(MSG_VT_BACKUP,0,0);
+		is << res << Reply();
 	}
 	void restore(IPCStream &is) {
-		handleControlMsg(is,MSG_VT_RESTORE,0,0);
+		errcode_t res = handleControlMsg(MSG_VT_RESTORE,0,0);
+		is << res << Reply();
 	}
 	void setShellPid(IPCStream &is) {
 		pid_t pid;
 		is >> pid;
-		handleControlMsg(is,MSG_VT_SHELLPID,pid,0);
+		errcode_t res = handleControlMsg(MSG_VT_SHELLPID,pid,0);
+		is << res << Reply();
 	}
 	void isVTerm(IPCStream &is) {
-		handleControlMsg(is,MSG_VT_ISVTERM,0,0);
+		errcode_t res = handleControlMsg(MSG_VT_ISVTERM,0,0);
+		is << res << Reply();
 	}
 
-	void handleControlMsg(IPCStream &is,msgid_t mid,int arg1,int arg2) {
-		int res = vtctrl_control(_vterm,mid,arg1,arg2);
+	errcode_t handleControlMsg(msgid_t mid,int arg1,int arg2) {
+		errcode_t res = vtctrl_control(_vterm,mid,arg1,arg2);
 		{
 			std::lock_guard<std::mutex> guard(*_vterm->mutex);
 			checkPending();
 			update();
 		}
-		is << res << Reply();
+		return res;
 	}
 
 protected:

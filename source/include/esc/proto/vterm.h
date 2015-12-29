@@ -63,11 +63,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	bool getFlag(Flag flag) {
-		int res;
-		_is << flag << SendReceive(MSG_VT_GETFLAG) >> res;
-		if(res < 0)
-			VTHROWE("getFlag(" << flag << ")",res);
-		return res == 1;
+		ValueResponse<bool> r;
+		_is << flag << SendReceive(MSG_VT_GETFLAG) >> r;
+		if(r.err < 0)
+			VTHROWE("getFlag(" << flag << ")",r.err);
+		return r.res;
 	}
 
 	/**
@@ -78,7 +78,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void setFlag(Flag flag,bool val) {
-		int res;
+		errcode_t res;
 		_is << flag << val << SendReceive(MSG_VT_SETFLAG) >> res;
 		if(res < 0)
 			VTHROWE("setFlag(" << flag << "," << val << ")",res);
@@ -90,7 +90,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void backup() {
-		int res;
+		errcode_t res;
 		_is << SendReceive(MSG_VT_BACKUP) >> res;
 		if(res < 0)
 			VTHROWE("backup()",res);
@@ -102,7 +102,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void restore() {
-		int res;
+		errcode_t res;
 		_is << SendReceive(MSG_VT_RESTORE) >> res;
 		if(res < 0)
 			VTHROWE("restore()",res);
@@ -115,7 +115,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void setShellPid(pid_t pid) {
-		int res;
+		errcode_t res;
 		_is << pid << SendReceive(MSG_VT_SHELLPID) >> res;
 		if(res < 0)
 			VTHROWE("setShellPid(" << pid << ")",res);
@@ -128,7 +128,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void setMode(int mode) {
-		int res;
+		errcode_t res;
 		_is << mode << SendReceive(MSG_VT_SETMODE) >> res;
 		if(res < 0)
 			VTHROWE("setMode(" << mode << ")",res);

@@ -42,6 +42,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+using namespace esc;
+
 class TUIVTermDevice;
 
 static int vtermThread(void *arg);
@@ -51,13 +53,13 @@ static void vtSetVideoMode(int mode);
 static void vtUpdate(void);
 static void vtSetCursor(sVTerm *vt);
 
-static std::vector<esc::Screen::Mode> modes;
-static esc::FrameBuffer *fb = NULL;
+static std::vector<Screen::Mode> modes;
+static FrameBuffer *fb = NULL;
 static sVTerm vterm;
 static bool run = true;
 static TUIVTermDevice *vtdev;
 
-class TUIVTermDevice : public esc::VTermDevice {
+class TUIVTermDevice : public VTermDevice {
 public:
 	explicit TUIVTermDevice(const char *name,mode_t mode,sVTerm *vt) : VTermDevice(name,mode,vt) {
 		set(MSG_SCR_GETMODE,std::make_memfun(this,&TUIVTermDevice::getMode));
@@ -74,30 +76,30 @@ public:
 		vtUpdate();
 	}
 
-	void getMode(esc::IPCStream &is) {
-		esc::Screen::Mode mode = vterm.ui->getMode();
-		is << 0 << mode << esc::Reply();
+	void getMode(IPCStream &is) {
+		Screen::Mode mode = vterm.ui->getMode();
+		is << ValueResponse<Screen::Mode>::success(mode) << Reply();
 	}
 
-	void getModes(esc::IPCStream &is) {
+	void getModes(IPCStream &is) {
 		size_t n;
 		is >> n;
 
-		is << modes.size() << esc::Reply();
+		is << ValueResponse<size_t>::success(modes.size()) << Reply();
 		if(n)
-			is << esc::ReplyData(modes.begin(),sizeof(esc::Screen::Mode) * modes.size());
+			is << ReplyData(modes.begin(),sizeof(Screen::Mode) * modes.size());
 	}
 
-	void getKeymap(esc::IPCStream &is) {
+	void getKeymap(IPCStream &is) {
 		std::string keymap = vterm.ui->getKeymap();
-		is << 0 << esc::CString(keymap.c_str(),keymap.length()) << esc::Reply();
+		is << errcode_t(0) << CString(keymap.c_str(),keymap.length()) << Reply();
 	}
 
-	void setKeymap(esc::IPCStream &is) {
-		esc::CStringBuf<MAX_PATH_LEN> path;
+	void setKeymap(IPCStream &is) {
+		CStringBuf<MAX_PATH_LEN> path;
 		is >> path;
 		vterm.ui->setKeymap(std::string(path.str()));
-		is << 0 << esc::Reply();
+		is << errcode_t(0) << Reply();
 	}
 };
 
@@ -160,16 +162,16 @@ int main(int argc,char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static void processKeyEvent(const esc::UIEvents::Event &ev) {
+static void processKeyEvent(const UIEvents::Event &ev) {
 	if((ev.d.keyb.modifier & (STATE_BREAK | STATE_CTRL | STATE_SHIFT)) == (STATE_CTRL | STATE_SHIFT)) {
 		if(ev.d.keyb.keycode == VK_C) {
-			esc::Clipboard::Stream s = esc::Clipboard::writer();
+			Clipboard::Stream s = Clipboard::writer();
 			std::lock_guard<std::mutex> guard(*vterm.mutex);
 			vtctrl_getSelection(&vterm,s);
 			return;
 		}
 		else if(ev.d.keyb.keycode == VK_V) {
-			esc::Clipboard::Stream s = esc::Clipboard::reader();
+			Clipboard::Stream s = Clipboard::reader();
 			std::lock_guard<std::mutex> guard(*vterm.mutex);
 			while(!s.eof()) {
 				char buf[256];
@@ -186,7 +188,7 @@ static void processKeyEvent(const esc::UIEvents::Event &ev) {
 	vtUpdate();
 }
 
-static void processMouseEvent(const esc::UIEvents::Event &ev) {
+static void processMouseEvent(const UIEvents::Event &ev) {
 	static int mx = 0, my = 0;
 	mx += ev.d.mouse.x;
 	my -= ev.d.mouse.y;
@@ -208,7 +210,7 @@ static void processMouseEvent(const esc::UIEvents::Event &ev) {
 static int uimInputThread(void *arg) {
 	int modeid = *(int*)arg;
 	/* open uimng's input device */
-	esc::UIEvents uiev(*vterm.ui);
+	UIEvents uiev(*vterm.ui);
 
 	if(signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set SIGTERM handler");
@@ -224,14 +226,14 @@ static int uimInputThread(void *arg) {
 
 	/* read from uimanager and handle the keys */
 	while(run) {
-		esc::UIEvents::Event ev;
-		uiev.is() >> esc::ReceiveData(&ev,sizeof(ev),false);
+		UIEvents::Event ev;
+		uiev.is() >> ReceiveData(&ev,sizeof(ev),false);
 		if(!run)
 			break;
 
-		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD)
+		if(ev.type == UIEvents::Event::TYPE_KEYBOARD)
 			processKeyEvent(ev);
-		else if(ev.type == esc::UIEvents::Event::TYPE_MOUSE)
+		else if(ev.type == UIEvents::Event::TYPE_MOUSE)
 			processMouseEvent(ev);
 		vtdev->checkPending();
 	}
@@ -245,17 +247,17 @@ static int vtermThread(void *arg) {
 }
 
 static int vtInit(int id,const char *name,uint cols,uint rows) {
-	vterm.ui = new esc::UI("/dev/uimng");
+	vterm.ui = new UI("/dev/uimng");
 	modes = vterm.ui->getModes();
 
 	/* find a suitable mode */
-	esc::Screen::Mode mode = vterm.ui->findTextModeIn(modes,cols,rows);
+	Screen::Mode mode = vterm.ui->findTextModeIn(modes,cols,rows);
 
 	/* open speaker */
 	struct stat info;
 	if(stat("/dev/speaker",&info) >= 0) {
 		try {
-			vterm.speaker = new esc::Speaker("/dev/speaker");
+			vterm.speaker = new Speaker("/dev/speaker");
 		}
 		catch(const std::exception &e) {
 			/* ignore errors here. in this case we simply don't use it */
@@ -315,7 +317,7 @@ static void vtSetVideoMode(int mode) {
 			print("Setting video mode %d: %dx%dx%d",mode,it->width,it->height,it->bitsPerPixel);
 
 			/* rename old shm as a backup */
-			esc::FrameBuffer *fbtmp = fb;
+			FrameBuffer *fbtmp = fb;
 			std::string tmpname;
 			if(fbtmp) {
 				tmpname = fbtmp->filename() + "-tmp";
@@ -326,12 +328,12 @@ static void vtSetVideoMode(int mode) {
 			/* try to set new mode */
 			print("Creating new framebuffer named %s",vterm.name);
 			try {
-				std::unique_ptr<esc::FrameBuffer> nfb(
-					new esc::FrameBuffer(*it,vterm.name,esc::Screen::MODE_TYPE_TUI,0644));
-				vterm.ui->setMode(esc::Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
+				std::unique_ptr<FrameBuffer> nfb(
+					new FrameBuffer(*it,vterm.name,Screen::MODE_TYPE_TUI,0644));
+				vterm.ui->setMode(Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
 				fb = nfb.release();
 			}
-			catch(const esc::default_error &e) {
+			catch(const default_error &e) {
 				fb = fbtmp;
 				if(fb)
 					fb->rename(vterm.name);
@@ -345,7 +347,7 @@ static void vtSetVideoMode(int mode) {
 					fb = fbtmp;
 					if(fb) {
 						fb->rename(vterm.name);
-						vterm.ui->setMode(esc::Screen::MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
+						vterm.ui->setMode(Screen::MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
 					}
 					VTHROWE("vtctrl_resize(" << it->cols << "," << it->rows << ")",-ENOMEM);
 				}

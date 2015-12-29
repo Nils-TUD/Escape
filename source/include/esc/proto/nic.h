@@ -105,11 +105,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	ulong getMTU() {
-		long res;
-		_is << SendReceive(MSG_NIC_GETMTU) >> res;
-		if(res < 0)
-			VTHROWE("getMTU()",res);
-		return res;
+		ValueResponse<ulong> r;
+		_is << SendReceive(MSG_NIC_GETMTU) >> r;
+		if(r.err < 0)
+			VTHROWE("getMTU()",r.err);
+		return r.res;
 	}
 
 	/**
@@ -117,12 +117,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	MAC getMAC() {
-		int res;
-		MAC addr;
-		_is << SendReceive(MSG_NIC_GETMAC) >> res >> addr;
-		if(res < 0)
-			VTHROWE("getMAC()",res);
-		return addr;
+		ValueResponse<MAC> r;
+		_is << SendReceive(MSG_NIC_GETMAC) >> r;
+		if(r.err < 0)
+			VTHROWE("getMAC()",r.err);
+		return r.res;
 	}
 
 private:

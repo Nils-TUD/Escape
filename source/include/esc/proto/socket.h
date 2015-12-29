@@ -154,7 +154,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void connect(const Addr &addr) {
-		int res;
+		errcode_t res;
 		_is << addr << SendReceive(MSG_SOCK_CONNECT) >> res;
 		if(res < 0)
 			VTHROWE("connect(" << addr << ")",res);
@@ -168,7 +168,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void bind(const Addr &addr) {
-		int res;
+		errcode_t res;
 		_is << addr << SendReceive(MSG_SOCK_BIND) >> res;
 		if(res < 0)
 			VTHROWE("bind(" << addr << ")",res);
@@ -180,7 +180,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void listen() {
-		int res;
+		errcode_t res;
 		_is << SendReceive(MSG_SOCK_LISTEN) >> res;
 		if(res < 0)
 			VTHROWE("listen()",res);
@@ -283,7 +283,7 @@ public:
 	 * the socket into the closed state.
 	 */
 	void abort() {
-		int res;
+		errcode_t res;
 		_is << SendReceive(MSG_SOCK_ABORT) >> res;
 		if(res < 0)
 			VTHROWE("abort()",res);

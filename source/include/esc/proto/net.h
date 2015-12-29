@@ -110,26 +110,26 @@ public:
 	Net &operator=(const Net&) = delete;
 
 	void linkAdd(const char *name,const char *device) {
-		int res;
+		errcode_t res;
 		_is << CString(name) << CString(device) << SendReceive(MSG_NET_LINK_ADD) >> res;
 		if(res < 0)
 			VTHROWE("linkAdd(" << name << "," << device << ")",res);
 	}
 	void linkRem(const char *name) {
-		int res;
+		errcode_t res;
 		_is << CString(name) << SendReceive(MSG_NET_LINK_REM) >> res;
 		if(res < 0)
 			VTHROWE("linkRem(" << name << ")",res);
 	}
 	void linkConfig(const char *link,const IPv4Addr &ip,const IPv4Addr &nm,Status status) {
-		int res;
+		errcode_t res;
 		_is << CString(link) << ip << nm << status << SendReceive(MSG_NET_LINK_CONFIG) >> res;
 		if(res < 0)
 			VTHROWE("linkConfig(" << link << ")",res);
 	}
 	NIC::MAC linkMAC(const char *link) {
 		NIC::MAC mac;
-		int res;
+		errcode_t res;
 		_is << CString(link) << SendReceive(MSG_NET_LINK_MAC) >> res >> mac;
 		if(res < 0)
 			VTHROWE("linkMAC(" << link << ")",res);
@@ -137,13 +137,13 @@ public:
 	}
 
 	void routeAdd(const char *link,const IPv4Addr &ip,const IPv4Addr &gw,const IPv4Addr &nm) {
-		int res;
+		errcode_t res;
 		_is << CString(link) << ip << gw << nm << SendReceive(MSG_NET_ROUTE_ADD) >> res;
 		if(res < 0)
 			VTHROWE("routeAdd(" << link << ")",res);
 	}
 	void routeRem(const IPv4Addr &ip) {
-		int res;
+		errcode_t res;
 		_is << ip << SendReceive(MSG_NET_ROUTE_REM) >> res;
 		if(res < 0)
 			VTHROWE("routeRem()",res);
@@ -151,27 +151,27 @@ public:
 	IPv4Addr routeGet(const IPv4Addr &ip,char *linkname,size_t size) {
 		IPv4Addr dest;
 		CString link(linkname,size);
-		int res;
+		errcode_t res;
 		_is << ip << SendReceive(MSG_NET_ROUTE_GET) >> res >> dest >> link;
 		if(res < 0)
 			VTHROWE("routeGem()",res);
 		return dest;
 	}
 	void routeConfig(const IPv4Addr &ip,Status status) {
-		int res;
+		errcode_t res;
 		_is << ip << status << SendReceive(MSG_NET_ROUTE_CONFIG) >> res;
 		if(res < 0)
 			VTHROWE("routeConfig()",res);
 	}
 
 	void arpAdd(const IPv4Addr &ip) {
-		int res;
+		errcode_t res;
 		_is << ip << SendReceive(MSG_NET_ARP_ADD) >> res;
 		if(res < 0)
 			VTHROWE("arpAdd()",res);
 	}
 	void arpRem(const IPv4Addr &ip) {
-		int res;
+		errcode_t res;
 		_is << ip << SendReceive(MSG_NET_ARP_REM) >> res;
 		if(res < 0)
 			VTHROWE("arpRem()",res);

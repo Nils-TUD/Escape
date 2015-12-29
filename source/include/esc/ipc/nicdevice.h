@@ -177,11 +177,11 @@ private:
 	}
 
 	void getMac(IPCStream &is) {
-		is << 0 << _driver->mac() << Reply();
+		is << ValueResponse<NIC::MAC>::success(_driver->mac()) << Reply();
 	}
 
 	void getMTU(IPCStream &is) {
-		is << _driver->mtu() << Reply();
+		is << ValueResponse<ulong>::success(_driver->mtu()) << Reply();
 	}
 
 	bool handleRead(int fd,msgid_t mid,char *data,size_t count) {

@@ -65,7 +65,7 @@ public:
 	 */
 	std::string getKeymap() {
 		CStringBuf<MAX_PATH_LEN> path;
-		int res;
+		errcode_t res;
 		_is << SendReceive(MSG_UIM_GETKEYMAP) >> res >> path;
 		if(res < 0)
 			VTHROWE("getKeymap()",res);
@@ -79,7 +79,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void setKeymap(const std::string &map) {
-		int res;
+		errcode_t res;
 		_is << CString(map.c_str(),map.length()) << SendReceive(MSG_UIM_SETKEYMAP) >> res;
 		if(res < 0)
 			VTHROWE("setKeymap(" << map << ")",res);

@@ -64,7 +64,7 @@ struct ValueResponse : public ErrorResponse {
 		return ValueResponse(res,0);
 	}
 	static ValueResponse error(errcode_t err) {
-		return ValueResponse(0,err);
+		return ValueResponse(T(),err);
 	}
 	static ValueResponse result(const T &res) {
 		return ValueResponse(res,res < 0 ? res : 0);
@@ -73,13 +73,13 @@ struct ValueResponse : public ErrorResponse {
 	friend IPCBuf &operator>>(IPCBuf &is,ValueResponse &r) {
 		is >> r.err >> r.res;
 		if(is.error())
-			r.res = -EINVAL;
+			r.err = -EINVAL;
 		return is;
 	}
 	friend IPCStream &operator>>(IPCStream &is,ValueResponse &r) {
 		is >> r.err >> r.res;
 		if(is.error())
-			r.res = -EINVAL;
+			r.err = -EINVAL;
 		return is;
 	}
 	friend IPCStream &operator<<(IPCStream &is,const ValueResponse &r) {

@@ -120,27 +120,27 @@ public:
 	}
 
 	void backup(IPCStream &is) {
-		is << 0 << Reply();
+		is << errcode_t(0) << Reply();
 	}
 	void restore(IPCStream &is) {
-		is << 0 << Reply();
+		is << errcode_t(0) << Reply();
 	}
 	void getMode(IPCStream &is) {
-		is << 0 << _mode << Reply();
+		is << ValueResponse<Screen::Mode>::success(_mode) << Reply();
 	}
 	void setShellPid(IPCStream &is) {
 		pid_t pid;
 		is >> pid;
 		_shpid = pid;
-		is << 0 << Reply();
+		is << errcode_t(0) << Reply();
 	}
 	void isVTerm(IPCStream &is) {
-		is << 1 << Reply();
+		is << errcode_t(1) << Reply();
 	}
 	void getFlag(IPCStream &is) {
 		VTerm::Flag flag;
 		is >> flag;
-		is << ((_flags & (1 << flag)) ? 1 : 0) << Reply();
+		is << ValueResponse<bool>::success((_flags & (1 << flag)) ? 1 : 0) << Reply();
 	}
 	void setFlag(IPCStream &is) {
 		bool val;
@@ -149,7 +149,7 @@ public:
 		_flags &= ~(1 << flag);
 		if(val)
 			_flags |= 1 << flag;
-		is << 0 << Reply();
+		is << errcode_t(0) << Reply();
 	}
 
 	void handleChar(char c) {

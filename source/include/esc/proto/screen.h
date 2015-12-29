@@ -133,12 +133,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	Mode getMode() {
-		Mode mode;
-		int res;
-		_is << SendReceive(MSG_SCR_GETMODE) >> res >> mode;
-		if(res < 0)
-			VTHROWE("getMode()",res);
-		return mode;
+		ValueResponse<Mode> r;
+		_is << SendReceive(MSG_SCR_GETMODE) >> r;
+		if(r.err < 0)
+			VTHROWE("getMode()",r.err);
+		return r.res;
 	}
 
 	/**
@@ -151,7 +150,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void setMode(int type,int mode,const char *shm,bool switchMode) {
-		int res;
+		errcode_t res;
 		_is << mode << type << switchMode << CString(shm) << SendReceive(MSG_SCR_SETMODE) >> res;
 		if(res < 0)
 			VTHROWE("setMode(" << type << "," << mode << "," << shm << ")",res);
@@ -164,11 +163,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	size_t getModeCount() {
-		ssize_t count;
-		_is << static_cast<size_t>(0) << SendReceive(MSG_SCR_GETMODES) >> count;
-		if(count < 0)
-			VTHROWE("getModeCount()",count);
-		return count;
+		ValueResponse<size_t> r;
+		_is << static_cast<size_t>(0) << SendReceive(MSG_SCR_GETMODES) >> r;
+		if(r.err < 0)
+			VTHROWE("getModeCount()",r.err);
+		return r.res;
 	}
 
 	/**

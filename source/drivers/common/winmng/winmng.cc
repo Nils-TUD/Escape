@@ -38,9 +38,11 @@
 
 #define DEF_BPP		24
 
+using namespace esc;
+
 static sInputThread inputData;
 
-class WinMngDevice : public esc::Device {
+class WinMngDevice : public Device {
 public:
 	explicit WinMngDevice(const char *path,const char *name,mode_t mode)
 		: Device(path,mode,DEV_TYPE_SERVICE,DEV_CLOSE), _name(name) {
@@ -56,20 +58,20 @@ public:
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
 	}
 
-	void create(esc::IPCStream &is) {
+	void create(IPCStream &is) {
 		gpos_t x,y;
 		gsize_t width,height,titleBarHeight;
 		uint style;
-		esc::CStringBuf<esc::WinMngEvents::MAX_WINTITLE_LEN> title;
+		CStringBuf<WinMngEvents::MAX_WINTITLE_LEN> title;
 		is >> x >> y >> width >> height >> style >> titleBarHeight >> title;
 
-		int res = win_create(x,y,width,height,is.fd(),style,titleBarHeight,
+		errcode_t res = win_create(x,y,width,height,is.fd(),style,titleBarHeight,
 			title.str(),_name);
 
-		is << res << esc::Reply();
+		is << ValueResponse<gwinid_t>::result(res) << Reply();
 	}
 
-	void setActive(esc::IPCStream &is) {
+	void setActive(IPCStream &is) {
 		gwinid_t wid;
 		is >> wid;
 
@@ -78,7 +80,7 @@ public:
 			win_setActive(wid,true,input_getMouseX(),input_getMouseY());
 	}
 
-	void destroy(esc::IPCStream &is) {
+	void destroy(IPCStream &is) {
 		gwinid_t wid;
 		is >> wid;
 
@@ -86,7 +88,7 @@ public:
 			win_destroy(wid,input_getMouseX(),input_getMouseY());
 	}
 
-	void move(esc::IPCStream &is) {
+	void move(IPCStream &is) {
 		gwinid_t wid;
 		gpos_t x,y;
 		bool finished;
@@ -101,7 +103,7 @@ public:
 		}
 	}
 
-	void resize(esc::IPCStream &is) {
+	void resize(IPCStream &is) {
 		gwinid_t wid;
 		gpos_t x,y;
 		gsize_t width,height;
@@ -113,8 +115,8 @@ public:
 			if(finished) {
 				win_resize(wid,x,y,width,height,_name);
 
-				esc::WinMngEvents::Event ev;
-				ev.type = esc::WinMngEvents::Event::TYPE_RESIZE;
+				WinMngEvents::Event ev;
+				ev.type = WinMngEvents::Event::TYPE_RESIZE;
 				ev.wid = wid;
 				send(evid,MSG_WIN_EVENT,&ev,sizeof(ev));
 			}
@@ -123,7 +125,7 @@ public:
 		}
 	}
 
-	void update(esc::IPCStream &is) {
+	void update(IPCStream &is) {
 		gwinid_t wid;
 		gpos_t x,y;
 		gsize_t width,height;
@@ -140,49 +142,49 @@ public:
 				wid = -EINVAL;
 		}
 
-		is << wid << esc::Reply();
+		is << ValueResponse<gwinid_t>::result(wid) << Reply();
 	}
 
-	void getModes(esc::IPCStream &is) {
+	void getModes(IPCStream &is) {
 		size_t n;
 		is >> n;
 
-		std::vector<esc::Screen::Mode> modes = inputData.ui->getModes();
+		std::vector<Screen::Mode> modes = inputData.ui->getModes();
 		if(n == 0) {
 			size_t count = 0;
 			for(auto m = modes.begin(); m != modes.end(); ++m) {
-				if(m->type & esc::Screen::MODE_TYPE_GUI)
+				if(m->type & Screen::MODE_TYPE_GUI)
 					count++;
 			}
-			is << count << esc::Reply();
+			is << ValueResponse<size_t>::success(count) << Reply();
 		}
 		else {
 			size_t pos = 0;
-			esc::Screen::Mode *marray = new esc::Screen::Mode[n];
+			Screen::Mode *marray = new Screen::Mode[n];
 			for(auto m = modes.begin(); pos < n && m != modes.end(); ++m) {
-				if(m->type & esc::Screen::MODE_TYPE_GUI)
+				if(m->type & Screen::MODE_TYPE_GUI)
 					marray[pos++] = *m;
 			}
-			is << pos << esc::Reply();
-			is << esc::ReplyData(marray,pos * sizeof(*marray));
+			is << ValueResponse<size_t>::success(pos) << Reply();
+			is << ReplyData(marray,pos * sizeof(*marray));
 			delete[] marray;
 		}
 	}
 
-	void getMode(esc::IPCStream &is) {
-		is << 0 << *win_getMode() << esc::Reply();
+	void getMode(IPCStream &is) {
+		is << ValueResponse<Screen::Mode>::success(*win_getMode()) << Reply();
 	}
 
-	void setMode(esc::IPCStream &is) {
+	void setMode(IPCStream &is) {
 		gsize_t width,height;
 		gcoldepth_t bpp;
 		is >> width >> height >> bpp;
 
-		int res = win_setMode(width,height,bpp,_name);
-		is << res << esc::Reply();
+		errcode_t res = win_setMode(width,height,bpp,_name);
+		is << res << Reply();
 	}
 
-	void close(esc::IPCStream &is) {
+	void close(IPCStream &is) {
 		win_destroyWinsOf(is.fd(),input_getMouseX(),input_getMouseY());
 		Device::close(is);
 	}
@@ -191,7 +193,7 @@ private:
 	const char *_name;
 };
 
-class WinMngEventDevice : public esc::Device {
+class WinMngEventDevice : public Device {
 public:
 	explicit WinMngEventDevice(const char *path,mode_t mode)
 		: Device(path,mode,DEV_TYPE_SERVICE,DEV_CLOSE) {
@@ -201,28 +203,28 @@ public:
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngEventDevice::close),false);
 	}
 
-	void attach(esc::IPCStream &is) {
+	void attach(IPCStream &is) {
 		gwinid_t winid;
 		is >> winid;
 
 		win_attach(winid,is.fd());
 	}
 
-	void addListener(esc::IPCStream &is) {
+	void addListener(IPCStream &is) {
 		ev_type type;
 		is >> type;
 
 		listener_add(is.fd(),type);
 	}
 
-	void remListener(esc::IPCStream &is) {
+	void remListener(IPCStream &is) {
 		ev_type type;
 		is >> type;
 
 		listener_remove(is.fd(),type);
 	}
 
-	void close(esc::IPCStream &is) {
+	void close(IPCStream &is) {
 		listener_removeAll(is.fd());
 		win_detachAll(is.fd());
 		Device::close(is);
@@ -245,7 +247,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* connect to ui-manager */
-	inputData.ui = new esc::UI("/dev/uimng");
+	inputData.ui = new UI("/dev/uimng");
 
 	/* create event-device */
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
@@ -258,7 +260,7 @@ int main(int argc,char *argv[]) {
 	WinMngDevice windev(path,argv[3],0111);
 
 	/* open input device and attach */
-	inputData.uiev = new esc::UIEvents(*inputData.ui);
+	inputData.uiev = new UIEvents(*inputData.ui);
 
 	/* init window stuff */
 	inputData.winmng = path;

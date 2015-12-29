@@ -115,12 +115,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	Device getByClass(uchar cls,uchar subcls,int no = 0) {
-		Device d;
-		int err;
-		_is << cls << subcls << no << SendReceive(MSG_PCI_GET_BY_CLASS) >> err >> d;
-		if(err < 0)
-			VTHROWE("getByClass(" << cls << "," << subcls << ")",err);
-		return d;
+		ValueResponse<Device> r;
+		_is << cls << subcls << no << SendReceive(MSG_PCI_GET_BY_CLASS) >> r;
+		if(r.err < 0)
+			VTHROWE("getByClass(" << cls << "," << subcls << ")",r.err);
+		return r.res;
 	}
 
 	/**
@@ -133,12 +132,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	Device getById(uchar bus,uchar dev,uchar func) {
-		Device d;
-		int err;
-		_is << bus << dev << func << SendReceive(MSG_PCI_GET_BY_ID) >> err >> d;
-		if(err < 0)
-			VTHROWE("getById(" << bus << ":" << dev << ":" << func << ")",err);
-		return d;
+		ValueResponse<Device> r;
+		_is << bus << dev << func << SendReceive(MSG_PCI_GET_BY_ID) >> r;
+		if(r.err < 0)
+			VTHROWE("getById(" << bus << ":" << dev << ":" << func << ")",r.err);
+		return r.res;
 	}
 
 	/**
@@ -149,12 +147,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	Device getByIndex(size_t idx) {
-		Device d;
-		int err;
-		_is << idx << SendReceive(MSG_PCI_GET_BY_INDEX) >> err >> d;
-		if(err < 0)
-			VTHROWE("getByIndex(" << idx << ")",err);
-		return d;
+		ValueResponse<Device> r;
+		_is << idx << SendReceive(MSG_PCI_GET_BY_INDEX) >> r;
+		if(r.err < 0)
+			VTHROWE("getByIndex(" << idx << ")",r.err);
+		return r.res;
 	}
 
 	/**
@@ -164,11 +161,11 @@ public:
 	 * @throws if the operation failed
 	 */
 	size_t getCount() {
-		ssize_t count;
-		_is << SendReceive(MSG_PCI_GET_COUNT) >> count;
-		if(count < 0)
-			VTHROWE("getCount()",count);
-		return count;
+		ValueResponse<size_t> r;
+		_is << SendReceive(MSG_PCI_GET_COUNT) >> r;
+		if(r.err < 0)
+			VTHROWE("getCount()",r.err);
+		return r.res;
 	}
 
 	/**
@@ -179,11 +176,14 @@ public:
 	 * @param func the function
 	 * @param offset the offset to read at
 	 * @return the value
+	 * @throws if the operation failed
 	 */
 	uint32_t read(uchar bus,uchar dev,uchar func,uint32_t offset) {
-		uint32_t res;
-		_is << bus << dev << func << offset << SendReceive(MSG_PCI_READ) >> res;
-		return res;
+		ValueResponse<uint32_t> r;
+		_is << bus << dev << func << offset << SendReceive(MSG_PCI_READ) >> r;
+		if(r.err < 0)
+			VTHROWE("read()",r.err);
+		return r.res;
 	}
 
 	/**
@@ -194,10 +194,13 @@ public:
 	 * @param func the function
 	 * @param offset the offset to write to
 	 * @param value the value to write
+	 * @throws if the operation failed
 	 */
 	void write(uchar bus,uchar dev,uchar func,uint32_t offset,uint32_t value) {
-		int res;
+		errcode_t res;
 		_is << bus << dev << func << offset << value << SendReceive(MSG_PCI_WRITE) >> res;
+		if(res < 0)
+			VTHROWE("write()",res);
 	}
 
 	/**
@@ -208,11 +211,14 @@ public:
 	 * @param func the function
 	 * @param id the capability id
 	 * @return true if found
+	 * @throws if the operation failed
 	 */
 	bool hasCap(uchar bus,uchar dev,uchar func,uint8_t id) {
-		bool res;
-		_is << bus << dev << func << id << SendReceive(MSG_PCI_HAS_CAP) >> res;
-		return res;
+		ValueResponse<bool> r;
+		_is << bus << dev << func << id << SendReceive(MSG_PCI_HAS_CAP) >> r;
+		if(r.err < 0)
+			VTHROWE("write()",r.err);
+		return r.res;
 	}
 
 	/**
@@ -223,12 +229,13 @@ public:
 	 * @param func the function
 	 * @param msiaddr the MSI address to program
 	 * @param msival the MSI value to program
-	 * @return 0 on success
+	 * @throws if the operation failed
 	 */
-	uint8_t enableMSIs(uchar bus,uchar dev,uchar func,uint64_t msiaddr,uint32_t msival) {
-		int res;
+	void enableMSIs(uchar bus,uchar dev,uchar func,uint64_t msiaddr,uint32_t msival) {
+		errcode_t res;
 		_is << bus << dev << func << msiaddr << msival << SendReceive(MSG_PCI_ENABLE_MSIS) >> res;
-		return res;
+		if(res < 0)
+			VTHROWE("enableMSIs()",res);
 	}
 
 private:

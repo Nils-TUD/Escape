@@ -143,10 +143,10 @@ private:
 		C *c = (*this)[is.fd()];
 
 		int res = c->mode ? 0 : -EINVAL;
-		is << res;
 		if(res == 0)
-			is << *c->mode;
-		is << Reply();
+			is << ValueResponse<Screen::Mode>::success(*c->mode) << Reply();
+		else
+			is << ValueResponse<Screen::Mode>::error(res) << Reply();
 	}
 
 	void setMode(IPCStream &is) {
@@ -162,7 +162,7 @@ private:
 				break;
 			}
 		}
-		is << 0 << Reply();
+		is << errcode_t(0) << Reply();
 	}
 
 	void getModes(IPCStream &is) {
@@ -170,11 +170,11 @@ private:
 		is >> count;
 
 		if(count == 0)
-			is << _modes.size() << Reply();
+			is << ValueResponse<size_t>::success(_modes.size()) << Reply();
 		else if(count > _modes.size())
-			is << static_cast<ssize_t>(-EINVAL) << Reply();
+			is << ValueResponse<size_t>::error(-EINVAL) << Reply();
 		else {
-			is << count << Reply();
+			is << ValueResponse<size_t>::success(count) << Reply();
 			is << ReplyData(_modes.begin(),count * sizeof(Screen::Mode));
 		}
 	}

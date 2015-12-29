@@ -76,7 +76,7 @@ public:
 	void getKeymap(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		const Keymap *km = c->keymap() ? c->keymap() : Keymap::getDefault();
-		is << 0 << esc::CString(km->file().c_str()) << esc::Reply();
+		is << errcode_t(0) << esc::CString(km->file().c_str()) << esc::Reply();
 	}
 
 	void setKeymap(esc::IPCStream &is) {
@@ -84,7 +84,7 @@ public:
 		esc::CStringBuf<MAX_PATH_LEN> path;
 		is >> path;
 
-		int res = -EINVAL;
+		errcode_t res = -EINVAL;
 		Keymap *newMap = Keymap::request(path.str());
 		if(newMap) {
 			/* we don't need to lock this, because the client is only removed if this
@@ -102,7 +102,7 @@ public:
 
 		esc::Screen::Mode *modes = n == 0 ? NULL : new esc::Screen::Mode[n];
 		ssize_t res = ScreenMng::getModes(modes,n);
-		is << res << esc::Reply();
+		is << esc::ValueResponse<size_t>::result(res) << esc::Reply();
 		if(n != 0) {
 			is << esc::ReplyData(modes,res > 0 ? res * sizeof(*modes) : 0);
 			delete[] modes;
@@ -114,10 +114,10 @@ public:
 		if(c->fb()) {
 			esc::Screen::Mode mode = c->fb()->mode();
 			ScreenMng::adjustMode(&mode);
-			is << 0 << mode << esc::Reply();
+			is << esc::ValueResponse<esc::Screen::Mode>::success(mode) << esc::Reply();
 		}
 		else
-			is << -EINVAL << esc::Reply();
+			is << esc::ValueResponse<esc::Screen::Mode>::error(-EINVAL) << esc::Reply();
 	}
 
 	void setMode(esc::IPCStream &is) {
@@ -141,7 +141,7 @@ public:
 					c->screen()->update(0,0,width,height);
 			}
 		}
-		is << 0 << esc::Reply();
+		is << errcode_t(0) << esc::Reply();
 	}
 
 	void setCursor(esc::IPCStream &is) {

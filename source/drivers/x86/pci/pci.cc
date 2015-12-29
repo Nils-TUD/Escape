@@ -60,7 +60,7 @@ public:
 		is >> cls >> subcls >> no;
 
 		PCI::Device *d = list_getByClass(cls,subcls,no);
-		reply(is,d);
+		replyDevice(is,d);
 	}
 
 	void getById(IPCStream &is) {
@@ -68,7 +68,7 @@ public:
 		is >> bus >> dev >> func;
 
 		PCI::Device *d = list_getById(bus,dev,func);
-		reply(is,d);
+		replyDevice(is,d);
 	}
 
 	void getByIndex(IPCStream &is) {
@@ -76,12 +76,12 @@ public:
 		is >> idx;
 
 		PCI::Device *d = list_get(idx);
-		reply(is,d);
+		replyDevice(is,d);
 	}
 
 	void getCount(IPCStream &is) {
-		ssize_t len = list_length();
-		is << len << Reply();
+		size_t len = list_length();
+		is << ValueResponse<size_t>::success(len) << Reply();
 	}
 
 	void read(IPCStream &is) {
@@ -91,7 +91,7 @@ public:
 
 		value = pci_read(bus,dev,func,offset);
 		DBG("%02x:%02x:%x [%#04x] -> %#08x",bus,dev,func,offset,value);
-		is << value << Reply();
+		is << ValueResponse<uint32_t>::success(value) << Reply();
 	}
 
 	void write(IPCStream &is) {
@@ -101,7 +101,7 @@ public:
 
 		DBG("%02x:%02x:%x [%#04x] <- %#08x",bus,dev,func,offset,value);
 		pci_write(bus,dev,func,offset,value);
-		is << 0 << Reply();
+		is << errcode_t(0) << Reply();
 	}
 
 	void hasCap(IPCStream &is) {
@@ -110,7 +110,7 @@ public:
 
 		uint8_t offset = getCapOff(bus,dev,func,cap);
 		DBG("%02x:%02x:%x CAP %#02x -> %#02x",bus,dev,func,cap,offset);
-		is << (offset != 0) << Reply();
+		is << ValueResponse<bool>::success(offset != 0) << Reply();
 	}
 
 	void enableMSIs(IPCStream &is) {
@@ -135,7 +135,7 @@ public:
 			DBG("%02x:%02x:%x enabled MSIs %#08Lx : %#08x",bus,dev,func,msiaddr,msival);
 		}
 
-		is << (offset ? 0 : -EINVAL) << Reply();
+		is << errcode_t(offset ? 0 : -EINVAL) << Reply();
 	}
 
 private:
@@ -153,11 +153,11 @@ private:
 		return 0;
 	}
 
-	void reply(IPCStream &is,PCI::Device *d) {
+	void replyDevice(IPCStream &is,PCI::Device *d) {
 		if(d)
-			is << 0 << *d << Reply();
+			is << ValueResponse<PCI::Device>::success(*d) << Reply();
 		else
-			is << -ENOTFOUND << Reply();
+			is << ValueResponse<PCI::Device>::error(-ENOTFOUND) << Reply();
 	}
 };
 

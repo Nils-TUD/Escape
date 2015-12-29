@@ -106,7 +106,7 @@ public:
 		esc::Socket::Addr sa;
 		is >> sa;
 
-		int res;
+		errcode_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->connect(&sa,is.msgid());
@@ -120,7 +120,7 @@ public:
 		esc::Socket::Addr sa;
 		is >> sa;
 
-		int res;
+		errcode_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->bind(&sa);
@@ -131,7 +131,7 @@ public:
 	void listen(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
 
-		int res;
+		errcode_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->listen();
@@ -144,7 +144,8 @@ public:
 		msgid_t mid;
 		is >> mid;
 
-		int res,msgtype = mid & 0xFFFF;
+		errcode_t res;
+		int msgtype = mid & 0xFFFF;
 		if(msgtype != MSG_FILE_WRITE && msgtype != MSG_SOCK_SENDTO &&
 				msgtype != MSG_FILE_READ && msgtype != MSG_SOCK_RECVFROM &&
 				msgtype != MSG_DEV_CREATSIBL) {
@@ -195,7 +196,7 @@ public:
 
 	void abort(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		int res = sock->abort();
+		errcode_t res = sock->abort();
 		is << res << esc::Reply();
 	}
 
@@ -270,7 +271,7 @@ public:
 		is >> name >> path;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = LinkMng::add(name.str(),path.str());
+		errcode_t res = LinkMng::add(name.str(),path.str());
 		if(res == 0) {
 			std::shared_ptr<Link> link = LinkMng::getByName(name.str());
 			std::shared_ptr<Link> *linkcpy = new std::shared_ptr<Link>(link);
@@ -287,7 +288,7 @@ public:
 		is >> name;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = LinkMng::rem(name.str());
+		errcode_t res = LinkMng::rem(name.str());
 		is << res << esc::Reply();
 	}
 
@@ -298,7 +299,7 @@ public:
 		is >> name >> ip >> netmask >> status;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = 0;
+		errcode_t res = 0;
 		std::shared_ptr<Link> l = LinkMng::getByName(name.str());
 		std::shared_ptr<Link> other;
 		if(!l)
@@ -324,9 +325,9 @@ public:
 		std::lock_guard<std::mutex> guard(mutex);
 		std::shared_ptr<Link> link = LinkMng::getByName(name.str());
 		if(!link)
-			is << -ENOTFOUND << esc::Reply();
+			is << esc::ValueResponse<esc::NIC::MAC>::error(-ENOTFOUND) << esc::Reply();
 		else
-			is << 0 << link->mac() << esc::Reply();
+			is << esc::ValueResponse<esc::NIC::MAC>::success(link->mac()) << esc::Reply();
 	}
 
 	void routeAdd(esc::IPCStream &is) {
@@ -335,7 +336,7 @@ public:
 		is >> link >> ip >> gw >> netmask;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = 0;
+		errcode_t res = 0;
 		std::shared_ptr<Link> l = LinkMng::getByName(link.str());
 		if(!l)
 			res = -ENOTFOUND;
@@ -353,7 +354,7 @@ public:
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = Route::remove(ip);
+		errcode_t res = Route::remove(ip);
 		is << res << esc::Reply();
 	}
 
@@ -363,7 +364,7 @@ public:
 		is >> ip >> status;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = Route::setStatus(ip,status);
+		errcode_t res = Route::setStatus(ip,status);
 		is << res << esc::Reply();
 	}
 
@@ -374,9 +375,9 @@ public:
 		std::lock_guard<std::mutex> guard(mutex);
 		Route r = Route::find(ip);
 		if(!r.valid())
-			is << -ENETUNREACH << esc::Reply();
+			is << errcode_t(-ENETUNREACH) << esc::Reply();
 		else {
-			is << 0;
+			is << errcode_t(0);
 			is << (r.flags & esc::Net::FL_USE_GW ? r.gateway : r.dest);
 			is << esc::CString(r.link->name().c_str(),r.link->name().length());
 			is << esc::Reply();
@@ -388,7 +389,7 @@ public:
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = 0;
+		errcode_t res = 0;
 		Route route = Route::find(ip);
 		if(!route.valid())
 			res = -ENOTFOUND;
@@ -402,7 +403,7 @@ public:
 		is >> ip;
 
 		std::lock_guard<std::mutex> guard(mutex);
-		int res = ARP::remove(ip);
+		errcode_t res = ARP::remove(ip);
 		is << res << esc::Reply();
 	}
 };

@@ -124,7 +124,7 @@ public:
 	void handleMsg(msgid_t mid,IPCStream &is);
 
 protected:
-	void reply(IPCStream &is,int errcode);
+	void reply(IPCStream &is,errcode_t errcode);
 	void close(IPCStream &is) {
 		::close(is.fd());
 	}

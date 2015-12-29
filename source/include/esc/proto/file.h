@@ -31,9 +31,11 @@ namespace esc {
  * The MSG_FILE_OPEN command that is sent by the kernel to devices if open() was called on them.
  */
 struct FileOpen {
-	struct Request {
-		static const msgid_t MSG = MSG_FILE_OPEN;
+	static const msgid_t MSG = MSG_FILE_OPEN;
 
+	struct Request {
+		explicit Request() {
+		}
 		explicit Request(char *buffer,size_t size) : path(buffer,size) {
 		}
 		explicit Request(uint _flags,const FSUser &_u,const CString &_path,mode_t _mode)
@@ -53,16 +55,18 @@ struct FileOpen {
 		mode_t mode;
 	};
 
-	typedef DefaultResponse<int> Response;
+	typedef ValueResponse<ino_t> Response;
 };
 
 /**
  * The MSG_DEV_SHFILE command that is sent by the kernel to devices if shfile() was called on them.
  */
 struct FileShFile {
-	struct Request {
-		static const msgid_t MSG = MSG_DEV_SHFILE;
+	static const msgid_t MSG = MSG_DEV_SHFILE;
 
+	struct Request {
+		explicit Request() {
+		}
 		explicit Request(char *buffer,size_t _size) : path(buffer,_size) {
 		}
 		explicit Request(size_t _size,const CString &_path)
@@ -83,7 +87,7 @@ struct FileShFile {
 		CString path;
 	};
 
-	typedef DefaultResponse<int> Response;
+	typedef ErrorResponse Response;
 };
 
 /**
@@ -91,38 +95,28 @@ struct FileShFile {
  * on them.
  */
 struct FileCreatSibl {
-	struct Request {
-		static const msgid_t MSG = MSG_DEV_CREATSIBL;
+	static const msgid_t MSG = MSG_DEV_CREATSIBL;
 
+	struct Request {
 		explicit Request() {
 		}
 		explicit Request(int _nfd,int _arg) : nfd(_nfd), arg(_arg) {
-		}
-
-		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.nfd << r.arg;
-		}
-		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.nfd << r.arg;
-		}
-		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.nfd >> r.arg;
 		}
 
 		int nfd;
 		int arg;
 	};
 
-	typedef DefaultResponse<int> Response;
+	typedef ErrorResponse Response;
 };
 
 /**
  * The MSG_FILE_READ command that is sent by the kernel to devices if read() was called on them.
  */
 struct FileRead {
-	struct Request {
-		static const msgid_t MSG = MSG_FILE_READ;
+	static const msgid_t MSG = MSG_FILE_READ;
 
+	struct Request {
 		explicit Request() {
 		}
 		explicit Request(size_t _offset,size_t _count,ssize_t _shmemoff)
@@ -134,16 +128,16 @@ struct FileRead {
 		ssize_t shmemoff;
 	};
 
-	typedef DefaultResponse<ssize_t> Response;
+	typedef ValueResponse<size_t> Response;
 };
 
 /**
  * The MSG_FILE_WRITE command that is sent by the kernel to devices if write() was called on them.
  */
 struct FileWrite {
-	struct Request {
-		static const msgid_t MSG = MSG_FILE_WRITE;
+	static const msgid_t MSG = MSG_FILE_WRITE;
 
+	struct Request {
 		explicit Request() {
 		}
 		explicit Request(size_t _offset,size_t _count,ssize_t _shmemoff)
@@ -155,14 +149,26 @@ struct FileWrite {
 		ssize_t shmemoff;
 	};
 
-	typedef DefaultResponse<ssize_t> Response;
+	typedef ValueResponse<size_t> Response;
 };
 
 /**
  * The MSG_FILE_SIZE command that is sent by the kernel to devices if filesize() was called on them.
  */
 struct FileSize {
-	typedef DefaultResponse<ssize_t> Response;
+	static const msgid_t MID = MSG_FILE_SIZE;
+
+	typedef EmptyRequest Request;
+	typedef ValueResponse<size_t> Response;
+};
+
+/**
+ * The MSG_FILE_CLOSE command that is sent by the kernel to devices if close() was called on them.
+ */
+struct FileClose {
+	static const msgid_t MID = MSG_FILE_CLOSE;
+
+	typedef EmptyRequest Request;
 };
 
 }

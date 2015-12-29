@@ -46,7 +46,7 @@ public:
 		if(r.shmemoff != -1)
 			memcpy(c->shm() + r.shmemoff,_diskaddr + r.offset,res);
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(r.shmemoff == -1 && res)
 			is << ReplyData(_diskaddr + r.offset,res);
 	}
@@ -62,11 +62,11 @@ public:
 		else
 			is >> ReceiveData(_diskaddr + r.offset,res);
 
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::result(res) << Reply();
 	}
 
 	void size(IPCStream &is) {
-		is << FileSize::Response(_disksize) << Reply();
+		is << FileSize::Response::success(_disksize) << Reply();
 	}
 
 private:

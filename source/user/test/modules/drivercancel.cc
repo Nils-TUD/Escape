@@ -63,7 +63,7 @@ public:
 			if(answer) {
 				ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 				IPCStream resp(is.fd(),buffer,sizeof(buffer),c->mid);
-				resp << FileRead::Response(4) << Reply() << ReplyData("foo",4);
+				resp << FileRead::Response::success(4) << Reply() << ReplyData("foo",4);
 			}
 			is << (answer ? 1 : 0) << Reply();
 			c->mid = 0;

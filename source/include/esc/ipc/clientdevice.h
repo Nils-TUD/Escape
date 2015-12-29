@@ -227,7 +227,7 @@ protected:
 	void open(IPCStream &is) {
 		add(is.fd(),new C(is.fd()));
 
-		is << FileOpen::Response(0) << Reply();
+		is << FileOpen::Response::success(0) << Reply();
 	}
 
 	void shfile(IPCStream &is) {

@@ -156,17 +156,17 @@ public:
 			}
 
 			if((~r.flags & O_CREAT) || file == NULL) {
-				is << FileOpen::Response(-ENOENT) << Reply();
+				is << FileOpen::Response::error(-ENOENT) << Reply();
 				return;
 			}
 		}
 		if(!canReach(&r.u,file)) {
-			is << FileOpen::Response(-EPERM) << Reply();
+			is << FileOpen::Response::error(-EPERM) << Reply();
 			return;
 		}
 
 		add(is.fd(),new OpenFile(is.fd(),r.path.str(),file,_archive,r.flags));
-		is << FileOpen::Response(is.fd()) << Reply();
+		is << FileOpen::Response::success(is.fd()) << Reply();
 	}
 
 	void close(IPCStream &is) {
@@ -181,7 +181,7 @@ public:
 		DataBuf buf(r.count,file->shm(),r.shmemoff);
 		ssize_t res = file->read(buf.data(),r.offset,r.count);
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(r.shmemoff == -1) {
 			if(res > 0)
 				is << ReplyData(buf.data(),res);
@@ -200,7 +200,7 @@ public:
 		ssize_t res = file->write(buf.data(),r.offset,r.count);
 		if(res > 0)
 			changed = true;
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::result(res) << Reply();
 	}
 
 	void istat(IPCStream &is) {

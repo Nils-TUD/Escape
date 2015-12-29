@@ -81,7 +81,7 @@ private:
 		else
 			res = r.count;
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(res)
 			is << ReplyData(content.c_str(),res);
 	}
@@ -94,12 +94,12 @@ private:
 		is >> ReceiveData(data.get(),r.count);
 		ssize_t res = handleWrite(r.offset,data.get(),r.count);
 
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::result(res) << Reply();
 	}
 
 	void filesize(IPCStream &is) {
 		std::string content = handleRead();
-		is << FileSize::Response(content.length()) << Reply();
+		is << FileSize::Response::success(content.length()) << Reply();
 	}
 };
 

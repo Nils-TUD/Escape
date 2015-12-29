@@ -25,32 +25,65 @@
 
 namespace esc {
 
-template<msgid_t MSGID>
 struct EmptyRequest {
-	static const msgid_t MID = MSGID;
 };
 
-template<typename T>
-struct DefaultResponse {
-	explicit DefaultResponse() : res() {
+struct ErrorResponse {
+	explicit ErrorResponse() : err() {
 	}
-	explicit DefaultResponse(T _res) : res(_res) {
+	explicit ErrorResponse(errcode_t _err) : err(_err) {
 	}
 
-	friend IPCBuf &operator>>(IPCBuf &is,DefaultResponse &r) {
-		is >> r.res;
+	friend IPCBuf &operator>>(IPCBuf &is,ErrorResponse &r) {
+		is >> r.err;
+		if(is.error())
+			r.err = -EINVAL;
+		return is;
+	}
+	friend IPCStream &operator>>(IPCStream &is,ErrorResponse &r) {
+		is >> r.err;
+		if(is.error())
+			r.err = -EINVAL;
+		return is;
+	}
+	friend IPCStream &operator<<(IPCStream &is,const ErrorResponse &r) {
+		return is << r.err;
+	}
+
+	errcode_t err;
+};
+
+template<typename T = void>
+struct ValueResponse : public ErrorResponse {
+	explicit ValueResponse() : ErrorResponse(), res() {
+	}
+	explicit ValueResponse(const T &_res, errcode_t err) : ErrorResponse(err), res(_res) {
+	}
+
+	static ValueResponse success(const T &res) {
+		return ValueResponse(res,0);
+	}
+	static ValueResponse error(errcode_t err) {
+		return ValueResponse(0,err);
+	}
+	static ValueResponse result(const T &res) {
+		return ValueResponse(res,res < 0 ? res : 0);
+	}
+
+	friend IPCBuf &operator>>(IPCBuf &is,ValueResponse &r) {
+		is >> r.err >> r.res;
 		if(is.error())
 			r.res = -EINVAL;
 		return is;
 	}
-	friend IPCStream &operator>>(IPCStream &is,DefaultResponse &r) {
-		is >> r.res;
+	friend IPCStream &operator>>(IPCStream &is,ValueResponse &r) {
+		is >> r.err >> r.res;
 		if(is.error())
 			r.res = -EINVAL;
 		return is;
 	}
-	friend IPCStream &operator<<(IPCStream &is,const DefaultResponse &r) {
-		return is << r.res;
+	friend IPCStream &operator<<(IPCStream &is,const ValueResponse &r) {
+		return is << r.err << r.res;
 	}
 
 	T res;

@@ -137,7 +137,7 @@ public:
 		is >> r;
 
 		add(is.fd(),new OpenFile(is.fd(),_ctrlRef,path,r.flags));
-		is << FileOpen::Response(is.fd()) << Reply();
+		is << FileOpen::Response::success(is.fd()) << Reply();
 	}
 
 	void shfile(IPCStream &is) {
@@ -160,7 +160,7 @@ public:
 		DataBuf buf(r.count,file->shm(),r.shmemoff);
 		ssize_t res = file->read(buf.data(),r.offset,r.count);
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(r.shmemoff == -1) {
 			if(res > 0)
 				is << ReplyData(buf.data(),res);
@@ -177,7 +177,7 @@ public:
 			is >> ReceiveData(buf.data(),r.count);
 
 		ssize_t res = file->write(buf.data(),r.offset,r.count);
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::result(res) << Reply();
 	}
 
 	void istat(IPCStream &is) {

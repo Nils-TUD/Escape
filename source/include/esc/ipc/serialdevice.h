@@ -113,7 +113,7 @@ public:
 			writeStr(buf.data());
 		}
 
-		is << FileWrite::Response(r.count) << Reply();
+		is << FileWrite::Response::success(r.count) << Reply();
 
 		std::lock_guard<std::mutex> guard(_mutex);
 		checkPending();
@@ -271,7 +271,7 @@ private:
 		ssize_t res = std::min(count,_inbuf.length());
 		if(res > 0)
 			_inbuf.readn(data,res);
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(res > 0)
 			is << ReplyData(data,res);
 		else

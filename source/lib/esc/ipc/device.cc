@@ -70,7 +70,7 @@ void Device::loop() {
 	}
 }
 
-void Device::reply(IPCStream &is,int errcode) {
+void Device::reply(IPCStream &is,errcode_t errcode) {
 	try {
 		is << errcode << Reply();
 	}

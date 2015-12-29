@@ -148,7 +148,7 @@ private:
 		if(r.count > _driver->mtu()) {
 			if(r.shmemoff == -1)
 				is >> ReceiveData(NULL,0);
-			is << FileWrite::Response(-EINVAL) << Reply();
+			is << FileWrite::Response::error(-EINVAL) << Reply();
 			return;
 		}
 
@@ -173,7 +173,7 @@ private:
 		else
 			res = _driver->send(data,r.count);
 
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::result(res) << Reply();
 	}
 
 	void getMac(IPCStream &is) {
@@ -195,7 +195,7 @@ private:
 
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		IPCStream is(fd,buffer,sizeof(buffer),mid);
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(!data && res > 0)
 			is << ReplyData(pkt->data,res);
 

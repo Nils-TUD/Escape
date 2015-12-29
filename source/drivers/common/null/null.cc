@@ -33,7 +33,7 @@ public:
 	}
 
 	void read(IPCStream &is) {
-		is << FileRead::Response(0) << Reply();
+		is << FileRead::Response::success(0) << Reply();
 	}
 
 	void write(IPCStream &is) {
@@ -42,7 +42,7 @@ public:
 		is >> r >> ReceiveData(NULL,0);
 
 		/* write response and pretend that we've written everything */
-		is << FileWrite::Response(r.count) << Reply();
+		is << FileWrite::Response::success(r.count) << Reply();
 	}
 };
 

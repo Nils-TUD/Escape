@@ -100,7 +100,7 @@ public:
 		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)(*this)[is.fd()]->shm() + (r.shmemoff >> 1);
 		size_t res = handleRead(_ataDev,_part,buf,r.offset,r.count);
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::success(res) << Reply();
 		if(r.shmemoff == -1 && res > 0)
 			is << ReplyData(buf,res);
 	}
@@ -115,11 +115,11 @@ public:
 		uint16_t *buf = r.shmemoff == -1 ? buffer : (uint16_t*)(*this)[is.fd()]->shm() + (r.shmemoff >> 1);
 		size_t res = handleWrite(_ataDev,_part,buf,r.offset,r.count);
 
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::success(res) << Reply();
 	}
 
 	void size(IPCStream &is) {
-		is << FileSize::Response(_part->size * _ataDev->secSize) << Reply();
+		is << FileSize::Response::success(_part->size * _ataDev->secSize) << Reply();
 	}
 
 private:

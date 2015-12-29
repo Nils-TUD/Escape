@@ -110,7 +110,7 @@ public:
 			}
 		}
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(r.shmemoff == -1 && res > 0)
 			is << ReplyData(buf,res);
 	}
@@ -133,11 +133,11 @@ public:
 			}
 		}
 
-		is << FileWrite::Response(res) << Reply();
+		is << FileWrite::Response::result(res) << Reply();
 	}
 
 	void size(IPCStream &is) {
-		is << FileSize::Response(disk->partCapacity()) << Reply();
+		is << FileSize::Response::success(disk->partCapacity()) << Reply();
 	}
 };
 

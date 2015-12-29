@@ -65,6 +65,7 @@ typedef uint blkcnt_t;
 typedef uint8_t cpuid_t;
 
 typedef uint32_t msgid_t;
+typedef int errcode_t;
 
 typedef uintptr_t evobj_t;
 

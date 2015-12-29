@@ -134,7 +134,7 @@ private:
 			update();
 		}
 
-		is << FileWrite::Response(r.count) << Reply();
+		is << FileWrite::Response::success(r.count) << Reply();
 
 		std::lock_guard<std::mutex> guard(*_vterm->mutex);
 		checkPending();
@@ -195,7 +195,7 @@ protected:
 		IPCStream is(fd,buffer,sizeof(buffer),mid);
 
 		ssize_t res = vtin_gets(_vterm,data,count);
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(res > 0)
 			is << ReplyData(data,res);
 		if(count > BUF_SIZE)

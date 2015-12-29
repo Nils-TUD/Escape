@@ -172,8 +172,8 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t 
 	{
 		esc::FileOpen::Response r;
 		ib >> r;
-		if(r.res < 0) {
-			res = r.res;
+		if(r.err < 0) {
+			res = r.err;
 			goto error;
 		}
 		return r.res;
@@ -289,8 +289,8 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		/* handle response */
 		esc::FileRead::Response r;
 		ib >> r;
-		if(r.res < 0)
-			return r.res;
+		if(r.err < 0)
+			return r.err;
 
 		/* read data */
 		if(!useshm && r.res > 0)
@@ -336,6 +336,8 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 
 		esc::FileWrite::Response r;
 		ib >> r;
+		if(r.err < 0)
+			return r.err;
 		return r.res;
 	}
 	A_UNREACHED;
@@ -403,8 +405,8 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	/* handle response */
 	esc::FileShFile::Response r;
 	ib >> r;
-	if(r.res < 0)
-		return r.res;
+	if(r.err < 0)
+		return r.err;
 	shmem = cliaddr;
 	shmemSize = size;
 	return 0;
@@ -452,8 +454,8 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 
 		esc::FileCreatSibl::Response r;
 		ib >> r;
-		if(r.res < 0) {
-			res = r.res;
+		if(r.err < 0) {
+			res = r.err;
 			goto error;
 		}
 		return 0;

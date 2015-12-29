@@ -89,7 +89,7 @@ public:
 			// function to ensure that the thread gets already arrived messages
 			::bindto(is.fd(),res);
 		}
-		is << FileOpen::Response(res >= 0 ? 0 : res) << Reply();
+		is << FileOpen::Response::result(res >= 0 ? 0 : res) << Reply();
 	}
 
 	void filesize(IPCStream &is) {
@@ -99,7 +99,7 @@ public:
 			res = readHeader(c,is.fd());
 		if(res == 1)
 			res = c->contentlen;
-		is << FileSize::Response(res) << Reply();
+		is << FileSize::Response::result(res) << Reply();
 	}
 
 	void read(IPCStream &is) {
@@ -114,7 +114,7 @@ public:
 		if(c->state != STATE_RESP) {
 			int res = readHeader(c,is.fd());
 			if(res <= 0) {
-				is << FileRead::Response(res) << Reply();
+				is << FileRead::Response::result(res) << Reply();
 				return;
 			}
 			// refresh client. it might have changed
@@ -126,7 +126,7 @@ public:
 			size_t amount = std::min(r.count,c->header->inbuflen());
 			if(r.shmemoff != -1)
 				c->header->read(buf.data(),amount);
-			is << FileRead::Response(amount) << Reply();
+			is << FileRead::Response::success(amount) << Reply();
 			if(r.shmemoff == -1) {
 				// not nice, but the easiest way
 				char tmp[amount];
@@ -142,7 +142,7 @@ public:
 			size_t count = max;
 			if(count > 0)
 				count = c->sock.receive(buf.data(),max);
-			is << FileRead::Response(count) << Reply();
+			is << FileRead::Response::success(count) << Reply();
 			if(r.shmemoff == -1) {
 				if(count)
 					is << ReplyData(buf.data(),count);

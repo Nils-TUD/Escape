@@ -154,7 +154,7 @@ void GUIVTermDevice::write(esc::IPCStream &is) {
 			free(data);
 	}
 
-	is << esc::FileWrite::Response(res) << esc::Reply();
+	is << esc::FileWrite::Response::result(res) << esc::Reply();
 	checkPending();
 }
 

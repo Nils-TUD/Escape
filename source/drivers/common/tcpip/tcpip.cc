@@ -98,7 +98,7 @@ public:
 			}
 		}
 
-		is << esc::FileOpen::Response(res) << esc::Reply();
+		is << esc::FileOpen::Response::result(res) << esc::Reply();
 	}
 
 	void connect(esc::IPCStream &is) {
@@ -226,7 +226,7 @@ private:
 		}
 
 		if(res < 0)
-			is << esc::FileRead::Response(res) << esc::Reply();
+			is << esc::FileRead::Response::error(res) << esc::Reply();
 	}
 
 	void handleWrite(esc::IPCStream &is,esc::FileWrite::Request &r,const esc::Socket::Addr *sa) {
@@ -244,7 +244,7 @@ private:
 		}
 
 		if(res != 0)
-			is << esc::FileWrite::Response(res) << esc::Reply();
+			is << esc::FileWrite::Response::result(res) << esc::Reply();
 	}
 };
 

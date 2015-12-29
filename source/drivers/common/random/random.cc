@@ -46,7 +46,7 @@ public:
 		while(r.count-- > 0)
 			*d++ = rand();
 
-		is << FileRead::Response(res) << Reply();
+		is << FileRead::Response::result(res) << Reply();
 		if(r.shmemoff == -1)
 			is << ReplyData(buf.data(),res);
 	}

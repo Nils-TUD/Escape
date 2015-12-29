@@ -159,7 +159,7 @@ static int handleRequest(void *arg) {
 
 			printffl("--[%d,%d] Open: flags=%d\n",gettid(),req->fd,r.flags);
 
-			is << esc::FileOpen::Response(0) << esc::Reply();
+			is << esc::FileOpen::Response::success(0) << esc::Reply();
 		}
 		break;
 
@@ -169,7 +169,7 @@ static int handleRequest(void *arg) {
 
 			printffl("--[%d,%d] Read: offset=%zu, count=%zu\n",gettid(),req->fd,r.offset,r.count);
 
-			is << esc::FileRead::Response(r.count) << esc::Reply();
+			is << esc::FileRead::Response::success(r.count) << esc::Reply();
 			itoa(resp,sizeof(resp),respId++);
 			is << esc::ReplyData(resp,sizeof(resp));
 		}
@@ -182,7 +182,7 @@ static int handleRequest(void *arg) {
 			printffl("--[%d,%d] Write: offset=%zu, count=%zu, data='%s'\n",gettid(),req->fd,
 					r.count,r.offset,req->data);
 
-			is << esc::FileWrite::Response(r.count) << esc::Reply();
+			is << esc::FileWrite::Response::success(r.count) << esc::Reply();
 		}
 		break;
 

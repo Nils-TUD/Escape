@@ -95,7 +95,7 @@ void FSDevice::loop() {
 
 void FSDevice::devopen(IPCStream &is) {
 	_clients++;
-	is << 0 << Reply();
+	is << FileOpen::Response::success(0) << Reply();
 }
 
 void FSDevice::devclose(IPCStream &is) {
@@ -115,7 +115,7 @@ void FSDevice::open(IPCStream &is) {
 		if(no >= 0)
 			add(is.fd(),new OpenFile(is.fd(),no));
 	}
-	is << no << Reply();
+	is << FileOpen::Response::result(no) << Reply();
 }
 
 void FSDevice::read(IPCStream &is) {
@@ -126,7 +126,7 @@ void FSDevice::read(IPCStream &is) {
 	DataBuf buf(r.count,file->shm(),r.shmemoff);
 	ssize_t res = _fs->read(file->ino,buf.data(),r.offset,r.count);
 
-	is << res << Reply();
+	is << FileRead::Response::result(res) << Reply();
 	if(r.shmemoff == -1 && res > 0)
 		is << ReplyData(buf.data(),res);
 }
@@ -141,7 +141,7 @@ void FSDevice::write(IPCStream &is) {
 		is >> ReceiveData(buf.data(),r.count);
 
 	ssize_t res = _fs->write(file->ino,buf.data(),r.offset,r.count);
-	is << res << Reply();
+	is << FileWrite::Response::result(res) << Reply();
 }
 
 void FSDevice::close(IPCStream &is) {

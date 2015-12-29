@@ -128,7 +128,7 @@ protected:
 	void reply(msgid_t mid,const esc::Socket::Addr &sa,bool needsSrc,void *dst,const void *src,ssize_t size) {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		esc::IPCStream is(fd(),buffer,sizeof(buffer),mid);
-		is << esc::FileRead::Response(size);
+		is << esc::FileRead::Response::result(size);
 		if(needsSrc)
 			is << sa;
 		is << esc::Reply();

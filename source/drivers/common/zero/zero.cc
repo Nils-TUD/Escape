@@ -52,7 +52,7 @@ public:
 
 		memset(buf.data(),0,r.count);
 
-		is << FileRead::Response(r.count) << Reply();
+		is << FileRead::Response::success(r.count) << Reply();
 		if(r.shmemoff == -1 && r.count)
 			is << ReplyData(data,r.count);
 	}

@@ -46,7 +46,7 @@ public:
 		::bindto(is.fd(),tids[_next]);
 		_next = (_next + 1) % cpuCount;
 
-		is << esc::FileOpen::Response(0) << esc::Reply();
+		is << esc::FileOpen::Response::success(0) << esc::Reply();
 	}
 
 	void fib(esc::IPCStream &is) {

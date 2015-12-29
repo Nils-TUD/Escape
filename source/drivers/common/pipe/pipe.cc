@@ -108,7 +108,7 @@ public:
 			/* EOF */
 			if(partner == NULL) {
 				esc::IPCStream is(pendingRead.fd,buffer,sizeof(buffer),pendingRead.mid);
-				is << esc::FileRead::Response(0) << esc::Reply();
+				is << esc::FileRead::Response::success(0) << esc::Reply();
 				pendingRead.count = 0;
 			}
 			return;
@@ -118,7 +118,7 @@ public:
 		esc::IPCStream is(pendingRead.fd,buffer,sizeof(buffer),pendingRead.mid);
 		if(pendingRead.offset != (size_t)-1)
 			memcpy(shm() + pendingRead.offset,data,size);
-		is << esc::FileRead::Response(size) << esc::Reply();
+		is << esc::FileRead::Response::success(size) << esc::Reply();
 		if(pendingRead.offset == (size_t)-1)
 			is << esc::ReplyData(data,size);
 
@@ -139,7 +139,7 @@ public:
 			/* skip data message, if not already done */
 			if(!pendingWrite.data && pendingWrite.offset == (size_t)-1)
 				is >> esc::ReceiveData(NULL,0);
-			is << esc::FileWrite::Response(-EDESTROYED) << esc::Reply();
+			is << esc::FileWrite::Response::error(-EDESTROYED) << esc::Reply();
 			delete[] pendingWrite.data;
 			pendingWrite.count = 0;
 		}
@@ -163,7 +163,7 @@ public:
 					memcpy(pos,shm() + pendingWrite.offset,pendingWrite.count);
 
 				/* reply and invalidate */
-				is << esc::FileWrite::Response(pendingWrite.count) << esc::Reply();
+				is << esc::FileWrite::Response::result(pendingWrite.count) << esc::Reply();
 				pendingWrite.count = 0;
 				/* check if somebody wanted to read */
 				partner->replyRead();
@@ -243,11 +243,11 @@ public:
 		is >> r;
 
 		if(c->pendingRead.count != 0) {
-			is << esc::FileRead::Response(-EINVAL) << esc::Reply();
+			is << esc::FileRead::Response::error(-EINVAL) << esc::Reply();
 			return;
 		}
 		if(~c->flags & PipeClient::FL_READ) {
-			is << esc::FileRead::Response(-EACCES) << esc::Reply();
+			is << esc::FileRead::Response::error(-EACCES) << esc::Reply();
 			return;
 		}
 
@@ -285,7 +285,7 @@ public:
 		/* skip data message */
 		if(r.shmemoff == -1)
 			is >> esc::ReceiveData(NULL,0);
-		is << esc::FileWrite::Response(res) << esc::Reply();
+		is << esc::FileWrite::Response::result(res) << esc::Reply();
 	}
 
 	void close(esc::IPCStream &is) {

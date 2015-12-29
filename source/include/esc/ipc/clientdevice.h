@@ -22,6 +22,7 @@
 #include <esc/ipc/device.h>
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/file.h>
+#include <esc/proto/device.h>
 #include <esc/vthrow.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -233,12 +234,12 @@ protected:
 	void shfile(IPCStream &is) {
 		C *c = get(is.fd());
 		char path[MAX_PATH_LEN];
-		FileShFile::Request r(path,sizeof(path));
+		DevShFile::Request r(path,sizeof(path));
 		is >> r;
 
 		assert(c->shm() == NULL && !is.error());
 		int res = joinshm(c,path,r.size,0);
-		is << FileShFile::Response(res) << Reply();
+		is << DevShFile::Response(res) << Reply();
 	}
 
 	void close(IPCStream &is) {

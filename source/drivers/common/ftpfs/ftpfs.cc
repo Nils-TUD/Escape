@@ -18,6 +18,7 @@
  */
 
 #include <esc/ipc/clientdevice.h>
+#include <esc/proto/device.h>
 #include <esc/proto/fs.h>
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
@@ -179,7 +180,7 @@ public:
 
 	void shfile(IPCStream &is) {
 		char path[MAX_PATH_LEN];
-		FileShFile::Request r(path,sizeof(path));
+		DevShFile::Request r(path,sizeof(path));
 		is >> r;
 
 		OpenFTPFile *file = (*this)[is.fd()];
@@ -187,7 +188,7 @@ public:
 		int res = joinshm(file,path,r.size,0);
 		if(res == 0)
 			res = file->sharemem(file->sharedmem()->addr,r.size);
-		is << FileShFile::Response(res) << Reply();
+		is << DevShFile::Response(res) << Reply();
 	}
 };
 

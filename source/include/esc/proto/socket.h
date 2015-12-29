@@ -21,6 +21,7 @@
 
 #include <esc/ipc/ipcstream.h>
 #include <esc/proto/file.h>
+#include <esc/proto/device.h>
 #include <esc/stream/ostream.h>
 #include <esc/stream/istream.h>
 #include <esc/vthrow.h>
@@ -265,7 +266,7 @@ public:
 			_is << req << SendReceive(MSG_SOCK_RECVFROM,false) >> resp >> addr;
 		}
 		catch(const esc::default_error &e) {
-			if(e.error() == -EINTR && cancel(_is.fd(),_is.msgid()) == 1)
+			if(e.error() == -EINTR && cancel(_is.fd(),_is.msgid()) == DevCancel::READY)
 				_is >> Receive() >> resp >> addr;
 			else
 				throw;

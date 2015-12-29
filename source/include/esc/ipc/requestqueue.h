@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <esc/proto/device.h>
 #include <functor.h>
 #include <vector>
 
@@ -72,11 +73,11 @@ public:
 	}
 
 	int cancel(msgid_t mid) {
-		int res = 1;
+		int res = DevCancel::READY;
 		for(auto it = _requests.begin(); it != _requests.end(); ++it) {
 			if(it->mid == mid) {
 				_requests.erase(it);
-				res = 0;
+				res = DevCancel::CANCELED;
 				break;
 			}
 		}

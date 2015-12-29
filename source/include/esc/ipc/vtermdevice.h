@@ -85,23 +85,23 @@ public:
 
 private:
 	void cancel(IPCStream &is) {
-		msgid_t mid;
-		is >> mid;
+		DevCancel::Request r;
+		is >> r;
 
-		int res;
+		errcode_t res;
 		// we answer write-requests always right away, so let the kernel just wait for the response
-		if((mid & 0xFFFF) == MSG_FILE_WRITE)
-			res = 1;
-		else if((mid & 0xFFFF) != MSG_FILE_READ)
+		if(r.msg == MSG_FILE_WRITE)
+			res = DevCancel::READY;
+		else if(r.msg != MSG_FILE_READ)
 			res = -EINVAL;
 		else {
 			std::lock_guard<std::mutex> guard(*_vterm->mutex);
 			if(vtin_hasData(_vterm))
-				res = 1;
+				res = DevCancel::READY;
 			else
-				res = _requests.cancel(mid);
+				res = _requests.cancel(r.mid);
 		}
-		is << res << Reply();
+		is << DevCancel::Response(res) << Reply();
 	}
 
 	void read(IPCStream &is) {

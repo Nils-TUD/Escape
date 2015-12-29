@@ -80,7 +80,7 @@ public:
 	void shfile(IPCStream &is) {
 		char path[MAX_PATH_LEN];
 		Client *c = (*this)[is.fd()];
-		FileShFile::Request r(path,sizeof(path));
+		DevShFile::Request r(path,sizeof(path));
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
@@ -89,7 +89,7 @@ public:
 		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
 		 * to swap (which would cause a deadlock, because we're doing that). */
 		int res = joinshm(c,path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
-		is << FileShFile::Response(res) << Reply();
+		is << DevShFile::Response(res) << Reply();
 	}
 
 	void read(IPCStream &is) {

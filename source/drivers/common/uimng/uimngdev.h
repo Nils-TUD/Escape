@@ -59,7 +59,7 @@ public:
 
 	void creatsibl(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		esc::FileCreatSibl::Request r;
+		esc::DevCreatSibl::Request r;
 		is >> r;
 
 		std::lock_guard<std::mutex> guard(_mutex);
@@ -70,7 +70,7 @@ public:
 		if(Header::update(c,&width,&height))
 			c->screen()->update(0,0,width,height);
 
-		is << esc::FileCreatSibl::Response(0) << esc::Reply();
+		is << esc::DevCreatSibl::Response(0) << esc::Reply();
 	}
 
 	void getKeymap(esc::IPCStream &is) {

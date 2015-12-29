@@ -19,6 +19,7 @@
 
 #include <esc/ipc/ipcbuf.h>
 #include <esc/proto/file.h>
+#include <esc/proto/device.h>
 #include <mem/cache.h>
 #include <mem/useraccess.h>
 #include <mem/virtmem.h>
@@ -219,7 +220,7 @@ ssize_t VFSChannel::getSize(pid_t pid) {
 		return 0;
 
 	/* send msg to device */
-	ssize_t res = send(pid,0,MSG_FILE_SIZE,NULL,0,NULL,0);
+	ssize_t res = send(pid,0,esc::FileSize::MSG,NULL,0,NULL,0);
 	if(res < 0)
 		return res;
 
@@ -229,8 +230,11 @@ ssize_t VFSChannel::getSize(pid_t pid) {
 	if(res < 0)
 		return res;
 
-	ib >> res;
-	return res;
+	esc::FileSize::Response r;
+	ib >> r;
+	if(r.err < 0)
+		return r.err;
+	return r.res;
 }
 
 static bool useSharedMem(const void *shmem,size_t shmsize,const void *buffer,size_t bufsize) {
@@ -262,7 +266,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	/* send msg to driver */
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 	ib << esc::FileRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
-	res = file->sendMsg(pid,MSG_FILE_READ,ib.buffer(),ib.pos(),NULL,0);
+	res = file->sendMsg(pid,esc::FileRead::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -276,7 +280,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		if(res < 0) {
 			if(res == -EINTR || res == -EWOULDBLOCK) {
 				int cancelRes = cancel(pid,file,mid);
-				if(cancelRes == 1) {
+				if(cancelRes == esc::DevCancel::READY) {
 					/* if the result is already there, get it, but don't allow signals anymore
 					 * and force blocking */
 					flags = VFS_BLOCK;
@@ -311,7 +315,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 
 	/* send msg and data to driver */
 	ib << esc::FileWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
-	res = file->sendMsg(pid,MSG_FILE_WRITE,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
+	res = file->sendMsg(pid,esc::FileWrite::MSG,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
 
@@ -324,7 +328,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 		if(res < 0) {
 			if(res == -EINTR || res == -EWOULDBLOCK) {
 				int cancelRes = cancel(pid,file,mid);
-				if(cancelRes == 1) {
+				if(cancelRes == esc::DevCancel::READY) {
 					/* if the result is already there, get it, but don't allow signals anymore
 					 * and force blocking */
 					flags = VFS_BLOCK;
@@ -361,8 +365,8 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 	if((res = isSupported(DEV_CANCEL)) < 0)
 		return sent ? 0 : res;
 
-	ib << mid;
-	res = file->sendMsg(pid,MSG_DEV_CANCEL,ib.buffer(),ib.pos(),NULL,0);
+	ib << esc::DevCancel::Request(mid);
+	res = file->sendMsg(pid,esc::DevCancel::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -373,8 +377,9 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 		return res;
 
 	/* handle response */
-	ib >> res;
-	return res;
+	esc::DevCancel::Response r;
+	ib >> r;
+	return r.err;
 }
 
 int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
@@ -388,10 +393,10 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* send msg to driver */
-	ib << esc::FileShFile::Request(size,esc::CString(path));
+	ib << esc::DevShFile::Request(size,esc::CString(path));
 	if(ib.error())
 		return -EINVAL;
-	res = file->sendMsg(pid,MSG_DEV_SHFILE,ib.buffer(),ib.pos(),NULL,0);
+	res = file->sendMsg(pid,esc::DevShFile::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -403,7 +408,7 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 		return res;
 
 	/* handle response */
-	esc::FileShFile::Response r;
+	esc::DevShFile::Response r;
 	ib >> r;
 	if(r.err < 0)
 		return r.err;
@@ -428,8 +433,8 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 		return res;
 
 	/* send msg to driver */
-	ib << esc::FileCreatSibl::Request(sibl->fd,arg);
-	res = file->sendMsg(pid,MSG_DEV_CREATSIBL,ib.buffer(),ib.pos(),NULL,0);
+	ib << esc::DevCreatSibl::Request(sibl->fd,arg);
+	res = file->sendMsg(pid,esc::DevCreatSibl::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		goto error;
 
@@ -442,7 +447,7 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 		if(res < 0) {
 			if(res == -EINTR || res == -EWOULDBLOCK) {
 				int cancelRes = cancel(pid,file,mid);
-				if(cancelRes == 1) {
+				if(cancelRes == esc::DevCancel::READY) {
 					/* if the result is already there, get it, but don't allow signals anymore
 					 * and force blocking */
 					flags = VFS_BLOCK;
@@ -452,7 +457,7 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 			goto error;
 		}
 
-		esc::FileCreatSibl::Response r;
+		esc::DevCreatSibl::Response r;
 		ib >> r;
 		if(r.err < 0) {
 			res = r.err;

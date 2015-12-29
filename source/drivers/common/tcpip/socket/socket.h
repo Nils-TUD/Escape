@@ -56,11 +56,11 @@ public:
 
 	virtual int cancel(msgid_t mid) {
 		if(!_pending.count)
-			return 1;
+			return esc::DevCancel::READY;
 		if(_pending.mid != mid)
 			return -EINVAL;
 		_pending.count = 0;
-		return 0;
+		return esc::DevCancel::CANCELED;
 	}
 
 	virtual int connect(const esc::Socket::Addr *,msgid_t) {

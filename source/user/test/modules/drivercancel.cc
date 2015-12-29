@@ -53,11 +53,11 @@ public:
 	void cancel(IPCStream &is) {
 		static int count = 0;
 		MyClient *c = (*this)[is.fd()];
-		msgid_t mid;
-		is >> mid;
+		DevCancel::Request r;
+		is >> r;
 
-		if(c->mid != mid)
-			is << -EINVAL << Reply();
+		if(c->mid != r.mid)
+			is << DevCancel::Response(-EINVAL) << Reply();
 		else {
 			bool answer = count++ > 1;
 			if(answer) {
@@ -65,7 +65,7 @@ public:
 				IPCStream resp(is.fd(),buffer,sizeof(buffer),c->mid);
 				resp << FileRead::Response::success(4) << Reply() << ReplyData("foo",4);
 			}
-			is << (answer ? 1 : 0) << Reply();
+			is << DevCancel::Response(answer ? DevCancel::READY : DevCancel::CANCELED) << Reply();
 			c->mid = 0;
 		}
 	}

@@ -59,58 +59,6 @@ struct FileOpen {
 };
 
 /**
- * The MSG_DEV_SHFILE command that is sent by the kernel to devices if shfile() was called on them.
- */
-struct FileShFile {
-	static const msgid_t MSG = MSG_DEV_SHFILE;
-
-	struct Request {
-		explicit Request() {
-		}
-		explicit Request(char *buffer,size_t _size) : path(buffer,_size) {
-		}
-		explicit Request(size_t _size,const CString &_path)
-			: size(_size), path(_path) {
-		}
-
-		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.size << r.path;
-		}
-		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.size << r.path;
-		}
-		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.size >> r.path;
-		}
-
-		size_t size;
-		CString path;
-	};
-
-	typedef ErrorResponse Response;
-};
-
-/**
- * The MSG_DEV_CREATSIBL command that is sent by the kernel to devices if creatsibl() was called
- * on them.
- */
-struct FileCreatSibl {
-	static const msgid_t MSG = MSG_DEV_CREATSIBL;
-
-	struct Request {
-		explicit Request() {
-		}
-		explicit Request(int _nfd,int _arg) : nfd(_nfd), arg(_arg) {
-		}
-
-		int nfd;
-		int arg;
-	};
-
-	typedef ErrorResponse Response;
-};
-
-/**
  * The MSG_FILE_READ command that is sent by the kernel to devices if read() was called on them.
  */
 struct FileRead {
@@ -156,7 +104,7 @@ struct FileWrite {
  * The MSG_FILE_SIZE command that is sent by the kernel to devices if filesize() was called on them.
  */
 struct FileSize {
-	static const msgid_t MID = MSG_FILE_SIZE;
+	static const msgid_t MSG = MSG_FILE_SIZE;
 
 	typedef EmptyRequest Request;
 	typedef ValueResponse<size_t> Response;
@@ -166,7 +114,7 @@ struct FileSize {
  * The MSG_FILE_CLOSE command that is sent by the kernel to devices if close() was called on them.
  */
 struct FileClose {
-	static const msgid_t MID = MSG_FILE_CLOSE;
+	static const msgid_t MSG = MSG_FILE_CLOSE;
 
 	typedef EmptyRequest Request;
 };

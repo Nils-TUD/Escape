@@ -198,31 +198,31 @@ public:
 
 	void cancel(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
-		msgid_t mid;
-		is >> mid;
+		esc::DevCancel::Request r;
+		is >> r;
 
-		int res = -EINVAL;
-		if((mid & 0xFFFF) == MSG_FILE_WRITE) {
+		errcode_t res = -EINVAL;
+		if(r.msg == MSG_FILE_WRITE) {
 			/* we will not necessarily answer a pending read/write immediately. thus, don't tell the
 			 * kernel that we do that but just cancel the request in every case */
-			if(c->pendingWrite.count > 0 && c->pendingWrite.mid == mid) {
-				res = 0;
+			if(c->pendingWrite.count > 0 && c->pendingWrite.mid == r.mid) {
+				res = esc::DevCancel::CANCELED;
 				c->pendingWrite.count = 0;
 			}
 		}
-		else if((mid & 0xFFFF) == MSG_FILE_READ) {
-			if(c->pendingRead.count > 0 && c->pendingRead.mid == mid) {
-				res = 0;
+		else if(r.msg == MSG_FILE_READ) {
+			if(c->pendingRead.count > 0 && c->pendingRead.mid == r.mid) {
+				res = esc::DevCancel::CANCELED;
 				c->pendingRead.count = 0;
 			}
 		}
 
-		is << res << esc::Reply();
+		is << esc::DevCancel::Response(res) << esc::Reply();
 	}
 
 	void creatsibl(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
-		esc::FileCreatSibl::Request r;
+		esc::DevCreatSibl::Request r;
 		is >> r;
 
 		int res = 0;
@@ -234,7 +234,7 @@ public:
 			c->partner = nc;
 			add(r.nfd,nc);
 		}
-		is << esc::FileCreatSibl::Response(res) << esc::Reply();
+		is << esc::DevCreatSibl::Response(res) << esc::Reply();
 	}
 
 	void read(esc::IPCStream &is) {

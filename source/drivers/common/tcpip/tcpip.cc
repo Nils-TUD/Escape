@@ -141,36 +141,35 @@ public:
 
 	void cancel(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		msgid_t mid;
-		is >> mid;
+		esc::DevCancel::Request r;
+		is >> r;
 
 		errcode_t res;
-		int msgtype = mid & 0xFFFF;
-		if(msgtype != MSG_FILE_WRITE && msgtype != MSG_SOCK_SENDTO &&
-				msgtype != MSG_FILE_READ && msgtype != MSG_SOCK_RECVFROM &&
-				msgtype != MSG_DEV_CREATSIBL) {
+		if(r.msg != MSG_FILE_WRITE && r.msg != MSG_SOCK_SENDTO &&
+				r.msg != MSG_FILE_READ && r.msg != MSG_SOCK_RECVFROM &&
+				r.msg != MSG_DEV_CREATSIBL) {
 			res = -EINVAL;
 		}
 		else {
 			std::lock_guard<std::mutex> guard(mutex);
-			res = sock->cancel(mid);
+			res = sock->cancel(r.mid);
 		}
 
-		is << res << esc::Reply();
+		is << esc::DevCancel::Response(res) << esc::Reply();
 	}
 
 	void creatsibl(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		esc::FileCreatSibl::Request r;
+		esc::DevCreatSibl::Request r;
 		is >> r;
 
-		int res;
+		errcode_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			res = sock->accept(is.msgid(),r.nfd,this);
 		}
 		if(res < 0)
-			is << esc::FileCreatSibl::Response(res) << esc::Reply();
+			is << esc::DevCreatSibl::Response(res) << esc::Reply();
 	}
 
 	void read(esc::IPCStream &is) {

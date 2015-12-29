@@ -83,8 +83,9 @@ int main(int argc,char **argv) {
 	}
 
 	// use a local path to have a unique name
+	// TODO that's not a long term solution
 	char devName[MAX_PATH_LEN];
-	snprintf(devName,sizeof(devName),"/sys/proc/%d/guiterm",getpid());
+	snprintf(devName,sizeof(devName),"/sys/proc/%d/shm/guiterm",getpid());
 
 	// set term as env-variable
 	setenv("TERM",devName);

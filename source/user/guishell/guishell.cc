@@ -69,19 +69,6 @@ static int termThread(A_UNUSED void *arg) {
 int main(int argc,char **argv) {
 	shell_init(argc,(const char**)argv);
 
-	// none-interactive-mode
-	if(argc == 3) {
-		// in this case we already have stdin, stdout and stderr
-		// execute a script
-		if(strcmp(argv[1],"-s") == 0)
-			return shell_executeCmd(argv[2],true);
-		// execute a command
-		if(strcmp(argv[1],"-e") == 0)
-			return shell_executeCmd(argv[2],false);
-		printe("Invalid shell-usage; Please use %s -e <cmd>",argv[1]);
-		return EXIT_FAILURE;
-	}
-
 	// use a local path to have a unique name
 	// TODO that's not a long term solution
 	char devName[MAX_PATH_LEN];

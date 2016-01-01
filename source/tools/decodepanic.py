@@ -35,7 +35,9 @@ def find_symbol(coderegs, addr):
 # returns an array of (<addr>, <symbol>, <lineinfo>) for all symbols in the given binary
 def get_symbols(binary):
 	symbols = []
-	if binary[0:10] == '/sys/boot/':
+	if binary == '/sys/boot/initloader':
+		binary = '/bin/initloader'
+	elif binary[0:10] == '/sys/boot/':
 		binary = '/sbin/' + binary[10:]
 	res = subprocess.check_output(
 		crossdir + "/bin/" + cross + "-nm -Cl " + builddir + "/dist/" + binary + " | grep -i ' \\(t\\|w\\) '",

@@ -59,23 +59,3 @@ BEGIN_FUNC(syscall4)
 	add		$29,$29,4						// release stack frame
 	jr		$31
 END_FUNC(syscall4)
-
-BEGIN_FUNC(syscall7)
-	sub		$29,$29,4						// create stack frame
-	stw		$31,$29,0						// save return register
-	add		$12,$0,$0						// clear error-code
-	ldw		$8,$29,20						// load arg 4 into $8
-	ldw		$9,$29,24						// load arg 5 into $9
-	ldw		$10,$29,28						// load arg 6 into $10
-	ldw		$11,$29,32						// load arg 7 into $11
-	trap
-	beq		$12,$0,1f
-	jal		errno_location
-	sub		$9,$0,$12
-	stw		$9,$2,0							// store to errno
-	add		$2,$12,$0						// return error-code
-1:
-	ldw		$31,$29,0						// restore return register
-	add		$29,$29,4						// release stack frame
-	jr		$31
-END_FUNC(syscall7)

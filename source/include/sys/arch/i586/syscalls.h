@@ -114,6 +114,3 @@ static inline long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong a
 	);
 	return finish(syscno,arg2);
 }
-
-EXTERN_C long syscall7(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4,ulong arg5,ulong arg6,
-                       ulong arg7);

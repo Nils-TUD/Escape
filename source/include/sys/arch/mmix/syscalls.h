@@ -26,8 +26,6 @@ EXTERN_C long syscall1(long syscno,ulong arg1);
 EXTERN_C long syscall2(long syscno,ulong arg1,ulong arg2);
 EXTERN_C long syscall3(long syscno,ulong arg1,ulong arg2,ulong arg3);
 EXTERN_C long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4);
-EXTERN_C long syscall7(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4,ulong arg5,ulong arg6,
-                      ulong arg7);
 
 static inline void syscalldbg(void) {
 	syscall0(SYSCALL_DEBUG);

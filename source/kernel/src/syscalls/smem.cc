@@ -28,6 +28,16 @@
 #include <string.h>
 #include <syscalls.h>
 
+struct mmap_params {
+	void *addr;
+	size_t length;
+	size_t loadLength;
+	int prot;
+	int flags;
+	int fd;
+	off_t offset;
+};
+
 int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	if(EXPECT_TRUE(count > 0)) {
@@ -41,13 +51,17 @@ int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
-	uintptr_t addr = SYSC_ARG1(stack);
-	size_t byteCount = SYSC_ARG2(stack);
-	size_t loadCount = SYSC_ARG3(stack);
-	int prot = SYSC_ARG4(stack);
-	int flags = SYSC_ARG5(stack);
-	int fd = SYSC_ARG6(stack);
-	off_t binOffset = SYSC_ARG7(stack);
+	const struct mmap_params *p = (const struct mmap_params*)SYSC_ARG1(stack);
+	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)p,sizeof(*p))))
+		SYSC_ERROR(stack,-EFAULT);
+
+	uintptr_t addr = (uintptr_t)p->addr;
+	size_t byteCount = p->length;
+	size_t loadCount = p->loadLength;
+	int prot = p->prot;
+	int flags = p->flags;
+	int fd = p->fd;
+	off_t binOffset = p->offset;
 	OpenFile *f = NULL;
 
 #if DISABLE_DEMLOAD

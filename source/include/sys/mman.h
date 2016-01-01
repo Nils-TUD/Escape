@@ -43,6 +43,16 @@
 
 #define MATTR_WC			1		/* write combining */
 
+struct mmap_params {
+	void *addr;
+	size_t length;
+	size_t loadLength;
+	int prot;
+	int flags;
+	int fd;
+	off_t offset;
+};
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

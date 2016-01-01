@@ -49,7 +49,15 @@ void *mmapphys(uintptr_t *phys,size_t count,size_t align,int flags) {
 }
 
 void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,off_t offset) {
-	intptr_t res = syscall7(SYSCALL_MMAP,(ulong)addr,length,loadLength,prot,flags,fd,offset);
+	struct mmap_params p;
+	p.addr = addr;
+	p.length = length;
+	p.loadLength = loadLength;
+	p.prot = prot;
+	p.flags = flags;
+	p.fd = fd;
+	p.offset = offset;
+	intptr_t res = syscall1(SYSCALL_MMAP,(ulong)&p);
 	/* FIXME workaround until we have TLS */
 	if(res >= -200 && res < 0)
 		return NULL;

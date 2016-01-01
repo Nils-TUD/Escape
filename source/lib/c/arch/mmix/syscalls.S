@@ -36,9 +36,6 @@ syscall3:
 .global syscall4
 .type syscall4, @function
 syscall4:
-.global syscall7
-.type syscall7, @function
-syscall7:
 	SET		$8,0						// clear error-code
 	TRAP	0,0,0
 	BZ		$8,1f						// no-error?

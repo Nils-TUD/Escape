@@ -85,6 +85,7 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 						sem = new SemTreapNode(id);
 						sems.insert(sem);
 					}
+					sem->refs++;
 				}
 			}
 
@@ -638,11 +639,15 @@ int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSN
 void OpenFile::releaseFile(OpenFile *file) {
 	Cache::free(file->path);
 	if(file->sem) {
+		bool last;
 		{
 			LockGuard<SpinLock> g(&semLock);
-			sems.remove(file->sem);
+			last = --file->sem->refs == 0;
+			if(last)
+				sems.remove(file->sem);
 		}
-		delete file->sem;
+		if(last)
+			delete file->sem;
 	}
 
 	LockGuard<SpinLock> g(&gftLock);

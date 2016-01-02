@@ -66,13 +66,14 @@ class OpenFile {
 	friend class VFSMS;
 
 	struct SemTreapNode : public esc::TreapNode<FileId> {
-		explicit SemTreapNode(const FileId &id) : esc::TreapNode<FileId>(id), sem() {
+		explicit SemTreapNode(const FileId &id) : esc::TreapNode<FileId>(id), refs(0), sem() {
 		}
 
 	    virtual void print(OStream &os) {
-			os.writef("f=(%d,%d) sem.value=%d\n",key().dev,key().ino,sem.getValue());
+			os.writef("f=(%d,%d) refs=%d sem.value=%d\n",key().dev,key().ino,refs,sem.getValue());
 	    }
 
+	    int refs;
 		Semaphore sem;
 	};
 

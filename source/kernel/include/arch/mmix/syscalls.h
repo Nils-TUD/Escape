@@ -32,6 +32,3 @@
 #define SYSC_ARG2(stack)				((stack)[2])
 #define SYSC_ARG3(stack)				((stack)[3])
 #define SYSC_ARG4(stack)				((stack)[4])
-#define SYSC_ARG5(stack)				((stack)[5])
-#define SYSC_ARG6(stack)				((stack)[6])
-#define SYSC_ARG7(stack)				((stack)[7])

@@ -34,6 +34,3 @@
 #define SYSC_ARG2(stack)				((stack)->edi)
 #define SYSC_ARG3(stack)				(*(((ulong*)(stack)->getSP()) + 0))
 #define SYSC_ARG4(stack)				(*(((ulong*)(stack)->getSP()) + 1))
-#define SYSC_ARG5(stack)				(*(((ulong*)(stack)->getSP()) + 2))
-#define SYSC_ARG6(stack)				(*(((ulong*)(stack)->getSP()) + 3))
-#define SYSC_ARG7(stack)				(*(((ulong*)(stack)->getSP()) + 4))

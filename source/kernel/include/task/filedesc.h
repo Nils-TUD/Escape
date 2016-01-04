@@ -87,7 +87,7 @@ public:
 	static int dup(int fd);
 
 	/**
-	 * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+	 * Redirects <src> to <dst>. <src> will be closed. Note that only <dst> has to exist.
 	 *
 	 * @param src the source-file-descriptor
 	 * @param dst the destination-file-descriptor

@@ -145,10 +145,12 @@ int FileDesc::redirect(int src,int dst) {
 	p->lock(PLOCK_FDS);
 	OpenFile *fSrc = p->fileDescs[src];
 	OpenFile *fDst = p->fileDescs[dst];
-	if(EXPECT_TRUE(fSrc != NULL && fDst != NULL)) {
+	if(EXPECT_TRUE(fDst != NULL)) {
 		fDst->incRefs();
-		/* we have to close the source because no one else will do it anymore... */
-		fSrc->close(p->getPid());
+		if(fSrc) {
+			/* we have to close the source because no one else will do it anymore... */
+			fSrc->close(p->getPid());
+		}
 		/* now redirect src to dst */
 		p->fileDescs[src] = fDst;
 		err = 0;

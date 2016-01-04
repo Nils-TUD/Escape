@@ -21,9 +21,8 @@
 #include <task/proc.h>
 #include <common.h>
 
-int ProcBase::cloneArch(Proc *dst,A_UNUSED const Proc *src) {
-	IOPorts::init(dst);
-	return 0;
+int ProcBase::cloneArch(Proc *dst,const Proc *src) {
+	return IOPorts::clone(dst,src);
 }
 
 void ProcBase::terminateArch(Proc *p) {

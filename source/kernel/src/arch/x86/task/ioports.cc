@@ -27,8 +27,15 @@
 #include <string.h>
 #include <video.h>
 
-void IOPorts::init(Proc *p) {
-	p->ioMap = NULL;
+int IOPorts::clone(Proc *dst,const Proc *src) {
+	dst->ioMap = NULL;
+	if(src->ioMap) {
+		dst->ioMap = (uint8_t*)Cache::alloc(TSS::IO_MAP_SIZE / 8);
+		if(!dst->ioMap)
+			return -ENOMEM;
+		memcpy(dst->ioMap,src->ioMap,TSS::IO_MAP_SIZE / 8);
+	}
+	return 0;
 }
 
 int IOPorts::request(uint16_t start,size_t count) {

@@ -25,11 +25,13 @@
 class IOPorts {
 public:
 	/**
-	 * Inits the IO-map for the given process
+	 * Clones the IO-map from the given process
 	 *
-	 * @param p the process
+	 * @param dst the destination process
+	 * @param src the source process
+	 * @return 0 on success
 	 */
-	static void init(Proc *p);
+	static int clone(Proc *dst,const Proc *src);
 
 	/**
 	 * Requests some IO-ports for the current process. Will not replace the IO-Map in TSS!

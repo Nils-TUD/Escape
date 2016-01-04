@@ -108,19 +108,10 @@ Thread *Sched::perform(Thread *old,cpuid_t cpu) {
 				return old;
 			}
 
-			switch(old->getNewState()) {
-				case Thread::READY:
-					assert(old->event == 0);
-					old->setState(Thread::READY);
-					enqueue(old);
-					break;
-				case Thread::BLOCKED:
-				case Thread::ZOMBIE:
-					old->setState(old->getNewState());
-					break;
-				default:
-					Util::panic("Unexpected new state (%d)\n",old->getNewState());
-					break;
+			old->setState(old->getNewState());
+			if(old->getNewState() == Thread::READY) {
+				assert(old->event == 0);
+				enqueue(old);
 			}
 		}
 	}

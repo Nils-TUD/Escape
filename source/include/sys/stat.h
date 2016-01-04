@@ -168,27 +168,52 @@ A_CHECKRET int fchown(int fd,uid_t uid,gid_t gid);
 /**
  * Checks whether the given path points to a regular file
  *
- * @param path the (absolute!) path
+ * @param path the path
  * @return true if its a file; false if not or an error occurred
  */
 bool isfile(const char *path);
 
 /**
+ * Checks whether the given file descriptor points to a regular file
+ *
+ * @param fd the file descriptor
+ * @return true if its a file; false if not or an error occurred
+ */
+bool fisfile(int fd);
+
+/**
  * Checks whether the given path points to a directory
  *
- * @param path the (absolute!) path
+ * @param path the path
  * @return true if its a directory; false if not or an error occurred
  */
 bool isdir(const char *path);
 
 /**
+ * Checks whether the given file descriptor points to a directory
+ *
+ * @param fd the file descriptor
+ * @return true if its a directory; false if not or an error occurred
+ */
+bool fisdir(int fd);
+
+/**
  * Checks whether the given path points to a file that behaves like a block-device, i.e. either
  * a regular file or a block device.
  *
- * @param path the (absolute!) path
+ * @param path the path
  * @return true if its a regular file or block device
  */
 bool isblock(const char *path);
+
+/**
+ * Checks whether the given file descriptor points to a file that behaves like a block-device, i.e.
+ * either a regular file or a block device.
+ *
+ * @param fd the file descriptor
+ * @return true if its a regular file or block device
+ */
+bool fisblock(int fd);
 
 #if defined(__cplusplus)
 }

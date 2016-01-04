@@ -78,6 +78,13 @@ bool isfile(const char *path) {
 	return S_ISREG(info.st_mode);
 }
 
+bool fisfile(int fd) {
+	struct stat info;
+	if(fstat(fd,&info) < 0)
+		return false;
+	return S_ISREG(info.st_mode);
+}
+
 bool isdir(const char *path) {
 	struct stat info;
 	if(stat(path,&info) < 0)
@@ -85,9 +92,23 @@ bool isdir(const char *path) {
 	return S_ISDIR(info.st_mode);
 }
 
+bool fisdir(int fd) {
+	struct stat info;
+	if(fstat(fd,&info) < 0)
+		return false;
+	return S_ISDIR(info.st_mode);
+}
+
 bool isblock(const char *path) {
 	struct stat info;
 	if(stat(path,&info) < 0)
+		return false;
+	return S_ISREG(info.st_mode) || S_ISBLK(info.st_mode);
+}
+
+bool fisblock(int fd) {
+	struct stat info;
+	if(fstat(fd,&info) < 0)
 		return false;
 	return S_ISREG(info.st_mode) || S_ISBLK(info.st_mode);
 }

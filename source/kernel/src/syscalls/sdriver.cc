@@ -125,7 +125,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	OpenFile *client = FileDesc::request(p,clifd);
-	if(!client)
+	if(EXPECT_FALSE(!client))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* receive a message */

@@ -455,19 +455,21 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 		return -EPERM;
 	if(EXPECT_FALSE(~file->flags & VFS_DEVICE))
 		return -EACCES;
-	if(EXPECT_FALSE(!IS_DEVICE(file->node->getMode())))
+
+	VFSDevice *dev = static_cast<VFSDevice*>(file->node);
+	if(EXPECT_FALSE(!IS_DEVICE(dev->getMode())))
 		return -EPERM;
 
 	while(true) {
 		{
 			LockGuard<SpinLock> g(&waitLock);
-			*fd = static_cast<VFSDevice*>(file->node)->getWork();
+			*fd = dev->getWork();
 			/* if we've found one or we shouldn't block, stop here */
 			if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK)))
 				return *fd >= 0 ? 0 : -ENOCLIENT;
 
 			/* wait for a client (accept signals) */
-			t->wait(EV_CLIENT,(evobj_t)file->node);
+			t->wait(EV_CLIENT,(evobj_t)dev);
 		}
 
 		Thread::switchAway();

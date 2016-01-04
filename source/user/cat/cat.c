@@ -43,20 +43,29 @@ int main(int argc,char *argv[]) {
 		int i;
 		FILE *file;
 		for(i = 1; i < argc; i++) {
+			int fd = open(argv[i],O_RDONLY);
+			if(fd < 0) {
+				printe("Unable to open '%s'",argv[i]);
+				continue;
+			}
+
 			/* check if it's a directory */
-			if(isdir(argv[i])) {
+			if(fisdir(fd)) {
+				close(fd);
 				printe("'%s' is a directory!",argv[i]);
 				continue;
 			}
 
-			file = fopen(argv[i],"r");
+			file = fattach(fd,"r");
 			if(file == NULL) {
-				printe("Unable to open '%s'",argv[i]);
+				close(fd);
+				printe("Unable to fopen '%s'",argv[i]);
 				continue;
 			}
 
 			printFile(argv[i],file);
 			fclose(file);
+			close(fd);
 		}
 	}
 

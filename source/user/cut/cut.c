@@ -45,10 +45,8 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char **argv) {
-	int first = 1,last = -1;
 	char *fields = NULL;
 	char *delim = (char*)"\t";
-	const char **args;
 
 	int res = ca_parse(argc,argv,0,"f=s* d=s",&fields,&delim);
 	if(res < 0) {
@@ -58,14 +56,15 @@ int main(int argc,const char **argv) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
+	int first = 1,last = -1;
 	parseFields(fields,&first,&last);
 
-	args = ca_getFree();
+	const char **args = ca_getFree();
 	if(args[0] == NULL)
 		handleFile(stdin,delim,first,last);
 	else {
-		FILE *f;
 		while(*args) {
+			FILE *f;
 			int fd = open(*args,O_RDONLY);
 			if(fd < 0) {
 				printe("Unable to open '%s'",*args);

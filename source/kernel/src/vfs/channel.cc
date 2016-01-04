@@ -513,35 +513,34 @@ ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const v
 		 * example. we can't hold the lock during that operation */
 		LockGuard<SpinLock> g(&waitLock);
 
-		/* set request id. for clients, we generate a new unique request-id */
 		if(list == &sendList) {
+			/* for clients, we generate a new unique request-id */
 			id &= 0xFFFF;
 			/* prevent to set the MSB. otherwise the return-value would be negative (on 32-bit) */
 			id |= ((nextRid++) & 0x7FFF) << 16;
 			/* it can't be 0. this is a special value */
 			if(id >> 16 == 0)
 				id |= 0x00010000;
-		}
-		/* for devices, we just use whatever the driver gave us */
-		msg1->id = id;
-		if(EXPECT_FALSE(data2))
-			msg2->id = id;
 
-		/* append to list */
-		list->append(msg1);
-		if(EXPECT_FALSE(msg2))
-			list->append(msg2);
-
-		/* notify the driver */
-		if(list == &sendList) {
+			/* notify driver */
 			static_cast<VFSDevice*>(parent)->addMsgs(1);
 			if(EXPECT_FALSE(msg2))
 				static_cast<VFSDevice*>(parent)->addMsgs(1);
 			Sched::wakeup(EV_CLIENT,(evobj_t)parent,true);
 		}
 		else {
-			/* notify other possible waiters */
+			/* for devices, we just use whatever the driver gave us */
+
+			/* notify receivers */
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,true);
+		}
+
+		/* append to list */
+		msg1->id = id;
+		list->append(msg1);
+		if(EXPECT_FALSE(msg2)) {
+			msg2->id = id;
+			list->append(msg2);
 		}
 	}
 

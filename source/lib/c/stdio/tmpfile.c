@@ -18,11 +18,47 @@
  */
 
 #include <sys/common.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "iobuf.h"
+
+#define NAME_LEN	8
 
 FILE *tmpfile(void) {
-	/* TODO to be implemented */
-	assert(false);
-	return NULL;
+	static bool initialized = false;
+	if(!initialized) {
+		srand(rdtsc());
+		initialized = true;
+	}
+
+	int fd;
+	const uint flags = O_RDWR | O_EXCL | O_LONELY;
+	char path[MAX_PATH_LEN] = "/tmp/";
+	do {
+		for(int i = 0; i < NAME_LEN; ++i)
+			path[i + 5] = 'a' + (rand() % ('z' - 'a'));
+		path[NAME_LEN + 5] = '\0';
+
+		fd = create(path,flags,0644);
+	}
+	while(fd == -EEXIST);
+	if(fd < 0)
+		return NULL;
+
+	/* unlink it now to make it invisible and destroy it on close */
+	sassert(unlink(path) == 0);
+
+	FILE *f;
+	if(!(f = bcreate(fd,flags,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false))) {
+		close(fd);
+		free(f);
+		return NULL;
+	}
+	benqueue(f);
+	return f;
 }

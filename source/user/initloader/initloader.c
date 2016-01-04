@@ -23,7 +23,9 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/syscalls.h>
+#include <sys/sysctrace.h>
 #include <sys/thread.h>
+#include <assert.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,6 +71,27 @@ int main(void) {
 
 	/* perform some additional initialization in the kernel */
 	syscall0(SYSCALL_INIT);
+
+	char tmp[12];
+
+	/* set sync file */
+	uint32_t cnt = 0;
+	int straceFd = create("/sys/strace",O_RDWR,0666);
+	if(straceFd != STRACE_FILENO)
+		error("Got the wrong fd for /sys/strace");
+	sassert(write(straceFd,&cnt,sizeof(cnt)) == sizeof(cnt));
+	itoa(tmp,sizeof(tmp),straceFd);
+	setenv("SYSCTRC_SYNCFD",tmp);
+
+	/* enable syscall tracing */
+	if(sysconf(CONF_LOG_SYSCALLS)) {
+		int max = sysconf(CONF_MAX_FDS);
+		/* set file descriptor to an invalid value to log the trace */
+		itoa(tmp,sizeof(tmp),max);
+		setenv("SYSCTRC_FD",tmp);
+		/* reinit syscall tracing */
+		traceFd = -2;
+	}
 
 	/* open arguments file */
 	char line[256];

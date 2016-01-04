@@ -39,6 +39,7 @@ public:
 		FORCE_PIT		= 9,
 		FORCE_PIC		= 10,
 		ACCURATE_CPU	= 11,
+		LOG_SYSCALLS	= 12,
 		ROOT_DEVICE		= 32,
 		SWAP_DEVICE		= 33,
 	};

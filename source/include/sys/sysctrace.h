@@ -21,38 +21,14 @@
 
 #include <sys/common.h>
 
-#define CONF_TIMER_FREQ			0
-#define CONF_MAX_PROCS			1
-#define CONF_MAX_FDS			2
-#define CONF_LOG				3
-#define CONF_LOG_TO_VGA			4
-#define CONF_CPU_COUNT			6
-#define CONF_TICKS_PER_SEC		8
-#define CONF_LOG_SYSCALLS		12
-#define CONF_ROOT_DEVICE		32	/* string */
-#define CONF_SWAP_DEVICE		33	/* string */
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-/**
- * Gets the value of a kernel-configuration
- *
- * @param id the id of the config-value (CONF_*)
- * @return the value or the negative error-code
- */
-long sysconf(int id);
+extern int traceFd;
 
-/**
- * Gets the value of the kernel-configuration for string-values.
- *
- * @param id the id of the config-value (CONF_*)
- * @param buf the buffer where to store the value
- * @param len the length of the buffer
- * @return 0 on success
- */
-int sysconfstr(int id,char *buf,size_t len);
+void syscTraceEnter(long syscno,uint32_t *id,int argc,...);
+void syscTraceLeave(uint32_t id,ulong res,long err);
 
 #if defined(__cplusplus)
 }

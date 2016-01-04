@@ -69,9 +69,9 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 		return;
 	}
 	if(mngPid == 0) {
-		/* close all but stdin, stdout, stderr */
+		/* close all but stdin, stdout, stderr, strace */
 		int max = sysconf(CONF_MAX_FDS);
-		for(int i = 3; i < max; ++i)
+		for(int i = 4; i < max; ++i)
 			close(i);
 
 		print("Executing %s %s %s %s",mng,cols,rows,name);
@@ -102,8 +102,10 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	if(loginPid == 0) {
 		/* close all; login will open different streams */
 		int max = sysconf(CONF_MAX_FDS);
-		for(int i = 0; i < max; ++i)
-			close(i);
+		for(int i = 0; i < max; ++i) {
+			if(i != STRACE_FILENO)
+				close(i);
+		}
 
 		/* set env-var for childs */
 		setenv(termVar,path);

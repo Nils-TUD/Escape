@@ -46,9 +46,9 @@ void DriverProcess::load() {
 	// now load the driver
 	_pid = fork();
 	if(_pid == 0) {
-		// keep only stdin, stdout and stderr
+		// keep only stdin, stdout and stderr and strace
 		int maxfds = sysconf(CONF_MAX_FDS);
-		for(int i = 3; i < maxfds; ++i)
+		for(int i = 4; i < maxfds; ++i)
 			close(i);
 
 		// build args and exec

@@ -36,17 +36,10 @@
 #	include <arch/mmix/syscalls.h>
 #endif
 
-#define PRINT_SYSCALLS	0
+class OStringStream;
 
 class Syscalls {
 	typedef int (*handler_func)(Thread *t,IntrptStackFrame *stack);
-
-	/* for syscall-definitions */
-	struct Syscall {
-		handler_func handler;
-		const char *name;
-		uchar argCount;
-	};
 
 	Syscalls() = delete;
 
@@ -64,15 +57,7 @@ public:
 			return;
 		}
 
-#if PRINT_SYSCALLS
-		printEntry(t,stack);
-#endif
-
-		syscalls[sysCallNo].handler(t,stack);
-
-#if PRINT_SYSCALLS
-		printExit(t,stack);
-#endif
+		syscalls[sysCallNo](t,stack);
 	}
 
 	/**
@@ -192,12 +177,6 @@ private:
 #endif
 
 	/**
-	 * @param sysCallNo the syscall-number
-	 * @return the number of arguments for the given syscall
-	 */
-	static uint getArgCount(uint sysCallNo);
-
-	/**
 	 * Checks the given path and copies it to <dst>.
 	 *
 	 * @param dst the destination array
@@ -207,9 +186,6 @@ private:
 	 */
 	static bool copyPath(char *dst,size_t size,const char *src);
 
-	static void printEntry(Thread *t,IntrptStackFrame *stack);
-	static void printExit(Thread *t,IntrptStackFrame *stack);
-
 	/* our syscalls */
-	static const Syscall syscalls[];
+	static const handler_func syscalls[];
 };

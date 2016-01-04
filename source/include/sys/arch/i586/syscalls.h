@@ -20,6 +20,7 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/sysctrace.h>
 #include <errno.h>
 
 #if defined(SHAREDLIB)
@@ -39,8 +40,14 @@
 	"1:\n"
 #endif
 
-static inline long finish(uint32_t res,long err) {
+#define SYS_START(cnt,syscno,argc,...)							\
+	if(traceFd != -1)											\
+		syscTraceEnter(syscno,&cnt,argc,## __VA_ARGS__)
+
+static inline long finish(uint32_t cnt,ulong res,long err) {
 	errno = err;
+	if(traceFd != -1)
+		syscTraceLeave(cnt,res,err);
 	if(EXPECT_FALSE(err))
 		return err;
 	return res;
@@ -50,41 +57,53 @@ static inline void syscalldbg(void) {
 	__asm__ volatile ("int	$0x30\n" : : : "memory");
 }
 
+/* ignore that warning here, because the code is performance critical */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+
 static inline long syscall0(long syscno) {
 	ulong dummy, err;
+	uint32_t cnt; /* does not need to be initialized */
+	SYS_START(cnt,syscno,0);
 	__asm__ volatile (
 		DO_SYSENTER
 		: "+a"(syscno), "=c"(dummy), "=d"(dummy), "=D"(err)
 		:
 		: "memory"
 	);
-	return finish(syscno,err);
+	return finish(cnt,syscno,err);
 }
 
 static inline long syscall1(long syscno,ulong arg1) {
 	ulong dummy, err;
+	uint32_t cnt; /* does not need to be initialized */
+	SYS_START(cnt,syscno,1,arg1);
 	__asm__ volatile (
 		DO_SYSENTER
 		: "+a"(syscno), "=c"(dummy), "=d"(dummy), "=D"(err)
 		: "S"(arg1)
 		: "memory"
 	);
-	return finish(syscno,err);
+	return finish(cnt,syscno,err);
 }
 
 static inline long syscall2(long syscno,ulong arg1,ulong arg2) {
 	ulong dummy;
+	uint32_t cnt; /* does not need to be initialized */
+	SYS_START(cnt,syscno,2,arg1,arg2);
 	__asm__ volatile (
 		DO_SYSENTER
 		: "+a"(syscno), "=c"(dummy), "=d"(dummy), "+D"(arg2)
 		: "S"(arg1)
 		: "memory"
 	);
-	return finish(syscno,arg2);
+	return finish(cnt,syscno,arg2);
 }
 
 static inline long syscall3(long syscno,ulong arg1,ulong arg2,ulong arg3) {
 	ulong dummy;
+	uint32_t cnt; /* does not need to be initialized */
+	SYS_START(cnt,syscno,3,arg1,arg2,arg3);
 	__asm__ volatile (
 		"push	%5\n"
 		DO_SYSENTER
@@ -93,10 +112,12 @@ static inline long syscall3(long syscno,ulong arg1,ulong arg2,ulong arg3) {
 		: "S"(arg1), "g"(arg3)
 		: "memory"
 	);
-	return finish(syscno,arg2);
+	return finish(cnt,syscno,arg2);
 }
 
 static inline long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong arg4) {
+	uint32_t cnt; /* does not need to be initialized */
+	SYS_START(cnt,syscno,4,arg1,arg2,arg3,arg4);
 	__asm__ volatile (
 		// the problem is here that we need to push 2 values. thus, the second one can't be loaded
 		// over esp, since the first push changes that. Using "r" doesn't work either because
@@ -112,5 +133,7 @@ static inline long syscall4(long syscno,ulong arg1,ulong arg2,ulong arg3,ulong a
 		: "S"(arg1)
 		: "memory"
 	);
-	return finish(syscno,arg2);
+	return finish(cnt,syscno,arg2);
 }
+
+#pragma GCC diagnostic pop

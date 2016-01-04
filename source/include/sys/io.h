@@ -47,6 +47,8 @@
 #define STDIN_FILENO			0
 #define STDOUT_FILENO			1
 #define STDERR_FILENO			2
+/* special fd for syscall tracing */
+#define STRACE_FILENO			3
 
 /* fcntl-commands */
 #define F_GETFL					0

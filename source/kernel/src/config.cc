@@ -89,6 +89,7 @@ long Config::get(int id) {
 		case FORCE_PIT:
 		case FORCE_PIC:
 		case ACCURATE_CPU:
+		case LOG_SYSCALLS:
 			res = !!(flags & (1 << id));
 			break;
 		default:
@@ -117,4 +118,6 @@ void Config::set(const char *name,const char *value) {
 		flags |= 1 << FORCE_PIC;
 	else if(strcmp(name,"accuratecpu") == 0)
 		flags |= 1 << ACCURATE_CPU;
+	else if(strcmp(name,"logsysc") == 0)
+		flags |= 1 << LOG_SYSCALLS;
 }

@@ -117,7 +117,7 @@ void GDT::initAP() {
 }
 
 cpuid_t GDT::getCPUId() {
-	DescTable tbl;
+	DescTable tbl = {0,0};
 	get(&tbl);
 	for(size_t i = 0; i < cpuCount; i++) {
 		if(all[i].gdt.offset == tbl.offset)

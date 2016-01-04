@@ -52,7 +52,7 @@ static void sig_handler(int) {
 }
 
 static int thread_func(A_UNUSED void *arg) {
-	if(signal(SIGINT,sig_handler) < 0)
+	if(signal(SIGINT,sig_handler) == SIG_ERR)
 		error("Unable to set signal handler");
 	while(run)
 		printffl("This is the %d test\n",rand());

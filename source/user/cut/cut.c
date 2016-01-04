@@ -66,17 +66,26 @@ int main(int argc,const char **argv) {
 	else {
 		FILE *f;
 		while(*args) {
-			if(isdir(*args)) {
-				printe("'%s' is a directory!",*args);
-				continue;
-			}
-			f = fopen(*args,"r");
-			if(!f) {
+			int fd = open(*args,O_RDONLY);
+			if(fd < 0) {
 				printe("Unable to open '%s'",*args);
-				continue;
+				goto err;
+			}
+			if(fisdir(fd)) {
+				printe("'%s' is a directory!",*args);
+				goto errFd;
+			}
+			f = fattach(fd,"r");
+			if(!f) {
+				printe("Unable to attach FILE to fd for %s",*args);
+				goto errFd;
 			}
 			handleFile(f,delim,first,last);
+
 			fclose(f);
+		errFd:
+			close(fd);
+		err:
 			args++;
 		}
 	}

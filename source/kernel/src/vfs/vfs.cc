@@ -45,6 +45,7 @@
 
 VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;
+VFSNode *VFS::tmpNode;
 VFSNode *VFS::msNode;
 SpinLock waitLock;
 
@@ -61,7 +62,8 @@ void VFS::init() {
 	 *   |   |- ms
 	 *   |   \- proc
 	 *   |       \- self
-	 *   \- dev
+	 *   |- dev
+	 *   \- tmp
 	 */
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
 	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"sys",DIR_DEF_MODE);
@@ -81,6 +83,8 @@ void VFS::init() {
 	/* TODO: maybe we should organize that differently */
 	devNode->chmod(KERNEL_PID,0777);
 	VFSNode::release(devNode);
+	tmpNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"tmp",S_IFDIR | 0777);
+	VFSNode::release(tmpNode);
 	VFSNode::release(procsNode);
 	VFSNode::release(sys);
 	VFSNode::release(root);
@@ -93,6 +97,8 @@ void VFS::mountAll(Proc *p) {
 		Util::panic("Unable to mount /dev");
 	if(p->getMS()->mount(p,"/sys",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
 		Util::panic("Unable to mount /dev");
+	if(p->getMS()->mount(p,"/tmp",reinterpret_cast<OpenFile*>(tmpNode)) < 0)
+		Util::panic("Unable to mount /tmp");
 }
 
 int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {

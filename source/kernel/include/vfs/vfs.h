@@ -195,5 +195,6 @@ private:
 
 	static VFSNode *procsNode;
 	static VFSNode *devNode;
+	static VFSNode *tmpNode;
 	static VFSNode *msNode;
 };

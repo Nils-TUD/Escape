@@ -28,7 +28,7 @@
 #include <sys/messages.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
-#include <usergroup/group.h>
+#include <usergroup/usergroup.h>
 #include <errno.h>
 #include <mutex>
 #include <signal.h>
@@ -60,10 +60,8 @@ int main(int argc,char *argv[]) {
 	ScreenMng::init(argc - 1,argv + 1);
 	srand(time(NULL));
 
-	size_t gcount;
-	sGroup *groups = group_parseFromFile(GROUPS_PATH,&gcount);
-	sGroup *uigrp = group_getByName(groups,"output");
-	if(!uigrp)
+	int outgid = usergroup_nameToId(GROUPS_PATH,"output");
+	if(outgid < 0)
 		error("Unable to find group 'output'");
 
 	/* create clipboard */
@@ -71,7 +69,7 @@ int main(int argc,char *argv[]) {
 	if(fd < 0)
 		error("Unable to create clipboard");
 	// TODO a fchown would be nice
-	if(chown(esc::Clipboard::PATH,-1,uigrp->gid) < 0)
+	if(chown(esc::Clipboard::PATH,-1,outgid) < 0)
 		error("Unable to change clipboard owner");
 	close(fd);
 

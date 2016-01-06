@@ -27,8 +27,7 @@
 #include <sys/endian.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <time.h>
@@ -41,8 +40,8 @@ using namespace fs;
 ino_t TarINode::_inode = 1;
 
 static char archiveFile[MAX_PATH_LEN];
-static sUser *userList = nullptr;
-static sGroup *groupList = nullptr;
+static sNamedItem *userList = nullptr;
+static sNamedItem *groupList = nullptr;
 static PathTree<TarINode> tree;
 static bool changed = false;
 
@@ -330,14 +329,14 @@ private:
 			tarfile->info.st_gid = strtoul(header.gid,NULL,8);
 
 			if(*header.uname) {
-				sUser *u = user_getByName(userList,header.uname);
+				sNamedItem *u = usergroup_getByName(userList,header.uname);
 				if(u)
-					tarfile->info.st_uid = u->uid;
+					tarfile->info.st_uid = u->id;
 			}
 			if(*header.gname) {
-				sGroup *g = group_getByName(groupList,header.gname);
+				sNamedItem *g = usergroup_getByName(groupList,header.gname);
 				if(g)
-					tarfile->info.st_gid = g->gid;
+					tarfile->info.st_gid = g->id;
 			}
 
 			tree.insert(header.filename,tarfile);
@@ -416,12 +415,12 @@ int main(int argc,char **argv) {
 	if(argc != 3)
 		error("Usage: %s <wait> <tar-file>",argv[0]);
 
-	userList = user_parseFromFile(USERS_PATH,nullptr);
+	userList = usergroup_parse(USERS_PATH,nullptr);
 	if(!userList)
-		printe("Warning: unable to parse users from file");
-	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
+		printe("Warning: unable to get user list");
+	groupList = usergroup_parse(GROUPS_PATH,nullptr);
 	if(!groupList)
-		printe("Unable to parse groups from file");
+		printe("Unable to get group list");
 
 	abspath(archiveFile,sizeof(archiveFile),argv[2]);
 

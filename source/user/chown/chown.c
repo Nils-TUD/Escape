@@ -21,15 +21,11 @@
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-static sUser *userList;
-static sGroup *groupList;
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [<user>][:[<group>]] <file>...\n",name);
@@ -57,19 +53,20 @@ static bool parseUserGroup(const char *spec,uid_t *uid,gid_t *gid) {
 		bool numeric = false;
 		const char *uname = parseName(s,&numeric);
 
-		sUser *u;
+		int userId;
 		if(numeric) {
-			uid_t uid = strtoul(uname,NULL,10);
-			u = user_getById(userList,uid);
+			userId = strtoul(uname,NULL,10);
+			if(!usergroup_idToName(USERS_PATH,userId))
+				userId = -1;
 		}
 		else
-			u = user_getByName(userList,uname);
-		if(!u) {
+			userId = usergroup_nameToId(USERS_PATH,uname);
+		if(userId < 0) {
 			fprintf(stderr,"Unable to find user '%s'\n",uname);
 			return false;
 		}
 
-		*uid = u->uid;
+		*uid = userId;
 		s += strlen(uname);
 		if(*s == ':')
 			s++;
@@ -83,19 +80,21 @@ static bool parseUserGroup(const char *spec,uid_t *uid,gid_t *gid) {
 	bool numeric = false;
 	const char *gname = parseName(s,&numeric);
 
-	sGroup *g;
+
+	int groupId;
 	if(numeric) {
-		gid_t gid = strtoul(gname,NULL,10);
-		g = group_getById(groupList,gid);
+		groupId = strtoul(gname,NULL,10);
+		if(!usergroup_idToName(GROUPS_PATH,groupId))
+			groupId = -1;
 	}
 	else
-		g = group_getByName(groupList,gname);
-	if(!g) {
+		groupId = usergroup_nameToId(GROUPS_PATH,gname);
+	if(groupId < 0) {
 		fprintf(stderr,"Unable to find group '%s'\n",gname);
 		return false;
 	}
 
-	*gid = g->gid;
+	*gid = groupId;
 
 	s += strlen(gname);
 	if(*s != '\0') {
@@ -118,13 +117,6 @@ int main(int argc,const char **argv) {
 	}
 	if(ca_hasHelp())
 		usage(argv[0]);
-
-	userList = user_parseFromFile(USERS_PATH,NULL);
-	if(!userList)
-		printe("Warning: unable to parse users from file");
-	groupList = group_parseFromFile(GROUPS_PATH,NULL);
-	if(!groupList)
-		printe("Unable to parse groups from file");
 
 	if(!parseUserGroup(spec,&uid,&gid))
 		exit(EXIT_FAILURE);

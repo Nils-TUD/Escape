@@ -26,21 +26,21 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/thread.h>
-#include <usergroup/group.h>
+#include <usergroup/usergroup.h>
 #include "../initerror.h"
 #include "driverprocess.h"
 
 using namespace std;
 
-sGroup *DriverProcess::groupList = nullptr;
+sNamedItem *DriverProcess::groupList = nullptr;
 
 void DriverProcess::load() {
 	// load groups from file, if not already done
 	if(groupList == nullptr) {
 		size_t count;
-		groupList = group_parseFromFile(GROUPS_PATH,&count);
+		groupList = usergroup_parse(GROUPS_PATH,&count);
 		if(!groupList)
-			throw init_error("Unable to load groups from file");
+			throw init_error("Unable to get group list");
 	}
 
 	// now load the driver
@@ -78,7 +78,7 @@ void DriverProcess::load() {
 	// wait for all specified devices
 	for(auto it = _devices.begin(); it != _devices.end(); ++it) {
 		struct stat info;
-		sGroup *g;
+		sNamedItem *g;
 		int res;
 		int j = 0;
 		do {
@@ -94,10 +94,10 @@ void DriverProcess::load() {
 		if(chmod(it->name().c_str(),it->permissions()) < 0)
 			throw init_error(string("Unable to set permissions for '") + it->name() + "'");
 		// set group
-		g = group_getByName(groupList,it->group().c_str());
+		g = usergroup_getByName(groupList,it->group().c_str());
 		if(!g)
 			throw init_error(string("Unable to find group '") + it->group() + "'");
-		if(chown(it->name().c_str(),-1,g->gid) < 0)
+		if(chown(it->name().c_str(),-1,g->id) < 0)
 			throw init_error(string("Unable to set group for '") + it->name() + "'");
 	}
 }

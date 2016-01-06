@@ -25,7 +25,7 @@
 #include <sys/sync.h>
 #include <sys/thread.h>
 #include <sys/time.h>
-#include <usergroup/group.h>
+#include <usergroup/usergroup.h>
 #include <mutex>
 #include <stdio.h>
 #include <vector>
@@ -533,11 +533,11 @@ static void createResolvConf() {
 
 	// chown it to the network-group
 	size_t groupCount;
-	sGroup *groups = group_parseFromFile(GROUPS_PATH,&groupCount);
-	sGroup *network = group_getByName(groups,"network");
-	if(!network || chown(resolvconf,0,network->gid) < 0)
+	sNamedItem *groups = usergroup_parse(GROUPS_PATH,&groupCount);
+	sNamedItem *network = usergroup_getByName(groups,"network");
+	if(!network || chown(resolvconf,0,network->id) < 0)
 		printe("Unable to chmod %s",resolvconf);
-	group_free(groups);
+	usergroup_free(groups);
 }
 
 int main() {

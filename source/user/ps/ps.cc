@@ -29,8 +29,7 @@
 #include <sys/conf.h>
 #include <sys/debug.h>
 #include <sys/proc.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,8 +95,8 @@ static void usage(const char *name) {
 int main(int argc,char **argv) {
 	string ssort("pid");
 	int own = 0,numeric = 0;
-	sUser *userList = nullptr;
-	sGroup *groupList = nullptr;
+	sNamedItem *userList = nullptr;
+	sNamedItem *groupList = nullptr;
 
 	// parse args
 	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
@@ -120,12 +119,12 @@ int main(int argc,char **argv) {
 	}
 
 	/* parse users and groups from file */
-	userList = user_parseFromFile(USERS_PATH,nullptr);
+	userList = usergroup_parse(USERS_PATH,nullptr);
 	if(!userList) {
 		numeric = true;
 		printe("Warning: unable to parse users from file");
 	}
-	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
+	groupList = usergroup_parse(GROUPS_PATH,nullptr);
 	if(!groupList) {
 		numeric = true;
 		printe("Warning: unable to parse groups from file");
@@ -155,7 +154,7 @@ int main(int argc,char **argv) {
 			if(p->ppid() > maxPpid)
 				maxPpid = p->ppid();
 
-			sUser *u = !numeric ? user_getById(userList,p->uid()) : nullptr;
+			sNamedItem *u = !numeric ? usergroup_getById(userList,p->uid()) : nullptr;
 			if(!u || numeric) {
 				if((x = count_digits((ulong)p->uid(),10)) > (size_t)maxUid)
 					maxUid = x;
@@ -163,7 +162,7 @@ int main(int argc,char **argv) {
 			else if((x = strlen(u->name)) > (size_t)maxUid)
 				maxUid = x;
 
-			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : nullptr;
+			sNamedItem *g = !numeric ? usergroup_getById(groupList,p->gid()) : nullptr;
 			if(!g || numeric) {
 				if((x = count_digits((ulong)p->gid(),10)) > (size_t)maxGid)
 					maxGid = x;
@@ -235,13 +234,13 @@ int main(int argc,char **argv) {
 			sout << fmt(p->pid(),maxPid) << " ";
 			sout << fmt(p->ppid(),maxPpid) << " ";
 
-			sUser *u = !numeric ? user_getById(userList,p->uid()) : nullptr;
+			sNamedItem *u = !numeric ? usergroup_getById(userList,p->uid()) : nullptr;
 			if(!u || numeric)
 				sout << fmt(p->uid(),"-",maxUid) << " ";
 			else
 				sout << fmt(u->name,"-",maxUid) << " ";
 
-			sGroup *g = !numeric ? group_getById(groupList,p->gid()) : nullptr;
+			sNamedItem *g = !numeric ? usergroup_getById(groupList,p->gid()) : nullptr;
 			if(!g || numeric)
 				sout << fmt(p->gid(),"-",maxGid) << " ";
 			else

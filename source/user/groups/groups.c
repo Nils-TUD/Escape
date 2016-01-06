@@ -22,8 +22,7 @@
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,9 +30,10 @@
 static void listGroups(void);
 static void listCurGroups(void);
 static void addGroup(const char *name);
-static void changeName(const char *old,const char *new);
+static void changeName(const char *old,const char *n);
 static void join(const char *user,const char *group);
 static void leave(const char *user,const char *group);
+static void writeGroupIds(const char *user,gid_t *gids,size_t count);
 static void deleteGroup(const char *name);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);
@@ -47,24 +47,20 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-static sGroup *groupList;
-static sUser *userList;
+static sNamedItem *groupList;
+static sNamedItem *userList;
 
 int main(int argc,char *argv[]) {
 	size_t count;
 	if(argc < 2 || argv[1][0] == '\0' || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
-	/* we need to be root to write /etc/groups */
-	if(seteuid(ROOT_UID) < 0)
-		error("Unable to set euid to ROOT_UID");
-
-	groupList = group_parseFromFile(GROUPS_PATH,&count);
+	groupList = usergroup_parse(GROUPS_PATH,&count);
 	if(!groupList)
-		error("Unable to parse groups-file '%s'",GROUPS_PATH);
-	userList = user_parseFromFile(USERS_PATH,&count);
+		error("Unable to load groups");
+	userList = usergroup_parse(USERS_PATH,&count);
 	if(!userList)
-		error("Unable to parse users-file '%s'",USERS_PATH);
+		error("Unable to load users");
 
 	switch(argv[1][1]) {
 		case 'l':
@@ -104,119 +100,149 @@ int main(int argc,char *argv[]) {
 }
 
 static void listGroups(void) {
-	sGroup *g = groupList;
+	sNamedItem *g = groupList;
 	printf("%-20s %-4s %s\n","Name","GID","Members");
 	while(g != NULL) {
-		size_t i;
-		printf("%-20s %-4d ",g->name,g->gid);
-		for(i = 0; i < g->userCount; i++) {
-			sUser *u = user_getById(userList,g->users[i]);
-			if(!u)
-				error("User with id %d does not exist!?",g->users[i]);
-			printf("%s ",u->name);
+		printf("%-20s %-4d ",g->name,g->id);
+
+		sNamedItem *u = userList;
+		while(u != NULL) {
+			size_t count;
+			gid_t *gids = usergroup_collectGroupsFor(u->name,0,&count);
+			if(gids) {
+				for(size_t i = 0; i < count; ++i) {
+					if(gids[i] == g->id) {
+						printf("%s ",u->name);
+						break;
+					}
+				}
+				free(gids);
+			}
+			u = u->next;
 		}
 		printf("\n");
+
 		g = g->next;
 	}
 }
 
 static void listCurGroups(void) {
-	gid_t *groupIds;
-	int i,count = getgroups(0,NULL);
+	int count = getgroups(0,NULL);
 	if(count < 0)
 		error("Unable to get groups of current process");
 
-	groupIds = (gid_t*)malloc(count * sizeof(gid_t));
+	gid_t *groupIds = (gid_t*)malloc(count * sizeof(gid_t));
 	if(!groupIds)
 		error("malloc");
 	count = getgroups(count,groupIds);
 	if(count < 0)
 		error("Unable to get groups of current process");
 
-	for(i = 0; i < count; i++) {
-		sGroup *g = group_getById(groupList,groupIds[i]);
-		printf("%s ",g->name);
+	for(int i = 0; i < count; i++) {
+		const char *name = usergroup_idToName(GROUPS_PATH,groupIds[i]);
+		if(name)
+			printf("%s ",name);
 	}
 	printf("\n");
+
+	free(groupIds);
 }
 
 static void addGroup(const char *name) {
-	uid_t uid = getuid();
-	sGroup *g;
-	if(group_getByName(groupList,name) != NULL)
-		error("A group with name '%s' does already exist",name);
-	if(uid != ROOT_UID)
-		error("Only root can do that!");
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"%s/%s",GROUPS_PATH,name);
+	if(mkdir(path,0755) < 0)
+		error("Unable to create group directory '%s'",path);
 
-	g = (sGroup*)malloc(sizeof(sGroup));
-	if(!g)
-		error("malloc");
-	g->gid = group_getFreeGid(groupList);
-	strnzcpy(g->name,name,sizeof(g->name));
-	g->userCount = 0;
-	g->users = NULL;
-	group_append(groupList,g);
-
-	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
-		error("Unable to write groups back to file");
+	int gid = usergroup_getFreeId(groupList);
+	if(usergroup_storeIntAttr(GROUPS_PATH,name,"id",gid,0644) < 0) {
+		if(rmdir(path) < 0)
+			printe("Unable to remove the created group directory");
+		error("Unable to write id to group directory");
+	}
 }
 
-static void changeName(const char *old,const char *new) {
-	uid_t uid = getuid();
-	sGroup *g = group_getByName(groupList,old);
-	if(!g)
-		error("A group with name '%s' does not exist",old);
-	if(uid != ROOT_UID)
-		error("Only root can do that!");
-
-	strnzcpy(g->name,new,sizeof(g->name));
-
-	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
-		error("Unable to write groups back to file");
+static void changeName(const char *old,const char *n) {
+	char oldPath[MAX_PATH_LEN];
+	char newPath[MAX_PATH_LEN];
+	snprintf(oldPath,sizeof(oldPath),"%s/%s",GROUPS_PATH,old);
+	snprintf(newPath,sizeof(newPath),"%s/%s",GROUPS_PATH,n);
+	if(rename(oldPath,newPath) < 0)
+		error("Renaming group from '%s' to '%s' failed",old,n);
 }
 
 static void join(const char *user,const char *group) {
-	uid_t uid = getuid();
-	sUser *u = user_getByName(userList,user);
-	sGroup *g = group_getByName(groupList,group);
-	if(!g || !u)
-		error("Group or user does not exist");
-	if(uid != ROOT_UID)
-		error("Only root can do that!");
+	int gid = usergroup_nameToId(GROUPS_PATH,group);
+	if(gid < 0)
+		error("Unable to get id of group '%s'",group);
 
-	g->userCount++;
-	g->users = (uid_t*)realloc(g->users,g->userCount);
-	g->users[g->userCount - 1] = u->uid;
+	size_t count;
+	gid_t *gids = usergroup_collectGroupsFor(user,1,&count);
+	gids[count++] = gid;
 
-	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
-		error("Unable to write groups back to file");
+	writeGroupIds(user,gids,count);
 }
 
 static void leave(const char *user,const char *group) {
-	uid_t uid = getuid();
-	sUser *u = user_getByName(userList,user);
-	sGroup *g = group_getByName(groupList,group);
-	if(!g || !u)
-		error("Group or user does not exist");
-	if(uid != ROOT_UID)
-		error("Only root can do that!");
+	int gid = usergroup_nameToId(GROUPS_PATH,group);
+	if(gid < 0)
+		error("Unable to get id of group '%s'",group);
 
-	group_removeFrom(g,u->uid);
+	/* remove group id from list */
+	bool found = false;
+	size_t count;
+	gid_t *gids = usergroup_collectGroupsFor(user,0,&count);
+	for(size_t i = 0; i < count; ++i) {
+		if(gids[i] == gid) {
+			count--;
+			found = true;
+		}
+		if(found && i + 1 < count)
+			gids[i] = gids[i + 1];
+	}
 
-	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
-		error("Unable to write groups back to file");
+	writeGroupIds(user,gids,count);
+}
+
+static void writeGroupIds(const char *user,gid_t *gids,size_t count) {
+	char path[MAX_PATH_LEN];
+	snprintf(path,sizeof(path),"%s/%s/groups",USERS_PATH,user);
+	FILE *f = fopen(path,"w");
+	if(!f)
+		error("Unable to open '%s' for writing",path);
+	for(size_t i = 0; i < count; ++i) {
+		fprintf(f,"%d",gids[i]);
+		if(i + 1 < count)
+			fprintf(f,",");
+	}
+	fclose(f);
 }
 
 static void deleteGroup(const char *name) {
-	uid_t uid = getuid();
-	sGroup *g = group_getByName(groupList,name);
-	if(!g)
-		error("A group with name '%s' does not exist",name);
-	if(uid != ROOT_UID)
-		error("Only root can do that!");
+	char path[MAX_PATH_LEN];
 
-	group_remove(groupList,g);
+	int gid = usergroup_nameToId(GROUPS_PATH,name);
+	if(gid < 0)
+		error("Unable to get id of group '%s'",name);
 
-	if(group_writeToFile(groupList,GROUPS_PATH) < 0)
-		error("Unable to write groups back to file");
+	/* let all users leave the group first */
+	sNamedItem *u = userList;
+	while(u != NULL) {
+		size_t count;
+		gid_t *gids = usergroup_collectGroupsFor(u->name,0,&count);
+		if(gids) {
+			for(size_t i = 0; i < count; ++i) {
+				if(gids[i] == gid) {
+					leave(u->name,name);
+					break;
+				}
+			}
+			free(gids);
+		}
+		u = u->next;
+	}
+
+	/* remove complete group directory */
+	snprintf(path,sizeof(path),"rm -r %s/%s",GROUPS_PATH,name);
+	system(path);
 }

@@ -30,7 +30,7 @@
 #include <sys/mman.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <usergroup/group.h>
+#include <usergroup/usergroup.h>
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
 #include <vterm/vtout.h>
@@ -126,16 +126,11 @@ int main(int argc,char **argv) {
 	vtdev = new TUIVTermDevice(path,0770,&vterm);
 
 	/* we want to give only users that are in the ui-group access to this vterm */
-	size_t gcount;
-	sGroup *groups = group_parseFromFile(GROUPS_PATH,&gcount);
-	sGroup *uigrp = group_getByName(groups,argv[3]);
-	if(uigrp != NULL) {
-		if(chown(path,ROOT_UID,uigrp->gid) < 0)
-			printe("Unable to add ui-group to group-list");
-	}
-	else
+	int gid = usergroup_nameToId(GROUPS_PATH,argv[3]);
+	if(gid < 0)
 		printe("Unable to find ui-group '%s'",argv[3]);
-	group_free(groups);
+	else if(chown(path,ROOT_UID,gid) < 0)
+		printe("Unable to add ui-group to group-list");
 
 	print("Getting video mode for %s columns, %s rows",argv[1],argv[2]);
 

@@ -28,9 +28,7 @@
 #include <sys/common.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
-#include <usergroup/group.h>
-#include <usergroup/passwd.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <memory>
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,12 +57,9 @@ class LoginPanel : public Panel {
 public:
 	LoginPanel(Window &win)
 			: Panel(make_layout<BorderLayout>(0)), _user(),
-			  _users(user_parseFromFile(USERS_PATH,NULL)),
-			  _pws(pw_parseFromFile(PASSWD_PATH,NULL)), _cbuser(), _edpw() {
+			  _users(usergroup_parse(USERS_PATH,NULL)), _cbuser(), _edpw() {
 		if(!_users)
 			error("Unable to parse users from '%s'",USERS_PATH);
-		if(!_pws)
-			error("Unable to parse passwords from '%s'",PASSWD_PATH);
 
 		getTheme().setPadding(0);
 
@@ -80,7 +75,7 @@ public:
 
 		_cbuser = make_control<ComboBox>();
 		_cbuser->changed().subscribe(mem_recv(this,&LoginPanel::onUserChanged));
-		sUser *u = _users;
+		sNamedItem *u = _users;
 		while(u != NULL) {
 			_cbuser->addItem(u->name);
 			u = u->next;
@@ -106,7 +101,7 @@ public:
 		add(body,BorderLayout::CENTER);
 	}
 
-	const sUser *getUser() const {
+	const sNamedItem *getUser() const {
 		return _user;
 	}
 
@@ -137,9 +132,9 @@ private:
 			indicateError(*_cbuser.get());
 			return;
 		}
-		sUser *u = user_getByName(_users,username->c_str());
-		sPasswd *pw = pw_getById(_pws,u->uid);
-		if(_edpw->getText() != pw->pw) {
+		sNamedItem *u = usergroup_getByName(_users,username->c_str());
+		const char *pw = usergroup_getPW(u->name);
+		if(!pw || _edpw->getText() != pw) {
 			indicateError(*_edpw.get());
 			return;
 		}
@@ -148,9 +143,8 @@ private:
 		Application::getInstance()->exit();
 	}
 
-	sUser *_user;
-	sUser *_users;
-	sPasswd *_pws;
+	sNamedItem *_user;
+	sNamedItem *_users;
 	shared_ptr<ComboBox> _cbuser;
 	shared_ptr<Editable> _edpw;
 };
@@ -175,7 +169,7 @@ public:
 		getRootPanel()->add(bg,BorderLayout::CENTER);
 	}
 
-	const sUser *getUser() const {
+	const sNamedItem *getUser() const {
 		return _lgpnl->getUser();
 	}
 
@@ -208,13 +202,16 @@ int main(void) {
 	app->run();
 
 	// get selected user and destroy app
-	const sUser *u = win->getUser();
+	const sNamedItem *u = win->getUser();
 	Application::destroy();
 
 	// set user- and group-id
-	if(setgid(u->gid) < 0)
+	int gid = usergroup_getGid(u->name);
+	if(gid < 0)
+		error("Unable to get users gid");
+	if(setgid(gid) < 0)
 		error("Unable to set gid");
-	if(setuid(u->uid) < 0)
+	if(setuid(u->id) < 0)
 		error("Unable to set uid");
 
 	// use a per-user mountspace
@@ -235,20 +232,20 @@ int main(void) {
 	close(ms);
 
 	// cd to home-dir
-	if(isdir(u->home))
-		setenv("CWD",u->home);
+	char homedir[MAX_PATH_LEN];
+	if(usergroup_getHome(u->name,homedir,sizeof(homedir)) != 0)
+		error("Unable to get users home directory");
+	if(isdir(homedir))
+		setenv("CWD",homedir);
 	else
 		setenv("CWD","/");
+
 	setenv("HOME",getenv("CWD"));
 	setenv("USER",u->name);
 
-	/* read in groups */
-	sGroup *groupList = group_parseFromFile(GROUPS_PATH,NULL);
-	if(!groupList)
-		error("Unable to parse groups from '%s'",GROUPS_PATH);
 	/* determine groups and set them */
 	size_t groupCount;
-	gid_t *groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
+	gid_t *groups = usergroup_collectGroupsFor(u->name,1,&groupCount);
 	if(!groups)
 		error("Unable to collect group-ids");
 	if(setgroups(groupCount,groups) < 0)

@@ -29,8 +29,20 @@ chmod -R 0644 $dir/etc
 chmod 0755 $dir/etc
 chmod 0755 $dir/etc/keymaps
 chmod 0755 $dir/etc/net
-chmod 0644 $dir/etc/users
-chmod 0600 $dir/etc/passwd
+# /etc/groups
+chown -R $root:$root $dir/etc/groups
+find $dir/etc/groups -type d | xargs chmod 0755
+find $dir/etc/groups -type f | xargs chmod 0644
+# /etc/users
+chown -R $root:$root $dir/etc/users
+find $dir/etc/users -type d | xargs chmod 0755
+find $dir/etc/users -type f | xargs chmod 0644
+# users can change their own password
+chown $hrniels:$hrniels $dir/etc/users/hrniels/passwd
+chmod 0600 $dir/etc/users/hrniels/passwd
+chown $jon:$jon $dir/etc/users/jon/passwd
+chmod 0600 $dir/etc/users/jon/passwd
+chmod 0600 $dir/etc/users/root/passwd
 # /root
 chown -R $root:$root $dir/root
 chmod -R 0600 $dir/root
@@ -48,4 +60,3 @@ chmod -R 0750 $dir/home/hrniels/scripts
 chown -R $jondoe:$jondoe $dir/home/jon
 chmod -R 0600 $dir/home/jon
 find $dir/home/jon -type d | xargs chmod +rx
-

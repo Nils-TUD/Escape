@@ -30,7 +30,7 @@
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
 #include <sys/thread.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <assert.h>
 #include <mutex>
 #include <stdlib.h>
@@ -44,7 +44,7 @@ using namespace info;
 
 static volatile bool run = true;
 static ssize_t yoffset;
-static sUser *users;
+static sNamedItem *users;
 static std::mutex displayMutex;
 static esc::VTerm vterm(esc::env::get("TERM").c_str());
 
@@ -158,7 +158,7 @@ static void display(void) {
 		for(; y < mode.rows && it != procs.end(); ++it, ++i) {
 			char time[12];
 			const process &p = **it;
-			sUser *user = user_getById(users,p.uid());
+			sNamedItem *user = usergroup_getById(users,p.uid());
 
 			sout << fmt(p.pid(),wpid) << " ";
 			if(user)
@@ -209,7 +209,7 @@ int main(void) {
 	vterm.backup();
 
 	size_t usercount;
-	users = user_parseFromFile(USERS_PATH,&usercount);
+	users = usergroup_parse(USERS_PATH,&usercount);
 
 	int tid = startthread(refreshThread,nullptr);
 	if(tid < 0)

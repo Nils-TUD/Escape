@@ -30,7 +30,7 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/thread.h>
-#include <usergroup/group.h>
+#include <usergroup/usergroup.h>
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>

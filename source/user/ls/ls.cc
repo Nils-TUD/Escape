@@ -24,8 +24,7 @@
 #include <esc/file.h>
 #include <sys/common.h>
 #include <sys/messages.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
@@ -117,8 +116,8 @@ static void usage(const char *name) {
 }
 
 static uint flags;
-static sUser *userList;
-static sGroup *groupList;
+static sNamedItem *userList;
+static sNamedItem *groupList;
 
 int main(int argc,char *argv[]) {
 	// parse params
@@ -145,12 +144,12 @@ int main(int argc,char *argv[]) {
 
 	// read users and groups
 	if(flags & F_LONG) {
-		userList = user_parseFromFile(USERS_PATH,nullptr);
+		userList = usergroup_parse(USERS_PATH,nullptr);
 		if(!userList) {
 			errmsg("Warning: unable to parse users from file");
 			flags |= F_NUMERIC;
 		}
-		groupList = group_parseFromFile(GROUPS_PATH,nullptr);
+		groupList = usergroup_parse(GROUPS_PATH,nullptr);
 		if(!groupList) {
 			errmsg("Unable to parse groups from file");
 			flags |= F_NUMERIC;
@@ -221,14 +220,14 @@ static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
 		if(flags & F_LONG) {
 			if((x = count_digits(f->links(),10)) > widths[W_LINKCOUNT])
 				widths[W_LINKCOUNT] = x;
-			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : nullptr;
+			sNamedItem *u = (~flags & F_NUMERIC) ? usergroup_getById(userList,f->uid()) : nullptr;
 			if(!u || (flags & F_NUMERIC)) {
 				if((x = count_digits((ulong)f->uid(),10)) > widths[W_UID])
 					widths[W_UID] = x;
 			}
 			else if((x = strlen(u->name)) > widths[W_UID])
 				widths[W_UID] = x;
-			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : nullptr;
+			sNamedItem *g = (~flags & F_NUMERIC) ? usergroup_getById(groupList,f->gid()) : nullptr;
 			if(!u || (flags & F_NUMERIC)) {
 				if((x = count_digits((ulong)f->gid(),10)) > widths[W_GID])
 					widths[W_GID] = x;
@@ -258,12 +257,12 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 			printMode(f->mode());
 			sout << fmt(f->links(),widths[W_LINKCOUNT]) << ' ';
 
-			sUser *u = (~flags & F_NUMERIC) ? user_getById(userList,f->uid()) : nullptr;
+			sNamedItem *u = (~flags & F_NUMERIC) ? usergroup_getById(userList,f->uid()) : nullptr;
 			if(!u || (flags & F_NUMERIC))
 				sout << fmt(f->uid(),widths[W_UID]) << ' ';
 			else
 				sout << fmt((u ? u->name : "?"),widths[W_UID]) << ' ';
-			sGroup *g = (~flags & F_NUMERIC) ? group_getById(groupList,f->gid()) : nullptr;
+			sNamedItem *g = (~flags & F_NUMERIC) ? usergroup_getById(groupList,f->gid()) : nullptr;
 			if(!g || (flags & F_NUMERIC))
 				sout << fmt(f->gid(),widths[W_GID]) << ' ';
 			else

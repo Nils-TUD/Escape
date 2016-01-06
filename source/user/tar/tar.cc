@@ -23,8 +23,7 @@
 #include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <time.h>
@@ -34,8 +33,8 @@ using namespace esc;
 using namespace fs;
 
 static char buffer[Tar::BLOCK_SIZE];
-static sUser *userList = nullptr;
-static sGroup *groupList = nullptr;
+static sNamedItem *userList = nullptr;
+static sNamedItem *groupList = nullptr;
 static off_t curoff = 0;
 
 static void addFolder(FILE *f,const std::string &fpath,const std::string &tpath) {
@@ -157,14 +156,14 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 	}
 
 	if(*header->uname) {
-		sUser *u = user_getByName(userList,header->uname);
-		if(u && chown(header->filename,u->uid,-1) < 0)
-			errmsg("chown(" << header->filename << "," << u->uid << ",-1) failed");
+		sNamedItem *u = usergroup_getByName(userList,header->uname);
+		if(u && chown(header->filename,u->id,-1) < 0)
+			errmsg("chown(" << header->filename << "," << u->id << ",-1) failed");
 	}
 	if(*header->gname) {
-		sGroup *g = group_getByName(groupList,header->gname);
-		if(g && chown(header->filename,-1,g->gid) < 0)
-			errmsg("chown(" << header->filename << ",-1," << g->gid << ") failed");
+		sNamedItem *g = usergroup_getByName(groupList,header->gname);
+		if(g && chown(header->filename,-1,g->id) < 0)
+			errmsg("chown(" << header->filename << ",-1," << g->id << ") failed");
 	}
 }
 
@@ -239,10 +238,10 @@ int main(int argc, char **argv) {
 		usage(argv[0]);
 	}
 
-	userList = user_parseFromFile(USERS_PATH,nullptr);
+	userList = usergroup_parse(USERS_PATH,nullptr);
 	if(!userList)
 		errmsg("Warning: unable to parse users from file");
-	groupList = group_parseFromFile(GROUPS_PATH,nullptr);
+	groupList = usergroup_parse(GROUPS_PATH,nullptr);
 	if(!groupList)
 		errmsg("Warning: unable to parse groups from file");
 

@@ -28,7 +28,7 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/thread.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -76,7 +76,7 @@ void shell_init(int argc,const char **argv) {
 ssize_t shell_prompt(void) {
 	uid_t uid = getuid();
 	char path[MAX_PATH_LEN + 1];
-	char username[MAX_USERNAME_LEN + 1];
+	char username[MAX_NAME_LEN + 1];
 	if(getenvto(username,sizeof(username),"USER") < 0) {
 		printe("Unable to get USER");
 		return -1;

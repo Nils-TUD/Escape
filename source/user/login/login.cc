@@ -24,9 +24,7 @@
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
-#include <usergroup/group.h>
-#include <usergroup/passwd.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,20 +35,9 @@
 
 using namespace esc;
 
-static sUser *getUser(const char *user,const char *pw);
-
-static sPasswd *pwList = NULL;
-static sGroup *groupList;
-static sUser *userList = NULL;
+static int getUser(const char *user,const char *pw);
 
 int main(void) {
-	char un[MAX_USERNAME_LEN + 1];
-	char pw[MAX_PW_LEN + 1];
-	sUser *u;
-	sGroup *gvt;
-	gid_t *groups;
-	size_t groupCount,usercount,pwcount;
-	int fd;
 	char *termPath = getenv("TERM");
 	char *termName = termPath + SSTRLEN("/dev/");
 
@@ -59,6 +46,7 @@ int main(void) {
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
 
+	int fd;
 	/* note: we do always pass O_MSGS to open because the user might want to request the console
 	 * size or use isatty() or something. */
 	if((fd = open(termPath,O_RDONLY | O_MSGS)) != STDIN_FILENO)
@@ -80,6 +68,9 @@ int main(void) {
 	sout << "Please login to get a shell.\n";
 	sout << "Hint: use hrniels/test, jon/doe or root/root ;)\n\n";
 
+	int uid;
+	char un[MAX_NAME_LEN + 1];
+	char pw[MAX_PW_LEN + 1];
 	esc::VTerm vterm(STDOUT_FILENO);
 	while(1) {
 #if SKIP_LOGIN
@@ -99,19 +90,8 @@ int main(void) {
 		sout << '\n';
 #endif
 
-		/* re-read users */
-		user_free(userList);
-		userList = user_parseFromFile(USERS_PATH,&usercount);
-		if(!userList)
-			exitmsg("Unable to parse users from '" << USERS_PATH << "'");
-
-		pw_free(pwList);
-		pwList = pw_parseFromFile(PASSWD_PATH,&pwcount);
-		if(!pwList)
-			exitmsg("Unable to parse passwords from '" << PASSWD_PATH << "'");
-
-		u = getUser(un,pw);
-		if(u != NULL)
+		uid = getUser(un,pw);
+		if(uid >= 0)
 			break;
 
 		sout << "Sorry, invalid username or password. Try again!" << endl;
@@ -119,36 +99,36 @@ int main(void) {
 	}
 	fflush(stdout);
 
-	/* read in groups */
-	groupList = group_parseFromFile(GROUPS_PATH,&usercount);
-	if(!groupList)
-		exitmsg("Unable to parse groups from '" << GROUPS_PATH << "'");
-
 	/* set user- and group-id */
-	if(setgid(u->gid) < 0)
+	int gid = usergroup_getGid(un);
+	if(gid < 0)
+		error("Unable to get users gid");
+	if(setgid(gid) < 0)
 		exitmsg("Unable to set gid");
-	if(setuid(u->uid) < 0)
+	if(setuid(uid) < 0)
 		exitmsg("Unable to set uid");
+
 	/* determine groups and set them */
-	groups = group_collectGroupsFor(groupList,u->uid,1,&groupCount);
+	size_t groupCount;
+	gid_t *groups = usergroup_collectGroupsFor(un,1,&groupCount);
 	if(!groups)
 		exitmsg("Unable to collect group-ids");
-	gvt = group_getByName(groupList,termName);
+	int vtgid = usergroup_nameToId(GROUPS_PATH,termName);
 	/* add the process to the corresponding ui-group */
-	if(gvt)
-		groups[groupCount++] = gvt->gid;
+	if(vtgid >= 0)
+		groups[groupCount++] = vtgid;
 	if(setgroups(groupCount,groups) < 0)
 		exitmsg("Unable to set groups");
 
 	/* use a per-user mountspace */
 	char mspath[MAX_PATH_LEN];
-	snprintf(mspath,sizeof(mspath),"/sys/ms/%s",u->name);
+	snprintf(mspath,sizeof(mspath),"/sys/ms/%s",un);
 	int ms = open(mspath,O_RDONLY);
 	if(ms < 0) {
 		ms = open("/sys/proc/self/ms",O_RDONLY);
 		if(ms < 0)
 			exitmsg("Unable to open /sys/proc/self/ms for reading");
-		if(clonems(ms,u->name) < 0)
+		if(clonems(ms,un) < 0)
 			exitmsg("Unable to clone mountspace");
 	}
 	else {
@@ -158,12 +138,15 @@ int main(void) {
 	close(ms);
 
 	/* cd to home-dir */
-	if(isdir(u->home))
-		setenv("CWD",u->home);
+	char homedir[MAX_PATH_LEN];
+	if(usergroup_getHome(un,homedir,sizeof(homedir)) != 0)
+		error("Unable to get users home directory");
+	if(isdir(homedir))
+		setenv("CWD",homedir);
 	else
 		setenv("CWD","/");
 	setenv("HOME",getenv("CWD"));
-	setenv("USER",u->name);
+	setenv("USER",un);
 
 	/* exchange with shell */
 	const char *shargs[] = {SHELL_PATH,NULL};
@@ -173,16 +156,13 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static sUser *getUser(const char *name,const char *pw) {
-	sUser *u = userList;
-	while(u != NULL) {
-		if(strcmp(u->name,name) == 0) {
-			sPasswd *p = pw_getById(pwList,u->uid);
-			if(p && strcmp(p->pw,pw) == 0)
-				return u;
-			return NULL;
-		}
-		u = u->next;
-	}
-	return NULL;
+static int getUser(const char *name,const char *pw) {
+	int res = usergroup_nameToId(USERS_PATH,name);
+	if(res < 0)
+		return res;
+
+	const char *upw = usergroup_getPW(name);
+	if(upw && strcmp(upw,pw) == 0)
+		return res;
+	return -EINVAL;
 }

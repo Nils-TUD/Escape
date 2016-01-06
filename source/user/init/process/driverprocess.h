@@ -22,7 +22,7 @@
 #include <esc/stream/istream.h>
 #include <esc/stream/ostream.h>
 #include <sys/common.h>
-#include <usergroup/group.h>
+#include <usergroup/usergroup.h>
 #include <string>
 #include <vector>
 
@@ -62,7 +62,7 @@ public:
 	static const int RETRY_INTERVAL		= 40;
 
 private:
-	static sGroup *groupList;
+	static sNamedItem *groupList;
 
 public:
 	DriverProcess() : Process(), _devices() {

@@ -21,8 +21,7 @@
 
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <usergroup/group.h>
-#include <usergroup/user.h>
+#include <usergroup/usergroup.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,7 +86,7 @@ public:
 	}
 
 	static void writeHeader(FILE *f,off_t offset,void *buffer,const char *path,struct stat &st,
-			sUser *userList,sGroup *groupList) {
+			sNamedItem *userList,sNamedItem *groupList) {
 		Tar::FileHeader *head = (Tar::FileHeader*)buffer;
 
 		/* fill file header */
@@ -115,10 +114,10 @@ public:
 
 		strncpy(head->ustar,"ustar ",6);
 		strncpy(head->version," ",1);
-		sUser *u = user_getById(userList,st.st_uid);
+		sNamedItem *u = usergroup_getById(userList,st.st_uid);
 		if(u)
 			strncpy(head->uname,u->name,sizeof(head->uname));
-		sGroup *g = group_getById(groupList,st.st_gid);
+		sNamedItem *g = usergroup_getById(groupList,st.st_gid);
 		if(g)
 			strncpy(head->gname,g->name,sizeof(head->gname));
 

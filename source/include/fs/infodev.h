@@ -77,7 +77,8 @@ private:
 	};
 
 	static void sigUsr1(int) {
-		dev->stop();
+		if(dev)
+			dev->stop();
 	}
 
 	static int thread(void *arg) {

@@ -63,7 +63,8 @@ public:
 	ssize_t read(fs::OpenFile *file,void *buffer,off_t offset,size_t size) override;
 	ssize_t write(fs::OpenFile *file,const void *buffer,off_t offset,size_t size) override;
 	int link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
-	int linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name);
+	int linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name,bool isdir);
+	int doUnlink(fs::User *u,fs::OpenFile *dir,const char *name,bool isdir);
 	int unlink(fs::User *u,fs::OpenFile *dir,const char *name) override;
 	int mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) override;
 	int rmdir(fs::User *u,fs::OpenFile *dir,const char *name) override;

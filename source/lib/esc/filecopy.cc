@@ -251,41 +251,6 @@ bool FileCopy::move(const char *src,const char *dstdir,const char *filename) {
 		if(!copy(src,dstdir,true))
 			return false;
 	}
-	/* we can't link directories */
-	else if(S_ISDIR(srcInfo.st_mode)) {
-		char subsrc[MAX_PATH_LEN];
-		DIR *dir = opendir(src);
-		if(!dir) {
-			handleError("Opening dir '%s' failed",src);
-			return false;
-		}
-
-		if(mkdir(dst,DIR_DEF_MODE) < 0) {
-			handleError("Creation of '%s' failed",dst);
-			closedir(dir);
-			return false;
-		}
-
-		/* move all files in that directory to the destination */
-		struct dirent e;
-		bool success = true;
-		while(readdir(dir,&e)) {
-			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
-				continue;
-
-			snprintf(subsrc,sizeof(subsrc),"%s/%s",src,e.d_name);
-			if(!move(subsrc,dst,e.d_name))
-				success = false;
-		}
-		closedir(dir);
-		if(!success)
-			return false;
-
-		if(rmdir(src) < 0) {
-			handleError("Removing '%s' failed",src);
-			return false;
-		}
-	}
 	else {
 		if(rename(src,dst) < 0) {
 			handleError("Renaming '%s' to '%s' failed",src,dst);

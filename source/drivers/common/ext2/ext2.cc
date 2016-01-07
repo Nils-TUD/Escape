@@ -207,17 +207,17 @@ ssize_t Ext2FileSystem::write(fs::OpenFile *file,const void *buffer,off_t offset
 }
 
 int Ext2FileSystem::link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) {
-	return linkIno(u,dst->ino,dir,name);
+	return linkIno(u,dst->ino,dir,name,false);
 }
 
-int Ext2FileSystem::linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name) {
+int Ext2FileSystem::linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name,bool isdir) {
 	int res;
 	Ext2CInode *cdir,*cdst;
 	cdir = inodeCache.request(dir->ino,IMODE_WRITE);
 	cdst = inodeCache.request(dst,IMODE_WRITE);
 	if(cdir == NULL || cdst == NULL)
 		res = -ENOBUFS;
-	else if(S_ISDIR(le16tocpu(cdst->inode.mode)))
+	else if(!isdir && S_ISDIR(le16tocpu(cdst->inode.mode)))
 		res = -EISDIR;
 	else
 		res = Ext2Link::create(this,u,cdir,cdst,name);
@@ -226,15 +226,19 @@ int Ext2FileSystem::linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *
 	return res;
 }
 
-int Ext2FileSystem::unlink(fs::User *u,fs::OpenFile *dir,const char *name) {
+int Ext2FileSystem::doUnlink(fs::User *u,fs::OpenFile *dir,const char *name,bool isdir) {
 	int res;
 	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
 	if(cdir == NULL)
 		return -ENOBUFS;
 
-	res = Ext2Link::remove(this,u,NULL,cdir,name,false);
+	res = Ext2Link::remove(this,u,NULL,cdir,name,isdir);
 	inodeCache.release(cdir);
 	return res;
+}
+
+int Ext2FileSystem::unlink(fs::User *u,fs::OpenFile *dir,const char *name) {
+	return doUnlink(u,dir,name,false);
 }
 
 int Ext2FileSystem::mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) {
@@ -265,9 +269,16 @@ int Ext2FileSystem::rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,
 	if(oldFile < 0)
 		return oldFile;
 	else {
-		int res = linkIno(u,oldFile,newDir,newName);
+		/* it might be a directory, too */
+		Ext2CInode *oldino = inodeCache.request(oldFile,IMODE_READ);
+		if(oldino == NULL)
+			return -ENOBUFS;
+		bool dir = S_ISDIR(le16tocpu(oldino->inode.mode));
+		inodeCache.release(oldino);
+
+		int res = linkIno(u,oldFile,newDir,newName,dir);
 		if(res == 0)
-			res = unlink(u,oldDir,oldName);
+			res = doUnlink(u,oldDir,oldName,dir);
 		return res;
 	}
 }

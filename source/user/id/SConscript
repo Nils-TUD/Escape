@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg('bin', target = 'id', source = env.Glob('*.c'), LIBS = ['usergroup'])

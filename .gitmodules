@@ -1,3 +1,6 @@
 [submodule "gimmix"]
 	path = gimmix
 	url = https://github.com/Nils-TUD/GIMMIX.git
+[submodule "eco32"]
+	path = eco32
+	url = https://github.com/Nils-TUD/ECO32.git

@@ -79,7 +79,7 @@ static void listDir(const char *path) {
 
 	bool endsWithSlash = path[strlen(path) - 1] == '/';
 	struct dirent e;
-	while(readdir(d,&e)) {
+	while(readdirto(d,&e)) {
 		if((e.d_namelen == 1 && e.d_name[0] == '.') ||
 			(e.d_namelen == 2 && e.d_name[0] == '.' && e.d_name[1] == '.'))
 			continue;

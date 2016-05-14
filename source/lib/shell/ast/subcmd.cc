@@ -161,7 +161,7 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 			if((dir = opendir(apath))) {
 				size_t apathlen = strlen(apath);
 				struct dirent e;
-				while(readdir(dir,&e)) {
+				while(readdirto(dir,&e)) {
 					if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 						continue;
 					if(strmatch(search,e.d_name)) {

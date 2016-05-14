@@ -72,7 +72,7 @@ int main(int argc,char **argv) {
 		DIR *dir = opendir(KEYMAP_DIR);
 		if(!dir)
 			exitmsg("Unable to open '" << KEYMAP_DIR << "'");
-		while(readdir(dir,&e)) {
+		while(readdirto(dir,&e)) {
 			if(strcmp(e.d_name,".") != 0 && strcmp(e.d_name,"..") != 0) {
 				char fpath[MAX_PATH_LEN];
 				snprintf(fpath,sizeof(fpath),"%s/%s",KEYMAP_DIR,e.d_name);

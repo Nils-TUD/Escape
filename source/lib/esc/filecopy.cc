@@ -195,7 +195,7 @@ bool FileCopy::copy(const char *src,const char *dest,bool remove) {
 
 		struct dirent e;
 		bool res = true;
-		while(readdir(dir,&e)) {
+		while(readdirto(dir,&e)) {
 			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;
 

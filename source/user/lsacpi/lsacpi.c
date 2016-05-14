@@ -35,7 +35,7 @@ int main(void) {
 
 	size_t i = 0;
 	struct dirent e;
-	while(readdir(dir,&e)) {
+	while(readdirto(dir,&e)) {
 		sRSDT table;
 		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 			continue;

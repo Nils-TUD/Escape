@@ -48,7 +48,7 @@ function getFiles($dir) {
 	if(is_dir($dir)) {
 		$d = opendir($dir);
 		if($d) {
-			while($f = readdir($d)) {
+			while($f = readdirto($d)) {
 				if($f == '.' || $f == '..' || preg_match('/^\.svn$/',$f))
 					continue;
 				foreach(getFiles($dir.'/'.$f) as $fd)

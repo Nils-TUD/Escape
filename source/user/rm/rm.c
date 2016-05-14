@@ -36,7 +36,7 @@ static void removeRec(const char *path,bool rec) {
 		char tmp[MAX_PATH_LEN];
 		DIR *dir = opendir(path);
 		struct dirent e;
-		while(readdir(dir,&e)) {
+		while(readdirto(dir,&e)) {
 			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;
 

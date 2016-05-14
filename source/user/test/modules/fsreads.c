@@ -48,7 +48,7 @@ int mod_fsreads(int argc,char *argv[]) {
 			error("Unable to open dir '/bin'");
 		for(i = 0; i < THREAD_COUNT; i++) {
 			char *path;
-			if(!readdir(dir,&e))
+			if(!readdirto(dir,&e))
 				break;
 			if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 				continue;

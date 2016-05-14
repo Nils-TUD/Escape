@@ -320,7 +320,7 @@ static sDirCache *compl_getCache(const char *path) {
 	dc->cmds = (sShellCmd*)malloc(cmdsSize * sizeof(sShellCmd));
 	if(!dc->cmds)
 		goto failed;
-	while(readdir(d,&e)) {
+	while(readdirto(d,&e)) {
 		sShellCmd *cmd;
 		/* skip . and .. */
 		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)

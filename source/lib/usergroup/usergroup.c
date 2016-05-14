@@ -33,7 +33,7 @@ sNamedItem *usergroup_parse(const char *path,size_t *count) {
 		return NULL;
 
 	struct dirent e;
-	while(readdir(d,&e)) {
+	while(readdirto(d,&e)) {
 		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 			continue;
 
@@ -100,7 +100,7 @@ bool usergroup_groupInUse(gid_t gid) {
 
 	bool res = false;
 	struct dirent e;
-	while(!res && readdir(d,&e)) {
+	while(!res && readdirto(d,&e)) {
 		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 			continue;
 
@@ -174,7 +174,7 @@ const char *usergroup_idToName(const char *folder,int id) {
 	if(!d)
 		return NULL;
 	struct dirent e;
-	while(readdir(d,&e)) {
+	while(readdirto(d,&e)) {
 		if(strcmp(e.d_name,".") == 0 || strcmp(e.d_name,"..") == 0)
 			continue;
 

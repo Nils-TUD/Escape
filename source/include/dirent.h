@@ -98,13 +98,21 @@ static inline DIR *opendir(const char *path) {
 }
 
 /**
- * Reads the next directory-entry from the given file-descriptor.
+ * Returns the next directory-entry from the given directory pointer.
+ *
+ * @param dir the dir-pointer
+ * @return the directory entry (statically allocated)
+ */
+struct dirent *readdir(DIR *dir);
+
+/**
+ * Stores the next directory-entry from the given directory pointer into <e>.
  *
  * @param e the dir-entry to read into
  * @param dir the dir-pointer
  * @return false if the end has been reached
  */
-bool readdir(DIR *dir,struct dirent *e);
+bool readdirto(DIR *dir,struct dirent *e);
 
 /**
  * Closes the given directory

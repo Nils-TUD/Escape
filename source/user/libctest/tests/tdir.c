@@ -57,7 +57,7 @@ static void test_opendir(void) {
 		return;
 	}
 
-	while(readdir(dir,&e));
+	while(readdirto(dir,&e));
 	closedir(dir);
 
 	test_caseSucceeded();

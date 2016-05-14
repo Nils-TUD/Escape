@@ -50,7 +50,7 @@ static void addFolder(FILE *f,const std::string &fpath,const std::string &tpath)
 		char ntpath[MAX_PATH_LEN];
 		DIR *d = opendir(fpath.c_str());
 		struct dirent e;
-		while(readdir(d,&e)) {
+		while(readdirto(d,&e)) {
 			if(e.d_namelen == 1 && e.d_name[0] == '.')
 				continue;
 			if(e.d_namelen == 2 && e.d_name[0] == '.' && e.d_name[1] == '.')

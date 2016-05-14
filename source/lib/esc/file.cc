@@ -53,7 +53,7 @@ namespace esc {
 		if(dir == nullptr)
 			throw default_error("opendir failed",errno);
 		bool res;
-		while((res = readdir(dir,&e))) {
+		while((res = readdirto(dir,&e))) {
 			if((pattern.empty() || strmatch(pattern.c_str(),e.d_name)) &&
 					(showHidden || e.d_name[0] != '.'))
 				v.push_back(e);

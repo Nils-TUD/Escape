@@ -8,7 +8,7 @@ fixDir($argv[1]);
 function fixDir($dir) {
 	if(is_dir($dir)) {
 		if($d = opendir($dir)) {
-			while($f = readdir($d)) {
+			while($f = readdirto($d)) {
 				if($f == '.' || $f == '..')
 					continue;
 				fixDir($dir.'/'.$f);
@@ -25,4 +25,3 @@ function fixDir($dir) {
 		}
 	}
 }
-?>

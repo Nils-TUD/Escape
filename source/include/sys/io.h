@@ -452,9 +452,10 @@ A_CHECKRET static inline int syncfs(int fd) {
  * Closes the given file-descriptor
  *
  * @param fd the file-descriptor
+ * @return 0 on success
  */
-static inline void close(int fd) {
-	syscall1(SYSCALL_CLOSE,fd);
+static inline int close(int fd) {
+	return syscall1(SYSCALL_CLOSE,fd);
 }
 
 /**

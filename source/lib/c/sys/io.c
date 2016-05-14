@@ -36,14 +36,14 @@ static const char *splitPath(char *tmp,char *apath,const char *path,char **name)
 	return dirfile(fullpath,name);
 }
 
-int open(const char *path,uint flags) {
-	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags,FILE_DEF_MODE);
-}
+int open(const char *path,uint flags,...) {
+	va_list ap;
+	va_start(ap, flags);
+	mode_t mode = va_arg(ap, int);
+	va_end(ap);
 
-int create(const char *path,uint flags,mode_t mode) {
 	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags | O_CREAT,mode);
+	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags,mode);
 }
 
 int truncate(const char *path,off_t length) {

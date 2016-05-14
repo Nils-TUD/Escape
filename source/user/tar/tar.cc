@@ -111,7 +111,7 @@ static void create(FILE *f,off_t cur,const Tar::FileHeader *header) {
 
 	switch(header->type) {
 		case Tar::T_REGULAR: {
-			int fd = create(header->filename,O_WRONLY | O_TRUNC | O_CREAT | O_EXCL,S_IFREG | mode);
+			int fd = open(header->filename,O_WRONLY | O_TRUNC | O_CREAT | O_EXCL,S_IFREG | mode);
 			if(fd < 0) {
 				errmsg("Unable to create file '" << header->filename << "'");
 				break;

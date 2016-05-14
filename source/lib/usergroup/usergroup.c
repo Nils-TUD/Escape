@@ -224,7 +224,7 @@ int usergroup_storeStrAttr(const char *folder,const char *name,const char *attr,
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"%s/%s/%s",folder,name,attr);
 
-	int fd = create(path,O_WRONLY | O_TRUNC | O_CREAT,mode);
+	int fd = creat(path,mode);
 	if(fd < 0)
 		return fd;
 	ssize_t res = write(fd,str,strlen(str) + 1);

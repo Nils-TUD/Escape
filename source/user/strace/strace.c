@@ -61,7 +61,7 @@ int main(int argc,char **argv) {
 	int first = 1;
 	int trc = STDERR_FILENO;
 	if(strcmp(argv[1],"-f") == 0) {
-		trc = create(argv[2],O_WRONLY,0644);
+		trc = creat(argv[2],0644);
 		if(trc < 0)
 			error("Unable to open %s for writing",argv[2]);
 		first += 2;

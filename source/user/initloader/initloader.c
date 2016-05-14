@@ -76,7 +76,7 @@ int main(void) {
 
 	/* set sync file */
 	uint32_t cnt = 0;
-	int straceFd = create("/sys/strace",O_RDWR,0666);
+	int straceFd = open("/sys/strace",O_CREAT | O_TRUNC | O_RDWR,0666);
 	if(straceFd != STRACE_FILENO)
 		error("Got the wrong fd for /sys/strace");
 	sassert(write(straceFd,&cnt,sizeof(cnt)) == sizeof(cnt));

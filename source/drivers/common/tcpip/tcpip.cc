@@ -524,7 +524,7 @@ static void createResolvConf() {
 	// create file
 	const char *resolvconf = esc::DNS::getResolveFile();
 	print("Creating empty %s",resolvconf);
-	int fd = create(resolvconf,O_WRONLY | O_CREAT,0660);
+	int fd = creat(resolvconf,0660);
 	if(fd < 0) {
 		printe("Unable to create %s",resolvconf);
 		return;

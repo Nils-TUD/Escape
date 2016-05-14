@@ -188,7 +188,7 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 
 int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	int fd = create("/sys/test",O_WRONLY,0600);
+	int fd = creat("/sys/test",0600);
 	if(fd < 0) {
 		printe("open of /sys/test failed");
 		return 1;

@@ -60,7 +60,7 @@ static int createfile(void) {
 	char *buffer = calloc(1,PAGE_SIZE);
 	if(!buffer)
 		error("malloc failed");
-	int fd = create("/sys/test",O_RDWR,0600);
+	int fd = open("/sys/test",O_CREAT | O_TRUNC | O_RDWR,0600);
 	if(fd < 0)
 		error("Unable to create /sys/test");
 	size_t i;

@@ -75,7 +75,7 @@ static const char *pshm_buildpath(char *path,ulong name) {
 int pshm_create(int oflag,mode_t mode,ulong *name) {
 	char path[MAX_PATH_LEN] = PSHM_PATH;
 	*name = atomic_add(&shmcnt,+1);
-	return create(pshm_buildpath(path,*name),oflag | O_CREAT | O_EXCL,mode);
+	return open(pshm_buildpath(path,*name),oflag | O_CREAT | O_EXCL,mode);
 }
 
 int pshm_unlink(ulong name) {
@@ -88,7 +88,7 @@ int shm_open(const char *name,int oflag,mode_t mode) {
 	char path[MAX_PATH_LEN];
 	snprintf(path,sizeof(path),"/sys/shm/%s",name);
 	if(oflag & O_CREAT)
-		fd = create(path,oflag | O_EXCL,mode);
+		fd = open(path,oflag | O_EXCL,mode);
 	else
 		fd = open(path,oflag);
 	return fd;

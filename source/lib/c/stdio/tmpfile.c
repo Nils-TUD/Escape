@@ -44,7 +44,7 @@ FILE *tmpfile(void) {
 			path[i + 5] = 'a' + (rand() % ('z' - 'a'));
 		path[NAME_LEN + 5] = '\0';
 
-		fd = create(path,flags,0644);
+		fd = open(path,flags | O_CREAT,0644);
 	}
 	while(fd == -EEXIST);
 	if(fd < 0)

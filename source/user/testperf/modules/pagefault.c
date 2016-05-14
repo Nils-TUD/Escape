@@ -83,7 +83,7 @@ int mod_pagefault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		printe("Unable to create buffer");
 		return 1;
 	}
-	int fd = create("/sys/test",O_WRONLY,0600);
+	int fd = creat("/sys/test",0600);
 	if(fd < 0) {
 		printe("open of /sys/test failed");
 		return 1;

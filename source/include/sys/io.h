@@ -87,23 +87,27 @@ extern "C" {
 #endif
 
 /**
- * Opens the given path with given mode and returns the associated file-descriptor
+ * Opens the given path with given mode and returns the associated file-descriptor.
+ * If O_CREAT is given in <flags>, the mode should be given as the third argument (see create).
+ * Otherwise, the third arguments is ignored.
  *
  * @param path the path to open
- * @param flags the open flags (IO_*)
+ * @param flags the open flags (O_*)
+ * @param mode the mode for the created file (only if O_CREAT is set)
  * @return the file-descriptor; negative if error
  */
-A_CHECKRET int open(const char *path,uint flags);
+A_CHECKRET int open(const char *path,uint flags,...);
 
 /**
- * Creates the given path with given flags and mode and returns the associated file-descriptor
+ * The equivalent of open(path,O_CREAT | O_WRONLY | O_TRUNC,mode).
  *
  * @param path the path to open
- * @param flags the open flags (IO_*)
  * @param mode the mode for the created file
  * @return the file-descriptor; negative if error
  */
-A_CHECKRET int create(const char *path,uint flags,mode_t mode);
+A_CHECKRET static inline int creat(const char *path,mode_t mode) {
+	return open(path,O_CREAT | O_WRONLY | O_TRUNC,mode);
+}
 
 /**
  * Creates a pipe with 2 separate files for reading and writing.

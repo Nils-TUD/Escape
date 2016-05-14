@@ -65,7 +65,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to find group 'output'");
 
 	/* create clipboard */
-	int fd = create(esc::Clipboard::PATH,O_WRONLY | O_CREAT | O_TRUNC,0660);
+	int fd = creat(esc::Clipboard::PATH,0660);
 	if(fd < 0)
 		error("Unable to create clipboard");
 	// TODO a fchown would be nice

@@ -81,7 +81,7 @@ static void do_read(const char *path,bool useshm) {
 
 int mod_reading(int argc,char **argv) {
 	bool useshm = argc < 3 ? true : strcmp(argv[2],"noshm") != 0;
-	int fd = create("/sys/test",O_WRONLY,0600);
+	int fd = creat("/sys/test",0600);
 	if(fd < 0) {
 		printe("open of /sys/test failed");
 		return 1;

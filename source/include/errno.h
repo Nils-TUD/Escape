@@ -66,6 +66,8 @@
 #define ENOTCONN					42	/* Not connected */
 #define ECONNRESET					43	/* Connection reset by peer */
 #define ENOTFOUND					44	/* Not found */
+#define ERANGE						45	/* Result too large (POSIX.1, C99) */
+#define EDOM						46	/* Math argument out of domain of function (POSIX.1, C99) */
 
 #if defined(__cplusplus)
 extern "C" {

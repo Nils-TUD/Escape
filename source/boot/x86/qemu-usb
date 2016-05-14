@@ -1,5 +1,5 @@
 #!/bin/sh
-source boot/$ESC_TGTTYPE/images.sh
+. boot/$ESC_TGTTYPE/images.sh
 create_usbimg $1
 
 lodev=`sudo losetup -f`

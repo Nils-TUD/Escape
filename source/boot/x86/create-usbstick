@@ -1,5 +1,5 @@
 #!/bin/sh
-source boot/$ESC_TGTTYPE/images.sh
+. boot/$ESC_TGTTYPE/images.sh
 
 if [ ! -b "$ESC_USBDEV" ]; then
 	echo "'$ESC_USBDEV' is no block device. Have you defined ESC_USBDEV properly?" 1>&2

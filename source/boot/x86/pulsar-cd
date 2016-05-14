@@ -1,5 +1,5 @@
 #!/bin/sh
-source boot/$ESC_TGTTYPE/images.sh
+. boot/$ESC_TGTTYPE/images.sh
 create_mini_cd $1/dist $1/cd-mini.iso 0
 
 cat >$1/config-$ESC_MAC <<EOF

@@ -46,7 +46,7 @@ find $dir/etc/users -type f | xargs chmod 0644
 # users can change their own password
 chown $hrniels:$hrniels $dir/etc/users/hrniels/passwd
 chmod 0600 $dir/etc/users/hrniels/passwd
-chown $jon:$jon $dir/etc/users/jon/passwd
+chown $jondoe:$jondoe $dir/etc/users/jon/passwd
 chmod 0600 $dir/etc/users/jon/passwd
 chmod 0600 $dir/etc/users/root/passwd
 

@@ -38,7 +38,7 @@
 #include <string.h>
 
 VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
-		: VFSNode(pid,n,DIR_DEF_MODE | (m & 0777),success) {
+		: VFSNode(pid,n,DIR_DEF_MODE | (m & MODE_PERM),success) {
 	VFSNode *l;
 	if(!success)
 		return;

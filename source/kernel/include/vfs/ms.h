@@ -48,7 +48,7 @@ public:
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
 	explicit VFSMS(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success)
-		: VFSNode(pid,name,S_IFMS | (mode & 0777),success), _tree() {
+		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _tree() {
 		if(!success)
 			return;
 
@@ -68,7 +68,7 @@ public:
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
 	explicit VFSMS(pid_t pid,const VFSMS &ms,VFSNode *parent,char *name,mode_t mode,bool &success)
-		: VFSNode(pid,name,S_IFMS | (mode & 0777),success), _tree() {
+		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _tree() {
 		if(!success)
 			return;
 		{

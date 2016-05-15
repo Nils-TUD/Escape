@@ -31,7 +31,7 @@
 #include <string.h>
 
 VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
-		: VFSNode(pid,n,S_IFREG | (m & 0777),success), dynamic(true), size(), pos(), data() {
+		: VFSNode(pid,n,S_IFREG | (m & MODE_PERM),success), dynamic(true), size(), pos(), data() {
 	if(!success)
 		return;
 	append(p);

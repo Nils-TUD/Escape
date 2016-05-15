@@ -144,12 +144,20 @@ int Ext2Link::remove(Ext2FileSystem *e,User *u,Ext2CInode *pdir,Ext2CInode *dir,
 					return -ENOBUFS;
 				}
 			}
+
 			if(!delDir && S_ISDIR(le16tocpu(cnode->inode.mode))) {
 				if(cnode != pdir && cnode != dir)
 					e->inodeCache.release(cnode);
 				free(buf);
 				return -EISDIR;
 			}
+
+			/* check permissions (sticky bit) */
+			if((res = e->canRemove(dir,cnode,u)) < 0) {
+				free(buf);
+				return res;
+			}
+
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
 				prev->recLen = cputole16(le16tocpu(prev->recLen) + le16tocpu(dire->recLen));

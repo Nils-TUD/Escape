@@ -247,8 +247,13 @@ errorName:
 	return res;
 }
 
-bool VFSNode::canRemove(pid_t,const VFSNode *node) const {
-	return node->isDeletable();
+bool VFSNode::canRemove(pid_t pid,const VFSNode *node) const {
+	if(!node->isDeletable())
+		return false;
+
+	Proc *p = Proc::getByPid(pid);
+	fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+	return fs::Permissions::canRemove(&u,mode,uid,node->uid) == 0;
 }
 
 int VFSNode::unlink(pid_t pid,const char *name) {

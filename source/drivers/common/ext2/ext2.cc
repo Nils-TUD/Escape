@@ -316,6 +316,13 @@ int Ext2FileSystem::hasPermission(Ext2CInode *cnode,fs::User *u,uint perms) {
 	return fs::Permissions::canAccess(u,mode,uid,gid,perms);
 }
 
+int Ext2FileSystem::canRemove(Ext2CInode *dir,Ext2CInode *file,fs::User *u) {
+	mode_t mode = le16tocpu(dir->inode.mode);
+	uid_t diruid = le16tocpu(dir->inode.uid);
+	uid_t fileuid = le16tocpu(file->inode.uid);
+	return fs::Permissions::canRemove(u,mode,diruid,fileuid);
+}
+
 bool Ext2FileSystem::bgHasBackups(block_t i) {
 	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
 	 * the backup */

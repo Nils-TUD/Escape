@@ -126,6 +126,10 @@ int Ext2Dir::remove(Ext2FileSystem *e,User *u,Ext2CInode *dir,const char *name) 
 	if(delIno == NULL)
 		return -ENOBUFS;
 
+	/* check permissions (sticky bit) */
+	if((res = e->canRemove(dir,delIno,u)) < 0)
+		goto errorPerm;
+
 	/* read the directory */
 	buffer = (Ext2DirEntry*)malloc(size);
 	if(buffer == NULL) {
@@ -167,6 +171,7 @@ int Ext2Dir::remove(Ext2FileSystem *e,User *u,Ext2CInode *dir,const char *name) 
 
 error:
 	free(buffer);
+errorPerm:
 	e->inodeCache.release(delIno);
 	return res;
 }

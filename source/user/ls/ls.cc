@@ -379,6 +379,7 @@ static void printMode(file::mode_type mode) {
 	char exec = 'x';
 	if(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFS(mode) || S_ISSERV(mode))
 		exec = 'm';
+
 	if(S_ISDIR(mode))
 		sout << 'd';
 	else if(S_ISCHR(mode))
@@ -391,6 +392,7 @@ static void printMode(file::mode_type mode) {
 		sout << 's';
 	else
 		sout << '-';
+
 	printPerm(mode,S_IRUSR,'r');
 	printPerm(mode,S_IWUSR,'w');
 	printPerm(mode,S_IXUSR,exec);
@@ -399,7 +401,10 @@ static void printMode(file::mode_type mode) {
 	printPerm(mode,S_IXGRP,exec);
 	printPerm(mode,S_IROTH,'r');
 	printPerm(mode,S_IWOTH,'w');
-	printPerm(mode,S_IXOTH,exec);
+	if(S_ISDIR(mode) && (mode & S_ISSTICKY))
+		sout << ((mode & S_IXOTH) ? 't' : 'T');
+	else
+		printPerm(mode,S_IXOTH,exec);
 	sout << ' ';
 }
 

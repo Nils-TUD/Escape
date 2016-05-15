@@ -63,6 +63,15 @@ public:
 		return 0;
 	}
 
+	static int canRemove(User *u,mode_t dirmode,uid_t diruid,uid_t fileuid) {
+		/* if the sticky flag is set, we need to be owner of the dir or the file to unlink */
+		if(dirmode & S_ISSTICKY) {
+			if(u->uid != ROOT_UID && diruid != u->uid && fileuid != u->uid)
+				return -EPERM;
+		}
+		return 0;
+	}
+
 	static bool canChmod(User *u,uid_t uid) {
 		/* root can chmod all files; otherwise it has to be the owner */
 		if(u->uid != uid && u->uid != ROOT_UID)

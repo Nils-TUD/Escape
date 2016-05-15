@@ -90,6 +90,16 @@ public:
 	int hasPermission(Ext2CInode *cnode,fs::User *u,uint perms);
 
 	/**
+	 * Checks whether the given user has the permission to remove <file> from <dir>.
+	 *
+	 * @param dir the directory to remove the file from
+	 * @param file the file to remove
+	 * @param u the user
+	 * @return 0 if the user has permission, the error-code otherwise
+	 */
+	int canRemove(Ext2CInode *dir,Ext2CInode *file,fs::User *u);
+
+	/**
 	 * @return the block size of the filesystem
 	 */
 	size_t blockSize() const {

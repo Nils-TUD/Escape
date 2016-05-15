@@ -57,7 +57,11 @@ static mode_t changeMode(mode_t mode,Operation op,int shift,int perm) {
 			mode &= ~(perm << shift);
 			break;
 		case ASSIGN:
-			mode &= ~(07 << shift);
+			// 't' is ignored for USER and GROUP, but not for OTHERS
+			if(shift == 0)
+				mode &= ~01007;
+			else
+				mode &= ~(07 << shift);
 			mode |= perm << shift;
 			break;
 	}
@@ -98,7 +102,7 @@ static mode_t parseMode(const char *path,const char *mode) {
 
 	int perm = 0;
 	struct { char c; int perm; } perms[] = {
-		{'r',04},{'w',02},{'x',01},
+		{'t',01000},{'r',04},{'w',02},{'x',01},
 	};
 	while(*mode) {
 		for(size_t i = 0; i < ARRAY_SIZE(perms); ++i) {
@@ -117,13 +121,13 @@ static mode_t parseMode(const char *path,const char *mode) {
 			fprintf(stderr,"Unable to stat '%s'\n",path);
 			return -1;
 		}
-		imode = st.st_mode & 0777;
+		imode = st.st_mode & MODE_PERM;
 	}
 
 	if(part & USER)
-		imode = changeMode(imode,op,6,perm);
+		imode = changeMode(imode,op,6,perm & 07);
 	if(part & GROUP)
-		imode = changeMode(imode,op,3,perm);
+		imode = changeMode(imode,op,3,perm & 07);
 	if(part & OTHERS)
 		imode = changeMode(imode,op,0,perm);
 	return imode;
@@ -131,7 +135,7 @@ static mode_t parseMode(const char *path,const char *mode) {
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <mode> <file>...\n",name);
-	fprintf(stderr,"  <mode> can be either numeric or of the form [ugo][+-=][rwx]\n");
+	fprintf(stderr,"  <mode> can be either numeric or of the form [ugo][+-=][trwx]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -144,7 +148,7 @@ int main(int argc,const char **argv) {
 		mode_t imode = parseMode(argv[i],mode);
 		if(imode != (mode_t)-1) {
 			if(chmod(argv[i],imode) < 0)
-				printe("Unable to set mode of '%s' to %04o",argv[i],imode);
+				printe("Unable to set mode of '%s' to %05o",argv[i],imode);
 		}
 	}
 	return EXIT_SUCCESS;

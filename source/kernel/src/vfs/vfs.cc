@@ -69,10 +69,8 @@ void VFS::init() {
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
 	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"sys",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"boot",DIR_DEF_MODE));
-	VFSNode *node = createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",DIR_DEF_MODE);
 	/* the user should be able to create shms as well */
-	node->chmod(KERNEL_PID,0777);
-	VFSNode::release(node);
+	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",S_IFDIR | S_ISSTICKY | 0777));
 	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"proc",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
@@ -84,7 +82,7 @@ void VFS::init() {
 	/* TODO: maybe we should organize that differently */
 	devNode->chmod(KERNEL_PID,0777);
 	VFSNode::release(devNode);
-	tmpNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"tmp",S_IFDIR | 0777);
+	tmpNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"tmp",S_IFDIR | S_ISSTICKY | 0777);
 	VFSNode::release(tmpNode);
 	VFSNode::release(procsNode);
 	VFSNode::release(sys);

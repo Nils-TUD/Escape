@@ -368,7 +368,7 @@ static int ast_redirToFile(sEnv *e,sRedirFile *redir) {
 		flags |= O_CREAT | O_TRUNC;
 	else if(redir->type == REDIR_OUTAPPEND)
 		flags |= O_APPEND;
-	fd = open(filename,flags);
+	fd = open(filename,flags,FILE_DEF_MODE);
 	efree(filename);
 	val_destroy(fileExpr);
 	if(fd < 0) {

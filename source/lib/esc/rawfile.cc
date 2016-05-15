@@ -18,6 +18,7 @@
  */
 
 #include <esc/rawfile.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdexcept>
 
@@ -33,7 +34,7 @@ namespace esc {
 			flags |= O_APPEND;
 		if(mode & TRUNCATE)
 			flags |= O_TRUNC;
-		_fd = ::open(filename.c_str(),flags);
+		_fd = ::open(filename.c_str(),flags,FILE_DEF_MODE);
 		if(_fd < 0)
 			throw default_error("Unable to open",-_fd);
 		_mode = mode & ~NO_CLOSE;

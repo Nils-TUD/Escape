@@ -26,7 +26,7 @@ namespace std {
 	filebuf* filebuf::open(const char* s,ios_base::openmode mode) {
 		close(false);
 		unsigned char omode = getMode(mode);
-		_fd = ::open(s,omode);
+		_fd = ::open(s,omode,FILE_DEF_MODE);
 		if(_fd < 0)
 			return nullptr;
 		_close = true;

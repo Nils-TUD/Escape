@@ -55,7 +55,7 @@ int main(int argc,char **argv) {
 
 	for(auto f = args.get_free().begin(); f != args.get_free().end(); ++f) {
 		if(!noCreate) {
-			int fd = open((*f)->c_str(),O_CREAT | O_WRONLY);
+			int fd = creat((*f)->c_str(),FILE_DEF_MODE);
 			if(fd < 0)
 				errmsg("Unable to open file '" << **f << "'");
 			close(fd);

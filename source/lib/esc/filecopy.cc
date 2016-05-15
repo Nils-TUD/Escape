@@ -102,7 +102,7 @@ bool FileCopy::copyFile(const char *src,const char *dest,bool remove) {
 		return false;
 	}
 
-	int outfd = open(dest,O_WRONLY | O_CREAT | O_TRUNC);
+	int outfd = creat(dest,FILE_DEF_MODE);
 	if(outfd < 0) {
 		handleError("open of '%s' for writing failed",dest);
 		close(infd);

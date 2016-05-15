@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <sys/stat.h>
 #include <esc/cmdargs.h>
 #include <esc/stream/std.h>
 
@@ -44,7 +45,7 @@ int main(int argc,char **argv) {
 
 	int openargs = no_create ? O_WRONLY : O_WRONLY | O_CREAT;
 	for(auto &arg : args.get_free()) {
-		int fd = open((*arg).c_str(),openargs);
+		int fd = open((*arg).c_str(),openargs,FILE_DEF_MODE);
 		if(fd < 0)
 			errmsg("Unable to open '" << *arg << "' for writing");
 		else {

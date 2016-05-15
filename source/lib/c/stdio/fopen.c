@@ -18,6 +18,7 @@
  */
 
 #include <sys/common.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -29,7 +30,7 @@ FILE *fopen(const char *filename,const char *mode) {
 		return NULL;
 
 	/* open */
-	int fd = open(filename,flags);
+	int fd = open(filename,flags,FILE_DEF_MODE);
 	if(fd < 0)
 		return NULL;
 

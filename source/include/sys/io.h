@@ -25,9 +25,9 @@
 #include <stdarg.h>
 
 /* access mode */
-#define O_READ					1
+#define O_MSGS					1					/* exchange messages with a device */
 #define O_WRITE					2
-#define O_MSGS					4					/* exchange messages with a device */
+#define O_READ					4
 #define O_RDONLY				O_READ
 #define O_WRONLY				O_WRITE
 #define O_RDWR					(O_READ | O_WRITE)

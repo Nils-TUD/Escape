@@ -70,9 +70,9 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param gid the group-id
-	 * @return true if so
+	 * @return 1 if so
 	 */
-	static bool contains(pid_t pid,gid_t gid);
+	static int contains(pid_t pid,gid_t gid);
 
 	/**
 	 * Lets the given process leave its groups

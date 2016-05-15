@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <fs/permissions.h>
 #include <mem/cache.h>
 #include <mem/dynarray.h>
 #include <mem/pagedir.h>
@@ -117,9 +118,13 @@ int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
 }
 
 int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
-	const Proc *p;
 	if(!n->isAlive())
 		return -ENOENT;
+	return hasAccess(pid,n->getMode(),n->getUid(),n->getGid(),flags);
+}
+
+int VFS::hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags) {
+	const Proc *p;
 	/* kernel is allmighty :P */
 	if(pid == KERNEL_PID)
 		return 0;
@@ -127,31 +132,9 @@ int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 	p = Proc::getByPid(pid);
 	if(p == NULL)
 		return -ESRCH;
-	/* root is (nearly) allmighty as well */
-	if(p->getEUid() == ROOT_UID) {
-		/* root has exec-permission if at least one has exec-permission */
-		if(flags & VFS_EXEC)
-			return (n->getMode() & MODE_EXEC) ? 0 : -EACCES;
-		return 0;
-	}
 
-	/* determine mask */
-	uint mode;
-	if(p->getEUid() == n->getUid())
-		mode = n->getMode() & S_IRWXU;
-	else if(p->getEGid() == n->getGid() || Groups::contains(p->getPid(),n->getGid()))
-		mode = n->getMode() & S_IRWXG;
-	else
-		mode = n->getMode() & S_IRWXO;
-
-	/* check access */
-	if((flags & VFS_READ) && !(mode & MODE_READ))
-		return -EACCES;
-	if((flags & VFS_WRITE) && !(mode & MODE_WRITE))
-		return -EACCES;
-	if((flags & VFS_EXEC) && !(mode & MODE_EXEC))
-		return -EACCES;
-	return 0;
+	fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+	return fs::Permissions::canAccess<Groups::contains>(&u,mode,uid,gid,flags);
 }
 
 int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,OpenFile **res) {

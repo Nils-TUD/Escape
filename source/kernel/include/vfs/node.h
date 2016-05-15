@@ -586,6 +586,7 @@ protected:
 private:
 	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,mode_t mode);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
+	bool canRemove(pid_t pid,const VFSNode *node) const;
 	ushort doUnref(bool remove);
 
 protected:

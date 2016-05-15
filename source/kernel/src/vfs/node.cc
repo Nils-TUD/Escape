@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <fs/permissions.h>
 #include <mem/cache.h>
 #include <mem/dynarray.h>
 #include <mem/pagedir.h>
@@ -169,9 +170,9 @@ void VFSNode::getPathTo(char *dst,size_t size) const {
 int VFSNode::chmod(pid_t pid,mode_t m) {
 	int res = 0;
 	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
-	/* root can chmod everything; others can only chmod their own files */
 	if(p) {
-		if(p->getEUid() != uid && p->getEUid() != ROOT_UID)
+		fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+		if(!fs::Permissions::canChmod(&u,uid))
 			res = -EPERM;
 		Proc::relRef(p);
 	}
@@ -184,18 +185,9 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 	int res = 0;
 	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
 	if(p) {
-		/* root can chown everything; others can only chown their own files */
-		if(p->getEUid() != uid && p->getEUid() != ROOT_UID)
+		fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+		if(!fs::Permissions::canChown<Groups::contains>(&u,uid,gid,nuid,ngid))
 			res = -EPERM;
-		else if(p->getEUid() != ROOT_UID) {
-			/* users can't change the owner */
-			if(nuid != (uid_t)-1 && nuid != uid && nuid != p->getEUid())
-				res = -EPERM;
-			/* users can change the group only to a group they're a member of */
-			else if(ngid != (gid_t)-1 && ngid != gid && ngid != p->getEGid() &&
-					!Groups::contains(p->getPid(),ngid))
-				res = -EPERM;
-		}
 		Proc::relRef(p);
 	}
 
@@ -212,7 +204,8 @@ int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
 	int res = 0;
 	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
 	if(p) {
-		if(p->getEUid() != uid && p->getEUid() != ROOT_UID)
+		fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+		if(!fs::Permissions::canUtime(&u,uid))
 			res = -EPERM;
 		Proc::relRef(p);
 	}
@@ -254,13 +247,17 @@ errorName:
 	return res;
 }
 
-int VFSNode::unlink(pid_t,const char *name) {
+bool VFSNode::canRemove(pid_t,const VFSNode *node) const {
+	return node->isDeletable();
+}
+
+int VFSNode::unlink(pid_t pid,const char *name) {
 	if(!S_ISDIR(mode))
 		return -ENOTDIR;
 
 	treeLock.down();
 	VFSNode *n = const_cast<VFSNode*>(findInDir(name,strlen(name),false));
-	if(!n || !n->isDeletable()) {
+	if(!n || !canRemove(pid,n)) {
 		treeLock.up();
 		return n ? -EPERM : -ENOENT;
 	}
@@ -272,7 +269,7 @@ int VFSNode::unlink(pid_t,const char *name) {
 	return 0;
 }
 
-int VFSNode::rename(pid_t,const char *oldName,VFSNode *newDir,const char *newName) {
+int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *newName) {
 	/* make copy of name */
 	char *namecpy = strdup(newName);
 	if(!namecpy)
@@ -281,7 +278,7 @@ int VFSNode::rename(pid_t,const char *oldName,VFSNode *newDir,const char *newNam
 	/* get target */
 	treeLock.down();
 	VFSNode *target = const_cast<VFSNode*>(findInDir(oldName,strlen(oldName),false));
-	if(!target || !target->isDeletable()) {
+	if(!target || !canRemove(pid,target)) {
 		Cache::free(namecpy);
 		treeLock.up();
 		return target ? -EPERM : -ENOENT;
@@ -334,7 +331,7 @@ errorFree:
 	return res;
 }
 
-int VFSNode::rmdir(pid_t,const char *name) {
+int VFSNode::rmdir(pid_t pid,const char *name) {
 	if(!S_ISDIR(this->mode))
 		return -ENOTDIR;
 
@@ -355,7 +352,7 @@ int VFSNode::rmdir(pid_t,const char *name) {
 	}
 
 	/* check permissions */
-	if(dir->getOwner() == KERNEL_PID) {
+	if(dir->getOwner() == KERNEL_PID || !canRemove(pid,dir)) {
 		res = -EPERM;
 		goto error;
 	}

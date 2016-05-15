@@ -85,8 +85,8 @@ size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
 	return res;
 }
 
-bool Groups::contains(pid_t pid,gid_t gid) {
-	bool res = false;
+int Groups::contains(pid_t pid,gid_t gid) {
+	int res = 0;
 	Proc *p = Proc::getRef(pid);
 	if(p) {
 		LockGuard<SpinLock> guard(&lock);
@@ -94,7 +94,7 @@ bool Groups::contains(pid_t pid,gid_t gid) {
 		if(g) {
 			for(size_t i = 0; i < g->count; i++) {
 				if(g->groups[i] == gid) {
-					res = true;
+					res = 1;
 					break;
 				}
 			}

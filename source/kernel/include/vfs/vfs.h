@@ -108,6 +108,18 @@ public:
 	static int hasAccess(pid_t pid,const VFSNode *n,ushort flags);
 
 	/**
+	 * Checks whether the process with given id has permission with the given flags
+	 *
+	 * @param pid the process-id
+	 * @param mode the mode of the object to get permission to
+	 * @param uid the uid of the object to get permission to
+	 * @param gid the gid of the object to get permission to
+	 * @param flags the flags (VFS_*)
+	 * @return 0 if successfull, negative if the process has no permission
+	 */
+	static int hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags);
+
+	/**
 	 * Opens the given path with given flags. That means it walks through the global
 	 * file table and searches for a free entry or an entry for that file.
 	 * Note that multiple processs may read from the same file simultaneously but NOT write!

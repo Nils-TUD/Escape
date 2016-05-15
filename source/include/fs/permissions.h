@@ -21,11 +21,9 @@
 
 #include <fs/common.h>
 #include <sys/common.h>
-#include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/proc.h>
 #include <errno.h>
-#include <stdio.h>
-#include <utime.h>
 
 namespace fs {
 
@@ -36,6 +34,7 @@ class Permissions {
 	Permissions() = delete;
 
 public:
+	template<int (*INGROUP)(pid_t,gid_t) = isingroup>
 	static int canAccess(User *u,mode_t mode,uid_t uid,gid_t gid,uint perms) {
 		int mask;
 		if(u->uid == ROOT_UID) {
@@ -46,13 +45,15 @@ public:
 			return 0;
 		}
 
+		/* determine mask */
 		if(uid == u->uid)
-			mask = (mode >> 6) & 0x7;
-		else if(gid == u->gid || isingroup(u->pid,gid) == 1)
-			mask = (mode >> 3) & 0x7;
+			mask = mode & S_IRWXU;
+		else if(gid == u->gid || INGROUP(u->pid,gid) == 1)
+			mask = mode & S_IRWXG;
 		else
-			mask = mode & 0x7;
+			mask = mode & S_IRWXO;
 
+		/* check access */
 		if((perms & MODE_READ) && !(mask & MODE_READ))
 			return -EACCES;
 		if((perms & MODE_WRITE) && !(mask & MODE_WRITE))
@@ -73,6 +74,7 @@ public:
 		return canChmod(u,uid);
 	}
 
+	template<int (*INGROUP)(pid_t,gid_t) = isingroup>
 	static bool canChown(User *u,uid_t oldUid,gid_t oldGid,uid_t newUid,gid_t newGid) {
 		/* root can chown everything; others can only chown their own files */
 		if(u->uid != oldUid && u->uid != ROOT_UID)
@@ -82,7 +84,7 @@ public:
 			if(newUid != (uid_t)-1 && newUid != oldUid && newUid != u->uid)
 				return false;
 			/* users can change the group only to a group they're a member of */
-			if(newGid != (gid_t)-1 && newGid != oldGid && newGid != u->gid && !isingroup(u->pid,newGid))
+			if(newGid != (gid_t)-1 && newGid != oldGid && newGid != u->gid && !INGROUP(u->pid,newGid))
 				return false;
 		}
 		return true;

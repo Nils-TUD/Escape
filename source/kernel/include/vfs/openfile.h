@@ -32,11 +32,11 @@
 /* GFT flags */
 enum {
 	VFS_NOACCESS = 0,		/* no read and write */
-	VFS_READ = 1,
-	VFS_WRITE = 2,
-	VFS_MSGS = 4,			/* exchange msgs with a device */
-	VFS_EXEC = 4,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
+	VFS_MSGS = 1,			/* exchange msgs with a device */
+	VFS_EXEC = 1,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
 							 * on purpose */
+	VFS_WRITE = 2,
+	VFS_READ = 4,
 	VFS_CREATE = 8,
 	VFS_TRUNCATE = 16,
 	VFS_APPEND = 32,

@@ -24,12 +24,7 @@
 #include "iobuf.h"
 
 size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {
-	/* first flush the output */
-	int res = fflush(file);
-	if(file->out.fd < 0 || res < 0)
-		return 0;
-	/* TODO like in fread, we could write to buffer if its less than the buffer-size and so on */
-	res = write(file->out.fd,ptr,count * size);
+	ssize_t res = bwrite(file,ptr,size * count);
 	if(res < 0) {
 		file->error = res;
 		return 0;

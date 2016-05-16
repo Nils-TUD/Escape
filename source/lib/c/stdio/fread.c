@@ -29,8 +29,9 @@ size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 	int res = 1; /* for reading from buffer something > 0 */
 	size_t rem = size * count;
 	char *cptr = (char*)ptr;
-	if(buf->fd < 0 || file->eof)
+	if(file->eof)
 		return 0;
+
 	/* at first, read from the buffer, if there is something left */
 	if(buf->pos < buf->max) {
 		size_t amount = MIN(rem,(size_t)(buf->max - buf->pos));
@@ -39,29 +40,33 @@ size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 		cptr += amount;
 		rem -= amount;
 	}
-	/* if its more than the buffer-capacity, better read it at once without buffer */
-	if(rem > IN_BUFFER_SIZE) {
-		if(file->flags & O_SIGNALS)
-			res = read(buf->fd,cptr,rem);
-		else
-			res = IGNSIGS(read(buf->fd,cptr,rem));
-		if(res > 0)
-			rem -= res;
-	}
-	/* otherwise fill the buffer and copy the part the user wants */
-	else if(rem > 0) {
-		if(file->flags & O_SIGNALS)
-			res = read(buf->fd,buf->buffer,IN_BUFFER_SIZE);
-		else
-			res = IGNSIGS(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
-		if(res > 0) {
-			size_t amount = MIN((size_t)res,rem);
-			memcpy(cptr,file->in.buffer,amount);
-			buf->pos = amount;
-			buf->max = res;
-			rem -= amount;
+
+	if(buf->fd >= 0) {
+		/* if its more than the buffer-capacity, better read it at once without buffer */
+		if(rem > IN_BUFFER_SIZE) {
+			if(file->flags & O_SIGNALS)
+				res = read(buf->fd,cptr,rem);
+			else
+				res = IGNSIGS(read(buf->fd,cptr,rem));
+			if(res > 0)
+				rem -= res;
+		}
+		/* otherwise fill the buffer and copy the part the user wants */
+		else if(rem > 0) {
+			if(file->flags & O_SIGNALS)
+				res = read(buf->fd,buf->buffer,IN_BUFFER_SIZE);
+			else
+				res = IGNSIGS(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
+			if(res > 0) {
+				size_t amount = MIN((size_t)res,rem);
+				memcpy(cptr,file->in.buffer,amount);
+				buf->pos = amount;
+				buf->max = res;
+				rem -= amount;
+			}
 		}
 	}
+
 	/* set eof and error */
 	if(res == 0)
 		file->eof = true;

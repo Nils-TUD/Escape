@@ -19,38 +19,17 @@
 
 #include <sys/common.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "iobuf.h"
 
 int bputc(FILE *f,int c) {
-	sIOBuf *buf = &f->out;
-	if(buf->buffer == NULL)
+	char cbuf = c;
+	ssize_t res = bwrite(f,&cbuf,1);
+	if(res < 0)
 		return EOF;
-	if(buf->fd >= 0) {
-		if(buf->pos >= buf->max)
-			RETERR(bflush(f));
-		buf->buffer[buf->pos++] = c;
-		/* flush stderr on '\n' */
-		if(f == stderr && c == '\n')
-			RETERR(bflush(f));
-	}
-	else {
-		if(buf->pos >= buf->max) {
-			char *old;
-			if(!buf->dynamic)
-				return EOF;
-
-			old = buf->buffer;
-			buf->buffer = realloc(buf->buffer,buf->max * 2);
-			if(!buf->buffer) {
-				buf->buffer = old;
-				return EOF;
-			}
-			buf->max *= 2;
-		}
-		buf->buffer[buf->pos++] = c;
-	}
+	/* flush stderr on '\n' */
+	if(f == stderr && c == '\n')
+		RETERR(bflush(f));
 	/* cast to unsigned char and back to int to ensure that chars < 0 (e.g. german umlaute) are
 	 * not negative */
 	return (int)(uchar)c;

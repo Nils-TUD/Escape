@@ -31,6 +31,7 @@ static bool test_fileio_checkPrint(int recvRes,int expRes,char *recvStr,const ch
 static bool test_fileio_checkScan(uint recvRes,uint expRes,const char *fmt,...);
 static void test_fileio_print(void);
 static void test_fileio_scan(void);
+static void test_fileio_buf(void);
 
 /* our test-module */
 sTestModule tModFileio = {
@@ -41,6 +42,7 @@ sTestModule tModFileio = {
 static void test_fileio(void) {
 	test_fileio_print();
 	test_fileio_scan();
+	test_fileio_buf();
 }
 
 static bool test_fileio_checkPrint(int res,int expRes,char *recvStr,const char *expStr) {
@@ -250,6 +252,43 @@ static void test_fileio_scan(void) {
 	res = sscanf("1234/5678/90123","%2d/%2d/%4d",&d1,&d2,&d3);
 	if(!test_fileio_checkScan(res,1,"%d",d1,12))
 		return;
+
+	test_caseSucceeded();
+}
+
+static void test_fileio_buf(void) {
+	test_caseStart("Testing fopenstr() and fopendyn()");
+
+	{
+		char str[] = "this is my string";
+		FILE *f = fopenstr(str,strlen(str),"r");
+		test_assertTrue(f != NULL);
+
+		char c = fgetc(f);
+		test_assertInt(c,str[0]);
+
+		char buf[128];
+		size_t res = fread(buf,1,sizeof(buf),f);
+		buf[res] = '\0';
+		test_assertSize(res,strlen(str) - 1);
+		test_assertStr(buf,str + 1);
+
+		fclose(f);
+	}
+
+	{
+		FILE *f = fopendyn();
+		fprintf(f,"%s:%d:","huhu",2);
+		test_assertSize(fwrite("foo",1,3,f),3);
+
+		size_t len;
+		char *buf = fgetbuf(f,&len);
+
+		test_assertSize(len,10);
+		test_assertStr(buf,"huhu:2:foo");
+
+		fclose(f);
+	}
 
 	test_caseSucceeded();
 }

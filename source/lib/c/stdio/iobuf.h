@@ -116,6 +116,7 @@ int bgetc(FILE *f);
 char *bgets(FILE *f,char *str,size_t size);
 int breadn(FILE *f,llong *num,size_t length,int c);
 int breads(FILE *f,size_t length,char *str);
+ssize_t bwrite(FILE *f,const void *ptr,size_t count);
 int vbscanf(FILE *f,const char *fmt,va_list ap);
 
 FILE *bcreate(int fd,uint flags,char *buffer,size_t insize,size_t outsize,bool dynamic);

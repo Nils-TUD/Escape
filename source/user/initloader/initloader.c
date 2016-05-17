@@ -129,7 +129,7 @@ int main(void) {
 			struct stat info;
 			int res;
 			while((res = stat(argv[1],&info)) == -ENOENT)
-				sleep(20);
+				usleep(20 * 1000);
 			if(res < 0)
 				error("stat for %s failed",argv[1]);
 		}

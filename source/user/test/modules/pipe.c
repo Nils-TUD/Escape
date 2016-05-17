@@ -69,7 +69,7 @@ static void pipeReadChild(void) {
 			snprintf(buf,10,"test%zd",c);
 			if(write(fd[1],buf,strlen(buf)) < 0)
 				error("Write failed");
-			sleep(10);
+			usleep(10 * 1000);
 		}
 		close(fd[1]);
 		exit(0);
@@ -114,7 +114,7 @@ static void pipeReadParent(void) {
 			snprintf(buf,10,"test%zd",c);
 			if(write(fd[1],buf,strlen(buf)) < 0)
 				error("Write failed");
-			sleep(10);
+			usleep(10 * 1000);
 		}
 		close(fd[1]);
 		waitchild(NULL,-1);

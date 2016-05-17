@@ -250,7 +250,7 @@ static State findConfig(NetConfig *cfg,const NIC::MAC &mac,uint timeout) {
 		sock.sendto(addr,&msg,sizeof(msg));
 
 		// we don't want to wait forever
-		alarm(timeout);
+		ualarm(timeout * 1000);
 
 		try {
 			esc::Socket::Addr src;

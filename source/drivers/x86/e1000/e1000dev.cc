@@ -141,13 +141,13 @@ void E1000::reset() {
 	// always reset MAC.  Required to reset the TX and RX rings.
 	uint32_t ctrl = readReg(REG_CTRL);
 	writeReg(REG_CTRL,ctrl | CTL_RESET);
-	sleep(20);
+	usleep(1000 * 20);
 
 	// set a sensible default configuration
 	ctrl |= CTL_SLU | CTL_ASDE;
 	ctrl &= ~(CTL_LRST | CTL_FRCSPD | CTL_FRCDPLX);
 	writeReg(REG_CTRL,ctrl);
-	sleep(20);
+	usleep(1000 * 20);
 
 	// if link is already up, do not attempt to reset the PHY.  On
 	// some models (notably ICH), performing a PHY reset seems to
@@ -156,11 +156,11 @@ void E1000::reset() {
 	if(~status & STATUS_LU) {
 		// Reset PHY and MAC simultaneously
 		writeReg(REG_CTRL,ctrl | CTL_RESET | CTL_PHY_RESET);
-		sleep(20);
+		usleep(1000 * 20);
 
 		// PHY reset is not self-clearing on all models
 		writeReg(REG_CTRL,ctrl);
-		sleep(20);
+		usleep(1000 * 20);
 	}
 
 	// init receive ring

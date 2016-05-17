@@ -155,8 +155,8 @@ esc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	if((oldhandler = signal(SIGALRM,sigalarm)) == SIG_ERR)
 		VTHROW("Unable to set SIGALRM handler");
 	int res;
-	if((res = alarm(timeout)) < 0)
-		VTHROWE("alarm(" << timeout << ")",res);
+	if((res = ualarm(timeout * 1000)) < 0)
+		VTHROWE("ualarm(" << (timeout * 1000) << ")",res);
 
 	try {
 		// receive response

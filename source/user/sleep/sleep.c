@@ -38,6 +38,6 @@ int main(int argc,const char **argv) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	sleep(secs * 1000);
+	sleep(secs);
 	return 0;
 }

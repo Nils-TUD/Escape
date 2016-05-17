@@ -84,7 +84,7 @@ void DriverProcess::load() {
 		do {
 			res = stat(it->name().c_str(),&info);
 			if(res < 0)
-				sleep(RETRY_INTERVAL);
+				usleep(RETRY_INTERVAL);
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0)

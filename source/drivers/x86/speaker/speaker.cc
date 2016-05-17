@@ -85,7 +85,7 @@ static void playSound(uint freq,uint dur) {
 	startSound(freq);
 	// TODO actually, it would be better not to block in this thread, because we make it unusable
 	// for other clients during that time
-	sleep(dur);
+	usleep(1000 * dur);
 	stopSound();
 }
 

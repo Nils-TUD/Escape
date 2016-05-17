@@ -44,7 +44,7 @@ int EEPROM::init(E1000 *e1000) {
 			shift = E1000::EERD_SHIFT_SMALL;
 			return 0;
 		}
-		sleep(1);
+		usleep(1000 * 1);
 	}
 	return -ETIMEOUT;
 }
@@ -59,7 +59,7 @@ int EEPROM::readWord(E1000 *e1000,uintptr_t address,uint8_t *data) {
 	for(uint i = 0; i < MAX_WAIT_MS; i++) {
 		uint32_t value = e1000->readReg(E1000::REG_EERD);
 		if(~value & doneBit) {
-			sleep(1);
+			usleep(1000 * 1);
 			continue;
 		}
 

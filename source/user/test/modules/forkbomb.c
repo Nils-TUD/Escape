@@ -58,6 +58,6 @@ int mod_forkbomb(int argc,char *argv[]) {
 		i++;
 	}
 
-	sleep(1000 * 10000);
+	sleep(10000);
 	return 0;
 }

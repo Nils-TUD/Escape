@@ -105,7 +105,7 @@ namespace gui {
 		if(msecs == 0)
 			kill(getpid(),SIGUSR1);
 		else if(it == _timequeue.begin())
-			alarm(msecs);
+			ualarm(msecs * 1000);
 		_timequeue.insert(it,TimeoutFunctor(tsc,functor));
 	}
 
@@ -153,7 +153,7 @@ namespace gui {
 		// program new wakeup
 		uint64_t now = rdtsc();
 		if(next > now && next != std::numeric_limits<uint64_t>::max())
-			alarm(tsctotime(next - now) / 1000);
+			ualarm(tsctotime(next - now));
 		_queueMutex.unlock();
 	}
 

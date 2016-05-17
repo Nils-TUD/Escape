@@ -96,7 +96,7 @@ int main(int argc,const char *argv[]) {
 		else {
 			/* wait until fs-device is present */
 			while(run && (fd = open(fsdev,O_MSGS)) == -ENOENT)
-				sleep(5);
+				usleep(5 * 1000);
 			if(!run)
 				errno = -ENOENT;
 		}

@@ -37,7 +37,7 @@ void JobMng::wait() {
 	/* TODO not optimal, but we should wait at the beginning until the first child has been started,
 	 * which is done in another thread */
 	while(_jobs.size() == 0)
-		sleep(50);
+		usleep(1000 * 50);
 
 	while(true) {
 		sExitState state;

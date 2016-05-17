@@ -54,7 +54,7 @@ void Timeouts::cancel(int id) {
 int Timeouts::thread(void*) {
 	while(1) {
 		// TODO we shouldn't wake up all the time when there is no timeout to trigger
-		sleep(100);
+		usleep(1000 * 100);
 		_now += 100;
 
 		// it's sorted

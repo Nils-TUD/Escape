@@ -90,7 +90,7 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 			printe("Unable to open '%s'",path);
 		if(!JobMng::exists(id))
 			return;
-		sleep(20);
+		usleep(1000 * 20);
 	}
 	close(fd);
 

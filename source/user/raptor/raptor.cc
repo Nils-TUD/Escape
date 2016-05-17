@@ -67,7 +67,7 @@ int main(int argc,char *argv[]) {
 		/* wait for next tick */
 		uint64_t now = rdtsc();
 		if(next > now)
-			sleep(tsctotime(next - now) / 1000);
+			usleep(tsctotime(next - now));
 		ticks++;
 	}
 

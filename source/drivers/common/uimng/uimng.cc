@@ -230,7 +230,7 @@ static int headerThread(A_UNUSED void *arg) {
 			}
 		}
 
-		sleep(1000);
+		sleep(1);
 	}
 	return 0;
 }

@@ -74,24 +74,45 @@ static inline void yield(void) {
 }
 
 /**
- * Notifies the thread in <msecs> milliseconds via signal (SIGALRM).
+ * Notifies the thread in <usecs> microseconds via signal (SIGALRM).
  *
- * @param msecs the number of milliseconds
+ * @param usecs the number of microseconds
  * @return 0 on success
  */
-static inline int alarm(time_t msecs) {
-	return syscall1(SYSCALL_ALARM,msecs);
+static inline int ualarm(time_t usecs) {
+	return syscall1(SYSCALL_ALARM,usecs);
 }
 
 /**
- * Puts the current thread to sleep for <msecs> milliseconds. If interrupted, -EINTR
- * is returned.
+ * Notifies the thread in <secs> seconds via signal (SIGALRM).
  *
- * @param msecs the number of milliseconds to wait
+ * @param secs the number of milliseconds
  * @return 0 on success
  */
-static inline int sleep(time_t msecs) {
-	return syscall1(SYSCALL_SLEEP,msecs);
+static inline int alarm(uint secs) {
+	return ualarm(secs * 1000000);
+}
+
+/**
+ * Puts the current thread to sleep for <usecs> microseconds. If interrupted, -EINTR
+ * is returned.
+ *
+ * @param usecs the number of microseconds to wait
+ * @return 0 on success
+ */
+static inline int usleep(time_t usecs) {
+	return syscall1(SYSCALL_SLEEP,usecs);
+}
+
+/**
+ * Puts the current thread to sleep for <secs> seconds. If interrupted, -EINTR
+ * is returned.
+ *
+ * @param secs the number of seconds to wait
+ * @return 0 on success
+ */
+static inline int sleep(uint secs) {
+	return usleep(secs * 1000000);
 }
 
 /**

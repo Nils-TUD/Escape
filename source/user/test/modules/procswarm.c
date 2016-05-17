@@ -37,7 +37,7 @@ int mod_procswarm(int argc,char *argv[]) {
 	while(1) {
 		printf(".");
 		fflush(stdout);
-		sleep(100);
+		usleep(100 * 1000);
 	}
 	return EXIT_SUCCESS;
 }

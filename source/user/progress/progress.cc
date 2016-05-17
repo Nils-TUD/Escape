@@ -58,7 +58,7 @@ int main(void) {
 		fflush(stdout);
 
 		/* wait a little bit */
-		sleep(100);
+		usleep(100 * 1000);
 	}
 	printf("Ready!\n");
 	return EXIT_SUCCESS;

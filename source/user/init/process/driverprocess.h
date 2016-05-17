@@ -59,7 +59,7 @@ class DriverProcess : public Process {
 
 public:
 	static const int MAX_WAIT_RETRIES	= 1000;
-	static const int RETRY_INTERVAL		= 40;
+	static const int RETRY_INTERVAL		= 40000 /* us */;
 
 private:
 	static sNamedItem *groupList;

@@ -202,7 +202,7 @@ int UI::run(void *arg) {
 	UI *ui = reinterpret_cast<UI*>(arg);
 	while(ui->_run) {
 		Game::tick();
-		sleep(100);
+		usleep(100 * 1000);
 	}
 	return 0;
 }

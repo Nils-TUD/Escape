@@ -38,7 +38,7 @@ static int myThread(A_UNUSED void *arg) {
 	fflush(stdout);
 	usemup(&usem);
 	for(i = 0; i < 10; i++)
-		sleep(100);
+		usleep(100 * 1000);
 	usemdown(&usem);
 	printf("Thread %d is done\n",gettid());
 	fflush(stdout);

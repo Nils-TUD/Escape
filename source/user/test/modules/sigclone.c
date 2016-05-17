@@ -53,7 +53,7 @@ int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	if((child = fork()) == 0) {
 		printf("Please give me a SIGINT!\n");
 		fflush(stdout);
-		sleep(1000000);
+		sleep(1000);
 		printf("Child got %d signals\n",childCount);
 		exit(EXIT_SUCCESS);
 	}

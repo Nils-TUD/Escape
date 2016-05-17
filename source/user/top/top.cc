@@ -198,7 +198,7 @@ static void display(void) {
 static int refreshThread(void*) {
 	while(run) {
 		display();
-		sleep(1000);
+		sleep(1);
 	}
 	return 0;
 }

@@ -64,19 +64,21 @@ int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
-	time_t msecs = SYSC_ARG1(stack);
+	time_t usecs = SYSC_ARG1(stack);
 	int res;
 	/* ensure that we're not already in the list */
 	Timer::removeThread(t->getTid());
-	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),msecs,false)) < 0))
+	/* TODO support microseconds */
+	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),usecs / 1000,false)) < 0))
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
 }
 
 int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
-	time_t msecs = SYSC_ARG1(stack);
+	time_t usecs = SYSC_ARG1(stack);
 	int res;
-	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),msecs,true)) < 0))
+	/* TODO support microseconds */
+	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),usecs / 1000,true)) < 0))
 		SYSC_ERROR(stack,res);
 	Thread::switchAway();
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal

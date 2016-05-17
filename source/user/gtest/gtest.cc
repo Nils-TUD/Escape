@@ -374,7 +374,7 @@ static int updateThread(A_UNUSED void *arg) {
 			else
 				progbar->repaint();
 		}));
-		sleep(50);
+		usleep(50 * 1000);
 	}
 	return 0;
 }

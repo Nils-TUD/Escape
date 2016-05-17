@@ -228,7 +228,7 @@ int main(int argc,char **argv) {
 		sendEcho(sock,src,dest,nbytes,i,ttl);
 		sent++;
 
-		if(alarm(timeout) < 0)
+		if(ualarm(timeout * 1000) < 0)
 			errmsg("alarm(" << timeout << ")");
 
 		try {
@@ -248,7 +248,7 @@ int main(int argc,char **argv) {
 			}
 
 			if(sent < times)
-				sleep(interval);
+				usleep(interval * 1000);
 		}
 		catch(const esc::default_error &e) {
 			if(e.error() != -EINTR)

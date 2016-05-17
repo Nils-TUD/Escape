@@ -84,7 +84,7 @@ static int clientthread(A_UNUSED void *arg) {
 		printf("[%d] fib(%d) = %d\n",gettid(),n,res);
 		fflush(stdout);
 		n++;
-		sleep(200);
+		usleep(200 * 1000);
 	}
 	return 0;
 }

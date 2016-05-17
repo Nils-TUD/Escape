@@ -102,7 +102,7 @@ int mod_reading(int argc,char **argv) {
 	else {
 		struct stat info;
 		while(stat("/dev/ramdisk",&info) == -ENOENT)
-			sleep(50);
+			usleep(50 * 1000);
 
 		do_read("/dev/ramdisk",useshm);
 		kill(pid,SIGTERM);

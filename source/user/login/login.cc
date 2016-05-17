@@ -95,7 +95,7 @@ int main(void) {
 			break;
 
 		sout << "Sorry, invalid username or password. Try again!" << endl;
-		sleep(1000);
+		sleep(1);
 	}
 	fflush(stdout);
 

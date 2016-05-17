@@ -31,7 +31,7 @@
 #include "process/processmanager.h"
 #include "initerror.h"
 
-#define SHUTDOWN_TIMEOUT		3000
+#define SHUTDOWN_TIMEOUT		3
 #define STATE_RUN				0
 #define STATE_REBOOT			1
 #define STATE_SHUTDOWN			2

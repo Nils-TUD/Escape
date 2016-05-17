@@ -205,7 +205,7 @@ int ctrl_waitUntil(sATAController *ctrl,time_t timeout,time_t sleepTime,uint8_t 
 			return 0;
 		ATA_PR1("Status %#x",status);
 		if(sleepTime) {
-			sleep(sleepTime);
+			usleep(1000 * sleepTime);
 			elapsed += sleepTime;
 		}
 		else

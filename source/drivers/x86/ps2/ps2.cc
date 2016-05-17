@@ -36,7 +36,7 @@ uint PS2::_ports = PORT1 | PORT2;
 bool PS2::waitInbuf() {
 	int i;
 	for(i = 0; i < TIMEOUT && (inbyte(PORT_CTRL) & ST_INBUF_FULL) != 0; ++i)
-		sleep(1);
+		usleep(1000 * 1);
 	if(i == TIMEOUT)
 		print("Timeout while waiting for bit ST_INBUF_FULL to clear");
 	return i != TIMEOUT;
@@ -45,7 +45,7 @@ bool PS2::waitInbuf() {
 bool PS2::waitOutbuf() {
 	int i;
 	for(i = 0; i < TIMEOUT && (inbyte(PORT_CTRL) & ST_OUTBUF_FULL) == 0; ++i)
-		sleep(1);
+		usleep(1000 * 1);
 	if(i == TIMEOUT)
 		print("Timeout while waiting for bit ST_OUTBUF_FULL to clear");
 	return i != TIMEOUT;

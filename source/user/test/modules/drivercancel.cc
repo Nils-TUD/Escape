@@ -116,7 +116,7 @@ static int cancelThread(void*) {
 		if((tid = startthread(clientThread,NULL)) < 0)
 			error("Unable to start thread");
 		fprintf(stderr,"Sleeping a second...\n");
-		sleep(1000);
+		sleep(1);
 		fprintf(stderr,"Sending signal...\n");
 		kill(getpid(),SIGUSR2);
 		fprintf(stderr,"Waiting for client thread...\n");

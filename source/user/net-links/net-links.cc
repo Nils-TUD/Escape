@@ -74,7 +74,7 @@ static void linkAdd(Net &net,int argc,char **argv) {
 		int res;
 		uint duration = 0;
 		while(duration < TIMEOUT && (res = open(path,O_RDONLY)) == -ENOENT) {
-			sleep(20);
+			usleep(20 * 1000);
 			duration += 20;
 			// we want to show the error from open, not sleep
 			errno = res;

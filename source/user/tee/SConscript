@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCProg('bin', target = 'tee', source = env.Glob('*.c'))

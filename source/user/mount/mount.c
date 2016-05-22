@@ -24,6 +24,7 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/thread.h>
+#include <sys/wait.h>
 #include <dirent.h>
 #include <limits.h>
 #include <signal.h>
@@ -46,6 +47,13 @@ static void usage(const char *name) {
 
 static void sigchild(A_UNUSED int sig) {
 	run = false;
+}
+
+static void cleanup(int pid) {
+	if(pid != -1) {
+		kill(pid,SIGTERM);
+		waitchild(NULL,pid);
+	}
 }
 
 int main(int argc,const char *argv[]) {
@@ -82,10 +90,11 @@ int main(int argc,const char *argv[]) {
 	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",basename(fsname),devname);
 
 	/* is it already started? */
+	int pid = -1;
 	int fd = open(fsdev,O_MSGS);
 	if(fd == -ENOENT) {
 		/* ok, do so now */
-		int pid = fork();
+		pid = fork();
 		if(pid < 0)
 			error("fork failed");
 		if(pid == 0) {
@@ -106,10 +115,16 @@ int main(int argc,const char *argv[]) {
 
 	/* now mount it */
 	int ms = open(mspath,O_WRITE);
-	if(ms < 0)
-		error("Unable to open '%s' for writing",mspath);
-	if(mount(ms,fd,path) < 0)
-		error("Unable to mount '%s' @ '%s' with fs %s in mountspace '%s'",dev,path,fs,mspath);
+	if(ms < 0) {
+		printe("Unable to open '%s' for writing",mspath);
+		cleanup(pid);
+		return EXIT_FAILURE;
+	}
+	if(mount(ms,fd,path) < 0) {
+		printe("Unable to mount '%s' @ '%s' with fs %s in mountspace '%s'",dev,path,fs,mspath);
+		cleanup(pid);
+		return EXIT_FAILURE;
+	}
 
 	close(ms);
 	close(fd);

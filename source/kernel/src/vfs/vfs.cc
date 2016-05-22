@@ -59,7 +59,6 @@ void VFS::init() {
 	 *   |   |- boot
 	 *   |   |- shm
 	 *   |   |- devices
-	 *   |   |- fs
 	 *   |   |- ms
 	 *   |   \- proc
 	 *   |       \- self
@@ -74,7 +73,6 @@ void VFS::init() {
 	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"proc",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"devices",DIR_DEF_MODE));
-	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"fs",DIR_DEF_MODE));
 	msNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"ms",DIR_DEF_MODE);
 	VFSNode::release(msNode);
 	devNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);

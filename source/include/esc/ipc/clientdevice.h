@@ -120,13 +120,11 @@ public:
 	 */
 	C *operator[](int fd) {
 		typename map_type::iterator it = _clients.find(fd);
-		assert(it != _clients.end());
-		return it->second;
+		return it != _clients.end() ? it->second : NULL;
 	}
 	const C *operator[](int fd) const {
 		typename map_type::const_iterator it = _clients.find(fd);
-		assert(it != _clients.end());
-		return it->second;
+		return it != _clients.end() ? it->second : NULL;
 	}
 
 	/**

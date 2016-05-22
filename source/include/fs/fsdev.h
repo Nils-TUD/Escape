@@ -23,7 +23,6 @@
 #include <esc/proto/fs.h>
 #include <esc/proto/init.h>
 #include <fs/common.h>
-#include <fs/infodev.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -47,7 +46,7 @@ class FSDevice : public esc::ClientDevice<F> {
 public:
 	explicit FSDevice(FileSystem<F> *fs,const char *fsDev)
 		: esc::ClientDevice<F>(fsDev,0777,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
-		  _fs(fs), _info(fsDev,fs), _clients(0) {
+		  _fs(fs), _clients(0) {
 		this->set(MSG_FILE_OPEN,std::make_memfun(this,&FSDevice::devopen));
 		this->set(MSG_FILE_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);
 		this->set(MSG_FS_OPEN,std::make_memfun(this,&FSDevice::open));
@@ -119,12 +118,16 @@ public:
 		esc::FileRead::Request r;
 		is >> r;
 
-		esc::DataBuf buf(r.count,file->shm(),r.shmemoff);
-		ssize_t res = _fs->read(file,buf.data(),r.offset,r.count);
+		if(file) {
+			esc::DataBuf buf(r.count,file->shm(),r.shmemoff);
+			ssize_t res = _fs->read(file,buf.data(),r.offset,r.count);
 
-		is << esc::FileRead::Response::result(res) << esc::Reply();
-		if(r.shmemoff == -1 && res > 0)
-			is << esc::ReplyData(buf.data(),res);
+			is << esc::FileRead::Response::result(res) << esc::Reply();
+			if(r.shmemoff == -1 && res > 0)
+				is << esc::ReplyData(buf.data(),res);
+		}
+		else
+			handleInfoRead(is,r);
 	}
 
 	void write(esc::IPCStream &is) {
@@ -132,11 +135,14 @@ public:
 		esc::FileWrite::Request r;
 		is >> r;
 
-		esc::DataBuf buf(r.count,file->shm(),r.shmemoff);
-		if(r.shmemoff == -1)
-			is >> esc::ReceiveData(buf.data(),r.count);
+		ssize_t res = -ENOTSUP;
+		if(file) {
+			esc::DataBuf buf(r.count,file->shm(),r.shmemoff);
+			if(r.shmemoff == -1)
+				is >> esc::ReceiveData(buf.data(),r.count);
 
-		ssize_t res = _fs->write(file,buf.data(),r.offset,r.count);
+			res = _fs->write(file,buf.data(),r.offset,r.count);
+		}
 		is << esc::FileWrite::Response::result(res) << esc::Reply();
 	}
 
@@ -257,8 +263,32 @@ public:
 	}
 
 private:
+	void handleInfoRead(esc::IPCStream &is,const esc::FileRead::Request &r) {
+		FILE *str = fopendyn();
+		char *data = NULL;
+		ssize_t res = -ENOMEM;
+
+		if(str) {
+			_fs->print(str);
+			data = fgetbuf(str,NULL);
+			size_t len = strlen(data);
+			if(r.offset >= len)
+				res = 0;
+			else if(r.offset + r.count > len)
+				res = len - r.offset;
+			else
+				res = r.count;
+			data += r.offset;
+		}
+
+		is << esc::FileRead::Response::result(res) << esc::Reply();
+		if(res > 0)
+			is << esc::ReplyData(data,res);
+		if(str)
+			fclose(str);
+	}
+
 	FileSystem<F> *_fs;
-	InfoDevice<F> _info;
 	size_t _clients;
 };
 

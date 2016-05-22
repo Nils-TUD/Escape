@@ -193,23 +193,18 @@ public:
 };
 
 int main(int argc,char **argv) {
-	char path[MAX_PATH_LEN];
 	if(argc != 3)
-		error("Usage: %s <wait> <url>",argv[0]);
-
-	abspath(path,sizeof(path),argv[2]);
-	if(strncmp(path,"/dev/ftp/",9) != 0)
-		error("Invalid device: %s",argv[2]);
+		error("Usage: %s <wait> <domain>[:<port>][/<path>]",argv[0]);
 
 	// use the last one. the username might be an email-address
-	char *pos = strrchr(path + 9,'@');
+	char *pos = strrchr(argv[2],'@');
 	if(!pos) {
-		host = path + 9;
+		host = argv[2];
 		user = const_cast<char*>("anonymous");
 	}
 	else {
 		host = pos + 1;
-		user = path + 9;
+		user = argv[2];
 		*pos = '\0';
 	}
 

@@ -10,7 +10,7 @@ cleanup() {
 }
 trap cleanup 2
 
-sudo $ESC_QEMU -m 256 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
+sudo $ESC_QEMU -m 512 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
 	-hdb $lodev $2 | tee log.txt
 
 cleanup

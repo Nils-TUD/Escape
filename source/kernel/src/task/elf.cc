@@ -50,7 +50,8 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 		return -ENOEXEC;
 	}
 
-	/* fill bindesc */
+	/* TODO do we want to allow setuid anyway? if we do, we need to disable it for user mounts...
+	 * fill bindesc */
 	struct stat finfo;
 	if((res = file->fstat(p->getPid(),&finfo)) < 0) {
 		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(res));

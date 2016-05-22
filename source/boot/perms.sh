@@ -13,7 +13,6 @@ find $dir/boot -type d | xargs chmod 0755
 # /bin
 chown -R $root:$root $dir/bin
 chmod -R 0755 $dir/bin
-chmod u+s $dir/bin/users $dir/bin/groups
 
 # /sbin
 chown -R $root:$root $dir/sbin

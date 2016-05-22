@@ -127,7 +127,7 @@ int main(int argc,char **argv) {
 	regs += dev * TERM_SIZE / sizeof(ulong);
 
 	/* create device */
-	vtdev = new ECOMMIXTermDevice(path,0777);
+	vtdev = new ECOMMIXTermDevice(path,0700);
 
 	/* init terminal */
 	regs[TERM_RCVR_CTRL] = TERM_RCVR_IEN;

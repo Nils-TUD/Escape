@@ -247,7 +247,7 @@ int main() {
 	if(signal(SIGCANCEL,sigcancel) == SIG_ERR)
 		error("Unable to register signal-handler for SIGCANCEL");
 
-	dev = new HTTPDevice("/dev/http",0444);
+	dev = new HTTPDevice("/dev/http",0400);
 	dev->loop();
 	return 0;
 }

@@ -105,7 +105,7 @@ void ui_init(uint cols,uint rows) {
 	do {
 		snprintf(shmname,sizeof(shmname),"raptor%d",++id);
 		try {
-			fb = new esc::FrameBuffer(mode,shmname,esc::Screen::MODE_TYPE_TUI,0644);
+			fb = new esc::FrameBuffer(mode,shmname,esc::Screen::MODE_TYPE_TUI,0600);
 		}
 		catch(...) {
 		}

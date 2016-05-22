@@ -124,7 +124,7 @@ void VGA::init() {
 }
 
 int VGA::run(void *) {
-	ScreenDevice dev(modes,"/dev/vga",0111);
+	ScreenDevice dev(modes,"/dev/vga",0100);
 	dev.loop();
 	return 0;
 }

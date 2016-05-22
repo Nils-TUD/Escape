@@ -18,6 +18,6 @@
 	/dev/socket 0770 network
 	/dev/tcpip 0110 network
 /sbin/http
-	/dev/http 0444 network
+	/dev/http 0440 network
 /sbin/uimng /dev/vga /dev/vesa
 	/dev/uimng 0110 input

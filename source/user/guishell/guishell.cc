@@ -99,7 +99,7 @@ static int guiProc(const char *devName) {
 	shared_ptr<Panel> root = w->getRootPanel();
 	root->getTheme().setPadding(0);
 	shared_ptr<ShellControl> sh = make_control<ShellControl>();
-	gt = new GUIVTermDevice(devName,0777,sh,DEF_COLS,DEF_ROWS);
+	gt = new GUIVTermDevice(devName,0700,sh,DEF_COLS,DEF_ROWS);
 	int tid;
 	if((tid = startthread(termThread,gt)) < 0)
 		error("Unable to start term-thread");

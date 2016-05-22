@@ -121,7 +121,7 @@ int main(void) {
 			esc::Screen::MODE_TEXT,esc::Screen::MODE_TYPE_TUI
 	}));
 
-	VideoScreenDevice dev(modes,"/dev/vga",0111);
+	VideoScreenDevice dev(modes,"/dev/vga",0100);
 	dev.loop();
 
 	/* clean up */

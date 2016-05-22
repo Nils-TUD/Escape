@@ -490,32 +490,43 @@ static int receiveThread(void *arg) {
 	return 0;
 }
 
+static gid_t networkGid;
+
+static void setGroup(const char *path) {
+	if(chown(path,0,networkGid) < 0)
+		printe("Unable to chown '%s'",path);
+}
+
 static int linksFileThread(void*) {
-	LinksFileDevice dev("/sys/net/links",0444);
+	LinksFileDevice dev("/sys/net/links",0440);
+	setGroup("/sys/net/links");
 	dev.loop();
 	return 0;
 }
 
 static int routesFileThread(void*) {
-	RoutesFileDevice dev("/sys/net/routes",0444);
+	RoutesFileDevice dev("/sys/net/routes",0440);
+	setGroup("/sys/net/routes");
 	dev.loop();
 	return 0;
 }
 
 static int arpFileThread(void*) {
-	ARPFileDevice dev("/sys/net/arp",0444);
+	ARPFileDevice dev("/sys/net/arp",0440);
+	setGroup("/sys/net/arp");
 	dev.loop();
 	return 0;
 }
 
 static int socketsFileThread(void*) {
-	SocketsFileDevice dev("/sys/net/sockets",0444);
+	SocketsFileDevice dev("/sys/net/sockets",0440);
+	setGroup("/sys/net/sockets");
 	dev.loop();
 	return 0;
 }
 
 static int socketThread(void*) {
-	SocketDevice dev("/dev/socket",0777);
+	SocketDevice dev("/dev/socket",0770);
 	dev.loop();
 	return 0;
 }
@@ -531,17 +542,18 @@ static void createResolvConf() {
 	}
 	close(fd);
 
-	// chown it to the network-group
-	size_t groupCount;
-	sNamedItem *groups = usergroup_parse(GROUPS_PATH,&groupCount);
-	sNamedItem *network = usergroup_getByName(groups,"network");
-	if(!network || chown(resolvconf,0,network->id) < 0)
-		printe("Unable to chmod %s",resolvconf);
-	usergroup_free(groups);
+	setGroup(resolvconf);
 }
 
 int main() {
 	srand(rdtsc());
+
+	// get the id of the network-group
+	size_t groupCount;
+	sNamedItem *groups = usergroup_parse(GROUPS_PATH,&groupCount);
+	sNamedItem *network = usergroup_getByName(groups,"network");
+	networkGid = network ? network->id : 0;
+	usergroup_free(groups);
 
 	print("Creating /sys/net");
 	if(mkdir("/sys/net",DIR_DEF_MODE) < 0)
@@ -561,7 +573,7 @@ int main() {
 	if(startthread(Timeouts::thread,NULL) < 0)
 		error("Unable to start timeout thread");
 
-	NetDevice netdev("/dev/tcpip",0111);
+	NetDevice netdev("/dev/tcpip",0110);
 	netdev.loop();
 	return 0;
 }

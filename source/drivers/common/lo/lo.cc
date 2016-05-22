@@ -51,7 +51,7 @@ int main(int argc,char **argv) {
 		error("Usage: %s <device>\n",argv[0]);
 
 	LoDriver *lo = new LoDriver();
-	esc::NICDevice dev(argv[1],0777,lo);
+	esc::NICDevice dev(argv[1],0700,lo);
 	lo->handler = std::make_memfun(&dev,&esc::NICDevice::checkPending);
 	dev.loop();
 	return EXIT_SUCCESS;

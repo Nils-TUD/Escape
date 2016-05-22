@@ -122,7 +122,7 @@ int main(int argc,char **argv) {
 		close(fd);
 
 	/* handle device */
-	RamDiskDevice ramdisk(device,0660,size,diskaddr);
+	RamDiskDevice ramdisk(device,0600,size,diskaddr);
 	if(chown(device,-1,GROUP_STORAGE) < 0)
 		error("chown for '%s' failed",device);
 	ramdisk.loop();

@@ -99,16 +99,7 @@ int main(void) {
 	}
 	fflush(stdout);
 
-	/* set user- and group-id */
-	int gid = usergroup_getGid(un);
-	if(gid < 0)
-		error("Unable to get users gid");
-	if(setgid(gid) < 0)
-		exitmsg("Unable to set gid");
-	if(setuid(uid) < 0)
-		exitmsg("Unable to set uid");
-
-	/* determine groups and set them */
+	/* determine groups (while still being root) */
 	size_t groupCount;
 	gid_t *groups = usergroup_collectGroupsFor(un,1,&groupCount);
 	if(!groups)
@@ -117,6 +108,15 @@ int main(void) {
 	/* add the process to the corresponding ui-group */
 	if(vtgid >= 0)
 		groups[groupCount++] = vtgid;
+
+	/* set user- and group-ids */
+	int gid = usergroup_getGid(un);
+	if(gid < 0)
+		error("Unable to get users gid");
+	if(setgid(gid) < 0)
+		exitmsg("Unable to set gid");
+	if(setuid(uid) < 0)
+		exitmsg("Unable to set uid");
 	if(setgroups(groupCount,groups) < 0)
 		exitmsg("Unable to set groups");
 

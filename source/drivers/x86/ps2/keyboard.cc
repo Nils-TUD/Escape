@@ -65,7 +65,7 @@ void Keyboard::updateLEDs(const esc::Keyb::Event &ev) {
 }
 
 int Keyboard::run(void*) {
-	esc::ClientDevice<> dev("/dev/keyb",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	esc::ClientDevice<> dev("/dev/keyb",0100,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 
 	if(startthread(irqThread,&dev) < 0)
 		error("Unable to start IRQ-thread");

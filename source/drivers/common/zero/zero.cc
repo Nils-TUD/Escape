@@ -59,7 +59,7 @@ public:
 };
 
 int main(void) {
-	ZeroDevice dev("/dev/zero",0444);
+	ZeroDevice dev("/dev/zero",0400);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

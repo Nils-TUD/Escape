@@ -54,7 +54,7 @@ public:
 
 int main() {
 	srand(time(NULL));
-	RandomDevice dev("/dev/random",0444);
+	RandomDevice dev("/dev/random",0400);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

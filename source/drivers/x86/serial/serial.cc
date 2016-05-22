@@ -107,7 +107,7 @@ int main(int argc,char **argv) {
 	print("Creating vterm at %s",path);
 
 	/* create device */
-	vtdev = new X86SerialTermDevice(path,0777);
+	vtdev = new X86SerialTermDevice(path,0700);
 
 	if(reqports(ports[port].base,IOPORT_COUNT) < 0)
 		error("Unable to request IO ports %d..%d",ports[port].base,ports[port].base + IOPORT_COUNT - 1);

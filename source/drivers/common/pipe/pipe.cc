@@ -302,7 +302,7 @@ public:
 };
 
 int main() {
-	PipeDevice dev("/dev/pipe",0666);
+	PipeDevice dev("/dev/pipe",0600);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

@@ -47,7 +47,7 @@ public:
 };
 
 int main() {
-	NullDevice dev("/dev/null",0666);
+	NullDevice dev("/dev/null",0600);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

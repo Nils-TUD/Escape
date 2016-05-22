@@ -72,7 +72,7 @@ int main(void) {
 	if(reqports(IOPORT_KB_CTRL_B,2) < 0)
 		error("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 
-	SpeakerDevice dev("/dev/speaker",0110);
+	SpeakerDevice dev("/dev/speaker",0100);
 	dev.loop();
 
 	/* clean up */

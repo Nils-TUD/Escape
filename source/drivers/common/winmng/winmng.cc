@@ -28,6 +28,7 @@
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
+#include <usergroup/usergroup.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -249,15 +250,24 @@ int main(int argc,char *argv[]) {
 	/* connect to ui-manager */
 	inputData.ui = new UI("/dev/uimng");
 
+	/* we want to give only users that are in the ui-group access to this window manager */
+	int gid = usergroup_nameToId(GROUPS_PATH,argv[3]);
+	if(gid < 0)
+		printe("Unable to find ui-group '%s'",argv[3]);
+
 	/* create event-device */
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
 	print("Creating window-manager-events at %s",path);
-	WinMngEventDevice evdev(path,0111);
+	WinMngEventDevice evdev(path,0110);
+	if(chown(path,ROOT_UID,gid) < 0)
+		printe("Unable to add ui-group to group-list");
 
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 	print("Creating window-manager at %s",path);
-	WinMngDevice windev(path,argv[3],0111);
+	WinMngDevice windev(path,argv[3],0110);
+	if(chown(path,ROOT_UID,gid) < 0)
+		printe("Unable to add ui-group to group-list");
 
 	/* open input device and attach */
 	inputData.uiev = new UIEvents(*inputData.ui);

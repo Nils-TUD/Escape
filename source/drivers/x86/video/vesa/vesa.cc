@@ -169,7 +169,7 @@ void VESA::init() {
 }
 
 int VESA::run(void *) {
-	ScreenDevice dev(modes,"/dev/vesa",0111);
+	ScreenDevice dev(modes,"/dev/vesa",0100);
 	dev.loop();
 	return 0;
 }

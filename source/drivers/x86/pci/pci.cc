@@ -164,7 +164,7 @@ private:
 int main(void) {
 	list_init();
 
-	PCIService dev("/dev/pci",0111);
+	PCIService dev("/dev/pci",0100);
 	dev.loop();
 	return EXIT_SUCCESS;
 }

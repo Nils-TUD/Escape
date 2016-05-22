@@ -180,6 +180,9 @@ private:
 const Color DesktopWindow::BGCOLOR = Color(0xd5,0xe6,0xf3);
 
 int main(void) {
+	char *winMngPath = getenv("WINMNG");
+	char *termName = winMngPath + SSTRLEN("/dev/");
+
 	int fd;
 
 	/* open stdin */
@@ -205,7 +208,17 @@ int main(void) {
 	const sNamedItem *u = win->getUser();
 	Application::destroy();
 
-	// set user- and group-id
+	/* determine groups (while still being root) */
+	size_t groupCount;
+	gid_t *groups = usergroup_collectGroupsFor(u->name,1,&groupCount);
+	if(!groups)
+		error("Unable to collect group-ids");
+	int vtgid = usergroup_nameToId(GROUPS_PATH,termName);
+	/* add the process to the corresponding ui-group */
+	if(vtgid >= 0)
+		groups[groupCount++] = vtgid;
+
+	// set user- and group-ids
 	int gid = usergroup_getGid(u->name);
 	if(gid < 0)
 		error("Unable to get users gid");
@@ -213,6 +226,8 @@ int main(void) {
 		error("Unable to set gid");
 	if(setuid(u->id) < 0)
 		error("Unable to set uid");
+	if(setgroups(groupCount,groups) < 0)
+		error("Unable to set groups");
 
 	// use a per-user mountspace
 	char mspath[MAX_PATH_LEN];
@@ -242,14 +257,6 @@ int main(void) {
 
 	setenv("HOME",getenv("CWD"));
 	setenv("USER",u->name);
-
-	/* determine groups and set them */
-	size_t groupCount;
-	gid_t *groups = usergroup_collectGroupsFor(u->name,1,&groupCount);
-	if(!groups)
-		error("Unable to collect group-ids");
-	if(setgroups(groupCount,groups) < 0)
-		error("Unable to set groups");
 
 	// exec with desktop
 	const char *args[] = {DESKTOP_PROG,NULL};

@@ -64,7 +64,7 @@ void Mouse::init() {
 }
 
 int Mouse::run(void*) {
-	esc::ClientDevice<> dev("/dev/mouse",0110,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
+	esc::ClientDevice<> dev("/dev/mouse",0100,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE);
 
 	if(startthread(irqThread,&dev) < 0)
 		error("Unable to start irq-thread");

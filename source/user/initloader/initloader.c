@@ -25,6 +25,7 @@
 #include <sys/syscalls.h>
 #include <sys/sysctrace.h>
 #include <sys/thread.h>
+#include <usergroup/usergroup.h>
 #include <assert.h>
 #include <dirent.h>
 #include <stdio.h>
@@ -142,6 +143,10 @@ int main(void) {
 	int fd = open(line,O_RDWRMSG);
 	if(fd < 0)
 		error("Unable to open '%s'",line);
+	if(chown(line,ROOT_UID,GROUP_STORAGE) < 0)
+		printe("Warning: unable to set owner of %s",line);
+	if(chmod(line,0770) < 0)
+		printe("Warning: unable to set permissions of %s",line);
 
 	int ms = open("/sys/proc/self/ms",O_WRITE);
 	if(ms < 0)

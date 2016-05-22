@@ -38,7 +38,7 @@ UI::UI(int c,int r,int size)
 	for(int id = 1; _fb == NULL; ++id) {
 		snprintf(shmname,sizeof(shmname),"tetris%d",id);
 		try {
-			_fb = new esc::FrameBuffer(_mode,shmname,esc::Screen::MODE_TYPE_TUI,0644);
+			_fb = new esc::FrameBuffer(_mode,shmname,esc::Screen::MODE_TYPE_TUI,0600);
 		}
 		catch(...) {
 		}

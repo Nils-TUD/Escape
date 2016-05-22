@@ -352,6 +352,13 @@ bool shell_handleSpecialKey(char *buffer,int keycode,int modifier,size_t *cursor
 			line = shell_histDown();
 			res = true;
 			break;
+		case VK_P:
+		case VK_N:
+			if(modifier & STATE_CTRL) {
+				line = keycode == VK_P ? shell_histUp() : shell_histDown();
+				res = true;
+			}
+			break;
 	}
 
 	if(line != NULL) {

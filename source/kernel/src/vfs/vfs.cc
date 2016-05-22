@@ -105,7 +105,7 @@ int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
 		return -ENOMEM;
 	strcpy(copy,name);
 
-	p->msnode = createObj<VFSMS>(p->getPid(),*src,msNode,copy,0644);
+	p->msnode = createObj<VFSMS>(p->getPid(),*src,msNode,copy,0600);
 	if(p->msnode == NULL) {
 		Cache::free(copy);
 		return -ENOMEM;

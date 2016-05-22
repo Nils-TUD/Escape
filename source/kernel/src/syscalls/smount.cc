@@ -50,39 +50,68 @@ static int getMS(Proc *p,int ms,OpenFile **msfile,VFSMS **msobj,uint perm) {
 
 int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
+	struct stat pinfo;
 	int ms = SYSC_ARG1(stack);
 	int fs = SYSC_ARG2(stack);
 	const char *path = (const char*)SYSC_ARG3(stack);
+	pid_t pid = t->getProc()->getPid();
 	VFSMS *msobj;
-	OpenFile *fsfile,*msfile;
+	OpenFile *fsfile,*msfile,*pfile = NULL;
 	int res;
 
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
+	/* root can mount everywhere, though. this is necessary because it needs to mount e.g. '/',
+	 * which doesn't exist initially. */
+	uid_t uid = t->getProc()->getEUid();
+	if(uid != ROOT_UID) {
+		res = VFS::openPath(pid,VFS_NOCHAN,0,abspath,&pfile);
+		if(res < 0)
+			goto errPath;
+
+		res = pfile->fstat(pid,&pinfo);
+		if(res < 0 || !S_ISDIR(pinfo.st_mode))
+			goto errStat;
+		/* if it's sticky, we have to be the owner */
+		if((pinfo.st_mode & S_ISSTICKY) && pinfo.st_uid != uid)
+			goto errStat;
+		/* check for write-permission. if we can write to the directory, we can add/remove entries
+		 * already. mounting something there, doesn't give us more power */
+		res = VFS::hasAccess(pid,pinfo.st_mode,pinfo.st_uid,pinfo.st_gid,VFS_WRITE);
+		if(res < 0)
+			goto errStat;
+	}
+
 	/* get files */
 	fsfile = FileDesc::request(t->getProc(),fs);
-	if(EXPECT_FALSE(fsfile == NULL))
-		SYSC_ERROR(stack,-EBADF);
+	if(EXPECT_FALSE(fsfile == NULL)) {
+		res = -EBADF;
+		goto errStat;
+	}
 
 	res = getMS(t->getProc(),ms,&msfile,&msobj,VFS_WRITE);
 	if(res < 0)
-		goto errorFs;
+		goto errorMs;
 
 	/* <fs> it has to be a filesystem */
 	if(fsfile->getDev() != VFS_DEV_NO || !IS_CHANNEL(fsfile->getNode()->getMode()) ||
 			!IS_FS(fsfile->getNode()->getParent()->getMode())) {
 		res = -EINVAL;
-		goto error;
+		goto errorFs;
 	}
 
 	/* mount it */
 	res = msobj->mount(t->getProc(),abspath,fsfile);
 
-error:
-	FileDesc::release(msfile);
 errorFs:
+	FileDesc::release(msfile);
+errorMs:
 	FileDesc::release(fsfile);
+errStat:
+	if(pfile)
+		pfile->close(pid);
+errPath:
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

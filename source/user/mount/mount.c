@@ -36,9 +36,12 @@ static bool run = true;
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [--ms <ms>] <device> <path> <fs>\n",name);
-	fprintf(stderr,"    For example, %s /dev/hda1 /mnt ext2, where ext2 is a program\n",name);
-	fprintf(stderr,"    in PATH that takes the device as argument 2 and creates\n");
-	fprintf(stderr,"    /dev/ext2-hda1 (in this case).\n");
+	fprintf(stderr,"    Creates a child process that executes <fs>. <fs> receives\n");
+	fprintf(stderr,"    the fs-device to create and the device to work with (<device>)\n");
+	fprintf(stderr,"    as command line arguments. Afterwards, mount opens the\n");
+	fprintf(stderr,"    created fs-device and mounts it at <path>.\n");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"    Example: %s /dev/hda1 /mnt /sbin/ext2.\n");
 	fprintf(stderr,"\n");
 	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
 	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");
@@ -57,9 +60,9 @@ static void cleanup(int pid) {
 }
 
 int main(int argc,const char *argv[]) {
-	char devpath[MAX_PATH_LEN];
 	char fsname[MAX_PATH_LEN];
 	char fsdev[MAX_PATH_LEN];
+	char devpath[MAX_PATH_LEN];
 	char *mspath = (char*)"/sys/proc/self/ms";
 	char *path = NULL;
 	char *dev = NULL;
@@ -77,41 +80,38 @@ int main(int argc,const char *argv[]) {
 		error("Unable to announce signal handler");
 
 	/* build fs-device */
-	cleanpath(devpath,sizeof(devpath),dev);
-	char *devname = devpath + 1;
-	if(strncmp(devname,"dev/",4) == 0)
-		devname += 4;
-	for(size_t i = 0; devname[i]; ++i) {
-		if(devname[i] == '/')
-			devname[i] = '-';
+	strnzcpy(devpath,dev,sizeof(devpath));
+	if(dev[0] == '/')
+		dev++;
+	for(size_t i = 0; dev[i]; ++i) {
+		if(dev[i] == '/')
+			dev[i] = '-';
 	}
 
 	strnzcpy(fsname,fs,sizeof(fsname));
-	snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",basename(fsname),devname);
+	/* use dev-number and inode-number if it's a file */
+	struct stat info;
+	if(stat(devpath,&info) == 0)
+		snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s-%d-%d",basename(fsname),dev,info.st_dev,info.st_ino);
+	else
+		snprintf(fsdev,sizeof(fsdev),"/dev/%s-%s",basename(fsname),dev);
 
-	/* is it already started? */
-	int pid = -1;
-	int fd = open(fsdev,O_MSGS);
-	if(fd == -ENOENT) {
-		/* ok, do so now */
-		pid = fork();
-		if(pid < 0)
-			error("fork failed");
-		if(pid == 0) {
-			const char *args[] = {fs,fsdev,dev,NULL};
-			execvp(fs,args);
-			error("exec failed");
-		}
-		else {
-			/* wait until fs-device is present */
-			while(run && (fd = open(fsdev,O_MSGS)) == -ENOENT)
-				usleep(5 * 1000);
-			if(!run)
-				errno = -ENOENT;
-		}
+	/* create child to run the filesystem */
+	int fd, pid = fork();
+	if(pid < 0)
+		error("fork failed");
+	if(pid == 0) {
+		const char *args[] = {fs,fsdev,devpath,NULL};
+		execvp(fs,args);
+		error("exec failed");
 	}
-	if(fd < 0)
-		error("Unable to open '%s'",fsdev);
+	else {
+		/* wait until fs-device is present */
+		while(run && (fd = open(fsdev,O_MSGS)) == -ENOENT)
+			usleep(5 * 1000);
+		if(!run)
+			errno = -ENOENT;
+	}
 
 	/* now mount it */
 	int ms = open(mspath,O_WRITE);

@@ -39,7 +39,7 @@ using namespace fs;
 
 ino_t TarINode::_inode = 1;
 
-static char archiveFile[MAX_PATH_LEN];
+static char *archiveFile;
 static sNamedItem *userList = nullptr;
 static sNamedItem *groupList = nullptr;
 static PathTree<TarINode> tree;
@@ -412,6 +412,7 @@ static void writeBackRec(FILE *f,const std::string &path) {
 }
 
 int main(int argc,char **argv) {
+	char apath[MAX_PATH_LEN];
 	if(argc != 3)
 		error("Usage: %s <wait> <tar-file>",argv[0]);
 
@@ -422,7 +423,7 @@ int main(int argc,char **argv) {
 	if(!groupList)
 		printe("Unable to get group list");
 
-	abspath(archiveFile,sizeof(archiveFile),argv[2]);
+	archiveFile = abspath(apath,sizeof(apath),argv[2]);
 
 	FILE *ar = fopen(archiveFile,"r");
 	if(ar == NULL)

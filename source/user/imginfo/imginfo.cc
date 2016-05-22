@@ -33,7 +33,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv))
+	if(isHelpCmd(argc,argv) || argc < 2)
 		usage(argv[0]);
 
 	ImageInfo *imgs[] = {

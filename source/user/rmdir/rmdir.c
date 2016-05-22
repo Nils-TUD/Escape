@@ -37,7 +37,7 @@ int main(int argc,const char *argv[]) {
 		printe("Invalid arguments: %s",ca_error(res));
 		usage(argv[0]);
 	}
-	if(ca_hasHelp())
+	if(ca_hasHelp() || ca_getFreeCount() == 0)
 		usage(argv[0]);
 
 	args = ca_getFree();

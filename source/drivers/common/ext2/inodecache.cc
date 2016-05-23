@@ -143,7 +143,7 @@ void Ext2INodeCache::print(FILE *f) {
 		if(inode->dirty)
 			dirty++;
 	}
-	fprintf(f,"\t\tTotal entries: %u\n",EXT2_ICACHE_SIZE);
+	fprintf(f,"\t\tTotal entries: %zu\n",EXT2_ICACHE_SIZE);
 	fprintf(f,"\t\tUsed entries: %zu\n",used);
 	fprintf(f,"\t\tDirty entries: %zu\n",dirty);
 	fprintf(f,"\t\tHits: %zu\n",_hits);

@@ -28,14 +28,14 @@
 #include "rw.h"
 
 int Ext2RW::readSectors(Ext2FileSystem *e,void *buffer,uint64_t lba,size_t secCount) {
-	ssize_t res;
-	off_t off;
-	if((off = seek(e->fd,lba * DISK_SECTOR_SIZE,SEEK_SET)) < 0) {
+	off_t off = seek(e->fd,lba * DISK_SECTOR_SIZE,SEEK_SET);
+	if(off < 0) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return off;
 	}
-	res = IGNSIGS(read(e->fd,buffer,secCount * DISK_SECTOR_SIZE));
-	if(res != (ssize_t)secCount * DISK_SECTOR_SIZE) {
+
+	ssize_t res = IGNSIGS(read(e->fd,buffer,secCount * DISK_SECTOR_SIZE));
+	if(res != (ssize_t)(secCount * DISK_SECTOR_SIZE)) {
 		printe("Unable to read %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return res;
 	}
@@ -44,13 +44,14 @@ int Ext2RW::readSectors(Ext2FileSystem *e,void *buffer,uint64_t lba,size_t secCo
 }
 
 int Ext2RW::writeSectors(Ext2FileSystem *e,const void *buffer,uint64_t lba,size_t secCount) {
-	ssize_t res;
-	off_t off;
-	if((off = seek(e->fd,lba * DISK_SECTOR_SIZE,SEEK_SET)) < 0) {
+	off_t off = seek(e->fd,lba * DISK_SECTOR_SIZE,SEEK_SET);
+	if(off < 0) {
 		printe("Unable to seek to %x",lba * DISK_SECTOR_SIZE);
 		return off;
 	}
-	if((res = write(e->fd,buffer,secCount * DISK_SECTOR_SIZE)) != (ssize_t)secCount * DISK_SECTOR_SIZE) {
+
+	ssize_t res = write(e->fd,buffer,secCount * DISK_SECTOR_SIZE);
+	if(res != (ssize_t)(secCount * DISK_SECTOR_SIZE)) {
 		printe("Unable to write %d sectors @ %x",secCount,lba * DISK_SECTOR_SIZE);
 		return res;
 	}

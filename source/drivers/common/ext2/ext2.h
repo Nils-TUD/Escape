@@ -31,11 +31,11 @@
 #include "inodecache.h"
 #include "sbmng.h"
 
-#define DISK_SECTOR_SIZE					512
-#define EXT2_SUPERBLOCK_LOCK				0xF7180002
+static const size_t DISK_SECTOR_SIZE		= 512;
+static const size_t EXT2_ICACHE_SIZE		= 64;
+static const size_t EXT2_BCACHE_SIZE		= 2048;
 
-#define EXT2_ICACHE_SIZE					64
-#define EXT2_BCACHE_SIZE					2048
+static const uint EXT2_SUPERBLOCK_LOCK		= 0xF7180002;
 
 class Ext2FileSystem : public fs::FileSystem<fs::OpenFile> {
 public:

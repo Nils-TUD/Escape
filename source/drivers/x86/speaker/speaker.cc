@@ -32,14 +32,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PIC_FREQUENCY				1193180
-#define IOPORT_PIT_SPEAKER			0x42
-#define IOPORT_PIT_CTRL_WORD_REG	0x43
-#define IOPORT_KB_CTRL_B			0x61
+enum {
+	IOPORT_PIT_SPEAKER				= 0x42,
+	IOPORT_PIT_CTRL_WORD_REG		= 0x43,
+	IOPORT_KB_CTRL_B				= 0x61,
+};
+
+static const uint PIC_FREQUENCY		= 1193180;
 
 static void playSound(uint freq,uint dur);
 static void startSound(uint frequency);
-static void stopSound(void);
+static void stopSound();
 
 class SpeakerDevice : public esc::Device {
 public:
@@ -57,13 +60,7 @@ public:
 	}
 };
 
-static long timerFreq;
-
-int main(void) {
-	timerFreq = sysconf(CONF_TIMER_FREQ);
-	if(timerFreq < 0)
-		error("Unable to get timer-frequency");
-
+int main() {
 	/* request io-ports */
 	if(reqports(IOPORT_PIT_SPEAKER,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_PIT_SPEAKER,IOPORT_PIT_CTRL_WORD_REG);
@@ -105,7 +102,7 @@ static void startSound(uint frequency) {
 		outbyte(IOPORT_KB_CTRL_B,tmp | 3);
 }
 
-static void stopSound(void) {
+static void stopSound() {
 	uint8_t tmp = inbyte(IOPORT_KB_CTRL_B) & 0xFC;
 	outbyte(IOPORT_KB_CTRL_B,tmp);
 }

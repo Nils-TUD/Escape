@@ -23,30 +23,34 @@
 
 #define MAX_ESCC_LENGTH			19
 
-#define ESCC_ARG_UNUSED			-1
-
 /* the known escape-codes */
-#define ESCC_INVALID			-1
-#define ESCC_INCOMPLETE			-2
-#define ESCC_MOVE_LEFT			0
-#define ESCC_MOVE_RIGHT			1
-#define ESCC_MOVE_UP			2
-#define ESCC_MOVE_DOWN			3
-#define ESCC_MOVE_HOME			4
-#define ESCC_MOVE_LINESTART		5
-#define ESCC_MOVE_LINEEND		6
-#define ESCC_DEL_FRONT			7
-#define ESCC_DEL_BACK			8
-#define ESCC_KEYCODE			9
-#define ESCC_COLOR				10
-#define ESCC_GOTO_XY			11
-#define ESCC_SIM_INPUT			12
+enum {
+	ESCC_INVALID						= -1,
+	ESCC_INCOMPLETE						= -2,
+	ESCC_MOVE_LEFT						= 0,
+	ESCC_MOVE_RIGHT						= 1,
+	ESCC_MOVE_UP						= 2,
+	ESCC_MOVE_DOWN						= 3,
+	ESCC_MOVE_HOME						= 4,
+	ESCC_MOVE_LINESTART					= 5,
+	ESCC_MOVE_LINEEND					= 6,
+	ESCC_DEL_FRONT						= 7,
+	ESCC_DEL_BACK						= 8,
+	ESCC_KEYCODE						= 9,
+	ESCC_COLOR							= 10,
+	ESCC_GOTO_XY						= 11,
+	ESCC_SIM_INPUT						= 12,
+};
 
-#define STATE_SHIFT				(1 << 0)
-#define STATE_CTRL				(1 << 1)
-#define STATE_ALT				(1 << 2)
-#define STATE_BREAK				(1 << 3)
-#define STATE_CAPS				(1 << 4)
+enum {
+	STATE_SHIFT							= 1 << 0,
+	STATE_CTRL							= 1 << 1,
+	STATE_ALT							= 1 << 2,
+	STATE_BREAK							= 1 << 3,
+	STATE_CAPS							= 1 << 4,
+};
+
+static const int ESCC_ARG_UNUSED 		= -1;
 
 #if defined(__cplusplus)
 extern "C" {

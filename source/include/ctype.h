@@ -25,14 +25,16 @@
 extern "C" {
 #endif
 
-#define CT_NUMERIC	1
-#define CT_LOWER	2
-#define CT_UPPER	4
-#define CT_SPACE	8
-#define CT_HEX		16
-#define CT_PUNCT	32
-#define CT_CTRL		64
-#define CT_BLANK	128
+enum {
+	CT_NUMERIC	= 1,
+	CT_LOWER	= 2,
+	CT_UPPER	= 4,
+	CT_SPACE	= 8,
+	CT_HEX		= 16,
+	CT_PUNCT	= 32,
+	CT_CTRL		= 64,
+	CT_BLANK	= 128,
+};
 
 /**
  * @param c the character

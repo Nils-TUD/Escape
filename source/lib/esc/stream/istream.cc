@@ -29,7 +29,7 @@ static int getDigitVal(char c) {
 
 int IStream::getesc(int &n1,int &n2,int &n3) {
 	int cmd = ESCC_INVALID;
-	int i;
+	size_t i;
 	char ec,escape[MAX_ESCC_LENGTH] = {0};
 	const char *escPtr = (const char*)escape;
 	for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = read()) != ']'; i++)

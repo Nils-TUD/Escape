@@ -22,7 +22,7 @@
 #include <dirent.h>
 #include <stdio.h>
 
-#define DIRE_SIZE	(sizeof(struct dirent) - (NAME_MAX + 1))
+static const size_t DIRE_SIZE	= sizeof(struct dirent) - (NAME_MAX + 1);
 
 bool readdirto(DIR *dir,struct dirent *e) {
 	if(fread(e,1,DIRE_SIZE,dir) > 0) {

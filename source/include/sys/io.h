@@ -24,44 +24,52 @@
 #include <errno.h>
 #include <stdarg.h>
 
-/* access mode */
-#define O_MSGS					1					/* exchange messages with a device */
-#define O_WRITE					2
-#define O_READ					4
-#define O_RDONLY				O_READ
-#define O_WRONLY				O_WRITE
-#define O_RDWR					(O_READ | O_WRITE)
-#define O_RDWRMSG				(O_READ | O_WRITE | O_MSGS)
-#define O_ACCMODE	   			O_RDWRMSG
+enum {
+	/* access mode */
+	O_MSGS					= 1 << 0,	/* exchange messages with a device */
+	O_WRITE					= 1 << 1,
+	O_READ					= 1 << 2,
+	O_RDONLY				= O_READ,
+	O_WRONLY				= O_WRITE,
+	O_RDWR					= O_READ | O_WRITE,
+	O_RDWRMSG				= O_READ | O_WRITE | O_MSGS,
+	O_ACCMODE	   			= O_RDWRMSG,
 
-/* open flags */
-#define O_CREAT					8
-#define O_TRUNC					16
-#define O_APPEND				32
-#define O_NONBLOCK				64	/* don't block when reading or receiving a msg from devices */
-#define O_LONELY				128	/* disallow other accesses */
-#define O_EXCL					256	/* fail if the file already exists */
-#define O_NOCHAN				512 /* don't create a channel, but open the device itself */
+	/* open flags */
+	O_CREAT					= 1 << 3,
+	O_TRUNC					= 1 << 4,
+	O_APPEND				= 1 << 5,
+	O_NONBLOCK				= 1 << 6,	/* don't block when reading or receiving a msg from devices */
+	O_LONELY				= 1 << 7,	/* disallow other accesses */
+	O_EXCL					= 1 << 8,	/* fail if the file already exists */
+	O_NOCHAN				= 1 << 9, 	/* don't create a channel, but open the device itself */
+};
 
 /* file descriptors for stdin, stdout and stderr */
-#define STDIN_FILENO			0
-#define STDOUT_FILENO			1
-#define STDERR_FILENO			2
-/* special fd for syscall tracing */
-#define STRACE_FILENO			3
+enum {
+	STDIN_FILENO			= 0,
+	STDOUT_FILENO			= 1,
+	STDERR_FILENO			= 2,
+	/* special fd for syscall tracing */
+	STRACE_FILENO			= 3,
+};
 
 /* fcntl-commands */
-#define F_GETFL					0
-#define F_SETFL					1
-#define F_GETACCESS				2
-#define F_SEMUP					3
-#define F_SEMDOWN				4
-#define F_DISMSGS				5
+enum {
+	F_GETFL					= 0,
+	F_SETFL					= 1,
+	F_GETACCESS				= 2,
+	F_SEMUP					= 3,
+	F_SEMDOWN				= 4,
+	F_DISMSGS				= 5,
+};
 
 /* seek-types */
-#define SEEK_SET				0
-#define SEEK_CUR				1
-#define SEEK_END				2
+enum {
+	SEEK_SET				= 0,
+	SEEK_CUR				= 1,
+	SEEK_END				= 2,
+};
 
 /* retry a syscall until it succeeded, skipping tries that failed because of a signal */
 #define IGNSIGS(expr) ({ \

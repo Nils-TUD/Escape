@@ -40,7 +40,7 @@ struct tm *gmtime(const time_t *timer) {
 	/* determine year */
 	days = timestamp;
 	for(year = 1970; ; year++) {
-		if(IS_LEAP_YEAR(year))
+		if(isLeapYear(year))
 			nextSecs = (long)ts - SECS_PER_LEAPYEAR;
 		else
 			nextSecs = (long)ts - SECS_PER_YEAR;
@@ -51,7 +51,7 @@ struct tm *gmtime(const time_t *timer) {
 
 	/* now we have the number of seconds in the year */
 	timeptr.tm_yday = ts / SECS_PER_DAY;
-	yearType = IS_LEAP_YEAR(year) ? LEAP_YEAR : DEF_YEAR;
+	yearType = isLeapYear(year) ? LEAP_YEAR : DEF_YEAR;
 	for(m = 0; ; m++) {
 		nextSecs = (long)ts - daysPerMonth[yearType][m] * SECS_PER_DAY;
 		if(nextSecs < 0)

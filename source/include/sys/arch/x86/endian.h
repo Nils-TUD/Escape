@@ -21,16 +21,31 @@
 
 #include <sys/common.h>
 
-#define le16tocpu(x)	(x)
-#define le32tocpu(x)	(x)
-#define cputole16(x)	(x)
-#define cputole32(x)	(x)
+static inline uint16_t le16tocpu(uint16_t val) {
+	return val;
+}
+static inline uint32_t le32tocpu(uint32_t val) {
+	return val;
+}
+static inline uint16_t cputole16(uint16_t val) {
+	return val;
+}
+static inline uint32_t cputole32(uint32_t val) {
+	return val;
+}
 
-#define be16tocpu(x)	((((x) & 0xFF) << 8) | ((x) >> 8))
-#define be32tocpu(x)	((((x) & 0xFF) << 24) | \
-						 (((x) & 0xFF00) << 8) | \
-						 (((x) & 0xFF0000) >> 8) | \
-						  ((x) >> 24))
-
-#define cputobe16(x)	be16tocpu(x)
-#define cputobe32(x)	be32tocpu(x)
+static inline uint16_t be16tocpu(uint16_t val) {
+	return ((val & 0xFF) << 8) | (val >> 8);
+}
+static inline uint32_t be32tocpu(uint32_t val) {
+	return ((val & 0xFF) << 24) |
+			((val & 0xFF00) << 8) |
+			((val & 0xFF0000) >> 8) |
+			(val >> 24);
+}
+static inline uint16_t cputobe16(uint16_t val) {
+	return be16tocpu(val);
+}
+static inline uint32_t cputobe32(uint32_t val) {
+	return be32tocpu(val);
+}

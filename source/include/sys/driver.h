@@ -22,30 +22,34 @@
 #include <sys/common.h>
 #include <sys/syscalls.h>
 
-#define DEV_OPEN					1
-#define DEV_READ					2		/* cancelable, if DEV_CANCEL is supported */
-#define DEV_WRITE					4		/* cancelable, if DEV_CANCEL is supported */
-#define DEV_CLOSE					8
-#define DEV_SHFILE					16
-#define DEV_CANCEL					32		/* cancel-message */
-#define DEV_CANCELSIG				64		/* cancel-signal (SIGCANCEL) */
-#define DEV_CREATSIBL				128		/* cancelable, if DEV_CANCEL is supported */
-#define DEV_SIZE					256
+enum {
+	DEV_OPEN						= 1 << 0,
+	DEV_READ						= 1 << 1,	/* cancelable, if DEV_CANCEL is supported */
+	DEV_WRITE						= 1 << 2,	/* cancelable, if DEV_CANCEL is supported */
+	DEV_CLOSE						= 1 << 3,
+	DEV_SHFILE						= 1 << 4,
+	DEV_CANCEL						= 1 << 5,	/* cancel-message */
+	DEV_CANCELSIG					= 1 << 6,	/* cancel-signal (SIGCANCEL) */
+	DEV_CREATSIBL					= 1 << 7,	/* cancelable, if DEV_CANCEL is supported */
+	DEV_SIZE						= 1 << 8,
+};
 
-/* supports read or write, is byte-oriented and random access is not supported */
-#define DEV_TYPE_CHAR				0
-/* supports read or write, is a block-oriented device, i.e. random access is supported */
-#define DEV_TYPE_BLOCK				1
-/* has an arbitrary messaging interface */
-#define DEV_TYPE_SERVICE			2
-/* has the filesystem interface */
-#define DEV_TYPE_FS					3
-/* normal file */
-#define DEV_TYPE_FILE				4
+enum {
+	/* supports read or write, is byte-oriented and random access is not supported */
+	DEV_TYPE_CHAR					= 0,
+	/* supports read or write, is a block-oriented device, i.e. random access is supported */
+	DEV_TYPE_BLOCK					= 1,
+	/* has an arbitrary messaging interface */
+	DEV_TYPE_SERVICE				= 2,
+	/* has the filesystem interface */
+	DEV_TYPE_FS						= 3,
+	/* normal file */
+	DEV_TYPE_FILE					= 4,
+};
 
-#define BITS_DEV_TYPE				3
+static const int BITS_DEV_TYPE		= 3;
 
-#define GW_NOBLOCK					1
+static const int GW_NOBLOCK			= 1;
 
 #if defined(__cplusplus)
 extern "C" {

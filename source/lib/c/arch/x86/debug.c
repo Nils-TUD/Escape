@@ -22,12 +22,11 @@
 #include <sys/debug.h>
 #include <sys/thread.h>
 
-#define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */
-#define CALL_INSTR_SIZE		5
+static const size_t CALL_INSTR_SIZE		= 5;
 
 uintptr_t *getStackTrace(void) {
-	static uintptr_t frames[MAX_STACK_DEPTH];
+	static uintptr_t frames[20];
 	uintptr_t end,start;
 	uintptr_t *frame = &frames[0];
 	ulong *bp;
@@ -36,7 +35,7 @@ uintptr_t *getStackTrace(void) {
 	end = ((uintptr_t)bp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
 	start = end - PAGE_SIZE * MAX_STACK_PAGES;
 
-	for(size_t i = 0; i < MAX_STACK_DEPTH; i++) {
+	for(size_t i = 0; i < ARRAY_SIZE(frames); i++) {
 		/* prevent page-fault */
 		if((uintptr_t)bp < start || (uintptr_t)bp >= end)
 			break;

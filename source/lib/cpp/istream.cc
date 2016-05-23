@@ -351,7 +351,7 @@ namespace std {
 		sentry se(*this,true);
 		if(se) {
 			try {
-				int i;
+				size_t i;
 				char ec,escape[MAX_ESCC_LENGTH] = {0};
 				const char *escPtr = (const char*)escape;
 				for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = _sb->get()) != ']'; i++)

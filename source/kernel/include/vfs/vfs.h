@@ -19,42 +19,12 @@
 
 #pragma once
 
+#include <sys/driver.h>
+#include <sys/io.h>
 #include <vfs/node.h>
 #include <common.h>
 
 #define MAX_VFS_FILE_SIZE			(1024 * 1024)
-
-#define DEV_OPEN					1
-#define DEV_READ					2
-#define DEV_WRITE					4
-#define DEV_CLOSE					8
-#define DEV_SHFILE					16
-#define DEV_CANCEL					32
-#define DEV_CANCELSIG				64
-#define DEV_CREATSIBL				128
-#define DEV_SIZE					256
-
-#define DEV_TYPE_CHAR				0
-#define DEV_TYPE_BLOCK				1
-#define DEV_TYPE_SERVICE			2
-#define DEV_TYPE_FS					3
-#define DEV_TYPE_FILE				4
-
-/* fcntl-commands */
-#define F_GETFL						0
-#define F_SETFL						1
-#define F_GETACCESS					2
-#define F_SEMUP						3
-#define F_SEMDOWN					4
-#define F_DISMSGS					5
-
-/* seek-types */
-#define SEEK_SET					0
-#define SEEK_CUR					1
-#define SEEK_END					2
-
-/* getwork-flags */
-#define GW_NOBLOCK					1
 
 /* all flags that the user can use */
 #define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_NOCHAN | \

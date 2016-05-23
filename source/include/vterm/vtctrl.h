@@ -120,7 +120,7 @@ struct sVTerm {
 	/* the pid of the shell for ctrl+c notifications */
 	pid_t shellPid;
 	/* the escape-state */
-	int escapePos;
+	size_t escapePos;
 	char escapeBuf[MAX_ESCC_LENGTH];
 	/* readline-buffer */
 	size_t rlStartCol;

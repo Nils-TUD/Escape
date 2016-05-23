@@ -21,9 +21,11 @@
 #include <ostream>
 #include <string.h>
 
-#define FFL_SHORT			1
-#define FFL_LONG			2
-#define FFL_LONGLONG		4
+enum {
+	FFL_SHORT			= 1,
+	FFL_LONG			= 2,
+	FFL_LONGLONG		= 4,
+};
 
 namespace std {
 	ostream::sentry::sentry(ostream& os)

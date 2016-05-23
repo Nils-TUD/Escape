@@ -21,16 +21,18 @@
 
 #include <sys/common.h>
 
-#define CONF_TIMER_FREQ			0
-#define CONF_MAX_PROCS			1
-#define CONF_MAX_FDS			2
-#define CONF_LOG				3
-#define CONF_LOG_TO_VGA			4
-#define CONF_CPU_COUNT			6
-#define CONF_TICKS_PER_SEC		8
-#define CONF_LOG_SYSCALLS		12
-#define CONF_ROOT_DEVICE		32	/* string */
-#define CONF_SWAP_DEVICE		33	/* string */
+enum {
+	CONF_TIMER_FREQ				= 0,
+	CONF_MAX_PROCS				= 1,
+	CONF_MAX_FDS				= 2,
+	CONF_LOG					= 3,
+	CONF_LOG_TO_VGA				= 4,
+	CONF_CPU_COUNT				= 6,
+	CONF_TICKS_PER_SEC			= 8,
+	CONF_LOG_SYSCALLS			= 12,
+	CONF_ROOT_DEVICE			= 32,	/* string */
+	CONF_SWAP_DEVICE			= 33,	/* string */
+};
 
 #if defined(__cplusplus)
 extern "C" {

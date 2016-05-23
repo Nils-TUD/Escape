@@ -23,8 +23,10 @@
 #include <sys/io.h>
 #include <sys/syscalls.h>
 
-#define RW_READ		0
-#define RW_WRITE	1
+enum {
+	RW_READ		= 0,
+	RW_WRITE	= 1,
+};
 
 typedef struct {
 	int sem;

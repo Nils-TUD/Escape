@@ -19,115 +19,119 @@
 
 #pragma once
 
-#define SHIFT_MASK		1
-#define CTRL_MASK		2
-#define ALT_MASK		4
+enum {
+	SHIFT_MASK			= 1,
+	CTRL_MASK			= 2,
+	ALT_MASK			= 4,
+};
 
-#define VK_NOKEY		128
+enum {
+	VK_ACCENT			= 1,
+	VK_0				= 2,
+	VK_1				= 3,
+	VK_2				= 4,
+	VK_3				= 5,
+	VK_4				= 6,
+	VK_5				= 7,
+	VK_6				= 8,
+	VK_7				= 9,
+	VK_8				= 10,
+	VK_9				= 11,
+	VK_MINUS			= 12,
+	VK_EQ				= 13,
+	VK_BACKSP			= 15,
+	VK_TAB				= 16,
+	VK_Q				= 17,
+	VK_W				= 18,
+	VK_E				= 19,
+	VK_R				= 20,
+	VK_T				= 21,
+	VK_Y				= 22,
+	VK_U				= 23,
+	VK_I				= 24,
+	VK_O				= 25,
+	VK_P				= 26,
+	VK_LBRACKET			= 27,
+	VK_RBRACKET			= 28,
+	VK_BACKSLASH		= 29,
+	VK_CAPS				= 30,
+	VK_A				= 31,
+	VK_S				= 32,
+	VK_D				= 33,
+	VK_F				= 34,
+	VK_G				= 35,
+	VK_H				= 36,
+	VK_J				= 37,
+	VK_K				= 38,
+	VK_L				= 39,
+	VK_SEM				= 40,
+	VK_APOS				= 41,
+	/* non-US-1 ?? */
+	VK_ENTER			= 43,
+	VK_LSHIFT			= 44,
+	VK_Z				= 46,
+	VK_X				= 47,
+	VK_C				= 48,
+	VK_V				= 49,
+	VK_B				= 50,
+	VK_N				= 51,
+	VK_M				= 52,
+	VK_COMMA			= 53,
+	VK_DOT				= 54,
+	VK_SLASH			= 55,
+	VK_RSHIFT			= 57,
+	VK_LCTRL			= 58,
+	VK_LSUPER			= 59,
+	VK_LALT				= 60,
+	VK_SPACE			= 61,
+	VK_RALT				= 62,
+	VK_APPS				= 63,	/* ?? */
+	VK_RCTRL			= 64,
+	VK_RSUPER			= 65,
+	VK_INSERT			= 75,
+	VK_DELETE			= 76,
+	VK_HOME				= 80,
+	VK_END				= 81,
+	VK_PGUP				= 85,
+	VK_PGDOWN			= 86,
+	VK_LEFT				= 79,
+	VK_UP				= 83,
+	VK_DOWN				= 84,
+	VK_RIGHT			= 89,
+	VK_NUM				= 90,
+	VK_KP7				= 91,
+	VK_KP4				= 92,
+	VK_KP1				= 93,
+	VK_KPDIV			= 95,
+	VK_KP8				= 96,
+	VK_KP5				= 97,
+	VK_KP2				= 98,
+	VK_KP0				= 99,
+	VK_KPMUL			= 100,
+	VK_KP9				= 101,
+	VK_KP6				= 102,
+	VK_KP3				= 103,
+	VK_KPDOT			= 104,
+	VK_KPSUB			= 105,
+	VK_KPADD			= 106,
+	VK_KPENTER			= 108,
+	VK_ESC				= 110,
+	VK_F1				= 112,
+	VK_F2				= 113,
+	VK_F3				= 114,
+	VK_F4				= 115,
+	VK_F5				= 116,
+	VK_F6				= 117,
+	VK_F7				= 118,
+	VK_F8				= 119,
+	VK_F9				= 120,
+	VK_F10				= 121,
+	VK_F11				= 122,
+	VK_F12				= 123,
+	VK_PRINT			= 124,
+	VK_SCROLL			= 125,
+	VK_PAUSE			= 126,
+	VK_PIPE				= 127,
 
-#define VK_ACCENT		1
-#define VK_0			2
-#define VK_1			3
-#define VK_2			4
-#define VK_3			5
-#define VK_4			6
-#define VK_5			7
-#define VK_6			8
-#define VK_7			9
-#define VK_8			10
-#define VK_9			11
-#define VK_MINUS		12
-#define VK_EQ			13
-#define VK_BACKSP		15
-#define VK_TAB			16
-#define VK_Q			17
-#define VK_W			18
-#define VK_E			19
-#define VK_R			20
-#define VK_T			21
-#define VK_Y			22
-#define VK_U			23
-#define VK_I			24
-#define VK_O			25
-#define VK_P			26
-#define VK_LBRACKET		27
-#define VK_RBRACKET		28
-#define VK_BACKSLASH	29
-#define VK_CAPS			30
-#define VK_A			31
-#define VK_S			32
-#define VK_D			33
-#define VK_F			34
-#define VK_G			35
-#define VK_H			36
-#define VK_J			37
-#define VK_K			38
-#define VK_L			39
-#define VK_SEM			40
-#define VK_APOS			41
-/* non-US-1 ?? */
-#define VK_ENTER		43
-#define VK_LSHIFT		44
-#define VK_Z			46
-#define VK_X			47
-#define VK_C			48
-#define VK_V			49
-#define VK_B			50
-#define VK_N			51
-#define VK_M			52
-#define VK_COMMA		53
-#define VK_DOT			54
-#define VK_SLASH		55
-#define VK_RSHIFT		57
-#define VK_LCTRL		58
-#define VK_LSUPER		59
-#define VK_LALT			60
-#define VK_SPACE		61
-#define VK_RALT			62
-#define VK_APPS			63	/* ?? */
-#define VK_RCTRL		64
-#define VK_RSUPER		65
-#define VK_INSERT		75
-#define VK_DELETE		76
-#define VK_HOME			80
-#define VK_END			81
-#define VK_PGUP			85
-#define VK_PGDOWN		86
-#define VK_LEFT			79
-#define VK_UP			83
-#define VK_DOWN			84
-#define VK_RIGHT		89
-#define VK_NUM			90
-#define VK_KP7			91
-#define VK_KP4			92
-#define VK_KP1			93
-#define VK_KPDIV		95
-#define VK_KP8			96
-#define VK_KP5			97
-#define VK_KP2			98
-#define VK_KP0			99
-#define VK_KPMUL		100
-#define VK_KP9			101
-#define VK_KP6			102
-#define VK_KP3			103
-#define VK_KPDOT		104
-#define VK_KPSUB		105
-#define VK_KPADD		106
-#define VK_KPENTER		108
-#define VK_ESC			110
-#define VK_F1			112
-#define VK_F2			113
-#define VK_F3			114
-#define VK_F4			115
-#define VK_F5			116
-#define VK_F6			117
-#define VK_F7			118
-#define VK_F8			119
-#define VK_F9			120
-#define VK_F10			121
-#define VK_F11			122
-#define VK_F12			123
-#define VK_PRINT		124
-#define VK_SCROLL		125
-#define VK_PAUSE		126
-#define VK_PIPE			127
+	VK_NOKEY			= 128,
+};

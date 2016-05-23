@@ -287,7 +287,7 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* can only be sent by drivers */
-	if(EXPECT_FALSE(!file->isDevice() && IS_DEVICE_MSG(id & 0xFFFF))) {
+	if(EXPECT_FALSE(!file->isDevice() && isDeviceMsg(id & 0xFFFF))) {
 		FileDesc::release(file);
 		SYSC_ERROR(stack,-EPERM);
 	}
@@ -346,7 +346,7 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* can only be sent by drivers */
-	if(EXPECT_FALSE(!file->isDevice() && IS_DEVICE_MSG(mid & 0xFFFF))) {
+	if(EXPECT_FALSE(!file->isDevice() && isDeviceMsg(mid & 0xFFFF))) {
 		FileDesc::release(file);
 		SYSC_ERROR(stack,-EPERM);
 	}

@@ -25,10 +25,18 @@
 extern "C" {
 #endif
 
-#define be16tocpu(x)	(x)
-#define be32tocpu(x)	(x)
-#define cputobe16(x)	(x)
-#define cputobe32(x)	(x)
+static inline uint16_t be16tocpu(uint16_t val) {
+	return val;
+}
+static inline uint32_t be32tocpu(uint32_t val) {
+	return val;
+}
+static inline uint16_t cputobe16(uint16_t val) {
+	return val;
+}
+static inline uint32_t cputobe32(uint32_t val) {
+	return val;
+}
 
 uint16_t le16tocpu(uint16_t in);
 uint32_t le32tocpu(uint32_t in);

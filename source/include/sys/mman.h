@@ -23,25 +23,31 @@
 #include <sys/syscalls.h>
 
 /* protection-flags */
-#define PROT_READ			0
-#define PROT_WRITE			1024UL
-#define PROT_EXEC			2048UL
+enum {
+	PROT_READ			= 0,
+	PROT_WRITE			= 1024UL,
+	PROT_EXEC			= 2048UL,
+};
 
 /* mapping flags */
-#define MAP_PRIVATE			0		/* make the region non-sharable */
-#define MAP_SHARED			1UL		/* make the region shareable */
-#define MAP_GROWABLE		2UL		/* make the region growable (e.g. heap, stack) */
-#define MAP_GROWSDOWN		4UL		/* for growable regions: let them grow downwards */
-#define MAP_STACK			8UL		/* for stack regions */
-#define MAP_LOCKED			16UL	/* lock the region in memory, i.e. don't swap it out */
-#define MAP_POPULATE		32UL	/* fault-in all pages at the beginning */
-#define MAP_NOSWAP			64UL	/* if not enough memory for the mapping, don't swap but fail */
-#define MAP_FIXED			128UL	/* put the region exactly at the given address */
+enum {
+	MAP_PRIVATE			= 0,		/* make the region non-sharable */
+	MAP_SHARED			= 1UL,		/* make the region shareable */
+	MAP_GROWABLE		= 2UL,		/* make the region growable (e.g. heap, stack) */
+	MAP_GROWSDOWN		= 4UL,		/* for growable regions: let them grow downwards */
+	MAP_STACK			= 8UL,		/* for stack regions */
+	MAP_LOCKED			= 16UL,		/* lock the region in memory, i.e. don't swap it out */
+	MAP_POPULATE		= 32UL,		/* fault-in all pages at the beginning */
+	MAP_NOSWAP			= 64UL,		/* if not enough memory for the mapping, don't swap but fail */
+	MAP_FIXED			= 128UL,	/* put the region exactly at the given address */
 
-#define MAP_PHYS_ALLOC		0		/* allocate physical memory */
-#define MAP_PHYS_MAP		1		/* map the specified physical memory */
+	MAP_PHYS_ALLOC		= 0,		/* allocate physical memory */
+	MAP_PHYS_MAP		= 1,		/* map the specified physical memory */
+};
 
-#define MATTR_WC			1		/* write combining */
+enum {
+	MATTR_WC			= 1,		/* write combining */
+};
 
 struct mmap_params {
 	void *addr;

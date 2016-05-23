@@ -24,14 +24,14 @@
 
 #define MAX_PROC_NAME_LEN	30
 
-#define ROOT_UID			0
-#define ROOT_GID			0
-
 typedef void (*fExitFunc)(void *arg);
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+static const uid_t ROOT_UID				= 0;
+static const gid_t ROOT_GID				= 0;
 
 extern char **environ;
 

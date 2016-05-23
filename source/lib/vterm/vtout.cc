@@ -41,7 +41,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	char c,*start = str;
 
 	/* are we waiting to finish an escape-code? */
-	if(vt->escapePos >= 0) {
+	if(vt->escapePos != (size_t)-1) {
 		size_t oldLen = vt->escapePos;
 		char *escPtr = vt->escapeBuf;
 		size_t length = MIN((int)len,MAX_ESCC_LENGTH - vt->escapePos - 1);
@@ -53,7 +53,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 		/* try it again */
 		if(!vtout_handleEscape(vt,&escPtr)) {
 			/* if no space is left, quit and simply print the code */
-			if(vt->escapePos >= MAX_ESCC_LENGTH - 1) {
+			if(vt->escapePos + 1 >= MAX_ESCC_LENGTH) {
 				size_t i;
 				for(i = 0; i < MAX_ESCC_LENGTH; i++) {
 					if(vt->printToRL)

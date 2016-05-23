@@ -27,20 +27,24 @@
 #define ERR_BUFFER_SIZE		128
 #define DYN_BUFFER_SIZE		128
 
-#define O_SIGNALS			(1U << 30)
-#define O_NOCLOSE			(1U << 31)
+enum {
+	O_SIGNALS			= 1U << 30,
+	O_NOCLOSE			= 1U << 31,
+};
 
 /* format flags */
-#define FFL_PADRIGHT		1
-#define FFL_FORCESIGN		2
-#define FFL_SPACESIGN		4
-#define FFL_PRINTBASE		8
-#define FFL_PADZEROS		16
-#define FFL_CAPHEX			32
-#define FFL_SHORT			64
-#define FFL_LONG			128
-#define FFL_LONGLONG		256
-#define FFL_SIZE			512
+enum {
+	FFL_PADRIGHT		= 1,
+	FFL_FORCESIGN		= 2,
+	FFL_SPACESIGN		= 4,
+	FFL_PRINTBASE		= 8,
+	FFL_PADZEROS		= 16,
+	FFL_CAPHEX			= 32,
+	FFL_SHORT			= 64,
+	FFL_LONG			= 128,
+	FFL_LONGLONG		= 256,
+	FFL_SIZE			= 512,
+};
 
 /* execute <expr> and return if its < 0; otherwise you get the value of <expr> */
 #define RETERR(expr)		({ \

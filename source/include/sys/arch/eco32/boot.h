@@ -21,8 +21,8 @@
 
 #include <sys/common.h>
 
-#define BOOT_PATH_MAX	64
-#define BOOT_PROG_MAX	8
+static const size_t BOOT_PATH_MAX	= 64;
+static const size_t BOOT_PROG_MAX	= 8;
 
 /* a program we should load */
 struct LoadProg {

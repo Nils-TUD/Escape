@@ -22,14 +22,21 @@
 #include <sys/common.h>
 
 /* timestamp stuff */
-#define SECS_PER_MIN			60
-#define SECS_PER_HOUR			(60 * SECS_PER_MIN)
-#define SECS_PER_DAY			(24 * SECS_PER_HOUR)
-#define SECS_PER_YEAR			(365 * SECS_PER_DAY)
-#define SECS_PER_LEAPYEAR		(366 * SECS_PER_DAY)
+ enum {
+	SECS_PER_MIN			= 60,
+	SECS_PER_HOUR			= 60 * SECS_PER_MIN,
+	SECS_PER_DAY			= 24 * SECS_PER_HOUR,
+	SECS_PER_YEAR			= 365 * SECS_PER_DAY,
+	SECS_PER_LEAPYEAR		= 366 * SECS_PER_DAY,
+};
 
-#define IS_LEAP_YEAR(y)			(((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
-#define DEF_YEAR				0
-#define LEAP_YEAR				1
+enum {
+	DEF_YEAR				= 0,
+	LEAP_YEAR				= 1,
+};
 
 extern const uchar daysPerMonth[2][12];
+
+static inline bool isLeapYear(int year) {
+	return (year % 4) == 0 && ((year % 100) != 0 || (year % 400) == 0);
+}

@@ -32,13 +32,13 @@ time_t mktime(struct tm *t) {
 	time_t ts = 0;
 	/* add full years */
 	for(y = 70; y < t->tm_year; y++) {
-		if(IS_LEAP_YEAR(y + 1900))
+		if(isLeapYear(y + 1900))
 			ts += SECS_PER_LEAPYEAR;
 		else
 			ts += SECS_PER_YEAR;
 	}
 	/* add full months */
-	yearType = IS_LEAP_YEAR(t->tm_year + 1900) ? LEAP_YEAR : DEF_YEAR;
+	yearType = isLeapYear(t->tm_year + 1900) ? LEAP_YEAR : DEF_YEAR;
 	for(m = t->tm_mon - 1; m >= 0; m--)
 		ts += daysPerMonth[yearType][m] * SECS_PER_DAY;
 	/* add full days */

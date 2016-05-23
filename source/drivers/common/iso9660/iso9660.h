@@ -28,36 +28,41 @@
 #include "common.h"
 #include "direcache.h"
 
-#define ATAPI_SECTOR_SIZE			2048
+static const size_t ATAPI_SECTOR_SIZE		= 2048;
+static const size_t ISO_BCACHE_SIZE			= 1024;
+static const size_t ISO_DIRE_CACHE_SIZE		= 128;
 
-#define ISO_BCACHE_SIZE				1024
-#define ISO_DIRE_CACHE_SIZE			128
+static const int ISO_VOL_DESC_START			= 0x10;
 
-#define ISO_VOL_DESC_START			0x10
-
-#define ISO_VOL_TYPE_BOOTRECORD		0
-#define ISO_VOL_TYPE_PRIMARY		1
-#define ISO_VOL_TYPE_SUPPLEMENTARY	2
-#define ISO_VOL_TYPE_PARTITION		3
-#define ISO_VOL_TYPE_TERMINATOR		255
+enum {
+	ISO_VOL_TYPE_BOOTRECORD		= 0,
+	ISO_VOL_TYPE_PRIMARY		= 1,
+	ISO_VOL_TYPE_SUPPLEMENTARY	= 2,
+	ISO_VOL_TYPE_PARTITION		= 3,
+	ISO_VOL_TYPE_TERMINATOR		= 255,
+};
 
 /* special filenames */
-#define ISO_FILENAME_THIS			0x00
-#define ISO_FILENAME_PARENT			0x01
+enum {
+	ISO_FILENAME_THIS			= 0x00,
+	ISO_FILENAME_PARENT			= 0x01,
+};
 
-/* If set, the existence of this file need not be made known to the user (basically a 'hidden' flag. */
-#define ISO_FILEFL_HIDDEN			(1 << 0)
-/* If set, this record describes a directory (in other words, it is a subdirectory extent). */
-#define ISO_FILEFL_DIR				(1 << 1)
-/* If set, this file is an "Associated File". */
-#define ISO_FILEFL_ASSOC_FILE		(1 << 2)
-/* If set, the extended attribute record contains information about the format of this file. */
-#define ISO_FILEFL_EXTATTR_FORMAT	(1 << 3)
-/* If set, owner and group permissions are set in the extended attribute record. */
-#define ISO_FILEFL_EXTATTR_PERMS	(1 << 4)
-/* If set, this is not the final directory record for this file (for files spanning several
- * extents, for example files over 4GiB long. */
-#define ISO_FILEFL_NOT_FINAL		(1 << 7)
+enum {
+	/* If set, the existence of this file need not be made known to the user. */
+	ISO_FILEFL_HIDDEN			= (1 << 0),
+	/* If set, this record describes a directory (in other words, it is a subdirectory extent). */
+	ISO_FILEFL_DIR				= (1 << 1),
+	/* If set, this file is an "Associated File". */
+	ISO_FILEFL_ASSOC_FILE		= (1 << 2),
+	/* If set, the extended attribute record contains information about the format of this file. */
+	ISO_FILEFL_EXTATTR_FORMAT	= (1 << 3),
+	/* If set, owner and group permissions are set in the extended attribute record. */
+	ISO_FILEFL_EXTATTR_PERMS	= (1 << 4),
+	/* If set, this is not the final directory record for this file (for files spanning several
+ 	 * extents, for example files over 4GiB long. */
+	ISO_FILEFL_NOT_FINAL		= (1 << 7),
+};
 
 /* an entry in the path-table */
 struct ISOPathTblEntry {

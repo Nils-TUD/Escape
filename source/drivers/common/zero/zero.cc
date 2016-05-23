@@ -25,7 +25,7 @@
 
 using namespace esc;
 
-#define BUF_SIZE		(16 * 1024)
+static const size_t BUF_SIZE = 16 * 1024;
 
 static char zeros[BUF_SIZE];
 

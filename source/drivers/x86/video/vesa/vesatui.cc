@@ -23,10 +23,6 @@
 
 #include "vesatui.h"
 
-#define CURSOR_LEN						FONT_WIDTH
-#define CURSOR_COLOR					0xFFFFFF
-#define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
-
 void VESATUI::drawChars(VESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len) {
 	while(len-- > 0) {
 		uint8_t c = *str++;

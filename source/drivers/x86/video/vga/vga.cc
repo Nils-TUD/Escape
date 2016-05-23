@@ -35,9 +35,6 @@
 
 #include "vga.h"
 
-#define VGA_ADDR				0xB8000
-#define VGA_SIZE				80 * 25 * 2
-
 using namespace esc;
 
 /* our state */

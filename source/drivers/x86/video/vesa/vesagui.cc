@@ -31,13 +31,13 @@
 #include "vesagui.h"
 #include "vesascreen.h"
 
-#define CURSOR_LEFT_OFF					10
-#define CURSOR_DEFAULT_FILE				"/etc/cursor_def.png"
-#define CURSOR_RESIZE_L_FILE			"/etc/cursor_resl.png"
-#define CURSOR_RESIZE_BR_FILE			"/etc/cursor_resbr.png"
-#define CURSOR_RESIZE_VERT_FILE			"/etc/cursor_resvert.png"
-#define CURSOR_RESIZE_BL_FILE			"/etc/cursor_resbl.png"
-#define CURSOR_RESIZE_R_FILE			"/etc/cursor_resr.png"
+static const size_t CURSOR_LEFT_OFF				= 10;
+static const char *CURSOR_DEFAULT_FILE			= "/etc/cursor_def.png";
+static const char *CURSOR_RESIZE_L_FILE			= "/etc/cursor_resl.png";
+static const char *CURSOR_RESIZE_BR_FILE		= "/etc/cursor_resbr.png";
+static const char *CURSOR_RESIZE_VERT_FILE		= "/etc/cursor_resvert.png";
+static const char *CURSOR_RESIZE_BL_FILE		= "/etc/cursor_resbl.png";
+static const char *CURSOR_RESIZE_R_FILE			= "/etc/cursor_resr.png";
 
 VESAGUI::VESAGUI()
 		: _cursorCopy(), _lastX(), _lastY(),_curCursor(esc::Screen::CURSOR_DEFAULT), _cursor() {

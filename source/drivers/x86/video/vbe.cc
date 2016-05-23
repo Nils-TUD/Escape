@@ -115,7 +115,7 @@ void VBE::init() {
 	// get info block
 	InfoBlock *p = reinterpret_cast<InfoBlock*>(_mem + ES_SEG0);
 	p->tag = VBE::TAG_VBE2;
-	x86emuExec(VBE_CONTROL_FUNC,0,0,ADDR_OFF(ES_SEG0),ADDR_SEG(ES_SEG0));
+	x86emuExec(VBE_CONTROL_FUNC,0,0,addrToSegOffset(ES_SEG0),addrToSeg(ES_SEG0));
 	if(p->version < 0x200)
 		error("VBE version %d too old ( >= 2.0 required)",p->version);
 	// save version for later usage
@@ -134,7 +134,7 @@ void VBE::init() {
 	uint16_t *video_mode_ptr = vbeToMem<uint16_t*>(p->video_mode_ptr);
 	for(size_t i = 0; video_mode_ptr[i] != 0xffff; i++) {
 		uint16_t mode = vbeToMem<uint16_t*>(p->video_mode_ptr)[i];
-		x86emuExec(VBE_INFO_FUNC,0,mode,ADDR_OFF(ES_SEG1),ADDR_SEG(ES_SEG1));
+		x86emuExec(VBE_INFO_FUNC,0,mode,addrToSegOffset(ES_SEG1),addrToSeg(ES_SEG1));
 		addMode(mode,ES_SEG1);
 	}
 }
@@ -176,12 +176,12 @@ uint16_t VBE::x86emuExec(uint16_t eax,uint16_t ebx,uint16_t ecx,uint16_t edi,uin
 	M.x86.R_EBX  = ebx;
 	M.x86.R_ECX  = ecx;
 	M.x86.R_EDI  = edi;
-	M.x86.R_IP   = ADDR_OFF(ENTRY);
-	M.x86.R_CS   = ADDR_SEG(ENTRY);
-	M.x86.R_DS   = ADDR_SEG(DATA);
+	M.x86.R_IP   = addrToSegOffset(ENTRY);
+	M.x86.R_CS   = addrToSeg(ENTRY);
+	M.x86.R_DS   = addrToSeg(DATA);
 	M.x86.R_ES   = es;
-	M.x86.R_SP   = ADDR_OFF(STACK);
-	M.x86.R_SS   = ADDR_SEG(STACK);
+	M.x86.R_SP   = addrToSegOffset(STACK);
+	M.x86.R_SS   = addrToSeg(STACK);
 	X86EMU_exec();
 	return M.x86.R_AX;
 }

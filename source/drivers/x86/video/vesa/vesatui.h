@@ -25,6 +25,8 @@
 #include "vesascreen.h"
 
 class VESATUI {
+	static const gpos_t CURSOR_LEN			= FONT_WIDTH;
+
 public:
 	void drawChars(VESAScreen *scr,gpos_t col,gpos_t row,const uint8_t *str,size_t len);
 	void setCursor(VESAScreen *scr,gpos_t col,gpos_t row);

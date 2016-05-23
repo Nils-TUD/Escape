@@ -25,9 +25,6 @@
 #include "x86emu/x86emu.h"
 #include "pcibus.h"
 
-#define ADDR_OFF(addr)      ((addr) & 0xFFFF)
-#define ADDR_SEG(addr)      (((addr) & 0xF0000) >> 4)
-
 class VBE {
 	VBE() = delete;
 
@@ -137,14 +134,21 @@ public:
 		return true;
 	}
 	static int getMode() {
-		x86emuExec(VBE_GMODE_FUNC,0,0,0,ADDR_SEG(ES_SEG0));
+		x86emuExec(VBE_GMODE_FUNC,0,0,0,addrToSeg(ES_SEG0));
 		return M.x86.R_EBX;
 	}
 	static void setMode(int mode) {
-		x86emuExec(VBE_MODE_FUNC,mode | MODE_SET_PRESERVE | MODE_SET_LFB,0,0,ADDR_SEG(ES_SEG0));
+		x86emuExec(VBE_MODE_FUNC,mode | MODE_SET_PRESERVE | MODE_SET_LFB,0,0,addrToSeg(ES_SEG0));
 	}
 
 private:
+	static uint addrToSegOffset(uintptr_t addr) {
+		return (addr) & 0xFFFF;
+	}
+	static uint addrToSeg(uintptr_t addr) {
+		return (addr & 0xF0000) >> 4;
+	}
+
 	template<typename T>
 	static T vbeToMem(unsigned ptr) {
 		return reinterpret_cast<T>(_mem + (ptr & 0xffff) + ((ptr >> 12) & 0xffff0));

@@ -29,6 +29,9 @@
 class VGA {
 	VGA() = delete;
 
+	static const uintptr_t VGA_ADDR	= 0xB8000;
+	static const size_t VGA_SIZE	= 80 * 25 * 2;
+
 	class ScreenDevice : public esc::ScreenDevice<> {
 	public:
 		explicit ScreenDevice(const std::vector<esc::Screen::Mode> &modes,const char *path,mode_t mode)

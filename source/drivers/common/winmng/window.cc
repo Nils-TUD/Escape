@@ -38,7 +38,6 @@
 #include "window.h"
 
 #define PIXEL_SIZE	(mode.bitsPerPixel / 8)
-#define ABS(a)		((a) < 0 ? -(a) : (a))
 
 static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
 static void win_destroyBuf(Window *win);

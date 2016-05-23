@@ -24,12 +24,14 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 
-#define WINDOW_COUNT					32
-#define WINID_UNUSED					WINDOW_COUNT
+static const size_t WINDOW_COUNT	= 32;
+static const gwinid_t WINID_UNUSED	= WINDOW_COUNT;
 
-#define WIN_STYLE_DEFAULT				0
-#define WIN_STYLE_POPUP					1
-#define WIN_STYLE_DESKTOP				2
+enum {
+	WIN_STYLE_DEFAULT				= 0,
+	WIN_STYLE_POPUP					= 1,
+	WIN_STYLE_DESKTOP				= 2,
+};
 
 typedef uint32_t tColor;
 

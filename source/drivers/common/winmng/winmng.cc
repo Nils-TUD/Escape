@@ -37,9 +37,9 @@
 #include "listener.h"
 #include "window.h"
 
-#define DEF_BPP		24
-
 using namespace esc;
+
+static const int DEF_BPP	= 24;
 
 static sInputThread inputData;
 

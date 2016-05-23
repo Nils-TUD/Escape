@@ -30,50 +30,50 @@ static long lockCount = 0;
 static tUserSem usems[MAX_LOCKS];
 
 int pthread_key_create(pthread_key_t* key,A_UNUSED void (*func)(void*)) {
-    *key = tlsadd();
-    return 0;
+	*key = tlsadd();
+	return 0;
 }
 
 int pthread_key_delete(A_UNUSED pthread_key_t key) {
-    return 0;
+	return 0;
 }
 
 int pthread_cancel(A_UNUSED pthread_t id) {
-    return 0;
+	return 0;
 }
 
 int pthread_once(pthread_once_t *control,void (*init)(void)) {
-    if(atomic_cmpnswap(control,1,2))
-        (*init)();
-    return 0;
+	if(atomic_cmpnswap(control,1,2))
+	    (*init)();
+	return 0;
 }
 
 void* pthread_getspecific(pthread_key_t key) {
-    return (void*)tlsget(key);
+	return (void*)tlsget(key);
 }
 
 int pthread_setspecific(pthread_key_t key,void* data) {
-    tlsset(key,(ulong)data);
-    return 0;
+	tlsset(key,(ulong)data);
+	return 0;
 }
 
 int pthread_mutex_init(pthread_mutex_t *mutex,A_UNUSED const pthread_mutexattr_t *attr) {
-    int id = atomic_add(&lockCount,+1);
-    *mutex = id;
-    return usemcrt(usems + id,1);
+	int id = atomic_add(&lockCount,+1);
+	*mutex = id;
+	return usemcrt(usems + id,1);
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
-    usemdown(usems + *mutex);
-    return 0;
+	usemdown(usems + *mutex);
+	return 0;
 }
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex) {
-    usemup(usems + *mutex);
-    return 0;
+	usemup(usems + *mutex);
+	return 0;
 }
 
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
-    usemdestr(usems + *mutex);
-    return 0;
+	usemdestr(usems + *mutex);
+	return 0;
 }

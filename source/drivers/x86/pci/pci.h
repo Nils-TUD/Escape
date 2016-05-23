@@ -20,8 +20,10 @@
 #include <sys/arch/x86/ports.h>
 #include <sys/common.h>
 
-#define IOPORT_PCI_CFG_DATA			0xCFC
-#define IOPORT_PCI_CFG_ADDR			0xCF8
+enum {
+	IOPORT_PCI_CFG_DATA			= 0xCFC,
+	IOPORT_PCI_CFG_ADDR			= 0xCF8,
+};
 
 static inline uint32_t pci_read(uchar bus,uchar dev,uchar func,uchar offset) {
 	uint32_t addr = 0x80000000 | (bus << 16) | (dev << 11) | (func << 8) | (offset & 0xFC);

@@ -26,29 +26,37 @@
 #include "list.h"
 #include "pci.h"
 
-/* TODO according to http://en.wikipedia.org/wiki/PCI_configuration_space there are max. 256 buses.
- * Lost searches the first 8. why? */
-#define BUS_COUNT					8
-#define DEV_COUNT					32
-#define FUNC_COUNT					8
-
-#define VENDOR_INVALID				0xFFFF
+enum {
+	/* TODO according to http://en.wikipedia.org/wiki/PCI_configuration_space there are max. 256 buses.
+	 * Lost searches the first 8. why? */
+	BUS_COUNT							= 8,
+	DEV_COUNT							= 32,
+	FUNC_COUNT							= 8,
+};
 
 /* header-types */
-#define PCI_TYPE_STD				0
-#define PCI_TYPE_PCIPCI_BRIDGE		1
-#define PCI_TYPE_CARDBUS_BRIDGE		2
+enum {
+	PCI_TYPE_STD						= 0,
+	PCI_TYPE_PCIPCI_BRIDGE				= 1,
+	PCI_TYPE_CARDBUS_BRIDGE				= 2,
+};
 
-#define BAR_OFFSET					0x10
+static const uint16_t VENDOR_INVALID	= 0xFFFF;
 
-#define BAR_ADDR_IO_MASK			0xFFFFFFFC
-#define BAR_ADDR_MEM_MASK			0xFFFFFFF0
+static const size_t BAR_OFFSET			= 0x10;
 
-#define BAR_ADDR_SPACE				0x01
-#define BAR_ADDR_SPACE_IO			0x01
-#define BAR_ADDR_SPACE_MEM			0x00
-#define BAR_MEM_TYPE(bar)			(((bar) >> 1) & 0x3)
-#define BAR_MEM_PREFETCHABLE(bar)	(((bar) >> 3) & 0x1)
+static const size_t BAR_ADDR_IO_MASK	= 0xFFFFFFFC;
+static const size_t BAR_ADDR_MEM_MASK	= 0xFFFFFFF0;
+
+static bool isMemBar(uint32_t size) {
+	return (size & 0x1) == 0;
+}
+static int getBarType(uint32_t bar) {
+	return (bar >> 1) & 0x3;
+}
+static bool isBarPrefetchable(uint32_t bar) {
+	return (bar >> 3) & 0x1;
+}
 
 static void list_detect(void);
 static void list_fillDev(esc::PCI::Device *dev);
@@ -152,8 +160,9 @@ static void list_fillBar(esc::PCI::Device *dev,size_t i) {
 	if(bar->size == 0 || bar->size == 0xFFFFFFFF)
 		bar->size = 0;
 	else {
-		if((bar->size & BAR_ADDR_SPACE) == BAR_ADDR_SPACE_MEM) {
-			switch(BAR_MEM_TYPE(barValue)) {
+		/* memory bar? */
+		if(isMemBar(bar->size)) {
+			switch(getBarType(barValue)) {
 				case 0x00:
 					bar->flags |= esc::PCI::Bar::BAR_MEM_32;
 					break;
@@ -161,7 +170,7 @@ static void list_fillBar(esc::PCI::Device *dev,size_t i) {
 					bar->flags |= esc::PCI::Bar::BAR_MEM_64;
 					break;
 			}
-			if(BAR_MEM_PREFETCHABLE(barValue))
+			if(isBarPrefetchable(barValue))
 				bar->flags |= esc::PCI::Bar::BAR_MEM_PREFETCH;
 			bar->size &= BAR_ADDR_MEM_MASK;
 		}

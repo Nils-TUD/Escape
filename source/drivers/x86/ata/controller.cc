@@ -34,19 +34,19 @@
 #include "ata.h"
 #include "controller.h"
 
-/* port-bases */
-#define PORTBASE_PRIMARY			0x1F0
-#define PORTBASE_SECONDARY			0x170
-
-#define IDE_CTRL_CLASS				0x01
-#define IDE_CTRL_SUBCLASS			0x01
-#define IDE_CTRL_BAR				4
-
-#define BMR_SEC_OFFSET				0x8
-
-#define DMA_BUF_SIZE				(64 * 1024)
-
 using namespace esc;
+
+/* port-bases */
+static const int PORTBASE_PRIMARY			= 0x1F0;
+static const int PORTBASE_SECONDARY			= 0x170;
+
+static const int IDE_CTRL_CLASS				= 0x01;
+static const int IDE_CTRL_SUBCLASS			= 0x01;
+static const int IDE_CTRL_BAR				= 4;
+
+static const size_t BMR_SEC_OFFSET			= 0x8;
+
+static const size_t DMA_BUF_SIZE			= 64 * 1024;
 
 static bool ctrl_isBusResponding(sATAController* ctrl);
 

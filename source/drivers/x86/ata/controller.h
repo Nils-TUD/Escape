@@ -23,29 +23,39 @@
 
 #include "device.h"
 
-#define DEVICE_PRIMARY				0
-#define DEVICE_SECONDARY			1
-
-#define DEVICE_COUNT				4
+enum {
+	DEVICE_PRIMARY					= 0,
+	DEVICE_SECONDARY				= 1,
+};
 
 /* device-identifier */
-#define DEVICE_PRIM_MASTER			0
-#define DEVICE_PRIM_SLAVE			1
-#define DEVICE_SEC_MASTER			2
-#define DEVICE_SEC_SLAVE			3
+enum {
+	DEVICE_PRIM_MASTER				= 0,
+	DEVICE_PRIM_SLAVE				= 1,
+	DEVICE_SEC_MASTER				= 2,
+	DEVICE_SEC_SLAVE				= 3,
+};
 
-#define BMR_REG_COMMAND				0x0
-#define BMR_REG_STATUS				0x2
-#define BMR_REG_PRDT				0x4
+enum {
+	BMR_REG_COMMAND					= 0x0,
+	BMR_REG_STATUS					= 0x2,
+	BMR_REG_PRDT					= 0x4,
+};
 
-#define BMR_STATUS_IRQ				0x4
-#define BMR_STATUS_ERROR			0x2
-#define BMR_STATUS_DMA				0x1
+enum {
+	BMR_STATUS_IRQ					= 0x4,
+	BMR_STATUS_ERROR				= 0x2,
+	BMR_STATUS_DMA					= 0x1,
+};
 
-#define BMR_CMD_START				0x1
-#define BMR_CMD_READ				0x8
+enum {
+	BMR_CMD_START					= 0x1,
+	BMR_CMD_READ					= 0x8,
+};
 
-#define CTRL_IRQ_BASE				14
+static const size_t DEVICE_COUNT	= 4;
+
+static const int CTRL_IRQ_BASE		= 14;
 
 /**
  * Inits the controllers

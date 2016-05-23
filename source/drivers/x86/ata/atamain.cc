@@ -44,10 +44,10 @@
 
 using namespace esc;
 
-#define MAX_RW_SIZE		4096
-#define RETRY_COUNT		3
-
 class ATAPartitionDevice;
+
+static const size_t MAX_RW_SIZE		= 4096;
+static const int RETRY_COUNT		= 3;
 
 static ulong handleRead(sATADevice *device,sPartition *part,uint16_t *buf,uint offset,uint count);
 static ulong handleWrite(sATADevice *device,sPartition *part,uint16_t *buf,uint offset,uint count);
@@ -194,19 +194,19 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
 		uint rcount = ROUND_UP(count,ataDev->secSize);
 		if(buf != buffer || rcount <= MAX_RW_SIZE) {
-			size_t i;
+			int i;
 			ATA_PR2("Reading %d bytes @ %x from device %d",
 					rcount,offset,ataDev->id);
 			for(i = 0; i < RETRY_COUNT; i++) {
 				if(i > 0)
-					ATA_LOG("Read failed; retry %zu",i);
+					ATA_LOG("Read failed; retry %d",i);
 				if(ataDev->rwHandler(ataDev,OP_READ,buf,
 						offset / ataDev->secSize + part->start,
 						ataDev->secSize,rcount / ataDev->secSize)) {
 					return count;
 				}
 			}
-			ATA_LOG("Giving up after %zu retries",i);
+			ATA_LOG("Giving up after %d retries",i);
 			return 0;
 		}
 	}
@@ -218,18 +218,18 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 static ulong handleWrite(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint offset,uint count) {
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
 		if(buf != buffer || count <= MAX_RW_SIZE) {
-			size_t i;
+			int i;
 			ATA_PR2("Writing %d bytes @ %x to device %d",count,offset,ataDev->id);
 			for(i = 0; i < RETRY_COUNT; i++) {
 				if(i > 0)
-					ATA_LOG("Write failed; retry %zu",i);
+					ATA_LOG("Write failed; retry %d",i);
 				if(ataDev->rwHandler(ataDev,OP_WRITE,buf,
 						offset / ataDev->secSize + part->start,
 						ataDev->secSize,count / ataDev->secSize)) {
 					return count;
 				}
 			}
-			ATA_LOG("Giving up after %zu retries",i);
+			ATA_LOG("Giving up after %d retries",i);
 			return 0;
 		}
 	}

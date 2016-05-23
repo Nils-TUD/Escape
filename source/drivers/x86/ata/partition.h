@@ -22,7 +22,7 @@
 #include <sys/common.h>
 
 /* the number of partitions per disk */
-#define PARTITION_COUNT		4
+static const size_t PARTITION_COUNT		= 4;
 
 /* represents a partition (in memory) */
 typedef struct {

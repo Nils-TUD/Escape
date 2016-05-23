@@ -23,7 +23,7 @@
 #include "partition.h"
 
 /* offset of partition-table in MBR */
-#define PART_TABLE_OFFSET	0x1BE
+static const size_t PART_TABLE_OFFSET	= 0x1BE;
 
 /* a partition on the disk */
 typedef struct {

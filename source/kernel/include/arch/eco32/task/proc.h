@@ -21,8 +21,6 @@
 
 #include <common.h>
 
-#define KEYBOARD_PID		8	/* just for debugging */
-
 class Proc : public ProcBase {
 	friend class ProcBase;
 

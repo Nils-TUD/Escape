@@ -66,6 +66,9 @@ class Interrupts : public InterruptsBase {
 	static const ulong TERM_RCVR_IEN		= 0x02;
 	static const ulong TERM_XMTR_IEN		= 0x02;
 
+	static uintptr_t pfaddr;
+	static bool kbInstalled;
+
 	static void defHandler(Thread *t,IntrptStackFrame *stack);
 	static void debug(Thread *t,IntrptStackFrame *stack);
 	static void exTrap(Thread *t,IntrptStackFrame *stack);
@@ -75,6 +78,4 @@ class Interrupts : public InterruptsBase {
 	static void termRcvr(Thread *t,IntrptStackFrame *stack);
 	static void termXmtr(Thread *t,IntrptStackFrame *stack);
 	static void irqDisk(Thread *t,IntrptStackFrame *stack);
-
-	static uintptr_t pfaddr;
 };

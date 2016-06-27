@@ -102,6 +102,8 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x3F */	{Interrupts::defHandler,	"??",					0},
 };
 
+bool Interrupts::kbInstalled = false;
+
 void InterruptsBase::init() {
 	initVFS();
 }
@@ -112,6 +114,10 @@ int InterruptsBase::installHandler(int irq,const char *) {
 
 	if(intrptList[irq].handler == Interrupts::defHandler)
 		return -EINVAL;
+
+	/* remember that we now have a handler for the keyboard */
+	if(irq == 0x3D)
+		Interrupts::kbInstalled = true;
 
 	/* nothing to do. already installed */
 	return 0;
@@ -224,7 +230,7 @@ void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {
 	uint64_t *kbRegs = (uint64_t*)KEYBOARD_BASE;
 	kbRegs[KEYBOARD_CTRL] &= ~KEYBOARD_IEN;
 
-	if(Proc::getByPid(KEYBOARD_PID) == NULL) {
+	if(!kbInstalled) {
 		/* in debug-mode, start the logviewer when the keyboard is not present yet */
 		/* (with a present keyboard-device we would steal him the scancodes) */
 		/* this way, we can debug the system in the startup-phase without affecting timings

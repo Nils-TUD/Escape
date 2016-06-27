@@ -74,6 +74,8 @@ class Interrupts : public InterruptsBase {
 	static const ulong TERM_RCVR_IEN		= 0x02;
 	static const ulong TERM_XMTR_IEN		= 0x02;
 
+	static bool kbInstalled;
+
 	static void forcedTrap(IntrptStackFrame *stack) asm("intrpt_forcedTrap");
 	static bool dynTrap(IntrptStackFrame *stack,int irqNo) asm("intrpt_dynTrap");
 

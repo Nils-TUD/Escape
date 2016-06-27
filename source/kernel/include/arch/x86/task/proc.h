@@ -21,8 +21,6 @@
 
 #include <common.h>
 
-#define KEYBOARD_PID		12	/* just for debugging */
-
 /* special process-flag for x86 */
 #define P_VM86				8
 

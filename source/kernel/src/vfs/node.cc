@@ -620,7 +620,7 @@ ushort VFSNode::doUnref(bool remove) {
 			firstChild = NULL;
 
 			/* free name (do that afterwards, unlocked) */
-			if(IS_ON_HEAP(name))
+			if(Cache::contains(name))
 				nameptr = name;
 			name = NULL;
 		}

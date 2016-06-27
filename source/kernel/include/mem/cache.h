@@ -20,6 +20,7 @@
 #pragma once
 
 #include <common.h>
+#include <mem/layout.h>
 #include <spinlock.h>
 
 class OStream;
@@ -68,6 +69,17 @@ public:
 	 * @param p the area
 	 */
 	static void free(void *p) asm("cache_free");
+
+	/**
+	 * Note: on MMIX, this does only check whether it's in kernel space, but not in static data
+	 *
+	 * @param p the pointer
+	 * @return whether the given pointer belongs to the cache/kheap
+	 */
+	static bool contains(const void *p) {
+		uintptr_t addr = reinterpret_cast<uintptr_t>(p);
+		return addr >= KHEAP_START && addr < KHEAP_START + KHEAP_SIZE;
+	}
 
 	/**
 	 * @return the occupied memory

@@ -28,10 +28,6 @@
 #include <string.h>
 #include <assert.h>
 
-/* determines whether the given address is on the heap */
-#define IS_ON_HEAP(addr)		((uintptr_t)(addr) >= KHEAP_START && \
-		(uintptr_t)(addr) < KHEAP_START + KHEAP_SIZE)
-
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 

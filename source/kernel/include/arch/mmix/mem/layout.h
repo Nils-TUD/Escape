@@ -74,6 +74,17 @@
 #define KERNEL_BEGIN			KERNEL_START
 #define KERNEL_AREA				KERNEL_START
 
+/* for mmix, we don't map the kernel heap somewhere, but have multiple, non-contiguous pieces in
+ * the directly mapped space. this is currently only used in Cache::contains, where it is enough
+ * to check whether it's in kernel space, but not in the static data. */
+#define KHEAP_START				({							\
+ 	extern void *_ebss;										\
+ 	((uintptr_t)&_ebss + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1); \
+})
+
+/* NOTE: this is not the real size, but rather the maximum theoretical size */
+#define KHEAP_SIZE				(0xFFFFFFFFFFFFFFFF - KHEAP_START)
+
 /* all physical memory is directly mapped @ 0x8000000000000000 by the HW. so, put all of that in
  * the lower memory pool */
 #define DIR_MAP_AREA			0x8000000000000000

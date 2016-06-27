@@ -35,10 +35,6 @@
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
 #define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
-/* determines whether the given address is on the heap */
-/* in this case it is sufficient to check whether its not in the data-area of the kernel */
-#define IS_ON_HEAP(addr) 		((uintptr_t)(addr) > KERNEL_START + Boot::getKernelSize())
-
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 

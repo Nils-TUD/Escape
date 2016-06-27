@@ -72,6 +72,10 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 
 uintptr_t Interrupts::pfaddr = 0;
 
+void InterruptsBase::init() {
+	initVFS();
+}
+
 int InterruptsBase::installHandler(int irq,const char *) {
 	if(irq < 0 || irq >= 0x10)
 		return -EINVAL;

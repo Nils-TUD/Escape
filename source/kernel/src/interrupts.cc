@@ -18,6 +18,7 @@
  */
 
 #include <common.h>
+#include <vfs/irq.h>
 #include <interrupts.h>
 #include <log.h>
 #include <ostream.h>
@@ -26,6 +27,13 @@
 const size_t InterruptsBase::IRQ_SEM_COUNT = IRQ_COUNT;
 SpinLock InterruptsBase::userIrqsLock;
 esc::ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
+
+void InterruptsBase::initVFS() {
+	VFSNode *node = NULL;
+	sassert(VFSNode::request("/sys/irq",NULL,&node,NULL,VFS_READ,0) == 0);
+	for(int i = 0; i < IRQ_COUNT; ++i)
+		VFSNode::release(createObj<VFSIRQ>(KERNEL_PID,node,i,0500));
+}
 
 int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name,
 		uint64_t *msiaddr,uint32_t *msival) {
@@ -67,8 +75,15 @@ size_t InterruptsBase::getCount() {
 
 void InterruptsBase::print(OStream &os) {
 	for(size_t i = 0; i < IRQ_COUNT; ++i) {
-		const Interrupt *irq = intrptList + i;
-		if(strcmp(irq->name,"??") != 0)
-			os.writef("%-20s: %lu\n",irq->name,irq->count);
+		if(strcmp(intrptList[i].name,"??") != 0)
+			printIRQ(i, os);
 	}
+}
+
+void InterruptsBase::printIRQ(int irq,OStream &os) {
+	if(irq >= IRQ_COUNT)
+		return;
+
+	const Interrupt *i = intrptList + irq;
+	os.writef("%3d %-20s %lu\n",irq,i->name,i->count);
 }

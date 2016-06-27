@@ -27,6 +27,7 @@
 #include <task/thread.h>
 #include <task/timer.h>
 #include <vfs/vfs.h>
+#include <vfs/irq.h>
 #include <common.h>
 #include <errno.h>
 #include <string.h>
@@ -112,28 +113,54 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
 	char kname[32];
-	int irq = (int)SYSC_ARG1(stack);
+	int fd = (int)SYSC_ARG1(stack);
 	char *name = (char*)SYSC_ARG2(stack);
 	uint64_t *msiaddr = (uint64_t*)SYSC_ARG3(stack);
 	uint32_t *msival = (uint32_t*)SYSC_ARG4(stack);
 	uint64_t kmsiaddr;
 	uint32_t kmsival;
+	int irq,res;
+	pid_t pid = t->getProc()->getPid();
 
 	if(EXPECT_FALSE(msiaddr && !PageDir::isInUserSpace((uintptr_t)msiaddr,sizeof(*msiaddr))))
 		SYSC_ERROR(stack,-EINVAL);
 	if(EXPECT_FALSE(msiaddr && !PageDir::isInUserSpace((uintptr_t)msival,sizeof(*msival))))
 		SYSC_ERROR(stack,-EINVAL);
 
-	/* copy it first. it might pagefault */
+	/* get IRQ file */
+	OpenFile *irqFile = FileDesc::request(t->getProc(),fd);
+	if(EXPECT_FALSE(irqFile == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* it has to be an IRQ */
+	if(irqFile->getDev() != VFS_DEV_NO || !S_ISIRQ(irqFile->getNode()->getMode())) {
+		res = -EINVAL;
+		goto errFile;
+	}
+	/* and we need exec permissions to get notified about irqs */
+	res = VFS::hasAccess(pid,irqFile->getNode(),VFS_EXEC);
+	if(res < 0)
+		goto errFile;
+
+	/* get irq number */
+	irq = static_cast<VFSIRQ*>(irqFile->getNode())->getIRQ();
+	FileDesc::release(irqFile);
+
+	/* create semaphore and attach it */
 	strnzcpy(kname,name,sizeof(kname));
-	int res = Sems::create(t->getProc(),0,irq,kname,msiaddr ? &kmsiaddr : NULL,msiaddr ? &kmsival : NULL);
+	res = Sems::create(t->getProc(),0,irq,kname,msiaddr ? &kmsiaddr : NULL,msiaddr ? &kmsival : NULL);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
+
 	if(msiaddr) {
 		*msiaddr = kmsiaddr;
 		*msival = kmsival;
 	}
 	SYSC_RET1(stack,res);
+
+errFile:
+	FileDesc::release(irqFile);
+	SYSC_ERROR(stack,res);
 }
 
 int Syscalls::semcrt(Thread *t,IntrptStackFrame *stack) {

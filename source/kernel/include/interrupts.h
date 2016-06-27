@@ -125,7 +125,17 @@ public:
 	 */
 	static void print(OStream &os);
 
+	/**
+	 * Prints information about the given IRQ
+	 *
+	 * @param irq the IRQ
+	 * @param os the output-stream
+	 */
+	static void printIRQ(int irq,OStream &os);
+
 protected:
+	static void initVFS();
+
 	static Interrupt intrptList[];
 	static SpinLock userIrqsLock;
 	static esc::ISList<Semaphore*> userIrqs[];

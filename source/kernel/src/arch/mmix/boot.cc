@@ -58,6 +58,7 @@ static const BootTask tasks[] = {
 	{"Initializing scheduler...",Sched::init},
 	{"Creating MB module files...",Boot::createModFiles},
 	{"Start logging to VFS...",Log::vfsIsReady},
+	{"Initializing interrupts...",Interrupts::init},
 };
 BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 

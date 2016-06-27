@@ -133,6 +133,8 @@ void InterruptsBase::init() {
 	}
 	else
 		Log::get().writef("Using PIC for interrupts\n");
+
+	initVFS();
 }
 
 int InterruptsBase::installHandler(int irq,const char *name) {

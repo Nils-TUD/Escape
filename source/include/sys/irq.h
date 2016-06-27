@@ -30,14 +30,26 @@ extern "C" {
  * Creates a new process-local semaphore that is attached to the given IRQ. That is, as soon as the
  * IRQ arrives, the semaphore is up'ed.
  *
- * @param irq the IRQ to attach it to
+ * @param irq the interrupt number to attach it to
  * @param name the name to display for this IRQ
  * @param msiaddr will be set to the address to program into MSI address registers, if <msiaddr> != 0
  * @param msival will be set to the value to program into the MSI data register, if <msiaddr> != 0
  * @return the semaphore id or a negative error-code
  */
-A_CHECKRET static inline int semcrtirq(int irq,const char *name,uint64_t *msiaddr,uint32_t *msival) {
-	return syscall4(SYSCALL_SEMCRTIRQ,irq,(ulong)name,(ulong)msiaddr,(ulong)msival);
+A_CHECKRET int semcrtirq(int irq,const char *name,uint64_t *msiaddr,uint32_t *msival);
+
+/**
+ * Creates a new process-local semaphore that is attached to the given IRQ. That is, as soon as the
+ * IRQ arrives, the semaphore is up'ed.
+ *
+ * @param fd the file descriptor for the IRQ to attach it to (/sys/irq/<no>)
+ * @param name the name to display for this IRQ
+ * @param msiaddr will be set to the address to program into MSI address registers, if <msiaddr> != 0
+ * @param msival will be set to the value to program into the MSI data register, if <msiaddr> != 0
+ * @return the semaphore id or a negative error-code
+ */
+A_CHECKRET static inline int fsemcrtirq(int fd,const char *name,uint64_t *msiaddr,uint32_t *msival) {
+	return syscall4(SYSCALL_SEMCRTIRQ,fd,(ulong)name,(ulong)msiaddr,(ulong)msival);
 }
 
 #if defined(__cplusplus)

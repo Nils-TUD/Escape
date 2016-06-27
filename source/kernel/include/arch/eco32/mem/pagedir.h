@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <arch/eco32/mem/layout.h>
+#include <mem/layout.h>
 #include <mem/pagetables.h>
 #include <mem/physmemareas.h>
 #include <assert.h>

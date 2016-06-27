@@ -20,7 +20,7 @@
 #pragma once
 
 #if !defined(__cplusplus)
-#	include <arch/x86_64/mem/layout.h>
+#	include <mem/layout.h>
 #	define SAVE_REGS		push	%rax;	\
  							push	%rbx;	\
  							push	%rcx;	\

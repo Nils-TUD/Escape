@@ -20,12 +20,7 @@
 #pragma once
 
 #include <common.h>
-
-#if defined(__i586__)
-#	include <arch/i586/mem/layout.h>
-#else
-#	include <arch/x86_64/mem/layout.h>
-#endif
+#include <mem/layout.h>
 #include <mem/pagetables.h>
 #include <spinlock.h>
 #include <lockguard.h>

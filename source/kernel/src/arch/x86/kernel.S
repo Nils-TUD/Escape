@@ -18,12 +18,11 @@
  */
 
 #if defined(__i586__)
-#	include <arch/i586/mem/layout.h>
 #	include <arch/i586/intrptstackframe.h>
 #else
-#	include <arch/x86_64/mem/layout.h>
 #	include <arch/x86_64/intrptstackframe.h>
 #endif
+#include <mem/layout.h>
 #include <sys/arch.h>
 
 #define KSTACK_CURTHREAD	(KSTACK_AREA + PAGE_SIZE - WORDSIZE)

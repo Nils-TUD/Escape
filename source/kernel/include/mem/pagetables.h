@@ -20,19 +20,10 @@
 #pragma once
 
 #include <mem/physmem.h>
+#include <mem/layout.h>
 #include <assert.h>
 #include <common.h>
 #include <cppsupport.h>
-
-#if defined(__i586__)
-#	include <arch/i586/mem/layout.h>
-#elif defined(__x86_64__)
-#	include <arch/x86_64/mem/layout.h>
-#elif defined(__eco32__)
-#	include <arch/eco32/mem/layout.h>
-#elif defined(__mmix__)
-#	include <arch/mmix/mem/layout.h>
-#endif
 
 #define PT_IDX(addr,lvl)		(((addr) >> (PAGE_BITS + PT_BPL * (lvl))) & ((1 << PT_BPL) - 1))
 

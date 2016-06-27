@@ -20,8 +20,8 @@
 #pragma once
 
 #include <arch/mmix/mem/addrspace.h>
-#include <arch/mmix/mem/layout.h>
 #include <mem/physmemareas.h>
+#include <mem/layout.h>
 #include <assert.h>
 #include <common.h>
 #include <string.h>

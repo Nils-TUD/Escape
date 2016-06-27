@@ -21,16 +21,11 @@
 
 #include <common.h>
 
-/* special process-flag for x86 */
-#define P_VM86				8
-
-class VM86;
 class GDT;
 class IOPorts;
 
 class Proc : public ProcBase {
 	friend class ProcBase;
-	friend class VM86;
 	friend class GDT;
 	friend class IOPorts;
 

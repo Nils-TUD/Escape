@@ -286,8 +286,8 @@ static void initDrives(void) {
 
 static void createVFSEntry(sATADevice *ataDev,sPartition *part,const char *name) {
 	FILE *f;
-	char path[SSTRLEN("/sys/devices/hda1") + 1];
-	snprintf(path,sizeof(path),"/sys/devices/%s",name);
+	char path[SSTRLEN("/sys/dev/hda1") + 1];
+	snprintf(path,sizeof(path),"/sys/dev/%s",name);
 
 	/* open and create file */
 	f = fopen(path,"w");

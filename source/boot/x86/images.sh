@@ -24,7 +24,7 @@ title Escape
 kernel /boot/escape$suffix root=/dev/iso9660-cdrom
 module /bin/initloader
 module /sbin/pci /dev/pci
-module /sbin/ata /sys/devices/ata nodma
+module /sbin/ata /sys/dev/ata nodma
 module /sbin/iso9660 /dev/iso9660-cdrom cdrom
 
 title Escape - Test
@@ -68,7 +68,7 @@ title Escape
 kernel /boot/escape$suffix root=/dev/ext2-hda1 swapdev=/dev/hda3
 module /bin/initloader
 module /sbin/pci /dev/pci
-module /sbin/ata /sys/devices/ata
+module /sbin/ata /sys/dev/ata
 module /sbin/ext2 /dev/ext2-hda1 /dev/hda1
 
 title Escape - Test

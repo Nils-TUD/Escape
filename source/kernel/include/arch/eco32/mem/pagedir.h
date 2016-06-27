@@ -30,11 +30,6 @@
 #define IS_ON_HEAP(addr) ((uintptr_t)(addr) >= KHEAP_START && \
 		(uintptr_t)(addr) < KHEAP_START + KHEAP_SIZE)
 
-/* determines whether the given address is in a shared kernel area; in this case it is "shared"
- * if it is accessed over the directly mapped space. */
-#define IS_SHARED(addr)			((uintptr_t)(addr) >= KERNEL_START || \
-		((uintptr_t)(addr) >= KHEAP_START && (uintptr_t)(addr) < KERNEL_STACK))
-
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 

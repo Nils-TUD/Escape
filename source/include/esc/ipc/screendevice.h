@@ -25,8 +25,6 @@
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 
-#define DIFF(a,b)				((a) > (b) ? ((a) - (b)) : ((b) - (a)))
-
 namespace esc {
 
 /**
@@ -211,6 +209,11 @@ private:
 		return _rects.size() > 0 || _newCursor.client;
 	}
 
+	template<typename T>
+	static T difference(T a,T b) {
+		return a > b ? a - b : b - a;
+	}
+
 	void addUpdate(C *cli,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		static size_t mergeTolerance[] = {
 			/* 0 = unused */	0,
@@ -224,8 +227,10 @@ private:
 		size_t tolerance = mergeTolerance[cli->type()];
 		for(auto r = _rects.begin(); r != _rects.end(); ++r) {
 			if(r->client == cli &&
-				(size_t)DIFF(r->r.x(),x) < tolerance && (size_t)DIFF(r->r.y(),y) < tolerance &&
-				DIFF(r->r.width(),width) < tolerance && DIFF(r->r.height(),height) < tolerance) {
+				difference(r->r.x(),x) < tolerance &&
+				difference(r->r.y(),y) < tolerance &&
+				difference(r->r.width(),width) < tolerance &&
+				difference(r->r.height(),height) < tolerance) {
 				/* mergable, so do it */
 				r->r = gui::unify(r->r,gui::Rectangle(x,y,width,height));
 				present = true;
@@ -281,5 +286,3 @@ private:
 };
 
 }
-
-#undef DIFF

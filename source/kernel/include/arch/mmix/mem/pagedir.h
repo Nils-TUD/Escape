@@ -26,15 +26,6 @@
 #include <common.h>
 #include <string.h>
 
-/* converts a virtual address to the page-directory-index for that address */
-#define ADDR_TO_PDINDEX(addr)	((size_t)((uintptr_t)(addr) / PAGE_SIZE / PT_ENTRY_COUNT))
-
-/* converts a virtual address to the index in the corresponding page-table */
-#define ADDR_TO_PTINDEX(addr)	((size_t)(((uintptr_t)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT))
-
-/* converts pages to page-tables (how many page-tables are required for the pages?) */
-#define PAGES_TO_PTS(pageCount)	(((size_t)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
-
 class PageDir : public PageDirBase {
 	friend class PageDirBase;
 

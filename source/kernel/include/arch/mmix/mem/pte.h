@@ -60,9 +60,6 @@
 #define PTE_FRAMENO_MASK			0x00FFFFFFFFFFE000
 #define PTE_NMASK					0x0000000000001FF8
 
-#define PAGE_NO(virt)				(((uintptr_t)(virt) & 0x1FFFFFFFFFFFFFFF) >> PAGE_BITS)
-#define SEGSIZE(rV,i)				((i) == 0 ? 0 : (((rV) >> (64 - (i) * 4)) & 0xF))
-
 #if defined(__cplusplus)
 typedef unsigned long pte_t;
 #endif

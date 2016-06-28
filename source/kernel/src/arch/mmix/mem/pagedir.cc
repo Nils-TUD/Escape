@@ -34,6 +34,16 @@
 
 PageDir PageDir::firstCon;
 
+static ulong pageNumber(uintptr_t virt) {
+	return (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_BITS;
+}
+
+static size_t segSize(uint64_t rv,int segment) {
+	if(segment == 0)
+		return 0;
+	return (rv >> (64 - segment * 4)) & 0xF;
+}
+
 void PageDirBase::init() {
 	ssize_t res;
 	/* set root-location of first process */
@@ -98,7 +108,7 @@ frameno_t PageDirBase::demandLoad(const void *buffer,size_t loadCount,ulong regF
 
 void PageDirBase::zeroToUser(void *dst,size_t count) {
 	uint64_t pte,*dpt = NULL;
-	ulong dstPageNo = PAGE_NO(dst);
+	ulong dstPageNo = pageNumber(reinterpret_cast<uintptr_t>(dst));
 	PageDir *cur = Proc::getCurPageDir();
 	PageTables::NoAllocator alloc;
 	uintptr_t offset = (uintptr_t)dst & (PAGE_SIZE - 1);
@@ -125,8 +135,8 @@ int PageDirBase::clone(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t c
 	PageTables::NoAllocator alloc;
 	uintptr_t orgVirtSrc = virtSrc,orgVirtDst = virtDst;
 	size_t orgCount = count;
-	ulong srcPageNo = PAGE_NO(virtSrc);
-	ulong dstPageNo = PAGE_NO(virtDst);
+	ulong srcPageNo = pageNumber(virtSrc);
+	ulong dstPageNo = pageNumber(virtDst);
 	uint64_t pte,*spt = NULL,*dpt = NULL;
 	uint64_t dstAddrSpace = dst->addrSpace->getNo() << 3;
 	uint64_t dstKey = virtDst | dstAddrSpace;
@@ -176,7 +186,7 @@ error:
 	dst->unmap(orgVirtDst,orgCount - count,alloc);
 	/* make the cow-pages writable again */
 	spt = NULL;
-	srcPageNo = PAGE_NO(orgVirtSrc);
+	srcPageNo = pageNumber(orgVirtSrc);
 	while(orgCount > count) {
 		if(!spt || (srcPageNo % PT_ENTRY_COUNT) == 0) {
 			spt = src->getPT(orgVirtSrc,false,alloc);
@@ -202,7 +212,7 @@ int PageDirBase::map(uintptr_t virt,size_t count,PageTables::Allocator &alloc,ui
 	PageDir *pdir = static_cast<PageDir*>(this);
 	uintptr_t orgVirt = virt;
 	size_t orgCount = count;
-	ulong pageNo = PAGE_NO(virt);
+	ulong pageNo = pageNumber(virt);
 	uint64_t key,pteFlags = 0;
 	uint64_t pteAttr = 0;
 	uint64_t pte,oldFrame,*pt = NULL;
@@ -268,7 +278,7 @@ void PageDirBase::unmapFromCur(uintptr_t virt,size_t count,PageTables::Allocator
 
 void PageDirBase::unmap(uintptr_t virt,size_t count,PageTables::Allocator &alloc) {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	ulong pageNo = PAGE_NO(virt);
+	ulong pageNo = pageNumber(virt);
 	uint64_t pte,*pt = NULL;
 	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
@@ -299,9 +309,9 @@ void PageDirBase::unmap(uintptr_t virt,size_t count,PageTables::Allocator &alloc
 
 uint64_t *PageDir::getPT(uintptr_t virt,bool create,PageTables::Allocator &alloc) const {
 	ulong j,i = virt >> 61;
-	ulong size1 = SEGSIZE(rv,i + 1);
-	ulong size2 = SEGSIZE(rv,i);
-	uint64_t c,pageNo = PAGE_NO(virt);
+	ulong size1 = segSize(rv,i + 1);
+	ulong size2 = segSize(rv,i);
+	uint64_t c,pageNo = pageNumber(virt);
 	uint64_t limit = 1UL << (10 * (size1 - size2));
 	if(size1 < size2 || pageNo >= limit)
 		return NULL;
@@ -311,7 +321,7 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,PageTables::Allocator &alloc
 		j++;
 		pageNo /= PT_ENTRY_COUNT;
 	}
-	pageNo = PAGE_NO(virt);
+	pageNo = pageNumber(virt);
 	c = ((rv & 0xFFFFFFFFFF) >> 13) + size2 + j;
 	for(; j > 0; j--) {
 		ulong ax = (pageNo >> (10 * j)) & 0x3FF;
@@ -340,7 +350,7 @@ uint64_t PageDir::getPTE(uintptr_t virt) const {
 	uint64_t pte = 0;
 	uint64_t *pt = getPT(virt,false,alloc);
 	if(pt)
-		return pt[PAGE_NO(virt) % PT_ENTRY_COUNT];
+		return pt[pageNumber(virt) % PT_ENTRY_COUNT];
 	return pte;
 }
 
@@ -397,14 +407,14 @@ size_t PageDir::removePts(uint64_t pageNo,uint64_t c,ulong level,ulong depth,Pag
 
 size_t PageDir::remEmptyPts(uintptr_t virt,PageTables::Allocator &alloc) {
 	ulong i = virt >> 61;
-	uint64_t pageNo = PAGE_NO(virt);
+	uint64_t pageNo = pageNumber(virt);
 	int j = 0;
 	while(pageNo >= PT_ENTRY_COUNT) {
 		j++;
 		pageNo /= PT_ENTRY_COUNT;
 	}
 	pageNo = (virt & 0x1FFFFFFFFFFFFFFF) >> PAGE_BITS;
-	uint64_t c = ((rv & 0xFFFFFFFFFF) >> 13) + SEGSIZE(rv,i) + j;
+	uint64_t c = ((rv & 0xFFFFFFFFFF) >> 13) + segSize(rv,i) + j;
 	return removePts(pageNo,c,j,0,alloc);
 }
 
@@ -422,10 +432,10 @@ void PageDirBase::print(OStream &os,A_UNUSED uint parts) const {
 	/* go through all page-tables in the root-location */
 	os.writef("root-location @ %p [n=%X]:\n",root,(pdir->rv & 0x1FF8) >> 3);
 	for(size_t i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(pdir->rv,i + 1) - SEGSIZE(pdir->rv,i);
+		ulong ssize = segSize(pdir->rv,i + 1) - segSize(pdir->rv,i);
 		uintptr_t addr = (i << 61);
 		os.writef("segment %zu:\n",i);
-		for(size_t j = 0; j < segSize; j++) {
+		for(size_t j = 0; j < ssize; j++) {
 			PageDir::printPageTable(os,i,addr,(uint64_t*)root,j,1);
 			addr = (i << 61) | (PAGE_SIZE * (1UL << (10 * (j + 1))));
 			root += PAGE_SIZE;
@@ -498,8 +508,8 @@ size_t PageDirBase::getPageCount() const {
 	PageDir *cur = Proc::getCurPageDir();
 	uintptr_t root = DIR_MAP_AREA | (cur->rv & 0xFFFFFFE000);
 	for(size_t i = 0; i < SEGMENT_COUNT; i++) {
-		ulong segSize = SEGSIZE(cur->rv,i + 1) - SEGSIZE(cur->rv,i);
-		for(size_t j = 0; j < segSize; j++) {
+		ulong ssize = segSize(cur->rv,i + 1) - segSize(cur->rv,i);
+		for(size_t j = 0; j < ssize; j++) {
 			count += PageDir::getPageCountOf((uint64_t*)root,j);
 			root += PAGE_SIZE;
 		}

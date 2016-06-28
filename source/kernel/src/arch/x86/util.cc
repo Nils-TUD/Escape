@@ -25,10 +25,10 @@
 #include <common.h>
 #include <util.h>
 
-/* the x86-call instruction is 5 bytes long */
-#define CALL_INSTR_SIZE			5
-
 static Util::FuncCall *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
+
+/* the x86-call instruction is 5 bytes long */
+static const int CALL_INSTR_SIZE	= 5;
 
 /* the beginning of the kernel-stack */
 extern uintptr_t kernelStack;

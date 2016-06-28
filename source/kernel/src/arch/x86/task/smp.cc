@@ -35,7 +35,7 @@
 #include <util.h>
 #include <video.h>
 
-#define TRAMPOLINE_ADDR		0x7000
+static const uintptr_t TRAMPOLINE_ADDR		= 0x7000;
 
 EXTERN_C void apEntry();
 

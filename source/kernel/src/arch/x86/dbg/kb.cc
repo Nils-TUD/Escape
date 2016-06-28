@@ -22,9 +22,12 @@
 #include <sys/keycodes.h>
 #include <common.h>
 
-#define IOPORT_KB_DATA				0x60
-#define IOPORT_KB_CTRL				0x64
-#define STATUS_OUTBUF_FULL			(1 << 0)
+enum {
+	IOPORT_KB_DATA				= 0x60,
+	IOPORT_KB_CTRL				= 0x64,
+};
+
+static const uint8_t STATUS_OUTBUF_FULL = 1 << 0;
 
 struct ScanCodeEntry {
 	uint8_t def;

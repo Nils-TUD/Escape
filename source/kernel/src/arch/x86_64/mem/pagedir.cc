@@ -22,11 +22,11 @@
 #include <assert.h>
 #include <common.h>
 
-#define SHARED_AREA_SIZE	(KFREE_AREA + KFREE_AREA_SIZE - KHEAP_START)
-#define SHPT_COUNT			(1 + (DIR_MAP_AREA_SIZE / PD_SIZE) + \
- 							((SHARED_AREA_SIZE + PDPT_SIZE - 1) / PDPT_SIZE) + \
- 							((SHARED_AREA_SIZE + PD_SIZE - 1) / PD_SIZE) + \
- 							((SHARED_AREA_SIZE + PT_SIZE - 1) / PT_SIZE))
+static const size_t SHARED_AREA_SIZE	= KFREE_AREA + KFREE_AREA_SIZE - KHEAP_START;
+static const ulong SHPT_COUNT			= 1 + (DIR_MAP_AREA_SIZE / PD_SIZE) +
+				 							((SHARED_AREA_SIZE + PDPT_SIZE - 1) / PDPT_SIZE) +
+				 							((SHARED_AREA_SIZE + PD_SIZE - 1) / PD_SIZE) +
+				 							((SHARED_AREA_SIZE + PT_SIZE - 1) / PT_SIZE);
 
 extern void *proc0TLPD;
 /* we can't allocate any frames at the beginning. so put the shared-pagetables in bss */

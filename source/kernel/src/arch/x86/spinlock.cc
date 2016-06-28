@@ -24,7 +24,7 @@
 #include <util.h>
 
 #if DEBUG_LOCKS
-#define MAX_WAIT_SECS		2
+static const int MAX_WAIT_SECS 	= 2;
 
 static void panic(const char *msg,...) {
 	static bool havePaniced = false;

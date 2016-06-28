@@ -31,7 +31,7 @@
 #include <ostringstream.h>
 #include <string.h>
 
-#define DIRE_SIZE		(sizeof(struct dirent) - (NAME_MAX + 1))
+static const size_t DIRE_HEAD_SIZE	= sizeof(struct dirent) - (NAME_MAX + 1);
 
 static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e);
 
@@ -71,7 +71,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e) {
 	ssize_t res;
 	/* default way; read the entry without name first */
-	if((res = file->read(pid,e,DIRE_SIZE)) < 0)
+	if((res = file->read(pid,e,DIRE_HEAD_SIZE)) < 0)
 		return res;
 	/* EOF? */
 	if(res == 0)
@@ -90,8 +90,8 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e) {
 		return res;
 
 	/* if the record is longer, we have to skip the stuff until the next record */
-	if(e->d_reclen - DIRE_SIZE > len) {
-		len = (e->d_reclen - DIRE_SIZE - len);
+	if(e->d_reclen - DIRE_HEAD_SIZE > len) {
+		len = (e->d_reclen - DIRE_HEAD_SIZE - len);
 		if((res = file->seek(pid,len,SEEK_CUR)) < 0)
 			return res;
 	}

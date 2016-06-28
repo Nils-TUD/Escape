@@ -50,8 +50,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define MAX_VIEWNAME_LEN	16
-
 class ViewOStream : public OStream {
 public:
 	explicit ViewOStream(Lines *l) : OStream(), lines(l) {
@@ -70,7 +68,7 @@ private:
 
 typedef void (*view_func)(OStream &os);
 struct View {
-	char name[MAX_VIEWNAME_LEN];
+	char name[16];
 	view_func func;
 };
 

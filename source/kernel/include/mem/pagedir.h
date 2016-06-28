@@ -25,21 +25,25 @@
 #include <cppsupport.h>
 
 /* flags for map() */
-#define PG_PRESENT				1
-#define PG_WRITABLE				2
-#define PG_EXECUTABLE			4
-#define PG_SUPERVISOR			8
+enum {
+	PG_PRESENT				= 1,
+	PG_WRITABLE				= 2,
+	PG_EXECUTABLE			= 4,
+	PG_SUPERVISOR			= 8,
 /* make it a global page */
-#define PG_GLOBAL				16
-#define PG_NOPAGES				32
+	PG_GLOBAL				= 16,
+	PG_NOPAGES				= 32,
+};
 
 /* for printing the page-directory */
-#define PD_PART_USER 			1
-#define PD_PART_KERNEL			2
-#define PD_PART_KHEAP			4
-#define PD_PART_PTBLS			8
-#define PD_PART_NOTSHARED		16
-#define PD_PART_ALL				(PD_PART_USER | PD_PART_KERNEL | PD_PART_PTBLS | PD_PART_NOTSHARED)
+enum {
+	PD_PART_USER 			= 1,
+	PD_PART_KERNEL			= 2,
+	PD_PART_KHEAP			= 4,
+	PD_PART_PTBLS			= 8,
+	PD_PART_NOTSHARED		= 16,
+	PD_PART_ALL				= PD_PART_USER | PD_PART_KERNEL | PD_PART_PTBLS | PD_PART_NOTSHARED,
+};
 
 class PageDir;
 class OStream;

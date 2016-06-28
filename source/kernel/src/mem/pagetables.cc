@@ -247,7 +247,7 @@ int PageTables::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 	bool needShootdown = false;
 	while(count-- > 0) {
 		/* remove and free page-table, if necessary */
-		pti = PT_IDX(virt,1);
+		pti = index(virt,1);
 		if(pti != lastPti) {
 			if(lastPti != PT_ENTRY_COUNT && (virt < KERNEL_AREA || virt >= KSTACK_AREA))
 				gc(virt - PAGE_SIZE,root | PTE_EXISTS,PT_LEVELS,PT_BITS - PT_BPL,alloc);
@@ -276,7 +276,7 @@ int PageTables::unmap(uintptr_t virt,size_t count,Allocator &alloc) {
 size_t PageTables::countEntries(pte_t pte,int level) const {
 	size_t count = 0;
 	pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (pte & PTE_FRAMENO_MASK));
-	size_t end = level == PT_LEVELS ? PT_IDX(KERNEL_AREA,level - 1) : PT_ENTRY_COUNT;
+	size_t end = level == PT_LEVELS ? index(KERNEL_AREA,level - 1) : PT_ENTRY_COUNT;
 	for(size_t i = 0; i < end; ++i) {
 		if(pt[i] & PTE_PRESENT) {
 			if(level == 1)

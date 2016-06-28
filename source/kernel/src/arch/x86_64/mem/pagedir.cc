@@ -40,7 +40,7 @@ void PageDirBase::init() {
 	/* put entry for physical memory in PML4 */
 	pte_t *pt2,*pt = (pte_t*)&proc0TLPD;
 	uintptr_t ptAddr = (uintptr_t)PageDir::sharedPtbls[shpt++] & ~KERNEL_BEGIN;
-	pt[PT_IDX(DIR_MAP_AREA,3)] = ptAddr | PTE_EXISTS | PTE_PRESENT | PTE_WRITABLE;
+	pt[PageTables::index(DIR_MAP_AREA,3)] = ptAddr | PTE_EXISTS | PTE_PRESENT | PTE_WRITABLE;
 
 	/* map first part of physical memory contiguously */
 	uintptr_t addr = 0;
@@ -99,13 +99,13 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	pte_t *npml4 = (pte_t*)(DIR_MAP_AREA + (pml4Frame << PAGE_BITS));
 
 	/* clear user-space PML4 entries */
-	memclear(npml4,PT_IDX(KERNEL_AREA,3) * sizeof(pte_t));
+	memclear(npml4,PageTables::index(KERNEL_AREA,3) * sizeof(pte_t));
 	/* copy remaining PML4 entries */
-	memcpy(npml4 + PT_IDX(KERNEL_AREA,3),pml4 + PT_IDX(KERNEL_AREA,3),
-			(PT_ENTRY_COUNT - PT_IDX(KERNEL_AREA,3)) * sizeof(pte_t));
+	memcpy(npml4 + PageTables::index(KERNEL_AREA,3),pml4 + PageTables::index(KERNEL_AREA,3),
+			(PT_ENTRY_COUNT - PageTables::index(KERNEL_AREA,3)) * sizeof(pte_t));
 
 	/* clear entry for non-shared page-tables */
-	npml4[PT_IDX(KSTACK_AREA,3)] = 0;
+	npml4[PageTables::index(KSTACK_AREA,3)] = 0;
 
 	/* map kernel-stack */
 	PageTables::KStackAllocator alloc;

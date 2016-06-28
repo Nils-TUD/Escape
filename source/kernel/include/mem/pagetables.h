@@ -25,8 +25,6 @@
 #include <common.h>
 #include <cppsupport.h>
 
-#define PT_IDX(addr,lvl)		(((addr) >> (PAGE_BITS + PT_BPL * (lvl))) & ((1 << PT_BPL) - 1))
-
 class PageTables {
 public:
 	/**
@@ -165,6 +163,15 @@ public:
 	 * Removes the entry for <addr> from the TLB.
 	 */
 	static void flushAddr(uintptr_t addr,bool wasPresent);
+
+	/**
+	 * @param addr the virtual address
+	 * @param lvl the level for which you want to have the index
+	 * @return the page table index for the given address in the given level
+	 */
+	static inline ulong index(uintptr_t addr,int lvl) {
+		return (addr >> (PAGE_BITS + PT_BPL * lvl)) & ((1 << PT_BPL) - 1);
+	}
 
 	explicit PageTables() : root() {
 	}

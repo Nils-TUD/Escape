@@ -33,8 +33,8 @@ void PageDirBase::init() {
 	pte_t *pt = (pte_t*)&proc0TLPD;
 	uintptr_t virt = DIR_MAP_AREA;
 	uint flags = PTE_PRESENT | PTE_WRITABLE | PTE_LARGE | PTE_EXISTS;
-	size_t end = PT_IDX(DIR_MAP_AREA + DIR_MAP_AREA_SIZE,1);
-	for(size_t i = PT_IDX(virt,1); i < end; ++i) {
+	size_t end = PageTables::index(DIR_MAP_AREA + DIR_MAP_AREA_SIZE,1);
+	for(size_t i = PageTables::index(virt,1); i < end; ++i) {
 		pt[i] = (virt - DIR_MAP_AREA) | flags;
 		virt += PT_SIZE;
 	}
@@ -77,18 +77,18 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	pte_t *npd = (pte_t*)(DIR_MAP_AREA + (pdirFrame << PAGE_BITS));
 
 	/* clear user-space page-tables */
-	memclear(npd,PT_IDX(KERNEL_AREA,1) * sizeof(pte_t));
+	memclear(npd,PageTables::index(KERNEL_AREA,1) * sizeof(pte_t));
 	/* copy kernel-space page-tables */
-	memcpy(npd + PT_IDX(KERNEL_AREA,1),
-			pd + PT_IDX(KERNEL_AREA,1),
-			(PT_IDX(KSTACK_AREA,1) - PT_IDX(KERNEL_AREA,1)) * sizeof(pte_t));
+	memcpy(npd + PageTables::index(KERNEL_AREA,1),
+			pd + PageTables::index(KERNEL_AREA,1),
+			(PageTables::index(KSTACK_AREA,1) - PageTables::index(KERNEL_AREA,1)) * sizeof(pte_t));
 	/* clear the remaining page-tables */
-	memclear(npd + PT_IDX(KSTACK_AREA,1),
-			(PT_ENTRY_COUNT - PT_IDX(KSTACK_AREA,1)) * sizeof(pte_t));
+	memclear(npd + PageTables::index(KSTACK_AREA,1),
+			(PT_ENTRY_COUNT - PageTables::index(KSTACK_AREA,1)) * sizeof(pte_t));
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
 	uintptr_t kstackAddr = t->getKernelStack();
-	npd[PT_IDX(kstackAddr,1)] =
+	npd[PageTables::index(kstackAddr,1)] =
 			stackPtFrame << PAGE_BITS | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
 	/* clear the page-table */
 	memclear((void*)(DIR_MAP_AREA + (stackPtFrame << PAGE_BITS)),PAGE_SIZE);
@@ -108,8 +108,8 @@ void PageDirBase::destroy() {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	pte_t *pd = (pte_t*)(DIR_MAP_AREA + pdir->pts.getRoot());
 	/* free page-tables for kernel-stack */
-	for(size_t i = PT_IDX(KSTACK_AREA,1);
-		i < PT_IDX(KSTACK_AREA + KSTACK_AREA_SIZE - 1,1); i++) {
+	for(size_t i = PageTables::index(KSTACK_AREA,1);
+		i < PageTables::index(KSTACK_AREA + KSTACK_AREA_SIZE - 1,1); i++) {
 		if(pd[i] & PTE_EXISTS) {
 			PhysMem::free(PTE_FRAMENO(pd[i]),PhysMem::KERN);
 			pd[i] = 0;

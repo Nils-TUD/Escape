@@ -47,7 +47,7 @@ void PageDirBase::init() {
 	memclear(pd,PAGE_SIZE);
 
 	/* insert pagedir in itself */
-	pd[PT_IDX(MAPPED_PTS_START,1)] = (frame << PAGE_BITS) | PTE_EXISTS | PTE_PRESENT | PTE_WRITABLE;
+	pd[PageTables::index(MAPPED_PTS_START,1)] = (frame << PAGE_BITS) | PTE_EXISTS | PTE_PRESENT | PTE_WRITABLE;
 
 	/* create kernel page-tables */
 	PageDir pdir;
@@ -83,22 +83,22 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 	pte_t *npd = (pte_t*)((pdirFrame * PAGE_SIZE) | DIR_MAP_AREA);
 
 	/* clear user-space page-tables */
-	memclear(npd,PT_IDX(KERNEL_AREA,1) * sizeof(pte_t));
+	memclear(npd,PageTables::index(KERNEL_AREA,1) * sizeof(pte_t));
 	/* copy kernel-space page-tables (beginning to temp-map-area, inclusive) */
-	memcpy(npd + PT_IDX(KERNEL_AREA,1),
-			pd + PT_IDX(KERNEL_AREA,1),
+	memcpy(npd + PageTables::index(KERNEL_AREA,1),
+			pd + PageTables::index(KERNEL_AREA,1),
 			(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE - KERNEL_AREA) /
 				(PAGE_SIZE * PT_ENTRY_COUNT) * sizeof(pte_t));
 	/* clear the rest */
-	memclear(npd + PT_IDX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE,1),
-			(PT_ENTRY_COUNT - PT_IDX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE,1))
+	memclear(npd + PageTables::index(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE,1),
+			(PT_ENTRY_COUNT - PageTables::index(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE,1))
 			* sizeof(pte_t));
 
 	/* insert pagedir in itself */
-	npd[PT_IDX(MAPPED_PTS_START,1)] = (pdirFrame << PAGE_BITS) | PTE_PRESENT | PTE_WRITABLE;
+	npd[PageTables::index(MAPPED_PTS_START,1)] = (pdirFrame << PAGE_BITS) | PTE_PRESENT | PTE_WRITABLE;
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	npd[PT_IDX(KERNEL_STACK,1)] =
+	npd[PageTables::index(KERNEL_STACK,1)] =
 			stackPtFrame << PAGE_BITS | PTE_PRESENT | PTE_WRITABLE | PTE_EXISTS;
 	/* clear the page-table */
 	memclear((void*)(DIR_MAP_AREA + (stackPtFrame << PAGE_BITS)),PAGE_SIZE);
@@ -112,7 +112,7 @@ void PageDirBase::destroy() {
 	assert((DIR_MAP_AREA + pdir->pts.getRoot()) != PageDir::curPDir);
 	/* free page-table for kernel-stack */
 	pte_t *pte = (pte_t*)(DIR_MAP_AREA + pdir->pts.getRoot());
-	PhysMem::free(PTE_FRAMENO(pte[PT_IDX(KERNEL_STACK,1)]),PhysMem::KERN);
+	PhysMem::free(PTE_FRAMENO(pte[PageTables::index(KERNEL_STACK,1)]),PhysMem::KERN);
 	/* free page-dir */
 	PhysMem::free(pdir->pts.getRoot() >> PAGE_BITS,PhysMem::KERN);
 }

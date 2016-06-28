@@ -26,19 +26,23 @@
 #include <cppsupport.h>
 #include <mutex.h>
 
-#define PF_BITCOUNT			3		/* number of bits occupied by real flags */
-#define PF_COPYONWRITE		1UL
-#define PF_DEMANDLOAD		2UL
-#define PF_SWAPPED			4UL
+enum {
+	PF_BITCOUNT			= 3,		/* number of bits occupied by real flags */
+	PF_COPYONWRITE		= 1UL,
+	PF_DEMANDLOAD		= 2UL,
+	PF_SWAPPED			= 4UL,
+};
 
-#define RF_SHAREABLE		1UL
-#define RF_GROWABLE			2UL
-#define RF_GROWS_DOWN		4UL
-#define RF_STACK			8UL
-#define RF_LOCKED			16UL
-#define RF_NOFREE			512UL	/* means that the memory should not be free'd on release */
-#define RF_WRITABLE			1024UL
-#define RF_EXECUTABLE		2048UL
+enum {
+	RF_SHAREABLE		= 1UL,
+	RF_GROWABLE			= 2UL,
+	RF_GROWS_DOWN		= 4UL,
+	RF_STACK			= 8UL,
+	RF_LOCKED			= 16UL,
+	RF_NOFREE			= 512UL,	/* means that the memory should not be free'd on release */
+	RF_WRITABLE			= 1024UL,
+	RF_EXECUTABLE		= 2048UL,
+};
 
 class OStream;
 class VirtMem;

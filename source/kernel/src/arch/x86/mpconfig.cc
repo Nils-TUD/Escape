@@ -26,12 +26,12 @@
 #include <util.h>
 
 /* bios data area contains address of EBDA and the base memory size */
-#define BDA_EBDA			0x40E	/* TODO not always available? */
-#define BDA_MEMSIZE			0x413
-#define BIOS_ROM_AREA		0xF0000
+static const uintptr_t BDA_EBDA			= 0x40E;	/* TODO not always available? */
+static const size_t BDA_MEMSIZE			= 0x413;
+static const uintptr_t BIOS_ROM_AREA	= 0xF0000;
 
-#define MPF_SIGNATURE		0x5F504D5F	/* _MP_ */
-#define MPC_SIGNATURE		0x504D4350	/* PCMP */
+static const uint32_t MPF_SIGNATURE		= 0x5F504D5F;	/* _MP_ */
+static const uint32_t MPC_SIGNATURE		= 0x504D4350;	/* PCMP */
 
 MPConfig::FloatPtr *MPConfig::mpf;
 

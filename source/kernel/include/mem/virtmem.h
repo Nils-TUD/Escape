@@ -21,6 +21,7 @@
 
 #include <esc/col/slist.h>
 #include <mem/pagedir.h>
+#include <mem/region.h>
 #include <mem/vmfreemap.h>
 #include <mem/vmtree.h>
 #include <common.h>
@@ -31,27 +32,33 @@
 #	define DISABLE_DEMLOAD	0
 #endif
 
-#define PROT_READ			0
-#define PROT_WRITE			RF_WRITABLE
-#define PROT_EXEC			RF_EXECUTABLE
+enum {
+	PROT_READ			= 0,
+	PROT_WRITE			= RF_WRITABLE,
+	PROT_EXEC			= RF_EXECUTABLE,
+};
 
-#define MAP_PRIVATE			0
-#define MAP_SHARED			RF_SHAREABLE
-#define MAP_GROWABLE		RF_GROWABLE
-#define MAP_GROWSDOWN		RF_GROWS_DOWN
-#define MAP_STACK			RF_STACK
-#define MAP_LOCKED			RF_LOCKED
-#define MAP_POPULATE		32UL
-#define MAP_NOSWAP			64UL
-#define MAP_FIXED			128UL
-#define MAP_NOMAP			256UL		/* kernel-intern */
-#define MAP_NOFREE			RF_NOFREE	/* kernel-intern */
+enum {
+	MAP_PRIVATE			= 0,
+	MAP_SHARED			= RF_SHAREABLE,
+	MAP_GROWABLE		= RF_GROWABLE,
+	MAP_GROWSDOWN		= RF_GROWS_DOWN,
+	MAP_STACK			= RF_STACK,
+	MAP_LOCKED			= RF_LOCKED,
+	MAP_POPULATE		= 32UL,
+	MAP_NOSWAP			= 64UL,
+	MAP_FIXED			= 128UL,
+	MAP_NOMAP			= 256UL,		/* kernel-intern */
+	MAP_NOFREE			= RF_NOFREE,	/* kernel-intern */
 
-#define MAP_USER_FLAGS		(MAP_SHARED | MAP_GROWABLE | MAP_GROWSDOWN | MAP_STACK | \
- 							 MAP_LOCKED | MAP_POPULATE | MAP_NOSWAP | MAP_FIXED)
+	MAP_USER_FLAGS		= MAP_SHARED | MAP_GROWABLE | MAP_GROWSDOWN | MAP_STACK |
+ 							MAP_LOCKED | MAP_POPULATE | MAP_NOSWAP | MAP_FIXED,
+};
 
-#define MAP_PHYS_ALLOC		0
-#define MAP_PHYS_MAP		1
+enum {
+	MAP_PHYS_ALLOC		= 0,
+	MAP_PHYS_MAP		= 1,
+};
 
 class Proc;
 class Thread;

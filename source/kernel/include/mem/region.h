@@ -20,7 +20,6 @@
 #pragma once
 
 #include <esc/col/islist.h>
-#include <mem/virtmem.h>
 #include <assert.h>
 #include <common.h>
 #include <cppsupport.h>
@@ -46,6 +45,7 @@ enum {
 
 class OStream;
 class VirtMem;
+class OpenFile;
 
 class Region : public CacheAllocatable {
 public:

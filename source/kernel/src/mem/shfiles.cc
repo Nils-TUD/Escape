@@ -19,6 +19,7 @@
 
 #include <mem/region.h>
 #include <mem/shfiles.h>
+#include <mem/virtmem.h>
 #include <vfs/openfile.h>
 #include <common.h>
 

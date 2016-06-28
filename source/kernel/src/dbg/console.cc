@@ -264,7 +264,7 @@ void Console::navigation(OStream &os,NaviBackend *backend) {
 		display(os,backend,search,searchClone,searchMode,&addr);
 		searchMode = SEARCH_NONE;
 		Keyboard::Event ev;
-		Keyboard::get(&ev,KEV_PRESS,true);
+		Keyboard::get(&ev,Keyboard::EVENT_PRESS,true);
 		switch(ev.keycode) {
 			case VK_UP:
 				addr = decrAddr(addr,BYTES_PER_LINE);
@@ -385,7 +385,7 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
 			if(count % 100 == 0) {
 				vid.goTo(VID_ROWS - 1,0);
 				Keyboard::Event ev;
-				if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_S) {
+				if(Keyboard::get(&ev,Keyboard::EVENT_PRESS,false) && ev.keycode == VK_S) {
 					*addr = startAddr;
 					break;
 				}
@@ -485,12 +485,12 @@ char *Console::readLine() {
 	size_t i = 0;
 	while(true) {
 		Keyboard::Event ev;
-		Keyboard::get(&ev,KEV_PRESS,true);
+		Keyboard::get(&ev,Keyboard::EVENT_PRESS,true);
 		if(i >= sizeof(line) - 1 || ev.keycode == VK_ENTER)
 			break;
 
 		/* emulate exit for ^D on an empty line */
-		if(i == 0 && (ev.flags & KE_CTRL) && ev.keycode == VK_D) {
+		if(i == 0 && (ev.flags & Keyboard::MOD_CTRL) && ev.keycode == VK_D) {
 			strcpy(line,"exit");
 			i = SSTRLEN("exit");
 			break;

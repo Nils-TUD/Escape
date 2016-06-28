@@ -317,7 +317,7 @@ void Interrupts::irqKeyboard(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	/* react on F12 presses during boot-phase until the keyboard driver has installed the default
 	 * irq routine for keyboard interrupts. */
 	Keyboard::Event ev;
-	if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+	if(Keyboard::get(&ev,Keyboard::EVENT_PRESS,false) && ev.keycode == VK_F12)
 		Console::start(NULL);
 
 	eoi(stack->intrptNo);

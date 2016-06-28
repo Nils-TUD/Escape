@@ -49,7 +49,7 @@ void Video::writec(char c) {
 	/* do an explicit newline if necessary */
 	if(col >= VID_COLS) {
 		if(Config::get(Config::LINE_BY_LINE))
-			Keyboard::get(NULL,KEV_PRESS,true);
+			Keyboard::get(NULL,Keyboard::EVENT_PRESS,true);
 		row++;
 		col = 0;
 	}
@@ -57,7 +57,7 @@ void Video::writec(char c) {
 
 	if(c == '\n') {
 		if(Config::get(Config::LINE_BY_LINE))
-			Keyboard::get(NULL,KEV_PRESS,true);
+			Keyboard::get(NULL,Keyboard::EVENT_PRESS,true);
 		row++;
 		col = 0;
 	}

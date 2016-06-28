@@ -192,7 +192,7 @@ void Interrupts::irqKB(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 		/* this way, we can debug the system in the startup-phase without affecting timings
 		 * (before viewing the log ;)) */
 		Keyboard::Event ev;
-		if(Keyboard::get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+		if(Keyboard::get(&ev,Keyboard::EVENT_PRESS,false) && ev.keycode == VK_F12)
 			Console::start(NULL);
 	}
 

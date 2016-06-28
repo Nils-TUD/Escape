@@ -122,7 +122,7 @@ void Util::vpanic(const char *fmt,va_list ap) {
 
 	vid.writef("\nPress any key to start debugger");
 	while(1) {
-		Keyboard::get(NULL,KEV_PRESS,true);
+		Keyboard::get(NULL,Keyboard::EVENT_PRESS,true);
 		Console::start(NULL);
 	}
 }

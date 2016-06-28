@@ -165,8 +165,8 @@ bool Keyboard::get(Event *ev,uint8_t events,bool wait) {
 
 		/* key pressed/released */
 		if(translate(ev,keycode)) {
-			if(((flags & KE_BREAK) && (events & KEV_RELEASE)) ||
-				(!(flags & KE_BREAK) && (events & KEV_PRESS)))
+			if(((flags & MOD_BREAK) && (events & EVENT_RELEASE)) ||
+				(!(flags & MOD_BREAK) && (events & EVENT_PRESS)))
 				return true;
 		}
 	}
@@ -182,15 +182,15 @@ bool Keyboard::translate(Event *ev,uint8_t keycode) {
 	switch(keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:
-			flags = toggleFlag(flags & KE_BREAK,flags,KE_SHIFT);
+			flags = toggleFlag(flags & MOD_BREAK,flags,MOD_SHIFT);
 			break;
 		case VK_LALT:
 		case VK_RALT:
-			flags = toggleFlag(flags & KE_BREAK,flags,KE_ALT);
+			flags = toggleFlag(flags & MOD_BREAK,flags,MOD_ALT);
 			break;
 		case VK_LCTRL:
 		case VK_RCTRL:
-			flags = toggleFlag(flags & KE_BREAK,flags,KE_CTRL);
+			flags = toggleFlag(flags & MOD_BREAK,flags,MOD_CTRL);
 			break;
 	}
 	if(ev)
@@ -198,9 +198,9 @@ bool Keyboard::translate(Event *ev,uint8_t keycode) {
 
 	/* fetch char from keymap */
 	if(ev) {
-		if(flags & KE_SHIFT)
+		if(flags & MOD_SHIFT)
 			ev->character = km->shift;
-		else if(flags & KE_ALT)
+		else if(flags & MOD_ALT)
 			ev->character = km->alt;
 		else
 			ev->character = km->def;

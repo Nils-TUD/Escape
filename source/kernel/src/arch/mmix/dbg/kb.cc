@@ -193,9 +193,9 @@ uint8_t Keyboard::getKeyCode(uint *pflags) {
 	ScanCodeEntry *e = scanCode2KeyCode + (scanCode % 0x84);
 	uint8_t keycode = isExt ? e->ext : e->def;
 	if(isBreak)
-		*pflags |= KE_BREAK;
+		*pflags |= MOD_BREAK;
 	else
-		*pflags &= ~KE_BREAK;
+		*pflags &= ~MOD_BREAK;
 	isExt = false;
 	isBreak = false;
 	return keycode;

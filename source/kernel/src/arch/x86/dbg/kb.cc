@@ -176,9 +176,9 @@ uint8_t Keyboard::getKeyCode(uint *pflags) {
 	}
 
 	/* break? */
-	*pflags &= ~KE_BREAK;
+	*pflags &= ~MOD_BREAK;
 	if(scanCode & 0x80) {
-		*pflags |= KE_BREAK;
+		*pflags |= MOD_BREAK;
 		scanCode &= ~0x80;
 	}
 

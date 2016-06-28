@@ -21,14 +21,6 @@
 
 #include <common.h>
 
-#define KEV_PRESS	1
-#define KEV_RELEASE	2
-
-#define KE_SHIFT	1
-#define KE_CTRL		2
-#define KE_ALT		4
-#define KE_BREAK	8
-
 class Keyboard {
 	Keyboard() = delete;
 
@@ -39,6 +31,18 @@ class Keyboard {
 	};
 
 public:
+	enum {
+		EVENT_PRESS 	= 1,
+		EVENT_RELEASE 	= 2,
+	};
+
+	enum {
+		MOD_SHIFT		= 1,
+		MOD_CTRL		= 2,
+		MOD_ALT			= 4,
+		MOD_BREAK		= 8,
+	};
+
 	struct Event {
 		uint8_t keycode;
 		char character;
@@ -46,7 +50,7 @@ public:
 	};
 
 	/**
-	 * @param flags will be changed to set/unset KE_BREAK
+	 * @param flags will be changed to set/unset MOD_BREAK
 	 * @return the keycode, if there is any, or VK_NOKEY
 	 */
 	static uint8_t getKeyCode(uint *flags);

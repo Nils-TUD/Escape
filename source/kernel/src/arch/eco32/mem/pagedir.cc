@@ -30,10 +30,9 @@
 #include <util.h>
 #include <video.h>
 
-#define TLB_SIZE					32
-#define TLB_FIXED					4
+static const size_t TLB_SIZE 	= 32;
 
-uintptr_t PageDir::curPDir = 0;
+uintptr_t PageDir::curPDir 		= 0;
 
 void PageDirBase::init() {
 	/* set page-dir of first process */

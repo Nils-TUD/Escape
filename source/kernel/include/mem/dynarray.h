@@ -46,16 +46,6 @@
  * have a huge static array.
  */
 
-/* for i586 and eco32, we need only 3 regions; one for gft, one for vfs-nodes and one for sll-nodes */
-/* but one additional one for the unit-tests doesn't hurt */
-#if defined(__x86__)
-#	define DYNA_REG_COUNT	4
-#elif defined(__eco32__)
-#	define DYNA_REG_COUNT	4
-#elif defined(__mmix__)
-#	define DYNA_REG_COUNT	128
-#endif
-
 class DynArray : public CacheAllocatable {
 	/* describes a dynarray-region */
 	struct Region {
@@ -63,6 +53,16 @@ class DynArray : public CacheAllocatable {
 		size_t size;
 		Region *next;
 	};
+
+/* for i586 and eco32, we need only 3 regions; one for gft, one for vfs-nodes and one for sll-nodes */
+/* but one additional one for the unit-tests doesn't hurt */
+#if defined(__x86__)
+	static const size_t REG_COUNT		= 4;
+#elif defined(__eco32__)
+	static const size_t REG_COUNT		= 4;
+#elif defined(__mmix__)
+	static const size_t REG_COUNT		= 128;
+#endif
 
 public:
 	/**

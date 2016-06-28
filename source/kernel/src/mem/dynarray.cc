@@ -21,14 +21,14 @@
 #include <common.h>
 #include <lockguard.h>
 
-DynArray::Region DynArray::regionstore[DYNA_REG_COUNT];
+DynArray::Region DynArray::regionstore[REG_COUNT];
 DynArray::Region *DynArray::freeList;
 size_t DynArray::totalPages = 0;
 
 void DynArray::init() {
 	regionstore[0].next = NULL;
 	freeList = regionstore;
-	for(size_t i = 1; i < DYNA_REG_COUNT; i++) {
+	for(size_t i = 1; i < REG_COUNT; i++) {
 		regionstore[i].next = freeList;
 		freeList = regionstore + i;
 	}

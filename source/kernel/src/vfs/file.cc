@@ -73,9 +73,9 @@ int VFSFile::doReserve(size_t newSize) {
 	if(!dynamic)
 		return -ENOTSUP;
 	/* ensure that we allocate enough memory */
-	if(newSize > MAX_VFS_FILE_SIZE)
+	if(newSize > VFS::MAX_FILE_SIZE)
 		return -ENOMEM;
-	newSize = MIN(MAX(newSize,size * 2),MAX_VFS_FILE_SIZE);
+	newSize = MIN(MAX(newSize,size * 2),VFS::MAX_FILE_SIZE);
 	void *newData = Cache::realloc(data,newSize);
 	if(!newData)
 		return -ENOMEM;

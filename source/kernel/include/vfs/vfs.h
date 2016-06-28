@@ -24,13 +24,6 @@
 #include <vfs/node.h>
 #include <common.h>
 
-#define MAX_VFS_FILE_SIZE			(1024 * 1024)
-
-/* all flags that the user can use */
-#define VFS_USER_FLAGS				(VFS_WRITE | VFS_READ | VFS_MSGS | VFS_NOCHAN | \
- 									 VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK | \
- 									 VFS_LONELY | VFS_EXCL)
-
 class Proc;
 class VFSMS;
 
@@ -38,6 +31,8 @@ class VFS {
 	VFS() = delete;
 
 public:
+	static const size_t MAX_FILE_SIZE 	= 1024 * 1024;
+
 	/**
 	 * Initializes the virtual file system
 	 */

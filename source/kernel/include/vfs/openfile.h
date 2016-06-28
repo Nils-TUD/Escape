@@ -49,6 +49,10 @@ enum {
 	VFS_NONODERES 	= 4096,		/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
 	VFS_SIGNALS 	= 8192,		/* kernel-intern: allow signals during blocking */
 	VFS_BLOCK 		= 16384,	/* kernel-intern: force blocking */
+
+	/* all flags that the user can use */
+	VFS_USER_FLAGS	= VFS_MSGS | VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE |
+						VFS_APPEND | VFS_NOBLOCK | VFS_LONELY | VFS_EXCL | VFS_NOCHAN,
 };
 
 class VFS;

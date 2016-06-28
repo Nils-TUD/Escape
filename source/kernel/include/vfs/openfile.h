@@ -31,24 +31,24 @@
 
 /* GFT flags */
 enum {
-	VFS_NOACCESS = 0,		/* no read and write */
-	VFS_MSGS = 1,			/* exchange msgs with a device */
-	VFS_EXEC = 1,			/* kernel-intern: for accessing directories; the same as VFS_MSGS
-							 * on purpose */
-	VFS_WRITE = 2,
-	VFS_READ = 4,
-	VFS_CREATE = 8,
-	VFS_TRUNCATE = 16,
-	VFS_APPEND = 32,
-	VFS_NOBLOCK = 64,
-	VFS_LONELY = 128,		/* disallow other accesses */
-	VFS_EXCL = 256,			/* fail if the file already exists */
-	VFS_NOCHAN = 512,		/* don't create a channel, but open the device itself */
-	VFS_NOLINKRES = 1024,	/* kernel-intern: don't resolve last link in path */
-	VFS_DEVICE = 2048,		/* kernel-intern: whether the file was created for a device */
-	VFS_NONODERES = 4096,	/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
-	VFS_SIGNALS = 8192,		/* kernel-intern: allow signals during blocking */
-	VFS_BLOCK = 16384		/* kernel-intern: force blocking */
+	VFS_NOACCESS 	= 0,		/* no read and write */
+	VFS_MSGS 		= 1,		/* exchange msgs with a device */
+	VFS_EXEC		= 1,		/* kernel-intern: for accessing directories; the same as VFS_MSGS
+							 	 * on purpose */
+	VFS_WRITE 		= 2,
+	VFS_READ 		= 4,
+	VFS_CREATE 		= 8,
+	VFS_TRUNCATE 	= 16,
+	VFS_APPEND 		= 32,
+	VFS_NOBLOCK 	= 64,
+	VFS_LONELY 		= 128,		/* disallow other accesses */
+	VFS_EXCL 		= 256,		/* fail if the file already exists */
+	VFS_NOCHAN 		= 512,		/* don't create a channel, but open the device itself */
+	VFS_NOLINKRES 	= 1024,		/* kernel-intern: don't resolve last link in path */
+	VFS_DEVICE 		= 2048,		/* kernel-intern: whether the file was created for a device */
+	VFS_NONODERES 	= 4096,		/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
+	VFS_SIGNALS 	= 8192,		/* kernel-intern: allow signals during blocking */
+	VFS_BLOCK 		= 16384,	/* kernel-intern: force blocking */
 };
 
 class VFS;

@@ -31,13 +31,15 @@
 #include <util.h>
 #include <video.h>
 
-#define MAX_ARG_COUNT	16
-#define MAX_ARG_LEN		256
-#define KERNEL_PERCENT	40
-#define BAR_HEIGHT		1
-#define BAR_WIDTH		60
-#define BAR_PAD			10
-#define BAR_TEXT_PAD	1
+static const size_t MAX_ARG_COUNT	= 16;
+static const size_t MAX_ARG_LEN		= 256;
+
+static const int KERNEL_PERCENT		= 40;
+
+static const size_t BAR_HEIGHT		= 1;
+static const size_t BAR_WIDTH		= 60;
+static const size_t BAR_PAD			= 10;
+static const size_t BAR_TEXT_PAD	= 1;
 
 extern void (*CTORS_BEGIN)();
 extern void (*CTORS_END)();

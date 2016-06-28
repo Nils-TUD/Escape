@@ -407,7 +407,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 
 			/* find swap-block */
 			ulong block = SwapMap::alloc();
-			assert(block != INVALID_BLOCK);
+			assert(block != SwapMap::INVALID);
 
 #if DEBUG_SWAP
 			Log::get().writef("OUT: %d of region %x (block %d)\n",index,vmreg->reg,block);

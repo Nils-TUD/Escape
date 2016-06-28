@@ -25,8 +25,6 @@
 #include <lockguard.h>
 #include <spinlock.h>
 
-#define INVALID_BLOCK		0xFFFFFFFF
-
 class SwapMap {
 	SwapMap() = delete;
 
@@ -36,6 +34,8 @@ class SwapMap {
 	};
 
 public:
+	static const ulong INVALID 	= 0xFFFFFFFF;
+
 	/**
 	 * Inits the swap-map
 	 *
@@ -47,7 +47,7 @@ public:
 	/**
 	 * Allocates 1 block on the swap-device
 	 *
-	 * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
+	 * @return the starting block on the swap-device or INVALID if no free space is left
 	 */
 	static ulong alloc();
 

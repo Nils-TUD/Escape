@@ -152,7 +152,7 @@ static void test_swapmap6() {
 
 	for(size_t i = 0; i < total; i++) {
 		blocks[i] = SwapMap::alloc();
-		test_assertTrue(blocks[i] != INVALID_BLOCK);
+		test_assertTrue(blocks[i] != SwapMap::INVALID);
 	}
 	for(size_t i = 0; i < total; i++)
 		SwapMap::free(blocks[i]);

@@ -58,7 +58,7 @@ bool SwapMap::init(size_t swapSize) {
 ulong SwapMap::alloc() {
 	LockGuard<SpinLock> g(&lock);
 	if(!freeList)
-		return INVALID_BLOCK;
+		return INVALID;
 	Block *block = freeList;
 	freeList = freeList->next;
 	block->refCount = 1;

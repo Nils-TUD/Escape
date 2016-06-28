@@ -31,9 +31,9 @@
 #include <util.h>
 #include <video.h>
 
-#define MAX_ACPI_PAGES		32
-#define BDA_EBDA			0x40E	/* TODO not always available? */
-#define BIOS_AREA			0xE0000
+static const size_t MAX_ACPI_PAGES		= 32;
+static const uintptr_t BDA_EBDA			= 0x40E;	/* TODO not always available? */
+static const uintptr_t BIOS_AREA		= 0xE0000;
 
 bool ACPI::enabled = false;
 ACPI::RSDP *ACPI::rsdp;

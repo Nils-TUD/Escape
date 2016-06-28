@@ -27,7 +27,7 @@ typedef int vmreg_t;
 typedef uintptr_t frameno_t;
 
 #ifndef NDEBUG
-#define DEBUGGING 1
+#	define DEBUGGING 1
 #endif
 
 /* indicates that a pointer might point into userspace */

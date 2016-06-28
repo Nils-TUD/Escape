@@ -27,9 +27,9 @@ void Video::move() {
 	/* last line? */
 	if(row >= VID_ROWS) {
 		/* copy all chars one line back */
-		copyScrToScr(screen(),(uint32_t*)screen() + MAX_COLS,VID_ROWS - 1);
+		copyScrToScr(screen(),(uint32_t*)screen() + VID_MAX_COLS,VID_ROWS - 1);
 		/* clear last line */
-		uint32_t *scr = (uint32_t*)screen() + MAX_COLS * (VID_ROWS - 1);
+		uint32_t *scr = (uint32_t*)screen() + VID_MAX_COLS * (VID_ROWS - 1);
 		for(size_t x = 0; x < VID_COLS; x++)
 			*scr++ = 0;
 		row--;
@@ -42,8 +42,8 @@ void Video::copyScrToScr(void *dst,const void *src,size_t rows) {
 	for(size_t y = 0; y < rows; y++) {
 		for(size_t x = 0; x < VID_COLS; x++)
 			*idst++ = *isrc++;
-		idst += MAX_COLS - VID_COLS;
-		isrc += MAX_COLS - VID_COLS;
+		idst += VID_MAX_COLS - VID_COLS;
+		isrc += VID_MAX_COLS - VID_COLS;
 	}
 }
 
@@ -53,7 +53,7 @@ void Video::copyScrToMem(void *dst,const void *src,size_t rows) {
 	for(size_t y = 0; y < rows; y++) {
 		for(size_t x = 0; x < VID_COLS; x++)
 			*idst++ = *isrc++;
-		isrc += MAX_COLS - VID_COLS;
+		isrc += VID_MAX_COLS - VID_COLS;
 	}
 }
 
@@ -63,7 +63,7 @@ void Video::copyMemToScr(void *dst,const void *src,size_t rows) {
 	for(size_t y = 0; y < rows; y++) {
 		for(size_t x = 0; x < VID_COLS; x++)
 			*idst++ = *isrc++;
-		idst += MAX_COLS - VID_COLS;
+		idst += VID_MAX_COLS - VID_COLS;
 	}
 }
 
@@ -72,6 +72,6 @@ void Video::clear() {
 	for(size_t y = 0; y < VID_ROWS; y++) {
 		for(size_t x = 0; x < VID_COLS; x++)
 			*scr++ = 0;
-		scr += MAX_COLS - VID_COLS;
+		scr += VID_MAX_COLS - VID_COLS;
 	}
 }

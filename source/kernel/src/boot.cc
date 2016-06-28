@@ -38,8 +38,6 @@
 #define BAR_WIDTH		60
 #define BAR_PAD			10
 #define BAR_TEXT_PAD	1
-#define BAR_PADX		((VID_COLS - BAR_WIDTH) / 2)
-#define BAR_PADY		((VID_ROWS / 2) - ((BAR_HEIGHT + 2) / 2) - 1)
 
 extern void (*CTORS_BEGIN)();
 extern void (*CTORS_END)();
@@ -50,6 +48,13 @@ void (*Boot::unittests)() = NULL;
 static size_t finished = 0;
 extern void *_btext;
 extern void *_ebss;
+
+static inline size_t barPadX() {
+	return (VID_COLS - BAR_WIDTH) / 2;
+}
+static inline size_t barPadY() {
+	return (VID_ROWS / 2) - ((BAR_HEIGHT + 2) / 2) - 1;
+}
 
 void Boot::start(void *info) {
 	for(void (**func)() = &CTORS_BEGIN; func != &CTORS_END; func++)
@@ -80,8 +85,8 @@ void Boot::start(void *info) {
 
 void Boot::taskStarted(const char *text) {
 	if(!Config::get(Config::LOG_TO_VGA)) {
-		Video::get().goTo(BAR_PADY + BAR_HEIGHT + 2 + BAR_TEXT_PAD,BAR_PADX);
-		Video::get().writef("%-*s",VID_COLS - BAR_PADX * 2,text);
+		Video::get().goTo(barPadY() + BAR_HEIGHT + 2 + BAR_TEXT_PAD,barPadX());
+		Video::get().writef("%-*s",VID_COLS - barPadX() * 2,text);
 	}
 }
 
@@ -93,7 +98,7 @@ void Boot::taskFinished() {
 		size_t total = taskList.count + 1;
 		uint percent = (KERNEL_PERCENT * finished) / total;
 		uint filled = (width * percent) / 100;
-		Video::get().goTo(BAR_PADY + 1,BAR_PADX + 1);
+		Video::get().goTo(barPadY() + 1,barPadX() + 1);
 		if(filled)
 			Video::get().writef("\033[co;0;7]%*s\033[co]",filled," ");
 		if(width - filled)
@@ -236,22 +241,22 @@ void Boot::drawProgressBar() {
 		Video &vid = Video::get();
 		vid.clearScreen();
 		/* top */
-		vid.goTo(BAR_PADY,BAR_PADX);
+		vid.goTo(barPadY(),barPadX());
 		vid.writef("\xC9");
 		for(ushort x = 1; x < BAR_WIDTH - 2; x++)
 			vid.writef("\xCD");
 		vid.writef("\xBB");
 		/* left and right */
 		for(ushort y = 0; y < BAR_HEIGHT; y++) {
-			vid.goTo(BAR_PADY + 1 + y,BAR_PADX);
+			vid.goTo(barPadY() + 1 + y,barPadX());
 			vid.writef("\xBA");
-			vid.goTo(BAR_PADY + 1 + y,VID_COLS - (BAR_PADX + 2));
+			vid.goTo(barPadY() + 1 + y,VID_COLS - (barPadX() + 2));
 			vid.writef("\xBA");
 		}
 		/* bottom */
-		vid.goTo(BAR_PADY + BAR_HEIGHT + 1,BAR_PADX);
+		vid.goTo(barPadY() + BAR_HEIGHT + 1,barPadX());
 		vid.writef("\xC8");
-		for(ushort x = 1; x < VID_COLS - (BAR_PADX * 2 + 2); x++)
+		for(ushort x = 1; x < VID_COLS - (barPadX() * 2 + 2); x++)
 			vid.writef("\xCD");
 		vid.writef("\xBC");
 	}

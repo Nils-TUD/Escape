@@ -22,9 +22,11 @@
 #include <mem/pagedir.h>
 #include <string.h>
 
-#define VID_COLS				80
-#define VID_ROWS				25
-#define BYTES_PER_COL			2
+enum {
+	VID_COLS 		= 80,
+	VID_ROWS 		= 25,
+	VID_MAX_COLS 	= 128,
+};
 
 inline void *Video::screen() {
 	return (void*)(KERNEL_START - KERNEL_P_ADDR + 0xB8000);

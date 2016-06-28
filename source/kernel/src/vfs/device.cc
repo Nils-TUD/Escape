@@ -30,8 +30,6 @@
 #include <spinlock.h>
 #include <video.h>
 
-#define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
-
 /* block- and file-devices are none-empty by default, because their data is always available */
 VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
 		: VFSNode(pid,n,buildMode(type) | (m & MODE_PERM),success), creator(Thread::getRunning()->getTid()),

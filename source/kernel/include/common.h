@@ -32,7 +32,5 @@ typedef uintptr_t frameno_t;
 
 /* indicates that a pointer might point into userspace */
 #define USER
-/* indicates that a function is called when handling an interrupt */
-#define INTRPT
 
 #define INVALID_FRAME	((frameno_t)-1)

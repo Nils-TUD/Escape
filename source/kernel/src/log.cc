@@ -35,9 +35,8 @@
 #include <string.h>
 #include <video.h>
 
-#define TAB_WIDTH		4
-#define LOG_DIR			"/sys"
-#define DUMMY_STDIN		"/sys/stdin"
+static const char *LOG_DIR			= "/sys";
+static const char *DUMMY_STDIN		= "/sys/stdin";
 
 Log Log::inst;
 

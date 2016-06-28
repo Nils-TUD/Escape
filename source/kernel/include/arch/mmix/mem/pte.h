@@ -20,12 +20,12 @@
 #pragma once
 
 /* number of used segments */
-#define SEGMENT_COUNT			3
+#define SEGMENT_COUNT				3
 /* page-tables for each segments in root-location */
-#define PTS_PER_SEGMENT			2
+#define PTS_PER_SEGMENT				2
 
 /* the number of entries in a page-directory or page-table */
-#define PT_ENTRY_COUNT			(PAGE_SIZE / 8)
+#define PT_ENTRY_COUNT				(PAGE_SIZE / 8)
 
 /* not used, but in order to compile the pagetables module */
 #define PT_LEVELS					4

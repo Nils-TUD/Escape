@@ -43,7 +43,7 @@ uintptr_t ThreadBase::addInitialStack() {
 int ThreadBase::initArch(Thread *t) {
 	/* setup kernel-stack for us */
 	frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
-	if(stackFrame == INVALID_FRAME)
+	if(stackFrame == PhysMem::INVALID_FRAME)
 		return -ENOMEM;
 	PageTables::RangeAllocator alloc(stackFrame);
 	if(t->getProc()->getPageDir()->map(KERNEL_STACK,1,alloc,
@@ -58,7 +58,7 @@ int ThreadBase::initArch(Thread *t) {
 int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc) {
 	if(cloneProc) {
 		frameno_t stackFrame = PhysMem::allocate(PhysMem::KERN);
-		if(stackFrame == INVALID_FRAME)
+		if(stackFrame == PhysMem::INVALID_FRAME)
 			return -ENOMEM;
 		PageTables::RangeAllocator alloc(stackFrame);
 		if(dst->getProc()->getPageDir()->map(KERNEL_STACK,1,alloc,
@@ -70,7 +70,7 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 	}
 	else {
 		dst->kstackFrame = PhysMem::allocate(PhysMem::KERN);
-		if(dst->kstackFrame == INVALID_FRAME)
+		if(dst->kstackFrame == PhysMem::INVALID_FRAME)
 			return -ENOMEM;
 
 		/* add a new stack-region */

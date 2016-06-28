@@ -24,7 +24,7 @@
 
 uintptr_t KHeap::allocAreas() {
 	frameno_t frame = PhysMem::allocate(PhysMem::CRIT);
-	if(frame == INVALID_FRAME)
+	if(frame == PhysMem::INVALID_FRAME)
 		return 0;
 	pages++;
 	return DIR_MAP_AREA | (frame * PAGE_SIZE);

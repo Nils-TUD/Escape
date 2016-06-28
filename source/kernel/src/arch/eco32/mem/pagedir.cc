@@ -37,7 +37,7 @@ uintptr_t PageDir::curPDir 		= 0;
 void PageDirBase::init() {
 	/* set page-dir of first process */
 	frameno_t frame = PhysMem::allocate(PhysMem::KERN);
-	if(frame == INVALID_FRAME)
+	if(frame == PhysMem::INVALID_FRAME)
 		Util::panic("Not enough memory for initial page-dir");
 	PageDir::curPDir = (frame * PAGE_SIZE) | DIR_MAP_AREA;
 
@@ -69,10 +69,10 @@ int PageDirBase::cloneKernelspace(PageDir *pdir,A_UNUSED tid_t tid) {
 
 	/* allocate frames */
 	frameno_t pdirFrame = PhysMem::allocate(PhysMem::KERN);
-	if(pdirFrame == INVALID_FRAME)
+	if(pdirFrame == PhysMem::INVALID_FRAME)
 		return -ENOMEM;
 	frameno_t stackPtFrame = PhysMem::allocate(PhysMem::KERN);
-	if(stackPtFrame == INVALID_FRAME) {
+	if(stackPtFrame == PhysMem::INVALID_FRAME) {
 		PhysMem::free(pdirFrame,PhysMem::KERN);
 		return -ENOMEM;
 	}

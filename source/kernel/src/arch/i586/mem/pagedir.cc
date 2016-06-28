@@ -65,10 +65,10 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 
 	/* allocate frames */
 	frameno_t pdirFrame = PhysMem::allocate(PhysMem::KERN);
-	if(pdirFrame == INVALID_FRAME)
+	if(pdirFrame == PhysMem::INVALID_FRAME)
 		return -ENOMEM;
 	frameno_t stackPtFrame = PhysMem::allocate(PhysMem::KERN);
-	if(stackPtFrame == INVALID_FRAME) {
+	if(stackPtFrame == PhysMem::INVALID_FRAME) {
 		PhysMem::free(pdirFrame,PhysMem::KERN);
 		return -ENOMEM;
 	}

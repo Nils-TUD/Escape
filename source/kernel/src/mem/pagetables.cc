@@ -97,7 +97,7 @@ error:
 
 int PageTables::crtPageTable(pte_t *pte,uint flags,Allocator &alloc) {
 	frameno_t frame = alloc.allocPT();
-	if(frame == INVALID_FRAME)
+	if(frame == PhysMem::INVALID_FRAME)
 		return -ENOMEM;
 
 	assert((*pte & PTE_PRESENT) == 0);
@@ -216,7 +216,7 @@ int PageTables::map(uintptr_t virt,size_t count,Allocator &alloc,uint flags) {
 		frameno_t frame = 0;
 		if(flags & PG_PRESENT) {
 			frame = alloc.allocPage();
-			if(frame == INVALID_FRAME)
+			if(frame == PhysMem::INVALID_FRAME)
 				goto error;
 		}
 

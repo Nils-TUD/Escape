@@ -85,7 +85,7 @@ int PageDirBase::cloneKernelspace(PageDir *dst,tid_t tid) {
 	PageDir *cur = Proc::getCurPageDir();
 
 	frameno_t pml4Frame = PhysMem::allocate(PhysMem::KERN);
-	if(pml4Frame == INVALID_FRAME)
+	if(pml4Frame == PhysMem::INVALID_FRAME)
 		return -ENOMEM;
 
 	dst->pts.setRoot(pml4Frame << PAGE_BITS);

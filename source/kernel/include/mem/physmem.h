@@ -65,6 +65,8 @@ class PhysMem {
 	static const size_t REG_TS_BEGIN				= 4 * 1024 * PAGE_SIZE;
 
 public:
+	static const frameno_t INVALID_FRAME			= -1;
+
 	enum MemType {
 		CONT	= 1,
 		DEF		= 2

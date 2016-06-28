@@ -240,7 +240,7 @@ int PageDirBase::map(uintptr_t virt,size_t count,PageTables::Allocator &alloc,ui
 		pte = pteAttr;
 		if(flags & PG_PRESENT) {
 			frameno_t frame = alloc.allocPage();
-			if(frame == INVALID_FRAME)
+			if(frame == PhysMem::INVALID_FRAME)
 				goto error;
 			if(frame == 0)
 				pte |= oldFrame;
@@ -332,7 +332,7 @@ uint64_t *PageDir::getPT(uintptr_t virt,bool create,PageTables::Allocator &alloc
 				return NULL;
 			/* allocate page-table and clear it */
 			frameno_t frame = alloc.allocPT();
-			if(frame == INVALID_FRAME)
+			if(frame == PhysMem::INVALID_FRAME)
 				return NULL;
 			*ptpAddr = DIR_MAP_AREA | (frame * PAGE_SIZE);
 			memclear((void*)*ptpAddr,PAGE_SIZE);

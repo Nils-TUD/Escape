@@ -173,7 +173,7 @@ bool ThreadBase::reserveFrames(size_t count,bool swap) {
 		}
 		for(size_t i = count; i > 0; i--) {
 			frameno_t frm = PhysMem::allocate(PhysMem::USR);
-			if(frm == INVALID_FRAME)
+			if(frm == PhysMem::INVALID_FRAME)
 				break;
 			reqFrames.append(frm);
 			count--;

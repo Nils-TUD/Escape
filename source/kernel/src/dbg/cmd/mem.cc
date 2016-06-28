@@ -33,7 +33,7 @@
 class MemNaviBackend : public NaviBackend {
 public:
 	explicit MemNaviBackend(Proc *p,uintptr_t addr)
-		: NaviBackend(addr,ROUND_DN(ULONG_MAX,(ulong)BYTES_PER_LINE)),
+		: NaviBackend(addr,ROUND_DN(ULONG_MAX,(ulong)Console::BYTES_PER_LINE)),
 		  proc(p), lastAddr(), lastFrame(), page() {
 	}
 	virtual ~MemNaviBackend() {
@@ -73,7 +73,7 @@ public:
 
 	virtual uintptr_t gotoAddr(const char *addr) {
 		uintptr_t off = strtoul(addr,NULL,16);
-		return ROUND_DN(off,(uintptr_t)BYTES_PER_LINE);
+		return ROUND_DN(off,(uintptr_t)Console::BYTES_PER_LINE);
 	}
 
 private:
@@ -81,7 +81,7 @@ private:
 	uintptr_t lastAddr;
 	frameno_t lastFrame;
 	uint8_t *page;
-	static uint8_t buffer[BYTES_PER_LINE + 1];
+	static uint8_t buffer[Console::BYTES_PER_LINE + 1];
 };
 
 int cons_cmd_mem(OStream &os,size_t argc,char **argv) {

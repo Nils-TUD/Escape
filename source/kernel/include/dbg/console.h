@@ -26,18 +26,6 @@
 #include <video.h>
 #include <videolog.h>
 
-#define CONS_EXIT			-1234
-/* has to be a power of 2 */
-#if defined(__mmix__) || defined(__x86_64__)
-#	define BYTES_PER_LINE		8
-#else
-#	define BYTES_PER_LINE		16
-#endif
-#define SCROLL_LINES		(VID_ROWS - 1)
-#define SEARCH_NONE			0
-#define SEARCH_FORWARD		1
-#define SEARCH_BACKWARDS	2
-
 /* to make a screen-backup */
 struct ScreenBackup {
 	char screen[VID_COLS * VID_ROWS * 2];
@@ -78,6 +66,13 @@ class Console {
 	static const size_t MAX_ARG_COUNT	= 5;
 	static const size_t MAX_ARG_LEN		= 32;
 	static const size_t MAX_SEARCH_LEN	= 16;
+	static const size_t SCROLL_LINES	= VID_ROWS - 1;
+
+	enum {
+		SEARCH_NONE,
+		SEARCH_FORWARD,
+		SEARCH_BACKWARDS,
+	};
 
 public:
 	typedef int (*command_func)(OStream &os,size_t argc,char **argv);
@@ -86,6 +81,18 @@ public:
 		char name[MAX_ARG_LEN];
 		command_func exec;
 	};
+
+	/**
+	 * The return value for commands, if the console should be exited
+	 */
+	static const int EXIT				= -1234;
+
+/* has to be a power of 2 */
+#if defined(__mmix__) || defined(__x86_64__)
+	static const size_t BYTES_PER_LINE	= 8;
+#else
+	static const size_t BYTES_PER_LINE	= 16;
+#endif
 
 	/**
 	 * Starts the debugging-console

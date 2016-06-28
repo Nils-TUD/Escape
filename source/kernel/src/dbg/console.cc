@@ -78,19 +78,19 @@ Console::Command Console::commands[] = {
 class LinesNaviBackend : public NaviBackend {
 public:
 	explicit LinesNaviBackend(const Lines *l)
-		: NaviBackend(0,l->getLineCount() * BYTES_PER_LINE), lines(l) {
+		: NaviBackend(0,l->getLineCount() * Console::BYTES_PER_LINE), lines(l) {
 	}
 
 	virtual uint8_t *loadLine(uintptr_t addr) {
-		if(addr / BYTES_PER_LINE < lines->getLineCount())
-			return (uint8_t*)lines->getLine(addr / BYTES_PER_LINE);
+		if(addr / Console::BYTES_PER_LINE < lines->getLineCount())
+			return (uint8_t*)lines->getLine(addr / Console::BYTES_PER_LINE);
 		return NULL;
 	}
 
 	virtual const char *getInfo(uintptr_t addr) {
 		static char tmp[64];
 		OStringStream os(tmp,sizeof(tmp));
-		size_t start = addr / BYTES_PER_LINE;
+		size_t start = addr / Console::BYTES_PER_LINE;
 		size_t end = MIN(lines->getLineCount(),start + VID_ROWS - 1);
 		os.writef("Lines %zu..%zu of %zu",start + 1,end,lines->getLineCount());
 		if(!lines->isValid())
@@ -111,7 +111,7 @@ public:
 	}
 
 	virtual uintptr_t gotoAddr(const char *addr) {
-		return (strtoul(addr,NULL,10) - 1) * BYTES_PER_LINE;
+		return (strtoul(addr,NULL,10) - 1) * Console::BYTES_PER_LINE;
 	}
 
 private:
@@ -151,11 +151,11 @@ int Console::exit(OStream &,size_t,char **) {
 	histReadPos = last;
 	histWritePos = last;
 	histSize--;
-	return CONS_EXIT;
+	return EXIT;
 }
 
 int Console::cont(OStream &,size_t,char**) {
-	return CONS_EXIT;
+	return EXIT;
 }
 
 void Console::start(const char *initialcmd) {
@@ -211,7 +211,7 @@ void Console::start(const char *initialcmd) {
 		Command *cmd = getCommand(argv[0]);
 		if(cmd) {
 			int res = cmd->exec(*out,argc,argv);
-			if(res == CONS_EXIT)
+			if(res == EXIT)
 				break;
 			if(res != 0)
 				out->writef("Executing command '%s' failed: %s (%d)\n",argv[0],strerror(res),res);

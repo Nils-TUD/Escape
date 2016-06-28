@@ -42,5 +42,5 @@ int cons_cmd_step(OStream &os,size_t argc,char **argv) {
 	}
 
 	kstack->setFlags(kstack->getFlags() | (1 << 8));
-	return CONS_EXIT;
+	return Console::EXIT;
 }

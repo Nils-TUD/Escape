@@ -73,16 +73,16 @@ public:
 
 	virtual uintptr_t gotoAddr(const char *addr) {
 		uintptr_t off = strtoul(addr,NULL,16);
-		return ROUND_DN(off,(uintptr_t)BYTES_PER_LINE);
+		return ROUND_DN(off,(uintptr_t)Console::BYTES_PER_LINE);
 	}
 
 private:
 	pid_t pid;
-	static uint8_t buffer[BYTES_PER_LINE + 1];
+	static uint8_t buffer[Console::BYTES_PER_LINE + 1];
 	static char filename[50];
 };
 
-uint8_t DumpNaviBackend::buffer[BYTES_PER_LINE + 1];
+uint8_t DumpNaviBackend::buffer[Console::BYTES_PER_LINE + 1];
 char DumpNaviBackend::filename[50];
 
 int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
@@ -97,7 +97,7 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 	int res = VFS::openPath(pid,VFS_READ,0,argv[1],&file);
 	if(res >= 0) {
 		off_t end = file->seek(pid,0,SEEK_END);
-		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)BYTES_PER_LINE));
+		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)Console::BYTES_PER_LINE));
 		Console::navigation(os,&backend);
 		file->close(pid);
 	}

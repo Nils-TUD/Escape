@@ -44,7 +44,7 @@
 #define DEBUG_PAGEFAULTS		0
 
 /* maximum number of a exception in a row */
-#define MAX_EX_COUNT			10
+static const int MAX_EX_COUNT	= 10;
 
 InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x00 */	{Interrupts::exFatal,		"Divide by zero",		0},

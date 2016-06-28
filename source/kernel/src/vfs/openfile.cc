@@ -31,8 +31,6 @@
 #include <errno.h>
 #include <ostream.h>
 
-#define FILE_COUNT					(gftArray.getObjCount())
-
 SpinLock OpenFile::gftLock;
 DynArray OpenFile::gftArray(sizeof(OpenFile),GFT_AREA,GFT_AREA_SIZE);
 OpenFile *OpenFile::usedList = NULL;
@@ -491,7 +489,7 @@ void OpenFile::print(OStream &os) const {
 
 void OpenFile::printAll(OStream &os) {
 	os.writef("Global File Table:\n");
-	for(size_t i = 0; i < FILE_COUNT; i++) {
+	for(size_t i = 0; i < gftArray.getObjCount(); i++) {
 		OpenFile *f = (OpenFile*)gftArray.getObj(i);
 		if(f->flags != 0) {
 			os.writef("\tfile @ index %d\n",i);
@@ -537,7 +535,7 @@ void OpenFile::printAll(OStream &os) {
 
 size_t OpenFile::getCount() {
 	size_t count = 0;
-	for(size_t i = 0; i < FILE_COUNT; i++) {
+	for(size_t i = 0; i < gftArray.getObjCount(); i++) {
 		OpenFile *f = (OpenFile*)gftArray.getObj(i);
 		if(f->flags != 0)
 			count++;

@@ -26,17 +26,19 @@
 #include <string.h>
 
 /* format flags */
-#define FFL_PADRIGHT		1
-#define FFL_FORCESIGN		2
-#define FFL_SPACESIGN		4
-#define FFL_PRINTBASE		8
-#define FFL_PADZEROS		16
-#define FFL_CAPHEX			32
-#define FFL_LONGLONG		64
-#define FFL_LONG			128
-#define FFL_SIZE_T			256
-#define FFL_INTPTR_T		512
-#define FFL_OFF_T			1024
+enum {
+	FFL_PADRIGHT		= 1,
+	FFL_FORCESIGN		= 2,
+	FFL_SPACESIGN		= 4,
+	FFL_PRINTBASE		= 8,
+	FFL_PADZEROS		= 16,
+	FFL_CAPHEX			= 32,
+	FFL_LONGLONG		= 64,
+	FFL_LONG			= 128,
+	FFL_SIZE_T			= 256,
+	FFL_INTPTR_T		= 512,
+	FFL_OFF_T			= 1024,
+};
 
 char OStream::hexCharsBig[] = "0123456789ABCDEF";
 char OStream::hexCharsSmall[] = "0123456789abcdef";

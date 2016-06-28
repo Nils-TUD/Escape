@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <common.h>
 
-#define SHPT_COUNT		((DIR_MAP_AREA - KHEAP_START) / PT_SIZE)
+static const ulong SHPT_COUNT	= (DIR_MAP_AREA - KHEAP_START) / PT_SIZE;
 
 extern void *proc0TLPD;
 /* we can't allocate any frames at the beginning. so put the shared-pagetables in bss */

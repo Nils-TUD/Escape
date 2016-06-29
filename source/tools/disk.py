@@ -43,9 +43,12 @@ def create_disk(image, parts, offset, flat, nogrub):
 				# all others get all sectors up to the following partition
 				else:
 					f.write(str(block_offset(parts, offset, i) * 2 - 1) + '\n')
+				# make first partition bootable
+				if i == 1:
+					f.write('\na\n')
 				i += 1
-			# a 1 = make partition 1 bootable, w = write partitions to disk
-			f.write('a\n1\nw\n')
+			# write partitions to disk
+			f.write('w\n')
 
 		# create partitions with fdisk
 		with open(tmpfile, "r") as fin:

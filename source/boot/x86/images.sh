@@ -105,10 +105,7 @@ create_fsimg() {
 create_usbimg() {
 	create_fsimg $1/dist $1/fs.img
 
-	suffix=""
-	if [ "$ESC_TARGET" = "x86_64" ]; then
-		suffix=".elf32"
-	fi
+	suffix=`get_suffix`
 
 	tmp=`mktemp -d`
 

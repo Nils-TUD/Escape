@@ -22,17 +22,17 @@
 #include <assert.h>
 #include <stdlib.h>
 
+using namespace esc;
+
 #if defined(__eco32__)
-#	define VIDEO_MEM			0x30100000
+static const uintptr_t VIDEO_MEM		= 0x30100000;
 #else
-#	define VIDEO_MEM			0x0005000000000000
+static const uintptr_t VIDEO_MEM		= 0x0005000000000000;
 #endif
 
-#define COLS					80
-#define ROWS					30
-#define MAX_COLS				128
-
-using namespace esc;
+static const int COLS					= 80;
+static const int ROWS					= 30;
+static const int MAX_COLS				= 128;
 
 static ulong *screenData;
 

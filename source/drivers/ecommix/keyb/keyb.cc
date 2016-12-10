@@ -37,29 +37,33 @@
 
 #include "set2.h"
 
+enum {
+	KEYBOARD_CTRL						= 0,
+	KEYBOARD_DATA						= 1,
+};
+
+enum {
+	KEYBOARD_RDY						= 0x01,
+	KEYBOARD_IEN						= 0x02,
+};
+
 #if defined(__eco32__)
-#	define KEYBOARD_BASE	0x30200000
-#	define KEYBOARD_IRQ		0x4
+static const uintptr_t KEYBOARD_BASE	= 0x30200000;
+static const int KEYBOARD_IRQ			= 0x4;
 #else
-#	define KEYBOARD_BASE	0x0006000000000000
-#	define KEYBOARD_IRQ		0x3D
+static const uintptr_t KEYBOARD_BASE	= 0x0006000000000000;
+static const int KEYBOARD_IRQ			= 0x3D;
 #endif
 
-#define KEYBOARD_CTRL		0
-#define KEYBOARD_DATA		1
-
-#define KEYBOARD_RDY		0x01
-#define KEYBOARD_IEN		0x02
-
-#define BUF_SIZE			128
-#define SC_BUF_SIZE			16
-#define TIMEOUT				60
-#define SLEEP_TIME			20
-
-static int kbIrqThread(A_UNUSED void *arg);
+static const size_t BUF_SIZE			= 128;
+static const size_t SC_BUF_SIZE			= 16;
+static const int TIMEOUT				= 60;
+static const int SLEEP_TIME				= 20;
 
 static esc::ClientDevice<> *dev = NULL;
 static ulong *kbRegs;
+
+static int kbIrqThread(A_UNUSED void *arg);
 
 int main(void) {
 	uintptr_t phys = KEYBOARD_BASE;

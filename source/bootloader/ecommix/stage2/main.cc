@@ -29,34 +29,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__mmix__)
-#	define DIR_MAP_START	0x8000000000000000
-#else
-#	define DIR_MAP_START	0xC0000000
-#endif
-
-#define BLOCK_SIZE			((size_t)(1024 << le32tocpu(e.superBlock.logBlockSize)))
-#define SPB					(BLOCK_SIZE / Disk::SECTOR_SIZE)	/* sectors per block */
-#define BLOCKS_TO_SECS(x)	((x) << (le32tocpu(e.superBlock.logBlockSize) + 1))
-#define GROUP_COUNT			16									/* no. of block groups to load */
-
 using namespace fs;
+
+/* no. of block groups to load */
+static constexpr size_t GROUP_COUNT			= 16;
+
+#if defined(__mmix__)
+static constexpr uintptr_t DIR_MAP_START	= 0x8000000000000000;
+#else
+static constexpr uintptr_t DIR_MAP_START	= 0xC0000000;
+#endif
 
 typedef struct {
 	Ext2SuperBlock superBlock;
 	Ext2BlockGrp groups[GROUP_COUNT];
 } sExt2Simple;
-
-/**
- * For mmix only: flush the given region from cache
- */
-EXTERN_C void flushRegion(void *addr,size_t count);
-
-/**
- * Reads/Writes from/to disk
- */
-EXTERN_C BootInfo *bootload(size_t memSize);
-EXTERN_C void flushRegion(void *addr,size_t count);
 
 /* the tasks we should load */
 static LoadProg progs[] = {
@@ -79,6 +66,27 @@ static ulong buffer[2048 / sizeof(ulong)];
 /* the start-address for loading programs; the bootloader needs 1 page for data and 1 stack-page */
 static uintptr_t loadAddr = DIR_MAP_START;
 static Disk *disk;
+
+/**
+ * For mmix only: flush the given region from cache
+ */
+EXTERN_C void flushRegion(void *addr,size_t count);
+
+/**
+ * Reads/Writes from/to disk
+ */
+EXTERN_C BootInfo *bootload(size_t memSize);
+EXTERN_C void flushRegion(void *addr,size_t count);
+
+static size_t blockSize() {
+	return 1024 << le32tocpu(e.superBlock.logBlockSize);
+}
+static size_t secsPerBlk() {
+	return blockSize() / Disk::SECTOR_SIZE;
+}
+static size_t blksToSecs(size_t blocks) {
+	return blocks << (le32tocpu(e.superBlock.logBlockSize) + 1);
+}
 
 static void halt(const char *s,...) {
 	va_list ap;
@@ -119,18 +127,18 @@ static int readSectors(void *dst,size_t start,size_t secCount) {
 }
 
 static int readBlocks(void *dst,block_t start,size_t blockCount) {
-	return readSectors(dst,BLOCKS_TO_SECS(start),BLOCKS_TO_SECS(blockCount));
+	return readSectors(dst,blksToSecs(start),blksToSecs(blockCount));
 }
 
 static void readFromDisk(block_t blkno,void *buf,size_t offset,size_t nbytes) {
-	void *dst = offset == 0 && (nbytes % BLOCK_SIZE) == 0 ? buf : buffer;
+	void *dst = offset == 0 && (nbytes % blockSize()) == 0 ? buf : buffer;
 	size_t secCount = (offset + nbytes + Disk::SECTOR_SIZE - 1) / Disk::SECTOR_SIZE;
 	if(offset >= sizeof(buffer) || secCount * Disk::SECTOR_SIZE > sizeof(buffer))
 		halt("offset or nbytes invalid (offset=%u nbytes=%u)",offset,nbytes);
 
-	/*debugf("Reading sectors %d .. %d\n",START_SECTOR + blkno * SPB,
-			START_SECTOR + blkno * SPB + secCount - 1);*/
-	int result = readSectors(dst,blkno * SPB,secCount);
+	/*debugf("Reading sectors %d .. %d\n",START_SECTOR + blkno * secsPerBlk(),
+			START_SECTOR + blkno * secsPerBlk() + secCount - 1);*/
+	int result = readSectors(dst,blkno * secsPerBlk(),secCount);
 	if(result != 0)
 		halt("Load error");
 
@@ -142,7 +150,7 @@ static void loadInode(Ext2Inode *ip,ino_t inodeno) {
 	Ext2BlockGrp *group = e.groups + ((inodeno - 1) / le32tocpu(e.superBlock.inodesPerGroup));
 	if(group >= e.groups + GROUP_COUNT)
 		halt("Invalid blockgroup of inode %u: %u\n",inodeno,group - e.groups);
-	size_t inodesPerBlock = BLOCK_SIZE / sizeof(Ext2Inode);
+	size_t inodesPerBlock = blockSize() / sizeof(Ext2Inode);
 	size_t noInGroup = (inodeno - 1) % le32tocpu(e.superBlock.inodesPerGroup);
 	block_t blockNo = le32tocpu(group->inodeTable) + noInGroup / inodesPerBlock;
 	size_t inodeInBlock = (inodeno - 1) % inodesPerBlock;
@@ -152,13 +160,13 @@ static void loadInode(Ext2Inode *ip,ino_t inodeno) {
 
 static ino_t searchDir(ino_t dirIno,Ext2Inode *dir,const char *name,size_t nameLen) {
 	size_t size = le32tocpu(dir->size);
-	size_t blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+	size_t blocks = (size + blockSize() - 1) / blockSize();
 	if(blocks > EXT2_DIRBLOCK_COUNT)
 		halt("Directory %u larger than %u blocks\n",dirIno,EXT2_DIRBLOCK_COUNT);
 
 	for(size_t i = 0; i < blocks; ++i) {
 		readBlocks(buffer,le32tocpu(dir->dBlocks[i]),1);
-		ssize_t rem = BLOCK_SIZE;
+		ssize_t rem = blockSize();
 		Ext2DirEntry *entry = (Ext2DirEntry*)buffer;
 
 		/* search the directory-entries */
@@ -176,8 +184,8 @@ static ino_t searchDir(ino_t dirIno,Ext2Inode *dir,const char *name,size_t nameL
 }
 
 static block_t getBlock(Ext2Inode *ino,size_t offset) {
-	block_t i,block = offset / BLOCK_SIZE;
-	size_t blockSize,blocksPerBlock;
+	block_t i,block = offset / blockSize();
+	size_t blocksPerBlock;
 
 	/* direct block */
 	if(block < EXT2_DIRBLOCK_COUNT)
@@ -185,8 +193,7 @@ static block_t getBlock(Ext2Inode *ino,size_t offset) {
 
 	/* singly indirect */
 	block -= EXT2_DIRBLOCK_COUNT;
-	blockSize = BLOCK_SIZE;
-	blocksPerBlock = blockSize / sizeof(block_t);
+	blocksPerBlock = blockSize() / sizeof(block_t);
 	if(block < blocksPerBlock) {
 		readBlocks(buffer,le32tocpu(ino->singlyIBlock),1);
 		return le32tocpu(*((block_t*)buffer + block));
@@ -251,8 +258,8 @@ static uintptr_t copyToMem(Ext2Inode *ino,size_t offset,size_t count,uintptr_t d
 	while(count > 0) {
 		blk = getBlock(ino,offset);
 
-		offInBlk = offset % BLOCK_SIZE;
-		amount = MIN(count,BLOCK_SIZE - offInBlk);
+		offInBlk = offset % blockSize();
+		amount = MIN(count,blockSize() - offInBlk);
 		readFromDisk(blk,(void*)dest,offInBlk,amount);
 
 		count -= amount;
@@ -282,7 +289,7 @@ static int loadKernel(LoadProg *prog,Ext2Inode *ino) {
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
 		block_t block = getBlock(ino,(size_t)datPtr);
-		readFromDisk(block,&pheader,(uintptr_t)datPtr & (BLOCK_SIZE - 1),sizeof(Elf64_Phdr));
+		readFromDisk(block,&pheader,(uintptr_t)datPtr & (blockSize() - 1),sizeof(Elf64_Phdr));
 
 		if(pheader.p_type == PT_LOAD) {
 			/* read into memory */
@@ -318,7 +325,7 @@ static int loadKernel(LoadProg *prog,Ext2Inode *ino) {
 	for(j = 0; j < eheader.e_shnum; datPtr += eheader.e_shentsize, j++) {
 		/* read pheader */
 		block_t block = getBlock(ino,(size_t)datPtr);
-		readFromDisk(block,&sheader,(uintptr_t)datPtr & (BLOCK_SIZE - 1),sizeof(Elf64_Shdr));
+		readFromDisk(block,&sheader,(uintptr_t)datPtr & (blockSize() - 1),sizeof(Elf64_Shdr));
 
 		/* the first section with type == PROGBITS and addr != 0 should be .MMIX.reg_contents */
 		if(sheader.sh_type == SHT_PROGBITS && sheader.sh_addr < prog->start && sheader.sh_addr != 0) {
@@ -377,8 +384,8 @@ EXTERN_C BootInfo *bootload(size_t memSize) {
 	readSectors(&(e.superBlock),EXT2_SUPERBLOCK_SECNO,2);
 
 	/* TODO currently required */
-	if(BLOCK_SIZE != 1024)
-		halt("Invalid block size %d; 1024 expected\n",BLOCK_SIZE);
+	if(blockSize() != 1024)
+		halt("Invalid block size %d; 1024 expected\n",blockSize());
 
 	/* read blockgroup descriptor table (copy to buffer first because a block is too large) */
 	readBlocks(buffer,le32tocpu(e.superBlock.firstDataBlock) + 1,1);

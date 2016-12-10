@@ -34,21 +34,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__eco32__)
-#	define DISK_MODEL		"ECO32 Disk"
-#else
-#	define DISK_MODEL		"GIMMIX Disk"
-#endif
-#define MAX_RW_SIZE			(Disk::SECTOR_SIZE * 8)
-#define IRQ_TIMEOUT			1000
-
 using namespace esc;
 
-static void createVFSEntry(const char *name,bool isPart);
+class IRQDisk;
+
+#if defined(__eco32__)
+static const char *DISK_MODEL		= "ECO32 Disk";
+#else
+static const char *DISK_MODEL		= "GIMMIX Disk";
+#endif
+
+static const size_t MAX_RW_SIZE		= Disk::SECTOR_SIZE * 8;
+static const int IRQ_TIMEOUT		= 1000;
 
 static int irqSm;
 static int drvId;
 static ulong buffer[MAX_RW_SIZE / sizeof(ulong)];
+
+static IRQDisk *disk;
+
+static void createVFSEntry(const char *name,bool isPart);
 
 class IRQDisk : public Disk {
 public:
@@ -65,8 +70,6 @@ public:
 		return (*diskCtrlReg & CTRL_ERR) == 0;
 	}
 };
-
-static IRQDisk *disk;
 
 class DiskDevice : public ClientDevice<> {
 public:

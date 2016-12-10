@@ -37,8 +37,6 @@
 #include "preview.h"
 #include "window.h"
 
-#define PIXEL_SIZE	(mode.bitsPerPixel / 8)
-
 static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
 static void win_destroyBuf(Window *win);
 static gwinid_t win_getTop(void);
@@ -62,6 +60,10 @@ static esc::FrameBuffer *fb;
 static size_t activeWindow = WINDOW_COUNT;
 static size_t topWindow = WINDOW_COUNT;
 static Window windows[WINDOW_COUNT];
+
+static size_t pixelSize() {
+	return mode.bitsPerPixel / 8;
+}
 
 int win_init(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
 	drvId = sid;
@@ -464,12 +466,12 @@ static void win_getRepaintRegions(std::vector<WinRect> &list,gwinid_t id,Window 
 
 static void win_clearRegion(char *mem,const gui::Rectangle &r) {
 	gpos_t y = r.y();
-	size_t count = r.width() * PIXEL_SIZE;
+	size_t count = r.width() * pixelSize();
 	gpos_t maxy = y + r.height();
-	mem += (y * mode.width + r.x()) * PIXEL_SIZE;
+	mem += (y * mode.width + r.x()) * pixelSize();
 	while(y < maxy) {
 		memclear(mem,count);
-		mem += mode.width * PIXEL_SIZE;
+		mem += mode.width * pixelSize();
 		y++;
 	}
 
@@ -484,11 +486,11 @@ static void win_copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id) {
 
 	char *src,*dst;
 	gpos_t endy = y + r.height();
-	size_t count = r.width() * PIXEL_SIZE;
-	size_t srcAdd = w->width() * PIXEL_SIZE;
-	size_t dstAdd = mode.width * PIXEL_SIZE;
-	src = w->fb->addr() + (y * w->width() + x) * PIXEL_SIZE;
-	dst = mem + ((w->y() + y) * mode.width + (w->x() + x)) * PIXEL_SIZE;
+	size_t count = r.width() * pixelSize();
+	size_t srcAdd = w->width() * pixelSize();
+	size_t dstAdd = mode.width * pixelSize();
+	src = w->fb->addr() + (y * w->width() + x) * pixelSize();
+	dst = mem + ((w->y() + y) * mode.width + (w->x() + x)) * pixelSize();
 
 	while(y < endy) {
 		memcpy(dst,src,count);

@@ -25,30 +25,36 @@ using namespace esc;
 
 class ECOMMIXTermDevice;
 
-#define MAX_TERMINALS		2
+enum {
+	TERM_RCVR_CTRL		= 0,		/* receiver control register */
+	TERM_RCVR_DATA		= 1,		/* receiver data register */
+	TERM_XMTR_CTRL		= 2,		/* transmitter control register */
+	TERM_XMTR_DATA		= 3,		/* transmitter data register */
+};
+
+enum {
+	TERM_RCVR_RDY		= 0x01,		/* receiver has a character */
+	TERM_RCVR_IEN		= 0x02,		/* enable receiver interrupt */
+};
+
+enum {
+	TERM_XMTR_RDY		= 0x01,		/* transmitter accepts a character */
+	TERM_XMTR_IEN		= 0x02,		/* enable transmitter interrupt */
+};
+
+static const size_t MAX_TERMINALS	= 2;
 
 #if defined(__eco32__)
-#	define TERM_BASE		0x30300000			/* base address for all terminals */
-#	define TERM_XMTR_IRQ	0					/* transmitter interrupt for terminal 0 */
-#	define TERM_RCVR_IRQ	1					/* receiver interrupt for terminal 0 */
-#	define TERM_SIZE		16					/* 16 bytes for each terminal */
+static const uintptr_t TERM_BASE	= 0x30300000;			/* base address for all terminals */
+static const int TERM_XMTR_IRQ		= 0;					/* transmitter interrupt for terminal 0 */
+static const int TERM_RCVR_IRQ		= 1;					/* receiver interrupt for terminal 0 */
+static const size_t TERM_SIZE		= 16;					/* 16 bytes for each terminal */
 #else
-#	define TERM_BASE		0x0002000000000000	/* base address for all terminals */
-#	define TERM_XMTR_IRQ	0x35				/* transmitter interrupt for terminal 0 */
-#	define TERM_RCVR_IRQ	0x36				/* receiver interrupt for terminal 0 */
-#	define TERM_SIZE		32					/* 32 bytes for each terminal */
+static const uintptr_t TERM_BASE	= 0x0002000000000000;	/* base address for all terminals */
+static const int TERM_XMTR_IRQ		= 0x35;					/* transmitter interrupt for terminal 0 */
+static const int TERM_RCVR_IRQ		= 0x36;					/* receiver interrupt for terminal 0 */
+static const size_t TERM_SIZE		= 32;					/* 32 bytes for each terminal */
 #endif
-
-#define TERM_RCVR_CTRL		0		/* receiver control register */
-#define TERM_RCVR_DATA		1		/* receiver data register */
-#define TERM_XMTR_CTRL		2		/* transmitter control register */
-#define TERM_XMTR_DATA		3		/* transmitter data register */
-
-#define TERM_RCVR_RDY		0x01	/* receiver has a character */
-#define TERM_RCVR_IEN		0x02	/* enable receiver interrupt */
-
-#define TERM_XMTR_RDY		0x01	/* transmitter accepts a character */
-#define TERM_XMTR_IEN		0x02	/* enable transmitter interrupt */
 
 static volatile ulong *regs;
 static size_t dev;

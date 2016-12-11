@@ -30,8 +30,6 @@
 #include <string.h>
 
 #define SKIP_LOGIN			0
-#define SHELL_PATH			"/bin/shell"
-#define MAX_VTERM_NAME_LEN	10
 
 using namespace esc;
 
@@ -149,8 +147,8 @@ int main(void) {
 	setenv("USER",un);
 
 	/* exchange with shell */
-	const char *shargs[] = {SHELL_PATH,NULL};
-	execv(SHELL_PATH,shargs);
+	const char *shargs[] = {"/bin/shell",NULL};
+	execv(shargs[0],shargs);
 
 	/* not reached */
 	return EXIT_SUCCESS;

@@ -22,10 +22,12 @@
 #include <sys/common.h>
 
 /* the movement-types for mvCurHor */
-#define HOR_MOVE_HOME	0
-#define HOR_MOVE_END	1
-#define HOR_MOVE_LEFT	2
-#define HOR_MOVE_RIGHT	3
+enum {
+	HOR_MOVE_HOME,
+	HOR_MOVE_END,
+	HOR_MOVE_LEFT,
+	HOR_MOVE_RIGHT,
+};
 
 #include "buffer.h"
 
@@ -39,7 +41,7 @@ void displ_init(sFileBuffer *buf);
 /**
  * Finishes the display (restores the screen-content)
  */
-void displ_finish(void);
+void displ_finish();
 
 /**
  * Retrieves the current cursor-position (in the buffer, not on the screen)
@@ -81,7 +83,7 @@ void displ_markDirty(size_t start,size_t count);
 /**
  * Updates all dirty regions
  */
-void displ_update(void);
+void displ_update();
 
 /**
  * Lets the user enter the filename. It will be put to <file>.

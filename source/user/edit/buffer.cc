@@ -28,10 +28,10 @@
 #include "display.h"
 #include "mem.h"
 
-#define INITIAL_LINE_SIZE	16
-
 static sLine *buf_createLine(void);
 static sLine *buf_readLine(FILE *f,bool *reachedEOF);
+
+static const size_t INITIAL_LINE_SIZE = 16;
 
 static sFileBuffer buf;
 

@@ -32,7 +32,7 @@
 #include "mem.h"
 
 static void displ_updateLines(size_t start,size_t count);
-static void displ_printStatus(void);
+static void displ_printStatus();
 
 static esc::VTerm vterm(STDOUT_FILENO);
 static esc::Screen::Mode mode;
@@ -61,7 +61,7 @@ void displ_init(sFileBuffer *buf) {
 	vterm.setFlag(esc::VTerm::FL_NAVI,false);
 }
 
-void displ_finish(void) {
+void displ_finish() {
 	printf("\n");
 	/* ensure that the output is flushed before the vterm restores the old screen */
 	fflush(stdout);
@@ -167,7 +167,7 @@ void displ_markDirty(size_t start,size_t count) {
 	dirtyCount = MIN(dirtyCount,mode.rows - (dirtyStart - firstLine));
 }
 
-void displ_update(void) {
+void displ_update() {
 	displ_updateLines(dirtyStart,dirtyCount);
 	dirtyStart = ULONG_MAX;
 	dirtyCount = 0;
@@ -235,7 +235,7 @@ static void displ_updateLines(size_t start,size_t count) {
 	printf("\033[go;%d;%d]",curXDispl,curY);
 }
 
-static void displ_printStatus(void) {
+static void displ_printStatus() {
 	size_t fileLen = buffer->filename ? strlen(buffer->filename) : 0;
 	char *tmp = (char*)emalloc(mode.cols + 1);
 	printf("\033[go;%d;%d]",0,mode.rows + 1);

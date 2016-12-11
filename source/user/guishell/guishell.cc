@@ -37,14 +37,14 @@
 #include "guiterm.h"
 #include "shellcontrol.h"
 
-#define DEF_COLS			80
-#define DEF_ROWS			25
-
 using namespace gui;
 using namespace std;
 
 static int guiProc(const char *devName);
 static int shellMain(const char *devName);
+
+static const int DEF_COLS = 80;
+static const int DEF_ROWS = 25;
 
 static GUIVTermDevice *gt;
 

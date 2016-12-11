@@ -25,11 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BUF_SIZE 512
-
 static void printFile(const char *filename,FILE *file);
 
-static char buffer[BUF_SIZE + 1];
+static char buffer[512];
 
 int main(int argc,char *argv[]) {
 	if(isHelpCmd(argc,argv)) {
@@ -74,9 +72,8 @@ int main(int argc,char *argv[]) {
 
 static void printFile(const char *filename,FILE *file) {
 	size_t count;
-	while((count = fread(buffer,sizeof(char),BUF_SIZE,file)) > 0) {
-		*(buffer + count) = '\0';
-		if(fputs(buffer,stdout) == EOF) {
+	while((count = fread(buffer,sizeof(char),sizeof(buffer),file)) > 0) {
+		if(fwrite(buffer,sizeof(char),count,stdout) != count) {
 			printe("Write failed");
 			break;
 		}

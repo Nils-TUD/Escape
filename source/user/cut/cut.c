@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_LINE_LEN	255
+static const size_t MAX_LINE_LEN = 255;
 
 static void handleFile(FILE *f,char *delim,int first,int last);
 static void printFields(char *line,const char *delim,int first,int last);

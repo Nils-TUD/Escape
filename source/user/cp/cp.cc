@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BUFFER_SIZE		(16 * 1024)
+static const size_t BUFFER_SIZE = 16 * 1024;
 
 class CpFileCopy : public esc::FileCopy {
 public:

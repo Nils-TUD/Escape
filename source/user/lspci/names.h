@@ -21,8 +21,6 @@
 #include <sys/common.h>
 #include <string>
 
-#define PCI_IDS_FILE	"/etc/pci.ids"
-
 class PCINode : public esc::TreapNode<unsigned> {
 public:
 	explicit PCINode(const char *n,unsigned id) : esc::TreapNode<unsigned>(id), _name(n) {

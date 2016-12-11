@@ -153,7 +153,7 @@ int main(int argc,char *argv[]) {
 		usage(argv[0]);
 	}
 
-	PCINames::load(PCI_IDS_FILE);
+	PCINames::load("/etc/pci.ids");
 
 	PCI pci("/dev/pci");
 	size_t count = pci.getCount();

@@ -33,9 +33,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LOG_PATH		"/sys/log"
-#define DESKTOP_PROG	"desktop"
-
 using namespace gui;
 using namespace std;
 
@@ -182,16 +179,17 @@ const Color DesktopWindow::BGCOLOR = Color(0xd5,0xe6,0xf3);
 int main(void) {
 	char *winMngPath = getenv("WINMNG");
 	char *termName = winMngPath + SSTRLEN("/dev/");
+	const char *logfile = "/sys/log";
 
 	int fd;
 
 	/* open stdin */
-	if((fd = open(LOG_PATH,O_RDONLY)) != STDIN_FILENO)
-		error("Unable to open '%s' for STDIN: Got fd %d",LOG_PATH,fd);
+	if((fd = open(logfile,O_RDONLY)) != STDIN_FILENO)
+		error("Unable to open '%s' for STDIN: Got fd %d",logfile,fd);
 
 	/* open stdout */
-	if((fd = open(LOG_PATH,O_WRONLY)) != STDOUT_FILENO)
-		error("Unable to open '%s' for STDOUT: Got fd %d",LOG_PATH,fd);
+	if((fd = open(logfile,O_WRONLY)) != STDOUT_FILENO)
+		error("Unable to open '%s' for STDOUT: Got fd %d",logfile,fd);
 
 	/* dup stdout to stderr */
 	if((fd = dup(fd)) != STDERR_FILENO)
@@ -259,7 +257,7 @@ int main(void) {
 	setenv("USER",u->name);
 
 	// exec with desktop
-	const char *args[] = {DESKTOP_PROG,NULL};
-	execvp(DESKTOP_PROG,args);
+	const char *args[] = {"desktop",NULL};
+	execvp(args[0],args);
 	return EXIT_FAILURE;
 }

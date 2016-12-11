@@ -31,9 +31,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TIMEOUT		2000	/* wait 2 ms for the NIC driver to register the device */
-
 using namespace esc;
+
+static const int TIMEOUT = 2000; /* ms */
 
 static void linkRem(Net &net,int argc,char **argv);
 
@@ -73,6 +73,7 @@ static void linkAdd(Net &net,int argc,char **argv) {
 	else {
 		int res;
 		uint duration = 0;
+		/* wait a bit for the NIC driver to register the device */
 		while(duration < TIMEOUT && (res = open(path,O_RDONLY)) == -ENOENT) {
 			usleep(20 * 1000);
 			duration += 20;

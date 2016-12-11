@@ -32,30 +32,34 @@
 using namespace std;
 using namespace esc;
 
-#define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
+enum {
+	F_LONG_SHIFT,
+	F_INODE_SHIFT,
+	F_ALL_SHIFT,
+	F_DIRSIZE_SHIFT,
+	F_DIRNUM_SHIFT,
+	F_NUMERIC_SHIFT,
+};
 
-#define F_LONG_SHIFT		0
-#define F_INODE_SHIFT		1
-#define F_ALL_SHIFT			2
-#define F_DIRSIZE_SHIFT		3
-#define F_DIRNUM_SHIFT		4
-#define F_NUMERIC_SHIFT		5
-
-#define F_LONG				(1 << F_LONG_SHIFT)
-#define F_INODE				(1 << F_INODE_SHIFT)
-#define F_ALL				(1 << F_ALL_SHIFT)
-#define F_DIRSIZE			(1 << F_DIRSIZE_SHIFT)
-#define F_DIRNUM			(1 << F_DIRNUM_SHIFT)
-#define F_NUMERIC			(1 << F_NUMERIC_SHIFT)
+enum {
+	F_LONG				= 1 << F_LONG_SHIFT,
+	F_INODE				= 1 << F_INODE_SHIFT,
+	F_ALL				= 1 << F_ALL_SHIFT,
+	F_DIRSIZE			= 1 << F_DIRSIZE_SHIFT,
+	F_DIRNUM			= 1 << F_DIRNUM_SHIFT,
+	F_NUMERIC			= 1 << F_NUMERIC_SHIFT,
+};
 
 /* for calculating the widths of the fields */
-#define WIDTHS_COUNT		6
-#define W_INODE				0
-#define W_LINKCOUNT			1
-#define W_UID				2
-#define W_GID				3
-#define W_SIZE				4
-#define W_NAME				5
+enum {
+	W_INODE,
+	W_LINKCOUNT,
+	W_UID,
+	W_GID,
+	W_SIZE,
+	W_NAME,
+	WIDTHS_COUNT,
+};
 
 class lsfile : public file {
 public:
@@ -270,7 +274,7 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 
 			sout << fmt(f->rsize(),widths[W_SIZE]) << ' ';
 			{
-				char dateStr[DATE_LEN];
+				char dateStr[SSTRLEN("2009-09-09 14:12") + 1];
 				file::time_type ts = f->modified();
 				struct tm *date = gmtime(&ts);
 				strftime(dateStr,sizeof(dateStr),"%Y-%m-%d %H:%M",date);

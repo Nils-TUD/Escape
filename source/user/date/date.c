@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define MAX_DATE_LEN 100
+static const size_t MAX_DATE_LEN = 100;
 
 int main(int argc,char **argv) {
 	char *fmt = (char*)"%c";

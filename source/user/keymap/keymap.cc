@@ -30,9 +30,9 @@
 #include <string.h>
 #include <string>
 
-#define KEYMAP_DIR		"/etc/keymaps"
-
 using namespace esc;
+
+static const char *KEYMAP_DIR = "/etc/keymaps";
 
 static void usage(const char *name) {
 	serr << "Usage: " << name << " [-s <name>]\n";

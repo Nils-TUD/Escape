@@ -21,28 +21,58 @@
 
 #include <sys/common.h>
 
-#define TYPE_AIRPLANE	0
-#define TYPE_BULLET		1
-#define TYPE_EXPLO1		2
-#define TYPE_EXPLO2		3
-#define TYPE_EXPLO3		4
-#define TYPE_EXPLO4		5
+class ObjList;
+class UI;
 
-#define AIRPLANE_WIDTH	3
-#define AIRPLANE_HEIGHT	3
+class Object {
+	friend class ObjList;
 
-#define BULLET_WIDTH	1
-#define BULLET_HEIGHT	1
+	static const int EXPLO_DURATION		=	8;
 
-#define EXPLO_DURATION	8
+public:
+	static const int AIRPLANE_WIDTH		=	3;
+	static const int AIRPLANE_HEIGHT	=	3;
 
-#define DIR_UP			1
-#define DIR_LEFT		2
-#define DIR_RIGHT		4
-#define DIR_DOWN		8
+	static const int BULLET_WIDTH		=	1;
+	static const int BULLET_HEIGHT		=	1;
 
-typedef struct sObject {
-	int type;
+	enum Dir {
+		UP		= 0x1,
+		LEFT	= 0x2,
+		RIGHT	= 0x4,
+		DOWN	= 0x8,
+	};
+
+	enum Type {
+		AIRPLANE,
+		BULLET,
+		EXPLO1,
+		EXPLO2,
+		EXPLO3,
+		EXPLO4
+	};
+
+	static Object *createAirplain(int x,int y,int direction,int speed) {
+		return new Object(AIRPLANE,x,y,AIRPLANE_WIDTH,AIRPLANE_HEIGHT,direction,speed);
+	}
+	static Object *createBullet(int x,int y,int direction,int speed) {
+		return new Object(BULLET,x,y,BULLET_WIDTH,BULLET_HEIGHT,direction,speed);
+	}
+
+	explicit Object(Type type,int x,int y,int width,int height,int direction,int speed)
+		: type(type), x(x), y(y), width(width), height(height), direction(direction), speed(speed),
+		  moveCnt(0), _next() {
+	}
+
+	Object *next() {
+		return _next;
+	}
+
+	bool explode();
+	bool collide(Object *o);
+	bool tick(UI &ui);
+
+	Type type;
 	int x;
 	int y;
 	int width;
@@ -50,19 +80,7 @@ typedef struct sObject {
 	int direction;
 	int speed;
 	int moveCnt;
-	struct sObject *next;
-} sObject;
 
-sObject *obj_createAirplain(int x,int y,int direction,int speed);
-
-sObject *obj_createBullet(int x,int y,int direction,int speed);
-
-sObject *obj_create(int type,int x,int y,int width,int height,int direction,int speed);
-
-bool obj_explode(sObject *o);
-
-bool obj_collide(sObject *o1,sObject *o2);
-
-bool obj_tick(sObject *o);
-
-void obj_destroy(sObject *o);
+private:
+	Object *_next;
+};

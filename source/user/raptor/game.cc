@@ -30,84 +30,57 @@
 #include "objlist.h"
 #include "ui.h"
 
-#define KEYCODE_COUNT		128
-#define TICK_SLICE			10
-#define UPDATE_INTERVAL		(TICK_SLICE / (1000 / (timerFreq)))
-#define KEYPRESS_INTERVAL	(UPDATE_INTERVAL * 2)
-#define FIRE_INTERVAL		(UPDATE_INTERVAL * 8)
-#define ADDPLAIN_INTERVAL	(UPDATE_INTERVAL * 90)
-
-static bool game_performAction(time_t time,uchar keycode);
-static void game_fire(void);
-static void game_addAirplain(void);
-
-static uint score;
-static long timerFreq;
-static uchar pressed[KEYCODE_COUNT];
-static uint addPlainInt;
-
-bool game_init(uint cols,uint rows) {
-	timerFreq = sysconf(CONF_TIMER_FREQ);
+Game::Game(uint cols,uint rows)
+		: score(0), timerFreq(sysconf(CONF_TIMER_FREQ)), addPlainInt(updateInterval() * 90),
+		  _bar(), ui(*this,cols,rows), objlist(), pressed() {
 	if(timerFreq < 0)
 		error("Unable to get timer-frequency");
-	addPlainInt = ADDPLAIN_INTERVAL;
 
-	score = 0;
-	ui_init(cols,rows);
 	srand(time(NULL));
-	bar_init();
-	return true;
 }
 
-void game_deinit(void) {
-	ui_destroy();
-}
-
-uint game_getScore(void) {
-	return score;
-}
-
-void game_handleKey(uchar keycode,uchar modifiers,A_UNUSED char c) {
-	pressed[keycode] = !(modifiers & STATE_BREAK);
-}
-
-bool game_tick(time_t gtime) {
+bool Game::tick(time_t gtime) {
 	bool stop = false;
-	if((gtime % UPDATE_INTERVAL) == 0) {
+
+	if((gtime % updateInterval()) == 0) {
 		int scoreChg;
-		if((gtime % KEYPRESS_INTERVAL) == 0) {
+		if((gtime % keypressInterval()) == 0) {
 			size_t i;
 			for(i = 0; i < KEYCODE_COUNT; i++) {
 				if(pressed[i])
-					stop |= !game_performAction(gtime,i);
+					stop |= !performAction(gtime,i);
 			}
 		}
+
 		if((gtime % addPlainInt) == 0) {
 			if(addPlainInt > 20)
 				addPlainInt--;
-			game_addAirplain();
+			addAirplain();
 		}
-		scoreChg = objlist_tick();
+
+		scoreChg = objlist.tick(ui);
 		if((int)(scoreChg + score) < 0)
 			score = 0;
 		else
 			score += scoreChg;
-		ui_update();
+
+		ui.update();
 	}
+
 	return !stop;
 }
 
-static bool game_performAction(time_t gtime,uchar keycode) {
+bool Game::performAction(time_t gtime,uchar keycode) {
 	switch(keycode) {
 		case VK_LEFT:
-			bar_moveLeft();
+			_bar.moveLeft();
 			break;
 		case VK_RIGHT:
-			bar_moveRight();
+			_bar.moveRight(ui);
 			break;
 		case VK_SPACE:
-			if((gtime % FIRE_INTERVAL) == 0)
-				game_fire();
+			if((gtime % fireInterval()) == 0)
+				fire();
 			break;
 		case VK_Q:
 			return false;
@@ -115,26 +88,22 @@ static bool game_performAction(time_t gtime,uchar keycode) {
 	return true;
 }
 
-static void game_fire(void) {
+void Game::fire() {
 	size_t start,end;
-	sObject *o;
-	bar_getDim(&start,&end);
-	o = obj_createBullet(start + (end - start) / 2,GHEIGHT - 2,DIR_UP,4);
-	objlist_add(o);
+	_bar.getDim(&start,&end);
+	objlist.add(Object::createBullet(start + (end - start) / 2,ui.gameHeight() - 2,Object::UP,4));
 }
 
-static void game_addAirplain(void) {
-	sObject *o;
-	uint x = rand() % (GWIDTH - 2);
-	uint dir = DIR_DOWN;
+void Game::addAirplain() {
+	uint x = rand() % (ui.gameWidth() - 2);
+	uint dir = Object::DOWN;
 	switch(rand() % 3) {
 		case 0:
-			dir |= DIR_LEFT;
+			dir |= Object::LEFT;
 			break;
 		case 1:
-			dir |= DIR_RIGHT;
+			dir |= Object::RIGHT;
 			break;
 	}
-	o = obj_createAirplain(x,0,dir,50);
-	objlist_add(o);
+	objlist.add(Object::createAirplain(x,0,dir,50));
 }

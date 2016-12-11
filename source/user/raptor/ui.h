@@ -24,14 +24,55 @@
 #include <sys/io.h>
 #include <sys/messages.h>
 
-#define WIDTH				(mode.cols)
-#define HEIGHT				(mode.rows)
-#define PADDING				1
-#define GWIDTH				(WIDTH - PADDING * 2)
-#define GHEIGHT				(HEIGHT - PADDING * 2)
+class Bar;
+class Game;
+class ObjList;
 
-extern esc::Screen::Mode mode;
+class UI {
+	static const uint SCORE_WIDTH	= 10;
+	static const uint SCORE_HEIGHT	= 4;
 
-void ui_init(uint cols,uint rows);
-void ui_destroy(void);
-void ui_update(void);
+public:
+	static const uint PADDING 		= 1;
+
+	explicit UI(Game &game,uint cols,uint rows);
+	~UI();
+
+	uint width() const {
+		return mode.cols;
+	}
+	uint height() const {
+		return mode.rows;
+	}
+	uint gameWidth() const {
+		return width() - PADDING * 2;
+	}
+	uint gameHeight() const {
+		return height() - PADDING * 2;
+	}
+
+	void update();
+
+private:
+	size_t xyChar(uint x,uint y) const {
+		return y * width() * 2 + x * 2;
+	}
+	size_t xyCol(uint x,uint y) const {
+		return y * width() * 2 + x * 2 + 1;
+	}
+
+	void drawScore();
+	void drawObjects(const ObjList &objlist);
+	void drawBar(const Bar &bar);
+	void restoreBackup();
+	void setBackup();
+
+	static int inputThread(void *arg);
+
+	Game &game;
+	esc::UI *ui;
+	esc::Screen::Mode mode;
+	esc::UIEvents *uiev;
+	esc::FrameBuffer *fb;
+	uchar *backup;
+};

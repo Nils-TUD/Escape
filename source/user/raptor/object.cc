@@ -24,101 +24,75 @@
 #include "object.h"
 #include "ui.h"
 
-sObject *obj_createAirplain(int x,int y,int direction,int speed) {
-	return obj_create(TYPE_AIRPLANE,x,y,AIRPLANE_WIDTH,AIRPLANE_HEIGHT,direction,speed);
-}
-
-sObject *obj_createBullet(int x,int y,int direction,int speed) {
-	return obj_create(TYPE_BULLET,x,y,BULLET_WIDTH,BULLET_HEIGHT,direction,speed);
-}
-
-sObject *obj_create(int type,int x,int y,int width,int height,int direction,int speed) {
-	sObject *o = (sObject*)malloc(sizeof(sObject));
-	assert(o != NULL);
-	o->type = type;
-	o->x = x;
-	o->y = y;
-	o->width = width;
-	o->height = height;
-	o->direction = direction;
-	o->speed = speed;
-	o->moveCnt = 0;
-	return o;
-}
-
-bool obj_collide(sObject *o1,sObject *o2) {
-	if((o1->type == TYPE_BULLET && o2->type == TYPE_AIRPLANE) ||
-		(o1->type == TYPE_AIRPLANE && o2->type == TYPE_BULLET)) {
-		return OVERLAPS(o1->x,o1->x + o1->width - 1,o2->x,o2->x + o2->width - 1) &&
-			OVERLAPS(o1->y,o1->y + o1->height - 1,o2->y,o2->y + o2->height - 1);
+bool Object::collide(Object *o) {
+	if((type == BULLET && o->type == AIRPLANE) ||
+		(type == AIRPLANE && o->type == BULLET)) {
+		return OVERLAPS(x,x + width - 1,o->x,o->x + o->width - 1) &&
+			OVERLAPS(y,y + height - 1,o->y,o->y + o->height - 1);
 	}
 	return false;
 }
 
-bool obj_explode(sObject *o) {
-	if(o->type == TYPE_AIRPLANE) {
-		o->moveCnt = 0;
-		o->type = TYPE_EXPLO1;
+bool Object::explode() {
+	if(type == AIRPLANE) {
+		moveCnt = 0;
+		type = EXPLO1;
 		return true;
 	}
 	return false;
 }
 
-bool obj_tick(sObject *o) {
-	o->moveCnt++;
-	if(o->type == TYPE_EXPLO1) {
-		if(o->moveCnt == EXPLO_DURATION) {
-			o->moveCnt = 0;
-			o->type = TYPE_EXPLO2;
+bool Object::tick(UI &ui) {
+	moveCnt++;
+	if(type == EXPLO1) {
+		if(moveCnt == EXPLO_DURATION) {
+			moveCnt = 0;
+			type = EXPLO2;
 		}
 		return true;
 	}
-	if(o->type == TYPE_EXPLO2) {
-		if(o->moveCnt == EXPLO_DURATION) {
-			o->moveCnt = 0;
-			o->type = TYPE_EXPLO3;
+	if(type == EXPLO2) {
+		if(moveCnt == EXPLO_DURATION) {
+			moveCnt = 0;
+			type = EXPLO3;
 		}
 		return true;
 	}
-	if(o->type == TYPE_EXPLO3) {
-		if(o->moveCnt == EXPLO_DURATION) {
-			o->moveCnt = 0;
-			o->type = TYPE_EXPLO4;
+	if(type == EXPLO3) {
+		if(moveCnt == EXPLO_DURATION) {
+			moveCnt = 0;
+			type = EXPLO4;
 		}
 		return true;
 	}
-	if(o->type == TYPE_EXPLO4) {
-		if(o->moveCnt == EXPLO_DURATION)
+	if(type == EXPLO4) {
+		if(moveCnt == EXPLO_DURATION)
 			return false;
 		return true;
 	}
 
-	if(++o->moveCnt == o->speed) {
-		o->moveCnt = 0;
-		if(o->direction & DIR_UP) {
-			if(o->y == 0)
+	if(++moveCnt == speed) {
+		moveCnt = 0;
+		if(direction & UP) {
+			if(y == 0)
 				return false;
-			o->y--;
+			y--;
 		}
-		if(o->direction & DIR_DOWN) {
-			if(o->y + o->height == (int)GHEIGHT)
+		if(direction & DOWN) {
+			if(y + height == (int)ui.gameHeight())
 				return false;
-			o->y++;
+			y++;
 		}
-		if(o->direction & DIR_LEFT) {
-			if(o->x == 0)
+		if(direction & LEFT) {
+			if(x == 0)
 				return false;
-			o->x--;
+			x--;
 		}
-		if(o->direction & DIR_RIGHT) {
-			if(o->x + o->width == (int)GWIDTH)
+		if(direction & RIGHT) {
+			if(x + width == (int)ui.gameWidth())
 				return false;
-			o->x++;
+			x++;
 		}
 	}
 	return true;
-}
-
-void obj_destroy(sObject *o) {
-	free(o);
 }

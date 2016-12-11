@@ -24,63 +24,57 @@
 #include "object.h"
 #include "objlist.h"
 
-static sObject *first;
-
-void objlist_add(sObject *o) {
-	sObject *p = NULL;
-	sObject *obj = first;
+void ObjList::add(Object *o) {
+	Object *p = NULL;
+	Object *obj = first;
 	while(obj) {
 		p = obj;
-		obj = obj->next;
+		obj = obj->_next;
 	}
 	if(p)
-		p->next = o;
+		p->_next = o;
 	else
 		first = o;
-	o->next = NULL;
+	o->_next = NULL;
 }
 
-sObject *objlist_get(void) {
-	return first;
-}
-
-int objlist_tick(void) {
+int ObjList::tick(UI &ui) {
 	bool removeO1;
 	int scoreChg = 0;
-	for(sObject *pn = NULL, *o1 = first; o1 != NULL; ) {
-		if(!obj_tick(o1)) {
-			if(o1->type == TYPE_AIRPLANE)
-				scoreChg += SCORE_MISS;
-			sObject *nnext = o1->next;
-			obj_destroy(o1);
+	for(Object *pn = NULL, *o1 = first; o1 != NULL; ) {
+		if(!o1->tick(ui)) {
+			if(o1->type == Object::AIRPLANE)
+				scoreChg += Game::SCORE_MISS;
+			Object *nnext = o1->_next;
+			delete o1;
 			if(pn)
-				pn->next = nnext;
+				pn->_next = nnext;
 			else
 				first = nnext;
 			o1 = nnext;
 		}
 		else {
 			pn = o1;
-			o1 = o1->next;
+			o1 = o1->_next;
 		}
 	}
 
-	for(sObject *pn = NULL, *o1 = first; o1 != NULL; ) {
+	for(Object *pn = NULL, *o1 = first; o1 != NULL; ) {
 		removeO1 = false;
-		for(sObject *pm = NULL, *o2 = first; o2 != NULL; pm = o2, o2 = o2->next) {
+		for(Object *pm = NULL, *o2 = first; o2 != NULL; pm = o2, o2 = o2->_next) {
 			if(o1 != o2) {
-				if(obj_collide(o1,o2)) {
-					scoreChg += SCORE_HIT;
-					if(!obj_explode(o1)) {
+				if(o1->collide(o2)) {
+					scoreChg += Game::SCORE_HIT;
+					if(!o1->explode()) {
 						removeO1 = true;
-						obj_destroy(o1);
+						delete o1;
 					}
-					if(!obj_explode(o2)) {
+					if(!o2->explode()) {
 						if(pm)
-							pm->next = o2->next;
+							pm->_next = o2->_next;
 						else
-							first = o2->next;
-						obj_destroy(o2);
+							first = o2->_next;
+						delete o2;
 					}
 					break;
 				}
@@ -89,16 +83,16 @@ int objlist_tick(void) {
 
 		/* collition? */
 		if(removeO1) {
-			sObject *nnext = o1->next;
+			Object *nnext = o1->_next;
 			if(pn)
-				pn->next = o1->next;
+				pn->_next = o1->_next;
 			else
-				first = o1->next;
+				first = o1->_next;
 			o1 = nnext;
 		}
 		else {
 			pn = o1;
-			o1 = o1->next;
+			o1 = o1->_next;
 		}
 	}
 	return scoreChg;

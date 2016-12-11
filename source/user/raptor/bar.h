@@ -21,10 +21,30 @@
 
 #include <sys/common.h>
 
-void bar_init(void);
+#include "ui.h"
 
-void bar_getDim(size_t *start,size_t *end);
+class Bar {
+public:
+	static const size_t BAR_WIDTH = 6;
 
-void bar_moveLeft(void);
+	explicit Bar() : pos(0) {
+	}
 
-void bar_moveRight(void);
+	void getDim(size_t *start,size_t *end) const {
+		*start = pos;
+		*end = pos + BAR_WIDTH - 1;
+	}
+
+	void moveLeft() {
+		if(pos > 0)
+			pos--;
+	}
+
+	void moveRight(UI &ui) {
+		if(pos + BAR_WIDTH <= ui.gameWidth())
+			pos++;
+	}
+
+private:
+	size_t pos;
+};

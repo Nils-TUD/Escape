@@ -20,17 +20,60 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/esccodes.h>
 
-#define SCORE_HIT		2
-#define SCORE_MISS		(-2)
-#define SCORE_SELFHIT	(-4)
+#include "bar.h"
+#include "objlist.h"
+#include "ui.h"
 
-bool game_init(uint cols,uint rows);
+class Game {
+public:
+	static const int SCORE_HIT		= 2;
+	static const int SCORE_MISS		= -2;
+	static const int SCORE_SELFHIT	= -4;
 
-void game_deinit(void);
+	static const size_t KEYCODE_COUNT	= 128;
+	static const int TICK_SLICE			= 10;
 
-uint game_getScore(void);
+	explicit Game(uint cols,uint rows);
 
-void game_handleKey(uchar keycode,uchar modifiers,A_UNUSED char c);
+	const Bar &bar() const {
+		return _bar;
+	}
+	const ObjList &objects() const {
+		return objlist;
+	}
 
-bool game_tick(time_t time);
+	uint getScore() {
+		return score;
+	}
+
+	void handleKey(uchar keycode,uchar modifiers,A_UNUSED char c) {
+		pressed[keycode] = !(modifiers & STATE_BREAK);
+	}
+
+	bool tick(time_t time);
+
+private:
+	int updateInterval() const {
+		return TICK_SLICE / (1000 / timerFreq);
+	}
+	int keypressInterval() const {
+		return updateInterval() * 2;
+	}
+	int fireInterval() const {
+		return updateInterval() * 8;
+	}
+
+	bool performAction(time_t time,uchar keycode);
+	void fire();
+	void addAirplain();
+
+	uint score;
+	long timerFreq;
+	uint addPlainInt;
+	Bar _bar;
+	UI ui;
+	ObjList objlist;
+	uchar pressed[KEYCODE_COUNT];
+};

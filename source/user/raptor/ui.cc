@@ -36,60 +36,41 @@
 #include "objlist.h"
 #include "ui.h"
 
-#define SCORE_WIDTH			10
-#define SCORE_HEIGHT		4
-
-#define XYCHAR(x,y)			((y) * WIDTH * 2 + (x) * 2)
-#define XYCOL(x,y)			((y) * WIDTH * 2 + (x) * 2 + 1)
-
-static int ui_inputThread(void *arg);
-static void ui_drawScore(void);
-static void ui_drawObjects(void);
-static void ui_drawBar(void);
-static void ui_restoreBackup(void);
-static void ui_setBackup(void);
-
-static const uchar airplane[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar airplane[Object::AIRPLANE_WIDTH * Object::AIRPLANE_HEIGHT * 2] = {
 	0xDA, 0x07, 0xC4, 0x07, 0xBF, 0x07,
 	0xB3, 0x07, 0xDB, 0x07, 0xB3, 0x07,
 	0xD4, 0x07, 0xCD, 0x07, 0xBE, 0x07
 };
 
-static const uchar explo1[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo1[Object::AIRPLANE_WIDTH * Object::AIRPLANE_HEIGHT * 2] = {
 	0xDA, 0x07, 0xC4, 0x07, 0xBF, 0x07,
 	0xB3, 0x07, 0xB2, 0x0E, 0xB3, 0x07,
 	0xD4, 0x07, 0xCD, 0x07, 0xBE, 0x07
 };
 
-static const uchar explo2[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo2[Object::AIRPLANE_WIDTH * Object::AIRPLANE_HEIGHT * 2] = {
 	0xB0, 0x0E, 0xB0, 0x0E, 0xB0, 0x0E,
 	0xB0, 0x0E, 0xB0, 0x0E, 0xB0, 0x0E,
 	0xB0, 0x0E, 0xB0, 0x0E, 0xB0, 0x0E
 };
 
-static const uchar explo3[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo3[Object::AIRPLANE_WIDTH * Object::AIRPLANE_HEIGHT * 2] = {
 	0xB1, 0x06, 0xB1, 0x06, 0xB1, 0x06,
 	0xB1, 0x06, 0xB1, 0x06, 0xB1, 0x06,
 	0xB1, 0x06, 0xB1, 0x06, 0xB1, 0x06
 };
 
-static const uchar explo4[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+static const uchar explo4[Object::AIRPLANE_WIDTH * Object::AIRPLANE_HEIGHT * 2] = {
 	0xB0, 0x08, 0xB0, 0x08, 0xB0, 0x08,
 	0xB0, 0x08, 0xB0, 0x08, 0xB0, 0x08,
 	0xB0, 0x08, 0xB0, 0x08, 0xB0, 0x08
 };
 
-static const uchar bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
+static const uchar bullet[Object::BULLET_WIDTH * Object::BULLET_HEIGHT * 2] = {
 	0x04, 0x04
 };
 
-esc::Screen::Mode mode;
-static esc::UI *ui;
-static esc::UIEvents *uiev;
-static esc::FrameBuffer *fb;
-static uchar *backup = NULL;
-
-void ui_init(uint cols,uint rows) {
+UI::UI(Game &game,uint cols,uint rows) : game(game) {
 	/* open uimanager */
 	ui = new esc::UI("/dev/uimng");
 
@@ -116,152 +97,157 @@ void ui_init(uint cols,uint rows) {
 	ui->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,shmname,true);
 
 	/* start input thread */
-	if(startthread(ui_inputThread,NULL) < 0)
+	if(startthread(inputThread,this) < 0)
 		error("Unable to start input-thread");
 
 	/* create basic screen */
-	backup = (uchar*)malloc(WIDTH * HEIGHT * 2);
+	backup = (uchar*)malloc(width() * height() * 2);
 	if(!backup)
 		error("Unable to alloc mem for backup");
-	ui_setBackup();
+	setBackup();
 }
 
-static void sigUsr1(A_UNUSED int sig) {
-	exit(EXIT_SUCCESS);
-}
-
-static int ui_inputThread(A_UNUSED void *arg) {
-	if(signal(SIGUSR1,sigUsr1) == SIG_ERR)
-		error("Unable to set SIGUSR1-handler");
-	/* read from uimanager and handle the keys */
-	while(1) {
-		esc::UIEvents::Event ev;
-		*uiev >> ev;
-		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD)
-			game_handleKey(ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
-	}
-	return 0;
-}
-
-void ui_destroy(void) {
+UI::~UI() {
 	if(kill(getpid(),SIGUSR1) < 0)
 		printe("Unable to send SIGUSR1");
+
 	delete fb;
 	delete uiev;
 	delete ui;
 	free(backup);
 }
 
-void ui_update(void) {
-	ui_restoreBackup();
-	ui_drawBar();
-	ui_drawObjects();
-	ui_drawScore();
-	ui->update(0,0,WIDTH,HEIGHT);
+static void sigUsr1(A_UNUSED int sig) {
+	exit(EXIT_SUCCESS);
 }
 
-static void ui_drawScore(void) {
-	size_t x,i;
+int UI::inputThread(void *arg) {
+	UI *ui = reinterpret_cast<UI*>(arg);
+
+	if(signal(SIGUSR1,sigUsr1) == SIG_ERR)
+		error("Unable to set SIGUSR1-handler");
+
+	/* read from uimanager and handle the keys */
+	while(1) {
+		esc::UIEvents::Event ev;
+		*ui->uiev >> ev;
+		if(ev.type == esc::UIEvents::Event::TYPE_KEYBOARD)
+			ui->game.handleKey(ev.d.keyb.keycode,ev.d.keyb.modifier,ev.d.keyb.character);
+	}
+	return 0;
+}
+
+void UI::update() {
+	restoreBackup();
+	drawBar(game.bar());
+	drawObjects(game.objects());
+	drawScore();
+	ui->update(0,0,width(),height());
+}
+
+void UI::drawScore() {
 	char scoreStr[SCORE_WIDTH];
-	snprintf(scoreStr,sizeof(scoreStr),"%*u",SCORE_WIDTH - 2,game_getScore());
-	for(i = 0, x = WIDTH - SCORE_WIDTH + 1; scoreStr[i]; i++, x++)
-		backup[XYCHAR(x,3)] = scoreStr[i];
+	snprintf(scoreStr,sizeof(scoreStr),"%*u",SCORE_WIDTH - 2,game.getScore());
+	for(size_t i = 0, x = width() - SCORE_WIDTH + 1; scoreStr[i]; i++, x++)
+		backup[xyChar(x,3)] = scoreStr[i];
 }
 
-static void ui_drawObjects(void) {
-	int y;
-	const uchar *src;
-	for(sObject *o = objlist_get(); o != NULL; o = o->next) {
-		if((size_t)(o->x + PADDING + o->width) >= (size_t)(WIDTH - SCORE_WIDTH) &&
+void UI::drawObjects(const ObjList &objlist) {
+	for(Object *o = objlist.get(); o != NULL; o = o->next()) {
+		if((size_t)(o->x + PADDING + o->width) >= (size_t)(width() - SCORE_WIDTH) &&
 				(o->y + PADDING) <= SCORE_HEIGHT) {
 			/* don't draw objects over the score-area */
 			continue;
 		}
 
+		const uchar *src;
 		switch(o->type) {
-			case TYPE_AIRPLANE:
+			case Object::AIRPLANE:
 				src = airplane;
 				break;
-			case TYPE_BULLET:
+			case Object::BULLET:
 				src = bullet;
 				break;
-			case TYPE_EXPLO1:
+			case Object::EXPLO1:
 				src = explo1;
 				break;
-			case TYPE_EXPLO2:
+			case Object::EXPLO2:
 				src = explo2;
 				break;
-			case TYPE_EXPLO3:
+			case Object::EXPLO3:
 				src = explo3;
 				break;
-			case TYPE_EXPLO4:
+			case Object::EXPLO4:
 			default:
 				src = explo4;
 				break;
 		}
 
-		for(y = o->y + PADDING; y < o->y + PADDING + o->height; y++) {
-			memcpy(fb->addr() + XYCHAR(o->x + PADDING,y),src,o->width * 2);
+		for(uint y = o->y + PADDING; y < o->y + PADDING + o->height; y++) {
+			memcpy(fb->addr() + xyChar(o->x + PADDING,y),src,o->width * 2);
 			src += o->width * 2;
 		}
 	}
 }
 
-static void ui_drawBar(void) {
-	size_t x,start,end;
-	bar_getDim(&start,&end);
-	for(x = start + PADDING; x <= end; x++) {
-		fb->addr()[XYCHAR(x,HEIGHT - 2)] = 0xDB;
-		fb->addr()[XYCOL(x,HEIGHT - 2)] = 0x07;
+void UI::drawBar(const Bar &bar) {
+	size_t start,end;
+	bar.getDim(&start,&end);
+
+	for(size_t x = start + PADDING; x <= end; x++) {
+		fb->addr()[xyChar(x,height() - 2)] = 0xDB;
+		fb->addr()[xyCol(x,height() - 2)] = 0x07;
 	}
 }
 
-static void ui_restoreBackup(void) {
-	memcpy(fb->addr(),backup,WIDTH * HEIGHT * 2);
+void UI::restoreBackup() {
+	memcpy(fb->addr(),backup,width() * height() * 2);
 }
 
-static void ui_setBackup(void) {
-	size_t i,x,y;
-	const char *title = "Score:";
+void UI::setBackup() {
 	/* fill bg */
-	for(i = 0; i < WIDTH * HEIGHT * 2; i += 2) {
+	for(size_t i = 0; i < width() * height() * 2; i += 2) {
 		backup[i] = ' ';
 		backup[i + 1] = 0x07;
 	}
+
 	/* top and bottom border */
-	for(x = 1; x < WIDTH - 1; x++) {
-		backup[XYCHAR(x,0)] = 0xCD;
-		backup[XYCOL(x,0)] = 0x07;
-		backup[XYCHAR(x,HEIGHT - 1)] = 0xCD;
-		backup[XYCOL(x,HEIGHT - 1)] = 0x07;
+	for(size_t x = 1; x < width() - 1; x++) {
+		backup[xyChar(x,0)] = 0xCD;
+		backup[xyCol(x,0)] = 0x07;
+		backup[xyChar(x,height() - 1)] = 0xCD;
+		backup[xyCol(x,height() - 1)] = 0x07;
 	}
+
 	/* left and right border */
-	for(y = 1; y < HEIGHT - 1; y++) {
-		backup[XYCHAR(0,y)] = 0xBA;
-		backup[XYCOL(0,y)] = 0x07;
-		backup[XYCHAR(WIDTH - 1,y)] = 0xBA;
-		backup[XYCOL(WIDTH - 1,y)] = 0x07;
+	for(size_t y = 1; y < height() - 1; y++) {
+		backup[xyChar(0,y)] = 0xBA;
+		backup[xyCol(0,y)] = 0x07;
+		backup[xyChar(width() - 1,y)] = 0xBA;
+		backup[xyCol(width() - 1,y)] = 0x07;
 	}
+
 	/* corners */
-	backup[XYCHAR(0,0)] = 0xC9;
-	backup[XYCOL(0,0)] = 0x07;
-	backup[XYCHAR(WIDTH - 1,0)] = 0xBB;
-	backup[XYCOL(WIDTH - 1,0)] = 0x07;
-	backup[XYCHAR(0,HEIGHT - 1)] = 0xC8;
-	backup[XYCOL(0,HEIGHT - 1)] = 0x07;
-	backup[XYCHAR(WIDTH - 1,HEIGHT - 1)] = 0xBC;
-	backup[XYCOL(WIDTH - 1,HEIGHT - 1)] = 0x07;
+	backup[xyChar(0,0)] = 0xC9;
+	backup[xyCol(0,0)] = 0x07;
+	backup[xyChar(width() - 1,0)] = 0xBB;
+	backup[xyCol(width() - 1,0)] = 0x07;
+	backup[xyChar(0,height() - 1)] = 0xC8;
+	backup[xyCol(0,height() - 1)] = 0x07;
+	backup[xyChar(width() - 1,height() - 1)] = 0xBC;
+	backup[xyCol(width() - 1,height() - 1)] = 0x07;
 
 	/* score-border */
-	backup[XYCHAR(WIDTH - SCORE_WIDTH,0)] = 0xCB;
-	for(y = 1; y < SCORE_HEIGHT; y++)
-		backup[XYCHAR(WIDTH - SCORE_WIDTH,y)] = 0xBA;
-	backup[XYCHAR(WIDTH - SCORE_WIDTH,SCORE_HEIGHT)] = 0xC8;
-	for(x = WIDTH - SCORE_WIDTH + 1; x < WIDTH - 1; x++)
-		backup[XYCHAR(x,SCORE_HEIGHT)] = 0xCD;
-	backup[XYCHAR(WIDTH - 1,SCORE_HEIGHT)] = 0xB9;
+	backup[xyChar(width() - SCORE_WIDTH,0)] = 0xCB;
+	for(size_t y = 1; y < SCORE_HEIGHT; y++)
+		backup[xyChar(width() - SCORE_WIDTH,y)] = 0xBA;
+	backup[xyChar(width() - SCORE_WIDTH,SCORE_HEIGHT)] = 0xC8;
+	for(size_t x = width() - SCORE_WIDTH + 1; x < width() - 1; x++)
+		backup[xyChar(x,SCORE_HEIGHT)] = 0xCD;
+	backup[xyChar(width() - 1,SCORE_HEIGHT)] = 0xB9;
 
 	/* "Score:" */
-	for(x = WIDTH - SCORE_WIDTH + 1; *title; x++)
-		backup[XYCHAR(x,1)] = *title++;
+	const char *title = "Score:";
+	for(size_t x = width() - SCORE_WIDTH + 1; *title; x++)
+		backup[xyChar(x,1)] = *title++;
 }

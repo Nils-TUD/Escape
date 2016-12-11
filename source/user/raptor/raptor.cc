@@ -33,12 +33,13 @@
 
 #include "game.h"
 
-#define INTERVAL		5000 /* us */
-
-static void sigInt(int sig);
-static void qerror(const char *msg,...);
+static const int INTERVAL = 5000; /* us */
 
 static volatile bool run = true;
+
+static void sigInt(A_UNUSED int sig) {
+	run = false;
+}
 
 int main(int argc,char *argv[]) {
 	if((argc != 1 && argc != 3) || isHelpCmd(argc,argv)) {
@@ -54,14 +55,14 @@ int main(int argc,char *argv[]) {
 	}
 
 	if(signal(SIGINT,sigInt) == SIG_ERR)
-		qerror("Unable to set sig-handler");
+		error("Unable to set sig-handler");
 
 	ulong ticks = 0;
-	game_init(cols,rows);
+	Game game(cols,rows);
 	while(run) {
 		uint64_t next = rdtsc() + timetotsc(INTERVAL);
 
-		if(!game_tick(ticks))
+		if(!game.tick(ticks))
 			break;
 
 		/* wait for next tick */
@@ -71,19 +72,5 @@ int main(int argc,char *argv[]) {
 		ticks++;
 	}
 
-	game_deinit();
 	return EXIT_SUCCESS;
-}
-
-static void sigInt(A_UNUSED int sig) {
-	run = false;
-}
-
-static void qerror(const char *msg,...) {
-	va_list ap;
-	game_deinit();
-	va_start(ap,msg);
-	vprinte(msg,ap);
-	va_end(ap);
-	exit(EXIT_FAILURE);
 }

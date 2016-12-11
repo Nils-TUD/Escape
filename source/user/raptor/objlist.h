@@ -23,8 +23,22 @@
 
 #include "object.h"
 
-void objlist_add(sObject *o);
+class UI;
 
-sObject *objlist_get(void);
+class ObjList {
+public:
+	explicit ObjList() : first() {
+	}
 
-int objlist_tick(void);
+	void add(Object *o);
+
+	Object *get() const {
+		return first;
+	}
+
+	int tick(UI &ui);
+
+private:
+	Object *first;
+};
+

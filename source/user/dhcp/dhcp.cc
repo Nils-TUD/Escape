@@ -38,11 +38,6 @@ using namespace esc;
  * - http://tools.ietf.org/html/rfc2132
  */
 
-#define DHCP_MAGIC		0x63825363
-#define ETH_10MB		1
-#define ETH_10MB_LEN	6
-#define DHCP_TIMEOUT	3000 /* ms */
-
 // ports
 enum {
 	SERVER_PORT	= 67,
@@ -90,6 +85,11 @@ enum State {
 	SUCCESS,
 	FAILED
 };
+
+static const uint32_t DHCP_MAGIC 	= 0x63825363;
+static const int ETH_10MB			= 1;
+static const int ETH_10MB_LEN		= 6;
+static const int DHCP_TIMEOUT		= 3000; /* ms */
 
 struct DHCPMsg {
 	explicit DHCPMsg() {

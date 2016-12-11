@@ -19,6 +19,7 @@
 
 #include <esc/stream/std.h>
 #include <esc/cmdargs.h>
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -34,7 +35,7 @@ static bool matches(const char *path,const char *file,size_t flen,struct stat *i
 	bool match = true;
 	if(!filterName.empty()) {
 		char filename[MAX_PATH_LEN];
-		size_t count = MAX(sizeof(filename) - 1,flen);
+		size_t count = esc::Util::max(sizeof(filename) - 1,flen);
 		memcpy(filename,file,count);
 		filename[count] = '\0';
 		match = strmatch(filterName.c_str(),filename);

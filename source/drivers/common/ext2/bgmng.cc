@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <fs/blockcache.h>
 #include <fs/fsdev.h>
 #include <sys/common.h>
@@ -96,10 +97,10 @@ void Ext2BGMng::print(block_t no) {
 	printf("	freeInodes = %d\n",le16tocpu(bg->freeInodeCount));
 	printf("	usedDirCount = %d\n",le16tocpu(bg->usedDirCount));
 	printRanges("Blocks",no * blocksPerGroup,
-			MIN(blocksPerGroup,le32tocpu(_fs->sb.get()->blockCount) - (no * blocksPerGroup)),
+			esc::Util::min(blocksPerGroup,le32tocpu(_fs->sb.get()->blockCount) - (no * blocksPerGroup)),
 			static_cast<uint8_t*>(bbitmap->buffer));
 	printRanges("Inodes",no * inodesPerGroup,
-			MIN(inodesPerGroup,le32tocpu(_fs->sb.get()->inodeCount) - (no * inodesPerGroup)),
+			esc::Util::min(inodesPerGroup,le32tocpu(_fs->sb.get()->inodeCount) - (no * inodesPerGroup)),
 			static_cast<uint8_t*>(ibitmap->buffer));
 	_fs->blockCache.release(ibitmap);
 	_fs->blockCache.release(bbitmap);

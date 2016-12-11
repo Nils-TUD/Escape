@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 #include <sys/driver.h>
@@ -84,8 +85,8 @@ void VESAGUI::update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width
 	size_t count;
 	uint8_t *src,*dst;
 	y1 = y;
-	y2 = MIN(yres,y + height);
-	width = MIN(xres - x,width);
+	y2 = esc::Util::min(yres,y + height);
+	width = esc::Util::min(xres - x,width);
 	count = width * pxSize;
 
 	/* copy from shared-mem to video-mem */
@@ -119,11 +120,11 @@ void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newC
 	gsize_t xres = scr->mode->width;
 	gsize_t yres = scr->mode->height;
 	/* validate position */
-	x = MIN(x,(int)(xres - 1));
-	y = MIN(y,(int)(yres - 1));
+	x = esc::Util::min(x,(int)(xres - 1));
+	y = esc::Util::min(y,(int)(yres - 1));
 
 	if(_lastX != x || _lastY != y) {
-		gsize_t upHeight = MIN(curHeight,yres - _lastY);
+		gsize_t upHeight = esc::Util::min(curHeight,yres - _lastY);
 		/* copy old content back */
 		copyRegion(scr,_cursorCopy,scr->frmbuf,curWidth,upHeight,0,0,_lastX,_lastY,curWidth,xres,curHeight);
 		/* save content */
@@ -138,9 +139,9 @@ void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newC
 
 void VESAGUI::copyRegion(VESAScreen *scr,uint8_t *src,uint8_t *dst,gsize_t width,gsize_t height,
 		gpos_t x1,gpos_t y1,gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1) {
-	gpos_t maxy = MIN(h1,y1 + height);
+	gpos_t maxy = esc::Util::min(h1,y1 + height);
 	gsize_t pxSize = scr->mode->bitsPerPixel / 8;
-	size_t count = MIN(w2 - x2,MIN(w1 - x1,width)) * pxSize;
+	size_t count = esc::Util::min(w2 - x2,esc::Util::min(w1 - x1,width)) * pxSize;
 	size_t srcInc = w1 * pxSize;
 	size_t dstInc = w2 * pxSize;
 	src += (y1 * w1 + x1) * pxSize;

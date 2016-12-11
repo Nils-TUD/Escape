@@ -77,7 +77,7 @@ size_t Groups::get(pid_t pid,USER gid_t *list,size_t count) {
 		if(count == 0)
 			res = g ? g->count : 0;
 		else if(g) {
-			res = MIN(g->count,count);
+			res = esc::Util::min(g->count,count);
 			UserAccess::write(list,g->groups,res * sizeof(gid_t));
 		}
 		Proc::relRef(p);

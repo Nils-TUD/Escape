@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <dbg/cmd/mem.h>
 #include <dbg/console.h>
 #include <dbg/kb.h>
@@ -33,7 +34,7 @@
 class MemNaviBackend : public NaviBackend {
 public:
 	explicit MemNaviBackend(Proc *p,uintptr_t addr)
-		: NaviBackend(addr,ROUND_DN(ULONG_MAX,(ulong)Console::BYTES_PER_LINE)),
+		: NaviBackend(addr,esc::Util::round_dn(ULONG_MAX,Console::BYTES_PER_LINE)),
 		  proc(p), lastAddr(), lastFrame(), page() {
 	}
 	virtual ~MemNaviBackend() {
@@ -73,7 +74,7 @@ public:
 
 	virtual uintptr_t gotoAddr(const char *addr) {
 		uintptr_t off = strtoul(addr,NULL,16);
-		return ROUND_DN(off,(uintptr_t)Console::BYTES_PER_LINE);
+		return esc::Util::round_dn(off,Console::BYTES_PER_LINE);
 	}
 
 private:

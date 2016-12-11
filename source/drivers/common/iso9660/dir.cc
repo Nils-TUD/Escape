@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <fs/blockcache.h>
 #include <sys/common.h>
 #include <sys/io.h>
@@ -117,7 +118,7 @@ bool ISO9660Dir::match(const char *user,const char *disk,size_t userLen,size_t d
 	if(*disk == ISO_FILENAME_PARENT)
 		return userLen == 2 && strcmp(user,"..") == 0;
 	/* don't compare volume sequence no */
-	rpos = MIN(diskLen,(size_t)strchri(disk,';'));
+	rpos = esc::Util::min(diskLen,(size_t)strchri(disk,';'));
 	if(disk[rpos] != ';')
 		return userLen == diskLen && strncasecmp(disk,user,userLen) == 0;
 	return userLen == rpos && strncasecmp(disk,user,userLen) == 0;

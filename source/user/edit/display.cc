@@ -135,19 +135,19 @@ void displ_mvCurVert(int lineCount) {
 		curY = total - 1;
 	else if(curY >= (int)mode.rows) {
 		if(total >= mode.rows)
-			firstLine = MIN(total - mode.rows,firstLine + (curY - mode.rows) + 1);
+			firstLine = esc::Util::min(total - mode.rows,firstLine + (curY - mode.rows) + 1);
 		else
-			firstLine = MIN(total,firstLine + (curY - mode.rows) + 1);
+			firstLine = esc::Util::min(total,firstLine + (curY - mode.rows) + 1);
 		curY = mode.rows - 1;
 	}
 	else if(curY < 0) {
-		firstLine = MAX(0,(int)firstLine + curY);
+		firstLine = esc::Util::max(0,(int)firstLine + curY);
 		curY = 0;
 	}
 	/* determine x-position */
 	line = buf_getLine(firstLine + curY);
-	curX = MIN((int)line->length,MAX(curXVirt,curX));
-	curXDispl = MIN((int)line->displLen,MAX(curXVirtDispl,curXDispl));
+	curX = esc::Util::min((int)line->length,esc::Util::max(curXVirt,curX));
+	curXDispl = esc::Util::min((int)line->displLen,esc::Util::max(curXVirtDispl,curXDispl));
 	/* anything to update? */
 	if(oldFirst != firstLine)
 		displ_markDirty(firstLine,mode.rows);
@@ -162,9 +162,9 @@ void displ_markDirty(size_t start,size_t count) {
 		size_t oldstart = dirtyStart;
 		if(start < oldstart)
 			dirtyStart = start;
-		dirtyCount = MAX(oldstart + dirtyCount,start + count) - dirtyStart;
+		dirtyCount = esc::Util::max(oldstart + dirtyCount,start + count) - dirtyStart;
 	}
-	dirtyCount = MIN(dirtyCount,mode.rows - (dirtyStart - firstLine));
+	dirtyCount = esc::Util::min(dirtyCount,mode.rows - (dirtyStart - firstLine));
 }
 
 void displ_update() {

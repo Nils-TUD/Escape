@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <fs/ext2/ext2.h>
 #include <ecmxdisk/disk.h>
 #include <sys/arch.h>
@@ -259,7 +260,7 @@ static uintptr_t copyToMem(Ext2Inode *ino,size_t offset,size_t count,uintptr_t d
 		blk = getBlock(ino,offset);
 
 		offInBlk = offset % blockSize();
-		amount = MIN(count,blockSize() - offInBlk);
+		amount = esc::Util::min(count,blockSize() - offInBlk);
 		readFromDisk(blk,(void*)dest,offInBlk,amount);
 
 		count -= amount;
@@ -314,10 +315,10 @@ static int loadKernel(LoadProg *prog,Ext2Inode *ino) {
 
 #if defined(__eco32__)
 	/* leave one page for stack */
-	loadAddr = ROUND_UP(loadAddr + PAGE_SIZE,PAGE_SIZE);
+	loadAddr = esc::Util::round_up(loadAddr + PAGE_SIZE,PAGE_SIZE);
 #else
 	/* to next page for the stack */
-	loadAddr = ROUND_UP(loadAddr,PAGE_SIZE);
+	loadAddr = esc::Util::round_up(loadAddr,PAGE_SIZE);
 	bootinfo.kstackBegin = loadAddr;
 
 	/* load the regs-section */
@@ -357,7 +358,7 @@ static int loadKernel(LoadProg *prog,Ext2Inode *ino) {
 
 static int readInProg(LoadProg *prog,Ext2Inode *ino) {
 	/* make page-boundary */
-	loadAddr = ROUND_PAGE_UP(loadAddr);
+	loadAddr = esc::Util::round_page_up(loadAddr);
 	prog->start = loadAddr;
 	prog->size = le32tocpu(ino->size);
 

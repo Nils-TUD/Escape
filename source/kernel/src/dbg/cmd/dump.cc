@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <dbg/cmd/dump.h>
 #include <dbg/console.h>
 #include <dbg/kb.h>
@@ -73,7 +74,7 @@ public:
 
 	virtual uintptr_t gotoAddr(const char *addr) {
 		uintptr_t off = strtoul(addr,NULL,16);
-		return ROUND_DN(off,(uintptr_t)Console::BYTES_PER_LINE);
+		return esc::Util::round_dn(off,Console::BYTES_PER_LINE);
 	}
 
 private:
@@ -97,7 +98,7 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 	int res = VFS::openPath(pid,VFS_READ,0,argv[1],&file);
 	if(res >= 0) {
 		off_t end = file->seek(pid,0,SEEK_END);
-		DumpNaviBackend backend(argv[1],ROUND_DN(end,(uintptr_t)Console::BYTES_PER_LINE));
+		DumpNaviBackend backend(argv[1],esc::Util::round_dn(end,Console::BYTES_PER_LINE));
 		Console::navigation(os,&backend);
 		file->close(pid);
 	}

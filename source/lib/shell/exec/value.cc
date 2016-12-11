@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/width.h>
 #include <stdlib.h>
@@ -416,7 +417,7 @@ static char *val_arr2Str(const sValue *v,bool brackets) {
 		char *elstr = val_getStr(el);
 		if(4 + count + (slen = strlen(elstr)) >= size) {
 			/* allocate for ", ", "]" and '\0' as well */
-			size = MAX(size * 2,count + slen + 4);
+			size = esc::Util::max(size * 2,count + slen + 4);
 			str = (char*)erealloc(str,size);
 		}
 		strcpy(str + count,elstr);

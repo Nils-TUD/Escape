@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -112,7 +113,7 @@ static bool ast_expandable(sASTNode *node) {
 }
 
 static void ast_appendToPath(char *path,size_t pos,const char *str) {
-	size_t amount = MIN(MAX_PATH_LEN - pos,strlen(str));
+	size_t amount = esc::Util::min(MAX_PATH_LEN - pos,strlen(str));
 	strncpy(path + pos,str,amount);
 	path[pos + amount] = '\0';
 }

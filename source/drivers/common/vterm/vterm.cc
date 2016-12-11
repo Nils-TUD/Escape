@@ -21,6 +21,7 @@
 #include <esc/proto/file.h>
 #include <esc/proto/ui.h>
 #include <esc/proto/vterm.h>
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/driver.h>
@@ -192,8 +193,8 @@ static void processMouseEvent(const UIEvents::Event &ev) {
 	int px_per_row = fb->mode().height / vterm.rows;
 
 	// make sure it's within the bounds
-	mx = MAX(0,MIN(mx,(int)fb->mode().width - px_per_col - 1));
-	my = MAX(0,MIN(my,(int)fb->mode().height - px_per_row - 1));
+	mx = esc::Util::max(0,esc::Util::min(mx,(int)fb->mode().width - px_per_col - 1));
+	my = esc::Util::max(0,esc::Util::min(my,(int)fb->mode().height - px_per_row - 1));
 
 	// set cursor
 	std::lock_guard<std::mutex> guard(*vterm.mutex);
@@ -278,7 +279,7 @@ static void vtUpdate(void) {
 	/* if we should scroll, mark the whole screen (without title) as dirty */
 	if(vterm.upScroll != 0) {
 		vterm.upCol = 0;
-		vterm.upRow = MIN(vterm.upRow,0);
+		vterm.upRow = esc::Util::min(vterm.upRow,0U);
 		vterm.upHeight = vterm.rows - vterm.upRow;
 		vterm.upWidth = vterm.cols;
 	}

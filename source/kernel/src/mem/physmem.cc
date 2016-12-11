@@ -18,6 +18,7 @@
  */
 
 #include <esc/ipc/ipcbuf.h>
+#include <esc/util.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
 #include <mem/physmemareas.h>
@@ -139,9 +140,9 @@ void PhysMem::init() {
 	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next) {
 		uintptr_t aend = area->addr + area->size;
 		if(area->addr >= lowerStart() || aend < lowerStart())
-			lowerPages += (MIN(lowerEnd(),aend) - area->addr) / PAGE_SIZE;
+			lowerPages += (esc::Util::min(lowerEnd(),aend) - area->addr) / PAGE_SIZE;
 		if(aend > lowerEnd())
-			upperPages += (aend - MAX(lowerEnd(),area->addr)) / PAGE_SIZE;
+			upperPages += (aend - esc::Util::max(lowerEnd(),area->addr)) / PAGE_SIZE;
 	}
 
 	lower.pages = BYTES_2_PAGES(lowerPages * sizeof(frameno_t));
@@ -218,7 +219,7 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 	LockGuard<SpinLock> g(&contLock);
 	size_t c = 0;
 	/* align in physical memory */
-	size_t i = ROUND_UP(bitmapStartFrame(),align);
+	size_t i = esc::Util::round_up(bitmapStartFrame(),align);
 	i -= bitmapStartFrame();
 	for(; i < BITMAP_PAGE_COUNT; ) {
 		/* walk forward until we find an occupied frame */
@@ -233,7 +234,7 @@ ssize_t PhysMem::allocateContiguous(size_t count,size_t align) {
 		if(c == count)
 			break;
 		/* ok, to next aligned frame */
-		i = ROUND_UP(bitmapStartFrame() + j + 1,align);
+		i = esc::Util::round_up(bitmapStartFrame() + j + 1,align);
 		i -= bitmapStartFrame();
 	}
 
@@ -427,7 +428,7 @@ void PhysMem::swapper() {
 		size_t free = getFreeDef();
 		/* swapping out is more important than swapping in */
 		if((free - (kframes + cframes)) < uframes) {
-			size_t amount = MIN(MAX_SWAP_AT_ONCE,uframes - (free - (kframes + cframes)));
+			size_t amount = esc::Util::min(MAX_SWAP_AT_ONCE,uframes - (free - (kframes + cframes)));
 			swapping = true;
 			defLock.up();
 

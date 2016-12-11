@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/kheap.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
@@ -39,7 +40,7 @@ void *KHeap::alloc(size_t size) {
 		return NULL;
 
 	/* align and we need 3 ulongs for the guards */
-	size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
+	size = esc::Util::round_up(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
 	LockGuard<SpinLock> g(&lock);
 
@@ -243,7 +244,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 			return NULL;
 
 		/* align and we need 3 ulongs for the guards */
-		size = ROUND_UP(size,sizeof(ulong)) + sizeof(ulong) * 3;
+		size = esc::Util::round_up(size,sizeof(ulong)) + sizeof(ulong) * 3;
 
 		/* ignore shrinks */
 		if(size < area->size)

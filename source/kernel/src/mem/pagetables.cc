@@ -310,13 +310,13 @@ void PageTables::printPTE(OStream &os,uintptr_t from,uintptr_t to,pte_t page,int
 		pte_t *pt = reinterpret_cast<pte_t*>(DIR_MAP_AREA + (page & PTE_FRAMENO_MASK));
 		size_t end,start = from >> (PAGE_BITS + PT_BPL * (level - 1)) & (PT_ENTRY_COUNT - 1);
 		uintptr_t last = to + entrySize - 1;
-		if(MAX(to,last) >= base + entrySize * PT_ENTRY_COUNT - 1)
+		if(esc::Util::max(to,last) >= base + entrySize * PT_ENTRY_COUNT - 1)
 			end = PT_ENTRY_COUNT;
 		else
 			end = last >> (PAGE_BITS + PT_BPL * (level - 1)) & (PT_ENTRY_COUNT - 1);
 		for(; start < end; ++start) {
 			if(pt[start] & PTE_EXISTS)
-				printPTE(os,from,MIN(from + entrySize - 1,to),pt[start],level - 1);
+				printPTE(os,from,esc::Util::min(from + entrySize - 1,to),pt[start],level - 1);
 			from += entrySize;
 		}
 	}

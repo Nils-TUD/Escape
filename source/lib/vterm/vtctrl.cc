@@ -125,7 +125,7 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	bool res = false;
 	if(vt->cols != cols || vt->rows != rows) {
 		size_t c,r,oldr,color;
-		size_t ccols = MIN(cols,vt->cols);
+		size_t ccols = esc::Util::min(cols,vt->cols);
 		char *buf,*oldBuf,**old = vt->lines,*oldempty = vt->emptyLine;
 		vt->lines = vtctrl_createLines(cols,rows);
 		if(!vt->lines) {
@@ -185,8 +185,8 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 		/* TODO update screenbackup */
 		vtctrl_freeLines(old,vt->rows);
 		free(oldempty);
-		vt->col = MIN(vt->col,cols - 1);
-		vt->row = MIN(rows - 1,rows - (vt->rows - vt->row));
+		vt->col = esc::Util::min(vt->col,cols - 1);
+		vt->row = esc::Util::min(rows - 1,rows - (vt->rows - vt->row));
 		vt->cols = cols;
 		vt->rows = rows;
 		vt->upCol = vt->cols;
@@ -285,11 +285,11 @@ void vtctrl_scroll(sVTerm *vt,int lines) {
 	old = vt->firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
-		vt->firstVisLine = MAX((int)vt->firstLine,(int)vt->firstVisLine - lines);
+		vt->firstVisLine = esc::Util::max((int)vt->firstLine,(int)vt->firstVisLine - lines);
 	}
 	else {
 		/* ensure that we don't scroll behind the last line */
-		vt->firstVisLine = MIN(HISTORY_SIZE * vt->rows - vt->rows,vt->firstVisLine - lines);
+		vt->firstVisLine = esc::Util::min(HISTORY_SIZE * vt->rows - vt->rows,vt->firstVisLine - lines);
 	}
 
 	if(old != vt->firstVisLine)
@@ -340,10 +340,10 @@ void vtctrl_markDirty(sVTerm *vt,uint col,uint row,size_t width,size_t height) {
 	row -= vt->firstVisLine;
 
 	int x = vt->upCol, y = vt->upRow;
-	vt->upCol = MIN(vt->upCol,col);
-	vt->upRow = MIN(vt->upRow,row);
-	vt->upWidth = MAX(x + vt->upWidth,col + width) - vt->upCol;
-	vt->upHeight = MAX(y + vt->upHeight,row + height) - vt->upRow;
+	vt->upCol = esc::Util::min(vt->upCol,col);
+	vt->upRow = esc::Util::min(vt->upRow,row);
+	vt->upWidth = esc::Util::max(x + vt->upWidth,col + width) - vt->upCol;
+	vt->upHeight = esc::Util::max(y + vt->upHeight,row + height) - vt->upRow;
 	assert(vt->upWidth <= vt->cols);
 	assert(vt->upHeight <= vt->rows);
 }

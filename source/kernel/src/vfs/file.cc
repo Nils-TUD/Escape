@@ -75,7 +75,7 @@ int VFSFile::doReserve(size_t newSize) {
 	/* ensure that we allocate enough memory */
 	if(newSize > VFS::MAX_FILE_SIZE)
 		return -ENOMEM;
-	newSize = MIN(MAX(newSize,size * 2),VFS::MAX_FILE_SIZE);
+	newSize = esc::Util::min(esc::Util::max(newSize,size * 2),VFS::MAX_FILE_SIZE);
 	void *newData = Cache::realloc(data,newSize);
 	if(!newData)
 		return -ENOMEM;
@@ -95,7 +95,7 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 	if(data != NULL) {
 		if(offset > pos)
 			offset = pos;
-		byteCount = MIN((size_t)(pos - offset),count);
+		byteCount = esc::Util::min((size_t)(pos - offset),count);
 		if(byteCount > 0) {
 			int res = UserAccess::write(buffer,(uint8_t*)data + offset,byteCount);
 			if(res < 0)
@@ -112,7 +112,7 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 	/* need to create cache? */
 	LockGuard<SpinLock> g(&lock);
 	if(data == NULL || size < offset + count) {
-		res = doReserve(MAX(offset + count,VFS_INITIAL_WRITECACHE));
+		res = doReserve(esc::Util::max(offset + count,VFS_INITIAL_WRITECACHE));
 		if(res < 0)
 			return res;
 	}
@@ -123,7 +123,7 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 		return res;
 
 	/* we have checked size for overflow. so it is ok here */
-	pos = MAX(pos,(off_t)(offset + count));
+	pos = esc::Util::max(pos,(off_t)(offset + count));
 	acctime = modtime = Timer::getTime();
 	return count;
 }

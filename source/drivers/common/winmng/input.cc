@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/winmng.h>
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/esccodes.h>
@@ -92,8 +93,8 @@ static void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 	gpos_t oldx = curX,oldy = curY;
 	bool btnChanged = false;
 	Window *w,*wheelWin = NULL;
-	curX = MAX(0,MIN((gpos_t)win_getMode()->width - 1,curX + data->d.mouse.x));
-	curY = MAX(0,MIN((gpos_t)win_getMode()->height - 1,curY - data->d.mouse.y));
+	curX = esc::Util::max(0,esc::Util::min((gpos_t)win_getMode()->width - 1,curX + data->d.mouse.x));
+	curY = esc::Util::max(0,esc::Util::min((gpos_t)win_getMode()->height - 1,curY - data->d.mouse.y));
 
 	/* set active window */
 	if(data->d.mouse.buttons != buttons) {

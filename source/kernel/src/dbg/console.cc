@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <dbg/cmd/break.h>
 #include <dbg/cmd/dump.h>
 #include <dbg/cmd/file.h>
@@ -91,7 +92,7 @@ public:
 		static char tmp[64];
 		OStringStream os(tmp,sizeof(tmp));
 		size_t start = addr / Console::BYTES_PER_LINE;
-		size_t end = MIN(lines->getLineCount(),start + VID_ROWS - 1);
+		size_t end = esc::Util::min(lines->getLineCount(),start + VID_ROWS - 1);
 		os.writef("Lines %zu..%zu of %zu",start + 1,end,lines->getLineCount());
 		if(!lines->isValid())
 			os.writef(" (incomplete)");
@@ -333,7 +334,7 @@ bool Console::multiLineMatches(NaviBackend *backend,uintptr_t addr,const char *s
 	uint8_t *bytes = backend->loadLine(addr);
 	if(bytes && searchlen > 0) {
 		for(size_t i = 0; i < BYTES_PER_LINE; i++) {
-			size_t len = MIN(searchlen,BYTES_PER_LINE - i);
+			size_t len = esc::Util::min(searchlen,BYTES_PER_LINE - i);
 			if(strncasecmp(search,(char*)bytes + i,len) == 0) {
 				if(len < searchlen) {
 					uint8_t *nextBytes = backend->loadLine(addr + BYTES_PER_LINE);
@@ -403,7 +404,7 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
 	}
 
 	if(startAddr > getMaxAddr(backend->getMaxPos()))
-		startAddr = ROUND_DN(getMaxAddr(backend->getMaxPos()),(uintptr_t)BYTES_PER_LINE);
+		startAddr = esc::Util::round_dn(getMaxAddr(backend->getMaxPos()),BYTES_PER_LINE);
 	if(found)
 		*addr = startAddr;
 
@@ -529,7 +530,7 @@ char *Console::readLine() {
 		history[histWritePos] = strdup(line);
 		histWritePos = (histWritePos + 1) % HISTORY_SIZE;
 		histReadPos = histWritePos;
-		histSize = MIN(histSize + 1,HISTORY_SIZE);
+		histSize = esc::Util::min(histSize + 1,HISTORY_SIZE);
 	}
 	return line;
 }

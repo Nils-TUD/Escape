@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/util.h>
 #include <sys/common.h>
 #include <assert.h>
 #include <string.h>
@@ -197,7 +198,7 @@ struct CString {
 	friend IPCBuf &operator>>(IPCBuf &is,CString &s) {
 		size_t len;
 		is >> len;
-		s._len = MIN(len,s._len - 1);
+		s._len = Util::min(len,s._len - 1);
 		is.fetch(s._str,s._len);
 		s._str[s._len] = '\0';
 		return is;
@@ -238,7 +239,7 @@ struct CStringBuf {
 	friend IPCBuf &operator>>(IPCBuf &is,CStringBuf &s) {
 		size_t len;
 		is >> len;
-		s._len = MIN(len,s._len - 1);
+		s._len = Util::min(len,s._len - 1);
 		is.fetch(s._str,s._len);
 		s._str[s._len] = '\0';
 		return is;

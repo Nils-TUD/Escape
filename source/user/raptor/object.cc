@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/common.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -27,8 +28,8 @@
 bool Object::collide(Object *o) {
 	if((type == BULLET && o->type == AIRPLANE) ||
 		(type == AIRPLANE && o->type == BULLET)) {
-		return OVERLAPS(x,x + width - 1,o->x,o->x + o->width - 1) &&
-			OVERLAPS(y,y + height - 1,o->y,o->y + o->height - 1);
+		return esc::Util::overlap(x,x + width - 1,o->x,o->x + o->width - 1) &&
+			esc::Util::overlap(y,y + height - 1,o->y,o->y + o->height - 1);
 	}
 	return false;
 }

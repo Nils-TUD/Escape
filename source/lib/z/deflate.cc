@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/endian.h>
 #include <z/deflate.h>
 
@@ -104,8 +105,8 @@ void Deflate::deflate_fixed_block(Data *d) {
 		int x,maxlen = 0,max = 0;
 		// ensure that we don't look more than 29 bytes back and not past the block-start and our
 		// current position
-		int end = MIN(29,len);
-		int begin = -MIN(29,orglen - len);
+		int end = esc::Util::min((size_t)29,len);
+		int begin = -esc::Util::min((size_t)29,orglen - len);
 		for(x = begin; x < 0; ++x) {
 			// check how many bytes match
 			int y;

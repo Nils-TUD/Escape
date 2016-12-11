@@ -145,7 +145,7 @@ void ThreadBase::updateRuntimes() {
 		if(t->state == Thread::RUNNING) {
 			/* we want to measure the last second only */
 			uint64_t cycles = CPU::rdtsc() - t->stats.cycleStart;
-			t->stats.lastCycleCount = t->stats.curCycleCount + MIN(cyclesPerSec,cycles);
+			t->stats.lastCycleCount = t->stats.curCycleCount + esc::Util::min(cyclesPerSec,cycles);
 		}
 		else
 			t->stats.lastCycleCount = t->stats.curCycleCount;

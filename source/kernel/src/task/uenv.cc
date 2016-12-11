@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/useraccess.h>
 #include <task/proc.h>
 #include <task/uenv.h>
@@ -51,10 +52,10 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 	size_t totalSize = 0;
 	if(argc > 0 || envc > 0) {
 		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += ROUND_UP(argsSize,sizeof(ulong));
+		totalSize += esc::Util::round_up(argsSize,sizeof(ulong));
 		totalSize += sizeof(void*) * (argc + 1 + envc + 1);
 	}
-	totalSize = ROUND_UP(totalSize,16) + 8;
+	totalSize = esc::Util::round_up(totalSize,16) + 8;
 	/* finally we need errno, TLS, envc, envv, argc, argv and entryPoint */
 	totalSize += sizeof(ulong) * 7;
 
@@ -72,7 +73,7 @@ ulong *UEnvBase::initProcStack(int argc,int envc,const char *args,size_t argsSiz
 	char **envv = copyArgs(envc,args,sp);
 
 	/* align it by 16 byte (SSE) */
-	sp = (ulong*)(ROUND_DN((uintptr_t)sp,16) - 8);
+	sp = (ulong*)(esc::Util::round_dn((uintptr_t)sp,16) - 8);
 
 	/* store envc, envv, argc and argv */
 	UserAccess::writeVar(sp--,(ulong)envv);
@@ -114,7 +115,7 @@ ulong *UEnvBase::initThreadStack(const void *arg,uintptr_t entry) {
 	sp -= 3;
 
 	/* align it by 16 byte (SSE) */
-	sp = (ulong*)ROUND_DN((uintptr_t)sp,16);
+	sp = (ulong*)esc::Util::round_dn((uintptr_t)sp,16);
 
 	/* put arg on stack */
 	UserAccess::writeVar(sp--,(ulong)arg);

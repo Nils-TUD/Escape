@@ -71,7 +71,7 @@ void ACPI::addTable(sRSDT *tbl,size_t i,uintptr_t &curDest,uintptr_t destEnd) {
 
 	sRSDT *begin = (sRSDT*)curDest;
 	do {
-		size_t amount = MIN(rem,PAGE_SIZE - tbloff);
+		size_t amount = esc::Util::min(rem,PAGE_SIZE - tbloff);
 		memcpy((void*)curDest,tmptbl,amount);
 
 		curDest += amount;

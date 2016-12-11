@@ -18,6 +18,7 @@
  */
 
 #include <esc/proto/winmng.h>
+#include <esc/util.h>
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 #include <sys/debug.h>
@@ -395,7 +396,9 @@ static bool win_validateRect(gui::Rectangle &r) {
 	if(r.x() >= (gpos_t)mode.width || r.y() >= (gpos_t)mode.height)
 		return false;
 
-	r.setSize(MIN(mode.width - r.x(),r.width()),MIN(mode.height - r.y(),r.height()));
+	gsize_t width = esc::Util::min((gsize_t)mode.width - r.x(),r.width());
+	gsize_t height = esc::Util::min((gsize_t)mode.height - r.y(),r.height());
+	r.setSize(width,height);
 	return true;
 }
 
@@ -508,7 +511,8 @@ void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		width += x;
 		x = 0;
 	}
-	ui->update(x,y,MIN(mode.width - x,width),MIN(mode.height - y,height));
+	ui->update(x,y,esc::Util::min((gsize_t)mode.width - x,width),
+		esc::Util::min((gsize_t)mode.height - y,height));
 }
 
 static void win_notifyWinCreate(gwinid_t id,const char *title) {

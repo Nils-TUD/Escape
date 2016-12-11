@@ -29,7 +29,7 @@ int UserAccess::copy(char *dst,const char *src,size_t size,size_t offset) {
 		if(t->isFaulted())
 			return -EFAULT;
 
-		size_t amount = MIN(size,PAGE_SIZE - offset);
+		size_t amount = esc::Util::min(size,PAGE_SIZE - offset);
 		memcpy(dst,src,amount);
 		size -= amount;
 		dst += amount;

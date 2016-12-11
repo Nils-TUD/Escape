@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/cache.h>
 #include <mem/copyonwrite.h>
 #include <mem/dynarray.h>
@@ -80,7 +81,7 @@ void Boot::parseBootInfo() {
 	}
 	/* mark everything behind the modules as free */
 	Module *last = info.mods + info.modCount - 1;
-	mmap.baseAddr = ROUND_PAGE_UP(last->phys + last->size);
+	mmap.baseAddr = esc::Util::round_page_up(last->phys + last->size);
 	mmap.size = binfo->memSize - mmap.baseAddr;
 	mmap.type = 1;
 	info.mmapCount = 1;

@@ -345,7 +345,7 @@ ssize_t VFSInfo::readHelper(A_UNUSED pid_t pid,VFSNode *node,USER void *buffer,o
 	/* correct vars */
 	if(offset > (off_t)dataSize)
 		offset = dataSize;
-	count = MIN(dataSize - offset,count);
+	count = esc::Util::min(dataSize - offset,count);
 	/* copy */
 	if(count > 0) {
 		int res = UserAccess::write(buffer,(uint8_t*)mem + offset,count);

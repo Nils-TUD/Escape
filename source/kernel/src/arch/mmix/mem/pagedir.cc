@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/cache.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
@@ -121,7 +122,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 		pte = dpt[dstPageNo % PT_ENTRY_COUNT];
 		addr = ((pte & PTE_FRAMENO_MASK) | DIR_MAP_AREA) + offset;
 
-		size_t amount = MIN(PAGE_SIZE - offset,count);
+		size_t amount = esc::Util::min(PAGE_SIZE - offset,count);
 		memclear((void*)addr,amount);
 		count -= amount;
 		offset = 0;
@@ -419,7 +420,7 @@ size_t PageDir::remEmptyPts(uintptr_t virt,PageTables::Allocator &alloc) {
 }
 
 void PageDir::tcRemPT(uintptr_t virt) {
-	uint64_t key = ROUND_PAGE_DN(virt) | (addrSpace->getNo() << 3);
+	uint64_t key = esc::Util::round_page_dn(virt) | (addrSpace->getNo() << 3);
 	for(size_t i = 0; i < PT_ENTRY_COUNT; i++) {
 		updateTC(key);
 		key += PAGE_SIZE;

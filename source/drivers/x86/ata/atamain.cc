@@ -20,6 +20,7 @@
 #include <sys/arch/x86/ports.h>
 #include <esc/ipc/clientdevice.h>
 #include <esc/ipc/ipcstream.h>
+#include <esc/util.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/debug.h>
@@ -192,7 +193,7 @@ static ulong handleRead(sATADevice *ataDev,sPartition *part,uint16_t *buf,uint o
 	/* we have to check whether it is at least one sector. otherwise ATA can't
 	 * handle the request */
 	if(offset + count <= part->size * ataDev->secSize && offset + count > offset) {
-		uint rcount = ROUND_UP(count,ataDev->secSize);
+		uint rcount = esc::Util::round_up((size_t)count,ataDev->secSize);
 		if(buf != buffer || rcount <= MAX_RW_SIZE) {
 			int i;
 			ATA_PR2("Reading %d bytes @ %x from device %d",

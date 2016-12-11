@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <info/cpu.h>
 #include <sys/common.h>
 #include <sys/conf.h>
@@ -80,7 +81,7 @@ void Header::readCPUUsage(void) {
 	int no = 0;
 	for(auto it = cpus.begin(); it != cpus.end(); ++it, ++no) {
 		_cpuUsage[no].usage = 100 * ((*it)->usedCycles() / (double)(*it)->totalCycles());
-		_cpuUsage[no].usage = MAX(0,MIN(_cpuUsage[no].usage,99));
+		_cpuUsage[no].usage = esc::Util::max(0,esc::Util::min(_cpuUsage[no].usage,99));
 		snprintf(_cpuUsage[no].str,sizeof(_cpuUsage[no].str),"%2d",_cpuUsage[no].usage);
 	}
 }

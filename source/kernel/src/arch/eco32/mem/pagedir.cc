@@ -128,7 +128,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 	uintptr_t virt = (uintptr_t)dst;
 	while(count > 0) {
 		frameno_t frameNo = pdir->getFrameNo(virt);
-		size_t amount = MIN(PAGE_SIZE - offset,count);
+		size_t amount = esc::Util::min(PAGE_SIZE - offset,count);
 		uintptr_t addr = ((frameNo << PAGE_BITS) | DIR_MAP_AREA) + offset;
 		memclear((void*)addr,amount);
 		count -= amount;

@@ -63,7 +63,7 @@ static void printRec(ProcNode *n,uint depth) {
 			prefix[depth - 1] = n->next ? PIPE : ' ';
 
 		// print name
-		size_t max = MIN(n->proc->command().length(),mode.cols - depth - 3);
+		size_t max = esc::Util::min(n->proc->command().length(),(size_t)(mode.cols - depth - 3));
 		if(max < n->proc->command().length()) {
 			sout.write(n->proc->command().c_str(),max);
 			sout << "...";

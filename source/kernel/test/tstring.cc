@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/test.h>
 #include <common.h>
 #include <ctype.h>
@@ -312,7 +313,7 @@ static void test_memmove() {
 			memset(zdest,0xFF,32);
 			memset(zdest + j,0,abs(i - j));
 			memmove(zdest + i,zdest + j,abs(i - j));
-			checkZero(zdest,MIN(i,j),abs(i - j) * 2,16);
+			checkZero(zdest,esc::Util::min(i,j),abs(i - j) * 2,16);
 		}
 	}
 

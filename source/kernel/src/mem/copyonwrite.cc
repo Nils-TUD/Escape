@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/cache.h>
 #include <mem/copyonwrite.h>
 #include <mem/pagedir.h>
@@ -51,7 +52,7 @@ size_t CopyOnWrite::pagefault(uintptr_t address,frameno_t frameNumber) {
 
 	/* copy? */
 	if(cow->refCount > 0)
-		PageDir::copyFromFrame(frameNumber,(void*)(ROUND_PAGE_DN(address)));
+		PageDir::copyFromFrame(frameNumber,(void*)(esc::Util::round_page_dn(address)));
 	else
 		delete cow;
 	return 1;

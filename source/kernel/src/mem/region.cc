@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/cache.h>
 #include <mem/physmem.h>
 #include <mem/region.h>
@@ -92,7 +93,7 @@ void Region::init(ulong pgFlags,bool &success) {
 	/* if we have no pages, create the page-array with 1; using 0 will fail and this may actually
 	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
 	 * must exist. */
-	pfSize = MAX(1,pages);
+	pfSize = esc::Util::max((size_t)1,pages);
 	pageFlags = (ulong*)Cache::alloc(pfSize * sizeof(ulong));
 	if(pageFlags == NULL) {
 		/* make sure that we don't touch pageFlags in the destructor */
@@ -153,7 +154,7 @@ ssize_t Region::grow(ssize_t amount,size_t *own) {
 		}
 		pageFlags = pf;
 		/* round up; if we add a page, we'll always have a complete page before that */
-		byteCount = ROUND_PAGE_UP(byteCount);
+		byteCount = esc::Util::round_page_up(byteCount);
 		byteCount += amount * PAGE_SIZE;
 	}
 	else {
@@ -173,7 +174,7 @@ ssize_t Region::grow(ssize_t amount,size_t *own) {
 		if(flags & RF_GROWS_DOWN)
 			memmove(pageFlags,pageFlags + -amount,(count + amount) * sizeof(ulong));
 		/* round up for the same reason */
-		byteCount = ROUND_PAGE_UP(byteCount);
+		byteCount = esc::Util::round_page_up(byteCount);
 		byteCount -= -amount * PAGE_SIZE;
 	}
 	return res;

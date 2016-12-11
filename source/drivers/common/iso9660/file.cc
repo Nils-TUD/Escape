@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <fs/blockcache.h>
 #include <sys/common.h>
 #include <ctype.h>
@@ -67,7 +68,7 @@ ssize_t ISO9660File::read(ISO9660FileSystem *h,ino_t inodeNo,void *buffer,off_t 
 
 		if(buffer != NULL) {
 			/* copy the requested part */
-			c = MIN(leftBytes,blockSize - offset);
+			c = esc::Util::min(leftBytes,blockSize - offset);
 			if(e->entry.flags & ISO_FILEFL_DIR)
 				buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,
 						static_cast<uint8_t*>(blk->buffer),offset,c);
@@ -123,7 +124,7 @@ void ISO9660File::buildDirEntries(ISO9660FileSystem *h,block_t lba,uint8_t *dst,
 			memcpy(de->d_name,"..",2);
 		}
 		else {
-			de->d_namelen = MIN(e->nameLen,strchri(e->name,';'));
+			de->d_namelen = esc::Util::min((int)e->nameLen,strchri(e->name,';'));
 			for(i = 0; i < de->d_namelen; i++)
 				de->d_name[i] = tolower(e->name[i]);
 		}

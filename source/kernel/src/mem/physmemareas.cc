@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/pagedir.h>
 #include <mem/physmemareas.h>
 #include <assert.h>
@@ -55,8 +56,8 @@ size_t PhysMemAreas::getAvailable() {
 
 void PhysMemAreas::add(uintptr_t addr,uintptr_t end) {
 	MemArea *area = allocArea();
-	addr = ROUND_PAGE_UP(addr);
-	end = ROUND_PAGE_UP(end);
+	addr = esc::Util::round_page_up(addr);
+	end = esc::Util::round_page_up(end);
 	area->addr = addr;
 	area->size = end - addr;
 	area->next = NULL;
@@ -70,8 +71,8 @@ void PhysMemAreas::add(uintptr_t addr,uintptr_t end) {
 void PhysMemAreas::rem(uintptr_t addr,uintptr_t end) {
 	MemArea *prev = NULL;
 	MemArea *area = list;
-	addr = ROUND_PAGE_DN(addr);
-	end = ROUND_PAGE_UP(end);
+	addr = esc::Util::round_page_dn(addr);
+	end = esc::Util::round_page_up(end);
 	while(area != NULL) {
 		/* area completely covered -> remove */
 		if(addr <= area->addr && end >= area->addr + area->size) {

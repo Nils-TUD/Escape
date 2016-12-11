@@ -236,7 +236,7 @@ namespace gui {
 		}
 
 		string text = _secret ? string(_str.length(),'*') : _str;
-		count = MIN((int)text.length(),count);
+		count = esc::Util::min((int)text.length(),count);
 
 		g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 		g.fillRect(1,1,size.width - 2,size.height - 2);
@@ -251,24 +251,24 @@ namespace gui {
 			spos = (start > _selStart ? 0 : (_selStart - start));
 			g.fillRect(pad + fsize.width * spos,
 					ystart - CURSOR_OVERLAP,
-					fsize.width * (MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))),
+					fsize.width * (esc::Util::min(count - spos,esc::Util::min(_selEnd - start,_selEnd - _selStart))),
 					fsize.height + CURSOR_OVERLAP * 2);
 
 			/* part before selection */
 			if(start < _selStart) {
 				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
-				g.drawString(pad,ystart,text,start,MIN(count,_selStart));
+				g.drawString(pad,ystart,text,start,esc::Util::min(count,_selStart));
 			}
 			/* selection */
 			g.setColor(getTheme().getColor(Theme::SEL_FOREGROUND));
-			g.drawString(pad + fsize.width * spos,ystart,text,MAX(start,_selStart),
-					(MIN(count - spos,MIN(_selEnd - start,_selEnd - _selStart))));
+			g.drawString(pad + fsize.width * spos,ystart,text,esc::Util::max(start,_selStart),
+					(esc::Util::min(count - spos,esc::Util::min(_selEnd - start,_selEnd - _selStart))));
 			/* part behind selection */
 			if(_selEnd < start + count) {
 				g.setColor(getTheme().getColor(Theme::TEXT_FOREGROUND));
 				spos = _selEnd - start;
 				g.drawString(pad + spos * fsize.width,ystart,text,_selEnd,
-					MIN(count - spos,MIN((int)text.length() - start,(int)text.length() - _selEnd)));
+					esc::Util::min(count - spos,esc::Util::min((int)text.length() - start,(int)text.length() - _selEnd)));
 			}
 		}
 		else {

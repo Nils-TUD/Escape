@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 #include <stdlib.h>
@@ -126,7 +127,7 @@ void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsiz
 
 		/* store preview rect */
 		if(x < 0) {
-			width = MAX(0,(int)(width + x));
+			width = esc::Util::max(0,(int)(width + x));
 			x = 0;
 		}
 		if(x > (int)xres)
@@ -187,9 +188,9 @@ static void preview_handleIntersec(char *shmem,const gui::Rectangle &curRec,
 static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h) {
 	gsize_t xres = win_getMode()->width;
 	gsize_t yres = win_getMode()->height;
-	gpos_t maxy = MIN(yres,y + h);
+	gpos_t maxy = esc::Util::min(yres,y + h);
 	gsize_t pxSize = win_getMode()->bitsPerPixel / 8;
-	size_t count = MIN(xres - x,w) * pxSize;
+	size_t count = esc::Util::min(xres - x,w) * pxSize;
 	size_t dstInc = xres * pxSize;
 	uint8_t *dst = (uint8_t*)shmem + (y * xres + x) * pxSize;
 	while(y < maxy) {
@@ -201,9 +202,9 @@ static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t 
 
 static void preview_copyRegion(char *src,char *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
 		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1) {
-	gpos_t maxy = MIN(h1,y1 + height);
+	gpos_t maxy = esc::Util::min(h1,y1 + height);
 	gsize_t pxSize = win_getMode()->bitsPerPixel / 8;
-	size_t count = MIN(w2 - x2,MIN(w1 - x1,width)) * pxSize;
+	size_t count = esc::Util::min(w2 - x2,esc::Util::min(w1 - x1,width)) * pxSize;
 	size_t srcInc = w1 * pxSize;
 	size_t dstInc = w2 * pxSize;
 	src += (y1 * w1 + x1) * pxSize;

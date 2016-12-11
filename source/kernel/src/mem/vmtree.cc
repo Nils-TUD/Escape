@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/cache.h>
 #include <mem/region.h>
 #include <mem/vmtree.h>
@@ -39,7 +40,7 @@ VMTree *VMTree::regList;
 VMTree *VMTree::regListEnd;
 
 bool VMRegion::matches(uintptr_t k) {
-    return k >= virt() && k < virt() + ROUND_PAGE_UP(reg->getByteCount());
+    return k >= virt() && k < virt() + esc::Util::round_page_up(reg->getByteCount());
 }
 
 void VMTree::addTree(VMTree *tree) {
@@ -69,8 +70,8 @@ void VMTree::remTree(VMTree *tree) {
 
 bool VMTree::available(uintptr_t addr,size_t size) const {
 	for(auto vm = regs.cbegin(); vm != regs.cend(); ++vm) {
-		uintptr_t endaddr = vm->virt() + ROUND_PAGE_UP(vm->reg->getByteCount());
-		if(OVERLAPS(addr,addr + size,vm->virt(),endaddr))
+		uintptr_t endaddr = vm->virt() + esc::Util::round_page_up(vm->reg->getByteCount());
+		if(esc::Util::overlap(addr,addr + size,vm->virt(),endaddr))
 			return false;
 	}
 	return true;

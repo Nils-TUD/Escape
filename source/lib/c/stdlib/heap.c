@@ -33,6 +33,9 @@
 #define DEBUG_ALLOC_N_FREE_PID	27	/* -1 = all */
 #endif
 
+#define ROUND_DN(count,align)	((count) & ~((align) - 1))
+#define ROUND_UP(count,align)	(((count) + (align) - 1) & ~((align) - 1))
+
 #define GUARD_MAGIC				0xDEADBEEF
 #define FREE_MAGIC				0xFEEEFEEE
 

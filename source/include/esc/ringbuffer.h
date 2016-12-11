@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/stream/ostream.h>
+#include <esc/util.h>
 #include <sys/common.h>
 
 namespace esc {
@@ -128,8 +129,8 @@ public:
 	size_t readn(T *e,size_t n) {
 		size_t orgn = n;
 		while(n > 0 && _count > 0) {
-			size_t count = MIN(_eMax - _readPos,n);
-			count = MIN(_count,count);
+			size_t count = esc::Util::min(_eMax - _readPos,n);
+			count = esc::Util::min(_count,count);
 			memcpy(e,_data + _readPos,count * sizeof(T));
 			n -= count;
 			e += count;
@@ -149,8 +150,8 @@ public:
 	size_t move(RingBuffer &src,size_t n) {
 		size_t count,c = 0;
 		while(n > 0 && src._count > 0) {
-			count = MIN(src._eMax - src._readPos,n);
-			count = MIN(src._count,count);
+			count = esc::Util::min(src._eMax - src._readPos,n);
+			count = esc::Util::min(src._count,count);
 			count = writen(src._data + src._readPos,count);
 			n -= count;
 			c += count;

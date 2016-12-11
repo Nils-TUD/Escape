@@ -47,11 +47,11 @@
 /* we have to use the max-size of all VFSNode sub-classes. that's unfortunate, but I don't see a
  * better way */
 static size_t getMaxSize() {
-	return MAX(sizeof(VFSChannel),
-			MAX(sizeof(VFSDevice),
-			MAX(sizeof(VFSDir),
-			MAX(sizeof(VFSFile),
-			MAX(sizeof(VFSMS),sizeof(VFSLink))))));
+	return esc::Util::max(sizeof(VFSChannel),
+			esc::Util::max(sizeof(VFSDevice),
+			esc::Util::max(sizeof(VFSDir),
+			esc::Util::max(sizeof(VFSFile),
+			esc::Util::max(sizeof(VFSMS),sizeof(VFSLink))))));
 }
 
 /* all nodes (expand dynamically) */

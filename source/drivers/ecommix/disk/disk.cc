@@ -18,6 +18,7 @@
  */
 
 #include <esc/ipc/clientdevice.h>
+#include <esc/util.h>
 #include <ecmxdisk/disk.h>
 #include <sys/common.h>
 #include <sys/driver.h>
@@ -102,8 +103,8 @@ public:
 		is >> r;
 		assert(!is.error());
 
-		size_t roffset = ROUND_DN(r.offset,Disk::SECTOR_SIZE);
-		size_t rcount = ROUND_UP(r.count,Disk::SECTOR_SIZE);
+		size_t roffset = esc::Util::round_dn(r.offset,Disk::SECTOR_SIZE);
+		size_t rcount = esc::Util::round_up(r.count,Disk::SECTOR_SIZE);
 		void *buf = r.shmemoff == -1 ? (void*)buffer : (*this)[is.fd()]->shm() + r.shmemoff;
 		ssize_t res = 0;
 		if(roffset + rcount <= disk->partCapacity() && roffset + rcount > roffset) {
@@ -125,8 +126,8 @@ public:
 			is >> ReceiveData(buffer,sizeof(buffer));
 		assert(!is.error());
 
-		size_t roffset = ROUND_DN(r.offset,Disk::SECTOR_SIZE);
-		size_t rcount = ROUND_UP(r.count,Disk::SECTOR_SIZE);
+		size_t roffset = esc::Util::round_dn(r.offset,Disk::SECTOR_SIZE);
+		size_t rcount = esc::Util::round_up(r.count,Disk::SECTOR_SIZE);
 		void *buf = r.shmemoff == -1 ? (void*)buffer : (*this)[is.fd()]->shm() + r.shmemoff;
 		ssize_t res = 0;
 		if(roffset + rcount <= disk->partCapacity() && roffset + rcount > roffset) {

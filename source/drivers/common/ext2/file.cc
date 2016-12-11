@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <fs/blockcache.h>
 #include <sys/common.h>
 #include <sys/debug.h>
@@ -188,7 +189,7 @@ ssize_t Ext2File::readIno(Ext2FileSystem *e,const Ext2CInode *cnode,void *buffer
 				return -ENOBUFS;
 
 			/* copy the requested part */
-			c = MIN(leftBytes,blockSize - offset);
+			c = esc::Util::min(leftBytes,blockSize - offset);
 			memcpy(bufWork,(uint8_t*)tmpBuffer->buffer + offset,c);
 			bufWork += c;
 
@@ -242,7 +243,7 @@ ssize_t Ext2File::writeIno(Ext2FileSystem *e,Ext2CInode *cnode,const void *buffe
 		if(block == 0)
 			return -ENOSPC;
 
-		c = MIN(leftBytes,blockSize - offset);
+		c = esc::Util::min(leftBytes,blockSize - offset);
 
 		/* if we're not writing a complete block, we have to read it from disk first */
 		if(offset != 0 || c != blockSize)
@@ -268,7 +269,7 @@ ssize_t Ext2File::writeIno(Ext2FileSystem *e,Ext2CInode *cnode,const void *buffe
 	now = cputole32(time(NULL));
 	cnode->inode.accesstime = now;
 	cnode->inode.modifytime = now;
-	cnode->inode.size = (int32_t)cputole32(MAX((int32_t)(orgOff + count),inoSize));
+	cnode->inode.size = (int32_t)cputole32(esc::Util::max((int32_t)(orgOff + count),inoSize));
 	e->inodeCache.markDirty(cnode);
 	return count;
 }

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/pathtree.h>
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/stat.h>
@@ -89,7 +90,7 @@ public:
 		}
 
 		if(_file->data == NULL) {
-			_file->datasize = MAX(1024,_file->info.st_size);
+			_file->datasize = esc::Util::max((off_t)1024,_file->info.st_size);
 			_file->data = (char*)malloc(_file->datasize);
 			if(_file->info.st_size > 0) {
 				fseek(_archive,_file->offset,SEEK_SET);

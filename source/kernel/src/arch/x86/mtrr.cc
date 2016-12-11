@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <arch/x86/mtrr.h>
 #include <mem/physmemareas.h>
 #include <dbg/console.h>
@@ -68,7 +69,7 @@ int MTRR::setRange(uint64_t base,uint64_t length,Type type) {
 		uint64_t tstart = tbase & ~(uint64_t)BASE_TYPE;
 		uint64_t tlen = ~((tmask & ~(uint64_t)MASK_VALID) - 1) & maxphys;
 		// TODO the overlap support is still really limited
-		if((tmask & MASK_VALID) && OVERLAPS(base,base + length,tstart,tstart + tlen)) {
+		if((tmask & MASK_VALID) && esc::Util::overlap(base,base + length,tstart,tstart + tlen)) {
 			// is it the same?
 			if(base == tbase && length == tlen && (tbase & BASE_TYPE) == type)
 				return 0;

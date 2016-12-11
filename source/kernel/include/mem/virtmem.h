@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/col/slist.h>
+#include <esc/util.h>
 #include <mem/pagedir.h>
 #include <mem/region.h>
 #include <mem/vmfreemap.h>
@@ -423,12 +424,12 @@ private:
 	void addOwn(long amount) {
 		assert(amount > 0 || ownFrames >= (ulong)-amount);
 		ownFrames += amount;
-		peakOwnFrames = MAX(ownFrames,peakOwnFrames);
+		peakOwnFrames = esc::Util::max(ownFrames,peakOwnFrames);
 	}
 	void addShared(long amount) {
 		assert(amount > 0 || sharedFrames >= (ulong)-amount);
 		sharedFrames += amount;
-		peakSharedFrames = MAX(sharedFrames,peakSharedFrames);
+		peakSharedFrames = esc::Util::max(sharedFrames,peakSharedFrames);
 	}
 	void addSwap(long amount) {
 		assert(amount > 0 || swapped >= (ulong)-amount);

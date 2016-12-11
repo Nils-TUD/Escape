@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/cache.h>
 #include <mem/copyonwrite.h>
 #include <mem/pagedir.h>
@@ -202,7 +203,7 @@ int VirtMem::map(uintptr_t *addr,size_t length,size_t loadCount,int prot,int fla
 		if(rflags & MAP_STACK)
 			virt = findFreeStack(length,rflags);
 		else
-			virt = freemap.allocate(ROUND_PAGE_UP(length));
+			virt = freemap.allocate(esc::Util::round_page_up(length));
 		if(virt == 0)
 			goto errProc;
 	}
@@ -715,7 +716,7 @@ void VirtMem::doUnmap(VMRegion *vm) {
 			freeStackAddr = vm->virt() + vm->reg->getByteCount();
 		/* give the memory back to the free-area, if its in there */
 		else if(vm->virt() >= FREE_AREA_BEGIN)
-			freemap.free(vm->virt(),ROUND_PAGE_UP(vm->reg->getByteCount()));
+			freemap.free(vm->virt(),esc::Util::round_page_up(vm->reg->getByteCount()));
 		if(vm->virt() == dataAddr)
 			dataAddr = 0;
 		/* remove from shared tree */
@@ -743,7 +744,7 @@ void VirtMem::doUnmap(VMRegion *vm) {
 			ShFiles::remove(vm);
 		/* give the memory back to the free-area, if its in there */
 		if(vm->virt() >= FREE_AREA_BEGIN)
-			freemap.free(vm->virt(),ROUND_PAGE_UP(vm->reg->getByteCount()));
+			freemap.free(vm->virt(),esc::Util::round_page_up(vm->reg->getByteCount()));
 		vm->reg->release();
 		regtree.remove(vm);
 	}
@@ -794,7 +795,7 @@ int VirtMem::join(uintptr_t srcAddr,VirtMem *dst,VMRegion **nvm,uintptr_t *dstAd
 
 	addr = dstAddr ? *dstAddr : 0;
 	if(addr == 0 || (~flags & MAP_FIXED))
-		addr = dst->freemap.allocate(ROUND_PAGE_UP(vm->reg->getByteCount()));
+		addr = dst->freemap.allocate(esc::Util::round_page_up(vm->reg->getByteCount()));
 	else if(dst->regtree.getByAddr(addr) != NULL)
 		goto errRel;
 	if(addr == 0)
@@ -848,7 +849,7 @@ errAdd:
 	dst->regtree.remove((*nvm));
 errReg:
 	if(dstAddr == 0)
-		dst->freemap.free(addr,ROUND_PAGE_UP(vm->reg->getByteCount()));
+		dst->freemap.free(addr,esc::Util::round_page_up(vm->reg->getByteCount()));
 errRel:
 	t->discardFrames();
 	vm->reg->release();
@@ -896,7 +897,7 @@ int VirtMem::cloneAll(VirtMem *dst) {
 
 			/* remove regions in the free area from the free-map */
 			if(vm->virt() >= FREE_AREA_BEGIN) {
-				if(!dst->freemap.allocateAt(nvm->virt(),ROUND_PAGE_UP(nvm->reg->getByteCount())))
+				if(!dst->freemap.allocateAt(nvm->virt(),esc::Util::round_page_up(nvm->reg->getByteCount())))
 					goto errorRem;
 			}
 
@@ -982,7 +983,7 @@ errorPages:
 	}
 errorFreeArea:
 	if(vm->virt() >= FREE_AREA_BEGIN)
-		dst->freemap.free(nvm->virt(),ROUND_PAGE_UP(nvm->reg->getByteCount()));
+		dst->freemap.free(nvm->virt(),esc::Util::round_page_up(nvm->reg->getByteCount()));
 errorRem:
 	dst->regtree.remove(nvm);
 errorReg:
@@ -1013,16 +1014,16 @@ int VirtMem::growStackTo(VMRegion *vm,uintptr_t addr) {
 	/* note that we assume here that if a thread has multiple stack-regions, they grow towards
 	 * each other */
 	if(vm->reg->getFlags() & RF_GROWS_DOWN) {
-		if(addr < vm->virt() + ROUND_PAGE_UP(vm->reg->getByteCount()) && addr < vm->virt()) {
+		if(addr < vm->virt() + esc::Util::round_page_up(vm->reg->getByteCount()) && addr < vm->virt()) {
 			res = 0;
 			newPages = (vm->virt() - addr) / PAGE_SIZE;
 		}
 	}
 	else {
-		if(addr >= vm->virt() && addr >= vm->virt() + ROUND_PAGE_UP(vm->reg->getByteCount())) {
+		if(addr >= vm->virt() && addr >= vm->virt() + esc::Util::round_page_up(vm->reg->getByteCount())) {
 			res = 0;
-			newPages = ROUND_PAGE_UP(addr -
-					(vm->virt() + ROUND_PAGE_UP(vm->reg->getByteCount()) - 1)) / PAGE_SIZE;
+			newPages = esc::Util::round_page_up(addr -
+					(vm->virt() + esc::Util::round_page_up(vm->reg->getByteCount()) - 1)) / PAGE_SIZE;
 		}
 	}
 
@@ -1081,7 +1082,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 				}
 			}
 			else {
-				uintptr_t end = oldVirt + ROUND_PAGE_UP(vm->reg->getByteCount());
+				uintptr_t end = oldVirt + esc::Util::round_page_up(vm->reg->getByteCount());
 				if(isOccupied(end,end + amount * PAGE_SIZE)) {
 					vm->reg->release();
 					return 0;
@@ -1106,7 +1107,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 				virt = vm->virt();
 			}
 			else
-				virt = vm->virt() + ROUND_PAGE_UP(oldSize);
+				virt = vm->virt() + esc::Util::round_page_up(oldSize);
 			res = getPageDir()->map(virt,amount,alloc,mapFlags);
 			if(res < 0) {
 				if(vm->reg->getFlags() & RF_GROWS_DOWN)
@@ -1126,7 +1127,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 				vm->virt(vm->virt() - amount * PAGE_SIZE);
 			}
 			else
-				virt = vm->virt() + ROUND_PAGE_UP(vm->reg->getByteCount());
+				virt = vm->virt() + esc::Util::round_page_up(vm->reg->getByteCount());
 			/* give it back to the free area */
 			if(vm->virt() >= FREE_AREA_BEGIN)
 				freemap.free(virt,-amount * PAGE_SIZE);
@@ -1136,7 +1137,7 @@ size_t VirtMem::doGrow(VMRegion *vm,ssize_t amount) {
 		}
 	}
 
-	res = (vm->reg->getFlags() & RF_GROWS_DOWN) ? oldVirt : oldVirt + ROUND_PAGE_UP(oldSize);
+	res = (vm->reg->getFlags() & RF_GROWS_DOWN) ? oldVirt : oldVirt + esc::Util::round_page_up(oldSize);
 	vm->reg->release();
 	return res;
 }
@@ -1221,8 +1222,8 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 	/* calculate the number of bytes to load and zero */
 	size_t loadCount = 0, zeroCount;
 	if(addr - vm->virt() < vm->reg->getLoadCount())
-		loadCount = MIN(PAGE_SIZE,vm->reg->getLoadCount() - (addr - vm->virt()));
-	zeroCount = MIN(PAGE_SIZE,vm->reg->getByteCount() - (addr - vm->virt())) - loadCount;
+		loadCount = esc::Util::min((size_t)PAGE_SIZE,vm->reg->getLoadCount() - (addr - vm->virt()));
+	zeroCount = esc::Util::min((size_t)PAGE_SIZE,vm->reg->getByteCount() - (addr - vm->virt())) - loadCount;
 
 	/* load from file */
 	if(loadCount)
@@ -1434,7 +1435,7 @@ uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 	VMRegion *dataReg = regtree.getByAddr(dataAddr);
 	uintptr_t addr,end;
 	if(dataReg)
-		end = dataReg->virt() + ROUND_PAGE_UP(dataReg->reg->getByteCount());
+		end = dataReg->virt() + esc::Util::round_page_up(dataReg->reg->getByteCount());
 	else
 		end = getFirstUsableAddr();
 	/* determine start address */
@@ -1442,7 +1443,7 @@ uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 		addr = freeStackAddr;
 	else
 		addr = STACK_AREA_END;
-	size_t size = ROUND_PAGE_UP(byteCount);
+	size_t size = esc::Util::round_page_up(byteCount);
 	for(; addr > end; addr -= MAX_STACK_PAGES * PAGE_SIZE) {
 		uintptr_t start = addr - size;
 		/* in this case it is not necessary to use vmm_isOccupied() because all stack-regions
@@ -1454,7 +1455,7 @@ uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 		}
 	}
 #else
-	size_t size = ROUND_PAGE_UP(byteCount);
+	size_t size = esc::Util::round_page_up(byteCount);
 	uintptr_t addr = freeStackAddr != 0 ? freeStackAddr : STACK_AREA_BEGIN;
 	for(; addr < STACK_AREA_END; addr += MAX_STACK_PAGES * PAGE_SIZE) {
 		if(!isOccupied(addr,addr + (MAX_STACK_PAGES - 1) * PAGE_SIZE)) {
@@ -1471,8 +1472,8 @@ uintptr_t VirtMem::findFreeStack(size_t byteCount,A_UNUSED ulong rflags) {
 bool VirtMem::isOccupied(uintptr_t start,uintptr_t end) const {
 	for(auto vm = regtree.cbegin(); vm != regtree.cend(); ++vm) {
 		uintptr_t rstart = vm->virt();
-		uintptr_t rend = vm->virt() + ROUND_PAGE_UP(vm->reg->getByteCount());
-		if(OVERLAPS(rstart,rend,start,end))
+		uintptr_t rend = vm->virt() + esc::Util::round_page_up(vm->reg->getByteCount());
+		if(esc::Util::overlap(rstart,rend,start,end))
 			return true;
 	}
 	return false;
@@ -1486,5 +1487,5 @@ uintptr_t VirtMem::getFirstUsableAddr() const {
 			addr = vm->virt() + vm->reg->getByteCount();
 		}
 	}
-	return ROUND_PAGE_UP(addr);
+	return esc::Util::round_page_up(addr);
 }

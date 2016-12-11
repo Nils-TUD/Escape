@@ -152,7 +152,8 @@ static void display(void) {
 
 		size_t i = 0;
 		size_t y = cpus.size() + 4;
-		size_t yoff = MIN(yoffset,MAX(0,(ssize_t)procs.size() - (ssize_t)(mode.rows - y)));
+		ssize_t yoff = esc::Util::max((ssize_t)0,(ssize_t)procs.size() - (ssize_t)(mode.rows - y));
+		yoff = esc::Util::min(yoffset,yoff);
 		auto it = procs.begin();
 		advance(it,yoff);
 		for(; y < mode.rows && it != procs.end(); ++it, ++i) {

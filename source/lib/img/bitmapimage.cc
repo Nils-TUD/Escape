@@ -18,6 +18,7 @@
  */
 
 #include <esc/rawfile.h>
+#include <esc/util.h>
 #include <img/bitmapimage.h>
 
 namespace img {
@@ -191,7 +192,7 @@ void BitmapImage::loadFromFile(const std::string &filename) {
 	if(_infoHeader->compression == BI_RGB) {
 		size_t bytesPerLine;
 		bytesPerLine = _infoHeader->width * (_infoHeader->bitCount / 8);
-		bytesPerLine = ROUND_UP(bytesPerLine,sizeof(uint32_t));
+		bytesPerLine = esc::Util::round_up(bytesPerLine,sizeof(uint32_t));
 		_dataSize = bytesPerLine * _infoHeader->height;
 	}
 	else if(_infoHeader->compression == BI_BITFIELDS) {

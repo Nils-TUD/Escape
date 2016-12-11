@@ -85,7 +85,7 @@ void SMPBase::updateRuntimes() {
 		if(cpu->thread && !(cpu->thread->getFlags() & T_IDLE)) {
 			/* we want to measure the last second only */
 			uint64_t cycles = now - cpu->thread->getStats().cycleStart;
-			cpu->curCycles = MIN(cpu->lastTotal,cpu->curCycles + cycles);
+			cpu->curCycles = esc::Util::min(cpu->lastTotal,cpu->curCycles + cycles);
 		}
 		cpu->lastCycles = cpu->curCycles;
 		cpu->curCycles = 0;

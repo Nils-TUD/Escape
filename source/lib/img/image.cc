@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <img/bitmapimage.h>
 #include <img/image.h>
 #include <img/pngimage.h>
@@ -26,7 +27,7 @@
 namespace img {
 
 Image *Image::loadImage(const std::shared_ptr<Painter> &painter,const std::string& path) {
-	char header[MAX(PNGImage::SIG_LEN,BitmapImage::SIG_LEN)];
+	char header[esc::Util::max(PNGImage::SIG_LEN,BitmapImage::SIG_LEN)];
 	FILE *f = fopen(path.c_str(),"r");
 	if(!f)
 		throw img_load_error(path + ": Unable to open");

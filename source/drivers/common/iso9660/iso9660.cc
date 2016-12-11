@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <sys/io.h>
@@ -225,7 +226,8 @@ void ISO9660FileSystem::print(FILE *f) {
 void ISO9660FileSystem::printPathTbl() {
 	size_t tblSize = primary.data.primary.pathTableSize.littleEndian;
 	size_t secCount = (tblSize + ATAPI_SECTOR_SIZE - 1) / ATAPI_SECTOR_SIZE;
-	ISOPathTblEntry *pe = static_cast<ISOPathTblEntry*>(malloc(ROUND_UP(tblSize,ATAPI_SECTOR_SIZE)));
+	size_t size = esc::Util::round_up(tblSize,ATAPI_SECTOR_SIZE);
+	ISOPathTblEntry *pe = static_cast<ISOPathTblEntry*>(malloc(size));
 	ISOPathTblEntry *start = pe;
 	if(ISO9660RW::readSectors(this,pe,primary.data.primary.lPathTblLoc,secCount) != 0) {
 		free(start);

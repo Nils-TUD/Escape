@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <shell/history.h>
 #include <sys/common.h>
 #include <sys/io.h>
@@ -76,7 +77,7 @@ char *shell_histDown(void) {
 	if(histReadPos < histSize - 1)
 		histReadPos++;
 	else
-		histReadPos = MIN(0,histSize - 1);
+		histReadPos = esc::Util::min((ssize_t)0,histSize - 1);
 
 	return history[histReadPos];
 }

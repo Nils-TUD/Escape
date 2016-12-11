@@ -44,7 +44,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 	if(vt->escapePos != (size_t)-1) {
 		size_t oldLen = vt->escapePos;
 		char *escPtr = vt->escapeBuf;
-		size_t length = MIN((int)len,MAX_ESCC_LENGTH - vt->escapePos - 1);
+		size_t length = esc::Util::min(len,MAX_ESCC_LENGTH - vt->escapePos - 1);
 		/* append the string */
 		memcpy(vt->escapeBuf + vt->escapePos,str,length);
 		vt->escapePos += length;
@@ -84,7 +84,7 @@ void vtout_puts(sVTerm *vt,char *str,size_t len,bool resetRead) {
 			 * further input */
 			size_t oldEscRow = vt->row;
 			if(!vtout_handleEscape(vt,&str)) {
-				size_t count = MIN(MAX_ESCC_LENGTH,len - (str - start));
+				size_t count = esc::Util::min((size_t)MAX_ESCC_LENGTH,len - (str - start));
 				memcpy(vt->escapeBuf,str,count);
 				vt->escapePos = count;
 				break;
@@ -239,16 +239,16 @@ static bool vtout_handleEscape(sVTerm *vt,char **str) {
 
 	switch(cmd) {
 		case ESCC_MOVE_LEFT:
-			vt->col = MAX(0,MIN((int)vt->cols - 1,(int)vt->col - n1));
+			vt->col = esc::Util::max(0,esc::Util::min((int)vt->cols - 1,(int)vt->col - n1));
 			break;
 		case ESCC_MOVE_RIGHT:
-			vt->col = MAX(0,MIN((int)vt->cols - 1,(int)vt->col + n1));
+			vt->col = esc::Util::max(0,esc::Util::min((int)vt->cols - 1,(int)vt->col + n1));
 			break;
 		case ESCC_MOVE_UP:
-			vt->row = MAX(0,MIN((int)vt->rows - 1,(int)vt->row - n1));
+			vt->row = esc::Util::max(0,esc::Util::min((int)vt->rows - 1,(int)vt->row - n1));
 			break;
 		case ESCC_MOVE_DOWN:
-			vt->row = MAX(0,MIN((int)vt->rows - 1,(int)vt->row + n1));
+			vt->row = esc::Util::max(0,esc::Util::min((int)vt->rows - 1,(int)vt->row + n1));
 			break;
 		case ESCC_MOVE_HOME:
 			vt->col = 0;
@@ -265,24 +265,24 @@ static bool vtout_handleEscape(sVTerm *vt,char **str) {
 			break;
 		case ESCC_DEL_BACK:
 			if(vt->readLine) {
-				vt->rlBufPos = MIN(vt->rlBufSize - 1,vt->rlBufPos + n1);
-				vt->rlBufPos = MIN((size_t)vt->cols - vt->rlStartCol,vt->rlBufPos);
+				vt->rlBufPos = esc::Util::min(vt->rlBufSize - 1,vt->rlBufPos + n1);
+				vt->rlBufPos = esc::Util::min((size_t)vt->cols - vt->rlStartCol,vt->rlBufPos);
 				vt->col = vt->rlBufPos + vt->rlStartCol;
 			}
 			else
-				vt->col = MIN(vt->cols - 1,vt->col + n1);
+				vt->col = esc::Util::min(vt->cols - 1,vt->col + n1);
 			break;
 		case ESCC_GOTO_XY:
-			vt->col = MIN(vt->cols - 1,(size_t)n1);
-			vt->row = MIN(vt->rows - 1,(size_t)n2);
+			vt->col = esc::Util::min(vt->cols - 1,(size_t)n1);
+			vt->row = esc::Util::min(vt->rows - 1,(size_t)n2);
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)
-				vt->foreground = MIN(15,n1);
+				vt->foreground = esc::Util::min(15,n1);
 			else
 				vt->foreground = vt->defForeground;
 			if(n2 != ESCC_ARG_UNUSED)
-				vt->background = MIN(15,n2);
+				vt->background = esc::Util::min(15,n2);
 			else
 				vt->background = vt->defBackground;
 			break;

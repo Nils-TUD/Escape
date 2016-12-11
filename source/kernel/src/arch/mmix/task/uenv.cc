@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <mem/pagedir.h>
 #include <mem/useraccess.h>
 #include <mem/virtmem.h>
@@ -107,7 +108,7 @@ bool UEnvBase::setupProc(int argc,int envc,const char *args,A_UNUSED size_t args
 	size_t totalSize = 0;
 	if(argc > 0 || envc > 0) {
 		/* first round the size of the arguments up. then we need argc+1 pointer */
-		totalSize += ROUND_UP(argsSize,sizeof(ulong));
+		totalSize += esc::Util::round_up(argsSize,sizeof(ulong));
 		totalSize += sizeof(void*) * (argc + 1 + envc + 1);
 	}
 	/* finally we need the stack-end */

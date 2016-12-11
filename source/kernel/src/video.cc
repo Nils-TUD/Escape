@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <dbg/kb.h>
 #include <sys/esccodes.h>
 #include <assert.h>
@@ -83,8 +84,8 @@ bool Video::escape(const char **str) {
 	int cmd = escc_get(str,&n1,&n2,&n3);
 	switch(cmd) {
 		case ESCC_COLOR: {
-			uchar fg = n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1);
-			uchar bg = n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2);
+			uchar fg = n1 == ESCC_ARG_UNUSED ? WHITE : esc::Util::min(9,n1);
+			uchar bg = n2 == ESCC_ARG_UNUSED ? BLACK : esc::Util::min(9,n2);
 			color = (bg << 4) | fg;
 		}
 		break;

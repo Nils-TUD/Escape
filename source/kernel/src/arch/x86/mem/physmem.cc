@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <arch/x86/mtrr.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
@@ -32,7 +33,7 @@ bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	/* go through the memory-map; if it overlaps with one of the free areas, its not allowed */
 	for(size_t i = 0; i < info->mmapCount; ++i) {
 		if(info->mmap[i].type == Boot::MemMap::MEM_AVAILABLE) {
-			if(OVERLAPS(addr,addr + size,info->mmap[i].baseAddr,
+			if(esc::Util::overlap(addr,addr + size,info->mmap[i].baseAddr,
 					info->mmap[i].baseAddr + info->mmap[i].size))
 				return false;
 		}

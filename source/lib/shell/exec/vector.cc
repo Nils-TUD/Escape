@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/util.h>
 #include <sys/common.h>
 #include <sys/debug.h>
 #include <assert.h>
@@ -116,7 +117,7 @@ void vec_destroy(sVector *v,bool freeElements) {
 
 static void vec_grow(sVector *v,size_t reqSize) {
 	if(v->_size < reqSize) {
-		v->_size = MAX(v->_size * 2,reqSize);
+		v->_size = esc::Util::max(v->_size * 2,reqSize);
 		v->_elements = erealloc(v->_elements,v->_size);
 	}
 }

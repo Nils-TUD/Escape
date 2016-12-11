@@ -30,9 +30,9 @@ using namespace std;
 using namespace esc;
 using namespace info;
 
-#define PIPE			0xB3	// |
-#define PIPE_CHILD		0xC3	// |-
-#define PIPE_LASTCHILD	0xC0	// \-
+static const char PIPE				= 0xB3; // |
+static const char PIPE_CHILD		= 0xC3; // |-
+static const char PIPE_LASTCHILD	= 0xC0; // \-
 
 struct ProcNode {
 	process *proc;

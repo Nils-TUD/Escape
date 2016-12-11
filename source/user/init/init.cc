@@ -31,15 +31,18 @@
 #include "process/processmanager.h"
 #include "initerror.h"
 
-#define SHUTDOWN_TIMEOUT		3
-#define STATE_RUN				0
-#define STATE_REBOOT			1
-#define STATE_SHUTDOWN			2
-
 class InitDevice;
+
+enum {
+	STATE_RUN,
+	STATE_REBOOT,
+	STATE_SHUTDOWN,
+};
 
 static void sigAlarm(int sig);
 static int driverThread(void *arg);
+
+static const int SHUTDOWN_TIMEOUT = 3; /* seconds */
 
 static ProcessManager pm;
 static int state = STATE_RUN;

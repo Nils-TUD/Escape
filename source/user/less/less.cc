@@ -34,8 +34,6 @@
 
 #include "linecontainer.h"
 
-#define TAB_WIDTH			4
-
 using namespace std;
 
 static void resetVterm(void);
@@ -44,6 +42,8 @@ static void append(string& s,int& len,char c);
 static void scrollDown(long lines);
 static void refreshScreen(void);
 static void printStatus(const char *totalStr);
+
+static const int TAB_WIDTH = 4;
 
 static esc::FStream *vt;
 static FILE *in;

@@ -36,11 +36,11 @@
 #include <stdlib.h>
 #include <string>
 
-#define PAGE_SCROLL		10
-
 using namespace std;
 using namespace esc;
 using namespace info;
+
+static const int PAGE_SCROLL = 10;
 
 static volatile bool run = true;
 static ssize_t yoffset;

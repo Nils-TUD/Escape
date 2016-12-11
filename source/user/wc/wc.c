@@ -26,9 +26,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define WC_BYTES	1
-#define WC_WORDS	2
-#define WC_LINES	4
+enum {
+	WC_BYTES	= 0x1,
+	WC_WORDS	= 0x2,
+	WC_LINES	= 0x4,
+};
 
 static void countFile(FILE *in);
 static void usage(const char *name) {

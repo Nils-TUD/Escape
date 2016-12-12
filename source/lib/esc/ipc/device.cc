@@ -75,7 +75,7 @@ void Device::reply(IPCStream &is,errcode_t errcode) {
 		is << errcode << Reply();
 	}
 	catch(...) {
-		printe("Client %d: sending error-code failed: %s",is.fd(),strerror(errcode));
+		printe("Client %d: sending error-code failed",is.fd());
 	}
 }
 

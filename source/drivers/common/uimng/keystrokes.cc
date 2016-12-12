@@ -49,6 +49,8 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	char name[SSTRLEN("ui") + 11];
 	char path[SSTRLEN("/dev/ui") + 11];
 
+	int maxfds = sysconf(CONF_MAX_FDS);
+
 	int id = JobMng::getId();
 	if(id < 0) {
 		printe("Maximum number of clients reached");
@@ -58,20 +60,23 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	snprintf(name,sizeof(name),"ui%d",id);
 	snprintf(path,sizeof(path),"/dev/%s",name);
 
-	print("Starting '%s'",name);
-
+	print("Starting %s %s %s %s",mng,cols,rows,name);
 	int mngPid = fork();
 	if(mngPid < 0) {
 		printe("fork failed");
 		return;
 	}
 	if(mngPid == 0) {
+		/* ATTENTION: since we have multiple threads, we have to be REALLY careful what we do here.
+		 * we basically can only do simple system calls, because we cannot be sure that our program
+		 * state is consistent. This is because other threads could have been at an arbitrary
+		 * position while we forked, so that, for example, locks could be taken, data structures
+		 * could be inconsistent and so on. */
+
 		/* close all but stdin, stdout, stderr, strace */
-		int max = sysconf(CONF_MAX_FDS);
-		for(int i = 4; i < max; ++i)
+		for(int i = 4; i < maxfds; ++i)
 			close(i);
 
-		print("Executing %s %s %s %s",mng,cols,rows,name);
 		const char *args[] = {mng,cols,rows,name,NULL};
 		execv(mng,args);
 		error("exec with %s failed",mng);
@@ -91,6 +96,12 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	}
 	close(fd);
 
+	print("Starting %s",login);
+
+	/* we can't do that in the child (see ATTENTION comment above), so do it here */
+	/* we don't need the env var in uimng anyway, so it doesn't hurt to set it */
+	setenv(termVar,path);
+
 	int loginPid = fork();
 	if(loginPid < 0) {
 		printe("fork failed");
@@ -98,16 +109,11 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	}
 	if(loginPid == 0) {
 		/* close all; login will open different streams */
-		int max = sysconf(CONF_MAX_FDS);
-		for(int i = 0; i < max; ++i) {
+		for(int i = 0; i < maxfds; ++i) {
 			if(i != STRACE_FILENO)
 				close(i);
 		}
 
-		/* set env-var for childs */
-		setenv(termVar,path);
-
-		print("Executing %s",login);
 		const char *args[] = {login,NULL};
 		execv(login,args);
 		error("exec with %s failed",login);

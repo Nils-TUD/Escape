@@ -5,14 +5,10 @@ Import('env')
 if env['TGTTYPE'] == 'x86':
 	myenv = env.Clone()
 
-	preproc = Builder(action = '$CROSSDIR/bin/$CROSS-cpp -P $CPPFLAGS $SOURCE $TARGET')
-	myenv.Append(BUILDERS = {'PreProc' : preproc})
+	myenv.Append(CPPFLAGS = ' -P')
+	ldconf = myenv.EscapeCPP('ld-final.conf', 'ld.conf')
 
-	ldconf = myenv.PreProc('ld-final.conf', 'ld.conf')
-
-	myenv.Append(
-		LINKFLAGS = ' -nostartfiles -Wl,-T,' + ldconf[0].abspath
-	)
+	myenv.Append(LINKFLAGS = ' -nostartfiles -Wl,-T,' + ldconf[0].abspath)
 	#myenv.Append(CFLAGS = ' -DCALLTRACE_PID=0', ASFLAGS = ' -DCALLTRACE_PID=0')
 	prog = myenv.EscapeCProg(
 		'bin',

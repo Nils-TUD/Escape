@@ -92,16 +92,26 @@ env.Append(
 
 verbose = os.environ.get('ESC_VERBOSE',0)
 if int(verbose) == 0:
-	hostenv['ASCOMSTR'] = env['ASCOMSTR'] = "AS $TARGET"
-	hostenv['ASPPCOMSTR'] = env['ASPPCOMSTR'] = "ASPP $TARGET"
-	hostenv['CCCOMSTR'] = env['CCCOMSTR'] = "CC $TARGET"
-	hostenv['SHCCCOMSTR'] = env['SHCCCOMSTR'] = "SHCC $TARGET"
-	hostenv['CXXCOMSTR'] = env['CXXCOMSTR'] = "CXX $TARGET"
-	hostenv['SHCXXCOMSTR'] = env['SHCXXCOMSTR'] = "SHCXX $TARGET"
-	hostenv['LINKCOMSTR'] = env['LINKCOMSTR'] = "LD $TARGET"
-	hostenv['SHLINKCOMSTR'] = env['SHLINKCOMSTR'] = "SHLD $TARGET"
-	hostenv['ARCOMSTR'] = env['ARCOMSTR'] = "AR $TARGET"
-	hostenv['RANLIBCOMSTR'] = env['RANLIBCOMSTR'] = "RANLIB $TARGET"
+	hostenv['ASCOMSTR']		= env['ASCOMSTR']		= "[AS     ] $TARGET"
+	hostenv['ASPPCOMSTR']	= env['ASPPCOMSTR']		= "[ASPP   ] $TARGET"
+	hostenv['CCCOMSTR']		= env['CCCOMSTR']		= "[CC     ] $TARGET"
+	hostenv['SHCCCOMSTR']	= env['SHCCCOMSTR']		= "[SHCC   ] $TARGET"
+	hostenv['CXXCOMSTR']	= env['CXXCOMSTR']		= "[CXX    ] $TARGET"
+	hostenv['SHCXXCOMSTR']	= env['SHCXXCOMSTR']	= "[SHCXX  ] $TARGET"
+	hostenv['LINKCOMSTR']	= env['LINKCOMSTR']		= "[LD     ] $TARGET"
+	hostenv['SHLINKCOMSTR']	= env['SHLINKCOMSTR']	= "[SHLD   ] $TARGET"
+	hostenv['ARCOMSTR']		= env['ARCOMSTR']		= "[AR     ] $TARGET"
+	hostenv['CPPCOMSTR']	= env['CPPCOMSTR']		= "[CPP    ] $TARGET"
+	hostenv['RANLIBCOMSTR']	= env['RANLIBCOMSTR']	= "[RANLIB ] $TARGET"
+	hostenv['LEXCOMSTR']	= env['LEXCOMSTR']		= "[LEX    ] $TARGET"
+	hostenv['YACCCOMSTR']	= env['YACCCOMSTR']		= "[YACC   ] $TARGET"
+	hostenv['LNCOMSTR']		= env['LNCOMSTR']		= "[LN     ] $TARGET"
+	hostenv['STRIPCOMSTR']	= env['STRIPCOMSTR']	= "[STRIP  ] $TARGET"
+	hostenv['DUMPCOMSTR']	= env['DUMPCOMSTR']		= "[DUMP   ] $TARGET"
+	hostenv['MAPCOMSTR']	= env['MAPCOMSTR']		= "[MAP    ] $TARGET"
+	hostenv['INSTALLSTR']	= env['INSTALLSTR']		= "[INSTALL] $TARGET"
+	hostenv['GENSYMCOMSTR']	= env['GENSYMCOMSTR']	= "[GENSYM ] $TARGET"
+	hostenv['OBJCPYCOMSTR']	= env['OBJCPYCOMSTR']	= "[OBJCPY ] $TARGET"
 
 env.Append(
 	TGT = target,
@@ -167,19 +177,49 @@ def SetLinkAddr(env, static):
 		link_addr += 0x20000
 
 def EscapeMap(env, target, source):
-	map = env.Command(target, source, 'tools/createmap-$TGT $SOURCE > $TARGET')
+	map = env.Command(
+		target, source, Action('tools/createmap-$TGT $SOURCE > $TARGET', '$MAPCOMSTR')
+	)
 	env.Depends(map, '#tools/createmap-$TGT')
 	env.Install('$MAPDIR', map)
 
 def EscapeDump(env, target, source):
-	dump = env.Command(target, source, '$BINDIR/hostdump $SOURCE > $TARGET')
+	dump = env.Command(
+		target, source, Action('$BINDIR/hostdump $SOURCE > $TARGET', '$DUMPCOMSTR')
+	)
 	env.Depends(dump, '$BINDIR/hostdump')
 	env.Install('$BUILDDIR', dump)
 
 def EscapeStrip(env, target, source):
     return env.Command(
-        target, source, cross + '-strip -s -o $TARGET $SOURCE'
+        target, source, Action(cross + '-strip -s -o $TARGET $SOURCE', '$STRIPCOMSTR')
     )
+
+def EscapeLink(env, target, source):
+	return env.Command(
+		target, source, Action('ln -sf ${SOURCE.abspath} $TARGET', '$LNCOMSTR')
+	)
+
+def EscapeCPP(env, target, source):
+	return env.Command(
+		target, source, Action(
+			'$CROSSDIR/bin/$CROSS-cpp $CPPFLAGS $SOURCE $TARGET',
+			'$CPPCOMSTR'
+		)
+	)
+
+def EscapeGenSym(env, target, source):
+	return env.Command(
+		target, source, Action('./tools/gensymbols.sh $SOURCE > $TARGET', '$GENSYMCOMSTR')
+	)
+
+def EscapeObjCpy(env, target, source):
+	return env.Command(
+		target, source, Action(
+			'$CROSSDIR/bin/$CROSS-objcopy $OBJCPYFLAGS $SOURCE $TARGET',
+			'$OBJCPYCOMSTR'
+		)
+	)
 
 def EscapeGCCLibs(env, static):
 	if static:
@@ -210,7 +250,7 @@ def EscapeCProg(env, prefix, target, source, force_static = False, var_addr = Tr
 	myenv.EscapeMap(target + '.map', prog)
 	if prefix != '':
 		myenv.Install('$DISTDIR/' + prefix, prog)
-		myenv.Symlink('$BINDIR/' + target, prog)
+		myenv.EscapeLink('$BINDIR/' + target, prog)
 	return prog
 
 def EscapeCXXProg(env, prefix, target, source, force_static = False, var_addr = True, LIBS = []):
@@ -230,7 +270,7 @@ def EscapeCXXProg(env, prefix, target, source, force_static = False, var_addr = 
 	myenv.EscapeMap(target + '.map', prog)
 	if prefix != '':
 		myenv.Install('$DISTDIR/' + prefix, prog)
-		myenv.Symlink('$BINDIR/' + target, prog)
+		myenv.EscapeLink('$BINDIR/' + target, prog)
 	return prog
 
 def EscapeLib(env, target, source, LIBS = []):
@@ -249,14 +289,16 @@ def EscapeLib(env, target, source, LIBS = []):
 		env.Install('$DISTDIR/lib', shlib)
 		env.EscapeMap('lib' + target + '.map', shlib)
 
-symlink = Builder(action = 'ln -sf ${SOURCE.abspath} $TARGET')
-env.Append(BUILDERS = {'Symlink' : symlink})
 env.AddMethod(EscapeMap)
 env.AddMethod(EscapeDump)
 env.AddMethod(EscapeStrip)
 env.AddMethod(EscapeCProg)
 env.AddMethod(EscapeCXXProg)
 env.AddMethod(EscapeLib)
+env.AddMethod(EscapeLink)
+env.AddMethod(EscapeCPP)
+env.AddMethod(EscapeGenSym)
+env.AddMethod(EscapeObjCpy)
 env.AddMethod(install.InstallFiles)
 
 # always use grouping for static libraries, because they may depend on each other so that we want

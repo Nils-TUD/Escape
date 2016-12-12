@@ -4,19 +4,11 @@ Import('env')
 import os
 
 kenv = env.Clone()
-gensyms = Builder(action = './tools/gensymbols.sh $SOURCE > $TARGET')
-objcpy = Builder(action = '$CROSSDIR/bin/$CROSS-objcopy -O elf32-i386 $SOURCE $TARGET')
-preproc = Builder(action = '$CROSSDIR/bin/$CROSS-cpp -P $CPPFLAGS -Ikernel/include $SOURCE $TARGET')
-kenv.Append(
-	BUILDERS = {
-		'GenSyms' : gensyms,
-		'ObjCpy' : objcpy,
-		'PreProc' : preproc
-	}
-)
 
-ldconfs = Flatten([kenv.Glob('src/arch/$TGTTYPE/ld.conf'), kenv.Glob('src/arch/$TGT/ld.conf')])
-ldconf = kenv.PreProc('ld.conf', ldconfs[0])
+ldenv = kenv.Clone()
+ldenv.Append(CPPFLAGS = ' -P -Ikernel/include')
+ldconfs = Flatten([ldenv.Glob('src/arch/$TGTTYPE/ld.conf'), ldenv.Glob('src/arch/$TGT/ld.conf')])
+ldconf = ldenv.EscapeCPP('ld.conf', ldconfs[0])
 
 kenv.Append(
 	CFLAGS = ' -ffreestanding',
@@ -37,6 +29,7 @@ if kenv['TGT'] == 'x86_64':
 		CXXFLAGS = ' -mcmodel=kernel -mno-red-zone -mno-sse',
 		ASFLAGS = ' -mcmodel=kernel -mno-red-zone',
 		LINKFLAGS = ' -mcmodel=kernel -mno-red-zone',
+		OBJCPYFLAGS = ' -O elf32-i386',
 	)
 
 #kenv.Append(
@@ -71,7 +64,7 @@ def objects(env, srcs):
 
 def LinkWithSymbols(kenv, name, objects):
 	# generate empty symbol file
-	kenv.GenSyms(name + 'ksyms1.cc', kenv.Value('-'))
+	kenv.EscapeGenSym(name + 'ksyms1.cc', kenv.Value('-'))
 	kenv.Object(name + 'ksyms1.o', name + 'ksyms1.cc')
 	# build the kernel with it
 	prekernel = kenv.EscapeCProg(
@@ -81,7 +74,7 @@ def LinkWithSymbols(kenv, name, objects):
 	kenv.Depends(prekernel, ldconf)
 
 	# generate symbol file for built kernel
-	kenv.GenSyms(name + 'ksyms2.cc', prekernel)
+	kenv.EscapeGenSym(name + 'ksyms2.cc', prekernel)
 	kenv.Object(name + 'ksyms2.o', name + 'ksyms2.cc')
 	# now build the real kernel
 	kernel = kenv.EscapeCProg(
@@ -95,8 +88,8 @@ kernel = LinkWithSymbols(kenv, 'escape', objects(kenv, src + [mainsrc]))
 test_kernel = LinkWithSymbols(kenv, 'escape_test', objects(kenv, src + tsrc))
 
 if kenv['TGT'] == 'x86_64':
-	kenv.ObjCpy('escape.elf32', kernel)
-	kenv.ObjCpy('escape_test.elf32', test_kernel)
+	kenv.EscapeObjCpy('escape.elf32', kernel)
+	kenv.EscapeObjCpy('escape_test.elf32', test_kernel)
 	kenv.Install('$DISTDIR/boot', ['escape.elf32', 'escape_test.elf32'])
-	kenv.Symlink('$BINDIR/escape.elf32', 'escape.elf32')
-	kenv.Symlink('$BINDIR/escape_test.elf32', 'escape_test.elf32')
+	kenv.EscapeLink('$BINDIR/escape.elf32', 'escape.elf32')
+	kenv.EscapeLink('$BINDIR/escape_test.elf32', 'escape_test.elf32')

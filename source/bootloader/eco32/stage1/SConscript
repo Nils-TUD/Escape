@@ -6,5 +6,5 @@ myenv = env.Clone()
 ldscript = 'bootloader/eco32/stage1/ld.conf'
 myenv.Append(LINKFLAGS = '-ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,' + ldscript)
 elf = myenv.EscapeCProg('', 'stage1.elf', ['br.S', 'sctio-ctl.S'], force_static = True, var_addr = False)
-myenv.Symlink('$BINDIR/stage1.elf', elf)
+myenv.EscapeLink('$BINDIR/stage1.elf', elf)
 myenv.Command('stage1.bin', elf, '$CROSS-objcopy -O binary $SOURCE $TARGET')

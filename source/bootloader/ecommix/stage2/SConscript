@@ -20,5 +20,5 @@ elf = myenv.EscapeCXXProg(
 	var_addr = False
 )
 myenv.Depends(elf, ldscript)
-myenv.Symlink('$BINDIR/stage2.elf', elf)
+myenv.EscapeLink('$BINDIR/stage2.elf', elf)
 myenv.Command('stage2.bin', elf, '$CROSS-objcopy -O binary $SOURCE $TARGET')

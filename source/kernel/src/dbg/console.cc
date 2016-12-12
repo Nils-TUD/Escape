@@ -381,7 +381,7 @@ void Console::display(OStream &os,NaviBackend *backend,const char *searchInfo,co
 		size_t searchlen = strlen(search);
 		found = false;
 		for(; !found && ((searchMode == SEARCH_FORWARD &&
-				startAddr < getMaxAddr(backend->getMaxPos())) ||
+				startAddr < backend->getMaxPos()) ||
 			  (searchMode == SEARCH_BACKWARDS && startAddr >= BYTES_PER_LINE)); count++) {
 			if(count % 100 == 0) {
 				vid.goTo(VID_ROWS - 1,0);

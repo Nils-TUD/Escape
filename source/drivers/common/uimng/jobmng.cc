@@ -48,10 +48,9 @@ void JobMng::wait() {
 			else
 				print("Child %d terminated with exitcode %d",state.pid,state.exitCode);
 			fflush(stdout);
-			terminate(state.pid);
 
 			/* if no jobs are left, create a new one */
-			if(_jobs.size() == 0)
+			if(terminate(state.pid))
 				Keystrokes::createTextConsole();
 		}
 	}
@@ -82,7 +81,7 @@ JobMng::Job *JobMng::get(int id) {
 	return NULL;
 }
 
-void JobMng::terminate(int pid) {
+bool JobMng::terminate(int pid) {
 	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _jobs.begin(); it != _jobs.end(); ++it) {
 		if(it->loginPid == pid || it->termPid == pid) {
@@ -102,4 +101,5 @@ void JobMng::terminate(int pid) {
 			break;
 		}
 	}
+	return _jobs.size() == 0;
 }

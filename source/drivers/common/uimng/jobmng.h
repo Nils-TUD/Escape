@@ -88,7 +88,7 @@ public:
 
 private:
 	static Job *get(int id);
-	static void terminate(int pid);
+	static bool terminate(int pid);
 
 	static std::mutex _mutex;
 	static std::vector<Job> _jobs;

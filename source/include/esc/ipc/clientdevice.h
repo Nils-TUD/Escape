@@ -123,8 +123,7 @@ public:
 		return it != _clients.end() ? it->second : NULL;
 	}
 	const C *operator[](int fd) const {
-		typename map_type::const_iterator it = _clients.find(fd);
-		return it != _clients.end() ? it->second : NULL;
+		return const_cast<ClientDevice*>(this)[fd];
 	}
 
 	/**
@@ -140,10 +139,7 @@ public:
 		return it->second;
 	}
 	const C *get(int fd) const {
-		typename map_type::const_iterator it = _clients.find(fd);
-		if(it == _clients.end())
-			VTHROWE("No client with id " << fd,-ENOTFOUND);
-		return it->second;
+		return const_cast<ClientDevice*>(this)->get(fd);
 	}
 
 	/**

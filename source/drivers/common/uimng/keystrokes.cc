@@ -30,8 +30,6 @@
 #include "keystrokes.h"
 #include "screens.h"
 
-std::mutex Keystrokes::mutex;
-
 const int Keystrokes::VGA_MODE			= 3;
 
 const char *Keystrokes::VTERM_PROG		= "/sbin/vterm";
@@ -51,7 +49,6 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	char name[SSTRLEN("ui") + 11];
 	char path[SSTRLEN("/dev/ui") + 11];
 
-	std::lock_guard<std::mutex> guard(mutex);
 	int id = JobMng::getId();
 	if(id < 0) {
 		printe("Maximum number of clients reached");

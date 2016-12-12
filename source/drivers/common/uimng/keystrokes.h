@@ -74,6 +74,4 @@ private:
 	static void createConsole(const char *mng,const char *cols,const char *rows,const char *login,
 		const char *termVar);
 	static void switchToVGA(void);
-
-	static std::mutex mutex;
 };

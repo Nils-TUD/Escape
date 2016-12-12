@@ -286,7 +286,6 @@ A_CHECKRET static inline int creatsibl(int fd,int arg) {
  * shared memory instead of copying it twice.
  *
  * @param dev the file descriptor to the device
- * @param fd the file descriptor to the shared-memory-file
  * @param mem the memory area where <fd> has been mmap'd
  * @return 0 on success
  */

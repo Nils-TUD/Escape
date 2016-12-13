@@ -27,6 +27,7 @@
 #include <sys/sync.h>
 #include <sys/thread.h>
 #include <sys/time.h>
+#include <sys/atomic.h>
 #include <mutex>
 #include <signal.h>
 #include <stdio.h>
@@ -44,7 +45,7 @@ typedef struct {
 	void *data;
 } sTestRequest;
 
-static volatile int closeCount = 0;
+static long clientsLeft = CLIENT_COUNT;
 static int respId = 1;
 static int id;
 static std::mutex mutex;
@@ -61,16 +62,12 @@ static void printffl(const char *fmt,...) {
 	va_end(ap);
 }
 
-static void sigUsr1(A_UNUSED int sig) {
-	signal(SIGUSR1,sigUsr1);
-}
-
 int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	char path[32];
 	srand(rdtsc());
 	snprintf(path,sizeof(path),"/dev/bla-%d",rand());
 
-	id = createdev(path,0666,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
+	id = createdev(path,0777,DEV_TYPE_BLOCK,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE);
 	if(id < 0)
 		error("createdev");
 
@@ -88,23 +85,31 @@ int mod_driver(A_UNUSED int argc,A_UNUSED char *argv[]) {
 }
 
 static int clientThread(void *arg) {
-	size_t i;
-	char buf[12] = {0};
-	int fd = open((char*)arg,O_RDWR);
+	int fd = open((char*)arg,O_MSGS | O_RDWR);
 	if(fd < 0)
 		error("open");
+
 	srand(time(NULL) * gettid());
-		printffl("[%d] Reading...\n",gettid());
+
+	char buf[12];
+	printffl("[%d] Reading...\n",gettid());
 	if(IGNSIGS(read(fd,buf,sizeof(buf))) < 0)
 		error("read");
+
 	printffl("[%d] Got: '%s'\n",gettid(),buf);
+	size_t i;
 	for(i = 0; i < sizeof(buf) - 1; i++)
 		buf[i] = (rand() % ('z' - 'a')) + 'a';
 	buf[i] = '\0';
+
 	printffl("[%d] Writing '%s'...\n",gettid(),buf);
 	if(write(fd,buf,sizeof(buf)) < 0)
 		error("write");
+
 	printffl("[%d] Closing...\n",gettid());
+
+	if(atomic_add(&clientsLeft,-1) == 1)
+		send(fd,0xDEAD,NULL,0);
 	close(fd);
 	return EXIT_SUCCESS;
 }
@@ -112,18 +117,17 @@ static int clientThread(void *arg) {
 static int getRequests(A_UNUSED void *arg) {
 	ulong buffer[64];
 	int tid;
-	if(signal(SIGUSR1,sigUsr1) == SIG_ERR)
-		error("Unable to announce signal-handler");
 
 	bindto(id,gettid());
-	do {
+	while(true) {
 		msgid_t mid;
 		int cfd = getwork(id,&mid,buffer,sizeof(buffer),0);
-		if(cfd < 0) {
-			if(cfd != -EINTR)
-				printe("Unable to get work");
-		}
+		if(cfd < 0)
+			error("Unable to get work");
 		else {
+			if((mid & 0xFFFF) == 0xDEAD)
+				break;
+
 			sTestRequest *req = (sTestRequest*)malloc(sizeof(sTestRequest));
 			req->fd = cfd;
 			req->mid = mid;
@@ -141,7 +145,6 @@ static int getRequests(A_UNUSED void *arg) {
 				error("Unable to start thread");
 		}
 	}
-	while(closeCount < CLIENT_COUNT);
 	printffl("No clients anymore, giving up :(\n");
 	return 0;
 }
@@ -188,11 +191,7 @@ static int handleRequest(void *arg) {
 
 		case MSG_FILE_CLOSE: {
 			printffl("--[%d,%d] Close\n",gettid(),req->fd);
-			closeCount++;
 			close(req->fd);
-			req->fd = -1;
-			if(kill(getpid(),SIGUSR1) < 0)
-				error("Unable to send signal to driver-thread");
 		}
 		break;
 	}

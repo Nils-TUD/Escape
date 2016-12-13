@@ -88,37 +88,6 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
-int VFSChannel::openForDriver() {
-	OpenFile *clifile;
-	VFSNode *par = getParent();
-	pid_t ppid = par->getOwner();
-	int res = VFS::openFile(ppid,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO,&clifile);
-	if(res < 0)
-		return res;
-	/* getByPid() is ok because if the parent-node exists, the owner does always exist, too */
-	Proc *pp = Proc::getByPid(ppid);
-	fd = FileDesc::assoc(pp,clifile);
-	if(fd < 0) {
-		clifile->close(ppid);
-		return fd;
-	}
-	return 0;
-}
-
-void VFSChannel::closeForDriver() {
-	/* the parent process might be dead now (in this case he would have already closed the file) */
-	VFSNode *par = getParent();
-	pid_t ppid = par->getOwner();
-	Proc *pp = Proc::getRef(ppid);
-	if(pp) {
-		/* the file might have been closed already */
-		OpenFile *clifile = FileDesc::unassoc(pp,fd);
-		if(clifile)
-			clifile->close(ppid);
-		Proc::relRef(pp);
-	}
-}
-
 ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
@@ -128,9 +97,10 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t 
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
-	res = openForDriver();
+	res = VFS::openFileDesc(getParent()->getOwner(),VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO);
 	if(res < 0)
 		return res;
+	fd = res;
 
 	/* do we need to send an open to the driver? */
 	res = isSupported(DEV_OPEN);
@@ -171,7 +141,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t 
 	}
 
 error:
-	closeForDriver();
+	VFS::closeFileDesc(getParent()->getOwner(),fd);
 	return res;
 }
 
@@ -418,9 +388,11 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 		return res;
 
 	/* first, give the driver a file-descriptor for the new channel */
-	res = sibl->openForDriver();
+	res = VFS::openFileDesc(sibl->getParent()->getOwner(),VFS_MSGS | VFS_DEVICE,
+		sibl,sibl->getNo(),VFS_DEV_NO);
 	if(res < 0)
 		return res;
+	sibl->fd = res;
 
 	/* send msg to driver */
 	ib << esc::DevCreatSibl::Request(sibl->fd,arg);
@@ -458,7 +430,7 @@ int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
 	A_UNREACHED;
 
 error:
-	sibl->closeForDriver();
+	VFS::closeFileDesc(sibl->getParent()->getOwner(),sibl->fd);
 	return res;
 }
 

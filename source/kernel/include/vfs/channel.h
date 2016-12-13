@@ -157,8 +157,6 @@ private:
 	static Message *getMsg(esc::SList<Message> *list,msgid_t mid,ushort flags);
 	uint getReceiveFlags() const;
 	int isSupported(int op) const;
-	int openForDriver();
-	void closeForDriver();
 
 	int fd;
 	tid_t handler;

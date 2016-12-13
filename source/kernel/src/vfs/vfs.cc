@@ -22,6 +22,7 @@
 #include <mem/dynarray.h>
 #include <mem/pagedir.h>
 #include <sys/messages.h>
+#include <task/filedesc.h>
 #include <task/groups.h>
 #include <task/proc.h>
 #include <task/timer.h>
@@ -237,6 +238,42 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 
 	/* determine free file */
 	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
+}
+
+int VFS::openFileDesc(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo) {
+	OpenFile *file;
+	int res = VFS::openFile(pid,flags,node,nodeNo,devNo,&file);
+	if(res < 0)
+		return res;
+
+	Proc *p = Proc::getRef(pid);
+	if(!p) {
+		res = -EDESTROYED;
+		goto errorProc;
+	}
+
+	res = FileDesc::assoc(p,file);
+	if(res < 0)
+		goto errorAssoc;
+	Proc::relRef(p);
+	return res;
+
+errorAssoc:
+	Proc::relRef(p);
+errorProc:
+	file->close(pid);
+	return res;
+}
+
+void VFS::closeFileDesc(pid_t pid,int fd) {
+	Proc *p = Proc::getRef(pid);
+	if(p) {
+		/* the file might have been closed already */
+		OpenFile *file = FileDesc::unassoc(p,fd);
+		if(file)
+			file->close(pid);
+		Proc::relRef(p);
+	}
 }
 
 int VFS::creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl) {

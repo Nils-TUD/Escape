@@ -115,6 +115,27 @@ public:
 	                    OpenFile **file);
 
 	/**
+	 * Opens the given file for process <pid> and associates a file descriptor for the process
+	 * with that file.
+	 *
+	 * @param pid the process-id with which the file should be opened
+	 * @param flags whether it is a virtual or real file and whether you want to read or write
+	 * @param node the node if its virtual or NULL otherwise.
+	 * @param nodeNo the node-number (in the virtual or real environment)
+	 * @param devNo the device-number
+	 * @return the file descriptor on success
+	 */
+	static int openFileDesc(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo);
+
+	/**
+	 * Closes the given file descriptor for process <pid>.
+	 *
+	 * @param pid the process id
+	 * @param fd the file descriptor
+	 */
+	static void closeFileDesc(pid_t pid,int fd);
+
+	/**
 	 * Creates a new sibling-channel for <file>.
 	 *
 	 * @param pid the process-id

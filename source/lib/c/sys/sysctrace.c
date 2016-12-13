@@ -63,7 +63,7 @@ const struct Syscall syscalls[] = {
 	/* 20 */
 	{"init",	    	""							},
 	{"sleep",    		"%u"						},
-	{"seek",    		"%d,%u"						},
+	{"seek",    		"%d,%u,%S"					},
 	{"startthread",		"%p,%p"						},
 	{"gettid",    		""							},
 	{"send",    		"%d,%N,%p,%x"				},
@@ -309,6 +309,12 @@ static const struct OpenFlag openFlags[] = {
 	{O_NOCHAN,	"O_NOCHAN"},
 };
 
+static const char *seekModes[] = {
+	"SET",
+	"CUR",
+	"END",
+};
+
 extern char __progname[];
 
 static bool inTrace = false;
@@ -419,6 +425,10 @@ static void decodeOpen(FILE *os, uint flags) {
 	}
 }
 
+static void decodeSeek(FILE *os, uint mode) {
+	fprintf(os,"%s",seekModes[mode]);
+}
+
 void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 	/* we might perform syscalls ourself. thus, prevent recursion here */
 	/* and ignore syscalls until the environment is initialized */
@@ -495,6 +505,9 @@ void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 					break;
 				case 'O':
 					decodeOpen(&os,val);
+					break;
+				case 'S':
+					decodeSeek(&os,val);
 					break;
 			}
 

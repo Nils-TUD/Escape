@@ -291,12 +291,12 @@ static const struct Messages msgs[] = {
 	{dnsMsgs,	1400,	ARRAY_SIZE(dnsMsgs)},
 };
 
-struct OpenFlag {
+struct Flag {
 	uint flag;
 	const char *name;
 };
 
-static const struct OpenFlag openFlags[] = {
+static const struct Flag openFlags[] = {
 	{O_MSGS,	"O_MSGS"},
 	{O_WRITE,	"O_WRITE"},
 	{O_READ,	"O_READ"},
@@ -313,6 +313,19 @@ static const char *seekModes[] = {
 	"SET",
 	"CUR",
 	"END",
+};
+
+static const struct Flag mmapFlags[] = {
+	{1UL,		"MAP_SHARED"},
+	{2UL,		"MAP_GROWABLE"},
+	{4UL,		"MAP_GROWSDOWN"},
+	{8UL,		"MAP_STACK"},
+	{16UL,		"MAP_LOCKED"},
+	{32UL,		"MAP_POPULATE"},
+	{64UL,		"MAP_NOSWAP"},
+	{128UL,		"MAP_FIXED"},
+	{1024UL,	"PROT_WRITE"},
+	{2048UL,	"PROT_EXEC"},
 };
 
 extern char __progname[];
@@ -396,9 +409,29 @@ static void writeTrace(FILE *os,bool enter,uint32_t *id) {
 	fsemup(syncFd);
 }
 
+static void decodeFlags(FILE *os,const struct Flag *flags,size_t count,uint val) {
+	if(val == 0) {
+		fputs("0",os);
+		return;
+	}
+
+	bool first = true;
+	for(size_t i = 0; i < count; ++i) {
+		if(val & flags[i].flag) {
+			if(!first)
+				fputs("|",os);
+			fputs(flags[i].name,os);
+			first = false;
+		}
+	}
+}
+
 static void decodeMmap(FILE *os,struct mmap_params *p) {
-	fprintf(os,"%p,%zu,%zu,%#x,%#x,%d,%lu",
-		p->addr,p->length,p->loadLength,p->prot,p->flags,p->fd,p->offset);
+	fprintf(os,"%p,%zu,%zu,",p->addr,p->length,p->loadLength);
+	decodeFlags(os,mmapFlags,ARRAY_SIZE(mmapFlags),p->prot);
+	fputs(",",os);
+	decodeFlags(os,mmapFlags,ARRAY_SIZE(mmapFlags),p->flags);
+	fprintf(os,",%d,%lu",p->fd,p->offset);
 }
 
 static void decodeMsg(FILE *os,msgid_t id) {
@@ -411,18 +444,6 @@ static void decodeMsg(FILE *os,msgid_t id) {
 		}
 	}
 	fprintf(os,"%#x:???",seq);
-}
-
-static void decodeOpen(FILE *os, uint flags) {
-	bool first = true;
-	for(size_t i = 0; i < ARRAY_SIZE(openFlags); ++i) {
-		if(flags & openFlags[i].flag) {
-			if(!first)
-				fputs("|",os);
-			fputs(openFlags[i].name,os);
-			first = false;
-		}
-	}
 }
 
 static void decodeSeek(FILE *os, uint mode) {
@@ -504,7 +525,7 @@ void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 					decodeMsg(&os,val);
 					break;
 				case 'O':
-					decodeOpen(&os,val);
+					decodeFlags(&os,openFlags,ARRAY_SIZE(openFlags),val);
 					break;
 				case 'S':
 					decodeSeek(&os,val);

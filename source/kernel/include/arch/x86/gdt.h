@@ -109,7 +109,7 @@ private:
 		asm volatile ("lgdt	(%0)" : : "r"(gdt));
 	}
 	static void get(DescTable *gdt) {
-		asm volatile ("sgdt (%0)\n" : : "r"(gdt));
+		asm volatile ("sgdt (%0)\n" : : "r"(gdt) : "memory");
 	}
 	static void loadTSS(size_t gdtOffset) {
 		asm volatile ("ltr %0" : : "m"(gdtOffset));

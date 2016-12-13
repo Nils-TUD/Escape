@@ -71,8 +71,7 @@ fConstr libcConstr[1] A_INIT = {
 
 char __progname[32];
 
-/* this lock is shared with tls.c */
-tUserSem __libc_sem;
+static tUserSem __libc_sem;
 static size_t threadCount = 1;
 static size_t exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];

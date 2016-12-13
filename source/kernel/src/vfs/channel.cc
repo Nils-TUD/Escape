@@ -64,17 +64,12 @@ VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 void VFSChannel::invalidate() {
 	/* notify potentially waiting clients */
 	Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
+
 	// luckily, we have the treelock here which is also used for all other calls to addMsgs/remMsgs.
-	// but we get the number of messages in VFS::waitFor() without the treelock. but in this case it
-	// doesn't really hurt to remove messages, because we would just give up waiting once, probably
-	// call getwork afterwards which will see that there is actually no new message anymore.
-	// (we can't acquire the waitlock because we use these locks in the opposite order below)
-	// note also that we only get here if there are no references to this node anymore. so it's safe
-	// to access the lists.
-	if(getParent()) {
-		static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
-		static_cast<VFSDevice*>(getParent())->clientRemoved(this);
-	}
+	static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
+	static_cast<VFSDevice*>(getParent())->clientRemoved(this);
+
+	// we only get here if the node has no references left. so it's safe to access the lists.
 	recvList.deleteAll();
 	sendList.deleteAll();
 }

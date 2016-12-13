@@ -42,7 +42,7 @@ const struct Syscall syscalls[] = {
 	{"debugc",    		"%c"						},
 	{"fork",    		""							},
 	{"exit",    		"%d"						},
-	{"open",    		"%s,%x"						},
+	{"open",    		"%s,%O"						},
 	{"close",    		"%d"						},
 	{"read",    		"%d,%p,%x"					},
 	{"createdev",    	"%d,%s,%x"					},
@@ -291,6 +291,24 @@ static const struct Messages msgs[] = {
 	{dnsMsgs,	1400,	ARRAY_SIZE(dnsMsgs)},
 };
 
+struct OpenFlag {
+	uint flag;
+	const char *name;
+};
+
+static const struct OpenFlag openFlags[] = {
+	{O_MSGS,	"O_MSGS"},
+	{O_WRITE,	"O_WRITE"},
+	{O_READ,	"O_READ"},
+	{O_CREAT,	"O_CREAT"},
+	{O_TRUNC,	"O_TRUNC"},
+	{O_APPEND,	"O_APPEND"},
+	{O_NONBLOCK,"O_NONBLOCK"},
+	{O_LONELY,	"O_LONELY"},
+	{O_EXCL,	"O_EXCL"},
+	{O_NOCHAN,	"O_NOCHAN"},
+};
+
 extern char __progname[];
 
 static bool inTrace = false;
@@ -389,6 +407,18 @@ static void decodeMsg(FILE *os,msgid_t id) {
 	fprintf(os,"%#x:???",seq);
 }
 
+static void decodeOpen(FILE *os, uint flags) {
+	bool first = true;
+	for(size_t i = 0; i < ARRAY_SIZE(openFlags); ++i) {
+		if(flags & openFlags[i].flag) {
+			if(!first)
+				fputs("|",os);
+			fputs(openFlags[i].name,os);
+			first = false;
+		}
+	}
+}
+
 void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 	/* we might perform syscalls ourself. thus, prevent recursion here */
 	/* and ignore syscalls until the environment is initialized */
@@ -462,6 +492,9 @@ void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 					break;
 				case 'N':
 					decodeMsg(&os,val);
+					break;
+				case 'O':
+					decodeOpen(&os,val);
 					break;
 			}
 

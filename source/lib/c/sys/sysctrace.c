@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <sys/driver.h>
 #include <sys/log.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
@@ -45,7 +46,7 @@ const struct Syscall syscalls[] = {
 	{"open",    		"%s,%O"						},
 	{"close",    		"%d"						},
 	{"read",    		"%d,%p,%x"					},
-	{"createdev",    	"%d,%s,%x"					},
+	{"createdev",    	"%d,%s,%o,%D"				},
 	{"chgsize",    		"%d"						},
 
 	/* 10 */
@@ -328,6 +329,26 @@ static const struct Flag mmapFlags[] = {
 	{2048UL,	"PROT_EXEC"},
 };
 
+static const struct Flag devOps[] = {
+	{DEV_OPEN,		"OPEN"},
+	{DEV_READ,		"READ"},
+	{DEV_WRITE,		"WRITE"},
+	{DEV_CLOSE,		"CLOSE"},
+	{DEV_SHFILE,	"SHFILE"},
+	{DEV_CANCEL,	"CANCEL"},
+	{DEV_CANCELSIG,	"CANCELSIG"},
+	{DEV_CREATSIBL,	"CREATSIBL"},
+	{DEV_SIZE,		"SIZE"},
+};
+
+static const char *devTypes[] = {
+	"CHAR",
+	"BLOCK",
+	"SERVICE",
+	"FS",
+	"FILE",
+};
+
 extern char __progname[];
 
 static bool inTrace = false;
@@ -426,6 +447,13 @@ static void decodeFlags(FILE *os,const struct Flag *flags,size_t count,uint val)
 	}
 }
 
+static void decodeName(FILE *os,const char **names,size_t count,uint val) {
+	if(val < count)
+		fprintf(os,"%s",names[val]);
+	else
+		fprintf(os,"%u",val);
+}
+
 static void decodeMmap(FILE *os,struct mmap_params *p) {
 	fprintf(os,"%p,%zu,%zu,",p->addr,p->length,p->loadLength);
 	decodeFlags(os,mmapFlags,ARRAY_SIZE(mmapFlags),p->prot);
@@ -444,10 +472,6 @@ static void decodeMsg(FILE *os,msgid_t id) {
 		}
 	}
 	fprintf(os,"%#x:???",seq);
-}
-
-static void decodeSeek(FILE *os, uint mode) {
-	fprintf(os,"%s",seekModes[mode]);
 }
 
 void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
@@ -528,7 +552,12 @@ void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 					decodeFlags(&os,openFlags,ARRAY_SIZE(openFlags),val);
 					break;
 				case 'S':
-					decodeSeek(&os,val);
+					decodeName(&os,seekModes,ARRAY_SIZE(seekModes),val);
+					break;
+				case 'D':
+					decodeName(&os,devTypes,ARRAY_SIZE(devTypes),val & ((1 << BITS_DEV_TYPE) - 1));
+					fputc(',',&os);
+					decodeFlags(&os,devOps,ARRAY_SIZE(devOps),val >> BITS_DEV_TYPE);
 					break;
 			}
 

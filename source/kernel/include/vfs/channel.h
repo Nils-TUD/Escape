@@ -81,11 +81,6 @@ public:
 	}
 
 	/**
-	 * Removes all messages from the send- and receive-list.
-	 */
-	void discardMsgs();
-
-	/**
 	 * Sends the given message to the channel
 	 *
 	 * @param pid the process-id

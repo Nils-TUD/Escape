@@ -61,7 +61,6 @@ enum {
 	F_GETACCESS				= 2,
 	F_SEMUP					= 3,
 	F_SEMDOWN				= 4,
-	F_DISMSGS				= 5,
 };
 
 /* seek-types */

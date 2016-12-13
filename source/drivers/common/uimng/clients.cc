@@ -74,13 +74,12 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	if(old && old != cli)
 		old->setActive(false);
 
-	/* before switching, discard all messages that are in flight from the old client. because we
-	 * might have send e.g. some update-messages which haven't been handled yet and of course we
+	/* we might have send e.g. some update-messages which haven't been handled yet and of course we
 	 * don't want the screen-driver to handle them afterwards since that would overwrite something
-	 * of the new client. note that this is no problem because if we switch back to the old client,
-	 * we'll update everything anyway. */
+	 * of the new client. thus, perform a send-receive to be sure that no update-requests (without
+	 * reply) are pending. */
 	if(old && old->_fb)
-		fcntl(old->_screen->fd(),F_DISMSGS,0);
+		old->_screen->getModeCount();
 
 	cli->_screen->setMode(cli->_type,cli->modeid(),cli->_fb->filename().c_str(),oldMode != cli->modeid());
 	cli->_screen->setCursor(cli->_cursor.x,cli->_cursor.y,cli->_cursor.cursor);

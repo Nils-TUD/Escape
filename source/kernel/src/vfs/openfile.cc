@@ -65,13 +65,6 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 			return 0;
 		}
 
-		case F_DISMSGS: {
-			if(EXPECT_FALSE(devNo != VFS_DEV_NO || !IS_CHANNEL(node->getMode())))
-				return -EINVAL;
-			static_cast<VFSChannel*>(node)->discardMsgs();
-			return 0;
-		}
-
 		case F_SEMUP:
 		case F_SEMDOWN: {
 			if(sem == NULL) {

@@ -88,16 +88,6 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
-void VFSChannel::discardMsgs() {
-	LockGuard<SpinLock> g(&waitLock);
-	// remove from parent
-	static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
-
-	// now clear lists
-	sendList.deleteAll();
-	recvList.deleteAll();
-}
-
 int VFSChannel::openForDriver() {
 	OpenFile *clifile;
 	VFSNode *par = getParent();

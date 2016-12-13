@@ -66,7 +66,7 @@ const struct Syscall syscalls[] = {
 	{"seek",    		"%d,%u"						},
 	{"startthread",		"%p,%p"						},
 	{"gettid",    		""							},
-	{"send",    		"%d,%u,%p,%x"				},
+	{"send",    		"%d,%N,%p,%x"				},
 	{"receive",    		"%d,%p,%p,%x"				},
 	{"getcycles",    	""							},
 	{"syncfs",    		"%d"						},
@@ -135,6 +135,160 @@ const struct Syscall syscalls[] = {
 #else
 	{"debug",    		""							},
 #endif
+};
+
+struct Messages {
+	const char **msgs;
+	size_t off;
+	size_t count;
+};
+
+static const char *fileMsgs[] = {
+	"FILE_OPEN",
+	"FILE_READ",
+	"FILE_WRITE",
+	"FILE_SIZE",
+	"FILE_CLOSE",
+	"DEV_SHFILE",
+	"DEV_CANCEL",
+	"DEV_CREATSIBL",
+};
+
+static const char *fsMsgs[] = {
+	"FS_OPEN",
+	"FS_READ",
+	"FS_WRITE",
+	"FS_CLOSE",
+	"FS_SYNCFS",
+	"FS_LINK",
+	"FS_UNLINK",
+	"FS_RENAME",
+	"FS_MKDIR",
+	"FS_RMDIR",
+	"FS_ISTAT",
+	"FS_CHMOD",
+	"FS_CHOWN",
+	"FS_UTIME",
+	"FS_TRUNCATE",
+};
+
+static const char *spkMsgs[] = {
+	"SPEAKER_BEEP",
+};
+
+static const char *winMsgs[] = {
+	"WIN_CREATE",
+	"WIN_MOVE",
+	"WIN_UPDATE",
+	"WIN_DESTROY",
+	"WIN_RESIZE",
+	"WIN_ENABLE",
+	"WIN_DISABLE",
+	"WIN_ADDLISTENER",
+	"WIN_REMLISTENER",
+	"WIN_SET_ACTIVE",
+	"WIN_ATTACH",
+	"WIN_SETMODE",
+	"WIN_EVENT",
+};
+
+static const char *scrMsgs[] = {
+	"SCR_SETCURSOR",
+	"SCR_GETMODE",
+	"SCR_SETMODE",
+	"SCR_GETMODES",
+	"SCR_UPDATE",
+};
+
+static const char *vtMsgs[] = {
+	"VT_GETFLAG",
+	"VT_SETFLAG",
+	"VT_BACKUP",
+	"VT_RESTORE",
+	"VT_SHELLPID",
+	"VT_ISVTERM",
+	"VT_SETMODE",
+};
+
+static const char *kbMsgs[] = {
+	"KB_EVENT",
+};
+
+static const char *msMsgs[] = {
+	"MS_EVENT",
+};
+
+static const char *uimMsgs[] = {
+	"UIM_GETKEYMAP",
+	"UIM_SETKEYMAP",
+	"UIM_EVENT",
+};
+
+static const char *pciMsgs[] = {
+	"PCI_GET_BY_CLASS",
+	"PCI_GET_BY_ID",
+	"PCI_GET_BY_INDEX",
+	"PCI_GET_COUNT",
+	"PCI_READ",
+	"PCI_WRITE",
+	"PCI_HAS_CAP",
+	"PCI_ENABLE_MSIS",
+};
+
+static const char *initMsgs[] = {
+	"INIT_REBOOT",
+	"INIT_SHUTDOWN",
+	"INIT_IAMALIVE",
+};
+
+static const char *nicMsgs[] = {
+	"NIC_GETMAC",
+	"NIC_GETMTU",
+};
+
+static const char *netMsgs[] = {
+	"NET_LINK_ADD",
+	"NET_LINK_REM",
+	"NET_LINK_CONFIG",
+	"NET_LINK_MAC",
+	"NET_ROUTE_ADD",
+	"NET_ROUTE_REM",
+	"NET_ROUTE_CONFIG",
+	"NET_ROUTE_GET",
+	"NET_ARP_ADD",
+	"NET_ARP_REM",
+};
+
+static const char *sockMsgs[] = {
+	"SOCK_CONNECT",
+	"SOCK_BIND",
+	"SOCK_LISTEN",
+	"SOCK_RECVFROM",
+	"SOCK_SENDTO",
+	"SOCK_ABORT",
+};
+
+static const char *dnsMsgs[] = {
+	"DNS_RESOLVE",
+	"DNS_SET_SERVER",
+};
+
+static const struct Messages msgs[] = {
+	{fileMsgs,	50,		ARRAY_SIZE(fileMsgs)},
+	{fsMsgs,	100,	ARRAY_SIZE(fsMsgs)},
+	{spkMsgs,	200,	ARRAY_SIZE(spkMsgs)},
+	{winMsgs,	300,	ARRAY_SIZE(winMsgs)},
+	{scrMsgs,	400,	ARRAY_SIZE(scrMsgs)},
+	{vtMsgs,	500,	ARRAY_SIZE(vtMsgs)},
+	{kbMsgs,	600,	ARRAY_SIZE(kbMsgs)},
+	{msMsgs,	700,	ARRAY_SIZE(msMsgs)},
+	{uimMsgs,	800,	ARRAY_SIZE(uimMsgs)},
+	{pciMsgs,	900,	ARRAY_SIZE(pciMsgs)},
+	{initMsgs,	1000,	ARRAY_SIZE(initMsgs)},
+	{nicMsgs,	1100,	ARRAY_SIZE(nicMsgs)},
+	{netMsgs,	1200,	ARRAY_SIZE(netMsgs)},
+	{sockMsgs,	1300,	ARRAY_SIZE(sockMsgs)},
+	{dnsMsgs,	1400,	ARRAY_SIZE(dnsMsgs)},
 };
 
 extern char __progname[];
@@ -223,6 +377,18 @@ static void decodeMmap(FILE *os,struct mmap_params *p) {
 		p->addr,p->length,p->loadLength,p->prot,p->flags,p->fd,p->offset);
 }
 
+static void decodeMsg(FILE *os,msgid_t id) {
+	uint seq = id >> 16;
+	uint mid = id & 0xFFFF;
+	for(size_t i = 0; i < ARRAY_SIZE(msgs); ++i) {
+		if(mid >= msgs[i].off && mid < msgs[i].off + msgs[i].count) {
+			fprintf(os,"%#x:%s",seq,msgs[i].msgs[mid - msgs[i].off]);
+			return;
+		}
+	}
+	fprintf(os,"%#x:???",seq);
+}
+
 void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 	/* we might perform syscalls ourself. thus, prevent recursion here */
 	/* and ignore syscalls until the environment is initialized */
@@ -293,6 +459,9 @@ void syscTraceEnter(long syscno,uint32_t *id,int argc,...) {
 					break;
 				case 'M':
 					decodeMmap(&os,(struct mmap_params*)val);
+					break;
+				case 'N':
+					decodeMsg(&os,val);
 					break;
 			}
 

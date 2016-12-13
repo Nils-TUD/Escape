@@ -51,7 +51,7 @@ VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
 		/* otherwise, if root uses that device, the driver is unable to open this channel. */
 		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
-		  handler(static_cast<VFSDevice*>(p)->getCreator()), closed(false),
+		  handler(), closed(false),
 		  shmem(NULL), shmemSize(0), sendList(), recvList() {
 	if(!success)
 		return;
@@ -59,6 +59,11 @@ VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 	/* auto-destroy on the last close() */
 	refCount--;
 	append(p);
+
+	/* ensure that we don't do that in parallel with VFSDevice::bindto */
+	VFSNode::acquireTree();
+	handler = static_cast<VFSDevice*>(p)->getCreator();
+	VFSNode::releaseTree();
 }
 
 void VFSChannel::invalidate() {

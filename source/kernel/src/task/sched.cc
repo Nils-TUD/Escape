@@ -74,13 +74,6 @@ void Sched::enqueue(Thread *t) {
 	rdyCount++;
 }
 
-void Sched::enqueueQuick(Thread *t) {
-	uint8_t prio = t->getPriority();
-	rdyQueues[prio].prepend(t);
-	readyMask |= 1UL << prio;
-	rdyCount++;
-}
-
 void Sched::dequeue(Thread *t) {
 	uint8_t prio = t->getPriority();
 	rdyQueues[prio].remove(t);
@@ -259,30 +252,6 @@ void Sched::setReady(Thread *t) {
 	else if(setReadyState(t)) {
 		assert(t->event == 0);
 		enqueue(t);
-	}
-}
-
-void Sched::setReadyQuick(Thread *t) {
-	if(t->getFlags() & T_IDLE)
-		return;
-
-	if(t->waitstart > 0) {
-		t->stats.blocked += CPU::rdtsc() - t->waitstart;
-		t->waitstart = 0;
-	}
-
-	if(t->getState() == Thread::RUNNING) {
-		removeFromEventlist(t);
-		t->setNewState(Thread::READY);
-	}
-	else if(t->getState() == Thread::READY) {
-		assert(t->event == 0);
-		dequeue(t);
-		enqueueQuick(t);
-	}
-	else if(setReadyState(t)) {
-		assert(t->event == 0);
-		enqueueQuick(t);
 	}
 }
 

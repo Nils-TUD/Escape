@@ -396,11 +396,6 @@ public:
 	void unblock();
 
 	/**
-	 * Unblocks this thread and puts it to the beginning of the ready-list. ONLY CALLED by event.
-	 */
-	void unblockQuick();
-
-	/**
 	 * Checks whether this thread has the given region for stack
 	 *
 	 * @param vm the region
@@ -631,10 +626,6 @@ inline void ThreadBase::block() {
 inline void ThreadBase::unblock() {
 	assert(this != NULL);
 	Sched::unblock(static_cast<Thread*>(this));
-}
-
-inline void ThreadBase::unblockQuick() {
-	Sched::unblockQuick(static_cast<Thread*>(this));
 }
 
 inline bool ThreadBase::hasStackRegion(VMRegion *vm) const {

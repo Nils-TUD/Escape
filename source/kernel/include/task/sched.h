@@ -95,13 +95,6 @@ public:
 	static void unblock(Thread *t);
 
 	/**
-	 * Unblocks the given thread and puts it to the beginning of the ready-list
-	 *
-	 * @param t the thread
-	 */
-	static void unblockQuick(Thread *t);
-
-	/**
 	 * Prints the status of the scheduler
 	 *
 	 * @param os the output-stream
@@ -154,13 +147,6 @@ private:
 	static void setReady(Thread *t);
 
 	/**
-	 * Puts the given thread to the beginning of the ready-queue
-	 *
-	 * @param t the thread
-	 */
-	static void setReadyQuick(Thread *t);
-
-	/**
 	 * Sets the thread in the blocked-state
 	 *
 	 * @param t the thread
@@ -175,7 +161,6 @@ private:
 	static void removeThread(Thread *t);
 
 	static void enqueue(Thread *t);
-	static void enqueueQuick(Thread *t);
 	static void dequeue(Thread *t);
 	static void removeFromEventlist(Thread *t);
 	static bool setReadyState(Thread *t);
@@ -199,10 +184,4 @@ inline void Sched::unblock(Thread *t) {
 	assert(t != NULL);
 	LockGuard<SpinLock> g(&lock);
 	setReady(t);
-}
-
-inline void Sched::unblockQuick(Thread *t) {
-	assert(t != NULL);
-	LockGuard<SpinLock> g(&lock);
-	setReadyQuick(t);
 }

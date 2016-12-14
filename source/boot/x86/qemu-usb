@@ -1,6 +1,8 @@
 #!/bin/sh
 . boot/$ESC_TGTTYPE/images.sh
-create_usbimg $1
+if [ $1/date -nt $1/usb.img ]; then
+	create_usbimg $1
+fi
 
 lodev=`sudo losetup -f`
 sudo losetup -o 0 $lodev $1/usb.img

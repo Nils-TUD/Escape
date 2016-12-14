@@ -186,6 +186,7 @@ echo "Working with $ESC_TARGET in $ESC_BUILD mode, using $ESC_LINKTYPE linking"
 if $dobuild; then
 	echo "Building Escape with $cpus jobs..."
 	scons -j$cpus || exit 1
+	date > $build/date
 fi
 
 # after building, check whether the requested binary really exists

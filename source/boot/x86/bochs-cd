@@ -1,7 +1,9 @@
 #!/bin/sh
 . boot/$ESC_TGTTYPE/images.sh
 
-create_cd $1/dist $1/cd.iso
+if [ $1/date -nt $1/cd.iso ]; then
+	create_cd $1/dist $1/cd.iso
+fi
 
 cat boot/$ESC_TGTTYPE/bochs.cfg > $1/bochs.cfg
 echo "ata0-master: type=cdrom, path=`readlink -f $1/cd.iso`, status=inserted" >> $1/bochs.cfg

@@ -58,7 +58,6 @@ void VFS::init() {
 	 *  /
 	 *   |- sys
 	 *   |   |- boot
-	 *   |   |- shm
 	 *   |   |- dev
 	 *   |   |- irq
 	 *   |   |- ms
@@ -70,8 +69,6 @@ void VFS::init() {
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
 	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"sys",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"boot",DIR_DEF_MODE));
-	/* the user should be able to create shms as well */
-	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"shm",S_IFDIR | S_ISSTICKY | 0777));
 	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"proc",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"dev",DIR_DEF_MODE));

@@ -174,33 +174,6 @@ int pshm_create(int oflag,mode_t mode,ulong *name);
  */
 int pshm_unlink(ulong name);
 
-/**
- * Creates/opens a file in /sys/shm/ with given name and opens it with <oflag>. If <oflag> contains
- * O_CREAT, <mode> is used for the permissions. This file is intended to be mapped with mmap().
- *
- * @param name the filename
- * @param oflag the open flags
- * @param mode the mode to set
- * @return the file descriptor on success
- */
-int shm_open(const char *name,int oflag,mode_t mode);
-
-/**
- * Renames the given shared-memory file from <old> to <newName>.
- *
- * @param old the old name
- * @param newName the new name
- * @return 0 on success
- */
-int shm_rename(const char *old,const char *newName);
-
-/**
- * Unlinks the file previously created by shm_open.
- *
- * @parma name the filename
- */
-int shm_unlink(const char *name);
-
 #if defined(__cplusplus)
 }
 #endif

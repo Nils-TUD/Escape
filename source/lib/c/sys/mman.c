@@ -82,28 +82,3 @@ int pshm_unlink(ulong name) {
 	char path[MAX_PATH_LEN] = PSHM_PATH;
 	return unlink(pshm_buildpath(path,name));
 }
-
-int shm_open(const char *name,int oflag,mode_t mode) {
-	int fd;
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/sys/shm/%s",name);
-	if(oflag & O_CREAT)
-		fd = open(path,oflag | O_EXCL,mode);
-	else
-		fd = open(path,oflag);
-	return fd;
-}
-
-int shm_rename(const char *old,const char *newName) {
-	char pathOld[MAX_PATH_LEN];
-	char pathNew[MAX_PATH_LEN];
-	snprintf(pathOld,sizeof(pathOld),"/sys/shm/%s",old);
-	snprintf(pathNew,sizeof(pathNew),"/sys/shm/%s",newName);
-	return rename(pathOld,pathNew);
-}
-
-int shm_unlink(const char *name) {
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/sys/shm/%s",name);
-	return unlink(path);
-}

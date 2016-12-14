@@ -40,12 +40,6 @@
 #include <string.h>
 #include <video.h>
 
-#define PRINT_MSGS			0
-
-extern SpinLock waitLock;
-
-uint16_t VFSChannel::nextRid = 1;
-
 VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
 		/* permissions are basically irrelevant here since the userland can't open a channel directly. */
 		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
@@ -70,9 +64,8 @@ void VFSChannel::invalidate() {
 	/* notify potentially waiting clients */
 	Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
 
-	// luckily, we have the treelock here which is also used for all other calls to addMsgs/remMsgs.
-	static_cast<VFSDevice*>(getParent())->remMsgs(sendList.length());
-	static_cast<VFSDevice*>(getParent())->clientRemoved(this);
+	// this is okay, because we have the treelock acquired here
+	static_cast<VFSDevice*>(getParent())->chanRemoved(this);
 
 	// we only get here if the node has no references left. so it's safe to access the lists.
 	recvList.deleteAll();
@@ -538,192 +531,12 @@ errorProc:
 }
 
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
-                         size_t size1,USER const void *data2,size_t size2) {
-	esc::SList<Message> *list;
-	Message *msg1,*msg2 = NULL;
-	int res;
-
-	/* devices write to the receive-list (which will be read by other processes) */
-	if(flags & VFS_DEVICE) {
-		assert(data2 == NULL && size2 == 0);
-		list = &recvList;
-	}
-	/* other processes write to the send-list (which will be read by the driver) */
-	else
-		list = &sendList;
-
-	/* create message and copy data to it */
-	msg1 = new (size1) Message(size1);
-	if(EXPECT_FALSE(msg1 == NULL))
-		return -ENOMEM;
-
-	if(EXPECT_TRUE(data1)) {
-		if(EXPECT_FALSE((res = UserAccess::read(msg1 + 1,data1,size1)) < 0))
-			goto errorMsg1;
-	}
-
-	if(EXPECT_FALSE(data2)) {
-		msg2 = new (size2) Message(size2);
-		if(EXPECT_FALSE(msg2 == NULL)) {
-			res = -ENOMEM;
-			goto errorMsg1;
-		}
-
-		if(EXPECT_FALSE((res = UserAccess::read(msg2 + 1,data2,size2)) < 0))
-			goto errorMsg2;
-	}
-
-	{
-		/* note that we do that here, because memcpy can fail because the page is swapped out for
-		 * example. we can't hold the lock during that operation */
-		LockGuard<SpinLock> g(&waitLock);
-
-		if(list == &sendList) {
-			/* for clients, we generate a new unique request-id */
-			id &= 0xFFFF;
-			/* prevent to set the MSB. otherwise the return-value would be negative (on 32-bit) */
-			id |= ((nextRid++) & 0x7FFF) << 16;
-			/* it can't be 0. this is a special value */
-			if(id >> 16 == 0)
-				id |= 0x00010000;
-
-			/* notify driver */
-			static_cast<VFSDevice*>(parent)->addMsgs(1);
-			if(EXPECT_FALSE(msg2))
-				static_cast<VFSDevice*>(parent)->addMsgs(1);
-			Sched::wakeup(EV_CLIENT,(evobj_t)parent,true);
-		}
-		else {
-			/* for devices, we just use whatever the driver gave us */
-
-			/* notify receivers */
-			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this,true);
-		}
-
-		/* append to list */
-		msg1->id = id;
-		list->append(msg1);
-		if(EXPECT_FALSE(msg2)) {
-			msg2->id = id;
-			list->append(msg2);
-		}
-	}
-
-#if PRINT_MSGS
-	{
-		Thread *t = Thread::getRunning();
-		Proc *p = Proc::getByPid(pid);
-		Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
-				t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size1,this,getPath());
-		if(data2) {
-			Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
-					t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size2,this,getPath());
-		}
-	}
-#endif
-	return id;
-
-errorMsg2:
-	delete msg2;
-errorMsg1:
-	delete msg1;
-	return res;
+						 size_t size1,USER const void *data2,size_t size2) {
+	return static_cast<VFSDevice*>(parent)->send(this,flags,id,data1,size1,data2,size2);
 }
 
-ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,USER void *data,size_t size) {
-	esc::SList<Message> *list;
-	Thread *t = Thread::getRunning();
-	VFSNode *waitNode;
-	Message *msg;
-	size_t event;
-	ssize_t res;
-
-	/* determine list and event to use */
-	if(flags & VFS_DEVICE) {
-		event = EV_CLIENT;
-		list = &sendList;
-		waitNode = parent;
-	}
-	else {
-		event = EV_RECEIVED_MSG;
-		list = &recvList;
-		waitNode = this;
-	}
-
-	/* wait until a message arrives */
-	waitLock.down();
-	while((msg = getMsg(list,*id,flags)) == NULL) {
-		if(EXPECT_FALSE((flags & (VFS_NOBLOCK | VFS_BLOCK)) == VFS_NOBLOCK)) {
-			waitLock.up();
-			return -EWOULDBLOCK;
-		}
-		/* if the channel has already been closed, there is no hope of success here */
-		if(EXPECT_FALSE(closed || !isAlive())) {
-			waitLock.up();
-			return -EDESTROYED;
-		}
-		t->wait(event,(evobj_t)waitNode);
-		waitLock.up();
-
-		if(flags & VFS_SIGNALS) {
-			Thread::switchAway();
-			if(EXPECT_FALSE(t->hasSignal()))
-				return -EINTR;
-		}
-		else
-			Thread::switchNoSigs();
-
-		/* if we waked up and there is no message, the driver probably died */
-		if(EXPECT_FALSE(!isAlive()))
-			return -EDESTROYED;
-		waitLock.down();
-	}
-
-	if(event == EV_CLIENT)
-		static_cast<VFSDevice*>(parent)->remMsgs(1);
-	waitLock.up();
-
-#if PRINT_MSGS
-	Proc *p = Proc::getByPid(pid);
-	Log::get().writef("%2d:%2d(%-12.12s) <- %5u:%5u (%4d b) %#x (%s)\n",
-			t->getTid(),pid,p ? p->getProgram() : "??",msg->id >> 16,msg->id & 0xFFFF,
-			msg->length,this,getPath());
-#endif
-
-	if(EXPECT_FALSE(data && msg->length > size)) {
-		Log::get().writef("INVALID: len=%zu, size=%zu\n",msg->length,size);
-		delete msg;
-		return -EINVAL;
-	}
-
-	/* copy data and id */
-	if(EXPECT_TRUE(data)) {
-		if(EXPECT_FALSE((res = UserAccess::write(data,msg + 1,msg->length)) < 0))
-			return res;
-	}
-	if(EXPECT_TRUE(id))
-		*id = msg->id;
-
-	res = msg->length;
-	delete msg;
-	return res;
-}
-
-VFSChannel::Message *VFSChannel::getMsg(esc::SList<Message> *list,msgid_t mid,ushort flags) {
-	/* drivers get always the first message */
-	if(flags & VFS_DEVICE)
-		return list->removeFirst();
-
-	/* find the message for the given id */
-	Message *p = NULL;
-	for(auto it = list->begin(); it != list->end(); p = &*it, ++it) {
-		/* either it's a "for anybody" message, or the id has to match */
-		if(it->id == mid || (it->id >> 16) == 0) {
-			list->removeAt(p,&*it);
-			return &*it;
-		}
-	}
-	return NULL;
+ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,void *data,size_t size) {
+	return static_cast<VFSDevice*>(parent)->receive(this,flags,id,data,size);
 }
 
 void VFSChannel::print(OStream &os) const {

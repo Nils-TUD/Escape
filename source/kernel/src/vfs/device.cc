@@ -18,6 +18,7 @@
  */
 
 #include <mem/cache.h>
+#include <mem/useraccess.h>
 #include <sys/messages.h>
 #include <task/proc.h>
 #include <vfs/channel.h>
@@ -30,7 +31,10 @@
 #include <spinlock.h>
 #include <video.h>
 
-SpinLock waitLock;
+#define PRINT_MSGS			0
+
+SpinLock VFSDevice::msgLock;
+uint16_t VFSDevice::nextRid = 1;
 
 /* block- and file-devices are none-empty by default, because their data is always available */
 VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
@@ -78,6 +82,14 @@ void VFSDevice::close(A_UNUSED pid_t pid,OpenFile *file,A_UNUSED int msgid) {
 		unref();
 }
 
+void VFSDevice::chanRemoved(const VFSChannel *chan) {
+	/* we don't have to lock this, because its only called in unref(), which can only
+	 * be called when the treelock is held. i.e. it is not possible during getwork() */
+	if(lastClient == chan)
+		lastClient = chan->next;
+	remMsgs(chan->sendList.length());
+}
+
 void VFSDevice::bindto(tid_t tid) {
 	bool valid;
 	const VFSNode *n = openDir(true,&valid);
@@ -98,7 +110,7 @@ int VFSDevice::getWork(uint flags) {
 
 	while(true) {
 		{
-			LockGuard<SpinLock> g(&waitLock);
+			LockGuard<SpinLock> g(&msgLock);
 			int fd = getClientFd(tid);
 			/* if we've found one or we shouldn't block, stop here */
 			if(EXPECT_TRUE(fd >= 0 || (flags & GW_NOBLOCK)))
@@ -137,7 +149,7 @@ searchBegin:
 	while(n != NULL && n != last) {
 		/* data available? */
 		const VFSChannel *chan = static_cast<const VFSChannel*>(n);
-		if(chan->getHandler() == tid && chan->hasWork()) {
+		if(chan->getHandler() == tid && chan->sendList.length() > 0) {
 			lastClient = const_cast<VFSNode*>(n);
 			closeDir(true);
 			return static_cast<const VFSChannel*>(lastClient)->getFd();
@@ -155,6 +167,195 @@ searchBegin:
 
 	closeDir(true);
 	return -ENOCLIENT;
+}
+
+ssize_t VFSDevice::send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *data1,
+                        size_t size1,USER const void *data2,size_t size2) {
+	esc::SList<VFSChannel::Message> *list;
+	VFSChannel::Message *msg1,*msg2 = NULL;
+	int res;
+
+	/* devices write to the receive-list (which will be read by other processes) */
+	if(flags & VFS_DEVICE) {
+		assert(data2 == NULL && size2 == 0);
+		list = &chan->recvList;
+	}
+	/* other processes write to the send-list (which will be read by the driver) */
+	else
+		list = &chan->sendList;
+
+	/* create message and copy data to it */
+	msg1 = new (size1) VFSChannel::Message(size1);
+	if(EXPECT_FALSE(msg1 == NULL))
+		return -ENOMEM;
+
+	if(EXPECT_TRUE(data1)) {
+		if(EXPECT_FALSE((res = UserAccess::read(msg1 + 1,data1,size1)) < 0))
+			goto errorMsg1;
+	}
+
+	if(EXPECT_FALSE(data2)) {
+		msg2 = new (size2) VFSChannel::Message(size2);
+		if(EXPECT_FALSE(msg2 == NULL)) {
+			res = -ENOMEM;
+			goto errorMsg1;
+		}
+
+		if(EXPECT_FALSE((res = UserAccess::read(msg2 + 1,data2,size2)) < 0))
+			goto errorMsg2;
+	}
+
+	{
+		/* note that we do that here, because memcpy can fail because the page is swapped out for
+		 * example. we can't hold the lock during that operation */
+		LockGuard<SpinLock> g(&msgLock);
+
+		if(~flags & VFS_DEVICE) {
+			/* for clients, we generate a new unique request-id */
+			id &= 0xFFFF;
+			/* prevent to set the MSB. otherwise the return-value would be negative (on 32-bit) */
+			id |= ((nextRid++) & 0x7FFF) << 16;
+			/* it can't be 0. this is a special value */
+			if(id >> 16 == 0)
+				id |= 0x00010000;
+
+			/* notify driver */
+			addMsgs(1);
+			if(EXPECT_FALSE(msg2))
+				addMsgs(1);
+			Sched::wakeup(EV_CLIENT,(evobj_t)this,true);
+		}
+		else {
+			/* for devices, we just use whatever the driver gave us */
+
+			/* notify receivers */
+			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)chan,true);
+		}
+
+		/* append to list */
+		msg1->id = id;
+		list->append(msg1);
+		if(EXPECT_FALSE(msg2)) {
+			msg2->id = id;
+			list->append(msg2);
+		}
+	}
+
+#if PRINT_MSGS
+	{
+		Thread *t = Thread::getRunning();
+		Proc *p = Proc::getByPid(pid);
+		Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
+				t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size1,chan,getPath());
+		if(data2) {
+			Log::get().writef("%2d:%2d(%-12.12s) -> %5u:%5u (%4d b) %#x (%s)\n",
+					t->getTid(),pid,p ? p->getProgram() : "??",id >> 16,id & 0xFFFF,size2,chan,getPath());
+		}
+	}
+#endif
+	return id;
+
+errorMsg2:
+	delete msg2;
+errorMsg1:
+	delete msg1;
+	return res;
+}
+
+ssize_t VFSDevice::receive(VFSChannel *chan,ushort flags,msgid_t *id,USER void *data,size_t size) {
+	esc::SList<VFSChannel::Message> *list;
+	Thread *t = Thread::getRunning();
+	VFSNode *waitNode;
+	VFSChannel::Message *msg;
+	size_t event;
+	ssize_t res;
+
+	/* determine list and event to use */
+	if(flags & VFS_DEVICE) {
+		event = EV_CLIENT;
+		list = &chan->sendList;
+		waitNode = this;
+	}
+	else {
+		event = EV_RECEIVED_MSG;
+		list = &chan->recvList;
+		waitNode = chan;
+	}
+
+	/* wait until a message arrives */
+	msgLock.down();
+	while((msg = getMsg(list,*id,flags)) == NULL) {
+		if(EXPECT_FALSE((flags & (VFS_NOBLOCK | VFS_BLOCK)) == VFS_NOBLOCK)) {
+			msgLock.up();
+			return -EWOULDBLOCK;
+		}
+		/* if the channel has already been closed, there is no hope of success here */
+		if(EXPECT_FALSE(chan->closed || !chan->isAlive())) {
+			msgLock.up();
+			return -EDESTROYED;
+		}
+		t->wait(event,(evobj_t)waitNode);
+		msgLock.up();
+
+		if(flags & VFS_SIGNALS) {
+			Thread::switchAway();
+			if(EXPECT_FALSE(t->hasSignal()))
+				return -EINTR;
+		}
+		else
+			Thread::switchNoSigs();
+
+		/* if we waked up and there is no message, the driver probably died */
+		if(EXPECT_FALSE(!isAlive()))
+			return -EDESTROYED;
+		msgLock.down();
+	}
+
+	if(event == EV_CLIENT)
+		remMsgs(1);
+	msgLock.up();
+
+#if PRINT_MSGS
+	Proc *p = Proc::getByPid(pid);
+	Log::get().writef("%2d:%2d(%-12.12s) <- %5u:%5u (%4d b) %#x (%s)\n",
+			t->getTid(),pid,p ? p->getProgram() : "??",msg->id >> 16,msg->id & 0xFFFF,
+			msg->length,chan,getPath());
+#endif
+
+	if(EXPECT_FALSE(data && msg->length > size)) {
+		Log::get().writef("INVALID: len=%zu, size=%zu\n",msg->length,size);
+		delete msg;
+		return -EINVAL;
+	}
+
+	/* copy data and id */
+	if(EXPECT_TRUE(data)) {
+		if(EXPECT_FALSE((res = UserAccess::write(data,msg + 1,msg->length)) < 0))
+			return res;
+	}
+	if(EXPECT_TRUE(id))
+		*id = msg->id;
+
+	res = msg->length;
+	delete msg;
+	return res;
+}
+
+VFSChannel::Message *VFSDevice::getMsg(esc::SList<VFSChannel::Message> *list,msgid_t mid,ushort flags) {
+	/* drivers get always the first message */
+	if(flags & VFS_DEVICE)
+		return list->removeFirst();
+
+	/* find the message for the given id */
+	VFSChannel::Message *p = NULL;
+	for(auto it = list->begin(); it != list->end(); p = &*it, ++it) {
+		/* either it's a "for anybody" message, or the id has to match */
+		if(it->id == mid || (it->id >> 16) == 0) {
+			list->removeAt(p,&*it);
+			return &*it;
+		}
+	}
+	return NULL;
 }
 
 void VFSDevice::print(OStream &os) const {

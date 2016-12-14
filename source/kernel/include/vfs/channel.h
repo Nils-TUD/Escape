@@ -23,7 +23,11 @@
 #include <vfs/node.h>
 #include <common.h>
 
+class VFSDevice;
+
 class VFSChannel : public VFSNode {
+	friend class VFSDevice;
+
 	struct Message : public esc::SListItem {
 		static void *operator new(size_t size, size_t msgSize) {
 			return Cache::alloc(size + msgSize);
@@ -69,15 +73,6 @@ public:
 	 */
 	void bindto(tid_t tid) {
 		handler = tid;
-	}
-
-	/**
-	 * Checks whether the channel has work to do for the server
-	 *
-	 * @return true if so
-	 */
-	bool hasWork() const {
-		return sendList.length() > 0;
 	}
 
 	/**
@@ -176,7 +171,6 @@ protected:
 	virtual void invalidate();
 
 private:
-	static Message *getMsg(esc::SList<Message> *list,msgid_t mid,ushort flags);
 	uint getReceiveFlags() const;
 	int isSupported(int op) const;
 
@@ -189,5 +183,4 @@ private:
 	esc::SList<Message> sendList;
 	/* a list for reading messages from the device */
 	esc::SList<Message> recvList;
-	static uint16_t nextRid;
 };

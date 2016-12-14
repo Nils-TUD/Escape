@@ -45,8 +45,8 @@ static sInputThread inputData;
 
 class WinMngDevice : public Device {
 public:
-	explicit WinMngDevice(const char *path,const char *name,mode_t mode)
-		: Device(path,mode,DEV_TYPE_SERVICE,DEV_CLOSE), _name(name) {
+	explicit WinMngDevice(const char *path,mode_t mode)
+		: Device(path,mode,DEV_TYPE_SERVICE,DEV_DELEGATE | DEV_CLOSE) {
 		set(MSG_WIN_CREATE,std::make_memfun(this,&WinMngDevice::create));
 		set(MSG_WIN_SET_ACTIVE,std::make_memfun(this,&WinMngDevice::setActive),false);
 		set(MSG_WIN_DESTROY,std::make_memfun(this,&WinMngDevice::destroy));
@@ -57,6 +57,7 @@ public:
 		set(MSG_SCR_GETMODE,std::make_memfun(this,&WinMngDevice::getMode));
 		set(MSG_WIN_SETMODE,std::make_memfun(this,&WinMngDevice::setMode));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&WinMngDevice::delegate),false);
 	}
 
 	void create(IPCStream &is) {
@@ -66,10 +67,17 @@ public:
 		CStringBuf<WinMngEvents::MAX_WINTITLE_LEN> title;
 		is >> x >> y >> width >> height >> style >> titleBarHeight >> title;
 
-		errcode_t res = win_create(x,y,width,height,is.fd(),style,titleBarHeight,
-			title.str(),_name);
+		errcode_t res = win_create(x,y,width,height,is.fd(),style,titleBarHeight,title.str());
 
 		is << ValueResponse<gwinid_t>::result(res) << Reply();
+	}
+
+	void delegate(IPCStream &is) {
+		esc::DevDelegate::Request r;
+		is >> r;
+
+		int res = win_joinbuf(r.arg,r.nfd);
+		is << esc::DevDelegate::Response(res) << esc::Reply();
 	}
 
 	void setActive(IPCStream &is) {
@@ -114,7 +122,7 @@ public:
 		if(win_exists(wid)) {
 			int evid = win_get(wid)->evfd;
 			if(finished) {
-				win_resize(wid,x,y,width,height,_name);
+				win_resize(wid,x,y,width,height);
 
 				WinMngEvents::Event ev;
 				ev.type = WinMngEvents::Event::TYPE_RESIZE;
@@ -181,7 +189,7 @@ public:
 		gcoldepth_t bpp;
 		is >> width >> height >> bpp;
 
-		errcode_t res = win_setMode(width,height,bpp,_name);
+		errcode_t res = win_setMode(width,height,bpp);
 		is << res << Reply();
 	}
 
@@ -189,9 +197,6 @@ public:
 		win_destroyWinsOf(is.fd(),input_getMouseX(),input_getMouseY());
 		Device::close(is);
 	}
-
-private:
-	const char *_name;
 };
 
 class WinMngEventDevice : public Device {
@@ -265,7 +270,7 @@ int main(int argc,char *argv[]) {
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 	print("Creating window-manager at %s",path);
-	WinMngDevice windev(path,argv[3],0110);
+	WinMngDevice windev(path,0110);
 	if(chown(path,ROOT_UID,gid) < 0)
 		printe("Unable to add ui-group to group-list");
 
@@ -274,8 +279,7 @@ int main(int argc,char *argv[]) {
 
 	/* init window stuff */
 	inputData.winmng = path;
-	inputData.shmname = argv[3];
-	inputData.mode = win_init(windev.id(),inputData.ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP,argv[3]);
+	inputData.mode = win_init(windev.id(),inputData.ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP);
 	if(inputData.mode < 0)
 		error("Setting mode %zu%zu@%d failed",atoi(argv[1]),atoi(argv[2]),DEF_BPP);
 

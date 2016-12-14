@@ -80,21 +80,9 @@ UI::UI(Game &game,uint cols,uint rows) : game(game) {
 	/* attach to input-channel */
 	uiev = new esc::UIEvents(*ui);
 
-	/* create shm */
-	int id = 0;
-	char shmname[SSTRLEN("raptor") + 12];
-	do {
-		snprintf(shmname,sizeof(shmname),"raptor%d",++id);
-		try {
-			fb = new esc::FrameBuffer(mode,shmname,esc::Screen::MODE_TYPE_TUI,0600);
-		}
-		catch(...) {
-		}
-	}
-	while(fb == NULL);
-
-	/* set mode */
-	ui->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,shmname,true);
+	/* create framebuffer and set mode */
+	fb = new esc::FrameBuffer(mode,esc::Screen::MODE_TYPE_TUI);
+	ui->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,fb->fd(),true);
 
 	/* start input thread */
 	if(startthread(inputThread,this) < 0)

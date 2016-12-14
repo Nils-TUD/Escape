@@ -32,13 +32,14 @@ namespace esc {
  */
 class ScreenClient : public Client {
 public:
-	explicit ScreenClient(int f) : Client(f), mode(), fb() {
+	explicit ScreenClient(int f) : Client(f), nfd(-1), mode(), fb() {
 	}
 
 	int type() const {
 		return fb ? fb->mode().type : -1;
 	}
 
+	int nfd;
 	Screen::Mode *mode;
 	FrameBuffer *fb;
 };
@@ -70,7 +71,7 @@ public:
 	 * @param mode the permissions to set
 	 */
 	explicit ScreenDevice(const std::vector<Screen::Mode> &modes,const char *path,mode_t mode)
-		: ClientDevice<C>(path,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CLOSE),
+		: ClientDevice<C>(path,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_DELEGATE | DEV_CLOSE),
 		  _modes(modes), _rects(), _newCursor(), _reqc() {
 		this->set(MSG_SCR_GETMODE,std::make_memfun(this,&ScreenDevice::getMode));
 		this->set(MSG_SCR_SETMODE,std::make_memfun(this,&ScreenDevice::setMode));
@@ -78,19 +79,19 @@ public:
 		this->set(MSG_SCR_SETCURSOR,std::make_memfun(this,&ScreenDevice::setCursor),false);
 		this->set(MSG_SCR_UPDATE,std::make_memfun(this,&ScreenDevice::update),false);
 		this->set(MSG_FILE_CLOSE,std::make_memfun(this,&ScreenDevice::close),false);
+		this->set(MSG_DEV_DELEGATE,std::make_memfun(this,&ScreenDevice::delegate),false);
 	}
 
 	/**
 	 * Sets the screen mode. Has to be implemented by the subclass.
 	 *
 	 * @param c the client
-	 * @param shm the shared memory file
 	 * @param mode the mode to set
 	 * @param type the mode-type
 	 * @param sw whether to switch to that mode
 	 * @throws if the operation failed
 	 */
-	virtual void setScreenMode(C *c,const char *shm,Screen::Mode *mode,int type,bool sw) = 0;
+	virtual void setScreenMode(C *c,Screen::Mode *mode,int type,bool sw) = 0;
 
 	/**
 	 * Sets the cursor. Has to be implemented by the subclass.
@@ -147,16 +148,36 @@ private:
 			is << ValueResponse<Screen::Mode>::error(res) << Reply();
 	}
 
+	void delegate(IPCStream &is) {
+		C *c = (*this)[is.fd()];
+		DevDelegate::Request r;
+		is >> r;
+
+		struct stat info;
+		int res;
+		if((res = fstat(r.nfd,&info)) < 0) {
+			is << DevDelegate::Response(res) << Reply();
+			return;
+		}
+		if(c->nfd != -1 || !S_ISREG(info.st_mode)) {
+			is << DevDelegate::Response(-EINVAL) << Reply();
+			return;
+		}
+
+		c->nfd = r.nfd;
+		is << DevDelegate::Response(0) << Reply();
+	}
+
 	void setMode(IPCStream &is) {
 		C *c = (*this)[is.fd()];
 		int modeno,type;
 		bool switchMode;
-		CStringBuf<MAX_PATH_LEN> path;
-		is >> modeno >> type >> switchMode >> path;
+		is >> modeno >> type >> switchMode;
 
 		for(auto it = _modes.begin(); it != _modes.end(); ++it) {
 			if(modeno == it->id) {
-				setScreenMode(c,path.str(),&*it,type,switchMode);
+				setScreenMode(c,&*it,type,switchMode);
+				c->nfd = -1;
 				break;
 			}
 		}
@@ -201,7 +222,8 @@ private:
 		C *c = (*this)[is.fd()];
 		/* better perform outstanding updates to not access a deleted client */
 		performUpdate();
-		setScreenMode(c,"",NULL,esc::Screen::MODE_TYPE_TUI,false);
+		c->nfd = -1;
+		setScreenMode(c,NULL,esc::Screen::MODE_TYPE_TUI,false);
 		ClientDevice<C>::close(is);
 	}
 

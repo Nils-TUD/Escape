@@ -27,7 +27,6 @@ typedef struct {
 	esc::UIEvents *uiev;
 	int mode;
 	const char *winmng;
-	const char *shmname;
 } sInputThread;
 
 gpos_t input_getMouseX(void);

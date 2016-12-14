@@ -203,6 +203,14 @@ namespace gui {
 		void removeWindow(std::shared_ptr<Window> win);
 
 		/**
+		 * Shares the window buffer with the window manager.
+		 *
+		 * @param win the window
+		 * @param fd the file descriptor
+		 */
+		void shareWinBuf(Window *win,int fd);
+
+		/**
 		 * Puts the given functor into the event-queue and calls it later, i.e. when the run-loop
 		 * looks into the queue again. This is intended to execute GUI-code from a different
 		 * thread (of course it is executed in the GUI thread later) or to execute a piece of code

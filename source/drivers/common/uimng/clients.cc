@@ -37,7 +37,7 @@ size_t UIClient::_clientCount = 0;
 
 UIClient::UIClient(int f)
 	: Client(f), _idx(-1), _evfd(-1), _map(), _screen(),
-	  _fb(), _header(), _cursor(), _type(esc::Screen::MODE_TYPE_TUI) {
+	  _nfd(-1), _fb(), _header(), _cursor(), _type(esc::Screen::MODE_TYPE_TUI) {
 	bool succ = false;
 	for(size_t i = 0; i < MAX_CLIENTS; ++i) {
 		if(_allclients[i] == NULL) {
@@ -81,7 +81,7 @@ void UIClient::reactivate(UIClient *cli,UIClient *old,int oldMode) {
 	if(old && old->_fb)
 		old->_screen->getModeCount();
 
-	cli->_screen->setMode(cli->_type,cli->modeid(),cli->_fb->filename().c_str(),oldMode != cli->modeid());
+	cli->_screen->setMode(cli->_type,cli->modeid(),cli->_fb->fd(),oldMode != cli->modeid());
 	cli->_screen->setCursor(cli->_cursor.x,cli->_cursor.y,cli->_cursor.cursor);
 
 	/* now everything is complete, so set the new active client */
@@ -122,13 +122,13 @@ void UIClient::switchClient(int incr) {
 		_active = newActive;
 }
 
-void UIClient::setMode(int ntype,const esc::Screen::Mode &mode,esc::Screen *scr,const char *file,bool set) {
+void UIClient::setMode(int ntype,const esc::Screen::Mode &mode,esc::Screen *scr,bool set) {
 	/* join framebuffer; this might throw */
-	std::unique_ptr<esc::FrameBuffer> nfb(new esc::FrameBuffer(mode,file,ntype));
+	std::unique_ptr<esc::FrameBuffer> nfb(new esc::FrameBuffer(mode,_nfd,ntype));
 
 	/* set mode; might throw, too */
 	if(set)
-		scr->setMode(ntype,mode.id,file,true);
+		scr->setMode(ntype,mode.id,nfb->fd(),true);
 
 	/* destroy old stuff */
 	delete[] _header;
@@ -140,6 +140,7 @@ void UIClient::setMode(int ntype,const esc::Screen::Mode &mode,esc::Screen *scr,
 	_screen = scr;
 	_fb = nfb.release();
 	_type = ntype;
+	_nfd = -1;
 }
 
 void UIClient::setCursor(gpos_t x,gpos_t y,int cursor) {

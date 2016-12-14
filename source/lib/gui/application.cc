@@ -288,6 +288,10 @@ namespace gui {
 		_winEv.attach(win->getId());
 	}
 
+	void Application::shareWinBuf(Window *win,int fd) {
+		_winMng.shareWinBuf(win->getId(),fd);
+	}
+
 	void Application::removeWindow(shared_ptr<Window> win) {
 		if(_windows.erase_first(win)) {
 			// let window-manager destroy our window

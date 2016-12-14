@@ -45,7 +45,7 @@ VESAGUI *VESA::gui;
 VESATUI *VESA::tui;
 std::vector<esc::Screen::Mode> VESA::modes;
 
-void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
+void VESA::ScreenDevice::setScreenMode(Client *c,Screen::Mode *mode,int type,bool sw) {
 	assert(type == esc::Screen::MODE_TYPE_TUI || type == esc::Screen::MODE_TYPE_GUI);
 
 	/* undo previous mapping */
@@ -58,7 +58,7 @@ void VESA::ScreenDevice::setScreenMode(Client *c,const char *shm,Screen::Mode *m
 	c->screen = NULL;
 
 	if(mode) {
-		std::unique_ptr<FrameBuffer> fb(new FrameBuffer(*mode,shm,type));
+		std::unique_ptr<FrameBuffer> fb(new FrameBuffer(*mode,c->nfd,type));
 
 		/* request screen */
 		VESAScreen *scr = VESAScreen::request(mode);

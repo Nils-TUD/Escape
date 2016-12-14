@@ -49,7 +49,7 @@ class VESA {
 			: esc::ScreenDevice<Client>(modes,path,mode) {
 		}
 
-		virtual void setScreenMode(Client *c,const char *shm,esc::Screen::Mode *mode,int type,bool sw);
+		virtual void setScreenMode(Client *c,esc::Screen::Mode *mode,int type,bool sw);
 		virtual void setScreenCursor(Client *c,gpos_t x,gpos_t y,int cursor);
 		virtual void updateScreen(Client *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 	};

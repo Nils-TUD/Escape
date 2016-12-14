@@ -33,18 +33,9 @@ UI::UI(int c,int r,int size)
 	if(c < minCols() || r < minRows())
 		VTHROW("Too few columns. I need at least " << minCols() << "x" << minRows());
 
-	// create shm
-	char shmname[SSTRLEN("tetris") + 12];
-	for(int id = 1; _fb == NULL; ++id) {
-		snprintf(shmname,sizeof(shmname),"tetris%d",id);
-		try {
-			_fb = new esc::FrameBuffer(_mode,shmname,esc::Screen::MODE_TYPE_TUI,0600);
-		}
-		catch(...) {
-		}
-	}
-
-	_ui.setMode(esc::Screen::MODE_TYPE_TUI,_mode.id,shmname,true);
+	// create framebuffer and set mode
+	_fb = new esc::FrameBuffer(_mode,esc::Screen::MODE_TYPE_TUI);
+	_ui.setMode(esc::Screen::MODE_TYPE_TUI,_mode.id,_fb->fd(),true);
 }
 
 UI::~UI() {

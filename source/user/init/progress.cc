@@ -152,8 +152,8 @@ bool Progress::connect() {
 
 	// this should succeed. if it does not, it's ok to die
 	esc::Screen::Mode mode = _scr->findTextMode(VGA_COLS,VGA_ROWS);
-	_fb = new esc::FrameBuffer(mode,"init-vga",esc::Screen::MODE_TYPE_TUI,0600);
-	_scr->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,"init-vga",true);
+	_fb = new esc::FrameBuffer(mode,esc::Screen::MODE_TYPE_TUI);
+	_scr->setMode(esc::Screen::MODE_TYPE_TUI,mode.id,_fb->fd(),true);
 	paintBar();
 	return true;
 }

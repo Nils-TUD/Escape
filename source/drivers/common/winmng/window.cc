@@ -38,7 +38,6 @@
 #include "preview.h"
 #include "window.h"
 
-static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng);
 static void win_destroyBuf(Window *win);
 static gwinid_t win_getTop(void);
 static bool win_validateRect(gui::Rectangle &r);
@@ -66,12 +65,12 @@ static size_t pixelSize() {
 	return mode.bitsPerPixel / 8;
 }
 
-int win_init(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
+int win_init(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp) {
 	drvId = sid;
 	ui = uiobj;
 	srand(time(NULL));
 
-	return win_setMode(width,height,bpp,shmname);
+	return win_setMode(width,height,bpp);
 }
 
 const esc::Screen::Mode *win_getMode(void) {
@@ -82,23 +81,7 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
 	ui->setCursor(x,y,cursor);
 }
 
-static void win_createBuf(Window *win,gwinid_t id,gsize_t width,gsize_t height,const char *winmng) {
-	char name[32];
-	snprintf(name,sizeof(name),"%s-win%d",winmng,id);
-	esc::Screen::Mode winMode = mode;
-	winMode.guiHeaderSize = winMode.tuiHeaderSize = 0;
-	winMode.width = width;
-	winMode.height = height;
-	win->fb = new esc::FrameBuffer(winMode,name,esc::Screen::MODE_TYPE_GUI,0666);
-	memclear(win->fb->addr(),width * height * (mode.bitsPerPixel / 8));
-}
-
-static void win_destroyBuf(Window *win) {
-	delete win->fb;
-	win->fb = NULL;
-}
-
-int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname) {
+int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
 	print("Getting video mode for %zux%zux%u",width,height,bpp);
 
 	esc::Screen::Mode newmode = ui->findGraphicsMode(width,height,bpp);
@@ -107,11 +90,11 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 	delete fb;
 
 	try {
-		print("Creating new framebuffer named %s",shmname);
+		print("Creating new framebuffer");
 		std::unique_ptr<esc::FrameBuffer> newfb(
-			new esc::FrameBuffer(newmode,shmname,esc::Screen::MODE_TYPE_GUI,0644));
+			new esc::FrameBuffer(newmode,esc::Screen::MODE_TYPE_GUI));
 		print("Setting mode %d: %zux%zux%u",newmode.id,newmode.width,newmode.height,newmode.bitsPerPixel);
-		ui->setMode(esc::Screen::MODE_TYPE_GUI,newmode.id,shmname,true);
+		ui->setMode(esc::Screen::MODE_TYPE_GUI,newmode.id,newfb->fd(),true);
 
 		mode = newmode;
 		fb = newfb.release();
@@ -120,9 +103,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i].id != WINID_UNUSED) {
 				win_destroyBuf(windows + i);
-				win_createBuf(windows + i,i,windows[i].width(),windows[i].height(),shmname);
 
-				/* let the window reset everything, i.e. connect to new buffer, repaint, ... */
+				/* let the window reset everything, i.e. create to new buffer, repaint, ... */
 				esc::WinMngEvents::Event ev;
 				ev.type = esc::WinMngEvents::Event::TYPE_RESET;
 				ev.wid = windows[i].id;
@@ -133,8 +115,8 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 	catch(const std::exception &e) {
 		printe("%s",e.what());
 		print("Restoring old framebuffer and mode");
-		fb = new esc::FrameBuffer(mode,shmname,esc::Screen::MODE_TYPE_GUI,0644);
-		ui->setMode(esc::Screen::MODE_TYPE_GUI,mode.id,shmname,true);
+		fb = new esc::FrameBuffer(mode,esc::Screen::MODE_TYPE_GUI);
+		ui->setMode(esc::Screen::MODE_TYPE_GUI,mode.id,fb->fd(),true);
 		/* we have to repaint everything */
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i].id != WINID_UNUSED)
@@ -146,12 +128,10 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname
 }
 
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-		gsize_t titleBarHeight,const char *title,const char *winmng) {
+		gsize_t titleBarHeight,const char *title) {
 	gwinid_t i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNUSED) {
-			win_createBuf(windows + i,i,width,height,winmng);
-
 			windows[i].id = i;
 			windows[i].setPos(x,y);
 			windows[i].setSize(width,height);
@@ -176,6 +156,26 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 		}
 	}
 	return WINID_UNUSED;
+}
+
+static void win_destroyBuf(Window *win) {
+	delete win->fb;
+	win->fb = NULL;
+}
+
+int win_joinbuf(gwinid_t winid,int fd) {
+	if(!win_exists(winid) || windows[winid].fb != NULL)
+		return -EINVAL;
+
+	esc::Screen::Mode winMode = mode;
+	winMode.guiHeaderSize = winMode.tuiHeaderSize = 0;
+	winMode.width = windows[winid].width();
+	winMode.height = windows[winid].height();
+	windows[winid].fb = new esc::FrameBuffer(winMode,fd,esc::Screen::MODE_TYPE_GUI);
+
+	memclear(windows[winid].fb->addr(),
+		windows[winid].width() * windows[winid].height() * (mode.bitsPerPixel / 8));
+	return 0;
 }
 
 void win_attach(gwinid_t winid,int fd) {
@@ -300,12 +300,11 @@ void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
 	preview_set(fb->addr(),x,y,w->width(),w->height(),2);
 }
 
-void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height,const char *winmng) {
+void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	Window *w = windows + window;
 
 	/* exchange buffer */
 	win_destroyBuf(w);
-	win_createBuf(w,window,width,height,winmng);
 
 	if(x != w->x() || y != w->y())
 		win_moveTo(window,x,y,width,height);
@@ -484,6 +483,10 @@ static void win_clearRegion(char *mem,const gui::Rectangle &r) {
 
 static void win_copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id) {
 	Window *w = windows + id;
+	/* ignore that if we don't have a framebuffer yet */
+	if(!w->fb)
+		return;
+
 	gpos_t x = r.x() - w->x();
 	gpos_t y = r.y() - w->y();
 

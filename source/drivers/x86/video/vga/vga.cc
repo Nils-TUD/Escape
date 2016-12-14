@@ -41,7 +41,7 @@ using namespace esc;
 uint8_t *VGA::screen;
 std::vector<esc::Screen::Mode> VGA::modes;
 
-void VGA::ScreenDevice::setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool sw) {
+void VGA::ScreenDevice::setScreenMode(ScreenClient *c,Screen::Mode *mode,int type,bool sw) {
 	if(type != esc::Screen::MODE_TYPE_TUI)
 		throw esc::default_error("Invalid mode type");
 
@@ -55,8 +55,8 @@ void VGA::ScreenDevice::setScreenMode(ScreenClient *c,const char *shm,Screen::Mo
 	c->fb = NULL;
 
 	if(mode) {
-		if(*shm)
-			c->fb = new FrameBuffer(*mode,shm,type);
+		if(c->nfd != -1)
+			c->fb = new FrameBuffer(*mode,c->nfd,type);
 		c->mode = mode;
 	}
 }

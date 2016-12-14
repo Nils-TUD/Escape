@@ -20,6 +20,7 @@
 #include <esc/proto/screen.h>
 #include <sys/common.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <algorithm>
 
 namespace esc {
@@ -92,26 +93,31 @@ Screen::Mode Screen::findGraphicsModeIn(const std::vector<Mode> &modes,gsize_t w
 	return *best;
 }
 
-char *FrameBuffer::init(Screen::Mode &mode,const char *file,int type,int flags,uint perms) {
+char *FrameBuffer::init(Screen::Mode &mode,int *fd,int type) {
 	char *res;
-	/* open shm */
-	int fd = shm_open(file,flags,perms);
-	if(fd < 0)
-		VTHROWE("shm_open(" << file << ")",fd);
 
+	/* create framebuffer? */
+	if(*fd == -1) {
+		*fd = opentmp();
+		if(*fd < 0)
+			VTHROWE("opentmp",*fd);
+	}
+
+	/* calculate size */
 	size_t size;
 	if(type == esc::Screen::MODE_TYPE_TUI)
 		size = mode.cols * (mode.rows + mode.tuiHeaderSize) * 2;
 	else
 		size = mode.width * (mode.height + mode.guiHeaderSize) * (mode.bitsPerPixel / 8);
-	res = static_cast<char*>(mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0));
-	close(fd);
+
+	/* mmap memory */
+	res = static_cast<char*>(mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED,*fd,0));
 	if(res == NULL) {
-		if(flags & O_CREAT)
-			shm_unlink(file);
+		close(*fd);
 		VTHROWE("mmap(" << size << ")",errno);
 	}
 
+	/* "hide" the header from the caller */
 	if(type == esc::Screen::MODE_TYPE_TUI)
 		res += mode.tuiHeaderSize * mode.cols * 2;
 	else
@@ -126,8 +132,7 @@ FrameBuffer::~FrameBuffer() {
 	else
 		_addr -= _mode.guiHeaderSize * _mode.width * (_mode.bitsPerPixel / 8);
 	munmap(_addr);
-	if(_created)
-		shm_unlink(_filename.c_str());
+	close(_fd);
 }
 
 }

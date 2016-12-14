@@ -42,7 +42,7 @@ public:
 		: ScreenDevice(modes,path,mode), _lastCol(COLS), _lastRow(ROWS), _color() {
 	}
 
-	virtual void setScreenMode(ScreenClient *c,const char *shm,Screen::Mode *mode,int type,bool) {
+	virtual void setScreenMode(ScreenClient *c,Screen::Mode *mode,int type,bool) {
 		if(type != esc::Screen::MODE_TYPE_TUI)
 			throw esc::default_error("Invalid mode type");
 
@@ -53,8 +53,8 @@ public:
 		c->fb = NULL;
 
 		if(mode) {
-			if(*shm)
-				c->fb = new FrameBuffer(*mode,shm,type);
+			if(c->nfd != -1)
+				c->fb = new FrameBuffer(*mode,c->nfd,type);
 			c->mode = mode;
 		}
 	}

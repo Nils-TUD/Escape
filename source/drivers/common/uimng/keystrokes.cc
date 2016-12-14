@@ -127,7 +127,7 @@ void Keystrokes::switchToVGA() {
 	esc::Screen::Mode mode;
 	if(ScreenMng::find(VGA_MODE,&mode,&scr)) {
 		try {
-			scr->setMode(esc::Screen::MODE_TYPE_TUI,VGA_MODE,"",true);
+			scr->setMode(esc::Screen::MODE_TYPE_TUI,VGA_MODE,-1,true);
 		}
 		catch(const std::exception &e) {
 			printe("Unable to switch to VGA: %s",e.what());

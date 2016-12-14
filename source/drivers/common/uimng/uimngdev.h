@@ -32,10 +32,12 @@
 class UIMngDevice : public esc::ClientDevice<UIClient> {
 public:
 	explicit UIMngDevice(const char *name,mode_t mode,std::mutex &mutex)
-		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CREATSIBL | DEV_CLOSE), _mutex(mutex) {
+		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CREATSIBL | DEV_DELEGATE | DEV_CLOSE),
+		  _mutex(mutex) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&UIMngDevice::open));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&UIMngDevice::close),false);
 		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&UIMngDevice::creatsibl));
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&UIMngDevice::delegate));
 		set(MSG_UIM_GETKEYMAP,std::make_memfun(this,&UIMngDevice::getKeymap));
 		set(MSG_UIM_SETKEYMAP,std::make_memfun(this,&UIMngDevice::setKeymap));
 		set(MSG_SCR_GETMODES,std::make_memfun(this,&UIMngDevice::getModes));
@@ -120,12 +122,20 @@ public:
 			is << esc::ValueResponse<esc::Screen::Mode>::error(-EINVAL) << esc::Reply();
 	}
 
+	void delegate(esc::IPCStream &is) {
+		UIClient *c = get(is.fd());
+		esc::DevDelegate::Request r;
+		is >> r;
+
+		int res = c->recvFb(r.nfd);
+		is << esc::DevDelegate::Response(res) << esc::Reply();
+	}
+
 	void setMode(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
 		bool swmode;
 		int modeid,type;
-		esc::CStringBuf<MAX_PATH_LEN> path;
-		is >> modeid >> type >> swmode >> path;
+		is >> modeid >> type >> swmode;
 
 		/* lock that to prevent that we interfere with e.g. the debugger keystroke */
 		std::lock_guard<std::mutex> guard(_mutex);
@@ -133,7 +143,7 @@ public:
 		esc::Screen *scr;
 		if(ScreenMng::find(modeid,&mode,&scr)) {
 			/* only set this mode if it's the active client */
-			c->setMode(type,mode,scr,path.str(),c->isActive());
+			c->setMode(type,mode,scr,c->isActive());
 			/* update header */
 			if(c->isActive()) {
 				gsize_t width,height;

@@ -64,10 +64,9 @@ struct Window : public WinRect {
  * @param width the desired screen width
  * @param height the desired screen height
  * @param bpp the desired bits per pixel
- * @param shmname the shared memory name
  * @return the mode id on success
  */
-int win_init(int sid,esc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname);
+int win_init(int sid,esc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp);
 
 /**
  * @return the current mode
@@ -80,10 +79,9 @@ const esc::Screen::Mode *win_getMode(void);
  * @param width the desired screen width
  * @param height the desired screen height
  * @param bpp the desired bits per pixel
- * @param shmname the shared memory name
  * @return 0 on success
  */
-int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp,const char *shmname);
+int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp);
 
 /**
  * Sets the cursor at given position (writes to vesa)
@@ -105,11 +103,19 @@ void win_setCursor(gpos_t x,gpos_t y,uint cursor);
  * @param style style-attributes
  * @param titleBarHeight the height of the titlebar of that window
  * @param title the title of the window
- * @param winmng the window-manager name
  * @return the window-id or WINID_UNUSED if no slot is free
  */
 gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-	gsize_t titleBarHeight,const char *title,const char *winmng);
+	gsize_t titleBarHeight,const char *title);
+
+/**
+ * Uses the file <fd> as the buffer for the given window
+ *
+ * @param winid the window id
+ * @param fd the file descriptor
+ * @return 0 on success
+ */
+int win_joinbuf(gwinid_t winid,int fd);
 
 /**
  * Attaches the given fd as event-channel to the window with id winid
@@ -210,7 +216,7 @@ void win_previewMove(gwinid_t window,gpos_t x,gpos_t y);
  * @param height the new height
  * @param winmng the window-manager name
  */
-void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height,const char *winmng);
+void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 /**
  * Moves the given window to given position and optionally changes the size

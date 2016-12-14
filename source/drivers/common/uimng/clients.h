@@ -174,15 +174,27 @@ public:
 	int attach(int evfd);
 
 	/**
+	 * Receives the framebuffer file
+	 *
+	 * @param fd the file descriptor
+	 * @return 0 on success
+	 */
+	int recvFb(int fd) {
+		if(_nfd != -1)
+			return -EINVAL;
+		_nfd = fd;
+		return 0;
+	}
+
+	/**
 	 * Sets the given mode.
 	 *
 	 * @param type the type of mode
 	 * @param mode the mode information
 	 * @param scr the screen instance to use
-	 * @param file the file for the framebuffer
 	 * @param set whether to set the mode via the screen
 	 */
-	void setMode(int type,const esc::Screen::Mode &mode,esc::Screen *scr,const char *file,bool set);
+	void setMode(int type,const esc::Screen::Mode &mode,esc::Screen *scr,bool set);
 
 	/**
 	 * Sets the cursor to given position
@@ -210,6 +222,7 @@ private:
 	int _evfd;
 	Keymap *_map;
 	esc::Screen *_screen;
+	int _nfd;
 	esc::FrameBuffer *_fb;
 	char *_header;
 	struct {

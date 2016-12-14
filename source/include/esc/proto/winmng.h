@@ -68,6 +68,18 @@ public:
 	}
 
 	/**
+	 * Shares the window buffer with the window manager
+	 *
+	 * @param wid the window id
+	 * @param fd the file descriptor
+	 * @throws if the delegate failed
+	 */
+	void shareWinBuf(gwinid_t wid,int fd) {
+		if(delegate(_is.fd(),fd,O_RDWR,wid) < 0)
+			VTHROW("shareWinBuf(" << wid << "," << fd << ")");
+	}
+
+	/**
 	 * Activates the window with given id, i.e. pulls it to the front.
 	 *
 	 * @param wid the window-id

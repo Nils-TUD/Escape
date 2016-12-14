@@ -317,27 +317,18 @@ static void vtSetVideoMode(int mode) {
 		if(it->id == mode) {
 			print("Setting video mode %d: %dx%dx%d",mode,it->width,it->height,it->bitsPerPixel);
 
-			/* rename old shm as a backup */
+			/* remember old framebuffer */
 			FrameBuffer *fbtmp = fb;
-			std::string tmpname;
-			if(fbtmp) {
-				tmpname = fbtmp->filename() + "-tmp";
-				print("Renaming old framebuffer to %s",tmpname.c_str());
-				fbtmp->rename(tmpname);
-			}
 
 			/* try to set new mode */
 			print("Creating new framebuffer named %s",vterm.name);
 			try {
-				std::unique_ptr<FrameBuffer> nfb(
-					new FrameBuffer(*it,vterm.name,Screen::MODE_TYPE_TUI,0644));
-				vterm.ui->setMode(Screen::MODE_TYPE_TUI,it->id,vterm.name,true);
+				std::unique_ptr<FrameBuffer> nfb(new FrameBuffer(*it,Screen::MODE_TYPE_TUI));
+				vterm.ui->setMode(Screen::MODE_TYPE_TUI,it->id,nfb->fd(),true);
 				fb = nfb.release();
 			}
 			catch(const default_error &e) {
 				fb = fbtmp;
-				if(fb)
-					fb->rename(vterm.name);
 				throw;
 			}
 
@@ -346,10 +337,8 @@ static void vtSetVideoMode(int mode) {
 				if(!vtctrl_resize(&vterm,it->cols,it->rows)) {
 					delete fb;
 					fb = fbtmp;
-					if(fb) {
-						fb->rename(vterm.name);
-						vterm.ui->setMode(Screen::MODE_TYPE_TUI,fb->mode().id,vterm.name,true);
-					}
+					if(fb)
+						vterm.ui->setMode(Screen::MODE_TYPE_TUI,fb->mode().id,fb->fd(),true);
 					VTHROWE("vtctrl_resize(" << it->cols << "," << it->rows << ")",-ENOMEM);
 				}
 			}

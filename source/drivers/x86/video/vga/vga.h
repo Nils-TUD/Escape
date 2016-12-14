@@ -38,7 +38,7 @@ class VGA {
 			: esc::ScreenDevice<>(modes,path,mode) {
 		}
 
-		virtual void setScreenMode(esc::ScreenClient *c,const char *shm,esc::Screen::Mode *mode,int type,bool sw);
+		virtual void setScreenMode(esc::ScreenClient *c,esc::Screen::Mode *mode,int type,bool sw);
 		virtual void setScreenCursor(esc::ScreenClient *c,gpos_t x,gpos_t y,int);
 		virtual void updateScreen(esc::ScreenClient *c,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 	};

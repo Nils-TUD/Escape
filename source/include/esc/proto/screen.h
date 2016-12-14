@@ -25,6 +25,7 @@
 #include <sys/messages.h>
 #include <sys/mman.h>
 #include <vector>
+#include <stdio.h>
 
 namespace esc {
 
@@ -145,15 +146,22 @@ public:
 	 *
 	 * @param type the screen type (esc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @param mode the mode-id to set
-	 * @param shm the shared-memory file used as the framebuffer
+	 * @param fd the framebuffer file
 	 * @param switchMode whether to actually set the given mode
 	 * @throws if the operation failed
 	 */
-	void setMode(int type,int mode,const char *shm,bool switchMode) {
+	void setMode(int type,int mode,int fd,bool switchMode) {
 		errcode_t res;
-		_is << mode << type << switchMode << CString(shm) << SendReceive(MSG_SCR_SETMODE) >> res;
+
+		if(fd >= 0) {
+			res = delegate(_is.fd(),fd,O_RDONLY,0);
+			if(res < 0)
+				VTHROWE("delegate for setMode(" << type << "," << mode << ") failed",res);
+		}
+
+		_is << mode << type << switchMode << SendReceive(MSG_SCR_SETMODE) >> res;
 		if(res < 0)
-			VTHROWE("setMode(" << type << "," << mode << "," << shm << ")",res);
+			VTHROWE("setMode(" << type << "," << mode << ")",res);
 	}
 
 	/**
@@ -242,29 +250,25 @@ protected:
 class FrameBuffer {
 public:
 	/**
-	 * Joines the framebuffer represented as the file <name>.
+	 * Joines the framebuffer with given file descriptor.
 	 *
 	 * @param m the mode to use
-	 * @param name the shared-memory file
+	 * @param fd the file descriptor
 	 * @param type the screen type (esc::Screen::MODE_TYPE_{TUI,GUI})
 	 * @throws if the operation failed
 	 */
-	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type)
-		: _mode(m), _filename(file),
-		  _addr(init(_mode,file,type,O_RDWR,0)), _created(false) {
+	explicit FrameBuffer(const Screen::Mode &m,int fd,int type)
+		: _mode(m), _fd(fd), _addr(init(_mode,&_fd,type)) {
 	}
 	/**
-	 * Creates the framebuffer represented as the file <name>.
+	 * Creates a new framebuffer.
 	 *
 	 * @param m the mode to use
-	 * @param file the shared-memory file
 	 * @param type the screen type (esc::Screen::MODE_TYPE_{TUI,GUI})
-	 * @param perms the permissions to give to the file
 	 * @throws if the operation failed
 	 */
-	explicit FrameBuffer(const Screen::Mode &m,const char *file,int type,uint perms)
-		: _mode(m), _filename(file),
-		  _addr(init(_mode,file,type,O_RDWR | O_CREAT,perms)), _created(true) {
+	explicit FrameBuffer(const Screen::Mode &m,int type)
+		: _mode(m), _fd(-1), _addr(init(_mode,&_fd,type)) {
 	}
 
 	/**
@@ -272,6 +276,12 @@ public:
 	 */
 	~FrameBuffer();
 
+	/**
+	 * @return the file descriptor for the framebuffer file
+	 */
+	int fd() const {
+		return _fd;
+	}
 	/**
 	 * @return the address of the framebuffer
 	 */
@@ -284,33 +294,13 @@ public:
 	const Screen::Mode &mode() const throw() {
 		return _mode;
 	}
-	/**
-	 * @return the filename
-	 */
-	const std::string filename() const throw() {
-		return _filename;
-	}
-
-	/**
-	 * Renames the shared memory file to <newName>.
-	 *
-	 * @param newName the new filename
-	 * @throws if the operation failed
-	 */
-	void rename(const std::string &newName) {
-		int res;
-		if((res = shm_rename(_filename.c_str(),newName.c_str())) < 0)
-			VTHROWE("shm_rename(" << _filename << "," << newName << ")",res);
-		_filename = newName;
-	}
 
 private:
-	static char *init(Screen::Mode &mode,const char *file,int type,int flags,uint perms);
+	static char *init(Screen::Mode &mode,int *fd,int type);
 
 	Screen::Mode _mode;
-	std::string _filename;
+	int _fd;
 	char *_addr;
-	bool _created;
 };
 
 }

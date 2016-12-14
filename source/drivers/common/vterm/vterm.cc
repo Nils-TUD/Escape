@@ -211,13 +211,18 @@ static int uimInputThread(void *arg) {
 	if(signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set SIGTERM handler");
 
-	{
+	try {
 		std::lock_guard<std::mutex> guard(*vterm.mutex);
 		/* set video mode */
 		vtSetVideoMode(modeid);
 		/* now we're the active client. update screen */
 		vtctrl_markScrDirty(&vterm);
 		vtUpdate();
+	}
+	catch(...) {
+		run = false;
+		vtdev->stop();
+		return 0;
 	}
 
 	/* read from uimanager and handle the keys */

@@ -140,7 +140,7 @@ A_CHECKRET static inline int tell(int fd,off_t *pos) {
  * Manipulates the given file-descriptor, depending on the command
  *
  * @param fd the file-descriptor
- * @param cmd the command (F_GETFL or F_SETFL)
+ * @param cmd the command (F_*)
  * @param arg the argument (just used for F_SETFL)
  * @return >= 0 on success
  */

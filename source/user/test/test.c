@@ -36,6 +36,7 @@ typedef struct {
 static sTestModule modules[] = {
 	{"driver",mod_driver},
 	{"drivercancel",mod_drivercancel},
+	{"driverdelob",mod_driverdelob},
 	{"debug",mod_debug},
 	{"fault",mod_fault},
 	{"thread",mod_thread},

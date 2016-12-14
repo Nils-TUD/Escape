@@ -31,6 +31,8 @@ enum {
 	MSG_DEV_SHFILE					= 55,
 	MSG_DEV_CANCEL					= 56,
 	MSG_DEV_CREATSIBL				= 57,
+	MSG_DEV_DELEGATE				= 58,
+	MSG_DEV_OBTAIN					= 59,
 
 	/* requests to fs */
 	MSG_FS_OPEN						= 100,
@@ -146,5 +148,5 @@ static const size_t IPC_DEF_SIZE	= 256;
  * @return whether the given message id is a device message, i.e. cannot be sent by the user.
  */
 static inline bool isDeviceMsg(msgid_t mid) {
-	return mid >= MSG_FILE_OPEN && mid <= MSG_DEV_CREATSIBL;
+	return mid >= MSG_FILE_OPEN && mid <= MSG_DEV_OBTAIN;
 }

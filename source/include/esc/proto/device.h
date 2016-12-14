@@ -109,4 +109,59 @@ struct DevCreatSibl {
 	typedef ErrorResponse Response;
 };
 
+/**
+ * The MSG_DEV_DELEGATE command that is sent by the kernel to devices if delegate() was called
+ * on them.
+ */
+struct DevDelegate {
+	static const msgid_t MSG = MSG_DEV_DELEGATE;
+
+	struct Request {
+		explicit Request() {
+		}
+		explicit Request(int _nfd,int _arg) : nfd(_nfd), arg(_arg) {
+		}
+
+		int nfd;
+		int arg;
+	};
+
+	typedef ErrorResponse Response;
+};
+
+/**
+ * The MSG_DEV_OBTAIN command that is sent by the kernel to devices if obtain() was called
+ * on them.
+ */
+struct DevObtain {
+	static const msgid_t MSG = MSG_DEV_OBTAIN;
+
+	struct Request {
+		explicit Request() {
+		}
+		explicit Request(int _arg) : arg(_arg) {
+		}
+
+		int arg;
+	};
+
+	struct Response : public ErrorResponse {
+		explicit Response() : ErrorResponse(), fd(), perm() {
+		}
+		explicit Response(int _fd,uint _perm,errcode_t err)
+			: ErrorResponse(err), fd(_fd), perm(_perm) {
+		}
+
+		static Response success(int fd,uint perm) {
+			return Response(fd,perm,0);
+		}
+		static Response error(errcode_t err) {
+			return Response(0,0,err);
+		}
+
+		int fd;
+		uint perm;
+	};
+};
+
 }

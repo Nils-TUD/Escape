@@ -237,12 +237,13 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 		return err;
 
 	/* determine free file */
-	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file);
+	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file,false);
 }
 
 int VFS::openFileDesc(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo) {
 	OpenFile *file;
-	int res = VFS::openFile(pid,flags,node,nodeNo,devNo,&file);
+	/* no permission check here; and the flags are already valid */
+	int res = OpenFile::getFree(pid,flags,nodeNo,devNo,node,&file,true);
 	if(res < 0)
 		return res;
 

@@ -393,6 +393,26 @@ public:
 	int creatsibl(pid_t pid,OpenFile *sibl,int arg);
 
 	/**
+	 * Delegates <file> to the driver over this channel.
+	 *
+	 * @param pid the process-id
+	 * @param file the file to delegate
+	 * @param perm the permissions to set for the file
+	 * @param arg the argument to send to the driver
+	 * @return 0 on success
+	 */
+	int delegate(pid_t pid,OpenFile *file,uint perm,int arg);
+
+	/**
+	 * Obtains a file from the driver over this channel.
+	 *
+	 * @param pid the process-id
+	 * @param arg the argument to send to the driver
+	 * @return the file descriptor for the obtained file on success
+	 */
+	int obtain(pid_t pid,int arg);
+
+	/**
 	 * Binds this file to the given thread.
 	 *
 	 * @param tid the thread-id
@@ -468,9 +488,11 @@ private:
 	 * @param devNo the dev-number
 	 * @param n the VFS-node or NULL
 	 * @param f will point to the used file afterwards
+	 * @param clone whether this is a clone of an existing OpenFile (no exclusive/lonely check)
 	 * @return 0 on success
 	 */
-	static int getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f);
+	static int getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,
+		OpenFile **f,bool clone);
 
 	static void releaseFile(OpenFile *file);
 	bool doClose(pid_t pid);

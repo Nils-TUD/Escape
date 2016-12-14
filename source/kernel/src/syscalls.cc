@@ -112,11 +112,13 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	sharefile,
 	cancel,
 	creatsibl,
+	delegate,
+	obtain,
 	sysconfstr,
-	clonems,
-	joinms,
 
 	/* 70 */
+	clonems,
+	joinms,
 	mlock,
 	mlockall,
 	semcrtirq,
@@ -125,6 +127,8 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	gettimeofday,
 	utime,
 	truncate,
+
+	/* 80 */
 #if defined(__x86__)
 	reqports,
 	relports,

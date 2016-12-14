@@ -278,6 +278,31 @@ A_CHECKRET static inline int creatsibl(int fd,int arg) {
 }
 
 /**
+ * Delegates access to the file <fd> to the device <dev>. That is, the driver for <dev> receives a
+ * file descriptor for the file denoted by <fd>.
+ *
+ * @param dev the device
+ * @param fd the file descriptor to delegate
+ * @param perm the permissions to delegate (downgrading only; any flag in O_ACCMODE)
+ * @param arg an arbitrary argument that is passed to the driver
+ * @return 0 on success
+ */
+A_CHECKRET static inline int delegate(int dev,int fd,uint perm,int arg) {
+	return syscall4(SYSCALL_DELEGATE,dev,fd,perm,arg);
+}
+
+/**
+ * Obtains access to a file from <dev>.
+ *
+ * @param dev the device
+ * @param arg an arbitrary argument that is passed to the driver
+ * @return the file descriptor on success
+ */
+A_CHECKRET static inline int obtain(int dev,int arg) {
+	return syscall2(SYSCALL_OBTAIN,dev,arg);
+}
+
+/**
  * Shares the file, denoted by <mem>, with the device, denoted by <dev>. That is, it sends
  * a message to the device and asks him to join that memory, if he wants to. The parameter <mem>
  * has to point to the beginning of the area where a file has been mmap'd.

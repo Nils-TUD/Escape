@@ -142,6 +142,28 @@ public:
 	 */
 	int creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg);
 
+	/**
+	 * Delegates <file> to the driver over <chan>.
+	 *
+	 * @param pid the process-id
+	 * @param chan the channel
+	 * @param file the file to delegate
+	 * @param perm the permissions to set for the file
+	 * @param arg the argument to send to the driver
+	 * @return 0 on success
+	 */
+	int delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int arg);
+
+	/**
+	 * Obtains a file from the driver over <chan>.
+	 *
+	 * @param pid the process-id
+	 * @param chan the channel
+	 * @param arg the argument to send to the driver
+	 * @return the file descriptor on success
+	 */
+	int obtain(pid_t pid,OpenFile *chan,int arg);
+
 	virtual ssize_t open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t getSize(pid_t pid);

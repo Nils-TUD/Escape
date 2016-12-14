@@ -388,6 +388,20 @@ int OpenFile::creatsibl(pid_t pid,OpenFile *sibl,int arg) {
 		pid,this,static_cast<VFSChannel*>(sibl->getNode()),arg);
 }
 
+int OpenFile::delegate(pid_t pid,OpenFile *file,uint perm,int arg) {
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
+		return -ENOTSUP;
+
+	return static_cast<VFSChannel*>(node)->delegate(pid,this,file,perm,arg);
+}
+
+int OpenFile::obtain(pid_t pid,int arg) {
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
+		return -ENOTSUP;
+
+	return static_cast<VFSChannel*>(node)->obtain(pid,this,arg);
+}
+
 int OpenFile::bindto(tid_t tid) {
 	if(EXPECT_FALSE(~flags & VFS_DEVICE))
 		return -EACCES;
@@ -536,7 +550,8 @@ size_t OpenFile::getCount() {
 	return count;
 }
 
-int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,OpenFile **f) {
+int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,
+		OpenFile **f,bool clone) {
 	A_UNUSED uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN | VFS_NOBLOCK |
 							  VFS_DEVICE | VFS_LONELY;
 	size_t i;
@@ -555,7 +570,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSN
 	{
 		LockGuard<SpinLock> g(&gftLock);
 		/* devices and files can't be used exclusively */
-		if(!isDevice) {
+		if(!clone && !isDevice) {
 			/* check if somebody has this file currently exclusively */
 			e = exclList;
 			while(e) {

@@ -434,6 +434,109 @@ error:
 	return res;
 }
 
+int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int arg) {
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+	int nfd;
+	msgid_t mid;
+
+	int res;
+	if((res = isSupported(DEV_DELEGATE)) < 0)
+		return res;
+
+	/* first, give the driver a file-descriptor for the new channel */
+	uint flags = (file->getFlags() & ~O_ACCMODE) | perm;
+	res = VFS::openFileDesc(getParent()->getOwner(),flags,file->getNode(),file->getNodeNo(),file->getDev());
+	if(res < 0)
+		return res;
+	nfd = res;
+
+	/* send msg to driver */
+	ib << esc::DevDelegate::Request(nfd,arg);
+	res = chan->sendMsg(pid,esc::DevDelegate::MSG,ib.buffer(),ib.pos(),NULL,0);
+	if(res < 0)
+		goto error;
+
+	/* read response */
+	ib.reset();
+	mid = res;
+	res = chan->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
+	if(res < 0)
+		goto error;
+
+	/* handle response */
+	{
+		esc::DevDelegate::Response r;
+		ib >> r;
+		if(r.err < 0) {
+			res = r.err;
+			goto error;
+		}
+	}
+	return 0;
+
+error:
+	VFS::closeFileDesc(getParent()->getOwner(),nfd);
+	return res;
+}
+
+int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
+	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
+
+	int res;
+	if((res = isSupported(DEV_OBTAIN)) < 0)
+		return res;
+
+	/* send msg to driver */
+	ib << esc::DevObtain::Request(arg);
+	res = chan->sendMsg(pid,esc::DevObtain::MSG,ib.buffer(),ib.pos(),NULL,0);
+	if(res < 0)
+		return res;
+
+	/* read response */
+	ib.reset();
+	msgid_t mid = res;
+	res = chan->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
+	if(res < 0)
+		return res;
+
+	/* handle response */
+	esc::DevObtain::Response r;
+	ib >> r;
+	if(r.err < 0)
+		return r.err;
+
+	/* request file from driver */
+	Proc *pp = Proc::getRef(getParent()->getOwner());
+	if(!pp)
+		return -ESRCH;
+	OpenFile *ofile = FileDesc::request(pp,r.fd);
+	if(ofile == NULL) {
+		res = -EBADF;
+		goto errorProc;
+	}
+
+	/* check permissions */
+	r.perm &= O_ACCMODE & ofile->getFlags();
+	if(r.perm == 0) {
+		res = -EINVAL;
+		goto errorFile;
+	}
+
+	/* open file for client */
+	{
+		uint flags = (ofile->getFlags() & ~O_ACCMODE) | r.perm;
+		res = VFS::openFileDesc(pid,flags,ofile->getNode(),ofile->getNodeNo(),ofile->getDev());
+	}
+
+errorFile:
+	FileDesc::release(ofile);
+errorProc:
+	Proc::relRef(pp);
+	return res;
+}
+
 ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
                          size_t size1,USER const void *data2,size_t size2) {
 	esc::SList<Message> *list;

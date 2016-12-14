@@ -436,6 +436,59 @@ int Syscalls::creatsibl(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,nfd);
 }
 
+int Syscalls::delegate(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	int dev = (int)SYSC_ARG1(stack);
+	int fd = (int)SYSC_ARG2(stack);
+	uint perm = (int)SYSC_ARG3(stack);
+	int arg = (int)SYSC_ARG4(stack);
+	Proc *p = t->getProc();
+
+	/* get file to delegate */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* only downgrading is allowed and only O_ACCMODE */
+	perm &= O_ACCMODE & file->getFlags();
+	if(perm == 0) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,-EPERM);
+	}
+
+	/* get channel file */
+	OpenFile *chanfile = FileDesc::request(p,dev);
+	if(EXPECT_FALSE(chanfile == NULL)) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,-EBADF);
+	}
+
+	/* delegate file */
+	int res = chanfile->delegate(p->getPid(),file,perm,arg);
+	FileDesc::release(chanfile);
+	FileDesc::release(file);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
+int Syscalls::obtain(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+	int dev = (int)SYSC_ARG1(stack);
+	int arg = (int)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+
+	/* get channel file */
+	OpenFile *chanfile = FileDesc::request(p,dev);
+	if(EXPECT_FALSE(chanfile == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* obtain file */
+	int res = chanfile->obtain(p->getPid(),arg);
+	FileDesc::release(chanfile);
+	if(EXPECT_FALSE(res < 0))
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
 int Syscalls::dup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int fd = (int)SYSC_ARG1(stack);
 

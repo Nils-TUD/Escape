@@ -1,24 +1,21 @@
 #!/bin/sh
 . boot/$ESC_TGTTYPE/images.sh
+create_fsimg $1/dist $1/fs.img
 
-if [ $1/date -nt $1/fs.img ]; then
-	create_fsimg $1/dist $1/fs.img
-
-	cat >$1/config-52-54-00-12-34-56 <<EOF
-	root escape
-	exec /boot/escape root=/dev/ext2-ramdisk-fs.img
-	load /bin/initloader
-	load /sbin/ramdisk /dev/ramdisk-fs.img -f /sys/boot/fs.img
-	load /sbin/pci /dev/pci
-	load /sbin/ext2 /dev/ext2-ramdisk-fs.img /dev/ramdisk-fs.img
-	load /fs.img
+cat >$1/config-52-54-00-12-34-56 <<EOF
+root escape
+exec /boot/escape root=/dev/ext2-ramdisk-fs.img
+load /bin/initloader
+load /sbin/ramdisk /dev/ramdisk-fs.img -f /sys/boot/fs.img
+load /sbin/pci /dev/pci
+load /sbin/ext2 /dev/ext2-ramdisk-fs.img /dev/ramdisk-fs.img
+load /fs.img
 EOF
 
-	files="boot/escape bin/initloader sbin/ramdisk sbin/pci sbin/ext2"
-	( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
-	( cd $1 && rsync --progress -RLp fs.img $ESC_SERVER/escape )
-	( cd $1 && rsync --progress -RLp config-52-54-00-12-34-56 $ESC_SERVER )
-fi
+files="boot/escape bin/initloader sbin/ramdisk sbin/pci sbin/ext2"
+( cd $1/dist && rsync --progress -RLp $files $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp fs.img $ESC_SERVER/escape )
+( cd $1 && rsync --progress -RLp config-52-54-00-12-34-56 $ESC_SERVER )
 
 $ESC_QEMU -m 512 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
 	-boot n -bootp pulsar -tftp $ESC_SERVER $2 | tee log.txt

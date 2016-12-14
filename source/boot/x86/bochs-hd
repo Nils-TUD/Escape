@@ -1,9 +1,7 @@
 #!/bin/sh
 . boot/$ESC_TGTTYPE/images.sh
 
-if [ $1/date -nt $1/hd.img ]; then
-	create_disk $1/dist $1/hd.img
-fi
+create_disk $1/dist $1/hd.img
 
 cat boot/$ESC_TGTTYPE/bochs.cfg > $1/bochs.cfg
 echo "ata0-master: type=disk, path=`readlink -f $1/hd.img`, cylinders=0" >> $1/bochs.cfg

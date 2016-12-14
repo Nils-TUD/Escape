@@ -1,8 +1,6 @@
 #!/bin/sh
 . boot/$ESC_TGTTYPE/images.sh
-if [ $1/date -nt $1/fs.img ]; then
-	create_fsimg $1/dist $1/fs.img
-fi
+create_fsimg $1/dist $1/fs.img
 
 suffix=""
 if [ "$ESC_TARGET" = "x86_64" ]; then

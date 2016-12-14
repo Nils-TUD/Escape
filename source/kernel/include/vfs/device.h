@@ -99,9 +99,10 @@ public:
 	/**
 	 * Searches for a channel of this device-node that should be served
 	 *
+	 * @param flags the flags (GW_*)
 	 * @return the fd for the channel to retrieve a message from or a an error if there is none
 	 */
-	int getWork();
+	int getWork(uint flags);
 
 	virtual ssize_t getSize(pid_t pid);
 	virtual void close(pid_t pid,OpenFile *file,int msgid);
@@ -110,6 +111,7 @@ public:
 private:
 	static uint buildMode(uint type);
 	void wakeupClients(bool locked);
+	int getClientFd(tid_t tid);
 
 	/* the thread that created this device. all channels will initially get bound to this one */
 	tid_t creator;

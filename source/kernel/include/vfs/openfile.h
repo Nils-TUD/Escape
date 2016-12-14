@@ -94,11 +94,10 @@ public:
 	 * not used, the function waits until a client wants to be served.
 	 *
 	 * @param file the file to check for a client
-	 * @param fd will be set to the file-descriptor for the channel to receive a message from
 	 * @param flags the flags (GW_*)
-	 * @return the error-code or 0
+	 * @return the error-code or the file descriptor
 	 */
-	static int getWork(OpenFile *file,int *fd,uint flags);
+	static int getWork(OpenFile *file,uint flags);
 
 	/**
 	 * Checks whether they point to the same file

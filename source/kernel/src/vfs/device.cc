@@ -30,6 +30,8 @@
 #include <spinlock.h>
 #include <video.h>
 
+SpinLock waitLock;
+
 /* block- and file-devices are none-empty by default, because their data is always available */
 VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
 		: VFSNode(pid,n,buildMode(type) | (m & MODE_PERM),success), creator(Thread::getRunning()->getTid()),
@@ -90,47 +92,67 @@ void VFSDevice::bindto(tid_t tid) {
 	closeDir(true);
 }
 
-int VFSDevice::getWork() {
-	const VFSNode *n,*first,*last;
-	bool valid;
-	/* this is a bit more complicated because we want to do it in a fair way. that means every
-	 * process that requests something should be served at some time. therefore we store the last
-	 * served client and continue from the next one. */
+int VFSDevice::getWork(uint flags) {
+	Thread *t = Thread::getRunning();
+	tid_t tid = t->getTid();
 
+	while(true) {
+		{
+			LockGuard<SpinLock> g(&waitLock);
+			int fd = getClientFd(tid);
+			/* if we've found one or we shouldn't block, stop here */
+			if(EXPECT_TRUE(fd >= 0 || (flags & GW_NOBLOCK)))
+				return fd >= 0 ? fd : -ENOCLIENT;
+
+			/* wait for a client (accept signals) */
+			t->wait(EV_CLIENT,(evobj_t)this);
+		}
+
+		Thread::switchAway();
+		if(EXPECT_FALSE(t->hasSignal()))
+			return -EINTR;
+	}
+	A_UNREACHED;
+}
+
+int VFSDevice::getClientFd(tid_t tid) {
 	/* search for a slot that needs work */
-	/* we don't need to lock the device-data here; the node with openDir() is sufficient */
-	/* because it can't be called twice because the waitLock in vfs prevents it. and nothing of the
-	 * device-data that is used here can be changed during this procedure. */
-	n = openDir(true,&valid);
+	bool valid;
+	const VFSNode *n = openDir(true,&valid);
+
 	/* if there are no messages at all or the node is invalid, stop right now */
 	if(!valid || msgCount == 0) {
 		closeDir(true);
 		return -ENOCLIENT;
 	}
 
-	Thread *t = Thread::getRunning();
-	tid_t ourself = t->getTid();
-	first = n;
-	last = lastClient;
+	/* this is a bit more complicated because we want to do it in a fair way. that means every
+	 * process that requests something should be served at some time. therefore we store the last
+	 * served client and continue from the next one. */
+	const VFSNode *first = n;
+	const VFSNode *last = lastClient;
 	n = last ? last->next : first;
 
 searchBegin:
 	while(n != NULL && n != last) {
 		/* data available? */
 		const VFSChannel *chan = static_cast<const VFSChannel*>(n);
-		if(chan->getHandler() == ourself && chan->hasWork()) {
+		if(chan->getHandler() == tid && chan->hasWork()) {
 			lastClient = const_cast<VFSNode*>(n);
 			closeDir(true);
 			return static_cast<const VFSChannel*>(lastClient)->getFd();
 		}
+
 		n = n->next;
 	}
+
 	if(lastClient) {
 		lastClient = NULL;
 		last = last->next;
 		n = first;
 		goto searchBegin;
 	}
+
 	closeDir(true);
 	return -ENOCLIENT;
 }

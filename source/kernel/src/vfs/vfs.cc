@@ -49,7 +49,6 @@ VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;
 VFSNode *VFS::tmpNode;
 VFSNode *VFS::msNode;
-SpinLock waitLock;
 
 void VFS::init() {
 	VFSNode *root,*sys;

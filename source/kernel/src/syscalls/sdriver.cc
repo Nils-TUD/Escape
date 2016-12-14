@@ -115,21 +115,20 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EBADF);
 
 	/* open a client */
-	int clifd;
-	ssize_t res = OpenFile::getWork(file,&clifd,flags);
+	int clifd = OpenFile::getWork(file,flags);
 
 	/* release files */
 	FileDesc::release(file);
 
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
+	if(EXPECT_FALSE(clifd < 0))
+		SYSC_ERROR(stack,clifd);
 
 	OpenFile *client = FileDesc::request(p,clifd);
 	if(EXPECT_FALSE(!client))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* receive a message */
-	res = client->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
+	int res = client->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
 	FileDesc::release(client);
 
 	if(EXPECT_FALSE(res < 0))

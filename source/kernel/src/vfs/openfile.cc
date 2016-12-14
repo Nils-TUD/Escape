@@ -454,8 +454,7 @@ bool OpenFile::doClose(pid_t pid) {
 	return false;
 }
 
-int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
-	Thread *t = Thread::getRunning();
+int OpenFile::getWork(OpenFile *file,uint flags) {
 	if(EXPECT_FALSE(file->devNo != VFS_DEV_NO))
 		return -EPERM;
 	if(EXPECT_FALSE(~file->flags & VFS_DEVICE))
@@ -465,23 +464,7 @@ int OpenFile::getWork(OpenFile *file,int *fd,uint flags) {
 	if(EXPECT_FALSE(!IS_DEVICE(dev->getMode())))
 		return -EPERM;
 
-	while(true) {
-		{
-			LockGuard<SpinLock> g(&waitLock);
-			*fd = dev->getWork();
-			/* if we've found one or we shouldn't block, stop here */
-			if(EXPECT_TRUE(*fd >= 0 || (flags & GW_NOBLOCK)))
-				return *fd >= 0 ? 0 : -ENOCLIENT;
-
-			/* wait for a client (accept signals) */
-			t->wait(EV_CLIENT,(evobj_t)dev);
-		}
-
-		Thread::switchAway();
-		if(EXPECT_FALSE(t->hasSignal()))
-			return -EINTR;
-	}
-	A_UNREACHED;
+	return dev->getWork(flags);
 }
 
 void OpenFile::print(OStream &os) const {

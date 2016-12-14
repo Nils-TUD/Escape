@@ -75,6 +75,13 @@ extern FILE *stderr;
 int remove(const char *filename);
 
 /**
+ * Opens a temporary file and returns the file descriptor
+ *
+ * @return the file descriptor
+ */
+int opentmp(void);
+
+/**
  * The tmpfile function creates a temporary binary file that is different from any other
  * existing file and that will automatically be removed when it is closed or at program
  * termination. If the program terminates abnormally, whether an open temporary file is

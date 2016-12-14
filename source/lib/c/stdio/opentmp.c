@@ -27,16 +27,29 @@
 
 #include "iobuf.h"
 
-FILE *tmpfile(void) {
-	int fd = opentmp();
-	if(fd < 0)
-		return NULL;
+#define NAME_LEN	8
 
-	FILE *f;
-	if(!(f = bcreate(fd,O_RDWR | O_EXCL | O_LONELY,NULL,IN_BUFFER_SIZE,OUT_BUFFER_SIZE,false))) {
-		close(fd);
-		return NULL;
+int opentmp(void) {
+	static bool initialized = false;
+	if(!initialized) {
+		srand(rdtsc());
+		initialized = true;
 	}
-	benqueue(f);
-	return f;
+
+	int fd;
+	char path[MAX_PATH_LEN] = "/tmp/";
+	do {
+		for(int i = 0; i < NAME_LEN; ++i)
+			path[i + 5] = 'a' + (rand() % ('z' - 'a'));
+		path[NAME_LEN + 5] = '\0';
+
+		fd = open(path,O_RDWR | O_EXCL | O_LONELY | O_CREAT,0644);
+	}
+	while(fd == -EEXIST);
+	if(fd < 0)
+		return fd;
+
+	/* unlink it now to make it invisible and destroy it on close */
+	sassert(unlink(path) == 0);
+	return fd;
 }

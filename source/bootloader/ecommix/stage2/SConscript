@@ -7,6 +7,7 @@ ldscript = 'arch/' + env['TGT'] + '/ld.conf'
 myenv.Append(LINKFLAGS = ' -ffreestanding -nostdlib -nostartfiles -nodefaultlibs')
 myenv.Append(LINKFLAGS = ' -Wl,-T,bootloader/ecommix/stage2/' + ldscript)
 myenv.Append(CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-function-sections')
+myenv.Append(OBJCPYFLAGS = ' -O binary')
 elf = myenv.EscapeCXXProg(
 	'',
 	'stage2.elf',
@@ -21,4 +22,4 @@ elf = myenv.EscapeCXXProg(
 )
 myenv.Depends(elf, ldscript)
 myenv.EscapeLink('$BINDIR/stage2.elf', elf)
-myenv.Command('stage2.bin', elf, '$CROSS-objcopy -O binary $SOURCE $TARGET')
+myenv.EscapeObjCpy('stage2.bin', elf)

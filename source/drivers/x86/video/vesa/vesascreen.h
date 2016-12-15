@@ -40,10 +40,10 @@ public:
 	uint8_t *frmbuf;
 	uint8_t *whOnBlCache;
 	esc::Screen::Mode *mode;
-	uint8_t cols;
-	uint8_t rows;
-	uint8_t lastCol;
-	uint8_t lastRow;
+	gpos_t cols;
+	gpos_t rows;
+	gpos_t lastCol;
+	gpos_t lastRow;
 	uint8_t *content;
 private:
 	static std::vector<VESAScreen*> _screens;

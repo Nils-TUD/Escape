@@ -28,7 +28,7 @@ class VESAGUI {
 public:
 	explicit VESAGUI();
 
-	void setCursor(VESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor);
+	void setCursor(VESAScreen *scr,void *shmem,gpos_t newCurX,gpos_t newCurY,int newCursor);
 	void update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
 
 private:

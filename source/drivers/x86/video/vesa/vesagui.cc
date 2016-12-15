@@ -68,7 +68,7 @@ VESAGUI::VESAGUI()
 		error("Unable to create cursor copy");
 }
 
-void VESAGUI::setCursor(VESAScreen *scr,void *shmem,int newCurX,int newCurY,int newCursor) {
+void VESAGUI::setCursor(VESAScreen *scr,void *shmem,gpos_t newCurX,gpos_t newCurY,int newCursor) {
 	if(newCursor == esc::Screen::CURSOR_RESIZE_L || newCursor == esc::Screen::CURSOR_RESIZE_BL)
 		newCurX -= CURSOR_LEFT_OFF;
 	doSetCursor(scr,shmem,newCurX,newCurY,newCursor);

@@ -63,8 +63,8 @@ void VESAScreen::initWhOnBl() {
 	uint8_t *white = vbet_getColor(WHITE);
 	uint8_t *black = vbet_getColor(BLACK);
 	for(size_t i = 0; i < FONT_COUNT; i++) {
-		for(int y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
-			for(int x = 0; x < FONT_WIDTH + PAD * 2; x++) {
+		for(gpos_t y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
+			for(gpos_t x = 0; x < FONT_WIDTH + PAD * 2; x++) {
 				if(y >= PAD && y < FONT_HEIGHT + PAD && x >= PAD && x < FONT_WIDTH + PAD &&
 						PIXEL_SET(i,x - PAD,y - PAD)) {
 					cc = vbe_setPixelAt(*mode,cc,white);
@@ -96,8 +96,8 @@ void VESAScreen::reset(int type) {
 	lastRow = rows;
 	memclear(frmbuf,mode->width * mode->height * (mode->bitsPerPixel / 8));
 	if(type == esc::Screen::MODE_TYPE_TUI) {
-		for(int y = 0; y < rows; y++) {
-			for(int x = 0; x < cols; x++) {
+		for(gpos_t y = 0; y < rows; y++) {
+			for(gpos_t x = 0; x < cols; x++) {
 				content[y * cols * 2 + x * 2] = ' ';
 				content[y * cols * 2 + x * 2 + 1] = 0x07;
 			}

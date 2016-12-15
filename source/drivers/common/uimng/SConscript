@@ -2,17 +2,13 @@
 
 Import('env')
 
+libs = ['info', 'keymap', 'usergroup']
 if env['TGTTYPE'] == 'x86':
-	env.EscapeCXXProg(
-		'sbin',
-		target = 'uimng',
-		source = env.Glob('*.cc'),
-		LIBS = ['info', 'keymap', 'usergroup', 'vbe']
-	)
-else:
-	env.EscapeCXXProg(
-		'sbin',
-		target = 'uimng',
-		source = env.Glob('*.cc'),
-		LIBS = ['info', 'keymap', 'usergroup']
-	)
+	libs += ['vbe']
+
+env.EscapeCXXProg(
+	'sbin',
+	target = 'uimng',
+	source = env.Glob('*.cc'),
+	LIBS = libs
+)

@@ -48,10 +48,9 @@ uint16_t Net::ipv4PayloadChecksum(const Net::IPv4Addr &src,const Net::IPv4Addr &
 	} A_PACKED pseudoHeader = {
 		.src = src,
 		.dst = dst,
-		.proto = 0,
+		.proto = cputobe16(protocol),
 		.dataSize = static_cast<uint16_t>(cputobe16(sz))
 	};
-	pseudoHeader.proto = cputobe16(protocol);
 
 	uint32_t checksum = 0;
 	const uint16_t *data = reinterpret_cast<uint16_t*>(&pseudoHeader);

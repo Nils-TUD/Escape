@@ -58,7 +58,7 @@ private:
 	* Fetches the entry at index <index> from the TLB and puts the virtual address into *entryHi and
 	* the physical address including flags into *entryLo.
 	*/
-	static void tlbGet(int index,uint *entryHi,uint *entryLo);
+	static void tlbGet(size_t index,uint *entryHi,uint *entryLo);
 
 	PageTables pts;
 	static uintptr_t curPDir asm("curPDir");
@@ -149,7 +149,7 @@ inline void PageDir::tlbSet(int index,uint virt,uint phys) {
 	);
 }
 
-inline void PageDir::tlbGet(int index,uint *entryHi,uint *entryLo) {
+inline void PageDir::tlbGet(size_t index,uint *entryHi,uint *entryLo) {
 	asm volatile (
 		"mvts	%2,1\n"
 		"tbri\n"

@@ -139,7 +139,7 @@ void PageDirBase::zeroToUser(void *dst,size_t count) {
 
 void PageDir::printTLB(OStream &os) const {
 	os.writef("TLB:\n");
-	for(int i = 0; i < TLB_SIZE; i++) {
+	for(size_t i = 0; i < TLB_SIZE; i++) {
 		uint entryHi,entryLo;
 		tlbGet(i,&entryHi,&entryLo);
 		os.writef("\t%d: %08x %08x %c%c\n",i,entryHi,entryLo,

@@ -43,20 +43,10 @@ static inline pid_t getpid(void) {
 }
 
 /**
- * Returns the parent-id of the given process
- *
- * @param pid the process-id
- * @return the parent-pid
- */
-static inline int getppidof(pid_t pid) {
-	return syscall1(SYSCALL_PPID,pid);
-}
-
-/**
  * @return the parent-pid of the current process
  */
 static inline pid_t getppid(void) {
-	return getppidof(getpid());
+	return syscall0(SYSCALL_PPID);
 }
 
 /**

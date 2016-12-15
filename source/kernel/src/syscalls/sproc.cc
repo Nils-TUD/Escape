@@ -41,14 +41,7 @@ int Syscalls::getpid(Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::getppid(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	pid_t pid = (pid_t)SYSC_ARG1(stack);
-	Proc *p = Proc::getRef(pid);
-	if(EXPECT_FALSE(!p))
-		SYSC_ERROR(stack,-ESRCH);
-
-	pid_t ppid = p->getParentPid();
-	Proc::relRef(p);
-	SYSC_RET1(stack,ppid);
+	SYSC_RET1(stack,t->getProc()->getParentPid());
 }
 
 int Syscalls::getuid(Thread *t,IntrptStackFrame *stack) {

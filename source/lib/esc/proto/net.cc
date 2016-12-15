@@ -41,7 +41,7 @@ uint16_t Net::ipv4Checksum(const uint16_t *data,uint16_t length) {
 uint16_t Net::ipv4PayloadChecksum(const Net::IPv4Addr &src,const Net::IPv4Addr &dst,uint16_t protocol,
 		const uint16_t *header,size_t sz) {
 	struct {
-		esc::Net::IPv4Addr src;
+		alignas(sizeof(uint16_t)) esc::Net::IPv4Addr src;
 		esc::Net::IPv4Addr dst;
 		uint16_t proto;
 		uint16_t dataSize;

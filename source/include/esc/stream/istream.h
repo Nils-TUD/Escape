@@ -312,8 +312,10 @@ private:
 					base = 16;
 					c = read();
 				}
-				else if(!isdigit(c))
+				else if(!isdigit(c)) {
 					putback(c);
+					c = '0';
+				}
 			}
 		}
 

@@ -115,19 +115,22 @@ void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newC
 	if(newCursor < 0 || (size_t)newCursor >= ARRAY_SIZE(_cursor))
 		return;
 
-	gsize_t curWidth,curHeight;
-	_cursor[newCursor]->getSize(&curWidth,&curHeight);
 	gsize_t xres = scr->mode->width;
 	gsize_t yres = scr->mode->height;
 	/* validate position */
 	x = esc::Util::min(x,(int)(xres - 1));
 	y = esc::Util::min(y,(int)(yres - 1));
 
-	if(_lastX != x || _lastY != y) {
-		gsize_t upHeight = esc::Util::min(curHeight,yres - _lastY);
+	if(_lastX != x || _lastY != y || newCursor != _curCursor) {
 		/* copy old content back */
-		copyRegion(scr,_cursorCopy,scr->frmbuf,curWidth,upHeight,0,0,_lastX,_lastY,curWidth,xres,curHeight);
+		gsize_t oldWidth,oldHeight;
+		_cursor[_curCursor]->getSize(&oldWidth,&oldHeight);
+		gsize_t upHeight = esc::Util::min(oldHeight,yres - _lastY);
+		copyRegion(scr,_cursorCopy,scr->frmbuf,oldWidth,upHeight,0,0,_lastX,_lastY,oldWidth,xres,oldHeight);
+
 		/* save content */
+		gsize_t curWidth,curHeight;
+		_cursor[newCursor]->getSize(&curWidth,&curHeight);
 		copyRegion(scr,(uint8_t*)shmem,_cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
 	}
 

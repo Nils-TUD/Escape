@@ -118,8 +118,8 @@ void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newC
 	gsize_t xres = scr->mode->width;
 	gsize_t yres = scr->mode->height;
 	/* validate position */
-	x = esc::Util::min(x,(int)(xres - 1));
-	y = esc::Util::min(y,(int)(yres - 1));
+	x = esc::Util::min(x,(gpos_t)(xres - 1));
+	y = esc::Util::min(y,(gpos_t)(yres - 1));
 
 	if(_lastX != x || _lastY != y || newCursor != _curCursor) {
 		/* copy old content back */

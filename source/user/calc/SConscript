@@ -13,7 +13,7 @@ myenv.Append(
 lexer = myenv.CFile(target = 'lex.c', source = 'calc.l')
 parser = myenv.CFile(target = 'parser', source = 'calc.y')
 
-cfiles = [f for f in myenv.Glob('*.c') if 'lex.c' not in str(f) and 'parser.c' not in str(f)]
+cfiles = [File('calc.c')]
 myenv.Depends(cfiles, [lexer, parser])
 
 myenv.EscapeCProg('bin', target = 'calc', source = cfiles + [lexer, parser[0]])

@@ -99,12 +99,11 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x31 */	{Syscalls::handle,			"Ack-Signal",			0},
 	/* 0x32 */	{Interrupts::irqTimer,		"LAPIC",				0},
 	/* 0x33 */	{Interrupts::ipiWork,		"Work IPI",				0},
-	/* 0x34 */	{NULL,						"??",					0},
-	/* 0x35 */	{NULL,						"??",					0},	// Flush TLB
-	/* 0x36 */	{NULL,						"??",					0},	// Wait
-	/* 0x37 */	{NULL,						"??",					0},	// Halt
-	/* 0x38 */	{NULL,						"??",					0},	// Flush TLB-Ack
-	/* 0x39 */	{Interrupts::ipiCallback,	"IPI Callback",			0},
+	/* 0x34 */	{NULL,						"??",					0},	// Flush TLB
+	/* 0x35 */	{NULL,						"??",					0},	// Wait
+	/* 0x36 */	{NULL,						"??",					0},	// Halt
+	/* 0x37 */	{NULL,						"??",					0},	// Flush TLB-Ack
+	/* 0x38 */	{Interrupts::ipiCallback,	"IPI Callback",			0},
 	/* 0x3A */	{Interrupts::exFatal,		"??",					0},
 };
 

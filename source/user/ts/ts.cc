@@ -188,9 +188,9 @@ int main(int argc,char **argv) {
 		sout << fmt(states[t->state()],5) << " ";
 		sout << fmt(t->prio(),4) << " ";
 		if(t->state() == 0)
-			sout << fmt('-',4);
-		else
 			sout << fmt(t->cpu(),4);
+		else
+			sout << fmt("-",4);
 		sout << " ";
 		sout << fmt((t->stackPages() * PAGE_SIZE) / 1024,maxStack - 1) << "K ";
 		sout << fmt(t->schedCount(),maxScheds) << " ";

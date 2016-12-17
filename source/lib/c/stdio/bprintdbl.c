@@ -30,26 +30,20 @@ int bprintdbl(FILE *f,double d,uint precision) {
 	/* Note: this is probably not a really good way of converting IEEE754-floating point numbers
 	 * to string. But its simple and should be enough for my purposes :) */
 
-	if(isnan(d)) {
-		if(d < 0) {
-			RETERR(bputc(f,'-'));
-			c++;
-		}
+	if(d < 0) {
+		RETERR(bputc(f,'-'));
+		c++;
+		d = -d;
+	}
+
+	if(isnan(d))
 		c += RETERR(bputs(f,"nan",-1));
-	}
-	else if(isinf(d)) {
-		if(d < 0) {
-			RETERR(bputc(f,'-'));
-			c++;
-		}
+	else if(isinf(d))
 		c += RETERR(bputs(f,"inf",-1));
-	}
 	else {
 		val = (llong)d;
 		c += bprintl(f,val);
 		d -= val;
-		if(d < 0)
-			d = -d;
 		RETERR(bputc(f,'.'));
 		c++;
 		while(precision-- > 0) {

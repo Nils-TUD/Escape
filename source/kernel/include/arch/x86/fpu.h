@@ -21,13 +21,17 @@
 
 #include <common.h>
 #include <cpu.h>
+#include <semaphore.h>
+#include <spinlock.h>
+
+class Thread;
 
 class FPU {
 	FPU() = delete;
 
 public:
 	/* the state of FPU/MMX/SSE/SSE2/SSE3/SSSE3/SSE4 */
-	struct XState {
+	struct XState : public CacheAllocatable {
 		uint8_t bytes[512];
 	} A_PACKED;
 
@@ -51,26 +55,42 @@ public:
 	/**
 	 * Handles the EX_CO_PROC_NA exception
 	 *
-	 * @param state pointer to the state-memory
+	 * @param t the current thread
 	 */
-	static void handleCoProcNA(XState **state);
+	static void handleCoProcNA(Thread *t);
 
 	/**
-	 * Clones the FPU-state <src> into <dst>
+	 * Clones the FPU-state from thread <src> into <dst>.
 	 *
-	 * @param dst the destination-fpu-state
-	 * @param src the source-fpu-state
+	 * @param dst the destination thread
+	 * @param src the source thread
 	 */
-	static void cloneState(XState **dst,const XState *src);
+	static void cloneState(Thread *dst,const Thread *src);
 
 	/**
-	 * Free's the given FPU-state
+	 * Initiates a saving of the FPU state on the old CPU of the given thread.
 	 *
-	 * @param state the state
+	 * @param t the current thread
 	 */
-	static void freeState(XState **state);
+	static void initSaveState(Thread *t);
+
+	/**
+	 * Saves the FPU-state to the current state owner.
+	 *
+	 * @param t the current thread
+	 */
+	static void saveState(Thread *t);
+
+	/**
+	 * Free's the FPU-state of the given thread.
+	 *
+	 * @param thread the thread
+	 */
+	static void freeState(Thread *t);
 
 private:
+	static bool doSave(XState **current);
+
 	static void finit() {
 		asm volatile ("fninit");
 	}
@@ -82,5 +102,6 @@ private:
 	}
 
 	/* current FPU state-memory */
-	static XState ***curStates;
+	static Thread **curStates;
+	static SpinLock lock;
 };

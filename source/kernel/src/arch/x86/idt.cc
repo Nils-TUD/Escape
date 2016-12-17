@@ -81,6 +81,7 @@ EXTERN_C void isr53();
 EXTERN_C void isr54();
 EXTERN_C void isr55();
 EXTERN_C void isr56();
+EXTERN_C void isr57();
 /* the handler for a other interrupts */
 EXTERN_C void isrNull();
 
@@ -159,9 +160,10 @@ void IDT::init() {
 	set(54,isr54,Desc::DPL_KERNEL);
 	set(55,isr55,Desc::DPL_KERNEL);
 	set(56,isr56,Desc::DPL_KERNEL);
+	set(57,isr57,Desc::DPL_KERNEL);
 
 	/* all other interrupts */
-	for(size_t i = 57; i < 256; i++)
+	for(size_t i = 58; i < 256; i++)
 		set(i,isrNull,Desc::DPL_KERNEL);
 
 	/* now we can use our idt */

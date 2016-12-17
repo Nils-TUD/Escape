@@ -27,8 +27,8 @@
 #include <util.h>
 #include <video.h>
 
-/* current FPU state-memory */
-FPU::XState ***FPU::curStates = NULL;
+Thread **FPU::curStates = NULL;
+SpinLock FPU::lock;
 
 void FPU::init() {
 	/* TODO check whether we have a FPU/SSE/... */
@@ -50,36 +50,43 @@ void FPU::init() {
 
 	/* allocate a state-pointer for each cpu (do that just once) */
 	if(!curStates) {
-		curStates = (XState***)Cache::calloc(SMP::getCPUCount(),sizeof(XState**));
+		curStates = (Thread**)Cache::calloc(SMP::getCPUCount(),sizeof(Thread*));
 		if(!curStates)
 			Util::panic("Unable to allocate memory for FPU-states");
 	}
 }
 
-void FPU::handleCoProcNA(XState **state) {
-	Thread *t = Thread::getRunning();
-	XState **current = curStates[t->getCPU()];
-	if(current != state) {
+void FPU::handleCoProcNA(Thread *t) {
+	LockGuard<SpinLock> guard(&lock);
+
+	/* were we migrated? */
+	if(t->getFlags() & T_FPU_WAIT) {
+		/* wait until the old CPU has saved the state */
+		t->getFPUSem().down(&lock);
+		t->setFlags(t->getFlags() & ~T_FPU_WAIT);
+	}
+
+	Thread *current = curStates[t->getCPU()];
+	if(current != t) {
+		/* init FPU for new process */
+		curStates[t->getCPU()] = t;
+
 		/* if any process has used the FPU in the past */
 		if(current != NULL) {
-			/* do we have to allocate space for the state? */
-			if(*current == NULL) {
-				*current = (XState*)Cache::alloc(sizeof(XState));
-				/* if we can't save the state, don't unlock the FPU for another process */
-				/* TODO ok? */
-				if(*current == NULL)
-					return;
+			/* TODO handle that case */
+			if(!doSave(current->getFPUStatePtr()))
+				Util::panic("Unable to save FPU state");
+
+			/* notify thread that the state is saved now */
+			if(current->getFlags() & T_FPU_SIGNAL) {
+				current->setFlags(current->getFlags() & ~T_FPU_SIGNAL);
+				current->getFPUSem().up();
 			}
-			/* unlock FPU (necessary here because otherwise fpu_saveState would cause a #NM) */
-			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
-			/* save state */
-			fsave(*current);
 		}
 		else
 			CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 
-		/* init FPU for new process */
-		curStates[t->getCPU()] = state;
+		XState **state = t->getFPUStatePtr();
 		if(*state != NULL)
 			frestore(*state);
 		else
@@ -90,25 +97,75 @@ void FPU::handleCoProcNA(XState **state) {
 		CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
 }
 
-void FPU::cloneState(XState **dst,const XState *src) {
-	if(src != NULL) {
-		*dst = (XState*)Cache::alloc(sizeof(XState));
-		/* simply ignore it here if alloc fails */
-		if(*dst)
-			memcpy(*dst,src,sizeof(XState));
+void FPU::initSaveState(Thread *t) {
+	if(curStates[t->getCPU()] == t) {
+		LockGuard<SpinLock> guard(&lock);
+		/* only do that if we did not request a remote-save yet */
+		if(curStates[t->getCPU()] == t && !(t->getFlags() & T_FPU_WAIT)) {
+			/* remember that we were migrated */
+			t->setFlags(t->getFlags() | T_FPU_SIGNAL | T_FPU_WAIT);
+			/* send an IPI to the old CPU to save the FPU state */
+			SMP::saveFPU(t->getCPU());
+		}
 	}
-	else
-		*dst = NULL;
 }
 
-void FPU::freeState(XState **state) {
+void FPU::saveState(Thread *t) {
+	LockGuard<SpinLock> guard(&lock);
+	Thread *current = curStates[t->getCPU()];
+	/* do the save&signal just once; maybe it was already done in handleCoProcNA */
+	if(current && (current->getFlags() & T_FPU_SIGNAL)) {
+		/* TODO how to handle an error here? */
+		if(!doSave(current->getFPUStatePtr()))
+			Util::panic("Unable to save FPU state");
+
+		/* forget state */
+		curStates[t->getCPU()] = NULL;
+		/* notify thread that the state is saved now */
+		current->setFlags(current->getFlags() & ~T_FPU_SIGNAL);
+		current->getFPUSem().up();
+
+		/* lock FPU again */
+		CPU::setCR0(CPU::getCR0() | CPU::CR0_TASK_SWITCHED);
+	}
+}
+
+bool FPU::doSave(XState **current) {
+	/* do we have to allocate space for the state? */
+	if(*current == NULL) {
+		*current = new XState;
+		if(*current == NULL)
+			return false;
+	}
+	/* unlock FPU (necessary here because otherwise fpu_saveState would cause a #NM) */
+	CPU::setCR0(CPU::getCR0() & ~CPU::CR0_TASK_SWITCHED);
+	/* save state */
+	fsave(*current);
+	return true;
+}
+
+void FPU::cloneState(Thread *dst,const Thread *src) {
+	LockGuard<SpinLock> guard(&lock);
+	if(src->getFPUState() != NULL) {
+		XState *state = *dst->getFPUStatePtr() = new XState;
+		/* simply ignore it here if alloc fails */
+		if(state)
+			memcpy(state,src->getFPUState(),sizeof(*state));
+	}
+	else
+		*dst->getFPUStatePtr() = NULL;
+}
+
+void FPU::freeState(Thread *t) {
+	LockGuard<SpinLock> guard(&lock);
+	XState **state = t->getFPUStatePtr();
 	if(*state != NULL)
-		Cache::free(*state);
+		delete *state;
 	*state = NULL;
 	/* we have to unset the current state because maybe the next created process gets
 	 * the same slot, so that the pointer is the same. */
 	for(size_t i = 0, n = SMP::getCPUCount(); i < n; i++) {
-		if(curStates[i] == state)
+		if(curStates[i] == t)
 			curStates[i] = NULL;
 	}
 }

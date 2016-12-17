@@ -30,6 +30,7 @@
 #define IPI_HALT			54
 #define IPI_FLUSH_TLB_ACK	55
 #define IPI_CALLBACK		56
+#define IPI_SAVE_FPU		57
 
 class Sched;
 class OStream;
@@ -150,6 +151,15 @@ public:
 	 * @param callback the function to call
 	 */
 	static void callbackOthers(callback_func callback);
+
+	/**
+	 * Lets CPU <id> save its FPU state
+	 *
+	 * @param id the CPU id
+	 */
+	static void saveFPU(cpuid_t id) {
+		sendIPI(id,IPI_SAVE_FPU);
+	}
 
 	/**
 	 * Sends the IPI <vector> to the CPU <id>

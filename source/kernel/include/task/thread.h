@@ -53,6 +53,8 @@
 
 #define T_IDLE					1
 #define T_IGNSIGS				2
+#define T_FPU_WAIT				4
+#define T_FPU_SIGNAL			8
 
 #if defined(__i586__)
 #	include <arch/i586/task/threadconf.h>

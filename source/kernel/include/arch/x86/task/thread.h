@@ -22,11 +22,12 @@
 #include <arch/x86/fpu.h>
 #include <common.h>
 #include <cpu.h>
+#include <semaphore.h>
 
 class Thread : public ThreadBase {
 	friend class ThreadBase;
 
-	Thread(Proc *p,uint8_t flags) : ThreadBase(p,flags), kernelStack(), fpuState() {
+	Thread(Proc *p,uint8_t flags) : ThreadBase(p,flags), kernelStack(), fpuState(), fpuSem(0) {
 	}
 
 public:
@@ -41,8 +42,14 @@ public:
 	uintptr_t getKernelStack() const {
 		return kernelStack;
 	}
-	FPU::XState **getFPUState() {
+	const FPU::XState *getFPUState() const {
+		return fpuState;
+	}
+	FPU::XState **getFPUStatePtr() {
 		return &fpuState;
+	}
+	BaseSem &getFPUSem() {
+		return fpuSem;
 	}
 
 private:
@@ -54,6 +61,7 @@ private:
 	uintptr_t kernelStack;
 	/* FPU-state; initially NULL */
 	FPU::XState *fpuState;
+	BaseSem fpuSem;
 };
 
 inline Thread *ThreadBase::getRunning() {

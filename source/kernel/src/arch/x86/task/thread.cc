@@ -62,7 +62,7 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 			return res;
 		}
 	}
-	FPU::cloneState(&(dst->fpuState),src->fpuState);
+	FPU::cloneState(dst,src);
 	return 0;
 }
 
@@ -72,7 +72,7 @@ void ThreadBase::freeArch(Thread *t) {
 		t->stackRegions[0] = NULL;
 	}
 	t->getProc()->getPageDir()->removeKernelStack(t->kernelStack);
-	FPU::freeState(&t->fpuState);
+	FPU::freeState(t);
 }
 
 int ThreadBase::finishClone(Thread *t,Thread *nt) {
@@ -159,8 +159,10 @@ void ThreadBase::doSwitch() {
 		if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
 			VirtMem::setTimestamp(n,cycles);
 		GDT::prepareRun(cpu,n->getProc() != old->getProc(),n);
-		if(cpu != n->getCPU())
+		if(cpu != n->getCPU()) {
+			FPU::initSaveState(n);
 			n->getStats().migrations++;
+		}
 		n->setCPU(cpu);
 
 		/* some stats for SMP */

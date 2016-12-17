@@ -197,6 +197,7 @@ private:
 	static void irqDefault(Thread *t,IntrptStackFrame *stack);
 	static void ipiWork(Thread *t,IntrptStackFrame *stack);
 	static void ipiCallback(Thread *t,IntrptStackFrame *stack);
+	static void ipiFPU(Thread *t,IntrptStackFrame *stack);
 
 	static void eoi(int irq);
 	static void printPFInfo(OStream &os,Thread *t,IntrptStackFrame *stack,uintptr_t pfaddr);

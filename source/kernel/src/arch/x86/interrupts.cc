@@ -104,6 +104,7 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x36 */	{NULL,						"??",					0},	// Halt
 	/* 0x37 */	{NULL,						"??",					0},	// Flush TLB-Ack
 	/* 0x38 */	{Interrupts::ipiCallback,	"IPI Callback",			0},
+	/* 0x39 */	{Interrupts::ipiFPU,		"IPI FPU",				0},
 	/* 0x3A */	{Interrupts::exFatal,		"??",					0},
 };
 
@@ -253,7 +254,7 @@ void Interrupts::exSStep(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 }
 
 void Interrupts::exCoProcNA(Thread *t,A_UNUSED IntrptStackFrame *stack) {
-	FPU::handleCoProcNA(t->getFPUState());
+	FPU::handleCoProcNA(t);
 }
 
 void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
@@ -347,6 +348,11 @@ void Interrupts::ipiWork(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 
 void Interrupts::ipiCallback(Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	SMP::callback(t->getCPU());
+	LAPIC::eoi();
+}
+
+void Interrupts::ipiFPU(Thread *t,A_UNUSED IntrptStackFrame *stack) {
+	FPU::saveState(t);
 	LAPIC::eoi();
 }
 

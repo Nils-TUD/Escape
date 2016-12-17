@@ -34,5 +34,7 @@ Path::list_type Path::buildParts(const string &path) {
 		parts.push_back(Link(string(p,s - p),string(tmp,s - tmp)));
 		p = s + 1;
 	}
+	if(*p)
+		parts.push_back(Link(string(p),string(tmp)));
 	return parts;
 }

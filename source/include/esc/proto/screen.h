@@ -74,7 +74,8 @@ public:
 		CURSOR_RESIZE_BR,
 		CURSOR_RESIZE_VERT,
 		CURSOR_RESIZE_BL,
-		CURSOR_RESIZE_R
+		CURSOR_RESIZE_R,
+		CURSOR_NONE,
 	};
 
 	static const size_t CURSOR_RESIZE_WIDTH	= 6;
@@ -111,6 +112,13 @@ public:
 	 */
 	void setCursor(gpos_t x,gpos_t y,int cursor = 0) {
 		_is << x << y << cursor << Send(MSG_SCR_SETCURSOR);
+	}
+
+	/**
+	 * Hides the cursor.
+	 */
+	void hideCursor() {
+		setCursor(0,0,CURSOR_NONE);
 	}
 
 	/**

@@ -60,6 +60,8 @@ VESAGUI::VESAGUI()
 	_cursor[5] = new VESAImage(CURSOR_RESIZE_R_FILE);
 	if(_cursor[5] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_R_FILE);
+	/* CURSOR_NONE */
+	_cursor[6] = NULL;
 
 	gsize_t curWidth,curHeight;
 	_cursor[_curCursor]->getSize(&curWidth,&curHeight);
@@ -76,22 +78,20 @@ void VESAGUI::setCursor(VESAScreen *scr,void *shmem,gpos_t newCurX,gpos_t newCur
 
 void VESAGUI::update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	esc::Screen::Mode *minfo = scr->mode;
-	gpos_t y1,y2;
+
 	gsize_t xres = minfo->width;
 	gsize_t yres = minfo->height;
 	gsize_t pxSize = minfo->bitsPerPixel / 8;
-	gsize_t curWidth,curHeight;
-	_cursor[_curCursor]->getSize(&curWidth,&curHeight);
-	size_t count;
-	uint8_t *src,*dst;
-	y1 = y;
-	y2 = esc::Util::min(yres,y + height);
+
 	width = esc::Util::min(xres - x,width);
-	count = width * pxSize;
+
+	gpos_t y1 = y;
+	gpos_t y2 = esc::Util::min(yres,y + height);
 
 	/* copy from shared-mem to video-mem */
-	dst = (uint8_t*)scr->frmbuf + (y1 * xres + x) * pxSize;
-	src = (uint8_t*)shmem + (y1 * xres + x) * pxSize;
+	uint8_t *dst = (uint8_t*)scr->frmbuf + (y1 * xres + x) * pxSize;
+	uint8_t *src = (uint8_t*)shmem + (y1 * xres + x) * pxSize;
+	size_t count = width * pxSize;
 	while(y1 < y2) {
 		memcpy(dst,src,count);
 		src += xres * pxSize;
@@ -99,15 +99,20 @@ void VESAGUI::update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width
 		y1++;
 	}
 
-	gui::Rectangle upRec(x,y,width,height);
-	gui::Rectangle curRec(_lastX,_lastY,curWidth,curHeight);
+	if(_curCursor != esc::Screen::CURSOR_NONE) {
+		gsize_t curWidth,curHeight;
+		_cursor[_curCursor]->getSize(&curWidth,&curHeight);
 
-	/* look if we have to update the cursor-copy */
-	gui::Rectangle intersec = gui::intersection(curRec,upRec);
-	if(!intersec.empty()) {
-		copyRegion(scr,(uint8_t*)shmem,_cursorCopy,intersec.width(),intersec.height(),
-			intersec.x(),intersec.y(),intersec.x() - _lastX,intersec.y() - _lastY,xres,curWidth,yres);
-		_cursor[_curCursor]->paint(scr,_lastX,_lastY);
+		gui::Rectangle upRec(x,y,width,height);
+		gui::Rectangle curRec(_lastX,_lastY,curWidth,curHeight);
+
+		/* look if we have to update the cursor-copy */
+		gui::Rectangle intersec = gui::intersection(curRec,upRec);
+		if(!intersec.empty()) {
+			copyRegion(scr,(uint8_t*)shmem,_cursorCopy,intersec.width(),intersec.height(),
+				intersec.x(),intersec.y(),intersec.x() - _lastX,intersec.y() - _lastY,xres,curWidth,yres);
+			_cursor[_curCursor]->paint(scr,_lastX,_lastY);
+		}
 	}
 }
 
@@ -123,18 +128,23 @@ void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newC
 
 	if(_lastX != x || _lastY != y || newCursor != _curCursor) {
 		/* copy old content back */
-		gsize_t oldWidth,oldHeight;
-		_cursor[_curCursor]->getSize(&oldWidth,&oldHeight);
-		gsize_t upHeight = esc::Util::min(oldHeight,yres - _lastY);
-		copyRegion(scr,_cursorCopy,scr->frmbuf,oldWidth,upHeight,0,0,_lastX,_lastY,oldWidth,xres,oldHeight);
+		if(_curCursor != esc::Screen::CURSOR_NONE) {
+			gsize_t oldWidth,oldHeight;
+			_cursor[_curCursor]->getSize(&oldWidth,&oldHeight);
+			gsize_t upHeight = esc::Util::min(oldHeight,yres - _lastY);
+			copyRegion(scr,_cursorCopy,scr->frmbuf,oldWidth,upHeight,0,0,_lastX,_lastY,oldWidth,xres,oldHeight);
+		}
 
 		/* save content */
-		gsize_t curWidth,curHeight;
-		_cursor[newCursor]->getSize(&curWidth,&curHeight);
-		copyRegion(scr,(uint8_t*)shmem,_cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
+		if(newCursor != esc::Screen::CURSOR_NONE) {
+			gsize_t curWidth,curHeight;
+			_cursor[newCursor]->getSize(&curWidth,&curHeight);
+			copyRegion(scr,(uint8_t*)shmem,_cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth,yres);
+		}
 	}
 
-	_cursor[newCursor]->paint(scr,x,y);
+	if(newCursor != esc::Screen::CURSOR_NONE)
+		_cursor[newCursor]->paint(scr,x,y);
 	_lastX = x;
 	_lastY = y;
 	_curCursor = newCursor;

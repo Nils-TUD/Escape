@@ -40,5 +40,5 @@ private:
 	gpos_t _lastX;
 	gpos_t _lastY;
 	uint8_t _curCursor;
-	VESAImage *_cursor[6];
+	VESAImage *_cursor[7];
 };

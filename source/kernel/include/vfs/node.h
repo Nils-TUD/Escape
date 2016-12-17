@@ -58,6 +58,13 @@ class VFSDir;
 class VFSInfo;
 class OpenFile;
 
+/**
+ * There are a couple of invariants for VFSNodes, that are important:
+ * 1) VFSNodes are reference counted
+ * 2) Each child increases the references by 1
+ * 3) If there is at least one reference, all parents still exist
+ * 4) Nodes can be detached from the tree, though, i.e., can become unreachable and lose their name
+ */
 class VFSNode : public CacheAllocatable {
 	/* we do often handle with VFSNode objects and still want to have access to the protected
 	 * members */

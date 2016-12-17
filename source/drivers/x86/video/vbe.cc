@@ -160,7 +160,7 @@ void VBE::addMode(unsigned short mode,unsigned seg) {
 	ModeInfo *copy = new ModeInfo(*modeinfo);
 	_modes[mode] = copy;
 
-	print("Mode %#3x %s %4ux%4ux%2u phys %#08x attr %#x bps %#06x planes %u memmodel %s",
+	print("Mode %#3d %s %4ux%4ux%2u phys %#08x attr %#x bps %#06x planes %u memmodel %s",
 		mode,
 		(modeinfo->modeAttributes & 0x80) ? "linear" : "window",
 		modeinfo->xResolution,modeinfo->yResolution,modeinfo->bitsPerPixel,

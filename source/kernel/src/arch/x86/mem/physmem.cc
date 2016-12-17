@@ -33,7 +33,7 @@ bool PhysMem::canMap(uintptr_t addr,size_t size) {
 	/* go through the memory-map; if it overlaps with one of the free areas, its not allowed */
 	for(size_t i = 0; i < info->mmapCount; ++i) {
 		if(info->mmap[i].type == Boot::MemMap::MEM_AVAILABLE) {
-			if(esc::Util::overlap(addr,addr + size,info->mmap[i].baseAddr,
+			if(esc::Util::overlap((uint64_t)addr,(uint64_t)addr + size,info->mmap[i].baseAddr,
 					info->mmap[i].baseAddr + info->mmap[i].size))
 				return false;
 		}

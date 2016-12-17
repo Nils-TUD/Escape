@@ -41,7 +41,8 @@ public:
      * Assuming that <startx> < <endx> and <endx> is not included (that means with start=0 and end=10
      * 0 .. 9 is used), the macro determines whether the two ranges overlap anywhere.
      */
-    static bool overlap(uintptr_t start1, uintptr_t end1, uintptr_t start2, uintptr_t end2) {
+    template<typename T>
+    static bool overlap(T start1, T end1, T start2, T end2) {
         return (start1 >= start2 && start1 < end2) ||   // start in range
             (end1 > start2 && end1 <= end2) ||          // end in range
             (start1 < start2 && end1 > end2);           // complete overlapped

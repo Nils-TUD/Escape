@@ -157,7 +157,8 @@ namespace gui {
 		_controls.clear();
 		if(_focus)
 			setFocus(nullptr);
-		_layout->removeAll();
+		if(_layout)
+			_layout->removeAll();
 		makeDirty(true);
 	}
 

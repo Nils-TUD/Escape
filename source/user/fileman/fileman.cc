@@ -38,8 +38,6 @@ int main() {
 		favlist.push_back(Link("Home",esc::env::get("HOME")));
 	}
 	catch(const esc::default_error& e) {
-		// TODO temporary
-		favlist.push_back(Link("Home","/home/hrniels"));
 		errmsg(e.what());
 	}
 

@@ -20,6 +20,7 @@
 #include <gui/layout/borderlayout.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/layout/iconlayout.h>
+#include <gui/layout/tablelayout.h>
 #include <gui/application.h>
 #include <gui/border.h>
 #include <gui/button.h>
@@ -56,6 +57,7 @@ static shared_ptr<Window> win6(void);
 static shared_ptr<Window> win7(void);
 static shared_ptr<Window> win8(void);
 static shared_ptr<Window> win9(void);
+static shared_ptr<Window> win10(void);
 static int updateThread(void *arg);
 
 static volatile bool run = true;
@@ -73,6 +75,7 @@ int main() {
 	addWindow(app,win7());
 	addWindow(app,win8());
 	addWindow(app,win9());
+	addWindow(app,win10());
 	int res = app->run();
 	run = false;
 	join(0);
@@ -341,6 +344,30 @@ static shared_ptr<Window> win9(void) {
 	root->add(make_control<Border>(make_control<Label>("all2"),Border::ALL,2),BorderLayout::CENTER);
 
 	win->show(false);
+	return win;
+}
+
+static shared_ptr<Window> win10(void) {
+	shared_ptr<Window> win = make_control<Window>("Window 10",Pos(150,200),Size(400,300));
+	shared_ptr<Panel> root = win->getRootPanel();
+	root->setLayout(make_layout<TableLayout>(4,2));
+	root->getTheme().setPadding(2);
+
+	const char *labels[] = {
+		"test", "test foo", "test bar", "",
+		"!!!", "Baz FOO", "This IS a test", "Hello"
+	};
+
+	size_t i = 0;
+	for(uint row = 0; row < 2; ++row) {
+		for(uint col = 0; col < 4; ++col) {
+			root->add(make_control<Border>(make_control<Label>(labels[i]),Border::ALL),
+				GridPos(col,row));
+			i++;
+		}
+	}
+
+	win->show(true);
 	return win;
 }
 

@@ -80,7 +80,7 @@ namespace gui {
 		Size getMaxSize() const;
 		virtual Size getSizeWith(const Size &avail,size_func func) const;
 
-	private:
+	protected:
 		unsigned _cols;
 		unsigned _rows;
 		gsize_t _gap;

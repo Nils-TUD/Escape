@@ -29,6 +29,11 @@ class Util {
 
 public:
     template<typename T>
+    static constexpr T abs(T x) {
+        return x < 0 ? -x : x;
+    }
+
+    template<typename T>
     static constexpr T min(T a, T b) {
         return a < b ? a : b;
     }

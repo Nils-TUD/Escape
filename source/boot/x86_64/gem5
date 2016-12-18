@@ -1,5 +1,8 @@
 #!/bin/sh
-gem5dir=/home/hrniels/Applications/gem5-stable
+if [ ! -d "$ESC_GEM5" ]; then
+	echo "Please set ESC_GEM5 to the gem5 directory!" >&2
+	exit 1
+fi
 
 source boot/$ESC_TGTTYPE/images.sh
 
@@ -17,7 +20,7 @@ mv $1/dist/etc/drivers.old $1/dist/etc/drivers
 # --debug-flags=Exec,Faults,IdeCtrl,IdeDisk,PCIDEV,I8259,I82094AA
 gem5args=" --outdir=run --debug-file=gem5.log --remote-gdb-port=1234"
 gem5args="$gem5args --debug-flags=Faults,IdeCtrl,IdeDisk,I8259,I82094AA $2"
-gem5args="$gem5args $gem5dir/configs/example/fs.py"
+gem5args="$gem5args $ESC_GEM5/configs/example/fs.py"
 gem5args="$gem5args --command-line=\"/boot/escape root=/dev/ext2-hda1 forcepic nosmp accuratecpu\""
 gem5args="$gem5args --caches --cpu-type TimingSimpleCPU --cpu-clock 1GHz --mem-size=32MB"
 
@@ -36,7 +39,7 @@ if [ "$GUEST_DBG" != "" ]; then
 	cmds=`mktemp`
 	echo "target remote localhost:1234" > $cmds
 
-	echo $gem5args | M5_PATH=$imgs xargs $1/tools/ignoreint/ignoreint $gem5dir/build/X86/gem5.opt 2>&1 &
+	echo $gem5args | M5_PATH=$imgs xargs $1/tools/ignoreint/ignoreint $ESC_GEM5/build/X86/gem5.opt 2>&1 &
 	gdb --tui -command=$cmds $1/bin/escape
 
 	rm -f $cmds
@@ -45,11 +48,11 @@ elif [ "$GEM5_DBG" != "" ]; then
 	echo "b main" > $cmds
 	echo "run $gem5args" >> $cmds
 
-	M5_PATH=$imgs gdb --tui -command=$cmds $gem5dir/build/X86/gem5.debug
+	M5_PATH=$imgs gdb --tui -command=$cmds $ESC_GEM5/build/X86/gem5.debug
 
 	rm -f $cmds
 else
-	echo $gem5args | M5_PATH=$imgs xargs $gem5dir/build/X86/gem5.opt &
+	echo $gem5args | M5_PATH=$imgs xargs $ESC_GEM5/build/X86/gem5.opt &
 	while [ "`lsof -i :3456`" = "" ]; do
 		sleep 1
 	done

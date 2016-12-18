@@ -38,6 +38,8 @@ namespace gui {
 		friend class ScrollPane;
 
 	public:
+		typedef std::vector<std::shared_ptr<Control>>::iterator iterator;
+
 		/**
 		 * Creates an empty panel with given layout.
 		 *
@@ -115,6 +117,19 @@ namespace gui {
 		 * @param pos the position-specification for the layout
 		 */
 		void add(std::shared_ptr<Control> c,Layout::pos_type pos = 0);
+
+		/**
+		 * @return the beginning of the control list
+		 */
+		iterator begin() {
+			return _controls.begin();
+		}
+		/**
+		 * @return the end of the control list
+		 */
+		iterator end() {
+			return _controls.end();
+		}
 
 		/**
 		 * Removes the given control from this panel.

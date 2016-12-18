@@ -21,8 +21,8 @@ VBoxManage storagectl $uuid --name "IDE Controller" --add ide --controller PIIX4
 VBoxManage closemedium disk $1/hd.vmdk
 VBoxManage storageattach $uuid --storagectl "IDE Controller" --port 0 --device 0 \
 	--type hdd --medium $1/hd.vmdk
-VBoxManage modifyvm $uuid --uart1 0x3f8 4 --uartmode1 file `readlink -f log.txt`
+VBoxManage modifyvm $uuid --uart1 0x3f8 4 --uartmode1 file `readlink -f run/log.txt`
 
-VBoxSDL --startvm $uuid 2>&1 | tee log.txt
+VBoxSDL --startvm $uuid 2>&1 | tee run/log.txt
 
 VBoxManage unregistervm $uuid

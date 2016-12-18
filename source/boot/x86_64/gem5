@@ -15,16 +15,17 @@ create_disk $1/dist $1/hd.img
 mv $1/dist/etc/drivers.old $1/dist/etc/drivers
 
 # --debug-flags=Exec,Faults,IdeCtrl,IdeDisk,PCIDEV,I8259,I82094AA
-gem5args=" --remote-gdb-port=1234 --debug-flags=Faults,IdeCtrl,IdeDisk,PCIDEV,I8259,I82094AA --debug-break=1000000 $2"
+gem5args=" --outdir=run --debug-file=gem5.log --remote-gdb-port=1234"
+gem5args="$gem5args --debug-flags=Faults,IdeCtrl,IdeDisk,I8259,I82094AA $2"
 gem5args="$gem5args $gem5dir/configs/example/fs.py"
-gem5args="$gem5args --kernel=bootloader --command-line=\"/boot/escape root=/dev/ext2-hda1 forcepic nosmp accuratecpu\""
+gem5args="$gem5args --command-line=\"/boot/escape root=/dev/ext2-hda1 forcepic nosmp accuratecpu\""
 gem5args="$gem5args --caches --cpu-type TimingSimpleCPU --cpu-clock 1GHz --mem-size=32MB"
 
 imgs=`mktemp -d`
 mkdir $imgs/binaries
 mkdir $imgs/disks
 
-ln -s `readlink -f $1/bin/bootloader` $imgs/binaries/bootloader
+ln -s `readlink -f $1/bin/bootloader` $imgs/binaries/x86_64-vmlinux-2.6.22.9
 ln -s `readlink -f $1/hd.img` $imgs/disks/x86root.img
 # create swap disk
 dd if=/dev/zero of=$imgs/disks/linux-bigswap2.img count=1024 bs=1024
@@ -35,20 +36,20 @@ if [ "$GUEST_DBG" != "" ]; then
 	cmds=`mktemp`
 	echo "target remote localhost:1234" > $cmds
 
-	echo $gem5args | M5_PATH=$imgs xargs $1/tools/ignoreint/ignoreint $gem5dir/build/X86/gem5.opt > log.txt 2>&1 &
+	echo $gem5args | M5_PATH=$imgs xargs $1/tools/ignoreint/ignoreint $gem5dir/build/X86/gem5.opt 2>&1 &
 	gdb --tui -command=$cmds $1/bin/escape
 
 	rm -f $cmds
 elif [ "$GEM5_DBG" != "" ]; then
  	cmds=`mktemp`
 	echo "b main" > $cmds
-	echo "run $gem5args >log.txt" >> $cmds
+	echo "run $gem5args" >> $cmds
 
 	M5_PATH=$imgs gdb --tui -command=$cmds $gem5dir/build/X86/gem5.debug
 
 	rm -f $cmds
 else
-	echo $gem5args | M5_PATH=$imgs xargs $gem5dir/build/X86/gem5.opt > log.txt &
+	echo $gem5args | M5_PATH=$imgs xargs $gem5dir/build/X86/gem5.opt &
 	while [ "`lsof -i :3456`" = "" ]; do
 		sleep 1
 	done

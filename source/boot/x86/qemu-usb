@@ -11,6 +11,6 @@ cleanup() {
 trap cleanup 2
 
 sudo $ESC_QEMU -m 512 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
-	-drive file=$lodev,index=0,media=disk,format=raw $2 | tee log.txt
+	-drive file=$lodev,index=0,media=disk,format=raw $2 | tee run/log.txt
 
 cleanup

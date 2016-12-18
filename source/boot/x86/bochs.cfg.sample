@@ -491,7 +491,7 @@ debugger_log: debug.txt
 #   com4: enabled=1, mode=pipe-server, dev=\\.\pipe\mypipe
 #=======================================================================
 #com1: enabled=1, mode=term, dev=/dev/ttyp9
-com1: enabled=1, mode=file, dev="log.txt"
+com1: enabled=1, mode=file, dev="run/log.txt"
 
 #=======================================================================
 # PARPORT1, PARPORT2:

@@ -19,8 +19,8 @@ trap sigint 2
 VBoxManage storagectl $uuid --name "IDE Controller" --add ide --controller PIIX4
 VBoxManage storageattach $uuid --storagectl "IDE Controller" --port 0 --device 1 --passthrough off \
 	--type dvddrive --medium $1/cd.iso
-VBoxManage modifyvm $uuid --uart1 0x3f8 4 --uartmode1 file `readlink -f log.txt`
+VBoxManage modifyvm $uuid --uart1 0x3f8 4 --uartmode1 file `readlink -f run/log.txt`
 
-VBoxSDL --startvm $uuid 2>&1 | tee log.txt
+VBoxSDL --startvm $uuid 2>&1 | tee run/log.txt
 
 VBoxManage unregistervm $uuid

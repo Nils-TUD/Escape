@@ -7,5 +7,5 @@ gimmon=$gimmix/build/tests/manual/hexmon.rom
 
 create_ecommix_disk $1 $1/hd.img test
 
-$gimsim -r $gimmon -o log.txt -c -t 1 -i --script=boot/$ESC_TARGET/gimmix.start \
+$gimsim -r $gimmon -o run/log.txt -c -t 1 -i --script=boot/$ESC_TARGET/gimmix.start \
 	-d $1/hd.img -b -s $1/map/escape_test.map $2

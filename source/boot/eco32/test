@@ -7,4 +7,4 @@ ecomon=$eco32/build/monitor/monitor.bin
 
 create_ecommix_disk $1 $1/hd.img test
 
-$ecosim -r $ecomon -o log.txt -m 64 -c -t 1 -i -s $1/map/escape_test.map -n -d $1/hd.img $2
+$ecosim -r $ecomon -o run/log.txt -m 64 -c -t 1 -i -s $1/map/escape_test.map -n -d $1/hd.img $2

@@ -1,5 +1,5 @@
 /source/build
-/source/log.txt
+/source/run
 /cross/*/src
 /cross/*/build
 /cross/*.gz

@@ -1,4 +1,4 @@
 #!/bin/sh
 . boot/$ESC_TGTTYPE/images.sh
 create_disk $1/dist $1/hd.img
-$ESC_QEMU -m 128 -net nic,model=ne2k_pci -net nic -net user -serial stdio -hda $1/hd.img $2 | tee log.txt
+$ESC_QEMU -m 128 -net nic,model=ne2k_pci -net nic -net user -serial stdio -d cpu_reset -D run/qemu.log -hda $1/hd.img $2 | tee run/log.txt

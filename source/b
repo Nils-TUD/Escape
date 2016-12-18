@@ -196,6 +196,8 @@ if [ "${cmd#*,}" = "$cmd" ] && [ "$binary" != "" ]; then
     fi
 fi
 
+mkdir -p run
+
 bootscript() {
 	if [ -f ./boot/$ESC_TARGET/$script ]; then
 		echo ./boot/$ESC_TARGET/$script
@@ -228,7 +230,7 @@ case "$cmd" in
 			# terminates. to prevent that we use a small program (ignoreint) no block SIGINT,
 			# which replaces itself with the given program afterwards
 			$build/tools/ignoreint/ignoreint `bootscript $script` $build \
-				"$ESC_SIM_FLAGS -S -s" >log.txt &
+				"$ESC_SIM_FLAGS -S -s" >run/log.txt &
 			# kill qemu when we're done
 			trap "pgrep qemu | xargs kill 2>/dev/null" INT
 		elif [ "$ESC_TARGET" = "eco32" ]; then
@@ -236,7 +238,7 @@ case "$cmd" in
 			exit 1
 		else
 			`bootscript $script` $build \
-				"$ESC_SIM_FLAGS -s $build/map/$binary.map -p 1234" >log.txt &
+				"$ESC_SIM_FLAGS -s $build/map/$binary.map -p 1234" >run/log.txt &
 		fi
 
 		# wait until the simulator listens on port 1234

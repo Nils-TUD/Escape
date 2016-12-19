@@ -129,6 +129,7 @@ ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const voi
 }
 
 int VFSFile::truncate(A_UNUSED pid_t pid,off_t length) {
+	LockGuard<SpinLock> g(&lock);
 	if(pos < length) {
 		if(size < (size_t)length) {
 			void *ndata = Cache::realloc(data,length);

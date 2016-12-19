@@ -58,7 +58,7 @@ namespace gui {
 	}
 
 	bool Panel::layout() {
-		bool res = false;
+		bool res = _ctrlsChanged;
 		_doingLayout = true;
 		if(_layout)
 			res |= _layout->rearrange();
@@ -142,6 +142,8 @@ namespace gui {
 		if(_layout)
 			_layout->add(this,c,pos);
 		makeDirty(true);
+		/* enforce a notification of the parent about our layout change if a control was added */
+		_ctrlsChanged = true;
 	}
 
 	void Panel::remove(shared_ptr<Control> c,Layout::pos_type pos) {
@@ -151,6 +153,8 @@ namespace gui {
 		if(_layout)
 			_layout->remove(this,c,pos);
 		makeDirty(true);
+		/* same for remove */
+		_ctrlsChanged = true;
 	}
 
 	void Panel::removeAll() {
@@ -160,6 +164,7 @@ namespace gui {
 		if(_layout)
 			_layout->removeAll();
 		makeDirty(true);
+		_ctrlsChanged = true;
 	}
 
 	void Panel::layoutChanged() {

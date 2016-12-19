@@ -196,6 +196,7 @@ namespace gui {
 		Control *_focus;
 		std::vector<std::shared_ptr<Control>> _controls;
 		std::shared_ptr<Layout> _layout;
+		bool _ctrlsChanged;
 		bool _doingLayout;
 	};
 }

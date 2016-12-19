@@ -124,6 +124,14 @@ namespace gui {
 		void setTextPadding(gsize_t pad);
 
 		/**
+		 * @param id the color-id
+		 * @return true if the color is set in this theme (not default)
+		 */
+		bool hasColor(colid_type id) const {
+			return _present & (1 << id);
+		}
+
+		/**
 		 * Returns the color-instance for the given color-id. If not present in the current theme,
 		 * the color in the default-theme will be returned.
 		 *

@@ -31,6 +31,12 @@ namespace gui {
 	void Label::paint(Graphics &g) {
 		Size fontsize = g.getFont().getSize();
 		gsize_t pad = getTheme().getTextPadding();
+
+		if(getTheme().hasColor(Theme::CTRL_BACKGROUND)) {
+			g.setColor(getTheme().getColor(Theme::CTRL_BACKGROUND));
+			g.fillRect(0,0,getSize().width,getSize().height);
+		}
+
 		g.setColor(getTheme().getColor(Theme::CTRL_FOREGROUND));
 
 		gpos_t y = (getSize().height - fontsize.height) / 2;

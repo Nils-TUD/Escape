@@ -43,8 +43,8 @@ int main(int argc,const char *argv[]) {
 	ullong total = 0;
 	char *inFile = NULL;
 	char *outFile = NULL;
-	FILE *in = stdin;
-	FILE *out = stdout;
+	int infd = STDIN_FILENO;
+	int outfd = STDOUT_FILENO;
 
 	int res = ca_parse(argc,argv,CA_NO_DASHES | CA_NO_FREE | CA_REQ_EQ,
 			"if=s of=s bs=k count=k",&inFile,&outFile,&bs,&count);
@@ -59,13 +59,13 @@ int main(int argc,const char *argv[]) {
 		error("Unable to set sig-handler for SIGINT");
 
 	if(inFile) {
-		in = fopen(inFile,"r");
-		if(in == NULL)
+		infd = open(inFile,O_RDONLY);
+		if(infd < 0)
 			error("Unable to open '%s'",inFile);
 	}
 	if(outFile) {
-		out = fopen(outFile,"w");
-		if(out == NULL)
+		outfd = open(outFile,O_WRONLY);
+		if(outfd < 0)
 			error("Unable to open '%s'",outFile);
 	}
 
@@ -73,25 +73,29 @@ int main(int argc,const char *argv[]) {
 	{
 		ulong shname;
 		uchar *shmem;
-		if(sharebuf(fileno(in),bs,(void**)&shmem,&shname,0) < 0) {
+		if(sharebuf(infd,bs,(void**)&shmem,&shname,0) < 0) {
 			if(shmem == NULL)
 				error("Unable to mmap buffer");
 		}
+		if(shmem) {
+			if(sharefile(outfd,shmem) < 0) {}
+		}
 
-		size_t result;
+		ssize_t result;
 		ullong limit = (ullong)count * bs;
 		while(run && (!count || total < limit)) {
-			if((result = fread(shmem,1,bs,in)) == 0)
+			if((result = read(infd,shmem,bs)) <= 0) {
+				if(result < 0)
+					error("Read failed");
 				break;
-			if(fwrite(shmem,1,bs,out) == 0)
-				break;
+			}
+
+			if(write(outfd,shmem,result) < 0)
+				error("Write failed");
+
 			total += result;
 		}
 
-		if(ferror(in))
-			error("Read failed");
-		if(ferror(out))
-			error("Write failed");
 		destroybuf(shmem,shname);
 	}
 	end = rdtsc();
@@ -103,8 +107,8 @@ int main(int argc,const char *argv[]) {
 		total,total / 1000000.0,usecs / 1000000.0,total / (double)usecs);
 
 	if(inFile)
-		fclose(in);
+		close(infd);
 	if(outFile)
-		fclose(out);
+		close(outfd);
 	return EXIT_SUCCESS;
 }

@@ -85,6 +85,17 @@ A_CHECKRET int createdev(const char *path,mode_t mode,uint type,uint ops);
 A_CHECKRET int fcreatedev(int dir,const char *name,mode_t mode,uint type,uint ops);
 
 /**
+ * Opens a new channel for the given device with given permissions.
+ *
+ * @param dev the device file descriptor
+ * @param perm the permissions (O_*)
+ * @return the file descriptor
+ */
+A_CHECKRET static inline int createchan(int dev,uint perm) {
+	return syscall2(SYSCALL_CREATECHAN,dev,perm);
+}
+
+/**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided
  * it waits until a client should be served. if not and GW_NOBLOCK is enabled, it returns an error.
  * If a client wants to be served, the message is fetched from him and a file-descriptor is returned.

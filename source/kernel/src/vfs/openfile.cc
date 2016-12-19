@@ -233,6 +233,28 @@ int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint op
 	return res;
 }
 
+int OpenFile::createchan(pid_t pid,uint perm,OpenFile **chan) {
+	if(!IS_DEVICE(node->getMode()))
+		return -ENOTSUP;
+
+	/* create new channel */
+	VFSChannel *chnode = createObj<VFSChannel>(pid,node);
+	if(chnode == NULL)
+		return -ENOMEM;
+
+	/* open new file for the channel */
+	int res = VFS::openFile(pid,VFS_DEVICE | perm,chnode,chnode->getNo(),VFS_DEV_NO,chan);
+	if(res < 0) {
+		VFSNode::release(chnode);
+		VFSNode::release(chnode);
+		return res;
+	}
+
+	/* the file holds a reference now */
+	VFSNode::release(chnode);
+	return 0;
+}
+
 off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	off_t res;
 

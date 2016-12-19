@@ -77,6 +77,7 @@ public:
 private:
 	// driver
 	static int createdev(Thread *t,IntrptStackFrame *stack);
+	static int createchan(Thread *t,IntrptStackFrame *stack);
 	static int getwork(Thread *t,IntrptStackFrame *stack);
 	static int bindto(Thread *t,IntrptStackFrame *stack);
 

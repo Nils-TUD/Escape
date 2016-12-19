@@ -129,6 +129,7 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	truncate,
 
 	/* 80 */
+	createchan,
 #if defined(__x86__)
 	reqports,
 	relports,

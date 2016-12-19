@@ -74,6 +74,36 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,nfd);
 }
 
+int Syscalls::createchan(Thread *t,IntrptStackFrame *stack) {
+	int dev = SYSC_ARG1(stack);
+	uint perm = SYSC_ARG2(stack);
+	Proc *p = t->getProc();
+
+	if(perm & ~O_ACCMODE)
+		SYSC_ERROR(stack,-EINVAL);
+
+	/* get device */
+	OpenFile *file = FileDesc::request(p,dev);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* create channel */
+	OpenFile *chan;
+	int res = file->createchan(p->getPid(),perm,&chan);
+	FileDesc::release(file);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+
+	/* give it a file descriptor */
+	int nfd = FileDesc::assoc(p,chan);
+	if(nfd < 0) {
+		chan->close(p->getPid());
+		SYSC_ERROR(stack,res);
+	}
+	static_cast<VFSChannel*>(chan->getNode())->setFd(nfd);
+	SYSC_RET1(stack,nfd);
+}
+
 int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {
 	int fd = SYSC_ARG1(stack);
 	tid_t tid = SYSC_ARG2(stack);

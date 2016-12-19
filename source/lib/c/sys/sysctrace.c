@@ -134,6 +134,7 @@ const struct Syscall syscalls[] = {
 	{"truncate",		"%d,%u"						},
 
 	/* 80 */
+	{"createchan",		"%d,%O",					},
 #if defined(__x86__)
 	{"reqports",   		"%d,%d"						},
 	{"relports",    	"%d,%d"						},

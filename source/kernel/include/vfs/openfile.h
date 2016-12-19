@@ -293,6 +293,17 @@ public:
 	int createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file);
 
 	/**
+	 * Creates a new channel for <file>.
+	 *
+	 * @param pid the process-id
+	 * @param file the device
+	 * @param perm the permissions
+	 * @param chan will be set to the created channel
+	 * @return 0 on success
+	 */
+	int createchan(pid_t pid,uint perm,OpenFile **chan);
+
+	/**
 	 * Sets the position for this file
 	 *
 	 * @param pid the process-id

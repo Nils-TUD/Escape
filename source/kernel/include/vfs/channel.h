@@ -59,6 +59,14 @@ public:
 	int getFd() const {
 		return fd;
 	}
+	/**
+	 * Sets the file descriptor for the driver to communicate with this channel
+	 *
+	 * @param nfd the new file descriptor
+	 */
+	void setFd(int nfd) {
+		fd = nfd;
+	}
 
 	/**
 	 * @return the thread who handles this channel

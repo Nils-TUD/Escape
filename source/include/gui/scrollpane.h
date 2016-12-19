@@ -85,6 +85,14 @@ namespace gui {
 		}
 
 		/**
+		 * Performs a scroll operation as necessary to make <point> visible.
+		 *
+		 * @param point the point to make visible
+		 * @param update whether to request an update
+		 */
+		void makeVisible(const Pos &point,bool update = true);
+
+		/**
 		 * Scrolls to the top
 		 *
 		 * @param update whether to request an update

@@ -50,6 +50,23 @@ namespace gui {
 		return res;
 	}
 
+	void ScrollPane::makeVisible(const Pos &point,bool update) {
+		Size visible = getVisible();
+
+		int x = 0, y = 0;
+		if(point.y < -_ctrl->getPos().y)
+			y = _ctrl->getPos().y + point.y;
+		else if(point.y + _ctrl->getPos().y > (gpos_t)visible.height)
+			y = point.y + _ctrl->getPos().y - visible.height;
+
+		if(point.x < -_ctrl->getPos().x)
+			x = _ctrl->getPos().x + point.x;
+		else if(point.x + _ctrl->getPos().x > (gpos_t)visible.width)
+			x = point.x + _ctrl->getPos().x - visible.width;
+
+		scrollBy(x,y,update);
+	}
+
 	void ScrollPane::scrollBy(int x,int y,bool update) {
 		Graphics *g = getGraphics();
 		Size visible = getVisible();
@@ -85,7 +102,7 @@ namespace gui {
 				}
 			}
 		}
-		else if(y != 0 && visible.height != 0) {
+		if(y != 0 && visible.height != 0) {
 			int minY = visible.height - _ctrl->getSize().height;
 			// scroll up, i.e. move content down
 			if(y < 0 && cpos.y < 0) {

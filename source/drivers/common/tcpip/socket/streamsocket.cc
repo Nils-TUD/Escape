@@ -428,7 +428,7 @@ void StreamSocket::push(const esc::Socket::Addr &,const Packet &pkt,size_t) {
 				syn.src.d.ipv4.addr = ip->src.value();
 				syn.src.d.ipv4.port = be16tocpu(tcp->srcPort);
 				// is there already a pending accept?
-				if(_pending.count > 0 && (_pending.mid & 0xFFFF) == MSG_DEV_CREATSIBL) {
+				if(_pending.count > 0 && (_pending.mid & 0xFFFF) == MSG_DEV_OBTAIN) {
 					forkSocket(_pending.d.accept.devfd,_pending.mid,_pending.d.accept.dev,syn,seqNo);
 					_pending.count = 0;
 				}

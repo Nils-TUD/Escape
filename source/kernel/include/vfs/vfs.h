@@ -136,17 +136,6 @@ public:
 	static void closeFileDesc(pid_t pid,int fd);
 
 	/**
-	 * Creates a new sibling-channel for <file>.
-	 *
-	 * @param pid the process-id
-	 * @param file the current channel
-	 * @param arg an arbitrary argument to send to the driver
-	 * @param sibl will be set to the created sibling channel
-	 * @return 0 on success
-	 */
-	static int creatsibl(pid_t pid,OpenFile *file,int arg,OpenFile **sibl);
-
-	/**
 	 * Creates a process-node with given pid
 	 *
 	 * @param pid the process-id

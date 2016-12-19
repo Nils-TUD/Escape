@@ -135,17 +135,6 @@ public:
 	int sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size);
 
 	/**
-	 * Creates a new sibling-channel for <file>.
-	 *
-	 * @param pid the process-id
-	 * @param file the current channel
-	 * @param sibl the sibling channel
-	 * @param arg an arbitrary argument to send to the driver
-	 * @return 0 on success
-	 */
-	int creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg);
-
-	/**
 	 * Delegates <file> to the driver over <chan>.
 	 *
 	 * @param pid the process-id

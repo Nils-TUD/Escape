@@ -52,7 +52,7 @@ class SocketDevice : public esc::ClientDevice<Socket> {
 public:
 	explicit SocketDevice(const char *path,mode_t mode)
 		: esc::ClientDevice<Socket>(path,mode,DEV_TYPE_BLOCK,
-			DEV_OPEN | DEV_CANCEL | DEV_SHFILE | DEV_CREATSIBL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
+			DEV_OPEN | DEV_CANCEL | DEV_SHFILE | DEV_OBTAIN | DEV_READ | DEV_WRITE | DEV_CLOSE) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&SocketDevice::open));
 		set(MSG_FILE_READ,std::make_memfun(this,&SocketDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&SocketDevice::write));
@@ -147,7 +147,7 @@ public:
 		errcode_t res;
 		if(r.msg != MSG_FILE_WRITE && r.msg != MSG_SOCK_SENDTO &&
 				r.msg != MSG_FILE_READ && r.msg != MSG_SOCK_RECVFROM &&
-				r.msg != MSG_DEV_CREATSIBL) {
+				r.msg != MSG_DEV_OBTAIN) {
 			res = -EINVAL;
 		}
 		else {

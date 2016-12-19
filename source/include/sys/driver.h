@@ -30,14 +30,13 @@ enum {
 	DEV_SHFILE						= 1 << 4,
 	DEV_CANCEL						= 1 << 5,	/* cancel-message */
 	DEV_CANCELSIG					= 1 << 6,	/* cancel-signal (SIGCANCEL) */
-	DEV_CREATSIBL					= 1 << 7,	/* cancelable, if DEV_CANCEL is supported */
 	/* For delegate, keep in mind that a file descriptor can point to all kinds of things. In
 	 * particular, it can refer to a device, possibly your own device. Thus, either don't use the
 	 * file in the thread that handles the device or, if you need to do that, deny delegations of
 	 * devices. Otherwise, you risk a deadlock */
-	DEV_DELEGATE					= 1 << 8,	/* accepts file delegations from clients */
-	DEV_OBTAIN						= 1 << 9,	/* allows to pass files to clients */
-	DEV_SIZE						= 1 << 10,
+	DEV_DELEGATE					= 1 << 7,	/* accepts file delegations from clients */
+	DEV_OBTAIN						= 1 << 8,	/* allows to pass files to clients */
+	DEV_SIZE						= 1 << 9,
 };
 
 enum {

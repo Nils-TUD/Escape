@@ -30,7 +30,6 @@ enum {
 	/* special device messages */
 	MSG_DEV_SHFILE					= 55,
 	MSG_DEV_CANCEL					= 56,
-	MSG_DEV_CREATSIBL				= 57,
 	MSG_DEV_DELEGATE				= 58,
 	MSG_DEV_OBTAIN					= 59,
 

@@ -410,32 +410,6 @@ int Syscalls::sharefile(Thread *t,IntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-int Syscalls::creatsibl(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	int fd = (int)SYSC_ARG1(stack);
-	int arg = (int)SYSC_ARG2(stack);
-	Proc *p = t->getProc();
-	OpenFile *sibl;
-
-	/* get channel file */
-	OpenFile *file = FileDesc::request(p,fd);
-	if(EXPECT_FALSE(file == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
-	/* create sibling */
-	int res = VFS::creatsibl(p->getPid(),file,arg,&sibl);
-	FileDesc::release(file);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
-
-	/* give it a file descriptor */
-	int nfd = FileDesc::assoc(p,sibl);
-	if(nfd < 0) {
-		sibl->close(p->getPid());
-		SYSC_ERROR(stack,res);
-	}
-	SYSC_RET1(stack,nfd);
-}
-
 int Syscalls::delegate(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int dev = (int)SYSC_ARG1(stack);
 	int fd = (int)SYSC_ARG2(stack);

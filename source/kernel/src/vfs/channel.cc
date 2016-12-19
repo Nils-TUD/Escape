@@ -370,63 +370,6 @@ int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliadd
 	return 0;
 }
 
-int VFSChannel::creatsibl(pid_t pid,OpenFile *file,VFSChannel *sibl,int arg) {
-	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
-	msgid_t mid;
-	uint flags;
-
-	int res;
-	if((res = isSupported(DEV_CREATSIBL)) < 0)
-		return res;
-
-	/* first, give the driver a file-descriptor for the new channel */
-	res = VFS::openFileDesc(sibl->getParent()->getOwner(),VFS_MSGS | VFS_DEVICE,
-		sibl,sibl->getNo(),VFS_DEV_NO);
-	if(res < 0)
-		return res;
-	sibl->fd = res;
-
-	/* send msg to driver */
-	ib << esc::DevCreatSibl::Request(sibl->fd,arg);
-	res = file->sendMsg(pid,esc::DevCreatSibl::MSG,ib.buffer(),ib.pos(),NULL,0);
-	if(res < 0)
-		goto error;
-
-	mid = res;
-	flags = getReceiveFlags();
-	while(1) {
-		/* read response */
-		ib.reset();
-		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
-		if(res < 0) {
-			if(res == -EINTR || res == -EWOULDBLOCK) {
-				int cancelRes = cancel(pid,file,mid);
-				if(cancelRes == esc::DevCancel::READY) {
-					/* if the result is already there, get it, but don't allow signals anymore
-					 * and force blocking */
-					flags = VFS_BLOCK;
-					continue;
-				}
-			}
-			goto error;
-		}
-
-		esc::DevCreatSibl::Response r;
-		ib >> r;
-		if(r.err < 0) {
-			res = r.err;
-			goto error;
-		}
-		return 0;
-	}
-	A_UNREACHED;
-
-error:
-	VFS::closeFileDesc(sibl->getParent()->getOwner(),sibl->fd);
-	return res;
-}
-
 int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int arg) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));

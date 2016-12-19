@@ -90,26 +90,6 @@ struct DevShFile {
 };
 
 /**
- * The MSG_DEV_CREATSIBL command that is sent by the kernel to devices if creatsibl() was called
- * on them.
- */
-struct DevCreatSibl {
-	static const msgid_t MSG = MSG_DEV_CREATSIBL;
-
-	struct Request {
-		explicit Request() {
-		}
-		explicit Request(int _nfd,int _arg) : nfd(_nfd), arg(_arg) {
-		}
-
-		int nfd;
-		int arg;
-	};
-
-	typedef ErrorResponse Response;
-};
-
-/**
  * The MSG_DEV_DELEGATE command that is sent by the kernel to devices if delegate() was called
  * on them.
  */

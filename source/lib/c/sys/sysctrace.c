@@ -116,7 +116,7 @@ const struct Syscall syscalls[] = {
 	{"sendrecv",		"%d,%p,%p,%x"				},
 	{"sharefile",		"%d,%p"						},
 	{"cancel",			"%d,%u"						},
-	{"creatsibl",		"%d,%d"						},
+	{"createchan",		"%d,%O"						},
 	{"delegate",        "%d,%d,%O,%d",				},
 	{"obtain",          "%d,%d",					},
 	{"sysconfstr",		"%d,%p,%x"					},
@@ -134,7 +134,6 @@ const struct Syscall syscalls[] = {
 	{"truncate",		"%d,%u"						},
 
 	/* 80 */
-	{"createchan",		"%d,%O",					},
 #if defined(__x86__)
 	{"reqports",   		"%d,%d"						},
 	{"relports",    	"%d,%d"						},
@@ -157,7 +156,6 @@ static const char *fileMsgs[] = {
 	"FILE_CLOSE",
 	"DEV_SHFILE",
 	"DEV_CANCEL",
-	"DEV_CREATSIBL",
 	"DEV_DELEGATE",
 	"DEV_OBTAIN",
 };
@@ -344,7 +342,6 @@ static const struct Flag devOps[] = {
 	{DEV_SHFILE,	"SHFILE"},
 	{DEV_CANCEL,	"CANCEL"},
 	{DEV_CANCELSIG,	"CANCELSIG"},
-	{DEV_CREATSIBL,	"CREATSIBL"},
 	{DEV_DELEGATE,	"DELEGATE"},
 	{DEV_OBTAIN,	"OBTAIN"},
 	{DEV_SIZE,		"SIZE"},

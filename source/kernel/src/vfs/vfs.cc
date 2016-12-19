@@ -129,7 +129,14 @@ int VFS::hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags) {
 		return -ESRCH;
 
 	fs::User u(p->getEUid(),p->getEGid(),p->getPid());
-	return fs::Permissions::canAccess<Groups::contains>(&u,mode,uid,gid,flags);
+	uint perms = 0;
+	if(flags & VFS_READ)
+		perms |= MODE_READ;
+	if(flags & VFS_WRITE)
+		perms |= MODE_WRITE;
+	if(flags & VFS_EXEC)
+		perms |= MODE_EXEC;
+	return fs::Permissions::canAccess<Groups::contains>(&u,mode,uid,gid,perms);
 }
 
 int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,OpenFile **res) {

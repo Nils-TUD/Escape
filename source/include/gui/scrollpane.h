@@ -85,7 +85,7 @@ namespace gui {
 		}
 
 		/**
-		 * Scrolls to the left
+		 * Scrolls to the top
 		 *
 		 * @param update whether to request an update
 		 */

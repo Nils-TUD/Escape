@@ -407,7 +407,8 @@ namespace gui {
 		 * @param pos the offset
 		 */
 		void setMinOff(const Pos &pos) {
-			_minoff = pos;
+			_minoff.x = std::max(_off.x,pos.x);
+			_minoff.y = std::max(_off.y,pos.y);
 		}
 		/**
 		 * Sets the size of the paint-area

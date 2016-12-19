@@ -39,6 +39,34 @@ static void listButtonClick(UIElement &) {
 static void iconButtonClick(UIElement &) {
 	filelist->setMode(FileList::MODE_ICONS);
 }
+static void keyPressed(UIElement &,const KeyEvent &e) {
+	switch(e.getKeyCode()) {
+		case VK_ESC:
+			filelist->loadParent();
+			break;
+		case VK_ENTER:
+			filelist->select();
+			break;
+		case VK_HOME:
+			filelist->selectionTop();
+			break;
+		case VK_UP:
+			filelist->selectionUp();
+			break;
+		case VK_DOWN:
+			filelist->selectionDown();
+			break;
+		case VK_PGUP:
+			filelist->selectionPageUp();
+			break;
+		case VK_PGDOWN:
+			filelist->selectionPageDown();
+			break;
+		case VK_END:
+			filelist->selectionBottom();
+			break;
+	}
+}
 
 int main() {
 	vector<Link> favlist;
@@ -78,6 +106,8 @@ int main() {
 	splitpan->add(make_control<Favorites>(filelist,favlist));
 	splitpan->add(make_control<ScrollPane>(filelist));
 	root->add(splitpan,BorderLayout::CENTER);
+
+	w->keyPressed().subscribe(func_recv(keyPressed));
 
 	filelist->loadDir("/");
 	w->show();

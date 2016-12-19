@@ -87,7 +87,14 @@ public:
 	};
 
 	explicit FileList(std::shared_ptr<PathBar> pathbar)
-		 : Panel(), _path(), _pathbar(pathbar) {
+		 : Panel(), _selected(-1), _files(0), _path(), _pathbar(pathbar) {
+	}
+
+	void loadParent() {
+		if(!_path.empty()) {
+			esc::file dir(_path);
+			loadDir(dir.parent());
+		}
 	}
 
 	void loadDir(const std::string &path) {
@@ -124,9 +131,12 @@ public:
 		using namespace gui;
 		removeAll();
 
+		_selected = -1;
+		_files = files.size();
+
 		if(_mode == MODE_LIST) {
-			setLayout(make_layout<TableLayout>(3,files.size()));
-			uint row = 0;
+			setLayout(make_layout<TableLayout>(3,files.size(),TableLayout::MAX_HORIZONTAL,0));
+			int row = 0;
 			for(auto it = files.begin(); it != files.end(); ++it, ++row) {
 				add(make_control<ListFileName>(*this,*it),GridPos(0,row));
 
@@ -151,25 +161,92 @@ public:
 		repaint();
 	}
 
+	void select() {
+		if(_selected >= 0) {
+			std::shared_ptr<Control> ctrl = _mode == MODE_LIST ? get(_selected * 3) : get(_selected);
+			std::static_pointer_cast<FileObject>(ctrl)->onClick();
+		}
+	}
+
+	void selectionTop() {
+		if(_selected != 0)
+			updateSelection(0);
+	}
+	void selectionUp() {
+		if(_selected > 0)
+			updateSelection(_selected - 1);
+	}
+	void selectionPageUp() {
+		if(_selected > 0)
+			updateSelection(std::max(0,_selected - 10));
+	}
+	void selectionDown() {
+		if((size_t)(_selected + 1) < _files)
+			updateSelection(_selected + 1);
+	}
+	void selectionPageDown() {
+		if((size_t)(_selected + 1) < _files)
+			updateSelection(std::min((int)_files - 1,_selected + 10));
+	}
+	void selectionBottom() {
+		if(_selected != (int)_files - 1)
+			updateSelection(_files - 1);
+	}
+
+private:
+	void updateSelection(int newSel) {
+		if(_selected != -1) {
+			if(_mode == MODE_LIST) {
+				for(size_t i = 0; i < 3; ++i)
+					get(_selected * 3 + i)->getTheme().unsetColor(gui::Theme::CTRL_BACKGROUND);
+			}
+			else
+				get(_selected)->getTheme().unsetColor(gui::Theme::CTRL_BACKGROUND);
+		}
+
+		assert(newSel != -1);
+		gui::Color selColor = getTheme().getColor(gui::Theme::SEL_BACKGROUND);
+		if(_mode == MODE_LIST) {
+			for(size_t i = 0; i < 3; ++i)
+				get(newSel * 3 + i)->getTheme().setColor(gui::Theme::CTRL_BACKGROUND,selColor);
+		}
+		else
+			get(newSel)->getTheme().setColor(gui::Theme::CTRL_BACKGROUND,selColor);
+
+		gui::ScrollPane *sp = static_cast<gui::ScrollPane*>(getParent());
+		std::shared_ptr<Control> first = _mode == MODE_LIST ? get(newSel * 3) : get(newSel);
+		gui::Pos pos = first->getPos();
+		if(newSel > _selected)
+			pos.y += first->getSize().height;
+		sp->makeVisible(pos,false);
+		_selected = newSel;
+
+		repaint();
+	}
+
 	virtual void onMousePressed(const gui::MouseEvent &e) {
 		if(e.isButton1Down()) {
-			for(auto ctrl = begin(); ctrl != end(); ++ctrl) {
-				FileObject *fo = dynamic_cast<FileObject*>(&**ctrl);
-				if(fo) {
-					bool hit;
-					if(_mode == MODE_LIST) {
-						hit = e.getPos().y >= fo->getPos().y &&
-							  (gsize_t)e.getPos().y < fo->getPos().y + fo->getSize().height;
+			if(_mode == MODE_LIST) {
+				for(size_t i = 0; i < _files; ++i) {
+					auto ctrl = std::static_pointer_cast<FileObject>(get(i * 3));
+					bool hit = e.getPos().y >= ctrl->getPos().y &&
+							   (gsize_t)e.getPos().y < ctrl->getPos().y + ctrl->getSize().height;
+					if(hit) {
+						ctrl->onClick();
+						break;
 					}
-					else {
-						hit = e.getPos().x >= fo->getPos().x &&
-							  (gsize_t)e.getPos().x < fo->getPos().x + fo->getSize().width &&
-							  e.getPos().y >= fo->getPos().y &&
-							  (gsize_t)e.getPos().y < fo->getPos().y + fo->getSize().height;
-					}
+				}
+			}
+			else {
+				for(auto it = begin(); it != end(); ++it) {
+					auto ctrl = std::static_pointer_cast<FileObject>(*it);
+					bool hit = e.getPos().x >= ctrl->getPos().x &&
+							   (gsize_t)e.getPos().x < ctrl->getPos().x + ctrl->getSize().width &&
+							   e.getPos().y >= ctrl->getPos().y &&
+							   (gsize_t)e.getPos().y < ctrl->getPos().y + ctrl->getSize().height;
 
 					if(hit) {
-						fo->onClick();
+						ctrl->onClick();
 						break;
 					}
 				}
@@ -177,8 +254,9 @@ public:
 		}
 	}
 
-private:
+	int _selected;
 	Mode _mode;
+	size_t _files;
 	std::string _path;
 	std::shared_ptr<PathBar> _pathbar;
 };

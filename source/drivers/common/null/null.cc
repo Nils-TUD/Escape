@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/ipc/device.h>
+#include <esc/ipc/clientdevice.h>
 #include <esc/proto/file.h>
 #include <sys/common.h>
 #include <stdio.h>
 
 using namespace esc;
 
-class NullDevice : public Device {
+class NullDevice : public ClientDevice<> {
 public:
 	explicit NullDevice(const char *name,mode_t mode)
-		: Device(name,mode,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_CLOSE) {
+		: ClientDevice<>(name,mode,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_SHFILE | DEV_CLOSE) {
 		set(MSG_FILE_READ,std::make_memfun(this,&NullDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&NullDevice::write));
 	}
@@ -39,7 +39,9 @@ public:
 	void write(IPCStream &is) {
 		/* skip the data-message */
 		FileWrite::Request r;
-		is >> r >> ReceiveData(NULL,0);
+		is >> r;
+		if(r.shmemoff == -1)
+			is >> ReceiveData(NULL,0);
 
 		/* write response and pretend that we've written everything */
 		is << FileWrite::Response::success(r.count) << Reply();

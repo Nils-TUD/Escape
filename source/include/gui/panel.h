@@ -119,6 +119,14 @@ namespace gui {
 		void add(std::shared_ptr<Control> c,Layout::pos_type pos = 0);
 
 		/**
+		 * @param idx the index (not the position in the layout!) of the control
+		 * @return the control at index <idx>
+		 */
+		std::shared_ptr<Control> get(size_t idx) {
+			return _controls[idx];
+		}
+
+		/**
 		 * @return the beginning of the control list
 		 */
 		iterator begin() {

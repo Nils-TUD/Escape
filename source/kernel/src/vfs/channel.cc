@@ -487,14 +487,27 @@ int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
 	if(res < 0)
 		return res;
 
-	/* read response */
-	ib.reset();
 	msgid_t mid = res;
-	res = chan->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
-	if(res < 0)
-		return res;
+	uint flags = getReceiveFlags();
+	while(1) {
+		/* read response */
+		ib.reset();
+		res = chan->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
+		if(res < 0) {
+			if(res == -EINTR || res == -EWOULDBLOCK) {
+				int cancelRes = cancel(pid,chan,mid);
+				if(cancelRes == esc::DevCancel::READY) {
+					/* if the result is already there, get it, but don't allow signals anymore
+					 * and force blocking */
+					flags = VFS_BLOCK;
+					continue;
+				}
+			}
+			return res;
+		}
+		break;
+	}
 
-	/* handle response */
 	esc::DevObtain::Response r;
 	ib >> r;
 	if(r.err < 0)
@@ -519,7 +532,10 @@ int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
 
 	/* open file for client */
 	{
-		uint flags = (ofile->getFlags() & ~O_ACCMODE) | r.perm;
+		/* TODO currently, we simply remove VFS_DEVICE here to allow drivers to delegate the fd from
+		 * createchan to the client and keep a copy for them. the drivers file has VFS_DEVICE set,
+		 * but with this, we remove it while it's passed to the client. */
+		uint flags = (ofile->getFlags() & ~(O_ACCMODE | VFS_DEVICE)) | r.perm;
 		res = VFS::openFileDesc(pid,flags,ofile->getNode(),ofile->getNodeNo(),ofile->getDev());
 	}
 

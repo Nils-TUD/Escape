@@ -165,13 +165,11 @@ int frmdir(int fd,const char *name) {
 }
 
 int pipe(int *readFd,int *writeFd) {
-	/* the permissions are read-write for both. we ensure that the first is for reading only and
-	 * the second for writing only in the pipe-driver. */
-	int fd = open("/dev/pipe",O_RDWR);
+	int fd = open("/dev/pipe",O_WRONLY);
 	if(fd < 0)
 		return fd;
 	*writeFd = fd;
-	*readFd = creatsibl(fd,0);
+	*readFd = obtain(fd,0);
 	if(*readFd < 0) {
 		close(fd);
 		errno = *readFd;

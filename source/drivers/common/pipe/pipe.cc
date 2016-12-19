@@ -188,9 +188,9 @@ class PipeDevice : public esc::ClientDevice<PipeClient> {
 public:
 	explicit PipeDevice(const char *path,mode_t mode)
 		: esc::ClientDevice<PipeClient>(path,mode,DEV_TYPE_CHAR,
-			DEV_CREATSIBL | DEV_SHFILE | DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
+			DEV_OBTAIN | DEV_SHFILE | DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&PipeDevice::cancel));
-		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&PipeDevice::creatsibl));
+		set(MSG_DEV_OBTAIN,std::make_memfun(this,&PipeDevice::obtain));
 		set(MSG_FILE_READ,std::make_memfun(this,&PipeDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&PipeDevice::write));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&PipeDevice::close));
@@ -220,21 +220,24 @@ public:
 		is << esc::DevCancel::Response(res) << esc::Reply();
 	}
 
-	void creatsibl(esc::IPCStream &is) {
+	void obtain(esc::IPCStream &is) {
 		PipeClient *c = (*this)[is.fd()];
-		esc::DevCreatSibl::Request r;
+		esc::DevObtain::Request r;
 		is >> r;
 
 		int res = 0;
 		if(c->flags != PipeClient::FL_WRITE)
 			res = -EINVAL;
 		else {
-			PipeClient *nc = new PipeClient(r.nfd,PipeClient::FL_READ);
-			nc->partner = c;
-			c->partner = nc;
-			add(r.nfd,nc);
+			res = createchan(id(),O_RDONLY);
+			if(res >= 0) {
+				PipeClient *nc = new PipeClient(res,PipeClient::FL_READ);
+				nc->partner = c;
+				c->partner = nc;
+				add(res,nc);
+			}
 		}
-		is << esc::DevCreatSibl::Response(res) << esc::Reply();
+		is << esc::DevObtain::Response::result(res,O_RDONLY) << esc::Reply();
 	}
 
 	void read(esc::IPCStream &is) {

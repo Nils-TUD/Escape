@@ -32,11 +32,11 @@
 class UIMngDevice : public esc::ClientDevice<UIClient> {
 public:
 	explicit UIMngDevice(const char *name,mode_t mode,std::mutex &mutex)
-		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_CREATSIBL | DEV_DELEGATE | DEV_CLOSE),
+		: ClientDevice(name,mode,DEV_TYPE_SERVICE,DEV_OPEN | DEV_OBTAIN | DEV_DELEGATE | DEV_CLOSE),
 		  _mutex(mutex) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&UIMngDevice::open));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&UIMngDevice::close),false);
-		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&UIMngDevice::creatsibl));
+		set(MSG_DEV_OBTAIN,std::make_memfun(this,&UIMngDevice::obtain));
 		set(MSG_DEV_DELEGATE,std::make_memfun(this,&UIMngDevice::delegate));
 		set(MSG_UIM_GETKEYMAP,std::make_memfun(this,&UIMngDevice::getKeymap));
 		set(MSG_UIM_SETKEYMAP,std::make_memfun(this,&UIMngDevice::setKeymap));
@@ -59,20 +59,23 @@ public:
 		esc::ClientDevice<UIClient>::close(is);
 	}
 
-	void creatsibl(esc::IPCStream &is) {
+	void obtain(esc::IPCStream &is) {
 		UIClient *c = get(is.fd());
-		esc::DevCreatSibl::Request r;
+		esc::DevObtain::Request r;
 		is >> r;
 
 		std::lock_guard<std::mutex> guard(_mutex);
-		c->attach(r.nfd);
+		int nfd = createchan(id(),O_MSGS);
+		if(nfd < 0)
+			VTHROW("createchan() failed");
+		c->attach(nfd);
 
 		/* update header */
 		gsize_t width,height;
 		if(Header::update(c,&width,&height))
 			c->screen()->update(0,0,width,height);
 
-		is << esc::DevCreatSibl::Response(0) << esc::Reply();
+		is << esc::DevObtain::Response::success(nfd,O_MSGS) << esc::Reply();
 	}
 
 	void getKeymap(esc::IPCStream &is) {

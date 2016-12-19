@@ -149,21 +149,21 @@ int StreamSocket::listen() {
 	return 0;
 }
 
-int StreamSocket::accept(msgid_t mid,int nfd,esc::ClientDevice<Socket> *dev) {
+int StreamSocket::accept(msgid_t mid,int devfd,esc::ClientDevice<Socket> *dev) {
 	if(_state != STATE_LISTEN)
 		return -EINVAL;
 
 	SynPacket syn;
 	CircularBuf::seq_type seqNo;
 	if(_rxCircle.pullctrl(&syn,sizeof(syn),&seqNo))
-		return forkSocket(nfd,mid,dev,syn,seqNo);
+		return forkSocket(devfd,mid,dev,syn,seqNo);
 
 	if(_pending.count > 0)
 		return -EAGAIN;
 	_pending.count = 1;
 	_pending.mid = mid;
 	_pending.d.accept.fd = fd();
-	_pending.d.accept.nfd = nfd;
+	_pending.d.accept.devfd = devfd;
 	_pending.d.accept.dev = dev;
 	return 0;
 }
@@ -429,7 +429,7 @@ void StreamSocket::push(const esc::Socket::Addr &,const Packet &pkt,size_t) {
 				syn.src.d.ipv4.port = be16tocpu(tcp->srcPort);
 				// is there already a pending accept?
 				if(_pending.count > 0 && (_pending.mid & 0xFFFF) == MSG_DEV_CREATSIBL) {
-					forkSocket(_pending.d.accept.nfd,_pending.mid,_pending.d.accept.dev,syn,seqNo);
+					forkSocket(_pending.d.accept.devfd,_pending.mid,_pending.d.accept.dev,syn,seqNo);
 					_pending.count = 0;
 				}
 				else {
@@ -470,7 +470,7 @@ void StreamSocket::push(const esc::Socket::Addr &,const Packet &pkt,size_t) {
 				assert(_pending.count > 0);
 				ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 				esc::IPCStream is(_pending.d.accept.fd,buffer,sizeof(buffer),_pending.mid);
-				is << esc::DevCreatSibl::Response(0) << esc::Reply();
+				is << esc::DevObtain::Response::success(fd(),O_RDWRMSG) << esc::Reply();
 				_pending.count = 0;
 				state(STATE_ESTABLISHED);
 			}
@@ -635,8 +635,12 @@ void StreamSocket::sendData(bool resend) {
 	}
 }
 
-int StreamSocket::forkSocket(int nfd,msgid_t mid,esc::ClientDevice<Socket> *dev,SynPacket &syn,
+int StreamSocket::forkSocket(int devfd,msgid_t mid,esc::ClientDevice<Socket> *dev,SynPacket &syn,
 		CircularBuf::seq_type seqNo) {
+	int nfd = createchan(devfd,O_RDWRMSG);
+	if(nfd < 0)
+		return nfd;
+
 	StreamSocket *s = new StreamSocket(nfd,esc::Socket::PROTO_TCP);
 	s->_mss = syn.mss;
 	s->_remoteAddr = syn.src;
@@ -656,7 +660,7 @@ int StreamSocket::forkSocket(int nfd,msgid_t mid,esc::ClientDevice<Socket> *dev,
 	s->_pending.count = 1;
 	s->_pending.mid = mid;
 	s->_pending.d.accept.fd = fd();
-	s->_pending.d.accept.nfd = nfd;
+	s->_pending.d.accept.devfd = -1; /* not used */
 	s->_pending.d.accept.dev = dev;
 	return 0;
 }

@@ -94,7 +94,7 @@ public:
 	virtual int connect(const esc::Socket::Addr *sa,msgid_t mid);
 	virtual int bind(const esc::Socket::Addr *sa);
 	virtual int listen();
-	virtual int accept(msgid_t mid,int nfd,esc::ClientDevice<Socket> *dev);
+	virtual int accept(msgid_t mid,int devfd,esc::ClientDevice<Socket> *dev);
 	virtual ssize_t sendto(msgid_t mid,const esc::Socket::Addr *sa,const void *buffer,size_t size);
 	virtual ssize_t recvfrom(msgid_t mid,bool needsSockAddr,void *buffer,size_t size);
 	virtual void push(const esc::Socket::Addr &sa,const Packet &pkt,size_t offset);
@@ -141,7 +141,7 @@ private:
 	void sendData(bool resend);
 	void timeout();
 
-	int forkSocket(int nfd,msgid_t mid,esc::ClientDevice<Socket> *dev,SynPacket &syn,
+	int forkSocket(int devfd,msgid_t mid,esc::ClientDevice<Socket> *dev,SynPacket &syn,
 		CircularBuf::seq_type seqNo);
 	bool replyRead(msgid_t mid,bool needsSrc,void *buffer,size_t size);
 	template<typename T>

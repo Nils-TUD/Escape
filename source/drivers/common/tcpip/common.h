@@ -63,7 +63,7 @@ struct PendingRequest {
 		} write;
 		struct {
 			int fd;
-			int nfd;
+			int devfd;
 			esc::ClientDevice<Socket> *dev;
 		} accept;
 	} d;

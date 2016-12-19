@@ -164,9 +164,9 @@ public:
 	 * @param ui the UI-connection
 	 * @throws if the open failed
 	 */
-	explicit UIEvents(UI &ui) : _is(creatsibl(ui.fd(),0)) {
+	explicit UIEvents(UI &ui) : _is(obtain(ui.fd(),0)) {
 		if(_is.fd() < 0)
-			VTHROWE("creatsibl(" << ui.fd() << ",0)",_is.fd());
+			VTHROWE("obtain(" << ui.fd() << ",0)",_is.fd());
 	}
 
 	/**

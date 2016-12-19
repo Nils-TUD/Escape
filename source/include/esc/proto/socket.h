@@ -196,7 +196,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	Socket accept() {
-		int nfd = creatsibl(_is.fd(),0);
+		int nfd = obtain(_is.fd(),0);
 		if(nfd < 0)
 			VTHROWE("accept()",nfd);
 		return Socket(nfd);

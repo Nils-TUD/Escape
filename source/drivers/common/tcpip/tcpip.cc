@@ -58,7 +58,7 @@ public:
 		set(MSG_FILE_WRITE,std::make_memfun(this,&SocketDevice::write));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&SocketDevice::close),false);
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&SocketDevice::cancel));
-		set(MSG_DEV_CREATSIBL,std::make_memfun(this,&SocketDevice::creatsibl));
+		set(MSG_DEV_OBTAIN,std::make_memfun(this,&SocketDevice::obtain));
 		set(MSG_SOCK_CONNECT,std::make_memfun(this,&SocketDevice::connect));
 		set(MSG_SOCK_BIND,std::make_memfun(this,&SocketDevice::bind));
 		set(MSG_SOCK_LISTEN,std::make_memfun(this,&SocketDevice::listen));
@@ -158,18 +158,18 @@ public:
 		is << esc::DevCancel::Response(res) << esc::Reply();
 	}
 
-	void creatsibl(esc::IPCStream &is) {
+	void obtain(esc::IPCStream &is) {
 		Socket *sock = get(is.fd());
-		esc::DevCreatSibl::Request r;
+		esc::DevObtain::Request r;
 		is >> r;
 
 		errcode_t res;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			res = sock->accept(is.msgid(),r.nfd,this);
+			res = sock->accept(is.msgid(),id(),this);
 		}
 		if(res < 0)
-			is << esc::DevCreatSibl::Response(res) << esc::Reply();
+			is << esc::DevObtain::Response::error(res) << esc::Reply();
 	}
 
 	void read(esc::IPCStream &is) {

@@ -158,6 +158,9 @@ struct DevObtain {
 		static Response error(errcode_t err) {
 			return Response(0,0,err);
 		}
+		static Response result(int res,uint perm) {
+			return Response(res,perm,res < 0 ? res : 0);
+		}
 
 		int fd;
 		uint perm;

@@ -31,40 +31,29 @@ using namespace esc;
 static char buffer[8192];
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " <file> <port>\n";
+	serr << "Usage: " << name << " <port>\n";
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv) || argc != 3)
+	if(isHelpCmd(argc,argv) || argc != 2)
 		usage(argv[0]);
-
-	FStream file(argv[1],"w");
-	if(!file)
-		exitmsg("Unable to open '" << argv[1] << "' for writing");
 
 	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
 	esc::Socket::Addr addr;
 	addr.family = esc::Socket::AF_INET;
 	addr.d.ipv4.addr = 0;
-	addr.d.ipv4.port = atoi(argv[2]);
+	addr.d.ipv4.port = atoi(argv[1]);
 	sock.bind(addr);
 	sock.listen();
 
 	Socket client = sock.accept();
 
-	uint32_t total;
-	client.receive(&total,sizeof(total));
-
-	sout << "Reading " << total << " bytes from client...\n";
-	sout.flush();
-
 	ssize_t res;
-	while(total > 0 && (res = client.receive(buffer,sizeof(buffer))) > 0) {
-		if(file.write(buffer,res) != (size_t)res)
-			exitmsg("fwrite failed");
-		total -= res;
+	while((res = client.receive(buffer,sizeof(buffer))) > 0) {
+		if(write(STDOUT_FILENO,buffer,res) < 0)
+			exitmsg("write failed");
 	}
 	return 0;
 }

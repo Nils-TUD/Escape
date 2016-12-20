@@ -32,12 +32,12 @@ using namespace esc;
 static char buffer[8192];
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " <file> <ip> <port>\n";
+	serr << "Usage: " << name << " <ip> <port>\n";
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv) || argc != 4)
+	if(isHelpCmd(argc,argv) || argc != 3)
 		usage(argv[0]);
 
 	esc::Socket::Addr addr;
@@ -45,24 +45,16 @@ int main(int argc,char **argv) {
 	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
 	esc::Net::IPv4Addr ip;
-	esc::IStringStream is(argv[2]);
+	esc::IStringStream is(argv[1]);
 	is >> ip;
 
 	addr.d.ipv4.addr = ip.value();
-	addr.d.ipv4.port = atoi(argv[3]);
+	addr.d.ipv4.port = atoi(argv[2]);
 	sock.connect(addr);
-
-	FStream file(argv[1],"r");
-	if(!file)
-		exitmsg("Unable to open '" << argv[1] << "' for reading");
-
-	/* send size first */
-	uint32_t size = filesize(file.fd());
-	sock.send(&size,sizeof(size));
 
 	/* send file */
 	ssize_t res;
-	while((res = file.read(buffer,sizeof(buffer))) > 0)
+	while((res = read(STDIN_FILENO,buffer,sizeof(buffer))) > 0)
 		sock.send(buffer,res);
 	return 0;
 }

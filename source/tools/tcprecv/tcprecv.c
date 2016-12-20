@@ -31,17 +31,13 @@
 static char buffer[512];
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <file> <port>\n",name);
+	fprintf(stderr,"Usage: %s <port>\n",name);
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	if(argc != 3)
+	if(argc != 2)
 		usage(argv[0]);
-
-	FILE *file = fopen(argv[1],"w");
-	if(!file)
-		error(EXIT_FAILURE,errno,"Unable to open '%s' for writing",argv[1]);
 
 	struct sockaddr_in stSockAddr;
 	int sock = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
@@ -50,7 +46,7 @@ int main(int argc,char **argv) {
 
 	memset(&stSockAddr,0,sizeof(stSockAddr));
 	stSockAddr.sin_family = AF_INET;
-	stSockAddr.sin_port = htons(atoi(argv[2]));
+	stSockAddr.sin_port = htons(atoi(argv[1]));
 	stSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	if(bind(sock,(struct sockaddr*)&stSockAddr,sizeof(stSockAddr)) == -1)
 		error(EXIT_FAILURE,errno,"bind failed");
@@ -62,17 +58,10 @@ int main(int argc,char **argv) {
 	if(cfd < 0)
 		error(EXIT_FAILURE,errno,"accept failed");
 
-	uint32_t total;
-	if(read(cfd,&total,sizeof(total)) != sizeof(total))
-		error(EXIT_FAILURE,errno,"Unable to read file length");
-
-	printf("Reading %u bytes from client...\n",total);
-
 	ssize_t res;
-	while(total > 0 && (res = read(cfd,buffer,sizeof(buffer))) > 0) {
-		if(fwrite(buffer,1,res,file) != (size_t)res)
-			error(EXIT_FAILURE,errno,"fwrite failed");
-		total -= res;
+	while((res = read(cfd,buffer,sizeof(buffer))) > 0) {
+		if(write(STDOUT_FILENO,buffer,res) == -1)
+			error(EXIT_FAILURE,errno,"write failed");
 	}
 	if(res < 0)
 		error(EXIT_FAILURE,errno,"read failed");

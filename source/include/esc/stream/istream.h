@@ -223,9 +223,10 @@ public:
 	 */
 	IStream &ignore_ws() {
 		char c = read();
-		while(isspace(c))
+		while(good() && isspace(c))
 			c = read();
-		putback(c);
+		if(good())
+			putback(c);
 		return *this;
 	}
 

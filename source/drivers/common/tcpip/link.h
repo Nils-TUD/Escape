@@ -37,7 +37,7 @@ public:
 		if(_buffer == NULL)
 			throw esc::default_error("Not enough memory for buffer",-ENOMEM);
 	}
-	virtual ~Link();
+	~Link();
 
 	const std::string &name() const {
 		return _name;

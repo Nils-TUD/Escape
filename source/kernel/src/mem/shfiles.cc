@@ -70,6 +70,19 @@ bool ShFiles::get(OpenFile *f,uintptr_t *addr,pid_t *pid) {
 	return false;
 }
 
+uintptr_t ShFiles::getFor(OpenFile *f,pid_t pid) {
+	FileId fid(f->getDev(),f->getNodeNo());
+	LockGuard<SpinLock> g(&lock);
+	FileNode *fn = tree.find(fid);
+	if(fn) {
+		for(auto u = fn->usages.begin(); u != fn->usages.end(); ++u) {
+			if(u->pid == pid)
+				return u->addr;
+		}
+	}
+	return 0;
+}
+
 void ShFiles::remove(VMRegion *vmreg) {
 	if(vmreg->fileuse != NULL) {
 		OpenFile *f = vmreg->reg->getFile();

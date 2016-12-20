@@ -34,7 +34,7 @@
 #endif
 
 Link::~Link() {
-	destroybuf(_buffer,_bufname);
+	destroybuf(_buffer,_buffd);
 	Route::removeAll(shared_from_this());
 }
 

@@ -53,7 +53,7 @@ private:
 	void printSize(size_t size);
 
 	size_t _bufsize;
-	ulong _shmname;
+	int _shmfd;
 	void *_shm;
 	uint _flags;
 	uint _cols;

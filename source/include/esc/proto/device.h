@@ -58,38 +58,6 @@ struct DevCancel {
 };
 
 /**
- * The MSG_DEV_SHFILE command that is sent by the kernel to devices if shfile() was called on them.
- */
-struct DevShFile {
-	static const msgid_t MSG = MSG_DEV_SHFILE;
-
-	struct Request {
-		explicit Request() {
-		}
-		explicit Request(char *buffer,size_t _size) : path(buffer,_size) {
-		}
-		explicit Request(size_t _size,const CString &_path)
-			: size(_size), path(_path) {
-		}
-
-		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.size << r.path;
-		}
-		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.size << r.path;
-		}
-		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.size >> r.path;
-		}
-
-		size_t size;
-		CString path;
-	};
-
-	typedef ErrorResponse Response;
-};
-
-/**
  * The MSG_DEV_DELEGATE command that is sent by the kernel to devices if delegate() was called
  * on them.
  */

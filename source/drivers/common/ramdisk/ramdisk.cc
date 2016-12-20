@@ -30,7 +30,7 @@ class RamDiskDevice : public ClientDevice<> {
 public:
 	explicit RamDiskDevice(const char *name,mode_t mode,size_t disksize,char *diskaddr)
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,
-			DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_SIZE | DEV_CLOSE),
+			DEV_OPEN | DEV_DELEGATE | DEV_READ | DEV_WRITE | DEV_SIZE | DEV_CLOSE),
 		  _disksize(disksize), _diskaddr(diskaddr) {
 		set(MSG_FILE_READ,std::make_memfun(this,&RamDiskDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&RamDiskDevice::write));

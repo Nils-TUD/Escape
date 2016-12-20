@@ -32,7 +32,7 @@ static char zeros[BUF_SIZE];
 class ZeroDevice : public ClientDevice<> {
 public:
 	explicit ZeroDevice(const char *name,mode_t mode)
-		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
+		: ClientDevice(name,mode,DEV_TYPE_BLOCK,DEV_OPEN | DEV_DELEGATE | DEV_READ | DEV_CLOSE) {
 		set(MSG_FILE_READ,std::make_memfun(this,&ZeroDevice::read));
 	}
 

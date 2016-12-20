@@ -45,7 +45,7 @@ template<class F>
 class FSDevice : public esc::ClientDevice<F> {
 public:
 	explicit FSDevice(FileSystem<F> *fs,const char *fsDev)
-		: esc::ClientDevice<F>(fsDev,0700,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE),
+		: esc::ClientDevice<F>(fsDev,0700,DEV_TYPE_FS,DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_DELEGATE),
 		  _fs(fs), _clients(0) {
 		this->set(MSG_FILE_OPEN,std::make_memfun(this,&FSDevice::devopen));
 		this->set(MSG_FILE_CLOSE,std::make_memfun(this,&FSDevice::devclose),false);

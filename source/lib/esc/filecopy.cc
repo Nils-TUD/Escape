@@ -30,18 +30,11 @@
 namespace esc {
 
 FileCopy::FileCopy(size_t bufsize,uint fl)
-		: _bufsize(bufsize), _shmname(), _shm(), _flags(fl), _cols() {
+		: _bufsize(bufsize), _shmfd(), _shm(), _flags(fl), _cols() {
 	/* create shm file */
-	int fd = pshm_create(O_RDWR,0666,&_shmname);
-	if(fd < 0)
-		throw esc::default_error("pshm_create");
-	/* mmap it */
-	_shm = mmap(NULL,_bufsize,0,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0);
-	close(fd);
-	if(!_shm) {
-		pshm_unlink(_shmname);
-		throw esc::default_error("mmap");
-	}
+	_shmfd = createbuf(_bufsize,&_shm,0);
+	if(_shmfd < 0)
+		throw esc::default_error("createbuf");
 
 	/* get vterm-size, if we should show a progress bar */
 	if(_flags & FL_PROGRESS) {
@@ -51,8 +44,7 @@ FileCopy::FileCopy(size_t bufsize,uint fl)
 }
 
 FileCopy::~FileCopy() {
-	pshm_unlink(_shmname);
-	munmap(_shm);
+	destroybuf(_shm,_shmfd);
 }
 
 void FileCopy::printSize(size_t size) {
@@ -110,8 +102,8 @@ bool FileCopy::copyFile(const char *src,const char *dest,bool remove) {
 	}
 
 	/* we don't care whether that is supported or not */
-	if(sharefile(infd,_shm) < 0) {}
-	if(sharefile(outfd,_shm) < 0) {}
+	if(delegate(infd,_shmfd,O_WRONLY,DEL_ARG_SHFILE) < 0) {}
+	if(delegate(outfd,_shmfd,O_RDONLY,DEL_ARG_SHFILE) < 0) {}
 
 	ssize_t res;
 	bool success = true;

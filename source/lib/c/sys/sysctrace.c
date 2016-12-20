@@ -114,15 +114,14 @@ const struct Syscall syscalls[] = {
 	{"semop",			"%d,%d"						},
 	{"semdestr",		"%d"						},
 	{"sendrecv",		"%d,%p,%p,%x"				},
-	{"sharefile",		"%d,%p"						},
 	{"cancel",			"%d,%u"						},
 	{"createchan",		"%d,%O"						},
 	{"delegate",        "%d,%d,%O,%d",				},
 	{"obtain",          "%d,%d",					},
 	{"sysconfstr",		"%d,%p,%x"					},
+	{"clonems",			""							},
 
 	/* 70 */
-	{"clonems",			""							},
 	{"joinms",			"%d"						},
 	{"mlock",			"%p,%x"						},
 	{"mlockall",		""							},
@@ -133,9 +132,9 @@ const struct Syscall syscalls[] = {
 	{"utime",			"%d,%p"						},
 	{"truncate",		"%d,%u"						},
 
-	/* 80 */
 #if defined(__x86__)
 	{"reqports",   		"%d,%d"						},
+	/* 80 */
 	{"relports",    	"%d,%d"						},
 #else
 	{"debug",    		""							},
@@ -154,7 +153,6 @@ static const char *fileMsgs[] = {
 	"FILE_WRITE",
 	"FILE_SIZE",
 	"FILE_CLOSE",
-	"DEV_SHFILE",
 	"DEV_CANCEL",
 	"DEV_DELEGATE",
 	"DEV_OBTAIN",
@@ -339,7 +337,6 @@ static const struct Flag devOps[] = {
 	{DEV_READ,		"READ"},
 	{DEV_WRITE,		"WRITE"},
 	{DEV_CLOSE,		"CLOSE"},
-	{DEV_SHFILE,	"SHFILE"},
 	{DEV_CANCEL,	"CANCEL"},
 	{DEV_CANCELSIG,	"CANCELSIG"},
 	{DEV_DELEGATE,	"DELEGATE"},

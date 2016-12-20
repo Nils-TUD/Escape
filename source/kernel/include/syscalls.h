@@ -96,7 +96,6 @@ private:
 	static int receive(Thread *t,IntrptStackFrame *stack);
 	static int sendrecv(Thread *t,IntrptStackFrame *stack);
 	static int cancel(Thread *t,IntrptStackFrame *stack);
-	static int sharefile(Thread *t,IntrptStackFrame *stack);
 	static int delegate(Thread *t,IntrptStackFrame *stack);
 	static int obtain(Thread *t,IntrptStackFrame *stack);
 	static int fstat(Thread *t,IntrptStackFrame *stack);

@@ -76,17 +76,16 @@ class DiskDevice : public ClientDevice<> {
 public:
 	explicit DiskDevice(const char *name,mode_t mode)
 		: ClientDevice(name,mode,
-			DEV_TYPE_BLOCK,DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_SIZE) {
-		set(MSG_DEV_SHFILE,std::make_memfun(this,&DiskDevice::shfile));
+			DEV_TYPE_BLOCK,DEV_OPEN | DEV_DELEGATE | DEV_READ | DEV_WRITE | DEV_SIZE) {
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&DiskDevice::delegate));
 		set(MSG_FILE_READ,std::make_memfun(this,&DiskDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&DiskDevice::write));
 		set(MSG_FILE_SIZE,std::make_memfun(this,&DiskDevice::size));
 	}
 
-	void shfile(IPCStream &is) {
-		char path[MAX_PATH_LEN];
+	void delegate(IPCStream &is) {
 		Client *c = (*this)[is.fd()];
-		DevShFile::Request r(path,sizeof(path));
+		DevDelegate::Request r;
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
@@ -94,8 +93,10 @@ public:
 		 * we populate it immediately and lock it into memory. additionally, we specify
 		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
 		 * to swap (which would cause a deadlock, because we're doing that). */
-		int res = joinshm(c,path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
-		is << DevShFile::Response(res) << Reply();
+		int res = -EINVAL;
+		if(r.arg == DEL_ARG_SHFILE)
+			res = joinshm(c,r.nfd,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
+		is << DevDelegate::Response(res) << Reply();
 	}
 
 	void read(IPCStream &is) {

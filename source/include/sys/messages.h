@@ -28,10 +28,9 @@ enum {
 	MSG_FILE_CLOSE					= 54,
 
 	/* special device messages */
-	MSG_DEV_SHFILE					= 55,
-	MSG_DEV_CANCEL					= 56,
-	MSG_DEV_DELEGATE				= 58,
-	MSG_DEV_OBTAIN					= 59,
+	MSG_DEV_CANCEL					= 55,
+	MSG_DEV_DELEGATE				= 56,
+	MSG_DEV_OBTAIN					= 57,
 
 	/* requests to fs */
 	MSG_FS_OPEN						= 100,

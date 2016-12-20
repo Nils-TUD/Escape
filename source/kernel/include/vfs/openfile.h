@@ -382,17 +382,6 @@ public:
 	int cancel(pid_t pid,msgid_t mid);
 
 	/**
-	 * Shares a file with the device that hosts this channel.
-	 *
-	 * @param pid the process-id
-	 * @param path the path to the file
-	 * @param cliaddr the address where the client of this channel has mapped it
-	 * @param size the size of the mmap'd file
-	 * @return 0 on success
-	 */
-	int sharefile(pid_t pid,const char *path,void *cliaddr,size_t size);
-
-	/**
 	 * Delegates <file> to the driver over this channel.
 	 *
 	 * @param pid the process-id

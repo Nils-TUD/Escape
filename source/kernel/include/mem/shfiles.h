@@ -54,6 +54,7 @@ class ShFiles {
 public:
 	static int add(VMRegion *vmreg,pid_t pid);
 	static bool get(OpenFile *f,uintptr_t *addr,pid_t *pid);
+	static uintptr_t getFor(OpenFile *f,pid_t pid);
 	static void remove(VMRegion *vmreg);
 
 	static esc::Treap<FileNode> tree;

@@ -66,10 +66,10 @@ class ATAPartitionDevice : public ClientDevice<> {
 public:
 	explicit ATAPartitionDevice(uint dev,uint part,const char *name,mode_t mode)
 		: ClientDevice(name,mode,DEV_TYPE_BLOCK,
-			DEV_OPEN | DEV_SHFILE | DEV_READ | DEV_WRITE | DEV_SIZE | DEV_CLOSE),
+			DEV_OPEN | DEV_DELEGATE | DEV_READ | DEV_WRITE | DEV_SIZE | DEV_CLOSE),
 		  _ataDev(ctrl_getDevice(dev)),
 		  _part(_ataDev ? _ataDev->partTable + part : NULL) {
-		set(MSG_DEV_SHFILE,std::make_memfun(this,&ATAPartitionDevice::shfile));
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&ATAPartitionDevice::delegate));
 		set(MSG_FILE_READ,std::make_memfun(this,&ATAPartitionDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&ATAPartitionDevice::write));
 		set(MSG_FILE_SIZE,std::make_memfun(this,&ATAPartitionDevice::size));
@@ -78,10 +78,9 @@ public:
 			VTHROW("Invalid device/partition (dev=" << dev << ",part=" << part << ")");
 	}
 
-	void shfile(IPCStream &is) {
-		char path[MAX_PATH_LEN];
+	void delegate(IPCStream &is) {
 		Client *c = (*this)[is.fd()];
-		DevShFile::Request r(path,sizeof(path));
+		DevDelegate::Request r;
 		is >> r;
 		assert(c->shm() == NULL && !is.error());
 
@@ -89,8 +88,10 @@ public:
 		 * we populate it immediately and lock it into memory. additionally, we specify
 		 * MAP_NOSWAP to let it fail if there is not enough memory instead of starting
 		 * to swap (which would cause a deadlock, because we're doing that). */
-		int res = joinshm(c,path,r.size,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
-		is << DevShFile::Response(res) << Reply();
+		int res = -EINVAL;
+		if(r.arg == DEL_ARG_SHFILE)
+			res = joinshm(c,r.nfd,MAP_POPULATE | MAP_NOSWAP | MAP_LOCKED);
+		is << DevDelegate::Response(res) << Reply();
 	}
 
 	void read(IPCStream &is) {

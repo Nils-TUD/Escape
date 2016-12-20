@@ -230,17 +230,6 @@ public:
 	size_t getMemUsage(size_t *pages) const;
 
 	/**
-	 * Requests the information we need to share the file that is mapped at <addr>. That is, the
-	 * path of the file and the size of the region.
-	 *
-	 * @param addr the address of the region
-	 * @param path the path to write to
-	 * @param size the size of <path>
-	 * @return the size on success
-	 */
-	ssize_t getShareInfo(uintptr_t addr,char *path,size_t size);
-
-	/**
 	 * Gets the region at given address
 	 *
 	 * @param addr the address

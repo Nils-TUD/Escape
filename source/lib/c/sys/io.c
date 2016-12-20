@@ -178,44 +178,43 @@ int pipe(int *readFd,int *writeFd) {
 	return 0;
 }
 
-int sharebuf(int dev,size_t size,void **mem,ulong *name,int flags) {
+int createbuf(size_t size,void **mem,int flags) {
 	/* create shm file */
 	*mem = NULL;
-	int fd = pshm_create(O_RDWR,0666,name);
+	int fd = opentmp();
 	if(fd < 0)
 		return fd;
 
+	int res;
+	if((res = ftruncate(fd,size)) < 0)
+		return res;
+
 	/* mmap it */
-	void *addr = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
+	void *addr = mmap(NULL,size,size,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
 	if(!addr) {
-		int res = errno;
-		pshm_unlink(*name);
+		res = errno;
 		close(fd);
 		errno = res;
 		return res;
 	}
 
-	/* share it with device; if it doesn't work, we don't care here */
-	int res = sharefile(dev,addr);
 	*mem = addr;
-	close(fd);
-	errno = res;
-	return res;
+	return fd;
 }
 
-void *joinbuf(const char *path,size_t size,int flags) {
-	int fd = open(path,O_RDWR);
+int sharebuf(int dev,size_t size,void **mem,int flags) {
+	int fd = createbuf(size,mem,flags);
 	if(fd < 0)
-		return NULL;
-	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
-	/* keep errno of mmap */
-	int error = errno;
-	close(fd);
-	errno = error;
-	return res;
+		return fd;
+
+	/* share it with device; if it doesn't work, we don't care here */
+	int res = delegate(dev,fd,O_RDWR,DEL_ARG_SHFILE);
+	if(res < 0)
+		return res;
+	return fd;
 }
 
-void destroybuf(void *mem,ulong name) {
-	pshm_unlink(name);
+void destroybuf(void *mem,int fd) {
 	munmap(mem);
+	close(fd);
 }

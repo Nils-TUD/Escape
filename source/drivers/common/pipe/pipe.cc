@@ -188,7 +188,7 @@ class PipeDevice : public esc::ClientDevice<PipeClient> {
 public:
 	explicit PipeDevice(const char *path,mode_t mode)
 		: esc::ClientDevice<PipeClient>(path,mode,DEV_TYPE_CHAR,
-			DEV_OBTAIN | DEV_SHFILE | DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
+			DEV_OBTAIN | DEV_DELEGATE | DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE) {
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&PipeDevice::cancel));
 		set(MSG_DEV_OBTAIN,std::make_memfun(this,&PipeDevice::obtain));
 		set(MSG_FILE_READ,std::make_memfun(this,&PipeDevice::read));

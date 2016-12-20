@@ -69,7 +69,7 @@ class HTTPDevice : public ClientDevice<HTTPClient> {
 public:
 	explicit HTTPDevice(const char *name,mode_t mode)
 		: ClientDevice(name,mode,DEV_TYPE_CHAR,
-			DEV_OPEN | DEV_CANCELSIG | DEV_SIZE | DEV_SHFILE | DEV_READ | DEV_CLOSE) {
+			DEV_OPEN | DEV_CANCELSIG | DEV_SIZE | DEV_DELEGATE | DEV_READ | DEV_CLOSE) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&HTTPDevice::open));
 		set(MSG_FILE_SIZE,std::make_memfun(this,&HTTPDevice::filesize));
 		set(MSG_FILE_READ,std::make_memfun(this,&HTTPDevice::read));

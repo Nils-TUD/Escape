@@ -101,9 +101,9 @@ int main(int argc,const char *argv[]) {
 			error("Unable to open '%s'",args[0]);
 	}
 
-	ulong shname;
+	int shmfd;
 	uchar *shmem;
-	if(sharebuf(fileno(in),BUF_SIZE,(void**)&shmem,&shname,0) < 0) {
+	if((shmfd = sharebuf(fileno(in),BUF_SIZE,(void**)&shmem,0)) < 0) {
 		if(shmem == NULL)
 			error("Unable to mmap buffer");
 	}
@@ -150,7 +150,7 @@ int main(int argc,const char *argv[]) {
 
 	printAscii(base,i);
 
-	destroybuf(shmem,shname);
+	destroybuf(shmem,shmfd);
 	if(args[0])
 		fclose(in);
 	return EXIT_SUCCESS;

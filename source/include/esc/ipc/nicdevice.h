@@ -83,7 +83,7 @@ class NICDevice : public ClientDevice<> {
 
 public:
 	explicit NICDevice(const char *path,mode_t mode,NICDriver *driver)
-		: ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_SHFILE | DEV_READ | DEV_WRITE),
+		: ClientDevice<>(path,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_DELEGATE | DEV_READ | DEV_WRITE),
 		  _requests(std::make_memfun(this,&NICDevice::handleRead)), _mutex(), _driver(driver),
 		  _tmpbuf(new char[_driver->mtu()]) {
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&NICDevice::cancel));

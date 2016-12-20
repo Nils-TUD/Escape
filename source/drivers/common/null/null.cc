@@ -27,7 +27,7 @@ using namespace esc;
 class NullDevice : public ClientDevice<> {
 public:
 	explicit NullDevice(const char *name,mode_t mode)
-		: ClientDevice<>(name,mode,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_SHFILE | DEV_CLOSE) {
+		: ClientDevice<>(name,mode,DEV_TYPE_BLOCK,DEV_READ | DEV_WRITE | DEV_DELEGATE | DEV_CLOSE) {
 		set(MSG_FILE_READ,std::make_memfun(this,&NullDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&NullDevice::write));
 	}

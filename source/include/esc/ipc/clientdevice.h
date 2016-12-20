@@ -35,17 +35,20 @@ namespace esc {
 
 class SharedMemory {
 public:
-	explicit SharedMemory() : addr(), ino(), dev() {
+	explicit SharedMemory() : addr(), size(), ino(), dev() {
 	}
-	explicit SharedMemory(char *_addr,ino_t _ino,dev_t _dev)
-		: addr(_addr), ino(_ino), dev(_dev) {
+	explicit SharedMemory(int _fd,char *_addr,size_t _size,ino_t _ino,dev_t _dev)
+		: fd(_fd), addr(_addr), size(_size), ino(_ino), dev(_dev) {
 	}
 	~SharedMemory() {
 		if(addr)
 			munmap(addr);
+		close(fd);
 	}
 
+	int fd;
 	char *addr;
+	size_t size;
 	ino_t ino;
 	dev_t dev;
 };
@@ -105,8 +108,8 @@ public:
 	explicit ClientDevice(const char *path,mode_t mode,uint type,uint ops)
 		: Device(path,mode,type,ops | DEV_OPEN), _clients(), _mutex() {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&ClientDevice::open));
-		if(ops & DEV_SHFILE)
-			set(MSG_DEV_SHFILE,std::make_memfun(this,&ClientDevice::shfile));
+		if(ops & DEV_DELEGATE)
+			set(MSG_DEV_DELEGATE,std::make_memfun(this,&ClientDevice::delegate));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&ClientDevice::close),false);
 	}
 	/**
@@ -182,14 +185,13 @@ public:
 	 * Joins client <c> to the given shared memory.
 	 *
 	 * @param c the client
-	 * @param path the file path
-	 * @param size the size of the memory
+	 * @param fd the file
 	 * @param flags the flags to use for joinbuf
 	 * @return 0 on success
 	 */
-	int joinshm(C *c,const char *path,size_t size,uint flags = 0) {
+	int joinshm(C *c,int fd,uint flags = 0) {
 		struct stat info;
-		int res = stat(path,&info);
+		int res = fstat(fd,&info);
 
 		if(res == 0) {
 			// check whether we already have this file. we can't map it twice
@@ -206,11 +208,12 @@ public:
 
 			// if not, map it
 			if(res == -ENOENT) {
-				void *addr = joinbuf(path,size,flags);
+				void *addr = mmap(NULL,info.st_size,0,PROT_READ | PROT_WRITE,MAP_SHARED | flags,fd,0);
 				if(!addr)
 					res = -errno;
 				else {
-					c->_shm.reset(new SharedMemory(reinterpret_cast<char*>(addr),info.st_ino,info.st_dev));
+					c->_shm.reset(new SharedMemory(
+						fd,reinterpret_cast<char*>(addr),info.st_size,info.st_ino,info.st_dev));
 					res = 0;
 				}
 			}
@@ -225,15 +228,17 @@ protected:
 		is << FileOpen::Response::success(0) << Reply();
 	}
 
-	void shfile(IPCStream &is) {
+	void delegate(IPCStream &is) {
 		C *c = get(is.fd());
-		char path[MAX_PATH_LEN];
-		DevShFile::Request r(path,sizeof(path));
+		DevDelegate::Request r;
 		is >> r;
 
-		assert(c->shm() == NULL && !is.error());
-		int res = joinshm(c,path,r.size,0);
-		is << DevShFile::Response(res) << Reply();
+		int res = -EINVAL;
+		if(r.arg == DEL_ARG_SHFILE) {
+			assert(c->shm() == NULL && !is.error());
+			res = joinshm(c,r.nfd,0);
+		}
+		is << DevDelegate::Response(res) << Reply();
 	}
 
 	void close(IPCStream &is) {

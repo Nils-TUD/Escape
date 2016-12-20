@@ -42,8 +42,8 @@ public:
 		_sock.send(buf,size);
 	}
 
-	int sharemem(void *mem,size_t size) {
-		return _sock.sharemem(mem,size);
+	int sharemem(int fd,void *mem,size_t size) {
+		return _sock.sharemem(fd,mem,size);
 	}
 
 	void abort() {

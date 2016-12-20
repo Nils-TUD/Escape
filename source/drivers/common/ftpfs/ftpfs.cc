@@ -67,8 +67,8 @@ struct OpenFTPFile : public OpenFile {
 		return count;
 	}
 
-	int sharemem(void *mem,size_t size) {
-		return file->sharemem(mem,size);
+	int sharemem(int fd,void *addr,size_t size) {
+		return file->sharemem(fd,addr,size);
 	}
 
 	static BlockFile *getFile(const CtrlConRef &ctrlRef,const std::string &path) {
@@ -175,20 +175,22 @@ class FTPFSDevice : public FSDevice<OpenFTPFile> {
 public:
 	explicit FTPFSDevice(FTPFileSystem *fs,const char *fsDev)
 		: FSDevice<OpenFTPFile>(fs,fsDev) {
-		set(MSG_DEV_SHFILE,std::make_memfun(this,&FTPFSDevice::shfile));
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&FTPFSDevice::delegate));
 	}
 
-	void shfile(IPCStream &is) {
-		char path[MAX_PATH_LEN];
-		DevShFile::Request r(path,sizeof(path));
+	void delegate(IPCStream &is) {
+		DevDelegate::Request r;
 		is >> r;
 
 		OpenFTPFile *file = (*this)[is.fd()];
 
-		int res = joinshm(file,path,r.size,0);
-		if(res == 0)
-			res = file->sharemem(file->sharedmem()->addr,r.size);
-		is << DevShFile::Response(res) << Reply();
+		int res = -EINVAL;
+		if(r.arg == DEL_ARG_SHFILE) {
+			res = joinshm(file,r.nfd,0);
+			if(res == 0)
+				res = file->sharemem(r.nfd,file->sharedmem()->addr,file->sharedmem()->size);
+		}
+		is << DevDelegate::Response(res) << Reply();
 	}
 };
 

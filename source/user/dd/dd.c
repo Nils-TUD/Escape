@@ -71,14 +71,14 @@ int main(int argc,const char *argv[]) {
 
 	uint64_t start = rdtsc(), end;
 	{
-		ulong shname;
+		int shmfd;
 		uchar *shmem;
-		if(sharebuf(infd,bs,(void**)&shmem,&shname,0) < 0) {
+		if((shmfd = sharebuf(infd,bs,(void**)&shmem,0)) < 0) {
 			if(shmem == NULL)
 				error("Unable to mmap buffer");
 		}
 		if(shmem) {
-			if(sharefile(outfd,shmem) < 0) {}
+			if(delegate(outfd,shmfd,O_RDONLY,DEL_ARG_SHFILE) < 0) {}
 		}
 
 		ssize_t result;
@@ -96,7 +96,7 @@ int main(int argc,const char *argv[]) {
 			total += result;
 		}
 
-		destroybuf(shmem,shname);
+		destroybuf(shmem,shmfd);
 	}
 	end = rdtsc();
 

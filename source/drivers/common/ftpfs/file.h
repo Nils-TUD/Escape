@@ -28,7 +28,7 @@
 class File : public BlockFile {
 public:
 	explicit File(const std::string &path,size_t size,const CtrlConRef &ctrl)
-			: _reading(false), _offset(-1), _shm(), _shmsize(), _total(size), _path(path),
+			: _reading(false), _offset(-1), _fd(), _shm(), _shmsize(), _total(size), _path(path),
 			  _ctrlRef(ctrl), _ctrl(), _data() {
 	}
 	virtual ~File() {
@@ -56,9 +56,10 @@ public:
 		_offset += count;
 	}
 
-	virtual int sharemem(void *mem,size_t size) {
+	virtual int sharemem(int fd,void *mem,size_t size) {
 		if(_shm)
 			return -EEXIST;
+		_fd = fd;
 		_shm = mem;
 		_shmsize = size;
 		return 0;
@@ -76,7 +77,7 @@ private:
 		}
 		_data = new DataCon(_ctrlRef);
 		if(_shm)
-			_data->sharemem(_shm,_shmsize);
+			_data->sharemem(_fd,_shm,_shmsize);
 		_offset = offset;
 		_reading = reading;
 
@@ -110,6 +111,7 @@ private:
 
 	bool _reading;
 	size_t _offset;
+	int _fd;
 	void *_shm;
 	size_t _shmsize;
 	size_t _total;

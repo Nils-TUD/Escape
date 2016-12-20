@@ -168,7 +168,7 @@ private:
 	CBlock *_freeBlocks;
 	CBlock *_blockCache;
 	void *_blockmem;
-	ulong _blockshm;
+	int _blockfd;
 	ulong _hits;
 	ulong _misses;
 };

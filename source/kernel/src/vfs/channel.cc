@@ -335,41 +335,6 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 	return r.err;
 }
 
-int VFSChannel::sharefile(pid_t pid,OpenFile *file,const char *path,void *cliaddr,size_t size) {
-	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
-	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
-	ssize_t res;
-
-	if(shmem != NULL)
-		return -EEXIST;
-	if((res = isSupported(DEV_SHFILE)) < 0)
-		return res;
-
-	/* send msg to driver */
-	ib << esc::DevShFile::Request(size,esc::CString(path));
-	if(ib.error())
-		return -EINVAL;
-	res = file->sendMsg(pid,esc::DevShFile::MSG,ib.buffer(),ib.pos(),NULL,0);
-	if(res < 0)
-		return res;
-
-	/* read response */
-	ib.reset();
-	msgid_t mid = res;
-	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
-	if(res < 0)
-		return res;
-
-	/* handle response */
-	esc::DevShFile::Response r;
-	ib >> r;
-	if(r.err < 0)
-		return r.err;
-	shmem = cliaddr;
-	shmemSize = size;
-	return 0;
-}
-
 int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int arg) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
@@ -380,11 +345,30 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 	if((res = isSupported(DEV_DELEGATE)) < 0)
 		return res;
 
+	/* establish shared memory? */
+	if(arg == DEL_ARG_SHFILE) {
+		if(shmem)
+			return -EEXIST;
+		/* it needs to be a virtual file, otherwise filesystems could not support shared memory
+		 * (easily), because they would risk a deadlock when doing a fstat() on the received fd. */
+		/* there is not really a point in using non-virtual files for this anyway.. */
+		if(file->getDev() != VFS_DEV_NO)
+			return -EINVAL;
+		uintptr_t addr = ShFiles::getFor(file,pid);
+		if(!addr)
+			return -ENXIO;
+		struct stat info;
+		if((res = file->fstat(pid,&info)) < 0)
+			return res;
+		shmem = reinterpret_cast<void*>(addr);
+		shmemSize = info.st_size;
+	}
+
 	/* first, give the driver a file-descriptor for the new channel */
 	uint flags = (file->getFlags() & ~O_ACCMODE) | perm;
 	res = VFS::openFileDesc(getParent()->getOwner(),flags,file->getNode(),file->getNodeNo(),file->getDev());
 	if(res < 0)
-		return res;
+		goto errorShm;
 	nfd = res;
 
 	/* send msg to driver */
@@ -413,6 +397,9 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 
 error:
 	VFS::closeFileDesc(getParent()->getOwner(),nfd);
+errorShm:
+	if(arg == DEL_ARG_SHFILE)
+		shmem = NULL;
 	return res;
 }
 

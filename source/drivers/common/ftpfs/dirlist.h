@@ -50,7 +50,7 @@ public:
 		VTHROWE("You can't write to a directory",-ENOTSUP);
 	}
 
-	virtual int sharemem(void *,size_t) {
+	virtual int sharemem(int,void *,size_t) {
 		return -ENOTSUP;
 	}
 

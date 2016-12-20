@@ -109,15 +109,14 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	semop,
 	semdestr,
 	sendrecv,
-	sharefile,
 	cancel,
 	createchan,
 	delegate,
 	obtain,
 	sysconfstr,
+	clonems,
 
 	/* 70 */
-	clonems,
 	joinms,
 	mlock,
 	mlockall,
@@ -128,9 +127,9 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	utime,
 	truncate,
 
-	/* 80 */
 #if defined(__x86__)
 	reqports,
+	/* 80 */
 	relports,
 #else
 	debug,

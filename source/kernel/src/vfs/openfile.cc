@@ -395,13 +395,6 @@ int OpenFile::cancel(pid_t pid,msgid_t mid) {
 	return static_cast<VFSChannel*>(node)->cancel(pid,this,mid);
 }
 
-int OpenFile::sharefile(pid_t pid,const char *p,void *cliaddr,size_t size) {
-	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
-		return -ENOTSUP;
-
-	return static_cast<VFSChannel*>(node)->sharefile(pid,this,p,cliaddr,size);
-}
-
 int OpenFile::delegate(pid_t pid,OpenFile *file,uint perm,int arg) {
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;

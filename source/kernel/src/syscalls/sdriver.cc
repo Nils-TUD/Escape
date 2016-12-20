@@ -48,8 +48,8 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(type != DEV_TYPE_BLOCK && type != DEV_TYPE_CHAR &&
 			type != DEV_TYPE_FILE && type != DEV_TYPE_SERVICE && type != DEV_TYPE_FS))
 		SYSC_ERROR(stack,-EINVAL);
-	if(EXPECT_FALSE((ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_SHFILE |
-			DEV_CANCEL | DEV_CANCELSIG | DEV_DELEGATE | DEV_OBTAIN | DEV_SIZE)) != 0))
+	if(EXPECT_FALSE((ops & ~(DEV_OPEN | DEV_READ | DEV_WRITE | DEV_CLOSE | DEV_CANCEL |
+			DEV_CANCELSIG | DEV_DELEGATE | DEV_OBTAIN | DEV_SIZE)) != 0))
 		SYSC_ERROR(stack,-EINVAL);
 	/* DEV_CLOSE is mandatory */
 	if(EXPECT_FALSE(~ops & DEV_CLOSE))

@@ -34,7 +34,7 @@ typedef uint16_t port_t;
 
 class Socket {
 	// this is called in accept, where IPCStream will not close the file, because it hasn't opened it
-	explicit Socket(int f) : _close(true), _is(f), _shm(), _shmname(), _shmsize() {
+	explicit Socket(int f) : _close(true), _is(f), _shm(), _shmfd(-1), _shmsize() {
 	}
 
 public:
@@ -79,7 +79,7 @@ public:
 	explicit Socket(const char *path,Type type,Protocol proto)
 		// no close by default because the IPCStream will do that already
 		: _close(false), _is(buildPath(path,type,proto).c_str(),O_RDWRMSG),
-		  _shm(), _shmsize() {
+		  _shm(), _shmfd(-1), _shmsize() {
 	}
 
 	/**
@@ -94,8 +94,8 @@ public:
 	 * Closes the socket
 	 */
 	~Socket() {
-		if(_shmname)
-			destroybuf(_shm,_shmsize);
+		if(_shmfd != -1)
+			destroybuf(_shm,_shmfd);
 		if(_close)
 			::close(_is.fd());
 	}
@@ -123,27 +123,28 @@ public:
 	int sharebuf(size_t size) {
 		if(_shmsize)
 			return -EEXIST;
-		int res = ::sharebuf(fd(),size,&_shm,&_shmname,0);
-		if(res == 0)
+		_shmfd = ::sharebuf(fd(),size,&_shm,0);
+		if(_shmfd == 0)
 			_shmsize = size;
-		return res;
+		return _shmfd;
 	}
 
 	/**
 	 * Shares the given memory with this socket.
 	 *
-	 * @param mem the memory
+	 * @param shmfd the file descriptor for the shared memory file
+	 * @param addr the address where it is mapped to
 	 * @param size the size
 	 * @return 0 on success
 	 */
-	int sharemem(void *mem,size_t size) {
+	int sharemem(int shmfd,void *addr,size_t size) {
 		if(_shmsize)
 			return -EEXIST;
-		int res = ::sharefile(fd(),mem);
+		int res = ::delegate(fd(),shmfd,O_RDWR,DEL_ARG_SHFILE);
 		if(res == 0) {
 			_shmsize = size;
-			_shm = mem;
-			_shmname = 0;
+			_shm = addr;
+			_shmfd = -1;
 		}
 		return res;
 	}
@@ -308,7 +309,7 @@ private:
 	bool _close;
 	IPCStream _is;
 	void *_shm;
-	ulong _shmname;
+	int _shmfd;
 	size_t _shmsize;
 };
 

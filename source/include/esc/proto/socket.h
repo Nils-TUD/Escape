@@ -34,7 +34,7 @@ typedef uint16_t port_t;
 
 class Socket {
 	// this is called in accept, where IPCStream will not close the file, because it hasn't opened it
-	explicit Socket(int f) : _close(true), _is(f) {
+	explicit Socket(int f) : _close(true), _is(f), _shm(), _shmname(), _shmsize() {
 	}
 
 public:

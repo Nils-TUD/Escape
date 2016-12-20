@@ -44,7 +44,7 @@ public:
 	static Route find(const esc::Net::IPv4Addr &ip);
 	static int setStatus(const esc::Net::IPv4Addr &ip,esc::Net::Status status);
 	static int remove(const esc::Net::IPv4Addr &ip);
-	static void removeAll(const std::shared_ptr<Link> &link);
+	static void removeAll(const Link *link);
 	static void print(esc::OStream &os);
 
 	esc::Net::IPv4Addr dest;

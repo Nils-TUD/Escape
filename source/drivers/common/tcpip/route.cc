@@ -76,10 +76,10 @@ int Route::remove(const esc::Net::IPv4Addr &ip) {
 	return -ENOTFOUND;
 }
 
-void Route::removeAll(const std::shared_ptr<Link> &l) {
+void Route::removeAll(const Link *l) {
 	std::lock_guard<std::mutex> guard(_mutex);
 	for(auto it = _table.begin(); it != _table.end(); ) {
-		if((*it)->link == l)
+		if(&*(*it)->link == l)
 			_table.erase(it);
 		else
 			++it;

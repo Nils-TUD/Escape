@@ -90,12 +90,12 @@ void Device::handleMsg(msgid_t mid,IPCStream &is) {
 	}
 	catch(const esc::default_error &e) {
 		// TODO printe is annoying here since it prints errno, which is typically nonsense.
-		printe("Client %d, message %d: %s",is.fd(),mid,e.what());
+		printe("Client %d, message %u: %s",is.fd(),mid & 0xFFFF,e.what());
 		if(h.reply)
 			reply(is,e.error() ? e.error() : -EINVAL);
 	}
 	catch(...) {
-		printe("Client %d, message %d: unknown error",is.fd(),mid);
+		printe("Client %d, message %u: unknown error",is.fd(),mid & 0xFFFF);
 		if(h.reply)
 			reply(is,-EINVAL);
 	}

@@ -325,12 +325,6 @@ ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 		goto errorDir;
 	VFSNode::release(nn);
 
-	/* create shm-dir */
-	nn = createObj<VFSDir>(KERNEL_PID,dir,(char*)"shm",0777);
-	if(nn == NULL)
-		goto errorDir;
-	VFSNode::release(nn);
-
 	/* create threads-dir */
 	nn = createObj<VFSDir>(KERNEL_PID,dir,(char*)"threads",DIR_DEF_MODE);
 	if(nn == NULL)

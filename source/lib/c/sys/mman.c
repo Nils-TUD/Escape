@@ -27,11 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-/* prefill the space for getpid() with '/'. they will simply be ignored by the kernel */
-#define PSHM_PATH	"/sys/proc/////////////shm/"
-
-static long shmcnt = 0;
-
 /* just a convenience for the user which sets errno if the return-value is zero (not enough mem) */
 void *chgsize(ssize_t count) {
 	size_t addr = syscall1(SYSCALL_CHGSIZE,count);
@@ -62,23 +57,4 @@ void *mmap(void *addr,size_t length,size_t loadLength,int prot,int flags,int fd,
 	if(res >= -200 && res < 0)
 		return NULL;
 	return (void*)res;
-}
-
-static const char *pshm_buildpath(char *path,ulong name) {
-	char *pidpos = path + SSTRLEN("/sys/proc/");
-	size_t len = itoa(pidpos,12,getpid());
-	pidpos[len] = '/';
-	itoa(path + SSTRLEN(PSHM_PATH),12,name);
-	return path;
-}
-
-int pshm_create(int oflag,mode_t mode,ulong *name) {
-	char path[MAX_PATH_LEN] = PSHM_PATH;
-	*name = atomic_add(&shmcnt,+1);
-	return open(pshm_buildpath(path,*name),oflag | O_CREAT | O_EXCL,mode);
-}
-
-int pshm_unlink(ulong name) {
-	char path[MAX_PATH_LEN] = PSHM_PATH;
-	return unlink(pshm_buildpath(path,name));
 }

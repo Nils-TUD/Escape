@@ -156,24 +156,6 @@ static inline int mlockall(void) {
 	return syscall0(SYSCALL_MLOCKALL);
 }
 
-/**
- * Creates a file in /sys/proc/<pid>/shm/ with a unique name and <oflag> as flags for create.
- * The file is intended to be mapped with mmap().
- *
- * @param oflag the open flags
- * @param mode the mode to set
- * @param name will be set to the name
- * @return the file descriptor on success
- */
-int pshm_create(int oflag,mode_t mode,ulong *name);
-
-/**
- * Unlinks the file previously created by pshm_create.
- *
- * @parma name the name of the shm
- */
-int pshm_unlink(ulong name);
-
 #if defined(__cplusplus)
 }
 #endif

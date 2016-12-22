@@ -54,34 +54,12 @@ namespace gui {
 			: _winMngName(getWinMng(winmng)), _winMng(_winMngName),
 			  _winEv((std::string(_winMngName) + "-events").c_str()), _run(true), _mouseBtns(0),
 			  _screenMode(_winMng.getMode()), _windows(), _created(), _activated(), _destroyed(),
-			  _timequeue(), _queueMutex(), _listening(false), _defTheme(nullptr) {
+			  _timequeue(), _queueMutex(), _listening(false), _defTheme(loadTheme()) {
 		// announce signal handlers
 		if(signal(SIGUSR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
 		if(signal(SIGALRM,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce ALARM signal handler");
-
-		// init default theme
-		_defTheme.setColor(Theme::CTRL_BACKGROUND,Color(0x88,0x88,0x88));
-		_defTheme.setColor(Theme::CTRL_FOREGROUND,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::CTRL_BORDER,Color(0x55,0x55,0x55));
-		_defTheme.setColor(Theme::CTRL_LIGHTBORDER,Color(0x70,0x70,0x70));
-		_defTheme.setColor(Theme::CTRL_DARKBORDER,Color(0x20,0x20,0x20));
-		_defTheme.setColor(Theme::CTRL_LIGHTBACK,Color(0x80,0x80,0x80));
-		_defTheme.setColor(Theme::CTRL_DARKBACK,Color(0x60,0x60,0x60));
-		_defTheme.setColor(Theme::BTN_BACKGROUND,Color(0x70,0x70,0x70));
-		_defTheme.setColor(Theme::BTN_FOREGROUND,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::SEL_BACKGROUND,Color(0x11,0x44,0x94));
-		_defTheme.setColor(Theme::SEL_FOREGROUND,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::TEXT_BACKGROUND,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::TEXT_FOREGROUND,Color(0x00,0x00,0x00));
-		_defTheme.setColor(Theme::WIN_TITLE_ACT_BG,Color(0x11,0x44,0x94));
-		_defTheme.setColor(Theme::WIN_TITLE_ACT_FG,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::WIN_TITLE_INACT_BG,Color(0x3d,0x4b,0x60));
-		_defTheme.setColor(Theme::WIN_TITLE_INACT_FG,Color(0xFF,0xFF,0xFF));
-		_defTheme.setColor(Theme::WIN_BORDER,Color(0x55,0x55,0x55));
-		_defTheme.setPadding(2);
-		_defTheme.setTextPadding(4);
 
 		// subscribe to window-events
 		_winEv.subscribe(esc::WinMngEvents::Event::TYPE_CREATED);
@@ -314,5 +292,14 @@ namespace gui {
 				return it->get();
 		}
 		return nullptr;
+	}
+
+	Theme Application::loadTheme() {
+		std::string name;
+		esc::FStream namefile("/etc/theme");
+		namefile >> name;
+
+		esc::FStream themefile(("/etc/themes/" + name).c_str());
+		return Theme::unserialize(themefile);
 	}
 }

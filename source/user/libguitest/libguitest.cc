@@ -23,10 +23,12 @@
 
 extern sTestModule tModSubscriber;
 extern sTestModule tModRect;
+extern sTestModule tModTheme;
 
 int main(void) {
 	test_register(&tModSubscriber);
 	test_register(&tModRect);
+	test_register(&tModTheme);
 	test_start();
 	/* flush stdout because cout will be closed before stdout is flushed by exit(). thus, that flush
 	 * will fail because the file has already been closed. */

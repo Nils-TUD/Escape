@@ -262,6 +262,11 @@ namespace gui {
 		 */
 		void handleQueue();
 
+		/**
+		 * Loads the theme from file
+		 */
+		Theme loadTheme();
+
 	private:
 		// prevent copying
 		Application(const Application &a);

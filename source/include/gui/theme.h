@@ -23,6 +23,11 @@
 #include <sys/common.h>
 #include <vector>
 
+namespace esc{
+class IStream;
+class OStream;
+}
+
 namespace gui {
 	/**
 	 * This class holds all colors that should be used for an ui-element. That is, each ui-element
@@ -86,6 +91,13 @@ namespace gui {
 				_colors = new std::vector<Color>(*t._colors);
 		}
 		/**
+		 * Move constructor
+		 */
+		Theme(Theme &&t)
+			: _default(t._default), _present(t._present), _padding(t._padding),
+			  _textPadding(t._textPadding), _colors(std::move(t._colors)), _dirty(t._dirty) {
+		}
+		/**
 		 * Destructor
 		 */
 		~Theme() {
@@ -95,7 +107,11 @@ namespace gui {
 		/**
 		 * Assignment-operator
 		 */
-		Theme& operator=(const Theme& t);
+		Theme& operator=(const Theme &t);
+		/**
+		 * Move assignment-operator
+		 */
+		Theme& operator=(Theme &&t);
 
 		/**
 		 * @return the padding
@@ -174,7 +190,24 @@ namespace gui {
 			_dirty = dirty;
 		}
 
+		/**
+		 * Writes the theme to the given output stream.
+		 *
+		 * @param os the output stream
+		 */
+		void serialize(esc::OStream &os);
+
+		/**
+		 * Reads a theme from given input stream.
+		 *
+		 * @param is the input stream
+		 * @return the theme
+		 */
+		static Theme unserialize(esc::IStream &is);
+
 	private:
+		void init(const Theme &t);
+
 		const Theme *_default;
 		bitmap_type _present;
 		gsize_t _padding;

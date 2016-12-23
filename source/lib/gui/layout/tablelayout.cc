@@ -52,6 +52,7 @@ namespace gui {
 		size.width -= _gap * (_cols - 1);
 		size.height -= _gap * (_rows - 1);
 
+		// determine the relative sizes of all cells based on the preferred size
 		std::vector<double> widths(_cols,0);
 		std::vector<double> heights(_rows,0);
 
@@ -68,12 +69,15 @@ namespace gui {
 			heights[row] = height / (double)pref.height;
 		}
 
+		// now apply these sizes based on our real size
 		gpos_t x = pad;
 		for(uint col = 0; col < _cols; ++col) {
 			gpos_t y = pad;
-			gsize_t colWidth = col == _cols - 1 ? xend - x : widths[col] * size.width;
+			// use round to spread the inaccuracy among all rows/columns
+			// and let the last one simply use the remaining space
+			gsize_t colWidth = col == _cols - 1 ? xend - x : round(widths[col] * size.width);
 			for(uint row = 0; row < _rows; ++row) {
-				gsize_t rowHeight = row == _rows - 1 ? yend - y : heights[row] * size.height;
+				gsize_t rowHeight = row == _rows - 1 ? yend - y : round(heights[row] * size.height);
 
 				auto ctrl = _ctrls.at(GridPos(col,row));
 				res |= configureControl(ctrl,Pos(x,y),Size(colWidth,rowHeight));

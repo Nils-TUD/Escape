@@ -32,22 +32,25 @@ static int childWaitThread(void *arg);
 
 static int childsm;
 
+static const struct {
+	const char *icon;
+	const char *bin;
+} shortcuts[] = {
+	{"/etc/guishell.png",	"/bin/guishell"},
+	{"/etc/calc.png",		"/bin/gcalc"},
+	{"/etc/fileman.png",	"/bin/fileman"},
+	{"/etc/gtest.png",		"/bin/gtest"},
+	{"/etc/settings.png",	"/bin/gsettings"},
+};
+
 int main() {
 	if((childsm = semcrt(0)) < 0)
 		error("Unable to create semaphore");
 
-	Shortcut sc1("/etc/guishell.png","/bin/guishell");
-	Shortcut sc2("/etc/calc.png","/bin/gcalc");
-	Shortcut sc3("/etc/fileman.png","/bin/fileman");
-	Shortcut sc4("/etc/gtest.png","/bin/gtest");
-	Shortcut sc5("/etc/settings.png","/bin/gsettings");
 	Application *app = Application::create();
 	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize(),childsm);
-	win->addShortcut(&sc1);
-	win->addShortcut(&sc2);
-	win->addShortcut(&sc3);
-	win->addShortcut(&sc4);
-	win->addShortcut(&sc5);
+	for(size_t i = 0; i < ARRAY_SIZE(shortcuts); ++i)
+		win->addShortcut(new Shortcut(shortcuts[i].icon,shortcuts[i].bin));
 	win->show();
 	if(startthread(childWaitThread,nullptr) < 0)
 		error("Unable to start thread");

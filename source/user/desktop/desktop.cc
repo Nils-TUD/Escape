@@ -41,6 +41,7 @@ static const struct {
 	{"/etc/fileman.png",	"/bin/fileman"},
 	{"/etc/gtest.png",		"/bin/gtest"},
 	{"/etc/settings.png",	"/bin/gsettings"},
+	{"/etc/cpugraph.png",	"/bin/cpugraph"},
 };
 
 int main() {

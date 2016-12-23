@@ -1,0 +1,4 @@
+# -*- Mode: Python -*-
+
+Import('env')
+env.EscapeCXXProg('bin', target = 'cpugraph', source = env.Glob('*.cc'), LIBS = ['gui', 'info'])

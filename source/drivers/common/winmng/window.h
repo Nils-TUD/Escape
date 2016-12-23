@@ -69,6 +69,18 @@ struct Window : public WinRect {
 int win_init(int sid,esc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp);
 
 /**
+ * @return the current theme
+ */
+const std::string &win_getTheme();
+
+/**
+ * Sets the theme.
+ *
+ * @param name the new name
+ */
+void win_setTheme(const char *name);
+
+/**
  * @return the current mode
  */
 const esc::Screen::Mode *win_getMode(void);

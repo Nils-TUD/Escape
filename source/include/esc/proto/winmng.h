@@ -145,6 +145,28 @@ public:
 	}
 
 	/**
+	 * @return the name of the current theme
+	 */
+	std::string getTheme() {
+		CStringBuf<64> name;
+		_is << esc::SendReceive(MSG_WIN_GETTHEME) >> name;
+		return name.str();
+	}
+
+	/**
+	 * Sets the theme to the given one.
+	 *
+	 * @param name the name of the theme
+	 * @throws if the operation failed
+	 */
+	void setTheme(const std::string &name) {
+		errcode_t res;
+		_is << CString(name.c_str(),name.length()) << esc::SendReceive(MSG_WIN_SETTHEME) >> res;
+		if(res < 0)
+			VTHROWE("setTheme(" << name << ")",res);
+	}
+
+	/**
 	 * Sets the given mode.
 	 *
 	 * @param width the width

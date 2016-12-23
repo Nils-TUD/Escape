@@ -446,10 +446,8 @@ namespace gui {
 					bgid = Theme::WIN_TITLE_INACT_BG;
 					fgid = Theme::WIN_TITLE_INACT_FG;
 				}
-				const Color &bg = getTheme().getColor(bgid);
-				const Color &fg = getTheme().getColor(fgid);
-				_header->getTheme().setColor(Theme::CTRL_BACKGROUND,bg);
-				_header->getTheme().setColor(Theme::CTRL_FOREGROUND,fg);
+				_header->getTheme().setColor(Theme::CTRL_BACKGROUND,bgid);
+				_header->getTheme().setColor(Theme::CTRL_FOREGROUND,fgid);
 				_header->repaint();
 			}
 		}

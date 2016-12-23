@@ -66,6 +66,8 @@ enum {
 	MSG_WIN_ATTACH					= 310,	/* connect an event-channel to a window */
 	MSG_WIN_SETMODE					= 311,	/* sets the screen mode */
 	MSG_WIN_EVENT					= 312,	/* for all events */
+	MSG_WIN_GETTHEME				= 313,	/* get current theme name */
+	MSG_WIN_SETTHEME				= 314,	/* set theme */
 
 	/* screen */
 	MSG_SCR_SETCURSOR				= 400,	/* sets the cursor */

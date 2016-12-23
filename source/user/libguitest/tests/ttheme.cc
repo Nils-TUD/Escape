@@ -19,7 +19,7 @@
 
 #include <esc/stream/istringstream.h>
 #include <esc/stream/ostringstream.h>
-#include <gui/theme.h>
+#include <gui/theme/basetheme.h>
 #include <sys/common.h>
 #include <sys/test.h>
 #include <stdarg.h>
@@ -37,7 +37,7 @@ sTestModule tModTheme = {
 };
 
 static void test_theme(void) {
-	Theme t(nullptr);
+	BaseTheme t;
 	for(size_t i = 0; i < 18; ++i)
 		t.setColor(i,Color(i,i,i));
 	t.setPadding(1);
@@ -47,7 +47,7 @@ static void test_theme(void) {
 	t.serialize(os);
 
 	esc::IStringStream is(os.str().c_str(),os.str().length());
-	Theme nt = Theme::unserialize(is);
+	BaseTheme nt = BaseTheme::unserialize(is);
 
 	for(size_t i = 0; i < 18; ++i) {
 		test_assertInt(t.getColor(i).getRed(), nt.getColor(i).getRed());

@@ -31,8 +31,6 @@ using namespace std;
 
 const gsize_t DesktopWin::PADDING = 10;
 const gsize_t DesktopWin::ICON_SIZE = 30;
-const Color DesktopWin::BGCOLOR = Color(0xd5,0xe6,0xf3);
-const Color DesktopWin::ACTIVE_COLOR = Color(0x90,0x90,0x90);
 const gsize_t DesktopWin::TASKBAR_HEIGHT = 24;
 
 DesktopWin::DesktopWin(const Size &size,int childsm)
@@ -47,7 +45,7 @@ DesktopWin::DesktopWin(const Size &size,int childsm)
 	root->add(_winPanel,BorderLayout::SOUTH);
 	root->add(_iconPanel,BorderLayout::CENTER);
 
-	_iconPanel->getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
+	_iconPanel->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::DESKTOP_BG);
 
 	Application *app = Application::getInstance();
 	app->created().subscribe(mem_recv(this,&DesktopWin::onWindowCreated));
@@ -99,9 +97,8 @@ void DesktopWin::onWindowActive(gwinid_t wid) {
 	}
 	auto it = _windows.find(wid);
 	if(it != _windows.end()) {
-		const Theme *def = Application::getInstance()->getDefaultTheme();
 		_active = it->second.get();
-		_active->getTheme().setColor(Theme::BTN_BACKGROUND,def->getColor(Theme::WIN_TITLE_ACT_BG));
+		_active->getTheme().setColor(Theme::BTN_BACKGROUND,Theme::WIN_TITLE_ACT_BG);
 		_active->repaint();
 	}
 	else

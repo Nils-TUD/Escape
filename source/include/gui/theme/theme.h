@@ -20,57 +20,48 @@
 #pragma once
 
 #include <gui/graphics/color.h>
+#include <gui/theme/basetheme.h>
 #include <sys/common.h>
 #include <vector>
 
-namespace esc{
-class IStream;
-class OStream;
-}
-
 namespace gui {
 	/**
-	 * This class holds all colors that should be used for an ui-element. That is, each ui-element
-	 * holds an instance of this class. Additionally, the Application class creates an instance of
-	 * this class and puts in all default colors. By default, the instance for the ui-elements
-	 * contains no colors at all but only a pointer to the theme-instance Application has created.
-	 * This way, without intervening the default colors are used. But the user of an ui-element
-	 * may overwrite all colors for a specific control to change its appearance.
+	 * This class holds the theme settings for one UI element. The actual colors are stored in the
+	 * base theme, but it is possible to change the mapping of colors.
 	 */
 	class Theme {
-	public:
-		/**
-		 * The type for the color-constants
-		 */
-		typedef size_t colid_type;
+		friend class BaseTheme;
 
-	private:
 		typedef unsigned int bitmap_type;
 
 	public:
+		typedef BaseTheme::colid_type colid_type;
+
 		// the different purposes for which colors are used
-		static const colid_type CTRL_BACKGROUND;
-		static const colid_type CTRL_FOREGROUND;
-		static const colid_type CTRL_BORDER;
-		static const colid_type CTRL_LIGHTBORDER;
-		static const colid_type CTRL_DARKBORDER;
-		static const colid_type CTRL_LIGHTBACK;
-		static const colid_type CTRL_DARKBACK;
-		static const colid_type BTN_BACKGROUND;
-		static const colid_type BTN_FOREGROUND;
-		static const colid_type SEL_BACKGROUND;
-		static const colid_type SEL_FOREGROUND;
-		static const colid_type TEXT_BACKGROUND;
-		static const colid_type TEXT_FOREGROUND;
-		static const colid_type WIN_TITLE_ACT_BG;
-		static const colid_type WIN_TITLE_ACT_FG;
-		static const colid_type WIN_TITLE_INACT_BG;
-		static const colid_type WIN_TITLE_INACT_FG;
-		static const colid_type WIN_BORDER;
+		static const colid_type CTRL_BACKGROUND		= 0;
+		static const colid_type CTRL_FOREGROUND		= 1;
+		static const colid_type CTRL_BORDER			= 2;
+		static const colid_type CTRL_LIGHTBORDER	= 3;
+		static const colid_type CTRL_DARKBORDER		= 4;
+		static const colid_type CTRL_LIGHTBACK		= 5;
+		static const colid_type CTRL_DARKBACK		= 6;
+		static const colid_type BTN_BACKGROUND		= 7;
+		static const colid_type BTN_FOREGROUND		= 8;
+		static const colid_type SEL_BACKGROUND		= 9;
+		static const colid_type SEL_FOREGROUND		= 10;
+		static const colid_type TEXT_BACKGROUND		= 11;
+		static const colid_type TEXT_FOREGROUND		= 12;
+		static const colid_type WIN_TITLE_ACT_BG	= 13;
+		static const colid_type WIN_TITLE_ACT_FG	= 14;
+		static const colid_type WIN_TITLE_INACT_BG	= 15;
+		static const colid_type WIN_TITLE_INACT_FG	= 16;
+		static const colid_type WIN_BORDER			= 17;
+		static const colid_type DESKTOP_BG			= 18;
+		static const colid_type ERROR_COLOR			= 19;
 
 	private:
-		static const colid_type PADDING;
-		static const colid_type TEXT_PADDING;
+		static const colid_type PADDING				= 20;
+		static const colid_type TEXT_PADDING		= 21;
 
 	public:
 		/**
@@ -78,24 +69,26 @@ namespace gui {
 		 *
 		 * @param def the default theme (nullptr if no default should be used)
 		 */
-		Theme(const Theme *def)
-			: _default(def), _present(0), _padding(0), _textPadding(0), _colors(nullptr), _dirty(false) {
+		Theme()
+			: _present(0), _padding(0), _textPadding(0), _colors(nullptr), _dirty(false) {
+			static_assert(PADDING == BaseTheme::COLOR_NUM,"COLOR_NUM is wrong");
 		}
 		/**
 		 * Copy-constructor
 		 */
 		Theme(const Theme& t)
-			: _default(t._default), _present(t._present), _padding(t._padding),
-			  _textPadding(t._textPadding), _colors(), _dirty(t._dirty) {
+			: _present(t._present), _padding(t._padding), _textPadding(t._textPadding),
+			  _colors(), _dirty(t._dirty) {
 			if(t._colors)
-				_colors = new std::vector<Color>(*t._colors);
+				_colors = new std::vector<colid_type>(*t._colors);
 		}
 		/**
 		 * Move constructor
 		 */
 		Theme(Theme &&t)
-			: _default(t._default), _present(t._present), _padding(t._padding),
-			  _textPadding(t._textPadding), _colors(std::move(t._colors)), _dirty(t._dirty) {
+			: _present(t._present), _padding(t._padding), _textPadding(t._textPadding),
+			  _colors(std::move(t._colors)), _dirty(t._dirty) {
+	  		t._colors = nullptr;
 		}
 		/**
 		 * Destructor
@@ -163,7 +156,7 @@ namespace gui {
 		 * @param id the color-id
 		 * @param c the new color
 		 */
-		void setColor(colid_type id,const Color& c);
+		void setColor(colid_type id,colid_type baseid);
 
 		/**
 		 * Removes the color with given id from this theme, i.e. the default color is used again.
@@ -190,29 +183,13 @@ namespace gui {
 			_dirty = dirty;
 		}
 
-		/**
-		 * Writes the theme to the given output stream.
-		 *
-		 * @param os the output stream
-		 */
-		void serialize(esc::OStream &os);
-
-		/**
-		 * Reads a theme from given input stream.
-		 *
-		 * @param is the input stream
-		 * @return the theme
-		 */
-		static Theme unserialize(esc::IStream &is);
-
 	private:
 		void init(const Theme &t);
 
-		const Theme *_default;
 		bitmap_type _present;
 		gsize_t _padding;
 		gsize_t _textPadding;
-		std::vector<Color> *_colors;
+		std::vector<colid_type> *_colors;
 		bool _dirty;
 	};
 }

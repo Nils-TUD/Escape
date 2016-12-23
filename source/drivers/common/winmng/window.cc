@@ -54,6 +54,7 @@ static void win_notifyWinDestroy(gwinid_t id);
 static esc::UI *ui;
 static int drvId;
 
+static std::string theme = "default";
 static esc::Screen::Mode mode;
 static esc::FrameBuffer *fb;
 
@@ -65,12 +66,37 @@ static size_t pixelSize() {
 	return mode.bitsPerPixel / 8;
 }
 
+static void resetWindows() {
+	for(size_t i = 0; i < WINDOW_COUNT; i++) {
+		if(windows[i].id != WINID_UNUSED) {
+			win_destroyBuf(windows + i);
+
+			/* let the window reset everything, i.e. create to new buffer, repaint, ... */
+			esc::WinMngEvents::Event ev;
+			ev.type = esc::WinMngEvents::Event::TYPE_RESET;
+			ev.wid = windows[i].id;
+			send(windows[i].evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
+		}
+	}
+}
+
 int win_init(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp) {
 	drvId = sid;
 	ui = uiobj;
 	srand(time(NULL));
 
 	return win_setMode(width,height,bpp);
+}
+
+const std::string &win_getTheme() {
+	return theme;
+}
+
+void win_setTheme(const char *name) {
+	print("Setting theme '%s'",name);
+	theme = name;
+
+	resetWindows();
 }
 
 const esc::Screen::Mode *win_getMode(void) {
@@ -100,17 +126,7 @@ int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
 		fb = newfb.release();
 
 		/* recreate window buffers */
-		for(size_t i = 0; i < WINDOW_COUNT; i++) {
-			if(windows[i].id != WINID_UNUSED) {
-				win_destroyBuf(windows + i);
-
-				/* let the window reset everything, i.e. create to new buffer, repaint, ... */
-				esc::WinMngEvents::Event ev;
-				ev.type = esc::WinMngEvents::Event::TYPE_RESET;
-				ev.wid = windows[i].id;
-				send(windows[i].evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
-			}
-		}
+		resetWindows();
 	}
 	catch(const std::exception &e) {
 		printe("%s",e.what());
@@ -164,8 +180,11 @@ static void win_destroyBuf(Window *win) {
 }
 
 int win_joinbuf(gwinid_t winid,int fd) {
-	if(!win_exists(winid) || windows[winid].fb != NULL)
+	if(!win_exists(winid))
 		return -EINVAL;
+
+	if(windows[winid].fb != NULL)
+		delete windows[winid].fb;
 
 	esc::Screen::Mode winMode = mode;
 	winMode.guiHeaderSize = winMode.tuiHeaderSize = 0;

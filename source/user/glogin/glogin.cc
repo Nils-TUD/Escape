@@ -61,7 +61,7 @@ public:
 		getTheme().setPadding(0);
 
 		shared_ptr<ColorFadePanel> header = make_control<ColorFadePanel>(make_layout<BorderLayout>(0));
-		header->getTheme().setColor(Theme::CTRL_BACKGROUND,getTheme().getColor(Theme::WIN_TITLE_ACT_BG));
+		header->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::WIN_TITLE_ACT_BG);
 		header->add(make_control<Label>("Login",CENTER),BorderLayout::CENTER);
 		add(header,BorderLayout::NORTH);
 
@@ -104,8 +104,8 @@ public:
 
 private:
 	static void indicateError(UIElement &el) {
-		el.getTheme().setColor(Theme::CTRL_DARKBORDER,Color(0xFF,0,0));
-		el.getTheme().setColor(Theme::CTRL_BORDER,Color(0xFF,0,0));
+		el.getTheme().setColor(Theme::CTRL_DARKBORDER,Theme::ERROR_COLOR);
+		el.getTheme().setColor(Theme::CTRL_BORDER,Theme::ERROR_COLOR);
 		el.repaint();
 	}
 	static void clearError(UIElement &el) {
@@ -147,12 +147,10 @@ private:
 };
 
 class DesktopWindow : public Window {
-	static const Color BGCOLOR;
-
 public:
 	DesktopWindow(const Size &size) : Window(Pos(0,0),size,DESKTOP), _lgpnl() {
 		shared_ptr<ColorFadePanel> bg = make_control<ColorFadePanel>();
-		bg->getTheme().setColor(Theme::CTRL_BACKGROUND,BGCOLOR);
+		bg->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::DESKTOP_BG);
 
 		_lgpnl = make_control<LoginPanel>(*this);
 		shared_ptr<Border> border = make_control<Border>(_lgpnl);
@@ -173,8 +171,6 @@ public:
 private:
 	shared_ptr<LoginPanel> _lgpnl;
 };
-
-const Color DesktopWindow::BGCOLOR = Color(0xd5,0xe6,0xf3);
 
 int main(void) {
 	char *winMngPath = getenv("WINMNG");

@@ -194,6 +194,8 @@ static const char *winMsgs[] = {
 	"WIN_ATTACH",
 	"WIN_SETMODE",
 	"WIN_EVENT",
+	"WIN_GETTHEME",
+	"WIN_SETTHEME",
 };
 
 static const char *scrMsgs[] = {

@@ -195,27 +195,27 @@ public:
 
 private:
 	void updateSelection(int newSel) {
+		using namespace gui;
 		if(_selected != -1) {
 			if(_mode == MODE_LIST) {
 				for(size_t i = 0; i < 3; ++i)
-					get(_selected * 3 + i)->getTheme().unsetColor(gui::Theme::CTRL_BACKGROUND);
+					get(_selected * 3 + i)->getTheme().unsetColor(Theme::CTRL_BACKGROUND);
 			}
 			else
-				get(_selected)->getTheme().unsetColor(gui::Theme::CTRL_BACKGROUND);
+				get(_selected)->getTheme().unsetColor(Theme::CTRL_BACKGROUND);
 		}
 
 		assert(newSel != -1);
-		gui::Color selColor = getTheme().getColor(gui::Theme::SEL_BACKGROUND);
 		if(_mode == MODE_LIST) {
 			for(size_t i = 0; i < 3; ++i)
-				get(newSel * 3 + i)->getTheme().setColor(gui::Theme::CTRL_BACKGROUND,selColor);
+				get(newSel * 3 + i)->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::SEL_BACKGROUND);
 		}
 		else
-			get(newSel)->getTheme().setColor(gui::Theme::CTRL_BACKGROUND,selColor);
+			get(newSel)->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::SEL_BACKGROUND);
 
-		gui::ScrollPane *sp = static_cast<gui::ScrollPane*>(getParent());
+		ScrollPane *sp = static_cast<ScrollPane*>(getParent());
 		std::shared_ptr<Control> first = _mode == MODE_LIST ? get(newSel * 3) : get(newSel);
-		gui::Pos pos = first->getPos();
+		Pos pos = first->getPos();
 		if(newSel > _selected)
 			pos.y += first->getSize().height;
 		sp->makeVisible(pos,false);

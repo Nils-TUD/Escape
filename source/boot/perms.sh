@@ -32,6 +32,7 @@ chmod -R 0644 $dir/etc
 chmod 0755 $dir/etc
 chmod 0755 $dir/etc/keymaps
 chmod 0755 $dir/etc/net
+chmod 0755 $dir/etc/themes
 
 # /etc/groups
 chown -R $root:$root $dir/etc/groups

@@ -23,8 +23,8 @@
 #include <gui/event/event.h>
 #include <gui/event/subscriber.h>
 #include <gui/graphics/graphics.h>
+#include <gui/theme/theme.h>
 #include <gui/application.h>
-#include <gui/theme.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <memory>
@@ -63,8 +63,7 @@ namespace gui {
 		 */
 		UIElement()
 			: _id(_nextid++), _g(nullptr), _parent(nullptr),
-			  _theme(Application::getInstance()->getDefaultTheme()),
-			  _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
+			  _theme(), _pos(), _size(), _prefSize(), _mouseMoved(), _mousePressed(), _mouseReleased(),
 			  _mouseWheel(), _keyPressed(), _keyReleased(), _dirty(true) {
 		}
 		/**
@@ -78,8 +77,7 @@ namespace gui {
 		 */
 		UIElement(const Pos &pos,const Size &size)
 			: _id(_nextid++), _g(nullptr), _parent(nullptr),
-			  _theme(Application::getInstance()->getDefaultTheme()),
-			  _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
+			  _theme(), _pos(pos), _size(size), _prefSize(size), _mouseMoved(), _mousePressed(),
 			  _mouseReleased(), _mouseWheel(), _keyPressed(), _keyReleased(), _dirty(true) {
 		}
 

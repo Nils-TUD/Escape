@@ -56,6 +56,8 @@ public:
 		set(MSG_SCR_GETMODES,std::make_memfun(this,&WinMngDevice::getModes));
 		set(MSG_SCR_GETMODE,std::make_memfun(this,&WinMngDevice::getMode));
 		set(MSG_WIN_SETMODE,std::make_memfun(this,&WinMngDevice::setMode));
+		set(MSG_WIN_GETTHEME,std::make_memfun(this,&WinMngDevice::getTheme));
+		set(MSG_WIN_SETTHEME,std::make_memfun(this,&WinMngDevice::setTheme));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
 		set(MSG_DEV_DELEGATE,std::make_memfun(this,&WinMngDevice::delegate),false);
 	}
@@ -191,6 +193,19 @@ public:
 
 		errcode_t res = win_setMode(width,height,bpp);
 		is << res << Reply();
+	}
+
+	void getTheme(IPCStream &is) {
+		const std::string &nameobj = win_getTheme();
+		is << CString(nameobj.c_str(),nameobj.length()) << Reply();
+	}
+
+	void setTheme(IPCStream &is) {
+		CStringBuf<64> name;
+		is >> name;
+
+		win_setTheme(name.str());
+		is << 0 << Reply();
 	}
 
 	void close(IPCStream &is) {

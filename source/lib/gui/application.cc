@@ -53,8 +53,10 @@ namespace gui {
 	Application::Application(const char *winmng)
 			: _winMngName(getWinMng(winmng)), _winMng(_winMngName),
 			  _winEv((std::string(_winMngName) + "-events").c_str()), _run(true), _mouseBtns(0),
-			  _screenMode(_winMng.getMode()), _windows(), _created(), _activated(), _destroyed(),
-			  _timequeue(), _queueMutex(), _listening(false), _defTheme(loadTheme()) {
+			  _screenMode(_winMng.getMode()), _windows(),
+			  _created(), _activated(), _destroyed(),
+			  _timequeue(), _queueMutex(), _listening(false),
+			  _themeName(_winMng.getTheme()), _baseTheme(loadTheme()) {
 		// announce signal handlers
 		if(signal(SIGUSR1,sighandler) == SIG_ERR)
 			throw app_error("Unable to announce USR1 signal handler");
@@ -189,9 +191,18 @@ namespace gui {
 				break;
 
 			case esc::WinMngEvents::Event::TYPE_RESET: {
-				Window *w = getWindowById(ev.wid);
+				// update theme, if it has changed
+				std::string theme = _winMng.getTheme();
+				if(theme != _themeName) {
+					_themeName = theme;
+					_baseTheme = loadTheme();
+				}
+
 				// re-request screen infos from vesa
 				_screenMode = _winMng.getMode();
+
+				// reset window
+				Window *w = getWindowById(ev.wid);
 				if(w)
 					w->onReset();
 			}
@@ -294,12 +305,8 @@ namespace gui {
 		return nullptr;
 	}
 
-	Theme Application::loadTheme() {
-		std::string name;
-		esc::FStream namefile("/etc/theme");
-		namefile >> name;
-
-		esc::FStream themefile(("/etc/themes/" + name).c_str());
-		return Theme::unserialize(themefile);
+	BaseTheme Application::loadTheme() {
+		esc::FStream themefile(("/etc/themes/" + getTheme()).c_str(),"r");
+		return BaseTheme::unserialize(themefile);
 	}
 }

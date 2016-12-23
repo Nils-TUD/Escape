@@ -83,8 +83,6 @@ class DesktopWin : public gui::Window {
 public:
 	static const gsize_t PADDING;
 	static const gsize_t ICON_SIZE;
-	static const gui::Color BGCOLOR;
-	static const gui::Color ACTIVE_COLOR;
 	static const gsize_t TASKBAR_HEIGHT;
 
 public:

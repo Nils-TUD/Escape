@@ -204,7 +204,7 @@ namespace gui {
 		if(_win)
 			removeWindow();
 		else {
-			gsize_t pad = Application::getInstance()->getDefaultTheme()->getTextPadding();
+			gsize_t pad = getTheme().getTextPadding();
 			gsize_t height = _items.size() * (getGraphics()->getFont().getSize().height + pad * 2);
 			const Window *w = getWindow();
 			Pos pos(w->getPos().x + getWindowPos().x,

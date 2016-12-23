@@ -23,7 +23,7 @@
 #include <gui/event/subscriber.h>
 #include <gui/graphics/pos.h>
 #include <gui/graphics/size.h>
-#include <gui/theme.h>
+#include <gui/theme/basetheme.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/sync.h>
@@ -150,6 +150,29 @@ namespace gui {
 		}
 
 		/**
+		 * @return the current theme name
+		 */
+		std::string getTheme() {
+			return _themeName;
+		}
+
+		/**
+		 * Sets the given theme for the entire UI.
+		 *
+		 * @param name the name
+		 */
+		void setTheme(const std::string &name) {
+			_winMng.setTheme(name);
+		}
+
+		/**
+		 * @return the base theme
+		 */
+		const BaseTheme &getBaseTheme() {
+			return _baseTheme;
+		}
+
+		/**
 		 * @return the path to the window-manager
 		 */
 		const char *getWinMng() const {
@@ -161,13 +184,6 @@ namespace gui {
 		 * @return the window with given id or nullptr
 		 */
 		Window *getWindowById(gwinid_t id);
-
-		/**
-		 * @return the default-theme
-		 */
-		const Theme *getDefaultTheme() {
-			return &_defTheme;
-		}
 
 		/**
 		 * Requests that this window should be the active one
@@ -265,7 +281,7 @@ namespace gui {
 		/**
 		 * Loads the theme from file
 		 */
-		Theme loadTheme();
+		BaseTheme loadTheme();
 
 	private:
 		// prevent copying
@@ -332,6 +348,7 @@ namespace gui {
 		std::list<TimeoutFunctor> _timequeue;
 		std::mutex _queueMutex;
 		bool _listening;
-		Theme _defTheme;
+		std::string _themeName;
+		BaseTheme _baseTheme;
 	};
 }

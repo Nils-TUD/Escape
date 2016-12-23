@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/file.h>
 #include <gui/layout/flowlayout.h>
 #include <gui/layout/gridlayout.h>
 #include <gui/application.h>
@@ -28,7 +29,8 @@
 using namespace std;
 using namespace gui;
 
-static shared_ptr<ComboBox> combo;
+static shared_ptr<ComboBox> modeCombo;
+static shared_ptr<ComboBox> themeCombo;
 static vector<esc::Screen::Mode> modes;
 
 static void onCancel(UIElement &) {
@@ -36,14 +38,17 @@ static void onCancel(UIElement &) {
 }
 
 static void onApply(UIElement &) {
-	ssize_t sel = combo->getSelectedIndex();
-	if(sel >= 0) {
-		try {
+	const std::string *theme = themeCombo->getSelectedItem();
+	try {
+		if(theme && *theme != Application::getInstance()->getTheme())
+			Application::getInstance()->setTheme(*theme);
+
+		ssize_t sel = modeCombo->getSelectedIndex();
+		if(sel >= 0 && modes[sel].id != Application::getInstance()->getMode()->id)
 			Application::getInstance()->setMode(modes[sel]);
-		}
-		catch(const std::exception &e) {
-			printe("%s",e.what());
-		}
+	}
+	catch(const std::exception &e) {
+		printe("%s",e.what());
 	}
 }
 
@@ -53,20 +58,34 @@ int main() {
 	shared_ptr<Panel> root = win->getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());
 
-	shared_ptr<Panel> grid = make_control<Panel>(make_layout<GridLayout>(2,1,5));
+	shared_ptr<Panel> grid = make_control<Panel>(make_layout<GridLayout>(2,2,5));
 	grid->add(make_control<Label>("Screenmode:"),GridPos(0,0));
 
-	combo = make_control<ComboBox>();
+	modeCombo = make_control<ComboBox>();
 	const esc::Screen::Mode *curmode = app->getMode();
 	modes = app->getModes();
 	for(auto it = modes.begin(); it != modes.end(); ++it) {
 		ostringstream os;
 		os << it->width << "x" << it->height << ", " << it->bitsPerPixel << "bpp";
-		combo->addItem(os.str());
+		modeCombo->addItem(os.str());
 		if(curmode->id == it->id)
-			combo->setSelectedIndex(it - modes.begin());
+			modeCombo->setSelectedIndex(it - modes.begin());
 	}
-	grid->add(combo,GridPos(1,0));
+	grid->add(modeCombo,GridPos(1,0));
+
+	grid->add(make_control<Label>("Theme:"),GridPos(0,1));
+
+	std::string curTheme = Application::getInstance()->getTheme();
+	themeCombo = make_control<ComboBox>();
+	vector<struct dirent> themes = esc::file("/etc/themes").list_files(false);
+	size_t i = 0;
+	for(auto theme : themes) {
+		themeCombo->addItem(theme.d_name);
+		if(curTheme == theme.d_name)
+			themeCombo->setSelectedIndex(i);
+		i++;
+	}
+	grid->add(themeCombo,GridPos(1,1));
 
 	root->add(grid,BorderLayout::CENTER);
 

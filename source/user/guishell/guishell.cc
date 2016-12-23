@@ -40,7 +40,6 @@
 using namespace gui;
 using namespace std;
 
-static int guiProc(const char *devName);
 static int shellMain(const char *devName);
 
 static const int DEF_COLS = 80;
@@ -77,6 +76,26 @@ int main(int argc,char **argv) {
 	// set term as env-variable
 	setenv("TERM",devName);
 
+	// create control elements
+	Application *app = Application::create(getenv("WINMNG"));
+	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100));
+	shared_ptr<Panel> root = w->getRootPanel();
+	root->getTheme().setPadding(0);
+	shared_ptr<ShellControl> sh = make_control<ShellControl>();
+	root->setLayout(make_layout<BorderLayout>());
+	root->add(make_control<ScrollPane>(sh),BorderLayout::CENTER);
+
+	// create gui vterm
+	gt = new GUIVTermDevice(devName,0700,sh,DEF_COLS,DEF_ROWS);
+	int tid;
+	if((tid = startthread(termThread,gt)) < 0)
+		error("Unable to start term-thread");
+
+	// create window
+	w->show(true);
+	w->requestFocus(sh.get());
+	app->addWindow(w);
+
 	// start the shell in a separate process. this way, the forks the shell performs
 	// are cheaper because its address-space is smaller.
 	int childPid;
@@ -85,48 +104,27 @@ int main(int argc,char **argv) {
 	else if(childPid < 0)
 		error("fork failed");
 
-	guiProc(devName);
-	return EXIT_SUCCESS;
-}
-
-static int guiProc(const char *devName) {
 	if(signal(SIGUSR2,sigUsr2) == SIG_ERR)
 		error("Unable to set signal-handler");
 
-	// now start GUI
-	Application *app = Application::create(getenv("WINMNG"));
-	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100));
-	shared_ptr<Panel> root = w->getRootPanel();
-	root->getTheme().setPadding(0);
-	shared_ptr<ShellControl> sh = make_control<ShellControl>();
-	gt = new GUIVTermDevice(devName,0700,sh,DEF_COLS,DEF_ROWS);
-	int tid;
-	if((tid = startthread(termThread,gt)) < 0)
-		error("Unable to start term-thread");
-	root->setLayout(make_layout<BorderLayout>());
-	root->add(make_control<ScrollPane>(sh),BorderLayout::CENTER);
-	w->show(true);
-	w->requestFocus(sh.get());
-	app->addWindow(w);
+	// run message loop
 	int res = app->run();
+
 	sh->sendEOF();
 	// notify the other thread and wait for him
 	if(kill(getpid(),SIGUSR2) < 0)
 		printe("Unable to send SIGUSR2 to ourself");
 	IGNSIGS(join(tid));
 	delete gt;
+
 	return res;
 }
 
 static int shellMain(const char *devName) {
 	// wait until the device is announced
-	int fin;
-	do {
-		fin = open(devName,O_RDONLY | O_MSGS);
-		if(fin < 0)
-			yield();
-	}
-	while(fin < 0);
+	int fin = open(devName,O_RDONLY | O_MSGS);
+	if(fin < 0)
+		error("Unable to open %s",devName);
 
 	// redirect fds so that stdin, stdout and stderr refer to our device
 	if(redirect(STDIN_FILENO,fin) < 0)

@@ -79,6 +79,10 @@ int vbscanf(FILE *f,const char *fmt,va_list ap) {
 					flags |= FFL_LONGLONG;
 					fmt++;
 					break;
+				case 'z':
+					flags |= FFL_SIZE;
+					fmt++;
+					break;
 				default:
 					readFlags = false;
 					break;
@@ -114,6 +118,8 @@ int vbscanf(FILE *f,const char *fmt,va_list ap) {
 						*(long*)n = val;
 					else if(flags & FFL_LONGLONG)
 						*(llong*)n = val;
+					else if(flags & FFL_SIZE)
+						*(size_t*)n = val;
 					else
 						*(int*)n = val;
 					count++;

@@ -30,177 +30,68 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include "painter/gui.h"
+#include "painter/tui.h"
+#include "painter/win.h"
+
 using namespace esc;
 
-static const float PI 		= 3.14159265358979f;
+enum Mode {
+	TUI,
+	GUI,
+	WIN,
+};
+
 static const int INTERVAL 	= 50000; /* us */
-
-static UI *ui;
-static UIEvents *uiev;
-static FrameBuffer *fb;
-static Screen::Mode mode;
-
-static bool gui = false;
-static uint width = 100;
-static uint height = 37;
 
 static volatile bool run = true;
 static volatile float speed = 0.04f;
 static volatile size_t raster = 1;
 
-static float radd = 0;
-static float gadd = 2 * PI / 3;
-static float badd = 4 * PI / 3;
-
-static const float PI_HALF = PI / 2;
-static float sintime, costime;
-static float *x1vals, *x2vals, *y1vals, *y2vals;
-
-static const char chartab[] = {
-	' ', '.', ',', '_', 'o', 'O', 'H', 'A'
+static RGB add = {
+	0,
+	2 * PI / 3,
+	4 * PI / 3
 };
 
-static float fastsin(float x) {
-    asm ("fsin" : "+t"(x));
-    return x;
-}
-static float fastcos(float x) {
-    asm ("fsin" : "+t"(x));
-    return x;
-}
-static float fastsqrt(float x) {
-    asm ("fsqrt" : "+t"(x));
-    return x;
-}
-
-static int inputThread(void *) {
-	/* read from uimanager and handle the keys */
-	while(1) {
-		esc::UIEvents::Event ev;
-		*uiev >> ev;
-		if(ev.type != esc::UIEvents::Event::TYPE_KEYBOARD || (ev.d.keyb.modifier & STATE_BREAK))
-			continue;
-
-		if(ev.d.keyb.keycode == VK_Q) {
+bool handleKey(int keycode) {
+	switch(keycode) {
+		case VK_Q:
 			run = false;
+			return false;
+		case VK_UP:
+			if(raster > 1)
+				raster /= 2;
 			break;
-		}
-
-		switch(ev.d.keyb.keycode) {
-			case VK_UP:
-				if(raster > 1)
-					raster /= 2;
-				break;
-			case VK_DOWN:
-				if(raster < 16)
-					raster *= 2;
-				break;
-			case VK_LEFT:
-				if(speed > 0)
-					speed -= 0.01f;
-				break;
-			case VK_RIGHT:
-				speed += 0.01f;
-				break;
-			case VK_PGUP:
-				radd += 0.05f;
-				gadd += 0.1f;
-				badd += 0.2f;
-				break;
-			case VK_PGDOWN:
-				radd -= 0.05f;
-				gadd -= 0.1f;
-				badd -= 0.2f;
-				break;
-		}
+		case VK_DOWN:
+			if(raster < 16)
+				raster *= 2;
+			break;
+		case VK_LEFT:
+			if(speed > 0)
+				speed -= 0.01f;
+			break;
+		case VK_RIGHT:
+			speed += 0.01f;
+			break;
+		case VK_PGUP:
+			add.r += 0.05f;
+			add.g += 0.1f;
+			add.b += 0.2f;
+			break;
+		case VK_PGDOWN:
+			add.r -= 0.05f;
+			add.g -= 0.1f;
+			add.b -= 0.2f;
+			break;
 	}
-	return 0;
-}
-
-static void init() {
-	width = gui ? mode.width : mode.cols;
-	height = gui ? mode.height : mode.rows;
-	x1vals = new float[width];
-	x2vals = new float[width];
-	y1vals = new float[height];
-	y2vals = new float[height];
-}
-
-static float getValue(uint ix,uint iy,float x,float y,float time) {
-	// return Util::abs(sin(sin(x * 10 + time) + sin(y * 10 + time) + time));
-	float v = 0;
-	v += x1vals[ix];
-	v += y2vals[iy];
-	v += fastsin((x * 10 + y * 10 + time) / 2);
-	float cx = x2vals[ix];
-	float cy = y2vals[iy];
-	v += fastsin(fastsqrt(100 * (cx + cy * cy) + 1) + time);
-	v = v * PI_HALF;
-	return Util::abs(v);
-}
-
-static void redraw(size_t factor,float time) {
-	uint w = width / factor;
-	uint h = height / factor;
-
-	sintime = .5f * fastsin(time / 5);
-	costime = .5f * fastcos(time / 3);
-
-	for(uint x = 0; x < w; ++x) {
-		float dx = (float)x / w;
-		x1vals[x] = fastsin((dx * 10 + time));
-		x2vals[x] = (x1vals[x] + sintime) * (x1vals[x] + sintime);
-	}
-	for(uint y = 0; y < h; ++y) {
-		float dy = (float)y / h;
-		y1vals[y] = fastsin((dy * 10 + time) / 2);
-		y2vals[y] = y1vals[y] + costime;
-	}
-
-	float dx, dy = 0;
-	float xadd = 1. / w;
-	float yadd = 1. / h;
-	for(uint y = 0; y < h; ++y, dy += yadd) {
-		dx = 0;
-		for(uint x = 0; x < w; ++x, dx += xadd) {
-			float val = getValue(x,y,dx,dy,time);
-			if(gui) {
-				uint32_t rgba = 0;
-				rgba |= (uint32_t)(255 * (.5f + .5f * fastsin(val + radd))) << 0;
-				rgba |= (uint32_t)(255 * (.5f + .5f * fastsin(val + gadd))) << 8;
-				rgba |= (uint32_t)(255 * (.5f + .5f * fastsin(val + badd))) << 16;
-				rgba |= (uint32_t)(255) << 24;
-
-				uint32_t *px = (uint32_t*)fb->addr() + y * factor * width + x * factor;
-				for(size_t j = 0; j < factor; ++j) {
-					for(size_t i = 0; i < factor; ++i)
-						px[j * width + i] = rgba;
-				}
-			}
-			else {
-				float fac = (.5 + .5 * fastsin(val));
-				uint16_t value = 0;
-				value |= (uint16_t)(chartab[(size_t)(ARRAY_SIZE(chartab) * fac)]) << 0;
-				value |= (uint16_t)(16 + 16 * fastsin(fac + radd)) << 8;
-
-				uint16_t *px = (uint16_t*)fb->addr() + y * factor * width + x * factor;
-				for(size_t j = 0; j < factor; ++j) {
-					for(size_t i = 0; i < factor; ++i)
-						px[j * width + i] = value;
-				}
-			}
-		}
-	}
-
-	ui->update(0,0,width,height);
-	// we want to have a synchronous update
-	ui->getMode();
+	return true;
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-t (gui|tui)] [-s <cols>x<rows>]\n";
-	serr << "    (gui|tui) selects the screen type\n";
-	serr << "    <cols>x<rows> selects the screen mode\n";
+	serr << "Usage: " << name << " [-m (gui|tui|win)] [-s <cols>x<rows>]\n";
+	serr << "    (gui|tui|win) selects the mode\n";
+	serr << "    <cols>x<rows> selects the plasma size\n";
 	serr << "\n";
 	serr << "Key-combinations:\n";
 	serr << "    left/right: decrease/increase speed\n";
@@ -211,12 +102,12 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	std::string scrtype;
+	std::string modestr;
 	std::string scrsize;
 
 	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
 	try {
-		args.parse("t=s s=s",&scrtype,&scrsize);
+		args.parse("m=s s=s",&modestr,&scrsize);
 		if(args.is_help())
 			usage(argv[0]);
 	}
@@ -225,49 +116,45 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 	}
 
-	if(!scrtype.empty() && scrtype == "gui") {
-		width = 1024;
-		height = 700;
-		gui = true;
+	Mode mode = TUI;
+	gsize_t width = 100;
+	gsize_t height = 37;
+	if(!modestr.empty()) {
+		if(modestr == "gui") {
+			width = 1024;
+			height = 700;
+			mode = GUI;
+		}
+		else if(modestr == "win") {
+			width = 400;
+			height = 300;
+			mode = WIN;
+		}
 	}
 	if(!scrsize.empty()) {
-		if(sscanf(scrsize.c_str(),"%dx%d",&width,&height) != 2)
+		if(sscanf(scrsize.c_str(),"%zux%zu",&width,&height) != 2)
 			usage(argv[0]);
 	}
 
-	/* open uimanager */
-	ui = new UI("/dev/uimng");
-
-	/* find desired mode */
-	if(gui) {
-		mode = ui->findGraphicsMode(width,height,32);
-		if(mode.bitsPerPixel != 32)
-			error("Mode %ux%ux%u is not supported",mode.width,mode.height,mode.bitsPerPixel);
+	Painter *painter;
+	switch(mode) {
+		case GUI:
+			painter = new GUIPainter(width,height);
+			break;
+		case TUI:
+			painter = new TUIPainter(width,height);
+			break;
+		case WIN:
+			painter = new WinPainter(width,height);
+			break;
 	}
-	else
-		mode = ui->findTextMode(width,height);
-
-	/* attach to input-channel */
-	uiev = new UIEvents(*ui);
-
-	/* create framebuffer and set mode */
-	int type = gui ? Screen::MODE_TYPE_GUI : Screen::MODE_TYPE_TUI;
-	fb = new FrameBuffer(mode,type);
-	ui->setMode(type,mode.id,fb->fd(),true);
-
-	ui->hideCursor();
-
-	if(startthread(inputThread,NULL) < 0)
-		error("Unable to start input thread");
-
-	init();
 
 	float time = 0;
 	uint64_t tscinterval = timetotsc(INTERVAL);
 	while(run) {
 		uint64_t now = rdtsc();
 
-		redraw(raster,time);
+		painter->paint(add,raster,time);
 		time += speed;
 
 		uint64_t next = now + tscinterval;

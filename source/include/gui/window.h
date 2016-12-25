@@ -107,6 +107,8 @@ namespace gui {
 		};
 
 	public:
+		typedef Sender<Window&> resizedev_type;
+
 		/**
 		 * Creates a new window without titlebar
 		 *
@@ -203,6 +205,13 @@ namespace gui {
 		 */
 		std::shared_ptr<Panel> getRootPanel() {
 			return _body;
+		}
+
+		/**
+		 * The resize event
+		 */
+		resizedev_type &resized() {
+			return _resized;
 		}
 
 		virtual bool layout() {
@@ -359,6 +368,7 @@ namespace gui {
 		Pos _movePos;
 		Size _resizeSize;
 		GraphicsBuffer *_gbuf;
+		resizedev_type _resized;
 	protected:
 		std::shared_ptr<WindowTitleBar> _header;
 		std::shared_ptr<Panel> _body;

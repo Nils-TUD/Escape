@@ -469,6 +469,7 @@ namespace gui {
 			_header->makeDirty(true);
 		_body->makeDirty(true);
 		repaint();
+		_resized.send(*this);
 	}
 
 	void Window::onReset() {

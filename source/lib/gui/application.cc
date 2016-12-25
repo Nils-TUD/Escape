@@ -108,32 +108,26 @@ namespace gui {
 
 	void Application::handleQueue() {
 		_queueMutex.lock();
-		uint64_t next = std::numeric_limits<uint64_t>::max();
 		// repeat until we've seen no calls anymore. this is because we release the lock in between
 		// so that one can insert an item into the queue. if this is a callback with timeout 0, we
 		// might have already got the signal and thus should handle it immediately.
-		uint calls;
-		do {
-			calls = 0;
-			for(auto it = _timequeue.begin(); it != _timequeue.end(); ) {
-				auto cur = it++;
-				if(cur->tsc <= rdtsc()) {
-					_queueMutex.unlock();
-					(*(cur->functor))();
-					_queueMutex.lock();
-					_timequeue.erase(cur);
-					calls++;
-				}
-				else if(cur->tsc < next)
-					next = cur->tsc;
-			}
+		uint64_t now = rdtsc();
+		while(!_timequeue.empty()) {
+			auto cur = _timequeue.front();
+			if(cur.tsc > (now = rdtsc()))
+				break;
+
+			_timequeue.pop_front();
+			_queueMutex.unlock();
+			(*(cur.functor))();
+			_queueMutex.lock();
 		}
-		while(calls > 0);
 
 		// program new wakeup
-		uint64_t now = rdtsc();
-		if(next > now && next != std::numeric_limits<uint64_t>::max())
-			ualarm(tsctotime(next - now));
+		if(!_timequeue.empty()) {
+			auto first = _timequeue.front();
+			ualarm(tsctotime(first.tsc - now));
+		}
 		_queueMutex.unlock();
 	}
 

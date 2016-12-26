@@ -61,11 +61,8 @@ void DesktopWin::onIconClick(UIElement& el) {
 	);
 	if(it != _shortcuts.end()) {
 		int pid = fork();
-		if(pid == 0) {
-			const char *args[] = {nullptr,nullptr};
-			args[0] = it->second->getApp().c_str();
-			execv(args[0],args);
-		}
+		if(pid == 0)
+			execv(it->second->getArgs()[0],it->second->getArgs());
 		else if(pid < 0)
 			printe("Unable to create child-process");
 		else

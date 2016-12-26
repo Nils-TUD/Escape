@@ -34,14 +34,14 @@ static int childsm;
 
 static const struct {
 	const char *icon;
-	const char *bin;
+	const char *args[4];
 } shortcuts[] = {
-	{"/etc/guishell.png",	"/bin/guishell"},
-	{"/etc/calc.png",		"/bin/gcalc"},
-	{"/etc/fileman.png",	"/bin/fileman"},
-	{"/etc/gtest.png",		"/bin/gtest"},
-	{"/etc/settings.png",	"/bin/gsettings"},
-	{"/etc/cpugraph.png",	"/bin/cpugraph"},
+	{"/etc/guishell.png",	{"/bin/guishell",	NULL,	NULL,	NULL}},
+	{"/etc/calc.png",		{"/bin/gcalc",		NULL,	NULL,	NULL}},
+	{"/etc/fileman.png",	{"/bin/fileman",	NULL,	NULL,	NULL}},
+	{"/etc/gtest.png",		{"/bin/gtest",		NULL,	NULL,	NULL}},
+	{"/etc/settings.png",	{"/bin/gsettings",	NULL,	NULL,	NULL}},
+	{"/etc/cpugraph.png",	{"/bin/cpugraph",	NULL,	NULL,	NULL}},
 };
 
 int main() {
@@ -51,7 +51,7 @@ int main() {
 	Application *app = Application::create();
 	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize(),childsm);
 	for(size_t i = 0; i < ARRAY_SIZE(shortcuts); ++i)
-		win->addShortcut(new Shortcut(shortcuts[i].icon,shortcuts[i].bin));
+		win->addShortcut(new Shortcut(shortcuts[i].icon,const_cast<const char**>(shortcuts[i].args)));
 	win->show();
 	if(startthread(childWaitThread,nullptr) < 0)
 		error("Unable to start thread");

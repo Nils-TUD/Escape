@@ -32,15 +32,15 @@ class Shortcut {
 	friend class DesktopWin;
 
 public:
-	Shortcut(const std::string& icon,const std::string& app)
-		: _icon(icon), _app(app), _btn() {
+	Shortcut(const std::string& icon,const char **args)
+		: _icon(icon), _args(args), _btn() {
 	}
 
 	const std::string& getIcon() const {
 		return _icon;
 	}
-	const std::string& getApp() const {
-		return _app;
+	const char **getArgs() const {
+		return _args;
 	}
 
 private:
@@ -53,7 +53,7 @@ private:
 
 private:
 	std::string _icon;
-	std::string _app;
+	const char **_args;
 	std::shared_ptr<gui::ImageButton> _btn;
 };
 

@@ -77,6 +77,7 @@ static void refresh() {
 }
 
 static void sigusr1(int) {
+	run = false;
 }
 
 static int refreshThread(void *) {
@@ -120,7 +121,6 @@ int main() {
 	app->addWindow(win);
 	int res = app->run();
 
-	run = false;
 	kill(getpid(),SIGUSR1);
 	join(tid);
 	return res;

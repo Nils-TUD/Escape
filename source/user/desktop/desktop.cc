@@ -42,6 +42,7 @@ static const struct {
 	{"/etc/gtest.png",		{"/bin/gtest",		NULL,	NULL,	NULL}},
 	{"/etc/settings.png",	{"/bin/gsettings",	NULL,	NULL,	NULL}},
 	{"/etc/cpugraph.png",	{"/bin/cpugraph",	NULL,	NULL,	NULL}},
+	{"/etc/plasma.png",		{"/bin/plasma",		"-m",	"win",	NULL}},
 };
 
 int main() {

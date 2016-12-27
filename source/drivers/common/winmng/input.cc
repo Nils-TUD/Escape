@@ -22,6 +22,7 @@
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/esccodes.h>
+#include <sys/keycodes.h>
 #include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/thread.h>
@@ -29,6 +30,8 @@
 #include <stdlib.h>
 
 #include "input.h"
+#include "listener.h"
+#include "stack.h"
 #include "window.h"
 
 static void handleKbMessage(esc::UIEvents::Event *data);
@@ -76,6 +79,22 @@ int input_thread(void *arg) {
 }
 
 static void handleKbMessage(esc::UIEvents::Event *data) {
+	if(data->d.keyb.modifier & STATE_CTRL) {
+		if(data->d.keyb.keycode == VK_TAB) {
+			if(~data->d.keyb.modifier & STATE_BREAK) {
+				if(data->d.keyb.modifier & STATE_SHIFT)
+					Stack::prev();
+				else
+					Stack::next();
+			}
+			return;
+		}
+		else if(!(data->d.keyb.modifier & (STATE_SHIFT | STATE_BREAK)))
+			Stack::start();
+	}
+	else
+		Stack::stop();
+
 	Window *active = win_getActive();
 	if(!active || active->evfd == -1)
 		return;

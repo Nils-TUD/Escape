@@ -196,8 +196,9 @@ Window *win_getActive(void);
  * @param repaint whether the window should receive a repaint-event
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
+ * @param updateWinStack whether to update the window stack
  */
-void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY);
+void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY,bool updateWinStack);
 
 /**
  * Shows a preview for the given resize-operation

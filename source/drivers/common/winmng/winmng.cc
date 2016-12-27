@@ -88,7 +88,7 @@ public:
 
 		Window *win = win_get(wid);
 		if(win)
-			win_setActive(wid,true,input_getMouseX(),input_getMouseY());
+			win_setActive(wid,true,input_getMouseX(),input_getMouseY(),true);
 	}
 
 	void destroy(IPCStream &is) {

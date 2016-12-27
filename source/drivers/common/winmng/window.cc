@@ -36,6 +36,7 @@
 #include "input.h"
 #include "listener.h"
 #include "preview.h"
+#include "stack.h"
 #include "window.h"
 
 static void win_destroyBuf(Window *win);
@@ -160,6 +161,8 @@ gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uin
 				else
 					windows[i].z = 1;
 			}
+			if(style == WIN_STYLE_DEFAULT)
+				Stack::add(i);
 			windows[i].owner = owner;
 			windows[i].evfd = -1;
 			windows[i].style = style;
@@ -201,7 +204,7 @@ void win_attach(gwinid_t winid,int fd) {
 	if(win_exists(winid) && windows[winid].evfd == -1) {
 		windows[winid].evfd = fd;
 		if(activeWindow == WINDOW_COUNT || windows[winid].style != WIN_STYLE_DESKTOP)
-			win_setActive(winid,false,input_getMouseX(),input_getMouseY());
+			win_setActive(winid,false,input_getMouseX(),input_getMouseY(),true);
 	}
 }
 
@@ -228,6 +231,9 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	windows[id].id = WINID_UNUSED;
 	win_notifyWinDestroy(id);
 
+	if(windows[id].style == WIN_STYLE_DEFAULT)
+		Stack::remove(id);
+
 	print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",
 		id,windows[id].x(),windows[id].y(),windows[id].z,windows[id].width(),windows[id].height());
 
@@ -238,7 +244,7 @@ void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
 	if(activeWindow == id || topWindow == id) {
 		gwinid_t winId = win_getTop();
 		if(winId != WINID_UNUSED)
-			win_setActive(winId,false,mouseX,mouseY);
+			win_setActive(winId,false,mouseX,mouseY,true);
 	}
 }
 
@@ -275,7 +281,7 @@ Window *win_getActive(void) {
 	return NULL;
 }
 
-void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
+void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY,bool updateWinStack) {
 	gwinid_t i;
 	gpos_t curz = windows[id].z;
 	gpos_t maxz = 0;
@@ -296,6 +302,9 @@ void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY) {
 	if(id != activeWindow) {
 		if(activeWindow != WINDOW_COUNT)
 			win_sendActive(activeWindow,false,mouseX,mouseY);
+
+		if(updateWinStack && windows[id].style == WIN_STYLE_DEFAULT)
+			Stack::activate(id);
 
 		activeWindow = id;
 		if(windows[activeWindow].style != WIN_STYLE_DESKTOP)

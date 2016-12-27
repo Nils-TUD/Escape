@@ -116,6 +116,11 @@ void VESAGUI::update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width
 	}
 }
 
+void VESAGUI::reset() {
+	// don't restore the stuff below the old cursor
+	_curCursor = esc::Screen::CURSOR_NONE;
+}
+
 void VESAGUI::doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor) {
 	if(newCursor < 0 || (size_t)newCursor >= ARRAY_SIZE(_cursor))
 		return;

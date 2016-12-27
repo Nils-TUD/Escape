@@ -30,6 +30,7 @@ public:
 
 	void setCursor(VESAScreen *scr,void *shmem,gpos_t newCurX,gpos_t newCurY,int newCursor);
 	void update(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	void reset();
 
 private:
 	void doSetCursor(VESAScreen *scr,void *shmem,gpos_t x,gpos_t y,int newCursor);

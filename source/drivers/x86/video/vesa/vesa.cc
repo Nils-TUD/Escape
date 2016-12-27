@@ -73,6 +73,7 @@ void VESA::ScreenDevice::setScreenMode(Client *c,Screen::Mode *mode,int type,boo
 		c->mode = mode;
 		/* it worked; reset screen and store new stuff */
 		scr->reset(type);
+		gui->reset();
 	}
 }
 

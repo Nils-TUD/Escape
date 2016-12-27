@@ -23,9 +23,7 @@
 #include <sys/common.h>
 
 typedef struct {
-	esc::UI *ui;
 	esc::UIEvents *uiev;
-	int mode;
 	const char *winmng;
 } sInputThread;
 

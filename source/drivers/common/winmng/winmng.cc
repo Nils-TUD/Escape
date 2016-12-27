@@ -41,7 +41,7 @@ using namespace esc;
 
 static const int DEF_BPP	= 24;
 
-static sInputThread inputData;
+static UI *ui;
 
 class WinMngDevice : public Device {
 public:
@@ -160,7 +160,7 @@ public:
 		size_t n;
 		is >> n;
 
-		std::vector<Screen::Mode> modes = inputData.ui->getModes();
+		std::vector<Screen::Mode> modes = ui->getModes();
 		if(n == 0) {
 			size_t count = 0;
 			for(auto m = modes.begin(); m != modes.end(); ++m) {
@@ -268,7 +268,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* connect to ui-manager */
-	inputData.ui = new UI("/dev/uimng");
+	ui = new UI("/dev/uimng");
 
 	/* we want to give only users that are in the ui-group access to this window manager */
 	int gid = usergroup_nameToId(GROUPS_PATH,argv[3]);
@@ -290,19 +290,20 @@ int main(int argc,char *argv[]) {
 		printe("Unable to add ui-group to group-list");
 
 	/* open input device and attach */
-	inputData.uiev = new UIEvents(*inputData.ui);
+	sInputThread inputData;
+	inputData.uiev = new UIEvents(*ui);
 
 	/* init window stuff */
 	inputData.winmng = path;
-	inputData.mode = win_init(windev.id(),inputData.ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP);
-	if(inputData.mode < 0)
+	int mode = win_init(windev.id(),ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP);
+	if(mode < 0)
 		error("Setting mode %zu%zu@%d failed",atoi(argv[1]),atoi(argv[2]),DEF_BPP);
 
 	/* start helper threads */
 	listener_init(windev.id());
 	if(startthread(input_thread,&inputData) < 0)
 		error("Unable to start thread for mouse-handler");
-	if(startthread(infodev_thread,argv[3]) < 0)
+	if(startthread(InfoDev::thread,argv[3]) < 0)
 		error("Unable to start thread for the infodev");
 	if(startthread(eventThread,&evdev) < 0)
 		error("Unable to start thread for the event-channel");
